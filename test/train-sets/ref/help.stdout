@@ -34,61 +34,77 @@ Diagnostic options:
   -a [ --audit ]        print weights of features
   -P [ --progress ] arg Progress update frequency. int: additive, float: 
                         multiplicative
-  --quiet               Don't output disgnostics and progress updates
+  --quiet               Don't output diagnostics and progress updates
+  --limit_output arg    Avoid chatty output. Limit total printed lines.
   --dry_run             Parse arguments and print corresponding metadata. Will 
                         not execute driver.
-  -h [ --help ]         Look here: http://hunch.net/~vw/ and click on Tutorial.
+  -h [ --help ]         More information on vowpal wabbit can be found here 
+                        https://vowpalwabbit.org.
 Randomization options:
   --random_seed arg     seed random number generator
 Feature options:
-  --hash arg                      how to hash the features. Available options: 
-                                  strings, all
-  --hash_seed arg (=0, )          seed for hash function
-  --ignore arg                    ignore namespaces beginning with character 
-                                  <arg>
-  --ignore_linear arg             ignore namespaces beginning with character 
-                                  <arg> for linear terms only
-  --keep arg                      keep namespaces beginning with character 
-                                  <arg>
-  --redefine arg                  redefine namespaces beginning with characters
-                                  of std::string S as namespace N. <arg> shall 
-                                  be in form 'N:=S' where := is operator. Empty
-                                  N or S are treated as default namespace. Use 
-                                  ':' as a wildcard in S.
-  -b [ --bit_precision ] arg      number of bits in the feature table
-  --noconstant                    Don't add a constant feature
-  -C [ --constant ] arg           Set initial value of constant
-  --ngram arg                     Generate N grams. To generate N grams for a 
-                                  single namespace 'foo', arg should be fN.
-  --skips arg                     Generate skips in N grams. This in 
-                                  conjunction with the ngram tag can be used to
-                                  generate generalized n-skip-k-gram. To 
-                                  generate n-skips for a single namespace 
-                                  'foo', arg should be fN.
-  --feature_limit arg             limit to N features. To apply to a single 
-                                  namespace 'foo', arg should be fN
-  --affix arg                     generate prefixes/suffixes of features; 
-                                  argument '+2a,-3b,+1' means generate 2-char 
-                                  prefixes for namespace a, 3-char suffixes for
-                                  b and 1 char prefixes for default namespace
-  --spelling arg                  compute spelling features for a give 
-                                  namespace (use '_' for default namespace)
-  --dictionary arg                read a dictionary for additional features 
-                                  (arg either 'x:file' or just 'file')
-  --dictionary_path arg           look in this directory for dictionaries; 
-                                  defaults to current directory or env{PATH}
-  --interactions arg              Create feature interactions of any level 
-                                  between namespaces.
-  --permutations                  Use permutations instead of combinations for 
-                                  feature interactions of same namespace.
-  --leave_duplicate_interactions  Don't remove interactions with duplicate 
-                                  combinations of namespaces. For ex. this is a
-                                  duplicate: '-q ab -q ba' and a lot more in 
-                                  '-q ::'.
-  -q [ --quadratic ] arg          Create and use quadratic features
-  --q: arg                        DEPRECATED ':' corresponds to a wildcard for 
-                                  all printable characters
-  --cubic arg                     Create and use cubic features
+  --hash arg                            how to hash the features. Available 
+                                        options: strings, all
+  --hash_seed arg (=0, )                seed for hash function
+  --ignore arg                          ignore namespaces beginning with 
+                                        character <arg>
+  --ignore_linear arg                   ignore namespaces beginning with 
+                                        character <arg> for linear terms only
+  --keep arg                            keep namespaces beginning with 
+                                        character <arg>
+  --redefine arg                        redefine namespaces beginning with 
+                                        characters of std::string S as 
+                                        namespace N. <arg> shall be in form 
+                                        'N:=S' where := is operator. Empty N or
+                                        S are treated as default namespace. Use
+                                        ':' as a wildcard in S.
+  -b [ --bit_precision ] arg            number of bits in the feature table
+  --noconstant                          Don't add a constant feature
+  -C [ --constant ] arg                 Set initial value of constant
+  --ngram arg                           Generate N grams. To generate N grams 
+                                        for a single namespace 'foo', arg 
+                                        should be fN.
+  --skips arg                           Generate skips in N grams. This in 
+                                        conjunction with the ngram tag can be 
+                                        used to generate generalized 
+                                        n-skip-k-gram. To generate n-skips for 
+                                        a single namespace 'foo', arg should be
+                                        fN.
+  --feature_limit arg                   limit to N unique features per 
+                                        namespace. To apply to a single 
+                                        namespace 'foo', arg should be fN
+  --affix arg                           generate prefixes/suffixes of features;
+                                        argument '+2a,-3b,+1' means generate 
+                                        2-char prefixes for namespace a, 3-char
+                                        suffixes for b and 1 char prefixes for 
+                                        default namespace
+  --spelling arg                        compute spelling features for a give 
+                                        namespace (use '_' for default 
+                                        namespace)
+  --dictionary arg                      read a dictionary for additional 
+                                        features (arg either 'x:file' or just 
+                                        'file')
+  --dictionary_path arg                 look in this directory for 
+                                        dictionaries; defaults to current 
+                                        directory or env{PATH}
+  --interactions arg                    Create feature interactions of any 
+                                        level between namespaces.
+  --experimental_full_name_interactions arg
+                                        EXPERIMENTAL: Create feature 
+                                        interactions of any level between 
+                                        namespaces by specifying the full name 
+                                        of each namespace.
+  --permutations                        Use permutations instead of 
+                                        combinations for feature interactions 
+                                        of same namespace.
+  --leave_duplicate_interactions        Don't remove interactions with 
+                                        duplicate combinations of namespaces. 
+                                        For ex. this is a duplicate: '-q ab -q 
+                                        ba' and a lot more in '-q ::'.
+  -q [ --quadratic ] arg                Create and use quadratic features
+  --q: arg                              DEPRECATED ':' corresponds to a 
+                                        wildcard for all printable characters
+  --cubic arg                           Create and use cubic features
 Example options:
   -t [ --testonly ]                Ignore label information and just test
   --holdout_off                    no holdout data in multiple passes
@@ -197,6 +213,14 @@ Audit Regressor:
                         this mode.
 Autolink:
   --autolink arg        create link function with polynomial d
+Debug: automl reduction:
+  --automl arg (=3, )                set number of live configs
+  --global_lease arg (=10, )         set initial lease for automl interactions
+  --cm_type arg (=interaction, )     set type of config manager
+  --priority_type arg (=none, )      set function to determine next config 
+                                     {none, least_exclusion}
+  --priority_challengers arg (=-1, ) set number of priority challengers to use
+  --keep_configs                     keep all configs after champ change
 Baseline options:
   --baseline            Learn an additive baseline (from constant features) and
                         a residual separately in regression.
@@ -205,6 +229,10 @@ Baseline options:
                         baseline predictions
   --check_enabled       only use baseline when the example contains enabled 
                         flag
+Baseline challenger reduction: Build a CI around the baseline action and use it instead of the model if it's perfoming better:
+  --baseline_challenger_cb   Enable reduction
+  --cb_c_alpha arg (=0.05, ) Confidence level for 
+  --cb_c_tau arg (=0.999, )  Time constant for count decay
 Conjugate Gradient options:
   --conjugate_gradient  use conjugate gradient based optimization
 LBFGS and Conjugate Gradient options:
@@ -223,18 +251,29 @@ Bootstrap:
   --bootstrap arg       k-way bootstrap by online importance resampling
   --bs_type arg         prediction type {mean,vote}
 Continuous actions tree with smoothing:
-  --cats arg            number of tree labels <k> for cats
+  --cats arg            number of discrete actions <k> for cats
+  --min_value arg       Minimum continuous value
+  --max_value arg       Maximum continuous value
+  --bandwidth arg       Bandwidth (radius) of randomization around discrete 
+                        actions in terms of continuous range. By default will 
+                        be set to half of the continuous action unit-range 
+                        resulting in smoothing that stays inside the action 
+                        space unit-range:
+                        unit_range = (max_value - min_value)/num-of-actions
+                        default bandwidth = unit_range / 2.0
 Continuous action tree with smoothing with full pdf:
   --cats_pdf arg        number of tree labels <k> for cats_pdf
 CATS Tree Options:
-  --cats_tree arg        CATS Tree with <k> labels
-  --bandwidth arg (=0, ) bandwidth for continuous actions in terms of #actions
-  --link arg             Specify the link function: identity, logistic, glf1 or
-                         poisson
+  --cats_tree arg             CATS Tree with <k> labels
+  --tree_bandwidth arg (=0, ) tree bandwidth for continuous actions in terms of
+                              #actions
+  --link arg                  Specify the link function: identity, logistic, 
+                              glf1 or poisson
 Contextual Bandit Options:
   --cb arg              Use contextual bandit learning with <k> costs
   --cb_type arg         contextual bandit method to use in {ips,dm,dr}
   --eval                Evaluate a policy rather than optimizing.
+  --cb_force_legacy     Default to non-adf cb implementation (cb_to_cb_adf)
 Contextual Bandit with Action Dependent Features:
   --cb_adf              Do Contextual Bandit learning with multiline action 
                         dependent features.
@@ -348,6 +387,15 @@ Continuous actions - cb_explore_pdf:
                           or uniform random
 CB Sample:
   --cb_sample           Sample from CB pdf and swap top action.
+Contextual Bandit Options: cb -> cb_adf:
+  --cb_to_cbadf arg     Maps cb_adf to cb. Disable with cb_force_legacy.
+  --cb arg              Maps cb_adf to cb. Disable with cb_force_legacy.
+  --cb_explore arg      Translate cb explore to cb_explore_adf. Disable with 
+                        cb_force_legacy.
+  --cbify arg           Translate cbify to cb_adf. Disable with 
+                        cb_force_legacy.
+  --cb_type arg         contextual bandit method to use in {}
+  --cb_force_legacy     Default to non-adf cb implementation (cb_algs)
 Make Multiclass into Contextual Bandit:
   --cbify arg                  Convert multiclass on <k> classes into a 
                                contextual bandit problem
@@ -385,6 +433,9 @@ importance weight classes:
 Confidence:
   --confidence                 Get confidence for binary predictions
   --confidence_after_training  Confidence after training
+count_label options:
+  --dont_output_best_constant  Don't track the best constant used in the 
+                               output.
 Cost-sensitive Active Learning:
   --cs_active arg                       Cost-sensitive active learning with <k>
                                         costs
@@ -412,7 +463,7 @@ Cost Sensitive One Against All with Label Dependent Features:
   --ldf_override arg    Override singleline or multiline from csoaa_ldf or 
                         wap_ldf, eg if stored in file
   --csoaa_rank          Return actions sorted by score order
-  --probabilities       predict probabilites of all classes
+  --probabilities       predict probabilities of all classes
 Cost Sensitive weighted all-pairs with Label Dependent Features:
   --wap_ldf arg         Use weighted all-pairs multiclass learning with label 
                         dependent features.  Specify singleline or multiline.
@@ -425,6 +476,9 @@ Explore evaluation:
   --explore_eval        Evaluate explore_eval adf policies
   --multiplier arg      Multiplier used to make all rejection sample 
                         probabilities <= 1
+Debug: Metrics:
+  --extra_metrics arg   Specify filename to write metrics to. Note: There is no
+                        fixed schema.
 Follow the Regularized Leader:
   --ftrl                FTRL: Follow the Proximal Regularized Leader
   --coin                Coin betting optimizer
@@ -440,6 +494,11 @@ Gradient Descent options:
   --sparse_l2 arg (=0, ) use per feature normalized updates
   --l1_state arg (=0, )  use per feature normalized updates
   --l2_state arg (=1, )  use per feature normalized updates
+Generate interactions:
+  --leave_duplicate_interactions  Don't remove interactions with duplicate 
+                                  combinations of namespaces. For ex. this is a
+                                  duplicate: '-q ab -q ba' and a lot more in 
+                                  '-q ::'.
 Continuous actions - convert to pmf:
   --get_pmf             Convert a single multiclass prediction to a pmf
 Interact via elementwise multiplication:
@@ -494,15 +553,17 @@ Memory Tree:
   --dream_repeats arg (=1, )           number of dream operations per example 
                                        (default = 1)
   --top_K arg (=1, )                   top K prediction error (default 1)
-  --learn_at_leaf                      whether or not learn at leaf (default = 
-                                       True)
+  --learn_at_leaf                      Enable learning at leaf
   --oas                                use oas at the leaf
   --dream_at_update arg (=0, )         turn on dream operations at reward based
                                        update as well
   --online                             turn on dream operations at reward based
                                        update as well
 Multilabel One Against All:
-  --multilabel_oaa arg  One-against-all multilabel with <k> labels
+  --multilabel_oaa arg     One-against-all multilabel with <k> labels
+  --probabilities          predict probabilities of all classes
+  --link arg (=identity, ) Specify the link function: identity, logistic, glf1 
+                           or poisson
 Multiworld Testing Options:
   --multiworld_test arg Evaluate features as a policies
   --learn arg           Do Contextual Bandit learning on <n> classes.
@@ -524,7 +585,7 @@ One Against All Options:
   --oaa arg             One-against-all multiclass with <k> labels
   --oaa_subsample arg   subsample this number of negative examples when 
                         learning
-  --probabilities       predict probabilites of all classes
+  --probabilities       predict probabilities of all classes
   --scores              output raw scores per class
 Offset tree Options:
   --ot arg              Offset tree with <k> labels
@@ -535,12 +596,17 @@ Probabilistic Label Tree :
                            greater than <thr> threshold
   --top_k arg (=0, )       predict top-<k> labels instead of labels above 
                            threshold
-Convert discrete PDF into continuous PDF:
-  --pmf_to_pdf arg (=0, ) number of tree labels <k> for pmf_to_pdf
+Convert discrete PMF into continuous PDF:
+  --pmf_to_pdf arg (=0, ) number of discrete actions <k> for pmf_to_pdf
   --min_value arg         Minimum continuous value
   --max_value arg         Maximum continuous value
-  --bandwidth arg (=1, )  Bandwidth (radius) of randomization around discrete 
-                          actions in number of actions.
+  --bandwidth arg         Bandwidth (radius) of randomization around discrete 
+                          actions in terms of continuous range. By default will
+                          be set to half of the continuous action unit-range 
+                          resulting in smoothing that stays inside the action 
+                          space unit-range:
+                          unit_range = (max_value - min_value)/num-of-actions
+                          default bandwidth = unit_range / 2.0
   --first_only            Use user provided first action or user provided pdf 
                           or uniform random
 Print psuedolearner:
@@ -586,7 +652,9 @@ Search options:
                                         list" to get a list of available tasks)
   --search_metatask arg                 the search metatask (use 
                                         "--search_metatask list" to get a list 
-                                        of available metatasks)
+                                        of available metatasks. Note: a valid 
+                                        search_task needs to be supplied in 
+                                        addition for this to output.)
   --search_interpolation arg            at what level should interpolation 
                                         happen? [*data|policy]
   --search_rollout arg                  how should rollouts be executed?       

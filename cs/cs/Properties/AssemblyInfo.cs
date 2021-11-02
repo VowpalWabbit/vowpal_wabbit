@@ -13,11 +13,11 @@
 [assembly: System.Runtime.InteropServices.Guid("6a577997-af00-4ca0-8453-fdc8bbdf2a57")]
 [assembly: System.Reflection.AssemblyCompany("Microsoft Corp")]
 [assembly: System.Reflection.AssemblyProduct("Vowpal Wabbit")]
-[assembly: System.Reflection.AssemblyCopyright("Copyright (C) Microsoft Corp 2012-2020, Yahoo! Inc. 2007-2012, and many individua" +
+[assembly: System.Reflection.AssemblyCopyright("Copyright (C) Microsoft Corp 2012-2021, Yahoo! Inc. 2007-2012, and many individua" +
     "l contributors. All rights reserved")]
 [assembly: System.Runtime.InteropServices.ComVisible(false)]
 [assembly: System.CLSCompliant(false)]
-[assembly: System.Reflection.AssemblyVersion("8.8.0")]
-[assembly: System.Reflection.AssemblyFileVersion("8.8.0")]
+[assembly: System.Reflection.AssemblyVersion("8.10.0")]
+[assembly: System.Reflection.AssemblyFileVersion("8.10.0")]
 
 

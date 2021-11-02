@@ -44,23 +44,24 @@ namespace VW
     (2) The code is not yet reentrant.
    */
 vw* initialize(std::unique_ptr<config::options_i, options_deleter_type> options, io_buf* model = nullptr,
-    bool skipModelLoad = false, trace_message_t trace_listener = nullptr, void* trace_context = nullptr);
-vw* initialize(config::options_i& options, io_buf* model = nullptr, bool skipModelLoad = false,
+    bool skip_model_load = false, trace_message_t trace_listener = nullptr, void* trace_context = nullptr);
+vw* initialize(config::options_i& options, io_buf* model = nullptr, bool skip_model_load = false,
     trace_message_t trace_listener = nullptr, void* trace_context = nullptr);
-vw* initialize(std::string s, io_buf* model = nullptr, bool skipModelLoad = false,
+vw* initialize(const std::string& s, io_buf* model = nullptr, bool skip_model_load = false,
     trace_message_t trace_listener = nullptr, void* trace_context = nullptr);
-vw* initialize(int argc, char* argv[], io_buf* model = nullptr, bool skipModelLoad = false,
+vw* initialize(int argc, char* argv[], io_buf* model = nullptr, bool skip_model_load = false,
     trace_message_t trace_listener = nullptr, void* trace_context = nullptr);
-vw* seed_vw_model(
-    vw* vw_model, std::string extra_args, trace_message_t trace_listener = nullptr, void* trace_context = nullptr);
+vw* seed_vw_model(vw* vw_model, const std::string& extra_args, trace_message_t trace_listener = nullptr,
+    void* trace_context = nullptr);
 // Allows the input command line string to have spaces escaped by '\'
-vw* initialize_escaped(std::string const& s, io_buf* model = nullptr, bool skipModelLoad = false,
+vw* initialize_escaped(std::string const& s, io_buf* model = nullptr, bool skip_model_load = false,
     trace_message_t trace_listener = nullptr, void* trace_context = nullptr);
+// Experimental (VW::setup_base_i):
+vw* initialize_with_builder(const std::string& s, io_buf* model = nullptr, bool skipModelLoad = false,
+    trace_message_t trace_listener = nullptr, void* trace_context = nullptr,
+    std::unique_ptr<VW::setup_base_i> = nullptr);
 
-void cmd_string_replace_value(std::stringstream*& ss, std::string flag_to_replace, std::string new_value);
-
-VW_DEPRECATED("By value version is deprecated, pass std::string by const ref instead using `to_argv`")
-char** get_argv_from_string(std::string s, int& argc);
+void cmd_string_replace_value(std::stringstream*& ss, std::string flag_to_replace, const std::string& new_value);
 
 // The argv array from both of these functions must be freed.
 char** to_argv(std::string const& s, int& argc);
@@ -77,7 +78,7 @@ void sync_stats(vw& all);
 
 void start_parser(vw& all);
 void end_parser(vw& all);
-bool is_ring_example(vw& all, example* ae);
+bool is_ring_example(const vw& all, const example* ae);
 
 struct primitive_feature_space  // just a helper definition.
 {
@@ -91,25 +92,23 @@ struct primitive_feature_space  // just a helper definition.
 
 /* The simplest of two ways to create an example.  An example_line is the literal line in a VW-format datafile.
  */
-example* read_example(vw& all, char* example_line);
-example* read_example(vw& all, std::string example_line);
+example* read_example(vw& all, const char* example_line);
+example* read_example(vw& all, const std::string& example_line);
 
 // The more complex way to create an example.
 
 // after you create and fill feature_spaces, get an example with everything filled in.
 example* import_example(vw& all, const std::string& label, primitive_feature_space* features, size_t len);
 
-// callers must free memory using dealloc_example
+// callers must free memory using dealloc_examples
 // this interface must be used with care as finish_example is a no-op for these examples.
 // thus any delay introduced when freeing examples must be at least as long as the one
 // introduced by all.l->finish_example implementations.
 // e.g. multiline examples as used by cb_adf must not be released before the finishing newline example.
-VW_DEPRECATED("label size is no longer used, please use the other overload")
-example* alloc_examples(size_t, size_t);
-example* alloc_examples(size_t);
-void dealloc_example(void (*delete_label)(polylabel*), example& ec, void (*delete_prediction)(void*) = nullptr);
+example* alloc_examples(size_t count);
+void dealloc_examples(example* example_ptr, size_t count);
 
-void parse_example_label(vw& all, example& ec, std::string label);
+void parse_example_label(vw& all, example& ec, const std::string& label);
 void setup_examples(vw& all, v_array<example*>& examples);
 void setup_example(vw& all, example* ae);
 example* new_unused_example(vw& all);
@@ -139,18 +138,17 @@ void finish_example(vw& all, example& ec);
 void finish_example(vw& all, multi_ex& ec);
 void empty_example(vw& all, example& ec);
 
-VW_DEPRECATED("label size is no longer used, please use the other overload")
-void copy_example_data(bool audit, example*, example*, size_t, void (*copy_label)(polylabel*, polylabel*));
-void copy_example_data(bool audit, example*, example*, void (*copy_label)(polylabel*, polylabel*));
-void copy_example_metadata(bool audit, example*, example*);
-void copy_example_data(bool audit, example*, example*);  // metadata + features, don't copy the label
 void move_feature_namespace(example* dst, example* src, namespace_index c);
+
+void copy_example_metadata(example*, const example*);
+void copy_example_data(example*, const example*);  // metadata + features, don't copy the label
+void copy_example_data_with_label(example* dst, const example* src);
 
 // after export_example, must call releaseFeatureSpace to free native memory
 primitive_feature_space* export_example(vw& all, example* e, size_t& len);
 void releaseFeatureSpace(primitive_feature_space* features, size_t len);
 
-void save_predictor(vw& all, std::string reg_name);
+void save_predictor(vw& all, const std::string& reg_name);
 void save_predictor(vw& all, io_buf& buf);
 
 // inlines
@@ -179,7 +177,7 @@ inline uint64_t hash_feature_static(const std::string& s, uint64_t u, const std:
   return getHasher(h)(s.data(), s.length(), u) & parse_mark;
 }
 
-inline uint64_t hash_feature_cstr(vw& all, char* fstr, uint64_t u)
+inline uint64_t hash_feature_cstr(vw& all, const char* fstr, uint64_t u)
 {
   return all.example_parser->hasher(fstr, strlen(fstr), u) & all.parse_mask;
 }
@@ -194,15 +192,15 @@ inline uint64_t chain_hash(vw& all, const std::string& name, const std::string& 
 
 inline float get_weight(vw& all, uint32_t index, uint32_t offset)
 {
-  return (&all.weights[((uint64_t)index) << all.weights.stride_shift()])[offset];
+  return (&all.weights[static_cast<uint64_t>(index) << all.weights.stride_shift()])[offset];
 }
 
 inline void set_weight(vw& all, uint32_t index, uint32_t offset, float value)
 {
-  (&all.weights[((uint64_t)index) << all.weights.stride_shift()])[offset] = value;
+  (&all.weights[static_cast<uint64_t>(index) << all.weights.stride_shift()])[offset] = value;
 }
 
-inline uint32_t num_weights(vw& all) { return (uint32_t)all.length(); }
+inline uint32_t num_weights(vw& all) { return static_cast<uint32_t>(all.length()); }
 
 inline uint32_t get_stride(vw& all) { return all.weights.stride(); }
 

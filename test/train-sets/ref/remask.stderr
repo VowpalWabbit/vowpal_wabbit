@@ -6,14 +6,14 @@ power_t = 0.5
 using no cache
 Reading datafile = train-sets/0001.dat
 num sources = 1
-Enabled reductions: gd, scorer
+Enabled reductions: gd, scorer-identity, count_label
 average  since         example        example  current  current  current
 loss     last          counter         weight    label  predict features
-0.217147 0.217147            1            1.0   1.0000   0.5340       51
+0.217146 0.217146            1            1.0   1.0000   0.5340       51
 0.286438 0.355730            2            2.0   0.0000   0.5964      104
 0.184439 0.082439            4            4.0   0.0000   0.2333      135
 0.163583 0.142727            8            8.0   0.0000   0.1131      146
-0.154976 0.146369           16           16.0   1.0000   0.5777       24
+0.154976 0.146370           16           16.0   1.0000   0.5777       24
 0.175539 0.196103           32           32.0   0.0000   0.1863       32
 0.187969 0.200398           64           64.0   0.0000   0.0000       61
 0.166548 0.145127          128          128.0   1.0000   0.8320      106

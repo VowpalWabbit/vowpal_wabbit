@@ -4,13 +4,12 @@
 #pragma once
 #include <memory>
 #include "reductions_fwd.h"
+#include "rand_state.h"
 
 #define BS_TYPE_MEAN 0
 #define BS_TYPE_VOTE 1
 
-struct rand_state;
-
-VW::LEARNER::base_learner* bs_setup(VW::config::options_i& options, vw& all);
+VW::LEARNER::base_learner* bs_setup(VW::setup_base_i& stack_builder);
 
 namespace BS
 {

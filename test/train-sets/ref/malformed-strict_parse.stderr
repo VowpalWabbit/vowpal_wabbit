@@ -5,10 +5,10 @@ power_t = 0.5
 using no cache
 Reading datafile = train-sets/malformed.dat
 num sources = 1
-Enabled reductions: gd, scorer
+Enabled reductions: gd, scorer-identity, count_label
 average  since         example        example  current  current  current
 loss     last          counter         weight    label  predict features
-vw example #0(parse_example.cc:81): malformed example! '|',space, or EOL expected after : "| x:0.7"in Example #0: "| x:0.7"
+[error] vw example #0(parse_example.cc:100): malformed example! '|',space, or EOL expected after : "| x:0.7"in Example #0: "| x:0.7"
 
-vw (parse_example.cc:81): malformed example! '|',space, or EOL expected after : "| x:0.7"in Example #0: "| x:0.7"
+[critical] vw (parse_example.cc:100): malformed example! '|',space, or EOL expected after : "| x:0.7"in Example #0: "| x:0.7"
 

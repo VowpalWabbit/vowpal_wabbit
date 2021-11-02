@@ -12,7 +12,7 @@ Search::search_task task = {"sequence", run, initialize, nullptr, nullptr, nullp
 }
 namespace SequenceSpanTask
 {
-Search::search_task task = {"sequencespan", run, initialize, finish, setup, takedown};
+Search::search_task task = {"sequencespan", run, initialize, nullptr, setup, takedown};
 }
 namespace SequenceTaskCostToGo
 {
@@ -20,11 +20,11 @@ Search::search_task task = {"sequence_ctg", run, initialize, nullptr, nullptr, n
 }
 namespace ArgmaxTask
 {
-Search::search_task task = {"argmax", run, initialize, finish, nullptr, nullptr};
+Search::search_task task = {"argmax", run, initialize, nullptr, nullptr, nullptr};
 }
 namespace SequenceTask_DemoLDF
 {
-Search::search_task task = {"sequence_demoldf", run, initialize, finish, nullptr, nullptr};
+Search::search_task task = {"sequence_demoldf", run, initialize, nullptr, nullptr, nullptr};
 }
 
 namespace SequenceTask
@@ -35,21 +35,22 @@ void initialize(Search::search& sch, size_t& /*num_actions*/, options_i& /*optio
       Search::AUTO_HAMMING_LOSS |     // please just use hamming loss on individual predictions -- we won't declare loss
       Search::EXAMPLES_DONT_CHANGE |  // we don't do any internal example munging
       0);
+  sch.set_is_ldf(false);
 }
 
 void run(Search::search& sch, multi_ex& ec)
 {
-  Search::predictor P(sch, (ptag)0);
+  Search::predictor P(sch, static_cast<ptag>(0));
   for (size_t i = 0; i < ec.size(); i++)
   {
     action oracle = ec[i]->l.multi.label;
-    size_t prediction = P.set_tag((ptag)i + 1)
+    size_t prediction = P.set_tag(static_cast<ptag>(i) + 1)
                             .set_input(*ec[i])
                             .set_oracle(oracle)
-                            .set_condition_range((ptag)i, sch.get_history_length(), 'p')
+                            .set_condition_range(static_cast<ptag>(i), sch.get_history_length(), 'p')
                             .predict();
 
-    if (sch.output().good()) sch.output() << sch.pretty_label((uint32_t)prediction) << ' ';
+    if (sch.output().good()) sch.output() << sch.pretty_label(static_cast<uint32_t>(prediction)) << ' ';
   }
 }
 }  // namespace SequenceTask
@@ -140,7 +141,9 @@ void initialize(Search::search& sch, size_t& num_actions, options_i& options)
 
   if (search_span_bilou)
   {
-    std::cerr << "switching to BILOU encoding for sequence span labeling" << std::endl;
+    // TODO: is this the right logger?
+    *(sch.get_vw_pointer_unsafe().trace_message)
+        << "switching to BILOU encoding for sequence span labeling" << std::endl;
     D->encoding = BILOU;
     num_actions = num_actions * 2 - 1;
   }
@@ -173,14 +176,7 @@ void initialize(Search::search& sch, size_t& num_actions, options_i& options)
       Search::EXAMPLES_DONT_CHANGE |  // we don't do any internal example munging
       0);
   sch.set_num_learners(D->multipass);
-}
-
-void finish(Search::search& sch)
-{
-  task_data* D = sch.get_task_data<task_data>();
-  D->allowed_actions.delete_v();
-  D->only_two_allowed.delete_v();
-  delete D;
+  sch.set_is_ldf(false);
 }
 
 void setup(Search::search& sch, multi_ex& ec)
@@ -205,7 +201,7 @@ void run(Search::search& sch, multi_ex& ec)
 {
   task_data& D = *sch.get_task_data<task_data>();
   v_array<action>* y_allowed = &(D.allowed_actions);
-  Search::predictor P(sch, (ptag)0);
+  Search::predictor P(sch, static_cast<ptag>(0));
   for (size_t pass = 1; pass <= D.multipass; pass++)
   {
     action last_prediction = 1;
@@ -213,7 +209,7 @@ void run(Search::search& sch, multi_ex& ec)
     {
       action oracle = ec[i]->l.multi.label;
       size_t len = y_allowed->size();
-      P.set_tag((ptag)i + 1);
+      P.set_tag(static_cast<ptag>(i) + 1);
       P.set_learner_id(pass - 1);
       if (D.encoding == BIO)
       {
@@ -250,8 +246,9 @@ void run(Search::search& sch, multi_ex& ec)
         }
       }
       P.set_input(*ec[i]);
-      P.set_condition_range((ptag)i, sch.get_history_length(), 'p');
-      if (pass > 1) P.add_condition_range((ptag)(i + 1 + sch.get_history_length()), sch.get_history_length() + 1, 'a');
+      P.set_condition_range(static_cast<ptag>(i), sch.get_history_length(), 'p');
+      if (pass > 1)
+        P.add_condition_range(static_cast<ptag>(i + 1 + sch.get_history_length()), sch.get_history_length() + 1, 'a');
       P.set_oracle(oracle);
       last_prediction = P.predict();
 
@@ -271,25 +268,26 @@ void initialize(Search::search& sch, size_t& num_actions, options_i& /*options*/
       Search::EXAMPLES_DONT_CHANGE |  // we don't do any internal example munging
       Search::ACTION_COSTS |          // we'll provide cost-per-action (rather than oracle)
       0);
-  sch.set_task_data<size_t>(&num_actions);
+  sch.set_task_data<size_t>(new size_t{num_actions});
+  sch.set_is_ldf(false);
 }
 
 void run(Search::search& sch, multi_ex& ec)
 {
   size_t K = *sch.get_task_data<size_t>();
   float* costs = calloc_or_throw<float>(K);
-  Search::predictor P(sch, (ptag)0);
+  Search::predictor P(sch, static_cast<ptag>(0));
   for (size_t i = 0; i < ec.size(); i++)
   {
     action oracle = ec[i]->l.multi.label;
     for (size_t k = 0; k < K; k++) costs[k] = 1.;
     costs[oracle - 1] = 0.;
-    size_t prediction = P.set_tag((ptag)i + 1)
+    size_t prediction = P.set_tag(static_cast<ptag>(i) + 1)
                             .set_input(*ec[i])
                             .set_allowed(nullptr, costs, K)
-                            .set_condition_range((ptag)i, sch.get_history_length(), 'p')
+                            .set_condition_range(static_cast<ptag>(i), sch.get_history_length(), 'p')
                             .predict();
-    if (sch.output().good()) sch.output() << sch.pretty_label((uint32_t)prediction) << ' ';
+    if (sch.output().good()) sch.output() << sch.pretty_label(static_cast<uint32_t>(prediction)) << ' ';
   }
   free(costs);
 }
@@ -317,18 +315,13 @@ void initialize(Search::search& sch, size_t& /*num_actions*/, options_i& options
   options.add_and_parse(new_options);
 
   sch.set_task_data(D);
+  sch.set_is_ldf(false);
 
   if (D->predict_max)
     sch.set_options(Search::EXAMPLES_DONT_CHANGE);  // we don't do any internal example munging
   else
     sch.set_options(Search::AUTO_CONDITION_FEATURES |  // automatically add history features to our examples, please
         Search::EXAMPLES_DONT_CHANGE);                 // we don't do any internal example munging
-}
-
-void finish(Search::search& sch)
-{
-  task_data* D = sch.get_task_data<task_data>();
-  delete D;
 }
 
 void run(Search::search& sch, multi_ex& ec)
@@ -363,7 +356,7 @@ namespace SequenceTask_DemoLDF  // this is just to debug/show off how to do LDF
 namespace CS = COST_SENSITIVE;
 struct task_data
 {
-  example* ldf_examples;
+  std::vector<example> ldf_examples;
   size_t num_actions;
 };
 
@@ -371,31 +364,23 @@ void initialize(Search::search& sch, size_t& num_actions, options_i& /*options*/
 {
   CS::wclass default_wclass = {0., 0, 0., 0.};
 
-  example* ldf_examples = VW::alloc_examples(num_actions);
+  task_data* data = new task_data;
+  data->ldf_examples.resize(num_actions);
   for (size_t a = 0; a < num_actions; a++)
   {
-    CS::label& lab = ldf_examples[a].l.cs;
+    CS::label& lab = data->ldf_examples[a].l.cs;
     CS::default_label(lab);
     lab.costs.push_back(default_wclass);
-    ldf_examples[a].interactions = &sch.get_vw_pointer_unsafe().interactions;
+    data->ldf_examples[a].interactions = &sch.get_vw_pointer_unsafe().interactions;
+    data->ldf_examples[a].extent_interactions = &sch.get_vw_pointer_unsafe().extent_interactions;
   }
 
-  task_data* data = &calloc_or_throw<task_data>();
-  data->ldf_examples = ldf_examples;
   data->num_actions = num_actions;
-
+  sch.set_is_ldf(true);
   sch.set_task_data<task_data>(data);
   sch.set_options(Search::AUTO_CONDITION_FEATURES |  // automatically add history features to our examples, please
       Search::AUTO_HAMMING_LOSS |  // please just use hamming loss on individual predictions -- we won't declare loss
       Search::IS_LDF);             // we generate ldf examples
-}
-
-void finish(Search::search& sch)
-{
-  task_data* data = sch.get_task_data<task_data>();
-  for (size_t a = 0; a < data->num_actions; a++) VW::dealloc_example(CS::cs_label.delete_label, data->ldf_examples[a]);
-  free(data->ldf_examples);
-  free(data);
 }
 
 // this is totally bogus for the example -- you'd never actually do this!
@@ -410,16 +395,16 @@ void my_update_example_indicies(
 void run(Search::search& sch, multi_ex& ec)
 {
   task_data* data = sch.get_task_data<task_data>();
-  Search::predictor P(sch, (ptag)0);
+  Search::predictor P(sch, static_cast<ptag>(0));
   for (ptag i = 0; i < ec.size(); i++)
   {
     for (uint32_t a = 0; a < data->num_actions; a++)
     {
       if (sch.predictNeedsExample())  // we can skip this work if `predict` won't actually use the example data
       {
-        VW::copy_example_data(false, &data->ldf_examples[a], ec[i]);  // copy but leave label alone!
+        VW::copy_example_data(&data->ldf_examples[a], ec[i]);  // copy but leave label alone!
         // now, offset it appropriately for the action id
-        my_update_example_indicies(sch, true, &data->ldf_examples[a], 28904713, 4832917 * (uint64_t)a);
+        my_update_example_indicies(sch, true, &data->ldf_examples[a], 28904713, 4832917 * static_cast<uint64_t>(a));
       }
 
       // regardless of whether the example is needed or not, the class info is needed
@@ -432,8 +417,8 @@ void run(Search::search& sch, multi_ex& ec)
     }
 
     action oracle = ec[i]->l.multi.label - 1;
-    action pred_id = P.set_tag((ptag)(i + 1))
-                         .set_input(data->ldf_examples, data->num_actions)
+    action pred_id = P.set_tag(static_cast<ptag>(i + 1))
+                         .set_input(data->ldf_examples.data(), data->num_actions)
                          .set_oracle(oracle)
                          .set_condition_range(i, sch.get_history_length(), 'p')
                          .predict();

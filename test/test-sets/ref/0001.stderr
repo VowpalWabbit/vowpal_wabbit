@@ -1,5 +1,5 @@
-Generating 3-grams for all namespaces.
-Generating 1-skips for all namespaces.
+[info] Generating 3-grams for all namespaces.
+[info] Generating 1-skips for all namespaces.
 only testing
 predictions = 0001.predict
 Num weight bits = 18
@@ -9,7 +9,7 @@ power_t = 0.5
 using no cache
 Reading datafile = train-sets/0001.dat
 num sources = 1
-Enabled reductions: gd, scorer
+Enabled reductions: gd, scorer-identity, count_label
 average  since         example        example  current  current  current
 loss     last          counter         weight    label  predict features
 0.000000 0.000000            1            1.0   1.0000   1.0000      290

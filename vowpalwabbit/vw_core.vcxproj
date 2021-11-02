@@ -28,6 +28,8 @@
     <CharacterSet>Unicode</CharacterSet>
     <PlatformToolset>v141</PlatformToolset>
     <VcpkgOSTarget Condition="'$(VcpkgPlatformToolset)'=='v141'">windows-v141</VcpkgOSTarget>
+    <BuildFlatbuffers Condition="'$(BUILD_FLATBUFFERS)'=='BUILD_FLATBUFFERS'">ON</BuildFlatbuffers>
+    <BuildFlatbuffers Condition="'$(BUILD_FLATBUFFERS)'!='BUILD_FLATBUFFERS'">OFF</BuildFlatbuffers>
     <!-- This is the ruleset file for code analysis, you can change it in VS -->
     <CodeAnalysisRuleSet>$(MSBuildProjectDirectory)\..\sdl\SDL-7.0-Recommended.ruleset</CodeAnalysisRuleSet>
     <RunCodeAnalysis>true</RunCodeAnalysis>
@@ -87,8 +89,8 @@
   </ItemDefinitionGroup>
   <ItemDefinitionGroup>
     <ClCompile>
-      <AdditionalIncludeDirectories>..\explore\static;./win32;%(AdditionalIncludeDirectories);$(ProjectDir)\..\rapidjson\include;$(ProjectDir)\..\explore</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>ZLIB_WINAPI;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>..\explore\static;./win32;%(AdditionalIncludeDirectories);$(ProjectDir)\..\ext_libs\rapidjson\include;$(ProjectDir)\..\explore;$(ProjectDir)\..\ext_libs\fmt\include;$(ProjectDir)\..\ext_libs\spdlog\include</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>ZLIB_WINAPI;$(BUILD_FLATBUFFERS);SPDLOG_COMPILED_LIB;SPDLOG_FMT_EXTERNAL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalOptions>/D "_CRT_SECURE_NO_WARNINGS" %(AdditionalOptions)</AdditionalOptions>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <EnableEnhancedInstructionSet>NotSet</EnableEnhancedInstructionSet>
@@ -107,9 +109,9 @@
       <AdditionalDependencies>kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;ws2_32.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <PreBuildEvent>
-      <Message>Generate FlatBuffer</Message>
+      <Message>Generate config.h and flatbuffer if flatbuffers enabled</Message>
       <Command>
-        $(flatcPath) -o $(ProjectDir)\parser\flatbuffer\generated\ --cpp $(ProjectDir)\parser\flatbuffer\schema\example.fbs
+        if $(BuildFlatbuffers) == ON ($(flatcPath) -o $(ProjectDir)\parser\flatbuffer\generated\ --cpp $(ProjectDir)\parser\flatbuffer\schema\example.fbs)
         win32\make_config_h.exe
       </Command>
     </PreBuildEvent>
@@ -125,9 +127,8 @@
     <ClInclude Include="cb_explore_pdf.h" />
     <ClInclude Include="cb_label_parser.h" />
     <ClInclude Include="debug_log.h" />
-    <ClInclude Include="errors_data.h" />
-    <ClInclude Include="err_constants.h" />
     <ClInclude Include="get_pmf.h" />
+    <ClInclude Include="io\logger.h" />
     <ClInclude Include="offset_tree.h" />
     <ClInclude Include="accumulate.h" />
     <ClInclude Include="action_score.h" />
@@ -138,7 +139,9 @@
     <ClInclude Include="array_parameters.h" />
     <ClInclude Include="audit_regressor.h" />
     <ClInclude Include="autolink.h" />
+    <ClInclude Include="automl.h" />
     <ClInclude Include="baseline.h" />
+    <ClInclude Include="baseline_challenger_cb.h" />
     <ClInclude Include="best_constant.h" />
     <ClInclude Include="bfgs.h" />
     <ClInclude Include="binary.h" />
@@ -160,7 +163,9 @@
     <ClInclude Include="cb_explore_adf_synthcover.h" />
     <ClInclude Include="cb_explore.h" />
     <ClInclude Include="cb_sample.h" />
+    <ClInclude Include="cb_type.h" />
     <ClInclude Include="cbify.h" />
+    <ClInclude Include="cb_to_cb_adf.h" />
     <ClInclude Include="ccb_label.h" />
     <ClInclude Include="ccb_reduction_features.h" />
     <ClInclude Include="continuous_actions_reduction_features.h" />
@@ -184,16 +189,20 @@
     <ClInclude Include="ftrl.h" />
     <ClInclude Include="gd_mf.h" />
     <ClInclude Include="gd.h" />
+    <ClInclude Include="gd_predict.h" />
     <ClInclude Include="gen_cs_example.h" />
+    <ClInclude Include="generate_interactions.h" />
     <ClInclude Include="global_data.h" />
     <ClInclude Include="guard.h" />
     <ClInclude Include="interact.h" />
     <ClInclude Include="interactions_predict.h" />
+    <ClInclude Include="cached_learner.h" />
     <ClInclude Include="interactions.h" />
     <ClInclude Include="io_buf.h" />
     <ClInclude Include="io/io_adapter.h" />
     <ClInclude Include="kskip_ngram_transformer.h" />
     <ClInclude Include="label_dictionary.h" />
+    <ClInclude Include="label_type.h" />
     <ClInclude Include="lda_core.h" />
     <ClInclude Include="learner.h" />
     <ClInclude Include="log_multi.h" />
@@ -203,7 +212,11 @@
     <ClInclude Include="marginal.h" />
     <ClInclude Include="memory_tree.h" />
     <ClInclude Include="memory.h" />
+    <ClInclude Include="metric_sink.h" />
+    <ClInclude Include="metrics.h" />
     <ClInclude Include="mf.h" />
+    <ClInclude Include="reduction_stack.h" />
+    <ClInclude Include="model_utils.h" />
     <ClInclude Include="multiclass.h" />
     <ClInclude Include="multilabel_oaa.h" />
     <ClInclude Include="multilabel.h" />
@@ -221,7 +234,7 @@
     <ClInclude Include="options_serializer_boost_po.h" />
     <ClInclude Include="options_types.h" />
     <ClInclude Include="options.h" />
-    <ClInclude Include="parser\flatbuffer\parse_example_flatbuffer.h" />
+    <ClInclude Condition="'$(BuildFlatbuffers)'=='ON'" Include="parser\flatbuffer\parse_example_flatbuffer.h" />
     <ClInclude Include="parse_args.h" />
     <ClInclude Include="parse_dispatch_loop.h" />
     <ClInclude Include="parse_example_json.h" />
@@ -231,14 +244,16 @@
     <ClInclude Include="parse_slates_example_json.h" />
     <ClInclude Include="parser.h" />
     <ClInclude Include="pmf_to_pdf.h" />
-    <ClInclude Include="primitives.h" />
     <ClInclude Include="plt.h" />
-    <ClInclude Include="reduction_features.h" />
+    <ClInclude Include="prediction_type.h" />
+    <ClInclude Include="primitives.h" />
     <ClInclude Include="print.h" />
     <ClInclude Include="prob_dist_cont.h" />
     <ClInclude Include="queue.h" />
     <ClInclude Include="rand48.h" />
     <ClInclude Include="recall_tree.h" />
+    <ClInclude Include="reduction_features.h" />
+    <ClInclude Include="count_label.h" />
     <ClInclude Include="sample_pdf.h" />
     <ClInclude Include="scorer.h" />
     <ClInclude Include="search_dep_parser.h" />
@@ -250,7 +265,9 @@
     <ClInclude Include="search_sequencetask.h" />
     <ClInclude Include="search.h" />
     <ClInclude Include="sender.h" />
+    <ClInclude Include="shared_data.h" />
     <ClInclude Include="shared_feature_merger.h" />
+    <ClInclude Include="simple_label_parser.h" />
     <ClInclude Include="simple_label.h" />
     <ClInclude Include="slates_label.h" />
     <ClInclude Include="slates.h" />
@@ -258,6 +275,7 @@
     <ClInclude Include="stagewise_poly.h" />
     <ClInclude Include="svrg.h" />
     <ClInclude Include="tag_utils.h" />
+    <ClInclude Include="text_utils.h" />
     <ClInclude Include="targetver.h" />
     <ClInclude Include="topk.h" />
     <ClInclude Include="unique_sort.h" />
@@ -273,10 +291,21 @@
     <ClInclude Include="warm_cb.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="../ext_libs/fmt/src/format.cc" />
+    <ClCompile Include="../ext_libs/fmt/src/os.cc" />
+    <ClCompile Include="../ext_libs/spdlog/src/async.cpp" />
+    <ClCompile Include="../ext_libs/spdlog/src/cfg.cpp" />
+    <ClCompile Include="../ext_libs/spdlog/src/color_sinks.cpp" />
+    <ClCompile Include="../ext_libs/spdlog/src/file_sinks.cpp" />
+    <ClCompile Include="../ext_libs/spdlog/src/fmt.cpp" />
+    <ClCompile Include="../ext_libs/spdlog/src/spdlog.cpp" />
+    <ClCompile Include="../ext_libs/spdlog/src/stdout_sinks.cpp" />
     <ClCompile Include="cats.cc" />
     <ClCompile Include="cats_pdf.cc" />
     <ClCompile Include="cb_continuous_label.cc" />
     <ClCompile Include="cb_explore_pdf.cc" />
+    <ClCompile Include="hashstring.cc" />
+    <ClCompile Include="io\logger.cc" />
     <ClCompile Include="offset_tree.cc" />
     <ClCompile Include="accumulate.cc" />
     <ClCompile Include="action_score.cc" />
@@ -287,7 +316,9 @@
     <ClCompile Include="api_status.cc" />
     <ClCompile Include="audit_regressor.cc" />
     <ClCompile Include="autolink.cc" />
+    <ClCompile Include="automl.cc" />
     <ClCompile Include="baseline.cc" />
+    <ClCompile Include="baseline_challenger_cb.cc" />
     <ClCompile Include="best_constant.cc" />
     <ClCompile Include="bfgs.cc" />
     <ClCompile Include="binary.cc" />
@@ -302,19 +333,22 @@
     <ClCompile Include="cb_explore_adf_first.cc" />
     <ClCompile Include="cb_explore_adf_greedy.cc" />
     <ClCompile Include="cb_explore_adf_regcb.cc" />
-    <ClCompile Include="cb_explore_adf_squarecb.cc" />
     <ClCompile Include="cb_explore_adf_rnd.cc" />
     <ClCompile Include="cb_explore_adf_softmax.cc" />
+    <ClCompile Include="cb_explore_adf_squarecb.cc" />
     <ClCompile Include="cb_explore_adf_synthcover.cc" />
     <ClCompile Include="cb_explore.cc" />
     <ClCompile Include="cb_sample.cc" />
+    <ClCompile Include="cb_type.cc" />
     <ClCompile Include="cb.cc" />
     <ClCompile Include="cbify.cc" />
+    <ClCompile Include="cb_to_cb_adf.cc" />
     <ClCompile Include="ccb_label.cc" />
     <ClCompile Include="classweight.cc" />
     <ClCompile Include="conditional_contextual_bandit.cc" />
     <ClCompile Include="confidence.cc" />
     <ClCompile Include="cbzo.cc" />
+    <ClCompile Include="crossplat_compat.cc" />
     <ClCompile Include="cost_sensitive.cc" />
     <ClCompile Include="cs_active.cc" />
     <ClCompile Include="csoaa.cc" />
@@ -329,14 +363,18 @@
     <ClCompile Include="gd_mf.cc" />
     <ClCompile Include="gd.cc" />
     <ClCompile Include="gen_cs_example.cc" />
+    <ClCompile Include="generate_interactions.cc" />
     <ClCompile Include="global_data.cc" />
     <ClCompile Include="interact.cc" />
     <ClCompile Include="interactions.cc" />
+    <ClCompile Include="reduction_stack.cc" />
     <ClCompile Include="io/io_adapter.cc" />
     <ClCompile Include="io_buf.cc" />
     <ClCompile Include="kernel_svm.cc" />
     <ClCompile Include="kskip_ngram_transformer.cc" />
     <ClCompile Include="label_dictionary.cc" />
+    <ClCompile Include="label_parser.cc" />
+    <ClCompile Include="label_type.cc" />
     <ClCompile Include="lda_core.cc" />
     <ClCompile Include="learner.cc" />
     <ClCompile Include="log_multi.cc" />
@@ -345,6 +383,8 @@
     <ClCompile Include="lrqfa.cc" />
     <ClCompile Include="marginal.cc" />
     <ClCompile Include="memory_tree.cc" />
+    <ClCompile Include="metrics.cc" />
+    <ClCompile Include="metric_sink.cc" />
     <ClCompile Include="mf.cc" />
     <ClCompile Include="multiclass.cc" />
     <ClCompile Include="multilabel_oaa.cc" />
@@ -360,8 +400,8 @@
     <ClCompile Include="OjaNewton.cc" />
     <ClCompile Include="options_boost_po.cc" />
     <ClCompile Include="options_serializer_boost_po.cc" />
-    <ClCompile Include="parser\flatbuffer\parse_example_flatbuffer.cc" />
-    <ClCompile Include="parser\flatbuffer\parse_label.cc" />
+    <ClCompile Condition="'$(BuildFlatbuffers)'=='ON'" Include="parser\flatbuffer\parse_example_flatbuffer.cc" />
+    <ClCompile Condition="'$(BuildFlatbuffers)'=='ON'" Include="parser\flatbuffer\parse_label.cc" />
     <ClCompile Include="parse_args.cc" />
     <ClCompile Include="parse_example.cc" />
     <ClCompile Include="parse_primitives.cc" />
@@ -369,10 +409,12 @@
     <ClCompile Include="parser.cc" />
     <ClCompile Include="pmf_to_pdf.cc" />
     <ClCompile Include="plt.cc" />
+    <ClCompile Include="prediction_type.cc" />
     <ClCompile Include="print.cc" />
     <ClCompile Include="prob_dist_cont.cc" />
     <ClCompile Include="rand48.cc" />
     <ClCompile Include="recall_tree.cc" />
+    <ClCompile Include="count_label.cc" />
     <ClCompile Include="sample_pdf.cc" />
     <ClCompile Include="scorer.cc" />
     <ClCompile Include="search_dep_parser.cc" />
@@ -384,7 +426,9 @@
     <ClCompile Include="search_sequencetask.cc" />
     <ClCompile Include="search.cc" />
     <ClCompile Include="sender.cc" />
+    <ClCompile Include="shared_data.cc" />
     <ClCompile Include="shared_feature_merger.cc" />
+    <ClCompile Include="simple_label_parser.cc" />
     <ClCompile Include="simple_label.cc" />
     <ClCompile Include="slates_label.cc" />
     <ClCompile Include="slates.cc" />
@@ -392,6 +436,7 @@
     <ClCompile Include="stagewise_poly.cc" />
     <ClCompile Include="svrg.cc" />
     <ClCompile Include="tag_utils.cc" />
+    <ClCompile Include="text_utils.cc" />
     <ClCompile Include="topk.cc" />
     <ClCompile Include="unique_sort.cc" />
     <ClCompile Include="version.cc" />
@@ -428,7 +473,7 @@
     <Error Condition="!Exists('$(SolutionDir)packages\zlib-msvc-x86.1.2.11.8900\build\native\zlib-msvc-x86.targets')" Text="$([System.String]::Format('$(ErrorText)', '$(SolutionDir)packages\zlib-msvc-x86.1.2.11.8900\build\native\zlib-msvc-x86.targets'))" />
   </Target>
   <Target Name="Check Vcpkg" AfterTargets="PrepareForBuild">
-    <Error Condition="'$(VcpkgAutoLink)'==''" Text="Vcpkg version is too old, doesn't contain VcpkgAutoLink flag, please upgrade to avoid linking problems" />
+    <Error Condition="'$(VcpkgAutoLink)'=='' and Exists('$(VcpkgIntegration)')" Text="Vcpkg version is too old, doesn't contain VcpkgAutoLink flag, please upgrade to avoid linking problems" />
   </Target>
   <Target Name="AfterClean">
     <RemoveDir Directories="$(SolutionDir)parser\flatbuffer\generated" />

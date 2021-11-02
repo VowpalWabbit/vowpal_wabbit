@@ -16,7 +16,7 @@ struct action_score
   float score;
 };
 
-typedef v_array<action_score> action_scores;
+using action_scores = v_array<action_score>;
 
 class score_iterator
 {
@@ -80,5 +80,5 @@ inline int reverse_order(const void* p1, const void* p2) { return score_comp(p2,
 
 void print_action_score(VW::io::writer* f, const v_array<action_score>& a_s, const v_array<char>&);
 
-void delete_action_scores(void* v);
+std::ostream& operator<<(std::ostream& os, const action_score& a_s);
 }  // namespace ACTION_SCORE

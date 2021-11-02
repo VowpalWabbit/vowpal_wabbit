@@ -1,0 +1,15 @@
+Id 
+Min label:-1
+Max label:0
+bits:18
+lda:0
+0 ngram:
+0 skip:
+options: --cb_adf --cb_explore_adf --cb_type mtr --csoaa_ldf multiline --csoaa_rank
+Checksum: 3590524534
+event_sum 1
+action_sum 2
+:0
+Constant:116060:-0.193097
+shared^f1:147509:-0.193097
+action^f2:257122:-0.193097

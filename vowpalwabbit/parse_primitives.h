@@ -14,6 +14,9 @@
 #include "hashstring.h"
 #include "vw_string_view.h"
 #include "fast_pow10.h"
+#include "future_compat.h"
+
+#include "io/logger.h"
 
 // chop up the string into a v_array or any compatible container of VW::string_view.
 template <typename ContainerT>
@@ -41,23 +44,12 @@ inline const char* safe_index(const char* start, char v, const char* max)
   return start;
 }
 
-// can't type as it forces C++/CLI part to include rapidjson, which leads to name clashes...
-struct example;
-namespace VW
-{
-typedef example& (*example_factory_t)(void*);
-}
-
-typedef uint64_t (*hash_func_t)(const char* s, size_t, uint64_t);
-
-hash_func_t getHasher(const std::string& s);
-
 // The following function is a home made strtof. The
 // differences are :
 //  - much faster (around 50% but depends on the  string to parse)
 //  - less error control, but utilised inside a very strict parser
 //    in charge of error detection.
-inline float parseFloat(const char* p, size_t& end_idx, const char* endLine = nullptr)
+inline FORCE_INLINE float parseFloat(const char* p, size_t& end_idx, const char* endLine = nullptr)
 {
   const char* start = p;
   bool endLine_is_null = endLine == nullptr;
@@ -125,7 +117,7 @@ inline float float_of_string(VW::string_view s)
   float f = parseFloat(s.begin(), end_idx, s.end());
   if ((end_idx == 0 && s.size() > 0) || std::isnan(f))
   {
-    std::cout << "warning: " << s << " is not a good float, replacing with 0" << std::endl;
+    VW::io::logger::log_warn("warning: {} is not a good float, replacing with 0", s);
     f = 0;
   }
   return f;
@@ -137,7 +129,7 @@ inline int int_of_string(VW::string_view s, char*& end)
   int i = strtol(s.begin(), &end, 10);
   if (end <= s.begin() && s.size() > 0)
   {
-    std::cout << "warning: " << s << " is not a good int, replacing with 0" << std::endl;
+    VW::io::logger::log_warn("warning: {} is not a good int, replacing with 0", s);
     i = 0;
   }
 
@@ -149,3 +141,9 @@ inline int int_of_string(VW::string_view s)
   char* end = nullptr;
   return int_of_string(s, end);
 }
+
+namespace VW
+{
+std::string trim_whitespace(const std::string& s);
+VW::string_view trim_whitespace(VW::string_view str);
+}  // namespace VW

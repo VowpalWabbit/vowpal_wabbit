@@ -4,7 +4,11 @@
 
 #include "kskip_ngram_transformer.h"
 
+#include "io/logger.h"
+
 #include <memory>
+
+namespace logger = VW::io::logger;
 
 void add_grams(
     size_t ngram, size_t skip_gram, features& fs, size_t initial_length, std::vector<size_t>& gram_mask, size_t skips)
@@ -21,13 +25,13 @@ void add_grams(
       fs.push_back(1., new_index);
       if (!fs.space_names.empty())
       {
-        std::string feature_name(fs.space_names[i].get()->second);
+        std::string feature_name(fs.space_names[i].second);
         for (size_t n = 1; n < gram_mask.size(); n++)
         {
           feature_name += std::string("^");
-          feature_name += std::string(fs.space_names[i + gram_mask[n]].get()->second);
+          feature_name += std::string(fs.space_names[i + gram_mask[n]].second);
         }
-        fs.space_names.push_back(std::make_shared<audit_strings>(fs.space_names[i].get()->first, feature_name));
+        fs.space_names.push_back(audit_strings(fs.space_names[i].first, feature_name));
       }
     }
   }
@@ -41,26 +45,25 @@ void add_grams(
 }
 
 void compile_gram(const std::vector<std::string>& grams, std::array<uint32_t, NUM_NAMESPACES>& dest,
-    const std::string& descriptor, bool quiet)
+		  const std::string& descriptor, bool /*quiet*/)
 {
   for (const auto& gram : grams)
   {
     if (isdigit(gram[0]) != 0)
     {
       int n = atoi(gram.c_str());
-      if (!quiet) { std::cerr << "Generating " << n << "-" << descriptor << " for all namespaces." << std::endl; }
+      logger::errlog_info("Generating {0}-{1} for all namespaces.", n, descriptor);
       for (size_t j = 0; j < NUM_NAMESPACES; j++) { dest[j] = n; }
     }
     else if (gram.size() == 1)
     {
-      std::cout << "You must specify the namespace index before the n" << std::endl;
+      logger::log_error("You must specify the namespace index before the n");
     }
     else
     {
       int n = atoi(gram.c_str() + 1);
-      dest[(uint32_t)(unsigned char)*gram.c_str()] = n;
-      if (!quiet)
-      { std::cerr << "Generating " << n << "-" << descriptor << " for " << gram[0] << " namespaces." << std::endl; }
+      dest[static_cast<uint32_t>(static_cast<unsigned char>(*gram.c_str()))] = n;
+      logger::errlog_info("Generating {0}-{1} for {2} namespaces.", n, descriptor, gram[0]);
     }
   }
 }

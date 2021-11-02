@@ -2,8 +2,12 @@
 // individual contributors. All rights reserved. Released under a BSD (revised)
 // license as described in the file LICENSE.
 #pragma once
-#include "label_parser.h"
+
 #include <vector>
+#include <cstdint>
+
+#include "label_parser.h"
+#include "v_array.h"
 
 struct example;
 struct vw;
@@ -16,6 +20,13 @@ struct wclass
   uint32_t class_index;
   float partial_prediction;  // a partial prediction: new!
   float wap_value;           // used for wap to store values derived from costs
+
+  wclass(float x, uint32_t class_index, float partial_prediction, float wap_value)
+      : x(x), class_index(class_index), partial_prediction(partial_prediction), wap_value(wap_value)
+  {
+  }
+  wclass() : x(0.f), class_index(0), partial_prediction(0.f), wap_value(0.f) {}
+
   bool operator==(wclass j) { return class_index == j.class_index; }
 };
 /* if class_index > 0, then this is a "normal" example
@@ -26,10 +37,11 @@ struct wclass
 
 struct label
 {
-  v_array<wclass> costs;
+  std::vector<wclass> costs;
 };
 
 void output_example(vw& all, example& ec);
+void output_example(vw& all, example& ec, const COST_SENSITIVE::label& cs_label, uint32_t multiclass_prediction);
 void finish_example(vw& all, example& ec);
 template <class T>
 void finish_example(vw& all, T&, example& ec)
@@ -37,7 +49,6 @@ void finish_example(vw& all, T&, example& ec)
   finish_example(all, ec);
 }
 
-void delete_label(label& ld);
 void default_label(label& ld);
 extern label_parser cs_label;
 

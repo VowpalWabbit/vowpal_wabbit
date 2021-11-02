@@ -177,8 +177,8 @@ Global
 		{6A9CBEAB-427F-4D8D-9559-B76B42B0895C}.Debug|x64.Build.0 = Debug|x64
 		{6A9CBEAB-427F-4D8D-9559-B76B42B0895C}.Release|x64.ActiveCfg = Release|x64
 		{6A9CBEAB-427F-4D8D-9559-B76B42B0895C}.Release|x64.Build.0 = Release|x64
-		{007B7DE0-1D9B-498D-ACFC-E9D33058F22E}.Debug|x64.ActiveCfg = Debug|Any CPU
-		{007B7DE0-1D9B-498D-ACFC-E9D33058F22E}.Debug|x64.Build.0 = Debug|Any CPU
+		{007B7DE0-1D9B-498D-ACFC-E9D33058F22E}.Debug|x64.ActiveCfg = Debug|x64
+		{007B7DE0-1D9B-498D-ACFC-E9D33058F22E}.Debug|x64.Build.0 = Debug|x64
 		{007B7DE0-1D9B-498D-ACFC-E9D33058F22E}.Release|x64.ActiveCfg = Release|Any CPU
 		{007B7DE0-1D9B-498D-ACFC-E9D33058F22E}.Release|x64.Build.0 = Release|Any CPU
 		{D5E462FC-3DD6-4B65-A9E9-DA0B0B11D254}.Debug|x64.ActiveCfg = Debug|x64
@@ -204,7 +204,7 @@ Global
 		HideSolutionNode = FALSE
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
-		EnterpriseLibraryConfigurationToolBinariesPathV6 = packages\EnterpriseLibrary.TransientFaultHandling.6.0.1304.0\lib\portable-net45+win+wp8
 		SolutionGuid = {14CFCE53-7467-4021-BD9A-978C2FC5BCC8}
+		EnterpriseLibraryConfigurationToolBinariesPathV6 = packages\EnterpriseLibrary.TransientFaultHandling.6.0.1304.0\lib\portable-net45+win+wp8
 	EndGlobalSection
 EndGlobal

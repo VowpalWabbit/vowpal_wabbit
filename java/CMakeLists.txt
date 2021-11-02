@@ -54,7 +54,7 @@ add_custom_command(TARGET vw_jni POST_BUILD
 )
 
 if(STATIC_LINK_VW_JAVA)
-  target_link_libraries(vw_jni PUBLIC -static-libgcc -static-libstdc++ -fPIC)
+  target_link_libraries(vw_jni PUBLIC -Wl,--exclude-libs,ALL -static-libgcc -static-libstdc++ -fPIC)
 else()
   if(${CMAKE_EXECUTABLE_FORMAT} MATCHES "ELF")
     # enable-new-dtags and rpath enables shared object library lookup in the location of libvw_spark_jni.so

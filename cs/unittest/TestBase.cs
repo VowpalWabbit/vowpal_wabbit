@@ -21,6 +21,9 @@ namespace cs_unittest
         public void Init()
         {
             var basePath = Path.GetDirectoryName(typeof(TestBase).Assembly.Location);
+
+            // TODO: Fix this, since it is super-fragile to depend on the relative position of the test sources
+            // and the generated assembly. Right now it just happens to work in both CMake and Visual Studio.
             Environment.CurrentDirectory = basePath + @"\..\..\..\test";
 
             if (!Directory.Exists("models"))

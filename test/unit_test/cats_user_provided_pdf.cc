@@ -1,6 +1,6 @@
-#ifndef STATIC_LINK_VW
-#  define BOOST_TEST_DYN_LINK
-#endif
+// Copyright (c) by respective owners including Yahoo!, Microsoft, and
+// individual contributors. All rights reserved. Released under a BSD (revised)
+// license as described in the file LICENSE.
 
 #include <boost/test/unit_test.hpp>
 #include <boost/test/test_tools.hpp>
@@ -68,7 +68,7 @@ BOOST_AUTO_TEST_CASE(cats_pdf_no_model_action_provided)
 }
 )";
   auto vw = VW::initialize(
-      "--dsjson --chain_hash --cats_pdf 4 --min_value=185 --max_value=23959 --bandwidth 1 --no_stdin --quiet "
+      "--dsjson --chain_hash --cats_pdf 32 --min_value=185 --max_value=23959 --bandwidth 1000 --no_stdin --quiet "
       "--first_only",
       nullptr, false, nullptr, nullptr);
   auto examples = parse_dsjson(*vw, json_text);
@@ -161,9 +161,9 @@ BOOST_AUTO_TEST_CASE(cats_pdf_no_model_pdf_provided)
   float min_value = 185;
   float max_value = 23959;
   float epsilon = 0.1f;
-  auto vw = VW::initialize("--dsjson --chain_hash --cats_pdf 4 --min_value=" + std::to_string(min_value) +
+  auto vw = VW::initialize("--dsjson --chain_hash --cats_pdf 32 --min_value=" + std::to_string(min_value) +
           " --max_value=" + std::to_string(max_value) + " --epsilon " + std::to_string(epsilon) +
-          " --bandwidth 1 --no_stdin --quiet --first_only",
+          " --bandwidth 1000 --no_stdin --quiet --first_only",
       nullptr, false, nullptr, nullptr);
   auto examples = parse_dsjson(*vw, json_text);
 

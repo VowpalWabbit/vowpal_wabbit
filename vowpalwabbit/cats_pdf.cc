@@ -8,12 +8,14 @@
 // It can also parse a continuous labeled example.
 
 #include "cats_pdf.h"
-#include "parse_args.h"
-#include "err_constants.h"
+#include "global_data.h"
+#include "error_constants.h"
 #include "api_status.h"
 #include "cb_continuous_label.h"
 #include "debug_log.h"
+#include "shared_data.h"
 
+#include <cfloat>
 // Aliases
 using std::endl;
 using VW::cb_continuous::continuous_label;
@@ -24,7 +26,8 @@ using VW::config::options_i;
 using VW::LEARNER::single_learner;
 
 // Enable/Disable indented debug statements
-VW_DEBUG_ENABLE(false)
+#undef VW_DEBUG_LOG
+#define VW_DEBUG_LOG vw_dbg::cats_pdf
 
 // Forward declarations
 namespace VW
@@ -57,7 +60,7 @@ int cats_pdf::predict(example& ec, experimental::api_status*)
 {
   VW_DBG(ec) << "cats_pdf::predict(), " << features_to_string(ec) << endl;
   _base->predict(ec);
-  return error_code::success;
+  return VW::experimental::error_code::success;
 }
 
 // Pass through
@@ -69,7 +72,7 @@ int cats_pdf::learn(example& ec, experimental::api_status*)
   if (_always_predict) { _base->predict(ec); }
 
   _base->learn(ec);
-  return error_code::success;
+  return VW::experimental::error_code::success;
 }
 
 cats_pdf::cats_pdf(single_learner* p_base, bool always_predict) : _base(p_base), _always_predict(always_predict) {}
@@ -84,7 +87,8 @@ void predict_or_learn(cats_pdf& reduction, single_learner&, example& ec)
   else
     reduction.predict(ec, &status);
 
-  if (status.get_error_code() != error_code::success) { VW_DBG(ec) << status.get_error_msg() << endl; }
+  if (status.get_error_code() != VW::experimental::error_code::success)
+  { VW_DBG(ec) << status.get_error_msg() << endl; }
 }
 // END cats_pdf reduction and reduction methods
 ////////////////////////////////////////////////////
@@ -130,7 +134,7 @@ void reduction_output::report_progress(vw& all, const cats_pdf&, const example& 
 {
   const auto& cb_cont_costs = ec.l.cb_cont.costs;
   all.sd->update(ec.test_only, does_example_have_label(ec), cb_cont_costs.empty() ? 0.f : cb_cont_costs[0].cost,
-      ec.weight, ec.num_features);
+      ec.weight, ec.get_num_features());
   all.sd->weighted_labels += ec.weight;
   print_update_cb_cont(all, ec);
 }
@@ -144,10 +148,10 @@ void reduction_output::print_update_cb_cont(vw& all, const example& ec)
 {
   if (all.sd->weighted_examples() >= all.sd->dump_interval && !all.logger.quiet && !all.bfgs)
   {
-    all.sd->print_update(all.holdout_set_off, all.current_pass,
+    all.sd->print_update(*all.trace_message, all.holdout_set_off, all.current_pass,
         ec.test_only ? "unknown" : to_string(ec.l.cb_cont.costs[0]),  // Label
         to_string(ec.pred.pdf),                                       // Prediction
-        ec.num_features, all.progress_add, all.progress_arg);
+        ec.get_num_features(), all.progress_add, all.progress_arg);
   }
 }
 
@@ -155,8 +159,11 @@ void reduction_output::print_update_cb_cont(vw& all, const example& ec)
 ////////////////////////////////////////////////////
 
 // Setup reduction in stack
-LEARNER::base_learner* setup(config::options_i& options, vw& all)
+LEARNER::base_learner* setup(setup_base_i& stack_builder)
 {
+  options_i& options = *stack_builder.get_options();
+  vw& all = *stack_builder.get_all_pointer();
+
   option_group_definition new_options("Continuous action tree with smoothing with full pdf");
   int num_actions = 0;
   new_options.add(
@@ -166,7 +173,7 @@ LEARNER::base_learner* setup(config::options_i& options, vw& all)
   // to the reduction stack;
   if (!options.add_parse_and_check_necessary(new_options)) return nullptr;
 
-  if (num_actions <= 0) THROW(error_code::num_actions_gt_zero_s);
+  if (num_actions <= 0) THROW(VW::experimental::error_code::num_actions_gt_zero_s);
 
   // cats stack = [cats_pdf -> cb_explore_pdf -> pmf_to_pdf -> get_pmf -> cats_tree]
   if (!options.was_supplied("cb_explore_pdf")) options.insert("cb_explore_pdf", "");
@@ -175,18 +182,21 @@ LEARNER::base_learner* setup(config::options_i& options, vw& all)
   if (!options.was_supplied("get_pmf")) options.insert("get_pmf", "");
   options.insert("cats_tree", std::to_string(num_actions));
 
-  LEARNER::base_learner* p_base = setup_base(options, all);
+  LEARNER::base_learner* p_base = stack_builder.setup_base_learner();
   bool always_predict = all.final_prediction_sink.size() > 0;
-  auto p_reduction = scoped_calloc_or_throw<cats_pdf>(as_singleline(p_base), always_predict);
+  auto p_reduction = VW::make_unique<cats_pdf>(as_singleline(p_base), always_predict);
 
-  LEARNER::learner<cats_pdf, example>& l = init_learner(
-      p_reduction, as_singleline(p_base), predict_or_learn<true>, predict_or_learn<false>, 1, prediction_type_t::pdf);
+  auto* l = make_reduction_learner(std::move(p_reduction), as_singleline(p_base), predict_or_learn<true>,
+      predict_or_learn<false>, stack_builder.get_setupfn_name(setup))
+                .set_learn_returns_prediction(true)
+                .set_output_prediction_type(VW::prediction_type_t::pdf)
+                .set_finish_example(finish_example)
+                .set_input_label_type(VW::label_type_t::continuous)
+                .build();
 
-  l.set_finish_example(finish_example);
   all.example_parser->lbl_parser = cb_continuous::the_label_parser;
-  all.label_type = label_type_t::continuous;
 
-  return make_base(l);
+  return make_base(*l);
 }
 }  // namespace cats_pdf
 }  // namespace continuous_action

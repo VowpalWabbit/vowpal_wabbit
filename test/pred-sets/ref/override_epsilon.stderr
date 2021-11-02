@@ -6,12 +6,12 @@ power_t = 0.5
 using no cache
 Reading datafile = train-sets/override_epsilon.txt
 num sources = 1
-Enabled reductions: gd, scorer, csoaa_ldf, cb_adf, cb_explore_adf_greedy, shared_feature_merger
+Enabled reductions: gd, scorer-identity, csoaa_ldf-rank, cb_adf, cb_explore_adf_greedy, shared_feature_merger
 average  since         example        example  current  current  current
 loss     last          counter         weight    label  predict features
--1.700000 -1.700000            1            1.0    known        0:0.85...        4
--0.850000 0.000000            2            2.0    known        0:0.85...        4
--0.850000 -0.850000            4            4.0    known        0:0.85...        4
+-1.700000 -1.700000            1            1.0 0:-1:0.5        0:0.85...        4
+-0.850000 0.000000            2            2.0  0:0:0.5        0:0.85...        4
+-0.850000 -0.850000            4            4.0  0:0:0.5        0:0.85...        4
 
 finished run
 number of examples = 4

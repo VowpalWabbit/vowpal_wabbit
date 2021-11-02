@@ -1,3 +1,10 @@
+trigger:
+- master
+- 'releases/**'
+
+pr:
+- '*'
+
 resources:
 - repo: self
 
@@ -8,6 +15,8 @@ pool:
 variables:
   SuppressTag: $[ eq(variables.officialbuild, 'true') ]
   VCPKG_ARCHIVE_DIR: $(LOCALAPPDATA)\vcpkg\archives
+  NUGET_PACKAGES: $(Pipeline.Workspace)\.nuget\packages
+  VCPKG_BINARY_SOURCES: 'clear;files,C:\Users\VssAdministrator\AppData\Local\vcpkg\archives,readwrite'
 
 steps:
 - task: VisualStudioTestPlatformInstaller@1
@@ -21,9 +30,17 @@ steps:
     #netShare: # Required when packageFeedSelector == NetShare
 - task: Cache@2
   inputs:
-    key: 'vcpkg | archives'
+    key: 'v2 | vcpkg | archives'
     path: $(VCPKG_ARCHIVE_DIR)
   displayName: Cache vcpkg dependencies
+- task: Cache@2
+  inputs:
+    key: 'nuget | "$(Agent.OS)" | $(Build.SourcesDirectory)\cs\**\packages.config'
+    restoreKeys: |
+       nuget | "$(Agent.OS)"
+       nuget
+    path: $(NUGET_PACKAGES)
+  displayName: Cache NuGet packages
 - script: CALL .scripts/restore.cmd
   displayName: 'Restore dependencies'
   env:

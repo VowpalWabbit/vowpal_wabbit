@@ -6,14 +6,14 @@ power_t = 0.45
 using no cache
 Reading datafile = train-sets/0002.dat
 num sources = 1
-Enabled reductions: gd, scorer
+Enabled reductions: gd, scorer-identity, count_label
 average  since         example        example  current  current  current
 loss     last          counter         weight    label  predict features
 0.271591 0.271591            1            1.0   0.5211   0.0000       15
 0.136335 0.001079            2            2.0   0.5353   0.5024       15
 0.107713 0.079091            4            4.0   0.5854   0.5854       15
 0.078253 0.048793            8            8.0   0.5575   0.4557       15
-0.080357 0.082460           16           16.0   0.5878   0.3578       15
+0.080356 0.082460           16           16.0   0.5878   0.3578       15
 0.044376 0.008395           32           32.0   0.6038   0.6114       15
 0.028309 0.012242           64           64.0   0.5683   0.4656       15
 0.016985 0.005660          128          128.0   0.5351   0.5011       15
@@ -23,7 +23,7 @@ loss     last          counter         weight    label  predict features
 finished run
 number of examples = 1000
 weighted example sum = 1000.000000
-weighted label sum = 526.517586
+weighted label sum = 526.517528
 average loss = 0.003447
 best constant = 0.526518
 total feature number = 14996

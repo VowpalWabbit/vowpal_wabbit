@@ -1,0 +1,110 @@
+name: Run benchmarks for refs
+on:
+  workflow_dispatch:
+    inputs:
+      base_ref:
+        description: 'Base git ref to benchmark'
+        required: true
+        default: '8.9.0'
+      compare_ref:
+        description: 'Git ref to benchmark against base'
+        required: true
+        default: 'master'
+      benchmarks_ref:
+        description: 'Git ref to checkout test/benchmarks module from'
+        required: true
+        default: 'master'
+
+jobs:
+  benchmark:
+    container:
+      image: vowpalwabbit/ubuntu1804-build:latest
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v1
+        with:
+          ref: ${{ github.event.inputs.benchmarks_ref }}
+      - name: Store benchmark related script(s)
+        shell: bash
+        run: cp ./.scripts/linux/*benchmarks.sh test/benchmarks/
+      - name: Upload benchmark module
+        uses: actions/upload-artifact@v2
+        with:
+          name: benchmark-module
+          path: test/benchmarks/
+# checkout first ref
+      - uses: actions/checkout@v1
+        with:
+          ref: ${{ github.event.inputs.base_ref }}
+      - name: Remove existing benchmark module (in favour of master)
+        shell: bash
+        run: rm -rf test/benchmarks
+      - name: Download master's benchmark module
+        uses: actions/download-artifact@v2
+        with:
+          name: benchmark-module
+          path: test/benchmarks/
+      - name: Restore benchmark related script(s)
+        shell: bash
+        run: cp test/benchmarks/*benchmarks.sh ./.scripts/linux/
+      - name: Change permissions to restored script(s)
+        shell: bash
+        run: chmod +x ./.scripts/linux/*.sh
+      - name: Install google benchmarks
+        shell: bash
+        run: ./.scripts/linux/install-benchmarks.sh
+      - name: Build ${{ github.event.inputs.base_ref }}
+        shell: bash
+        run: ./.scripts/linux/build-with-standalone-benchmarks.sh
+      - name: Benchmark ${{ github.event.inputs.base_ref }}
+        shell: bash
+        run: ./.scripts/linux/run-benchmarks.sh base-benchmarks.json
+      - name: Upload ${{ github.event.inputs.base_ref }} benchmark results
+        uses: actions/upload-artifact@v2
+        with:
+          name: base-benchmarks
+          path: base-benchmarks.json
+      - name: Upload benchmark compare
+        uses: actions/upload-artifact@v2
+        with:
+          name: benchmark-compare
+          path: benchmark/tools/
+      - name: Install benchmark compare requirements
+        shell: bash
+        run: python3 -m pip install -r benchmark/tools/requirements.txt
+      - run: rm -rf benchmark build vowpalwabbit/parser/flatbuffer/generated/ test/benchmarks/ # generated or downloaded files
+# checkout second ref
+      - uses: actions/checkout@v1
+        with:
+          ref: ${{ github.event.inputs.compare_ref }}
+      - name: Download ${{ github.event.inputs.base_ref }} benchmark results
+        uses: actions/download-artifact@v2
+        with:
+          name: base-benchmarks
+      - name: Download benchmark compare
+        uses: actions/download-artifact@v2
+        with:
+          name: benchmark-compare
+      - name: Remove existing benchmark module (in favour of master)
+        shell: bash
+        run: rm -rf test/benchmarks
+      - name: Download master's benchmark module
+        uses: actions/download-artifact@v2
+        with:
+          name: benchmark-module
+          path: test/benchmarks/
+      - name: Restore benchmark related script(s)
+        shell: bash
+        run: cp test/benchmarks/*benchmarks.sh ./.scripts/linux/
+      - name: Change permissions to restored script(s)
+        shell: bash
+        run: chmod +x ./.scripts/linux/*.sh
+      - name: Build ${{ github.event.inputs.compare_ref }}
+        shell: bash
+        run: ./.scripts/linux/build-with-standalone-benchmarks.sh
+      - name: Benchmark ${{ github.event.inputs.compare_ref }}
+        shell: bash
+        run: ./.scripts/linux/run-benchmarks.sh compare-benchmarks.json
+      - name: Compare benchmarks
+        shell: bash
+        run: ./.scripts/linux/compare-benchmarks.sh base-benchmarks.json compare-benchmarks.json

@@ -258,6 +258,11 @@ class TestVWRegressor(BaseVWTest):
         # ensure model can make multiple calls to predict
         assert np.allclose(raw_model.predict(data.x), model.predict(data.x))
 
+    def test_repr(self):
+        model = self.estimator()
+        expected = self.estimator.__name__ + "(convert_labels: False, convert_to_vw: True, passes: 1, quiet: True)"
+        assert expected == model.__repr__()
+
 
 class TestVWMultiClassifier(BaseVWTest):
 

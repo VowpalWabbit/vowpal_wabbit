@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
     <Filter Include="Source Files">
@@ -15,6 +15,15 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="automl_test.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="automl_weights_test.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="cache_test.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
     <ClCompile Include="cb_explore_adf_test.cc">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -22,6 +31,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="ccb_test.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="cats_test.cc">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="cats_user_provided_pdf.cc">
@@ -45,13 +57,16 @@
     <ClCompile Include="explore_test.cc">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="flatbuffer_parser_test.cc">
+    <ClCompile Include="feature_group_test.cc">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="guard_test.cc">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="initialize_test.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="interactions_test.cc">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="io_adapter_test.cc">
@@ -61,6 +76,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="main.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="math_test.cc">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="object_pool_test.cc">
@@ -75,13 +93,13 @@
     <ClCompile Include="offset_tree_tests.cc">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="ostream_test.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
     <ClCompile Include="power_test.cc">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="options_boost_po_test.cc">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="options_test.cc">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="stable_unique_tests.cc">
@@ -108,6 +126,12 @@
     <ClCompile Include="prediction_test.cc">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="custom_reduction_test.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="minimal_custom_reduction.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
     <ClCompile Include="scope_exit_test.cc">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -126,22 +150,40 @@
     <ClCompile Include="vwdll_test.cc">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="numeric_cast_tests.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="parse_args_test.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="simulator.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="tutorial_test.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="vw_versions_test.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="weights_test.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="flatbuffer_parser_test.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="v_array_test.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="test_common.h">
+    <ClInclude Include="simulator.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="cats_tree_tests.h">
+    <ClInclude Include="test_common.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
-    <None Include="DistributionallyRobustUnitTestData.py">
-      <Filter>Source Files</Filter>
-    </None>
-    <None Include="crminustwo.py">
-      <Filter>Source Files</Filter>
-    </None>
   </ItemGroup>
 </Project>

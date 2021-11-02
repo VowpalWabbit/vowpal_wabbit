@@ -16,7 +16,18 @@
 #include "future_compat.h"
 #include "vw_allreduce.h"
 #include "named_labels.h"
-#include "parser/flatbuffer/parse_example_flatbuffer.h"
+#include "shared_data.h"
+#include "reduction_stack.h"
+#ifdef BUILD_FLATBUFFERS
+#  include "parser/flatbuffer/parse_example_flatbuffer.h"
+#endif
+#ifdef BUILD_EXTERNAL_PARSER
+#  include "parse_example_external.h"
+#endif
+
+#include "io/logger.h"
+namespace logger = VW::io::logger;
+
 
 struct global_prediction
 {
@@ -26,7 +37,7 @@ struct global_prediction
 
 size_t really_read(VW::io::reader* sock, void* in, size_t count)
 {
-  char* buf = (char*)in;
+  char* buf = static_cast<char*>(in);
   size_t done = 0;
   ssize_t r = 0;
   while (done < count)
@@ -59,11 +70,6 @@ void send_prediction(VW::io::writer* f, global_prediction p)
     THROWERRNO("send_prediction write(unknown socket fd)");
 }
 
-void binary_print_result(VW::io::writer* f, float res, float weight, v_array<char> array)
-{
-  binary_print_result_by_ref(f, res, weight, array);
-}
-
 void binary_print_result_by_ref(VW::io::writer* f, float res, float weight, const v_array<char>&)
 {
   if (f != nullptr)
@@ -83,12 +89,18 @@ int print_tag_by_ref(std::stringstream& ss, const v_array<char>& tag)
   return tag.begin() != tag.end();
 }
 
-int print_tag(std::stringstream& ss, v_array<char> tag) { return print_tag_by_ref(ss, tag); }
-
-void print_result(VW::io::writer* f, float res, float unused, v_array<char> tag)
+std::string vw::get_setupfn_name(reduction_setup_fn setup_fn)
 {
-  print_result_by_ref(f, res, unused, tag);
+  const auto loc = _setup_name_map.find(setup_fn);
+  if (loc != _setup_name_map.end()) return loc->second;
+  return "NA";
 }
+
+void vw::build_setupfn_name_dict(std::vector<std::tuple<std::string, reduction_setup_fn>>& reduction_stack)
+{
+  for (auto&& setup_tuple : reduction_stack) { _setup_name_map[std::get<1>(setup_tuple)] = std::get<0>(setup_tuple); }
+}
+
 
 void print_result_by_ref(VW::io::writer* f, float res, float, const v_array<char>& tag)
 {
@@ -101,22 +113,9 @@ void print_result_by_ref(VW::io::writer* f, float res, float, const v_array<char
     print_tag_by_ref(ss, tag);
     ss << '\n';
     ssize_t len = ss.str().size();
-    ssize_t t = f->write(ss.str().c_str(), (unsigned int)len);
-    if (t != len) { std::cerr << "write error: " << VW::strerror_to_string(errno) << std::endl; }
+    ssize_t t = f->write(ss.str().c_str(), static_cast<unsigned int>(len));
+    if (t != len) { logger::errlog_error("write error: {}", VW::strerror_to_string(errno)); }
   }
-}
-
-void print_raw_text(VW::io::writer* f, std::string s, v_array<char> tag)
-{
-  if (f == nullptr) return;
-
-  std::stringstream ss;
-  ss << s;
-  print_tag_by_ref(ss, tag);
-  ss << '\n';
-  ssize_t len = ss.str().size();
-  ssize_t t = f->write(ss.str().c_str(), (unsigned int)len);
-  if (t != len) { std::cerr << "write error: " << VW::strerror_to_string(errno) << std::endl; }
 }
 
 void print_raw_text_by_ref(VW::io::writer* f, const std::string& s, const v_array<char>& tag)
@@ -128,8 +127,8 @@ void print_raw_text_by_ref(VW::io::writer* f, const std::string& s, const v_arra
   print_tag_by_ref(ss, tag);
   ss << '\n';
   ssize_t len = ss.str().size();
-  ssize_t t = f->write(ss.str().c_str(), (unsigned int)len);
-  if (t != len) { std::cerr << "write error: " << VW::strerror_to_string(errno) << std::endl; }
+  ssize_t t = f->write(ss.str().c_str(), static_cast<unsigned int>(len));
+  if (t != len) { logger::errlog_error("write error: {}", VW::strerror_to_string(errno)); }
 }
 
 void set_mm(shared_data* sd, float label)
@@ -142,27 +141,41 @@ void noop_mm(shared_data*, float) {}
 
 void vw::learn(example& ec)
 {
-  if (l->is_multiline) THROW("This reduction does not support single-line examples.");
+  if (l->is_multiline()) THROW("This reduction does not support single-line examples.");
 
   if (ec.test_only || !training)
     VW::LEARNER::as_singleline(l)->predict(ec);
   else
-    VW::LEARNER::as_singleline(l)->learn(ec);
+  {
+    if (l->learn_returns_prediction) { VW::LEARNER::as_singleline(l)->learn(ec); }
+    else
+    {
+      VW::LEARNER::as_singleline(l)->predict(ec);
+      VW::LEARNER::as_singleline(l)->learn(ec);
+    }
+  }
 }
 
 void vw::learn(multi_ex& ec)
 {
-  if (!l->is_multiline) THROW("This reduction does not support multi-line example.");
+  if (!l->is_multiline()) THROW("This reduction does not support multi-line example.");
 
   if (!training)
     VW::LEARNER::as_multiline(l)->predict(ec);
   else
-    VW::LEARNER::as_multiline(l)->learn(ec);
+  {
+    if (l->learn_returns_prediction) { VW::LEARNER::as_multiline(l)->learn(ec); }
+    else
+    {
+      VW::LEARNER::as_multiline(l)->predict(ec);
+      VW::LEARNER::as_multiline(l)->learn(ec);
+    }
+  }
 }
 
 void vw::predict(example& ec)
 {
-  if (l->is_multiline) THROW("This reduction does not support single-line examples.");
+  if (l->is_multiline()) THROW("This reduction does not support single-line examples.");
 
   // be called directly in library mode, test_only must be explicitly set here. If the example has a label but is passed
   // to predict it would otherwise be incorrectly labelled as test_only = false.
@@ -172,7 +185,7 @@ void vw::predict(example& ec)
 
 void vw::predict(multi_ex& ec)
 {
-  if (!l->is_multiline) THROW("This reduction does not support multi-line example.");
+  if (!l->is_multiline()) THROW("This reduction does not support multi-line example.");
 
   // be called directly in library mode, test_only must be explicitly set here. If the example has a label but is passed
   // to predict it would otherwise be incorrectly labelled as test_only = false.
@@ -183,19 +196,19 @@ void vw::predict(multi_ex& ec)
 
 void vw::finish_example(example& ec)
 {
-  if (l->is_multiline) THROW("This reduction does not support single-line examples.");
+  if (l->is_multiline()) THROW("This reduction does not support single-line examples.");
 
   VW::LEARNER::as_singleline(l)->finish_example(*this, ec);
 }
 
 void vw::finish_example(multi_ex& ec)
 {
-  if (!l->is_multiline) THROW("This reduction does not support multi-line example.");
+  if (!l->is_multiline()) THROW("This reduction does not support multi-line example.");
 
   VW::LEARNER::as_multiline(l)->finish_example(*this, ec);
 }
 
-void compile_limits(std::vector<std::string> limits, std::array<uint32_t, NUM_NAMESPACES>& dest, bool quiet)
+void compile_limits(std::vector<std::string> limits, std::array<uint32_t, NUM_NAMESPACES>& dest, bool /*quiet*/)
 {
   for (size_t i = 0; i < limits.size(); i++)
   {
@@ -203,39 +216,18 @@ void compile_limits(std::vector<std::string> limits, std::array<uint32_t, NUM_NA
     if (isdigit(limit[0]))
     {
       int n = atoi(limit.c_str());
-      if (!quiet) std::cerr << "limiting to " << n << "features for each namespace." << std::endl;
+      logger::errlog_warn("limiting to {} features for each namespace.", n);
       for (size_t j = 0; j < 256; j++) dest[j] = n;
     }
     else if (limit.size() == 1)
-      std::cout << "You must specify the namespace index before the n" << std::endl;
+      logger::log_error("You must specify the namespace index before the n");
     else
     {
       int n = atoi(limit.c_str() + 1);
-      dest[(uint32_t)limit[0]] = n;
-      if (!quiet) std::cerr << "limiting to " << n << " for namespaces " << limit[0] << std::endl;
+      dest[static_cast<uint32_t>(limit[0])] = n;
+      logger::errlog_warn("limiting to {0} for namespaces {1}", n, limit[0]);
     }
   }
-}
-
-void trace_listener_cerr(void*, const std::string& message)
-{
-  std::cerr << message;
-  std::cerr.flush();
-}
-
-int vw_ostream::vw_streambuf::sync()
-{
-  int ret = std::stringbuf::sync();
-  if (ret) return ret;
-
-  parent.trace_listener(parent.trace_context, str());
-  str("");
-  return 0;  // success
-}
-
-vw_ostream::vw_ostream() : std::ostream(&buf), buf(*this), trace_context(nullptr)
-{
-  trace_listener = trace_listener_cerr;
 }
 
 VW_WARNING_STATE_PUSH
@@ -243,15 +235,9 @@ VW_WARNING_DISABLE_DEPRECATED_USAGE
 
 vw::vw() : options(nullptr, nullptr)
 {
-  sd = &calloc_or_throw<shared_data>();
-  sd->dump_interval = 1.;  // next update progress dump
-  sd->contraction = 1.;
-  sd->first_observed_label = FLT_MAX;
-  sd->is_more_than_two_labels_observed = false;
-  sd->max_label = 0;
-  sd->min_label = 0;
-
-  label_type = label_type_t::simple;
+  sd = new shared_data();
+  // Default is stderr.
+  trace_message = VW::make_unique<std::ostream>(std::cerr.rdbuf());
 
   l = nullptr;
   scorer = nullptr;
@@ -261,8 +247,6 @@ vw::vw() : options(nullptr, nullptr)
 
   reg_mode = 0;
   current_pass = 0;
-
-  delete_prediction = nullptr;
 
   bfgs = false;
   no_bias = false;
@@ -286,8 +270,6 @@ vw::vw() : options(nullptr, nullptr)
               // updates (see parse_args.cc)
   numpasses = 1;
 
-  print = print_result;
-  print_text = print_raw_text;
   print_by_ref = print_result_by_ref;
   print_text_by_ref = print_raw_text_by_ref;
   lda = 0;
@@ -346,14 +328,6 @@ vw::vw() : options(nullptr, nullptr)
   // Set by the '--progress <arg>' option and affect sd->dump_interval
   progress_add = false;  // default is multiplicative progress dumps
   progress_arg = 2.0;    // next update progress dump multiplier
-
-  sd->is_more_than_two_labels_observed = false;
-  sd->first_observed_label = FLT_MAX;
-  sd->second_observed_label = FLT_MAX;
-
-  sd->report_multiclass_log_loss = false;
-  sd->multiclass_log_loss = 0;
-  sd->holdout_multiclass_log_loss = 0;
 }
 VW_WARNING_STATE_POP
 
@@ -362,7 +336,7 @@ vw::~vw()
   if (l != nullptr)
   {
     l->finish();
-    free(l);
+    delete l;
   }
 
   // TODO: migrate all finalization into parser destructor
@@ -373,15 +347,7 @@ vw::~vw()
   }
 
   const bool seeded = weights.seeded() > 0;
-  if (!seeded)
-  {
-    if (sd->ldict)
-    {
-      sd->ldict->~named_labels();
-      free(sd->ldict);
-    }
-    free(sd);
-  }
+  if (!seeded) { delete sd; }
 
   delete all_reduce;
 }

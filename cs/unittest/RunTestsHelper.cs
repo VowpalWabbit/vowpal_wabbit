@@ -50,8 +50,9 @@ namespace cs_unittest
                         var lines = new List<string>();
 
                         string dataLine;
-                        while ((dataLine = streamReader.ReadLine()) != null)
+                        do
                         {
+                            dataLine = streamReader.ReadLine();
                             if (string.IsNullOrWhiteSpace(dataLine))
                             {
                                 if (lines.Count > 0)
@@ -67,7 +68,7 @@ namespace cs_unittest
                             }
 
                             lines.Add(dataLine);
-                        }
+                        } while (dataLine != null);
                     }
                     else
                     {

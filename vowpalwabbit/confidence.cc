@@ -5,14 +5,20 @@
 #include "reductions.h"
 #include "vw.h"
 #include "math.h"
+#include "shared_data.h"
+
+#include "io/logger.h"
+
+#include <cfloat>
 
 using namespace VW::LEARNER;
-
 using namespace VW::config;
+
+namespace logger = VW::io::logger;
 
 struct confidence
 {
-  vw* all;
+  vw* all = nullptr;
 };
 
 template <bool is_learn, bool is_confidence_after_training>
@@ -43,7 +49,7 @@ void predict_or_learn_with_confidence(confidence& /* c */, single_learner& base,
   ec.confidence = fabsf(ec.pred.scalar - threshold) / sensitivity;
 }
 
-void confidence_print_result(VW::io::writer* f, float res, float confidence, v_array<char> tag)
+void confidence_print_result(VW::io::writer* f, float res, float confidence, const v_array<char>& tag)
 {
   if (f != nullptr)
   {
@@ -51,9 +57,14 @@ void confidence_print_result(VW::io::writer* f, float res, float confidence, v_a
     ss << std::fixed << res << " " << confidence;
     if (!print_tag_by_ref(ss, tag)) ss << ' ';
     ss << '\n';
-    ssize_t len = ss.str().size();
-    ssize_t t = f->write(ss.str().c_str(), (unsigned int)len);
-    if (t != len) std::cerr << "write error: " << VW::strerror_to_string(errno) << std::endl;
+    // avoid serializing the stringstream multiple times
+    auto ss_string(ss.str());
+    ssize_t len = ss_string.size();
+    ssize_t t = f->write(ss_string.c_str(), static_cast<unsigned int>(len));
+    if (t != len)
+    {
+      logger::errlog_error("write error: {}", VW::strerror_to_string(errno));
+    }
   }
 }
 
@@ -61,7 +72,7 @@ void output_and_account_confidence_example(vw& all, example& ec)
 {
   label_data& ld = ec.l.simple;
 
-  all.sd->update(ec.test_only, ld.label != FLT_MAX, ec.loss, ec.weight, ec.num_features);
+  all.sd->update(ec.test_only, ld.label != FLT_MAX, ec.loss, ec.weight, ec.get_num_features());
   if (ld.label != FLT_MAX && !ec.test_only) all.sd->weighted_labels += ld.label * ec.weight;
   all.sd->weighted_unlabeled_examples += ld.label == FLT_MAX ? ec.weight : 0;
 
@@ -78,8 +89,10 @@ void return_confidence_example(vw& all, confidence& /* c */, example& ec)
   VW::finish_example(all, ec);
 }
 
-base_learner* confidence_setup(options_i& options, vw& all)
+base_learner* confidence_setup(VW::setup_base_i& stack_builder)
 {
+  options_i& options = *stack_builder.get_options();
+  vw& all = *stack_builder.get_all_pointer();
   bool confidence_arg = false;
   bool confidence_after_training = false;
   option_group_definition new_options("Confidence");
@@ -91,14 +104,12 @@ base_learner* confidence_setup(options_i& options, vw& all)
 
   if (!all.training)
   {
-    std::cout
-        << "Confidence does not work in test mode because learning algorithm state is needed.  Use --save_resume when "
-           "saving the model and avoid --test_only"
-        << std::endl;
+    logger::log_warn("Confidence does not work in test mode because learning algorithm state is needed.  Use --save_resume when "
+		     "saving the model and avoid --test_only");
     return nullptr;
   }
 
-  auto data = scoped_calloc_or_throw<confidence>();
+  auto data = VW::make_unique<confidence>();
   data->all = &all;
 
   void (*learn_with_confidence_ptr)(confidence&, single_learner&, example&) = nullptr;
@@ -115,11 +126,16 @@ base_learner* confidence_setup(options_i& options, vw& all)
     predict_with_confidence_ptr = predict_or_learn_with_confidence<false, false>;
   }
 
+  auto base = as_singleline(stack_builder.setup_base_learner());
+
   // Create new learner
-  learner<confidence, example>& l = init_learner(
-      data, as_singleline(setup_base(options, all)), learn_with_confidence_ptr, predict_with_confidence_ptr);
+  auto* l = make_reduction_learner(std::move(data), base, learn_with_confidence_ptr, predict_with_confidence_ptr,
+      stack_builder.get_setupfn_name(confidence_setup))
+                .set_learn_returns_prediction(true)
+                .set_input_label_type(VW::label_type_t::simple)
+                .set_output_prediction_type(VW::prediction_type_t::scalar)
+                .set_finish_example(return_confidence_example)
+                .build();
 
-  l.set_finish_example(return_confidence_example);
-
-  return make_base(l);
+  return make_base(*l);
 }

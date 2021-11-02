@@ -11,23 +11,25 @@
 #include "cb_continuous_label.h"
 #include "debug_print.h"
 
+#include "io/logger.h"
+
 using namespace LEARNER;
-using std::endl;
+
+namespace logger = VW::io::logger;
 
 namespace CB
 {
 template <>
-char* bufcache_label_additional_fields<VW::cb_continuous::continuous_label>(
-    VW::cb_continuous::continuous_label&, char* c)
+size_t read_cached_label_additional_fields<VW::cb_continuous::continuous_label>(
+    VW::cb_continuous::continuous_label&, io_buf&)
 {
-  return c;
+  return 0;
 }
 
 template <>
-char* bufread_label_additional_fields<VW::cb_continuous::continuous_label>(
-    VW::cb_continuous::continuous_label&, char* c)
+void cache_label_additional_fields<VW::cb_continuous::continuous_label>(
+    const VW::cb_continuous::continuous_label&, io_buf&)
 {
-  return c;
 }
 
 template <>
@@ -35,40 +37,35 @@ void default_label_additional_fields<VW::cb_continuous::continuous_label>(VW::cb
 {
 }
 
-template <>
-void copy_label_additional_fields<VW::cb_continuous::continuous_label>(
-    VW::cb_continuous::continuous_label&, VW::cb_continuous::continuous_label&)
-{
-}
 }  // namespace CB
 
-void parse_pdf(
-    const std::vector<VW::string_view>& words, size_t words_index, parser* p, reduction_features& red_features)
+void parse_pdf(const std::vector<VW::string_view>& words, size_t words_index, VW::label_parser_reuse_mem& reuse_mem,
+    reduction_features& red_features)
 {
   auto& cats_reduction_features = red_features.template get<VW::continuous_actions::reduction_features>();
   for (size_t i = words_index; i < words.size(); i++)
   {
     if (words[i] == CHOSEN_ACTION) { break; /* no more pdf to parse*/ }
-    tokenize(':', words[i], p->parse_name);
-    if (p->parse_name.empty() || p->parse_name.size() < 3) { continue; }
+    tokenize(':', words[i], reuse_mem.tokens);
+    if (reuse_mem.tokens.empty() || reuse_mem.tokens.size() < 3) { continue; }
     VW::continuous_actions::pdf_segment seg;
-    seg.left = float_of_string(p->parse_name[0]);
-    seg.right = float_of_string(p->parse_name[1]);
-    seg.pdf_value = float_of_string(p->parse_name[2]);
+    seg.left = float_of_string(reuse_mem.tokens[0]);
+    seg.right = float_of_string(reuse_mem.tokens[1]);
+    seg.pdf_value = float_of_string(reuse_mem.tokens[2]);
     cats_reduction_features.pdf.push_back(seg);
   }
   if (!VW::continuous_actions::is_valid_pdf(cats_reduction_features.pdf)) { cats_reduction_features.pdf.clear(); }
 }
 
-void parse_chosen_action(
-    const std::vector<VW::string_view>& words, size_t words_index, parser* p, reduction_features& red_features)
+void parse_chosen_action(const std::vector<VW::string_view>& words, size_t words_index,
+    VW::label_parser_reuse_mem& reuse_mem, reduction_features& red_features)
 {
   auto& cats_reduction_features = red_features.template get<VW::continuous_actions::reduction_features>();
   for (size_t i = words_index; i < words.size(); i++)
   {
-    tokenize(':', words[i], p->parse_name);
-    if (p->parse_name.empty() || p->parse_name.size() < 1) { continue; }
-    cats_reduction_features.chosen_action = float_of_string(p->parse_name[0]);
+    tokenize(':', words[i], reuse_mem.tokens);
+    if (reuse_mem.tokens.empty() || reuse_mem.tokens.size() < 1) { continue; }
+    cats_reduction_features.chosen_action = float_of_string(reuse_mem.tokens[0]);
     break;  // there can only be one chosen action
   }
 }
@@ -79,8 +76,8 @@ namespace cb_continuous
 {
 ////////////////////////////////////////////////////
 // Begin: parse a,c,p label format
-void parse_label(parser* p, shared_data*, continuous_label& ld, std::vector<VW::string_view>& words,
-    reduction_features& red_features)
+void parse_label(continuous_label& ld, reduction_features& red_features, VW::label_parser_reuse_mem& reuse_mem,
+    const std::vector<VW::string_view>& words)
 {
   ld.costs.clear();
 
@@ -90,35 +87,36 @@ void parse_label(parser* p, shared_data*, continuous_label& ld, std::vector<VW::
 
   for (size_t i = 1; i < words.size(); i++)
   {
-    if (words[i] == PDF) { parse_pdf(words, i + 1, p, red_features); }
+    if (words[i] == PDF) { parse_pdf(words, i + 1, reuse_mem, red_features); }
     else if (words[i] == CHOSEN_ACTION)
     {
-      parse_chosen_action(words, i + 1, p, red_features);
+      parse_chosen_action(words, i + 1, reuse_mem, red_features);
     }
     else if (words[i - 1] == CA_LABEL)
     {
       continuous_label_elm f{0.f, FLT_MAX, 0.f};
-      tokenize(':', words[i], p->parse_name);
+      tokenize(':', words[i], reuse_mem.tokens);
 
-      if (p->parse_name.empty() || p->parse_name.size() > 4)
+      if (reuse_mem.tokens.empty() || reuse_mem.tokens.size() > 4)
         THROW("malformed cost specification: "
-            << "p->parse_name");
+            << "reuse_mem.tokens");
 
-      f.action = float_of_string(p->parse_name[0]);
+      f.action = float_of_string(reuse_mem.tokens[0]);
 
-      if (p->parse_name.size() > 1) f.cost = float_of_string(p->parse_name[1]);
+      if (reuse_mem.tokens.size() > 1) f.cost = float_of_string(reuse_mem.tokens[1]);
 
-      if (std::isnan(f.cost)) THROW("error NaN cost (" << p->parse_name[1] << " for action: " << p->parse_name[0]);
+      if (std::isnan(f.cost))
+        THROW("error NaN cost (" << reuse_mem.tokens[1] << " for action: " << reuse_mem.tokens[0]);
 
       f.pdf_value = .0;
-      if (p->parse_name.size() > 2) f.pdf_value = float_of_string(p->parse_name[2]);
+      if (reuse_mem.tokens.size() > 2) f.pdf_value = float_of_string(reuse_mem.tokens[2]);
 
       if (std::isnan(f.pdf_value))
-        THROW("error NaN pdf_value (" << p->parse_name[2] << " for action: " << p->parse_name[0]);
+        THROW("error NaN pdf_value (" << reuse_mem.tokens[2] << " for action: " << reuse_mem.tokens[0]);
 
       if (f.pdf_value < 0.0)
       {
-        std::cerr << "invalid pdf_value < 0 specified for an action, resetting to 0." << endl;
+        logger::errlog_warn("invalid pdf_value < 0 specified for an action, resetting to 0.");
         f.pdf_value = .0;
       }
 
@@ -127,33 +125,28 @@ void parse_label(parser* p, shared_data*, continuous_label& ld, std::vector<VW::
   }
 }
 
-// clang-format off
 label_parser the_label_parser = {
-  // default_label
-  [](polylabel* v) { CB::default_label<continuous_label>(v->cb_cont); },
-  // parse_label
-  [](parser* p, shared_data* sd, polylabel* v, std::vector<VW::string_view>& words, reduction_features& red_features) {
-    parse_label(p, sd, v->cb_cont, words, red_features);
-  },
-  // cache_label
-  [](polylabel* v, io_buf& cache) { CB::cache_label<continuous_label, continuous_label_elm>(v->cb_cont, cache); },
-  // read_cached_label
-  [](shared_data* sd, polylabel* v, io_buf& cache) { return CB::read_cached_label<continuous_label, continuous_label_elm>(sd, v->cb_cont, cache); },
-  // delete_label
-  [](polylabel* v) { CB::delete_label<continuous_label>(v->cb_cont); },
-  // get_weight
-  // CB::weight just returns 1.f? This seems like it could be a bug...
-  [](polylabel*) { return 1.f; },
-  // copy_label
-  [](polylabel* dst, polylabel* src) {
-    if (dst && src) {
-      CB::copy_label<continuous_label>(dst->cb_cont, src->cb_cont);
-    }
-  },
-  // test_label
-  [](polylabel* v) { return CB::is_test_label<continuous_label, continuous_label_elm>(v->cb_cont); },
-};
-// clang-format on
+    // default_label
+    [](polylabel& label) { CB::default_label<continuous_label>(label.cb_cont); },
+    // parse_label
+    [](polylabel& label, reduction_features& red_features, VW::label_parser_reuse_mem& reuse_mem,
+        const VW::named_labels* /*ldict*/,
+        const std::vector<VW::string_view>& words) { parse_label(label.cb_cont, red_features, reuse_mem, words); },
+    // cache_label
+    [](const polylabel& label, const reduction_features& /*red_features*/, io_buf& cache) {
+      CB::cache_label<continuous_label, continuous_label_elm>(label.cb_cont, cache);
+    },
+    // read_cached_label
+    [](polylabel& label, reduction_features& /*red_features*/, io_buf& cache) {
+      return CB::read_cached_label<continuous_label, continuous_label_elm>(label.cb_cont, cache);
+    },
+    // get_weight
+    // CB::weight just returns 1.f? This seems like it could be a bug...
+    [](const polylabel& /*label*/, const reduction_features& /*red_features*/) { return 1.f; },
+    // test_label
+    [](const polylabel& label) { return CB::is_test_label<continuous_label, continuous_label_elm>(label.cb_cont); },
+    // label type
+    VW::label_type_t::continuous};
 
 // End: parse a,c,p label format
 ////////////////////////////////////////////////////

@@ -3,6 +3,7 @@
 // license as described in the file LICENSE.
 #pragma once
 #include "label_parser.h"
+#include "v_array.h"
 
 struct example;
 struct vw;
@@ -15,7 +16,6 @@ struct labels
 };
 
 void output_example(vw& all, example& ec);
-void delete_prediction(void* v);
 
 extern label_parser multilabel;
 

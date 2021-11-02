@@ -8,6 +8,10 @@
 #include "io_buf.h"
 #include "global_data.h"
 
+#include "io/logger.h"
+
+namespace logger = VW::io::logger;
+
 namespace ACTION_SCORE
 {
 void print_action_score(VW::io::writer* f, const v_array<action_score>& a_s, const v_array<char>& tag)
@@ -25,14 +29,13 @@ void print_action_score(VW::io::writer* f, const v_array<action_score>& a_s, con
   ss << '\n';
   const auto ss_str = ss.str();
   ssize_t len = ss_str.size();
-  ssize_t t = f->write(ss_str.c_str(), (unsigned int)len);
-  if (t != len) std::cerr << "write error: " << VW::strerror_to_string(errno) << std::endl;
+  ssize_t t = f->write(ss_str.c_str(), static_cast<unsigned int>(len));
+  if (t != len) logger::errlog_error("write error: {}", VW::strerror_to_string(errno));
 }
 
-void delete_action_scores(void* v)
+std::ostream& operator<<(std::ostream& os, const action_score& a_s)
 {
-  v_array<action_score>* cs = (v_array<action_score>*)v;
-  cs->delete_v();
+  os << "(" << a_s.action << "," << a_s.score << ")";
+  return os;
 }
-
 }  // namespace ACTION_SCORE

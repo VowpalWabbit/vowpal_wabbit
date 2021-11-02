@@ -6,7 +6,7 @@ using no cache
 Reading datafile = train-sets/cb_as_ccb.json
 WARNING: Old string feature value behavior is deprecated in JSON/DSJSON and will be removed in a future version. Use `--chain_hash` to use new behavior and silence this warning.
 num sources = 1
-Enabled reductions: gd, scorer, csoaa_ldf, cb_adf, cb_explore_adf_greedy, cb_sample, shared_feature_merger, ccb_explore_adf
+Enabled reductions: gd, generate_interactions, scorer-identity, csoaa_ldf-rank, cb_adf, cb_explore_adf_greedy, cb_sample, shared_feature_merger, ccb_explore_adf
 average  since         example        example  current  current  current
 loss     last          counter         weight    label  predict features
 -2.500000 -2.500000            1            1.0     1:-1        1        7

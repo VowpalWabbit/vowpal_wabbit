@@ -5,7 +5,7 @@
 
 namespace MulticlassTask
 {
-Search::search_task task = {"multiclasstask", run, initialize, finish, nullptr, nullptr};
+Search::search_task task = {"multiclasstask", run, initialize, nullptr, nullptr, nullptr};
 }
 
 namespace MulticlassTask
@@ -23,17 +23,11 @@ void initialize(Search::search& sch, size_t& num_actions, VW::config::options_i&
   sch.set_options(0);
   sch.set_num_learners(num_actions);
   my_task_data->max_label = num_actions;
-  my_task_data->num_level = (size_t)ceil(log(num_actions) / log(2));
+  my_task_data->num_level = static_cast<size_t>(ceil(log(num_actions) / log(2)));
   my_task_data->y_allowed.push_back(1);
   my_task_data->y_allowed.push_back(2);
   sch.set_task_data(my_task_data);
-}
-
-void finish(Search::search& sch)
-{
-  task_data* my_task_data = sch.get_task_data<task_data>();
-  my_task_data->y_allowed.delete_v();
-  delete my_task_data;
+  sch.set_is_ldf(false);
 }
 
 void run(Search::search& sch, multi_ex& ec)

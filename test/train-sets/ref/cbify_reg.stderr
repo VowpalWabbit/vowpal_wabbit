@@ -9,21 +9,21 @@ power_t = 0.5
 using no cache
 Reading datafile = train-sets/regression/cbify-reg.dat
 num sources = 1
-Enabled reductions: ftrl, scorer, binary, cats_tree, get_pmf, pmf_to_pdf, cb_explore_pdf, cats_pdf, sample_pdf, cats, cbify
+Enabled reductions: ftrl-Coin Betting, scorer-identity, binary, cats_tree, get_pmf, pmf_to_pdf, cb_explore_pdf, cats_pdf, sample_pdf, cats, cbify-reg, count_label
 average  since         example        example  current  current  current
 loss     last          counter         weight    label  predict features
-0.155338 0.155338            1            1.0 3879.0000 185.0007       10
-0.412530 0.669723            2            2.0 16123.0000 200.1764       10
-0.383097 0.353664            4            4.0 4213.0000 408.8916       10
-0.426958 0.470819            8            8.0 7932.0000 655.8133       10
-0.444664 0.462370           16           16.0 8574.0000 838.1911       10
-0.470519 0.496375           32           32.0 15481.0000 6148.0508       10
+0.155377 0.155377            1            1.0 3879.0000 185.0774       10
+0.396949 0.638522            2            2.0 16123.0000 942.7876       10
+0.398703 0.400457            4            4.0 4213.0000 17639.9590       10
+0.268907 0.139111            8            8.0 7932.0000 8195.4629       10
+0.272572 0.276237           16           16.0 8574.0000 9905.8975       10
+0.254497 0.236422           32           32.0 15481.0000 19055.5371       10
 
 finished run
 number of examples = 50
 weighted example sum = 50.000000
-weighted label sum = 252788.170868
-average loss = 0.372589
-best constant = 5055.763672
+weighted label sum = 553368.298340
+average loss = 0.267300
+best constant = 11067.366211
 total feature number = 500
-Learn() count per node: id=0, #l=3; id=1, #l=3; id=2, #l=1; id=3, #l=3; id=4, #l=1; id=5, #l=1; id=6, #l=0; id=7, #l=3; id=8, #l=1; id=9, #l=1; id=10, #l=0; id=11, #l=1; id=12, #l=0; id=13, #l=0; id=14, #l=0; id=15, #l=3; 
+Learn() count per node: id=0, #l=48; id=1, #l=8; id=2, #l=12; id=3, #l=2; id=4, #l=16; id=5, #l=8; id=6, #l=1; id=7, #l=1; id=8, #l=1; id=9, #l=7; id=10, #l=5; id=11, #l=1; id=12, #l=2; id=13, #l=4; id=14, #l=1; id=15, #l=1; 

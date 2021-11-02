@@ -6,11 +6,16 @@
 
 #include <functional>
 
-using dispatch_fptr = std::function<void(vw&, const v_array<example*>&)>;
+#include "global_data.h"
+#include "v_array.h"
+#include "parse_example.h"
+#include "io/logger.h"
 
-inline void parse_dispatch(vw& all, dispatch_fptr dispatch)
+// DispatchFuncT should be of the form - void(vw&, const v_array<example*>&)
+template <typename DispatchFuncT>
+void parse_dispatch(vw& all, DispatchFuncT& dispatch)
 {
-  v_array<example*> examples = v_init<example*>();
+  v_array<example*> examples;
   size_t example_number = 0;  // for variable-size batch learning algorithms
 
   try
@@ -19,7 +24,7 @@ inline void parse_dispatch(vw& all, dispatch_fptr dispatch)
     {
       examples.push_back(&VW::get_unused_example(&all));  // need at least 1 example
       if (!all.do_reset_source && example_number != all.pass_length && all.max_examples > example_number &&
-          all.example_parser->reader(&all, examples) > 0)
+          all.example_parser->reader(&all, all.example_parser->input, examples) > 0)
       {
         VW::setup_examples(all, examples);
         example_number += examples.size();
@@ -32,7 +37,7 @@ inline void parse_dispatch(vw& all, dispatch_fptr dispatch)
         all.passes_complete++;
 
         // setup an end_pass example
-        all.example_parser->lbl_parser.default_label(&examples[0]->l);
+        all.example_parser->lbl_parser.default_label(examples[0]->l);
         examples[0]->end_pass = true;
         all.example_parser->in_pass_counter = 0;
 
@@ -51,19 +56,17 @@ inline void parse_dispatch(vw& all, dispatch_fptr dispatch)
   }
   catch (VW::vw_exception& e)
   {
-    std::cerr << "vw example #" << example_number << "(" << e.Filename() << ":" << e.LineNumber() << "): " << e.what()
-              << std::endl;
+    VW::io::logger::errlog_error("vw example #{0}({1}:{2}): {3}", example_number, e.Filename(), e.LineNumber(), e.what());
 
     // Stash the exception so it can be thrown on the main thread.
     all.example_parser->exc_ptr = std::current_exception();
   }
   catch (std::exception& e)
   {
-    std::cerr << "vw: example #" << example_number << e.what() << std::endl;
+    VW::io::logger::errlog_error("vw: example #{0}{1}", example_number, e.what());
 
     // Stash the exception so it can be thrown on the main thread.
     all.example_parser->exc_ptr = std::current_exception();
   }
   lock_done(*all.example_parser);
-  examples.delete_v();
 }

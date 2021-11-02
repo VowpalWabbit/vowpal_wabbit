@@ -1,6 +1,6 @@
-#ifndef STATIC_LINK_VW
-#define BOOST_TEST_DYN_LINK
-#endif
+// Copyright (c) by respective owners including Yahoo!, Microsoft, and
+// individual contributors. All rights reserved. Released under a BSD (revised)
+// license as described in the file LICENSE.
 
 #include <boost/test/unit_test.hpp>
 #include <boost/test/test_tools.hpp>
@@ -158,4 +158,35 @@ BOOST_AUTO_TEST_CASE(swap_guard_unique_ptr)
     BOOST_CHECK_EQUAL(*original_location, 9999);
   }
   BOOST_CHECK_EQUAL(*original_location, 1);
+}
+
+BOOST_AUTO_TEST_CASE(stash_guard_execute_on_scope_end)
+{
+  int target_location = 999;
+  {
+    BOOST_CHECK_EQUAL(target_location, 999);
+    auto guard = VW::stash_guard(target_location);
+    BOOST_CHECK_EQUAL(target_location, 0);
+  }
+  BOOST_CHECK_EQUAL(target_location, 999);
+}
+
+struct struct_with_non_trivial_ctor
+{
+  int value;
+  struct_with_non_trivial_ctor() : value(123) {}
+};
+
+BOOST_AUTO_TEST_CASE(stash_guard_used_default_ctor)
+{
+  struct_with_non_trivial_ctor target_location;
+  BOOST_CHECK_EQUAL(target_location.value, 123);
+
+  target_location.value = 456;
+  {
+    BOOST_CHECK_EQUAL(target_location.value, 456);
+    auto guard = VW::stash_guard(target_location);
+    BOOST_CHECK_EQUAL(target_location.value, 123);
+  }
+  BOOST_CHECK_EQUAL(target_location.value, 456);
 }

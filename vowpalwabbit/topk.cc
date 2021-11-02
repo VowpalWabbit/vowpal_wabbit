@@ -8,10 +8,14 @@
 
 #include "topk.h"
 #include "learner.h"
-#include "parse_args.h"
+
 #include "vw.h"
+#include "shared_data.h"
+
+#include "io/logger.h"
 
 using namespace VW::config;
+namespace logger = VW::io::logger;
 
 namespace VW
 {
@@ -88,7 +92,7 @@ void print_result(
     ss << '\n';
     ssize_t len = ss.str().size();
     auto t = file_descriptor->write(ss.str().c_str(), len);
-    if (t != len) std::cerr << "write error: " << VW::strerror_to_string(errno) << std::endl;
+    if (t != len) logger::errlog_error("write error: {}", VW::strerror_to_string(errno));
   }
 }
 
@@ -96,8 +100,8 @@ void output_example(vw& all, example& ec)
 {
   label_data& ld = ec.l.simple;
 
-  all.sd->update(ec.test_only, ld.label != FLT_MAX, ec.loss, ec.weight, ec.num_features);
-  if (ld.label != FLT_MAX) all.sd->weighted_labels += ((double)ld.label) * ec.weight;
+  all.sd->update(ec.test_only, ld.label != FLT_MAX, ec.loss, ec.weight, ec.get_num_features());
+  if (ld.label != FLT_MAX) all.sd->weighted_labels += (static_cast<double>(ld.label)) * ec.weight;
 
   print_update(all, ec);
 }
@@ -119,19 +123,21 @@ void finish_example(vw& all, VW::topk& d, multi_ex& ec_seq)
   VW::finish_example(all, ec_seq);
 }
 
-VW::LEARNER::base_learner* topk_setup(options_i& options, vw& all)
+VW::LEARNER::base_learner* topk_setup(VW::setup_base_i& stack_builder)
 {
+  options_i& options = *stack_builder.get_options();
   uint32_t K;
   option_group_definition new_options("Top K");
   new_options.add(make_option("top", K).keep().necessary().help("top k recommendation"));
 
   if (!options.add_parse_and_check_necessary(new_options)) return nullptr;
 
-  auto data = scoped_calloc_or_throw<VW::topk>(K);
-
-  VW::LEARNER::learner<VW::topk, multi_ex>& l =
-      init_learner(data, as_singleline(setup_base(options, all)), predict_or_learn<true>, predict_or_learn<false>);
-  l.set_finish_example(finish_example);
-
-  return make_base(l);
+  auto data = VW::make_unique<VW::topk>(K);
+  auto* l = VW::LEARNER::make_reduction_learner(std::move(data), as_singleline(stack_builder.setup_base_learner()),
+      predict_or_learn<true>, predict_or_learn<false>, stack_builder.get_setupfn_name(topk_setup))
+                .set_learn_returns_prediction(true)
+                .set_output_prediction_type(VW::prediction_type_t::scalar)
+                .set_finish_example(finish_example)
+                .build();
+  return make_base(*l);
 }

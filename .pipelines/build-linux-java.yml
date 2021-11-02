@@ -1,8 +1,12 @@
-pr:
+trigger:
 - master
+- 'releases/**'
+
+pr:
+- '*'
 
 pool:
-  vmImage: 'ubuntu-16.04'
+  vmImage: 'ubuntu-18.04'
 
 container:
   image: vowpalwabbit/centos7_6_1810-build:latest
@@ -20,7 +24,7 @@ steps:
     ossrh_username: $(ossrh_username)
     ossrh_password: $(ossrh_password)
 - task: PublishBuildArtifacts@1
-  inputs: 
+  inputs:
     pathtoPublish: build/java/libvw_jni.so
     artifactName: 'vw-static-linux-64'
   displayName: 'java artifact linux 64'

@@ -6,7 +6,7 @@ power_t = 0.5
 using no cache
 Reading datafile = train-sets/cs_test_multilabel.ldf
 num sources = 1
-Enabled reductions: gd, scorer, csoaa_ldf, shared_feature_merger
+Enabled reductions: gd, scorer-identity, csoaa_ldf-rank, shared_feature_merger
 average  since         example        example  current  current  current
 loss     last          counter         weight    label  predict features
 1.000000 1.000000            1            1.0    known        0.....        9

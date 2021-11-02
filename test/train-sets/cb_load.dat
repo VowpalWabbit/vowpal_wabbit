@@ -1,0 +1,1016 @@
+shared |User user=Tom time_of_day=morning
+|Action article=politics 
+|Action article=sports 
+|Action article=music 
+|Action article=food 
+0:0.0:0.14285714498588012 |Action article=finance 
+|Action article=health 
+|Action article=camping 
+
+shared |User user=Anna time_of_day=morning
+0:0.0:0.14285713008471937 |Action article=politics 
+|Action article=sports 
+|Action article=music 
+|Action article=food 
+|Action article=finance 
+|Action article=health 
+|Action article=camping 
+
+shared |User user=Anna time_of_day=morning
+|Action article=politics 
+|Action article=sports 
+|Action article=music 
+|Action article=food 
+0:0.0:0.14285714498588012 |Action article=finance 
+|Action article=health 
+|Action article=camping 
+
+shared |User user=Tom time_of_day=afternoon
+|Action article=politics 
+0:0.0:0.14285714498588012 |Action article=sports 
+|Action article=music 
+|Action article=food 
+|Action article=finance 
+|Action article=health 
+|Action article=camping 
+
+shared |User user=Tom time_of_day=morning
+|Action article=politics 
+|Action article=sports 
+|Action article=music 
+|Action article=food 
+|Action article=finance 
+0:0.0:0.14285714498588012 |Action article=health 
+|Action article=camping 
+
+shared |User user=Tom time_of_day=morning
+|Action article=politics 
+|Action article=sports 
+0:0.0:0.14285714498588012 |Action article=music 
+|Action article=food 
+|Action article=finance 
+|Action article=health 
+|Action article=camping 
+
+shared |User user=Tom time_of_day=afternoon
+|Action article=politics 
+|Action article=sports 
+|Action article=music 
+0:0.0:0.14285714498588012 |Action article=food 
+|Action article=finance 
+|Action article=health 
+|Action article=camping 
+
+shared |User user=Anna time_of_day=afternoon
+|Action article=politics 
+|Action article=sports 
+|Action article=music 
+0:0.0:0.14285714498588012 |Action article=food 
+|Action article=finance 
+|Action article=health 
+|Action article=camping 
+
+shared |User user=Tom time_of_day=morning
+|Action article=politics 
+0:0.0:0.14285714498588012 |Action article=sports 
+|Action article=music 
+|Action article=food 
+|Action article=finance 
+|Action article=health 
+|Action article=camping 
+
+shared |User user=Anna time_of_day=afternoon
+|Action article=politics 
+0:0.0:0.14285714498588012 |Action article=sports 
+|Action article=music 
+|Action article=food 
+|Action article=finance 
+|Action article=health 
+|Action article=camping 
+
+shared |User user=Tom time_of_day=morning
+|Action article=politics 
+|Action article=sports 
+|Action article=music 
+|Action article=food 
+0:0.0:0.14285714498588012 |Action article=finance 
+|Action article=health 
+|Action article=camping 
+
+shared |User user=Anna time_of_day=afternoon
+|Action article=politics 
+0:0.0:0.14285714498588012 |Action article=sports 
+|Action article=music 
+|Action article=food 
+|Action article=finance 
+|Action article=health 
+|Action article=camping 
+
+shared |User user=Anna time_of_day=morning
+|Action article=politics 
+|Action article=sports 
+0:0.0:0.14285714498588012 |Action article=music 
+|Action article=food 
+|Action article=finance 
+|Action article=health 
+|Action article=camping 
+
+shared |User user=Anna time_of_day=afternoon
+|Action article=politics 
+|Action article=sports 
+0:0.0:0.14285714498588012 |Action article=music 
+|Action article=food 
+|Action article=finance 
+|Action article=health 
+|Action article=camping 
+
+shared |User user=Anna time_of_day=morning
+|Action article=politics 
+|Action article=sports 
+|Action article=music 
+0:0.0:0.14285714498588012 |Action article=food 
+|Action article=finance 
+|Action article=health 
+|Action article=camping 
+
+shared |User user=Anna time_of_day=afternoon
+|Action article=politics 
+|Action article=sports 
+|Action article=music 
+0:0.0:0.14285714498588012 |Action article=food 
+|Action article=finance 
+|Action article=health 
+|Action article=camping 
+
+shared |User user=Tom time_of_day=afternoon
+0:0.0:0.14285713008471937 |Action article=politics 
+|Action article=sports 
+|Action article=music 
+|Action article=food 
+|Action article=finance 
+|Action article=health 
+|Action article=camping 
+
+shared |User user=Tom time_of_day=morning
+|Action article=politics 
+|Action article=sports 
+|Action article=music 
+|Action article=food 
+|Action article=finance 
+|Action article=health 
+0:0.0:0.14285714498588012 |Action article=camping 
+
+shared |User user=Tom time_of_day=afternoon
+|Action article=politics 
+|Action article=sports 
+|Action article=music 
+|Action article=food 
+|Action article=finance 
+0:0.0:0.14285714498588012 |Action article=health 
+|Action article=camping 
+
+shared |User user=Tom time_of_day=afternoon
+|Action article=politics 
+|Action article=sports 
+|Action article=music 
+|Action article=food 
+0:0.0:0.14285714498588012 |Action article=finance 
+|Action article=health 
+|Action article=camping 
+
+shared |User user=Tom time_of_day=morning
+|Action article=politics 
+|Action article=sports 
+|Action article=music 
+|Action article=food 
+|Action article=finance 
+0:0.0:0.14285714498588012 |Action article=health 
+|Action article=camping 
+
+shared |User user=Tom time_of_day=morning
+|Action article=politics 
+0:0.0:0.14285714498588012 |Action article=sports 
+|Action article=music 
+|Action article=food 
+|Action article=finance 
+|Action article=health 
+|Action article=camping 
+
+shared |User user=Tom time_of_day=morning
+|Action article=politics 
+|Action article=sports 
+|Action article=music 
+|Action article=food 
+0:0.0:0.14285714498588012 |Action article=finance 
+|Action article=health 
+|Action article=camping 
+
+shared |User user=Anna time_of_day=afternoon
+|Action article=politics 
+|Action article=sports 
+|Action article=music 
+|Action article=food 
+0:0.0:0.14285714498588012 |Action article=finance 
+|Action article=health 
+|Action article=camping 
+
+shared |User user=Tom time_of_day=afternoon
+|Action article=politics 
+|Action article=sports 
+|Action article=music 
+|Action article=food 
+0:0.0:0.14285714498588012 |Action article=finance 
+|Action article=health 
+|Action article=camping 
+
+shared |User user=Anna time_of_day=morning
+|Action article=politics 
+|Action article=sports 
+|Action article=music 
+|Action article=food 
+0:0.0:0.14285714498588012 |Action article=finance 
+|Action article=health 
+|Action article=camping 
+
+shared |User user=Anna time_of_day=morning
+0:0.0:0.14285713008471937 |Action article=politics 
+|Action article=sports 
+|Action article=music 
+|Action article=food 
+|Action article=finance 
+|Action article=health 
+|Action article=camping 
+
+shared |User user=Tom time_of_day=morning
+|Action article=politics 
+|Action article=sports 
+0:0.0:0.14285714498588012 |Action article=music 
+|Action article=food 
+|Action article=finance 
+|Action article=health 
+|Action article=camping 
+
+shared |User user=Anna time_of_day=morning
+|Action article=politics 
+|Action article=sports 
+|Action article=music 
+|Action article=food 
+0:0.0:0.14285714498588012 |Action article=finance 
+|Action article=health 
+|Action article=camping 
+
+shared |User user=Anna time_of_day=morning
+0:0.0:0.14285713008471937 |Action article=politics 
+|Action article=sports 
+|Action article=music 
+|Action article=food 
+|Action article=finance 
+|Action article=health 
+|Action article=camping 
+
+shared |User user=Anna time_of_day=morning
+|Action article=politics 
+|Action article=sports 
+0:0.0:0.14285714498588012 |Action article=music 
+|Action article=food 
+|Action article=finance 
+|Action article=health 
+|Action article=camping 
+
+shared |User user=Tom time_of_day=afternoon
+|Action article=politics 
+|Action article=sports 
+|Action article=music 
+0:0.0:0.14285714498588012 |Action article=food 
+|Action article=finance 
+|Action article=health 
+|Action article=camping 
+
+shared |User user=Tom time_of_day=afternoon
+|Action article=politics 
+0:0.0:0.14285714498588012 |Action article=sports 
+|Action article=music 
+|Action article=food 
+|Action article=finance 
+|Action article=health 
+|Action article=camping 
+
+shared |User user=Anna time_of_day=morning
+|Action article=politics 
+|Action article=sports 
+|Action article=music 
+|Action article=food 
+0:0.0:0.14285714498588012 |Action article=finance 
+|Action article=health 
+|Action article=camping 
+
+shared |User user=Tom time_of_day=afternoon
+|Action article=politics 
+|Action article=sports 
+|Action article=music 
+|Action article=food 
+|Action article=finance 
+0:0.0:0.14285714498588012 |Action article=health 
+|Action article=camping 
+
+shared |User user=Anna time_of_day=afternoon
+|Action article=politics 
+|Action article=sports 
+0:0.0:0.14285714498588012 |Action article=music 
+|Action article=food 
+|Action article=finance 
+|Action article=health 
+|Action article=camping 
+
+shared |User user=Tom time_of_day=morning
+0:-1.0:0.14285713008471937 |Action article=politics 
+|Action article=sports 
+|Action article=music 
+|Action article=food 
+|Action article=finance 
+|Action article=health 
+|Action article=camping 
+
+shared |User user=Tom time_of_day=morning
+0:-1.0:0.6715756504630525 |Action article=politics 
+|Action article=sports 
+|Action article=music 
+|Action article=food 
+|Action article=finance 
+|Action article=health 
+|Action article=camping 
+
+shared |User user=Tom time_of_day=morning
+0:-1.0:0.7571669390164376 |Action article=politics 
+|Action article=sports 
+|Action article=music 
+|Action article=food 
+|Action article=finance 
+|Action article=health 
+|Action article=camping 
+
+shared |User user=Tom time_of_day=afternoon
+0:0.0:0.7233828902244568 |Action article=politics 
+|Action article=sports 
+|Action article=music 
+|Action article=food 
+|Action article=finance 
+|Action article=health 
+|Action article=camping 
+
+shared |User user=Anna time_of_day=morning
+0:0.0:0.7082564181964366 |Action article=politics 
+|Action article=sports 
+|Action article=music 
+|Action article=food 
+|Action article=finance 
+|Action article=health 
+|Action article=camping 
+
+shared |User user=Tom time_of_day=afternoon
+|Action article=politics 
+|Action article=sports 
+0:-1.0:0.06905248761177063 |Action article=music 
+|Action article=food 
+|Action article=finance 
+|Action article=health 
+|Action article=camping 
+
+shared |User user=Anna time_of_day=morning
+0:0.0:0.5672104996980019 |Action article=politics 
+|Action article=sports 
+|Action article=music 
+|Action article=food 
+|Action article=finance 
+|Action article=health 
+|Action article=camping 
+
+shared |User user=Anna time_of_day=afternoon
+|Action article=politics 
+|Action article=sports 
+0:0.0:0.6226996802639204 |Action article=music 
+|Action article=food 
+|Action article=finance 
+|Action article=health 
+|Action article=camping 
+
+shared |User user=Tom time_of_day=afternoon
+|Action article=politics 
+|Action article=sports 
+0:-1.0:0.6428159211912188 |Action article=music 
+|Action article=food 
+|Action article=finance 
+|Action article=health 
+|Action article=camping 
+
+shared |User user=Tom time_of_day=afternoon
+0:0.0:0.0529798410388851 |Action article=politics 
+|Action article=sports 
+|Action article=music 
+|Action article=food 
+|Action article=finance 
+|Action article=health 
+|Action article=camping 
+
+shared |User user=Tom time_of_day=morning
+0:-1.0:0.6531152408924024 |Action article=politics 
+|Action article=sports 
+|Action article=music 
+|Action article=food 
+|Action article=finance 
+|Action article=health 
+|Action article=camping 
+
+shared |User user=Tom time_of_day=afternoon
+|Action article=politics 
+|Action article=sports 
+0:-1.0:0.7643005508136189 |Action article=music 
+|Action article=food 
+|Action article=finance 
+|Action article=health 
+|Action article=camping 
+
+shared |User user=Tom time_of_day=morning
+|Action article=politics 
+|Action article=sports 
+0:0.0:0.1050310287812018 |Action article=music 
+|Action article=food 
+|Action article=finance 
+|Action article=health 
+|Action article=camping 
+
+shared |User user=Tom time_of_day=morning
+0:-1.0:0.7563473554091626 |Action article=politics 
+|Action article=sports 
+|Action article=music 
+|Action article=food 
+|Action article=finance 
+|Action article=health 
+|Action article=camping 
+
+shared |User user=Tom time_of_day=afternoon
+|Action article=politics 
+|Action article=sports 
+0:-1.0:0.7707675271652831 |Action article=music 
+|Action article=food 
+|Action article=finance 
+|Action article=health 
+|Action article=camping 
+
+shared |User user=Tom time_of_day=afternoon
+|Action article=politics 
+|Action article=sports 
+|Action article=music 
+0:0.0:0.03116764285445546 |Action article=food 
+|Action article=finance 
+|Action article=health 
+|Action article=camping 
+
+shared |User user=Anna time_of_day=morning
+0:0.0:0.6320693398703733 |Action article=politics 
+|Action article=sports 
+|Action article=music 
+|Action article=food 
+|Action article=finance 
+|Action article=health 
+|Action article=camping 
+
+shared |User user=Anna time_of_day=afternoon
+0:-1.0:0.031889069231430645 |Action article=politics 
+|Action article=sports 
+|Action article=music 
+|Action article=food 
+|Action article=finance 
+|Action article=health 
+|Action article=camping 
+
+shared |User user=Tom time_of_day=morning
+|Action article=politics 
+|Action article=sports 
+|Action article=music 
+|Action article=food 
+|Action article=finance 
+0:0.0:0.031166861356239303 |Action article=health 
+|Action article=camping 
+
+shared |User user=Tom time_of_day=morning
+0:-1.0:0.8129809665359382 |Action article=politics 
+|Action article=sports 
+|Action article=music 
+|Action article=food 
+|Action article=finance 
+|Action article=health 
+|Action article=camping 
+
+shared |User user=Anna time_of_day=morning
+0:0.0:0.7384835784260906 |Action article=politics 
+|Action article=sports 
+|Action article=music 
+|Action article=food 
+|Action article=finance 
+|Action article=health 
+|Action article=camping 
+
+shared |User user=Tom time_of_day=afternoon
+|Action article=politics 
+|Action article=sports 
+0:-1.0:0.812098441995497 |Action article=music 
+|Action article=food 
+|Action article=finance 
+|Action article=health 
+|Action article=camping 
+
+shared |User user=Tom time_of_day=morning
+|Action article=politics 
+|Action article=sports 
+|Action article=music 
+|Action article=food 
+|Action article=finance 
+|Action article=health 
+0:0.0:0.0297276558405225 |Action article=camping 
+
+shared |User user=Tom time_of_day=afternoon
+|Action article=politics 
+|Action article=sports 
+0:-1.0:0.8387227701324379 |Action article=music 
+|Action article=food 
+|Action article=finance 
+|Action article=health 
+|Action article=camping 
+
+shared |User user=Tom time_of_day=morning
+0:-1.0:0.8223640032993258 |Action article=politics 
+|Action article=sports 
+|Action article=music 
+|Action article=food 
+|Action article=finance 
+|Action article=health 
+|Action article=camping 
+
+shared |User user=Tom time_of_day=afternoon
+|Action article=politics 
+|Action article=sports 
+0:-1.0:0.8517309236884655 |Action article=music 
+|Action article=food 
+|Action article=finance 
+|Action article=health 
+|Action article=camping 
+
+shared |User user=Tom time_of_day=morning
+0:-1.0:0.8412585995557297 |Action article=politics 
+|Action article=sports 
+|Action article=music 
+|Action article=food 
+|Action article=finance 
+|Action article=health 
+|Action article=camping 
+
+shared |User user=Anna time_of_day=morning
+0:0.0:0.7659814357757568 |Action article=politics 
+|Action article=sports 
+|Action article=music 
+|Action article=food 
+|Action article=finance 
+|Action article=health 
+|Action article=camping 
+
+shared |User user=Tom time_of_day=morning
+0:-1.0:0.8501758401246103 |Action article=politics 
+|Action article=sports 
+|Action article=music 
+|Action article=food 
+|Action article=finance 
+|Action article=health 
+|Action article=camping 
+
+shared |User user=Anna time_of_day=morning
+0:0.0:0.7596555820910256 |Action article=politics 
+|Action article=sports 
+|Action article=music 
+|Action article=food 
+|Action article=finance 
+|Action article=health 
+|Action article=camping 
+
+shared |User user=Anna time_of_day=morning
+|Action article=politics 
+|Action article=sports 
+0:0.0:0.0572363684199072 |Action article=music 
+|Action article=food 
+|Action article=finance 
+|Action article=health 
+|Action article=camping 
+
+shared |User user=Anna time_of_day=morning
+|Action article=politics 
+|Action article=sports 
+|Action article=music 
+|Action article=food 
+|Action article=finance 
+0:0.0:0.03448867476714663 |Action article=health 
+|Action article=camping 
+
+shared |User user=Anna time_of_day=morning
+0:0.0:0.7429916706440814 |Action article=politics 
+|Action article=sports 
+|Action article=music 
+|Action article=food 
+|Action article=finance 
+|Action article=health 
+|Action article=camping 
+
+shared |User user=Tom time_of_day=morning
+0:-1.0:0.8570071634409554 |Action article=politics 
+|Action article=sports 
+|Action article=music 
+|Action article=food 
+|Action article=finance 
+|Action article=health 
+|Action article=camping 
+
+shared |User user=Tom time_of_day=afternoon
+|Action article=politics 
+|Action article=sports 
+0:-1.0:0.8624475211125199 |Action article=music 
+|Action article=food 
+|Action article=finance 
+|Action article=health 
+|Action article=camping 
+
+shared |User user=Tom time_of_day=morning
+|Action article=politics 
+|Action article=sports 
+0:0.0:0.038752010799884475 |Action article=music 
+|Action article=food 
+|Action article=finance 
+|Action article=health 
+|Action article=camping 
+
+shared |User user=Tom time_of_day=morning
+0:-1.0:0.8762292216928905 |Action article=politics 
+|Action article=sports 
+|Action article=music 
+|Action article=food 
+|Action article=finance 
+|Action article=health 
+|Action article=camping 
+
+shared |User user=Anna time_of_day=afternoon
+|Action article=politics 
+|Action article=sports 
+0:0.0:0.8070296304663713 |Action article=music 
+|Action article=food 
+|Action article=finance 
+|Action article=health 
+|Action article=camping 
+
+shared |User user=Anna time_of_day=afternoon
+|Action article=politics 
+|Action article=sports 
+0:0.0:0.747607677341683 |Action article=music 
+|Action article=food 
+|Action article=finance 
+|Action article=health 
+|Action article=camping 
+
+shared |User user=Tom time_of_day=morning
+0:-1.0:0.8860793245744605 |Action article=politics 
+|Action article=sports 
+|Action article=music 
+|Action article=food 
+|Action article=finance 
+|Action article=health 
+|Action article=camping 
+
+shared |User user=Anna time_of_day=afternoon
+|Action article=politics 
+|Action article=sports 
+0:0.0:0.6897900053129344 |Action article=music 
+|Action article=food 
+|Action article=finance 
+|Action article=health 
+|Action article=camping 
+
+shared |User user=Anna time_of_day=afternoon
+|Action article=politics 
+|Action article=sports 
+0:0.0:0.633310456076576 |Action article=music 
+|Action article=food 
+|Action article=finance 
+|Action article=health 
+|Action article=camping 
+
+shared |User user=Tom time_of_day=morning
+0:-1.0:0.8932065276193695 |Action article=politics 
+|Action article=sports 
+|Action article=music 
+|Action article=food 
+|Action article=finance 
+|Action article=health 
+|Action article=camping 
+
+shared |User user=Tom time_of_day=morning
+0:-1.0:0.8973958433775502 |Action article=politics 
+|Action article=sports 
+|Action article=music 
+|Action article=food 
+|Action article=finance 
+|Action article=health 
+|Action article=camping 
+
+shared |User user=Tom time_of_day=morning
+0:-1.0:0.900718993698947 |Action article=politics 
+|Action article=sports 
+|Action article=music 
+|Action article=food 
+|Action article=finance 
+|Action article=health 
+|Action article=camping 
+
+shared |User user=Anna time_of_day=morning
+0:0.0:0.8230587290025804 |Action article=politics 
+|Action article=sports 
+|Action article=music 
+|Action article=food 
+|Action article=finance 
+|Action article=health 
+|Action article=camping 
+
+shared |User user=Anna time_of_day=afternoon
+|Action article=politics 
+|Action article=sports 
+0:0.0:0.5883757204772375 |Action article=music 
+|Action article=food 
+|Action article=finance 
+|Action article=health 
+|Action article=camping 
+
+shared |User user=Tom time_of_day=morning
+0:-1.0:0.9023887154337801 |Action article=politics 
+|Action article=sports 
+|Action article=music 
+|Action article=food 
+|Action article=finance 
+|Action article=health 
+|Action article=camping 
+
+shared |User user=Anna time_of_day=afternoon
+|Action article=politics 
+|Action article=sports 
+0:0.0:0.5465130907765234 |Action article=music 
+|Action article=food 
+|Action article=finance 
+|Action article=health 
+|Action article=camping 
+
+shared |User user=Tom time_of_day=afternoon
+|Action article=politics 
+|Action article=sports 
+0:-1.0:0.7831807384529572 |Action article=music 
+|Action article=food 
+|Action article=finance 
+|Action article=health 
+|Action article=camping 
+
+shared |User user=Tom time_of_day=morning
+0:-1.0:0.9051800991553257 |Action article=politics 
+|Action article=sports 
+|Action article=music 
+|Action article=food 
+|Action article=finance 
+|Action article=health 
+|Action article=camping 
+
+shared |User user=Tom time_of_day=morning
+0:-1.0:0.9072103246894574 |Action article=politics 
+|Action article=sports 
+|Action article=music 
+|Action article=food 
+|Action article=finance 
+|Action article=health 
+|Action article=camping 
+
+shared |User user=Anna time_of_day=morning
+0:0.0:0.8271692929627799 |Action article=politics 
+|Action article=sports 
+|Action article=music 
+|Action article=food 
+|Action article=finance 
+|Action article=health 
+|Action article=camping 
+
+shared |User user=Tom time_of_day=morning
+0:-1.0:0.9074880683605686 |Action article=politics 
+|Action article=sports 
+|Action article=music 
+|Action article=food 
+|Action article=finance 
+|Action article=health 
+|Action article=camping 
+
+shared |User user=Anna time_of_day=afternoon
+|Action article=politics 
+|Action article=sports 
+|Action article=music 
+0:0.0:0.04542927376286277 |Action article=food 
+|Action article=finance 
+|Action article=health 
+|Action article=camping 
+
+shared |User user=Anna time_of_day=morning
+0:0.0:0.8202308156640755 |Action article=politics 
+|Action article=sports 
+|Action article=music 
+|Action article=food 
+|Action article=finance 
+|Action article=health 
+|Action article=camping 
+
+shared |User user=Tom time_of_day=afternoon
+|Action article=politics 
+|Action article=sports 
+0:-1.0:0.8198835421702246 |Action article=music 
+|Action article=food 
+|Action article=finance 
+|Action article=health 
+|Action article=camping 
+
+shared |User user=Tom time_of_day=afternoon
+|Action article=politics 
+|Action article=sports 
+|Action article=music 
+0:0.0:0.015610049376943758 |Action article=food 
+|Action article=finance 
+|Action article=health 
+|Action article=camping 
+
+shared |User user=Tom time_of_day=morning
+0:-1.0:0.9098540536036211 |Action article=politics 
+|Action article=sports 
+|Action article=music 
+|Action article=food 
+|Action article=finance 
+|Action article=health 
+|Action article=camping 
+
+shared |User user=Tom time_of_day=afternoon
+|Action article=politics 
+|Action article=sports 
+0:-1.0:0.8408743880090667 |Action article=music 
+|Action article=food 
+|Action article=finance 
+|Action article=health 
+|Action article=camping 
+
+shared |User user=Tom time_of_day=morning
+0:-1.0:0.911436139688421 |Action article=politics 
+|Action article=sports 
+|Action article=music 
+|Action article=food 
+|Action article=finance 
+|Action article=health 
+|Action article=camping 
+
+shared |User user=Anna time_of_day=afternoon
+|Action article=politics 
+0:0.0:0.06497745106965852 |Action article=sports 
+|Action article=music 
+|Action article=food 
+|Action article=finance 
+|Action article=health 
+|Action article=camping 
+
+shared |User user=Anna time_of_day=afternoon
+|Action article=politics 
+|Action article=sports 
+|Action article=music 
+0:0.0:0.03083436959113456 |Action article=food 
+|Action article=finance 
+|Action article=health 
+|Action article=camping 
+
+shared |User user=Anna time_of_day=morning
+0:0.0:0.8245429442704261 |Action article=politics 
+|Action article=sports 
+|Action article=music 
+|Action article=food 
+|Action article=finance 
+|Action article=health 
+|Action article=camping 
+
+shared |User user=Anna time_of_day=afternoon
+|Action article=politics 
+|Action article=sports 
+0:0.0:0.7037972965195171 |Action article=music 
+|Action article=food 
+|Action article=finance 
+|Action article=health 
+|Action article=camping 
+
+shared |User user=Tom time_of_day=morning
+0:-1.0:0.9132764135313836 |Action article=politics 
+|Action article=sports 
+|Action article=music 
+|Action article=food 
+|Action article=finance 
+|Action article=health 
+|Action article=camping 
+
+shared |User user=Tom time_of_day=afternoon
+|Action article=politics 
+|Action article=sports 
+0:-1.0:0.8524237235429524 |Action article=music 
+|Action article=food 
+|Action article=finance 
+|Action article=health 
+|Action article=camping 
+
+shared |User user=Tom time_of_day=afternoon
+|Action article=politics 
+|Action article=sports 
+0:-1.0:0.8631680059982538 |Action article=music 
+|Action article=food 
+|Action article=finance 
+|Action article=health 
+|Action article=camping 
+
+shared |User user=Tom time_of_day=morning
+0:-1.0:0.9145342665047651 |Action article=politics 
+|Action article=sports 
+|Action article=music 
+|Action article=food 
+|Action article=finance 
+|Action article=health 
+|Action article=camping 
+
+shared |User user=Anna time_of_day=afternoon
+|Action article=politics 
+|Action article=sports 
+0:0.0:0.7143286626263409 |Action article=music 
+|Action article=food 
+|Action article=finance 
+|Action article=health 
+|Action article=camping 
+
+shared |User user=Tom time_of_day=afternoon
+|Action article=politics 
+|Action article=sports 
+0:-1.0:0.8667653364458184 |Action article=music 
+|Action article=food 
+|Action article=finance 
+|Action article=health 
+|Action article=camping 
+
+shared |User user=Tom time_of_day=afternoon
+|Action article=politics 
+|Action article=sports 
+0:-1.0:0.8730935895920003 |Action article=music 
+|Action article=food 
+|Action article=finance 
+|Action article=health 
+|Action article=camping 
+
+shared |User user=Tom time_of_day=morning
+0:-1.0:0.9161765362094964 |Action article=politics 
+|Action article=sports 
+|Action article=music 
+|Action article=food 
+|Action article=finance 
+|Action article=health 
+|Action article=camping 
+
+shared |User user=Anna time_of_day=afternoon
+|Action article=politics 
+|Action article=sports 
+0:0.0:0.7100930968692846 |Action article=music 
+|Action article=food 
+|Action article=finance 
+|Action article=health 
+|Action article=camping 
+
+shared |User user=Tom time_of_day=morning
+0:-1.0:0.9175393367759107 |Action article=politics 
+|Action article=sports 
+|Action article=music 
+|Action article=food 
+|Action article=finance 
+|Action article=health 
+|Action article=camping 
+
+shared |User user=Anna time_of_day=afternoon
+|Action article=politics 
+|Action article=sports 
+|Action article=music 
+|Action article=food 
+|Action article=finance 
+0:0.0:0.05084651468666495 |Action article=health 
+|Action article=camping 
+
+shared |User user=Tom time_of_day=afternoon
+0:0.0:0.052035390555331254 |Action article=politics 
+|Action article=sports 
+|Action article=music 
+|Action article=food 
+|Action article=finance 
+|Action article=health 
+|Action article=camping

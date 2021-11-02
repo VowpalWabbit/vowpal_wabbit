@@ -6,7 +6,7 @@ power_t = 0.5
 using no cache
 Reading datafile = train-sets/cb_eval
 num sources = 1
-Enabled reductions: gd, scorer, csoaa, cb, multiworld_test
+Enabled reductions: gd, scorer-identity, csoaa, cb, multiworld_test-eval
 average  since         example        example  current  current  current
 loss     last          counter         weight    label  predict features
 0.000000 0.000000            1            1.0  unknown        1        3

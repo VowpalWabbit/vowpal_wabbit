@@ -89,7 +89,7 @@ struct no_lock_object_pool
     return size;
   }
 
-  bool is_from_pool(T* obj) const
+  bool is_from_pool(const T* obj) const
   {
     for (auto& bound : m_chunk_bounds)
     {
@@ -121,30 +121,23 @@ private:
   std::queue<T*> m_pool;
 };
 
-template <typename T, typename TAllocator, typename TDeleter>
-struct value_object_pool
+template <typename T>
+struct moved_object_pool
 {
-  value_object_pool() = default;
+  moved_object_pool() = default;
 
-  ~value_object_pool()
+  void reclaim_object(T&& obj) { m_pool.push(std::move(obj)); }
+
+  void acquire_object(T& dest)
   {
-    while (!m_pool.empty())
+    if (m_pool.empty())
     {
-      auto& item = m_pool.top();
-      m_deleter(item);
-      m_pool.pop();
+      dest = T();
+      return;
     }
-  }
 
-  void return_object(T obj) { m_pool.push(obj); }
-
-  T get_object()
-  {
-    if (m_pool.empty()) { return m_allocator(); }
-
-    auto obj = m_pool.top();
+    dest = std::move(m_pool.top());
     m_pool.pop();
-    return obj;
   }
 
   bool empty() const { return m_pool.empty(); }
@@ -153,8 +146,6 @@ struct value_object_pool
 
 private:
   std::stack<T> m_pool;
-  TAllocator m_allocator;
-  TDeleter m_deleter;
 };
 
 template <typename T, typename TInitializer = default_initializer<T>, typename TCleanup = default_cleanup<T>>
@@ -190,7 +181,7 @@ struct object_pool
     return inner_pool.size();
   }
 
-  bool is_from_pool(T* obj) const
+  bool is_from_pool(const T* obj) const
   {
     std::unique_lock<std::mutex> lock(m_lock);
     return inner_pool.is_from_pool(obj);

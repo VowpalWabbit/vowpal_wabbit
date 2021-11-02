@@ -1,10 +1,11 @@
 package org.vowpalwabbit.spark;
 
+import common.Native;
 import java.io.Closeable;
 
 /**
  * Wraps the spanning tree coordinator native code used to orchestrate multipe VW instances.
- * 
+ *
  * @author Markus Cozowicz
  */
 public class ClusterSpanningTree implements Closeable {
@@ -14,7 +15,7 @@ public class ClusterSpanningTree implements Closeable {
 
     private static native long create(int port, boolean quiet);
     private native void delete();
-    public native void start(); 
+    public native void start();
     public native void stop();
     public native int getPort();
 

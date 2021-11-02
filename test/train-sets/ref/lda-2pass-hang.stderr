@@ -6,24 +6,24 @@ decay_learning_rate = 1
 creating cache_file = train-sets/lda-2pass-hang.dat.cache
 Reading datafile = train-sets/lda-2pass-hang.dat
 num sources = 1
-Enabled reductions: lda, scorer
+Enabled reductions: lda
 average  since         example        example  current  current  current
 loss     last          counter         weight    label  predict features
-12.813775 12.813775            1            1.0     none        0      201
-12.946867 13.079960            2            2.0     none        0      220
-13.718190 14.489512            4            4.0     none        0      136
-14.787531 15.856872            8            8.0     none        0      371
-15.934851 17.082171           16           16.0     none        0      138
-17.209260 18.483669           32           32.0     none        0      276
-17.163311 17.117362           64           64.0     none        0       55
-16.494666 15.826021          128          128.0     none        0      131
-15.918044 15.341422          256          256.0     none        0      433
-15.281656 14.645268          512          512.0     none        0       61
+12.813779 12.813779            1            1.0     none        0      201
+12.946867 13.079956            2            2.0     none        0      220
+13.718172 14.489477            4            4.0     none        0      136
+14.787527 15.856882            8            8.0     none        0      371
+15.934858 17.082189           16           16.0     none        0      138
+17.209267 18.483675           32           32.0     none        0      276
+17.163384 17.117502           64           64.0     none        0       55
+16.494681 15.825978          128          128.0     none        0      131
+15.918007 15.341333          256          256.0     none        0      433
+15.281618 14.645229          512          512.0     none        0       61
 
 finished run
 number of examples per pass = 500
 passes used = 2
 weighted example sum = 1000.000000
 weighted label sum = 0.000000
-average loss = 14.297952
+average loss = 14.297938
 total feature number = 193156

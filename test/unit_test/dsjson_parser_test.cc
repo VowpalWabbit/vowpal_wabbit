@@ -1,6 +1,6 @@
-#ifndef STATIC_LINK_VW
-#  define BOOST_TEST_DYN_LINK
-#endif
+// Copyright (c) by respective owners including Yahoo!, Microsoft, and
+// individual contributors. All rights reserved. Released under a BSD (revised)
+// license as described in the file LICENSE.
 
 #include <boost/test/unit_test.hpp>
 #include <boost/test/test_tools.hpp>
@@ -85,6 +85,40 @@ BOOST_AUTO_TEST_CASE(parse_dsjson_p_duplicates)
     // Check that probabilities are as expected.
     BOOST_CHECK_EQUAL(interaction.probabilities[i], EXPECTED_PDF[i]);
   }
+}
+
+BOOST_AUTO_TEST_CASE(parse_dsjson_pdrop_float)
+{
+  const std::string json_text = R"(
+{
+  "pdrop": 0.1
+}
+  )";
+  auto vw = VW::initialize("--dsjson --chain_hash --cb_adf --no_stdin --quiet", nullptr, false, nullptr, nullptr);
+  DecisionServiceInteraction interaction;
+
+  auto examples = parse_dsjson(*vw, json_text, &interaction);
+  VW::finish_example(*vw, examples);
+  VW::finish(*vw);
+
+  BOOST_CHECK_CLOSE(0.1f, interaction.probabilityOfDrop, FLOAT_TOL);
+}
+
+BOOST_AUTO_TEST_CASE(parse_dsjson_pdrop_uint)
+{
+  const std::string json_text = R"(
+{
+  "pdrop": 0
+}
+  )";
+  auto vw = VW::initialize("--dsjson --chain_hash --cb_adf --no_stdin --quiet", nullptr, false, nullptr, nullptr);
+  DecisionServiceInteraction interaction;
+
+  auto examples = parse_dsjson(*vw, json_text, &interaction);
+  VW::finish_example(*vw, examples);
+  VW::finish(*vw);
+
+  BOOST_CHECK_CLOSE(0.0f, interaction.probabilityOfDrop, FLOAT_TOL);
 }
 
 // TODO: Make unit test dig out and verify features.
@@ -215,7 +249,7 @@ BOOST_AUTO_TEST_CASE(parse_dsjson_cats)
 
   auto& space_names = examples[0]->feature_space[' '].space_names;
   BOOST_CHECK_EQUAL(features.size(), space_names.size());
-  for (size_t i = 0; i < space_names.size(); i++) { BOOST_CHECK_EQUAL(space_names[i]->second, features[i]); }
+  for (size_t i = 0; i < space_names.size(); i++) { BOOST_CHECK_EQUAL(space_names[i].second, features[i]); }
 
   VW::finish_example(*vw, examples);
   VW::finish(*vw);
@@ -253,7 +287,7 @@ BOOST_AUTO_TEST_CASE(parse_dsjson_cats_no_label)
 
   auto& space_names = examples[0]->feature_space[' '].space_names;
   BOOST_CHECK_EQUAL(features.size(), space_names.size());
-  for (size_t i = 0; i < space_names.size(); i++) { BOOST_CHECK_EQUAL(space_names[i]->second, features[i]); }
+  for (size_t i = 0; i < space_names.size(); i++) { BOOST_CHECK_EQUAL(space_names[i].second, features[i]); }
 
   VW::finish_example(*vw, examples);
   VW::finish(*vw);
@@ -306,7 +340,7 @@ BOOST_AUTO_TEST_CASE(parse_dsjson_cats_w_valid_pdf)
 
   auto& space_names = examples[0]->feature_space[' '].space_names;
   BOOST_CHECK_EQUAL(features.size(), space_names.size());
-  for (size_t i = 0; i < space_names.size(); i++) { BOOST_CHECK_EQUAL(space_names[i]->second, features[i]); }
+  for (size_t i = 0; i < space_names.size(); i++) { BOOST_CHECK_EQUAL(space_names[i].second, features[i]); }
 
   VW::finish_example(*vw, examples);
   VW::finish(*vw);
@@ -352,7 +386,7 @@ BOOST_AUTO_TEST_CASE(parse_dsjson_cats_w_invalid_pdf)
 
   auto& space_names = examples[0]->feature_space[' '].space_names;
   BOOST_CHECK_EQUAL(features.size(), space_names.size());
-  for (size_t i = 0; i < space_names.size(); i++) { BOOST_CHECK_EQUAL(space_names[i]->second, features[i]); }
+  for (size_t i = 0; i < space_names.size(); i++) { BOOST_CHECK_EQUAL(space_names[i].second, features[i]); }
 
   VW::finish_example(*vw, examples);
   VW::finish(*vw);
@@ -398,7 +432,7 @@ BOOST_AUTO_TEST_CASE(parse_dsjson_cats_chosen_action)
 
   auto& space_names = examples[0]->feature_space[' '].space_names;
   BOOST_CHECK_EQUAL(features.size(), space_names.size());
-  for (size_t i = 0; i < space_names.size(); i++) { BOOST_CHECK_EQUAL(space_names[i]->second, features[i]); }
+  for (size_t i = 0; i < space_names.size(); i++) { BOOST_CHECK_EQUAL(space_names[i].second, features[i]); }
 
   VW::finish_example(*vw, examples);
   VW::finish(*vw);

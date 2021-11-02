@@ -7,14 +7,18 @@ on:
   push:
     branches:
       - master
+      - 'releases/**'
+  pull_request:
+    branches:
+      - '*'
   release:
     types:
       - created
 
 jobs:
-  CXX:
+  cpp:
     container:
-      image: vowpalwabbit/ubuntu1604-build:latest
+      image: vowpalwabbit/ubuntu1804-build:latest
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v1
@@ -32,44 +36,72 @@ jobs:
         with:
           name: cxx_docs
           path: doc/html/
-  Python:
+  python-build:
     container:
-      image: vowpalwabbit/ubuntu1604-build:latest
+      image: vowpalwabbit/manylinux2010-build:latest
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v1
+      - run: echo "/opt/python/cp39-cp39/bin" >> $GITHUB_PATH
+      - name: Build wheel
+        shell: bash
+        run: |
+          pip wheel . -w wheel_output/ --global-option --cmake-options="-DSTATIC_LINK_VW_JAVA=On;-DPython_INCLUDE_DIR='/opt/python/cp39-cp39/include/python3.9/'" --verbose
+          auditwheel repair wheel_output/*whl -w audit_output/
+      - name: Upload built wheel
+        uses: actions/upload-artifact@v1
+        with:
+          name: python_wheel
+          path: audit_output/
+  python-doc:
+    needs: python-build
+    container:
+      image: python:3.9
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v1
-      - name: Install Python package
+      - name: If this is a push build then set version to latest
+        if: ${{ github.event_name == 'push' }}
+        run: echo "VW_SPHINX_VERSION_OVERRIDE=latest" >> $GITHUB_ENV
+      - name: Download Wheel
+        uses: actions/download-artifact@v1
+        with:
+          name: python_wheel
+      - name: Install dependencies
+        shell: bash
         run: |
-          /usr/local/miniconda/bin/activate test-python36
-          python setup.py install --user
-          /usr/local/miniconda/bin/deactivate
+          pip install -r python/docs/build-requirements.txt
+          pip install -r requirements.txt
+      - name: Install wheel
+        shell: bash
+        run: |
+          export wheel_files=(python_wheel/*)
+          export wheel_file="${wheel_files[0]}"
+          echo Installing ${wheel_file}...
+          pip install ${wheel_file}
       - name: Build docs
         run: |
-          /usr/local/miniconda/bin/activate test-python36
-          pip install sphinx numpydoc
-          pip install -r requirements.txt
           cd python/docs
           make html
-          /usr/local/miniconda/bin/deactivate
       - name: Upload built docs
         uses: actions/upload-artifact@v1
         with:
           name: python_docs
           path: python/docs/build/
-  Upload:
-    name: Upload Docs
-    needs: [CXX, Python]
+  upload:
+    needs: [cpp, python-doc]
     runs-on: ubuntu-latest
-    # The upload step should only be run on the main repository.
-    if: github.repository == 'VowpalWabbit/vowpal_wabbit'
+    # The upload step should only be run on the main repository and only for pushes or releases (not pull requests).
+    if: ${{ github.repository == 'VowpalWabbit/vowpal_wabbit' && (github.event_name == 'push' || github.event_name == 'release') }}
     steps:
       - name: Set folder name to latest if push
-        if: github.event_name == 'push'
+        if: ${{ github.event_name == 'push' }}
         run: echo "FOLDER_NAME=latest" >> $GITHUB_ENV
       - name: Set folder name to version if release
-        if: github.event_name == 'release'
+        if: ${{ github.event_name == 'release' }}
         run: echo "FOLDER_NAME=$(echo ${GITHUB_REF:10})" >> $GITHUB_ENV
-      - name: Download CXX Docs
+      - name: Download c++ Docs
         uses: actions/download-artifact@v1
         with:
           name: cxx_docs
@@ -99,7 +131,7 @@ jobs:
           cd docs
           pwd
           ls
-      - name: Copy CXX Docs
+      - name: Copy c++ Docs
         shell: bash
         run: |
           rm -rf docs/vowpal_wabbit/cpp/$FOLDER_NAME/

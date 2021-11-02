@@ -14,6 +14,9 @@
 
 #include <fstream>
 
+#include "text_utils.h"
+#include "crossplat_compat.h"
+
 #ifdef _WIN32
 #  define NOMINMAX
 #  include <winsock2.h>
@@ -27,14 +30,16 @@ int daemon(int /*a*/, int /*b*/) { exit(0); }
 
 // Starting with v142 the fix in the else block no longer works due to mismatching linkage. Going forward we should just
 // use the actual isocpp version.
+// use VW_getpid instead of getpid to avoid name collisions with process.h
 #  if _MSC_VER >= 1920
-#    define getpid _getpid
+#    define VW_getpid _getpid
 #  else
-int getpid() { return (int)::GetCurrentProcessId(); }
+int VW_getpid() { return (int)::GetCurrentProcessId(); }
 #  endif
 
 #else
 #  include <netdb.h>
+#  define VW_getpid getpid
 #endif
 
 #if defined(__FreeBSD__) || defined(__APPLE__)
@@ -45,6 +50,7 @@ int getpid() { return (int)::GetCurrentProcessId(); }
 #include <cstdio>
 #include <cassert>
 
+#include "parse_primitives.h"
 #include "parse_example.h"
 #include "cache.h"
 #include "unique_sort.h"
@@ -56,7 +62,13 @@ int getpid() { return (int)::GetCurrentProcessId(); }
 #include "parse_dispatch_loop.h"
 #include "parse_args.h"
 #include "io/io_adapter.h"
-#include "parser/flatbuffer/parse_example_flatbuffer.h"
+#ifdef BUILD_FLATBUFFERS
+#  include "parser/flatbuffer/parse_example_flatbuffer.h"
+#endif
+
+#ifdef BUILD_EXTERNAL_PARSER
+#  include "parse_example_external.h"
+#endif
 
 // OSX doesn't expects you to use IPPROTO_TCP instead of SOL_TCP
 #if !defined(SOL_TCP) && defined(IPPROTO_TCP)
@@ -81,32 +93,38 @@ bool is_test_only(uint32_t counter, uint32_t period, uint32_t after, bool holdou
     return (counter > after);
 }
 
-void set_compressed(parser* /*par*/) {}
-
-uint32_t cache_numbits(io_buf* buf, VW::io::reader* filepointer)
+uint32_t cache_numbits(VW::io::reader& cache_reader)
 {
-  size_t v_length;
-  buf->read_file(filepointer, (char*)&v_length, sizeof(v_length));
-  if (v_length > 61) THROW("cache version too long, cache file is probably invalid");
+  size_t version_buffer_length;
+  if (static_cast<size_t>(cache_reader.read(reinterpret_cast<char*>(&version_buffer_length),
+          sizeof(version_buffer_length))) < sizeof(version_buffer_length))
+  { THROW("failed to read: version_buffer_length"); }
 
-  if (v_length == 0) THROW("cache version too short, cache file is probably invalid");
+  if (version_buffer_length > 61) THROW("cache version too long, cache file is probably invalid");
+  if (version_buffer_length == 0) THROW("cache version too short, cache file is probably invalid");
 
-  std::vector<char> t(v_length);
-  buf->read_file(filepointer, t.data(), v_length);
-  VW::version_struct v_tmp(t.data());
-  if (v_tmp != VW::version)
+  std::vector<char> version_buffer(version_buffer_length);
+  if (static_cast<size_t>(cache_reader.read(version_buffer.data(), version_buffer_length)) < version_buffer_length)
+  { THROW("failed to read: version buffer"); }
+  VW::version_struct cache_version(version_buffer.data());
+  if (cache_version != VW::version)
   {
-    //      cout << "cache has possibly incompatible version, rebuilding" << endl;
-    return 0;
+    auto msg = fmt::format(
+        "Cache file version does not match current VW version. Cache files must be produced by the version consuming "
+        "them. Cache version: {} VW version: {}",
+        cache_version.to_string(), VW::version.to_string());
+    THROW(msg);
   }
 
-  char temp;
-  if (buf->read_file(filepointer, &temp, 1) < 1) THROW("failed to read");
+  char marker;
+  if (static_cast<size_t>(cache_reader.read(&marker, sizeof(marker))) < sizeof(marker)) { THROW("failed to read"); }
 
-  if (temp != 'c') THROW("data file is not a cache file");
+  if (marker != 'c') THROW("data file is not a cache file");
 
   uint32_t cache_numbits;
-  if (buf->read_file(filepointer, &cache_numbits, sizeof(cache_numbits)) < (int)sizeof(cache_numbits)) { return true; }
+  if (static_cast<size_t>(cache_reader.read(reinterpret_cast<char*>(&cache_numbits), sizeof(cache_numbits))) <
+      sizeof(cache_numbits))
+  { THROW("failed to read"); }
 
   return cache_numbits;
 }
@@ -116,11 +134,18 @@ void set_cache_reader(vw& all) { all.example_parser->reader = read_cached_featur
 void set_string_reader(vw& all)
 {
   all.example_parser->reader = read_features_string;
-  VW_WARNING_STATE_PUSH
-  VW_WARNING_DISABLE_DEPRECATED_USAGE
-  all.print = print_result;
-  VW_WARNING_STATE_POP
   all.print_by_ref = print_result_by_ref;
+}
+
+bool is_currently_json_reader(const vw& all)
+{
+  return all.example_parser->reader == &read_features_json<true> ||
+      all.example_parser->reader == &read_features_json<false>;
+}
+
+bool is_currently_dsjson_reader(const vw& all)
+{
+  return is_currently_json_reader(all) && all.example_parser->decision_service_json;
 }
 
 void set_json_reader(vw& all, bool dsjson = false)
@@ -141,17 +166,16 @@ void set_json_reader(vw& all, bool dsjson = false)
   }
 
   all.example_parser->decision_service_json = dsjson;
+
+  if (dsjson && all.options->was_supplied("extra_metrics"))
+  { all.example_parser->metrics = VW::make_unique<dsjson_metrics>(); }
 }
 
 void set_daemon_reader(vw& all, bool json = false, bool dsjson = false)
 {
-  if (all.example_parser->input->isbinary())
+  if (all.example_parser->input.isbinary())
   {
     all.example_parser->reader = read_cached_features;
-    VW_WARNING_STATE_PUSH
-    VW_WARNING_DISABLE_DEPRECATED_USAGE
-    all.print = binary_print_result;
-    VW_WARNING_STATE_POP
     all.print_by_ref = binary_print_result_by_ref;
   }
   else if (json || dsjson)
@@ -166,16 +190,15 @@ void set_daemon_reader(vw& all, bool json = false, bool dsjson = false)
 
 void reset_source(vw& all, size_t numbits)
 {
-  io_buf* input = all.example_parser->input;
-  input->current = 0;
+  io_buf& input = all.example_parser->input;
 
   // If in write cache mode then close all of the input files then open the written cache as the new input.
   if (all.example_parser->write_cache)
   {
-    all.example_parser->output->flush();
+    all.example_parser->output.flush();
     // Turn off write_cache as we are now reading it instead of writing!
     all.example_parser->write_cache = false;
-    all.example_parser->output->close_file();
+    all.example_parser->output.close_file();
 
     // This deletes the file from disk.
     remove(all.example_parser->finalname.c_str());
@@ -184,9 +207,9 @@ void reset_source(vw& all, size_t numbits)
     if (0 != rename(all.example_parser->currentname.c_str(), all.example_parser->finalname.c_str()))
       THROW("WARN: reset_source(vw& all, size_t numbits) cannot rename: " << all.example_parser->currentname << " to "
                                                                           << all.example_parser->finalname);
-    input->close_files();
+    input.close_files();
     // Now open the written cache as the new input file.
-    input->add_file(VW::io::open_file_reader(all.example_parser->finalname));
+    input.add_file(VW::io::open_file_reader(all.example_parser->finalname));
     set_cache_reader(all);
   }
 
@@ -198,17 +221,18 @@ void reset_source(vw& all, size_t numbits)
       {
         std::unique_lock<std::mutex> lock(all.example_parser->output_lock);
         all.example_parser->output_done.wait(lock, [&] {
-          return all.example_parser->finished_examples == all.example_parser->end_parsed_examples &&
+          return all.example_parser->num_finished_examples == all.example_parser->num_setup_examples &&
               all.example_parser->ready_parsed_examples.size() == 0;
         });
       }
 
       all.final_prediction_sink.clear();
-      all.example_parser->input->close_files();
+      all.example_parser->input.close_files();
 
       sockaddr_in client_address;
       socklen_t size = sizeof(client_address);
-      int f = (int)accept(all.example_parser->bound_sock, (sockaddr*)&client_address, &size);
+      int f =
+          static_cast<int>(accept(all.example_parser->bound_sock, reinterpret_cast<sockaddr*>(&client_address), &size));
       if (f < 0) THROW("accept: " << VW::strerror_to_string(errno));
 
       // Disable Nagle delay algorithm due to daemon mode's interactive workload
@@ -219,54 +243,53 @@ void reset_source(vw& all, size_t numbits)
 
       auto socket = VW::io::wrap_socket_descriptor(f);
       all.final_prediction_sink.push_back(socket->get_writer());
-      all.example_parser->input->add_file(socket->get_reader());
+      all.example_parser->input.add_file(socket->get_reader());
 
-      set_daemon_reader(all);
+      set_daemon_reader(all, is_currently_json_reader(all), is_currently_dsjson_reader(all));
     }
     else
     {
-      for (auto& file : input->input_files)
+      if (!input.is_resettable()) { THROW("Cannot reset source as it is a non-resettable input type.") }
+      input.reset();
+      for (auto& file : input.get_input_files())
       {
-        input->reset_file(file.get());
-        if (cache_numbits(input, file.get()) < numbits) THROW("argh, a bug in caching of some sort!");
+        if (cache_numbits(*file) < numbits) { THROW("argh, a bug in caching of some sort!") }
       }
     }
   }
 }
 
-void finalize_source(parser*) {}
-
 void make_write_cache(vw& all, std::string& newname, bool quiet)
 {
-  io_buf* output = all.example_parser->output;
-  if (output->num_files() != 0)
+  io_buf& output = all.example_parser->output;
+  if (output.num_files() != 0)
   {
-    all.trace_message << "Warning: you tried to make two write caches.  Only the first one will be made." << endl;
+    *(all.trace_message) << "Warning: you tried to make two write caches.  Only the first one will be made." << endl;
     return;
   }
 
   all.example_parser->currentname = newname + std::string(".writing");
   try
   {
-    output->add_file(VW::io::open_file_writer(all.example_parser->currentname));
+    output.add_file(VW::io::open_file_writer(all.example_parser->currentname));
   }
   catch (const std::exception&)
   {
-    all.trace_message << "can't create cache file !" << all.example_parser->currentname << endl;
+    *(all.trace_message) << "can't create cache file !" << all.example_parser->currentname << endl;
     return;
   }
 
-  size_t v_length = (uint64_t)VW::version.to_string().length() + 1;
+  size_t v_length = static_cast<uint64_t>(VW::version.to_string().length()) + 1;
 
-  output->bin_write_fixed(reinterpret_cast<const char*>(&v_length), sizeof(v_length));
-  output->bin_write_fixed(VW::version.to_string().c_str(), v_length);
-  output->bin_write_fixed("c", 1);
-  output->bin_write_fixed(reinterpret_cast<const char*>(&all.num_bits), sizeof(all.num_bits));
-  output->flush();
+  output.bin_write_fixed(reinterpret_cast<const char*>(&v_length), sizeof(v_length));
+  output.bin_write_fixed(VW::version.to_string().c_str(), v_length);
+  output.bin_write_fixed("c", 1);
+  output.bin_write_fixed(reinterpret_cast<const char*>(&all.num_bits), sizeof(all.num_bits));
+  output.flush();
 
   all.example_parser->finalname = newname;
   all.example_parser->write_cache = true;
-  if (!quiet) all.trace_message << "creating cache_file = " << newname << endl;
+  if (!quiet) *(all.trace_message) << "creating cache_file = " << newname << endl;
 }
 
 void parse_cache(vw& all, std::vector<std::string> cache_files, bool kill_cache, bool quiet)
@@ -278,7 +301,7 @@ void parse_cache(vw& all, std::vector<std::string> cache_files, bool kill_cache,
     bool cache_file_opened = false;
     if (!kill_cache) try
       {
-        all.example_parser->input->add_file(VW::io::open_file_reader(file));
+        all.example_parser->input.add_file(VW::io::open_file_reader(file));
         cache_file_opened = true;
       }
       catch (const std::exception&)
@@ -289,18 +312,18 @@ void parse_cache(vw& all, std::vector<std::string> cache_files, bool kill_cache,
       make_write_cache(all, file, quiet);
     else
     {
-      uint64_t c = cache_numbits(all.example_parser->input, all.example_parser->input->input_files.back().get());
+      uint64_t c = cache_numbits(*all.example_parser->input.get_input_files().back());
       if (c < all.num_bits)
       {
         if (!quiet)
-          all.trace_message << "WARNING: cache file is ignored as it's made with less bit precision than required!"
-                            << endl;
-        all.example_parser->input->close_file();
+          *(all.trace_message) << "WARNING: cache file is ignored as it's made with less bit precision than required!"
+                               << endl;
+        all.example_parser->input.close_file();
         make_write_cache(all, file, quiet);
       }
       else
       {
-        if (!quiet) all.trace_message << "using cache_file = " << file.c_str() << endl;
+        if (!quiet) *(all.trace_message) << "using cache_file = " << file.c_str() << endl;
         set_cache_reader(all);
         if (c == all.num_bits)
           all.example_parser->sorted_cache = true;
@@ -311,10 +334,10 @@ void parse_cache(vw& all, std::vector<std::string> cache_files, bool kill_cache,
     }
   }
 
-  all.parse_mask = ((uint64_t)1 << all.num_bits) - 1;
+  all.parse_mask = (static_cast<uint64_t>(1) << all.num_bits) - 1;
   if (cache_files.size() == 0)
   {
-    if (!quiet) all.trace_message << "using no cache" << endl;
+    if (!quiet) *(all.trace_message) << "using no cache" << endl;
   }
 }
 
@@ -325,7 +348,6 @@ void parse_cache(vw& all, std::vector<std::string> cache_files, bool kill_cache,
 
 void enable_sources(vw& all, bool quiet, size_t passes, input_options& input_options)
 {
-  all.example_parser->input->current = 0;
   parse_cache(all, input_options.cache_files, input_options.kill_cache, quiet);
 
   // default text reader
@@ -338,33 +360,36 @@ void enable_sources(vw& all, bool quiet, size_t passes, input_options& input_opt
     int lastError = WSAStartup(MAKEWORD(2, 2), &wsaData);
     if (lastError != 0) THROWERRNO("WSAStartup() returned error:" << lastError);
 #endif
-    all.example_parser->bound_sock = (int)socket(PF_INET, SOCK_STREAM, 0);
+    all.example_parser->bound_sock = static_cast<int>(socket(PF_INET, SOCK_STREAM, 0));
     if (all.example_parser->bound_sock < 0)
     {
       std::stringstream msg;
       msg << "socket: " << VW::strerror_to_string(errno);
-      all.trace_message << msg.str() << endl;
+      *(all.trace_message) << msg.str() << endl;
       THROW(msg.str().c_str());
     }
 
     int on = 1;
-    if (setsockopt(all.example_parser->bound_sock, SOL_SOCKET, SO_REUSEADDR, (char*)&on, sizeof(on)) < 0)
-      all.trace_message << "setsockopt SO_REUSEADDR: " << VW::strerror_to_string(errno) << endl;
+    if (setsockopt(all.example_parser->bound_sock, SOL_SOCKET, SO_REUSEADDR, reinterpret_cast<char*>(&on), sizeof(on)) <
+        0)
+      *(all.trace_message) << "setsockopt SO_REUSEADDR: " << VW::strerror_to_string(errno) << endl;
 
     // Enable TCP Keep Alive to prevent socket leaks
     int enableTKA = 1;
-    if (setsockopt(all.example_parser->bound_sock, SOL_SOCKET, SO_KEEPALIVE, (char*)&enableTKA, sizeof(enableTKA)) < 0)
-      all.trace_message << "setsockopt SO_KEEPALIVE: " << VW::strerror_to_string(errno) << endl;
+    if (setsockopt(all.example_parser->bound_sock, SOL_SOCKET, SO_KEEPALIVE, reinterpret_cast<char*>(&enableTKA),
+            sizeof(enableTKA)) < 0)
+      *(all.trace_message) << "setsockopt SO_KEEPALIVE: " << VW::strerror_to_string(errno) << endl;
 
     sockaddr_in address;
     address.sin_family = AF_INET;
     address.sin_addr.s_addr = htonl(INADDR_ANY);
     short unsigned int port = 26542;
-    if (all.options->was_supplied("port")) port = (uint16_t)input_options.port;
+    if (all.options->was_supplied("port")) port = static_cast<uint16_t>(input_options.port);
     address.sin_port = htons(port);
 
     // attempt to bind to socket
-    if (::bind(all.example_parser->bound_sock, (sockaddr*)&address, sizeof(address)) < 0) THROWERRNO("bind");
+    if (::bind(all.example_parser->bound_sock, reinterpret_cast<sockaddr*>(&address), sizeof(address)) < 0)
+      THROWERRNO("bind");
 
     // listen on socket
     if (listen(all.example_parser->bound_sock, 1) < 0) THROWERRNO("listen");
@@ -373,8 +398,8 @@ void enable_sources(vw& all, bool quiet, size_t passes, input_options& input_opt
     if (all.options->was_supplied("port_file"))
     {
       socklen_t address_size = sizeof(address);
-      if (getsockname(all.example_parser->bound_sock, (sockaddr*)&address, &address_size) < 0)
-      { all.trace_message << "getsockname: " << VW::strerror_to_string(errno) << endl; }
+      if (getsockname(all.example_parser->bound_sock, reinterpret_cast<sockaddr*>(&address), &address_size) < 0)
+      { *(all.trace_message) << "getsockname: " << VW::strerror_to_string(errno) << endl; }
       std::ofstream port_file;
       port_file.open(input_options.port_file.c_str());
       if (!port_file.is_open()) THROW("error writing port file: " << input_options.port_file);
@@ -395,20 +420,9 @@ void enable_sources(vw& all, bool quiet, size_t passes, input_options& input_opt
     {
       std::ofstream pid_file;
       pid_file.open(input_options.pid_file.c_str());
-      if (!pid_file.is_open()) THROW("error writing pid file");
-
-#ifdef _WIN32
-#  pragma warning(push)  // This next line is inappropriately triggering the Windows-side warning about getpid()
-#  pragma warning( \
-      disable : 4996)  // In newer toolchains, we are properly calling _getpid(), via the #define above (line 33).
-#endif
-
-      pid_file << getpid() << endl;
+      if (!pid_file.is_open()) { THROW("error writing pid file"); }
+      pid_file << VW::get_pid() << endl;
       pid_file.close();
-
-#ifdef _WIN32
-#  pragma warning(pop)
-#endif
     }
 
     if (all.daemon && !all.active)
@@ -421,17 +435,17 @@ void enable_sources(vw& all, bool quiet, size_t passes, input_options& input_opt
       all.weights.share(all.length());
 
       // learning state to be shared across children
-      shared_data* sd =
-          (shared_data*)mmap(0, sizeof(shared_data), PROT_READ | PROT_WRITE, MAP_SHARED | MAP_ANONYMOUS, -1, 0);
-      memcpy(sd, all.sd, sizeof(shared_data));
+      shared_data* sd = static_cast<shared_data*>(
+          mmap(nullptr, sizeof(shared_data), PROT_READ | PROT_WRITE, MAP_SHARED | MAP_ANONYMOUS, -1, 0));
+      new (sd) shared_data(*all.sd);
       free(all.sd);
       all.sd = sd;
       all.example_parser->_shared_data = sd;
 
       // create children
       size_t num_children = all.num_children;
-      v_array<int> children = v_init<int>();
-      children.resize(num_children);
+      v_array<int> children;
+      children.resize_but_with_stl_behavior(num_children);
       for (size_t i = 0; i < num_children; i++)
       {
         // fork() returns pid if parent, 0 if child
@@ -485,8 +499,9 @@ void enable_sources(vw& all, bool quiet, size_t passes, input_options& input_opt
 #endif
     sockaddr_in client_address;
     socklen_t size = sizeof(client_address);
-    if (!all.logger.quiet) all.trace_message << "calling accept" << endl;
-    auto f_a = (int)accept(all.example_parser->bound_sock, (sockaddr*)&client_address, &size);
+    if (!all.logger.quiet) *(all.trace_message) << "calling accept" << endl;
+    auto f_a =
+        static_cast<int>(accept(all.example_parser->bound_sock, reinterpret_cast<sockaddr*>(&client_address), &size));
     if (f_a < 0) THROWERRNO("accept");
 
     // Disable Nagle delay algorithm due to daemon mode's interactive workload
@@ -497,8 +512,8 @@ void enable_sources(vw& all, bool quiet, size_t passes, input_options& input_opt
 
     all.final_prediction_sink.push_back(socket->get_writer());
 
-    all.example_parser->input->add_file(socket->get_reader());
-    if (!all.logger.quiet) all.trace_message << "reading data from port " << port << endl;
+    all.example_parser->input.add_file(socket->get_reader());
+    if (!all.logger.quiet) *(all.trace_message) << "reading data from port " << port << endl;
 
     if (all.active) { set_string_reader(all); }
     else
@@ -511,16 +526,16 @@ void enable_sources(vw& all, bool quiet, size_t passes, input_options& input_opt
   }
   else
   {
-    if (all.example_parser->input->num_files() != 0)
+    if (all.example_parser->input.num_files() != 0)
     {
-      if (!quiet) all.trace_message << "ignoring text input in favor of cache input" << endl;
+      if (!quiet) *(all.trace_message) << "ignoring text input in favor of cache input" << endl;
     }
     else
     {
       std::string temp = all.data_filename;
-      if (!quiet) all.trace_message << "Reading datafile = " << temp << endl;
+      if (!quiet) *(all.trace_message) << "Reading datafile = " << temp << endl;
 
-      auto should_use_compressed = input_options.compressed || ends_with(all.data_filename, ".gz");
+      auto should_use_compressed = input_options.compressed || VW::ends_with(all.data_filename, ".gz");
 
       try
       {
@@ -539,12 +554,12 @@ void enable_sources(vw& all, bool quiet, size_t passes, input_options& input_opt
           }
         }
 
-        if (adapter) { all.example_parser->input->add_file(std::move(adapter)); }
+        if (adapter) { all.example_parser->input.add_file(std::move(adapter)); }
       }
       catch (std::exception const&)
       {
         // when trying to fix this exception, consider that an empty temp is valid if all.stdin_off is false
-        if (!temp.empty()) { all.trace_message << "can't open '" << temp << "', sailing on!" << endl; }
+        if (!temp.empty()) { *(all.trace_message) << "can't open '" << temp << "', sailing on!" << endl; }
         else
         {
           throw;
@@ -555,18 +570,28 @@ void enable_sources(vw& all, bool quiet, size_t passes, input_options& input_opt
       {
         if (!input_options.chain_hash_json)
         {
-          all.trace_message
+          *(all.trace_message)
               << "WARNING: Old string feature value behavior is deprecated in JSON/DSJSON and will be removed in a "
                  "future version. Use `--chain_hash` to use new behavior and silence this warning."
               << endl;
         }
         set_json_reader(all, input_options.dsjson);
       }
+#ifdef BUILD_FLATBUFFERS
       else if (input_options.flatbuffer)
       {
         all.flat_converter = VW::make_unique<VW::parsers::flatbuffer::parser>();
         all.example_parser->reader = VW::parsers::flatbuffer::flatbuffer_to_examples;
       }
+#endif
+
+#ifdef BUILD_EXTERNAL_PARSER
+      else if (input_options.ext_opts && input_options.ext_opts->is_enabled())
+      {
+        all.external_parser = VW::external::parser::get_external_parser(&all, input_options);
+        all.example_parser->reader = VW::external::parse_examples;
+      }
+#endif
       else
       {
         set_string_reader(all);
@@ -580,7 +605,7 @@ void enable_sources(vw& all, bool quiet, size_t passes, input_options& input_opt
   if (passes > 1 && !all.example_parser->resettable)
     THROW("need a cache file for multiple passes : try using --cache_file");
 
-  if (!quiet && !all.daemon) all.trace_message << "num sources = " << all.example_parser->input->num_files() << endl;
+  if (!quiet && !all.daemon) *(all.trace_message) << "num sources = " << all.example_parser->input.num_files() << endl;
 }
 
 void lock_done(parser& p)
@@ -598,7 +623,7 @@ void set_done(vw& all)
 
 void end_pass_example(vw& all, example* ae)
 {
-  all.example_parser->lbl_parser.default_label(&ae->l);
+  all.example_parser->lbl_parser.default_label(ae->l);
   ae->end_pass = true;
   all.example_parser->in_pass_counter = 0;
 }
@@ -619,12 +644,8 @@ namespace VW
 example& get_unused_example(vw* all)
 {
   parser* p = all->example_parser;
-  auto ex = p->example_pool.get_object();
-  p->begin_parsed_examples++;
-  VW_WARNING_STATE_PUSH
-  VW_WARNING_DISABLE_DEPRECATED_USAGE
-  ex->in_use = true;
-  VW_WARNING_STATE_POP
+  auto* ex = p->example_pool.get_object();
+  ex->example_counter = static_cast<size_t>(p->num_examples_taken_from_pool.fetch_add(1, std::memory_order_relaxed));
   return *ex;
 }
 
@@ -639,39 +660,53 @@ void setup_example(vw& all, example* ae)
 
   if (all.example_parser->write_cache)
   {
-    all.example_parser->lbl_parser.cache_label(&ae->l, *(all.example_parser->output));
-    cache_features(*(all.example_parser->output), ae, all.parse_mask);
+    VW::write_example_to_cache(all.example_parser->output, ae, all.example_parser->lbl_parser, all.parse_mask,
+        all.example_parser->_cache_temp_buffer);
   }
+
+  // Require all extents to be complete in an example.
+#ifndef NDEBUG
+  for (auto& fg : *ae) { assert(fg.validate_extents()); }
+#endif
 
   ae->partial_prediction = 0.;
   ae->num_features = 0;
-  ae->total_sum_feat_sq = 0;
+  ae->reset_total_sum_feat_sq();
   ae->loss = 0.;
+  ae->_debug_current_reduction_depth = 0;
+  ae->use_permutations = all.permutations;
 
-  ae->example_counter = (size_t)(all.example_parser->end_parsed_examples.load());
+  all.example_parser->num_setup_examples++;
   if (!all.example_parser->emptylines_separate_examples) all.example_parser->in_pass_counter++;
 
   // Determine if this example is part of the holdout set.
   ae->test_only = is_test_only(all.example_parser->in_pass_counter, all.holdout_period, all.holdout_after,
       all.holdout_set_off, all.example_parser->emptylines_separate_examples ? (all.holdout_period - 1) : 0);
   // If this example has a test only label then it is true regardless.
-  ae->test_only |= all.example_parser->lbl_parser.test_label(&ae->l);
+  ae->test_only |= all.example_parser->lbl_parser.test_label(ae->l);
 
-  if (all.example_parser->emptylines_separate_examples && example_is_newline(*ae))
+  if (all.example_parser->emptylines_separate_examples &&
+      (example_is_newline(*ae) &&
+          (all.example_parser->lbl_parser.label_type != label_type_t::ccb || CCB::ec_is_example_unset(*ae))))
     all.example_parser->in_pass_counter++;
 
-  ae->weight = all.example_parser->lbl_parser.get_weight(&ae->l);
+  ae->weight = all.example_parser->lbl_parser.get_weight(ae->l, ae->_reduction_features);
 
   if (all.ignore_some)
+  {
     for (unsigned char* i = ae->indices.begin(); i != ae->indices.end(); i++)
+    {
       if (all.ignore[*i])
       {
-        // delete namespace
+        // Delete namespace
         ae->feature_space[*i].clear();
-        memmove(i, i + 1, (ae->indices.end() - (i + 1)) * sizeof(*i));
-        ae->indices.end()--;
+        i = ae->indices.erase(i);
+        // Offset the increment for this iteration so that is processes this index again which is actually the next
+        // item.
         i--;
       }
+    }
+  }
 
   if (all.skip_gram_transformer != nullptr) { all.skip_gram_transformer->generate_grams(ae); }
 
@@ -680,27 +715,20 @@ void setup_example(vw& all, example* ae)
 
   if (!all.limit_strings.empty()) feature_limit(all, ae);
 
-  uint64_t multiplier = (uint64_t)all.wpp << all.weights.stride_shift();
+  uint64_t multiplier = static_cast<uint64_t>(all.wpp) << all.weights.stride_shift();
 
   if (multiplier != 1)  // make room for per-feature information.
     for (features& fs : *ae)
       for (auto& j : fs.indicies) j *= multiplier;
   ae->num_features = 0;
-  ae->total_sum_feat_sq = 0;
   for (const features& fs : *ae)
   {
     ae->num_features += fs.size();
-    ae->total_sum_feat_sq += fs.sum_feat_sq;
   }
 
   // Set the interactions for this example to the global set.
   ae->interactions = &all.interactions;
-
-  size_t new_features_cnt;
-  float new_features_sum_feat_sq;
-  INTERACTIONS::eval_count_of_generated_ft(all, *ae, new_features_cnt, new_features_sum_feat_sq);
-  ae->num_features += new_features_cnt;
-  ae->total_sum_feat_sq += new_features_sum_feat_sq;
+  ae->extent_interactions = &all.extent_interactions;
 }
 }  // namespace VW
 
@@ -709,45 +737,43 @@ namespace VW
 example* new_unused_example(vw& all)
 {
   example* ec = &get_unused_example(&all);
-  all.example_parser->lbl_parser.default_label(&ec->l);
-  all.example_parser->begin_parsed_examples++;
-  ec->example_counter = (size_t)all.example_parser->begin_parsed_examples.load();
+  all.example_parser->lbl_parser.default_label(ec->l);
   return ec;
 }
-example* read_example(vw& all, char* example_line)
+
+example* read_example(vw& all, const char* example_line)
 {
   example* ret = &get_unused_example(&all);
 
   VW::read_line(all, ret, example_line);
   setup_example(all, ret);
-  all.example_parser->end_parsed_examples++;
 
   return ret;
 }
 
-example* read_example(vw& all, std::string example_line) { return read_example(all, (char*)example_line.c_str()); }
+example* read_example(vw& all, const std::string& example_line) { return read_example(all, example_line.c_str()); }
 
 void add_constant_feature(vw& vw, example* ec)
 {
   ec->indices.push_back(constant_namespace);
-  ec->feature_space[constant_namespace].push_back(1, constant);
-  ec->total_sum_feat_sq++;
+  ec->feature_space[constant_namespace].push_back(1, constant, constant_namespace);
   ec->num_features++;
   if (vw.audit || vw.hash_inv)
-    ec->feature_space[constant_namespace].space_names.push_back(audit_strings_ptr(new audit_strings("", "Constant")));
+    ec->feature_space[constant_namespace].space_names.push_back(audit_strings("", "Constant"));
 }
 
 void add_label(example* ec, float label, float weight, float base)
 {
   ec->l.simple.label = label;
-  ec->l.simple.initial = base;
+  auto& simple_red_features = ec->_reduction_features.template get<simple_label_reduction_features>();
+  simple_red_features.initial = base;
   ec->weight = weight;
 }
 
 example* import_example(vw& all, const std::string& label, primitive_feature_space* features, size_t len)
 {
   example* ret = &get_unused_example(&all);
-  all.example_parser->lbl_parser.default_label(&ret->l);
+  all.example_parser->lbl_parser.default_label(ret->l);
 
   if (label.length() > 0) parse_example_label(all, *ret, label);
 
@@ -760,7 +786,6 @@ example* import_example(vw& all, const std::string& label, primitive_feature_spa
   }
 
   setup_example(all, ret);
-  all.example_parser->end_parsed_examples++;
   return ret;
 }
 
@@ -798,12 +823,12 @@ void releaseFeatureSpace(primitive_feature_space* features, size_t len)
   delete (features);
 }
 
-void parse_example_label(vw& all, example& ec, std::string label)
+void parse_example_label(vw& all, example& ec, const std::string& label)
 {
   std::vector<VW::string_view> words;
   tokenize(' ', label, words);
   all.example_parser->lbl_parser.parse_label(
-      all.example_parser, all.example_parser->_shared_data, &ec.l, words, ec._reduction_features);
+      ec.l, ec._reduction_features, all.example_parser->parser_memory_to_reuse, all.sd->ldict.get(), words);
 }
 
 void empty_example(vw& /*all*/, example& ec)
@@ -814,22 +839,14 @@ void empty_example(vw& /*all*/, example& ec)
   ec.tag.clear();
   ec.sorted = false;
   ec.end_pass = false;
+  ec.is_newline = false;
   ec._reduction_features.clear();
+  ec.num_features_from_interactions = 0;
 }
 
-void clean_example(vw& all, example& ec, bool rewind)
+void clean_example(vw& all, example& ec)
 {
-  if (rewind)
-  {
-    assert(all.example_parser->begin_parsed_examples.load() > 0);
-    all.example_parser->begin_parsed_examples--;
-  }
-
   empty_example(all, ec);
-  VW_WARNING_STATE_PUSH
-  VW_WARNING_DISABLE_DEPRECATED_USAGE
-  ec.in_use = false;
-  VW_WARNING_STATE_POP
   all.example_parser->example_pool.return_object(&ec);
 }
 
@@ -838,11 +855,11 @@ void finish_example(vw& all, example& ec)
   // only return examples to the pool that are from the pool and not externally allocated
   if (!is_ring_example(all, &ec)) return;
 
-  clean_example(all, ec, false);
+  clean_example(all, ec);
 
   {
     std::lock_guard<std::mutex> lock(all.example_parser->output_lock);
-    ++all.example_parser->finished_examples;
+    ++all.example_parser->num_finished_examples;
     all.example_parser->output_done.notify_one();
   }
 }
@@ -850,7 +867,6 @@ void finish_example(vw& all, example& ec)
 
 void thread_dispatch(vw& all, const v_array<example*>& examples)
 {
-  all.example_parser->end_parsed_examples += examples.size();
   for (auto example : examples) { all.example_parser->ready_parsed_examples.push(example); }
 }
 
@@ -866,11 +882,15 @@ float get_label(example* ec) { return ec->l.simple.label; }
 
 float get_importance(example* ec) { return ec->weight; }
 
-float get_initial(example* ec) { return ec->l.simple.initial; }
+float get_initial(example* ec)
+{
+  const auto& simple_red_features = ec->_reduction_features.template get<simple_label_reduction_features>();
+  return simple_red_features.initial;
+}
 
 float get_prediction(example* ec) { return ec->pred.scalar; }
 
-float get_cost_sensitive_prediction(example* ec) { return (float)ec->pred.multiclass; }
+float get_cost_sensitive_prediction(example* ec) { return static_cast<float>(ec->pred.multiclass); }
 
 v_array<float>& get_cost_sensitive_prediction_confidence_scores(example* ec) { return ec->pred.scalars; }
 
@@ -898,14 +918,10 @@ size_t get_tag_length(example* ec) { return ec->tag.size(); }
 
 const char* get_tag(example* ec) { return ec->tag.begin(); }
 
-size_t get_feature_number(example* ec) { return ec->num_features; }
+size_t get_feature_number(example* ec) { return ec->get_num_features(); }
 
 float get_confidence(example* ec) { return ec->confidence; }
 }  // namespace VW
-
-void adjust_used_index(vw&)
-{ /* no longer used */
-}
 
 namespace VW
 {
@@ -925,21 +941,11 @@ void free_parser(vw& all)
 
   // There should be no examples in flight at this point.
   assert(all.example_parser->ready_parsed_examples.size() == 0);
-
-  std::vector<example*> drain_pool;
-  drain_pool.reserve(all.example_parser->example_pool.size());
-  while (!all.example_parser->example_pool.empty())
-  {
-    example* temp = all.example_parser->example_pool.get_object();
-    temp->delete_unions(all.example_parser->lbl_parser.delete_label, all.delete_prediction);
-    drain_pool.push_back(temp);
-  }
-  for (auto* example_ptr : drain_pool) { all.example_parser->example_pool.return_object(example_ptr); }
 }
 
 namespace VW
 {
 void end_parser(vw& all) { all.parse_thread.join(); }
 
-bool is_ring_example(vw& all, example* ae) { return all.example_parser->example_pool.is_from_pool(ae); }
+bool is_ring_example(const vw& all, const example* ae) { return all.example_parser->example_pool.is_from_pool(ae); }
 }  // namespace VW

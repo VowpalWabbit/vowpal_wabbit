@@ -15,6 +15,8 @@
 #include "options_serializer_boost_po.h"
 #include "future_compat.h"
 #include "slates_label.h"
+#include "simple_label_parser.h"
+#include "shared_data.h"
 
 // see http://www.boost.org/doc/libs/1_56_0/doc/html/bbv2/installation.html
 #define BOOST_PYTHON_USE_GCC_SYMBOL_VISIBILITY 1
@@ -58,6 +60,8 @@ const size_t pMULTICLASSPROBS = 7;
 const size_t pDECISION_SCORES = 8;
 const size_t pACTION_PDF_VALUE = 9;
 const size_t pPDF = 10;
+const size_t pACTIVE_MULTICLASS = 11;
+const size_t pNOPRED = 12;
 
 void dont_delete_me(void* arg) {}
 
@@ -105,6 +109,8 @@ public:
   template <typename T>
   py::object* value_to_pyobject(VW::config::typed_option<T>& opt)
   {
+    T not_supplied{};
+
     if (m_opt.was_supplied(opt.m_name))
     {
       if (opt.default_value_supplied())
@@ -112,7 +118,7 @@ public:
             opt.m_allow_override, opt.value(), true, opt.default_value(), true));
       else
         return new py::object(m_py_opt_class(opt.m_name, opt.m_help, opt.m_short_name, opt.m_keep, opt.m_necessary,
-            opt.m_allow_override, opt.value(), true, py::object(), false));
+            opt.m_allow_override, opt.value(), true, not_supplied, false));
     }
     else
     {
@@ -121,7 +127,7 @@ public:
             opt.m_allow_override, opt.default_value(), false, opt.default_value(), true));
       else
         return new py::object(m_py_opt_class(opt.m_name, opt.m_help, opt.m_short_name, opt.m_keep, opt.m_necessary,
-            opt.m_allow_override, py::object(), false, py::object(), false));
+            opt.m_allow_override, py::object(), false, not_supplied, false));
     }
   }
 
@@ -265,6 +271,34 @@ void my_run_parser(vw_ptr all)
   VW::end_parser(*all);
 }
 
+struct python_dict_writer : VW::metric_sink_visitor
+{
+  python_dict_writer(py::dict& dest_dict) : _dest_dict(dest_dict) {}
+  void int_metric(const std::string& key, uint64_t value) override { _dest_dict[key] = value; }
+  void float_metric(const std::string& key, float value) override { _dest_dict[key] = value; }
+  void string_metric(const std::string& key, const std::string& value) override { _dest_dict[key] = value; }
+  void bool_metric(const std::string& key, bool value) override { _dest_dict[key] = value; }
+
+private:
+  py::dict& _dest_dict;
+};
+
+py::dict get_learner_metrics(vw_ptr all)
+{
+  py::dict dictionary;
+
+  if (all->options->was_supplied("extra_metrics"))
+  {
+    VW::metric_sink metrics;
+    all->l->persist_metrics(metrics);
+
+    python_dict_writer writer(dictionary);
+    metrics.visit(writer);
+  }
+
+  return dictionary;
+}
+
 void my_finish(vw_ptr all)
 {
   VW::finish(*all, false);  // don't delete all because python will do that for us!
@@ -279,7 +313,9 @@ search_ptr get_search_ptr(vw_ptr all)
 
 py::object get_options(vw_ptr all, py::object py_class, bool enabled_only)
 {
-  auto opt_manager = OptionManager(*all->options, all->enabled_reductions, py_class);
+  std::vector<std::string> enabled_reductions;
+  if (all->l) all->l->get_enabled_reductions(enabled_reductions);
+  auto opt_manager = OptionManager(*all->options, enabled_reductions, py_class);
   return opt_manager.get_vw_option_pyobjects(enabled_only);
 }
 
@@ -296,6 +332,16 @@ std::string get_arguments(vw_ptr all)
   }
 
   return serializer.str();
+}
+
+py::list get_enabled_reductions(vw_ptr all)
+{
+  py::list py_enabled_reductions;
+  std::vector<std::string> enabled_reductions;
+  if (all->l) all->l->get_enabled_reductions(enabled_reductions);
+  for (auto ex : enabled_reductions) { py_enabled_reductions.append(ex); }
+
+  return py_enabled_reductions;
 }
 
 predictor_ptr get_predictor(search_ptr sch, ptag my_tag)
@@ -365,30 +411,34 @@ size_t my_get_label_type(vw* all)
 
 size_t my_get_prediction_type(vw_ptr all)
 {
-  switch (all->l->pred_type)
+  switch (all->l->get_output_prediction_type())
   {
-    case prediction_type_t::scalar:
+    case VW::prediction_type_t::scalar:
       return pSCALAR;
-    case prediction_type_t::scalars:
+    case VW::prediction_type_t::scalars:
       return pSCALARS;
-    case prediction_type_t::action_scores:
+    case VW::prediction_type_t::action_scores:
       return pACTION_SCORES;
-    case prediction_type_t::action_probs:
+    case VW::prediction_type_t::action_probs:
       return pACTION_PROBS;
-    case prediction_type_t::multiclass:
+    case VW::prediction_type_t::multiclass:
       return pMULTICLASS;
-    case prediction_type_t::multilabels:
+    case VW::prediction_type_t::multilabels:
       return pMULTILABELS;
-    case prediction_type_t::prob:
+    case VW::prediction_type_t::prob:
       return pPROB;
-    case prediction_type_t::multiclassprobs:
+    case VW::prediction_type_t::multiclassprobs:
       return pMULTICLASSPROBS;
-    case prediction_type_t::decision_probs:
+    case VW::prediction_type_t::decision_probs:
       return pDECISION_SCORES;
-    case prediction_type_t::action_pdf_value:
+    case VW::prediction_type_t::action_pdf_value:
       return pACTION_PDF_VALUE;
-    case prediction_type_t::pdf:
+    case VW::prediction_type_t::pdf:
       return pPDF;
+    case VW::prediction_type_t::active_multiclass:
+      return pACTIVE_MULTICLASS;
+    case VW::prediction_type_t::nopred:
+      return pNOPRED;
     default:
       THROW("unsupported prediction type used");
   }
@@ -399,16 +449,16 @@ void my_delete_example(void* voidec)
   example* ec = (example*)voidec;
   size_t labelType = ec->example_counter;
   label_parser* lp = get_label_parser(NULL, labelType);
-  VW::dealloc_example(lp ? lp->delete_label : NULL, *ec);
-  free(ec);
+  VW::dealloc_examples(ec, 1);
 }
 
 example* my_empty_example0(vw_ptr vw, size_t labelType)
 {
   label_parser* lp = get_label_parser(&*vw, labelType);
   example* ec = VW::alloc_examples(1);
-  lp->default_label(&ec->l);
+  lp->default_label(ec->l);
   ec->interactions = &vw->interactions;
+  ec->extent_interactions = &vw->extent_interactions;
   if (labelType == lCOST_SENSITIVE)
   {
     COST_SENSITIVE::wclass zero = {0., 1, 0., 0.};
@@ -470,7 +520,7 @@ float my_predict(vw_ptr all, example_ptr ec)
   return ec->partial_prediction;
 }
 
-bool my_is_multiline(vw_ptr all) { return all->l->is_multiline; }
+bool my_is_multiline(vw_ptr all) { return all->l->is_multiline(); }
 
 template <bool learn>
 void predict_or_learn(vw_ptr& all, py::list& ec)
@@ -484,7 +534,7 @@ void predict_or_learn(vw_ptr& all, py::list& ec)
 
 py::list my_parse(vw_ptr& all, char* str)
 {
-  v_array<example*> examples = v_init<example*>();
+  v_array<example*> examples;
   examples.push_back(&VW::get_unused_example(all.get()));
   all->example_parser->text_reader(all.get(), str, strlen(str), examples);
 
@@ -496,8 +546,6 @@ py::list my_parse(vw_ptr& all, char* str)
     // returned to the pool using finish_example.
     example_collection.append(boost::shared_ptr<example>(ex, dont_delete_me));
   }
-  examples.clear();
-  examples.delete_v();
   return example_collection;
 }
 
@@ -533,7 +581,7 @@ void ex_push_feature(example_ptr ec, unsigned char ns, uint32_t fid, float v)
 {  // warning: assumes namespace exists!
   ec->feature_space[ns].push_back(v, fid);
   ec->num_features++;
-  ec->total_sum_feat_sq += v * v;
+  ec->reset_total_sum_feat_sq();
 }
 
 void ex_push_feature_list(example_ptr ec, vw_ptr vw, unsigned char ns, py::list& a)
@@ -541,7 +589,6 @@ void ex_push_feature_list(example_ptr ec, vw_ptr vw, unsigned char ns, py::list&
   char ns_str[2] = {(char)ns, 0};
   uint64_t ns_hash = VW::hash_space(*vw, ns_str);
   size_t count = 0;
-  float sum_sq = 0.;
   for (ssize_t i = 0; i < len(a); i++)
   {
     feature f = {1., 0};
@@ -593,12 +640,11 @@ void ex_push_feature_list(example_ptr ec, vw_ptr vw, unsigned char ns, py::list&
       {
         ec->feature_space[ns].push_back(f.x, f.weight_index);
         count++;
-        sum_sq += f.x * f.x;
       }
     }
   }
   ec->num_features += count;
-  ec->total_sum_feat_sq += sum_sq;
+  ec->reset_total_sum_feat_sq();
 }
 
 void ex_push_namespace(example_ptr ec, unsigned char ns) { ec->indices.push_back(ns); }
@@ -638,19 +684,20 @@ void ex_push_dictionary(example_ptr ec, vw_ptr vw, py::dict& dict)
 bool ex_pop_feature(example_ptr ec, unsigned char ns)
 {
   if (ec->feature_space[ns].size() == 0) return false;
-  float val = ec->feature_space[ns].values.pop();
-  if (ec->feature_space[ns].indicies.size() > 0) ec->feature_space[ns].indicies.pop();
+  float val = ec->feature_space[ns].values.back();
+  ec->feature_space[ns].values.pop_back();
+  if (ec->feature_space[ns].indicies.size() > 0) ec->feature_space[ns].indicies.pop_back();
   if (ec->feature_space[ns].space_names.size() > 0) ec->feature_space[ns].space_names.pop_back();
   ec->num_features--;
   ec->feature_space[ns].sum_feat_sq -= val * val;
-  ec->total_sum_feat_sq -= val * val;
+  ec->reset_total_sum_feat_sq();
   return true;
 }
 
 void ex_erase_namespace(example_ptr ec, unsigned char ns)
 {
   ec->num_features -= ec->feature_space[ns].size();
-  ec->total_sum_feat_sq -= ec->feature_space[ns].sum_feat_sq;
+  ec->reset_total_sum_feat_sq();
   ec->feature_space[ns].sum_feat_sq = 0.;
   ec->feature_space[ns].clear();
 }
@@ -658,7 +705,8 @@ void ex_erase_namespace(example_ptr ec, unsigned char ns)
 bool ex_pop_namespace(example_ptr ec)
 {
   if (ec->indices.size() == 0) return false;
-  unsigned char ns = ec->indices.pop();
+  unsigned char ns = ec->indices.back();
+  ec->indices.pop_back();
   ex_erase_namespace(ec, ns);
   return true;
 }
@@ -670,7 +718,7 @@ void unsetup_example(vw_ptr vwP, example_ptr ae)
   vw& all = *vwP;
   ae->partial_prediction = 0.;
   ae->num_features = 0;
-  ae->total_sum_feat_sq = 0;
+  ae->reset_total_sum_feat_sq();
   ae->loss = 0.;
 
   if (all.ignore_some) { THROW("error: cannot unsetup example when some namespaces are ignored!"); }
@@ -696,7 +744,7 @@ void unsetup_example(vw_ptr vwP, example_ptr ae)
     if (hit_constant >= 0)
     {
       for (size_t i = hit_constant; i < N - 1; i++) ae->indices[i] = ae->indices[i + 1];
-      ae->indices.pop();
+      ae->indices.pop_back();
     }
   }
 
@@ -715,8 +763,11 @@ void ex_set_label_string(example_ptr ec, vw_ptr vw, std::string label, size_t la
 }
 
 float ex_get_simplelabel_label(example_ptr ec) { return ec->l.simple.label; }
-float ex_get_simplelabel_weight(example_ptr ec) { return ec->l.simple.weight; }
-float ex_get_simplelabel_initial(example_ptr ec) { return ec->l.simple.initial; }
+float ex_get_simplelabel_weight(example_ptr ec) { return ec->weight; }
+float ex_get_simplelabel_initial(example_ptr ec)
+{
+  return ec->_reduction_features.template get<simple_label_reduction_features>().initial;
+}
 float ex_get_simplelabel_prediction(example_ptr ec) { return ec->pred.scalar; }
 float ex_get_prob(example_ptr ec) { return ec->pred.prob; }
 
@@ -772,6 +823,15 @@ py::list ex_get_pdf(example_ptr ec)
   return values;
 }
 
+py::tuple ex_get_active_multiclass(example_ptr ec)
+{
+  py::list values;
+  for (auto const& query_needed_class : ec->pred.active_multiclass.more_info_required_for_classes)
+  { values.append(query_needed_class); }
+
+  return py::make_tuple(ec->pred.active_multiclass.predicted_class, values);
+}
+
 py::list ex_get_multilabel_predictions(example_ptr ec)
 {
   py::list values;
@@ -780,6 +840,8 @@ py::list ex_get_multilabel_predictions(example_ptr ec)
   for (uint32_t l : labels.label_v) { values.append(l); }
   return values;
 }
+
+char ex_get_nopred(example_ptr ec) { return ec->pred.nopred; }
 
 uint32_t ex_get_costsensitive_prediction(example_ptr ec) { return ec->pred.multiclass; }
 uint32_t ex_get_costsensitive_num_costs(example_ptr ec) { return (uint32_t)ec->l.cs.costs.size(); }
@@ -801,11 +863,11 @@ float ex_get_cbandits_partial_prediction(example_ptr ec, uint32_t i) { return ec
 // example_counter is being overriden by lableType!
 size_t get_example_counter(example_ptr ec) { return ec->example_counter; }
 uint64_t get_ft_offset(example_ptr ec) { return ec->ft_offset; }
-size_t get_num_features(example_ptr ec) { return ec->num_features; }
+size_t get_num_features(example_ptr ec) { return ec->get_num_features(); }
 float get_partial_prediction(example_ptr ec) { return ec->partial_prediction; }
 float get_updated_prediction(example_ptr ec) { return ec->updated_prediction; }
 float get_loss(example_ptr ec) { return ec->loss; }
-float get_total_sum_feat_sq(example_ptr ec) { return ec->total_sum_feat_sq; }
+float get_total_sum_feat_sq(example_ptr ec) { return ec->get_total_sum_feat_sq(); }
 
 double get_sum_loss(vw_ptr vw) { return vw->sd->sum_loss; }
 double get_weighted_examples(vw_ptr vw) { return vw->sd->weighted_examples(); }
@@ -867,7 +929,7 @@ void search_run_fn(Search::search& sch)
   try
   {
     HookTask::task_data* d = sch.get_task_data<HookTask::task_data>();
-    py::object run = *(py::object*)d->run_object;
+    py::object run = *static_cast<py::object*>(d->run_object.get());
     run.attr("__call__")();
   }
   catch (...)
@@ -884,7 +946,7 @@ void search_setup_fn(Search::search& sch)
   try
   {
     HookTask::task_data* d = sch.get_task_data<HookTask::task_data>();
-    py::object run = *(py::object*)d->setup_object;
+    py::object run = *static_cast<py::object*>(d->setup_object.get());
     run.attr("__call__")();
   }
   catch (...)
@@ -901,7 +963,7 @@ void search_takedown_fn(Search::search& sch)
   try
   {
     HookTask::task_data* d = sch.get_task_data<HookTask::task_data>();
-    py::object run = *(py::object*)d->takedown_object;
+    py::object run = *static_cast<py::object*>(d->takedown_object.get());
     run.attr("__call__")();
   }
   catch (...)
@@ -930,26 +992,23 @@ void set_structured_predict_hook(
 {
   verify_search_set_properly(sch);
   HookTask::task_data* d = sch->get_task_data<HookTask::task_data>();
-  d->run_f = &search_run_fn;
-  delete (py::object*)d->run_object;
-  d->run_object = NULL;
-  delete (py::object*)d->setup_object;
-  d->setup_object = NULL;
-  delete (py::object*)d->takedown_object;
-  d->takedown_object = NULL;
+  d->run_object = nullptr;
+  d->setup_object = nullptr;
+  d->takedown_object = nullptr;
   sch->set_force_oracle(false);
-  d->run_object = new py::object(run_object);
+
+  d->run_f = &search_run_fn;
+  d->run_object = std::make_shared<py::object>(run_object);
   if (setup_object.ptr() != Py_None)
   {
-    d->setup_object = new py::object(setup_object);
+    d->setup_object = std::make_shared<py::object>(setup_object);
     d->run_setup_f = &search_setup_fn;
   }
   if (takedown_object.ptr() != Py_None)
   {
-    d->takedown_object = new py::object(takedown_object);
+    d->takedown_object = std::make_shared<py::object>(takedown_object);
     d->run_takedown_f = &search_takedown_fn;
   }
-  d->delete_run_object = &py_delete_run_object;
 }
 
 void my_set_test_only(example_ptr ec, bool val) { ec->test_only = val; }
@@ -1105,6 +1164,8 @@ BOOST_PYTHON_MODULE(pylibvw)
       .def("__init__", py::make_constructor(my_initialize_with_log))
       //      .def("__del__", &my_finish, "deconstruct the VW object by calling finish")
       .def("run_parser", &my_run_parser, "parse external data file")
+      .def("get_learner_metrics", &get_learner_metrics,
+          "get current learner stack metrics. returns empty dict if --extra_metrics was not supplied.")
       .def("finish", &my_finish, "stop VW by calling finish (and, eg, write weights to disk)")
       .def("save", &my_save, "save model to filename")
       .def("learn", &my_learn, "given a pyvw example, learn (and predict) on that example")
@@ -1134,6 +1195,7 @@ BOOST_PYTHON_MODULE(pylibvw)
       .def("audit_example", &my_audit_example, "print example audit information")
       .def("get_id", &get_model_id, "return the model id")
       .def("get_arguments", &get_arguments, "return the arguments after resolving all dependencies")
+      .def("get_enabled_reductions", &get_enabled_reductions, "return the list of names of the enabled reductions")
 
       .def("learn_multi", &my_learn_multi_ex, "given a list pyvw examples, learn (and predict) on those examples")
       .def("predict_multi", &my_predict_multi_ex, "given a list of pyvw examples, predict on that example")
@@ -1163,7 +1225,9 @@ BOOST_PYTHON_MODULE(pylibvw)
       .def_readonly("pMULTICLASSPROBS", pMULTICLASSPROBS, "Multiclass probabilities prediction type")
       .def_readonly("pDECISION_SCORES", pDECISION_SCORES, "Decision scores prediction type")
       .def_readonly("pACTION_PDF_VALUE", pACTION_PDF_VALUE, "Action pdf value prediction type")
-      .def_readonly("pPDF", pPDF, "PDF prediction type");
+      .def_readonly("pPDF", pPDF, "PDF prediction type")
+      .def_readonly("pACTIVE_MULTICLASS", pACTIVE_MULTICLASS, "Active multiclass prediction type")
+      .def_readonly("pNOPRED", pNOPRED, "Nopred prediction type");
 
   // define the example class
   py::class_<example, example_ptr, boost::noncopyable>("example", py::no_init)
@@ -1234,8 +1298,10 @@ BOOST_PYTHON_MODULE(pylibvw)
       .def("get_decision_scores", &ex_get_decision_scores, "Get decision scores from example prediction")
       .def("get_action_pdf_value", &ex_get_action_pdf_value, "Get action and pdf value from example prediction")
       .def("get_pdf", &ex_get_pdf, "Get pdf from example prediction")
+      .def("get_active_multiclass", &ex_get_active_multiclass, "Get active multiclass from example prediction")
       .def("get_multilabel_predictions", &ex_get_multilabel_predictions,
           "Get multilabel predictions from example prediction")
+      .def("get_nopred", &ex_get_nopred, "Get nopred from example prediction")
       .def("get_costsensitive_prediction", &ex_get_costsensitive_prediction,
           "Assuming a cost_sensitive label type, get the prediction")
       .def("get_costsensitive_num_costs", &ex_get_costsensitive_num_costs,
@@ -1265,7 +1331,7 @@ BOOST_PYTHON_MODULE(pylibvw)
           "Assuming a contextual_bandits label type, get the partial prediction for a given pair (i=0.. "
           "get_cbandits_num_costs)");
 
-  py::class_<Search::predictor, predictor_ptr>("predictor", py::no_init)
+  py::class_<Search::predictor, predictor_ptr, boost::noncopyable>("predictor", py::no_init)
       .def("set_input", &my_set_input, "set the input (an example) for this predictor (non-LDF mode only)")
       //.def("set_input_ldf", &my_set_input_ldf, "set the inputs (a list of examples) for this predictor (LDF mode
       // only)")

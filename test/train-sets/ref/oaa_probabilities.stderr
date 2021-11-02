@@ -6,7 +6,7 @@ power_t = 0.5
 using no cache
 Reading datafile = train-sets/probabilities.dat
 num sources = 1
-Enabled reductions: gd, scorer, oaa
+Enabled reductions: gd, scorer-identity, oaa-prob
 average  since         example        example  current  current  current
 loss     last          counter         weight    label  predict features
 0.000000 0.000000            1            1.0        1   1(25%)       51
@@ -23,5 +23,5 @@ number of examples = 200
 weighted example sum = 200.000000
 weighted label sum = 0.000000
 average loss = 0.450000
-average multiclass log loss = 1.161185
+average multiclass log loss = 1.161186
 total feature number = 15482

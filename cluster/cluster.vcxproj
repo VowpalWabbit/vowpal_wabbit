@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup Label="ProjectConfigurations">
     <ProjectConfiguration Include="Debug|Win32">
@@ -62,8 +62,8 @@
       </PrecompiledHeader>
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
-      <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>$(SolutionDir);$(ProjectDir)\..\explore</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;%(PreprocessorDefinitions);SPDLOG_COMPILED_LIB;SPDLOG_FMT_EXTERNAL</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>$(SolutionDir);$(ProjectDir)\..\explore;$(ProjectDir)\..\ext_libs\fmt\include;$(ProjectDir)\..\ext_libs\spdlog\include</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
       <TreatWarningAsError Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</TreatWarningAsError>
     </ClCompile>
@@ -81,9 +81,9 @@
       <Optimization>MaxSpeed</Optimization>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
-      <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;%(PreprocessorDefinitions);SPDLOG_COMPILED_LIB;SPDLOG_FMT_EXTERNAL</PreprocessorDefinitions>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
-      <AdditionalIncludeDirectories>$(SolutionDir);$(ProjectDir)\..\explore</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir);$(ProjectDir)\..\explore;$(ProjectDir)\..\ext_libs\fmt\include;$(ProjectDir)\..\ext_libs\spdlog\include</AdditionalIncludeDirectories>
       <TreatWarningAsError Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</TreatWarningAsError>
     </ClCompile>
     <Link>
@@ -107,7 +107,7 @@
     <ClInclude Include="..\vowpalwabbit\options_boost_po.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
-    <ImportGroup Label="ExtensionTargets">
+  <ImportGroup Label="ExtensionTargets">
     <Import Project="$(SolutionDir)packages\boost.1.70.0.0\build\boost.targets" Condition="Exists('$(SolutionDir)packages\boost.1.70.0.0\build\boost.targets')" />
     <Import Project="$(SolutionDir)packages\boost_program_options-vc141.1.70.0.0\build\boost_program_options-vc141.targets" Condition="Exists('$(SolutionDir)packages\boost_program_options-vc141.1.70.0.0\build\boost_program_options-vc141.targets')" />
   </ImportGroup>

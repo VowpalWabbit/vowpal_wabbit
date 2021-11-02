@@ -14,9 +14,16 @@
 #include "explore.h"
 #include "vw_versions.h"
 #include "version.h"
+#include "label_parser.h"
+
+#include <utility>
 #include <vector>
 #include <algorithm>
 #include <cmath>
+
+#include "io/logger.h"
+
+namespace logger = VW::io::logger;
 
 // All exploration algorithms return a vector of id, probability tuples, sorted in order of scores. The probabilities
 // are the probability with which each action should be replaced to the top of the list.
@@ -44,7 +51,6 @@ private:
 public:
   cb_explore_adf_synthcover(float epsilon, float psi, size_t synthcoversize, std::shared_ptr<rand_state> random_state,
       VW::version_struct model_file_version);
-  ~cb_explore_adf_synthcover();
 
   // Should be called through cb_explore_adf_base for pre/post-processing
   void predict(VW::LEARNER::multi_learner& base, multi_ex& examples) { predict_or_learn_impl<false>(base, examples); }
@@ -61,9 +67,8 @@ cb_explore_adf_synthcover::cb_explore_adf_synthcover(float epsilon, float psi, s
     : _epsilon(epsilon)
     , _psi(psi)
     , _synthcoversize(synthcoversize)
-    , _random_state(random_state)
+    , _random_state(std::move(random_state))
     , _model_file_version(model_file_version)
-    , _action_probs(v_init<ACTION_SCORE::action_score>())
     , _min_cost(0.0)
     , _max_cost(0.0)
 {
@@ -86,7 +91,7 @@ void cb_explore_adf_synthcover::predict_or_learn_impl(VW::LEARNER::multi_learner
   }
 
   ACTION_SCORE::action_scores& preds = examples[0]->pred.a_s;
-  uint32_t num_actions = (uint32_t)examples.size();
+  uint32_t num_actions = static_cast<uint32_t>(examples.size());
   if (num_actions == 0)
   {
     preds.clear();
@@ -98,8 +103,7 @@ void cb_explore_adf_synthcover::predict_or_learn_impl(VW::LEARNER::multi_learner
     return;
   }
 
-  for (size_t i = 0; i < num_actions; i++)
-  { preds[i].score = std::min(_max_cost, std::max(_min_cost, preds[i].score)); }
+  for (size_t i = 0; i < num_actions; i++) { preds[i].score = VW::math::clamp(preds[i].score, _min_cost, _max_cost); }
   std::make_heap(
       preds.begin(), preds.end(), [](const ACTION_SCORE::action_score& a, const ACTION_SCORE::action_score& b) {
         return ACTION_SCORE::score_comp(&a, &b) > 0;
@@ -114,8 +118,8 @@ void cb_explore_adf_synthcover::predict_or_learn_impl(VW::LEARNER::multi_learner
         preds.begin(), preds.end(), [](const ACTION_SCORE::action_score& a, const ACTION_SCORE::action_score& b) {
           return ACTION_SCORE::score_comp(&a, &b) > 0;
         });
-    // NB: what STL calls pop_back(), v_array calls pop().  facepalm.
-    auto minpred = preds.pop();
+    auto minpred = preds.back();
+    preds.pop_back();
 
     auto secondminpred = preds[0];
     for (; secondminpred.score >= minpred.score && i < _synthcoversize; i++)
@@ -141,24 +145,24 @@ void cb_explore_adf_synthcover::predict_or_learn_impl(VW::LEARNER::multi_learner
   for (size_t i = 0; i < num_actions; i++) preds[i] = _action_probs[i];
 }
 
-cb_explore_adf_synthcover::~cb_explore_adf_synthcover() { _action_probs.delete_v(); }
-
 void cb_explore_adf_synthcover::save_load(io_buf& model_file, bool read, bool text)
 {
   if (model_file.num_files() == 0) { return; }
-  if (!read || _model_file_version >= VERSION_FILE_WITH_CCB_MULTI_SLOTS_SEEN_FLAG)
+  if (!read || _model_file_version >= VW::version_definitions::VERSION_FILE_WITH_CCB_MULTI_SLOTS_SEEN_FLAG)
   {
     std::stringstream msg;
     if (!read) msg << "_min_cost " << _min_cost << "\n";
-    bin_text_read_write_fixed(model_file, (char*)&_min_cost, sizeof(_min_cost), "", read, msg, text);
+    bin_text_read_write_fixed(model_file, reinterpret_cast<char*>(&_min_cost), sizeof(_min_cost), read, msg, text);
 
     if (!read) msg << "_max_cost " << _max_cost << "\n";
-    bin_text_read_write_fixed(model_file, (char*)&_max_cost, sizeof(_max_cost), "", read, msg, text);
+    bin_text_read_write_fixed(model_file, reinterpret_cast<char*>(&_max_cost), sizeof(_max_cost), read, msg, text);
   }
 }
 
-VW::LEARNER::base_learner* setup(VW::config::options_i& options, vw& all)
+VW::LEARNER::base_learner* setup(VW::setup_base_i& stack_builder)
 {
+  VW::config::options_i& options = *stack_builder.get_options();
+  vw& all = *stack_builder.get_all_pointer();
   using config::make_option;
   bool cb_explore_adf_option = false;
   float epsilon = 0.;
@@ -195,29 +199,32 @@ VW::LEARNER::base_learner* setup(VW::config::options_i& options, vw& all)
 
   if (!all.logger.quiet)
   {
-    std::cerr << "Using synthcover for CB exploration" << std::endl;
-    std::cerr << "synthcoversize = " << synthcoversize << std::endl;
-    if (epsilon > 0) std::cerr << "epsilon = " << epsilon << std::endl;
-    std::cerr << "synthcoverpsi = " << psi << std::endl;
+    *(all.trace_message) << "Using synthcover for CB exploration" << std::endl;
+    *(all.trace_message) << "synthcoversize = " << synthcoversize << std::endl;
+    if (epsilon > 0) *(all.trace_message) << "epsilon = " << epsilon << std::endl;
+    *(all.trace_message) << "synthcoverpsi = " << psi << std::endl;
   }
 
-  all.delete_prediction = ACTION_SCORE::delete_action_scores;
-
   size_t problem_multiplier = 1;
-  VW::LEARNER::multi_learner* base = as_multiline(setup_base(options, all));
+  VW::LEARNER::multi_learner* base = as_multiline(stack_builder.setup_base_learner());
   all.example_parser->lbl_parser = CB::cb_label;
-  all.label_type = label_type_t::cb;
+
+  bool with_metrics = options.was_supplied("extra_metrics");
 
   using explore_type = cb_explore_adf_base<cb_explore_adf_synthcover>;
-  auto data =
-      scoped_calloc_or_throw<explore_type>(epsilon, psi, synthcoversize, all.get_random_state(), all.model_file_ver);
-
-  VW::LEARNER::learner<explore_type, multi_ex>& l = VW::LEARNER::init_learner(
-      data, base, explore_type::learn, explore_type::predict, problem_multiplier, prediction_type_t::action_probs);
-
-  l.set_finish_example(explore_type::finish_multiline_example);
-  l.set_save_load(explore_type::save_load);
-  return make_base(l);
+  auto data = VW::make_unique<explore_type>(
+      with_metrics, epsilon, psi, synthcoversize, all.get_random_state(), all.model_file_ver);
+  auto* l = make_reduction_learner(
+      std::move(data), base, explore_type::learn, explore_type::predict, stack_builder.get_setupfn_name(setup))
+                .set_params_per_weight(problem_multiplier)
+                .set_output_prediction_type(VW::prediction_type_t::action_probs)
+                .set_input_label_type(VW::label_type_t::cb)
+                .set_finish_example(explore_type::finish_multiline_example)
+                .set_print_example(explore_type::print_multiline_example)
+                .set_save_load(explore_type::save_load)
+                .set_persist_metrics(explore_type::persist_metrics)
+                .build();
+  return make_base(*l);
 }
 
 }  // namespace synthcover

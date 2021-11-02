@@ -1,12 +1,13 @@
-name: Build Windows Python Wheels
+name: Windows / Python
 
 on:
   push:
     branches:
       - master
+      - 'releases/**'
   pull_request:
     branches:
-      - master
+      - '*'
 
 jobs:
   build:
@@ -17,6 +18,7 @@ jobs:
         - { version: 3.6, vcpkg_commit: aa095559917a495b160986e9ad50556431509ace}
         - { version: 3.7, vcpkg_commit: 8c3e093d0509fb0c7cc325692834fc1583a05390}
         - { version: 3.8, vcpkg_commit: 6185aa76504a5025f36754324abf307cc776f3da}
+        - { version: 3.9, vcpkg_commit: fe112d8301e13fde9a25dc92d94a0c4a6dc3cf19}
     steps:
       - name: Set up Python ${{ matrix.config.version }}
         uses: actions/setup-python@v2
@@ -33,6 +35,11 @@ jobs:
         with:
           path: ${{github.workspace}}\\vcpkg
           key: ${{ runner.os }}-${{ matrix.config.version }}-${{ matrix.config.vcpkg_commit }}-2
+      # Downgrade CMake to mitigate crashing issue introduced in 3.21 that only affects vcpkg. See here: https://github.com/microsoft/vcpkg/issues/18718
+      - name: Setup cmake
+        uses: jwlawson/actions-setup-cmake@v1.9
+        with:
+          cmake-version: '3.20.x'
       - name: Bootstrap and install vcpkg packages
         shell: powershell
         if: steps.vcpkg-cache.outputs.cache-hit != 'true'
@@ -63,6 +70,7 @@ jobs:
         - { version: 3.6 }
         - { version: 3.7 }
         - { version: 3.8 }
+        - { version: 3.9 }
     steps:
       - uses: actions/checkout@v2
       - name: Set up Python ${{ matrix.config.version }}

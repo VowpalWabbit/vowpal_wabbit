@@ -4,6 +4,10 @@
 #pragma once
 #include "global_data.h"
 
+// TODO: Search is using some macro-enabled logging logic for cdbg
+//       (going to clog [which in turn goes to err, with some differences])
+//       We may want to create/use some macro-based loggers (which will wrap the spdlog ones)
+//       to mimic this behavior.
 #define cdbg std::clog
 #undef cdbg
 #define cdbg \
@@ -12,8 +16,8 @@
     std::clog
 // comment the previous two lines if you want loads of debug output :)
 
-typedef uint32_t action;
-typedef uint32_t ptag;
+using action = uint32_t;
+using ptag = uint32_t;
 
 namespace Search
 {
@@ -79,24 +83,24 @@ struct search
   template <class T>
   void set_task_data(T* data)
   {
-    task_data = data;
+    task_data = std::shared_ptr<T>(data);
   }
   template <class T>
   T* get_task_data()
   {
-    return (T*)task_data;
+    return static_cast<T*>(task_data.get());
   }
 
   // for managing metatask-specific data
   template <class T>
   void set_metatask_data(T* data)
   {
-    metatask_data = data;
+    metatask_data = std::shared_ptr<T>(data);
   }
   template <class T>
   T* get_metatask_data()
   {
-    return (T*)metatask_data;
+    return static_cast<T*>(metatask_data.get());
   }
 
   // for setting programmatic options during initialization
@@ -105,7 +109,7 @@ struct search
 
   // change the default label parser, but you _must_ tell me how
   // to detect test examples!
-  void set_label_parser(label_parser& lp, label_type_t type, bool (*is_test)(polylabel&));
+  void set_label_parser(label_parser& lp, bool (*is_test)(const polylabel&));
 
   // for explicitly declaring a loss incrementally
   void loss(float incr_loss);
@@ -115,7 +119,7 @@ struct search
   //   ec                    the example (features) on which to make a prediction
   //   my_tag                a tag for this prediction, so that you can explicitly
   //                           state, for future predictions, which ones depend
-  //                           explicitely or implicitly on this prediction
+  //                           explicitly or implicitly on this prediction
   //   oracle_actions        an array of actions that the oracle would take
   //                           nullptr => the oracle doesn't know (is random!)
   //   oracle_actions_cnt    the length of the previous array, or 0 if it's nullptr
@@ -186,6 +190,8 @@ struct search
 
   // check if the user declared ldf mode
   bool is_ldf();
+  // Ldf is used to determine if the base learner is multi or single line.
+  void set_is_ldf(bool);
 
   // where you should write output
   std::stringstream& output();
@@ -210,12 +216,12 @@ struct search
 
   // internal data that you don't get to see!
   search_private* priv;
-  void* task_data;      // your task data!
-  void* metatask_data;  // your metatask data!
+  std::shared_ptr<void> task_data;      // your task data!
+  std::shared_ptr<void> metatask_data;  // your metatask data!
   const char* task_name;
   const char* metatask_name;
 
-  vw& get_vw_pointer_unsafe();  // although you should rarely need this, some times you need a poiter to the vw data
+  vw& get_vw_pointer_unsafe();  // although you should rarely need this, some times you need a pointer to the vw data
                                 // structure :(
   void set_force_oracle(bool force);  // if the library wants to force search to use the oracle, set this to true
   search();
@@ -253,7 +259,6 @@ class predictor
 {
 public:
   predictor(search& sch, ptag my_tag);
-  ~predictor();
 
   // tell the predictor what to use as input. a single example input
   // means non-LDF mode; an array of inputs means LDF mode
@@ -299,14 +304,10 @@ public:
   // set/add allowed but with per-actions costs specified
   predictor& add_allowed(action a, float cost);
   predictor& add_allowed(action* a, float* costs, size_t action_count);
-  VW_DEPRECATED("Use the std::vector variant of add_allowed.")
-  predictor& add_allowed(v_array<std::pair<action, float> >& a);
   predictor& add_allowed(std::vector<std::pair<action, float> >& a);
 
   predictor& set_allowed(action a, float cost);
   predictor& set_allowed(action* a, float* costs, size_t action_count);
-  VW_DEPRECATED("Use the std::vector variant of set_allowed.")
-  predictor& set_allowed(v_array<std::pair<action, float> >& a);
   predictor& set_allowed(std::vector<std::pair<action, float> >& a);
 
   // add a tag to condition on with a name, or set the conditioning
@@ -332,26 +333,15 @@ private:
   ptag my_tag;
   example* ec;
   size_t ec_cnt;
-  bool ec_alloced;
+  std::vector<example> allocated_examples;
   float weight;
   v_array<action> oracle_actions;
-  bool oracle_is_pointer;  // if we're pointing to your memory TRUE; if it's our own memory FALSE
   v_array<ptag> condition_on_tags;
   v_array<char> condition_on_names;
   v_array<action> allowed_actions;
-  bool allowed_is_pointer;  // if we're pointing to your memory TRUE; if it's our own memory FALSE
   v_array<float> allowed_actions_cost;
-  bool allowed_cost_is_pointer;  // if we're pointing to your memory TRUE; if it's our own memory FALSE
   size_t learner_id;
   search& sch;
-
-  template <class T>
-  void make_new_pointer(v_array<T>& A, size_t new_size);
-  template <class T>
-  predictor& add_to(v_array<T>& A, bool& A_is_ptr, T a, bool clear_first);
-  template <class T>
-  predictor& add_to(v_array<T>& A, bool& A_is_ptr, T* a, size_t count, bool clear_first);
-  void free_ec();
 
   // prevent the user from doing something stupid :) ... ugh needed to turn this off for python :(
   // predictor(const predictor&P);
@@ -374,5 +364,5 @@ default_to_cmdline, bool(*equal)(T,T), const char* mismatch_error_string, const 
 // char* mismatch_error_string);
 
 // our interface within VW
-VW::LEARNER::base_learner* setup(VW::config::options_i& options, vw& all);
+VW::LEARNER::base_learner* setup(VW::setup_base_i& stack_builder);
 }  // namespace Search

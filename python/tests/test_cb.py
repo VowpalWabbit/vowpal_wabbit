@@ -35,10 +35,16 @@ def helper_get_data():
 
     return train_df, test_df
 
-def test_getting_started_example():
+def test_getting_started_example_cb():
+    return helper_getting_started_example("--cb")
+
+def test_getting_started_example_legacy_cb():
+    return helper_getting_started_example("--cb_force_legacy --cb")
+
+def helper_getting_started_example(which_cb):
     train_df, test_df = helper_get_data()
 
-    vw = pyvw.vw("--cb 4", enable_logging=True)
+    vw = pyvw.vw(which_cb + " 4", enable_logging=True)
 
     for i in train_df.index:
         action = train_df.loc[i, "action"]
@@ -59,16 +65,24 @@ def test_getting_started_example():
         feature3 = test_df.loc[j, "feature3"]
         choice = vw.predict("| "+str(feature1)+" "+str(feature2)+" "+str(feature3))
         assert isinstance(choice, int), "choice should be int"
-        assert choice == 3, "predicted action should be 3"
+        assert choice == 3, "predicted action should be 3 instead of " + str(choice)
+
+    # test that metrics is empty since "--extra_metrics filename" was not supplied
+    assert(len(vw.get_learner_metrics()) == 0)
 
     vw.finish()
 
     output = vw.get_log()
 
-    with open(path.join(helper_get_test_dir(), "test-sets/ref/python_test_cb.stderr"), 'r') as file:
+    if which_cb.find("legacy") != -1:
+        test_file = "test-sets/ref/python_test_cb_legacy.stderr"
+    else:
+        test_file = "test-sets/ref/python_test_cb.stderr"
+    
+    with open(path.join(helper_get_test_dir(), test_file), 'r') as file:
         actual = file.readlines()
         for j, i in zip(actual, output):
-            assert i == j, "line mismatch should be: " + i + " output: " + j
+            assert i == j, "line mismatch should be: " + j + " output: " + i
 
 def test_getting_started_example_with():
     train_df, test_df = helper_get_data()

@@ -6,20 +6,12 @@
 #include <string>
 #include <stdexcept>
 #include <sstream>
+#include <cctype>
 
 #include "parse_primitives.h"
 #include "hash.h"
 #include "vw_exception.h"
-
-hash_func_t getHasher(const std::string& s)
-{
-  if (s == "strings")
-    return hashstring;
-  else if (s == "all")
-    return hashall;
-  else
-    THROW("Unknown hash function: " << s);
-}
+#include "vw_string_view.h"
 
 std::vector<std::string> escaped_tokenize(char delim, VW::string_view s, bool allow_empty)
 {
@@ -60,3 +52,23 @@ std::vector<std::string> escaped_tokenize(char delim, VW::string_view s, bool al
   }
   return tokens;
 }
+
+namespace VW
+{
+std::string trim_whitespace(const std::string& str) { return std::string(VW::trim_whitespace(VW::string_view(str))); }
+
+VW::string_view trim_whitespace(VW::string_view str)
+{
+  // Determine start
+  auto start = std::find_if_not(str.begin(), str.end(), [](char c) { return std::isspace(c); });
+  if (start == str.end()) { return ""; }
+  auto start_pos = std::distance(str.begin(), start);
+
+  // Determine end
+  auto end = std::find_if_not(str.rbegin(), str.rend(), [](char c) { return std::isspace(c); });
+  if (end == str.rend()) { return ""; }
+  // -1 is required as position 0 of the string is (rend - 1)
+  auto end_pos = std::distance(end, str.rend()) - 1;
+  return str.substr(start_pos, (end_pos - start_pos) + 1);
+}
+}  // namespace VW

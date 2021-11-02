@@ -6,7 +6,7 @@ decay_learning_rate = 1
 creating cache_file = train-sets/0002.dat.cache
 Reading datafile = train-sets/0002.dat
 num sources = 1
-Enabled reductions: gd, scorer
+Enabled reductions: gd, scorer-identity, count_label
 average  since         example        example  current  current  current
 loss     last          counter         weight    label  predict features
 0.020368 0.020368          100          100.0   0.5266   0.5147       15
@@ -24,7 +24,7 @@ finished run
 number of examples per pass = 500
 passes used = 2
 weighted example sum = 1000.000000
-weighted label sum = 523.218958
+weighted label sum = 523.218900
 average loss = 0.001528 h
 best constant = 0.523219
 total feature number = 14994

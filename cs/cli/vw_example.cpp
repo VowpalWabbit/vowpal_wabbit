@@ -5,8 +5,10 @@
 #include "vowpalwabbit.h"
 #include "vw_example.h"
 #include "vw_prediction.h"
+#include "simple_label_parser.h"
 #include "gd.h"
 #include <algorithm>
+#include "shared_data.h"
 
 namespace VW
 {
@@ -97,7 +99,7 @@ void VowpalWabbitExample::Label::set(ILabel^ label)
 	label->UpdateExample(m_owner->Native->m_vw, m_example);
 
 	// we need to update the example weight as setup_example() can be called prior to this call.
-	m_example->weight = m_owner->Native->m_vw->example_parser->lbl_parser.get_weight(&m_example->l);
+	m_example->weight = m_owner->Native->m_vw->example_parser->lbl_parser.get_weight(m_example->l, m_example->_reduction_features);
 }
 
 void VowpalWabbitExample::MakeEmpty(VowpalWabbit^ vw)
@@ -282,14 +284,16 @@ System::String^ VowpalWabbitExample::Diff(VowpalWabbit^ vw, VowpalWabbitExample^
 String^ VowpalWabbitSimpleLabelComparator::Diff(VowpalWabbitExample^ ex1, VowpalWabbitExample^ ex2)
 { auto s1 = ex1->m_example->l.simple;
   auto s2 = ex2->m_example->l.simple;
+  auto ex1_initial = ex1->m_example->_reduction_features.template get<simple_label_reduction_features>().initial;
+  auto ex2_initial = ex2->m_example->_reduction_features.template get<simple_label_reduction_features>().initial;
 
-  if (!(FloatEqual(s1.initial, s2.initial) &&
+  if (!(FloatEqual(ex1_initial, ex2_initial) &&
         FloatEqual(s1.label, s2.label) &&
-        FloatEqual(s1.weight, s2.weight)))
+        FloatEqual(ex1->m_example->weight, ex2->m_example->weight)))
   { return System::String::Format("Label differ. label {0} vs {1}. initial {2} vs {3}. weight {4} vs {5}",
                                   s1.label, s2.label,
-                                  s1.initial, s2.initial,
-                                  s1.weight, s2.weight);
+                                  ex1_initial, ex2_initial,
+                                  ex1->m_example->weight, ex2->m_example->weight);
   }
 
   return nullptr;

@@ -13,6 +13,7 @@
 #include "gd_predict.h"
 #include "model_parser.h"
 #include "opts.h"
+#include "interactions.h"
 
 namespace vw_slim
 {
@@ -225,6 +226,10 @@ class vw_predict
   std::string _version;
   std::string _command_line_arguments;
   std::vector<std::vector<namespace_index>> _interactions;
+  std::vector<std::vector<extent_term>> _unused_extent_interactions;
+  INTERACTIONS::generate_interactions_object_cache _generate_interactions_object_cache;
+  INTERACTIONS::interactions_generator _generate_interactions;
+  bool _contains_wildcard;
   std::array<bool, NUM_NAMESPACES> _ignore_linear;
   bool _no_constant;
 
@@ -239,7 +244,7 @@ class vw_predict
   bool _model_loaded;
 
 public:
-  vw_predict() : _model_loaded(false) {}
+  vw_predict() : _model_loaded(false), _contains_wildcard(false) {}
 
   /**
    * @brief Reads the Vowpal Wabbit model from the supplied buffer (produced using vw -f <modelname>)
@@ -300,13 +305,16 @@ public:
     // VW performs the following transformation as a side-effect of looking for duplicates.
     // This affects how interaction hashes are generated.
     std::vector<std::vector<namespace_index>> vec_sorted;
-    for (auto& interaction : _interactions)
+    for (auto& interaction : _interactions) { std::sort(std::begin(interaction), std::end(interaction)); }
+
+    for (const auto& inter : _interactions)
     {
-      std::vector<namespace_index> sorted_i(interaction);
-      std::sort(std::begin(sorted_i), std::end(sorted_i));
-      vec_sorted.push_back(sorted_i);
+      if (INTERACTIONS::contains_wildcard(inter))
+      {
+        _contains_wildcard = true;
+        break;
+      }
     }
-    _interactions = vec_sorted;
 
     // TODO: take --cb_type dr into account
     uint64_t num_weights = 0;
@@ -414,8 +422,20 @@ public:
       ns_copy_guard->feature_push_back(1.f, (constant << _stride_shift) + ex.ft_offset);
     }
 
-    score = GD::inline_predict<W>(*_weights, false, _ignore_linear, _interactions, /* permutations */ false, ex);
-
+    if (_contains_wildcard)
+    {
+      // permutations is not supported by slim so we can just use combinations!
+      _generate_interactions.update_interactions_if_new_namespace_seen<
+          INTERACTIONS::generate_namespace_combinations_with_repetition, false>(_interactions, ex.indices);
+      score = GD::inline_predict<W>(*_weights, false, _ignore_linear, _generate_interactions.generated_interactions,
+          _unused_extent_interactions,
+          /* permutations */ false, ex, _generate_interactions_object_cache);
+    }
+    else
+    {
+      score = GD::inline_predict<W>(*_weights, false, _ignore_linear, _interactions, _unused_extent_interactions,
+          /* permutations */ false, ex, _generate_interactions_object_cache);
+    }
     return S_VW_PREDICT_OK;
   }
 

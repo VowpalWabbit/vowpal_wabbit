@@ -9,20 +9,20 @@ power_t = 0.5
 using no cache
 Reading datafile = train-sets/regression/cbify-reg.dat
 num sources = 1
-Enabled reductions: ftrl, scorer, csoaa, cb, cb_explore, cbify
+Enabled reductions: ftrl-Coin Betting, scorer-identity, csoaa, cb, cb_explore-greedy, cbify-reg-discrete, count_label
 average  since         example        example  current  current  current
 loss     last          counter         weight    label  predict features
 0.155380 0.155380            1            1.0 3879.0000 185.0000       10
-0.412636 0.669891            2            2.0 16123.0000 196.6084       10
-0.386210 0.359784            4            4.0 4213.0000 208.2168       10
-0.454777 0.523345            8            8.0 7932.0000 231.4336       10
-0.469378 0.483979           16           16.0 8574.0000 289.4756       10
-0.510508 0.551637           32           32.0 15481.0000 382.3428       10
+0.412644 0.669908            2            2.0 16123.0000 196.6084       10
+0.386470 0.360297            4            4.0 4213.0000 185.0000       10
+0.454917 0.523363            8            8.0 7932.0000 231.4336       10
+0.469705 0.484493           16           16.0 8574.0000 254.6504       10
+0.511582 0.553460           32           32.0 15481.0000 324.3008       10
 
 finished run
 number of examples = 50
 weighted example sum = 50.000000
-weighted label sum = 638.000000
-average loss = 0.526042
-best constant = 12.760000
+weighted label sum = 500.000000
+average loss = 0.527409
+best constant = 10.000000
 total feature number = 500

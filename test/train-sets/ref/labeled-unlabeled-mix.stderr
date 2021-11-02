@@ -5,7 +5,7 @@ power_t = 0.5
 using no cache
 Reading datafile = train-sets/labeled-unlabeled-mix.dat
 num sources = 1
-Enabled reductions: gd, scorer, bootstrap
+Enabled reductions: gd, scorer-identity, bootstrap, count_label
 average  since         example        example  current  current  current
 loss     last          counter         weight    label  predict features
 1.000000 1.000000            1            1.0   1.0000   0.0000        4

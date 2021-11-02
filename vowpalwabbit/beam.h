@@ -31,8 +31,8 @@ struct beam_element
 inline int compare_on_cost(const void *void_a, const void *void_b)
 {
   if (void_a == void_b) return 0;
-  const beam_element<void> *a = (const beam_element<void> *)void_a;
-  const beam_element<void> *b = (const beam_element<void> *)void_b;
+  const beam_element<void>* a = static_cast<const beam_element<void>*>(void_a);
+  const beam_element<void>* b = static_cast<const beam_element<void>*>(void_b);
   if (a->active && !b->active)
     return -1;  // active things come before inactive things
   else if (!a->active && b->active)
@@ -50,8 +50,8 @@ inline int compare_on_cost(const void *void_a, const void *void_b)
 inline int compare_on_hash_then_cost(const void *void_a, const void *void_b)
 {
   if (void_a == void_b) return 0;
-  const beam_element<void> *a = (const beam_element<void> *)void_a;
-  const beam_element<void> *b = (const beam_element<void> *)void_b;
+  const beam_element<void>* a = static_cast<const beam_element<void>*>(void_a);
+  const beam_element<void>* b = static_cast<const beam_element<void>*>(void_b);
   if (a->active && !b->active)
     return -1;  // active things come before inactive things
   else if (!a->active && b->active)
@@ -99,7 +99,6 @@ public:
     best_cost = FLT_MAX;
     prune_if_gt = FLT_MAX;
     best_cost_data = nullptr;
-    A = v_init<beam_element<T>>();
     if (beam_size <= BEAM_CONSTANT_SIZE)
       A.resize(beam_size, true);
     else
@@ -293,7 +292,6 @@ public:
   ~beam()
   {
     assert(A.size() == 0);
-    A.delete_v();
   }
 
   beam_element<T> *begin() { return A.begin; }

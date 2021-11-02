@@ -5,7 +5,7 @@ import sys
 import os
 import optparse
 import random
-from six.moves import zip_longest
+from itertools import zip_longest
 
 
 def system(cmd, verbose=True):

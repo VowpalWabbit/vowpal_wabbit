@@ -1,20 +1,29 @@
 package vowpalWabbit;
 
+import common.Native;
 import vowpalWabbit.learner.VWLearners;
 
 public final class VW {
     static {
-        System.loadLibrary("vw_jni");
+        try {
+            // Load from java.library.path
+            System.loadLibrary("vw_jni");
+        } catch (UnsatisfiedLinkError e) {
+            // Load from JAR
+            Native.load();
+        }
     }
 
     /**
      * Should not be directly instantiated.
      */
-    private VW(){}
+    private VW() {
+    }
 
     /**
-     * This main method only exists to test the library implementation.  To test it just run
-     * java -cp target/vw-jni-*-SNAPSHOT.jar vowpalWabbit.VW
+     * This main method only exists to test the library implementation. To test
+     * it, just run java -cp target/vw-jni-*-SNAPSHOT.jar vowpalWabbit.VW
+     *
      * @param args No args needed.
      * @throws Exception possibly during close.
      */

@@ -8,16 +8,16 @@ using no cache
 Reading datafile = train-sets/decisionservice.json
 WARNING: Old string feature value behavior is deprecated in JSON/DSJSON and will be removed in a future version. Use `--chain_hash` to use new behavior and silence this warning.
 num sources = 1
-Enabled reductions: gd, scorer, csoaa_ldf, cb_adf, cb_explore_adf_greedy, shared_feature_merger
+Enabled reductions: gd, scorer-identity, csoaa_ldf-rank, cb_adf, cb_explore_adf_greedy, shared_feature_merger
 average  since         example        example  current  current  current
 loss     last          counter         weight    label  predict features
--0.102041 -0.102041            1            1.0    known        0:0.0833333...      361
--0.051020 0.000000            2            2.0    known        6:0.816667...      361
--0.040816 -0.020408            3            3.0    known        6:0.816667...      361
+-0.102041 -0.102041            1            1.0 9:-1:0.82        0:0.0833333...     1149
+-0.051020 0.000000            2            2.0 9:0:0.82        6:0.816667...     1149
+-0.040816 -0.020408            3            3.0 9:-1:0.82        6:0.816667...     1149
 
 finished run
 number of examples = 3
 weighted example sum = 3.000000
 weighted label sum = 0.000000
 average loss = -0.040816
-total feature number = 1104
+total feature number = 3468

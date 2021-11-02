@@ -10,6 +10,7 @@
 #include "gen_cs_example.h"
 #include "cb_explore.h"
 #include "explore.h"
+#include "label_parser.h"
 #include <vector>
 #include <algorithm>
 #include <cmath>
@@ -53,8 +54,10 @@ void cb_explore_adf_softmax::predict_or_learn_impl(VW::LEARNER::multi_learner& b
   exploration::enforce_minimum_probability(_epsilon, true, begin_scores(preds), end_scores(preds));
 }
 
-VW::LEARNER::base_learner* setup(VW::config::options_i& options, vw& all)
+VW::LEARNER::base_learner* setup(VW::setup_base_i& stack_builder)
 {
+  VW::config::options_i& options = *stack_builder.get_options();
+  vw& all = *stack_builder.get_all_pointer();
   using config::make_option;
   bool cb_explore_adf_option = false;
   bool softmax = false;
@@ -78,25 +81,28 @@ VW::LEARNER::base_learner* setup(VW::config::options_i& options, vw& all)
   // Ensure serialization of cb_adf in all cases.
   if (!options.was_supplied("cb_adf")) { options.insert("cb_adf", ""); }
 
-  all.delete_prediction = ACTION_SCORE::delete_action_scores;
-
   // Set explore_type
   size_t problem_multiplier = 1;
 
-  VW::LEARNER::multi_learner* base = as_multiline(setup_base(options, all));
+  VW::LEARNER::multi_learner* base = as_multiline(stack_builder.setup_base_learner());
   all.example_parser->lbl_parser = CB::cb_label;
-  all.label_type = label_type_t::cb;
+
+  bool with_metrics = options.was_supplied("extra_metrics");
 
   using explore_type = cb_explore_adf_base<cb_explore_adf_softmax>;
-  auto data = scoped_calloc_or_throw<explore_type>(epsilon, lambda);
+  auto data = VW::make_unique<explore_type>(with_metrics, epsilon, lambda);
 
   if (epsilon < 0.0 || epsilon > 1.0) { THROW("The value of epsilon must be in [0,1]"); }
-
-  VW::LEARNER::learner<explore_type, multi_ex>& l = VW::LEARNER::init_learner(
-      data, base, explore_type::learn, explore_type::predict, problem_multiplier, prediction_type_t::action_probs);
-
-  l.set_finish_example(explore_type::finish_multiline_example);
-  return make_base(l);
+  auto* l = make_reduction_learner(
+      std::move(data), base, explore_type::learn, explore_type::predict, stack_builder.get_setupfn_name(setup))
+                .set_params_per_weight(problem_multiplier)
+                .set_output_prediction_type(VW::prediction_type_t::action_probs)
+                .set_input_label_type(VW::label_type_t::cb)
+                .set_finish_example(explore_type::finish_multiline_example)
+                .set_print_example(explore_type::print_multiline_example)
+                .set_persist_metrics(explore_type::persist_metrics)
+                .build();
+  return make_base(*l);
 }
 }  // namespace softmax
 }  // namespace cb_explore_adf

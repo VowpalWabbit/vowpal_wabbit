@@ -9,92 +9,49 @@
 #include "vw_string_view.h"
 #include "constant.h"
 #include "vw_math.h"
+#include "parse_primitives.h"
 #include <numeric>
+
 namespace VW
 {
 namespace slates
 {
 void default_label(slates::label& v);
 
-#define READ_CACHED_VALUE(DEST, TYPE)                                      \
-  next_read_size = sizeof(TYPE);                                           \
-  if (cache.buf_read(read_ptr, next_read_size) < next_read_size) return 0; \
-  DEST = *(TYPE*)read_ptr;                                                 \
-  read_count += sizeof(TYPE);
-
-#define WRITE_CACHED_VALUE(VALUE, TYPE) \
-  *(TYPE*)c = VALUE;                    \
-  c += sizeof(TYPE);
-
-size_t read_cached_label(shared_data* /*sd*/, slates::label& ld, io_buf& cache)
+size_t read_cached_label(slates::label& ld, io_buf& cache)
 {
   // Since read_cached_features doesn't default the label we must do it here.
   default_label(ld);
 
   size_t read_count = 0;
-  char* read_ptr;
-  size_t next_read_size = 0;
+  ld.type = cache.read_value_and_accumulate_size<slates::example_type>("type", read_count);
+  ld.weight = cache.read_value_and_accumulate_size<float>("weight", read_count);
+  ld.labeled = cache.read_value_and_accumulate_size<bool>("labeled", read_count);
+  ld.cost = cache.read_value_and_accumulate_size<float>("cost", read_count);
+  ld.slot_id = cache.read_value_and_accumulate_size<uint32_t>("slot_id", read_count);
 
-  READ_CACHED_VALUE(ld.type, slates::example_type);
-  READ_CACHED_VALUE(ld.weight, float);
-  READ_CACHED_VALUE(ld.labeled, bool);
-  READ_CACHED_VALUE(ld.cost, float);
-  READ_CACHED_VALUE(ld.slot_id, uint32_t);
-
-  uint32_t size_probs = 0;
-  READ_CACHED_VALUE(size_probs, uint32_t);
-
+  auto size_probs = cache.read_value_and_accumulate_size<uint32_t>("size_probs", read_count);
   for (uint32_t i = 0; i < size_probs; i++)
-  {
-    ACTION_SCORE::action_score a_s;
-    READ_CACHED_VALUE(a_s, ACTION_SCORE::action_score);
-    ld.probabilities.push_back(a_s);
-  }
+  { ld.probabilities.push_back(cache.read_value_and_accumulate_size<ACTION_SCORE::action_score>("a_s", read_count)); }
   return read_count;
 }
 
-void cache_label(slates::label& ld, io_buf& cache)
+void cache_label(const slates::label& ld, io_buf& cache)
 {
-  char* c;
-  size_t size = sizeof(ld.type) + sizeof(ld.weight) + sizeof(ld.labeled) + sizeof(ld.cost) + sizeof(ld.slot_id) +
-      sizeof(uint32_t)  // Size of probabilities
-      + sizeof(ACTION_SCORE::action_score) * ld.probabilities.size();
-
-  cache.buf_write(c, size);
-  WRITE_CACHED_VALUE(ld.type, slates::example_type);
-  WRITE_CACHED_VALUE(ld.weight, float);
-  WRITE_CACHED_VALUE(ld.labeled, bool);
-  WRITE_CACHED_VALUE(ld.cost, float);
-  WRITE_CACHED_VALUE(VW::convert(ld.slot_id), uint32_t);
-  WRITE_CACHED_VALUE(VW::convert(ld.probabilities.size()), uint32_t);
-  for (const auto& score : ld.probabilities) { WRITE_CACHED_VALUE(score, ACTION_SCORE::action_score); }
+  cache.write_value(ld.type);
+  cache.write_value(ld.weight);
+  cache.write_value(ld.labeled);
+  cache.write_value(ld.cost);
+  cache.write_value(VW::convert(ld.slot_id));
+  cache.write_value(VW::convert(ld.probabilities.size()));
+  for (const auto& score : ld.probabilities) { cache.write_value(score); }
 }
 
-float weight(slates::label& ld) { return ld.weight; }
+float weight(const slates::label& ld) { return ld.weight; }
 
-void default_label(slates::label& ld)
-{
-  ld.type = example_type::unset;
-  ld.weight = 1.f;
-  ld.labeled = false;
-  ld.cost = 0.f;
-  ld.slot_id = 0;
-  ld.probabilities.clear();
-}
+void default_label(slates::label& ld) { ld.reset_to_default(); }
 
-bool test_label(slates::label& ld) { return ld.labeled == false; }
-
-void delete_label(slates::label& ld) { ld.probabilities.delete_v(); }
-
-void copy_label(slates::label& dst, slates::label& src)
-{
-  dst.type = src.type;
-  dst.weight = src.weight;
-  dst.labeled = src.labeled;
-  dst.cost = src.cost;
-  dst.slot_id = src.slot_id;
-  copy_array(dst.probabilities, src.probabilities);
-}
+bool test_label(const slates::label& ld) { return ld.labeled == false; }
 
 // Slates labels come in three types, shared, action and slot with the following structure:
 // slates shared [global_cost]
@@ -103,8 +60,8 @@ void copy_label(slates::label& dst, slates::label& src)
 //
 // For a more complete description of the grammar, including examples see:
 // https://github.com/VowpalWabbit/vowpal_wabbit/wiki/Slates
-void parse_label(
-    parser* p, shared_data* /*sd*/, slates::label& ld, std::vector<VW::string_view>& words, reduction_features&)
+
+void parse_label(slates::label& ld, VW::label_parser_reuse_mem& reuse_mem, const std::vector<VW::string_view>& words)
 {
   ld.weight = 1;
 
@@ -144,10 +101,10 @@ void parse_label(
     if (words.size() == 3)
     {
       ld.labeled = true;
-      tokenize(',', words[2], p->parse_name);
+      tokenize(',', words[2], reuse_mem.tokens);
 
       std::vector<VW::string_view> split_colons;
-      for (auto& token : p->parse_name)
+      for (auto& token : reuse_mem.tokens)
       {
         tokenize(':', token, split_colons);
         if (split_colons.size() != 2) { THROW("Malformed action score token"); }
@@ -186,32 +143,27 @@ void parse_label(
   }
 }
 
-// clang-format off
 label_parser slates_label_parser = {
-  // default_label
-  [](polylabel* v) { default_label(v->slates); },
-  // parse_label
-  [](parser* p, shared_data* sd, polylabel* v, std::vector<VW::string_view>& words, reduction_features& red_features) {
-    parse_label(p, sd, v->slates, words, red_features);
-  },
-  // cache_label
-  [](polylabel* v, io_buf& cache) { cache_label(v->slates, cache); },
-  // read_cached_label
-  [](shared_data* sd, polylabel* v, io_buf& cache) { return read_cached_label(sd, v->slates, cache); },
-  // delete_label
-  [](polylabel* v) { delete_label(v->slates); },
-   // get_weight
-  [](polylabel* v) { return weight(v->slates); },
-  // copy_label
-  [](polylabel* dst, polylabel* src) {
-    if (dst && src) {
-      copy_label(dst->slates, src->slates);
-    }
-  },
-  // test_label
-  [](polylabel* v) { return test_label(v->slates); }
-};
-// clang-format on
+    // default_label
+    [](polylabel& label) { default_label(label.slates); },
+    // parse_label
+    [](polylabel& label, reduction_features& /* red_features */, VW::label_parser_reuse_mem& reuse_mem,
+        const VW::named_labels* /* ldict */,
+        const std::vector<VW::string_view>& words) { parse_label(label.slates, reuse_mem, words); },
+    // cache_label
+    [](const polylabel& label, const reduction_features& /* red_features */, io_buf& cache) {
+      cache_label(label.slates, cache);
+    },
+    // read_cached_label
+    [](polylabel& label, reduction_features& /* red_features */, io_buf& cache) {
+      return read_cached_label(label.slates, cache);
+    },
+    // get_weight
+    [](const polylabel& label, const reduction_features& /* red_features */) { return weight(label.slates); },
+    // test_label
+    [](const polylabel& label) { return test_label(label.slates); },
+    // label type
+    label_type_t::slates};
 
 }  // namespace slates
 }  // namespace VW

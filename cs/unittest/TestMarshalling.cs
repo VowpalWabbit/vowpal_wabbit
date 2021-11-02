@@ -237,6 +237,8 @@ namespace cs_unittest
             {
                 vw.Validate("| OnOff", new ExampleBoolean { OnOff = true });
                 vw.Validate("| ", new ExampleBoolean { OnOff = false });
+                vw.Validate("", new ExampleBoolean { OnOff = false });
+                vw.Validate("\n", new ExampleBoolean { OnOff = false });
             }
         }
 

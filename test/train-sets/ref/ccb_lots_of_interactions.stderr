@@ -1,0 +1,24 @@
+creating quadratic features for pairs: :: 
+WARNING: any duplicate namespace interactions will be removed
+You can use --leave_duplicate_interactions to disable this behaviour.
+Num weight bits = 18
+learning rate = 0.5
+initial_t = 0
+power_t = 0.5
+using no cache
+Reading datafile = train-sets/ccb_lots_of_interactions.dat
+num sources = 1
+Enabled reductions: gd, generate_interactions, scorer-identity, csoaa_ldf-rank, cb_adf, cb_explore_adf_greedy, cb_sample, shared_feature_merger, ccb_explore_adf
+average  since         example        example  current  current  current
+loss     last          counter         weight    label  predict features
+0.000000 0.000000            1            1.0 0:0,1:0,... 0,1,2,...      151
+0.000000 0.000000            2            2.0 0:0,1:0,... 0,1,2,...      181
+0.000000 0.000000            4            4.0 0:0,1:0,... 0,1,2,...      181
+-0.029762 -0.059524            8            8.0 4:-1,1:0,... 4,1,0,...     1077
+
+finished run
+number of examples = 11
+weighted example sum = 11.000000
+weighted label sum = 0.000000
+average loss = -0.021645
+total feature number = 11693

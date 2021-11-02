@@ -20,7 +20,7 @@ public class VWMulticlassLearnerTest extends VWTestHelper {
     public void testContextualBandits() throws IOException {
         // Note that the expected values in this test were obtained by running
         // vw from the command line as follows
-        // echo -e "1:2:0.4 | a c\n3:0.5:0.2 | b d\n4:1.2:0.5 | a b c\n2:1:0.3 | b c\n3:1.5:0.7 | a d" | ../vowpalwabbit/vw --cb 4 -f cb.model -p cb.train.out
+        // echo -e "1:2:0.4 | a c\n3:0.5:0.2 | b d\n4:1.2:0.5 | a b c\n2:1:0.3 | b c\n3:1.5:0.7 | a d" | ../vowpalwabbit/vw --cb_force_legacy --cb 4 -f cb.model -p cb.train.out
         // echo -e "1:2 3:5 4:1:0.6 | a c d\n1:0.5 2:1:0.4 3:2 4:1.5 | c d" | ../vowpalwabbit/vw -i cb.model -t -p cb.out
         String[] train = new String[]{
             "1:2:0.4 | a c",
@@ -30,7 +30,7 @@ public class VWMulticlassLearnerTest extends VWTestHelper {
             "3:1.5:0.7 | a d"
         };
         String cbModel = temporaryFolder.newFile().getAbsolutePath();
-        VWMulticlassLearner vw = VWLearners.create("--quiet --cb 4 -f " + cbModel);
+        VWMulticlassLearner vw = VWLearners.create("--quiet --cb_force_legacy --cb 4 -f " + cbModel);
         int[] trainPreds = new int[train.length];
         for (int i=0; i<train.length; ++i) {
             trainPreds[i] = vw.learn(train[i]);

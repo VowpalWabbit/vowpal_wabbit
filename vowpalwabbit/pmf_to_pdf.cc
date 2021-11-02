@@ -4,10 +4,13 @@
 
 #include "reductions.h"
 #include "pmf_to_pdf.h"
+
+#include <cmath>
 #include "explore.h"
 #include "guard.h"
 #include "vw.h"
 #include "cb_label_parser.h"
+#include "shared_data.h"
 
 using namespace LEARNER;
 using namespace VW;
@@ -20,47 +23,59 @@ namespace pmf_to_pdf
 void reduction::transform_prediction(example& ec)
 {
   const float continuous_range = max_value - min_value;
-  const float unit_range = continuous_range / (num_actions - 1);
+  const float unit_range = continuous_range / num_actions;
 
   size_t n = temp_pred_a_s.size();
   assert(n != 0);
 
+  auto score = temp_pred_a_s[0].score;
+  // map discrete action (predicted tree leaf) to the continuous value of the centre of the leaf
+  auto centre = min_value + temp_pred_a_s[0].action * unit_range + unit_range / 2.0f;
+
+  // if zero bandwidth -> stay inside leaf by smoothing around unit_range / 2 (leaf range is unit_range)
+  auto b = !bandwidth ? unit_range / 2.0f : bandwidth;
+
   pdf_lim.clear();
-  if (temp_pred_a_s[0].action - bandwidth != 0) pdf_lim.push_back(0);
+  if (centre - b != min_value) pdf_lim.push_back(min_value);
 
   uint32_t l = 0;
   uint32_t r = 0;
   while (l < n || r < n)
   {
-    if (temp_pred_a_s[0].action >= bandwidth)
+    if (centre >= b)
     {
-      if (l == n || temp_pred_a_s[r].action + bandwidth < temp_pred_a_s[l].action - bandwidth)
+      if (l == n || centre + b < centre - b)
       {
-        auto val = std::min(temp_pred_a_s[r++].action + bandwidth, num_actions - 1);
+        auto val = std::min(centre + b, max_value);
         pdf_lim.push_back(val);
+        r++;
       }
-      else if (r == n || temp_pred_a_s[l].action - bandwidth < temp_pred_a_s[r].action + bandwidth)
+      else if (r == n || centre - b < centre + b)
       {
-        pdf_lim.push_back(temp_pred_a_s[l++].action - bandwidth);
+        auto val = std::max(centre - b, min_value);
+        if ((!pdf_lim.empty() && pdf_lim.back() != val) || pdf_lim.empty()) { pdf_lim.push_back(val); }
+        l++;
       }
-      else if (temp_pred_a_s[l].action - bandwidth == temp_pred_a_s[r].action + bandwidth)
+      else if (centre - b == centre + b)
       {
-        pdf_lim.push_back(temp_pred_a_s[l].action - bandwidth);
+        auto val = std::max(centre - b, min_value);
+        if ((!pdf_lim.empty() && pdf_lim.back() != val) || pdf_lim.empty()) { pdf_lim.push_back(val); }
         l++;
         r++;
       }
     }
     else
     {
-      // action - bandwidth < 0 so lower limit is zero (already added to pdf_lim)
-      auto val = std::min(temp_pred_a_s[r++].action + bandwidth, num_actions - 1);
+      // centre < b so lower limit should be min_value (already added to pdf_lim)
+      // so need to add centre + b
+      auto val = std::min(centre + b, max_value);
       pdf_lim.push_back(val);
       l++;
       r++;
     }
   }
 
-  if (pdf_lim.back() != num_actions - 1) pdf_lim.push_back(num_actions - 1);
+  if (pdf_lim.back() != max_value) pdf_lim.push_back(max_value);
 
   auto& p_dist = ec.pred.pdf;
   p_dist.clear();
@@ -70,37 +85,21 @@ void reduction::transform_prediction(example& ec)
   for (uint32_t i = 0; i < m - 1; i++)
   {
     float p = 0;
-    if (l < n &&
-        ((temp_pred_a_s[l].action < bandwidth && pdf_lim[i] == 0) || pdf_lim[i] == temp_pred_a_s[l].action - bandwidth))
+    // there are 2 ways of knowing that we are entering the pdf limits of the chosen action and thus need to assign a
+    // probability: (1) if centre - b < min_value -> pdf_lim would be 'min_value' or
+    // (2) pdf_lim is 'centre - b'
+    if (l < n && (((centre - min_value) < b && pdf_lim[i] == min_value) || pdf_lim[i] == centre - b))
     {
-      // default: 'action - bandwidth' to 'action + bandwidth'
-      uint32_t actual_bandwidth = 2 * bandwidth;
-
-      if (temp_pred_a_s[l].action < bandwidth && pdf_lim[i] == 0)
-      {
-        // 'action - bandwidth' gets cut off by lower limit which is zero
-        // need to adjust bandwidth used in generating the pdf
-        actual_bandwidth -= (bandwidth - temp_pred_a_s[l].action);
-      }
-      if (temp_pred_a_s[l].action + bandwidth > num_actions - 1)
-      {
-        // 'action + bandwidth' gets cut off by upper limit which is 'num_actions - 1'
-        // need to adjust bandwidth used in generating the pdf
-        actual_bandwidth -= (bandwidth - (num_actions - 1 - temp_pred_a_s[l].action));
-      }
-      p += temp_pred_a_s[l++].score / (actual_bandwidth * unit_range);
+      // default: 2 * b : 'centre - b' to 'centre + b'
+      float actual_b = std::min(max_value, centre + b) - std::max(min_value, centre - b);
+      p += score / actual_b;
+      l++;
     }
-    const float left = min_value + pdf_lim[i] * unit_range;
-    const float right = min_value + pdf_lim[i + 1] * unit_range;
+    const float left = pdf_lim[i];
+    const float right = pdf_lim[i + 1];
 
     p_dist.push_back({left, right, p});
   }
-}
-
-reduction::~reduction()
-{
-  temp_lbl_cb.costs.delete_v();
-  temp_pred_a_s.delete_v();
 }
 
 void reduction::predict(example& ec)
@@ -112,11 +111,11 @@ void reduction::predict(example& ec)
   {
     float chosen_action = reduction_features.chosen_action;
     const float continuous_range = max_value - min_value;
-    const float unit_range = continuous_range / (num_actions - 1);
+    const float unit_range = continuous_range / num_actions;
 
     // discretize chosen action
     const float ac = (chosen_action - min_value) / unit_range;
-    auto action = static_cast<uint32_t>(floor(ac));
+    auto action = std::min(num_actions - 1, static_cast<uint32_t>(std::floor(ac)));
 
     temp_pred_a_s.clear();
     temp_pred_a_s.push_back({action, 1.f});
@@ -137,10 +136,10 @@ void reduction::learn(example& ec)
   const float action_cont = ec.l.cb_cont.costs[0].action;
 
   const float continuous_range = max_value - min_value;
-  const float unit_range = continuous_range / (num_actions - 1);
+  const float unit_range = continuous_range / num_actions;
 
   const float ac = (action_cont - min_value) / unit_range;
-  int action_segment_index = static_cast<int>(floor(ac));
+  int action_segment_index = std::min(static_cast<int>(num_actions - 1), static_cast<int>(std::floor(ac)));
   const bool cond1 = min_value + action_segment_index * unit_range <= action_cont;
   const bool cond2 = action_cont < min_value + (action_segment_index + 1) * unit_range;
 
@@ -150,16 +149,21 @@ void reduction::learn(example& ec)
     if (!cond2) action_segment_index++;
   }
 
-  const uint32_t local_min_value = (std::max)((int)bandwidth, action_segment_index - (int)bandwidth + 1);
-  const uint32_t local_max_value = (std::min)(num_actions - 1 - bandwidth, action_segment_index + bandwidth);
+  // going to pass label into tree, so need to used discretized version of bandwidth i.e. tree_bandwidth
+  uint32_t b = tree_bandwidth;
+  const uint32_t local_min_value = std::max(0, action_segment_index - static_cast<int>(b));
+  const uint32_t local_max_value = std::min(num_actions - 1, action_segment_index + b);
 
   auto swap_label = VW::swap_guard(ec.l.cb, temp_lbl_cb);
 
   ec.l.cb.costs.clear();
+
+  auto actual_bandwidth = !tree_bandwidth ? 1 : 2 * b;  // avoid zero division
+
   ec.l.cb.costs.push_back(
-      {cost, local_min_value + 1, pdf_value * 2 * bandwidth * continuous_range / num_actions, 0.0f});
+      CB::cb_class(cost, local_min_value + 1, pdf_value * actual_bandwidth * continuous_range / num_actions));
   ec.l.cb.costs.push_back(
-      {cost, local_max_value + 1, pdf_value * 2 * bandwidth * continuous_range / num_actions, 0.0f});
+      CB::cb_class(cost, local_max_value + 1, pdf_value * actual_bandwidth * continuous_range / num_actions));
 
   auto swap_prediction = VW::swap_guard(ec.pred.a_s, temp_pred_a_s);
 
@@ -182,33 +186,21 @@ void print_update(vw& all, bool is_test, example& ec, std::stringstream& pred_st
       const auto& cost = ec.l.cb.costs[0];
       label_string << cost.action << ":" << cost.cost << ":" << cost.probability;
     }
-    all.sd->print_update(all.holdout_set_off, all.current_pass, label_string.str(), pred_string.str(), ec.num_features,
-        all.progress_add, all.progress_arg);
+    all.sd->print_update(*all.trace_message, all.holdout_set_off, all.current_pass, label_string.str(),
+        pred_string.str(), ec.get_num_features(), all.progress_add, all.progress_arg);
   }
-}
-
-inline bool observed_cost(CB::cb_class* cl)
-{
-  // cost observed for this action if it has non zero probability and cost != FLT_MAX
-  return (cl != nullptr && cl->cost != FLT_MAX && cl->probability > .0);
-}
-
-CB::cb_class* get_observed_cost(CB::label& ld)
-{
-  for (auto& cl : ld.costs)
-    if (observed_cost(&cl)) return &cl;
-  return nullptr;
 }
 
 void output_example(vw& all, reduction&, example& ec, CB::label& ld)
 {
   float loss = 0.;
-
-  if (get_observed_cost(ec.l.cb) != nullptr)
-    for (auto& cbc : ec.l.cb.costs)
+  auto optional_cost = get_observed_cost_cb(ec.l.cb);
+  // cost observed, not default
+  if (optional_cost.first)
+    for (const auto& cbc : ec.l.cb.costs)
       for (uint32_t i = 0; i < ec.pred.pdf.size(); i++) loss += (cbc.cost / cbc.probability) * ec.pred.pdf[i].pdf_value;
 
-  all.sd->update(ec.test_only, get_observed_cost(ld) != nullptr, loss, 1.f, ec.num_features);
+  all.sd->update(ec.test_only, optional_cost.first, loss, 1.f, ec.get_num_features());
 
   constexpr size_t buffsz = 20;
   char temp_str[buffsz];
@@ -240,23 +232,27 @@ void finish_example(vw& all, reduction& c, example& ec)
   VW::finish_example(all, ec);
 }
 
-base_learner* setup(options_i& options, vw& all)
+base_learner* setup(VW::setup_base_i& stack_builder)
 {
-  auto data = scoped_calloc_or_throw<pmf_to_pdf::reduction>();
+  options_i& options = *stack_builder.get_options();
+  vw& all = *stack_builder.get_all_pointer();
+  auto data = VW::make_unique<pmf_to_pdf::reduction>();
 
-  option_group_definition new_options("Convert discrete PDF into continuous PDF");
+  option_group_definition new_options("Convert discrete PMF into continuous PDF");
   new_options
       .add(make_option("pmf_to_pdf", data->num_actions)
                .default_value(0)
                .necessary()
                .keep()
-               .help("number of tree labels <k> for pmf_to_pdf"))
+               .help("number of discrete actions <k> for pmf_to_pdf"))
       .add(make_option("min_value", data->min_value).keep().help("Minimum continuous value"))
       .add(make_option("max_value", data->max_value).keep().help("Maximum continuous value"))
       .add(make_option("bandwidth", data->bandwidth)
-               .default_value(1)
                .keep()
-               .help("Bandwidth (radius) of randomization around discrete actions in number of actions."))
+               .help("Bandwidth (radius) of randomization around discrete actions in terms of continuous range. By "
+                     "default will be set to half of the continuous action unit-range resulting in smoothing that "
+                     "stays inside the action space unit-range:\nunit_range = (max_value - "
+                     "min_value)/num-of-actions\ndefault bandwidth = unit_range / 2.0"))
       .add(make_option("first_only", data->first_only)
                .keep()
                .help("Use user provided first action or user provided pdf or uniform random"));
@@ -266,15 +262,50 @@ base_learner* setup(options_i& options, vw& all)
   if (data->num_actions == 0) return nullptr;
   if (!options.was_supplied("min_value") || !options.was_supplied("max_value"))
   { THROW("error: min and max values must be supplied with cb_continuous"); }
-  if (data->bandwidth <= 0) { THROW("error: Bandwidth must be >= 1"); }
-  auto p_base = as_singleline(setup_base(options, all));
+
+  float leaf_width = (data->max_value - data->min_value) / (data->num_actions);  // aka unit range
+  float half_leaf_width = leaf_width / 2.f;
+
+  if (!options.was_supplied("bandwidth"))
+  {
+    data->bandwidth = half_leaf_width;
+    *(all.trace_message) << "Bandwidth was not supplied, setting default to half the continuous action unit range: "
+                         << data->bandwidth << std::endl;
+  }
+
+  if (!(data->bandwidth >= 0.0f)) { THROW("error: Bandwidth must be positive"); }
+
+  if (data->bandwidth >= (data->max_value - data->min_value))
+  {
+    *(all.trace_message)
+        << "WARNING: Bandwidth is larger than continuous action range, this will result in a uniform pdf" << std::endl;
+  }
+
+  // Translate user provided bandwidth which is in terms of continuous action range (max_value - min_value)
+  // to the internal tree bandwidth which is in terms of #actions
+  if (data->bandwidth <= half_leaf_width) { data->tree_bandwidth = 0; }
+  else if (std::fmod((data->bandwidth), leaf_width) == 0)
+  {
+    data->tree_bandwidth = static_cast<uint32_t>((data->bandwidth) / leaf_width);
+  }
+  else
+  {
+    data->tree_bandwidth = static_cast<uint32_t>((data->bandwidth) / leaf_width) + 1;
+  }
+
+  options.replace("tree_bandwidth", std::to_string(data->tree_bandwidth));
+
+  auto* p_base = as_singleline(stack_builder.setup_base_learner());
   data->_p_base = p_base;
 
-  learner<pmf_to_pdf::reduction, example>& l = init_learner(data, p_base, learn, predict, 1, prediction_type_t::pdf);
-
-  all.delete_prediction = continuous_actions::delete_probability_density_function;
-
-  return make_base(l);
+  auto* l = VW::LEARNER::make_reduction_learner(
+      std::move(data), p_base, learn, predict, stack_builder.get_setupfn_name(setup))
+                .set_output_prediction_type(VW::prediction_type_t::pdf)
+                .set_input_label_type(VW::label_type_t::continuous)
+                // .set_output_label_type(label_type_t::cb)
+                // .set_input_prediction_type(prediction_type_t::action_scores)
+                .build();
+  return make_base(*l);
 }
 
 }  // namespace pmf_to_pdf

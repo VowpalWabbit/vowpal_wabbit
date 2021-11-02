@@ -58,7 +58,7 @@ instance "n1 n2 n3 0 n4 | ..." is the same as "n1 n2 n3 n4 | ...", but
 
 namespace GraphTask
 {
-Search::search_task task = {"graph", run, initialize, finish, setup, takedown};
+Search::search_task task = {"graph", run, initialize, nullptr, setup, takedown};
 
 struct task_data
 {
@@ -83,13 +83,13 @@ struct task_data
   std::vector<uint32_t> bfs;             // order of nodes to process
   std::vector<size_t> pred;              // predictions
   example* cur_node;                     // pointer to the current node for add_edge_features_fn
-  float* neighbor_predictions;           // prediction on this neighbor for add_edge_features_fn
-  uint32_t* confusion_matrix;
-  float* true_counts;
+  std::vector<float> neighbor_predictions;  // prediction on this neighbor for add_edge_features_fn
+  std::vector<uint32_t> confusion_matrix;
+  std::vector<float> true_counts;
   float true_counts_total;
 };
 
-inline bool example_is_test(polylabel& l) { return l.cs.costs.size() == 0; }
+inline bool example_is_test(const polylabel& l) { return l.cs.costs.empty(); }
 
 void initialize(Search::search& sch, size_t& num_actions, options_i& options)
 {
@@ -115,28 +115,20 @@ void initialize(Search::search& sch, size_t& num_actions, options_i& options)
 
   D->K = num_actions;
   D->numN = (D->directed + 1) * (D->K + 1);
-  std::cerr << "K=" << D->K << ", numN=" << D->numN << std::endl;
-  D->neighbor_predictions = calloc_or_throw<float>(D->numN);
+  *(sch.get_vw_pointer_unsafe().trace_message) << "K=" << D->K << ", numN=" << D->numN << std::endl;
+  D->neighbor_predictions.resize(D->numN, 0.f);
 
-  D->confusion_matrix = calloc_or_throw<uint32_t>((D->K + 1) * (D->K + 1));
-  D->true_counts = calloc_or_throw<float>(D->K + 1);
-  D->true_counts_total = (float)(D->K + 1);
+  D->confusion_matrix.resize((D->K + 1) * (D->K + 1), 0);
+  D->true_counts.resize(D->K + 1, 0.f);
+  D->true_counts_total = static_cast<float>(D->K + 1);
   for (size_t k = 0; k <= D->K; k++) D->true_counts[k] = 1.;
 
   if (D->separate_learners) sch.set_num_learners(D->num_loops);
 
   sch.set_task_data<task_data>(D);
   sch.set_options(0);  // Search::AUTO_HAMMING_LOSS
-  sch.set_label_parser(COST_SENSITIVE::cs_label, label_type_t::cs, example_is_test);
-}
-
-void finish(Search::search& sch)
-{
-  task_data* D = sch.get_task_data<task_data>();
-  free(D->neighbor_predictions);
-  free(D->confusion_matrix);
-  free(D->true_counts);
-  delete D;
+  sch.set_label_parser(COST_SENSITIVE::cs_label, example_is_test);
+  sch.set_is_ldf(false);
 }
 
 inline bool example_is_edge(example* e) { return e->l.cs.costs.size() > 1; }
@@ -244,12 +236,12 @@ void takedown(Search::search& sch, multi_ex& /*ec*/)
 void add_edge_features_group_fn(task_data& D, float fv, uint64_t fx)
 {
   example* node = D.cur_node;
-  uint64_t fx2 = fx / (uint64_t)D.multiplier;
+  uint64_t fx2 = fx / D.multiplier;
   for (size_t k = 0; k < D.numN; k++)
   {
     if (D.neighbor_predictions[k] == 0.) continue;
     node->feature_space[neighbor_namespace].push_back(
-        fv * D.neighbor_predictions[k], (uint64_t)((fx2 + 348919043 * k) * D.multiplier) & (uint64_t)D.mask);
+        fv * D.neighbor_predictions[k], static_cast<uint64_t>((fx2 + 348919043 * k) * D.multiplier) & D.mask);
   }
 }
 
@@ -257,9 +249,9 @@ void add_edge_features_single_fn(task_data& D, float fv, uint64_t fx)
 {
   example* node = D.cur_node;
   features& fs = node->feature_space[neighbor_namespace];
-  uint64_t fx2 = fx / (uint64_t)D.multiplier;
-  size_t k = (size_t)D.neighbor_predictions[0];
-  fs.push_back(fv, (uint32_t)((fx2 + 348919043 * k) * D.multiplier) & (uint64_t)D.mask);
+  uint64_t fx2 = fx / D.multiplier;
+  size_t k = static_cast<size_t>(D.neighbor_predictions[0]);
+  fs.push_back(fv, static_cast<uint32_t>((fx2 + 348919043 * k) * D.multiplier) & D.mask);
 }
 
 void add_edge_features(Search::search& sch, task_data& D, size_t n, multi_ex& ec)
@@ -302,7 +294,7 @@ void add_edge_features(Search::search& sch, task_data& D, size_t n, multi_ex& ec
         size_t other_side = (D.directed && (n_in_sink != m_in_sink)) ? (D.K + 1) : 0;
         D.neighbor_predictions[D.pred[m] - 1 + other_side] += 1.;
         pred_total += 1.;
-        last_pred = (uint32_t)D.pred[m] - 1 + (uint32_t)other_side;
+        last_pred = static_cast<uint32_t>(D.pred[m]) - 1 + static_cast<uint32_t>(other_side);
       }
     }
     else
@@ -313,43 +305,38 @@ void add_edge_features(Search::search& sch, task_data& D, size_t n, multi_ex& ec
     }
 
     if (pred_total == 0.) continue;
-    // std::cerr << n << ':' << i << " -> ["; for (size_t k=0; k<D.numN; k++) std::cerr << ' ' <<
-    // D.neighbor_predictions[k]; std::cerr
-    // << " ]" << std::endl;
     for (size_t k = 0; k < D.numN; k++) D.neighbor_predictions[k] /= pred_total;
     example& edge = *ec[i];
 
     if (pred_total <= 1.)  // single edge
     {
-      D.neighbor_predictions[0] = (float)last_pred;
+      D.neighbor_predictions[0] = static_cast<float>(last_pred);
       GD::foreach_feature<task_data, uint64_t, add_edge_features_single_fn>(sch.get_vw_pointer_unsafe(), edge, D);
     }
     else  // lots of edges
       GD::foreach_feature<task_data, uint64_t, add_edge_features_group_fn>(sch.get_vw_pointer_unsafe(), edge, D);
   }
   ec[n]->indices.push_back(neighbor_namespace);
-  ec[n]->total_sum_feat_sq += ec[n]->feature_space[neighbor_namespace].sum_feat_sq;
+  ec[n]->reset_total_sum_feat_sq();
   ec[n]->num_features += ec[n]->feature_space[neighbor_namespace].size();
 
   vw& all = sch.get_vw_pointer_unsafe();
-  for (auto& i : all.interactions)
+  for (const auto& i : all.interactions)
   {
     if (i.size() != 2) continue;
-    int i0 = (int)i[0];
-    int i1 = (int)i[1];
-    if ((i0 == (int)neighbor_namespace) || (i1 == (int)neighbor_namespace))
+    int i0 = static_cast<int>(i[0]);
+    int i1 = static_cast<int>(i[1]);
+    if ((i0 == static_cast<int>(neighbor_namespace)) || (i1 == static_cast<int>(neighbor_namespace)))
     {
       ec[n]->num_features += ec[n]->feature_space[i0].size() * ec[n]->feature_space[i1].size();
-      ec[n]->total_sum_feat_sq += ec[n]->feature_space[i0].sum_feat_sq * ec[n]->feature_space[i1].sum_feat_sq;
     }
   }
 }
 
 void del_edge_features(task_data& /*D*/, uint32_t n, multi_ex& ec)
 {
-  ec[n]->indices.pop();
+  ec[n]->indices.pop_back();
   features& fs = ec[n]->feature_space[neighbor_namespace];
-  ec[n]->total_sum_feat_sq -= fs.sum_feat_sq;
   ec[n]->num_features -= fs.size();
   fs.clear();
 }
@@ -366,11 +353,11 @@ float macro_f(task_data& D)
     float predC = 0.;
     for (size_t j = 1; j <= D.K; j++)
     {
-      trueC += (float)D.confusion_matrix[IDX(k, j)];
-      predC += (float)D.confusion_matrix[IDX(j, k)];
+      trueC += static_cast<float>(D.confusion_matrix[IDX(k, j)]);
+      predC += static_cast<float>(D.confusion_matrix[IDX(j, k)]);
     }
     if (trueC == 0) continue;
-    float correctC = (float)D.confusion_matrix[IDX(k, k)];
+    float correctC = static_cast<float>(D.confusion_matrix[IDX(k, k)]);
     count_f1++;
     if (correctC > 0)
     {
@@ -385,7 +372,7 @@ float macro_f(task_data& D)
 void run(Search::search& sch, multi_ex& ec)
 {
   task_data& D = *sch.get_task_data<task_data>();
-  float loss_val = 0.5f / (float)D.num_loops;
+  float loss_val = 0.5f / static_cast<float>(D.num_loops);
   for (size_t n = 0; n < D.N; n++) D.pred[n] = D.K + 1;
 
   for (size_t loop = 0; loop < D.num_loops; loop++)

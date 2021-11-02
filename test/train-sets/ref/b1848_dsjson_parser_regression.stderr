@@ -5,7 +5,7 @@ power_t = 0.5
 using no cache
 Reading datafile = train-sets/b1848_dsjson_parser_regression.txt
 num sources = 1
-Enabled reductions: gd, scorer, csoaa_ldf, cb_adf, cb_explore_adf_greedy, shared_feature_merger
+Enabled reductions: gd, scorer-identity, csoaa_ldf-rank, cb_adf, cb_explore_adf_greedy, shared_feature_merger, extra_metrics
 average  since         example        example  current  current  current
 loss     last          counter         weight    label  predict features
 

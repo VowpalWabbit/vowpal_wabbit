@@ -4,6 +4,11 @@
 
 #pragma once
 
+#include <vector>
+#include <string>
+#include <cstdint>
+#include <cstddef>
+
 namespace VW
 {
 namespace config

@@ -3,10 +3,11 @@
 // license as described in the file LICENSE.
 
 #include "get_pmf.h"
-#include "err_constants.h"
+#include "error_constants.h"
 #include "api_status.h"
 #include "debug_log.h"
-#include "parse_args.h"
+#include "global_data.h"
+#include "guard.h"
 
 // Aliases
 using std::endl;
@@ -18,7 +19,8 @@ using VW::config::options_i;
 using VW::LEARNER::single_learner;
 
 // Enable/Disable indented debug statements
-VW_DEBUG_ENABLE(false)
+#undef VW_DEBUG_LOG
+#define VW_DEBUG_LOG vw_dbg::cb_explore_get_pmf
 
 namespace VW
 {
@@ -35,13 +37,13 @@ struct get_pmf
 
 private:
   single_learner* _base = nullptr;
-  float _epsilon;
+  float _epsilon = 0.f;
 };
 
 int get_pmf::learn(example& ec, experimental::api_status*)
 {
   _base->learn(ec);
-  return error_code::success;
+  return VW::experimental::error_code::success;
 }
 
 int get_pmf::predict(example& ec, experimental::api_status*)
@@ -49,7 +51,7 @@ int get_pmf::predict(example& ec, experimental::api_status*)
   uint32_t base_prediction;
 
   {  // predict & restore prediction
-    restore_prediction restore(ec);
+    auto restore = VW::stash_guard(ec.pred);
     _base->predict(ec);
     base_prediction = ec.pred.multiclass - 1;
   }
@@ -58,7 +60,7 @@ int get_pmf::predict(example& ec, experimental::api_status*)
   ec.pred.a_s.clear();
   ec.pred.a_s.push_back({base_prediction, 1.0f});
 
-  return error_code::success;
+  return VW::experimental::error_code::success;
 }
 
 void get_pmf::init(single_learner* p_base, float epsilon)
@@ -77,15 +79,17 @@ void predict_or_learn(get_pmf& reduction, single_learner&, example& ec)
   else
     reduction.predict(ec, &status);
 
-  if (status.get_error_code() != error_code::success) { VW_DBG(ec) << status.get_error_msg() << endl; }
+  if (status.get_error_code() != VW::experimental::error_code::success)
+  { VW_DBG(ec) << status.get_error_msg() << endl; }
 }
 
 // END sample_pdf reduction and reduction methods
 ////////////////////////////////////////////////////
 
 // Setup reduction in stack
-LEARNER::base_learner* get_pmf_setup(config::options_i& options, vw& all)
+LEARNER::base_learner* get_pmf_setup(VW::setup_base_i& stack_builder)
 {
+  options_i& options = *stack_builder.get_options();
   option_group_definition new_options("Continuous actions - convert to pmf");
   bool invoked = false;
   float epsilon = 0.0f;
@@ -96,14 +100,16 @@ LEARNER::base_learner* get_pmf_setup(config::options_i& options, vw& all)
   // to the reduction stack;
   if (!options.add_parse_and_check_necessary(new_options)) return nullptr;
 
-  LEARNER::base_learner* p_base = setup_base(options, all);
-  auto p_reduction = scoped_calloc_or_throw<get_pmf>();
+  LEARNER::base_learner* p_base = stack_builder.setup_base_learner();
+  auto p_reduction = VW::make_unique<get_pmf>();
   p_reduction->init(as_singleline(p_base), epsilon);
 
-  LEARNER::learner<get_pmf, example>& l = init_learner(
-      p_reduction, as_singleline(p_base), predict_or_learn<true>, predict_or_learn<false>, 1, prediction_type_t::pdf);
+  auto* l = make_reduction_learner(std::move(p_reduction), as_singleline(p_base), predict_or_learn<true>,
+      predict_or_learn<false>, stack_builder.get_setupfn_name(get_pmf_setup))
+                .set_output_prediction_type(VW::prediction_type_t::pdf)
+                .build();
 
-  return make_base(l);
+  return make_base(*l);
 }
 }  // namespace continuous_action
 }  // namespace VW

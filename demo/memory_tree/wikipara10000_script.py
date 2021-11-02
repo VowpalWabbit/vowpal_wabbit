@@ -18,15 +18,15 @@ for shot,shots in available_shots.items():
     #hal_version = 1
     #num_queries = 1 #int(np.log(shots*num_of_classes)/np.log(2.))
     alpha = 0.1
-    learn_at_leaf = 1
-    use_oas = 0
+    learn_at_leaf = True
+    use_oas = False
     dream_at_update = 1
     dream_repeats = 5
     loss = "squared"
-    online = 0
-    sort_feature = 1
+    online = False
+    sort_feature = True
 
-    tree_node = int(2*passes*(num_of_classes*shots/(np.log(num_of_classes*shots)/np.log(2)*leaf_example_multiplier)));
+    tree_node = int(2*passes*(num_of_classes*shots/(np.log(num_of_classes*shots)/np.log(2)*leaf_example_multiplier)))
 
     train_data = "paradata10000_{}_shot.vw.train".format(shot)
     test_data = "paradata10000_{}_shot.vw.test".format(shot)
@@ -39,17 +39,16 @@ for shot,shots in available_shots.items():
 
     print("## Training...")
     start = time.time()
-    os.system("../../build/vowpalwabbit/vw {} --memory_tree {} --learn_at_leaf {} --max_number_of_labels {} --oas {} --online {} --dream_at_update {}\
-              --leaf_example_multiplier {} --dream_repeats {} --sort_features {}\
-        --alpha {} -l {} -b {} -c --passes {} --loss_function {} --holdout_off -f {}".format(
-                train_data,
-                tree_node, learn_at_leaf, num_of_classes,  use_oas, online, dream_at_update, 
-                leaf_example_multiplier, dream_repeats, sort_feature, alpha, lr, bits, passes, loss, saved_model))
+    command_line = f"../../build/vowpalwabbit/vw -d {train_data} --memory_tree {tree_node} {'--learn_at_leaf' if learn_at_leaf else ''} --max_number_of_labels {num_of_classes} {'--oas' if use_oas else ''} {'--online' if online else ''} --dream_at_update {dream_at_update}\
+              --leaf_example_multiplier {leaf_example_multiplier} --dream_repeats {dream_repeats} {'--sort_features' if sort_feature else ''} \
+        --alpha {alpha} -l {lr} -b {bits} -c --passes {passes} --loss_function {loss} --holdout_off -f {saved_model}"
+    print(command_line)
+    os.system(command_line)
     train_time = time.time() - start
 
     #test:
     print("## Testing...")
-    start = time.time();
+    start = time.time()
     os.system("../../build/vowpalwabbit/vw {} -i {}".format(test_data, saved_model))
 
     test_time = time.time() - start

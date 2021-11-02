@@ -14,24 +14,29 @@
 #include "vw.h"
 #include "bs.h"
 #include "vw_exception.h"
+#include "shared_data.h"
+
+#include "io/logger.h"
 
 using namespace VW::LEARNER;
 using namespace VW::config;
 
+namespace logger = VW::io::logger;
+
 struct bs
 {
-  uint32_t B;  // number of bootstrap rounds
-  size_t bs_type;
-  float lb;
-  float ub;
+  uint32_t B = 0;  // number of bootstrap rounds
+  size_t bs_type = 0;
+  float lb = 0.f;
+  float ub = 0.f;
   std::vector<double> pred_vec;
-  vw* all;  // for raw prediction and loss
+  vw* all = nullptr;  // for raw prediction and loss
   std::shared_ptr<rand_state> _random_state;
 };
 
 void bs_predict_mean(vw& all, example& ec, std::vector<double>& pred_vec)
 {
-  ec.pred.scalar = (float)accumulate(pred_vec.cbegin(), pred_vec.cend(), 0.0) / pred_vec.size();
+  ec.pred.scalar = static_cast<float>(accumulate(pred_vec.cbegin(), pred_vec.cend(), 0.0)) / pred_vec.size();
   if (ec.weight > 0 && ec.l.simple.label != FLT_MAX)
     ec.loss = all.loss->getLoss(all.sd, ec.pred.scalar, ec.l.simple.label) * ec.weight;
 }
@@ -48,8 +53,8 @@ void bs_predict_vote(example& ec, std::vector<double>& pred_vec)
 
   for (size_t i = 0; i < pred_vec_int.size(); i++)
   {
-    pred_vec_int[i] = (int)floor(
-        pred_vec[i] + 0.5);  // could be added: link(), min_label/max_label, cutoff between true/false for binary
+    pred_vec_int[i] = static_cast<int>(
+        floor(pred_vec[i] + 0.5));  // could be added: link(), min_label/max_label, cutoff between true/false for binary
 
     if (!multivote_detected)  // distinct(votes)>2 detection bloc
     {
@@ -117,7 +122,7 @@ void bs_predict_vote(example& ec, std::vector<double>& pred_vec)
         sum_labels += pred_vec[i]; */
   }
   // ld.prediction = sum_labels/(float)counter; //replace line below for: "avg on votes" and getLoss()
-  ec.pred.scalar = (float)current_label;
+  ec.pred.scalar = static_cast<float>(current_label);
 
   // ec.loss = all.loss->getLoss(all.sd, ld.prediction, ld.label) * ec.weight; //replace line below for: "avg on votes"
   // and getLoss()
@@ -134,16 +139,19 @@ void print_result(VW::io::writer* f, float res, const v_array<char>& tag, float 
   ss << std::fixed << ' ' << lb << ' ' << ub << '\n';
   const auto ss_str = ss.str();
   ssize_t len = ss_str.size();
-  ssize_t t = f->write(ss_str.c_str(), (unsigned int)len);
-  if (t != len) { std::cerr << "write error: " << VW::strerror_to_string(errno) << std::endl; }
+  ssize_t t = f->write(ss_str.c_str(), static_cast<unsigned int>(len));
+  if (t != len)
+  {
+    logger::errlog_error("write error: {}", VW::strerror_to_string(errno));
+  }
 }
 
 void output_example(vw& all, bs& d, example& ec)
 {
   label_data& ld = ec.l.simple;
 
-  all.sd->update(ec.test_only, ld.label != FLT_MAX, ec.loss, ec.weight, ec.num_features);
-  if (ld.label != FLT_MAX && !ec.test_only) all.sd->weighted_labels += ((double)ld.label) * ec.weight;
+  all.sd->update(ec.test_only, ld.label != FLT_MAX, ec.loss, ec.weight, ec.get_num_features());
+  if (ld.label != FLT_MAX && !ec.test_only) all.sd->weighted_labels += (static_cast<double>(ld.label)) * ec.weight;
 
   if (!all.final_prediction_sink.empty())  // get confidence interval only when printing out predictions
   {
@@ -151,8 +159,8 @@ void output_example(vw& all, bs& d, example& ec)
     d.ub = -FLT_MAX;
     for (double v : d.pred_vec)
     {
-      if (v > d.ub) d.ub = (float)v;
-      if (v < d.lb) d.lb = (float)v;
+      if (v > d.ub) d.ub = static_cast<float>(v);
+      if (v < d.lb) d.lb = static_cast<float>(v);
     }
   }
 
@@ -174,7 +182,7 @@ void predict_or_learn(bs& d, single_learner& base, example& ec)
 
   for (size_t i = 1; i <= d.B; i++)
   {
-    ec.weight = weight_temp * (float)BS::weight_gen(d._random_state);
+    ec.weight = weight_temp * static_cast<float>(BS::weight_gen(d._random_state));
 
     if (is_learn)
       base.learn(ec, i - 1);
@@ -213,9 +221,11 @@ void finish_example(vw& all, bs& d, example& ec)
   VW::finish_example(all, ec);
 }
 
-base_learner* bs_setup(options_i& options, vw& all)
+base_learner* bs_setup(VW::setup_base_i& stack_builder)
 {
-  auto data = scoped_calloc_or_throw<bs>();
+  options_i& options = *stack_builder.get_options();
+  vw& all = *stack_builder.get_all_pointer();
+  auto data = VW::make_unique<bs>();
   std::string type_string("mean");
   option_group_definition new_options("Bootstrap");
   new_options
@@ -223,7 +233,7 @@ base_learner* bs_setup(options_i& options, vw& all)
       .add(make_option("bs_type", type_string).keep().help("prediction type {mean,vote}"));
 
   if (!options.add_parse_and_check_necessary(new_options)) return nullptr;
-
+  size_t ws = data->B;
   data->ub = FLT_MAX;
   data->lb = -FLT_MAX;
 
@@ -235,7 +245,7 @@ base_learner* bs_setup(options_i& options, vw& all)
       data->bs_type = BS_TYPE_VOTE;
     else
     {
-      std::cerr << "warning: bs_type must be in {'mean','vote'}; resetting to mean." << std::endl;
+      logger::errlog_warn("bs_type must be in {'mean','vote'}; resetting to mean.");
       data->bs_type = BS_TYPE_MEAN;
     }
   }
@@ -246,9 +256,14 @@ base_learner* bs_setup(options_i& options, vw& all)
   data->all = &all;
   data->_random_state = all.get_random_state();
 
-  learner<bs, example>& l = init_learner(
-      data, as_singleline(setup_base(options, all)), predict_or_learn<true>, predict_or_learn<false>, data->B);
-  l.set_finish_example(finish_example);
+  auto* l = make_reduction_learner(std::move(data), as_singleline(stack_builder.setup_base_learner()),
+      predict_or_learn<true>, predict_or_learn<false>, stack_builder.get_setupfn_name(bs_setup))
+                .set_params_per_weight(ws)
+                .set_learn_returns_prediction(true)
+                .set_finish_example(finish_example)
+                .set_input_label_type(VW::label_type_t::simple)
+                .set_output_prediction_type(VW::prediction_type_t::scalar)
+                .build();
 
-  return make_base(l);
+  return make_base(*l);
 }

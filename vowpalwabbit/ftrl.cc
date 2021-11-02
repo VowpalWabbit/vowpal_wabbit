@@ -1,12 +1,21 @@
 // Copyright (c) by respective owners including Yahoo!, Microsoft, and
 // individual contributors. All rights reserved. Released under a BSD (revised)
 // license as described in the file LICENSE.
+#include <cmath>
 #include <string>
+#include <cfloat>
 #include "correctedMath.h"
 #include "gd.h"
+#include "shared_data.h"
+#include "label_parser.h"
+
+#include "io/logger.h"
 
 using namespace VW::LEARNER;
 using namespace VW::config;
+using namespace VW::math;
+
+namespace logger = VW::io::logger;
 
 #define W_XT 0  // current parameter
 #define W_ZT 1  // in proximal is "accumulated z(t) = z(t-1) + g(t) + sigma*w(t)", in general is the dual weight vector
@@ -17,25 +26,26 @@ using namespace VW::config;
 
 struct ftrl_update_data
 {
-  float update;
-  float ftrl_alpha;
-  float ftrl_beta;
-  float l1_lambda;
-  float l2_lambda;
-  float predict;
-  float normalized_squared_norm_x;
+  float update = 0.f;
+  float ftrl_alpha = 0.f;
+  float ftrl_beta = 0.f;
+  float l1_lambda = 0.f;
+  float l2_lambda = 0.f;
+  float predict = 0.f;
+  float normalized_squared_norm_x = 0.f;
+  float average_squared_norm_x = 0.f;
 };
 
 struct ftrl
 {
-  vw* all;  // features, finalize, l1, l2,
-  float ftrl_alpha;
-  float ftrl_beta;
-  struct ftrl_update_data data;
-  size_t no_win_counter;
-  size_t early_stop_thres;
-  uint32_t ftrl_size;
-  double total_weight;
+  vw* all = nullptr;  // features, finalize, l1, l2,
+  float ftrl_alpha = 0.f;
+  float ftrl_beta = 0.f;
+  ftrl_update_data data;
+  size_t no_win_counter = 0;
+  size_t early_stop_thres = 0;
+  uint32_t ftrl_size = 0;
+  double total_weight = 0.0;
 };
 
 struct uncertainty
@@ -49,14 +59,6 @@ struct uncertainty
     score = 0;
   }
 };
-
-inline float sign(float w)
-{
-  if (w < 0.)
-    return -1.;
-  else
-    return 1.;
-}
 
 inline void predict_with_confidence(uncertainty& d, const float fx, float& fw)
 {
@@ -74,9 +76,11 @@ float sensitivity(ftrl& b, base_learner& /* base */, example& ec)
 }
 
 template <bool audit>
-void predict(ftrl& b, single_learner&, example& ec)
+void predict(ftrl& b, base_learner&, example& ec)
 {
-  ec.partial_prediction = GD::inline_predict(*b.all, ec);
+  size_t num_features_from_interactions = 0;
+  ec.partial_prediction = GD::inline_predict(*b.all, ec, num_features_from_interactions);
+  ec.num_features_from_interactions = num_features_from_interactions;
   ec.pred.scalar = GD::finalize_prediction(b.all->sd, b.all->logger, ec.partial_prediction);
   if (audit) GD::print_audit_features(*(b.all), ec);
 }
@@ -86,20 +90,29 @@ void multipredict(
     ftrl& b, base_learner&, example& ec, size_t count, size_t step, polyprediction* pred, bool finalize_predictions)
 {
   vw& all = *b.all;
-  for (size_t c = 0; c < count; c++) pred[c].scalar = ec.l.simple.initial;
+  for (size_t c = 0; c < count; c++)
+  {
+    const auto& simple_red_features = ec._reduction_features.template get<simple_label_reduction_features>();
+    pred[c].scalar = simple_red_features.initial;
+  }
+  size_t num_features_from_interactions = 0;
   if (b.all->weights.sparse)
   {
     GD::multipredict_info<sparse_parameters> mp = {
-        count, step, pred, all.weights.sparse_weights, (float)all.sd->gravity};
-    GD::foreach_feature<GD::multipredict_info<sparse_parameters>, uint64_t, GD::vec_add_multipredict>(all, ec, mp);
+        count, step, pred, all.weights.sparse_weights, static_cast<float>(all.sd->gravity)};
+    GD::foreach_feature<GD::multipredict_info<sparse_parameters>, uint64_t, GD::vec_add_multipredict>(
+        all, ec, mp, num_features_from_interactions);
   }
   else
   {
-    GD::multipredict_info<dense_parameters> mp = {count, step, pred, all.weights.dense_weights, (float)all.sd->gravity};
-    GD::foreach_feature<GD::multipredict_info<dense_parameters>, uint64_t, GD::vec_add_multipredict>(all, ec, mp);
+    GD::multipredict_info<dense_parameters> mp = {
+        count, step, pred, all.weights.dense_weights, static_cast<float>(all.sd->gravity)};
+    GD::foreach_feature<GD::multipredict_info<dense_parameters>, uint64_t, GD::vec_add_multipredict>(
+        all, ec, mp, num_features_from_interactions);
   }
+  ec.num_features_from_interactions = num_features_from_interactions;
   if (all.sd->contraction != 1.)
-    for (size_t c = 0; c < count; c++) pred[c].scalar *= (float)all.sd->contraction;
+    for (size_t c = 0; c < count; c++) pred[c].scalar *= static_cast<float>(all.sd->contraction);
   if (finalize_predictions)
     for (size_t c = 0; c < count; c++) pred[c].scalar = GD::finalize_prediction(all.sd, all.logger, pred[c].scalar);
   if (audit)
@@ -108,9 +121,9 @@ void multipredict(
     {
       ec.pred.scalar = pred[c].scalar;
       GD::print_audit_features(all, ec);
-      ec.ft_offset += (uint64_t)step;
+      ec.ft_offset += static_cast<uint64_t>(step);
     }
-    ec.ft_offset -= (uint64_t)(step * count);
+    ec.ft_offset -= static_cast<uint64_t>(step * count);
   }
 }
 
@@ -140,7 +153,7 @@ void inner_update_pistol_state_and_predict(ftrl_update_data& d, float x, float& 
 {
   float* w = &wref;
 
-  float fabs_x = fabs(x);
+  float fabs_x = std::fabs(x);
   if (fabs_x > w[W_MX]) w[W_MX] = fabs_x;
 
   float squared_theta = w[W_ZT] * w[W_ZT];
@@ -156,7 +169,7 @@ void inner_update_pistol_post(ftrl_update_data& d, float x, float& wref)
   float gradient = d.update * x;
 
   w[W_ZT] += -gradient;
-  w[W_G2] += fabs(gradient);
+  w[W_G2] += std::fabs(gradient);
 }
 
 // Coin betting vectors
@@ -172,7 +185,7 @@ void inner_coin_betting_predict(ftrl_update_data& d, float x, float& wref)
   float w_mx = w[W_MX];
   float w_xt = 0.0;
 
-  float fabs_x = fabs(x);
+  float fabs_x = std::fabs(x);
   if (fabs_x > w_mx) { w_mx = fabs_x; }
 
   // COCOB update without sigmoid
@@ -185,12 +198,12 @@ void inner_coin_betting_predict(ftrl_update_data& d, float x, float& wref)
 void inner_coin_betting_update_after_prediction(ftrl_update_data& d, float x, float& wref)
 {
   float* w = &wref;
-  float fabs_x = fabs(x);
+  float fabs_x = std::fabs(x);
   float gradient = d.update * x;
 
   if (fabs_x > w[W_MX]) { w[W_MX] = fabs_x; }
 
-  float fabs_gradient = fabs(d.update);
+  float fabs_gradient = std::fabs(d.update);
   if (fabs_gradient > w[W_MG]) w[W_MG] = fabs_gradient > d.ftrl_beta ? fabs_gradient : d.ftrl_beta;
 
   // COCOB update without sigmoid.
@@ -202,30 +215,39 @@ void inner_coin_betting_update_after_prediction(ftrl_update_data& d, float x, fl
     w[W_XT] = 0;
 
   w[W_ZT] += -gradient;
-  w[W_G2] += fabs(gradient);
+  w[W_G2] += std::fabs(gradient);
   w[W_WE] += (-gradient * w[W_XT]);
+
+  w[W_XT] /= d.average_squared_norm_x;
 }
 
-void coin_betting_predict(ftrl& b, single_learner&, example& ec)
+void coin_betting_predict(ftrl& b, base_learner&, example& ec)
 {
   b.data.predict = 0;
   b.data.normalized_squared_norm_x = 0;
 
-  GD::foreach_feature<ftrl_update_data, inner_coin_betting_predict>(*b.all, ec, b.data);
+  size_t num_features_from_interactions = 0;
+  GD::foreach_feature<ftrl_update_data, inner_coin_betting_predict>(*b.all, ec, b.data, num_features_from_interactions);
+  ec.num_features_from_interactions = num_features_from_interactions;
 
-  b.all->normalized_sum_norm_x += ((double)ec.weight) * b.data.normalized_squared_norm_x;
+  b.all->normalized_sum_norm_x += (static_cast<double>(ec.weight)) * b.data.normalized_squared_norm_x;
   b.total_weight += ec.weight;
+  b.data.average_squared_norm_x = (static_cast<float>((b.all->normalized_sum_norm_x + 1e-6) / b.total_weight));
 
-  ec.partial_prediction = b.data.predict / ((float)((b.all->normalized_sum_norm_x + 1e-6) / b.total_weight));
+  ec.partial_prediction = b.data.predict / b.data.average_squared_norm_x;
 
   ec.pred.scalar = GD::finalize_prediction(b.all->sd, b.all->logger, ec.partial_prediction);
 }
 
-void update_state_and_predict_pistol(ftrl& b, single_learner&, example& ec)
+void update_state_and_predict_pistol(ftrl& b, base_learner&, example& ec)
 {
   b.data.predict = 0;
 
-  GD::foreach_feature<ftrl_update_data, inner_update_pistol_state_and_predict>(*b.all, ec, b.data);
+  size_t num_features_from_interactions = 0;
+  GD::foreach_feature<ftrl_update_data, inner_update_pistol_state_and_predict>(
+      *b.all, ec, b.data, num_features_from_interactions);
+  ec.num_features_from_interactions = num_features_from_interactions;
+
   ec.partial_prediction = b.data.predict;
   ec.pred.scalar = GD::finalize_prediction(b.all->sd, b.all->logger, ec.partial_prediction);
 }
@@ -251,7 +273,7 @@ void coin_betting_update_after_prediction(ftrl& b, example& ec)
 }
 
 template <bool audit>
-void learn_proximal(ftrl& a, single_learner& base, example& ec)
+void learn_proximal(ftrl& a, base_learner& base, example& ec)
 {
   // predict with confidence
   predict<audit>(a, base, ec);
@@ -260,20 +282,22 @@ void learn_proximal(ftrl& a, single_learner& base, example& ec)
   update_after_prediction_proximal(a, ec);
 }
 
-void learn_pistol(ftrl& a, single_learner& base, example& ec)
+template <bool audit>
+void learn_pistol(ftrl& a, base_learner& base, example& ec)
 {
   // update state based on the example and predict
   update_state_and_predict_pistol(a, base, ec);
-
+  if (audit) GD::print_audit_features(*(a.all), ec);
   // update state based on the prediction
   update_after_prediction_pistol(a, ec);
 }
 
-void learn_coin_betting(ftrl& a, single_learner& base, example& ec)
+template <bool audit>
+void learn_coin_betting(ftrl& a, base_learner& base, example& ec)
 {
   // update state based on the example and predict
   coin_betting_predict(a, base, ec);
-
+  if (audit) GD::print_audit_features(*(a.all), ec);
   // update state based on the prediction
   coin_betting_update_after_prediction(a, ec);
 }
@@ -288,7 +312,7 @@ void save_load(ftrl& b, io_buf& model_file, bool read, bool text)
     bool resume = all->save_resume;
     std::stringstream msg;
     msg << ":" << resume << "\n";
-    bin_text_read_write_fixed(model_file, (char*)&resume, sizeof(resume), "", read, msg, text);
+    bin_text_read_write_fixed(model_file, reinterpret_cast<char*>(&resume), sizeof(resume), read, msg, text);
 
     if (resume)
       GD::save_load_online_state(*all, model_file, read, text, b.total_weight, nullptr, b.ftrl_size);
@@ -310,9 +334,12 @@ void end_pass(ftrl& g)
   }
 }
 
-base_learner* ftrl_setup(options_i& options, vw& all)
+base_learner* ftrl_setup(VW::setup_base_i& stack_builder)
 {
-  auto b = scoped_calloc_or_throw<ftrl>();
+  options_i& options = *stack_builder.get_options();
+  vw& all = *stack_builder.get_all_pointer();
+  auto b = VW::make_unique<ftrl>();
+
   bool ftrl_option = false;
   bool pistol = false;
   bool coin = false;
@@ -350,13 +377,14 @@ base_learner* ftrl_setup(options_i& options, vw& all)
   b->all->normalized_sum_norm_x = 0;
   b->total_weight = 0;
 
-  void (*learn_ptr)(ftrl&, single_learner&, example&) = nullptr;
+  void (*learn_ptr)(ftrl&, base_learner&, example&) = nullptr;
+  bool learn_returns_prediction = false;
 
   std::string algorithm_name;
   if (ftrl_option)
   {
     algorithm_name = "Proximal-FTRL";
-    if (all.audit)
+    if (all.audit || all.hash_inv)
       learn_ptr = learn_proximal<true>;
     else
       learn_ptr = learn_proximal<false>;
@@ -366,16 +394,24 @@ base_learner* ftrl_setup(options_i& options, vw& all)
   else if (pistol)
   {
     algorithm_name = "PiSTOL";
-    learn_ptr = learn_pistol;
+    if (all.audit || all.hash_inv)
+      learn_ptr = learn_pistol<true>;
+    else
+      learn_ptr = learn_pistol<false>;
     all.weights.stride_shift(2);  // NOTE: for more parameter storage
     b->ftrl_size = 4;
+    learn_returns_prediction = true;
   }
   else if (coin)
   {
     algorithm_name = "Coin Betting";
-    learn_ptr = learn_coin_betting;
+    if (all.audit || all.hash_inv)
+      learn_ptr = learn_coin_betting<true>;
+    else
+      learn_ptr = learn_coin_betting<false>;
     all.weights.stride_shift(3);  // NOTE: for more parameter storage
     b->ftrl_size = 6;
+    learn_returns_prediction = true;
   }
 
   b->data.ftrl_alpha = b->ftrl_alpha;
@@ -385,10 +421,10 @@ base_learner* ftrl_setup(options_i& options, vw& all)
 
   if (!all.logger.quiet)
   {
-    std::cerr << "Enabling FTRL based optimization" << std::endl;
-    std::cerr << "Algorithm used: " << algorithm_name << std::endl;
-    std::cerr << "ftrl_alpha = " << b->ftrl_alpha << std::endl;
-    std::cerr << "ftrl_beta = " << b->ftrl_beta << std::endl;
+    *(all.trace_message) << "Enabling FTRL based optimization" << std::endl;
+    *(all.trace_message) << "Algorithm used: " << algorithm_name << std::endl;
+    *(all.trace_message) << "ftrl_alpha = " << b->ftrl_alpha << std::endl;
+    *(all.trace_message) << "ftrl_beta = " << b->ftrl_beta << std::endl;
   }
 
   if (!all.holdout_set_off)
@@ -397,17 +433,19 @@ base_learner* ftrl_setup(options_i& options, vw& all)
     b->early_stop_thres = options.get_typed_option<size_t>("early_terminate").value();
   }
 
-  learner<ftrl, example>* l;
-  if (all.audit || all.hash_inv)
-    l = &init_learner(b, learn_ptr, predict<true>, UINT64_ONE << all.weights.stride_shift());
-  else
-    l = &init_learner(b, learn_ptr, predict<false>, UINT64_ONE << all.weights.stride_shift());
-  l->set_sensitivity(sensitivity);
-  if (all.audit || all.hash_inv)
-    l->set_multipredict(multipredict<true>);
-  else
-    l->set_multipredict(multipredict<false>);
-  l->set_save_load(save_load);
-  l->set_end_pass(end_pass);
+  auto predict_ptr = (all.audit || all.hash_inv) ? predict<true> : predict<false>;
+  auto multipredict_ptr = (all.audit || all.hash_inv) ? multipredict<true> : multipredict<false>;
+  std::string name_addition = (all.audit || all.hash_inv) ? "-audit" : "";
+
+  auto l = VW::LEARNER::make_base_learner(std::move(b), learn_ptr, predict_ptr,
+      stack_builder.get_setupfn_name(ftrl_setup) + "-" + algorithm_name + name_addition, VW::prediction_type_t::scalar,
+      VW::label_type_t::simple)
+               .set_learn_returns_prediction(learn_returns_prediction)
+               .set_params_per_weight(UINT64_ONE << all.weights.stride_shift())
+               .set_sensitivity(sensitivity)
+               .set_multipredict(multipredict_ptr)
+               .set_save_load(save_load)
+               .set_end_pass(end_pass)
+               .build();
   return make_base(*l);
 }

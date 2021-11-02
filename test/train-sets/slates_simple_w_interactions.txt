@@ -1,0 +1,27 @@
+slates shared 0.8 |U shared_0 shared_1
+slates action 0 |A action_0
+slates action 0 | action_1
+slates action 0 |A action_2
+slates action 1 | action_3
+slates action 1 | action_4
+slates slot 1:0.8 |S slot_0
+slates slot 0:0.6 | slot_1
+
+slates shared 0.8 |U shared_0 shared_1
+slates action 0 |A action_0
+slates action 0 |A action_1
+slates action 0 |A action_2
+slates action 1 |A action_3
+slates action 1 |A action_4
+slates slot 1:0.8,0:0.1,2:0.1 |S slot_0
+slates slot  0:0.6,1:0.4 |S slot_1
+
+slates shared |  shared_0 shared_1
+slates action 0 |  action_0
+slates action 0 |A  action_1
+slates action 0 |  action_2
+slates action 1 |  action_3
+slates action 1 |  action_4
+slates slot |  slot_0
+slates slot |  slot_1
+

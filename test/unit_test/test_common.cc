@@ -1,24 +1,27 @@
+// Copyright (c) by respective owners including Yahoo!, Microsoft, and
+// individual contributors. All rights reserved. Released under a BSD (revised)
+// license as described in the file LICENSE.
+
 #include "test_common.h"
 
 multi_ex parse_json(vw& all, const std::string& line)
 {
-  auto examples = v_init<example*>();
+  v_array<example*> examples;
   examples.push_back(&VW::get_unused_example(&all));
-  VW::read_line_json<true>(
-      all, examples, (char*)line.c_str(), (VW::example_factory_t)&VW::get_unused_example, (void*)&all);
+  VW::read_line_json_s<true>(
+      all, examples, (char*)line.c_str(), line.length(), (VW::example_factory_t)&VW::get_unused_example, (void*)&all);
 
   multi_ex result;
   for (size_t i = 0; i < examples.size(); ++i)
   {
     result.push_back(examples[i]);
   }
-  examples.delete_v();
   return result;
 }
 
 multi_ex parse_dsjson(vw& all, std::string line, DecisionServiceInteraction* interaction)
 {
-  auto examples = v_init<example*>();
+  v_array<example*> examples;
   examples.push_back(&VW::get_unused_example(&all));
 
   DecisionServiceInteraction local_interaction;
@@ -29,7 +32,6 @@ multi_ex parse_dsjson(vw& all, std::string line, DecisionServiceInteraction* int
 
   multi_ex result;
   for (const auto& ex : examples) { result.push_back(ex); }
-  examples.delete_v();
   return result;
 }
 

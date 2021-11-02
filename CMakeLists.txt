@@ -1,8 +1,15 @@
 cmake_minimum_required(VERSION 3.5)
+
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_CURRENT_LIST_DIR}/cmake/")
 if(POLICY CMP0076)
   cmake_policy(SET CMP0076 NEW)
 endif()
+
+# Do not add /W3 to MSVC flags by default. We set this to /W4.
+if(POLICY CMP0092)
+  cmake_policy(SET CMP0092 NEW)
+endif()
+
 # Read version into variable
 file(READ version.txt PACKAGE_VERSION)
 string(STRIP ${PACKAGE_VERSION} PACKAGE_VERSION)
@@ -16,14 +23,6 @@ list(GET VW_VERSION_LIST 2 VW_VERSION_PATCH)
 # Set this to on so that tooling can make use of the outputted compile commands (such as clang-tidy)
 set(CMAKE_EXPORT_COMPILE_COMMANDS On)
 
-if(MSVC)
-  # Do nothing as the default compile flags for MSVC are okay.
-else()
-  # We want RelWithDebInfo and Release to be similar. But default RelWithDebInfo
-  # is O2 and Release is O3, override that here:
-  set(CMAKE_CXX_FLAGS_RELWITHDEBINFO "-O3 -g -DNDEBUG")
-endif()
-
 set(DEFAULT_BUILD_TYPE "Release")
 if(NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
   message(STATUS "Setting build type to '${DEFAULT_BUILD_TYPE}' as none was specified.")
@@ -32,11 +31,12 @@ if(NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
   set_property(CACHE CMAKE_BUILD_TYPE PROPERTY STRINGS "Debug" "Release" "MinSizeRel" "RelWithDebInfo")
 endif()
 
-# VW targets Windows 10.0.16299.0 SDK
-# CMAKE_SYSTEM_VERSION must come before the project is defined in the top level CMakeLists file
-# https://stackoverflow.com/questions/45692367/how-to-set-msvc-target-platform-version-with-cmake
 if(WIN32)
-  set(CMAKE_SYSTEM_VERSION "10.0.16299.0" CACHE INTERNAL "Windows SDK version to target.")
+  include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/platforms/win32.cmake)
+  message(STATUS "WinSDK Version: ${CMAKE_SYSTEM_VERSION}")
+  if (vw_BUILD_NET_FRAMEWORK)
+    message(STATUS ".NET Framework Version: ${CMAKE_DOTNET_TARGET_FRAMEWORK_VERSION}")
+  endif()
 endif()
 
 project(vowpal_wabbit VERSION ${PACKAGE_VERSION} LANGUAGES C CXX)
@@ -45,6 +45,14 @@ set(VW_PROJECT_URL "https://vowpalwabbit.org")
 
 option(USE_LATEST_STD "Override using C++11 with the latest standard the compiler offers. Default is C++11. " OFF)
 include(DetectCXXStandard)
+
+if(MSVC)
+  # Do nothing as the default compile flags for MSVC are okay.
+else()
+  # We want RelWithDebInfo and Release to be similar. But default RelWithDebInfo
+  # is O2 and Release is O3, override that here:
+  set(CMAKE_CXX_FLAGS_RELWITHDEBINFO "-O3 -g -DNDEBUG")
+endif()
 
 # Grab git commitish into variable
 IF(EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/.git)
@@ -80,6 +88,7 @@ option(STATIC_LINK_VW_JAVA "Link VW-JNI shared library statically. Off by defaul
 option(VW_INSTALL "Add install targets." ON)
 option(BUILD_TESTS "Build and enable tests." ON)
 option(BUILD_BENCHMARKS "Build benchmarks" OFF)
+option(BUILD_ONLY_STANDALONE_BENCHMARKS "Build only the benchmarks that can run standalone (and do not use vw internals)" OFF)
 option(BUILD_JAVA "Add Java targets." Off)
 option(BUILD_PYTHON "Add Python targets." Off)
 option(BUILD_DOCS "Add documentation targets." Off)
@@ -87,7 +96,9 @@ option(BUILD_EXPERIMENTAL_BINDING "Add targets for experimental bindings" OFF)
 option(LTO "Enable Link Time optimization (Requires Release build, only works with clang and linux/mac for now)." Off)
 option(BUILD_SLIM_VW "Add targets for slim version of VW which implements only predict() for a subset of VW reductions." OFF)
 option(RAPIDJSON_SYS_DEP "Override using the submodule for RapidJSON dependency. Instead will use find_package" OFF)
-option(BUILD_FLATBUFFER_UTILS "Build the flatbuffer data converter utility in utl/flatbuffer" ON)
+option(FMT_SYS_DEP "Override using the submodule for FMT dependency. Instead will use find_package" OFF)
+option(SPDLOG_SYS_DEP "Override using the submodule for spdlog dependency. Instead will use find_package" OFF)
+option(BUILD_FLATBUFFERS "Build flatbuffers" OFF)
 
 string(TOUPPER "${CMAKE_BUILD_TYPE}" CONFIG)
 
@@ -106,9 +117,15 @@ if(WIN32 AND (PROFILE OR VALGRIND_PROFILE OR GCOV OR STATIC_LINK_VW OR BUILD_JAV
   message(FATAL_ERROR "Unsupported option enabled on Windows build")
 endif()
 
+# This was the previous default but is only valid on x86_64 systems.
+set(linux_x86_64_opt_flags "")
+if("${CMAKE_SYSTEM_PROCESSOR}" STREQUAL "x86_64")
+  set(linux_x86_64_opt_flags -msse2 -mfpmath=sse)
+endif()
+
 # Add -ffast-math for speed, remove for testability.
 # no-stack-check is added to mitigate stack alignment issue on Catalina where there is a bug with aligning stack-check instructions, and stack-check became default option
-set(linux_release_config -O3 -fno-strict-aliasing -msse2 -mfpmath=sse -fno-stack-check)
+set(linux_release_config -O3 -fno-strict-aliasing ${linux_x86_64_opt_flags} -fno-stack-check)
 set(linux_debug_config -g -O0 -fno-stack-check)
 
 if((NOT PROFILE) AND (NOT GCOV))
@@ -197,60 +214,44 @@ endif()
 # Align and foreach are also required, for some reason they can't be specified as components though.
 find_package(Boost REQUIRED COMPONENTS program_options system)
 find_package(ZLIB REQUIRED)
-find_package(flatbuffers REQUIRED)
+if(BUILD_FLATBUFFERS)
+  find_package(flatbuffers REQUIRED)
+endif()
 
 # This provides the variables such as CMAKE_INSTALL_LIBDIR for installation paths.
 include(GNUInstallDirs)
 
-if(RAPIDJSON_SYS_DEP)
-  # Since EXACT is not specified, any version compatible with 1.1.0 is accepted (>= 1.1.0)
-  find_package(RapidJSON 1.1.0 CONFIG REQUIRED)
-  add_library(RapidJSON INTERFACE)
-  target_include_directories(RapidJSON INTERFACE ${RAPIDJSON_INCLUDE_DIRS})
-else()
-  # Ensure rapidjson submodule is ready
-  find_package(Git QUIET)
-  if(GIT_FOUND AND EXISTS "${PROJECT_SOURCE_DIR}/.git")
-    # Update submodules as needed
-    option(GIT_SUBMODULE "Check submodules during build" ON)
-    if(GIT_SUBMODULE)
-      message(STATUS "Submodule update")
+# Ensure submodules are ready
+find_package(Git QUIET)
+if(GIT_FOUND AND EXISTS "${PROJECT_SOURCE_DIR}/.git")
+  # Update submodules as needed
+  option(GIT_SUBMODULE "Check submodules during build" ON)
+  if(GIT_SUBMODULE)
+    message(STATUS "Submodule update")
+    # Check if an abritrary file in the submodules already exists. If it does
+    # then we assume the submodules are already up to date. This is to avoid
+    # taking the git lock aggressively whenever we configure. This can cause
+    # issues if VSCode with certain extensions has the workspace open at the
+    # same time as you interact with it on the command line.
+    if(NOT EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/ext_libs/spdlog/README.md)
       execute_process(COMMAND ${GIT_EXECUTABLE} submodule update --init --recursive
-                      WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
-                      RESULT_VARIABLE GIT_SUBMOD_RESULT)
+        WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+        RESULT_VARIABLE GIT_SUBMOD_RESULT)
       if(NOT GIT_SUBMOD_RESULT EQUAL "0")
         message(FATAL_ERROR "git submodule update --init failed with ${GIT_SUBMOD_RESULT}, please checkout submodules")
       endif()
     endif()
-  endif()
-
-  if(NOT EXISTS "${PROJECT_SOURCE_DIR}/rapidjson/CMakeLists.txt")
-    message(FATAL_ERROR "The submodules were not downloaded! GIT_SUBMODULE was turned off or failed. Please update submodules and try again.")
-  endif()
-  add_library(RapidJSON INTERFACE)
-  target_include_directories(RapidJSON INTERFACE
-    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/rapidjson/include>
-    $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
-  )
-
-  if(VW_INSTALL)
-    install(
-      TARGETS RapidJSON
-      EXPORT VowpalWabbitConfig)
-
-    install(
-      DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/rapidjson/include/rapidjson/
-      DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/rapidjson
-    )
   endif()
 endif()
 
 add_subdirectory(explore)
 add_subdirectory(cluster)
 add_subdirectory(library)
+include(ext_libs/ext_libs.cmake)
 add_subdirectory(vowpalwabbit)
+add_subdirectory(utl/dump_options)
 
-if (BUILD_FLATBUFFER_UTILS)
+if (BUILD_FLATBUFFERS)
   add_subdirectory(utl/flatbuffer)
 endif()
 
@@ -286,10 +287,35 @@ if(BUILD_TESTS)
     set(vw_c_api_unit_test_target "vw_c_api_unit_test")
   endif()
 
+  set(vw_cs_unittest_targets "")
+  if (vw_BUILD_NET_FRAMEWORK)
+    set(vw_cs_unittest_targets
+      cs_unittest
+      cs_unittest_nofriend
+    )
+  endif()
+
+  # The Visual Studio expression generator
+  set(cmake_test_configuration "")
+  set(cmake_test_verbosity "--verbose")
+  if (${CMAKE_GENERATOR} MATCHES "^Visual Studio")
+    set(cmake_test_configuration -C $<CONFIG>)
+    # The VS Generator builds fall over in test when STDOUT/ERR contains strings of the form
+    # "(<other-stuff, snipped>)?error[^:]*:.*", which our native unit tests output as part of a
+    # successful run.
+    #
+    # This is caused by MSBuild being "helpful":
+    # https://stackoverflow.com/questions/48117302/does-the-msbuild-exec-task-search-stdout-for-the-string-error
+    #
+    # The CMake team has discussed this issue, but are using an MSBuild mechanism that does not support
+    # overriding this behaviour. The fix is to disable test output on Visual Studio generator builds.
+    set(cmake_test_verbosity "")
+  endif()
+
   # This target ensures all dependencies are built and also uses verbose mode allowing the test output to be seen.
   add_custom_target(test_with_output
-    COMMAND ${CMAKE_CTEST_COMMAND} --verbose
-    DEPENDS spanning_tree vw-unit-test.out vw-bin ${vw_c_api_unit_test_target}
+    COMMAND ${CMAKE_CTEST_COMMAND} ${cmake_test_configuration} ${cmake_test_verbosity} --output-on-failure
+    DEPENDS spanning_tree vw-unit-test.out vw-bin ${vw_c_api_unit_test_target} ${vw_cs_unittest_targets}
   )
 
   # Don't offer these make dependent targets on Windows
@@ -307,13 +333,16 @@ if(BUILD_EXPERIMENTAL_BINDING)
   add_subdirectory(bindings)
 endif()
 
-# TODO convert cs directory to cmake
+if(vw_BUILD_NET_FRAMEWORK)
+  add_subdirectory(cs)
+endif()
+
 # TODO convert c_test directory to cmake
 
 # Handle installation of targets, version, config and pkgconfig
 if(VW_INSTALL)
   find_package(Boost REQUIRED COMPONENTS program_options)
-  
+
   FOREACH(BOOST_LIBRARY ${Boost_LIBRARIES})
     SET (BOOST_LINK_LIBRARIES "${BOOST_LINK_LIBRARIES} ${BOOST_LIBRARY}")
   ENDFOREACH()

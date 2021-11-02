@@ -1,11 +1,15 @@
-pr:
+trigger:
 - master
+- 'releases/**'
+
+pr:
+- '*'
 
 pool:
-  vmImage: 'ubuntu-16.04'
+  vmImage: 'ubuntu-18.04'
 
 container:
-  image: vowpalwabbit/ubuntu1604-build:latest
+  image: vowpalwabbit/ubuntu1804-build:latest
   endpoint: DockerHub
 
 strategy:
@@ -25,7 +29,3 @@ steps:
   displayName: RunTest flatbuffers C++
 - bash: ./.scripts/linux/java.sh
   displayName: Build + test Java
-- bash: ./.scripts/linux/python27.sh
-  displayName: Build + test Python 2.7
-- bash: ./.scripts/linux/python36.sh
-  displayName: Build + test Python 3.6

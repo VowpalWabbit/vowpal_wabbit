@@ -1,0 +1,24 @@
+name: Linux / C++ - VW Slim
+
+on:
+  push:
+    branches:
+      - master
+      - 'releases/**'
+  pull_request:
+    branches:
+      - '*'
+
+jobs:
+  check:
+    container:
+      image: vowpalwabbit/ubuntu1804-build:latest
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v1
+      - name: Build VW Slim
+        shell: bash
+        run: ./.scripts/linux/build-slim.sh
+      - name: Test VW Slim
+        shell: bash
+        run: ./.scripts/linux/test-slim.sh

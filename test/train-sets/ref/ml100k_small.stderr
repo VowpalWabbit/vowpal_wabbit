@@ -1,4 +1,4 @@
-creating quadratic features for pairs: ui 
+creating quadratic features for pairs: ui
 using l2 regularization = 2e-06
 final_regressor = models/movielens.reg
 Num weight bits = 16
@@ -9,7 +9,7 @@ decay_learning_rate = 0.97
 creating cache_file = train-sets/ml100k_small_train.cache
 Reading datafile = train-sets/ml100k_small_train
 num sources = 1
-Enabled reductions: rank, scorer
+Enabled reductions: rank, scorer-identity, count_label
 average  since         example        example  current  current  current
 loss     last          counter         weight    label  predict features
 3.295105 3.295105            1            1.0   2.0000   0.1848       23

@@ -3,7 +3,10 @@
 // license as described in the file LICENSE.
 
 #pragma once
-#include <cstdint>  // defines size_t
+#include <cstdint>
+#include <cstddef>  // defines size_t
+#include <string>
+
 #include "future_compat.h"
 #include "hash.h"
 
@@ -12,12 +15,12 @@ VW_STD14_CONSTEXPR inline uint64_t hashall(const char* s, size_t len, uint64_t h
 VW_STD14_CONSTEXPR inline uint64_t hashstring(const char* s, size_t len, uint64_t h)
 {
   const char* front = s;
-  while (len > 0 && front[0] <= 0x20 && (int)(front[0]) >= 0)
+  while (len > 0 && front[0] <= 0x20 && static_cast<int>(front[0]) >= 0)
   {
     ++front;
     --len;
   }
-  while (len > 0 && front[len - 1] <= 0x20 && (int)(front[len - 1]) >= 0) { --len; }
+  while (len > 0 && front[len - 1] <= 0x20 && static_cast<int>(front[len - 1]) >= 0) { --len; }
 
   size_t ret = 0;
   const char* p = front;
@@ -29,3 +32,7 @@ VW_STD14_CONSTEXPR inline uint64_t hashstring(const char* s, size_t len, uint64_
 
   return ret + h;
 }
+
+using hash_func_t = uint64_t (*)(const char*, size_t, uint64_t);
+
+hash_func_t getHasher(const std::string& s);

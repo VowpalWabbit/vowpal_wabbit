@@ -5,77 +5,62 @@
 #pragma once
 #include "cb.h"
 
+#include "future_compat.h"
+#include "io/logger.h"
+#include "io_buf.h"
+#include "cb_continuous_label.h"
+#include <cfloat>
+
 namespace CB
 {
 template <typename LabelT = CB::label>
-char* bufread_label_additional_fields(LabelT& ld, char* c)
+size_t read_cached_label_additional_fields(LabelT& ld, io_buf& cache)
 {
-  memcpy(&ld.weight, c, sizeof(ld.weight));
-  c += sizeof(ld.weight);
-  return c;
+  ld.weight = cache.read_value<float>("weight");
+  return sizeof(float);
 }
 
 template <typename LabelT = CB::label, typename LabelElmT = cb_class>
-char* bufread_label(LabelT& ld, char* c, io_buf& cache)
-{
-  size_t num = *(size_t*)c;
-  ld.costs.clear();
-  c += sizeof(size_t);
-  size_t total = sizeof(LabelElmT) * num;
-  if (cache.buf_read(c, total) < total)
-  {
-    std::cout << "error in demarshal of cost data" << std::endl;
-    return c;
-  }
-  for (size_t i = 0; i < num; i++)
-  {
-    LabelElmT temp = *(LabelElmT*)c;
-    c += sizeof(LabelElmT);
-    ld.costs.push_back(temp);
-  }
-
-  return bufread_label_additional_fields(ld, c);
-}
-
-template <typename LabelT = CB::label, typename LabelElmT = cb_class>
-size_t read_cached_label(shared_data*, LabelT& ld, io_buf& cache)
+size_t read_cached_label(LabelT& ld, io_buf& cache)
 {
   ld.costs.clear();
+
+  // It would be desirable to be able to use cache.read_value here as below:
+  //
+  // size_t num_costs = cache.read_value<size_t>("ld.costs.size()");
+  //
+  // Unfortunately, it seems like for newline examples (e.g. terminal
+  // example) what happens is that the cache ends, and the label parser
+  // is expected to silently do nothing.
+  // Previously we would just return 0 here if we could not read anything.
   char* c;
-  size_t total = sizeof(size_t);
-  if (cache.buf_read(c, total) < total) return 0;
-  bufread_label<LabelT, LabelElmT>(ld, c, cache);
+  if (cache.buf_read(c, sizeof(size_t)) < sizeof(size_t)) return 0;
+  size_t num_costs = *reinterpret_cast<size_t*>(c);
+  c += sizeof(size_t);
+  cache.set(c);
+
+  for (size_t i = 0; i < num_costs; i++) { ld.costs.push_back(cache.read_value<LabelElmT>("ld.costs[i]")); }
+
+  size_t total =
+      sizeof(size_t) + num_costs * sizeof(LabelElmT) + read_cached_label_additional_fields<LabelT>(ld, cache);
 
   return total;
 }
 
-template <typename LabelT>
-char* bufcache_label_additional_fields(LabelT& ld, char* c)
+template <typename LabelT = CB::label>
+void cache_label_additional_fields(const LabelT& ld, io_buf& cache)
 {
-  memcpy(c, &ld.weight, sizeof(ld.weight));
-  c += sizeof(ld.weight);
-  return c;
+  cache.write_value(ld.weight);
 }
 
 template <typename LabelT = CB::label, typename LabelElmT = cb_class>
-char* bufcache_label(LabelT& ld, char* c)
+void cache_label(const LabelT& ld, io_buf& cache)
 {
-  *(size_t*)c = ld.costs.size();
-  c += sizeof(size_t);
-  for (size_t i = 0; i < ld.costs.size(); i++)
-  {
-    *(LabelElmT*)c = ld.costs[i];
-    c += sizeof(LabelElmT);
-  }
-  return bufcache_label_additional_fields(ld, c);
-}
+  cache.write_value<size_t>(ld.costs.size());
 
-template <typename LabelT = CB::label, typename LabelElmT = cb_class>
-void cache_label(LabelT& ld, io_buf& cache)
-{
-  char* c;
-  cache.buf_write(c, sizeof(size_t) + sizeof(LabelElmT) * ld.costs.size());
-  bufcache_label<LabelT, LabelElmT>(ld, c);
+  for (size_t i = 0; i < ld.costs.size(); i++) { cache.write_value<LabelElmT>(ld.costs[i]); }
+
+  cache_label_additional_fields<LabelT>(ld, cache);
 }
 
 template <typename LabelT>
@@ -92,19 +77,19 @@ void default_label(LabelT& ld)
 }
 
 template <typename LabelElmT = cb_class>
-float get_probability(LabelElmT& elm)
+float get_probability(const LabelElmT& elm)
 {
   return elm.probability;
 }
 
 template <>
-inline float get_probability(VW::cb_continuous::continuous_label_elm& elm)
+inline float get_probability(const VW::cb_continuous::continuous_label_elm& elm)
 {
   return elm.pdf_value;
 }
 
 template <typename LabelT = CB::label, typename LabelElmT = cb_class>
-bool is_test_label(LabelT& ld)
+bool is_test_label(const LabelT& ld)
 {
   if (ld.costs.size() == 0) return true;
   for (size_t i = 0; i < ld.costs.size(); i++)
@@ -115,22 +100,4 @@ bool is_test_label(LabelT& ld)
   return true;
 }
 
-template <typename LabelT = CB::label>
-void delete_label(LabelT& ld)
-{
-  ld.costs.delete_v();
-}
-
-template <typename LabelT = CB::label>
-void copy_label_additional_fields(LabelT& dst, LabelT& src)
-{
-  dst.weight = src.weight;
-}
-
-template <typename LabelT = CB::label>
-void copy_label(LabelT& dst, LabelT& src)
-{
-  copy_array(dst.costs, src.costs);
-  copy_label_additional_fields(dst, src);
-}
 }  // namespace CB

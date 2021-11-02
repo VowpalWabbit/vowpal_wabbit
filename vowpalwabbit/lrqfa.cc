@@ -3,20 +3,28 @@
 // license as described in the file LICENSE.
 
 #include <string>
+#include <cfloat>
 #include "reductions.h"
 #include "rand48.h"
 #include "parse_args.h"  // for spoof_hex_encoded_namespaces
+#include "text_utils.h"
 
 using namespace VW::LEARNER;
 using namespace VW::config;
 
 struct LRQFAstate
 {
-  vw* all;
-  std::string field_name;
-  int k;
+  vw* all = nullptr;
+  std::string field_name = "";
+  int k = 0;
   int field_id[256];
   size_t orig_size[256];
+
+  LRQFAstate()
+  {
+    std::fill(field_id, field_id + 256, 0);
+    std::fill(orig_size, orig_size + 256, 0);
+  }
 };
 
 inline float cheesyrand(uint64_t x)
@@ -41,7 +49,7 @@ void predict_or_learn(LRQFAstate& lrq, single_learner& base, example& ec)
   float first_loss = 0;
   unsigned int maxiter = (is_learn && !example_is_test(ec)) ? 2 : 1;
   unsigned int k = lrq.k;
-  float sqrtk = (float)std::sqrt(k);
+  float sqrtk = static_cast<float>(std::sqrt(k));
 
   uint32_t stride_shift = lrq.all->weights.stride_shift();
   uint64_t weight_mask = lrq.all->weights.mask();
@@ -65,8 +73,8 @@ void predict_or_learn(LRQFAstate& lrq, single_learner& base, example& ec)
           uint64_t lindex = fs.indicies[lfn];
           for (unsigned int n = 1; n <= k; ++n)
           {
-            uint64_t lwindex =
-                (lindex + ((uint64_t)(rfd_id * k + n) << stride_shift));  // a feature has k weights in each field
+            uint64_t lwindex = (lindex +
+                (static_cast<uint64_t>(rfd_id * k + n) << stride_shift));  // a feature has k weights in each field
             float* lw = &all.weights[lwindex & weight_mask];
             // perturb away from saddle point at (0, 0)
             if (is_learn)
@@ -81,13 +89,13 @@ void predict_or_learn(LRQFAstate& lrq, single_learner& base, example& ec)
               // NB: ec.ft_offset added by base learner
               float rfx = rfs.values[rfn];
               uint64_t rindex = rfs.indicies[rfn];
-              uint64_t rwindex = (rindex + ((uint64_t)(lfd_id * k + n) << stride_shift));
+              uint64_t rwindex = (rindex + (static_cast<uint64_t>(lfd_id * k + n) << stride_shift));
 
               rfs.push_back(*lw * lfx * rfx, rwindex);
               if (all.audit || all.hash_inv)
               {
                 std::stringstream new_feature_buffer;
-                new_feature_buffer << right << '^' << rfs.space_names[rfn].get()->second << '^' << n;
+                new_feature_buffer << right << '^' << rfs.space_names[rfn].second << '^' << n;
 #ifdef _WIN32
                 char* new_space = _strdup("lrqfa");
                 char* new_feature = _strdup(new_feature_buffer.str().c_str());
@@ -95,7 +103,7 @@ void predict_or_learn(LRQFAstate& lrq, single_learner& base, example& ec)
                 char* new_space = strdup("lrqfa");
                 char* new_feature = strdup(new_feature_buffer.str().c_str());
 #endif
-                rfs.space_names.push_back(audit_strings_ptr(new audit_strings(new_space, new_feature)));
+                rfs.space_names.push_back(audit_strings(new_space, new_feature));
               }
             }
           }
@@ -124,20 +132,16 @@ void predict_or_learn(LRQFAstate& lrq, single_learner& base, example& ec)
     {
       namespace_index right = i;
       features& rfs = ec.feature_space[right];
-      rfs.values.end() = rfs.values.begin() + lrq.orig_size[right];
-
-      if (all.audit || all.hash_inv)
-      {
-        for (size_t j = lrq.orig_size[right]; j < rfs.space_names.size(); ++j) rfs.space_names[j].~audit_strings_ptr();
-
-        rfs.space_names.end() = rfs.space_names.begin() + lrq.orig_size[right];
-      }
+      rfs.values.resize_but_with_stl_behavior(lrq.orig_size[right]);
+      if (all.audit || all.hash_inv) { rfs.space_names.resize(lrq.orig_size[right]); }
     }
   }
 }
 
-VW::LEARNER::base_learner* lrqfa_setup(options_i& options, vw& all)
+VW::LEARNER::base_learner* lrqfa_setup(VW::setup_base_i& stack_builder)
 {
+  options_i& options = *stack_builder.get_options();
+  vw& all = *stack_builder.get_all_pointer();
   std::string lrqfa;
   option_group_definition new_options("Low Rank Quadratics FA");
   new_options.add(
@@ -145,20 +149,26 @@ VW::LEARNER::base_learner* lrqfa_setup(options_i& options, vw& all)
 
   if (!options.add_parse_and_check_necessary(new_options)) return nullptr;
 
-  auto lrq = scoped_calloc_or_throw<LRQFAstate>();
+  auto lrq = VW::make_unique<LRQFAstate>();
   lrq->all = &all;
 
-  std::string lrqopt = spoof_hex_encoded_namespaces(lrqfa);
+  std::string lrqopt = VW::decode_inline_hex(lrqfa);
   size_t last_index = lrqopt.find_last_not_of("0123456789");
   new (&lrq->field_name) std::string(lrqopt.substr(0, last_index + 1));  // make sure there is no duplicates
   lrq->k = atoi(lrqopt.substr(last_index + 1).c_str());
 
   int fd_id = 0;
-  for (char i : lrq->field_name) lrq->field_id[(int)i] = fd_id++;
+  for (char i : lrq->field_name) lrq->field_id[static_cast<int>(i)] = fd_id++;
 
-  all.wpp = all.wpp * (uint64_t)(1 + lrq->k);
-  learner<LRQFAstate, example>& l = init_learner(lrq, as_singleline(setup_base(options, all)), predict_or_learn<true>,
-      predict_or_learn<false>, 1 + lrq->field_name.size() * lrq->k);
+  all.wpp = all.wpp * static_cast<uint64_t>(1 + lrq->k);
+  auto base = stack_builder.setup_base_learner();
+  size_t ws = 1 + lrq->field_name.size() * lrq->k;
 
-  return make_base(l);
+  auto* l = make_reduction_learner(std::move(lrq), as_singleline(base), predict_or_learn<true>, predict_or_learn<false>,
+      stack_builder.get_setupfn_name(lrqfa_setup))
+                .set_params_per_weight(ws)
+                .set_learn_returns_prediction(base->learn_returns_prediction)
+                .build();
+
+  return make_base(*l);
 }

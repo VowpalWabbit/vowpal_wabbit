@@ -108,6 +108,11 @@
     <Compile Include="VowpalWabbitDecisionServiceInteractionHeader.cs" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="$(ProjectDir)\..\..\vowpalwabbit\vw_core.vcxproj">
+      <Project>{1e205806-7f80-47dd-a38d-fc08083f3593}</Project>
+    </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
     <EmbeddedResource Include="..\vw_key.snk" />
   </ItemGroup>
   <ItemGroup>

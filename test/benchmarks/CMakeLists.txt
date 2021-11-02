@@ -1,7 +1,18 @@
-add_executable(vw-benchmarks.out
+set(all_sources
   benchmark_main.cc
-  input_format_benchmarks.cc
-  rcv1_benchmarks.cc
+  standalone/benchmark_text_input.cc
+  standalone/rcv1_benchmarks.cc
+)
+
+if (NOT BUILD_ONLY_STANDALONE_BENCHMARKS)
+  set(all_sources ${all_sources}
+    input_format_benchmarks.cc
+    benchmark_funcs.cc
+  )
+endif()
+
+add_executable(vw-benchmarks.out
+  ${all_sources}
 )
 
 find_package(benchmark REQUIRED)

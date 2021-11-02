@@ -7,7 +7,19 @@ import warnings
 
 # baked in con py boost https://wiki.python.org/moin/boost.python/FAQ#The_constructors_of_some_classes_I_am_trying_to_wrap_are_private_because_instances_must_be_created_by_using_a_factory._Is_it_possible_to_wrap_such_classes.3F
 class VWOption:
-    def __init__(self, name, help_str, short_name, keep, necessary, allow_override, value, value_supplied, default_value, default_value_supplied):
+    def __init__(
+        self,
+        name,
+        help_str,
+        short_name,
+        keep,
+        necessary,
+        allow_override,
+        value,
+        value_supplied,
+        default_value,
+        default_value_supplied,
+    ):
         self._name = name
         self._help_str = help_str
         self._short_name = short_name
@@ -65,7 +77,9 @@ class VWOption:
         self._value = val
 
     def is_flag(self):
-        return type(self._default_value) == bool or (self.value_supplied and type(self.value) == bool)
+        return type(self._default_value) == bool or (
+            self.value_supplied and type(self.value) == bool
+        )
 
     def __str__(self):
         if self.value_supplied:
@@ -78,7 +92,8 @@ class VWOption:
                 else:
                     return "--{} {}".format(self.name, self.value)
         else:
-            return ''
+            return ""
+
 
 class SearchTask:
     """Search task class"""
@@ -227,6 +242,8 @@ def get_prediction(ec, prediction_type):
         - 8: pDECISION_SCORES
         - 9: pACTION_PDF_VALUE
         - 10: pPDF
+        - 11: pACTIVE_MULTICLASS
+        - 12: pNOPRED
 
     Examples
     --------
@@ -256,8 +273,11 @@ def get_prediction(ec, prediction_type):
         pylibvw.vw.pDECISION_SCORES: ec.get_decision_scores,
         pylibvw.vw.pACTION_PDF_VALUE: ec.get_action_pdf_value,
         pylibvw.vw.pPDF: ec.get_pdf,
+        pylibvw.vw.pACTIVE_MULTICLASS: ec.get_active_multiclass,
+        pylibvw.vw.pNOPRED: ec.get_nopred,
     }
     return switch_prediction_type[prediction_type]()
+
 
 def get_all_vw_options():
     temp = vw("--dry_run")
@@ -265,18 +285,29 @@ def get_all_vw_options():
     temp.finish()
     return config
 
+
 class log_forward:
     def __init__(self):
+        self.current_message = ""
         self.messages = []
 
     def log(self, msg):
-        self.messages.append(msg)
+        self.current_message += msg
+        if "\n" in self.current_message:
+            self.messages.append(self.current_message)
+            self.current_message = ""
 
 
 class vw(pylibvw.vw):
     """The pyvw.vw object is a (trivial) wrapper around the pylibvw.vw
     object; you're probably best off using this directly and ignoring
     the pylibvw.vw structure entirely."""
+
+    log_wrapper = None
+    parser_ran = False
+    init = False
+    finished = False
+    log_fwd = None
 
     def __init__(self, arg_str=None, enable_logging=False, **kw):
         """Initialize the vw object.
@@ -318,17 +349,13 @@ class vw(pylibvw.vw):
             if isinstance(val, list):
                 # if a list is passed as a parameter value - create a key for
                 # each list element
-                return " ".join(
-                    [format_input_pair(key, value) for value in val]
-                )
+                return " ".join([format_input_pair(key, value) for value in val])
             else:
                 return format_input_pair(key, val)
 
         l = [format_input(k, v) for k, v in kw.items()]
         if arg_str is not None:
             l = [arg_str] + l
-        
-        self.log_wrapper = None
 
         if enable_logging:
             self.log_fwd = log_forward()
@@ -338,8 +365,7 @@ class vw(pylibvw.vw):
             super(vw, self).__init__(" ".join(l), self.log_wrapper)
         else:
             super(vw, self).__init__(" ".join(l))
-
-        self.parser_ran = False
+        self.init = True
 
         # check to see if native parser needs to run
         ext_file_args = ["d", "data", "passes"]
@@ -349,18 +375,16 @@ class vw(pylibvw.vw):
         elif arg_str:
             # space after -d to avoid matching with other substrings
             ext_file_cmd_str = ["-d ", "--data", "--passes"]
-            if [cmd for cmd in ext_file_cmd_str if(cmd in arg_str)]:
+            if [cmd for cmd in ext_file_cmd_str if (cmd in arg_str)]:
                 pylibvw.vw.run_parser(self)
                 self.parser_ran = True
 
-        self.finished = False
-    
     def get_config(self, filtered_enabled_reductions_only=True):
         return self.get_options(VWOption, filtered_enabled_reductions_only)
 
     def __enter__(self):
         return self
-    
+
     def __exit__(self, exc_type, exc_value, traceback):
         self.finish()
 
@@ -419,9 +443,7 @@ class vw(pylibvw.vw):
                 return str_ex
 
         if not isinstance(str_ex, (list, str)):
-            raise TypeError(
-                "Unsupported type. List or string object must be passed."
-            )
+            raise TypeError("Unsupported type. List or string object must be passed.")
 
         if isinstance(str_ex, list):
             str_ex = "\n".join(str_ex)
@@ -436,8 +458,7 @@ class vw(pylibvw.vw):
                 ec = ec[0]
             else:
                 raise TypeError(
-                    "expecting single line example, got multi_ex of len %i"
-                    % len(ec)
+                    "expecting single line example, got multi_ex of len %i" % len(ec)
                 )
         return ec
 
@@ -495,6 +516,25 @@ class vw(pylibvw.vw):
 
         """
         return pylibvw.vw.get_weight(self, index, offset)
+
+    def get_weight_from_name(self, feature_name, namespace_name=" "):
+        """Get the weight based on the feature name and the namespace name.
+
+        Parameters
+        ----------
+        feature_name : str
+            The name of the feature
+        namespace_name : str, by default is ""
+            The name of the namespace where the feature lives
+
+        Returns
+        -------
+        weight : float
+            Weight for the given feature and namespace name
+        """
+        space_hash = self.hash_space(namespace_name)
+        feat_hash = self.hash_feature(feature_name, space_hash)
+        return self.get_weight(feat_hash)
 
     def learn(self, ec):
         """Perform an online update
@@ -603,8 +643,9 @@ class vw(pylibvw.vw):
 
     def finish(self):
         """stop VW by calling finish (and, eg, write weights to disk)"""
-        if not self.finished:
+        if not self.finished and self.init:
             pylibvw.vw.finish(self)
+            self.init = False
             self.finished = True
 
     # returns the latest vw log
@@ -738,10 +779,7 @@ class vw(pylibvw.vw):
                 if sch.predict_needs_example():
                     while hasattr(examples, "__call__"):
                         examples = examples()
-                    if (
-                        hasattr(examples, "setup_done")
-                        and not examples.setup_done
-                    ):
+                    if hasattr(examples, "setup_done") and not examples.setup_done:
                         examples.setup_example()
                     P.set_input(examples)
                 else:
@@ -776,9 +814,7 @@ class vw(pylibvw.vw):
                 for c in condition:
                     if not isinstance(c, tuple):
                         raise TypeError(
-                            "item "
-                            + str(c)
-                            + " in condition list is malformed"
+                            "item " + str(c) + " in condition list is malformed"
                         )
                     if (
                         len(c) == 2
@@ -862,8 +898,7 @@ class namespace_id:
             self.ord_ns = ord(self.ns)
         else:
             raise Exception(
-                "ns_to_characterord failed because id type is unknown: "
-                + str(type(id))
+                "ns_to_characterord failed because id type is unknown: " + str(type(id))
             )
 
 
@@ -1052,9 +1087,7 @@ class cost_sensitive_label(abstract_label):
 
     def from_example(self, ex):
         class wclass:
-            def __init__(
-                self, label, cost=0.0, partial_prediction=0.0, wap_value=0.0
-            ):
+            def __init__(self, label, cost=0.0, partial_prediction=0.0, wap_value=0.0):
                 self.label = label
                 self.cost = cost
                 self.partial_prediction = partial_prediction
@@ -1121,10 +1154,7 @@ class cbandits_label(abstract_label):
 
     def __str__(self):
         return " ".join(
-            [
-                "{}:{}:{}".format(c.action, c.cost, c.probability)
-                for c in self.costs
-            ]
+            ["{}:{}:{}".format(c.action, c.cost, c.probability) for c in self.costs]
         )
 
 
@@ -1188,14 +1218,10 @@ class example(pylibvw.example):
             pylibvw.example.__init__(self, vw, labelType)
             self.setup_done = False
         elif isinstance(initStringOrDictOrRawExample, str):
-            pylibvw.example.__init__(
-                self, vw, labelType, initStringOrDictOrRawExample
-            )
+            pylibvw.example.__init__(self, vw, labelType, initStringOrDictOrRawExample)
             self.setup_done = True
         elif isinstance(initStringOrDictOrRawExample, pylibvw.example):
-            pylibvw.example.__init__(
-                self, vw, labelType, initStringOrDictOrRawExample
-            )
+            pylibvw.example.__init__(self, vw, labelType, initStringOrDictOrRawExample)
         elif isinstance(initStringOrDictOrRawExample, dict):
             pylibvw.example.__init__(self, vw, labelType)
             self.vw = vw
@@ -1307,11 +1333,9 @@ class example(pylibvw.example):
 
     def unsetup_example(self):
         """If this example has been setup, reverse that process so you can
-         continue editing the examples."""
+        continue editing the examples."""
         if not self.setup_done:
-            raise Exception(
-                "Trying to unsetup_example that has not yet been setup"
-            )
+            raise Exception("Trying to unsetup_example that has not yet been setup")
         self.vw.unsetup_example(self)
         self.setup_done = False
 
@@ -1389,9 +1413,7 @@ class example(pylibvw.example):
             if ns_hash is None:
                 ns_hash = self.vw.hash_space(self.get_ns(ns).ns)
             return self.vw.hash_feature(feature, ns_hash)
-        raise Exception(
-            "cannot extract feature of type: " + str(type(feature))
-        )
+        raise Exception("cannot extract feature of type: " + str(type(feature)))
 
     def push_hashed_feature(self, ns, f, v=1.0):
         """Add a hashed feature to a given namespace.
@@ -1489,9 +1511,7 @@ class example(pylibvw.example):
         """
         if self.setup_done:
             self.unsetup_example()
-        return pylibvw.example.ensure_namespace_exists(
-            self, self.get_ns(ns).ord_ns
-        )
+        return pylibvw.example.ensure_namespace_exists(self, self.get_ns(ns).ord_ns)
 
     def push_features(self, ns, featureList):
         """Push a list of features to a given namespace.
@@ -1545,9 +1565,7 @@ class example(pylibvw.example):
     def iter_features(self):
         """Iterate over all feature/value pairs in this example (all
         namespace included)."""
-        for ns_id in range(
-            self.num_namespaces()
-        ):  # iterate over every namespace
+        for ns_id in range(self.num_namespaces()):  # iterate over every namespace
             ns = self.get_ns(ns_id)
             for i in range(self.num_features_in(ns)):
                 f = self.feature(ns, i)
@@ -1566,4 +1584,3 @@ class example(pylibvw.example):
             simple_label
         """
         return label_class(self)
-

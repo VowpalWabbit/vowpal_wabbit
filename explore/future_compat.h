@@ -17,7 +17,11 @@
 #else
 #define VW_STD17_CONSTEXPR
 #define VW_ATTR(name)
-#    define VW_FALLTHROUGH  // fall through
+#    if defined(__GNUC__) && __GNUC__ >= 7
+#      define VW_FALLTHROUGH [[gnu::fallthrough]];
+#    else
+#      define VW_FALLTHROUGH
+#    endif
 #endif
 
 #ifdef HAS_STD14
@@ -78,4 +82,18 @@
     #define VW_WARNING_DISABLE_CLASS_MEMACCESS
 #  define VW_WARNING_DISABLE_BADLY_FORMED_XML
 #  define VW_WARNING_DISABLE_CPP_17_LANG_EXT
+#endif
+
+#if defined(_MSC_VER)
+#  define FORCE_INLINE __forceinline
+#elif defined(__GNUC__)
+#  define FORCE_INLINE __attribute__((__always_inline__))
+#elif defined(__CLANG__)
+#  if __has_attribute(__always_inline__)
+#    define FORCE_INLINE __attribute__((__always_inline__))
+#  else
+#    define FORCE_INLINE
+#  endif
+#else
+#  define FORCE_INLINE
 #endif

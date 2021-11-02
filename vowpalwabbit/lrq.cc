@@ -7,19 +7,26 @@
 #include "rand48.h"
 #include "vw_exception.h"
 #include "parse_args.h"  // for spoof_hex_encoded_namespaces
+#include "text_utils.h"
 
 using namespace VW::LEARNER;
 using namespace VW::config;
 
 struct LRQstate
 {
-  vw* all;  // feature creation, audit, hash_inv
+  vw* all = nullptr;  // feature creation, audit, hash_inv
   bool lrindices[256];
   size_t orig_size[256];
   std::set<std::string> lrpairs;
-  bool dropout;
-  uint64_t seed;
-  uint64_t initial_seed;
+  bool dropout = false;
+  uint64_t seed = 0;
+  uint64_t initial_seed = 0;
+
+  LRQstate()
+  {
+    std::fill(lrindices, lrindices + 256, false);
+    std::fill(orig_size, orig_size + 256, 0);
+  }
 };
 
 bool valid_int(const char* s)
@@ -93,7 +100,7 @@ void predict_or_learn(LRQstate& lrq, single_learner& base, example& ec)
         {
           if (!do_dropout || cheesyrbit(lrq.seed))
           {
-            uint64_t lwindex = (lindex + ((uint64_t)n << stride_shift));
+            uint64_t lwindex = (lindex + (static_cast<uint64_t>(n) << stride_shift));
             weight* lw = &lrq.all->weights[lwindex];
 
             // perturb away from saddle point at (0, 0)
@@ -111,14 +118,14 @@ void predict_or_learn(LRQstate& lrq, single_learner& base, example& ec)
               // NB: ec.ft_offset added by base learner
               float rfx = right_fs.values[rfn];
               uint64_t rindex = right_fs.indicies[rfn];
-              uint64_t rwindex = (rindex + ((uint64_t)n << stride_shift));
+              uint64_t rwindex = (rindex + (static_cast<uint64_t>(n) << stride_shift));
 
               right_fs.push_back(scale * *lw * lfx * rfx, rwindex);
 
               if (all.audit || all.hash_inv)
               {
                 std::stringstream new_feature_buffer;
-                new_feature_buffer << right << '^' << right_fs.space_names[rfn].get()->second << '^' << n;
+                new_feature_buffer << right << '^' << right_fs.space_names[rfn].second << '^' << n;
 
 #ifdef _WIN32
                 char* new_space = _strdup("lrq");
@@ -127,7 +134,7 @@ void predict_or_learn(LRQstate& lrq, single_learner& base, example& ec)
                 char* new_space = strdup("lrq");
                 char* new_feature = strdup(new_feature_buffer.str().c_str());
 #endif
-                right_fs.space_names.push_back(audit_strings_ptr(new audit_strings(new_space, new_feature)));
+                right_fs.space_names.push_back(audit_strings(new_space, new_feature));
               }
             }
           }
@@ -159,12 +166,14 @@ void predict_or_learn(LRQstate& lrq, single_learner& base, example& ec)
       unsigned char right = i[(which + 1) % 2];
       ec.feature_space[right].truncate_to(lrq.orig_size[right]);
     }
-  }
+  }  // end for(max_iter)
 }
 
-base_learner* lrq_setup(options_i& options, vw& all)
+base_learner* lrq_setup(VW::setup_base_i& stack_builder)
 {
-  auto lrq = scoped_calloc_or_throw<LRQstate>();
+  options_i& options = *stack_builder.get_options();
+  vw& all = *stack_builder.get_all_pointer();
+  auto lrq = VW::make_unique<LRQstate>();
   std::vector<std::string> lrq_names;
   option_group_definition new_options("Low Rank Quadratics");
   new_options.add(make_option("lrq", lrq_names).keep().necessary().help("use low rank quadratic features"))
@@ -175,7 +184,7 @@ base_learner* lrq_setup(options_i& options, vw& all)
   uint32_t maxk = 0;
   lrq->all = &all;
 
-  for (auto& lrq_name : lrq_names) lrq_name = spoof_hex_encoded_namespaces(lrq_name);
+  for (auto& lrq_name : lrq_names) lrq_name = VW::decode_inline_hex(lrq_name);
 
   new (&lrq->lrpairs) std::set<std::string>(lrq_names.begin(), lrq_names.end());
 
@@ -183,8 +192,8 @@ base_learner* lrq_setup(options_i& options, vw& all)
 
   if (!all.logger.quiet)
   {
-    all.trace_message << "creating low rank quadratic features for pairs: ";
-    if (lrq->dropout) all.trace_message << "(using dropout) ";
+    *(all.trace_message) << "creating low rank quadratic features for pairs: ";
+    if (lrq->dropout) *(all.trace_message) << "(using dropout) ";
   }
 
   for (std::string const& i : lrq->lrpairs)
@@ -194,25 +203,30 @@ base_learner* lrq_setup(options_i& options, vw& all)
       if ((i.length() < 3) || !valid_int(i.c_str() + 2))
         THROW("error, low-rank quadratic features must involve two sets and a rank.");
 
-      all.trace_message << i << " ";
+      *(all.trace_message) << i << " ";
     }
     // TODO: colon-syntax
 
     unsigned int k = atoi(i.c_str() + 2);
 
-    lrq->lrindices[(int)i[0]] = true;
-    lrq->lrindices[(int)i[1]] = true;
+    lrq->lrindices[static_cast<int>(i[0])] = true;
+    lrq->lrindices[static_cast<int>(i[1])] = true;
 
-    maxk = std::max(k, k);
+    maxk = std::max(maxk, k);
   }
 
-  if (!all.logger.quiet) all.trace_message << std::endl;
+  if (!all.logger.quiet) *(all.trace_message) << std::endl;
 
-  all.wpp = all.wpp * (uint64_t)(1 + maxk);
-  learner<LRQstate, example>& l = init_learner(
-      lrq, as_singleline(setup_base(options, all)), predict_or_learn<true>, predict_or_learn<false>, 1 + maxk);
-  l.set_end_pass(reset_seed);
+  all.wpp = all.wpp * static_cast<uint64_t>(1 + maxk);
+  auto base = stack_builder.setup_base_learner();
+
+  auto* l = make_reduction_learner(std::move(lrq), as_singleline(base), predict_or_learn<true>, predict_or_learn<false>,
+      stack_builder.get_setupfn_name(lrq_setup))
+                .set_params_per_weight(1 + maxk)
+                .set_learn_returns_prediction(base->learn_returns_prediction)
+                .set_end_pass(reset_seed)
+                .build();
 
   // TODO: leaks memory ?
-  return make_base(l);
+  return make_base(*l);
 }

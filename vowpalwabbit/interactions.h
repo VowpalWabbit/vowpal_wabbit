@@ -4,18 +4,21 @@
 
 #pragma once
 
-#include "global_data.h"
-#include "interactions_predict.h"
+#include "example_predict.h"
+#include "feature_group.h"
+#include "reductions_fwd.h"
+#include "constant.h"
 
-/*
- *  Interactions preprocessing and feature combinations generation
- */
+#include <cstddef>
+
+#include <vector>
+#include <set>
+#include <algorithm>
+#include "vw_math.h"
 
 namespace INTERACTIONS
 {
-/*
- *  Interactions preprocessing
- */
+VW::LEARNER::base_learner* generate_interactions_setup(VW::config::options_i& options, vw& all);
 
 constexpr unsigned char printable_start = ' ';
 constexpr unsigned char printable_end = '~';
@@ -28,61 +31,386 @@ inline constexpr bool is_printable_namespace(const unsigned char ns)
   return ns >= printable_start && ns <= printable_end;
 }
 
-// exand all wildcard namespaces in vector<string>
-// req_length must be 0 if interactions of any length are allowed, otherwise contains required length
-// err_msg will be printed plus exception will be thrown if req_length != 0 and mismatch interaction length.
-std::vector<std::vector<namespace_index>> expand_interactions(
-    const std::vector<std::vector<namespace_index>>& vec, const size_t required_length, const std::string& err_msg);
-
-// remove duplicate interactions and sort namespaces in them (if required)
-void sort_and_filter_duplicate_interactions(
-    std::vector<std::vector<namespace_index>>& vec, bool filter_duplicates, size_t& removed_cnt, size_t& sorted_cnt);
-
-/*
- *  Feature combinations generation
- */
-
-// function estimates how many new features will be generated for example and ther sum(value^2).
-void eval_count_of_generated_ft(vw& all, example& ec, size_t& new_features_cnt, float& new_features_value);
-
-template <class R, class S, void (*T)(R&, float, S), bool audit, void (*audit_func)(R&, const audit_strings*)>
-inline void generate_interactions(vw& all, example_predict& ec, R& dat)
+inline bool contains_wildcard(const std::vector<namespace_index>& interaction)
 {
-  if (all.weights.sparse)
-    generate_interactions<R, S, T, audit, audit_func, sparse_parameters>(
-        *ec.interactions, all.permutations, ec, dat, all.weights.sparse_weights);
-  else
-    generate_interactions<R, S, T, audit, audit_func, dense_parameters>(
-        *ec.interactions, all.permutations, ec, dat, all.weights.dense_weights);
+  return std::find(interaction.begin(), interaction.end(), wildcard_namespace) != interaction.end();
 }
 
-// this code is for C++98/03 complience as I unable to pass null function-pointer as template argument in g++-4.6
-template <class R, class S, void (*T)(R&, float, S)>
-inline void generate_interactions(vw& all, example_predict& ec, R& dat)
+inline bool contains_wildcard(const std::vector<extent_term>& interaction)
 {
-  if (all.weights.sparse)
-    generate_interactions<R, S, T, sparse_parameters>(
-        all.interactions, all.permutations, ec, dat, all.weights.sparse_weights);
-  else
-    generate_interactions<R, S, T, dense_parameters>(
-        all.interactions, all.permutations, ec, dat, all.weights.dense_weights);
+  return std::find(interaction.begin(), interaction.end(), extent_term{wildcard_namespace, wildcard_namespace}) !=
+      interaction.end();
 }
 
-// C(n,k) = n!/(k!(n-k)!)
+// function estimates how many new features will be generated for example and their sum(value^2).
+float eval_sum_ft_squared_of_generated_ft(bool permutations,
+    const std::vector<std::vector<namespace_index>>& interactions,
+    const std::vector<std::vector<extent_term>>& extent_interactions,
+    const std::array<features, NUM_NAMESPACES>& feature_spaces);
 
-inline int64_t choose(int64_t n, int64_t k)
+template <typename T>
+std::vector<T> indices_to_values_one_based(const std::vector<size_t>& indices, const std::set<T>& values)
 {
-  if (k > n) return 0;
-  if (k < 0) return 0;
-  if (k == n) return 1;
-  if (k == 0 && n != 0) return 1;
-  int64_t r = 1;
-  for (int64_t d = 1; d <= k; ++d)
+  std::vector<T> result;
+  result.reserve(indices.size());
+  for (auto idx : indices)
   {
-    r *= n--;
-    r /= d;
+    auto it = values.begin();
+    std::advance(it, idx - 1);
+    result.push_back(*it);
   }
-  return r;
+  return result;
 }
+
+template <typename T>
+std::vector<T> indices_to_values_ignore_last_index(const std::vector<size_t>& indices, const std::set<T>& values)
+{
+  std::vector<T> result;
+  result.reserve(indices.size() - 1);
+  for (size_t i = 0; i < indices.size() - 1; i++)
+  {
+    auto it = values.begin();
+    std::advance(it, indices[i]);
+    result.push_back(*it);
+  }
+  return result;
+}
+
+// returns true if iteraction contains one or more duplicated namespaces
+// with one exeption - returns false if interaction made of one namespace
+// like 'aaa' as it has no sense to sort such things.
+template <typename T>
+inline bool must_be_left_sorted(const std::vector<T>& oi)
+{
+  if (oi.size() <= 1) return true;  // one letter in std::string - no need to sort
+
+  bool diff_ns_found = false;
+  bool pair_found = false;
+
+  for (auto i = std::begin(oi); i != std::end(oi) - 1; ++i)
+    if (*i == *(i + 1))  // pair found
+    {
+      if (diff_ns_found) return true;  // case 'abb'
+      pair_found = true;
+    }
+    else
+    {
+      if (pair_found) return true;  // case 'aab'
+      diff_ns_found = true;
+    }
+
+  return false;  // 'aaa' or 'abc'
+}
+
+// used from parse_args.cc
+// filter duplicate namespaces treating them as unordered sets of namespaces.
+// also sort namespaces in interactions containing duplicate namespaces to make sure they are grouped together.
+template <typename T>
+void sort_and_filter_duplicate_interactions(
+    std::vector<std::vector<T>>& vec, bool filter_duplicates, size_t& removed_cnt, size_t& sorted_cnt)
+{
+  // 2 out parameters
+  removed_cnt = 0;
+  sorted_cnt = 0;
+
+  // interaction value sort + original position
+  std::vector<std::pair<std::vector<T>, size_t>> vec_sorted;
+  for (size_t i = 0; i < vec.size(); ++i)
+  {
+    std::vector<T> sorted_i(vec[i]);
+    std::stable_sort(std::begin(sorted_i), std::end(sorted_i));
+    vec_sorted.push_back(std::make_pair(sorted_i, i));
+  }
+
+  if (filter_duplicates)
+  {
+    // remove duplicates
+    std::stable_sort(vec_sorted.begin(), vec_sorted.end(),
+        [](std::pair<std::vector<T>, size_t> const& a, std::pair<std::vector<T>, size_t> const& b) {
+          return a.first < b.first;
+        });
+    auto last = unique(vec_sorted.begin(), vec_sorted.end(),
+        [](std::pair<std::vector<T>, size_t> const& a, std::pair<std::vector<T>, size_t> const& b) {
+          return a.first == b.first;
+        });
+    vec_sorted.erase(last, vec_sorted.end());
+
+    // report number of removed interactions
+    removed_cnt = vec.size() - vec_sorted.size();
+
+    // restore original order
+    std::stable_sort(vec_sorted.begin(), vec_sorted.end(),
+        [](std::pair<std::vector<T>, size_t> const& a, std::pair<std::vector<T>, size_t> const& b) {
+          return a.second < b.second;
+        });
+  }
+
+  // we have original vector and vector with duplicates removed + corresponding indexes in original vector
+  // plus second vector's data is sorted. We can reuse it if we need interaction to be left sorted.
+  // let's make a new vector from these two sources - without dulicates and with sorted data whenever it's needed.
+  std::vector<std::vector<T>> res;
+  for (auto& i : vec_sorted)
+  {
+    if (must_be_left_sorted(i.first))
+    {
+      // if so - copy sorted data to result
+      res.push_back(i.first);
+      ++sorted_cnt;
+    }
+    else  // else - move unsorted data to result
+      res.push_back(vec[i.second]);
+  }
+
+  vec = res;
+}
+
+template <typename T>
+std::vector<std::vector<T>> generate_namespace_combinations_with_repetition(
+    const std::set<T>& namespaces, size_t num_to_pick)
+{
+  std::vector<std::vector<T>> result;
+  // This computation involves factorials and so can only be done with relatively small inputs.
+  // Factorial 22 would result in 64 bit overflow.
+  if ((namespaces.size() + num_to_pick) <= 21)
+  { result.reserve(VW::math::number_of_combinations_with_repetition(namespaces.size(), num_to_pick)); }
+
+  auto last_index = namespaces.size() - 1;
+  // last index is used to signal when done
+  std::vector<size_t> indices(num_to_pick + 1, 0);
+  while (true)
+  {
+    for (size_t i = 0; i < num_to_pick; ++i)
+    {
+      if (indices[i] > last_index)
+      {
+        // Increment the next index
+        indices[i + 1] += 1;
+        // Decrement all past indices
+        for (int k = static_cast<int>(i); k >= 0; --k) { indices[static_cast<size_t>(k)] = indices[i + 1]; }
+      }
+    }
+
+    if (indices[num_to_pick] > 0) { break; }
+    result.emplace_back(indices_to_values_ignore_last_index(indices, namespaces));
+
+    indices[0] += 1;
+  }
+
+  return result;
+}
+
+template <typename T>
+std::vector<std::vector<T>> generate_namespace_permutations_with_repetition(
+    const std::set<T>& namespaces, size_t num_to_pick)
+{
+  std::vector<std::vector<T>> result;
+  result.reserve(VW::math::number_of_permutations_with_repetition(namespaces.size(), num_to_pick));
+
+  std::vector<size_t> one_based_chosen_indices(num_to_pick, 0);
+  for (size_t i = 0; i < num_to_pick - 1; i++) { one_based_chosen_indices[i] = 1; }
+  one_based_chosen_indices[num_to_pick - 1] = 0;
+
+  size_t number_of_namespaces = namespaces.size();
+  size_t next_index = num_to_pick;
+
+  while (true)
+  {
+    if (one_based_chosen_indices[next_index - 1] == number_of_namespaces)
+    {
+      next_index--;
+      if (next_index == 0) { break; }
+    }
+    else
+    {
+      one_based_chosen_indices[next_index - 1]++;
+      while (next_index < num_to_pick)
+      {
+        next_index++;
+        one_based_chosen_indices[next_index - 1] = 1;
+      }
+
+      result.emplace_back(indices_to_values_one_based(one_based_chosen_indices, namespaces));
+    }
+  }
+
+  return result;
+}
+
+template <typename T>
+using generate_func_t = std::vector<std::vector<T>>(const std::set<T>& namespaces, size_t num_to_pick);
+
+std::vector<std::vector<namespace_index>> expand_quadratics_wildcard_interactions(
+    bool leave_duplicate_interactions, const std::set<namespace_index>& new_example_indices);
+
+bool sort_interactions_comparator(const std::vector<namespace_index>& a, const std::vector<namespace_index>& b);
+
+template <generate_func_t<namespace_index> generate_func, bool leave_duplicate_interactions>
+std::vector<std::vector<namespace_index>> compile_interaction(
+    const std::vector<namespace_index>& interaction, const std::set<namespace_index>& indices)
+{
+  std::vector<size_t> insertion_indices;
+  std::vector<namespace_index> insertion_ns;
+  size_t num_wildcards = 0;
+  for (size_t i = 0; i < interaction.size(); i++)
+  {
+    if (interaction[i] != wildcard_namespace)
+    {
+      insertion_indices.push_back(i);
+      insertion_ns.push_back(interaction[i]);
+    }
+    else
+    {
+      num_wildcards++;
+    }
+  }
+
+  // Quadratic fast path or generic generation function.
+  auto result = num_wildcards == 2 ? expand_quadratics_wildcard_interactions(leave_duplicate_interactions, indices)
+                                   : generate_func(indices, num_wildcards);
+  for (size_t i = 0; i < insertion_indices.size(); i++)
+  {
+    for (auto& res : result) { res.insert(res.begin() + insertion_indices[i], insertion_ns[i]); }
+  }
+  return result;
+}
+
+template <generate_func_t<extent_term> generate_func, bool leave_duplicate_interactions>
+std::vector<std::vector<extent_term>> compile_extent_interaction(
+    const std::vector<extent_term>& interaction, const std::set<extent_term>& all_seen_extents)
+{
+  std::vector<size_t> insertion_indices;
+  std::vector<extent_term> insertion_ns;
+  size_t num_wildcards = 0;
+  for (size_t i = 0; i < interaction.size(); i++)
+  {
+    if (interaction[i].first != wildcard_namespace)
+    {
+      insertion_indices.push_back(i);
+      insertion_ns.push_back(interaction[i]);
+    }
+    else
+    {
+      num_wildcards++;
+    }
+  }
+
+  auto result = generate_func(all_seen_extents, num_wildcards);
+  for (size_t i = 0; i < insertion_indices.size(); i++)
+  {
+    for (auto& res : result) { res.insert(res.begin() + insertion_indices[i], insertion_ns[i]); }
+  }
+  return result;
+}
+
+// Compiling an interaction means to expand out wildcards (:) for each index present
+template <generate_func_t<namespace_index> generate_func, bool leave_duplicate_interactions>
+std::vector<std::vector<namespace_index>> compile_interactions(
+    const std::vector<std::vector<namespace_index>>& interactions, const std::set<namespace_index>& indices)
+{
+  std::vector<std::vector<namespace_index>> final_interactions;
+
+  for (const auto& inter : interactions)
+  {
+    if (contains_wildcard(inter))
+    {
+      auto compiled = compile_interaction<generate_func, leave_duplicate_interactions>(inter, indices);
+      std::copy(compiled.begin(), compiled.end(), std::back_inserter(final_interactions));
+    }
+    else
+    {
+      final_interactions.push_back(inter);
+    }
+  }
+  std::sort(final_interactions.begin(), final_interactions.end(), INTERACTIONS::sort_interactions_comparator);
+  size_t removed_cnt = 0;
+  size_t sorted_cnt = 0;
+  INTERACTIONS::sort_and_filter_duplicate_interactions(
+      final_interactions, !leave_duplicate_interactions, removed_cnt, sorted_cnt);
+  return final_interactions;
+}
+
+template <generate_func_t<extent_term> generate_func, bool leave_duplicate_interactions>
+std::vector<std::vector<extent_term>> compile_extent_interactions(
+    const std::vector<std::vector<extent_term>>& interactions, const std::set<extent_term>& indices)
+{
+  std::vector<std::vector<extent_term>> final_interactions;
+
+  for (const auto& inter : interactions)
+  {
+    if (contains_wildcard(inter))
+    {
+      auto compiled = compile_extent_interaction<generate_func, leave_duplicate_interactions>(inter, indices);
+      std::copy(compiled.begin(), compiled.end(), std::back_inserter(final_interactions));
+    }
+    else
+    {
+      final_interactions.push_back(inter);
+    }
+  }
+  size_t removed_cnt = 0;
+  size_t sorted_cnt = 0;
+  INTERACTIONS::sort_and_filter_duplicate_interactions(
+      final_interactions, !leave_duplicate_interactions, removed_cnt, sorted_cnt);
+  return final_interactions;
+}
+
+struct interactions_generator
+{
+private:
+  std::set<namespace_index> all_seen_namespaces;
+  std::set<extent_term> all_seen_extents;
+
+public:
+  std::vector<std::vector<namespace_index>> generated_interactions;
+  std::vector<std::vector<extent_term>> generated_extent_interactions;
+
+  template <generate_func_t<namespace_index> generate_func, bool leave_duplicate_interactions>
+  void update_interactions_if_new_namespace_seen(const std::vector<std::vector<namespace_index>>& interactions,
+      const v_array<namespace_index>& new_example_indices)
+  {
+    auto prev_count = all_seen_namespaces.size();
+    all_seen_namespaces.insert(new_example_indices.begin(), new_example_indices.end());
+
+    if (prev_count != all_seen_namespaces.size())
+    {
+      // We do not generate interactions for non-printable namespaces as
+      // generally they are used for implementation details and special behavior
+      // and not user inputted features.
+      std::set<namespace_index> indices_to_interact;
+      for (auto ns_index : all_seen_namespaces)
+      {
+        if (is_printable_namespace(ns_index)) { indices_to_interact.insert(ns_index); }
+      }
+      generated_interactions.clear();
+      if (indices_to_interact.size() > 0)
+      {
+        generated_interactions =
+            compile_interactions<generate_func, leave_duplicate_interactions>(interactions, indices_to_interact);
+      }
+    }
+  }
+
+  template <generate_func_t<extent_term> generate_func, bool leave_duplicate_interactions>
+  void update_extent_interactions_if_new_namespace_seen(const std::vector<std::vector<extent_term>>& interactions,
+      const v_array<namespace_index>& indices, const std::array<features, NUM_NAMESPACES>& feature_space)
+  {
+    auto prev_count = all_seen_extents.size();
+    for (auto ns_index : indices)
+    {
+      for (const auto& extent : feature_space[ns_index].namespace_extents)
+      { all_seen_extents.insert({ns_index, extent.hash}); }
+    }
+
+    if (prev_count != all_seen_extents.size())
+    {
+      generated_interactions.clear();
+      if (!all_seen_extents.empty())
+      {
+        generated_extent_interactions =
+            compile_extent_interactions<generate_func, leave_duplicate_interactions>(interactions, all_seen_extents);
+      }
+    }
+  }
+};
 
 }  // namespace INTERACTIONS

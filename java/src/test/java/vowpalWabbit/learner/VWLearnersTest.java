@@ -32,7 +32,7 @@ public class VWLearnersTest extends VWTestHelper {
     @Test
     public void testWrongType() {
         thrown.expect(ClassCastException.class);
-        VWScalarsLearner learner = VWLearners.create("--cb 4 --quiet");
+        VWScalarsLearner learner = VWLearners.create("--cb 4 --quiet --cb_force_legacy");
     }
 
     @Test

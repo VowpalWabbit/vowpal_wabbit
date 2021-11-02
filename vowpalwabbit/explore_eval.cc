@@ -9,6 +9,8 @@
 #include "rand48.h"
 #include "gen_cs_example.h"
 #include <memory>
+#include <cfloat>
+#include "shared_data.h"
 
 // Do evaluation of nonstationary policies.
 // input = contextual bandit label
@@ -23,27 +25,27 @@ namespace EXPLORE_EVAL
 struct explore_eval
 {
   CB::cb_class known_cost;
-  vw* all;
+  vw* all = nullptr;
   std::shared_ptr<rand_state> _random_state;
-  uint64_t offset;
+  uint64_t offset = 0;
   CB::label action_label;
   CB::label empty_label;
-  size_t example_counter;
+  size_t example_counter = 0;
 
-  size_t update_count;
-  size_t violations;
-  float multiplier;
+  size_t update_count = 0;
+  size_t violations = 0;
+  float multiplier = 0.f;
 
-  bool fixed_multiplier;
+  bool fixed_multiplier = false;
 };
 
 void finish(explore_eval& data)
 {
   if (!data.all->logger.quiet)
   {
-    data.all->trace_message << "update count = " << data.update_count << std::endl;
-    if (data.violations > 0) data.all->trace_message << "violation count = " << data.violations << std::endl;
-    if (!data.fixed_multiplier) data.all->trace_message << "final multiplier = " << data.multiplier << std::endl;
+    *(data.all->trace_message) << "update count = " << data.update_count << std::endl;
+    if (data.violations > 0) *(data.all->trace_message) << "violation count = " << data.violations << std::endl;
+    if (!data.fixed_multiplier) *(data.all->trace_message) << "final multiplier = " << data.multiplier << std::endl;
   }
 }
 
@@ -59,16 +61,17 @@ void output_example(vw& all, explore_eval& c, example& ec, multi_ex* ec_seq)
 
   float loss = 0.;
   ACTION_SCORE::action_scores preds = (*ec_seq)[0]->pred.a_s;
+  VW::label_type_t label_type = all.example_parser->lbl_parser.label_type;
 
   for (size_t i = 0; i < (*ec_seq).size(); i++)
-    if (!CB::ec_is_example_header(*(*ec_seq)[i])) num_features += (*ec_seq)[i]->num_features;
+    if (!VW::LEARNER::ec_is_example_header(*(*ec_seq)[i], label_type)) num_features += (*ec_seq)[i]->get_num_features();
 
   bool labeled_example = true;
   if (c.known_cost.probability > 0)
   {
     for (uint32_t i = 0; i < preds.size(); i++)
     {
-      float l = get_cost_estimate(&c.known_cost, preds[i].action);
+      float l = get_cost_estimate(c.known_cost, preds[i].action);
       loss += l * preds[i].score;
     }
   }
@@ -96,7 +99,7 @@ void output_example(vw& all, explore_eval& c, example& ec, multi_ex* ec_seq)
     all.print_text_by_ref(all.raw_prediction.get(), outputStringStream.str(), ec.tag);
   }
 
-  CB::print_update(all, !labeled_example, ec, ec_seq, true);
+  CB::print_update(all, !labeled_example, ec, ec_seq, true, nullptr);
 }
 
 void output_example_seq(vw& all, explore_eval& data, multi_ex& ec_seq)
@@ -125,15 +128,19 @@ void do_actual_learning(explore_eval& data, multi_learner& base, multi_ex& ec_se
 
   if (label_example != nullptr)  // extract label
   {
-    data.action_label = label_example->l.cb;
-    label_example->l.cb = data.empty_label;
+    data.action_label = std::move(label_example->l.cb);
+    label_example->l.cb = std::move(data.empty_label);
   }
   multiline_learn_or_predict<false>(base, ec_seq, data.offset);
 
   if (label_example != nullptr)  // restore label
-    label_example->l.cb = data.action_label;
+  {
+    label_example->l.cb = std::move(data.action_label);
+    data.empty_label.costs.clear();
+    data.empty_label.weight = 1.f;
+  }
 
-  data.known_cost = CB_ADF::get_observed_cost(ec_seq);
+  data.known_cost = CB_ADF::get_observed_cost_or_default_cb_adf(ec_seq);
   if (label_example != nullptr && is_learn)
   {
     ACTION_SCORE::action_scores& a_s = ec_seq[0]->pred.a_s;
@@ -178,9 +185,11 @@ void do_actual_learning(explore_eval& data, multi_learner& base, multi_ex& ec_se
 
 using namespace EXPLORE_EVAL;
 
-base_learner* explore_eval_setup(options_i& options, vw& all)
+base_learner* explore_eval_setup(VW::setup_base_i& stack_builder)
 {
-  auto data = scoped_calloc_or_throw<explore_eval>();
+  options_i& options = *stack_builder.get_options();
+  vw& all = *stack_builder.get_all_pointer();
+  auto data = VW::make_unique<explore_eval>();
   bool explore_eval_option = false;
   option_group_definition new_options("Explore evaluation");
   new_options
@@ -203,16 +212,17 @@ base_learner* explore_eval_setup(options_i& options, vw& all)
 
   if (!options.was_supplied("cb_explore_adf")) options.insert("cb_explore_adf", "");
 
-  all.delete_prediction = nullptr;
-
-  multi_learner* base = as_multiline(setup_base(options, all));
+  multi_learner* base = as_multiline(stack_builder.setup_base_learner());
   all.example_parser->lbl_parser = CB::cb_label;
-  all.label_type = label_type_t::cb;
 
-  learner<explore_eval, multi_ex>& l =
-      init_learner(data, base, do_actual_learning<true>, do_actual_learning<false>, 1, prediction_type_t::action_probs);
+  auto* l = make_reduction_learner(std::move(data), base, do_actual_learning<true>, do_actual_learning<false>,
+      stack_builder.get_setupfn_name(explore_eval_setup))
+                .set_learn_returns_prediction(true)
+                .set_output_prediction_type(VW::prediction_type_t::action_probs)
+                .set_input_label_type(VW::label_type_t::cb)
+                .set_finish_example(finish_multiline_example)
+                .set_finish(finish)
+                .build();
 
-  l.set_finish_example(finish_multiline_example);
-  l.set_finish(finish);
-  return make_base(l);
+  return make_base(*l);
 }

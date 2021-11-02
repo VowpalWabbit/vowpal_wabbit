@@ -3,8 +3,8 @@
 // license as described in the file LICENSE.
 
 #include "offset_tree.h"
-#include "parse_args.h"  // setup_base()
-#include "learner.h"     // init_learner()
+#include "global_data.h"
+#include "learner.h"
 #include "action_score.h"
 
 using namespace VW::config;
@@ -249,8 +249,9 @@ void learn(offset_tree& tree, single_learner& base, example& ec)
   copy_to_action_scores(saved_scores, ec.pred.a_s);
 }
 
-base_learner* setup(VW::config::options_i& options, vw& all)
+base_learner* setup(VW::setup_base_i& stack_builder)
 {
+  options_i& options = *stack_builder.get_options();
   option_group_definition new_options("Offset tree Options");
   uint32_t num_actions;
   new_options.add(make_option("ot", num_actions).keep().necessary().help("Offset tree with <k> labels"));
@@ -260,17 +261,23 @@ base_learner* setup(VW::config::options_i& options, vw& all)
   // Ensure that cb_explore will be the base reduction
   if (!options.was_supplied("cb_explore")) { options.insert("cb_explore", "2"); }
 
-  auto otree = scoped_calloc_or_throw<offset_tree>(num_actions);
+  // default to legacy cb implementation
+  options.insert("cb_force_legacy", "");
+
+  auto otree = VW::make_unique<offset_tree>(num_actions);
   otree->init();
 
-  base_learner* base = setup_base(options, all);
+  base_learner* base = stack_builder.setup_base_learner();
+  size_t ws = otree->learner_count();
 
-  all.delete_prediction = ACTION_SCORE::delete_action_scores;
+  auto* l = make_reduction_learner(
+      std::move(otree), as_singleline(base), learn, predict, stack_builder.get_setupfn_name(setup))
+                .set_params_per_weight(ws)
+                .set_output_prediction_type(prediction_type_t::action_probs)
+                .set_input_label_type(label_type_t::cb)
+                .build();
 
-  learner<offset_tree, example>& l =
-      init_learner(otree, as_singleline(base), learn, predict, otree->learner_count(), prediction_type_t::action_probs);
-
-  return make_base(l);
+  return make_base(*l);
 }
 }  // namespace offset_tree
 }  // namespace VW

@@ -12,9 +12,15 @@
 #include "gd.h"
 #include "vw.h"
 #include "guard.h"
+#include "shared_data.h"
+
+#include "io/logger.h"
+
 
 using namespace VW::LEARNER;
 using namespace VW::config;
+
+namespace logger = VW::io::logger;
 
 constexpr float hidden_min_activation = -3;
 constexpr float hidden_max_activation = 3;
@@ -22,27 +28,27 @@ constexpr uint64_t nn_constant = 533357803;
 
 struct nn
 {
-  uint32_t k;
+  uint32_t k = 0;
   std::unique_ptr<loss_function> squared_loss;
   example output_layer;
   example hiddenbias;
   example outputweight;
-  float prediction;
-  size_t increment;
-  bool dropout;
-  uint64_t xsubi;
-  uint64_t save_xsubi;
-  bool inpass;
-  bool finished_setup;
-  bool multitask;
+  float prediction = 0.f;
+  size_t increment = 0;
+  bool dropout = false;
+  uint64_t xsubi = 0;
+  uint64_t save_xsubi = 0;
+  bool inpass = false;
+  bool finished_setup = false;
+  bool multitask = false;
 
-  float* hidden_units;
-  bool* dropped_out;
+  float* hidden_units = nullptr;
+  bool* dropped_out = nullptr;
 
-  polyprediction* hidden_units_pred;
-  polyprediction* hiddenbias_pred;
+  polyprediction* hidden_units_pred = nullptr;
+  polyprediction* hiddenbias_pred = nullptr;
 
-  vw* all;  // many things
+  vw* all = nullptr;  // many things
   std::shared_ptr<rand_state> _random_state;
 
   ~nn()
@@ -51,9 +57,6 @@ struct nn
     free(dropped_out);
     free(hidden_units_pred);
     free(hiddenbias_pred);
-    VW::dealloc_example(nullptr, output_layer);
-    VW::dealloc_example(nullptr, hiddenbias);
-    VW::dealloc_example(nullptr, outputweight);
   }
 };
 
@@ -63,7 +66,7 @@ static inline float fastpow2(float p)
 {
   float offset = (p < 0) ? 1.0f : 0.0f;
   float clipp = (p < -126) ? -126.0f : p;
-  int w = (int)clipp;
+  int w = static_cast<int>(clipp);
   float z = clipp - w + offset;
   union
   {
@@ -83,6 +86,7 @@ void finish_setup(nn& n, vw& all)
   // TODO: output_layer audit
 
   n.output_layer.interactions = &all.interactions;
+  n.output_layer.extent_interactions = &all.extent_interactions;
   n.output_layer.indices.push_back(nn_output_namespace);
   uint64_t nn_index = nn_constant << all.weights.stride_shift();
 
@@ -94,42 +98,40 @@ void finish_setup(nn& n, vw& all)
     {
       std::stringstream ss;
       ss << "OutputLayer" << i;
-      fs.space_names.push_back(audit_strings_ptr(new audit_strings("", ss.str())));
+      fs.space_names.push_back(audit_strings("", ss.str()));
     }
-    nn_index += (uint64_t)n.increment;
+    nn_index += static_cast<uint64_t>(n.increment);
   }
   n.output_layer.num_features += n.k;
 
   if (!n.inpass)
   {
     fs.push_back(1., nn_index);
-    if (all.audit || all.hash_inv)
-      fs.space_names.push_back(audit_strings_ptr(new audit_strings("", "OutputLayerConst")));
+    if (all.audit || all.hash_inv) fs.space_names.push_back(audit_strings("", "OutputLayerConst"));
     ++n.output_layer.num_features;
   }
 
   // TODO: not correct if --noconstant
   n.hiddenbias.interactions = &all.interactions;
+  n.hiddenbias.extent_interactions = &all.extent_interactions;
   n.hiddenbias.indices.push_back(constant_namespace);
-  n.hiddenbias.feature_space[constant_namespace].push_back(1, (uint64_t)constant);
+  n.hiddenbias.feature_space[constant_namespace].push_back(1, constant);
   if (all.audit || all.hash_inv)
-    n.hiddenbias.feature_space[constant_namespace].space_names.push_back(
-        audit_strings_ptr(new audit_strings("", "HiddenBias")));
-  n.hiddenbias.total_sum_feat_sq++;
+    n.hiddenbias.feature_space[constant_namespace].space_names.push_back(audit_strings("", "HiddenBias"));
   n.hiddenbias.l.simple.label = FLT_MAX;
   n.hiddenbias.weight = 1;
 
   n.outputweight.interactions = &all.interactions;
+  n.outputweight.extent_interactions = &all.extent_interactions;
   n.outputweight.indices.push_back(nn_output_namespace);
   features& outfs = n.output_layer.feature_space[nn_output_namespace];
   n.outputweight.feature_space[nn_output_namespace].push_back(outfs.values[0], outfs.indicies[0]);
   if (all.audit || all.hash_inv)
-    n.outputweight.feature_space[nn_output_namespace].space_names.push_back(
-        audit_strings_ptr(new audit_strings("", "OutputWeight")));
+    n.outputweight.feature_space[nn_output_namespace].space_names.push_back(audit_strings("", "OutputWeight"));
   n.outputweight.feature_space[nn_output_namespace].values[0] = 1;
-  n.outputweight.total_sum_feat_sq++;
   n.outputweight.l.simple.label = FLT_MAX;
   n.outputweight.weight = 1;
+  n.outputweight._reduction_features.template get<simple_label_reduction_features>().initial = 0.f;
 
   n.finished_setup = true;
 }
@@ -144,8 +146,8 @@ void predict_or_learn_multi(nn& n, single_learner& base, example& ec)
 {
   bool shouldOutput = n.all->raw_prediction != nullptr;
   if (!n.finished_setup) finish_setup(n, *(n.all));
-  shared_data sd;
-  memcpy(&sd, n.all->sd, sizeof(shared_data));
+  // Yes, copy all of shared data.
+  shared_data sd{*n.all->sd};
   {
     // guard for all.sd as it is modified - this will restore the state at the end of the scope.
     auto swap_guard = VW::swap_guard(n.all->sd, &sd);
@@ -183,7 +185,7 @@ void predict_or_learn_multi(nn& n, single_learner& base, example& ec)
         // avoid saddle point at 0
         if (hiddenbias_pred[i].scalar == 0)
         {
-          n.hiddenbias.l.simple.label = (float)(n._random_state->get_and_update_random() - 0.5);
+          n.hiddenbias.l.simple.label = static_cast<float>(n._random_state->get_and_update_random() - 0.5);
           base.learn(n.hiddenbias, i);
           n.hiddenbias.l.simple.label = FLT_MAX;
         }
@@ -221,7 +223,7 @@ void predict_or_learn_multi(nn& n, single_learner& base, example& ec)
 
   CONVERSE:  // That's right, I'm using goto.  So sue me.
 
-    n.output_layer.total_sum_feat_sq = 1;
+    n.output_layer.reset_total_sum_feat_sq();
     n.output_layer.feature_space[nn_output_namespace].sum_feat_sq = 1;
 
     n.outputweight.ft_offset = ec.ft_offset;
@@ -238,8 +240,6 @@ void predict_or_learn_multi(nn& n, single_learner& base, example& ec)
       float sigmah = (dropped_out[i]) ? 0.0f : dropscale * fasttanh(hidden_units[i].scalar);
       features& out_fs = n.output_layer.feature_space[nn_output_namespace];
       out_fs.values[i] = sigmah;
-
-      n.output_layer.total_sum_feat_sq += sigmah * sigmah;
       out_fs.sum_feat_sq += sigmah * sigmah;
 
       n.outputweight.feature_space[nn_output_namespace].indicies[0] = out_fs.indicies[i];
@@ -249,8 +249,8 @@ void predict_or_learn_multi(nn& n, single_learner& base, example& ec)
       // avoid saddle point at 0
       if (wf == 0)
       {
-        float sqrtk = std::sqrt((float)n.k);
-        n.outputweight.l.simple.label = (float)(n._random_state->get_and_update_random() - 0.5) / sqrtk;
+        float sqrtk = std::sqrt(static_cast<float>(n.k));
+        n.outputweight.l.simple.label = static_cast<float>(n._random_state->get_and_update_random() - 0.5) / sqrtk;
         base.update(n.outputweight, n.k);
         n.outputweight.l.simple.label = FLT_MAX;
       }
@@ -278,32 +278,30 @@ void predict_or_learn_multi(nn& n, single_learner& base, example& ec)
        * save_nn_output_namespace is destroyed
        */
       features save_nn_output_namespace = std::move(ec.feature_space[nn_output_namespace]);
-      auto tmp_sum_feat_sq = n.output_layer.feature_space[nn_output_namespace].sum_feat_sq;
-      ec.feature_space[nn_output_namespace].deep_copy_from(n.output_layer.feature_space[nn_output_namespace]);
+      ec.feature_space[nn_output_namespace] = n.output_layer.feature_space[nn_output_namespace];
 
-      ec.total_sum_feat_sq += tmp_sum_feat_sq;
       if (is_learn)
         base.learn(ec, n.k);
       else
         base.predict(ec, n.k);
       n.output_layer.partial_prediction = ec.partial_prediction;
       n.output_layer.loss = ec.loss;
-      ec.total_sum_feat_sq -= tmp_sum_feat_sq;
       ec.feature_space[nn_output_namespace].sum_feat_sq = 0;
       std::swap(ec.feature_space[nn_output_namespace], save_nn_output_namespace);
-      ec.indices.pop();
+      ec.indices.pop_back();
     }
     else
     {
       n.output_layer.ft_offset = ec.ft_offset;
-      n.output_layer.l = ec.l;
+      n.output_layer.l.simple = ec.l.simple;
+      n.output_layer._reduction_features.template get<simple_label_reduction_features>().initial =
+          ec._reduction_features.template get<simple_label_reduction_features>().initial;
       n.output_layer.weight = ec.weight;
       n.output_layer.partial_prediction = 0;
       if (is_learn)
         base.learn(n.output_layer, n.k);
       else
         base.predict(n.output_layer, n.k);
-      ec.l = n.output_layer.l;
     }
 
     n.prediction = GD::finalize_prediction(n.all->sd, n.all->logger, n.output_layer.partial_prediction);
@@ -320,7 +318,7 @@ void predict_or_learn_multi(nn& n, single_learner& base, example& ec)
       {
         float gradient = n.all->loss->first_derivative(n.all->sd, n.prediction, ld.label);
 
-        if (fabs(gradient) > 0)
+        if (std::fabs(gradient) > 0)
         {
           auto loss_function_swap_guard_learn_block = VW::swap_guard(n.all->loss, n.squared_loss);
           n.all->set_minmax = noop_mm;
@@ -394,12 +392,13 @@ void multipredict(nn& n, single_learner& base, example& ec, size_t count, size_t
     else
       predict_or_learn_multi<false, false>(n, base, ec);
     if (finalize_predictions)
-      pred[c] = ec.pred;
+      pred[c] = std::move(ec.pred);  // TODO: this breaks for complex labels because = doesn't do deep copy! (XXX we
+                                     // "fix" this by moving)
     else
       pred[c].scalar = ec.partial_prediction;
-    ec.ft_offset += (uint64_t)step;
+    ec.ft_offset += static_cast<uint64_t>(step);
   }
-  ec.ft_offset -= (uint64_t)(step * count);
+  ec.ft_offset -= static_cast<uint64_t>(step * count);
 }
 
 void finish_example(vw& all, nn&, example& ec)
@@ -409,9 +408,11 @@ void finish_example(vw& all, nn&, example& ec)
   return_simple_example(all, nullptr, ec);
 }
 
-base_learner* nn_setup(options_i& options, vw& all)
+base_learner* nn_setup(VW::setup_base_i& stack_builder)
 {
-  auto n = scoped_calloc_or_throw<nn>();
+  options_i& options = *stack_builder.get_options();
+  vw& all = *stack_builder.get_all_pointer();
+  auto n = VW::make_unique<nn>();
   bool meanfield = false;
   option_group_definition new_options("Neural Network");
   new_options
@@ -429,20 +430,19 @@ base_learner* nn_setup(options_i& options, vw& all)
   n->_random_state = all.get_random_state();
 
   if (n->multitask && !all.logger.quiet)
-    std::cerr << "using multitask sharing for neural network " << (all.training ? "training" : "testing") << std::endl;
+    logger::errlog_info("using multitask sharing for neural network {}", (all.training ? "training" : "testing"));
 
   if (options.was_supplied("meanfield"))
   {
     n->dropout = false;
-    if (!all.logger.quiet)
-      std::cerr << "using mean field for neural network " << (all.training ? "training" : "testing") << std::endl;
+    logger::errlog_info("using mean field for neural network {}", (all.training ? "training" : "testing"));
   }
 
   if (n->dropout && !all.logger.quiet)
-    std::cerr << "using dropout for neural network " << (all.training ? "training" : "testing") << std::endl;
+    logger::errlog_info("using dropout for neural network {}", (all.training ? "training" : "testing"));
 
   if (n->inpass && !all.logger.quiet)
-    std::cerr << "using input passthrough for neural network " << (all.training ? "training" : "testing") << std::endl;
+    logger::errlog_info("using input passthrough for neural network {}", (all.training ? "training" : "testing"));
 
   n->finished_setup = false;
   n->squared_loss = getLossFunction(all, "squared", 0);
@@ -456,16 +456,25 @@ base_learner* nn_setup(options_i& options, vw& all)
   n->hidden_units_pred = calloc_or_throw<polyprediction>(n->k);
   n->hiddenbias_pred = calloc_or_throw<polyprediction>(n->k);
 
-  auto base = as_singleline(setup_base(options, all));
+  auto base = as_singleline(stack_builder.setup_base_learner());
   n->increment = base->increment;  // Indexing of output layer is odd.
   nn& nv = *n.get();
-  learner<nn, example>& l =
-      init_learner(n, base, predict_or_learn_multi<true, true>, predict_or_learn_multi<false, true>, n->k + 1);
-  if (nv.multitask) l.set_multipredict(multipredict);
-  l.set_finish_example(finish_example);
-  l.set_end_pass(end_pass);
 
-  return make_base(l);
+  size_t ws = n->k + 1;
+  auto* multipredict_f = (nv.multitask) ? multipredict : nullptr;
+
+  auto* l = make_reduction_learner(std::move(n), base, predict_or_learn_multi<true, true>,
+      predict_or_learn_multi<false, true>, stack_builder.get_setupfn_name(nn_setup))
+                .set_params_per_weight(ws)
+                .set_learn_returns_prediction(true)
+                .set_multipredict(multipredict_f)
+                .set_output_prediction_type(VW::prediction_type_t::scalar)
+                .set_input_label_type(VW::label_type_t::simple)
+                .set_finish_example(finish_example)
+                .set_end_pass(end_pass)
+                .build();
+
+  return make_base(*l);
 }
 
 /*

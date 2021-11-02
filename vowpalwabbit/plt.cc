@@ -13,8 +13,12 @@
 #include "reductions.h"
 #include "vw.h"
 
+#include "io/logger.h"
+#include "shared_data.h"
+
 using namespace VW::LEARNER;
 using namespace VW::config;
+namespace logger = VW::io::logger;
 
 namespace plt_ns
 {
@@ -28,13 +32,13 @@ struct node
 
 struct plt
 {
-  vw* all;
+  vw* all = nullptr;
 
   // tree structure
-  uint32_t k;     // number of labels
-  uint32_t t;     // number of tree nodes
-  uint32_t ti;    // number of internal nodes
-  uint32_t kary;  // kary tree
+  uint32_t k = 0;     // number of labels
+  uint32_t t = 0;     // number of tree nodes
+  uint32_t ti = 0;    // number of internal nodes
+  uint32_t kary = 0;  // kary tree
 
   // for training
   v_array<float> nodes_time;                    // in case of sgd, this stores individual t for each node
@@ -42,37 +46,27 @@ struct plt
   std::unordered_set<uint32_t> negative_nodes;  // container for negative nodes
 
   // for prediction
-  float threshold;
-  uint32_t top_k;
-  v_array<polyprediction> node_preds;  // for storing results of base.multipredict
+  float threshold = 0.f;
+  uint32_t top_k = 0;
+  std::vector<polyprediction> node_preds;  // for storing results of base.multipredict
   std::vector<node> node_queue;        // container for queue used for both types of predictions
 
   // for measuring predictive performance
   std::unordered_set<uint32_t> true_labels;
   v_array<uint32_t> tp_at;  // true positives at (for precision and recall at)
-  uint32_t tp;
-  uint32_t fp;
-  uint32_t fn;
-  uint32_t true_count;  // number of all true labels (for recall at)
-  uint32_t ec_count;    // number of examples
+  uint32_t tp = 0;
+  uint32_t fp = 0;
+  uint32_t fn = 0;
+  uint32_t true_count = 0;  // number of all true labels (for recall at)
+  uint32_t ec_count = 0;    // number of examples
 
   plt()
   {
-    nodes_time = v_init<float>();
-    node_preds = v_init<polyprediction>();
-    tp_at = v_init<uint32_t>();
     tp = 0;
     fp = 0;
     fn = 0;
     ec_count = 0;
     true_count = 0;
-  }
-
-  ~plt()
-  {
-    nodes_time.delete_v();
-    node_preds.delete_v();
-    tp_at.delete_v();
   }
 };
 
@@ -108,14 +102,14 @@ void learn(plt& p, single_learner& base, example& ec)
         p.positive_nodes.insert(tn);
         while (tn > 0)
         {
-          tn = static_cast<uint32_t>(floor(static_cast<float>(tn - 1) / p.kary));
+          tn = static_cast<uint32_t>(std::floor(static_cast<float>(tn - 1) / p.kary));
           p.positive_nodes.insert(tn);
         }
       }
     }
-    if (ec.l.multilabels.label_v.last() >= p.k)
-      std::cout << "label " << ec.l.multilabels.label_v.last() << " is not in {0," << p.k - 1
-                << "} This won't work right." << std::endl;
+    if (multilabels.label_v.back() >= p.k)
+      logger::log_error("label {0} is not in {{0,{1}}} This won't work right.",
+                        multilabels.label_v.back(), p.k - 1);
 
     for (auto& n : p.positive_nodes)
     {
@@ -133,7 +127,8 @@ void learn(plt& p, single_learner& base, example& ec)
   else
     p.negative_nodes.insert(0);
 
-  ec.l.simple = {1.f, 1.f, 0.f};
+  ec.l.simple = {1.f};
+  ec._reduction_features.template get<simple_label_reduction_features>().reset_to_default();
   for (auto& n : p.positive_nodes) learn_node(p, n, base, ec);
 
   ec.l.simple.label = -1.f;
@@ -148,9 +143,10 @@ void learn(plt& p, single_learner& base, example& ec)
 
 inline float predict_node(uint32_t n, single_learner& base, example& ec)
 {
-  ec.l.simple = {FLT_MAX, 1.f, 0.f};
+  ec.l.simple = {FLT_MAX};
+  ec._reduction_features.template get<simple_label_reduction_features>().reset_to_default();
   base.predict(ec, n);
-  return 1.0f / (1.0f + exp(-ec.partial_prediction));
+  return 1.0f / (1.0f + std::exp(-ec.partial_prediction));
 }
 
 template <bool threshold>
@@ -162,12 +158,12 @@ void predict(plt& p, single_learner& base, example& ec)
 
   // split labels into true and skip (those > max. label num)
   p.true_labels.clear();
-  for (auto label : ec.l.multilabels.label_v)
+  for (auto label : multilabels.label_v)
   {
     if (label < p.k)
       p.true_labels.insert(label);
     else
-      std::cout << "label " << label << " is not in {0," << p.k - 1 << "} Model can't predict it." << std::endl;
+      logger::log_error("label {0} is not in {{0,{1}}} This won't work right.", label, p.k - 1);
   }
 
   p.node_queue.clear();  // clear node queue
@@ -184,12 +180,13 @@ void predict(plt& p, single_learner& base, example& ec)
       p.node_queue.pop_back();
 
       uint32_t n_child = p.kary * node.n + 1;
-      ec.l.simple = {FLT_MAX, 1.f, 0.f};
-      base.multipredict(ec, n_child, p.kary, p.node_preds.begin(), false);
+      ec.l.simple = {FLT_MAX};
+      ec._reduction_features.template get<simple_label_reduction_features>().reset_to_default();
+      base.multipredict(ec, n_child, p.kary, p.node_preds.data(), false);
 
       for (uint32_t i = 0; i < p.kary; ++i, ++n_child)
       {
-        float cp_child = node.p * (1.f / (1.f + exp(-p.node_preds[i].scalar)));
+        float cp_child = node.p * (1.f / (1.f + std::exp(-p.node_preds[i].scalar)));
         if (cp_child > p.threshold)
         {
           if (n_child < p.ti)
@@ -232,12 +229,14 @@ void predict(plt& p, single_learner& base, example& ec)
       if (node.n < p.ti)
       {
         uint32_t n_child = p.kary * node.n + 1;
-        ec.l.simple = {FLT_MAX, 1.f, 0.f};
-        base.multipredict(ec, n_child, p.kary, p.node_preds.begin(), false);
+        ec.l.simple = {FLT_MAX};
+        ec._reduction_features.template get<simple_label_reduction_features>().reset_to_default();
+
+        base.multipredict(ec, n_child, p.kary, p.node_preds.data(), false);
 
         for (uint32_t i = 0; i < p.kary; ++i, ++n_child)
         {
-          float cp_child = node.p * (1.0f / (1.0f + exp(-p.node_preds[i].scalar)));
+          float cp_child = node.p * (1.0f / (1.0f + std::exp(-p.node_preds[i].scalar)));
           p.node_queue.push_back({n_child, cp_child});
           std::push_heap(p.node_queue.begin(), p.node_queue.end());
         }
@@ -286,16 +285,18 @@ void finish(plt& p)
       for (size_t i = 0; i < p.top_k; ++i)
       {
         correct += p.tp_at[i];
-        std::cerr << "p@" << i + 1 << " = " << correct / (p.ec_count * (i + 1)) << std::endl;
-        std::cerr << "r@" << i + 1 << " = " << correct / p.true_count << std::endl;
+        // TODO: is this the correct logger?
+        *(p.all->trace_message) << "p@" << i + 1 << " = " << correct / (p.ec_count * (i + 1)) << std::endl;
+        *(p.all->trace_message) << "r@" << i + 1 << " = " << correct / p.true_count << std::endl;
       }
     }
 
     else if (p.threshold > 0)
     {
-      std::cerr << "hamming loss = " << static_cast<double>(p.fp + p.fn) / p.ec_count << std::endl;
-      std::cerr << "precision = " << static_cast<double>(p.tp) / (p.tp + p.fp) << std::endl;
-      std::cerr << "recall = " << static_cast<double>(p.tp) / (p.tp + p.fn) << std::endl;
+      // TODO: is this the correct logger?
+      *(p.all->trace_message) << "hamming loss = " << static_cast<double>(p.fp + p.fn) / p.ec_count << std::endl;
+      *(p.all->trace_message) << "precision = " << static_cast<double>(p.tp) / (p.tp + p.fp) << std::endl;
+      *(p.all->trace_message) << "recall = " << static_cast<double>(p.tp) / (p.tp + p.fn) << std::endl;
     }
   }
 }
@@ -307,12 +308,13 @@ void save_load_tree(plt& p, io_buf& model_file, bool read, bool text)
     bool resume = p.all->save_resume;
     std::stringstream msg;
     msg << ":" << resume << "\n";
-    bin_text_read_write_fixed(model_file, (char*)&resume, sizeof(resume), "", read, msg, text);
+    bin_text_read_write_fixed(model_file, reinterpret_cast<char*>(&resume), sizeof(resume), read, msg, text);
 
     if (resume && !p.all->weights.adaptive)
     {
       for (size_t i = 0; i < p.t; ++i)
-        bin_text_read_write_fixed(model_file, (char*)&p.nodes_time[i], sizeof(p.nodes_time[0]), "", read, msg, text);
+        bin_text_read_write_fixed(
+            model_file, reinterpret_cast<char*>(&p.nodes_time[i]), sizeof(p.nodes_time[0]), read, msg, text);
     }
   }
 }
@@ -320,9 +322,11 @@ void save_load_tree(plt& p, io_buf& model_file, bool read, bool text)
 
 using namespace plt_ns;
 
-base_learner* plt_setup(options_i& options, vw& all)
+base_learner* plt_setup(VW::setup_base_i& stack_builder)
 {
-  auto tree = scoped_calloc_or_throw<plt>();
+  options_i& options = *stack_builder.get_options();
+  vw& all = *stack_builder.get_all_pointer();
+  auto tree = VW::make_unique<plt>();
   option_group_definition new_options("Probabilistic Label Tree ");
   new_options.add(make_option("plt", tree->k).keep().necessary().help("Probabilistic Label Tree with <k> labels"))
       .add(make_option("kary_tree", tree->kary).keep().default_value(2).help("use <k>-ary tree"))
@@ -348,41 +352,53 @@ base_learner* plt_setup(options_i& options, vw& all)
 
   if (!all.logger.quiet)
   {
-    all.trace_message << "PLT k = " << tree->k << "\nkary_tree = " << tree->kary << std::endl;
+    *(all.trace_message) << "PLT k = " << tree->k << "\nkary_tree = " << tree->kary << std::endl;
     if (!all.training)
     {
-      if (tree->top_k > 0) { all.trace_message << "top_k = " << tree->top_k << std::endl; }
+      if (tree->top_k > 0) { *(all.trace_message) << "top_k = " << tree->top_k << std::endl; }
       else
       {
-        all.trace_message << "threshold = " << tree->threshold << std::endl;
+        *(all.trace_message) << "threshold = " << tree->threshold << std::endl;
       }
     }
   }
 
   // resize v_arrays
-  tree->nodes_time.resize(tree->t);
+  tree->nodes_time.resize_but_with_stl_behavior(tree->t);
   std::fill(tree->nodes_time.begin(), tree->nodes_time.end(), all.initial_t);
   tree->node_preds.resize(tree->kary);
-  if (tree->top_k > 0) tree->tp_at.resize(tree->top_k);
+  if (tree->top_k > 0) tree->tp_at.resize_but_with_stl_behavior(tree->top_k);
 
-  learner<plt, example>* l;
+  size_t ws = tree->t;
+  std::string name_addition;
+  void (*pred_ptr)(plt&, single_learner&, example&);
+
   if (tree->top_k > 0)
-    l = &init_learner(
-        tree, as_singleline(setup_base(options, all)), learn, predict<false>, tree->t, prediction_type_t::multilabels);
+  {
+    name_addition = "-top_k";
+    pred_ptr = predict<false>;
+  }
   else
-    l = &init_learner(
-        tree, as_singleline(setup_base(options, all)), learn, predict<true>, tree->t, prediction_type_t::multilabels);
+  {
+    name_addition = "";
+    pred_ptr = predict<true>;
+  }
+
+  auto* l = make_reduction_learner(std::move(tree), as_singleline(stack_builder.setup_base_learner()), learn, pred_ptr,
+      stack_builder.get_setupfn_name(plt_setup) + name_addition)
+                .set_params_per_weight(ws)
+                .set_output_prediction_type(VW::prediction_type_t::multilabels)
+                .set_input_label_type(VW::label_type_t::multilabel)
+                .set_learn_returns_prediction(true)
+                .set_finish_example(finish_example)
+                .set_finish(finish)
+                .set_save_load(save_load_tree)
+                .build();
 
   all.example_parser->lbl_parser = MULTILABEL::multilabel;
-  all.label_type = label_type_t::multi;
-  all.delete_prediction = MULTILABEL::delete_prediction;
 
   // force logistic loss for base classifiers
   all.loss = getLossFunction(all, "logistic");
-
-  l->set_finish_example(finish_example);
-  l->set_finish(finish);
-  l->set_save_load(save_load_tree);
 
   return make_base(*l);
 }

@@ -14,6 +14,7 @@
 #include "lda_core.h"
 #include "parse_example.h"
 #include "parse_example_json.h"
+#include "shared_data.h"
 
 using namespace System;
 using namespace System::Collections::Generic;
@@ -96,7 +97,7 @@ VowpalWabbitPerformanceStatistics^ VowpalWabbit::PerformanceStatistics::get()
 	  stats->AverageLoss = m_vw->sd->holdout_best_loss;
 
   float best_constant; float best_constant_loss;
-  if (get_best_constant(*m_vw, best_constant, best_constant_loss))
+  if (get_best_constant(m_vw->loss.get(), m_vw->sd, best_constant, best_constant_loss))
   { stats->BestConstant = best_constant;
     if (best_constant_loss != FLT_MIN)
     { stats->BestConstantLoss = best_constant_loss;
@@ -306,7 +307,7 @@ List<VowpalWabbitExample^>^ VowpalWabbit::ParseDecisionServiceJson(cli::array<By
 			auto ex = GetOrCreateNativeExample();
 			state->examples->Add(ex);
 
-			v_array<example*> examples = v_init<example*>();
+			v_array<example*> examples;
 			example* native_example = ex->m_example;
 			examples.push_back(native_example);
 
@@ -326,7 +327,7 @@ List<VowpalWabbitExample^>^ VowpalWabbit::ParseDecisionServiceJson(cli::array<By
 			VW::setup_examples(*m_vw, examples);
 
 			// delete native array of pointers, keep examples
-			examples.delete_v();
+			examples.clear();
 
 			header->EventId = gcnew String(interaction.eventId.c_str());
 			header->Actions = gcnew cli::array<int>((int)interaction.actions.size());
@@ -375,16 +376,16 @@ List<VowpalWabbitExample^>^ VowpalWabbit::ParseDecisionServiceJson(cli::array<By
 			  auto ex = GetOrCreateNativeExample();
 			  state->examples->Add(ex);
 
-			  v_array<example*> examples = v_init<example*>();
+			  v_array<example*> examples;
 			  example* native_example = ex->m_example;
 			  examples.push_back(native_example);
 
 			  interior_ptr<ParseJsonState^> state_ptr = &state;
 
 			  if (m_vw->audit)
-				VW::read_line_json<true>(*m_vw, examples, reinterpret_cast<char*>(valueHandle.AddrOfPinnedObject().ToPointer()), get_example_from_pool, &state);
+				VW::read_line_json_s<true>(*m_vw, examples, reinterpret_cast<char*>(valueHandle.AddrOfPinnedObject().ToPointer()), (size_t)bytes->Length, get_example_from_pool, &state);
 			  else
-				VW::read_line_json<false>(*m_vw, examples, reinterpret_cast<char*>(valueHandle.AddrOfPinnedObject().ToPointer()), get_example_from_pool, &state);
+				VW::read_line_json_s<false>(*m_vw, examples, reinterpret_cast<char*>(valueHandle.AddrOfPinnedObject().ToPointer()), (size_t)bytes->Length, get_example_from_pool, &state);
 
 			  // finalize example
 			  VW::setup_examples(*m_vw, examples);
@@ -788,7 +789,7 @@ VowpalWabbitExample^ VowpalWabbit::GetOrCreateNativeExample()
   if (ex == nullptr)
   { try
     { auto ex = VW::alloc_examples(1);
-      m_vw->example_parser->lbl_parser.default_label(&ex->l);
+      m_vw->example_parser->lbl_parser.default_label(ex->l);
       return gcnew VowpalWabbitExample(this, ex);
     }
     CATCHRETHROW
@@ -796,7 +797,7 @@ VowpalWabbitExample^ VowpalWabbit::GetOrCreateNativeExample()
 
   try
   { VW::empty_example(*m_vw, *ex->m_example);
-    m_vw->example_parser->lbl_parser.default_label(&ex->m_example->l);
+    m_vw->example_parser->lbl_parser.default_label(ex->m_example->l);
 
     return ex;
   }

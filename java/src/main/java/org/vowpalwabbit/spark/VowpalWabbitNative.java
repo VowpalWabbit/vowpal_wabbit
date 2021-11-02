@@ -1,10 +1,11 @@
 package org.vowpalwabbit.spark;
 
+import common.Native;
 import java.io.Closeable;
 
 /**
  * Main wrapper for VowpalWabbit native implementation.
- * 
+ *
  * @author Markus Cozowicz
  */
 public class VowpalWabbitNative implements Closeable {
@@ -15,7 +16,7 @@ public class VowpalWabbitNative implements Closeable {
 
     /**
      * Initializes the native VW data structures.
-     * 
+     *
      * @param args VW command line arguments.
      * @return pointer to vw data structure defined in global_data.h.
      */
@@ -23,12 +24,12 @@ public class VowpalWabbitNative implements Closeable {
 
     /**
      * Initializes the native VW data structures.
-     * 
+     *
      * <p>
      * Note: The {@code args} must be compatible with the command line arguments
      * stored in {@code model}.
      * </p>
-     * 
+     *
      * @param args  VW command line arguments.
      * @param model VW model to initialize this instance from.
      * @return pointer to vw data structure defined in global_data.h.
@@ -37,7 +38,7 @@ public class VowpalWabbitNative implements Closeable {
 
     /**
      * Invoke multi-line learning.
-     * 
+     *
      * @param examples the examples to learn from.
      * @return the one-step ahead prediction.
      */
@@ -45,7 +46,7 @@ public class VowpalWabbitNative implements Closeable {
 
     /**
      * Invoke multi-line prediction.
-     * 
+     *
      * @param examples the example to predict for.
      * @return the prediction.
      */
@@ -58,14 +59,14 @@ public class VowpalWabbitNative implements Closeable {
 
     /**
      * Returns a snapshot of the current model.
-     * 
+     *
      * @return serialized VW model.
      */
     public native byte[] getModel();
 
     /**
      * Returns a subset of the current arguments VW received (e.g. numbits)
-     * 
+     *
      * @return VW argument object.
      */
     public native VowpalWabbitArguments getArguments();
@@ -95,7 +96,7 @@ public class VowpalWabbitNative implements Closeable {
 
     /**
      * Initializes the native VW data structures.
-     * 
+     *
      * @param args VW command line arguments.
      */
     public VowpalWabbitNative(String args) {
@@ -104,12 +105,12 @@ public class VowpalWabbitNative implements Closeable {
 
     /**
      * Initializes the native VW data structures.
-     * 
+     *
      * <p>
      * Note: The {@code args} must be compatible with the command line arguments
      * stored in {@code model}.
      * </p>
-     * 
+     *
      * @param args  VW command line arguments.
      * @param model VW model to initialize this instance from.
      */
@@ -119,7 +120,7 @@ public class VowpalWabbitNative implements Closeable {
 
     /**
      * Creates a new VW example associated with this this instance.
-     * 
+     *
      * @return new {@code VowpalWabbitExample} object.
      */
     public VowpalWabbitExample createExample() {
@@ -129,7 +130,7 @@ public class VowpalWabbitNative implements Closeable {
     /**
      * Creates a new empty VW example associated with this this instance. This is
      * used to mark the end of a multiline example.
-     * 
+     *
      * @return new {@code VowpalWabbitExample} object.
      */
     public VowpalWabbitExample createEmptyExample() {

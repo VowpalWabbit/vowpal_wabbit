@@ -1,6 +1,6 @@
-#ifndef STATIC_LINK_VW
-#define BOOST_TEST_DYN_LINK
-#endif
+// Copyright (c) by respective owners including Yahoo!, Microsoft, and
+// individual contributors. All rights reserved. Released under a BSD (revised)
+// license as described in the file LICENSE.
 
 #include <boost/test/unit_test.hpp>
 #include <boost/test/test_tools.hpp>
@@ -13,9 +13,9 @@ BOOST_AUTO_TEST_CASE(predict_modifying_state)
   float prediction_one;
   {
     auto& vw = *VW::initialize("--quiet --sgd --noconstant --learning_rate 0.1");
-    auto& pre_learn_predict_example = *VW::read_example(vw, std::string("0.19574759682114784 | 1:1.430"));
-    auto& learn_example = *VW::read_example(vw, std::string("0.19574759682114784 | 1:1.430"));
-    auto& predict_example = *VW::read_example(vw, std::string("| 1:1.0"));
+    auto& pre_learn_predict_example = *VW::read_example(vw, "0.19574759682114784 | 1:1.430");
+    auto& learn_example = *VW::read_example(vw, "0.19574759682114784 | 1:1.430");
+    auto& predict_example = *VW::read_example(vw, "| 1:1.0");
 
     vw.predict(pre_learn_predict_example);
     vw.finish_example(pre_learn_predict_example);
@@ -31,8 +31,8 @@ BOOST_AUTO_TEST_CASE(predict_modifying_state)
   {
     auto& vw = *VW::initialize("--quiet --sgd --noconstant --learning_rate 0.1");
 
-    auto& learn_example = *VW::read_example(vw, std::string("0.19574759682114784 | 1:1.430"));
-    auto& predict_example = *VW::read_example(vw, std::string("| 1:1.0"));
+    auto& learn_example = *VW::read_example(vw, "0.19574759682114784 | 1:1.430");
+    auto& predict_example = *VW::read_example(vw, "| 1:1.0");
 
     vw.learn(learn_example);
     vw.finish_example(learn_example);

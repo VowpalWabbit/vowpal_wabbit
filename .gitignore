@@ -21,6 +21,7 @@ CMakeCache.txt
 CTestCostData.txt
 CTestTestfile.cmake
 cmake_install.cmake
+CMakeUserPresets.json
 config.h
 *.la
 *.lo
@@ -33,7 +34,6 @@ test/*.cmp
 *.a
 t_*
 bin
-.*
 !.pipelines
 vw.1
 *.cache
@@ -62,6 +62,7 @@ test/RunTests.last.times
 *.pc
 *.pyc
 .DS_Store
+logs/**
 results/**
 
 # build folders
@@ -115,6 +116,9 @@ python/vowpalwabbit.egg-info/**
 python/.coverage
 python/docs/build
 env/**
+
+# Java
+java/pom.xml
 
 /COPYING
 /README

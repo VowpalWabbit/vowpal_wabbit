@@ -11,17 +11,16 @@
 
 #include "reductions.h"
 #include "gd.h"
+#include "scope_exit.h"
 
 using namespace VW::LEARNER;
 using namespace VW::config;
 
 struct mf
 {
-  std::vector<std::vector<namespace_index>> pairs;
+  size_t rank = 0;
 
-  size_t rank;
-
-  uint32_t increment;
+  uint32_t increment = 0;
 
   // array to cache w*x, (l^k * x_l) and (r^k * x_r)
   // [ w*(1,x_l,x_r) , l^1*x_l, r^1*x_r, l^2*x_l, r^2*x_2, ... ]
@@ -36,21 +35,14 @@ struct mf
   // array for temp storage of features
   features temp_features;
 
-  vw* all;  // for pairs? and finalize
-
-  ~mf()
-  {
-    // clean up local v_arrays
-    indices.delete_v();
-    sub_predictions.delete_v();
-  }
+  vw* all = nullptr;  // for pairs? and finalize
 };
 
 template <bool cache_sub_predictions>
 void predict(mf& data, single_learner& base, example& ec)
 {
   float prediction = 0;
-  if (cache_sub_predictions) data.sub_predictions.resize(2 * data.rank + 1);
+  if (cache_sub_predictions) { data.sub_predictions.resize_but_with_stl_behavior(2 * data.rank + 1); }
 
   // predict from linear terms
   base.predict(ec);
@@ -60,14 +52,20 @@ void predict(mf& data, single_learner& base, example& ec)
   prediction += ec.partial_prediction;
 
   // store namespace indices
-  copy_array(data.predict_indices, ec.indices);
+  data.predict_indices = ec.indices;
 
   // erase indices
   ec.indices.clear();
   ec.indices.push_back(0);
 
+  auto* saved_interactions = ec.interactions;
+  auto restore_guard = VW::scope_exit([saved_interactions, &ec] { ec.interactions = saved_interactions; });
+
+  std::vector<std::vector<namespace_index>> empty_interactions;
+  ec.interactions = &empty_interactions;
+
   // add interaction terms to prediction
-  for (auto& i : data.pairs)
+  for (auto& i : *saved_interactions)
   {
     auto left_ns = static_cast<int>(i[0]);
     auto right_ns = static_cast<int>(i[1]);
@@ -97,7 +95,7 @@ void predict(mf& data, single_learner& base, example& ec)
     }
   }
   // restore namespace indices and label
-  copy_array(ec.indices, data.predict_indices);
+  ec.indices = data.predict_indices;
 
   // finalize prediction
   ec.partial_prediction = prediction;
@@ -115,18 +113,22 @@ void learn(mf& data, single_learner& base, example& ec)
   ec.pred.scalar = ec.updated_prediction;
 
   // store namespace indices
-  copy_array(data.indices, ec.indices);
+  data.indices = ec.indices;
 
   // erase indices
   ec.indices.clear();
   ec.indices.push_back(0);
 
+  auto* saved_interactions = ec.interactions;
+  std::vector<std::vector<namespace_index>> empty_interactions;
+  ec.interactions = &empty_interactions;
+
   // update interaction terms
   // looping over all pairs of non-empty namespaces
-  for (auto& i : data.pairs)
+  for (auto& i : *saved_interactions)
   {
-    int left_ns = (int)i[0];
-    int right_ns = (int)i[1];
+    int left_ns = static_cast<int>(i[0]);
+    int right_ns = static_cast<int>(i[1]);
 
     if (ec.feature_space[left_ns].size() > 0 && ec.feature_space[right_ns].size() > 0)
     {
@@ -134,7 +136,7 @@ void learn(mf& data, single_learner& base, example& ec)
       ec.indices[0] = static_cast<namespace_index>(left_ns);
 
       // store feature values in left namespace
-      data.temp_features.deep_copy_from(ec.feature_space[left_ns]);
+      data.temp_features = ec.feature_space[left_ns];
 
       for (size_t k = 1; k <= data.rank; k++)
       {
@@ -146,7 +148,7 @@ void learn(mf& data, single_learner& base, example& ec)
         base.update(ec, k);
 
         // restore left namespace features (undoing multiply)
-        fs.deep_copy_from(data.temp_features);
+        fs = data.temp_features;
 
         // compute new l_k * x_l scaling factors
         // base.predict(ec, k);
@@ -158,7 +160,7 @@ void learn(mf& data, single_learner& base, example& ec)
       ec.indices[0] = static_cast<namespace_index>(right_ns);
 
       // store feature values for right namespace
-      data.temp_features.deep_copy_from(ec.feature_space[right_ns]);
+      data.temp_features = ec.feature_space[right_ns];
 
       for (size_t k = 1; k <= data.rank; k++)
       {
@@ -171,20 +173,23 @@ void learn(mf& data, single_learner& base, example& ec)
         ec.pred.scalar = ec.updated_prediction;
 
         // restore right namespace features
-        fs.deep_copy_from(data.temp_features);
+        fs = data.temp_features;
       }
     }
   }
   // restore namespace indices
-  copy_array(ec.indices, data.indices);
+  ec.indices = data.indices;
 
   // restore original prediction
   ec.pred.scalar = predicted;
+  ec.interactions = saved_interactions;
 }
 
-base_learner* mf_setup(options_i& options, vw& all)
+base_learner* mf_setup(VW::setup_base_i& stack_builder)
 {
-  auto data = scoped_calloc_or_throw<mf>();
+  options_i& options = *stack_builder.get_options();
+  vw& all = *stack_builder.get_all_pointer();
+  auto data = VW::make_unique<mf>();
   option_group_definition new_options("Matrix Factorization Reduction");
   new_options.add(
       make_option("new_mf", data->rank).keep().necessary().help("rank for reduction-based matrix factorization"));
@@ -198,12 +203,15 @@ base_learner* mf_setup(options_i& options, vw& all)
       [](const std::vector<unsigned char>& interaction) { return interaction.size() != 2; });
   if (non_pair_count > 0) { THROW("can only use pairs with new_mf"); }
 
-  data->pairs = all.interactions;
-  all.interactions.clear();
-
   all.random_positive_weights = true;
 
-  learner<mf, example>& l =
-      init_learner(data, as_singleline(setup_base(options, all)), learn, predict<false>, 2 * data->rank + 1);
-  return make_base(l);
+  size_t ws = 2 * data->rank + 1;
+
+  auto* l = make_reduction_learner(std::move(data), as_singleline(stack_builder.setup_base_learner()), learn,
+      predict<false>, stack_builder.get_setupfn_name(mf_setup))
+                .set_params_per_weight(ws)
+                .set_output_prediction_type(VW::prediction_type_t::scalar)
+                .build();
+
+  return make_base(*l);
 }

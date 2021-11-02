@@ -10,6 +10,6 @@ namespace VW
 namespace continuous_action
 {
 // Setup reduction in stack
-LEARNER::base_learner* get_pmf_setup(config::options_i& options, vw& all);
+LEARNER::base_learner* get_pmf_setup(VW::setup_base_i& stack_builder);
 }  // namespace continuous_action
 }  // namespace VW

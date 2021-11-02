@@ -1,6 +1,6 @@
-#ifndef STATIC_LINK_VW
-#  define BOOST_TEST_DYN_LINK
-#endif
+// Copyright (c) by respective owners including Yahoo!, Microsoft, and
+// individual contributors. All rights reserved. Released under a BSD (revised)
+// license as described in the file LICENSE.
 
 #include <boost/test/unit_test.hpp>
 #include <boost/test/test_tools.hpp>
@@ -18,105 +18,18 @@ void inject_slot_features(example* shared, example* slot);
 void remove_slot_features(example* shared, example* slot);
 }  // namespace CCB
 
-BOOST_AUTO_TEST_CASE(ccb_generate_interactions)
-{
-  auto& vw = *VW::initialize("--ccb_explore_adf --quiet", nullptr, false, nullptr, nullptr);
-  auto shared_ex = VW::read_example(vw, std::string("ccb shared |User f"));
-  multi_ex actions;
-  actions.push_back(VW::read_example(vw, std::string("ccb action |Action f")));
-  actions.push_back(VW::read_example(vw, std::string("ccb action |Other f |Action f")));
-
-  std::vector<example*> slots;
-  slots.push_back(VW::read_example(vw, std::string("ccb slot 0 |SlotNamespace f1 f2")));
-  for (auto* slot : slots) { CCB::inject_slot_features(shared_ex, slot); }
-
-  std::vector<std::vector<namespace_index>> interactions;
-  std::vector<std::vector<namespace_index>> compare_set = {{'U', ccb_id_namespace}, {'A', ccb_id_namespace},
-      {'O', ccb_id_namespace}, {'S', ccb_id_namespace}, {ccb_slot_namespace, ccb_slot_namespace},
-      {ccb_slot_namespace, ccb_slot_namespace, ccb_id_namespace}};
-
-  CCB::calculate_and_insert_interactions(shared_ex, actions, interactions);
-  std::sort(compare_set.begin(), compare_set.end());
-  std::sort(interactions.begin(), interactions.end());
-  check_vector_of_vectors_exact(interactions, compare_set);
-
-  interactions = {{'U', 'A'}, {'U', 'O'}, {'U', 'O', 'A'}};
-  compare_set = {{'U', 'A'}, {'U', 'O'}, {'U', 'O', 'A'}, {'U', 'A', ccb_id_namespace}, {'U', 'O', ccb_id_namespace},
-      {'U', 'O', 'A', ccb_id_namespace}, {'U', ccb_id_namespace}, {'A', ccb_id_namespace}, {'O', ccb_id_namespace},
-      {'S', ccb_id_namespace}, {ccb_slot_namespace, ccb_slot_namespace},
-      {ccb_slot_namespace, ccb_slot_namespace, ccb_id_namespace}, {'U', ccb_slot_namespace},
-      {'U', ccb_slot_namespace, ccb_id_namespace}};
-  CCB::calculate_and_insert_interactions(shared_ex, actions, interactions);
-  std::sort(compare_set.begin(), compare_set.end());
-  std::sort(interactions.begin(), interactions.end());
-
-  check_vector_of_vectors_exact(interactions, compare_set);
-
-  for (auto* slot : slots)
-  {
-    CCB::remove_slot_features(shared_ex, slot);
-    VW::finish_example(vw, *slot);
-  }
-  VW::finish_example(vw, actions);
-  VW::finish_example(vw, *shared_ex);
-  VW::finish(vw);
-}
-
-BOOST_AUTO_TEST_CASE(ccb_generate_interactions_w_default_slot_namespaces)
-{
-  auto& vw = *VW::initialize("--ccb_explore_adf --quiet", nullptr, false, nullptr, nullptr);
-  auto shared_ex = VW::read_example(vw, std::string("ccb shared |User f"));
-  multi_ex actions;
-  actions.push_back(VW::read_example(vw, std::string("ccb action |Action f")));
-  actions.push_back(VW::read_example(vw, std::string("ccb action |Other f |Action f")));
-
-  std::vector<example*> slots;
-  slots.push_back(VW::read_example(vw, std::string("ccb slot 0 | f1 f2")));
-  for (auto* slot : slots) { CCB::inject_slot_features(shared_ex, slot); }
-
-  std::vector<std::vector<namespace_index>> interactions;
-  std::vector<std::vector<namespace_index>> compare_set = {{'U', ccb_id_namespace}, {'A', ccb_id_namespace},
-      {'O', ccb_id_namespace}, {ccb_slot_namespace, ccb_slot_namespace},
-      {ccb_slot_namespace, ccb_slot_namespace, ccb_id_namespace}};
-
-  CCB::calculate_and_insert_interactions(shared_ex, actions, interactions);
-  std::sort(compare_set.begin(), compare_set.end());
-  std::sort(interactions.begin(), interactions.end());
-  check_vector_of_vectors_exact(interactions, compare_set);
-
-  interactions = {{'U', 'A'}, {'U', 'O'}, {'U', 'O', 'A'}};
-  compare_set = {{'U', 'A'}, {'U', 'O'}, {'U', 'O', 'A'}, {'U', 'A', ccb_id_namespace}, {'U', 'O', ccb_id_namespace},
-      {'U', 'O', 'A', ccb_id_namespace}, {'U', ccb_id_namespace}, {'A', ccb_id_namespace}, {'O', ccb_id_namespace},
-      {ccb_slot_namespace, ccb_slot_namespace}, {ccb_slot_namespace, ccb_slot_namespace, ccb_id_namespace},
-      {'U', ccb_slot_namespace}, {'U', ccb_slot_namespace, ccb_id_namespace}};
-  CCB::calculate_and_insert_interactions(shared_ex, actions, interactions);
-  std::sort(compare_set.begin(), compare_set.end());
-  std::sort(interactions.begin(), interactions.end());
-
-  check_vector_of_vectors_exact(interactions, compare_set);
-
-  for (auto* slot : slots)
-  {
-    CCB::remove_slot_features(shared_ex, slot);
-    VW::finish_example(vw, *slot);
-  }
-  VW::finish_example(vw, actions);
-  VW::finish_example(vw, *shared_ex);
-  VW::finish(vw);
-}
-
 BOOST_AUTO_TEST_CASE(ccb_explicit_included_actions_no_overlap)
 {
   auto& vw = *VW::initialize("--ccb_explore_adf --quiet");
   multi_ex examples;
-  examples.push_back(VW::read_example(vw, std::string("ccb shared |")));
-  examples.push_back(VW::read_example(vw, std::string("ccb action |")));
-  examples.push_back(VW::read_example(vw, std::string("ccb action |")));
-  examples.push_back(VW::read_example(vw, std::string("ccb action |")));
-  examples.push_back(VW::read_example(vw, std::string("ccb action |")));
-  examples.push_back(VW::read_example(vw, std::string("ccb slot 0 |")));
-  examples.push_back(VW::read_example(vw, std::string("ccb slot 3 |")));
-  examples.push_back(VW::read_example(vw, std::string("ccb slot 1 |")));
+  examples.push_back(VW::read_example(vw, "ccb shared |"));
+  examples.push_back(VW::read_example(vw, "ccb action |"));
+  examples.push_back(VW::read_example(vw, "ccb action |"));
+  examples.push_back(VW::read_example(vw, "ccb action |"));
+  examples.push_back(VW::read_example(vw, "ccb action |"));
+  examples.push_back(VW::read_example(vw, "ccb slot 0 |"));
+  examples.push_back(VW::read_example(vw, "ccb slot 3 |"));
+  examples.push_back(VW::read_example(vw, "ccb slot 1 |"));
 
   vw.predict(examples);
 
@@ -156,9 +69,12 @@ BOOST_AUTO_TEST_CASE(ccb_exploration_reproducibility_test)
     for (int i = 0; i < event_ids.size(); i++)
     {
       const size_t slot_example_indx = examples.size() - event_ids.size() + i;
-      push_many(examples[slot_example_indx]->tag, SEED_TAG.c_str(), SEED_TAG.size());
-      push_many(examples[slot_example_indx]->tag, event_ids[i].c_str(), event_ids[i].size());
+      examples[slot_example_indx]->tag.insert(examples[slot_example_indx]->tag.end(), SEED_TAG.begin(), SEED_TAG.end());
+      examples[slot_example_indx]->tag.insert(
+          examples[slot_example_indx]->tag.end(), event_ids[i].begin(), event_ids[i].end());
     }
+
+    for (auto* ex : examples) { VW::setup_example(*vw, ex); }
 
     vw->predict(examples);
     auto& decision_scores = examples[0]->pred.decision_scores;
@@ -179,17 +95,15 @@ BOOST_AUTO_TEST_CASE(ccb_invalid_example_checks)
 {
   auto& vw = *VW::initialize("--ccb_explore_adf --quiet");
   multi_ex examples;
-  examples.push_back(VW::read_example(vw, std::string("ccb shared |")));
-  examples.push_back(VW::read_example(vw, std::string("ccb action |")));
-  examples.push_back(VW::read_example(vw, std::string("ccb slot 0 |")));
-  examples.push_back(VW::read_example(vw, std::string("ccb slot 3 |")));
+  examples.push_back(VW::read_example(vw, "ccb shared |"));
+  examples.push_back(VW::read_example(vw, "ccb action |"));
+  examples.push_back(VW::read_example(vw, "ccb slot 0 |"));
+  examples.push_back(VW::read_example(vw, "ccb slot 3 |"));
 
   for (auto* example : examples) { VW::setup_example(vw, example); }
 
   // Check that number of actions is greater than slots
   BOOST_REQUIRE_THROW(vw.predict(examples), VW::vw_exception);
-
-  // Examples are unlabeled, so should not work for learn.
   BOOST_REQUIRE_THROW(vw.learn(examples), VW::vw_exception);
 
   vw.finish_example(examples);

@@ -24,6 +24,10 @@
 #include <stdexcept>
 #include "vw_exception.h"
 
+#include "io/logger.h"
+
+namespace logger = VW::io::logger;
+
 int open_socket(const char* host)
 {
 #ifdef _WIN32
@@ -44,24 +48,25 @@ int open_socket(const char* host)
 
   if (he == nullptr) THROWERRNO("gethostbyname(" << host << ")");
 
-  int sd = (int)socket(PF_INET, SOCK_STREAM, 0);
+  int sd = static_cast<int>(socket(PF_INET, SOCK_STREAM, 0));
   if (sd == -1) THROWERRNO("socket");
 
   sockaddr_in far_end;
   far_end.sin_family = AF_INET;
   far_end.sin_port = htons(port);
-  far_end.sin_addr = *(in_addr*)(he->h_addr);
+  far_end.sin_addr = *reinterpret_cast<in_addr*>(he->h_addr);
   memset(&far_end.sin_zero, '\0', 8);
-  if (connect(sd, (sockaddr*)&far_end, sizeof(far_end)) == -1) THROWERRNO("connect(" << host << ':' << port << ")");
+  if (connect(sd, reinterpret_cast<sockaddr*>(&far_end), sizeof(far_end)) == -1)
+    THROWERRNO("connect(" << host << ':' << port << ")");
 
   char id = '\0';
   if (
 #ifdef _WIN32
       _write(sd, &id, sizeof(id)) < (int)sizeof(id)
 #else
-      write(sd, &id, sizeof(id)) < (int)sizeof(id)
+      write(sd, &id, sizeof(id)) < static_cast<int>(sizeof(id))
 #endif
   )
-    std::cerr << "write failed!" << std::endl;
+    logger::errlog_error("write failed!");
   return sd;
 }

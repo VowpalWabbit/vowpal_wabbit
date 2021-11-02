@@ -3,6 +3,7 @@
 // license as described in the file LICENSE.
 
 #include <random>
+#include <cfloat>
 
 #include "gd.h"
 #include "io_buf.h"
@@ -11,10 +12,10 @@
 #include "vw.h"
 #include "vw_math.h"
 #include "prob_dist_cont.h"
+#include "shared_data.h"
 
 using namespace VW::LEARNER;
 using namespace VW::config;
-using VW::continuous_actions::delete_probability_density_function;
 using VW::continuous_actions::probability_density_function;
 
 namespace VW
@@ -26,16 +27,17 @@ constexpr uint8_t linear_policy = 1;
 
 struct cbzo
 {
-  float radius;
-  vw* all;
-  bool min_prediction_supplied, max_prediction_supplied;
+  float radius = 0.f;
+  vw* all = nullptr;
+  bool min_prediction_supplied = false;
+  bool max_prediction_supplied = false;
 };
 
 struct linear_update_data
 {
-  float mult;
-  float part_grad;
-  vw* all;
+  float mult = 0.f;
+  float part_grad = 0.f;
+  vw* all = nullptr;
 };
 
 // uint64_t index variant of VW::get_weight
@@ -206,7 +208,7 @@ void predict(cbzo& data, base_learner&, example& ec)
 
   float action_centroid = inference<policy>(*data.all, ec);
   set_minmax(data.all->sd, action_centroid, data.min_prediction_supplied, data.max_prediction_supplied);
-  action_centroid = std::min(std::max(action_centroid, data.all->sd->min_label), data.all->sd->max_label);
+  action_centroid = VW::math::clamp(action_centroid, data.all->sd->min_label, data.all->sd->max_label);
 
   approx_pmf_to_pdf(action_centroid - data.radius, action_centroid + data.radius, ec.pred.pdf);
 
@@ -243,13 +245,14 @@ bool is_labeled(example& ec) { return (!ec.l.cb_cont.costs.empty() && ec.l.cb_co
 void report_progress(vw& all, example& ec)
 {
   const auto& costs = ec.l.cb_cont.costs;
-  all.sd->update(ec.test_only, is_labeled(ec), costs.empty() ? 0.0f : costs[0].cost, ec.weight, ec.num_features);
+  all.sd->update(ec.test_only, is_labeled(ec), costs.empty() ? 0.0f : costs[0].cost, ec.weight, ec.get_num_features());
   all.sd->weighted_labels += ec.weight;
 
   if (all.sd->weighted_examples() >= all.sd->dump_interval && !all.logger.quiet)
   {
-    all.sd->print_update(all.holdout_set_off, all.current_pass, ec.test_only ? "unknown" : to_string(costs[0]),
-        get_pred_repr(ec), ec.num_features, all.progress_add, all.progress_arg);
+    all.sd->print_update(*all.trace_message, all.holdout_set_off, all.current_pass,
+        ec.test_only ? "unknown" : to_string(costs[0]), get_pred_repr(ec), ec.get_num_features(), all.progress_add,
+        all.progress_arg);
   }
 }
 
@@ -314,9 +317,12 @@ void (*get_predict(vw& all, uint8_t policy))(cbzo&, base_learner&, example&)
     THROW("Unknown policy encountered: " << policy)
 }
 
-base_learner* setup(options_i& options, vw& all)
+base_learner* setup(VW::setup_base_i& stack_builder)
 {
-  auto data = scoped_calloc_or_throw<cbzo>();
+  options_i& options = *stack_builder.get_options();
+  vw& all = *stack_builder.get_all_pointer();
+
+  auto data = VW::make_unique<cbzo>();
 
   std::string policy_str;
   bool cbzo_option = false;
@@ -348,24 +354,23 @@ base_learner* setup(options_i& options, vw& all)
     if (options.was_supplied("noconstant")) THROW("constant policy can't be learnt when --noconstant is used")
 
     if (!feature_mask_off)
-      all.trace_message << "warning: feature_mask used with constant policy (where there is only one weight to learn)."
-                        << std::endl;
+      *(all.trace_message)
+          << "warning: feature_mask used with constant policy (where there is only one weight to learn)." << std::endl;
   }
 
   all.example_parser->lbl_parser = cb_continuous::the_label_parser;
-  all.delete_prediction = delete_probability_density_function;
-  all.label_type = label_type_t::continuous;
   data->all = &all;
   data->min_prediction_supplied = options.was_supplied("min_prediction");
   data->max_prediction_supplied = options.was_supplied("max_prediction");
 
-  learner<cbzo, example>& l =
-      init_learner(data, get_learn(all, policy, feature_mask_off), get_predict(all, policy), 0, prediction_type_t::pdf);
+  auto* l = make_base_learner(std::move(data), get_learn(all, policy, feature_mask_off), get_predict(all, policy),
+      stack_builder.get_setupfn_name(setup), prediction_type_t::pdf, label_type_t::continuous)
+                .set_params_per_weight(0)
+                .set_save_load(save_load)
+                .set_finish_example(finish_example)
+                .build();
 
-  l.set_save_load(save_load);
-  l.set_finish_example(finish_example);
-
-  return make_base(l);
+  return make_base(*l);
 }
 
 }  // namespace cbzo

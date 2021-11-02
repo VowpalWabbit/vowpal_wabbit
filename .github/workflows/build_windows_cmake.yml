@@ -1,0 +1,64 @@
+name: Windows / C++ - CMake only
+
+on:
+  push:
+    branches:
+      - master
+      - 'releases/**'
+  pull_request:
+    branches:
+      - '*'
+
+jobs:
+  check:
+    runs-on: windows-latest
+    strategy:
+      matrix:
+        build_config: ["Debug", "Release"]
+    env:
+      CMAKE_BUILD_DIR: ${{ github.workspace }}/vw/build
+      SOURCE_DIR: ${{ github.workspace }}/vw
+      VCPKG_ROOT: ${{ github.workspace }}/vcpkg
+      # 2020.11-1
+      VCPKG_REF: ec6fe06e8da05a8157dc8581fa96b36b571c1bd5
+
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          path: 'vw'
+          submodules: true
+      - uses: actions/checkout@v2
+        with:
+          path: 'vcpkg'
+          repository: 'microsoft/vcpkg'
+          ref: ${{ env.VCPKG_REF }}
+      - name: Restore vcpkg and build artifacts
+        uses: actions/cache@v2
+        with:
+          path: |
+            ${{ env.VCPKG_ROOT }}/installed/
+            ${{ env.VCPKG_ROOT }}
+            !${{ env.VCPKG_ROOT }}/buildtrees
+            !${{ env.VCPKG_ROOT }}/packages
+            !${{ env.VCPKG_ROOT }}/downloads
+          key: |
+            ${{ env.VCPKG_REF }}-vcpkg-cache-invalidate-0
+      # Downgrade CMake to mitigate crashing issue introduced in 3.21 that only affects vcpkg. See here: https://github.com/microsoft/vcpkg/issues/18718
+      - name: Setup cmake
+        uses: jwlawson/actions-setup-cmake@v1.9
+        with:
+          cmake-version: '3.20.x'
+      - uses: ilammy/msvc-dev-cmd@v1
+      - name: Bootstrap vcpkg
+        run: ${{ env.VCPKG_ROOT }}/bootstrap-vcpkg.bat
+      - name: Install vcpkg dependencies
+        run: ${{ env.VCPKG_ROOT }}/vcpkg.exe --triplet x64-windows install zlib boost-system boost-program-options boost-test boost-align boost-foreach boost-math flatbuffers
+      - name: Generate project files
+        run: |
+          cmake -S "${{ env.SOURCE_DIR }}" -B "${{ env.CMAKE_BUILD_DIR }}" -G "Visual Studio 16 2019" -A "x64" -DCMAKE_TOOLCHAIN_FILE="${{ env.VCPKG_ROOT }}/scripts/buildsystems/vcpkg.cmake" -DUSE_LATEST_STD=On -DBUILD_FLATBUFFERS=On -Dvw_BUILD_NET_FRAMEWORK=On
+      - name: Build project
+        run: |
+          cmake --build "${{ env.CMAKE_BUILD_DIR }}" --config ${{ matrix.build_config }}
+      - name: Run tests
+        run: |
+          cmake --build "${{ env.CMAKE_BUILD_DIR }}" --config ${{ matrix.build_config }} --target test_with_output

@@ -15,7 +15,7 @@
     <ProjectGuid>{AA39948B-C78F-4347-8A37-DD27B843E69E}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
     <RootNamespace>slimtest</RootNamespace>
-    <WindowsTargetPlatformVersion>8.1</WindowsTargetPlatformVersion>
+    <WindowsTargetPlatformVersion>10.0.17763.0</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">

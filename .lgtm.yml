@@ -1,3 +1,6 @@
+path_classifiers:
+  library:
+    - ext_libs
 queries:
   exclude: "cs/useless-assignment-to-local"
 extraction:

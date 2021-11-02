@@ -1,9 +1,11 @@
-#define BOOST_TEST_DYN_LINK
+// Copyright (c) by respective owners including Yahoo!, Microsoft, and
+// individual contributors. All rights reserved. Released under a BSD (revised)
+// license as described in the file LICENSE.
+
 #include <boost/test/unit_test.hpp>
 #include <iostream>
 #include "learner.h"
 #include "pmf_to_pdf.h"
-#include "parse_args.h"  // setup_base()
 #include "action_score.h"
 #include "cb_label_parser.h"
 
@@ -26,34 +28,23 @@ struct reduction_test_harness
 
   void set_predict_response(const vector<pair<uint32_t, float>>& predictions) { _predictions = predictions; }
 
-  void test_predict(single_learner& base, example& ec)
+  void test_predict(base_learner& base, example& ec)
   {
     ec.pred.a_s.clear();
     for (uint32_t i = 0; i < _predictions.size(); i++)
     { ec.pred.a_s.push_back(ACTION_SCORE::action_score{_predictions[i].first, _predictions[i].second}); }
-
-    // cout << "\nec.pred.a_s (PMF): " << endl;
-    // for (uint32_t i = 0; i < _predictions.size(); i++)
-    // { cout << "(" << ec.pred.a_s[i].action << " : " << ec.pred.a_s[i].score << "), " << endl; }
   }
 
-  void test_learn(single_learner& base, example& ec)
-  {
-    // cout << "ec.l.cb.costs after:" << endl;
-    // for (uint32_t i = 0; i < ec.l.cb.costs.size(); i++)
-    // {
-    //   cout << "(" << ec.l.cb.costs[i].action << " , " << ec.l.cb.costs[i].cost << " , " <<
-    //   ec.l.cb.costs[i].probability
-    //        << " , " << ec.l.cb.costs[i].partial_prediction << "), " << endl;
-    // }
+  void test_learn(base_learner& base, example& ec)
+  { /*noop*/
   }
 
-  static void predict(reduction_test_harness& test_reduction, single_learner& base, example& ec)
+  static void predict(reduction_test_harness& test_reduction, base_learner& base, example& ec)
   {
     test_reduction.test_predict(base, ec);
   }
 
-  static void learn(reduction_test_harness& test_reduction, single_learner& base, example& ec)
+  static void learn(reduction_test_harness& test_reduction, base_learner& base, example& ec)
   {
     test_reduction.test_learn(base, ec);
   };
@@ -80,7 +71,7 @@ void check_pdf_sums_to_one(VW::continuous_actions::probability_density_function&
 }
 
 void check_pdf_limits_are_valid(VW::continuous_actions::probability_density_function& pdf, float min_value,
-    float max_value, uint32_t bandwidth, uint32_t num_actions, uint32_t action)
+    float max_value, float bandwidth, uint32_t num_actions, uint32_t action)
 {
   // check that left <= right for all pdf
   float prev_pdf_limit = 0;
@@ -121,7 +112,7 @@ void check_pdf_limits_are_valid(VW::continuous_actions::probability_density_func
 BOOST_AUTO_TEST_CASE(pmf_to_pdf_basic)
 {
   uint32_t k = 4;
-  uint32_t h = 1;
+  float h = 10.f;  // h (bandwidth) property of continuous range (max_val - min_val)
   float min_val = 1000;
   float max_val = 1100;
 
@@ -139,15 +130,11 @@ BOOST_AUTO_TEST_CASE(pmf_to_pdf_basic)
   data->max_value = max_val;
   data->_p_base = as_singleline(test_harness);
 
-  ec.pred.a_s = v_init<ACTION_SCORE::action_score>();
-
   predict(*data, *data->_p_base, ec);
 
   check_pdf_sums_to_one(ec.pred.pdf);
   check_pdf_limits_are_valid(ec.pred.pdf, min_val, max_val, h, k, action);
 
-  ec.l.cb_cont = VW::cb_continuous::continuous_label();
-  ec.l.cb_cont.costs = v_init<VW::cb_continuous::continuous_label_elm>();
   ec.l.cb_cont.costs.clear();
   ec.l.cb_cont.costs.push_back({1010.17f, .5f, .05f});  // action, cost, prob
 
@@ -159,18 +146,16 @@ BOOST_AUTO_TEST_CASE(pmf_to_pdf_basic)
 
   learn(*data, *as_singleline(test_harness), ec);
 
-  delete_probability_density_function(&ec.pred.pdf);
-  CB::delete_label<VW::cb_continuous::continuous_label>(ec.l.cb_cont);
   test_harness->finish();
-  destroy_free<VW::pmf_to_pdf::reduction_test_harness>(test_harness);
+  delete test_harness;
 }
 
 BOOST_AUTO_TEST_CASE(pmf_to_pdf_w_large_bandwidth)
 {
   example ec;
   auto data = scoped_calloc_or_throw<VW::pmf_to_pdf::reduction>();
-  uint32_t k = 4;  // num_actions
-  uint32_t h = 2;  // bandwidth
+  uint32_t k = 4;   // num_actions
+  float h = 300.f;  // // h (bandwidth) property of continuous range (max_val - min_val)
   float min_val = 1000;
   float max_val = 1400;
 
@@ -188,7 +173,6 @@ BOOST_AUTO_TEST_CASE(pmf_to_pdf_w_large_bandwidth)
 
     const auto test_harness = VW::pmf_to_pdf::get_test_harness_reduction(prediction_scores);
     data->_p_base = as_singleline(test_harness);
-    ec.pred.a_s = v_init<ACTION_SCORE::action_score>();
 
     predict(*data, *data->_p_base, ec);
 
@@ -196,9 +180,7 @@ BOOST_AUTO_TEST_CASE(pmf_to_pdf_w_large_bandwidth)
     check_pdf_limits_are_valid(ec.pred.pdf, min_val, max_val, h, k, action);
 
     test_harness->finish();
-    destroy_free<VW::pmf_to_pdf::reduction_test_harness>(test_harness);
-    delete_probability_density_function(&ec.pred.pdf);
-    CB::delete_label<VW::cb_continuous::continuous_label>(ec.l.cb_cont);
+    delete test_harness;
   }
 }
 
@@ -208,7 +190,7 @@ BOOST_AUTO_TEST_CASE(pmf_to_pdf_w_large_discretization)
   auto data = scoped_calloc_or_throw<VW::pmf_to_pdf::reduction>();
 
   uint32_t k = 16;  // num_actions
-  uint32_t h = 3;   // bandwidth
+  float h = 10.f;   // h (bandwidth) property of continuous range (max_val - min_val)
   float min_val = 1000;
   float max_val = 1400;
 
@@ -226,7 +208,6 @@ BOOST_AUTO_TEST_CASE(pmf_to_pdf_w_large_discretization)
 
     const auto test_harness = VW::pmf_to_pdf::get_test_harness_reduction(prediction_scores);
     data->_p_base = as_singleline(test_harness);
-    ec.pred.a_s = v_init<ACTION_SCORE::action_score>();
 
     predict(*data, *data->_p_base, ec);
 
@@ -234,9 +215,7 @@ BOOST_AUTO_TEST_CASE(pmf_to_pdf_w_large_discretization)
     check_pdf_limits_are_valid(ec.pred.pdf, min_val, max_val, h, k, action);
 
     test_harness->finish();
-    destroy_free<VW::pmf_to_pdf::reduction_test_harness>(test_harness);
-    delete_probability_density_function(&ec.pred.pdf);
-    CB::delete_label<VW::cb_continuous::continuous_label>(ec.l.cb_cont);
+    delete test_harness;
   }
 }
 
@@ -247,15 +226,15 @@ namespace pmf_to_pdf
 test_learner_t* get_test_harness_reduction(const predictions_t& base_reduction_predictions)
 {
   // Setup a test harness base reduction
-  auto test_harness = scoped_calloc_or_throw<reduction_test_harness>();
+  auto test_harness = VW::make_unique<reduction_test_harness>();
   test_harness->set_predict_response(base_reduction_predictions);
-  auto& test_learner =
-      init_learner(test_harness,          // Data structure passed by vw_framework into test_harness predict/learn calls
-          reduction_test_harness::learn,  // test_harness learn
-          reduction_test_harness::predict,  // test_harness predict
-          1                                 // Number of regressors in test_harness (not used)
-      );                                    // Create a learner using the base reduction.
-  return &test_learner;
+  auto test_learner = VW::LEARNER::make_base_learner(
+      std::move(test_harness),          // Data structure passed by vw_framework into test_harness predict/learn calls
+      reduction_test_harness::learn,    // test_harness learn
+      reduction_test_harness::predict,  // test_harness predict
+      "test_learner", VW::prediction_type_t::action_scores, VW::label_type_t::continuous)
+                          .build();  // Create a learner using the base reduction.
+  return test_learner;
 }
 }  // namespace pmf_to_pdf
 }  // namespace VW

@@ -6,15 +6,21 @@
   by John Langford.
 */
 
+#include <cfloat>
 #include <iostream>
 #include <fstream>
 #include <ctime>
 #include <numeric>
+#include <fmt/core.h>
 
 #include "reductions.h"
 
+#include "io/logger.h"
+
 using namespace VW::LEARNER;
 using namespace VW::config;
+
+namespace logger = VW::io::logger;
 
 struct direction
 {
@@ -29,42 +35,27 @@ struct direction
 
 struct ect
 {
-  uint64_t k;
-  uint64_t errors;
-  float class_boundary;
+  uint64_t k = 0;
+  uint64_t errors = 0;
+  float class_boundary = 0.f;
 
   v_array<direction> directions;  // The nodes of the tournament datastructure
 
-  v_array<v_array<v_array<uint32_t>>> all_levels;
+  std::vector<std::vector<v_array<uint32_t>>> all_levels;
 
   v_array<uint32_t> final_nodes;  // The final nodes of each tournament.
 
   v_array<size_t> up_directions;    // On edge e, which node n is in the up direction?
   v_array<size_t> down_directions;  // On edge e, which node n is in the down direction?
 
-  size_t tree_height;  // The height of the final tournament.
+  size_t tree_height = 0;  // The height of the final tournament.
 
-  uint32_t last_pair;
+  uint32_t last_pair = 0;
 
   v_array<bool> tournaments_won;
-
-  ~ect()
-  {
-    for (auto& all_level : all_levels)
-    {
-      for (auto& t : all_level) t.delete_v();
-      all_level.delete_v();
-    }
-    all_levels.delete_v();
-    final_nodes.delete_v();
-    up_directions.delete_v();
-    directions.delete_v();
-    down_directions.delete_v();
-    tournaments_won.delete_v();
-  }
 };
 
-bool exists(v_array<size_t> db)
+bool exists(const v_array<size_t>& db)
 {
   for (size_t i : db)
     if (i != 0) return true;
@@ -76,33 +67,35 @@ size_t final_depth(size_t eliminations)
   eliminations--;
   for (size_t i = 0; i < 32; i++)
     if (eliminations >> i == 0) return i;
-  std::cerr << "too many eliminations" << std::endl;
+  logger::errlog_error("too many eliminations");
   return 31;
 }
 
-bool not_empty(v_array<v_array<uint32_t>> const& tournaments)
+bool not_empty(std::vector<v_array<uint32_t>> const& tournaments)
 {
-  auto const first_non_empty_tournament = std::find_if(
-      tournaments.cbegin(), tournaments.cend(), [](v_array<uint32_t>& tournament) { return !tournament.empty(); });
+  auto const first_non_empty_tournament = std::find_if(tournaments.cbegin(), tournaments.cend(),
+      [](const v_array<uint32_t>& tournament) { return !tournament.empty(); });
   return first_non_empty_tournament != tournaments.cend();
 }
 
-void print_level(v_array<v_array<uint32_t>> const& level)
+void print_level(std::vector<v_array<uint32_t>> const& level)
 {
+  fmt::memory_buffer buffer;
   for (auto const& t : level)
   {
-    for (auto i : t) std::cout << " " << i;
-    std::cout << " | ";
+    for (auto i : t) fmt::format_to(buffer, " {}", i);
+    fmt::format_to(buffer, " | ");
   }
-  std::cout << std::endl;
+  logger::pattern_guard("%v");
+  logger::log_info("{}", fmt::to_string(buffer));
 }
 
 size_t create_circuit(ect& e, uint64_t max_label, uint64_t eliminations)
 {
   if (max_label == 1) return 0;
 
-  v_array<v_array<uint32_t>> tournaments = v_init<v_array<uint32_t>>();
-  v_array<uint32_t> t = v_init<uint32_t>();
+  std::vector<v_array<uint32_t>> tournaments;
+  v_array<uint32_t> t;
 
   for (uint32_t i = 0; i < max_label; i++)
   {
@@ -119,16 +112,16 @@ size_t create_circuit(ect& e, uint64_t max_label, uint64_t eliminations)
 
   size_t level = 0;
 
-  uint32_t node = (uint32_t)e.directions.size();
+  uint32_t node = static_cast<uint32_t>(e.directions.size());
 
   while (not_empty(e.all_levels[level]))
   {
-    v_array<v_array<uint32_t>> new_tournaments = v_init<v_array<uint32_t>>();
+    std::vector<v_array<uint32_t>> new_tournaments;
     tournaments = e.all_levels[level];
 
     for (size_t i = 0; i < tournaments.size(); i++)
     {
-      v_array<uint32_t> empty = v_init<uint32_t>();
+      v_array<uint32_t> empty;
       new_tournaments.push_back(empty);
     }
 
@@ -142,7 +135,7 @@ size_t create_circuit(ect& e, uint64_t max_label, uint64_t eliminations)
 
         direction d = {id, i, 0, 0, left, right, false};
         e.directions.push_back(d);
-        uint32_t direction_index = (uint32_t)e.directions.size() - 1;
+        uint32_t direction_index = static_cast<uint32_t>(e.directions.size()) - 1;
         if (e.directions[left].tournament == i)
           e.directions[left].winner = direction_index;
         else
@@ -160,7 +153,7 @@ size_t create_circuit(ect& e, uint64_t max_label, uint64_t eliminations)
             new_tournaments[i + 1].push_back(id);
           else  // winner eliminated.
             e.directions[direction_index].winner = 0;
-          e.final_nodes.push_back((uint32_t)(e.directions.size() - 1));
+          e.final_nodes.push_back(static_cast<uint32_t>(e.directions.size() - 1));
         }
         else
           new_tournaments[i].push_back(id);
@@ -169,13 +162,13 @@ size_t create_circuit(ect& e, uint64_t max_label, uint64_t eliminations)
         else  // loser eliminated.
           e.directions[direction_index].loser = 0;
       }
-      if (tournaments[i].size() % 2 == 1) new_tournaments[i].push_back(tournaments[i].last());
+      if (tournaments[i].size() % 2 == 1) new_tournaments[i].push_back(tournaments[i].back());
     }
     e.all_levels.push_back(new_tournaments);
     level++;
   }
 
-  e.last_pair = (uint32_t)((max_label - 1) * eliminations);
+  e.last_pair = static_cast<uint32_t>((max_label - 1) * eliminations);
 
   if (max_label > 1) e.tree_height = final_depth(eliminations);
 
@@ -184,23 +177,25 @@ size_t create_circuit(ect& e, uint64_t max_label, uint64_t eliminations)
 
 uint32_t ect_predict(ect& e, single_learner& base, example& ec)
 {
-  if (e.k == (size_t)1) return 1;
+  if (e.k == static_cast<size_t>(1)) return 1;
 
   uint32_t finals_winner = 0;
 
   // Binary final elimination tournament first
-  ec.l.simple = {FLT_MAX, 0., 0.};
+  ec.l.simple = {FLT_MAX};
+  ec._reduction_features.template get<simple_label_reduction_features>().reset_to_default();
 
-  for (size_t i = e.tree_height - 1; i != (size_t)0 - 1; i--)
+  for (size_t i = e.tree_height - 1; i != static_cast<size_t>(0) - 1; i--)
   {
-    if ((finals_winner | (((size_t)1) << i)) <= e.errors)
+    if ((finals_winner | ((static_cast<size_t>(1)) << i)) <= e.errors)
     {
       // a real choice exists
-      uint32_t problem_number = e.last_pair + (finals_winner | (((uint32_t)1) << i)) - 1;  // This is unique.
+      uint32_t problem_number =
+          e.last_pair + (finals_winner | ((static_cast<uint32_t>(1)) << i)) - 1;  // This is unique.
 
       base.learn(ec, problem_number);
 
-      if (ec.pred.scalar > e.class_boundary) finals_winner = finals_winner | (((size_t)1) << i);
+      if (ec.pred.scalar > e.class_boundary) finals_winner = finals_winner | ((static_cast<size_t>(1)) << i);
     }
   }
 
@@ -224,8 +219,6 @@ void ect_train(ect& e, single_learner& base, example& ec)
   MULTICLASS::label_t mc = ec.l.multi;
 
   label_data simple_temp;
-
-  simple_temp.initial = 0.;
 
   e.tournaments_won.clear();
 
@@ -268,7 +261,8 @@ void ect_train(ect& e, single_learner& base, example& ec)
     }
   } while (id != 0);
 
-  if (e.tournaments_won.empty()) std::cout << "badness!" << std::endl;
+  //TODO: error? warn? info? what level is this supposed to be?
+  if (e.tournaments_won.empty()) logger::log_error("badness!");
 
   // tournaments_won is a bit vector determining which tournaments the label won.
   for (size_t i = 0; i < e.tree_height; i++)
@@ -285,8 +279,8 @@ void ect_train(ect& e, single_learner& base, example& ec)
           simple_temp.label = -1;
         else
           simple_temp.label = 1;
-        simple_temp.weight = (float)(1 << (e.tree_height - i - 1));
         ec.l.simple = simple_temp;
+        ec.weight = static_cast<float>(1 << (e.tree_height - i - 1));
 
         uint32_t problem_number = e.last_pair + j * (1 << (i + 1)) + (1 << i) - 1;
 
@@ -297,9 +291,10 @@ void ect_train(ect& e, single_learner& base, example& ec)
         else
           e.tournaments_won[j] = left;
       }
+
       if (e.tournaments_won.size() % 2 == 1)
-        e.tournaments_won[e.tournaments_won.size() / 2] = e.tournaments_won[e.tournaments_won.size() - 1];
-      e.tournaments_won.end() = e.tournaments_won.begin() + (1 + e.tournaments_won.size()) / 2;
+      { e.tournaments_won[e.tournaments_won.size() / 2] = e.tournaments_won[e.tournaments_won.size() - 1]; }
+      e.tournaments_won.resize_but_with_stl_behavior((1 + e.tournaments_won.size()) / 2);
     }
   }
 }
@@ -307,8 +302,12 @@ void ect_train(ect& e, single_learner& base, example& ec)
 void predict(ect& e, single_learner& base, example& ec)
 {
   MULTICLASS::label_t mc = ec.l.multi;
-  if (mc.label == 0 || (mc.label > e.k && mc.label != (uint32_t)-1))
-    std::cout << "label " << mc.label << " is not in {1," << e.k << "} This won't work right." << std::endl;
+  if (mc.label == 0 || (mc.label > e.k && mc.label != static_cast<uint32_t>(-1)))
+  {
+    // In order to print curly braces, they need to be embedded within curly braces to escape them.
+    // The funny looking part will just print {1, e.k}
+    logger::log_warn("label {0} is not in {{1, {1}}} This won't work right.", mc.label, e.k);
+  }
   ec.pred.multiclass = ect_predict(e, base, ec);
   ec.l.multi = mc;
 }
@@ -316,17 +315,18 @@ void predict(ect& e, single_learner& base, example& ec)
 void learn(ect& e, single_learner& base, example& ec)
 {
   MULTICLASS::label_t mc = ec.l.multi;
-  predict(e, base, ec);
   uint32_t pred = ec.pred.multiclass;
 
-  if (mc.label != (uint32_t)-1) ect_train(e, base, ec);
+  if (mc.label != static_cast<uint32_t>(-1)) ect_train(e, base, ec);
   ec.l.multi = mc;
   ec.pred.multiclass = pred;
 }
 
-base_learner* ect_setup(options_i& options, vw& all)
+base_learner* ect_setup(VW::setup_base_i& stack_builder)
 {
-  auto data = scoped_calloc_or_throw<ect>();
+  options_i& options = *stack_builder.get_options();
+  vw& all = *stack_builder.get_all_pointer();
+  auto data = VW::make_unique<ect>();
   std::string link;
   option_group_definition new_options("Error Correcting Tournament Options");
   new_options.add(make_option("ect", data->k).keep().necessary().help("Error correcting tournament with <k> labels"))
@@ -341,12 +341,18 @@ base_learner* ect_setup(options_i& options, vw& all)
 
   size_t wpp = create_circuit(*data.get(), data->k, data->errors + 1);
 
-  base_learner* base = setup_base(options, all);
+  base_learner* base = stack_builder.setup_base_learner();
   if (link == "logistic") data->class_boundary = 0.5;  // as --link=logistic maps predictions in [0;1]
 
-  learner<ect, example>& l =
-      init_multiclass_learner(data, as_singleline(base), learn, predict, all.example_parser, wpp);
-  all.label_type = label_type_t::mc;
+  auto* l = make_reduction_learner(
+      std::move(data), as_singleline(base), learn, predict, stack_builder.get_setupfn_name(ect_setup))
+                .set_params_per_weight(wpp)
+                .set_finish_example(MULTICLASS::finish_example<ect&>)
+                .set_output_prediction_type(VW::prediction_type_t::multiclass)
+                .set_input_label_type(VW::label_type_t::multiclass)
+                .build();
 
-  return make_base(l);
+  all.example_parser->lbl_parser = MULTICLASS::mc_label;
+
+  return make_base(*l);
 }

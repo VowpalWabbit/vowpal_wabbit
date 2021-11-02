@@ -3,10 +3,10 @@
 // license as described in the file LICENSE.
 
 #include "cb_explore_pdf.h"
-#include "err_constants.h"
+#include "error_constants.h"
 #include "api_status.h"
 #include "debug_log.h"
-#include "parse_args.h"
+#include "global_data.h"
 
 // Aliases
 using std::endl;
@@ -16,7 +16,8 @@ using VW::config::options_i;
 using VW::LEARNER::single_learner;
 
 // Enable/Disable indented debug statements
-VW_DEBUG_ENABLE(false)
+#undef VW_DEBUG_LOG
+#define VW_DEBUG_LOG vw_dbg::cb_explore_pdf
 
 namespace VW
 {
@@ -43,7 +44,7 @@ private:
 int cb_explore_pdf::learn(example& ec, experimental::api_status*)
 {
   _base->learn(ec);
-  return error_code::success;
+  return VW::experimental::error_code::success;
 }
 
 int cb_explore_pdf::predict(example& ec, experimental::api_status*)
@@ -52,14 +53,15 @@ int cb_explore_pdf::predict(example& ec, experimental::api_status*)
   if (first_only && !reduction_features.is_pdf_set() && !reduction_features.is_chosen_action_set())
   {
     // uniform random
-    ec.pred.pdf.push_back({min_value, max_value, static_cast<float>(1. / (max_value - min_value))});
-    return error_code::success;
+    ec.pred.pdf.push_back(
+        VW::continuous_actions::pdf_segment{min_value, max_value, static_cast<float>(1. / (max_value - min_value))});
+    return VW::experimental::error_code::success;
   }
   else if (first_only && reduction_features.is_pdf_set())
   {
     // pdf provided
-    copy_array(ec.pred.pdf, reduction_features.pdf);
-    return error_code::success;
+    ec.pred.pdf = reduction_features.pdf;
+    return VW::experimental::error_code::success;
   }
 
   _base->predict(ec);
@@ -67,7 +69,7 @@ int cb_explore_pdf::predict(example& ec, experimental::api_status*)
   continuous_actions::probability_density_function& _pred_pdf = ec.pred.pdf;
   for (uint32_t i = 0; i < _pred_pdf.size(); i++)
   { _pred_pdf[i].pdf_value = _pred_pdf[i].pdf_value * (1 - epsilon) + epsilon / (max_value - min_value); }
-  return error_code::success;
+  return VW::experimental::error_code::success;
 }
 
 void cb_explore_pdf::init(single_learner* p_base) { _base = p_base; }
@@ -82,15 +84,17 @@ void predict_or_learn(cb_explore_pdf& reduction, single_learner&, example& ec)
   else
     reduction.predict(ec, &status);
 
-  if (status.get_error_code() != error_code::success) { VW_DBG(ec) << status.get_error_msg() << endl; }
+  if (status.get_error_code() != VW::experimental::error_code::success)
+  { VW_DBG(ec) << status.get_error_msg() << endl; }
 }
 
 // END sample_pdf reduction and reduction methods
 ////////////////////////////////////////////////////
 
 // Setup reduction in stack
-LEARNER::base_learner* cb_explore_pdf_setup(config::options_i& options, vw& all)
+LEARNER::base_learner* cb_explore_pdf_setup(VW::setup_base_i& stack_builder)
 {
+  options_i& options = *stack_builder.get_options();
   option_group_definition new_options("Continuous actions - cb_explore_pdf");
   bool invoked = false;
   float epsilon;
@@ -120,18 +124,20 @@ LEARNER::base_learner* cb_explore_pdf_setup(config::options_i& options, vw& all)
   if (!options.was_supplied("min_value") || !options.was_supplied("max_value"))
     THROW("error: min and max values must be supplied with cb_explore_pdf");
 
-  LEARNER::base_learner* p_base = setup_base(options, all);
-  auto p_reduction = scoped_calloc_or_throw<cb_explore_pdf>();
+  LEARNER::base_learner* p_base = stack_builder.setup_base_learner();
+  auto p_reduction = VW::make_unique<cb_explore_pdf>();
   p_reduction->init(as_singleline(p_base));
   p_reduction->epsilon = epsilon;
   p_reduction->min_value = min;
   p_reduction->max_value = max;
   p_reduction->first_only = first_only;
 
-  LEARNER::learner<cb_explore_pdf, example>& l = init_learner(
-      p_reduction, as_singleline(p_base), predict_or_learn<true>, predict_or_learn<false>, 1, prediction_type_t::pdf);
-
-  return make_base(l);
+  auto* l = make_reduction_learner(std::move(p_reduction), as_singleline(p_base), predict_or_learn<true>,
+      predict_or_learn<false>, stack_builder.get_setupfn_name(cb_explore_pdf_setup))
+                .set_output_prediction_type(VW::prediction_type_t::pdf)
+                .set_input_label_type(VW::label_type_t::cb)
+                .build();
+  return make_base(*l);
 }
 }  // namespace continuous_action
 }  // namespace VW

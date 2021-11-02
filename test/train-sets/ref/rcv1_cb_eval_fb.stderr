@@ -5,18 +5,18 @@ power_t = 0.5
 using no cache
 Reading datafile = train-sets/rcv1_cb_eval.fb
 num sources = 1
-Enabled reductions: gd, scorer, csoaa, cb
+Enabled reductions: gd, scorer-identity, csoaa, cb-eval
 average  since         example        example  current  current  current
 loss     last          counter         weight    label  predict features
-0.000000 0.000000            1            1.0    known        2       50
-0.000000 0.000000            2            2.0    known        2      103
-0.000000 0.000000            4            4.0    known        2      134
-0.000000 0.000000            8            8.0    known        2      145
-0.475577 0.951154           16           16.0    known        2       23
-0.497601 0.519625           32           32.0    known        2       31
-0.578183 0.658765           64           64.0    known        2       60
-0.483010 0.387836          128          128.0    known        2      105
-0.480136 0.477262          256          256.0    known        2      122
+0.000000 0.000000            1            1.0  1:1:0.5        2       50
+0.000000 0.000000            2            2.0  1:0:0.5        2      103
+0.000000 0.000000            4            4.0  1:0:0.5        2      134
+0.000000 0.000000            8            8.0  1:0:0.5        2      145
+0.475577 0.951154           16           16.0  1:1:0.5        2       23
+0.497601 0.519625           32           32.0  1:0:0.5        2       31
+0.578183 0.658765           64           64.0  2:1:0.5        2       60
+0.483010 0.387836          128          128.0  1:1:0.5        2      105
+0.480136 0.477262          256          256.0  2:0:0.5        2      122
 
 finished run
 number of examples = 500

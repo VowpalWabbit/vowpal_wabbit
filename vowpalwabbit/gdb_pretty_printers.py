@@ -27,8 +27,8 @@ class VArrayPrinter:
         self.value = value
         self.begin_array = self.value['_begin']
         self.end_array = self.value['_end']
-        self.end_buffer = self.value['end_array']
-        self.erase_count = self.value['erase_count']
+        self.end_buffer = self.value['_end_array']
+        self.erase_count = self.value['_erase_count']
         self.size = int(self.end_array - self.begin_array)
         self.capacity = int(self.end_buffer - self.begin_array)
 

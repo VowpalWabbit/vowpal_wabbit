@@ -6,7 +6,7 @@ power_t = 0.5
 using no cache
 Reading datafile = train-sets/0080.dat
 num sources = 1
-Enabled reductions: gd, lrq, scorer
+Enabled reductions: gd, lrq, scorer-identity, count_label
 average  since         example        example  current  current  current
 loss     last          counter         weight    label  predict features
 0.000000 0.000000            1            1.0   1.0000   1.0000        5

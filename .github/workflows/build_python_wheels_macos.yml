@@ -1,12 +1,13 @@
-name: Build MacOS Python Wheels
+name: MacOS / Python
 
 on:
   push:
     branches:
       - master
+      - 'releases/**'
   pull_request:
     branches:
-      - master
+      - '*'
 
 jobs:
   build:
@@ -17,6 +18,7 @@ jobs:
         - { version: 3.6, include_dir_name: python3.6m/}
         - { version: 3.7, include_dir_name: python3.7m/}
         - { version: 3.8, include_dir_name: python3.8/}
+        - { version: 3.9, include_dir_name: python3.9/}
     steps:
       - uses: actions/checkout@v2
       - uses: conda-incubator/setup-miniconda@v2
@@ -43,6 +45,7 @@ jobs:
         - { version: 3.6, include_dir_name: python3.6m/}
         - { version: 3.7, include_dir_name: python3.7m/}
         - { version: 3.8, include_dir_name: python3.8/}
+        - { version: 3.9, include_dir_name: python3.9/}
     steps:
       - uses: actions/checkout@v2
       - name: Set up Python ${{ matrix.config.version }}

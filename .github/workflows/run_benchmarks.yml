@@ -1,28 +1,34 @@
 name: Run Benchmarks
+
 on:
   pull_request:
     branches:
       - master
+      - 'releases/**'
+
+concurrency: 
+  group: ${{ github.head_ref }}
+  cancel-in-progress: true
 
 jobs:
-  Benchmarking:
+  benchmark:
     container:
-      image: vowpalwabbit/ubuntu1604-build:latest
-    runs-on: ubuntu-latest
+      image: vowpalwabbit/ubuntu1804-build:latest
+    runs-on: perf
     steps:
       - uses: actions/checkout@v1
         with:
-          ref: master
+          ref: ${{ github.base_ref }}
       - name: Install google benchmarks
         shell: bash
-        run: ./.scripts/linux/install-benchmark.sh
-      - name: Build master
+        run: ./.scripts/linux/install-benchmarks.sh
+      - name: Build ${{ github.base_ref }}
         shell: bash
         run: ./.scripts/linux/build-with-benchmarks.sh
-      - name: Benchmark master
+      - name: Benchmark ${{ github.base_ref }}
         shell: bash
         run: ./.scripts/linux/run-benchmarks.sh master-benchmarks.json
-      - name: Upload master benchmark results
+      - name: Upload ${{ github.base_ref }} benchmark results
         uses: actions/upload-artifact@v2
         with:
           name: master-benchmarks
@@ -34,10 +40,10 @@ jobs:
           path: benchmark/tools/
       - name: Install benchmark compare requirements
         shell: bash
-        run: /usr/local/miniconda/envs/test-python36/bin/pip install -r benchmark/tools/requirements.txt
+        run: python3 -m pip install -r benchmark/tools/requirements.txt
       - run: rm -rf benchmark build vowpalwabbit/parser/flatbuffer/generated/ # generated or downloaded files
       - uses: actions/checkout@v1
-      - name: Download master benchmark results
+      - name: Download ${{ github.base_ref }} benchmark results
         uses: actions/download-artifact@v2
         with:
           name: master-benchmarks
@@ -54,3 +60,8 @@ jobs:
       - name: Compare benchmarks
         shell: bash
         run: ./.scripts/linux/compare-benchmarks.sh master-benchmarks.json branch-benchmarks.json
+      - name: Cleanup runner
+        if: always()
+        # This will only clear out the contents of the workspace dir
+        run: |
+          sudo rm -rf * 

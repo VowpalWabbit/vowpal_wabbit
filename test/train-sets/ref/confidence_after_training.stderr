@@ -6,7 +6,7 @@ power_t = 0.5
 using no cache
 Reading datafile = ./train-sets/rcv1_small.dat
 num sources = 1
-Enabled reductions: gd, confidence, scorer
+Enabled reductions: gd, confidence, scorer-identity, count_label
 average  since         example        example  current  current  current
 loss     last          counter         weight    label  predict features
 1.000000 1.000000            1            1.0  -1.0000   0.0000      128
@@ -24,7 +24,7 @@ finished run
 number of examples = 1000
 weighted example sum = 1000.000000
 weighted label sum = -82.000000
-average loss = 0.501669
+average loss = 0.501670
 best constant = -0.082000
 best constant's loss = 0.993276
 total feature number = 78739

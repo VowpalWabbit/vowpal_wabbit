@@ -4,14 +4,18 @@
 
 #include <cfloat>
 #include <cassert>
+#include <cmath>
 
 #include "gd.h"
 #include "accumulate.h"
+#include "label_parser.h"
 #include "reductions.h"
 #include "vw.h"
 #include "vw_allreduce.h"
 
 //#define MAGIC_ARGUMENT //MAY IT NEVER DIE //LIVE LONG AND PROSPER
+// TODO: This file makes extensive use of #ifdef DEBUG for printing
+//       leave this alone for now
 
 using namespace VW::LEARNER;
 using namespace VW::config;
@@ -31,34 +35,34 @@ struct sort_data
 
 struct stagewise_poly
 {
-  vw *all;  // many uses, unmodular reduction
+  vw* all = nullptr;  // many uses, unmodular reduction
 
-  float sched_exponent;
-  uint32_t batch_sz;
-  bool batch_sz_double;
+  float sched_exponent = 0.f;
+  uint32_t batch_sz = 0;
+  bool batch_sz_double = false;
 
-  sort_data *sd;
-  size_t sd_len;
-  uint8_t *depthsbits;  // interleaved array storing depth information and parent/cycle bits
+  sort_data* sd = nullptr;
+  size_t sd_len = 0;
+  uint8_t* depthsbits = nullptr;  // interleaved array storing depth information and parent/cycle bits
 
-  uint64_t sum_sparsity;        // of synthetic example
-  uint64_t sum_input_sparsity;  // of input example
-  uint64_t num_examples;
+  uint64_t sum_sparsity = 0;        // of synthetic example
+  uint64_t sum_input_sparsity = 0;  // of input example
+  uint64_t num_examples = 0;
   // following three are for parallel (see end_pass())
-  uint64_t sum_sparsity_sync;
-  uint64_t sum_input_sparsity_sync;
-  uint64_t num_examples_sync;
+  uint64_t sum_sparsity_sync = 0;
+  uint64_t sum_input_sparsity_sync = 0;
+  uint64_t num_examples_sync = 0;
 
   example synth_ec;
   // following is bookkeeping in synth_ec creation (dfs)
-  feature synth_rec_f;
-  example *original_ec;
-  uint32_t cur_depth;
-  bool training;
-  uint64_t last_example_counter;
-  size_t numpasses;
-  uint32_t next_batch_sz;
-  bool update_support;
+  feature synth_rec_f{0.f, 0};
+  example* original_ec = nullptr;
+  uint32_t cur_depth = 0;
+  bool training = false;
+  uint64_t last_example_counter = 0;
+  size_t numpasses = 0;
+  uint32_t next_batch_sz = 0;
+  bool update_support = false;
 
 #ifdef DEBUG
   uint32_t max_depth;
@@ -75,12 +79,8 @@ struct stagewise_poly
     std::cout << "total feature number (after poly expansion!) = " << sum_sparsity << std::endl;
 #endif  // DEBUG
 
-    // synth_ec.feature_space[tree_atomics].delete_v();
     free(sd);
     free(depthsbits);
-
-    // Intentionally do not clear the unions here.
-    synth_ec.delete_unions(nullptr, nullptr);
   }
 };
 
@@ -96,7 +96,6 @@ inline uint64_t stride_un_shift(const stagewise_poly &poly, uint64_t idx)
 
 inline uint64_t do_ft_offset(const stagewise_poly &poly, uint64_t idx)
 {
-  // std::cout << poly.synth_ec.ft_offset << "  " << poly.original_ec->ft_offset << std::endl;
   assert(!poly.original_ec || poly.synth_ec.ft_offset == poly.original_ec->ft_offset);
   return idx + poly.synth_ec.ft_offset;
 }
@@ -284,8 +283,10 @@ void sort_data_update_support(stagewise_poly &poly)
   assert(poly.original_ec);
   poly.original_ec->ft_offset = 0;
 
-  size_t num_new_features = (size_t)pow(poly.sum_input_sparsity * 1.0f / poly.num_examples, poly.sched_exponent);
-  num_new_features = (num_new_features > poly.all->length()) ? (uint64_t)poly.all->length() : num_new_features;
+  size_t num_new_features =
+      static_cast<size_t>(std::pow(poly.sum_input_sparsity * 1.0f / poly.num_examples, poly.sched_exponent));
+  num_new_features =
+      (num_new_features > poly.all->length()) ? static_cast<uint64_t>(poly.all->length()) : num_new_features;
   sort_data_ensure_sz(poly, num_new_features);
 
   sort_data *heap_end = poly.sd;
@@ -310,7 +311,7 @@ void sort_data_update_support(stagewise_poly &poly)
         assert(heap_end >= poly.sd);
         assert(heap_end <= poly.sd + num_new_features);
 
-        if (heap_end - poly.sd == (int)num_new_features && poly.sd->weightsal < weightsal)
+        if (heap_end - poly.sd == static_cast<int>(num_new_features) && poly.sd->weightsal < weightsal)
         {
           std::pop_heap(poly.sd, heap_end, sort_data_compar_heap);
           --heap_end;
@@ -319,7 +320,7 @@ void sort_data_update_support(stagewise_poly &poly)
         assert(heap_end >= poly.sd);
         assert(heap_end < poly.sd + poly.sd_len);
 
-        if (heap_end - poly.sd < (int)num_new_features)
+        if (heap_end - poly.sd < static_cast<int>(num_new_features))
         {
           heap_end->weightsal = weightsal;
           heap_end->wid = wid;
@@ -329,7 +330,7 @@ void sort_data_update_support(stagewise_poly &poly)
       }
     }
   }
-  num_new_features = (uint64_t)(heap_end - poly.sd);
+  num_new_features = static_cast<uint64_t>(heap_end - poly.sd);
 
 #ifdef DEBUG
   // eyeballing weights a pain if unsorted.
@@ -370,6 +371,7 @@ void synthetic_reset(stagewise_poly &poly, example &ec)
   poly.synth_ec.tag = ec.tag;
   poly.synth_ec.example_counter = ec.example_counter;
   poly.synth_ec.interactions = &poly.all->interactions;
+  poly.synth_ec.extent_interactions = &poly.all->extent_interactions;
 
   /**
    * Some comments on ft_offset.
@@ -398,7 +400,6 @@ void synthetic_reset(stagewise_poly &poly, example &ec)
 
   poly.synth_ec.feature_space[tree_atomics].clear();
   poly.synth_ec.num_features = 0;
-  poly.synth_ec.total_sum_feat_sq = 0;
 
   if (poly.synth_ec.indices.size() == 0) poly.synth_ec.indices.push_back(tree_atomics);
 }
@@ -484,12 +485,11 @@ void synthetic_create(stagewise_poly &poly, example &ec, bool training)
    */
   GD::foreach_feature<stagewise_poly, uint64_t, synthetic_create_rec>(*poly.all, *poly.original_ec, poly);
   synthetic_decycle(poly);
-  poly.synth_ec.total_sum_feat_sq = poly.synth_ec.feature_space[tree_atomics].sum_feat_sq;
 
   if (training)
   {
-    poly.sum_sparsity += poly.synth_ec.num_features;
-    poly.sum_input_sparsity += ec.num_features;
+    poly.sum_sparsity += poly.synth_ec.get_num_features();
+    poly.sum_input_sparsity += ec.get_num_features();
     poly.num_examples += 1;
   }
 }
@@ -603,9 +603,9 @@ void end_pass(stagewise_poly &poly)
      */
     all_reduce<uint8_t, reduce_min_max>(all, poly.depthsbits, depthsbits_sizeof(poly));
 
-    sum_input_sparsity_inc = (uint64_t)accumulate_scalar(all, (float)sum_input_sparsity_inc);
-    sum_sparsity_inc = (uint64_t)accumulate_scalar(all, (float)sum_sparsity_inc);
-    num_examples_inc = (uint64_t)accumulate_scalar(all, (float)num_examples_inc);
+    sum_input_sparsity_inc = static_cast<uint64_t>(accumulate_scalar(all, static_cast<float>(sum_input_sparsity_inc)));
+    sum_sparsity_inc = static_cast<uint64_t>(accumulate_scalar(all, static_cast<float>(sum_sparsity_inc)));
+    num_examples_inc = static_cast<uint64_t>(accumulate_scalar(all, static_cast<float>(num_examples_inc)));
   }
 
   poly.sum_input_sparsity_sync = poly.sum_input_sparsity_sync + sum_input_sparsity_inc;
@@ -630,7 +630,7 @@ void end_pass(stagewise_poly &poly)
 void finish_example(vw &all, stagewise_poly &poly, example &ec)
 {
   size_t temp_num_features = ec.num_features;
-  ec.num_features = poly.synth_ec.num_features;
+  ec.num_features = poly.synth_ec.get_num_features();
   output_and_account_example(all, ec);
   ec.num_features = temp_num_features;
   VW::finish_example(all, ec);
@@ -641,8 +641,8 @@ void save_load(stagewise_poly &poly, io_buf &model_file, bool read, bool text)
   if (model_file.num_files() > 0)
   {
     std::stringstream msg;
-    bin_text_read_write_fixed(
-        model_file, (char *)poly.depthsbits, (uint32_t)depthsbits_sizeof(poly), "", read, msg, text);
+    bin_text_read_write_fixed(model_file, reinterpret_cast<char*>(poly.depthsbits),
+        static_cast<uint32_t>(depthsbits_sizeof(poly)), read, msg, text);
   }
   // unfortunately, following can't go here since save_load called before gd::save_load and thus
   // weight vector state uninitialiazed.
@@ -653,9 +653,11 @@ void save_load(stagewise_poly &poly, io_buf &model_file, bool read, bool text)
   //#endif //DEBUG
 }
 
-base_learner *stagewise_poly_setup(options_i &options, vw &all)
+base_learner* stagewise_poly_setup(VW::setup_base_i& stack_builder)
 {
-  auto poly = scoped_calloc_or_throw<stagewise_poly>();
+  options_i& options = *stack_builder.get_options();
+  vw& all = *stack_builder.get_all_pointer();
+  auto poly = VW::make_unique<stagewise_poly>();
   bool stage_poly = false;
   option_group_definition new_options("Stagewise polynomial options");
   new_options
@@ -675,8 +677,8 @@ base_learner *stagewise_poly_setup(options_i &options, vw &all)
   if (!options.add_parse_and_check_necessary(new_options)) return nullptr;
 
   poly->all = &all;
-  depthsbits_create(*poly.get());
-  sort_data_create(*poly.get());
+  depthsbits_create(*poly);
+  sort_data_create(*poly);
 
   poly->batch_sz_double = !poly->batch_sz_double;
 
@@ -692,10 +694,14 @@ base_learner *stagewise_poly_setup(options_i &options, vw &all)
   poly->original_ec = nullptr;
   poly->next_batch_sz = poly->batch_sz;
 
-  learner<stagewise_poly, example> &l = init_learner(poly, as_singleline(setup_base(options, all)), learn, predict);
-  l.set_save_load(save_load);
-  l.set_finish_example(finish_example);
-  l.set_end_pass(end_pass);
+  auto* l = VW::LEARNER::make_reduction_learner(std::move(poly), as_singleline(stack_builder.setup_base_learner()),
+      learn, predict, stack_builder.get_setupfn_name(stagewise_poly_setup))
+                .set_input_label_type(VW::label_type_t::simple)
+                .set_output_prediction_type(VW::prediction_type_t::scalar)
+                .set_save_load(save_load)
+                .set_finish_example(finish_example)
+                .set_end_pass(end_pass)
+                .build();
 
-  return make_base(l);
+  return make_base(*l);
 }

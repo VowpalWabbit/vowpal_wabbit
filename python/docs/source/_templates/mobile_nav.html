@@ -1,0 +1,68 @@
+<div class="navbar_container mobile_nav_container">
+  <div class="container nav_wrapper">
+    <div class="hamburger_icon">
+      {% include 'assets/icons/icon_menu.svg' %}
+    </div>
+    <div class="logo">
+      <a href="https://vowpalwabbit.org/index.html">
+        {% include 'assets/logo.svg' %}
+      </a>
+    </div>
+  </div>
+</div>
+
+<div class="mobile_nav">
+  <button type="button" class="go_back_button">
+    <
+  </button>
+
+  <a href="https://vowpalwabbit.org/start.html">
+    Get started
+  </a>
+  <a href="https://vowpalwabbit.org/features.html">
+    Features
+  </a>
+  <a href="https://vowpalwabbit.org/tutorials.html">
+    Tutorials
+  </a>
+  <a href="https://vowpalwabbit.org/blog.html">
+    Blog
+  </a>
+  <a href="https://vowpalwabbit.org/research.html">
+    Research
+  </a>
+  <div class="external_links">
+    <a href="https://github.com/VowpalWabbit/vowpalwabbit.github.io/issues/new"
+      target="_blank"
+    >
+      Feedback
+    </a>
+
+    <a class="active" href="index.html">
+      Doc
+    </a>
+
+    <a href="https://github.com/VowpalWabbit/vowpal_wabbit/wiki" target="_blank">
+      Wiki
+    </a>
+
+    <a href="https://github.com/VowpalWabbit/vowpal_wabbit" target="_blank" class="github_link">
+      {% include 'assets/github.svg' %}
+
+      <div>
+        GitHub
+      </div>
+    </a>
+  </div>
+</div>
+
+<script script type="text/javascript">
+  $(".mobile_nav_container").on("click", ".hamburger_icon", (e) => {
+    e.stopPropagation();
+    $(".mobile_nav").addClass("open");
+  });
+
+  $('body').on("click", ".mobile_nav .go_back_button", () => {
+    $(".mobile_nav").removeClass("open");
+  });
+</script>

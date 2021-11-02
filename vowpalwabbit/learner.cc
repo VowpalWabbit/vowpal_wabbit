@@ -8,27 +8,6 @@
 #include "parse_regressor.h"
 #include "parse_dispatch_loop.h"
 
-#define CASE(type) \
-  case type:       \
-    return #type;
-
-const char* to_string(prediction_type_t prediction_type)
-{
-  switch (prediction_type)
-  {
-    CASE(prediction_type_t::scalar)
-    CASE(prediction_type_t::scalars)
-    CASE(prediction_type_t::action_scores)
-    CASE(prediction_type_t::action_probs)
-    CASE(prediction_type_t::multiclass)
-    CASE(prediction_type_t::multilabels)
-    CASE(prediction_type_t::prob)
-    CASE(prediction_type_t::multiclassprobs)
-    default:
-      return "<unsupported>";
-  }
-}
-
 namespace VW
 {
 namespace LEARNER
@@ -61,7 +40,7 @@ void save(example& ec, vw& all)
   if ((ec.tag).size() >= 6 && (ec.tag)[4] == '_')
     final_regressor_name = std::string(ec.tag.begin() + 5, (ec.tag).size() - 5);
 
-  if (!all.logger.quiet) all.trace_message << "saving regressor to " << final_regressor_name << std::endl;
+  if (!all.logger.quiet) *(all.trace_message) << "saving regressor to " << final_regressor_name << std::endl;
   save_predictor(all, final_regressor_name, 0);
 
   VW::finish_example(all, ec);
@@ -71,13 +50,7 @@ void save(example& ec, vw& all)
 inline bool example_is_newline_not_header(example& ec, vw& all)
 {
   // If we are using CCB, test against CCB implementation otherwise fallback to previous behavior.
-  bool is_header = false;
-  if (all.label_type == label_type_t::ccb) { is_header = CCB::ec_is_example_header(ec); }
-  else
-  {
-    is_header = CB::ec_is_example_header(ec);
-  }
-
+  const bool is_header = ec_is_example_header(ec, all.example_parser->lbl_parser.label_type);
   return example_is_newline(ec) && !is_header;
 }
 
@@ -165,22 +138,32 @@ private:
   bool complete_multi_ex(example* ec)
   {
     auto& master = _context.get_master();
-    const bool is_test_ec = master.example_parser->lbl_parser.test_label(&ec->l);
+    const bool is_test_ec = master.example_parser->lbl_parser.test_label(ec->l);
     const bool is_newline = (example_is_newline_not_header(*ec, master) && is_test_ec);
-    if (!is_newline) { ec_seq.push_back(ec); }
-    else
+
+    // In the case of end-of-pass example, we need to treat it as an indicator of
+    // multi_ex completion, but we should not call finish_example on it, until after
+    // doing learning on the multi_ex, otherwise we lose track of it being an end-
+    // of-pass example, and cannot chain to end_pass()
+    if (!is_newline && !ec->end_pass) { ec_seq.push_back(ec); }
+    else if (!ec->end_pass)
     {
       VW::finish_example(master, *ec);
     }
-    return is_newline;
+
+    // A terminating example can occur when there have been no featureful examples
+    // collected. In this case, do not trigger a learn.
+    return (is_newline || ec->end_pass) && !ec_seq.empty();
   }
 
   bool try_complete_multi_ex(example* ec)
   {
     if (ec->indices.size() > 1)  // 1+ nonconstant feature. (most common case first)
       return complete_multi_ex(ec);
-    else if (ec->end_pass)
-      _context.template process<example, end_pass>(*ec);
+    // Explicitly do not process the end-of-pass examples here: It needs to be done
+    // after learning on the collected multi_ex
+    // else if (ec->end_pass)
+    //   _context.template process<example, end_pass>(*ec);
     else if (is_save_cmd(ec))
       _context.template process<example, save>(*ec);
     else
@@ -202,6 +185,15 @@ public:
     {
       _context.template process<multi_ex, learn_multi_ex>(ec_seq);
       ec_seq.clear();
+    }
+
+    // Send out the end-of-pass notification after doing learning
+    if (ec->end_pass)
+    {
+      // Because the end_pass example is used to complete the in-flight multi_ex prior
+      // to this call we should have no more in-flight multi_ex here.
+      assert(ec_seq.empty());
+      _context.template process<example, end_pass>(*ec);
     }
   }
 
@@ -226,12 +218,21 @@ private:
 class custom_examples_queue
 {
 public:
-  custom_examples_queue(v_array<example*> examples) : _examples(examples) {}
+  void reset_examples(const v_array<example*>* examples)
+  {
+    assert(examples != nullptr);
+    _examples = examples;
+    _index = 0;
+  }
 
-  example* pop() { return _index < _examples.size() ? _examples[_index++] : nullptr; }
+  example* pop()
+  {
+    assert(_examples != nullptr);
+    return _index < _examples->size() ? (*_examples)[_index++] : nullptr;
+  }
 
 private:
-  v_array<example*> _examples;
+  const v_array<example*>* _examples;
   size_t _index{0};
 };
 
@@ -246,7 +247,7 @@ void process_examples(queue_type& examples, handler_type& handler)
 template <typename context_type>
 void generic_driver(ready_examples_queue& examples, context_type& context)
 {
-  if (context.get_master().l->is_multiline)
+  if (context.get_master().l->is_multiline())
   {
     using handler_type = multi_example_handler<context_type>;
     handler_type handler(context);
@@ -280,9 +281,9 @@ void generic_driver_onethread(vw& all)
 {
   single_instance_context context(all);
   handler_type handler(context);
-  auto multi_ex_fptr = [&handler](vw& all, v_array<example*> examples) {
-    all.example_parser->end_parsed_examples += examples.size();  // divergence: lock & signal
-    custom_examples_queue examples_queue(examples);
+  custom_examples_queue examples_queue;
+  auto multi_ex_fptr = [&handler, &examples_queue](vw& /*all*/, const v_array<example*>& examples) {
+    examples_queue.reset_examples(&examples);
     process_examples(examples_queue, handler);
   };
   parse_dispatch(all, multi_ex_fptr);
@@ -291,7 +292,7 @@ void generic_driver_onethread(vw& all)
 
 void generic_driver_onethread(vw& all)
 {
-  if (all.l->is_multiline)
+  if (all.l->is_multiline())
     generic_driver_onethread<multi_example_handler<single_instance_context>>(all);
   else
     generic_driver_onethread<single_example_handler<single_instance_context>>(all);

@@ -1,6 +1,6 @@
-Generating 2-grams for all namespaces.
+[info] Generating 2-grams for all namespaces.
 creating quadratic features for pairs: :: 
-WARNING: duplicate namespace interactions were found. Removed: 4278.
+WARNING: any duplicate namespace interactions will be removed
 You can use --leave_duplicate_interactions to disable this behaviour.
 only testing
 Num weight bits = 18
@@ -10,14 +10,14 @@ power_t = 0.5
 using no cache
 Reading datafile = train-sets/rcv1_mini.dat
 num sources = 1
-Enabled reductions: gd, scorer
+Enabled reductions: gd, generate_interactions, scorer-identity, count_label
 average  since         example        example  current  current  current
 loss     last          counter         weight    label  predict features
 0.077284 0.077284            1            1.0  -1.0000  -0.7220    32385
-0.041674 0.006065            2            2.0  -1.0000  -0.9221     3741
-0.030923 0.020171            4            4.0  -1.0000  -0.8484    71631
-0.027502 0.024082            8            8.0   1.0000   0.9214     2211
-0.035515 0.043529           16           16.0   1.0000   0.9767     3570
+0.041675 0.006065            2            2.0  -1.0000  -0.9221     3741
+0.030923 0.020172            4            4.0  -1.0000  -0.8484    71631
+0.027503 0.024082            8            8.0   1.0000   0.9214     2211
+0.035516 0.043530           16           16.0   1.0000   0.9767     3570
 0.024695 0.013874           32           32.0  -1.0000  -0.9606     4278
 0.031099 0.037503           64           64.0   1.0000   1.0000     5671
 0.022095 0.013092          128          128.0  -1.0000  -1.0000     8778

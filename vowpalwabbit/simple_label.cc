@@ -12,118 +12,32 @@
 #include "best_constant.h"
 #include "vw_string_view.h"
 #include "example.h"
+#include "parse_primitives.h"
+#include "vw.h"
+#include "vw_string_view_fmt.h"
 
-char* bufread_simple_label(shared_data* sd, label_data& ld, char* c)
+#include "io/logger.h"
+// needed for printing ranges of objects (eg: all elements of a vector)
+#include <fmt/ranges.h>
+
+namespace logger = VW::io::logger;
+
+label_data::label_data() { reset_to_default(); }
+
+label_data::label_data(float label) : label(label) {}
+
+void label_data::reset_to_default()
 {
-  memcpy(&ld.label, c, sizeof(ld.label));
-  //  std::cout << ld.label << " " << sd->is_more_than_two_labels_observed << " " << sd->first_observed_label <<
-  //  std::endl;
-  c += sizeof(ld.label);
-  memcpy(&ld.weight, c, sizeof(ld.weight));
-  c += sizeof(ld.weight);
-  memcpy(&ld.initial, c, sizeof(ld.initial));
-  c += sizeof(ld.initial);
-
-  count_label(sd, ld.label);
-  return c;
+  label = FLT_MAX;
 }
-
-size_t read_cached_simple_label(shared_data* sd, label_data& ld, io_buf& cache)
-{
-  char* c;
-  size_t total = sizeof(ld.label) + sizeof(ld.weight) + sizeof(ld.initial);
-  if (cache.buf_read(c, total) < total) return 0;
-  bufread_simple_label(sd, ld, c);
-
-  return total;
-}
-
-float get_weight(label_data& ld) { return ld.weight; }
-
-char* bufcache_simple_label(label_data& ld, char* c)
-{
-  memcpy(c, &ld.label, sizeof(ld.label));
-  c += sizeof(ld.label);
-  memcpy(c, &ld.weight, sizeof(ld.weight));
-  c += sizeof(ld.weight);
-  memcpy(c, &ld.initial, sizeof(ld.initial));
-  c += sizeof(ld.initial);
-  return c;
-}
-
-void cache_simple_label(label_data& ld, io_buf& cache)
-{
-  char* c;
-  cache.buf_write(c, sizeof(ld.label) + sizeof(ld.weight) + sizeof(ld.initial));
-  bufcache_simple_label(ld, c);
-}
-
-void default_simple_label(label_data& ld)
-{
-  ld.label = FLT_MAX;
-  ld.weight = 1.;
-  ld.initial = 0.;
-}
-
-bool test_label(label_data& ld) { return ld.label == FLT_MAX; }
-
-void parse_simple_label(
-    parser*, shared_data* sd, label_data& ld, std::vector<VW::string_view>& words, reduction_features&)
-{
-  switch (words.size())
-  {
-    case 0:
-      break;
-    case 1:
-      ld.label = float_of_string(words[0]);
-      break;
-    case 2:
-      ld.label = float_of_string(words[0]);
-      ld.weight = float_of_string(words[1]);
-      break;
-    case 3:
-      ld.label = float_of_string(words[0]);
-      ld.weight = float_of_string(words[1]);
-      ld.initial = float_of_string(words[2]);
-      break;
-    default:
-      std::cout << "Error: " << words.size() << " is too many tokens for a simple label: ";
-      for (const auto& word : words) std::cout << word;
-      std::cout << std::endl;
-  }
-  count_label(sd, ld.label);
-}
-
-// clang-format off
-label_parser simple_label_parser = {
-  // default_label
-  [](polylabel* v) { default_simple_label(v->simple); },
-  // parse_label
-  [](parser* p, shared_data* sd, polylabel* v, std::vector<VW::string_view>& words, reduction_features& red_features) {
-    parse_simple_label(p, sd, v->simple, words, red_features);
-  },
-  // cache_label
-  [](polylabel* v, io_buf& cache) { cache_simple_label(v->simple, cache); },
-  // read_cached_label
-  [](shared_data* sd, polylabel* v, io_buf& cache) { return read_cached_simple_label(sd, v->simple, cache); },
-  // delete_label
-  [](polylabel*) {},
-   // get_weight
-  [](polylabel* v) { return get_weight(v->simple); },
-  // copy_label
-  nullptr,
-  // test_label
-  [](polylabel* v) { return test_label(v->simple); },
-};
-// clang-format on
 
 void print_update(vw& all, example& ec)
 {
   if (all.sd->weighted_labeled_examples + all.sd->weighted_unlabeled_examples >= all.sd->dump_interval &&
       !all.logger.quiet && !all.bfgs)
   {
-    all.sd->print_update(all.holdout_set_off, all.current_pass, ec.l.simple.label, ec.pred.scalar, ec.num_features,
-        all.progress_add, all.progress_arg);
+    all.sd->print_update(*all.trace_message, all.holdout_set_off, all.current_pass, ec.l.simple.label, ec.pred.scalar,
+        ec.get_num_features(), all.progress_add, all.progress_arg);
   }
 }
 
@@ -131,8 +45,8 @@ void output_and_account_example(vw& all, example& ec)
 {
   const label_data& ld = ec.l.simple;
 
-  all.sd->update(ec.test_only, ld.label != FLT_MAX, ec.loss, ec.weight, ec.num_features);
-  if (ld.label != FLT_MAX && !ec.test_only) all.sd->weighted_labels += ((double)ld.label) * ec.weight;
+  all.sd->update(ec.test_only, ld.label != FLT_MAX, ec.loss, ec.weight, ec.get_num_features());
+  if (ld.label != FLT_MAX && !ec.test_only) all.sd->weighted_labels += (static_cast<double>(ld.label)) * ec.weight;
 
   all.print_by_ref(all.raw_prediction.get(), ec.partial_prediction, -1, ec.tag);
   for (auto& f : all.final_prediction_sink) { all.print_by_ref(f.get(), ec.pred.scalar, 0, ec.tag); }
@@ -149,7 +63,7 @@ void return_simple_example(vw& all, void*, example& ec)
 bool summarize_holdout_set(vw& all, size_t& no_win_counter)
 {
   float thisLoss = (all.sd->weighted_holdout_examples_since_last_pass > 0)
-      ? (float)(all.sd->holdout_sum_loss_since_last_pass / all.sd->weighted_holdout_examples_since_last_pass)
+      ? static_cast<float>(all.sd->holdout_sum_loss_since_last_pass / all.sd->weighted_holdout_examples_since_last_pass)
       : FLT_MAX * 0.5f;
   if (all.all_reduce != nullptr) thisLoss = accumulate_scalar(all, thisLoss);
 

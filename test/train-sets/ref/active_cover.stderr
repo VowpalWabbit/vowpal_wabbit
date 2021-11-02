@@ -6,7 +6,7 @@ power_t = 0.5
 using no cache
 Reading datafile = train-sets/rcv1_mini.dat
 num sources = 1
-Enabled reductions: gd, active_cover, scorer, binary
+Enabled reductions: gd, active_cover, scorer-identity, binary, count_label
 average  since         example        example  current  current  current
 loss     last          counter         weight    label  predict features
 0.000000 0.000000            1            1.0  -1.0000  -1.0000      128
@@ -20,8 +20,8 @@ loss     last          counter         weight    label  predict features
 
 finished run
 number of examples = 250
-weighted example sum = 217.709347
-weighted label sum = 15.483053
+weighted example sum = 217.709346
+weighted label sum = 15.483050
 average loss = 0.264386
 best constant = 0.142477
 best constant's loss = 0.690616

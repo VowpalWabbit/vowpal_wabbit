@@ -1,0 +1,110 @@
+ccb shared |User b c
+ccb action |Action d |action d 
+ccb action |Action e
+ccb action |Action f
+ccb action |Action ff
+ccb action |Action fff
+ccb slot 0:0:0.2 |Slot h
+ccb slot 1:0:0.25 |Slot i
+ccb slot 2:0:0.333333 | j
+
+ccb shared |User b c
+ccb action |Action d |action d |Baction d |baction d
+ccb action |Action e
+ccb action |Action f
+ccb action |Action ff
+ccb action |Action fff
+ccb slot 0:0:0.2 |Slot h
+ccb slot 1:0:0.25 |Slot i
+ccb slot 2:0:0.333333 | j
+
+ccb shared |User b c
+ccb action |Z d |z d 
+ccb action |Action e
+ccb action |Action f
+ccb action |Action ff
+ccb action |Action fff
+ccb slot 0:0:0.2 |Slot h
+ccb slot 1:0:0.25 |Slot i
+ccb slot 2:0:0.333333 | j
+
+ccb shared |User b c
+ccb action |Y d |y d |Z d |z d 
+ccb action |Action e
+ccb action |Action f
+ccb action |Action ff
+ccb action |Action fff
+ccb slot 0:0:0.2 |Slot h
+ccb slot 1:0:0.25 |Slot i
+ccb slot 2:0:0.333333 | j
+
+ccb shared |User b
+ccb action |W d |w d |X d |x d |Y d |y d |Z d |z d 
+ccb action |Action e
+ccb action |Action f
+ccb action |Action ff
+ccb action |Action fff
+ccb slot 3:0:0.2 |Slot h
+ccb slot 4:0:0.25 |Slot i
+ccb slot 0:0:0.333333 | j
+
+ccb shared |User b c
+ccb action |u f |V d |v d |W d |w d |X d |x d |Y d |y d |Z d |z d 
+ccb action |Action e
+ccb action |Action f
+ccb action |Action ff
+ccb action |Action fff
+ccb slot 0:0:0.2 |Slot h
+ccb slot 1:0:0.25 |Slot i
+ccb slot 2:0:0.333333 | j
+
+ccb shared |User b
+ccb action |T d |t d |u f |V d |v d |W d |w d |X d |x d |Y d |y d |Z d |z d 
+ccb action |Action e
+ccb action |Action f
+ccb action |Action ff
+ccb action |Action fff
+ccb slot 3:0:0.2 |Slot h
+ccb slot 4:0:0.25 |Slot i
+ccb slot 0:0:0.333333 | j
+
+ccb shared |User c
+ccb action |R d |r d  |s d |T d |t d |u f |V d |v d |W d |w d |X d |x d |Y d |y d |Z d |z d 
+ccb action |Action e
+ccb action |Action f
+ccb action |1 ff |2 ff |3 ff |4 ff |5 ff |6 ff |7 ff |8 ff |9 ff |0 ff |! ff |% ff |& ff |( ff |) ff |$ ff |~ff
+ccb action |Action fff
+ccb slot 4:-1:0.84 |Slot h
+ccb slot 1:0:0.85 |Slot i
+ccb slot 0:0:0.866667 | j
+
+ccb shared |User b
+ccb action |P d |p d |Q d |q d |R d |r d  |s d |T d |t d |u f |V d |v d |W d |w d |X d |x d |Y d |y d |Z d |z d 
+ccb action |Action e
+ccb action |Action f
+ccb action |1 ff |2 ff |3 ff |4 ff |5 ff |6 ff |7 ff |8 ff |9 ff |0 ff |! ff |% ff |& ff |( ff |) ff |$ ff |~ff
+ccb action |Action fff
+ccb slot 3:0:0.2 |Slot h
+ccb slot 4:0:0.25 |Slot i
+ccb slot 0:0:0.333333 | j
+
+ccb shared |User a
+ccb action |Ection d |e d |F d |f d |G d |g d |H d |h d |I g |i g |J d |j d |L d |l d |M d |m d |N d |n d |O d |o d |P d |p d |Q d |q d |R d |r d |s d |T d |t d |u f |V d |v d |W d |w d |X d |x d |Y d |y d |Z d |z d 
+ccb action |Action e
+ccb action |Action f
+ccb action |1 ff |2 ff |3 ff |4 ff |5 ff |6 ff |7 ff |8 ff |9 ff |0 ff |! ff |% ff |& ff |( ff |) ff |$ ff |~ff
+ccb action |Action fff
+ccb slot 4:0:0.84 |Slot h
+ccb slot 3:0:0.316667 |Slot i
+ccb slot 1:-1:0.466667 | j
+
+ccb shared |User b
+ccb action |Action d |action d |Baction d |baction d |Caction d |caction d |Daction d |daction d |Ection d |e d |F d |f d |G d |g d |H d |h d |I g |i g |J d |j d |L d |l d |M d |m d |N d |n d |O d |o d |P d |p d |Q d |q d |R d |r d  |s d |T d |t d |u f |V d |v d |W d |w d |X d |x d |Y d |y d |Z d |z d 
+ccb action |Action e
+ccb action |Action f
+ccb action |1 ff |2 ff |3 ff |4 ff |5 ff |6 ff |7 ff |8 ff |9 ff |0 ff |! ff |% ff |& ff |( ff |) ff |$ ff |~ff
+ccb action |1 ff |2 ff |3 ff |4 ff |5 ff |6 ff |7 ff |8 ff |9 ff |0 ff |! ff |% ff |& ff |( ff |) ff |$ ff |~fff
+ccb slot 3:0:0.2 |Slot h
+ccb slot 4:0:0.25 |Slot i
+ccb slot 0:0:0.333333 | j
+

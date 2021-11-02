@@ -7,7 +7,7 @@ power_t = 0.5
 using no cache
 Reading datafile = test-sets/ml100k_small_test
 num sources = 1
-Enabled reductions: rank, scorer
+Enabled reductions: rank, scorer-identity, count_label
 average  since         example        example  current  current  current
 loss     last          counter         weight    label  predict features
 2.491066 2.491066            1            1.0   5.0000   3.4217       23

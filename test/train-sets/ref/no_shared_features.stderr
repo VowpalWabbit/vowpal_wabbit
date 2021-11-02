@@ -5,10 +5,10 @@ power_t = 0.5
 using no cache
 Reading datafile = train-sets/no_shared_features.json
 num sources = 1
-Enabled reductions: gd, scorer, csoaa_ldf, cb_adf, shared_feature_merger
+Enabled reductions: gd, scorer-identity, csoaa_ldf-rank, cb_adf, shared_feature_merger
 average  since         example        example  current  current  current
 loss     last          counter         weight    label  predict features
-0.000000 0.000000            1            1.0    known        0:0...        8
+0.000000 0.000000            1            1.0 1:0:0.33        0:0...        8
 
 finished run
 number of examples = 1

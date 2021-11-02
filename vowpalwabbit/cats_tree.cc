@@ -7,12 +7,13 @@
 #include <limits>
 
 #include "cats_tree.h"
-#include "parse_args.h"  // setup_base()
-#include "learner.h"     // init_learner()
+#include "learner.h"
 #include "reductions.h"
 #include "debug_log.h"
 #include "explore_internal.h"
 #include "hash.h"
+#include "guard.h"
+#include "label_parser.h"
 
 using namespace VW::config;
 using namespace VW::LEARNER;
@@ -20,7 +21,8 @@ using namespace VW::LEARNER;
 using CB::cb_class;
 using std::vector;
 
-VW_DEBUG_ENABLE(false)
+#undef VW_DEBUG_LOG
+#define VW_DEBUG_LOG vw_dbg::cats_tree
 
 namespace VW
 {
@@ -169,7 +171,6 @@ uint32_t cats_tree::predict(LEARNER::single_learner& base, example& ec)
     {
       ec.partial_prediction = 0.f;
       ec.pred.scalar = 0.f;
-      ec.l.simple.initial = 0.f;  // needed for gd.predict()
       base.predict(ec, cur_node.id);
       VW_DBG(ec) << "tree_c: predict() after base.predict() " << scalar_pred_to_string(ec)
                  << ", nodeid = " << cur_node.id << std::endl;
@@ -180,11 +181,11 @@ uint32_t cats_tree::predict(LEARNER::single_learner& base, example& ec)
       }
     }
   }
-  ec.l.cb = saved_label;
+  ec.l.cb = std::move(saved_label);
   return (cur_node.id - _binary_tree.internal_node_count() + 1);  // 1 to k
 }
 
-void cats_tree::init_node_costs(v_array<cb_class>& ac)
+void cats_tree::init_node_costs(std::vector<cb_class>& ac)
 {
   assert(ac.size() > 0);
   assert(ac[0].action > 0);
@@ -192,9 +193,13 @@ void cats_tree::init_node_costs(v_array<cb_class>& ac)
   _cost_star = ac[0].cost / ac[0].probability;
 
   uint32_t node_id = ac[0].action + _binary_tree.internal_node_count() - 1;
+  // stay inside the node boundaries
+  if (node_id >= _binary_tree.nodes.size()) { node_id = static_cast<uint32_t>(_binary_tree.nodes.size()) - 1; }
   _a = {node_id, _cost_star};
 
   node_id = ac[ac.size() - 1].action + _binary_tree.internal_node_count() - 1;
+  // stay inside the node boundaries
+  if (node_id >= _binary_tree.nodes.size()) { node_id = static_cast<uint32_t>(_binary_tree.nodes.size()) - 1; }
   _b = {node_id, _cost_star};
 }
 
@@ -217,12 +222,11 @@ float cats_tree::return_cost(const tree_node& w)
 
 void cats_tree::learn(LEARNER::single_learner& base, example& ec)
 {
-  polylabel saved_label = std::move(ec.l);
   const float saved_weight = ec.weight;
-  const polyprediction saved_pred = ec.pred;
+  auto saved_pred = stash_guard(ec.pred);
 
   const vector<tree_node>& nodes = _binary_tree.nodes;
-  v_array<cb_class>& ac = ec.l.cb.costs;
+  auto& ac = ec.l.cb.costs;
 
   VW_DBG(ec) << "tree_c: learn() -- tree_traversal -- " << std::endl;
 
@@ -251,7 +255,6 @@ void cats_tree::learn(LEARNER::single_learner& base, example& ec)
         if (((cost_v < cost_w) ? v : w).id == v_parent.left_id) { local_action = LEFT; }
 
         ec.l.simple.label = local_action;
-        ec.l.simple.initial = 0.f;
         ec.weight = std::abs(cost_v - cost_w);
 
         bool filter = false;
@@ -277,16 +280,17 @@ void cats_tree::learn(LEARNER::single_learner& base, example& ec)
           VW_DBG(ec) << "tree_c: learn() after binary predict:" << scalar_pred_to_string(ec)
                      << ", local_action = " << (local_action) << std::endl;
           float trained_action = (ec.pred.scalar < 0) ? LEFT : RIGHT;
+
           if (trained_action == local_action)
           {
-            cost_parent = (std::min)(cost_v, cost_w) * std::abs(ec.pred.scalar) +
-                (std::max)(cost_v, cost_w) * (1 - std::abs(ec.pred.scalar));
+            cost_parent = std::min(cost_v, cost_w) * (1 + std::abs(ec.pred.scalar)) / 2.f +
+                std::max(cost_v, cost_w) * (1 - std::abs(ec.pred.scalar)) / 2.f;
             VW_DBG(ec) << "tree_c: learn() ec.pred.scalar == local_action" << std::endl;
           }
           else
           {
-            cost_parent = (std::max)(cost_v, cost_w) * std::abs(ec.pred.scalar) +
-                (std::min)(cost_v, cost_w) * (1 - std::abs(ec.pred.scalar));
+            cost_parent = std::max(cost_v, cost_w) * (1 + std::abs(ec.pred.scalar)) / 2.f +
+                std::min(cost_v, cost_w) * (1 - std::abs(ec.pred.scalar)) / 2.f;
             VW_DBG(ec) << "tree_c: learn() ec.pred.scalar != local_action" << std::endl;
           }
         }
@@ -300,9 +304,7 @@ void cats_tree::learn(LEARNER::single_learner& base, example& ec)
     _b = {nodes[_b.node_id].parent_id, b_parent_cost};
   }
 
-  ec.l = saved_label;
   ec.weight = saved_weight;
-  ec.pred = saved_pred;
 }
 
 void cats_tree::set_trace_message(std::ostream* vw_ostream, bool quiet)
@@ -333,17 +335,20 @@ void learn(cats_tree& tree, single_learner& base, example& ec)
   VW_DBG(ec) << "tree_c: after tree.learn() " << cb_label_to_string(ec) << features_to_string(ec) << std::endl;
 }
 
-base_learner* setup(options_i& options, vw& all)
+base_learner* setup(setup_base_i& stack_builder)
 {
+  options_i& options = *stack_builder.get_options();
+  vw& all = *stack_builder.get_all_pointer();
+
   option_group_definition new_options("CATS Tree Options");
   uint32_t num_actions;  // = K = 2^D
   uint32_t bandwidth;    // = 2^h#
   std::string link;
   new_options.add(make_option("cats_tree", num_actions).keep().necessary().help("CATS Tree with <k> labels"))
-      .add(make_option("bandwidth", bandwidth)
+      .add(make_option("tree_bandwidth", bandwidth)
                .default_value(0)
                .keep()
-               .help("bandwidth for continuous actions in terms of #actions"))
+               .help("tree bandwidth for continuous actions in terms of #actions"))
       .add(make_option("link", link).keep().help("Specify the link function: identity, logistic, glf1 or poisson"));
 
   if (!options.add_parse_and_check_necessary(new_options)) return nullptr;
@@ -354,20 +359,24 @@ base_learner* setup(options_i& options, vw& all)
   {
     // if link was supplied then force glf1
     if (link != "glf1")
-    { all.trace_message << "warning: cats_tree only supports glf1; resetting to glf1." << std::endl; }
+    { *(all.trace_message) << "warning: cats_tree only supports glf1; resetting to glf1." << std::endl; }
     options.replace("link", "glf1");
   }
 
-  auto tree = scoped_calloc_or_throw<cats_tree>();
+  auto tree = VW::make_unique<cats_tree>();
   tree->init(num_actions, bandwidth);
-  tree->set_trace_message(&all.trace_message, all.logger.quiet);
+  tree->set_trace_message(all.trace_message.get(), all.logger.quiet);
 
-  base_learner* base = setup_base(options, all);
-
-  learner<cats_tree, example>& l =
-      init_learner(tree, as_singleline(base), learn, predict, tree->learner_count(), prediction_type_t::multiclass);
-
-  return make_base(l);
+  base_learner* base = stack_builder.setup_base_learner();
+  int32_t params_per_weight = tree->learner_count();
+  auto* l = make_reduction_learner(
+      std::move(tree), as_singleline(base), learn, predict, stack_builder.get_setupfn_name(setup))
+                .set_params_per_weight(params_per_weight)
+                .set_output_prediction_type(VW::prediction_type_t::multiclass)
+                .set_input_label_type(VW::label_type_t::cb)
+                .build();
+  all.example_parser->lbl_parser = CB::cb_label;
+  return make_base(*l);
 }
 
 }  // namespace cats_tree

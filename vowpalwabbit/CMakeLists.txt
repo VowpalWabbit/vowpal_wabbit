@@ -3,12 +3,27 @@ configure_file(config.h.in config.h)
 # Use position independent code for all targets in this directory
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 
+add_library(vw_io STATIC io/io_adapter.h io/io_adapter.cc io/logger.h io/logger.cc)
+target_include_directories(vw_io PUBLIC
+  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+  $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>)
+target_link_libraries(vw_io PUBLIC ${spdlog_target} fmt::fmt PRIVATE ZLIB::ZLIB)
+
+if(SPDLOG_SYS_DEP)
+  # this doesn't get defined when using a system-installed spdlog
+  target_compile_definitions(vw_io PUBLIC SPDLOG_FMT_EXTERNAL)
+endif()
+
+add_library(VowpalWabbit::io ALIAS vw_io)
+
 add_library(allreduce STATIC allreduce_sockets.cc allreduce_threads.cc vw_exception.cc)
 target_include_directories(allreduce PUBLIC
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
   $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>)
 
 add_library(VowpalWabbit::allreduce ALIAS allreduce)
+
+target_link_libraries(allreduce PRIVATE vw_io)
 
 # Winsock32 should be available on Windows
 if(WIN32)
@@ -17,14 +32,13 @@ else()
   target_compile_options(allreduce PUBLIC ${linux_flags})
 endif()
 
-add_library(vw_io STATIC io/io_adapter.h io/io_adapter.cc)
-target_link_libraries(vw_io PRIVATE ZLIB::ZLIB)
-add_library(VowpalWabbit::io ALIAS vw_io)
 
-add_subdirectory(parser/flatbuffer)
-add_library(FlatbuffersTarget INTERFACE)
-target_include_directories(FlatbuffersTarget INTERFACE ${FLATBUFFERS_INCLUDE_DIR})
-add_dependencies(FlatbuffersTarget fbschemas)
+if(BUILD_FLATBUFFERS)
+  add_subdirectory(parser/flatbuffer)
+  add_library(FlatbuffersTarget INTERFACE)
+  target_include_directories(FlatbuffersTarget INTERFACE ${FLATBUFFERS_INCLUDE_DIR})
+  add_dependencies(FlatbuffersTarget fbschemas)
+endif()
 
 set(vw_all_headers
   accumulate.h
@@ -38,6 +52,7 @@ set(vw_all_headers
   audit_regressor.h
   autolink.h
   baseline.h
+  baseline_challenger_cb.h
   beam.h
   best_constant.h
   bfgs.h
@@ -67,6 +82,7 @@ set(vw_all_headers
   cb_label_parser.h
   cb.h
   cbify.h
+  cb_to_cb_adf.h
   ccb_label.h
   ccb_reduction_features.h
   continuous_actions_reduction_features.h
@@ -89,12 +105,10 @@ set(vw_all_headers
   error_constants.h
   error_data.h
   error_reporting.h
-  errors_data.h
   example_predict.h
   example.h
   explore_eval.h
   expreplay.h
-  ezexample.h
   fast_pow10.h
   feature_group.h
   ftrl.h
@@ -102,12 +116,15 @@ set(vw_all_headers
   gd_predict.h
   gd.h
   gen_cs_example.h
+  generate_interactions.h
   get_pmf.h
   global_data.h
   guard.h
   hashstring.h
   interact.h
   interactions_predict.h
+  cached_learner.h
+  reduction_stack.h
   interactions.h
   io_buf.h
   json_utils.h
@@ -123,7 +140,10 @@ set(vw_all_headers
   marginal.h
   memory_tree.h
   memory.h
+  metrics.h
+  metric_sink.h
   mf.h
+  model_utils.h
   multiclass.h
   multilabel_oaa.h
   multilabel.h
@@ -151,7 +171,6 @@ set(vw_all_headers
   parse_regressor.h
   parse_slates_example_json.h
   parser.h
-  parser/flatbuffer/parse_example_flatbuffer.h
   pmf_to_pdf.h
   plt.h
   reduction_features.h
@@ -174,7 +193,9 @@ set(vw_all_headers
   search_sequencetask.h
   search.h
   sender.h
+  shared_data.h
   shared_feature_merger.h
+  simple_label_parser.h
   simple_label.h
   slates_label.h
   slates.h
@@ -183,7 +204,9 @@ set(vw_all_headers
   stagewise_poly.h
   svrg.h
   tag_utils.h
+  text_utils.h
   topk.h
+  automl.h
   unique_sort.h
   v_array.h
   version.h
@@ -197,7 +220,23 @@ set(vw_all_headers
   vwdll.h
   vwvis.h
   warm_cb.h
+  generic_range.h
+  active_multiclass_prediction.h
+  debug_log.h
+  rand_state.h
+  label_type.h
+  cb_type.h
+  prediction_type.h
+  count_label.h
 )
+
+if(BUILD_FLATBUFFERS)
+  set(vw_all_headers ${vw_all_headers} parser/flatbuffer/parse_example_flatbuffer.h)
+endif()
+
+if(BUILD_EXTERNAL_PARSER)
+  set(vw_all_headers ${vw_all_headers} ${external_parser_headers})
+endif()
 
 set(vw_all_sources
   accumulate.cc
@@ -208,6 +247,7 @@ set(vw_all_sources
   audit_regressor.cc
   autolink.cc
   baseline.cc
+  baseline_challenger_cb.cc
   best_constant.cc
   bfgs.cc
   binary.cc
@@ -235,12 +275,14 @@ set(vw_all_sources
   cb_sample.cc
   cb.cc
   cbify.cc
+  cb_to_cb_adf.cc
   ccb_label.cc
   classweight.cc
   conditional_contextual_bandit.cc
   confidence.cc
   cbzo.cc
   cost_sensitive.cc
+  crossplat_compat.cc
   cs_active.cc
   csoaa.cc
   decision_scores.cc
@@ -254,13 +296,17 @@ set(vw_all_sources
   gd_mf.cc
   gd.cc
   gen_cs_example.cc
+  generate_interactions.cc
   get_pmf.cc
   global_data.cc
+  hashstring.cc
   interact.cc
+  reduction_stack.cc
   interactions.cc
   io_buf.cc
   kernel_svm.cc
   label_dictionary.cc
+  label_parser.cc
   lda_core.cc
   learner.cc
   log_multi.cc
@@ -269,6 +315,8 @@ set(vw_all_sources
   lrqfa.cc
   marginal.cc
   memory_tree.cc
+  metrics.cc
+  metric_sink.cc
   mf.cc
   multiclass.cc
   multilabel_oaa.cc
@@ -290,8 +338,6 @@ set(vw_all_sources
   parse_primitives.cc
   parse_regressor.cc
   parser.cc
-  parser/flatbuffer/parse_example_flatbuffer.cc
-  parser/flatbuffer/parse_label.cc
   pmf_to_pdf.cc
   plt.cc
   print.cc
@@ -309,33 +355,67 @@ set(vw_all_sources
   search_sequencetask.cc
   search.cc
   sender.cc
+  shared_data.cc
   shared_feature_merger.cc
+  simple_label_parser.cc
   simple_label.cc
   slates_label.cc
   slates.cc
   stagewise_poly.cc
   svrg.cc
   tag_utils.cc
+  text_utils.cc
   topk.cc
+  automl.cc
   unique_sort.cc
   version.cc
   vw_exception.cc
   vw_validate.cc
   warm_cb.cc
+  label_type.cc
+  cb_type.cc
+  prediction_type.cc
+  count_label.cc
 )
+
+if(BUILD_FLATBUFFERS)
+  set(vw_all_sources ${vw_all_sources}
+    parser/flatbuffer/parse_example_flatbuffer.cc
+    parser/flatbuffer/parse_label.cc)
+endif()
+
+if(BUILD_EXTERNAL_PARSER)
+  set(vw_all_sources ${vw_all_sources} ${external_parser_sources})
+endif()
+
+if (vw_BUILD_NET_FRAMEWORK)
+set(vw_all_sources ${vw_all_sources} spanning_tree.cc)
+endif()
 
 add_library(vw STATIC ${vw_all_sources} ${vw_all_headers})
 
 target_link_libraries(vw
   PUBLIC
-    VowpalWabbit::explore VowpalWabbit::allreduce Boost::boost
+    VowpalWabbit::explore VowpalWabbit::allreduce Boost::boost ${spdlog_target} fmt::fmt
   PRIVATE
     Boost::program_options ${CMAKE_DL_LIBS} ${LINK_THREADS} vw_io
     # Workaround an issue where RapidJSON needed to be exported tom install the target. This is
     # actually a private dependency and so do not "link" when processing targets for installation.
     # https://gitlab.kitware.com/cmake/cmake/issues/15415
-    $<BUILD_INTERFACE:RapidJSON>
-    $<BUILD_INTERFACE:FlatbuffersTarget>)
+    $<BUILD_INTERFACE:RapidJSON>)
+
+if (BUILD_EXTERNAL_PARSER)
+  target_compile_definitions(vw PUBLIC BUILD_EXTERNAL_PARSER)
+  target_include_directories(vw PRIVATE ${EXTERNAL_PARSER_DIR})
+  target_link_libraries(vw PRIVATE ${EXTERNAL_PARSER_LIBS})
+endif()
+
+if(BUILD_FLATBUFFERS)
+  target_link_libraries(vw
+      PRIVATE
+      $<BUILD_INTERFACE:FlatbuffersTarget>)
+  target_compile_definitions(vw PUBLIC BUILD_FLATBUFFERS)
+endif()
 
 
 add_library(VowpalWabbit::vw ALIAS vw)

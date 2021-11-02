@@ -1,6 +1,6 @@
 only testing
 predictions = cbe_adf_cover_e_fixed.predict
-warning: currently, mtr is only used for the first policy in cover, other policies use dr
+[warning] currently, mtr is only used for the first policy in cover, other policies use dr
 Num weight bits = 18
 learning rate = 0.5
 initial_t = 0
@@ -8,13 +8,13 @@ power_t = 0.5
 using no cache
 Reading datafile = train-sets/cb_test_medium.ldf
 num sources = 1
-Enabled reductions: gd, scorer, csoaa_ldf, cb_adf, cb_explore_adf_cover, shared_feature_merger
+Enabled reductions: gd, scorer-identity, csoaa_ldf-rank, cb_adf, cb_explore_adf_cover, shared_feature_merger
 average  since         example        example  current  current  current
 loss     last          counter         weight    label  predict features
-0.333333 0.333333            1            1.0    known        1:0.555556...       12
-0.166667 0.000000            2            2.0    known        1:0.666667...        8
-0.222222 0.333333            4            4.0    known        1:0.555556...       12
-0.166667 0.111111            8            8.0    known        1:0.666667...        8
+0.333333 0.333333            1            1.0  0:1:0.5        1:0.555556...       12
+0.166667 0.000000            2            2.0  1:0:0.5        1:0.666667...        8
+0.222222 0.333333            4            4.0  0:1:0.5        1:0.555556...       12
+0.166667 0.111111            8            8.0  1:0:0.5        1:0.666667...        8
 
 finished run
 number of examples = 15

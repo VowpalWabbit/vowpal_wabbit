@@ -10,6 +10,7 @@ VW_WARNING_DISABLE_BADLY_FORMED_XML
 #include "parser/flatbuffer/generated/example_generated.h"
 VW_WARNING_STATE_POP
 #include "simple_label.h"
+#include "named_labels.h"
 
 struct ExampleBuilder
 {
@@ -17,11 +18,12 @@ struct ExampleBuilder
   VW::parsers::flatbuffer::Label label_type = VW::parsers::flatbuffer::Label_NONE;
   flatbuffers::Offset<void> label = 0;
   std::string tag;
+  bool is_newline = false;
 
   flatbuffers::Offset<VW::parsers::flatbuffer::Example> to_flat_example(flatbuffers::FlatBufferBuilder& builder)
   {
     auto ex = VW::parsers::flatbuffer::CreateExampleDirect(
-        builder, &namespaces, label_type, label, tag.empty() ? nullptr : tag.c_str());
+        builder, &namespaces, label_type, label, tag.empty() ? nullptr : tag.c_str(), is_newline);
     clear();
     return ex;
   }
@@ -82,4 +84,7 @@ private:
   void write_collection_to_file(bool is_multiline, std::ofstream& outfile);
   void write_to_file(bool collection, bool is_multiline, MultiExampleBuilder& multi_ex_builder,
       ExampleBuilder& ex_builder, std::ofstream& outfile);
+
+  flatbuffers::Offset<VW::parsers::flatbuffer::Namespace> create_namespace(
+      features::audit_iterator begin, features::audit_iterator end, namespace_index index, uint64_t hash, bool audit);
 };

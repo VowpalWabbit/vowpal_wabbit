@@ -114,8 +114,8 @@ void VowpalWabbitBase::DecrementReference()
 }
 
 void VowpalWabbitBase::DisposeExample(VowpalWabbitExample^ ex)
-{ VW::dealloc_example(m_vw->example_parser->lbl_parser.delete_label, *ex->m_example);
-  ::free_it(ex->m_example);
+{
+  VW::dealloc_examples(ex->m_example, 1);
 
   // cleanup pointers in example chain
   auto inner = ex;

@@ -10,6 +10,7 @@
 
 #include "reductions.h"
 #include "rand48.h"
+#include "vw_math.h"
 
 using namespace VW::LEARNER;
 using namespace VW::config;
@@ -55,35 +56,31 @@ struct node
       , n(0)
       , entropy(0)
       , passes(1)
-      , preds(v_init<node_pred>())
   {
   }
-
-  ~node() { preds.delete_v(); }
 };
 
 struct recall_tree
 {
-  vw* all;
+  vw* all = nullptr;
   std::shared_ptr<rand_state> _random_state;
-  uint32_t k;
-  bool node_only;
+  uint32_t k = 0;
+  bool node_only = false;
 
   std::vector<node> nodes;
 
-  size_t max_candidates;
-  size_t max_routers;
-  size_t max_depth;
-  float bern_hyper;
+  size_t max_candidates = 0;
+  size_t max_routers = 0;
+  size_t max_depth = 0;
+  float bern_hyper = 0.f;
 
-  bool randomized_routing;
+  bool randomized_routing = false;
 };
 
-float to_prob(float x)
+VW_STD14_CONSTEXPR float to_prob(float x)
 {
-  static const float alpha = 2.0f;
-  // http://stackoverflow.com/questions/2789481/problem-calling-stdmax
-  return std::max(0.f, std::min(1.f, 0.5f * (1.0f + alpha * x)));
+  constexpr float alpha = 2.0f;
+  return VW::math::clamp(0.5f * (1.0f + alpha * x), 0.f, 1.f);
 }
 
 void init_tree(recall_tree& b, uint32_t root, uint32_t depth, uint32_t& routers_used)
@@ -92,9 +89,9 @@ void init_tree(recall_tree& b, uint32_t root, uint32_t depth, uint32_t& routers_
   {
     uint32_t left_child;
     uint32_t right_child;
-    left_child = (uint32_t)b.nodes.size();
+    left_child = static_cast<uint32_t>(b.nodes.size());
     b.nodes.push_back(node());
-    right_child = (uint32_t)b.nodes.size();
+    right_child = static_cast<uint32_t>(b.nodes.size());
     b.nodes.push_back(node());
     b.nodes[root].base_router = routers_used++;
 
@@ -153,9 +150,9 @@ void compute_recall_lbest(recall_tree& b, node* n)
   for (node_pred* ls = n->preds.begin(); ls != n->preds.end() && ls < n->preds.begin() + b.max_candidates; ++ls)
   { mass_at_k += ls->label_count; }
 
-  float f = (float)mass_at_k / (float)n->n;
-  float stdf = std::sqrt(f * (1.f - f) / (float)n->n);
-  float diamf = 15.f / (std::sqrt(18.f) * (float)n->n);
+  float f = static_cast<float>(mass_at_k) / static_cast<float>(n->n);
+  float stdf = std::sqrt(f * (1.f - f) / static_cast<float>(n->n));
+  float diamf = 15.f / (std::sqrt(18.f) * static_cast<float>(n->n));
 
   n->recall_lbest = std::max(0.f, f - std::sqrt(b.bern_hyper) * stdf - b.bern_hyper * diamf);
 }
@@ -221,12 +218,12 @@ void add_node_id_feature(recall_tree& b, uint32_t cn, example& ec)
   ec.indices.push_back(node_id_namespace);
   features& fs = ec.feature_space[node_id_namespace];
 
-  if (b.node_only) { fs.push_back(1., (((uint64_t)868771 * cn) << ss) & mask); }
+  if (b.node_only) { fs.push_back(1., ((static_cast<uint64_t>(868771) * cn) << ss) & mask); }
   else
   {
     while (cn > 0)
     {
-      fs.push_back(1., (((uint64_t)868771 * cn) << ss) & mask);
+      fs.push_back(1., ((static_cast<uint64_t>(868771) * cn) << ss) & mask);
       cn = b.nodes[cn].parent;
     }
   }
@@ -239,7 +236,7 @@ void remove_node_id_feature(recall_tree& /* b */, uint32_t /* cn */, example& ec
 {
   features& fs = ec.feature_space[node_id_namespace];
   fs.clear();
-  ec.indices.pop();
+  ec.indices.pop_back();
 }
 
 uint32_t oas_predict(recall_tree& b, single_learner& base, uint32_t cn, example& ec)
@@ -250,8 +247,8 @@ uint32_t oas_predict(recall_tree& b, single_learner& base, uint32_t cn, example&
   uint32_t amaxscore = 0;
 
   add_node_id_feature(b, cn, ec);
-  ec.l.simple = {FLT_MAX, 0.f, 0.f};
-
+  ec.l.simple = {FLT_MAX};
+  ec._reduction_features.template get<simple_label_reduction_features>().reset_to_default();
   float maxscore = std::numeric_limits<float>::lowest();
   for (node_pred* ls = b.nodes[cn].preds.begin();
        ls != b.nodes[cn].preds.end() && ls < b.nodes[cn].preds.begin() + b.max_candidates; ++ls)
@@ -303,7 +300,8 @@ predict_type predict_from(recall_tree& b, single_learner& base, example& ec, uin
   MULTICLASS::label_t mc = ec.l.multi;
   uint32_t save_pred = ec.pred.multiclass;
 
-  ec.l.simple = {FLT_MAX, 0.f, 0.f};
+  ec.l.simple = {FLT_MAX};
+  ec._reduction_features.template get<simple_label_reduction_features>().reset_to_default();
   while (b.nodes[cn].internal)
   {
     base.predict(ec, b.nodes[cn].base_router);
@@ -344,9 +342,22 @@ float train_node(recall_tree& b, single_learner& base, example& ec, uint32_t cn)
   double delta_left = nl * (new_left - old_left) + mc.weight * new_left;
   double delta_right = nr * (new_right - old_right) + mc.weight * new_right;
   float route_label = delta_left < delta_right ? -1.f : 1.f;
-  float imp_weight = fabs((float)(delta_left - delta_right));
 
-  ec.l.simple = {route_label, imp_weight, 0.};
+  // Bug?
+  // Notes: imp_weight does not seem to be used since it was not set to
+  // ec.weight before.  ec.l.simple.weight was not used in gd.
+  // float imp_weight = fabs((float)(delta_left - delta_right));
+
+  ec.l.simple = {route_label};
+  ec._reduction_features.template get<simple_label_reduction_features>().reset_to_default();
+  // Bug?
+  // Notes: looks like imp_weight was not used since ec.l.simple.weight is not
+  // used in gd.
+  // Only ec.weight is used in gd.  ec.imp_weight is now set to 0 instead of
+  // ec.l.simple.weight.
+  // This causes different results during RunTests
+  // ec.weight = imp_weight;
+
   base.learn(ec, b.nodes[cn].base_router);
 
   // TODO: using the updated routing seems to help
@@ -364,9 +375,7 @@ float train_node(recall_tree& b, single_learner& base, example& ec, uint32_t cn)
 
 void learn(recall_tree& b, single_learner& base, example& ec)
 {
-  predict(b, base, ec);
-
-  if (b.all->training && ec.l.multi.label != (uint32_t)-1)  // if training the tree
+  if (b.all->training && ec.l.multi.label != static_cast<uint32_t>(-1))  // if training the tree
   {
     uint32_t cn = 0;
 
@@ -398,9 +407,10 @@ void learn(recall_tree& b, single_learner& base, example& ec)
 
       add_node_id_feature(b, cn, ec);
 
-      ec.l.simple = {1.f, 1.f, 0.f};
+      ec.l.simple = {1.f};
+      ec._reduction_features.template get<simple_label_reduction_features>().reset_to_default();
       base.learn(ec, b.max_routers + mc.label - 1);
-      ec.l.simple = {-1.f, 1.f, 0.f};
+      ec.l.simple = {-1.f};
 
       for (node_pred* ls = b.nodes[cn].preds.begin();
            ls != b.nodes[cn].preds.end() && ls < b.nodes[cn].preds.begin() + b.max_candidates; ++ls)
@@ -476,9 +486,11 @@ void save_load_tree(recall_tree& b, io_buf& model_file, bool read, bool text)
 
 using namespace recall_tree_ns;
 
-base_learner* recall_tree_setup(options_i& options, vw& all)
+base_learner* recall_tree_setup(VW::setup_base_i& stack_builder)
 {
-  auto tree = scoped_calloc_or_throw<recall_tree>();
+  options_i& options = *stack_builder.get_options();
+  vw& all = *stack_builder.get_all_pointer();
+  auto tree = VW::make_unique<recall_tree>();
   option_group_definition new_options("Recall Tree");
   new_options.add(make_option("recall_tree", tree->k).keep().necessary().help("Use online tree for multiclass"))
       .add(make_option("max_candidates", tree->max_candidates)
@@ -495,23 +507,32 @@ base_learner* recall_tree_setup(options_i& options, vw& all)
   tree->_random_state = all.get_random_state();
   tree->max_candidates = options.was_supplied("max_candidates")
       ? tree->max_candidates
-      : std::min(tree->k, 4 * (uint32_t)(ceil(log(tree->k) / log(2.0))));
-  tree->max_depth =
-      options.was_supplied("max_depth") ? tree->max_depth : (uint32_t)std::ceil(std::log(tree->k) / std::log(2.0));
+      : std::min(tree->k, 4 * static_cast<uint32_t>(ceil(log(tree->k) / log(2.0))));
+  tree->max_depth = options.was_supplied("max_depth")
+      ? tree->max_depth
+      : static_cast<uint32_t>(std::ceil(std::log(tree->k) / std::log(2.0)));
 
   init_tree(*tree.get());
 
   if (!all.logger.quiet)
-    all.trace_message << "recall_tree:"
-                      << " node_only = " << tree->node_only << " bern_hyper = " << tree->bern_hyper
-                      << " max_depth = " << tree->max_depth << " routing = "
-                      << (all.training ? (tree->randomized_routing ? "randomized" : "deterministic") : "n/a testonly")
-                      << std::endl;
+    *(all.trace_message) << "recall_tree:"
+                         << " node_only = " << tree->node_only << " bern_hyper = " << tree->bern_hyper
+                         << " max_depth = " << tree->max_depth << " routing = "
+                         << (all.training ? (tree->randomized_routing ? "randomized" : "deterministic")
+                                          : "n/a testonly")
+                         << std::endl;
 
-  learner<recall_tree, example>& l = init_multiclass_learner(
-      tree, as_singleline(setup_base(options, all)), learn, predict, all.example_parser, tree->max_routers + tree->k);
-  all.label_type = label_type_t::mc;
-  l.set_save_load(save_load_tree);
+  size_t ws = tree->max_routers + tree->k;
+  auto* l = make_reduction_learner(std::move(tree), as_singleline(stack_builder.setup_base_learner()), learn, predict,
+      stack_builder.get_setupfn_name(recall_tree_setup))
+                .set_params_per_weight(ws)
+                .set_finish_example(MULTICLASS::finish_example<recall_tree&>)
+                .set_save_load(save_load_tree)
+                .set_output_prediction_type(VW::prediction_type_t::multiclass)
+                .set_input_label_type(VW::label_type_t::multiclass)
+                .build();
 
-  return make_base(l);
+  all.example_parser->lbl_parser = MULTICLASS::mc_label;
+
+  return make_base(*l);
 }

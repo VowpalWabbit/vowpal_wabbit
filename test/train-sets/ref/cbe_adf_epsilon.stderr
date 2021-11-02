@@ -6,11 +6,11 @@ power_t = 0.5
 using no cache
 Reading datafile = train-sets/cb_test.ldf
 num sources = 1
-Enabled reductions: gd, scorer, csoaa_ldf, cb_adf, cb_explore_adf_greedy, shared_feature_merger
+Enabled reductions: gd, scorer-identity, csoaa_ldf-rank, cb_adf, cb_explore_adf_greedy, shared_feature_merger
 average  since         example        example  current  current  current
 loss     last          counter         weight    label  predict features
-0.666667 0.666667            1            1.0    known        0:0.333333...        9
-0.333333 0.000000            2            2.0    known        1:0.95...        6
+0.666667 0.666667            1            1.0  0:1:0.5        0:0.333333...        9
+0.333333 0.000000            2            2.0  1:0:0.5        1:0.95...        6
 
 finished run
 number of examples = 3

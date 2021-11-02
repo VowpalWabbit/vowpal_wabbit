@@ -4,10 +4,11 @@
 #pragma once
 #include "reductions_fwd.h"
 
-VW::LEARNER::base_learner* mwt_setup(VW::config::options_i& options, vw& all);
+#include "io/io_adapter.h"
+
+VW::LEARNER::base_learner* mwt_setup(VW::setup_base_i& stack_builder);
 
 namespace MWT
 {
-void delete_scalars(void* v);
 void print_scalars(VW::io::writer* f, v_array<float>& scalars, v_array<char>& tag);
 }  // namespace MWT

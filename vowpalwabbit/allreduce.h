@@ -7,6 +7,7 @@
 
 #include <string>
 #include <algorithm>
+#include <utility>
 
 #ifdef _WIN32
 #  define NOMINMAX
@@ -25,9 +26,6 @@ namespace std
 template <typename T>
 class promise;
 
-class condition_variable;
-
-class mutex;
 }  // namespace std
 #else
 #  include <sys/socket.h>
@@ -39,13 +37,25 @@ class mutex;
 #  include <stdio.h>
 #  include <unistd.h>
 #  include <string.h>
-typedef int socket_t;
+using socket_t = int;
 #  define CLOSESOCK close
 #  include <future>
 #endif
 #include "vw_exception.h"
 #include "vwvis.h"
 #include <cassert>
+
+#ifdef _M_CEE
+#  pragma managed(push, off)
+#  undef _M_CEE
+#  include <condition_variable>
+#  include <mutex>
+#  define _M_CEE 001
+#  pragma managed(pop)
+#else
+#  include <condition_variable>
+#  include <mutex>
+#endif
 
 constexpr size_t ar_buf_size = 1 << 16;
 
@@ -96,8 +106,8 @@ struct Data
 class AllReduceSync
 {
 private:
-  std::mutex* m_mutex;
-  std::condition_variable* m_cv;
+  std::mutex m_mutex;
+  std::condition_variable m_cv;
 
   // total number of threads we wait for
   size_t m_total;
@@ -192,7 +202,7 @@ private:
 
     if (my_bufsize > 0)
     {  // going to pass up this chunk of data to the parent
-      int write_size = send(socks.parent, buffer + parent_sent_pos, (int)my_bufsize, 0);
+      int write_size = send(socks.parent, buffer + parent_sent_pos, static_cast<int>(my_bufsize), 0);
       if (write_size < 0)
         THROW("Write to parent failed " << my_bufsize << " " << write_size << " " << parent_sent_pos << " "
                                         << left_read_pos << " " << right_read_pos);
@@ -228,7 +238,7 @@ private:
 
       if (child_read_pos[0] < n || child_read_pos[1] < n)
       {
-        if (max_fd > 0 && select((int)max_fd, &fds, nullptr, nullptr, nullptr) == -1) THROWERRNO("select");
+        if (max_fd > 0 && select(static_cast<int>(max_fd), &fds, nullptr, nullptr, nullptr) == -1) THROWERRNO("select");
 
         for (int i = 0; i < 2; i++)
         {
@@ -239,7 +249,8 @@ private:
                   << FD_ISSET(socks.children[0], &fds) << " " << FD_ISSET(socks.children[1], &fds));
 
             size_t count = std::min(ar_buf_size, n - child_read_pos[i]);
-            int read_size = recv(socks.children[i], &child_read_buf[i][child_unprocessed[i]], (int)count, 0);
+            int read_size =
+                recv(socks.children[i], &child_read_buf[i][child_unprocessed[i]], static_cast<int>(count), 0);
             if (read_size == -1) THROWERRNO("recv from child");
 
             addbufs<T, f>((T*)buffer + child_read_pos[i] / sizeof(T), (T*)child_read_buf[i],
@@ -274,7 +285,7 @@ private:
 public:
   AllReduceSockets(std::string pspan_server, const int pport, const size_t punique_id, size_t ptotal,
       const size_t pnode, bool pquiet)
-      : AllReduce(ptotal, pnode, pquiet), span_server(pspan_server), port(pport), unique_id(punique_id)
+      : AllReduce(ptotal, pnode, pquiet), span_server(std::move(pspan_server)), port(pport), unique_id(punique_id)
   {
   }
 

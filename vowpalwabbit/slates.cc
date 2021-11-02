@@ -16,6 +16,7 @@
 #include "decision_scores.h"
 #include "action_score.h"
 #include "ccb_label.h"
+#include "shared_data.h"
 
 using namespace VW::config;
 
@@ -41,7 +42,6 @@ void slates_data::learn_or_predict(VW::LEARNER::multi_learner& base, multi_ex& e
   for (size_t i = 0; i < examples.size(); i++)
   {
     CCB::label ccb_label;
-    memset(&ccb_label, 0, sizeof(ccb_label));
     CCB::default_label(ccb_label);
     const auto& slates_label = _stashed_labels[i];
     if (slates_label.type == slates::example_type::shared)
@@ -63,14 +63,14 @@ void slates_data::learn_or_predict(VW::LEARNER::multi_learner& base, multi_ex& e
     else if (slates_label.type == slates::example_type::slot)
     {
       ccb_label.type = CCB::example_type::slot;
-      ccb_label.explicit_included_actions = v_init<uint32_t>();
+      ccb_label.explicit_included_actions.clear();
       for (const auto index : slot_action_pools[slot_index]) { ccb_label.explicit_included_actions.push_back(index); }
 
       if (global_cost_found)
       {
         ccb_label.outcome = new CCB::conditional_contextual_bandit_outcome();
         ccb_label.outcome->cost = global_cost;
-        ccb_label.outcome->probabilities = v_init<ACTION_SCORE::action_score>();
+        ccb_label.outcome->probabilities.clear();
 
         for (const auto& action_score : slates_label.probabilities)
         {
@@ -100,7 +100,6 @@ void slates_data::learn_or_predict(VW::LEARNER::multi_learner& base, multi_ex& e
 
   for (size_t i = 0; i < examples.size(); i++)
   {
-    CCB::delete_label(examples[i]->l.conditional_contextual_bandit);
     examples[i]->l.slates = std::move(_stashed_labels[i]);
   }
   _stashed_labels.clear();
@@ -172,11 +171,11 @@ void output_example(vw& all, slates_data& /*c*/, multi_ex& ec_seq)
   float loss = 0.;
   bool is_labelled = ec_seq[SHARED_EX_INDEX]->l.slates.labeled;
   float cost = is_labelled ? ec_seq[SHARED_EX_INDEX]->l.slates.cost : 0.f;
-  auto label_probs = v_init<ACTION_SCORE::action_score>();
+  v_array<ACTION_SCORE::action_score> label_probs;
 
   for (auto* ec : ec_seq)
   {
-    num_features += ec->num_features;
+    num_features += ec->get_num_features();
 
     if (ec->l.slates.type == slates::example_type::slot)
     {
@@ -194,7 +193,7 @@ void output_example(vw& all, slates_data& /*c*/, multi_ex& ec_seq)
   // Calculate the estimate for this example based on the pseudo inverse estimator.
   const auto& predictions = ec_seq[0]->pred.decision_scores;
   if (is_labelled) { loss = get_estimate(label_probs, cost, predictions); }
-  label_probs.delete_v();
+  label_probs.clear();
 
   bool holdout_example = is_labelled;
   if (holdout_example != false)
@@ -216,7 +215,7 @@ void finish_multiline_example(vw& all, slates_data& data, multi_ex& ec_seq)
   {
     output_example(all, data, ec_seq);
     CB_ADF::global_print_newline(all.final_prediction_sink);
-    for (auto& action_scores : ec_seq[0]->pred.decision_scores) { action_scores.delete_v(); }
+    for (auto& action_scores : ec_seq[0]->pred.decision_scores) { action_scores.clear(); }
     ec_seq[0]->pred.decision_scores.clear();
   }
 
@@ -233,9 +232,11 @@ void learn_or_predict(slates_data& data, VW::LEARNER::multi_learner& base, multi
   }
 }
 
-VW::LEARNER::base_learner* slates_setup(options_i& options, vw& all)
+VW::LEARNER::base_learner* slates_setup(VW::setup_base_i& stack_builder)
 {
-  auto data = scoped_calloc_or_throw<slates_data>();
+  options_i& options = *stack_builder.get_options();
+  vw& all = *stack_builder.get_all_pointer();
+  auto data = VW::make_unique<slates_data>();
   bool slates_option = false;
   option_group_definition new_options("Slates");
   new_options.add(make_option("slates", slates_option).keep().necessary().help("EXPERIMENTAL"));
@@ -248,14 +249,16 @@ VW::LEARNER::base_learner* slates_setup(options_i& options, vw& all)
     options.add_and_parse(new_options);
   }
 
-  auto* base = as_multiline(setup_base(options, all));
+  auto* base = as_multiline(stack_builder.setup_base_learner());
   all.example_parser->lbl_parser = slates_label_parser;
-  all.label_type = label_type_t::slates;
-  all.delete_prediction = VW::delete_decision_scores;
-  auto& l = VW::LEARNER::init_learner(
-      data, base, learn_or_predict<true>, learn_or_predict<false>, 1, prediction_type_t::decision_probs);
-  l.set_finish_example(finish_multiline_example);
-  return VW::LEARNER::make_base(l);
+  auto* l = VW::LEARNER::make_reduction_learner(std::move(data), base, learn_or_predict<true>, learn_or_predict<false>,
+      stack_builder.get_setupfn_name(slates_setup))
+                .set_learn_returns_prediction(base->learn_returns_prediction)
+                .set_output_prediction_type(VW::prediction_type_t::decision_probs)
+                .set_input_label_type(VW::label_type_t::slates)
+                .set_finish_example(finish_multiline_example)
+                .build();
+  return VW::LEARNER::make_base(*l);
 }
 }  // namespace slates
 }  // namespace VW

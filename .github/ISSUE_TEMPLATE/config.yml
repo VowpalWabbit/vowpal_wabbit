@@ -1,8 +1,8 @@
 blank_issues_enabled: true
 contact_links: 
   - about: "Ask questions or see past answers on Stack Overflow"
-    name: "Stack Overflow"
+    name: "💬 Stack Overflow"
     url: "https://stackoverflow.com/questions/tagged/vowpalwabbit"
   - about: "Chat with the community on Gitter"
-    name: "Gitter"
+    name: "💬 Gitter"
     url: "https://gitter.im/VowpalWabbit/community/"

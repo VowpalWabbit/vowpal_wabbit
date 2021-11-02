@@ -2,89 +2,61 @@
 // individual contributors. All rights reserved. Released under a BSD (revised)
 // license as described in the file LICENSE.
 
-#include <cfloat>
-#include <cerrno>
+#include "baseline.h"
 
 #include "reductions.h"
 #include "vw.h"
+#include "shared_data.h"
 
 using namespace VW::LEARNER;
 using namespace VW::config;
 
 namespace
 {
-const float max_multiplier = 1000.f;
-const size_t baseline_enabled_idx = 1357;  // feature index for enabling baseline
+constexpr float max_multiplier = 1000.f;
 }  // namespace
 
 namespace BASELINE
 {
 void set_baseline_enabled(example* ec)
 {
-  auto& fs = ec->feature_space[message_namespace];
-  for (auto& f : fs)
-  {
-    if (f.index() == baseline_enabled_idx)
-    {
-      f.value() = 1;
-      return;
-    }
-  }
-  // if not found, push new feature
-  fs.push_back(1, baseline_enabled_idx);
+  if (!baseline_enabled(ec)) { ec->indices.push_back(baseline_enabled_message_namespace); }
 }
 
 void reset_baseline_disabled(example* ec)
 {
-  auto& fs = ec->feature_space[message_namespace];
-  for (auto& f : fs)
-  {
-    if (f.index() == baseline_enabled_idx)
-    {
-      f.value() = 0;
-      return;
-    }
-  }
+  const auto it = std::find(ec->indices.begin(), ec->indices.end(), baseline_enabled_message_namespace);
+  if (it != ec->indices.end()) { ec->indices.erase(it); }
 }
 
-bool baseline_enabled(example* ec)
+bool baseline_enabled(const example* ec)
 {
-  auto& fs = ec->feature_space[message_namespace];
-  for (auto& f : fs)
-  {
-    if (f.index() == baseline_enabled_idx) return f.value() == 1;
-  }
-  return false;
+  const auto it = std::find(ec->indices.begin(), ec->indices.end(), baseline_enabled_message_namespace);
+  return it != ec->indices.end();
 }
 }  // namespace BASELINE
 
 struct baseline
 {
-  example* ec;
-  vw* all;
-  bool lr_scaling;  // whether to scale baseline learning rate based on max label
-  float lr_multiplier;
-  bool global_only;  // only use a global constant for the baseline
-  bool global_initialized;
-  bool check_enabled;  // only use baseline when the example contains enabled flag
-
-  ~baseline()
-  {
-    if (ec) VW::dealloc_example(simple_label_parser.delete_label, *ec);
-    free(ec);
-  }
+  example ec;
+  vw* all = nullptr;
+  bool lr_scaling = false;  // whether to scale baseline learning rate based on max label
+  float lr_multiplier = 0.f;
+  bool global_only = false;  // only use a global constant for the baseline
+  bool global_initialized = false;
+  bool check_enabled = false;  // only use baseline when the example contains enabled flag
 };
 
 void init_global(baseline& data)
 {
   if (!data.global_only) return;
   // use a separate global constant
-  data.ec->indices.push_back(constant_namespace);
+  data.ec.indices.push_back(constant_namespace);
   // different index from constant to avoid conflicts
-  data.ec->feature_space[constant_namespace].push_back(
-      1, ((constant - 17) * data.all->wpp) << data.all->weights.stride_shift());
-  data.ec->total_sum_feat_sq++;
-  data.ec->num_features++;
+  data.ec.feature_space[constant_namespace].push_back(
+      1, ((constant - 17) * data.all->wpp) << data.all->weights.stride_shift(), constant_namespace);
+  data.ec.reset_total_sum_feat_sq();
+  data.ec.num_features++;
 }
 
 template <bool is_learn>
@@ -108,9 +80,10 @@ void predict_or_learn(baseline& data, single_learner& base, example& ec)
       init_global(data);
       data.global_initialized = true;
     }
-    VW::copy_example_metadata(/*audit=*/false, data.ec, &ec);
-    base.predict(*data.ec);
-    ec.l.simple.initial = data.ec->pred.scalar;
+    VW::copy_example_metadata(&data.ec, &ec);
+    base.predict(data.ec);
+    auto& simple_red_features = ec._reduction_features.template get<simple_label_reduction_features>();
+    simple_red_features.initial = data.ec.pred.scalar;
     base.predict(ec);
   }
   else
@@ -121,12 +94,12 @@ void predict_or_learn(baseline& data, single_learner& base, example& ec)
     const float pred = ec.pred.scalar;  // save 'safe' prediction
 
     // now learn
-    data.ec->l.simple = ec.l.simple;
+    data.ec.l.simple = ec.l.simple;
     if (!data.global_only)
     {
       // move label & constant features data over to baseline example
-      VW::copy_example_metadata(/*audit=*/false, data.ec, &ec);
-      VW::move_feature_namespace(data.ec, &ec, constant_namespace);
+      VW::copy_example_metadata(&data.ec, &ec);
+      VW::move_feature_namespace(&data.ec, &ec, constant_namespace);
     }
 
     // regress baseline on label
@@ -139,20 +112,21 @@ void predict_or_learn(baseline& data, single_learner& base, example& ec)
         if (multiplier > max_multiplier) multiplier = max_multiplier;
       }
       data.all->eta *= multiplier;
-      base.learn(*data.ec);
+      base.learn(data.ec);
       data.all->eta /= multiplier;
     }
     else
-      base.learn(*data.ec);
+      base.learn(data.ec);
 
     // regress residual
-    ec.l.simple.initial = data.ec->pred.scalar;
+    auto& simple_red_features = ec._reduction_features.template get<simple_label_reduction_features>();
+    simple_red_features.initial = data.ec.pred.scalar;
     base.learn(ec);
 
     if (!data.global_only)
     {
       // move feature data back to the original example
-      VW::move_feature_namespace(&ec, data.ec, constant_namespace);
+      VW::move_feature_namespace(&ec, &data.ec, constant_namespace);
     }
 
     // return the safe prediction
@@ -165,27 +139,27 @@ float sensitivity(baseline& data, base_learner& base, example& ec)
   // no baseline if check_enabled is true and example contains flag
   if (data.check_enabled && !BASELINE::baseline_enabled(&ec)) return base.sensitivity(ec);
 
-  if (!data.global_only) THROW("sensitivity for baseline without --global_only not implemented");
+  if (!data.global_only) { THROW("sensitivity for baseline without --global_only not implemented") }
 
   // sensitivity of baseline term
-  VW::copy_example_metadata(/*audit=*/false, data.ec, &ec);
-  data.ec->l.simple.label = ec.l.simple.label;
-  data.ec->pred.scalar = ec.pred.scalar;
-  // std::cout << "before base" << std::endl;
-  const float baseline_sens = base.sensitivity(*data.ec);
-  // std::cout << "base sens: " << baseline_sens << std::endl;
+  VW::copy_example_metadata(&data.ec, &ec);
+  data.ec.l.simple.label = ec.l.simple.label;
+  data.ec.pred.scalar = ec.pred.scalar;
+  const float baseline_sens = base.sensitivity(data.ec);
 
   // sensitivity of residual
-  as_singleline(&base)->predict(*data.ec);
-  ec.l.simple.initial = data.ec->pred.scalar;
+  as_singleline(&base)->predict(data.ec);
+  auto& simple_red_features = ec._reduction_features.template get<simple_label_reduction_features>();
+  simple_red_features.initial = data.ec.pred.scalar;
   const float sens = base.sensitivity(ec);
-  // std::cout << " residual sens: " << sens << std::endl;
   return baseline_sens + sens;
 }
 
-base_learner* baseline_setup(options_i& options, vw& all)
+base_learner* baseline_setup(VW::setup_base_i& stack_builder)
 {
-  auto data = scoped_calloc_or_throw<baseline>();
+  options_i& options = *stack_builder.get_options();
+  vw& all = *stack_builder.get_all_pointer();
+  auto data = VW::make_unique<baseline>();
   bool baseline_option = false;
   std::string loss_function;
 
@@ -205,20 +179,21 @@ base_learner* baseline_setup(options_i& options, vw& all)
 
   if (!options.add_parse_and_check_necessary(new_options)) return nullptr;
 
-  // initialize baseline example
-  data->ec = VW::alloc_examples(1);
-  data->ec->interactions = &all.interactions;
-
+  // initialize baseline example's interactions.
+  data->ec.interactions = &all.interactions;
+  data->ec.extent_interactions = &all.extent_interactions;
   data->all = &all;
 
-  auto loss_function_type = all.loss->getType();
-  if (loss_function_type != "logistic") data->lr_scaling = true;
+  const auto loss_function_type = all.loss->getType();
+  if (loss_function_type != "logistic") { data->lr_scaling = true; }
 
-  auto base = as_singleline(setup_base(options, all));
+  auto base = as_singleline(stack_builder.setup_base_learner());
+  auto* l = VW::LEARNER::make_reduction_learner(std::move(data), base, predict_or_learn<true>, predict_or_learn<false>,
+      stack_builder.get_setupfn_name(baseline_setup))
+                .set_output_prediction_type(VW::prediction_type_t::scalar)
+                .set_input_label_type(VW::label_type_t::simple)
+                .set_sensitivity(sensitivity)
+                .build();
 
-  learner<baseline, example>& l = init_learner(data, base, predict_or_learn<true>, predict_or_learn<false>);
-
-  l.set_sensitivity(sensitivity);
-
-  return make_base(l);
+  return make_base(*l);
 }

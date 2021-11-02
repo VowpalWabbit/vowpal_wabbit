@@ -16,13 +16,15 @@ void CheckExample(vw* vw, example* ex, prediction_type_t type)
   if (ex == nullptr)
     throw gcnew ArgumentNullException("ex");
 
-  auto ex_pred_type = vw->l->pred_type;
+  auto ex_pred_type = vw->l->get_output_prediction_type();
   if (ex_pred_type != type)
   { auto sb = gcnew StringBuilder();
     sb->Append("Prediction type must be ");
-    sb->Append(gcnew String(to_string(type)));
+    // Note: we know this is a static lifetime string constant that is null terminated.
+    sb->Append(gcnew String(VW::to_string(type).data()));
     sb->Append(" but is ");
-    sb->Append(gcnew String(to_string(ex_pred_type)));
+    // Note: we know this is a static lifetime string constant that is null terminated.
+    sb->Append(gcnew String(VW::to_string(ex_pred_type).data()));
 
     throw gcnew ArgumentException(sb->ToString());
   }
@@ -158,11 +160,29 @@ cli::array<float>^ VowpalWabbitTopicPredictionFactory::Create(vw* vw, example* e
   return values;
 }
 
+VowpalWabbitActiveMulticlass^ VowpalWabbitActiveMulticlassPredictionFactory::Create(vw* vw, example* ex)
+{
+  CheckExample(vw, ex, prediction_type_t::active_multiclass);
+  auto struct_obj = gcnew VowpalWabbitActiveMulticlass();
+  const auto length = ex->pred.active_multiclass.more_info_required_for_classes.size();
+  struct_obj->more_info_required_for_classes = gcnew cli::array<int>((int)length);
+
+  if (length > 0)
+  {
+    Marshal::Copy(IntPtr(ex->pred.active_multiclass.more_info_required_for_classes.data()),
+        struct_obj->more_info_required_for_classes, 0, (int)length);
+  }
+
+  struct_obj->predicted_class = ex->pred.active_multiclass.predicted_class;
+
+  return struct_obj;
+}
+
 System::Object^ VowpalWabbitDynamicPredictionFactory::Create(vw* vw, example* ex)
 { if (ex == nullptr)
     throw gcnew ArgumentNullException("ex");
 
-  switch (vw->l->pred_type)
+  switch (vw->l->get_output_prediction_type())
   { case prediction_type_t::scalar:
       return VowpalWabbitPredictionType::Scalar->Create(vw, ex);
     case prediction_type_t::scalars:
@@ -179,10 +199,13 @@ System::Object^ VowpalWabbitDynamicPredictionFactory::Create(vw* vw, example* ex
       return VowpalWabbitPredictionType::Probability->Create(vw, ex);
     case prediction_type_t::multiclassprobs:
       return VowpalWabbitPredictionType::MultiClassProbabilities->Create(vw, ex);
+    case prediction_type_t::active_multiclass:
+      return VowpalWabbitPredictionType::ActiveMulticlass->Create(vw, ex);
     default:
     { auto sb = gcnew StringBuilder();
       sb->Append("Unsupported prediction type: ");
-      sb->Append(gcnew String(to_string(vw->l->pred_type)));
+      // Note: we know this is a static lifetime string constant that is null terminated.
+      sb->Append(gcnew String(VW::to_string(vw->l->get_output_prediction_type()).data()));
       throw gcnew ArgumentException(sb->ToString());
     }
   }

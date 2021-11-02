@@ -6,12 +6,12 @@
 
 #include "reductions_fwd.h"
 
-VW::LEARNER::base_learner* baseline_setup(VW::config::options_i& options, vw& all);
+VW::LEARNER::base_learner* baseline_setup(VW::setup_base_i& stack_builder);
 
 namespace BASELINE
 {
 // utility functions for disabling baseline on a given example
 void set_baseline_enabled(example* ec);
 void reset_baseline_disabled(example* ec);
-bool baseline_enabled(example* ec);
+bool baseline_enabled(const example* ec);
 }  // namespace BASELINE
