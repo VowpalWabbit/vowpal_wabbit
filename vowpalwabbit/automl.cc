@@ -78,51 +78,6 @@ void fail_if_enabled(vw& all, const std::set<std::string>& not_compat)
     if (not_compat.count(reduction) > 0) THROW("Error: automl does not yet support this reduction: " + reduction);
   }
 }
-
-/*
-void print_weights_nonzero(vw* all, uint64_t count, dense_parameters& weights)
-{
-  for (auto it = weights.begin(); it != weights.end(); ++it)
-  {
-    assert(weights.stride_shift() == 2);
-    auto real_index = it.index() >> weights.stride_shift();
-    // if (MAX_CONFIGS > 4)
-    //   assert(all->wpp == 8);
-    // else
-    //   assert(all->wpp == 4);
-
-    int type = real_index & (all->wpp - 1);
-
-    uint64_t off = 0;
-    auto zero = (&(*it))[0 + off];
-    if (!cmpf(zero, 0.f))
-    {
-      if (type == 0) { std::cerr << (real_index) << ":c" << count << ":0:" << zero << std::endl; }
-      else if (type == 1)
-      {
-        std::cerr << (real_index - 1) << ":c" << count << ":1:" << zero << std::endl;
-      }
-      else if (type == 2)
-      {
-        std::cerr << (real_index - 2) << ":c" << count << ":2:" << zero << std::endl;
-      }
-      else if (type == 3)
-      {
-        std::cerr << (real_index - 3) << ":c" << count << ":3:" << zero << std::endl;
-      }
-      else if (type == 4)
-      {
-        std::cerr << (real_index - 4) << ":c" << count << ":4:" << zero << std::endl;
-      }
-      else if (type == 5)
-      {
-        std::cerr << (real_index - 5) << ":c" << count << ":5:" << zero << std::endl;
-      }
-    }
-  }
-  std::cerr << std::endl;
-}
-*/
 }  // namespace details
 
 void scored_config::update(float w, float r)
@@ -680,7 +635,7 @@ VW::LEARNER::base_learner* automl_setup(VW::setup_base_i& stack_builder)
                   .set_finish_example(finish_example<interaction_config_manager>)
                   .set_save_load(save_load_aml<interaction_config_manager>)
                   .set_persist_metrics(persist<interaction_config_manager>)
-                  .set_prediction_type(base_learner->get_output_prediction_type())
+                  .set_output_prediction_type(base_learner->get_output_prediction_type())
                   .set_learn_returns_prediction(true)
                   .build();
 

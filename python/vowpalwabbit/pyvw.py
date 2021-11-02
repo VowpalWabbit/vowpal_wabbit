@@ -242,6 +242,8 @@ def get_prediction(ec, prediction_type):
         - 8: pDECISION_SCORES
         - 9: pACTION_PDF_VALUE
         - 10: pPDF
+        - 11: pACTIVE_MULTICLASS
+        - 12: pNOPRED
 
     Examples
     --------
@@ -272,6 +274,7 @@ def get_prediction(ec, prediction_type):
         pylibvw.vw.pACTION_PDF_VALUE: ec.get_action_pdf_value,
         pylibvw.vw.pPDF: ec.get_pdf,
         pylibvw.vw.pACTIVE_MULTICLASS: ec.get_active_multiclass,
+        pylibvw.vw.pNOPRED: ec.get_nopred,
     }
     return switch_prediction_type[prediction_type]()
 

@@ -336,8 +336,8 @@ VW::LEARNER::base_learner* oaa_setup(VW::setup_base_i& stack_builder)
   auto l = make_reduction_learner(
       std::move(data), base, learn_ptr, pred_ptr, stack_builder.get_setupfn_name(oaa_setup) + name_addition)
                .set_params_per_weight(k_value)
-               .set_label_type(VW::label_type_t::multiclass)
-               .set_prediction_type(pred_type)
+               .set_input_label_type(VW::label_type_t::multiclass)
+               .set_output_prediction_type(pred_type)
                .set_finish_example(finish_ptr)
                .build();
 

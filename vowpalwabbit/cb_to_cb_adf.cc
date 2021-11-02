@@ -206,8 +206,8 @@ VW::LEARNER::base_learner* cb_to_cb_adf_setup(VW::setup_base_i& stack_builder)
 
   auto* l = make_reduction_learner(
       std::move(data), base, predict_or_learn<true>, predict_or_learn<false>, all.get_setupfn_name(cb_to_cb_adf_setup))
-                .set_prediction_type(pred_type)
-                .set_label_type(VW::label_type_t::cb)
+                .set_output_prediction_type(pred_type)
+                .set_input_label_type(VW::label_type_t::cb)
                 .set_learn_returns_prediction(true)
                 .set_finish_example(finish_example)
                 .build();

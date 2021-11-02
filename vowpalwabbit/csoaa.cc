@@ -152,8 +152,8 @@ base_learner* csoaa_setup(VW::setup_base_i& stack_builder)
                 .set_learn_returns_prediction(
                     true) /* csoaa.learn calls gd.learn. nothing to be gained by calling csoaa.predict first */
                 .set_params_per_weight(ws)
-                .set_prediction_type(VW::prediction_type_t::multiclass)
-                .set_label_type(VW::label_type_t::cs)
+                .set_output_prediction_type(VW::prediction_type_t::multiclass)
+                .set_input_label_type(VW::label_type_t::cs)
                 .set_finish_example(finish_example)
                 .build();
 
@@ -940,8 +940,8 @@ base_learner* csldf_setup(VW::setup_base_i& stack_builder)
   auto* l = make_reduction_learner(std::move(ld), pbase, learn_csoaa_ldf, pred_ptr, name + name_addition)
                 .set_finish_example(finish_multiline_example)
                 .set_end_pass(end_pass)
-                .set_label_type(VW::label_type_t::cs)
-                .set_prediction_type(pred_type)
+                .set_input_label_type(VW::label_type_t::cs)
+                .set_output_prediction_type(pred_type)
                 .build();
 
   all.example_parser->lbl_parser = COST_SENSITIVE::cs_label;
