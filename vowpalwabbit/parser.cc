@@ -228,12 +228,10 @@ void reset_source(vw& all, size_t numbits)
       // wait for all predictions to be sent back to client
       {
         std::unique_lock<std::mutex> lock(all.example_parser->output_lock);
-        all.example_parser->output_done.wait(lock,
-            [&]
-            {
-              return all.example_parser->num_finished_examples == all.example_parser->num_setup_examples &&
-                  all.example_parser->ready_parsed_examples.size() == 0;
-            });
+        all.example_parser->output_done.wait(lock, [&] {
+          return all.example_parser->num_finished_examples == all.example_parser->num_setup_examples &&
+              all.example_parser->ready_parsed_examples.size() == 0;
+        });
       }
 
       all.final_prediction_sink.clear();
