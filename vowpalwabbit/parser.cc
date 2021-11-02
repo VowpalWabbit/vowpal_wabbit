@@ -98,18 +98,14 @@ uint32_t cache_numbits(VW::io::reader& cache_reader)
   size_t version_buffer_length;
   if (static_cast<size_t>(cache_reader.read(reinterpret_cast<char*>(&version_buffer_length),
           sizeof(version_buffer_length))) < sizeof(version_buffer_length))
-  {
-    THROW("failed to read: version_buffer_length");
-  }
+  { THROW("failed to read: version_buffer_length"); }
 
   if (version_buffer_length > 61) THROW("cache version too long, cache file is probably invalid");
   if (version_buffer_length == 0) THROW("cache version too short, cache file is probably invalid");
 
   std::vector<char> version_buffer(version_buffer_length);
   if (static_cast<size_t>(cache_reader.read(version_buffer.data(), version_buffer_length)) < version_buffer_length)
-  {
-    THROW("failed to read: version buffer");
-  }
+  { THROW("failed to read: version buffer"); }
   VW::version_struct cache_version(version_buffer.data());
   if (cache_version != VW::version)
   {
@@ -128,9 +124,7 @@ uint32_t cache_numbits(VW::io::reader& cache_reader)
   uint32_t cache_numbits;
   if (static_cast<size_t>(cache_reader.read(reinterpret_cast<char*>(&cache_numbits), sizeof(cache_numbits))) <
       sizeof(cache_numbits))
-  {
-    THROW("failed to read");
-  }
+  { THROW("failed to read"); }
 
   return cache_numbits;
 }
@@ -174,9 +168,7 @@ void set_json_reader(vw& all, bool dsjson = false)
   all.example_parser->decision_service_json = dsjson;
 
   if (dsjson && all.options->was_supplied("extra_metrics"))
-  {
-    all.example_parser->metrics = VW::make_unique<dsjson_metrics>();
-  }
+  { all.example_parser->metrics = VW::make_unique<dsjson_metrics>(); }
 }
 
 void set_daemon_reader(vw& all, bool json = false, bool dsjson = false)
@@ -407,9 +399,7 @@ void enable_sources(vw& all, bool quiet, size_t passes, input_options& input_opt
     {
       socklen_t address_size = sizeof(address);
       if (getsockname(all.example_parser->bound_sock, reinterpret_cast<sockaddr*>(&address), &address_size) < 0)
-      {
-        *(all.trace_message) << "getsockname: " << VW::strerror_to_string(errno) << endl;
-      }
+      { *(all.trace_message) << "getsockname: " << VW::strerror_to_string(errno) << endl; }
       std::ofstream port_file;
       port_file.open(input_options.port_file.c_str());
       if (!port_file.is_open()) THROW("error writing port file: " << input_options.port_file);
@@ -544,9 +534,9 @@ void enable_sources(vw& all, bool quiet, size_t passes, input_options& input_opt
     {
       std::string filename_to_read = all.data_filename;
       std::string input_name = filename_to_read;
+      auto should_use_compressed = input_options.compressed || VW::ends_with(filename_to_read, ".gz");
 
-      auto should_use_compressed = input_options.compressed || VW::ends_with(all.data_filename, ".gz");
-
+      
       try
       {
         std::unique_ptr<VW::io::reader> adapter;
@@ -743,7 +733,10 @@ void setup_example(vw& all, example* ae)
     for (features& fs : *ae)
       for (auto& j : fs.indicies) j *= multiplier;
   ae->num_features = 0;
-  for (const features& fs : *ae) { ae->num_features += fs.size(); }
+  for (const features& fs : *ae)
+  {
+    ae->num_features += fs.size();
+  }
 
   // Set the interactions for this example to the global set.
   ae->interactions = &all.interactions;
