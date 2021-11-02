@@ -348,6 +348,7 @@
     <ClCompile Include="conditional_contextual_bandit.cc" />
     <ClCompile Include="confidence.cc" />
     <ClCompile Include="cbzo.cc" />
+    <ClCompile Include="crossplat_compat.cc" />
     <ClCompile Include="cost_sensitive.cc" />
     <ClCompile Include="cs_active.cc" />
     <ClCompile Include="csoaa.cc" />
@@ -372,6 +373,7 @@
     <ClCompile Include="kernel_svm.cc" />
     <ClCompile Include="kskip_ngram_transformer.cc" />
     <ClCompile Include="label_dictionary.cc" />
+    <ClCompile Include="label_parser.cc" />
     <ClCompile Include="label_type.cc" />
     <ClCompile Include="lda_core.cc" />
     <ClCompile Include="learner.cc" />
@@ -382,6 +384,7 @@
     <ClCompile Include="marginal.cc" />
     <ClCompile Include="memory_tree.cc" />
     <ClCompile Include="metrics.cc" />
+    <ClCompile Include="metric_sink.cc" />
     <ClCompile Include="mf.cc" />
     <ClCompile Include="multiclass.cc" />
     <ClCompile Include="multilabel_oaa.cc" />

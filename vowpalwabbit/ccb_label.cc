@@ -231,7 +231,7 @@ label_parser ccb_label_parser = {
       cache_label(label.conditional_contextual_bandit, cache);
     },
     // read_cached_label
-    [](polylabel& label, ::reduction_features& /*red_features*/, const VW::named_labels* /*ldict*/, io_buf& cache) {
+    [](polylabel& label, ::reduction_features& /*red_features*/, io_buf& cache) {
       return read_cached_label(label.conditional_contextual_bandit, cache);
     },
     // get_weight

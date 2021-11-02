@@ -70,6 +70,7 @@ struct polyprediction
   VW::continuous_actions::probability_density_function pdf;  // probability density defined over an action range
   VW::continuous_actions::probability_density_function_value pdf_value;  // probability density value for a given action
   VW::active_multiclass_prediction active_multiclass;
+  char nopred = static_cast<char>(0);
 };
 
 float calculate_total_sum_features_squared(bool permutations, example& ec);

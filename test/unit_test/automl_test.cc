@@ -2,6 +2,7 @@
 // individual contributors. All rights reserved. Released under a BSD (revised)
 // license as described in the file LICENSE.
 
+#include <boost/test/tools/old/interface.hpp>
 #include <boost/test/unit_test.hpp>
 #include <boost/test/test_tools.hpp>
 
@@ -13,6 +14,7 @@
 
 #include <functional>
 #include <map>
+#include <utility>
 
 using simulator::callback_map;
 using simulator::cb_sim;
@@ -20,17 +22,6 @@ using namespace VW::automl;
 
 namespace aml_test
 {
-void assert_metric(const std::string& metric_name, const size_t value, const VW::metric_sink& metrics)
-{
-  auto it = std::find_if(metrics.int_metrics_list.begin(), metrics.int_metrics_list.end(),
-      [&metric_name](const std::pair<std::string, size_t>& element) { return element.first == metric_name; });
-
-  if (it == metrics.int_metrics_list.end()) { BOOST_FAIL("could not find metric. fatal."); }
-  else
-  {
-    BOOST_CHECK_EQUAL(it->second, value);
-  }
-}
 
 void check_interactions_match_exclusions(VW::automl::automl<interaction_config_manager>* aml)
 {
@@ -112,8 +103,9 @@ BOOST_AUTO_TEST_CASE(automl_first_champ_switch)
 
   // we initialize the reduction pointing to position 0 as champ, that config is hard-coded to empty
   auto ctr = simulator::_test_helper_hook(
-      "--automl 3 --priority_type least_exclusion --cb_explore_adf --quiet --epsilon 0.2 --random_seed 5", test_hooks,
-      num_iterations, seed);
+      "--automl 3 --priority_type least_exclusion --cb_explore_adf --quiet --epsilon 0.2 --random_seed 5 "
+      "--keep_configs",
+      test_hooks, num_iterations, seed);
 
   BOOST_CHECK_GT(ctr.back(), 0.4f);
 }
@@ -124,12 +116,15 @@ BOOST_AUTO_TEST_CASE(automl_save_load)
 {
   callback_map empty_hooks;
   auto ctr = simulator::_test_helper_hook(
-      "--automl 3 --priority_type least_exclusion --cb_explore_adf --quiet --epsilon 0.2 --random_seed 5", empty_hooks);
+      "--automl 3 --priority_type least_exclusion --cb_explore_adf --quiet --epsilon 0.2 --random_seed 5 "
+      "--keep_configs",
+      empty_hooks);
   float without_save = ctr.back();
   BOOST_CHECK_GT(without_save, 0.7f);
 
   ctr = simulator::_test_helper_save_load(
       "--automl 3 --priority_type least_exclusion --cb_explore_adf --quiet --epsilon 0.2 --random_seed 5 "
+      "--keep_configs "
       "--save_resume");
   float with_save = ctr.back();
   BOOST_CHECK_GT(with_save, 0.7f);
@@ -160,8 +155,9 @@ BOOST_AUTO_TEST_CASE(assert_0th_event_automl)
   });
 
   auto ctr = simulator::_test_helper_hook(
-      "--automl 3 --priority_type least_exclusion --cb_explore_adf --quiet --epsilon 0.2 --random_seed 5", test_hooks,
-      num_iterations);
+      "--automl 3 --priority_type least_exclusion --cb_explore_adf --quiet --epsilon 0.2 --random_seed 5 "
+      "--keep_configs",
+      test_hooks, num_iterations);
 
   BOOST_CHECK_GT(ctr.back(), 0.1f);
 }
@@ -178,7 +174,7 @@ BOOST_AUTO_TEST_CASE(assert_0th_event_metrics)
     VW::metric_sink metrics;
     all.l->persist_metrics(metrics);
 
-    aml_test::assert_metric(metric_name, zero, metrics);
+    BOOST_REQUIRE_EQUAL(metrics.get_uint(metric_name), zero);
     return true;
   });
 
@@ -187,7 +183,7 @@ BOOST_AUTO_TEST_CASE(assert_0th_event_metrics)
     VW::metric_sink metrics;
     all.l->persist_metrics(metrics);
 
-    aml_test::assert_metric(metric_name, num_iterations, metrics);
+    BOOST_REQUIRE_EQUAL(metrics.get_uint(metric_name), num_iterations);
     return true;
   });
 
@@ -229,8 +225,9 @@ BOOST_AUTO_TEST_CASE(assert_live_configs_and_lease)
   });
 
   auto ctr = simulator::_test_helper_hook(
-      "--automl 3 --priority_type least_exclusion --cb_explore_adf --quiet --epsilon 0.2 --random_seed 5", test_hooks,
-      num_iterations);
+      "--automl 3 --priority_type least_exclusion --cb_explore_adf --quiet --epsilon 0.2 --random_seed 5 "
+      "--keep_configs",
+      test_hooks, num_iterations);
 
   BOOST_CHECK_GT(ctr.back(), 0.1f);
 }
@@ -240,7 +237,7 @@ BOOST_AUTO_TEST_CASE(cpp_simulator_automl)
 {
   auto ctr = simulator::_test_helper(
       "--cb_explore_adf --quiet --epsilon 0.2 --random_seed 5 --extra_metrics --automl 3 --priority_type "
-      "least_exclusion");
+      "least_exclusion --keep_configs");
   BOOST_CHECK_GT(ctr.back(), 0.6f);
 }
 
@@ -285,7 +282,44 @@ BOOST_AUTO_TEST_CASE(namespace_switch)
 
   auto ctr = simulator::_test_helper_hook(
       "--automl 3 --priority_type least_exclusion --cb_explore_adf --quiet --epsilon 0.2 --random_seed 5 "
-      "--global_lease 500",
+      "--global_lease 500 --keep_configs",
       test_hooks, num_iterations);
   BOOST_CHECK_GT(ctr.back(), 0.8f);
+}
+
+BOOST_AUTO_TEST_CASE(clear_configs)
+{
+  const size_t num_iterations = 3000;
+  const size_t seed = 10;
+  const size_t clear_champ_switch = 150;
+  callback_map test_hooks;
+
+  test_hooks.emplace(clear_champ_switch - 1, [&](cb_sim&, vw& all, multi_ex&) {
+    VW::automl::automl<interaction_config_manager>* aml = aml_test::get_automl_data(all);
+    aml_test::check_interactions_match_exclusions(aml);
+    aml_test::check_config_states(aml);
+    BOOST_CHECK_EQUAL(aml->cm->current_champ, 0);
+    BOOST_CHECK_EQUAL(clear_champ_switch - 1, aml->cm->total_learn_count);
+    BOOST_CHECK(aml->current_state == VW::automl::automl_state::Experimenting);
+    return true;
+  });
+
+  test_hooks.emplace(clear_champ_switch, [&clear_champ_switch](cb_sim&, vw& all, multi_ex&) {
+    VW::automl::automl<interaction_config_manager>* aml = aml_test::get_automl_data(all);
+    aml_test::check_interactions_match_exclusions(aml);
+    aml_test::check_config_states(aml);
+    BOOST_CHECK_EQUAL(aml->cm->current_champ, 0);
+    BOOST_CHECK_EQUAL(clear_champ_switch, aml->cm->total_learn_count);
+    BOOST_CHECK_EQUAL(aml->cm->scores.size(), 1);
+    BOOST_CHECK_EQUAL(aml->cm->valid_config_size, 6);
+    BOOST_CHECK(aml->current_state == VW::automl::automl_state::Experimenting);
+    return true;
+  });
+
+  // we initialize the reduction pointing to position 0 as champ, that config is hard-coded to empty
+  auto ctr = simulator::_test_helper_hook(
+      "--automl 3 --priority_type least_exclusion --cb_explore_adf --quiet --epsilon 0.2 --random_seed 5", test_hooks,
+      num_iterations, seed);
+
+  BOOST_CHECK_GT(ctr.back(), 0.4f);
 }

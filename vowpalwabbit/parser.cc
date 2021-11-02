@@ -15,6 +15,7 @@
 #include <fstream>
 
 #include "text_utils.h"
+#include "crossplat_compat.h"
 
 #ifdef _WIN32
 #  define NOMINMAX
@@ -92,30 +93,38 @@ bool is_test_only(uint32_t counter, uint32_t period, uint32_t after, bool holdou
     return (counter > after);
 }
 
-uint32_t cache_numbits(VW::io::reader* filepointer)
+uint32_t cache_numbits(VW::io::reader& cache_reader)
 {
-  size_t v_length;
-  io_buf::read_file(filepointer, reinterpret_cast<char*>(&v_length), sizeof(v_length));
-  if (v_length > 61) THROW("cache version too long, cache file is probably invalid");
+  size_t version_buffer_length;
+  if (static_cast<size_t>(cache_reader.read(reinterpret_cast<char*>(&version_buffer_length),
+          sizeof(version_buffer_length))) < sizeof(version_buffer_length))
+  { THROW("failed to read: version_buffer_length"); }
 
-  if (v_length == 0) THROW("cache version too short, cache file is probably invalid");
+  if (version_buffer_length > 61) THROW("cache version too long, cache file is probably invalid");
+  if (version_buffer_length == 0) THROW("cache version too short, cache file is probably invalid");
 
-  std::vector<char> t(v_length);
-  io_buf::read_file(filepointer, t.data(), v_length);
-  VW::version_struct v_tmp(t.data());
-  if (v_tmp != VW::version)
+  std::vector<char> version_buffer(version_buffer_length);
+  if (static_cast<size_t>(cache_reader.read(version_buffer.data(), version_buffer_length)) < version_buffer_length)
+  { THROW("failed to read: version buffer"); }
+  VW::version_struct cache_version(version_buffer.data());
+  if (cache_version != VW::version)
   {
-    return 0;
+    auto msg = fmt::format(
+        "Cache file version does not match current VW version. Cache files must be produced by the version consuming "
+        "them. Cache version: {} VW version: {}",
+        cache_version.to_string(), VW::version.to_string());
+    THROW(msg);
   }
 
-  char temp;
-  if (io_buf::read_file(filepointer, &temp, 1) < 1) THROW("failed to read");
+  char marker;
+  if (static_cast<size_t>(cache_reader.read(&marker, sizeof(marker))) < sizeof(marker)) { THROW("failed to read"); }
 
-  if (temp != 'c') THROW("data file is not a cache file");
+  if (marker != 'c') THROW("data file is not a cache file");
 
   uint32_t cache_numbits;
-  if (io_buf::read_file(filepointer, &cache_numbits, sizeof(cache_numbits)) < static_cast<int>(sizeof(cache_numbits)))
-  { return true; }
+  if (static_cast<size_t>(cache_reader.read(reinterpret_cast<char*>(&cache_numbits), sizeof(cache_numbits))) <
+      sizeof(cache_numbits))
+  { THROW("failed to read"); }
 
   return cache_numbits;
 }
@@ -244,7 +253,7 @@ void reset_source(vw& all, size_t numbits)
       input.reset();
       for (auto& file : input.get_input_files())
       {
-        if (cache_numbits(file.get()) < numbits) { THROW("argh, a bug in caching of some sort!") }
+        if (cache_numbits(*file) < numbits) { THROW("argh, a bug in caching of some sort!") }
       }
     }
   }
@@ -303,7 +312,7 @@ void parse_cache(vw& all, std::vector<std::string> cache_files, bool kill_cache,
       make_write_cache(all, file, quiet);
     else
     {
-      uint64_t c = cache_numbits(all.example_parser->input.get_input_files().back().get());
+      uint64_t c = cache_numbits(*all.example_parser->input.get_input_files().back());
       if (c < all.num_bits)
       {
         if (!quiet)
@@ -411,20 +420,9 @@ void enable_sources(vw& all, bool quiet, size_t passes, input_options& input_opt
     {
       std::ofstream pid_file;
       pid_file.open(input_options.pid_file.c_str());
-      if (!pid_file.is_open()) THROW("error writing pid file");
-
-#ifdef _WIN32
-#  pragma warning(push)  // This next line is inappropriately triggering the Windows-side warning about getpid()
-#  pragma warning( \
-      disable : 4996)  // In newer toolchains, we are properly calling _getpid(), via the #define above (line 33).
-#endif
-
-      pid_file << VW_getpid() << endl;
+      if (!pid_file.is_open()) { THROW("error writing pid file"); }
+      pid_file << VW::get_pid() << endl;
       pid_file.close();
-
-#ifdef _WIN32
-#  pragma warning(pop)
-#endif
     }
 
     if (all.daemon && !all.active)
@@ -661,7 +659,10 @@ void setup_example(vw& all, example* ae)
   if (all.example_parser->sort_features && ae->sorted == false) unique_sort_features(all.parse_mask, ae);
 
   if (all.example_parser->write_cache)
-  { VW::write_example_to_cache(all.example_parser->output, ae, all.example_parser->lbl_parser, all.parse_mask); }
+  {
+    VW::write_example_to_cache(all.example_parser->output, ae, all.example_parser->lbl_parser, all.parse_mask,
+        all.example_parser->_cache_temp_buffer);
+  }
 
   // Require all extents to be complete in an example.
 #ifndef NDEBUG
