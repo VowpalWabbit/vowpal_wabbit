@@ -20,7 +20,7 @@ void check_weights_equal(T& first, T& second)
 BOOST_AUTO_TEST_CASE(vw_dll_parsed_and_constructed_example_parity)
 {
   //parse example
-  VW_HANDLE handle1 = VW_InitializeA("--noconstant --quiet");
+  VW_HANDLE handle1 = VW_InitializeA("-q st --noconstant --quiet");
   VW_EXAMPLE example_parsed;
   example_parsed = VW_ReadExampleA(handle1, "1 |s p^the_man w^the w^man |t p^un_homme w^un w^homme");
 
@@ -77,7 +77,7 @@ BOOST_AUTO_TEST_CASE(vw_dll_parsed_and_constructed_example_parity)
 BOOST_AUTO_TEST_CASE(vw_dll_get_audit_output)
 {
   // parse example
-  VW_HANDLE handle = VW_InitializeA("-q st --noconstant --quiet --audit");
+  VW_HANDLE handle = VW_InitializeA("--noconstant --quiet --audit");
   VW_CaptureAuditData(handle);
   VW_EXAMPLE example_parsed;
   example_parsed = VW_ReadExampleA(handle, "1 | test example");
