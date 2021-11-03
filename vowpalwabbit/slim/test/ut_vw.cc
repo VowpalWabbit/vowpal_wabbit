@@ -217,7 +217,7 @@ void run_predict_in_memory(
   EXPECT_THAT(preds, Pointwise(FloatNearPointwise(1e-5f), preds_expected));
 }
 
-enum PredictParamWeightType
+enum class PredictParamWeightType
 {
   All,
   Sparse,
@@ -277,8 +277,9 @@ std::vector<PredictParam> GenerateTestParams()
       fixtures.push_back(p);
     else
     {
-      for (int weight_type = PredictParamWeightType::Sparse; weight_type <= PredictParamWeightType::Dense;
-           weight_type++)
+      std::initializer_list<PredictParamWeightType> weight_types = {
+          PredictParamWeightType::Sparse, PredictParamWeightType::Dense};
+      for (auto weight_type : weight_types)
       {
         p.weight_type = static_cast<PredictParamWeightType>(weight_type);
         fixtures.push_back(p);
