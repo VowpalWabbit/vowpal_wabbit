@@ -58,7 +58,7 @@
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <java.version>1.6</java.version>
+        <java.version>1.7</java.version>
     </properties>
 
     <dependencies>
@@ -176,6 +176,9 @@
                     </goals>
                 </execution>
                 </executions>
+                <configuration>
+                    <argLine>-Djava.library.path=${project.build.directory}/bin/natives/linux_64</argLine>
+                </configuration>
             </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
