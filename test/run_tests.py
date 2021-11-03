@@ -756,7 +756,7 @@ def convert_tests_for_flatbuffers(
 
 
 def convert_to_test_data(
-    tests: List[Any], vw_bin: str, spanning_tree_bin: Optional[str]
+    tests: List[Any], vw_bin: str, spanning_tree_bin: Optional[str], skipped_ids: List[int]
 ) -> List[TestData]:
     results = []
     for test in tests:
@@ -784,6 +784,10 @@ def convert_to_test_data(
         else:
             skip = True
             skip_reason = "This test is an unknown type"
+        
+        if test["id"] in skipped_ids:
+            skip = True
+            skip_reason = "Test skipped by --skip_test argument"
 
         results.append(
             TestData(
@@ -883,6 +887,11 @@ def main():
         action="store_true",
     )
     parser.add_argument(
+        "--skip_test",
+        help="Skip specific test ids",
+        nargs='+', 
+    )
+    parser.add_argument(
         "--test_spec",
         type=str,
         help="Optional. If passed the given JSON test spec will be used, "
@@ -972,7 +981,7 @@ def main():
         tests = json.loads(json_test_spec_content)
         print("Tests read from test spec file: {}".format((args.test_spec)))
 
-    tests = convert_to_test_data(tests, vw_bin, spanning_tree_bin)
+    tests = convert_to_test_data(tests, vw_bin, spanning_tree_bin, args.skip_test)
 
     print()
 
