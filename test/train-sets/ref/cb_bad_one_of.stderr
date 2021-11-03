@@ -6,4 +6,4 @@ weighted example sum = 0.000000
 weighted label sum = 0.000000
 average loss = n.a.
 total feature number = 0
-[critical] vw (options.h:170): Error: 'bad_type' is not a valid choice for option --cb_type
+[critical] vw (options.h:166): Error: 'bad_type' is not a valid choice for option --cb_type
