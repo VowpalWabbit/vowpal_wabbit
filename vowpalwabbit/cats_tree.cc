@@ -349,7 +349,10 @@ base_learner* setup(setup_base_i& stack_builder)
                .default_value(0)
                .keep()
                .help("tree bandwidth for continuous actions in terms of #actions"))
-      .add(make_option("link", link).keep().one_of({"identity", "logistic", "glf1", "poisson"}).help("Specify the link function"));
+      .add(make_option("link", link)
+               .keep()
+               .one_of({"identity", "logistic", "glf1", "poisson"})
+               .help("Specify the link function"));
 
   if (!options.add_parse_and_check_necessary(new_options)) return nullptr;
 

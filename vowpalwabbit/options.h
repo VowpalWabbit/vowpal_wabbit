@@ -55,11 +55,16 @@ struct option_builder
   }
 
   template <typename U>
-  void add_help(const std::ostringstream&, const U&) { /* cannot handle non-string or arithmetic types */ }
+  void add_help(const std::ostringstream&, const U&)
+  { /* cannot handle non-string or arithmetic types */
+  }
   void add_help(std::ostringstream& help, const std::string& addition) { help << addition; }
   template <typename A>
-  typename std::enable_if<std::is_arithmetic<A>::value, void>::type
-  add_help(std::ostringstream& help, const A& addition) { help << std::to_string(addition); }
+  typename std::enable_if<std::is_arithmetic<A>::value, void>::type add_help(
+      std::ostringstream& help, const A& addition)
+  {
+    help << std::to_string(addition);
+  }
 
   option_builder& help(const std::string& help)
   {
@@ -72,7 +77,10 @@ struct option_builder
       for (const auto& v : m_option_obj.one_of())
       {
         if (first) { first = false; }
-        else { help_w_additions << ", "; }
+        else
+        {
+          help_w_additions << ", ";
+        }
         add_help(help_w_additions, v);
       }
       help_w_additions << "}";
@@ -159,9 +167,7 @@ struct typed_option : base_option
     m_value = std::make_shared<T>(value);
     value_set_callback(value, called_from_add_and_parse);
     if (m_one_of.size() > 0 && std::find(m_one_of.begin(), m_one_of.end(), value) == m_one_of.end())
-    {
-       THROW(fmt::format("Error: '{}' is not a valid value for option --{}", value, m_name));
-    }
+    { THROW(fmt::format("Error: '{}' is not a valid value for option --{}", value, m_name)); }
     return *this;
   }
 

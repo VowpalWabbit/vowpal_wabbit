@@ -2550,10 +2550,9 @@ base_learner* setup(VW::setup_base_i& stack_builder)
   new_options.add(make_option("search_interpolation", interpolation_string)
                       .keep()
                       .help("at what level should interpolation happen? [*data|policy]"));
-  new_options.add(
-      make_option("search_rollout", rollout_string)
-          .one_of({"policy", "learn", "oracle", "ref", "mix_per_state", "mix_per_roll", "mix", "none"})
-          .help("how should rollouts be executed"));
+  new_options.add(make_option("search_rollout", rollout_string)
+                      .one_of({"policy", "learn", "oracle", "ref", "mix_per_state", "mix_per_roll", "mix", "none"})
+                      .help("how should rollouts be executed"));
   new_options.add(make_option("search_rollin", rollin_string)
                       .one_of({"policy", "learn", "oracle", "ref", "mix_per_state", "mix_per_roll", "mix"})
                       .help("how should past trajectories be generated"));
