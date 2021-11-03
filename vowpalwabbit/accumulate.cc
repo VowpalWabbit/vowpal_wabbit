@@ -19,7 +19,7 @@ namespace logger = VW::io::logger;
 
 void add_float(float& c1, const float& c2) { c1 += c2; }
 
-void accumulate(vw& all, parameters& weights, size_t offset)
+void accumulate(VW::workspace& all, parameters& weights, size_t offset)
 {
   uint64_t length = UINT64_ONE << all.num_bits;  // This is size of gradient
   float* local_grad = new float[length];
@@ -43,14 +43,14 @@ void accumulate(vw& all, parameters& weights, size_t offset)
   delete[] local_grad;
 }
 
-float accumulate_scalar(vw& all, float local_sum)
+float accumulate_scalar(VW::workspace& all, float local_sum)
 {
   float temp = local_sum;
   all_reduce<float, add_float>(all, &temp, 1);
   return temp;
 }
 
-void accumulate_avg(vw& all, parameters& weights, size_t offset)
+void accumulate_avg(VW::workspace& all, parameters& weights, size_t offset)
 {
   uint32_t length = 1 << all.num_bits;  // This is size of gradient
   float numnodes = static_cast<float>(all.all_reduce->total);
@@ -92,7 +92,7 @@ float min_elem(float* arr, int length)
 }
 
 template <class T>
-void do_weighting(vw& all, uint64_t length, float* local_weights, T& weights)
+void do_weighting(VW::workspace& all, uint64_t length, float* local_weights, T& weights)
 {
   for (uint64_t i = 0; i < length; i++)
   {
@@ -113,7 +113,7 @@ void do_weighting(vw& all, uint64_t length, float* local_weights, T& weights)
   }
 }
 
-void accumulate_weighted_avg(vw& all, parameters& weights)
+void accumulate_weighted_avg(VW::workspace& all, parameters& weights)
 {
   if (!weights.adaptive)
   {

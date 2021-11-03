@@ -35,7 +35,7 @@ struct sort_data
 
 struct stagewise_poly
 {
-  vw* all = nullptr;  // many uses, unmodular reduction
+  VW::workspace* all = nullptr;  // many uses, unmodular reduction
 
   float sched_exponent = 0.f;
   uint32_t batch_sz = 0;
@@ -592,7 +592,7 @@ void end_pass(stagewise_poly &poly)
   sanity_check_state(poly);
 #endif  // DEBUG
 
-  vw &all = *poly.all;
+  VW::workspace& all = *poly.all;
   if (all.all_reduce != nullptr)
   {
     /*
@@ -627,7 +627,7 @@ void end_pass(stagewise_poly &poly)
   }
 }
 
-void finish_example(vw &all, stagewise_poly &poly, example &ec)
+void finish_example(VW::workspace& all, stagewise_poly& poly, example& ec)
 {
   size_t temp_num_features = ec.num_features;
   ec.num_features = poly.synth_ec.get_num_features();
@@ -656,7 +656,7 @@ void save_load(stagewise_poly &poly, io_buf &model_file, bool read, bool text)
 base_learner* stagewise_poly_setup(VW::setup_base_i& stack_builder)
 {
   options_i& options = *stack_builder.get_options();
-  vw& all = *stack_builder.get_all_pointer();
+  VW::workspace& all = *stack_builder.get_all_pointer();
   auto poly = VW::make_unique<stagewise_poly>();
   bool stage_poly = false;
   option_group_definition new_options("Stagewise polynomial options");

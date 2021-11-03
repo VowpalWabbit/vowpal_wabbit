@@ -53,8 +53,8 @@ BOOST_AUTO_TEST_CASE(vw_dll_parsed_and_constructed_example_parity)
 
   //check parity
   BOOST_CHECK_EQUAL(score_parsed, score_constructed);
-  auto vw1 = static_cast<vw*>(handle1);
-  auto vw2 = static_cast<vw*>(handle2);
+  auto vw1 = static_cast<VW::workspace*>(handle1);
+  auto vw2 = static_cast<VW::workspace*>(handle2);
 
   BOOST_CHECK_EQUAL(vw1->weights.sparse, vw2->weights.sparse);
 

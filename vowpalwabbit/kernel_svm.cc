@@ -111,7 +111,7 @@ struct svm_params
 
   float loss_sum = 0.f;
 
-  vw* all = nullptr;  // flatten, parallel
+  VW::workspace* all = nullptr;  // flatten, parallel
   std::shared_ptr<rand_state> _random_state;
 
   ~svm_params()
@@ -582,7 +582,7 @@ void add_size_t(size_t& t1, const size_t& t2) noexcept { t1 += t2; }
 
 void add_double(double& t1, const double& t2) noexcept { t1 += t2; }
 
-void sync_queries(vw& all, svm_params& params, bool* train_pool)
+void sync_queries(VW::workspace& all, svm_params& params, bool* train_pool)
 {
   io_buf* b = new io_buf();
 
@@ -798,7 +798,7 @@ void learn(svm_params& params, base_learner&, example& ec)
 VW::LEARNER::base_learner* kernel_svm_setup(VW::setup_base_i& stack_builder)
 {
   options_i& options = *stack_builder.get_options();
-  vw& all = *stack_builder.get_all_pointer();
+  VW::workspace& all = *stack_builder.get_all_pointer();
 
   auto params = VW::make_unique<svm_params>();
   std::string kernel_type;

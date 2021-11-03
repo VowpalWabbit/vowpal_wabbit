@@ -102,16 +102,16 @@ struct save_metric_data
 
 struct finish_example_data
 {
-  using fn = void (*)(vw&, void* data, void* ex);
+  using fn = void (*)(VW::workspace&, void* data, void* ex);
   void* data = nullptr;
   base_learner* base = nullptr;
   fn finish_example_f = nullptr;
   fn print_example_f = nullptr;
 };
 
-void generic_driver(vw& all);
-void generic_driver(const std::vector<vw*>& alls);
-void generic_driver_onethread(vw& all);
+void generic_driver(VW::workspace& all);
+void generic_driver(const std::vector<VW::workspace*>& alls);
+void generic_driver_onethread(VW::workspace& all);
 
 inline void noop_save_load(void*, io_buf&, bool, bool) {}
 inline void noop_persist_metrics(void*, metric_sink&) {}
@@ -256,7 +256,7 @@ public:
   // not call predict before learn
   bool learn_returns_prediction = false;
 
-  using end_fptr_type = void (*)(vw&, void*, void*);
+  using end_fptr_type = void (*)(VW::workspace&, void*, void*);
   using finish_fptr_type = void (*)(void*);
 
   /// \private
@@ -411,13 +411,13 @@ public:
   void init_driver() { init_fd.func(init_fd.data); }
 
   // called after learn example for each example.  Explicitly not recursive.
-  inline void finish_example(vw& all, E& ec)
+  inline void finish_example(VW::workspace& all, E& ec)
   {
     debug_log_message(ec, "finish_example");
     finish_example_fd.finish_example_f(all, finish_example_fd.data, (void*)&ec);
   }
 
-  inline void print_example(vw& all, E& ec)
+  inline void print_example(VW::workspace& all, E& ec)
   {
     debug_log_message(ec, "print_example");
 
@@ -503,7 +503,7 @@ struct common_learner_builder
 {
   learner<DataT, ExampleT>* _learner = nullptr;
 
-  using end_fptr_type = void (*)(vw&, void*, void*);
+  using end_fptr_type = void (*)(VW::workspace&, void*, void*);
   using finish_fptr_type = void (*)(void*);
 
   common_learner_builder(learner<DataT, ExampleT>* learner, std::unique_ptr<DataT>&& data, const std::string& name)
@@ -591,14 +591,14 @@ struct common_learner_builder
     return *static_cast<FluentBuilderT*>(this);
   }
 
-  FluentBuilderT& set_finish_example(void (*fn_ptr)(vw& all, DataT&, ExampleT&))
+  FluentBuilderT& set_finish_example(void (*fn_ptr)(VW::workspace& all, DataT&, ExampleT&))
   {
     _learner->finish_example_fd.data = _learner->learn_fd.data;
     _learner->finish_example_fd.finish_example_f = (end_fptr_type)(fn_ptr);
     return *static_cast<FluentBuilderT*>(this);
   }
 
-  FluentBuilderT& set_print_example(void (*fn_ptr)(vw& all, DataT&, ExampleT&))
+  FluentBuilderT& set_print_example(void (*fn_ptr)(VW::workspace& all, DataT&, ExampleT&))
   {
     _learner->finish_example_fd.data = _learner->learn_fd.data;
     _learner->finish_example_fd.print_example_f = (end_fptr_type)(fn_ptr);
