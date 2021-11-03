@@ -246,7 +246,7 @@ public:
       namespace_dictionaries{};  // each namespace has a list of dictionaries attached to it
 
   vw_logger logger;
-  bool audit;     // should I print lots of debugging information?
+  bool audit;  // should I print lots of debugging information?
   std::vector<char> _audit_buffer;
   std::unique_ptr<VW::io::writer> _audit_writer;
   bool training;  // Should I train if lable data is available?

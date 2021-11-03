@@ -76,7 +76,7 @@ BOOST_AUTO_TEST_CASE(vw_dll_parsed_and_constructed_example_parity)
 
 BOOST_AUTO_TEST_CASE(vw_dll_get_audit_output)
 {
-  //parse example
+  // parse example
   VW_HANDLE handle = VW_InitializeA("-q st --noconstant --quiet --audit");
   VW_CaptureAuditData(handle);
   VW_EXAMPLE example_parsed;
