@@ -786,7 +786,6 @@ def convert_to_test_data(
             skip_reason = "This test is an unknown type"
         
         if test["id"] in skipped_ids:
-            print("skipping {}".format(test["id"]))
             skip = True
             skip_reason = "Test skipped by --skip_test argument"
 
@@ -892,6 +891,7 @@ def main():
         help="Skip specific test ids",
         nargs='+', 
         default=[],
+        type=int,
     )
     parser.add_argument(
         "--test_spec",
