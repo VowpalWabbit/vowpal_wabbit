@@ -4,6 +4,7 @@
 
 #include <boost/test/unit_test.hpp>
 
+#include "vw_string_view.h"
 #include "vwdll.h"
 #include "vw.h"
 #include "test_common.h"
@@ -71,6 +72,29 @@ BOOST_AUTO_TEST_CASE(vw_dll_parsed_and_constructed_example_parity)
 
   VW_Finish(handle1);
   VW_Finish(handle2);
+}
+
+BOOST_AUTO_TEST_CASE(vw_dll_get_audit_output)
+{
+  //parse example
+  VW_HANDLE handle = VW_InitializeA("-q st --noconstant --quiet --audit");
+  VW_CaptureAuditData(handle);
+  VW_EXAMPLE example_parsed;
+  example_parsed = VW_ReadExampleA(handle, "1 | test example");
+  VW_Learn(handle, example_parsed);
+
+  size_t audit_size;
+  char* audit_data = VW_GetAuditDataA(handle, &audit_size);
+
+  VW::string_view expected_audit = R"(0
+	test:250387:1:0@0	example:99909:1:0@0
+)";
+  VW::string_view audit_data_view(audit_data, audit_size);
+  BOOST_CHECK_EQUAL(audit_data_view, expected_audit);
+
+  VW_FreeAuditDataA(handle, audit_data);
+  VW_FinishExample(handle, example_parsed);
+  VW_Finish(handle);
 }
 
 #ifndef __APPLE__

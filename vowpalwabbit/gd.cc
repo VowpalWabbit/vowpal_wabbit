@@ -325,9 +325,9 @@ void print_features(vw& all, example& ec)
 
 void print_audit_features(vw& all, example& ec)
 {
-  if (all.audit) print_result_by_ref(all.audit_writer.get(), ec.pred.scalar, -1, ec.tag);
+  if (all.audit) print_result_by_ref(all._audit_writer.get(), ec.pred.scalar, -1, ec.tag);
 
-  print_features(all, ec, all.audit ? all.audit_writer.get() : all.stdout_adapter.get());
+  print_features(all, ec);
 }
 
 float finalize_prediction(shared_data* sd, vw_logger&, float ret)
