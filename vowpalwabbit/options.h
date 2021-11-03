@@ -162,8 +162,12 @@ struct typed_option : base_option
 
   template <typename U>
   void invalid_choice_error(const U&, const std::string&)
-  { /* cannot handle non-string or arithmetic types */ }
-  void invalid_choice_error(const std::string& value, const std::string& m_name) { THROW(fmt::format("Error: '{}' is not a valid choice for option --{}", value, m_name)); }
+  { /* cannot handle non-string or arithmetic types */
+  }
+  void invalid_choice_error(const std::string& value, const std::string& m_name)
+  {
+    THROW(fmt::format("Error: '{}' is not a valid choice for option --{}", value, m_name));
+  }
   template <typename A>
   typename std::enable_if<std::is_arithmetic<A>::value, void>::type invalid_choice_error(A& value, std::string& m_name)
   {
