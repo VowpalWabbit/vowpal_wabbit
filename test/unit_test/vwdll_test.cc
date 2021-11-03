@@ -4,10 +4,10 @@
 
 #include <boost/test/unit_test.hpp>
 
-#include "vw_string_view.h"
 #include "vwdll.h"
 #include "vw.h"
 #include "test_common.h"
+#include "vw_string_view.h"
 
 using namespace boost::unit_test;
 

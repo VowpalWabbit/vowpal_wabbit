@@ -13,6 +13,7 @@
 #include "parse_args.h"
 #include "vw.h"
 #include "memory.h"
+#include "io/io_adapter.h"
 
 // This interface now provides "wide" functions for compatibility with .NET interop
 // The default functions assume a wide (16 bit char pointer) that is converted to a utf8-string and passed to
@@ -393,32 +394,26 @@ VW_DLL_PUBLIC void VW_CALLING_CONV VW_FreeIOBuf(VW_IOBUF bufferHandle)
 }
 
 VW_DLL_PUBLIC void VW_CALLING_CONV VW_CaptureAuditData(VW_HANDLE handle) {
-	vw* all = static_cast<vw*>(handle);
-	all->_audit_writer = VW::io::create_custom_writer(
-		&all->_audit_buffer,
-		[](void* context, const char* buffer, size_t num_bytes) -> ssize_t {
-			std::vector<char>& output_buffer = *static_cast<std::vector<char>*>(context);
-      output_buffer.reserve(output_buffer.size() + num_bytes);
-      output_buffer.insert(std::end(output_buffer), buffer, buffer + num_bytes);
-			return num_bytes;
-		}
-	);
+  vw* all = static_cast<vw*>(handle);
+  all->_audit_buffer = std::make_shared<std::vector<char>>();
+  all->_audit_writer = VW::io::create_vector_writer(all->_audit_buffer);
 }
 
 VW_DLL_PUBLIC void VW_CALLING_CONV VW_ClearCapturedAuditData(VW_HANDLE handle) {
-	vw* all = static_cast<vw*>(handle);
-	all->_audit_buffer.clear();
+  vw* all = static_cast<vw*>(handle);
+  all->_audit_buffer->clear();
 }
 
 VW_DLL_PUBLIC char* VW_CALLING_CONV VW_GetAuditDataA(VW_HANDLE handle, size_t* size) {
-	vw* all = static_cast<vw*>(handle);
-	*size = all->_audit_buffer.size();
-	char* data = new char[*size];
-	memcpy(data, all->_audit_buffer.data(), *size);
-	return data;
+  vw* all = static_cast<vw*>(handle);
+  const auto buffer_size = all->_audit_buffer->size();
+  *size = buffer_size;
+  char* data = new char[buffer_size];
+  memcpy(data, all->_audit_buffer->data(), buffer_size);
+  return data;
 }
 
 VW_DLL_PUBLIC void VW_CALLING_CONV VW_FreeAuditDataA(VW_HANDLE handle, char* data) {
-	delete[] data;
+  delete[] data;
 }
 }
