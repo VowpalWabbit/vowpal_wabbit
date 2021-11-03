@@ -12,7 +12,7 @@ namespace VW
 {
 namespace slates
 {
-enum example_type : uint8_t
+enum class example_type : uint8_t
 {
   unset = 0,
   shared = 1,
@@ -61,4 +61,6 @@ size_t read_cached_label(VW::slates::label& ld, io_buf& cache);
 
 extern label_parser slates_label_parser;
 }  // namespace slates
+
+VW::string_view to_string(VW::slates::example_type);
 }  // namespace VW
