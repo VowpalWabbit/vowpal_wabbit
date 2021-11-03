@@ -244,12 +244,9 @@ public:
   }
 };
 
-vw_ptr my_initialize_with_log_and_optional_stdin(std::string args, py_log_wrapper_ptr py_log, bool allow_stdin)
+vw_ptr my_initialize_with_log(std::string args, py_log_wrapper_ptr py_log)
 {
-  if (!allow_stdin)
-  {
-    if (args.find_first_of("--no_stdin") == std::string::npos) args += " --no_stdin";
-  }
+  if (args.find_first_of("--no_stdin") == std::string::npos) args += " --no_stdin";
 
   trace_message_t trace_listener = nullptr;
   void* trace_context = nullptr;
@@ -265,12 +262,7 @@ vw_ptr my_initialize_with_log_and_optional_stdin(std::string args, py_log_wrappe
   return boost::shared_ptr<vw>(foo);
 }
 
-vw_ptr my_initialize_with_log(std::string args, py_log_wrapper_ptr py_log)
-{
-  my_initialize_with_log_and_optional_stdin(args, py_log, false);
-}
-
-vw_ptr my_initialize(std::string args) { return my_initialize_with_log_and_optional_stdin(args, nullptr, false); }
+vw_ptr my_initialize(std::string args) { return my_initialize_with_log(args, nullptr); }
 
 void my_run_parser(vw_ptr all)
 {
@@ -1171,7 +1163,6 @@ BOOST_PYTHON_MODULE(pylibvw)
       "vw", "the basic VW object that holds with weight vector, parser, etc.", py::no_init)
       .def("__init__", py::make_constructor(my_initialize))
       .def("__init__", py::make_constructor(my_initialize_with_log))
-      .def("__init__", py::make_constructor(my_initialize_with_log_and_optional_stdin))
       //      .def("__del__", &my_finish, "deconstruct the VW object by calling finish")
       .def("run_parser", &my_run_parser, "parse external data file")
       .def("get_learner_metrics", &get_learner_metrics,

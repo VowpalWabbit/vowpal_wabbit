@@ -309,7 +309,7 @@ class vw(pylibvw.vw):
     finished = False
     log_fwd = None
 
-    def __init__(self, arg_str=None, enable_logging=False, allow_stdin=False, **kw):
+    def __init__(self, arg_str=None, enable_logging=False, **kw):
         """Initialize the vw object.
 
         Parameters
@@ -361,8 +361,10 @@ class vw(pylibvw.vw):
             self.log_fwd = log_forward()
             self.log_wrapper = pylibvw.vw_log(self.log_fwd)
 
-        # self.log_wrapper == None should get passed through as a nullptr
-        super(vw, self).__init__(" ".join(l), self.log_wrapper, allow_stdin)
+        if self.log_wrapper:
+            super(vw, self).__init__(" ".join(l), self.log_wrapper)
+        else:
+            super(vw, self).__init__(" ".join(l))
         self.init = True
 
         # check to see if native parser needs to run
