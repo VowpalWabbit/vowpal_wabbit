@@ -83,7 +83,7 @@ BOOST_AUTO_TEST_CASE(vw_dll_get_audit_output)
   example_parsed = VW_ReadExampleA(handle, "1 | test example");
   VW_Learn(handle, example_parsed);
 
-  size_t audit_size;
+  size_t audit_size = 0;
   char* audit_data = VW_GetAuditDataA(handle, &audit_size);
 
   VW::string_view expected_audit = R"(0
