@@ -273,6 +273,7 @@ set(vw_all_sources
   cbify.cc
   cb_to_cb_adf.cc
   ccb_label.cc
+  ccb_reduction_features.cc
   classweight.cc
   conditional_contextual_bandit.cc
   confidence.cc

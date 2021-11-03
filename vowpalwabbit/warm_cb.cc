@@ -522,7 +522,7 @@ void init_adf_data(warm_cb& data, const uint32_t num_actions)
 base_learner* warm_cb_setup(VW::setup_base_i& stack_builder)
 {
   options_i& options = *stack_builder.get_options();
-  vw& all = *stack_builder.get_all_pointer();
+  VW::workspace& all = *stack_builder.get_all_pointer();
   uint32_t num_actions = 0;
   auto data = VW::make_unique<warm_cb>();
   bool use_cs;
@@ -629,11 +629,11 @@ base_learner* warm_cb_setup(VW::setup_base_i& stack_builder)
   auto* l = make_reduction_learner(std::move(data), base, learn_pred_ptr, learn_pred_ptr,
       stack_builder.get_setupfn_name(warm_cb_setup) + name_addition)
                 .set_params_per_weight(ws)
-                .set_prediction_type(VW::prediction_type_t::multiclass)
+                .set_output_prediction_type(VW::prediction_type_t::multiclass)
                 .set_learn_returns_prediction(true)
                 .set_finish_example(finish_ptr)
                 .set_finish(finish)
-                .set_label_type(label_type)
+                .set_input_label_type(label_type)
                 .build();
 
   return make_base(*l);

@@ -338,7 +338,7 @@ void learn(cats_tree& tree, single_learner& base, example& ec)
 base_learner* setup(setup_base_i& stack_builder)
 {
   options_i& options = *stack_builder.get_options();
-  vw& all = *stack_builder.get_all_pointer();
+  VW::workspace& all = *stack_builder.get_all_pointer();
 
   option_group_definition new_options("CATS Tree Options");
   uint32_t num_actions;  // = K = 2^D
@@ -372,8 +372,8 @@ base_learner* setup(setup_base_i& stack_builder)
   auto* l = make_reduction_learner(
       std::move(tree), as_singleline(base), learn, predict, stack_builder.get_setupfn_name(setup))
                 .set_params_per_weight(params_per_weight)
-                .set_prediction_type(VW::prediction_type_t::multiclass)
-                .set_label_type(VW::label_type_t::cb)
+                .set_output_prediction_type(VW::prediction_type_t::multiclass)
+                .set_input_label_type(VW::label_type_t::cb)
                 .build();
   all.example_parser->lbl_parser = CB::cb_label;
   return make_base(*l);

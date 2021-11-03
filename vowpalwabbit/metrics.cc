@@ -78,7 +78,7 @@ void list_to_json_file(const std::string& filename, const metric_sink& metrics)
   }
 }
 
-void output_metrics(vw& all)
+void output_metrics(VW::workspace& all)
 {
   if (all.options->was_supplied("extra_metrics"))
   {
@@ -140,7 +140,7 @@ VW::LEARNER::base_learner* metrics_setup(VW::setup_base_i& stack_builder)
     auto* l = make_reduction_learner(std::move(data), as_multiline(base_learner),
         predict_or_learn<true, multi_learner, multi_ex>, predict_or_learn<false, multi_learner, multi_ex>,
         stack_builder.get_setupfn_name(metrics_setup))
-                  .set_prediction_type(base_learner->get_output_prediction_type())
+                  .set_output_prediction_type(base_learner->get_output_prediction_type())
                   .set_learn_returns_prediction(base_learner->learn_returns_prediction)
                   .set_persist_metrics(persist)
                   .build();
@@ -151,7 +151,7 @@ VW::LEARNER::base_learner* metrics_setup(VW::setup_base_i& stack_builder)
     auto* l = make_reduction_learner(std::move(data), as_singleline(base_learner),
         predict_or_learn<true, single_learner, example>, predict_or_learn<false, single_learner, example>,
         stack_builder.get_setupfn_name(metrics_setup))
-                  .set_prediction_type(base_learner->get_output_prediction_type())
+                  .set_output_prediction_type(base_learner->get_output_prediction_type())
                   .set_learn_returns_prediction(base_learner->learn_returns_prediction)
                   .set_persist_metrics(persist)
                   .build();

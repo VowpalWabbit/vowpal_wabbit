@@ -174,7 +174,7 @@ void predict(pmf_to_pdf::reduction& data, single_learner&, example& ec) { data.p
 
 void learn(pmf_to_pdf::reduction& data, single_learner&, example& ec) { data.learn(ec); }
 
-void print_update(vw& all, bool is_test, example& ec, std::stringstream& pred_string)
+void print_update(VW::workspace& all, bool is_test, example& ec, std::stringstream& pred_string)
 {
   if (all.sd->weighted_examples() >= all.sd->dump_interval && !all.logger.quiet && !all.bfgs)
   {
@@ -191,7 +191,7 @@ void print_update(vw& all, bool is_test, example& ec, std::stringstream& pred_st
   }
 }
 
-void output_example(vw& all, reduction&, example& ec, CB::label& ld)
+void output_example(VW::workspace& all, reduction&, example& ec, CB::label& ld)
 {
   float loss = 0.;
   auto optional_cost = get_observed_cost_cb(ec.l.cb);
@@ -226,7 +226,7 @@ void output_example(vw& all, reduction&, example& ec, CB::label& ld)
   print_update(all, CB::is_test_label(ld), ec, sso);
 }
 
-void finish_example(vw& all, reduction& c, example& ec)
+void finish_example(VW::workspace& all, reduction& c, example& ec)
 {
   output_example(all, c, ec, ec.l.cb);
   VW::finish_example(all, ec);
@@ -235,7 +235,7 @@ void finish_example(vw& all, reduction& c, example& ec)
 base_learner* setup(VW::setup_base_i& stack_builder)
 {
   options_i& options = *stack_builder.get_options();
-  vw& all = *stack_builder.get_all_pointer();
+  VW::workspace& all = *stack_builder.get_all_pointer();
   auto data = VW::make_unique<pmf_to_pdf::reduction>();
 
   option_group_definition new_options("Convert discrete PMF into continuous PDF");
@@ -300,8 +300,8 @@ base_learner* setup(VW::setup_base_i& stack_builder)
 
   auto* l = VW::LEARNER::make_reduction_learner(
       std::move(data), p_base, learn, predict, stack_builder.get_setupfn_name(setup))
-                .set_prediction_type(VW::prediction_type_t::pdf)
-                .set_label_type(VW::label_type_t::continuous)
+                .set_output_prediction_type(VW::prediction_type_t::pdf)
+                .set_input_label_type(VW::label_type_t::continuous)
                 // .set_output_label_type(label_type_t::cb)
                 // .set_input_prediction_type(prediction_type_t::action_scores)
                 .build();

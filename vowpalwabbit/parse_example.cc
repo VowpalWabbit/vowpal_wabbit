@@ -58,7 +58,7 @@ size_t read_features(io_buf& buf, char*& line, size_t& num_chars)
   return num_chars_initial;
 }
 
-int read_features_string(vw* all, io_buf& buf, v_array<example*>& examples)
+int read_features_string(VW::workspace* all, io_buf& buf, v_array<example*>& examples)
 {
   char* line;
   size_t num_chars;
@@ -497,7 +497,7 @@ public:
     }
   }
 
-  TC_parser(VW::string_view line, vw& all, example* ae) : _line(line)
+  TC_parser(VW::string_view line, VW::workspace& all, example* ae) : _line(line)
   {
     if (!_line.empty())
     {
@@ -577,13 +577,13 @@ void substring_to_example(vw* all, example* ae, VW::string_view example)
 
 namespace VW
 {
-void read_line(vw& all, example* ex, VW::string_view line)
+void read_line(VW::workspace& all, example* ex, VW::string_view line)
 {
   while (line.size() > 0 && line.back() == '\n') line.remove_suffix(1);
   substring_to_example(&all, ex, line);
 }
 
-void read_line(vw& all, example* ex, const char* line) { return read_line(all, ex, VW::string_view(line)); }
+void read_line(VW::workspace& all, example* ex, const char* line) { return read_line(all, ex, VW::string_view(line)); }
 
 void read_lines(vw* all, const char* line, size_t len, v_array<example*>& examples)
 {

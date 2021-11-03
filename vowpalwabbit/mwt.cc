@@ -159,7 +159,7 @@ void print_scalars(VW::io::writer* f, v_array<float>& scalars, v_array<char>& ta
   }
 }
 
-void finish_example(vw& all, mwt& c, example& ec)
+void finish_example(VW::workspace& all, mwt& c, example& ec)
 {
   float loss = 0.;
   if (c.learn)
@@ -279,8 +279,8 @@ base_learner* mwt_setup(VW::setup_base_i& stack_builder)
   auto* l = make_reduction_learner(std::move(c), as_singleline(stack_builder.setup_base_learner()), learn_ptr, pred_ptr,
       stack_builder.get_setupfn_name(mwt_setup) + name_addition)
                 .set_learn_returns_prediction(true)
-                .set_prediction_type(VW::prediction_type_t::scalars)
-                .set_label_type(VW::label_type_t::cb)
+                .set_output_prediction_type(VW::prediction_type_t::scalars)
+                .set_input_label_type(VW::label_type_t::cb)
                 .set_save_load(save_load)
                 .set_finish_example(finish_example)
                 .build();

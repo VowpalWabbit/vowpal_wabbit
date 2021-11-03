@@ -46,7 +46,7 @@ private:
   uint32_t numrnd;
 
   size_t increment;
-  vw* all;
+  VW::workspace* all;
 
   std::vector<float> bonuses;
   std::vector<float> initials;
@@ -73,7 +73,8 @@ private:
   void base_learn_or_predict(multi_learner&, multi_ex&, uint32_t);
 
 public:
-  cb_explore_adf_rnd(float _epsilon, float _alpha, float _invlambda, uint32_t _numrnd, size_t _increment, vw* _all)
+  cb_explore_adf_rnd(
+      float _epsilon, float _alpha, float _invlambda, uint32_t _numrnd, size_t _increment, VW::workspace* _all)
       : epsilon(_epsilon)
       , alpha(_alpha)
       , sqrtinvlambda(std::sqrt(_invlambda))
@@ -256,7 +257,7 @@ void cb_explore_adf_rnd::predict_or_learn_impl(multi_learner& base, multi_ex& ex
 base_learner* setup(VW::setup_base_i& stack_builder)
 {
   VW::config::options_i& options = *stack_builder.get_options();
-  vw& all = *stack_builder.get_all_pointer();
+  VW::workspace& all = *stack_builder.get_all_pointer();
   using config::make_option;
   bool cb_explore_adf_option = false;
   float epsilon = 0.;
@@ -308,8 +309,8 @@ base_learner* setup(VW::setup_base_i& stack_builder)
   auto* l = make_reduction_learner(
       std::move(data), base, explore_type::learn, explore_type::predict, stack_builder.get_setupfn_name(setup))
                 .set_params_per_weight(problem_multiplier)
-                .set_prediction_type(VW::prediction_type_t::action_probs)
-                .set_label_type(VW::label_type_t::cb)
+                .set_output_prediction_type(VW::prediction_type_t::action_probs)
+                .set_input_label_type(VW::label_type_t::cb)
                 .set_finish_example(explore_type::finish_multiline_example)
                 .set_print_example(explore_type::print_multiline_example)
                 .set_persist_metrics(explore_type::persist_metrics)

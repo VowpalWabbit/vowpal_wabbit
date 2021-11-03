@@ -62,6 +62,7 @@ const size_t pDECISION_SCORES = 8;
 const size_t pACTION_PDF_VALUE = 9;
 const size_t pPDF = 10;
 const size_t pACTIVE_MULTICLASS = 11;
+const size_t pNOPRED = 12;
 
 void dont_delete_me(void* arg) {}
 
@@ -437,6 +438,8 @@ size_t my_get_prediction_type(vw_ptr all)
       return pPDF;
     case VW::prediction_type_t::active_multiclass:
       return pACTIVE_MULTICLASS;
+    case VW::prediction_type_t::nopred:
+      return pNOPRED;
     default:
       THROW("unsupported prediction type used");
   }
@@ -858,6 +861,8 @@ py::list ex_get_multilabel_predictions(example_ptr ec)
   return values;
 }
 
+char ex_get_nopred(example_ptr ec) { return ec->pred.nopred; }
+
 uint32_t ex_get_costsensitive_prediction(example_ptr ec) { return ec->pred.multiclass; }
 uint32_t ex_get_costsensitive_num_costs(example_ptr ec) { return (uint32_t)ec->l.cs.costs.size(); }
 float ex_get_costsensitive_cost(example_ptr ec, uint32_t i) { return ec->l.cs.costs[i].x; }
@@ -885,6 +890,7 @@ float get_loss(example_ptr ec) { return ec->loss; }
 float get_total_sum_feat_sq(example_ptr ec) { return ec->get_total_sum_feat_sq(); }
 
 double get_sum_loss(vw_ptr vw) { return vw->sd->sum_loss; }
+double get_holdout_sum_loss(vw_ptr vw) { return vw->sd->holdout_sum_loss; }
 double get_weighted_examples(vw_ptr vw) { return vw->sd->weighted_examples(); }
 
 bool search_should_output(search_ptr sch) { return sch->output().good(); }
@@ -1203,6 +1209,7 @@ BOOST_PYTHON_MODULE(pylibvw)
       .def("get_label_type", &my_get_label_type, "return parse label type")
       .def("get_prediction_type", &my_get_prediction_type, "return prediction type")
       .def("get_sum_loss", &get_sum_loss, "return the total cumulative loss suffered so far")
+      .def("get_holdout_sum_loss", &get_holdout_sum_loss, "return the total cumulative holdout loss suffered so far")
       .def("get_weighted_examples", &get_weighted_examples, "return the total weight of examples so far")
 
       .def("get_search_ptr", &get_search_ptr, "return a pointer to the search data structure")
@@ -1241,7 +1248,8 @@ BOOST_PYTHON_MODULE(pylibvw)
       .def_readonly("pDECISION_SCORES", pDECISION_SCORES, "Decision scores prediction type")
       .def_readonly("pACTION_PDF_VALUE", pACTION_PDF_VALUE, "Action pdf value prediction type")
       .def_readonly("pPDF", pPDF, "PDF prediction type")
-      .def_readonly("pACTIVE_MULTICLASS", pACTIVE_MULTICLASS, "Active multiclass prediction type");
+      .def_readonly("pACTIVE_MULTICLASS", pACTIVE_MULTICLASS, "Active multiclass prediction type")
+      .def_readonly("pNOPRED", pNOPRED, "Nopred prediction type");
 
   // define the example class
   py::class_<example, example_ptr, boost::noncopyable>("example", py::no_init)
@@ -1315,6 +1323,7 @@ BOOST_PYTHON_MODULE(pylibvw)
       .def("get_active_multiclass", &ex_get_active_multiclass, "Get active multiclass from example prediction")
       .def("get_multilabel_predictions", &ex_get_multilabel_predictions,
           "Get multilabel predictions from example prediction")
+      .def("get_nopred", &ex_get_nopred, "Get nopred from example prediction")
       .def("get_costsensitive_prediction", &ex_get_costsensitive_prediction,
           "Assuming a cost_sensitive label type, get the prediction")
       .def("get_costsensitive_num_costs", &ex_get_costsensitive_num_costs,

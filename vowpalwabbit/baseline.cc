@@ -39,7 +39,7 @@ bool baseline_enabled(const example* ec)
 struct baseline
 {
   example ec;
-  vw* all = nullptr;
+  VW::workspace* all = nullptr;
   bool lr_scaling = false;  // whether to scale baseline learning rate based on max label
   float lr_multiplier = 0.f;
   bool global_only = false;  // only use a global constant for the baseline
@@ -158,7 +158,7 @@ float sensitivity(baseline& data, base_learner& base, example& ec)
 base_learner* baseline_setup(VW::setup_base_i& stack_builder)
 {
   options_i& options = *stack_builder.get_options();
-  vw& all = *stack_builder.get_all_pointer();
+  VW::workspace& all = *stack_builder.get_all_pointer();
   auto data = VW::make_unique<baseline>();
   bool baseline_option = false;
   std::string loss_function;
@@ -190,8 +190,8 @@ base_learner* baseline_setup(VW::setup_base_i& stack_builder)
   auto base = as_singleline(stack_builder.setup_base_learner());
   auto* l = VW::LEARNER::make_reduction_learner(std::move(data), base, predict_or_learn<true>, predict_or_learn<false>,
       stack_builder.get_setupfn_name(baseline_setup))
-                .set_prediction_type(VW::prediction_type_t::scalar)
-                .set_label_type(VW::label_type_t::simple)
+                .set_output_prediction_type(VW::prediction_type_t::scalar)
+                .set_input_label_type(VW::label_type_t::simple)
                 .set_sensitivity(sensitivity)
                 .build();
 

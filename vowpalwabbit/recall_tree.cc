@@ -211,7 +211,7 @@ void insert_example_at_node(recall_tree& b, uint32_t cn, example& ec)
 
 void add_node_id_feature(recall_tree& b, uint32_t cn, example& ec)
 {
-  vw* all = b.all;
+  VW::workspace* all = b.all;
   uint64_t mask = all->weights.mask();
   size_t ss = all->weights.stride_shift();
 
@@ -528,8 +528,8 @@ base_learner* recall_tree_setup(VW::setup_base_i& stack_builder)
                 .set_params_per_weight(ws)
                 .set_finish_example(MULTICLASS::finish_example<recall_tree&>)
                 .set_save_load(save_load_tree)
-                .set_prediction_type(VW::prediction_type_t::multiclass)
-                .set_label_type(VW::label_type_t::multiclass)
+                .set_output_prediction_type(VW::prediction_type_t::multiclass)
+                .set_input_label_type(VW::label_type_t::multiclass)
                 .build();
 
   all.example_parser->lbl_parser = MULTICLASS::mc_label;

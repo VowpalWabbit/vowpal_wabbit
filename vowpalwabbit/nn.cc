@@ -81,7 +81,7 @@ static inline float fastexp(float p) { return fastpow2(1.442695040f * p); }
 
 static inline float fasttanh(float p) { return -1.0f + 2.0f / (1.0f + fastexp(-2.0f * p)); }
 
-void finish_setup(nn& n, vw& all)
+void finish_setup(nn& n, VW::workspace& all)
 {
   // TODO: output_layer audit
 
@@ -401,7 +401,7 @@ void multipredict(nn& n, single_learner& base, example& ec, size_t count, size_t
   ec.ft_offset -= static_cast<uint64_t>(step * count);
 }
 
-void finish_example(vw& all, nn&, example& ec)
+void finish_example(VW::workspace& all, nn&, example& ec)
 {
   std::unique_ptr<VW::io::writer> temp(nullptr);
   auto raw_prediction_guard = VW::swap_guard(all.raw_prediction, temp);
@@ -468,8 +468,8 @@ base_learner* nn_setup(VW::setup_base_i& stack_builder)
                 .set_params_per_weight(ws)
                 .set_learn_returns_prediction(true)
                 .set_multipredict(multipredict_f)
-                .set_prediction_type(VW::prediction_type_t::scalar)
-                .set_label_type(VW::label_type_t::simple)
+                .set_output_prediction_type(VW::prediction_type_t::scalar)
+                .set_input_label_type(VW::label_type_t::simple)
                 .set_finish_example(finish_example)
                 .set_end_pass(end_pass)
                 .build();

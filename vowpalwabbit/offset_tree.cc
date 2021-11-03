@@ -273,8 +273,8 @@ base_learner* setup(VW::setup_base_i& stack_builder)
   auto* l = make_reduction_learner(
       std::move(otree), as_singleline(base), learn, predict, stack_builder.get_setupfn_name(setup))
                 .set_params_per_weight(ws)
-                .set_prediction_type(prediction_type_t::action_probs)
-                .set_label_type(label_type_t::cb)
+                .set_output_prediction_type(prediction_type_t::action_probs)
+                .set_input_label_type(label_type_t::cb)
                 .build();
 
   return make_base(*l);

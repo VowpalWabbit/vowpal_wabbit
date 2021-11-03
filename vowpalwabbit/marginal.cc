@@ -47,7 +47,7 @@ struct data
   }
 
   data(float initial_numerator, float initial_denominator, float decay, bool update_before_learn,
-      bool unweighted_marginals, bool compete, vw& all)
+      bool unweighted_marginals, bool compete, VW::workspace& all)
       : data(initial_numerator, initial_denominator, decay, update_before_learn, unweighted_marginals, compete,
             &all.weights, all.loss.get(), all.sd)
   {
@@ -381,7 +381,7 @@ using namespace MARGINAL;
 VW::LEARNER::base_learner* marginal_setup(VW::setup_base_i& stack_builder)
 {
   options_i& options = *stack_builder.get_options();
-  vw* all = stack_builder.get_all_pointer();
+  VW::workspace* all = stack_builder.get_all_pointer();
 
   std::string marginal;
   float initial_denominator;
@@ -416,8 +416,8 @@ VW::LEARNER::base_learner* marginal_setup(VW::setup_base_i& stack_builder)
 
   auto* l = VW::LEARNER::make_reduction_learner(std::move(d), as_singleline(stack_builder.setup_base_learner()),
       predict_or_learn<true>, predict_or_learn<false>, stack_builder.get_setupfn_name(marginal_setup))
-                .set_label_type(VW::label_type_t::simple)
-                .set_prediction_type(VW::prediction_type_t::scalar)
+                .set_input_label_type(VW::label_type_t::simple)
+                .set_output_prediction_type(VW::prediction_type_t::scalar)
                 .set_learn_returns_prediction(true)
                 .set_save_load(save_load)
                 .build();

@@ -498,7 +498,7 @@ void save_load_tree(log_multi& b, io_buf& model_file, bool read, bool text)
 base_learner* log_multi_setup(VW::setup_base_i& stack_builder)  // learner setup
 {
   options_i& options = *stack_builder.get_options();
-  vw& all = *stack_builder.get_all_pointer();
+  VW::workspace& all = *stack_builder.get_all_pointer();
 
   auto data = VW::make_unique<log_multi>();
   option_group_definition new_options("Logarithmic Time Multiclass Tree");
@@ -525,8 +525,8 @@ base_learner* log_multi_setup(VW::setup_base_i& stack_builder)  // learner setup
                 .set_params_per_weight(ws)
                 .set_finish_example(MULTICLASS::finish_example<log_multi&>)
                 .set_save_load(save_load_tree)
-                .set_prediction_type(VW::prediction_type_t::multiclass)
-                .set_label_type(VW::label_type_t::multiclass)
+                .set_output_prediction_type(VW::prediction_type_t::multiclass)
+                .set_input_label_type(VW::label_type_t::multiclass)
                 .build();
 
   all.example_parser->lbl_parser = MULTICLASS::mc_label;

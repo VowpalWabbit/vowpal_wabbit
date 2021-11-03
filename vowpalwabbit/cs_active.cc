@@ -60,7 +60,7 @@ struct cs_active
   bool is_baseline = false;
   bool use_domination = false;
 
-  vw* all = nullptr;  // statistics, loss
+  VW::workspace* all = nullptr;  // statistics, loss
   VW::LEARNER::base_learner* l = nullptr;
 
   v_array<lq_data> query_data;
@@ -102,7 +102,7 @@ inline void inner_loop(cs_active& cs_a, single_learner& base, example& ec, uint3
   base.predict(ec, i - 1);
   if (is_learn)
   {
-    vw& all = *cs_a.all;
+    VW::workspace& all = *cs_a.all;
     ec.weight = 1.;
     if (is_simulation)
     {
@@ -287,7 +287,7 @@ void predict_or_learn(cs_active& cs_a, single_learner& base, example& ec)
   ec.l.cs = ld;
 }
 
-void finish_example(vw& all, cs_active&, example& ec)
+void finish_example(VW::workspace& all, cs_active&, example& ec)
 {
   COST_SENSITIVE::output_example(all, ec, ec.l.cs, ec.pred.active_multiclass.predicted_class);
   VW::finish_example(all, ec);
@@ -296,7 +296,7 @@ void finish_example(vw& all, cs_active&, example& ec)
 base_learner* cs_active_setup(VW::setup_base_i& stack_builder)
 {
   options_i& options = *stack_builder.get_options();
-  vw& all = *stack_builder.get_all_pointer();
+  VW::workspace& all = *stack_builder.get_all_pointer();
   auto data = VW::make_unique<cs_active>();
 
   bool simulation = false;
@@ -376,8 +376,8 @@ base_learner* cs_active_setup(VW::setup_base_i& stack_builder)
       predict_ptr, stack_builder.get_setupfn_name(cs_active_setup) + name_addition)
                 .set_params_per_weight(ws)
                 .set_learn_returns_prediction(true)
-                .set_prediction_type(VW::prediction_type_t::active_multiclass)
-                .set_label_type(VW::label_type_t::cs)
+                .set_output_prediction_type(VW::prediction_type_t::active_multiclass)
+                .set_input_label_type(VW::label_type_t::cs)
                 .set_finish_example(finish_example)
                 .build();
 

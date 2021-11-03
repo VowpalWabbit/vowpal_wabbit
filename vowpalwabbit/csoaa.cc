@@ -129,12 +129,12 @@ void predict_or_learn(csoaa& c, single_learner& base, example& ec)
   ec.pred.multiclass = prediction;
 }
 
-void finish_example(vw& all, csoaa&, example& ec) { COST_SENSITIVE::finish_example(all, ec); }
+void finish_example(VW::workspace& all, csoaa&, example& ec) { COST_SENSITIVE::finish_example(all, ec); }
 
 base_learner* csoaa_setup(VW::setup_base_i& stack_builder)
 {
   options_i& options = *stack_builder.get_options();
-  vw& all = *stack_builder.get_all_pointer();
+  VW::workspace& all = *stack_builder.get_all_pointer();
   auto c = VW::make_unique<csoaa>();
   option_group_definition new_options("Cost Sensitive One Against All");
   new_options.add(
@@ -152,8 +152,8 @@ base_learner* csoaa_setup(VW::setup_base_i& stack_builder)
                 .set_learn_returns_prediction(
                     true) /* csoaa.learn calls gd.learn. nothing to be gained by calling csoaa.predict first */
                 .set_params_per_weight(ws)
-                .set_prediction_type(VW::prediction_type_t::multiclass)
-                .set_label_type(VW::label_type_t::cs)
+                .set_output_prediction_type(VW::prediction_type_t::multiclass)
+                .set_input_label_type(VW::label_type_t::cs)
                 .set_finish_example(finish_example)
                 .build();
 
@@ -175,7 +175,7 @@ struct ldf
   bool treat_as_classifier = false;
   bool is_probabilities = false;
   float csoaa_example_t = false;
-  vw* all = nullptr;
+  VW::workspace* all = nullptr;
 
   bool rank = false;
   action_scores a_s;
@@ -228,7 +228,7 @@ void subtract_feature(example& ec, float feature_value_x, uint64_t weight_index)
 }
 
 // Iterate over all features of ecsub including quadratic and cubic features and subtract them from ec.
-void subtract_example(vw& all, example* ec, example* ecsub)
+void subtract_example(VW::workspace& all, example* ec, example* ecsub)
 {
   features& wap_fs = ec->feature_space[wap_ldf_namespace];
   wap_fs.sum_feat_sq = 0;
@@ -571,7 +571,7 @@ void predict_csoaa_ldf_rank(ldf& data, single_learner& base, multi_ex& ec_seq_al
   }
 }
 
-void global_print_newline(vw& all)
+void global_print_newline(VW::workspace& all)
 {
   char temp[1];
   temp[0] = '\n';
@@ -583,7 +583,7 @@ void global_print_newline(vw& all)
   }
 }
 
-void output_example(vw& all, example& ec, bool& hit_loss, multi_ex* ec_seq, ldf& data)
+void output_example(VW::workspace& all, example& ec, bool& hit_loss, multi_ex* ec_seq, ldf& data)
 {
   label& ld = ec.l.cs;
   const auto& costs = ld.costs;
@@ -653,7 +653,7 @@ void output_example(vw& all, example& ec, bool& hit_loss, multi_ex* ec_seq, ldf&
   COST_SENSITIVE::print_update(all, COST_SENSITIVE::cs_label.test_label(ec.l), ec, ec_seq, false, predicted_class);
 }
 
-void output_rank_example(vw& all, example& head_ec, bool& hit_loss, multi_ex* ec_seq)
+void output_rank_example(VW::workspace& all, example& head_ec, bool& hit_loss, multi_ex* ec_seq)
 {
   const auto& costs = head_ec.l.cs.costs;
 
@@ -701,7 +701,7 @@ void output_rank_example(vw& all, example& head_ec, bool& hit_loss, multi_ex* ec
   COST_SENSITIVE::print_update(all, COST_SENSITIVE::cs_label.test_label(head_ec.l), head_ec, ec_seq, true, 0);
 }
 
-void output_example_seq(vw& all, ldf& data, multi_ex& ec_seq)
+void output_example_seq(VW::workspace& all, ldf& data, multi_ex& ec_seq)
 {
   size_t K = ec_seq.size();
   if ((K > 0) && !ec_seq_is_label_definition(ec_seq))
@@ -758,7 +758,7 @@ void output_example_seq(vw& all, ldf& data, multi_ex& ec_seq)
 
 void end_pass(ldf& data) { data.first_pass = false; }
 
-void finish_multiline_example(vw& all, ldf& data, multi_ex& ec_seq)
+void finish_multiline_example(VW::workspace& all, ldf& data, multi_ex& ec_seq)
 {
   if (!ec_seq.empty())
   {
@@ -828,7 +828,7 @@ multi_ex process_labels(ldf& data, const multi_ex& ec_seq_all)
 base_learner* csldf_setup(VW::setup_base_i& stack_builder)
 {
   options_i& options = *stack_builder.get_options();
-  vw& all = *stack_builder.get_all_pointer();
+  VW::workspace& all = *stack_builder.get_all_pointer();
   auto ld = VW::make_unique<ldf>();
 
   std::string csoaa_ldf;
@@ -940,8 +940,8 @@ base_learner* csldf_setup(VW::setup_base_i& stack_builder)
   auto* l = make_reduction_learner(std::move(ld), pbase, learn_csoaa_ldf, pred_ptr, name + name_addition)
                 .set_finish_example(finish_multiline_example)
                 .set_end_pass(end_pass)
-                .set_label_type(VW::label_type_t::cs)
-                .set_prediction_type(pred_type)
+                .set_input_label_type(VW::label_type_t::cs)
+                .set_output_prediction_type(pred_type)
                 .build();
 
   all.example_parser->lbl_parser = COST_SENSITIVE::cs_label;

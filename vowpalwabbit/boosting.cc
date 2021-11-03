@@ -312,7 +312,7 @@ void save_load_sampling(boosting& o, io_buf& model_file, bool read, bool text)
   logger::errlog_info("{}", fmt::to_string(buffer));
 }
 
-void return_example(vw& all, boosting& /* a */, example& ec)
+void return_example(VW::workspace& all, boosting& /* a */, example& ec)
 {
   output_and_account_example(all, ec);
   VW::finish_example(all, ec);
@@ -435,8 +435,8 @@ VW::LEARNER::base_learner* boosting_setup(VW::setup_base_i& stack_builder)
   auto* l = make_reduction_learner(std::move(data), as_singleline(stack_builder.setup_base_learner()), learn_ptr,
       pred_ptr, stack_builder.get_setupfn_name(boosting_setup) + name_addition)
                 .set_params_per_weight(ws)
-                .set_prediction_type(VW::prediction_type_t::scalar)
-                .set_label_type(VW::label_type_t::simple)
+                .set_output_prediction_type(VW::prediction_type_t::scalar)
+                .set_input_label_type(VW::label_type_t::simple)
                 .set_save_load(save_load_fn)
                 .set_finish_example(return_example)
                 .build();

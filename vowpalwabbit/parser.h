@@ -31,6 +31,11 @@
 
 namespace VW
 {
+struct workspace;
+
+void parse_example_label(string_view label, const label_parser& lbl_parser, const named_labels* ldict,
+    label_parser_reuse_mem& reuse_mem, example& ec);
+
 namespace details
 {
 struct cache_temp_buffer
@@ -92,7 +97,6 @@ struct example_parser_factory_i
 
 }  // namespace VW
 
-struct vw;
 struct input_options;
 struct dsjson_metrics;
 struct parser
@@ -168,12 +172,12 @@ struct parser
   VW::details::cache_temp_buffer _cache_temp_buffer;
 };
 
-void enable_sources(vw& all, bool quiet, size_t passes, input_options& input_options);
+void enable_sources(VW::workspace& all, bool quiet, size_t passes, input_options& input_options);
 
 // parser control
 void lock_done(parser& p);
-void set_done(vw& all);
+void set_done(VW::workspace& all);
 
 // source control functions
-void reset_source(vw& all, size_t numbits);
-void free_parser(vw& all);
+void reset_source(VW::workspace& all, size_t numbits);
+void free_parser(VW::workspace& all);
