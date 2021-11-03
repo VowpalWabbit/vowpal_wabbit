@@ -171,7 +171,7 @@ namespace vw_slim
 /**
  * @brief Exploration algorithm specified by the model.
  */
-enum vw_predict_exploration
+enum class vw_predict_exploration
 {
   epsilon_greedy,
   softmax,
