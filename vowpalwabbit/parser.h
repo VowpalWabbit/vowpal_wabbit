@@ -31,7 +31,6 @@
 namespace VW
 {
 struct workspace;
-}
 
 namespace details
 {

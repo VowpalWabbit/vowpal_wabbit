@@ -141,6 +141,7 @@ void output_and_account_example(VW::workspace& all, active& a, example& ec)
 
 template <bool simulation>
 void return_active_example(vw& all, active& a, example& ec)
+{
   if (simulation) { output_and_account_example(all, ec); }
   else
   {
