@@ -69,7 +69,7 @@ struct dictionary_info
   std::shared_ptr<feature_dict> dict;
 };
 
-enum AllReduceType
+enum class AllReduceType
 {
   Socket,
   Thread

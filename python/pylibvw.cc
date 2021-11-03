@@ -870,6 +870,7 @@ float get_loss(example_ptr ec) { return ec->loss; }
 float get_total_sum_feat_sq(example_ptr ec) { return ec->get_total_sum_feat_sq(); }
 
 double get_sum_loss(vw_ptr vw) { return vw->sd->sum_loss; }
+double get_holdout_sum_loss(vw_ptr vw) { return vw->sd->holdout_sum_loss; }
 double get_weighted_examples(vw_ptr vw) { return vw->sd->weighted_examples(); }
 
 bool search_should_output(search_ptr sch) { return sch->output().good(); }
@@ -1188,6 +1189,7 @@ BOOST_PYTHON_MODULE(pylibvw)
       .def("get_label_type", &my_get_label_type, "return parse label type")
       .def("get_prediction_type", &my_get_prediction_type, "return prediction type")
       .def("get_sum_loss", &get_sum_loss, "return the total cumulative loss suffered so far")
+      .def("get_holdout_sum_loss", &get_holdout_sum_loss, "return the total cumulative holdout loss suffered so far")
       .def("get_weighted_examples", &get_weighted_examples, "return the total weight of examples so far")
 
       .def("get_search_ptr", &get_search_ptr, "return a pointer to the search data structure")
