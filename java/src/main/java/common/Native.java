@@ -5,13 +5,17 @@ package common;
 
 import java.nio.file.*;
 import java.io.File;
+import java.io.IOException;
 import java.util.jar.*;
 import java.util.*;
 
 public class Native {
-    static {
-        try {
-            // create temp directory
+    private static void try_load_from_path() {
+        System.loadLibrary("vw_jni");
+    }
+
+    private static void try_load_from_jar() throws IOException {
+        // create temp directory
             Path tempDirectory = Files.createTempDirectory("tmplibvw");
             tempDirectory.toFile().deleteOnExit();
 
@@ -41,9 +45,20 @@ public class Native {
 
             // load the library
             System.load(tempDirectory.resolve("natives/linux_64/libvw_jni.so").toString());
+    }
 
-        } catch (Exception e) {
-            throw new RuntimeException("Unable to load native library 'vw_jni'", e);
+    static {
+        try {
+            try_load_from_path();
+        } catch (UnsatisfiedLinkError ex) {
+            try {
+                try_load_from_jar();
+            } catch (Exception ex_inner) {
+                throw new RuntimeException("Unable to load native library 'vw_jni'", ex_inner);
+            }
+            catch (UnsatisfiedLinkError ex_inner) {
+                throw new RuntimeException("Unable to load native library 'vw_jni'", ex_inner);
+            }
         }
     }
 
