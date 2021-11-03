@@ -394,11 +394,12 @@ VW_DLL_PUBLIC void VW_CALLING_CONV VW_FreeIOBuf(VW_IOBUF bufferHandle)
 
 VW_DLL_PUBLIC void VW_CALLING_CONV VW_CaptureAuditData(VW_HANDLE handle) {
 	vw* all = static_cast<vw*>(handle);
-	all->audit_writer = VW::io::create_custom_writer(
-		&all->audit_buffer,
+	all->_audit_writer = VW::io::create_custom_writer(
+		&all->_audit_buffer,
 		[](void* context, const char* buffer, size_t num_bytes) -> ssize_t {
-			std::stringstream& audit_buffer = *((std::stringstream*)context);
-			audit_buffer.write(buffer, num_bytes);
+			std::vector<char>& output_buffer = *static_cast<std::vector<char>*>(context);
+      output_buffer.reserve(output_buffer.size() + num_bytes);
+      output_buffer.insert(std::end(output_buffer), buffer, buffer + num_bytes);
 			return num_bytes;
 		}
 	);
@@ -406,16 +407,14 @@ VW_DLL_PUBLIC void VW_CALLING_CONV VW_CaptureAuditData(VW_HANDLE handle) {
 
 VW_DLL_PUBLIC void VW_CALLING_CONV VW_ClearCapturedAuditData(VW_HANDLE handle) {
 	vw* all = static_cast<vw*>(handle);
-	all->audit_buffer.str(std::string());
-	all->audit_buffer.clear();
+	all->_audit_buffer.clear();
 }
 
 VW_DLL_PUBLIC char* VW_CALLING_CONV VW_GetAuditDataA(VW_HANDLE handle, size_t* size) {
 	vw* all = static_cast<vw*>(handle);
-	std::string audit_data = all->audit_buffer.str();
-	*size = audit_data.size();
+	*size = all->_audit_buffer.size();
 	char* data = new char[*size];
-	memcpy(data, audit_data.data(), *size);
+	memcpy(data, all->_audit_buffer.data(), *size);
 	return data;
 }
 

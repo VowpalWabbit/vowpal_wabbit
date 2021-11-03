@@ -247,8 +247,8 @@ public:
 
   vw_logger logger;
   bool audit;     // should I print lots of debugging information?
-  std::stringstream audit_buffer;
-  std::unique_ptr<VW::io::writer> audit_writer;
+  std::vector<char> _audit_buffer;
+  std::unique_ptr<VW::io::writer> _audit_writer;
   bool training;  // Should I train if lable data is available?
   bool active;
   bool invariant_updates;  // Should we use importance aware/safe updates

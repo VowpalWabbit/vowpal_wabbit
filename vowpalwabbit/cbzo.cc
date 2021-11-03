@@ -167,7 +167,7 @@ void print_audit_features(vw& all, example& ec)
 {
   if (all.audit) all.print_text_by_ref(all.stdout_adapter.get(), get_pred_repr(ec), ec.tag);
 
-  GD::print_features(all, ec, all.audit ? all.audit_writer.get() : all.stdout_adapter.get());
+  GD::print_features(all, ec);
 }
 
 // Returns a value close to x and greater than it
