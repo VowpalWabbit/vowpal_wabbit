@@ -43,7 +43,6 @@ struct Namespace
     if (audit) ftrs->space_names.push_back(audit_strings(name, feature_name));
   }
 
-
   void AddFeature(const char* str, hash_func_t hash_func, uint64_t parse_mask)
   {
     auto hashed_feature = hash_func(str, strlen(str), namespace_hash) & parse_mask;
