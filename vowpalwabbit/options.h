@@ -160,14 +160,23 @@ struct typed_option : base_option
 
   bool value_supplied() const { return m_value.get() != nullptr; }
 
+  template <typename U>
+  void invalid_choice_error(const U&, const std::string&)
+  { /* cannot handle non-string or arithmetic types */ }
+  void invalid_choice_error(const std::string& value, const std::string& m_name) { THROW(fmt::format("Error: '{}' is not a valid choice for option --{}", value, m_name)); }
+  template <typename A>
+  typename std::enable_if<std::is_arithmetic<A>::value, void>::type invalid_choice_error(A& value, std::string& m_name)
+  {
+    THROW(fmt::format("Error: '{}' is not a valid choice for option --{}", value, m_name));
+  }
+
   // Typed option children sometimes use stack local variables that are only valid for the initial set from add and
   // parse, so we need to signal when that is the case.
   typed_option& value(T value, bool called_from_add_and_parse = false)
   {
     m_value = std::make_shared<T>(value);
     value_set_callback(value, called_from_add_and_parse);
-    if (m_one_of.size() > 0 && (m_one_of.find(value) == m_one_of.end()))
-    { THROW(fmt::format("Error: '{}' is not a valid choice for option --{}", value, m_name)); }
+    if (m_one_of.size() > 0 && (m_one_of.find(value) == m_one_of.end())) { invalid_choice_error(value, m_name); }
     return *this;
   }
 
