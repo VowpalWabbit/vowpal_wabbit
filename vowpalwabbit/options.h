@@ -166,12 +166,40 @@ struct typed_option : base_option
   }
   void invalid_choice_error(const std::string& value, const std::string& m_name)
   {
-    THROW(fmt::format("Error: '{}' is not a valid choice for option --{}", value, m_name));
+    std::ostringstream err_msg;
+    err_msg << fmt::format("Error: '{}' is not a valid choice for option --{}", value, m_name);
+    err_msg << ". Please select from {";
+    bool first = true;
+    for (const auto& v : m_one_of)
+    {
+      if (first) { first = false; }
+      else
+      {
+        err_msg << ", ";
+      }
+      err_msg << v;
+    }
+    err_msg << "}";
+    THROW(err_msg.str());
   }
   template <typename A>
   typename std::enable_if<std::is_arithmetic<A>::value, void>::type invalid_choice_error(A& value, std::string& m_name)
   {
-    THROW(fmt::format("Error: '{}' is not a valid choice for option --{}", value, m_name));
+    std::ostringstream err_msg;
+    err_msg << fmt::format("Error: '{}' is not a valid choice for option --{}", value, m_name);
+    err_msg << ". Please select from {";
+    bool first = true;
+    for (const auto& v : m_one_of)
+    {
+      if (first) { first = false; }
+      else
+      {
+        err_msg << ", ";
+      }
+      err_msg << std::to_string(v);
+    }
+    err_msg << "}";
+    THROW(err_msg.str());
   }
 
   // Typed option children sometimes use stack local variables that are only valid for the initial set from add and

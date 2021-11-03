@@ -1,9 +1,0 @@
-Error: Error: 'bad_type' is not a valid choice for option --cb_type
-
-finished run
-number of examples = 0
-weighted example sum = 0.000000
-weighted label sum = 0.000000
-average loss = n.a.
-total feature number = 0
-[critical] vw (options.h:169): Error: 'bad_type' is not a valid choice for option --cb_type
