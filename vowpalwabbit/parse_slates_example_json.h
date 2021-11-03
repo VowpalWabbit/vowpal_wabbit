@@ -246,7 +246,7 @@ void parse_slates_example_json(const vw& all, v_array<example*>& examples, char*
 }
 
 template <bool audit>
-void parse_slates_example_dsjson(vw& all, v_array<example*>& examples, char* line, size_t /*length*/,
+void parse_slates_example_dsjson(VW::workspace& all, v_array<example*>& examples, char* line, size_t /*length*/,
     VW::example_factory_t example_factory, void* ex_factory_context, DecisionServiceInteraction* data,
     std::unordered_map<uint64_t, example*>* dedup_examples = nullptr)
 {

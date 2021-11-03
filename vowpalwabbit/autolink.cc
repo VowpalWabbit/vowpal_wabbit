@@ -88,7 +88,7 @@ void predict_or_learn(VW::autolink& b, VW::LEARNER::single_learner& base, exampl
 VW::LEARNER::base_learner* autolink_setup(VW::setup_base_i& stack_builder)
 {
   options_i& options = *stack_builder.get_options();
-  vw& all = *stack_builder.get_all_pointer();
+  VW::workspace& all = *stack_builder.get_all_pointer();
   uint32_t d;
   option_group_definition new_options("Autolink");
   new_options.add(make_option("autolink", d).keep().necessary().help("create link function with polynomial d"));

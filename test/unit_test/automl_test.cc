@@ -170,7 +170,7 @@ BOOST_AUTO_TEST_CASE(assert_0th_event_metrics)
   callback_map test_hooks;
 
   // technically runs after the 0th example is learned
-  test_hooks.emplace(zero, [&metric_name, &zero](cb_sim&, vw& all, multi_ex&) {
+  test_hooks.emplace(zero, [&metric_name, &zero](cb_sim&, VW::workspace& all, multi_ex&) {
     VW::metric_sink metrics;
     all.l->persist_metrics(metrics);
 
@@ -179,7 +179,7 @@ BOOST_AUTO_TEST_CASE(assert_0th_event_metrics)
   });
 
   // test executes right after learn call of the 10th example
-  test_hooks.emplace(num_iterations, [&metric_name, &num_iterations](cb_sim&, vw& all, multi_ex&) {
+  test_hooks.emplace(num_iterations, [&metric_name, &num_iterations](cb_sim&, VW::workspace& all, multi_ex&) {
     VW::metric_sink metrics;
     all.l->persist_metrics(metrics);
 

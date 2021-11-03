@@ -97,7 +97,7 @@ void register_reductions(std::vector<reduction_setup_fn>& reductions,
       {generate_interactions_setup, "generate_interactions"}, {VW::count_label_setup, "count_label"}};
 
   auto name_extractor = VW::config::options_name_extractor();
-  vw dummy_all;
+  VW::workspace dummy_all;
 
   VW::cached_learner null_ptr_learner(dummy_all, name_extractor, nullptr);
 
@@ -218,7 +218,7 @@ void prepare_reductions(std::vector<std::tuple<std::string, reduction_setup_fn>>
 
 namespace VW
 {
-default_reduction_stack_setup::default_reduction_stack_setup(vw& all, VW::config::options_i& options)
+default_reduction_stack_setup::default_reduction_stack_setup(VW::workspace& all, VW::config::options_i& options)
 {
   // push all reduction functions into the stack
   prepare_reductions(reduction_stack);
@@ -229,7 +229,7 @@ default_reduction_stack_setup::default_reduction_stack_setup() { prepare_reducti
 
 // this should be reworked, but its setup related to how setup is tied with all object
 // which is not applicable to everything
-void default_reduction_stack_setup::delayed_state_attach(vw& all, VW::config::options_i& options)
+void default_reduction_stack_setup::delayed_state_attach(VW::workspace& all, VW::config::options_i& options)
 {
   all_ptr = &all;
   options_impl = &options;

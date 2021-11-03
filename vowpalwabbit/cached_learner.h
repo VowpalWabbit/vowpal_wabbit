@@ -11,7 +11,7 @@ struct cached_learner : public setup_base_i
 
   operator bool() const { return !(_cached == nullptr); }
 
-  void delayed_state_attach(vw& all, VW::config::options_i& options) override
+  void delayed_state_attach(VW::workspace& all, VW::config::options_i& options) override
   {
     options_impl = &options;
     all_ptr = &all;
@@ -19,7 +19,7 @@ struct cached_learner : public setup_base_i
 
   cached_learner(VW::LEARNER::base_learner* learner = nullptr) : _cached(learner) {}
 
-  cached_learner(vw& all, VW::config::options_i& options, VW::LEARNER::base_learner* learner = nullptr)
+  cached_learner(VW::workspace& all, VW::config::options_i& options, VW::LEARNER::base_learner* learner = nullptr)
       : _cached(learner)
   {
     delayed_state_attach(all, options);
@@ -27,13 +27,13 @@ struct cached_learner : public setup_base_i
 
   VW::config::options_i* get_options() override { return options_impl; }
 
-  vw* get_all_pointer() override { return all_ptr; }
+  VW::workspace* get_all_pointer() override { return all_ptr; }
 
   std::string get_setupfn_name(reduction_setup_fn) override { return ""; }
 
 private:
   VW::LEARNER::base_learner* _cached = nullptr;
   VW::config::options_i* options_impl = nullptr;
-  vw* all_ptr = nullptr;
+  VW::workspace* all_ptr = nullptr;
 };
 }  // namespace VW

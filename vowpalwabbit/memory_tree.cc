@@ -162,7 +162,7 @@ struct node
 // memory_tree
 struct memory_tree
 {
-  vw* all = nullptr;
+  VW::workspace* all = nullptr;
   std::shared_ptr<rand_state> _random_state;
 
   std::vector<node> nodes;  // array of nodes.
@@ -1201,7 +1201,7 @@ void save_load_memory_tree(memory_tree& b, io_buf& model_file, bool read, bool t
 base_learner* memory_tree_setup(VW::setup_base_i& stack_builder)
 {
   options_i& options = *stack_builder.get_options();
-  vw& all = *stack_builder.get_all_pointer();
+  VW::workspace& all = *stack_builder.get_all_pointer();
   using namespace memory_tree_ns;
   auto tree = VW::make_unique<memory_tree>();
   option_group_definition new_options("Memory Tree");

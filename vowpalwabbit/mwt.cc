@@ -159,7 +159,7 @@ void print_scalars(VW::io::writer* f, v_array<float>& scalars, v_array<char>& ta
   }
 }
 
-void finish_example(vw& all, mwt& c, example& ec)
+void finish_example(VW::workspace& all, mwt& c, example& ec)
 {
   float loss = 0.;
   if (c.learn)

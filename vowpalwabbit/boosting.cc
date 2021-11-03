@@ -312,7 +312,7 @@ void save_load_sampling(boosting& o, io_buf& model_file, bool read, bool text)
   logger::errlog_info("{}", fmt::to_string(buffer));
 }
 
-void return_example(vw& all, boosting& /* a */, example& ec)
+void return_example(VW::workspace& all, boosting& /* a */, example& ec)
 {
   output_and_account_example(all, ec);
   VW::finish_example(all, ec);
