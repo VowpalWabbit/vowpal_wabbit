@@ -166,8 +166,8 @@ struct typed_option : base_option
   {
     m_value = std::make_shared<T>(value);
     value_set_callback(value, called_from_add_and_parse);
-    if (m_one_of.size() > 0 && std::find(m_one_of.begin(), m_one_of.end(), value) == m_one_of.end())
-    { THROW(fmt::format("Error: '{}' is not a valid value for option --{}", value, m_name)); }
+    if (m_one_of.size() > 0 && (m_one_of.find(value) == m_one_of.end()))
+    { THROW(fmt::format("Error: '{}' is not a valid choice for option --{}", value, m_name)); }
     return *this;
   }
 
