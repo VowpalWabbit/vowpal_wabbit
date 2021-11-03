@@ -659,7 +659,7 @@ base_learner* stagewise_poly_setup(VW::setup_base_i& stack_builder)
   VW::workspace& all = *stack_builder.get_all_pointer();
   auto poly = VW::make_unique<stagewise_poly>();
   bool stage_poly = false;
-  option_group_definition new_options("Stagewise polynomial options");
+  option_group_definition new_options("Stagewise Polynomial");
   new_options
       .add(make_option("stage_poly", stage_poly).keep().necessary().help("use stagewise polynomial feature learning"))
       .add(make_option("sched_exponent", poly->sched_exponent)

@@ -549,6 +549,7 @@ base_learner* warm_cb_setup(VW::setup_base_i& stack_builder)
       .add(make_option("interaction_update", data->upd_inter).help("indicator of interaction updates"))
       .add(make_option("corrupt_type_warm_start", data->cor_type_ws)
                .default_value(UAR)
+               .one_of({1, 2, 3})
                .help("type of label corruption in the warm start phase (1: uniformly at random, 2: circular, 3: "
                      "replacing with overwriting label)"))
       .add(make_option("corrupt_prob_warm_start", data->cor_prob_ws)
@@ -560,6 +561,7 @@ base_learner* warm_cb_setup(VW::setup_base_i& stack_builder)
                      "the two sources)"))
       .add(make_option("lambda_scheme", data->lambda_scheme)
                .default_value(ABS_CENTRAL)
+               .one_of({1, 2, 3, 4})
                .help("The scheme for generating candidate lambda set (1: center lambda=0.5, 2: center lambda=0.5, min "
                      "lambda=0, max lambda=1, 3: center lambda=epsilon/(1+epsilon), 4: center "
                      "lambda=epsilon/(1+epsilon), min lambda=0, max lambda=1); the rest of candidate lambda values are "

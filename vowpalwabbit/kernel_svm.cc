@@ -819,7 +819,8 @@ VW::LEARNER::base_learner* kernel_svm_setup(VW::setup_base_i& stack_builder)
       .add(make_option("kernel", kernel_type)
                .keep()
                .default_value("linear")
-               .help("type of kernel (rbf or linear (default))"))
+               .one_of({"linear", "rbf", "poly"})
+               .help("type of kernel"))
       .add(make_option("bandwidth", bandwidth).keep().default_value(1.f).help("bandwidth of rbf kernel"))
       .add(make_option("degree", degree).keep().default_value(2).help("degree of poly kernel"));
 

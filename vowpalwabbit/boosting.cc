@@ -379,7 +379,8 @@ VW::LEARNER::base_learner* boosting_setup(VW::setup_base_i& stack_builder)
           make_option("alg", data->alg)
               .keep()
               .default_value("BBM")
-              .help("specify the boosting algorithm: BBM (default), logistic (AdaBoost.OL.W), adaptive (AdaBoost.OL)"));
+              .one_of({"BBM", "logistic", "adaptive"})
+              .help("Specify the boosting algorithm: BBM (default), logistic (AdaBoost.OL.W), adaptive (AdaBoost.OL)"));
 
   if (!options.add_parse_and_check_necessary(new_options)) return nullptr;
 

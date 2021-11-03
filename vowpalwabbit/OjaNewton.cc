@@ -491,7 +491,7 @@ base_learner* OjaNewton_setup(VW::setup_base_i& stack_builder)
   // of the positional data argument.
   std::string normalize = "true";
   std::string random_init = "true";
-  option_group_definition new_options("OjaNewton options");
+  option_group_definition new_options("OjaNewton");
   new_options.add(make_option("OjaNewton", oja_newton).keep().necessary().help("Online Newton with Oja's Sketch"))
       .add(make_option("sketch_size", ON->m).default_value(10).help("size of sketch"))
       .add(make_option("epoch_size", ON->epoch_size).default_value(1).help("size of epoch"))

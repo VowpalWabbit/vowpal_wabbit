@@ -229,7 +229,7 @@ VW::LEARNER::base_learner* oaa_setup(VW::setup_base_i& stack_builder)
   auto data = VW::make_unique<oaa>();
   bool probabilities = false;
   bool scores = false;
-  option_group_definition new_options("One Against All Options");
+  option_group_definition new_options("One Against All");
   new_options.add(make_option("oaa", data->k).keep().necessary().help("One-against-all multiclass with <k> labels"))
       .add(make_option("oaa_subsample", data->num_subsample)
                .help("subsample this number of negative examples when learning"))

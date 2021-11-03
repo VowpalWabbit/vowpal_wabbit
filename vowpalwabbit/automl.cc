@@ -597,7 +597,7 @@ VW::LEARNER::base_learner* automl_setup(VW::setup_base_i& stack_builder)
   int priority_challengers;
   bool keep_configs = false;
 
-  option_group_definition new_options("Debug: automl reduction");
+  option_group_definition new_options("Automl");
   new_options
       .add(make_option("automl", max_live_configs)
                .necessary()
@@ -608,11 +608,12 @@ VW::LEARNER::base_learner* automl_setup(VW::setup_base_i& stack_builder)
                .keep()
                .default_value(10)
                .help("set initial lease for automl interactions"))
-      .add(make_option("cm_type", cm_type).keep().default_value("interaction").help("set type of config manager"))
+      .add(make_option("cm_type", cm_type).keep().default_value("interaction").one_of({"interaction"}).help("set type of config manager"))
       .add(make_option("priority_type", priority_type)
                .keep()
                .default_value("none")
-               .help("set function to determine next config {none, least_exclusion}"))
+               .one_of({"none", "least_exclusion"})
+               .help("set function to determine next config"))
       .add(make_option("priority_challengers", priority_challengers)
                .keep()
                .default_value(-1)

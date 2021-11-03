@@ -340,7 +340,7 @@ base_learner* setup(setup_base_i& stack_builder)
   options_i& options = *stack_builder.get_options();
   VW::workspace& all = *stack_builder.get_all_pointer();
 
-  option_group_definition new_options("CATS Tree Options");
+  option_group_definition new_options("CATS Tree");
   uint32_t num_actions;  // = K = 2^D
   uint32_t bandwidth;    // = 2^h#
   std::string link;
@@ -349,7 +349,7 @@ base_learner* setup(setup_base_i& stack_builder)
                .default_value(0)
                .keep()
                .help("tree bandwidth for continuous actions in terms of #actions"))
-      .add(make_option("link", link).keep().help("Specify the link function: identity, logistic, glf1 or poisson"));
+      .add(make_option("link", link).keep().one_of({"identity", "logistic", "glf1", "poisson"}).help("Specify the link function"));
 
   if (!options.add_parse_and_check_necessary(new_options)) return nullptr;
 

@@ -1067,13 +1067,13 @@ base_learner* bfgs_setup(VW::setup_base_i& stack_builder)
   auto b = VW::make_unique<bfgs>();
   bool conjugate_gradient = false;
   bool bfgs_option = false;
-  option_group_definition bfgs_outer_options("Conjugate Gradient options");
+  option_group_definition bfgs_outer_options("Conjugate Gradient");
   bfgs_outer_options.add(make_option("conjugate_gradient", conjugate_gradient)
                              .keep()
                              .necessary()
                              .help("use conjugate gradient based optimization"));
 
-  option_group_definition bfgs_inner_options("LBFGS and Conjugate Gradient options");
+  option_group_definition bfgs_inner_options("LBFGS and Conjugate Gradient");
   bfgs_inner_options.add(
       make_option("bfgs", bfgs_option).keep().necessary().help("use conjugate gradient based optimization"));
   bfgs_inner_options.add(make_option("hessian_on", all.hessian_on).help("use second derivative in line search"));

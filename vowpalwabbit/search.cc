@@ -2397,7 +2397,7 @@ void ensure_param(float& v, float lo, float hi, float def, const char* str)
 
 void handle_condition_options(VW::workspace& all, auto_condition_settings& acset)
 {
-  option_group_definition new_options("Search Auto-conditioning Options");
+  option_group_definition new_options("Search Auto-Conditioning");
   new_options.add(make_option("search_max_bias_ngram_length", acset.max_bias_ngram_length)
                       .keep()
                       .default_value(1)
@@ -2536,7 +2536,7 @@ base_learner* setup(VW::setup_base_i& stack_builder)
   std::string search_allowed_transitions;
 
   priv.A = 1;
-  option_group_definition new_options("Search options");
+  option_group_definition new_options("Search");
   new_options.add(
       make_option("search", priv.A).keep().help("Use learning to search, argument=maximum action id or 0 for LDF"));
   new_options.add(make_option("search_task", task_string)
@@ -2552,9 +2552,11 @@ base_learner* setup(VW::setup_base_i& stack_builder)
                       .help("at what level should interpolation happen? [*data|policy]"));
   new_options.add(
       make_option("search_rollout", rollout_string)
-          .help("how should rollouts be executed?           [policy|oracle|*mix_per_state|mix_per_roll|none]"));
+          .one_of({"policy", "learn", "oracle", "ref", "mix_per_state", "mix_per_roll", "mix", "none"})
+          .help("how should rollouts be executed"));
   new_options.add(make_option("search_rollin", rollin_string)
-                      .help("how should past trajectories be generated? [policy|oracle|*mix_per_state|mix_per_roll]"));
+                      .one_of({"policy", "learn", "oracle", "ref", "mix_per_state", "mix_per_roll", "mix"})
+                      .help("how should past trajectories be generated"));
   new_options.add(make_option("search_passes_per_policy", priv.passes_per_policy)
                       .default_value(1)
                       .help("number of passes per policy (only valid for search_interpolation=policy)"));
@@ -2631,8 +2633,6 @@ base_learner* setup(VW::setup_base_i& stack_builder)
     priv.rollout_method = RollMethod::NO_ROLLOUT;
     priv.no_caching = true;
   }
-  else
-    THROW("error: --search_rollout must be 'learn', 'ref', 'mix', 'mix_per_state' or 'none'");
 
   if ((rollin_string == "policy") || (rollin_string == "learn"))
     priv.rollin_method = RollMethod::POLICY;
@@ -2642,8 +2642,6 @@ base_learner* setup(VW::setup_base_i& stack_builder)
     priv.rollin_method = RollMethod::MIX_PER_STATE;
   else if ((rollin_string == "mix_per_roll") || (rollin_string == "mix"))
     priv.rollin_method = RollMethod::MIX_PER_ROLL;
-  else
-    THROW("error: --search_rollin must be 'learn', 'ref', 'mix' or 'mix_per_state'");
 
   // check if the base learner is contextual bandit, in which case, we dont rollout all actions.
   // TODO consume this when learner understand base label type

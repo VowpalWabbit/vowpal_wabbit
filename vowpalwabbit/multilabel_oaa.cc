@@ -95,7 +95,8 @@ VW::LEARNER::base_learner* multilabel_oaa_setup(VW::setup_base_i& stack_builder)
       .add(make_option("link", data->link)
                .default_value("identity")
                .keep()
-               .help("Specify the link function: identity, logistic, glf1 or poisson"));
+               .one_of({"identity", "logistic", "glf1", "poisson"})
+               .help("Specify the link function"));
 
   if (!options.add_parse_and_check_necessary(new_options)) return nullptr;
 

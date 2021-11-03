@@ -223,9 +223,9 @@ base_learner* mwt_setup(VW::setup_base_i& stack_builder)
   auto c = VW::make_unique<mwt>();
   std::string s;
   bool exclude_eval = false;
-  option_group_definition new_options("Multiworld Testing Options");
+  option_group_definition new_options("Multiworld Testing");
   new_options.add(make_option("multiworld_test", s).keep().necessary().help("Evaluate features as a policies"))
-      .add(make_option("learn", c->num_classes).help("Do Contextual Bandit learning on <n> classes."))
+      .add(make_option("learn", c->num_classes).help("Do Contextual Bandit learning on <n> classes"))
       .add(make_option("exclude_eval", exclude_eval).help("Discard mwt policy features before learning"));
 
   if (!options.add_parse_and_check_necessary(new_options)) return nullptr;

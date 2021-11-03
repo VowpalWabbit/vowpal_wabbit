@@ -132,7 +132,7 @@ void initialize(Search::search& sch, size_t& num_actions, options_i& options)
   task_data* D = new task_data();
 
   bool search_span_bilou = false;
-  option_group_definition new_options("search sequencespan options");
+  option_group_definition new_options("Search Sequencespan");
   new_options
       .add(make_option("search_span_bilou", search_span_bilou)
                .help("switch to (internal) BILOU encoding instead of BIO encoding"))
@@ -306,7 +306,7 @@ void initialize(Search::search& sch, size_t& /*num_actions*/, options_i& options
 {
   task_data* D = new task_data();
 
-  option_group_definition new_options("argmax options");
+  option_group_definition new_options("Argmax");
   new_options.add(make_option("cost", D->false_negative_cost).default_value(10.0f).help("False Negative Cost"))
       .add(make_option("negative_weight", D->negative_weight)
                .default_value(1.f)

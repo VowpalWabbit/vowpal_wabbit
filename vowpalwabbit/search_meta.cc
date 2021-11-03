@@ -88,7 +88,7 @@ void initialize(Search::search& sch, size_t& /*num_actions*/, options_i& options
 {
   size_t max_branches = 2;
   size_t kbest = 0;
-  option_group_definition new_options("selective branching options");
+  option_group_definition new_options("Selective Branching");
   new_options
       .add(make_option("search_max_branch", max_branches)
                .default_value(2)

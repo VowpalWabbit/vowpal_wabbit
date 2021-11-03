@@ -14,6 +14,7 @@
 #include <unordered_set>
 #include <sstream>
 #include <type_traits>
+#include <fmt/format.h>
 
 #include "options_types.h"
 #include "vw_exception.h"
@@ -53,9 +54,30 @@ struct option_builder
     return *this;
   }
 
+  template <typename U>
+  void add_help(const std::ostringstream&, const U&) { /* cannot handle non-string or arithmetic types */ }
+  void add_help(std::ostringstream& help, const std::string& addition) { help << addition; }
+  template <typename A>
+  typename std::enable_if<std::is_arithmetic<A>::value, void>::type
+  add_help(std::ostringstream& help, const A& addition) { help << std::to_string(addition); }
+
   option_builder& help(const std::string& help)
   {
-    m_option_obj.m_help = help;
+    std::ostringstream help_w_additions;
+    help_w_additions << help;
+    if (m_option_obj.one_of().size() > 0)
+    {
+      help_w_additions << ". Choices: {";
+      bool first = true;
+      for (const auto& v : m_option_obj.one_of())
+      {
+        if (first) { first = false; }
+        else { help_w_additions << ", "; }
+        add_help(help_w_additions, v);
+      }
+      help_w_additions << "}";
+    }
+    m_option_obj.m_help = help_w_additions.str();
     return *this;
   }
 
@@ -68,6 +90,12 @@ struct option_builder
   option_builder& necessary(bool necessary = true)
   {
     m_option_obj.m_necessary = necessary;
+    return *this;
+  }
+
+  option_builder& one_of(std::set<typename T::value_type> args)
+  {
+    m_option_obj.set_one_of(args);
     return *this;
   }
 
@@ -130,6 +158,10 @@ struct typed_option : base_option
   {
     m_value = std::make_shared<T>(value);
     value_set_callback(value, called_from_add_and_parse);
+    if (m_one_of.size() > 0 && std::find(m_one_of.begin(), m_one_of.end(), value) == m_one_of.end())
+    {
+       THROW(fmt::format("Error: '{}' is not a valid value for option --{}", value, m_name));
+    }
     return *this;
   }
 
@@ -139,6 +171,10 @@ struct typed_option : base_option
     THROW("typed_option does not contain value. use value_supplied to check if value exists.")
   }
 
+  void set_one_of(const std::set<value_type>& one_of_set) { m_one_of = one_of_set; }
+
+  std::set<value_type> one_of() { return m_one_of; }
+
 protected:
   // Allows inheriting classes to handle set values. Noop by default.
   virtual void value_set_callback(const T& /*value*/, bool /*called_from_add_and_parse*/) {}
@@ -147,6 +183,7 @@ private:
   // Would prefer to use std::optional (C++17) here but we are targeting C++11
   std::shared_ptr<T> m_value{nullptr};
   std::shared_ptr<T> m_default_value{nullptr};
+  std::set<T> m_one_of;
 };
 
 // The contract of typed_option_with_location is that the first set of the option value is written to the given
@@ -259,7 +296,7 @@ struct options_i
 struct option_group_definition
 {
   // add second parameter for const string short name
-  option_group_definition(const std::string& name) : m_name(name) {}
+  option_group_definition(const std::string& name) : m_name(name + " Options") {}
 
   template <typename T>
   option_group_definition& add(option_builder<T>&& op)

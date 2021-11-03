@@ -301,7 +301,7 @@ base_learner* cs_active_setup(VW::setup_base_i& stack_builder)
 
   bool simulation = false;
   int domination;
-  option_group_definition new_options("Cost-sensitive Active Learning");
+  option_group_definition new_options("Cost Sensitive Active Learning");
   new_options
       .add(make_option("cs_active", data->num_classes)
                .keep()
@@ -313,18 +313,18 @@ base_learner* cs_active_setup(VW::setup_base_i& stack_builder)
                .default_value(1)
                .help("cost-sensitive active learning use domination. Default 1"))
       .add(
-          make_option("mellowness", data->c0).keep().default_value(0.1f).help("mellowness parameter c_0. Default 0.1."))
+          make_option("mellowness", data->c0).keep().default_value(0.1f).help("mellowness parameter c_0. Default 0.1"))
       .add(make_option("range_c", data->c1)
                .default_value(0.5f)
-               .help("parameter controlling the threshold for per-label cost uncertainty. Default 0.5."))
+               .help("parameter controlling the threshold for per-label cost uncertainty. Default 0.5"))
       .add(make_option("max_labels", data->max_labels)
                .default_value(std::numeric_limits<size_t>::max())
-               .help("maximum number of label queries."))
+               .help("maximum number of label queries"))
       .add(make_option("min_labels", data->min_labels)
                .default_value(std::numeric_limits<size_t>::max())
-               .help("minimum number of label queries."))
-      .add(make_option("cost_max", data->cost_max).default_value(1.f).help("cost upper bound. Default 1."))
-      .add(make_option("cost_min", data->cost_min).default_value(0.f).help("cost lower bound. Default 0."))
+               .help("minimum number of label queries"))
+      .add(make_option("cost_max", data->cost_max).default_value(1.f).help("cost upper bound. Default 1"))
+      .add(make_option("cost_min", data->cost_min).default_value(0.f).help("cost lower bound. Default 0"))
       // TODO replace with trace and quiet
       .add(make_option("csa_debug", data->print_debug_stuff).help("print debug stuff for cs_active"));
 

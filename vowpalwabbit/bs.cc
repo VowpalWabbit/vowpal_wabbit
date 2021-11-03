@@ -230,7 +230,7 @@ base_learner* bs_setup(VW::setup_base_i& stack_builder)
   option_group_definition new_options("Bootstrap");
   new_options
       .add(make_option("bootstrap", data->B).keep().necessary().help("k-way bootstrap by online importance resampling"))
-      .add(make_option("bs_type", type_string).keep().help("prediction type {mean,vote}"));
+      .add(make_option("bs_type", type_string).keep().one_of({"mean", "vote"}).help("prediction type"));
 
   if (!options.add_parse_and_check_necessary(new_options)) return nullptr;
   size_t ws = data->B;
