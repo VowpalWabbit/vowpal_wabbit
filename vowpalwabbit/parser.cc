@@ -74,10 +74,25 @@ int VW_getpid() { return (int)::GetCurrentProcessId(); }
 #  define SOL_TCP IPPROTO_TCP
 #endif
 
-VW::example_parser_i::example_parser_i(std::string type) : _type(std::move(type)){}
+void clean_example(vw& all, example& ec);
+
+VW::example_parser_i::example_parser_i(std::string type) : _type(std::move(type)) {}
 VW::string_view VW::example_parser_i::type() { return _type; };
-example* VW::pooled_example_factory::create() { return &VW::get_unused_example(_all); }
-void VW::pooled_example_factory::destroy(example* ex) { VW::finish_example(*_all, *ex); }
+
+struct pooled_example_factory final : VW::example_factory_i
+{
+  pooled_example_factory(VW::workspace* workspace) : _workspace(workspace) {}
+  example* create() override { return &VW::get_unused_example(_workspace); }
+  void destroy(example* ex) override { clean_example(*_workspace, *ex); }
+
+private:
+  VW::workspace* _workspace;
+};
+
+std::unique_ptr<VW::example_factory_i> VW::make_example_factory(VW::workspace& ws)
+{
+  return VW::make_unique<pooled_example_factory>(&ws);
+}
 
 using std::endl;
 

@@ -57,14 +57,7 @@ struct example_factory_i
   virtual void destroy(example*) = 0;
 };
 
-struct pooled_example_factory final : example_factory_i
-{
-  pooled_example_factory(vw* all) : _all(all) {}
-  example* create() override;
-  void destroy(example*) override;
-private:
-  vw* _all;
-};
+std::unique_ptr<example_factory_i> make_example_factory(VW::workspace& ws);
 
 struct example_parser_i
 {
