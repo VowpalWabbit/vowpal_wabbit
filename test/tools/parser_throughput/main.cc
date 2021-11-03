@@ -125,7 +125,7 @@ int main(int argc, char** argv)
   }
 
   auto vw = VW::initialize(args, nullptr, false, nullptr, nullptr);
-  const auto is_multiline = vw->l->is_multiline;
+  const auto is_multiline = vw->l->is_multiline();
 
   const auto start = std::chrono::high_resolution_clock::now();
   if (type == parser_type::text)

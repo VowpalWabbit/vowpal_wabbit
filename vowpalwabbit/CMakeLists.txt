@@ -52,6 +52,7 @@ set(vw_all_headers
   audit_regressor.h
   autolink.h
   baseline.h
+  baseline_challenger_cb.h
   beam.h
   best_constant.h
   bfgs.h
@@ -84,7 +85,6 @@ set(vw_all_headers
   cb_to_cb_adf.h
   ccb_label.h
   ccb_reduction_features.h
-  chained_proxy_iterator.h
   continuous_actions_reduction_features.h
   classweight.h
   compat.h
@@ -143,12 +143,11 @@ set(vw_all_headers
   metrics.h
   metric_sink.h
   mf.h
+  model_utils.h
   multiclass.h
   multilabel_oaa.h
   multilabel.h
-  model_utils.h
   mwt.h
-  namespaced_feature_store.h
   numeric_casts.h
   named_labels.h
   network.h
@@ -207,6 +206,7 @@ set(vw_all_headers
   tag_utils.h
   text_utils.h
   topk.h
+  automl.h
   unique_sort.h
   v_array.h
   version.h
@@ -224,6 +224,10 @@ set(vw_all_headers
   active_multiclass_prediction.h
   debug_log.h
   rand_state.h
+  label_type.h
+  cb_type.h
+  prediction_type.h
+  count_label.h
 )
 
 if(BUILD_FLATBUFFERS)
@@ -243,6 +247,7 @@ set(vw_all_sources
   audit_regressor.cc
   autolink.cc
   baseline.cc
+  baseline_challenger_cb.cc
   best_constant.cc
   bfgs.cc
   binary.cc
@@ -272,11 +277,13 @@ set(vw_all_sources
   cbify.cc
   cb_to_cb_adf.cc
   ccb_label.cc
+  ccb_reduction_features.cc
   classweight.cc
   conditional_contextual_bandit.cc
   confidence.cc
   cbzo.cc
   cost_sensitive.cc
+  crossplat_compat.cc
   cs_active.cc
   csoaa.cc
   decision_scores.cc
@@ -300,6 +307,7 @@ set(vw_all_sources
   io_buf.cc
   kernel_svm.cc
   label_dictionary.cc
+  label_parser.cc
   lda_core.cc
   learner.cc
   log_multi.cc
@@ -309,12 +317,12 @@ set(vw_all_sources
   marginal.cc
   memory_tree.cc
   metrics.cc
+  metric_sink.cc
   mf.cc
   multiclass.cc
   multilabel_oaa.cc
   multilabel.cc
   mwt.cc
-  namespaced_feature_store.cc
   named_labels.cc
   network.cc
   kskip_ngram_transformer.cc
@@ -359,11 +367,16 @@ set(vw_all_sources
   tag_utils.cc
   text_utils.cc
   topk.cc
+  automl.cc
   unique_sort.cc
   version.cc
   vw_exception.cc
   vw_validate.cc
   warm_cb.cc
+  label_type.cc
+  cb_type.cc
+  prediction_type.cc
+  count_label.cc
 )
 
 if(BUILD_FLATBUFFERS)

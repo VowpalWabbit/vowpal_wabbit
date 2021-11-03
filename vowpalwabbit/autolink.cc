@@ -99,7 +99,7 @@ VW::LEARNER::base_learner* autolink_setup(VW::setup_base_i& stack_builder)
   auto base = VW::LEARNER::as_singleline(stack_builder.setup_base_learner());
   auto* learner = VW::LEARNER::make_reduction_learner(std::move(autolink_reduction), base, predict_or_learn<true>,
       predict_or_learn<false>, stack_builder.get_setupfn_name(autolink_setup))
-                      .set_prediction_type(prediction_type_t::scalar)
+                      .set_output_prediction_type(VW::prediction_type_t::scalar)
                       .set_learn_returns_prediction(base->learn_returns_prediction)
                       .build();
   return make_base(*learner);

@@ -5,6 +5,7 @@
 #include "global_data.h"
 #include "options.h"
 #include "text_utils.h"
+#include "vw_string_view.h"
 
 // Used in parse_source
 struct input_options
@@ -46,3 +47,5 @@ inline bool ends_with(const std::string& full_string, const std::string& ending)
 {
   return VW::ends_with(full_string, ending);
 }
+
+std::vector<extent_term> parse_full_name_interactions(vw& all, VW::string_view str);

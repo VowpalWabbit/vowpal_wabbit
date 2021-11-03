@@ -17,44 +17,44 @@ using namespace VW::config;
 
 struct oja_n_update_data
 {
-  struct OjaNewton* ON;
-  float g;
-  float sketch_cnt;
-  float norm2_x;
-  float* Zx;
-  float* AZx;
-  float* delta;
-  float bdelta;
-  float prediction;
+  struct OjaNewton* ON = nullptr;
+  float g = 0.f;
+  float sketch_cnt = 0.f;
+  float norm2_x = 0.f;
+  float* Zx = nullptr;
+  float* AZx = nullptr;
+  float* delta = nullptr;
+  float bdelta = 0.f;
+  float prediction = 0.f;
 };
 
 struct OjaNewton
 {
-  VW::workspace* all;
+  vw* all = nullptr;
   std::shared_ptr<rand_state> _random_state;
-  int m;
-  int epoch_size;
-  float alpha;
-  int cnt;
-  int t;
+  int m = 0;
+  int epoch_size = 0;
+  float alpha = 0.f;
+  int cnt = 0;
+  int t = 0;
 
-  float* ev;
-  float* b;
-  float* D;
-  float** A;
-  float** K;
+  float* ev = nullptr;
+  float* b = nullptr;
+  float* D = nullptr;
+  float** A = nullptr;
+  float** K = nullptr;
 
-  float* zv;
-  float* vv;
-  float* tmp;
+  float* zv = nullptr;
+  float* vv = nullptr;
+  float* tmp = nullptr;
 
-  example** buffer;
-  float* weight_buffer;
+  example** buffer = nullptr;
+  float* weight_buffer = nullptr;
   struct oja_n_update_data data;
 
-  float learning_rate_cnt;
-  bool normalize;
-  bool random_init;
+  float learning_rate_cnt = 0.f;
+  bool normalize = false;
+  bool random_init = false;
 
   void initialize_Z(parameters& weights)
   {
@@ -480,7 +480,7 @@ base_learner* OjaNewton_setup(VW::setup_base_i& stack_builder)
   options_i& options = *stack_builder.get_options();
   VW::workspace& all = *stack_builder.get_all_pointer();
 
-  auto ON = scoped_calloc_or_throw<OjaNewton>();
+  auto ON = VW::make_unique<OjaNewton>();
 
   bool oja_newton;
   float alpha_inverse;
@@ -543,9 +543,12 @@ base_learner* OjaNewton_setup(VW::setup_base_i& stack_builder)
 
   all.weights.stride_shift(static_cast<uint32_t>(ceil(log2(ON->m + 2))));
 
-  learner<OjaNewton, example>& l =
-      init_learner(ON, learn, predict, all.weights.stride(), stack_builder.get_setupfn_name(OjaNewton_setup));
-  l.set_save_load(save_load);
-  l.set_finish_example(keep_example);
-  return make_base(l);
+  auto* l = make_base_learner(std::move(ON), learn, predict, stack_builder.get_setupfn_name(OjaNewton_setup),
+      VW::prediction_type_t::scalar, VW::label_type_t::simple)
+                .set_params_per_weight(all.weights.stride())
+                .set_save_load(save_load)
+                .set_finish_example(keep_example)
+                .build();
+
+  return make_base(*l);
 }

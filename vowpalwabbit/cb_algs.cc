@@ -62,7 +62,7 @@ void predict_or_learn(cb& data, single_learner& base, example& ec)
   // generate a cost-sensitive example to update classifiers
   gen_cs_example<is_learn>(c, ec, ec.l.cb, ec.l.cs);
 
-  if (c.cb_type != CB_TYPE_DM)
+  if (c.cb_type != VW::cb_type_t::dm)
   {
     if (is_learn)
       base.learn(ec);
@@ -179,23 +179,24 @@ base_learner* cb_algs_setup(VW::setup_base_i& stack_builder)
   cb_to_cs& c = data->cbcs;
 
   size_t problem_multiplier = 2;  // default for DR
-  if (type_string.compare("dr") == 0)
-    c.cb_type = CB_TYPE_DR;
-  else if (type_string.compare("dm") == 0)
+  c.cb_type = VW::cb_type_from_string(type_string);
+  switch (c.cb_type)
   {
-    if (eval) THROW("direct method can not be used for evaluation --- it is biased.");
-    c.cb_type = CB_TYPE_DM;
-    problem_multiplier = 1;
-  }
-  else if (type_string.compare("ips") == 0)
-  {
-    c.cb_type = CB_TYPE_IPS;
-    problem_multiplier = 1;
-  }
-  else
-  {
-    logger::errlog_warn("warning: cb_type must be in {'ips','dm','dr'}; resetting to dr.");
-    c.cb_type = CB_TYPE_DR;
+    case VW::cb_type_t::dr:
+      break;
+    case VW::cb_type_t::dm:
+      if (eval) THROW("direct method can not be used for evaluation --- it is biased.");
+      problem_multiplier = 1;
+      break;
+    case VW::cb_type_t::ips:
+      problem_multiplier = 1;
+      break;
+    case VW::cb_type_t::mtr:
+    case VW::cb_type_t::sm:
+      logger::errlog_warn("warning: cb_type must be in {'ips','dm','dr'}; resetting to dr. Input received: {}",
+          VW::to_string(c.cb_type));
+      c.cb_type = VW::cb_type_t::dr;
+      break;
   }
 
   if (!options.was_supplied("csoaa"))
@@ -216,15 +217,15 @@ base_learner* cb_algs_setup(VW::setup_base_i& stack_builder)
   std::string name_addition = eval ? "-eval" : "";
   auto learn_ptr = eval ? learn_eval : predict_or_learn<true>;
   auto predict_ptr = eval ? predict_eval : predict_or_learn<false>;
-  auto label_type = eval ? label_type_t::cb_eval : label_type_t::cb;
+  auto label_type = eval ? VW::label_type_t::cb_eval : VW::label_type_t::cb;
   auto finish_ex = eval ? eval_finish_example : finish_example;
 
   auto* l = make_reduction_learner(
       std::move(data), base, learn_ptr, predict_ptr, stack_builder.get_setupfn_name(cb_algs_setup) + name_addition)
                 .set_params_per_weight(problem_multiplier)
-                .set_prediction_type(prediction_type_t::multiclass)
+                .set_output_prediction_type(VW::prediction_type_t::multiclass)
                 .set_learn_returns_prediction(eval)
-                .set_label_type(label_type)
+                .set_input_label_type(label_type)
                 .set_finish_example(finish_ex)
                 .build();
 

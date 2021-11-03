@@ -1,6 +1,7 @@
 import json
 from os import path
 
+
 class Test:
     output = {}
     unique_id = set()
@@ -11,7 +12,7 @@ class Test:
             return
 
         Test.output[filename] = idnum
-    
+
     @staticmethod
     def has_output(filename):
         return filename in Test.output
@@ -27,17 +28,17 @@ class Test:
         else:
             Test.unique_id.add(idnum)
 
-    def __init__(self, id, desc):   
-        self.id = id 
+    def __init__(self, id, desc):
+        self.id = id
         self.desc = desc.strip()
         self.backslash_seen = False
-        self.vw_command = "" 
+        self.vw_command = ""
         self.is_bash_command = False
         self.diff_files = []
 
     def add_more_comments(self, line):
         self.desc = self.desc + ". " + line.strip()[1:].strip()
-    
+
     def add_vw_command(self, line):
         self.vw_command = (self.vw_command + " " + line).strip()
         if self.vw_command[-1] == "\\":
@@ -46,7 +47,7 @@ class Test:
 
         if "&&" in self.vw_command:
             self.is_bash_command = True
-    
+
     # a cmd is incomplete if self.backslash_seen is true
     # this represents that the previous command parsed ended in '\' char
     def append_cmd_if_incomplete(self, line):
@@ -56,13 +57,15 @@ class Test:
             return True
         else:
             return False
-        
+
     def add_file(self, line):
         self.diff_files.append(line)
 
     def add_bash_command(self, line):
         if self.vw_command:
-            raise Exception("construction faulty merging" + self.vw_command + " and " + line)
+            raise Exception(
+                "construction faulty merging" + self.vw_command + " and " + line
+            )
         self.is_bash_command = True
         self.add_vw_command(line)
 
@@ -71,28 +74,35 @@ class Test:
             self.vw_command = " ".join(self.vw_command.split()[1:])
 
             # check what input files this command needs
-            input_file_flags = ["-d", "-i", "--dictionary", "--feature_mask", "--cache_file"]
+            input_file_flags = [
+                "-d",
+                "-i",
+                "--dictionary",
+                "--feature_mask",
+                "--cache_file",
+            ]
             files = []
             for flag in input_file_flags:
                 next_files = Parser.get_values_of_vwarg(self.vw_command, flag)
 
                 # some cleanup only when its dictionary
                 if flag == "--dictionary":
-                    next_files = [f.split(":")[-1]  for f in next_files]
-                    dpath = Parser.get_values_of_vwarg(self.vw_command, "--dictionary_path")
+                    next_files = [f.split(":")[-1] for f in next_files]
+                    dpath = Parser.get_values_of_vwarg(
+                        self.vw_command, "--dictionary_path"
+                    )
                     if dpath:
-                        next_files = [ dpath[0]+"/"+f  for f in next_files]
+                        next_files = [dpath[0] + "/" + f for f in next_files]
 
                 files = files + next_files
             if files:
                 self.input_files = files
 
-
             # get output files and register as creator of files
             files = Parser.get_values_of_vwarg(self.vw_command, "-f")
             for f in files:
                 Test.register_output(int(self.id), f)
-            
+
             files = Parser.get_values_of_vwarg(self.vw_command, "--cache_file")
             for f in files:
                 # treat cache_file differently because it is both an input and output
@@ -116,7 +126,7 @@ class Test:
 
             if depends_on:
                 self.depends_on = depends_on
-        
+
         orig_files = self.diff_files
 
         self.diff_files = {}
@@ -128,14 +138,14 @@ class Test:
 
         if self.is_bash_command:
             self.bash_command = self.vw_command
-            delattr(self, 'vw_command')
+            delattr(self, "vw_command")
 
-        delattr(self, 'is_bash_command')
-        delattr(self, 'backslash_seen')
+        delattr(self, "is_bash_command")
+        delattr(self, "backslash_seen")
 
 
 class Parser:
-    def __init__(self):   
+    def __init__(self):
         self.curr_test = None
         self.results = []
         self.saw_first_test = False
@@ -190,10 +200,10 @@ class Parser:
 
         if len(tokens) <= 1:
             return None
-        
+
         if "# Test" in tokens[0]:
             test_id = tokens[0].split()[-1]
-            test_desc = ':'.join(tokens[1:])
+            test_desc = ":".join(tokens[1:])
             return Test(test_id, test_desc)
         else:
             return None
@@ -214,17 +224,19 @@ class Parser:
             self.saw_first_test = True
 
         if not self.saw_first_test:
-            return # do nothing until we find first test definition
+            return  # do nothing until we find first test definition
 
         if Parser.is_perl_comment(line):
             new_test = Parser.try_parse_test_definition(line)
 
-            if new_test: # we reached a perl comment that declares a new test
+            if new_test:  # we reached a perl comment that declares a new test
                 self.commit_parsed_test()
                 self.curr_test = new_test
-            elif not self.is_last_comment(line): # its any other perl comment
+            elif not self.is_last_comment(line):  # its any other perl comment
                 self.curr_test.add_more_comments(line)
-        elif self.curr_test.append_cmd_if_incomplete(line): # check case if previous line ended in \
+        elif self.curr_test.append_cmd_if_incomplete(
+            line
+        ):  # check case if previous line ended in \
             pass
         elif Parser.begins_with_vw_command(line):
             self.curr_test.add_vw_command(line)
@@ -232,10 +244,11 @@ class Parser:
             self.curr_test.add_file(line)
         else:
             self.curr_test.add_bash_command(line)
-    
+
     def get_results(self):
         self.commit_parsed_test()
         return self.results
+
 
 def file_to_obj(filename):
     RTParser = Parser()
@@ -243,7 +256,7 @@ def file_to_obj(filename):
     with open(filename) as f:
         for line in f:
             RTParser.process_line(line)
-    
+
     results = RTParser.get_results()
 
     # check for missing ids
@@ -251,9 +264,10 @@ def file_to_obj(filename):
     for r in results:
         if i != r.id:
             raise Exception("test id being skipped: " + str(i))
-        i+=1
+        i += 1
 
     return results
+
 
 def find_runtest_file():
     rtfile = None
@@ -263,8 +277,9 @@ def find_runtest_file():
     for p in possible_paths:
         if path.exists(p):
             rtfile = p
-    
+
     return rtfile
+
 
 def main():
     rtfile = find_runtest_file()
@@ -272,6 +287,7 @@ def main():
 
     with open(path.join(path.dirname(rtfile), "runtests.AUTOGEN.json"), "w") as f:
         f.write(json.dumps(results, indent=2, default=lambda x: x.__dict__))
+
 
 if __name__ == "__main__":
     main()

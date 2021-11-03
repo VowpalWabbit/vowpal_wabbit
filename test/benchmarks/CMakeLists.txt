@@ -7,7 +7,8 @@ set(all_sources
 if (NOT BUILD_ONLY_STANDALONE_BENCHMARKS)
   set(all_sources ${all_sources}
     input_format_benchmarks.cc
-    )
+    benchmark_funcs.cc
+  )
 endif()
 
 add_executable(vw-benchmarks.out

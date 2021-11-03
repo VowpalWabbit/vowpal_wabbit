@@ -144,7 +144,7 @@ namespace VW
 {
 void workspace::learn(example& ec)
 {
-  if (l->is_multiline) THROW("This reduction does not support single-line examples.");
+  if (l->is_multiline()) THROW("This reduction does not support single-line examples.");
 
   if (ec.test_only || !training)
     VW::LEARNER::as_singleline(l)->predict(ec);
@@ -161,7 +161,7 @@ void workspace::learn(example& ec)
 
 void workspace::learn(multi_ex& ec)
 {
-  if (!l->is_multiline) THROW("This reduction does not support multi-line example.");
+  if (!l->is_multiline()) THROW("This reduction does not support multi-line example.");
 
   if (!training)
     VW::LEARNER::as_multiline(l)->predict(ec);
@@ -178,7 +178,7 @@ void workspace::learn(multi_ex& ec)
 
 void workspace::predict(example& ec)
 {
-  if (l->is_multiline) THROW("This reduction does not support single-line examples.");
+  if (l->is_multiline()) THROW("This reduction does not support single-line examples.");
 
   // be called directly in library mode, test_only must be explicitly set here. If the example has a label but is passed
   // to predict it would otherwise be incorrectly labelled as test_only = false.
@@ -188,7 +188,7 @@ void workspace::predict(example& ec)
 
 void workspace::predict(multi_ex& ec)
 {
-  if (!l->is_multiline) THROW("This reduction does not support multi-line example.");
+  if (!l->is_multiline()) THROW("This reduction does not support multi-line example.");
 
   // be called directly in library mode, test_only must be explicitly set here. If the example has a label but is passed
   // to predict it would otherwise be incorrectly labelled as test_only = false.
@@ -199,14 +199,14 @@ void workspace::predict(multi_ex& ec)
 
 void workspace::finish_example(example& ec)
 {
-  if (l->is_multiline) THROW("This reduction does not support single-line examples.");
+  if (l->is_multiline()) THROW("This reduction does not support single-line examples.");
 
   VW::LEARNER::as_singleline(l)->finish_example(*this, ec);
 }
 
 void workspace::finish_example(multi_ex& ec)
 {
-  if (!l->is_multiline) THROW("This reduction does not support multi-line example.");
+  if (!l->is_multiline()) THROW("This reduction does not support multi-line example.");
 
   VW::LEARNER::as_multiline(l)->finish_example(*this, ec);
 }

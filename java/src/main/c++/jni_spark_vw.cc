@@ -337,6 +337,7 @@ JNIEXPORT jlong JNICALL Java_org_vowpalwabbit_spark_VowpalWabbitExample_initiali
   {
     example* ex = VW::alloc_examples(1);
     ex->interactions = &all->interactions;
+    ex->extent_interactions = &all->extent_interactions;
 
     if (isEmpty)
     {
@@ -344,7 +345,7 @@ JNIEXPORT jlong JNICALL Java_org_vowpalwabbit_spark_VowpalWabbitExample_initiali
       VW::read_line(*all, ex, &empty);
     }
     else
-      all->example_parser->lbl_parser.default_label(&ex->l);
+      all->example_parser->lbl_parser.default_label(ex->l);
 
     return reinterpret_cast<jlong>(new VowpalWabbitExampleWrapper(all, ex));
   }
@@ -376,7 +377,7 @@ JNIEXPORT void JNICALL Java_org_vowpalwabbit_spark_VowpalWabbitExample_clear(JNI
   try
   {
     VW::empty_example(*all, *ex);
-    all->example_parser->lbl_parser.default_label(&ex->l);
+    all->example_parser->lbl_parser.default_label(ex->l);
   }
   catch (...)
   {
@@ -500,7 +501,7 @@ JNIEXPORT void JNICALL Java_org_vowpalwabbit_spark_VowpalWabbitExample_setDefaul
 
   try
   {
-    all->example_parser->lbl_parser.default_label(&ex->l);
+    all->example_parser->lbl_parser.default_label(ex->l);
   }
   catch (...)
   {
@@ -682,9 +683,9 @@ jobject getJavaPrediction(JNIEnv* env, vw* all, example* ex)
 {
   jclass predClass;
   jmethodID ctr;
-  switch (all->l->pred_type)
+  switch (all->l->get_output_prediction_type())
   {
-    case prediction_type_t::scalar:
+    case VW::prediction_type_t::scalar:
       predClass = env->FindClass("org/vowpalwabbit/spark/prediction/ScalarPrediction");
       CHECK_JNI_EXCEPTION(nullptr);
 
@@ -693,7 +694,7 @@ jobject getJavaPrediction(JNIEnv* env, vw* all, example* ex)
 
       return env->NewObject(predClass, ctr, VW::get_prediction(ex), ex->confidence);
 
-    case prediction_type_t::prob:
+    case VW::prediction_type_t::prob:
       predClass = env->FindClass("java/lang/Float");
       CHECK_JNI_EXCEPTION(nullptr);
 
@@ -702,7 +703,7 @@ jobject getJavaPrediction(JNIEnv* env, vw* all, example* ex)
 
       return env->NewObject(predClass, ctr, ex->pred.prob);
 
-    case prediction_type_t::multiclass:
+    case VW::prediction_type_t::multiclass:
       predClass = env->FindClass("java/lang/Integer");
       CHECK_JNI_EXCEPTION(nullptr);
 
@@ -711,22 +712,22 @@ jobject getJavaPrediction(JNIEnv* env, vw* all, example* ex)
 
       return env->NewObject(predClass, ctr, ex->pred.multiclass);
 
-    case prediction_type_t::scalars:
+    case VW::prediction_type_t::scalars:
       return scalars_predictor(ex, env);
 
-    case prediction_type_t::action_probs:
+    case VW::prediction_type_t::action_probs:
       return action_probs_prediction(ex, env);
 
-    case prediction_type_t::action_scores:
+    case VW::prediction_type_t::action_scores:
       return action_scores_prediction(ex, env);
 
-    case prediction_type_t::multilabels:
+    case VW::prediction_type_t::multilabels:
       return multilabel_predictor(ex, env);
 
     default:
     {
       std::ostringstream ostr;
-      ostr << "prediction type '" << to_string(all->l->pred_type) << "' is not supported";
+      ostr << "prediction type '" << VW::to_string(all->l->get_output_prediction_type()) << "' is not supported";
 
       env->ThrowNew(env->FindClass("java/lang/UnsupportedOperationException"), ostr.str().c_str());
       return nullptr;

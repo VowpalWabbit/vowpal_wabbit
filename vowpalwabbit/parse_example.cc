@@ -12,6 +12,7 @@
 #include "constant.h"
 #include "vw_string_view.h"
 #include "future_compat.h"
+#include "shared_data.h"
 
 #include "io/logger.h"
 
@@ -37,17 +38,19 @@ int read_features_string(VW::workspace* all, io_buf& buf, v_array<example*>& exa
 {
   char* line;
   size_t num_chars;
-  size_t num_chars_initial = read_features(buf, line, num_chars);
-  if (num_chars_initial < 1)
+  // This function consumes input until it reaches a '\n' then it walks back the '\n' and '\r' if it exists.
+  size_t num_bytes_consumed = read_features(buf, line, num_chars);
+  if (num_bytes_consumed < 1)
   {
-    examples[0]->is_newline = true;
-    return static_cast<int>(num_chars_initial);
+    // This branch will get hit once we have reached EOF of the input device.
+    return static_cast<int>(num_bytes_consumed);
   }
 
   VW::string_view example(line, num_chars);
+  // If this example is empty substring_to_example will mark it as a newline example.
   substring_to_example(all, examples[0], example);
 
-  return static_cast<int>(num_chars_initial);
+  return static_cast<int>(num_bytes_consumed);
 }
 
 template <bool audit>
@@ -78,7 +81,8 @@ public:
 
   // TODO: Currently this function is called by both warning and error conditions. We only log
   //      to warning here though.
-  inline FORCE_INLINE void parserWarning(const char* message, VW::string_view var_msg, const char* message2)
+  inline FORCE_INLINE void parserWarning(
+      const char* message, VW::string_view var_msg, const char* message2, size_t example_number)
   {
     // VW::string_view will output the entire view into the output stream.
     // That means if there is a null character somewhere in the range, it will terminate
@@ -87,8 +91,7 @@ public:
     // TODO: Find a sane way to handle nulls in the middle of a string (either VW::string_view or substring)
     auto tmp_view = _line.substr(0, _line.find('\0'));
     std::stringstream ss;
-    ss << message << var_msg << message2 << "in Example #" << this->_p->end_parsed_examples.load() << ": \"" << tmp_view
-       << "\"";
+    ss << message << var_msg << message2 << "in Example #" << example_number << ": \"" << tmp_view << "\"";
 
     if (_p->strict_parse)
     {
@@ -137,8 +140,8 @@ public:
       if (std::isnan(_v))
       {
         _v = float_feature_value = 0.f;
-        parserWarning(
-            "warning: invalid feature value:\"", _line.substr(_read_idx), "\" read as NaN. Replacing with 0.");
+        parserWarning("warning: invalid feature value:\"", _line.substr(_read_idx), "\" read as NaN. Replacing with 0.",
+            _ae->example_counter);
       }
       _read_idx += end_read;
       return true;
@@ -147,7 +150,8 @@ public:
     {
       _v = float_feature_value = 0.f;
       // syntax error
-      parserWarning("malformed example! '|', ':', space, or EOL expected after : \"", _line.substr(0, _read_idx), "\"");
+      parserWarning("malformed example! '|', ':', space, or EOL expected after : \"", _line.substr(0, _read_idx), "\"",
+          _ae->example_counter);
       return true;
     }
   }
@@ -351,19 +355,23 @@ public:
       VW::string_view sv = _line.substr(_read_idx);
       _cur_channel_v = parseFloat(sv.begin(), end_read, sv.end());
       if (end_read + _read_idx >= _line.size())
-      { parserWarning("malformed example! Float expected after : \"", _line.substr(0, _read_idx), "\""); }
+      {
+        parserWarning(
+            "malformed example! Float expected after : \"", _line.substr(0, _read_idx), "\"", _ae->example_counter);
+      }
       if (std::isnan(_cur_channel_v))
       {
         _cur_channel_v = 1.f;
-        parserWarning(
-            "warning: invalid namespace value:\"", _line.substr(_read_idx), "\" read as NaN. Replacing with 1.");
+        parserWarning("warning: invalid namespace value:\"", _line.substr(_read_idx),
+            "\" read as NaN. Replacing with 1.", _ae->example_counter);
       }
       _read_idx += end_read;
     }
     else
     {
       // syntax error
-      parserWarning("malformed example! '|',':', space, or EOL expected after : \"", _line.substr(0, _read_idx), "\"");
+      parserWarning("malformed example! '|',':', space, or EOL expected after : \"", _line.substr(0, _read_idx), "\"",
+          _ae->example_counter);
     }
   }
 
@@ -373,7 +381,8 @@ public:
         _line[_read_idx] == ':' || _line[_read_idx] == '\r')
     {
       // syntax error
-      parserWarning("malformed example! String expected after : \"", _line.substr(0, _read_idx), "\"");
+      parserWarning(
+          "malformed example! String expected after : \"", _line.substr(0, _read_idx), "\"", _ae->example_counter);
     }
     else
     {
@@ -399,7 +408,8 @@ public:
     if (!(_read_idx >= _line.size() || _line[_read_idx] == '|' || _line[_read_idx] == '\r'))
     {
       // syntax error
-      parserWarning("malformed example! '|',space, or EOL expected after : \"", _line.substr(0, _read_idx), "\"");
+      parserWarning("malformed example! '|',space, or EOL expected after : \"", _line.substr(0, _read_idx), "\"",
+          _ae->example_counter);
     }
   }
 
@@ -438,8 +448,8 @@ public:
     else
     {
       // syntax error
-      parserWarning(
-          "malformed example! '|',String,space, or EOL expected after : \"", _line.substr(0, _read_idx), "\"");
+      parserWarning("malformed example! '|',String,space, or EOL expected after : \"", _line.substr(0, _read_idx), "\"",
+          _ae->example_counter);
     }
 
     if (_new_index && _ae->feature_space[_index].size() > 0) _ae->indices.push_back(_index);
@@ -458,7 +468,8 @@ public:
     if (_read_idx < _line.size() && _line[_read_idx] != '\r')
     {
       // syntax error
-      parserWarning("malformed example! '|' or EOL expected after : \"", _line.substr(0, _read_idx), "\"");
+      parserWarning(
+          "malformed example! '|' or EOL expected after : \"", _line.substr(0, _read_idx), "\"", _ae->example_counter);
     }
   }
 
@@ -489,7 +500,7 @@ void substring_to_example(VW::workspace* all, example* ae, VW::string_view examp
 {
   if (example.empty()) { ae->is_newline = true; }
 
-  all->example_parser->lbl_parser.default_label(&ae->l);
+  all->example_parser->lbl_parser.default_label(ae->l);
 
   size_t bar_idx = example.find('|');
 
@@ -519,8 +530,10 @@ void substring_to_example(VW::workspace* all, example* ae, VW::string_view examp
   }
 
   if (!all->example_parser->words.empty())
-    all->example_parser->lbl_parser.parse_label(all->example_parser, all->example_parser->_shared_data, &ae->l,
-        all->example_parser->words, ae->_reduction_features);
+  {
+    all->example_parser->lbl_parser.parse_label(ae->l, ae->_reduction_features,
+        all->example_parser->parser_memory_to_reuse, all->sd->ldict.get(), all->example_parser->words);
+  }
 
   if (bar_idx != VW::string_view::npos)
   {
@@ -541,10 +554,11 @@ void read_line(VW::workspace& all, example* ex, VW::string_view line)
 
 void read_line(VW::workspace& all, example* ex, const char* line) { return read_line(all, ex, VW::string_view(line)); }
 
-void read_lines(VW::workspace* all, const char* line, size_t /*len*/, v_array<example*>& examples)
+void read_lines(vw* all, const char* line, size_t len, v_array<example*>& examples)
 {
+  VW::string_view line_view = VW::string_view(line, len);
   std::vector<VW::string_view> lines;
-  tokenize('\n', line, lines);
+  tokenize('\n', line_view, lines);
   for (size_t i = 0; i < lines.size(); i++)
   {
     // Check if a new empty example needs to be added.

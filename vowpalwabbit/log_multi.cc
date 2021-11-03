@@ -68,17 +68,17 @@ struct node
 
 struct log_multi
 {
-  uint32_t k;
+  uint32_t k = 0;
 
   std::vector<node> nodes;
 
-  size_t max_predictors;
-  size_t predictors_used;
+  size_t max_predictors = 0;
+  size_t predictors_used = 0;
 
-  bool progress;
-  uint32_t swap_resist;
+  bool progress = false;
+  uint32_t swap_resist = 0;
 
-  uint32_t nbofswaps;
+  uint32_t nbofswaps = 0;
 
   ~log_multi()
   {
@@ -500,7 +500,7 @@ base_learner* log_multi_setup(VW::setup_base_i& stack_builder)  // learner setup
   options_i& options = *stack_builder.get_options();
   VW::workspace& all = *stack_builder.get_all_pointer();
 
-  auto data = scoped_calloc_or_throw<log_multi>();
+  auto data = VW::make_unique<log_multi>();
   option_group_definition new_options("Logarithmic Time Multiclass Tree");
   new_options.add(make_option("log_multi", data->k).keep().necessary().help("Use online tree for multiclass"))
       .add(make_option("no_progress", data->progress).help("disable progressive validation"))
@@ -519,10 +519,17 @@ base_learner* log_multi_setup(VW::setup_base_i& stack_builder)  // learner setup
   data->max_predictors = data->k - 1;
   init_tree(*data.get());
 
-  learner<log_multi, example>& l = init_multiclass_learner(data, as_singleline(stack_builder.setup_base_learner()),
-      learn, predict, all.example_parser, data->max_predictors, stack_builder.get_setupfn_name(log_multi_setup));
-  all.example_parser->lbl_parser.label_type = label_type_t::multiclass;
-  l.set_save_load(save_load_tree);
+  size_t ws = data->max_predictors;
+  auto* l = make_reduction_learner(std::move(data), as_singleline(stack_builder.setup_base_learner()), learn, predict,
+      stack_builder.get_setupfn_name(log_multi_setup))
+                .set_params_per_weight(ws)
+                .set_finish_example(MULTICLASS::finish_example<log_multi&>)
+                .set_save_load(save_load_tree)
+                .set_output_prediction_type(VW::prediction_type_t::multiclass)
+                .set_input_label_type(VW::label_type_t::multiclass)
+                .build();
 
-  return make_base(l);
+  all.example_parser->lbl_parser = MULTICLASS::mc_label;
+
+  return make_base(*l);
 }

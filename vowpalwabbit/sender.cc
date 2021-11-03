@@ -88,7 +88,7 @@ void learn(sender& s, VW::LEARNER::base_learner& /*unused*/, example& ec)
   if (s.received_index + s.all->example_parser->ring_size / 2 - 1 == s.sent_index) { receive_result(s); }
 
   s.all->set_minmax(s.all->sd, ec.l.simple.label);
-  s.all->example_parser->lbl_parser.cache_label(&ec.l, ec._reduction_features, *s.buf);  // send label information.
+  s.all->example_parser->lbl_parser.cache_label(ec.l, ec._reduction_features, *s.buf);  // send label information.
   cache_tag(*s.buf, ec.tag);
   send_features(s.buf, ec, static_cast<uint32_t>(s.all->parse_mask));
   s.delay_ring[s.sent_index++ % s.all->example_parser->ring_size] = &ec;
@@ -121,7 +121,7 @@ VW::LEARNER::base_learner* sender_setup(VW::setup_base_i& stack_builder)
   s->delay_ring = calloc_or_throw<example*>(all.example_parser->ring_size);
 
   auto* l = VW::LEARNER::make_base_learner(std::move(s), learn, learn, stack_builder.get_setupfn_name(sender_setup),
-      prediction_type_t::scalar, label_type_t::simple)
+      VW::prediction_type_t::scalar, VW::label_type_t::simple)
                 .set_finish_example(finish_example)
                 .set_end_examples(end_examples)
                 .build();

@@ -35,9 +35,9 @@ struct direction
 
 struct ect
 {
-  uint64_t k;
-  uint64_t errors;
-  float class_boundary;
+  uint64_t k = 0;
+  uint64_t errors = 0;
+  float class_boundary = 0.f;
 
   v_array<direction> directions;  // The nodes of the tournament datastructure
 
@@ -48,9 +48,9 @@ struct ect
   v_array<size_t> up_directions;    // On edge e, which node n is in the up direction?
   v_array<size_t> down_directions;  // On edge e, which node n is in the down direction?
 
-  size_t tree_height;  // The height of the final tournament.
+  size_t tree_height = 0;  // The height of the final tournament.
 
-  uint32_t last_pair;
+  uint32_t last_pair = 0;
 
   v_array<bool> tournaments_won;
 };
@@ -325,8 +325,8 @@ void learn(ect& e, single_learner& base, example& ec)
 base_learner* ect_setup(VW::setup_base_i& stack_builder)
 {
   options_i& options = *stack_builder.get_options();
-  VW::workspace& all = *stack_builder.get_all_pointer();
-  auto data = scoped_calloc_or_throw<ect>();
+  vw& all = *stack_builder.get_all_pointer();
+  auto data = VW::make_unique<ect>();
   std::string link;
   option_group_definition new_options("Error Correcting Tournament Options");
   new_options.add(make_option("ect", data->k).keep().necessary().help("Error correcting tournament with <k> labels"))
@@ -344,9 +344,15 @@ base_learner* ect_setup(VW::setup_base_i& stack_builder)
   base_learner* base = stack_builder.setup_base_learner();
   if (link == "logistic") data->class_boundary = 0.5;  // as --link=logistic maps predictions in [0;1]
 
-  learner<ect, example>& l = init_multiclass_learner(
-      data, as_singleline(base), learn, predict, all.example_parser, wpp, stack_builder.get_setupfn_name(ect_setup));
-  all.example_parser->lbl_parser.label_type = label_type_t::multiclass;
+  auto* l = make_reduction_learner(
+      std::move(data), as_singleline(base), learn, predict, stack_builder.get_setupfn_name(ect_setup))
+                .set_params_per_weight(wpp)
+                .set_finish_example(MULTICLASS::finish_example<ect&>)
+                .set_output_prediction_type(VW::prediction_type_t::multiclass)
+                .set_input_label_type(VW::label_type_t::multiclass)
+                .build();
 
-  return make_base(l);
+  all.example_parser->lbl_parser = MULTICLASS::mc_label;
+
+  return make_base(*l);
 }

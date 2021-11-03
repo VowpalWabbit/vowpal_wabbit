@@ -132,7 +132,7 @@ bool parser::parse_examples(VW::workspace* all, io_buf& buf, v_array<example*>& 
 
 void parser::parse_example(VW::workspace* all, example* ae, const Example* eg)
 {
-  all->example_parser->lbl_parser.default_label(&ae->l);
+  all->example_parser->lbl_parser.default_label(ae->l);
   ae->is_newline = eg->is_newline();
   parse_flat_label(all->sd, ae, eg);
 
@@ -147,7 +147,7 @@ void parser::parse_example(VW::workspace* all, example* ae, const Example* eg)
 
 void parser::parse_multi_example(VW::workspace* all, example* ae, const MultiExample* eg)
 {
-  all->example_parser->lbl_parser.default_label(&ae->l);
+  all->example_parser->lbl_parser.default_label(ae->l);
   if (_multi_ex_index >= eg->examples()->size())
   {
     // done with multi example, send a newline example and reset

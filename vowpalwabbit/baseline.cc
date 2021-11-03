@@ -29,7 +29,7 @@ void reset_baseline_disabled(example* ec)
   if (it != ec->indices.end()) { ec->indices.erase(it); }
 }
 
-bool baseline_enabled(example* ec)
+bool baseline_enabled(const example* ec)
 {
   const auto it = std::find(ec->indices.begin(), ec->indices.end(), baseline_enabled_message_namespace);
   return it != ec->indices.end();
@@ -181,6 +181,7 @@ base_learner* baseline_setup(VW::setup_base_i& stack_builder)
 
   // initialize baseline example's interactions.
   data->ec.interactions = &all.interactions;
+  data->ec.extent_interactions = &all.extent_interactions;
   data->all = &all;
 
   const auto loss_function_type = all.loss->getType();
@@ -189,8 +190,8 @@ base_learner* baseline_setup(VW::setup_base_i& stack_builder)
   auto base = as_singleline(stack_builder.setup_base_learner());
   auto* l = VW::LEARNER::make_reduction_learner(std::move(data), base, predict_or_learn<true>, predict_or_learn<false>,
       stack_builder.get_setupfn_name(baseline_setup))
-                .set_prediction_type(prediction_type_t::scalar)
-                .set_label_type(label_type_t::simple)
+                .set_output_prediction_type(VW::prediction_type_t::scalar)
+                .set_input_label_type(VW::label_type_t::simple)
                 .set_sensitivity(sensitivity)
                 .build();
 

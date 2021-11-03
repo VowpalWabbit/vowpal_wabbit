@@ -77,9 +77,9 @@ const char* are_features_compatible(VW::workspace& vw1, VW::workspace& vw2);
 void finish(VW::workspace& all, bool delete_all = true);
 void sync_stats(VW::workspace& all);
 
-void start_parser(VW::workspace& all);
-void end_parser(VW::workspace& all);
-bool is_ring_example(VW::workspace& all, example* ae);
+void start_parser(vw& all);
+void end_parser(vw& all);
+bool is_ring_example(const vw& all, const example* ae);
 
 struct primitive_feature_space  // just a helper definition.
 {

@@ -10,17 +10,12 @@
 #include "cb.h"
 #include "example.h"
 #include "learner.h"
+#include "cb_type.h"
 
 #include <cfloat>
 
 // TODO: extend to handle CSOAA_LDF and WAP_LDF
 VW::LEARNER::base_learner* cb_algs_setup(VW::setup_base_i& stack_builder);
-
-#define CB_TYPE_DR 0
-#define CB_TYPE_DM 1
-#define CB_TYPE_IPS 2
-#define CB_TYPE_MTR 3
-#define CB_TYPE_SM 4
 
 namespace CB_ALGS
 {
@@ -29,7 +24,6 @@ float get_cost_pred(
     VW::LEARNER::single_learner* scorer, const CB::cb_class& known_cost, example& ec, uint32_t index, uint32_t base)
 {
   VW_DBG(ec) << "get_cost_pred:" << is_learn << std::endl;
-  CB::label ld = ec.l.cb;
 
   label_data simple_temp;
   if (index == known_cost.action)

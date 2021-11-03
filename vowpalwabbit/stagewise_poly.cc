@@ -371,6 +371,7 @@ void synthetic_reset(stagewise_poly &poly, example &ec)
   poly.synth_ec.tag = ec.tag;
   poly.synth_ec.example_counter = ec.example_counter;
   poly.synth_ec.interactions = &poly.all->interactions;
+  poly.synth_ec.extent_interactions = &poly.all->extent_interactions;
 
   /**
    * Some comments on ft_offset.
@@ -695,8 +696,8 @@ base_learner* stagewise_poly_setup(VW::setup_base_i& stack_builder)
 
   auto* l = VW::LEARNER::make_reduction_learner(std::move(poly), as_singleline(stack_builder.setup_base_learner()),
       learn, predict, stack_builder.get_setupfn_name(stagewise_poly_setup))
-                .set_label_type(label_type_t::simple)
-                .set_prediction_type(prediction_type_t::scalar)
+                .set_input_label_type(VW::label_type_t::simple)
+                .set_output_prediction_type(VW::prediction_type_t::scalar)
                 .set_save_load(save_load)
                 .set_finish_example(finish_example)
                 .set_end_pass(end_pass)

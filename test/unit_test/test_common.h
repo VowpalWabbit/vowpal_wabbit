@@ -1,3 +1,7 @@
+// Copyright (c) by respective owners including Yahoo!, Microsoft, and
+// individual contributors. All rights reserved. Released under a BSD (revised)
+// license as described in the file LICENSE.
+
 #pragma once
 
 #include <boost/test/unit_test.hpp>
@@ -7,6 +11,8 @@
 #include <string>
 
 #include "parse_example_json.h"
+#include "slates_label.h"
+#include "ccb_reduction_features.h"
 #include "action_score.h"
 #include "vw.h"
 
@@ -59,3 +65,18 @@ inline std::ostream& operator<<(std::ostream& os, const namespace_extent& extent
   return os;
 }
 }  // namespace VW
+
+namespace std
+{
+inline std::ostream& operator<<(std::ostream& os, VW::slates::example_type ex_type)
+{
+  os << VW::to_string(ex_type);
+  return os;
+}
+
+inline std::ostream& operator<<(std::ostream& os, CCB::example_type ex_type)
+{
+  os << VW::to_string(ex_type);
+  return os;
+}
+}  // namespace std
