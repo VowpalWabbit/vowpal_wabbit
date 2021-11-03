@@ -202,11 +202,11 @@ Cost Sensitive One Against All with Label Dependent Features Options:
   --csoaa_rank          Return actions sorted by score order
   --probabilities       predict probabilities of all classes
 Contextual Bandit with Action Dependent Features Options:
-  --cb_adf              Do Contextual Bandit learning with multiline action 
-                        dependent features
-  --rank_all            Return actions sorted by score order
-  --no_predict          Do not do a prediction when training
-  --clip_p arg (=0, )   Clipping probability in importance weight. Default: 0.f
-                        (no clipping)
-  --cb_type arg         contextual bandit method to use in {ips, dm, dr, mtr, 
-                        sm}. Default: mtr
+  --cb_adf               Do Contextual Bandit learning with multiline action 
+                         dependent features
+  --rank_all             Return actions sorted by score order
+  --no_predict           Do not do a prediction when training
+  --clip_p arg (=0, )    Clipping probability in importance weight. Default: 
+                         0.f (no clipping)
+  --cb_type arg (=mtr, ) contextual bandit method to use. Choices: {dm, dr, 
+                         ips, mtr, sm}

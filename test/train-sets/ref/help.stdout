@@ -272,18 +272,19 @@ CATS Tree Options:
                               identity, logistic, poisson}
 Contextual Bandit Options:
   --cb arg              Use contextual bandit learning with <k> costs
-  --cb_type arg         contextual bandit method to use in {ips,dm,dr}
+  --cb_type arg (=dr, ) contextual bandit method to use. Choices: {dm, dr, ips,
+                        mtr, sm}
   --eval                Evaluate a policy rather than optimizing
   --cb_force_legacy     Default to non-adf cb implementation (cb_to_cb_adf)
 Contextual Bandit with Action Dependent Features Options:
-  --cb_adf              Do Contextual Bandit learning with multiline action 
-                        dependent features
-  --rank_all            Return actions sorted by score order
-  --no_predict          Do not do a prediction when training
-  --clip_p arg (=0, )   Clipping probability in importance weight. Default: 0.f
-                        (no clipping)
-  --cb_type arg         contextual bandit method to use in {ips, dm, dr, mtr, 
-                        sm}. Default: mtr
+  --cb_adf               Do Contextual Bandit learning with multiline action 
+                         dependent features
+  --rank_all             Return actions sorted by score order
+  --no_predict           Do not do a prediction when training
+  --clip_p arg (=0, )    Clipping probability in importance weight. Default: 
+                         0.f (no clipping)
+  --cb_type arg (=mtr, ) contextual bandit method to use. Choices: {dm, dr, 
+                         ips, mtr, sm}
 CB Distributionally Robust Optimization Options:
   --cb_dro                     Use DRO for cb learning
   --cb_dro_alpha arg (=0.05, ) Confidence level for cb dro
@@ -314,8 +315,8 @@ Contextual Bandit Exploration with ADF (online cover) Options:
   --nounif                do not explore uniformly on zero-probability actions 
                           in cover
   --first_only            Only explore the first action in a tie-breaking event
-  --cb_type arg           contextual bandit method to use in {ips,dr,mtr}. 
-                          Default: mtr
+  --cb_type arg (=mtr, )  contextual bandit method to use. Choices: {dm, dr, 
+                          ips, mtr, sm}
   --epsilon arg (=0.05, ) epsilon-greedy exploration
 Contextual Bandit Exploration with ADF (tau-first) Options:
   --cb_explore_adf      Online explore-exploit for a contextual bandit problem 
@@ -337,8 +338,8 @@ Contextual Bandit Exploration with ADF (RegCB) Options:
   --cb_max_cost arg (=1, )  upper bound on cost
   --first_only              Only explore the first action in a tie-breaking 
                             event
-  --cb_type arg             contextual bandit method to use in {ips,dr,mtr}. 
-                            Default: mtr
+  --cb_type arg (=mtr, )    contextual bandit method to use. Choices: {dm, dr, 
+                            ips, mtr, sm}
 Contextual Bandit Exploration with ADF (rnd) Options:
   --cb_explore_adf             Online explore-exploit for a contextual bandit 
                                problem with multiline action dependent features
@@ -369,8 +370,8 @@ Contextual Bandit Exploration with ADF (SquareCB) Options:
                                 plausible action set. Only used with --elim
   --cb_min_cost arg (=0, )      Lower bound on cost. Only used with --elim
   --cb_max_cost arg (=1, )      Upper bound on cost. Only used with --elim
-  --cb_type arg                 contextual bandit method to use in 
-                                {ips,dr,mtr}. Default: mtr
+  --cb_type arg (=mtr, )        contextual bandit method to use. Choices: {dm, 
+                                dr, ips, mtr, sm}
 Contextual Bandit Exploration with ADF (synthetic cover) Options:
   --cb_explore_adf              Online explore-exploit for a contextual bandit 
                                 problem with multiline action dependent 
@@ -389,13 +390,15 @@ Continuous Actions: cb_explore_pdf Options:
 CB Sample Options:
   --cb_sample           Sample from CB pdf and swap top action
 Contextual Bandit: cb -> cb_adf Options:
-  --cb_to_cbadf arg     Maps cb_adf to cb. Disable with cb_force_legacy
-  --cb arg              Maps cb_adf to cb. Disable with cb_force_legacy
-  --cb_explore arg      Translate cb explore to cb_explore_adf. Disable with 
-                        cb_force_legacy
-  --cbify arg           Translate cbify to cb_adf. Disable with cb_force_legacy
-  --cb_type arg         contextual bandit method to use in {}
-  --cb_force_legacy     Default to non-adf cb implementation (cb_algs)
+  --cb_to_cbadf arg      Maps cb_adf to cb. Disable with cb_force_legacy
+  --cb arg               Maps cb_adf to cb. Disable with cb_force_legacy
+  --cb_explore arg       Translate cb explore to cb_explore_adf. Disable with 
+                         cb_force_legacy
+  --cbify arg            Translate cbify to cb_adf. Disable with 
+                         cb_force_legacy
+  --cb_type arg (=mtr, ) contextual bandit method to use. Choices: {dm, dr, 
+                         ips, mtr, sm}
+  --cb_force_legacy      Default to non-adf cb implementation (cb_algs)
 Make Multiclass into Contextual Bandit Options:
   --cbify arg                  Convert multiclass on <k> classes into a 
                                contextual bandit problem
