@@ -112,7 +112,7 @@ void list_to_json_file(const std::string& filename, const metric_sink& metrics)
   }
 }
 
-void output_metrics(vw& all)
+void output_metrics(VW::workspace& all)
 {
   if (all.options->was_supplied("extra_metrics"))
   {

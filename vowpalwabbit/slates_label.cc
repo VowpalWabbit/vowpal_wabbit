@@ -167,3 +167,27 @@ label_parser slates_label_parser = {
 
 }  // namespace slates
 }  // namespace VW
+
+VW::string_view VW::to_string(VW::slates::example_type ex_type)
+{
+#define CASE(type) \
+  case type:       \
+    return #type;
+
+  using namespace VW::slates;
+  switch (ex_type)
+  {
+    CASE(example_type::unset)
+    CASE(example_type::shared)
+    CASE(example_type::action)
+    CASE(example_type::slot)
+  }
+
+  // The above enum is exhaustive and will warn on a new label type being added due to the lack of `default`
+  // The following is required by the compiler, otherwise it things control can reach the end of this function without
+  // returning.
+  assert(false);
+  return "unknown example_type enum";
+
+#undef CASE
+}

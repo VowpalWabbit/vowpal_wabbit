@@ -32,7 +32,7 @@ using VW::LEARNER::single_learner;
 // Forward declarations
 namespace VW
 {
-void finish_example(vw& all, example& ec);
+void finish_example(VW::workspace& all, example& ec);
 }
 
 namespace VW
@@ -98,17 +98,17 @@ void predict_or_learn(cats_pdf& reduction, single_learner&, example& ec)
 class reduction_output
 {
 public:
-  static void report_progress(vw& all, const cats_pdf&, const example& ec);
+  static void report_progress(VW::workspace& all, const cats_pdf&, const example& ec);
   static void output_predictions(std::vector<std::unique_ptr<VW::io::writer>>& predict_file_descriptors,
       const continuous_actions::probability_density_function& prediction);
 
 private:
   static inline bool does_example_have_label(const example& ec);
-  static void print_update_cb_cont(vw& all, const example& ec);
+  static void print_update_cb_cont(VW::workspace& all, const example& ec);
 };
 
 // Free function to tie function pointers to output class methods
-void finish_example(vw& all, cats_pdf& data, example& ec)
+void finish_example(VW::workspace& all, cats_pdf& data, example& ec)
 {
   // add output example
   reduction_output::report_progress(all, data, ec);
@@ -130,7 +130,7 @@ void reduction_output::output_predictions(std::vector<std::unique_ptr<VW::io::wr
 
 // "average loss" "since last" "example counter" "example weight"
 // "current label" "current predict" "current features"
-void reduction_output::report_progress(vw& all, const cats_pdf&, const example& ec)
+void reduction_output::report_progress(VW::workspace& all, const cats_pdf&, const example& ec)
 {
   const auto& cb_cont_costs = ec.l.cb_cont.costs;
   all.sd->update(ec.test_only, does_example_have_label(ec), cb_cont_costs.empty() ? 0.f : cb_cont_costs[0].cost,
@@ -144,7 +144,7 @@ inline bool reduction_output::does_example_have_label(const example& ec)
   return (!ec.l.cb_cont.costs.empty() && ec.l.cb_cont.costs[0].action != FLT_MAX);
 }
 
-void reduction_output::print_update_cb_cont(vw& all, const example& ec)
+void reduction_output::print_update_cb_cont(VW::workspace& all, const example& ec)
 {
   if (all.sd->weighted_examples() >= all.sd->dump_interval && !all.logger.quiet && !all.bfgs)
   {
@@ -162,7 +162,7 @@ void reduction_output::print_update_cb_cont(vw& all, const example& ec)
 LEARNER::base_learner* setup(setup_base_i& stack_builder)
 {
   options_i& options = *stack_builder.get_options();
-  vw& all = *stack_builder.get_all_pointer();
+  VW::workspace& all = *stack_builder.get_all_pointer();
 
   option_group_definition new_options("Continuous action tree with smoothing with full pdf");
   int num_actions = 0;
