@@ -152,9 +152,9 @@ interaction_config_manager::interaction_config_manager(uint64_t global_lease, ui
   random_state.set_random_state(seed);
   exclusion_config conf(global_lease);
   conf.state = VW::automl::config_state::Live;
-  configs[0] = conf;
+  configs[0] = std::move(conf);
   scored_config sc;
-  scores.push_back(sc);
+  scores.push_back(std::move(sc));
   ++valid_config_size;
 }
 
@@ -206,14 +206,14 @@ void interaction_config_manager::pre_process(const multi_ex& ecs)
 // Helper function to insert new configs from oracle into map of configs as well as index_queue.
 // Handles creating new config with exclusions or overwriting stale configs to avoid reallocation.
 void interaction_config_manager::insert_config(
-    const std::map<namespace_index, std::set<namespace_index>>& new_exclusions)
+    const std::map<namespace_index, std::set<namespace_index>>&& new_exclusions)
 {
   // Note that configs are never actually cleared, but valid_config_size is set to 0 instead to denote that
   // configs have become stale. Here we try to write over stale configs with new configs, and if no stale
   // configs exist we'll generate a new one.
   if (valid_config_size < configs.size())
   {
-    configs[valid_config_size].exclusions = new_exclusions;
+    configs[valid_config_size].exclusions = std::move(new_exclusions);
     configs[valid_config_size].lease = global_lease;
     configs[valid_config_size].ips = 0;
     configs[valid_config_size].lower_bound = std::numeric_limits<float>::infinity();
@@ -223,7 +223,7 @@ void interaction_config_manager::insert_config(
   {
     exclusion_config conf(global_lease);
     conf.exclusions = new_exclusions;
-    configs[valid_config_size] = conf;
+    configs[valid_config_size] = std::move(conf);
   }
   float priority = (*calc_priority)(configs[valid_config_size], ns_counter);
   index_queue.push(std::make_pair(priority, valid_config_size));
@@ -248,7 +248,7 @@ void interaction_config_manager::config_oracle()
       std::map<namespace_index, std::set<namespace_index>> new_exclusions(
           configs[scores[current_champ].config_index].exclusions);
       new_exclusions[ns1].insert(ns2);
-      insert_config(new_exclusions);
+      insert_config(std::move(new_exclusions));
     }
   }
   /*
@@ -270,7 +270,7 @@ void interaction_config_manager::config_oracle()
       std::map<namespace_index, std::set<namespace_index>> new_exclusions(
           configs[scores[current_champ].config_index].exclusions);
       new_exclusions[ns1].insert(ns2);
-      insert_config(new_exclusions);
+      insert_config(std::move(new_exclusions));
     }
     // Remove one exclusion (for each exclusion)
     for (auto& ns_pair : configs[scores[current_champ].config_index].exclusions)
@@ -281,7 +281,7 @@ void interaction_config_manager::config_oracle()
         std::map<namespace_index, std::set<namespace_index>> new_exclusions(
             configs[scores[current_champ].config_index].exclusions);
         new_exclusions[ns1].erase(ns2);
-        insert_config(new_exclusions);
+        insert_config(std::move(new_exclusions));
       }
     }
   }
@@ -356,7 +356,7 @@ void interaction_config_manager::schedule()
       {
         scored_config sc;
         if (live_slot > priority_challengers) { sc.eligible_to_inactivate = true; }
-        scores.push_back(sc);
+        scores.push_back(std::move(sc));
       }
       // Only inactivate current config if lease is reached
       if (!need_new_score && configs[scores[live_slot].config_index].state == VW::automl::config_state::Live)

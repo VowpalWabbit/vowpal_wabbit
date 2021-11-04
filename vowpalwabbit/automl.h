@@ -153,7 +153,7 @@ private:
   priority_func* calc_priority;
   bool repopulate_index_queue();
   bool swap_eligible_to_inactivate(uint64_t);
-  void insert_config(const std::map<namespace_index, std::set<namespace_index>>&);
+  void insert_config(const std::map<namespace_index, std::set<namespace_index>>&&);
 };
 
 template <typename CMType>
