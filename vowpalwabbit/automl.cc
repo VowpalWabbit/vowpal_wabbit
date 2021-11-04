@@ -205,8 +205,7 @@ void interaction_config_manager::pre_process(const multi_ex& ecs)
 
 // Helper function to insert new configs from oracle into map of configs as well as index_queue.
 // Handles creating new config with exclusions or overwriting stale configs to avoid reallocation.
-void interaction_config_manager::insert_config(
-    const std::map<namespace_index, std::set<namespace_index>>&& new_exclusions)
+void interaction_config_manager::insert_config(std::map<namespace_index, std::set<namespace_index>>&& new_exclusions)
 {
   // Note that configs are never actually cleared, but valid_config_size is set to 0 instead to denote that
   // configs have become stale. Here we try to write over stale configs with new configs, and if no stale
