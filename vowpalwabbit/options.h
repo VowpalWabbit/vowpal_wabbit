@@ -158,7 +158,8 @@ struct typed_option : base_option
 
   template <typename U>
   std::string invalid_choice_error(const U&, const std::string&)
-  { return "";
+  {
+    return "";
   }
   std::string invalid_choice_error(const std::string& value, const std::string& m_name)
   {
