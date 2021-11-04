@@ -145,7 +145,7 @@ void options_boost_po::add_and_parse(const option_group_definition& group)
 bool options_boost_po::add_parse_and_check_necessary(const option_group_definition& group)
 {
   this->add_and_parse(group);
-  return group.check_necessary_enabled(*this);
+  return group.check_necessary_enabled(*this) && group.check_one_of();
 }
 
 bool options_boost_po::was_supplied(const std::string& key) const

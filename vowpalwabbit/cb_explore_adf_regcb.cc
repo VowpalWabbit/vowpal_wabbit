@@ -276,7 +276,7 @@ base_learner* setup(VW::setup_base_i& stack_builder)
       .add(make_option("cb_type", type_string)
                .keep()
                .default_value("mtr")
-               .one_of({"ips", "dm", "dr", "mtr", "sm"})
+               .one_of({"mtr"})
                .help("Contextual bandit method to use"));
 
   options.add_and_parse(new_options);

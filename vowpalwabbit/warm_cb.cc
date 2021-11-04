@@ -61,7 +61,7 @@ struct warm_cb
   uint32_t choices_lambda = 0;
   bool upd_ws = false;
   bool upd_inter = false;
-  int cor_type_ws = false;
+  int cor_type_ws = 0;
   float cor_prob_ws = 0.f;
   int vali_method = 0;
   int wt_scheme = 0;

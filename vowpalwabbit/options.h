@@ -55,16 +55,11 @@ struct option_builder
   }
 
   template <typename U>
-  void add_help(const std::ostringstream&, const U&)
+  void add_help(std::ostringstream&, const U&)
   { /* cannot handle non-string or arithmetic types */
   }
   void add_help(std::ostringstream& help, const std::string& addition) { help << addition; }
-  template <typename A>
-  typename std::enable_if<std::is_arithmetic<A>::value, void>::type add_help(
-      std::ostringstream& help, const A& addition)
-  {
-    help << std::to_string(addition);
-  }
+  void add_help(std::ostringstream& help, const int& addition) { help << std::to_string(addition); }
 
   option_builder& help(const std::string& help)
   {
@@ -135,6 +130,7 @@ struct base_option
   bool m_keep = false;
   bool m_necessary = false;
   bool m_allow_override = false;
+  std::string m_one_of_err = "";
 
   virtual ~base_option() = default;
 };
@@ -161,10 +157,10 @@ struct typed_option : base_option
   bool value_supplied() const { return m_value.get() != nullptr; }
 
   template <typename U>
-  void invalid_choice_error(const U&, const std::string&)
-  { /* cannot handle non-string or arithmetic types */
+  std::string invalid_choice_error(const U&, const std::string&)
+  { return "";
   }
-  void invalid_choice_error(const std::string& value, const std::string& m_name)
+  std::string invalid_choice_error(const std::string& value, const std::string& m_name)
   {
     std::ostringstream err_msg;
     err_msg << fmt::format("Error: '{}' is not a valid choice for option --{}", value, m_name);
@@ -180,26 +176,11 @@ struct typed_option : base_option
       err_msg << v;
     }
     err_msg << "}";
-    THROW(err_msg.str());
+    return err_msg.str();
   }
-  template <typename A>
-  typename std::enable_if<std::is_arithmetic<A>::value, void>::type invalid_choice_error(A& value, std::string& m_name)
+  std::string invalid_choice_error(const int& value, const std::string& m_name)
   {
-    std::ostringstream err_msg;
-    err_msg << fmt::format("Error: '{}' is not a valid choice for option --{}", value, m_name);
-    err_msg << ". Please select from {";
-    bool first = true;
-    for (const auto& v : m_one_of)
-    {
-      if (first) { first = false; }
-      else
-      {
-        err_msg << ", ";
-      }
-      err_msg << std::to_string(v);
-    }
-    err_msg << "}";
-    THROW(err_msg.str());
+    return invalid_choice_error(std::to_string(value), m_name);
   }
 
   // Typed option children sometimes use stack local variables that are only valid for the initial set from add and
@@ -208,7 +189,8 @@ struct typed_option : base_option
   {
     m_value = std::make_shared<T>(value);
     value_set_callback(value, called_from_add_and_parse);
-    if (m_one_of.size() > 0 && (m_one_of.find(value) == m_one_of.end())) { invalid_choice_error(value, m_name); }
+    if (m_one_of.size() > 0 && (m_one_of.find(value) == m_one_of.end()))
+    { m_one_of_err = invalid_choice_error(value, m_name); }
     return *this;
   }
 
@@ -370,6 +352,16 @@ struct option_group_definition
     for (const auto& elem : m_necessary_flags) { check_if_all_necessary_enabled &= options.was_supplied(elem); }
 
     return check_if_all_necessary_enabled;
+  }
+
+  // will check if one_of condition is met for all options
+  bool check_one_of() const
+  {
+    for (const auto& option : m_options)
+    {
+      if (option->m_one_of_err.length() > 0) { THROW(option->m_one_of_err); }
+    }
+    return true;
   }
 
   template <typename T>
