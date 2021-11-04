@@ -270,14 +270,14 @@ base_learner* setup(VW::setup_base_i& stack_builder)
       .add(make_option("regcb", regcb).keep().help("RegCB-elim exploration"))
       .add(make_option("regcbopt", regcbopt).keep().help("RegCB optimistic exploration"))
       .add(make_option("mellowness", c0).keep().default_value(0.1f).help("RegCB mellowness parameter c_0. Default 0.1"))
-      .add(make_option("cb_min_cost", min_cb_cost).keep().default_value(0.f).help("lower bound on cost"))
-      .add(make_option("cb_max_cost", max_cb_cost).keep().default_value(1.f).help("upper bound on cost"))
+      .add(make_option("cb_min_cost", min_cb_cost).keep().default_value(0.f).help("Lower bound on cost"))
+      .add(make_option("cb_max_cost", max_cb_cost).keep().default_value(1.f).help("Upper bound on cost"))
       .add(make_option("first_only", first_only).keep().help("Only explore the first action in a tie-breaking event"))
       .add(make_option("cb_type", type_string)
                .keep()
                .default_value("mtr")
                .one_of({"ips", "dm", "dr", "mtr", "sm"})
-               .help("contextual bandit method to use"));
+               .help("Contextual bandit method to use"));
 
   options.add_and_parse(new_options);
 

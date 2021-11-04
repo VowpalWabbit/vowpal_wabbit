@@ -170,7 +170,7 @@ LEARNER::base_learner* setup(setup_base_i& stack_builder)
   float bandwidth = 0;
   float min_value = 0;
   float max_value = 0;
-  new_options.add(make_option("cats", num_actions).keep().necessary().help("number of discrete actions <k> for cats"))
+  new_options.add(make_option("cats", num_actions).keep().necessary().help("Number of discrete actions <k> for cats"))
       .add(make_option("min_value", min_value).keep().help("Minimum continuous value"))
       .add(make_option("max_value", max_value).keep().help("Maximum continuous value"))
       .add(make_option("bandwidth", bandwidth)

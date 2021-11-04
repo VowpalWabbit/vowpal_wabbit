@@ -91,7 +91,7 @@ VW::LEARNER::base_learner* multilabel_oaa_setup(VW::setup_base_i& stack_builder)
   option_group_definition new_options("Multilabel One Against All");
   new_options
       .add(make_option("multilabel_oaa", data->k).keep().necessary().help("One-against-all multilabel with <k> labels"))
-      .add(make_option("probabilities", data->probabilities).help("predict probabilities of all classes"))
+      .add(make_option("probabilities", data->probabilities).help("Predict probabilities of all classes"))
       .add(make_option("link", data->link)
                .default_value("identity")
                .keep()

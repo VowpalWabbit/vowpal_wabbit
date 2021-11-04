@@ -502,7 +502,7 @@ base_learner* cb_adf_setup(VW::setup_base_i& stack_builder)
                .keep()
                .default_value("mtr")
                .one_of({"ips", "dm", "dr", "mtr", "sm"})
-               .help("contextual bandit method to use"));
+               .help("Contextual bandit method to use"));
 
   if (!options.add_parse_and_check_necessary(new_options)) return nullptr;
 

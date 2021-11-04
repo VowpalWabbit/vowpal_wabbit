@@ -280,7 +280,7 @@ void parse_diagnostics(options_i& options, VW::workspace& all)
   std::string progress_arg;
   option_group_definition diagnostic_group("Diagnostic");
   diagnostic_group.add(make_option("version", version_arg).help("Version information"))
-      .add(make_option("audit", all.audit).short_name("a").help("print weights of features"))
+      .add(make_option("audit", all.audit).short_name("a").help("Print weights of features"))
       .add(make_option("progress", progress_arg)
                .short_name("P")
                .help("Progress update frequency. int: additive, float: multiplicative"))
@@ -360,11 +360,11 @@ input_options parse_source(VW::workspace& all, options_i& options)
 
   option_group_definition input_options("Input");
   input_options.add(make_option("data", all.data_filename).short_name("d").help("Example set"))
-      .add(make_option("daemon", parsed_options.daemon).help("persistent daemon mode on port 26542"))
+      .add(make_option("daemon", parsed_options.daemon).help("Persistent daemon mode on port 26542"))
       .add(make_option("foreground", parsed_options.foreground)
-               .help("in persistent daemon mode, do not run in the background"))
-      .add(make_option("port", parsed_options.port).help("port to listen on; use 0 to pick unused port"))
-      .add(make_option("num_children", all.num_children).help("number of children for persistent daemon mode"))
+               .help("In persistent daemon mode, do not run in the background"))
+      .add(make_option("port", parsed_options.port).help("Port to listen on; use 0 to pick unused port"))
+      .add(make_option("num_children", all.num_children).help("Number of children for persistent daemon mode"))
       .add(make_option("pid_file", parsed_options.pid_file).help("Write pid file in persistent daemon mode"))
       .add(make_option("port_file", parsed_options.port_file).help("Write port used in persistent daemon mode"))
       .add(make_option("cache", parsed_options.cache).short_name("c").help("Use a cache.  The default is <data>.cache"))
@@ -373,13 +373,13 @@ input_options parse_source(VW::workspace& all, options_i& options)
       .add(make_option("dsjson", parsed_options.dsjson).help("Enable Decision Service JSON parsing"))
       .add(make_option("kill_cache", parsed_options.kill_cache)
                .short_name("k")
-               .help("do not reuse existing cache: create a new one always"))
+               .help("Do not reuse existing cache: create a new one always"))
       .add(
           make_option("compressed", parsed_options.compressed)
               .help(
                   "use gzip format whenever possible. If a cache file is being created, this option creates a "
                   "compressed cache file. A mixture of raw-text & compressed inputs are supported with autodetection."))
-      .add(make_option("no_stdin", all.stdin_off).help("do not default to reading from stdin"))
+      .add(make_option("no_stdin", all.stdin_off).help("Do not default to reading from stdin"))
       .add(make_option("no_daemon", all.no_daemon)
                .help("Force a loaded daemon or active learning model to accept local input instead of starting in "
                      "daemon mode"))
@@ -389,7 +389,7 @@ input_options parse_source(VW::workspace& all, options_i& options)
                      "A^B^C. Note: this will become the default in a future version, so enabling this option will "
                      "migrate you to the new behavior and silence the warning."))
       .add(make_option("flatbuffer", parsed_options.flatbuffer)
-               .help("data file will be interpreted as a flatbuffer file"));
+               .help("Data file will be interpreted as a flatbuffer file"));
 #ifdef BUILD_EXTERNAL_PARSER
   VW::external::parser::set_parse_args(input_options, parsed_options);
 #endif
@@ -563,21 +563,21 @@ void parse_feature_tweaks(
 
   option_group_definition feature_options("Feature");
   feature_options
-      .add(make_option("hash", hash_function).keep().one_of({"strings", "all"}).help("how to hash the features"))
-      .add(make_option("hash_seed", all.hash_seed).keep().default_value(0).help("seed for hash function"))
-      .add(make_option("ignore", ignores).keep().help("ignore namespaces beginning with character <arg>"))
+      .add(make_option("hash", hash_function).keep().one_of({"strings", "all"}).help("How to hash the features"))
+      .add(make_option("hash_seed", all.hash_seed).keep().default_value(0).help("Seed for hash function"))
+      .add(make_option("ignore", ignores).keep().help("Ignore namespaces beginning with character <arg>"))
       .add(make_option("ignore_linear", ignore_linears)
                .keep()
-               .help("ignore namespaces beginning with character <arg> for linear terms only"))
-      .add(make_option("keep", keeps).keep().help("keep namespaces beginning with character <arg>"))
+               .help("Ignore namespaces beginning with character <arg> for linear terms only"))
+      .add(make_option("keep", keeps).keep().help("Keep namespaces beginning with character <arg>"))
       .add(make_option("redefine", redefines)
                .keep()
-               .help("redefine namespaces beginning with characters of std::string S as namespace N. <arg> shall be in "
+               .help("Redefine namespaces beginning with characters of std::string S as namespace N. <arg> shall be in "
                      "form "
                      "'N:=S' where := is operator. Empty N or S are treated as default namespace. Use ':' as a "
                      "wildcard in S.")
                .keep())
-      .add(make_option("bit_precision", new_bits).short_name("b").help("number of bits in the feature table"))
+      .add(make_option("bit_precision", new_bits).short_name("b").help("Number of bits in the feature table"))
       .add(make_option("noconstant", noconstant).help("Don't add a constant feature"))
       .add(make_option("constant", all.initial_constant).short_name("C").help("Set initial value of constant"))
       .add(make_option("ngram", ngram_strings)
@@ -587,19 +587,19 @@ void parse_feature_tweaks(
                      "generalized n-skip-k-gram. To generate n-skips for a single namespace 'foo', arg should be fN."))
       .add(
           make_option("feature_limit", all.limit_strings)
-              .help("limit to N unique features per namespace. To apply to a single namespace 'foo', arg should be fN"))
+              .help("Limit to N unique features per namespace. To apply to a single namespace 'foo', arg should be fN"))
       .add(make_option("affix", affix)
                .keep()
-               .help("generate prefixes/suffixes of features; argument '+2a,-3b,+1' means generate 2-char prefixes for "
+               .help("Generate prefixes/suffixes of features; argument '+2a,-3b,+1' means generate 2-char prefixes for "
                      "namespace a, 3-char suffixes for b and 1 char prefixes for default namespace"))
       .add(make_option("spelling", spelling_ns)
                .keep()
-               .help("compute spelling features for a give namespace (use '_' for default namespace)"))
+               .help("Compute spelling features for a give namespace (use '_' for default namespace)"))
       .add(make_option("dictionary", dictionary_nses)
                .keep()
-               .help("read a dictionary for additional features (arg either 'x:file' or just 'file')"))
+               .help("Read a dictionary for additional features (arg either 'x:file' or just 'file')"))
       .add(make_option("dictionary_path", dictionary_path)
-               .help("look in this directory for dictionaries; defaults to current directory or env{PATH}"))
+               .help("Look in this directory for dictionaries; defaults to current directory or env{PATH}"))
       .add(make_option("interactions", interactions)
                .keep()
                .help("Create feature interactions of any level between namespaces"))
@@ -978,22 +978,22 @@ void parse_example_tweaks(options_i& options, VW::workspace& all)
 
   option_group_definition example_options("Example");
   example_options.add(make_option("testonly", test_only).short_name("t").help("Ignore label information and just test"))
-      .add(make_option("holdout_off", all.holdout_set_off).help("no holdout data in multiple passes"))
-      .add(make_option("holdout_period", all.holdout_period).default_value(10).help("holdout period for test only"))
+      .add(make_option("holdout_off", all.holdout_set_off).help("No holdout data in multiple passes"))
+      .add(make_option("holdout_period", all.holdout_period).default_value(10).help("Holdout period for test only"))
       .add(make_option("holdout_after", all.holdout_after)
-               .help("holdout after n training examples, default off (disables holdout_period)"))
+               .help("Holdout after n training examples, default off (disables holdout_period)"))
       .add(
           make_option("early_terminate", early_terminate_passes)
               .default_value(3)
               .help(
                   "Specify the number of passes tolerated when holdout loss doesn't decrease before early termination"))
       .add(make_option("passes", all.numpasses).help("Number of Training Passes"))
-      .add(make_option("initial_pass_length", all.pass_length).help("initial number of examples per pass"))
-      .add(make_option("examples", all.max_examples).help("number of examples to parse"))
+      .add(make_option("initial_pass_length", all.pass_length).help("Initial number of examples per pass"))
+      .add(make_option("examples", all.max_examples).help("Number of examples to parse"))
       .add(make_option("min_prediction", all.sd->min_label).help("Smallest prediction to output"))
       .add(make_option("max_prediction", all.sd->max_label).help("Largest prediction to output"))
       .add(make_option("sort_features", all.example_parser->sort_features)
-               .help("turn this on to disregard order in which features have been defined. This will lead to smaller "
+               .help("Turn this on to disregard order in which features have been defined. This will lead to smaller "
                      "cache sizes"))
       .add(make_option("loss_function", loss_function)
                .default_value("squared")
@@ -1002,12 +1002,12 @@ void parse_example_tweaks(options_i& options, VW::workspace& all)
       .add(make_option("quantile_tau", loss_parameter)
                .default_value(0.5f)
                .help("Parameter \\tau associated with Quantile loss. Defaults to 0.5"))
-      .add(make_option("l1", all.l1_lambda).help("l_1 lambda"))
-      .add(make_option("l2", all.l2_lambda).help("l_2 lambda"))
-      .add(make_option("no_bias_regularization", all.no_bias).help("no bias in regularization"))
+      .add(make_option("l1", all.l1_lambda).help("L_1 lambda"))
+      .add(make_option("l2", all.l2_lambda).help("L_2 lambda"))
+      .add(make_option("no_bias_regularization", all.no_bias).help("No bias in regularization"))
       .add(make_option("named_labels", named_labels)
                .keep()
-               .help("use names for labels (multiclass, etc.) rather than integers, argument specified all possible "
+               .help("Use names for labels (multiclass, etc.) rather than integers, argument specified all possible "
                      "labels, comma-sep, eg \"--named_labels Noun,Verb,Adj,Punc\""));
   options.add_and_parse(example_options);
 
@@ -1116,9 +1116,9 @@ void parse_output_model(options_i& options, VW::workspace& all)
       .add(make_option("invert_hash", all.inv_hash_regressor_name)
                .help("Output human-readable final regressor with feature names.  Computationally expensive"))
       .add(make_option("save_resume", all.save_resume)
-               .help("save extra state so learning can be resumed later with new data"))
+               .help("Save extra state so learning can be resumed later with new data"))
       .add(make_option("preserve_performance_counters", all.preserve_performance_counters)
-               .help("reset performance counters when warmstarting"))
+               .help("Reset performance counters when warmstarting"))
       .add(make_option("save_per_pass", all.save_per_pass).help("Save the model after every pass over data"))
       .add(make_option("output_feature_regularizer_binary", all.per_feature_regularizer_output)
                .help("Per feature regularization output file"))
@@ -1192,8 +1192,8 @@ VW::workspace& parse_args(
     bool strict_parse = false;
     int ring_size_tmp;
     option_group_definition vw_args("VW");
-    vw_args.add(make_option("ring_size", ring_size_tmp).default_value(256).help("size of example ring"))
-        .add(make_option("strict_parse", strict_parse).help("throw on malformed examples"));
+    vw_args.add(make_option("ring_size", ring_size_tmp).default_value(256).help("Size of example ring"))
+        .add(make_option("strict_parse", strict_parse).help("Throw on malformed examples"));
     all.options->add_and_parse(vw_args);
 
     if (ring_size_tmp <= 0) { THROW("ring_size should be positive") }
@@ -1204,10 +1204,10 @@ VW::workspace& parse_args(
 
     option_group_definition update_args("Update");
     update_args.add(make_option("learning_rate", all.eta).help("Set learning rate").short_name("l"))
-        .add(make_option("power_t", all.power_t).help("t power value"))
+        .add(make_option("power_t", all.power_t).help("T power value"))
         .add(make_option("decay_learning_rate", all.eta_decay_rate)
                  .help("Set Decay factor for learning_rate between passes"))
-        .add(make_option("initial_t", all.sd->t).help("initial t value"))
+        .add(make_option("initial_t", all.sd->t).help("Initial t value"))
         .add(make_option("feature_mask", all.feature_mask)
                  .help("Use existing regressor to determine which parameters may be updated.  If no initial_regressor "
                        "given, also used for initial weights."));
@@ -1217,9 +1217,9 @@ VW::workspace& parse_args(
     weight_args
         .add(make_option("initial_regressor", all.initial_regressors).help("Initial regressor(s)").short_name("i"))
         .add(make_option("initial_weight", all.initial_weight).help("Set all weights to an initial value of arg"))
-        .add(make_option("random_weights", all.random_weights).help("make initial weights random"))
-        .add(make_option("normal_weights", all.normal_weights).help("make initial weights normal"))
-        .add(make_option("truncated_normal_weights", all.tnormal_weights).help("make initial weights truncated normal"))
+        .add(make_option("random_weights", all.random_weights).help("Make initial weights random"))
+        .add(make_option("normal_weights", all.normal_weights).help("Make initial weights normal"))
+        .add(make_option("truncated_normal_weights", all.tnormal_weights).help("Make initial weights truncated normal"))
         .add(make_option("sparse_weights", all.weights.sparse).help("Use a sparse datastructure for weights"))
         .add(make_option("input_feature_regularizer", all.per_feature_regularizer_input)
                  .help("Per feature regularization input file"));
@@ -1235,10 +1235,10 @@ VW::workspace& parse_args(
     parallelization_args
         .add(make_option("span_server", span_server_arg).help("Location of server for setting up spanning tree"))
         //(make_option("threads", threads_arg).help("Enable multi-threading")) Unused option?
-        .add(make_option("unique_id", unique_id_arg).default_value(0).help("unique id used for cluster parallel jobs"))
+        .add(make_option("unique_id", unique_id_arg).default_value(0).help("Unique id used for cluster parallel jobs"))
         .add(
-            make_option("total", total_arg).default_value(1).help("total number of nodes used in cluster parallel job"))
-        .add(make_option("node", node_arg).default_value(0).help("node number in cluster parallel job"))
+            make_option("total", total_arg).default_value(1).help("Total number of nodes used in cluster parallel job"))
+        .add(make_option("node", node_arg).default_value(0).help("Node number in cluster parallel job"))
         .add(make_option("span_server_port", span_server_port_arg)
                  .default_value(26543)
                  .help("Port of the server for setting up spanning tree"));
@@ -1396,7 +1396,7 @@ void parse_modules(options_i& options, VW::workspace& all, bool interactions_set
     std::vector<std::string>& dictionary_namespaces)
 {
   option_group_definition rand_options("Randomization");
-  rand_options.add(make_option("random_seed", all.random_seed).help("seed random number generator"));
+  rand_options.add(make_option("random_seed", all.random_seed).help("Seed random number generator"));
   options.add_and_parse(rand_options);
   all.get_random_state()->set_random_state(all.random_seed);
 

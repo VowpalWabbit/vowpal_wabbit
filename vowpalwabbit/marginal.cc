@@ -392,18 +392,18 @@ VW::LEARNER::base_learner* marginal_setup(VW::setup_base_i& stack_builder)
   float decay;
   option_group_definition marginal_options("Marginal");
   marginal_options.add(
-      make_option("marginal", marginal).keep().necessary().help("substitute marginal label estimates for ids"));
+      make_option("marginal", marginal).keep().necessary().help("Substitute marginal label estimates for ids"));
   marginal_options.add(
-      make_option("initial_denominator", initial_denominator).default_value(1.f).help("initial denominator"));
+      make_option("initial_denominator", initial_denominator).default_value(1.f).help("Initial denominator"));
   marginal_options.add(
-      make_option("initial_numerator", initial_numerator).default_value(0.5f).help("initial numerator"));
-  marginal_options.add(make_option("compete", compete).help("enable competition with marginal features"));
+      make_option("initial_numerator", initial_numerator).default_value(0.5f).help("Initial numerator"));
+  marginal_options.add(make_option("compete", compete).help("Enable competition with marginal features"));
   marginal_options.add(
-      make_option("update_before_learn", update_before_learn).help("update marginal values before learning"));
+      make_option("update_before_learn", update_before_learn).help("Update marginal values before learning"));
   marginal_options.add(make_option("unweighted_marginals", unweighted_marginals)
-                           .help("ignore importance weights when computing marginals"));
+                           .help("Ignore importance weights when computing marginals"));
   marginal_options.add(
-      make_option("decay", decay).default_value(0.f).help("decay multiplier per event (1e-3 for example)"));
+      make_option("decay", decay).default_value(0.f).help("Decay multiplier per event (1e-3 for example)"));
 
   if (!options.add_parse_and_check_necessary(marginal_options)) { return nullptr; }
 

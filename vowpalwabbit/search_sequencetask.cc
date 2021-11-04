@@ -135,8 +135,8 @@ void initialize(Search::search& sch, size_t& num_actions, options_i& options)
   option_group_definition new_options("Search Sequencespan");
   new_options
       .add(make_option("search_span_bilou", search_span_bilou)
-               .help("switch to (internal) BILOU encoding instead of BIO encoding"))
-      .add(make_option("search_span_multipass", D->multipass).default_value(1).help("do multiple passes"));
+               .help("Switch to (internal) BILOU encoding instead of BIO encoding"))
+      .add(make_option("search_span_multipass", D->multipass).default_value(1).help("Do multiple passes"));
   options.add_and_parse(new_options);
 
   if (search_span_bilou)

@@ -845,7 +845,7 @@ base_learner* csldf_setup(VW::setup_base_i& stack_builder)
           .help("Override singleline or multiline from csoaa_ldf or wap_ldf, eg if stored in file"));
   csldf_outer_options.add(make_option("csoaa_rank", ld->rank).keep().help("Return actions sorted by score order"));
   csldf_outer_options.add(
-      make_option("probabilities", ld->is_probabilities).keep().help("predict probabilities of all classes"));
+      make_option("probabilities", ld->is_probabilities).keep().help("Predict probabilities of all classes"));
 
   option_group_definition csldf_inner_options("Cost Sensitive Weighted All-Pairs with Label Dependent Features");
   csldf_inner_options.add(make_option("wap_ldf", wap_ldf)

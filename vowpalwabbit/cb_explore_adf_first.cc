@@ -107,8 +107,8 @@ base_learner* setup(VW::setup_base_i& stack_builder)
                .keep()
                .necessary()
                .help("Online explore-exploit for a contextual bandit problem with multiline action dependent features"))
-      .add(make_option("first", tau).keep().necessary().help("tau-first exploration"))
-      .add(make_option("epsilon", epsilon).keep().allow_override().help("epsilon-greedy exploration"));
+      .add(make_option("first", tau).keep().necessary().help("Tau-first exploration"))
+      .add(make_option("epsilon", epsilon).keep().allow_override().help("Epsilon-greedy exploration"));
 
   if (!options.add_parse_and_check_necessary(new_options)) return nullptr;
 
