@@ -213,8 +213,7 @@ void interaction_config_manager::insert_config(
   // configs exist we'll generate a new one.
   if (valid_config_size < configs.size())
   {
-    configs[valid_config_size].exclusions.clear();
-    configs[valid_config_size].exclusions = new_exclusions;
+    configs[valid_config_size].exclusions = std::move(new_exclusions);
     configs[valid_config_size].lease = global_lease;
     configs[valid_config_size].ips = 0;
     configs[valid_config_size].lower_bound = std::numeric_limits<float>::infinity();
@@ -241,7 +240,7 @@ void interaction_config_manager::config_oracle()
   auto& champ_interactions = scores[current_champ].live_interactions;
   if (oracle_type == "rand")
   {
-    for (uint64_t i = 0; i < CONGIGS_PER_CHAMP_CHANGE; ++i)
+    for (uint64_t i = 0; i < CONFIGS_PER_CHAMP_CHANGE; ++i)
     {
       uint64_t rand_ind = static_cast<uint64_t>(random_state.get_and_update_random() * champ_interactions.size());
       namespace_index ns1 = champ_interactions[rand_ind][0];
@@ -249,9 +248,18 @@ void interaction_config_manager::config_oracle()
       std::map<namespace_index, std::set<namespace_index>> new_exclusions(
           configs[scores[current_champ].config_index].exclusions);
       new_exclusions[ns1].insert(ns2);
-      insert_config(new_exclusions);
+      insert_config(std::move(new_exclusions));
     }
   }
+  /*
+   * Example of one_diff oracle:
+   * Say we have namespaces {a,b,c}, so all quadratic interactions are {aa, ab, ac, bb, bc, cc}. If the champ has
+   * an exclusion set {aa, ab}, then the champs interactions would be {ac, bb, bc, cc}. We want to generate all
+   * configs with a distance of 1 from the champ, meaning all sets with one less exclusion, and all sets with one
+   * more exclusion. So the first part looks through the champs interaction set, and creates new configs which add
+   * one of those to the current exclusion set (eg it will generate {aa, ab, ac}, {aa, ab, bb}, {aa, ab, bc},
+   * {aa, ab, cc}). Then the second part will create all exclusion sets which remove one (eg {aa} and {ab}).
+   */
   else if (oracle_type == "one_diff")
   {
     // Add one exclusion (for each interaction)
@@ -262,7 +270,7 @@ void interaction_config_manager::config_oracle()
       std::map<namespace_index, std::set<namespace_index>> new_exclusions(
           configs[scores[current_champ].config_index].exclusions);
       new_exclusions[ns1].insert(ns2);
-      insert_config(new_exclusions);
+      insert_config(std::move(new_exclusions));
     }
     // Remove one exclusion (for each exclusion)
     for (auto& ns_pair : configs[scores[current_champ].config_index].exclusions)
@@ -273,7 +281,7 @@ void interaction_config_manager::config_oracle()
         std::map<namespace_index, std::set<namespace_index>> new_exclusions(
             configs[scores[current_champ].config_index].exclusions);
         new_exclusions[ns1].erase(ns2);
-        insert_config(new_exclusions);
+        insert_config(std::move(new_exclusions));
       }
     }
   }

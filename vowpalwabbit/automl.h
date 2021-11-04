@@ -33,7 +33,7 @@ void fail_if_enabled(vw&, const std::set<std::string>&);
 }  // namespace details
 
 constexpr uint64_t MAX_CONFIGS = 10;
-constexpr uint64_t CONGIGS_PER_CHAMP_CHANGE = 5;
+constexpr uint64_t CONFIGS_PER_CHAMP_CHANGE = 5;
 
 struct scored_config
 {
