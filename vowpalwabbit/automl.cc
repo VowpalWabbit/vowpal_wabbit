@@ -206,14 +206,14 @@ void interaction_config_manager::pre_process(const multi_ex& ecs)
 // Helper function to insert new configs from oracle into map of configs as well as index_queue.
 // Handles creating new config with exclusions or overwriting stale configs to avoid reallocation.
 void interaction_config_manager::insert_config(
-    const std::map<namespace_index, std::set<namespace_index>> new_exclusions)
+    const std::map<namespace_index, std::set<namespace_index>>& new_exclusions)
 {
   // Note that configs are never actually cleared, but valid_config_size is set to 0 instead to denote that
   // configs have become stale. Here we try to write over stale configs with new configs, and if no stale
   // configs exist we'll generate a new one.
   if (valid_config_size < configs.size())
   {
-    configs[valid_config_size].exclusions = std::move(new_exclusions);
+    configs[valid_config_size].exclusions = new_exclusions;
     configs[valid_config_size].lease = global_lease;
     configs[valid_config_size].ips = 0;
     configs[valid_config_size].lower_bound = std::numeric_limits<float>::infinity();
@@ -248,7 +248,7 @@ void interaction_config_manager::config_oracle()
       std::map<namespace_index, std::set<namespace_index>> new_exclusions(
           configs[scores[current_champ].config_index].exclusions);
       new_exclusions[ns1].insert(ns2);
-      insert_config(std::move(new_exclusions));
+      insert_config(new_exclusions);
     }
   }
   /*
@@ -270,7 +270,7 @@ void interaction_config_manager::config_oracle()
       std::map<namespace_index, std::set<namespace_index>> new_exclusions(
           configs[scores[current_champ].config_index].exclusions);
       new_exclusions[ns1].insert(ns2);
-      insert_config(std::move(new_exclusions));
+      insert_config(new_exclusions);
     }
     // Remove one exclusion (for each exclusion)
     for (auto& ns_pair : configs[scores[current_champ].config_index].exclusions)
@@ -281,7 +281,7 @@ void interaction_config_manager::config_oracle()
         std::map<namespace_index, std::set<namespace_index>> new_exclusions(
             configs[scores[current_champ].config_index].exclusions);
         new_exclusions[ns1].erase(ns2);
-        insert_config(std::move(new_exclusions));
+        insert_config(new_exclusions);
       }
     }
   }
