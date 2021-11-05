@@ -209,9 +209,12 @@ void save_load(mwt& c, io_buf& model_file, bool read, bool text)
   {
     policy_data& pd = c.evals[policy];
     if (read) msg << "evals: " << policy << ":" << pd.action << ":" << pd.cost << " ";
-    bin_text_read_write_fixed_validated(model_file, reinterpret_cast<char*>(&c.evals[policy].cost), sizeof(double), read, msg, text);
-    bin_text_read_write_fixed_validated(model_file, reinterpret_cast<char*>(&c.evals[policy].action), sizeof(uint32_t), read, msg, text);
-    bin_text_read_write_fixed_validated(model_file, reinterpret_cast<char*>(&c.evals[policy].seen), sizeof(bool), read, msg, text);
+    bin_text_read_write_fixed_validated(
+        model_file, reinterpret_cast<char*>(&c.evals[policy].cost), sizeof(double), read, msg, text);
+    bin_text_read_write_fixed_validated(
+        model_file, reinterpret_cast<char*>(&c.evals[policy].action), sizeof(uint32_t), read, msg, text);
+    bin_text_read_write_fixed_validated(
+        model_file, reinterpret_cast<char*>(&c.evals[policy].seen), sizeof(bool), read, msg, text);
   }
 }
 }  // namespace MWT
