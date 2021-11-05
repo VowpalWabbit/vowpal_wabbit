@@ -97,7 +97,6 @@
   <ItemGroup>
     <ClCompile Include="..\vowpalwabbit\spanning_tree.cc" />
     <ClCompile Include="..\vowpalwabbit\vw_exception.cc" />
-    <ClCompile Include="..\vowpalwabbit\options.cc" />
     <ClCompile Include="..\vowpalwabbit\options_boost_po.cc" />
     <ClCompile Include="..\vowpalwabbit\options_serializer_boost_po.cc" />
     <ClCompile Include="spanning_tree_main.cc" />
