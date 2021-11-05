@@ -272,10 +272,7 @@ void my_run_parser(vw_ptr all)
   VW::end_parser(*all);
 }
 
-py::tuple get_vw_version(vw_ptr all)
-{
-  return py::make_tuple(VW::version.to_string(), VW::git_commit);
-}
+py::tuple get_vw_version(vw_ptr all) { return py::make_tuple(VW::version.to_string(), VW::git_commit); }
 
 struct python_dict_writer : VW::metric_sink_visitor
 {
