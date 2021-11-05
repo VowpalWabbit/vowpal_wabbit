@@ -150,11 +150,9 @@ interaction_config_manager::interaction_config_manager(uint64_t global_lease, ui
     , calc_priority(calc_priority)
 {
   random_state.set_random_state(seed);
-  exclusion_config conf(global_lease);
-  conf.state = VW::automl::config_state::Live;
-  configs[0] = std::move(conf);
-  scored_config sc;
-  scores.push_back(std::move(sc));
+  configs[0] = exclusion_config(global_lease);
+  configs[0].state = VW::automl::config_state::Live;
+  scores.push_back(scored_config());
   ++valid_config_size;
 }
 
@@ -220,9 +218,8 @@ void interaction_config_manager::insert_config(std::map<namespace_index, std::se
   }
   else
   {
-    exclusion_config conf(global_lease);
-    conf.exclusions = new_exclusions;
-    configs[valid_config_size] = std::move(conf);
+    configs[valid_config_size] = exclusion_config(global_lease);
+    configs[valid_config_size].exclusions = std::move(new_exclusions);
   }
   float priority = (*calc_priority)(configs[valid_config_size], ns_counter);
   index_queue.push(std::make_pair(priority, valid_config_size));
@@ -353,9 +350,8 @@ void interaction_config_manager::schedule()
       // Allocate new score if we haven't reached maximum yet
       if (need_new_score)
       {
-        scored_config sc;
-        if (live_slot > priority_challengers) { sc.eligible_to_inactivate = true; }
-        scores.push_back(std::move(sc));
+        scores.push_back(scored_config());
+        if (live_slot > priority_challengers) { scores.back().eligible_to_inactivate = true; }
       }
       // Only inactivate current config if lease is reached
       if (!need_new_score && configs[scores[live_slot].config_index].state == VW::automl::config_state::Live)
@@ -481,7 +477,7 @@ void interaction_config_manager::update_champ()
       }
       scored_config champ_score = std::move(scores[current_champ]);
       scores.clear();
-      scores.push_back(champ_score);
+      scores.push_back(std::move(champ_score));
       current_champ = 0;
       valid_config_size = 1;
     }
