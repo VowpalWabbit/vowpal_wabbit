@@ -189,8 +189,8 @@ std::string options_boost_po::help(const std::vector<std::string>& enabled_reduc
         std::string::size_type pos = reduction.find('-');
         if (pos != std::string::npos)
         {
-          auto it = m_help_stringstream.find(reduction.substr(0, pos));
-          if (it != m_help_stringstream.end()) { help << it->second.rdbuf(); }
+          auto it_inner = m_help_stringstream.find(reduction.substr(0, pos));
+          if (it_inner != m_help_stringstream.end()) { help << it_inner->second.rdbuf(); }
         }
       }
     }

@@ -14,7 +14,9 @@
 #include <unordered_set>
 #include <sstream>
 #include <type_traits>
+#include <cstdio>
 #include <fmt/format.h>
+#include <iostream>
 
 #include "options_types.h"
 #include "vw_exception.h"
