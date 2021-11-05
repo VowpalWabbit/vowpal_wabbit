@@ -227,9 +227,10 @@ config_path = os.path.join(here, 'version.txt')
 with open(config_path, encoding='utf-8') as f:
     version = f.readline().strip()
 
-# append commit hash to version if available
 try:
-    version = version + "-" + subprocess.check_output(['git', 'rev-parse', '--short', 'HEAD']).decode('ascii').strip()
+    current_git_hash = subprocess.check_output(['git', 'rev-parse', '--short', 'HEAD']).decode('ascii').strip()
+    if current_git_hash:
+        version = version + "+" + current_git_hash
 except FileNotFoundError as e:
     pass
 except subprocess.CalledProcessError as e:
