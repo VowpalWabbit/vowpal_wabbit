@@ -125,7 +125,7 @@ struct base_option
 {
   base_option(std::string name, size_t type_hash) : m_name(std::move(name)), m_type_hash(type_hash) {}
 
-  std::string m_name;
+  std::string m_name = "";
   size_t m_type_hash;
   std::string m_help = "";
   std::string m_short_name = "";
@@ -370,7 +370,7 @@ struct option_group_definition
     return *this;
   }
 
-  std::string m_name;
+  std::string m_name = "";
   std::unordered_set<std::string> m_necessary_flags;
   std::vector<std::shared_ptr<base_option>> m_options;
 };
