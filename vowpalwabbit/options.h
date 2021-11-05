@@ -13,10 +13,10 @@
 #include <memory>
 #include <unordered_set>
 #include <sstream>
-#include <type_traits>
 #include <cstdio>
 #include <fmt/format.h>
 #include <iostream>
+#include <type_traits>
 
 #include "options_types.h"
 #include "vw_exception.h"
