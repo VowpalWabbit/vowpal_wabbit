@@ -6,4 +6,4 @@ weighted example sum = 0.000000
 weighted label sum = 0.000000
 average loss = n.a.
 total feature number = 0
-[critical] vw (options.h:359): Error: '5' is not a valid choice for option --math-mode. Please select from {0, 1, 2}
+[critical] vw (options.h:361): Error: '5' is not a valid choice for option --math-mode. Please select from {0, 1, 2}
