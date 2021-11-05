@@ -23,6 +23,7 @@
 #include <boost/make_shared.hpp>
 #include <boost/python.hpp>
 #include <boost/utility.hpp>
+#include <boost/python/tuple.hpp>
 #include <boost/python/suite/indexing/vector_indexing_suite.hpp>
 
 // Brings VW_DLL_PUBLIC to help control exports
@@ -269,6 +270,11 @@ void my_run_parser(vw_ptr all)
   VW::start_parser(*all);
   VW::LEARNER::generic_driver(*all);
   VW::end_parser(*all);
+}
+
+py::tuple get_vw_version(vw_ptr all)
+{
+  return py::make_tuple(VW::version.to_string(), VW::git_commit);
 }
 
 struct python_dict_writer : VW::metric_sink_visitor
@@ -1164,6 +1170,7 @@ BOOST_PYTHON_MODULE(pylibvw)
       .def("__init__", py::make_constructor(my_initialize))
       .def("__init__", py::make_constructor(my_initialize_with_log))
       //      .def("__del__", &my_finish, "deconstruct the VW object by calling finish")
+      .def("version", &get_vw_version, "get current VW version")
       .def("run_parser", &my_run_parser, "parse external data file")
       .def("get_learner_metrics", &get_learner_metrics,
           "get current learner stack metrics. returns empty dict if --extra_metrics was not supplied.")
