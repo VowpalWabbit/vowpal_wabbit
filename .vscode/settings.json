@@ -6,16 +6,5 @@
             ],
             "url": "./test/runtests.schema.json"
         }
-    ],
-    "files.associations": {
-        "hash_map": "cpp",
-        "hash_set": "cpp",
-        "*.tcc": "cpp",
-        "deque": "cpp",
-        "forward_list": "cpp",
-        "list": "cpp",
-        "string": "cpp",
-        "vector": "cpp",
-        "ranges": "cpp"
-    }
+    ]
 }
