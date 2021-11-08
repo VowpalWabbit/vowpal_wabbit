@@ -97,15 +97,11 @@
   <ItemGroup>
     <ClCompile Include="..\vowpalwabbit\spanning_tree.cc" />
     <ClCompile Include="..\vowpalwabbit\vw_exception.cc" />
-    <ClCompile Include="..\vowpalwabbit\options_boost_po.cc" />
-    <ClCompile Include="..\vowpalwabbit\options_serializer_boost_po.cc" />
     <ClCompile Include="spanning_tree_main.cc" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\vowpalwabbit\spanning_tree.h" />
     <ClInclude Include="..\vowpalwabbit\vw_exception.h" />
-    <ClInclude Include="..\vowpalwabbit\options.h" />
-    <ClInclude Include="..\vowpalwabbit\options_boost_po.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
