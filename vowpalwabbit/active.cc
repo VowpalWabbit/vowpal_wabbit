@@ -121,7 +121,7 @@ void active_print_result(VW::io::writer* f, float res, float weight, const v_arr
   if (t != len) { logger::errlog_error("write error: {}", VW::strerror_to_string(errno)); }
 }
 
-void output_and_account_example(vw& all, active& a, example& ec)
+void output_and_account_example(VW::workspace& all, active& a, example& ec)
 {
   const label_data& ld = ec.l.simple;
 
@@ -171,7 +171,7 @@ void save_load(active& a, io_buf& io, bool read, bool text)
 base_learner* active_setup(VW::setup_base_i& stack_builder)
 {
   options_i& options = *stack_builder.get_options();
-  vw& all = *stack_builder.get_all_pointer();
+  VW::workspace& all = *stack_builder.get_all_pointer();
 
   bool active_option = false;
   bool simulation = false;

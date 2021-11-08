@@ -14,7 +14,7 @@ using namespace VW::config;
 
 struct LRQstate
 {
-  vw* all = nullptr;  // feature creation, audit, hash_inv
+  VW::workspace* all = nullptr;  // feature creation, audit, hash_inv
   bool lrindices[256];
   size_t orig_size[256];
   std::set<std::string> lrpairs;
@@ -58,7 +58,7 @@ void reset_seed(LRQstate& lrq)
 template <bool is_learn>
 void predict_or_learn(LRQstate& lrq, single_learner& base, example& ec)
 {
-  vw& all = *lrq.all;
+  VW::workspace& all = *lrq.all;
 
   // Remember original features
 
@@ -172,7 +172,7 @@ void predict_or_learn(LRQstate& lrq, single_learner& base, example& ec)
 base_learner* lrq_setup(VW::setup_base_i& stack_builder)
 {
   options_i& options = *stack_builder.get_options();
-  vw& all = *stack_builder.get_all_pointer();
+  VW::workspace& all = *stack_builder.get_all_pointer();
   auto lrq = VW::make_unique<LRQstate>();
   std::vector<std::string> lrq_names;
   option_group_definition new_options("Low Rank Quadratics");

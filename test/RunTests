@@ -2514,9 +2514,8 @@ train-sets/ref/slates_simple_w_interactions.stderr
 ./negative-test.sh {VW} --no_stdin --cb_explore_adf --cover 3 --noconstant --quiet -i model-sets/corrupted_weights_gd_mf.model
     train-sets/ref/corrupt_weights_gd_mf.stderr
 
-# Test 351: should be the same output as 158
-# except the line of enabled_reductions
-{VW} --save_resume -f automl.model --automl 3 --priority_type least_exclusion -d train-sets/decisionservice.json --dsjson --cb_explore_adf --epsilon 0.2 -P 1 -p cbe_adf_dsjson.predict --extra_metrics metrics_.json --readable_model automl_readable.txt
+# Test 351: should be the same output as 158 except the line of enabled_reductions
+{VW} --save_resume -f automl.model --automl 3 --priority_type least_exclusion -d train-sets/decisionservice.json --dsjson --cb_explore_adf --epsilon 0.2 -P 1 -p cbe_adf_dsjson.predict --extra_metrics metrics_.json --readable_model automl_readable.txt --keep_configs
     train-sets/ref/cbe_adf_dsjson_metrics_.stderr
     test-sets/ref/metrics_.json
     train-sets/ref/automl_readable.txt

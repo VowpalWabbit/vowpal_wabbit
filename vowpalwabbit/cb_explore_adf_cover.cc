@@ -226,7 +226,7 @@ void cb_explore_adf_cover::save_load(io_buf& io, bool read, bool text)
 VW::LEARNER::base_learner* setup(VW::setup_base_i& stack_builder)
 {
   VW::config::options_i& options = *stack_builder.get_options();
-  vw& all = *stack_builder.get_all_pointer();
+  VW::workspace& all = *stack_builder.get_all_pointer();
   using config::make_option;
 
   bool cb_explore_adf_option = false;

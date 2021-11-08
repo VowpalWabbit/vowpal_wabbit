@@ -11,6 +11,8 @@
 #include <string>
 
 #include "parse_example_json.h"
+#include "slates_label.h"
+#include "ccb_reduction_features.h"
 #include "action_score.h"
 #include "vw.h"
 
@@ -49,9 +51,9 @@ void check_vector_of_vectors_exact(const std::vector<std::vector<T>>& lhs, const
   }
 }
 
-multi_ex parse_json(vw& all, const std::string& line);
+multi_ex parse_json(VW::workspace& all, const std::string& line);
 
-multi_ex parse_dsjson(vw& all, std::string line, DecisionServiceInteraction* interaction = nullptr);
+multi_ex parse_dsjson(VW::workspace& all, std::string line, DecisionServiceInteraction* interaction = nullptr);
 
 bool is_invoked_with(const std::string& arg);
 
@@ -63,3 +65,18 @@ inline std::ostream& operator<<(std::ostream& os, const namespace_extent& extent
   return os;
 }
 }  // namespace VW
+
+namespace std
+{
+inline std::ostream& operator<<(std::ostream& os, VW::slates::example_type ex_type)
+{
+  os << VW::to_string(ex_type);
+  return os;
+}
+
+inline std::ostream& operator<<(std::ostream& os, CCB::example_type ex_type)
+{
+  os << VW::to_string(ex_type);
+  return os;
+}
+}  // namespace std

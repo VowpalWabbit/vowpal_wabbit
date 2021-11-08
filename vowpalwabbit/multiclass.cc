@@ -105,7 +105,7 @@ label_parser mc_label = {
     // label type
     VW::label_type_t::multiclass};
 
-void print_label_pred(vw& all, example& ec, uint32_t prediction)
+void print_label_pred(VW::workspace& all, example& ec, uint32_t prediction)
 {
   VW::string_view sv_label = all.sd->ldict->get(ec.l.multi.label);
   VW::string_view sv_pred = all.sd->ldict->get(prediction);
@@ -114,7 +114,7 @@ void print_label_pred(vw& all, example& ec, uint32_t prediction)
       ec.get_num_features(), all.progress_add, all.progress_arg);
 }
 
-void print_probability(vw& all, example& ec, uint32_t prediction)
+void print_probability(VW::workspace& all, example& ec, uint32_t prediction)
 {
   if (prediction == 0) { prediction = static_cast<uint32_t>(ec.pred.scalars.size()); }
   std::stringstream pred_ss;
@@ -128,7 +128,7 @@ void print_probability(vw& all, example& ec, uint32_t prediction)
       ec.get_num_features(), all.progress_add, all.progress_arg);
 }
 
-void print_score(vw& all, example& ec, uint32_t prediction)
+void print_score(VW::workspace& all, example& ec, uint32_t prediction)
 {
   std::stringstream pred_ss;
   pred_ss << prediction;
@@ -140,14 +140,14 @@ void print_score(vw& all, example& ec, uint32_t prediction)
       ec.get_num_features(), all.progress_add, all.progress_arg);
 }
 
-void direct_print_update(vw& all, example& ec, uint32_t prediction)
+void direct_print_update(VW::workspace& all, example& ec, uint32_t prediction)
 {
   all.sd->print_update(*all.trace_message, all.holdout_set_off, all.current_pass, ec.l.multi.label, prediction,
       ec.get_num_features(), all.progress_add, all.progress_arg);
 }
 
-template <void (*T)(vw&, example&, uint32_t)>
-void print_update(vw& all, example& ec, uint32_t prediction)
+template <void (*T)(VW::workspace&, example&, uint32_t)>
+void print_update(VW::workspace& all, example& ec, uint32_t prediction)
 {
   if (all.sd->weighted_examples() >= all.sd->dump_interval && !all.logger.quiet && !all.bfgs)
   {
@@ -158,13 +158,16 @@ void print_update(vw& all, example& ec, uint32_t prediction)
   }
 }
 
-void print_update_with_probability(vw& all, example& ec, uint32_t pred)
+void print_update_with_probability(VW::workspace& all, example& ec, uint32_t pred)
 {
   print_update<print_probability>(all, ec, pred);
 }
-void print_update_with_score(vw& all, example& ec, uint32_t pred) { print_update<print_score>(all, ec, pred); }
+void print_update_with_score(VW::workspace& all, example& ec, uint32_t pred)
+{
+  print_update<print_score>(all, ec, pred);
+}
 
-void finish_example(vw& all, example& ec, bool update_loss)
+void finish_example(VW::workspace& all, example& ec, bool update_loss)
 {
   float loss = 0;
   if (ec.l.multi.label != ec.pred.multiclass && ec.l.multi.label != static_cast<uint32_t>(-1)) loss = ec.weight;

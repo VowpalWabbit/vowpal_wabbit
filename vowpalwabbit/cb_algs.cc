@@ -94,7 +94,7 @@ void learn_eval(cb& data, single_learner&, example& ec)
   ec.pred.multiclass = ec.l.cb_eval.action;
 }
 
-void output_example(vw& all, cb& data, example& ec, CB::label& ld)
+void output_example(VW::workspace& all, cb& data, example& ec, CB::label& ld)
 {
   float loss = 0.;
 
@@ -104,7 +104,7 @@ void output_example(vw& all, cb& data, example& ec, CB::label& ld)
   generic_output_example(all, loss, ec, ld, &c.known_cost);
 }
 
-void generic_output_example(vw& all, float loss, example& ec, const CB::label& ld, CB::cb_class* known_cost)
+void generic_output_example(VW::workspace& all, float loss, example& ec, const CB::label& ld, CB::cb_class* known_cost)
 {
   all.sd->update(ec.test_only, !CB::is_test_label(ld), loss, 1.f, ec.get_num_features());
 
@@ -131,13 +131,13 @@ void generic_output_example(vw& all, float loss, example& ec, const CB::label& l
   }
 }
 
-void finish_example(vw& all, cb& c, example& ec)
+void finish_example(VW::workspace& all, cb& c, example& ec)
 {
   output_example(all, c, ec, ec.l.cb);
   VW::finish_example(all, ec);
 }
 
-void eval_finish_example(vw& all, cb& c, example& ec)
+void eval_finish_example(VW::workspace& all, cb& c, example& ec)
 {
   output_example(all, c, ec, ec.l.cb_eval.event);
   VW::finish_example(all, ec);
@@ -147,7 +147,7 @@ using namespace CB_ALGS;
 base_learner* cb_algs_setup(VW::setup_base_i& stack_builder)
 {
   options_i& options = *stack_builder.get_options();
-  vw& all = *stack_builder.get_all_pointer();
+  VW::workspace& all = *stack_builder.get_all_pointer();
   auto data = VW::make_unique<cb>();
   std::string type_string = "dr";
   bool eval = false;

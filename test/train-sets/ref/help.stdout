@@ -220,6 +220,7 @@ Debug: automl reduction:
   --priority_type arg (=none, )      set function to determine next config 
                                      {none, least_exclusion}
   --priority_challengers arg (=-1, ) set number of priority challengers to use
+  --keep_configs                     keep all configs after champ change
 Baseline options:
   --baseline            Learn an additive baseline (from constant features) and
                         a residual separately in regression.

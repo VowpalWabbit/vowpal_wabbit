@@ -96,7 +96,7 @@ void print_result(
   }
 }
 
-void output_example(vw& all, example& ec)
+void output_example(VW::workspace& all, example& ec)
 {
   label_data& ld = ec.l.simple;
 
@@ -115,7 +115,7 @@ void predict_or_learn(VW::topk& d, VW::LEARNER::single_learner& base, multi_ex& 
     d.predict(base, ec_seq);
 }
 
-void finish_example(vw& all, VW::topk& d, multi_ex& ec_seq)
+void finish_example(VW::workspace& all, VW::topk& d, multi_ex& ec_seq)
 {
   for (auto ec : ec_seq) output_example(all, *ec);
   for (auto& sink : all.final_prediction_sink) print_result(sink.get(), d.get_container_view());

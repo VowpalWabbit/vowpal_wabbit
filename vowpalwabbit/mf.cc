@@ -35,7 +35,7 @@ struct mf
   // array for temp storage of features
   features temp_features;
 
-  vw* all = nullptr;  // for pairs? and finalize
+  VW::workspace* all = nullptr;  // for pairs? and finalize
 };
 
 template <bool cache_sub_predictions>
