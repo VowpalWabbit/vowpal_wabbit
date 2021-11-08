@@ -58,7 +58,8 @@ struct option_builder
 
   template <typename U>
   void add_help(std::ostringstream&, const U&)
-  { /* cannot handle non-string or arithmetic types */
+  {
+    THROW("Error: cannot handle non-string or arithmetic types in one_of().");
   }
   void add_help(std::ostringstream& help, const std::string& addition) { help << addition; }
   void add_help(std::ostringstream& help, const int& addition) { help << std::to_string(addition); }
