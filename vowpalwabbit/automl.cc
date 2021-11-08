@@ -671,7 +671,7 @@ VW::LEARNER::base_learner* automl_setup(VW::setup_base_i& stack_builder)
       .add(make_option("oracle_type", oracle_type)
                .keep()
                .default_value("one_diff")
-               .one_of({"one_diff","rand"})
+               .one_of({"one_diff", "rand"})
                .help("Set oracle to generate configs"));
 
   if (!options.add_parse_and_check_necessary(new_options)) return nullptr;
