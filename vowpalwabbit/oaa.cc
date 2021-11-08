@@ -57,7 +57,7 @@ void learn_randomized(oaa& o, VW::LEARNER::single_learner& base, example& ec)
   else if (o.indexing == 1 && (ld.label < 1 || ld.label > o.k))
   {
     logger::log_warn("label {0} is not in {{1,{1}}}. This won't work for 1-indexed actions.", ld.label, o.k);
-    ec.l.multi.label = o.k;
+    ec.l.multi.label = static_cast<uint32_t>(o.k);
   }
 
   ec.l.simple.label = 1.;  // truth
@@ -117,7 +117,7 @@ void learn(oaa& o, VW::LEARNER::single_learner& base, example& ec)
   else if (o.indexing == 1 && (mc_label_data.label < 1 || mc_label_data.label > o.k))
   {
     logger::log_warn("label {0} is not in {{1,{1}}}. This won't work for 1-indexed actions.", mc_label_data.label, o.k);
-    ec.l.multi.label = o.k;
+    ec.l.multi.label = static_cast<uint32_t>(o.k);
   }
 
   ec.l.simple = {FLT_MAX};
