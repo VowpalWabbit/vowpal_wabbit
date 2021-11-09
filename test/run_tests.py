@@ -871,7 +871,7 @@ def main():
         help="Directory to read test input files from",
     )
     parser.add_argument(
-        "-j", "--jobs", type=int, default=4, help="Number of tests to run in parallel"
+        "-j", "--jobs", type=int, default=os.cpu_count(), help="Number of tests to run in parallel. Default is current machine core count."
     )
     parser.add_argument(
         "--vw_bin_path",
