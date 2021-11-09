@@ -784,7 +784,7 @@ def convert_to_test_data(
         else:
             skip = True
             skip_reason = "This test is an unknown type"
-        
+
         if test["id"] in skipped_ids:
             skip = True
             skip_reason = "Test skipped by --skip_test argument"
@@ -792,12 +792,12 @@ def convert_to_test_data(
         results.append(
             TestData(
                 id=test["id"],
-                description=test["desc"],
+                description=test["desc"] if "desc" in test else "",
                 depends_on=test["depends_on"] if "depends_on" in test else [],
                 command_line=command_line,
                 is_shell=is_shell,
                 input_files=test["input_files"] if "input_files" in test else [],
-                comparison_files=test["diff_files"],
+                comparison_files=test["diff_files"] if "diff_files" in test else dict(),
                 skip=skip,
                 skip_reason=skip_reason,
             )
@@ -889,7 +889,7 @@ def main():
     parser.add_argument(
         "--skip_test",
         help="Skip specific test ids",
-        nargs='+', 
+        nargs='+',
         default=[],
         type=int,
     )
