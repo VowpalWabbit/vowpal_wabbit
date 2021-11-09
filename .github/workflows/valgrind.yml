@@ -9,22 +9,8 @@ on:
     branches:
       - '*'
 
-# This CI runs both the legacy valgrind test script in parallel with the new one so we can gain confidence of the new one
-
 jobs:
   check_valgrind:
-    container:
-      image: vowpalwabbit/ubuntu1804-build:latest
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v1
-      - name: Build C++ VW binary
-        run: ./.scripts/linux/build-minimal.sh Release
-      - name: Run unit tests with Valgrind
-        run: ./.scripts/linux/unit-tests-valgrind.sh
-      - name: Run test suite with Valgrind
-        run: ./.scripts/linux/test-valgrind.sh
-  check_valgrind_new:
     container:
       image: vowpalwabbit/ubuntu1804-build:latest
     runs-on: ubuntu-latest
