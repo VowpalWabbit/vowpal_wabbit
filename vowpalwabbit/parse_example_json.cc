@@ -2,8 +2,6 @@
 // individual contributors. All rights reserved. Released under a BSD (revised)
 // license as described in the file LICENSE.
 
-#pragma once
-
 #include "parse_example_json.h"
 
 #include "global_data.h"
@@ -14,6 +12,7 @@
 #include "v_array.h"
 #include "future_compat.h"
 #include "parser.h"
+#include "shared_data.h"
 
 #include <cstdint>
 #include <cstring>
@@ -2057,13 +2056,15 @@ bool VW::dsjson_example_parser::parse_line(char* line, size_t length,
   return apply_pdrop(_label_parser.label_type, data->probabilityOfDrop, examples);
 }
 
-
-
 std::unique_ptr<VW::json_example_parser> VW::make_json_parser(vw& all)
 {
-  return VW::make_unique<VW::json_example_parser>(&all);
+  return VW::make_unique<VW::json_example_parser>(all.example_parser->lbl_parser.label_type, all.example_parser->hasher,
+      all.hash_seed, all.parse_mask, all.chain_hash_json, VW::make_example_factory(all), all.sd->ldict.get(),
+      all.audit || all.hash_inv);
 }
-std::unique_ptr<VW::dsjson_example_parser> VW::make_dsjson_parser(vw& all, bool record_metrics)
+
+std::unique_ptr<VW::dsjson_example_parser> VW::make_dsjson_parser(
+    vw& all, bool record_metrics, bool destructive_parse, bool strict_parse)
 {
-  return VW::make_unique<VW::dsjson_example_parser>(&all, record_metrics);
+  return VW::make_unique<VW::dsjson_example_parser>(return VW::make_unique<VW::json_example_parser>(all.example_parser->lbl_parser.label_type, all.example_parser->hasher, all.hash_seed, all.parse_mask, all.chain_hash_json, VW::make_example_factory(all), all.sd->ldict.get(), all.audit || all.hash_inv, record_metrics, destructive_parse, strict_parse);
 }

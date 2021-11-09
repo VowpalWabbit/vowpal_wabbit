@@ -107,5 +107,6 @@ private:
 };
 
 std::unique_ptr<VW::json_example_parser> make_json_parser(VW::workspace& all);
-std::unique_ptr<VW::dsjson_example_parser> make_dsjson_parser(VW::workspace& all, bool record_metrics);
+std::unique_ptr<VW::dsjson_example_parser> make_dsjson_parser(
+    VW::workspace& all, bool record_metrics, bool destructive_parse, bool strict_parse);
 }  // namespace VW

@@ -33,7 +33,7 @@ namespace VW
 {
 struct workspace;
 
-void parse_example_label(string_view label, const label_parser& lbl_parser, const named_labels* ldict,
+void parse_example_label(VW::string_view label, const label_parser& lbl_parser, const named_labels* ldict,
     label_parser_reuse_mem& reuse_mem, example& ec);
 
 namespace details

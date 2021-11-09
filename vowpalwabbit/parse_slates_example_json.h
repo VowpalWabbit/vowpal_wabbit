@@ -187,7 +187,7 @@ void parse_context(const Value& context, const label_parser& lbl_parser, hash_fu
 
         if (dedup_examples->find(dedup_id) == dedup_examples->end()) { THROW("dedup id not found: " << dedup_id); }
 
-        auto* stored_ex = (*dedup_examples)[dedup_id];
+        auto* stored_ex = dedup_examples->at(dedup_id);
         ex->indices = stored_ex->indices;
         for (auto& ns : ex->indices) { ex->feature_space[ns] = stored_ex->feature_space[ns]; }
         ex->ft_offset = stored_ex->ft_offset;

@@ -19,6 +19,7 @@
 
 #include "text_utils.h"
 #include "crossplat_compat.h"
+#include "shared_data.h"
 
 #ifdef _WIN32
 #  define NOMINMAX
@@ -74,8 +75,6 @@ int VW_getpid() { return (int)::GetCurrentProcessId(); }
 #  define SOL_TCP IPPROTO_TCP
 #endif
 
-void clean_example(vw& all, example& ec);
-
 VW::example_parser_i::example_parser_i(std::string type) : _type(std::move(type)) {}
 VW::string_view VW::example_parser_i::type() { return _type; };
 
@@ -83,7 +82,10 @@ struct pooled_example_factory final : VW::example_factory_i
 {
   pooled_example_factory(VW::workspace* workspace) : _workspace(workspace) {}
   example* create() override { return &VW::get_unused_example(_workspace); }
-  void destroy(example* ex) override { clean_example(*_workspace, *ex); }
+  void destroy(example* ex) override { 
+    VW::empty_example(*ex);
+    
+      _workspace->example_parser->example_pool.return_object(ex); }
 
 private:
   VW::workspace* _workspace;
@@ -598,7 +600,7 @@ void enable_sources(VW::workspace& all, bool quiet, size_t passes, input_options
             all.parse_mask,
             all.example_parser->hasher,
             all.options->was_supplied("extra_metrics"),
-            VW::make_unique<VW::pooled_example_factory>(&all));
+            VW::make_unique<pooled_example_factory>(&all));
       }
       else if (input_options.json || input_options.dsjson)
       {
@@ -627,7 +629,7 @@ void enable_sources(VW::workspace& all, bool quiet, size_t passes, input_options
             all.parse_mask,
             all.example_parser->hasher,
             all.options->was_supplied("extra_metrics"),
-            VW::make_unique<VW::pooled_example_factory>(&all));
+            VW::make_unique<pooled_example_factory>(&all));
       }
       else
       {
