@@ -11,8 +11,11 @@ on:
 
 jobs:
   check_valgrind:
+    strategy:
+      matrix:
+        container: ["vowpalwabbit/ubuntu1804-build:latest", "vowpalwabbit/ubuntu2004-build:latest"]
     container:
-      image: vowpalwabbit/ubuntu1804-build:latest
+      image: ${{ matrix.container }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v1
