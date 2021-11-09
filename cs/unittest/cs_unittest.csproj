@@ -171,7 +171,7 @@
   <ItemGroup>
     <Compile Include="BaseData.cs" />
     <Compile Include="CbAdfData.cs" />
-    <Compile Include="RunTests.cs">
+    <Compile Include="RunTests-sln.cs">
       <AutoGen>True</AutoGen>
       <DesignTime>True</DesignTime>
       <DependentUpon>RunTests-sln.tt</DependentUpon>
@@ -282,7 +282,7 @@
   <ItemGroup>
     <None Include="RunTests-sln.tt">
       <Generator>TextTemplatingFileGenerator</Generator>
-      <LastGenOutput>RunTests.cs</LastGenOutput>
+      <LastGenOutput>RunTests-sln.cs</LastGenOutput>
     </None>
     <None Include="TestMarshalNumeric.tt">
       <Generator>TextTemplatingFileGenerator</Generator>
