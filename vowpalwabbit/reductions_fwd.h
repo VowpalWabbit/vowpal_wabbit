@@ -12,10 +12,10 @@
 struct example;
 using multi_ex = std::vector<example*>;
 struct random_state;
-struct vw;
 
 namespace VW
 {
+struct workspace;
 namespace LEARNER
 {
 template <class T, class E>
@@ -34,7 +34,7 @@ using reduction_setup_fn = VW::LEARNER::base_learner* (*)(VW::setup_base_i&);
 
 struct setup_base_i
 {
-  virtual void delayed_state_attach(vw&, VW::config::options_i&) = 0;
+  virtual void delayed_state_attach(VW::workspace&, VW::config::options_i&) = 0;
 
   virtual VW::LEARNER::base_learner* setup_base_learner() = 0;
 
@@ -43,7 +43,7 @@ struct setup_base_i
 
   // in reality we would want to be more specific than this
   // to start hiding global state away
-  virtual vw* get_all_pointer() = 0;
+  virtual VW::workspace* get_all_pointer() = 0;
 
   virtual std::string get_setupfn_name(reduction_setup_fn setup) = 0;
 

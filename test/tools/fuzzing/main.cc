@@ -8,7 +8,7 @@ int main(int argc, char** argv)
 {
   std::unique_ptr<VW::config::options_i> ptr(new VW::config::options_boost_po(argc, argv));
   try {
-    vw* all = VW::initialize(*ptr);
+    VW::workspace* all = VW::initialize(*ptr);
   }
   catch(...)
   {

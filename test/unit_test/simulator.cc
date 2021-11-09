@@ -74,7 +74,7 @@ std::pair<int, float> cb_sim::sample_custom_pmf(std::vector<float>& pmf)
   THROW("Error: No prob selected");
 }
 
-std::pair<std::string, float> cb_sim::get_action(vw* vw, const std::map<std::string, std::string>& context)
+std::pair<std::string, float> cb_sim::get_action(VW::workspace* vw, const std::map<std::string, std::string>& context)
 {
   std::vector<std::string> multi_ex_str = cb_sim::to_vw_example_format(context, "");
   multi_ex examples;
@@ -104,7 +104,7 @@ const std::string& cb_sim::choose_time_of_day()
   return times_of_day[rand_ind];
 }
 
-void cb_sim::call_if_exists(vw& vw, multi_ex& ex, const callback_map& callbacks, const size_t event)
+void cb_sim::call_if_exists(VW::workspace& vw, multi_ex& ex, const callback_map& callbacks, const size_t event)
 {
   auto iter = callbacks.find(event);
   if (iter != callbacks.end())
@@ -116,7 +116,7 @@ void cb_sim::call_if_exists(vw& vw, multi_ex& ex, const callback_map& callbacks,
 }
 
 std::vector<float> cb_sim::run_simulation_hook(
-    vw* vw, size_t num_iterations, callback_map& callbacks, bool do_learn, size_t shift)
+    VW::workspace* vw, size_t num_iterations, callback_map& callbacks, bool do_learn, size_t shift)
 {
   // check if there's a callback for the first possible element,
   // in this case most likely 0th event
@@ -172,7 +172,7 @@ std::vector<float> cb_sim::run_simulation_hook(
   return ctr;
 }
 
-std::vector<float> cb_sim::run_simulation(vw* vw, size_t num_iterations, bool do_learn, size_t shift)
+std::vector<float> cb_sim::run_simulation(VW::workspace* vw, size_t num_iterations, bool do_learn, size_t shift)
 {
   callback_map callbacks;
   return cb_sim::run_simulation_hook(vw, num_iterations, callbacks, do_learn, shift);

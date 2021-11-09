@@ -16,7 +16,7 @@ BOOST_AUTO_TEST_CASE(verify_vw_versions)
   using namespace VW::version_definitions;
 
   // check default vw version value
-  vw dummy_vw;
+  workspace dummy_vw;
   BOOST_CHECK(dummy_vw.model_file_ver == EMPTY_VERSION_FILE);
   BOOST_CHECK(dummy_vw.model_file_ver < VERSION_FILE_WITH_CB_ADF_SAVE);
 

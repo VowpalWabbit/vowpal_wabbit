@@ -13,7 +13,7 @@
 
 // DispatchFuncT should be of the form - void(vw&, const v_array<example*>&)
 template <typename DispatchFuncT>
-void parse_dispatch(vw& all, DispatchFuncT& dispatch)
+void parse_dispatch(VW::workspace& all, DispatchFuncT& dispatch)
 {
   v_array<example*> examples;
   size_t example_number = 0;  // for variable-size batch learning algorithms

@@ -19,7 +19,7 @@ namespace parsers
 {
 namespace flatbuffer
 {
-int flatbuffer_to_examples(vw* all, io_buf& buf, v_array<example*>& examples)
+int flatbuffer_to_examples(VW::workspace* all, io_buf& buf, v_array<example*>& examples)
 {
   return static_cast<int>(all->flat_converter->parse_examples(all, buf, examples));
 }
@@ -51,7 +51,7 @@ bool parser::parse(io_buf& buf, uint8_t* buffer_pointer)
   return true;
 }
 
-void parser::process_collection_item(vw* all, v_array<example*>& examples)
+void parser::process_collection_item(VW::workspace* all, v_array<example*>& examples)
 {
   // new example/multi example object to process from collection
   if (_data->example_obj_as_ExampleCollection()->is_multiline())
@@ -80,7 +80,7 @@ void parser::process_collection_item(vw* all, v_array<example*>& examples)
   }
 }
 
-bool parser::parse_examples(vw* all, io_buf& buf, v_array<example*>& examples, uint8_t* buffer_pointer)
+bool parser::parse_examples(VW::workspace* all, io_buf& buf, v_array<example*>& examples, uint8_t* buffer_pointer)
 {
   if (_active_multi_ex)
   {
@@ -130,7 +130,7 @@ bool parser::parse_examples(vw* all, io_buf& buf, v_array<example*>& examples, u
   }
 }
 
-void parser::parse_example(vw* all, example* ae, const Example* eg)
+void parser::parse_example(VW::workspace* all, example* ae, const Example* eg)
 {
   all->example_parser->lbl_parser.default_label(ae->l);
   ae->is_newline = eg->is_newline();
@@ -145,7 +145,7 @@ void parser::parse_example(vw* all, example* ae, const Example* eg)
   for (const auto& ns : *(eg->namespaces())) { parse_namespaces(all, ae, ns); }
 }
 
-void parser::parse_multi_example(vw* all, example* ae, const MultiExample* eg)
+void parser::parse_multi_example(VW::workspace* all, example* ae, const MultiExample* eg)
 {
   all->example_parser->lbl_parser.default_label(ae->l);
   if (_multi_ex_index >= eg->examples()->size())
@@ -173,7 +173,7 @@ namespace_index get_namespace_index(const Namespace* ns)
   THROW("Either name or hash field must be specified to get the namespace index.");
 }
 
-bool get_namespace_hash(vw* all, const Namespace* ns, uint64_t& hash)
+bool get_namespace_hash(VW::workspace* all, const Namespace* ns, uint64_t& hash)
 {
   if (flatbuffers::IsFieldPresent(ns, Namespace::VT_NAME))
   {
@@ -188,7 +188,7 @@ bool get_namespace_hash(vw* all, const Namespace* ns, uint64_t& hash)
   return false;
 }
 
-void parser::parse_namespaces(vw* all, example* ae, const Namespace* ns)
+void parser::parse_namespaces(VW::workspace* all, example* ae, const Namespace* ns)
 {
   const namespace_index index = get_namespace_index(ns);
   uint64_t hash = 0;
@@ -204,7 +204,7 @@ void parser::parse_namespaces(vw* all, example* ae, const Namespace* ns)
   if (hash_found) { fs.end_ns_extent(); }
 }
 
-void parser::parse_features(vw* all, features& fs, const Feature* feature, const flatbuffers::String* ns)
+void parser::parse_features(VW::workspace* all, features& fs, const Feature* feature, const flatbuffers::String* ns)
 {
   if (flatbuffers::IsFieldPresent(feature, Feature::VT_NAME))
   {

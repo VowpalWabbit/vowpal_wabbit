@@ -62,6 +62,14 @@ using options_deleter_type = void (*)(VW::config::options_i*);
 
 struct shared_data;
 
+namespace VW
+{
+struct workspace;
+}
+
+// TODO: deprecate this alias.
+using vw = VW::workspace;
+
 struct dictionary_info
 {
   std::string name;
@@ -124,7 +132,9 @@ struct trace_message_wrapper
   ~trace_message_wrapper() = default;
 };
 
-struct vw
+namespace VW
+{
+struct workspace
 {
 private:
   std::shared_ptr<rand_state> _random_state_sp = std::make_shared<rand_state>();  // per instance random_state
@@ -313,17 +323,17 @@ public:
   // hack to support cb model loading into ccb reduction
   bool is_ccb_input_model = false;
 
-  vw();
-  ~vw();
+  workspace();
+  ~workspace();
   std::shared_ptr<rand_state> get_random_state() { return _random_state_sp; }
 
-  vw(const vw&) = delete;
-  vw& operator=(const vw&) = delete;
+  workspace(const VW::workspace&) = delete;
+  VW::workspace& operator=(const VW::workspace&) = delete;
 
   // vw object cannot be moved as many objects hold a pointer to it.
   // That pointer would be invalidated if it were to be moved.
-  vw(const vw&&) = delete;
-  vw& operator=(const vw&&) = delete;
+  workspace(const VW::workspace&&) = delete;
+  VW::workspace& operator=(const VW::workspace&&) = delete;
 
   std::string get_setupfn_name(reduction_setup_fn setup);
   void build_setupfn_name_dict(std::vector<std::tuple<std::string, reduction_setup_fn>>&);
@@ -331,6 +341,7 @@ public:
 private:
   std::unordered_map<reduction_setup_fn, std::string> _setup_name_map;
 };
+}  // namespace VW
 
 void print_result_by_ref(VW::io::writer* f, float res, float weight, const v_array<char>& tag);
 void binary_print_result_by_ref(VW::io::writer* f, float res, float weight, const v_array<char>& tag);

@@ -221,6 +221,8 @@ Debug: automl reduction:
                                      {none, least_exclusion}
   --priority_challengers arg (=-1, ) set number of priority challengers to use
   --keep_configs                     keep all configs after champ change
+  --oracle_type arg (=one_diff, )    set oracle to generate configs in 
+                                     {one_diff, rand}
 Baseline options:
   --baseline            Learn an additive baseline (from constant features) and
                         a residual separately in regression.

@@ -74,3 +74,11 @@ jobs:
         shell: bash
         run: |
           python ./python/tests/run_doctest.py
+      - name: Run vw tests as Python module
+        shell: bash
+        # Onethread is not supported in the Python wrapper so those tests must be skipped
+        # Stdin is not supported
+        # Help output tests assume --onthread is in the output
+        run: |
+          cd test
+          python run_tests.py -E 0.001 -f --skip_spanning_tree_tests --vw_bin_path "python3 -m vowpalwabbit" --skip_test 60 193 195 275 276 324 325 326 

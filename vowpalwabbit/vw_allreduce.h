@@ -11,7 +11,7 @@
 #include "vw_exception.h"
 
 template <class T, void (*f)(T&, const T&)>
-void all_reduce(vw& all, T* buffer, const size_t n)
+void all_reduce(VW::workspace& all, T* buffer, const size_t n)
 {
   switch (all.all_reduce_type)
   {

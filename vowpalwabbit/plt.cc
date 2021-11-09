@@ -267,7 +267,7 @@ void predict(plt& p, single_learner& base, example& ec)
   ec.l.multilabels = std::move(multilabels);
 }
 
-void finish_example(vw& all, plt& /*p*/, example& ec)
+void finish_example(VW::workspace& all, plt& /*p*/, example& ec)
 {
   MULTILABEL::output_example(all, ec);
   VW::finish_example(all, ec);

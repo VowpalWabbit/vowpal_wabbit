@@ -28,11 +28,14 @@
 #include <vector>
 #include <iostream>
 
-struct vw;
+namespace VW
+{
+struct workspace;
+}
 namespace VW
 {
 void copy_example_data(example* dst, const example* src);
-void setup_example(vw& all, example* ae);
+void setup_example(VW::workspace& all, example* ae);
 }  // namespace VW
 
 struct polylabel
@@ -135,14 +138,17 @@ struct example : public example_predict  // core example datatype.
   }
 
   friend void VW::copy_example_data(example* dst, const example* src);
-  friend void VW::setup_example(vw& all, example* ae);
+  friend void VW::setup_example(VW::workspace& all, example* ae);
 
 private:
   bool total_sum_feat_sq_calculated = false;
   bool use_permutations = false;
 };
 
-struct vw;
+namespace VW
+{
+struct workspace;
+}
 
 struct flat_example
 {
@@ -161,8 +167,8 @@ struct flat_example
   features fs;              // all the features
 };
 
-flat_example* flatten_example(vw& all, example* ec);
-flat_example* flatten_sort_example(vw& all, example* ec);
+flat_example* flatten_example(VW::workspace& all, example* ec);
+flat_example* flatten_sort_example(VW::workspace& all, example* ec);
 void free_flatten_example(flat_example* fec);
 
 inline bool example_is_newline(const example& ec) { return ec.is_newline; }
@@ -181,7 +187,7 @@ typedef std::vector<example*> multi_ex;
 
 namespace VW
 {
-void return_multiple_example(vw& all, v_array<example*>& examples);
+void return_multiple_example(VW::workspace& all, v_array<example*>& examples);
 
 using example_factory_t = example& (*)(void*);
 

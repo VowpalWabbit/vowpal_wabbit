@@ -519,7 +519,22 @@ def create_test_dir(
 
 
 def find_vw_binary(test_base_ref_dir, user_supplied_bin_path):
-    vw_search_paths = [Path(test_base_ref_dir).joinpath("../build/vowpalwabbit")]
+    def is_python_invocation(file_path):
+        if not user_supplied_bin_path:
+            return False
+        elif (user_supplied_bin_path.startswith("python") and
+              user_supplied_bin_path.endswith("-m vowpalwabbit")):
+            return user_supplied_bin_path
+        else:
+            return False
+
+    if is_python_invocation(user_supplied_bin_path):
+        return user_supplied_bin_path
+
+    vw_search_paths = [
+        Path(test_base_ref_dir).joinpath("../build/vowpalwabbit")
+    ]
+
 
     def is_vw_binary(file_path):
         file_name = os.path.basename(file_path)
@@ -741,7 +756,7 @@ def convert_tests_for_flatbuffers(
 
 
 def convert_to_test_data(
-    tests: List[Any], vw_bin: str, spanning_tree_bin: Optional[str]
+    tests: List[Any], vw_bin: str, spanning_tree_bin: Optional[str], skipped_ids: List[int]
 ) -> List[TestData]:
     results = []
     for test in tests:
@@ -769,6 +784,10 @@ def convert_to_test_data(
         else:
             skip = True
             skip_reason = "This test is an unknown type"
+        
+        if test["id"] in skipped_ids:
+            skip = True
+            skip_reason = "Test skipped by --skip_test argument"
 
         results.append(
             TestData(
@@ -868,6 +887,13 @@ def main():
         action="store_true",
     )
     parser.add_argument(
+        "--skip_test",
+        help="Skip specific test ids",
+        nargs='+', 
+        default=[],
+        type=int,
+    )
+    parser.add_argument(
         "--test_spec",
         type=str,
         help="Optional. If passed the given JSON test spec will be used, "
@@ -957,7 +983,7 @@ def main():
         tests = json.loads(json_test_spec_content)
         print("Tests read from test spec file: {}".format((args.test_spec)))
 
-    tests = convert_to_test_data(tests, vw_bin, spanning_tree_bin)
+    tests = convert_to_test_data(tests, vw_bin, spanning_tree_bin, args.skip_test)
 
     print()
 
