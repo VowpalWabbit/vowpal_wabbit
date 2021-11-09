@@ -74,7 +74,7 @@ BOOST_AUTO_TEST_CASE(vw_dll_parsed_and_constructed_example_parity)
   VW_Finish(handle2);
 }
 
-// This test seems to have issues on the older MSVC compiler CI, but no issues in the newer. 
+// This test seems to have issues on the older MSVC compiler CI, but no issues in the newer.
 #if (_MSC_VER >= 1920)
 BOOST_AUTO_TEST_CASE(vw_dll_get_audit_output)
 {
