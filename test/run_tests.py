@@ -811,6 +811,16 @@ def get_test(test_number, tests):
             return test
     return None
 
+# https://stackoverflow.com/a/43357954/2214524
+def str2bool(v):
+    if isinstance(v, bool):
+        return v
+    if v.lower() in ('yes', 'true', 't', 'y', '1'):
+        return True
+    elif v.lower() in ('no', 'false', 'f', 'n', '0'):
+        return False
+    else:
+        raise argparse.ArgumentTypeError('Boolean value expected.')
 
 def main():
     working_dir = Path.home().joinpath(".vw_runtests_working_dir")
@@ -849,8 +859,11 @@ def main():
     parser.add_argument(
         "-f",
         "--fuzzy_compare",
-        action="store_true",
-        help="Allow for some tolerance when comparing floats",
+        type=str2bool,
+        nargs='?',
+        const=True,
+        default=True,
+        help="Allow for some tolerance when comparing floats. This defaults to on but can be turned off with --fuzzy_compare false",
     )
     parser.add_argument(
         "--ignore_dirty",
