@@ -756,7 +756,7 @@ def convert_tests_for_flatbuffers(
 
 
 def convert_to_test_data(
-    tests: List[Any], vw_bin: str, spanning_tree_bin: Optional[str], skipped_ids: List[int]
+    tests: List[Any], vw_bin: str, spanning_tree_bin: Optional[str], skipped_ids: List[int], extra_vw_options: str
 ) -> List[TestData]:
     results = []
     for test in tests:
@@ -780,11 +780,11 @@ def convert_to_test_data(
                 )
                 is_shell = True
         elif "vw_command" in test:
-            command_line = "{} {}".format(vw_bin, test["vw_command"])
+            command_line = "{} {} {}".format(vw_bin, test["vw_command"], extra_vw_options)
         else:
             skip = True
             skip_reason = "This test is an unknown type"
-        
+
         if test["id"] in skipped_ids:
             skip = True
             skip_reason = "Test skipped by --skip_test argument"
@@ -889,7 +889,7 @@ def main():
     parser.add_argument(
         "--skip_test",
         help="Skip specific test ids",
-        nargs='+', 
+        nargs='+',
         default=[],
         type=int,
     )
@@ -918,6 +918,9 @@ def main():
     )
     parser.add_argument(
         "--valgrind", action="store_true", help="Run tests with Valgrind"
+    )
+    parser.add_argument(
+        "-O", "--extra_options", type=str, help="Append extra options to VW command line tests.", default=""
     )
     args = parser.parse_args()
 
@@ -983,7 +986,7 @@ def main():
         tests = json.loads(json_test_spec_content)
         print("Tests read from test spec file: {}".format((args.test_spec)))
 
-    tests = convert_to_test_data(tests, vw_bin, spanning_tree_bin, args.skip_test)
+    tests = convert_to_test_data(tests, vw_bin, spanning_tree_bin, args.skip_test, extra_vw_options=args.extra_options)
 
     print()
 
