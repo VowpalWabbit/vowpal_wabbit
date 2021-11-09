@@ -174,7 +174,7 @@
     <Compile Include="RunTests.cs">
       <AutoGen>True</AutoGen>
       <DesignTime>True</DesignTime>
-      <DependentUpon>RunTests.tt</DependentUpon>
+      <DependentUpon>RunTests-sln.tt</DependentUpon>
     </Compile>
     <Compile Include="RunTestsHelper.cs" />
     <Compile Include="TestConfidence.cs" />
@@ -280,7 +280,7 @@
     <Service Include="{82A7F48D-3B50-4B1E-B82E-3ADA8210C358}" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="RunTests.tt">
+    <None Include="RunTests-sln.tt">
       <Generator>TextTemplatingFileGenerator</Generator>
       <LastGenOutput>RunTests.cs</LastGenOutput>
     </None>
