@@ -95,7 +95,7 @@ void predict_or_learn(cb_explore_pdf& reduction, single_learner&, example& ec)
 LEARNER::base_learner* cb_explore_pdf_setup(VW::setup_base_i& stack_builder)
 {
   options_i& options = *stack_builder.get_options();
-  option_group_definition new_options("Continuous actions - cb_explore_pdf");
+  option_group_definition new_options("Continuous Actions: cb_explore_pdf");
   bool invoked = false;
   float epsilon;
   float min;
@@ -110,9 +110,9 @@ LEARNER::base_learner* cb_explore_pdf_setup(VW::setup_base_i& stack_builder)
                .keep()
                .allow_override()
                .default_value(0.05f)
-               .help("epsilon-greedy exploration"))
-      .add(make_option("min_value", min).keep().default_value(0.0f).help("min value for continuous range"))
-      .add(make_option("max_value", max).keep().default_value(1.0f).help("max value for continuous range"))
+               .help("Epsilon-greedy exploration"))
+      .add(make_option("min_value", min).keep().default_value(0.0f).help("Min value for continuous range"))
+      .add(make_option("max_value", max).keep().default_value(1.0f).help("Max value for continuous range"))
       .add(make_option("first_only", first_only)
                .keep()
                .help("Use user provided first action or user provided pdf or uniform random"));

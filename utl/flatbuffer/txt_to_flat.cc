@@ -65,7 +65,7 @@ VW::workspace* setup(std::unique_ptr<options_i, options_deleter_type> options)
 
 int main(int argc, char* argv[])
 {
-  option_group_definition driver_config("driver");
+  option_group_definition driver_config("Driver");
 
   to_flat converter;
   driver_config.add(make_option("fb_out", converter.output_flatbuffer_name));

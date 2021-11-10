@@ -340,7 +340,7 @@ base_learner* setup(setup_base_i& stack_builder)
   options_i& options = *stack_builder.get_options();
   VW::workspace& all = *stack_builder.get_all_pointer();
 
-  option_group_definition new_options("CATS Tree Options");
+  option_group_definition new_options("CATS Tree");
   uint32_t num_actions;  // = K = 2^D
   uint32_t bandwidth;    // = 2^h#
   std::string link;
@@ -348,20 +348,16 @@ base_learner* setup(setup_base_i& stack_builder)
       .add(make_option("tree_bandwidth", bandwidth)
                .default_value(0)
                .keep()
-               .help("tree bandwidth for continuous actions in terms of #actions"))
-      .add(make_option("link", link).keep().help("Specify the link function: identity, logistic, glf1 or poisson"));
+               .help("Tree bandwidth for continuous actions in terms of #actions"))
+      .add(make_option("link", link)
+               .keep()
+               .one_of({"glf1"})
+               .help("The learner in each node must return a prediction in range [-1,1], so only glf1 is allowed"));
 
   if (!options.add_parse_and_check_necessary(new_options)) return nullptr;
 
   // default behaviour uses binary
   if (!options.was_supplied("link")) { options.insert("binary", ""); }
-  else
-  {
-    // if link was supplied then force glf1
-    if (link != "glf1")
-    { *(all.trace_message) << "warning: cats_tree only supports glf1; resetting to glf1." << std::endl; }
-    options.replace("link", "glf1");
-  }
 
   auto tree = VW::make_unique<cats_tree>();
   tree->init(num_actions, bandwidth);

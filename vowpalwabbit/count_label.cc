@@ -58,9 +58,9 @@ namespace VW
 VW::LEARNER::base_learner* count_label_setup(VW::setup_base_i& stack_builder)
 {
   bool dont_output_best_constant = false;
-  VW::config::option_group_definition reduction_options("count_label options");
+  VW::config::option_group_definition reduction_options("count_label");
   reduction_options.add(VW::config::make_option("dont_output_best_constant", dont_output_best_constant)
-                            .help("Don't track the best constant used in the output."));
+                            .help("Don't track the best constant used in the output"));
 
   stack_builder.get_options()->add_and_parse(reduction_options);
 
