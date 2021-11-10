@@ -26,7 +26,7 @@ if(NOT WIN32)
 
   add_test(
     NAME extra_tests
-    COMMAND python3 run_tests.py --clean_dirty --test_spec ${CMAKE_CURRENT_SOURCE_DIR}/extra.vwtest.json
+    COMMAND python3 run_tests.py --clean_dirty --test_spec ${CMAKE_CURRENT_SOURCE_DIR}/slow.vwtest.json
     WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
   )
 endif()
