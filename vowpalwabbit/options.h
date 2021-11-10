@@ -155,7 +155,8 @@ struct typed_option : base_option
   }
   std::string invalid_choice_error(const std::string& value)
   {
-    return fmt::format("Error: '{}' is not a valid choice for option --{}. Please select from {{{}}}", value, m_name, fmt::join(m_one_of, ", "));
+    return fmt::format("Error: '{}' is not a valid choice for option --{}. Please select from {{{}}}", value, m_name,
+        fmt::join(m_one_of, ", "));
   }
   std::string invalid_choice_error(const int& value) { return invalid_choice_error(std::to_string(value)); }
 
