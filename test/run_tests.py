@@ -792,12 +792,12 @@ def convert_to_test_data(
         results.append(
             TestData(
                 id=test["id"],
-                description=test["desc"],
+                description=test["desc"] if "desc" in test else "",
                 depends_on=test["depends_on"] if "depends_on" in test else [],
                 command_line=command_line,
                 is_shell=is_shell,
                 input_files=test["input_files"] if "input_files" in test else [],
-                comparison_files=test["diff_files"],
+                comparison_files=test["diff_files"] if "diff_files" in test else dict(),
                 skip=skip,
                 skip_reason=skip_reason,
             )

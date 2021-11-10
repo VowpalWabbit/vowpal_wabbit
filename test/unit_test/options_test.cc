@@ -85,7 +85,7 @@ BOOST_AUTO_TEST_CASE(create_argument_group) {
   ag.add(make_option("opt3", loc2));
   ag.add(make_option("opt4", loc2).keep());
 
-  BOOST_CHECK_EQUAL(ag.m_name, "g1");
+  BOOST_CHECK_EQUAL(ag.m_name, "g1 Options");
   BOOST_CHECK_EQUAL(ag.m_options[0]->m_name, "opt1");
   BOOST_CHECK_EQUAL(ag.m_options[0]->m_keep, true);
   BOOST_CHECK_EQUAL(ag.m_options[0]->m_type_hash, typeid(decltype(loc)).hash_code());

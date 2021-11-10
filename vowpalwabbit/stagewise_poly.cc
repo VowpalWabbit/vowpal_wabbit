@@ -659,19 +659,19 @@ base_learner* stagewise_poly_setup(VW::setup_base_i& stack_builder)
   VW::workspace& all = *stack_builder.get_all_pointer();
   auto poly = VW::make_unique<stagewise_poly>();
   bool stage_poly = false;
-  option_group_definition new_options("Stagewise polynomial options");
+  option_group_definition new_options("Stagewise Polynomial");
   new_options
-      .add(make_option("stage_poly", stage_poly).keep().necessary().help("use stagewise polynomial feature learning"))
+      .add(make_option("stage_poly", stage_poly).keep().necessary().help("Use stagewise polynomial feature learning"))
       .add(make_option("sched_exponent", poly->sched_exponent)
                .default_value(1.f)
-               .help("exponent controlling quantity of included features"))
+               .help("Exponent controlling quantity of included features"))
       .add(make_option("batch_sz", poly->batch_sz)
                .default_value(1000)
-               .help("multiplier on batch size before including more features"))
-      .add(make_option("batch_sz_no_doubling", poly->batch_sz_double).help("batch_sz does not double"));
+               .help("Multiplier on batch size before including more features"))
+      .add(make_option("batch_sz_no_doubling", poly->batch_sz_double).help("Batch_sz does not double"));
 #ifdef MAGIC_ARGUMENT
   new_options.add(
-      make_typed_option("magic_argument", poly->magic_argument).default_value(0.).help("magical feature flag"));
+      make_typed_option("magic_argument", poly->magic_argument).default_value(0.).help("Magical feature flag"));
 #endif  // MAGIC_ARGUMENT
 
   if (!options.add_parse_and_check_necessary(new_options)) return nullptr;

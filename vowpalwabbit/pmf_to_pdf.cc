@@ -238,13 +238,13 @@ base_learner* setup(VW::setup_base_i& stack_builder)
   VW::workspace& all = *stack_builder.get_all_pointer();
   auto data = VW::make_unique<pmf_to_pdf::reduction>();
 
-  option_group_definition new_options("Convert discrete PMF into continuous PDF");
+  option_group_definition new_options("Convert Discrete PMF into Continuous PDF");
   new_options
       .add(make_option("pmf_to_pdf", data->num_actions)
                .default_value(0)
                .necessary()
                .keep()
-               .help("number of discrete actions <k> for pmf_to_pdf"))
+               .help("Number of discrete actions <k> for pmf_to_pdf"))
       .add(make_option("min_value", data->min_value).keep().help("Minimum continuous value"))
       .add(make_option("max_value", data->max_value).keep().help("Maximum continuous value"))
       .add(make_option("bandwidth", data->bandwidth)

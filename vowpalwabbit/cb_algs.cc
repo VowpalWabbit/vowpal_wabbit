@@ -153,14 +153,18 @@ base_learner* cb_algs_setup(VW::setup_base_i& stack_builder)
   bool eval = false;
   bool force_legacy = true;
 
-  option_group_definition new_options("Contextual Bandit Options");
+  option_group_definition new_options("Contextual Bandit");
   new_options
       .add(make_option("cb", data->cbcs.num_actions)
                .keep()
                .necessary()
                .help("Use contextual bandit learning with <k> costs"))
-      .add(make_option("cb_type", type_string).keep().help("contextual bandit method to use in {ips,dm,dr}"))
-      .add(make_option("eval", eval).help("Evaluate a policy rather than optimizing."))
+      .add(make_option("cb_type", type_string)
+               .keep()
+               .default_value("dr")
+               .one_of({"ips", "dm", "dr", "mtr", "sm"})
+               .help("Contextual bandit method to use"))
+      .add(make_option("eval", eval).help("Evaluate a policy rather than optimizing"))
       .add(make_option("cb_force_legacy", force_legacy)
                .keep()
                .help("Default to non-adf cb implementation (cb_to_cb_adf)"));

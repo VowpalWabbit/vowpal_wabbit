@@ -117,7 +117,7 @@ base_learner* cb_dro_setup(VW::setup_base_i& stack_builder)
       .add(make_option("cb_dro_wmax", wmax)
                .default_value(std::numeric_limits<double>::infinity())
                .keep()
-               .help("maximum importance weight for cb_dro"));
+               .help("Maximum importance weight for cb_dro"));
 
   if (!options.add_parse_and_check_necessary(new_options)) return nullptr;
 
