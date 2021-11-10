@@ -58,7 +58,7 @@ set(vw_CS_UNITTEST_SOURCES
 )
 
 set(vw_CS_UNITTEST_T4TEMPLATES
-  RunTests-cmake.tt
+  RunTests.tt
   TestMarshalNumeric.tt
 )
 

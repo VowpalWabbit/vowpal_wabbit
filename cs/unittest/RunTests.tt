@@ -6,7 +6,7 @@
 <#@ import namespace="System.Text" #>
 <#@ import namespace="System.Text.RegularExpressions" #>
 <#@ import namespace="System.Collections.Generic" #>
-<#@ assembly name="Newtonsoft.Json.dll" #>
+<#@ assembly name="$(NewtonsoftDependencyPrefix)Newtonsoft.Json.dll" #>
 <#@ import namespace="Newtonsoft.Json" #>
 <#@ output extension=".cs" #>
 

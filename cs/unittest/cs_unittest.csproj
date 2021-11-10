@@ -171,10 +171,10 @@
   <ItemGroup>
     <Compile Include="BaseData.cs" />
     <Compile Include="CbAdfData.cs" />
-    <Compile Include="RunTests-sln.cs">
+    <Compile Include="RunTests.cs">
       <AutoGen>True</AutoGen>
       <DesignTime>True</DesignTime>
-      <DependentUpon>RunTests-sln.tt</DependentUpon>
+      <DependentUpon>RunTests.tt</DependentUpon>
     </Compile>
     <Compile Include="RunTestsHelper.cs" />
     <Compile Include="TestConfidence.cs" />
@@ -280,14 +280,22 @@
     <Service Include="{82A7F48D-3B50-4B1E-B82E-3ADA8210C358}" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="RunTests-sln.tt">
+    <None Include="RunTests.tt">
       <Generator>TextTemplatingFileGenerator</Generator>
-      <LastGenOutput>RunTests-sln.cs</LastGenOutput>
+      <LastGenOutput>RunTests.cs</LastGenOutput>
     </None>
     <None Include="TestMarshalNumeric.tt">
       <Generator>TextTemplatingFileGenerator</Generator>
       <LastGenOutput>TestMarshalNumeric.cs</LastGenOutput>
     </None>
+  </ItemGroup>
+  <PropertyGroup>
+    <NewtonsoftDependencyPrefixValue>$(SolutionDir)packages\Newtonsoft.Json.9.0.1\lib\net45\</NewtonsoftDependencyPrefixValue>
+  </PropertyGroup>
+  <ItemGroup>
+    <T4ParameterValues Include="NewtonsoftDependencyPrefix">
+      <Value>$(NewtonsoftDependencyPrefixValue)</Value>
+    </T4ParameterValues>
   </ItemGroup>
   <Choose>
     <When Condition="'$(VisualStudioVersion)' == '10.0' And '$(IsCodedUITest)' == 'True'">

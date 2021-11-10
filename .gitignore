@@ -126,7 +126,6 @@ java/pom.xml
 /cs/Serializer/Visitors/VowpalWabbitNativeVisitorExt.cs
 /cs/Serializer/VowpalWabbitDefaultMarshallerExt.cs
 /cs/unittest/RunTests.cs
-/cs/unittest/RunTests-sln.cs
 /cs/unittest/TestMarshalNumeric.cs
 vowpalwabbit/vw.VC.VC.opendb
 vowpalwabbit/vw.VC.db
