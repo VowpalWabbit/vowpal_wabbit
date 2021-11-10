@@ -352,7 +352,7 @@ base_learner* setup(setup_base_i& stack_builder)
       .add(make_option("link", link)
                .keep()
                .one_of({"glf1"})
-               .help("Specify the link function. Cats tree only supports glf1"));
+               .help("The learner in each node must return a prediction in range [-1,1], so only glf1 is allowed"));
 
   if (!options.add_parse_and_check_necessary(new_options)) return nullptr;
 

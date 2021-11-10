@@ -270,8 +270,9 @@ CATS Tree Options:
   --cats_tree arg             CATS Tree with <k> labels
   --tree_bandwidth arg (=0, ) Tree bandwidth for continuous actions in terms of
                               #actions
-  --link arg                  Specify the link function. Cats tree only 
-                              supports glf1. Choices: {glf1}
+  --link arg                  The learner in each node must return a prediction
+                              in range [-1,1], so only glf1 is allowed. 
+                              Choices: {glf1}
 Contextual Bandit Options:
   --cb arg              Use contextual bandit learning with <k> costs
   --cb_type arg (=dr, ) Contextual bandit method to use. Choices: {dm, dr, ips,
