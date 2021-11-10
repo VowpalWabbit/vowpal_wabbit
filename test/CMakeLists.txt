@@ -12,7 +12,7 @@ if(NOT WIN32)
     NAME RunTests_pass_1_onethread
     COMMAND
       ${CMAKE_COMMAND} -E env PATH=${CMAKE_CURRENT_BINARY_DIR}/../vowpalwabbit/:$ENV{PATH}
-      python3 run_tests.py --fuzzy_compare --exit_first_fail --epsilon 0.001 --extra_options="--onethread" ${FB_FLAG}
+      python3 run_tests.py --fuzzy_compare --exit_first_fail --epsilon 0.001 --clean_dirty --extra_options="--onethread" ${FB_FLAG}
     WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
   )
 
@@ -20,7 +20,7 @@ if(NOT WIN32)
     NAME RunTests_pass_2
     COMMAND
       ${CMAKE_COMMAND} -E env PATH=${CMAKE_CURRENT_BINARY_DIR}/../vowpalwabbit/:$ENV{PATH}
-      python3 run_tests.py --fuzzy_compare --exit_first_fail --epsilon 0.001 ${FB_FLAG}
+      python3 run_tests.py --fuzzy_compare --exit_first_fail --epsilon 0.001 --clean_dirty ${FB_FLAG}
     WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
   )
 
