@@ -2415,7 +2415,7 @@
       "stdout": "test-sets/ref/cluster.stdout",
       "cluster.predict": "pred-sets/ref/cluster.predict"
     },
-    "bash_command": "python3 ./cluster_test.py --vw ../build/vowpalwabbit/vw --spanning_tree ../build/cluster/spanning_tree  --test_file test-sets/0001.dat --data_files train-sets/0001.dat train-sets/0002.dat  --prediction_file cluster.predict"
+    "bash_command": "python3 ./cluster_test.py --vw {VW} --spanning_tree {SPANNING_TREE}  --test_file test-sets/0001.dat --data_files train-sets/0001.dat train-sets/0002.dat  --prediction_file cluster.predict"
   },
   {
     "id": 204,
@@ -4079,7 +4079,7 @@
   {
     "id": 344,
     "desc": "check cb_adf with multiple passes",
-    "vw_command": "--cb_adf -c --passes 2 -d train-sets/cb_adf_multipass_crash_1.data --holdout_off",
+    "vw_command": "--cb_adf -k -c --passes 2 -d train-sets/cb_adf_multipass_crash_1.data --holdout_off",
     "diff_files": {
       "stderr": "train-sets/ref/cb_adf_multipass_crash_1.stderr"
     },
@@ -4090,7 +4090,7 @@
   {
     "id": 345,
     "desc": "check cb with multiple passes",
-    "vw_command": "-d train-sets/cb_multi_cost.dat --cb 4 -c --passes 2 --holdout_off",
+    "vw_command": "-d train-sets/cb_multi_cost.dat --cb 4 -k -c --passes 2 --holdout_off",
     "diff_files": {
       "stderr": "train-sets/ref/cb_multi_cost_multipass.stderr"
     },
@@ -4101,12 +4101,125 @@
   {
     "id": 346,
     "desc": "check legacy mode cb with multiple passes",
-    "vw_command": "-d train-sets/cb_multi_cost.dat --cb 4 -c --passes 2 --holdout_off --cb_force_legacy",
+    "vw_command": "-d train-sets/cb_multi_cost.dat --cb 4 -k -c --passes 2 --holdout_off --cb_force_legacy",
     "diff_files": {
       "stderr": "train-sets/ref/cb_multi_cost_multipass_legacy.stderr"
     },
     "input_files": [
       "train-sets/cb_multi_cost.dat"
     ]
+  },
+  {
+    "id": 347,
+    "desc": "cats save with predictions",
+    "vw_command": "--cats 32 --bandwidth 1 --min_value 0 --max_value 32 --json --chain_hash --coin --epsilon 0.2 -q :: -d train-sets/cats_train.json -f models/cats_train.model -p cats_save.predict --save_resume",
+    "diff_files": {
+      "stderr": "train-sets/ref/cats_save.stderr",
+      "cats_save.predict": "pred-sets/ref/cats_save.predict"
+    },
+    "input_files": [
+      "train-sets/cats_train.json"
+    ]
+  },
+  {
+    "id": 348,
+    "desc": "cats load with predictions",
+    "vw_command": "--cats 32 --bandwidth 1 --min_value 0 --max_value 32 --json --chain_hash --coin --epsilon 0.2 -q :: -d train-sets/cats_train.json -i models/cats_train.model -p cats_load.predict --save_resume",
+    "diff_files": {
+      "stderr": "train-sets/ref/cats_load.stderr",
+      "cats_load.predict": "pred-sets/ref/cats_load.predict"
+    },
+    "input_files": [
+      "train-sets/cats_train.json",
+      "models/cats_train.model"
+    ],
+    "depends_on": [
+      347
+    ]
+  },
+  {
+    "id": 349,
+    "desc": "model with corrupted weights gd.cc",
+    "diff_files": {
+      "stderr": "train-sets/ref/corrupt_weights_gd.stderr"
+    },
+    "bash_command": "./negative-test.sh {VW} --no_stdin --cb_explore_adf --cover 3 --noconstant --quiet -i model-sets/corrupted_weights_gd.model"
+  },
+  {
+    "id": 350,
+    "desc": "model with corrupted weights gd_mf.cc",
+    "diff_files": {
+      "stderr": "train-sets/ref/corrupt_weights_gd_mf.stderr"
+    },
+    "bash_command": "./negative-test.sh {VW} --no_stdin --cb_explore_adf --cover 3 --noconstant --quiet -i model-sets/corrupted_weights_gd_mf.model"
+  },
+  {
+    "id": 351,
+    "desc": "should be the same output as 158 except the line of enabled_reductions",
+    "vw_command": "--save_resume -f automl.model --automl 3 --priority_type least_exclusion -d train-sets/decisionservice.json --dsjson --cb_explore_adf --epsilon 0.2 -P 1 -p cbe_adf_dsjson.predict --extra_metrics metrics_.json --readable_model automl_readable.txt --keep_configs --oracle_type rand",
+    "diff_files": {
+      "stderr": "train-sets/ref/cbe_adf_dsjson_metrics_.stderr",
+      "metrics_.json": "test-sets/ref/metrics_.json",
+      "automl_readable.txt": "train-sets/ref/automl_readable.txt"
+    },
+    "input_files": [
+      "train-sets/decisionservice.json"
+    ]
+  },
+  {
+    "id": 352,
+    "desc": "check multilabel_oaa probabilities",
+    "vw_command": "--multilabel_oaa 10 -d train-sets/multilabel -p multilabel_probs.predict --loss_function=logistic --probabilities",
+    "diff_files": {
+      "stderr": "train-sets/ref/multilabel_probs.stderr",
+      "multilabel_probs.predict": "pred-sets/ref/multilabel_probs.predict"
+    },
+    "input_files": [
+      "train-sets/multilabel"
+    ]
+  },
+  {
+    "id": 353,
+    "desc": "check multilabel_oaa probabilities same as when manually specifying link",
+    "vw_command": "--multilabel_oaa 10 -d train-sets/multilabel -p multilabel_probs.predict --loss_function=logistic --probabilities --link logistic",
+    "diff_files": {
+      "stderr": "train-sets/ref/multilabel_probs.stderr",
+      "multilabel_probs.predict": "pred-sets/ref/multilabel_probs.predict"
+    },
+    "input_files": [
+      "train-sets/multilabel"
+    ]
+  },
+  {
+    "id": 354,
+    "desc": "check oaa probabilities same as when manually specifying link",
+    "vw_command": "-d train-sets/probabilities.dat --probabilities --oaa=4 --loss_function=logistic -p oaa_probabilities.predict --link logistic",
+    "diff_files": {
+      "stderr": "train-sets/ref/oaa_probabilities.stderr",
+      "oaa_probabilities.predict": "pred-sets/ref/oaa_probabilities.predict"
+    },
+    "input_files": [
+      "train-sets/probabilities.dat"
+    ]
+  },
+  {
+    "id": 355,
+    "desc": "check csoaa_ldf probabilities same as when manually specifying link",
+    "vw_command": "-d train-sets/cs_test.ldf --probabilities --csoaa_ldf=mc --loss_function=logistic -p csoaa_ldf_probabilities.predict --link logistic",
+    "diff_files": {
+      "stderr": "train-sets/ref/csoaa_ldf_probabilities.stderr",
+      "csoaa_ldf_probabilities.predict": "pred-sets/ref/csoaa_ldf_probabilities.predict"
+    },
+    "input_files": [
+      "train-sets/cs_test.ldf"
+    ]
+  },
+  {
+    "id": 356,
+    "desc": "fuzz testing crash due to partial model file",
+    "diff_files": {
+      "stdout": "train-sets/ref/truncated_model_crash.stdout"
+    },
+    "bash_command": "./negative-test.sh {VW} --no_stdin --cb_explore_adf --cover 3 --noconstant --quiet -i model-sets/truncated_model"
   }
 ]
