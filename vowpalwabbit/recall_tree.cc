@@ -495,11 +495,11 @@ base_learner* recall_tree_setup(VW::setup_base_i& stack_builder)
   new_options.add(make_option("recall_tree", tree->k).keep().necessary().help("Use online tree for multiclass"))
       .add(make_option("max_candidates", tree->max_candidates)
                .keep()
-               .help("maximum number of labels per leaf in the tree"))
-      .add(make_option("bern_hyper", tree->bern_hyper).default_value(1.f).help("recall tree depth penalty"))
-      .add(make_option("max_depth", tree->max_depth).keep().help("maximum depth of the tree, default log_2 (#classes)"))
-      .add(make_option("node_only", tree->node_only).keep().help("only use node features, not full path features"))
-      .add(make_option("randomized_routing", tree->randomized_routing).keep().help("randomized routing"));
+               .help("Maximum number of labels per leaf in the tree"))
+      .add(make_option("bern_hyper", tree->bern_hyper).default_value(1.f).help("Recall tree depth penalty"))
+      .add(make_option("max_depth", tree->max_depth).keep().help("Maximum depth of the tree, default log_2 (#classes)"))
+      .add(make_option("node_only", tree->node_only).keep().help("Only use node features, not full path features"))
+      .add(make_option("randomized_routing", tree->randomized_routing).keep().help("Randomized routing"));
 
   if (!options.add_parse_and_check_necessary(new_options)) return nullptr;
 

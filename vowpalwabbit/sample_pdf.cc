@@ -104,7 +104,7 @@ LEARNER::base_learner* sample_pdf_setup(VW::setup_base_i& stack_builder)
 {
   options_i& options = *stack_builder.get_options();
   VW::workspace& all = *stack_builder.get_all_pointer();
-  option_group_definition new_options("Continuous actions - sample pdf");
+  option_group_definition new_options("Continuous Actions: Sample Pdf");
   bool invoked = false;
   new_options.add(
       make_option("sample_pdf", invoked).keep().necessary().help("Sample a pdf and pick a continuous valued action"));

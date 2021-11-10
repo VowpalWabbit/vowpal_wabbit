@@ -491,16 +491,18 @@ base_learner* cb_adf_setup(VW::setup_base_i& stack_builder)
       .add(make_option("cb_adf", cb_adf_option)
                .keep()
                .necessary()
-               .help("Do Contextual Bandit learning with multiline action dependent features."))
+               .help("Do Contextual Bandit learning with multiline action dependent features"))
       .add(make_option("rank_all", rank_all).keep().help("Return actions sorted by score order"))
       .add(make_option("no_predict", no_predict).help("Do not do a prediction when training"))
       .add(make_option("clip_p", clip_p)
                .keep()
                .default_value(0.f)
-               .help("Clipping probability in importance weight. Default: 0.f (no clipping)."))
+               .help("Clipping probability in importance weight. Default: 0.f (no clipping)"))
       .add(make_option("cb_type", type_string)
                .keep()
-               .help("contextual bandit method to use in {ips, dm, dr, mtr, sm}. Default: mtr"));
+               .default_value("mtr")
+               .one_of({"ips", "dm", "dr", "mtr", "sm"})
+               .help("Contextual bandit method to use"));
 
   if (!options.add_parse_and_check_necessary(new_options)) return nullptr;
 
