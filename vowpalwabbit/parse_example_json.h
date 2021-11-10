@@ -46,7 +46,9 @@ struct dsjson_metrics
   std::string LastEventId;
   std::string LastEventTime;
 };
+void persist_dsjson_metrics(VW::metric_sink& sink, VW::label_type_t label_type, const details::dsjson_metrics& metrics);
 }  // namespace details
+
 struct json_example_parser : VW::example_parser_i
 {
   json_example_parser(VW::label_type_t label_type, hash_func_t hash_func, uint64_t hash_seed, uint64_t parse_mask,

@@ -82,9 +82,9 @@ struct pooled_example_factory final : VW::example_factory_i
 {
   pooled_example_factory(VW::workspace* workspace) : _workspace(workspace) {}
   example* create() override { return &VW::get_unused_example(_workspace); }
-  void destroy(example* ex) override { 
+  void destroy(example* ex) override {
     VW::empty_example(*ex);
-    
+
       _workspace->example_parser->example_pool.return_object(ex); }
 
 private:
@@ -183,7 +183,7 @@ void set_json_reader(VW::workspace& all, bool dsjson = false)
 {
   if (dsjson)
   {
-    all.example_parser->active_example_parser = VW::make_dsjson_parser(all, all.options->was_supplied("extra_metrics"));
+    all.example_parser->active_example_parser = VW::make_dsjson_parser(all, all.options->was_supplied("extra_metrics"), true /* destructive_parse*/, all.example_parser->strict_parse);
   }
   else
   {
@@ -600,6 +600,8 @@ void enable_sources(VW::workspace& all, bool quiet, size_t passes, input_options
             all.parse_mask,
             all.example_parser->hasher,
             all.options->was_supplied("extra_metrics"),
+            all.sd->ldict.get(),
+            all.chain_hash_json,
             VW::make_unique<pooled_example_factory>(&all));
       }
       else if (input_options.json || input_options.dsjson)
@@ -629,6 +631,8 @@ void enable_sources(VW::workspace& all, bool quiet, size_t passes, input_options
             all.parse_mask,
             all.example_parser->hasher,
             all.options->was_supplied("extra_metrics"),
+            all.sd->ldict.get(),
+            all.chain_hash_json,
             VW::make_unique<pooled_example_factory>(&all));
       }
       else

@@ -1710,6 +1710,14 @@ vw* initialize_with_custom_parser(std::unique_ptr<config::options_i, options_del
         std::move(options), model, skip_model_load, trace_listener, trace_context, std::move(learner_builder), std::move(factory));
 }
 
+vw* initialize_with_custom_parser(options_i& options, io_buf* model, bool skip_model_load, trace_message_t trace_listener,
+    void* trace_context, std::unique_ptr<VW::setup_base_i> learner_builder, std::unique_ptr<VW::example_parser_factory_i> factory)
+{
+  std::unique_ptr<options_i, options_deleter_type> opts(&options, [](VW::config::options_i*) {});
+  return initialize_with_custom_parser(
+        std::move(opts), model, skip_model_load, trace_listener, trace_context, std::move(learner_builder), std::move(factory));
+}
+
 VW::workspace* initialize(
     const std::string& s, io_buf* model, bool skip_model_load, trace_message_t trace_listener, void* trace_context)
 {

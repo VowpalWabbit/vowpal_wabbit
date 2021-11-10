@@ -615,7 +615,9 @@ struct MultiState : BaseState<audit>
     ctx.ex = ctx._example_factory->create();
     ctx._label_parser.default_label(ctx.ex->l);
     if (ctx._label_parser.label_type == VW::label_type_t::ccb)
-    { ctx.ex->l.conditional_contextual_bandit.type = CCB::example_type::action; }
+    {
+      ctx.ex->l.conditional_contextual_bandit.type = CCB::example_type::action;
+    }
     else if (ctx._label_parser.label_type == VW::label_type_t::slates)
     {
       ctx.ex->l.slates.type = VW::slates::example_type::action;
@@ -662,7 +664,9 @@ struct SlotsState : BaseState<audit>
     ctx.ex = ctx._example_factory->create();
     ctx._label_parser.default_label(ctx.ex->l);
     if (ctx._label_parser.label_type == VW::label_type_t::ccb)
-    { ctx.ex->l.conditional_contextual_bandit.type = CCB::example_type::slot; }
+    {
+      ctx.ex->l.conditional_contextual_bandit.type = CCB::example_type::slot;
+    }
     else if (ctx._label_parser.label_type == VW::label_type_t::slates)
     {
       ctx.ex->l.slates.type = VW::slates::example_type::slot;
@@ -915,16 +919,17 @@ public:
       else if (length == 8 && !strncmp(str, "_slot_id", 8))
       {
         if (ctx._label_parser.label_type != VW::label_type_t::slates)
-        { THROW("Can only use _slot_id with slates examples"); } ctx.uint_state.output_uint = &ctx.ex->l.slates.slot_id;
+        {
+          THROW("Can only use _slot_id with slates examples");
+        }
+        ctx.uint_state.output_uint = &ctx.ex->l.slates.slot_id;
         ctx.array_float_state.return_state = this;
         return &ctx.array_float_state;
       }
 
       else if (ctx.key_length == 20 && !strncmp(str, "_original_label_cost", 20))
       {
-        if(!ctx.decision_service_data) {
-          THROW("_original_label_cost is only valid in DSJson");
-        }
+        if (!ctx.decision_service_data) { THROW("_original_label_cost is only valid in DSJson"); }
         ctx.original_label_cost_state.aggr_float = &ctx.decision_service_data->originalLabelCost;
         ctx.original_label_cost_state.first_slot_float = &ctx.decision_service_data->originalLabelCostFirstSlot;
         ctx.original_label_cost_state.return_state = this;
@@ -1163,14 +1168,11 @@ public:
 
 // AggrFunc prototype is void (*)(float *input_output, float f);
 // Basic Aggregation Types
-namespace float_aggregation {
-inline void set(float* output, float f) {
-  *output = f;
-}
-inline void add(float* output, float f) {
-  *output += f;
-}
-}
+namespace float_aggregation
+{
+inline void set(float* output, float f) { *output = f; }
+inline void add(float* output, float f) { *output += f; }
+}  // namespace float_aggregation
 
 template <bool audit, void (*func)(float*, float)>
 class FloatToFloatState : public BaseState<audit>
@@ -1187,10 +1189,7 @@ public:
     return return_state;
   }
 
-  BaseState<audit>* Uint(Context<audit>& ctx, unsigned i) override
-  {
-    return Float(ctx, static_cast<float>(i));
-  }
+  BaseState<audit>* Uint(Context<audit>& ctx, unsigned i) override { return Float(ctx, static_cast<float>(i)); }
 
   BaseState<audit>* Null(Context<audit>& /*ctx*/) override
   {
@@ -1216,17 +1215,15 @@ public:
   BaseState<audit>* Float(Context<audit>& /*ctx*/, float f) override
   {
     *aggr_float += f;
-    if(!seen_first) {
+    if (!seen_first)
+    {
       seen_first = true;
       *first_slot_float = f;
     }
     return return_state;
   }
 
-  BaseState<audit>* Uint(Context<audit>& ctx, unsigned i) override
-  {
-    return Float(ctx, static_cast<float>(i));
-  }
+  BaseState<audit>* Uint(Context<audit>& ctx, unsigned i) override { return Float(ctx, static_cast<float>(i)); }
 
   BaseState<audit>* Null(Context<audit>& /*ctx*/) override
   {
@@ -1234,7 +1231,6 @@ public:
     return return_state;
   }
 };
-
 
 template <bool audit>
 class UIntDedupState : public BaseState<audit>
@@ -1319,7 +1315,9 @@ public:
               ex->l.conditional_contextual_bandit.type != CCB::example_type::slot) ||
           (ctx._label_parser.label_type == VW::label_type_t::slates &&
               ex->l.slates.type != VW::slates::example_type::slot))
-      { slot_object_index++; }
+      {
+        slot_object_index++;
+      }
     }
     old_root = ctx.root_state;
     ctx.root_state = this;
@@ -1633,8 +1631,7 @@ struct VWReaderHandler : public rapidjson::BaseReaderHandler<rapidjson::UTF8<>, 
   void init(const label_parser& lbl_parser, hash_func_t hash_func, uint64_t hash_seed, uint64_t parse_mask,
       bool chain_hash, VW::label_parser_reuse_mem* reuse_mem, const VW::named_labels* ldict,
       v_array<example*>* examples, rapidjson::InsituStringStream* stream, const char* stream_end,
-      VW::example_factory_i* example_factory,
-      const std::unordered_map<uint64_t, example*>* dedup_examples = nullptr)
+      VW::example_factory_i* example_factory, const std::unordered_map<uint64_t, example*>* dedup_examples = nullptr)
   {
     assert(reuse_mem != nullptr);
     assert(example_factory != nullptr);
@@ -1728,17 +1725,16 @@ inline void append_empty_newline_example_for_driver(VW::example_factory_i& examp
   }
 }
 
-
-template<bool audit>
+template <bool audit>
 void VW::json_example_parser::parse_line(char* line, size_t length,
-const std::unordered_map<uint64_t, example*>* dedup_examples, v_array<example*>& examples)
+    const std::unordered_map<uint64_t, example*>* dedup_examples, v_array<example*>& examples)
 {
- assert(examples.size() == 1);
-  assert(example_factory != nullptr);
+  assert(examples.size() == 1);
+  assert(_example_factory != nullptr);
   if (_label_parser.label_type == VW::label_type_t::slates)
   {
-    parse_slates_example_json<audit>(_label_parser, _hash_func, _hash_seed, _parse_mask, _chain_hash, examples, line, length,
-        *_example_factory, dedup_examples);
+    parse_slates_example_json<audit>(_label_parser, _hash_func, _hash_seed, _parse_mask, _chain_hash, examples, line,
+        length, *_example_factory, dedup_examples);
     return;
   }
 
@@ -1772,145 +1768,154 @@ const std::unordered_map<uint64_t, example*>* dedup_examples, v_array<example*>&
   // "Line: '"<< line_copy << "'");
 }
 
-  // template<>
-  // void VW::json_example_parser::parse_line<true>(v_array<example*>& examples, char* line, size_t length,
-  //     const std::unordered_map<uint64_t, example*>* dedup_examples);
-  // template<>
-  // void VW::json_example_parser::parse_line<false>(v_array<example*>& examples, char* line, size_t length,
-  //     const std::unordered_map<uint64_t, example*>* dedup_examples);
+// template<>
+// void VW::json_example_parser::parse_line<true>(v_array<example*>& examples, char* line, size_t length,
+//     const std::unordered_map<uint64_t, example*>* dedup_examples);
+// template<>
+// void VW::json_example_parser::parse_line<false>(v_array<example*>& examples, char* line, size_t length,
+//     const std::unordered_map<uint64_t, example*>* dedup_examples);
 
-  VW::json_example_parser::json_example_parser(VW::label_type_t label_type, hash_func_t hash_func, uint64_t hash_seed, uint64_t parse_mask,
-      bool chain_hash, std::unique_ptr<VW::example_factory_i> example_factory, const named_labels* ldict, bool audit)
-      : example_parser_i("json")
-      , _label_parser(VW::get_label_parser(label_type))
-      , _hash_func(hash_func)
-      , _hash_seed(hash_seed)
-      , _parse_mask(parse_mask)
-      , _chain_hash(chain_hash)
-      , _example_factory(std::move(example_factory))
-      , _ldict(ldict)
-      , _audit(audit)
+VW::json_example_parser::json_example_parser(VW::label_type_t label_type, hash_func_t hash_func, uint64_t hash_seed,
+    uint64_t parse_mask, bool chain_hash, std::unique_ptr<VW::example_factory_i> example_factory,
+    const named_labels* ldict, bool audit)
+    : example_parser_i("json")
+    , _label_parser(VW::get_label_parser(label_type))
+    , _hash_func(hash_func)
+    , _hash_seed(hash_seed)
+    , _parse_mask(parse_mask)
+    , _chain_hash(chain_hash)
+    , _example_factory(std::move(example_factory))
+    , _ldict(ldict)
+    , _audit(audit)
+{
+}
+
+bool VW::json_example_parser::next_with_dedup(
+    io_buf& input, const std::unordered_map<uint64_t, example*>* dedup_examples, v_array<example*>& output)
+{
+  char* line;
+  size_t num_chars;
+  size_t num_chars_initial = read_features(input, line, num_chars);
+  if (num_chars_initial < 1) { return false; }
+  // Ensure there is a null terminator.
+  line[num_chars] = '\0';
+
+  if (_audit) { parse_line<true>(line, num_chars, dedup_examples, output); }
+  else
   {
+    parse_line<false>(line, num_chars, dedup_examples, output);
   }
 
-  bool VW::json_example_parser::next_with_dedup(
-      io_buf& input, const std::unordered_map<uint64_t, example*>* dedup_examples, v_array<example*>& output)
-  {
+  append_empty_newline_example_for_driver(*_example_factory, output);
+  return true;
+}
+
+bool VW::json_example_parser::next(io_buf& input, v_array<example*>& output)
+{
+  return next_with_dedup(input, nullptr, output);
+}
+
+VW::dsjson_example_parser::dsjson_example_parser(VW::label_type_t label_type, hash_func_t hash_func, uint64_t hash_seed,
+    uint64_t parse_mask, bool chain_hash, std::unique_ptr<VW::example_factory_i> example_factory,
+    const named_labels* ldict, bool audit, bool record_metrics, bool destructive_parse, bool strict_parse)
+    : example_parser_i("dsjson")
+    , _label_parser(VW::get_label_parser(label_type))
+    , _hash_func(hash_func)
+    , _hash_seed(hash_seed)
+    , _parse_mask(parse_mask)
+    , _chain_hash(chain_hash)
+    , _example_factory(std::move(example_factory))
+    , _ldict(ldict)
+    , _audit(audit)
+    , _should_record_metrics(record_metrics)
+    , _destructive_parse(destructive_parse)
+    , _strict_parse(strict_parse)
+{
+}
+
+bool VW::dsjson_example_parser::next(io_buf& input, v_array<example*>& output)
+{
+  bool reread;
+  do {
+    reread = false;
+
     char* line;
     size_t num_chars;
     size_t num_chars_initial = read_features(input, line, num_chars);
     if (num_chars_initial < 1) { return false; }
+
     // Ensure there is a null terminator.
     line[num_chars] = '\0';
 
-    if (_audit) { parse_line<true>(line, num_chars, dedup_examples, output); }
+    auto* metrics = _should_record_metrics ? &_ds_metrics : nullptr;
+
+    if (_audit) { reread = !parse_line_and_process_metrics<true>(line, num_chars, metrics, output); }
     else
     {
-      parse_line<false>(line, num_chars, dedup_examples, output);
+      reread = !parse_line_and_process_metrics<false>(line, num_chars, metrics, output);
     }
+  } while (reread);
 
-    append_empty_newline_example_for_driver(*_example_factory, output);
-    return true;
-  }
-
-  bool VW::json_example_parser::next(io_buf& input, v_array<example*>& output) { return next_with_dedup(input, nullptr, output); }
-
-
-  VW::dsjson_example_parser::dsjson_example_parser(VW::label_type_t label_type, hash_func_t hash_func, uint64_t hash_seed, uint64_t parse_mask,
-      bool chain_hash, std::unique_ptr<VW::example_factory_i> example_factory, const named_labels* ldict, bool audit,
-      bool record_metrics, bool destructive_parse,  bool strict_parse) : example_parser_i("dsjson")
-      , _label_parser(VW::get_label_parser(label_type))
-      , _hash_func(hash_func)
-      , _hash_seed(hash_seed)
-      , _parse_mask(parse_mask)
-      , _chain_hash(chain_hash)
-      , _example_factory(std::move(example_factory))
-      , _ldict(ldict)
-      , _audit(audit)
-      , _should_record_metrics(record_metrics)
-      , _destructive_parse(destructive_parse)
-      , _strict_parse(strict_parse)
-      {}
+  append_empty_newline_example_for_driver(*_example_factory, output);
+  return true;
+}
 
 
-  bool VW::dsjson_example_parser::next(io_buf& input, v_array<example*>& output)
+void VW::details::persist_dsjson_metrics(VW::metric_sink& sink, VW::label_type_t label_type, const VW::details::dsjson_metrics& metrics)
+{
+  sink.set_uint("number_skipped_events", metrics.NumberOfSkippedEvents);
+  sink.set_uint("number_events_zero_actions", metrics.NumberOfEventsZeroActions);
+  sink.set_uint("line_parse_error", metrics.LineParseError);
+  sink.set_string("first_event_id", metrics.FirstEventId);
+  sink.set_string("first_event_time", metrics.FirstEventTime);
+  sink.set_string("last_event_id", metrics.LastEventId);
+  sink.set_string("last_event_time", metrics.LastEventTime);
+  sink.set_float("dsjson_sum_cost_original", metrics.DsjsonSumCostOriginal);
+  if (label_type == VW::label_type_t::ccb)
   {
-    bool reread;
-    do
-    {
-      reread = false;
+    sink.set_float("dsjson_sum_cost_original_first_slot", metrics.DsjsonSumCostOriginalFirstSlot);
+    sink.set_uint(
+        "dsjson_number_label_equal_baseline_first_slot", metrics.DsjsonNumberOfLabelEqualBaselineFirstSlot);
+    sink.set_uint("dsjson_number_label_not_equal_baseline_first_slot",
+        metrics.DsjsonNumberOfLabelNotEqualBaselineFirstSlot);
+    sink.set_float("dsjson_sum_cost_original_label_equal_baseline_first_slot",
+        metrics.DsjsonSumCostOriginalLabelEqualBaselineFirstSlot);
+  }
+  else if (label_type == VW::label_type_t::cb)
+  {
+    sink.set_float("dsjson_sum_cost_original_baseline", metrics.DsjsonSumCostOriginalBaseline);
+  }
+  else
+  {
+    // Unexpected label type.
+  }
+}
 
-      char* line;
-      size_t num_chars;
-      size_t num_chars_initial = read_features(input, line, num_chars);
-      if (num_chars_initial < 1) { return false; }
 
-      // Ensure there is a null terminator.
-      line[num_chars] = '\0';
-
-      auto* metrics = _should_record_metrics ? &_ds_metrics : nullptr;
-
-      if (_audit)
-      {
-      reread = !parse_line_and_process_metrics<true>(line, num_chars, metrics, output);
-      }
-      else
-      {
-        reread = !parse_line_and_process_metrics<false>(line, num_chars, metrics, output);
-      }
-    } while (reread);
-
-    append_empty_newline_example_for_driver(*_example_factory, output);
-    return true;
+void VW::dsjson_example_parser::persist_metrics(VW::metric_sink& sink)
+{
+  if(!_should_record_metrics)
+  {
+    return;
   }
 
-//   void persist_metrics(VW::metric_sink& sink) override
-//   {
-//     if(!_should_record_metrics)
-//     {
-//       return;
-//     }
-
-//     std::vector<std::string> enabled_reductions;
-//     if (_all->l != nullptr) { _all->l->get_enabled_reductions(enabled_reductions); }
-
-//     sink.set_uint("number_skipped_events", _ds_metrics.NumberOfSkippedEvents);
-//     sink.set_uint("number_events_zero_actions", _ds_metrics.NumberOfEventsZeroActions);
-//     sink.set_uint("line_parse_error", _ds_metrics.LineParseError);
-//     sink.set_string("first_event_id", _ds_metrics.FirstEventId);
-//     sink.set_string("first_event_time", _ds_metrics.FirstEventTime);
-//     sink.set_string("last_event_id", _ds_metrics.LastEventId);
-//     sink.set_string("last_event_time", _ds_metrics.LastEventTime);
-//     sink.set_float("dsjson_sum_cost_original", _ds_metrics.DsjsonSumCostOriginal);
-//     if (std::find(enabled_reductions.begin(), enabled_reductions.end(), "ccb_explore_adf") != enabled_reductions.end())
-//     {
-//       sink.set_float("dsjson_sum_cost_original_first_slot", _ds_metrics.DsjsonSumCostOriginalFirstSlot);
-//       sink.set_uint(
-//           "dsjson_number_label_equal_baseline_first_slot", _ds_metrics.DsjsonNumberOfLabelEqualBaselineFirstSlot);
-//       sink.set_uint("dsjson_number_label_not_equal_baseline_first_slot",
-//           _ds_metrics.DsjsonNumberOfLabelNotEqualBaselineFirstSlot);
-//       sink.set_float("dsjson_sum_cost_original_label_equal_baseline_first_slot",
-//           _ds_metrics.DsjsonSumCostOriginalLabelEqualBaselineFirstSlot);
-//     }
-//     else
-//     {
-//       sink.set_float("dsjson_sum_cost_original_baseline", _ds_metrics.DsjsonSumCostOriginalBaseline);
-//     }
-//   }
+  VW::details::persist_dsjson_metrics(sink, _label_parser.label_type, _ds_metrics);
+}
 
 void reset_example_list_to_default(VW::example_factory_i& factory, v_array<example*>& examples)
 {
-  for(auto* ex : examples)
-    {
-      VW::empty_example(*ex);
-      factory.destroy(ex);
-    }
-    examples.clear();
-    examples.push_back(factory.create());
+  for (auto* ex : examples)
+  {
+    VW::empty_example(*ex);
+    factory.destroy(ex);
+  }
+  examples.clear();
+  examples.push_back(factory.create());
 }
 
 template <bool audit>
-bool VW::dsjson_example_parser::parse_line_and_process_metrics(char* line, size_t num_chars, VW::details::dsjson_metrics* metrics, v_array<example*>& examples)
+bool VW::dsjson_example_parser::parse_line_and_process_metrics(
+    char* line, size_t num_chars, VW::details::dsjson_metrics* metrics, v_array<example*>& examples)
 {
   assert(examples.size() == 1);
 
@@ -1954,16 +1959,14 @@ bool VW::dsjson_example_parser::parse_line_and_process_metrics(char* line, size_
     if (!interaction.actions.empty())
     {
       // APS requires this metric for CB (baseline action is 1)
-      if (interaction.actions[0] == 1)
-      { metrics->DsjsonSumCostOriginalBaseline += interaction.originalLabelCost; }
+      if (interaction.actions[0] == 1) { metrics->DsjsonSumCostOriginalBaseline += interaction.originalLabelCost; }
 
       if (!interaction.baseline_actions.empty())
       {
         if (interaction.actions[0] == interaction.baseline_actions[0])
         {
           metrics->DsjsonNumberOfLabelEqualBaselineFirstSlot++;
-          metrics->DsjsonSumCostOriginalLabelEqualBaselineFirstSlot +=
-              interaction.originalLabelCostFirstSlot;
+          metrics->DsjsonSumCostOriginalLabelEqualBaselineFirstSlot += interaction.originalLabelCostFirstSlot;
         }
         else
         {
@@ -1996,16 +1999,17 @@ bool VW::dsjson_example_parser::parse_line_and_process_metrics(char* line, size_
 
 // returns true if succesfully parsed, returns false if not and logs warning
 template <bool audit>
-bool VW::dsjson_example_parser::parse_line(char* line, size_t length,
-    v_array<example*>& examples, DecisionServiceInteraction* data)
+bool VW::dsjson_example_parser::parse_line(
+    char* line, size_t length, v_array<example*>& examples, DecisionServiceInteraction* data)
 {
-  assert(example_factory != nullptr);
+  assert(_example_factory != nullptr);
   // Insitu parsing requires a null terminated string and we can't specify a length based string.
   assert(*(line + length) = '\0');
 
   if (_label_parser.label_type == VW::label_type_t::slates)
   {
-    parse_slates_example_dsjson<audit>(_label_parser, _hash_func, _hash_seed, _parse_mask, _chain_hash, examples, line, length, *_example_factory, data);
+    parse_slates_example_dsjson<audit>(_label_parser, _hash_func, _hash_seed, _parse_mask, _chain_hash, examples, line,
+        length, *_example_factory, data);
     return apply_pdrop(_label_parser.label_type, data->probabilityOfDrop, examples);
   }
 
@@ -2020,8 +2024,7 @@ bool VW::dsjson_example_parser::parse_line(char* line, size_t length,
   json_parser<audit> parser;
 
   VWReaderHandler<audit>& handler = parser.handler;
-  handler.init(_label_parser, _hash_func, _hash_seed, _parse_mask,
-      _chain_hash, &_parser_mem, _ldict, &examples, &ss,
+  handler.init(_label_parser, _hash_func, _hash_seed, _parse_mask, _chain_hash, &_parser_mem, _ldict, &examples, &ss,
       line + length, _example_factory.get());
 
   handler.ctx.SetStartStateToDecisionService(data);
@@ -2066,5 +2069,7 @@ std::unique_ptr<VW::json_example_parser> VW::make_json_parser(vw& all)
 std::unique_ptr<VW::dsjson_example_parser> VW::make_dsjson_parser(
     vw& all, bool record_metrics, bool destructive_parse, bool strict_parse)
 {
-  return VW::make_unique<VW::dsjson_example_parser>(return VW::make_unique<VW::json_example_parser>(all.example_parser->lbl_parser.label_type, all.example_parser->hasher, all.hash_seed, all.parse_mask, all.chain_hash_json, VW::make_example_factory(all), all.sd->ldict.get(), all.audit || all.hash_inv, record_metrics, destructive_parse, strict_parse);
+  return VW::make_unique<VW::dsjson_example_parser>(all.example_parser->lbl_parser.label_type,
+      all.example_parser->hasher, all.hash_seed, all.parse_mask, all.chain_hash_json, VW::make_example_factory(all),
+      all.sd->ldict.get(), all.audit || all.hash_inv, record_metrics, destructive_parse, strict_parse);
 }

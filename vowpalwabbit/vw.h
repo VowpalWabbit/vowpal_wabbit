@@ -67,6 +67,10 @@ vw* initialize_with_custom_parser(std::unique_ptr<config::options_i, options_del
     trace_message_t trace_listener = nullptr, void* trace_context = nullptr,
     std::unique_ptr<VW::setup_base_i> = nullptr,
     std::unique_ptr<VW::example_parser_factory_i> = nullptr);
+vw* initialize_with_custom_parser(config::options_i& options, io_buf* model = nullptr, bool skipModelLoad = false,
+    trace_message_t trace_listener = nullptr, void* trace_context = nullptr,
+    std::unique_ptr<VW::setup_base_i> = nullptr,
+    std::unique_ptr<VW::example_parser_factory_i> = nullptr);
 
 void cmd_string_replace_value(std::stringstream*& ss, std::string flag_to_replace, const std::string& new_value);
 
