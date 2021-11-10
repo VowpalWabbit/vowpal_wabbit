@@ -241,7 +241,7 @@ void parse_slates_example_dsjson(const label_parser& lbl_parser, hash_func_t has
     const std::unordered_map<uint64_t, example*>* dedup_examples = nullptr)
 {
   // Insitu parsing requires a null terminated string and we can't specify a length based string.
-  assert(*(line + length) = '\0');
+  assert(*(line + length) == '\0');
   _UNUSED(length);
 
   Document document;

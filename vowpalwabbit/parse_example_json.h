@@ -59,6 +59,12 @@ struct json_example_parser : VW::example_parser_i
 
   bool next(io_buf& input, v_array<example*>& output) override;
 
+  // This function is specifically here if you don't want to drain from an iobuf. In the context of json this is useful as in tests it is convenient to not have to flatten to a single line.
+  // Since the format is officially newline delimited JSON the standard way of parsing is consuming a single line. Whereas this will parse the entire given buffer.
+  // Must be only a single JSON object in the given bytes. 
+  void parse_object(char* line, size_t length, const std::unordered_map<uint64_t, example*>* dedup_examples,
+      v_array<example*>& output);
+
 private:
   template <bool audit>
   void parse_line(char* line, size_t length,
@@ -83,11 +89,19 @@ struct dsjson_example_parser : VW::example_parser_i
       bool record_metrics, bool destructive_parse, bool strict_parse);
 
   bool next(io_buf& input, v_array<example*>& output) override;
+  bool next_with_interaction(io_buf& input, v_array<example*>& output, DecisionServiceInteraction& interaction);
   void persist_metrics(VW::metric_sink& sink) override;
+
+  // This function is specifically here if you don't want to drain from an iobuf. In the context of json this is useful as in tests it is convenient to not have to flatten to a single line.
+  // Since the format is officially newline delimited JSON the standard way of parsing is consuming a single line. Whereas this will parse the entire given buffer.
+  // Must be only a single JSON object in the given bytes. 
+   void parse_object(char* line, size_t length, 
+      v_array<example*>& output, DecisionServiceInteraction& interaction);
 
 private:
   template <bool audit>
-  bool parse_line_and_process_metrics(char* line, size_t num_chars, VW::details::dsjson_metrics* metrics, v_array<example*>& examples);
+  bool parse_line_and_process_metrics(char* line, size_t num_chars, VW::details::dsjson_metrics* metrics,
+      v_array<example*>& examples, DecisionServiceInteraction& interaction);
 
   template <bool audit>
   bool parse_line(char* line, size_t length, v_array<example*>& examples, DecisionServiceInteraction* data);

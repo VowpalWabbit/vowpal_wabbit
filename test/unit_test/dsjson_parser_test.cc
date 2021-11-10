@@ -9,6 +9,7 @@
 
 #include <vector>
 #include "conditional_contextual_bandit.h"
+#include "json_utils.h"
 
 BOOST_AUTO_TEST_CASE(parse_dsjson_underscore_p)
 {
@@ -778,7 +779,7 @@ BOOST_AUTO_TEST_CASE(parse_dsjson_slates)
   BOOST_CHECK_EQUAL(ds_interaction.eventId, "test_id");
   BOOST_CHECK_CLOSE(ds_interaction.probabilityOfDrop, 0.1, FLOAT_TOL);
   BOOST_CHECK_EQUAL(ds_interaction.skipLearn, true);
-  check_collections_exact(ds_interaction.actions, std::vector<unsigned int>{1,0});
+  check_collections_exact(ds_interaction.actions, std::vector<unsigned>{1,0});
   check_collections_with_float_tolerance(ds_interaction.probabilities, std::vector<float>{0.8f, 0.6f}, FLOAT_TOL);
 
   VW::finish_example(*vw, examples);

@@ -13,6 +13,7 @@
 
 #include "test_common.h"
 #include "vw.h"
+#include "shared_data.h"
 #include "gd_predict.h"
 #include "gd.h"
 #include "interactions.h"

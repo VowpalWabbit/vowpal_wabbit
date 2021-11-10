@@ -1739,7 +1739,7 @@ void VW::json_example_parser::parse_line(char* line, size_t length,
   }
 
   // Insitu parsing requires a null terminated string and we can't specify a length based string.
-  assert(*(line + length) = '\0');
+  assert(*(line + length) == '\0');
 
   // string line_copy(line);
   // destructive parsing
@@ -1766,6 +1766,16 @@ void VW::json_example_parser::parse_line(char* line, size_t length,
                                 << handler.error().str()
                                 << "State: " << (current_state ? current_state->name : "null"));  // <<
   // "Line: '"<< line_copy << "'");
+}
+
+ void VW::json_example_parser::parse_object(
+    char* line, size_t length, const std::unordered_map<uint64_t, example*>* dedup_examples, v_array<example*>& output)
+{
+   if (_audit) { parse_line<true>(line, length, dedup_examples, output); }
+  else
+  {
+    parse_line<false>(line, length, dedup_examples, output);
+  }
 }
 
 // template<>
@@ -1835,6 +1845,13 @@ VW::dsjson_example_parser::dsjson_example_parser(VW::label_type_t label_type, ha
 
 bool VW::dsjson_example_parser::next(io_buf& input, v_array<example*>& output)
 {
+  DecisionServiceInteraction interaction;
+  return next_with_interaction(input, output, interaction);
+}
+
+bool VW::dsjson_example_parser::next_with_interaction(
+    io_buf& input, v_array<example*>& output, DecisionServiceInteraction& interaction)
+{
   bool reread;
   do {
     reread = false;
@@ -1849,10 +1866,10 @@ bool VW::dsjson_example_parser::next(io_buf& input, v_array<example*>& output)
 
     auto* metrics = _should_record_metrics ? &_ds_metrics : nullptr;
 
-    if (_audit) { reread = !parse_line_and_process_metrics<true>(line, num_chars, metrics, output); }
+    if (_audit) { reread = !parse_line_and_process_metrics<true>(line, num_chars, metrics, output, interaction); }
     else
     {
-      reread = !parse_line_and_process_metrics<false>(line, num_chars, metrics, output);
+      reread = !parse_line_and_process_metrics<false>(line, num_chars, metrics, output, interaction);
     }
   } while (reread);
 
@@ -1914,15 +1931,14 @@ void reset_example_list_to_default(VW::example_factory_i& factory, v_array<examp
 }
 
 template <bool audit>
-bool VW::dsjson_example_parser::parse_line_and_process_metrics(
-    char* line, size_t num_chars, VW::details::dsjson_metrics* metrics, v_array<example*>& examples)
+bool VW::dsjson_example_parser::parse_line_and_process_metrics(char* line, size_t num_chars,
+    VW::details::dsjson_metrics* metrics, v_array<example*>& examples, DecisionServiceInteraction& interaction)
 {
   assert(examples.size() == 1);
 
   // Skip lines that do not start with "{"
   if (line[0] != '{') { return false; }
 
-  DecisionServiceInteraction interaction;
   bool result = parse_line<audit>(line, num_chars, examples, &interaction);
 
   if (!result)
@@ -1997,6 +2013,16 @@ bool VW::dsjson_example_parser::parse_line_and_process_metrics(
   return true;
 }
 
+ void VW::dsjson_example_parser::parse_object(
+    char* line, size_t length, v_array<example*>& output, DecisionServiceInteraction& interaction)
+{
+  if (_audit) { parse_line<true>(line, length, output, &interaction); }
+   else
+   {
+     parse_line<false>(line, length, output, &interaction);
+   }
+ }
+
 // returns true if succesfully parsed, returns false if not and logs warning
 template <bool audit>
 bool VW::dsjson_example_parser::parse_line(
@@ -2004,7 +2030,7 @@ bool VW::dsjson_example_parser::parse_line(
 {
   assert(_example_factory != nullptr);
   // Insitu parsing requires a null terminated string and we can't specify a length based string.
-  assert(*(line + length) = '\0');
+  assert(*(line + length) == '\0');
 
   if (_label_parser.label_type == VW::label_type_t::slates)
   {
