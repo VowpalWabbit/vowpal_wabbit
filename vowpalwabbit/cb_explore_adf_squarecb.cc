@@ -353,17 +353,12 @@ base_learner* setup(VW::setup_base_i& stack_builder)
                .keep()
                .default_value("mtr")
                .one_of({"mtr"})
-               .help("Contextual bandit method to use"));
+               .help("Contextual bandit method to use. SquareCB only supports supervised regression (mtr)"));
 
   if (!options.add_parse_and_check_necessary(new_options)) return nullptr;
 
   // Ensure serialization of cb_adf in all cases.
   if (!options.was_supplied("cb_adf")) { options.insert("cb_adf", ""); }
-  if (type_string != "mtr")
-  {
-    *(all.trace_message) << "warning: bad cb_type, SquareCB only supports mtr; resetting to mtr." << std::endl;
-    options.replace("cb_type", "mtr");
-  }
 
   // Set explore_type
   size_t problem_multiplier = 1;

@@ -270,7 +270,8 @@ CATS Tree Options:
   --cats_tree arg             CATS Tree with <k> labels
   --tree_bandwidth arg (=0, ) Tree bandwidth for continuous actions in terms of
                               #actions
-  --link arg                  Specify the link function. Choices: {glf1}
+  --link arg                  Specify the link function. Cats tree only 
+                              supports glf1. Choices: {glf1}
 Contextual Bandit Options:
   --cb arg              Use contextual bandit learning with <k> costs
   --cb_type arg (=dr, ) Contextual bandit method to use. Choices: {dm, dr, ips,
@@ -339,13 +340,15 @@ Contextual Bandit Exploration with ADF (RegCB) Options:
   --cb_max_cost arg (=1, )  Upper bound on cost
   --first_only              Only explore the first action in a tie-breaking 
                             event
-  --cb_type arg (=mtr, )    Contextual bandit method to use. Choices: {mtr}
+  --cb_type arg (=mtr, )    Contextual bandit method to use. RegCB only 
+                            supports supervised regression (mtr). Choices: 
+                            {mtr}
 Contextual Bandit Exploration with ADF (rnd) Options:
   --cb_explore_adf             Online explore-exploit for a contextual bandit 
                                problem with multiline action dependent features
   --epsilon arg                Minimum exploration probability
   --rnd arg                    Rnd based exploration
-  --rnd_alpha arg (=0.1, )     Ci width for rnd (bigger => more exploration on 
+  --rnd_alpha arg (=0.1, )     CI width for rnd (bigger => more exploration on 
                                repeating features)
   --rnd_invlambda arg (=0.1, ) Covariance regularization strength rnd (bigger 
                                => more exploration on new features)
@@ -370,7 +373,9 @@ Contextual Bandit Exploration with ADF (SquareCB) Options:
                                 plausible action set. Only used with --elim
   --cb_min_cost arg (=0, )      Lower bound on cost. Only used with --elim
   --cb_max_cost arg (=1, )      Upper bound on cost. Only used with --elim
-  --cb_type arg (=mtr, )        Contextual bandit method to use. Choices: {mtr}
+  --cb_type arg (=mtr, )        Contextual bandit method to use. SquareCB only 
+                                supports supervised regression (mtr). Choices: 
+                                {mtr}
 Contextual Bandit Exploration with ADF (synthetic cover) Options:
   --cb_explore_adf              Online explore-exploit for a contextual bandit 
                                 problem with multiline action dependent 

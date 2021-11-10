@@ -57,33 +57,22 @@ struct option_builder
   }
 
   template <typename U>
-  void add_help(std::ostringstream&, const U&)
+  std::string help_one_of(const std::string&, const std::set<U>&)
   {
     THROW("Error: cannot handle non-string or arithmetic types in one_of().");
   }
-  void add_help(std::ostringstream& help, const std::string& addition) { help << addition; }
-  void add_help(std::ostringstream& help, const int& addition) { help << std::to_string(addition); }
+  std::string help_one_of(const std::string& help, const std::set<std::string>& s)
+  {
+    return fmt::format("{}. Choices: {{{}}}", help, fmt::join(s, ", "));
+  }
+  std::string help_one_of(const std::string& help, const std::set<int>& s)
+  {
+    return fmt::format("{}. Choices: {{{}}}", help, fmt::join(s, ", "));
+  }
 
   option_builder& help(const std::string& help)
   {
-    std::ostringstream help_w_additions;
-    help_w_additions << help;
-    if (m_option_obj.one_of().size() > 0)
-    {
-      help_w_additions << ". Choices: {";
-      bool first = true;
-      for (const auto& v : m_option_obj.one_of())
-      {
-        if (first) { first = false; }
-        else
-        {
-          help_w_additions << ", ";
-        }
-        add_help(help_w_additions, v);
-      }
-      help_w_additions << "}";
-    }
-    m_option_obj.m_help = help_w_additions.str();
+    m_option_obj.m_help = m_option_obj.one_of().empty() ? help : help_one_of(help, m_option_obj.one_of());
     return *this;
   }
 
@@ -166,21 +155,7 @@ struct typed_option : base_option
   }
   std::string invalid_choice_error(const std::string& value)
   {
-    std::ostringstream err_msg;
-    err_msg << fmt::format("Error: '{}' is not a valid choice for option --{}", value, m_name);
-    err_msg << ". Please select from {";
-    bool first = true;
-    for (const auto& v : m_one_of)
-    {
-      if (first) { first = false; }
-      else
-      {
-        err_msg << ", ";
-      }
-      err_msg << v;
-    }
-    err_msg << "}";
-    return err_msg.str();
+    return fmt::format("Error: '{}' is not a valid choice for option --{}. Please select from {{{}}}", value, m_name, fmt::join(m_one_of, ", "));
   }
   std::string invalid_choice_error(const int& value) { return invalid_choice_error(std::to_string(value)); }
 
@@ -202,7 +177,7 @@ struct typed_option : base_option
 
   void set_one_of(const std::set<value_type>& one_of_set) { m_one_of = one_of_set; }
 
-  std::set<value_type> one_of() { return m_one_of; }
+  const std::set<value_type>& one_of() const { return m_one_of; }
 
 protected:
   // Allows inheriting classes to handle set values. Noop by default.
@@ -359,7 +334,7 @@ struct option_group_definition
   {
     for (const auto& option : m_options)
     {
-      if (option->m_one_of_err.length() > 0) { THROW(option->m_one_of_err); }
+      if (!option->m_one_of_err.empty()) { THROW(option->m_one_of_err); }
     }
     return true;
   }

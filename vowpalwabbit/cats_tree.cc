@@ -349,19 +349,15 @@ base_learner* setup(setup_base_i& stack_builder)
                .default_value(0)
                .keep()
                .help("Tree bandwidth for continuous actions in terms of #actions"))
-      .add(make_option("link", link).keep().one_of({"glf1"}).help("Specify the link function"));
+      .add(make_option("link", link)
+               .keep()
+               .one_of({"glf1"})
+               .help("Specify the link function. Cats tree only supports glf1"));
 
   if (!options.add_parse_and_check_necessary(new_options)) return nullptr;
 
   // default behaviour uses binary
   if (!options.was_supplied("link")) { options.insert("binary", ""); }
-  else
-  {
-    // if link was supplied then force glf1
-    if (link != "glf1")
-    { *(all.trace_message) << "warning: cats_tree only supports glf1; resetting to glf1." << std::endl; }
-    options.replace("link", "glf1");
-  }
 
   auto tree = VW::make_unique<cats_tree>();
   tree->init(num_actions, bandwidth);
