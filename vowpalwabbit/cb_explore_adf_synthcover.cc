@@ -175,18 +175,18 @@ VW::LEARNER::base_learner* setup(VW::setup_base_i& stack_builder)
                .keep()
                .necessary()
                .help("Online explore-exploit for a contextual bandit problem with multiline action dependent features"))
-      .add(make_option("epsilon", epsilon).keep().allow_override().help("epsilon-greedy exploration"))
-      .add(make_option("synthcover", use_synthcover).keep().necessary().help("use synthetic cover exploration"))
+      .add(make_option("epsilon", epsilon).keep().allow_override().help("Epsilon-greedy exploration"))
+      .add(make_option("synthcover", use_synthcover).keep().necessary().help("Use synthetic cover exploration"))
       .add(make_option("synthcoverpsi", psi)
                .keep()
                .default_value(0.1f)
                .allow_override()
-               .help("exploration reward bonus"))
+               .help("Exploration reward bonus"))
       .add(make_option("synthcoversize", synthcoversize)
                .keep()
                .default_value(100)
                .allow_override()
-               .help("number of policies in cover"));
+               .help("Number of policies in cover"));
 
   if (!options.add_parse_and_check_necessary(new_options)) return nullptr;
 

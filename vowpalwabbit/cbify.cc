@@ -686,15 +686,15 @@ base_learner* cbify_setup(VW::setup_base_i& stack_builder)
       .add(make_option("max_value", data->regression_data.max_value).keep().help("Maximum continuous value"))
       .add(make_option("loss_option", data->regression_data.loss_option)
                .default_value(0)
-               .help("loss options for regression - 0:squared, 1:absolute, 2:0/1"))
+               .help("Loss options for regression - 0:squared, 1:absolute, 2:0/1"))
       .add(make_option("loss_report", data->regression_data.loss_report)
                .default_value(0)
-               .help("loss report option - 0:normalized, 1:denormalized"))
+               .help("Loss report option - 0:normalized, 1:denormalized"))
       .add(make_option("loss_01_ratio", data->regression_data.loss_01_ratio)
                .default_value(0.1f)
-               .help("ratio of zero loss for 0/1 loss"))
-      .add(make_option("loss0", data->loss0).default_value(0.f).help("loss for correct label"))
-      .add(make_option("loss1", data->loss1).default_value(1.f).help("loss for incorrect label"));
+               .help("Ratio of zero loss for 0/1 loss"))
+      .add(make_option("loss0", data->loss0).default_value(0.f).help("Loss for correct label"))
+      .add(make_option("loss1", data->loss1).default_value(1.f).help("Loss for incorrect label"));
 
   if (!options.add_parse_and_check_necessary(new_options)) return nullptr;
 
@@ -863,8 +863,8 @@ base_learner* cbifyldf_setup(VW::setup_base_i& stack_builder)
                .keep()
                .necessary()
                .help("Convert csoaa_ldf into a contextual bandit problem"))
-      .add(make_option("loss0", data->loss0).default_value(0.f).help("loss for correct label"))
-      .add(make_option("loss1", data->loss1).default_value(1.f).help("loss for incorrect label"));
+      .add(make_option("loss0", data->loss0).default_value(0.f).help("Loss for correct label"))
+      .add(make_option("loss1", data->loss1).default_value(1.f).help("Loss for incorrect label"));
 
   if (!options.add_parse_and_check_necessary(new_options)) return nullptr;
 
