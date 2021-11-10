@@ -642,31 +642,37 @@ VW::LEARNER::base_learner* automl_setup(VW::setup_base_i& stack_builder)
   bool keep_configs = false;
   std::string oracle_type;
 
-  option_group_definition new_options("Debug: automl reduction");
+  option_group_definition new_options("Automl");
   new_options
       .add(make_option("automl", max_live_configs)
                .necessary()
                .keep()
                .default_value(3)
-               .help("set number of live configs"))
+               .help("Set number of live configs"))
       .add(make_option("global_lease", global_lease)
                .keep()
                .default_value(10)
-               .help("set initial lease for automl interactions"))
-      .add(make_option("cm_type", cm_type).keep().default_value("interaction").help("set type of config manager"))
+               .help("Set initial lease for automl interactions"))
+      .add(make_option("cm_type", cm_type)
+               .keep()
+               .default_value("interaction")
+               .one_of({"interaction"})
+               .help("Set type of config manager"))
       .add(make_option("priority_type", priority_type)
                .keep()
                .default_value("none")
-               .help("set function to determine next config {none, least_exclusion}"))
+               .one_of({"none", "least_exclusion"})
+               .help("Set function to determine next config"))
       .add(make_option("priority_challengers", priority_challengers)
                .keep()
                .default_value(-1)
-               .help("set number of priority challengers to use"))
+               .help("Set number of priority challengers to use"))
       .add(make_option("keep_configs", keep_configs).keep().help("keep all configs after champ change"))
       .add(make_option("oracle_type", oracle_type)
                .keep()
                .default_value("one_diff")
-               .help("set oracle to generate configs in {one_diff, rand}"));
+               .one_of({"one_diff", "rand"})
+               .help("Set oracle to generate configs"));
 
   if (!options.add_parse_and_check_necessary(new_options)) return nullptr;
 

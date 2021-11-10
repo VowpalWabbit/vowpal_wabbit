@@ -48,7 +48,7 @@ VW::workspace* setup(options_i& options)
 int main(int argc, char* argv[])
 {
   bool should_use_onethread = false;
-  option_group_definition driver_config("driver");
+  option_group_definition driver_config("Driver");
   driver_config.add(make_option("onethread", should_use_onethread).help("Disable parse thread"));
 
   try

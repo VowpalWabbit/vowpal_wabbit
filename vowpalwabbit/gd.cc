@@ -1166,21 +1166,21 @@ base_learner* setup(VW::setup_base_i& stack_builder)
   bool invariant = false;
   bool normalized = false;
 
-  option_group_definition new_options("Gradient Descent options");
-  new_options.add(make_option("sgd", sgd).help("use regular stochastic gradient descent update.").keep(all.save_resume))
-      .add(make_option("adaptive", adaptive).help("use adaptive, individual learning rates.").keep(all.save_resume))
-      .add(make_option("adax", adax).help("use adaptive learning rates with x^2 instead of g^2x^2"))
-      .add(make_option("invariant", invariant).help("use safe/importance aware updates.").keep(all.save_resume))
-      .add(make_option("normalized", normalized).help("use per feature normalized updates").keep(all.save_resume))
-      .add(make_option("sparse_l2", g->sparse_l2).default_value(0.f).help("use per feature normalized updates"))
+  option_group_definition new_options("Gradient Descent");
+  new_options.add(make_option("sgd", sgd).help("Use regular stochastic gradient descent update").keep(all.save_resume))
+      .add(make_option("adaptive", adaptive).help("Use adaptive, individual learning rates").keep(all.save_resume))
+      .add(make_option("adax", adax).help("Use adaptive learning rates with x^2 instead of g^2x^2"))
+      .add(make_option("invariant", invariant).help("Use safe/importance aware updates").keep(all.save_resume))
+      .add(make_option("normalized", normalized).help("Use per feature normalized updates").keep(all.save_resume))
+      .add(make_option("sparse_l2", g->sparse_l2).default_value(0.f).help("Use per feature normalized updates"))
       .add(make_option("l1_state", all.sd->gravity)
                .keep(all.save_resume)
                .default_value(0.)
-               .help("use per feature normalized updates"))
+               .help("Use per feature normalized updates"))
       .add(make_option("l2_state", all.sd->contraction)
                .keep(all.save_resume)
                .default_value(1.)
-               .help("use per feature normalized updates"));
+               .help("Use per feature normalized updates"));
   options.add_and_parse(new_options);
 
   g->all = &all;

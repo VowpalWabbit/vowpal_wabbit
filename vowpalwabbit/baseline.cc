@@ -163,19 +163,19 @@ base_learner* baseline_setup(VW::setup_base_i& stack_builder)
   bool baseline_option = false;
   std::string loss_function;
 
-  option_group_definition new_options("Baseline options");
+  option_group_definition new_options("Baseline");
   new_options
       .add(make_option("baseline", baseline_option)
                .keep()
                .necessary()
-               .help("Learn an additive baseline (from constant features) and a residual separately in regression."))
-      .add(make_option("lr_multiplier", data->lr_multiplier).help("learning rate multiplier for baseline model"))
+               .help("Learn an additive baseline (from constant features) and a residual separately in regression"))
+      .add(make_option("lr_multiplier", data->lr_multiplier).help("Learning rate multiplier for baseline model"))
       .add(make_option("global_only", data->global_only)
                .keep()
-               .help("use separate example with only global constant for baseline predictions"))
+               .help("Use separate example with only global constant for baseline predictions"))
       .add(make_option("check_enabled", data->check_enabled)
                .keep()
-               .help("only use baseline when the example contains enabled flag"));
+               .help("Only use baseline when the example contains enabled flag"));
 
   if (!options.add_parse_and_check_necessary(new_options)) return nullptr;
 
