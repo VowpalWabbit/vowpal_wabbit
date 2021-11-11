@@ -30,7 +30,7 @@ namespace VW
 {
 namespace model_utils
 {
-  size_t read_model_field(io_buf&, MULTILABEL::labels&);
-  size_t write_model_field(io_buf&, const MULTILABEL::labels&, const std::string&, bool);
+size_t read_model_field(io_buf&, MULTILABEL::labels&);
+size_t write_model_field(io_buf&, const MULTILABEL::labels&, const std::string&, bool);
 }  // namespace model_utils
 }  // namespace VW

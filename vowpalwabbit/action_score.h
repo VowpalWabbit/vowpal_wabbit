@@ -88,7 +88,7 @@ namespace VW
 {
 namespace model_utils
 {
-  size_t read_model_field(io_buf&, ACTION_SCORE::action_score&);
-  size_t write_model_field(io_buf&, const ACTION_SCORE::action_score&, const std::string&, bool);
+size_t read_model_field(io_buf&, ACTION_SCORE::action_score&);
+size_t write_model_field(io_buf&, const ACTION_SCORE::action_score&, const std::string&, bool);
 }  // namespace model_utils
 }  // namespace VW

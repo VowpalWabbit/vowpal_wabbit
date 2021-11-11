@@ -65,7 +65,8 @@ size_t read_model_field(io_buf& io, VW::continuous_actions::pdf_segment& pdf)
   bytes += read_model_field(io, pdf.pdf_value);
   return bytes;
 }
-size_t write_model_field(io_buf& io, const VW::continuous_actions::pdf_segment& pdf, const std::string& upstream_name, bool text)
+size_t write_model_field(
+    io_buf& io, const VW::continuous_actions::pdf_segment& pdf, const std::string& upstream_name, bool text)
 {
   size_t bytes = 0;
   bytes += write_model_field(io, pdf.left, upstream_name + "_left", text);

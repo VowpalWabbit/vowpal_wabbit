@@ -16,7 +16,8 @@ size_t read_model_field(io_buf& io, VW::continuous_actions::reduction_features& 
   bytes += read_model_field(io, carf.chosen_action);
   return bytes;
 }
-size_t write_model_field(io_buf& io, const VW::continuous_actions::reduction_features& carf, const std::string& upstream_name, bool text)
+size_t write_model_field(
+    io_buf& io, const VW::continuous_actions::reduction_features& carf, const std::string& upstream_name, bool text)
 {
   size_t bytes = 0;
   bytes += write_model_field(io, carf.pdf, upstream_name + "_pdf", text);

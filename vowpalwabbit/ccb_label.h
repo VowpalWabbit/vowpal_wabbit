@@ -117,9 +117,9 @@ namespace VW
 {
 namespace model_utils
 {
-  size_t read_model_field(io_buf&, CCB::conditional_contextual_bandit_outcome&);
-  size_t write_model_field(io_buf&, const CCB::conditional_contextual_bandit_outcome&, const std::string&, bool);
-  size_t read_model_field(io_buf&, CCB::label&);
-  size_t write_model_field(io_buf&, const CCB::label&, const std::string&, bool);
+size_t read_model_field(io_buf&, CCB::conditional_contextual_bandit_outcome&);
+size_t write_model_field(io_buf&, const CCB::conditional_contextual_bandit_outcome&, const std::string&, bool);
+size_t read_model_field(io_buf&, CCB::label&);
+size_t write_model_field(io_buf&, const CCB::label&, const std::string&, bool);
 }  // namespace model_utils
 }  // namespace VW

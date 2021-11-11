@@ -193,10 +193,10 @@ using example_factory_t = example& (*)(void*);
 
 namespace model_utils
 {
-  size_t read_model_field(io_buf&, polylabel&);
-  size_t write_model_field(io_buf&, const polylabel&, const std::string&, bool);
-  size_t read_model_field(io_buf&, flat_example&);
-  size_t write_model_field(io_buf&, const flat_example&, const std::string&, bool);
+size_t read_model_field(io_buf&, polylabel&);
+size_t write_model_field(io_buf&, const polylabel&, const std::string&, bool);
+size_t read_model_field(io_buf&, flat_example&);
+size_t write_model_field(io_buf&, const flat_example&, const std::string&, bool);
 }  // namespace model_utils
 }  // namespace VW
 

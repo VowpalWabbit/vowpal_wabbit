@@ -68,7 +68,7 @@ VW::string_view to_string(VW::slates::example_type);
 
 namespace model_utils
 {
-  size_t read_model_field(io_buf&, VW::slates::label&);
-  size_t write_model_field(io_buf&, const VW::slates::label&, const std::string&, bool);
+size_t read_model_field(io_buf&, VW::slates::label&);
+size_t write_model_field(io_buf&, const VW::slates::label&, const std::string&, bool);
 }  // namespace model_utils
 }  // namespace VW

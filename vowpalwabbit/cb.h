@@ -68,11 +68,11 @@ namespace VW
 {
 namespace model_utils
 {
-  size_t read_model_field(io_buf&, CB::cb_class&);
-  size_t write_model_field(io_buf&, const CB::cb_class&, const std::string&, bool);
-  size_t read_model_field(io_buf&, CB::label&);
-  size_t write_model_field(io_buf&, const CB::label&, const std::string&, bool);
-  size_t read_model_field(io_buf&, CB_EVAL::label&);
-  size_t write_model_field(io_buf&, const CB_EVAL::label&, const std::string&, bool);
+size_t read_model_field(io_buf&, CB::cb_class&);
+size_t write_model_field(io_buf&, const CB::cb_class&, const std::string&, bool);
+size_t read_model_field(io_buf&, CB::label&);
+size_t write_model_field(io_buf&, const CB::label&, const std::string&, bool);
+size_t read_model_field(io_buf&, CB_EVAL::label&);
+size_t write_model_field(io_buf&, const CB_EVAL::label&, const std::string&, bool);
 }  // namespace model_utils
 }  // namespace VW

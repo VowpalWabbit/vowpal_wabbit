@@ -32,7 +32,7 @@ const char* to_string(CCB::example_type type);
 
 namespace model_utils
 {
-  size_t read_model_field(io_buf&, CCB::reduction_features&);
-  size_t write_model_field(io_buf&, const CCB::reduction_features&, const std::string&, bool);
+size_t read_model_field(io_buf&, CCB::reduction_features&);
+size_t write_model_field(io_buf&, const CCB::reduction_features&, const std::string&, bool);
 }  // namespace model_utils
 }  // namespace VW

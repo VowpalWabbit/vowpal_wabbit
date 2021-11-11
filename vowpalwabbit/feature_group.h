@@ -481,9 +481,9 @@ namespace VW
 {
 namespace model_utils
 {
-  size_t read_model_field(io_buf&, features&);
-  size_t write_model_field(io_buf&, const features&, const std::string&, bool);
-  size_t read_model_field(io_buf&, VW::namespace_extent&);
-  size_t write_model_field(io_buf&, const VW::namespace_extent&, const std::string&, bool);
+size_t read_model_field(io_buf&, features&);
+size_t write_model_field(io_buf&, const features&, const std::string&, bool);
+size_t read_model_field(io_buf&, VW::namespace_extent&);
+size_t write_model_field(io_buf&, const VW::namespace_extent&, const std::string&, bool);
 }  // namespace model_utils
 }  // namespace VW

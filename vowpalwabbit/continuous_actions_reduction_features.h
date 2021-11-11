@@ -38,7 +38,7 @@ struct reduction_features
 
 namespace model_utils
 {
-  size_t read_model_field(io_buf&, VW::continuous_actions::reduction_features&);
-  size_t write_model_field(io_buf&, const VW::continuous_actions::reduction_features&, const std::string&, bool);
+size_t read_model_field(io_buf&, VW::continuous_actions::reduction_features&);
+size_t write_model_field(io_buf&, const VW::continuous_actions::reduction_features&, const std::string&, bool);
 }  // namespace model_utils
 }  // namespace VW

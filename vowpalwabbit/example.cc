@@ -333,7 +333,8 @@ size_t write_model_field(io_buf& io, const polylabel& poly, const std::string& u
   bytes += write_model_field(io, poly.cs, upstream_name + "_cs", text);
   bytes += write_model_field(io, poly.cb, upstream_name + "_cb", text);
   bytes += write_model_field(io, poly.cb_cont, upstream_name + "_cb_cont", text);
-  bytes += write_model_field(io, poly.conditional_contextual_bandit, upstream_name + "_conditional_contextual_bandit", text);
+  bytes +=
+      write_model_field(io, poly.conditional_contextual_bandit, upstream_name + "_conditional_contextual_bandit", text);
   bytes += write_model_field(io, poly.slates, upstream_name + "_slates", text);
   bytes += write_model_field(io, poly.cb_eval, upstream_name + "_cb_eval", text);
   bytes += write_model_field(io, poly.multilabels, upstream_name + "_multilabels", text);

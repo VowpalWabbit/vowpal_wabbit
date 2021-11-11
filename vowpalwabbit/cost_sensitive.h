@@ -66,9 +66,9 @@ namespace VW
 {
 namespace model_utils
 {
-  size_t read_model_field(io_buf&, COST_SENSITIVE::wclass&);
-  size_t write_model_field(io_buf&, const COST_SENSITIVE::wclass&, const std::string&, bool);
-  size_t read_model_field(io_buf&, COST_SENSITIVE::label&);
-  size_t write_model_field(io_buf&, const COST_SENSITIVE::label&, const std::string&, bool);
+size_t read_model_field(io_buf&, COST_SENSITIVE::wclass&);
+size_t write_model_field(io_buf&, const COST_SENSITIVE::wclass&, const std::string&, bool);
+size_t read_model_field(io_buf&, COST_SENSITIVE::label&);
+size_t write_model_field(io_buf&, const COST_SENSITIVE::label&, const std::string&, bool);
 }  // namespace model_utils
 }  // namespace VW

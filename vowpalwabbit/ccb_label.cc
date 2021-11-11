@@ -256,7 +256,8 @@ size_t read_model_field(io_buf& io, CCB::conditional_contextual_bandit_outcome& 
   bytes += read_model_field(io, ccbo.probabilities);
   return bytes;
 }
-size_t write_model_field(io_buf& io, const CCB::conditional_contextual_bandit_outcome& ccbo, const std::string& upstream_name, bool text)
+size_t write_model_field(
+    io_buf& io, const CCB::conditional_contextual_bandit_outcome& ccbo, const std::string& upstream_name, bool text)
 {
   size_t bytes = 0;
   bytes += write_model_field(io, ccbo.cost, upstream_name + "_cost", text);

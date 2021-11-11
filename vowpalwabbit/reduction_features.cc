@@ -22,7 +22,8 @@ size_t write_model_field(io_buf& io, const reduction_features& rf, const std::st
   size_t bytes = 0;
   bytes += write_model_field(io, rf._ccb_reduction_features, upstream_name + "_ccb_reduction_features", text);
   bytes += write_model_field(io, rf._contact_reduction_features, upstream_name + "_contact_reduction_features", text);
-  bytes += write_model_field(io, rf._simple_label_reduction_features, upstream_name + "_simple_label_reduction_features", text);
+  bytes += write_model_field(
+      io, rf._simple_label_reduction_features, upstream_name + "_simple_label_reduction_features", text);
   return bytes;
 }
 }  // namespace model_utils
