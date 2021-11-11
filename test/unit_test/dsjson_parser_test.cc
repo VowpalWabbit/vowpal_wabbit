@@ -237,7 +237,7 @@ BOOST_AUTO_TEST_CASE(parse_dsjson_cats)
 }
 )";
   auto vw = VW::initialize(
-      "--dsjson --chain_hash --cats 4 --min_value=185 --max_value=23959 --bandwidth 1 --no_stdin --quiet", nullptr,
+      "--dsjson --chain_hash --cats 4 --min_value=185 --max_value=23959 --bandwidth 1 --no_stdin --quiet --audit", nullptr,
       false, nullptr, nullptr);
   auto examples = parse_dsjson(*vw, json_text);
 
@@ -279,7 +279,7 @@ BOOST_AUTO_TEST_CASE(parse_dsjson_cats_no_label)
 }
 )";
   auto vw = VW::initialize(
-      "--dsjson --chain_hash -t --cats 4 --min_value=185 --max_value=23959 --bandwidth 1 --no_stdin --quiet", nullptr,
+      "--dsjson --chain_hash -t --cats 4 --min_value=185 --max_value=23959 --bandwidth 1 --no_stdin --quiet --audit", nullptr,
       false, nullptr, nullptr);
   auto examples = parse_dsjson(*vw, json_text);
 
@@ -319,7 +319,7 @@ BOOST_AUTO_TEST_CASE(parse_dsjson_cats_w_valid_pdf)
 }
 )";
   auto vw = VW::initialize(
-      "--dsjson --chain_hash --cats 4 --min_value=185 --max_value=23959 --bandwidth 1 --no_stdin --quiet", nullptr,
+      "--dsjson --chain_hash --cats 4 --min_value=185 --max_value=23959 --bandwidth 1 --no_stdin --quiet --audit", nullptr,
       false, nullptr, nullptr);
   auto examples = parse_dsjson(*vw, json_text);
 
@@ -373,7 +373,7 @@ BOOST_AUTO_TEST_CASE(parse_dsjson_cats_w_invalid_pdf)
 }
 )";
   auto vw = VW::initialize(
-      "--dsjson --chain_hash --cats 4 --min_value=185 --max_value=23959 --bandwidth 1 --no_stdin --quiet", nullptr,
+      "--dsjson --chain_hash --cats 4 --min_value=185 --max_value=23959 --bandwidth 1 --no_stdin --quiet --audit", nullptr,
       false, nullptr, nullptr);
   auto examples = parse_dsjson(*vw, json_text);
 
@@ -419,7 +419,7 @@ BOOST_AUTO_TEST_CASE(parse_dsjson_cats_chosen_action)
 }
 )";
   auto vw = VW::initialize(
-      "--dsjson --chain_hash --cats 4 --min_value=185 --max_value=23959 --bandwidth 1 --no_stdin --quiet", nullptr,
+      "--dsjson --chain_hash --cats 4 --min_value=185 --max_value=23959 --bandwidth 1 --no_stdin --quiet --audit", nullptr,
       false, nullptr, nullptr);
   auto examples = parse_dsjson(*vw, json_text);
 

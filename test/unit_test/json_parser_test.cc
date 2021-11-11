@@ -106,7 +106,7 @@ BOOST_AUTO_TEST_CASE(parse_json_cats)
 )";
 
   auto vw =
-      VW::initialize("--json --chain_hash --cats 4 --min_value=185 --max_value=23959 --bandwidth 1 --no_stdin --quiet",
+      VW::initialize("--json --chain_hash --cats 4 --min_value=185 --max_value=23959 --bandwidth 1 --no_stdin --quiet --audit",
           nullptr, false, nullptr, nullptr);
   auto examples = parse_json(*vw, json_text);
 
@@ -141,7 +141,7 @@ BOOST_AUTO_TEST_CASE(parse_json_cats_no_label)
 }
 )";
   auto vw = VW::initialize(
-      "--json --chain_hash -t --cats 4 --min_value=185 --max_value=23959 --bandwidth 1 --no_stdin --quiet", nullptr,
+      "--json --chain_hash -t --cats 4 --min_value=185 --max_value=23959 --bandwidth 1 --no_stdin --quiet --audit", nullptr,
       false, nullptr, nullptr);
   auto examples = parse_json(*vw, json_text);
 
@@ -420,7 +420,7 @@ BOOST_AUTO_TEST_CASE(parse_json_dedup_cb)
   uint64_t dedup_id_1 = 848539518;
   uint64_t dedup_id_2 = 3407057455;
 
-  auto vw = VW::initialize("--json --chain_hash --cb_explore_adf --no_stdin --quiet", nullptr, false, nullptr, nullptr);
+  auto vw = VW::initialize("--json --chain_hash --cb_explore_adf --no_stdin --quiet --audit", nullptr, false, nullptr, nullptr);
 
   std::unordered_map<uint64_t, example*> dedup_examples;
 
@@ -529,7 +529,7 @@ BOOST_AUTO_TEST_CASE(parse_json_dedup_ccb)
   uint64_t dedup_id_2 = 3407057455;
 
   auto vw =
-      VW::initialize("--json --chain_hash --ccb_explore_adf --no_stdin --quiet", nullptr, false, nullptr, nullptr);
+      VW::initialize("--json --chain_hash --ccb_explore_adf --no_stdin --quiet --audit", nullptr, false, nullptr, nullptr);
 
   std::unordered_map<uint64_t, example*> dedup_examples;
 
@@ -670,7 +670,7 @@ BOOST_AUTO_TEST_CASE(parse_json_dedup_slates)
   uint64_t dedup_id_1 = 4282062864;
   uint64_t dedup_id_2 = 4199675127;
 
-  auto vw = VW::initialize("--json --chain_hash --slates --no_stdin --quiet", nullptr, false, nullptr, nullptr);
+  auto vw = VW::initialize("--json --chain_hash --slates --no_stdin --quiet --audit", nullptr, false, nullptr, nullptr);
 
   std::unordered_map<uint64_t, example*> dedup_examples;
 
