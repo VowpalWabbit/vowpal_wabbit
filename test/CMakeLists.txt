@@ -10,7 +10,7 @@ endif()
 if(NOT WIN32)
   add_test(
     NAME RunTests_pass_1_onethread
-    COMMAND python3 run_tests.py --fuzzy_compare --exit_first_fail --epsilon 0.001 --clean_dirty --extra_options="--onethread" ${FB_FLAG}
+    COMMAND python3 run_tests.py --fuzzy_compare --exit_first_fail --epsilon 0.001 --clean_dirty --extra_options=--onethread ${FB_FLAG}
     WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
   )
 
