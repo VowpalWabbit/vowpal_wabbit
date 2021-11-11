@@ -3,16 +3,19 @@ learning rate = 0.5
 initial_t = 0
 power_t = 0.5
 using no cache
-Reading datafile = train-sets/ccb_losses.txt
+Reading datafile = train-sets/ccb_audit.dat
 num sources = 1
 Enabled reductions: gd, generate_interactions, scorer-identity, csoaa_ldf-rank, cb_adf, cb_explore_adf_greedy, cb_sample, shared_feature_merger, ccb_explore_adf
 average  since         example        example  current  current  current
 loss     last          counter         weight    label  predict features
--2.000000 -2.000000            1            1.0 2:-3,0:-1      2,0       18
+    n.a.     n.a.            1            1.0        ?        0        2
+    n.a.     n.a.            2            2.0        ?        0        2
+    n.a.     n.a.            3            3.0        ?        0        2
+    n.a.     n.a.            4            4.0        ?        0        2
 
 finished run
-number of examples = 1
-weighted example sum = 1.000000
+number of examples = 4
+weighted example sum = 4.000000
 weighted label sum = 0.000000
-average loss = -2.000000
-total feature number = 18
+average loss = n.a.
+total feature number = 8
