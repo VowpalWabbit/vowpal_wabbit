@@ -164,7 +164,7 @@ VW::LEARNER::base_learner* metrics_setup(VW::setup_base_i& stack_builder)
   option_group_definition new_options("Debug: Metrics");
   new_options.add(make_option("extra_metrics", data->out_file)
                       .necessary()
-                      .help("Specify filename to write metrics to. Note: There is no fixed schema."));
+                      .help("Specify filename to write metrics to. Note: There is no fixed schema"));
 
   if (!options.add_parse_and_check_necessary(new_options)) return nullptr;
 

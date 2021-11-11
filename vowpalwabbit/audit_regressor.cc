@@ -266,7 +266,7 @@ VW::LEARNER::base_learner* audit_regressor_setup(VW::setup_base_i& stack_builder
   new_options.add(make_option("audit_regressor", out_file)
                       .keep()
                       .necessary()
-                      .help("stores feature names and their regressor values. Same dataset must be used for both "
+                      .help("Stores feature names and their regressor values. Same dataset must be used for both "
                             "regressor training and this mode."));
 
   if (!options.add_parse_and_check_necessary(new_options)) return nullptr;

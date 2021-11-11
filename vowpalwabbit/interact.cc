@@ -146,7 +146,7 @@ VW::LEARNER::base_learner* interact_setup(VW::setup_base_i& stack_builder)
   options_i& options = *stack_builder.get_options();
   VW::workspace& all = *stack_builder.get_all_pointer();
   std::string s;
-  option_group_definition new_options("Interact via elementwise multiplication");
+  option_group_definition new_options("Interact via Elementwise Multiplication");
   new_options.add(make_option("interact", s)
                       .keep()
                       .necessary()

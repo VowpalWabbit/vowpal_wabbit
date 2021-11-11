@@ -191,7 +191,7 @@ base_learner* explore_eval_setup(VW::setup_base_i& stack_builder)
   VW::workspace& all = *stack_builder.get_all_pointer();
   auto data = VW::make_unique<explore_eval>();
   bool explore_eval_option = false;
-  option_group_definition new_options("Explore evaluation");
+  option_group_definition new_options("Explore Evaluation");
   new_options
       .add(make_option("explore_eval", explore_eval_option)
                .keep()

@@ -239,7 +239,7 @@ VW::LEARNER::base_learner* slates_setup(VW::setup_base_i& stack_builder)
   auto data = VW::make_unique<slates_data>();
   bool slates_option = false;
   option_group_definition new_options("Slates");
-  new_options.add(make_option("slates", slates_option).keep().necessary().help("EXPERIMENTAL"));
+  new_options.add(make_option("slates", slates_option).keep().necessary().help("Enable slates reduction"));
 
   if (!options.add_parse_and_check_necessary(new_options)) { return nullptr; }
 
