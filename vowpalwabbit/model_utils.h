@@ -5,9 +5,11 @@
 
 #include "io_buf.h"
 #include "cache.h"
+#include "v_array.h"
 #include <set>
 #include <map>
 #include <queue>
+#include <string>
 
 #include <fmt/format.h>
 #include <type_traits>
@@ -97,6 +99,64 @@ size_t write_model_field(io_buf& io, const T& var, const std::string& name_or_re
   return details::check_length_matches(io.bin_write_fixed(data, len), len);
 }
 
+size_t read_model_field(io_buf&, std::string&);
+size_t write_model_field(io_buf&, const std::string&, const std::string&, bool);
+template <typename T>
+size_t read_model_field(io_buf&, std::set<T>&);
+template <typename T>
+size_t write_model_field(io_buf&, const std::set<T>&, const std::string&, bool);
+template <typename T>
+size_t read_model_field(io_buf&, std::vector<T>&);
+template <typename T>
+size_t write_model_field(io_buf&, const std::vector<T>&, const std::string&, bool);
+template <typename T>
+size_t read_model_field(io_buf&, v_array<T>&);
+template <typename T>
+size_t write_model_field(io_buf&, const v_array<T>&, const std::string&, bool);
+template <typename F, typename S>
+size_t read_model_field(io_buf&, std::pair<F, S>&);
+template <typename F, typename S>
+size_t write_model_field(io_buf&, const std::pair<F, S>&, const std::string&, bool);
+template <typename T>
+size_t read_model_field(io_buf&, std::priority_queue<T>&);
+template <typename T>
+size_t write_model_field(io_buf&, const std::priority_queue<T>&, const std::string&, bool);
+template <typename K, typename V>
+size_t read_model_field(io_buf&, std::map<K, V>&);
+template <typename K, typename V>
+size_t write_model_field(io_buf&, const std::map<K, V>&, const std::string&, bool);
+
+inline size_t read_model_field(io_buf& io, std::string& str)
+{
+  size_t bytes = 0;
+  uint64_t str_size;
+  bytes += read_model_field(io, str_size);
+  std::ostringstream os;
+  for (uint64_t i = 0; i < str_size; ++i)
+  {
+    char c;
+    bytes += read_model_field(io, c);
+    os << c;
+  }
+  str = os.str();
+  return bytes;
+}
+
+inline size_t write_model_field(io_buf& io, const std::string& str, const std::string& upstream_name, bool text)
+{
+  if (upstream_name.find("{}") != std::string::npos) { THROW("Field template not allowed for string."); }
+  size_t bytes = 0;
+  uint64_t str_size = static_cast<uint64_t>(str.size());
+  bytes += write_model_field(io, str_size, upstream_name + ".size()", text);
+  uint64_t i = 0;
+  for (const auto c : str)
+  {
+    bytes += write_model_field(io, c, fmt::format("{}[{}]", upstream_name, i), text);
+    ++i;
+  }
+  return bytes;
+}
+
 template <typename T>
 size_t read_model_field(io_buf& io, std::set<T>& set)
 {
@@ -147,6 +207,33 @@ template <typename T>
 size_t write_model_field(io_buf& io, const std::vector<T>& vec, const std::string& upstream_name, bool text)
 {
   if (upstream_name.find("{}") != std::string::npos) { THROW("Field template not allowed for vector."); }
+  size_t bytes = 0;
+  uint64_t vec_size = static_cast<uint64_t>(vec.size());
+  bytes += write_model_field(io, vec_size, upstream_name + ".size()", text);
+  for (uint64_t i = 0; i < vec_size; ++i)
+  { bytes += write_model_field(io, vec[i], fmt::format("{}[{}]", upstream_name, i), text); }
+  return bytes;
+}
+
+template <typename T>
+size_t read_model_field(io_buf& io, v_array<T>& vec)
+{
+  size_t bytes = 0;
+  uint64_t vec_size;
+  bytes += read_model_field(io, vec_size);
+  for (uint64_t i = 0; i < vec_size; ++i)
+  {
+    T v;
+    bytes += read_model_field(io, v);
+    vec.push_back(v);
+  }
+  return bytes;
+}
+
+template <typename T>
+size_t write_model_field(io_buf& io, const v_array<T>& vec, const std::string& upstream_name, bool text)
+{
+  if (upstream_name.find("{}") != std::string::npos) { THROW("Field template not allowed for v_array."); }
   size_t bytes = 0;
   uint64_t vec_size = static_cast<uint64_t>(vec.size());
   bytes += write_model_field(io, vec_size, upstream_name + ".size()", text);

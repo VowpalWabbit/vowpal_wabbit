@@ -6,6 +6,7 @@
 #include "ccb_reduction_features.h"
 #include "continuous_actions_reduction_features.h"
 #include "simple_label.h"
+#include "io_buf.h"
 
 /*
  * class reduction_features
@@ -26,6 +27,16 @@
  *     features_data fd;
  *     auto& data = fd.get<data_type>();
  */
+class reduction_features;
+
+namespace VW
+{
+namespace model_utils
+{
+  size_t read_model_field(io_buf&, reduction_features&);
+  size_t write_model_field(io_buf&, const reduction_features&, const std::string&, bool);
+}  // namespace model_utils
+}  // namespace VW
 
 class reduction_features
 {
@@ -47,6 +58,8 @@ public:
     _contact_reduction_features.clear();
     _simple_label_reduction_features.reset_to_default();
   }
+  friend size_t VW::model_utils::read_model_field(io_buf&, reduction_features&);
+  friend size_t VW::model_utils::write_model_field(io_buf&, const reduction_features&, const std::string&, bool);
 };
 
 template <>

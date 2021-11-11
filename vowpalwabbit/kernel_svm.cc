@@ -22,6 +22,7 @@
 #include "vw_allreduce.h"
 #include "rand48.h"
 #include "reductions.h"
+#include "model_utils.h"
 
 #include "io/logger.h"
 
@@ -249,7 +250,7 @@ int save_load_flat_example(io_buf& model_file, bool read, flat_example*& fec)
   if (read)
   {
     fec = &calloc_or_throw<flat_example>();
-    brw = model_file.bin_read_fixed(reinterpret_cast<char*>(fec), sizeof(flat_example));
+    brw = VW::model_utils::read_model_field(model_file, *fec);
 
     if (brw > 0)
     {
@@ -280,7 +281,7 @@ int save_load_flat_example(io_buf& model_file, bool read, flat_example*& fec)
   }
   else
   {
-    brw = model_file.bin_write_fixed(reinterpret_cast<char*>(fec), sizeof(flat_example));
+    brw = VW::model_utils::write_model_field(model_file, *fec, "flat_example", false);
 
     if (brw > 0)
     {
@@ -881,3 +882,12 @@ VW::LEARNER::base_learner* kernel_svm_setup(VW::setup_base_i& stack_builder)
 
   return make_base(*l);
 }
+
+/*namespace VW
+{
+namespace namespace model_utils
+{
+size_t read_model_field(io_buf&, VW::automl::scored_config&);
+size_t write_model_field(io_buf&, const VW::automl::exclusion_config&, const std::string&, bool);
+} // namesapce model_utils
+} // namespace VW*/

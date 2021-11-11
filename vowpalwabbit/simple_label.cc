@@ -15,6 +15,7 @@
 #include "parse_primitives.h"
 #include "vw.h"
 #include "vw_string_view_fmt.h"
+#include "model_utils.h"
 
 #include "io/logger.h"
 // needed for printing ranges of objects (eg: all elements of a vector)
@@ -84,3 +85,37 @@ bool summarize_holdout_set(VW::workspace& all, size_t& no_win_counter)
     no_win_counter++;
   return false;
 }
+
+namespace VW
+{
+namespace model_utils
+{
+size_t read_model_field(io_buf& io, label_data& ld)
+{
+  size_t bytes = 0;
+  bytes += read_model_field(io, ld.label);
+  return bytes;
+}
+size_t write_model_field(io_buf& io, const label_data& ld, const std::string& upstream_name, bool text)
+{
+  size_t bytes = 0;
+  bytes += write_model_field(io, ld.label, upstream_name + "_label", text);
+  return bytes;
+}
+size_t read_model_field(io_buf& io, simple_label_reduction_features& slrf)
+{
+  size_t bytes = 0;
+  bytes += read_model_field(io, slrf.weight);
+  bytes += read_model_field(io, slrf.initial);
+
+  return bytes;
+}
+size_t write_model_field(io_buf& io, const simple_label_reduction_features& slrf, const std::string& upstream_name, bool text)
+{
+  size_t bytes = 0;
+  bytes += write_model_field(io, slrf.weight, upstream_name + "_weight", text);
+  bytes += write_model_field(io, slrf.initial, upstream_name + "_initial", text);
+  return bytes;
+}
+}  // namespace model_utils
+}  // namespace VW

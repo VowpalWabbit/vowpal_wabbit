@@ -11,6 +11,7 @@
 #include "example.h"
 #include "parse_primitives.h"
 #include "shared_data.h"
+#include "model_utils.h"
 
 #include "io/logger.h"
 
@@ -311,3 +312,40 @@ bool ec_is_example_header(example const& ec)  // example headers look like "shar
   return true;
 }
 }  // namespace COST_SENSITIVE
+
+namespace VW
+{
+namespace model_utils
+{
+size_t read_model_field(io_buf& io, COST_SENSITIVE::wclass& wc)
+{
+  size_t bytes = 0;
+  bytes += read_model_field(io, wc.x);
+  bytes += read_model_field(io, wc.class_index);
+  bytes += read_model_field(io, wc.partial_prediction);
+  bytes += read_model_field(io, wc.wap_value);
+  return bytes;
+}
+size_t write_model_field(io_buf& io, const COST_SENSITIVE::wclass& wc, const std::string& upstream_name, bool text)
+{
+  size_t bytes = 0;
+  bytes += write_model_field(io, wc.x, upstream_name + "_x", text);
+  bytes += write_model_field(io, wc.class_index, upstream_name + "_class_index", text);
+  bytes += write_model_field(io, wc.partial_prediction, upstream_name + "_partial_prediction", text);
+  bytes += write_model_field(io, wc.wap_value, upstream_name + "_wap_value", text);
+  return bytes;
+}
+size_t read_model_field(io_buf& io, COST_SENSITIVE::label& cs)
+{
+  size_t bytes = 0;
+  bytes += read_model_field(io, cs.costs);
+  return bytes;
+}
+size_t write_model_field(io_buf& io, const COST_SENSITIVE::label& cs, const std::string& upstream_name, bool text)
+{
+  size_t bytes = 0;
+  bytes += write_model_field(io, cs.costs, upstream_name + "_costs", text);
+  return bytes;
+}
+}  // namespace model_utils
+}  // namespace VW

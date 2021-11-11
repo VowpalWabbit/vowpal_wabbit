@@ -6,6 +6,7 @@
 #include "v_array.h"
 #include "prob_dist_cont.h"
 #include "io_buf.h"
+#include "model_utils.h"
 
 using namespace std;
 namespace VW
@@ -53,4 +54,24 @@ bool is_valid_pdf(probability_density_function& pdf)
 }
 
 }  // namespace continuous_actions
+
+namespace model_utils
+{
+size_t read_model_field(io_buf& io, VW::continuous_actions::pdf_segment& pdf)
+{
+  size_t bytes = 0;
+  bytes += read_model_field(io, pdf.left);
+  bytes += read_model_field(io, pdf.right);
+  bytes += read_model_field(io, pdf.pdf_value);
+  return bytes;
+}
+size_t write_model_field(io_buf& io, const VW::continuous_actions::pdf_segment& pdf, const std::string& upstream_name, bool text)
+{
+  size_t bytes = 0;
+  bytes += write_model_field(io, pdf.left, upstream_name + "_left", text);
+  bytes += write_model_field(io, pdf.right, upstream_name + "_right", text);
+  bytes += write_model_field(io, pdf.pdf_value, upstream_name + "_pdf_value", text);
+  return bytes;
+}
+}  // namespace model_utils
 }  // namespace VW

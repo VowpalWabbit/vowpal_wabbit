@@ -6,6 +6,7 @@
 #include <string>
 #include <vector>
 #include "v_array.h"
+#include "io_buf.h"
 
 namespace VW
 {
@@ -37,4 +38,10 @@ std::string to_string(const probability_density_function& pdf, bool print_newlin
 bool is_valid_pdf(probability_density_function& pdf);
 
 }  // namespace continuous_actions
+
+namespace model_utils
+{
+  size_t read_model_field(io_buf&, VW::continuous_actions::pdf_segment&);
+  size_t write_model_field(io_buf&, const VW::continuous_actions::pdf_segment&, const std::string&, bool);
+}  // namespace model_utils
 }  // namespace VW

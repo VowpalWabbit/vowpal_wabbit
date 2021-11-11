@@ -1,0 +1,36 @@
+using l2 regularization = 1
+Lambda = 1
+Kernel = linear
+Num weight bits = 18
+learning rate = 0.5
+initial_t = 0
+power_t = 0.5
+using no cache
+Reading datafile = train-sets/rcv1_smaller.dat
+num sources = 1
+Enabled reductions: ksvm, scorer-identity, count_label
+average  since         example        example  current  current  current
+loss     last          counter         weight    label  predict features
+0.058760 0.058760            1            1.0   1.0000   0.9412       50
+0.040302 0.021845            2            2.0  -1.0000  -0.9782      103
+0.033832 0.027361            4            4.0  -1.0000  -1.0601      134
+0.073930 0.114028            8            8.0  -1.0000  -1.2322      145
+0.086287 0.098643           16           16.0   1.0000   0.8333       23
+0.083680 0.081074           32           32.0  -1.0000  -0.9091       31
+0.087104 0.090529           64           64.0  -1.0000  -1.0051       60
+0.076018 0.064932          128          128.0   1.0000   0.7974      105
+
+finished run
+number of examples = 250
+weighted example sum = 250.000000
+weighted label sum = -22.000000
+average loss = 0.064405
+best constant = -1.000000
+best constant's loss = 0.912000
+total feature number = 19870
+Num support = 365
+Number of kernel evaluations = 388155 Number of cache queries = 272489
+Total loss = 16.101147
+Done freeing model
+Done freeing kernel params
+Done with finish 

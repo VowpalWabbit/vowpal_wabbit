@@ -13,6 +13,7 @@
 // TODO: This header can be removed once type and explicit_included_actions are removed from the label
 #include "ccb_reduction_features.h"
 #include "vw_string_view.h"
+#include "io_buf.h"
 
 namespace CCB
 {
@@ -111,3 +112,14 @@ size_t read_cached_label(CCB::label& ld, io_buf& cache);
 
 extern label_parser ccb_label_parser;
 }  // namespace CCB
+
+namespace VW
+{
+namespace model_utils
+{
+  size_t read_model_field(io_buf&, CCB::conditional_contextual_bandit_outcome&);
+  size_t write_model_field(io_buf&, const CCB::conditional_contextual_bandit_outcome&, const std::string&, bool);
+  size_t read_model_field(io_buf&, CCB::label&);
+  size_t write_model_field(io_buf&, const CCB::label&, const std::string&, bool);
+}  // namespace model_utils
+}  // namespace VW

@@ -8,6 +8,7 @@
 
 #include "label_parser.h"
 #include "v_array.h"
+#include "io_buf.h"
 
 struct example;
 namespace VW
@@ -60,3 +61,14 @@ void print_update(
     VW::workspace& all, bool is_test, example& ec, std::vector<example*>* ec_seq, bool multilabel, uint32_t prediction);
 bool ec_is_example_header(example const& ec);  // example headers look like "0:-1" or just "shared"
 }  // namespace COST_SENSITIVE
+
+namespace VW
+{
+namespace model_utils
+{
+  size_t read_model_field(io_buf&, COST_SENSITIVE::wclass&);
+  size_t write_model_field(io_buf&, const COST_SENSITIVE::wclass&, const std::string&, bool);
+  size_t read_model_field(io_buf&, COST_SENSITIVE::label&);
+  size_t write_model_field(io_buf&, const COST_SENSITIVE::label&, const std::string&, bool);
+}  // namespace model_utils
+}  // namespace VW

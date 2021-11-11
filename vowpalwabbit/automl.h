@@ -176,12 +176,12 @@ private:
 namespace model_utils
 {
 template <typename CMType>
-size_t write_model_field(io_buf&, const VW::automl::automl<CMType>&, const std::string&, bool);
+size_t read_model_field(io_buf&, VW::automl::automl<CMType>&);
 size_t read_model_field(io_buf&, VW::automl::exclusion_config&);
 size_t read_model_field(io_buf&, VW::automl::scored_config&);
 size_t read_model_field(io_buf&, VW::automl::interaction_config_manager&);
 template <typename CMType>
-size_t read_model_field(io_buf&, VW::automl::automl<CMType>&);
+size_t write_model_field(io_buf&, const VW::automl::automl<CMType>&, const std::string&, bool);
 size_t write_model_field(io_buf&, const VW::automl::exclusion_config&, const std::string&, bool);
 size_t write_model_field(io_buf&, const VW::automl::scored_config&, const std::string&, bool);
 size_t write_model_field(io_buf&, const VW::automl::interaction_config_manager&, const std::string&, bool);

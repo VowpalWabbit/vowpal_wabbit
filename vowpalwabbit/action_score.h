@@ -7,6 +7,7 @@
 #include "io/io_adapter.h"
 #include <iterator>
 #include "v_array.h"
+#include "io_buf.h"
 
 namespace ACTION_SCORE
 {
@@ -82,3 +83,12 @@ void print_action_score(VW::io::writer* f, const v_array<action_score>& a_s, con
 
 std::ostream& operator<<(std::ostream& os, const action_score& a_s);
 }  // namespace ACTION_SCORE
+
+namespace VW
+{
+namespace model_utils
+{
+  size_t read_model_field(io_buf&, ACTION_SCORE::action_score&);
+  size_t write_model_field(io_buf&, const ACTION_SCORE::action_score&, const std::string&, bool);
+}  // namespace model_utils
+}  // namespace VW

@@ -10,6 +10,7 @@
 #include "cb_label_parser.h"
 #include "cb_continuous_label.h"
 #include "debug_print.h"
+#include "model_utils.h"
 
 #include "io/logger.h"
 
@@ -167,4 +168,36 @@ std::string to_string(const continuous_label& lbl)
   return strstream.str();
 }
 }  // namespace cb_continuous
+
+namespace model_utils
+{
+size_t read_model_field(io_buf& io, VW::cb_continuous::continuous_label_elm& cle)
+{
+  size_t bytes = 0;
+  bytes += read_model_field(io, cle.action);
+  bytes += read_model_field(io, cle.cost);
+  bytes += read_model_field(io, cle.pdf_value);
+  return bytes;
+}
+size_t write_model_field(io_buf& io, const VW::cb_continuous::continuous_label_elm& cle, const std::string& upstream_name, bool text)
+{
+  size_t bytes = 0;
+  bytes += write_model_field(io, cle.action, upstream_name + "_action", text);
+  bytes += write_model_field(io, cle.cost, upstream_name + "_cost", text);
+  bytes += write_model_field(io, cle.pdf_value, upstream_name + "_pdf_value", text);
+  return bytes;
+}
+size_t read_model_field(io_buf& io, VW::cb_continuous::continuous_label& cl)
+{
+  size_t bytes = 0;
+  bytes += read_model_field(io, cl.costs);
+  return bytes;
+}
+size_t write_model_field(io_buf& io, const VW::cb_continuous::continuous_label& cl, const std::string& upstream_name, bool text)
+{
+  size_t bytes = 0;
+  bytes += write_model_field(io, cl.costs, upstream_name + "_costs", text);
+  return bytes;
+}
+}  // namespace model_utils
 }  // namespace VW

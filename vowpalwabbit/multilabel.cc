@@ -9,6 +9,7 @@
 #include "vw_string_view_fmt.h"
 #include "parse_primitives.h"
 #include "shared_data.h"
+#include "model_utils.h"
 
 #include "io/logger.h"
 // needed for printing ranges of objects (eg: all elements of a vector)
@@ -189,3 +190,22 @@ void output_example(VW::workspace& all, example& ec)
   print_update(all, test_label(ld), ec);
 }
 }  // namespace MULTILABEL
+
+namespace VW
+{
+namespace model_utils
+{
+size_t read_model_field(io_buf& io, MULTILABEL::labels& multi)
+{
+  size_t bytes = 0;
+  bytes += read_model_field(io, multi.label_v);
+  return bytes;
+}
+size_t write_model_field(io_buf& io, const MULTILABEL::labels& multi, const std::string& upstream_name, bool text)
+{
+  size_t bytes = 0;
+  bytes += write_model_field(io, multi.label_v, upstream_name + "_label_v", text);
+  return bytes;
+}
+}  // namespace model_utils
+}  // namespace VW

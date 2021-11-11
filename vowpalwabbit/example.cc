@@ -8,6 +8,7 @@
 #include "gd.h"
 #include "simple_label_parser.h"
 #include "interactions.h"
+#include "model_utils.h"
 
 float calculate_total_sum_features_squared(bool permutations, example& ec)
 {
@@ -306,6 +307,72 @@ void return_multiple_example(VW::workspace& all, v_array<example*>& examples)
   examples.clear();
 }
 
+namespace model_utils
+{
+size_t read_model_field(io_buf& io, polylabel& poly)
+{
+  size_t bytes = 0;
+  bytes += read_model_field(io, poly.empty);
+  bytes += read_model_field(io, poly.simple);
+  bytes += read_model_field(io, poly.multi);
+  bytes += read_model_field(io, poly.cs);
+  bytes += read_model_field(io, poly.cb);
+  bytes += read_model_field(io, poly.cb_cont);
+  bytes += read_model_field(io, poly.conditional_contextual_bandit);
+  bytes += read_model_field(io, poly.slates);
+  bytes += read_model_field(io, poly.cb_eval);
+  bytes += read_model_field(io, poly.multilabels);
+  return bytes;
+}
+size_t write_model_field(io_buf& io, const polylabel& poly, const std::string& upstream_name, bool text)
+{
+  size_t bytes = 0;
+  bytes += write_model_field(io, poly.empty, upstream_name + "_empty", text);
+  bytes += write_model_field(io, poly.simple, upstream_name + "_simple", text);
+  bytes += write_model_field(io, poly.multi, upstream_name + "_multi", text);
+  bytes += write_model_field(io, poly.cs, upstream_name + "_cs", text);
+  bytes += write_model_field(io, poly.cb, upstream_name + "_cb", text);
+  bytes += write_model_field(io, poly.cb_cont, upstream_name + "_cb_cont", text);
+  bytes += write_model_field(io, poly.conditional_contextual_bandit, upstream_name + "_conditional_contextual_bandit", text);
+  bytes += write_model_field(io, poly.slates, upstream_name + "_slates", text);
+  bytes += write_model_field(io, poly.cb_eval, upstream_name + "_cb_eval", text);
+  bytes += write_model_field(io, poly.multilabels, upstream_name + "_multilabels", text);
+  return bytes;
+}
+size_t read_model_field(io_buf& io, flat_example& fe)
+{
+  size_t bytes = 0;
+  bool tag_is_null;
+  bytes += read_model_field(io, fe.l);
+  bytes += read_model_field(io, fe._reduction_features);
+  bytes += read_model_field(io, fe.tag_len);
+  bytes += read_model_field(io, tag_is_null);
+  if (!tag_is_null) { bytes += read_model_field(io, *fe.tag); }
+  bytes += read_model_field(io, fe.example_counter);
+  bytes += read_model_field(io, fe.ft_offset);
+  bytes += read_model_field(io, fe.global_weight);
+  bytes += read_model_field(io, fe.num_features);
+  bytes += read_model_field(io, fe.total_sum_feat_sq);
+  bytes += read_model_field(io, fe.fs);
+  return bytes;
+}
+size_t write_model_field(io_buf& io, const flat_example& fe, const std::string& upstream_name, bool text)
+{
+  size_t bytes = 0;
+  bytes += write_model_field(io, fe.l, upstream_name + "_l", text);
+  bytes += write_model_field(io, fe._reduction_features, upstream_name + "_reduction_features", text);
+  bytes += write_model_field(io, fe.tag_len, upstream_name + "_tag_len", text);
+  bytes += write_model_field(io, fe.tag == nullptr, upstream_name + "_tag_is_null", text);
+  if (!(fe.tag == nullptr)) { bytes += write_model_field(io, *fe.tag, upstream_name + "_tag", text); }
+  bytes += write_model_field(io, fe.example_counter, upstream_name + "_example_counter", text);
+  bytes += write_model_field(io, fe.ft_offset, upstream_name + "_ft_offset", text);
+  bytes += write_model_field(io, fe.global_weight, upstream_name + "_global_weight", text);
+  bytes += write_model_field(io, fe.num_features, upstream_name + "_num_features", text);
+  bytes += write_model_field(io, fe.total_sum_feat_sq, upstream_name + "_total_sum_feat_sq", text);
+  bytes += write_model_field(io, fe.fs, upstream_name + "_fs", text);
+  return bytes;
+}
+}  // namespace model_utils
 }  // namespace VW
 
 std::string debug_depth_indent_string(const example& ec)

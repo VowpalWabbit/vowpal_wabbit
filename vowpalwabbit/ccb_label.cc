@@ -19,6 +19,7 @@
 #include "parse_primitives.h"
 #include "reduction_features.h"
 #include "label_parser.h"
+#include "model_utils.h"
 
 #include "io/logger.h"
 
@@ -243,3 +244,45 @@ label_parser ccb_label_parser = {
     // label type
     VW::label_type_t::ccb};
 }  // namespace CCB
+
+namespace VW
+{
+namespace model_utils
+{
+size_t read_model_field(io_buf& io, CCB::conditional_contextual_bandit_outcome& ccbo)
+{
+  size_t bytes = 0;
+  bytes += read_model_field(io, ccbo.cost);
+  bytes += read_model_field(io, ccbo.probabilities);
+  return bytes;
+}
+size_t write_model_field(io_buf& io, const CCB::conditional_contextual_bandit_outcome& ccbo, const std::string& upstream_name, bool text)
+{
+  size_t bytes = 0;
+  bytes += write_model_field(io, ccbo.cost, upstream_name + "_cost", text);
+  bytes += write_model_field(io, ccbo.probabilities, upstream_name + "_probabilities", text);
+  return bytes;
+}
+size_t read_model_field(io_buf& io, CCB::label& ccb)
+{
+  size_t bytes = 0;
+  bool outcome_is_null;
+  bytes += read_model_field(io, ccb.type);
+  bytes += read_model_field(io, outcome_is_null);
+  if (!outcome_is_null) { bytes += read_model_field(io, *ccb.outcome); }
+  bytes += read_model_field(io, ccb.explicit_included_actions);
+  bytes += read_model_field(io, ccb.weight);
+  return bytes;
+}
+size_t write_model_field(io_buf& io, const CCB::label& ccb, const std::string& upstream_name, bool text)
+{
+  size_t bytes = 0;
+  bytes += write_model_field(io, ccb.type, upstream_name + "_type", text);
+  bytes += write_model_field(io, ccb.outcome == nullptr, upstream_name + "_outcome_is_null", text);
+  if (!(ccb.outcome == nullptr)) { bytes += write_model_field(io, *ccb.outcome, upstream_name + "_outcome", text); }
+  bytes += write_model_field(io, ccb.explicit_included_actions, upstream_name + "_explicit_included_actions", text);
+  bytes += write_model_field(io, ccb.weight, upstream_name + "_weight", text);
+  return bytes;
+}
+}  // namespace model_utils
+}  // namespace VW

@@ -13,6 +13,7 @@
 #include "cb_label_parser.h"
 #include "vw_string_view.h"
 #include "shared_data.h"
+#include "model_utils.h"
 
 #include "io/logger.h"
 
@@ -228,3 +229,56 @@ label_parser cb_eval = {
     VW::label_type_t::cb_eval};
 
 }  // namespace CB_EVAL
+
+namespace VW
+{
+namespace model_utils
+{
+size_t read_model_field(io_buf& io, CB::cb_class& cbc)
+{
+  size_t bytes = 0;
+  bytes += read_model_field(io, cbc.cost);
+  bytes += read_model_field(io, cbc.action);
+  bytes += read_model_field(io, cbc.probability);
+  bytes += read_model_field(io, cbc.partial_prediction);
+  return bytes;
+}
+size_t write_model_field(io_buf& io, const CB::cb_class& cbc, const std::string& upstream_name, bool text)
+{
+  size_t bytes = 0;
+  bytes += write_model_field(io, cbc.cost, upstream_name + "_cost", text);
+  bytes += write_model_field(io, cbc.action, upstream_name + "_action", text);
+  bytes += write_model_field(io, cbc.probability, upstream_name + "_probability", text);
+  bytes += write_model_field(io, cbc.partial_prediction, upstream_name + "_partial_prediction", text);
+  return bytes;
+}
+size_t read_model_field(io_buf& io, CB::label& cb)
+{
+  size_t bytes = 0;
+  bytes += read_model_field(io, cb.costs);
+  bytes += read_model_field(io, cb.weight);
+  return bytes;
+}
+size_t write_model_field(io_buf& io, const CB::label& cb, const std::string& upstream_name, bool text)
+{
+  size_t bytes = 0;
+  bytes += write_model_field(io, cb.costs, upstream_name + "_costs", text);
+  bytes += write_model_field(io, cb.weight, upstream_name + "_weight", text);
+  return bytes;
+}
+size_t read_model_field(io_buf& io, CB_EVAL::label& cbe)
+{
+  size_t bytes = 0;
+  bytes += read_model_field(io, cbe.action);
+  bytes += read_model_field(io, cbe.event);
+  return bytes;
+}
+size_t write_model_field(io_buf& io, const CB_EVAL::label& cbe, const std::string& upstream_name, bool text)
+{
+  size_t bytes = 0;
+  bytes += write_model_field(io, cbe.action, upstream_name + "_action", text);
+  bytes += write_model_field(io, cbe.event, upstream_name + "_event", text);
+  return bytes;
+}
+}  // namespace model_utils
+}  // namespace VW

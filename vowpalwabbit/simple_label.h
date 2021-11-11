@@ -4,6 +4,7 @@
 #pragma once
 
 #include <cstddef>
+#include "io_buf.h"
 
 struct example;
 namespace VW
@@ -33,6 +34,17 @@ struct simple_label_reduction_features
     initial = 0.f;
   }
 };
+
+namespace VW
+{
+namespace model_utils
+{
+  size_t read_model_field(io_buf&, label_data&);
+  size_t write_model_field(io_buf&, const label_data&, const std::string&, bool);
+  size_t read_model_field(io_buf&, simple_label_reduction_features&);
+  size_t write_model_field(io_buf&, const simple_label_reduction_features&, const std::string&, bool);
+}  // namespace model_utils
+}  // namespace VW
 
 void return_simple_example(VW::workspace& all, void*, example& ec);
 bool summarize_holdout_set(VW::workspace& all, size_t& no_win_counter);

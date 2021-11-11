@@ -348,6 +348,7 @@
     <ClCompile Include="classweight.cc" />
     <ClCompile Include="conditional_contextual_bandit.cc" />
     <ClCompile Include="confidence.cc" />
+    <ClInclude Include="continuous_actions_reduction_features.cc" />
     <ClCompile Include="cbzo.cc" />
     <ClCompile Include="crossplat_compat.cc" />
     <ClCompile Include="cost_sensitive.cc" />
@@ -415,6 +416,7 @@
     <ClCompile Include="prob_dist_cont.cc" />
     <ClCompile Include="rand48.cc" />
     <ClCompile Include="recall_tree.cc" />
+    <ClInclude Include="reduction_features.cc" />
     <ClCompile Include="count_label.cc" />
     <ClCompile Include="sample_pdf.cc" />
     <ClCompile Include="scorer.cc" />

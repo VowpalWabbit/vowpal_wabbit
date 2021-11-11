@@ -281,6 +281,7 @@ set(vw_all_sources
   classweight.cc
   conditional_contextual_bandit.cc
   confidence.cc
+  continuous_actions_reduction_features.cc
   cbzo.cc
   cost_sensitive.cc
   crossplat_compat.cc
@@ -345,6 +346,7 @@ set(vw_all_sources
   prob_dist_cont.cc
   rand48.cc
   recall_tree.cc
+  reduction_features.cc
   sample_pdf.cc
   scorer.cc
   search_dep_parser.cc

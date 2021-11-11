@@ -7,6 +7,7 @@
 #include "v_array.h"
 #include "io_buf.h"
 #include "global_data.h"
+#include "model_utils.h"
 
 #include "io/logger.h"
 
@@ -39,3 +40,24 @@ std::ostream& operator<<(std::ostream& os, const action_score& a_s)
   return os;
 }
 }  // namespace ACTION_SCORE
+
+namespace VW
+{
+namespace model_utils
+{
+size_t read_model_field(io_buf& io, ACTION_SCORE::action_score& as)
+{
+  size_t bytes = 0;
+  bytes += read_model_field(io, as.action);
+  bytes += read_model_field(io, as.score);
+  return bytes;
+}
+size_t write_model_field(io_buf& io, const ACTION_SCORE::action_score& as, const std::string& upstream_name, bool text)
+{
+  size_t bytes = 0;
+  bytes += write_model_field(io, as.action, upstream_name + "_action", text);
+  bytes += write_model_field(io, as.score, upstream_name + "_score", text);
+  return bytes;
+}
+}  // namespace model_utils
+}  // namespace VW

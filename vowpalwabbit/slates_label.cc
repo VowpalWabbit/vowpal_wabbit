@@ -10,6 +10,7 @@
 #include "constant.h"
 #include "vw_math.h"
 #include "parse_primitives.h"
+#include "model_utils.h"
 #include <numeric>
 
 namespace VW
@@ -191,3 +192,32 @@ VW::string_view VW::to_string(VW::slates::example_type ex_type)
 
 #undef CASE
 }
+
+namespace VW
+{
+namespace model_utils
+{
+size_t read_model_field(io_buf& io, VW::slates::label& slates)
+{
+  size_t bytes = 0;
+  bytes += read_model_field(io, slates.type);
+  bytes += read_model_field(io, slates.weight);
+  bytes += read_model_field(io, slates.labeled);
+  bytes += read_model_field(io, slates.cost);
+  bytes += read_model_field(io, slates.slot_id);
+  bytes += read_model_field(io, slates.probabilities);
+  return bytes;
+}
+size_t write_model_field(io_buf& io, const VW::slates::label& slates, const std::string& upstream_name, bool text)
+{
+  size_t bytes = 0;
+  bytes += write_model_field(io, slates.type, upstream_name + "_type", text);
+  bytes += write_model_field(io, slates.weight, upstream_name + "_weight", text);
+  bytes += write_model_field(io, slates.labeled, upstream_name + "_labeled", text);
+  bytes += write_model_field(io, slates.cost, upstream_name + "_cost", text);
+  bytes += write_model_field(io, slates.slot_id, upstream_name + "_slot_id", text);
+  bytes += write_model_field(io, slates.probabilities, upstream_name + "_probabilities", text);
+  return bytes;
+}
+}  // namespace model_utils
+}  // namespace VW

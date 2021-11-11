@@ -3,6 +3,7 @@
 // license as described in the file LICENSE.
 
 #include "ccb_reduction_features.h"
+#include "model_utils.h"
 
 const char* VW::to_string(CCB::example_type ex_type)
 {
@@ -27,3 +28,24 @@ const char* VW::to_string(CCB::example_type ex_type)
 
 #undef CASE
 }
+
+namespace VW
+{
+namespace model_utils
+{
+size_t read_model_field(io_buf& io, CCB::reduction_features& rf)
+{
+  size_t bytes = 0;
+  bytes += read_model_field(io, rf.type);
+  bytes += read_model_field(io, rf.explicit_included_actions);
+  return bytes;
+}
+size_t write_model_field(io_buf& io, const CCB::reduction_features& rf, const std::string& upstream_name, bool text)
+{
+  size_t bytes = 0;
+  bytes += write_model_field(io, rf.type, upstream_name + "_type", text);
+  bytes += write_model_field(io, rf.explicit_included_actions, upstream_name + "_explicit_included_actions", text);
+  return bytes;
+}
+}  // namespace model_utils
+}  // namespace VW

@@ -11,6 +11,7 @@
 #include "example.h"
 #include "parse_primitives.h"
 #include "shared_data.h"
+#include "model_utils.h"
 
 namespace MULTICLASS
 {
@@ -190,3 +191,24 @@ void finish_example(VW::workspace& all, example& ec, bool update_loss)
   VW::finish_example(all, ec);
 }
 }  // namespace MULTICLASS
+
+namespace VW
+{
+namespace model_utils
+{
+size_t read_model_field(io_buf& io, MULTICLASS::label_t& multi)
+{
+  size_t bytes = 0;
+  bytes += read_model_field(io, multi.label);
+  bytes += read_model_field(io, multi.weight);
+  return bytes;
+}
+size_t write_model_field(io_buf& io, const MULTICLASS::label_t& multi, const std::string& upstream_name, bool text)
+{
+  size_t bytes = 0;
+  bytes += write_model_field(io, multi.label, upstream_name + "_label", text);
+  bytes += write_model_field(io, multi.weight, upstream_name + "_weight", text);
+  return bytes;
+}
+}  // namespace model_utils
+}  // namespace VW

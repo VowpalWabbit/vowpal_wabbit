@@ -6,6 +6,7 @@
 
 #include "v_array.h"
 #include "prob_dist_cont.h"
+#include "io_buf.h"
 
 #include <cmath>
 #include <limits>
@@ -34,4 +35,10 @@ struct reduction_features
 };
 
 }  // namespace continuous_actions
+
+namespace model_utils
+{
+  size_t read_model_field(io_buf&, VW::continuous_actions::reduction_features&);
+  size_t write_model_field(io_buf&, const VW::continuous_actions::reduction_features&, const std::string&, bool);
+}  // namespace model_utils
 }  // namespace VW

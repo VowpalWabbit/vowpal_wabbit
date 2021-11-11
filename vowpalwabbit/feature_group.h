@@ -7,6 +7,7 @@
 #include "v_array.h"
 #include "future_compat.h"
 #include "generic_range.h"
+#include "io_buf.h"
 
 #include <iterator>
 #include <utility>
@@ -475,3 +476,14 @@ struct features
     return all_extents_complete;
   }
 };
+
+namespace VW
+{
+namespace model_utils
+{
+  size_t read_model_field(io_buf&, features&);
+  size_t write_model_field(io_buf&, const features&, const std::string&, bool);
+  size_t read_model_field(io_buf&, VW::namespace_extent&);
+  size_t write_model_field(io_buf&, const VW::namespace_extent&, const std::string&, bool);
+}  // namespace model_utils
+}  // namespace VW
