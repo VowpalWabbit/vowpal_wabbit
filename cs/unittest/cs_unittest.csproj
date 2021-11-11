@@ -28,13 +28,8 @@
     <OutputPath>$(SolutionDir)$(Platform)\$(Configuration)\</OutputPath>
     <IntermediateOutputPath>$(SolutionDir)out\int\$(Configuration)\x64\$(ProjectName)\</IntermediateOutputPath>
   </PropertyGroup>
-   <PropertyGroup>
-    <NewtonsoftDependencyPrefix>$(SolutionDir)packages\Newtonsoft.Json.9.0.1\lib\net45\</NewtonsoftDependencyPrefix>
-  </PropertyGroup>
   <ItemGroup>
-    <T4ParameterValues Include="NewtonsoftDependencyPrefix">
-      <Value>$(NewtonsoftDependencyPrefix)</Value>
-    </T4ParameterValues>
+    <T4ReferencePath Include="$(SolutionDir)packages\Newtonsoft.Json.9.0.1\lib\net45\" />
   </ItemGroup>
   <PropertyGroup>
     <TextTransformPath>$(VsInstallRoot)\Common7\IDE\TextTransform.exe</TextTransformPath>
