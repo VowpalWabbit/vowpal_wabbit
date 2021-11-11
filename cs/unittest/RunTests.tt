@@ -15,7 +15,7 @@
 var testRoot = Path.Combine(Path.GetDirectoryName(Host.TemplateFile), @"..\..\test");
 
 List<Test> tests;
-using (StreamReader sr = File.OpenText(Path.Combine(testRoot, "runtests.AUTOGEN.json")))
+using (StreamReader sr = File.OpenText(Path.Combine(testRoot, "core.vwtest.json")))
 {
     tests = JsonConvert.DeserializeObject<List<Test>>(sr.ReadToEnd());
 }
