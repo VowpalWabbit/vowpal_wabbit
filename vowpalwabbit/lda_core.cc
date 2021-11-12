@@ -1296,7 +1296,8 @@ base_learner* lda_setup(VW::setup_base_i& stack_builder)
       .add(make_option("minibatch", ld->minibatch).default_value(1).help("Minibatch size, for LDA"))
       .add(make_option("math-mode", math_mode)
                .default_value(static_cast<int>(lda_math_mode::USE_SIMD))
-               .help("Math mode: simd, accuracy, fast-approx"))
+               .one_of({0, 1, 2})
+               .help("Math mode: 0=simd, 1=accuracy, 2=fast-approx"))
       .add(make_option("metrics", ld->compute_coherence_metrics).help("Compute metrics"));
 
   if (!options.add_parse_and_check_necessary(new_options)) return nullptr;

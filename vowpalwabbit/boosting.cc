@@ -374,12 +374,13 @@ VW::LEARNER::base_learner* boosting_setup(VW::setup_base_i& stack_builder)
   new_options.add(make_option("boosting", data->N).keep().necessary().help("Online boosting with <N> weak learners"))
       .add(make_option("gamma", data->gamma)
                .default_value(0.1f)
-               .help("weak learner's edge (=0.1), used only by online BBM"))
+               .help("Weak learner's edge (=0.1), used only by online BBM"))
       .add(
           make_option("alg", data->alg)
               .keep()
               .default_value("BBM")
-              .help("specify the boosting algorithm: BBM (default), logistic (AdaBoost.OL.W), adaptive (AdaBoost.OL)"));
+              .one_of({"BBM", "logistic", "adaptive"})
+              .help("Specify the boosting algorithm: BBM (default), logistic (AdaBoost.OL.W), adaptive (AdaBoost.OL)"));
 
   if (!options.add_parse_and_check_necessary(new_options)) return nullptr;
 

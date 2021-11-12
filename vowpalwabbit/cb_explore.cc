@@ -335,18 +335,18 @@ base_learner* cb_explore_setup(VW::setup_base_i& stack_builder)
                .keep()
                .necessary()
                .help("Online explore-exploit for a <k> action contextual bandit problem"))
-      .add(make_option("first", data->tau).keep().help("tau-first exploration"))
+      .add(make_option("first", data->tau).keep().help("Tau-first exploration"))
       .add(make_option("epsilon", data->epsilon)
                .keep()
                .allow_override()
                .default_value(0.05f)
-               .help("epsilon-greedy exploration"))
-      .add(make_option("bag", data->bag_size).keep().help("bagging-based exploration"))
+               .help("Epsilon-greedy exploration"))
+      .add(make_option("bag", data->bag_size).keep().help("Bagging-based exploration"))
       .add(make_option("cover", data->cover_size).keep().help("Online cover based exploration"))
       .add(make_option("nounif", data->nounif)
                .keep()
-               .help("do not explore uniformly on zero-probability actions in cover"))
-      .add(make_option("psi", data->psi).keep().default_value(1.0f).help("disagreement parameter for cover"));
+               .help("Do not explore uniformly on zero-probability actions in cover"))
+      .add(make_option("psi", data->psi).keep().default_value(1.0f).help("Disagreement parameter for cover"));
 
   if (!options.add_parse_and_check_necessary(new_options)) return nullptr;
 

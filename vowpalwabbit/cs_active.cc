@@ -301,32 +301,31 @@ base_learner* cs_active_setup(VW::setup_base_i& stack_builder)
 
   bool simulation = false;
   int domination;
-  option_group_definition new_options("Cost-sensitive Active Learning");
+  option_group_definition new_options("Cost Sensitive Active Learning");
   new_options
       .add(make_option("cs_active", data->num_classes)
                .keep()
                .necessary()
                .help("Cost-sensitive active learning with <k> costs"))
-      .add(make_option("simulation", simulation).help("cost-sensitive active learning simulation mode"))
-      .add(make_option("baseline", data->is_baseline).help("cost-sensitive active learning baseline"))
+      .add(make_option("simulation", simulation).help("Cost-sensitive active learning simulation mode"))
+      .add(make_option("baseline", data->is_baseline).help("Cost-sensitive active learning baseline"))
       .add(make_option("domination", domination)
                .default_value(1)
-               .help("cost-sensitive active learning use domination. Default 1"))
-      .add(
-          make_option("mellowness", data->c0).keep().default_value(0.1f).help("mellowness parameter c_0. Default 0.1."))
+               .help("Cost-sensitive active learning use domination. Default 1"))
+      .add(make_option("mellowness", data->c0).keep().default_value(0.1f).help("Mellowness parameter c_0. Default 0.1"))
       .add(make_option("range_c", data->c1)
                .default_value(0.5f)
-               .help("parameter controlling the threshold for per-label cost uncertainty. Default 0.5."))
+               .help("Parameter controlling the threshold for per-label cost uncertainty. Default 0.5"))
       .add(make_option("max_labels", data->max_labels)
                .default_value(std::numeric_limits<size_t>::max())
-               .help("maximum number of label queries."))
+               .help("Maximum number of label queries"))
       .add(make_option("min_labels", data->min_labels)
                .default_value(std::numeric_limits<size_t>::max())
-               .help("minimum number of label queries."))
-      .add(make_option("cost_max", data->cost_max).default_value(1.f).help("cost upper bound. Default 1."))
-      .add(make_option("cost_min", data->cost_min).default_value(0.f).help("cost lower bound. Default 0."))
+               .help("Minimum number of label queries"))
+      .add(make_option("cost_max", data->cost_max).default_value(1.f).help("Cost upper bound. Default 1"))
+      .add(make_option("cost_min", data->cost_min).default_value(0.f).help("Cost lower bound. Default 0"))
       // TODO replace with trace and quiet
-      .add(make_option("csa_debug", data->print_debug_stuff).help("print debug stuff for cs_active"));
+      .add(make_option("csa_debug", data->print_debug_stuff).help("Print debug stuff for cs_active"));
 
   if (!options.add_parse_and_check_necessary(new_options)) return nullptr;
 

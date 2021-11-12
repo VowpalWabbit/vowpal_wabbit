@@ -270,18 +270,18 @@ base_learner* setup(VW::setup_base_i& stack_builder)
                .keep()
                .necessary()
                .help("Online explore-exploit for a contextual bandit problem with multiline action dependent features"))
-      .add(make_option("epsilon", epsilon).keep().allow_override().help("minimum exploration probability"))
-      .add(make_option("rnd", numrnd).keep().necessary().help("rnd based exploration"))
+      .add(make_option("epsilon", epsilon).keep().allow_override().help("Minimum exploration probability"))
+      .add(make_option("rnd", numrnd).keep().necessary().help("Rnd based exploration"))
       .add(make_option("rnd_alpha", alpha)
                .keep()
                .allow_override()
                .default_value(0.1f)
-               .help("ci width for rnd (bigger => more exploration on repeating features)"))
+               .help("CI width for rnd (bigger => more exploration on repeating features)"))
       .add(make_option("rnd_invlambda", invlambda)
                .keep()
                .allow_override()
                .default_value(0.1f)
-               .help("covariance regularization strength rnd (bigger => more exploration on new features)"));
+               .help("Covariance regularization strength rnd (bigger => more exploration on new features)"));
 
   if (!options.add_parse_and_check_necessary(new_options)) return nullptr;
 

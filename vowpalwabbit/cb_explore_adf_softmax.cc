@@ -69,9 +69,9 @@ VW::LEARNER::base_learner* setup(VW::setup_base_i& stack_builder)
                .keep()
                .necessary()
                .help("Online explore-exploit for a contextual bandit problem with multiline action dependent features"))
-      .add(make_option("epsilon", epsilon).keep().allow_override().help("epsilon-greedy exploration"))
-      .add(make_option("softmax", softmax).keep().necessary().help("softmax exploration"))
-      .add(make_option("lambda", lambda).keep().allow_override().default_value(1.f).help("parameter for softmax"));
+      .add(make_option("epsilon", epsilon).keep().allow_override().help("Epsilon-greedy exploration"))
+      .add(make_option("softmax", softmax).keep().necessary().help("Softmax exploration"))
+      .add(make_option("lambda", lambda).keep().allow_override().default_value(1.f).help("Parameter for softmax"));
 
   if (!options.add_parse_and_check_necessary(new_options)) return nullptr;
 

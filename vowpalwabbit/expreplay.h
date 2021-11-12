@@ -92,11 +92,11 @@ VW::LEARNER::base_learner* expreplay_setup(VW::setup_base_i& stack_builder)
       .add(VW::config::make_option(replay_string, er->N)
                .keep()
                .necessary()
-               .help("use experience replay at a specified level [b=classification/regression, m=multiclass, c=cost "
+               .help("Use experience replay at a specified level [b=classification/regression, m=multiclass, c=cost "
                      "sensitive] with specified buffer size"))
       .add(VW::config::make_option(replay_count_string, er->replay_count)
                .default_value(1)
-               .help("how many times (in expectation) should each example be played (default: 1 = permuting)"));
+               .help("How many times (in expectation) should each example be played (default: 1 = permuting)"));
 
   if (!options.add_parse_and_check_necessary(new_options) || er->N == 0) return nullptr;
 

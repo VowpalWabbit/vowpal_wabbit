@@ -49,3 +49,5 @@ REM Repo-specific paths
 IF NOT DEFINED vwRoot (
     SET vwRoot=%~dp0..
 )
+
+SET "NewtonsoftDependencyValue=%vwRoot%\vowpalwabbit\packages\Newtonsoft.Json.9.0.1\lib\net45\Newtonsoft.Json.dll"
