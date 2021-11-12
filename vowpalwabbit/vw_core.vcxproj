@@ -404,7 +404,6 @@
     <ClCompile Condition="'$(BuildFlatbuffers)'=='ON'" Include="parser\flatbuffer\parse_example_flatbuffer.cc" />
     <ClCompile Condition="'$(BuildFlatbuffers)'=='ON'" Include="parser\flatbuffer\parse_label.cc" />
     <ClCompile Include="parse_args.cc" />
-    <ClCompile Include="parse_example_json.cc" />
     <ClCompile Include="parse_example.cc" />
     <ClCompile Include="parse_primitives.cc" />
     <ClCompile Include="parse_regressor.cc" />

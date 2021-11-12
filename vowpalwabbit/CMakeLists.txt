@@ -331,7 +331,6 @@ set(vw_all_sources
   options_boost_po.cc
   options_serializer_boost_po.cc
   parse_args.cc
-  parse_example_json.cc
   parse_example.cc
   parse_primitives.cc
   parse_regressor.cc
