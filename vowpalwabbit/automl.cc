@@ -85,7 +85,13 @@ std::string interaction_vec_t_to_string(const std::vector<std::vector<namespace_
   for (const std::vector<namespace_index>& v : interactions)
   {
     ss << "-q ";
-    for (namespace_index c : v) { ss << c; }
+    for (namespace_index c : v)
+    {
+      if (c == constant_namespace)
+        ss << "0";
+      else
+        ss << c; 
+    }
     ss << " ";
   }
   return ss.str();
