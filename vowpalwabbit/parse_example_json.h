@@ -1980,6 +1980,10 @@ inline bool VW::dsjson_example_parser::next_with_interaction(
     {
       reread = !parse_line_and_process_metrics<false>(line, num_chars, metrics, output, interaction);
     }
+    if (reread) {
+      // Reset the interaction object as we are rereading and it can contain stale data.
+      interaction = DecisionServiceInteraction{};
+    }
   } while (reread);
 
   append_empty_newline_example_for_driver(_label_parser, *_example_factory, output);
