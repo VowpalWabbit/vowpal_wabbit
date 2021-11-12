@@ -4237,5 +4237,54 @@
       "stderr": "train-sets/ref/cb_bad_one_of_int.stderr"
     },
     "bash_command": "./negative-test.sh {VW} -k -d train-sets/lda-2pass-hang.dat --lda 10 -c --passes 2 --holdout_off --math-mode 5"
+  },
+  {
+    "id": 359,
+    "desc": "--probabilities --oaa one-indexed",
+    "diff_files": {
+      "stderr": "train-sets/ref/oaa_one_ind_probabilities.stderr",
+      "oaa_one_ind_probabilities.predict": "pred-sets/ref/oaa_one_ind_probabilities.predict"
+    },
+    "vw_command": "-d train-sets/probabilities_one_ind.dat --probabilities --oaa=4 --loss_function=logistic -p oaa_one_ind_probabilities.predict",
+    "input_files": [
+      "train-sets/probabilities_one_ind.dat"
+    ]
+  },
+  {
+    "id": 360,
+    "desc": "--probabilities --oaa zero-indexed",
+    "vw_command": "-d train-sets/probabilities_zero_ind.dat --probabilities --oaa=4 --loss_function=logistic -p oaa_zero_ind_probabilities.predict --indexing 0",
+    "diff_files": {
+      "stderr": "train-sets/ref/oaa_zero_ind_probabilities.stderr",
+      "oaa_zero_ind_probabilities.predict": "pred-sets/ref/oaa_zero_ind_probabilities.predict"
+    },
+    "input_files": [
+      "train-sets/probabilities_zero_ind.dat"
+    ]
+  },
+  {
+    "id": 361,
+    "desc": "--probabilities --oaa zero-indexed without flag",
+    "vw_command": "-d train-sets/probabilities_zero_ind.dat --probabilities --oaa=4 --loss_function=logistic -p oaa_zero_ind_no_flag_probabilities.predict",
+    "diff_files": {
+      "stderr": "train-sets/ref/oaa_zero_ind_no_flag_probabilities.stderr",
+      "oaa_zero_ind_no_flag_probabilities.predict": "pred-sets/ref/oaa_zero_ind_no_flag_probabilities.predict"
+    },
+    "input_files": [
+      "train-sets/probabilities_zero_ind.dat"
+    ]
+  },
+  {
+    "id": 362,
+    "desc": "--probabilities --oaa mixed-indexing",
+    "vw_command": "-d train-sets/probabilities_mixed_ind.dat --probabilities --oaa=4 --loss_function=logistic -p oaa_mixed_probabilities.predict",
+    "diff_files": {
+      "stderr": "train-sets/ref/oaa_mixed_probabilities.stderr",
+      "stdout": "train-sets/ref/oaa_mixed_probabilities.stderr",
+      "oaa_mixed_probabilities.predict": "pred-sets/ref/oaa_mixed_probabilities.predict"
+    },
+    "input_files": [
+      "train-sets/probabilities_mixed_ind.dat"
+    ]
   }
 ]
