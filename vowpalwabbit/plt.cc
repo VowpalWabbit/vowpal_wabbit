@@ -327,15 +327,15 @@ base_learner* plt_setup(VW::setup_base_i& stack_builder)
   options_i& options = *stack_builder.get_options();
   vw& all = *stack_builder.get_all_pointer();
   auto tree = VW::make_unique<plt>();
-  option_group_definition new_options("Probabilistic Label Tree ");
+  option_group_definition new_options("Probabilistic Label Tree");
   new_options.add(make_option("plt", tree->k).keep().necessary().help("Probabilistic Label Tree with <k> labels"))
-      .add(make_option("kary_tree", tree->kary).keep().default_value(2).help("use <k>-ary tree"))
+      .add(make_option("kary_tree", tree->kary).keep().default_value(2).help("Use <k>-ary tree"))
       .add(make_option("threshold", tree->threshold)
                .default_value(0.5)
-               .help("predict labels with conditional marginal probability greater than <thr> threshold"))
+               .help("Predict labels with conditional marginal probability greater than <thr> threshold"))
       .add(make_option("top_k", tree->top_k)
                .default_value(0)
-               .help("predict top-<k> labels instead of labels above threshold"));
+               .help("Predict top-<k> labels instead of labels above threshold"));
 
   if (!options.add_parse_and_check_necessary(new_options)) return nullptr;
 

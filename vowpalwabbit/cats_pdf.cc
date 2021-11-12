@@ -164,10 +164,10 @@ LEARNER::base_learner* setup(setup_base_i& stack_builder)
   options_i& options = *stack_builder.get_options();
   VW::workspace& all = *stack_builder.get_all_pointer();
 
-  option_group_definition new_options("Continuous action tree with smoothing with full pdf");
+  option_group_definition new_options("Continuous Action Tree with Smoothing with Full Pdf");
   int num_actions = 0;
   new_options.add(
-      make_option("cats_pdf", num_actions).keep().necessary().help("number of tree labels <k> for cats_pdf"));
+      make_option("cats_pdf", num_actions).keep().necessary().help("Number of tree labels <k> for cats_pdf"));
 
   // If cats reduction was not invoked, don't add anything
   // to the reduction stack;

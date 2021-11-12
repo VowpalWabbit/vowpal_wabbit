@@ -2515,7 +2515,7 @@ train-sets/ref/slates_simple_w_interactions.stderr
     train-sets/ref/corrupt_weights_gd_mf.stderr
 
 # Test 351: should be the same output as 158 except the line of enabled_reductions
-{VW} --save_resume -f automl.model --automl 3 --priority_type least_exclusion -d train-sets/decisionservice.json --dsjson --cb_explore_adf --epsilon 0.2 -P 1 -p cbe_adf_dsjson.predict --extra_metrics metrics_.json --readable_model automl_readable.txt --keep_configs
+{VW} --save_resume -f automl.model --automl 3 --priority_type least_exclusion -d train-sets/decisionservice.json --dsjson --cb_explore_adf --epsilon 0.2 -P 1 -p cbe_adf_dsjson.predict --extra_metrics metrics_.json --readable_model automl_readable.txt --keep_configs --oracle_type rand
     train-sets/ref/cbe_adf_dsjson_metrics_.stderr
     test-sets/ref/metrics_.json
     train-sets/ref/automl_readable.txt
@@ -2564,5 +2564,13 @@ train-sets/ref/slates_simple_w_interactions.stderr
    train-sets/ref/oaa_mixed_probabilities.stdout
    train-sets/ref/oaa_mixed_probabilities.stderr
    pred-sets/ref/oaa_mixed_probabilities.predict
+
+# Test 361: bad argument in one_of string
+./negative-test.sh {VW} --cb_adf -d train-sets/cb_test.ldf --cb_type bad_type
+    train-sets/ref/cb_bad_one_of_string.stderr
+
+# Test 362: bad argument in one_of int
+./negative-test.sh {VW} -k -d train-sets/lda-2pass-hang.dat --lda 10 -c --passes 2 --holdout_off --math-mode 5
+    train-sets/ref/cb_bad_one_of_int.stderr
 
 # Do not delete this line or the empty line above it
