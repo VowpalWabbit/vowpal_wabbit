@@ -4221,5 +4221,21 @@
       "stdout": "train-sets/ref/truncated_model_crash.stdout"
     },
     "bash_command": "./negative-test.sh {VW} --no_stdin --cb_explore_adf --cover 3 --noconstant --quiet -i model-sets/truncated_model"
+  },
+  {
+    "id": 357,
+    "desc": "bad argument in one_of string",
+    "diff_files": {
+      "stderr": "train-sets/ref/cb_bad_one_of_string.stderr"
+    },
+    "bash_command": "./negative-test.sh {VW} --cb_adf -d train-sets/cb_test.ldf --cb_type bad_type"
+  },
+  {
+    "id": 358,
+    "desc": "bad argument in one_of int",
+    "diff_files": {
+      "stderr": "train-sets/ref/cb_bad_one_of_int.stderr"
+    },
+    "bash_command": "./negative-test.sh {VW} -k -d train-sets/lda-2pass-hang.dat --lda 10 -c --passes 2 --holdout_off --math-mode 5"
   }
 ]

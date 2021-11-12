@@ -1,10 +1,16 @@
 from vowpalwabbit import pyvw
+import json
+import os
+from pathlib import Path
 
 
-def get_latest_tests():
-    import runtests_parser as rtp
+def get_latest_tests(file_path = None):
+    if file_path is None:
+        test_ref_dir = Path(os.path.dirname(os.path.abspath(__file__)))
+        file_path = Path(test_ref_dir).joinpath("core.vwtest.json")
 
-    tests = rtp.file_to_obj(rtp.find_runtest_file())
+    json_test_spec_content = open(file_path).read()
+    tests = json.loads(json_test_spec_content)
     return [x.__dict__ for x in tests]
 
 
