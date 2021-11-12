@@ -101,7 +101,7 @@ struct json_example_parser : VW::example_parser_i
 
   // This function is specifically here if you don't want to drain from an iobuf. In the context of json this is useful as in tests it is convenient to not have to flatten to a single line.
   // Since the format is officially newline delimited JSON the standard way of parsing is consuming a single line. Whereas this will parse the entire given buffer.
-  // Must be only a single JSON object in the given bytes. 
+  // Must be only a single JSON object in the given bytes.
   void parse_object(char* line, size_t length, const std::unordered_map<uint64_t, example*>* dedup_examples,
       v_array<example*>& output);
 
@@ -134,8 +134,8 @@ struct dsjson_example_parser : VW::example_parser_i
 
   // This function is specifically here if you don't want to drain from an iobuf. In the context of json this is useful as in tests it is convenient to not have to flatten to a single line.
   // Since the format is officially newline delimited JSON the standard way of parsing is consuming a single line. Whereas this will parse the entire given buffer.
-  // Must be only a single JSON object in the given bytes. 
-   void parse_object(char* line, size_t length, 
+  // Must be only a single JSON object in the given bytes.
+   void parse_object(char* line, size_t length,
       v_array<example*>& output, DecisionServiceInteraction& interaction);
 
 private:
@@ -1821,7 +1821,7 @@ inline bool apply_pdrop(label_type_t label_type, float pdrop, v_array<example*>&
   return true;
 }
 
-inline void append_empty_newline_example_for_driver(VW::example_factory_i& example_factory, v_array<example*>& examples)
+inline void append_empty_newline_example_for_driver(const label_parser& lbl_parser, VW::example_factory_i& example_factory, v_array<example*>& examples)
 {
   // note: the json parser does single pass parsing and cannot determine if a shared example is needed.
   // since the communication between the parsing thread the main learner expects examples to be requested in order (as
@@ -1832,6 +1832,7 @@ inline void append_empty_newline_example_for_driver(VW::example_factory_i& examp
   if (examples.size() > 1)
   {
     auto* ex = example_factory.create();
+    lbl_parser.default_label(ex->l);
     ex->is_newline = true;
     examples.push_back(ex);
   }
@@ -1909,6 +1910,7 @@ inline VW::json_example_parser::json_example_parser(VW::label_type_t label_type,
 inline bool VW::json_example_parser::next_with_dedup(
     io_buf& input, const std::unordered_map<uint64_t, example*>* dedup_examples, v_array<example*>& output)
 {
+  assert(output.size() == 1);
   char* line;
   size_t num_chars;
   size_t num_chars_initial = read_features(input, line, num_chars);
@@ -1922,7 +1924,7 @@ inline bool VW::json_example_parser::next_with_dedup(
     parse_line<false>(line, num_chars, dedup_examples, output);
   }
 
-  append_empty_newline_example_for_driver(*_example_factory, output);
+  append_empty_newline_example_for_driver(_label_parser, *_example_factory, output);
   return true;
 }
 
@@ -1980,7 +1982,7 @@ inline bool VW::dsjson_example_parser::next_with_interaction(
     }
   } while (reread);
 
-  append_empty_newline_example_for_driver(*_example_factory, output);
+  append_empty_newline_example_for_driver(_label_parser, *_example_factory, output);
   return true;
 }
 
