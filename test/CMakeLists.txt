@@ -10,20 +10,20 @@ endif()
 if(NOT WIN32)
   add_test(
     NAME RunTests_pass_1_onethread
-    COMMAND python3 run_tests.py --fuzzy_compare --exit_first_fail --epsilon 0.001 --clean_dirty --extra_options=--onethread ${FB_FLAG}
+    COMMAND python3 run_tests.py --fuzzy_compare --exit_first_fail --epsilon 0.001 --ignore_dirty --extra_options=--onethread ${FB_FLAG}
     WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
   )
 
   add_test(
     NAME RunTests_pass_2
-    COMMAND python3 run_tests.py --fuzzy_compare --exit_first_fail --epsilon 0.001 --clean_dirty ${FB_FLAG}
+    COMMAND python3 run_tests.py --fuzzy_compare --exit_first_fail --epsilon 0.001 --ignore_dirty ${FB_FLAG}
     WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
   )
 
   add_test(
     NAME slow_tests
 
-    COMMAND python3 run_tests.py --clean_dirty --test_spec ${CMAKE_CURRENT_SOURCE_DIR}/slow.vwtest.json
+    COMMAND python3 run_tests.py --ignore_dirty --test_spec ${CMAKE_CURRENT_SOURCE_DIR}/slow.vwtest.json
     WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
   )
 endif()
