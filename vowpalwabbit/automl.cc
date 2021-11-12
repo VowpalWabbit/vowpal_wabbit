@@ -78,6 +78,18 @@ void fail_if_enabled(vw& all, const std::set<std::string>& not_compat)
     if (not_compat.count(reduction) > 0) THROW("Error: automl does not yet support this reduction: " + reduction);
   }
 }
+
+std::string interaction_vec_t_to_string(const std::vector<std::vector<namespace_index>>& interactions)
+{
+  std::stringstream ss;
+  for (const std::vector<namespace_index>& v : interactions)
+  {
+    ss << "-q ";
+    for (namespace_index c : v) { ss << c; }
+    ss << " ";
+  }
+  return ss.str();
+}
 }  // namespace details
 
 void scored_config::update(float w, float r)
@@ -98,6 +110,7 @@ void scored_config::persist(metric_sink& metrics, const std::string& suffix)
   metrics.set_float("w" + suffix, last_w);
   metrics.set_float("r" + suffix, last_r);
   metrics.set_uint("conf_idx" + suffix, config_index);
+  metrics.set_string("interactions" + suffix, details::interaction_vec_t_to_string(live_interactions));
 }
 
 float scored_config::current_ips() const { return (update_count > 0) ? ips / update_count : 0; }
