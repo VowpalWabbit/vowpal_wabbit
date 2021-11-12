@@ -294,19 +294,15 @@ def run_command_line_test(
             )
 
     try:
-        if test.is_shell:
-            # Because we don't really know what shell scripts do, we need to run them in the tests dir.
-            working_dir = ref_dir
-        else:
-            working_dir = str(
-                create_test_dir(
-                    test.id,
-                    test.input_files,
-                    base_working_dir,
-                    ref_dir,
-                    dependencies=test.depends_on,
-                )
+        working_dir = str(
+            create_test_dir(
+                test.id,
+                test.input_files,
+                base_working_dir,
+                ref_dir,
+                dependencies=test.depends_on,
             )
+        )
 
         command_line = test.command_line
         if valgrind:
@@ -475,6 +471,12 @@ def create_test_dir(
     test_id, input_files, test_base_dir, test_ref_dir, dependencies: List[int] = []
 ):
     test_working_dir = Path(test_base_dir).joinpath("test_{}".format((test_id)))
+
+    # Delete the directory to ensure we always start with a clean slate.
+    # Some implicit files like cache files might change behavior and are harder to track based on "input_files"
+    if test_working_dir.exists():
+        shutil.rmtree(test_working_dir)
+
     Path(test_working_dir).mkdir(parents=True, exist_ok=True)
 
     # Required as workaround until #2686 is fixed.
@@ -504,16 +506,13 @@ def create_test_dir(
                 break
 
         if file_to_copy is None:
-            raise ValueError("{} couldn't be found for test {}".format((f), (test_id)))
+            raise ValueError("Input file '{}' couldn't be found for test {}. Searched in '{}' as well as outputs of dependent tests: [{}]".format(f, test_id, test_ref_dir, ", ".join(dependencies)))
 
         test_dest_file = Path(test_working_dir).joinpath(f)
         if file_to_copy == test_dest_file:
             continue
         Path(test_dest_file.parent).mkdir(parents=True, exist_ok=True)
-        # We always want to replace this file in case it is the output of another test
-        if test_dest_file.exists():
-            test_dest_file.unlink()
-        shutil.copyfile(str(file_to_copy), str(test_dest_file))
+        shutil.copy(str(file_to_copy), str(test_dest_file))
     return test_working_dir
 
 
@@ -1000,16 +999,6 @@ def main():
         tests = convert_tests_for_flatbuffers(
             tests, to_flatbuff, args.working_dir, color_enum
         )
-
-    # Because bash_command based tests don't specify all inputs and outputs they must operate in the test directory directly.
-    # This means that if they run in parallel they can break each other by touching the same files.
-    # Until we can move to a test spec which allows us to specify the input/output we need to add dependencies between them here.
-    prev_bash_test = None
-    for test in tests:
-        if test.is_shell:
-            if prev_bash_test is not None:
-                test.depends_on.append(prev_bash_test.id)
-            prev_bash_test = test
 
     tasks = []
     completed_tests = Completion()

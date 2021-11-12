@@ -25,7 +25,11 @@ do
             ;;
         --port)
             PORT="$2"
-            shift 
+            shift
+            ;;
+        --vw)
+            VW="$2"
+            shift
             ;;
         *)
             echo "$NAME: unknown argument $1"
