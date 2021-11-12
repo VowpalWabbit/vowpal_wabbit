@@ -4241,11 +4241,11 @@
   {
     "id": 359,
     "desc": "--probabilities --oaa one-indexed",
+    "vw_command": "-d train-sets/probabilities_one_ind.dat --probabilities --oaa=4 --loss_function=logistic -p oaa_one_ind_probabilities.predict",
     "diff_files": {
       "stderr": "train-sets/ref/oaa_one_ind_probabilities.stderr",
       "oaa_one_ind_probabilities.predict": "pred-sets/ref/oaa_one_ind_probabilities.predict"
     },
-    "vw_command": "-d train-sets/probabilities_one_ind.dat --probabilities --oaa=4 --loss_function=logistic -p oaa_one_ind_probabilities.predict",
     "input_files": [
       "train-sets/probabilities_one_ind.dat"
     ]
@@ -4279,8 +4279,8 @@
     "desc": "--probabilities --oaa mixed-indexing",
     "vw_command": "-d train-sets/probabilities_mixed_ind.dat --probabilities --oaa=4 --loss_function=logistic -p oaa_mixed_probabilities.predict",
     "diff_files": {
+      "stdout": "train-sets/ref/oaa_mixed_probabilities.stdout",
       "stderr": "train-sets/ref/oaa_mixed_probabilities.stderr",
-      "stdout": "train-sets/ref/oaa_mixed_probabilities.stderr",
       "oaa_mixed_probabilities.predict": "pred-sets/ref/oaa_mixed_probabilities.predict"
     },
     "input_files": [
