@@ -491,7 +491,8 @@ void enable_sources(VW::workspace& all, bool quiet, size_t passes, input_options
         // If the child failed we still fork off another one, but log the issue.
         if (status != 0)
         {
-          VW::io::logger::errlog_warn("Daemon child process received exited with non-zero exit code: {}. Ignoring.", status);
+          VW::io::logger::errlog_warn(
+              "Daemon child process received exited with non-zero exit code: {}. Ignoring.", status);
         }
 
         if (got_sigterm)
