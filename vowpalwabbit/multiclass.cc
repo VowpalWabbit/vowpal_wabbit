@@ -82,9 +82,6 @@ void parse_label(label_t& ld, const VW::named_labels* ldict, const std::vector<V
     default:
       THROW("malformed example, words.size() = " << words.size());
   }
-  if (ld.label == 0)
-    THROW("label 0 is not allowed for multiclass.  Valid labels are {1,k}"
-        << (ldict ? "\nthis likely happened because you specified an invalid label with named labels" : ""));
 }
 
 label_parser mc_label = {
@@ -120,6 +117,7 @@ void print_label_pred(VW::workspace& all, example& ec, uint32_t prediction)
 
 void print_probability(VW::workspace& all, example& ec, uint32_t prediction)
 {
+  if (prediction == 0) { prediction = static_cast<uint32_t>(ec.pred.scalars.size()); }
   std::stringstream pred_ss;
   pred_ss << prediction << "(" << std::setw(2) << std::setprecision(0) << std::fixed
           << 100 * ec.pred.scalars[prediction - 1] << "%)";
