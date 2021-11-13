@@ -90,7 +90,7 @@ std::string interaction_vec_t_to_string(const std::vector<std::vector<namespace_
       if (c == constant_namespace)
         ss << "0";
       else
-        ss << c; 
+        ss << c;
     }
     ss << " ";
   }
