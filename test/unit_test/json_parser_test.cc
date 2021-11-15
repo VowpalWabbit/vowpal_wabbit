@@ -105,9 +105,9 @@ BOOST_AUTO_TEST_CASE(parse_json_cats)
 }
 )";
 
-  auto vw =
-      VW::initialize("--json --chain_hash --cats 4 --min_value=185 --max_value=23959 --bandwidth 1 --no_stdin --quiet --audit",
-          nullptr, false, nullptr, nullptr);
+  auto vw = VW::initialize(
+      "--json --chain_hash --cats 4 --min_value=185 --max_value=23959 --bandwidth 1 --no_stdin --quiet --audit",
+      nullptr, false, nullptr, nullptr);
   auto examples = parse_json(*vw, json_text);
 
   BOOST_CHECK_EQUAL(examples.size(), 1);
@@ -141,8 +141,8 @@ BOOST_AUTO_TEST_CASE(parse_json_cats_no_label)
 }
 )";
   auto vw = VW::initialize(
-      "--json --chain_hash -t --cats 4 --min_value=185 --max_value=23959 --bandwidth 1 --no_stdin --quiet --audit", nullptr,
-      false, nullptr, nullptr);
+      "--json --chain_hash -t --cats 4 --min_value=185 --max_value=23959 --bandwidth 1 --no_stdin --quiet --audit",
+      nullptr, false, nullptr, nullptr);
   auto examples = parse_json(*vw, json_text);
 
   BOOST_CHECK_EQUAL(examples.size(), 1);
@@ -420,7 +420,8 @@ BOOST_AUTO_TEST_CASE(parse_json_dedup_cb)
   uint64_t dedup_id_1 = 848539518;
   uint64_t dedup_id_2 = 3407057455;
 
-  auto vw = VW::initialize("--json --chain_hash --cb_explore_adf --no_stdin --quiet --audit", nullptr, false, nullptr, nullptr);
+  auto vw = VW::initialize(
+      "--json --chain_hash --cb_explore_adf --no_stdin --quiet --audit", nullptr, false, nullptr, nullptr);
 
   std::unordered_map<uint64_t, example*> dedup_examples;
 
@@ -495,7 +496,7 @@ BOOST_AUTO_TEST_CASE(parse_json_dedup_cb_missing_dedup_id)
   examples.clear();
   examples.push_back(&VW::get_unused_example(vw));
 
-   // parse json that includes dedup id's and re-use the examples from the dedup map instead of creating new ones
+  // parse json that includes dedup id's and re-use the examples from the dedup map instead of creating new ones
   BOOST_REQUIRE_THROW(json_parser->parse_object(const_cast<char*>(json_deduped_text.c_str()), json_deduped_text.size(),
                           &dedup_examples, examples),
       VW::vw_exception);
@@ -540,8 +541,8 @@ BOOST_AUTO_TEST_CASE(parse_json_dedup_ccb)
   uint64_t dedup_id_1 = 848539518;
   uint64_t dedup_id_2 = 3407057455;
 
-  auto vw =
-      VW::initialize("--json --chain_hash --ccb_explore_adf --no_stdin --quiet --audit", nullptr, false, nullptr, nullptr);
+  auto vw = VW::initialize(
+      "--json --chain_hash --ccb_explore_adf --no_stdin --quiet --audit", nullptr, false, nullptr, nullptr);
 
   std::unordered_map<uint64_t, example*> dedup_examples;
 
@@ -652,7 +653,7 @@ BOOST_AUTO_TEST_CASE(parse_json_dedup_ccb_dedup_id_missing)
 
   std::unordered_map<uint64_t, example*> dedup_examples;
 
-   // parse first dedup example and store it in dedup_examples map
+  // parse first dedup example and store it in dedup_examples map
   v_array<example*> examples;
   examples.push_back(&VW::get_unused_example(vw));
 

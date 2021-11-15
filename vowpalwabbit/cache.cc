@@ -21,12 +21,10 @@ constexpr size_t general = 2;
 constexpr unsigned char newline_example = '1';
 constexpr unsigned char non_newline_example = '0';
 
-
 struct cache_example_parser : VW::example_parser_i
 {
   cache_example_parser(VW::label_type_t type, bool sorted_cache)
-      : example_parser_i("cache")
-      , _sorted_cache(sorted_cache)
+      : example_parser_i("cache"), _sorted_cache(sorted_cache)
   {
     _label_parser = VW::get_label_parser(type);
   }
@@ -34,8 +32,7 @@ struct cache_example_parser : VW::example_parser_i
   bool next(io_buf& input, v_array<example*>& output) override
   {
     assert(output.size() == 1);
-    auto bytes_read = VW::read_example_from_cache(input, output[0], _label_parser,
-      _sorted_cache);
+    auto bytes_read = VW::read_example_from_cache(input, output[0], _label_parser, _sorted_cache);
     return bytes_read != 0;
   }
 
@@ -47,8 +44,7 @@ private:
 
 std::unique_ptr<VW::example_parser_i> VW::make_cache_parser(vw& all)
 {
-  return make_cache_parser(all.example_parser->lbl_parser.label_type,
-      all.example_parser->sorted_cache);
+  return make_cache_parser(all.example_parser->lbl_parser.label_type, all.example_parser->sorted_cache);
 }
 
 std::unique_ptr<VW::example_parser_i> VW::make_cache_parser(VW::label_type_t label_type, bool sorted_cache)

@@ -51,7 +51,8 @@ void check_vector_of_vectors_exact(const std::vector<std::vector<T>>& lhs, const
   }
 }
 
-multi_ex parse_json(VW::workspace& all, const std::string& line, const std::unordered_map<uint64_t, example*>* dedup_examples = nullptr);
+multi_ex parse_json(VW::workspace& all, const std::string& line,
+    const std::unordered_map<uint64_t, example*>* dedup_examples = nullptr);
 
 multi_ex parse_dsjson(VW::workspace& all, std::string line, DecisionServiceInteraction* interaction = nullptr);
 

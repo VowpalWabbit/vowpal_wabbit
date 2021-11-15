@@ -82,10 +82,12 @@ struct pooled_example_factory final : VW::example_factory_i
 {
   pooled_example_factory(VW::workspace* workspace) : _workspace(workspace) {}
   example* create() override { return &VW::get_unused_example(_workspace); }
-  void destroy(example* ex) override {
+  void destroy(example* ex) override
+  {
     VW::empty_example(*ex);
 
-      _workspace->example_parser->example_pool.return_object(ex); }
+    _workspace->example_parser->example_pool.return_object(ex);
+  }
 
 private:
   VW::workspace* _workspace;
@@ -161,13 +163,9 @@ uint32_t cache_numbits(VW::io::reader& cache_reader)
   return cache_numbits;
 }
 
-void set_cache_reader(VW::workspace& all) {
-  all.example_parser->active_example_parser = VW::make_cache_parser(all); }
+void set_cache_reader(VW::workspace& all) { all.example_parser->active_example_parser = VW::make_cache_parser(all); }
 
-void set_string_reader(VW::workspace& all)
-{
-  all.example_parser->active_example_parser = VW::make_text_parser(all);
-}
+void set_string_reader(VW::workspace& all) { all.example_parser->active_example_parser = VW::make_text_parser(all); }
 
 bool is_currently_json_reader(const VW::workspace& all)
 {
@@ -183,7 +181,8 @@ void set_json_reader(VW::workspace& all, bool dsjson = false)
 {
   if (dsjson)
   {
-    all.example_parser->active_example_parser = VW::make_dsjson_parser(all, all.options->was_supplied("extra_metrics"), true /* destructive_parse*/, all.example_parser->strict_parse);
+    all.example_parser->active_example_parser = VW::make_dsjson_parser(
+        all, all.options->was_supplied("extra_metrics"), true /* destructive_parse*/, all.example_parser->strict_parse);
   }
   else
   {
@@ -590,19 +589,12 @@ void enable_sources(VW::workspace& all, bool quiet, size_t passes, input_options
         }
       }
 
-
-      if(all.example_parser->custom_example_parser_factory != nullptr)
+      if (all.example_parser->custom_example_parser_factory != nullptr)
       {
-          all.example_parser->active_example_parser = all.example_parser->custom_example_parser_factory->make_parser(
-            all.audit || all.hash_inv,
-            all.example_parser->lbl_parser.label_type,
-            all.hash_seed,
-            all.parse_mask,
-            all.example_parser->hasher,
-            all.options->was_supplied("extra_metrics"),
-            all.sd->ldict.get(),
-            all.chain_hash_json,
-            VW::make_unique<pooled_example_factory>(&all));
+        all.example_parser->active_example_parser = all.example_parser->custom_example_parser_factory->make_parser(
+            all.audit || all.hash_inv, all.example_parser->lbl_parser.label_type, all.hash_seed, all.parse_mask,
+            all.example_parser->hasher, all.options->was_supplied("extra_metrics"), all.sd->ldict.get(),
+            all.chain_hash_json, VW::make_unique<pooled_example_factory>(&all));
       }
       else if (input_options.json || input_options.dsjson)
       {
@@ -621,18 +613,12 @@ void enable_sources(VW::workspace& all, bool quiet, size_t passes, input_options
         all.example_parser->active_example_parser = VW::parsers::flatbuffer::make_flatbuffer_parser(all);
       }
 #endif
-      else if(all.example_parser->custom_example_parser_factory != nullptr)
+      else if (all.example_parser->custom_example_parser_factory != nullptr)
       {
-          all.example_parser->active_example_parser = all.example_parser->custom_example_parser_factory->make_parser(
-            all.audit || all.hash_inv,
-            all.example_parser->lbl_parser.label_type,
-            all.hash_seed,
-            all.parse_mask,
-            all.example_parser->hasher,
-            all.options->was_supplied("extra_metrics"),
-            all.sd->ldict.get(),
-            all.chain_hash_json,
-            VW::make_unique<pooled_example_factory>(&all));
+        all.example_parser->active_example_parser = all.example_parser->custom_example_parser_factory->make_parser(
+            all.audit || all.hash_inv, all.example_parser->lbl_parser.label_type, all.hash_seed, all.parse_mask,
+            all.example_parser->hasher, all.options->was_supplied("extra_metrics"), all.sd->ldict.get(),
+            all.chain_hash_json, VW::make_unique<pooled_example_factory>(&all));
       }
       else
       {
@@ -876,10 +862,7 @@ void parse_example_label(VW::workspace& all, example& ec, const std::string& lab
       ec.l, ec._reduction_features, all.example_parser->parser_memory_to_reuse, all.sd->ldict.get(), words);
 }
 
-void empty_example(VW::workspace& /*all*/, example& ec)
-{
-  empty_example(ec);
-}
+void empty_example(VW::workspace& /*all*/, example& ec) { empty_example(ec); }
 
 void empty_example(example& ec)
 {

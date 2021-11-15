@@ -172,7 +172,7 @@ int main(int argc, char** argv)
     {
       v_array<example*> examples;
       examples.push_back(&VW::get_unused_example(vw));
-      dsjson_parser->parse_object(const_cast<char*>(line.data()), line.length(),examples, interaction);
+      dsjson_parser->parse_object(const_cast<char*>(line.data()), line.length(), examples, interaction);
       multi_ex result;
       result.reserve(examples.size());
       for (size_t i = 0; i < examples.size(); ++i)

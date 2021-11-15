@@ -59,18 +59,18 @@ internal:
   /// The native vowpal wabbit data structure.
   /// </summary>
   vw* m_vw;
-  VW::dsjson_example_parser* m_dsjson_parser;
-  VW::json_example_parser* m_json_parser;
+VW::dsjson_example_parser* m_dsjson_parser;
+VW::json_example_parser* m_json_parser;
 
-  /// <summary>
-  /// Thread-safe increment of reference count.
-  /// </summary>
-  void IncrementReference();
+/// <summary>
+/// Thread-safe increment of reference count.
+/// </summary>
+void IncrementReference();
 
-  /// <summary>
-  /// Thread-safe decrement of reference count.
-  /// </summary>
-  void DecrementReference();
+/// <summary>
+/// Thread-safe decrement of reference count.
+/// </summary>
+void DecrementReference();
 
 protected:
   /// <summary>

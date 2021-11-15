@@ -89,9 +89,7 @@ void output_metrics(VW::workspace& all)
 
     // Give the current parser an opportunity to add its metrics.
     if (all.example_parser->active_example_parser != nullptr)
-    {
-      all.example_parser->active_example_parser->persist_metrics(list_metrics);
-    }
+    { all.example_parser->active_example_parser->persist_metrics(list_metrics); }
 
     list_metrics.set_uint("total_log_calls", logger::get_log_count());
     list_to_json_file(filename, list_metrics);

@@ -125,10 +125,7 @@ bool parser::parse_examples(io_buf& buf, v_array<example*>& examples, uint8_t* b
   }
 }
 
-bool parser::next(io_buf& input, v_array<example*>& output)
-{
-  return parse_examples(input, output);
-}
+bool parser::next(io_buf& input, v_array<example*>& output) { return parse_examples(input, output); }
 
 void parser::reset()
 {
@@ -213,8 +210,7 @@ void parser::parse_namespaces(example* ae, const Namespace* ns)
   auto& fs = ae->feature_space[index];
 
   if (hash_found) { fs.start_ns_extent(hash); }
-  for (const auto& feature : *(ns->features()))
-  { parse_features(fs, feature, _audit ? ns->name() : nullptr); }
+  for (const auto& feature : *(ns->features())) { parse_features(fs, feature, _audit ? ns->name() : nullptr); }
   if (hash_found) { fs.end_ns_extent(); }
 }
 
@@ -224,8 +220,7 @@ void parser::parse_features(features& fs, const Feature* feature, const flatbuff
   {
     uint64_t word_hash = _hash_function(feature->name()->c_str(), feature->name()->size(), _c_hash);
     fs.push_back(feature->value(), word_hash);
-    if (_audit && ns != nullptr)
-    { fs.space_names.push_back(audit_strings(ns->c_str(), feature->name()->c_str())); }
+    if (_audit && ns != nullptr) { fs.space_names.push_back(audit_strings(ns->c_str(), feature->name()->c_str())); }
   }
   else
   {

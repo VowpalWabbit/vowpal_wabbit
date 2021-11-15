@@ -1164,8 +1164,8 @@ ssize_t trace_message_wrapper_adapter(void* context, const char* buffer, size_t 
   return static_cast<ssize_t>(num_bytes);
 }
 
-VW::workspace& parse_args(
-    std::unique_ptr<options_i, options_deleter_type> options, trace_message_t trace_listener, void* trace_context, std::unique_ptr<VW::example_parser_factory_i> example_parser_factory)
+VW::workspace& parse_args(std::unique_ptr<options_i, options_deleter_type> options, trace_message_t trace_listener,
+    void* trace_context, std::unique_ptr<VW::example_parser_factory_i> example_parser_factory)
 {
   VW::workspace& all = *(new VW::workspace());
   all.options = std::move(options);
@@ -1195,10 +1195,8 @@ VW::workspace& parse_args(
 
     all.example_parser = new parser{ring_size, strict_parse};
     all.example_parser->_shared_data = all.sd;
-    if(example_parser_factory != nullptr)
-    {
-      all.example_parser->custom_example_parser_factory = std::move(example_parser_factory);
-    }
+    if (example_parser_factory != nullptr)
+    { all.example_parser->custom_example_parser_factory = std::move(example_parser_factory); }
 
     option_group_definition update_args("Update");
     update_args.add(make_option("learning_rate", all.eta).help("Set learning rate").short_name("l"))
@@ -1564,7 +1562,8 @@ VW::workspace* initialize(config::options_i& options, io_buf* model, bool skip_m
 
 VW::workspace* initialize_with_builder(std::unique_ptr<options_i, options_deleter_type> options, io_buf* model,
     bool skip_model_load, trace_message_t trace_listener, void* trace_context,
-    std::unique_ptr<VW::setup_base_i> learner_builder = nullptr, std::unique_ptr<VW::example_parser_factory_i> example_parser_factory = nullptr)
+    std::unique_ptr<VW::setup_base_i> learner_builder = nullptr,
+    std::unique_ptr<VW::example_parser_factory_i> example_parser_factory = nullptr)
 {
   // Set up logger as early as possible
   logger::initialize_logger();
@@ -1703,19 +1702,21 @@ VW::workspace* initialize_with_builder(const std::string& s, io_buf* model, bool
   return ret;
 }
 
-vw* initialize_with_custom_parser(std::unique_ptr<config::options_i, options_deleter_type> options, io_buf* model, bool skip_model_load, trace_message_t trace_listener,
-    void* trace_context, std::unique_ptr<VW::setup_base_i> learner_builder, std::unique_ptr<VW::example_parser_factory_i> factory)
+vw* initialize_with_custom_parser(std::unique_ptr<config::options_i, options_deleter_type> options, io_buf* model,
+    bool skip_model_load, trace_message_t trace_listener, void* trace_context,
+    std::unique_ptr<VW::setup_base_i> learner_builder, std::unique_ptr<VW::example_parser_factory_i> factory)
 {
-  return initialize_with_builder(
-        std::move(options), model, skip_model_load, trace_listener, trace_context, std::move(learner_builder), std::move(factory));
+  return initialize_with_builder(std::move(options), model, skip_model_load, trace_listener, trace_context,
+      std::move(learner_builder), std::move(factory));
 }
 
-vw* initialize_with_custom_parser(options_i& options, io_buf* model, bool skip_model_load, trace_message_t trace_listener,
-    void* trace_context, std::unique_ptr<VW::setup_base_i> learner_builder, std::unique_ptr<VW::example_parser_factory_i> factory)
+vw* initialize_with_custom_parser(options_i& options, io_buf* model, bool skip_model_load,
+    trace_message_t trace_listener, void* trace_context, std::unique_ptr<VW::setup_base_i> learner_builder,
+    std::unique_ptr<VW::example_parser_factory_i> factory)
 {
   std::unique_ptr<options_i, options_deleter_type> opts(&options, [](VW::config::options_i*) {});
-  return initialize_with_custom_parser(
-        std::move(opts), model, skip_model_load, trace_listener, trace_context, std::move(learner_builder), std::move(factory));
+  return initialize_with_custom_parser(std::move(opts), model, skip_model_load, trace_listener, trace_context,
+      std::move(learner_builder), std::move(factory));
 }
 
 VW::workspace* initialize(

@@ -152,8 +152,7 @@ void handle_features_value(const char* key_namespace, const Value& value, exampl
 template <bool audit>
 void parse_context(const Value& context, const label_parser& lbl_parser, hash_func_t hash_func, uint64_t hash_seed,
     uint64_t parse_mask, bool chain_hash, v_array<example*>& examples, VW::example_factory_i& example_factory,
-     std::vector<example*>& slot_examples,
-    const std::unordered_map<uint64_t, example*>* dedup_examples = nullptr)
+    std::vector<example*>& slot_examples, const std::unordered_map<uint64_t, example*>* dedup_examples = nullptr)
 {
   std::vector<Namespace<audit>> namespaces;
   handle_features_value(" ", context, examples[0], namespaces, hash_func, hash_seed, parse_mask, chain_hash);
@@ -222,8 +221,7 @@ void parse_context(const Value& context, const label_parser& lbl_parser, hash_fu
 template <bool audit>
 void parse_slates_example_json(const label_parser& lbl_parser, hash_func_t hash_func, uint64_t hash_seed,
     uint64_t parse_mask, bool chain_hash, v_array<example*>& examples, char* line, size_t /*length*/,
-    VW::example_factory_i& example_factory,
-    const std::unordered_map<uint64_t, example*>* dedup_examples = nullptr)
+    VW::example_factory_i& example_factory, const std::unordered_map<uint64_t, example*>* dedup_examples = nullptr)
 {
   Document document;
   document.ParseInsitu(line);
@@ -231,7 +229,8 @@ void parse_slates_example_json(const label_parser& lbl_parser, hash_func_t hash_
   // Build shared example
   const Value& context = document.GetObject();
   std::vector<example*> slot_examples;
-  parse_context<audit>(context, lbl_parser, hash_func, hash_seed, parse_mask, chain_hash, examples, example_factory, slot_examples, dedup_examples);
+  parse_context<audit>(context, lbl_parser, hash_func, hash_seed, parse_mask, chain_hash, examples, example_factory,
+      slot_examples, dedup_examples);
 }
 
 template <bool audit>

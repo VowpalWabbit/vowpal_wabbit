@@ -76,6 +76,7 @@ struct example_parser_i
   virtual void persist_metrics(metric_sink& /*sink*/) {}
 
   VW::string_view type();
+
 private:
   std::string _type;
 };
@@ -84,8 +85,8 @@ struct example_parser_factory_i
 {
   virtual ~example_parser_factory_i() = default;
 
-  virtual std::unique_ptr<example_parser_i> make_parser(bool audit,
-      VW::label_type_t type, uint32_t hash_seed, uint64_t parse_mask, hash_func_t hash_func, bool record_metrics, const named_labels* ldict, bool chain_hash,
+  virtual std::unique_ptr<example_parser_i> make_parser(bool audit, VW::label_type_t type, uint32_t hash_seed,
+      uint64_t parse_mask, hash_func_t hash_func, bool record_metrics, const named_labels* ldict, bool chain_hash,
       std::unique_ptr<example_factory_i>&& example_factory) = 0;
 };
 
@@ -125,7 +126,6 @@ struct parser
   std::unique_ptr<VW::example_parser_i> active_example_parser = nullptr;
 
   std::unique_ptr<VW::example_parser_factory_i> custom_example_parser_factory = nullptr;
-
 
   shared_data* _shared_data = nullptr;
 

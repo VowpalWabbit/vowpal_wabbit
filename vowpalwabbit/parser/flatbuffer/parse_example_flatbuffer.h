@@ -15,12 +15,13 @@ namespace VW
 {
 namespace parsers
 {
-namespace flatbuffer 
+namespace flatbuffer
 {
 class parser : public VW::example_parser_i
 {
 public:
-  parser(VW::label_type_t label_type, bool audit, const VW::named_labels* ldict, hash_func_t hash_function, uint64_t hash_seed)
+  parser(VW::label_type_t label_type, bool audit, const VW::named_labels* ldict, hash_func_t hash_function,
+      uint64_t hash_seed)
       : example_parser_i("flatbuffer")
       , _label_parser(VW::get_label_parser(label_type))
       , _audit(audit)
@@ -34,6 +35,7 @@ public:
 
   bool next(io_buf& input, v_array<example*>& output) override;
   void reset() override;
+
 private:
   label_parser _label_parser;
   bool _audit;
@@ -71,11 +73,10 @@ private:
   void parse_continuous_action_label(polylabel* l, const ContinuousLabel* label);
 };
 
-inline std::unique_ptr<parser> make_flatbuffer_parser(
-    vw& all)
+inline std::unique_ptr<parser> make_flatbuffer_parser(vw& all)
 {
   return VW::make_unique<parser>(all.example_parser->lbl_parser.label_type, all.audit || all.hash_inv,
-          all.sd->ldict.get(), all.example_parser->hasher, all.hash_seed);
+      all.sd->ldict.get(), all.example_parser->hasher, all.hash_seed);
 }
 }  // namespace flatbuffer
 }  // namespace parsers

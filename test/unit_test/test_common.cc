@@ -34,7 +34,7 @@ multi_ex parse_dsjson(VW::workspace& all, std::string line, DecisionServiceInter
   if (interaction == nullptr) { interaction = &local_interaction; }
 
   dsjson_parser->parse_object(const_cast<char*>(line.c_str()), line.size(), examples, *interaction);
-  
+
   multi_ex result;
   for (const auto& ex : examples) { result.push_back(ex); }
   return result;

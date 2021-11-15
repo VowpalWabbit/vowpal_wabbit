@@ -22,11 +22,7 @@ namespace logger = VW::io::logger;
 
 struct text_example_parser : VW::example_parser_i
 {
-  text_example_parser(vw* all)
-      : example_parser_i("text")
-      , _all(all)
-  {
-  }
+  text_example_parser(vw* all) : example_parser_i("text"), _all(all) {}
 
   bool next(io_buf& input, v_array<example*>& output) override;
 
@@ -35,7 +31,6 @@ private:
   VW::label_parser_reuse_mem _label_parser_reuse_mem;
   vw* _all;
 };
-
 
 std::unique_ptr<VW::example_parser_i> VW::make_text_parser(vw& all)
 {
@@ -520,7 +515,8 @@ public:
   }
 };
 
-void substring_to_example(vw* all, example* ae, VW::string_view example, std::vector<VW::string_view>& words, VW::label_parser_reuse_mem& label_parser_mem)
+void substring_to_example(vw* all, example* ae, VW::string_view example, std::vector<VW::string_view>& words,
+    VW::label_parser_reuse_mem& label_parser_mem)
 {
   if (example.empty()) { ae->is_newline = true; }
 
@@ -555,8 +551,8 @@ void substring_to_example(vw* all, example* ae, VW::string_view example, std::ve
 
   if (!words.empty())
   {
-    all->example_parser->lbl_parser.parse_label(ae->l, ae->_reduction_features,
-        label_parser_mem, all->sd->ldict.get(), words);
+    all->example_parser->lbl_parser.parse_label(
+        ae->l, ae->_reduction_features, label_parser_mem, all->sd->ldict.get(), words);
   }
 
   if (bar_idx != VW::string_view::npos)
@@ -614,6 +610,6 @@ bool text_example_parser::next(io_buf& input, v_array<example*>& output)
   }
 
   VW::string_view example_line(line, num_chars);
-   substring_to_example(_all, output[0], example_line, _token_storage, _label_parser_reuse_mem);
+  substring_to_example(_all, output[0], example_line, _token_storage, _label_parser_reuse_mem);
   return true;
 }

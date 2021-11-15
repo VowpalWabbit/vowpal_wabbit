@@ -29,7 +29,7 @@
 #ifdef _M_CEE
 #  pragma managed(push, off)
 #  undef _M_CEE
-#include "io/logger.h"
+#  include "io/logger.h"
 // RapidJson triggers this warning by memcpying non-trivially copyable type. Ignore it so that our warnings are not
 // polluted by it.
 // https://github.com/Tencent/rapidjson/issues/1700
@@ -41,7 +41,7 @@ VW_WARNING_STATE_POP
 #  define _M_CEE 001
 #  pragma managed(pop)
 #else
-#include "io/logger.h"
+#  include "io/logger.h"
 // RapidJson triggers this warning by memcpying non-trivially copyable type. Ignore it so that our warnings are not
 // polluted by it.
 // https://github.com/Tencent/rapidjson/issues/1700
@@ -101,7 +101,8 @@ struct dsjson_metrics
   std::string LastEventId;
   std::string LastEventTime;
 };
-inline void persist_dsjson_metrics(VW::metric_sink& sink, VW::label_type_t label_type, const details::dsjson_metrics& metrics);
+inline void persist_dsjson_metrics(
+    VW::metric_sink& sink, VW::label_type_t label_type, const details::dsjson_metrics& metrics);
 }  // namespace details
 
 struct json_example_parser : VW::example_parser_i
@@ -114,9 +115,10 @@ struct json_example_parser : VW::example_parser_i
 
   bool next(io_buf& input, v_array<example*>& output) override;
 
-  // This function is specifically here if you don't want to drain from an iobuf. In the context of json this is useful as in tests it is convenient to not have to flatten to a single line.
-  // Since the format is officially newline delimited JSON the standard way of parsing is consuming a single line. Whereas this will parse the entire given buffer.
-  // Must be only a single JSON object in the given bytes.
+  // This function is specifically here if you don't want to drain from an iobuf. In the context of json this is useful
+  // as in tests it is convenient to not have to flatten to a single line. Since the format is officially newline
+  // delimited JSON the standard way of parsing is consuming a single line. Whereas this will parse the entire given
+  // buffer. Must be only a single JSON object in the given bytes.
   void parse_object(char* line, size_t length, const std::unordered_map<uint64_t, example*>* dedup_examples,
       v_array<example*>& output);
 
@@ -124,8 +126,8 @@ struct json_example_parser : VW::example_parser_i
 
 private:
   template <bool audit>
-  void parse_line(char* line, size_t length,
-      const std::unordered_map<uint64_t, example*>* dedup_examples, v_array<example*>& examples);
+  void parse_line(char* line, size_t length, const std::unordered_map<uint64_t, example*>* dedup_examples,
+      v_array<example*>& examples);
 
   label_parser _label_parser;
   hash_func_t _hash_func;
@@ -150,13 +152,13 @@ struct dsjson_example_parser : VW::example_parser_i
   bool next_with_interaction(io_buf& input, v_array<example*>& output, DecisionServiceInteraction& interaction);
   void persist_metrics(VW::metric_sink& sink) override;
 
-  // This function is specifically here if you don't want to drain from an iobuf. In the context of json this is useful as in tests it is convenient to not have to flatten to a single line.
-  // Since the format is officially newline delimited JSON the standard way of parsing is consuming a single line. Whereas this will parse the entire given buffer.
-  // Must be only a single JSON object in the given bytes.
-   void parse_object(char* line, size_t length,
-      v_array<example*>& output, DecisionServiceInteraction& interaction);
+  // This function is specifically here if you don't want to drain from an iobuf. In the context of json this is useful
+  // as in tests it is convenient to not have to flatten to a single line. Since the format is officially newline
+  // delimited JSON the standard way of parsing is consuming a single line. Whereas this will parse the entire given
+  // buffer. Must be only a single JSON object in the given bytes.
+  void parse_object(char* line, size_t length, v_array<example*>& output, DecisionServiceInteraction& interaction);
 
-   VW::example_factory_i& get_example_factory() { return *_example_factory; }
+  VW::example_factory_i& get_example_factory() { return *_example_factory; }
 
 private:
   template <bool audit>
@@ -186,7 +188,6 @@ inline std::unique_ptr<VW::json_example_parser> make_json_parser(VW::workspace& 
 inline std::unique_ptr<VW::dsjson_example_parser> make_dsjson_parser(
     VW::workspace& all, bool record_metrics, bool destructive_parse, bool strict_parse);
 }  // namespace VW
-
 
 template <bool audit>
 struct BaseState;
@@ -747,9 +748,7 @@ struct MultiState : BaseState<audit>
     ctx.ex = ctx._example_factory->create();
     ctx._label_parser.default_label(ctx.ex->l);
     if (ctx._label_parser.label_type == VW::label_type_t::ccb)
-    {
-      ctx.ex->l.conditional_contextual_bandit.type = CCB::example_type::action;
-    }
+    { ctx.ex->l.conditional_contextual_bandit.type = CCB::example_type::action; }
     else if (ctx._label_parser.label_type == VW::label_type_t::slates)
     {
       ctx.ex->l.slates.type = VW::slates::example_type::action;
@@ -796,9 +795,7 @@ struct SlotsState : BaseState<audit>
     ctx.ex = ctx._example_factory->create();
     ctx._label_parser.default_label(ctx.ex->l);
     if (ctx._label_parser.label_type == VW::label_type_t::ccb)
-    {
-      ctx.ex->l.conditional_contextual_bandit.type = CCB::example_type::slot;
-    }
+    { ctx.ex->l.conditional_contextual_bandit.type = CCB::example_type::slot; }
     else if (ctx._label_parser.label_type == VW::label_type_t::slates)
     {
       ctx.ex->l.slates.type = VW::slates::example_type::slot;
@@ -1051,9 +1048,7 @@ public:
       else if (length == 8 && !strncmp(str, "_slot_id", 8))
       {
         if (ctx._label_parser.label_type != VW::label_type_t::slates)
-        {
-          THROW("Can only use _slot_id with slates examples");
-        }
+        { THROW("Can only use _slot_id with slates examples"); }
         ctx.uint_state.output_uint = &ctx.ex->l.slates.slot_id;
         ctx.array_float_state.return_state = this;
         return &ctx.array_float_state;
@@ -1447,9 +1442,7 @@ public:
               ex->l.conditional_contextual_bandit.type != CCB::example_type::slot) ||
           (ctx._label_parser.label_type == VW::label_type_t::slates &&
               ex->l.slates.type != VW::slates::example_type::slot))
-      {
-        slot_object_index++;
-      }
+      { slot_object_index++; }
     }
     old_root = ctx.root_state;
     ctx.root_state = this;
@@ -1841,7 +1834,8 @@ inline bool apply_pdrop(VW::label_type_t label_type, float pdrop, v_array<exampl
   return true;
 }
 
-inline void append_empty_newline_example_for_driver(const label_parser& lbl_parser, VW::example_factory_i& example_factory, v_array<example*>& examples)
+inline void append_empty_newline_example_for_driver(
+    const label_parser& lbl_parser, VW::example_factory_i& example_factory, v_array<example*>& examples)
 {
   // note: the json parser does single pass parsing and cannot determine if a shared example is needed.
   // since the communication between the parsing thread the main learner expects examples to be requested in order (as
@@ -1912,8 +1906,7 @@ inline void VW::json_example_parser::parse_object(
 }
 
 inline VW::json_example_parser::json_example_parser(VW::label_type_t label_type, hash_func_t hash_func,
-    uint64_t hash_seed,
-    uint64_t parse_mask, bool chain_hash, std::unique_ptr<VW::example_factory_i> example_factory,
+    uint64_t hash_seed, uint64_t parse_mask, bool chain_hash, std::unique_ptr<VW::example_factory_i> example_factory,
     const named_labels* ldict, bool audit)
     : example_parser_i("json")
     , _label_parser(VW::get_label_parser(label_type))
@@ -1954,8 +1947,7 @@ inline bool VW::json_example_parser::next(io_buf& input, v_array<example*>& outp
 }
 
 inline VW::dsjson_example_parser::dsjson_example_parser(VW::label_type_t label_type, hash_func_t hash_func,
-    uint64_t hash_seed,
-    uint64_t parse_mask, bool chain_hash, std::unique_ptr<VW::example_factory_i> example_factory,
+    uint64_t hash_seed, uint64_t parse_mask, bool chain_hash, std::unique_ptr<VW::example_factory_i> example_factory,
     const named_labels* ldict, bool audit, bool record_metrics, bool destructive_parse, bool strict_parse)
     : example_parser_i("dsjson")
     , _label_parser(VW::get_label_parser(label_type))
@@ -1982,7 +1974,8 @@ inline bool VW::dsjson_example_parser::next_with_interaction(
     io_buf& input, v_array<example*>& output, DecisionServiceInteraction& interaction)
 {
   bool reread;
-  do {
+  do
+  {
     reread = false;
 
     char* line;
