@@ -132,7 +132,6 @@ struct parser
   hash_func_t hasher;
   bool resettable;           // Whether or not the input can be reset.
   io_buf output;             // Where to output the cache.
-
   std::string currentname;
   std::string finalname;
 

@@ -568,7 +568,7 @@ void substring_to_example(vw* all, example* ae, VW::string_view example, std::ve
   }
 }
 
-void substring_to_example(vw* all, example* ae, VW::string_view example)
+void substring_to_example(VW::workspace* all, example* ae, VW::string_view example)
 {
   std::vector<VW::string_view> words;
   VW::label_parser_reuse_mem label_parser_mem;

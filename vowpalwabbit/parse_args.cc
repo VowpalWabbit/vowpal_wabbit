@@ -1164,7 +1164,7 @@ ssize_t trace_message_wrapper_adapter(void* context, const char* buffer, size_t 
   return static_cast<ssize_t>(num_bytes);
 }
 
-vw& parse_args(
+VW::workspace& parse_args(
     std::unique_ptr<options_i, options_deleter_type> options, trace_message_t trace_listener, void* trace_context, std::unique_ptr<VW::example_parser_factory_i> example_parser_factory)
 {
   VW::workspace& all = *(new VW::workspace());
@@ -1568,7 +1568,7 @@ VW::workspace* initialize_with_builder(std::unique_ptr<options_i, options_delete
 {
   // Set up logger as early as possible
   logger::initialize_logger();
-  vw& all = parse_args(std::move(options), trace_listener, trace_context, std::move(example_parser_factory));
+  VW::workspace& all = parse_args(std::move(options), trace_listener, trace_context, std::move(example_parser_factory));
 
   try
   {

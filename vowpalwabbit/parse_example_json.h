@@ -2193,7 +2193,7 @@ bool VW::dsjson_example_parser::parse_line(
   return apply_pdrop(_label_parser.label_type, data->probabilityOfDrop, examples);
 }
 
-inline std::unique_ptr<VW::json_example_parser> VW::make_json_parser(vw& all)
+inline std::unique_ptr<VW::json_example_parser> VW::make_json_parser(VW::workspace& all)
 {
   return VW::make_unique<VW::json_example_parser>(all.example_parser->lbl_parser.label_type, all.example_parser->hasher,
       all.hash_seed, all.parse_mask, all.chain_hash_json, VW::make_example_factory(all), all.sd->ldict.get(),
@@ -2201,7 +2201,7 @@ inline std::unique_ptr<VW::json_example_parser> VW::make_json_parser(vw& all)
 }
 
 inline std::unique_ptr<VW::dsjson_example_parser> VW::make_dsjson_parser(
-    vw& all, bool record_metrics, bool destructive_parse, bool strict_parse)
+    VW::workspace& all, bool record_metrics, bool destructive_parse, bool strict_parse)
 {
   return VW::make_unique<VW::dsjson_example_parser>(all.example_parser->lbl_parser.label_type,
       all.example_parser->hasher, all.hash_seed, all.parse_mask, all.chain_hash_json, VW::make_example_factory(all),

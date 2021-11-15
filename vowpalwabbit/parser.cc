@@ -161,7 +161,7 @@ uint32_t cache_numbits(VW::io::reader& cache_reader)
   return cache_numbits;
 }
 
-void set_cache_reader(vw& all) {
+void set_cache_reader(VW::workspace& all) {
   all.example_parser->active_example_parser = VW::make_cache_parser(all); }
 
 void set_string_reader(VW::workspace& all)
@@ -879,15 +879,7 @@ void parse_example_label(VW::workspace& all, example& ec, const std::string& lab
 
 void empty_example(VW::workspace& /*all*/, example& ec)
 {
-  for (features& fs : ec) fs.clear();
-
-  ec.indices.clear();
-  ec.tag.clear();
-  ec.sorted = false;
-  ec.end_pass = false;
-  ec.is_newline = false;
-  ec._reduction_features.clear();
-  ec.num_features_from_interactions = 0;
+  empty_example(ec);
 }
 
 void empty_example(example& ec)
