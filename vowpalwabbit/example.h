@@ -40,7 +40,7 @@ void setup_example(VW::workspace& all, example* ae);
 
 struct polylabel
 {
-  no_label::no_label empty;
+  no_label::no_label empty = static_cast<char>(0);
   label_data simple;
   MULTICLASS::label_t multi;
   COST_SENSITIVE::label cs;

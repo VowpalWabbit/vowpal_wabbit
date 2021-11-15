@@ -131,14 +131,9 @@ inline size_t read_model_field(io_buf& io, std::string& str)
   size_t bytes = 0;
   uint64_t str_size;
   bytes += read_model_field(io, str_size);
-  std::ostringstream os;
-  for (uint64_t i = 0; i < str_size; ++i)
-  {
-    char c;
-    bytes += read_model_field(io, c);
-    os << c;
-  }
-  str = os.str();
+  char* cs = nullptr;
+  bytes += io.buf_read(cs, str_size * sizeof(char));
+  str = std::string(cs);
   return bytes;
 }
 
@@ -148,12 +143,13 @@ inline size_t write_model_field(io_buf& io, const std::string& str, const std::s
   size_t bytes = 0;
   uint64_t str_size = static_cast<uint64_t>(str.size());
   bytes += write_model_field(io, str_size, upstream_name + ".size()", text);
-  uint64_t i = 0;
-  for (const auto c : str)
+  std::string message;
+  if (text) { message = fmt::format("{} = {}\n", upstream_name, str); }
+  else
   {
-    bytes += write_model_field(io, c, fmt::format("{}[{}]", upstream_name, i), text);
-    ++i;
+    message = str;
   }
+  bytes += io.bin_write_fixed(message.c_str(), message.size());
   return bytes;
 }
 

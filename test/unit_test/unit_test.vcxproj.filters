@@ -131,6 +131,8 @@
     </ClCompile>
     <ClCompile Include="minimal_custom_reduction.cc">
       <Filter>Source Files</Filter>
+    <ClCompile Include="model_utils_test.cc">
+      <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="scope_exit_test.cc">
       <Filter>Source Files</Filter>

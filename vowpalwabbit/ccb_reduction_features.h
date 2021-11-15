@@ -20,7 +20,7 @@ enum class example_type : uint8_t
 
 struct reduction_features
 {
-  example_type type;
+  example_type type = CCB::example_type::unset;
   v_array<uint32_t> explicit_included_actions;
   void clear() { explicit_included_actions.clear(); }
 };

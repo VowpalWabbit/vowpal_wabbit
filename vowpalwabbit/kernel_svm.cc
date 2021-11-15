@@ -244,69 +244,15 @@ static int trim_cache(svm_params& params)
   return alloc;
 }
 
-int save_load_flat_example(io_buf& model_file, bool read, flat_example*& fec)
+int save_load_flat_example(io_buf& model_file, bool read, flat_example& fec)
 {
-  size_t brw = 1;
   if (read)
   {
-    fec = &calloc_or_throw<flat_example>();
-    brw = VW::model_utils::read_model_field(model_file, *fec);
-
-    if (brw > 0)
-    {
-      if (fec->tag_len > 0)
-      {
-        fec->tag = calloc_or_throw<char>(fec->tag_len);
-        brw = model_file.bin_read_fixed(fec->tag, fec->tag_len * sizeof(char));
-        if (!brw) return 2;
-      }
-      if (fec->fs.size() > 0)
-      {
-        features& fs = fec->fs;
-        size_t len = fs.size();
-        fs.values.clear();
-        fs.values.resize_but_with_stl_behavior(len);
-        brw = model_file.bin_read_fixed(reinterpret_cast<char*>(fs.values.begin()), len * sizeof(feature_value));
-        if (!brw) return 3;
-
-        len = fs.indicies.size();
-        fs.indicies.clear();
-        fs.indicies.resize_but_with_stl_behavior(len);
-        brw = model_file.bin_read_fixed(reinterpret_cast<char*>(fs.indicies.begin()), len * sizeof(feature_index));
-        if (!brw) return 3;
-      }
-    }
-    else
-      return 1;
+    VW::model_utils::read_model_field(model_file, fec);
   }
   else
   {
-    brw = VW::model_utils::write_model_field(model_file, *fec, "flat_example", false);
-
-    if (brw > 0)
-    {
-      if (fec->tag_len > 0)
-      {
-        brw = model_file.bin_write_fixed(fec->tag, static_cast<uint32_t>(fec->tag_len) * sizeof(char));
-        if (!brw)
-        {
-	  // I'm assuming this is an error condition?
-          logger::errlog_error("{0} {1}", fec->tag_len, fec->tag);
-          return 2;
-        }
-      }
-      if (fec->fs.size() > 0)
-      {
-        brw = model_file.bin_write_fixed(reinterpret_cast<char*>(fec->fs.values.begin()),
-            static_cast<uint32_t>(fec->fs.size()) * sizeof(feature_value));
-        if (!brw) return 3;
-        brw = model_file.bin_write_fixed(reinterpret_cast<char*>(fec->fs.indicies.begin()),
-            static_cast<uint32_t>(fec->fs.indicies.size()) * sizeof(feature_index));
-        if (!brw) return 3;
-      }
-    }
-    else
-      return 1;
+    VW::model_utils::write_model_field(model_file, fec, "flat_example", false);
   }
   return 0;
 }
@@ -323,22 +269,21 @@ void save_load_svm_model(svm_params& params, io_buf& model_file, bool read, bool
       model_file, reinterpret_cast<char*>(&(model->num_support)), sizeof(model->num_support), read, msg, text);
   // params.all->opts_n_args.trace_message<<"Read num support "<<model->num_support<< endl;
 
-  flat_example* fec = nullptr;
   if (read) { model->support_vec.reserve(model->num_support); }
 
   for (uint32_t i = 0; i < model->num_support; i++)
   {
     if (read)
     {
-      save_load_flat_example(model_file, read, fec);
-      svm_example* tmp = &calloc_or_throw<svm_example>();
-      tmp->init_svm_example(fec);
+      auto fec = VW::make_unique<flat_example>();
+      auto* tmp = &calloc_or_throw<svm_example>();
+      save_load_flat_example(model_file, read, *fec);
+      tmp->ex = *fec;
       model->support_vec.push_back(tmp);
     }
     else
     {
-      fec = &(model->support_vec[i]->ex);
-      save_load_flat_example(model_file, read, fec);
+      save_load_flat_example(model_file, read, model->support_vec[i]->ex);
     }
   }
 
@@ -595,7 +540,7 @@ void sync_queries(VW::workspace& all, svm_params& params, bool* train_pool)
     if (!train_pool[i]) continue;
 
     fec = &(params.pool[i]->ex);
-    save_load_flat_example(*b, false, fec);
+    save_load_flat_example(*b, false, *fec);
     delete params.pool[i];
   }
 
@@ -626,7 +571,7 @@ void sync_queries(VW::workspace& all, svm_params& params, bool* train_pool)
 
     for (size_t i = 0; i < params.pool_size; i++)
     {
-      if (!save_load_flat_example(*b, true, fec))
+      if (!save_load_flat_example(*b, true, *fec))
       {
         params.pool[i] = &calloc_or_throw<svm_example>();
         params.pool[i]->init_svm_example(fec);
@@ -882,12 +827,3 @@ VW::LEARNER::base_learner* kernel_svm_setup(VW::setup_base_i& stack_builder)
 
   return make_base(*l);
 }
-
-/*namespace VW
-{
-namespace namespace model_utils
-{
-size_t read_model_field(io_buf&, VW::automl::scored_config&);
-size_t write_model_field(io_buf&, const VW::automl::exclusion_config&, const std::string&, bool);
-} // namesapce model_utils
-} // namespace VW*/
