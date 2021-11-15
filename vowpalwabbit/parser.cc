@@ -5,6 +5,7 @@
 #include "parser.h"
 
 #include <sys/types.h>
+#include "io/logger.h"
 
 #ifndef _WIN32
 #  include <sys/mman.h>
@@ -248,7 +249,7 @@ void reset_source(VW::workspace& all, size_t numbits)
 
       all.final_prediction_sink.clear();
       all.example_parser->input.close_files();
-
+      all.example_parser->input.reset();
       sockaddr_in client_address;
       socklen_t size = sizeof(client_address);
       int f =
@@ -487,6 +488,14 @@ void enable_sources(VW::workspace& all, bool quiet, size_t passes, input_options
         // wait for child to change state; if finished, then respawn
         int status;
         pid_t pid = wait(&status);
+
+        // If the child failed we still fork off another one, but log the issue.
+        if (status != 0)
+        {
+          VW::io::logger::errlog_warn(
+              "Daemon child process received exited with non-zero exit code: {}. Ignoring.", status);
+        }
+
         if (got_sigterm)
         {
           for (size_t i = 0; i < num_children; i++) kill(children[i], SIGTERM);
