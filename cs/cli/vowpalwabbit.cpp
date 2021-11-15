@@ -20,6 +20,47 @@ using namespace System;
 using namespace System::Collections::Generic;
 using namespace System::Text;
 
+public ref struct ParseJsonState
+{
+  VW::VowpalWabbit ^ vw;
+  List<VW::VowpalWabbitExample^> ^ examples;
+};
+
+struct managed_example_pool : VW::example_factory_i
+{
+private:
+  void* _parse_json_state_ptr = nullptr;
+public:
+
+  void set_internal_ptr(void* ptr) { _parse_json_state_ptr = ptr; }
+
+  example* create() override {
+    assert(_parse_json_state_ptr != nullptr);
+    interior_ptr<ParseJsonState ^> state = (interior_ptr<ParseJsonState ^>)_parse_json_state_ptr;
+
+    auto ex = (*state)->vw->GetOrCreateNativeExample();
+    (*state)->examples->Add(ex);
+
+    return ex->m_example;
+  }
+
+  void destroy(example* ex) override {
+    interior_ptr<ParseJsonState ^> state = (interior_ptr<ParseJsonState ^>)_parse_json_state_ptr;
+
+    VW::VowpalWabbitExample ^ to_remove = nullptr;
+    for each (auto ref_ex in (*state)->examples)
+    {
+      if (ref_ex->m_example == ex)
+      {
+        (*state)->vw->ReturnExampleToPool(ref_ex);
+        to_remove = ref_ex;
+      }
+    }
+
+    if (to_remove != nullptr) { (*state)->examples->Remove(to_remove); }
+  }
+};
+
 namespace VW
 {
 VowpalWabbit::VowpalWabbit(VowpalWabbitSettings^ settings)
@@ -41,6 +82,15 @@ VowpalWabbit::VowpalWabbit(VowpalWabbitSettings^ settings)
       m_vw->all_reduce = new AllReduceThreads(parent_all_reduce, total, settings->Node);
     }
   }
+
+  m_dsjson_parser = new VW::dsjson_example_parser(m_vw->example_parser->lbl_parser.label_type,
+      m_vw->example_parser->hasher, m_vw->hash_seed, m_vw->parse_mask, m_vw->chain_hash_json,
+      VW::make_unique<managed_example_pool>(), m_vw->sd->ldict.get(), m_vw->audit || m_vw->hash_inv,
+      m_vw->options->was_supplied("extra_metrics"), false /* destructive_parse*/, true);
+
+  m_json_parser = new VW::json_example_parser(m_vw->example_parser->lbl_parser.label_type, m_vw->example_parser->hasher, m_vw->hash_seed, m_vw->parse_mask, m_vw->chain_hash_json,
+      VW::make_unique<managed_example_pool>(), m_vw->sd->ldict.get(),
+      m_vw->audit || m_vw->hash_inv);
 
   try
   { m_hasher = GetHasher();
@@ -273,11 +323,6 @@ generic<typename T> T VowpalWabbit::Predict(VowpalWabbitExample^ ex, IVowpalWabb
   CATCHRETHROW
 }
 
-public ref struct ParseJsonState
-{ VowpalWabbit^ vw;
-  List<VowpalWabbitExample^>^ examples;
-};
-
 example& get_example_from_pool(void* v)
 { interior_ptr<ParseJsonState^> state = (interior_ptr<ParseJsonState^>)v;
 
@@ -316,12 +361,11 @@ List<VowpalWabbitExample^>^ VowpalWabbit::ParseDecisionServiceJson(cli::array<By
 			pin_ptr<unsigned char> data = &json[0];
 			data += offset;
 
+      m_dsjson_parser->set_destructive_parse(!copyJson);
 			DecisionServiceInteraction interaction;
-
-			if (m_vw->audit)
-				VW::read_line_decision_service_json<true>(*m_vw, examples, reinterpret_cast<char*>(data), length, copyJson, get_example_from_pool, &state, &interaction);
-			else
-				VW::read_line_decision_service_json<false>(*m_vw, examples, reinterpret_cast<char*>(data), length, copyJson, get_example_from_pool, &state, &interaction);
+      reinterpret_cast<managed_example_pool*>(&m_dsjson_parser->get_example_factory())->set_internal_ptr(&state);
+      m_dsjson_parser->parse_object(reinterpret_cast<char*>(data), length, examples, interaction);
+      reinterpret_cast<managed_example_pool*>(&m_dsjson_parser->get_example_factory())->set_internal_ptr(nullptr);
 
 			// finalize example
 			VW::setup_examples(*m_vw, examples);
@@ -381,12 +425,9 @@ List<VowpalWabbitExample^>^ VowpalWabbit::ParseDecisionServiceJson(cli::array<By
 			  examples.push_back(native_example);
 
 			  interior_ptr<ParseJsonState^> state_ptr = &state;
-
-			  if (m_vw->audit)
-				VW::read_line_json_s<true>(*m_vw, examples, reinterpret_cast<char*>(valueHandle.AddrOfPinnedObject().ToPointer()), (size_t)bytes->Length, get_example_from_pool, &state);
-			  else
-				VW::read_line_json_s<false>(*m_vw, examples, reinterpret_cast<char*>(valueHandle.AddrOfPinnedObject().ToPointer()), (size_t)bytes->Length, get_example_from_pool, &state);
-
+        reinterpret_cast<managed_example_pool*>(&m_json_parser->get_example_factory())->set_internal_ptr(&state);
+        m_json_parser->parse_object(reinterpret_cast<char*>(valueHandle.AddrOfPinnedObject().ToPointer()), (size_t)bytes->Length, nullptr, examples);
+        reinterpret_cast<managed_example_pool*>(&m_json_parser->get_example_factory())->set_internal_ptr(nullptr);
 			  // finalize example
 			  VW::setup_examples(*m_vw, examples);
 

@@ -15,6 +15,7 @@ license as described in the file LICENSE.
 #include "io/io_adapter.h"
 #include "vw_exception.h"
 #include "parse_args.h"
+#include "parse_example_json.h"
 #include "parse_regressor.h"
 
 using namespace System;
@@ -31,7 +32,13 @@ void trace_listener_cli(void* context, const std::string& message)
 }
 
 VowpalWabbitBase::VowpalWabbitBase(VowpalWabbitSettings^ settings)
-  : m_examples(nullptr), m_vw(nullptr), m_model(nullptr), m_settings(settings != nullptr ? settings : gcnew VowpalWabbitSettings), m_instanceCount(0)
+    : m_examples(nullptr)
+    , m_vw(nullptr)
+    , m_dsjson_parser(nullptr)
+    , m_json_parser(nullptr)
+    , m_model(nullptr)
+    , m_settings(settings != nullptr ? settings : gcnew VowpalWabbitSettings)
+    , m_instanceCount(0)
 { if (m_settings->EnableThreadSafeExamplePooling)
     m_examples = Bag::CreateLockFree<VowpalWabbitExample^>(m_settings->MaxExamples);
   else
@@ -145,6 +152,18 @@ void VowpalWabbitBase::InternalDispose()
       m_model->DecrementReference();
       m_model = nullptr;
     }
+  }
+
+  if (m_dsjson_parser != nullptr)
+  {
+    delete m_dsjson_parser;
+    m_dsjson_parser = nullptr;
+  }
+
+  if (m_json_parser != nullptr)
+  {
+    delete m_json_parser;
+    m_json_parser = nullptr;
   }
 
   try

@@ -12,6 +12,9 @@
 
 namespace VW
 {
+struct dsjson_example_parser;
+struct json_example_parser;
+
 ref class VowpalWabbitExampleBuilder;
 ref struct VowpalWabbitFeature;
 
@@ -21,6 +24,10 @@ ref struct VowpalWabbitFeature;
 /// <remarks>If possible use VowpalWabbit{T} types as this wrapper suffers from marshalling performance wise.</remarks>
 public ref class VowpalWabbit : VowpalWabbitBase, IVowpalWabbitExamplePool
 {
+    internal :
+      VW::dsjson_example_parser* m_dsjson_parser;
+  VW::json_example_parser* m_json_parser;
+
 private:
   /// <summary>
   /// Select the right hash method based on args.

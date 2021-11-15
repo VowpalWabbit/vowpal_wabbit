@@ -683,8 +683,8 @@ namespace cs_unittest
         public void TestDecisionServiceJsonOutOfBounds()
         {
             var json = @"{""EventId"":""abc"",""a"":[1,2,3],""Version"":""1"",""c"":{""u"":{""loc"":""New York""},""_multi"":[]},""p"":[0.8,0.1,0.1]}";
-            TestDecisionServiceJson(json);
-            for (int i = json.Length; i >= 0; i--)
+            TestDecisionServiceJson(json, false);
+            for (int i = json.Length - 1; i >= 0; i--)
             {
                 var jsonSub = json.Substring(0, i);
                 Console.WriteLine(jsonSub);

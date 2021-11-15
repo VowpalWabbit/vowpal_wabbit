@@ -13,6 +13,9 @@ using namespace System::Collections::Generic;
 
 namespace VW
 {
+struct dsjson_example_parser;
+struct json_example_parser;
+
 ref class VowpalWabbitPrediction;
 ref class VowpalWabbitModel;
 
@@ -56,6 +59,8 @@ internal:
   /// The native vowpal wabbit data structure.
   /// </summary>
   vw* m_vw;
+  VW::dsjson_example_parser* m_dsjson_parser;
+  VW::json_example_parser* m_json_parser;
 
   /// <summary>
   /// Thread-safe increment of reference count.
