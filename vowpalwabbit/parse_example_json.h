@@ -26,16 +26,31 @@
 //#define RAPIDJSON_SIMD
 //#define RAPIDJSON_SSE42
 
+#ifdef _M_CEE
+#  pragma managed(push, off)
+#  undef _M_CEE
+#include "io/logger.h"
 // RapidJson triggers this warning by memcpying non-trivially copyable type. Ignore it so that our warnings are not
 // polluted by it.
 // https://github.com/Tencent/rapidjson/issues/1700
 VW_WARNING_STATE_PUSH
 VW_WARNING_DISABLE_CLASS_MEMACCESS
-#include <rapidjson/reader.h>
-#include <rapidjson/error/en.h>
+#  include <rapidjson/reader.h>
+#  include <rapidjson/error/en.h>
 VW_WARNING_STATE_POP
-
+#  define _M_CEE 001
+#  pragma managed(pop)
+#else
 #include "io/logger.h"
+// RapidJson triggers this warning by memcpying non-trivially copyable type. Ignore it so that our warnings are not
+// polluted by it.
+// https://github.com/Tencent/rapidjson/issues/1700
+VW_WARNING_STATE_PUSH
+VW_WARNING_DISABLE_CLASS_MEMACCESS
+#  include <rapidjson/reader.h>
+#  include <rapidjson/error/en.h>
+VW_WARNING_STATE_POP
+#endif
 
 #include "cb.h"
 #include "conditional_contextual_bandit.h"
@@ -105,6 +120,8 @@ struct json_example_parser : VW::example_parser_i
   void parse_object(char* line, size_t length, const std::unordered_map<uint64_t, example*>* dedup_examples,
       v_array<example*>& output);
 
+  VW::example_factory_i& get_example_factory() { return *_example_factory; }
+
 private:
   template <bool audit>
   void parse_line(char* line, size_t length,
@@ -128,6 +145,7 @@ struct dsjson_example_parser : VW::example_parser_i
       bool chain_hash, std::unique_ptr<VW::example_factory_i> example_factory, const named_labels* ldict, bool audit,
       bool record_metrics, bool destructive_parse, bool strict_parse);
 
+  void set_destructive_parse(bool destructive_parse) { _destructive_parse = destructive_parse; }
   bool next(io_buf& input, v_array<example*>& output) override;
   bool next_with_interaction(io_buf& input, v_array<example*>& output, DecisionServiceInteraction& interaction);
   void persist_metrics(VW::metric_sink& sink) override;
@@ -137,6 +155,8 @@ struct dsjson_example_parser : VW::example_parser_i
   // Must be only a single JSON object in the given bytes.
    void parse_object(char* line, size_t length,
       v_array<example*>& output, DecisionServiceInteraction& interaction);
+
+   VW::example_factory_i& get_example_factory() { return *_example_factory; }
 
 private:
   template <bool audit>
@@ -1797,7 +1817,7 @@ struct json_parser
   VWReaderHandler<audit> handler;
 };
 
-inline bool apply_pdrop(label_type_t label_type, float pdrop, v_array<example*>& examples)
+inline bool apply_pdrop(VW::label_type_t label_type, float pdrop, v_array<example*>& examples)
 {
   if (pdrop == 1.)
   {
@@ -1970,6 +1990,9 @@ inline bool VW::dsjson_example_parser::next_with_interaction(
     size_t num_chars_initial = read_features(input, line, num_chars);
     if (num_chars_initial < 1) { return false; }
 
+    // Reset the interaction object as we may be rereading and it can contain stale data.
+    interaction = DecisionServiceInteraction{};
+
     // Ensure there is a null terminator.
     line[num_chars] = '\0';
 
@@ -1979,10 +2002,6 @@ inline bool VW::dsjson_example_parser::next_with_interaction(
     else
     {
       reread = !parse_line_and_process_metrics<false>(line, num_chars, metrics, output, interaction);
-    }
-    if (reread) {
-      // Reset the interaction object as we are rereading and it can contain stale data.
-      interaction = DecisionServiceInteraction{};
     }
   } while (reread);
 
@@ -2151,6 +2170,7 @@ bool VW::dsjson_example_parser::parse_line(
   if (!_destructive_parse)
   {
     line_vec.insert(line_vec.end(), line, line + length);
+    line_vec.push_back('\0');
     line = &line_vec.front();
   }
 

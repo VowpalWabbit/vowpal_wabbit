@@ -618,8 +618,7 @@ void enable_sources(VW::workspace& all, bool quiet, size_t passes, input_options
 #ifdef BUILD_FLATBUFFERS
       else if (input_options.flatbuffer)
       {
-        all.flat_converter = VW::make_unique<VW::parsers::flatbuffer::parser>();
-        all.example_parser->reader = VW::parsers::flatbuffer::flatbuffer_to_examples;
+        all.example_parser->active_example_parser = VW::parsers::flatbuffer::make_flatbuffer_parser(all);
       }
 #endif
       else if(all.example_parser->custom_example_parser_factory != nullptr)

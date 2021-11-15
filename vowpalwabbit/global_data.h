@@ -159,10 +159,6 @@ public:
 
   uint32_t hash_seed;
 
-#ifdef BUILD_FLATBUFFERS
-  std::unique_ptr<VW::parsers::flatbuffer::parser> flat_converter;
-#endif
-
   std::string data_filename;
 
   bool daemon;

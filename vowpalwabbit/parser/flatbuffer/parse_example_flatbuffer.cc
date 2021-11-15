@@ -19,11 +19,6 @@ namespace parsers
 {
 namespace flatbuffer
 {
-int flatbuffer_to_examples(VW::workspace* all, io_buf& buf, v_array<example*>& examples)
-{
-  return static_cast<int>(all->flat_converter->parse_examples(all, buf, examples));
-}
-
 const VW::parsers::flatbuffer::ExampleRoot* parser::data() { return _data; }
 
 bool parser::parse(io_buf& buf, uint8_t* buffer_pointer)
@@ -51,14 +46,14 @@ bool parser::parse(io_buf& buf, uint8_t* buffer_pointer)
   return true;
 }
 
-void parser::process_collection_item(VW::workspace* all, v_array<example*>& examples)
+void parser::process_collection_item(v_array<example*>& examples)
 {
   // new example/multi example object to process from collection
   if (_data->example_obj_as_ExampleCollection()->is_multiline())
   {
     _active_multi_ex = true;
     _multi_example_object = _data->example_obj_as_ExampleCollection()->multi_examples()->Get(_example_index);
-    parse_multi_example(all, examples[0], _multi_example_object);
+    parse_multi_example(examples[0], _multi_example_object);
     // read from active collection
     _example_index++;
     if (_example_index == _data->example_obj_as_ExampleCollection()->multi_examples()->size())
@@ -70,7 +65,7 @@ void parser::process_collection_item(VW::workspace* all, v_array<example*>& exam
   else
   {
     const auto ex = _data->example_obj_as_ExampleCollection()->examples()->Get(_example_index);
-    parse_example(all, examples[0], ex);
+    parse_example(examples[0], ex);
     _example_index++;
     if (_example_index == _data->example_obj_as_ExampleCollection()->examples()->size())
     {
@@ -80,17 +75,17 @@ void parser::process_collection_item(VW::workspace* all, v_array<example*>& exam
   }
 }
 
-bool parser::parse_examples(VW::workspace* all, io_buf& buf, v_array<example*>& examples, uint8_t* buffer_pointer)
+bool parser::parse_examples(io_buf& buf, v_array<example*>& examples, uint8_t* buffer_pointer)
 {
   if (_active_multi_ex)
   {
-    parse_multi_example(all, examples[0], _multi_example_object);
+    parse_multi_example(examples[0], _multi_example_object);
     return true;
   }
 
   if (_active_collection)
   {
-    process_collection_item(all, examples);
+    process_collection_item(examples);
     return true;
   }
   else
@@ -103,7 +98,7 @@ bool parser::parse_examples(VW::workspace* all, io_buf& buf, v_array<example*>& 
       case VW::parsers::flatbuffer::ExampleType_Example:
       {
         const auto example = _data->example_obj_as_Example();
-        parse_example(all, examples[0], example);
+        parse_example(examples[0], example);
         return true;
       }
       break;
@@ -111,14 +106,14 @@ bool parser::parse_examples(VW::workspace* all, io_buf& buf, v_array<example*>& 
       {
         _multi_example_object = _data->example_obj_as_MultiExample();
         _active_multi_ex = true;
-        parse_multi_example(all, examples[0], _multi_example_object);
+        parse_multi_example(examples[0], _multi_example_object);
         return true;
       }
       break;
       case VW::parsers::flatbuffer::ExampleType_ExampleCollection:
       {
         _active_collection = true;
-        process_collection_item(all, examples);
+        process_collection_item(examples);
         return true;
       }
       break;
@@ -130,11 +125,30 @@ bool parser::parse_examples(VW::workspace* all, io_buf& buf, v_array<example*>& 
   }
 }
 
-void parser::parse_example(VW::workspace* all, example* ae, const Example* eg)
+bool parser::next(io_buf& input, v_array<example*>& output)
 {
-  all->example_parser->lbl_parser.default_label(ae->l);
+  return parse_examples(input, output);
+}
+
+void parser::reset()
+{
+  _data = nullptr;
+  _flatbuffer_pointer = nullptr;
+  _object_size = 0;
+  _active_collection = false;
+  _example_index = 0;
+  _multi_ex_index = 0;
+  _active_multi_ex = false;
+  _multi_example_object = nullptr;
+  _labeled_action = 0;
+  _c_hash = 0;
+}
+
+void parser::parse_example(example* ae, const Example* eg)
+{
+  _label_parser.default_label(ae->l);
   ae->is_newline = eg->is_newline();
-  parse_flat_label(all->sd, ae, eg);
+  parse_flat_label(ae, eg);
 
   if (flatbuffers::IsFieldPresent(eg, Example::VT_TAG))
   {
@@ -142,12 +156,12 @@ void parser::parse_example(VW::workspace* all, example* ae, const Example* eg)
     ae->tag.insert(ae->tag.end(), tag.begin(), tag.end());
   }
 
-  for (const auto& ns : *(eg->namespaces())) { parse_namespaces(all, ae, ns); }
+  for (const auto& ns : *(eg->namespaces())) { parse_namespaces(ae, ns); }
 }
 
-void parser::parse_multi_example(VW::workspace* all, example* ae, const MultiExample* eg)
+void parser::parse_multi_example(example* ae, const MultiExample* eg)
 {
-  all->example_parser->lbl_parser.default_label(ae->l);
+  _label_parser.default_label(ae->l);
   if (_multi_ex_index >= eg->examples()->size())
   {
     // done with multi example, send a newline example and reset
@@ -158,7 +172,7 @@ void parser::parse_multi_example(VW::workspace* all, example* ae, const MultiExa
     return;
   }
 
-  parse_example(all, ae, eg->examples()->Get(_multi_ex_index));
+  parse_example(ae, eg->examples()->Get(_multi_ex_index));
   _multi_ex_index++;
 }
 
@@ -173,11 +187,11 @@ namespace_index get_namespace_index(const Namespace* ns)
   THROW("Either name or hash field must be specified to get the namespace index.");
 }
 
-bool get_namespace_hash(VW::workspace* all, const Namespace* ns, uint64_t& hash)
+bool get_namespace_hash(hash_func_t hash_func, uint64_t hash_seed, const Namespace* ns, uint64_t& hash)
 {
   if (flatbuffers::IsFieldPresent(ns, Namespace::VT_NAME))
   {
-    hash = all->example_parser->hasher(ns->name()->c_str(), ns->name()->size(), all->hash_seed);
+    hash = hash_func(ns->name()->c_str(), ns->name()->size(), hash_seed);
     return true;
   }
   else if (flatbuffers::IsFieldPresent(ns, Namespace::VT_FULL_HASH))
@@ -188,11 +202,11 @@ bool get_namespace_hash(VW::workspace* all, const Namespace* ns, uint64_t& hash)
   return false;
 }
 
-void parser::parse_namespaces(VW::workspace* all, example* ae, const Namespace* ns)
+void parser::parse_namespaces(example* ae, const Namespace* ns)
 {
   const namespace_index index = get_namespace_index(ns);
   uint64_t hash = 0;
-  const auto hash_found = get_namespace_hash(all, ns, hash);
+  const auto hash_found = get_namespace_hash(_hash_function, _hash_seed, ns, hash);
   if (hash_found) { _c_hash = hash; }
   if (std::find(ae->indices.begin(), ae->indices.end(), index) == ae->indices.end()) { ae->indices.push_back(index); }
 
@@ -200,17 +214,17 @@ void parser::parse_namespaces(VW::workspace* all, example* ae, const Namespace* 
 
   if (hash_found) { fs.start_ns_extent(hash); }
   for (const auto& feature : *(ns->features()))
-  { parse_features(all, fs, feature, (all->audit || all->hash_inv) ? ns->name() : nullptr); }
+  { parse_features(fs, feature, _audit ? ns->name() : nullptr); }
   if (hash_found) { fs.end_ns_extent(); }
 }
 
-void parser::parse_features(VW::workspace* all, features& fs, const Feature* feature, const flatbuffers::String* ns)
+void parser::parse_features(features& fs, const Feature* feature, const flatbuffers::String* ns)
 {
   if (flatbuffers::IsFieldPresent(feature, Feature::VT_NAME))
   {
-    uint64_t word_hash = all->example_parser->hasher(feature->name()->c_str(), feature->name()->size(), _c_hash);
+    uint64_t word_hash = _hash_function(feature->name()->c_str(), feature->name()->size(), _c_hash);
     fs.push_back(feature->value(), word_hash);
-    if ((all->audit || all->hash_inv) && ns != nullptr)
+    if (_audit && ns != nullptr)
     { fs.space_names.push_back(audit_strings(ns->c_str(), feature->name()->c_str())); }
   }
   else
@@ -219,14 +233,14 @@ void parser::parse_features(VW::workspace* all, features& fs, const Feature* fea
   }
 }
 
-void parser::parse_flat_label(shared_data* sd, example* ae, const Example* eg)
+void parser::parse_flat_label(example* ae, const Example* eg)
 {
   switch (eg->label_type())
   {
     case Label_SimpleLabel:
     {
       const SimpleLabel* simple_lbl = static_cast<const SimpleLabel*>(eg->label());
-      parse_simple_label(sd, &(ae->l), &(ae->_reduction_features), simple_lbl);
+      parse_simple_label(&(ae->l), &(ae->_reduction_features), simple_lbl);
       break;
     }
     case Label_CBLabel:
@@ -256,7 +270,7 @@ void parser::parse_flat_label(shared_data* sd, example* ae, const Example* eg)
     case Label_MultiClass:
     {
       auto mc_label = static_cast<const MultiClass*>(eg->label());
-      parse_mc_label(sd, &(ae->l), mc_label);
+      parse_mc_label(_ldict, &(ae->l), mc_label);
       break;
     }
     case Label_MultiLabel:
