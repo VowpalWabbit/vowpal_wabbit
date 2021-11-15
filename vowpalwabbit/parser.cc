@@ -77,7 +77,7 @@ int VW_getpid() { return (int)::GetCurrentProcessId(); }
 #endif
 
 VW::example_parser_i::example_parser_i(std::string type) : _type(std::move(type)) {}
-VW::string_view VW::example_parser_i::type() { return _type; };
+VW::string_view VW::example_parser_i::type() { return _type; }
 
 struct pooled_example_factory final : VW::example_factory_i
 {
