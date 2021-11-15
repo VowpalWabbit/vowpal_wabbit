@@ -167,12 +167,12 @@ int main(int argc, char** argv)
   else
   {
     DecisionServiceInteraction interaction;
+    auto dsjson_parser = VW::make_dsjson_parser(*vw, false, true, false);
     for (const auto& line : lines)
     {
       v_array<example*> examples;
       examples.push_back(&VW::get_unused_example(vw));
-      VW::read_line_decision_service_json<false>(*vw, examples, const_cast<char*>(line.data()), line.length(), false,
-          (VW::example_factory_t)&VW::get_unused_example, (void*)vw, &interaction);
+      dsjson_parser->parse_object(const_cast<char*>(line.data()), line.length(),examples, interaction);
       multi_ex result;
       result.reserve(examples.size());
       for (size_t i = 0; i < examples.size(); ++i)
