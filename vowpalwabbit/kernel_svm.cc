@@ -246,10 +246,7 @@ static int trim_cache(svm_params& params)
 
 int save_load_flat_example(io_buf& model_file, bool read, flat_example& fec)
 {
-  if (read)
-  {
-    VW::model_utils::read_model_field(model_file, fec);
-  }
+  if (read) { VW::model_utils::read_model_field(model_file, fec); }
   else
   {
     VW::model_utils::write_model_field(model_file, fec, "flat_example", false);
