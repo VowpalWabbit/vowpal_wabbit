@@ -244,17 +244,19 @@ VW::LEARNER::base_learner* setup(VW::setup_base_i& stack_builder)
                .necessary()
                .help("Online explore-exploit for a contextual bandit problem with multiline action dependent features"))
       .add(make_option("cover", cover_size).keep().necessary().help("Online cover based exploration"))
-      .add(make_option("psi", psi).keep().default_value(1.0f).help("disagreement parameter for cover"))
-      .add(make_option("nounif", nounif).keep().help("do not explore uniformly on zero-probability actions in cover"))
+      .add(make_option("psi", psi).keep().default_value(1.0f).help("Disagreement parameter for cover"))
+      .add(make_option("nounif", nounif).keep().help("Do not explore uniformly on zero-probability actions in cover"))
       .add(make_option("first_only", first_only).keep().help("Only explore the first action in a tie-breaking event"))
       .add(make_option("cb_type", type_string)
                .keep()
-               .help("contextual bandit method to use in {ips,dr,mtr}. Default: mtr"))
+               .default_value("mtr")
+               .one_of({"ips", "dr", "mtr"})
+               .help("Contextual bandit method to use"))
       .add(make_option("epsilon", epsilon)
                .keep()
                .allow_override()
                .default_value(0.05f)
-               .help("epsilon-greedy exploration"));
+               .help("Epsilon-greedy exploration"));
 
   if (!options.add_parse_and_check_necessary(new_options)) return nullptr;
 

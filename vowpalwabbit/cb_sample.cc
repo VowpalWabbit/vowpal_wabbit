@@ -116,7 +116,7 @@ base_learner* cb_sample_setup(VW::setup_base_i& stack_builder)
 
   option_group_definition new_options("CB Sample");
   new_options.add(
-      make_option("cb_sample", cb_sample_option).keep().necessary().help("Sample from CB pdf and swap top action."));
+      make_option("cb_sample", cb_sample_option).keep().necessary().help("Sample from CB pdf and swap top action"));
 
   if (!options.add_parse_and_check_necessary(new_options)) return nullptr;
 

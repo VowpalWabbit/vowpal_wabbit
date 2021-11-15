@@ -1214,21 +1214,21 @@ base_learner* memory_tree_setup(VW::setup_base_i& stack_builder)
                .help("Make a memory tree with at most <n> nodes"))
       .add(make_option("max_number_of_labels", tree->max_num_labels)
                .default_value(10)
-               .help("max number of unique label"))
+               .help("Max number of unique label"))
       .add(make_option("leaf_example_multiplier", tree->leaf_example_multiplier)
                .default_value(1)
-               .help("multiplier on examples per leaf (default = log nodes)"))
+               .help("Multiplier on examples per leaf (default = log nodes)"))
       .add(make_option("alpha", tree->alpha).default_value(0.1f).help("Alpha"))
       .add(make_option("dream_repeats", tree->dream_repeats)
                .default_value(1)
-               .help("number of dream operations per example (default = 1)"))
-      .add(make_option("top_K", tree->top_K).default_value(1).help("top K prediction error (default 1)"))
+               .help("Number of dream operations per example (default = 1)"))
+      .add(make_option("top_K", tree->top_K).default_value(1).help("Top K prediction error (default 1)"))
       .add(make_option("learn_at_leaf", tree->learn_at_leaf).help("Enable learning at leaf"))
-      .add(make_option("oas", tree->oas).help("use oas at the leaf"))
+      .add(make_option("oas", tree->oas).help("Use oas at the leaf"))
       .add(make_option("dream_at_update", tree->dream_at_update)
                .default_value(0)
-               .help("turn on dream operations at reward based update as well"))
-      .add(make_option("online", tree->online).help("turn on dream operations at reward based update as well"));
+               .help("Turn on dream operations at reward based update as well"))
+      .add(make_option("online", tree->online).help("Turn on dream operations at reward based update as well"));
 
   if (!options.add_parse_and_check_necessary(new_options)) { return nullptr; }
 

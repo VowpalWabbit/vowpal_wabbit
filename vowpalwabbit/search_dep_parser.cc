@@ -66,7 +66,7 @@ void initialize(Search::search &sch, size_t & /*num_actions*/, options_i &option
   data->action_loss.resize_but_with_stl_behavior(5);
   sch.set_task_data<task_data>(data);
 
-  option_group_definition new_options("Dependency Parser Options");
+  option_group_definition new_options("Dependency Parser");
   new_options.add(make_option("root_label", data->root_label)
                       .keep()
                       .default_value(8)

@@ -252,7 +252,7 @@ void learn(offset_tree& tree, single_learner& base, example& ec)
 base_learner* setup(VW::setup_base_i& stack_builder)
 {
   options_i& options = *stack_builder.get_options();
-  option_group_definition new_options("Offset tree Options");
+  option_group_definition new_options("Offset Tree");
   uint32_t num_actions;
   new_options.add(make_option("ot", num_actions).keep().necessary().help("Offset tree with <k> labels"));
 

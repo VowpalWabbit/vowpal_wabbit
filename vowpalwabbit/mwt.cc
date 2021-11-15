@@ -210,7 +210,11 @@ void save_load(mwt& c, io_buf& model_file, bool read, bool text)
     policy_data& pd = c.evals[policy];
     if (read) msg << "evals: " << policy << ":" << pd.action << ":" << pd.cost << " ";
     bin_text_read_write_fixed_validated(
-        model_file, reinterpret_cast<char*>(&c.evals[policy]), sizeof(policy_data), read, msg, text);
+        model_file, reinterpret_cast<char*>(&c.evals[policy].cost), sizeof(double), read, msg, text);
+    bin_text_read_write_fixed_validated(
+        model_file, reinterpret_cast<char*>(&c.evals[policy].action), sizeof(uint32_t), read, msg, text);
+    bin_text_read_write_fixed_validated(
+        model_file, reinterpret_cast<char*>(&c.evals[policy].seen), sizeof(bool), read, msg, text);
   }
 }
 }  // namespace MWT
@@ -223,9 +227,9 @@ base_learner* mwt_setup(VW::setup_base_i& stack_builder)
   auto c = VW::make_unique<mwt>();
   std::string s;
   bool exclude_eval = false;
-  option_group_definition new_options("Multiworld Testing Options");
+  option_group_definition new_options("Multiworld Testing");
   new_options.add(make_option("multiworld_test", s).keep().necessary().help("Evaluate features as a policies"))
-      .add(make_option("learn", c->num_classes).help("Do Contextual Bandit learning on <n> classes."))
+      .add(make_option("learn", c->num_classes).help("Do Contextual Bandit learning on <n> classes"))
       .add(make_option("exclude_eval", exclude_eval).help("Discard mwt policy features before learning"));
 
   if (!options.add_parse_and_check_necessary(new_options)) return nullptr;

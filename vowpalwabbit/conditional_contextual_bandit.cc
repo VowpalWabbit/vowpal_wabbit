@@ -272,6 +272,7 @@ void inject_slot_id(ccb& data, example* shared, size_t id)
 
   shared->feature_space[ccb_id_namespace].push_back(1., index, ccb_id_namespace);
   shared->indices.push_back(ccb_id_namespace);
+  shared->num_features++;
 
   if (audit)
   {

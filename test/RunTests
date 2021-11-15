@@ -1281,7 +1281,7 @@ echo "" | {VW}
     pred-sets/ref/cb_adf_rank.predict
 
 # Test 88: named labels at training time
-{VW} --named_labels det,noun,verb --oaa 3 -d train-sets/test_named  -k -c --passes 10 --holdout_off -f models/test_named.model
+{VW} --named_labels det,noun,verb --oaa 3 -d train-sets/test_named -k -c --passes 10 --holdout_off -f models/test_named.model
     train-sets/ref/test_named_train.stderr
 
 # Test 89: named labels at prediction
@@ -2543,5 +2543,39 @@ train-sets/ref/slates_simple_w_interactions.stderr
 # Test 356: fuzz testing crash due to partial model file
 ./negative-test.sh {VW} --no_stdin --cb_explore_adf --cover 3 --noconstant --quiet -i model-sets/truncated_model
     train-sets/ref/truncated_model_crash.stdout
+
+# Test 357: --probabilities --oaa one-indexed
+{VW} -d train-sets/probabilities_one_ind.dat --probabilities --oaa=4 --loss_function=logistic -p oaa_one_ind_probabilities.predict
+   train-sets/ref/oaa_one_ind_probabilities.stderr
+   pred-sets/ref/oaa_one_ind_probabilities.predict
+
+# Test 358: --probabilities --oaa zero-indexed
+{VW} -d train-sets/probabilities_zero_ind.dat --probabilities --oaa=4 --loss_function=logistic -p oaa_zero_ind_probabilities.predict --indexing 0
+   train-sets/ref/oaa_zero_ind_probabilities.stderr
+   pred-sets/ref/oaa_zero_ind_probabilities.predict
+
+# Test 359: --probabilities --oaa zero-indexed without flag
+{VW} -d train-sets/probabilities_zero_ind.dat --probabilities --oaa=4 --loss_function=logistic -p oaa_zero_ind_no_flag_probabilities.predict
+   train-sets/ref/oaa_zero_ind_no_flag_probabilities.stderr
+   pred-sets/ref/oaa_zero_ind_no_flag_probabilities.predict
+
+# Test 360: --probabilities --oaa mixed-indexing
+{VW} -d train-sets/probabilities_mixed_ind.dat --probabilities --oaa=4 --loss_function=logistic -p oaa_mixed_probabilities.predict
+   train-sets/ref/oaa_mixed_probabilities.stdout
+   train-sets/ref/oaa_mixed_probabilities.stderr
+   pred-sets/ref/oaa_mixed_probabilities.predict
+
+# Test 361: bad argument in one_of string
+./negative-test.sh {VW} --cb_adf -d train-sets/cb_test.ldf --cb_type bad_type
+    train-sets/ref/cb_bad_one_of_string.stderr
+
+# Test 362: bad argument in one_of int
+./negative-test.sh {VW} -k -d train-sets/lda-2pass-hang.dat --lda 10 -c --passes 2 --holdout_off --math-mode 5
+    train-sets/ref/cb_bad_one_of_int.stderr
+
+# Test 363: check that ccb feature count adds up with slot ids
+{VW} -d train-sets/ccb_audit.dat --ccb_explore_adf --audit --noconstant -P 1
+    train-sets/ref/ccb_audit.stdout
+    train-sets/ref/ccb_audit.stderr
 
 # Do not delete this line or the empty line above it

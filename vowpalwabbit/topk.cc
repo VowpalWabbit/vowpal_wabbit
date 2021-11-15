@@ -128,7 +128,7 @@ VW::LEARNER::base_learner* topk_setup(VW::setup_base_i& stack_builder)
   options_i& options = *stack_builder.get_options();
   uint32_t K;
   option_group_definition new_options("Top K");
-  new_options.add(make_option("top", K).keep().necessary().help("top k recommendation"));
+  new_options.add(make_option("top", K).keep().necessary().help("Top k recommendation"));
 
   if (!options.add_parse_and_check_necessary(new_options)) return nullptr;
 
