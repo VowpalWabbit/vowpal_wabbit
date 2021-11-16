@@ -743,6 +743,26 @@ def convert_tests_for_flatbuffers(
 
     return tests
 
+def check_test_ids(tests):
+    seen_ids: Set[int] = set()
+    for test in tests:
+        if "id" not in test:
+            raise ValueError("id field missing in test: {}".format(test))
+        if test["id"] in seen_ids:
+            raise ValueError("Duplicate found for id: {}".format(test["id"]))
+        seen_ids.add(test["id"])
+    
+    first_id = min(seen_ids)
+    if first_id != 1:
+        raise ValueError("Ids must start from 1. First id was: {}".format(first_id))
+
+    last_test_id = max(seen_ids)
+    if len(seen_ids) != (last_test_id):
+        missing_ids = []
+        for i in range(1, last_test_id + 1):
+            if i not in seen_ids:
+                missing_ids.append(i)
+        raise ValueError("Missing test ids: [{}]".format(", ".join(str(x) for x in missing_ids)))
 
 def convert_to_test_data(
     tests: List[Any], vw_bin: str, spanning_tree_bin: Optional[str], skipped_ids: List[int], extra_vw_options: str
@@ -970,6 +990,8 @@ def main():
     json_test_spec_content = open(args.test_spec).read()
     tests = json.loads(json_test_spec_content)
     print("Tests read from file: {}".format((args.test_spec)))
+
+    check_test_ids(tests)
 
     tests = convert_to_test_data(tests, vw_bin, spanning_tree_bin, args.skip_test, extra_vw_options=args.extra_options)
 
