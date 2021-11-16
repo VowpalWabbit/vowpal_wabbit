@@ -556,7 +556,7 @@ py::list my_parse(vw_ptr& all, char* str)
       current_examples.clear();
       current_examples.push_back(&VW::get_unused_example(all.get()));
     }
-    assert(current_examples.empty());
+    finish_example(*all, *current_examples.back());
   }
   else if (current_parser_type == "json" || current_parser_type == "dsjson")
   {
@@ -583,7 +583,7 @@ py::list my_parse(vw_ptr& all, char* str)
       current_examples.clear();
       current_examples.push_back(&VW::get_unused_example(all.get()));
     }
-    assert(current_examples.empty());
+    finish_example(*all, *current_examples.back());
   }
 
   // TODO is an undrained input an error?
