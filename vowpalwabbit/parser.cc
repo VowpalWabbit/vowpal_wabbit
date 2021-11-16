@@ -367,6 +367,7 @@ void parse_cache(VW::workspace& all, std::vector<std::string> cache_files, bool 
 void enable_sources(VW::workspace& all, bool quiet, size_t passes, input_options& input_options)
 {
   parse_cache(all, input_options.cache_files, input_options.kill_cache, quiet);
+  all.chain_hash_json = input_options.chain_hash_json;
 
   if (!all.no_daemon && (all.daemon || all.active))
   {
@@ -635,7 +636,6 @@ void enable_sources(VW::workspace& all, bool quiet, size_t passes, input_options
       }
 
       all.example_parser->resettable = all.example_parser->write_cache;
-      all.chain_hash_json = input_options.chain_hash_json;
     }
   }
 
