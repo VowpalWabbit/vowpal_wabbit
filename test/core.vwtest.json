@@ -4286,5 +4286,17 @@
     "input_files": [
       "train-sets/probabilities_mixed_ind.dat"
     ]
+  },
+  {
+    "id": 363,
+    "desc": "check that ccb feature count adds up with slot ids",
+    "vw_command": "-d train-sets/ccb_audit.dat --ccb_explore_adf --audit --noconstant -P 1",
+    "diff_files": {
+      "stderr": "train-sets/ref/ccb_audit.stderr",
+      "stdout": "train-sets/ref/ccb_audit.stdout"
+    },
+    "input_files": [
+      "train-sets/ccb_audit.dat"
+    ]
   }
 ]
