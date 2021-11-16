@@ -536,26 +536,71 @@ void predict_or_learn(vw_ptr& all, py::list& ec)
 py::list my_parse(vw_ptr& all, char* str)
 {
   v_array<example*> examples;
-  examples.push_back(&VW::get_unused_example(all.get()));
+
+  io_buf buffer;
+  buffer.add_file(VW::io::create_buffer_view(str, strlen(str)));
 
   auto current_parser_type = all->example_parser->active_example_parser->type();
-  if (current_parser_type == "text" || current_parser_type == "json" || current_parser_type == "dsjson")
+  if (current_parser_type == "text")
   {
-    io_buf buffer;
-    buffer.add_file(VW::io::create_buffer_view(str, strlen(str)));
+    v_array<example*> current_examples;
+    current_examples.push_back(&VW::get_unused_example(all.get()));
+
     all->example_parser->active_example_parser->reset();
-    // Consider draining the input instead of simply taking the first example?
+    while(all->example_parser->active_example_parser->next(buffer, current_examples))
+    {
+      for(auto* ex : current_examples)
+      {
+        examples.push_back(ex);
+      }
+      current_examples.clear();
+      current_examples.push_back(&VW::get_unused_example(all.get()));
+    }
+    assert(current_examples.empty());
+  }
+  else if (current_parser_type == "json" || current_parser_type == "dsjson")
+  {
+    v_array<example*> current_examples;
+    current_examples.push_back(&VW::get_unused_example(all.get()));
+
+    all->example_parser->active_example_parser->reset();
     all->example_parser->active_example_parser->next(buffer, examples);
   }
   else
   {
     // If some other input type is in use the default is to fallback to text in this call.
     auto text_parser = VW::make_text_parser(*all);
-    io_buf buffer;
-    buffer.add_file(VW::io::create_buffer_view(str, strlen(str)));
-    all->example_parser->active_example_parser->reset();
+    
     // Consider draining the input instead of simply taking the first example?
-    all->example_parser->active_example_parser->next(buffer, examples);
+    v_array<example*> current_examples;
+    current_examples.push_back(&VW::get_unused_example(all.get()));
+    while(text_parser->next(buffer, current_examples))
+    {
+      for(auto* ex : current_examples)
+      {
+        examples.push_back(ex);
+      }
+      current_examples.clear();
+      current_examples.push_back(&VW::get_unused_example(all.get()));
+    }
+    assert(current_examples.empty());
+  }
+
+  // TODO is an undrained input an error?
+  if (!examples.empty())
+  {
+    // If the final example as new_line, remove it.
+    if (examples.back()->is_newline)
+    {
+      auto* back_ex = examples.back();
+      finish_example(*all.get(), *back_ex);
+      examples.pop_back();
+    }
+
+    for (auto* ex : examples)
+    {
+      assert(!ex->is_newline);
+    }
   }
 
   py::list example_collection;
