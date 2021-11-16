@@ -31,7 +31,7 @@ BOOST_AUTO_TEST_CASE(write_and_read_features_from_cache)
   v_array<example*> examples;
   example dest_ex;
   examples.push_back(&dest_ex);
-  assert(parser->next(io_reader, examples) == true);
+  BOOST_CHECK_EQUAL(parser->next(io_reader, examples), true);
 
   BOOST_CHECK_EQUAL(dest_ex.indices.size(), 2);
   BOOST_CHECK_EQUAL(dest_ex.feature_space['n'].size(), 3);
