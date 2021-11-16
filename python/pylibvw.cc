@@ -560,9 +560,7 @@ py::list my_parse(vw_ptr& all, char* str)
   }
   else if (current_parser_type == "json" || current_parser_type == "dsjson")
   {
-    v_array<example*> current_examples;
-    current_examples.push_back(&VW::get_unused_example(all.get()));
-
+      examples.push_back(&VW::get_unused_example(all.get()));
     all->example_parser->active_example_parser->reset();
     all->example_parser->active_example_parser->next(buffer, examples);
   }
