@@ -635,7 +635,7 @@ void enable_sources(VW::workspace& all, bool quiet, size_t passes, input_options
   }
 
   if (passes > 1 && !all.example_parser->resettable)
-    THROW("need a cache file for multiple passes : try using --cache_file");
+    THROW("need a cache file for multiple passes : try using  --cache or --cache_file <name>");
 
   if (!quiet && !all.daemon) *(all.trace_message) << "num sources = " << all.example_parser->input.num_files() << endl;
 }
