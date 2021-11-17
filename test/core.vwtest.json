@@ -1165,7 +1165,10 @@
       "stderr": "test-sets/ref/backwards.stderr",
       "stdout": "test-sets/ref/backwards.stdout"
     },
-    "bash_command": "printf '3 |f a b c |e x y z\\n2 |f a y c |e x\\n' |  {VW} -i simple_model --invert_hash inv_hash.cmp &&  tail -n +2 inv_hash.cmp"
+    "bash_command": "printf '3 |f a b c |e x y z\\n2 |f a y c |e x\\n' |  {VW} -i model-sets/simple_model --invert_hash inv_hash.cmp &&  tail -n +2 inv_hash.cmp",
+    "input_files": [
+      "model-sets/simple_model"
+    ]
   },
   {
     "id": 97,
