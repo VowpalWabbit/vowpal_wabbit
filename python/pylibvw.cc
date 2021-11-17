@@ -547,12 +547,9 @@ py::list my_parse(vw_ptr& all, char* str)
     current_examples.push_back(&VW::get_unused_example(all.get()));
 
     all->example_parser->active_example_parser->reset();
-    while(all->example_parser->active_example_parser->next(buffer, current_examples))
+    while (all->example_parser->active_example_parser->next(buffer, current_examples))
     {
-      for(auto* ex : current_examples)
-      {
-        examples.push_back(ex);
-      }
+      for (auto* ex : current_examples) { examples.push_back(ex); }
       current_examples.clear();
       current_examples.push_back(&VW::get_unused_example(all.get()));
     }
@@ -560,7 +557,7 @@ py::list my_parse(vw_ptr& all, char* str)
   }
   else if (current_parser_type == "json" || current_parser_type == "dsjson")
   {
-      examples.push_back(&VW::get_unused_example(all.get()));
+    examples.push_back(&VW::get_unused_example(all.get()));
     all->example_parser->active_example_parser->reset();
     all->example_parser->active_example_parser->next(buffer, examples);
   }
@@ -568,16 +565,13 @@ py::list my_parse(vw_ptr& all, char* str)
   {
     // If some other input type is in use the default is to fallback to text in this call.
     auto text_parser = VW::make_text_parser(*all);
-    
+
     // Consider draining the input instead of simply taking the first example?
     v_array<example*> current_examples;
     current_examples.push_back(&VW::get_unused_example(all.get()));
-    while(text_parser->next(buffer, current_examples))
+    while (text_parser->next(buffer, current_examples))
     {
-      for(auto* ex : current_examples)
-      {
-        examples.push_back(ex);
-      }
+      for (auto* ex : current_examples) { examples.push_back(ex); }
       current_examples.clear();
       current_examples.push_back(&VW::get_unused_example(all.get()));
     }
@@ -595,10 +589,7 @@ py::list my_parse(vw_ptr& all, char* str)
       examples.pop_back();
     }
 
-    for (auto* ex : examples)
-    {
-      assert(!ex->is_newline);
-    }
+    for (auto* ex : examples) { assert(!ex->is_newline); }
   }
 
   py::list example_collection;
