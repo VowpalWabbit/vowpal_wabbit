@@ -421,8 +421,8 @@ public:
         generated_extent_interactions =
             compile_extent_interactions<generate_func, leave_duplicate_interactions>(interactions, all_seen_extents);
       }
-      }
     }
+  }
 };
 
 }  // namespace INTERACTIONS
