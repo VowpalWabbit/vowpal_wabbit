@@ -409,20 +409,18 @@ public:
         if (extent.hash == 0 || extent.hash >= std::numeric_limits<unsigned char>::max() ||
             (extent.hash < std::numeric_limits<unsigned char>::max() &&
                 is_printable_namespace(static_cast<unsigned char>(extent.hash))))
-        {
-          all_seen_extents.insert({ns_index, extent.hash});
-        }
+        { all_seen_extents.insert({ns_index, extent.hash}); }
       }
     }
 
-      if (prev_count != all_seen_extents.size())
+    if (prev_count != all_seen_extents.size())
+    {
+      generated_interactions.clear();
+      if (!all_seen_extents.empty())
       {
-        generated_interactions.clear();
-        if (!all_seen_extents.empty())
-        {
-          generated_extent_interactions =
-              compile_extent_interactions<generate_func, leave_duplicate_interactions>(interactions, all_seen_extents);
-        }
+        generated_extent_interactions =
+            compile_extent_interactions<generate_func, leave_duplicate_interactions>(interactions, all_seen_extents);
+      }
       }
     }
 };

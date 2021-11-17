@@ -517,7 +517,10 @@ void do_interaction_feature_count_test(bool add_quadratic, bool add_cubic, bool 
   BOOST_REQUIRE_EQUAL(num_char_fts, num_extent_fts);
 }
 
-BOOST_AUTO_TEST_CASE(extent_vs_char_interactions_wildcard) { do_interaction_feature_count_test(true, false, true, true); }
+BOOST_AUTO_TEST_CASE(extent_vs_char_interactions_wildcard)
+{
+  do_interaction_feature_count_test(true, false, true, true);
+}
 BOOST_AUTO_TEST_CASE(extent_vs_char_interactions_cubic_wildcard)
 {
   do_interaction_feature_count_test(true, true, true, true);
