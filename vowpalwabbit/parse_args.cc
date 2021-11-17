@@ -536,8 +536,8 @@ std::vector<extent_term> parse_full_name_interactions(VW::workspace& all, VW::st
   return result;
 }
 
-void parse_feature_tweaks(
-    options_i& options, VW::workspace& all, bool interactions_settings_duplicated, std::vector<std::string>& dictionary_nses)
+void parse_feature_tweaks(options_i& options, VW::workspace& all, bool interactions_settings_duplicated,
+    std::vector<std::string>& dictionary_nses)
 {
   std::string hash_function("strings");
   uint32_t new_bits;

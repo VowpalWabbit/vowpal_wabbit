@@ -220,8 +220,8 @@ void reset_source(VW::workspace& all, size_t numbits)
 
     // Rename the cache file to the final name.
     if (0 != rename(all.example_parser->currentname.c_str(), all.example_parser->finalname.c_str()))
-      THROW("WARN: reset_source(VW::workspace& all, size_t numbits) cannot rename: " << all.example_parser->currentname << " to "
-                                                                          << all.example_parser->finalname);
+      THROW("WARN: reset_source(VW::workspace& all, size_t numbits) cannot rename: "
+          << all.example_parser->currentname << " to " << all.example_parser->finalname);
     input.close_files();
     // Now open the written cache as the new input file.
     input.add_file(VW::io::open_file_reader(all.example_parser->finalname));
@@ -982,5 +982,8 @@ namespace VW
 {
 void end_parser(VW::workspace& all) { all.parse_thread.join(); }
 
-bool is_ring_example(const VW::workspace& all, const example* ae) { return all.example_parser->example_pool.is_from_pool(ae); }
+bool is_ring_example(const VW::workspace& all, const example* ae)
+{
+  return all.example_parser->example_pool.is_from_pool(ae);
+}
 }  // namespace VW

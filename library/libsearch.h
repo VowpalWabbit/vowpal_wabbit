@@ -89,7 +89,7 @@ class BuiltInTask : public SearchTask< std::vector<example*>, std::vector<uint32
 {
 public:
   BuiltInTask(VW::workspace& vw_obj, Search::search_task* task)
-    : SearchTask< std::vector<example*>, std::vector<uint32_t> >(vw_obj)
+      : SearchTask<std::vector<example*>, std::vector<uint32_t>>(vw_obj)
   { HookTask::task_data* d = sch.get_task_data<HookTask::task_data>();
     size_t num_actions = d->num_actions;
     my_task = task;
