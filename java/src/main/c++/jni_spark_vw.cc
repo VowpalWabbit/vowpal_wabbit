@@ -325,7 +325,7 @@ JNIEXPORT jint JNICALL Java_org_vowpalwabbit_spark_VowpalWabbitNative_hash(
 // VW Example
 #define INIT_VARS                                                                                      \
   auto exWrapper = reinterpret_cast<VowpalWabbitExampleWrapper*>(get_native_pointer(env, exampleObj)); \
-  VW::workspace* all = exWrapper->_all;                                                                           \
+  VW::workspace* all = exWrapper->_all;                                                                \
   example* ex = exWrapper->_example;
 
 JNIEXPORT jlong JNICALL Java_org_vowpalwabbit_spark_VowpalWabbitExample_initialize(

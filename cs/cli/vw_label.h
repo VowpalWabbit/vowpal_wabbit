@@ -29,9 +29,10 @@ using namespace MULTICLASS;
 using namespace Newtonsoft::Json;
 
 public interface class ILabel
-{ void UpdateExample(VW::workspace* vw, example* ex);
-  void ReadFromExample(example* ex);
-};
+  {
+    void UpdateExample(VW::workspace* vw, example* ex);
+    void ReadFromExample(example* ex);
+  };
 
 public ref class ContextualBanditLabel sealed : ILabel
 {
@@ -316,9 +317,7 @@ public:
   { throw gcnew NotImplementedException("to be done...");
   }
 
-  virtual void UpdateExample(VW::workspace* vw, example* ex)
-  { throw gcnew NotImplementedException("to be done...");
-  }
+  virtual void UpdateExample(VW::workspace* vw, example* ex) { throw gcnew NotImplementedException("to be done..."); }
 
   virtual String^ ToString() override
   { auto sb = gcnew StringBuilder;

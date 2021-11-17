@@ -360,8 +360,8 @@ default_to_cmdline, bool(*equal)(T,T), const char* mismatch_error_string, const 
   }
   }*/
 
-// void check_option(bool& ret, VW::workspace&all, po::variables_map& vm, const char* opt_name, bool default_to_cmdline, const
-// char* mismatch_error_string);
+// void check_option(bool& ret, VW::workspace&all, po::variables_map& vm, const char* opt_name, bool default_to_cmdline,
+// const char* mismatch_error_string);
 
 // our interface within VW
 VW::LEARNER::base_learner* setup(VW::setup_base_i& stack_builder);
