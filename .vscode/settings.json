@@ -6,5 +6,10 @@
             ],
             "url": "./test/vwtest.schema.json"
         }
-    ]
+    ],
+    "files.associations": {
+        "deque": "cpp",
+        "string": "cpp",
+        "vector": "cpp"
+    }
 }
