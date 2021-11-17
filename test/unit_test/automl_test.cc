@@ -78,13 +78,14 @@ BOOST_AUTO_TEST_CASE(automl_first_champ_switch)
 {
   const size_t num_iterations = 1331;
   const size_t seed = 10;
-  const size_t deterministic_champ_switch = 150;
+  const size_t deterministic_champ_switch = 161;
   callback_map test_hooks;
 
   test_hooks.emplace(deterministic_champ_switch - 1, [&](cb_sim&, vw& all, multi_ex&) {
     VW::automl::automl<interaction_config_manager>* aml = aml_test::get_automl_data(all);
     aml_test::check_interactions_match_exclusions(aml);
     aml_test::check_config_states(aml);
+    BOOST_CHECK_EQUAL(aml->cm->total_champ_switches, 0);
     BOOST_CHECK_EQUAL(aml->cm->current_champ, 0);
     BOOST_CHECK_EQUAL(deterministic_champ_switch - 1, aml->cm->total_learn_count);
     BOOST_CHECK(aml->current_state == VW::automl::automl_state::Experimenting);
@@ -95,6 +96,7 @@ BOOST_AUTO_TEST_CASE(automl_first_champ_switch)
     VW::automl::automl<interaction_config_manager>* aml = aml_test::get_automl_data(all);
     aml_test::check_interactions_match_exclusions(aml);
     aml_test::check_config_states(aml);
+    BOOST_CHECK_GT(aml->cm->total_champ_switches, 0);
     BOOST_CHECK_EQUAL(aml->cm->current_champ, 2);
     BOOST_CHECK_EQUAL(deterministic_champ_switch, aml->cm->total_learn_count);
     BOOST_CHECK(aml->current_state == VW::automl::automl_state::Experimenting);
@@ -290,7 +292,7 @@ BOOST_AUTO_TEST_CASE(clear_configs)
 {
   const size_t num_iterations = 3000;
   const size_t seed = 10;
-  const size_t clear_champ_switch = 150;
+  const size_t clear_champ_switch = 161;
   callback_map test_hooks;
 
   test_hooks.emplace(clear_champ_switch - 1, [&](cb_sim&, vw& all, multi_ex&) {
@@ -333,7 +335,7 @@ BOOST_AUTO_TEST_CASE(clear_configs_one_diff)
 {
   const size_t num_iterations = 3000;
   const size_t seed = 10;
-  const size_t clear_champ_switch = 173;
+  const size_t clear_champ_switch = 161;
   callback_map test_hooks;
 
   test_hooks.emplace(clear_champ_switch - 1, [&](cb_sim&, vw& all, multi_ex&) {
@@ -353,7 +355,7 @@ BOOST_AUTO_TEST_CASE(clear_configs_one_diff)
     aml_test::check_config_states(aml);
     BOOST_CHECK_EQUAL(aml->cm->current_champ, 0);
     BOOST_CHECK_EQUAL(clear_champ_switch, aml->cm->total_learn_count);
-    BOOST_CHECK_EQUAL(aml->cm->scores.size(), 1);
+    BOOST_CHECK_EQUAL(aml->cm->scores.size(), 3);
     BOOST_CHECK_EQUAL(aml->cm->valid_config_size, 7);
     BOOST_CHECK(aml->current_state == VW::automl::automl_state::Experimenting);
     return true;

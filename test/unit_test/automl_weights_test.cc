@@ -13,6 +13,8 @@
 #include <functional>
 #include <map>
 
+#define ARE_SAME(X, Y, Z) BOOST_CHECK_MESSAGE(VW::math::are_same_rel(X, Y, Z), "check ARE_SAME: expected: " << X << " not equal to " << Y);
+
 using simulator::callback_map;
 using simulator::cb_sim;
 
@@ -20,12 +22,6 @@ constexpr float AUTO_ML_FLOAT_TOL = 0.001f;
 
 namespace vw_hash_helpers
 {
-void ARE_SAME(float expected, float actual, float tol)
-{
-  BOOST_CHECK_MESSAGE(VW::math::are_same_rel(expected, actual, tol),
-      "check ARE_SAME: expected: " << expected << " not equal to " << actual);
-}
-
 // see parse_example.cc:maybeFeature(..) for other cases
 size_t get_hash_for_feature(vw& all, const std::string& ns, const std::string& feature)
 {
@@ -77,9 +73,9 @@ bool weights_offset_test(cb_sim&, vw& all, multi_ex& ec)
   const size_t interaction_index = interaction_to_index(all.weights,
       get_hash_for_feature(all, "Action", "article=sports"), get_hash_for_feature(all, "Action", "article=sports"));
 
-  const float expected_w0 = 0.0102325846f;
-  const float expected_w1 = 0.0230506323f;
-  const float expected_w2 = 0.0141550414f;
+  const float expected_w0 = 0.0248609f;
+  const float expected_w1 = 0.0346472f;
+  const float expected_w2 = 0.0105546f;
   const float ZERO = 0.f;
 
   for (auto index : feature_indexes)
