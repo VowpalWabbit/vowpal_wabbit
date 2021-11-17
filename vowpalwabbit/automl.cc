@@ -174,16 +174,16 @@ void automl<CMType>::one_step(multi_learner& base, multi_ex& ec, CB::cb_class& l
 // this can also be interpreted as a pre-learn() hook since it gets called by a learn() right before calling
 // into its own base_learner.learn(). see learn_automl(...)
 interaction_config_manager::interaction_config_manager(uint64_t global_lease, uint64_t max_live_configs, uint64_t seed,
-    uint64_t priority_challengers, bool keep_configs, std::string oracle_type, priority_func* calc_priority,
-    dense_parameters& weights)
+    uint64_t priority_challengers, bool keep_configs, std::string oracle_type, dense_parameters& weights,
+    priority_func* calc_priority)
     : global_lease(global_lease)
     , max_live_configs(max_live_configs)
     , seed(seed)
     , priority_challengers(priority_challengers)
     , keep_configs(keep_configs)
     , oracle_type(std::move(oracle_type))
-    , calc_priority(calc_priority)
     , weights(weights)
+    , calc_priority(calc_priority)
 {
   random_state.set_random_state(seed);
   configs[0] = exclusion_config(global_lease);
@@ -734,7 +734,7 @@ VW::LEARNER::base_learner* automl_setup(VW::setup_base_i& stack_builder)
   if (priority_challengers < 0) { priority_challengers = (static_cast<int>(max_live_configs) - 1) / 2; }
 
   auto cm = VW::make_unique<interaction_config_manager>(global_lease, max_live_configs, all.random_seed,
-      static_cast<uint64_t>(priority_challengers), keep_configs, oracle_type, calc_priority, all.weights.dense_weights);
+      static_cast<uint64_t>(priority_challengers), keep_configs, oracle_type, all.weights.dense_weights, calc_priority);
   auto data = VW::make_unique<automl<interaction_config_manager>>(std::move(cm));
   assert(max_live_configs <= MAX_CONFIGS);
 
