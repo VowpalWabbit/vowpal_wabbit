@@ -7,7 +7,7 @@
 #include <cassert>
 
 #define CASE(type) \
-  case VW::type:       \
+  case VW::type:   \
     return #type;
 
 VW::string_view to_string(VW::label_type_t label_type)
