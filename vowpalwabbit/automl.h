@@ -10,6 +10,7 @@
 #include "action_score.h"
 #include "reductions.h"
 #include "learner.h"
+#include "array_parameters_dense.h"
 #include <map>
 #include <set>
 #include <queue>
@@ -106,6 +107,7 @@ using priority_func = float(const exclusion_config&, const std::map<namespace_in
 
 struct interaction_config_manager : config_manager
 {
+  uint64_t total_champ_switches = 0;
   uint64_t total_learn_count = 0;
   uint64_t current_champ = 0;
   uint64_t global_lease;
@@ -116,6 +118,7 @@ struct interaction_config_manager : config_manager
   uint64_t valid_config_size = 0;
   bool keep_configs;
   std::string oracle_type;
+  dense_parameters& weights;
 
   // Stores all namespaces currently seen -- Namespace switch could we use array, ask Jack
   std::map<namespace_index, uint64_t> ns_counter;
@@ -130,7 +133,7 @@ struct interaction_config_manager : config_manager
   std::priority_queue<std::pair<float, uint64_t>> index_queue;
 
   interaction_config_manager(uint64_t, uint64_t, uint64_t, uint64_t, bool, std::string,
-      float (*)(const exclusion_config&, const std::map<namespace_index, uint64_t>&));
+      float (*)(const exclusion_config&, const std::map<namespace_index, uint64_t>&), dense_parameters&);
 
   void apply_config(example*, uint64_t);
   void revert_config(example*);

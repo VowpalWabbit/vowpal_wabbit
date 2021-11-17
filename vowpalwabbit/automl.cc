@@ -87,12 +87,27 @@ std::string interaction_vec_t_to_string(const std::vector<std::vector<namespace_
     ss << "-q ";
     for (namespace_index c : v)
     {
-      if (c == constant_namespace)
-        ss << "0";
-      else
-        ss << c;
+      c = (c == constant_namespace) ? '0' : c;
+      ss << c;
     }
     ss << " ";
+  }
+  return ss.str();
+}
+std::string exclusions_to_string(const std::map<namespace_index, std::set<namespace_index>>& exclusions)
+{
+  std::stringstream ss;
+  for (auto const& x : exclusions)
+  {
+    auto ns1 = x.first;
+    ns1 = (ns1 == constant_namespace) ? '0' : ns1;
+    ss << ns1 << ": [";
+    for (auto ns : x.second)
+    {
+      ns = (ns == constant_namespace) ? '0' : ns;
+      ss << ns << " ";
+    }
+    ss << "] ";
   }
   return ss.str();
 }
@@ -159,7 +174,8 @@ void automl<CMType>::one_step(multi_learner& base, multi_ex& ec, CB::cb_class& l
 // this can also be interpreted as a pre-learn() hook since it gets called by a learn() right before calling
 // into its own base_learner.learn(). see learn_automl(...)
 interaction_config_manager::interaction_config_manager(uint64_t global_lease, uint64_t max_live_configs, uint64_t seed,
-    uint64_t priority_challengers, bool keep_configs, std::string oracle_type, priority_func* calc_priority)
+    uint64_t priority_challengers, bool keep_configs, std::string oracle_type, priority_func* calc_priority,
+    dense_parameters& weights)
     : global_lease(global_lease)
     , max_live_configs(max_live_configs)
     , seed(seed)
@@ -167,6 +183,7 @@ interaction_config_manager::interaction_config_manager(uint64_t global_lease, ui
     , keep_configs(keep_configs)
     , oracle_type(std::move(oracle_type))
     , calc_priority(calc_priority)
+    , weights(weights)
 {
   random_state.set_random_state(seed);
   configs[0] = exclusion_config(global_lease);
@@ -380,6 +397,7 @@ void interaction_config_manager::schedule()
       uint64_t new_live_config_index = choose();
       scores[live_slot].config_index = new_live_config_index;
       configs[new_live_config_index].state = VW::automl::config_state::Live;
+      weights.copy_offsets(current_champ, live_slot, 4);
       // Regenerate interactions each time an exclusion is swapped in
       gen_quadratic_interactions(live_slot);
       // We may also want to 0 out weights here? Currently keep all same in live_slot position
@@ -483,6 +501,7 @@ void interaction_config_manager::update_champ()
   }
   if (champ_change)
   {
+    this->total_champ_switches++;
     if (!keep_configs)
     {
       while (!index_queue.empty()) { index_queue.pop(); };
@@ -509,7 +528,12 @@ void interaction_config_manager::persist(metric_sink& metrics)
   metrics.set_uint("test_county", total_learn_count);
   metrics.set_uint("current_champ", current_champ);
   for (uint64_t live_slot = 0; live_slot < scores.size(); ++live_slot)
-  { scores[live_slot].persist(metrics, "_" + std::to_string(live_slot)); }
+  {
+    scores[live_slot].persist(metrics, "_" + std::to_string(live_slot));
+    auto& exclusions = configs[scores[live_slot].config_index].exclusions;
+    metrics.set_string("exclusionc_" + std::to_string(live_slot), details::exclusions_to_string(exclusions));
+  }
+  metrics.set_uint("total_champ_switches", total_champ_switches);
 }
 
 // This sets up example with correct ineractions vector
@@ -710,7 +734,7 @@ VW::LEARNER::base_learner* automl_setup(VW::setup_base_i& stack_builder)
   if (priority_challengers < 0) { priority_challengers = (static_cast<int>(max_live_configs) - 1) / 2; }
 
   auto cm = VW::make_unique<interaction_config_manager>(global_lease, max_live_configs, all.random_seed,
-      static_cast<uint64_t>(priority_challengers), keep_configs, oracle_type, calc_priority);
+      static_cast<uint64_t>(priority_challengers), keep_configs, oracle_type, calc_priority, all.weights.dense_weights);
   auto data = VW::make_unique<automl<interaction_config_manager>>(std::move(cm));
   assert(max_live_configs <= MAX_CONFIGS);
 
