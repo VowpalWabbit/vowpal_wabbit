@@ -11,6 +11,7 @@
 
 #include <cstddef>
 
+#include <limits>
 #include <vector>
 #include <set>
 #include <algorithm>
@@ -398,19 +399,32 @@ public:
     for (auto ns_index : indices)
     {
       for (const auto& extent : feature_space[ns_index].namespace_extents)
-      { all_seen_extents.insert({ns_index, extent.hash}); }
-    }
-
-    if (prev_count != all_seen_extents.size())
-    {
-      generated_interactions.clear();
-      if (!all_seen_extents.empty())
       {
-        generated_extent_interactions =
-            compile_extent_interactions<generate_func, leave_duplicate_interactions>(interactions, all_seen_extents);
+        // Interactions should not be generated for reserved namespaces such as
+        // constant. These reserved namespaces use their hash as the namespace
+        // character value so we can check if the value is in this range. There
+        // is a chance of collisions here though. 0 is a special case as the
+        // default case is mapped to a hash of 0 even though it is in slot ' ',
+        // 32
+        if (extent.hash == 0 || extent.hash >= std::numeric_limits<unsigned char>::max() ||
+            (extent.hash < std::numeric_limits<unsigned char>::max() &&
+                is_printable_namespace(static_cast<unsigned char>(extent.hash))))
+        {
+          all_seen_extents.insert({ns_index, extent.hash});
+        }
       }
     }
-  }
+
+      if (prev_count != all_seen_extents.size())
+      {
+        generated_interactions.clear();
+        if (!all_seen_extents.empty())
+        {
+          generated_extent_interactions =
+              compile_extent_interactions<generate_func, leave_duplicate_interactions>(interactions, all_seen_extents);
+        }
+      }
+    }
 };
 
 }  // namespace INTERACTIONS
