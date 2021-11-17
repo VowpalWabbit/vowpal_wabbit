@@ -33,7 +33,7 @@ namespace py = boost::python;
 
 class py_log_wrapper;
 
-typedef boost::shared_ptr<vw> vw_ptr;
+typedef boost::shared_ptr<VW::workspace> vw_ptr;
 typedef boost::shared_ptr<example> example_ptr;
 typedef boost::shared_ptr<Search::search> search_ptr;
 typedef boost::shared_ptr<Search::predictor> predictor_ptr;
@@ -1159,7 +1159,7 @@ BOOST_PYTHON_MODULE(pylibvw)
   py::docstring_options local_docstring_options(true, true, false);
 
   // define the vw class
-  py::class_<vw, vw_ptr, boost::noncopyable>(
+  py::class_<VW::workspace, vw_ptr, boost::noncopyable>(
       "vw", "the basic VW object that holds with weight vector, parser, etc.", py::no_init)
       .def("__init__", py::make_constructor(my_initialize))
       .def("__init__", py::make_constructor(my_initialize_with_log))
