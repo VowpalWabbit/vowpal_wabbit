@@ -2,6 +2,7 @@
 // individual contributors. All rights reserved. Released under a BSD (revised)
 // license as described in the file LICENSE.
 
+#include "memory.h"
 #ifdef _WIN32
 #  define NOMINMAX
 #  include <WinSock2.h>
@@ -72,10 +73,7 @@ int main(int argc, char* argv[])
         const std::string new_args = sstr.str();
         std::cout << new_args << std::endl;
 
-        int l_argc;
-        char** l_argv = VW::to_argv(new_args, l_argc);
-
-        std::unique_ptr<options_boost_po> ptr(new options_boost_po(l_argc, l_argv));
+        auto ptr = VW::make_unique<options_boost_po>(sstr.str());
         ptr->add_and_parse(driver_config);
         alls.push_back(setup(*ptr));
         arguments.push_back(std::move(ptr));
