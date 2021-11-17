@@ -186,10 +186,7 @@ base_learner* lrq_setup(VW::setup_base_i& stack_builder)
 
   for (const auto& name : lrq_names)
   {
-    if (name.find(':') != std::string::npos)
-    {
-      THROW("--lrq does not support wildcards ':'");
-    }
+    if (name.find(':') != std::string::npos) { THROW("--lrq does not support wildcards ':'"); }
   }
 
   for (auto& lrq_name : lrq_names) lrq_name = VW::decode_inline_hex(lrq_name);

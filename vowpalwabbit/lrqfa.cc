@@ -152,10 +152,7 @@ VW::LEARNER::base_learner* lrqfa_setup(VW::setup_base_i& stack_builder)
   auto lrq = VW::make_unique<LRQFAstate>();
   lrq->all = &all;
 
-  if (lrqfa.find(':') != std::string::npos)
-  {
-    THROW("--lrqfa does not support wildcards ':'");
-  }
+  if (lrqfa.find(':') != std::string::npos) { THROW("--lrqfa does not support wildcards ':'"); }
 
   std::string lrqopt = VW::decode_inline_hex(lrqfa);
   size_t last_index = lrqopt.find_last_not_of("0123456789");
