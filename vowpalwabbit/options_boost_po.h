@@ -47,9 +47,7 @@ struct options_boost_po : public options_i
   options_boost_po(int argc, char** argv) : options_boost_po(std::vector<std::string>(argv + 1, argv + argc)) {}
 
   options_boost_po(const std::vector<std::string>& args) : m_command_line(args) {}
-  options_boost_po(const std::string& args) {
-    m_command_line = po::split_unix(args);
-  }
+  options_boost_po(const std::string& args) { m_command_line = po::split_unix(args); }
 
   options_boost_po(options_boost_po&) = delete;
   options_boost_po& operator=(options_boost_po&) = delete;
