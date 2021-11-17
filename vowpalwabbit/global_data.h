@@ -68,7 +68,7 @@ struct workspace;
 }
 
 // TODO: deprecate this alias.
-// using vw = VW::workspace;
+using vw = VW::workspace;
 
 struct dictionary_info
 {
