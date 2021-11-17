@@ -220,7 +220,7 @@ void reset_source(VW::workspace& all, size_t numbits)
 
     // Rename the cache file to the final name.
     if (0 != rename(all.example_parser->currentname.c_str(), all.example_parser->finalname.c_str()))
-      THROW("WARN: reset_source(vw& all, size_t numbits) cannot rename: " << all.example_parser->currentname << " to "
+      THROW("WARN: reset_source(VW::workspace& all, size_t numbits) cannot rename: " << all.example_parser->currentname << " to "
                                                                           << all.example_parser->finalname);
     input.close_files();
     // Now open the written cache as the new input file.
@@ -773,7 +773,7 @@ example* new_unused_example(VW::workspace& all)
   return ec;
 }
 
-example* read_example(vw& all, const char* example_line)
+example* read_example(VW::workspace& all, const char* example_line)
 {
   example* ret = &get_unused_example(&all);
 
@@ -879,7 +879,7 @@ void empty_example(VW::workspace& /*all*/, example& ec)
   ec.num_features_from_interactions = 0;
 }
 
-void clean_example(vw& all, example& ec)
+void clean_example(VW::workspace& all, example& ec)
 {
   empty_example(all, ec);
   all.example_parser->example_pool.return_object(&ec);
@@ -982,5 +982,5 @@ namespace VW
 {
 void end_parser(VW::workspace& all) { all.parse_thread.join(); }
 
-bool is_ring_example(const vw& all, const example* ae) { return all.example_parser->example_pool.is_from_pool(ae); }
+bool is_ring_example(const VW::workspace& all, const example* ae) { return all.example_parser->example_pool.is_from_pool(ae); }
 }  // namespace VW

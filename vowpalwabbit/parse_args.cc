@@ -507,7 +507,7 @@ std::vector<namespace_index> parse_char_interactions(VW::string_view input)
   return result;
 }
 
-std::vector<extent_term> parse_full_name_interactions(vw& all, VW::string_view str)
+std::vector<extent_term> parse_full_name_interactions(VW::workspace& all, VW::string_view str)
 {
   std::vector<extent_term> result;
   auto encoded = VW::decode_inline_hex(str);
@@ -537,7 +537,7 @@ std::vector<extent_term> parse_full_name_interactions(vw& all, VW::string_view s
 }
 
 void parse_feature_tweaks(
-    options_i& options, vw& all, bool interactions_settings_duplicated, std::vector<std::string>& dictionary_nses)
+    options_i& options, VW::workspace& all, bool interactions_settings_duplicated, std::vector<std::string>& dictionary_nses)
 {
   std::string hash_function("strings");
   uint32_t new_bits;

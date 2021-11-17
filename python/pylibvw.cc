@@ -257,7 +257,7 @@ vw_ptr my_initialize_with_log(std::string args, py_log_wrapper_ptr py_log)
     trace_context = py_log.get();
   }
 
-  vw* foo = VW::initialize(args, nullptr, false, trace_listener, trace_context);
+  VW::workspace* foo = VW::initialize(args, nullptr, false, trace_listener, trace_context);
   // return boost::shared_ptr<vw>(foo, [](vw *all){VW::finish(*all);});
   return boost::shared_ptr<vw>(foo);
 }
@@ -350,7 +350,7 @@ predictor_ptr get_predictor(search_ptr sch, ptag my_tag)
   return boost::shared_ptr<Search::predictor>(P);
 }
 
-label_parser* get_label_parser(vw* all, size_t labelType)
+label_parser* get_label_parser(VW::workspace* all, size_t labelType)
 {
   switch (labelType)
   {
@@ -375,7 +375,7 @@ label_parser* get_label_parser(vw* all, size_t labelType)
   }
 }
 
-size_t my_get_label_type(vw* all)
+size_t my_get_label_type(VW::workspace* all)
 {
   label_parser* lp = &all->example_parser->lbl_parser;
   if (lp->parse_label == simple_label_parser.parse_label) { return lBINARY; }
@@ -715,7 +715,7 @@ void my_setup_example(vw_ptr vw, example_ptr ec) { VW::setup_example(*vw, ec.get
 
 void unsetup_example(vw_ptr vwP, example_ptr ae)
 {
-  vw& all = *vwP;
+  VW::workspace& all = *vwP;
   ae->partial_prediction = 0.;
   ae->num_features = 0;
   ae->reset_total_sum_feat_sq();

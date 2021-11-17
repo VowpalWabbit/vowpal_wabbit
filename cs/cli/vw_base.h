@@ -55,7 +55,7 @@ internal:
   /// <summary>
   /// The native vowpal wabbit data structure.
   /// </summary>
-  vw* m_vw;
+  VW::workspace* m_vw;
 
   /// <summary>
   /// Thread-safe increment of reference count.

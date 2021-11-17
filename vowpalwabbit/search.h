@@ -349,7 +349,7 @@ private:
 };
 
 // some helper functions you might find helpful
-/*template<class T> void check_option(T& ret, vw&all, po::variables_map& vm, const char* opt_name, bool
+/*template<class T> void check_option(T& ret, VW::workspace&all, po::variables_map& vm, const char* opt_name, bool
 default_to_cmdline, bool(*equal)(T,T), const char* mismatch_error_string, const char* required_error_string) { if
 (vm.count(opt_name)) { ret = vm[opt_name].as<T>(); *all.args_n_opts.file_options << " --" << opt_name << " " << ret;
   }
@@ -360,7 +360,7 @@ default_to_cmdline, bool(*equal)(T,T), const char* mismatch_error_string, const 
   }
   }*/
 
-// void check_option(bool& ret, vw&all, po::variables_map& vm, const char* opt_name, bool default_to_cmdline, const
+// void check_option(bool& ret, VW::workspace&all, po::variables_map& vm, const char* opt_name, bool default_to_cmdline, const
 // char* mismatch_error_string);
 
 // our interface within VW

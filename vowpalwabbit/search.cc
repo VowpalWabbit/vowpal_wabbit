@@ -2522,7 +2522,7 @@ void parse_neighbor_features(VW::string_view nf_strview, v_array<int32_t>& neigh
 base_learner* setup(VW::setup_base_i& stack_builder)
 {
   options_i& options = *stack_builder.get_options();
-  vw& all = *stack_builder.get_all_pointer();
+  VW::workspace& all = *stack_builder.get_all_pointer();
   auto sch = VW::make_unique<search>();
   search_private& priv = *sch->priv;
   std::string task_string;

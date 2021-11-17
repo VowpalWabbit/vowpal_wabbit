@@ -71,7 +71,7 @@ void eval_count_of_generated_ft_naive(
 }
 
 template <INTERACTIONS::generate_func_t<extent_term> generate_func, bool leave_duplicate_interactions>
-void eval_count_of_generated_ft_naive(vw& all, example_predict& ec, size_t& new_features_cnt, float& new_features_value)
+void eval_count_of_generated_ft_naive(VW::workspace& all, example_predict& ec, size_t& new_features_cnt, float& new_features_value)
 {
   // Only makes sense to do this when not in permutations mode.
   assert(!all.permutations);

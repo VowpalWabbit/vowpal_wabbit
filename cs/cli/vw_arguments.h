@@ -33,7 +33,7 @@ private:
   float m_power_t;
 
 internal:
-  VowpalWabbitArguments(vw* vw) :
+  VowpalWabbitArguments(VW::workspace* vw) :
     m_data(gcnew String(vw->data_filename.c_str())),
     m_finalRegressor(gcnew String(vw->final_regressor_name.c_str())),
     m_testonly(!vw->training),
