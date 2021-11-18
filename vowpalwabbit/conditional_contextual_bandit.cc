@@ -496,6 +496,7 @@ void learn_or_predict(ccb& data, multi_learner& base, multi_ex& examples)
           {
             slot->num_features += ex->num_features;
             slot->num_features_from_interactions += ex->num_features_from_interactions;
+            slot->num_features -= ex->feature_space[constant_namespace].size();
           }
         }
         clear_pred_and_label(data);

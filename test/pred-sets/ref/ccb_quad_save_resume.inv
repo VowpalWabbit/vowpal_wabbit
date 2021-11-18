@@ -24,7 +24,7 @@ weighted_labeled_examples 8
 weighted_labels 0
 weighted_unlabeled_examples 0
 example_number 8
-total_features 2094
+total_features 1998
 total_weight 26.4534
 sd::oec.weighted_labeled_examples 8
 current_pass 1
