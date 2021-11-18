@@ -491,10 +491,7 @@ void learn_or_predict(ccb& data, multi_learner& base, multi_ex& examples)
                          << "slot:" << slot_id << " " << ccb_decision_to_string(data) << std::endl;
         for (const auto& ex : data.cb_ex)
         {
-          if (CB::ec_is_example_header(*ex))
-          {
-            slot->num_features = (data.cb_ex.size() - 1) * ex->num_features;
-          }
+          if (CB::ec_is_example_header(*ex)) { slot->num_features = (data.cb_ex.size() - 1) * ex->num_features; }
           else
           {
             slot->num_features += ex->num_features;
