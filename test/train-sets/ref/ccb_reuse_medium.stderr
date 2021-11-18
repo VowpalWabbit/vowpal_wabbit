@@ -8,13 +8,13 @@ num sources = 1
 Enabled reductions: gd, generate_interactions, scorer-identity, csoaa_ldf-rank, cb_adf, cb_explore_adf_greedy, cb_sample, shared_feature_merger, ccb_explore_adf
 average  since         example        example  current  current  current
 loss     last          counter         weight    label  predict features
-0.000000 0.000000            1            1.0 0:0,4:0,... 0,4,7,...       76
--0.045882 -0.091765            2            2.0 0:-0.0917649,6:-0.0917649,... 0,6,7,...       76
--0.045485 -0.045087            4            4.0 0:-0.0230896,6:-0.0230896,... 0,6,7,...       76
+0.000000 0.000000            1            1.0 0:0,4:0,... 0,4,7,...      117
+-0.045882 -0.091765            2            2.0 0:-0.0917649,6:-0.0917649,... 0,6,7,...      117
+-0.045485 -0.045087            4            4.0 0:-0.0230896,6:-0.0230896,... 0,6,7,...      117
 
 finished run
 number of examples = 4
 weighted example sum = 4.000000
 weighted label sum = 0.000000
 average loss = -0.045485
-total feature number = 304
+total feature number = 468
