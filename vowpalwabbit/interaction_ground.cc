@@ -2,6 +2,8 @@
 // individual contributors. All rights reserved. Released under a BSD (revised)
 // license as described in the file LICENSE.
 
+#include "interaction_ground.h"
+
 #include "prediction_type.h"
 #include "reductions.h"
 #include "label_dictionary.h"

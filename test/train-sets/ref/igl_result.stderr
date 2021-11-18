@@ -5,7 +5,7 @@ power_t = 0.5
 using no cache
 Reading datafile = train-sets/rcv1_multiclass.dat
 num sources = 1
-Enabled reductions: gd, scorer-identity, csoaa_ldf-rank, cb_adf, igl, cb_explore_adf_greedy, shared_feature_merger, cbify-adf
+Enabled reductions: gd, scorer-identity, csoaa_ldf-rank, cb_adf, experimental_igl, cb_explore_adf_greedy, shared_feature_merger, cbify-adf
 average  since         example        example  current  current  current
 loss     last          counter         weight    label  predict features
 1.000000 1.000000            1            1.0        2        1      128
