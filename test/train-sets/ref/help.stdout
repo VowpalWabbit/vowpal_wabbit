@@ -476,6 +476,9 @@ Error Correcting Tournament Options:
   --error arg (=0, )       Errors allowed by ECT
   --link arg (=identity, ) Specify the link function. Choices: {glf1, identity,
                            logistic, poisson}
+Interaction Grounded Learning Options:
+  --experimental_igl    Experimental: Do Interaction Grounding with multiline 
+                        action dependent features.
 Explore Evaluation Options:
   --explore_eval        Evaluate explore_eval adf policies
   --multiplier arg      Multiplier used to make all rejection sample 
@@ -505,9 +508,6 @@ Generate Interactions Options:
                                   '-q ::'.
 Continuous Actions: Convert to Pmf Options:
   --get_pmf             Convert a single multiclass prediction to a pmf
-Interaction Grounded Learning Options:
-  --igl                 Do Interaction Grounding with multiline action 
-                        dependent features.
 Interact via Elementwise Multiplication Options:
   --interact arg        Put weights on feature products from namespaces <n1> 
                         and <n2>
