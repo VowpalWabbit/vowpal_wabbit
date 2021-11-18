@@ -366,7 +366,7 @@ bool cb_adf::update_statistics(example& ec, multi_ex* ec_seq)
   return labeled_example;
 }
 
-void output_example(vw& all, cb_adf& c, example& ec, multi_ex* ec_seq)
+void output_example(VW::workspace& all, cb_adf& c, example& ec, multi_ex* ec_seq)
 {
   if (example_is_newline_not_header(ec)) return;
 
@@ -395,7 +395,7 @@ void output_example(vw& all, cb_adf& c, example& ec, multi_ex* ec_seq)
     CB::print_update(all, !labeled_example, ec, ec_seq, true, nullptr);
 }
 
-void output_rank_example(vw& all, cb_adf& c, example& ec, multi_ex* ec_seq)
+void output_rank_example(VW::workspace& all, cb_adf& c, example& ec, multi_ex* ec_seq)
 {
   const auto& costs = ec.l.cb.costs;
 
@@ -423,7 +423,7 @@ void output_rank_example(vw& all, cb_adf& c, example& ec, multi_ex* ec_seq)
     CB::print_update(all, !labeled_example, ec, ec_seq, true, nullptr);
 }
 
-void output_example_seq(vw& all, cb_adf& data, multi_ex& ec_seq)
+void output_example_seq(VW::workspace& all, cb_adf& data, multi_ex& ec_seq)
 {
   if (!ec_seq.empty())
   {
@@ -438,7 +438,7 @@ void output_example_seq(vw& all, cb_adf& data, multi_ex& ec_seq)
   }
 }
 
-void update_and_output(vw& all, cb_adf& data, multi_ex& ec_seq)
+void update_and_output(VW::workspace& all, cb_adf& data, multi_ex& ec_seq)
 {
   if (!ec_seq.empty())
   {
@@ -447,7 +447,7 @@ void update_and_output(vw& all, cb_adf& data, multi_ex& ec_seq)
   }
 }
 
-void finish_multiline_example(vw& all, cb_adf& data, multi_ex& ec_seq)
+void finish_multiline_example(VW::workspace& all, cb_adf& data, multi_ex& ec_seq)
 {
   update_and_output(all, data, ec_seq);
   VW::finish_example(all, ec_seq);
@@ -477,7 +477,7 @@ using namespace CB_ADF;
 base_learner* cb_adf_setup(VW::setup_base_i& stack_builder)
 {
   options_i& options = *stack_builder.get_options();
-  vw& all = *stack_builder.get_all_pointer();
+  VW::workspace& all = *stack_builder.get_all_pointer();
   bool cb_adf_option = false;
   std::string type_string = "mtr";
 
@@ -491,16 +491,18 @@ base_learner* cb_adf_setup(VW::setup_base_i& stack_builder)
       .add(make_option("cb_adf", cb_adf_option)
                .keep()
                .necessary()
-               .help("Do Contextual Bandit learning with multiline action dependent features."))
+               .help("Do Contextual Bandit learning with multiline action dependent features"))
       .add(make_option("rank_all", rank_all).keep().help("Return actions sorted by score order"))
       .add(make_option("no_predict", no_predict).help("Do not do a prediction when training"))
       .add(make_option("clip_p", clip_p)
                .keep()
                .default_value(0.f)
-               .help("Clipping probability in importance weight. Default: 0.f (no clipping)."))
+               .help("Clipping probability in importance weight. Default: 0.f (no clipping)"))
       .add(make_option("cb_type", type_string)
                .keep()
-               .help("contextual bandit method to use in {ips, dm, dr, mtr, sm}. Default: mtr"));
+               .default_value("mtr")
+               .one_of({"ips", "dm", "dr", "mtr", "sm"})
+               .help("Contextual bandit method to use"));
 
   if (!options.add_parse_and_check_necessary(new_options)) return nullptr;
 
@@ -559,8 +561,8 @@ base_learner* cb_adf_setup(VW::setup_base_i& stack_builder)
   auto* l = make_reduction_learner(std::move(ld), base, learn, predict, stack_builder.get_setupfn_name(cb_adf_setup))
                 .set_learn_returns_prediction(lrp)
                 .set_params_per_weight(problem_multiplier)
-                .set_prediction_type(VW::prediction_type_t::action_scores)
-                .set_label_type(VW::label_type_t::cb)
+                .set_output_prediction_type(VW::prediction_type_t::action_scores)
+                .set_input_label_type(VW::label_type_t::cb)
                 .set_finish_example(CB_ADF::finish_multiline_example)
                 .set_print_example(CB_ADF::update_and_output)
                 .set_save_load(CB_ADF::save_load)

@@ -44,7 +44,7 @@ label_parser no_label_parser = {
     // cache_label
     [](const polylabel& /* label */, const reduction_features& /* red_features */, io_buf& /* cache */) {},
     // read_cached_label
-    [](polylabel& /* label */, reduction_features& /* red_features */, const VW::named_labels* /* ldict */, io_buf &
+    [](polylabel& /* label */, reduction_features& /* red_features */, io_buf &
         /* cache */) -> size_t { return 1; },
     // get_weight
     [](const polylabel& /* label */, const reduction_features& /* red_features */) { return 1.f; },
@@ -53,7 +53,7 @@ label_parser no_label_parser = {
     // label type
     VW::label_type_t::nolabel};
 
-void print_no_label_update(vw& all, example& ec)
+void print_no_label_update(VW::workspace& all, example& ec)
 {
   if (all.sd->weighted_labeled_examples + all.sd->weighted_unlabeled_examples >= all.sd->dump_interval &&
       !all.logger.quiet && !all.bfgs)
@@ -63,7 +63,7 @@ void print_no_label_update(vw& all, example& ec)
   }
 }
 
-void output_and_account_no_label_example(vw& all, example& ec)
+void output_and_account_no_label_example(VW::workspace& all, example& ec)
 {
   all.sd->update(ec.test_only, false, ec.loss, ec.weight, ec.get_num_features());
 
@@ -73,7 +73,7 @@ void output_and_account_no_label_example(vw& all, example& ec)
   print_no_label_update(all, ec);
 }
 
-void return_no_label_example(vw& all, void*, example& ec)
+void return_no_label_example(VW::workspace& all, void*, example& ec)
 {
   output_and_account_example(all, ec);
   VW::finish_example(all, ec);

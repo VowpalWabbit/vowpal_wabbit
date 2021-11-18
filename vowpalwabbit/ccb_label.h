@@ -12,6 +12,7 @@
 #include "action_score.h"
 // TODO: This header can be removed once type and explicit_included_actions are removed from the label
 #include "ccb_reduction_features.h"
+#include "vw_string_view.h"
 
 namespace CCB
 {

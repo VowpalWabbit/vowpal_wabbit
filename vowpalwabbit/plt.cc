@@ -267,7 +267,7 @@ void predict(plt& p, single_learner& base, example& ec)
   ec.l.multilabels = std::move(multilabels);
 }
 
-void finish_example(vw& all, plt& /*p*/, example& ec)
+void finish_example(VW::workspace& all, plt& /*p*/, example& ec)
 {
   MULTILABEL::output_example(all, ec);
   VW::finish_example(all, ec);
@@ -327,15 +327,15 @@ base_learner* plt_setup(VW::setup_base_i& stack_builder)
   options_i& options = *stack_builder.get_options();
   vw& all = *stack_builder.get_all_pointer();
   auto tree = VW::make_unique<plt>();
-  option_group_definition new_options("Probabilistic Label Tree ");
+  option_group_definition new_options("Probabilistic Label Tree");
   new_options.add(make_option("plt", tree->k).keep().necessary().help("Probabilistic Label Tree with <k> labels"))
-      .add(make_option("kary_tree", tree->kary).keep().default_value(2).help("use <k>-ary tree"))
+      .add(make_option("kary_tree", tree->kary).keep().default_value(2).help("Use <k>-ary tree"))
       .add(make_option("threshold", tree->threshold)
                .default_value(0.5)
-               .help("predict labels with conditional marginal probability greater than <thr> threshold"))
+               .help("Predict labels with conditional marginal probability greater than <thr> threshold"))
       .add(make_option("top_k", tree->top_k)
                .default_value(0)
-               .help("predict top-<k> labels instead of labels above threshold"));
+               .help("Predict top-<k> labels instead of labels above threshold"));
 
   if (!options.add_parse_and_check_necessary(new_options)) return nullptr;
 
@@ -387,8 +387,8 @@ base_learner* plt_setup(VW::setup_base_i& stack_builder)
   auto* l = make_reduction_learner(std::move(tree), as_singleline(stack_builder.setup_base_learner()), learn, pred_ptr,
       stack_builder.get_setupfn_name(plt_setup) + name_addition)
                 .set_params_per_weight(ws)
-                .set_prediction_type(VW::prediction_type_t::multilabels)
-                .set_label_type(VW::label_type_t::multilabel)
+                .set_output_prediction_type(VW::prediction_type_t::multilabels)
+                .set_input_label_type(VW::label_type_t::multilabel)
                 .set_learn_returns_prediction(true)
                 .set_finish_example(finish_example)
                 .set_finish(finish)

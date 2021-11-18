@@ -18,12 +18,12 @@ struct interact
   unsigned char n1 = static_cast<unsigned char>(0);
   unsigned char n2 = static_cast<unsigned char>(0);
   features feat_store;
-  vw* all = nullptr;
+  VW::workspace* all = nullptr;
   float n1_feat_sq = 0.f;
   size_t num_features = 0;
 };
 
-bool contains_valid_namespaces(vw& all, features& f_src1, features& f_src2, interact& in)
+bool contains_valid_namespaces(VW::workspace& all, features& f_src1, features& f_src2, interact& in)
 {
   // first feature must be 1 so we're sure that the anchor feature is present
   if (f_src1.size() == 0 || f_src2.size() == 0) return false;
@@ -49,7 +49,7 @@ void multiply(features& f_dest, features& f_src2, interact& in)
 {
   f_dest.clear();
   features& f_src1 = in.feat_store;
-  vw* all = in.all;
+  VW::workspace* all = in.all;
   uint64_t weight_mask = all->weights.mask();
   uint64_t base_id1 = f_src1.indicies[0] & weight_mask;
   uint64_t base_id2 = f_src2.indicies[0] & weight_mask;
@@ -144,9 +144,9 @@ void predict_or_learn(interact& in, VW::LEARNER::single_learner& base, example& 
 VW::LEARNER::base_learner* interact_setup(VW::setup_base_i& stack_builder)
 {
   options_i& options = *stack_builder.get_options();
-  vw& all = *stack_builder.get_all_pointer();
+  VW::workspace& all = *stack_builder.get_all_pointer();
   std::string s;
-  option_group_definition new_options("Interact via elementwise multiplication");
+  option_group_definition new_options("Interact via Elementwise Multiplication");
   new_options.add(make_option("interact", s)
                       .keep()
                       .necessary()

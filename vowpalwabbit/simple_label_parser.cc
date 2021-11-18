@@ -108,7 +108,7 @@ label_parser simple_label_parser = {
       cache_simple_label(label.simple, red_features, cache);
     },
     // read_cached_label
-    [](polylabel& label, reduction_features& red_features, const VW::named_labels*, io_buf& cache) {
+    [](polylabel& label, reduction_features& red_features, io_buf& cache) {
       return read_cached_simple_label(label.simple, red_features, cache);
     },
     // get_weight

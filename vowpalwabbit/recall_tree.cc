@@ -211,7 +211,7 @@ void insert_example_at_node(recall_tree& b, uint32_t cn, example& ec)
 
 void add_node_id_feature(recall_tree& b, uint32_t cn, example& ec)
 {
-  vw* all = b.all;
+  VW::workspace* all = b.all;
   uint64_t mask = all->weights.mask();
   size_t ss = all->weights.stride_shift();
 
@@ -495,11 +495,11 @@ base_learner* recall_tree_setup(VW::setup_base_i& stack_builder)
   new_options.add(make_option("recall_tree", tree->k).keep().necessary().help("Use online tree for multiclass"))
       .add(make_option("max_candidates", tree->max_candidates)
                .keep()
-               .help("maximum number of labels per leaf in the tree"))
-      .add(make_option("bern_hyper", tree->bern_hyper).default_value(1.f).help("recall tree depth penalty"))
-      .add(make_option("max_depth", tree->max_depth).keep().help("maximum depth of the tree, default log_2 (#classes)"))
-      .add(make_option("node_only", tree->node_only).keep().help("only use node features, not full path features"))
-      .add(make_option("randomized_routing", tree->randomized_routing).keep().help("randomized routing"));
+               .help("Maximum number of labels per leaf in the tree"))
+      .add(make_option("bern_hyper", tree->bern_hyper).default_value(1.f).help("Recall tree depth penalty"))
+      .add(make_option("max_depth", tree->max_depth).keep().help("Maximum depth of the tree, default log_2 (#classes)"))
+      .add(make_option("node_only", tree->node_only).keep().help("Only use node features, not full path features"))
+      .add(make_option("randomized_routing", tree->randomized_routing).keep().help("Randomized routing"));
 
   if (!options.add_parse_and_check_necessary(new_options)) return nullptr;
 
@@ -528,8 +528,8 @@ base_learner* recall_tree_setup(VW::setup_base_i& stack_builder)
                 .set_params_per_weight(ws)
                 .set_finish_example(MULTICLASS::finish_example<recall_tree&>)
                 .set_save_load(save_load_tree)
-                .set_prediction_type(VW::prediction_type_t::multiclass)
-                .set_label_type(VW::label_type_t::multiclass)
+                .set_output_prediction_type(VW::prediction_type_t::multiclass)
+                .set_input_label_type(VW::label_type_t::multiclass)
                 .build();
 
   all.example_parser->lbl_parser = MULTICLASS::mc_label;

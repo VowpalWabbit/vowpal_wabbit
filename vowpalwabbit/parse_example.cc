@@ -34,21 +34,23 @@ size_t read_features(io_buf& buf, char*& line, size_t& num_chars)
   return num_chars_initial;
 }
 
-int read_features_string(vw* all, io_buf& buf, v_array<example*>& examples)
+int read_features_string(VW::workspace* all, io_buf& buf, v_array<example*>& examples)
 {
   char* line;
   size_t num_chars;
-  size_t num_chars_initial = read_features(buf, line, num_chars);
-  if (num_chars_initial < 1)
+  // This function consumes input until it reaches a '\n' then it walks back the '\n' and '\r' if it exists.
+  size_t num_bytes_consumed = read_features(buf, line, num_chars);
+  if (num_bytes_consumed < 1)
   {
-    examples[0]->is_newline = true;
-    return static_cast<int>(num_chars_initial);
+    // This branch will get hit once we have reached EOF of the input device.
+    return static_cast<int>(num_bytes_consumed);
   }
 
   VW::string_view example(line, num_chars);
+  // If this example is empty substring_to_example will mark it as a newline example.
   substring_to_example(all, examples[0], example);
 
-  return static_cast<int>(num_chars_initial);
+  return static_cast<int>(num_bytes_consumed);
 }
 
 template <bool audit>
@@ -471,7 +473,7 @@ public:
     }
   }
 
-  TC_parser(VW::string_view line, vw& all, example* ae) : _line(line)
+  TC_parser(VW::string_view line, VW::workspace& all, example* ae) : _line(line)
   {
     if (!_line.empty())
     {
@@ -494,7 +496,7 @@ public:
   }
 };
 
-void substring_to_example(vw* all, example* ae, VW::string_view example)
+void substring_to_example(VW::workspace* all, example* ae, VW::string_view example)
 {
   if (example.empty()) { ae->is_newline = true; }
 
@@ -544,13 +546,13 @@ void substring_to_example(vw* all, example* ae, VW::string_view example)
 
 namespace VW
 {
-void read_line(vw& all, example* ex, VW::string_view line)
+void read_line(VW::workspace& all, example* ex, VW::string_view line)
 {
   while (line.size() > 0 && line.back() == '\n') line.remove_suffix(1);
   substring_to_example(&all, ex, line);
 }
 
-void read_line(vw& all, example* ex, const char* line) { return read_line(all, ex, VW::string_view(line)); }
+void read_line(VW::workspace& all, example* ex, const char* line) { return read_line(all, ex, VW::string_view(line)); }
 
 void read_lines(vw* all, const char* line, size_t len, v_array<example*>& examples)
 {

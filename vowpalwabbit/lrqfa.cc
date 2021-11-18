@@ -14,7 +14,7 @@ using namespace VW::config;
 
 struct LRQFAstate
 {
-  vw* all = nullptr;
+  VW::workspace* all = nullptr;
   std::string field_name = "";
   int k = 0;
   int field_id[256];
@@ -39,7 +39,7 @@ constexpr inline bool example_is_test(example& ec) { return ec.l.simple.label ==
 template <bool is_learn>
 void predict_or_learn(LRQFAstate& lrq, single_learner& base, example& ec)
 {
-  vw& all = *lrq.all;
+  VW::workspace& all = *lrq.all;
 
   memset(lrq.orig_size, 0, sizeof(lrq.orig_size));
   for (namespace_index i : ec.indices) lrq.orig_size[i] = ec.feature_space[i].size();
@@ -141,11 +141,11 @@ void predict_or_learn(LRQFAstate& lrq, single_learner& base, example& ec)
 VW::LEARNER::base_learner* lrqfa_setup(VW::setup_base_i& stack_builder)
 {
   options_i& options = *stack_builder.get_options();
-  vw& all = *stack_builder.get_all_pointer();
+  VW::workspace& all = *stack_builder.get_all_pointer();
   std::string lrqfa;
   option_group_definition new_options("Low Rank Quadratics FA");
   new_options.add(
-      make_option("lrqfa", lrqfa).keep().necessary().help("use low rank quadratic features with field aware weights"));
+      make_option("lrqfa", lrqfa).keep().necessary().help("Use low rank quadratic features with field aware weights"));
 
   if (!options.add_parse_and_check_necessary(new_options)) return nullptr;
 

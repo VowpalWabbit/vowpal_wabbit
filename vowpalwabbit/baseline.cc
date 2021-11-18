@@ -39,7 +39,7 @@ bool baseline_enabled(const example* ec)
 struct baseline
 {
   example ec;
-  vw* all = nullptr;
+  VW::workspace* all = nullptr;
   bool lr_scaling = false;  // whether to scale baseline learning rate based on max label
   float lr_multiplier = 0.f;
   bool global_only = false;  // only use a global constant for the baseline
@@ -158,24 +158,24 @@ float sensitivity(baseline& data, base_learner& base, example& ec)
 base_learner* baseline_setup(VW::setup_base_i& stack_builder)
 {
   options_i& options = *stack_builder.get_options();
-  vw& all = *stack_builder.get_all_pointer();
+  VW::workspace& all = *stack_builder.get_all_pointer();
   auto data = VW::make_unique<baseline>();
   bool baseline_option = false;
   std::string loss_function;
 
-  option_group_definition new_options("Baseline options");
+  option_group_definition new_options("Baseline");
   new_options
       .add(make_option("baseline", baseline_option)
                .keep()
                .necessary()
-               .help("Learn an additive baseline (from constant features) and a residual separately in regression."))
-      .add(make_option("lr_multiplier", data->lr_multiplier).help("learning rate multiplier for baseline model"))
+               .help("Learn an additive baseline (from constant features) and a residual separately in regression"))
+      .add(make_option("lr_multiplier", data->lr_multiplier).help("Learning rate multiplier for baseline model"))
       .add(make_option("global_only", data->global_only)
                .keep()
-               .help("use separate example with only global constant for baseline predictions"))
+               .help("Use separate example with only global constant for baseline predictions"))
       .add(make_option("check_enabled", data->check_enabled)
                .keep()
-               .help("only use baseline when the example contains enabled flag"));
+               .help("Only use baseline when the example contains enabled flag"));
 
   if (!options.add_parse_and_check_necessary(new_options)) return nullptr;
 
@@ -190,8 +190,8 @@ base_learner* baseline_setup(VW::setup_base_i& stack_builder)
   auto base = as_singleline(stack_builder.setup_base_learner());
   auto* l = VW::LEARNER::make_reduction_learner(std::move(data), base, predict_or_learn<true>, predict_or_learn<false>,
       stack_builder.get_setupfn_name(baseline_setup))
-                .set_prediction_type(VW::prediction_type_t::scalar)
-                .set_label_type(VW::label_type_t::simple)
+                .set_output_prediction_type(VW::prediction_type_t::scalar)
+                .set_input_label_type(VW::label_type_t::simple)
                 .set_sensitivity(sensitivity)
                 .build();
 

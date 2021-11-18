@@ -178,7 +178,7 @@ label_parser cs_label = {
       cache_label(label.cs, cache);
     },
     // read_cached_label
-    [](polylabel& label, reduction_features& /* red_features */, const VW::named_labels* /* ldict */, io_buf& cache) {
+    [](polylabel& label, reduction_features& /* red_features */, io_buf& cache) {
       return read_cached_label(label.cs, cache);
     },
     // get_weight
@@ -188,7 +188,8 @@ label_parser cs_label = {
     // label type
     VW::label_type_t::cs};
 
-void print_update(vw& all, bool is_test, example& ec, multi_ex* ec_seq, bool action_scores, uint32_t prediction)
+void print_update(
+    VW::workspace& all, bool is_test, example& ec, multi_ex* ec_seq, bool action_scores, uint32_t prediction)
 {
   if (all.sd->weighted_examples() >= all.sd->dump_interval && !all.logger.quiet && !all.bfgs)
   {
@@ -233,7 +234,8 @@ void print_update(vw& all, bool is_test, example& ec, multi_ex* ec_seq, bool act
   }
 }
 
-void output_example(vw& all, example& ec, const COST_SENSITIVE::label& cs_label, uint32_t multiclass_prediction)
+void output_example(
+    VW::workspace& all, example& ec, const COST_SENSITIVE::label& cs_label, uint32_t multiclass_prediction)
 {
   float loss = 0.;
   if (!test_label(cs_label))
@@ -283,9 +285,9 @@ void output_example(vw& all, example& ec, const COST_SENSITIVE::label& cs_label,
   print_update(all, test_label(cs_label), ec, nullptr, false, multiclass_prediction);
 }
 
-void output_example(vw& all, example& ec) { output_example(all, ec, ec.l.cs, ec.pred.multiclass); }
+void output_example(VW::workspace& all, example& ec) { output_example(all, ec, ec.l.cs, ec.pred.multiclass); }
 
-void finish_example(vw& all, example& ec)
+void finish_example(VW::workspace& all, example& ec)
 {
   output_example(all, ec, ec.l.cs, ec.pred.multiclass);
   VW::finish_example(all, ec);

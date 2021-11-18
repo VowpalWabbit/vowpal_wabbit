@@ -95,7 +95,7 @@ void insert_ccb_interactions(std::vector<std::vector<namespace_index>>& interact
 
 struct ccb
 {
-  vw* all = nullptr;
+  VW::workspace* all = nullptr;
   example* shared = nullptr;
   std::vector<example*> actions, slots;
   std::vector<uint32_t> origin_index;
@@ -272,6 +272,7 @@ void inject_slot_id(ccb& data, example* shared, size_t id)
 
   shared->feature_space[ccb_id_namespace].push_back(1., index, ccb_id_namespace);
   shared->indices.push_back(ccb_id_namespace);
+  shared->num_features++;
 
   if (audit)
   {
@@ -549,7 +550,7 @@ std::string generate_ccb_label_printout(const std::vector<example*>& slots)
   return label_ss.str();
 }
 
-void output_example(vw& all, ccb& c, multi_ex& ec_seq)
+void output_example(VW::workspace& all, ccb& c, multi_ex& ec_seq)
 {
   if (ec_seq.empty()) { return; }
 
@@ -600,7 +601,7 @@ void output_example(vw& all, ccb& c, multi_ex& ec_seq)
   VW::print_update_ccb(all, slots, preds, num_features);
 }
 
-void finish_multiline_example(vw& all, ccb& data, multi_ex& ec_seq)
+void finish_multiline_example(VW::workspace& all, ccb& data, multi_ex& ec_seq)
 {
   if (!ec_seq.empty())
   {
@@ -635,7 +636,7 @@ void save_load(ccb& sm, io_buf& io, bool read, bool text)
 base_learner* ccb_explore_adf_setup(VW::setup_base_i& stack_builder)
 {
   options_i& options = *stack_builder.get_options();
-  vw& all = *stack_builder.get_all_pointer();
+  VW::workspace& all = *stack_builder.get_all_pointer();
   auto data = VW::make_unique<ccb>();
   bool ccb_explore_adf_option = false;
   bool all_slots_loss_report = false;
@@ -683,8 +684,8 @@ base_learner* ccb_explore_adf_setup(VW::setup_base_i& stack_builder)
   auto* l = VW::LEARNER::make_reduction_learner(std::move(data), base, learn_or_predict<true>, learn_or_predict<false>,
       stack_builder.get_setupfn_name(ccb_explore_adf_setup))
                 .set_learn_returns_prediction(true)
-                .set_prediction_type(VW::prediction_type_t::decision_probs)
-                .set_label_type(VW::label_type_t::ccb)
+                .set_output_prediction_type(VW::prediction_type_t::decision_probs)
+                .set_input_label_type(VW::label_type_t::ccb)
                 .set_finish_example(finish_multiline_example)
                 .set_save_load(save_load)
                 .build();

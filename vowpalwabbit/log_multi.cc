@@ -498,15 +498,15 @@ void save_load_tree(log_multi& b, io_buf& model_file, bool read, bool text)
 base_learner* log_multi_setup(VW::setup_base_i& stack_builder)  // learner setup
 {
   options_i& options = *stack_builder.get_options();
-  vw& all = *stack_builder.get_all_pointer();
+  VW::workspace& all = *stack_builder.get_all_pointer();
 
   auto data = VW::make_unique<log_multi>();
   option_group_definition new_options("Logarithmic Time Multiclass Tree");
   new_options.add(make_option("log_multi", data->k).keep().necessary().help("Use online tree for multiclass"))
-      .add(make_option("no_progress", data->progress).help("disable progressive validation"))
+      .add(make_option("no_progress", data->progress).help("Disable progressive validation"))
       .add(make_option("swap_resistance", data->swap_resist)
                .default_value(4)
-               .help("higher = more resistance to swap, default=4"));
+               .help("Higher = more resistance to swap, default=4"));
 
   if (!options.add_parse_and_check_necessary(new_options)) return nullptr;
 
@@ -525,8 +525,8 @@ base_learner* log_multi_setup(VW::setup_base_i& stack_builder)  // learner setup
                 .set_params_per_weight(ws)
                 .set_finish_example(MULTICLASS::finish_example<log_multi&>)
                 .set_save_load(save_load_tree)
-                .set_prediction_type(VW::prediction_type_t::multiclass)
-                .set_label_type(VW::label_type_t::multiclass)
+                .set_output_prediction_type(VW::prediction_type_t::multiclass)
+                .set_input_label_type(VW::label_type_t::multiclass)
                 .build();
 
   all.example_parser->lbl_parser = MULTICLASS::mc_label;

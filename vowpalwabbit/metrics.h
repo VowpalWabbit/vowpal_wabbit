@@ -10,6 +10,6 @@ namespace VW
 namespace metrics
 {
 VW::LEARNER::base_learner* metrics_setup(VW::setup_base_i& stack_builder);
-void output_metrics(vw& all);
+void output_metrics(VW::workspace& all);
 }  // namespace metrics
 }  // namespace VW

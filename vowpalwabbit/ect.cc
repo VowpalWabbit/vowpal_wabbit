@@ -328,14 +328,15 @@ base_learner* ect_setup(VW::setup_base_i& stack_builder)
   vw& all = *stack_builder.get_all_pointer();
   auto data = VW::make_unique<ect>();
   std::string link;
-  option_group_definition new_options("Error Correcting Tournament Options");
+  option_group_definition new_options("Error Correcting Tournament");
   new_options.add(make_option("ect", data->k).keep().necessary().help("Error correcting tournament with <k> labels"))
-      .add(make_option("error", data->errors).keep().default_value(0).help("errors allowed by ECT"))
+      .add(make_option("error", data->errors).keep().default_value(0).help("Errors allowed by ECT"))
       // Used to check value. TODO replace
       .add(make_option("link", link)
                .default_value("identity")
                .keep()
-               .help("Specify the link function: identity, logistic, glf1 or poisson"));
+               .one_of({"identity", "logistic", "glf1", "poisson"})
+               .help("Specify the link function"));
 
   if (!options.add_parse_and_check_necessary(new_options)) return nullptr;
 
@@ -348,8 +349,8 @@ base_learner* ect_setup(VW::setup_base_i& stack_builder)
       std::move(data), as_singleline(base), learn, predict, stack_builder.get_setupfn_name(ect_setup))
                 .set_params_per_weight(wpp)
                 .set_finish_example(MULTICLASS::finish_example<ect&>)
-                .set_prediction_type(VW::prediction_type_t::multiclass)
-                .set_label_type(VW::label_type_t::multiclass)
+                .set_output_prediction_type(VW::prediction_type_t::multiclass)
+                .set_input_label_type(VW::label_type_t::multiclass)
                 .build();
 
   all.example_parser->lbl_parser = MULTICLASS::mc_label;

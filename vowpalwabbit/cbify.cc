@@ -52,7 +52,7 @@ struct cbify
   cbify_reg regression_data;
   // used as the seed
   size_t example_counter = 0;
-  vw* all = nullptr;
+  VW::workspace* all = nullptr;
   bool use_adf = false;  // if true, reduce to cb_explore_adf instead of cb_explore
   cbify_adf_data adf_data;
   float loss0 = 0.f;
@@ -509,7 +509,7 @@ void do_actual_learning_ldf(cbify& data, multi_learner& base, multi_ex& ec_seq)
   }
 }
 
-void output_example(vw& all, example& ec, bool& hit_loss, multi_ex* ec_seq)
+void output_example(VW::workspace& all, example& ec, bool& hit_loss, multi_ex* ec_seq)
 {
   const auto& costs = ec.l.cs.costs;
 
@@ -557,7 +557,7 @@ void output_example(vw& all, example& ec, bool& hit_loss, multi_ex* ec_seq)
   COST_SENSITIVE::print_update(all, COST_SENSITIVE::cs_label.test_label(ec.l), ec, ec_seq, false, predicted_class);
 }
 
-void output_example_seq(vw& all, multi_ex& ec_seq)
+void output_example_seq(VW::workspace& all, multi_ex& ec_seq)
 {
   if (ec_seq.empty()) return;
   all.sd->weighted_labeled_examples += ec_seq[0]->weight;
@@ -573,7 +573,7 @@ void output_example_seq(vw& all, multi_ex& ec_seq)
   }
 }
 
-void output_example_regression_discrete(vw& all, cbify& data, example& ec)
+void output_example_regression_discrete(VW::workspace& all, cbify& data, example& ec)
 {
   // data contains the cb vector, which store among other things, loss
   // ec contains a simple label type
@@ -592,7 +592,7 @@ void output_example_regression_discrete(vw& all, cbify& data, example& ec)
   print_update(all, ec);
 }
 
-void output_example_regression(vw& all, cbify& data, example& ec)
+void output_example_regression(VW::workspace& all, cbify& data, example& ec)
 {
   // data contains the cb_cont vector, which store among other things, loss
   // ec contains a simple label type
@@ -632,7 +632,7 @@ void output_cb_reg_predictions(
   for (auto& f : predict_file_descriptors) { f->write(str.c_str(), str.size()); }
 }
 
-void finish_example_cb_reg_continous(vw& all, cbify& data, example& ec)
+void finish_example_cb_reg_continous(VW::workspace& all, cbify& data, example& ec)
 {
   // add output example
   output_example_regression(all, data, ec);
@@ -640,14 +640,14 @@ void finish_example_cb_reg_continous(vw& all, cbify& data, example& ec)
   VW::finish_example(all, ec);
 }
 
-void finish_example_cb_reg_discrete(vw& all, cbify& data, example& ec)
+void finish_example_cb_reg_discrete(VW::workspace& all, cbify& data, example& ec)
 {
   // add output example
   output_example_regression_discrete(all, data, ec);
   VW::finish_example(all, ec);
 }
 
-void finish_multiline_example(vw& all, cbify&, multi_ex& ec_seq)
+void finish_multiline_example(VW::workspace& all, cbify&, multi_ex& ec_seq)
 {
   if (!ec_seq.empty())
   {
@@ -660,7 +660,7 @@ void finish_multiline_example(vw& all, cbify&, multi_ex& ec_seq)
 base_learner* cbify_setup(VW::setup_base_i& stack_builder)
 {
   options_i& options = *stack_builder.get_options();
-  vw& all = *stack_builder.get_all_pointer();
+  VW::workspace& all = *stack_builder.get_all_pointer();
   uint32_t num_actions = 0;
   uint32_t cb_continuous_num_actions = 0;
   auto data = VW::make_unique<cbify>();
@@ -688,18 +688,18 @@ base_learner* cbify_setup(VW::setup_base_i& stack_builder)
       .add(make_option("max_value", data->regression_data.max_value).keep().help("Maximum continuous value"))
       .add(make_option("loss_option", data->regression_data.loss_option)
                .default_value(0)
-               .help("loss options for regression - 0:squared, 1:absolute, 2:0/1"))
+               .help("Loss options for regression - 0:squared, 1:absolute, 2:0/1"))
       .add(make_option("loss_report", data->regression_data.loss_report)
                .default_value(0)
-               .help("loss report option - 0:normalized, 1:denormalized"))
+               .help("Loss report option - 0:normalized, 1:denormalized"))
       .add(make_option("loss_01_ratio", data->regression_data.loss_01_ratio)
                .default_value(0.1f)
-               .help("ratio of zero loss for 0/1 loss"))
-      .add(make_option("loss0", data->loss0).default_value(0.f).help("loss for correct label"))
-      .add(make_option("loss1", data->loss1).default_value(1.f).help("loss for incorrect label"))
+               .help("Ratio of zero loss for 0/1 loss"))
+      .add(make_option("loss0", data->loss0).default_value(0.f).help("Loss for correct label"))
+      .add(make_option("loss1", data->loss1).default_value(1.f).help("Loss for incorrect label"))
       .add(make_option("flip_loss_sign", data->flip_loss_sign)
                .keep()
-               .help("flip sign of loss (use reward instead of loss)"));
+               .help("Flip sign of loss (use reward instead of loss)"));
 
   if (!options.add_parse_and_check_necessary(new_options)) return nullptr;
 
@@ -759,7 +759,7 @@ base_learner* cbify_setup(VW::setup_base_i& stack_builder)
   }
 
   learner<cbify, example>* l;
-  void (*finish_ptr)(vw&, cbify&, example&);
+  void (*finish_ptr)(VW::workspace&, cbify&, example&);
   std::string name_addition;
   VW::label_type_t label_type;
 
@@ -792,8 +792,8 @@ base_learner* cbify_setup(VW::setup_base_i& stack_builder)
     }
     l = make_reduction_learner(
         std::move(data), base, learn_ptr, predict_ptr, stack_builder.get_setupfn_name(cbify_setup) + name_addition)
-            .set_label_type(label_type)
-            .set_prediction_type(VW::prediction_type_t::multiclass)
+            .set_input_label_type(label_type)
+            .set_output_prediction_type(VW::prediction_type_t::multiclass)
             .set_finish_example(finish_ptr)
             .build();
   }
@@ -846,8 +846,8 @@ base_learner* cbify_setup(VW::setup_base_i& stack_builder)
     l = make_reduction_learner(
         std::move(data), base, learn_ptr, predict_ptr, stack_builder.get_setupfn_name(cbify_setup) + name_addition)
             .set_learn_returns_prediction(true)
-            .set_label_type(label_type)
-            .set_prediction_type(pred_type)
+            .set_input_label_type(label_type)
+            .set_output_prediction_type(pred_type)
             .set_finish_example(finish_ptr)
             .build();
   }
@@ -858,7 +858,7 @@ base_learner* cbify_setup(VW::setup_base_i& stack_builder)
 base_learner* cbifyldf_setup(VW::setup_base_i& stack_builder)
 {
   options_i& options = *stack_builder.get_options();
-  vw& all = *stack_builder.get_all_pointer();
+  VW::workspace& all = *stack_builder.get_all_pointer();
   auto data = VW::make_unique<cbify>();
   bool cbify_ldf_option = false;
 
@@ -868,8 +868,8 @@ base_learner* cbifyldf_setup(VW::setup_base_i& stack_builder)
                .keep()
                .necessary()
                .help("Convert csoaa_ldf into a contextual bandit problem"))
-      .add(make_option("loss0", data->loss0).default_value(0.f).help("loss for correct label"))
-      .add(make_option("loss1", data->loss1).default_value(1.f).help("loss for incorrect label"));
+      .add(make_option("loss0", data->loss0).default_value(0.f).help("Loss for correct label"))
+      .add(make_option("loss1", data->loss1).default_value(1.f).help("Loss for incorrect label"));
 
   if (!options.add_parse_and_check_necessary(new_options)) return nullptr;
 
@@ -891,8 +891,8 @@ base_learner* cbifyldf_setup(VW::setup_base_i& stack_builder)
   multi_learner* base = as_multiline(stack_builder.setup_base_learner());
   auto* l = make_reduction_learner(std::move(data), base, do_actual_learning_ldf, do_actual_predict_ldf,
       stack_builder.get_setupfn_name(cbifyldf_setup))
-                .set_prediction_type(VW::prediction_type_t::multiclass)
-                .set_label_type(VW::label_type_t::cs)
+                .set_output_prediction_type(VW::prediction_type_t::multiclass)
+                .set_input_label_type(VW::label_type_t::cs)
                 .set_finish_example(finish_multiline_example)
                 .build();
   all.example_parser->lbl_parser = COST_SENSITIVE::cs_label;

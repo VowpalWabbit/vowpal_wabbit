@@ -12,6 +12,7 @@ namespace po = boost::program_options;
 #include <sstream>
 #include <set>
 #include <algorithm>
+#include <string>
 
 #include "options.h"
 #include "options_types.h"

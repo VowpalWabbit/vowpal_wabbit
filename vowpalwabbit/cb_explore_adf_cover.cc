@@ -226,7 +226,7 @@ void cb_explore_adf_cover::save_load(io_buf& io, bool read, bool text)
 VW::LEARNER::base_learner* setup(VW::setup_base_i& stack_builder)
 {
   VW::config::options_i& options = *stack_builder.get_options();
-  vw& all = *stack_builder.get_all_pointer();
+  VW::workspace& all = *stack_builder.get_all_pointer();
   using config::make_option;
 
   bool cb_explore_adf_option = false;
@@ -244,17 +244,19 @@ VW::LEARNER::base_learner* setup(VW::setup_base_i& stack_builder)
                .necessary()
                .help("Online explore-exploit for a contextual bandit problem with multiline action dependent features"))
       .add(make_option("cover", cover_size).keep().necessary().help("Online cover based exploration"))
-      .add(make_option("psi", psi).keep().default_value(1.0f).help("disagreement parameter for cover"))
-      .add(make_option("nounif", nounif).keep().help("do not explore uniformly on zero-probability actions in cover"))
+      .add(make_option("psi", psi).keep().default_value(1.0f).help("Disagreement parameter for cover"))
+      .add(make_option("nounif", nounif).keep().help("Do not explore uniformly on zero-probability actions in cover"))
       .add(make_option("first_only", first_only).keep().help("Only explore the first action in a tie-breaking event"))
       .add(make_option("cb_type", type_string)
                .keep()
-               .help("contextual bandit method to use in {ips,dr,mtr}. Default: mtr"))
+               .default_value("mtr")
+               .one_of({"ips", "dr", "mtr"})
+               .help("Contextual bandit method to use"))
       .add(make_option("epsilon", epsilon)
                .keep()
                .allow_override()
                .default_value(0.05f)
-               .help("epsilon-greedy exploration"));
+               .help("Epsilon-greedy exploration"));
 
   if (!options.add_parse_and_check_necessary(new_options)) return nullptr;
 
@@ -316,8 +318,8 @@ VW::LEARNER::base_learner* setup(VW::setup_base_i& stack_builder)
       std::move(data), base, explore_type::learn, explore_type::predict, stack_builder.get_setupfn_name(setup))
                 .set_learn_returns_prediction(true)
                 .set_params_per_weight(problem_multiplier)
-                .set_prediction_type(VW::prediction_type_t::action_probs)
-                .set_label_type(VW::label_type_t::cb)
+                .set_output_prediction_type(VW::prediction_type_t::action_probs)
+                .set_input_label_type(VW::label_type_t::cb)
                 .set_finish_example(explore_type::finish_multiline_example)
                 .set_print_example(explore_type::print_multiline_example)
                 .set_save_load(explore_type::save_load)

@@ -337,7 +337,7 @@ struct OjaNewton
   }
 };
 
-void keep_example(vw& all, OjaNewton& /* ON */, example& ec) { output_and_account_example(all, ec); }
+void keep_example(VW::workspace& all, OjaNewton& /* ON */, example& ec) { output_and_account_example(all, ec); }
 
 void make_pred(oja_n_update_data& data, float x, float& wref)
 {
@@ -453,7 +453,7 @@ void learn(OjaNewton& ON, base_learner& base, example& ec)
 
 void save_load(OjaNewton& ON, io_buf& model_file, bool read, bool text)
 {
-  vw& all = *ON.all;
+  VW::workspace& all = *ON.all;
   if (read)
   {
     initialize_regressor(all);
@@ -478,7 +478,7 @@ void save_load(OjaNewton& ON, io_buf& model_file, bool read, bool text)
 base_learner* OjaNewton_setup(VW::setup_base_i& stack_builder)
 {
   options_i& options = *stack_builder.get_options();
-  vw& all = *stack_builder.get_all_pointer();
+  VW::workspace& all = *stack_builder.get_all_pointer();
 
   auto ON = VW::make_unique<OjaNewton>();
 
@@ -491,17 +491,17 @@ base_learner* OjaNewton_setup(VW::setup_base_i& stack_builder)
   // of the positional data argument.
   std::string normalize = "true";
   std::string random_init = "true";
-  option_group_definition new_options("OjaNewton options");
+  option_group_definition new_options("OjaNewton");
   new_options.add(make_option("OjaNewton", oja_newton).keep().necessary().help("Online Newton with Oja's Sketch"))
-      .add(make_option("sketch_size", ON->m).default_value(10).help("size of sketch"))
-      .add(make_option("epoch_size", ON->epoch_size).default_value(1).help("size of epoch"))
-      .add(make_option("alpha", ON->alpha).default_value(1.f).help("mutiplicative constant for indentiy"))
-      .add(make_option("alpha_inverse", alpha_inverse).help("one over alpha, similar to learning rate"))
+      .add(make_option("sketch_size", ON->m).default_value(10).help("Size of sketch"))
+      .add(make_option("epoch_size", ON->epoch_size).default_value(1).help("Size of epoch"))
+      .add(make_option("alpha", ON->alpha).default_value(1.f).help("Mutiplicative constant for indentiy"))
+      .add(make_option("alpha_inverse", alpha_inverse).help("One over alpha, similar to learning rate"))
       .add(make_option("learning_rate_cnt", ON->learning_rate_cnt)
                .default_value(2.f)
-               .help("constant for the learning rate 1/t"))
-      .add(make_option("normalize", normalize).help("normalize the features or not"))
-      .add(make_option("random_init", random_init).help("randomize initialization of Oja or not"));
+               .help("Constant for the learning rate 1/t"))
+      .add(make_option("normalize", normalize).help("Normalize the features or not"))
+      .add(make_option("random_init", random_init).help("Randomize initialization of Oja or not"));
 
   if (!options.add_parse_and_check_necessary(new_options)) return nullptr;
 

@@ -35,7 +35,7 @@ struct mf
   // array for temp storage of features
   features temp_features;
 
-  vw* all = nullptr;  // for pairs? and finalize
+  VW::workspace* all = nullptr;  // for pairs? and finalize
 };
 
 template <bool cache_sub_predictions>
@@ -192,7 +192,7 @@ base_learner* mf_setup(VW::setup_base_i& stack_builder)
   auto data = VW::make_unique<mf>();
   option_group_definition new_options("Matrix Factorization Reduction");
   new_options.add(
-      make_option("new_mf", data->rank).keep().necessary().help("rank for reduction-based matrix factorization"));
+      make_option("new_mf", data->rank).keep().necessary().help("Rank for reduction-based matrix factorization"));
 
   if (!options.add_parse_and_check_necessary(new_options)) return nullptr;
 
@@ -210,7 +210,7 @@ base_learner* mf_setup(VW::setup_base_i& stack_builder)
   auto* l = make_reduction_learner(std::move(data), as_singleline(stack_builder.setup_base_learner()), learn,
       predict<false>, stack_builder.get_setupfn_name(mf_setup))
                 .set_params_per_weight(ws)
-                .set_prediction_type(VW::prediction_type_t::scalar)
+                .set_output_prediction_type(VW::prediction_type_t::scalar)
                 .build();
 
   return make_base(*l);
