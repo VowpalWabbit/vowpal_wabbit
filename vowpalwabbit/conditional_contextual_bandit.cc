@@ -272,7 +272,7 @@ void inject_slot_id(ccb& data, example* shared, size_t id)
 
   shared->feature_space[ccb_id_namespace].push_back(1., index, ccb_id_namespace);
   shared->indices.push_back(ccb_id_namespace);
-  shared->num_features++;
+  if (id == 0) { shared->num_features++; }
 
   if (audit)
   {
@@ -400,7 +400,7 @@ void learn_or_predict(ccb& data, multi_learner& base, multi_ex& examples)
   {
     std::stringstream msg;
     msg << "ccb_adf_explore: badly formatted example - number of actions " << data.actions.size()
-        << " must be greater than the number of slots " << data.slots.size();
+        << " must be greater than or equal to the number of slots " << data.slots.size();
     THROW(msg.str())
   }
 
@@ -489,6 +489,16 @@ void learn_or_predict(ccb& data, multi_learner& base, multi_ex& examples)
         save_action_scores(data, decision_scores);
         VW_DBG(examples) << "ccb "
                          << "slot:" << slot_id << " " << ccb_decision_to_string(data) << std::endl;
+        for (const auto& ex : data.cb_ex)
+        {
+          if (CB::ec_is_example_header(*ex)) { slot->num_features = (data.cb_ex.size() - 1) * ex->num_features; }
+          else
+          {
+            slot->num_features += ex->num_features;
+            slot->num_features_from_interactions += ex->num_features_from_interactions;
+            slot->num_features -= ex->feature_space[constant_namespace].size();
+          }
+        }
         clear_pred_and_label(data);
       }
       else
@@ -554,24 +564,17 @@ void output_example(VW::workspace& all, ccb& c, multi_ex& ec_seq)
 {
   if (ec_seq.empty()) { return; }
 
-  std::vector<example*> slots;
   size_t num_features = 0;
   float loss = 0.;
 
-  // Should this be done for shared, action and slot?
-  for (auto* ec : ec_seq)
-  {
-    num_features += ec->get_num_features();
-
-    if (ec->l.conditional_contextual_bandit.type == CCB::example_type::slot) { slots.push_back(ec); }
-  }
+  for (auto* ec : c.slots) { num_features += ec->get_num_features(); }
 
   // Is it hold out?
   size_t num_labeled = 0;
   const auto& preds = ec_seq[0]->pred.decision_scores;
-  for (size_t i = 0; i < slots.size(); i++)
+  for (size_t i = 0; i < c.slots.size(); i++)
   {
-    auto* outcome = slots[i]->l.conditional_contextual_bandit.outcome;
+    auto* outcome = c.slots[i]->l.conditional_contextual_bandit.outcome;
     if (outcome != nullptr)
     {
       num_labeled++;
@@ -584,7 +587,7 @@ void output_example(VW::workspace& all, ccb& c, multi_ex& ec_seq)
     }
   }
 
-  if (num_labeled > 0 && num_labeled < slots.size())
+  if (num_labeled > 0 && num_labeled < c.slots.size())
   {
     logger::errlog_warn("Unlabeled example in train set, was this intentional?");
   }
@@ -598,7 +601,7 @@ void output_example(VW::workspace& all, ccb& c, multi_ex& ec_seq)
   for (auto& sink : all.final_prediction_sink)
   { VW::print_decision_scores(sink.get(), ec_seq[SHARED_EX_INDEX]->pred.decision_scores); }
 
-  VW::print_update_ccb(all, slots, preds, num_features);
+  VW::print_update_ccb(all, c.slots, preds, num_features);
 }
 
 void finish_multiline_example(VW::workspace& all, ccb& data, multi_ex& ec_seq)
