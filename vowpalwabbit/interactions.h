@@ -20,12 +20,12 @@ namespace INTERACTIONS
 {
 VW::LEARNER::base_learner* generate_interactions_setup(VW::config::options_i& options, VW::workspace& all);
 
-constexpr unsigned char non_interaction_ns_start = ' ';
-constexpr unsigned char non_interaction_ns_end = '~';
+constexpr unsigned char interaction_ns_start = ' ';
+constexpr unsigned char interaction_ns_end = '~';
 
-inline constexpr bool is_non_interaction_ns(const unsigned char ns)
+inline constexpr bool is_interaction_ns(const unsigned char ns)
 {
-  return ns >= non_interaction_ns_start && ns <= non_interaction_ns_end && ns != ccb_slot_namespace;
+  return (ns >= interaction_ns_start && ns <= interaction_ns_end) || (ns == ccb_slot_namespace);
 }
 
 inline bool contains_wildcard(const std::vector<namespace_index>& interaction)
@@ -377,7 +377,7 @@ public:
       std::set<namespace_index> indices_to_interact;
       for (auto ns_index : all_seen_namespaces)
       {
-        if (is_non_interaction_ns(ns_index)) { indices_to_interact.insert(ns_index); }
+        if (is_interaction_ns(ns_index)) { indices_to_interact.insert(ns_index); }
       }
       generated_interactions.clear();
       if (indices_to_interact.size() > 0)

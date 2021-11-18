@@ -4301,5 +4301,17 @@
     "input_files": [
       "train-sets/ccb_audit.dat"
     ]
+  },
+  {
+    "id": 364,
+    "desc": "check that ccb feature count adds up with multi-action multi-slot and -q ::, constant, using ccb_slot_namespace",
+    "vw_command": "-d train-sets/ccb_audit_multi_default_ns.dat --ccb_explore_adf --noconstant -q :: -P 1 --audit",
+    "diff_files": {
+      "stderr": "train-sets/ref/ccb_audit_multi_default_ns.stderr",
+      "stdout": "train-sets/ref/ccb_audit_multi_default_ns.stdout"
+    },
+    "input_files": [
+      "train-sets/ccb_audit_multi_default_ns.dat"
+    ]
   }
 ]

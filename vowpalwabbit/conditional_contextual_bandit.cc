@@ -54,7 +54,7 @@ void return_collection(std::vector<T>& array, VW::vector_pool<T>& pool)
 
 // CCB adds the following interactions:
 //   1. Every existing interaction + ccb_id_namespace
-//   3. wildcard_namespace + ccb_id_namespace
+//   2. wildcard_namespace + ccb_id_namespace
 void insert_ccb_interactions(std::vector<std::vector<namespace_index>>& interactions_to_add_to,
     std::vector<std::vector<extent_term>>& extent_interactions_to_add_to)
 {
