@@ -20,15 +20,12 @@ namespace INTERACTIONS
 {
 VW::LEARNER::base_learner* generate_interactions_setup(VW::config::options_i& options, VW::workspace& all);
 
-constexpr unsigned char printable_start = ' ';
-constexpr unsigned char printable_end = '~';
-constexpr unsigned char printable_ns_size = printable_end - printable_start;
-constexpr uint64_t valid_ns_size =
-    printable_end - printable_start - 1;  // -1 to skip characters ':' and '|' excluded in is_valid_ns()
+constexpr unsigned char non_interaction_ns_start = ' ';
+constexpr unsigned char non_interaction_ns_end = '~';
 
-inline constexpr bool is_printable_namespace(const unsigned char ns)
+inline constexpr bool is_non_interaction_ns(const unsigned char ns)
 {
-  return ns >= printable_start && ns <= printable_end;
+  return ns >= non_interaction_ns_start && ns <= non_interaction_ns_end && ns != ccb_slot_namespace;
 }
 
 inline bool contains_wildcard(const std::vector<namespace_index>& interaction)
@@ -373,13 +370,14 @@ public:
 
     if (prev_count != all_seen_namespaces.size())
     {
-      // We do not generate interactions for non-printable namespaces as
+      // We do not generate interactions for reserved namespaces as
       // generally they are used for implementation details and special behavior
-      // and not user inputted features.
+      // and not user inputted features. The two exceptions are default_namespace
+      // and ccb_slot_namespace (the default namespace for CCB slots)
       std::set<namespace_index> indices_to_interact;
       for (auto ns_index : all_seen_namespaces)
       {
-        if (is_printable_namespace(ns_index)) { indices_to_interact.insert(ns_index); }
+        if (is_non_interaction_ns(ns_index)) { indices_to_interact.insert(ns_index); }
       }
       generated_interactions.clear();
       if (indices_to_interact.size() > 0)
