@@ -404,7 +404,7 @@ public:
         // constant. These reserved namespaces use their hash as the namespace
         // character value so we can check if the value is in this range. There
         // is a chance of collisions here though. 0 is a special case as the
-        // default case is mapped to a hash of 0 even though it is in slot ' ',
+        // default case is mapped to a hash of 0 even though it is in index ' ',
         // 32
         if (extent.hash == 0 || extent.hash >= std::numeric_limits<unsigned char>::max() ||
             (extent.hash < std::numeric_limits<unsigned char>::max() &&
