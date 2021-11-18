@@ -4301,5 +4301,29 @@
     "input_files": [
       "train-sets/ccb_audit.dat"
     ]
+  },
+  {
+    "id": 364,
+    "desc": "check that ccb feature count adds up with multi-action multi-slot and -q ::",
+    "vw_command": "-d train-sets/ccb_audit_multi.dat --ccb_explore_adf --noconstant -q :: -P 1 --audit",
+    "diff_files": {
+      "stderr": "train-sets/ref/ccb_audit_multi.stderr",
+      "stdout": "train-sets/ref/ccb_audit_multi.stdout"
+    },
+    "input_files": [
+      "train-sets/ccb_audit_multi.dat"
+    ]
+  },
+  {
+    "id": 365,
+    "desc": "check that ccb feature count adds up with multi-action multi-slot, -q :: and constant",
+    "vw_command": "-d train-sets/ccb_audit_multi.dat --ccb_explore_adf -q :: -P 1 --audit",
+    "diff_files": {
+      "stderr": "train-sets/ref/ccb_audit_multi_constant.stderr",
+      "stdout": "train-sets/ref/ccb_audit_multi_constant.stdout"
+    },
+    "input_files": [
+      "train-sets/ccb_audit_multi.dat"
+    ]
   }
 ]
