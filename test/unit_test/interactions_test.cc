@@ -459,10 +459,10 @@ BOOST_AUTO_TEST_CASE(extent_interaction_expansion_test)
   }
 }
 
-void do_interaction_feature_count_test(bool add_quadratic, bool add_cubic, bool combinations)
+void do_interaction_feature_count_test(bool add_quadratic, bool add_cubic, bool combinations, bool no_constant)
 {
-  std::string char_cmd_line = "--quiet --noconstant";
-  std::string extent_cmd_line = "--quiet --noconstant";
+  std::string char_cmd_line = "--quiet";
+  std::string extent_cmd_line = "--quiet";
   if (add_quadratic)
   {
     char_cmd_line += " -q :: ";
@@ -477,6 +477,11 @@ void do_interaction_feature_count_test(bool add_quadratic, bool add_cubic, bool 
   {
     char_cmd_line += " --leave_duplicate_interactions ";
     extent_cmd_line += " --leave_duplicate_interactions ";
+  }
+  if (no_constant)
+  {
+    char_cmd_line += " --noconstant";
+    extent_cmd_line += " --noconstant";
   }
   auto* vw_char_inter = VW::initialize(char_cmd_line);
   auto* vw_extent_inter = VW::initialize(extent_cmd_line);
@@ -512,17 +517,30 @@ void do_interaction_feature_count_test(bool add_quadratic, bool add_cubic, bool 
   BOOST_REQUIRE_EQUAL(num_char_fts, num_extent_fts);
 }
 
-BOOST_AUTO_TEST_CASE(extent_vs_char_interactions_wildcard) { do_interaction_feature_count_test(true, false, true); }
+BOOST_AUTO_TEST_CASE(extent_vs_char_interactions_wildcard)
+{
+  do_interaction_feature_count_test(true, false, true, true);
+}
 BOOST_AUTO_TEST_CASE(extent_vs_char_interactions_cubic_wildcard)
 {
-  do_interaction_feature_count_test(true, true, true);
+  do_interaction_feature_count_test(true, true, true, true);
 }
 
 BOOST_AUTO_TEST_CASE(extent_vs_char_interactions_wildcard_permutations)
 {
-  do_interaction_feature_count_test(true, false, false);
+  do_interaction_feature_count_test(true, false, false, true);
 }
 BOOST_AUTO_TEST_CASE(extent_vs_char_interactions_cubic_wildcard_permutations)
 {
-  do_interaction_feature_count_test(true, true, false);
+  do_interaction_feature_count_test(true, true, false, true);
+}
+
+BOOST_AUTO_TEST_CASE(extent_vs_char_interactions_cubic_wildcard_permutations_constant)
+{
+  do_interaction_feature_count_test(true, true, false, false);
+}
+
+BOOST_AUTO_TEST_CASE(extent_vs_char_interactions_cubic_wildcard_permutations_combinations_constant)
+{
+  do_interaction_feature_count_test(true, true, true, false);
 }
