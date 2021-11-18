@@ -2,6 +2,7 @@
 // individual contributors. All rights reserved. Released under a BSD (revised)
 // license as described in the file LICENSE.
 
+#include "prediction_type.h"
 #include "reductions.h"
 #include "label_dictionary.h"
 #include "vw.h"
@@ -14,32 +15,26 @@
 using namespace VW::LEARNER;
 using namespace VW::config;
 using namespace CB_ALGS;
-namespace Interaction_Ground
-{
+
 struct interaction_ground
 {
-  double total_importance_weighted_reward;  // the accumulated importance weighted reward of a policy which optimizes
-                                            // the given value
-  double total_uniform_reward;
-  double total_importance_weighted_cost;  // the accumulated importance weighted loss of the policy which optimizes the
-                                          // negative of the given value.
-  double total_uniform_cost;
-
-public:
-  interaction_ground()
-  {
-    total_importance_weighted_reward = 0.;
-    total_uniform_reward = 0.;
-    total_importance_weighted_cost = 0.;
-    total_uniform_cost = 0.;
-  };
+  // the accumulated importance weighted reward of a policy which optimizes the given value
+  double total_importance_weighted_reward = 0.;
+  double total_uniform_reward = 0.;
+  // the accumulated importance weighted loss of the policy which optimizes the negative of the given value
+  double total_importance_weighted_cost = 0.;
+  double total_uniform_cost = 0.;
 };
 
 void negate_cost(multi_ex& ec_seq)
 {
   for (auto* example_ptr : ec_seq)
+  {
     for (auto& label : example_ptr->l.cb.costs)
-      if (label.has_observed_cost()) label.cost = -label.cost;
+    {
+      if (label.has_observed_cost()) { label.cost = -label.cost; }
+    }
+  }
 }
 
 void learn(interaction_ground& ig, multi_learner& base, multi_ex& ec_seq)
@@ -70,25 +65,25 @@ void predict(interaction_ground& ig, multi_learner& base, multi_ex& ec_seq)
   // figure out which is better by our current estimate.
   if (ig.total_uniform_cost - ig.total_importance_weighted_cost >
       ig.total_uniform_reward - ig.total_importance_weighted_reward)
-    base.predict(ec_seq);
+  { base.predict(ec_seq); }
   else
+  {
     base.predict(ec_seq, 1);
+  }
 }
 
-}  // namespace Interaction_Ground
-using namespace Interaction_Ground;
-base_learner* interaction_ground_setup(VW::setup_base_i& stack_builder)
+base_learner* VW::interaction_ground_setup(VW::setup_base_i& stack_builder)
 {
   options_i& options = *stack_builder.get_options();
   bool igl_option = false;
 
   option_group_definition new_options("Interaction Grounded Learning");
-  new_options.add(make_option("igl", igl_option)
+  new_options.add(make_option("experimental_igl", igl_option)
                       .keep()
                       .necessary()
-                      .help("Do Interaction Grounding with multiline action dependent features."));
+                      .help("Experimental: Do Interaction Grounding with multiline action dependent features."));
 
-  if (!options.add_parse_and_check_necessary(new_options)) return nullptr;
+  if (!options.add_parse_and_check_necessary(new_options)) { return nullptr; }
 
   // number of weight vectors needed
   size_t problem_multiplier = 2;  // One for reward and one for loss
@@ -97,11 +92,14 @@ base_learner* interaction_ground_setup(VW::setup_base_i& stack_builder)
   // Ensure cb_adf so we are reducing to something useful.
   if (!options.was_supplied("cb_adf")) { options.insert("cb_adf", ""); }
 
-  auto base = as_multiline(stack_builder.setup_base_learner());
-
+  auto* base = as_multiline(stack_builder.setup_base_learner());
   auto* l = make_reduction_learner(
       std::move(ld), base, learn, predict, stack_builder.get_setupfn_name(interaction_ground_setup))
                 .set_params_per_weight(problem_multiplier)
+                .set_input_label_type(label_type_t::cb)
+                .set_output_label_type(label_type_t::cb)
+                .set_output_prediction_type(prediction_type_t::action_scores)
+                .set_input_prediction_type(prediction_type_t::action_scores)
                 .build();
 
   return make_base(*l);

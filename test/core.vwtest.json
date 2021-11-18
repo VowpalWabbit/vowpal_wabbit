@@ -4301,5 +4301,27 @@
     "input_files": [
       "train-sets/ccb_audit.dat"
     ]
+  },
+  {
+    "id": 364,
+    "desc": "Igl with a dataset containing costs - This intentionally has the same reference file as 365",
+    "vw_command": "--cbify 2 --igl -d train-sets/rcv1_multiclass.dat",
+    "diff_files": {
+      "stderr": "train-sets/ref/igl_result.stderr"
+    },
+    "input_files": [
+      "train-sets/rcv1_multiclass.dat"
+    ]
+  },
+  {
+    "id": 365,
+    "desc": "Igl with a dataset containing rewards - This intentionally has the same reference file as 364",
+    "vw_command": "--cbify 2 --flip_loss_sign --igl -d train-sets/rcv1_multiclass.dat",
+    "diff_files": {
+      "stderr": "train-sets/ref/igl_result.stderr"
+    },
+    "input_files": [
+      "train-sets/rcv1_multiclass.dat"
+    ]
   }
 ]
