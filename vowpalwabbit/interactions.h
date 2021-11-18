@@ -406,7 +406,7 @@ public:
         // 32
         if (extent.hash == 0 || extent.hash >= std::numeric_limits<unsigned char>::max() ||
             (extent.hash < std::numeric_limits<unsigned char>::max() &&
-                is_printable_namespace(static_cast<unsigned char>(extent.hash))))
+                is_interaction_ns(static_cast<unsigned char>(extent.hash))))
         { all_seen_extents.insert({ns_index, extent.hash}); }
       }
     }
