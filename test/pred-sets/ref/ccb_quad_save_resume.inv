@@ -24,11 +24,11 @@ weighted_labeled_examples 8
 weighted_labels 0
 weighted_unlabeled_examples 0
 example_number 8
-total_features 748
+total_features 1998
 total_weight 26.4534
 sd::oec.weighted_labeled_examples 8
 current_pass 1
-Action^fff*User^a:431:-0.0648094 5.0176 1
+Action^fff*User^a:431:-0.0648093 5.0176 1
 Action^fff*_id^index1:1661:-0.0581905 8.39543 1
 Slot^h*User^c:2034:-0.039144 5.70336 1
 User^a*_id^index2:2511:-0.0414438 2.50186 1
@@ -49,14 +49,14 @@ Action^ff*Action^ff*_id^index1:22111:0.0498541 0.952527 1
 j:23097:-0.0355497 2.81385 1
 _id^index1:25433:-0.0295064 9.62608 1
 User^a:25739:-0.0660201 8.50659 1
-Action^d*User^c:26782:0.030478 1.01523 1
+Action^d*User^c:26782:0.0304781 1.01523 1
 User^a*User^a*_id^index1:28919:-0.0467489 5.87019 1
 Action^fff*Action^fff*_id^index0:29418:-0.0289289 4.79488 1
 User^b*User^c*_id^index0:29798:0.0182089 1.00842 1
 Slot^i*Slot^i:32658:-0.0295064 9.62608 1
 User^b*j:35132:0.0131543 0.0395891 1
 Action^d*User^b*j:35865:0.0131543 0.0395891 1
-Action^e*User^b*_id^index1:44017:0.0115229 0.0607954 1
+Action^e*User^b*_id^index1:44017:0.0115229 0.0607953 1
 User^b*_id^index1:45148:-0.0058513 3.53856 1
 Slot^i*Slot^i*_id^index1:45455:-0.0295064 9.62608 1
 Slot^i*User^b:46490:-0.0058513 3.53856 1
@@ -64,26 +64,26 @@ User^c*User^c*_id^index0:46836:-0.039144 5.70336 1
 Action^d*Action^d*_id^index0:48540:0.0182089 1.00842 1
 User^b*User^b*_id^index2:56120:0.0131543 0.0395891 1
 Action^fff*User^c*_id^index0:57653:-0.0501388 4.69495 1
-Action^d*User^c*j:60035:0.0123294 0.0068125 1
+Action^d*User^c*j:60035:0.0123294 0.00681251 1
 Action^f*Action^f*_id^index2:64262:0.0343426 0.499038 1
 _id^index0:68306:-0.0138736 5.90722 1
 Action^f*User^c:69205:0.00942892 0.265586 1
 User^b:71687:0.0131295 4.65589 1
 User^a*User^a*_id^index0:72060:0.0365243 0.134537 1
 Action^fff*Action^fff*_id^index1:72545:-0.0581905 8.39543 1
-User^b*User^c*_id^index1:73197:0.0115229 0.0607954 1
+User^b*User^c*_id^index1:73197:0.0115229 0.0607953 1
 Action^f*User^a*j:77916:0.0336197 0.233451 1
-Action^ff*Action^ff*_id^index0:81876:0.000540947 5.36317e-05 1
-Action^ff*User^b:83218:0.000540947 5.36317e-05 1
+Action^ff*Action^ff*_id^index0:81876:0.000540946 5.36314e-05 1
+Action^ff*User^b:83218:0.000540946 5.36314e-05 1
 Action^e*_id^index2:84641:-0.0594073 2.26841 1
-Action^ff*_id^index0:88007:0.000540947 5.36317e-05 1
+Action^ff*_id^index0:88007:0.000540946 5.36314e-05 1
 User^c*_id^index0:89129:-0.039144 5.70336 1
 Slot^i*User^c*_id^index1:91701:0.0395499 0.278124 1
 Action^f*Action^f:92808:0.0343426 0.499038 1
 Action^fff*_id^index0:94198:-0.0289289 4.79488 1
 Action^d*_id^index2:94841:0.0178782 0.0464016 1
 Action^e*Action^e*_id^index0:97084:0.0107783 0.103865 1
-Action^fff*User^b:97571:-0.00996171 3.47777 1
+Action^fff*User^b:97571:-0.00996172 3.47777 1
 Slot^i*User^b*_id^index1:98871:-0.0058513 3.53856 1
 Action^d:100701:0.0356786 1.05482 1
 Slot^h*User^c*_id^index0:101156:-0.039144 5.70336 1
@@ -94,7 +94,7 @@ Action^fff*Slot^i:112427:-0.0581905 8.39543 1
 Action^d*User^c*_id^index0:113256:0.0182089 1.00842 1
 Action^e*User^b*_id^index0:115322:0.00334638 0.0692619 1
 Constant:116060:-0.0610461 18.3472 1
-Action^ff*Slot^h:116156:0.000540947 5.36317e-05 1
+Action^ff*Slot^h:116156:0.000540946 5.36314e-05 1
 Slot^i*User^a:117014:-0.0467489 5.87019 1
 User^b*User^b:117506:0.0131295 4.65589 1
 Slot^i*_id^index1:118468:-0.0295064 9.62608 1
@@ -132,7 +132,7 @@ User^b*_id^index2:171035:0.0131543 0.0395891 1
 Action^e*Slot^h:171286:0.0107783 0.103865 1
 Action^d*Slot^h:173518:0.0182089 1.00842 1
 Action^fff*Action^fff:174568:-0.0752334 13.1903 1
-Action^ff*User^b*_id^index0:176516:0.000540947 5.36317e-05 1
+Action^ff*User^b*_id^index0:176516:0.000540946 5.36314e-05 1
 Action^d*Action^d:177210:0.0356786 1.05482 1
 Action^fff*User^a*_id^index1:181540:-0.0694815 4.91766 1
 Slot^h*Slot^h:182946:-0.0138736 5.90722 1
@@ -143,7 +143,7 @@ Action^e*Slot^i:186288:0.0395499 0.278124 1
 Action^f*Action^f*j:192033:0.0343426 0.499038 1
 User^b*User^b*_id^index1:194431:-0.0058513 3.53856 1
 Slot^i*User^c:194660:0.0395499 0.278124 1
-Action^d*User^c*_id^index2:196516:0.0123294 0.0068125 1
+Action^d*User^c*_id^index2:196516:0.0123294 0.00681251 1
 User^c*User^c:197378:-0.0194199 6.25389 1
 Action^e*User^a*_id^index0:200206:0.012878 0.0346028 1
 Action^f*User^a*_id^index2:206203:0.0336197 0.233451 1
@@ -154,7 +154,7 @@ Slot^h*User^a:210560:0.0365243 0.134537 1
 Action^e:210597:-0.0440323 2.6504 1
 Action^fff*Slot^i*_id^index1:211944:-0.0581905 8.39543 1
 User^a*_id^index0:216067:0.0365243 0.134537 1
-Action^ff*Slot^h*_id^index0:216102:0.000540947 5.36317e-05 1
+Action^ff*Slot^h*_id^index0:216102:0.000540946 5.36314e-05 1
 User^c:218617:-0.0194199 6.25389 1
 Action^e*j:221062:-0.0594073 2.26841 1
 Action^e*User^a:221492:-0.057629 2.30302 1
@@ -162,7 +162,7 @@ Action^e*_id^index1:222950:0.0395499 0.278124 1
 Action^d*j:223070:0.0178782 0.0464016 1
 User^b*User^c:231164:0.0209572 1.06921 1
 Slot^h*User^b*_id^index0:236086:0.0209632 1.07773 1
-Action^fff*User^b*_id^index1:236864:-0.00996171 3.47777 1
+Action^fff*User^b*_id^index1:236864:-0.00996172 3.47777 1
 User^b*User^b*_id^index0:237300:0.0209632 1.07773 1
 Action^fff*User^a*_id^index0:240815:0.0314608 0.0999346 1
 Action^f*User^c*_id^index2:245969:0.00942892 0.265586 1

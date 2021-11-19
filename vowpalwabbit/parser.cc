@@ -5,6 +5,7 @@
 #include "parser.h"
 
 #include <sys/types.h>
+#include "io/logger.h"
 
 #ifndef _WIN32
 #  include <sys/mman.h>
@@ -219,8 +220,8 @@ void reset_source(VW::workspace& all, size_t numbits)
 
     // Rename the cache file to the final name.
     if (0 != rename(all.example_parser->currentname.c_str(), all.example_parser->finalname.c_str()))
-      THROW("WARN: reset_source(vw& all, size_t numbits) cannot rename: " << all.example_parser->currentname << " to "
-                                                                          << all.example_parser->finalname);
+      THROW("WARN: reset_source(VW::workspace& all, size_t numbits) cannot rename: "
+          << all.example_parser->currentname << " to " << all.example_parser->finalname);
     input.close_files();
     // Now open the written cache as the new input file.
     input.add_file(VW::io::open_file_reader(all.example_parser->finalname));
@@ -242,7 +243,7 @@ void reset_source(VW::workspace& all, size_t numbits)
 
       all.final_prediction_sink.clear();
       all.example_parser->input.close_files();
-
+      all.example_parser->input.reset();
       sockaddr_in client_address;
       socklen_t size = sizeof(client_address);
       int f =
@@ -486,6 +487,14 @@ void enable_sources(VW::workspace& all, bool quiet, size_t passes, input_options
         // wait for child to change state; if finished, then respawn
         int status;
         pid_t pid = wait(&status);
+
+        // If the child failed we still fork off another one, but log the issue.
+        if (status != 0)
+        {
+          VW::io::logger::errlog_warn(
+              "Daemon child process received exited with non-zero exit code: {}. Ignoring.", status);
+        }
+
         if (got_sigterm)
         {
           for (size_t i = 0; i < num_children; i++) kill(children[i], SIGTERM);
@@ -626,7 +635,7 @@ void enable_sources(VW::workspace& all, bool quiet, size_t passes, input_options
   }
 
   if (passes > 1 && !all.example_parser->resettable)
-    THROW("need a cache file for multiple passes : try using --cache_file");
+    THROW("need a cache file for multiple passes : try using  --cache or --cache_file <name>");
 
   if (!quiet && !all.daemon) *(all.trace_message) << "num sources = " << all.example_parser->input.num_files() << endl;
 }
@@ -764,7 +773,7 @@ example* new_unused_example(VW::workspace& all)
   return ec;
 }
 
-example* read_example(vw& all, const char* example_line)
+example* read_example(VW::workspace& all, const char* example_line)
 {
   example* ret = &get_unused_example(&all);
 
@@ -870,7 +879,7 @@ void empty_example(VW::workspace& /*all*/, example& ec)
   ec.num_features_from_interactions = 0;
 }
 
-void clean_example(vw& all, example& ec)
+void clean_example(VW::workspace& all, example& ec)
 {
   empty_example(all, ec);
   all.example_parser->example_pool.return_object(&ec);
@@ -973,5 +982,8 @@ namespace VW
 {
 void end_parser(VW::workspace& all) { all.parse_thread.join(); }
 
-bool is_ring_example(const vw& all, const example* ae) { return all.example_parser->example_pool.is_from_pool(ae); }
+bool is_ring_example(const VW::workspace& all, const example* ae)
+{
+  return all.example_parser->example_pool.is_from_pool(ae);
+}
 }  // namespace VW
