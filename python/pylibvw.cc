@@ -33,7 +33,7 @@ namespace py = boost::python;
 
 class py_log_wrapper;
 
-typedef boost::shared_ptr<vw> vw_ptr;
+typedef boost::shared_ptr<VW::workspace> vw_ptr;
 typedef boost::shared_ptr<example> example_ptr;
 typedef boost::shared_ptr<Search::search> search_ptr;
 typedef boost::shared_ptr<Search::predictor> predictor_ptr;
@@ -257,9 +257,9 @@ vw_ptr my_initialize_with_log(std::string args, py_log_wrapper_ptr py_log)
     trace_context = py_log.get();
   }
 
-  vw* foo = VW::initialize(args, nullptr, false, trace_listener, trace_context);
-  // return boost::shared_ptr<vw>(foo, [](vw *all){VW::finish(*all);});
-  return boost::shared_ptr<vw>(foo);
+  VW::workspace* foo = VW::initialize(args, nullptr, false, trace_listener, trace_context);
+  // return boost::shared_ptr<VW::workspace>(foo, [](vw *all){VW::finish(*all);});
+  return boost::shared_ptr<VW::workspace>(foo);
 }
 
 vw_ptr my_initialize(std::string args) { return my_initialize_with_log(args, nullptr); }
@@ -350,7 +350,7 @@ predictor_ptr get_predictor(search_ptr sch, ptag my_tag)
   return boost::shared_ptr<Search::predictor>(P);
 }
 
-label_parser* get_label_parser(vw* all, size_t labelType)
+label_parser* get_label_parser(VW::workspace* all, size_t labelType)
 {
   switch (labelType)
   {
@@ -375,7 +375,7 @@ label_parser* get_label_parser(vw* all, size_t labelType)
   }
 }
 
-size_t my_get_label_type(vw* all)
+size_t my_get_label_type(VW::workspace* all)
 {
   label_parser* lp = &all->example_parser->lbl_parser;
   if (lp->parse_label == simple_label_parser.parse_label) { return lBINARY; }
@@ -715,7 +715,7 @@ void my_setup_example(vw_ptr vw, example_ptr ec) { VW::setup_example(*vw, ec.get
 
 void unsetup_example(vw_ptr vwP, example_ptr ae)
 {
-  vw& all = *vwP;
+  VW::workspace& all = *vwP;
   ae->partial_prediction = 0.;
   ae->num_features = 0;
   ae->reset_total_sum_feat_sq();
@@ -1159,7 +1159,7 @@ BOOST_PYTHON_MODULE(pylibvw)
   py::docstring_options local_docstring_options(true, true, false);
 
   // define the vw class
-  py::class_<vw, vw_ptr, boost::noncopyable>(
+  py::class_<VW::workspace, vw_ptr, boost::noncopyable>(
       "vw", "the basic VW object that holds with weight vector, parser, etc.", py::no_init)
       .def("__init__", py::make_constructor(my_initialize))
       .def("__init__", py::make_constructor(my_initialize_with_log))

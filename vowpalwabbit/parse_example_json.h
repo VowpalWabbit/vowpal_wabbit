@@ -1740,7 +1740,7 @@ void read_line_json_s(const label_parser& lbl_parser, hash_func_t hash_func, uin
 }
 
 template <bool audit>
-void read_line_json_s(vw& all, v_array<example*>& examples, char* line, size_t length,
+void read_line_json_s(VW::workspace& all, v_array<example*>& examples, char* line, size_t length,
     example_factory_t example_factory, void* ex_factory_context,
     std::unordered_map<uint64_t, example*>* dedup_examples = nullptr)
 {

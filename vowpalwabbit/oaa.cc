@@ -338,7 +338,7 @@ VW::LEARNER::base_learner* oaa_setup(VW::setup_base_i& stack_builder)
   void (*pred_ptr)(oaa&, LEARNER::single_learner&, example&);
   std::string name_addition;
   VW::prediction_type_t pred_type;
-  void (*finish_ptr)(vw&, oaa&, example&);
+  void (*finish_ptr)(VW::workspace&, oaa&, example&);
   if (probabilities || scores)
   {
     pred_type = VW::prediction_type_t::scalars;
