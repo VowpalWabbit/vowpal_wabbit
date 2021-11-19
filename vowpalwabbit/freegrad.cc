@@ -285,7 +285,7 @@ base_learner* freegrad_setup(options_i& options, vw& all)
   float radius; 
 
   option_group_definition new_options("FreeGrad options");
-  new_options.add(make_option("freegrad", FreeGrad).keep().help("Diagonal FreeGrad Algorithm")).add(make_option("restart", restart).help("Use the FreeRange restarts"))
+  new_options.add(make_option("freegrad", FreeGrad).necessary().keep().help("Diagonal FreeGrad Algorithm")).add(make_option("restart", restart).help("Use the FreeRange restarts"))
       .add(make_option("project", project).help("Project the outputs to adapt to both the lipschitz and comparator norm")).add(make_option("radius", radius).help("Radius of the l2-ball for the projection. If not supplied, an adaptive radius will be used.")).add(make_option("fepsilon", FG->epsilon).default_value(1.f).help("Initial wealth"));
 
   options.add_and_parse(new_options);
