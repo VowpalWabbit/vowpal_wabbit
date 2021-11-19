@@ -588,7 +588,7 @@ void finish_example(VW::workspace& all, automl<CMType>& data, multi_ex& ec)
     uint64_t champ_live_slot = data.cm->current_champ;
     for (example* ex : ec) { data.cm->apply_config(ex, champ_live_slot); }
 
-    auto restore_guard = VW::scope_exit([&data, &ec, &champ_live_slot] {
+    auto restore_guard = VW::scope_exit([&data, &ec] {
       for (example* ex : ec) { data.cm->revert_config(ex); }
     });
 
