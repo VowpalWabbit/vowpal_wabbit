@@ -4329,7 +4329,7 @@
   {
     "id": 366,
     "desc": "Freegrad",
-    "vw_command": "-d train-sets/0001.dat -f models/freegrad.model -c --passes 4",
+    "vw_command": "-d train-sets/0001.dat -f models/freegrad.model -k -c --passes 4",
     "diff_files": {
       "stderr": "train-sets/ref/freegrad.stderr"
     },
