@@ -36,7 +36,7 @@ using namespace VW::config;
 namespace logger = VW::io::logger;
 
 // todo:
-// 4. Factor various state out of vw&
+// 4. Factor various state out of VW::workspace&
 namespace GD
 {
 struct gd

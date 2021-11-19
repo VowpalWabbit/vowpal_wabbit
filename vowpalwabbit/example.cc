@@ -292,8 +292,8 @@ void dealloc_examples(example* example_ptr, size_t count)
   free(example_ptr);
 }
 
-void finish_example(vw&, example&);
-void clean_example(vw&, example&);
+void finish_example(VW::workspace&, example&);
+void clean_example(VW::workspace&, example&);
 
 void finish_example(VW::workspace& all, multi_ex& ec_seq)
 {

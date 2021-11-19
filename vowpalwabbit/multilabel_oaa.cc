@@ -62,7 +62,7 @@ void predict_or_learn(multi_oaa& o, VW::LEARNER::single_learner& base, example& 
   }
 }
 
-void finish_example(vw& all, multi_oaa& o, example& ec)
+void finish_example(VW::workspace& all, multi_oaa& o, example& ec)
 {
   if (o.probabilities)
   {
@@ -86,7 +86,7 @@ void finish_example(vw& all, multi_oaa& o, example& ec)
 VW::LEARNER::base_learner* multilabel_oaa_setup(VW::setup_base_i& stack_builder)
 {
   options_i& options = *stack_builder.get_options();
-  vw& all = *stack_builder.get_all_pointer();
+  VW::workspace& all = *stack_builder.get_all_pointer();
   auto data = VW::make_unique<multi_oaa>();
   option_group_definition new_options("Multilabel One Against All");
   new_options

@@ -196,10 +196,10 @@ public:
   example* learn_ec_ref;                        // reference to example at learn_t, when there's no example munging
   size_t learn_ec_ref_cnt;                      // how many are there (for LDF mode only; otherwise 1)
   v_array<ptag> learn_condition_on;             // a copy of the tags used for conditioning at the training position
-  v_array<action_repr> learn_condition_on_act;  // the actions taken
+  std::vector<action_repr> learn_condition_on_act;  // the actions taken
   v_array<char> learn_condition_on_names;       // the names of the actions
   v_array<action> learn_allowed_actions;        // which actions were allowed at training time?
-  v_array<action_repr> ptag_to_action;          // tag to action mapping for conditioning
+  std::vector<action_repr> ptag_to_action;      // tag to action mapping for conditioning
   std::vector<action> test_action_sequence;  // if test-mode was run, what was the corresponding action sequence; it's a
                                              // vector cuz we might expose it to the library
   action learn_oracle_action;                // store an oracle action for debugging purposes
@@ -273,7 +273,7 @@ public:
   // to reduce memory allocation
   std::unique_ptr<std::stringstream> rawOutputStringStream;
   CS::label ldf_test_label;
-  v_array<action_repr> condition_on_actions;
+  std::vector<action_repr> condition_on_actions;
   v_array<size_t> timesteps;
   polylabel learn_losses;
   polylabel gte_label;
@@ -1004,9 +1004,22 @@ void ensure_size(v_array<T>& A, size_t sz)
 }
 
 template <class T>
+void ensure_size(std::vector<T>& A, size_t sz)
+{
+  A.resize(sz);
+}
+
+template <class T>
 void set_at(v_array<T>& v, T item, size_t pos)
 {
   if (pos >= v.size()) { v.resize_but_with_stl_behavior(pos + 1); }
+  v[pos] = item;
+}
+
+template <class T>
+void set_at(std::vector<T>& v, T item, size_t pos)
+{
+  if (pos >= v.size()) { v.resize(pos + 1); }
   v[pos] = item;
 }
 
@@ -1424,7 +1437,7 @@ void generate_training_example(search_private& priv, polylabel& losses, float we
     ec.l = losses;  // labels;
     if (add_conditioning)
       add_example_conditioning(priv, ec, priv.learn_condition_on.size(), priv.learn_condition_on_names.begin(),
-          priv.learn_condition_on_act.begin());
+          priv.learn_condition_on_act.data());
     for (size_t is_local = 0; is_local <= static_cast<size_t>(priv.xv); is_local++)
     {
       int learner = select_learner(priv, priv.current_policy, priv.learn_learner_id, true, is_local > 0);
@@ -1448,7 +1461,7 @@ void generate_training_example(search_private& priv, polylabel& losses, float we
       {
         example& ec = priv.learn_ec_ref[a];
         add_example_conditioning(priv, ec, priv.learn_condition_on.size(), priv.learn_condition_on_names.begin(),
-            priv.learn_condition_on_act.begin());
+            priv.learn_condition_on_act.data());
       }
 
     for (size_t is_local = 0; is_local <= static_cast<size_t>(priv.xv); is_local++)
@@ -1735,7 +1748,7 @@ action search_predict(search_private& priv, example* ecs, size_t ec_cnt, ptag my
       bool not_test = priv.all->training && !ecs[0].test_only;
 
       if ((!skip) && (!need_fea) && not_test &&
-          cached_action_store_or_find(priv, mytag, condition_on, condition_on_names, priv.condition_on_actions.begin(),
+          cached_action_store_or_find(priv, mytag, condition_on, condition_on_names, priv.condition_on_actions.data(),
               condition_on_cnt, policy, learner_id, a, false, a_cost))
         // if this succeeded, 'a' has the right action
         priv.total_cache_hits++;
@@ -1746,7 +1759,7 @@ action search_predict(search_private& priv, example* ecs, size_t ec_cnt, ptag my
         if (priv.auto_condition_features)
           for (size_t n = start_K; n < ec_cnt; n++)
             add_example_conditioning(
-                priv, ecs[n], condition_on_cnt, condition_on_names, priv.condition_on_actions.begin());
+                priv, ecs[n], condition_on_cnt, condition_on_names, priv.condition_on_actions.data());
 
         if (((!skip) && (policy >= 0)) || need_fea)  // only make a prediction if we're going to use the output
         {
@@ -1805,7 +1818,7 @@ action search_predict(search_private& priv, example* ecs, size_t ec_cnt, ptag my
           for (size_t n = start_K; n < ec_cnt; n++) del_example_conditioning(priv, ecs[n]);
 
         if (not_test && (!skip))
-          cached_action_store_or_find(priv, mytag, condition_on, condition_on_names, priv.condition_on_actions.begin(),
+          cached_action_store_or_find(priv, mytag, condition_on, condition_on_names, priv.condition_on_actions.data(),
               condition_on_cnt, policy, learner_id, a, true, a_cost);
       }
     }
@@ -2522,7 +2535,7 @@ void parse_neighbor_features(VW::string_view nf_strview, v_array<int32_t>& neigh
 base_learner* setup(VW::setup_base_i& stack_builder)
 {
   options_i& options = *stack_builder.get_options();
-  vw& all = *stack_builder.get_all_pointer();
+  VW::workspace& all = *stack_builder.get_all_pointer();
   auto sch = VW::make_unique<search>();
   search_private& priv = *sch->priv;
   std::string task_string;
