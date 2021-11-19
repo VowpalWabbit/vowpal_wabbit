@@ -1172,15 +1172,17 @@ base_learner* setup(VW::setup_base_i& stack_builder)
       .add(make_option("adax", adax).help("Use adaptive learning rates with x^2 instead of g^2x^2"))
       .add(make_option("invariant", invariant).help("Use safe/importance aware updates").keep(all.save_resume))
       .add(make_option("normalized", normalized).help("Use per feature normalized updates").keep(all.save_resume))
-      .add(make_option("sparse_l2", g->sparse_l2).default_value(0.f).help("Use per feature normalized updates"))
+      .add(make_option("sparse_l2", g->sparse_l2)
+               .default_value(0.f)
+               .help("Degree of l2 regularization applied to activated sparse parameters"))
       .add(make_option("l1_state", all.sd->gravity)
                .keep(all.save_resume)
                .default_value(0.)
-               .help("Use per feature normalized updates"))
+               .help("Amount of accumulated implicit l1 regularization"))
       .add(make_option("l2_state", all.sd->contraction)
                .keep(all.save_resume)
                .default_value(1.)
-               .help("Use per feature normalized updates"));
+               .help("Amount of accumulated implicit l2 regularization"));
   options.add_and_parse(new_options);
 
   g->all = &all;
