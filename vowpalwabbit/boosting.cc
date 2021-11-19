@@ -39,7 +39,7 @@ struct boosting
   int N = 0;
   float gamma = 0.f;
   std::string alg = "";
-  vw* all = nullptr;
+  VW::workspace* all = nullptr;
   std::shared_ptr<rand_state> _random_state;
   std::vector<std::vector<int64_t> > C;
   std::vector<float> alpha;
@@ -368,7 +368,7 @@ void save_load_boosting_noop(boosting&, io_buf&, bool, bool) {}
 VW::LEARNER::base_learner* boosting_setup(VW::setup_base_i& stack_builder)
 {
   options_i& options = *stack_builder.get_options();
-  vw& all = *stack_builder.get_all_pointer();
+  VW::workspace& all = *stack_builder.get_all_pointer();
   auto data = VW::make_unique<boosting>();
   option_group_definition new_options("Boosting");
   new_options.add(make_option("boosting", data->N).keep().necessary().help("Online boosting with <N> weak learners"))

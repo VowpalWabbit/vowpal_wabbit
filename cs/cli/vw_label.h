@@ -29,9 +29,10 @@ using namespace MULTICLASS;
 using namespace Newtonsoft::Json;
 
 public interface class ILabel
-{ void UpdateExample(vw* vw, example* ex);
-  void ReadFromExample(example* ex);
-};
+  {
+    void UpdateExample(VW::workspace* vw, example* ex);
+    void ReadFromExample(example* ex);
+  };
 
 public ref class ContextualBanditLabel sealed : ILabel
 {
@@ -110,7 +111,7 @@ public:
     }
   }
 
-  virtual void UpdateExample(vw* vw, example* ex)
+  virtual void UpdateExample(VW::workspace* vw, example* ex)
   {
     CB::label* ld = &ex->l.cb;
     cb_class f;
@@ -151,7 +152,7 @@ private:
 public:
   static SharedLabel^ Instance = gcnew SharedLabel;
 
-  virtual void UpdateExample(vw* vw, example* ex)
+  virtual void UpdateExample(VW::workspace* vw, example* ex)
   {
     CB::label* ld = &ex->l.cb;
     cb_class f;
@@ -230,7 +231,7 @@ public:
     m_initial = red_fts.initial;
   }
 
-  virtual void UpdateExample(vw* vw, example* ex)
+  virtual void UpdateExample(VW::workspace* vw, example* ex)
   {
     label_data* ld = &ex->l.simple;
     ld->label = m_label;
@@ -316,9 +317,7 @@ public:
   { throw gcnew NotImplementedException("to be done...");
   }
 
-  virtual void UpdateExample(vw* vw, example* ex)
-  { throw gcnew NotImplementedException("to be done...");
-  }
+  virtual void UpdateExample(VW::workspace* vw, example* ex) { throw gcnew NotImplementedException("to be done..."); }
 
   virtual String^ ToString() override
   { auto sb = gcnew StringBuilder;
@@ -368,7 +367,7 @@ public:
   { throw gcnew NotImplementedException("to be done...");
   }
 
-  virtual void UpdateExample(vw* vw, example* ex)
+  virtual void UpdateExample(VW::workspace* vw, example* ex)
   { auto bytes = System::Text::Encoding::UTF8->GetBytes(m_label);
     auto valueHandle = GCHandle::Alloc(bytes, GCHandleType::Pinned);
 
