@@ -492,7 +492,7 @@ inline void expdigammify(VW::workspace& all, T* gamma, T threshold, T initial)
       [sum, threshold](T g) { return fmax(threshold, exponential<T, mtype>(digamma<T, mtype>(g) - sum)); });
 }
 template <>
-inline void expdigammify<float, lda_math_mode::USE_SIMD>(vw& all, float* gamma, float threshold, float)
+inline void expdigammify<float, lda_math_mode::USE_SIMD>(VW::workspace& all, float* gamma, float threshold, float)
 {
 #if defined(HAVE_SIMD_MATHMODE)
   vexpdigammify(all, gamma, threshold);
@@ -509,7 +509,8 @@ inline void expdigammify_2(VW::workspace& all, float* gamma, T* norm, const T th
       [threshold](float g, float n) { return fmax(threshold, exponential<T, mtype>(digamma<T, mtype>(g) - n)); });
 }
 template <>
-inline void expdigammify_2<float, lda_math_mode::USE_SIMD>(vw& all, float* gamma, float* norm, const float threshold)
+inline void expdigammify_2<float, lda_math_mode::USE_SIMD>(
+    VW::workspace& all, float* gamma, float* norm, const float threshold)
 {
 #if defined(HAVE_SIMD_MATHMODE)
   vexpdigammify_2(all, gamma, norm, threshold);
