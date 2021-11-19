@@ -314,7 +314,7 @@ base_learner* VW::freegrad_setup(VW::setup_base_i& stack_builder)
   float radius;
   float fepsilon;
 
-  option_group_definition new_options("FreeGrad options");
+  option_group_definition new_options("FreeGrad");
   new_options.add(make_option("freegrad", freegrad_enabled).necessary().keep().help("Diagonal FreeGrad Algorithm"))
       .add(make_option("restart", restart).help("Use the FreeRange restarts"))
       .add(make_option("project", project)

@@ -482,6 +482,14 @@ Explore Evaluation Options:
 Debug: Metrics Options:
   --extra_metrics arg   Specify filename to write metrics to. Note: There is no
                         fixed schema
+FreeGrad Options:
+  --freegrad            Diagonal FreeGrad Algorithm
+  --restart             Use the FreeRange restarts
+  --project             Project the outputs to adapt to both the lipschitz and 
+                        comparator norm
+  --radius arg          Radius of the l2-ball for the projection. If not 
+                        supplied, an adaptive radius will be used.
+  --fepsilon arg (=1, ) Initial wealth
 Follow the Regularized Leader Options:
   --ftrl                FTRL: Follow the Proximal Regularized Leader
   --coin                Coin betting optimizer
