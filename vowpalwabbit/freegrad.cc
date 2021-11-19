@@ -181,9 +181,7 @@ void inner_freegrad_update_after_prediction(freegrad_update_data& d, float x, fl
     }
 
     if (norm_w_pred > projection_radius && g_dot_w < 0)
-    {
-      tilde_gradient = gradient - (g_dot_w * w[W]) / std::pow(norm_w_pred, 2.f);
-    }
+    { tilde_gradient = gradient - (g_dot_w * w[W]) / std::pow(norm_w_pred, 2.f); }
   }
 
   // Only do something if a non-zero gradient has been observed
@@ -244,9 +242,7 @@ void freegrad_update_after_prediction(freegrad& fg, example& ec)
   // Update the maximum gradient norm value
   clipped_grad_norm = sqrtf(fg.update_data.squared_norm_clipped_grad);
   if (clipped_grad_norm > fg.update_data.maximum_clipped_gradient_norm)
-  {
-    fg.update_data.maximum_clipped_gradient_norm = clipped_grad_norm;
-  }
+  { fg.update_data.maximum_clipped_gradient_norm = clipped_grad_norm; }
 
   if (fg.update_data.maximum_clipped_gradient_norm > 0)
   {
@@ -279,9 +275,7 @@ void save_load(freegrad& fg, io_buf& model_file, bool read, bool text)
     bin_text_read_write_fixed(model_file, reinterpret_cast<char*>(&resume), sizeof(resume), read, msg, text);
 
     if (resume)
-    {
-      GD::save_load_online_state(*all, model_file, read, text, fg.total_weight, nullptr, fg.freegrad_size);
-    }
+    { GD::save_load_online_state(*all, model_file, read, text, fg.total_weight, nullptr, fg.freegrad_size); }
     else
     {
       GD::save_load_regressor(*all, model_file, read, text);
@@ -298,9 +292,7 @@ void end_pass(freegrad& fg)
     if (summarize_holdout_set(all, fg.no_win_counter)) { finalize_regressor(all, all.final_regressor_name); }
     if ((fg.early_stop_thres == fg.no_win_counter) &&
         ((all.check_holdout_every_n_passes <= 1) || ((all.current_pass % all.check_holdout_every_n_passes) == 0)))
-    {
-      set_done(all);
-    }
+    { set_done(all); }
   }
 }
 

@@ -91,7 +91,7 @@ void register_reductions(std::vector<reduction_setup_fn>& reductions,
     std::vector<std::tuple<std::string, reduction_setup_fn>>& reduction_stack)
 {
   std::map<reduction_setup_fn, std::string> allowlist = {{GD::setup, "gd"}, {ftrl_setup, "ftrl"},
-  {VW::freegrad_setup, "freegrad"}, {sender_setup, "sender"}, {nn_setup, "nn"}, {oaa_setup, "oaa"},
+      {VW::freegrad_setup, "freegrad"}, {sender_setup, "sender"}, {nn_setup, "nn"}, {oaa_setup, "oaa"},
       {scorer_setup, "scorer"}, {CSOAA::csldf_setup, "csoaa_ldf"},
       {VW::cb_explore_adf::greedy::setup, "cb_explore_adf_greedy"},
       {VW::cb_explore_adf::regcb::setup, "cb_explore_adf_regcb"},
