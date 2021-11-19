@@ -4325,5 +4325,30 @@
     "input_files": [
       "train-sets/ccb_audit_multi.dat"
     ]
+  },
+  {
+    "id": 366,
+    "desc": "Freegrad",
+    "vw_command": "-d train-sets/0001.dat -f models/freegrad.model -c --passes 4",
+    "diff_files": {
+      "stderr": "train-sets/ref/freegrad.stderr"
+    },
+    "input_files": [
+      "train-sets/0001.dat"
+    ]
+  },
+  {
+    "id": 367,
+    "desc": "Freegrad load model",
+    "vw_command": "-d train-sets/0001.dat -i models/freegrad.model -k -t -p freegrad.predict",
+    "diff_files": {
+      "stderr": "train-sets/ref/freegrad_load.stderr",
+      "freegrad.predict": "pred-sets/ref/freegrad.predict"
+    },
+    "input_files": [
+      "train-sets/0001.dat",
+      "models/freegrad.model"
+    ],
+    "depends_on": [366]
   }
 ]
