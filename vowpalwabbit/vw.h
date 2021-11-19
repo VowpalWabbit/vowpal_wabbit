@@ -78,9 +78,9 @@ const char* are_features_compatible(VW::workspace& vw1, VW::workspace& vw2);
 void finish(VW::workspace& all, bool delete_all = true);
 void sync_stats(VW::workspace& all);
 
-void start_parser(vw& all);
-void end_parser(vw& all);
-bool is_ring_example(const vw& all, const example* ae);
+void start_parser(VW::workspace& all);
+void end_parser(VW::workspace& all);
+bool is_ring_example(const VW::workspace& all, const example* ae);
 
 struct primitive_feature_space  // just a helper definition.
 {
@@ -199,7 +199,7 @@ inline uint64_t chain_hash_static(
   return hash_func(value.data(), value.length(), hash_func(name.data(), name.length(), u)) & parse_mask;
 }
 
-inline float get_weight(vw& all, uint32_t index, uint32_t offset)
+inline float get_weight(VW::workspace& all, uint32_t index, uint32_t offset)
 {
   return (&all.weights[static_cast<uint64_t>(index) << all.weights.stride_shift()])[offset];
 }

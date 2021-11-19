@@ -17,7 +17,7 @@
 
 namespace test_helpers
 {
-void make_example(multi_ex& examples, vw& vw, int arm, float* costs, float* probs)
+void make_example(multi_ex& examples, VW::workspace& vw, int arm, float* costs, float* probs)
 {
   examples.push_back(VW::read_example(vw, "shared | shared_f"));
   for (int i = 0; i < 4; ++i)
