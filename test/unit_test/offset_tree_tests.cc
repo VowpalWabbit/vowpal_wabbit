@@ -1,4 +1,6 @@
-#define BOOST_TEST_DYN_LINK
+// Copyright (c) by respective owners including Yahoo!, Microsoft, and
+// individual contributors. All rights reserved. Released under a BSD (revised)
+// license as described in the file LICENSE.
 
 #include <boost/test/unit_test.hpp>
 #include <utility>
@@ -26,7 +28,7 @@ struct reduction_test_harness
 
   void set_predict_response(const vector<pair<float, float>>& predictions) { _predictions = predictions; }
 
-  void test_predict(single_learner& base, example& ec)
+  void test_predict(base_learner& base, example& ec)
   {
     ec.pred.a_s.clear();
     const auto curr_pred = _predictions[_curr_idx++];
@@ -34,17 +36,17 @@ struct reduction_test_harness
     ec.pred.a_s.push_back(ACTION_SCORE::action_score{1, curr_pred.second});
   }
 
-  void test_learn(single_learner& base, example& ec)
+  void test_learn(base_learner& base, example& ec)
   {
     // do nothing
   }
 
-  static void predict(reduction_test_harness& test_reduction, single_learner& base, example& ec)
+  static void predict(reduction_test_harness& test_reduction, base_learner& base, example& ec)
   {
     test_reduction.test_predict(base, ec);
   }
 
-  static void learn(reduction_test_harness& test_reduction, single_learner& base, example& ec)
+  static void learn(reduction_test_harness& test_reduction, base_learner& base, example& ec)
   {
     test_reduction.test_learn(base, ec);
   };
@@ -143,15 +145,15 @@ namespace offset_tree
 test_learner_t* get_test_harness_reduction(const predictions_t& base_reduction_predictions)
 {
   // Setup a test harness base reduction
-  auto test_harness = scoped_calloc_or_throw<reduction_test_harness>();
+  auto test_harness = VW::make_unique<reduction_test_harness>();
   test_harness->set_predict_response(base_reduction_predictions);
-  auto& test_learner =
-      init_learner(test_harness,          // Data structure passed by vw_framework into test_harness predict/learn calls
-          reduction_test_harness::learn,  // test_harness learn
-          reduction_test_harness::predict,  // test_harness predict
-          1,                                // Number of regressors in test_harness (not used)
-          "test_learner");                  // Create a learner using the base reduction.
-  return &test_learner;
+  auto test_learner = VW::LEARNER::make_base_learner(
+      std::move(test_harness),          // Data structure passed by vw_framework into test_harness predict/learn calls
+      reduction_test_harness::learn,    // test_harness learn
+      reduction_test_harness::predict,  // test_harness predict
+      "test_learner", VW::prediction_type_t::action_scores, VW::label_type_t::cb)
+                          .build();  // Create a learner using the base reduction.
+  return test_learner;
 }
 
 void predict_test_helper(const predictions_t& base_reduction_predictions, const scores_t& expected_scores)

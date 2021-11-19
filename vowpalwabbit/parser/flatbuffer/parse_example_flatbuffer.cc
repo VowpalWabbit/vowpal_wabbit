@@ -19,14 +19,14 @@ namespace parsers
 {
 namespace flatbuffer
 {
-int flatbuffer_to_examples(vw* all, v_array<example*>& examples)
+int flatbuffer_to_examples(VW::workspace* all, io_buf& buf, v_array<example*>& examples)
 {
-  return static_cast<int>(all->flat_converter->parse_examples(all, examples));
+  return static_cast<int>(all->flat_converter->parse_examples(all, buf, examples));
 }
 
 const VW::parsers::flatbuffer::ExampleRoot* parser::data() { return _data; }
 
-bool parser::parse(vw* all, uint8_t* buffer_pointer)
+bool parser::parse(io_buf& buf, uint8_t* buffer_pointer)
 {
   if (buffer_pointer)
   {
@@ -37,21 +37,21 @@ bool parser::parse(vw* all, uint8_t* buffer_pointer)
   }
 
   char* line = nullptr;
-  auto len = all->example_parser->input->buf_read(line, sizeof(uint32_t));
+  auto len = buf.buf_read(line, sizeof(uint32_t));
 
   if (len < sizeof(uint32_t)) { return false; }
 
   _object_size = flatbuffers::ReadScalar<flatbuffers::uoffset_t>(line);
 
   // read one object, object size defined by the read prefix
-  all->example_parser->input->buf_read(line, _object_size);
+  buf.buf_read(line, _object_size);
 
   _flatbuffer_pointer = reinterpret_cast<uint8_t*>(line);
   _data = VW::parsers::flatbuffer::GetExampleRoot(_flatbuffer_pointer);
   return true;
 }
 
-void parser::process_collection_item(vw* all, v_array<example*>& examples)
+void parser::process_collection_item(VW::workspace* all, v_array<example*>& examples)
 {
   // new example/multi example object to process from collection
   if (_data->example_obj_as_ExampleCollection()->is_multiline())
@@ -80,7 +80,7 @@ void parser::process_collection_item(vw* all, v_array<example*>& examples)
   }
 }
 
-bool parser::parse_examples(vw* all, v_array<example*>& examples, uint8_t* buffer_pointer)
+bool parser::parse_examples(VW::workspace* all, io_buf& buf, v_array<example*>& examples, uint8_t* buffer_pointer)
 {
   if (_active_multi_ex)
   {
@@ -96,7 +96,7 @@ bool parser::parse_examples(vw* all, v_array<example*>& examples, uint8_t* buffe
   else
   {
     // new object to be read from file
-    if (!parse(all, buffer_pointer)) { return false; }
+    if (!parse(buf, buffer_pointer)) { return false; }
 
     switch (_data->example_obj_type())
     {
@@ -130,9 +130,9 @@ bool parser::parse_examples(vw* all, v_array<example*>& examples, uint8_t* buffe
   }
 }
 
-void parser::parse_example(vw* all, example* ae, const Example* eg)
+void parser::parse_example(VW::workspace* all, example* ae, const Example* eg)
 {
-  all->example_parser->lbl_parser.default_label(&ae->l);
+  all->example_parser->lbl_parser.default_label(ae->l);
   ae->is_newline = eg->is_newline();
   parse_flat_label(all->sd, ae, eg);
 
@@ -145,9 +145,9 @@ void parser::parse_example(vw* all, example* ae, const Example* eg)
   for (const auto& ns : *(eg->namespaces())) { parse_namespaces(all, ae, ns); }
 }
 
-void parser::parse_multi_example(vw* all, example* ae, const MultiExample* eg)
+void parser::parse_multi_example(VW::workspace* all, example* ae, const MultiExample* eg)
 {
-  all->example_parser->lbl_parser.default_label(&ae->l);
+  all->example_parser->lbl_parser.default_label(ae->l);
   if (_multi_ex_index >= eg->examples()->size())
   {
     // done with multi example, send a newline example and reset
@@ -162,27 +162,49 @@ void parser::parse_multi_example(vw* all, example* ae, const MultiExample* eg)
   _multi_ex_index++;
 }
 
-void parser::parse_namespaces(vw* all, example* ae, const Namespace* ns)
+namespace_index get_namespace_index(const Namespace* ns)
 {
-  namespace_index temp_index;
-  if (flatbuffers::IsFieldPresent(ns, Namespace::VT_NAME))
+  if (flatbuffers::IsFieldPresent(ns, Namespace::VT_NAME)) { return static_cast<uint8_t>(ns->name()->c_str()[0]); }
+  else if (flatbuffers::IsFieldPresent(ns, Namespace::VT_HASH))
   {
-    temp_index = static_cast<uint8_t>(ns->name()->c_str()[0]);
-    _c_hash = all->example_parser->hasher(ns->name()->c_str(), ns->name()->size(), all->hash_seed);
+    return ns->hash();
   }
-  else
-  {
-    temp_index = ns->hash();
-  }
-  ae->indices.push_back(temp_index);
 
-  auto& fs = ae->feature_space[temp_index];
-
-  for (const auto& feature : *(ns->features()))
-  { parse_features(all, fs, feature, (all->audit || all->hash_inv) ? ns->name() : nullptr); }
+  THROW("Either name or hash field must be specified to get the namespace index.");
 }
 
-void parser::parse_features(vw* all, features& fs, const Feature* feature, const flatbuffers::String* ns)
+bool get_namespace_hash(VW::workspace* all, const Namespace* ns, uint64_t& hash)
+{
+  if (flatbuffers::IsFieldPresent(ns, Namespace::VT_NAME))
+  {
+    hash = all->example_parser->hasher(ns->name()->c_str(), ns->name()->size(), all->hash_seed);
+    return true;
+  }
+  else if (flatbuffers::IsFieldPresent(ns, Namespace::VT_FULL_HASH))
+  {
+    hash = ns->full_hash();
+    return true;
+  }
+  return false;
+}
+
+void parser::parse_namespaces(VW::workspace* all, example* ae, const Namespace* ns)
+{
+  const namespace_index index = get_namespace_index(ns);
+  uint64_t hash = 0;
+  const auto hash_found = get_namespace_hash(all, ns, hash);
+  if (hash_found) { _c_hash = hash; }
+  if (std::find(ae->indices.begin(), ae->indices.end(), index) == ae->indices.end()) { ae->indices.push_back(index); }
+
+  auto& fs = ae->feature_space[index];
+
+  if (hash_found) { fs.start_ns_extent(hash); }
+  for (const auto& feature : *(ns->features()))
+  { parse_features(all, fs, feature, (all->audit || all->hash_inv) ? ns->name() : nullptr); }
+  if (hash_found) { fs.end_ns_extent(); }
+}
+
+void parser::parse_features(VW::workspace* all, features& fs, const Feature* feature, const flatbuffers::String* ns)
 {
   if (flatbuffers::IsFieldPresent(feature, Feature::VT_NAME))
   {

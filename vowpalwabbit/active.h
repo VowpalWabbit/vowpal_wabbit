@@ -5,14 +5,29 @@
 #pragma once
 
 #include <memory>
+#include <utility>
 #include "reductions_fwd.h"
 #include "rand_state.h"
+#include "version.h"
 
 struct active
 {
+  active(float active_c0, shared_data* shared_data, std::shared_ptr<rand_state> random_state,
+      VW::version_struct model_version)
+      : active_c0(active_c0)
+      , _shared_data(shared_data)
+      , _random_state(std::move(random_state))
+      , _model_version{std::move(model_version)}
+  {
+  }
+
   float active_c0;
-  vw* all;  // statistics, loss
+  shared_data* _shared_data;  // statistics, loss
   std::shared_ptr<rand_state> _random_state;
+
+  float _min_seen_label = 0.f;
+  float _max_seen_label = 1.f;
+  VW::version_struct _model_version;
 };
 
-VW::LEARNER::base_learner* active_setup(VW::config::options_i& options, vw& all);
+VW::LEARNER::base_learner* active_setup(VW::setup_base_i& stack_builder);

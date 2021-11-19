@@ -206,6 +206,7 @@ struct input
   input(std::string _in, std::string _out, float _weight) : in(_in), out(_out), weight(_weight) {}
   input(std::string _in, std::string _out) : in(_in), out(_out), weight(1.) {}
   input(std::string _in) : in(_in), out(_in), weight(1.) {}
+  input() : weight(1.) {}
 };
 
 typedef std::string output;
@@ -222,8 +223,8 @@ float get_or_one(std::vector<std::pair<char,size_t> >& v, char c)
 class Generator : public SearchTask<input, output>
 {
 public:
-
-  Generator(vw& vw_obj, Trie* _dict=nullptr) : SearchTask<input,output>(vw_obj), dist(0), dict(_dict)    // must run parent constructor!
+  Generator(VW::workspace& vw_obj, Trie* _dict = nullptr)
+      : SearchTask<input, output>(vw_obj), dist(0), dict(_dict)  // must run parent constructor!
   {
     // TODO: if action costs is specified but no allowed actions provided, don't segfault :P
     sch.set_options(Search::AUTO_CONDITION_FEATURES | Search::NO_CACHING | Search::ACTION_COSTS);
@@ -370,7 +371,9 @@ private:
 };
 
 void run_easy()
-{ vw& vw_obj = *VW::initialize("--search 29 --quiet --search_task hook --ring_size 1024 --search_rollin learn --search_rollout none");
+{
+  VW::workspace& vw_obj = *VW::initialize(
+      "--search 29 --quiet --search_task hook --ring_size 1024 --search_rollin learn --search_rollout none");
   Generator task(vw_obj);
   output out("");
 
@@ -468,7 +471,7 @@ void train()
   //dict.print();
 
   std::string init_str("--search 29 -b 28 --quiet --search_task hook --ring_size 1024 --search_rollin learn --search_rollout none -q i: --ngram i15 --skips i5 --ngram c15 --ngram w6 --skips c3 --skips w3"); //  --search_use_passthrough_repr"); // -q si -q wi -q ci -q di  -f my_model
-  vw& vw_obj = *VW::initialize(init_str);
+  VW::workspace& vw_obj = *VW::initialize(init_str);
   cerr << init_str << endl;
   Generator gen(vw_obj, nullptr); // &dict);
   for (size_t pass=1; pass<=20; pass++)
@@ -481,7 +484,8 @@ void train()
 }
 
 void predict()
-{ vw& vw_obj = *VW::initialize("--quiet -t --ring_size 1024 -i my_model");
+{
+  VW::workspace& vw_obj = *VW::initialize("--quiet -t --ring_size 1024 -i my_model");
   //run(vw_obj);
   VW::finish(vw_obj);
 }

@@ -48,9 +48,9 @@ po::typed_value<std::vector<bool>>* options_boost_po::convert_to_boost_value(std
 }
 
 void options_boost_po::add_to_description(
-    std::shared_ptr<base_option> opt, po::options_description& options_description)
+    const std::shared_ptr<base_option>& opt, po::options_description& options_description)
 {
-  add_to_description_impl<supported_options_types>(std::move(opt), options_description);
+  add_to_description_impl<supported_options_types>(opt, options_description);
 }
 
 void options_boost_po::add_and_parse(const option_group_definition& group)
@@ -59,7 +59,7 @@ void options_boost_po::add_and_parse(const option_group_definition& group)
 
   po::options_description new_options(group.m_name);
 
-  for (auto opt_ptr : group.m_options)
+  for (const auto& opt_ptr : group.m_options)
   {
     add_to_description(opt_ptr, new_options);
     m_defined_options.insert(opt_ptr->m_name);
@@ -145,7 +145,7 @@ void options_boost_po::add_and_parse(const option_group_definition& group)
 bool options_boost_po::add_parse_and_check_necessary(const option_group_definition& group)
 {
   this->add_and_parse(group);
-  return group.check_necessary_enabled(*this);
+  return group.check_necessary_enabled(*this) && group.check_one_of();
 }
 
 bool options_boost_po::was_supplied(const std::string& key) const
@@ -177,7 +177,7 @@ std::string options_boost_po::help(const std::vector<std::string>& enabled_reduc
   else
   {
     // add help message of only enabled reductions
-    for (auto reduction : enabled_reductions)
+    for (const auto& reduction : enabled_reductions)
     {
       auto it = m_help_stringstream.find(reduction);
       if (it != m_help_stringstream.end()) { help << it->second.rdbuf(); }
@@ -189,8 +189,8 @@ std::string options_boost_po::help(const std::vector<std::string>& enabled_reduc
         std::string::size_type pos = reduction.find('-');
         if (pos != std::string::npos)
         {
-          auto it = m_help_stringstream.find(reduction.substr(0, pos));
-          if (it != m_help_stringstream.end()) { help << it->second.rdbuf(); }
+          auto it_inner = m_help_stringstream.find(reduction.substr(0, pos));
+          if (it_inner != m_help_stringstream.end()) { help << it_inner->second.rdbuf(); }
         }
       }
     }
@@ -250,7 +250,8 @@ void options_boost_po::check_unregistered()
 }
 
 template <>
-void options_boost_po::add_to_description_impl<typelist<>>(std::shared_ptr<base_option>, po::options_description&)
+void options_boost_po::add_to_description_impl<typelist<>>(
+    const std::shared_ptr<base_option>&, po::options_description&)
 {
   THROW("That is an unsupported option type.");
 }

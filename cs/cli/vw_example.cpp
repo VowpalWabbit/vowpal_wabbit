@@ -99,7 +99,7 @@ void VowpalWabbitExample::Label::set(ILabel^ label)
 	label->UpdateExample(m_owner->Native->m_vw, m_example);
 
 	// we need to update the example weight as setup_example() can be called prior to this call.
-	m_example->weight = m_owner->Native->m_vw->example_parser->lbl_parser.get_weight(&m_example->l, m_example->_reduction_features);
+	m_example->weight = m_owner->Native->m_vw->example_parser->lbl_parser.get_weight(m_example->l, m_example->_reduction_features);
 }
 
 void VowpalWabbitExample::MakeEmpty(VowpalWabbit^ vw)

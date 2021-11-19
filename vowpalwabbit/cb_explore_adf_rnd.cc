@@ -46,7 +46,7 @@ private:
   uint32_t numrnd;
 
   size_t increment;
-  vw* all;
+  VW::workspace* all;
 
   std::vector<float> bonuses;
   std::vector<float> initials;
@@ -73,7 +73,8 @@ private:
   void base_learn_or_predict(multi_learner&, multi_ex&, uint32_t);
 
 public:
-  cb_explore_adf_rnd(float _epsilon, float _alpha, float _invlambda, uint32_t _numrnd, size_t _increment, vw* _all)
+  cb_explore_adf_rnd(
+      float _epsilon, float _alpha, float _invlambda, uint32_t _numrnd, size_t _increment, VW::workspace* _all)
       : epsilon(_epsilon)
       , alpha(_alpha)
       , sqrtinvlambda(std::sqrt(_invlambda))
@@ -157,8 +158,9 @@ float cb_explore_adf_rnd::get_initial_prediction(example* ec)
   LazyGaussian w;
 
   std::pair<float, float> dotwithnorm(0.f, 0.f);
-  GD::foreach_feature<std::pair<float, float>, float, vec_add_with_norm, LazyGaussian>(
-      w, all->ignore_some_linear, all->ignore_linear, all->interactions, all->permutations, *ec, dotwithnorm);
+  GD::foreach_feature<std::pair<float, float>, float, vec_add_with_norm, LazyGaussian>(w, all->ignore_some_linear,
+      all->ignore_linear, all->interactions, all->extent_interactions, all->permutations, *ec, dotwithnorm,
+      all->_generate_interactions_object_cache);
 
   return sqrtinvlambda * dotwithnorm.second / std::sqrt(2.0f * std::max(1e-12f, dotwithnorm.first));
 }
@@ -252,8 +254,10 @@ void cb_explore_adf_rnd::predict_or_learn_impl(multi_learner& base, multi_ex& ex
   exploration::enforce_minimum_probability(epsilon, true, begin_scores(preds), end_scores(preds));
 }
 
-base_learner* setup(VW::config::options_i& options, vw& all)
+base_learner* setup(VW::setup_base_i& stack_builder)
 {
+  VW::config::options_i& options = *stack_builder.get_options();
+  VW::workspace& all = *stack_builder.get_all_pointer();
   using config::make_option;
   bool cb_explore_adf_option = false;
   float epsilon = 0.;
@@ -266,18 +270,18 @@ base_learner* setup(VW::config::options_i& options, vw& all)
                .keep()
                .necessary()
                .help("Online explore-exploit for a contextual bandit problem with multiline action dependent features"))
-      .add(make_option("epsilon", epsilon).keep().allow_override().help("minimum exploration probability"))
-      .add(make_option("rnd", numrnd).keep().necessary().help("rnd based exploration"))
+      .add(make_option("epsilon", epsilon).keep().allow_override().help("Minimum exploration probability"))
+      .add(make_option("rnd", numrnd).keep().necessary().help("Rnd based exploration"))
       .add(make_option("rnd_alpha", alpha)
                .keep()
                .allow_override()
                .default_value(0.1f)
-               .help("ci width for rnd (bigger => more exploration on repeating features)"))
+               .help("CI width for rnd (bigger => more exploration on repeating features)"))
       .add(make_option("rnd_invlambda", invlambda)
                .keep()
                .allow_override()
                .default_value(0.1f)
-               .help("covariance regularization strength rnd (bigger => more exploration on new features)"));
+               .help("Covariance regularization strength rnd (bigger => more exploration on new features)"));
 
   if (!options.add_parse_and_check_necessary(new_options)) return nullptr;
 
@@ -292,7 +296,7 @@ base_learner* setup(VW::config::options_i& options, vw& all)
 
   size_t problem_multiplier = 1 + numrnd;
 
-  multi_learner* base = as_multiline(setup_base(options, all));
+  multi_learner* base = as_multiline(stack_builder.setup_base_learner());
   all.example_parser->lbl_parser = CB::cb_label;
 
   bool with_metrics = options.was_supplied("extra_metrics");
@@ -303,10 +307,10 @@ base_learner* setup(VW::config::options_i& options, vw& all)
 
   if (epsilon < 0.0 || epsilon > 1.0) { THROW("The value of epsilon must be in [0,1]"); }
   auto* l = make_reduction_learner(
-      std::move(data), base, explore_type::learn, explore_type::predict, all.get_setupfn_name(setup))
+      std::move(data), base, explore_type::learn, explore_type::predict, stack_builder.get_setupfn_name(setup))
                 .set_params_per_weight(problem_multiplier)
-                .set_prediction_type(prediction_type_t::action_probs)
-                .set_label_type(label_type_t::cb)
+                .set_output_prediction_type(VW::prediction_type_t::action_probs)
+                .set_input_label_type(VW::label_type_t::cb)
                 .set_finish_example(explore_type::finish_multiline_example)
                 .set_print_example(explore_type::print_multiline_example)
                 .set_persist_metrics(explore_type::persist_metrics)

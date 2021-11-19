@@ -15,6 +15,12 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="automl_test.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="automl_weights_test.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
     <ClCompile Include="cache_test.cc">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -49,6 +55,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="explore_test.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="feature_group_test.cc">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="guard_test.cc">
@@ -117,6 +126,12 @@
     <ClCompile Include="prediction_test.cc">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="custom_reduction_test.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="minimal_custom_reduction.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
     <ClCompile Include="scope_exit_test.cc">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -135,13 +150,16 @@
     <ClCompile Include="vwdll_test.cc">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="namespaced_feature_store_test.cc">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="numeric_cast_tests.cc">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="parse_args_test.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="simulator.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="tutorial_test.cc">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="vw_versions_test.cc">
@@ -158,17 +176,14 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="simulator.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
     <ClInclude Include="test_common.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
-    <None Include="DistributionallyRobustUnitTestData.py">
-      <Filter>Source Files</Filter>
-    </None>
-    <None Include="crminustwo.py">
-      <Filter>Source Files</Filter>
-    </None>
   </ItemGroup>
 </Project>

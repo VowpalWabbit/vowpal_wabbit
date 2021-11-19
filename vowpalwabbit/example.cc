@@ -14,10 +14,8 @@ float calculate_total_sum_features_squared(bool permutations, example& ec)
   float sum_features_squared = 0.f;
   for (const features& fs : ec) { sum_features_squared += fs.sum_feat_sq; }
 
-  size_t ignored_interacted_feature_count = 0;
-  float calculated_sum_features_squared = 0.f;
-  INTERACTIONS::eval_count_of_generated_ft(permutations, *ec.interactions, ec.feature_space,
-      ignored_interacted_feature_count, calculated_sum_features_squared);
+  float calculated_sum_features_squared = INTERACTIONS::eval_sum_ft_squared_of_generated_ft(
+      permutations, *ec.interactions, *ec.extent_interactions, ec.feature_space);
   sum_features_squared += calculated_sum_features_squared;
   return sum_features_squared;
 }
@@ -51,9 +49,10 @@ float collision_cleanup(features& fs)
   }
 
   sum_sq += pos.value() * pos.value();
-  fs.sum_feat_sq = sum_sq;
   ++pos;
-  fs.truncate_to(pos);
+  // Don't change the sum_feat_sq as we will do it manually directly after.
+  fs.truncate_to(pos, 0);
+  fs.sum_feat_sq = sum_sq;
 
   return sum_sq;
 }
@@ -103,23 +102,8 @@ void copy_example_data(example* dst, const example* src)
   dst->total_sum_feat_sq_calculated = src->total_sum_feat_sq_calculated;
   dst->use_permutations = src->use_permutations;
   dst->interactions = src->interactions;
+  dst->extent_interactions = src->extent_interactions;
   dst->_debug_current_reduction_depth = src->_debug_current_reduction_depth;
-}
-
-void copy_example_metadata(bool /* audit */, example* dst, example* src) { copy_example_metadata(dst, src); }
-
-void copy_example_data(bool /* audit */, example* dst, example* src) { copy_example_data(dst, src); }
-
-void copy_example_data(bool /* audit */, example* dst, example* src, void (*copy_label)(polylabel*, polylabel*))
-{
-  copy_example_data(dst, src);
-  copy_example_label(dst, src, copy_label);
-}
-
-void copy_example_data(
-    bool audit, example* dst, example* src, size_t /*label_size*/, void (*copy_label)(polylabel*, polylabel*))
-{
-  copy_example_data(audit, dst, src, copy_label);
 }
 
 void copy_example_data_with_label(example* dst, const example* src)
@@ -159,7 +143,7 @@ void vec_store(features_and_source& p, float fx, uint64_t fi)
 
 namespace VW
 {
-feature* get_features(vw& all, example* ec, size_t& feature_map_len)
+feature* get_features(VW::workspace& all, example* ec, size_t& feature_map_len)
 {
   features_and_source fs;
   fs.stride_shift = all.weights.stride_shift();
@@ -185,7 +169,7 @@ void vec_ffs_store(full_features_and_source& p, float fx, uint64_t fi)
   p.fs.push_back(fx, (fi >> p.stride_shift) & p.mask);
 }
 
-flat_example* flatten_example(vw& all, example* ec)
+flat_example* flatten_example(VW::workspace& all, example* ec)
 {
   flat_example& fec = calloc_or_throw<flat_example>();
   fec.l = ec->l;
@@ -215,7 +199,7 @@ flat_example* flatten_example(vw& all, example* ec)
   return &fec;
 }
 
-flat_example* flatten_sort_example(vw& all, example* ec)
+flat_example* flatten_sort_example(VW::workspace& all, example* ec)
 {
   flat_example* fec = flatten_example(all, ec);
   fec->fs.sort(all.parse_mask);
@@ -294,17 +278,13 @@ std::string prob_dist_pred_to_string(const example& ec)
 
 namespace VW
 {
-example* alloc_examples(size_t, size_t count)
+example* alloc_examples(size_t count)
 {
   example* ec = calloc_or_throw<example>(count);
-  if (ec == nullptr) return nullptr;
+  if (ec == nullptr) { return nullptr; }
   for (size_t i = 0; i < count; i++) { new (ec + i) example; }
   return ec;
 }
-
-example* alloc_examples(size_t count) { return alloc_examples(0, count); }
-
-void dealloc_example(void (*)(polylabel*), example& ec, void (*)(void*)) { ec.~example(); }
 
 void dealloc_examples(example* example_ptr, size_t count)
 {
@@ -312,17 +292,17 @@ void dealloc_examples(example* example_ptr, size_t count)
   free(example_ptr);
 }
 
-void finish_example(vw&, example&);
-void clean_example(vw&, example&, bool rewind);
+void finish_example(VW::workspace&, example&);
+void clean_example(VW::workspace&, example&);
 
-void finish_example(vw& all, multi_ex& ec_seq)
+void finish_example(VW::workspace& all, multi_ex& ec_seq)
 {
   for (example* ecc : ec_seq) VW::finish_example(all, *ecc);
 }
 
-void return_multiple_example(vw& all, v_array<example*>& examples)
+void return_multiple_example(VW::workspace& all, v_array<example*>& examples)
 {
-  for (auto ec : examples) { clean_example(all, *ec, true); }
+  for (auto ec : examples) { clean_example(all, *ec); }
   examples.clear();
 }
 

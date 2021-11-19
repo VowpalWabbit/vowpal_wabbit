@@ -11,7 +11,7 @@
 
 #include "memory.h"
 
-typedef float weight;
+using weight = float;
 
 template <typename T>
 class dense_iterator
@@ -22,11 +22,11 @@ private:
   uint32_t _stride;
 
 public:
-  typedef std::forward_iterator_tag iterator_category;
-  typedef T value_type;
-  typedef std::ptrdiff_t difference_type;
-  typedef T* pointer;
-  typedef T& reference;
+  using iterator_category = std::forward_iterator_tag;
+  using value_type = T;
+  using difference_type = std::ptrdiff_t;
+  using pointer = T*;
+  using reference = T&;
 
   dense_iterator(T* current, T* begin, uint32_t stride) : _current(current), _begin(begin), _stride(stride) {}
 
@@ -53,8 +53,8 @@ private:
   bool _seeded;  // whether the instance is sharing model state with others
 
 public:
-  typedef dense_iterator<weight> iterator;
-  typedef dense_iterator<const weight> const_iterator;
+  using iterator = dense_iterator<weight>;
+  using const_iterator = dense_iterator<const weight>;
   dense_parameters(size_t length, uint32_t stride_shift = 0)
       : _begin(calloc_mergable_or_throw<weight>(length << stride_shift))
       , _weight_mask((length << stride_shift) - 1)
@@ -112,6 +112,49 @@ public:
   void set_zero(size_t offset)
   {
     for (iterator iter = begin(); iter != end(); ++iter) (&(*iter))[offset] = 0;
+  }
+
+  void copy_offsets(const size_t from, const size_t to, const size_t params_per_problem)
+  {
+    assert(from < params_per_problem);
+    assert(to < params_per_problem);
+    uint32_t stride_size = 1 << stride_shift();
+
+    int64_t diff = to - from;
+    for (auto iter = begin(); iter != end(); ++iter)
+    {
+      size_t prestride_index = iter.index() >> stride_shift();
+      size_t current_offset = prestride_index & (params_per_problem - 1);
+      if (current_offset == from)
+      {
+        float* other = &_begin[(prestride_index + diff) << stride_shift()];
+
+        if (*other != 0.f || *iter != 0.f)
+        {
+          for (size_t stride_offset = 0; stride_offset < stride_size; stride_offset++)
+          { (&(*other))[stride_offset] = (&(*iter))[stride_offset]; }
+        }
+      }
+    }
+  }
+
+  void clear_offset(const size_t offset, const size_t params_per_problem)
+  {
+    assert(offset < params_per_problem);
+    uint32_t stride_size = 1 << stride_shift();
+
+    for (iterator iter = begin(); iter != end(); ++iter)
+    {
+      if (*iter != 0.f)
+      {
+        size_t current_offset = (iter.index() >> stride_shift()) & (params_per_problem - 1);
+        if (current_offset == offset)
+        {
+          for (size_t stride_offset = 0; stride_offset < stride_size; stride_offset++)
+          { (&(*iter))[stride_offset] = 0.f; }
+        }
+      }
+    }
   }
 
   uint64_t mask() const { return _weight_mask; }

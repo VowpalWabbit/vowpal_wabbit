@@ -48,17 +48,19 @@ void predict_or_learn(char&, VW::LEARNER::single_learner& base, example& ec)
   }
 }
 
-VW::LEARNER::base_learner* binary_setup(options_i& options, vw& all)
+VW::LEARNER::base_learner* binary_setup(setup_base_i& stack_builder)
 {
+  options_i& options = *stack_builder.get_options();
+
   bool binary = false;
-  option_group_definition new_options("Binary loss");
+  option_group_definition new_options("Binary Loss");
   new_options.add(
-      make_option("binary", binary).keep().necessary().help("report loss as binary classification on -1,1"));
+      make_option("binary", binary).keep().necessary().help("Report loss as binary classification on -1,1"));
 
   if (!options.add_parse_and_check_necessary(new_options)) return nullptr;
 
-  auto ret = VW::LEARNER::make_no_data_reduction_learner(as_singleline(setup_base(options, all)),
-      predict_or_learn<true>, predict_or_learn<false>, all.get_setupfn_name(binary_setup))
+  auto ret = VW::LEARNER::make_no_data_reduction_learner(as_singleline(stack_builder.setup_base_learner()),
+      predict_or_learn<true>, predict_or_learn<false>, stack_builder.get_setupfn_name(binary_setup))
                  .set_learn_returns_prediction(true)
                  .build();
 

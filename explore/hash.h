@@ -66,10 +66,10 @@ namespace MURMUR_HASH_3
 
 VW_STD14_CONSTEXPR inline uint64_t uniform_hash(const void* key, size_t len, uint64_t seed)
 {
-  const uint8_t* data = (const uint8_t*)key;
-  const int nblocks = (int)len / 4;
+  const uint8_t* data = static_cast<const uint8_t*>(key);
+  const int nblocks = static_cast<int>(len) / 4;
 
-  uint32_t h1 = (uint32_t)seed;
+  uint32_t h1 = static_cast<uint32_t>(seed);
 
   const uint32_t c1 = 0xcc9e2d51;
   const uint32_t c2 = 0x1b873593;
@@ -91,7 +91,7 @@ VW_STD14_CONSTEXPR inline uint64_t uniform_hash(const void* key, size_t len, uin
   }
 
   // --- tail
-  const uint8_t * tail = (const uint8_t*)(data + nblocks * 4);
+  const uint8_t* tail = data + nblocks * 4;
 
   uint32_t k1 = 0;
 

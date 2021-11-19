@@ -164,7 +164,7 @@ float get_estimate(
   return cost * p_over_ps;
 }
 
-void output_example(vw& all, slates_data& /*c*/, multi_ex& ec_seq)
+void output_example(VW::workspace& all, slates_data& /*c*/, multi_ex& ec_seq)
 {
   std::vector<example*> slots;
   size_t num_features = 0;
@@ -209,7 +209,7 @@ void output_example(vw& all, slates_data& /*c*/, multi_ex& ec_seq)
   VW::print_update_slates(all, slots, predictions, num_features);
 }
 
-void finish_multiline_example(vw& all, slates_data& data, multi_ex& ec_seq)
+void finish_multiline_example(VW::workspace& all, slates_data& data, multi_ex& ec_seq)
 {
   if (!ec_seq.empty())
   {
@@ -232,12 +232,14 @@ void learn_or_predict(slates_data& data, VW::LEARNER::multi_learner& base, multi
   }
 }
 
-VW::LEARNER::base_learner* slates_setup(options_i& options, vw& all)
+VW::LEARNER::base_learner* slates_setup(VW::setup_base_i& stack_builder)
 {
+  options_i& options = *stack_builder.get_options();
+  VW::workspace& all = *stack_builder.get_all_pointer();
   auto data = VW::make_unique<slates_data>();
   bool slates_option = false;
   option_group_definition new_options("Slates");
-  new_options.add(make_option("slates", slates_option).keep().necessary().help("EXPERIMENTAL"));
+  new_options.add(make_option("slates", slates_option).keep().necessary().help("Enable slates reduction"));
 
   if (!options.add_parse_and_check_necessary(new_options)) { return nullptr; }
 
@@ -247,13 +249,13 @@ VW::LEARNER::base_learner* slates_setup(options_i& options, vw& all)
     options.add_and_parse(new_options);
   }
 
-  auto* base = as_multiline(setup_base(options, all));
+  auto* base = as_multiline(stack_builder.setup_base_learner());
   all.example_parser->lbl_parser = slates_label_parser;
-  auto* l = VW::LEARNER::make_reduction_learner(
-      std::move(data), base, learn_or_predict<true>, learn_or_predict<false>, all.get_setupfn_name(slates_setup))
+  auto* l = VW::LEARNER::make_reduction_learner(std::move(data), base, learn_or_predict<true>, learn_or_predict<false>,
+      stack_builder.get_setupfn_name(slates_setup))
                 .set_learn_returns_prediction(base->learn_returns_prediction)
-                .set_prediction_type(prediction_type_t::decision_probs)
-                .set_label_type(label_type_t::slates)
+                .set_output_prediction_type(VW::prediction_type_t::decision_probs)
+                .set_input_label_type(VW::label_type_t::slates)
                 .set_finish_example(finish_multiline_example)
                 .build();
   return VW::LEARNER::make_base(*l);

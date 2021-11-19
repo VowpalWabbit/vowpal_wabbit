@@ -11,9 +11,9 @@
 #include "parse_example.h"
 #include "io/logger.h"
 
-using dispatch_fptr = std::function<void(vw&, const v_array<example*>&)>;
-
-inline void parse_dispatch(vw& all, dispatch_fptr dispatch)
+// DispatchFuncT should be of the form - void(VW::workspace&, const v_array<example*>&)
+template <typename DispatchFuncT>
+void parse_dispatch(VW::workspace& all, DispatchFuncT& dispatch)
 {
   v_array<example*> examples;
   size_t example_number = 0;  // for variable-size batch learning algorithms
@@ -24,7 +24,7 @@ inline void parse_dispatch(vw& all, dispatch_fptr dispatch)
     {
       examples.push_back(&VW::get_unused_example(&all));  // need at least 1 example
       if (!all.do_reset_source && example_number != all.pass_length && all.max_examples > example_number &&
-          all.example_parser->reader(&all, examples) > 0)
+          all.example_parser->reader(&all, all.example_parser->input, examples) > 0)
       {
         VW::setup_examples(all, examples);
         example_number += examples.size();
@@ -37,9 +37,11 @@ inline void parse_dispatch(vw& all, dispatch_fptr dispatch)
         all.passes_complete++;
 
         // setup an end_pass example
-        all.example_parser->lbl_parser.default_label(&examples[0]->l);
+        all.example_parser->lbl_parser.default_label(examples[0]->l);
         examples[0]->end_pass = true;
         all.example_parser->in_pass_counter = 0;
+        // Since this example gets finished, we need to keep the counter correct.
+        all.example_parser->num_setup_examples++;
 
         if (all.passes_complete == all.numpasses && example_number == all.pass_length)
         {

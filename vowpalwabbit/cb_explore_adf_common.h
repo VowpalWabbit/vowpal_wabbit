@@ -100,8 +100,8 @@ public:
     if (with_metrics) _metrics = VW::make_unique<cb_explore_metrics>();
   }
 
-  static void finish_multiline_example(vw& all, cb_explore_adf_base<ExploreType>& data, multi_ex& ec_seq);
-  static void print_multiline_example(vw& all, cb_explore_adf_base<ExploreType>& data, multi_ex& ec_seq);
+  static void finish_multiline_example(VW::workspace& all, cb_explore_adf_base<ExploreType>& data, multi_ex& ec_seq);
+  static void print_multiline_example(VW::workspace& all, cb_explore_adf_base<ExploreType>& data, multi_ex& ec_seq);
   static void save_load(cb_explore_adf_base<ExploreType>& data, io_buf& io, bool read, bool text);
   static void persist_metrics(cb_explore_adf_base<ExploreType>& data, metric_sink& metrics);
   static void predict(cb_explore_adf_base<ExploreType>& data, VW::LEARNER::multi_learner& base, multi_ex& examples);
@@ -111,8 +111,8 @@ public:
   ExploreType explore;
 
 private:
-  void output_example_seq(vw& all, multi_ex& ec_seq);
-  void output_example(vw& all, multi_ex& ec_seq);
+  void output_example_seq(VW::workspace& all, multi_ex& ec_seq);
+  void output_example(VW::workspace& all, multi_ex& ec_seq);
 };
 
 template <typename ExploreType>
@@ -179,7 +179,7 @@ inline void cb_explore_adf_base<ExploreType>::learn(
 }
 
 template <typename ExploreType>
-void cb_explore_adf_base<ExploreType>::output_example(vw& all, multi_ex& ec_seq)
+void cb_explore_adf_base<ExploreType>::output_example(VW::workspace& all, multi_ex& ec_seq)
 {
   if (ec_seq.size() <= 0) return;
 
@@ -193,8 +193,16 @@ void cb_explore_adf_base<ExploreType>::output_example(vw& all, multi_ex& ec_seq)
 
   for (const auto& example : ec_seq)
   {
-    num_features += example->get_num_features();
-    num_namespaces += example->indices.size();
+    if (CB::ec_is_example_header(*example))
+    {
+      num_features += (ec_seq.size() - 1) * example->get_num_features();
+      num_namespaces += (ec_seq.size() - 1) * example->indices.size();
+    }
+    else
+    {
+      num_features += example->get_num_features();
+      num_namespaces += example->indices.size();
+    }
   }
 
   if (_metrics)
@@ -243,7 +251,7 @@ void cb_explore_adf_base<ExploreType>::output_example(vw& all, multi_ex& ec_seq)
 }
 
 template <typename ExploreType>
-void cb_explore_adf_base<ExploreType>::output_example_seq(vw& all, multi_ex& ec_seq)
+void cb_explore_adf_base<ExploreType>::output_example_seq(VW::workspace& all, multi_ex& ec_seq)
 {
   if (ec_seq.size() > 0)
   {
@@ -254,7 +262,7 @@ void cb_explore_adf_base<ExploreType>::output_example_seq(vw& all, multi_ex& ec_
 
 template <typename ExploreType>
 void cb_explore_adf_base<ExploreType>::finish_multiline_example(
-    vw& all, cb_explore_adf_base<ExploreType>& data, multi_ex& ec_seq)
+    VW::workspace& all, cb_explore_adf_base<ExploreType>& data, multi_ex& ec_seq)
 {
   print_multiline_example(all, data, ec_seq);
 
@@ -263,7 +271,7 @@ void cb_explore_adf_base<ExploreType>::finish_multiline_example(
 
 template <typename ExploreType>
 void cb_explore_adf_base<ExploreType>::print_multiline_example(
-    vw& all, cb_explore_adf_base<ExploreType>& data, multi_ex& ec_seq)
+    VW::workspace& all, cb_explore_adf_base<ExploreType>& data, multi_ex& ec_seq)
 {
   if (ec_seq.size() > 0)
   {
@@ -285,37 +293,35 @@ inline void cb_explore_adf_base<ExploreType>::persist_metrics(
 {
   if (data._metrics)
   {
-    metrics.int_metrics_list.emplace_back("cbea_labeled_ex", data._metrics->metric_labeled);
-    metrics.int_metrics_list.emplace_back("cbea_predict_in_learn", data._metrics->metric_predict_in_learn);
-    metrics.float_metrics_list.emplace_back("cbea_sum_cost", data._metrics->metric_sum_cost);
-    metrics.float_metrics_list.emplace_back("cbea_sum_cost_baseline", data._metrics->metric_sum_cost_first);
-    metrics.int_metrics_list.emplace_back("cbea_label_first_action", data._metrics->label_action_first_option);
-    metrics.int_metrics_list.emplace_back("cbea_label_not_first", data._metrics->label_action_not_first);
-    metrics.int_metrics_list.emplace_back("cbea_non_zero_cost", data._metrics->count_non_zero_cost);
+    metrics.set_uint("cbea_labeled_ex", data._metrics->metric_labeled);
+    metrics.set_uint("cbea_predict_in_learn", data._metrics->metric_predict_in_learn);
+    metrics.set_float("cbea_sum_cost", data._metrics->metric_sum_cost);
+    metrics.set_float("cbea_sum_cost_baseline", data._metrics->metric_sum_cost_first);
+    metrics.set_uint("cbea_label_first_action", data._metrics->label_action_first_option);
+    metrics.set_uint("cbea_label_not_first", data._metrics->label_action_not_first);
+    metrics.set_uint("cbea_non_zero_cost", data._metrics->count_non_zero_cost);
 
     if (data._metrics->metric_labeled)
     {
-      metrics.float_metrics_list.emplace_back(
+      metrics.set_float(
           "cbea_avg_feat_per_event", static_cast<float>(data._metrics->sum_features / data._metrics->metric_labeled));
-      metrics.float_metrics_list.emplace_back(
+      metrics.set_float(
           "cbea_avg_actions_per_event", static_cast<float>(data._metrics->sum_actions / data._metrics->metric_labeled));
-      metrics.float_metrics_list.emplace_back(
+      metrics.set_float(
           "cbea_avg_ns_per_event", static_cast<float>(data._metrics->sum_namespaces / data._metrics->metric_labeled));
     }
 
     if (data._metrics->sum_actions)
     {
-      metrics.float_metrics_list.emplace_back(
+      metrics.set_float(
           "cbea_avg_feat_per_action", static_cast<float>(data._metrics->sum_features / data._metrics->sum_actions));
-      metrics.float_metrics_list.emplace_back(
+      metrics.set_float(
           "cbea_avg_ns_per_action", static_cast<float>(data._metrics->sum_namespaces / data._metrics->sum_actions));
     }
 
-    if (data._metrics->min_actions != SIZE_MAX)
-    { metrics.int_metrics_list.emplace_back("cbea_min_actions", data._metrics->min_actions); }
+    if (data._metrics->min_actions != SIZE_MAX) { metrics.set_uint("cbea_min_actions", data._metrics->min_actions); }
 
-    if (data._metrics->max_actions)
-    { metrics.int_metrics_list.emplace_back("cbea_max_actions", data._metrics->max_actions); }
+    if (data._metrics->max_actions) { metrics.set_uint("cbea_max_actions", data._metrics->max_actions); }
   }
 }
 

@@ -35,6 +35,11 @@ jobs:
         with:
           path: ${{github.workspace}}\\vcpkg
           key: ${{ runner.os }}-${{ matrix.config.version }}-${{ matrix.config.vcpkg_commit }}-2
+      # Downgrade CMake to mitigate crashing issue introduced in 3.21 that only affects vcpkg. See here: https://github.com/microsoft/vcpkg/issues/18718
+      - name: Setup cmake
+        uses: jwlawson/actions-setup-cmake@v1.9
+        with:
+          cmake-version: '3.20.x'
       - name: Bootstrap and install vcpkg packages
         shell: powershell
         if: steps.vcpkg-cache.outputs.cache-hit != 'true'

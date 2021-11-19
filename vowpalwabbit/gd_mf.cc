@@ -23,17 +23,17 @@ using namespace VW::config;
 
 struct gdmf
 {
-  vw* all;  // regressor, printing
+  VW::workspace* all = nullptr;  // regressor, printing
   v_array<float> scalars;
-  uint32_t rank;
-  size_t no_win_counter;
-  uint64_t early_stop_thres;
+  uint32_t rank = 0;
+  size_t no_win_counter = 0;
+  uint64_t early_stop_thres = 0;
 };
 
 void mf_print_offset_features(gdmf& d, example& ec, size_t offset)
 {
   // TODO: Where should audit stuff output to?
-  vw& all = *d.all;
+  VW::workspace& all = *d.all;
   parameters& weights = all.weights;
   uint64_t mask = weights.mask();
   for (features& fs : ec)
@@ -94,7 +94,7 @@ void offset_add(pred_offset& res, const float fx, float& fw) { res.p += (&fw)[re
 template <class T>
 float mf_predict(gdmf& d, example& ec, T& weights)
 {
-  vw& all = *d.all;
+  VW::workspace& all = *d.all;
   const auto& simple_red_features = ec._reduction_features.template get<simple_label_reduction_features>();
   float prediction = simple_red_features.initial;
 
@@ -170,7 +170,7 @@ float mf_predict(gdmf& d, example& ec, T& weights)
 
 float mf_predict(gdmf& d, example& ec)
 {
-  vw& all = *d.all;
+  VW::workspace& all = *d.all;
   if (all.weights.sparse)
     return mf_predict(d, ec, all.weights.sparse_weights);
   else
@@ -187,7 +187,7 @@ void sd_offset_update(T& weights, features& fs, uint64_t offset, float update, f
 template <class T>
 void mf_train(gdmf& d, example& ec, T& weights)
 {
-  vw& all = *d.all;
+  VW::workspace& all = *d.all;
   label_data& ld = ec.l.simple;
 
   // use final prediction to get update size
@@ -247,7 +247,7 @@ void initialize_weights(weight* weights, uint64_t index, uint32_t stride)
 
 void save_load(gdmf& d, io_buf& model_file, bool read, bool text)
 {
-  vw& all = *d.all;
+  VW::workspace& all = *d.all;
   uint64_t length = static_cast<uint64_t>(1) << all.num_bits;
   if (read)
   {
@@ -264,6 +264,7 @@ void save_load(gdmf& d, io_buf& model_file, bool read, bool text)
 
   if (model_file.num_files() > 0)
   {
+    if (!all.weights.not_null()) { THROW("Error: Model weights not initialized."); }
     uint64_t i = 0;
     size_t brw = 1;
     do
@@ -272,7 +273,7 @@ void save_load(gdmf& d, io_buf& model_file, bool read, bool text)
       size_t K = d.rank * 2 + 1;
       std::stringstream msg;
       msg << i << " ";
-      brw += bin_text_read_write_fixed(model_file, reinterpret_cast<char*>(&i), sizeof(i), "", read, msg, text);
+      brw += bin_text_read_write_fixed(model_file, reinterpret_cast<char*>(&i), sizeof(i), read, msg, text);
       if (brw != 0)
       {
         weight* w_i = &(all.weights.strided_index(i));
@@ -280,13 +281,13 @@ void save_load(gdmf& d, io_buf& model_file, bool read, bool text)
         {
           weight* v = w_i + k;
           msg << v << " ";
-          brw += bin_text_read_write_fixed(model_file, reinterpret_cast<char*>(v), sizeof(*v), "", read, msg, text);
+          brw += bin_text_read_write_fixed(model_file, reinterpret_cast<char*>(v), sizeof(*v), read, msg, text);
         }
       }
       if (text)
       {
         msg << "\n";
-        brw += bin_text_read_write_fixed(model_file, nullptr, 0, "", read, msg, text);
+        brw += bin_text_read_write_fixed(model_file, nullptr, 0, read, msg, text);
       }
 
       if (!read) ++i;
@@ -296,7 +297,7 @@ void save_load(gdmf& d, io_buf& model_file, bool read, bool text)
 
 void end_pass(gdmf& d)
 {
-  vw* all = d.all;
+  VW::workspace* all = d.all;
 
   all->eta *= all->eta_decay_rate;
   if (all->save_per_pass) save_predictor(*all, all->final_regressor_name, all->current_pass);
@@ -310,24 +311,27 @@ void end_pass(gdmf& d)
   }
 }
 
-void predict(gdmf& d, single_learner&, example& ec) { mf_predict(d, ec); }
+void predict(gdmf& d, base_learner&, example& ec) { mf_predict(d, ec); }
 
-void learn(gdmf& d, single_learner&, example& ec)
+void learn(gdmf& d, base_learner&, example& ec)
 {
-  vw& all = *d.all;
+  VW::workspace& all = *d.all;
 
   mf_predict(d, ec);
   if (all.training && ec.l.simple.label != FLT_MAX) mf_train(d, ec);
 }
 
-base_learner* gd_mf_setup(options_i& options, vw& all)
+base_learner* gd_mf_setup(VW::setup_base_i& stack_builder)
 {
-  auto data = scoped_calloc_or_throw<gdmf>();
+  options_i& options = *stack_builder.get_options();
+  VW::workspace& all = *stack_builder.get_all_pointer();
+
+  auto data = VW::make_unique<gdmf>();
 
   bool bfgs = false;
   bool conjugate_gradient = false;
   option_group_definition gf_md_options("Gradient Descent Matrix Factorization");
-  gf_md_options.add(make_option("rank", data->rank).keep().necessary().help("rank for matrix factorization."));
+  gf_md_options.add(make_option("rank", data->rank).keep().necessary().help("Rank for matrix factorization"));
 
   // Not supported, need to be checked to be false.
   gf_md_options.add(make_option("bfgs", bfgs).help("Option not supported by this reduction"));
@@ -368,10 +372,13 @@ base_learner* gd_mf_setup(options_i& options, vw& all)
   }
   all.eta *= powf(static_cast<float>(all.sd->t), all.power_t);
 
-  learner<gdmf, example>& l = init_learner(
-      data, learn, predict, (UINT64_ONE << all.weights.stride_shift()), all.get_setupfn_name(gd_mf_setup), true);
-  l.set_save_load(save_load);
-  l.set_end_pass(end_pass);
+  auto* l = make_base_learner(std::move(data), learn, predict, stack_builder.get_setupfn_name(gd_mf_setup),
+      VW::prediction_type_t::scalar, VW::label_type_t::simple)
+                .set_params_per_weight(UINT64_ONE << all.weights.stride_shift())
+                .set_learn_returns_prediction(true)
+                .set_save_load(save_load)
+                .set_end_pass(end_pass)
+                .build();
 
-  return make_base(l);
+  return make_base(*l);
 }

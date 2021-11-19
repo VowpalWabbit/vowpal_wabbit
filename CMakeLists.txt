@@ -228,11 +228,18 @@ if(GIT_FOUND AND EXISTS "${PROJECT_SOURCE_DIR}/.git")
   option(GIT_SUBMODULE "Check submodules during build" ON)
   if(GIT_SUBMODULE)
     message(STATUS "Submodule update")
-    execute_process(COMMAND ${GIT_EXECUTABLE} submodule update --init --recursive
-      WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
-      RESULT_VARIABLE GIT_SUBMOD_RESULT)
-    if(NOT GIT_SUBMOD_RESULT EQUAL "0")
-      message(FATAL_ERROR "git submodule update --init failed with ${GIT_SUBMOD_RESULT}, please checkout submodules")
+    # Check if an abritrary file in the submodules already exists. If it does
+    # then we assume the submodules are already up to date. This is to avoid
+    # taking the git lock aggressively whenever we configure. This can cause
+    # issues if VSCode with certain extensions has the workspace open at the
+    # same time as you interact with it on the command line.
+    if(NOT EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/ext_libs/spdlog/README.md)
+      execute_process(COMMAND ${GIT_EXECUTABLE} submodule update --init --recursive
+        WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+        RESULT_VARIABLE GIT_SUBMOD_RESULT)
+      if(NOT GIT_SUBMOD_RESULT EQUAL "0")
+        message(FATAL_ERROR "git submodule update --init failed with ${GIT_SUBMOD_RESULT}, please checkout submodules")
+      endif()
     endif()
   endif()
 endif()
@@ -242,6 +249,7 @@ add_subdirectory(cluster)
 add_subdirectory(library)
 include(ext_libs/ext_libs.cmake)
 add_subdirectory(vowpalwabbit)
+add_subdirectory(utl/dump_options)
 
 if (BUILD_FLATBUFFERS)
   add_subdirectory(utl/flatbuffer)
@@ -281,7 +289,7 @@ if(BUILD_TESTS)
 
   set(vw_cs_unittest_targets "")
   if (vw_BUILD_NET_FRAMEWORK)
-    set(vw_cs_unittest_targets 
+    set(vw_cs_unittest_targets
       cs_unittest
       cs_unittest_nofriend
     )
@@ -292,21 +300,21 @@ if(BUILD_TESTS)
   set(cmake_test_verbosity "--verbose")
   if (${CMAKE_GENERATOR} MATCHES "^Visual Studio")
     set(cmake_test_configuration -C $<CONFIG>)
-    # The VS Generator builds fall over in test when STDOUT/ERR contains strings of the form 
-    # "(<other-stuff, snipped>)?error[^:]*:.*", which our native unit tests output as part of a 
-    # successful run. 
+    # The VS Generator builds fall over in test when STDOUT/ERR contains strings of the form
+    # "(<other-stuff, snipped>)?error[^:]*:.*", which our native unit tests output as part of a
+    # successful run.
     #
-    # This is caused by MSBuild being "helpful": 
+    # This is caused by MSBuild being "helpful":
     # https://stackoverflow.com/questions/48117302/does-the-msbuild-exec-task-search-stdout-for-the-string-error
-    # 
+    #
     # The CMake team has discussed this issue, but are using an MSBuild mechanism that does not support
-    # overriding this behaviour. The fix is to disable test output on Visual Studio generator builds. 
+    # overriding this behaviour. The fix is to disable test output on Visual Studio generator builds.
     set(cmake_test_verbosity "")
   endif()
 
   # This target ensures all dependencies are built and also uses verbose mode allowing the test output to be seen.
   add_custom_target(test_with_output
-    COMMAND ${CMAKE_CTEST_COMMAND} ${cmake_test_configuration} ${cmake_test_verbosity}
+    COMMAND ${CMAKE_CTEST_COMMAND} ${cmake_test_configuration} ${cmake_test_verbosity} --output-on-failure
     DEPENDS spanning_tree vw-unit-test.out vw-bin ${vw_c_api_unit_test_target} ${vw_cs_unittest_targets}
   )
 

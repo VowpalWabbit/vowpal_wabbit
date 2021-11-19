@@ -50,12 +50,11 @@ namespace SelectiveBranchingMT
 {
 void run(Search::search& sch, multi_ex& ec);
 void initialize(Search::search& sch, size_t& num_actions, options_i& options);
-void finish(Search::search& sch);
-Search::search_metatask metatask = {"selective_branching", run, initialize, finish, nullptr, nullptr};
+Search::search_metatask metatask = {"selective_branching", run, initialize, nullptr, nullptr, nullptr};
 
 typedef std::pair<action, float> act_score;
-typedef std::vector<act_score> path;
-typedef std::pair<float, path> branch;
+using path = std::vector<act_score>;
+using branch = std::pair<float, path>;
 
 std::ostream& operator<<(std::ostream& os, const std::pair<unsigned int, float>& v)
 {
@@ -89,21 +88,19 @@ void initialize(Search::search& sch, size_t& /*num_actions*/, options_i& options
 {
   size_t max_branches = 2;
   size_t kbest = 0;
-  option_group_definition new_options("selective branching options");
+  option_group_definition new_options("Selective Branching");
   new_options
       .add(make_option("search_max_branch", max_branches)
                .default_value(2)
-               .help("maximum number of branches to consider"))
+               .help("Maximum number of branches to consider"))
       .add(make_option("search_kbest", kbest)
                .default_value(0)
-               .help("number of best items to output (0=just like non-selectional-branching, default)"));
+               .help("Number of best items to output (0=just like non-selectional-branching, default)"));
   options.add_and_parse(new_options);
 
   task_data* d = new task_data(max_branches, kbest);
   sch.set_metatask_data(d);
 }
-
-void finish(Search::search& sch) { delete sch.get_metatask_data<task_data>(); }
 
 void run(Search::search& sch, multi_ex& ec)
 {

@@ -61,7 +61,7 @@ private:
 
   // for backing up cb example data when computing sensitivities
   std::vector<ACTION_SCORE::action_scores> _ex_as;
-  std::vector<v_array<CB::cb_class>> _ex_costs;
+  std::vector<std::vector<CB::cb_class>> _ex_costs;
 
 public:
   cb_explore_adf_squarecb(float gamma_scale, float gamma_exponent, bool elim, float c0, float min_cb_cost,
@@ -292,16 +292,18 @@ void cb_explore_adf_squarecb::predict_or_learn_impl(multi_learner& base, multi_e
 void cb_explore_adf_squarecb::save_load(io_buf& io, bool read, bool text)
 {
   if (io.num_files() == 0) { return; }
-  if (!read || _model_file_version >= VERSION_FILE_WITH_SQUARE_CB_SAVE_RESUME)
+  if (!read || _model_file_version >= VW::version_definitions::VERSION_FILE_WITH_SQUARE_CB_SAVE_RESUME)
   {
     std::stringstream msg;
     if (!read) { msg << "cb squarecb adf storing example counter:  = " << _counter << "\n"; }
-    bin_text_read_write_fixed_validated(io, reinterpret_cast<char*>(&_counter), sizeof(_counter), "", read, msg, text);
+    bin_text_read_write_fixed_validated(io, reinterpret_cast<char*>(&_counter), sizeof(_counter), read, msg, text);
   }
 }
 
-base_learner* setup(VW::config::options_i& options, vw& all)
+base_learner* setup(VW::setup_base_i& stack_builder)
 {
+  VW::config::options_i& options = *stack_builder.get_options();
+  VW::workspace& all = *stack_builder.get_all_pointer();
   using config::make_option;
   bool cb_explore_adf_option = false;
   bool squarecb = false;
@@ -331,7 +333,7 @@ base_learner* setup(VW::config::options_i& options, vw& all)
       .add(make_option("gamma_exponent", gamma_exponent)
                .keep()
                .default_value(.5f)
-               .help("Exponent on [num examples] in SquareCB greediness parameter gamma."))
+               .help("Exponent on [num examples] in SquareCB greediness parameter gamma"))
       .add(make_option("elim", elim)
                .keep()
                .help("Only perform SquareCB exploration over plausible actions (computed via RegCB strategy)"))
@@ -349,22 +351,19 @@ base_learner* setup(VW::config::options_i& options, vw& all)
                .help("Upper bound on cost. Only used with --elim"))
       .add(make_option("cb_type", type_string)
                .keep()
-               .help("contextual bandit method to use in {ips,dr,mtr}. Default: mtr"));
+               .default_value("mtr")
+               .one_of({"mtr"})
+               .help("Contextual bandit method to use. SquareCB only supports supervised regression (mtr)"));
 
   if (!options.add_parse_and_check_necessary(new_options)) return nullptr;
 
   // Ensure serialization of cb_adf in all cases.
   if (!options.was_supplied("cb_adf")) { options.insert("cb_adf", ""); }
-  if (type_string != "mtr")
-  {
-    *(all.trace_message) << "warning: bad cb_type, SquareCB only supports mtr; resetting to mtr." << std::endl;
-    options.replace("cb_type", "mtr");
-  }
 
   // Set explore_type
   size_t problem_multiplier = 1;
 
-  multi_learner* base = as_multiline(setup_base(options, all));
+  multi_learner* base = as_multiline(stack_builder.setup_base_learner());
   all.example_parser->lbl_parser = CB::cb_label;
 
   bool with_metrics = options.was_supplied("extra_metrics");
@@ -373,10 +372,10 @@ base_learner* setup(VW::config::options_i& options, vw& all)
   auto data = VW::make_unique<explore_type>(
       with_metrics, gamma_scale, gamma_exponent, elim, c0, min_cb_cost, max_cb_cost, all.model_file_ver);
   auto* l = make_reduction_learner(
-      std::move(data), base, explore_type::learn, explore_type::predict, all.get_setupfn_name(setup))
+      std::move(data), base, explore_type::learn, explore_type::predict, stack_builder.get_setupfn_name(setup))
                 .set_params_per_weight(problem_multiplier)
-                .set_prediction_type(prediction_type_t::action_probs)
-                .set_label_type(label_type_t::cb)
+                .set_output_prediction_type(VW::prediction_type_t::action_probs)
+                .set_input_label_type(VW::label_type_t::cb)
                 .set_finish_example(explore_type::finish_multiline_example)
                 .set_print_example(explore_type::print_multiline_example)
                 .set_persist_metrics(explore_type::persist_metrics)

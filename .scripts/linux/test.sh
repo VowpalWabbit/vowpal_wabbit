@@ -10,5 +10,5 @@ cd test
 python3 run_tests.py -f -j $(nproc) --include_flatbuffers
 
 cd ../build
-make test_with_output
+ctest --verbose --output-on-failure
 

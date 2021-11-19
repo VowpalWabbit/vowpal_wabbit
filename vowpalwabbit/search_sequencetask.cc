@@ -12,7 +12,7 @@ Search::search_task task = {"sequence", run, initialize, nullptr, nullptr, nullp
 }
 namespace SequenceSpanTask
 {
-Search::search_task task = {"sequencespan", run, initialize, finish, setup, takedown};
+Search::search_task task = {"sequencespan", run, initialize, nullptr, setup, takedown};
 }
 namespace SequenceTaskCostToGo
 {
@@ -20,11 +20,11 @@ Search::search_task task = {"sequence_ctg", run, initialize, nullptr, nullptr, n
 }
 namespace ArgmaxTask
 {
-Search::search_task task = {"argmax", run, initialize, finish, nullptr, nullptr};
+Search::search_task task = {"argmax", run, initialize, nullptr, nullptr, nullptr};
 }
 namespace SequenceTask_DemoLDF
 {
-Search::search_task task = {"sequence_demoldf", run, initialize, finish, nullptr, nullptr};
+Search::search_task task = {"sequence_demoldf", run, initialize, nullptr, nullptr, nullptr};
 }
 
 namespace SequenceTask
@@ -35,6 +35,7 @@ void initialize(Search::search& sch, size_t& /*num_actions*/, options_i& /*optio
       Search::AUTO_HAMMING_LOSS |     // please just use hamming loss on individual predictions -- we won't declare loss
       Search::EXAMPLES_DONT_CHANGE |  // we don't do any internal example munging
       0);
+  sch.set_is_ldf(false);
 }
 
 void run(Search::search& sch, multi_ex& ec)
@@ -56,7 +57,7 @@ void run(Search::search& sch, multi_ex& ec)
 
 namespace SequenceSpanTask
 {
-enum EncodingType
+enum class EncodingType
 {
   BIO,
   BILOU
@@ -131,11 +132,11 @@ void initialize(Search::search& sch, size_t& num_actions, options_i& options)
   task_data* D = new task_data();
 
   bool search_span_bilou = false;
-  option_group_definition new_options("search sequencespan options");
+  option_group_definition new_options("Search Sequencespan");
   new_options
       .add(make_option("search_span_bilou", search_span_bilou)
-               .help("switch to (internal) BILOU encoding instead of BIO encoding"))
-      .add(make_option("search_span_multipass", D->multipass).default_value(1).help("do multiple passes"));
+               .help("Switch to (internal) BILOU encoding instead of BIO encoding"))
+      .add(make_option("search_span_multipass", D->multipass).default_value(1).help("Do multiple passes"));
   options.add_and_parse(new_options);
 
   if (search_span_bilou)
@@ -143,21 +144,21 @@ void initialize(Search::search& sch, size_t& num_actions, options_i& options)
     // TODO: is this the right logger?
     *(sch.get_vw_pointer_unsafe().trace_message)
         << "switching to BILOU encoding for sequence span labeling" << std::endl;
-    D->encoding = BILOU;
+    D->encoding = EncodingType::BILOU;
     num_actions = num_actions * 2 - 1;
   }
   else
-    D->encoding = BIO;
+    D->encoding = EncodingType::BIO;
 
   D->allowed_actions.clear();
 
-  if (D->encoding == BIO)
+  if (D->encoding == EncodingType::BIO)
   {
     D->allowed_actions.push_back(1);
     for (action l = 2; l < num_actions; l += 2) D->allowed_actions.push_back(l);
     D->allowed_actions.push_back(1);  // push back an extra 1 that we can overwrite later if we want
   }
-  else if (D->encoding == BILOU)
+  else if (D->encoding == EncodingType::BILOU)
   {
     D->allowed_actions.push_back(1);
     for (action l = 2; l < num_actions; l += 4)
@@ -175,25 +176,20 @@ void initialize(Search::search& sch, size_t& num_actions, options_i& options)
       Search::EXAMPLES_DONT_CHANGE |  // we don't do any internal example munging
       0);
   sch.set_num_learners(D->multipass);
-}
-
-void finish(Search::search& sch)
-{
-  task_data* D = sch.get_task_data<task_data>();
-  delete D;
+  sch.set_is_ldf(false);
 }
 
 void setup(Search::search& sch, multi_ex& ec)
 {
   task_data& D = *sch.get_task_data<task_data>();
-  if (D.encoding == BILOU) convert_bio_to_bilou(ec);
+  if (D.encoding == EncodingType::BILOU) convert_bio_to_bilou(ec);
 }
 
 void takedown(Search::search& sch, multi_ex& ec)
 {
   task_data& D = *sch.get_task_data<task_data>();
 
-  if (D.encoding == BILOU)
+  if (D.encoding == EncodingType::BILOU)
     for (size_t n = 0; n < ec.size(); n++)
     {
       MULTICLASS::label_t ylab = ec[n]->l.multi;
@@ -215,7 +211,7 @@ void run(Search::search& sch, multi_ex& ec)
       size_t len = y_allowed->size();
       P.set_tag(static_cast<ptag>(i) + 1);
       P.set_learner_id(pass - 1);
-      if (D.encoding == BIO)
+      if (D.encoding == EncodingType::BIO)
       {
         if (last_prediction == 1)
           P.set_allowed(y_allowed->begin(), len - 1);
@@ -232,7 +228,7 @@ void run(Search::search& sch, multi_ex& ec)
         if ((oracle > 1) && (oracle % 2 == 1) && (last_prediction != oracle) && (last_prediction != oracle - 1))
           oracle = 1;  // if we are supposed to I-X, but last wasn't B-X or I-X, then say O
       }
-      else if (D.encoding == BILOU)
+      else if (D.encoding == EncodingType::BILOU)
       {
         if ((last_prediction == 1) || ((last_prediction - 2) % 4 == 0) ||
             ((last_prediction - 2) % 4 == 3))  // O or unit-X or last-X
@@ -257,7 +253,7 @@ void run(Search::search& sch, multi_ex& ec)
       last_prediction = P.predict();
 
       if ((pass == D.multipass) && sch.output().good())
-        sch.output() << ((D.encoding == BIO) ? last_prediction : bilou_to_bio(last_prediction)) << ' ';
+        sch.output() << ((D.encoding == EncodingType::BIO) ? last_prediction : bilou_to_bio(last_prediction)) << ' ';
     }
   }
 }
@@ -272,7 +268,8 @@ void initialize(Search::search& sch, size_t& num_actions, options_i& /*options*/
       Search::EXAMPLES_DONT_CHANGE |  // we don't do any internal example munging
       Search::ACTION_COSTS |          // we'll provide cost-per-action (rather than oracle)
       0);
-  sch.set_task_data<size_t>(&num_actions);
+  sch.set_task_data<size_t>(new size_t{num_actions});
+  sch.set_is_ldf(false);
 }
 
 void run(Search::search& sch, multi_ex& ec)
@@ -309,7 +306,7 @@ void initialize(Search::search& sch, size_t& /*num_actions*/, options_i& options
 {
   task_data* D = new task_data();
 
-  option_group_definition new_options("argmax options");
+  option_group_definition new_options("Argmax");
   new_options.add(make_option("cost", D->false_negative_cost).default_value(10.0f).help("False Negative Cost"))
       .add(make_option("negative_weight", D->negative_weight)
                .default_value(1.f)
@@ -318,18 +315,13 @@ void initialize(Search::search& sch, size_t& /*num_actions*/, options_i& options
   options.add_and_parse(new_options);
 
   sch.set_task_data(D);
+  sch.set_is_ldf(false);
 
   if (D->predict_max)
     sch.set_options(Search::EXAMPLES_DONT_CHANGE);  // we don't do any internal example munging
   else
     sch.set_options(Search::AUTO_CONDITION_FEATURES |  // automatically add history features to our examples, please
         Search::EXAMPLES_DONT_CHANGE);                 // we don't do any internal example munging
-}
-
-void finish(Search::search& sch)
-{
-  task_data* D = sch.get_task_data<task_data>();
-  delete D;
 }
 
 void run(Search::search& sch, multi_ex& ec)
@@ -364,7 +356,7 @@ namespace SequenceTask_DemoLDF  // this is just to debug/show off how to do LDF
 namespace CS = COST_SENSITIVE;
 struct task_data
 {
-  example* ldf_examples;
+  std::vector<example> ldf_examples;
   size_t num_actions;
 };
 
@@ -372,30 +364,23 @@ void initialize(Search::search& sch, size_t& num_actions, options_i& /*options*/
 {
   CS::wclass default_wclass = {0., 0, 0., 0.};
 
-  example* ldf_examples = VW::alloc_examples(num_actions);
+  task_data* data = new task_data;
+  data->ldf_examples.resize(num_actions);
   for (size_t a = 0; a < num_actions; a++)
   {
-    CS::label& lab = ldf_examples[a].l.cs;
+    CS::label& lab = data->ldf_examples[a].l.cs;
     CS::default_label(lab);
     lab.costs.push_back(default_wclass);
-    ldf_examples[a].interactions = &sch.get_vw_pointer_unsafe().interactions;
+    data->ldf_examples[a].interactions = &sch.get_vw_pointer_unsafe().interactions;
+    data->ldf_examples[a].extent_interactions = &sch.get_vw_pointer_unsafe().extent_interactions;
   }
 
-  task_data* data = &calloc_or_throw<task_data>();
-  data->ldf_examples = ldf_examples;
   data->num_actions = num_actions;
-
+  sch.set_is_ldf(true);
   sch.set_task_data<task_data>(data);
   sch.set_options(Search::AUTO_CONDITION_FEATURES |  // automatically add history features to our examples, please
       Search::AUTO_HAMMING_LOSS |  // please just use hamming loss on individual predictions -- we won't declare loss
       Search::IS_LDF);             // we generate ldf examples
-}
-
-void finish(Search::search& sch)
-{
-  task_data* data = sch.get_task_data<task_data>();
-  VW::dealloc_examples(data->ldf_examples, data->num_actions);
-  free(data);
 }
 
 // this is totally bogus for the example -- you'd never actually do this!
@@ -433,7 +418,7 @@ void run(Search::search& sch, multi_ex& ec)
 
     action oracle = ec[i]->l.multi.label - 1;
     action pred_id = P.set_tag(static_cast<ptag>(i + 1))
-                         .set_input(data->ldf_examples, data->num_actions)
+                         .set_input(data->ldf_examples.data(), data->num_actions)
                          .set_oracle(oracle)
                          .set_condition_range(i, sch.get_history_length(), 'p')
                          .predict();

@@ -1,7 +1,7 @@
-creating quadratic features for pairs: :: AB 
+creating quadratic features for pairs: :: AB
+creating features for following interactions: AAA :::
 WARNING: any duplicate namespace interactions will be removed
 You can use --leave_duplicate_interactions to disable this behaviour.
-creating features for following interactions: AAA ::: 
 Num weight bits = 18
 learning rate = 0.5
 initial_t = 0
@@ -12,13 +12,13 @@ num sources = 1
 Enabled reductions: gd, generate_interactions, scorer-identity, csoaa_ldf-rank, cb_adf, cb_explore_adf_greedy, cb_sample, shared_feature_merger, ccb_explore_adf
 average  since         example        example  current  current  current
 loss     last          counter         weight    label  predict features
-0.000000 0.000000            1            1.0 0:0,1:0,... 0,1,2,...      351
-0.000000 0.000000            2            2.0 0:0,1:0,... 0,1,2,...      351
-0.000000 0.000000            4            4.0 3:0,4:0,... 3,4,0,...    20705
+0.000000 0.000000            1            1.0 0:0,1:0,... 0,1,2,...      852
+0.000000 0.000000            2            2.0 0:0,1:0,... 0,1,2,...      852
+0.000000 0.000000            4            4.0 3:0,4:0,... 3,4,0,...    47092
 
 finished run
 number of examples = 4
 weighted example sum = 4.000000
 weighted label sum = 0.000000
 average loss = 0.000000
-total feature number = 29340
+total feature number = 68636

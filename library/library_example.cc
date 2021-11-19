@@ -2,14 +2,15 @@
 #include "../vowpalwabbit/parser.h"
 #include "../vowpalwabbit/vw.h"
 
-inline feature vw_feature_from_string(vw& v, std::string fstr, unsigned long seed, float val)
+inline feature vw_feature_from_string(VW::workspace& v, std::string fstr, unsigned long seed, float val)
 { auto foo = VW::hash_feature(v, fstr, seed);
   feature f = { val, foo};
   return f;
 }
 
 int main(int argc, char *argv[])
-{ vw* model = VW::initialize("--hash all -q st --noconstant -i train.w -f train2.vw --no_stdin");
+{
+  VW::workspace* model = VW::initialize("--hash all -q st --noconstant -i train.w -f train2.vw --no_stdin");
 
   example *vec2 = VW::read_example(*model, (char*)"|s p^the_man w^the w^man |t p^un_homme w^un w^homme");
   model->learn(*vec2);
@@ -43,7 +44,7 @@ int main(int argc, char *argv[])
 
   VW::finish(*model);
 
-  vw* model2 = VW::initialize("--hash all -q st --noconstant -i train2.vw --no_stdin");
+  VW::workspace* model2 = VW::initialize("--hash all -q st --noconstant -i train2.vw --no_stdin");
   vec2 = VW::read_example(*model2, (char*)" |s p^the_man w^the w^man |t p^un_homme w^un w^homme");
   model2->learn(*vec2);
   std::cerr << "p4 = " << vec2->pred.scalar << std::endl;

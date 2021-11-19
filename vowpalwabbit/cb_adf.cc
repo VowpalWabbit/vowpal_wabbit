@@ -90,8 +90,8 @@ public:
   void predict(VW::LEARNER::multi_learner& base, multi_ex& ec_seq);
   bool update_statistics(example& ec, multi_ex* ec_seq);
 
-  cb_adf(
-      shared_data* sd, size_t cb_type, VW::version_struct* model_file_ver, bool rank_all, float clip_p, bool no_predict)
+  cb_adf(shared_data* sd, VW::cb_type_t cb_type, VW::version_struct* model_file_ver, bool rank_all, float clip_p,
+      bool no_predict)
       : _sd(sd)
       , _model_file_ver(model_file_ver)
       , _offset(0)
@@ -110,10 +110,10 @@ public:
 
   const VW::version_struct* get_model_file_ver() const { return _model_file_ver; }
 
-  bool learn_returns_prediction()
+  bool learn_returns_prediction() const
   {
-    return ((_gen_cs.cb_type == CB_TYPE_MTR) && !_no_predict) || _gen_cs.cb_type == CB_TYPE_IPS ||
-        _gen_cs.cb_type == CB_TYPE_DR || _gen_cs.cb_type == CB_TYPE_DM;
+    return ((_gen_cs.cb_type == VW::cb_type_t::mtr) && !_no_predict) || _gen_cs.cb_type == VW::cb_type_t::ips ||
+        _gen_cs.cb_type == VW::cb_type_t::dr || _gen_cs.cb_type == VW::cb_type_t::dm;
   }
 
   CB::cb_class* known_cost() { return &_gen_cs.known_cost; }
@@ -298,26 +298,24 @@ void cb_adf::learn(multi_learner& base, multi_ex& ec_seq)
     _gen_cs.known_cost = get_observed_cost_or_default_cb_adf(ec_seq);  // need to set for test case
     switch (_gen_cs.cb_type)
     {
-      case CB_TYPE_IPS:
-        learn_IPS(base, ec_seq);
-        break;
-      case CB_TYPE_DR:
+      case VW::cb_type_t::dr:
         learn_DR(base, ec_seq);
         break;
-      case CB_TYPE_DM:
+      case VW::cb_type_t::dm:
         learn_DM(base, ec_seq);
         break;
-      case CB_TYPE_MTR:
+      case VW::cb_type_t::ips:
+        learn_IPS(base, ec_seq);
+        break;
+      case VW::cb_type_t::mtr:
         if (_no_predict)
           learn_MTR<false>(base, ec_seq);
         else
           learn_MTR<true>(base, ec_seq);
         break;
-      case CB_TYPE_SM:
+      case VW::cb_type_t::sm:
         learn_SM(base, ec_seq);
         break;
-      default:
-        THROW("Unknown cb_type specified for contextual bandit learning: " << _gen_cs.cb_type);
     }
   }
   else if (learn_returns_prediction())
@@ -368,7 +366,7 @@ bool cb_adf::update_statistics(example& ec, multi_ex* ec_seq)
   return labeled_example;
 }
 
-void output_example(vw& all, cb_adf& c, example& ec, multi_ex* ec_seq)
+void output_example(VW::workspace& all, cb_adf& c, example& ec, multi_ex* ec_seq)
 {
   if (example_is_newline_not_header(ec)) return;
 
@@ -397,7 +395,7 @@ void output_example(vw& all, cb_adf& c, example& ec, multi_ex* ec_seq)
     CB::print_update(all, !labeled_example, ec, ec_seq, true, nullptr);
 }
 
-void output_rank_example(vw& all, cb_adf& c, example& ec, multi_ex* ec_seq)
+void output_rank_example(VW::workspace& all, cb_adf& c, example& ec, multi_ex* ec_seq)
 {
   const auto& costs = ec.l.cb.costs;
 
@@ -425,7 +423,7 @@ void output_rank_example(vw& all, cb_adf& c, example& ec, multi_ex* ec_seq)
     CB::print_update(all, !labeled_example, ec, ec_seq, true, nullptr);
 }
 
-void output_example_seq(vw& all, cb_adf& data, multi_ex& ec_seq)
+void output_example_seq(VW::workspace& all, cb_adf& data, multi_ex& ec_seq)
 {
   if (!ec_seq.empty())
   {
@@ -440,7 +438,7 @@ void output_example_seq(vw& all, cb_adf& data, multi_ex& ec_seq)
   }
 }
 
-void update_and_output(vw& all, cb_adf& data, multi_ex& ec_seq)
+void update_and_output(VW::workspace& all, cb_adf& data, multi_ex& ec_seq)
 {
   if (!ec_seq.empty())
   {
@@ -449,7 +447,7 @@ void update_and_output(vw& all, cb_adf& data, multi_ex& ec_seq)
   }
 }
 
-void finish_multiline_example(vw& all, cb_adf& data, multi_ex& ec_seq)
+void finish_multiline_example(VW::workspace& all, cb_adf& data, multi_ex& ec_seq)
 {
   update_and_output(all, data, ec_seq);
   VW::finish_example(all, ec_seq);
@@ -457,15 +455,17 @@ void finish_multiline_example(vw& all, cb_adf& data, multi_ex& ec_seq)
 
 void save_load(cb_adf& c, io_buf& model_file, bool read, bool text)
 {
-  if (c.get_model_file_ver() != nullptr && *c.get_model_file_ver() < VERSION_FILE_WITH_CB_ADF_SAVE) return;
+  if (c.get_model_file_ver() != nullptr &&
+      *c.get_model_file_ver() < VW::version_definitions::VERSION_FILE_WITH_CB_ADF_SAVE)
+  { return; }
   std::stringstream msg;
   msg << "event_sum " << c.get_gen_cs().event_sum << "\n";
   bin_text_read_write_fixed(
-      model_file, (char*)&c.get_gen_cs().event_sum, sizeof(c.get_gen_cs().event_sum), "", read, msg, text);
+      model_file, (char*)&c.get_gen_cs().event_sum, sizeof(c.get_gen_cs().event_sum), read, msg, text);
 
   msg << "action_sum " << c.get_gen_cs().action_sum << "\n";
   bin_text_read_write_fixed(
-      model_file, (char*)&c.get_gen_cs().action_sum, sizeof(c.get_gen_cs().action_sum), "", read, msg, text);
+      model_file, (char*)&c.get_gen_cs().action_sum, sizeof(c.get_gen_cs().action_sum), read, msg, text);
 }
 
 void learn(cb_adf& c, multi_learner& base, multi_ex& ec_seq) { c.learn(base, ec_seq); }
@@ -474,12 +474,14 @@ void predict(cb_adf& c, multi_learner& base, multi_ex& ec_seq) { c.predict(base,
 
 }  // namespace CB_ADF
 using namespace CB_ADF;
-base_learner* cb_adf_setup(options_i& options, vw& all)
+base_learner* cb_adf_setup(VW::setup_base_i& stack_builder)
 {
+  options_i& options = *stack_builder.get_options();
+  VW::workspace& all = *stack_builder.get_all_pointer();
   bool cb_adf_option = false;
   std::string type_string = "mtr";
 
-  size_t cb_type;
+  VW::cb_type_t cb_type;
   bool rank_all;
   float clip_p;
   bool no_predict;
@@ -489,16 +491,18 @@ base_learner* cb_adf_setup(options_i& options, vw& all)
       .add(make_option("cb_adf", cb_adf_option)
                .keep()
                .necessary()
-               .help("Do Contextual Bandit learning with multiline action dependent features."))
+               .help("Do Contextual Bandit learning with multiline action dependent features"))
       .add(make_option("rank_all", rank_all).keep().help("Return actions sorted by score order"))
       .add(make_option("no_predict", no_predict).help("Do not do a prediction when training"))
       .add(make_option("clip_p", clip_p)
                .keep()
                .default_value(0.f)
-               .help("Clipping probability in importance weight. Default: 0.f (no clipping)."))
+               .help("Clipping probability in importance weight. Default: 0.f (no clipping)"))
       .add(make_option("cb_type", type_string)
                .keep()
-               .help("contextual bandit method to use in {ips, dm, dr, mtr, sm}. Default: mtr"));
+               .default_value("mtr")
+               .one_of({"ips", "dm", "dr", "mtr", "sm"})
+               .help("Contextual bandit method to use"));
 
   if (!options.add_parse_and_check_necessary(new_options)) return nullptr;
 
@@ -513,28 +517,26 @@ base_learner* cb_adf_setup(options_i& options, vw& all)
   size_t problem_multiplier = 1;  // default for IPS
   bool check_baseline_enabled = false;
 
-  if (type_string == "dr")
+  try
   {
-    cb_type = CB_TYPE_DR;
+    cb_type = VW::cb_type_from_string(type_string);
+  }
+  catch (const VW::vw_exception& /*exception*/)
+  {
+    logger::log_warn(
+        "warning: cb_type must be in {'ips','dr','mtr','dm','sm'}; resetting to mtr. Input was: '{}'", type_string);
+
+    cb_type = VW::cb_type_t::mtr;
+  }
+
+  if (cb_type == VW::cb_type_t::dr)
+  {
     problem_multiplier = 2;
     // only use baseline when manually enabled for loss estimation
     check_baseline_enabled = true;
   }
-  else if (type_string == "ips")
-    cb_type = CB_TYPE_IPS;
-  else if (type_string == "mtr")
-    cb_type = CB_TYPE_MTR;
-  else if (type_string == "dm")
-    cb_type = CB_TYPE_DM;
-  else if (type_string == "sm")
-    cb_type = CB_TYPE_SM;
-  else
-  {
-    *(all.trace_message) << "warning: cb_type must be in {'ips','dr','mtr','dm','sm'}; resetting to mtr." << std::endl;
-    cb_type = CB_TYPE_MTR;
-  }
 
-  if (clip_p > 0.f && cb_type == CB_TYPE_SM)
+  if (clip_p > 0.f && cb_type == VW::cb_type_t::sm)
     *(all.trace_message) << "warning: clipping probability not yet implemented for cb_type sm; p will not be clipped."
                          << std::endl;
 
@@ -551,16 +553,16 @@ base_learner* cb_adf_setup(options_i& options, vw& all)
 
   auto ld = VW::make_unique<cb_adf>(all.sd, cb_type, &all.model_file_ver, rank_all, clip_p, no_predict);
 
-  auto base = as_multiline(setup_base(options, all));
+  auto base = as_multiline(stack_builder.setup_base_learner());
   all.example_parser->lbl_parser = CB::cb_label;
 
   cb_adf* bare = ld.get();
   bool lrp = ld->learn_returns_prediction();
-  auto* l = make_reduction_learner(std::move(ld), base, learn, predict, all.get_setupfn_name(cb_adf_setup))
+  auto* l = make_reduction_learner(std::move(ld), base, learn, predict, stack_builder.get_setupfn_name(cb_adf_setup))
                 .set_learn_returns_prediction(lrp)
                 .set_params_per_weight(problem_multiplier)
-                .set_prediction_type(prediction_type_t::action_scores)
-                .set_label_type(label_type_t::cb)
+                .set_output_prediction_type(VW::prediction_type_t::action_scores)
+                .set_input_label_type(VW::label_type_t::cb)
                 .set_finish_example(CB_ADF::finish_multiline_example)
                 .set_print_example(CB_ADF::update_and_output)
                 .set_save_load(CB_ADF::save_load)

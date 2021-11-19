@@ -13,13 +13,13 @@ namespace continuous_action
 {
 namespace cats
 {
-LEARNER::base_learner* setup(config::options_i& options, vw& all);
+LEARNER::base_learner* setup(setup_base_i& stack_builder);
 struct cats
 {
-  uint32_t num_actions;
-  float bandwidth;
-  float min_value;
-  float max_value;
+  uint32_t num_actions = 0;
+  float bandwidth = 0.f;
+  float min_value = 0.f;
+  float max_value = 0.f;
 
   cats(LEARNER::single_learner* p_base);
 

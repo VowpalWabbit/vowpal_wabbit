@@ -6,7 +6,7 @@
 #include "error_constants.h"
 #include "api_status.h"
 #include "debug_log.h"
-#include "parse_args.h"
+#include "global_data.h"
 #include "guard.h"
 
 // Aliases
@@ -37,7 +37,7 @@ struct get_pmf
 
 private:
   single_learner* _base = nullptr;
-  float _epsilon;
+  float _epsilon = 0.f;
 };
 
 int get_pmf::learn(example& ec, experimental::api_status*)
@@ -87,9 +87,10 @@ void predict_or_learn(get_pmf& reduction, single_learner&, example& ec)
 ////////////////////////////////////////////////////
 
 // Setup reduction in stack
-LEARNER::base_learner* get_pmf_setup(config::options_i& options, vw& all)
+LEARNER::base_learner* get_pmf_setup(VW::setup_base_i& stack_builder)
 {
-  option_group_definition new_options("Continuous actions - convert to pmf");
+  options_i& options = *stack_builder.get_options();
+  option_group_definition new_options("Continuous Actions: Convert to Pmf");
   bool invoked = false;
   float epsilon = 0.0f;
   new_options.add(
@@ -99,14 +100,16 @@ LEARNER::base_learner* get_pmf_setup(config::options_i& options, vw& all)
   // to the reduction stack;
   if (!options.add_parse_and_check_necessary(new_options)) return nullptr;
 
-  LEARNER::base_learner* p_base = setup_base(options, all);
-  auto p_reduction = scoped_calloc_or_throw<get_pmf>();
+  LEARNER::base_learner* p_base = stack_builder.setup_base_learner();
+  auto p_reduction = VW::make_unique<get_pmf>();
   p_reduction->init(as_singleline(p_base), epsilon);
 
-  LEARNER::learner<get_pmf, example>& l = init_learner(p_reduction, as_singleline(p_base), predict_or_learn<true>,
-      predict_or_learn<false>, 1, prediction_type_t::pdf, all.get_setupfn_name(get_pmf_setup));
+  auto* l = make_reduction_learner(std::move(p_reduction), as_singleline(p_base), predict_or_learn<true>,
+      predict_or_learn<false>, stack_builder.get_setupfn_name(get_pmf_setup))
+                .set_output_prediction_type(VW::prediction_type_t::pdf)
+                .build();
 
-  return make_base(l);
+  return make_base(*l);
 }
 }  // namespace continuous_action
 }  // namespace VW

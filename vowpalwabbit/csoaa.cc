@@ -33,8 +33,8 @@ namespace CSOAA
 {
 struct csoaa
 {
-  uint32_t num_classes;
-  polyprediction* pred;
+  uint32_t num_classes = 0;
+  polyprediction* pred = nullptr;
   ~csoaa() { free(pred); }
 };
 
@@ -129,28 +129,36 @@ void predict_or_learn(csoaa& c, single_learner& base, example& ec)
   ec.pred.multiclass = prediction;
 }
 
-void finish_example(vw& all, csoaa&, example& ec) { COST_SENSITIVE::finish_example(all, ec); }
+void finish_example(VW::workspace& all, csoaa&, example& ec) { COST_SENSITIVE::finish_example(all, ec); }
 
-base_learner* csoaa_setup(options_i& options, vw& all)
+base_learner* csoaa_setup(VW::setup_base_i& stack_builder)
 {
-  auto c = scoped_calloc_or_throw<csoaa>();
+  options_i& options = *stack_builder.get_options();
+  VW::workspace& all = *stack_builder.get_all_pointer();
+  auto c = VW::make_unique<csoaa>();
   option_group_definition new_options("Cost Sensitive One Against All");
   new_options.add(
       make_option("csoaa", c->num_classes).keep().necessary().help("One-against-all multiclass with <k> costs"));
 
   if (!options.add_parse_and_check_necessary(new_options)) return nullptr;
 
+  if (options.was_supplied("probabilities"))
+  { THROW("Error: csoaa does not support probabilities flag, please use oaa or multilabel_oaa"); }
+
   c->pred = calloc_or_throw<polyprediction>(c->num_classes);
+  size_t ws = c->num_classes;
+  auto* l = make_reduction_learner(std::move(c), as_singleline(stack_builder.setup_base_learner()),
+      predict_or_learn<true>, predict_or_learn<false>, stack_builder.get_setupfn_name(csoaa_setup))
+                .set_learn_returns_prediction(
+                    true) /* csoaa.learn calls gd.learn. nothing to be gained by calling csoaa.predict first */
+                .set_params_per_weight(ws)
+                .set_output_prediction_type(VW::prediction_type_t::multiclass)
+                .set_input_label_type(VW::label_type_t::cs)
+                .set_finish_example(finish_example)
+                .build();
 
-  learner<csoaa, example>& l = init_learner(
-      c, as_singleline(setup_base(*all.options, all)), predict_or_learn<true>, predict_or_learn<false>, c->num_classes,
-      prediction_type_t::multiclass, all.get_setupfn_name(csoaa_setup), true /*csoaa.learn calls gd.learn. nothing to be
-                                                                                gained by calling csoaa.predict first*/
-  );
   all.example_parser->lbl_parser = cs_label;
-
-  l.set_finish_example(finish_example);
-  all.cost_sensitive = make_base(l);
+  all.cost_sensitive = make_base(*l);
   return all.cost_sensitive;
 }
 
@@ -161,17 +169,17 @@ struct ldf
 {
   LabelDict::label_feature_map label_features;
 
-  size_t read_example_this_loop;
-  bool is_wap;
-  bool first_pass;
-  bool treat_as_classifier;
-  bool is_probabilities;
-  float csoaa_example_t;
-  vw* all;
+  size_t read_example_this_loop = 0;
+  bool is_wap = false;
+  bool first_pass = false;
+  bool treat_as_classifier = false;
+  bool is_probabilities = false;
+  float csoaa_example_t = false;
+  VW::workspace* all = nullptr;
 
-  bool rank;
+  bool rank = false;
   action_scores a_s;
-  uint64_t ft_offset;
+  uint64_t ft_offset = 0;
 
   std::vector<action_scores> stored_preds;
 };
@@ -216,11 +224,11 @@ void compute_wap_values(std::vector<COST_SENSITIVE::wclass*> costs)
 // This is faster and allows fast undo in unsubtract_example().
 void subtract_feature(example& ec, float feature_value_x, uint64_t weight_index)
 {
-  ec.feature_space[wap_ldf_namespace].push_back(-feature_value_x, weight_index);
+  ec.feature_space[wap_ldf_namespace].push_back(-feature_value_x, weight_index, wap_ldf_namespace);
 }
 
 // Iterate over all features of ecsub including quadratic and cubic features and subtract them from ec.
-void subtract_example(vw& all, example* ec, example* ecsub)
+void subtract_example(VW::workspace& all, example* ec, example* ecsub)
 {
   features& wap_fs = ec->feature_space[wap_ldf_namespace];
   wap_fs.sum_feat_sq = 0;
@@ -282,13 +290,13 @@ bool test_ldf_sequence(ldf& data, multi_ex& ec_seq)
   if (ec_seq.empty())
     isTest = true;
   else
-    isTest = COST_SENSITIVE::cs_label.test_label(&ec_seq[0]->l);
+    isTest = COST_SENSITIVE::cs_label.test_label(ec_seq[0]->l);
   for (const auto& ec : ec_seq)
   {
     // Each sub-example must have just one cost
     assert(ec->l.cs.costs.size() == 1);
 
-    if (COST_SENSITIVE::cs_label.test_label(&ec->l) != isTest)
+    if (COST_SENSITIVE::cs_label.test_label(ec->l) != isTest)
     {
       isTest = true;
       *(data.all->trace_message) << "warning: ldf example has mix of train/test data; assuming test" << std::endl;
@@ -315,7 +323,7 @@ void do_actual_learning_wap(ldf& data, single_learner& base, multi_ex& ec_seq)
     label_data& simple_lbl = ec1->l.simple;
     auto& simple_red_features = ec1->_reduction_features.template get<simple_label_reduction_features>();
 
-    v_array<COST_SENSITIVE::wclass> costs1 = save_cs_label.costs;
+    auto costs1 = save_cs_label.costs;
     if (costs1[0].class_index == static_cast<uint32_t>(-1)) continue;
 
     LabelDict::add_example_namespace_from_memory(data.label_features, *ec1, costs1[0].class_index);
@@ -331,7 +339,7 @@ void do_actual_learning_wap(ldf& data, single_learner& base, multi_ex& ec_seq)
     for (size_t k2 = k1 + 1; k2 < K; k2++)
     {
       example* ec2 = ec_seq[k2];
-      v_array<COST_SENSITIVE::wclass> costs2 = ec2->l.cs.costs;
+      auto costs2 = ec2->l.cs.costs;
 
       if (costs2[0].class_index == static_cast<uint32_t>(-1)) continue;
       float value_diff = std::fabs(costs2[0].wap_value - costs1[0].wap_value);
@@ -563,7 +571,7 @@ void predict_csoaa_ldf_rank(ldf& data, single_learner& base, multi_ex& ec_seq_al
   }
 }
 
-void global_print_newline(vw& all)
+void global_print_newline(VW::workspace& all)
 {
   char temp[1];
   temp[0] = '\n';
@@ -575,7 +583,7 @@ void global_print_newline(vw& all)
   }
 }
 
-void output_example(vw& all, example& ec, bool& hit_loss, multi_ex* ec_seq, ldf& data)
+void output_example(VW::workspace& all, example& ec, bool& hit_loss, multi_ex* ec_seq, ldf& data)
 {
   label& ld = ec.l.cs;
   const auto& costs = ld.costs;
@@ -609,7 +617,7 @@ void output_example(vw& all, example& ec, bool& hit_loss, multi_ex* ec_seq, ldf&
   else
     predicted_class = ec.pred.multiclass;
 
-  if (!COST_SENSITIVE::cs_label.test_label(&ec.l))
+  if (!COST_SENSITIVE::cs_label.test_label(ec.l))
   {
     for (auto const& cost : costs)
     {
@@ -642,10 +650,10 @@ void output_example(vw& all, example& ec, bool& hit_loss, multi_ex* ec_seq, ldf&
     all.print_text_by_ref(all.raw_prediction.get(), outputStringStream.str(), ec.tag);
   }
 
-  COST_SENSITIVE::print_update(all, COST_SENSITIVE::cs_label.test_label(&ec.l), ec, ec_seq, false, predicted_class);
+  COST_SENSITIVE::print_update(all, COST_SENSITIVE::cs_label.test_label(ec.l), ec, ec_seq, false, predicted_class);
 }
 
-void output_rank_example(vw& all, example& head_ec, bool& hit_loss, multi_ex* ec_seq)
+void output_rank_example(VW::workspace& all, example& head_ec, bool& hit_loss, multi_ex* ec_seq)
 {
   const auto& costs = head_ec.l.cs.costs;
 
@@ -657,7 +665,7 @@ void output_rank_example(vw& all, example& head_ec, bool& hit_loss, multi_ex* ec
   float loss = 0.;
   v_array<action_score>& preds = head_ec.pred.a_s;
 
-  if (!COST_SENSITIVE::cs_label.test_label(&head_ec.l))
+  if (!COST_SENSITIVE::cs_label.test_label(head_ec.l))
   {
     size_t idx = 0;
     for (example* ex : *ec_seq)
@@ -690,10 +698,10 @@ void output_rank_example(vw& all, example& head_ec, bool& hit_loss, multi_ex* ec
     all.print_text_by_ref(all.raw_prediction.get(), outputStringStream.str(), head_ec.tag);
   }
 
-  COST_SENSITIVE::print_update(all, COST_SENSITIVE::cs_label.test_label(&head_ec.l), head_ec, ec_seq, true, 0);
+  COST_SENSITIVE::print_update(all, COST_SENSITIVE::cs_label.test_label(head_ec.l), head_ec, ec_seq, true, 0);
 }
 
-void output_example_seq(vw& all, ldf& data, multi_ex& ec_seq)
+void output_example_seq(VW::workspace& all, ldf& data, multi_ex& ec_seq)
 {
   size_t K = ec_seq.size();
   if ((K > 0) && !ec_seq_is_label_definition(ec_seq))
@@ -750,7 +758,7 @@ void output_example_seq(vw& all, ldf& data, multi_ex& ec_seq)
 
 void end_pass(ldf& data) { data.first_pass = false; }
 
-void finish_multiline_example(vw& all, ldf& data, multi_ex& ec_seq)
+void finish_multiline_example(VW::workspace& all, ldf& data, multi_ex& ec_seq)
 {
   if (!ec_seq.empty())
   {
@@ -817,9 +825,11 @@ multi_ex process_labels(ldf& data, const multi_ex& ec_seq_all)
   return ret;
 }
 
-base_learner* csldf_setup(options_i& options, vw& all)
+base_learner* csldf_setup(VW::setup_base_i& stack_builder)
 {
-  auto ld = scoped_calloc_or_throw<ldf>();
+  options_i& options = *stack_builder.get_options();
+  VW::workspace& all = *stack_builder.get_all_pointer();
+  auto ld = VW::make_unique<ldf>();
 
   std::string csoaa_ldf;
   std::string ldf_override;
@@ -829,15 +839,15 @@ base_learner* csldf_setup(options_i& options, vw& all)
   csldf_outer_options.add(make_option("csoaa_ldf", csoaa_ldf)
                               .keep()
                               .necessary()
-                              .help("Use one-against-all multiclass learning with label dependent features."));
+                              .help("Use one-against-all multiclass learning with label dependent features"));
   csldf_outer_options.add(
       make_option("ldf_override", ldf_override)
           .help("Override singleline or multiline from csoaa_ldf or wap_ldf, eg if stored in file"));
   csldf_outer_options.add(make_option("csoaa_rank", ld->rank).keep().help("Return actions sorted by score order"));
   csldf_outer_options.add(
-      make_option("probabilities", ld->is_probabilities).keep().help("predict probabilites of all classes"));
+      make_option("probabilities", ld->is_probabilities).keep().help("Predict probabilities of all classes"));
 
-  option_group_definition csldf_inner_options("Cost Sensitive weighted all-pairs with Label Dependent Features");
+  option_group_definition csldf_inner_options("Cost Sensitive Weighted All-Pairs with Label Dependent Features");
   csldf_inner_options.add(make_option("wap_ldf", wap_ldf)
                               .keep()
                               .necessary()
@@ -848,6 +858,11 @@ base_learner* csldf_setup(options_i& options, vw& all)
   {
     if (!options.add_parse_and_check_necessary(csldf_inner_options)) { return nullptr; }
   }
+
+  // csoaa_ldf does logistic link manually for probabilities because the unlinked values are
+  // required elsewhere. This implemenation will provide correct probabilities regardless
+  // of whether --link logistic is included or not.
+  if (ld->is_probabilities && options.was_supplied("link")) { options.replace("link", "identity"); }
 
   ld->all = &all;
   ld->first_pass = true;
@@ -862,8 +877,6 @@ base_learner* csldf_setup(options_i& options, vw& all)
     ld->is_wap = true;
   }
   if (options.was_supplied("ldf_override")) ldf_arg = ldf_override;
-
-  all.example_parser->lbl_parser = COST_SENSITIVE::cs_label;
 
   ld->treat_as_classifier = false;
   if (ldf_arg == "multiline" || ldf_arg == "m")
@@ -884,13 +897,13 @@ base_learner* csldf_setup(options_i& options, vw& all)
     all.sd->report_multiclass_log_loss = true;
     auto loss_function_type = all.loss->getType();
     if (loss_function_type != "logistic")
-      *(all.trace_message) << "WARNING: --probabilities should be used only "
-                              "with --loss_function=logistic"
-                           << std::endl;
+    {
+      logger::log_error(
+          "WARNING: --probabilities should be used only with --loss_function=logistic, currently using: {}",
+          loss_function_type);
+    }
     if (!ld->treat_as_classifier)
-      *(all.trace_message) << "WARNING: --probabilities should be used with "
-                              "--csoaa_ldf=mc (or --oaa)"
-                           << std::endl;
+    { logger::log_error("WARNING: --probabilities should be used with --csoaa_ldf=mc (or --oaa, --multilabel_oaa)"); }
   }
 
   all.example_parser->emptylines_separate_examples = true;  // TODO: check this to be sure!!!  !ld->is_singleline;
@@ -899,21 +912,40 @@ base_learner* csldf_setup(options_i& options, vw& all)
   ld->label_features.reserve(256);
 
   ld->read_example_this_loop = 0;
-  single_learner* pbase = as_singleline(setup_base(*all.options, all));
-  learner<ldf, multi_ex>* pl = nullptr;
+  single_learner* pbase = as_singleline(stack_builder.setup_base_learner());
 
-  std::string name = all.get_setupfn_name(csldf_setup);
+  std::string name = stack_builder.get_setupfn_name(csldf_setup);
+  std::string name_addition;
+  VW::prediction_type_t pred_type;
+  void (*pred_ptr)(ldf&, single_learner&, multi_ex&);
   if (ld->rank)
-    pl = &init_learner(
-        ld, pbase, learn_csoaa_ldf, predict_csoaa_ldf_rank, 1, prediction_type_t::action_scores, name + "-rank");
+  {
+    name_addition = "-rank";
+    pred_type = VW::prediction_type_t::action_scores;
+    pred_ptr = predict_csoaa_ldf_rank;
+  }
   else if (ld->is_probabilities)
-    pl = &init_learner(ld, pbase, learn_csoaa_ldf, predict_csoaa_ldf, 1, prediction_type_t::prob, name + "-prob");
+  {
+    name_addition = "-prob";
+    pred_type = VW::prediction_type_t::prob;
+    pred_ptr = predict_csoaa_ldf;
+  }
   else
-    pl = &init_learner(ld, pbase, learn_csoaa_ldf, predict_csoaa_ldf, 1, prediction_type_t::multiclass, name);
+  {
+    name_addition = "";
+    pred_type = VW::prediction_type_t::multiclass;
+    pred_ptr = predict_csoaa_ldf;
+  }
 
-  pl->set_finish_example(finish_multiline_example);
-  pl->set_end_pass(end_pass);
-  all.cost_sensitive = make_base(*pl);
+  auto* l = make_reduction_learner(std::move(ld), pbase, learn_csoaa_ldf, pred_ptr, name + name_addition)
+                .set_finish_example(finish_multiline_example)
+                .set_end_pass(end_pass)
+                .set_input_label_type(VW::label_type_t::cs)
+                .set_output_prediction_type(pred_type)
+                .build();
+
+  all.example_parser->lbl_parser = COST_SENSITIVE::cs_label;
+  all.cost_sensitive = make_base(*l);
   return all.cost_sensitive;
 }
 }  // namespace CSOAA

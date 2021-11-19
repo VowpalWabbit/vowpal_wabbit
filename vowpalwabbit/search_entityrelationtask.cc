@@ -16,7 +16,7 @@ constexpr size_t NUM_LDF_ENTITY_EXAMPLES = 10;
 
 namespace EntityRelationTask
 {
-Search::search_task task = {"entity_relation", run, initialize, finish, nullptr, nullptr};
+Search::search_task task = {"entity_relation", run, initialize, nullptr, nullptr, nullptr};
 }
 
 namespace EntityRelationTask
@@ -37,7 +37,7 @@ struct task_data
   v_array<uint32_t> y_allowed_entity;
   v_array<uint32_t> y_allowed_relation;
   size_t search_order;
-  example* ldf_entity;
+  std::array<example, NUM_LDF_ENTITY_EXAMPLES> ldf_entity;
   example* ldf_relation;
 };
 
@@ -46,7 +46,7 @@ void initialize(Search::search& sch, size_t& /*num_actions*/, options_i& options
   task_data* my_task_data = new task_data();
   sch.set_task_data<task_data>(my_task_data);
 
-  option_group_definition new_options("Entity Relation Options");
+  option_group_definition new_options("Entity Relation");
   new_options
       .add(make_option("relation_cost", my_task_data->relation_cost).keep().default_value(1.f).help("Relation Cost"))
       .add(make_option("entity_cost", my_task_data->entity_cost).keep().default_value(1.f).help("Entity Cost"))
@@ -77,28 +77,34 @@ void initialize(Search::search& sch, size_t& /*num_actions*/, options_i& options
   if (my_task_data->search_order != 3 && my_task_data->search_order != 4) { sch.set_options(0); }
   else
   {
-    example* ldf_examples = VW::alloc_examples(NUM_LDF_ENTITY_EXAMPLES);
     CS::wclass default_wclass = {0., 0, 0., 0.};
     for (size_t a = 0; a < NUM_LDF_ENTITY_EXAMPLES; a++)
     {
-      ldf_examples[a].l.cs.costs.push_back(default_wclass);
-      ldf_examples[a].interactions = &sch.get_vw_pointer_unsafe().interactions;
+      my_task_data->ldf_entity[a].l.cs.costs.push_back(default_wclass);
+      my_task_data->ldf_entity[a].interactions = &sch.get_vw_pointer_unsafe().interactions;
+      my_task_data->ldf_entity[a].extent_interactions = &sch.get_vw_pointer_unsafe().extent_interactions;
     }
-    my_task_data->ldf_entity = ldf_examples;
-    my_task_data->ldf_relation = ldf_examples + 4;
+    my_task_data->ldf_relation = my_task_data->ldf_entity.data() + 4;
     sch.set_options(Search::IS_LDF);
   }
 
   sch.set_num_learners(2);
   if (my_task_data->search_order == 4) sch.set_num_learners(3);
-}
 
-void finish(Search::search& sch)
-{
-  task_data* my_task_data = sch.get_task_data<task_data>();
-  if (my_task_data->search_order == 3) { VW::dealloc_examples(my_task_data->ldf_entity, NUM_LDF_ENTITY_EXAMPLES); }
-  delete my_task_data;
-}  // if we had task data, we'd want to free it here
+  switch (my_task_data->search_order)
+  {
+    case 0:
+    case 1:
+    case 2:
+      sch.set_is_ldf(false);
+      break;
+    case 3:
+      sch.set_is_ldf(true);
+      break;
+    default:
+      logger::errlog_error("search order {} is undefined", my_task_data->search_order);
+  }
+}
 
 bool check_constraints(size_t ent1_id, size_t ent2_id, size_t rel_id)
 {
@@ -109,7 +115,7 @@ bool check_constraints(size_t ent1_id, size_t ent2_id, size_t rel_id)
   return false;
 }
 
-void decode_tag(v_array<char> tag, char& type, int& id1, int& id2)
+void decode_tag(const v_array<char>& tag, char& type, int& id1, int& id2)
 {
   std::string s1;
   std::string s2;
@@ -165,7 +171,7 @@ size_t predict_entity(
         lab.costs[0].wap_value = 0.f;
       }
       prediction = Search::predictor(sch, my_tag)
-                       .set_input(my_task_data->ldf_entity, 4)
+                       .set_input(my_task_data->ldf_entity.data(), 4)
                        .set_oracle(ex->l.multi.label - 1)
                        .set_learner_id(1)
                        .predict() +

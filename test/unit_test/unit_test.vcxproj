@@ -19,6 +19,8 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="automl_test.cc" />
+    <ClCompile Include="automl_weights_test.cc" />
     <ClCompile Include="cats_test.cc" />
     <ClCompile Include="cats_tree_tests.cc" />
     <ClCompile Include="cats_user_provided_pdf.cc" />
@@ -26,6 +28,7 @@
     <ClCompile Include="ccb_test.cc" />
     <ClCompile Include="ccb_parser_test.cc" />
     <ClCompile Include="continuous_actions_parser_test.cc" />
+    <ClCompile Include="feature_group_test.cc" />
     <ClCompile Include="object_pool_test.cc" />
     <ClCompile Include="offset_tree_tests.cc" />
     <ClCompile Include="ostream_test.cc" />
@@ -45,19 +48,22 @@
     <ClCompile Include="json_parser_test.cc" />
     <ClCompile Include="main.cc" />
     <ClCompile Include="math_test.cc" />
-    <ClCompile Include="namespaced_feature_store_test.cc" />
     <ClCompile Include="numeric_cast_tests.cc" />
     <ClCompile Include="random_test.cc" />
     <ClCompile Include="parse_args_test.cc" />
     <ClCompile Include="vw_versions_test.cc" />
     <ClCompile Include="power_test.cc" />
     <ClCompile Include="prediction_test.cc" />
+    <ClCompile Include="custom_reduction_test.cc" />
+    <ClCompile Include="minimal_custom_reduction.cc" />
     <ClCompile Include="scope_exit_test.cc" />
+    <ClCompile Include="simulator.cc" />
     <ClCompile Include="slates_parser_test.cc" />
     <ClCompile Include="slates_test.cc" />
     <ClCompile Include="stable_unique_tests.cc" />
     <ClCompile Include="tag_utils_test.cc" />
     <ClCompile Include="test_common.cc" />
+    <ClCompile Include="tutorial_test.cc" />
     <ClCompile Include="v_array_test.cc" />
     <ClCompile Include="vwdll_test.cc" />
     <ClCompile Include="weights_test.cc" />
@@ -71,11 +77,10 @@
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="simulator.h" />
     <ClInclude Include="test_common.h" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="crminustwo.py" />
-    <None Include="DistributionallyRobustUnitTestData.py" />
     <None Include="packages.config" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
@@ -178,7 +183,7 @@
   <ItemDefinitionGroup>
     <ClCompile>
       <AdditionalIncludeDirectories>$(SolutionDir);$(SolutionDir)..\ext_libs\rapidjson\include;$(SolutionDir)..\explore;$(SolutionDir)..\ext_libs\fmt\include;$(SolutionDir)..\ext_libs\spdlog\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>ZLIB_WINAPI;$(BUILD_FLATBUFFERS);%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>ZLIB_WINAPI;BOOST_TEST_DYN_LINK;$(BUILD_FLATBUFFERS);%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalOptions>/D "_CRT_SECURE_NO_WARNINGS" %(AdditionalOptions)</AdditionalOptions>
     </ClCompile>
     <Link>

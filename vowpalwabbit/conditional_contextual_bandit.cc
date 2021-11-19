@@ -18,6 +18,7 @@
 #include "version.h"
 #include "debug_log.h"
 #include "shared_data.h"
+#include "model_utils.h"
 
 #include "io/logger.h"
 
@@ -36,11 +37,19 @@ using namespace VW::config;
 namespace logger = VW::io::logger;
 
 template <typename T>
-void return_v_array(v_array<T>& array, VW::v_array_pool<T>& pool)
+void return_collection(v_array<T>& array, VW::v_array_pool<T>& pool)
 {
   array.clear();
   pool.reclaim_object(std::move(array));
   array = v_array<T>{};
+}
+
+template <typename T>
+void return_collection(std::vector<T>& array, VW::vector_pool<T>& pool)
+{
+  array.clear();
+  pool.reclaim_object(std::move(array));
+  array = std::vector<T>{};
 }
 
 // CCB adds the following interactions:
@@ -48,7 +57,8 @@ void return_v_array(v_array<T>& array, VW::v_array_pool<T>& pool)
 //   2. Every existing interaction + ccb_slot_namespace
 //   3. wildcard_namespace + ccb_id_namespace
 //   4. wildcard_namespace + ccb_slot_namespace
-void insert_ccb_interactions(std::vector<std::vector<namespace_index>>& interactions_to_add_to)
+void insert_ccb_interactions(std::vector<std::vector<namespace_index>>& interactions_to_add_to,
+    std::vector<std::vector<extent_term>>& extent_interactions_to_add_to)
 {
   const auto reserve_size = interactions_to_add_to.size() * 2;
   std::vector<std::vector<namespace_index>> new_interactions;
@@ -64,11 +74,28 @@ void insert_ccb_interactions(std::vector<std::vector<namespace_index>>& interact
   std::move(new_interactions.begin(), new_interactions.end(), std::back_inserter(interactions_to_add_to));
   interactions_to_add_to.push_back({wildcard_namespace, ccb_id_namespace});
   interactions_to_add_to.push_back({wildcard_namespace, ccb_slot_namespace});
+
+  std::vector<std::vector<extent_term>> new_extent_interactions;
+  new_extent_interactions.reserve(new_extent_interactions.size() * 2);
+  for (const auto& inter : extent_interactions_to_add_to)
+  {
+    new_extent_interactions.push_back(inter);
+    new_extent_interactions.back().emplace_back(ccb_id_namespace, ccb_id_namespace);
+    new_extent_interactions.push_back(inter);
+    new_extent_interactions.back().emplace_back(ccb_slot_namespace, ccb_slot_namespace);
+  }
+  extent_interactions_to_add_to.reserve(extent_interactions_to_add_to.size() + new_extent_interactions.size() + 2);
+  std::move(new_extent_interactions.begin(), new_extent_interactions.end(),
+      std::back_inserter(extent_interactions_to_add_to));
+  extent_interactions_to_add_to.push_back(
+      {std::make_pair(wildcard_namespace, wildcard_namespace), std::make_pair(ccb_id_namespace, ccb_id_namespace)});
+  extent_interactions_to_add_to.push_back(
+      {std::make_pair(wildcard_namespace, wildcard_namespace), std::make_pair(ccb_slot_namespace, ccb_slot_namespace)});
 }
 
 struct ccb
 {
-  vw* all = nullptr;
+  VW::workspace* all = nullptr;
   example* shared = nullptr;
   std::vector<example*> actions, slots;
   std::vector<uint32_t> origin_index;
@@ -87,7 +114,7 @@ struct ccb
   size_t base_learner_stride_shift = 0;
   bool all_slots_loss_report = false;
 
-  VW::v_array_pool<CB::cb_class> cb_label_pool;
+  VW::vector_pool<CB::cb_class> cb_label_pool;
   VW::v_array_pool<ACTION_SCORE::action_score> action_score_pool;
 
   VW::version_struct model_file_version;
@@ -154,12 +181,12 @@ void create_cb_labels(ccb& data)
 // the polylabel (union) must be manually cleaned up
 void delete_cb_labels(ccb& data)
 {
-  return_v_array(data.shared->l.cb.costs, data.cb_label_pool);
+  return_collection(data.shared->l.cb.costs, data.cb_label_pool);
   data.shared->l.cb.costs.clear();
 
   for (example* action : data.actions)
   {
-    return_v_array(action->l.cb.costs, data.cb_label_pool);
+    return_collection(action->l.cb.costs, data.cb_label_pool);
     action->l.cb.costs.clear();
   }
 }
@@ -243,8 +270,9 @@ void inject_slot_id(ccb& data, example* shared, size_t id)
     index = data.slot_id_hashes[id];
   }
 
-  shared->feature_space[ccb_id_namespace].push_back(1., index);
+  shared->feature_space[ccb_id_namespace].push_back(1., index, ccb_id_namespace);
   shared->indices.push_back(ccb_id_namespace);
+  if (id == 0) { shared->num_features++; }
 
   if (audit)
   {
@@ -257,11 +285,8 @@ void inject_slot_id(ccb& data, example* shared, size_t id)
 template <bool audit>
 void remove_slot_id(example* shared)
 {
-  shared->feature_space[ccb_id_namespace].indicies.pop_back();
-  shared->feature_space[ccb_id_namespace].values.pop_back();
+  shared->feature_space[ccb_id_namespace].clear();
   shared->indices.pop_back();
-
-  if (audit) { shared->feature_space[ccb_id_namespace].space_names.pop_back(); }
 }
 
 void remove_slot_features(example* shared, example* slot)
@@ -375,7 +400,7 @@ void learn_or_predict(ccb& data, multi_learner& base, multi_ex& examples)
   {
     std::stringstream msg;
     msg << "ccb_adf_explore: badly formatted example - number of actions " << data.actions.size()
-        << " must be greater than the number of slots " << data.slots.size();
+        << " must be greater than or equal to the number of slots " << data.slots.size();
     THROW(msg.str())
   }
 
@@ -408,7 +433,7 @@ void learn_or_predict(ccb& data, multi_learner& base, multi_ex& examples)
   // mode a new namespace is added (ccb_id_namespace) and so we can be confident
   // that the cache will be invalidated.
   if (!previously_should_augment_with_slot_info && should_augment_with_slot_info)
-  { insert_ccb_interactions(data.all->interactions); }
+  { insert_ccb_interactions(data.all->interactions, data.all->extent_interactions); }
 
   // This will overwrite the labels with CB.
   create_cb_labels(data);
@@ -464,6 +489,16 @@ void learn_or_predict(ccb& data, multi_learner& base, multi_ex& examples)
         save_action_scores(data, decision_scores);
         VW_DBG(examples) << "ccb "
                          << "slot:" << slot_id << " " << ccb_decision_to_string(data) << std::endl;
+        for (const auto& ex : data.cb_ex)
+        {
+          if (CB::ec_is_example_header(*ex)) { slot->num_features = (data.cb_ex.size() - 1) * ex->num_features; }
+          else
+          {
+            slot->num_features += ex->num_features;
+            slot->num_features_from_interactions += ex->num_features_from_interactions;
+            slot->num_features -= ex->feature_space[constant_namespace].size();
+          }
+        }
         clear_pred_and_label(data);
       }
       else
@@ -525,28 +560,21 @@ std::string generate_ccb_label_printout(const std::vector<example*>& slots)
   return label_ss.str();
 }
 
-void output_example(vw& all, ccb& c, multi_ex& ec_seq)
+void output_example(VW::workspace& all, ccb& c, multi_ex& ec_seq)
 {
   if (ec_seq.empty()) { return; }
 
-  std::vector<example*> slots;
   size_t num_features = 0;
   float loss = 0.;
 
-  // Should this be done for shared, action and slot?
-  for (auto* ec : ec_seq)
-  {
-    num_features += ec->get_num_features();
-
-    if (ec->l.conditional_contextual_bandit.type == CCB::example_type::slot) { slots.push_back(ec); }
-  }
+  for (auto* ec : c.slots) { num_features += ec->get_num_features(); }
 
   // Is it hold out?
   size_t num_labeled = 0;
   const auto& preds = ec_seq[0]->pred.decision_scores;
-  for (size_t i = 0; i < slots.size(); i++)
+  for (size_t i = 0; i < c.slots.size(); i++)
   {
-    auto* outcome = slots[i]->l.conditional_contextual_bandit.outcome;
+    auto* outcome = c.slots[i]->l.conditional_contextual_bandit.outcome;
     if (outcome != nullptr)
     {
       num_labeled++;
@@ -559,7 +587,7 @@ void output_example(vw& all, ccb& c, multi_ex& ec_seq)
     }
   }
 
-  if (num_labeled > 0 && num_labeled < slots.size())
+  if (num_labeled > 0 && num_labeled < c.slots.size())
   {
     logger::errlog_warn("Unlabeled example in train set, was this intentional?");
   }
@@ -573,10 +601,10 @@ void output_example(vw& all, ccb& c, multi_ex& ec_seq)
   for (auto& sink : all.final_prediction_sink)
   { VW::print_decision_scores(sink.get(), ec_seq[SHARED_EX_INDEX]->pred.decision_scores); }
 
-  VW::print_update_ccb(all, slots, preds, num_features);
+  VW::print_update_ccb(all, c.slots, preds, num_features);
 }
 
-void finish_multiline_example(vw& all, ccb& data, multi_ex& ec_seq)
+void finish_multiline_example(VW::workspace& all, ccb& data, multi_ex& ec_seq)
 {
   if (!ec_seq.empty())
   {
@@ -584,7 +612,7 @@ void finish_multiline_example(vw& all, ccb& data, multi_ex& ec_seq)
     CB_ADF::global_print_newline(all.final_prediction_sink);
   }
 
-  for (auto& a_s : ec_seq[0]->pred.decision_scores) { return_v_array(a_s, data.action_score_pool); }
+  for (auto& a_s : ec_seq[0]->pred.decision_scores) { return_collection(a_s, data.action_score_pool); }
   ec_seq[0]->pred.decision_scores.clear();
 
   VW::finish_example(all, ec_seq);
@@ -594,21 +622,24 @@ void save_load(ccb& sm, io_buf& io, bool read, bool text)
 {
   if (io.num_files() == 0) { return; }
 
-  // We want to enter this block if either we are writing, or reading a model file after the version in which this was
-  // added.
-  if (!read || (sm.model_file_version >= VERSION_FILE_WITH_CCB_MULTI_SLOTS_SEEN_FLAG && sm.is_ccb_input_model))
+  // We need to check if reading a model file after the version in which this was added.
+  if (read &&
+      (sm.model_file_version >= VW::version_definitions::VERSION_FILE_WITH_CCB_MULTI_SLOTS_SEEN_FLAG &&
+          sm.is_ccb_input_model))
+  { VW::model_utils::read_model_field(io, sm.has_seen_multi_slot_example); }
+  else if (!read)
   {
-    std::stringstream msg;
-    if (!read) { msg << "CCB: has_seen_multi_slot_example = " << sm.has_seen_multi_slot_example << "\n"; }
-    bin_text_read_write_fixed_validated(io, reinterpret_cast<char*>(&sm.has_seen_multi_slot_example),
-        sizeof(sm.has_seen_multi_slot_example), "", read, msg, text);
+    VW::model_utils::write_model_field(io, sm.has_seen_multi_slot_example, "CCB: has_seen_multi_slot_example", text);
   }
 
-  if (read && sm.has_seen_multi_slot_example) { insert_ccb_interactions(sm.all->interactions); }
+  if (read && sm.has_seen_multi_slot_example)
+  { insert_ccb_interactions(sm.all->interactions, sm.all->extent_interactions); }
 }
 
-base_learner* ccb_explore_adf_setup(options_i& options, vw& all)
+base_learner* ccb_explore_adf_setup(VW::setup_base_i& stack_builder)
 {
+  options_i& options = *stack_builder.get_options();
+  VW::workspace& all = *stack_builder.get_all_pointer();
   auto data = VW::make_unique<ccb>();
   bool ccb_explore_adf_option = false;
   bool all_slots_loss_report = false;
@@ -638,7 +669,7 @@ base_learner* ccb_explore_adf_setup(options_i& options, vw& all)
     options.add_and_parse(new_options);
   }
 
-  auto* base = as_multiline(setup_base(options, all));
+  auto* base = as_multiline(stack_builder.setup_base_learner());
   all.example_parser->lbl_parser = CCB::ccb_label_parser;
 
   // Stash the base learners stride_shift so we can properly add a feature
@@ -654,10 +685,10 @@ base_learner* ccb_explore_adf_setup(options_i& options, vw& all)
   data->id_namespace_hash = VW::hash_space(all, data->id_namespace_str);
 
   auto* l = VW::LEARNER::make_reduction_learner(std::move(data), base, learn_or_predict<true>, learn_or_predict<false>,
-      all.get_setupfn_name(ccb_explore_adf_setup))
+      stack_builder.get_setupfn_name(ccb_explore_adf_setup))
                 .set_learn_returns_prediction(true)
-                .set_prediction_type(prediction_type_t::decision_probs)
-                .set_label_type(label_type_t::ccb)
+                .set_output_prediction_type(VW::prediction_type_t::decision_probs)
+                .set_input_label_type(VW::label_type_t::ccb)
                 .set_finish_example(finish_multiline_example)
                 .set_save_load(save_load)
                 .build();

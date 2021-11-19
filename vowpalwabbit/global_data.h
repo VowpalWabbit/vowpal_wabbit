@@ -47,6 +47,7 @@
 #include "feature_group.h"
 #include "rand_state.h"
 #include "allreduce.h"
+#include "interactions_predict.h"
 
 #include "options.h"
 #include "version.h"
@@ -54,12 +55,20 @@
 
 typedef float weight;
 
-typedef std::unordered_map<std::string, std::unique_ptr<features>> feature_dict;
-typedef VW::LEARNER::base_learner* (*reduction_setup_fn)(VW::config::options_i&, vw&);
+using feature_dict = std::unordered_map<std::string, std::unique_ptr<features>>;
+using reduction_setup_fn = VW::LEARNER::base_learner* (*)(VW::setup_base_i&);
 
 using options_deleter_type = void (*)(VW::config::options_i*);
 
 struct shared_data;
+
+namespace VW
+{
+struct workspace;
+}
+
+// TODO: deprecate this alias.
+using vw = VW::workspace;
 
 struct dictionary_info
 {
@@ -68,7 +77,7 @@ struct dictionary_info
   std::shared_ptr<feature_dict> dict;
 };
 
-enum AllReduceType
+enum class AllReduceType
 {
   Socket,
   Thread
@@ -101,6 +110,7 @@ struct parser_options;
 
 namespace VW
 {
+struct default_reduction_stack_setup;
 namespace parsers
 {
 namespace flatbuffer
@@ -122,7 +132,9 @@ struct trace_message_wrapper
   ~trace_message_wrapper() = default;
 };
 
-struct vw
+namespace VW
+{
+struct workspace
 {
 private:
   std::shared_ptr<rand_state> _random_state_sp = std::make_shared<rand_state>();  // per instance random_state
@@ -220,6 +232,7 @@ public:
 
   // Referenced by examples as their set of interactions. Can be overriden by reductions.
   std::vector<std::vector<namespace_index>> interactions;
+  std::vector<std::vector<extent_term>> extent_interactions;
   bool ignore_some;
   std::array<bool, NUM_NAMESPACES> ignore;  // a set of namespaces to ignore
   bool ignore_some_linear;
@@ -242,11 +255,6 @@ public:
   std::array<std::vector<std::shared_ptr<feature_dict>>, NUM_NAMESPACES>
       namespace_dictionaries{};  // each namespace has a list of dictionaries attached to it
 
-  VW_DEPRECATED(
-      "delete_prediction has been deprecated. Prediction types should have the proper destructor now. This will be "
-      "removed in VW 9.0.")
-  void (*delete_prediction)(void*);
-
   vw_logger logger;
   bool audit;     // should I print lots of debugging information?
   bool training;  // Should I train if lable data is available?
@@ -267,6 +275,8 @@ public:
   size_t check_holdout_every_n_passes;  // default: 1, but search might want to set it higher if you spend multiple
                                         // passes learning a single policy
 
+  INTERACTIONS::generate_interactions_object_cache _generate_interactions_object_cache;
+
   size_t normalized_idx;  // offset idx where the norm is stored (1 or 2 depending on whether adaptive is true)
 
   uint32_t lda;
@@ -276,22 +286,13 @@ public:
 
   size_t length() { return (static_cast<size_t>(1)) << num_bits; };
 
-  std::vector<std::tuple<std::string, reduction_setup_fn>> reduction_stack;
-
   // Prediction output
   std::vector<std::unique_ptr<VW::io::writer>> final_prediction_sink;  // set to send global predictions to.
   std::unique_ptr<VW::io::writer> raw_prediction;                      // file descriptors for text output.
 
-  VW_DEPRECATED("print has been deprecated, use print_by_ref. This will be removed in VW 9.0.")
-  void (*print)(VW::io::writer*, float, float, v_array<char>);
   void (*print_by_ref)(VW::io::writer*, float, float, const v_array<char>&);
-  VW_DEPRECATED("print_text has been deprecated, use print_text_by_ref. This will be removed in VW 9.0.")
-  void (*print_text)(VW::io::writer*, std::string, v_array<char>);
   void (*print_text_by_ref)(VW::io::writer*, const std::string&, const v_array<char>&);
   std::unique_ptr<loss_function> loss;
-
-  VW_DEPRECATED("This is unused and will be removed. This will be removed in VW 9.0.")
-  char* program_name;
 
   bool stdin_off;
 
@@ -322,31 +323,27 @@ public:
   // hack to support cb model loading into ccb reduction
   bool is_ccb_input_model = false;
 
-  vw();
-  ~vw();
+  workspace();
+  ~workspace();
   std::shared_ptr<rand_state> get_random_state() { return _random_state_sp; }
 
-  vw(const vw&) = delete;
-  vw& operator=(const vw&) = delete;
+  workspace(const VW::workspace&) = delete;
+  VW::workspace& operator=(const VW::workspace&) = delete;
 
   // vw object cannot be moved as many objects hold a pointer to it.
   // That pointer would be invalidated if it were to be moved.
-  vw(const vw&&) = delete;
-  vw& operator=(const vw&&) = delete;
+  workspace(const VW::workspace&&) = delete;
+  VW::workspace& operator=(const VW::workspace&&) = delete;
 
   std::string get_setupfn_name(reduction_setup_fn setup);
-  void build_setupfn_name_dict();
+  void build_setupfn_name_dict(std::vector<std::tuple<std::string, reduction_setup_fn>>&);
 
 private:
   std::unordered_map<reduction_setup_fn, std::string> _setup_name_map;
 };
+}  // namespace VW
 
-VW_DEPRECATED("Use print_result_by_ref instead. This will be removed in VW 9.0.")
-void print_result(VW::io::writer* f, float res, float weight, v_array<char> tag);
 void print_result_by_ref(VW::io::writer* f, float res, float weight, const v_array<char>& tag);
-
-VW_DEPRECATED("Use binary_print_result_by_ref instead. This will be removed in VW 9.0.")
-void binary_print_result(VW::io::writer* f, float res, float weight, v_array<char> tag);
 void binary_print_result_by_ref(VW::io::writer* f, float res, float weight, const v_array<char>& tag);
 
 void noop_mm(shared_data*, float label);
@@ -355,6 +352,4 @@ void compile_gram(
     std::vector<std::string> grams, std::array<uint32_t, NUM_NAMESPACES>& dest, char* descriptor, bool quiet);
 void compile_limits(std::vector<std::string> limits, std::array<uint32_t, NUM_NAMESPACES>& dest, bool quiet);
 
-VW_DEPRECATED("Use print_tag_by_ref instead. This will be removed in VW 9.0.")
-int print_tag(std::stringstream& ss, v_array<char> tag);
 int print_tag_by_ref(std::stringstream& ss, const v_array<char>& tag);

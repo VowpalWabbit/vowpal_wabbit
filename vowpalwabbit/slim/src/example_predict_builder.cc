@@ -24,7 +24,8 @@ example_predict_builder::example_predict_builder(
 void example_predict_builder::add_namespace(namespace_index feature_group)
 {
   _namespace_idx = feature_group;
-  _ex->indices.unique_add_sorted(feature_group);
+  const auto it = std::find(_ex->indices.begin(), _ex->indices.end(), feature_group);
+  if (it == _ex->indices.end()) { _ex->indices.push_back(feature_group); }
 }
 
 void example_predict_builder::push_feature_string(const char* feature_name, feature_value value)

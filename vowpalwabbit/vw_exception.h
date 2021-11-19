@@ -96,6 +96,21 @@ public:
   ~vw_unrecognised_option_exception() noexcept override = default;
 };
 
+class save_load_model_exception : public vw_exception
+{
+public:
+  save_load_model_exception(const char* file, int lineNumber, const std::string& message)
+      : vw_exception(file, lineNumber, message)
+  {
+  }
+
+  save_load_model_exception(const save_load_model_exception& ex) = default;
+  save_load_model_exception& operator=(const save_load_model_exception& other) = default;
+  save_load_model_exception(save_load_model_exception&& ex) = default;
+  save_load_model_exception& operator=(save_load_model_exception&& other) = default;
+  ~save_load_model_exception() noexcept override = default;
+};
+
 class strict_parse_exception : public vw_exception
 {
 public:
@@ -125,7 +140,7 @@ inline std::string strerror_to_string(int error_number)
   constexpr auto BUFFER_SIZE = 256;
   std::array<char, BUFFER_SIZE> error_message_buffer;
 #    if defined(__GLIBC__) && defined(_GNU_SOURCE)
-  // You must use the returned bffer and not the passed in buffer the GNU version.
+  // You must use the returned buffer and not the passed in buffer the GNU version.
   char* message_buffer = strerror_r(error_number, error_message_buffer.data(), error_message_buffer.size() - 1);
   auto length = std::strlen(message_buffer);
   return std::string(message_buffer, length);

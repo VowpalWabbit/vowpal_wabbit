@@ -14,14 +14,16 @@ namespace logger = VW::io::logger;
 
 struct interact
 {
-  unsigned char n1, n2;  // namespaces to interact
+  // namespaces to interact
+  unsigned char n1 = static_cast<unsigned char>(0);
+  unsigned char n2 = static_cast<unsigned char>(0);
   features feat_store;
-  vw* all;
-  float n1_feat_sq;
-  size_t num_features;
+  VW::workspace* all = nullptr;
+  float n1_feat_sq = 0.f;
+  size_t num_features = 0;
 };
 
-bool contains_valid_namespaces(vw& all, features& f_src1, features& f_src2, interact& in)
+bool contains_valid_namespaces(VW::workspace& all, features& f_src1, features& f_src2, interact& in)
 {
   // first feature must be 1 so we're sure that the anchor feature is present
   if (f_src1.size() == 0 || f_src2.size() == 0) return false;
@@ -47,7 +49,7 @@ void multiply(features& f_dest, features& f_src2, interact& in)
 {
   f_dest.clear();
   features& f_src1 = in.feat_store;
-  vw* all = in.all;
+  VW::workspace* all = in.all;
   uint64_t weight_mask = all->weights.mask();
   uint64_t base_id1 = f_src1.indicies[0] & weight_mask;
   uint64_t base_id2 = f_src2.indicies[0] & weight_mask;
@@ -139,10 +141,12 @@ void predict_or_learn(interact& in, VW::LEARNER::single_learner& base, example& 
   ec.num_features = in.num_features;
 }
 
-VW::LEARNER::base_learner* interact_setup(options_i& options, vw& all)
+VW::LEARNER::base_learner* interact_setup(VW::setup_base_i& stack_builder)
 {
+  options_i& options = *stack_builder.get_options();
+  VW::workspace& all = *stack_builder.get_all_pointer();
   std::string s;
-  option_group_definition new_options("Interact via elementwise multiplication");
+  option_group_definition new_options("Interact via Elementwise Multiplication");
   new_options.add(make_option("interact", s)
                       .keep()
                       .necessary()
@@ -156,16 +160,15 @@ VW::LEARNER::base_learner* interact_setup(options_i& options, vw& all)
     return nullptr;
   }
 
-  auto data = scoped_calloc_or_throw<interact>();
+  auto data = VW::make_unique<interact>();
 
   data->n1 = static_cast<unsigned char>(s[0]);
   data->n2 = static_cast<unsigned char>(s[1]);
   logger::errlog_info("Interacting namespaces {0:c} and {1:c}", data->n1, data->n2);
   data->all = &all;
 
-  VW::LEARNER::learner<interact, example>* l;
-  l = &VW::LEARNER::init_learner(data, as_singleline(setup_base(options, all)), predict_or_learn<true, true>,
-      predict_or_learn<false, true>, 1, all.get_setupfn_name(interact_setup));
-
+  auto* l = make_reduction_learner(std::move(data), as_singleline(stack_builder.setup_base_learner()),
+      predict_or_learn<true, true>, predict_or_learn<false, true>, stack_builder.get_setupfn_name(interact_setup))
+                .build();
   return make_base(*l);
 }

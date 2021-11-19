@@ -32,7 +32,7 @@ float safe_probability(float prob)
 }
 
 // Multiline version
-void gen_cs_example_ips(multi_ex& examples, COST_SENSITIVE::label& cs_labels, float clip_p)
+void gen_cs_example_ips(const multi_ex& examples, COST_SENSITIVE::label& cs_labels, float clip_p)
 {
   cs_labels.costs.clear();
   for (uint32_t i = 0; i < examples.size(); i++)
@@ -47,12 +47,12 @@ void gen_cs_example_ips(multi_ex& examples, COST_SENSITIVE::label& cs_labels, fl
 }
 
 // Multiline version
-void gen_cs_example_dm(multi_ex& examples, COST_SENSITIVE::label& cs_labels)
+void gen_cs_example_dm(const multi_ex& examples, COST_SENSITIVE::label& cs_labels)
 {
   cs_labels.costs.clear();
   for (uint32_t i = 0; i < examples.size(); i++)
   {
-    CB::label ld = examples[i]->l.cb;
+    const CB::label& ld = examples[i]->l.cb;
 
     COST_SENSITIVE::wclass wc = {0., i, 0., 0.};
     if (ld.costs.size() == 1 && ld.costs[0].cost != FLT_MAX) wc.x = ld.costs[0].cost;
@@ -61,7 +61,7 @@ void gen_cs_example_dm(multi_ex& examples, COST_SENSITIVE::label& cs_labels)
 }
 
 // Multiline version
-void gen_cs_test_example(multi_ex& examples, COST_SENSITIVE::label& cs_labels)
+void gen_cs_test_example(const multi_ex& examples, COST_SENSITIVE::label& cs_labels)
 {
   cs_labels.costs.clear();
   for (uint32_t i = 0; i < examples.size(); i++)
@@ -72,7 +72,7 @@ void gen_cs_test_example(multi_ex& examples, COST_SENSITIVE::label& cs_labels)
 }
 
 // single line version
-void gen_cs_example_ips(cb_to_cs& c, CB::label& ld, COST_SENSITIVE::label& cs_ld, float clip_p)
+void gen_cs_example_ips(cb_to_cs& c, const CB::label& ld, COST_SENSITIVE::label& cs_ld, float clip_p)
 {
   // this implements the inverse propensity score method, where cost are importance weighted by the probability of the
   // chosen action generate cost-sensitive example
@@ -104,7 +104,7 @@ void gen_cs_example_ips(cb_to_cs& c, CB::label& ld, COST_SENSITIVE::label& cs_ld
   else  // this is an example where we can only perform a subset of the actions
   {
     // in this case generate cost-sensitive example with only allowed actions
-    for (auto& cl : ld.costs)
+    for (const auto& cl : ld.costs)
     {
       COST_SENSITIVE::wclass wc = {0., cl.action, 0., 0.};
       if (cl.action == c.known_cost.action)
@@ -149,8 +149,8 @@ void gen_cs_example_mtr(cb_to_cs_adf& c, multi_ex& ec_seq, COST_SENSITIVE::label
   }
 }
 
-void gen_cs_example_sm(multi_ex&, uint32_t chosen_action, float sign_offset, ACTION_SCORE::action_scores action_vals,
-    COST_SENSITIVE::label& cs_labels)
+void gen_cs_example_sm(multi_ex&, uint32_t chosen_action, float sign_offset,
+    const ACTION_SCORE::action_scores& action_vals, COST_SENSITIVE::label& cs_labels)
 {
   cs_labels.costs.clear();
   for (uint32_t i = 0; i < action_vals.size(); i++)

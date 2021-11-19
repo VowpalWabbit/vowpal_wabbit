@@ -48,7 +48,7 @@ struct cb_dro_data
         const CB::cb_class logged = (*it)->l.cb.costs[0];
         const uint32_t labelled_action = static_cast<uint32_t>(std::distance(examples.begin(), it));
 
-        const auto action_scores = examples[0]->pred.a_s;
+        const auto& action_scores = examples[0]->pred.a_s;
 
         // cb_explore_adf => want maximum probability
         // cb_adf => first action is a greedy action
@@ -101,8 +101,10 @@ void learn_or_predict(cb_dro_data &data, multi_learner &base, multi_ex &examples
   data.learn_or_predict<is_learn, is_explore>(base, examples);
 }
 
-base_learner *cb_dro_setup(options_i &options, vw &all)
+base_learner* cb_dro_setup(VW::setup_base_i& stack_builder)
 {
+  options_i& options = *stack_builder.get_options();
+  VW::workspace& all = *stack_builder.get_all_pointer();
   double alpha;
   double tau;
   double wmax;
@@ -115,7 +117,7 @@ base_learner *cb_dro_setup(options_i &options, vw &all)
       .add(make_option("cb_dro_wmax", wmax)
                .default_value(std::numeric_limits<double>::infinity())
                .keep()
-               .help("maximum importance weight for cb_dro"));
+               .help("Maximum importance weight for cb_dro"));
 
   if (!options.add_parse_and_check_necessary(new_options)) return nullptr;
 
@@ -144,20 +146,20 @@ base_learner *cb_dro_setup(options_i &options, vw &all)
 
   if (options.was_supplied("cb_explore_adf"))
   {
-    auto* l =
-        make_reduction_learner(std::move(data), as_multiline(setup_base(options, all)), learn_or_predict<true, true>,
-            learn_or_predict<false, true>, all.get_setupfn_name(cb_dro_setup) + "-cb_explore_adf")
-            .set_prediction_type(prediction_type_t::action_probs)
-            .set_label_type(label_type_t::cb)
-            .build();
+    auto* l = make_reduction_learner(std::move(data), as_multiline(stack_builder.setup_base_learner()),
+        learn_or_predict<true, true>, learn_or_predict<false, true>,
+        stack_builder.get_setupfn_name(cb_dro_setup) + "-cb_explore_adf")
+                  .set_output_prediction_type(VW::prediction_type_t::action_probs)
+                  .set_input_label_type(VW::label_type_t::cb)
+                  .build();
     return make_base(*l);
   }
   else
   {
-    auto* l = make_reduction_learner(std::move(data), as_multiline(setup_base(options, all)),
-        learn_or_predict<true, false>, learn_or_predict<false, false>, all.get_setupfn_name(cb_dro_setup))
-                  .set_prediction_type(prediction_type_t::action_probs)
-                  .set_label_type(label_type_t::cb)
+    auto* l = make_reduction_learner(std::move(data), as_multiline(stack_builder.setup_base_learner()),
+        learn_or_predict<true, false>, learn_or_predict<false, false>, stack_builder.get_setupfn_name(cb_dro_setup))
+                  .set_output_prediction_type(VW::prediction_type_t::action_probs)
+                  .set_input_label_type(VW::label_type_t::cb)
                   .build();
     return make_base(*l);
   }

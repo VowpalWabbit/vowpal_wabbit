@@ -8,7 +8,7 @@ lda:0
 0 skip:
 options: --cb_adf --cb_explore_adf --cb_sample --cb_type mtr --ccb_explore_adf --csoaa_ldf multiline --csoaa_rank --quadratic ::
 Checksum: 1827071792
-CCB: has_seen_multi_slot_example = 1
+CCB: has_seen_multi_slot_example = true
 event_sum 24
 action_sum 96
 :1
@@ -24,7 +24,7 @@ weighted_labeled_examples 8
 weighted_labels 0
 weighted_unlabeled_examples 0
 example_number 8
-total_features 748
+total_features 1998
 total_weight 15.2712
 sd::oec.weighted_labeled_examples 8
 current_pass 1
@@ -49,7 +49,7 @@ Action^ff*Action^ff*_id^index1:22111:0.0367904 0.851468 1
 j:23097:-0.0297621 2.40271 1
 _id^index1:25433:-0.0313558 5.33074 1
 User^a:25739:-0.0499125 6.93476 1
-Action^d*User^c:26782:0.0123294 0.0068125 1
+Action^d*User^c:26782:0.0123294 0.00681251 1
 User^a*User^a*_id^index1:28919:-0.0289656 4.76258 1
 Action^fff*Action^fff*_id^index0:29418:-0.0319884 1.42404 1
 Slot^i*Slot^i:32658:-0.0313558 5.33074 1
@@ -61,7 +61,7 @@ Slot^i*User^b:46490:-0.0350046 0.350832 1
 User^c*User^c*_id^index0:46836:-0.0508249 1.34258 1
 User^b*User^b*_id^index2:56120:0.0131543 0.0395891 1
 Action^fff*User^c*_id^index0:57653:-0.0508249 1.34258 1
-Action^d*User^c*j:60035:0.0123294 0.0068125 1
+Action^d*User^c*j:60035:0.0123294 0.00681251 1
 Action^f*Action^f*_id^index2:64262:0.0173015 0.319101 1
 _id^index0:68306:-0.0284547 1.4933 1
 Action^f*User^c:69205:0.00942892 0.265586 1
@@ -129,7 +129,7 @@ Action^e*Slot^i:186288:0.034163 0.217329 1
 Action^f*Action^f*j:192033:0.0173015 0.319101 1
 User^b*User^b*_id^index1:194431:-0.0350046 0.350832 1
 Slot^i*User^c:194660:0.034163 0.217329 1
-Action^d*User^c*_id^index2:196516:0.0123294 0.0068125 1
+Action^d*User^c*_id^index2:196516:0.0123294 0.00681251 1
 User^c*User^c:197378:-0.0313819 1.8323 1
 Action^f*User^a*_id^index2:206203:0.0087017 0.0535151 1
 Action^fff*Slot^h*_id^index0:208421:-0.0319884 1.42404 1

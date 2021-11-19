@@ -8,7 +8,7 @@
 
 #include "topk.h"
 #include "learner.h"
-#include "parse_args.h"
+
 #include "vw.h"
 #include "shared_data.h"
 
@@ -96,7 +96,7 @@ void print_result(
   }
 }
 
-void output_example(vw& all, example& ec)
+void output_example(VW::workspace& all, example& ec)
 {
   label_data& ld = ec.l.simple;
 
@@ -115,7 +115,7 @@ void predict_or_learn(VW::topk& d, VW::LEARNER::single_learner& base, multi_ex& 
     d.predict(base, ec_seq);
 }
 
-void finish_example(vw& all, VW::topk& d, multi_ex& ec_seq)
+void finish_example(VW::workspace& all, VW::topk& d, multi_ex& ec_seq)
 {
   for (auto ec : ec_seq) output_example(all, *ec);
   for (auto& sink : all.final_prediction_sink) print_result(sink.get(), d.get_container_view());
@@ -123,19 +123,21 @@ void finish_example(vw& all, VW::topk& d, multi_ex& ec_seq)
   VW::finish_example(all, ec_seq);
 }
 
-VW::LEARNER::base_learner* topk_setup(options_i& options, vw& all)
+VW::LEARNER::base_learner* topk_setup(VW::setup_base_i& stack_builder)
 {
+  options_i& options = *stack_builder.get_options();
   uint32_t K;
   option_group_definition new_options("Top K");
-  new_options.add(make_option("top", K).keep().necessary().help("top k recommendation"));
+  new_options.add(make_option("top", K).keep().necessary().help("Top k recommendation"));
 
   if (!options.add_parse_and_check_necessary(new_options)) return nullptr;
 
-  auto data = scoped_calloc_or_throw<VW::topk>(K);
-
-  VW::LEARNER::learner<VW::topk, multi_ex>& l = init_learner(data, as_singleline(setup_base(options, all)),
-      predict_or_learn<true>, predict_or_learn<false>, all.get_setupfn_name(topk_setup), true);
-  l.set_finish_example(finish_example);
-
-  return make_base(l);
+  auto data = VW::make_unique<VW::topk>(K);
+  auto* l = VW::LEARNER::make_reduction_learner(std::move(data), as_singleline(stack_builder.setup_base_learner()),
+      predict_or_learn<true>, predict_or_learn<false>, stack_builder.get_setupfn_name(topk_setup))
+                .set_learn_returns_prediction(true)
+                .set_output_prediction_type(VW::prediction_type_t::scalar)
+                .set_finish_example(finish_example)
+                .build();
+  return make_base(*l);
 }

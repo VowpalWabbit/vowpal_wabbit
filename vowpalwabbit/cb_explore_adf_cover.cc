@@ -18,6 +18,8 @@
 #include <algorithm>
 #include <cmath>
 
+#include "io/logger.h"
+
 // All exploration algorithms return a vector of id, probability tuples, sorted in order of scores. The probabilities
 // are the probability with which each action should be replaced to the top of the list.
 
@@ -52,7 +54,7 @@ private:
 
 public:
   cb_explore_adf_cover(size_t cover_size, float psi, bool nounif, float epsilon, bool epsilon_decay, bool first_only,
-      VW::LEARNER::multi_learner* cs_ldf_learner, VW::LEARNER::single_learner* scorer, size_t cb_type,
+      VW::LEARNER::multi_learner* cs_ldf_learner, VW::LEARNER::single_learner* scorer, VW::cb_type_t cb_type,
       VW::version_struct model_file_version);
 
   // Should be called through cb_explore_adf_base for pre/post-processing
@@ -66,8 +68,8 @@ private:
 };
 
 cb_explore_adf_cover::cb_explore_adf_cover(size_t cover_size, float psi, bool nounif, float epsilon, bool epsilon_decay,
-    bool first_only, VW::LEARNER::multi_learner* cs_ldf_learner, VW::LEARNER::single_learner* scorer, size_t cb_type,
-    VW::version_struct model_file_version)
+    bool first_only, VW::LEARNER::multi_learner* cs_ldf_learner, VW::LEARNER::single_learner* scorer,
+    VW::cb_type_t cb_type, VW::version_struct model_file_version)
     : _cover_size(cover_size)
     , _psi(psi)
     , _nounif(nounif)
@@ -76,7 +78,7 @@ cb_explore_adf_cover::cb_explore_adf_cover(size_t cover_size, float psi, bool no
     , _first_only(first_only)
     , _counter(0)
     , _cs_ldf_learner(cs_ldf_learner)
-    , _model_file_version(std::move(model_file_version))
+    , _model_file_version(model_file_version)
 {
   _gen_cs.cb_type = cb_type;
   _gen_cs.scorer = scorer;
@@ -90,7 +92,7 @@ void cb_explore_adf_cover::predict_or_learn_impl(VW::LEARNER::multi_learner& bas
 
   // Randomize over predictions from a base set of predictors
   // Use cost sensitive oracle to cover actions to form distribution.
-  const bool is_mtr = _gen_cs.cb_type == CB_TYPE_MTR;
+  const bool is_mtr = _gen_cs.cb_type == VW::cb_type_t::mtr;
   if (is_learn)
   {
     if (is_mtr)  // use DR estimates for non-ERM policies in MTR
@@ -213,16 +215,18 @@ void cb_explore_adf_cover::predict_or_learn_impl(VW::LEARNER::multi_learner& bas
 void cb_explore_adf_cover::save_load(io_buf& io, bool read, bool text)
 {
   if (io.num_files() == 0) { return; }
-  if (!read || _model_file_version >= VERSION_FILE_WITH_CCB_MULTI_SLOTS_SEEN_FLAG)
+  if (!read || _model_file_version >= VW::version_definitions::VERSION_FILE_WITH_CCB_MULTI_SLOTS_SEEN_FLAG)
   {
     std::stringstream msg;
     if (!read) { msg << "cb cover adf storing example counter:  = " << _counter << "\n"; }
-    bin_text_read_write_fixed_validated(io, reinterpret_cast<char*>(&_counter), sizeof(_counter), "", read, msg, text);
+    bin_text_read_write_fixed_validated(io, reinterpret_cast<char*>(&_counter), sizeof(_counter), read, msg, text);
   }
 }
 
-VW::LEARNER::base_learner* setup(config::options_i& options, vw& all)
+VW::LEARNER::base_learner* setup(VW::setup_base_i& stack_builder)
 {
+  VW::config::options_i& options = *stack_builder.get_options();
+  VW::workspace& all = *stack_builder.get_all_pointer();
   using config::make_option;
 
   bool cb_explore_adf_option = false;
@@ -240,17 +244,19 @@ VW::LEARNER::base_learner* setup(config::options_i& options, vw& all)
                .necessary()
                .help("Online explore-exploit for a contextual bandit problem with multiline action dependent features"))
       .add(make_option("cover", cover_size).keep().necessary().help("Online cover based exploration"))
-      .add(make_option("psi", psi).keep().default_value(1.0f).help("disagreement parameter for cover"))
-      .add(make_option("nounif", nounif).keep().help("do not explore uniformly on zero-probability actions in cover"))
+      .add(make_option("psi", psi).keep().default_value(1.0f).help("Disagreement parameter for cover"))
+      .add(make_option("nounif", nounif).keep().help("Do not explore uniformly on zero-probability actions in cover"))
       .add(make_option("first_only", first_only).keep().help("Only explore the first action in a tie-breaking event"))
       .add(make_option("cb_type", type_string)
                .keep()
-               .help("contextual bandit method to use in {ips,dr,mtr}. Default: mtr"))
+               .default_value("mtr")
+               .one_of({"ips", "dr", "mtr"})
+               .help("Contextual bandit method to use"))
       .add(make_option("epsilon", epsilon)
                .keep()
                .allow_override()
                .default_value(0.05f)
-               .help("epsilon-greedy exploration"));
+               .help("Epsilon-greedy exploration"));
 
   if (!options.add_parse_and_check_necessary(new_options)) return nullptr;
 
@@ -264,32 +270,31 @@ VW::LEARNER::base_learner* setup(config::options_i& options, vw& all)
   // Ensure serialization of cb_adf in all cases.
   if (!options.was_supplied("cb_adf")) { options.insert("cb_adf", ""); }
 
-  // Set cb_type
-  size_t cb_type_enum;
-  if (type_string.compare("dr") == 0)
-    cb_type_enum = CB_TYPE_DR;
-  else if (type_string.compare("ips") == 0)
-    cb_type_enum = CB_TYPE_IPS;
-  else if (type_string.compare("mtr") == 0)
+  auto cb_type = VW::cb_type_from_string(type_string);
+  switch (cb_type)
   {
-    *(all.trace_message) << "warning: currently, mtr is only used for the first policy in cover, other policies use dr"
-                         << std::endl;
-    cb_type_enum = CB_TYPE_MTR;
-  }
-  else
-  {
-    *(all.trace_message) << "warning: cb_type must be in {'ips','dr','mtr'}; resetting to mtr." << std::endl;
-    options.replace("cb_type", "mtr");
-    cb_type_enum = CB_TYPE_MTR;
+    case VW::cb_type_t::dr:
+    case VW::cb_type_t::ips:
+      break;
+    case VW::cb_type_t::mtr:
+      VW::io::logger::errlog_warn("currently, mtr is only used for the first policy in cover, other policies use dr");
+      break;
+    case VW::cb_type_t::dm:
+    case VW::cb_type_t::sm:
+      VW::io::logger::errlog_warn(
+          "cb_type must be in {'ips','dr','mtr'}; resetting to mtr. Input received: {}", VW::to_string(cb_type));
+      options.replace("cb_type", "mtr");
+      cb_type = VW::cb_type_t::mtr;
+      break;
   }
 
   // Set explore_type
   size_t problem_multiplier = cover_size + 1;
 
   // Cover is using doubly robust without the cooperation of the base reduction
-  if (cb_type_enum == CB_TYPE_MTR) { problem_multiplier *= 2; }
+  if (cb_type == VW::cb_type_t::mtr) { problem_multiplier *= 2; }
 
-  VW::LEARNER::multi_learner* base = VW::LEARNER::as_multiline(setup_base(options, all));
+  VW::LEARNER::multi_learner* base = VW::LEARNER::as_multiline(stack_builder.setup_base_learner());
   all.example_parser->lbl_parser = CB::cb_label;
 
   bool epsilon_decay;
@@ -308,13 +313,13 @@ VW::LEARNER::base_learner* setup(config::options_i& options, vw& all)
 
   using explore_type = cb_explore_adf_base<cb_explore_adf_cover>;
   auto data = VW::make_unique<explore_type>(with_metrics, cover_size, psi, nounif, epsilon, epsilon_decay, first_only,
-      as_multiline(all.cost_sensitive), all.scorer, cb_type_enum, all.model_file_ver);
+      as_multiline(all.cost_sensitive), all.scorer, cb_type, all.model_file_ver);
   auto* l = make_reduction_learner(
-      std::move(data), base, explore_type::learn, explore_type::predict, all.get_setupfn_name(setup))
+      std::move(data), base, explore_type::learn, explore_type::predict, stack_builder.get_setupfn_name(setup))
                 .set_learn_returns_prediction(true)
                 .set_params_per_weight(problem_multiplier)
-                .set_prediction_type(prediction_type_t::action_probs)
-                .set_label_type(label_type_t::cb)
+                .set_output_prediction_type(VW::prediction_type_t::action_probs)
+                .set_input_label_type(VW::label_type_t::cb)
                 .set_finish_example(explore_type::finish_multiline_example)
                 .set_print_example(explore_type::print_multiline_example)
                 .set_save_load(explore_type::save_load)
