@@ -101,15 +101,15 @@ public:
   const_iterator cend() { return const_iterator(_begin + _weight_mask + 1, _begin, stride()); }
 
   inline const weight& operator[](size_t i) const { return _begin[i & _weight_mask]; }
-  inline weight& operator[](size_t i) 
-  { 
-    if(_tag_info.is_set)
+  inline weight& operator[](size_t i)
+  {
+    if (_tag_info.is_set)
     {
       // lookup a bit for a feature in the bitset using the
       // tag hash and turn it on
-      _feature_bitset[i & _weight_mask][_tag_info.tag_hash]=1;
+      _feature_bitset[i & _weight_mask][_tag_info.tag_hash] = 1;
     }
-    return _begin[i & _weight_mask]; 
+    return _begin[i & _weight_mask];
   }
 
   void set_tag(uint64_t tag_hash)
@@ -117,7 +117,7 @@ public:
     _tag_info.tag_hash = tag_hash;
     _tag_info.is_set = true;
   }
-  
+
   void unset_tag() { _tag_info.is_set = false; }
 
   // function to check if the number of bits set to 1 are greater than a threshold for a feature

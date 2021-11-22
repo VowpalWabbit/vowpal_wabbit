@@ -167,15 +167,12 @@ public:
     return const_iterator(i, stride());
   }
 
-  inline weight& operator[](size_t i) 
-  { 
+  inline weight& operator[](size_t i)
+  {
     // lookup a bit for a feature in the bitset using the
     // tag hash and turn the bit on
-    if(_tag_info.is_set) 
-    {
-      _feature_bitset[i & _weight_mask][_tag_info.tag_hash]=1;
-    }
-    return *(get_or_default_and_get(i)); 
+    if (_tag_info.is_set) { _feature_bitset[i & _weight_mask][_tag_info.tag_hash] = 1; }
+    return *(get_or_default_and_get(i));
   }
 
   inline const weight& operator[](size_t i) const { return *(get_or_default_and_get(i)); }
