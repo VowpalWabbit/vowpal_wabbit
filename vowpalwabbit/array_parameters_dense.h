@@ -73,7 +73,7 @@ public:
       , _seeded(false)
       , _privacy_activation_threshold(0)
   {
-    _feature_bitset.reserve(length << stride_shift);
+    _feature_bitset.reserve((length << stride_shift) & _weight_mask);
   }
 
   dense_parameters()

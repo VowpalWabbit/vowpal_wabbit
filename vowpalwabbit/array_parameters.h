@@ -109,7 +109,7 @@ public:
       , _default_func(nullptr)
       , _privacy_activation_threshold(0)
   {
-    _feature_bitset.reserve(length << stride_shift);
+    _feature_bitset.reserve((length << stride_shift) & _weight_mask);
   }
 
   sparse_parameters()
