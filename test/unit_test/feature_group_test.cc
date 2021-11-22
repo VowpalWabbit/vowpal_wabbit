@@ -1,6 +1,6 @@
-#ifndef STATIC_LINK_VW
-#  define BOOST_TEST_DYN_LINK
-#endif
+// Copyright (c) by respective owners including Yahoo!, Microsoft, and
+// individual contributors. All rights reserved. Released under a BSD (revised)
+// license as described in the file LICENSE.
 
 #include <boost/test/unit_test.hpp>
 #include <boost/test/test_tools.hpp>
@@ -124,4 +124,39 @@ BOOST_AUTO_TEST_CASE(sort_feature_group_test)
   check_collections_exact(std::vector<feature_index>(fs.indicies.begin(), fs.indicies.end()),
       std::vector<feature_index>{1, 3, 5, 7, 11, 12, 13, 25});
   check_collections_exact(fs.namespace_extents, std::vector<VW::namespace_extent>{{1, 3, 1}, {4, 7, 2}});
+}
+
+BOOST_AUTO_TEST_CASE(iterate_extents_test)
+{
+  auto* vw = VW::initialize("--quiet");
+  auto* ex = VW::read_example(*vw, "|user_info a b c |user_geo a b c d |other a b c d e |user_info a b");
+  auto cleanup = VW::scope_exit([&]() {
+    VW::finish_example(*vw, *ex);
+    VW::finish(*vw);
+  });
+
+  {
+    auto begin = ex->feature_space['u'].hash_extents_begin(VW::hash_space(*vw, "user_info"));
+    const auto end = ex->feature_space['u'].hash_extents_end(VW::hash_space(*vw, "user_info"));
+    BOOST_REQUIRE_EQUAL(std::distance(begin, end), 2);
+    BOOST_REQUIRE_EQUAL(std::distance((*begin).first, (*begin).second), 3);
+    ++begin;
+    BOOST_REQUIRE_EQUAL(std::distance((*begin).first, (*begin).second), 2);
+  }
+
+  // seek first
+  {
+    auto begin = ex->feature_space['u'].hash_extents_begin(VW::hash_space(*vw, "user_geo"));
+    const auto end = ex->feature_space['u'].hash_extents_end(VW::hash_space(*vw, "user_geo"));
+    BOOST_REQUIRE_EQUAL(std::distance(begin, end), 1);
+    BOOST_REQUIRE_EQUAL(std::distance((*begin).first, (*begin).second), 4);
+  }
+
+  // Different first char
+  {
+    auto begin = ex->feature_space['o'].hash_extents_begin(VW::hash_space(*vw, "other"));
+    const auto end = ex->feature_space['o'].hash_extents_end(VW::hash_space(*vw, "other"));
+    BOOST_REQUIRE_EQUAL(std::distance(begin, end), 1);
+    BOOST_REQUIRE_EQUAL(std::distance((*begin).first, (*begin).second), 5);
+  }
 }

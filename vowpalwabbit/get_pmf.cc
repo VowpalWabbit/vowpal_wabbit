@@ -90,7 +90,7 @@ void predict_or_learn(get_pmf& reduction, single_learner&, example& ec)
 LEARNER::base_learner* get_pmf_setup(VW::setup_base_i& stack_builder)
 {
   options_i& options = *stack_builder.get_options();
-  option_group_definition new_options("Continuous actions - convert to pmf");
+  option_group_definition new_options("Continuous Actions: Convert to Pmf");
   bool invoked = false;
   float epsilon = 0.0f;
   new_options.add(
@@ -106,7 +106,7 @@ LEARNER::base_learner* get_pmf_setup(VW::setup_base_i& stack_builder)
 
   auto* l = make_reduction_learner(std::move(p_reduction), as_singleline(p_base), predict_or_learn<true>,
       predict_or_learn<false>, stack_builder.get_setupfn_name(get_pmf_setup))
-                .set_prediction_type(prediction_type_t::pdf)
+                .set_output_prediction_type(VW::prediction_type_t::pdf)
                 .build();
 
   return make_base(*l);

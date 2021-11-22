@@ -204,7 +204,7 @@ static std::vector<std::vector<std::string>> gen_ccb_examples(size_t num_example
   return examples_vec;
 }
 
-static std::vector<multi_ex> load_examples(vw* vw, const std::vector<std::vector<std::string>>& ex_strs)
+static std::vector<multi_ex> load_examples(VW::workspace* vw, const std::vector<std::vector<std::string>>& ex_strs)
 {
   std::vector<multi_ex> examples_vec;
   for (const auto& ex_str : ex_strs)

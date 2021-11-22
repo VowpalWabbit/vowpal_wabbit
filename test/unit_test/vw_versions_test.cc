@@ -1,6 +1,6 @@
-#ifndef STATIC_LINK_VW
-#  define BOOST_TEST_DYN_LINK
-#endif
+// Copyright (c) by respective owners including Yahoo!, Microsoft, and
+// individual contributors. All rights reserved. Released under a BSD (revised)
+// license as described in the file LICENSE.
 
 #include <boost/test/unit_test.hpp>
 #include <boost/test/test_tools.hpp>
@@ -16,7 +16,7 @@ BOOST_AUTO_TEST_CASE(verify_vw_versions)
   using namespace VW::version_definitions;
 
   // check default vw version value
-  vw dummy_vw;
+  workspace dummy_vw;
   BOOST_CHECK(dummy_vw.model_file_ver == EMPTY_VERSION_FILE);
   BOOST_CHECK(dummy_vw.model_file_ver < VERSION_FILE_WITH_CB_ADF_SAVE);
 

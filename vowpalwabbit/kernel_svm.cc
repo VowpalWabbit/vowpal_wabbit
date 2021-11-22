@@ -111,7 +111,7 @@ struct svm_params
 
   float loss_sum = 0.f;
 
-  vw* all = nullptr;  // flatten, parallel
+  VW::workspace* all = nullptr;  // flatten, parallel
   std::shared_ptr<rand_state> _random_state;
 
   ~svm_params()
@@ -582,7 +582,7 @@ void add_size_t(size_t& t1, const size_t& t2) noexcept { t1 += t2; }
 
 void add_double(double& t1, const double& t2) noexcept { t1 += t2; }
 
-void sync_queries(vw& all, svm_params& params, bool* train_pool)
+void sync_queries(VW::workspace& all, svm_params& params, bool* train_pool)
 {
   io_buf* b = new io_buf();
 
@@ -798,7 +798,7 @@ void learn(svm_params& params, base_learner&, example& ec)
 VW::LEARNER::base_learner* kernel_svm_setup(VW::setup_base_i& stack_builder)
 {
   options_i& options = *stack_builder.get_options();
-  vw& all = *stack_builder.get_all_pointer();
+  VW::workspace& all = *stack_builder.get_all_pointer();
 
   auto params = VW::make_unique<svm_params>();
   std::string kernel_type;
@@ -808,20 +808,21 @@ VW::LEARNER::base_learner* kernel_svm_setup(VW::setup_base_i& stack_builder)
   bool ksvm = false;
 
   option_group_definition new_options("Kernel SVM");
-  new_options.add(make_option("ksvm", ksvm).keep().necessary().help("kernel svm"))
-      .add(make_option("reprocess", params->reprocess).default_value(1).help("number of reprocess steps for LASVM"))
-      .add(make_option("pool_greedy", params->active_pool_greedy).help("use greedy selection on mini pools"))
-      .add(make_option("para_active", params->para_active).help("do parallel active learning"))
-      .add(make_option("pool_size", params->pool_size).default_value(1).help("size of pools for active learning"))
+  new_options.add(make_option("ksvm", ksvm).keep().necessary().help("Kernel svm"))
+      .add(make_option("reprocess", params->reprocess).default_value(1).help("Number of reprocess steps for LASVM"))
+      .add(make_option("pool_greedy", params->active_pool_greedy).help("Use greedy selection on mini pools"))
+      .add(make_option("para_active", params->para_active).help("Do parallel active learning"))
+      .add(make_option("pool_size", params->pool_size).default_value(1).help("Size of pools for active learning"))
       .add(make_option("subsample", params->subsample)
                .default_value(1)
-               .help("number of items to subsample from the pool"))
+               .help("Number of items to subsample from the pool"))
       .add(make_option("kernel", kernel_type)
                .keep()
                .default_value("linear")
-               .help("type of kernel (rbf or linear (default))"))
-      .add(make_option("bandwidth", bandwidth).keep().default_value(1.f).help("bandwidth of rbf kernel"))
-      .add(make_option("degree", degree).keep().default_value(2).help("degree of poly kernel"));
+               .one_of({"linear", "rbf", "poly"})
+               .help("Type of kernel"))
+      .add(make_option("bandwidth", bandwidth).keep().default_value(1.f).help("Bandwidth of rbf kernel"))
+      .add(make_option("degree", degree).keep().default_value(2).help("Degree of poly kernel"));
 
   if (!options.add_parse_and_check_necessary(new_options)) { return nullptr; }
 
@@ -874,7 +875,7 @@ VW::LEARNER::base_learner* kernel_svm_setup(VW::setup_base_i& stack_builder)
   params->all->weights.stride_shift(0);
 
   auto* l = make_base_learner(std::move(params), learn, predict, stack_builder.get_setupfn_name(kernel_svm_setup),
-      prediction_type_t::scalar, label_type_t::simple)
+      VW::prediction_type_t::scalar, VW::label_type_t::simple)
                 .set_save_load(save_load)
                 .build();
 

@@ -162,7 +162,7 @@ struct node
 // memory_tree
 struct memory_tree
 {
-  vw* all = nullptr;
+  VW::workspace* all = nullptr;
   std::shared_ptr<rand_state> _random_state;
 
   std::vector<node> nodes;  // array of nodes.
@@ -1190,6 +1190,7 @@ void save_load_memory_tree(memory_tree& b, io_buf& model_file, bool read, bool t
     {
       save_load_example(b.examples[i], model_file, read, text, msg, b.oas);
       b.examples[i]->interactions = &b.all->interactions;
+      b.examples[i]->extent_interactions = &b.all->extent_interactions;
     }
     // std::cout<<"done loading...."<< std::endl;
   }
@@ -1200,7 +1201,7 @@ void save_load_memory_tree(memory_tree& b, io_buf& model_file, bool read, bool t
 base_learner* memory_tree_setup(VW::setup_base_i& stack_builder)
 {
   options_i& options = *stack_builder.get_options();
-  vw& all = *stack_builder.get_all_pointer();
+  VW::workspace& all = *stack_builder.get_all_pointer();
   using namespace memory_tree_ns;
   auto tree = VW::make_unique<memory_tree>();
   option_group_definition new_options("Memory Tree");
@@ -1213,21 +1214,21 @@ base_learner* memory_tree_setup(VW::setup_base_i& stack_builder)
                .help("Make a memory tree with at most <n> nodes"))
       .add(make_option("max_number_of_labels", tree->max_num_labels)
                .default_value(10)
-               .help("max number of unique label"))
+               .help("Max number of unique label"))
       .add(make_option("leaf_example_multiplier", tree->leaf_example_multiplier)
                .default_value(1)
-               .help("multiplier on examples per leaf (default = log nodes)"))
+               .help("Multiplier on examples per leaf (default = log nodes)"))
       .add(make_option("alpha", tree->alpha).default_value(0.1f).help("Alpha"))
       .add(make_option("dream_repeats", tree->dream_repeats)
                .default_value(1)
-               .help("number of dream operations per example (default = 1)"))
-      .add(make_option("top_K", tree->top_K).default_value(1).help("top K prediction error (default 1)"))
+               .help("Number of dream operations per example (default = 1)"))
+      .add(make_option("top_K", tree->top_K).default_value(1).help("Top K prediction error (default 1)"))
       .add(make_option("learn_at_leaf", tree->learn_at_leaf).help("Enable learning at leaf"))
-      .add(make_option("oas", tree->oas).help("use oas at the leaf"))
+      .add(make_option("oas", tree->oas).help("Use oas at the leaf"))
       .add(make_option("dream_at_update", tree->dream_at_update)
                .default_value(0)
-               .help("turn on dream operations at reward based update as well"))
-      .add(make_option("online", tree->online).help("turn on dream operations at reward based update as well"));
+               .help("Turn on dream operations at reward based update as well"))
+      .add(make_option("online", tree->online).help("Turn on dream operations at reward based update as well"));
 
   if (!options.add_parse_and_check_necessary(new_options)) { return nullptr; }
 
@@ -1250,8 +1251,8 @@ base_learner* memory_tree_setup(VW::setup_base_i& stack_builder)
                          << "online =" << tree->online << " " << std::endl;
 
   size_t num_learners;
-  prediction_type_t pred_type;
-  label_type_t label_type;
+  VW::prediction_type_t pred_type;
+  VW::label_type_t label_type;
   bool oas = tree->oas;
 
   // multi-class classification
@@ -1259,15 +1260,15 @@ base_learner* memory_tree_setup(VW::setup_base_i& stack_builder)
   {
     num_learners = tree->max_nodes + 1;
     all.example_parser->lbl_parser = MULTICLASS::mc_label;
-    pred_type = prediction_type_t::multiclass;
-    label_type = label_type_t::multiclass;
+    pred_type = VW::prediction_type_t::multiclass;
+    label_type = VW::label_type_t::multiclass;
   }  // multi-label classification
   else
   {
     num_learners = tree->max_nodes + 1 + tree->max_num_labels;
     all.example_parser->lbl_parser = MULTILABEL::multilabel;
-    pred_type = prediction_type_t::multilabels;
-    label_type = label_type_t::multilabel;
+    pred_type = VW::prediction_type_t::multilabels;
+    label_type = VW::label_type_t::multilabel;
   }
 
   auto l = make_reduction_learner(std::move(tree), as_singleline(stack_builder.setup_base_learner()), learn, predict,
@@ -1275,8 +1276,8 @@ base_learner* memory_tree_setup(VW::setup_base_i& stack_builder)
                .set_params_per_weight(num_learners)
                .set_end_pass(end_pass)
                .set_save_load(save_load_memory_tree)
-               .set_prediction_type(pred_type)
-               .set_label_type(label_type);
+               .set_output_prediction_type(pred_type)
+               .set_input_label_type(label_type);
 
   if (!oas) { l.set_finish_example(MULTICLASS::finish_example<memory_tree&>); }
 

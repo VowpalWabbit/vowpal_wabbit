@@ -8,6 +8,7 @@ Github version of hyperparameter optimization for Vowpal Wabbit via hyperopt
 __author__ = 'kurtosis'
 
 from hyperopt import hp, fmin, tpe, rand, Trials, STATUS_OK
+from hyperopt.pyll import scope
 from sklearn.metrics import roc_curve, auc, log_loss, average_precision_score, hinge_loss, \
     mean_squared_error
 import numpy as np
@@ -19,6 +20,8 @@ import re
 import logging
 import json
 from matplotlib import pyplot as plt
+import itertools
+from collections import Counter
 try:
     import seaborn as sns
 except ImportError:
@@ -67,6 +70,18 @@ class HyperoptSpaceConstructor(object):
         self.distr_pattern = re.compile("(?<=~)[IOL]*")  # re.compile("(?<=\])[IOL]*")
         self.only_continuous = re.compile("(?<=~)[IL]*")  # re.compile("(?<=\])[IL]*")
 
+
+    def _create_combinations(self,possible_values,len_comb,arg):
+        out_combos=[]
+        all_combos=itertools.combinations(possible_values,len_comb)
+        for combo in all_combos:
+            combo_ns_only = [re.sub('[^a-zA-Z]+', '', k) for k in combo]
+            if len(Counter(combo_ns_only).keys())==len_comb:
+                current_list = [combo[0]]
+                current_list.extend([f'{arg} {k}' for k in combo[1:]])
+                out_combos.append(' '.join(current_list))
+        return out_combos
+
     def _process_vw_argument(self, arg, value, algorithm):
         try:
             distr_part = self.distr_pattern.findall(value)[0]
@@ -90,25 +105,45 @@ class HyperoptSpaceConstructor(object):
         try_omit_zero = 'O' in distr_part
         distr_part = distr_part.replace('O', '')
 
+        
         if is_continuous:
-            vmin, vmax = [float(i) for i in range_part.split('..')]
-
-            if distr_part == 'L':
-                distrib = hp.loguniform(hp_choice_name, log(vmin), log(vmax))
-            elif distr_part == '':
-                distrib = hp.uniform(hp_choice_name, vmin, vmax)
-            elif distr_part == 'I':
-                distrib = hp.quniform(hp_choice_name, vmin, vmax, 1)
-            elif distr_part in {'LI', 'IL'}:
-                distrib = hp.qloguniform(hp_choice_name, log(vmin), log(vmax), 1)
+            if (arg == '--lrq' or arg == '--lrqfa'):
+                possible_values = []
+                for current_int in range_part.split(','):
+                    possible_values_current = []
+                    if '+' in current_int and arg == '--lrq':
+                        list_range_part = current_int.split('+')
+                        for range_part_k in list_range_part:
+                            vmin, vmax = [int(re.sub("[^0-9]", "", i)) for i in range_part_k.split('..')]
+                            ns = re.sub('[^a-zA-Z]+', '', range_part_k)
+                            possible_values_current.extend([f"{ns}{v}" for v in range(vmin, vmax+1)])
+                        n = len(list_range_part)
+                        possible_values.extend(self._create_combinations(possible_values_current,n,arg))                   
+                    else:
+                        vmin, vmax = [int(re.sub("[^0-9]", "", i)) for i in current_int.split('..')]
+                        ns = re.sub('[^a-zA-Z]+', '', current_int)
+                        possible_values.extend([f"{ns}{v}" for v in range(vmin, vmax+1)])
+                
+                distrib = hp.choice(hp_choice_name, possible_values)
             else:
-                raise ValueError("Cannot recognize distribution: %s" % (distr_part))
+                vmin, vmax = [float(i) for i in range_part.split('..')]
+                if distr_part == 'L':
+                    distrib = hp.loguniform(hp_choice_name, log(vmin), log(vmax))
+                elif distr_part == '':
+                    distrib = hp.uniform(hp_choice_name, vmin, vmax)
+                elif distr_part == 'I':
+                    distrib = scope.int(hp.quniform(hp_choice_name, vmin, vmax, 1))
+                elif distr_part in {'LI', 'IL'}:
+                    distrib = hp.qloguniform(hp_choice_name, log(vmin), log(vmax), 1)
+                else:
+                    raise ValueError("Cannot recognize distribution: %s" % (distr_part))
+
         else:
             possible_values = range_part.split(',')
-            if arg == '-q':
-                possible_values = [v.replace('+', ' -q ') for v in possible_values]
+            arg_list = ['--lrq', '-q', '--quadratic', '--cubic']
+            if arg in arg_list:
+                possible_values = [v.replace('+', f' {arg} ') for v in possible_values]
             distrib = hp.choice(hp_choice_name, possible_values)
-
         if try_omit_zero:
             hp_choice_name_outer = hp_choice_name + '_outer'
             distrib = hp.choice(hp_choice_name_outer, ['omit', distrib])
@@ -207,9 +242,6 @@ class HyperOptimizer(object):
         return logger
 
     def get_hyperparam_string(self, **kwargs):
-        for arg in ['--passes']: #, '--rank', '--lrq']:
-            if arg in kwargs:
-                kwargs[arg] = int(kwargs[arg])
 
         #print 'KWARGS: ', kwargs
         flags = [key for key in kwargs if key.startswith('-')]

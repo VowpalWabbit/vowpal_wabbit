@@ -370,7 +370,8 @@ public:
   }
 };
 
-std::unique_ptr<loss_function> getLossFunction(vw& all, const std::string& funcName, float function_parameter)
+std::unique_ptr<loss_function> getLossFunction(
+    VW::workspace& all, const std::string& funcName, float function_parameter)
 {
   if (funcName == "squared" || funcName == "Huber") { return VW::make_unique<squaredloss>(); }
   else if (funcName == "classic")

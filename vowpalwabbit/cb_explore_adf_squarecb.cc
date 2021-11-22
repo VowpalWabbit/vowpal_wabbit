@@ -303,7 +303,7 @@ void cb_explore_adf_squarecb::save_load(io_buf& io, bool read, bool text)
 base_learner* setup(VW::setup_base_i& stack_builder)
 {
   VW::config::options_i& options = *stack_builder.get_options();
-  vw& all = *stack_builder.get_all_pointer();
+  VW::workspace& all = *stack_builder.get_all_pointer();
   using config::make_option;
   bool cb_explore_adf_option = false;
   bool squarecb = false;
@@ -333,7 +333,7 @@ base_learner* setup(VW::setup_base_i& stack_builder)
       .add(make_option("gamma_exponent", gamma_exponent)
                .keep()
                .default_value(.5f)
-               .help("Exponent on [num examples] in SquareCB greediness parameter gamma."))
+               .help("Exponent on [num examples] in SquareCB greediness parameter gamma"))
       .add(make_option("elim", elim)
                .keep()
                .help("Only perform SquareCB exploration over plausible actions (computed via RegCB strategy)"))
@@ -351,17 +351,14 @@ base_learner* setup(VW::setup_base_i& stack_builder)
                .help("Upper bound on cost. Only used with --elim"))
       .add(make_option("cb_type", type_string)
                .keep()
-               .help("contextual bandit method to use in {ips,dr,mtr}. Default: mtr"));
+               .default_value("mtr")
+               .one_of({"mtr"})
+               .help("Contextual bandit method to use. SquareCB only supports supervised regression (mtr)"));
 
   if (!options.add_parse_and_check_necessary(new_options)) return nullptr;
 
   // Ensure serialization of cb_adf in all cases.
   if (!options.was_supplied("cb_adf")) { options.insert("cb_adf", ""); }
-  if (type_string != "mtr")
-  {
-    *(all.trace_message) << "warning: bad cb_type, SquareCB only supports mtr; resetting to mtr." << std::endl;
-    options.replace("cb_type", "mtr");
-  }
 
   // Set explore_type
   size_t problem_multiplier = 1;
@@ -377,8 +374,8 @@ base_learner* setup(VW::setup_base_i& stack_builder)
   auto* l = make_reduction_learner(
       std::move(data), base, explore_type::learn, explore_type::predict, stack_builder.get_setupfn_name(setup))
                 .set_params_per_weight(problem_multiplier)
-                .set_prediction_type(prediction_type_t::action_probs)
-                .set_label_type(label_type_t::cb)
+                .set_output_prediction_type(VW::prediction_type_t::action_probs)
+                .set_input_label_type(VW::label_type_t::cb)
                 .set_finish_example(explore_type::finish_multiline_example)
                 .set_print_example(explore_type::print_multiline_example)
                 .set_persist_metrics(explore_type::persist_metrics)

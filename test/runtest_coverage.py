@@ -1,8 +1,16 @@
 from vowpalwabbit import pyvw
+import json
+import os
+from pathlib import Path
 
-def get_latest_tests():
-    import runtests_parser as rtp
-    tests = rtp.file_to_obj(rtp.find_runtest_file())
+
+def get_latest_tests(file_path = None):
+    if file_path is None:
+        test_ref_dir = Path(os.path.dirname(os.path.abspath(__file__)))
+        file_path = Path(test_ref_dir).joinpath("core.vwtest.json")
+
+    json_test_spec_content = open(file_path).read()
+    tests = json.loads(json_test_spec_content)
     return [x.__dict__ for x in tests]
 
 
@@ -16,7 +24,7 @@ def to_json():
         for (group_name, options) in config_group:
             for option in options:
                 option._type = str(type(option._default_value).__name__)
-    
+
     import json
 
     with open("vw_options.json", "w") as f:
@@ -67,15 +75,22 @@ def print_non_supplied(config):
                     if len(config_group) <= 1:
                         agg.append(name + ", " + option.name + default_val_str)
                     else:
-                        agg.append(name + ", " + group_name + ", " + option.name + default_val_str)
-                    
+                        agg.append(
+                            name
+                            + ", "
+                            + group_name
+                            + ", "
+                            + option.name
+                            + default_val_str
+                        )
+
                     agg = without_default
-    
+
     for e in with_default:
         print(e)
     for e in without_default:
         print(e)
-        
+
 
 # this function needs more depedencies (networkx, matplotlib, graphviz)
 def draw_graph(stacks):
@@ -83,47 +98,69 @@ def draw_graph(stacks):
     import matplotlib.pyplot as plt
     from networkx.drawing.nx_agraph import write_dot, graphviz_layout
 
-    G=nx.DiGraph()
+    G = nx.DiGraph()
 
     for l in stacks:
         reductions = l.split("->")
-        for i,k in zip(reductions, reductions[1:]):
-            G.add_edge(k.replace("cb_explore_adf_",""),i.replace("cb_explore_adf_",""))
+        for i, k in zip(reductions, reductions[1:]):
+            G.add_edge(
+                k.replace("cb_explore_adf_", ""), i.replace("cb_explore_adf_", "")
+            )
         if len(reductions) == 1:
             G.add_node(reductions[0])
 
-    plt.figure(num=None, figsize=(24, 12), dpi=120, facecolor='w', edgecolor='k')
+    plt.figure(num=None, figsize=(24, 12), dpi=120, facecolor="w", edgecolor="k")
 
-    write_dot(G,'graphviz_format.dot')
+    write_dot(G, "graphviz_format.dot")
 
-    pos =graphviz_layout(G, prog='dot', args='-Nfontsize=10 -Nwidth=".2" -Nheight=".2" -Nmargin=0 -Gfontsize=12')
+    pos = graphviz_layout(
+        G,
+        prog="dot",
+        args='-Nfontsize=10 -Nwidth=".2" -Nheight=".2" -Nmargin=0 -Gfontsize=12',
+    )
     nx.draw(G, pos, with_labels=True, arrows=True, node_size=1600)
-    plt.savefig('reduction_graph.png')
+    plt.savefig("reduction_graph.png")
 
 
 def main():
     stacks = []
 
-    allConfig = get_all_options() 
+    allConfig = get_all_options()
     tests = get_latest_tests()
     for test in tests:
         # fails for unknown reasons (possibly bugs with pyvw)
-        if test["id"] in [195, 236, 237, 238, 239, 240, 241, 242, 243, 244, 245, 246, 258, 269]:
+        if test["id"] in [
+            195,
+            236,
+            237,
+            238,
+            239,
+            240,
+            241,
+            242,
+            243,
+            244,
+            245,
+            246,
+            258,
+            269,
+        ]:
             continue
 
         if "vw_command" in test:
             config, enabled_reductions = get_config_of_vw_cmd(test)
-            stacks.append('->'.join(enabled_reductions))
+            stacks.append("->".join(enabled_reductions))
             allConfig = merge_config(allConfig, config)
-    
+
     print_non_supplied(allConfig)
 
     # draw_graph(stacks)
 
     # print reduction stack by count
     from collections import Counter
+
     for c in Counter(stacks).most_common():
-        print(c[0]+", "+str(c[1]))
+        print(c[0] + ", " + str(c[1]))
 
 
 if __name__ == "__main__":

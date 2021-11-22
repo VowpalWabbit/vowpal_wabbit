@@ -14,7 +14,7 @@ using namespace VW::config;
 
 struct LRQstate
 {
-  vw* all = nullptr;  // feature creation, audit, hash_inv
+  VW::workspace* all = nullptr;  // feature creation, audit, hash_inv
   bool lrindices[256];
   size_t orig_size[256];
   std::set<std::string> lrpairs;
@@ -58,7 +58,7 @@ void reset_seed(LRQstate& lrq)
 template <bool is_learn>
 void predict_or_learn(LRQstate& lrq, single_learner& base, example& ec)
 {
-  vw& all = *lrq.all;
+  VW::workspace& all = *lrq.all;
 
   // Remember original features
 
@@ -172,17 +172,22 @@ void predict_or_learn(LRQstate& lrq, single_learner& base, example& ec)
 base_learner* lrq_setup(VW::setup_base_i& stack_builder)
 {
   options_i& options = *stack_builder.get_options();
-  vw& all = *stack_builder.get_all_pointer();
+  VW::workspace& all = *stack_builder.get_all_pointer();
   auto lrq = VW::make_unique<LRQstate>();
   std::vector<std::string> lrq_names;
   option_group_definition new_options("Low Rank Quadratics");
-  new_options.add(make_option("lrq", lrq_names).keep().necessary().help("use low rank quadratic features"))
-      .add(make_option("lrqdropout", lrq->dropout).keep().help("use dropout training for low rank quadratic features"));
+  new_options.add(make_option("lrq", lrq_names).keep().necessary().help("Use low rank quadratic features"))
+      .add(make_option("lrqdropout", lrq->dropout).keep().help("Use dropout training for low rank quadratic features"));
 
   if (!options.add_parse_and_check_necessary(new_options)) return nullptr;
 
   uint32_t maxk = 0;
   lrq->all = &all;
+
+  for (const auto& name : lrq_names)
+  {
+    if (name.find(':') != std::string::npos) { THROW("--lrq does not support wildcards ':'"); }
+  }
 
   for (auto& lrq_name : lrq_names) lrq_name = VW::decode_inline_hex(lrq_name);
 

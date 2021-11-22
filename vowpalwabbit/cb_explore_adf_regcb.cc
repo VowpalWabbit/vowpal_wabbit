@@ -251,7 +251,7 @@ void cb_explore_adf_regcb::save_load(io_buf& io, bool read, bool text)
 base_learner* setup(VW::setup_base_i& stack_builder)
 {
   VW::config::options_i& options = *stack_builder.get_options();
-  vw& all = *stack_builder.get_all_pointer();
+  VW::workspace& all = *stack_builder.get_all_pointer();
   using config::make_option;
   bool cb_explore_adf_option = false;
   bool regcb = false;
@@ -270,12 +270,14 @@ base_learner* setup(VW::setup_base_i& stack_builder)
       .add(make_option("regcb", regcb).keep().help("RegCB-elim exploration"))
       .add(make_option("regcbopt", regcbopt).keep().help("RegCB optimistic exploration"))
       .add(make_option("mellowness", c0).keep().default_value(0.1f).help("RegCB mellowness parameter c_0. Default 0.1"))
-      .add(make_option("cb_min_cost", min_cb_cost).keep().default_value(0.f).help("lower bound on cost"))
-      .add(make_option("cb_max_cost", max_cb_cost).keep().default_value(1.f).help("upper bound on cost"))
+      .add(make_option("cb_min_cost", min_cb_cost).keep().default_value(0.f).help("Lower bound on cost"))
+      .add(make_option("cb_max_cost", max_cb_cost).keep().default_value(1.f).help("Upper bound on cost"))
       .add(make_option("first_only", first_only).keep().help("Only explore the first action in a tie-breaking event"))
       .add(make_option("cb_type", type_string)
                .keep()
-               .help("contextual bandit method to use in {ips,dr,mtr}. Default: mtr"));
+               .default_value("mtr")
+               .one_of({"mtr"})
+               .help("Contextual bandit method to use. RegCB only supports supervised regression (mtr)"));
 
   options.add_and_parse(new_options);
 
@@ -283,11 +285,6 @@ base_learner* setup(VW::setup_base_i& stack_builder)
 
   // Ensure serialization of cb_adf in all cases.
   if (!options.was_supplied("cb_adf")) { options.insert("cb_adf", ""); }
-  if (type_string != mtr)
-  {
-    *(all.trace_message) << "warning: bad cb_type, RegCB only supports mtr; resetting to mtr." << std::endl;
-    options.replace("cb_type", mtr);
-  }
 
   // Set explore_type
   size_t problem_multiplier = 1;
@@ -303,8 +300,8 @@ base_learner* setup(VW::setup_base_i& stack_builder)
   auto* l = make_reduction_learner(
       std::move(data), base, explore_type::learn, explore_type::predict, stack_builder.get_setupfn_name(setup))
                 .set_params_per_weight(problem_multiplier)
-                .set_prediction_type(prediction_type_t::action_probs)
-                .set_label_type(label_type_t::cb)
+                .set_output_prediction_type(VW::prediction_type_t::action_probs)
+                .set_input_label_type(VW::label_type_t::cb)
                 .set_finish_example(explore_type::finish_multiline_example)
                 .set_print_example(explore_type::print_multiline_example)
                 .set_persist_metrics(explore_type::persist_metrics)

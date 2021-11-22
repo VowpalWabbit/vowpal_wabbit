@@ -17,44 +17,44 @@ using namespace VW::config;
 
 struct oja_n_update_data
 {
-  struct OjaNewton* ON;
-  float g;
-  float sketch_cnt;
-  float norm2_x;
-  float* Zx;
-  float* AZx;
-  float* delta;
-  float bdelta;
-  float prediction;
+  struct OjaNewton* ON = nullptr;
+  float g = 0.f;
+  float sketch_cnt = 0.f;
+  float norm2_x = 0.f;
+  float* Zx = nullptr;
+  float* AZx = nullptr;
+  float* delta = nullptr;
+  float bdelta = 0.f;
+  float prediction = 0.f;
 };
 
 struct OjaNewton
 {
-  vw* all;
+  VW::workspace* all = nullptr;
   std::shared_ptr<rand_state> _random_state;
-  int m;
-  int epoch_size;
-  float alpha;
-  int cnt;
-  int t;
+  int m = 0;
+  int epoch_size = 0;
+  float alpha = 0.f;
+  int cnt = 0;
+  int t = 0;
 
-  float* ev;
-  float* b;
-  float* D;
-  float** A;
-  float** K;
+  float* ev = nullptr;
+  float* b = nullptr;
+  float* D = nullptr;
+  float** A = nullptr;
+  float** K = nullptr;
 
-  float* zv;
-  float* vv;
-  float* tmp;
+  float* zv = nullptr;
+  float* vv = nullptr;
+  float* tmp = nullptr;
 
-  example** buffer;
-  float* weight_buffer;
+  example** buffer = nullptr;
+  float* weight_buffer = nullptr;
   struct oja_n_update_data data;
 
-  float learning_rate_cnt;
-  bool normalize;
-  bool random_init;
+  float learning_rate_cnt = 0.f;
+  bool normalize = false;
+  bool random_init = false;
 
   void initialize_Z(parameters& weights)
   {
@@ -337,7 +337,7 @@ struct OjaNewton
   }
 };
 
-void keep_example(vw& all, OjaNewton& /* ON */, example& ec) { output_and_account_example(all, ec); }
+void keep_example(VW::workspace& all, OjaNewton& /* ON */, example& ec) { output_and_account_example(all, ec); }
 
 void make_pred(oja_n_update_data& data, float x, float& wref)
 {
@@ -453,7 +453,7 @@ void learn(OjaNewton& ON, base_learner& base, example& ec)
 
 void save_load(OjaNewton& ON, io_buf& model_file, bool read, bool text)
 {
-  vw& all = *ON.all;
+  VW::workspace& all = *ON.all;
   if (read)
   {
     initialize_regressor(all);
@@ -478,9 +478,9 @@ void save_load(OjaNewton& ON, io_buf& model_file, bool read, bool text)
 base_learner* OjaNewton_setup(VW::setup_base_i& stack_builder)
 {
   options_i& options = *stack_builder.get_options();
-  vw& all = *stack_builder.get_all_pointer();
+  VW::workspace& all = *stack_builder.get_all_pointer();
 
-  auto ON = scoped_calloc_or_throw<OjaNewton>();
+  auto ON = VW::make_unique<OjaNewton>();
 
   bool oja_newton;
   float alpha_inverse;
@@ -491,17 +491,17 @@ base_learner* OjaNewton_setup(VW::setup_base_i& stack_builder)
   // of the positional data argument.
   std::string normalize = "true";
   std::string random_init = "true";
-  option_group_definition new_options("OjaNewton options");
+  option_group_definition new_options("OjaNewton");
   new_options.add(make_option("OjaNewton", oja_newton).keep().necessary().help("Online Newton with Oja's Sketch"))
-      .add(make_option("sketch_size", ON->m).default_value(10).help("size of sketch"))
-      .add(make_option("epoch_size", ON->epoch_size).default_value(1).help("size of epoch"))
-      .add(make_option("alpha", ON->alpha).default_value(1.f).help("mutiplicative constant for indentiy"))
-      .add(make_option("alpha_inverse", alpha_inverse).help("one over alpha, similar to learning rate"))
+      .add(make_option("sketch_size", ON->m).default_value(10).help("Size of sketch"))
+      .add(make_option("epoch_size", ON->epoch_size).default_value(1).help("Size of epoch"))
+      .add(make_option("alpha", ON->alpha).default_value(1.f).help("Mutiplicative constant for indentiy"))
+      .add(make_option("alpha_inverse", alpha_inverse).help("One over alpha, similar to learning rate"))
       .add(make_option("learning_rate_cnt", ON->learning_rate_cnt)
                .default_value(2.f)
-               .help("constant for the learning rate 1/t"))
-      .add(make_option("normalize", normalize).help("normalize the features or not"))
-      .add(make_option("random_init", random_init).help("randomize initialization of Oja or not"));
+               .help("Constant for the learning rate 1/t"))
+      .add(make_option("normalize", normalize).help("Normalize the features or not"))
+      .add(make_option("random_init", random_init).help("Randomize initialization of Oja or not"));
 
   if (!options.add_parse_and_check_necessary(new_options)) return nullptr;
 
@@ -543,9 +543,12 @@ base_learner* OjaNewton_setup(VW::setup_base_i& stack_builder)
 
   all.weights.stride_shift(static_cast<uint32_t>(ceil(log2(ON->m + 2))));
 
-  learner<OjaNewton, example>& l =
-      init_learner(ON, learn, predict, all.weights.stride(), stack_builder.get_setupfn_name(OjaNewton_setup));
-  l.set_save_load(save_load);
-  l.set_finish_example(keep_example);
-  return make_base(l);
+  auto* l = make_base_learner(std::move(ON), learn, predict, stack_builder.get_setupfn_name(OjaNewton_setup),
+      VW::prediction_type_t::scalar, VW::label_type_t::simple)
+                .set_params_per_weight(all.weights.stride())
+                .set_save_load(save_load)
+                .set_finish_example(keep_example)
+                .build();
+
+  return make_base(*l);
 }

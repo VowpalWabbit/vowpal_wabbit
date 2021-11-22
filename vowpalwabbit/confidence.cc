@@ -18,7 +18,7 @@ namespace logger = VW::io::logger;
 
 struct confidence
 {
-  vw* all = nullptr;
+  VW::workspace* all = nullptr;
 };
 
 template <bool is_learn, bool is_confidence_after_training>
@@ -68,7 +68,7 @@ void confidence_print_result(VW::io::writer* f, float res, float confidence, con
   }
 }
 
-void output_and_account_confidence_example(vw& all, example& ec)
+void output_and_account_confidence_example(VW::workspace& all, example& ec)
 {
   label_data& ld = ec.l.simple;
 
@@ -83,7 +83,7 @@ void output_and_account_confidence_example(vw& all, example& ec)
   print_update(all, ec);
 }
 
-void return_confidence_example(vw& all, confidence& /* c */, example& ec)
+void return_confidence_example(VW::workspace& all, confidence& /* c */, example& ec)
 {
   output_and_account_confidence_example(all, ec);
   VW::finish_example(all, ec);
@@ -92,7 +92,7 @@ void return_confidence_example(vw& all, confidence& /* c */, example& ec)
 base_learner* confidence_setup(VW::setup_base_i& stack_builder)
 {
   options_i& options = *stack_builder.get_options();
-  vw& all = *stack_builder.get_all_pointer();
+  VW::workspace& all = *stack_builder.get_all_pointer();
   bool confidence_arg = false;
   bool confidence_after_training = false;
   option_group_definition new_options("Confidence");
@@ -132,8 +132,8 @@ base_learner* confidence_setup(VW::setup_base_i& stack_builder)
   auto* l = make_reduction_learner(std::move(data), base, learn_with_confidence_ptr, predict_with_confidence_ptr,
       stack_builder.get_setupfn_name(confidence_setup))
                 .set_learn_returns_prediction(true)
-                .set_label_type(label_type_t::simple)
-                .set_prediction_type(prediction_type_t::scalar)
+                .set_input_label_type(VW::label_type_t::simple)
+                .set_output_prediction_type(VW::prediction_type_t::scalar)
                 .set_finish_example(return_confidence_example)
                 .build();
 

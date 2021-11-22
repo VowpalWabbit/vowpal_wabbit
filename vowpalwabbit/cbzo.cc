@@ -28,7 +28,7 @@ constexpr uint8_t linear_policy = 1;
 struct cbzo
 {
   float radius = 0.f;
-  vw* all = nullptr;
+  VW::workspace* all = nullptr;
   bool min_prediction_supplied = false;
   bool max_prediction_supplied = false;
 };
@@ -37,22 +37,22 @@ struct linear_update_data
 {
   float mult = 0.f;
   float part_grad = 0.f;
-  vw* all = nullptr;
+  VW::workspace* all = nullptr;
 };
 
 // uint64_t index variant of VW::get_weight
-inline float get_weight(vw& all, uint64_t index, uint32_t offset)
+inline float get_weight(VW::workspace& all, uint64_t index, uint32_t offset)
 {
   return (&all.weights[(index) << all.weights.stride_shift()])[offset];
 }
 
 // uint64_t index variant of VW::set_weight
-inline void set_weight(vw& all, uint64_t index, uint32_t offset, float value)
+inline void set_weight(VW::workspace& all, uint64_t index, uint32_t offset, float value)
 {
   (&all.weights[(index) << all.weights.stride_shift()])[offset] = value;
 }
 
-float l1_grad(vw& all, uint64_t fi)
+float l1_grad(VW::workspace& all, uint64_t fi)
 {
   if (all.no_bias && fi == constant) return 0.0f;
 
@@ -60,7 +60,7 @@ float l1_grad(vw& all, uint64_t fi)
   return fw >= 0.0f ? all.l1_lambda : -all.l1_lambda;
 }
 
-float l2_grad(vw& all, uint64_t fi)
+float l2_grad(VW::workspace& all, uint64_t fi)
 {
   if (all.no_bias && fi == constant) return 0.0f;
 
@@ -70,13 +70,13 @@ float l2_grad(vw& all, uint64_t fi)
 
 inline void accumulate_dotprod(float& dotprod, float x, float& fw) { dotprod += x * fw; }
 
-inline float constant_inference(vw& all)
+inline float constant_inference(VW::workspace& all)
 {
   float wt = get_weight(all, constant, 0);
   return wt;
 }
 
-float linear_inference(vw& all, example& ec)
+float linear_inference(VW::workspace& all, example& ec)
 {
   float dotprod = 0;
   GD::foreach_feature<float, accumulate_dotprod>(all, ec, dotprod);
@@ -84,7 +84,7 @@ float linear_inference(vw& all, example& ec)
 }
 
 template <uint8_t policy>
-float inference(vw& all, example& ec)
+float inference(VW::workspace& all, example& ec)
 {
   if (policy == constant_policy)
     return constant_inference(all);
@@ -163,7 +163,7 @@ inline std::string get_pred_repr(example& ec)
   return continuous_actions::to_string(ec.pred.pdf, false, std::numeric_limits<float>::max_digits10);
 }
 
-void print_audit_features(vw& all, example& ec)
+void print_audit_features(VW::workspace& all, example& ec)
 {
   if (all.audit) all.print_text_by_ref(all.stdout_adapter.get(), get_pred_repr(ec), ec.tag);
 
@@ -224,14 +224,14 @@ void learn(cbzo& data, base_learner& base, example& ec)
   update_weights<policy, feature_mask_off>(data, ec);
 }
 
-inline void save_load_regressor(vw& all, io_buf& model_file, bool read, bool text)
+inline void save_load_regressor(VW::workspace& all, io_buf& model_file, bool read, bool text)
 {
   GD::save_load_regressor(all, model_file, read, text);
 }
 
 void save_load(cbzo& data, io_buf& model_file, bool read, bool text)
 {
-  vw& all = *data.all;
+  VW::workspace& all = *data.all;
   if (read)
   {
     initialize_regressor(all);
@@ -242,7 +242,7 @@ void save_load(cbzo& data, io_buf& model_file, bool read, bool text)
 
 bool is_labeled(example& ec) { return (!ec.l.cb_cont.costs.empty() && ec.l.cb_cont.costs[0].action != FLT_MAX); }
 
-void report_progress(vw& all, example& ec)
+void report_progress(VW::workspace& all, example& ec)
 {
   const auto& costs = ec.l.cb_cont.costs;
   all.sd->update(ec.test_only, is_labeled(ec), costs.empty() ? 0.0f : costs[0].cost, ec.weight, ec.get_num_features());
@@ -256,20 +256,20 @@ void report_progress(vw& all, example& ec)
   }
 }
 
-void output_prediction(vw& all, example& ec)
+void output_prediction(VW::workspace& all, example& ec)
 {
   std::string pred_repr = get_pred_repr(ec);
   for (auto& sink : all.final_prediction_sink) all.print_text_by_ref(sink.get(), pred_repr, ec.tag);
 }
 
-void finish_example(vw& all, cbzo&, example& ec)
+void finish_example(VW::workspace& all, cbzo&, example& ec)
 {
   report_progress(all, ec);
   output_prediction(all, ec);
   VW::finish_example(all, ec);
 }
 
-void (*get_learn(vw& all, uint8_t policy, bool feature_mask_off))(cbzo&, base_learner&, example&)
+void (*get_learn(VW::workspace& all, uint8_t policy, bool feature_mask_off))(cbzo&, base_learner&, example&)
 {
   if (policy == constant_policy)
     if (feature_mask_off)
@@ -299,7 +299,7 @@ void (*get_learn(vw& all, uint8_t policy, bool feature_mask_off))(cbzo&, base_le
     THROW("Unknown policy encountered: " << policy)
 }
 
-void (*get_predict(vw& all, uint8_t policy))(cbzo&, base_learner&, example&)
+void (*get_predict(VW::workspace& all, uint8_t policy))(cbzo&, base_learner&, example&)
 {
   if (policy == constant_policy)
     if (all.audit || all.hash_inv)
@@ -320,7 +320,7 @@ void (*get_predict(vw& all, uint8_t policy))(cbzo&, base_learner&, example&)
 base_learner* setup(VW::setup_base_i& stack_builder)
 {
   options_i& options = *stack_builder.get_options();
-  vw& all = *stack_builder.get_all_pointer();
+  VW::workspace& all = *stack_builder.get_all_pointer();
 
   auto data = VW::make_unique<cbzo>();
 
