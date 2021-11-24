@@ -621,7 +621,14 @@ void add_neighbor_features(search_private& priv, multi_ex& ec_seq)
       else  // this is actually a neighbor
       {
         example& other = *ec_seq[n + offset];
-        GD::foreach_feature<search_private, add_new_feature>(priv.all, other.feature_space[ns], priv, me.ft_offset);
+        if (priv.all->privacy_activation)
+        {
+          GD::foreach_feature<search_private, add_new_feature, true>(other.feature_space[ns], priv, me.ft_offset);
+        }
+        else
+        {
+          GD::foreach_feature<search_private, add_new_feature, false>(other.feature_space[ns], priv, me.ft_offset);
+        }
       }
     }
 

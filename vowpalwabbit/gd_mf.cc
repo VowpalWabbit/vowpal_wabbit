@@ -116,7 +116,14 @@ float mf_predict(gdmf& d, example& ec, T& weights)
   float linear_prediction = 0.;
   // linear terms
 
-  for (features& fs : ec) GD::foreach_feature<float, GD::vec_add, T>(weights, fs, linear_prediction);
+  if (all.privacy_activation)
+  {
+    for (features& fs : ec) GD::foreach_feature<float, GD::vec_add, T, true>(weights, fs, linear_prediction);
+  }
+  else
+  {
+    for (features& fs : ec) GD::foreach_feature<float, GD::vec_add, T, false>(weights, fs, linear_prediction);
+  }
 
   // store constant + linear prediction
   // note: constant is now automatically added
@@ -136,13 +143,31 @@ float mf_predict(gdmf& d, example& ec, T& weights)
         // l^k is from index+1 to index+d.rank
         // float x_dot_l = sd_offset_add(weights, ec.atomics[(int)(*i)[0]].begin(), ec.atomics[(int)(*i)[0]].end(), k);
         pred_offset x_dot_l = {0., k};
-        GD::foreach_feature<pred_offset, offset_add, T>(weights, ec.feature_space[static_cast<int>(i[0])], x_dot_l);
+        if (all.privacy_activation)
+        {
+          GD::foreach_feature<pred_offset, offset_add, T, true>(
+              weights, ec.feature_space[static_cast<int>(i[0])], x_dot_l);
+        }
+        else
+        {
+          GD::foreach_feature<pred_offset, offset_add, T, false>(
+              weights, ec.feature_space[static_cast<int>(i[0])], x_dot_l);
+        }
         // x_r * r^k
         // r^k is from index+d.rank+1 to index+2*d.rank
         // float x_dot_r = sd_offset_add(weights, ec.atomics[(int)(*i)[1]].begin(), ec.atomics[(int)(*i)[1]].end(),
         // k+d.rank);
         pred_offset x_dot_r = {0., k + d.rank};
-        GD::foreach_feature<pred_offset, offset_add, T>(weights, ec.feature_space[static_cast<int>(i[1])], x_dot_r);
+        if (all.privacy_activation)
+        {
+          GD::foreach_feature<pred_offset, offset_add, T, true>(
+              weights, ec.feature_space[static_cast<int>(i[1])], x_dot_r);
+        }
+        else
+        {
+          GD::foreach_feature<pred_offset, offset_add, T, false>(
+              weights, ec.feature_space[static_cast<int>(i[1])], x_dot_r);
+        }
 
         prediction += x_dot_l.p * x_dot_r.p;
 

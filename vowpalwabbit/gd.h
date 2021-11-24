@@ -65,26 +65,52 @@ inline void vec_add_multipredict(multipredict_info<T>& mp, const float fx, uint6
 template <class DataT, class WeightOrIndexT, void (*FuncT)(DataT&, float, WeightOrIndexT)>
 inline void foreach_feature(VW::workspace& all, example& ec, DataT& dat)
 {
-  return all.weights.sparse
-      ? foreach_feature<DataT, WeightOrIndexT, FuncT, sparse_parameters>(all.weights.sparse_weights,
+  if (all.privacy_activation)
+  {
+    return all.weights.sparse
+        ? foreach_feature<DataT, WeightOrIndexT, FuncT, sparse_parameters, true>(all.weights.sparse_weights,
+              all.ignore_some_linear, all.ignore_linear, *ec.interactions, *ec.extent_interactions, all.permutations, ec,
+              dat, all._generate_interactions_object_cache)
+        : foreach_feature<DataT, WeightOrIndexT, FuncT, dense_parameters, true>(all.weights.dense_weights,
+              all.ignore_some_linear, all.ignore_linear, *ec.interactions, *ec.extent_interactions, all.permutations, ec,
+              dat, all._generate_interactions_object_cache);
+  }
+  else
+  {
+    return all.weights.sparse
+      ? foreach_feature<DataT, WeightOrIndexT, FuncT, sparse_parameters, false>(all.weights.sparse_weights,
             all.ignore_some_linear, all.ignore_linear, *ec.interactions, *ec.extent_interactions, all.permutations, ec,
             dat, all._generate_interactions_object_cache)
-      : foreach_feature<DataT, WeightOrIndexT, FuncT, dense_parameters>(all.weights.dense_weights,
+      : foreach_feature<DataT, WeightOrIndexT, FuncT, dense_parameters, false>(all.weights.dense_weights,
             all.ignore_some_linear, all.ignore_linear, *ec.interactions, *ec.extent_interactions, all.permutations, ec,
             dat, all._generate_interactions_object_cache);
+  }
 }
 
 // iterate through one namespace (or its part), callback function FuncT(some_data_R, feature_value_x, feature_weight)
 template <class DataT, class WeightOrIndexT, void (*FuncT)(DataT&, float, WeightOrIndexT)>
 inline void foreach_feature(VW::workspace& all, example& ec, DataT& dat, size_t& num_interacted_features)
 {
-  return all.weights.sparse
-      ? foreach_feature<DataT, WeightOrIndexT, FuncT, sparse_parameters>(all.weights.sparse_weights,
+  if (all.privacy_activation)
+  {
+    return all.weights.sparse
+        ? foreach_feature<DataT, WeightOrIndexT, FuncT, sparse_parameters, true>(all.weights.sparse_weights,
+              all.ignore_some_linear, all.ignore_linear, *ec.interactions, *ec.extent_interactions, all.permutations, ec,
+              dat, num_interacted_features, all._generate_interactions_object_cache)
+        : foreach_feature<DataT, WeightOrIndexT, FuncT, dense_parameters, true>(all.weights.dense_weights,
+              all.ignore_some_linear, all.ignore_linear, *ec.interactions, *ec.extent_interactions, all.permutations, ec,
+              dat, num_interacted_features, all._generate_interactions_object_cache);
+  }
+  else
+  {
+    return all.weights.sparse
+      ? foreach_feature<DataT, WeightOrIndexT, FuncT, sparse_parameters, false>(all.weights.sparse_weights,
             all.ignore_some_linear, all.ignore_linear, *ec.interactions, *ec.extent_interactions, all.permutations, ec,
             dat, num_interacted_features, all._generate_interactions_object_cache)
-      : foreach_feature<DataT, WeightOrIndexT, FuncT, dense_parameters>(all.weights.dense_weights,
+      : foreach_feature<DataT, WeightOrIndexT, FuncT, dense_parameters, false>(all.weights.dense_weights,
             all.ignore_some_linear, all.ignore_linear, *ec.interactions, *ec.extent_interactions, all.permutations, ec,
             dat, num_interacted_features, all._generate_interactions_object_cache);
+  }
 }
 
 // iterate through all namespaces and quadratic&cubic features, callback function T(some_data_R, feature_value_x,

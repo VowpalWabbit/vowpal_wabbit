@@ -7,6 +7,7 @@
 #include <unordered_map>
 #include <cstddef>
 #include <functional>
+#include <bitset>
 
 #ifndef _WIN32
 #  define NOMINMAX
@@ -63,6 +64,12 @@ public:
 class sparse_parameters
 {
 private:
+  // struct to store the tag hash and if it is set or not
+  struct tag_hash_info
+  {
+    uint64_t tag_hash;
+    bool is_set = false;
+  };
   // This must be mutable because the const operator[] must be able to intialize default weights to return.
   mutable weight_map _map;
   uint64_t _weight_mask;  // (stride*(1 << num_bits) -1)
@@ -70,6 +77,9 @@ private:
   bool _seeded;  // whether the instance is sharing model state with others
   bool _delete;
   std::function<void(weight*, uint64_t)> _default_func;
+  size_t _privacy_activation_threshold;
+  std::unordered_map<uint64_t, std::bitset<32>> _feature_bitset;  // define the bitset for each feature
+  tag_hash_info _tag_info;
 
   // It is marked const so it can be used from both const and non const operator[]
   // The map itself is mutable to facilitate this
@@ -97,15 +107,40 @@ public:
       , _seeded(false)
       , _delete(false)
       , _default_func(nullptr)
+      , _privacy_activation_threshold(0)
   {
   }
 
   sparse_parameters()
-      : _map(), _weight_mask(0), _stride_shift(0), _seeded(false), _delete(false), _default_func(nullptr)
+      : _map()
+      , _weight_mask(0)
+      , _stride_shift(0)
+      , _seeded(false)
+      , _delete(false)
+      , _default_func(nullptr)
+      , _privacy_activation_threshold(0)
   {
   }
 
   bool not_null() { return (_weight_mask > 0 && !_map.empty()); }
+
+  void set_tag(uint64_t tag_hash)
+  {
+    _tag_info.tag_hash = tag_hash;
+    _tag_info.is_set = true;
+  }
+
+  // function to lookup a bit for a feature in the bitset using the
+  // tag hash and turn the bit on
+  void set_privacy_preserving_bit(uint64_t feature_index)
+  {
+    if (_tag_info.is_set) { _feature_bitset[feature_index & _weight_mask][_tag_info.tag_hash] = 1; }
+  }
+
+  void unset_tag() { _tag_info.is_set = false; }
+
+  // function to check if the number of bits set to 1 are greater than a threshold for a feature
+  bool is_activated(uint64_t index) { return _feature_bitset[index].count() >= _privacy_activation_threshold; }
 
   sparse_parameters(const sparse_parameters& other) = delete;
   sparse_parameters& operator=(const sparse_parameters& other) = delete;
@@ -159,6 +194,7 @@ public:
     _weight_mask = input._weight_mask;
     _stride_shift = input._stride_shift;
     _seeded = true;
+    _privacy_activation_threshold = input._privacy_activation_threshold;
   }
 
   template <typename Lambda>
@@ -181,6 +217,11 @@ public:
   uint32_t stride_shift() const { return _stride_shift; }
 
   void stride_shift(uint32_t stride_shift) { _stride_shift = stride_shift; }
+
+  void privacy_activation_threshold(size_t privacy_activation_threshold)
+  {
+    _privacy_activation_threshold = privacy_activation_threshold;
+  }
 
 #ifndef _WIN32
   void share(size_t /* length */) { THROW_OR_RETURN("Operation not supported on Windows"); }

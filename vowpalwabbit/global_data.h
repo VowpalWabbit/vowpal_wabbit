@@ -171,6 +171,11 @@ public:
 
   uint32_t hash_seed;
 
+  bool privacy_activation = false;
+  // this is coupled with the bitset size in array_parameters which needs to be determined at compile time
+  size_t feature_bitset_size = 32;
+  size_t privacy_activation_threshold = 10;
+
 #ifdef BUILD_FLATBUFFERS
   std::unique_ptr<VW::parsers::flatbuffer::parser> flat_converter;
 #endif

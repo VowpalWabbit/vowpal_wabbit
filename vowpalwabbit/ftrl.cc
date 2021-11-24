@@ -252,54 +252,108 @@ void update_state_and_predict_pistol(ftrl& b, base_learner&, example& ec)
   ec.pred.scalar = GD::finalize_prediction(b.all->sd, b.all->logger, ec.partial_prediction);
 }
 
+template <bool privacy_activation>
 void update_after_prediction_proximal(ftrl& b, example& ec)
 {
   b.data.update = b.all->loss->first_derivative(b.all->sd, ec.pred.scalar, ec.l.simple.label) * ec.weight;
 
-  GD::foreach_feature<ftrl_update_data, inner_update_proximal>(*b.all, ec, b.data);
+  if (b.all->weights.sparse && privacy_activation)
+  {
+    b.all->weights.sparse_weights.set_tag(
+        hashall(ec.tag.begin(), ec.tag.size(), b.all->hash_seed) % b.all->feature_bitset_size);
+    GD::foreach_feature<ftrl_update_data, inner_update_proximal>(*b.all, ec, b.data);
+    b.all->weights.sparse_weights.unset_tag();
+  }
+  else if (!b.all->weights.sparse && privacy_activation)
+  {
+    b.all->weights.dense_weights.set_tag(
+        hashall(ec.tag.begin(), ec.tag.size(), b.all->hash_seed) % b.all->feature_bitset_size);
+    GD::foreach_feature<ftrl_update_data, inner_update_proximal>(*b.all, ec, b.data);
+    b.all->weights.dense_weights.unset_tag();
+  }
+  else
+  {
+    GD::foreach_feature<ftrl_update_data, inner_update_proximal>(*b.all, ec, b.data);
+  }
 }
 
+template <bool privacy_activation>
 void update_after_prediction_pistol(ftrl& b, example& ec)
 {
   b.data.update = b.all->loss->first_derivative(b.all->sd, ec.pred.scalar, ec.l.simple.label) * ec.weight;
 
-  GD::foreach_feature<ftrl_update_data, inner_update_pistol_post>(*b.all, ec, b.data);
+  if (b.all->weights.sparse && privacy_activation)
+  {
+    b.all->weights.sparse_weights.set_tag(
+        hashall(ec.tag.begin(), ec.tag.size(), b.all->hash_seed) % b.all->feature_bitset_size);
+    GD::foreach_feature<ftrl_update_data, inner_update_pistol_post>(*b.all, ec, b.data);
+    b.all->weights.sparse_weights.unset_tag();
+  }
+  else if (!b.all->weights.sparse && privacy_activation)
+  {
+    b.all->weights.dense_weights.set_tag(
+        hashall(ec.tag.begin(), ec.tag.size(), b.all->hash_seed) % b.all->feature_bitset_size);
+    GD::foreach_feature<ftrl_update_data, inner_update_pistol_post>(*b.all, ec, b.data);
+    b.all->weights.dense_weights.unset_tag();
+  }
+  else
+  {
+    GD::foreach_feature<ftrl_update_data, inner_update_pistol_post>(*b.all, ec, b.data);
+  }
 }
 
+template <bool privacy_activation>
 void coin_betting_update_after_prediction(ftrl& b, example& ec)
 {
   b.data.update = b.all->loss->first_derivative(b.all->sd, ec.pred.scalar, ec.l.simple.label) * ec.weight;
-  GD::foreach_feature<ftrl_update_data, inner_coin_betting_update_after_prediction>(*b.all, ec, b.data);
+  if (b.all->weights.sparse && privacy_activation)
+  {
+    b.all->weights.sparse_weights.set_tag(
+        hashall(ec.tag.begin(), ec.tag.size(), b.all->hash_seed) % b.all->feature_bitset_size);
+    GD::foreach_feature<ftrl_update_data, inner_coin_betting_update_after_prediction>(*b.all, ec, b.data);
+    b.all->weights.sparse_weights.unset_tag();
+  }
+  else if (!b.all->weights.sparse && privacy_activation)
+  {
+    b.all->weights.dense_weights.set_tag(
+        hashall(ec.tag.begin(), ec.tag.size(), b.all->hash_seed) % b.all->feature_bitset_size);
+    GD::foreach_feature<ftrl_update_data, inner_coin_betting_update_after_prediction>(*b.all, ec, b.data);
+    b.all->weights.dense_weights.unset_tag();
+  }
+  else
+  {
+    GD::foreach_feature<ftrl_update_data, inner_coin_betting_update_after_prediction>(*b.all, ec, b.data);
+  }
 }
 
-template <bool audit>
+template <bool audit, bool privacy_activation>
 void learn_proximal(ftrl& a, base_learner& base, example& ec)
 {
   // predict with confidence
   predict<audit>(a, base, ec);
 
   // update state based on the prediction
-  update_after_prediction_proximal(a, ec);
+  update_after_prediction_proximal<privacy_activation>(a, ec);
 }
 
-template <bool audit>
+template <bool audit, bool privacy_activation>
 void learn_pistol(ftrl& a, base_learner& base, example& ec)
 {
   // update state based on the example and predict
   update_state_and_predict_pistol(a, base, ec);
   if (audit) GD::print_audit_features(*(a.all), ec);
   // update state based on the prediction
-  update_after_prediction_pistol(a, ec);
+  update_after_prediction_pistol<privacy_activation>(a, ec);
 }
 
-template <bool audit>
+template <bool audit, bool privacy_activation>
 void learn_coin_betting(ftrl& a, base_learner& base, example& ec)
 {
   // update state based on the example and predict
   coin_betting_predict(a, base, ec);
   if (audit) GD::print_audit_features(*(a.all), ec);
   // update state based on the prediction
-  coin_betting_update_after_prediction(a, ec);
+  coin_betting_update_after_prediction<privacy_activation>(a, ec);
 }
 
 void save_load(ftrl& b, io_buf& model_file, bool read, bool text)
@@ -385,9 +439,21 @@ base_learner* ftrl_setup(VW::setup_base_i& stack_builder)
   {
     algorithm_name = "Proximal-FTRL";
     if (all.audit || all.hash_inv)
-      learn_ptr = learn_proximal<true>;
+    {
+      if (all.privacy_activation) { learn_ptr = learn_proximal<true, true>; }
+      else
+      {
+        learn_ptr = learn_proximal<true, false>;
+      }
+    }
     else
-      learn_ptr = learn_proximal<false>;
+    {
+      if (all.privacy_activation) { learn_ptr = learn_proximal<false, true>; }
+      else
+      {
+        learn_ptr = learn_proximal<false, false>;
+      }
+    }
     all.weights.stride_shift(2);  // NOTE: for more parameter storage
     b->ftrl_size = 3;
   }
@@ -395,9 +461,21 @@ base_learner* ftrl_setup(VW::setup_base_i& stack_builder)
   {
     algorithm_name = "PiSTOL";
     if (all.audit || all.hash_inv)
-      learn_ptr = learn_pistol<true>;
+    {
+      if (all.privacy_activation) { learn_ptr = learn_pistol<true, true>; }
+      else
+      {
+        learn_ptr = learn_pistol<true, false>;
+      }
+    }
     else
-      learn_ptr = learn_pistol<false>;
+    {
+      if (all.privacy_activation) { learn_ptr = learn_pistol<false, true>; }
+      else
+      {
+        learn_ptr = learn_pistol<false, false>;
+      }
+    }
     all.weights.stride_shift(2);  // NOTE: for more parameter storage
     b->ftrl_size = 4;
     learn_returns_prediction = true;
@@ -406,9 +484,21 @@ base_learner* ftrl_setup(VW::setup_base_i& stack_builder)
   {
     algorithm_name = "Coin Betting";
     if (all.audit || all.hash_inv)
-      learn_ptr = learn_coin_betting<true>;
+    {
+      if (all.privacy_activation) { learn_ptr = learn_coin_betting<true, true>; }
+      else
+      {
+        learn_ptr = learn_coin_betting<true, false>;
+      }
+    }
     else
-      learn_ptr = learn_coin_betting<false>;
+    {
+      if (all.privacy_activation) { learn_ptr = learn_coin_betting<false, true>; }
+      else
+      {
+        learn_ptr = learn_coin_betting<false, false>;
+      }
+    }
     all.weights.stride_shift(3);  // NOTE: for more parameter storage
     b->ftrl_size = 6;
     learn_returns_prediction = true;

@@ -49,6 +49,7 @@ struct generate_interactions_object_cache
 template <class DataT, void (*FuncT)(DataT&, const float, float&), class WeightsT>
 inline void call_FuncT(DataT& dat, WeightsT& weights, const float ft_value, const uint64_t ft_idx)
 {
+  weights.set_privacy_preserving_bit(ft_idx);
   FuncT(dat, ft_value, weights[ft_idx]);
 }
 

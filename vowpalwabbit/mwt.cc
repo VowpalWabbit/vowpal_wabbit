@@ -30,7 +30,7 @@ struct policy_data
 
 struct mwt
 {
-  bool namespaces[256];        // the set of namespaces to evaluate.
+  bool namespaces[256];            // the set of namespaces to evaluate.
   std::vector<policy_data> evals;  // accrued losses of features.
   std::pair<bool, CB::cb_class> optional_observation;
   v_array<uint64_t> policies;
@@ -70,8 +70,21 @@ void predict_or_learn(mwt& c, single_learner& base, example& ec)
   {
     c.total++;
     // For each nonzero feature in observed namespaces, check it's value.
-    for (unsigned char ns : ec.indices)
-      if (c.namespaces[ns]) GD::foreach_feature<mwt, value_policy>(c.all, ec.feature_space[ns], c);
+    if (c.all->privacy_activation)
+    {
+      for (unsigned char ns : ec.indices)
+      {
+        if (c.namespaces[ns]) GD::foreach_feature<mwt, value_policy, true>(ec.feature_space[ns], c);
+      }
+    }
+    else
+    {
+      for (unsigned char ns : ec.indices)
+      {
+        if (c.namespaces[ns]) GD::foreach_feature<mwt, value_policy, false>(ec.feature_space[ns], c);
+      }
+    }
+
     for (uint64_t policy : c.policies)
     {
       c.evals[policy].cost += get_cost_estimate(c.optional_observation.second, c.evals[policy].action);

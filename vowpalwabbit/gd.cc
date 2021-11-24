@@ -662,28 +662,55 @@ float compute_update(gd& g, example& ec)
 }
 
 template <bool sparse_l2, bool invariant, bool sqrt_rate, bool feature_mask_off, bool adax, size_t adaptive,
-    size_t normalized, size_t spare>
+    size_t normalized, size_t spare, bool privacy_activation>
 void update(gd& g, base_learner&, example& ec)
 {
   // invariant: not a test label, importance weight > 0
   float update;
   if ((update = compute_update<sparse_l2, invariant, sqrt_rate, feature_mask_off, adax, adaptive, normalized, spare>(
            g, ec)) != 0.)
-    train<sqrt_rate, feature_mask_off, adaptive, normalized, spare>(g, ec, update);
+  {
+    if (g.all->weights.sparse)
+    {
+      if VW_STD17_CONSTEXPR (privacy_activation)
+      {
+        g.all->weights.sparse_weights.set_tag(ec.tag_hash);
+        train<sqrt_rate, feature_mask_off, adaptive, normalized, spare>(g, ec, update);
+        g.all->weights.sparse_weights.unset_tag();
+      }
+      else
+      {
+        train<sqrt_rate, feature_mask_off, adaptive, normalized, spare>(g, ec, update);
+      }
+    }
+    else
+    {
+      if VW_STD17_CONSTEXPR (privacy_activation)
+      {
+        g.all->weights.dense_weights.set_tag(ec.tag_hash);
+        train<sqrt_rate, feature_mask_off, adaptive, normalized, spare>(g, ec, update);
+        g.all->weights.dense_weights.unset_tag();
+      }
+      else
+      {
+        train<sqrt_rate, feature_mask_off, adaptive, normalized, spare>(g, ec, update);
+      }
+    }
+  }
 
   if (g.all->sd->contraction < 1e-9 || g.all->sd->gravity > 1e3)  // updating weights now to avoid numerical instability
     sync_weights(*g.all);
 }
 
 template <bool sparse_l2, bool invariant, bool sqrt_rate, bool feature_mask_off, bool adax, size_t adaptive,
-    size_t normalized, size_t spare>
+    size_t normalized, size_t spare, bool privacy_activation>
 void learn(gd& g, base_learner& base, example& ec)
 {
   // invariant: not a test label, importance weight > 0
   assert(ec.l.simple.label != FLT_MAX);
   assert(ec.weight > 0.);
   g.predict(g, base, ec);
-  update<sparse_l2, invariant, sqrt_rate, feature_mask_off, adax, adaptive, normalized, spare>(g, base, ec);
+  update<sparse_l2, invariant, sqrt_rate, feature_mask_off, adax, adaptive, normalized, spare, privacy_activation>(g, base, ec);
 }
 
 void sync_weights(VW::workspace& all)
@@ -733,7 +760,7 @@ void save_load_regressor(VW::workspace& all, io_buf& model_file, bool read, bool
     for (auto it = weights.begin(); it != weights.end(); ++it)
     {
       const auto weight_value = *it;
-      if (*it != 0.f)
+      if (*it != 0.f && (!all.privacy_activation || (weights.is_activated(it.index()) && all.privacy_activation)))
       {
         const auto weight_index = it.index() >> weights.stride_shift();
 
@@ -777,7 +804,7 @@ void save_load_regressor(VW::workspace& all, io_buf& model_file, bool read, bool
   {
     for (typename T::iterator v = weights.begin(); v != weights.end(); ++v)
     {
-      if (*v != 0.)
+      if (*v != 0. && (!all.privacy_activation || (weights.is_activated(v.index()) && all.privacy_activation)))
       {
         i = v.index() >> weights.stride_shift();
         std::stringstream msg;
@@ -841,7 +868,7 @@ void save_load_online_state(VW::workspace& all, io_buf& model_file, bool read, b
     {
       i = v.index() >> weights.stride_shift();
 
-      if (all.print_invert)  // write readable model with feature names
+      if (*v != 0.f && (!all.privacy_activation || (weights.is_activated(v.index()) && all.privacy_activation)))
       {
         if (*v != 0.f)
         {
@@ -1076,25 +1103,34 @@ void save_load(gd& g, io_buf& model_file, bool read, bool text)
     sync_weights(all);
 }
 
-template <bool sparse_l2, bool invariant, bool sqrt_rate, bool feature_mask_off, uint64_t adaptive, uint64_t normalized,
-    uint64_t spare, uint64_t next>
+template <bool sparse_l2, bool invariant, bool sqrt_rate, bool feature_mask_off, bool adax, uint64_t adaptive, uint64_t normalized,    uint64_t spare, uint64_t next>
 uint64_t set_learn(VW::workspace& all, gd& g)
 {
   all.normalized_idx = normalized;
-  if (g.adax)
+  if (all.privacy_activation)
   {
-    g.learn = learn<sparse_l2, invariant, sqrt_rate, feature_mask_off, true, adaptive, normalized, spare>;
-    g.update = update<sparse_l2, invariant, sqrt_rate, feature_mask_off, true, adaptive, normalized, spare>;
-    g.sensitivity = sensitivity<sqrt_rate, feature_mask_off, true, adaptive, normalized, spare>;
+    g.learn = learn<sparse_l2, invariant, sqrt_rate, feature_mask_off, adax, adaptive, normalized, spare, true>;
+    g.update = update<sparse_l2, invariant, sqrt_rate, feature_mask_off, adax, adaptive, normalized, spare, true>;
+    g.sensitivity = sensitivity<sqrt_rate, feature_mask_off, adax, adaptive, normalized, spare>;
     return next;
   }
   else
   {
-    g.learn = learn<sparse_l2, invariant, sqrt_rate, feature_mask_off, false, adaptive, normalized, spare>;
-    g.update = update<sparse_l2, invariant, sqrt_rate, feature_mask_off, false, adaptive, normalized, spare>;
-    g.sensitivity = sensitivity<sqrt_rate, feature_mask_off, false, adaptive, normalized, spare>;
+    g.learn = learn<sparse_l2, invariant, sqrt_rate, feature_mask_off, adax, adaptive, normalized, spare, false>;
+    g.update = update<sparse_l2, invariant, sqrt_rate, feature_mask_off, adax, adaptive, normalized, spare, false>;
+    g.sensitivity = sensitivity<sqrt_rate, feature_mask_off, adax, adaptive, normalized, spare>;
     return next;
   }
+}
+
+template <bool sparse_l2, bool invariant, bool sqrt_rate, bool feature_mask_off, uint64_t adaptive, uint64_t normalized, uint64_t spare,
+    uint64_t next>
+uint64_t set_learn(VW::workspace& all, gd& g)
+{
+  if (g.adax)
+    return set_learn<sparse_l2, invariant, sqrt_rate, feature_mask_off, true, adaptive, normalized, spare, next>(all, g);
+  else
+    return set_learn<sparse_l2, invariant, sqrt_rate, feature_mask_off,false, adaptive, normalized, spare, next>(all, g);
 }
 
 template <bool sparse_l2, bool invariant, bool sqrt_rate, uint64_t adaptive, uint64_t normalized, uint64_t spare,
