@@ -14,12 +14,12 @@ using namespace VW::config;
 
 struct audit_regressor_data
 {
-  audit_regressor_data(vw* all, std::unique_ptr<VW::io::writer>&& output) : all(all)
+  audit_regressor_data(VW::workspace* all, std::unique_ptr<VW::io::writer>&& output) : all(all)
   {
     out_file.add_file(std::move(output));
   }
 
-  vw* all;
+  VW::workspace* all;
   size_t increment = 0;
   size_t cur_class = 0;
   size_t total_class_cnt = 0;
@@ -78,7 +78,7 @@ inline void audit_regressor_feature(audit_regressor_data& dat, const float, cons
 
 void audit_regressor_lda(audit_regressor_data& rd, VW::LEARNER::single_learner& /* base */, example& ec)
 {
-  vw& all = *rd.all;
+  VW::workspace& all = *rd.all;
 
   std::ostringstream tempstream;
   parameters& weights = rd.all->weights;
@@ -107,7 +107,7 @@ void audit_regressor_lda(audit_regressor_data& rd, VW::LEARNER::single_learner& 
 
 void audit_regressor(audit_regressor_data& rd, VW::LEARNER::single_learner& base, example& ec)
 {
-  vw& all = *rd.all;
+  VW::workspace& all = *rd.all;
 
   if (all.lda > 0) { audit_regressor_lda(rd, base, ec); }
   else
@@ -140,14 +140,16 @@ void audit_regressor(audit_regressor_data& rd, VW::LEARNER::single_learner& base
       if (rd.all->weights.sparse)
       {
         INTERACTIONS::generate_interactions<audit_regressor_data, const uint64_t, audit_regressor_feature, true,
-            audit_regressor_interaction, sparse_parameters>(rd.all->interactions, rd.all->permutations, ec, rd,
-            rd.all->weights.sparse_weights, num_interacted_features);
+            audit_regressor_interaction, sparse_parameters>(rd.all->interactions, rd.all->extent_interactions,
+            rd.all->permutations, ec, rd, rd.all->weights.sparse_weights, num_interacted_features,
+            rd.all->_generate_interactions_object_cache);
       }
       else
       {
         INTERACTIONS::generate_interactions<audit_regressor_data, const uint64_t, audit_regressor_feature, true,
-            audit_regressor_interaction, dense_parameters>(
-            rd.all->interactions, rd.all->permutations, ec, rd, rd.all->weights.dense_weights, num_interacted_features);
+            audit_regressor_interaction, dense_parameters>(rd.all->interactions, rd.all->extent_interactions,
+            rd.all->permutations, ec, rd, rd.all->weights.dense_weights, num_interacted_features,
+            rd.all->_generate_interactions_object_cache);
       }
 
       ec.ft_offset += rd.increment;
@@ -158,14 +160,14 @@ void audit_regressor(audit_regressor_data& rd, VW::LEARNER::single_learner& base
   }
 }
 
-inline void print_ex(vw& all, size_t ex_processed, size_t vals_found, size_t progress)
+inline void print_ex(VW::workspace& all, size_t ex_processed, size_t vals_found, size_t progress)
 {
   *(all.trace_message) << std::left << std::setw(shared_data::col_example_counter) << ex_processed << " " << std::right
                        << std::setw(9) << vals_found << " " << std::right << std::setw(12) << progress << '%'
                        << std::endl;
 }
 
-void finish_example(vw& all, audit_regressor_data& rd, example& ec)
+void finish_example(VW::workspace& all, audit_regressor_data& rd, example& ec)
 {
   bool printed = false;
   if (static_cast<float>(ec.example_counter + std::size_t{1}) >= all.sd->dump_interval && !all.logger.quiet)
@@ -257,14 +259,14 @@ void init_driver(audit_regressor_data& dat)
 VW::LEARNER::base_learner* audit_regressor_setup(VW::setup_base_i& stack_builder)
 {
   options_i& options = *stack_builder.get_options();
-  vw& all = *stack_builder.get_all_pointer();
+  VW::workspace& all = *stack_builder.get_all_pointer();
 
   std::string out_file;
   option_group_definition new_options("Audit Regressor");
   new_options.add(make_option("audit_regressor", out_file)
                       .keep()
                       .necessary()
-                      .help("stores feature names and their regressor values. Same dataset must be used for both "
+                      .help("Stores feature names and their regressor values. Same dataset must be used for both "
                             "regressor training and this mode."));
 
   if (!options.add_parse_and_check_necessary(new_options)) return nullptr;

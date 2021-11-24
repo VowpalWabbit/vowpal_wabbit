@@ -33,7 +33,7 @@ namespace py = boost::python;
 
 class py_log_wrapper;
 
-typedef boost::shared_ptr<vw> vw_ptr;
+typedef boost::shared_ptr<VW::workspace> vw_ptr;
 typedef boost::shared_ptr<example> example_ptr;
 typedef boost::shared_ptr<Search::search> search_ptr;
 typedef boost::shared_ptr<Search::predictor> predictor_ptr;
@@ -61,6 +61,7 @@ const size_t pDECISION_SCORES = 8;
 const size_t pACTION_PDF_VALUE = 9;
 const size_t pPDF = 10;
 const size_t pACTIVE_MULTICLASS = 11;
+const size_t pNOPRED = 12;
 
 void dont_delete_me(void* arg) {}
 
@@ -256,9 +257,9 @@ vw_ptr my_initialize_with_log(std::string args, py_log_wrapper_ptr py_log)
     trace_context = py_log.get();
   }
 
-  vw* foo = VW::initialize(args, nullptr, false, trace_listener, trace_context);
-  // return boost::shared_ptr<vw>(foo, [](vw *all){VW::finish(*all);});
-  return boost::shared_ptr<vw>(foo);
+  VW::workspace* foo = VW::initialize(args, nullptr, false, trace_listener, trace_context);
+  // return boost::shared_ptr<VW::workspace>(foo, [](vw *all){VW::finish(*all);});
+  return boost::shared_ptr<VW::workspace>(foo);
 }
 
 vw_ptr my_initialize(std::string args) { return my_initialize_with_log(args, nullptr); }
@@ -270,6 +271,18 @@ void my_run_parser(vw_ptr all)
   VW::end_parser(*all);
 }
 
+struct python_dict_writer : VW::metric_sink_visitor
+{
+  python_dict_writer(py::dict& dest_dict) : _dest_dict(dest_dict) {}
+  void int_metric(const std::string& key, uint64_t value) override { _dest_dict[key] = value; }
+  void float_metric(const std::string& key, float value) override { _dest_dict[key] = value; }
+  void string_metric(const std::string& key, const std::string& value) override { _dest_dict[key] = value; }
+  void bool_metric(const std::string& key, bool value) override { _dest_dict[key] = value; }
+
+private:
+  py::dict& _dest_dict;
+};
+
 py::dict get_learner_metrics(vw_ptr all)
 {
   py::dict dictionary;
@@ -279,8 +292,8 @@ py::dict get_learner_metrics(vw_ptr all)
     VW::metric_sink metrics;
     all->l->persist_metrics(metrics);
 
-    for (const auto& m : metrics.int_metrics_list) { dictionary[m.first] = m.second; }
-    for (const auto& m : metrics.float_metrics_list) { dictionary[m.first] = m.second; }
+    python_dict_writer writer(dictionary);
+    metrics.visit(writer);
   }
 
   return dictionary;
@@ -337,7 +350,7 @@ predictor_ptr get_predictor(search_ptr sch, ptag my_tag)
   return boost::shared_ptr<Search::predictor>(P);
 }
 
-label_parser* get_label_parser(vw* all, size_t labelType)
+label_parser* get_label_parser(VW::workspace* all, size_t labelType)
 {
   switch (labelType)
   {
@@ -362,7 +375,7 @@ label_parser* get_label_parser(vw* all, size_t labelType)
   }
 }
 
-size_t my_get_label_type(vw* all)
+size_t my_get_label_type(VW::workspace* all)
 {
   label_parser* lp = &all->example_parser->lbl_parser;
   if (lp->parse_label == simple_label_parser.parse_label) { return lBINARY; }
@@ -398,32 +411,34 @@ size_t my_get_label_type(vw* all)
 
 size_t my_get_prediction_type(vw_ptr all)
 {
-  switch (all->l->pred_type)
+  switch (all->l->get_output_prediction_type())
   {
-    case prediction_type_t::scalar:
+    case VW::prediction_type_t::scalar:
       return pSCALAR;
-    case prediction_type_t::scalars:
+    case VW::prediction_type_t::scalars:
       return pSCALARS;
-    case prediction_type_t::action_scores:
+    case VW::prediction_type_t::action_scores:
       return pACTION_SCORES;
-    case prediction_type_t::action_probs:
+    case VW::prediction_type_t::action_probs:
       return pACTION_PROBS;
-    case prediction_type_t::multiclass:
+    case VW::prediction_type_t::multiclass:
       return pMULTICLASS;
-    case prediction_type_t::multilabels:
+    case VW::prediction_type_t::multilabels:
       return pMULTILABELS;
-    case prediction_type_t::prob:
+    case VW::prediction_type_t::prob:
       return pPROB;
-    case prediction_type_t::multiclassprobs:
+    case VW::prediction_type_t::multiclassprobs:
       return pMULTICLASSPROBS;
-    case prediction_type_t::decision_probs:
+    case VW::prediction_type_t::decision_probs:
       return pDECISION_SCORES;
-    case prediction_type_t::action_pdf_value:
+    case VW::prediction_type_t::action_pdf_value:
       return pACTION_PDF_VALUE;
-    case prediction_type_t::pdf:
+    case VW::prediction_type_t::pdf:
       return pPDF;
-    case prediction_type_t::active_multiclass:
+    case VW::prediction_type_t::active_multiclass:
       return pACTIVE_MULTICLASS;
+    case VW::prediction_type_t::nopred:
+      return pNOPRED;
     default:
       THROW("unsupported prediction type used");
   }
@@ -441,8 +456,9 @@ example* my_empty_example0(vw_ptr vw, size_t labelType)
 {
   label_parser* lp = get_label_parser(&*vw, labelType);
   example* ec = VW::alloc_examples(1);
-  lp->default_label(&ec->l);
+  lp->default_label(ec->l);
   ec->interactions = &vw->interactions;
+  ec->extent_interactions = &vw->extent_interactions;
   if (labelType == lCOST_SENSITIVE)
   {
     COST_SENSITIVE::wclass zero = {0., 1, 0., 0.};
@@ -504,7 +520,7 @@ float my_predict(vw_ptr all, example_ptr ec)
   return ec->partial_prediction;
 }
 
-bool my_is_multiline(vw_ptr all) { return all->l->is_multiline; }
+bool my_is_multiline(vw_ptr all) { return all->l->is_multiline(); }
 
 template <bool learn>
 void predict_or_learn(vw_ptr& all, py::list& ec)
@@ -699,7 +715,7 @@ void my_setup_example(vw_ptr vw, example_ptr ec) { VW::setup_example(*vw, ec.get
 
 void unsetup_example(vw_ptr vwP, example_ptr ae)
 {
-  vw& all = *vwP;
+  VW::workspace& all = *vwP;
   ae->partial_prediction = 0.;
   ae->num_features = 0;
   ae->reset_total_sum_feat_sq();
@@ -825,6 +841,8 @@ py::list ex_get_multilabel_predictions(example_ptr ec)
   return values;
 }
 
+char ex_get_nopred(example_ptr ec) { return ec->pred.nopred; }
+
 uint32_t ex_get_costsensitive_prediction(example_ptr ec) { return ec->pred.multiclass; }
 uint32_t ex_get_costsensitive_num_costs(example_ptr ec) { return (uint32_t)ec->l.cs.costs.size(); }
 float ex_get_costsensitive_cost(example_ptr ec, uint32_t i) { return ec->l.cs.costs[i].x; }
@@ -852,6 +870,7 @@ float get_loss(example_ptr ec) { return ec->loss; }
 float get_total_sum_feat_sq(example_ptr ec) { return ec->get_total_sum_feat_sq(); }
 
 double get_sum_loss(vw_ptr vw) { return vw->sd->sum_loss; }
+double get_holdout_sum_loss(vw_ptr vw) { return vw->sd->holdout_sum_loss; }
 double get_weighted_examples(vw_ptr vw) { return vw->sd->weighted_examples(); }
 
 bool search_should_output(search_ptr sch) { return sch->output().good(); }
@@ -1140,7 +1159,7 @@ BOOST_PYTHON_MODULE(pylibvw)
   py::docstring_options local_docstring_options(true, true, false);
 
   // define the vw class
-  py::class_<vw, vw_ptr, boost::noncopyable>(
+  py::class_<VW::workspace, vw_ptr, boost::noncopyable>(
       "vw", "the basic VW object that holds with weight vector, parser, etc.", py::no_init)
       .def("__init__", py::make_constructor(my_initialize))
       .def("__init__", py::make_constructor(my_initialize_with_log))
@@ -1170,6 +1189,7 @@ BOOST_PYTHON_MODULE(pylibvw)
       .def("get_label_type", &my_get_label_type, "return parse label type")
       .def("get_prediction_type", &my_get_prediction_type, "return prediction type")
       .def("get_sum_loss", &get_sum_loss, "return the total cumulative loss suffered so far")
+      .def("get_holdout_sum_loss", &get_holdout_sum_loss, "return the total cumulative holdout loss suffered so far")
       .def("get_weighted_examples", &get_weighted_examples, "return the total weight of examples so far")
 
       .def("get_search_ptr", &get_search_ptr, "return a pointer to the search data structure")
@@ -1208,7 +1228,8 @@ BOOST_PYTHON_MODULE(pylibvw)
       .def_readonly("pDECISION_SCORES", pDECISION_SCORES, "Decision scores prediction type")
       .def_readonly("pACTION_PDF_VALUE", pACTION_PDF_VALUE, "Action pdf value prediction type")
       .def_readonly("pPDF", pPDF, "PDF prediction type")
-      .def_readonly("pACTIVE_MULTICLASS", pACTIVE_MULTICLASS, "Active multiclass prediction type");
+      .def_readonly("pACTIVE_MULTICLASS", pACTIVE_MULTICLASS, "Active multiclass prediction type")
+      .def_readonly("pNOPRED", pNOPRED, "Nopred prediction type");
 
   // define the example class
   py::class_<example, example_ptr, boost::noncopyable>("example", py::no_init)
@@ -1282,6 +1303,7 @@ BOOST_PYTHON_MODULE(pylibvw)
       .def("get_active_multiclass", &ex_get_active_multiclass, "Get active multiclass from example prediction")
       .def("get_multilabel_predictions", &ex_get_multilabel_predictions,
           "Get multilabel predictions from example prediction")
+      .def("get_nopred", &ex_get_nopred, "Get nopred from example prediction")
       .def("get_costsensitive_prediction", &ex_get_costsensitive_prediction,
           "Assuming a cost_sensitive label type, get the prediction")
       .def("get_costsensitive_num_costs", &ex_get_costsensitive_num_costs,

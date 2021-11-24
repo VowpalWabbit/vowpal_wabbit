@@ -28,7 +28,7 @@ struct active_cover
   float* lambda_n = nullptr;
   float* lambda_d = nullptr;
 
-  vw* all = nullptr;  // statistics, loss
+  VW::workspace* all = nullptr;  // statistics, loss
   std::shared_ptr<rand_state> _random_state;
 
   ~active_cover()
@@ -38,7 +38,7 @@ struct active_cover
   }
 };
 
-bool dis_test(vw& all, example& ec, single_learner& base, float /* prediction */, float threshold)
+bool dis_test(VW::workspace& all, example& ec, single_learner& base, float /* prediction */, float threshold)
 {
   if (all.sd->t + ec.weight <= 3) { return true; }
 
@@ -110,7 +110,7 @@ void predict_or_learn_active_cover(active_cover& a, single_learner& base, exampl
 
   if (is_learn)
   {
-    vw& all = *a.all;
+    VW::workspace& all = *a.all;
 
     float prediction = ec.pred.scalar;
     float t = static_cast<float>(a.all->sd->t);
@@ -209,7 +209,7 @@ void predict_or_learn_active_cover(active_cover& a, single_learner& base, exampl
 base_learner* active_cover_setup(VW::setup_base_i& stack_builder)
 {
   options_i& options = *stack_builder.get_options();
-  vw& all = *stack_builder.get_all_pointer();
+  VW::workspace& all = *stack_builder.get_all_pointer();
 
   auto data = VW::make_unique<active_cover>();
   option_group_definition new_options("Active Learning with Cover");
@@ -217,19 +217,19 @@ base_learner* active_cover_setup(VW::setup_base_i& stack_builder)
   bool active_cover_option = false;
   new_options
       .add(
-          make_option("active_cover", active_cover_option).keep().necessary().help("enable active learning with cover"))
+          make_option("active_cover", active_cover_option).keep().necessary().help("Enable active learning with cover"))
       .add(make_option("mellowness", data->active_c0)
                .keep()
                .default_value(8.f)
-               .help("active learning mellowness parameter c_0. Default 8."))
+               .help("Active learning mellowness parameter c_0. Default 8"))
       .add(make_option("alpha", data->alpha)
                .default_value(1.f)
-               .help("active learning variance upper bound parameter alpha. Default 1."))
+               .help("Active learning variance upper bound parameter alpha. Default 1"))
       .add(make_option("beta_scale", data->beta_scale)
                .default_value(sqrtf(10.f))
-               .help("active learning variance upper bound parameter beta_scale. Default std::sqrt(10)."))
-      .add(make_option("cover", data->cover_size).keep().default_value(12).help("cover size. Default 12."))
-      .add(make_option("oracular", data->oracular).help("Use Oracular-CAL style query or not. Default false."));
+               .help("Active learning variance upper bound parameter beta_scale. Default std::sqrt(10)"))
+      .add(make_option("cover", data->cover_size).keep().default_value(12).help("Cover size. Default 12"))
+      .add(make_option("oracular", data->oracular).help("Use Oracular-CAL style query or not. Default false"));
 
   if (!options.add_parse_and_check_necessary(new_options)) return nullptr;
 
@@ -258,8 +258,8 @@ base_learner* active_cover_setup(VW::setup_base_i& stack_builder)
   auto* l = VW::LEARNER::make_reduction_learner(std::move(data), base, predict_or_learn_active_cover<true>,
       predict_or_learn_active_cover<false>, stack_builder.get_setupfn_name(active_cover_setup))
                 .set_params_per_weight(cover_size + 1)
-                .set_prediction_type(prediction_type_t::scalar)
-                .set_label_type(label_type_t::simple)
+                .set_output_prediction_type(VW::prediction_type_t::scalar)
+                .set_input_label_type(VW::label_type_t::simple)
                 .build();
   return make_base(*l);
 }

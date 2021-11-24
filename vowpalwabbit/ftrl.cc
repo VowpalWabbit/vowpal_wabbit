@@ -38,7 +38,7 @@ struct ftrl_update_data
 
 struct ftrl
 {
-  vw* all = nullptr;  // features, finalize, l1, l2,
+  VW::workspace* all = nullptr;  // features, finalize, l1, l2,
   float ftrl_alpha = 0.f;
   float ftrl_beta = 0.f;
   ftrl_update_data data;
@@ -89,7 +89,7 @@ template <bool audit>
 void multipredict(
     ftrl& b, base_learner&, example& ec, size_t count, size_t step, polyprediction* pred, bool finalize_predictions)
 {
-  vw& all = *b.all;
+  VW::workspace& all = *b.all;
   for (size_t c = 0; c < count; c++)
   {
     const auto& simple_red_features = ec._reduction_features.template get<simple_label_reduction_features>();
@@ -304,7 +304,7 @@ void learn_coin_betting(ftrl& a, base_learner& base, example& ec)
 
 void save_load(ftrl& b, io_buf& model_file, bool read, bool text)
 {
-  vw* all = b.all;
+  VW::workspace* all = b.all;
   if (read) initialize_regressor(*all);
 
   if (model_file.num_files() != 0)
@@ -323,7 +323,7 @@ void save_load(ftrl& b, io_buf& model_file, bool read, bool text)
 
 void end_pass(ftrl& g)
 {
-  vw& all = *g.all;
+  VW::workspace& all = *g.all;
 
   if (!all.holdout_set_off)
   {
@@ -337,7 +337,7 @@ void end_pass(ftrl& g)
 base_learner* ftrl_setup(VW::setup_base_i& stack_builder)
 {
   options_i& options = *stack_builder.get_options();
-  vw& all = *stack_builder.get_all_pointer();
+  VW::workspace& all = *stack_builder.get_all_pointer();
   auto b = VW::make_unique<ftrl>();
 
   bool ftrl_option = false;
@@ -438,8 +438,8 @@ base_learner* ftrl_setup(VW::setup_base_i& stack_builder)
   std::string name_addition = (all.audit || all.hash_inv) ? "-audit" : "";
 
   auto l = VW::LEARNER::make_base_learner(std::move(b), learn_ptr, predict_ptr,
-      stack_builder.get_setupfn_name(ftrl_setup) + "-" + algorithm_name + name_addition, prediction_type_t::scalar,
-      label_type_t::simple)
+      stack_builder.get_setupfn_name(ftrl_setup) + "-" + algorithm_name + name_addition, VW::prediction_type_t::scalar,
+      VW::label_type_t::simple)
                .set_learn_returns_prediction(learn_returns_prediction)
                .set_params_per_weight(UINT64_ONE << all.weights.stride_shift())
                .set_sensitivity(sensitivity)

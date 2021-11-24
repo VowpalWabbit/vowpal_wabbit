@@ -89,20 +89,20 @@ struct task_data
   float true_counts_total;
 };
 
-inline bool example_is_test(polylabel* l) { return l->cs.costs.size() == 0; }
+inline bool example_is_test(const polylabel& l) { return l.cs.costs.empty(); }
 
 void initialize(Search::search& sch, size_t& num_actions, options_i& options)
 {
   task_data* D = new task_data();
 
-  option_group_definition new_options("search graphtask options");
+  option_group_definition new_options("Search Graphtask");
   new_options
-      .add(make_option("search_graph_num_loops", D->num_loops).default_value(2).help("how many loops to run [def: 2]"))
-      .add(make_option("search_graph_no_structure", D->use_structure).help("turn off edge features"))
+      .add(make_option("search_graph_num_loops", D->num_loops).default_value(2).help("How many loops to run [def: 2]"))
+      .add(make_option("search_graph_no_structure", D->use_structure).help("Turn off edge features"))
       .add(make_option("search_graph_separate_learners", D->separate_learners)
-               .help("use a different learner for each pass"))
+               .help("Use a different learner for each pass"))
       .add(make_option("search_graph_directed", D->directed)
-               .help("construct features based on directed graph semantics"));
+               .help("Construct features based on directed graph semantics"));
   options.add_and_parse(new_options);
 
   D->use_structure = !D->use_structure;
@@ -128,6 +128,7 @@ void initialize(Search::search& sch, size_t& num_actions, options_i& options)
   sch.set_task_data<task_data>(D);
   sch.set_options(0);  // Search::AUTO_HAMMING_LOSS
   sch.set_label_parser(COST_SENSITIVE::cs_label, example_is_test);
+  sch.set_is_ldf(false);
 }
 
 inline bool example_is_edge(example* e) { return e->l.cs.costs.size() > 1; }
@@ -319,7 +320,7 @@ void add_edge_features(Search::search& sch, task_data& D, size_t n, multi_ex& ec
   ec[n]->reset_total_sum_feat_sq();
   ec[n]->num_features += ec[n]->feature_space[neighbor_namespace].size();
 
-  vw& all = sch.get_vw_pointer_unsafe();
+  VW::workspace& all = sch.get_vw_pointer_unsafe();
   for (const auto& i : all.interactions)
   {
     if (i.size() != 2) continue;

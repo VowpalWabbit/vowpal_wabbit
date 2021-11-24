@@ -83,7 +83,7 @@ void predict_or_learn(cb_to_cb_adf& data, multi_learner& base, example& ec)
   if (!data.explore_mode) ec.pred.multiclass = ec.pred.a_s[0].action + 1;
 }
 
-void finish_example(vw& all, cb_to_cb_adf& c, example& ec)
+void finish_example(VW::workspace& all, cb_to_cb_adf& c, example& ec)
 {
   c.adf_data.ecs[0]->pred.a_s = std::move(ec.pred.a_s);
 
@@ -104,24 +104,21 @@ void finish_example(vw& all, cb_to_cb_adf& c, example& ec)
 VW::LEARNER::base_learner* cb_to_cb_adf_setup(VW::setup_base_i& stack_builder)
 {
   options_i& options = *stack_builder.get_options();
-  vw& all = *stack_builder.get_all_pointer();
+  VW::workspace& all = *stack_builder.get_all_pointer();
   bool compat_old_cb = false;
   bool force_legacy = false;
-  std::string type_string = "mtr";
   uint32_t num_actions;
   uint32_t cbx_num_actions;
   uint32_t cbi_num_actions;
 
-  option_group_definition new_options("Contextual Bandit Options: cb -> cb_adf");
+  option_group_definition new_options("Contextual Bandit: cb -> cb_adf");
   new_options
-      .add(make_option("cb_to_cbadf", num_actions).necessary().help("Maps cb_adf to cb. Disable with cb_force_legacy."))
-      .add(make_option("cb", num_actions).keep().help("Maps cb_adf to cb. Disable with cb_force_legacy."))
+      .add(make_option("cb_to_cbadf", num_actions).necessary().help("Maps cb_adf to cb. Disable with cb_force_legacy"))
+      .add(make_option("cb", num_actions).keep().help("Maps cb_adf to cb. Disable with cb_force_legacy"))
       .add(make_option("cb_explore", cbx_num_actions)
                .keep()
-               .help("Translate cb explore to cb_explore_adf. Disable with cb_force_legacy."))
-      .add(
-          make_option("cbify", cbi_num_actions).keep().help("Translate cbify to cb_adf. Disable with cb_force_legacy."))
-      .add(make_option("cb_type", type_string).keep().help("contextual bandit method to use in {}"))
+               .help("Translate cb explore to cb_explore_adf. Disable with cb_force_legacy"))
+      .add(make_option("cbify", cbi_num_actions).keep().help("Translate cbify to cb_adf. Disable with cb_force_legacy"))
       .add(make_option("cb_force_legacy", force_legacy).keep().help("Default to non-adf cb implementation (cb_algs)"));
 
   options.add_parse_and_check_necessary(new_options);
@@ -187,27 +184,27 @@ VW::LEARNER::base_learner* cb_to_cb_adf_setup(VW::setup_base_i& stack_builder)
 
   if (num_actions <= 0) THROW("cb num actions must be positive");
 
-  data->adf_data.init_adf_data(num_actions, base->increment, all.interactions);
+  data->adf_data.init_adf_data(num_actions, base->increment, all.interactions, all.extent_interactions);
 
   // see csoaa.cc ~ line 894 / setup for csldf_setup
   all.example_parser->emptylines_separate_examples = false;
-  prediction_type_t pred_type;
+  VW::prediction_type_t pred_type;
 
   if (data->explore_mode)
   {
     data->adf_learner = as_multiline(base->get_learner_by_name_prefix("cb_explore_adf_"));
-    pred_type = prediction_type_t::action_probs;
+    pred_type = VW::prediction_type_t::action_probs;
   }
   else
   {
     data->adf_learner = as_multiline(base->get_learner_by_name_prefix("cb_adf"));
-    pred_type = prediction_type_t::multiclass;
+    pred_type = VW::prediction_type_t::multiclass;
   }
 
   auto* l = make_reduction_learner(
       std::move(data), base, predict_or_learn<true>, predict_or_learn<false>, all.get_setupfn_name(cb_to_cb_adf_setup))
-                .set_prediction_type(pred_type)
-                .set_label_type(label_type_t::cb)
+                .set_output_prediction_type(pred_type)
+                .set_input_label_type(VW::label_type_t::cb)
                 .set_learn_returns_prediction(true)
                 .set_finish_example(finish_example)
                 .build();

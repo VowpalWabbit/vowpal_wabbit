@@ -22,23 +22,8 @@
 #include "scope_exit.h"
 #include "metric_sink.h"
 
-enum class prediction_type_t
-{
-  scalar,
-  scalars,
-  action_scores,
-  pdf,
-  action_probs,
-  multiclass,
-  multilabels,
-  prob,
-  multiclassprobs,
-  decision_probs,
-  action_pdf_value,
-  active_multiclass
-};
-
-const char* to_string(prediction_type_t prediction_type);
+#include "label_type.h"
+#include "prediction_type.h"
 
 namespace VW
 {
@@ -117,16 +102,16 @@ struct save_metric_data
 
 struct finish_example_data
 {
-  using fn = void (*)(vw&, void* data, void* ex);
+  using fn = void (*)(VW::workspace&, void* data, void* ex);
   void* data = nullptr;
   base_learner* base = nullptr;
   fn finish_example_f = nullptr;
   fn print_example_f = nullptr;
 };
 
-void generic_driver(vw& all);
-void generic_driver(const std::vector<vw*>& alls);
-void generic_driver_onethread(vw& all);
+void generic_driver(VW::workspace& all);
+void generic_driver(const std::vector<VW::workspace*>& alls);
+void generic_driver_onethread(VW::workspace& all);
 
 inline void noop_save_load(void*, io_buf&, bool, bool) {}
 inline void noop_persist_metrics(void*, metric_sink&) {}
@@ -196,12 +181,12 @@ inline void decrement_offset(multi_ex& ec_seq, const size_t increment, const siz
 
 inline bool ec_is_example_header(example const& ec, label_type_t label_type)
 {
-  if (label_type == label_type_t::cb) { return CB::ec_is_example_header(ec); }
-  else if (label_type == label_type_t::ccb)
+  if (label_type == VW::label_type_t::cb) { return CB::ec_is_example_header(ec); }
+  else if (label_type == VW::label_type_t::ccb)
   {
     return CCB::ec_is_example_header(ec);
   }
-  else if (label_type == label_type_t::cs)
+  else if (label_type == VW::label_type_t::cs)
   {
     return COST_SENSITIVE::ec_is_example_header(ec);
   }
@@ -216,16 +201,15 @@ inline bool ec_is_example_header(example const& ec, label_type_t label_type)
 /// will recursively call the base given to it, whereas a base learner will not
 /// recurse and will simply return the result. Learner is not intended to be
 /// inherited from. Instead it is used through composition, and created through
-/// the various VW::LEARNER::init_learner overloaded functions that chain to the
-/// central factor function VW::LEARNER::learner::init_learner The state of this
+/// the make_reduction_learner and make_base_learner. The state of this
 /// learner, or reduction, is stored in the learner_data field. A
 /// <code>std::shared_pointer<void></code> is used as this class uses type
 /// erasure to allow for an arbitrary reduction to be implemented. It is
 /// extremely important that the function pointers given to the class match the
 /// expected types of the object. If the learner is constructed using
-/// VW::LEARNER::learner::init_learner and assembled before it is transformed
-/// into a VW::LEARNER::base_learner with VW::LEARNER::make_base then the usage
-/// of the templated functions should ensure types are correct.
+/// make_reduction_learner or make_base_learner and assembled before it is
+/// transformed into a VW::LEARNER::base_learner with VW::LEARNER::make_base then
+/// the usage of the templated functions should ensure types are correct.
 ///
 /// \tparam T Type of the reduction data object stored. This allows this
 /// specific reduction to have it's own state.
@@ -254,34 +238,40 @@ private:
   save_metric_data persist_metrics_fd;
   func_data finisher_fd;
   std::string name;  // Name of the reduction.  Used in VW_DBG to trace nested learn() and predict() calls
+  prediction_type_t _output_pred_type;
+  prediction_type_t _input_pred_type;
+  label_type_t _output_label_type;
+  label_type_t _input_label_type;
+  bool _is_multiline;  // Is this a single-line or multi-line reduction?
 
   std::shared_ptr<void> learner_data;
 
-  learner(){};  // Should only be able to construct a learner through
-                // init_learner function
+  learner() = default;  // Should only be able to construct a learner through make_reduction_learner / make_base_learner
 
 public:
-  prediction_type_t pred_type;
   size_t weights;  // this stores the number of "weight vectors" required by the learner.
   size_t increment;
-  bool is_multiline;  // Is this a single-line or multi-line reduction?
 
   // learn will return a prediction.  The framework should
   // not call predict before learn
   bool learn_returns_prediction = false;
 
-  using end_fptr_type = void (*)(vw&, void*, void*);
+  using end_fptr_type = void (*)(VW::workspace&, void*, void*);
   using finish_fptr_type = void (*)(void*);
 
+  /// \private
   void debug_log_message(example& ec, const std::string& msg)
   {
     VW_DBG(ec) << "[" << name << "." << msg << "]" << std::endl;
   }
 
+  /// \private
   void debug_log_message(multi_ex& ec, const std::string& msg)
   {
     VW_DBG(*ec[0]) << "[" << name << "." << msg << "]" << std::endl;
   }
+
+  void* get_internal_type_erased_data_pointer_test_use_only() { return learner_data.get(); }
 
   /// \brief Will update the model according to the labels and examples supplied.
   /// \param ec The ::example object or ::multi_ex to be operated on. This
@@ -293,8 +283,8 @@ public:
   /// guaranteed and is undefined behavior if accessed.
   inline void learn(E& ec, size_t i = 0)
   {
-    assert((is_multiline && std::is_same<multi_ex, E>::value) ||
-        (!is_multiline && std::is_same<example, E>::value));  // sanity check under debug compile
+    assert((is_multiline() && std::is_same<multi_ex, E>::value) ||
+        (!is_multiline() && std::is_same<example, E>::value));  // sanity check under debug compile
     increment_offset(ec, increment, i);
     debug_log_message(ec, "learn");
     learn_fd.learn_f(learn_fd.data, *learn_fd.base, (void*)&ec);
@@ -312,8 +302,8 @@ public:
   /// on the 0th item in the list.
   inline void predict(E& ec, size_t i = 0)
   {
-    assert((is_multiline && std::is_same<multi_ex, E>::value) ||
-        (!is_multiline && std::is_same<example, E>::value));  // sanity check under debug compile
+    assert((is_multiline() && std::is_same<multi_ex, E>::value) ||
+        (!is_multiline() && std::is_same<example, E>::value));  // sanity check under debug compile
     increment_offset(ec, increment, i);
     debug_log_message(ec, "predict");
     learn_fd.predict_f(learn_fd.data, *learn_fd.base, (void*)&ec);
@@ -322,8 +312,8 @@ public:
 
   inline void multipredict(E& ec, size_t lo, size_t count, polyprediction* pred, bool finalize_predictions)
   {
-    assert((is_multiline && std::is_same<multi_ex, E>::value) ||
-        (!is_multiline && std::is_same<example, E>::value));  // sanity check under debug compile
+    assert((is_multiline() && std::is_same<multi_ex, E>::value) ||
+        (!is_multiline() && std::is_same<example, E>::value));  // sanity check under debug compile
     if (learn_fd.multipredict_f == nullptr)
     {
       increment_offset(ec, increment, lo);
@@ -351,58 +341,16 @@ public:
     }
   }
 
-  template <class L>
-  inline void set_predict(void (*u)(T&, L&, E&))
-  {
-    VW_WARNING_STATE_PUSH
-    VW_WARNING_DISABLE_CAST_FUNC_TYPE
-    learn_fd.predict_f = (learn_data::fn)u;
-    VW_WARNING_STATE_POP
-  }
-  template <class L>
-  inline void set_learn(void (*u)(T&, L&, E&))
-  {
-    VW_WARNING_STATE_PUSH
-    VW_WARNING_DISABLE_CAST_FUNC_TYPE
-    learn_fd.learn_f = (learn_data::fn)u;
-    VW_WARNING_STATE_POP
-  }
-  template <class L>
-  inline void set_multipredict(void (*u)(T&, L&, E&, size_t, size_t, polyprediction*, bool))
-  {
-    VW_WARNING_STATE_PUSH
-    VW_WARNING_DISABLE_CAST_FUNC_TYPE
-    learn_fd.multipredict_f = (learn_data::multi_fn)u;
-    VW_WARNING_STATE_POP
-  }
-
   inline void update(E& ec, size_t i = 0)
   {
-    assert((is_multiline && std::is_same<multi_ex, E>::value) ||
-        (!is_multiline && std::is_same<example, E>::value));  // sanity check under debug compile
+    assert((is_multiline() && std::is_same<multi_ex, E>::value) ||
+        (!is_multiline() && std::is_same<example, E>::value));  // sanity check under debug compile
     increment_offset(ec, increment, i);
     debug_log_message(ec, "update");
     learn_fd.update_f(learn_fd.data, *learn_fd.base, (void*)&ec);
     decrement_offset(ec, increment, i);
   }
-  template <class L>
-  inline void set_update(void (*u)(T& data, L& base, E&))
-  {
-    VW_WARNING_STATE_PUSH
-    VW_WARNING_DISABLE_CAST_FUNC_TYPE
-    learn_fd.update_f = (learn_data::fn)u;
-    VW_WARNING_STATE_POP
-  }
 
-  // used for active learning and confidence to determine how easily predictions are changed
-  inline void set_sensitivity(float (*u)(T& data, base_learner& base, example&))
-  {
-    sensitivity_fd.data = learn_fd.data;
-    VW_WARNING_STATE_PUSH
-    VW_WARNING_DISABLE_CAST_FUNC_TYPE
-    sensitivity_fd.sensitivity_f = (sensitivity_data::fn)u;
-    VW_WARNING_STATE_POP
-  }
   inline float sensitivity(example& ec, size_t i = 0)
   {
     increment_offset(ec, increment, i);
@@ -415,17 +363,17 @@ public:
   // called anytime saving or loading needs to happen. Autorecursive.
   inline void save_load(io_buf& io, const bool read, const bool text)
   {
-    save_load_fd.save_load_f(save_load_fd.data, io, read, text);
+    try
+    {
+      save_load_fd.save_load_f(save_load_fd.data, io, read, text);
+    }
+    catch (VW::vw_exception& vwex)
+    {
+      std::stringstream better_msg;
+      better_msg << "model " << std::string(read ? "load" : "save") << " failed. Error Details: " << vwex.what();
+      throw VW::save_load_model_exception(vwex.Filename(), vwex.LineNumber(), better_msg.str());
+    }
     if (save_load_fd.base) save_load_fd.base->save_load(io, read, text);
-  }
-  inline void set_save_load(void (*sl)(T&, io_buf&, bool, bool))
-  {
-    VW_WARNING_STATE_PUSH
-    VW_WARNING_DISABLE_CAST_FUNC_TYPE
-    save_load_fd.save_load_f = (save_load_data::fn)sl;
-    VW_WARNING_STATE_POP
-    save_load_fd.data = learn_fd.data;
-    save_load_fd.base = learn_fd.base;
   }
 
   // called when metrics is enabled.  Autorecursive.
@@ -434,24 +382,7 @@ public:
     persist_metrics_fd.save_metric_f(persist_metrics_fd.data, metrics);
     if (persist_metrics_fd.base) persist_metrics_fd.base->persist_metrics(metrics);
   }
-  void set_persist_metrics(void (*f)(T&, metric_sink&))
-  {
-    VW_WARNING_STATE_PUSH
-    VW_WARNING_DISABLE_CAST_FUNC_TYPE
-    persist_metrics_fd.save_metric_f = (save_metric_data::fn)f;
-    VW_WARNING_STATE_POP
-    persist_metrics_fd.data = learn_fd.data;
-    persist_metrics_fd.base = learn_fd.base;
-  }
 
-  // called to clean up state.  Autorecursive.
-  void set_finish(void (*f)(T&))
-  {
-    VW_WARNING_STATE_PUSH
-    VW_WARNING_DISABLE_CAST_FUNC_TYPE
-    finisher_fd = tuple_dbf(learn_fd.data, learn_fd.base, (finish_fptr_type)(f));
-    VW_WARNING_STATE_POP
-  }
 
   inline void finish()
   {
@@ -469,69 +400,24 @@ public:
     if (end_pass_fd.base) end_pass_fd.base->end_pass();
   }  // autorecursive
 
-  void set_end_pass(void (*f)(T&))
-  {
-    VW_WARNING_STATE_PUSH
-    VW_WARNING_DISABLE_CAST_FUNC_TYPE
-    end_pass_fd = tuple_dbf(learn_fd.data, learn_fd.base, (func_data::fn)f);
-    VW_WARNING_STATE_POP
-  }
-
   // called after parsing of examples is complete.  Autorecursive.
   void end_examples()
   {
     end_examples_fd.func(end_examples_fd.data);
     if (end_examples_fd.base) end_examples_fd.base->end_examples();
   }
-  void set_end_examples(void (*f)(T&))
-  {
-    VW_WARNING_STATE_PUSH
-    VW_WARNING_DISABLE_CAST_FUNC_TYPE
-    end_examples_fd = tuple_dbf(learn_fd.data, learn_fd.base, (func_data::fn)f);
-    VW_WARNING_STATE_POP
-  }
 
   // Called at the beginning by the driver.  Explicitly not recursive.
   void init_driver() { init_fd.func(init_fd.data); }
-  void set_init_driver(void (*f)(T&))
-  {
-    VW_WARNING_STATE_PUSH
-    VW_WARNING_DISABLE_CAST_FUNC_TYPE
-    init_fd = tuple_dbf(learn_fd.data, learn_fd.base, (func_data::fn)f);
-    VW_WARNING_STATE_POP
-  }
 
   // called after learn example for each example.  Explicitly not recursive.
-  inline void finish_example(vw& all, E& ec)
+  inline void finish_example(VW::workspace& all, E& ec)
   {
     debug_log_message(ec, "finish_example");
     finish_example_fd.finish_example_f(all, finish_example_fd.data, (void*)&ec);
   }
-  // called after learn example for each example.  Explicitly not recursive.
-  void set_finish_example(void (*f)(vw& all, T&, E&))
-  {
-    finish_example_fd.data = learn_fd.data;
-    VW_WARNING_STATE_PUSH
-    VW_WARNING_DISABLE_CAST_FUNC_TYPE
-    finish_example_fd.finish_example_f = (end_fptr_type)(f);
-    VW_WARNING_STATE_POP
-  }
 
-  // never called, convienience method in case reduction has a seperate
-  // print fn that mirrors the fn received on set_finish_example(..)
-  //
-  // usually finish_example routine prints and then deallocs
-  // that printing logic can be registered here
-  void set_print_example(void (*f)(vw& all, T&, E&))
-  {
-    finish_example_fd.data = learn_fd.data;
-    VW_WARNING_STATE_PUSH
-    VW_WARNING_DISABLE_CAST_FUNC_TYPE
-    finish_example_fd.print_example_f = (end_fptr_type)(f);
-    VW_WARNING_STATE_POP
-  }
-
-  inline void print_example(vw& all, E& ec)
+  inline void print_example(VW::workspace& all, E& ec)
   {
     debug_log_message(ec, "print_example");
 
@@ -547,71 +433,6 @@ public:
     enabled_reductions.push_back(name);
   }
 
-  template <class L>
-  static learner<T, E>& init_learner(T* dat, L* base, void (*learn)(T&, L&, E&), void (*predict)(T&, L&, E&), size_t ws,
-      prediction_type_t pred_type, const std::string& name, bool learn_returns_prediction = false)
-  {
-    learner<T, E>& ret = *(new learner<T, E>());
-
-    if (base != nullptr)
-    {  // a reduction
-
-      // This is a copy assignment into the current object. The purpose is to copy all of the
-      // function data objects so that if this reduction does not define a function such as
-      // save_load then calling save_load on this object will essentially result in forwarding the
-      // call the next reduction that actually implements it.
-      ret = *(learner<T, E>*)(base);
-
-      ret.learn_fd.base = make_base(*base);
-      ret.sensitivity_fd.sensitivity_f = static_cast<sensitivity_data::fn>(recur_sensitivity);
-      ret.finisher_fd.data = dat;
-      ret.finisher_fd.base = make_base(*base);
-      ret.finisher_fd.func = static_cast<func_data::fn>(noop);
-      ret.weights = ws;
-      ret.increment = base->increment * ret.weights;
-    }
-    else  // a base learner
-    {
-      ret.weights = 1;
-      ret.increment = ws;
-      ret.end_pass_fd.func = static_cast<func_data::fn>(noop);
-      ret.end_examples_fd.func = static_cast<func_data::fn>(noop);
-      ret.persist_metrics_fd.save_metric_f = static_cast<save_metric_data::fn>(noop_persist_metrics);
-      ret.init_fd.func = static_cast<func_data::fn>(noop);
-      ret.save_load_fd.save_load_f = static_cast<save_load_data::fn>(noop_save_load);
-      ret.finisher_fd.data = dat;
-      ret.finisher_fd.func = static_cast<func_data::fn>(noop);
-      ret.sensitivity_fd.sensitivity_f = static_cast<sensitivity_data::fn>(noop_sensitivity);
-      ret.finish_example_fd.data = dat;
-      VW_WARNING_STATE_PUSH
-      VW_WARNING_DISABLE_CAST_FUNC_TYPE
-      ret.finish_example_fd.finish_example_f = reinterpret_cast<finish_example_data::fn>(return_simple_example);
-      VW_WARNING_STATE_POP
-    }
-
-    ret.name = name;
-    ret.learner_data = std::shared_ptr<T>(dat, [](T* ptr) {
-      ptr->~T();
-      free(ptr);
-    });
-
-    ret.learn_fd.data = dat;
-    VW_WARNING_STATE_PUSH
-    VW_WARNING_DISABLE_CAST_FUNC_TYPE
-    ret.learn_fd.learn_f = reinterpret_cast<learn_data::fn>(learn);
-    ret.learn_fd.update_f = (learn_data::fn)learn;
-    ret.learn_fd.predict_f = (learn_data::fn)predict;
-    VW_WARNING_STATE_POP
-    ret.learn_fd.multipredict_f = nullptr;
-    ret.pred_type = pred_type;
-    ret.is_multiline = std::is_same<multi_ex, E>::value;
-    ret.learn_returns_prediction = learn_returns_prediction;
-
-    VW_DBG_0 << "Added Reduction: " << name << std::endl;
-
-    return ret;
-  }
-
   base_learner* get_learner_by_name_prefix(const std::string& reduction_name)
   {
     if (name.find(reduction_name) != std::string::npos) { return (base_learner*)this; }
@@ -623,117 +444,13 @@ public:
         THROW("fatal: could not find in learner chain: " << reduction_name);
     }
   }
+
+  prediction_type_t get_output_prediction_type() { return _output_pred_type; }
+  prediction_type_t get_input_prediction_type() { return _input_pred_type; }
+  label_type_t get_output_label_type() { return _output_label_type; }
+  label_type_t get_input_label_type() { return _input_label_type; }
+  bool is_multiline() { return _is_multiline; }
 };
-
-// OLD WAY:
-// The init_learner set of functions is the old way to create a learner. They
-// have been replaced with:
-//   - make_reduction_learner
-//   - make_base_learner
-// They were replaced due to how many different overloads there are and the
-// fact defaults are very hard to express. This problem got worse as more
-// arguments got added.
-template <class T, class E, class L>
-learner<T, E>& init_learner(free_ptr<T>& dat, L* base, void (*learn)(T&, L&, E&), void (*predict)(T&, L&, E&),
-    size_t ws, prediction_type_t pred_type, const std::string& name, bool learn_returns_prediction = false)
-{
-  auto ret =
-      &learner<T, E>::init_learner(dat.get(), base, learn, predict, ws, pred_type, name, learn_returns_prediction);
-
-  dat.release();
-  return *ret;
-}
-
-// base learner/predictor
-template <class T, class E, class L>
-learner<T, E>& init_learner(free_ptr<T>& dat, void (*learn)(T&, L&, E&), void (*predict)(T&, L&, E&),
-    size_t params_per_weight, const std::string& name, bool learn_returns_prediction = false)
-{
-  auto ret = &learner<T, E>::init_learner(dat.get(), (L*)nullptr, learn, predict, params_per_weight,
-      prediction_type_t::scalar, name, learn_returns_prediction);
-
-  dat.release();
-  return *ret;
-}
-
-// base predictor only
-template <class T, class E, class L>
-learner<T, E>& init_learner(void (*predict)(T&, L&, E&), size_t params_per_weight, const std::string& name)
-{
-  return learner<T, E>::init_learner(
-      nullptr, (L*)nullptr, predict, predict, params_per_weight, prediction_type_t::scalar, name);
-}
-
-template <class T, class E, class L>
-learner<T, E>& init_learner(free_ptr<T>& dat, void (*learn)(T&, L&, E&), void (*predict)(T&, L&, E&),
-    size_t params_per_weight, prediction_type_t pred_type, const std::string& name,
-    bool learn_returns_prediction = false)
-{
-  auto ret = &learner<T, E>::init_learner(
-      dat.get(), (L*)nullptr, learn, predict, params_per_weight, pred_type, name, learn_returns_prediction);
-  dat.release();
-  return *ret;
-}
-
-// reduction with default prediction type
-template <class T, class E, class L>
-learner<T, E>& init_learner(free_ptr<T>& dat, L* base, void (*learn)(T&, L&, E&), void (*predict)(T&, L&, E&),
-    size_t ws, const std::string& name, bool learn_returns_prediction = false)
-{
-  auto ret = &learner<T, E>::init_learner(
-      dat.get(), base, learn, predict, ws, base->pred_type, name, learn_returns_prediction);
-
-  dat.release();
-  return *ret;
-}
-
-// reduction with default num_params
-template <class T, class E, class L>
-learner<T, E>& init_learner(free_ptr<T>& dat, L* base, void (*learn)(T&, L&, E&), void (*predict)(T&, L&, E&),
-    const std::string& name, bool learn_returns_prediction = false)
-{
-  auto ret =
-      &learner<T, E>::init_learner(dat.get(), base, learn, predict, 1, base->pred_type, name, learn_returns_prediction);
-
-  dat.release();
-  return *ret;
-}
-
-// Reduction with no data.
-template <class T, class E, class L>
-learner<T, E>& init_learner(L* base, void (*learn)(T&, L&, E&), void (*predict)(T&, L&, E&), const std::string& name,
-    bool learn_returns_prediction = false)
-{
-  return learner<T, E>::init_learner(nullptr, base, learn, predict, 1, base->pred_type, name, learn_returns_prediction);
-}
-
-// multiclass reduction
-template <class T, class E, class L>
-learner<T, E>& init_multiclass_learner(free_ptr<T>& dat, L* base, void (*learn)(T&, L&, E&),
-    void (*predict)(T&, L&, E&), parser* p, size_t ws, const std::string& name,
-    prediction_type_t pred_type = prediction_type_t::multiclass, bool learn_returns_prediction = false)
-{
-  learner<T, E>& l =
-      learner<T, E>::init_learner(dat.get(), base, learn, predict, ws, pred_type, name, learn_returns_prediction);
-
-  dat.release();
-  l.set_finish_example(MULTICLASS::finish_example<T>);
-  p->lbl_parser = MULTICLASS::mc_label;
-  return l;
-}
-
-template <class T, class E, class L>
-learner<T, E>& init_cost_sensitive_learner(free_ptr<T>& dat, L* base, void (*learn)(T&, L&, E&),
-    void (*predict)(T&, L&, E&), parser* p, size_t ws, const std::string& name,
-    prediction_type_t pred_type = prediction_type_t::multiclass, bool learn_returns_prediction = false)
-{
-  learner<T, E>& l =
-      learner<T, E>::init_learner(dat.get(), base, learn, predict, ws, pred_type, name, learn_returns_prediction);
-  dat.release();
-  l.set_finish_example(COST_SENSITIVE::finish_example);
-  p->lbl_parser = COST_SENSITIVE::cs_label;
-  return l;
-}
 
 template <class T, class E>
 base_learner* make_base(learner<T, E>& base)
@@ -744,7 +461,7 @@ base_learner* make_base(learner<T, E>& base)
 template <class T, class E>
 multi_learner* as_multiline(learner<T, E>* l)
 {
-  if (l->is_multiline)  // Tried to use a singleline reduction as a multiline reduction
+  if (l->is_multiline())  // Tried to use a singleline reduction as a multiline reduction
     return (multi_learner*)(l);
   THROW("Tried to use a singleline reduction as a multiline reduction");
 }
@@ -752,7 +469,7 @@ multi_learner* as_multiline(learner<T, E>* l)
 template <class T, class E>
 single_learner* as_singleline(learner<T, E>* l)
 {
-  if (!l->is_multiline)  // Tried to use a multiline reduction as a singleline reduction
+  if (!l->is_multiline())  // Tried to use a multiline reduction as a singleline reduction
     return (single_learner*)(l);
   THROW("Tried to use a multiline reduction as a singleline reduction");
 }
@@ -786,14 +503,14 @@ struct common_learner_builder
 {
   learner<DataT, ExampleT>* _learner = nullptr;
 
-  using end_fptr_type = void (*)(vw&, void*, void*);
+  using end_fptr_type = void (*)(VW::workspace&, void*, void*);
   using finish_fptr_type = void (*)(void*);
 
   common_learner_builder(learner<DataT, ExampleT>* learner, std::unique_ptr<DataT>&& data, const std::string& name)
   {
     _learner = learner;
     _learner->name = name;
-    _learner->is_multiline = std::is_same<multi_ex, ExampleT>::value;
+    _learner->_is_multiline = std::is_same<multi_ex, ExampleT>::value;
     _learner->learner_data = std::shared_ptr<DataT>(data.release());
   }
 
@@ -874,14 +591,14 @@ struct common_learner_builder
     return *static_cast<FluentBuilderT*>(this);
   }
 
-  FluentBuilderT& set_finish_example(void (*fn_ptr)(vw& all, DataT&, ExampleT&))
+  FluentBuilderT& set_finish_example(void (*fn_ptr)(VW::workspace& all, DataT&, ExampleT&))
   {
     _learner->finish_example_fd.data = _learner->learn_fd.data;
     _learner->finish_example_fd.finish_example_f = (end_fptr_type)(fn_ptr);
     return *static_cast<FluentBuilderT*>(this);
   }
 
-  FluentBuilderT& set_print_example(void (*fn_ptr)(vw& all, DataT&, ExampleT&))
+  FluentBuilderT& set_print_example(void (*fn_ptr)(VW::workspace& all, DataT&, ExampleT&))
   {
     _learner->finish_example_fd.data = _learner->learn_fd.data;
     _learner->finish_example_fd.print_example_f = (end_fptr_type)(fn_ptr);
@@ -895,6 +612,30 @@ struct common_learner_builder
     _learner->persist_metrics_fd.base = _learner->learn_fd.base;
     return *static_cast<FluentBuilderT*>(this);
   }
+
+  FluentBuilderT& set_output_prediction_type(prediction_type_t pred_type)
+  {
+    this->_learner->_output_pred_type = pred_type;
+    return *static_cast<FluentBuilderT*>(this);
+  }
+
+  FluentBuilderT& set_input_prediction_type(prediction_type_t pred_type)
+  {
+    this->_learner->_input_pred_type = pred_type;
+    return *static_cast<FluentBuilderT*>(this);
+  }
+
+  FluentBuilderT& set_output_label_type(label_type_t label_type)
+  {
+    this->_learner->_output_label_type = label_type;
+    return *static_cast<FluentBuilderT*>(this);
+  }
+
+  FluentBuilderT& set_input_label_type(label_type_t label_type)
+  {
+    this->_learner->_input_label_type = label_type;
+    return *static_cast<FluentBuilderT*>(this);
+  }
 };
 
 template <class DataT, class ExampleT, class BaseLearnerT>
@@ -902,6 +643,8 @@ struct reduction_learner_builder
     : public common_learner_builder<reduction_learner_builder<DataT, ExampleT, BaseLearnerT>, DataT, ExampleT,
           BaseLearnerT>
 {
+  using super =
+      common_learner_builder<reduction_learner_builder<DataT, ExampleT, BaseLearnerT>, DataT, ExampleT, BaseLearnerT>;
   reduction_learner_builder(std::unique_ptr<DataT>&& data, BaseLearnerT* base, const std::string& name)
       // NOTE: This is a copy of the base! The purpose is to copy all of the
       // function data objects so that if this reduction does not define a function such as
@@ -921,23 +664,11 @@ struct reduction_learner_builder
     set_params_per_weight(1);
     this->set_learn_returns_prediction(false);
 
-    set_prediction_type(base->pred_type);
-    // TODO add label type as something learner knows about itself, this will enable more type checking and better
-    // description of the learner. this->_learner.label_type = label_type;
-  }
-
-  reduction_learner_builder<DataT, ExampleT, BaseLearnerT>& set_prediction_type(prediction_type_t pred_type)
-  {
-    this->_learner->pred_type = pred_type;
-    return *this;
-  }
-
-  reduction_learner_builder<DataT, ExampleT, BaseLearnerT>& set_label_type(label_type_t label_type)
-  {
-    // TODO add label type as something learner knows about itself, this will enable more type checking and better
-    // description of the learner. this->_learner.label_type = label_type;
-    std::ignore = label_type;
-    return *this;
+    // Default here is passthrough.
+    super::set_output_prediction_type(base->get_output_prediction_type());
+    super::set_input_prediction_type(base->get_input_prediction_type());
+    super::set_output_label_type(base->get_output_label_type());
+    super::set_input_label_type(base->get_input_label_type());
   }
 
   reduction_learner_builder<DataT, ExampleT, BaseLearnerT>& set_params_per_weight(size_t params_per_weight)
@@ -955,6 +686,8 @@ struct reduction_no_data_learner_builder
     : public common_learner_builder<reduction_learner_builder<char, ExampleT, BaseLearnerT>, char, ExampleT,
           BaseLearnerT>
 {
+  using super =
+      common_learner_builder<reduction_learner_builder<char, ExampleT, BaseLearnerT>, char, ExampleT, BaseLearnerT>;
   reduction_no_data_learner_builder(BaseLearnerT* base, const std::string& name)
       // NOTE: This is a copy of the base! The purpose is to copy all of the
       // function data objects so that if this reduction does not define a function such as
@@ -970,20 +703,11 @@ struct reduction_no_data_learner_builder
     this->_learner->finisher_fd.func = static_cast<func_data::fn>(noop);
 
     set_params_per_weight(1);
-
-    this->_learner->pred_type = base->pred_type;
-  }
-
-  reduction_no_data_learner_builder<ExampleT, BaseLearnerT>& set_prediction_type(prediction_type_t pred_type)
-  {
-    this->_learner->pred_type = pred_type;
-    return *this;
-  }
-
-  reduction_no_data_learner_builder<ExampleT, BaseLearnerT>& set_label_type(label_type_t label_type)
-  {
-    std::ignore = label_type;
-    return *this;
+    // Default here is passthrough.
+    super::set_output_prediction_type(base->get_output_prediction_type());
+    super::set_input_prediction_type(base->get_input_prediction_type());
+    super::set_output_label_type(base->get_output_label_type());
+    super::set_input_label_type(base->get_input_label_type());
   }
 
   reduction_no_data_learner_builder<ExampleT, BaseLearnerT>& set_params_per_weight(size_t params_per_weight)
@@ -1002,8 +726,9 @@ template <class DataT, class ExampleT>
 struct base_learner_builder
     : public common_learner_builder<base_learner_builder<DataT, ExampleT>, DataT, ExampleT, base_learner>
 {
-  base_learner_builder(
-      std::unique_ptr<DataT>&& data, const std::string& name, prediction_type_t pred_type, label_type_t label_type)
+  using super = common_learner_builder<base_learner_builder<DataT, ExampleT>, DataT, ExampleT, base_learner>;
+  base_learner_builder(std::unique_ptr<DataT>&& data, const std::string& name, prediction_type_t out_pred_type,
+      label_type_t in_label_type)
       : common_learner_builder<base_learner_builder<DataT, ExampleT>, DataT, ExampleT, base_learner>(
             std::move(data), name)
   {
@@ -1020,10 +745,11 @@ struct base_learner_builder
         reinterpret_cast<finish_example_data::fn>(return_simple_example);
 
     this->_learner->learn_fd.data = this->_learner->learner_data.get();
-    this->_learner->pred_type = pred_type;
-    // TODO add label type as something learner knows about itself.
-    std::ignore = label_type;
-    // this->_learner.label_type = label_type;
+
+    super::set_output_prediction_type(out_pred_type);
+    super::set_input_prediction_type(prediction_type_t::nopred);
+    super::set_output_label_type(label_type_t::nolabel);
+    super::set_input_label_type(in_label_type);
 
     set_params_per_weight(1);
   }
@@ -1039,8 +765,6 @@ struct base_learner_builder
 };
 VW_WARNING_STATE_POP
 
-// NEW WAY:
-// Use these two functions when creating a new learner.
 template <class DataT, class ExampleT, class BaseLearnerT>
 reduction_learner_builder<DataT, ExampleT, BaseLearnerT> make_reduction_learner(std::unique_ptr<DataT>&& data,
     BaseLearnerT* base, void (*learn_fn)(DataT&, BaseLearnerT&, ExampleT&),
@@ -1068,9 +792,9 @@ reduction_no_data_learner_builder<ExampleT, BaseLearnerT> make_no_data_reduction
 template <class DataT, class ExampleT>
 base_learner_builder<DataT, ExampleT> make_base_learner(std::unique_ptr<DataT>&& data,
     void (*learn_fn)(DataT&, base_learner&, ExampleT&), void (*predict_fn)(DataT&, base_learner&, ExampleT&),
-    const std::string& name, prediction_type_t pred_type, label_type_t label_type)
+    const std::string& name, prediction_type_t out_pred_type, label_type_t in_label_type)
 {
-  auto builder = base_learner_builder<DataT, ExampleT>(std::move(data), name, pred_type, label_type);
+  auto builder = base_learner_builder<DataT, ExampleT>(std::move(data), name, out_pred_type, in_label_type);
   builder.set_learn(learn_fn);
   builder.set_update(learn_fn);
   builder.set_predict(predict_fn);
@@ -1079,11 +803,11 @@ base_learner_builder<DataT, ExampleT> make_base_learner(std::unique_ptr<DataT>&&
 
 template <class ExampleT>
 base_learner_builder<char, ExampleT> make_no_data_base_learner(void (*learn_fn)(char&, base_learner&, ExampleT&),
-    void (*predict_fn)(char&, base_learner&, ExampleT&), const std::string& name, prediction_type_t pred_type,
-    label_type_t label_type)
+    void (*predict_fn)(char&, base_learner&, ExampleT&), const std::string& name, prediction_type_t out_pred_type,
+    label_type_t in_label_type)
 {
   return make_base_learner<char, ExampleT>(
-      std::unique_ptr<char>(nullptr), learn_fn, predict_fn, name, pred_type, label_type);
+      std::unique_ptr<char>(nullptr), learn_fn, predict_fn, name, out_pred_type, in_label_type);
 }
 
 }  // namespace LEARNER

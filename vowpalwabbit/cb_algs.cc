@@ -62,7 +62,7 @@ void predict_or_learn(cb& data, single_learner& base, example& ec)
   // generate a cost-sensitive example to update classifiers
   gen_cs_example<is_learn>(c, ec, ec.l.cb, ec.l.cs);
 
-  if (c.cb_type != CB_TYPE_DM)
+  if (c.cb_type != VW::cb_type_t::dm)
   {
     if (is_learn)
       base.learn(ec);
@@ -94,7 +94,7 @@ void learn_eval(cb& data, single_learner&, example& ec)
   ec.pred.multiclass = ec.l.cb_eval.action;
 }
 
-void output_example(vw& all, cb& data, example& ec, CB::label& ld)
+void output_example(VW::workspace& all, cb& data, example& ec, CB::label& ld)
 {
   float loss = 0.;
 
@@ -104,7 +104,7 @@ void output_example(vw& all, cb& data, example& ec, CB::label& ld)
   generic_output_example(all, loss, ec, ld, &c.known_cost);
 }
 
-void generic_output_example(vw& all, float loss, example& ec, const CB::label& ld, CB::cb_class* known_cost)
+void generic_output_example(VW::workspace& all, float loss, example& ec, const CB::label& ld, CB::cb_class* known_cost)
 {
   all.sd->update(ec.test_only, !CB::is_test_label(ld), loss, 1.f, ec.get_num_features());
 
@@ -131,13 +131,13 @@ void generic_output_example(vw& all, float loss, example& ec, const CB::label& l
   }
 }
 
-void finish_example(vw& all, cb& c, example& ec)
+void finish_example(VW::workspace& all, cb& c, example& ec)
 {
   output_example(all, c, ec, ec.l.cb);
   VW::finish_example(all, ec);
 }
 
-void eval_finish_example(vw& all, cb& c, example& ec)
+void eval_finish_example(VW::workspace& all, cb& c, example& ec)
 {
   output_example(all, c, ec, ec.l.cb_eval.event);
   VW::finish_example(all, ec);
@@ -147,20 +147,24 @@ using namespace CB_ALGS;
 base_learner* cb_algs_setup(VW::setup_base_i& stack_builder)
 {
   options_i& options = *stack_builder.get_options();
-  vw& all = *stack_builder.get_all_pointer();
+  VW::workspace& all = *stack_builder.get_all_pointer();
   auto data = VW::make_unique<cb>();
   std::string type_string = "dr";
   bool eval = false;
   bool force_legacy = true;
 
-  option_group_definition new_options("Contextual Bandit Options");
+  option_group_definition new_options("Contextual Bandit");
   new_options
       .add(make_option("cb", data->cbcs.num_actions)
                .keep()
                .necessary()
                .help("Use contextual bandit learning with <k> costs"))
-      .add(make_option("cb_type", type_string).keep().help("contextual bandit method to use in {ips,dm,dr}"))
-      .add(make_option("eval", eval).help("Evaluate a policy rather than optimizing."))
+      .add(make_option("cb_type", type_string)
+               .keep()
+               .default_value("dr")
+               .one_of({"ips", "dm", "dr", "mtr", "sm"})
+               .help("Contextual bandit method to use"))
+      .add(make_option("eval", eval).help("Evaluate a policy rather than optimizing"))
       .add(make_option("cb_force_legacy", force_legacy)
                .keep()
                .help("Default to non-adf cb implementation (cb_to_cb_adf)"));
@@ -179,23 +183,24 @@ base_learner* cb_algs_setup(VW::setup_base_i& stack_builder)
   cb_to_cs& c = data->cbcs;
 
   size_t problem_multiplier = 2;  // default for DR
-  if (type_string.compare("dr") == 0)
-    c.cb_type = CB_TYPE_DR;
-  else if (type_string.compare("dm") == 0)
+  c.cb_type = VW::cb_type_from_string(type_string);
+  switch (c.cb_type)
   {
-    if (eval) THROW("direct method can not be used for evaluation --- it is biased.");
-    c.cb_type = CB_TYPE_DM;
-    problem_multiplier = 1;
-  }
-  else if (type_string.compare("ips") == 0)
-  {
-    c.cb_type = CB_TYPE_IPS;
-    problem_multiplier = 1;
-  }
-  else
-  {
-    logger::errlog_warn("warning: cb_type must be in {'ips','dm','dr'}; resetting to dr.");
-    c.cb_type = CB_TYPE_DR;
+    case VW::cb_type_t::dr:
+      break;
+    case VW::cb_type_t::dm:
+      if (eval) THROW("direct method can not be used for evaluation --- it is biased.");
+      problem_multiplier = 1;
+      break;
+    case VW::cb_type_t::ips:
+      problem_multiplier = 1;
+      break;
+    case VW::cb_type_t::mtr:
+    case VW::cb_type_t::sm:
+      logger::errlog_warn("warning: cb_type must be in {'ips','dm','dr'}; resetting to dr. Input received: {}",
+          VW::to_string(c.cb_type));
+      c.cb_type = VW::cb_type_t::dr;
+      break;
   }
 
   if (!options.was_supplied("csoaa"))
@@ -216,15 +221,15 @@ base_learner* cb_algs_setup(VW::setup_base_i& stack_builder)
   std::string name_addition = eval ? "-eval" : "";
   auto learn_ptr = eval ? learn_eval : predict_or_learn<true>;
   auto predict_ptr = eval ? predict_eval : predict_or_learn<false>;
-  auto label_type = eval ? label_type_t::cb_eval : label_type_t::cb;
+  auto label_type = eval ? VW::label_type_t::cb_eval : VW::label_type_t::cb;
   auto finish_ex = eval ? eval_finish_example : finish_example;
 
   auto* l = make_reduction_learner(
       std::move(data), base, learn_ptr, predict_ptr, stack_builder.get_setupfn_name(cb_algs_setup) + name_addition)
                 .set_params_per_weight(problem_multiplier)
-                .set_prediction_type(prediction_type_t::multiclass)
+                .set_output_prediction_type(VW::prediction_type_t::multiclass)
                 .set_learn_returns_prediction(eval)
-                .set_label_type(label_type)
+                .set_input_label_type(label_type)
                 .set_finish_example(finish_ex)
                 .build();
 

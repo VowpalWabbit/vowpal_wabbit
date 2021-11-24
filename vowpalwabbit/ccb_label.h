@@ -12,6 +12,7 @@
 #include "action_score.h"
 // TODO: This header can be removed once type and explicit_included_actions are removed from the label
 #include "ccb_reduction_features.h"
+#include "vw_string_view.h"
 
 namespace CCB
 {
@@ -104,9 +105,9 @@ struct label
 };
 
 void default_label(CCB::label& ld);
-void parse_label(parser* p, shared_data*, CCB::label& ld, std::vector<VW::string_view>& words, ::reduction_features&);
-void cache_label(CCB::label& ld, io_buf& cache);
-size_t read_cached_label(shared_data*, CCB::label& ld, io_buf& cache);
+void parse_label(label& ld, VW::label_parser_reuse_mem& reuse_mem, const std::vector<VW::string_view>& words);
+void cache_label(const CCB::label& ld, io_buf& cache);
+size_t read_cached_label(CCB::label& ld, io_buf& cache);
 
 extern label_parser ccb_label_parser;
 }  // namespace CCB

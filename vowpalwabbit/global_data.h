@@ -47,6 +47,7 @@
 #include "feature_group.h"
 #include "rand_state.h"
 #include "allreduce.h"
+#include "interactions_predict.h"
 
 #include "options.h"
 #include "version.h"
@@ -61,6 +62,14 @@ using options_deleter_type = void (*)(VW::config::options_i*);
 
 struct shared_data;
 
+namespace VW
+{
+struct workspace;
+}
+
+// TODO: deprecate this alias.
+using vw = VW::workspace;
+
 struct dictionary_info
 {
   std::string name;
@@ -68,7 +77,7 @@ struct dictionary_info
   std::shared_ptr<feature_dict> dict;
 };
 
-enum AllReduceType
+enum class AllReduceType
 {
   Socket,
   Thread
@@ -123,7 +132,9 @@ struct trace_message_wrapper
   ~trace_message_wrapper() = default;
 };
 
-struct vw
+namespace VW
+{
+struct workspace
 {
 private:
   std::shared_ptr<rand_state> _random_state_sp = std::make_shared<rand_state>();  // per instance random_state
@@ -221,6 +232,7 @@ public:
 
   // Referenced by examples as their set of interactions. Can be overriden by reductions.
   std::vector<std::vector<namespace_index>> interactions;
+  std::vector<std::vector<extent_term>> extent_interactions;
   bool ignore_some;
   std::array<bool, NUM_NAMESPACES> ignore;  // a set of namespaces to ignore
   bool ignore_some_linear;
@@ -262,6 +274,8 @@ public:
   uint32_t holdout_after;
   size_t check_holdout_every_n_passes;  // default: 1, but search might want to set it higher if you spend multiple
                                         // passes learning a single policy
+
+  INTERACTIONS::generate_interactions_object_cache _generate_interactions_object_cache;
 
   size_t normalized_idx;  // offset idx where the norm is stored (1 or 2 depending on whether adaptive is true)
 
@@ -309,17 +323,17 @@ public:
   // hack to support cb model loading into ccb reduction
   bool is_ccb_input_model = false;
 
-  vw();
-  ~vw();
+  workspace();
+  ~workspace();
   std::shared_ptr<rand_state> get_random_state() { return _random_state_sp; }
 
-  vw(const vw&) = delete;
-  vw& operator=(const vw&) = delete;
+  workspace(const VW::workspace&) = delete;
+  VW::workspace& operator=(const VW::workspace&) = delete;
 
   // vw object cannot be moved as many objects hold a pointer to it.
   // That pointer would be invalidated if it were to be moved.
-  vw(const vw&&) = delete;
-  vw& operator=(const vw&&) = delete;
+  workspace(const VW::workspace&&) = delete;
+  VW::workspace& operator=(const VW::workspace&&) = delete;
 
   std::string get_setupfn_name(reduction_setup_fn setup);
   void build_setupfn_name_dict(std::vector<std::tuple<std::string, reduction_setup_fn>>&);
@@ -327,6 +341,7 @@ public:
 private:
   std::unordered_map<reduction_setup_fn, std::string> _setup_name_map;
 };
+}  // namespace VW
 
 void print_result_by_ref(VW::io::writer* f, float res, float weight, const v_array<char>& tag);
 void binary_print_result_by_ref(VW::io::writer* f, float res, float weight, const v_array<char>& tag);

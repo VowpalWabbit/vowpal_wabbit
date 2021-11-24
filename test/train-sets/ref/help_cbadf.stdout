@@ -1,137 +1,149 @@
-driver:
+Driver Options:
   --onethread           Disable parse thread
-VW options:
-  --ring_size arg (=256, ) size of example ring
-  --strict_parse           throw on malformed examples
-Update options:
+VW Options:
+  --ring_size arg (=256, ) Size of example ring
+  --strict_parse           Throw on malformed examples
+Update Options:
   -l [ --learning_rate ] arg Set learning rate
-  --power_t arg              t power value
+  --power_t arg              T power value
   --decay_learning_rate arg  Set Decay factor for learning_rate between passes
-  --initial_t arg            initial t value
+  --initial_t arg            Initial t value
   --feature_mask arg         Use existing regressor to determine which 
                              parameters may be updated.  If no 
                              initial_regressor given, also used for initial 
                              weights.
-Weight options:
+Weight Options:
   -i [ --initial_regressor ] arg  Initial regressor(s)
-  --initial_weight arg            Set all weights to an initial value of arg.
-  --random_weights                make initial weights random
-  --normal_weights                make initial weights normal
-  --truncated_normal_weights      make initial weights truncated normal
+  --initial_weight arg            Set all weights to an initial value of arg
+  --random_weights                Make initial weights random
+  --normal_weights                Make initial weights normal
+  --truncated_normal_weights      Make initial weights truncated normal
   --sparse_weights                Use a sparse datastructure for weights
   --input_feature_regularizer arg Per feature regularization input file
-Parallelization options:
+Parallelization Options:
   --span_server arg                 Location of server for setting up spanning 
                                     tree
-  --unique_id arg (=0, )            unique id used for cluster parallel jobs
-  --total arg (=1, )                total number of nodes used in cluster 
+  --unique_id arg (=0, )            Unique id used for cluster parallel jobs
+  --total arg (=1, )                Total number of nodes used in cluster 
                                     parallel job
-  --node arg (=0, )                 node number in cluster parallel job
+  --node arg (=0, )                 Node number in cluster parallel job
   --span_server_port arg (=26543, ) Port of the server for setting up spanning 
                                     tree
-Diagnostic options:
+Diagnostic Options:
   --version             Version information
-  -a [ --audit ]        print weights of features
+  -a [ --audit ]        Print weights of features
   -P [ --progress ] arg Progress update frequency. int: additive, float: 
                         multiplicative
   --quiet               Don't output diagnostics and progress updates
-  --limit_output arg    Avoid chatty output. Limit total printed lines.
+  --limit_output arg    Avoid chatty output. Limit total printed lines
   --dry_run             Parse arguments and print corresponding metadata. Will 
-                        not execute driver.
+                        not execute driver
   -h [ --help ]         More information on vowpal wabbit can be found here 
-                        https://vowpalwabbit.org.
-Randomization options:
-  --random_seed arg     seed random number generator
-Feature options:
-  --hash arg                      how to hash the features. Available options: 
-                                  strings, all
-  --hash_seed arg (=0, )          seed for hash function
-  --ignore arg                    ignore namespaces beginning with character 
-                                  <arg>
-  --ignore_linear arg             ignore namespaces beginning with character 
-                                  <arg> for linear terms only
-  --keep arg                      keep namespaces beginning with character 
-                                  <arg>
-  --redefine arg                  redefine namespaces beginning with characters
-                                  of std::string S as namespace N. <arg> shall 
-                                  be in form 'N:=S' where := is operator. Empty
-                                  N or S are treated as default namespace. Use 
-                                  ':' as a wildcard in S.
-  -b [ --bit_precision ] arg      number of bits in the feature table
-  --noconstant                    Don't add a constant feature
-  -C [ --constant ] arg           Set initial value of constant
-  --ngram arg                     Generate N grams. To generate N grams for a 
-                                  single namespace 'foo', arg should be fN.
-  --skips arg                     Generate skips in N grams. This in 
-                                  conjunction with the ngram tag can be used to
-                                  generate generalized n-skip-k-gram. To 
-                                  generate n-skips for a single namespace 
-                                  'foo', arg should be fN.
-  --feature_limit arg             limit to N unique features per namespace. To 
-                                  apply to a single namespace 'foo', arg should
-                                  be fN
-  --affix arg                     generate prefixes/suffixes of features; 
-                                  argument '+2a,-3b,+1' means generate 2-char 
-                                  prefixes for namespace a, 3-char suffixes for
-                                  b and 1 char prefixes for default namespace
-  --spelling arg                  compute spelling features for a give 
-                                  namespace (use '_' for default namespace)
-  --dictionary arg                read a dictionary for additional features 
-                                  (arg either 'x:file' or just 'file')
-  --dictionary_path arg           look in this directory for dictionaries; 
-                                  defaults to current directory or env{PATH}
-  --interactions arg              Create feature interactions of any level 
-                                  between namespaces.
-  --permutations                  Use permutations instead of combinations for 
-                                  feature interactions of same namespace.
-  --leave_duplicate_interactions  Don't remove interactions with duplicate 
-                                  combinations of namespaces. For ex. this is a
-                                  duplicate: '-q ab -q ba' and a lot more in 
-                                  '-q ::'.
-  -q [ --quadratic ] arg          Create and use quadratic features
-  --q: arg                        DEPRECATED ':' corresponds to a wildcard for 
-                                  all printable characters
-  --cubic arg                     Create and use cubic features
-Example options:
+                        https://vowpalwabbit.org
+Randomization Options:
+  --random_seed arg     Seed random number generator
+Feature Options:
+  --hash arg                            How to hash the features. Choices: 
+                                        {all, strings}
+  --hash_seed arg (=0, )                Seed for hash function
+  --ignore arg                          Ignore namespaces beginning with 
+                                        character <arg>
+  --ignore_linear arg                   Ignore namespaces beginning with 
+                                        character <arg> for linear terms only
+  --keep arg                            Keep namespaces beginning with 
+                                        character <arg>
+  --redefine arg                        Redefine namespaces beginning with 
+                                        characters of std::string S as 
+                                        namespace N. <arg> shall be in form 
+                                        'N:=S' where := is operator. Empty N or
+                                        S are treated as default namespace. Use
+                                        ':' as a wildcard in S.
+  -b [ --bit_precision ] arg            Number of bits in the feature table
+  --noconstant                          Don't add a constant feature
+  -C [ --constant ] arg                 Set initial value of constant
+  --ngram arg                           Generate N grams. To generate N grams 
+                                        for a single namespace 'foo', arg 
+                                        should be fN
+  --skips arg                           Generate skips in N grams. This in 
+                                        conjunction with the ngram tag can be 
+                                        used to generate generalized 
+                                        n-skip-k-gram. To generate n-skips for 
+                                        a single namespace 'foo', arg should be
+                                        fN.
+  --feature_limit arg                   Limit to N unique features per 
+                                        namespace. To apply to a single 
+                                        namespace 'foo', arg should be fN
+  --affix arg                           Generate prefixes/suffixes of features;
+                                        argument '+2a,-3b,+1' means generate 
+                                        2-char prefixes for namespace a, 3-char
+                                        suffixes for b and 1 char prefixes for 
+                                        default namespace
+  --spelling arg                        Compute spelling features for a give 
+                                        namespace (use '_' for default 
+                                        namespace)
+  --dictionary arg                      Read a dictionary for additional 
+                                        features (arg either 'x:file' or just 
+                                        'file')
+  --dictionary_path arg                 Look in this directory for 
+                                        dictionaries; defaults to current 
+                                        directory or env{PATH}
+  --interactions arg                    Create feature interactions of any 
+                                        level between namespaces
+  --experimental_full_name_interactions arg
+                                        EXPERIMENTAL: Create feature 
+                                        interactions of any level between 
+                                        namespaces by specifying the full name 
+                                        of each namespace.
+  --permutations                        Use permutations instead of 
+                                        combinations for feature interactions 
+                                        of same namespace
+  --leave_duplicate_interactions        Don't remove interactions with 
+                                        duplicate combinations of namespaces. 
+                                        For ex. this is a duplicate: '-q ab -q 
+                                        ba' and a lot more in '-q ::'.
+  -q [ --quadratic ] arg                Create and use quadratic features
+  --q: arg                              DEPRECATED ':' corresponds to a 
+                                        wildcard for all printable characters
+  --cubic arg                           Create and use cubic features
+Example Options:
   -t [ --testonly ]                Ignore label information and just test
-  --holdout_off                    no holdout data in multiple passes
-  --holdout_period arg (=10, )     holdout period for test only
-  --holdout_after arg              holdout after n training examples, default 
+  --holdout_off                    No holdout data in multiple passes
+  --holdout_period arg (=10, )     Holdout period for test only
+  --holdout_after arg              Holdout after n training examples, default 
                                    off (disables holdout_period)
   --early_terminate arg (=3, )     Specify the number of passes tolerated when 
                                    holdout loss doesn't decrease before early 
                                    termination
   --passes arg                     Number of Training Passes
-  --initial_pass_length arg        initial number of examples per pass
-  --examples arg                   number of examples to parse
+  --initial_pass_length arg        Initial number of examples per pass
+  --examples arg                   Number of examples to parse
   --min_prediction arg             Smallest prediction to output
   --max_prediction arg             Largest prediction to output
-  --sort_features                  turn this on to disregard order in which 
+  --sort_features                  Turn this on to disregard order in which 
                                    features have been defined. This will lead 
                                    to smaller cache sizes
   --loss_function arg (=squared, ) Specify the loss function to be used, uses 
-                                   squared by default. Currently available ones
-                                   are squared, classic, hinge, logistic, 
-                                   quantile and poisson.
+                                   squared by default. Choices: {classic, 
+                                   hinge, logistic, poisson, quantile, squared}
   --quantile_tau arg (=0.5, )      Parameter \tau associated with Quantile 
                                    loss. Defaults to 0.5
-  --l1 arg                         l_1 lambda
-  --l2 arg                         l_2 lambda
-  --no_bias_regularization         no bias in regularization
-  --named_labels arg               use names for labels (multiclass, etc.) 
+  --l1 arg                         L_1 lambda
+  --l2 arg                         L_2 lambda
+  --no_bias_regularization         No bias in regularization
+  --named_labels arg               Use names for labels (multiclass, etc.) 
                                    rather than integers, argument specified all
                                    possible labels, comma-sep, eg 
                                    "--named_labels Noun,Verb,Adj,Punc"
-Output model:
+Output Model Options:
   -f [ --final_regressor ] arg          Final regressor
   --readable_model arg                  Output human-readable final regressor 
                                         with numeric features
   --invert_hash arg                     Output human-readable final regressor 
                                         with feature names.  Computationally 
-                                        expensive.
-  --save_resume                         save extra state so learning can be 
+                                        expensive
+  --save_resume                         Save extra state so learning can be 
                                         resumed later with new data
-  --preserve_performance_counters       reset performance counters when 
+  --preserve_performance_counters       Reset performance counters when 
                                         warmstarting
   --save_per_pass                       Save the model after every pass over 
                                         data
@@ -141,27 +153,27 @@ Output model:
                                         in text
   --id arg                              User supplied ID embedded into the 
                                         final regressor
-Output options:
+Output Options:
   -p [ --predictions ] arg     File to output predictions to
   -r [ --raw_predictions ] arg File to output unnormalized predictions to
-Input options:
+Input Options:
   -d [ --data ] arg     Example set
-  --daemon              persistent daemon mode on port 26542
-  --foreground          in persistent daemon mode, do not run in the background
-  --port arg            port to listen on; use 0 to pick unused port
-  --num_children arg    number of children for persistent daemon mode
+  --daemon              Persistent daemon mode on port 26542
+  --foreground          In persistent daemon mode, do not run in the background
+  --port arg            Port to listen on; use 0 to pick unused port
+  --num_children arg    Number of children for persistent daemon mode
   --pid_file arg        Write pid file in persistent daemon mode
   --port_file arg       Write port used in persistent daemon mode
   -c [ --cache ]        Use a cache.  The default is <data>.cache
-  --cache_file arg      The location(s) of cache_file.
-  --json                Enable JSON parsing.
-  --dsjson              Enable Decision Service JSON parsing.
-  -k [ --kill_cache ]   do not reuse existing cache: create a new one always
+  --cache_file arg      The location(s) of cache_file
+  --json                Enable JSON parsing
+  --dsjson              Enable Decision Service JSON parsing
+  -k [ --kill_cache ]   Do not reuse existing cache: create a new one always
   --compressed          use gzip format whenever possible. If a cache file is 
                         being created, this option creates a compressed cache 
                         file. A mixture of raw-text & compressed inputs are 
                         supported with autodetection.
-  --no_stdin            do not default to reading from stdin
+  --no_stdin            Do not default to reading from stdin
   --no_daemon           Force a loaded daemon or active learning model to 
                         accept local input instead of starting in daemon mode
   --chain_hash          Enable chain hash in JSON for feature name and string 
@@ -169,32 +181,33 @@ Input options:
                         A^B^C. Note: this will become the default in a future 
                         version, so enabling this option will migrate you to 
                         the new behavior and silence the warning.
-  --flatbuffer          data file will be interpreted as a flatbuffer file
-Gradient Descent options:
-  --sgd                  use regular stochastic gradient descent update.
-  --adaptive             use adaptive, individual learning rates.
-  --adax                 use adaptive learning rates with x^2 instead of g^2x^2
-  --invariant            use safe/importance aware updates.
-  --normalized           use per feature normalized updates
-  --sparse_l2 arg (=0, ) use per feature normalized updates
-  --l1_state arg (=0, )  use per feature normalized updates
-  --l2_state arg (=1, )  use per feature normalized updates
-scorer options:
-  --link arg (=identity, ) Specify the link function: identity, logistic, glf1 
-                           or poisson
-Cost Sensitive One Against All with Label Dependent Features:
+  --flatbuffer          Data file will be interpreted as a flatbuffer file
+Gradient Descent Options:
+  --sgd                  Use regular stochastic gradient descent update
+  --adaptive             Use adaptive, individual learning rates
+  --adax                 Use adaptive learning rates with x^2 instead of g^2x^2
+  --invariant            Use safe/importance aware updates
+  --normalized           Use per feature normalized updates
+  --sparse_l2 arg (=0, ) Degree of l2 regularization applied to activated 
+                         sparse parameters
+  --l1_state arg (=0, )  Amount of accumulated implicit l1 regularization
+  --l2_state arg (=1, )  Amount of accumulated implicit l2 regularization
+Scorer Options:
+  --link arg (=identity, ) Specify the link function. Choices: {glf1, identity,
+                           logistic, poisson}
+Cost Sensitive One Against All with Label Dependent Features Options:
   --csoaa_ldf arg       Use one-against-all multiclass learning with label 
-                        dependent features.
+                        dependent features
   --ldf_override arg    Override singleline or multiline from csoaa_ldf or 
                         wap_ldf, eg if stored in file
   --csoaa_rank          Return actions sorted by score order
-  --probabilities       predict probabilites of all classes
-Contextual Bandit with Action Dependent Features:
-  --cb_adf              Do Contextual Bandit learning with multiline action 
-                        dependent features.
-  --rank_all            Return actions sorted by score order
-  --no_predict          Do not do a prediction when training
-  --clip_p arg (=0, )   Clipping probability in importance weight. Default: 0.f
-                        (no clipping).
-  --cb_type arg         contextual bandit method to use in {ips, dm, dr, mtr, 
-                        sm}. Default: mtr
+  --probabilities       Predict probabilities of all classes
+Contextual Bandit with Action Dependent Features Options:
+  --cb_adf               Do Contextual Bandit learning with multiline action 
+                         dependent features
+  --rank_all             Return actions sorted by score order
+  --no_predict           Do not do a prediction when training
+  --clip_p arg (=0, )    Clipping probability in importance weight. Default: 
+                         0.f (no clipping)
+  --cb_type arg (=mtr, ) Contextual bandit method to use. Choices: {dm, dr, 
+                         ips, mtr, sm}

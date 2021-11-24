@@ -245,7 +245,7 @@ void predict_or_learn_cover(cb_explore& data, single_learner& base, example& ec)
   ec.pred.a_s = probs;
 }
 
-void print_update_cb_explore(vw& all, bool is_test, example& ec, std::stringstream& pred_string)
+void print_update_cb_explore(VW::workspace& all, bool is_test, example& ec, std::stringstream& pred_string)
 {
   if (all.sd->weighted_examples() >= all.sd->dump_interval && !all.logger.quiet && !all.bfgs)
   {
@@ -279,7 +279,7 @@ float calc_loss(cb_explore& data, example& ec, const CB::label& ld)
   return loss;
 }
 
-void generic_output_example(vw& all, float loss, example& ec, CB::label& ld)
+void generic_output_example(VW::workspace& all, float loss, example& ec, CB::label& ld)
 {
   all.sd->update(ec.test_only, !CB::is_test_label(ld), loss, 1.f, ec.get_num_features());
 
@@ -302,7 +302,7 @@ void generic_output_example(vw& all, float loss, example& ec, CB::label& ld)
   print_update_cb_explore(all, CB::is_test_label(ld), ec, sso);
 }
 
-void finish_example(vw& all, cb_explore& data, example& ec)
+void finish_example(VW::workspace& all, cb_explore& data, example& ec)
 {
   float loss = calc_loss(data, ec, ec.l.cb);
 
@@ -327,7 +327,7 @@ using namespace CB_EXPLORE;
 base_learner* cb_explore_setup(VW::setup_base_i& stack_builder)
 {
   options_i& options = *stack_builder.get_options();
-  vw& all = *stack_builder.get_all_pointer();
+  VW::workspace& all = *stack_builder.get_all_pointer();
   auto data = VW::make_unique<cb_explore>();
   option_group_definition new_options("Contextual Bandit Exploration");
   new_options
@@ -335,18 +335,18 @@ base_learner* cb_explore_setup(VW::setup_base_i& stack_builder)
                .keep()
                .necessary()
                .help("Online explore-exploit for a <k> action contextual bandit problem"))
-      .add(make_option("first", data->tau).keep().help("tau-first exploration"))
+      .add(make_option("first", data->tau).keep().help("Tau-first exploration"))
       .add(make_option("epsilon", data->epsilon)
                .keep()
                .allow_override()
                .default_value(0.05f)
-               .help("epsilon-greedy exploration"))
-      .add(make_option("bag", data->bag_size).keep().help("bagging-based exploration"))
+               .help("Epsilon-greedy exploration"))
+      .add(make_option("bag", data->bag_size).keep().help("Bagging-based exploration"))
       .add(make_option("cover", data->cover_size).keep().help("Online cover based exploration"))
       .add(make_option("nounif", data->nounif)
                .keep()
-               .help("do not explore uniformly on zero-probability actions in cover"))
-      .add(make_option("psi", data->psi).keep().default_value(1.0f).help("disagreement parameter for cover"));
+               .help("Do not explore uniformly on zero-probability actions in cover"))
+      .add(make_option("psi", data->psi).keep().default_value(1.0f).help("Disagreement parameter for cover"));
 
   if (!options.add_parse_and_check_necessary(new_options)) return nullptr;
 
@@ -367,7 +367,7 @@ base_learner* cb_explore_setup(VW::setup_base_i& stack_builder)
 
   if (data->epsilon < 0.0 || data->epsilon > 1.0) { THROW("The value of epsilon must be in [0,1]"); }
 
-  data->cbcs.cb_type = CB_TYPE_DR;
+  data->cbcs.cb_type = VW::cb_type_t::dr;
   data->model_file_version = all.model_file_ver;
 
   single_learner* base = as_singleline(stack_builder.setup_base_learner());
@@ -423,8 +423,8 @@ base_learner* cb_explore_setup(VW::setup_base_i& stack_builder)
   auto* l = make_reduction_learner(
       std::move(data), base, learn_ptr, predict_ptr, stack_builder.get_setupfn_name(cb_explore_setup) + name_addition)
                 .set_params_per_weight(params_per_weight)
-                .set_prediction_type(prediction_type_t::action_probs)
-                .set_label_type(label_type_t::cb)
+                .set_output_prediction_type(VW::prediction_type_t::action_probs)
+                .set_input_label_type(VW::label_type_t::cb)
                 .set_finish_example(finish_example)
                 .set_save_load(save_load)
                 .build();

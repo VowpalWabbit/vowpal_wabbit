@@ -1,6 +1,6 @@
-#ifndef STATIC_LINK_VW
-#define BOOST_TEST_DYN_LINK
-#endif
+// Copyright (c) by respective owners including Yahoo!, Microsoft, and
+// individual contributors. All rights reserved. Released under a BSD (revised)
+// license as described in the file LICENSE.
 
 #include <boost/test/unit_test.hpp>
 #include <boost/test/test_tools.hpp>
@@ -44,7 +44,7 @@ VW::LEARNER::learner<test_base<LearnFunc, PredictFunc>, multi_ex>* make_test_lea
   auto learn_fptr = &test_base<LearnFunc, PredictFunc>::invoke_learn;
   auto predict_fptr = &test_base<LearnFunc, PredictFunc>::invoke_predict;
   return VW::LEARNER::make_base_learner(std::move(test_base_data), static_cast<func>(learn_fptr),
-      static_cast<func>(predict_fptr), "mock_reduction", prediction_type_t::decision_probs, label_type_t::ccb)
+      static_cast<func>(predict_fptr), "mock_reduction", VW::prediction_type_t::decision_probs, VW::label_type_t::ccb)
       .build();
 }
 

@@ -61,12 +61,12 @@ constexpr uint32_t my_null = 9999999; /*representing_default*/
 
 void initialize(Search::search &sch, size_t & /*num_actions*/, options_i &options)
 {
-  vw &all = sch.get_vw_pointer_unsafe();
+  VW::workspace& all = sch.get_vw_pointer_unsafe();
   task_data *data = new task_data();
   data->action_loss.resize_but_with_stl_behavior(5);
   sch.set_task_data<task_data>(data);
 
-  option_group_definition new_options("Dependency Parser Options");
+  option_group_definition new_options("Dependency Parser");
   new_options.add(make_option("root_label", data->root_label)
                       .keep()
                       .default_value(8)
@@ -90,11 +90,14 @@ void initialize(Search::search &sch, size_t & /*num_actions*/, options_i &option
   for (size_t i = 1; i < 14; i++) data->ex.indices.push_back(static_cast<unsigned char>(i) + 'A');
   data->ex.indices.push_back(constant_namespace);
   data->ex.interactions = &sch.get_vw_pointer_unsafe().interactions;
+  data->ex.extent_interactions = &sch.get_vw_pointer_unsafe().extent_interactions;
 
   if (data->one_learner)
     sch.set_num_learners(1);
   else
     sch.set_num_learners(3);
+
+  sch.set_is_ldf(false);
 
   std::vector<std::vector<namespace_index>> newpairs{{'B', 'C'}, {'B', 'E'}, {'B', 'B'}, {'C', 'C'}, {'D', 'D'},
       {'E', 'E'}, {'F', 'F'}, {'G', 'G'}, {'E', 'F'}, {'B', 'H'}, {'B', 'J'}, {'E', 'L'}, {'d', 'B'}, {'d', 'C'},
@@ -112,7 +115,7 @@ void initialize(Search::search &sch, size_t & /*num_actions*/, options_i &option
   else
     sch.set_options(AUTO_CONDITION_FEATURES | NO_CACHING);
 
-  sch.set_label_parser(COST_SENSITIVE::cs_label, [](polylabel* l) -> bool { return l->cs.costs.size() == 0; });
+  sch.set_label_parser(COST_SENSITIVE::cs_label, [](const polylabel& l) -> bool { return l.cs.costs.empty(); });
 }
 
 void inline add_feature(
@@ -237,7 +240,7 @@ size_t transition_eager(Search::search &sch, uint64_t a_id, uint32_t idx, uint32
 
 void extract_features(Search::search &sch, uint32_t idx, multi_ex &ec)
 {
-  vw &all = sch.get_vw_pointer_unsafe();
+  VW::workspace& all = sch.get_vw_pointer_unsafe();
   task_data *data = sch.get_task_data<task_data>();
   reset_ex(data->ex);
   uint64_t mask = sch.get_mask();
