@@ -56,7 +56,7 @@ inline void dummy_func(DataT&, const audit_strings*)
 }  // should never be called due to call_audit overload
 
 template <class DataT, class WeightOrIndexT, void (*FuncT)(DataT&, float, WeightOrIndexT),
-    class WeightsT>  // nullptr func can't be used as template param in old
+    class WeightsT, bool privacy_activation>  // nullptr func can't be used as template param in old
                      // compilers
 
 inline void generate_interactions(const std::vector<std::vector<namespace_index>>& interactions,
@@ -65,7 +65,7 @@ inline void generate_interactions(const std::vector<std::vector<namespace_index>
     INTERACTIONS::generate_interactions_object_cache& cache)  // default value removed to eliminate
                                                               // ambiguity in old complers
 {
-  INTERACTIONS::generate_interactions<DataT, WeightOrIndexT, FuncT, false, dummy_func<DataT>, WeightsT>(
+  INTERACTIONS::generate_interactions<DataT, WeightOrIndexT, FuncT, false, dummy_func<DataT>, WeightsT, privacy_activation>(
       interactions, extent_interactions, permutations, ec, dat, weights, num_interacted_features, cache);
 }
 
@@ -90,7 +90,7 @@ inline void foreach_feature(WeightsT& weights, bool ignore_some_linear, std::arr
   else
     for (features& f : ec) foreach_feature<DataT, FuncT, WeightsT, privacy_activation>(weights, f, dat, offset);
 
-  generate_interactions<DataT, WeightOrIndexT, FuncT, WeightsT>(
+  generate_interactions<DataT, WeightOrIndexT, FuncT, WeightsT, privacy_activation>(
       interactions, extent_interactions, permutations, ec, dat, weights, num_interacted_features, cache);
 }
 

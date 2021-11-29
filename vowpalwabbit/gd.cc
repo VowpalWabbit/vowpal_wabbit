@@ -307,7 +307,7 @@ void print_features(VW::workspace& all, example& ec)
       }
     }
     size_t num_interacted_features = 0;
-    INTERACTIONS::generate_interactions<audit_results, const uint64_t, audit_feature, true, audit_interaction>(
+    INTERACTIONS::generate_interactions<audit_results, const uint64_t, audit_feature, true, audit_interaction, false>(
         all, ec, dat, num_interacted_features);
 
     stable_sort(dat.results.begin(), dat.results.end());
@@ -868,9 +868,9 @@ void save_load_online_state(VW::workspace& all, io_buf& model_file, bool read, b
     {
       i = v.index() >> weights.stride_shift();
 
-      if (*v != 0.f && (!all.privacy_activation || (weights.is_activated(v.index()) && all.privacy_activation)))
+      if (all.print_invert)
       {
-        if (*v != 0.f)
+        if (*v != 0.f && (!all.privacy_activation || (weights.is_activated(v.index()) && all.privacy_activation)))
         {
           const auto map_it = all.index_name_map.find(i);
           if (map_it != all.index_name_map.end())
@@ -1103,34 +1103,38 @@ void save_load(gd& g, io_buf& model_file, bool read, bool text)
     sync_weights(all);
 }
 
-template <bool sparse_l2, bool invariant, bool sqrt_rate, bool feature_mask_off, bool adax, uint64_t adaptive, uint64_t normalized,    uint64_t spare, uint64_t next>
+template <bool sparse_l2, bool invariant, bool sqrt_rate, bool feature_mask_off, uint64_t adaptive, uint64_t normalized,    uint64_t spare, uint64_t next>
 uint64_t set_learn(VW::workspace& all, gd& g)
 {
   all.normalized_idx = normalized;
-  if (all.privacy_activation)
+  if (g.adax && all.privacy_activation)
   {
-    g.learn = learn<sparse_l2, invariant, sqrt_rate, feature_mask_off, adax, adaptive, normalized, spare, true>;
-    g.update = update<sparse_l2, invariant, sqrt_rate, feature_mask_off, adax, adaptive, normalized, spare, true>;
-    g.sensitivity = sensitivity<sqrt_rate, feature_mask_off, adax, adaptive, normalized, spare>;
+    g.learn = learn<sparse_l2, invariant, sqrt_rate, feature_mask_off, true, adaptive, normalized, spare, true>;
+    g.update = update<sparse_l2, invariant, sqrt_rate, feature_mask_off, true, adaptive, normalized, spare, true>;
+    g.sensitivity = sensitivity<sqrt_rate, feature_mask_off, true, adaptive, normalized, spare>;
+    return next;
+  }
+  else if (g.adax && !all.privacy_activation)
+  {
+    g.learn = learn<sparse_l2, invariant, sqrt_rate, feature_mask_off, true, adaptive, normalized, spare, false>;
+    g.update = update<sparse_l2, invariant, sqrt_rate, feature_mask_off, true, adaptive, normalized, spare, false>;
+    g.sensitivity = sensitivity<sqrt_rate, feature_mask_off, true, adaptive, normalized, spare>;
+    return next;
+  }
+  else if (!g.adax && all.privacy_activation)
+  {
+    g.learn = learn<sparse_l2, invariant, sqrt_rate, feature_mask_off, false, adaptive, normalized, spare, true>;
+    g.update = update<sparse_l2, invariant, sqrt_rate, feature_mask_off, false, adaptive, normalized, spare, true>;
+    g.sensitivity = sensitivity<sqrt_rate, feature_mask_off, false, adaptive, normalized, spare>;
     return next;
   }
   else
   {
-    g.learn = learn<sparse_l2, invariant, sqrt_rate, feature_mask_off, adax, adaptive, normalized, spare, false>;
-    g.update = update<sparse_l2, invariant, sqrt_rate, feature_mask_off, adax, adaptive, normalized, spare, false>;
-    g.sensitivity = sensitivity<sqrt_rate, feature_mask_off, adax, adaptive, normalized, spare>;
+    g.learn = learn<sparse_l2, invariant, sqrt_rate, feature_mask_off, false, adaptive, normalized, spare, false>;
+    g.update = update<sparse_l2, invariant, sqrt_rate, feature_mask_off, false, adaptive, normalized, spare, false>;
+    g.sensitivity = sensitivity<sqrt_rate, feature_mask_off, false, adaptive, normalized, spare>;
     return next;
   }
-}
-
-template <bool sparse_l2, bool invariant, bool sqrt_rate, bool feature_mask_off, uint64_t adaptive, uint64_t normalized, uint64_t spare,
-    uint64_t next>
-uint64_t set_learn(VW::workspace& all, gd& g)
-{
-  if (g.adax)
-    return set_learn<sparse_l2, invariant, sqrt_rate, feature_mask_off, true, adaptive, normalized, spare, next>(all, g);
-  else
-    return set_learn<sparse_l2, invariant, sqrt_rate, feature_mask_off,false, adaptive, normalized, spare, next>(all, g);
 }
 
 template <bool sparse_l2, bool invariant, bool sqrt_rate, uint64_t adaptive, uint64_t normalized, uint64_t spare,

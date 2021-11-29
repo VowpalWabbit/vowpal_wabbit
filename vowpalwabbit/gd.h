@@ -171,28 +171,28 @@ inline float trunc_weight(const float w, const float gravity)
 
 namespace INTERACTIONS
 {
-template <class R, class S, void (*T)(R&, float, S), bool audit, void (*audit_func)(R&, const audit_strings*)>
+template <class R, class S, void (*T)(R&, float, S), bool audit, void (*audit_func)(R&, const audit_strings*), bool privacy_activation>
 inline void generate_interactions(VW::workspace& all, example_predict& ec, R& dat, size_t& num_interacted_features)
 {
   if (all.weights.sparse)
-    generate_interactions<R, S, T, audit, audit_func, sparse_parameters>(*ec.interactions, *ec.extent_interactions,
+    generate_interactions<R, S, T, audit, audit_func, sparse_parameters, privacy_activation>(*ec.interactions, *ec.extent_interactions,
         all.permutations, ec, dat, all.weights.sparse_weights, num_interacted_features,
         all._generate_interactions_object_cache);
   else
-    generate_interactions<R, S, T, audit, audit_func, dense_parameters>(*ec.interactions, *ec.extent_interactions,
+    generate_interactions<R, S, T, audit, audit_func, dense_parameters, privacy_activation>(*ec.interactions, *ec.extent_interactions,
         all.permutations, ec, dat, all.weights.dense_weights, num_interacted_features,
         all._generate_interactions_object_cache);
 }
 
 // this code is for C++98/03 complience as I unable to pass null function-pointer as template argument in g++-4.6
-template <class R, class S, void (*T)(R&, float, S)>
+template <class R, class S, void (*T)(R&, float, S), bool privacy_activation>
 inline void generate_interactions(VW::workspace& all, example_predict& ec, R& dat, size_t& num_interacted_features)
 {
   if (all.weights.sparse)
-    generate_interactions<R, S, T, sparse_parameters>(all.interactions, all.extent_interactions, all.permutations, ec,
+    generate_interactions<R, S, T, sparse_parameters, privacy_activation>(all.interactions, all.extent_interactions, all.permutations, ec,
         dat, all.weights.sparse_weights, num_interacted_features, all._generate_interactions_object_cache);
   else
-    generate_interactions<R, S, T, dense_parameters>(all.interactions, all.extent_interactions, all.permutations, ec,
+    generate_interactions<R, S, T, dense_parameters,privacy_activation>(all.interactions, all.extent_interactions, all.permutations, ec,
         dat, all.weights.dense_weights, num_interacted_features, all._generate_interactions_object_cache);
 }
 

@@ -46,20 +46,23 @@ struct generate_interactions_object_cache
 
 // 3 template functions to pass FuncT() proper argument (feature idx in regressor, or its coefficient)
 
-template <class DataT, void (*FuncT)(DataT&, const float, float&), class WeightsT>
+template <class DataT, void (*FuncT)(DataT&, const float, float&), bool privacy_activation, class WeightsT>
 inline void call_FuncT(DataT& dat, WeightsT& weights, const float ft_value, const uint64_t ft_idx)
 {
-  weights.set_privacy_preserving_bit(ft_idx);
+  if VW_STD17_CONSTEXPR (privacy_activation)
+  {
+    weights.set_privacy_preserving_bit(ft_idx);
+  }
   FuncT(dat, ft_value, weights[ft_idx]);
 }
 
-template <class DataT, void (*FuncT)(DataT&, const float, float), class WeightsT>
+template <class DataT, void (*FuncT)(DataT&, const float, float), bool privacy_activation, class WeightsT>
 inline void call_FuncT(DataT& dat, const WeightsT& weights, const float ft_value, const uint64_t ft_idx)
 {
   FuncT(dat, ft_value, weights[ft_idx]);
 }
 
-template <class DataT, void (*FuncT)(DataT&, float, uint64_t), class WeightsT>
+template <class DataT, void (*FuncT)(DataT&, float, uint64_t), bool privacy_activation, class WeightsT>
 inline void call_FuncT(DataT& dat, WeightsT& /*weights*/, const float ft_value, const uint64_t ft_idx)
 {
   FuncT(dat, ft_value, ft_idx);
@@ -229,7 +232,7 @@ std::vector<features_range_t> inline generate_generic_char_combination(
 }
 
 template <class DataT, class WeightOrIndexT, void (*FuncT)(DataT&, float, WeightOrIndexT), bool audit,
-    void (*audit_func)(DataT&, const audit_strings*), class WeightsT>
+    void (*audit_func)(DataT&, const audit_strings*), bool privacy_activation, class WeightsT>
 void inner_kernel(DataT& dat, features::const_audit_iterator& begin, features::const_audit_iterator& end,
     const uint64_t offset, WeightsT& weights, feature_value ft_value, feature_index halfhash)
 {
@@ -238,7 +241,7 @@ void inner_kernel(DataT& dat, features::const_audit_iterator& begin, features::c
     for (; begin != end; ++begin)
     {
       audit_func(dat, begin.audit() == nullptr ? &EMPTY_AUDIT_STRINGS : begin.audit());
-      call_FuncT<DataT, FuncT>(
+      call_FuncT<DataT, FuncT, privacy_activation>(
           dat, weights, INTERACTION_VALUE(ft_value, begin.value()), (begin.index() ^ halfhash) + offset);
       audit_func(dat, nullptr);
     }
@@ -246,7 +249,7 @@ void inner_kernel(DataT& dat, features::const_audit_iterator& begin, features::c
   else
   {
     for (; begin != end; ++begin)
-      call_FuncT<DataT, FuncT>(
+      call_FuncT<DataT, FuncT, privacy_activation>(
           dat, weights, INTERACTION_VALUE(ft_value, begin.value()), (begin.index() ^ halfhash) + offset);
   }
 }
@@ -428,7 +431,7 @@ size_t process_generic_interaction(const std::vector<features_range_t>& range, b
 // it must be in header file to avoid compilation problems
 template <class DataT, class WeightOrIndexT, void (*FuncT)(DataT&, float, WeightOrIndexT), bool audit,
     void (*audit_func)(DataT&, const audit_strings*),
-    class WeightsT>  // nullptr func can't be used as template param in old compilers
+    class WeightsT, bool privacy_activation>  // nullptr func can't be used as template param in old compilers
 inline void generate_interactions(const std::vector<std::vector<namespace_index>>& interactions,
     const std::vector<std::vector<extent_term>>& extent_interactions, bool permutations, example_predict& ec,
     DataT& dat, WeightsT& weights, size_t& num_features,
@@ -438,7 +441,7 @@ inline void generate_interactions(const std::vector<std::vector<namespace_index>
   // often used values
   const auto inner_kernel_func = [&](features::const_audit_iterator begin, features::const_audit_iterator end,
                                      feature_value value, feature_index index) {
-    inner_kernel<DataT, WeightOrIndexT, FuncT, audit, audit_func>(dat, begin, end, ec.ft_offset, weights, value, index);
+    inner_kernel<DataT, WeightOrIndexT, FuncT, audit, audit_func, privacy_activation>(dat, begin, end, ec.ft_offset, weights, value, index);
   };
 
   const auto depth_audit_func = [&](const audit_strings* audit_str) { audit_func(dat, audit_str); };
