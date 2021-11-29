@@ -10,7 +10,7 @@
   case VW::type:   \
     return #type;
 
-VW::string_view to_string(VW::label_type_t label_type)
+VW::string_view VW::to_string(VW::label_type_t label_type)
 {
   switch (label_type)
   {

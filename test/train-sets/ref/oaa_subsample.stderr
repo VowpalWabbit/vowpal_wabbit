@@ -7,6 +7,8 @@ creating cache_file = train-sets/multiclass.cache
 Reading datafile = train-sets/multiclass
 num sources = 1
 Enabled reductions: gd, scorer-identity, oaa
+Input label = multiclass
+Output pred = multiclass
 average  since         example        example  current  current  current
 loss     last          counter         weight    label  predict features
     n.a.     n.a.            1            1.0        1        1        2
