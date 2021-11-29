@@ -75,7 +75,7 @@ public:
   {
   }
 
-  dense_parameters()     
+  dense_parameters()
       : _begin(nullptr), _weight_mask(0), _stride_shift(0), _seeded(false), _privacy_activation_threshold(0)
   {
   }
@@ -205,7 +205,7 @@ public:
   {
     _privacy_activation_threshold = privacy_activation_threshold;
   }
-  
+
 #ifndef _WIN32
 #  ifndef DISABLE_SHARED_WEIGHTS
   void share(size_t length)

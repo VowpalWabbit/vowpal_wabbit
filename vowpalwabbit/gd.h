@@ -69,21 +69,21 @@ inline void foreach_feature(VW::workspace& all, example& ec, DataT& dat)
   {
     return all.weights.sparse
         ? foreach_feature<DataT, WeightOrIndexT, FuncT, sparse_parameters, true>(all.weights.sparse_weights,
-              all.ignore_some_linear, all.ignore_linear, *ec.interactions, *ec.extent_interactions, all.permutations, ec,
-              dat, all._generate_interactions_object_cache)
+              all.ignore_some_linear, all.ignore_linear, *ec.interactions, *ec.extent_interactions, all.permutations,
+              ec, dat, all._generate_interactions_object_cache)
         : foreach_feature<DataT, WeightOrIndexT, FuncT, dense_parameters, true>(all.weights.dense_weights,
-              all.ignore_some_linear, all.ignore_linear, *ec.interactions, *ec.extent_interactions, all.permutations, ec,
-              dat, all._generate_interactions_object_cache);
+              all.ignore_some_linear, all.ignore_linear, *ec.interactions, *ec.extent_interactions, all.permutations,
+              ec, dat, all._generate_interactions_object_cache);
   }
   else
   {
     return all.weights.sparse
-      ? foreach_feature<DataT, WeightOrIndexT, FuncT, sparse_parameters, false>(all.weights.sparse_weights,
-            all.ignore_some_linear, all.ignore_linear, *ec.interactions, *ec.extent_interactions, all.permutations, ec,
-            dat, all._generate_interactions_object_cache)
-      : foreach_feature<DataT, WeightOrIndexT, FuncT, dense_parameters, false>(all.weights.dense_weights,
-            all.ignore_some_linear, all.ignore_linear, *ec.interactions, *ec.extent_interactions, all.permutations, ec,
-            dat, all._generate_interactions_object_cache);
+        ? foreach_feature<DataT, WeightOrIndexT, FuncT, sparse_parameters, false>(all.weights.sparse_weights,
+              all.ignore_some_linear, all.ignore_linear, *ec.interactions, *ec.extent_interactions, all.permutations,
+              ec, dat, all._generate_interactions_object_cache)
+        : foreach_feature<DataT, WeightOrIndexT, FuncT, dense_parameters, false>(all.weights.dense_weights,
+              all.ignore_some_linear, all.ignore_linear, *ec.interactions, *ec.extent_interactions, all.permutations,
+              ec, dat, all._generate_interactions_object_cache);
   }
 }
 
@@ -95,21 +95,21 @@ inline void foreach_feature(VW::workspace& all, example& ec, DataT& dat, size_t&
   {
     return all.weights.sparse
         ? foreach_feature<DataT, WeightOrIndexT, FuncT, sparse_parameters, true>(all.weights.sparse_weights,
-              all.ignore_some_linear, all.ignore_linear, *ec.interactions, *ec.extent_interactions, all.permutations, ec,
-              dat, num_interacted_features, all._generate_interactions_object_cache)
+              all.ignore_some_linear, all.ignore_linear, *ec.interactions, *ec.extent_interactions, all.permutations,
+              ec, dat, num_interacted_features, all._generate_interactions_object_cache)
         : foreach_feature<DataT, WeightOrIndexT, FuncT, dense_parameters, true>(all.weights.dense_weights,
-              all.ignore_some_linear, all.ignore_linear, *ec.interactions, *ec.extent_interactions, all.permutations, ec,
-              dat, num_interacted_features, all._generate_interactions_object_cache);
+              all.ignore_some_linear, all.ignore_linear, *ec.interactions, *ec.extent_interactions, all.permutations,
+              ec, dat, num_interacted_features, all._generate_interactions_object_cache);
   }
   else
   {
     return all.weights.sparse
-      ? foreach_feature<DataT, WeightOrIndexT, FuncT, sparse_parameters, false>(all.weights.sparse_weights,
-            all.ignore_some_linear, all.ignore_linear, *ec.interactions, *ec.extent_interactions, all.permutations, ec,
-            dat, num_interacted_features, all._generate_interactions_object_cache)
-      : foreach_feature<DataT, WeightOrIndexT, FuncT, dense_parameters, false>(all.weights.dense_weights,
-            all.ignore_some_linear, all.ignore_linear, *ec.interactions, *ec.extent_interactions, all.permutations, ec,
-            dat, num_interacted_features, all._generate_interactions_object_cache);
+        ? foreach_feature<DataT, WeightOrIndexT, FuncT, sparse_parameters, false>(all.weights.sparse_weights,
+              all.ignore_some_linear, all.ignore_linear, *ec.interactions, *ec.extent_interactions, all.permutations,
+              ec, dat, num_interacted_features, all._generate_interactions_object_cache)
+        : foreach_feature<DataT, WeightOrIndexT, FuncT, dense_parameters, false>(all.weights.dense_weights,
+              all.ignore_some_linear, all.ignore_linear, *ec.interactions, *ec.extent_interactions, all.permutations,
+              ec, dat, num_interacted_features, all._generate_interactions_object_cache);
   }
 }
 
@@ -171,16 +171,17 @@ inline float trunc_weight(const float w, const float gravity)
 
 namespace INTERACTIONS
 {
-template <class R, class S, void (*T)(R&, float, S), bool audit, void (*audit_func)(R&, const audit_strings*), bool privacy_activation>
+template <class R, class S, void (*T)(R&, float, S), bool audit, void (*audit_func)(R&, const audit_strings*),
+    bool privacy_activation>
 inline void generate_interactions(VW::workspace& all, example_predict& ec, R& dat, size_t& num_interacted_features)
 {
   if (all.weights.sparse)
-    generate_interactions<R, S, T, audit, audit_func, sparse_parameters, privacy_activation>(*ec.interactions, *ec.extent_interactions,
-        all.permutations, ec, dat, all.weights.sparse_weights, num_interacted_features,
+    generate_interactions<R, S, T, audit, audit_func, sparse_parameters, privacy_activation>(*ec.interactions,
+        *ec.extent_interactions, all.permutations, ec, dat, all.weights.sparse_weights, num_interacted_features,
         all._generate_interactions_object_cache);
   else
-    generate_interactions<R, S, T, audit, audit_func, dense_parameters, privacy_activation>(*ec.interactions, *ec.extent_interactions,
-        all.permutations, ec, dat, all.weights.dense_weights, num_interacted_features,
+    generate_interactions<R, S, T, audit, audit_func, dense_parameters, privacy_activation>(*ec.interactions,
+        *ec.extent_interactions, all.permutations, ec, dat, all.weights.dense_weights, num_interacted_features,
         all._generate_interactions_object_cache);
 }
 
@@ -189,11 +190,13 @@ template <class R, class S, void (*T)(R&, float, S), bool privacy_activation>
 inline void generate_interactions(VW::workspace& all, example_predict& ec, R& dat, size_t& num_interacted_features)
 {
   if (all.weights.sparse)
-    generate_interactions<R, S, T, sparse_parameters, privacy_activation>(all.interactions, all.extent_interactions, all.permutations, ec,
-        dat, all.weights.sparse_weights, num_interacted_features, all._generate_interactions_object_cache);
+    generate_interactions<R, S, T, sparse_parameters, privacy_activation>(all.interactions, all.extent_interactions,
+        all.permutations, ec, dat, all.weights.sparse_weights, num_interacted_features,
+        all._generate_interactions_object_cache);
   else
-    generate_interactions<R, S, T, dense_parameters,privacy_activation>(all.interactions, all.extent_interactions, all.permutations, ec,
-        dat, all.weights.dense_weights, num_interacted_features, all._generate_interactions_object_cache);
+    generate_interactions<R, S, T, dense_parameters, privacy_activation>(all.interactions, all.extent_interactions,
+        all.permutations, ec, dat, all.weights.dense_weights, num_interacted_features,
+        all._generate_interactions_object_cache);
 }
 
 }  // namespace INTERACTIONS

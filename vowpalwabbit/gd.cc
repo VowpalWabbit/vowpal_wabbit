@@ -710,7 +710,8 @@ void learn(gd& g, base_learner& base, example& ec)
   assert(ec.l.simple.label != FLT_MAX);
   assert(ec.weight > 0.);
   g.predict(g, base, ec);
-  update<sparse_l2, invariant, sqrt_rate, feature_mask_off, adax, adaptive, normalized, spare, privacy_activation>(g, base, ec);
+  update<sparse_l2, invariant, sqrt_rate, feature_mask_off, adax, adaptive, normalized, spare, privacy_activation>(
+      g, base, ec);
 }
 
 void sync_weights(VW::workspace& all)
@@ -1103,7 +1104,8 @@ void save_load(gd& g, io_buf& model_file, bool read, bool text)
     sync_weights(all);
 }
 
-template <bool sparse_l2, bool invariant, bool sqrt_rate, bool feature_mask_off, uint64_t adaptive, uint64_t normalized,    uint64_t spare, uint64_t next>
+template <bool sparse_l2, bool invariant, bool sqrt_rate, bool feature_mask_off, uint64_t adaptive, uint64_t normalized,
+    uint64_t spare, uint64_t next>
 uint64_t set_learn(VW::workspace& all, gd& g)
 {
   all.normalized_idx = normalized;

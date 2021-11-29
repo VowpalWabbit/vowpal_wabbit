@@ -430,8 +430,8 @@ size_t process_generic_interaction(const std::vector<features_range_t>& range, b
 // and passes each of them to given function FuncT()
 // it must be in header file to avoid compilation problems
 template <class DataT, class WeightOrIndexT, void (*FuncT)(DataT&, float, WeightOrIndexT), bool audit,
-    void (*audit_func)(DataT&, const audit_strings*),
-    class WeightsT, bool privacy_activation>  // nullptr func can't be used as template param in old compilers
+    void (*audit_func)(DataT&, const audit_strings*), class WeightsT,
+    bool privacy_activation>  // nullptr func can't be used as template param in old compilers
 inline void generate_interactions(const std::vector<std::vector<namespace_index>>& interactions,
     const std::vector<std::vector<extent_term>>& extent_interactions, bool permutations, example_predict& ec,
     DataT& dat, WeightsT& weights, size_t& num_features,
@@ -441,7 +441,8 @@ inline void generate_interactions(const std::vector<std::vector<namespace_index>
   // often used values
   const auto inner_kernel_func = [&](features::const_audit_iterator begin, features::const_audit_iterator end,
                                      feature_value value, feature_index index) {
-    inner_kernel<DataT, WeightOrIndexT, FuncT, audit, audit_func, privacy_activation>(dat, begin, end, ec.ft_offset, weights, value, index);
+    inner_kernel<DataT, WeightOrIndexT, FuncT, audit, audit_func, privacy_activation>(
+        dat, begin, end, ec.ft_offset, weights, value, index);
   };
 
   const auto depth_audit_func = [&](const audit_strings* audit_str) { audit_func(dat, audit_str); };
