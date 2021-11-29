@@ -671,31 +671,21 @@ void update(gd& g, base_learner&, example& ec)
            g, ec)) != 0.)
   {
 #ifdef PRIVACY_ACTIVATION
-    if (g.all->weights.sparse)
+    if (g.all->weights.sparse && g.all->privacy_activation)
     {
-      if (g.all->privacy_activation)
-      {
-        g.all->weights.sparse_weights.set_tag(ec.tag_hash);
-        train<sqrt_rate, feature_mask_off, adaptive, normalized, spare>(g, ec, update);
-        g.all->weights.sparse_weights.unset_tag();
-      }
-      else
-      {
-        train<sqrt_rate, feature_mask_off, adaptive, normalized, spare>(g, ec, update);
-      }
+      g.all->weights.sparse_weights.set_tag(ec.tag_hash);
+      train<sqrt_rate, feature_mask_off, adaptive, normalized, spare>(g, ec, update);
+      g.all->weights.sparse_weights.unset_tag();
+    }
+    else if (!g.all->weights.sparse && g.all->privacy_activation)
+    {
+      g.all->weights.dense_weights.set_tag(ec.tag_hash);
+      train<sqrt_rate, feature_mask_off, adaptive, normalized, spare>(g, ec, update);
+      g.all->weights.dense_weights.unset_tag();
     }
     else
     {
-      if (g.all->privacy_activation)
-      {
-        g.all->weights.dense_weights.set_tag(ec.tag_hash);
-        train<sqrt_rate, feature_mask_off, adaptive, normalized, spare>(g, ec, update);
-        g.all->weights.dense_weights.unset_tag();
-      }
-      else
-      {
-        train<sqrt_rate, feature_mask_off, adaptive, normalized, spare>(g, ec, update);
-      }
+      train<sqrt_rate, feature_mask_off, adaptive, normalized, spare>(g, ec, update);
     }
 #else
     train<sqrt_rate, feature_mask_off, adaptive, normalized, spare>(g, ec, update);
