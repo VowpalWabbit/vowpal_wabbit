@@ -48,7 +48,7 @@ struct nn
   polyprediction* hidden_units_pred = nullptr;
   polyprediction* hiddenbias_pred = nullptr;
 
-  vw* all = nullptr;  // many things
+  VW::workspace* all = nullptr;  // many things
   std::shared_ptr<rand_state> _random_state;
 
   ~nn()
@@ -411,7 +411,7 @@ void finish_example(VW::workspace& all, nn&, example& ec)
 base_learner* nn_setup(VW::setup_base_i& stack_builder)
 {
   options_i& options = *stack_builder.get_options();
-  vw& all = *stack_builder.get_all_pointer();
+  VW::workspace& all = *stack_builder.get_all_pointer();
   auto n = VW::make_unique<nn>();
   bool meanfield = false;
   option_group_definition new_options("Neural Network");

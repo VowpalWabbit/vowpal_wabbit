@@ -48,4 +48,4 @@ inline bool ends_with(const std::string& full_string, const std::string& ending)
   return VW::ends_with(full_string, ending);
 }
 
-std::vector<extent_term> parse_full_name_interactions(vw& all, VW::string_view str);
+std::vector<extent_term> parse_full_name_interactions(VW::workspace& all, VW::string_view str);

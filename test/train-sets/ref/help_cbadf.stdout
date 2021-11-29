@@ -188,9 +188,10 @@ Gradient Descent Options:
   --adax                 Use adaptive learning rates with x^2 instead of g^2x^2
   --invariant            Use safe/importance aware updates
   --normalized           Use per feature normalized updates
-  --sparse_l2 arg (=0, ) Use per feature normalized updates
-  --l1_state arg (=0, )  Use per feature normalized updates
-  --l2_state arg (=1, )  Use per feature normalized updates
+  --sparse_l2 arg (=0, ) Degree of l2 regularization applied to activated 
+                         sparse parameters
+  --l1_state arg (=0, )  Amount of accumulated implicit l1 regularization
+  --l2_state arg (=1, )  Amount of accumulated implicit l2 regularization
 Scorer Options:
   --link arg (=identity, ) Specify the link function. Choices: {glf1, identity,
                            logistic, poisson}
