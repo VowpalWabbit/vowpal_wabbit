@@ -690,7 +690,7 @@ void update(gd& g, base_learner&, example& ec)
 #else
     train<sqrt_rate, feature_mask_off, adaptive, normalized, spare>(g, ec, update);
 #endif
-  }  // namespace GD
+  }
 
   if (g.all->sd->contraction < 1e-9 || g.all->sd->gravity > 1e3)  // updating weights now to avoid numerical instability
     sync_weights(*g.all);
