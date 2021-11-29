@@ -12,6 +12,8 @@ creating cache_file = train-sets/zero.dat.cache
 Reading datafile = train-sets/zero.dat
 num sources = 1
 Enabled reductions: bfgs, scorer-identity, count_label
+Input label = simple
+Output pred = scalar
  1 0.00000   	0.00000   	0.00000   	          	          	          	0.00000   	0.00000   	0.00000
 
 finished run

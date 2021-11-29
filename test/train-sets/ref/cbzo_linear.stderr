@@ -9,6 +9,8 @@ using no cache
 Reading datafile = train-sets/cbzo_linear.dat
 num sources = 1
 Enabled reductions: cbzo
+Input label = continuous
+Output pred = pdf
 average  since         example        example  current  current  current
 loss     last          counter         weight    label  predict features
 0.134630 0.134630            1            1.0 {-0.1,0.13463,3.35544e+07} -0.100000009--0.099999994:33554432,0.099999994-0.100000009:33554432        5

@@ -7,6 +7,8 @@ power_t = 0.5
 using no cache
 Reading datafile = train-sets/test_named_csoaa
 num sources = 1
+Input label = cs
+Output pred = multiclass
 Regressor contains 18 values
 example      values         total   
 counter      audited        progress

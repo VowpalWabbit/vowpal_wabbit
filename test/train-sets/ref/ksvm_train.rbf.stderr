@@ -11,6 +11,8 @@ using no cache
 Reading datafile = train-sets/rcv1_smaller.dat
 num sources = 1
 Enabled reductions: ksvm, scorer-identity, count_label
+Input label = simple
+Output pred = scalar
 average  since         example        example  current  current  current
 loss     last          counter         weight    label  predict features
 1.000000 1.000000            1            1.0   1.0000   0.0000       50
@@ -32,7 +34,7 @@ best constant's loss = 0.912000
 total feature number = 19870
 Num support = 250
 Number of kernel evaluations = 182687 Number of cache queries = 103819
-Total loss = 223.479752
+Total loss = 223.479828
 Done freeing model
 Done freeing kernel params
 Done with finish 
