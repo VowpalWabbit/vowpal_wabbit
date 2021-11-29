@@ -35,8 +35,7 @@ inline void foreach_feature(WeightsT& weights, const features& fs, DataT& dat, u
 {
   for (const auto& f : fs)
   {
-    if
-      VW_STD17_CONSTEXPR(privacy_activation) { weights.set_privacy_preserving_bit(f.index() + offset); }
+    if VW_STD17_CONSTEXPR (privacy_activation) { weights.set_privacy_preserving_bit(f.index() + offset); }
     weight& w = weights[(f.index() + offset)];
     FuncT(dat, mult * f.value(), w);
   }

@@ -49,10 +49,7 @@ struct generate_interactions_object_cache
 template <class DataT, void (*FuncT)(DataT&, const float, float&), bool privacy_activation, class WeightsT>
 inline void call_FuncT(DataT& dat, WeightsT& weights, const float ft_value, const uint64_t ft_idx)
 {
-  if VW_STD17_CONSTEXPR (privacy_activation)
-  {
-    weights.set_privacy_preserving_bit(ft_idx);
-  }
+  if VW_STD17_CONSTEXPR (privacy_activation) { weights.set_privacy_preserving_bit(ft_idx); }
   FuncT(dat, ft_value, weights[ft_idx]);
 }
 
