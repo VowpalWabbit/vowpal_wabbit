@@ -1,0 +1,24 @@
+name: Linux / C++ - VW with privacy activation
+
+on:
+  push:
+    branches:
+      - master
+      - 'releases/**'
+  pull_request:
+    branches:
+      - '*'
+
+jobs:
+  check:
+    container:
+      image: vowpalwabbit/ubuntu1804-build:latest
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v1
+      - name: Build VW with privacy activation
+        shell: bash
+        run: ./.scripts/linux/build-privacy_activation.sh
+      - name: Test VW with privacy activation
+        shell: bash
+        run: ./.scripts/linux/test-privacy_activation.sh
