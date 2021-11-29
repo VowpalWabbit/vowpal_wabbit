@@ -23,6 +23,8 @@
 
 #include "rand48.h"
 #include "learner.h"
+#include "prediction_type.h"
+#include "label_type.h"
 #include "parse_example.h"
 #include "best_constant.h"
 #include "vw_exception.h"
@@ -1610,6 +1612,13 @@ VW::workspace* initialize_with_builder(std::unique_ptr<options_i, options_delete
     }
 
     print_enabled_reductions(all, enabled_reductions);
+
+    if (!all.logger.quiet)
+    {
+      *(all.trace_message) << "Input label = " << VW::to_string(all.l->get_input_label_type()).substr(14) << std::endl;
+      *(all.trace_message) << "Output pred = " << VW::to_string(all.l->get_output_prediction_type()).substr(19)
+                           << std::endl;
+    }
 
     if (!all.options->get_typed_option<bool>("dry_run").value())
     {

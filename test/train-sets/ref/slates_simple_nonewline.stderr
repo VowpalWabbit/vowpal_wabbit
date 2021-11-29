@@ -7,6 +7,8 @@ using no cache
 Reading datafile = train-sets/slates_simple_nonewline.txt
 num sources = 1
 Enabled reductions: gd, generate_interactions, scorer-identity, csoaa_ldf-rank, cb_adf, cb_explore_adf_greedy, cb_sample, shared_feature_merger, ccb_explore_adf, slates
+Input label = slates
+Output pred = decision_probs
 average  since         example        example  current  current  current
 loss     last          counter         weight    label  predict features
 0.200000 0.200000            1            1.0      1,0      1,0       84
