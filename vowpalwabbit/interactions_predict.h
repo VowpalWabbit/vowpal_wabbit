@@ -44,24 +44,56 @@ struct generate_interactions_object_cache
  *
  */
 
-// 3 template functions to pass FuncT() proper argument (feature idx in regressor, or its coefficient)
+template <class WeightsT, class FuncT>
+inline auto apply_foreach_feature_func(WeightsT& weights, float ft_value, uint64_t ft_idx, const FuncT& func)
+    -> decltype(func(std::declval<float>(), std::declval<float*>()), void())
+{
+  func(ft_value, &weights[ft_idx]);
+}
 
+template <class WeightsT, class FuncT>
+inline auto apply_foreach_feature_func(const WeightsT& weights, float ft_value, uint64_t ft_idx, const FuncT& func)
+    -> decltype(func(std::declval<float>(), std::declval<const float*>()), void())
+{
+  func(ft_value, &weights[ft_idx]);
+}
+
+template <class WeightsT, class FuncT>
+inline auto apply_foreach_feature_func(const WeightsT& weights, float ft_value, uint64_t ft_idx, const FuncT& func)
+    -> decltype(func(std::declval<float>(), std::declval<float>()), void())
+{
+  func(ft_value, weights[ft_idx]);
+}
+
+template <class WeightsT, class FuncT>
+inline auto apply_foreach_feature_func(const WeightsT& weights, float ft_value, uint64_t ft_idx, const FuncT& func)
+    -> decltype(func(std::declval<float>(), std::declval<const float*>(), std::declval<uint64_t>()), void())
+{
+  func(ft_value, &weights[ft_idx], ft_idx);
+}
+
+// 3 template functions to pass FuncT() proper argument (feature idx in regressor, or its coefficient)
 template <class DataT, void (*FuncT)(DataT&, const float, float&), class WeightsT>
 inline void call_FuncT(DataT& dat, WeightsT& weights, const float ft_value, const uint64_t ft_idx)
 {
-  FuncT(dat, ft_value, weights[ft_idx]);
+  apply_foreach_feature_func(weights, ft_value, ft_idx,
+      [&](float feature_value, float* weight_values) { FuncT(dat, feature_value, *weight_values); });
 }
 
 template <class DataT, void (*FuncT)(DataT&, const float, float), class WeightsT>
 inline void call_FuncT(DataT& dat, const WeightsT& weights, const float ft_value, const uint64_t ft_idx)
 {
-  FuncT(dat, ft_value, weights[ft_idx]);
+  apply_foreach_feature_func(weights, ft_value, ft_idx,
+      [&](float feature_value, float weight_value) { FuncT(dat, feature_value, weight_value); });
 }
 
 template <class DataT, void (*FuncT)(DataT&, float, uint64_t), class WeightsT>
-inline void call_FuncT(DataT& dat, WeightsT& /*weights*/, const float ft_value, const uint64_t ft_idx)
+inline void call_FuncT(DataT& dat, WeightsT& weights, const float ft_value, const uint64_t ft_idx)
 {
-  FuncT(dat, ft_value, ft_idx);
+  // Index based overload requires a different number of arguments since C++ implicitly converts between int and float
+  // it seems here so the overload resolution does not work.
+  apply_foreach_feature_func(weights, ft_value, ft_idx,
+      [&](float feature_value, const float* /*weight_values*/, uint64_t index) { FuncT(dat, feature_value, index); });
 }
 
 // state data used in non-recursive feature generation algorithm
