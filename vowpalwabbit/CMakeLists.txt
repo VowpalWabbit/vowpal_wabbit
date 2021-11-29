@@ -411,6 +411,10 @@ if (BUILD_EXTERNAL_PARSER)
   target_link_libraries(vw PRIVATE ${EXTERNAL_PARSER_LIBS})
 endif()
 
+if (BUILD_PRIVACY_ACTIVATION)
+  target_compile_definitions(vw PUBLIC PRIVACY_ACTIVATION)
+endif()
+
 if(BUILD_FLATBUFFERS)
   target_link_libraries(vw
       PRIVATE

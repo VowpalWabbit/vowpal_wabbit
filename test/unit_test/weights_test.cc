@@ -23,6 +23,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(test_default_function_weight_initialization_stride
   for (size_t i = 0; i < LENGTH; i++) { BOOST_CHECK_CLOSE(w.strided_index(i), 1.f * (i * w.stride()), FLOAT_TOL); }
 }
 
+#ifdef PRIVACY_ACTIVATION
 BOOST_AUTO_TEST_CASE_TEMPLATE(test_feature_is_activated, T, weight_types)
 {
   // unit test to check if number of bits equal to the threshold in
@@ -72,3 +73,4 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(test_feature_could_be_activated_but_feature_not_in
   }
   BOOST_CHECK_EQUAL(w.is_activated(feature_index), false);
 }
+#endif

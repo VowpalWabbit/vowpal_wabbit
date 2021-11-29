@@ -255,6 +255,7 @@ void update_state_and_predict_pistol(ftrl& b, base_learner&, example& ec)
 void update_after_prediction_proximal(ftrl& b, example& ec)
 {
   b.data.update = b.all->loss->first_derivative(b.all->sd, ec.pred.scalar, ec.l.simple.label) * ec.weight;
+#ifdef PRIVACY_ACTIVATION
   if (b.all->weights.sparse && b.all->privacy_activation)
   {
     b.all->weights.sparse_weights.set_tag(
@@ -273,12 +274,15 @@ void update_after_prediction_proximal(ftrl& b, example& ec)
   {
     GD::foreach_feature<ftrl_update_data, inner_update_proximal>(*b.all, ec, b.data);
   }
+#else
+  GD::foreach_feature<ftrl_update_data, inner_update_proximal>(*b.all, ec, b.data);
+#endif
 }
 
 void update_after_prediction_pistol(ftrl& b, example& ec)
 {
   b.data.update = b.all->loss->first_derivative(b.all->sd, ec.pred.scalar, ec.l.simple.label) * ec.weight;
-
+#ifdef PRIVACY_ACTIVATION
   if (b.all->weights.sparse && b.all->privacy_activation)
   {
     b.all->weights.sparse_weights.set_tag(
@@ -297,11 +301,15 @@ void update_after_prediction_pistol(ftrl& b, example& ec)
   {
     GD::foreach_feature<ftrl_update_data, inner_update_pistol_post>(*b.all, ec, b.data);
   }
+#else
+  GD::foreach_feature<ftrl_update_data, inner_update_pistol_post>(*b.all, ec, b.data);
+#endif
 }
 
 void coin_betting_update_after_prediction(ftrl& b, example& ec)
 {
   b.data.update = b.all->loss->first_derivative(b.all->sd, ec.pred.scalar, ec.l.simple.label) * ec.weight;
+#ifdef PRIVACY_ACTIVATION
   if (b.all->weights.sparse && b.all->privacy_activation)
   {
     b.all->weights.sparse_weights.set_tag(
@@ -320,6 +328,9 @@ void coin_betting_update_after_prediction(ftrl& b, example& ec)
   {
     GD::foreach_feature<ftrl_update_data, inner_coin_betting_update_after_prediction>(*b.all, ec, b.data);
   }
+#else
+  GD::foreach_feature<ftrl_update_data, inner_coin_betting_update_after_prediction>(*b.all, ec, b.data);
+#endif
 }
 
 template <bool audit>

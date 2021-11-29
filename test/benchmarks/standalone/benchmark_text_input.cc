@@ -65,6 +65,7 @@ static void benchmark_cb_adf_learn(benchmark::State& state, int feature_count)
   VW::finish(*vw);
 }
 
+#ifdef PRIVACY_ACTIVATION
 static void benchmark_cb_adf_learn_privacy_preserving(benchmark::State& state, int feature_count)
 {
   auto vw = VW::initialize(
@@ -83,6 +84,7 @@ static void benchmark_cb_adf_learn_privacy_preserving(benchmark::State& state, i
   vw->finish_example(examples);
   VW::finish(*vw);
 }
+#endif
 
 static void benchmark_ccb_adf_learn(benchmark::State& state, std::string feature_string)
 {
