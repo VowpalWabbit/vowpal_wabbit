@@ -152,7 +152,7 @@ void VowpalWabbitBase::InternalDispose()
     { reset_source(*m_vw, m_vw->num_bits);
 
       // make sure don't try to free m_vw twice in case VW::finish throws.
-      vw* vw_tmp = m_vw;
+      VW::workspace* vw_tmp = m_vw;
       m_vw = nullptr;
       VW::finish(*vw_tmp);
     }
@@ -195,7 +195,7 @@ void VowpalWabbitBase::Reload([System::Runtime::InteropServices::Optional] Strin
     }
 
     // make sure don't try to free m_vw twice in case VW::finish throws.
-    vw* vw_tmp = m_vw;
+    VW::workspace* vw_tmp = m_vw;
     m_vw = nullptr;
     VW::finish(*vw_tmp);
 

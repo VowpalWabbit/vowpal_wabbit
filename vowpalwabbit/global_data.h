@@ -17,6 +17,7 @@
 #include <array>
 #include <memory>
 #include <atomic>
+#include "future_compat.h"
 #include "vw_string_view.h"
 
 // Thread cannot be used in managed C++, tell the compiler that this is unmanaged even if included in a managed project.
@@ -67,8 +68,7 @@ namespace VW
 struct workspace;
 }
 
-// TODO: deprecate this alias.
-using vw = VW::workspace;
+using vw VW_DEPRECATED("Use VW::workspace instead of ::vw. ::vw will be removed in VW 10.") = VW::workspace;
 
 struct dictionary_info
 {
