@@ -6,6 +6,8 @@ using no cache
 Reading datafile = train-sets/cs_cb
 num sources = 1
 Enabled reductions: gd, scorer-identity, csoaa_ldf-rank, cb_adf, cb_explore_adf_greedy, shared_feature_merger, warm_cb-cs
+Input label = cs
+Output pred = multiclass
 average  since         example        example  current  current  current
 loss     last          counter         weight    label  predict features
 0.000000 0.000000            2            1.0    known        2        4

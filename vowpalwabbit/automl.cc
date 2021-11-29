@@ -68,7 +68,7 @@ namespace details
 {
 // fail if incompatible reductions got setup
 // todo: audit if they reference global all interactions
-void fail_if_enabled(vw& all, const std::set<std::string>& not_compat)
+void fail_if_enabled(VW::workspace& all, const std::set<std::string>& not_compat)
 {
   std::vector<std::string> enabled_reductions;
   if (all.l != nullptr) all.l->get_enabled_reductions(enabled_reductions);
@@ -625,13 +625,13 @@ void persist(automl<CMType>& data, metric_sink& metrics)
 }
 
 template <typename CMType>
-void finish_example(vw& all, automl<CMType>& data, multi_ex& ec)
+void finish_example(VW::workspace& all, automl<CMType>& data, multi_ex& ec)
 {
   {
     uint64_t champ_live_slot = data.cm->current_champ;
     for (example* ex : ec) { data.cm->apply_config(ex, champ_live_slot); }
 
-    auto restore_guard = VW::scope_exit([&data, &ec, &champ_live_slot] {
+    auto restore_guard = VW::scope_exit([&data, &ec] {
       for (example* ex : ec) { data.cm->revert_config(ex); }
     });
 
@@ -675,7 +675,7 @@ float calc_priority_empty(const exclusion_config& config, const std::map<namespa
 VW::LEARNER::base_learner* automl_setup(VW::setup_base_i& stack_builder)
 {
   options_i& options = *stack_builder.get_options();
-  vw& all = *stack_builder.get_all_pointer();
+  VW::workspace& all = *stack_builder.get_all_pointer();
 
   uint64_t global_lease;
   uint64_t max_live_configs;

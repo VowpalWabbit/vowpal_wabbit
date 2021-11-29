@@ -49,7 +49,7 @@ int main(int argc, char *argv[])
   }
 
   // initialize model
-  vw* model = VW::initialize(vwparams);
+  VW::workspace* model = VW::initialize(vwparams);
   model->audit = true;
 
   string target("--rank ");

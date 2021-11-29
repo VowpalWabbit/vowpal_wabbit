@@ -24,7 +24,7 @@ constexpr float AUTO_ML_FLOAT_TOL = 0.001f;
 namespace vw_hash_helpers
 {
 // see parse_example.cc:maybeFeature(..) for other cases
-size_t get_hash_for_feature(vw& all, const std::string& ns, const std::string& feature)
+size_t get_hash_for_feature(VW::workspace& all, const std::string& ns, const std::string& feature)
 {
   std::uint64_t hash_ft = VW::hash_feature(all, feature, VW::hash_space(all, ns));
   std::uint64_t ft = hash_ft & all.parse_mask;
@@ -60,7 +60,7 @@ using namespace vw_hash_helpers;
 // n) asserts weights before/after every operation
 // NOTE: interactions are currently 0 for offset 0 since
 // config 0 is hard-coded to be empty interactions for now.
-bool weights_offset_test(cb_sim&, vw& all, multi_ex& ec)
+bool weights_offset_test(cb_sim&, VW::workspace& all, multi_ex& ec)
 {
   const size_t offset_to_clear = 1;
   auto& weights = all.weights.dense_weights;

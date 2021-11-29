@@ -140,7 +140,7 @@ void output_and_account_example(VW::workspace& all, active& a, example& ec)
 }
 
 template <bool simulation>
-void return_active_example(vw& all, active& a, example& ec)
+void return_active_example(VW::workspace& all, active& a, example& ec)
 {
   if (simulation) { output_and_account_example(all, ec); }
   else
@@ -193,7 +193,7 @@ base_learner* active_setup(VW::setup_base_i& stack_builder)
   using learn_pred_func_t = void (*)(active&, VW::LEARNER::single_learner&, example&);
   learn_pred_func_t learn_func;
   learn_pred_func_t pred_func;
-  void (*finish_ptr)(vw&, active&, example&);
+  void (*finish_ptr)(VW::workspace&, active&, example&);
   bool learn_returns_prediction = true;
   std::string reduction_name = stack_builder.get_setupfn_name(active_setup);
   if (simulation)

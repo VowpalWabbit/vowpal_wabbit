@@ -6,6 +6,8 @@ creating cache_file = train-sets/long_line.cache
 Reading datafile = train-sets/long_line
 num sources = 1
 Enabled reductions: gd, scorer-identity, count_label
+Input label = simple
+Output pred = scalar
 average  since         example        example  current  current  current
 loss     last          counter         weight    label  predict features
 5755201.000000 5755201.000000            1            1.0 2399.0000   0.0000     5137

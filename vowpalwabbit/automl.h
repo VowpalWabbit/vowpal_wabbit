@@ -29,8 +29,8 @@ VW::LEARNER::base_learner* automl_setup(VW::setup_base_i&);
 
 namespace details
 {
-void fail_if_enabled(vw&, const std::set<std::string>&);
-// void print_weights_nonzero(vw*, uint64, dense_parameters&);
+void fail_if_enabled(VW::workspace&, const std::set<std::string>&);
+// void print_weights_nonzero(VW::workspace*, uint64, dense_parameters&);
 }  // namespace details
 
 constexpr uint64_t MAX_CONFIGS = 10;
