@@ -246,8 +246,10 @@ BENCHMARK_CAPTURE(benchmark_ccb_adf_learn, many_features, "a b c d e f g h i j k
 BENCHMARK_CAPTURE(benchmark_cb_adf_learn, few_features, 2);
 BENCHMARK_CAPTURE(benchmark_cb_adf_learn, many_features, 120);
 
+#ifdef PRIVACY_ACTIVATION
 BENCHMARK_CAPTURE(benchmark_cb_adf_learn_privacy_preserving, few_features, 2);
 BENCHMARK_CAPTURE(benchmark_cb_adf_learn_privacy_preserving, many_features, 120);
+#endif
 
 BENCHMARK_CAPTURE(benchmark_multi, cb_adf_no_namespaces, gen_cb_examples(100, 7, 3, 6, 1, 4, 14, 2, false),
     "--cb_explore_adf --quiet");
