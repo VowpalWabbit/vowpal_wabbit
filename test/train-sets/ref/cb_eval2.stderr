@@ -7,8 +7,8 @@ using no cache
 Reading datafile = train-sets/cb_eval2
 num sources = 1
 Enabled reductions: gd, scorer-identity, multiworld_test
-Input label = label_type_t::cb
-Output pred = prediction_type_t::scalars
+Input label = cb
+Output pred = scalars
 average  since         example        example  current  current  current
 loss     last          counter         weight    label  predict features
 

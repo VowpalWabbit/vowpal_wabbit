@@ -11,8 +11,8 @@ using no cache
 Reading datafile = train-sets/multilabel
 num sources = 1
 Enabled reductions: gd, scorer-identity, plt
-Input label = label_type_t::multilabel
-Output pred = prediction_type_t::multilabels
+Input label = multilabel
+Output pred = multilabels
 average  since         example        example  current  current  current
 loss     last          counter         weight    label  predict features
 0.000000 0.000000            1            1.0      0 1      0 1        2

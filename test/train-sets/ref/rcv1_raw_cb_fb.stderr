@@ -6,8 +6,8 @@ using no cache
 Reading datafile = train-sets/rcv1_raw_cb_small.fb
 num sources = 1
 Enabled reductions: gd, scorer-identity, csoaa, cb
-Input label = label_type_t::cb
-Output pred = prediction_type_t::multiclass
+Input label = cb
+Output pred = multiclass
 average  since         example        example  current  current  current
 loss     last          counter         weight    label  predict features
 2.000000 2.000000            1            1.0  1:1:0.5        1       50

@@ -11,8 +11,8 @@ using no cache
 Reading datafile = train-sets/cats_room_temp.json
 num sources = 1
 Enabled reductions: ftrl-Coin Betting, scorer-identity, binary, cats_tree, get_pmf, pmf_to_pdf, cb_explore_pdf, cats_pdf, sample_pdf, cats
-Input label = label_type_t::continuous
-Output pred = prediction_type_t::action_pdf_value
+Input label = continuous
+Output pred = action_pdf_value
 average  since         example        example  current  current  current
 loss     last          counter         weight    label  predict features
 0.000000 0.000000            1            1.0 {0.00150219,24.9985,0.005} 53.2046,0.0883333        3

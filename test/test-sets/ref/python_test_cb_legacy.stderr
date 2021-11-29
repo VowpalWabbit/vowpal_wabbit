@@ -6,8 +6,8 @@ using no cache
 Reading datafile = stdin
 num sources = 1
 Enabled reductions: gd, scorer-identity, csoaa, cb
-Input label = label_type_t::cb
-Output pred = prediction_type_t::multiclass
+Input label = cb
+Output pred = multiclass
 average  since         example        example  current  current  current
 loss     last          counter         weight    label  predict features
 5.000000 5.000000            1            1.0  1:2:0.4        1        3
