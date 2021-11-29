@@ -6,6 +6,8 @@ using no cache
 Reading datafile = train-sets/multilabel.fb
 num sources = 1
 Enabled reductions: gd, scorer-identity, multilabel_oaa
+Input label = multilabel
+Output pred = multilabels
 average  since         example        example  current  current  current
 loss     last          counter         weight    label  predict features
 2.000000 2.000000            1            1.0      0 1                 2

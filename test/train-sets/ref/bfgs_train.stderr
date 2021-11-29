@@ -12,6 +12,8 @@ creating cache_file = train-sets/rcv1_small.dat.cache
 Reading datafile = train-sets/rcv1_small.dat
 num sources = 1
 Enabled reductions: bfgs, scorer-identity, count_label
+Input label = simple
+Output pred = scalar
  1 1.00000   	0.03904   	26.66576  	          	          	          	600.55063 	75141.73438	0.04440
  3 h0.66988   	0.28188   	0.00000   	 0.528626  	0.173814  	          	          	228322.92188	0.00000
 

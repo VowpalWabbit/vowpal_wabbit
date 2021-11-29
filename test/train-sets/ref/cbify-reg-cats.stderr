@@ -10,6 +10,8 @@ using no cache
 Reading datafile = train-sets/regression/cbify-reg.dat
 num sources = 1
 Enabled reductions: ftrl-Coin Betting, scorer-identity, binary, cats_tree, get_pmf, pmf_to_pdf, cb_explore_pdf, cats_pdf, sample_pdf, cats, cbify-reg, count_label
+Input label = simple
+Output pred = scalar
 average  since         example        example  current  current  current
 loss     last          counter         weight    label  predict features
 0.155230 0.155230            1            1.0 3879.0000 188.5713       10
