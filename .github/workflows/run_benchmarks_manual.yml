@@ -71,7 +71,10 @@ jobs:
           path: benchmark/tools/
       - name: Install benchmark compare requirements
         shell: bash
-        run: python3 -m pip install -r benchmark/tools/requirements.txt
+        run: |
+          python3 -m pip install -r benchmark/tools/requirements.txt
+          # The above requirements file is missing the pandas dependency.
+          python3 -m pip install pandas
       - run: rm -rf benchmark build vowpalwabbit/parser/flatbuffer/generated/ test/benchmarks/ # generated or downloaded files
 # checkout second ref
       - uses: actions/checkout@v1
