@@ -60,7 +60,7 @@ private:
   uint32_t _stride_shift;
   bool _seeded;  // whether the instance is sharing model state with others
   size_t _privacy_activation_threshold;
-  std::unordered_map<uint64_t, std::bitset<32>> _feature_bitset;  // define the bitset for each feature
+  std::shared_ptr<std::unordered_map<uint64_t, std::bitset<32>>> _feature_bitset;  // define the bitset for each feature
   tag_hash_info _tag_info;
 
 public:
@@ -72,11 +72,18 @@ public:
       , _stride_shift(stride_shift)
       , _seeded(false)
       , _privacy_activation_threshold(0)
+      , _feature_bitset(nullptr)
   {
   }
 
   dense_parameters()
-      : _begin(nullptr), _weight_mask(0), _stride_shift(0), _seeded(false), _privacy_activation_threshold(0)
+      : _begin(nullptr)
+      , _weight_mask(0)
+      , _stride_shift(0)
+      , _seeded(false)
+      , _privacy_activation_threshold(0)
+      , _feature_bitset(nullptr)
+
   {
   }
 
@@ -104,21 +111,29 @@ public:
 
   void set_tag(uint64_t tag_hash)
   {
-    _tag_info.tag_hash = tag_hash;
-    _tag_info.is_set = true;
+    if (_feature_bitset)
+    {
+      _tag_info.tag_hash = tag_hash;
+      _tag_info.is_set = true;
+    }
   }
 
   // function to lookup a bit for a feature in the bitset using the
   // tag hash and turn it on
   void set_privacy_preserving_bit(uint64_t feature_index)
   {
-    if (_tag_info.is_set) { _feature_bitset[feature_index & _weight_mask][_tag_info.tag_hash] = 1; }
+    if (_feature_bitset && _tag_info.is_set)
+    { (*_feature_bitset)[feature_index & _weight_mask][_tag_info.tag_hash] = 1; }
   }
 
   void unset_tag() { _tag_info.is_set = false; }
 
   // function to check if the number of bits set to 1 are greater than a threshold for a feature
-  bool is_activated(uint64_t index) { return _feature_bitset[index].count() >= _privacy_activation_threshold; }
+  bool is_activated(uint64_t index)
+  {
+    if (!_feature_bitset) { return false; }
+    return (*_feature_bitset)[index].count() >= _privacy_activation_threshold;
+  }
 
   void shallow_copy(const dense_parameters& input)
   {
@@ -128,6 +143,7 @@ public:
     _stride_shift = input._stride_shift;
     _seeded = true;
     _privacy_activation_threshold = input._privacy_activation_threshold;
+    _feature_bitset = input._feature_bitset;
   }
 
   inline weight& strided_index(size_t index) { return operator[](index << _stride_shift); }
@@ -204,6 +220,7 @@ public:
   void privacy_activation_threshold(size_t privacy_activation_threshold)
   {
     _privacy_activation_threshold = privacy_activation_threshold;
+    _feature_bitset = std::make_shared<std::unordered_map<uint64_t, std::bitset<32>>>();
   }
 
 #ifndef _WIN32

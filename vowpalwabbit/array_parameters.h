@@ -78,7 +78,7 @@ private:
   bool _delete;
   std::function<void(weight*, uint64_t)> _default_func;
   size_t _privacy_activation_threshold;
-  std::unordered_map<uint64_t, std::bitset<32>> _feature_bitset;  // define the bitset for each feature
+  std::shared_ptr<std::unordered_map<uint64_t, std::bitset<32>>> _feature_bitset;  // define the bitset for each feature
   tag_hash_info _tag_info;
 
   // It is marked const so it can be used from both const and non const operator[]
@@ -108,6 +108,7 @@ public:
       , _delete(false)
       , _default_func(nullptr)
       , _privacy_activation_threshold(0)
+      , _feature_bitset(nullptr)
   {
   }
 
@@ -119,6 +120,7 @@ public:
       , _delete(false)
       , _default_func(nullptr)
       , _privacy_activation_threshold(0)
+      , _feature_bitset(nullptr)
   {
   }
 
@@ -126,21 +128,29 @@ public:
 
   void set_tag(uint64_t tag_hash)
   {
-    _tag_info.tag_hash = tag_hash;
-    _tag_info.is_set = true;
+    if (_feature_bitset)
+    {
+      _tag_info.tag_hash = tag_hash;
+      _tag_info.is_set = true;
+    }
   }
 
   // function to lookup a bit for a feature in the bitset using the
   // tag hash and turn the bit on
   void set_privacy_preserving_bit(uint64_t feature_index)
   {
-    if (_tag_info.is_set) { _feature_bitset[feature_index & _weight_mask][_tag_info.tag_hash] = 1; }
+    if (_tag_info.is_set && _feature_bitset)
+    { (*_feature_bitset)[feature_index & _weight_mask][_tag_info.tag_hash] = 1; }
   }
 
   void unset_tag() { _tag_info.is_set = false; }
 
   // function to check if the number of bits set to 1 are greater than a threshold for a feature
-  bool is_activated(uint64_t index) { return _feature_bitset[index].count() >= _privacy_activation_threshold; }
+  bool is_activated(uint64_t index)
+  {
+    if (!_feature_bitset) { return false; }
+    return (*_feature_bitset)[index].count() >= _privacy_activation_threshold;
+  }
 
   sparse_parameters(const sparse_parameters& other) = delete;
   sparse_parameters& operator=(const sparse_parameters& other) = delete;
@@ -195,6 +205,7 @@ public:
     _stride_shift = input._stride_shift;
     _seeded = true;
     _privacy_activation_threshold = input._privacy_activation_threshold;
+    _feature_bitset = input._feature_bitset;
   }
 
   template <typename Lambda>
@@ -221,6 +232,7 @@ public:
   void privacy_activation_threshold(size_t privacy_activation_threshold)
   {
     _privacy_activation_threshold = privacy_activation_threshold;
+    _feature_bitset = std::make_shared<std::unordered_map<uint64_t, std::bitset<32>>>();
   }
 
 #ifndef _WIN32
