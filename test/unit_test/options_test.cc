@@ -1,6 +1,6 @@
-#ifndef STATIC_LINK_VW
-#define BOOST_TEST_DYN_LINK
-#endif
+// Copyright (c) by respective owners including Yahoo!, Microsoft, and
+// individual contributors. All rights reserved. Released under a BSD (revised)
+// license as described in the file LICENSE.
 
 #include <boost/test/unit_test.hpp>
 #include <boost/test/test_tools.hpp>
@@ -85,7 +85,7 @@ BOOST_AUTO_TEST_CASE(create_argument_group) {
   ag.add(make_option("opt3", loc2));
   ag.add(make_option("opt4", loc2).keep());
 
-  BOOST_CHECK_EQUAL(ag.m_name, "g1");
+  BOOST_CHECK_EQUAL(ag.m_name, "g1 Options");
   BOOST_CHECK_EQUAL(ag.m_options[0]->m_name, "opt1");
   BOOST_CHECK_EQUAL(ag.m_options[0]->m_keep, true);
   BOOST_CHECK_EQUAL(ag.m_options[0]->m_type_hash, typeid(decltype(loc)).hash_code());

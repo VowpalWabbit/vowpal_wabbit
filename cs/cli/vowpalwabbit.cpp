@@ -97,7 +97,7 @@ VowpalWabbitPerformanceStatistics^ VowpalWabbit::PerformanceStatistics::get()
 	  stats->AverageLoss = m_vw->sd->holdout_best_loss;
 
   float best_constant; float best_constant_loss;
-  if (get_best_constant(*m_vw, best_constant, best_constant_loss))
+  if (get_best_constant(m_vw->loss.get(), m_vw->sd, best_constant, best_constant_loss))
   { stats->BestConstant = best_constant;
     if (best_constant_loss != FLT_MIN)
     { stats->BestConstantLoss = best_constant_loss;
@@ -789,7 +789,7 @@ VowpalWabbitExample^ VowpalWabbit::GetOrCreateNativeExample()
   if (ex == nullptr)
   { try
     { auto ex = VW::alloc_examples(1);
-      m_vw->example_parser->lbl_parser.default_label(&ex->l);
+      m_vw->example_parser->lbl_parser.default_label(ex->l);
       return gcnew VowpalWabbitExample(this, ex);
     }
     CATCHRETHROW
@@ -797,7 +797,7 @@ VowpalWabbitExample^ VowpalWabbit::GetOrCreateNativeExample()
 
   try
   { VW::empty_example(*m_vw, *ex->m_example);
-    m_vw->example_parser->lbl_parser.default_label(&ex->m_example->l);
+    m_vw->example_parser->lbl_parser.default_label(ex->m_example->l);
 
     return ex;
   }

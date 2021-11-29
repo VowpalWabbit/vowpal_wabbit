@@ -1,0 +1,4341 @@
+[
+  {
+    "id": 1,
+    "desc": "",
+    "vw_command": "-k -l 20 --initial_t 128000 --power_t 1 -d train-sets/0001.dat -f models/0001_1.model -c --passes 8 --invariant --ngram 3 --skips 1 --holdout_off",
+    "diff_files": {
+      "stderr": "train-sets/ref/0001.stderr"
+    },
+    "input_files": [
+      "train-sets/0001.dat"
+    ]
+  },
+  {
+    "id": 2,
+    "desc": "checking predictions as well",
+    "vw_command": "-k -t -d train-sets/0001.dat -i models/0001_1.model -p 0001.predict --invariant",
+    "diff_files": {
+      "stderr": "test-sets/ref/0001.stderr",
+      "0001.predict": "pred-sets/ref/0001.predict"
+    },
+    "input_files": [
+      "train-sets/0001.dat",
+      "models/0001_1.model"
+    ],
+    "depends_on": [
+      1
+    ]
+  },
+  {
+    "id": 3,
+    "desc": "without -d, training only",
+    "vw_command": "-k -d train-sets/0002.dat -f models/0002.model --invariant",
+    "diff_files": {
+      "stderr": "train-sets/ref/0002.stderr"
+    },
+    "input_files": [
+      "train-sets/0002.dat"
+    ]
+  },
+  {
+    "id": 4,
+    "desc": "same, with -d",
+    "vw_command": "-k -d train-sets/0002.dat -f models/0002.model --invariant",
+    "diff_files": {
+      "stdout": "train-sets/ref/0002.stdout",
+      "stderr": "train-sets/ref/0002.stderr"
+    },
+    "input_files": [
+      "train-sets/0002.dat"
+    ]
+  },
+  {
+    "id": 5,
+    "desc": "add -q .., adaptive, and more (same input, different outputs)",
+    "vw_command": "-k --initial_t 1 --adaptive --invariant -q Tf -q ff -f models/0002a.model -d train-sets/0002.dat",
+    "diff_files": {
+      "stderr": "train-sets/ref/0002a.stderr"
+    },
+    "input_files": [
+      "train-sets/0002.dat"
+    ]
+  },
+  {
+    "id": 6,
+    "desc": "run predictions on Test 4 model. Pretending the labels aren't there",
+    "vw_command": "-k -t -i models/0002.model -d train-sets/0002.dat -p 0002b.predict",
+    "diff_files": {
+      "stderr": "test-sets/ref/0002b.stderr",
+      "0002b.predict": "pred-sets/ref/0002b.predict"
+    },
+    "input_files": [
+      "train-sets/0002.dat",
+      "models/0002.model"
+    ],
+    "depends_on": [
+      4
+    ]
+  },
+  {
+    "id": 7,
+    "desc": "using normalized adaptive updates and a low --power_t",
+    "vw_command": "-k --power_t 0.45 -f models/0002c.model -d train-sets/0002.dat",
+    "diff_files": {
+      "stderr": "train-sets/ref/0002c.stderr"
+    },
+    "input_files": [
+      "train-sets/0002.dat"
+    ]
+  },
+  {
+    "id": 8,
+    "desc": "predicts on test 7 model",
+    "vw_command": "-k -t -i models/0002c.model -d train-sets/0002.dat -p 0002c.predict",
+    "diff_files": {
+      "stderr": "test-sets/ref/0002c.stderr",
+      "0002c.predict": "pred-sets/ref/0002c.predict"
+    },
+    "input_files": [
+      "train-sets/0002.dat",
+      "models/0002c.model"
+    ],
+    "depends_on": [
+      7
+    ]
+  },
+  {
+    "id": 9,
+    "desc": "label-dependent features with csoaa_ldf",
+    "vw_command": "-k -c -d train-sets/cs_test.ldf -p cs_test.ldf.csoaa.predict --passes 10 --invariant --csoaa_ldf multiline --holdout_off --noconstant",
+    "diff_files": {
+      "stderr": "train-sets/ref/cs_test.ldf.csoaa.stderr",
+      "cs_test.ldf.csoaa.predict": "train-sets/ref/cs_test.ldf.csoaa.predict"
+    },
+    "input_files": [
+      "train-sets/cs_test.ldf"
+    ]
+  },
+  {
+    "id": 10,
+    "desc": "label-dependent features with wap_ldf",
+    "vw_command": "-k -c -d train-sets/cs_test.ldf -p cs_test.ldf.wap.predict --passes 10 --invariant --wap_ldf multiline --holdout_off --noconstant",
+    "diff_files": {
+      "stderr": "train-sets/ref/cs_test.ldf.wap.stderr",
+      "cs_test.ldf.wap.predict": "train-sets/ref/cs_test.ldf.wap.predict"
+    },
+    "input_files": [
+      "train-sets/cs_test.ldf"
+    ]
+  },
+  {
+    "id": 11,
+    "desc": "one-against-all",
+    "vw_command": "-k --oaa 10 -c --passes 10 -d train-sets/multiclass --holdout_off",
+    "diff_files": {
+      "stderr": "train-sets/ref/oaa.stderr"
+    },
+    "input_files": [
+      "train-sets/multiclass"
+    ]
+  },
+  {
+    "id": 12,
+    "desc": "Error Correcting Tournament",
+    "vw_command": "-k --ect 10 --error 3 -c --passes 10 --invariant -d train-sets/multiclass --holdout_off",
+    "diff_files": {
+      "stderr": "train-sets/ref/multiclass.stderr"
+    },
+    "input_files": [
+      "train-sets/multiclass"
+    ]
+  },
+  {
+    "id": 13,
+    "desc": "Run search (dagger) on wsj_small for 6 passes extra features",
+    "vw_command": "-k -c -d train-sets/wsj_small.dat.gz --passes 6 --search_task sequence --search 45 --search_alpha 1e-6 --search_max_bias_ngram_length 2 --search_max_quad_ngram_length 1 --holdout_off",
+    "diff_files": {
+      "stderr": "train-sets/ref/search_wsj.stderr"
+    },
+    "input_files": [
+      "train-sets/wsj_small.dat.gz"
+    ]
+  },
+  {
+    "id": 14,
+    "desc": "Run search (searn) on wsj_small for 6 passes extra features",
+    "vw_command": "-k -c -d train-sets/wsj_small.dat.gz --passes 6 --search_task sequence --search 45 --search_alpha 1e-6 --search_max_bias_ngram_length 2 --search_max_quad_ngram_length 1 --holdout_off --search_passes_per_policy 3 --search_interpolation policy",
+    "diff_files": {
+      "stderr": "train-sets/ref/search_wsj2.dat.stderr"
+    },
+    "input_files": [
+      "train-sets/wsj_small.dat.gz"
+    ]
+  },
+  {
+    "id": 15,
+    "desc": "LBFGS on zero derivative input",
+    "vw_command": "-k -c -d train-sets/zero.dat --loss_function=squared -b 20 --bfgs --mem 7 --passes 5 --l2 1.0 --holdout_off",
+    "diff_files": {
+      "stdout": "train-sets/ref/zero.stdout",
+      "stderr": "train-sets/ref/zero.stderr"
+    },
+    "input_files": [
+      "train-sets/zero.dat"
+    ]
+  },
+  {
+    "id": 16,
+    "desc": "LBFGS early termination",
+    "vw_command": "-k -c -d train-sets/rcv1_small.dat --loss_function=logistic --bfgs --mem 7 --passes 20 --termination 0.001 --l2 1.0 --holdout_off",
+    "diff_files": {
+      "stdout": "train-sets/ref/rcv1_small.stdout",
+      "stderr": "train-sets/ref/rcv1_small.stderr"
+    },
+    "input_files": [
+      "train-sets/rcv1_small.dat"
+    ]
+  },
+  {
+    "id": 17,
+    "desc": "Run LDA with 100 topics on 1000 Wikipedia articles",
+    "vw_command": "-k --lda 100 --lda_alpha 0.01 --lda_rho 0.01 --lda_D 1000 -l 1 -b 13 --minibatch 128 -d train-sets/wiki256.dat",
+    "diff_files": {
+      "stderr": "train-sets/ref/wiki1K.stderr"
+    },
+    "input_files": [
+      "train-sets/wiki256.dat"
+    ]
+  },
+  {
+    "id": 18,
+    "desc": "Run search on seq_small for 12 passes, 4 passes per policy",
+    "vw_command": "-k -c -d train-sets/seq_small --passes 12 --invariant --search 4 --search_task sequence --holdout_off",
+    "diff_files": {
+      "stderr": "train-sets/ref/search_small.stderr"
+    },
+    "input_files": [
+      "train-sets/seq_small"
+    ]
+  },
+  {
+    "id": 19,
+    "desc": "neural network 3-parity with 2 hidden units",
+    "vw_command": "-k -c -d train-sets/3parity --hash all --passes 3000 -b 16 --nn 2 -l 10 --invariant -f models/0021.model --random_seed 19 --quiet --holdout_off",
+    "diff_files": {
+      "stderr": "train-sets/ref/3parity.stderr"
+    },
+    "input_files": [
+      "train-sets/3parity"
+    ]
+  },
+  {
+    "id": 20,
+    "desc": "neural network 3-parity with 2 hidden units (predict)",
+    "vw_command": "-d train-sets/3parity -t -i models/0021.model -p 0022.predict",
+    "diff_files": {
+      "stderr": "pred-sets/ref/0022.stderr",
+      "0022.predict": "pred-sets/ref/0022.predict"
+    },
+    "input_files": [
+      "train-sets/3parity",
+      "models/0021.model"
+    ],
+    "depends_on": [
+      19
+    ]
+  },
+  {
+    "id": 21,
+    "desc": "cubic features -- on a parity test case",
+    "vw_command": "-k -c -f models/xxor.model -d train-sets/xxor.dat --cubic abc --passes 100 --holdout_off --progress 1.33333",
+    "diff_files": {
+      "stderr": "train-sets/ref/xxor.stderr"
+    },
+    "input_files": [
+      "train-sets/xxor.dat"
+    ]
+  },
+  {
+    "id": 22,
+    "desc": "matrix factorization -- training",
+    "vw_command": "-k -d train-sets/ml100k_small_train -b 16 -q ui --rank 10 --l2 2e-6 --learning_rate 0.05 --passes 2 --decay_learning_rate 0.97 --power_t 0 -f models/movielens.reg -c --loss_function classic --holdout_off",
+    "diff_files": {
+      "stdout": "train-sets/ref/ml100k_small.stdout",
+      "stderr": "train-sets/ref/ml100k_small.stderr"
+    },
+    "input_files": [
+      "train-sets/ml100k_small_train"
+    ]
+  },
+  {
+    "id": 23,
+    "desc": "matrix factorization -- testing",
+    "vw_command": "-i models/movielens.reg -t -d test-sets/ml100k_small_test",
+    "diff_files": {
+      "stdout": "test-sets/ref/ml100k_small.stdout",
+      "stderr": "test-sets/ref/ml100k_small.stderr"
+    },
+    "input_files": [
+      "test-sets/ml100k_small_test",
+      "models/movielens.reg"
+    ],
+    "depends_on": [
+      22
+    ]
+  },
+  {
+    "id": 24,
+    "desc": "active-learning -- training",
+    "vw_command": "-k --active --simulation --mellowness 0.000001 -d train-sets/rcv1_small.dat -l 10 --initial_t 10 --random_seed 3",
+    "diff_files": {
+      "stderr": "train-sets/ref/active-simulation.t24.stderr"
+    },
+    "input_files": [
+      "train-sets/rcv1_small.dat"
+    ]
+  },
+  {
+    "id": 25,
+    "desc": "bagging -- training regressor",
+    "vw_command": "-k -d train-sets/0002.dat -f models/bs.reg.model --bootstrap 4 -p bs.reg.predict",
+    "diff_files": {
+      "stderr": "train-sets/ref/bs.reg.stderr",
+      "bs.reg.predict": "train-sets/ref/bs.reg.predict"
+    },
+    "input_files": [
+      "train-sets/0002.dat"
+    ]
+  },
+  {
+    "id": 26,
+    "desc": "bagging -- predicting with bagged regressor",
+    "vw_command": "-d train-sets/0002.dat -i models/bs.reg.model -p bs.prreg.predict -t",
+    "diff_files": {
+      "stderr": "train-sets/ref/bs.prreg.stderr",
+      "bs.prreg.predict": "train-sets/ref/bs.prreg.predict"
+    },
+    "input_files": [
+      "train-sets/0002.dat",
+      "models/bs.reg.model"
+    ],
+    "depends_on": [
+      25
+    ]
+  },
+  {
+    "id": 27,
+    "desc": "bagging -- binary classifiers",
+    "vw_command": "-d train-sets/0001.dat -f models/bs.vote.model --bootstrap 4 --bs_type vote -p bs.vote.predict",
+    "diff_files": {
+      "stderr": "train-sets/ref/bs.vote.stderr",
+      "bs.vote.predict": "train-sets/ref/bs.vote.predict"
+    },
+    "input_files": [
+      "train-sets/0001.dat"
+    ]
+  },
+  {
+    "id": 28,
+    "desc": "bagging -- predict with bagged classifier",
+    "vw_command": "-d train-sets/0001.dat -i models/bs.vote.model -p bs.prvote.predict -t",
+    "diff_files": {
+      "stderr": "train-sets/ref/bs.prvote.stderr",
+      "bs.prvote.predict": "train-sets/ref/bs.prvote.predict"
+    },
+    "input_files": [
+      "train-sets/0001.dat",
+      "models/bs.vote.model"
+    ],
+    "depends_on": [
+      27
+    ]
+  },
+  {
+    "id": 29,
+    "desc": "affix features",
+    "vw_command": "-d train-sets/affix_test.dat -k -c --passes 10 --holdout_off --affix -2",
+    "diff_files": {
+      "stderr": "train-sets/ref/affix_test.stderr"
+    },
+    "input_files": [
+      "train-sets/affix_test.dat"
+    ]
+  },
+  {
+    "id": 30,
+    "desc": "train --l1 regularized model",
+    "vw_command": "-d train-sets/0001.dat -f models/mask.model --invert_hash mask.predict --l1 0.01",
+    "diff_files": {
+      "stderr": "train-sets/ref/mask.stderr"
+    },
+    "input_files": [
+      "train-sets/0001.dat"
+    ]
+  },
+  {
+    "id": 31,
+    "desc": "train model using --feature_mask",
+    "vw_command": "-d train-sets/0001.dat --invert_hash remask.predict --feature_mask models/mask.model -f models/remask.model",
+    "diff_files": {
+      "stderr": "train-sets/ref/remask.stderr"
+    },
+    "input_files": [
+      "train-sets/0001.dat",
+      "models/mask.model"
+    ],
+    "depends_on": [
+      30
+    ]
+  },
+  {
+    "id": 32,
+    "desc": "train model using --feature_mask and --initial_regressor",
+    "vw_command": "-d train-sets/0001.dat --feature_mask models/mask.model -i models/remask.model",
+    "diff_files": {
+      "stderr": "train-sets/ref/remask.final.stderr"
+    },
+    "input_files": [
+      "train-sets/0001.dat",
+      "models/remask.model",
+      "models/mask.model"
+    ],
+    "depends_on": [
+      31,
+      30
+    ]
+  },
+  {
+    "id": 33,
+    "desc": "train model for topk recommender",
+    "vw_command": "-d train-sets/topk.vw -f topk.model -q MF --passes 100 --cache_file topk-train.cache -k --holdout_off",
+    "diff_files": {
+      "stderr": "train-sets/ref/topk-train.stderr"
+    },
+    "input_files": [
+      "train-sets/topk.vw"
+    ]
+  },
+  {
+    "id": 34,
+    "desc": "train model for topk recommender",
+    "vw_command": "-P 1 -d train-sets/topk.vw -i topk.model --top 2 -p topk-rec.predict",
+    "diff_files": {
+      "stderr": "train-sets/ref/topk-rec.stderr",
+      "topk-rec.predict": "train-sets/ref/topk-rec.predict"
+    },
+    "input_files": [
+      "train-sets/topk.vw",
+      "topk.model"
+    ],
+    "depends_on": [
+      33
+    ]
+  },
+  {
+    "id": 35,
+    "desc": "non-centered data-set where constant >> 0. To test the new --constant option without which performance is very weak",
+    "vw_command": "-k --passes 100 -c --holdout_off --constant 1000 -d train-sets/big-constant.dat",
+    "diff_files": {
+      "stderr": "train-sets/ref/big-constant.stderr"
+    },
+    "input_files": [
+      "train-sets/big-constant.dat"
+    ]
+  },
+  {
+    "id": 36,
+    "desc": "new option: --progress w/ integer arg",
+    "vw_command": "-k -d train-sets/0001.dat --progress 10",
+    "diff_files": {
+      "stderr": "train-sets/ref/progress-10.stderr"
+    },
+    "input_files": [
+      "train-sets/0001.dat"
+    ]
+  },
+  {
+    "id": 37,
+    "desc": "new-option: --progress w/ floating-point arg. + alternate short form (-P)",
+    "vw_command": "-k -d train-sets/0001.dat -P 0.5",
+    "diff_files": {
+      "stderr": "train-sets/ref/progress-0.5.stderr"
+    },
+    "input_files": [
+      "train-sets/0001.dat"
+    ]
+  },
+  {
+    "id": 38,
+    "desc": "--nn without --quiet to avoid nn regressions. (Needs to be a simple test, not one sensitive to symmetry breaking)",
+    "vw_command": "-k -d train-sets/0001.dat --nn 1",
+    "diff_files": {
+      "stderr": "train-sets/ref/nn-1-noquiet.stderr"
+    },
+    "input_files": [
+      "train-sets/0001.dat"
+    ]
+  },
+  {
+    "id": 39,
+    "desc": "cb with dr",
+    "vw_command": "-d train-sets/rcv1_raw_cb_small.vw --cb 2 --cb_type dr --ngram 2 --skips 4 -b 24 -l 0.25",
+    "diff_files": {
+      "stderr": "train-sets/ref/rcv1_raw_new_cb_dr.stderr"
+    },
+    "input_files": [
+      "train-sets/rcv1_raw_cb_small.vw"
+    ]
+  },
+  {
+    "id": 40,
+    "desc": "cb with ips",
+    "vw_command": "-d train-sets/rcv1_raw_cb_small.vw --cb 2 --cb_type ips --ngram 2 --skips 4 -b 24 -l 0.125",
+    "diff_files": {
+      "stderr": "train-sets/ref/rcv1_raw_new_cb_ips.stderr"
+    },
+    "input_files": [
+      "train-sets/rcv1_raw_cb_small.vw"
+    ]
+  },
+  {
+    "id": 41,
+    "desc": "cb with dm",
+    "vw_command": "-d train-sets/rcv1_raw_cb_small.vw --cb 2 --cb_type dm --ngram 2 --skips 4 -b 24 -l 0.125 -f cb_dm.reg",
+    "diff_files": {
+      "stderr": "train-sets/ref/rcv1_raw_new_cb_dm.stderr"
+    },
+    "input_files": [
+      "train-sets/rcv1_raw_cb_small.vw"
+    ]
+  },
+  {
+    "id": 42,
+    "desc": "--lda --passes 2 hang regression",
+    "vw_command": "-k -d train-sets/lda-2pass-hang.dat --lda 10 -c --passes 2 --holdout_off",
+    "diff_files": {
+      "stderr": "train-sets/ref/lda-2pass-hang.stderr"
+    },
+    "input_files": [
+      "train-sets/lda-2pass-hang.dat"
+    ]
+  },
+  {
+    "id": 43,
+    "desc": "search sequence labeling, non-ldf train",
+    "vw_command": "-k -c -d train-sets/sequence_data --passes 20 --invariant --search_rollout ref --search_alpha 1e-8 --search_task sequence --search 5 --holdout_off -f models/sequence_data.model",
+    "diff_files": {
+      "stderr": "train-sets/ref/sequence_data.nonldf.train.stderr"
+    },
+    "input_files": [
+      "train-sets/sequence_data"
+    ]
+  },
+  {
+    "id": 44,
+    "desc": "search sequence labeling, non-ldf test",
+    "vw_command": "-d train-sets/sequence_data -t -i models/sequence_data.model -p sequence_data.nonldf.test.predict",
+    "diff_files": {
+      "stderr": "train-sets/ref/sequence_data.nonldf.test.stderr",
+      "sequence_data.nonldf.test.predict": "train-sets/ref/sequence_data.nonldf.test.predict"
+    },
+    "input_files": [
+      "train-sets/sequence_data",
+      "models/sequence_data.model"
+    ],
+    "depends_on": [
+      43
+    ]
+  },
+  {
+    "id": 45,
+    "desc": "make sure that history works",
+    "vw_command": "-k -c -d train-sets/seq_small2 --passes 4 --search 4 --search_task sequence --holdout_off",
+    "diff_files": {
+      "stderr": "train-sets/ref/search_small2.stderr"
+    },
+    "input_files": [
+      "train-sets/seq_small2"
+    ]
+  },
+  {
+    "id": 46,
+    "desc": "search sequence labeling, ldf train",
+    "vw_command": "-k -c -d train-sets/sequence_data --passes 20 --search_rollout ref --search_alpha 1e-8 --search_task sequence_demoldf --csoaa_ldf m --search 5 --holdout_off -f models/sequence_data.ldf.model --noconstant",
+    "diff_files": {
+      "stderr": "train-sets/ref/sequence_data.ldf.train.stderr"
+    },
+    "input_files": [
+      "train-sets/sequence_data"
+    ]
+  },
+  {
+    "id": 47,
+    "desc": "search sequence labeling, ldf test",
+    "vw_command": "-d train-sets/sequence_data -t -i models/sequence_data.ldf.model -p sequence_data.ldf.test.predict --noconstant",
+    "diff_files": {
+      "stderr": "train-sets/ref/sequence_data.ldf.test.stderr",
+      "sequence_data.ldf.test.predict": "train-sets/ref/sequence_data.ldf.test.predict"
+    },
+    "input_files": [
+      "train-sets/sequence_data",
+      "models/sequence_data.ldf.model"
+    ],
+    "depends_on": [
+      46
+    ]
+  },
+  {
+    "id": 48,
+    "desc": "search sequence SPAN labeling BIO, non-ldf train, no rollouts",
+    "vw_command": "-k -c -d train-sets/sequencespan_data --passes 20 --invariant --search_rollout none --search_task sequencespan --search 7 --holdout_off -f models/sequencespan_data.model",
+    "diff_files": {
+      "stderr": "train-sets/ref/sequencespan_data.nonldf.train.stderr"
+    },
+    "input_files": [
+      "train-sets/sequencespan_data"
+    ]
+  },
+  {
+    "id": 49,
+    "desc": "search sequence SPAN labeling BIO, non-ldf test",
+    "vw_command": "-d train-sets/sequencespan_data -t -i models/sequencespan_data.model -p sequencespan_data.nonldf.test.predict",
+    "diff_files": {
+      "stderr": "train-sets/ref/sequencespan_data.nonldf.test.stderr",
+      "sequencespan_data.nonldf.test.predict": "train-sets/ref/sequencespan_data.nonldf.test.predict"
+    },
+    "input_files": [
+      "train-sets/sequencespan_data",
+      "models/sequencespan_data.model"
+    ],
+    "depends_on": [
+      48
+    ]
+  },
+  {
+    "id": 50,
+    "desc": "search sequence SPAN labeling BILOU, non-ldf train",
+    "vw_command": "-k -c -d train-sets/sequencespan_data --passes 20 --invariant --search_rollout ref --search_alpha 1e-8 --search_task sequencespan --search_span_bilou --search 7 --holdout_off -f models/sequencespan_data.model",
+    "diff_files": {
+      "stderr": "train-sets/ref/sequencespan_data.nonldf-bilou.train.stderr"
+    },
+    "input_files": [
+      "train-sets/sequencespan_data"
+    ]
+  },
+  {
+    "id": 51,
+    "desc": "search sequence SPAN labeling BILOU, non-ldf test",
+    "vw_command": "-d train-sets/sequencespan_data -t --search_span_bilou -i models/sequencespan_data.model -p sequencespan_data.nonldf-bilou.test.predict",
+    "diff_files": {
+      "stderr": "train-sets/ref/sequencespan_data.nonldf-bilou.test.stderr",
+      "sequencespan_data.nonldf-bilou.test.predict": "train-sets/ref/sequencespan_data.nonldf-bilou.test.predict"
+    },
+    "input_files": [
+      "train-sets/sequencespan_data",
+      "models/sequencespan_data.model"
+    ],
+    "depends_on": [
+      50
+    ]
+  },
+  {
+    "id": 52,
+    "desc": "silly test for \"argmax\" task",
+    "vw_command": "-d train-sets/argmax_data -k -c --passes 20 --search_rollout ref --search_alpha 1e-8 --search_task argmax --search 2 --holdout_off",
+    "diff_files": {
+      "stderr": "train-sets/ref/argmax_data.stderr"
+    },
+    "input_files": [
+      "train-sets/argmax_data"
+    ]
+  },
+  {
+    "id": 53,
+    "desc": "(holdout-broken regression). ensure we have no holdout loss of '0 h'",
+    "vw_command": "-k -c --passes 2 -d train-sets/0001.dat",
+    "diff_files": {
+      "stderr": "train-sets/ref/holdout-loss-not-zero.stderr"
+    },
+    "input_files": [
+      "train-sets/0001.dat"
+    ]
+  },
+  {
+    "id": 54,
+    "desc": "stagewise poly with exponent 0.25. ###in the following stage_poly tests, there are minute differences in losses, which are not being fuzzy-diffed;. ###thus the stderr is cleared (--quiet) and only comparing (fuzzy-diffed) predictions.",
+    "vw_command": "--stage_poly --sched_exponent 0.25 --batch_sz 1000 --batch_sz_no_doubling -d train-sets/rcv1_small.dat -p stage_poly.s025.predict --quiet",
+    "diff_files": {
+      "stderr": "train-sets/ref/stage_poly.s025.stderr",
+      "stage_poly.s025.predict": "train-sets/ref/stage_poly.s025.predict"
+    },
+    "input_files": [
+      "train-sets/rcv1_small.dat"
+    ]
+  },
+  {
+    "id": 55,
+    "desc": "stagewise poly with exponent 1.0",
+    "vw_command": "--stage_poly --sched_exponent 1.0 --batch_sz 1000 --batch_sz_no_doubling -d train-sets/rcv1_small.dat --quiet",
+    "diff_files": {
+      "stderr": "train-sets/ref/stage_poly.s100.stderr"
+    },
+    "input_files": [
+      "train-sets/rcv1_small.dat"
+    ]
+  },
+  {
+    "id": 56,
+    "desc": "stagewise poly with exponent 0.25 and doubling batches",
+    "vw_command": "--stage_poly --sched_exponent 0.25 --batch_sz 1000 -d train-sets/rcv1_small.dat -p stage_poly.s025.doubling.predict --quiet",
+    "diff_files": {
+      "stderr": "train-sets/ref/stage_poly.s025.doubling.stderr",
+      "stage_poly.s025.doubling.predict": "train-sets/ref/stage_poly.s025.doubling.predict"
+    },
+    "input_files": [
+      "train-sets/rcv1_small.dat"
+    ]
+  },
+  {
+    "id": 57,
+    "desc": "stagewise poly with exponent 1.0 and doubling batches",
+    "vw_command": "--stage_poly --sched_exponent 1.0 --batch_sz 1000 -d train-sets/rcv1_small.dat -p stage_poly.s100.doubling.predict --quiet",
+    "diff_files": {
+      "stderr": "train-sets/ref/stage_poly.s100.doubling.stderr",
+      "stage_poly.s100.doubling.predict": "train-sets/ref/stage_poly.s100.doubling.predict"
+    },
+    "input_files": [
+      "train-sets/rcv1_small.dat"
+    ]
+  },
+  {
+    "id": 58,
+    "desc": "library test, train the initial model",
+    "vw_command": "-c -k -d train-sets/library_train -f models/library_train.w -q st --passes 100 --hash all --noconstant --csoaa_ldf m --holdout_off",
+    "diff_files": {
+      "stdout": "train-sets/ref/library_train.stdout",
+      "stderr": "train-sets/ref/library_train.stderr"
+    },
+    "input_files": [
+      "train-sets/library_train"
+    ]
+  },
+  {
+    "id": 59,
+    "desc": "cb_adf, sharedfeatures",
+    "vw_command": "--dsjson --chain_hash --cb_adf -d train-sets/no_shared_features.json",
+    "diff_files": {
+      "stderr": "train-sets/ref/no_shared_features.stderr"
+    },
+    "input_files": [
+      "train-sets/no_shared_features.json"
+    ]
+  },
+  {
+    "id": 60,
+    "desc": "empty test, bad builds (without make clean). sometimes cause a SEGV even on empty input",
+    "diff_files": {
+      "stderr": "train-sets/ref/empty-set.stderr"
+    },
+    "bash_command": "echo \"\" | {VW}"
+  },
+  {
+    "id": 61,
+    "desc": "daemon test",
+    "diff_files": {
+      "stdout": "test-sets/ref/vw-daemon.stdout"
+    },
+    "bash_command": "./daemon-test.sh --port 54249"
+  },
+  {
+    "id": 62,
+    "desc": "SVM linear kernel",
+    "vw_command": "--ksvm --l2 1 --reprocess 5 -b 18 -p ksvm_train.linear.predict -d train-sets/rcv1_smaller.dat",
+    "diff_files": {
+      "stderr": "train-sets/ref/ksvm_train.linear.stderr",
+      "ksvm_train.linear.predict": "train-sets/ref/ksvm_train.linear.predict"
+    },
+    "input_files": [
+      "train-sets/rcv1_smaller.dat"
+    ]
+  },
+  {
+    "id": 63,
+    "desc": "SVM polynomial kernel",
+    "vw_command": "--ksvm --l2 1 --reprocess 5 -b 18 --kernel poly -p ksvm_train.poly.predict -d train-sets/rcv1_smaller.dat",
+    "diff_files": {
+      "stderr": "train-sets/ref/ksvm_train.poly.stderr",
+      "ksvm_train.poly.predict": "train-sets/ref/ksvm_train.poly.predict"
+    },
+    "input_files": [
+      "train-sets/rcv1_smaller.dat"
+    ]
+  },
+  {
+    "id": 64,
+    "desc": "SVM rbf kernel",
+    "vw_command": "--ksvm --l2 1 --reprocess 5 -b 18 --kernel rbf -p ksvm_train.rbf.predict -d train-sets/rcv1_smaller.dat",
+    "diff_files": {
+      "stderr": "train-sets/ref/ksvm_train.rbf.stderr",
+      "ksvm_train.rbf.predict": "train-sets/ref/ksvm_train.rbf.predict"
+    },
+    "input_files": [
+      "train-sets/rcv1_smaller.dat"
+    ]
+  },
+  {
+    "id": 65,
+    "desc": "Run search (dagger) on an entity-relation recognitions data set,. er_small, for 6 passes with constraints",
+    "vw_command": "-k -c -d train-sets/er_small.vw --passes 6 --search_task entity_relation --search 10 --constraints --search_alpha 1e-8",
+    "diff_files": {
+      "stderr": "train-sets/ref/search_er.stderr"
+    },
+    "input_files": [
+      "train-sets/er_small.vw"
+    ]
+  },
+  {
+    "id": 66,
+    "desc": "Train a depenency parser with search (dagger). on wsj_small.dparser.vw.gz for 6 passes",
+    "vw_command": "-k -c -d train-sets/wsj_small.dparser.vw.gz --passes 6 --search_task dep_parser --search 12 --search_alpha 1e-4 --search_rollout oracle --holdout_off",
+    "diff_files": {
+      "stderr": "train-sets/ref/search_dep_parser.stderr"
+    },
+    "input_files": [
+      "train-sets/wsj_small.dparser.vw.gz"
+    ]
+  },
+  {
+    "id": 67,
+    "desc": "classification with data from dictionaries. (eg embeddings or gazetteers) -- note that this is impossible without. dictionaries because --ignore w; also test to make sure gzipped dicts. work and dictionary redundancy checking works",
+    "vw_command": "-k -c -d train-sets/dictionary_test.dat --binary --ignore w --holdout_off --passes 32 --dictionary w:dictionary_test.dict --dictionary w:dictionary_test.dict.gz --dictionary_path train-sets",
+    "diff_files": {
+      "stderr": "train-sets/ref/dictionary_test.stderr"
+    },
+    "input_files": [
+      "train-sets/dictionary_test.dat",
+      "train-sets/dictionary_test.dict",
+      "train-sets/dictionary_test.dict.gz"
+    ]
+  },
+  {
+    "id": 68,
+    "desc": "Search for multiclass classification",
+    "vw_command": "-k -c -d train-sets/multiclass.sch --passes 20 --search_task multiclasstask --search 10 --search_alpha 1e-4 --holdout_off",
+    "diff_files": {
+      "stderr": "train-sets/ref/search_multiclass.stderr"
+    },
+    "input_files": [
+      "train-sets/multiclass.sch"
+    ]
+  },
+  {
+    "id": 69,
+    "desc": "(see Test 43/Test 44): search sequence labeling, with selective branching",
+    "vw_command": "-d train-sets/sequence_data -t -i models/sequence_data.model -p sequence_data.nonldf.beam.test.predict --search_metatask selective_branching --search_max_branch 10 --search_kbest 10",
+    "diff_files": {
+      "stderr": "train-sets/ref/sequence_data.nonldf.beam.test.stderr",
+      "sequence_data.nonldf.beam.test.predict": "train-sets/ref/sequence_data.nonldf.beam.test.predict"
+    },
+    "input_files": [
+      "train-sets/sequence_data",
+      "models/sequence_data.model"
+    ],
+    "depends_on": [
+      43
+    ]
+  },
+  {
+    "id": 70,
+    "desc": "(see Test 46/47) search sequence labeling, ldf test, with selective branching",
+    "vw_command": "-d train-sets/sequence_data -t -i models/sequence_data.ldf.model -p sequence_data.ldf.beam.test.predict --search_metatask selective_branching --search_max_branch 10 --search_kbest 10 --noconstant",
+    "diff_files": {
+      "stderr": "train-sets/ref/sequence_data.ldf.beam.test.stderr",
+      "sequence_data.ldf.beam.test.predict": "train-sets/ref/sequence_data.ldf.beam.test.predict"
+    },
+    "input_files": [
+      "train-sets/sequence_data",
+      "models/sequence_data.ldf.model"
+    ],
+    "depends_on": [
+      46
+    ]
+  },
+  {
+    "id": 71,
+    "desc": "autolink",
+    "vw_command": "-d train-sets/0002.dat --autolink 1 --examples 100 -p 0002.autolink.predict",
+    "diff_files": {
+      "stderr": "train-sets/ref/0002.autolink.stderr",
+      "0002.autolink.predict": "train-sets/ref/0002.autolink.predict"
+    },
+    "input_files": [
+      "train-sets/0002.dat"
+    ]
+  },
+  {
+    "id": 72,
+    "desc": "train FTRL-Proximal",
+    "vw_command": "-k -d train-sets/0001.dat -f models/0001_ftrl.model --passes 1 --ftrl --ftrl_alpha 0.01 --ftrl_beta 0 --l1 2",
+    "diff_files": {
+      "stderr": "train-sets/ref/0001_ftrl.stderr"
+    },
+    "input_files": [
+      "train-sets/0001.dat"
+    ]
+  },
+  {
+    "id": 73,
+    "desc": "test FTRL-Proximal",
+    "vw_command": "-k -t -d train-sets/0001.dat -i models/0001_ftrl.model -p 0001_ftrl.predict",
+    "diff_files": {
+      "stderr": "test-sets/ref/0001_ftrl.stderr",
+      "0001_ftrl.predict": "pred-sets/ref/0001_ftrl.predict"
+    },
+    "input_files": [
+      "train-sets/0001.dat",
+      "models/0001_ftrl.model"
+    ],
+    "depends_on": [
+      72
+    ]
+  },
+  {
+    "id": 74,
+    "desc": "cb evaluation",
+    "vw_command": "-d train-sets/rcv1_cb_eval --cb 2 --eval",
+    "diff_files": {
+      "stderr": "train-sets/ref/rcv1_cb_eval.stderr"
+    },
+    "input_files": [
+      "train-sets/rcv1_cb_eval"
+    ]
+  },
+  {
+    "id": 75,
+    "desc": "Log_multi",
+    "vw_command": "--log_multi 10 -d train-sets/multiclass",
+    "diff_files": {
+      "stderr": "train-sets/ref/log_multi.stderr"
+    },
+    "input_files": [
+      "train-sets/multiclass"
+    ]
+  },
+  {
+    "id": 76,
+    "desc": "cbify, epsilon-greedy",
+    "vw_command": "--cbify 10 --epsilon 0.05 -d train-sets/multiclass",
+    "diff_files": {
+      "stderr": "train-sets/ref/cbify_epsilon.stderr"
+    },
+    "input_files": [
+      "train-sets/multiclass"
+    ]
+  },
+  {
+    "id": 77,
+    "desc": "cbify, tau first",
+    "vw_command": "--cbify 10 --first 5 -d train-sets/multiclass",
+    "diff_files": {
+      "stderr": "train-sets/ref/cbify_first.stderr"
+    },
+    "input_files": [
+      "train-sets/multiclass"
+    ]
+  },
+  {
+    "id": 78,
+    "desc": "cbify, bag",
+    "vw_command": "--cbify 10 --bag 7 -d train-sets/multiclass",
+    "diff_files": {
+      "stderr": "train-sets/ref/cbify_bag.stderr"
+    },
+    "input_files": [
+      "train-sets/multiclass"
+    ]
+  },
+  {
+    "id": 79,
+    "desc": "cbify, cover",
+    "vw_command": "--cbify 10 --cover 3 -d train-sets/multiclass --nounif",
+    "diff_files": {
+      "stderr": "train-sets/ref/cbify_cover.stderr"
+    },
+    "input_files": [
+      "train-sets/multiclass"
+    ]
+  },
+  {
+    "id": 80,
+    "desc": "lrq empty namespace",
+    "vw_command": "--lrq aa3 -d train-sets/0080.dat",
+    "diff_files": {
+      "stderr": "train-sets/ref/0080.stderr"
+    },
+    "input_files": [
+      "train-sets/0080.dat"
+    ]
+  },
+  {
+    "id": 81,
+    "desc": "train FTRL-PiSTOL",
+    "vw_command": "-k -d train-sets/0001.dat -f models/ftrl_pistol.model --passes 1 --pistol",
+    "diff_files": {
+      "stderr": "train-sets/ref/ftrl_pistol.stderr"
+    },
+    "input_files": [
+      "train-sets/0001.dat"
+    ]
+  },
+  {
+    "id": 82,
+    "desc": "test FTRL-PiSTOL",
+    "vw_command": "-k -t -d train-sets/0001.dat -i models/ftrl_pistol.model -p ftrl_pistol.predict",
+    "diff_files": {
+      "stderr": "test-sets/ref/ftrl_pistol.stderr",
+      "ftrl_pistol.predict": "pred-sets/ref/ftrl_pistol.predict"
+    },
+    "input_files": [
+      "train-sets/0001.dat",
+      "models/ftrl_pistol.model"
+    ],
+    "depends_on": [
+      81
+    ]
+  },
+  {
+    "id": 83,
+    "desc": "check redefine functionality",
+    "vw_command": "-k -d train-sets/0080.dat --redefine := --redefine y:=: --redefine x:=arma --ignore x -q yy",
+    "diff_files": {
+      "stderr": "train-sets/ref/redefine.stderr"
+    },
+    "input_files": [
+      "train-sets/0080.dat"
+    ]
+  },
+  {
+    "id": 84,
+    "desc": "check cb_adf",
+    "vw_command": "--cb_adf -d train-sets/cb_test.ldf --noconstant",
+    "diff_files": {
+      "stderr": "train-sets/ref/cb_adf_mtr.stderr"
+    },
+    "input_files": [
+      "train-sets/cb_test.ldf"
+    ]
+  },
+  {
+    "id": 85,
+    "desc": "check multilabel_oaa",
+    "vw_command": "--multilabel_oaa 10 -d train-sets/multilabel -p multilabel.predict",
+    "diff_files": {
+      "stderr": "train-sets/ref/multilabel.stderr",
+      "multilabel.predict": "pred-sets/ref/multilabel.predict"
+    },
+    "input_files": [
+      "train-sets/multilabel"
+    ]
+  },
+  {
+    "id": 86,
+    "desc": "check --csoaa_rank on csoaa_ldf",
+    "vw_command": "--csoaa_ldf multiline --csoaa_rank -d train-sets/cs_test_multilabel.ldf -p multilabel_ldf.predict --noconstant",
+    "diff_files": {
+      "stderr": "train-sets/ref/multilabel_ldf.stderr",
+      "multilabel_ldf.predict": "pred-sets/ref/multilabel_ldf.predict"
+    },
+    "input_files": [
+      "train-sets/cs_test_multilabel.ldf"
+    ]
+  },
+  {
+    "id": 87,
+    "desc": "check --rank_all on csoaa_ldf",
+    "vw_command": "--cb_adf --rank_all -d train-sets/cb_test.ldf -p cb_adf_rank.predict --noconstant",
+    "diff_files": {
+      "stderr": "train-sets/ref/cb_adf_rank.stderr",
+      "cb_adf_rank.predict": "pred-sets/ref/cb_adf_rank.predict"
+    },
+    "input_files": [
+      "train-sets/cb_test.ldf"
+    ]
+  },
+  {
+    "id": 88,
+    "desc": "named labels at training time",
+    "vw_command": "--named_labels det,noun,verb --oaa 3 -d train-sets/test_named -k -c --passes 10 --holdout_off -f models/test_named.model",
+    "diff_files": {
+      "stderr": "train-sets/ref/test_named_train.stderr"
+    },
+    "input_files": [
+      "train-sets/test_named"
+    ]
+  },
+  {
+    "id": 89,
+    "desc": "named labels at prediction",
+    "vw_command": "-i models/test_named.model -t -d train-sets/test_named -p test_named.predict",
+    "diff_files": {
+      "stderr": "train-sets/ref/test_named_test.stderr",
+      "test_named.predict": "pred-sets/ref/test_named.predict"
+    },
+    "input_files": [
+      "train-sets/test_named",
+      "models/test_named.model"
+    ],
+    "depends_on": [
+      88
+    ]
+  },
+  {
+    "id": 90,
+    "desc": "named labels at training time (csoaa)",
+    "vw_command": "--named_labels det,noun,verb --csoaa 3 -d train-sets/test_named_csoaa -k -c --passes 10 --holdout_off -f models/test_named_csoaa.model",
+    "diff_files": {
+      "stderr": "train-sets/ref/test_named_csoaa_train.stderr"
+    },
+    "input_files": [
+      "train-sets/test_named_csoaa"
+    ]
+  },
+  {
+    "id": 91,
+    "desc": "named labels at prediction (csoaa)",
+    "vw_command": "-i models/test_named_csoaa.model -t -d train-sets/test_named_csoaa -p test_named_csoaa.predict",
+    "diff_files": {
+      "stderr": "train-sets/ref/test_named_csoaa_test.stderr",
+      "test_named_csoaa.predict": "pred-sets/ref/test_named_csoaa.predict"
+    },
+    "input_files": [
+      "train-sets/test_named_csoaa",
+      "models/test_named_csoaa.model"
+    ],
+    "depends_on": [
+      90
+    ]
+  },
+  {
+    "id": 92,
+    "desc": "check -q :: and -oaa inverse hash",
+    "diff_files": {
+      "stderr": "train-sets/ref/inv_hash.stderr",
+      "inv_hash.cmp": "pred-sets/ref/inv_hash.cmp"
+    },
+    "bash_command": "printf '3 |f a b c |e x y z\\n2 |f a y c |e x\\n' |  {VW} --oaa 3 -q :: --invert_hash inv_hash.cmp &&  tail -n +2 inv_hash.cmp > inv_hash.cmp.new &&  rm inv_hash.cmp &&  mv inv_hash.cmp.new inv_hash.cmp"
+  },
+  {
+    "id": 93,
+    "desc": "check cb_adf with doubly robust option",
+    "vw_command": "--cb_adf --rank_all -d train-sets/cb_test.ldf -p cb_adf_dr.predict --cb_type dr",
+    "diff_files": {
+      "stderr": "train-sets/ref/cb_adf_dr.stderr",
+      "cb_adf_dr.predict": "pred-sets/ref/cb_adf_dr.predict"
+    },
+    "input_files": [
+      "train-sets/cb_test.ldf"
+    ]
+  },
+  {
+    "id": 94,
+    "desc": "experience replay version of test 1",
+    "vw_command": "-k -l 20 --initial_t 128000 --power_t 1 -d train-sets/0001.dat -c --passes 8 --invariant --ngram 3 --skips 1 --holdout_off --replay_b 100",
+    "diff_files": {
+      "stderr": "train-sets/ref/0001-replay.stderr"
+    },
+    "input_files": [
+      "train-sets/0001.dat"
+    ]
+  },
+  {
+    "id": 95,
+    "desc": "named labels at training time (csoaa) with experience replay",
+    "vw_command": "--named_labels det,noun,verb --csoaa 3 -d train-sets/test_named_csoaa -k -c --passes 10 --holdout_off -f models/test_named_csoaa.model --replay_c 100",
+    "diff_files": {
+      "stderr": "train-sets/ref/test_named_csoaa_train-replay.stderr"
+    },
+    "input_files": [
+      "train-sets/test_named_csoaa"
+    ]
+  },
+  {
+    "id": 96,
+    "desc": "backwards compatibility",
+    "diff_files": {
+      "stderr": "test-sets/ref/backwards.stderr",
+      "stdout": "test-sets/ref/backwards.stdout"
+    },
+    "bash_command": "printf '3 |f a b c |e x y z\\n2 |f a y c |e x\\n' |  {VW} -i model-sets/simple_model --invert_hash inv_hash.cmp &&  tail -n +2 inv_hash.cmp",
+    "input_files": [
+      "model-sets/simple_model"
+    ]
+  },
+  {
+    "id": 97,
+    "desc": "",
+    "vw_command": "-d train-sets/0001.dat -f models/0097.model --save_resume",
+    "diff_files": {
+      "stderr": "train-sets/ref/0097.stderr"
+    },
+    "input_files": [
+      "train-sets/0001.dat"
+    ]
+  },
+  {
+    "id": 98,
+    "desc": "checking predictions as well",
+    "vw_command": "--preserve_performance_counters -d train-sets/0001.dat -i models/0097.model -p 0098.predict",
+    "diff_files": {
+      "stderr": "test-sets/ref/0098.stderr",
+      "0098.predict": "pred-sets/ref/0098.predict"
+    },
+    "input_files": [
+      "train-sets/0001.dat",
+      "models/0097.model"
+    ],
+    "depends_on": [
+      97
+    ]
+  },
+  {
+    "id": 99,
+    "desc": "checking predictions with testing",
+    "vw_command": "-d train-sets/0001.dat -i models/0097.model -p 0099.predict",
+    "diff_files": {
+      "stderr": "test-sets/ref/0099.stderr",
+      "0099.predict": "pred-sets/ref/0099.predict"
+    },
+    "input_files": [
+      "train-sets/0001.dat",
+      "models/0097.model"
+    ],
+    "depends_on": [
+      97
+    ]
+  },
+  {
+    "id": 100,
+    "desc": "action costs, no rollout",
+    "vw_command": "-k -c -d train-sets/sequence_data --passes 20 --invariant --search_rollout none --search_task sequence_ctg --search 5 --holdout_off",
+    "diff_files": {
+      "stderr": "train-sets/ref/sequence_data.ctg.train.stderr"
+    },
+    "input_files": [
+      "train-sets/sequence_data"
+    ]
+  },
+  {
+    "id": 101,
+    "desc": "active cover",
+    "vw_command": "--loss_function logistic --binary --active_cover -d train-sets/rcv1_mini.dat -f models/active_cover.model",
+    "diff_files": {
+      "stderr": "train-sets/ref/active_cover.stderr"
+    },
+    "input_files": [
+      "train-sets/rcv1_mini.dat"
+    ]
+  },
+  {
+    "id": 102,
+    "desc": "active cover (predict)",
+    "vw_command": "-i models/active_cover.model -t -d test-sets/rcv1_small_test.data -p active_cover.predict",
+    "diff_files": {
+      "stderr": "test-sets/ref/active_cover.stderr",
+      "active_cover.predict": "pred-sets/ref/active_cover.predict"
+    },
+    "input_files": [
+      "test-sets/rcv1_small_test.data",
+      "models/active_cover.model"
+    ],
+    "depends_on": [
+      101
+    ]
+  },
+  {
+    "id": 103,
+    "desc": "active cover oracular",
+    "vw_command": "--loss_function logistic --binary --active_cover --oracular -d ./train-sets/rcv1_small.dat",
+    "diff_files": {
+      "stderr": "train-sets/ref/active_cover_oracular.stderr"
+    },
+    "input_files": [
+      "./train-sets/rcv1_small.dat"
+    ]
+  },
+  {
+    "id": 104,
+    "desc": "check cb_adf",
+    "vw_command": "--cb_adf -d train-sets/cb_test.ldf --cb_type mtr --noconstant",
+    "diff_files": {
+      "stderr": "train-sets/ref/cb_adf_mtr.stderr"
+    },
+    "input_files": [
+      "train-sets/cb_test.ldf"
+    ]
+  },
+  {
+    "id": 105,
+    "desc": "train FTRL-Proximal early stopping",
+    "vw_command": "-k -d train-sets/0001.dat -f models/0001_ftrl.model --passes 10 --ftrl --ftrl_alpha 3.0 --ftrl_beta 0 --l1 0.9 --cache",
+    "diff_files": {
+      "stderr": "train-sets/ref/0001_ftrl_holdout.stderr"
+    },
+    "input_files": [
+      "train-sets/0001.dat"
+    ]
+  },
+  {
+    "id": 106,
+    "desc": "test FTRL-Proximal early stopping prediction",
+    "vw_command": "-k -t -d train-sets/0001.dat -i models/0001_ftrl.model -p 0001_ftrl_holdout.predict",
+    "diff_files": {
+      "stderr": "test-sets/ref/0001_ftrl_holdout_106.stderr",
+      "0001_ftrl_holdout.predict": "pred-sets/ref/0001_ftrl_holdout.predict"
+    },
+    "input_files": [
+      "train-sets/0001.dat",
+      "models/0001_ftrl.model"
+    ],
+    "depends_on": [
+      105
+    ]
+  },
+  {
+    "id": 107,
+    "desc": "train FTRL-Proximal no early stopping",
+    "vw_command": "-k -d train-sets/0001.dat -f models/0001_ftrl.model --passes 10 --ftrl --ftrl_alpha 0.01 --ftrl_beta 0 --l1 2 --cache --holdout_off",
+    "diff_files": {
+      "stderr": "train-sets/ref/0001_ftrl_holdout_off.stderr"
+    },
+    "input_files": [
+      "train-sets/0001.dat"
+    ]
+  },
+  {
+    "id": 108,
+    "desc": "test FTRL-Proximal no early stopping",
+    "vw_command": "-k -t -d train-sets/0001.dat -i models/0001_ftrl.model -p 0001_ftrl_holdout_off.predict --holdout_off",
+    "diff_files": {
+      "stderr": "test-sets/ref/0001_ftrl_holdout_off.stderr",
+      "0001_ftrl_holdout_off.predict": "pred-sets/ref/0001_ftrl_holdout_off.predict"
+    },
+    "input_files": [
+      "train-sets/0001.dat",
+      "models/0001_ftrl.model"
+    ],
+    "depends_on": [
+      107
+    ]
+  },
+  {
+    "id": 109,
+    "desc": "--probabilities --oaa",
+    "vw_command": "-d train-sets/probabilities.dat --probabilities --oaa=4 --loss_function=logistic -p oaa_probabilities.predict",
+    "diff_files": {
+      "stderr": "train-sets/ref/oaa_probabilities.stderr",
+      "oaa_probabilities.predict": "pred-sets/ref/oaa_probabilities.predict"
+    },
+    "input_files": [
+      "train-sets/probabilities.dat"
+    ]
+  },
+  {
+    "id": 110,
+    "desc": "--probabilities --csoaa_ldf=mc",
+    "vw_command": "-d train-sets/cs_test.ldf --probabilities --csoaa_ldf=mc --loss_function=logistic -p csoaa_ldf_probabilities.predict",
+    "diff_files": {
+      "stderr": "train-sets/ref/csoaa_ldf_probabilities.stderr",
+      "csoaa_ldf_probabilities.predict": "pred-sets/ref/csoaa_ldf_probabilities.predict"
+    },
+    "input_files": [
+      "train-sets/cs_test.ldf"
+    ]
+  },
+  {
+    "id": 111,
+    "desc": "Train a depenency parser with neural network and one_learner approach (lols)",
+    "vw_command": "-k -c -d train-sets/wsj_small.dparser.vw.gz -b 20 --search_task dep_parser --search 25 --search_alpha 1e-5 --search_rollin mix_per_roll --search_rollout oracle --one_learner --nn 5 --ftrl --search_history_length 3 --root_label 8",
+    "diff_files": {
+      "stderr": "train-sets/ref/search_dep_parser_one_learner.stderr"
+    },
+    "input_files": [
+      "train-sets/wsj_small.dparser.vw.gz"
+    ]
+  },
+  {
+    "id": 112,
+    "desc": "Train a depenency parser with cost_to_go",
+    "vw_command": "-k -c -d train-sets/wsj_small.dparser.vw.gz -b 20 --passes 6 --search_task dep_parser --search 25 --search_alpha 1e-5 --search_rollin mix_per_roll --search_rollout none --holdout_off --search_history_length 3 --root_label 8 --cost_to_go",
+    "diff_files": {
+      "stderr": "train-sets/ref/search_dep_parser_cost_to_go.stderr"
+    },
+    "input_files": [
+      "train-sets/wsj_small.dparser.vw.gz"
+    ]
+  },
+  {
+    "id": 113,
+    "desc": "Predictions with confidences",
+    "vw_command": "--confidence -d ./train-sets/rcv1_micro.dat --initial_t 0.1 -p confidence.preds",
+    "diff_files": {
+      "stderr": "train-sets/ref/confidence.stderr",
+      "confidence.preds": "pred-sets/ref/confidence.preds"
+    },
+    "input_files": [
+      "./train-sets/rcv1_micro.dat"
+    ]
+  },
+  {
+    "id": 114,
+    "desc": "Over size example test",
+    "vw_command": "-d train-sets/x.txt",
+    "diff_files": {
+      "stderr": "train-sets/ref/oversize.stderr"
+    },
+    "input_files": [
+      "train-sets/x.txt"
+    ]
+  },
+  {
+    "id": 115,
+    "desc": "Long Line test",
+    "vw_command": "-d train-sets/long_line -c -k",
+    "diff_files": {
+      "stderr": "train-sets/ref/long_line.stderr"
+    },
+    "input_files": [
+      "train-sets/long_line"
+    ]
+  },
+  {
+    "id": 116,
+    "desc": "MWT test",
+    "vw_command": "-d train-sets/cb_eval --multiworld_test f -p cb_eval.preds",
+    "diff_files": {
+      "stderr": "train-sets/ref/cb_eval.stderr",
+      "cb_eval.preds": "pred-sets/ref/cb_eval.preds"
+    },
+    "input_files": [
+      "train-sets/cb_eval"
+    ]
+  },
+  {
+    "id": 117,
+    "desc": "Audit regressor of ftrl model (from test #107)",
+    "vw_command": "-d train-sets/0001.dat -i models/0001_ftrl.model --audit_regressor ftrl.audit_regr",
+    "diff_files": {
+      "stderr": "train-sets/ref/ftrl_audit_regr.stderr",
+      "ftrl.audit_regr": "train-sets/ref/ftrl.audit_regr"
+    },
+    "input_files": [
+      "train-sets/0001.dat",
+      "models/0001_ftrl.model"
+    ],
+    "depends_on": [
+      107
+    ]
+  },
+  {
+    "id": 118,
+    "desc": "Audit regressor of csoaa model (from test #95)",
+    "vw_command": "-d train-sets/test_named_csoaa -i models/test_named_csoaa.model --audit_regressor csoaa.audit_regr",
+    "diff_files": {
+      "stderr": "train-sets/ref/csoaa_audit_regr.stderr",
+      "csoaa.audit_regr": "train-sets/ref/csoaa.audit_regr"
+    },
+    "input_files": [
+      "train-sets/test_named_csoaa",
+      "models/test_named_csoaa.model"
+    ],
+    "depends_on": [
+      95
+    ]
+  },
+  {
+    "id": 119,
+    "desc": "MWT learn test",
+    "vw_command": "-d train-sets/cb_eval --multiworld_test f --learn 2 -p mwt_learn.preds",
+    "diff_files": {
+      "stderr": "train-sets/ref/mwt_learn.stderr",
+      "mwt_learn.preds": "pred-sets/ref/mwt_learn.preds"
+    },
+    "input_files": [
+      "train-sets/cb_eval"
+    ]
+  },
+  {
+    "id": 120,
+    "desc": "MWT learn exclude test",
+    "vw_command": "-d train-sets/cb_eval --multiworld_test f --learn 2 --exclude_eval -p mwt_learn_exclude.preds",
+    "diff_files": {
+      "stderr": "train-sets/ref/mwt_learn_exclude.stderr",
+      "mwt_learn_exclude.preds": "pred-sets/ref/mwt_learn_exclude.preds"
+    },
+    "input_files": [
+      "train-sets/cb_eval"
+    ]
+  },
+  {
+    "id": 121,
+    "desc": "cb_explore",
+    "vw_command": "-d train-sets/rcv1_raw_cb_small.vw --cb_explore 2 --ngram 2 --skips 4 -b 24 -l 0.25 -p rcv1_raw_cb_explore.preds",
+    "diff_files": {
+      "stderr": "train-sets/ref/rcv1_raw_cb_explore.stderr",
+      "rcv1_raw_cb_explore.preds": "pred-sets/ref/rcv1_raw_cb_explore.preds"
+    },
+    "input_files": [
+      "train-sets/rcv1_raw_cb_small.vw"
+    ]
+  },
+  {
+    "id": 122,
+    "desc": "Predictions with confidences after training",
+    "vw_command": "--confidence --confidence_after_training --initial_t 0.1 -d ./train-sets/rcv1_small.dat -p confidence_after_training.preds",
+    "diff_files": {
+      "stderr": "train-sets/ref/confidence_after_training.stderr",
+      "confidence_after_training.preds": "pred-sets/ref/confidence_after_training.preds"
+    },
+    "input_files": [
+      "./train-sets/rcv1_small.dat"
+    ]
+  },
+  {
+    "id": 123,
+    "desc": "cb_eval save/load #1",
+    "vw_command": "-d train-sets/cb_eval1 --multiworld_test f -f mwt.model -p cb_eval1.preds",
+    "diff_files": {
+      "stderr": "train-sets/ref/cb_eval1.stderr",
+      "cb_eval1.preds": "pred-sets/ref/cb_eval1.preds"
+    },
+    "input_files": [
+      "train-sets/cb_eval1"
+    ]
+  },
+  {
+    "id": 124,
+    "desc": "cb_eval save/load #2",
+    "vw_command": "-d train-sets/cb_eval2 -i mwt.model -p cb_eval2.preds",
+    "diff_files": {
+      "stderr": "train-sets/ref/cb_eval2.stderr",
+      "cb_eval2.preds": "pred-sets/ref/cb_eval2.preds"
+    },
+    "input_files": [
+      "train-sets/cb_eval2",
+      "mwt.model"
+    ],
+    "depends_on": [
+      123
+    ]
+  },
+  {
+    "id": 125,
+    "desc": "arc-eager trasition-based dependency parser",
+    "vw_command": "-k -c -d train-sets/wsj_small.dparser.vw.gz -b 20 --search_task dep_parser --search 26 --search_alpha 1e-5 --search_rollin mix_per_roll --search_rollout oracle --one_learner --search_history_length 3 --root_label 8 --transition_system 2 --passes 8",
+    "diff_files": {
+      "stderr": "train-sets/ref/search_dep_parser_arceager.stderr"
+    },
+    "input_files": [
+      "train-sets/wsj_small.dparser.vw.gz"
+    ]
+  },
+  {
+    "id": 126,
+    "desc": "recall tree hello world",
+    "vw_command": "--quiet -d train-sets/gauss1k.dat.gz -f models/recall_tree_g100.model --recall_tree 100 -b 20 --loss_function logistic",
+    "diff_files": {},
+    "input_files": [
+      "train-sets/gauss1k.dat.gz"
+    ]
+  },
+  {
+    "id": 127,
+    "desc": "recall_tree hello world predict-from-saved-model",
+    "vw_command": "-t -d train-sets/gauss1k.dat.gz -i models/recall_tree_g100.model",
+    "diff_files": {
+      "stderr": "train-sets/ref/recall_tree_gauss1k.stderr",
+      "stdout": "train-sets/ref/recall_tree_gauss1k.stdout"
+    },
+    "input_files": [
+      "train-sets/gauss1k.dat.gz",
+      "models/recall_tree_g100.model"
+    ],
+    "depends_on": [
+      126
+    ]
+  },
+  {
+    "id": 128,
+    "desc": "cb_explore_adf with epsilon-greedy exploration",
+    "vw_command": "--cb_explore_adf --epsilon 0.1 -d train-sets/cb_test.ldf --noconstant -p cbe_adf_epsilon.predict",
+    "diff_files": {
+      "stderr": "train-sets/ref/cbe_adf_epsilon.stderr",
+      "cbe_adf_epsilon.predict": "pred-sets/ref/cbe_adf_epsilon.predict"
+    },
+    "input_files": [
+      "train-sets/cb_test.ldf"
+    ]
+  },
+  {
+    "id": 129,
+    "desc": "cb_explore_adf with softmax exploration",
+    "vw_command": "--cb_explore_adf --softmax --lambda 1 -d train-sets/cb_test.ldf --noconstant -p cbe_adf_softmax.predict",
+    "diff_files": {
+      "stderr": "train-sets/ref/cbe_adf_softmax.stderr",
+      "cbe_adf_softmax.predict": "pred-sets/ref/cbe_adf_softmax.predict"
+    },
+    "input_files": [
+      "train-sets/cb_test.ldf"
+    ]
+  },
+  {
+    "id": 130,
+    "desc": "cb_explore_adf with bagging exploration",
+    "vw_command": "--cb_explore_adf --bag 3 -d train-sets/cb_test.ldf --noconstant -p cbe_adf_bag.predict",
+    "diff_files": {
+      "stderr": "train-sets/ref/cbe_adf_bag.stderr",
+      "cbe_adf_bag.predict": "pred-sets/ref/cbe_adf_bag.predict"
+    },
+    "input_files": [
+      "train-sets/cb_test.ldf"
+    ]
+  },
+  {
+    "id": 131,
+    "desc": "cb_explore_adf with explore-first exploration",
+    "vw_command": "--cb_explore_adf --first 2 -d train-sets/cb_test.ldf --noconstant -p cbe_adf_first.predict",
+    "diff_files": {
+      "stderr": "train-sets/ref/cbe_adf_first.stderr",
+      "cbe_adf_first.predict": "pred-sets/ref/cbe_adf_first.predict"
+    },
+    "input_files": [
+      "train-sets/cb_test.ldf"
+    ]
+  },
+  {
+    "id": 132,
+    "desc": "train a poisson model",
+    "vw_command": "--quiet -d train-sets/poisson.dat -f models/poisson.model --loss_function poisson --link poisson -b 2 -p poisson.train.predict",
+    "diff_files": {
+      "stderr": "train-sets/ref/poisson.train.stderr",
+      "poisson.train.predict": "pred-sets/ref/poisson.train.predict"
+    },
+    "input_files": [
+      "train-sets/poisson.dat"
+    ]
+  },
+  {
+    "id": 133,
+    "desc": "train a poisson model without invariant updates",
+    "vw_command": "--quiet -d train-sets/poisson.dat -f models/poisson.normalized.model --normalized --loss_function poisson --link poisson -b 2 -l 0.1 -p poisson.train.normalized.predict",
+    "diff_files": {
+      "stderr": "train-sets/ref/poisson.train.normalized.stderr",
+      "poisson.train.normalized.predict": "pred-sets/ref/poisson.train.normalized.predict"
+    },
+    "input_files": [
+      "train-sets/poisson.dat"
+    ]
+  },
+  {
+    "id": 134,
+    "desc": "second order online learning",
+    "vw_command": "--OjaNewton -d train-sets/0001.dat -f models/second_order.model -p second_order.predict",
+    "diff_files": {
+      "stderr": "train-sets/ref/second_order.stderr",
+      "second_order.predict": "pred-sets/ref/second_order.predict"
+    },
+    "input_files": [
+      "train-sets/0001.dat"
+    ]
+  },
+  {
+    "id": 135,
+    "desc": "cb explore adf",
+    "vw_command": "-d train-sets/cb_adf_crash_1.data -f models/cb_adf_crash.model --cb_explore_adf --epsilon 0.05",
+    "diff_files": {
+      "stderr": "train-sets/ref/cb_adf_crash1.stderr"
+    },
+    "input_files": [
+      "train-sets/cb_adf_crash_1.data"
+    ]
+  },
+  {
+    "id": 136,
+    "desc": "cb explore adf predict",
+    "vw_command": "-d train-sets/cb_adf_crash_2.data -i models/cb_adf_crash.model -t",
+    "diff_files": {
+      "stderr": "train-sets/ref/cb_adf_crash2.stderr"
+    },
+    "input_files": [
+      "train-sets/cb_adf_crash_2.data",
+      "models/cb_adf_crash.model"
+    ],
+    "depends_on": [
+      135
+    ]
+  },
+  {
+    "id": 137,
+    "desc": "Fix for regression introduced by badeedb.. Ensure audit output continues to work correctly in the presence of anon features.. Github issue 1038 (https://github.com/JohnLangford/vowpal_wabbit/issues/1038)",
+    "vw_command": "--audit -d train-sets/audit.dat --noconstant",
+    "diff_files": {
+      "stderr": "train-sets/ref/audit.stderr",
+      "stdout": "train-sets/ref/audit.stdout"
+    },
+    "input_files": [
+      "train-sets/audit.dat"
+    ]
+  },
+  {
+    "id": 138,
+    "desc": "cb_explore_adf with cover exploration",
+    "vw_command": "--cb_explore_adf --cover 3 -d train-sets/cb_test.ldf --noconstant -p cbe_adf_cover.predict",
+    "diff_files": {
+      "stderr": "train-sets/ref/cbe_adf_cover.stderr",
+      "cbe_adf_cover.predict": "pred-sets/ref/cbe_adf_cover.predict"
+    },
+    "input_files": [
+      "train-sets/cb_test.ldf"
+    ]
+  },
+  {
+    "id": 139,
+    "desc": "cb_explore_adf with cover exploration + double robust",
+    "vw_command": "--cb_explore_adf --cover 3 --cb_type dr -d train-sets/cb_test.ldf --noconstant -p cbe_adf_cover_dr.predict",
+    "diff_files": {
+      "stderr": "train-sets/ref/cbe_adf_cover_dr.stderr",
+      "cbe_adf_cover_dr.predict": "pred-sets/ref/cbe_adf_cover_dr.predict"
+    },
+    "input_files": [
+      "train-sets/cb_test.ldf"
+    ]
+  },
+  {
+    "id": 140,
+    "desc": "marginal features",
+    "vw_command": "--marginal f -d train-sets/marginal_features --noconstant --initial_numerator 0.5 --initial_denominator 1.0 --decay 0.001 --holdout_off -c -k --passes 100 -f marginal_model",
+    "diff_files": {
+      "stderr": "train-sets/ref/marginal.stderr"
+    },
+    "input_files": [
+      "train-sets/marginal_features"
+    ]
+  },
+  {
+    "id": 141,
+    "desc": "marginal features test",
+    "vw_command": "-i marginal_model -d train-sets/marginal_features --noconstant -t",
+    "diff_files": {
+      "stderr": "train-sets/ref/marginal_test.stderr"
+    },
+    "input_files": [
+      "train-sets/marginal_features",
+      "marginal_model"
+    ],
+    "depends_on": [
+      140
+    ]
+  },
+  {
+    "id": 142,
+    "desc": "Evaluate exploration on contextal bandit data",
+    "vw_command": "--explore_eval --epsilon 0.2 -d train-sets/cb_test.ldf --noconstant -p explore_eval.predict",
+    "diff_files": {
+      "stderr": "train-sets/ref/explore_eval.stderr",
+      "explore_eval.predict": "pred-sets/ref/explore_eval.predict"
+    },
+    "input_files": [
+      "train-sets/cb_test.ldf"
+    ]
+  },
+  {
+    "id": 143,
+    "desc": "Test 1 using JSON",
+    "vw_command": "-k -l 20 --initial_t 128000 --power_t 1 -d train-sets/0001.json --json --chain_hash -c --passes 8 --invariant --ngram 3 --skips 1 --holdout_off",
+    "diff_files": {
+      "stderr": "train-sets/ref/0001.json.stderr"
+    },
+    "input_files": [
+      "train-sets/0001.json"
+    ]
+  },
+  {
+    "id": 144,
+    "desc": "cb_explore_adf with cover exploration + double robust",
+    "vw_command": "--cb_explore_adf --cover 3 --cb_type dr -d train-sets/cb_test.json --json --chain_hash --noconstant -p cbe_adf_cover_dr.predict",
+    "diff_files": {
+      "stderr": "train-sets/ref/cbe_adf_cover_dr.json.stderr",
+      "cbe_adf_cover_dr.predict": "pred-sets/ref/cbe_adf_cover_dr.predict"
+    },
+    "input_files": [
+      "train-sets/cb_test.json"
+    ]
+  },
+  {
+    "id": 145,
+    "desc": "mix labeled and unlabeled examples with --bootstrap bug:. https://github.com/JohnLangford/vowpal_wabbit/issues/1111",
+    "vw_command": "--bootstrap 2 -d train-sets/labeled-unlabeled-mix.dat",
+    "diff_files": {
+      "stderr": "train-sets/ref/labeled-unlabeled-mix.stderr"
+    },
+    "input_files": [
+      "train-sets/labeled-unlabeled-mix.dat"
+    ]
+  },
+  {
+    "id": 146,
+    "desc": "cb_explore_adf with cover exploration + double robust (using more than 256 examples)",
+    "vw_command": "--cb_explore_adf --cover 3 --cb_type dr -d train-sets/cb_test256.json --json --chain_hash --noconstant -p cbe_adf_cover_dr256.predict",
+    "diff_files": {
+      "stderr": "train-sets/ref/cbe_adf_cover_dr256.json.stderr",
+      "cbe_adf_cover_dr256.predict": "pred-sets/ref/cbe_adf_cover_dr256.predict"
+    },
+    "input_files": [
+      "train-sets/cb_test256.json"
+    ]
+  },
+  {
+    "id": 147,
+    "desc": "--scores --oaa",
+    "vw_command": "-d train-sets/probabilities.dat --scores --oaa=4 -p oaa_scores.predict",
+    "diff_files": {
+      "stderr": "train-sets/ref/oaa_scores.stderr",
+      "oaa_scores.predict": "pred-sets/ref/oaa_scores.predict"
+    },
+    "input_files": [
+      "train-sets/probabilities.dat"
+    ]
+  },
+  {
+    "id": 148,
+    "desc": "check cb_adf with direct method option",
+    "vw_command": "--cb_adf -d train-sets/cb_test.ldf -p cb_adf_dm.predict --cb_type dm",
+    "diff_files": {
+      "stderr": "train-sets/ref/cb_adf_dm.stderr",
+      "cb_adf_dm.predict": "pred-sets/ref/cb_adf_dm.predict"
+    },
+    "input_files": [
+      "train-sets/cb_test.ldf"
+    ]
+  },
+  {
+    "id": 149,
+    "desc": "initial_weight option is used",
+    "diff_files": {
+      "stderr": "train-sets/ref/initial_weight.stderr",
+      "stdout": "train-sets/ref/initial_weight.stdout"
+    },
+    "bash_command": "echo \"1 | feature:1\" | {VW} -a --initial_weight 0.1 --initial_t 0.3"
+  },
+  {
+    "id": 150,
+    "desc": "Test --sparse_weights with 148",
+    "vw_command": "--cb_adf -d train-sets/cb_test.ldf -p cb_adf_dm.predict --cb_type dm --sparse_weights",
+    "diff_files": {
+      "stderr": "train-sets/ref/sparse.stderr"
+    },
+    "input_files": [
+      "train-sets/cb_test.ldf"
+    ]
+  },
+  {
+    "id": 151,
+    "desc": "lrqfa",
+    "vw_command": "--lrqfa aa3 -d train-sets/0080.dat",
+    "diff_files": {
+      "stderr": "train-sets/ref/0151.stderr"
+    },
+    "input_files": [
+      "train-sets/0080.dat"
+    ]
+  },
+  {
+    "id": 152,
+    "desc": "daemon on the foreground test",
+    "diff_files": {
+      "stdout": "test-sets/ref/vw-daemon.stdout"
+    },
+    "bash_command": "./daemon-test.sh --foreground --port 54250"
+  },
+  {
+    "id": 153,
+    "desc": "marginal features",
+    "vw_command": "--marginal f -d train-sets/marginal_features --noconstant --initial_numerator 0.5 --initial_denominator 1.0 --decay 0.001 --holdout_off -c -k --passes 100 --compete",
+    "diff_files": {
+      "stderr": "train-sets/ref/marginal_compete.stderr"
+    },
+    "input_files": [
+      "train-sets/marginal_features"
+    ]
+  },
+  {
+    "id": 154,
+    "desc": "ignore linear",
+    "vw_command": "-k --cache_file ignore_linear.cache --passes 10000 --holdout_off -d train-sets/0154.dat --noconstant --ignore_linear x -q xx",
+    "diff_files": {
+      "stderr": "train-sets/ref/ignore_linear.stderr"
+    },
+    "input_files": [
+      "train-sets/0154.dat"
+    ]
+  },
+  {
+    "id": 155,
+    "desc": "checking audit_regressor with --save_resume model",
+    "vw_command": "-d train-sets/0001.dat -i models/0097.model --save_resume --audit_regressor 0097.audit_regr",
+    "diff_files": {
+      "stderr": "train-sets/ref/0097.audit_regr.stderr",
+      "0097.audit_regr": "train-sets/ref/0097.audit_regr"
+    },
+    "input_files": [
+      "train-sets/0001.dat",
+      "models/0097.model"
+    ],
+    "depends_on": [
+      97
+    ]
+  },
+  {
+    "id": 156,
+    "desc": "--cubic regression verification",
+    "diff_files": {},
+    "bash_command": "./cubic-test.sh {VW}"
+  },
+  {
+    "id": 157,
+    "desc": "save_resume without --preserve_performce_counters does not alter performance counters over multiple passes",
+    "vw_command": "-d train-sets/0001.dat -f models/sr.model --passes 2 -c -k -P 50 --save_resume",
+    "diff_files": {
+      "stderr": "train-sets/ref/157.stderr"
+    },
+    "input_files": [
+      "train-sets/0001.dat"
+    ]
+  },
+  {
+    "id": 158,
+    "desc": "test decision service json parsing",
+    "vw_command": "-d train-sets/decisionservice.json --dsjson --cb_explore_adf --epsilon 0.2 --quadratic GT -P 1 -p cbe_adf_dsjson.predict",
+    "diff_files": {
+      "stderr": "train-sets/ref/cbe_adf_dsjson.stderr",
+      "cbe_adf_dsjson.predict": "pred-sets/ref/cbe_adf_dsjson.predict"
+    },
+    "input_files": [
+      "train-sets/decisionservice.json"
+    ]
+  },
+  {
+    "id": 159,
+    "desc": "test --bootstrap & --binary interaction",
+    "vw_command": "-d train-sets/rcv1_mini.dat --bootstrap 5 --binary -c -k --passes 2",
+    "diff_files": {
+      "stderr": "train-sets/ref/bootstrap_and_binary.stderr"
+    },
+    "input_files": [
+      "train-sets/rcv1_mini.dat"
+    ]
+  },
+  {
+    "id": 160,
+    "desc": "test --bootstrap & --oaa interaction. (Also adds -q :: and -P1 to get & verify perfect predictions in 2nd pass)",
+    "vw_command": "-d train-sets/multiclass --bootstrap 4 --oaa 10 -q :: --leave_duplicate_interactions -c -k --passes 2 --holdout_off -P1",
+    "diff_files": {
+      "stderr": "train-sets/ref/bootstrap_and_oaa.stderr"
+    },
+    "input_files": [
+      "train-sets/multiclass"
+    ]
+  },
+  {
+    "id": 161,
+    "desc": "--classweight",
+    "vw_command": "-d train-sets/0001.dat --classweight 1:2,0:3.1,-1:5",
+    "diff_files": {
+      "stderr": "train-sets/ref/classweight.stderr"
+    },
+    "input_files": [
+      "train-sets/0001.dat"
+    ]
+  },
+  {
+    "id": 162,
+    "desc": "--classweight with multiclass",
+    "vw_command": "--oaa 10 -d train-sets/multiclass --classweight 4:0,7:0.1,2:10 --classweight 10:3",
+    "diff_files": {
+      "stderr": "train-sets/ref/classweight_multiclass.stderr"
+    },
+    "input_files": [
+      "train-sets/multiclass"
+    ]
+  },
+  {
+    "id": 163,
+    "desc": "--classweight with multiclass",
+    "vw_command": "--recall_tree 10 -d train-sets/multiclass --classweight 4:0,7:0.1 --classweight 2:10,10:3",
+    "diff_files": {
+      "stderr": "train-sets/ref/classweight_recall_tree.stderr"
+    },
+    "input_files": [
+      "train-sets/multiclass"
+    ]
+  },
+  {
+    "id": 164,
+    "desc": "cs_active low mellowness",
+    "vw_command": "--cs_active 3 -d train-sets/cs_test --cost_max 2 --mellowness 0.01 --simulation --adax",
+    "diff_files": {
+      "stderr": "train-sets/ref/cs_active_0.01.stderr"
+    },
+    "input_files": [
+      "train-sets/cs_test"
+    ]
+  },
+  {
+    "id": 165,
+    "desc": "cs_active high mellowness",
+    "vw_command": "--cs_active 3 -d train-sets/cs_test --cost_max 2 --mellowness 1.0 --simulation --adax",
+    "diff_files": {
+      "stderr": "train-sets/ref/cs_active_1.0.stderr"
+    },
+    "input_files": [
+      "train-sets/cs_test"
+    ]
+  },
+  {
+    "id": 166,
+    "desc": "hash_seed train",
+    "vw_command": "--hash_seed 5 -d train-sets/rcv1_mini.dat --holdout_off --passes 2 -f hash_seed5.model -c -k --ngram 2 -q ::",
+    "diff_files": {
+      "stderr": "train-sets/ref/hash_seed_train.stderr"
+    },
+    "input_files": [
+      "train-sets/rcv1_mini.dat"
+    ]
+  },
+  {
+    "id": 167,
+    "desc": "hash_seed test",
+    "vw_command": "-d train-sets/rcv1_mini.dat -i hash_seed5.model -t",
+    "diff_files": {
+      "stderr": "train-sets/ref/hash_seed_test.stderr"
+    },
+    "input_files": [
+      "train-sets/rcv1_mini.dat",
+      "hash_seed5.model"
+    ],
+    "depends_on": [
+      166
+    ]
+  },
+  {
+    "id": 168,
+    "desc": "test cb with dm",
+    "vw_command": "-d train-sets/rcv1_raw_cb_small.vw -t -i cb_dm.reg",
+    "diff_files": {
+      "stderr": "train-sets/ref/rcv1_raw_cb_dm_test.stderr"
+    },
+    "input_files": [
+      "train-sets/rcv1_raw_cb_small.vw",
+      "cb_dm.reg"
+    ],
+    "depends_on": [
+      41
+    ]
+  },
+  {
+    "id": 169,
+    "desc": "test cbify large",
+    "vw_command": "-d train-sets/rcv1_multiclass.dat --cbify 2 --epsilon 0.05",
+    "diff_files": {
+      "stderr": "train-sets/ref/rcv1_multiclass.stderr"
+    },
+    "input_files": [
+      "train-sets/rcv1_multiclass.dat"
+    ]
+  },
+  {
+    "id": 170,
+    "desc": "cbify adf, epsilon-greedy",
+    "vw_command": "--cbify 10 --cb_explore_adf --epsilon 0.05 -d train-sets/multiclass",
+    "diff_files": {
+      "stderr": "train-sets/ref/cbify_epsilon_adf.stderr"
+    },
+    "input_files": [
+      "train-sets/multiclass"
+    ]
+  },
+  {
+    "id": 171,
+    "desc": "cbify cs, epsilon-greedy",
+    "vw_command": "--cbify 3 --cbify_cs --epsilon 0.05 -d train-sets/cs_cb",
+    "diff_files": {
+      "stderr": "train-sets/ref/cbify_epsilon_cs.stderr"
+    },
+    "input_files": [
+      "train-sets/cs_cb"
+    ]
+  },
+  {
+    "id": 172,
+    "desc": "cbify adf cs, epsilon-greedy",
+    "vw_command": "--cbify 3 --cbify_cs --cb_explore_adf --epsilon 0.05 -d train-sets/cs_cb",
+    "diff_files": {
+      "stderr": "train-sets/ref/cbify_epsilon_cs_adf.stderr"
+    },
+    "input_files": [
+      "train-sets/cs_cb"
+    ]
+  },
+  {
+    "id": 173,
+    "desc": "cbify adf, regcb",
+    "vw_command": "--cbify 10 --cb_explore_adf --cb_type mtr --regcb --mellowness 0.01 -d train-sets/multiclass",
+    "diff_files": {
+      "stderr": "train-sets/ref/cbify_regcb.stderr"
+    },
+    "input_files": [
+      "train-sets/multiclass"
+    ]
+  },
+  {
+    "id": 174,
+    "desc": "cbify adf, regcbopt",
+    "vw_command": "--cbify 10 --cb_explore_adf --cb_type mtr --regcbopt --mellowness 0.01 -d train-sets/multiclass",
+    "diff_files": {
+      "stderr": "train-sets/ref/cbify_regcbopt.stderr"
+    },
+    "input_files": [
+      "train-sets/multiclass"
+    ]
+  },
+  {
+    "id": 175,
+    "desc": "cbify ldf, regcbopt",
+    "vw_command": "-d train-sets/cs_test.ldf --cbify_ldf --cb_type mtr --regcbopt --mellowness 0.01",
+    "diff_files": {
+      "stderr": "train-sets/ref/cbify_ldf_regcbopt.stderr"
+    },
+    "input_files": [
+      "train-sets/cs_test.ldf"
+    ]
+  },
+  {
+    "id": 176,
+    "desc": "same model on cluster mode",
+    "diff_files": {},
+    "bash_command": "./same-model-test.sh"
+  },
+  {
+    "id": 177,
+    "desc": "check --audit output is reproducible",
+    "diff_files": {
+      "stdout": "train-sets/ref/audit2.stdout"
+    },
+    "bash_command": "printf '3 |f a b c |e x y z\\n2 |f a y c |e x\\n' | {VW} --oaa 3 -q ef --audit"
+  },
+  {
+    "id": 178,
+    "desc": "cb_adf, sharedfeatures",
+    "vw_command": "--dsjson --chain_hash --cb_adf -d train-sets/no_shared_features.json",
+    "diff_files": {
+      "stderr": "train-sets/ref/no_shared_features.stderr"
+    },
+    "input_files": [
+      "train-sets/no_shared_features.json"
+    ]
+  },
+  {
+    "id": 179,
+    "desc": "warm_cb warm start",
+    "vw_command": "--warm_cb 10 --cb_explore_adf --cb_type mtr --epsilon 0.05 --warm_start 3 --interaction 7 --choices_lambda 8 --warm_start_update --interaction_update -d train-sets/multiclass",
+    "diff_files": {
+      "stderr": "train-sets/ref/warm_cb.stderr"
+    },
+    "input_files": [
+      "train-sets/multiclass"
+    ]
+  },
+  {
+    "id": 180,
+    "desc": "warm_cb warm start with lambda set containing 0/1",
+    "vw_command": "--warm_cb 10 --cb_explore_adf --cb_type mtr --epsilon 0.05 --warm_start 3 --interaction 7 --choices_lambda 8 --lambda_scheme 2 --warm_start_update --interaction_update -d train-sets/multiclass",
+    "diff_files": {
+      "stderr": "train-sets/ref/warm_cb_lambda_zeroone.stderr"
+    },
+    "input_files": [
+      "train-sets/multiclass"
+    ]
+  },
+  {
+    "id": 181,
+    "desc": "warm_cb warm start with warm start update turned off",
+    "vw_command": "--warm_cb 10 --cb_explore_adf --cb_type mtr --epsilon 0.05 --warm_start 3 --interaction 7 --choices_lambda 8 --interaction_update -d train-sets/multiclass",
+    "diff_files": {
+      "stderr": "train-sets/ref/warm_cb_no_ws_upd.stderr"
+    },
+    "input_files": [
+      "train-sets/multiclass"
+    ]
+  },
+  {
+    "id": 182,
+    "desc": "warm_cb warm start with interaction update turned off",
+    "vw_command": "--warm_cb 10 --cb_explore_adf --cb_type mtr --epsilon 0.0 --warm_start 3 --interaction 7 --choices_lambda 8 --warm_start_update -d train-sets/multiclass",
+    "diff_files": {
+      "stderr": "train-sets/ref/warm_cb_no_int_upd.stderr"
+    },
+    "input_files": [
+      "train-sets/multiclass"
+    ]
+  },
+  {
+    "id": 183,
+    "desc": "warm_cb warm start with bandit warm start type (Sim-Bandit)",
+    "vw_command": "--warm_cb 10 --cb_explore_adf --cb_type mtr --epsilon 0.05 --warm_start 3 --interaction 7 --choices_lambda 1 --warm_start_update --interaction_update --sim_bandit -d train-sets/multiclass",
+    "diff_files": {
+      "stderr": "train-sets/ref/warm_cb_simbandit.stderr"
+    },
+    "input_files": [
+      "train-sets/multiclass"
+    ]
+  },
+  {
+    "id": 184,
+    "desc": "warm_cb warm start with CYC supervised corruption",
+    "vw_command": "--warm_cb 10 --cb_explore_adf --cb_type mtr --epsilon 0.05 --warm_start 3 --interaction 7 --choices_lambda 8 --warm_start_update --interaction_update --corrupt_type_warm_start 2 --corrupt_prob_warm_start 0.5 -d train-sets/multiclass",
+    "diff_files": {
+      "stderr": "train-sets/ref/warm_cb_cyc.stderr"
+    },
+    "input_files": [
+      "train-sets/multiclass"
+    ]
+  },
+  {
+    "id": 185,
+    "desc": "warm_cb warm start with input cost-sensitive examples",
+    "vw_command": "--warm_cb 3 --cb_explore_adf --cb_type mtr --epsilon 0.05 --warm_start 1 --interaction 2 --choices_lambda 8 --warm_start_update --interaction_update --warm_cb_cs -d train-sets/cs_cb",
+    "diff_files": {
+      "stderr": "train-sets/ref/warm_cb_cs.stderr"
+    },
+    "input_files": [
+      "train-sets/cs_cb"
+    ]
+  },
+  {
+    "id": 186,
+    "desc": "test counting examples with holdout_after option",
+    "vw_command": "-k -P 100 --holdout_after 500 -d train-sets/0002.dat",
+    "diff_files": {
+      "stderr": "train-sets/ref/holdout_after.stderr"
+    },
+    "input_files": [
+      "train-sets/0002.dat"
+    ]
+  },
+  {
+    "id": 187,
+    "desc": "test counting examples with holdout_after option with 2 passes on the training set",
+    "vw_command": "-k -P 100 --holdout_after 500 -d train-sets/0002.dat -c --passes 2",
+    "diff_files": {
+      "stderr": "train-sets/ref/holdout_after_2passes.stderr"
+    },
+    "input_files": [
+      "train-sets/0002.dat"
+    ]
+  },
+  {
+    "id": 188,
+    "desc": "test cb_adf with softmax",
+    "vw_command": "--cb_adf --rank_all -d train-sets/cb_adf_sm.data -p cb_adf_sm.predict --cb_type sm",
+    "diff_files": {
+      "stderr": "train-sets/ref/cb_adf_sm.stderr",
+      "cb_adf_sm.predict": "pred-sets/ref/cb_adf_sm.predict"
+    },
+    "input_files": [
+      "train-sets/cb_adf_sm.data"
+    ]
+  },
+  {
+    "id": 189,
+    "desc": "test dsjson parser correctly processes checkpoint and dangling observation lines",
+    "vw_command": "-d train-sets/b1848_dsjson_parser_regression.txt --dsjson --chain_hash --cb_explore_adf -P 1 --extra_metrics metrics_skip.json",
+    "diff_files": {
+      "stderr": "train-sets/ref/b1848_dsjson_parser_regression.stderr",
+      "metrics_skip.json": "test-sets/ref/metrics_skip.json"
+    },
+    "input_files": [
+      "train-sets/b1848_dsjson_parser_regression.txt"
+    ]
+  },
+  {
+    "id": 190,
+    "desc": "one-against-all with subsampling",
+    "vw_command": "-k --oaa 10 --oaa_subsample 5 -c --passes 10 -d train-sets/multiclass --holdout_off",
+    "diff_files": {
+      "stderr": "train-sets/ref/oaa_subsample.stderr"
+    },
+    "input_files": [
+      "train-sets/multiclass"
+    ]
+  },
+  {
+    "id": 191,
+    "desc": "train coin betting",
+    "vw_command": "-k -d train-sets/0001.dat -f models/ftrl_coin.model --passes 1 --coin",
+    "diff_files": {
+      "stderr": "train-sets/ref/ftrl_coin.stderr"
+    },
+    "input_files": [
+      "train-sets/0001.dat"
+    ]
+  },
+  {
+    "id": 192,
+    "desc": "test coin betting",
+    "vw_command": "-k -t -d train-sets/0001.dat -i models/ftrl_coin.model -p ftrl_coin.predict",
+    "diff_files": {
+      "stderr": "test-sets/ref/ftrl_coin.stderr",
+      "ftrl_coin.predict": "pred-sets/ref/ftrl_coin.predict"
+    },
+    "input_files": [
+      "train-sets/0001.dat",
+      "models/ftrl_coin.model"
+    ],
+    "depends_on": [
+      191
+    ]
+  },
+  {
+    "id": 193,
+    "desc": "malformed examples, onethread, strict_parse failure",
+    "diff_files": {
+      "stderr": "train-sets/ref/malformed-onethread-strict_parse.stderr"
+    },
+    "bash_command": "./negative-test.sh {VW} -d train-sets/malformed.dat --onethread --strict_parse"
+  },
+  {
+    "id": 194,
+    "desc": "malformed examples, strict_parse failure",
+    "diff_files": {
+      "stderr": "train-sets/ref/malformed-strict_parse.stderr"
+    },
+    "bash_command": "./negative-test.sh {VW} -d train-sets/malformed.dat --strict_parse"
+  },
+  {
+    "id": 195,
+    "desc": "malformed examples success",
+    "vw_command": "-d train-sets/malformed.dat --onethread",
+    "diff_files": {
+      "stderr": "train-sets/ref/malformed.stderr"
+    },
+    "input_files": [
+      "train-sets/malformed.dat"
+    ]
+  },
+  {
+    "id": 196,
+    "desc": "online contextual memory tree",
+    "vw_command": "-d train-sets/rcv1_smaller.dat --memory_tree 10 --learn_at_leaf --max_number_of_labels 2 --dream_at_update 0 --dream_repeats 3 --online --leaf_example_multiplier 10 --alpha 0.1 -l 0.001 -b 15 --passes 1 --loss_function squared --holdout_off",
+    "diff_files": {
+      "stderr": "train-sets/ref/cmt_rcv1_smaller_online.stderr"
+    },
+    "input_files": [
+      "train-sets/rcv1_smaller.dat"
+    ]
+  },
+  {
+    "id": 197,
+    "desc": "offline contextual memory tree",
+    "vw_command": "-d train-sets/rcv1_smaller.dat -k --memory_tree 10 --learn_at_leaf --max_number_of_labels 2 --dream_at_update 0 --dream_repeats 3 --leaf_example_multiplier 10 --alpha 0.1 -l 0.001 -b 15 -c --passes 2 --loss_function squared --holdout_off",
+    "diff_files": {
+      "stderr": "train-sets/ref/cmt_rcv1_smaller_offline.stderr"
+    },
+    "input_files": [
+      "train-sets/rcv1_smaller.dat"
+    ]
+  },
+  {
+    "id": 198,
+    "desc": "test cb_sample",
+    "vw_command": "--cb_sample --cb_explore_adf -d test-sets/cb_sample_seed.data -p cb_sample_seed.predict --random_seed 1234",
+    "diff_files": {
+      "cb_sample_seed.predict": "pred-sets/ref/cb_sample_seed.predict"
+    },
+    "input_files": [
+      "test-sets/cb_sample_seed.data"
+    ]
+  },
+  {
+    "id": 199,
+    "desc": "CCB train then test",
+    "vw_command": "-d train-sets/ccb_test.dat --ccb_explore_adf -p ccb_test.predict",
+    "diff_files": {
+      "stderr": "train-sets/ref/ccb_test.stderr",
+      "ccb_test.predict": "train-sets/ref/ccb_test.predict"
+    },
+    "input_files": [
+      "train-sets/ccb_test.dat"
+    ]
+  },
+  {
+    "id": 200,
+    "desc": "cb_explore_adf with huge lambda softmax exploration",
+    "vw_command": "--cb_explore_adf --softmax --lambda 100000 -d train-sets/cb_test.ldf --noconstant -p cbe_adf_softmax_biglambda.predict",
+    "diff_files": {
+      "stderr": "train-sets/ref/cbe_adf_softmax_biglambda.stderr",
+      "cbe_adf_softmax_biglambda.predict": "pred-sets/ref/cbe_adf_softmax_biglambda.predict"
+    },
+    "input_files": [
+      "train-sets/cb_test.ldf"
+    ]
+  },
+  {
+    "id": 201,
+    "desc": "Test memory corruption issue in ccb_explore_adf where mtr was leaving a prediction behind",
+    "vw_command": "--ccb_explore_adf --ring_size 7 -d train-sets/ccb_reuse_small.data",
+    "diff_files": {
+      "stderr": "train-sets/ref/ccb_reuse_small.stderr"
+    },
+    "input_files": [
+      "train-sets/ccb_reuse_small.data"
+    ]
+  },
+  {
+    "id": 202,
+    "desc": "Test memory corruption issue in ccb_explore_adf where mtr was leaving a prediction behind",
+    "vw_command": "--ccb_explore_adf --ring_size 20 --dsjson --chain_hash -d train-sets/ccb_reuse_medium.dsjson",
+    "diff_files": {
+      "stderr": "train-sets/ref/ccb_reuse_medium.stderr"
+    },
+    "input_files": [
+      "train-sets/ccb_reuse_medium.dsjson"
+    ]
+  },
+  {
+    "id": 203,
+    "desc": "Basic test of cluster. Can't use the VW replacer as it will think this is a VW command append things like --onethread",
+    "diff_files": {
+      "stderr": "test-sets/ref/cluster.stderr",
+      "stdout": "test-sets/ref/cluster.stdout",
+      "cluster.predict": "pred-sets/ref/cluster.predict"
+    },
+    "bash_command": "python3 ./cluster_test.py --vw {VW} --spanning_tree {SPANNING_TREE}  --test_file test-sets/0001.dat --data_files train-sets/0001.dat train-sets/0002.dat  --prediction_file cluster.predict"
+  },
+  {
+    "id": 204,
+    "desc": "Test if options that are negative numbers are handled correctly",
+    "vw_command": "--classweight -1:0.5 --no_stdin",
+    "diff_files": {
+      "stderr": "test-sets/ref/negative-num-option.stderr"
+    }
+  },
+  {
+    "id": 205,
+    "desc": "test cb_dro with softmax",
+    "vw_command": "--cb_dro --cb_adf --rank_all -d train-sets/cb_adf_sm.data -p cb_dro_adf_sm.predict --cb_type sm",
+    "diff_files": {
+      "stderr": "train-sets/ref/cb_dro_adf_sm.stderr",
+      "cb_dro_adf_sm.predict": "pred-sets/ref/cb_dro_adf_sm.predict"
+    },
+    "input_files": [
+      "train-sets/cb_adf_sm.data"
+    ]
+  },
+  {
+    "id": 206,
+    "desc": "Tests segfault that used to happen when audit, cache and interactions were combined.",
+    "vw_command": "-c -k --passes 2 -d train-sets/cache_interaction_audit.txt -q st --audit",
+    "diff_files": {
+      "stdout": "train-sets/ref/cache_interaction_audit.stdout",
+      "stderr": "train-sets/ref/cache_interaction_audit.stderr"
+    },
+    "input_files": [
+      "train-sets/cache_interaction_audit.txt"
+    ]
+  },
+  {
+    "id": 207,
+    "desc": "Enable chain hash option for json example",
+    "diff_files": {
+      "stderr": "test-sets/ref/chain_hash_json_test.stderr",
+      "stdout": "test-sets/ref/chain_hash_json_test.stdout",
+      "chain_hash_json_result.cmp": "test-sets/ref/chain_hash_json_result.cmp"
+    },
+    "bash_command": "{VW} --audit --json --chain_hash -d train-sets/chain_hash_json_test.json --invert_hash chain_hash_json_result.cmp --chain_hash &&  tail -n +2 chain_hash_json_result.cmp > chain_hash_json_result.cmp.new &&  rm chain_hash_json_result.cmp &&  mv chain_hash_json_result.cmp.new chain_hash_json_result.cmp"
+  },
+  {
+    "id": 208,
+    "desc": "Enable chain hash option for text example",
+    "diff_files": {
+      "stderr": "test-sets/ref/chain_hash_text_result.stderr",
+      "stdout": "test-sets/ref/chain_hash_text_result.stdout",
+      "chain_hash_text_result.cmp": "test-sets/ref/chain_hash_text_result.cmp"
+    },
+    "bash_command": "{VW} --audit -d train-sets/chain_hash_text_test.dat --invert_hash chain_hash_text_result.cmp --chain_hash &&  tail -n +2 chain_hash_text_result.cmp > chain_hash_text_result.cmp.new &&  rm chain_hash_text_result.cmp &&  mv chain_hash_text_result.cmp.new chain_hash_text_result.cmp"
+  },
+  {
+    "id": 209,
+    "desc": "Test override epsilon value saved in a model",
+    "vw_command": "-i model-sets/epsilon.model -d train-sets/override_epsilon.txt --epsilon 0.3 -p override_epsilon.preds",
+    "diff_files": {
+      "stderr": "pred-sets/ref/override_epsilon.stderr",
+      "override_epsilon.preds": "pred-sets/ref/override_epsilon.preds"
+    },
+    "input_files": [
+      "train-sets/override_epsilon.txt",
+      "model-sets/epsilon.model"
+    ]
+  },
+  {
+    "id": 210,
+    "desc": "Ensure that all weights that exist in the model are present in the invert_hash output. Even if Audit did not see it.. SkipC# - Do not remove this - this test breaks test generation by creating an infinite sized list containing this test case (many times)",
+    "diff_files": {
+      "inv_hash_load_model.invert.txt": "train-sets/ref/inv_hash_load_model.invert.txt",
+      "inv_hash_load_model.readable.txt": "train-sets/ref/inv_hash_load_model.readable.txt"
+    },
+    "bash_command": "{VW} -d train-sets/inv_hash_load_model_data1.txt -f inv_hash_load_model.vw --noconstant  && {VW} -d train-sets/inv_hash_load_model_data2.txt -i inv_hash_load_model.vw --noconstant --readable_model inv_hash_load_model.readable.txt --invert_hash inv_hash_load_model.invert.txt"
+  },
+  {
+    "id": 211,
+    "desc": "cb_explore_adf with rnd exploration",
+    "vw_command": "--cb_explore_adf --rnd 1 -d train-sets/cb_test.ldf --noconstant -p cbe_adf_rnd.predict",
+    "diff_files": {
+      "stderr": "train-sets/ref/cbe_adf_rnd.stderr",
+      "cbe_adf_rnd.predict": "pred-sets/ref/cbe_adf_rnd.predict"
+    },
+    "input_files": [
+      "train-sets/cb_test.ldf"
+    ]
+  },
+  {
+    "id": 212,
+    "desc": "Slates sanity check",
+    "vw_command": "--slates -d train-sets/slates_simple.txt -p slates_simple.predict",
+    "diff_files": {
+      "stderr": "train-sets/ref/slates_simple.stderr",
+      "slates_simple.predict": "pred-sets/ref/slates_simple.predict"
+    },
+    "input_files": [
+      "train-sets/slates_simple.txt"
+    ]
+  },
+  {
+    "id": 213,
+    "desc": "offset_tree, 2 actions",
+    "vw_command": "--ot 2 -k -d train-sets/offset_tree_000.dat -p offset_tree_000.pred -P 1",
+    "diff_files": {
+      "stderr": "test-sets/ref/offset_tree_000.stderr",
+      "offset_tree_000.pred": "pred-sets/ref/offset_tree_000.pred"
+    },
+    "input_files": [
+      "train-sets/offset_tree_000.dat"
+    ]
+  },
+  {
+    "id": 214,
+    "desc": "offset_tree, 3 actions",
+    "vw_command": "--ot 3 -k -d train-sets/offset_tree_001.dat -p offset_tree_001.pred -P 1",
+    "diff_files": {
+      "stderr": "test-sets/ref/offset_tree_001.stderr",
+      "offset_tree_001.pred": "pred-sets/ref/offset_tree_001.pred"
+    },
+    "input_files": [
+      "train-sets/offset_tree_001.dat"
+    ]
+  },
+  {
+    "id": 215,
+    "desc": "offset_tree, 4 actions",
+    "vw_command": "--ot 4 -k -d train-sets/offset_tree_002.dat -p offset_tree_002.pred -P 1",
+    "diff_files": {
+      "stderr": "test-sets/ref/offset_tree_002.stderr",
+      "offset_tree_002.pred": "pred-sets/ref/offset_tree_002.pred"
+    },
+    "input_files": [
+      "train-sets/offset_tree_002.dat"
+    ]
+  },
+  {
+    "id": 216,
+    "desc": "Regression test for crash on unlabelled data",
+    "vw_command": "--dsjson --chain_hash --slates -d train-sets/slates_simple_unlabeled.dsjson",
+    "diff_files": {
+      "stderr": "train-sets/ref/slates_simple_unlabeled.stderr"
+    },
+    "input_files": [
+      "train-sets/slates_simple_unlabeled.dsjson"
+    ]
+  },
+  {
+    "id": 217,
+    "desc": "check plt training",
+    "vw_command": "-d train-sets/multilabel -f plt.model --plt 10 --sgd",
+    "diff_files": {
+      "stderr": "train-sets/ref/plt_multilabel.stderr"
+    },
+    "input_files": [
+      "train-sets/multilabel"
+    ]
+  },
+  {
+    "id": 218,
+    "desc": "check default plt prediction",
+    "vw_command": "-t -d train-sets/multilabel -i plt.model -p plt_multilabel.predict",
+    "diff_files": {
+      "stderr": "train-sets/ref/plt_multilabel_predict.stderr",
+      "plt_multilabel.predict": "pred-sets/ref/plt_multilabel.predict"
+    },
+    "input_files": [
+      "train-sets/multilabel",
+      "plt.model"
+    ],
+    "depends_on": [
+      217
+    ]
+  },
+  {
+    "id": 219,
+    "desc": "check plt top-1 prediction",
+    "vw_command": "-t -d train-sets/multilabel -i plt.model -p plt_top1_multilabel.predict --top_k 1",
+    "diff_files": {
+      "stderr": "train-sets/ref/plt_top1_multilabel_predict.stderr",
+      "plt_top1_multilabel.predict": "pred-sets/ref/plt_top1_multilabel.predict"
+    },
+    "input_files": [
+      "train-sets/multilabel",
+      "plt.model"
+    ],
+    "depends_on": [
+      217
+    ]
+  },
+  {
+    "id": 220,
+    "desc": "daemon test with json",
+    "diff_files": {
+      "stdout": "test-sets/ref/vw-daemon.stdout"
+    },
+    "bash_command": "./daemon-test.sh --json --port 54251"
+  },
+  {
+    "id": 221,
+    "desc": "cbify adf, squarecb",
+    "vw_command": "--cbify 10 --cb_explore_adf --cb_type mtr --squarecb --gamma_scale 500 -d train-sets/multiclass",
+    "diff_files": {
+      "stderr": "train-sets/ref/cbify_squarecb.stderr"
+    },
+    "input_files": [
+      "train-sets/multiclass"
+    ]
+  },
+  {
+    "id": 222,
+    "desc": "cbify adf, squarecb-elim",
+    "vw_command": "--cbify 10 --cb_explore_adf --cb_type mtr --squarecb --elim --gamma_scale 10 --mellowness 0.001 -d train-sets/multiclass",
+    "diff_files": {
+      "stderr": "train-sets/ref/cbify_squarecb_elim.stderr"
+    },
+    "input_files": [
+      "train-sets/multiclass"
+    ]
+  },
+  {
+    "id": 223,
+    "desc": "cbify ldf, squarecb",
+    "vw_command": "-d train-sets/cs_test.ldf --cbify_ldf --cb_type mtr --squarecb --gamma_scale 500",
+    "diff_files": {
+      "stderr": "train-sets/ref/cbify_ldf_squarecb.stderr"
+    },
+    "input_files": [
+      "train-sets/cs_test.ldf"
+    ]
+  },
+  {
+    "id": 224,
+    "desc": "cbify ldf, squarecb-elim",
+    "vw_command": "-d train-sets/cs_test.ldf --cbify_ldf --cb_type mtr --squarecb --elim --gamma_scale 10 --mellowness 0.001",
+    "diff_files": {
+      "stderr": "train-sets/ref/cbify_ldf_squarecb_elim.stderr"
+    },
+    "input_files": [
+      "train-sets/cs_test.ldf"
+    ]
+  },
+  {
+    "id": 225,
+    "desc": "cbify regression dataset.  Use it with cats.",
+    "vw_command": "--cbify 4 --cbify_reg --min_value=185 --max_value=23959 --bandwidth 3000 -d train-sets/regression/cbify-reg.dat --passes 1 -b 18 --coin --loss_option 1",
+    "diff_files": {
+      "stderr": "train-sets/ref/cbify-reg-cats.stderr"
+    },
+    "input_files": [
+      "train-sets/regression/cbify-reg.dat"
+    ]
+  },
+  {
+    "id": 226,
+    "desc": "cats train",
+    "vw_command": "--cats 4 --min_value=185 --max_value=23959 --bandwidth 3000 -d train-sets/cats.acpx --passes 1 -b 18 --coin --loss_option 1 -f cats.model",
+    "diff_files": {
+      "stderr": "train-sets/ref/cats-train.stderr"
+    },
+    "input_files": [
+      "train-sets/cats.acpx"
+    ]
+  },
+  {
+    "id": 227,
+    "desc": "cats predict",
+    "vw_command": "-d train-sets/cats.acpx -i cats.model -p cats.predict",
+    "diff_files": {
+      "stderr": "train-sets/ref/cats-predict.stderr",
+      "cats.predict": "pred-sets/ref/cats.predict"
+    },
+    "input_files": [
+      "train-sets/cats.acpx",
+      "cats.model"
+    ],
+    "depends_on": [
+      226
+    ]
+  },
+  {
+    "id": 228,
+    "desc": "cats-pdf train",
+    "vw_command": "--cats_pdf 4 --min_value=185 --max_value=23959 --bandwidth 2000 -d train-sets/cats.acpx --passes 1 -b 18 --coin --loss_option 1 -f cats-pdf.model",
+    "diff_files": {
+      "stderr": "train-sets/ref/cats-pdf-train.stderr"
+    },
+    "input_files": [
+      "train-sets/cats.acpx"
+    ]
+  },
+  {
+    "id": 229,
+    "desc": "cats-pdf predict",
+    "vw_command": "-d train-sets/cats.acpx -i cats-pdf.model -p cats-pdf.predict",
+    "diff_files": {
+      "stderr": "train-sets/ref/cats-pdf-predict.stderr",
+      "cats-pdf.predict": "pred-sets/ref/cats-pdf.predict"
+    },
+    "input_files": [
+      "train-sets/cats.acpx",
+      "cats-pdf.model"
+    ],
+    "depends_on": [
+      228
+    ]
+  },
+  {
+    "id": 230,
+    "desc": "cbify-reg",
+    "vw_command": "--cbify 2048 --cbify_reg --min_value=185 --max_value=23959 --bandwidth 10000 -d train-sets/regression/cbify-reg.dat --coin --loss_option 1",
+    "diff_files": {
+      "stderr": "train-sets/ref/cbify_reg.stderr"
+    },
+    "input_files": [
+      "train-sets/regression/cbify-reg.dat"
+    ]
+  },
+  {
+    "id": 231,
+    "desc": "cbify-reg cb_discrete",
+    "vw_command": "--cbify 2048 --cbify_reg --cb_discrete --min_value=185 --max_value=23959 -d train-sets/regression/cbify-reg.dat --coin --loss_option 1",
+    "diff_files": {
+      "stderr": "train-sets/ref/cbify_reg_discrete.stderr"
+    },
+    "input_files": [
+      "train-sets/regression/cbify-reg.dat"
+    ]
+  },
+  {
+    "id": 232,
+    "desc": "cbify-reg discrete cats_tree",
+    "vw_command": "--cbify 2048 --cbify_reg --cb_discrete --cats_tree 2048 --min_value=185 --max_value=23959 -d train-sets/regression/cbify-reg.dat --coin --loss_option 1",
+    "diff_files": {
+      "stderr": "train-sets/ref/cbify_reg_discrete_cats.stderr"
+    },
+    "input_files": [
+      "train-sets/regression/cbify-reg.dat"
+    ]
+  },
+  {
+    "id": 233,
+    "desc": "CCB first slot loss",
+    "vw_command": "-d train-sets/ccb_losses.txt --ccb_explore_adf --epsilon 0 --cb_type ips",
+    "diff_files": {
+      "stderr": "train-sets/ref/ccb_1slot_loss.stderr"
+    },
+    "input_files": [
+      "train-sets/ccb_losses.txt"
+    ]
+  },
+  {
+    "id": 234,
+    "desc": "CCB all slots loss",
+    "vw_command": "-d train-sets/ccb_losses.txt --ccb_explore_adf --epsilon 0 --cb_type ips --all_slots_loss",
+    "diff_files": {
+      "stderr": "train-sets/ref/ccb_allslots_loss.stderr"
+    },
+    "input_files": [
+      "train-sets/ccb_losses.txt"
+    ]
+  },
+  {
+    "id": 235,
+    "desc": "big feature poison test 1",
+    "vw_command": "-d train-sets/big_feature_poison.dat --interactions aaaaa --noconstant",
+    "diff_files": {
+      "stderr": "train-sets/ref/big_feature_poison.stderr",
+      "stdout": "train-sets/ref/big_feature_poison.stdout"
+    },
+    "input_files": [
+      "train-sets/big_feature_poison.dat"
+    ]
+  },
+  {
+    "id": 236,
+    "desc": "big feature poison test 2",
+    "vw_command": "-d train-sets/big_feature_poison.dat --interactions aaaaa --noconstant --power_t 0",
+    "diff_files": {
+      "stderr": "train-sets/ref/big_feature_poison_2.stderr",
+      "stdout": "train-sets/ref/big_feature_poison_2.stdout"
+    },
+    "input_files": [
+      "train-sets/big_feature_poison.dat"
+    ]
+  },
+  {
+    "id": 237,
+    "desc": "test decision service json parsing including chain hashing",
+    "vw_command": "-d train-sets/decisionservice.json --dsjson --chain_hash --cb_explore_adf --epsilon 0.2 --quadratic GT -P 1 -p cbe_adf_dsjson_chain_hash.predict",
+    "diff_files": {
+      "stderr": "train-sets/ref/cbe_adf_dsjson_chain_hash.stderr",
+      "cbe_adf_dsjson_chain_hash.predict": "pred-sets/ref/cbe_adf_dsjson_chain_hash.predict"
+    },
+    "input_files": [
+      "train-sets/decisionservice.json"
+    ]
+  },
+  {
+    "id": 238,
+    "desc": "same with test 142 but with empty shared features",
+    "vw_command": "--explore_eval --epsilon 0.2 -d train-sets/cb_test_with_empty_shared_feature.ldf --noconstant -p explore_eval.predict",
+    "diff_files": {
+      "stderr": "train-sets/ref/explore_eval_with_empty_shared_feature.stderr",
+      "explore_eval.predict": "pred-sets/ref/explore_eval.predict"
+    },
+    "input_files": [
+      "train-sets/cb_test_with_empty_shared_feature.ldf"
+    ]
+  },
+  {
+    "id": 239,
+    "desc": "Flatbuffer Simple Label Test",
+    "vw_command": "-k -l 20 --initial_t 128000 --power_t 1 -d train-sets/0001.fb -f models/0001_1.model --invariant --flatbuffer --ngram 3 --skips 1 --holdout_off",
+    "diff_files": {
+      "stderr": "train-sets/ref/0001_fb.stderr"
+    },
+    "input_files": [
+      "train-sets/0001.fb"
+    ]
+  },
+  {
+    "id": 240,
+    "desc": "Flatbuffer CB Label Test",
+    "vw_command": "--cb_force_legacy --cb 2 -d train-sets/rcv1_raw_cb_small.fb --flatbuffer",
+    "diff_files": {
+      "stderr": "train-sets/ref/rcv1_raw_cb_fb.stderr"
+    },
+    "input_files": [
+      "train-sets/rcv1_raw_cb_small.fb"
+    ]
+  },
+  {
+    "id": 241,
+    "desc": "Flatbuffer Multilabel Test",
+    "vw_command": "--multilabel_oaa 10 -d train-sets/multilabel.fb --flatbuffer",
+    "diff_files": {
+      "stderr": "train-sets/ref/multilabel_fb.stderr"
+    },
+    "input_files": [
+      "train-sets/multilabel.fb"
+    ]
+  },
+  {
+    "id": 242,
+    "desc": "Flatbuffer Mutliclass Test",
+    "vw_command": "-d train-sets/multiclass.fb -k --ect 10 --flatbuffer",
+    "diff_files": {
+      "stderr": "train-sets/ref/multiclass_fb.stderr"
+    },
+    "input_files": [
+      "train-sets/multiclass.fb"
+    ]
+  },
+  {
+    "id": 243,
+    "desc": "Flatbuffer CS Test",
+    "vw_command": "-k -d train-sets/cs.fb --invariant --csoaa_ldf multiline --flatbuffer",
+    "diff_files": {
+      "stderr": "train-sets/ref/cs_fb.stderr"
+    },
+    "input_files": [
+      "train-sets/cs.fb"
+    ]
+  },
+  {
+    "id": 244,
+    "desc": "Flatbuffer CB_eval test",
+    "vw_command": "-d train-sets/rcv1_cb_eval.fb --cb 2 --eval --flatbuffer",
+    "diff_files": {
+      "stderr": "train-sets/ref/rcv1_cb_eval_fb.stderr"
+    },
+    "input_files": [
+      "train-sets/rcv1_cb_eval.fb"
+    ]
+  },
+  {
+    "id": 245,
+    "desc": "Flatbuffer no label Test (LDA)",
+    "vw_command": "-k --lda 100 --lda_alpha 0.01 --lda_rho 0.01 --lda_D 1000 -l 1 -b 13 --minibatch 128 -d train-sets/wiki256_no_label.fb --flatbuffer",
+    "diff_files": {
+      "stderr": "train-sets/ref/no_label_fb.stderr"
+    },
+    "input_files": [
+      "train-sets/wiki256_no_label.fb"
+    ]
+  },
+  {
+    "id": 246,
+    "desc": "Flatbuffer CCB Label Test",
+    "vw_command": "--ccb_explore_adf -d train-sets/ccb.fb --flatbuffer",
+    "diff_files": {
+      "stderr": "train-sets/ref/ccb_fb.stderr"
+    },
+    "input_files": [
+      "train-sets/ccb.fb"
+    ]
+  },
+  {
+    "id": 247,
+    "desc": "cb_explore with cover epsilon decaying",
+    "vw_command": "--cb_explore 2 --cover 3 -d train-sets/cb_explore_cover.dat -f models/cover_e_dec.model -p cover_e_dec_train.pred",
+    "diff_files": {
+      "stderr": "train-sets/ref/cbe_cover_e_dec.stderr",
+      "cover_e_dec_train.pred": "train-sets/ref/cover_e_dec_train.pred"
+    },
+    "input_files": [
+      "train-sets/cb_explore_cover.dat"
+    ]
+  },
+  {
+    "id": 248,
+    "desc": "cb_explore with cover epsilon decaying predict",
+    "vw_command": "--cb_explore 2 --cover 3 -d train-sets/cb_explore_cover.dat -i models/cover_e_dec.model -t -p cbe_cover_e_dec.predict",
+    "diff_files": {
+      "stderr": "train-sets/ref/cbe_cover_e_dec_predict.stderr",
+      "cbe_cover_e_dec.predict": "pred-sets/ref/cbe_cover_e_dec.predict"
+    },
+    "input_files": [
+      "train-sets/cb_explore_cover.dat",
+      "models/cover_e_dec.model"
+    ],
+    "depends_on": [
+      247
+    ]
+  },
+  {
+    "id": 249,
+    "desc": "cb_explore with cover epsilon fixed",
+    "vw_command": "--cb_explore 2 --cover 3 -d train-sets/cb_explore_cover.dat -f models/cover_e_fixed.model --epsilon 0.5",
+    "diff_files": {
+      "stderr": "train-sets/ref/cbe_cover_e_fixed.stderr"
+    },
+    "input_files": [
+      "train-sets/cb_explore_cover.dat"
+    ]
+  },
+  {
+    "id": 250,
+    "desc": "cb_explore with cover epsilon fixed predict",
+    "vw_command": "--cb_explore 2 --cover 3 -d train-sets/cb_explore_cover.dat -i models/cover_e_fixed.model --epsilon 0.5 -t -p cbe_cover_e_fixed.predict",
+    "diff_files": {
+      "stderr": "train-sets/ref/cbe_cover_e_fixed_predict.stderr",
+      "cbe_cover_e_fixed.predict": "pred-sets/ref/cbe_cover_e_fixed.predict"
+    },
+    "input_files": [
+      "train-sets/cb_explore_cover.dat",
+      "models/cover_e_fixed.model"
+    ],
+    "depends_on": [
+      249
+    ]
+  },
+  {
+    "id": 251,
+    "desc": "cb_explore_adf with cover exploration epsilon decaying",
+    "vw_command": "--cb_explore_adf --cover 3 -d train-sets/cb_test_medium.ldf --noconstant -f models/cover_adf_e_dec.model",
+    "diff_files": {
+      "stderr": "train-sets/ref/cbe_adf_cover_e_dec.stderr"
+    },
+    "input_files": [
+      "train-sets/cb_test_medium.ldf"
+    ]
+  },
+  {
+    "id": 252,
+    "desc": "cb_explore_adf with cover exploration epsilon decaying predict only",
+    "vw_command": "--cb_explore_adf --cover 3 -d train-sets/cb_test_medium.ldf --noconstant -p cbe_adf_cover_e_dec.predict -i models/cover_adf_e_dec.model -t",
+    "diff_files": {
+      "stderr": "train-sets/ref/cbe_adf_cover_e_dec_predict.stderr",
+      "cbe_adf_cover_e_dec.predict": "pred-sets/ref/cbe_adf_cover_e_dec.predict"
+    },
+    "input_files": [
+      "train-sets/cb_test_medium.ldf",
+      "models/cover_adf_e_dec.model"
+    ],
+    "depends_on": [
+      251
+    ]
+  },
+  {
+    "id": 253,
+    "desc": "cb_explore_adf with cover epsilon fixed",
+    "vw_command": "--cb_explore_adf --cover 3 -d train-sets/cb_test_medium.ldf -f models/cover_adf_e_fixed.model --epsilon 0.5",
+    "diff_files": {
+      "stderr": "train-sets/ref/cbe_adf_cover_e_fixed.stderr"
+    },
+    "input_files": [
+      "train-sets/cb_test_medium.ldf"
+    ]
+  },
+  {
+    "id": 254,
+    "desc": "cb_explore_adf with cover epsilon fixed predict",
+    "vw_command": "--cb_explore_adf --cover 3 -d train-sets/cb_test_medium.ldf -i models/cover_adf_e_fixed.model --epsilon 0.5 -t -p cbe_adf_cover_e_fixed.predict",
+    "diff_files": {
+      "stderr": "train-sets/ref/cbe_adf_cover_e_fixed_predict.stderr",
+      "cbe_adf_cover_e_fixed.predict": "pred-sets/ref/cbe_adf_cover_e_fixed.predict"
+    },
+    "input_files": [
+      "train-sets/cb_test_medium.ldf",
+      "models/cover_adf_e_fixed.model"
+    ],
+    "depends_on": [
+      253
+    ]
+  },
+  {
+    "id": 255,
+    "desc": "cb_explore_adf with synthcover exploration",
+    "vw_command": "--cb_explore_adf --synthcover --epsilon 0.01 -d train-sets/cb_test.ldf --noconstant -p cbe_adf_synthcover.predict",
+    "diff_files": {
+      "stderr": "train-sets/ref/cbe_adf_synthcover.stderr",
+      "cbe_adf_synthcover.predict": "pred-sets/ref/cbe_adf_synthcover.predict"
+    },
+    "input_files": [
+      "train-sets/cb_test.ldf"
+    ]
+  },
+  {
+    "id": 256,
+    "desc": "cb data consumed by ccb_explore_adf reduction",
+    "vw_command": "--ccb_explore_adf --dsjson --epsilon 0.2 -d train-sets/cb_as_ccb.json",
+    "diff_files": {
+      "stderr": "train-sets/ref/cb_as_ccb.stderr"
+    },
+    "input_files": [
+      "train-sets/cb_as_ccb.json"
+    ]
+  },
+  {
+    "id": 257,
+    "desc": "CCB interactions with slot with default namespace",
+    "vw_command": "-d train-sets/ccb_test_interactions.dat --ccb_explore_adf --invert_hash w_out_slot_ns.interactions -q ::",
+    "diff_files": {
+      "stderr": "train-sets/ref/ccb_test_interactions.stderr",
+      "w_out_slot_ns.interactions": "train-sets/ref/w_out_slot_ns.interactions"
+    },
+    "input_files": [
+      "train-sets/ccb_test_interactions.dat"
+    ]
+  },
+  {
+    "id": 258,
+    "desc": "cb with dr (see test 39)",
+    "vw_command": "--cb_force_legacy -d train-sets/rcv1_raw_cb_small.vw --cb 2 --cb_type dr --ngram 2 --skips 4 -b 24 -l 0.25",
+    "diff_files": {
+      "stderr": "train-sets/ref/rcv1_raw_cb_dr.stderr"
+    },
+    "input_files": [
+      "train-sets/rcv1_raw_cb_small.vw"
+    ]
+  },
+  {
+    "id": 259,
+    "desc": "cb with ips (see test 40)",
+    "vw_command": "--cb_force_legacy -d train-sets/rcv1_raw_cb_small.vw --cb 2 --cb_type ips --ngram 2 --skips 4 -b 24 -l 0.125",
+    "diff_files": {
+      "stderr": "train-sets/ref/rcv1_raw_cb_ips.stderr"
+    },
+    "input_files": [
+      "train-sets/rcv1_raw_cb_small.vw"
+    ]
+  },
+  {
+    "id": 260,
+    "desc": "cb with dm (see test 41)",
+    "vw_command": "--cb_force_legacy -d train-sets/rcv1_raw_cb_small.vw --cb 2 --cb_type dm --ngram 2 --skips 4 -b 24 -l 0.125 -f cb_dm.reg",
+    "diff_files": {
+      "stderr": "train-sets/ref/rcv1_raw_cb_dm.stderr"
+    },
+    "input_files": [
+      "train-sets/rcv1_raw_cb_small.vw"
+    ]
+  },
+  {
+    "id": 261,
+    "desc": "cb redirection when --eval (see test 74)",
+    "vw_command": "-d train-sets/rcv1_cb_eval --cb 2 --eval",
+    "diff_files": {
+      "stderr": "train-sets/ref/rcv1_cb_eval.stderr"
+    },
+    "input_files": [
+      "train-sets/rcv1_cb_eval"
+    ]
+  },
+  {
+    "id": 262,
+    "desc": "cbify, epsilon-greedy (see test 76)",
+    "vw_command": "--cb_force_legacy --cbify 10 --epsilon 0.05 -d train-sets/multiclass",
+    "diff_files": {
+      "stderr": "train-sets/ref/cbify_epsilon_legacy.stderr"
+    },
+    "input_files": [
+      "train-sets/multiclass"
+    ]
+  },
+  {
+    "id": 263,
+    "desc": "cbify, tau first (see test 77)",
+    "vw_command": "--cb_force_legacy --cbify 10 --first 5 -d train-sets/multiclass",
+    "diff_files": {
+      "stderr": "train-sets/ref/cbify_first_legacy.stderr"
+    },
+    "input_files": [
+      "train-sets/multiclass"
+    ]
+  },
+  {
+    "id": 264,
+    "desc": "cbify, bag (see test 78)",
+    "vw_command": "--cb_force_legacy --cbify 10 --bag 7 -d train-sets/multiclass",
+    "diff_files": {
+      "stderr": "train-sets/ref/cbify_bag_legacy.stderr"
+    },
+    "input_files": [
+      "train-sets/multiclass"
+    ]
+  },
+  {
+    "id": 265,
+    "desc": "cbify, cover (see test 79)",
+    "vw_command": "--cb_force_legacy --cbify 10 --cover 3 -d train-sets/multiclass --nounif",
+    "diff_files": {
+      "stderr": "train-sets/ref/cbify_cover_legacy.stderr"
+    },
+    "input_files": [
+      "train-sets/multiclass"
+    ]
+  },
+  {
+    "id": 266,
+    "desc": "cb_explore (see test 121)",
+    "vw_command": "--cb_force_legacy -d train-sets/rcv1_raw_cb_small.vw --cb_explore 2 --ngram 2 --skips 4 -b 24 -l 0.25 -p rcv1_raw_cb_explore_legacy.preds",
+    "diff_files": {
+      "stderr": "train-sets/ref/rcv1_raw_cb_explore_legacy.stderr",
+      "rcv1_raw_cb_explore_legacy.preds": "pred-sets/ref/rcv1_raw_cb_explore_legacy.preds"
+    },
+    "input_files": [
+      "train-sets/rcv1_raw_cb_small.vw"
+    ]
+  },
+  {
+    "id": 267,
+    "desc": "test cbify large (see test 169)",
+    "vw_command": "--cb_force_legacy -d train-sets/rcv1_multiclass.dat --cbify 2 --epsilon 0.05",
+    "diff_files": {
+      "stderr": "train-sets/ref/rcv1_multiclass_legacy.stderr"
+    },
+    "input_files": [
+      "train-sets/rcv1_multiclass.dat"
+    ]
+  },
+  {
+    "id": 268,
+    "desc": "cbify cs, epsilon-greedy (see test 171)",
+    "vw_command": "--cb_force_legacy --cbify 3 --cbify_cs --epsilon 0.05 -d train-sets/cs_cb",
+    "diff_files": {
+      "stderr": "train-sets/ref/cbify_epsilon_cs_legacy.stderr"
+    },
+    "input_files": [
+      "train-sets/cs_cb"
+    ]
+  },
+  {
+    "id": 269,
+    "desc": "cb_explore with cover epsilon decaying (see test 249)",
+    "vw_command": "--cb_force_legacy --cb_explore 2 --cover 3 -d train-sets/cb_explore_cover.dat -f models/cover_e_dec.model",
+    "diff_files": {
+      "stderr": "train-sets/ref/cbe_cover_e_dec_legacy.stderr"
+    },
+    "input_files": [
+      "train-sets/cb_explore_cover.dat"
+    ]
+  },
+  {
+    "id": 270,
+    "desc": "cb_explore with cover epsilon decaying predict (see test 250)",
+    "vw_command": "--cb_explore 2 --cover 3 -d train-sets/cb_explore_cover.dat -i models/cover_e_dec.model -t -p cbe_cover_e_dec_legacy.predict",
+    "diff_files": {
+      "stderr": "train-sets/ref/cbe_cover_e_dec_predict_legacy.stderr",
+      "cbe_cover_e_dec_legacy.predict": "pred-sets/ref/cbe_cover_e_dec_legacy.predict"
+    },
+    "input_files": [
+      "train-sets/cb_explore_cover.dat",
+      "models/cover_e_dec.model"
+    ],
+    "depends_on": [
+      269
+    ]
+  },
+  {
+    "id": 271,
+    "desc": "cb_explore with cover epsilon fixed (see test 251)",
+    "vw_command": "--cb_force_legacy --cb_explore 2 --cover 3 -d train-sets/cb_explore_cover.dat -f models/cover_e_fixed.model --epsilon 0.5",
+    "diff_files": {
+      "stderr": "train-sets/ref/cbe_cover_e_fixed_legacy.stderr"
+    },
+    "input_files": [
+      "train-sets/cb_explore_cover.dat"
+    ]
+  },
+  {
+    "id": 272,
+    "desc": "cb_explore with cover epsilon fixed predict (see test 252)",
+    "vw_command": "--cb_explore 2 --cover 3 -d train-sets/cb_explore_cover.dat -i models/cover_e_fixed.model --epsilon 0.5 -t -p cbe_cover_e_fixed_legacy.predict",
+    "diff_files": {
+      "stderr": "train-sets/ref/cbe_cover_e_fixed_predict_legacy.stderr",
+      "cbe_cover_e_fixed_legacy.predict": "pred-sets/ref/cbe_cover_e_fixed_legacy.predict"
+    },
+    "input_files": [
+      "train-sets/cb_explore_cover.dat",
+      "models/cover_e_fixed.model"
+    ],
+    "depends_on": [
+      271
+    ]
+  },
+  {
+    "id": 273,
+    "desc": "cb evaluation (see test 74)",
+    "vw_command": "-d train-sets/rcv1_cb_eval --cb 2 --eval",
+    "diff_files": {
+      "stderr": "train-sets/ref/rcv1_cb_eval.stderr"
+    },
+    "input_files": [
+      "train-sets/rcv1_cb_eval"
+    ]
+  },
+  {
+    "id": 274,
+    "desc": "8.8.0 old model, test cb compat",
+    "vw_command": "-i model-sets/cb_compat_test.vwmodel -d train-sets/cb_compat_test.dat -p cb_compat_test.predict",
+    "diff_files": {
+      "stderr": "train-sets/ref/cb_old_model.compat.stderr",
+      "cb_compat_test.predict": "pred-sets/ref/cb_compat_test.predict"
+    },
+    "input_files": [
+      "train-sets/cb_compat_test.dat",
+      "model-sets/cb_compat_test.vwmodel"
+    ]
+  },
+  {
+    "id": 275,
+    "desc": "vw --help",
+    "vw_command": "--help",
+    "diff_files": {
+      "stderr": "train-sets/ref/help.stderr",
+      "stdout": "train-sets/ref/help.stdout"
+    }
+  },
+  {
+    "id": 276,
+    "desc": "vw --help with filtering",
+    "vw_command": "--cb_adf --help",
+    "diff_files": {
+      "stderr": "train-sets/ref/help_cbadf.stderr",
+      "stdout": "train-sets/ref/help_cbadf.stdout"
+    }
+  },
+  {
+    "id": 277,
+    "desc": "cbzo: learn and save constant template model. Note: Changing hyperparameters (-l, --radius etc.) or any options affecting the learning algorithm will require. preparing the dataset again",
+    "vw_command": "-d train-sets/cbzo_constant.dat --holdout_off --cbzo --policy constant -l 0.001 --radius 0.1 -f models/cbzo_constant.model",
+    "diff_files": {
+      "stderr": "train-sets/ref/cbzo_constant.stderr",
+      "stdout": "train-sets/ref/cbzo_constant.stdout"
+    },
+    "input_files": [
+      "train-sets/cbzo_constant.dat"
+    ]
+  },
+  {
+    "id": 278,
+    "desc": "cbzo: verify predictions of Test 277 model.. Also ends up testing if important cmd-line options (--cbzo, --policy) are saved with the model.",
+    "vw_command": "-d train-sets/cbzo_constant.dat --holdout_off -t --radius 0.1 -i models/cbzo_constant.model -p cbzo_constant.preds",
+    "diff_files": {
+      "cbzo_constant.preds": "pred-sets/ref/cbzo_constant.preds"
+    },
+    "input_files": [
+      "train-sets/cbzo_constant.dat",
+      "models/cbzo_constant.model"
+    ],
+    "depends_on": [
+      277
+    ]
+  },
+  {
+    "id": 279,
+    "desc": "cbzo: verify predictions without the intervention of model saving",
+    "vw_command": "-d train-sets/cbzo_constant.dat --holdout_off --cbzo --policy constant -l 0.001 --radius 0.1 -p cbzo_constant_online.preds",
+    "diff_files": {
+      "cbzo_constant_online.preds": "pred-sets/ref/cbzo_constant_online.preds"
+    },
+    "input_files": [
+      "train-sets/cbzo_constant.dat"
+    ]
+  },
+  {
+    "id": 280,
+    "desc": "cbzo: verify --readable_model file contents",
+    "vw_command": "-d train-sets/cbzo_constant.dat --holdout_off --cbzo --policy constant -l 0.001 --radius 0.1 --readable_model cbzo_constant_readable_model.txt",
+    "diff_files": {
+      "cbzo_constant_readable_model.txt": "train-sets/ref/cbzo_constant_readable_model.txt"
+    },
+    "input_files": [
+      "train-sets/cbzo_constant.dat"
+    ]
+  },
+  {
+    "id": 281,
+    "desc": "cbzo: verify --invert_hash file contents",
+    "vw_command": "-d train-sets/cbzo_constant.dat --holdout_off --cbzo --policy constant -l 0.001 --radius 0.1 --invert_hash cbzo_constant_invert_hash.txt",
+    "diff_files": {
+      "cbzo_constant_invert_hash.txt": "train-sets/ref/cbzo_constant_invert_hash.txt"
+    },
+    "input_files": [
+      "train-sets/cbzo_constant.dat"
+    ]
+  },
+  {
+    "id": 282,
+    "desc": "cbzo: learn and save linear template model. Note: Changing hyperparameters (-l, --l1, --radius etc.) or any options affecting the learning algorithm will require. preparing the dataset again",
+    "vw_command": "-d train-sets/cbzo_linear.dat --holdout_off --cbzo --policy linear -l 0.0001 --radius 0.1 --l1 0.2 --l2 0.3 --no_bias_regularization -f models/cbzo_linear.model",
+    "diff_files": {
+      "stderr": "train-sets/ref/cbzo_linear.stderr",
+      "stdout": "train-sets/ref/cbzo_linear.stdout"
+    },
+    "input_files": [
+      "train-sets/cbzo_linear.dat"
+    ]
+  },
+  {
+    "id": 283,
+    "desc": "cbzo: verify predictions of Test 282 model.. Also ends up testing if important cmd-line options (--cbzo, --policy) are saved with the model.",
+    "vw_command": "-d train-sets/cbzo_linear.dat --holdout_off -t --radius 0.1 -i models/cbzo_linear.model -p cbzo_linear.preds",
+    "diff_files": {
+      "cbzo_linear.preds": "pred-sets/ref/cbzo_linear.preds"
+    },
+    "input_files": [
+      "train-sets/cbzo_linear.dat",
+      "models/cbzo_linear.model"
+    ],
+    "depends_on": [
+      282
+    ]
+  },
+  {
+    "id": 284,
+    "desc": "cbzo: verify predictions without the intervention of model saving",
+    "vw_command": "-d train-sets/cbzo_linear.dat --holdout_off --cbzo --policy linear -l 0.0001 --radius 0.1 --l1 0.2 --l2 0.3 --no_bias_regularization -p cbzo_linear_online.preds",
+    "diff_files": {
+      "cbzo_linear_online.preds": "pred-sets/ref/cbzo_linear_online.preds"
+    },
+    "input_files": [
+      "train-sets/cbzo_linear.dat"
+    ]
+  },
+  {
+    "id": 285,
+    "desc": "cbzo: verify --readable_model file contents",
+    "vw_command": "-d train-sets/cbzo_linear.dat --holdout_off --cbzo --policy linear -l 0.0001 --radius 0.1 --l1 0.2 --l2 0.3 --no_bias_regularization --readable_model cbzo_linear_readable_model.txt",
+    "diff_files": {
+      "cbzo_linear_readable_model.txt": "train-sets/ref/cbzo_linear_readable_model.txt"
+    },
+    "input_files": [
+      "train-sets/cbzo_linear.dat"
+    ]
+  },
+  {
+    "id": 286,
+    "desc": "cbzo: verify --invert_hash file contents",
+    "vw_command": "-d train-sets/cbzo_linear.dat --holdout_off --cbzo --policy linear -l 0.0001 --radius 0.1 --l1 0.2 --l2 0.3 --no_bias_regularization --invert_hash cbzo_linear_invert_hash.txt",
+    "diff_files": {
+      "cbzo_linear_invert_hash.txt": "train-sets/ref/cbzo_linear_invert_hash.txt"
+    },
+    "input_files": [
+      "train-sets/cbzo_linear.dat"
+    ]
+  },
+  {
+    "id": 287,
+    "desc": "vw test used in brew script",
+    "vw_command": "-d train-sets/houses --audit --nn 1",
+    "diff_files": {
+      "stderr": "train-sets/ref/houses.stderr",
+      "stdout": "train-sets/ref/houses.stdout"
+    },
+    "input_files": [
+      "train-sets/houses"
+    ]
+  },
+  {
+    "id": 288,
+    "desc": "creating model using --save_resume to be tested with -q :: and --invert_hash",
+    "vw_command": "-d train-sets/ccb_test_interactions.dat --ccb_explore_adf -q :: -f models/288.model --save_resume --invert_hash ccb_quad.inv",
+    "diff_files": {
+      "stderr": "train-sets/ref/ccb_quad.stderr",
+      "ccb_quad.inv": "pred-sets/ref/ccb_quad.inv"
+    },
+    "input_files": [
+      "train-sets/ccb_test_interactions.dat"
+    ]
+  },
+  {
+    "id": 289,
+    "desc": "checking invert_hash for ccb with --save_resume model and -q ::",
+    "vw_command": "-d train-sets/ccb_test_interactions.dat -i models/288.model --save_resume --invert_hash ccb_quad_save_resume.inv",
+    "diff_files": {
+      "stderr": "train-sets/ref/ccb_quad_save_resume.stderr",
+      "ccb_quad_save_resume.inv": "pred-sets/ref/ccb_quad_save_resume.inv"
+    },
+    "input_files": [
+      "train-sets/ccb_test_interactions.dat",
+      "models/288.model"
+    ],
+    "depends_on": [
+      288
+    ]
+  },
+  {
+    "id": 290,
+    "desc": "Slates sanity check with interactions and invert hash",
+    "vw_command": "--slates -d train-sets/slates_simple_w_interactions.txt -p slates_simple_w_interactions.predict -q :: --invert_hash slates_w_interactions.inv",
+    "diff_files": {
+      "stderr": "train-sets/ref/slates_simple_w_interactions.stderr",
+      "slates_simple_w_interactions.predict": "pred-sets/ref/slates_simple_w_interactions.predict",
+      "slates_w_interactions.inv": "pred-sets/ref/slates_w_interactions.inv"
+    },
+    "input_files": [
+      "train-sets/slates_simple_w_interactions.txt"
+    ]
+  },
+  {
+    "id": 291,
+    "desc": "test -q :: with many interactions",
+    "vw_command": "-d train-sets/ccb_lots_of_interactions.dat --ccb_explore_adf -q :: --invert_hash ccb_lots_of_interactions.inv",
+    "diff_files": {
+      "stderr": "train-sets/ref/ccb_lots_of_interactions.stderr",
+      "ccb_lots_of_interactions.inv": "pred-sets/ref/ccb_lots_of_interactions.inv"
+    },
+    "input_files": [
+      "train-sets/ccb_lots_of_interactions.dat"
+    ]
+  },
+  {
+    "id": 292,
+    "desc": "Test search_neighbor_features argument",
+    "vw_command": "-k -c -d train-sets/sequence_data --passes 2 --search_rollout ref --search_alpha 1e-8 --search_task sequence --search 5 --holdout_off --search_neighbor_features -3:w,-2:w,-1:w,1:w,2:w,3:w,-3:e,-2:e,-1:e,1:e,2:e,3:e,-3:s,-2:s,-1:s,1:s,2:s,3:s",
+    "diff_files": {
+      "stderr": "train-sets/ref/search_neighbor_features.train.stderr"
+    },
+    "input_files": [
+      "train-sets/sequence_data"
+    ]
+  },
+  {
+    "id": 293,
+    "desc": "test -q :: with explicit interactions",
+    "vw_command": "-d train-sets/ccb_lots_of_interactions_mini.dat --ccb_explore_adf -q :: -q AB --interactions AAA --interactions ::: --invert_hash ccb_implicit_and_explicit_interactions.inv",
+    "diff_files": {
+      "stderr": "train-sets/ref/ccb_implicit_and_explicit_interactions.stderr",
+      "ccb_implicit_and_explicit_interactions.inv": "pred-sets/ref/ccb_implicit_and_explicit_interactions.inv"
+    },
+    "input_files": [
+      "train-sets/ccb_lots_of_interactions_mini.dat"
+    ]
+  },
+  {
+    "id": 294,
+    "desc": "test -q :: with explicit interactions and ignore",
+    "vw_command": "-d train-sets/ccb_lots_of_interactions_mini.dat --ignore C --ccb_explore_adf -q :: -q AB --interactions AAA --interactions ::: --invert_hash ccb_implicit_explicit_ignore_interactions.inv",
+    "diff_files": {
+      "stderr": "train-sets/ref/ccb_implicit_explicit_ignore_interactions.stderr",
+      "ccb_implicit_explicit_ignore_interactions.inv": "pred-sets/ref/ccb_implicit_explicit_ignore_interactions.inv"
+    },
+    "input_files": [
+      "train-sets/ccb_lots_of_interactions_mini.dat"
+    ]
+  },
+  {
+    "id": 295,
+    "desc": "Test interact reduction",
+    "vw_command": "-d train-sets/interact.dat -p t288.predict --interact ab --readable_model t288.readable",
+    "diff_files": {
+      "stderr": "test-sets/ref/t288.stderr",
+      "t288.predict": "pred-sets/ref/t288.predict",
+      "t288.readable": "pred-sets/ref/t288.readable"
+    },
+    "input_files": [
+      "train-sets/interact.dat"
+    ]
+  },
+  {
+    "id": 296,
+    "desc": "FTRL readable model test. TODO: investigate slow convergence",
+    "vw_command": "-d train-sets/regression_simple.txt --noconstant --ftrl --invert_hash ftrl.readable",
+    "diff_files": {
+      "ftrl.readable": "train-sets/ref/ftrl.readable"
+    },
+    "input_files": [
+      "train-sets/regression_simple.txt"
+    ]
+  },
+  {
+    "id": 297,
+    "desc": "pistol readable model test",
+    "vw_command": "-d train-sets/regression_simple.txt --noconstant --pistol --invert_hash pistol.readable",
+    "diff_files": {
+      "pistol.readable": "train-sets/ref/pistol.readable"
+    },
+    "input_files": [
+      "train-sets/regression_simple.txt"
+    ]
+  },
+  {
+    "id": 298,
+    "desc": "coin readable model test",
+    "vw_command": "-d train-sets/regression_simple.txt --noconstant --coin --invert_hash coin.readable",
+    "diff_files": {
+      "coin.readable": "train-sets/ref/coin.readable"
+    },
+    "input_files": [
+      "train-sets/regression_simple.txt"
+    ]
+  },
+  {
+    "id": 299,
+    "desc": "generate cb model",
+    "vw_command": "-d train-sets/cb_as_ccb.json --dsjson --cb_explore_adf --save_resume -f models/cb_model.bin",
+    "diff_files": {
+      "stderr": "train-sets/ref/cb_as_ccb.cb.stderr"
+    },
+    "input_files": [
+      "train-sets/cb_as_ccb.json"
+    ]
+  },
+  {
+    "id": 300,
+    "desc": "load cb model into ccb learner",
+    "vw_command": "-d train-sets/cb_as_ccb.json --dsjson --ccb_explore_adf --save_resume -i models/cb_model.bin",
+    "diff_files": {
+      "stderr": "train-sets/ref/cb_as_ccb.ccb.stderr"
+    },
+    "input_files": [
+      "train-sets/cb_as_ccb.json",
+      "models/cb_model.bin"
+    ],
+    "depends_on": [
+      299
+    ]
+  },
+  {
+    "id": 301,
+    "desc": "memory_tree create model",
+    "vw_command": "-d train-sets/aloi_short_train.dat --memory_tree 1204 --learn_at_leaf --max_number_of_labels 1000 --dream_at_update 0 --dream_repeats 20 --online --leaf_example_multiplier 10 -f cmt.model",
+    "diff_files": {
+      "stderr": "train-sets/ref/cmt_train_model.stderr"
+    },
+    "input_files": [
+      "train-sets/aloi_short_train.dat"
+    ]
+  },
+  {
+    "id": 302,
+    "desc": "memory_tree load model",
+    "vw_command": "-d test-sets/aloi_short_test.dat -i cmt.model",
+    "diff_files": {
+      "stderr": "train-sets/ref/cmt_test_model.stderr"
+    },
+    "input_files": [
+      "test-sets/aloi_short_test.dat",
+      "cmt.model"
+    ],
+    "depends_on": [
+      301
+    ]
+  },
+  {
+    "id": 303,
+    "desc": "cb file with no extra newline at the end",
+    "vw_command": "--cb_explore_adf --epsilon 0.1 -d train-sets/cb_test_nonewline.ldf --noconstant -p cbe_adf_nonewline.predict",
+    "diff_files": {
+      "stderr": "train-sets/ref/cbe_adf_nonewline.stderr",
+      "cbe_adf_nonewline.predict": "pred-sets/ref/cbe_adf_nonewline.predict"
+    },
+    "input_files": [
+      "train-sets/cb_test_nonewline.ldf"
+    ]
+  },
+  {
+    "id": 304,
+    "desc": "ccb file with no extra newline at the end",
+    "vw_command": "--ccb_explore_adf -d train-sets/ccb_test_nonewline.dat -p ccb_test_nonewline.predict",
+    "diff_files": {
+      "stderr": "train-sets/ref/ccb_test_nonewline.stderr",
+      "ccb_test_nonewline.predict": "train-sets/ref/ccb_test_nonewline.predict"
+    },
+    "input_files": [
+      "train-sets/ccb_test_nonewline.dat"
+    ]
+  },
+  {
+    "id": 305,
+    "desc": "slates file with no extra newline at the end",
+    "vw_command": "--slates -d train-sets/slates_simple_nonewline.txt -p slates_simple_nonewline.predict",
+    "diff_files": {
+      "stderr": "train-sets/ref/slates_simple_nonewline.stderr",
+      "slates_simple_nonewline.predict": "pred-sets/ref/slates_simple_nonewline.predict"
+    },
+    "input_files": [
+      "train-sets/slates_simple_nonewline.txt"
+    ]
+  },
+  {
+    "id": 306,
+    "desc": "cb json dataset with zero feature values",
+    "vw_command": "--cb_explore_adf --dsjson -d train-sets/cb_features_w_zero_vals.dsjson -p cb_zero_feature_vals_dsjson.predict",
+    "diff_files": {
+      "stderr": "train-sets/ref/cb_zero_feature_vals_dsjson.stderr",
+      "cb_zero_feature_vals_dsjson.predict": "pred-sets/ref/cb_zero_feature_vals_dsjson.predict"
+    },
+    "input_files": [
+      "train-sets/cb_features_w_zero_vals.dsjson"
+    ]
+  },
+  {
+    "id": 307,
+    "desc": "cb text dataset with zero feature values",
+    "vw_command": "--cb_explore_adf -d train-sets/cb_features_w_zero_vals.dat -p cb_zero_feature_vals.predict",
+    "diff_files": {
+      "stderr": "train-sets/ref/cb_zero_feature_vals.stderr",
+      "cb_zero_feature_vals.predict": "pred-sets/ref/cb_zero_feature_vals.predict"
+    },
+    "input_files": [
+      "train-sets/cb_features_w_zero_vals.dat"
+    ]
+  },
+  {
+    "id": 308,
+    "desc": "ccb text dataset with zero feature values in actions/slot/shared feature",
+    "vw_command": "--ccb_explore_adf -d train-sets/ccb_zero_value_features.dat",
+    "diff_files": {
+      "stderr": "train-sets/ref/ccb_zero_value_features.stderr"
+    },
+    "input_files": [
+      "train-sets/ccb_zero_value_features.dat"
+    ]
+  },
+  {
+    "id": 309,
+    "desc": "slate text dataset with zero feature values in actions/slot/shared feature",
+    "vw_command": "--slates -d train-sets/slates_zero_value_features.txt",
+    "diff_files": {
+      "stderr": "train-sets/ref/slates_zero_value_features.stderr"
+    },
+    "input_files": [
+      "train-sets/slates_zero_value_features.txt"
+    ]
+  },
+  {
+    "id": 310,
+    "desc": "cats predict room tempertature learn",
+    "vw_command": "-d train-sets/cats_room_temp.json --cats 32 --bandwidth 3 --min_value 0 --max_value 100 -f models/cats_room_temp.model --coin --json --chain_hash --epsilon 0.5",
+    "diff_files": {
+      "stderr": "train-sets/ref/cats_room_temp.stderr"
+    },
+    "input_files": [
+      "train-sets/cats_room_temp.json"
+    ]
+  },
+  {
+    "id": 311,
+    "desc": "cats predict room tempertature learn",
+    "vw_command": "-d train-sets/cats_room_temp.json -i models/cats_room_temp.model --coin --json --chain_hash -p cats_room_temp.predict",
+    "diff_files": {
+      "stderr": "train-sets/ref/cats_room_temp_pred.stderr",
+      "cats_room_temp.predict": "pred-sets/ref/cats_room_temp.predict"
+    },
+    "input_files": [
+      "train-sets/cats_room_temp.json",
+      "models/cats_room_temp.model"
+    ],
+    "depends_on": [
+      310
+    ]
+  },
+  {
+    "id": 312,
+    "desc": "test extra_metrics",
+    "vw_command": "-d train-sets/decisionservice.json --dsjson --cb_explore_adf --epsilon 0.2 --quadratic GT -P 1 -p cbe_adf_dsjson.predict --extra_metrics metrics.json",
+    "diff_files": {
+      "stderr": "train-sets/ref/cbe_adf_dsjson_metrics.stderr",
+      "cbe_adf_dsjson.predict": "pred-sets/ref/cbe_adf_dsjson.predict",
+      "metrics.json": "test-sets/ref/metrics.json"
+    },
+    "input_files": [
+      "train-sets/decisionservice.json"
+    ]
+  },
+  {
+    "id": 313,
+    "desc": "test extra_metrics",
+    "vw_command": "-d train-sets/rcv1_raw_cb_small.vw --cb 2 --cb_type dr --ngram 2 --skips 4 -b 24 -l 0.25 --extra_metrics metrics_2.json",
+    "diff_files": {
+      "stderr": "train-sets/ref/rcv1_raw_cb_dr_metrics.stderr",
+      "metrics_2.json": "test-sets/ref/metrics_2.json"
+    },
+    "input_files": [
+      "train-sets/rcv1_raw_cb_small.vw"
+    ]
+  },
+  {
+    "id": 314,
+    "desc": "squarecb save_load, save model",
+    "vw_command": "-d train-sets/cb_load.dat --cb_explore_adf -q UA --squarecb -f models/sqcb_ld.model --save_resume",
+    "diff_files": {
+      "stderr": "train-sets/ref/squarecb_save.stderr"
+    },
+    "input_files": [
+      "train-sets/cb_load.dat"
+    ]
+  },
+  {
+    "id": 315,
+    "desc": "squarecb save_load, load model",
+    "vw_command": "-d train-sets/cb_load.dat --cb_explore_adf -q UA --squarecb -i models/sqcb_ld.model -t",
+    "diff_files": {
+      "stderr": "train-sets/ref/squarecb_load.stderr"
+    },
+    "input_files": [
+      "train-sets/cb_load.dat",
+      "models/sqcb_ld.model"
+    ],
+    "depends_on": [
+      314
+    ]
+  },
+  {
+    "id": 316,
+    "desc": "test extra_metrics with djson timestamps",
+    "vw_command": "-d train-sets/dsjson_cb.json --dsjson --cb_explore_adf --epsilon 0.2 --quadratic GT --extra_metrics metrics_time.json",
+    "diff_files": {
+      "stderr": "train-sets/ref/metrics_time.stderr",
+      "metrics_time.json": "test-sets/ref/metrics_time.json"
+    },
+    "input_files": [
+      "train-sets/dsjson_cb.json"
+    ]
+  },
+  {
+    "id": 317,
+    "desc": "bfgs preconditioner overflowing test",
+    "vw_command": "-c -k -d train-sets/rcv1_small.dat --bfgs --passes 12 -f models/bfgs_precon.model --save_resume",
+    "diff_files": {
+      "stderr": "train-sets/ref/bfgs_train.stderr"
+    },
+    "input_files": [
+      "train-sets/rcv1_small.dat"
+    ]
+  },
+  {
+    "id": 318,
+    "desc": "test extra_metrics with djson ccb",
+    "vw_command": "-d train-sets/ccb_data.json --dsjson --ccb_explore_adf --extra_metrics metrics_ccb.json",
+    "diff_files": {
+      "stderr": "train-sets/ref/metrics_ccb.stderr",
+      "metrics_ccb.json": "test-sets/ref/metrics_ccb.json"
+    },
+    "input_files": [
+      "train-sets/ccb_data.json"
+    ]
+  },
+  {
+    "id": 319,
+    "desc": "test extra_metrics with djson ccb, without event_id",
+    "vw_command": "-d train-sets/ccb_data_noevent.json --dsjson --ccb_explore_adf --extra_metrics metrics_ccb_noevent.json",
+    "diff_files": {
+      "stderr": "train-sets/ref/metrics_ccb_noevent.stderr",
+      "metrics_ccb_noevent.json": "test-sets/ref/metrics_ccb_noevent.json"
+    },
+    "input_files": [
+      "train-sets/ccb_data_noevent.json"
+    ]
+  },
+  {
+    "id": 320,
+    "desc": "first save_load, save model",
+    "vw_command": "-d train-sets/cb_load.dat --cb_explore_adf -q UA --first 130 -f models/first_ld.model --save_resume",
+    "diff_files": {
+      "stderr": "train-sets/ref/first_save.stderr"
+    },
+    "input_files": [
+      "train-sets/cb_load.dat"
+    ]
+  },
+  {
+    "id": 321,
+    "desc": "first save_load, load model",
+    "vw_command": "-d train-sets/cb_load.dat --cb_explore_adf -q UA -i models/first_ld.model -t",
+    "diff_files": {
+      "stderr": "train-sets/ref/first_load.stderr"
+    },
+    "input_files": [
+      "train-sets/cb_load.dat",
+      "models/first_ld.model"
+    ],
+    "depends_on": [
+      320
+    ]
+  },
+  {
+    "id": 322,
+    "desc": "regcb save_load, save model",
+    "vw_command": "-d train-sets/cb_load.dat --cb_explore_adf -q UA --regcb -f models/regcb_ld.model --save_resume --mellowness .001",
+    "diff_files": {
+      "stderr": "train-sets/ref/regcb_save.stderr"
+    },
+    "input_files": [
+      "train-sets/cb_load.dat"
+    ]
+  },
+  {
+    "id": 323,
+    "desc": "regcb save_load, load model",
+    "vw_command": "-d train-sets/cb_load.dat --cb_explore_adf -q UA --regcb -i models/regcb_ld.model -t",
+    "diff_files": {
+      "stderr": "train-sets/ref/regcb_load.stderr"
+    },
+    "input_files": [
+      "train-sets/cb_load.dat",
+      "models/regcb_ld.model"
+    ],
+    "depends_on": [
+      322
+    ]
+  },
+  {
+    "id": 324,
+    "desc": "test dsjson with some errors. Since logging is not thread safe, diff might fail randomnly. Added onethread to minimize error. Line 57 of ccb_data_parse_error.json has a missing quote on purpose",
+    "vw_command": "-d train-sets/ccb_data_parse_error.json --dsjson --ccb_explore_adf --extra_metrics metrics_ccb_parse_error.json --onethread",
+    "diff_files": {
+      "stderr": "train-sets/ref/metrics_ccb_parse_error.stderr",
+      "metrics_ccb_parse_error.json": "test-sets/ref/metrics_ccb_parse_error.json"
+    },
+    "input_files": [
+      "train-sets/ccb_data_parse_error.json"
+    ]
+  },
+  {
+    "id": 325,
+    "desc": "test dsjson with some errors and limit output. Since logging is not thread safe, diff might fail randomnly. Added onethread to minimize error. Line 57 of ccb_data_parse_error.json has a missing quote on purpose. shares same metric file as test 324",
+    "vw_command": "-d train-sets/ccb_data_parse_error.json --dsjson --ccb_explore_adf --extra_metrics metrics_ccb_parse_error.json --onethread --limit_output 1",
+    "diff_files": {
+      "stderr": "train-sets/ref/metrics_ccb_parse_error_limit.stderr",
+      "metrics_ccb_parse_error.json": "test-sets/ref/metrics_ccb_parse_error.json"
+    },
+    "input_files": [
+      "train-sets/ccb_data_parse_error.json"
+    ]
+  },
+  {
+    "id": 326,
+    "desc": "test dsjson with some errors with quiet. Since logging is not thread safe, diff might fail randomnly. Added onethread to minimize error. Line 57 of ccb_data_parse_error.json has a missing quote on purpose. shares same metric file as test 324",
+    "vw_command": "-d train-sets/ccb_data_parse_error.json --dsjson --ccb_explore_adf --extra_metrics metrics_ccb_parse_error.json --onethread --quiet",
+    "diff_files": {
+      "stderr": "train-sets/ref/metrics_ccb_parse_error_quiet.stderr",
+      "metrics_ccb_parse_error.json": "test-sets/ref/metrics_ccb_parse_error.json"
+    },
+    "input_files": [
+      "train-sets/ccb_data_parse_error.json"
+    ]
+  },
+  {
+    "id": 327,
+    "desc": "simple cb dsjson. Required for having side-by-side comparison with the same one with pdrop from 328",
+    "diff_files": {
+      "stderr": "train-sets/ref/cb_simple.stderr",
+      "cb_simple_invert_hash.txt": "train-sets/ref/cb_simple_invert_hash.txt"
+    },
+    "bash_command": "{VW} -d train-sets/cb_simple.json --dsjson --cb_explore_adf --invert_hash cb_simple_invert_hash.txt &&  tail -n +2 cb_simple_invert_hash.txt > cb_simple_invert_hash.txt.new &&  rm cb_simple_invert_hash.txt &&  mv cb_simple_invert_hash.txt.new cb_simple_invert_hash.txt"
+  },
+  {
+    "id": 328,
+    "desc": "simple cb dsjson with pdrop. Required for having side-by-side comparison with the same one without pdrop from 327. TODO: update stderr when reported metrics pdrop issue is fixed",
+    "diff_files": {
+      "stderr": "train-sets/ref/cb_simple_pdrop.stderr",
+      "cb_simple_pdrop_invert_hash.txt": "train-sets/ref/cb_simple_pdrop_invert_hash.txt"
+    },
+    "bash_command": "{VW} -d train-sets/cb_simple_pdrop.json --dsjson --cb_explore_adf --invert_hash cb_simple_pdrop_invert_hash.txt &&  tail -n +2 cb_simple_pdrop_invert_hash.txt > cb_simple_pdrop_invert_hash.txt.new &&  rm cb_simple_pdrop_invert_hash.txt &&  mv cb_simple_pdrop_invert_hash.txt.new cb_simple_pdrop_invert_hash.txt"
+  },
+  {
+    "id": 329,
+    "desc": "simple cb dsjson with pdrop=1 (unsupported)",
+    "vw_command": "-d train-sets/cb_simple_pdrop1.json --dsjson --cb_explore_adf",
+    "diff_files": {
+      "stderr": "train-sets/ref/cb_simple_pdrop1.stderr"
+    },
+    "input_files": [
+      "train-sets/cb_simple_pdrop1.json"
+    ]
+  },
+  {
+    "id": 330,
+    "desc": "simple ccb dsjson. Required for having side-by-side comparison with the same one with pdrop from 331",
+    "diff_files": {
+      "stderr": "train-sets/ref/ccb_simple.stderr",
+      "ccb_simple_invert_hash.txt": "train-sets/ref/ccb_simple_invert_hash.txt"
+    },
+    "bash_command": "{VW} -d train-sets/ccb_simple.json --dsjson --ccb_explore_adf --invert_hash ccb_simple_invert_hash.txt &&  tail -n +2 ccb_simple_invert_hash.txt > ccb_simple_invert_hash.txt.new &&  rm ccb_simple_invert_hash.txt &&  mv ccb_simple_invert_hash.txt.new ccb_simple_invert_hash.txt"
+  },
+  {
+    "id": 331,
+    "desc": "simple ccb dsjson with pdrop. Required for having side-by-side comparison with the same one without pdrop from 330. TODO: update stderr when reported metrics pdrop issue is fixed",
+    "diff_files": {
+      "stderr": "train-sets/ref/ccb_simple_pdrop.stderr",
+      "ccb_simple_pdrop_invert_hash.txt": "train-sets/ref/ccb_simple_pdrop_invert_hash.txt"
+    },
+    "bash_command": "{VW} -d train-sets/ccb_simple_pdrop.json --dsjson --ccb_explore_adf --invert_hash ccb_simple_pdrop_invert_hash.txt &&  tail -n +2 ccb_simple_pdrop_invert_hash.txt > ccb_simple_pdrop_invert_hash.txt.new &&  rm ccb_simple_pdrop_invert_hash.txt &&  mv ccb_simple_pdrop_invert_hash.txt.new ccb_simple_pdrop_invert_hash.txt"
+  },
+  {
+    "id": 332,
+    "desc": "regression test for #3062",
+    "vw_command": "-d train-sets/issue3062.txt --cb_explore 2 --cb_force_legacy --save_resume -f issue3062.model",
+    "diff_files": {
+      "stderr": "train-sets/ref/issue3062train.stderr"
+    },
+    "input_files": [
+      "train-sets/issue3062.txt"
+    ]
+  },
+  {
+    "id": 333,
+    "desc": "regression test for #3062",
+    "vw_command": "-d train-sets/issue3062.txt -t --cb_explore 2 --cb_force_legacy --save_resume -i issue3062.model",
+    "diff_files": {
+      "stderr": "train-sets/ref/issue3062test.stderr"
+    },
+    "input_files": [
+      "train-sets/issue3062.txt",
+      "issue3062.model"
+    ],
+    "depends_on": [
+      332
+    ]
+  },
+  {
+    "id": 334,
+    "desc": "test cb_dro with softmax and cb_explore_adf",
+    "vw_command": "--cb_dro --cb_explore_adf --rank_all -d train-sets/cb_adf_sm.data -p cb_dro_explore_adf_sm.predict --cb_type sm",
+    "diff_files": {
+      "stderr": "train-sets/ref/cb_dro_explore_adf_sm.stderr",
+      "cb_dro_explore_adf_sm.predict": "pred-sets/ref/cb_dro_explore_adf_sm.predict"
+    },
+    "input_files": [
+      "train-sets/cb_adf_sm.data"
+    ]
+  },
+  {
+    "id": 335,
+    "desc": "test --baseline",
+    "vw_command": "-d train-sets/0001.dat --baseline",
+    "diff_files": {
+      "stderr": "train-sets/ref/baseline_test.stderr"
+    },
+    "input_files": [
+      "train-sets/0001.dat"
+    ]
+  },
+  {
+    "id": 336,
+    "desc": "",
+    "vw_command": "-d train-sets/dupeindex_self.dat --noconstant --ignore_linear a --interactions aa --quiet --invert_hash dupeindex_self_quadratic.txt",
+    "diff_files": {
+      "dupeindex_self_quadratic.txt": "train-sets/ref/dupeindex_self_quadratic.txt"
+    },
+    "input_files": [
+      "train-sets/dupeindex_self.dat"
+    ]
+  },
+  {
+    "id": 337,
+    "desc": "",
+    "vw_command": "-d train-sets/dupeindex_self.dat --noconstant --ignore_linear a --interactions aaa --quiet --invert_hash dupeindex_self_cubic.txt",
+    "diff_files": {
+      "dupeindex_self_cubic.txt": "train-sets/ref/dupeindex_self_cubic.txt"
+    },
+    "input_files": [
+      "train-sets/dupeindex_self.dat"
+    ]
+  },
+  {
+    "id": 338,
+    "desc": "",
+    "vw_command": "-d train-sets/dupeindex_self.dat --noconstant --ignore_linear a --interactions aaaa --quiet --invert_hash dupeindex_self_quartic.txt",
+    "diff_files": {
+      "dupeindex_self_quartic.txt": "train-sets/ref/dupeindex_self_quartic.txt"
+    },
+    "input_files": [
+      "train-sets/dupeindex_self.dat"
+    ]
+  },
+  {
+    "id": 339,
+    "desc": "",
+    "vw_command": "-d train-sets/cb_multi_cost.dat --cb 4 --cb_force_legacy",
+    "diff_files": {
+      "stderr": "train-sets/ref/cb_multi_cost_legacy.stderr"
+    },
+    "input_files": [
+      "train-sets/cb_multi_cost.dat"
+    ]
+  },
+  {
+    "id": 340,
+    "desc": "",
+    "vw_command": "-d train-sets/cb_multi_cost.dat --cb 4",
+    "diff_files": {
+      "stderr": "train-sets/ref/cb_multi_cost.stderr"
+    },
+    "input_files": [
+      "train-sets/cb_multi_cost.dat"
+    ]
+  },
+  {
+    "id": 341,
+    "desc": "csoaa_ldf with shared features",
+    "vw_command": "-d train-sets/cs_shared.ldf --csoaa_ldf m",
+    "diff_files": {
+      "stderr": "train-sets/ref/cs_shared_ldf.stderr"
+    },
+    "input_files": [
+      "train-sets/cs_shared.ldf"
+    ]
+  },
+  {
+    "id": 342,
+    "desc": "check cb_adf with cache (part1 - no cache, but generate one)",
+    "vw_command": "--cb_adf -k --cache_file models/cb_test_cache.ldf.cache -d train-sets/cb_test.ldf",
+    "diff_files": {
+      "stderr": "train-sets/ref/cb_adf_mtr_cache.stderr"
+    },
+    "input_files": [
+      "train-sets/cb_test.ldf"
+    ]
+  },
+  {
+    "id": 343,
+    "desc": "check cb_adf with cache (part2 - run with cache)",
+    "vw_command": "--cb_adf --cache_file models/cb_test_cache.ldf.cache -d train-sets/cb_test.ldf",
+    "diff_files": {
+      "stderr": "train-sets/ref/cb_adf_mtr_cache_2.stderr"
+    },
+    "input_files": [
+      "train-sets/cb_test.ldf",
+      "models/cb_test_cache.ldf.cache"
+    ],
+    "depends_on": [
+      342
+    ]
+  },
+  {
+    "id": 344,
+    "desc": "check cb_adf with multiple passes",
+    "vw_command": "--cb_adf -k -c --passes 2 -d train-sets/cb_adf_multipass_crash_1.data --holdout_off",
+    "diff_files": {
+      "stderr": "train-sets/ref/cb_adf_multipass_crash_1.stderr"
+    },
+    "input_files": [
+      "train-sets/cb_adf_multipass_crash_1.data"
+    ]
+  },
+  {
+    "id": 345,
+    "desc": "check cb with multiple passes",
+    "vw_command": "-d train-sets/cb_multi_cost.dat --cb 4 -k -c --passes 2 --holdout_off",
+    "diff_files": {
+      "stderr": "train-sets/ref/cb_multi_cost_multipass.stderr"
+    },
+    "input_files": [
+      "train-sets/cb_multi_cost.dat"
+    ]
+  },
+  {
+    "id": 346,
+    "desc": "check legacy mode cb with multiple passes",
+    "vw_command": "-d train-sets/cb_multi_cost.dat --cb 4 -k -c --passes 2 --holdout_off --cb_force_legacy",
+    "diff_files": {
+      "stderr": "train-sets/ref/cb_multi_cost_multipass_legacy.stderr"
+    },
+    "input_files": [
+      "train-sets/cb_multi_cost.dat"
+    ]
+  },
+  {
+    "id": 347,
+    "desc": "cats save with predictions",
+    "vw_command": "--cats 32 --bandwidth 1 --min_value 0 --max_value 32 --json --chain_hash --coin --epsilon 0.2 -q :: -d train-sets/cats_train.json -f models/cats_train.model -p cats_save.predict --save_resume",
+    "diff_files": {
+      "stderr": "train-sets/ref/cats_save.stderr",
+      "cats_save.predict": "pred-sets/ref/cats_save.predict"
+    },
+    "input_files": [
+      "train-sets/cats_train.json"
+    ]
+  },
+  {
+    "id": 348,
+    "desc": "cats load with predictions",
+    "vw_command": "--cats 32 --bandwidth 1 --min_value 0 --max_value 32 --json --chain_hash --coin --epsilon 0.2 -q :: -d train-sets/cats_train.json -i models/cats_train.model -p cats_load.predict --save_resume",
+    "diff_files": {
+      "stderr": "train-sets/ref/cats_load.stderr",
+      "cats_load.predict": "pred-sets/ref/cats_load.predict"
+    },
+    "input_files": [
+      "train-sets/cats_train.json",
+      "models/cats_train.model"
+    ],
+    "depends_on": [
+      347
+    ]
+  },
+  {
+    "id": 349,
+    "desc": "model with corrupted weights gd.cc",
+    "diff_files": {
+      "stderr": "train-sets/ref/corrupt_weights_gd.stderr"
+    },
+    "bash_command": "./negative-test.sh {VW} --no_stdin --cb_explore_adf --cover 3 --noconstant --quiet -i model-sets/corrupted_weights_gd.model"
+  },
+  {
+    "id": 350,
+    "desc": "model with corrupted weights gd_mf.cc",
+    "diff_files": {
+      "stderr": "train-sets/ref/corrupt_weights_gd_mf.stderr"
+    },
+    "bash_command": "./negative-test.sh {VW} --no_stdin --cb_explore_adf --cover 3 --noconstant --quiet -i model-sets/corrupted_weights_gd_mf.model"
+  },
+  {
+    "id": 351,
+    "desc": "should be the same output as 158 except the line of enabled_reductions",
+    "vw_command": "--save_resume -f automl.model --automl 3 --priority_type least_exclusion -d train-sets/decisionservice.json --dsjson --cb_explore_adf --epsilon 0.2 -P 1 -p cbe_adf_dsjson.predict --extra_metrics metrics_.json --readable_model automl_readable.txt --keep_configs --oracle_type rand",
+    "diff_files": {
+      "stderr": "train-sets/ref/cbe_adf_dsjson_metrics_.stderr",
+      "metrics_.json": "test-sets/ref/metrics_.json",
+      "automl_readable.txt": "train-sets/ref/automl_readable.txt"
+    },
+    "input_files": [
+      "train-sets/decisionservice.json"
+    ]
+  },
+  {
+    "id": 352,
+    "desc": "check multilabel_oaa probabilities",
+    "vw_command": "--multilabel_oaa 10 -d train-sets/multilabel -p multilabel_probs.predict --loss_function=logistic --probabilities",
+    "diff_files": {
+      "stderr": "train-sets/ref/multilabel_probs.stderr",
+      "multilabel_probs.predict": "pred-sets/ref/multilabel_probs.predict"
+    },
+    "input_files": [
+      "train-sets/multilabel"
+    ]
+  },
+  {
+    "id": 353,
+    "desc": "check multilabel_oaa probabilities same as when manually specifying link",
+    "vw_command": "--multilabel_oaa 10 -d train-sets/multilabel -p multilabel_probs.predict --loss_function=logistic --probabilities --link logistic",
+    "diff_files": {
+      "stderr": "train-sets/ref/multilabel_probs.stderr",
+      "multilabel_probs.predict": "pred-sets/ref/multilabel_probs.predict"
+    },
+    "input_files": [
+      "train-sets/multilabel"
+    ]
+  },
+  {
+    "id": 354,
+    "desc": "check oaa probabilities same as when manually specifying link",
+    "vw_command": "-d train-sets/probabilities.dat --probabilities --oaa=4 --loss_function=logistic -p oaa_probabilities.predict --link logistic",
+    "diff_files": {
+      "stderr": "train-sets/ref/oaa_probabilities.stderr",
+      "oaa_probabilities.predict": "pred-sets/ref/oaa_probabilities.predict"
+    },
+    "input_files": [
+      "train-sets/probabilities.dat"
+    ]
+  },
+  {
+    "id": 355,
+    "desc": "check csoaa_ldf probabilities same as when manually specifying link",
+    "vw_command": "-d train-sets/cs_test.ldf --probabilities --csoaa_ldf=mc --loss_function=logistic -p csoaa_ldf_probabilities.predict --link logistic",
+    "diff_files": {
+      "stderr": "train-sets/ref/csoaa_ldf_probabilities.stderr",
+      "csoaa_ldf_probabilities.predict": "pred-sets/ref/csoaa_ldf_probabilities.predict"
+    },
+    "input_files": [
+      "train-sets/cs_test.ldf"
+    ]
+  },
+  {
+    "id": 356,
+    "desc": "fuzz testing crash due to partial model file",
+    "diff_files": {
+      "stdout": "train-sets/ref/truncated_model_crash.stdout"
+    },
+    "bash_command": "./negative-test.sh {VW} --no_stdin --cb_explore_adf --cover 3 --noconstant --quiet -i model-sets/truncated_model"
+  },
+  {
+    "id": 357,
+    "desc": "bad argument in one_of string",
+    "diff_files": {
+      "stderr": "train-sets/ref/cb_bad_one_of_string.stderr"
+    },
+    "bash_command": "./negative-test.sh {VW} --cb_adf -d train-sets/cb_test.ldf --cb_type bad_type"
+  },
+  {
+    "id": 358,
+    "desc": "bad argument in one_of int",
+    "diff_files": {
+      "stderr": "train-sets/ref/cb_bad_one_of_int.stderr"
+    },
+    "bash_command": "./negative-test.sh {VW} -k -d train-sets/lda-2pass-hang.dat --lda 10 -c --passes 2 --holdout_off --math-mode 5"
+  },
+  {
+    "id": 359,
+    "desc": "--probabilities --oaa one-indexed",
+    "diff_files": {
+      "stderr": "train-sets/ref/oaa_one_ind_probabilities.stderr",
+      "oaa_one_ind_probabilities.predict": "pred-sets/ref/oaa_one_ind_probabilities.predict"
+    },
+    "vw_command": "-d train-sets/probabilities_one_ind.dat --probabilities --oaa=4 --loss_function=logistic -p oaa_one_ind_probabilities.predict",
+    "input_files": [
+      "train-sets/probabilities_one_ind.dat"
+    ]
+  },
+  {
+    "id": 360,
+    "desc": "--probabilities --oaa zero-indexed",
+    "vw_command": "-d train-sets/probabilities_zero_ind.dat --probabilities --oaa=4 --loss_function=logistic -p oaa_zero_ind_probabilities.predict --indexing 0",
+    "diff_files": {
+      "stderr": "train-sets/ref/oaa_zero_ind_probabilities.stderr",
+      "oaa_zero_ind_probabilities.predict": "pred-sets/ref/oaa_zero_ind_probabilities.predict"
+    },
+    "input_files": [
+      "train-sets/probabilities_zero_ind.dat"
+    ]
+  },
+  {
+    "id": 361,
+    "desc": "--probabilities --oaa zero-indexed without flag",
+    "vw_command": "-d train-sets/probabilities_zero_ind.dat --probabilities --oaa=4 --loss_function=logistic -p oaa_zero_ind_no_flag_probabilities.predict",
+    "diff_files": {
+      "stderr": "train-sets/ref/oaa_zero_ind_no_flag_probabilities.stderr",
+      "oaa_zero_ind_no_flag_probabilities.predict": "pred-sets/ref/oaa_zero_ind_no_flag_probabilities.predict"
+    },
+    "input_files": [
+      "train-sets/probabilities_zero_ind.dat"
+    ]
+  },
+  {
+    "id": 362,
+    "desc": "--probabilities --oaa mixed-indexing",
+    "vw_command": "-d train-sets/probabilities_mixed_ind.dat --probabilities --oaa=4 --loss_function=logistic -p oaa_mixed_probabilities.predict",
+    "diff_files": {
+      "stderr": "train-sets/ref/oaa_mixed_probabilities.stderr",
+      "stdout": "train-sets/ref/oaa_mixed_probabilities.stdout",
+      "oaa_mixed_probabilities.predict": "pred-sets/ref/oaa_mixed_probabilities.predict"
+    },
+    "input_files": [
+      "train-sets/probabilities_mixed_ind.dat"
+    ]
+  },
+  {
+    "id": 363,
+    "desc": "check that ccb feature count adds up with slot ids",
+    "vw_command": "-d train-sets/ccb_audit.dat --ccb_explore_adf --audit --noconstant -P 1",
+    "diff_files": {
+      "stderr": "train-sets/ref/ccb_audit.stderr",
+      "stdout": "train-sets/ref/ccb_audit.stdout"
+    },
+    "input_files": [
+      "train-sets/ccb_audit.dat"
+    ]
+  },
+  {
+    "id": 364,
+    "desc": "check that ccb feature count adds up with multi-action multi-slot and -q ::",
+    "vw_command": "-d train-sets/ccb_audit_multi.dat --ccb_explore_adf --noconstant -q :: -P 1 --audit",
+    "diff_files": {
+      "stderr": "train-sets/ref/ccb_audit_multi.stderr",
+      "stdout": "train-sets/ref/ccb_audit_multi.stdout"
+    },
+    "input_files": [
+      "train-sets/ccb_audit_multi.dat"
+    ]
+  },
+  {
+    "id": 365,
+    "desc": "check that ccb feature count adds up with multi-action multi-slot, -q :: and constant",
+    "vw_command": "-d train-sets/ccb_audit_multi.dat --ccb_explore_adf -q :: -P 1 --audit",
+    "diff_files": {
+      "stderr": "train-sets/ref/ccb_audit_multi_constant.stderr",
+      "stdout": "train-sets/ref/ccb_audit_multi_constant.stdout"
+    },
+    "input_files": [
+      "train-sets/ccb_audit_multi.dat"
+    ]
+  },
+  {
+    "id": 366,
+    "desc": "check that ccb feature count adds up with multi-action multi-slot and -q ::, constant, using ccb_slot_namespace",
+    "vw_command": "-d train-sets/ccb_audit_multi_default_ns.dat --ccb_explore_adf -q :: -P 1 --audit",
+    "diff_files": {
+      "stderr": "train-sets/ref/ccb_audit_multi_default_ns.stderr",
+      "stdout": "train-sets/ref/ccb_audit_multi_default_ns.stdout"
+    },
+    "input_files": [
+      "train-sets/ccb_audit_multi_default_ns.dat"
+    ]
+  }
+]

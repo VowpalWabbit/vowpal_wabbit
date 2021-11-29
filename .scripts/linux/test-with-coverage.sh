@@ -7,5 +7,5 @@ REPO_DIR=$SCRIPT_DIR/../../
 cd $REPO_DIR
 
 cd test
-export PATH=../build/vowpalwabbit/:$PATH && ./RunTests -d -fe -E 0.001 -F
+python3 run_tests.py -f -j $(nproc) --include_flatbuffers --clean_dirty -E 0.001
 ../build/test/unit_test/vw-unit-test.out

@@ -5,9 +5,7 @@ power_t = 0.5
 using no cache
 Reading datafile = train-sets/wiki256_no_label.fb
 num sources = 1
-Enabled reductions: lda, scorer-identity
-Input label = label_type_t::nolabel
-Output pred = prediction_type_t::scalars
+Enabled reductions: lda
 average  since         example        example  current  current  current
 loss     last          counter         weight    label  predict features
 10.148774 10.148774            1            1.0     none        0      732

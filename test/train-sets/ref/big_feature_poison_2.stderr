@@ -1,4 +1,4 @@
-creating features for following interactions: aaaaa 
+creating features for following interactions: aaaaa
 Num weight bits = 18
 learning rate = 0.5
 initial_t = 0
@@ -6,9 +6,7 @@ power_t = 0
 using no cache
 Reading datafile = train-sets/big_feature_poison.dat
 num sources = 1
-Enabled reductions: gd, scorer-identity
-Input label = label_type_t::simple
-Output pred = prediction_type_t::scalar
+Enabled reductions: gd, scorer-identity, count_label
 average  since         example        example  current  current  current
 loss     last          counter         weight    label  predict features
 [warning] NAN prediction in example 1, forcing 0

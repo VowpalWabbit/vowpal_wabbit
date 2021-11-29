@@ -51,7 +51,7 @@ private:
 };
 
 cb_explore_adf_first::cb_explore_adf_first(size_t tau, float epsilon, VW::version_struct model_file_version)
-    : _tau(tau), _epsilon(epsilon), _model_file_version(std::move(model_file_version))
+    : _tau(tau), _epsilon(epsilon), _model_file_version(model_file_version)
 {
 }
 
@@ -85,18 +85,18 @@ void cb_explore_adf_first::predict_or_learn_impl(multi_learner& base, multi_ex& 
 void cb_explore_adf_first::save_load(io_buf& io, bool read, bool text)
 {
   if (io.num_files() == 0) { return; }
-  if (!read || _model_file_version >= VERSION_FILE_WITH_FIRST_SAVE_RESUME)
+  if (!read || _model_file_version >= VW::version_definitions::VERSION_FILE_WITH_FIRST_SAVE_RESUME)
   {
     std::stringstream msg;
     if (!read) { msg << "cb first adf storing example counter:  = " << _tau << "\n"; }
-    bin_text_read_write_fixed_validated(io, reinterpret_cast<char*>(&_tau), sizeof(_tau), "", read, msg, text);
+    bin_text_read_write_fixed_validated(io, reinterpret_cast<char*>(&_tau), sizeof(_tau), read, msg, text);
   }
 }
 
 base_learner* setup(VW::setup_base_i& stack_builder)
 {
   VW::config::options_i& options = *stack_builder.get_options();
-  vw& all = *stack_builder.get_all_pointer();
+  VW::workspace& all = *stack_builder.get_all_pointer();
   using config::make_option;
   bool cb_explore_adf_option = false;
   size_t tau = 0;
@@ -107,8 +107,8 @@ base_learner* setup(VW::setup_base_i& stack_builder)
                .keep()
                .necessary()
                .help("Online explore-exploit for a contextual bandit problem with multiline action dependent features"))
-      .add(make_option("first", tau).keep().necessary().help("tau-first exploration"))
-      .add(make_option("epsilon", epsilon).keep().allow_override().help("epsilon-greedy exploration"));
+      .add(make_option("first", tau).keep().necessary().help("Tau-first exploration"))
+      .add(make_option("epsilon", epsilon).keep().allow_override().help("Epsilon-greedy exploration"));
 
   if (!options.add_parse_and_check_necessary(new_options)) return nullptr;
 
@@ -129,8 +129,8 @@ base_learner* setup(VW::setup_base_i& stack_builder)
   auto* l = make_reduction_learner(
       std::move(data), base, explore_type::learn, explore_type::predict, stack_builder.get_setupfn_name(setup))
                 .set_params_per_weight(problem_multiplier)
-                .set_prediction_type(prediction_type_t::action_probs)
-                .set_label_type(label_type_t::cb)
+                .set_output_prediction_type(VW::prediction_type_t::action_probs)
+                .set_input_label_type(VW::label_type_t::cb)
                 .set_finish_example(explore_type::finish_multiline_example)
                 .set_print_example(explore_type::print_multiline_example)
                 .set_persist_metrics(explore_type::persist_metrics)

@@ -45,49 +45,49 @@ namespace logger = VW::io::logger;
 struct warm_cb
 {
   CB::label cb_label;
-  uint64_t app_seed;
+  uint64_t app_seed = 0;
   action_scores a_s;
   // used as the seed
-  size_t example_counter;
-  vw* all;
+  size_t example_counter = 0;
+  VW::workspace* all = nullptr;
   std::shared_ptr<rand_state> _random_state;
   multi_ex ecs;
-  float loss0;
-  float loss1;
+  float loss0 = 0.f;
+  float loss1 = 0.f;
 
   // warm start parameters
-  uint32_t ws_period;
-  uint32_t inter_period;
-  uint32_t choices_lambda;
-  bool upd_ws;
-  bool upd_inter;
-  int cor_type_ws;
-  float cor_prob_ws;
-  int vali_method;
-  int wt_scheme;
-  int lambda_scheme;
-  uint32_t overwrite_label;
-  int ws_type;
-  bool sim_bandit;
+  uint32_t ws_period = 0;
+  uint32_t inter_period = 0;
+  uint32_t choices_lambda = 0;
+  bool upd_ws = false;
+  bool upd_inter = false;
+  int cor_type_ws = 0;
+  float cor_prob_ws = 0.f;
+  int vali_method = 0;
+  int wt_scheme = 0;
+  int lambda_scheme = 0;
+  uint32_t overwrite_label = 0;
+  int ws_type = 0;
+  bool sim_bandit = false;
 
   // auxiliary variables
-  uint32_t num_actions;
-  float epsilon;
+  uint32_t num_actions = 0;
+  float epsilon = 0.f;
   std::vector<float> lambdas;
   action_scores a_s_adf;
   std::vector<float> cumulative_costs;
   CB::cb_class cl_adf;
-  uint32_t ws_train_size;
-  uint32_t ws_vali_size;
+  uint32_t ws_train_size = 0;
+  uint32_t ws_vali_size = 0;
   std::vector<example*> ws_vali;
-  float cumu_var;
-  uint32_t ws_iter;
-  uint32_t inter_iter;
+  float cumu_var = 0.f;
+  uint32_t ws_iter = 0;
+  uint32_t inter_iter = 0;
   MULTICLASS::label_t mc_label;
   COST_SENSITIVE::label cs_label;
   std::vector<COST_SENSITIVE::label> csls;
   std::vector<CB::label> cbls;
-  bool use_cs;
+  bool use_cs = 0;
 
   ~warm_cb()
   {
@@ -170,7 +170,7 @@ void copy_example_to_adf(warm_cb& data, example& ec)
     }
 
     // avoid empty example by adding a tag (hacky)
-    if (CB_ALGS::example_is_newline_not_header(eca) && CB::cb_label.test_label(&eca.l)) { eca.tag.push_back('n'); }
+    if (CB_ALGS::example_is_newline_not_header(eca) && CB::cb_label.test_label(eca.l)) { eca.tag.push_back('n'); }
   }
 }
 
@@ -522,9 +522,9 @@ void init_adf_data(warm_cb& data, const uint32_t num_actions)
 base_learner* warm_cb_setup(VW::setup_base_i& stack_builder)
 {
   options_i& options = *stack_builder.get_options();
-  vw& all = *stack_builder.get_all_pointer();
+  VW::workspace& all = *stack_builder.get_all_pointer();
   uint32_t num_actions = 0;
-  auto data = scoped_calloc_or_throw<warm_cb>();
+  auto data = VW::make_unique<warm_cb>();
   bool use_cs;
 
   option_group_definition new_options("Make Multiclass into Warm-starting Contextual Bandit");
@@ -535,40 +535,42 @@ base_learner* warm_cb_setup(VW::setup_base_i& stack_builder)
                .necessary()
                .help("Convert multiclass on <k> classes into a contextual bandit problem"))
       .add(make_option("warm_cb_cs", use_cs)
-               .help("consume cost-sensitive classification examples instead of multiclass"))
-      .add(make_option("loss0", data->loss0).default_value(0.f).help("loss for correct label"))
-      .add(make_option("loss1", data->loss1).default_value(1.f).help("loss for incorrect label"))
+               .help("Consume cost-sensitive classification examples instead of multiclass"))
+      .add(make_option("loss0", data->loss0).default_value(0.f).help("Loss for correct label"))
+      .add(make_option("loss1", data->loss1).default_value(1.f).help("Loss for incorrect label"))
       .add(make_option("warm_start", data->ws_period)
                .default_value(0U)
-               .help("number of training examples for warm start phase"))
-      .add(make_option("epsilon", data->epsilon).keep().allow_override().help("epsilon-greedy exploration"))
+               .help("Number of training examples for warm start phase"))
+      .add(make_option("epsilon", data->epsilon).keep().allow_override().help("Epsilon-greedy exploration"))
       .add(make_option("interaction", data->inter_period)
                .default_value(UINT32_MAX)
-               .help("number of examples for the interactive contextual bandit learning phase"))
-      .add(make_option("warm_start_update", data->upd_ws).help("indicator of warm start updates"))
-      .add(make_option("interaction_update", data->upd_inter).help("indicator of interaction updates"))
+               .help("Number of examples for the interactive contextual bandit learning phase"))
+      .add(make_option("warm_start_update", data->upd_ws).help("Indicator of warm start updates"))
+      .add(make_option("interaction_update", data->upd_inter).help("Indicator of interaction updates"))
       .add(make_option("corrupt_type_warm_start", data->cor_type_ws)
                .default_value(UAR)
-               .help("type of label corruption in the warm start phase (1: uniformly at random, 2: circular, 3: "
+               .one_of({1, 2, 3})
+               .help("Type of label corruption in the warm start phase (1: uniformly at random, 2: circular, 3: "
                      "replacing with overwriting label)"))
       .add(make_option("corrupt_prob_warm_start", data->cor_prob_ws)
                .default_value(0.f)
-               .help("probability of label corruption in the warm start phase"))
+               .help("Probability of label corruption in the warm start phase"))
       .add(make_option("choices_lambda", data->choices_lambda)
                .default_value(1U)
-               .help("the number of candidate lambdas to aggregate (lambda is the importance weight parameter between "
+               .help("The number of candidate lambdas to aggregate (lambda is the importance weight parameter between "
                      "the two sources)"))
       .add(make_option("lambda_scheme", data->lambda_scheme)
                .default_value(ABS_CENTRAL)
+               .one_of({1, 2, 3, 4})
                .help("The scheme for generating candidate lambda set (1: center lambda=0.5, 2: center lambda=0.5, min "
                      "lambda=0, max lambda=1, 3: center lambda=epsilon/(1+epsilon), 4: center "
                      "lambda=epsilon/(1+epsilon), min lambda=0, max lambda=1); the rest of candidate lambda values are "
                      "generated using a doubling scheme"))
       .add(make_option("overwrite_label", data->overwrite_label)
                .default_value(1U)
-               .help("the label used by type 3 corruptions (overwriting)"))
+               .help("The label used by type 3 corruptions (overwriting)"))
       .add(make_option("sim_bandit", data->sim_bandit)
-               .help("simulate contextual bandit updates on warm start examples"));
+               .help("Simulate contextual bandit updates on warm start examples"));
 
   if (!options.add_parse_and_check_necessary(new_options)) { return nullptr; }
 
@@ -592,8 +594,6 @@ base_learner* warm_cb_setup(VW::setup_base_i& stack_builder)
     options.insert("lr_multiplier", ss.str());
   }
 
-  learner<warm_cb, example>* l;
-
   multi_learner* base = as_multiline(stack_builder.setup_base_learner());
   // Note: the current version of warm start CB can only support epsilon-greedy exploration
   // We need to wait for the epsilon value to be passed from the base
@@ -605,22 +605,38 @@ base_learner* warm_cb_setup(VW::setup_base_i& stack_builder)
     data->epsilon = 0.05f;
   }
 
+  void (*learn_pred_ptr)(warm_cb&, multi_learner&, example&);
+  size_t ws = data->choices_lambda;
+  std::string name_addition;
+  void (*finish_ptr)(VW::workspace&, warm_cb&, example&);
+  VW::label_type_t label_type;
+
   if (use_cs)
   {
-    l = &init_cost_sensitive_learner(data, base, predict_and_learn_adf<true>, predict_and_learn_adf<true>,
-        all.example_parser, data->choices_lambda, stack_builder.get_setupfn_name(warm_cb_setup) + "-cs",
-        prediction_type_t::multiclass, true);
-    all.example_parser->lbl_parser.label_type = label_type_t::cs;
+    learn_pred_ptr = predict_and_learn_adf<true>;
+    name_addition = "-cs";
+    finish_ptr = COST_SENSITIVE::finish_example;
+    all.example_parser->lbl_parser = COST_SENSITIVE::cs_label;
+    label_type = VW::label_type_t::cs;
   }
   else
   {
-    l = &init_multiclass_learner(data, base, predict_and_learn_adf<false>, predict_and_learn_adf<false>,
-        all.example_parser, data->choices_lambda, stack_builder.get_setupfn_name(warm_cb_setup) + "-multi",
-        prediction_type_t::multiclass, true);
-    all.example_parser->lbl_parser.label_type = label_type_t::multiclass;
+    learn_pred_ptr = predict_and_learn_adf<false>;
+    name_addition = "-multi";
+    finish_ptr = MULTICLASS::finish_example;
+    all.example_parser->lbl_parser = MULTICLASS::mc_label;
+    label_type = VW::label_type_t::multiclass;
   }
 
-  l->set_finish(finish);
+  auto* l = make_reduction_learner(std::move(data), base, learn_pred_ptr, learn_pred_ptr,
+      stack_builder.get_setupfn_name(warm_cb_setup) + name_addition)
+                .set_params_per_weight(ws)
+                .set_output_prediction_type(VW::prediction_type_t::multiclass)
+                .set_learn_returns_prediction(true)
+                .set_finish_example(finish_ptr)
+                .set_finish(finish)
+                .set_input_label_type(label_type)
+                .build();
 
   return make_base(*l);
 }

@@ -1,4 +1,4 @@
-creating quadratic features for pairs: :: 
+creating quadratic features for pairs: ::
 WARNING: any duplicate namespace interactions will be removed
 You can use --leave_duplicate_interactions to disable this behaviour.
 final_regressor = models/288.model
@@ -14,14 +14,14 @@ Input label = label_type_t::ccb
 Output pred = prediction_type_t::decision_probs
 average  since         example        example  current  current  current
 loss     last          counter         weight    label  predict features
-0.000000 0.000000            1            1.0 0:0,1:0,... 0,1,2,...      139
-0.000000 0.000000            2            2.0 3:0,4:0,... 3,4,0,...       87
-0.000000 0.000000            4            4.0 1:0,4:-1,... 1,4,2,...       87
--0.144345 -0.288690            8            8.0 4:-1,1:0,... 4,1,0,...       87
+0.000000 0.000000            1            1.0 0:0,1:0,... 0,1,2,...      360
+0.000000 0.000000            2            2.0 3:0,4:0,... 3,4,0,...      240
+0.000000 0.000000            4            4.0 1:0,4:-1,... 1,4,2,...      240
+-0.144345 -0.288690            8            8.0 4:-1,1:0,... 4,1,0,...      240
 
 finished run
 number of examples = 8
 weighted example sum = 8.000000
 weighted label sum = 0.000000
 average loss = -0.144345
-total feature number = 748
+total feature number = 2040

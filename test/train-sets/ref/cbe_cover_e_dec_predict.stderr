@@ -1,6 +1,6 @@
 only testing
 predictions = cbe_cover_e_dec.predict
-warning: currently, mtr is only used for the first policy in cover, other policies use dr
+[warning] currently, mtr is only used for the first policy in cover, other policies use dr
 Num weight bits = 18
 learning rate = 0.5
 initial_t = 0

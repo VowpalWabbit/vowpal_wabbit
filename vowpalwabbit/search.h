@@ -16,8 +16,8 @@
     std::clog
 // comment the previous two lines if you want loads of debug output :)
 
-typedef uint32_t action;
-typedef uint32_t ptag;
+using action = uint32_t;
+using ptag = uint32_t;
 
 namespace Search
 {
@@ -109,7 +109,7 @@ struct search
 
   // change the default label parser, but you _must_ tell me how
   // to detect test examples!
-  void set_label_parser(label_parser& lp, bool (*is_test)(polylabel&));
+  void set_label_parser(label_parser& lp, bool (*is_test)(const polylabel&));
 
   // for explicitly declaring a loss incrementally
   void loss(float incr_loss);
@@ -190,6 +190,8 @@ struct search
 
   // check if the user declared ldf mode
   bool is_ldf();
+  // Ldf is used to determine if the base learner is multi or single line.
+  void set_is_ldf(bool);
 
   // where you should write output
   std::stringstream& output();
@@ -219,8 +221,8 @@ struct search
   const char* task_name;
   const char* metatask_name;
 
-  vw& get_vw_pointer_unsafe();  // although you should rarely need this, some times you need a pointer to the vw data
-                                // structure :(
+  VW::workspace& get_vw_pointer_unsafe();  // although you should rarely need this, some times you need a pointer to the
+                                           // vw data structure :(
   void set_force_oracle(bool force);  // if the library wants to force search to use the oracle, set this to true
   search();
   ~search();
@@ -257,7 +259,6 @@ class predictor
 {
 public:
   predictor(search& sch, ptag my_tag);
-  ~predictor();
 
   // tell the predictor what to use as input. a single example input
   // means non-LDF mode; an array of inputs means LDF mode
@@ -332,7 +333,7 @@ private:
   ptag my_tag;
   example* ec;
   size_t ec_cnt;
-  bool ec_alloced;
+  std::vector<example> allocated_examples;
   float weight;
   v_array<action> oracle_actions;
   v_array<ptag> condition_on_tags;
@@ -342,15 +343,13 @@ private:
   size_t learner_id;
   search& sch;
 
-  void free_ec();
-
   // prevent the user from doing something stupid :) ... ugh needed to turn this off for python :(
   // predictor(const predictor&P);
   // predictor&operator=(const predictor&P);
 };
 
 // some helper functions you might find helpful
-/*template<class T> void check_option(T& ret, vw&all, po::variables_map& vm, const char* opt_name, bool
+/*template<class T> void check_option(T& ret, VW::workspace&all, po::variables_map& vm, const char* opt_name, bool
 default_to_cmdline, bool(*equal)(T,T), const char* mismatch_error_string, const char* required_error_string) { if
 (vm.count(opt_name)) { ret = vm[opt_name].as<T>(); *all.args_n_opts.file_options << " --" << opt_name << " " << ret;
   }
@@ -361,8 +360,8 @@ default_to_cmdline, bool(*equal)(T,T), const char* mismatch_error_string, const 
   }
   }*/
 
-// void check_option(bool& ret, vw&all, po::variables_map& vm, const char* opt_name, bool default_to_cmdline, const
-// char* mismatch_error_string);
+// void check_option(bool& ret, VW::workspace&all, po::variables_map& vm, const char* opt_name, bool default_to_cmdline,
+// const char* mismatch_error_string);
 
 // our interface within VW
 VW::LEARNER::base_learner* setup(VW::setup_base_i& stack_builder);

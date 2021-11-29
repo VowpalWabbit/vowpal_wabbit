@@ -10,9 +10,7 @@ power_t = 0.5
 using no cache
 Reading datafile = train-sets/0001.dat
 num sources = 1
-Enabled reductions: ftrl-PiSTOL, scorer-identity
-Input label = label_type_t::simple
-Output pred = prediction_type_t::scalar
+Enabled reductions: ftrl-PiSTOL, scorer-identity, count_label
 average  since         example        example  current  current  current
 loss     last          counter         weight    label  predict features
 1.000000 1.000000            1            1.0   1.0000   0.0000       51

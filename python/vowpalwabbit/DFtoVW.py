@@ -80,7 +80,9 @@ class _Col:
         try:
             out = df[self.colname]
         except KeyError:
-            raise KeyError("column '{colname}' not found in dataframe".format(colname=self.colname))
+            raise KeyError(
+                "column '{colname}' not found in dataframe".format(colname=self.colname)
+            )
         else:
             return out.fillna("").apply(str)
 
@@ -108,7 +110,9 @@ class _Col:
         TypeError
             If the type of the column is not valid.
         """
-        expected_type = [self.mapping_python_numpy[exp_type] for exp_type in self.expected_type]
+        expected_type = [
+            self.mapping_python_numpy[exp_type] for exp_type in self.expected_type
+        ]
         col_type = df[self.colname].dtype
 
         if not any(np.issubdtype(col_type, exp_type) for exp_type in expected_type):
@@ -132,7 +136,10 @@ class _Col:
         """
         if self.min_value is not None and self.max_value is not None:
             col_value = df[self.colname]
-            if not ((col_value >= self.min_value).all() and (col_value <= self.max_value).all()):
+            if not (
+                (col_value >= self.min_value).all()
+                and (col_value <= self.max_value).all()
+            ):
                 raise ValueError(
                     "column '{colname}' must be >= {min_value} and <= {max_value}.".format(
                         colname=self.colname,
@@ -218,7 +225,9 @@ class AttributeDescriptor(object):
             ]
 
             if not arg_is_list:
-                instance.__dict__[self.attribute_name] = instance.__dict__[self.attribute_name][0]
+                instance.__dict__[self.attribute_name] = instance.__dict__[
+                    self.attribute_name
+                ][0]
 
 
 class SimpleLabel(object):
@@ -422,7 +431,9 @@ class Feature(object):
             rename_feature if rename_feature is not None else self.value.colname
         )
         if as_type is not None and as_type not in ("numerical", "categorical"):
-            raise ValueError("Argument 'as_type' can either be 'numerical' or 'categorical'")
+            raise ValueError(
+                "Argument 'as_type' can either be 'numerical' or 'categorical'"
+            )
         else:
             self.as_type = as_type
 
@@ -491,7 +502,9 @@ class Namespace(object):
     be composed of a Feature object or a list of Feature objects.
     """
 
-    expected_type = dict(name=(str, int, float), value=(int, float), features=(Feature,))
+    expected_type = dict(
+        name=(str, int, float), value=(int, float), features=(Feature,)
+    )
 
     def __init__(self, features, name=None, value=None):
         """Initialize a Namespace instance.
@@ -525,7 +538,9 @@ class Namespace(object):
             )
         self.name = _Col.make_valid_name(name) if name else None
         self.value = value
-        self.features = list(features) if isinstance(features, (list, set)) else [features]
+        self.features = (
+            list(features) if isinstance(features, (list, set)) else [features]
+        )
         self.check_attributes_type()
 
     def check_attributes_type(self):
@@ -544,12 +559,17 @@ class Namespace(object):
                 raise TypeError(
                     "In Namespace, argument '{attribute_name}' should be either of the following type(s): {types}".format(
                         attribute_name=attribute_name,
-                        types=repr([x.__name__ for x in self.expected_type[attribute_name]])[1:-1],
+                        types=repr(
+                            [x.__name__ for x in self.expected_type[attribute_name]]
+                        )[1:-1],
                     )
                 )
 
         valid_feature = all(
-            [isinstance(feature, self.expected_type["features"]) for feature in self.features]
+            [
+                isinstance(feature, self.expected_type["features"])
+                for feature in self.features
+            ]
         )
         if not valid_feature:
             raise TypeError(
@@ -596,12 +616,15 @@ class _ListLabel(object):
 
     def __init__(self, label_list):
 
-        instance_classes = set([type(label_instance).__name__ for label_instance in label_list])
+        instance_classes = set(
+            [type(label_instance).__name__ for label_instance in label_list]
+        )
         if len(instance_classes) > 1:
             raise TypeError("The list passed in 'label' has mixed label types.")
 
         if not all(
-            isinstance(label_instance, self.available_labels) for label_instance in label_list
+            isinstance(label_instance, self.available_labels)
+            for label_instance in label_list
         ):
             raise TypeError(
                 "The only labels that can be used with list are {accepted}.".format(
@@ -621,14 +644,18 @@ class _ListLabel(object):
         label_cols = []
         for label_instance in label_list:
             label_cols += [
-                value for key, value in vars(label_instance).items() if isinstance(value, _Col)
+                value
+                for key, value in vars(label_instance).items()
+                if isinstance(value, _Col)
             ]
         self.label_cols = label_cols
 
         self.sep = self.sep_by_label[list(instance_classes)[0]]
 
         # Dynamically change class_name
-        _ListLabel.__name__ = "List[{typename}]".format(typename=type(label_list[0]).__name__)
+        _ListLabel.__name__ = "List[{typename}]".format(
+            typename=type(label_list[0]).__name__
+        )
 
     def __getitem__(self, idx):
         return self.label_list[idx]
@@ -841,7 +868,9 @@ class DFtoVW:
         else:
             valid_feature = isinstance(features, Feature)
         if not valid_feature:
-            raise TypeError("Argument 'features' should be a Feature or a list of Feature.")
+            raise TypeError(
+                "Argument 'features' should be a Feature or a list of Feature."
+            )
 
     def set_namespaces(self, namespaces, features):
         """Set namespaces attributes
@@ -868,7 +897,9 @@ class DFtoVW:
         if features is not None:
             namespaces = Namespace(features=features)
 
-        namespaces = list(namespaces) if isinstance(namespaces, (list, set)) else [namespaces]
+        namespaces = (
+            list(namespaces) if isinstance(namespaces, (list, set)) else [namespaces]
+        )
 
         self.namespaces = namespaces
 
@@ -908,7 +939,9 @@ class DFtoVW:
             not isinstance(namespace, Namespace) for namespace in self.namespaces
         ]
         if any(wrong_type_namespaces):
-            raise TypeError("Argument 'namespaces' should be a Namespace or a list of Namespace.")
+            raise TypeError(
+                "Argument 'namespaces' should be a Namespace or a list of Namespace."
+            )
 
     def check_missing_columns_df(self):
         """Check if the columns are in the dataframe."""
@@ -932,7 +965,9 @@ class DFtoVW:
             missing_cols["tag"] = tag_columns - df_colnames
         # pytype: enable=attribute-error
 
-        all_features = [feature for namespace in self.namespaces for feature in namespace.features]
+        all_features = [
+            feature for namespace in self.namespaces for feature in namespace.features
+        ]
         missing_features_cols = set()
         for feature in all_features:
             missing_features_cols.update(feature.columns - df_colnames)
@@ -940,7 +975,9 @@ class DFtoVW:
         missing_cols["Feature"] = missing_features_cols
 
         missing_cols = {
-            key: sorted(list(value)) for (key, value) in missing_cols.items() if len(value) > 0
+            key: sorted(list(value))
+            for (key, value) in missing_cols.items()
+            if len(value) > 0
         }
         if missing_cols:
             self.raise_missing_col_error(missing_cols)
@@ -958,9 +995,11 @@ class DFtoVW:
             missing_cols_str = repr(missing_cols)[1:-1]
             if len(error_msg) > 0:
                 error_msg += " "
-            error_msg += "In '{attribute}': column(s) {colnames} not found in dataframe.".format(
-                attribute=attribute_name,
-                colnames=missing_cols_str,
+            error_msg += (
+                "In '{attribute}': column(s) {colnames} not found in dataframe.".format(
+                    attribute=attribute_name,
+                    colnames=missing_cols_str,
+                )
             )
         raise ValueError(error_msg)
 
@@ -1004,10 +1043,12 @@ class DFtoVW:
             try:
                 [x.check_col_type(self.df) for x in attribute_value]
             except TypeError as type_error:
-                type_error_msg = "In argument '{attribute}' of '{class_name}', {error}".format(
-                    class_name=class_name,
-                    attribute=attribute_name,
-                    error=str(type_error),
+                type_error_msg = (
+                    "In argument '{attribute}' of '{class_name}', {error}".format(
+                        class_name=class_name,
+                        attribute=attribute_name,
+                        error=str(type_error),
+                    )
                 )
                 raise TypeError(type_error_msg)
 
@@ -1015,10 +1056,12 @@ class DFtoVW:
             try:
                 [x.check_col_value(self.df) for x in attribute_value]
             except ValueError as value_error:
-                value_error_msg = "In argument '{attribute}' of '{class_name}', {error}".format(
-                    class_name=class_name,
-                    attribute=attribute_name,
-                    error=str(value_error),
+                value_error_msg = (
+                    "In argument '{attribute}' of '{class_name}', {error}".format(
+                        class_name=class_name,
+                        attribute=attribute_name,
+                        error=str(value_error),
+                    )
                 )
                 raise ValueError(value_error_msg)
 

@@ -8,6 +8,7 @@
 
 #include "gd.h"
 #include "accumulate.h"
+#include "label_parser.h"
 #include "reductions.h"
 #include "vw.h"
 #include "vw_allreduce.h"
@@ -34,34 +35,34 @@ struct sort_data
 
 struct stagewise_poly
 {
-  vw *all;  // many uses, unmodular reduction
+  VW::workspace* all = nullptr;  // many uses, unmodular reduction
 
-  float sched_exponent;
-  uint32_t batch_sz;
-  bool batch_sz_double;
+  float sched_exponent = 0.f;
+  uint32_t batch_sz = 0;
+  bool batch_sz_double = false;
 
-  sort_data *sd;
-  size_t sd_len;
-  uint8_t *depthsbits;  // interleaved array storing depth information and parent/cycle bits
+  sort_data* sd = nullptr;
+  size_t sd_len = 0;
+  uint8_t* depthsbits = nullptr;  // interleaved array storing depth information and parent/cycle bits
 
-  uint64_t sum_sparsity;        // of synthetic example
-  uint64_t sum_input_sparsity;  // of input example
-  uint64_t num_examples;
+  uint64_t sum_sparsity = 0;        // of synthetic example
+  uint64_t sum_input_sparsity = 0;  // of input example
+  uint64_t num_examples = 0;
   // following three are for parallel (see end_pass())
-  uint64_t sum_sparsity_sync;
-  uint64_t sum_input_sparsity_sync;
-  uint64_t num_examples_sync;
+  uint64_t sum_sparsity_sync = 0;
+  uint64_t sum_input_sparsity_sync = 0;
+  uint64_t num_examples_sync = 0;
 
   example synth_ec;
   // following is bookkeeping in synth_ec creation (dfs)
-  feature synth_rec_f;
-  example *original_ec;
-  uint32_t cur_depth;
-  bool training;
-  uint64_t last_example_counter;
-  size_t numpasses;
-  uint32_t next_batch_sz;
-  bool update_support;
+  feature synth_rec_f{0.f, 0};
+  example* original_ec = nullptr;
+  uint32_t cur_depth = 0;
+  bool training = false;
+  uint64_t last_example_counter = 0;
+  size_t numpasses = 0;
+  uint32_t next_batch_sz = 0;
+  bool update_support = false;
 
 #ifdef DEBUG
   uint32_t max_depth;
@@ -370,6 +371,7 @@ void synthetic_reset(stagewise_poly &poly, example &ec)
   poly.synth_ec.tag = ec.tag;
   poly.synth_ec.example_counter = ec.example_counter;
   poly.synth_ec.interactions = &poly.all->interactions;
+  poly.synth_ec.extent_interactions = &poly.all->extent_interactions;
 
   /**
    * Some comments on ft_offset.
@@ -590,7 +592,7 @@ void end_pass(stagewise_poly &poly)
   sanity_check_state(poly);
 #endif  // DEBUG
 
-  vw &all = *poly.all;
+  VW::workspace& all = *poly.all;
   if (all.all_reduce != nullptr)
   {
     /*
@@ -625,7 +627,7 @@ void end_pass(stagewise_poly &poly)
   }
 }
 
-void finish_example(vw &all, stagewise_poly &poly, example &ec)
+void finish_example(VW::workspace& all, stagewise_poly& poly, example& ec)
 {
   size_t temp_num_features = ec.num_features;
   ec.num_features = poly.synth_ec.get_num_features();
@@ -640,7 +642,7 @@ void save_load(stagewise_poly &poly, io_buf &model_file, bool read, bool text)
   {
     std::stringstream msg;
     bin_text_read_write_fixed(model_file, reinterpret_cast<char*>(poly.depthsbits),
-        static_cast<uint32_t>(depthsbits_sizeof(poly)), "", read, msg, text);
+        static_cast<uint32_t>(depthsbits_sizeof(poly)), read, msg, text);
   }
   // unfortunately, following can't go here since save_load called before gd::save_load and thus
   // weight vector state uninitialiazed.
@@ -654,29 +656,29 @@ void save_load(stagewise_poly &poly, io_buf &model_file, bool read, bool text)
 base_learner* stagewise_poly_setup(VW::setup_base_i& stack_builder)
 {
   options_i& options = *stack_builder.get_options();
-  vw& all = *stack_builder.get_all_pointer();
-  auto poly = scoped_calloc_or_throw<stagewise_poly>();
+  VW::workspace& all = *stack_builder.get_all_pointer();
+  auto poly = VW::make_unique<stagewise_poly>();
   bool stage_poly = false;
-  option_group_definition new_options("Stagewise polynomial options");
+  option_group_definition new_options("Stagewise Polynomial");
   new_options
-      .add(make_option("stage_poly", stage_poly).keep().necessary().help("use stagewise polynomial feature learning"))
+      .add(make_option("stage_poly", stage_poly).keep().necessary().help("Use stagewise polynomial feature learning"))
       .add(make_option("sched_exponent", poly->sched_exponent)
                .default_value(1.f)
-               .help("exponent controlling quantity of included features"))
+               .help("Exponent controlling quantity of included features"))
       .add(make_option("batch_sz", poly->batch_sz)
                .default_value(1000)
-               .help("multiplier on batch size before including more features"))
-      .add(make_option("batch_sz_no_doubling", poly->batch_sz_double).help("batch_sz does not double"));
+               .help("Multiplier on batch size before including more features"))
+      .add(make_option("batch_sz_no_doubling", poly->batch_sz_double).help("Batch_sz does not double"));
 #ifdef MAGIC_ARGUMENT
   new_options.add(
-      make_typed_option("magic_argument", poly->magic_argument).default_value(0.).help("magical feature flag"));
+      make_typed_option("magic_argument", poly->magic_argument).default_value(0.).help("Magical feature flag"));
 #endif  // MAGIC_ARGUMENT
 
   if (!options.add_parse_and_check_necessary(new_options)) return nullptr;
 
   poly->all = &all;
-  depthsbits_create(*poly.get());
-  sort_data_create(*poly.get());
+  depthsbits_create(*poly);
+  sort_data_create(*poly);
 
   poly->batch_sz_double = !poly->batch_sz_double;
 
@@ -692,12 +694,14 @@ base_learner* stagewise_poly_setup(VW::setup_base_i& stack_builder)
   poly->original_ec = nullptr;
   poly->next_batch_sz = poly->batch_sz;
 
-  learner<stagewise_poly, example>& l = init_learner(poly, as_singleline(stack_builder.setup_base_learner()), learn,
-      predict, stack_builder.get_setupfn_name(stagewise_poly_setup));
+  auto* l = VW::LEARNER::make_reduction_learner(std::move(poly), as_singleline(stack_builder.setup_base_learner()),
+      learn, predict, stack_builder.get_setupfn_name(stagewise_poly_setup))
+                .set_input_label_type(VW::label_type_t::simple)
+                .set_output_prediction_type(VW::prediction_type_t::scalar)
+                .set_save_load(save_load)
+                .set_finish_example(finish_example)
+                .set_end_pass(end_pass)
+                .build();
 
-  l.set_save_load(save_load);
-  l.set_finish_example(finish_example);
-  l.set_end_pass(end_pass);
-
-  return make_base(l);
+  return make_base(*l);
 }

@@ -1,6 +1,9 @@
-#define BOOST_TEST_DYN_LINK
+// Copyright (c) by respective owners including Yahoo!, Microsoft, and
+// individual contributors. All rights reserved. Released under a BSD (revised)
+// license as described in the file LICENSE.
 
 #include <boost/test/unit_test.hpp>
+
 #include "cats_tree.h"
 #include "cb_label_parser.h"
 #include "test_common.h"
@@ -76,7 +79,7 @@ learner<T, example>* get_test_harness_reduction(const predictions_t& base_reduct
       std::move(test_harness),          // Data structure passed by vw_framework into test_harness predict/learn calls
       reduction_test_harness::learn,    // test_harness learn
       reduction_test_harness::predict,  // test_harness predict
-      "test_learner", prediction_type_t::scalar, label_type_t::cb)
+      "test_learner", VW::prediction_type_t::scalar, VW::label_type_t::cb)
                           .build();  // Create a learner using the base reduction.
   return test_learner;
 }

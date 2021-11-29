@@ -9,9 +9,7 @@ power_t = 0.5
 using no cache
 Reading datafile = train-sets/regression/cbify-reg.dat
 num sources = 1
-Enabled reductions: ftrl-Coin Betting, scorer-identity, csoaa, cb, cb_explore-greedy, cbify-reg-discrete
-Input label = label_type_t::simple
-Output pred = prediction_type_t::scalar
+Enabled reductions: ftrl-Coin Betting, scorer-identity, csoaa, cb, cb_explore-greedy, cbify-reg-discrete, count_label
 average  since         example        example  current  current  current
 loss     last          counter         weight    label  predict features
 0.155380 0.155380            1            1.0 3879.0000 185.0000       10

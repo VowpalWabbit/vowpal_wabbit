@@ -7,9 +7,7 @@ decay_learning_rate = 1
 creating cache_file = train-sets/marginal_features.cache
 Reading datafile = train-sets/marginal_features
 num sources = 1
-Enabled reductions: gd, marginal, scorer-identity
-Input label = label_type_t::simple
-Output pred = prediction_type_t::scalar
+Enabled reductions: gd, marginal, scorer-identity, count_label
 average  since         example        example  current  current  current
 loss     last          counter         weight    label  predict features
 0.250000 0.250000            1            1.0   0.5000   0.0000        4

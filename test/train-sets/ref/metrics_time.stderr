@@ -1,4 +1,4 @@
-creating quadratic features for pairs: GT 
+creating quadratic features for pairs: GT
 Num weight bits = 18
 learning rate = 0.5
 initial_t = 0
@@ -12,15 +12,15 @@ Input label = label_type_t::cb
 Output pred = prediction_type_t::action_probs
 average  since         example        example  current  current  current
 loss     last          counter         weight    label  predict features
-0.000000 0.000000            1            1.0 3:-0:0.05        0:0.25...       28
--0.147059 -0.294118            2            2.0 0:-1:0.85        0:0.25...       28
--0.323529 -0.500000            4            4.0 0:-1:0.85        0:0.85...       28
--0.169118 -0.014706            8            8.0 2:-1:0.85        0:0.85...       28
--0.216912 -0.264706           16           16.0 0:-0:0.85        0:0.85...       28
+0.000000 0.000000            1            1.0 3:-0:0.05        0:0.25...       44
+-0.147059 -0.294118            2            2.0 0:-1:0.85        0:0.25...       44
+-0.323529 -0.500000            4            4.0 0:-1:0.85        0:0.85...       44
+-0.169118 -0.014706            8            8.0 2:-1:0.85        0:0.85...       44
+-0.216912 -0.264706           16           16.0 0:-0:0.85        0:0.85...       44
 
 finished run
 number of examples = 23
 weighted example sum = 23.000000
 weighted label sum = 0.000000
 average loss = -0.204604
-total feature number = 736
+total feature number = 1012

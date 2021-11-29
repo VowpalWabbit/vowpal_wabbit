@@ -35,8 +35,8 @@ class CriticalArrayGuard
 class VowpalWabbitExampleWrapper
 {
  public:
-  vw* _all;
-  example* _example;
+   VW::workspace* _all;
+   example* _example;
 
-  VowpalWabbitExampleWrapper(vw* all, example* example) : _all(all), _example(example) {}
+   VowpalWabbitExampleWrapper(VW::workspace* all, example* example) : _all(all), _example(example) {}
 };

@@ -16,12 +16,12 @@ namespace VW
 struct autolink
 {
   autolink(uint32_t d, uint32_t stride_shift);
-  void predict(VW::LEARNER::single_learner& base, example& ec);
-  void learn(VW::LEARNER::single_learner& base, example& ec);
+  void predict(VW::LEARNER::single_learner& base, example& ec) const;
+  void learn(VW::LEARNER::single_learner& base, example& ec) const;
 
 private:
-  void prepare_example(VW::LEARNER::single_learner& base, example& ec);
-  void reset_example(example& ec);
+  void prepare_example(VW::LEARNER::single_learner& base, example& ec) const;
+  static void reset_example(example& ec);
 
   // degree of the polynomial
   const uint32_t _poly_degree;
@@ -35,21 +35,21 @@ VW::autolink::autolink(uint32_t poly_degree, uint32_t stride_shift)
 {
 }
 
-void VW::autolink::predict(VW::LEARNER::single_learner& base, example& ec)
+void VW::autolink::predict(VW::LEARNER::single_learner& base, example& ec) const
 {
   prepare_example(base, ec);
   base.predict(ec);
   reset_example(ec);
 }
 
-void VW::autolink::learn(VW::LEARNER::single_learner& base, example& ec)
+void VW::autolink::learn(VW::LEARNER::single_learner& base, example& ec) const
 {
   prepare_example(base, ec);
   base.learn(ec);
   reset_example(ec);
 }
 
-void VW::autolink::prepare_example(VW::LEARNER::single_learner& base, example& ec)
+void VW::autolink::prepare_example(VW::LEARNER::single_learner& base, example& ec) const
 {
   base.predict(ec);
   float base_pred = ec.pred.scalar;
@@ -59,9 +59,9 @@ void VW::autolink::prepare_example(VW::LEARNER::single_learner& base, example& e
   features& fs = ec.feature_space[autolink_namespace];
   for (size_t i = 0; i < _poly_degree; i++)
   {
-    if (base_pred != 0.)
+    if (base_pred != 0.f)
     {
-      fs.push_back(base_pred, AUTOCONSTANT + (i << _stride_shift));
+      fs.push_back(base_pred, AUTOCONSTANT + (i << _stride_shift), autolink_namespace);
       base_pred *= ec.pred.scalar;
     }
   }
@@ -88,15 +88,19 @@ void predict_or_learn(VW::autolink& b, VW::LEARNER::single_learner& base, exampl
 VW::LEARNER::base_learner* autolink_setup(VW::setup_base_i& stack_builder)
 {
   options_i& options = *stack_builder.get_options();
-  vw& all = *stack_builder.get_all_pointer();
+  VW::workspace& all = *stack_builder.get_all_pointer();
   uint32_t d;
   option_group_definition new_options("Autolink");
-  new_options.add(make_option("autolink", d).keep().necessary().help("create link function with polynomial d"));
+  new_options.add(make_option("autolink", d).keep().necessary().help("Create link function with polynomial d"));
 
   if (!options.add_parse_and_check_necessary(new_options)) return nullptr;
 
-  auto autolink_reduction = scoped_calloc_or_throw<VW::autolink>(d, all.weights.stride_shift());
-  auto base = stack_builder.setup_base_learner();
-  return make_base(init_learner(autolink_reduction, as_singleline(base), predict_or_learn<true>,
-      predict_or_learn<false>, stack_builder.get_setupfn_name(autolink_setup), base->learn_returns_prediction));
+  auto autolink_reduction = VW::make_unique<VW::autolink>(d, all.weights.stride_shift());
+  auto base = VW::LEARNER::as_singleline(stack_builder.setup_base_learner());
+  auto* learner = VW::LEARNER::make_reduction_learner(std::move(autolink_reduction), base, predict_or_learn<true>,
+      predict_or_learn<false>, stack_builder.get_setupfn_name(autolink_setup))
+                      .set_output_prediction_type(VW::prediction_type_t::scalar)
+                      .set_learn_returns_prediction(base->learn_returns_prediction)
+                      .build();
+  return make_base(*learner);
 }

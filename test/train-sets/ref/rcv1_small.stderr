@@ -11,9 +11,7 @@ Allocated 18M for weights and mem
 creating cache_file = train-sets/rcv1_small.dat.cache
 Reading datafile = train-sets/rcv1_small.dat
 num sources = 1
-Enabled reductions: bfgs, scorer-identity
-Input label = label_type_t::simple
-Output pred = prediction_type_t::scalar
+Enabled reductions: bfgs, scorer-identity, count_label
  1 0.69315   	0.00266   	0.87764   	          	          	          	2.24708   	776.93225 	0.39057
  3 0.51357   	0.00493   	4.93046   	 0.523903  	0.088793  	          	          	76.25746  	1.00000
  4 0.65936   	0.04915   	49.15203  	 -0.910623 	-2.480117 	          	          	(revise x 0.5)	0.50000

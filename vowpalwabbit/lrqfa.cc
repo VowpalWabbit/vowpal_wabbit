@@ -7,17 +7,24 @@
 #include "reductions.h"
 #include "rand48.h"
 #include "parse_args.h"  // for spoof_hex_encoded_namespaces
+#include "text_utils.h"
 
 using namespace VW::LEARNER;
 using namespace VW::config;
 
 struct LRQFAstate
 {
-  vw* all;
-  std::string field_name;
-  int k;
+  VW::workspace* all = nullptr;
+  std::string field_name = "";
+  int k = 0;
   int field_id[256];
   size_t orig_size[256];
+
+  LRQFAstate()
+  {
+    std::fill(field_id, field_id + 256, 0);
+    std::fill(orig_size, orig_size + 256, 0);
+  }
 };
 
 inline float cheesyrand(uint64_t x)
@@ -32,7 +39,7 @@ constexpr inline bool example_is_test(example& ec) { return ec.l.simple.label ==
 template <bool is_learn>
 void predict_or_learn(LRQFAstate& lrq, single_learner& base, example& ec)
 {
-  vw& all = *lrq.all;
+  VW::workspace& all = *lrq.all;
 
   memset(lrq.orig_size, 0, sizeof(lrq.orig_size));
   for (namespace_index i : ec.indices) lrq.orig_size[i] = ec.feature_space[i].size();
@@ -134,18 +141,20 @@ void predict_or_learn(LRQFAstate& lrq, single_learner& base, example& ec)
 VW::LEARNER::base_learner* lrqfa_setup(VW::setup_base_i& stack_builder)
 {
   options_i& options = *stack_builder.get_options();
-  vw& all = *stack_builder.get_all_pointer();
+  VW::workspace& all = *stack_builder.get_all_pointer();
   std::string lrqfa;
   option_group_definition new_options("Low Rank Quadratics FA");
   new_options.add(
-      make_option("lrqfa", lrqfa).keep().necessary().help("use low rank quadratic features with field aware weights"));
+      make_option("lrqfa", lrqfa).keep().necessary().help("Use low rank quadratic features with field aware weights"));
 
   if (!options.add_parse_and_check_necessary(new_options)) return nullptr;
 
-  auto lrq = scoped_calloc_or_throw<LRQFAstate>();
+  auto lrq = VW::make_unique<LRQFAstate>();
   lrq->all = &all;
 
-  std::string lrqopt = spoof_hex_encoded_namespaces(lrqfa);
+  if (lrqfa.find(':') != std::string::npos) { THROW("--lrqfa does not support wildcards ':'"); }
+
+  std::string lrqopt = VW::decode_inline_hex(lrqfa);
   size_t last_index = lrqopt.find_last_not_of("0123456789");
   new (&lrq->field_name) std::string(lrqopt.substr(0, last_index + 1));  // make sure there is no duplicates
   lrq->k = atoi(lrqopt.substr(last_index + 1).c_str());
@@ -155,9 +164,13 @@ VW::LEARNER::base_learner* lrqfa_setup(VW::setup_base_i& stack_builder)
 
   all.wpp = all.wpp * static_cast<uint64_t>(1 + lrq->k);
   auto base = stack_builder.setup_base_learner();
-  learner<LRQFAstate, example>& l = init_learner(lrq, as_singleline(base), predict_or_learn<true>,
-      predict_or_learn<false>, 1 + lrq->field_name.size() * lrq->k, stack_builder.get_setupfn_name(lrqfa_setup),
-      base->learn_returns_prediction);
+  size_t ws = 1 + lrq->field_name.size() * lrq->k;
 
-  return make_base(l);
+  auto* l = make_reduction_learner(std::move(lrq), as_singleline(base), predict_or_learn<true>, predict_or_learn<false>,
+      stack_builder.get_setupfn_name(lrqfa_setup))
+                .set_params_per_weight(ws)
+                .set_learn_returns_prediction(base->learn_returns_prediction)
+                .build();
+
+  return make_base(*l);
 }

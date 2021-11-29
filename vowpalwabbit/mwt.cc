@@ -31,16 +31,18 @@ struct policy_data
 struct mwt
 {
   bool namespaces[256];        // the set of namespaces to evaluate.
-  v_array<policy_data> evals;  // accrued losses of features.
+  std::vector<policy_data> evals;  // accrued losses of features.
   std::pair<bool, CB::cb_class> optional_observation;
   v_array<uint64_t> policies;
-  double total;
-  uint32_t num_classes;
-  bool learn;
+  double total = 0.;
+  uint32_t num_classes = 0;
+  bool learn = false;
 
   v_array<namespace_index> indices;  // excluded namespaces
   features feature_space[256];
-  vw* all;
+  VW::workspace* all = nullptr;
+
+  mwt() { std::fill(namespaces, namespaces + 256, false); }
 };
 
 void value_policy(mwt& c, float val, uint64_t index)  // estimate the value of a single feature.
@@ -157,7 +159,7 @@ void print_scalars(VW::io::writer* f, v_array<float>& scalars, v_array<char>& ta
   }
 }
 
-void finish_example(vw& all, mwt& c, example& ec)
+void finish_example(VW::workspace& all, mwt& c, example& ec)
 {
   float loss = 0.;
   if (c.learn)
@@ -185,13 +187,12 @@ void save_load(mwt& c, io_buf& model_file, bool read, bool text)
 
   // total
   msg << "total: " << c.total;
-  bin_text_read_write_fixed_validated(
-      model_file, reinterpret_cast<char*>(&c.total), sizeof(c.total), "", read, msg, text);
+  bin_text_read_write_fixed_validated(model_file, reinterpret_cast<char*>(&c.total), sizeof(c.total), read, msg, text);
 
   // policies
   size_t policies_size = c.policies.size();
   bin_text_read_write_fixed_validated(
-      model_file, reinterpret_cast<char*>(&policies_size), sizeof(policies_size), "", read, msg, text);
+      model_file, reinterpret_cast<char*>(&policies_size), sizeof(policies_size), read, msg, text);
 
   if (read) { c.policies.resize_but_with_stl_behavior(policies_size); }
   else
@@ -200,8 +201,8 @@ void save_load(mwt& c, io_buf& model_file, bool read, bool text)
     for (feature_index& policy : c.policies) msg << policy << " ";
   }
 
-  bin_text_read_write_fixed_validated(model_file, reinterpret_cast<char*>(c.policies.begin()),
-      policies_size * sizeof(feature_index), "", read, msg, text);
+  bin_text_read_write_fixed_validated(
+      model_file, reinterpret_cast<char*>(c.policies.begin()), policies_size * sizeof(feature_index), read, msg, text);
 
   // c.evals is already initialized nicely to the same size as the regressor.
   for (feature_index& policy : c.policies)
@@ -209,7 +210,11 @@ void save_load(mwt& c, io_buf& model_file, bool read, bool text)
     policy_data& pd = c.evals[policy];
     if (read) msg << "evals: " << policy << ":" << pd.action << ":" << pd.cost << " ";
     bin_text_read_write_fixed_validated(
-        model_file, reinterpret_cast<char*>(&c.evals[policy]), sizeof(policy_data), "", read, msg, text);
+        model_file, reinterpret_cast<char*>(&c.evals[policy].cost), sizeof(double), read, msg, text);
+    bin_text_read_write_fixed_validated(
+        model_file, reinterpret_cast<char*>(&c.evals[policy].action), sizeof(uint32_t), read, msg, text);
+    bin_text_read_write_fixed_validated(
+        model_file, reinterpret_cast<char*>(&c.evals[policy].seen), sizeof(bool), read, msg, text);
   }
 }
 }  // namespace MWT
@@ -218,13 +223,13 @@ using namespace MWT;
 base_learner* mwt_setup(VW::setup_base_i& stack_builder)
 {
   options_i& options = *stack_builder.get_options();
-  vw& all = *stack_builder.get_all_pointer();
-  auto c = scoped_calloc_or_throw<mwt>();
+  VW::workspace& all = *stack_builder.get_all_pointer();
+  auto c = VW::make_unique<mwt>();
   std::string s;
   bool exclude_eval = false;
-  option_group_definition new_options("Multiworld Testing Options");
+  option_group_definition new_options("Multiworld Testing");
   new_options.add(make_option("multiworld_test", s).keep().necessary().help("Evaluate features as a policies"))
-      .add(make_option("learn", c->num_classes).help("Do Contextual Bandit learning on <n> classes."))
+      .add(make_option("learn", c->num_classes).help("Do Contextual Bandit learning on <n> classes"))
       .add(make_option("exclude_eval", exclude_eval).help("Discard mwt policy features before learning"));
 
   if (!options.add_parse_and_check_necessary(new_options)) return nullptr;
@@ -232,7 +237,7 @@ base_learner* mwt_setup(VW::setup_base_i& stack_builder)
   for (char i : s) c->namespaces[static_cast<unsigned char>(i)] = true;
   c->all = &all;
 
-  c->evals.resize_but_with_stl_behavior(all.length());
+  c->evals.resize(all.length(), policy_data{});
 
   if (c->num_classes > 0)
   {
@@ -249,23 +254,41 @@ base_learner* mwt_setup(VW::setup_base_i& stack_builder)
   // default to legacy cb implementation
   options.insert("cb_force_legacy", "");
 
-  learner<mwt, example>* l;
-  if (c->learn)
-    if (exclude_eval)
-      l = &init_learner(c, as_singleline(stack_builder.setup_base_learner()), predict_or_learn<true, true, true>,
-          predict_or_learn<true, true, false>, 1, prediction_type_t::scalars,
-          stack_builder.get_setupfn_name(mwt_setup) + "-no_eval", true);
-    else
-      l = &init_learner(c, as_singleline(stack_builder.setup_base_learner()), predict_or_learn<true, false, true>,
-          predict_or_learn<true, false, false>, 1, prediction_type_t::scalars,
-          stack_builder.get_setupfn_name(mwt_setup) + "-eval", true);
-  else
-    l = &init_learner(c, as_singleline(stack_builder.setup_base_learner()), predict_or_learn<false, false, true>,
-        predict_or_learn<false, false, false>, 1, prediction_type_t::scalars, stack_builder.get_setupfn_name(mwt_setup),
-        true);
+  std::string name_addition;
+  void (*learn_ptr)(mwt&, single_learner&, example&);
+  void (*pred_ptr)(mwt&, single_learner&, example&);
 
-  l->set_save_load(save_load);
-  l->set_finish_example(finish_example);
+  if (c->learn)
+  {
+    if (exclude_eval)
+    {
+      name_addition = "-no_eval";
+      learn_ptr = predict_or_learn<true, true, true>;
+      pred_ptr = predict_or_learn<true, true, false>;
+    }
+    else
+    {
+      name_addition = "-eval";
+      learn_ptr = predict_or_learn<true, false, true>;
+      pred_ptr = predict_or_learn<true, false, false>;
+    }
+  }
+  else
+  {
+    name_addition = "";
+    learn_ptr = predict_or_learn<false, false, true>;
+    pred_ptr = predict_or_learn<false, false, false>;
+  }
+
+  auto* l = make_reduction_learner(std::move(c), as_singleline(stack_builder.setup_base_learner()), learn_ptr, pred_ptr,
+      stack_builder.get_setupfn_name(mwt_setup) + name_addition)
+                .set_learn_returns_prediction(true)
+                .set_output_prediction_type(VW::prediction_type_t::scalars)
+                .set_input_label_type(VW::label_type_t::cb)
+                .set_save_load(save_load)
+                .set_finish_example(finish_example)
+                .build();
+
   all.example_parser->lbl_parser = CB::cb_label;
   return make_base(*l);
 }

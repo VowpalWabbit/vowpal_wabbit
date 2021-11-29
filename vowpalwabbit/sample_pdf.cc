@@ -103,8 +103,8 @@ void predict_or_learn(sample_pdf& reduction, single_learner&, example& ec)
 LEARNER::base_learner* sample_pdf_setup(VW::setup_base_i& stack_builder)
 {
   options_i& options = *stack_builder.get_options();
-  vw& all = *stack_builder.get_all_pointer();
-  option_group_definition new_options("Continuous actions - sample pdf");
+  VW::workspace& all = *stack_builder.get_all_pointer();
+  option_group_definition new_options("Continuous Actions: Sample Pdf");
   bool invoked = false;
   new_options.add(
       make_option("sample_pdf", invoked).keep().necessary().help("Sample a pdf and pick a continuous valued action"));
@@ -117,10 +117,10 @@ LEARNER::base_learner* sample_pdf_setup(VW::setup_base_i& stack_builder)
   auto p_reduction = VW::make_unique<sample_pdf>();
   p_reduction->init(as_singleline(p_base), all.get_random_state());
 
-  // This learner will assume the label type from base, so should not call set_label_type
+  // This learner will assume the label type from base, so should not call set_input_label_type
   auto* l = make_reduction_learner(std::move(p_reduction), as_singleline(p_base), predict_or_learn<true>,
       predict_or_learn<false>, stack_builder.get_setupfn_name(sample_pdf_setup))
-                .set_prediction_type(prediction_type_t::action_pdf_value)
+                .set_output_prediction_type(VW::prediction_type_t::action_pdf_value)
                 .build();
 
   return VW::LEARNER::make_base(*l);

@@ -26,7 +26,7 @@ using VW::LEARNER::single_learner;
 // Forward declarations
 namespace VW
 {
-void finish_example(vw& all, example& ec);
+void finish_example(VW::workspace& all, example& ec);
 }
 
 namespace VW
@@ -105,17 +105,17 @@ void predict_or_learn(cats& reduction, single_learner&, example& ec)
 class reduction_output
 {
 public:
-  static void report_progress(vw& all, const cats&, const example& ec);
+  static void report_progress(VW::workspace& all, const cats&, const example& ec);
   static void output_predictions(std::vector<std::unique_ptr<VW::io::writer>>& predict_file_descriptors,
       const continuous_actions::probability_density_function_value& prediction);
 
 private:
   static inline bool does_example_have_label(const example& ec);
-  static void print_update_cb_cont(vw& all, const example& ec);
+  static void print_update_cb_cont(VW::workspace& all, const example& ec);
 };
 
 // Free function to tie function pointers to output class methods
-void finish_example(vw& all, cats& data, example& ec)
+void finish_example(VW::workspace& all, cats& data, example& ec)
 {
   // add output example
   reduction_output::report_progress(all, data, ec);
@@ -131,7 +131,7 @@ void reduction_output::output_predictions(std::vector<std::unique_ptr<VW::io::wr
   for (auto& f : predict_file_descriptors) f->write(str.c_str(), str.size());
 }
 
-void reduction_output::report_progress(vw& all, const cats& data, const example& ec)
+void reduction_output::report_progress(VW::workspace& all, const cats& data, const example& ec)
 {
   auto loss = data.get_loss(ec.l.cb_cont, ec.pred.pdf_value.action);
 
@@ -145,7 +145,7 @@ inline bool reduction_output::does_example_have_label(const example& ec)
   return (!ec.l.cb_cont.costs.empty() && ec.l.cb_cont.costs[0].action != FLT_MAX);
 }
 
-void reduction_output::print_update_cb_cont(vw& all, const example& ec)
+void reduction_output::print_update_cb_cont(VW::workspace& all, const example& ec)
 {
   if (all.sd->weighted_examples() >= all.sd->dump_interval && !all.logger.quiet && !all.bfgs)
   {
@@ -163,14 +163,14 @@ void reduction_output::print_update_cb_cont(vw& all, const example& ec)
 LEARNER::base_learner* setup(setup_base_i& stack_builder)
 {
   options_i& options = *stack_builder.get_options();
-  vw& all = *stack_builder.get_all_pointer();
+  VW::workspace& all = *stack_builder.get_all_pointer();
 
-  option_group_definition new_options("Continuous actions tree with smoothing");
+  option_group_definition new_options("Continuous Actions Tree with Smoothing");
   uint32_t num_actions = 0;
   float bandwidth = 0;
   float min_value = 0;
   float max_value = 0;
-  new_options.add(make_option("cats", num_actions).keep().necessary().help("number of discrete actions <k> for cats"))
+  new_options.add(make_option("cats", num_actions).keep().necessary().help("Number of discrete actions <k> for cats"))
       .add(make_option("min_value", min_value).keep().help("Minimum continuous value"))
       .add(make_option("max_value", max_value).keep().help("Maximum continuous value"))
       .add(make_option("bandwidth", bandwidth)
@@ -200,18 +200,21 @@ LEARNER::base_learner* setup(setup_base_i& stack_builder)
   }
 
   LEARNER::base_learner* p_base = stack_builder.setup_base_learner();
-  auto p_reduction = scoped_calloc_or_throw<cats>(as_singleline(p_base));
+  auto p_reduction = VW::make_unique<cats>(as_singleline(p_base));
   p_reduction->num_actions = num_actions;
   p_reduction->bandwidth = bandwidth;
   p_reduction->max_value = max_value;
   p_reduction->min_value = min_value;
 
-  LEARNER::learner<cats, example>& l = init_learner(p_reduction, as_singleline(p_base), predict_or_learn<true>,
-      predict_or_learn<false>, 1, prediction_type_t::action_pdf_value, stack_builder.get_setupfn_name(setup), true);
+  auto* l = make_reduction_learner(std::move(p_reduction), as_singleline(p_base), predict_or_learn<true>,
+      predict_or_learn<false>, stack_builder.get_setupfn_name(setup))
+                .set_learn_returns_prediction(true)
+                .set_output_prediction_type(VW::prediction_type_t::action_pdf_value)
+                .set_finish_example(finish_example)
+                .set_input_label_type(VW::label_type_t::continuous)
+                .build();
 
-  l.set_finish_example(finish_example);
-
-  return make_base(l);
+  return make_base(*l);
 }
 
 }  // namespace cats

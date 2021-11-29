@@ -13,6 +13,9 @@
 #include <memory>
 #include <unordered_set>
 #include <sstream>
+#include <cstdio>
+#include <fmt/format.h>
+#include <iostream>
 #include <type_traits>
 
 #include "options_types.h"
@@ -53,9 +56,23 @@ struct option_builder
     return *this;
   }
 
+  template <typename U>
+  std::string help_one_of(const std::string&, const std::set<U>&)
+  {
+    THROW("Error: cannot handle non-string or arithmetic types in one_of().");
+  }
+  std::string help_one_of(const std::string& help, const std::set<std::string>& s)
+  {
+    return fmt::format("{}. Choices: {{{}}}", help, fmt::join(s, ", "));
+  }
+  std::string help_one_of(const std::string& help, const std::set<int>& s)
+  {
+    return fmt::format("{}. Choices: {{{}}}", help, fmt::join(s, ", "));
+  }
+
   option_builder& help(const std::string& help)
   {
-    m_option_obj.m_help = help;
+    m_option_obj.m_help = m_option_obj.one_of().empty() ? help : help_one_of(help, m_option_obj.one_of());
     return *this;
   }
 
@@ -68,6 +85,12 @@ struct option_builder
   option_builder& necessary(bool necessary = true)
   {
     m_option_obj.m_necessary = necessary;
+    return *this;
+  }
+
+  option_builder& one_of(std::set<typename T::value_type> args)
+  {
+    m_option_obj.set_one_of(args);
     return *this;
   }
 
@@ -92,13 +115,14 @@ struct base_option
 {
   base_option(std::string name, size_t type_hash) : m_name(std::move(name)), m_type_hash(type_hash) {}
 
-  std::string m_name;
+  std::string m_name = "";
   size_t m_type_hash;
   std::string m_help = "";
   std::string m_short_name = "";
   bool m_keep = false;
   bool m_necessary = false;
   bool m_allow_override = false;
+  std::string m_one_of_err = "";
 
   virtual ~base_option() = default;
 };
@@ -124,12 +148,25 @@ struct typed_option : base_option
 
   bool value_supplied() const { return m_value.get() != nullptr; }
 
+  template <typename U>
+  std::string invalid_choice_error(const U&)
+  {
+    return "";
+  }
+  std::string invalid_choice_error(const std::string& value)
+  {
+    return fmt::format("Error: '{}' is not a valid choice for option --{}. Please select from {{{}}}", value, m_name,
+        fmt::join(m_one_of, ", "));
+  }
+  std::string invalid_choice_error(const int& value) { return invalid_choice_error(std::to_string(value)); }
+
   // Typed option children sometimes use stack local variables that are only valid for the initial set from add and
   // parse, so we need to signal when that is the case.
   typed_option& value(T value, bool called_from_add_and_parse = false)
   {
     m_value = std::make_shared<T>(value);
     value_set_callback(value, called_from_add_and_parse);
+    if (m_one_of.size() > 0 && (m_one_of.find(value) == m_one_of.end())) { m_one_of_err = invalid_choice_error(value); }
     return *this;
   }
 
@@ -139,6 +176,10 @@ struct typed_option : base_option
     THROW("typed_option does not contain value. use value_supplied to check if value exists.")
   }
 
+  void set_one_of(const std::set<value_type>& one_of_set) { m_one_of = one_of_set; }
+
+  const std::set<value_type>& one_of() const { return m_one_of; }
+
 protected:
   // Allows inheriting classes to handle set values. Noop by default.
   virtual void value_set_callback(const T& /*value*/, bool /*called_from_add_and_parse*/) {}
@@ -147,6 +188,7 @@ private:
   // Would prefer to use std::optional (C++17) here but we are targeting C++11
   std::shared_ptr<T> m_value{nullptr};
   std::shared_ptr<T> m_default_value{nullptr};
+  std::set<T> m_one_of = {};
 };
 
 // The contract of typed_option_with_location is that the first set of the option value is written to the given
@@ -259,7 +301,7 @@ struct options_i
 struct option_group_definition
 {
   // add second parameter for const string short name
-  option_group_definition(const std::string& name) : m_name(name) {}
+  option_group_definition(const std::string& name) : m_name(name + " Options") {}
 
   template <typename T>
   option_group_definition& add(option_builder<T>&& op)
@@ -288,6 +330,16 @@ struct option_group_definition
     return check_if_all_necessary_enabled;
   }
 
+  // will check if one_of condition is met for all options
+  bool check_one_of() const
+  {
+    for (const auto& option : m_options)
+    {
+      if (!option->m_one_of_err.empty()) { THROW(option->m_one_of_err); }
+    }
+    return true;
+  }
+
   template <typename T>
   option_group_definition& operator()(T&& op)
   {
@@ -295,7 +347,7 @@ struct option_group_definition
     return *this;
   }
 
-  std::string m_name;
+  std::string m_name = "";
   std::unordered_set<std::string> m_necessary_flags;
   std::vector<std::shared_ptr<base_option>> m_options;
 };
@@ -322,7 +374,7 @@ struct options_name_extractor : options_i
 
     generated_name.clear();
 
-    for (auto opt : group.m_options)
+    for (const auto& opt : group.m_options)
     {
       if (opt->m_necessary)
       {

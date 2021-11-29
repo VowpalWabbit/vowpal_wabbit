@@ -7,19 +7,26 @@
 #include "rand48.h"
 #include "vw_exception.h"
 #include "parse_args.h"  // for spoof_hex_encoded_namespaces
+#include "text_utils.h"
 
 using namespace VW::LEARNER;
 using namespace VW::config;
 
 struct LRQstate
 {
-  vw* all;  // feature creation, audit, hash_inv
+  VW::workspace* all = nullptr;  // feature creation, audit, hash_inv
   bool lrindices[256];
   size_t orig_size[256];
   std::set<std::string> lrpairs;
-  bool dropout;
-  uint64_t seed;
-  uint64_t initial_seed;
+  bool dropout = false;
+  uint64_t seed = 0;
+  uint64_t initial_seed = 0;
+
+  LRQstate()
+  {
+    std::fill(lrindices, lrindices + 256, false);
+    std::fill(orig_size, orig_size + 256, 0);
+  }
 };
 
 bool valid_int(const char* s)
@@ -51,7 +58,7 @@ void reset_seed(LRQstate& lrq)
 template <bool is_learn>
 void predict_or_learn(LRQstate& lrq, single_learner& base, example& ec)
 {
-  vw& all = *lrq.all;
+  VW::workspace& all = *lrq.all;
 
   // Remember original features
 
@@ -165,19 +172,24 @@ void predict_or_learn(LRQstate& lrq, single_learner& base, example& ec)
 base_learner* lrq_setup(VW::setup_base_i& stack_builder)
 {
   options_i& options = *stack_builder.get_options();
-  vw& all = *stack_builder.get_all_pointer();
-  auto lrq = scoped_calloc_or_throw<LRQstate>();
+  VW::workspace& all = *stack_builder.get_all_pointer();
+  auto lrq = VW::make_unique<LRQstate>();
   std::vector<std::string> lrq_names;
   option_group_definition new_options("Low Rank Quadratics");
-  new_options.add(make_option("lrq", lrq_names).keep().necessary().help("use low rank quadratic features"))
-      .add(make_option("lrqdropout", lrq->dropout).keep().help("use dropout training for low rank quadratic features"));
+  new_options.add(make_option("lrq", lrq_names).keep().necessary().help("Use low rank quadratic features"))
+      .add(make_option("lrqdropout", lrq->dropout).keep().help("Use dropout training for low rank quadratic features"));
 
   if (!options.add_parse_and_check_necessary(new_options)) return nullptr;
 
   uint32_t maxk = 0;
   lrq->all = &all;
 
-  for (auto& lrq_name : lrq_names) lrq_name = spoof_hex_encoded_namespaces(lrq_name);
+  for (const auto& name : lrq_names)
+  {
+    if (name.find(':') != std::string::npos) { THROW("--lrq does not support wildcards ':'"); }
+  }
+
+  for (auto& lrq_name : lrq_names) lrq_name = VW::decode_inline_hex(lrq_name);
 
   new (&lrq->lrpairs) std::set<std::string>(lrq_names.begin(), lrq_names.end());
 
@@ -205,17 +217,21 @@ base_learner* lrq_setup(VW::setup_base_i& stack_builder)
     lrq->lrindices[static_cast<int>(i[0])] = true;
     lrq->lrindices[static_cast<int>(i[1])] = true;
 
-    maxk = std::max(k, k);
+    maxk = std::max(maxk, k);
   }
 
   if (!all.logger.quiet) *(all.trace_message) << std::endl;
 
   all.wpp = all.wpp * static_cast<uint64_t>(1 + maxk);
   auto base = stack_builder.setup_base_learner();
-  learner<LRQstate, example>& l = init_learner(lrq, as_singleline(base), predict_or_learn<true>,
-      predict_or_learn<false>, 1 + maxk, stack_builder.get_setupfn_name(lrq_setup), base->learn_returns_prediction);
-  l.set_end_pass(reset_seed);
+
+  auto* l = make_reduction_learner(std::move(lrq), as_singleline(base), predict_or_learn<true>, predict_or_learn<false>,
+      stack_builder.get_setupfn_name(lrq_setup))
+                .set_params_per_weight(1 + maxk)
+                .set_learn_returns_prediction(base->learn_returns_prediction)
+                .set_end_pass(reset_seed)
+                .build();
 
   // TODO: leaks memory ?
-  return make_base(l);
+  return make_base(*l);
 }

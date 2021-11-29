@@ -18,7 +18,7 @@
 namespace logger = VW::io::logger;
 
 template <typename LabelPrintFunc>
-void print_update(vw& all, const std::vector<example*>& slots, const VW::decision_scores_t& decision_scores,
+void print_update(VW::workspace& all, const std::vector<example*>& slots, const VW::decision_scores_t& decision_scores,
     size_t num_features, LabelPrintFunc label_print_func)
 {
   if (all.sd->weighted_examples() >= all.sd->dump_interval && !all.logger.quiet && !all.bfgs)
@@ -76,13 +76,13 @@ void print_decision_scores(VW::io::writer* f, const VW::decision_scores_t& decis
 }
 
 void print_update_ccb(
-    vw& all, std::vector<example*>& slots, const VW::decision_scores_t& decision_scores, size_t num_features)
+    VW::workspace& all, std::vector<example*>& slots, const VW::decision_scores_t& decision_scores, size_t num_features)
 {
   print_update(all, slots, decision_scores, num_features, CCB::generate_ccb_label_printout);
 }
 
 void print_update_slates(
-    vw& all, std::vector<example*>& slots, const VW::decision_scores_t& decision_scores, size_t num_features)
+    VW::workspace& all, std::vector<example*>& slots, const VW::decision_scores_t& decision_scores, size_t num_features)
 {
   print_update(all, slots, decision_scores, num_features, slates::generate_slates_label_printout);
 }

@@ -6,9 +6,7 @@ decay_learning_rate = 1
 creating cache_file = train-sets/lda-2pass-hang.dat.cache
 Reading datafile = train-sets/lda-2pass-hang.dat
 num sources = 1
-Enabled reductions: lda, scorer-identity
-Input label = label_type_t::nolabel
-Output pred = prediction_type_t::scalars
+Enabled reductions: lda
 average  since         example        example  current  current  current
 loss     last          counter         weight    label  predict features
 12.813779 12.813779            1            1.0     none        0      201

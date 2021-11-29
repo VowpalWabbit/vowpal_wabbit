@@ -23,9 +23,9 @@
 
 using namespace VW::config;
 
-vw* setup(options_i& options)
+VW::workspace* setup(options_i& options)
 {
-  vw* all = nullptr;
+  VW::workspace* all = nullptr;
   try
   {
     all = VW::initialize(options);
@@ -48,14 +48,14 @@ vw* setup(options_i& options)
 int main(int argc, char* argv[])
 {
   bool should_use_onethread = false;
-  option_group_definition driver_config("driver");
+  option_group_definition driver_config("Driver");
   driver_config.add(make_option("onethread", should_use_onethread).help("Disable parse thread"));
 
   try
   {
     // support multiple vw instances for training of the same datafile for the same instance
     std::vector<std::unique_ptr<options_boost_po>> arguments;
-    std::vector<vw*> alls;
+    std::vector<VW::workspace*> alls;
     if (argc == 3 && !std::strcmp(argv[1], "--args"))
     {
       std::fstream arg_file(argv[2]);
@@ -89,13 +89,13 @@ int main(int argc, char* argv[])
       arguments.push_back(std::move(ptr));
     }
 
-    vw& all = *alls[0];
+    VW::workspace& all = *alls[0];
 
     auto skip_driver = all.options->get_typed_option<bool>("dry_run").value();
 
     if (skip_driver)
     {
-      for (vw* v : alls) { VW::finish(*v); }
+      for (VW::workspace* v : alls) { VW::finish(*v); }
       return 0;
     }
 
@@ -116,7 +116,7 @@ int main(int argc, char* argv[])
       VW::end_parser(all);
     }
 
-    for (vw* v : alls)
+    for (VW::workspace* v : alls)
     {
       if (v->example_parser->exc_ptr) { std::rethrow_exception(v->example_parser->exc_ptr); }
 
@@ -128,7 +128,7 @@ int main(int argc, char* argv[])
   {
     // TODO: If loggers are instantiated within struct vw, this line lives outside of that. Log as critical for now
     std::cerr << "[critical] vw (" << e.Filename() << ":" << e.LineNumber() << "): " << e.what() << std::endl;
-    exit(1);
+    return 1;
   }
   catch (std::exception& e)
   {
@@ -139,7 +139,7 @@ int main(int argc, char* argv[])
     // TODO: If loggers are instantiated within struct vw, this line lives outside of that. Log as critical for now
     std::cerr << "[critical] vw: " << e.what() << std::endl;
     // cin.ignore();
-    exit(1);
+    return 1;
   }
   // cin.ignore();
   return 0;

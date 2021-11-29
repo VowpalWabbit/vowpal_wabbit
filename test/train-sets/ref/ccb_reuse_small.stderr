@@ -10,13 +10,13 @@ Input label = label_type_t::ccb
 Output pred = prediction_type_t::decision_probs
 average  since         example        example  current  current  current
 loss     last          counter         weight    label  predict features
-0.000000 0.000000            1            1.0      0:0        0       14
-0.000000 0.000000            2            2.0      1:0        1       14
-0.000000 0.000000            4            4.0      1:0        1       14
+0.000000 0.000000            1            1.0      0:0        0       16
+0.000000 0.000000            2            2.0      1:0        1       16
+0.000000 0.000000            4            4.0      1:0        1       16
 
 finished run
 number of examples = 4
 weighted example sum = 4.000000
 weighted label sum = 0.000000
 average loss = 0.000000
-total feature number = 56
+total feature number = 64

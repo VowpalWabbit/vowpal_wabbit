@@ -11,10 +11,13 @@
 #include <memory>
 #include <cassert>
 #include <cstdlib>
+#include <algorithm>
+#include <fmt/format.h>
 
 #include "v_array.h"
 #include "hash.h"
 #include "io/io_adapter.h"
+#include "vw_string_view.h"
 
 #ifndef VW_NOEXCEPT
 #  include "vw_exception.h"
@@ -89,6 +92,9 @@ class io_buf
   internal_buffer _buffer;
   char* head = nullptr;
 
+  // file descriptor currently being used.
+  size_t _current = 0;
+
   std::vector<std::unique_ptr<VW::io::reader>> input_files;
   std::vector<std::unique_ptr<VW::io::writer>> output_files;
 
@@ -106,9 +112,6 @@ public:
 
   const std::vector<std::unique_ptr<VW::io::reader>>& get_input_files() const { return input_files; }
   const std::vector<std::unique_ptr<VW::io::writer>>& get_output_files() const { return output_files; }
-
-  // file descriptor currently being used.
-  size_t current = 0;
 
   void verify_hash(bool verify)
   {
@@ -136,17 +139,22 @@ public:
     output_files.push_back(std::move(file));
   }
 
-  void reset_buffer()
-  {
-    _buffer._end = _buffer._begin;
-    head = _buffer._begin;
-  }
+  /**
+   * @brief Calls reset on all contained input files. Moves back to the first
+   * file being the current one processed and resets the buffer position. If the
+   * contained readers are not resettable then this function will fail. The
+   * buffer should be tested with io_buf::is_resettable prior to calling this to
+   * avoid failure.
+   */
+  void reset();
 
-  void reset_file(VW::io::reader* f)
-  {
-    f->reset();
-    reset_buffer();
-  }
+  /**
+   * @brief Test if this io_buf supports resetting.
+   *
+   * @return true if all contained input files can be reset
+   * @return false if any contained input files cannot be reset
+   */
+  bool is_resettable() const;
 
   void set(char* p) { head = p; }
 
@@ -212,25 +220,27 @@ public:
     while (close_file()) {}
   }
 
-  template <typename T>
-  void write_value(const T& value)
+  template <typename T,
+      typename std::enable_if<!std::is_pointer<T>::value && std::is_trivially_copyable<T>::value, bool>::type = true>
+  size_t write_value(const T& value)
   {
     char* c;
     buf_write(c, sizeof(T));
     *reinterpret_cast<T*>(c) = value;
     c += sizeof(T);
     set(c);
+    return sizeof(T);
   }
 
-  template <typename T>
-  T read_value(const char* debug_name = nullptr)
+  template <typename T,
+      typename std::enable_if<!std::is_pointer<T>::value && std::is_trivially_copyable<T>::value, bool>::type = true>
+  T read_value(VW::string_view debug_name = "")
   {
     char* c;
     T value;
     if (buf_read(c, sizeof(T)) < sizeof(T))
     {
-      if (debug_name != nullptr)
-      { THROW("Failed to read cache value: " << debug_name << ", with size: " << sizeof(T)); }
+      if (!debug_name.empty()) { THROW("Failed to read cache value: " << debug_name << ", with size: " << sizeof(T)); }
       else
       {
         THROW("Failed to read cache value with size: " << sizeof(T));
@@ -242,11 +252,18 @@ public:
     return value;
   }
 
+  template <typename T,
+      typename std::enable_if<!std::is_pointer<T>::value && std::is_trivially_copyable<T>::value, bool>::type = true>
+  T read_value_and_accumulate_size(VW::string_view debug_name, size_t& size)
+  {
+    size += sizeof(T);
+    return read_value<T>(debug_name);
+  }
+
   void buf_write(char*& pointer, size_t n);
   size_t buf_read(char*& pointer, size_t n);
 
-  // if read_message is null, just read it in.  Otherwise do a comparison and barf on read_message.
-  size_t bin_read_fixed(char* data, size_t len, const char* read_message)
+  size_t bin_read_fixed(char* data, size_t len)
   {
     if (len > 0)
     {
@@ -257,10 +274,7 @@ public:
 
       // compute hash for check-sum
       if (_verify_hash) { _hash = static_cast<uint32_t>(uniform_hash(p, len, _hash)); }
-
-      if (*read_message == '\0') { memcpy(data, p, len); }
-      else if (memcmp(data, p, len) != 0)
-        THROW(read_message);
+      memcpy(data, p, len);
       return len;
     }
     return 0;
@@ -288,13 +302,13 @@ public:
   char* buffer_start() { return _buffer._begin; }  // This should be replaced with slicing.
 };
 
-inline size_t bin_read(io_buf& i, char* data, size_t len, const char* read_message)
+inline size_t bin_read(io_buf& i, char* data, size_t len)
 {
   uint32_t obj_len;
-  size_t ret = i.bin_read_fixed(reinterpret_cast<char*>(&obj_len), sizeof(obj_len), "");
+  size_t ret = i.bin_read_fixed(reinterpret_cast<char*>(&obj_len), sizeof(obj_len));
   if (obj_len > len || ret < sizeof(uint32_t)) THROW("bad model format!");
 
-  ret += i.bin_read_fixed(data, obj_len, read_message);
+  ret += i.bin_read_fixed(data, obj_len);
 
   return ret;
 }
@@ -318,10 +332,9 @@ inline size_t bin_text_write(io_buf& io, char* data, size_t len, std::stringstre
 }
 
 // a unified function for read(in binary), write(in binary), and write(in text)
-inline size_t bin_text_read_write(
-    io_buf& io, char* data, size_t len, const char* read_message, bool read, std::stringstream& msg, bool text)
+inline size_t bin_text_read_write(io_buf& io, char* data, size_t len, bool read, std::stringstream& msg, bool text)
 {
-  if (read) { return bin_read(io, data, len, read_message); }
+  if (read) { return bin_read(io, data, len); }
   return bin_text_write(io, data, len, msg, text);
 }
 
@@ -338,16 +351,16 @@ inline size_t bin_text_write_fixed(io_buf& io, char* data, size_t len, std::stri
 
 // a unified function for read(in binary), write(in binary), and write(in text)
 inline size_t bin_text_read_write_fixed(
-    io_buf& io, char* data, size_t len, const char* read_message, bool read, std::stringstream& msg, bool text)
+    io_buf& io, char* data, size_t len, bool read, std::stringstream& msg, bool text)
 {
-  if (read) { return io.bin_read_fixed(data, len, read_message); }
+  if (read) { return io.bin_read_fixed(data, len); }
   return bin_text_write_fixed(io, data, len, msg, text);
 }
 
 inline size_t bin_text_read_write_fixed_validated(
-    io_buf& io, char* data, size_t len, const char* read_message, bool read, std::stringstream& msg, bool text)
+    io_buf& io, char* data, size_t len, bool read, std::stringstream& msg, bool text)
 {
-  size_t nbytes = bin_text_read_write_fixed(io, data, len, read_message, read, msg, text);
+  size_t nbytes = bin_text_read_write_fixed(io, data, len, read, msg, text);
   if (read && len > 0)  // only validate bytes read/write if expected length > 0
   {
     if (nbytes == 0) { THROW("Unexpected end of file encountered."); }
@@ -355,17 +368,17 @@ inline size_t bin_text_read_write_fixed_validated(
   return nbytes;
 }
 
-#define writeit(what, str)                                                                  \
-  do                                                                                        \
-  {                                                                                         \
-    msg << str << " = " << what << " ";                                                     \
-    bin_text_read_write_fixed(model_file, (char*)&what, sizeof(what), "", read, msg, text); \
+#define writeit(what, str)                                                              \
+  do                                                                                    \
+  {                                                                                     \
+    msg << str << " = " << what << " ";                                                 \
+    bin_text_read_write_fixed(model_file, (char*)&what, sizeof(what), read, msg, text); \
   } while (0);
 
-#define writeitvar(what, str, mywhat)                                                           \
-  auto mywhat = (what);                                                                         \
-  do                                                                                            \
-  {                                                                                             \
-    msg << str << " = " << mywhat << " ";                                                       \
-    bin_text_read_write_fixed(model_file, (char*)&mywhat, sizeof(mywhat), "", read, msg, text); \
+#define writeitvar(what, str, mywhat)                                                       \
+  auto mywhat = (what);                                                                     \
+  do                                                                                        \
+  {                                                                                         \
+    msg << str << " = " << mywhat << " ";                                                   \
+    bin_text_read_write_fixed(model_file, (char*)&mywhat, sizeof(mywhat), read, msg, text); \
   } while (0);

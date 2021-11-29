@@ -11,18 +11,17 @@ on:
 
 jobs:
   check_valgrind:
+    strategy:
+      matrix:
+        container: ["vowpalwabbit/ubuntu1804-build:latest", "vowpalwabbit/ubuntu2004-build:latest"]
     container:
-      image: vowpalwabbit/ubuntu1604-build:latest
+      image: ${{ matrix.container }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v1
-      - name: Install Valgrind
-        run: |
-          sudo apt update -y
-          sudo apt install -y valgrind
       - name: Build C++ VW binary
         run: ./.scripts/linux/build-minimal.sh Release
       - name: Run unit tests with Valgrind
         run: ./.scripts/linux/unit-tests-valgrind.sh
       - name: Run test suite with Valgrind
-        run: ./.scripts/linux/test-valgrind.sh
+        run: ./.scripts/linux/test-valgrind-run_tests.sh

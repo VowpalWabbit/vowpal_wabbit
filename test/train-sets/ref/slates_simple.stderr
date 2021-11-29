@@ -11,12 +11,12 @@ Input label = label_type_t::slates
 Output pred = prediction_type_t::decision_probs
 average  since         example        example  current  current  current
 loss     last          counter         weight    label  predict features
-0.200000 0.200000            1            1.0      1,0      1,0       47
--0.275000 -0.750000            2            2.0      1,0      1,0       47
+0.200000 0.200000            1            1.0      1,0      1,0       84
+-0.275000 -0.750000            2            2.0      1,0      1,0       84
 
 finished run
 number of examples = 3
 weighted example sum = 3.000000
 weighted label sum = 0.000000
 average loss = -0.275000
-total feature number = 141
+total feature number = 252

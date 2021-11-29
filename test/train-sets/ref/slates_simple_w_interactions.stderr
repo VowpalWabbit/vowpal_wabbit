@@ -1,4 +1,4 @@
-creating quadratic features for pairs: :: 
+creating quadratic features for pairs: ::
 WARNING: any duplicate namespace interactions will be removed
 You can use --leave_duplicate_interactions to disable this behaviour.
 predictions = slates_simple_w_interactions.predict
@@ -14,12 +14,12 @@ Input label = label_type_t::slates
 Output pred = prediction_type_t::decision_probs
 average  since         example        example  current  current  current
 loss     last          counter         weight    label  predict features
-0.200000 0.200000            1            1.0      1,0      1,0      137
-0.200000 0.200000            2            2.0      1,0      1,0      137
+0.200000 0.200000            1            1.0      1,0      1,0      284
+0.200000 0.200000            2            2.0      1,0      1,0      284
 
 finished run
 number of examples = 3
 weighted example sum = 3.000000
 weighted label sum = 0.000000
 average loss = 0.200000
-total feature number = 411
+total feature number = 852

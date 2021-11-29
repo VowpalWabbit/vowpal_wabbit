@@ -7,6 +7,8 @@
 #include <iostream>
 
 #include "gd.h"
+#include "memory.h"
+#include "reductions_fwd.h"
 #include "vw.h"
 #include "reductions.h"
 
@@ -21,14 +23,16 @@ namespace SVRG
 
 struct svrg
 {
-  int stage_size;         // Number of data passes per stage.
-  int prev_pass;          // To detect that we're in a new pass.
-  int stable_grad_count;  // Number of data points that
+  int stage_size = 1;         // Number of data passes per stage.
+  int prev_pass = -1;         // To detect that we're in a new pass.
+  int stable_grad_count = 0;  // Number of data points that
   // contributed to the stable gradient
   // calculation.
 
   // The VW process' global state.
-  vw* all;
+  VW::workspace* all = nullptr;
+
+  svrg(VW::workspace* all) : all(all) {}
 };
 
 // Mimic GD::inline_predict but with offset for predicting with either
@@ -42,7 +46,7 @@ inline void vec_add(float& p, const float x, float& w)
 }
 
 template <int offset>
-inline float inline_predict(vw& all, example& ec)
+inline float inline_predict(VW::workspace& all, example& ec)
 {
   const auto& simple_red_features = ec._reduction_features.template get<simple_label_reduction_features>();
   float acc = simple_red_features.initial;
@@ -57,7 +61,7 @@ float predict_stable(const svrg& s, example& ec)
   return GD::finalize_prediction(s.all->sd, s.all->logger, inline_predict<W_STABLE>(*s.all, ec));
 }
 
-void predict(svrg& s, single_learner&, example& ec)
+void predict(svrg& s, base_learner&, example& ec)
 {
   ec.partial_prediction = inline_predict<W_INNER>(*s.all, ec);
   ec.pred.scalar = GD::finalize_prediction(s.all->sd, s.all->logger, ec.partial_prediction);
@@ -107,7 +111,7 @@ void update_stable(const svrg& s, example& ec)
   GD::foreach_feature<float, update_stable_feature>(*s.all, ec, g);
 }
 
-void learn(svrg& s, single_learner& base, example& ec)
+void learn(svrg& s, base_learner& base, example& ec)
 {
   predict(s, base, ec);
 
@@ -149,7 +153,7 @@ void save_load(svrg& s, io_buf& model_file, bool read, bool text)
     bool resume = s.all->save_resume;
     std::stringstream msg;
     msg << ":" << resume << "\n";
-    bin_text_read_write_fixed(model_file, reinterpret_cast<char*>(&resume), sizeof(resume), "", read, msg, text);
+    bin_text_read_write_fixed(model_file, reinterpret_cast<char*>(&resume), sizeof(resume), read, msg, text);
 
     double temp = 0.;
     if (resume)
@@ -166,8 +170,8 @@ using namespace SVRG;
 base_learner* svrg_setup(VW::setup_base_i& stack_builder)
 {
   VW::config::options_i& options = *stack_builder.get_options();
-  vw& all = *stack_builder.get_all_pointer();
-  auto s = scoped_calloc_or_throw<svrg>();
+  VW::workspace& all = *stack_builder.get_all_pointer();
+  auto s = VW::make_unique<svrg>(&all);
 
   bool svrg_option = false;
   option_group_definition new_options("Stochastic Variance Reduced Gradient");
@@ -177,14 +181,12 @@ base_learner* svrg_setup(VW::setup_base_i& stack_builder)
 
   if (!options.add_parse_and_check_necessary(new_options)) { return nullptr; }
 
-  s->all = &all;
-  s->prev_pass = -1;
-  s->stable_grad_count = 0;
-
   // Request more parameter storage (4 floats per feature)
   all.weights.stride_shift(2);
-  learner<svrg, example>& l = init_learner(
-      s, learn, predict, UINT64_ONE << all.weights.stride_shift(), stack_builder.get_setupfn_name(svrg_setup));
-  l.set_save_load(save_load);
-  return make_base(l);
+  auto* l = VW::LEARNER::make_base_learner(std::move(s), learn, predict, stack_builder.get_setupfn_name(svrg_setup),
+      VW::prediction_type_t::scalar, VW::label_type_t::simple)
+                .set_params_per_weight(UINT64_ONE << all.weights.stride_shift())
+                .set_save_load(save_load)
+                .build();
+  return make_base(*l);
 }

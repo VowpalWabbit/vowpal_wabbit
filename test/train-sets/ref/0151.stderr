@@ -5,9 +5,7 @@ power_t = 0.5
 using no cache
 Reading datafile = train-sets/0080.dat
 num sources = 1
-Enabled reductions: gd, lrqfa, scorer-identity
-Input label = label_type_t::simple
-Output pred = prediction_type_t::scalar
+Enabled reductions: gd, lrqfa, scorer-identity, count_label
 average  since         example        example  current  current  current
 loss     last          counter         weight    label  predict features
 0.484530 0.484530            1            1.0   1.0000   0.3039        5

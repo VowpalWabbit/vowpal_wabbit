@@ -18,7 +18,7 @@ on:
 jobs:
   benchmark:
     container:
-      image: vowpalwabbit/ubuntu1604-build:latest
+      image: vowpalwabbit/ubuntu1804-build:latest
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v1
@@ -71,7 +71,10 @@ jobs:
           path: benchmark/tools/
       - name: Install benchmark compare requirements
         shell: bash
-        run: /usr/local/miniconda/envs/test-python36/bin/pip install -r benchmark/tools/requirements.txt
+        run: |
+          python3 -m pip install -r benchmark/tools/requirements.txt
+          # The above requirements file is missing the pandas dependency.
+          python3 -m pip install pandas
       - run: rm -rf benchmark build vowpalwabbit/parser/flatbuffer/generated/ test/benchmarks/ # generated or downloaded files
 # checkout second ref
       - uses: actions/checkout@v1

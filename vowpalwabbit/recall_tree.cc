@@ -10,6 +10,7 @@
 
 #include "reductions.h"
 #include "rand48.h"
+#include "vw_math.h"
 
 using namespace VW::LEARNER;
 using namespace VW::config;
@@ -61,26 +62,25 @@ struct node
 
 struct recall_tree
 {
-  vw* all;
+  VW::workspace* all = nullptr;
   std::shared_ptr<rand_state> _random_state;
-  uint32_t k;
-  bool node_only;
+  uint32_t k = 0;
+  bool node_only = false;
 
   std::vector<node> nodes;
 
-  size_t max_candidates;
-  size_t max_routers;
-  size_t max_depth;
-  float bern_hyper;
+  size_t max_candidates = 0;
+  size_t max_routers = 0;
+  size_t max_depth = 0;
+  float bern_hyper = 0.f;
 
-  bool randomized_routing;
+  bool randomized_routing = false;
 };
 
-float to_prob(float x)
+VW_STD14_CONSTEXPR float to_prob(float x)
 {
-  static const float alpha = 2.0f;
-  // http://stackoverflow.com/questions/2789481/problem-calling-stdmax
-  return std::max(0.f, std::min(1.f, 0.5f * (1.0f + alpha * x)));
+  constexpr float alpha = 2.0f;
+  return VW::math::clamp(0.5f * (1.0f + alpha * x), 0.f, 1.f);
 }
 
 void init_tree(recall_tree& b, uint32_t root, uint32_t depth, uint32_t& routers_used)
@@ -211,7 +211,7 @@ void insert_example_at_node(recall_tree& b, uint32_t cn, example& ec)
 
 void add_node_id_feature(recall_tree& b, uint32_t cn, example& ec)
 {
-  vw* all = b.all;
+  VW::workspace* all = b.all;
   uint64_t mask = all->weights.mask();
   size_t ss = all->weights.stride_shift();
 
@@ -489,17 +489,17 @@ using namespace recall_tree_ns;
 base_learner* recall_tree_setup(VW::setup_base_i& stack_builder)
 {
   options_i& options = *stack_builder.get_options();
-  vw& all = *stack_builder.get_all_pointer();
-  auto tree = scoped_calloc_or_throw<recall_tree>();
+  VW::workspace& all = *stack_builder.get_all_pointer();
+  auto tree = VW::make_unique<recall_tree>();
   option_group_definition new_options("Recall Tree");
   new_options.add(make_option("recall_tree", tree->k).keep().necessary().help("Use online tree for multiclass"))
       .add(make_option("max_candidates", tree->max_candidates)
                .keep()
-               .help("maximum number of labels per leaf in the tree"))
-      .add(make_option("bern_hyper", tree->bern_hyper).default_value(1.f).help("recall tree depth penalty"))
-      .add(make_option("max_depth", tree->max_depth).keep().help("maximum depth of the tree, default log_2 (#classes)"))
-      .add(make_option("node_only", tree->node_only).keep().help("only use node features, not full path features"))
-      .add(make_option("randomized_routing", tree->randomized_routing).keep().help("randomized routing"));
+               .help("Maximum number of labels per leaf in the tree"))
+      .add(make_option("bern_hyper", tree->bern_hyper).default_value(1.f).help("Recall tree depth penalty"))
+      .add(make_option("max_depth", tree->max_depth).keep().help("Maximum depth of the tree, default log_2 (#classes)"))
+      .add(make_option("node_only", tree->node_only).keep().help("Only use node features, not full path features"))
+      .add(make_option("randomized_routing", tree->randomized_routing).keep().help("Randomized routing"));
 
   if (!options.add_parse_and_check_necessary(new_options)) return nullptr;
 
@@ -522,11 +522,17 @@ base_learner* recall_tree_setup(VW::setup_base_i& stack_builder)
                                           : "n/a testonly")
                          << std::endl;
 
-  learner<recall_tree, example>& l =
-      init_multiclass_learner(tree, as_singleline(stack_builder.setup_base_learner()), learn, predict,
-          all.example_parser, tree->max_routers + tree->k, stack_builder.get_setupfn_name(recall_tree_setup));
-  all.example_parser->lbl_parser.label_type = label_type_t::multiclass;
-  l.set_save_load(save_load_tree);
+  size_t ws = tree->max_routers + tree->k;
+  auto* l = make_reduction_learner(std::move(tree), as_singleline(stack_builder.setup_base_learner()), learn, predict,
+      stack_builder.get_setupfn_name(recall_tree_setup))
+                .set_params_per_weight(ws)
+                .set_finish_example(MULTICLASS::finish_example<recall_tree&>)
+                .set_save_load(save_load_tree)
+                .set_output_prediction_type(VW::prediction_type_t::multiclass)
+                .set_input_label_type(VW::label_type_t::multiclass)
+                .build();
 
-  return make_base(l);
+  all.example_parser->lbl_parser = MULTICLASS::mc_label;
+
+  return make_base(*l);
 }

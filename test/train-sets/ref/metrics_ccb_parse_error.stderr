@@ -11,14 +11,14 @@ Input label = label_type_t::ccb
 Output pred = prediction_type_t::decision_probs
 average  since         example        example  current  current  current
 loss     last          counter         weight    label  predict features
-0.000000 0.000000            1            1.0  3:0,0:0      3,0       48
--0.300000 -0.600000            2            2.0 1:-0.6,3:-0.4      1,3       48
--0.162500 -0.025000            4            4.0  2:0,0:0      2,0       48
--0.093875 -0.025250            8            8.0  2:-0.42        2       35
--0.533937 -0.974000           16           16.0      1:0        1       35
--0.328594 -0.123250           32           32.0  1:-0.42        1       35
+0.000000 0.000000            1            1.0  3:0,0:0      3,0       98
+-0.300000 -0.600000            2            2.0 1:-0.6,3:-0.4      1,3       98
+-0.162500 -0.025000            4            4.0  2:0,0:0      2,0       98
+-0.093875 -0.025250            8            8.0  2:-0.42        2       40
+-0.533937 -0.974000           16           16.0      1:0        1       40
+-0.328594 -0.123250           32           32.0  1:-0.42        1       40
 [error] JSON parser error at 43: Missing a comma or '}' after an object member.. Handler:  State: DecisionService
--0.547531 -0.766469           64           64.0      1:0        1       35
+-0.547531 -0.766469           64           64.0      1:0        1       40
 [error] JSON parser error at 67: Terminate parsing due to Handler error.. Handler: Unexpected token: uint (0) State: StringToStringState
 
 finished run
@@ -26,4 +26,4 @@ number of examples = 68
 weighted example sum = 68.000000
 weighted label sum = 0.000000
 average loss = -0.572868
-total feature number = 2471
+total feature number = 3126

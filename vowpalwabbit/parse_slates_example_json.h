@@ -37,7 +37,8 @@ inline float get_number(const rapidjson::Value& value)
 
 template <bool audit>
 void handle_features_value(const char* key_namespace, const Value& value, example* current_example,
-    std::vector<Namespace<audit>>& namespaces, vw& all)
+    std::vector<Namespace<audit>>& namespaces, hash_func_t hash_func, uint64_t hash_seed, uint64_t parse_mask,
+    bool chain_hash)
 {
   assert(key_namespace != nullptr);
   assert(std::strlen(key_namespace) != 0);
@@ -57,19 +58,22 @@ void handle_features_value(const char* key_namespace, const Value& value, exampl
       break;
     case rapidjson::kTrueType:
       assert(!namespaces.empty());
-      namespaces.back().AddFeature(&all, key_namespace);
+      namespaces.back().AddFeature(key_namespace, hash_func, parse_mask);
       break;
     case rapidjson::kObjectType:
     {
-      push_ns(current_example, key_namespace, namespaces, all);
+      push_ns(current_example, key_namespace, namespaces, hash_func, hash_seed);
       for (auto& object_value : value.GetObject())
-      { handle_features_value(object_value.name.GetString(), object_value.value, current_example, namespaces, all); }
+      {
+        handle_features_value(object_value.name.GetString(), object_value.value, current_example, namespaces, hash_func,
+            hash_seed, parse_mask, chain_hash);
+      }
       pop_ns(current_example, namespaces);
     }
     break;
     case rapidjson::kArrayType:
     {
-      push_ns(current_example, key_namespace, namespaces, all);
+      push_ns(current_example, key_namespace, namespaces, hash_func, hash_seed);
       auto array_hash = namespaces.back().namespace_hash;
 
       for (auto& array_value : value.GetArray())
@@ -94,7 +98,8 @@ void handle_features_value(const char* key_namespace, const Value& value, exampl
           break;
           case rapidjson::kObjectType:
           {
-            handle_features_value(key_namespace, array_value, current_example, namespaces, all);
+            handle_features_value(
+                key_namespace, array_value, current_example, namespaces, hash_func, hash_seed, parse_mask, chain_hash);
           }
           break;
           default:
@@ -122,12 +127,12 @@ void handle_features_value(const char* key_namespace, const Value& value, exampl
         }
       }
 
-      if (all.chain_hash_json) { namespaces.back().AddFeature(&all, key_namespace, str); }
+      if (chain_hash) { namespaces.back().AddFeature(key_namespace, str, hash_func, parse_mask); }
       else
       {
         char* prepend = const_cast<char*>(str) - key_namespace_length;
         std::memmove(prepend, key_namespace, key_namespace_length);
-        namespaces.back().AddFeature(&all, prepend);
+        namespaces.back().AddFeature(prepend, hash_func, parse_mask);
       }
     }
 
@@ -136,8 +141,8 @@ void handle_features_value(const char* key_namespace, const Value& value, exampl
     {
       assert(!namespaces.empty());
       float number = get_number(value);
-      namespaces.back().AddFeature(
-          number, VW::hash_feature_cstr(all, key_namespace, namespaces.back().namespace_hash), key_namespace);
+      auto hash_index = hash_func(key_namespace, strlen(key_namespace), namespaces.back().namespace_hash) & parse_mask;
+      namespaces.back().AddFeature(number, hash_index, key_namespace);
     }
     break;
     default:
@@ -146,13 +151,14 @@ void handle_features_value(const char* key_namespace, const Value& value, exampl
 }
 
 template <bool audit>
-void parse_context(const Value& context, vw& all, v_array<example*>& examples, VW::example_factory_t example_factory,
+void parse_context(const Value& context, const label_parser& lbl_parser, hash_func_t hash_func, uint64_t hash_seed,
+    uint64_t parse_mask, bool chain_hash, v_array<example*>& examples, VW::example_factory_t example_factory,
     void* ex_factory_context, std::vector<example*>& slot_examples,
     std::unordered_map<uint64_t, example*>* dedup_examples = nullptr)
 {
   std::vector<Namespace<audit>> namespaces;
-  handle_features_value(" ", context, examples[0], namespaces, all);
-  all.example_parser->lbl_parser.default_label(&examples[0]->l);
+  handle_features_value(" ", context, examples[0], namespaces, hash_func, hash_seed, parse_mask, chain_hash);
+  lbl_parser.default_label(examples[0]->l);
   if (context.HasMember("_slot_id"))
   {
     auto slot_id = context["_slot_id"].GetInt();
@@ -173,7 +179,7 @@ void parse_context(const Value& context, vw& all, v_array<example*>& examples, V
     for (const Value& obj : multi)
     {
       auto ex = &(*example_factory)(ex_factory_context);
-      all.example_parser->lbl_parser.default_label(&ex->l);
+      lbl_parser.default_label(ex->l);
       ex->l.slates.type = VW::slates::example_type::action;
       examples.push_back(ex);
       if (dedup_examples && !dedup_examples->empty() && obj.HasMember("__aid"))
@@ -192,7 +198,7 @@ void parse_context(const Value& context, vw& all, v_array<example*>& examples, V
       {
         auto slot_id = obj["_slot_id"].GetInt();
         ex->l.slates.slot_id = slot_id;
-        handle_features_value(" ", obj, ex, namespaces, all);
+        handle_features_value(" ", obj, ex, namespaces, hash_func, hash_seed, parse_mask, chain_hash);
         assert(namespaces.size() == 0);
       }
     }
@@ -204,18 +210,19 @@ void parse_context(const Value& context, vw& all, v_array<example*>& examples, V
     for (const Value& slot_object : slots)
     {
       auto ex = &(*example_factory)(ex_factory_context);
-      all.example_parser->lbl_parser.default_label(&ex->l);
+      lbl_parser.default_label(ex->l);
       ex->l.slates.type = VW::slates::example_type::slot;
       examples.push_back(ex);
       slot_examples.push_back(ex);
-      handle_features_value(" ", slot_object, ex, namespaces, all);
+      handle_features_value(" ", slot_object, ex, namespaces, hash_func, hash_seed, parse_mask, chain_hash);
       assert(namespaces.size() == 0);
     }
   }
 }
 
 template <bool audit>
-void parse_slates_example_json(vw& all, v_array<example*>& examples, char* line, size_t /*length*/,
+void parse_slates_example_json(const label_parser& lbl_parser, hash_func_t hash_func, uint64_t hash_seed,
+    uint64_t parse_mask, bool chain_hash, v_array<example*>& examples, char* line, size_t /*length*/,
     VW::example_factory_t example_factory, void* ex_factory_context,
     std::unordered_map<uint64_t, example*>* dedup_examples = nullptr)
 {
@@ -225,21 +232,32 @@ void parse_slates_example_json(vw& all, v_array<example*>& examples, char* line,
   // Build shared example
   const Value& context = document.GetObject();
   std::vector<example*> slot_examples;
-  parse_context<audit>(context, all, examples, example_factory, ex_factory_context, slot_examples, dedup_examples);
+  parse_context<audit>(context, lbl_parser, hash_func, hash_seed, parse_mask, chain_hash, examples, example_factory,
+      ex_factory_context, slot_examples, dedup_examples);
 }
 
 template <bool audit>
-void parse_slates_example_dsjson(vw& all, v_array<example*>& examples, char* line, size_t /*length*/,
+void parse_slates_example_json(const VW::workspace& all, v_array<example*>& examples, char* line, size_t /*length*/,
+    VW::example_factory_t example_factory, void* ex_factory_context,
+    std::unordered_map<uint64_t, example*>* dedup_examples = nullptr)
+{
+  parse_slates_example_json<audit>(all.chain_hash_json, all.example_parser->lbl_parser, all.example_parser->hasher,
+      all.hash_seed, all.parse_mask, examples, line, example_factory, ex_factory_context, dedup_examples);
+}
+
+template <bool audit>
+void parse_slates_example_dsjson(VW::workspace& all, v_array<example*>& examples, char* line, size_t /*length*/,
     VW::example_factory_t example_factory, void* ex_factory_context, DecisionServiceInteraction* data,
     std::unordered_map<uint64_t, example*>* dedup_examples = nullptr)
 {
   Document document;
   document.ParseInsitu(line);
-
   // Build shared example
   const Value& context = document["c"].GetObject();
   std::vector<example*> slot_examples;
-  parse_context<audit>(context, all, examples, example_factory, ex_factory_context, slot_examples, dedup_examples);
+  parse_context<audit>(context, all.example_parser->lbl_parser, all.example_parser->hasher, all.hash_seed,
+      all.parse_mask, all.chain_hash_json, examples, example_factory, ex_factory_context, slot_examples,
+      dedup_examples);
 
   if (document.HasMember("_label_cost"))
   {
@@ -264,6 +282,7 @@ void parse_slates_example_dsjson(vw& all, v_array<example*>& examples, char* lin
       auto& current_obj = outcomes[i];
       auto& destination = slot_examples[i]->l.slates.probabilities;
       auto& actions = current_obj["_a"];
+
       if (actions.GetType() == rapidjson::kNumberType) { destination.push_back({actions.GetUint(), 0.f}); }
       else if (actions.GetType() == rapidjson::kArrayType)
       {
@@ -290,6 +309,12 @@ void parse_slates_example_dsjson(vw& all, v_array<example*>& examples, char* lin
       else
       {
         assert(false);
+      }
+
+      if (current_obj.HasMember("_original_label_cost"))
+      {
+        assert(current_obj["_original_label_cost"].IsFloat());
+        data->originalLabelCost = current_obj["_original_label_cost"].GetFloat();
       }
     }
 

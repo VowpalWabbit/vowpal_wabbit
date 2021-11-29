@@ -84,33 +84,34 @@ void free_svm_model(svm_model* model)
 
 struct svm_params
 {
-  size_t current_pass;
-  bool active;
-  bool active_pool_greedy;
-  bool para_active;
-  double active_c;
+  size_t current_pass = 0;
+  bool active = false;
+  bool active_pool_greedy = false;
+  bool para_active = false;
+  double active_c = 0.0;
 
-  size_t pool_size;
-  size_t pool_pos;
-  size_t subsample;  // NOTE: Eliminating subsample to only support 1/pool_size
-  size_t reprocess;
+  size_t pool_size = 0;
+  size_t pool_pos = 0;
+  size_t subsample = 0;  // NOTE: Eliminating subsample to only support 1/pool_size
+  size_t reprocess = 0;
 
-  svm_model* model;
-  size_t maxcache;
+  svm_model* model = nullptr;
+  size_t maxcache = 0;
   // size_t curcache;
 
-  svm_example** pool;
-  float lambda;
+  svm_example** pool = nullptr;
+  float lambda = 0.f;
 
-  void* kernel_params;
-  size_t kernel_type;
+  void* kernel_params = nullptr;
+  size_t kernel_type = 0;
 
-  size_t local_begin, local_end;
-  size_t current_t;
+  size_t local_begin = 0;
+  size_t local_end = 0;
+  size_t current_t = 0;
 
-  float loss_sum;
+  float loss_sum = 0.f;
 
-  vw* all;  // flatten, parallel
+  VW::workspace* all = nullptr;  // flatten, parallel
   std::shared_ptr<rand_state> _random_state;
 
   ~svm_params()
@@ -248,14 +249,14 @@ int save_load_flat_example(io_buf& model_file, bool read, flat_example*& fec)
   if (read)
   {
     fec = &calloc_or_throw<flat_example>();
-    brw = model_file.bin_read_fixed(reinterpret_cast<char*>(fec), sizeof(flat_example), "");
+    brw = model_file.bin_read_fixed(reinterpret_cast<char*>(fec), sizeof(flat_example));
 
     if (brw > 0)
     {
       if (fec->tag_len > 0)
       {
         fec->tag = calloc_or_throw<char>(fec->tag_len);
-        brw = model_file.bin_read_fixed(fec->tag, fec->tag_len * sizeof(char), "");
+        brw = model_file.bin_read_fixed(fec->tag, fec->tag_len * sizeof(char));
         if (!brw) return 2;
       }
       if (fec->fs.size() > 0)
@@ -264,13 +265,13 @@ int save_load_flat_example(io_buf& model_file, bool read, flat_example*& fec)
         size_t len = fs.size();
         fs.values.clear();
         fs.values.resize_but_with_stl_behavior(len);
-        brw = model_file.bin_read_fixed(reinterpret_cast<char*>(fs.values.begin()), len * sizeof(feature_value), "");
+        brw = model_file.bin_read_fixed(reinterpret_cast<char*>(fs.values.begin()), len * sizeof(feature_value));
         if (!brw) return 3;
 
         len = fs.indicies.size();
         fs.indicies.clear();
         fs.indicies.resize_but_with_stl_behavior(len);
-        brw = model_file.bin_read_fixed(reinterpret_cast<char*>(fs.indicies.begin()), len * sizeof(feature_index), "");
+        brw = model_file.bin_read_fixed(reinterpret_cast<char*>(fs.indicies.begin()), len * sizeof(feature_index));
         if (!brw) return 3;
       }
     }
@@ -318,7 +319,7 @@ void save_load_svm_model(svm_params& params, io_buf& model_file, bool read, bool
   if (model_file.num_files() == 0) return;
   std::stringstream msg;
   bin_text_read_write_fixed(
-      model_file, reinterpret_cast<char*>(&(model->num_support)), sizeof(model->num_support), "", read, msg, text);
+      model_file, reinterpret_cast<char*>(&(model->num_support)), sizeof(model->num_support), read, msg, text);
   // params.all->opts_n_args.trace_message<<"Read num support "<<model->num_support<< endl;
 
   flat_example* fec = nullptr;
@@ -342,10 +343,10 @@ void save_load_svm_model(svm_params& params, io_buf& model_file, bool read, bool
 
   if (read) { model->alpha.resize_but_with_stl_behavior(model->num_support); }
   bin_text_read_write_fixed(model_file, reinterpret_cast<char*>(model->alpha.data()),
-      static_cast<uint32_t>(model->num_support) * sizeof(float), "", read, msg, text);
+      static_cast<uint32_t>(model->num_support) * sizeof(float), read, msg, text);
   if (read) { model->delta.resize_but_with_stl_behavior(model->num_support); }
   bin_text_read_write_fixed(model_file, reinterpret_cast<char*>(model->delta.data()),
-      static_cast<uint32_t>(model->num_support) * sizeof(float), "", read, msg, text);
+      static_cast<uint32_t>(model->num_support) * sizeof(float), read, msg, text);
 }
 
 void save_load(svm_params& params, io_buf& model_file, bool read, bool text)
@@ -438,7 +439,7 @@ void predict(svm_params& params, svm_example** ec_arr, float* scores, size_t n)
   }
 }
 
-void predict(svm_params& params, single_learner&, example& ec)
+void predict(svm_params& params, base_learner&, example& ec)
 {
   flat_example* fec = flatten_sort_example(*(params.all), &ec);
   if (fec)
@@ -581,7 +582,7 @@ void add_size_t(size_t& t1, const size_t& t2) noexcept { t1 += t2; }
 
 void add_double(double& t1, const double& t2) noexcept { t1 += t2; }
 
-void sync_queries(vw& all, svm_params& params, bool* train_pool)
+void sync_queries(VW::workspace& all, svm_params& params, bool* train_pool)
 {
   io_buf* b = new io_buf();
 
@@ -762,7 +763,7 @@ void train(svm_params& params)
   free(train_pool);
 }
 
-void learn(svm_params& params, single_learner&, example& ec)
+void learn(svm_params& params, base_learner&, example& ec)
 {
   flat_example* fec = flatten_sort_example(*(params.all), &ec);
   if (fec)
@@ -797,9 +798,9 @@ void learn(svm_params& params, single_learner&, example& ec)
 VW::LEARNER::base_learner* kernel_svm_setup(VW::setup_base_i& stack_builder)
 {
   options_i& options = *stack_builder.get_options();
-  vw& all = *stack_builder.get_all_pointer();
+  VW::workspace& all = *stack_builder.get_all_pointer();
 
-  auto params = scoped_calloc_or_throw<svm_params>();
+  auto params = VW::make_unique<svm_params>();
   std::string kernel_type;
   float bandwidth = 1.f;
   int degree = 2;
@@ -807,20 +808,21 @@ VW::LEARNER::base_learner* kernel_svm_setup(VW::setup_base_i& stack_builder)
   bool ksvm = false;
 
   option_group_definition new_options("Kernel SVM");
-  new_options.add(make_option("ksvm", ksvm).keep().necessary().help("kernel svm"))
-      .add(make_option("reprocess", params->reprocess).default_value(1).help("number of reprocess steps for LASVM"))
-      .add(make_option("pool_greedy", params->active_pool_greedy).help("use greedy selection on mini pools"))
-      .add(make_option("para_active", params->para_active).help("do parallel active learning"))
-      .add(make_option("pool_size", params->pool_size).default_value(1).help("size of pools for active learning"))
+  new_options.add(make_option("ksvm", ksvm).keep().necessary().help("Kernel svm"))
+      .add(make_option("reprocess", params->reprocess).default_value(1).help("Number of reprocess steps for LASVM"))
+      .add(make_option("pool_greedy", params->active_pool_greedy).help("Use greedy selection on mini pools"))
+      .add(make_option("para_active", params->para_active).help("Do parallel active learning"))
+      .add(make_option("pool_size", params->pool_size).default_value(1).help("Size of pools for active learning"))
       .add(make_option("subsample", params->subsample)
                .default_value(1)
-               .help("number of items to subsample from the pool"))
+               .help("Number of items to subsample from the pool"))
       .add(make_option("kernel", kernel_type)
                .keep()
                .default_value("linear")
-               .help("type of kernel (rbf or linear (default))"))
-      .add(make_option("bandwidth", bandwidth).keep().default_value(1.f).help("bandwidth of rbf kernel"))
-      .add(make_option("degree", degree).keep().default_value(2).help("degree of poly kernel"));
+               .one_of({"linear", "rbf", "poly"})
+               .help("Type of kernel"))
+      .add(make_option("bandwidth", bandwidth).keep().default_value(1.f).help("Bandwidth of rbf kernel"))
+      .add(make_option("degree", degree).keep().default_value(2).help("Degree of poly kernel"));
 
   if (!options.add_parse_and_check_necessary(new_options)) { return nullptr; }
 
@@ -872,8 +874,10 @@ VW::LEARNER::base_learner* kernel_svm_setup(VW::setup_base_i& stack_builder)
 
   params->all->weights.stride_shift(0);
 
-  learner<svm_params, example>& l =
-      init_learner(params, learn, predict, 1, stack_builder.get_setupfn_name(kernel_svm_setup));
-  l.set_save_load(save_load);
-  return make_base(l);
+  auto* l = make_base_learner(std::move(params), learn, predict, stack_builder.get_setupfn_name(kernel_svm_setup),
+      VW::prediction_type_t::scalar, VW::label_type_t::simple)
+                .set_save_load(save_load)
+                .build();
+
+  return make_base(*l);
 }
