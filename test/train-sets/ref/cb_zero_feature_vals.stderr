@@ -7,8 +7,8 @@ using no cache
 Reading datafile = train-sets/cb_features_w_zero_vals.dat
 num sources = 1
 Enabled reductions: gd, scorer-identity, csoaa_ldf-rank, cb_adf, cb_explore_adf_greedy, shared_feature_merger
-Input label = label_type_t::cb
-Output pred = prediction_type_t::action_probs
+Input label = cb
+Output pred = action_probs
 average  since         example        example  current  current  current
 loss     last          counter         weight    label  predict features
 0.666667 0.666667            1            1.0  0:1:0.5        0:0.333333...        6

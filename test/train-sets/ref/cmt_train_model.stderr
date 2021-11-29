@@ -8,8 +8,8 @@ using no cache
 Reading datafile = train-sets/aloi_short_train.dat
 num sources = 1
 Enabled reductions: gd, scorer-identity, memory_tree
-Input label = label_type_t::multiclass
-Output pred = prediction_type_t::multiclass
+Input label = multiclass
+Output pred = multiclass
 average  since         example        example  current  current  current
 loss     last          counter         weight    label  predict features
 1.000000 1.000000            1            1.0      796        0       46

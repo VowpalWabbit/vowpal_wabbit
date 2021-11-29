@@ -7,8 +7,8 @@ creating cache_file = train-sets/cb_adf_multipass_crash_1.data.cache
 Reading datafile = train-sets/cb_adf_multipass_crash_1.data
 num sources = 1
 Enabled reductions: gd, scorer-identity, csoaa_ldf-rank, cb_adf, shared_feature_merger
-Input label = label_type_t::cb
-Output pred = prediction_type_t::action_scores
+Input label = cb
+Output pred = action_scores
 average  since         example        example  current  current  current
 loss     last          counter         weight    label  predict features
 0.133333 0.133333            1            1.0 0:0.1:0.75        0:0...       13

@@ -10,8 +10,8 @@ creating cache_file = train-sets/wsj_small.dparser.vw.gz.cache
 Reading datafile = train-sets/wsj_small.dparser.vw.gz
 num sources = 1
 Enabled reductions: ftrl-Proximal-FTRL, nn, scorer-identity, csoaa, search_task
-Input label = label_type_t::cs
-Output pred = prediction_type_t::multiclass
+Input label = cs
+Output pred = multiclass
 average    since      instance            current true      current predicted   cur   cur   predic    cache  examples          
 loss       last        counter           output prefix          output prefix  pass   pol     made     hits    gener  beta    
 89.000000  89.000000         1  [43:1 5:2 5:2 5:2 1..] [20:9 20:9 20:9 20:..]     0     0       96        0       96  0.000950
