@@ -90,7 +90,7 @@ void freegrad_predict(freegrad& fg, example& ec)
 {
   fg.update_data.predict = 0.;
   fg.update_data.squared_norm_prediction = 0.;
-  size_t num_features_from_interactions = 0;
+  size_t num_features_from_interactions = 0.;
   fg.total_weight += ec.weight;
   float norm_w_pred;
   float projection_radius;
@@ -102,7 +102,7 @@ void freegrad_predict(freegrad& fg, example& ec)
 
   if (fg.project)
   {
-    // Set the project radius either to the user-specified value, or adaptively
+    // Set the project radius either to the user-specified value, or adap tively
     if (fg.adaptiveradius) { projection_radius = fg.epsilon * sqrtf(fg.update_data.sum_normalized_grad_norms); }
     else
     {
@@ -132,8 +132,8 @@ void gradient_dot_w(freegrad_update_data& d, float x, float& wref)
   // Only predict a non-zero w_pred if a non-zero gradient has been observed
   if (h1 > 0.f)
   {
-    w_pred = -G * epsilon * (2.f * V + ht * absG) * std::pow(h1, 2.f) /
-        (2.f * std::pow(V + ht * absG, 2.f) * sqrtf(V)) * std::exp(std::pow(absG, 2.f) / (2 * V + 2.f * ht * absG));
+    w_pred = -G * epsilon * (2. * V + ht * absG) * std::pow(h1, 2.f) / (2.f * std::pow(V + ht * absG, 2.f) * sqrtf(V)) *
+        std::exp(std::pow(absG, 2.f) / (2 * V + 2.f * ht * absG));
   }
 
   d.grad_dot_w += gradient * w_pred;
@@ -358,7 +358,7 @@ base_learner* VW::freegrad_setup(VW::setup_base_i& stack_builder)
   auto predict_ptr = (fg_ptr->all->audit || fg_ptr->all->hash_inv) ? predict<true> : predict<false>;
   auto learn_ptr = (fg_ptr->all->audit || fg_ptr->all->hash_inv) ? learn_freegrad<true> : learn_freegrad<false>;
   auto* l = VW::LEARNER::make_base_learner(std::move(fg_ptr), learn_ptr, predict_ptr,
-      stack_builder.get_setupfn_name(VW::freegrad_setup) + "-" + algorithm_name, VW::prediction_type_t::scalar,
+      stack_builder.get_setupfn_name(VW::freegrad_setup), VW::prediction_type_t::scalar,
       VW::label_type_t::simple)
                 .set_learn_returns_prediction(true)
                 .set_params_per_weight(UINT64_ONE << stack_builder.get_all_pointer()->weights.stride_shift())

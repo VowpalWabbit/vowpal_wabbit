@@ -4341,7 +4341,7 @@
   {
     "id": 367,
     "desc": "Freegrad",
-    "vw_command": "-d train-sets/0001.dat -f models/freegrad.model -k -c --passes 4",
+    "vw_command": "--freegrad -d train-sets/0001.dat -f models/freegrad.model -k -c --passes 4",
     "diff_files": {
       "stderr": "train-sets/ref/freegrad.stderr"
     },
