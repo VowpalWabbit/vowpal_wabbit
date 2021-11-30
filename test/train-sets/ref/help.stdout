@@ -420,6 +420,7 @@ Make Multiclass into Contextual Bandit Options:
   --loss_01_ratio arg (=0.1, ) Ratio of zero loss for 0/1 loss
   --loss0 arg (=0, )           Loss for correct label
   --loss1 arg (=1, )           Loss for incorrect label
+  --flip_loss_sign             Flip sign of loss (use reward instead of loss)
 Make csoaa_ldf into Contextual Bandit Options:
   --cbify_ldf           Convert csoaa_ldf into a contextual bandit problem
   --loss0 arg (=0, )    Loss for correct label
@@ -475,6 +476,9 @@ Error Correcting Tournament Options:
   --error arg (=0, )       Errors allowed by ECT
   --link arg (=identity, ) Specify the link function. Choices: {glf1, identity,
                            logistic, poisson}
+Interaction Grounded Learning Options:
+  --experimental_igl    Experimental: Do Interaction Grounding with multiline 
+                        action dependent features.
 Explore Evaluation Options:
   --explore_eval        Evaluate explore_eval adf policies
   --multiplier arg      Multiplier used to make all rejection sample 
