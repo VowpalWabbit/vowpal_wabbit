@@ -817,10 +817,11 @@ void parse_feature_tweaks(options_i& options, VW::workspace& all, bool interacti
 
     if (!all.logger.quiet)
     {
-      *(all.trace_message) << "ignoring namespaces beginning with: ";
-      for (auto const& ignore : ignores)
-        for (auto const character : ignore) *(all.trace_message) << character << " ";
-
+      *(all.trace_message) << "ignoring namespaces beginning with:";
+      for (size_t i = 0; i < 256; ++i)
+      {
+        if (all.ignore[i]) *(all.trace_message) << " " << static_cast<unsigned char>(i);
+      }
       *(all.trace_message) << endl;
     }
   }
@@ -837,10 +838,11 @@ void parse_feature_tweaks(options_i& options, VW::workspace& all, bool interacti
 
     if (!all.logger.quiet)
     {
-      *(all.trace_message) << "ignoring linear terms for namespaces beginning with: ";
-      for (auto const& ignore : ignore_linears)
-        for (auto const character : ignore) *(all.trace_message) << character << " ";
-
+      *(all.trace_message) << "ignoring linear terms for namespaces beginning with:";
+      for (size_t i = 0; i < 256; ++i)
+      {
+        if (all.ignore_linear[i]) *(all.trace_message) << " " << static_cast<unsigned char>(i);
+      }
       *(all.trace_message) << endl;
     }
   }
@@ -859,10 +861,11 @@ void parse_feature_tweaks(options_i& options, VW::workspace& all, bool interacti
 
     if (!all.logger.quiet)
     {
-      *(all.trace_message) << "using namespaces beginning with: ";
-      for (auto const& keep : keeps)
-        for (auto const character : keep) *(all.trace_message) << character << " ";
-
+      *(all.trace_message) << "using namespaces beginning with:";
+      for (size_t i = 0; i < 256; ++i)
+      {
+        if (!all.ignore[i]) *(all.trace_message) << " " << static_cast<unsigned char>(i);
+      }
       *(all.trace_message) << endl;
     }
   }
