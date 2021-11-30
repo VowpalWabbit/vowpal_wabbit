@@ -64,6 +64,7 @@ set(vw_all_headers
   cats_tree.h
   cats.h
   cb_adf.h
+  interaction_ground.h
   cb_algs.h
   cb_continuous_label.h
   cb_dro.h
@@ -258,6 +259,7 @@ set(vw_all_sources
   cats_tree.cc
   cats.cc
   cb_adf.cc
+  interaction_ground.cc
   cb_algs.cc
   cb_continuous_label.cc
   cb_dro.cc
