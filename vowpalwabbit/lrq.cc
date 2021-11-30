@@ -184,6 +184,11 @@ base_learner* lrq_setup(VW::setup_base_i& stack_builder)
   uint32_t maxk = 0;
   lrq->all = &all;
 
+  for (const auto& name : lrq_names)
+  {
+    if (name.find(':') != std::string::npos) { THROW("--lrq does not support wildcards ':'"); }
+  }
+
   for (auto& lrq_name : lrq_names) lrq_name = VW::decode_inline_hex(lrq_name);
 
   new (&lrq->lrpairs) std::set<std::string>(lrq_names.begin(), lrq_names.end());

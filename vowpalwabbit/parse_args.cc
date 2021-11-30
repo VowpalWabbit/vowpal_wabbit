@@ -23,6 +23,8 @@
 
 #include "rand48.h"
 #include "learner.h"
+#include "prediction_type.h"
+#include "label_type.h"
 #include "parse_example.h"
 #include "best_constant.h"
 #include "vw_exception.h"
@@ -507,7 +509,7 @@ std::vector<namespace_index> parse_char_interactions(VW::string_view input)
   return result;
 }
 
-std::vector<extent_term> parse_full_name_interactions(vw& all, VW::string_view str)
+std::vector<extent_term> parse_full_name_interactions(VW::workspace& all, VW::string_view str)
 {
   std::vector<extent_term> result;
   auto encoded = VW::decode_inline_hex(str);
@@ -536,8 +538,8 @@ std::vector<extent_term> parse_full_name_interactions(vw& all, VW::string_view s
   return result;
 }
 
-void parse_feature_tweaks(
-    options_i& options, vw& all, bool interactions_settings_duplicated, std::vector<std::string>& dictionary_nses)
+void parse_feature_tweaks(options_i& options, VW::workspace& all, bool interactions_settings_duplicated,
+    std::vector<std::string>& dictionary_nses)
 {
   std::string hash_function("strings");
   uint32_t new_bits;
@@ -1610,6 +1612,13 @@ VW::workspace* initialize_with_builder(std::unique_ptr<options_i, options_delete
     }
 
     print_enabled_reductions(all, enabled_reductions);
+
+    if (!all.logger.quiet)
+    {
+      *(all.trace_message) << "Input label = " << VW::to_string(all.l->get_input_label_type()).substr(14) << std::endl;
+      *(all.trace_message) << "Output pred = " << VW::to_string(all.l->get_output_prediction_type()).substr(19)
+                           << std::endl;
+    }
 
     if (!all.options->get_typed_option<bool>("dry_run").value())
     {

@@ -5,6 +5,8 @@ power_t = 0.5
 using no cache
 Reading datafile = train-sets/0001.dat
 num sources = 1
+Input label = simple
+Output pred = scalar
 Regressor contains 4287 values
 example      values         total   
 counter      audited        progress

@@ -11,7 +11,7 @@
 #include "parse_example.h"
 #include "io/logger.h"
 
-// DispatchFuncT should be of the form - void(vw&, const v_array<example*>&)
+// DispatchFuncT should be of the form - void(VW::workspace&, const v_array<example*>&)
 template <typename DispatchFuncT>
 void parse_dispatch(VW::workspace& all, DispatchFuncT& dispatch)
 {
@@ -40,6 +40,8 @@ void parse_dispatch(VW::workspace& all, DispatchFuncT& dispatch)
         all.example_parser->lbl_parser.default_label(examples[0]->l);
         examples[0]->end_pass = true;
         all.example_parser->in_pass_counter = 0;
+        // Since this example gets finished, we need to keep the counter correct.
+        all.example_parser->num_setup_examples++;
 
         if (all.passes_complete == all.numpasses && example_number == all.pass_length)
         {

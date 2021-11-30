@@ -554,7 +554,7 @@ void read_line(VW::workspace& all, example* ex, VW::string_view line)
 
 void read_line(VW::workspace& all, example* ex, const char* line) { return read_line(all, ex, VW::string_view(line)); }
 
-void read_lines(vw* all, const char* line, size_t len, v_array<example*>& examples)
+void read_lines(VW::workspace* all, const char* line, size_t len, v_array<example*>& examples)
 {
   VW::string_view line_view = VW::string_view(line, len);
   std::vector<VW::string_view> lines;
