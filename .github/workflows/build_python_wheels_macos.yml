@@ -19,7 +19,7 @@ jobs:
         - { version: 3.7, include_dir_name: python3.7m/}
         - { version: 3.8, include_dir_name: python3.8/}
         - { version: 3.9, include_dir_name: python3.9/}
-        - { version: 3.10, include_dir_name: python3.10/}
+        - { version: "3.10", include_dir_name: python3.10/}
     steps:
       - uses: actions/checkout@v2
       - uses: conda-incubator/setup-miniconda@v2

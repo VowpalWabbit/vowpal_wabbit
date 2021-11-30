@@ -19,7 +19,7 @@ jobs:
         - { version: 3.7, vcpkg_commit: 8c3e093d0509fb0c7cc325692834fc1583a05390}
         - { version: 3.8, vcpkg_commit: 6185aa76504a5025f36754324abf307cc776f3da}
         - { version: 3.9, vcpkg_commit: fe112d8301e13fde9a25dc92d94a0c4a6dc3cf19}
-        - { version: 3.10, vcpkg_commit: fe112d8301e13fde9a25dc92d94a0c4a6dc3cf19}
+        - { version: "3.10", vcpkg_commit: fe112d8301e13fde9a25dc92d94a0c4a6dc3cf19}
     steps:
       - name: Set up Python ${{ matrix.config.version }}
         uses: actions/setup-python@v2
@@ -72,6 +72,7 @@ jobs:
         - { version: 3.7 }
         - { version: 3.8 }
         - { version: 3.9 }
+        - { version: "3.10" }
     steps:
       - uses: actions/checkout@v2
       - name: Set up Python ${{ matrix.config.version }}
