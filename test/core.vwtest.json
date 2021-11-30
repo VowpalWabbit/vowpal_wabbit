@@ -4340,6 +4340,28 @@
   },
   {
     "id": 367,
+    "desc": "Igl with a dataset containing costs - This intentionally has the same reference file as 368",
+    "vw_command": "--cbify 2 --experimental_igl -d train-sets/rcv1_multiclass.dat",
+    "diff_files": {
+      "stderr": "train-sets/ref/igl_result.stderr"
+    },
+    "input_files": [
+      "train-sets/rcv1_multiclass.dat"
+    ]
+  },
+  {
+    "id": 368,
+    "desc": "Igl with a dataset containing rewards - This intentionally has the same reference file as 367",
+    "vw_command": "--cbify 2 --flip_loss_sign --experimental_igl -d train-sets/rcv1_multiclass.dat",
+    "diff_files": {
+      "stderr": "train-sets/ref/igl_result.stderr"
+    },
+    "input_files": [
+      "train-sets/rcv1_multiclass.dat"
+    ]
+  },
+  {
+    "id": 369,
     "desc": "Freegrad",
     "vw_command": "--freegrad -d train-sets/0001.dat -f models/freegrad.model -k -c --passes 4",
     "diff_files": {
@@ -4350,7 +4372,7 @@
     ]
   },
   {
-    "id": 368,
+    "id": 370,
     "desc": "Freegrad load model",
     "vw_command": "-d train-sets/0001.dat -i models/freegrad.model -k -t -p freegrad.predict",
     "diff_files": {
@@ -4361,6 +4383,8 @@
       "train-sets/0001.dat",
       "models/freegrad.model"
     ],
-    "depends_on": [367]
+    "depends_on": [
+      369
+    ]
   }
 ]
