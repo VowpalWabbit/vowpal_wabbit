@@ -90,7 +90,7 @@ void freegrad_predict(freegrad& fg, example& ec)
 {
   fg.update_data.predict = 0.;
   fg.update_data.squared_norm_prediction = 0.;
-  size_t num_features_from_interactions = 0.;
+  size_t num_features_from_interactions = 0;
   fg.total_weight += ec.weight;
   float norm_w_pred;
   float projection_radius;
@@ -132,7 +132,7 @@ void gradient_dot_w(freegrad_update_data& d, float x, float& wref)
   // Only predict a non-zero w_pred if a non-zero gradient has been observed
   if (h1 > 0.f)
   {
-    w_pred = -G * epsilon * (2. * V + ht * absG) * std::pow(h1, 2.f) / (2.f * std::pow(V + ht * absG, 2.f) * sqrtf(V)) *
+    w_pred = -G * epsilon * (2.f * V + ht * absG) * std::pow(h1, 2.f) / (2.f * std::pow(V + ht * absG, 2.f) * sqrtf(V)) *
         std::exp(std::pow(absG, 2.f) / (2 * V + 2.f * ht * absG));
   }
 
