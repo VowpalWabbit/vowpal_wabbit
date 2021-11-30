@@ -132,8 +132,8 @@ void gradient_dot_w(freegrad_update_data& d, float x, float& wref)
   // Only predict a non-zero w_pred if a non-zero gradient has been observed
   if (h1 > 0.f)
   {
-    w_pred = -G * epsilon * (2.f * V + ht * absG) * std::pow(h1, 2.f) / (2.f * std::pow(V + ht * absG, 2.f) * sqrtf(V)) *
-        std::exp(std::pow(absG, 2.f) / (2 * V + 2.f * ht * absG));
+    w_pred = -G * epsilon * (2.f * V + ht * absG) * std::pow(h1, 2.f) /
+        (2.f * std::pow(V + ht * absG, 2.f) * sqrtf(V)) * std::exp(std::pow(absG, 2.f) / (2 * V + 2.f * ht * absG));
   }
 
   d.grad_dot_w += gradient * w_pred;
