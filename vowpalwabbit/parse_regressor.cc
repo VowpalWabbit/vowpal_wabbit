@@ -383,12 +383,32 @@ void save_load_header(VW::workspace& all, io_buf& model_file, bool read, bool te
     else
     {
       VW::config::options_serializer_boost_po serializer;
+
+      std::map<std::string, std::set<char>> merged_values = {{"ignore", {}}, {"ignore_linear", {}}, {"keep", {}}};
+
       for (auto const& option : options.get_all_options())
       {
-        if (option->m_keep && options.was_supplied(option->m_name)) { serializer.add(*option); }
+        if (option->m_keep && options.was_supplied(option->m_name))
+        {
+          if (merged_values.find(option->m_name) != merged_values.end())
+          {
+            // Merge and deduplicate the namespaces before serializing into the model file.
+            const auto& typed = dynamic_cast<const VW::config::typed_option<std::vector<std::string>>&>(*option);
+            for (const auto& v : typed.value()) { merged_values[option->m_name].insert(v.begin(), v.end()); }
+            continue;
+          }
+          serializer.add(*option);
+        }
       }
 
       auto serialized_keep_options = serializer.str();
+
+      // Save deduplicated values for ignore, ignore_linear, or keep.
+      for (const auto& kv : merged_values)
+      {
+        if (kv.second.empty()) continue;
+        serialized_keep_options += " --" + kv.first + " " + std::string(kv.second.begin(), kv.second.end());
+      }
 
       // We need to save our current PRG state
       if (all.get_random_state()->get_current_state() != 0)

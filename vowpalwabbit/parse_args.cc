@@ -1351,6 +1351,7 @@ void merge_options_from_header_strings(const std::vector<std::string>& strings, 
         first_seen = false;
         continue;
       }
+
       saved_key = opt.string_key;
       is_ccb_input_model = is_ccb_input_model || (saved_key == "ccb_explore_adf");
 
@@ -1387,7 +1388,7 @@ options_i& load_header_merge_options(
 
   interactions_settings_duplicated = check_interaction_settings_collision(options, file_options);
 
-  // Convert file_options into  vector.
+  // Convert file_options into vector.
   std::istringstream ss{file_options};
   const std::vector<std::string> container{
       std::istream_iterator<std::string>{ss}, std::istream_iterator<std::string>{}};
