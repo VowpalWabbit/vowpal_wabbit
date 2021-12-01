@@ -60,9 +60,10 @@ jobs:
           pip wheel . -w ${{github.workspace}}\\wheel_output --global-option --vcpkg-root="${{github.workspace}}\\vcpkg" --global-option --cmake-generator="${{ matrix.config.generator }}"  --verbose
       - name: Upload built wheel
         uses: actions/upload-artifact@v1
+        if: always()
         with:
-          name: wheel_${{ matrix.config.version }}
-          path: wheel_output
+          name: logs
+          path: ${{github.workspace}}\\vcpkg\\buildtrees\\python3\\build-x64-windows-rel-out.log
   test:
     needs: build
     runs-on: windows-2019
