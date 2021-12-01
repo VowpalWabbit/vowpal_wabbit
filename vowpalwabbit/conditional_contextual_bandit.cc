@@ -688,9 +688,6 @@ base_learner* ccb_explore_adf_setup(VW::setup_base_i& stack_builder)
     options.add_and_parse(new_options);
   }
 
-  // Automatically remove prediction if no pred file and quiet
-  if (options.was_supplied("quiet") && !options.was_supplied("p")) { data->no_pred = true; }
-
   if (options.was_supplied("no_predict") && options.was_supplied("p"))
   { THROW("Error: Cannot use flags --no_predict and -p simultaneously"); }
 
