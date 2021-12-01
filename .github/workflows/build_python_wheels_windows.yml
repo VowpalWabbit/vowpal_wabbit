@@ -15,7 +15,7 @@ jobs:
     strategy:
       matrix:
         config:
-        - { version: "3.6", vcpkg_commit: 61922f919fca03ebd554a0ab9a26dffead947250, os: windows-2019, generator: "Visual Studio 16 2019"}
+        - { version: "3.6", vcpkg_commit: 787fe1418ea968913cc6daf11855ffd8b0b5e9d4, os: windows-2019, generator: "Visual Studio 16 2019"}
         - { version: "3.7", vcpkg_commit: 8c3e093d0509fb0c7cc325692834fc1583a05390, os: windows-2019, generator: "Visual Studio 16 2019"}
         - { version: "3.8", vcpkg_commit: 6185aa76504a5025f36754324abf307cc776f3da, os: windows-2019, generator: "Visual Studio 16 2019"}
         - { version: "3.9", vcpkg_commit: fe112d8301e13fde9a25dc92d94a0c4a6dc3cf19, os: windows-2019, generator: "Visual Studio 16 2019"}
@@ -30,24 +30,24 @@ jobs:
           repository: microsoft/vcpkg
           ref: ${{ matrix.config.vcpkg_commit }}
           path: ${{github.workspace}}\\vcpkg
-      - name: Cache vcpkg
-        id: vcpkg-cache
-        uses: actions/cache@v2
-        with:
-          path: ${{github.workspace}}\\vcpkg
-          key: ${{ runner.os }}-${{ matrix.config.version }}-${{ matrix.config.vcpkg_commit }}-2
+      # - name: Cache vcpkg
+      #   id: vcpkg-cache
+      #   uses: actions/cache@v2
+      #   with:
+      #     path: ${{github.workspace}}\\vcpkg
+      #     key: ${{ runner.os }}-${{ matrix.config.version }}-${{ matrix.config.vcpkg_commit }}-2
       # Downgrade CMake to mitigate crashing issue introduced in 3.21 that only affects vcpkg. See here: https://github.com/microsoft/vcpkg/issues/18718
       - name: Setup cmake
         uses: jwlawson/actions-setup-cmake@v1.9
         with:
           cmake-version: '3.20.x'
-      - name: Bootstrap and install vcpkg packages
-        shell: powershell
-        if: steps.vcpkg-cache.outputs.cache-hit != 'true'
-        run: |
-          cd ${{github.workspace}}\\vcpkg
-          .\\bootstrap-vcpkg.bat
-          .\\vcpkg.exe --triplet x64-windows install zlib boost-program-options boost-align boost-foreach boost-python boost-math python3 flatbuffers
+      # - name: Bootstrap and install vcpkg packages
+      #   shell: powershell
+      #   if: steps.vcpkg-cache.outputs.cache-hit != 'true'
+      #   run: |
+      #     cd ${{github.workspace}}\\vcpkg
+      #     .\\bootstrap-vcpkg.bat
+      #     .\\vcpkg.exe --triplet x64-windows install zlib boost-program-options boost-align boost-foreach boost-python boost-math python3 flatbuffers
       - uses: actions/checkout@v2
         with:
           path: ${{github.workspace}}\\vowpal_wabbit
