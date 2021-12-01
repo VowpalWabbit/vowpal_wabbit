@@ -99,6 +99,7 @@ option(RAPIDJSON_SYS_DEP "Override using the submodule for RapidJSON dependency.
 option(FMT_SYS_DEP "Override using the submodule for FMT dependency. Instead will use find_package" OFF)
 option(SPDLOG_SYS_DEP "Override using the submodule for spdlog dependency. Instead will use find_package" OFF)
 option(BUILD_FLATBUFFERS "Build flatbuffers" OFF)
+option(BUILD_PRIVACY_ACTIVATION "Enable privacy activation feature" OFF)
 
 string(TOUPPER "${CMAKE_BUILD_TYPE}" CONFIG)
 
