@@ -365,12 +365,5 @@ base_learner* VW::freegrad_setup(VW::setup_base_i& stack_builder)
                 .set_end_pass(end_pass)
                 .build();
 
-  // (TODO) Check what the multipredict is about and set_and_pass
-  // l->set_sensitivity(sensitivity);
-  // if (all.audit || all.hash_inv)
-  //   l->set_multipredict(multipredict<true>);
-  // else
-  //   l->set_multipredict(multipredict<false>);
-
   return make_base(*l);
 }
