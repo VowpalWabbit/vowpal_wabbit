@@ -101,7 +101,6 @@ class BuildPyLibVWBindingsModule(_build_ext):
             '-DBUILD_PYTHON=On',
             '-DBUILD_TESTS=Off',
             '-DWARNINGS=Off',
-            '-DVCPKG_TARGET_TRIPLET=win-old',
             f'-DVCPKG_OVERLAY_TRIPLETS={triplets_path}'
             
         ]
