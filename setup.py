@@ -21,6 +21,7 @@ system = platform.system()
 version_info = sys.version_info
 here = os.path.abspath(os.path.dirname(__file__))
 pkg_path = os.path.join(here, 'python')
+triplets_path = os.path.join(here, 'triplets')
 
 class Distribution(_distribution):
     global_options = _distribution.global_options
@@ -99,7 +100,10 @@ class BuildPyLibVWBindingsModule(_build_ext):
             '-DPY_VERSION=' + '{v[0]}.{v[1]}'.format(v=version_info),
             '-DBUILD_PYTHON=On',
             '-DBUILD_TESTS=Off',
-            '-DWARNINGS=Off'
+            '-DWARNINGS=Off',
+            '-DVCPKG_TARGET_TRIPLET=win-old',
+            f'-DVCPKG_OVERLAY_TRIPLETS={triplets_path}'
+            
         ]
         if self.distribution.enable_boost_cmake is None:
             # Add this flag as default since testing indicates its safe.
