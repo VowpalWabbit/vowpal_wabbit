@@ -4359,5 +4359,60 @@
     "input_files": [
       "train-sets/rcv1_multiclass.dat"
     ]
+  },
+  {
+    "id": 369,
+    "desc": "Create CCB model with predictions",
+    "vw_command": "-d train-sets/ccb_test_interactions.dat --ccb_explore_adf -q :: -f models/ccb_with_predict.model --save_resume",
+    "diff_files": {
+      "stderr": "train-sets/ref/ccb_with_predict.stderr"
+    },
+    "input_files": [
+      "train-sets/ccb_test_interactions.dat"
+    ]
+  },
+  {
+    "id": 370,
+    "desc": "Predict on CCB model generated with predictions",
+    "vw_command": "-d train-sets/ccb_test_interactions.dat --ccb_explore_adf -q :: -i models/ccb_with_predict.model --save_resume -p ccb_with_predict.predict",
+    "diff_files": {
+      "stderr": "train-sets/ref/ccb_with_predict_loaded.stderr",
+      "ccb_with_predict.predict": "pred-sets/ref/ccb_with_predict.predict"
+    },
+    "input_files": [
+      "train-sets/ccb_test_interactions.dat",
+      "models/ccb_with_predict.model"
+    ],
+    "depends_on": [
+      369
+    ]
+  },
+  {
+    "id": 371,
+    "desc": "Create CCB model without predictions",
+    "vw_command": "-d train-sets/ccb_test_interactions.dat --ccb_explore_adf -q :: -f models/ccb_no_predict.model --save_resume --no_predict",
+    "diff_files": {
+      "stderr": "train-sets/ref/ccb_no_predict.stderr"
+    },
+    "input_files": [
+      "train-sets/ccb_test_interactions.dat"
+    ]
+  },
+  {
+    "id": 372,
+    "desc": "Predict on CCB model generated without predictions and ensure prediction is same as loaded model with predictions",
+    "vw_command": "-d train-sets/ccb_test_interactions.dat --ccb_explore_adf -q :: -i models/ccb_no_predict.model --save_resume -p ccb_no_predict.predict",
+    "diff_files": {
+      "stderr": "train-sets/ref/ccb_no_predict_loaded.stderr",
+      "ccb_no_predict.predict": "pred-sets/ref/ccb_with_predict.predict"
+    },
+    "input_files": [
+      "train-sets/ccb_test_interactions.dat",
+      "models/ccb_no_predict.model"
+    ],
+    "depends_on": [
+      371
+    ]
   }
+
 ]

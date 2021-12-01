@@ -20,7 +20,7 @@ void remove_slot_features(example* shared, example* slot);
 
 BOOST_AUTO_TEST_CASE(ccb_explicit_included_actions_no_overlap)
 {
-  auto& vw = *VW::initialize("--ccb_explore_adf --quiet");
+  auto& vw = *VW::initialize("--ccb_explore_adf --quiet -p ccb.pred");
   multi_ex examples;
   examples.push_back(VW::read_example(vw, "ccb shared |"));
   examples.push_back(VW::read_example(vw, "ccb action |"));

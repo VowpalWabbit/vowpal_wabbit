@@ -434,6 +434,7 @@ EXPERIMENTAL: Conditional Contextual Bandit Exploration with ADF Options:
   --ccb_explore_adf     EXPERIMENTAL: Do Conditional Contextual Bandit learning
                         with multiline action dependent features.
   --all_slots_loss      Report average loss from all slots
+  --no_predict          Do not do a prediction when training
 Importance Weight Classes Options:
   --classweight arg     Importance weight multiplier for class
 Confidence Options:

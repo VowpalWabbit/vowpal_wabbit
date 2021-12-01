@@ -212,21 +212,24 @@ void save_action_scores(ccb& data, decision_scores_t& decision_scores)
   data.shared->pred.a_s.clear();
 }
 
-void save_action_no_pred(ccb& data, multi_ex& examples)
+void remove_labeled_action(ccb& data, multi_ex& examples)
 {
-  // Exclude the chosen action from next slots.
-  uint32_t action_index;
-  if (data.shared->pred.a_s.empty())
-  { action_index = examples[1]->l.conditional_contextual_bandit.explicit_included_actions[0]; }
-  else
+  int32_t action_index = -1;
+  for (size_t i = 0; i < examples.size(); i++)
   {
-    // There should be no prediction here. The prediction implies that the example was unlabeled, so prediction
-    // was done instead in learn function of cb_explore_adf_common
-    logger::errlog_warn("Unlabeled example used for learning only. This will have no effect and diminish performance.");
-    action_index = data.shared->pred.a_s[0].action;
+    CB::label& ld = examples[i]->l.cb;
+    if (ld.costs.size() == 1 && ld.costs[0].cost != FLT_MAX)
+    {
+      action_index = static_cast<int32_t>(i) - 1; /* un-1-index for shared */
+      break;
+    }
   }
-  const auto original_index_of_chosen_action = data.origin_index[action_index];
-  data.exclude_list[original_index_of_chosen_action] = true;
+  if (action_index == -1)
+  {
+    logger::errlog_warn("Unlabeled example used for learning only. Skipping over.");
+    return;
+  }
+  data.exclude_list[action_index] = true;
 }
 
 void clear_pred_and_label(ccb& data)
@@ -493,14 +496,16 @@ void learn_or_predict(ccb& data, multi_learner& base, multi_ex& examples)
         // The right thing to do here is to detect library mode and not have to
         // call predict if prediction is
         // not needed for learn.  This will be part of a future PR
-        if (!is_learn) multiline_learn_or_predict<false>(base, data.cb_ex, examples[0]->ft_offset);
-
-        if (is_learn) { multiline_learn_or_predict<true>(base, data.cb_ex, examples[0]->ft_offset); }
-
-        if (data.no_pred) { save_action_no_pred(data, examples); }
+        if (!is_learn) { multiline_learn_or_predict<false>(base, data.cb_ex, examples[0]->ft_offset); }
         else
         {
-          save_action_scores(data, decision_scores);
+          multiline_learn_or_predict<true>(base, data.cb_ex, examples[0]->ft_offset);
+        }
+
+        if (!data.no_pred) { save_action_scores(data, decision_scores); }
+        else
+        {
+          remove_labeled_action(data, examples);
         }
 
         VW_DBG(examples) << "ccb "
@@ -672,7 +677,8 @@ base_learner* ccb_explore_adf_setup(VW::setup_base_i& stack_builder)
                .necessary()
                .help(
                    "EXPERIMENTAL: Do Conditional Contextual Bandit learning with multiline action dependent features."))
-      .add(make_option("all_slots_loss", all_slots_loss_report).help("Report average loss from all slots"));
+      .add(make_option("all_slots_loss", all_slots_loss_report).help("Report average loss from all slots"))
+      .add(make_option("no_predict", data->no_pred).help("Do not do a prediction when training"));
 
   if (!options.add_parse_and_check_necessary(new_options)) { return nullptr; }
   data->all_slots_loss_report = all_slots_loss_report;
@@ -682,7 +688,13 @@ base_learner* ccb_explore_adf_setup(VW::setup_base_i& stack_builder)
     options.add_and_parse(new_options);
   }
 
+  // Automatically remove prediction if no pred file and quiet
   if (options.was_supplied("quiet") && !options.was_supplied("p")) { data->no_pred = true; }
+
+  if (options.was_supplied("no_predict") && options.was_supplied("p"))
+  {
+    THROW("Error: Cannot use flags --no_predict and -p simultaneously");
+  }
 
   if (!options.was_supplied("cb_sample") && !data->no_pred)
   {
