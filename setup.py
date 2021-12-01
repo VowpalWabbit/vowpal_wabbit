@@ -88,9 +88,7 @@ class BuildPyLibVWBindingsModule(build_ext):
 
     def build_extension(self, ext):
         # Ensure lib output directory is made
-        lib_output_dir = os.path.abspath(
-            os.path.dirname(self.get_ext_fullpath(ext.name))
-        )
+        lib_output_dir = os.path.join(REPO_ROOT_DIR, os.path.dirname(self.get_ext_fullpath(ext.name)))
 
         # example of cmake args
         config = "Debug" if self.distribution.debug else "Release"
