@@ -15,7 +15,7 @@ jobs:
     strategy:
       matrix:
         config:
-        - { version: "3.6", vcpkg_commit: 94218ff78217a1bf66619f03de6731c959514ef2, os: windows-2019, generator: "Visual Studio 16 2019"}
+        - { version: "3.6", vcpkg_commit: 61922f919fca03ebd554a0ab9a26dffead947250, os: windows-2019, generator: "Visual Studio 16 2019"}
         - { version: "3.7", vcpkg_commit: 8c3e093d0509fb0c7cc325692834fc1583a05390, os: windows-2019, generator: "Visual Studio 16 2019"}
         - { version: "3.8", vcpkg_commit: 6185aa76504a5025f36754324abf307cc776f3da, os: windows-2019, generator: "Visual Studio 16 2019"}
         - { version: "3.9", vcpkg_commit: fe112d8301e13fde9a25dc92d94a0c4a6dc3cf19, os: windows-2019, generator: "Visual Studio 16 2019"}
