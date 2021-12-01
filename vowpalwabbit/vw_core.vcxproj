@@ -195,6 +195,7 @@
     <ClInclude Include="global_data.h" />
     <ClInclude Include="guard.h" />
     <ClInclude Include="interact.h" />
+    <ClInclude Include="interaction_ground.h" />
     <ClInclude Include="interactions_predict.h" />
     <ClInclude Include="cached_learner.h" />
     <ClInclude Include="interactions.h" />
@@ -367,6 +368,7 @@
     <ClCompile Include="generate_interactions.cc" />
     <ClCompile Include="global_data.cc" />
     <ClCompile Include="interact.cc" />
+    <ClCompile Include="interaction_ground.cc" />
     <ClCompile Include="interactions.cc" />
     <ClCompile Include="reduction_stack.cc" />
     <ClCompile Include="io/io_adapter.cc" />

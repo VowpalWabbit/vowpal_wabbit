@@ -420,6 +420,7 @@ Make Multiclass into Contextual Bandit Options:
   --loss_01_ratio arg (=0.1, ) Ratio of zero loss for 0/1 loss
   --loss0 arg (=0, )           Loss for correct label
   --loss1 arg (=1, )           Loss for incorrect label
+  --flip_loss_sign             Flip sign of loss (use reward instead of loss)
 Make csoaa_ldf into Contextual Bandit Options:
   --cbify_ldf           Convert csoaa_ldf into a contextual bandit problem
   --loss0 arg (=0, )    Loss for correct label
@@ -475,6 +476,9 @@ Error Correcting Tournament Options:
   --error arg (=0, )       Errors allowed by ECT
   --link arg (=identity, ) Specify the link function. Choices: {glf1, identity,
                            logistic, poisson}
+Interaction Grounded Learning Options:
+  --experimental_igl    Experimental: Do Interaction Grounding with multiline 
+                        action dependent features.
 Explore Evaluation Options:
   --explore_eval        Evaluate explore_eval adf policies
   --multiplier arg      Multiplier used to make all rejection sample 
@@ -494,9 +498,10 @@ Gradient Descent Options:
   --adax                 Use adaptive learning rates with x^2 instead of g^2x^2
   --invariant            Use safe/importance aware updates
   --normalized           Use per feature normalized updates
-  --sparse_l2 arg (=0, ) Use per feature normalized updates
-  --l1_state arg (=0, )  Use per feature normalized updates
-  --l2_state arg (=1, )  Use per feature normalized updates
+  --sparse_l2 arg (=0, ) Degree of l2 regularization applied to activated 
+                         sparse parameters
+  --l1_state arg (=0, )  Amount of accumulated implicit l1 regularization
+  --l2_state arg (=1, )  Amount of accumulated implicit l2 regularization
 Generate Interactions Options:
   --leave_duplicate_interactions  Don't remove interactions with duplicate 
                                   combinations of namespaces. For ex. this is a

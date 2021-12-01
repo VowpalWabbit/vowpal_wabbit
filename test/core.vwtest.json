@@ -4325,5 +4325,39 @@
     "input_files": [
       "train-sets/ccb_audit_multi.dat"
     ]
+  },
+  {
+    "id": 366,
+    "desc": "check that ccb feature count adds up with multi-action multi-slot and -q ::, constant, using ccb_slot_namespace",
+    "vw_command": "-d train-sets/ccb_audit_multi_default_ns.dat --ccb_explore_adf -q :: -P 1 --audit",
+    "diff_files": {
+      "stderr": "train-sets/ref/ccb_audit_multi_default_ns.stderr",
+      "stdout": "train-sets/ref/ccb_audit_multi_default_ns.stdout"
+    },
+    "input_files": [
+      "train-sets/ccb_audit_multi_default_ns.dat"
+    ]
+  },
+  {
+    "id": 367,
+    "desc": "Igl with a dataset containing costs - This intentionally has the same reference file as 368",
+    "vw_command": "--cbify 2 --experimental_igl -d train-sets/rcv1_multiclass.dat",
+    "diff_files": {
+      "stderr": "train-sets/ref/igl_result.stderr"
+    },
+    "input_files": [
+      "train-sets/rcv1_multiclass.dat"
+    ]
+  },
+  {
+    "id": 368,
+    "desc": "Igl with a dataset containing rewards - This intentionally has the same reference file as 367",
+    "vw_command": "--cbify 2 --flip_loss_sign --experimental_igl -d train-sets/rcv1_multiclass.dat",
+    "diff_files": {
+      "stderr": "train-sets/ref/igl_result.stderr"
+    },
+    "input_files": [
+      "train-sets/rcv1_multiclass.dat"
+    ]
   }
 ]
