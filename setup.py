@@ -21,7 +21,7 @@ system = platform.system()
 version_info = sys.version_info
 here = os.path.abspath(os.path.dirname(__file__))
 pkg_path = os.path.join(here, 'python')
-triplets_path = os.path.join(here, 'triplets')
+ports_path = os.path.join(here, 'ports')
 
 class Distribution(_distribution):
     global_options = _distribution.global_options
@@ -101,7 +101,7 @@ class BuildPyLibVWBindingsModule(_build_ext):
             '-DBUILD_PYTHON=On',
             '-DBUILD_TESTS=Off',
             '-DWARNINGS=Off',
-            f'-DVCPKG_OVERLAY_TRIPLETS={triplets_path}'
+            f'-DVCPKG_OVERLAY_PORTS={ports_path}'
             
         ]
         if self.distribution.enable_boost_cmake is None:
