@@ -1,0 +1,26 @@
+[
+    {
+        "id": 1,
+        "desc": "test privacy_activation command line argument",
+        "vw_command": "--privacy_activation -d train-sets/privacy_dataset --invert_hash readable_model_privacy.txt --cbify 2 --cb_adf",
+        "diff_files": {
+            "stderr": "train-sets/ref/privacy_dataset.stderr",
+            "readable_model_privacy.txt": "pred-sets/ref/readable_model_privacy.txt"
+        },
+        "input_files": [
+            "train-sets/privacy_dataset"
+        ]
+    },
+    {
+        "id": 2,
+        "desc": "test privacy_activation command line argument with no tags input",
+        "vw_command": "--privacy_activation -d train-sets/privacy_dataset_no_tags --invert_hash readable_model_privacy_no_tags.txt --cbify 2 --cb_adf",
+        "diff_files": {
+            "stderr": "train-sets/ref/privacy_no_tags.stderr",
+            "readable_model_privacy_no_tags.txt": "pred-sets/ref/readable_model_privacy_no_tags.txt"
+        },
+        "input_files": [
+            "train-sets/privacy_dataset_no_tags"
+        ]
+    }
+]

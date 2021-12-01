@@ -15,11 +15,11 @@ jobs:
     strategy:
       matrix:
         config:
-        - { version: "3.6", vcpkg_commit: aa095559917a495b160986e9ad50556431509ace, os: windows-2016}
-        - { version: "3.7", vcpkg_commit: 8c3e093d0509fb0c7cc325692834fc1583a05390, os: windows-2016}
-        - { version: "3.8", vcpkg_commit: 6185aa76504a5025f36754324abf307cc776f3da, os: windows-2016}
-        - { version: "3.9", vcpkg_commit: fe112d8301e13fde9a25dc92d94a0c4a6dc3cf19, os: windows-2016}
-        - { version: "3.10", vcpkg_commit: 761c81d43335a5d5ccc2ec8ad90bd7e2cbba734e, os: windows-2019}
+        - { version: "3.6", vcpkg_commit: aa095559917a495b160986e9ad50556431509ace, os: windows-2016, generator: "Visual Studio 15 2017 Win64"}
+        - { version: "3.7", vcpkg_commit: 8c3e093d0509fb0c7cc325692834fc1583a05390, os: windows-2016, generator: "Visual Studio 15 2017 Win64"}
+        - { version: "3.8", vcpkg_commit: 6185aa76504a5025f36754324abf307cc776f3da, os: windows-2016, generator: "Visual Studio 15 2017 Win64"}
+        - { version: "3.9", vcpkg_commit: fe112d8301e13fde9a25dc92d94a0c4a6dc3cf19, os: windows-2016, generator: "Visual Studio 15 2017 Win64"}
+        - { version: "3.10", vcpkg_commit: a515872b1abf58b639bf8b15ab5fe23b62f25ac3, os: windows-2019, generator: "Visual Studio 16 2019"}
     steps:
       - name: Set up Python ${{ matrix.config.version }}
         uses: actions/setup-python@v2
@@ -56,7 +56,7 @@ jobs:
         run: |
           cd ${{github.workspace}}\\vowpal_wabbit
           pip install wheel
-          pip wheel . -w ${{github.workspace}}\\wheel_output --global-option --vcpkg-root="${{github.workspace}}\\vcpkg" --verbose
+          pip wheel . -w ${{github.workspace}}\\wheel_output --global-option --vcpkg-root="${{github.workspace}}\\vcpkg" --global-option --cmake-generator="${{ matrix.config.generator }}"  --verbose
       - name: Upload built wheel
         uses: actions/upload-artifact@v1
         with:
