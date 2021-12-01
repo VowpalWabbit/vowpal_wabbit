@@ -214,13 +214,10 @@ void save_action_scores(ccb& data, decision_scores_t& decision_scores)
 
 void save_action_no_pred(ccb& data, multi_ex& examples)
 {
-
   // Exclude the chosen action from next slots.
   uint32_t action_index;
   if (data.shared->pred.a_s.empty())
-  {
-    action_index = examples[1]->l.conditional_contextual_bandit.explicit_included_actions[0];
-  }
+  { action_index = examples[1]->l.conditional_contextual_bandit.explicit_included_actions[0]; }
   else
   {
     // There should be no prediction here. The prediction implies that the example was unlabeled, so prediction
@@ -500,15 +497,12 @@ void learn_or_predict(ccb& data, multi_learner& base, multi_ex& examples)
 
         if (is_learn) { multiline_learn_or_predict<true>(base, data.cb_ex, examples[0]->ft_offset); }
 
-        if (data.no_pred)
-        {
-          save_action_no_pred(data, examples);
-        }
+        if (data.no_pred) { save_action_no_pred(data, examples); }
         else
         {
           save_action_scores(data, decision_scores);
         }
-        
+
         VW_DBG(examples) << "ccb "
                          << "slot:" << slot_id << " " << ccb_decision_to_string(data) << std::endl;
         for (const auto& ex : data.cb_ex)
@@ -688,10 +682,7 @@ base_learner* ccb_explore_adf_setup(VW::setup_base_i& stack_builder)
     options.add_and_parse(new_options);
   }
 
-  if (options.was_supplied("quiet") && !options.was_supplied("p"))
-  {
-    data->no_pred = true;
-  }
+  if (options.was_supplied("quiet") && !options.was_supplied("p")) { data->no_pred = true; }
 
   if (!options.was_supplied("cb_sample") && !data->no_pred)
   {

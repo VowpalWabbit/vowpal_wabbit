@@ -559,11 +559,7 @@ base_learner* cb_adf_setup(VW::setup_base_i& stack_builder)
 
   if (options.was_supplied("baseline") && check_baseline_enabled) { options.insert("check_enabled", ""); }
 
-  
-  if (options.was_supplied("ccb_explore_adf") && cb_type == VW::cb_type_t::mtr)
-  {
-    ccb = true;
-  }
+  if (options.was_supplied("ccb_explore_adf") && cb_type == VW::cb_type_t::mtr) { ccb = true; }
 
   auto ld = VW::make_unique<cb_adf>(all.sd, cb_type, &all.model_file_ver, rank_all, clip_p, no_predict, ccb);
 
