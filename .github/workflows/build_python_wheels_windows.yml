@@ -16,10 +16,10 @@ jobs:
       matrix:
         config:
         - { version: "3.6", vcpkg_commit: 787fe1418ea968913cc6daf11855ffd8b0b5e9d4, os: windows-2019, generator: "Visual Studio 16 2019"}
-        - { version: "3.7", vcpkg_commit: 8c3e093d0509fb0c7cc325692834fc1583a05390, os: windows-2019, generator: "Visual Studio 16 2019"}
-        - { version: "3.8", vcpkg_commit: 6185aa76504a5025f36754324abf307cc776f3da, os: windows-2019, generator: "Visual Studio 16 2019"}
-        - { version: "3.9", vcpkg_commit: fe112d8301e13fde9a25dc92d94a0c4a6dc3cf19, os: windows-2019, generator: "Visual Studio 16 2019"}
-        - { version: "3.10", vcpkg_commit: a515872b1abf58b639bf8b15ab5fe23b62f25ac3, os: windows-2019, generator: "Visual Studio 16 2019"}
+        # - { version: "3.7", vcpkg_commit: 8c3e093d0509fb0c7cc325692834fc1583a05390, os: windows-2019, generator: "Visual Studio 16 2019"}
+        # - { version: "3.8", vcpkg_commit: 6185aa76504a5025f36754324abf307cc776f3da, os: windows-2019, generator: "Visual Studio 16 2019"}
+        # - { version: "3.9", vcpkg_commit: fe112d8301e13fde9a25dc92d94a0c4a6dc3cf19, os: windows-2019, generator: "Visual Studio 16 2019"}
+        # - { version: "3.10", vcpkg_commit: a515872b1abf58b639bf8b15ab5fe23b62f25ac3, os: windows-2019, generator: "Visual Studio 16 2019"}
     steps:
       - name: Set up Python ${{ matrix.config.version }}
         uses: actions/setup-python@v2
