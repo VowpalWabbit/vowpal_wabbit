@@ -29,6 +29,7 @@ jobs:
         with:
           repository: microsoft/vcpkg
           ref: ${{ matrix.config.vcpkg_commit }}
+          fetch-depth: 0
           path: ${{github.workspace}}\\vcpkg
       # - name: Cache vcpkg
       #   id: vcpkg-cache
