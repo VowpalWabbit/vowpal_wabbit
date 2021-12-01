@@ -106,6 +106,7 @@ struct ccb
 
   size_t base_learner_stride_shift = 0;
   bool all_slots_loss_report = false;
+  bool no_pred = false;
 
   VW::vector_pool<CB::cb_class> cb_label_pool;
   VW::v_array_pool<ACTION_SCORE::action_score> action_score_pool;
@@ -209,6 +210,26 @@ void save_action_scores(ccb& data, decision_scores_t& decision_scores)
 
   decision_scores.emplace_back(std::move(pred));
   data.shared->pred.a_s.clear();
+}
+
+void save_action_no_pred(ccb& data, multi_ex& examples)
+{
+
+  // Exclude the chosen action from next slots.
+  uint32_t action_index;
+  if (data.shared->pred.a_s.empty())
+  {
+    action_index = examples[1]->l.conditional_contextual_bandit.explicit_included_actions[0];
+  }
+  else
+  {
+    // There should be no prediction here. The prediction implies that the example was unlabeled, so prediction
+    // was done instead in learn function of cb_explore_adf_common
+    logger::errlog_warn("Unlabeled example used for learning only. This will have no effect and diminish performance.");
+    action_index = data.shared->pred.a_s[0].action;
+  }
+  const auto original_index_of_chosen_action = data.origin_index[action_index];
+  data.exclude_list[original_index_of_chosen_action] = true;
 }
 
 void clear_pred_and_label(ccb& data)
@@ -479,7 +500,15 @@ void learn_or_predict(ccb& data, multi_learner& base, multi_ex& examples)
 
         if (is_learn) { multiline_learn_or_predict<true>(base, data.cb_ex, examples[0]->ft_offset); }
 
-        save_action_scores(data, decision_scores);
+        if (data.no_pred)
+        {
+          save_action_no_pred(data, examples);
+        }
+        else
+        {
+          save_action_scores(data, decision_scores);
+        }
+        
         VW_DBG(examples) << "ccb "
                          << "slot:" << slot_id << " " << ccb_decision_to_string(data) << std::endl;
         for (const auto& ex : data.cb_ex)
@@ -599,14 +628,17 @@ void output_example(VW::workspace& all, ccb& c, multi_ex& ec_seq)
 
 void finish_multiline_example(VW::workspace& all, ccb& data, multi_ex& ec_seq)
 {
-  if (!ec_seq.empty())
+  if (!ec_seq.empty() && !data.no_pred)
   {
     output_example(all, data, ec_seq);
     CB_ADF::global_print_newline(all.final_prediction_sink);
   }
 
-  for (auto& a_s : ec_seq[0]->pred.decision_scores) { return_collection(a_s, data.action_score_pool); }
-  ec_seq[0]->pred.decision_scores.clear();
+  if (!data.no_pred)
+  {
+    for (auto& a_s : ec_seq[0]->pred.decision_scores) { return_collection(a_s, data.action_score_pool); }
+    ec_seq[0]->pred.decision_scores.clear();
+  }
 
   VW::finish_example(all, ec_seq);
 }
@@ -656,7 +688,12 @@ base_learner* ccb_explore_adf_setup(VW::setup_base_i& stack_builder)
     options.add_and_parse(new_options);
   }
 
-  if (!options.was_supplied("cb_sample"))
+  if (options.was_supplied("quiet") && !options.was_supplied("p"))
+  {
+    data->no_pred = true;
+  }
+
+  if (!options.was_supplied("cb_sample") && !data->no_pred)
   {
     options.insert("cb_sample", "");
     options.add_and_parse(new_options);

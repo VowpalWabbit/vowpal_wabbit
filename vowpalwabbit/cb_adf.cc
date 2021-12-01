@@ -84,6 +84,7 @@ private:
   const bool _no_predict;
   const bool _rank_all;
   const float _clip_p;
+  bool _ccb;
 
 public:
   void learn(VW::LEARNER::multi_learner& base, multi_ex& ec_seq);
@@ -91,13 +92,14 @@ public:
   bool update_statistics(example& ec, multi_ex* ec_seq);
 
   cb_adf(shared_data* sd, VW::cb_type_t cb_type, VW::version_struct* model_file_ver, bool rank_all, float clip_p,
-      bool no_predict)
+      bool no_predict, bool ccb)
       : _sd(sd)
       , _model_file_ver(model_file_ver)
       , _offset(0)
       , _no_predict(no_predict)
       , _rank_all(rank_all)
       , _clip_p(clip_p)
+      , _ccb(ccb)
   {
     _gen_cs.cb_type = cb_type;
   }
@@ -261,6 +263,11 @@ void cb_adf::learn_MTR(multi_learner& base, multi_ex& examples)
   examples[_gen_cs.mtr_example]->num_features = nf;
   examples[_gen_cs.mtr_example]->weight = old_weight;
   std::swap(_gen_cs.mtr_ec_seq[0]->pred.a_s, _a_s_mtr_cs);
+  if (_ccb)
+  {
+    examples[0]->l.conditional_contextual_bandit.explicit_included_actions.clear();
+    examples[0]->l.conditional_contextual_bandit.explicit_included_actions.push_back(_gen_cs.mtr_example);
+  }
 
   if (PREDICT)  // Return the saved prediction
     std::swap(examples[0]->pred.a_s, _a_s);
@@ -485,6 +492,7 @@ base_learner* cb_adf_setup(VW::setup_base_i& stack_builder)
   bool rank_all;
   float clip_p;
   bool no_predict;
+  bool ccb = false;
 
   option_group_definition new_options("Contextual Bandit with Action Dependent Features");
   new_options
@@ -551,7 +559,13 @@ base_learner* cb_adf_setup(VW::setup_base_i& stack_builder)
 
   if (options.was_supplied("baseline") && check_baseline_enabled) { options.insert("check_enabled", ""); }
 
-  auto ld = VW::make_unique<cb_adf>(all.sd, cb_type, &all.model_file_ver, rank_all, clip_p, no_predict);
+  
+  if (options.was_supplied("ccb_explore_adf") && cb_type == VW::cb_type_t::mtr)
+  {
+    ccb = true;
+  }
+
+  auto ld = VW::make_unique<cb_adf>(all.sd, cb_type, &all.model_file_ver, rank_all, clip_p, no_predict, ccb);
 
   auto base = as_multiline(stack_builder.setup_base_learner());
   all.example_parser->lbl_parser = CB::cb_label;
