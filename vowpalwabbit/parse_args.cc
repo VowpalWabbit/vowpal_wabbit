@@ -565,6 +565,14 @@ void parse_feature_tweaks(options_i& options, VW::workspace& all, bool interacti
 
   option_group_definition feature_options("Feature");
   feature_options
+#ifdef PRIVACY_ACTIVATION
+      .add(make_option("privacy_activation", all.privacy_activation)
+               .help("turns on aggregated weight exporting when the unique feature tags cross "
+                     "`privacy_activation_threshold`"))
+      .add(make_option("privacy_activation_threshold", all.privacy_activation_threshold)
+               .help("takes effect when `privacy_activation` is turned on and is the number of unique tag hashes a "
+                     "weight needs to see before it is exported"))
+#endif
       .add(make_option("hash", hash_function).keep().one_of({"strings", "all"}).help("How to hash the features"))
       .add(make_option("hash_seed", all.hash_seed).keep().default_value(0).help("Seed for hash function"))
       .add(make_option("ignore", ignores).keep().help("Ignore namespaces beginning with character <arg>"))
@@ -797,7 +805,7 @@ void parse_feature_tweaks(options_i& options, VW::workspace& all, bool interacti
     }
   }
 
-  for (size_t i = 0; i < 256; i++)
+  for (size_t i = 0; i < NUM_NAMESPACES; i++)
   {
     all.ignore[i] = false;
     all.ignore_linear[i] = false;
@@ -817,10 +825,11 @@ void parse_feature_tweaks(options_i& options, VW::workspace& all, bool interacti
 
     if (!all.logger.quiet)
     {
-      *(all.trace_message) << "ignoring namespaces beginning with: ";
-      for (auto const& ignore : ignores)
-        for (auto const character : ignore) *(all.trace_message) << character << " ";
-
+      *(all.trace_message) << "ignoring namespaces beginning with:";
+      for (size_t i = 0; i < NUM_NAMESPACES; ++i)
+      {
+        if (all.ignore[i]) *(all.trace_message) << " " << static_cast<unsigned char>(i);
+      }
       *(all.trace_message) << endl;
     }
   }
@@ -837,17 +846,18 @@ void parse_feature_tweaks(options_i& options, VW::workspace& all, bool interacti
 
     if (!all.logger.quiet)
     {
-      *(all.trace_message) << "ignoring linear terms for namespaces beginning with: ";
-      for (auto const& ignore : ignore_linears)
-        for (auto const character : ignore) *(all.trace_message) << character << " ";
-
+      *(all.trace_message) << "ignoring linear terms for namespaces beginning with:";
+      for (size_t i = 0; i < NUM_NAMESPACES; ++i)
+      {
+        if (all.ignore_linear[i]) *(all.trace_message) << " " << static_cast<unsigned char>(i);
+      }
       *(all.trace_message) << endl;
     }
   }
 
   if (options.was_supplied("keep"))
   {
-    for (size_t i = 0; i < 256; i++) all.ignore[i] = true;
+    for (size_t i = 0; i < NUM_NAMESPACES; i++) all.ignore[i] = true;
 
     all.ignore_some = true;
 
@@ -859,10 +869,11 @@ void parse_feature_tweaks(options_i& options, VW::workspace& all, bool interacti
 
     if (!all.logger.quiet)
     {
-      *(all.trace_message) << "using namespaces beginning with: ";
-      for (auto const& keep : keeps)
-        for (auto const character : keep) *(all.trace_message) << character << " ";
-
+      *(all.trace_message) << "using namespaces beginning with:";
+      for (size_t i = 0; i < NUM_NAMESPACES; ++i)
+      {
+        if (!all.ignore[i]) *(all.trace_message) << " " << static_cast<unsigned char>(i);
+      }
       *(all.trace_message) << endl;
     }
   }
@@ -873,7 +884,7 @@ void parse_feature_tweaks(options_i& options, VW::workspace& all, bool interacti
   if (options.was_supplied("redefine"))
   {
     // initial values: i-th namespace is redefined to i itself
-    for (size_t i = 0; i < 256; i++) all.redefine[i] = static_cast<unsigned char>(i);
+    for (size_t i = 0; i < NUM_NAMESPACES; i++) all.redefine[i] = static_cast<unsigned char>(i);
 
     // note: --redefine declaration order is matter
     // so --redefine :=L --redefine ab:=M  --ignore L  will ignore all except a and b under new M namspace
@@ -924,7 +935,7 @@ void parse_feature_tweaks(options_i& options, VW::workspace& all, bool interacti
           else
           {
             // wildcard found: redefine all except default and break
-            for (size_t j = 0; j < 256; j++) all.redefine[j] = new_namespace;
+            for (size_t j = 0; j < NUM_NAMESPACES; j++) all.redefine[j] = new_namespace;
             break;  // break processing S
           }
         }
@@ -1348,6 +1359,7 @@ void merge_options_from_header_strings(const std::vector<std::string>& strings, 
         first_seen = false;
         continue;
       }
+
       saved_key = opt.string_key;
       is_ccb_input_model = is_ccb_input_model || (saved_key == "ccb_explore_adf");
 
@@ -1384,7 +1396,7 @@ options_i& load_header_merge_options(
 
   interactions_settings_duplicated = check_interaction_settings_collision(options, file_options);
 
-  // Convert file_options into  vector.
+  // Convert file_options into vector.
   std::istringstream ss{file_options};
   const std::vector<std::string> container{
       std::istream_iterator<std::string>{ss}, std::istream_iterator<std::string>{}};
