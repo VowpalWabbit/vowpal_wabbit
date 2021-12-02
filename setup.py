@@ -99,8 +99,6 @@ class BuildPyLibVWBindingsModule(_build_ext):
             '-DBUILD_PYTHON=On',
             '-DBUILD_TESTS=Off',
             '-DWARNINGS=Off',
-            f'-DVCPKG_OVERLAY_PORTS={ports_path}'
-            
         ]
         if self.distribution.enable_boost_cmake is None:
             # Add this flag as default since testing indicates its safe.
