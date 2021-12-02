@@ -15,11 +15,11 @@ jobs:
     strategy:
       matrix:
         config:
-        - { version: "3.6", vcpkg_manifest: "python\\vcpkg_default.json", overlay_ports: "python\\vcpkg_python_override_ports\\python36\\"}
-        # - { version: "3.7", vcpkg_manifest: "python\\vcpkg_python37.json", overlay_ports: ""}
+        # - { version: "3.6", vcpkg_manifest: "python\\vcpkg_default.json", overlay_ports: "python\\vcpkg_python_override_ports\\python36\\"}
+        - { version: "3.7", vcpkg_manifest: "python\\vcpkg_python37.json", overlay_ports: ""}
         # - { version: "3.8", vcpkg_manifest: "python\\vcpkg_python38.json", overlay_ports: "" }
         # - { version: "3.9", vcpkg_manifest: "python\\vcpkg_python39.json", overlay_ports: "" }
-        - { version: "3.10", vcpkg_manifest: "python\\vcpkg_python310.json", overlay_ports: "" }
+        # - { version: "3.10", vcpkg_manifest: "python\\vcpkg_python310.json", overlay_ports: "" }
     steps:
       - name: Set up Python ${{ matrix.config.version }}
         uses: actions/setup-python@v2
@@ -54,20 +54,24 @@ jobs:
           pip wheel . -w ${{github.workspace}}\\wheel_output --global-option --vcpkg-root="${{github.workspace}}\\vcpkg" --global-option --cmake-generator="Visual Studio 16 2019" --global-option --cmake-options="-DVCPKG_OVERLAY_PORTS=${{github.workspace}}\\vowpal_wabbit\\${{ matrix.config.overlay_ports }}"  --verbose
       - name: Upload built wheel
         uses: actions/upload-artifact@v1
+        # with:
+        #   name: wheel_${{ matrix.config.version }}
+        #   path: wheel_output
+        if: always()
         with:
-          name: wheel_${{ matrix.config.version }}
-          path: wheel_output
+          name: logs
+          path: ${{github.workspace}}\\vcpkg\\buildtrees\\python3\\build-x64-windows-rel-out.log
   test:
     needs: build
     runs-on: windows-2019
     strategy:
       matrix:
         config:
-        - { version: "3.6" }
+        # - { version: "3.6" }
         # - { version: "3.7" }
         # - { version: "3.8" }
         # - { version: "3.9" }
-        - { version: "3.10" }
+        # - { version: "3.10" }
     steps:
       - uses: actions/checkout@v2
       - name: Set up Python ${{ matrix.config.version }}
