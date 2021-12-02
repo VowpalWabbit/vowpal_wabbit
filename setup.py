@@ -5,7 +5,6 @@ import distutils.dir_util
 import os
 import platform
 import sys
-import sysconfig
 import subprocess
 from codecs import open
 from distutils.command.clean import clean as _clean
@@ -15,6 +14,7 @@ from setuptools.command.sdist import sdist as _sdist
 from setuptools.command.install_lib import install_lib as _install_lib
 from shutil import rmtree
 import multiprocessing
+import sysconfig
 
 system = platform.system()
 version_info = sys.version_info
