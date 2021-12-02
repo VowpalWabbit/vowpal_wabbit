@@ -6,6 +6,7 @@ import platform
 import sys
 import sysconfig
 import subprocess
+import distutils
 from codecs import open
 from setuptools import setup, Extension, find_packages, Distribution as _distribution
 from setuptools.command.build_ext import build_ext as _build_ext
@@ -25,16 +26,12 @@ PLAT_TO_CMAKE = {
 }
 
 
-class CustomDistribution(_distribution):
+class Distribution(_distribution):
     global_options = _distribution.global_options
 
     global_options += [
         ("enable-boost-cmake", None, "Enable boost-cmake"),
-        (
-            "cmake-options=",
-            None,
-            "Additional semicolon-separated cmake setup options list",
-        ),
+        ("cmake-options=", None, "Additional semicolon-separated cmake setup options list"),
         ("debug", None, "Debug build"),
     ]
 
@@ -218,6 +215,6 @@ setup(
     zip_safe=False,
     include_package_data=True,
     ext_modules=[CMakeExtension("pylibvw")],
-    distclass=CustomDistribution,
+    distclass=Distribution,
     cmdclass={"build_ext": BuildPyLibVWBindingsModule},
 )
