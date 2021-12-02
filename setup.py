@@ -10,6 +10,7 @@ from codecs import open
 from setuptools import setup, Extension, find_packages, Distribution
 from setuptools.command.build_ext import build_ext
 import multiprocessing
+from setuptools.command.install_lib import install_lib as _install_lib
 
 SYSTEM = platform.system()
 PYTHON_VERSION = sys.version_info
@@ -169,6 +170,9 @@ class BuildPyLibVWBindingsModule(build_ext):
         )
         self.spawn(["cmake", "--build", str(self.build_temp)] + build_args)
 
+class InstallLib(_install_lib):
+    def build(self):
+        _install_lib.build(self)
 
 # Get the long description from the README file
 with open(os.path.join(PYTHON_PACKAGE_DIR, "README.rst"), encoding="utf-8") as f:
@@ -217,5 +221,5 @@ setup(
     include_package_data=True,
     ext_modules=[CMakeExtension("pylibvw")],
     distclass=CustomDistribution,
-    cmdclass={"build_ext": BuildPyLibVWBindingsModule},
+    cmdclass={"build_ext": BuildPyLibVWBindingsModule, 'install_lib': InstallLib},
 )
