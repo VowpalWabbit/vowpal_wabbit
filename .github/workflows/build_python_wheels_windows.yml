@@ -61,35 +61,35 @@ jobs:
         with:
           name: logs
           path: ${{github.workspace}}\\vcpkg\\buildtrees\\python3\\build-x64-windows-rel-out.log
-  test:
-    needs: build
-    runs-on: windows-2019
-    strategy:
-      matrix:
-        config:
-        # - { version: "3.6" }
-        # - { version: "3.7" }
-        # - { version: "3.8" }
-        # - { version: "3.9" }
-        # - { version: "3.10" }
-    steps:
-      - uses: actions/checkout@v2
-      - name: Set up Python ${{ matrix.config.version }}
-        uses: actions/setup-python@v2
-        with:
-          python-version: ${{ matrix.config.version }}
-      - name: Download wheel
-        uses: actions/download-artifact@v1
-        with:
-          name: wheel_${{ matrix.config.version }}
-      - name: Install deps and test wheel
-        shell: bash
-        run: |
-          export wheel_files=(wheel_${{ matrix.config.version }}/*)
-          export wheel_file="${wheel_files[0]}"
-          echo Installing ${wheel_file}...
-          pip install -r requirements.txt
-          pip install pytest
-          pip install ${wheel_file}
-          python -m pytest .\\python\\tests\\
-          python .\\python\\tests\\run_doctest.py
+  # test:
+  #   needs: build
+  #   runs-on: windows-2019
+  #   strategy:
+  #     matrix:
+  #       config:
+  #       # - { version: "3.6" }
+  #       # - { version: "3.7" }
+  #       # - { version: "3.8" }
+  #       # - { version: "3.9" }
+  #       # - { version: "3.10" }
+  #   steps:
+  #     - uses: actions/checkout@v2
+  #     - name: Set up Python ${{ matrix.config.version }}
+  #       uses: actions/setup-python@v2
+  #       with:
+  #         python-version: ${{ matrix.config.version }}
+  #     - name: Download wheel
+  #       uses: actions/download-artifact@v1
+  #       with:
+  #         name: wheel_${{ matrix.config.version }}
+  #     - name: Install deps and test wheel
+  #       shell: bash
+  #       run: |
+  #         export wheel_files=(wheel_${{ matrix.config.version }}/*)
+  #         export wheel_file="${wheel_files[0]}"
+  #         echo Installing ${wheel_file}...
+  #         pip install -r requirements.txt
+  #         pip install pytest
+  #         pip install ${wheel_file}
+  #         python -m pytest .\\python\\tests\\
+  #         python .\\python\\tests\\run_doctest.py
