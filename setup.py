@@ -10,7 +10,6 @@ from codecs import open
 from setuptools import setup, Extension, find_packages, Distribution
 from setuptools.command.build_ext import build_ext
 import multiprocessing
-from setuptools.command.install_lib import install_lib as _install_lib
 
 SYSTEM = platform.system()
 PYTHON_VERSION = sys.version_info
@@ -87,7 +86,12 @@ class BuildPyLibVWBindingsModule(build_ext):
         filename = build_ext.get_ext_filename(self, ext_name)
         return get_ext_filename_without_platform_suffix(filename)
 
-    def build_extension(self, ext):
+    def run(self):
+        for ext in self.extensions:
+            self.build_cmake(ext)
+        build_ext.run(self)
+
+    def build_cmake(self, ext):
         # Ensure lib output directory is made
         lib_output_dir = os.path.join(REPO_ROOT_DIR, os.path.dirname(self.get_ext_fullpath(ext.name)))
 
@@ -132,7 +136,7 @@ class BuildPyLibVWBindingsModule(build_ext):
         # User can always override generator choice with the envvar. (CMake picks it up directly)
         cmake_generator = os.environ.get("CMAKE_GENERATOR", "")
         # If not on Windows use Ninja if it is available
-        if self.compiler.compiler_type != "msvc":
+        if SYSTEM != "Windows":
             if not cmake_generator:
                 try:
                     # Try import it to see if the Python package is available
@@ -141,7 +145,6 @@ class BuildPyLibVWBindingsModule(build_ext):
                     cmake_args += ["-GNinja"]
                 except ImportError:
                     pass
-
         else:
             # Single config generators are handled "normally"
             single_config = any(x in cmake_generator for x in {"NMake", "Ninja"})
@@ -170,9 +173,6 @@ class BuildPyLibVWBindingsModule(build_ext):
         )
         self.spawn(["cmake", "--build", str(self.build_temp)] + build_args)
 
-class InstallLib(_install_lib):
-    def build(self):
-        _install_lib.build(self)
 
 # Get the long description from the README file
 with open(os.path.join(PYTHON_PACKAGE_DIR, "README.rst"), encoding="utf-8") as f:
@@ -221,5 +221,5 @@ setup(
     include_package_data=True,
     ext_modules=[CMakeExtension("pylibvw")],
     distclass=CustomDistribution,
-    cmdclass={"build_ext": BuildPyLibVWBindingsModule, 'install_lib': InstallLib},
+    cmdclass={"build_ext": BuildPyLibVWBindingsModule},
 )
