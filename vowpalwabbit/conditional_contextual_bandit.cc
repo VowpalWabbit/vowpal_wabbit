@@ -212,12 +212,12 @@ void save_action_scores(ccb& data, decision_scores_t& decision_scores)
   data.shared->pred.a_s.clear();
 }
 
-void remove_labeled_action(ccb& data, multi_ex& examples)
+void remove_labeled_action(ccb& data, const multi_ex& examples)
 {
   int32_t action_index = -1;
   for (size_t i = 0; i < examples.size(); i++)
   {
-    CB::label& ld = examples[i]->l.cb;
+    const CB::label& ld = examples[i]->l.cb;
     if (ld.costs.size() == 1 && ld.costs[0].cost != FLT_MAX)
     {
       action_index = static_cast<int32_t>(i) - 1; /* un-1-index for shared */
