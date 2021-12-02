@@ -88,6 +88,9 @@ void copy_example_metadata(example* dst, const example* src)
   dst->end_pass = src->end_pass;
   dst->is_newline = src->is_newline;
   dst->sorted = src->sorted;
+#ifdef PRIVACY_ACTIVATION
+  dst->tag_hash = src->tag_hash;
+#endif
 }
 
 void copy_example_data(example* dst, const example* src)
@@ -143,7 +146,7 @@ void vec_store(features_and_source& p, float fx, uint64_t fi)
 
 namespace VW
 {
-feature* get_features(vw& all, example* ec, size_t& feature_map_len)
+feature* get_features(VW::workspace& all, example* ec, size_t& feature_map_len)
 {
   features_and_source fs;
   fs.stride_shift = all.weights.stride_shift();
@@ -169,7 +172,7 @@ void vec_ffs_store(full_features_and_source& p, float fx, uint64_t fi)
   p.fs.push_back(fx, (fi >> p.stride_shift) & p.mask);
 }
 
-flat_example* flatten_example(vw& all, example* ec)
+flat_example* flatten_example(VW::workspace& all, example* ec)
 {
   flat_example& fec = calloc_or_throw<flat_example>();
   fec.l = ec->l;
@@ -199,7 +202,7 @@ flat_example* flatten_example(vw& all, example* ec)
   return &fec;
 }
 
-flat_example* flatten_sort_example(vw& all, example* ec)
+flat_example* flatten_sort_example(VW::workspace& all, example* ec)
 {
   flat_example* fec = flatten_example(all, ec);
   fec->fs.sort(all.parse_mask);
@@ -292,15 +295,15 @@ void dealloc_examples(example* example_ptr, size_t count)
   free(example_ptr);
 }
 
-void finish_example(vw&, example&);
-void clean_example(vw&, example&);
+void finish_example(VW::workspace&, example&);
+void clean_example(VW::workspace&, example&);
 
-void finish_example(vw& all, multi_ex& ec_seq)
+void finish_example(VW::workspace& all, multi_ex& ec_seq)
 {
   for (example* ecc : ec_seq) VW::finish_example(all, *ecc);
 }
 
-void return_multiple_example(vw& all, v_array<example*>& examples)
+void return_multiple_example(VW::workspace& all, v_array<example*>& examples)
 {
   for (auto ec : examples) { clean_example(all, *ec); }
   examples.clear();

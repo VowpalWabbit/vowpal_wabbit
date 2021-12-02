@@ -40,7 +40,7 @@ struct mwt
 
   v_array<namespace_index> indices;  // excluded namespaces
   features feature_space[256];
-  vw* all = nullptr;
+  VW::workspace* all = nullptr;
 
   mwt() { std::fill(namespaces, namespaces + 256, false); }
 };
@@ -159,7 +159,7 @@ void print_scalars(VW::io::writer* f, v_array<float>& scalars, v_array<char>& ta
   }
 }
 
-void finish_example(vw& all, mwt& c, example& ec)
+void finish_example(VW::workspace& all, mwt& c, example& ec)
 {
   float loss = 0.;
   if (c.learn)
@@ -210,7 +210,11 @@ void save_load(mwt& c, io_buf& model_file, bool read, bool text)
     policy_data& pd = c.evals[policy];
     if (read) msg << "evals: " << policy << ":" << pd.action << ":" << pd.cost << " ";
     bin_text_read_write_fixed_validated(
-        model_file, reinterpret_cast<char*>(&c.evals[policy]), sizeof(policy_data), read, msg, text);
+        model_file, reinterpret_cast<char*>(&c.evals[policy].cost), sizeof(double), read, msg, text);
+    bin_text_read_write_fixed_validated(
+        model_file, reinterpret_cast<char*>(&c.evals[policy].action), sizeof(uint32_t), read, msg, text);
+    bin_text_read_write_fixed_validated(
+        model_file, reinterpret_cast<char*>(&c.evals[policy].seen), sizeof(bool), read, msg, text);
   }
 }
 }  // namespace MWT
@@ -219,13 +223,13 @@ using namespace MWT;
 base_learner* mwt_setup(VW::setup_base_i& stack_builder)
 {
   options_i& options = *stack_builder.get_options();
-  vw& all = *stack_builder.get_all_pointer();
+  VW::workspace& all = *stack_builder.get_all_pointer();
   auto c = VW::make_unique<mwt>();
   std::string s;
   bool exclude_eval = false;
-  option_group_definition new_options("Multiworld Testing Options");
+  option_group_definition new_options("Multiworld Testing");
   new_options.add(make_option("multiworld_test", s).keep().necessary().help("Evaluate features as a policies"))
-      .add(make_option("learn", c->num_classes).help("Do Contextual Bandit learning on <n> classes."))
+      .add(make_option("learn", c->num_classes).help("Do Contextual Bandit learning on <n> classes"))
       .add(make_option("exclude_eval", exclude_eval).help("Discard mwt policy features before learning"));
 
   if (!options.add_parse_and_check_necessary(new_options)) return nullptr;
@@ -279,8 +283,8 @@ base_learner* mwt_setup(VW::setup_base_i& stack_builder)
   auto* l = make_reduction_learner(std::move(c), as_singleline(stack_builder.setup_base_learner()), learn_ptr, pred_ptr,
       stack_builder.get_setupfn_name(mwt_setup) + name_addition)
                 .set_learn_returns_prediction(true)
-                .set_prediction_type(VW::prediction_type_t::scalars)
-                .set_label_type(VW::label_type_t::cb)
+                .set_output_prediction_type(VW::prediction_type_t::scalars)
+                .set_input_label_type(VW::label_type_t::cb)
                 .set_save_load(save_load)
                 .set_finish_example(finish_example)
                 .build();

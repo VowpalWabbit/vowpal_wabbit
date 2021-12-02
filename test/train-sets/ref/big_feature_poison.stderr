@@ -7,6 +7,8 @@ using no cache
 Reading datafile = train-sets/big_feature_poison.dat
 num sources = 1
 Enabled reductions: gd, scorer-identity, count_label
+Input label = simple
+Output pred = scalar
 average  since         example        example  current  current  current
 loss     last          counter         weight    label  predict features
 [warning] NAN prediction in example 1, forcing 0

@@ -124,7 +124,8 @@ std::string known_cost_to_str(CB::cb_class* known_cost)
   return label_string.str();
 }
 
-void print_update(vw& all, bool is_test, example& ec, multi_ex* ec_seq, bool action_scores, CB::cb_class* known_cost)
+void print_update(
+    VW::workspace& all, bool is_test, example& ec, multi_ex* ec_seq, bool action_scores, CB::cb_class* known_cost)
 {
   if (all.sd->weighted_examples() >= all.sd->dump_interval && !all.logger.quiet && !all.bfgs)
   {
@@ -136,7 +137,14 @@ void print_update(vw& all, bool is_test, example& ec, multi_ex* ec_seq, bool act
       num_features = 0;
       // TODO: code duplication csoaa.cc LabelDict::ec_is_example_header
       for (size_t i = 0; i < (*ec_seq).size(); i++)
-        if (!CB::ec_is_example_header(*(*ec_seq)[i])) num_features += (*ec_seq)[i]->get_num_features();
+      {
+        if (CB::ec_is_example_header(*(*ec_seq)[i]))
+        { num_features += (ec_seq->size() - 1) * (*ec_seq)[i]->get_num_features(); }
+        else
+        {
+          num_features += (*ec_seq)[i]->get_num_features();
+        }
+      }
     }
     std::string label_buf;
     if (is_test)

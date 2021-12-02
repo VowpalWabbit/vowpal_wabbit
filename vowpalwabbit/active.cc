@@ -121,7 +121,7 @@ void active_print_result(VW::io::writer* f, float res, float weight, const v_arr
   if (t != len) { logger::errlog_error("write error: {}", VW::strerror_to_string(errno)); }
 }
 
-void output_and_account_example(vw& all, active& a, example& ec)
+void output_and_account_example(VW::workspace& all, active& a, example& ec)
 {
   const label_data& ld = ec.l.simple;
 
@@ -139,9 +139,14 @@ void output_and_account_example(vw& all, active& a, example& ec)
   print_update(all, ec);
 }
 
-void return_active_example(vw& all, active& a, example& ec)
+template <bool simulation>
+void return_active_example(VW::workspace& all, active& a, example& ec)
 {
-  output_and_account_example(all, a, ec);
+  if (simulation) { output_and_account_example(all, ec); }
+  else
+  {
+    output_and_account_example(all, a, ec);
+  }
   VW::finish_example(all, ec);
 }
 
@@ -166,18 +171,18 @@ void save_load(active& a, io_buf& io, bool read, bool text)
 base_learner* active_setup(VW::setup_base_i& stack_builder)
 {
   options_i& options = *stack_builder.get_options();
-  vw& all = *stack_builder.get_all_pointer();
+  VW::workspace& all = *stack_builder.get_all_pointer();
 
   bool active_option = false;
   bool simulation = false;
   float active_c0;
   option_group_definition new_options("Active Learning");
-  new_options.add(make_option("active", active_option).keep().necessary().help("enable active learning"))
-      .add(make_option("simulation", simulation).help("active learning simulation mode"))
+  new_options.add(make_option("active", active_option).keep().necessary().help("Enable active learning"))
+      .add(make_option("simulation", simulation).help("Active learning simulation mode"))
       .add(make_option("mellowness", active_c0)
                .keep()
                .default_value(8.f)
-               .help("active learning mellowness parameter c_0. Default 8"));
+               .help("Active learning mellowness parameter c_0. Default 8"));
 
   if (!options.add_parse_and_check_necessary(new_options)) return nullptr;
 
@@ -188,12 +193,14 @@ base_learner* active_setup(VW::setup_base_i& stack_builder)
   using learn_pred_func_t = void (*)(active&, VW::LEARNER::single_learner&, example&);
   learn_pred_func_t learn_func;
   learn_pred_func_t pred_func;
+  void (*finish_ptr)(VW::workspace&, active&, example&);
   bool learn_returns_prediction = true;
   std::string reduction_name = stack_builder.get_setupfn_name(active_setup);
   if (simulation)
   {
     learn_func = predict_or_learn_simulation<true>;
     pred_func = predict_or_learn_simulation<false>;
+    finish_ptr = return_active_example<true>;
     reduction_name.append("-simulation");
   }
   else
@@ -201,16 +208,18 @@ base_learner* active_setup(VW::setup_base_i& stack_builder)
     all.active = true;
     learn_func = predict_or_learn_active<true>;
     pred_func = predict_or_learn_active<false>;
+    finish_ptr = return_active_example<false>;
     learn_returns_prediction = base->learn_returns_prediction;
   }
 
   // Create new learner
-  auto reduction_builder = make_reduction_learner(std::move(data), base, learn_func, pred_func, reduction_name);
-  reduction_builder.set_label_type(VW::label_type_t::simple);
-  reduction_builder.set_prediction_type(VW::prediction_type_t::scalar);
-  reduction_builder.set_learn_returns_prediction(learn_returns_prediction);
-  reduction_builder.set_save_load(save_load);
-  if (!simulation) { reduction_builder.set_finish_example(return_active_example); }
+  auto* l = make_reduction_learner(std::move(data), base, learn_func, pred_func, reduction_name)
+                .set_input_label_type(VW::label_type_t::simple)
+                .set_output_prediction_type(VW::prediction_type_t::scalar)
+                .set_learn_returns_prediction(learn_returns_prediction)
+                .set_save_load(save_load)
+                .set_finish_example(finish_ptr)
+                .build();
 
-  return make_base(*reduction_builder.build());
+  return make_base(*l);
 }

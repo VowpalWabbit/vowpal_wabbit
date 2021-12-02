@@ -23,11 +23,12 @@ static constexpr bool PROBABILITIES = true;
 struct oaa
 {
   uint64_t k = 0;
-  vw* all = nullptr;                    // for raw
+  VW::workspace* all = nullptr;         // for raw
   polyprediction* pred = nullptr;       // for multipredict
   uint64_t num_subsample = 0;           // for randomized subsampling, how many negatives to draw?
   uint32_t* subsample_order = nullptr;  // for randomized subsampling, in what order should we touch classes
   size_t subsample_id = 0;              // for randomized subsampling, where do we live in the list
+  int indexing = -1;                    // for 0 or 1 indexing
 
   ~oaa()
   {
@@ -38,13 +39,31 @@ struct oaa
 
 void learn_randomized(oaa& o, VW::LEARNER::single_learner& base, example& ec)
 {
-  MULTICLASS::label_t ld = ec.l.multi;
-  if (ld.label == 0 || (ld.label > o.k && ld.label != static_cast<uint32_t>(-1)))
-    logger::log_error("label {0} is not in {{1,{1}}} This won't work right.", ld.label, o.k);
+  // Update indexing
+  if (o.indexing == -1 && ec.l.multi.label == 0) { o.indexing = 0; }
+  else if (o.indexing == -1 && ec.l.multi.label == o.k)
+  {
+    o.indexing = 1;
+  }
 
-  ec.l.simple = {1.};  // truth
+  MULTICLASS::label_t ld = ec.l.multi;
+
+  // Label validation
+  if (o.indexing == 0 && ld.label >= o.k)
+  {
+    logger::log_warn("label {0} is not in {{0,{1}}}. This won't work for 0-indexed actions.", ld.label, o.k - 1);
+    ec.l.multi.label = 0;
+  }
+  else if (o.indexing == 1 && (ld.label < 1 || ld.label > o.k))
+  {
+    logger::log_warn("label {0} is not in {{1,{1}}}. This won't work for 1-indexed actions.", ld.label, o.k);
+    ec.l.multi.label = static_cast<uint32_t>(o.k);
+  }
+
+  ec.l.simple.label = 1.;  // truth
   ec._reduction_features.template get<simple_label_reduction_features>().reset_to_default();
-  base.learn(ec, ld.label - 1);
+
+  base.learn(ec, (ld.label + o.k - 1) % o.k);
 
   size_t prediction = ld.label;
   float best_partial_prediction = ec.partial_prediction;
@@ -58,12 +77,13 @@ void learn_randomized(oaa& o, VW::LEARNER::single_learner& base, example& ec)
   {
     uint32_t l = o.subsample_order[p];
     p = (p + 1) % o.k;
-    if (l == ld.label - 1) continue;
+    if (l == (ld.label + o.k - 1) % o.k) continue;
     base.learn(ec, l);
     if (ec.partial_prediction > best_partial_prediction)
     {
       best_partial_prediction = ec.partial_prediction;
       prediction = l + 1;
+      if (o.indexing == 0 && prediction == o.k) { prediction = 0; }
     }
     count++;
   }
@@ -77,19 +97,35 @@ void learn_randomized(oaa& o, VW::LEARNER::single_learner& base, example& ec)
 template <bool print_all, bool scores, bool probabilities>
 void learn(oaa& o, VW::LEARNER::single_learner& base, example& ec)
 {
+  // Update indexing
+  if (o.indexing == -1 && ec.l.multi.label == 0) { o.indexing = 0; }
+  else if (o.indexing == -1 && ec.l.multi.label == o.k)
+  {
+    o.indexing = 1;
+  }
+
   // Save label
   MULTICLASS::label_t mc_label_data = ec.l.multi;
 
   // Label validation
-  if (mc_label_data.label == 0 || (mc_label_data.label > o.k && mc_label_data.label != static_cast<uint32_t>(-1)))
-    logger::log_error("label {0} is not in {{1,{1}}} This won't work right.", mc_label_data.label, o.k);
+  if (o.indexing == 0 && mc_label_data.label >= o.k)
+  {
+    logger::log_warn(
+        "label {0} is not in {{0,{1}}}. This won't work for 0-indexed actions.", mc_label_data.label, o.k - 1);
+    ec.l.multi.label = 0;
+  }
+  else if (o.indexing == 1 && (mc_label_data.label < 1 || mc_label_data.label > o.k))
+  {
+    logger::log_warn("label {0} is not in {{1,{1}}}. This won't work for 1-indexed actions.", mc_label_data.label, o.k);
+    ec.l.multi.label = static_cast<uint32_t>(o.k);
+  }
 
   ec.l.simple = {FLT_MAX};
   ec._reduction_features.template get<simple_label_reduction_features>().reset_to_default();
 
   for (uint32_t i = 1; i <= o.k; i++)
   {
-    ec.l.simple = {(mc_label_data.label == i) ? 1.f : -1.f};
+    ec.l.simple.label = ((mc_label_data.label % o.k) == (i % o.k)) ? 1.f : -1.f;
     // The following is an unfortunate loss of abstraction
     // Downstream reduction (gd.update) uses the prediction
     // from here
@@ -121,16 +157,34 @@ void predict(oaa& o, LEARNER::single_learner& base, example& ec)
   uint32_t prediction = 1;
   for (uint32_t i = 2; i <= o.k; i++)
     if (o.pred[i - 1].scalar > o.pred[prediction - 1].scalar) prediction = i;
+  if (prediction == o.k && o.indexing == 0) { prediction = 0; }
 
   if (ec.passthrough)
-    for (uint32_t i = 1; i <= o.k; i++) add_passthrough_feature(ec, i, o.pred[i - 1].scalar);
+  {
+    if (o.indexing == 0)
+    {
+      add_passthrough_feature(ec, 0, o.pred[o.k - 1].scalar);
+      for (uint32_t i = 0; i < o.k - 1; i++) add_passthrough_feature(ec, (i + 1), o.pred[i].scalar);
+    }
+    else
+    {
+      for (uint32_t i = 1; i <= o.k; i++) add_passthrough_feature(ec, i, o.pred[i - 1].scalar);
+    }
+  }
 
   // Print predictions to a file
   if (print_all)
   {
     std::stringstream output_string_stream;
-    output_string_stream << "1:" << o.pred[0].scalar;
-    for (uint32_t i = 2; i <= o.k; i++) output_string_stream << ' ' << i << ':' << o.pred[i - 1].scalar;
+    if (o.indexing == 0)
+    {
+      output_string_stream << ' ' << 0 << ':' << o.pred[o.k - 1].scalar;
+      for (uint32_t i = 0; i < o.k - 1; i++) output_string_stream << ' ' << (i + 1) << ':' << o.pred[i].scalar;
+    }
+    else
+    {
+      for (uint32_t i = 1; i <= o.k; i++) output_string_stream << ' ' << i << ':' << o.pred[i - 1].scalar;
+    }
     o.all->print_text_by_ref(o.all->raw_prediction.get(), output_string_stream.str(), ec.tag);
   }
 
@@ -156,12 +210,14 @@ void predict(oaa& o, LEARNER::single_learner& base, example& ec)
     }
   }
   else
+  {
     ec.pred.multiclass = prediction;
+  }
 }
 
 // TODO: partial code duplication with multiclass.cc:finish_example
 template <bool probabilities>
-void finish_example_scores(vw& all, oaa& o, example& ec)
+void finish_example_scores(VW::workspace& all, oaa& o, example& ec)
 {
   // === Compute multiclass_log_loss
   // TODO:
@@ -174,8 +230,7 @@ void finish_example_scores(vw& all, oaa& o, example& ec)
   float correct_class_prob = 0;
   if (probabilities)
   {
-    if (ec.l.multi.label <= o.k)  // prevent segmentation fault if labeĺ==(uint32_t)-1
-      correct_class_prob = ec.pred.scalars[ec.l.multi.label - 1];
+    correct_class_prob = ec.pred.scalars[(ec.l.multi.label - 1 + o.k) % o.k];
     if (correct_class_prob > 0) multiclass_log_loss = -std::log(correct_class_prob) * ec.weight;
     if (ec.test_only)
       all.sd->holdout_multiclass_log_loss += multiclass_log_loss;
@@ -185,10 +240,11 @@ void finish_example_scores(vw& all, oaa& o, example& ec)
   // === Compute `prediction` and zero_one_loss
   // We have already computed `prediction` in predict_or_learn,
   // but we cannot store it in ec.pred union because we store ec.pred.probs there.
-  uint32_t prediction = 0;
-  for (uint32_t i = 1; i < o.k; i++)
-    if (ec.pred.scalars[i] > ec.pred.scalars[prediction]) prediction = i;
-  prediction++;  // prediction is 1-based index (not 0-based)
+  uint32_t prediction = 1;
+  for (uint32_t i = 2; i <= o.k; i++)
+    if (o.pred[i - 1].scalar > o.pred[prediction - 1].scalar) prediction = i;
+  if (prediction == o.k && o.indexing == 0) { prediction = 0; }
+
   float zero_one_loss = 0;
   if (ec.l.multi.label != prediction) zero_one_loss = ec.weight;
 
@@ -196,11 +252,13 @@ void finish_example_scores(vw& all, oaa& o, example& ec)
   std::ostringstream outputStringStream;
   for (uint32_t i = 0; i < o.k; i++)
   {
+    uint32_t corrected_label = (o.indexing == 0) ? i : i + 1;
+    uint32_t corrected_ind = (o.indexing == 0) ? (i + static_cast<uint32_t>(o.k) - 1) % o.k : i;
     if (i > 0) outputStringStream << ' ';
-    if (all.sd->ldict) { outputStringStream << all.sd->ldict->get(i + 1); }
+    if (all.sd->ldict) { outputStringStream << all.sd->ldict->get(corrected_label); }
     else
-      outputStringStream << i + 1;
-    outputStringStream << ':' << ec.pred.scalars[i];
+      outputStringStream << corrected_label;
+    outputStringStream << ':' << ec.pred.scalars[corrected_ind];
   }
   const auto ss_str = outputStringStream.str();
   for (auto& sink : all.final_prediction_sink) all.print_text_by_ref(sink.get(), ss_str, ec.tag);
@@ -225,16 +283,17 @@ void finish_example_scores(vw& all, oaa& o, example& ec)
 VW::LEARNER::base_learner* oaa_setup(VW::setup_base_i& stack_builder)
 {
   options_i& options = *stack_builder.get_options();
-  vw& all = *stack_builder.get_all_pointer();
+  VW::workspace& all = *stack_builder.get_all_pointer();
   auto data = VW::make_unique<oaa>();
   bool probabilities = false;
   bool scores = false;
-  option_group_definition new_options("One Against All Options");
+  option_group_definition new_options("One Against All");
   new_options.add(make_option("oaa", data->k).keep().necessary().help("One-against-all multiclass with <k> labels"))
       .add(make_option("oaa_subsample", data->num_subsample)
-               .help("subsample this number of negative examples when learning"))
-      .add(make_option("probabilities", probabilities).help("predict probabilities of all classes"))
-      .add(make_option("scores", scores).help("output raw scores per class"));
+               .help("Subsample this number of negative examples when learning"))
+      .add(make_option("probabilities", probabilities).help("Predict probabilities of all classes"))
+      .add(make_option("scores", scores).help("Output raw scores per class"))
+      .add(make_option("indexing", data->indexing).one_of({0, 1}).keep().help("Choose between 0 or 1-indexing"));
 
   if (!options.add_parse_and_check_necessary(new_options)) return nullptr;
 
@@ -279,7 +338,7 @@ VW::LEARNER::base_learner* oaa_setup(VW::setup_base_i& stack_builder)
   void (*pred_ptr)(oaa&, LEARNER::single_learner&, example&);
   std::string name_addition;
   VW::prediction_type_t pred_type;
-  void (*finish_ptr)(vw&, oaa&, example&);
+  void (*finish_ptr)(VW::workspace&, oaa&, example&);
   if (probabilities || scores)
   {
     pred_type = VW::prediction_type_t::scalars;
@@ -336,8 +395,8 @@ VW::LEARNER::base_learner* oaa_setup(VW::setup_base_i& stack_builder)
   auto l = make_reduction_learner(
       std::move(data), base, learn_ptr, pred_ptr, stack_builder.get_setupfn_name(oaa_setup) + name_addition)
                .set_params_per_weight(k_value)
-               .set_label_type(VW::label_type_t::multiclass)
-               .set_prediction_type(pred_type)
+               .set_input_label_type(VW::label_type_t::multiclass)
+               .set_output_prediction_type(pred_type)
                .set_finish_example(finish_ptr)
                .build();
 

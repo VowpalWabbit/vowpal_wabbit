@@ -41,8 +41,9 @@ set(vw_jni_sources
 )
 
 add_library(vw_jni SHARED ${vw_jni_headers} ${vw_jni_sources})
-target_link_libraries(vw_jni PUBLIC vw)
+target_link_libraries(vw_jni PUBLIC VowpalWabbit::vw)
 set_property(TARGET vw_jni PROPERTY POSITION_INDEPENDENT_CODE ON)
+set_property(TARGET vw_jni PROPERTY BUILD_RPATH_USE_ORIGIN ON)
 target_include_directories(vw_jni PUBLIC
   ${CMAKE_CURRENT_SOURCE_DIR}
   ${JNI_INCLUDE_DIRS})
@@ -56,25 +57,15 @@ add_custom_command(TARGET vw_jni POST_BUILD
 if(STATIC_LINK_VW_JAVA)
   target_link_libraries(vw_jni PUBLIC -Wl,--exclude-libs,ALL -static-libgcc -static-libstdc++ -fPIC)
 else()
-  # enable-new-dtags and rpath enables shared object library lookup in the location of libvw_spark_jni.so
-  target_link_libraries(vw_jni PUBLIC -fPIC -Wl,--enable-new-dtags -Wl,-rpath,\"\$ORIGIN\")
+  if(${CMAKE_EXECUTABLE_FORMAT} MATCHES "ELF")
+    # enable-new-dtags and rpath enables shared object library lookup in the location of libvw_spark_jni.so
+    # dtags are an ELF feature
+    target_link_libraries(vw_jni PUBLIC -Wl,--enable-new-dtags)
+  endif()
 endif()
 
 # Replace version number in POM
 configure_file(pom.xml.in ${CMAKE_CURRENT_SOURCE_DIR}/pom.xml @ONLY)
-
-if (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
-    set(JAVA_INSTALL_PATH /usr/lib)
-else()
-    set(JAVA_INSTALL_PATH /Library/Java/Extensions)
-endif()
-
-if(VW_INSTALL)
-  install(TARGETS vw_jni
-    RUNTIME DESTINATION ${JAVA_INSTALL_PATH}
-    LIBRARY DESTINATION ${JAVA_INSTALL_PATH}
-  )
-endif()
 
 if(NOT WIN32)
   # Ensure target directory exists
@@ -103,22 +94,22 @@ if(NOT WIN32)
   #   OUTPUT_NAME ${CMAKE_CURRENT_SOURCE_DIR}/src/main/c++/jni_spark_vw_generated.h)
   # add_dependencies(javaheaders javacompile)
 
+  if (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
+    set(JAVA_INSTALL_PATH /Library/Java/Extensions)
+  else()
+    set(JAVA_INSTALL_PATH /usr/lib)
+  endif()
+
   add_custom_command(TARGET vw_jni POST_BUILD
       COMMAND cp $<TARGET_FILE:vw_jni> target/bin/natives/linux_64
       COMMAND echo $<TARGET_FILE:vw-bin> > ${CMAKE_CURRENT_SOURCE_DIR}/target/test-classes/vw-bin.txt
       # -B is batch mode and avoids the massive download progress print out
-      COMMAND mvn -B verify
+      COMMAND mvn -B verify 
       WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
       COMMENT "Copying shared libary dependencies to output directory")
 
   # Replace version number in POM
   configure_file(pom.xml.in ${CMAKE_CURRENT_SOURCE_DIR}/pom.xml @ONLY)
-
-  if (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
-      set(JAVA_INSTALL_PATH /usr/lib)
-  else()
-      set(JAVA_INSTALL_PATH /Library/Java/Extensions)
-  endif()
 
   if(VW_INSTALL)
       install(TARGETS vw_jni

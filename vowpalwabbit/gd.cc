@@ -36,7 +36,7 @@ using namespace VW::config;
 namespace logger = VW::io::logger;
 
 // todo:
-// 4. Factor various state out of vw&
+// 4. Factor various state out of VW::workspace&
 namespace GD
 {
 struct gd
@@ -58,10 +58,10 @@ struct gd
   bool adaptive_input = false;
   bool normalized_input = false;
   bool adax = false;
-  vw* all = nullptr;  // parallel, features, parameters
+  VW::workspace* all = nullptr;  // parallel, features, parameters
 };
 
-void sync_weights(vw& all);
+void sync_weights(VW::workspace& all);
 
 inline float quake_InvSqrt(float x)
 {
@@ -146,7 +146,7 @@ void train(gd& g, example& ec, float update)
 
 void end_pass(gd& g)
 {
-  vw& all = *g.all;
+  VW::workspace& all = *g.all;
   if (all.save_resume)
   {
     // TODO work out a better system to update state that will be saved in the model.
@@ -195,11 +195,11 @@ bool operator<(const string_value& first, const string_value& second) { return f
 
 struct audit_results
 {
-  vw& all;
+  VW::workspace& all;
   const uint64_t offset;
   std::vector<std::string> ns_pre;
   std::vector<string_value> results;
-  audit_results(vw& p_all, const size_t p_offset) : all(p_all), offset(p_offset) {}
+  audit_results(VW::workspace& p_all, const size_t p_offset) : all(p_all), offset(p_offset) {}
 };
 
 inline void audit_interaction(audit_results& dat, const audit_strings* f)
@@ -265,7 +265,7 @@ inline void audit_feature(audit_results& dat, const float ft_weight, const uint6
   }
 }
 
-void print_lda_features(vw& all, example& ec)
+void print_lda_features(VW::workspace& all, example& ec)
 {
   parameters& weights = all.weights;
   uint32_t stride_shift = weights.stride_shift();
@@ -284,7 +284,7 @@ void print_lda_features(vw& all, example& ec)
   std::cout << " total of " << count << " features." << std::endl;
 }
 
-void print_features(vw& all, example& ec)
+void print_features(VW::workspace& all, example& ec)
 {
   if (all.lda > 0)
     print_lda_features(all, ec);
@@ -319,7 +319,7 @@ void print_features(vw& all, example& ec)
   }
 }
 
-void print_audit_features(vw& all, example& ec)
+void print_audit_features(VW::workspace& all, example& ec)
 {
   if (all.audit) print_result_by_ref(all.stdout_adapter.get(), ec.pred.scalar, -1, ec.tag);
   fflush(stdout);
@@ -350,7 +350,7 @@ inline void vec_add_trunc(trunc_data& p, const float fx, float& fw)
   p.prediction += trunc_weight(fw, p.gravity) * fx;
 }
 
-inline float trunc_predict(vw& all, example& ec, double gravity, size_t& num_interacted_features)
+inline float trunc_predict(VW::workspace& all, example& ec, double gravity, size_t& num_interacted_features)
 {
   const auto& simple_red_features = ec._reduction_features.template get<simple_label_reduction_features>();
   trunc_data temp = {simple_red_features.initial, static_cast<float>(gravity)};
@@ -370,7 +370,7 @@ void predict(gd& g, base_learner&, example& ec)
 {
   VW_DBG(ec) << "gd.predict(): ex#=" << ec.example_counter << ", offset=" << ec.ft_offset << std::endl;
 
-  vw& all = *g.all;
+  VW::workspace& all = *g.all;
   size_t num_interacted_features = 0;
   if (l1)
     ec.partial_prediction = trunc_predict(all, ec, all.sd->gravity, num_interacted_features);
@@ -398,7 +398,7 @@ template <bool l1, bool audit>
 void multipredict(
     gd& g, base_learner&, example& ec, size_t count, size_t step, polyprediction* pred, bool finalize_predictions)
 {
-  vw& all = *g.all;
+  VW::workspace& all = *g.all;
   for (size_t c = 0; c < count; c++)
   {
     const auto& simple_red_features = ec._reduction_features.template get<simple_label_reduction_features>();
@@ -555,7 +555,7 @@ float get_pred_per_update(gd& g, example& ec)
 {
   // We must traverse the features in _precisely_ the same order as during training.
   label_data& ld = ec.l.simple;
-  vw& all = *g.all;
+  VW::workspace& all = *g.all;
 
   float grad_squared = ec.weight;
   if (!adax) grad_squared *= all.loss->getSquareGrad(ec.pred.scalar, ld.label);
@@ -625,7 +625,7 @@ float compute_update(gd& g, example& ec)
 {
   // invariant: not a test label, importance weight > 0
   const label_data& ld = ec.l.simple;
-  vw& all = *g.all;
+  VW::workspace& all = *g.all;
 
   float update = 0.;
   ec.updated_prediction = ec.pred.scalar;
@@ -669,11 +669,32 @@ void update(gd& g, base_learner&, example& ec)
   float update;
   if ((update = compute_update<sparse_l2, invariant, sqrt_rate, feature_mask_off, adax, adaptive, normalized, spare>(
            g, ec)) != 0.)
+  {
+#ifdef PRIVACY_ACTIVATION
+    if (g.all->weights.sparse && g.all->privacy_activation)
+    {
+      g.all->weights.sparse_weights.set_tag(ec.tag_hash);
+      train<sqrt_rate, feature_mask_off, adaptive, normalized, spare>(g, ec, update);
+      g.all->weights.sparse_weights.unset_tag();
+    }
+    else if (!g.all->weights.sparse && g.all->privacy_activation)
+    {
+      g.all->weights.dense_weights.set_tag(ec.tag_hash);
+      train<sqrt_rate, feature_mask_off, adaptive, normalized, spare>(g, ec, update);
+      g.all->weights.dense_weights.unset_tag();
+    }
+    else
+    {
+      train<sqrt_rate, feature_mask_off, adaptive, normalized, spare>(g, ec, update);
+    }
+#else
     train<sqrt_rate, feature_mask_off, adaptive, normalized, spare>(g, ec, update);
+#endif
+  }
 
   if (g.all->sd->contraction < 1e-9 || g.all->sd->gravity > 1e3)  // updating weights now to avoid numerical instability
     sync_weights(*g.all);
-}
+}  // namespace GD
 
 template <bool sparse_l2, bool invariant, bool sqrt_rate, bool feature_mask_off, bool adax, size_t adaptive,
     size_t normalized, size_t spare>
@@ -686,7 +707,7 @@ void learn(gd& g, base_learner& base, example& ec)
   update<sparse_l2, invariant, sqrt_rate, feature_mask_off, adax, adaptive, normalized, spare>(g, base, ec);
 }
 
-void sync_weights(vw& all)
+void sync_weights(VW::workspace& all)
 {
   // todo, fix length dependence
   if (all.sd->gravity == 0. && all.sd->contraction == 1.)  // to avoid unnecessary weight synchronization
@@ -722,7 +743,7 @@ size_t write_index(io_buf& model_file, std::stringstream& msg, bool text, uint32
 }
 
 template <class T>
-void save_load_regressor(vw& all, io_buf& model_file, bool read, bool text, T& weights)
+void save_load_regressor(VW::workspace& all, io_buf& model_file, bool read, bool text, T& weights)
 {
   size_t brw = 1;
 
@@ -733,7 +754,11 @@ void save_load_regressor(vw& all, io_buf& model_file, bool read, bool text, T& w
     for (auto it = weights.begin(); it != weights.end(); ++it)
     {
       const auto weight_value = *it;
+#ifdef PRIVACY_ACTIVATION
+      if (*it != 0.f && (!all.privacy_activation || (weights.is_activated(it.index()) && all.privacy_activation)))
+#else
       if (*it != 0.f)
+#endif
       {
         const auto weight_index = it.index() >> weights.stride_shift();
 
@@ -776,8 +801,11 @@ void save_load_regressor(vw& all, io_buf& model_file, bool read, bool text, T& w
   else  // write
   {
     for (typename T::iterator v = weights.begin(); v != weights.end(); ++v)
-    {
+#ifdef PRIVACY_ACTIVATION
+      if (*v != 0. && (!all.privacy_activation || (weights.is_activated(v.index()) && all.privacy_activation)))
+#else
       if (*v != 0.)
+#endif
       {
         i = v.index() >> weights.stride_shift();
         std::stringstream msg;
@@ -785,11 +813,10 @@ void save_load_regressor(vw& all, io_buf& model_file, bool read, bool text, T& w
         msg << ":" << *v << "\n";
         brw += bin_text_write_fixed(model_file, (char*)&(*v), sizeof(*v), msg, text);
       }
-    }
   }
 }
 
-void save_load_regressor(vw& all, io_buf& model_file, bool read, bool text)
+void save_load_regressor(VW::workspace& all, io_buf& model_file, bool read, bool text)
 {
   if (all.weights.sparse)
     save_load_regressor(all, model_file, read, text, all.weights.sparse_weights);
@@ -798,8 +825,8 @@ void save_load_regressor(vw& all, io_buf& model_file, bool read, bool text)
 }
 
 template <class T>
-void save_load_online_state(
-    vw& all, io_buf& model_file, bool read, bool text, gd* g, std::stringstream& msg, uint32_t ftrl_size, T& weights)
+void save_load_online_state(VW::workspace& all, io_buf& model_file, bool read, bool text, gd* g, std::stringstream& msg,
+    uint32_t ftrl_size, T& weights)
 {
   uint64_t length = static_cast<uint64_t>(1) << all.num_bits;
 
@@ -843,7 +870,11 @@ void save_load_online_state(
 
       if (all.print_invert)  // write readable model with feature names
       {
+#ifdef PRIVACY_ACTIVATION
+        if (*v != 0.f && (!all.privacy_activation || (weights.is_activated(v.index()) && all.privacy_activation)))
+#else
         if (*v != 0.f)
+#endif
         {
           const auto map_it = all.index_name_map.find(i);
           if (map_it != all.index_name_map.end())
@@ -916,7 +947,7 @@ void save_load_online_state(
 }
 
 void save_load_online_state(
-    vw& all, io_buf& model_file, bool read, bool text, double& total_weight, gd* g, uint32_t ftrl_size)
+    VW::workspace& all, io_buf& model_file, bool read, bool text, double& total_weight, gd* g, uint32_t ftrl_size)
 {
   std::stringstream msg;
 
@@ -1023,7 +1054,7 @@ void save_load_online_state(
 
 void save_load(gd& g, io_buf& model_file, bool read, bool text)
 {
-  vw& all = *g.all;
+  VW::workspace& all = *g.all;
   if (read)
   {
     initialize_regressor(all);
@@ -1078,7 +1109,7 @@ void save_load(gd& g, io_buf& model_file, bool read, bool text)
 
 template <bool sparse_l2, bool invariant, bool sqrt_rate, bool feature_mask_off, uint64_t adaptive, uint64_t normalized,
     uint64_t spare, uint64_t next>
-uint64_t set_learn(vw& all, gd& g)
+uint64_t set_learn(VW::workspace& all, gd& g)
 {
   all.normalized_idx = normalized;
   if (g.adax)
@@ -1099,7 +1130,7 @@ uint64_t set_learn(vw& all, gd& g)
 
 template <bool sparse_l2, bool invariant, bool sqrt_rate, uint64_t adaptive, uint64_t normalized, uint64_t spare,
     uint64_t next>
-uint64_t set_learn(vw& all, bool feature_mask_off, gd& g)
+uint64_t set_learn(VW::workspace& all, bool feature_mask_off, gd& g)
 {
   all.normalized_idx = normalized;
   if (feature_mask_off)
@@ -1109,7 +1140,7 @@ uint64_t set_learn(vw& all, bool feature_mask_off, gd& g)
 }
 
 template <bool invariant, bool sqrt_rate, uint64_t adaptive, uint64_t normalized, uint64_t spare, uint64_t next>
-uint64_t set_learn(vw& all, bool feature_mask_off, gd& g)
+uint64_t set_learn(VW::workspace& all, bool feature_mask_off, gd& g)
 {
   if (g.sparse_l2 > 0.f)
     return set_learn<true, invariant, sqrt_rate, adaptive, normalized, spare, next>(all, feature_mask_off, g);
@@ -1118,7 +1149,7 @@ uint64_t set_learn(vw& all, bool feature_mask_off, gd& g)
 }
 
 template <bool sqrt_rate, uint64_t adaptive, uint64_t normalized, uint64_t spare, uint64_t next>
-uint64_t set_learn(vw& all, bool feature_mask_off, gd& g)
+uint64_t set_learn(VW::workspace& all, bool feature_mask_off, gd& g)
 {
   if (all.invariant_updates)
     return set_learn<true, sqrt_rate, adaptive, normalized, spare, next>(all, feature_mask_off, g);
@@ -1127,7 +1158,7 @@ uint64_t set_learn(vw& all, bool feature_mask_off, gd& g)
 }
 
 template <bool sqrt_rate, uint64_t adaptive, uint64_t spare>
-uint64_t set_learn(vw& all, bool feature_mask_off, gd& g)
+uint64_t set_learn(VW::workspace& all, bool feature_mask_off, gd& g)
 {
   // select the appropriate learn function based on adaptive, normalization, and feature mask
   if (all.weights.normalized)
@@ -1137,7 +1168,7 @@ uint64_t set_learn(vw& all, bool feature_mask_off, gd& g)
 }
 
 template <bool sqrt_rate>
-uint64_t set_learn(vw& all, bool feature_mask_off, gd& g)
+uint64_t set_learn(VW::workspace& all, bool feature_mask_off, gd& g)
 {
   if (all.weights.adaptive)
     return set_learn<sqrt_rate, 1, 2>(all, feature_mask_off, g);
@@ -1156,7 +1187,7 @@ uint64_t ceil_log_2(uint64_t v)
 base_learner* setup(VW::setup_base_i& stack_builder)
 {
   options_i& options = *stack_builder.get_options();
-  vw& all = *stack_builder.get_all_pointer();
+  VW::workspace& all = *stack_builder.get_all_pointer();
 
   auto g = VW::make_unique<gd>();
 
@@ -1166,21 +1197,23 @@ base_learner* setup(VW::setup_base_i& stack_builder)
   bool invariant = false;
   bool normalized = false;
 
-  option_group_definition new_options("Gradient Descent options");
-  new_options.add(make_option("sgd", sgd).help("use regular stochastic gradient descent update.").keep(all.save_resume))
-      .add(make_option("adaptive", adaptive).help("use adaptive, individual learning rates.").keep(all.save_resume))
-      .add(make_option("adax", adax).help("use adaptive learning rates with x^2 instead of g^2x^2"))
-      .add(make_option("invariant", invariant).help("use safe/importance aware updates.").keep(all.save_resume))
-      .add(make_option("normalized", normalized).help("use per feature normalized updates").keep(all.save_resume))
-      .add(make_option("sparse_l2", g->sparse_l2).default_value(0.f).help("use per feature normalized updates"))
+  option_group_definition new_options("Gradient Descent");
+  new_options.add(make_option("sgd", sgd).help("Use regular stochastic gradient descent update").keep(all.save_resume))
+      .add(make_option("adaptive", adaptive).help("Use adaptive, individual learning rates").keep(all.save_resume))
+      .add(make_option("adax", adax).help("Use adaptive learning rates with x^2 instead of g^2x^2"))
+      .add(make_option("invariant", invariant).help("Use safe/importance aware updates").keep(all.save_resume))
+      .add(make_option("normalized", normalized).help("Use per feature normalized updates").keep(all.save_resume))
+      .add(make_option("sparse_l2", g->sparse_l2)
+               .default_value(0.f)
+               .help("Degree of l2 regularization applied to activated sparse parameters"))
       .add(make_option("l1_state", all.sd->gravity)
                .keep(all.save_resume)
                .default_value(0.)
-               .help("use per feature normalized updates"))
+               .help("Amount of accumulated implicit l1 regularization"))
       .add(make_option("l2_state", all.sd->contraction)
                .keep(all.save_resume)
                .default_value(1.)
-               .help("use per feature normalized updates"));
+               .help("Amount of accumulated implicit l2 regularization"));
   options.add_and_parse(new_options);
 
   g->all = &all;

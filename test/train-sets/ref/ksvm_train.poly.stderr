@@ -11,6 +11,8 @@ using no cache
 Reading datafile = train-sets/rcv1_smaller.dat
 num sources = 1
 Enabled reductions: ksvm, scorer-identity, count_label
+Input label = simple
+Output pred = scalar
 average  since         example        example  current  current  current
 loss     last          counter         weight    label  predict features
 1.000000 1.000000            1            1.0   1.0000   0.0000       50

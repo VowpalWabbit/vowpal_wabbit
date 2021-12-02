@@ -243,21 +243,21 @@ void to_flat::create_slates_label(example* v, ExampleBuilder& ex_builder)
   auto e_type = v->l.slates.type;
   ex_builder.label_type = VW::parsers::flatbuffer::Label_Slates_Label;
 
-  if (e_type == VW::slates::shared)
+  if (e_type == VW::slates::example_type::shared)
   {
     auto type = VW::parsers::flatbuffer::CCB_Slates_example_type_shared;
     ex_builder.label = VW::parsers::flatbuffer::CreateSlates_LabelDirect(
         _builder, type, weight, v->l.slates.labeled, v->l.slates.cost, 0U, nullptr)
                            .Union();
   }
-  else if (e_type == VW::slates::action)
+  else if (e_type == VW::slates::example_type::action)
   {
     auto type = VW::parsers::flatbuffer::CCB_Slates_example_type_action;
     ex_builder.label = VW::parsers::flatbuffer::CreateSlates_LabelDirect(
         _builder, type, weight, false, 0.0, v->l.slates.slot_id, nullptr)
                            .Union();
   }
-  else if (e_type == VW::slates::slot)
+  else if (e_type == VW::slates::example_type::slot)
   {
     auto type = VW::parsers::flatbuffer::CCB_Slates_example_type_slot;
     for (auto const& as : v->l.slates.probabilities)
@@ -354,7 +354,7 @@ std::vector<VW::namespace_extent> unflatten_namespace_extents_dont_skip(
   return results;
 }
 
-void to_flat::convert_txt_to_flat(vw& all)
+void to_flat::convert_txt_to_flat(VW::workspace& all)
 {
   std::ofstream outfile;
   if (output_flatbuffer_name.empty()) { output_flatbuffer_name = all.data_filename + ".fb"; }
@@ -445,7 +445,7 @@ void to_flat::convert_txt_to_flat(vw& all)
           ((all.example_parser->lbl_parser.label_type == VW::label_type_t::ccb &&
                ae->l.conditional_contextual_bandit.type == CCB::example_type::slot) ||
               (all.example_parser->lbl_parser.label_type == VW::label_type_t::slates &&
-                  ae->l.slates.type == VW::slates::slot)))
+                  ae->l.slates.type == VW::slates::example_type::slot)))
       {
         ex_builder.namespaces.insert(ex_builder.namespaces.end(), namespaces.begin(), namespaces.end());
         ex_builder.is_newline = ae->is_newline;

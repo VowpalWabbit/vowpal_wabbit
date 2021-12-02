@@ -21,6 +21,7 @@
 #include "csoaa.h"
 #include "cb_algs.h"
 #include "cb_adf.h"
+#include "interaction_ground.h"
 #include "cb_to_cb_adf.h"
 #include "cb_dro.h"
 #include "cb_explore.h"
@@ -85,11 +86,13 @@
 #include "kskip_ngram_transformer.h"
 #include "baseline_challenger_cb.h"
 #include "count_label.h"
+#include "freegrad.h"
 
 void register_reductions(std::vector<reduction_setup_fn>& reductions,
     std::vector<std::tuple<std::string, reduction_setup_fn>>& reduction_stack)
 {
   std::map<reduction_setup_fn, std::string> allowlist = {{GD::setup, "gd"}, {ftrl_setup, "ftrl"},
+      {VW::freegrad_setup, "freegrad"}, {sender_setup, "sender"}, {nn_setup, "nn"}, {oaa_setup, "oaa"},
       {scorer_setup, "scorer"}, {CSOAA::csldf_setup, "csoaa_ldf"},
       {VW::cb_explore_adf::greedy::setup, "cb_explore_adf_greedy"},
       {VW::cb_explore_adf::regcb::setup, "cb_explore_adf_regcb"},
@@ -97,7 +100,7 @@ void register_reductions(std::vector<reduction_setup_fn>& reductions,
       {generate_interactions_setup, "generate_interactions"}, {VW::count_label_setup, "count_label"}};
 
   auto name_extractor = VW::config::options_name_extractor();
-  vw dummy_all;
+  VW::workspace dummy_all;
 
   VW::cached_learner null_ptr_learner(dummy_all, name_extractor, nullptr);
 
@@ -124,6 +127,7 @@ void prepare_reductions(std::vector<std::tuple<std::string, reduction_setup_fn>>
   reductions.push_back(GD::setup);
   reductions.push_back(kernel_svm_setup);
   reductions.push_back(ftrl_setup);
+  reductions.push_back(VW::freegrad_setup);
   reductions.push_back(svrg_setup);
   reductions.push_back(sender_setup);
   reductions.push_back(gd_mf_setup);
@@ -175,6 +179,7 @@ void prepare_reductions(std::vector<std::tuple<std::string, reduction_setup_fn>>
   reductions.push_back(CSOAA::csldf_setup);
   reductions.push_back(cb_algs_setup);
   reductions.push_back(cb_adf_setup);
+  reductions.push_back(VW::interaction_ground_setup);
   reductions.push_back(mwt_setup);
   reductions.push_back(VW::cats_tree::setup);
   reductions.push_back(baseline_challenger_cb_setup);
@@ -218,7 +223,7 @@ void prepare_reductions(std::vector<std::tuple<std::string, reduction_setup_fn>>
 
 namespace VW
 {
-default_reduction_stack_setup::default_reduction_stack_setup(vw& all, VW::config::options_i& options)
+default_reduction_stack_setup::default_reduction_stack_setup(VW::workspace& all, VW::config::options_i& options)
 {
   // push all reduction functions into the stack
   prepare_reductions(reduction_stack);
@@ -229,7 +234,7 @@ default_reduction_stack_setup::default_reduction_stack_setup() { prepare_reducti
 
 // this should be reworked, but its setup related to how setup is tied with all object
 // which is not applicable to everything
-void default_reduction_stack_setup::delayed_state_attach(vw& all, VW::config::options_i& options)
+void default_reduction_stack_setup::delayed_state_attach(VW::workspace& all, VW::config::options_i& options)
 {
   all_ptr = &all;
   options_impl = &options;

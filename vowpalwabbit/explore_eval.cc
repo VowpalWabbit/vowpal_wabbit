@@ -25,7 +25,7 @@ namespace EXPLORE_EVAL
 struct explore_eval
 {
   CB::cb_class known_cost;
-  vw* all = nullptr;
+  VW::workspace* all = nullptr;
   std::shared_ptr<rand_state> _random_state;
   uint64_t offset = 0;
   CB::label action_label;
@@ -53,7 +53,7 @@ void finish(explore_eval& data)
 // are specified. We print the first action and probability, based on
 // ordering by scores in the final output.
 
-void output_example(vw& all, explore_eval& c, example& ec, multi_ex* ec_seq)
+void output_example(VW::workspace& all, explore_eval& c, example& ec, multi_ex* ec_seq)
 {
   if (example_is_newline_not_header(ec)) return;
 
@@ -102,7 +102,7 @@ void output_example(vw& all, explore_eval& c, example& ec, multi_ex* ec_seq)
   CB::print_update(all, !labeled_example, ec, ec_seq, true, nullptr);
 }
 
-void output_example_seq(vw& all, explore_eval& data, multi_ex& ec_seq)
+void output_example_seq(VW::workspace& all, explore_eval& data, multi_ex& ec_seq)
 {
   if (ec_seq.size() > 0)
   {
@@ -111,7 +111,7 @@ void output_example_seq(vw& all, explore_eval& data, multi_ex& ec_seq)
   }
 }
 
-void finish_multiline_example(vw& all, explore_eval& data, multi_ex& ec_seq)
+void finish_multiline_example(VW::workspace& all, explore_eval& data, multi_ex& ec_seq)
 {
   if (ec_seq.size() > 0)
   {
@@ -188,10 +188,10 @@ using namespace EXPLORE_EVAL;
 base_learner* explore_eval_setup(VW::setup_base_i& stack_builder)
 {
   options_i& options = *stack_builder.get_options();
-  vw& all = *stack_builder.get_all_pointer();
+  VW::workspace& all = *stack_builder.get_all_pointer();
   auto data = VW::make_unique<explore_eval>();
   bool explore_eval_option = false;
-  option_group_definition new_options("Explore evaluation");
+  option_group_definition new_options("Explore Evaluation");
   new_options
       .add(make_option("explore_eval", explore_eval_option)
                .keep()
@@ -218,8 +218,8 @@ base_learner* explore_eval_setup(VW::setup_base_i& stack_builder)
   auto* l = make_reduction_learner(std::move(data), base, do_actual_learning<true>, do_actual_learning<false>,
       stack_builder.get_setupfn_name(explore_eval_setup))
                 .set_learn_returns_prediction(true)
-                .set_prediction_type(VW::prediction_type_t::action_probs)
-                .set_label_type(VW::label_type_t::cb)
+                .set_output_prediction_type(VW::prediction_type_t::action_probs)
+                .set_input_label_type(VW::label_type_t::cb)
                 .set_finish_example(finish_multiline_example)
                 .set_finish(finish)
                 .build();

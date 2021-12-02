@@ -221,8 +221,8 @@ struct search
   const char* task_name;
   const char* metatask_name;
 
-  vw& get_vw_pointer_unsafe();  // although you should rarely need this, some times you need a pointer to the vw data
-                                // structure :(
+  VW::workspace& get_vw_pointer_unsafe();  // although you should rarely need this, some times you need a pointer to the
+                                           // vw data structure :(
   void set_force_oracle(bool force);  // if the library wants to force search to use the oracle, set this to true
   search();
   ~search();
@@ -349,7 +349,7 @@ private:
 };
 
 // some helper functions you might find helpful
-/*template<class T> void check_option(T& ret, vw&all, po::variables_map& vm, const char* opt_name, bool
+/*template<class T> void check_option(T& ret, VW::workspace&all, po::variables_map& vm, const char* opt_name, bool
 default_to_cmdline, bool(*equal)(T,T), const char* mismatch_error_string, const char* required_error_string) { if
 (vm.count(opt_name)) { ret = vm[opt_name].as<T>(); *all.args_n_opts.file_options << " --" << opt_name << " " << ret;
   }
@@ -360,8 +360,8 @@ default_to_cmdline, bool(*equal)(T,T), const char* mismatch_error_string, const 
   }
   }*/
 
-// void check_option(bool& ret, vw&all, po::variables_map& vm, const char* opt_name, bool default_to_cmdline, const
-// char* mismatch_error_string);
+// void check_option(bool& ret, VW::workspace&all, po::variables_map& vm, const char* opt_name, bool default_to_cmdline,
+// const char* mismatch_error_string);
 
 // our interface within VW
 VW::LEARNER::base_learner* setup(VW::setup_base_i& stack_builder);

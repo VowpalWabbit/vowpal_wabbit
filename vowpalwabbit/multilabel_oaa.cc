@@ -62,7 +62,7 @@ void predict_or_learn(multi_oaa& o, VW::LEARNER::single_learner& base, example& 
   }
 }
 
-void finish_example(vw& all, multi_oaa& o, example& ec)
+void finish_example(VW::workspace& all, multi_oaa& o, example& ec)
 {
   if (o.probabilities)
   {
@@ -86,16 +86,17 @@ void finish_example(vw& all, multi_oaa& o, example& ec)
 VW::LEARNER::base_learner* multilabel_oaa_setup(VW::setup_base_i& stack_builder)
 {
   options_i& options = *stack_builder.get_options();
-  vw& all = *stack_builder.get_all_pointer();
+  VW::workspace& all = *stack_builder.get_all_pointer();
   auto data = VW::make_unique<multi_oaa>();
   option_group_definition new_options("Multilabel One Against All");
   new_options
       .add(make_option("multilabel_oaa", data->k).keep().necessary().help("One-against-all multilabel with <k> labels"))
-      .add(make_option("probabilities", data->probabilities).help("predict probabilities of all classes"))
+      .add(make_option("probabilities", data->probabilities).help("Predict probabilities of all classes"))
       .add(make_option("link", data->link)
                .default_value("identity")
                .keep()
-               .help("Specify the link function: identity, logistic, glf1 or poisson"));
+               .one_of({"identity", "logistic", "glf1", "poisson"})
+               .help("Specify the link function"));
 
   if (!options.add_parse_and_check_necessary(new_options)) return nullptr;
 
@@ -132,8 +133,8 @@ VW::LEARNER::base_learner* multilabel_oaa_setup(VW::setup_base_i& stack_builder)
           predict_or_learn<false>, stack_builder.get_setupfn_name(multilabel_oaa_setup) + name_addition)
           .set_params_per_weight(ws)
           .set_learn_returns_prediction(true)
-          .set_label_type(VW::label_type_t::multilabel)
-          .set_prediction_type(pred_type)
+          .set_input_label_type(VW::label_type_t::multilabel)
+          .set_output_prediction_type(pred_type)
           .set_finish_example(finish_example)
           .build();
 

@@ -35,7 +35,7 @@ struct sort_data
 
 struct stagewise_poly
 {
-  vw* all = nullptr;  // many uses, unmodular reduction
+  VW::workspace* all = nullptr;  // many uses, unmodular reduction
 
   float sched_exponent = 0.f;
   uint32_t batch_sz = 0;
@@ -592,7 +592,7 @@ void end_pass(stagewise_poly &poly)
   sanity_check_state(poly);
 #endif  // DEBUG
 
-  vw &all = *poly.all;
+  VW::workspace& all = *poly.all;
   if (all.all_reduce != nullptr)
   {
     /*
@@ -627,7 +627,7 @@ void end_pass(stagewise_poly &poly)
   }
 }
 
-void finish_example(vw &all, stagewise_poly &poly, example &ec)
+void finish_example(VW::workspace& all, stagewise_poly& poly, example& ec)
 {
   size_t temp_num_features = ec.num_features;
   ec.num_features = poly.synth_ec.get_num_features();
@@ -656,22 +656,22 @@ void save_load(stagewise_poly &poly, io_buf &model_file, bool read, bool text)
 base_learner* stagewise_poly_setup(VW::setup_base_i& stack_builder)
 {
   options_i& options = *stack_builder.get_options();
-  vw& all = *stack_builder.get_all_pointer();
+  VW::workspace& all = *stack_builder.get_all_pointer();
   auto poly = VW::make_unique<stagewise_poly>();
   bool stage_poly = false;
-  option_group_definition new_options("Stagewise polynomial options");
+  option_group_definition new_options("Stagewise Polynomial");
   new_options
-      .add(make_option("stage_poly", stage_poly).keep().necessary().help("use stagewise polynomial feature learning"))
+      .add(make_option("stage_poly", stage_poly).keep().necessary().help("Use stagewise polynomial feature learning"))
       .add(make_option("sched_exponent", poly->sched_exponent)
                .default_value(1.f)
-               .help("exponent controlling quantity of included features"))
+               .help("Exponent controlling quantity of included features"))
       .add(make_option("batch_sz", poly->batch_sz)
                .default_value(1000)
-               .help("multiplier on batch size before including more features"))
-      .add(make_option("batch_sz_no_doubling", poly->batch_sz_double).help("batch_sz does not double"));
+               .help("Multiplier on batch size before including more features"))
+      .add(make_option("batch_sz_no_doubling", poly->batch_sz_double).help("Batch_sz does not double"));
 #ifdef MAGIC_ARGUMENT
   new_options.add(
-      make_typed_option("magic_argument", poly->magic_argument).default_value(0.).help("magical feature flag"));
+      make_typed_option("magic_argument", poly->magic_argument).default_value(0.).help("Magical feature flag"));
 #endif  // MAGIC_ARGUMENT
 
   if (!options.add_parse_and_check_necessary(new_options)) return nullptr;
@@ -696,8 +696,8 @@ base_learner* stagewise_poly_setup(VW::setup_base_i& stack_builder)
 
   auto* l = VW::LEARNER::make_reduction_learner(std::move(poly), as_singleline(stack_builder.setup_base_learner()),
       learn, predict, stack_builder.get_setupfn_name(stagewise_poly_setup))
-                .set_label_type(VW::label_type_t::simple)
-                .set_prediction_type(VW::prediction_type_t::scalar)
+                .set_input_label_type(VW::label_type_t::simple)
+                .set_output_prediction_type(VW::prediction_type_t::scalar)
                 .set_save_load(save_load)
                 .set_finish_example(finish_example)
                 .set_end_pass(end_pass)

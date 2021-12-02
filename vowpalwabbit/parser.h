@@ -30,6 +30,11 @@
 
 namespace VW
 {
+struct workspace;
+
+void parse_example_label(string_view label, const label_parser& lbl_parser, const named_labels* ldict,
+    label_parser_reuse_mem& reuse_mem, example& ec);
+
 namespace details
 {
 struct cache_temp_buffer
@@ -45,7 +50,6 @@ struct cache_temp_buffer
 }  // namespace details
 }  // namespace VW
 
-struct vw;
 struct input_options;
 struct dsjson_metrics;
 struct parser
@@ -80,9 +84,9 @@ struct parser
   /// parsers multiple are produced which all correspond the the same overall
   /// logical example. examples must have a single empty example in it when this
   /// call is made.
-  int (*reader)(vw*, io_buf&, v_array<example*>& examples);
+  int (*reader)(VW::workspace*, io_buf&, v_array<example*>& examples);
   /// text_reader consumes the char* input and is for text based parsing
-  void (*text_reader)(vw*, const char*, size_t, v_array<example*>&);
+  void (*text_reader)(VW::workspace*, const char*, size_t, v_array<example*>&);
 
   shared_data* _shared_data = nullptr;
 
@@ -141,12 +145,12 @@ struct dsjson_metrics
   std::string LastEventTime;
 };
 
-void enable_sources(vw& all, bool quiet, size_t passes, input_options& input_options);
+void enable_sources(VW::workspace& all, bool quiet, size_t passes, input_options& input_options);
 
 // parser control
 void lock_done(parser& p);
-void set_done(vw& all);
+void set_done(VW::workspace& all);
 
 // source control functions
-void reset_source(vw& all, size_t numbits);
-void free_parser(vw& all);
+void reset_source(VW::workspace& all, size_t numbits);
+void free_parser(VW::workspace& all);

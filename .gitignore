@@ -1,3 +1,4 @@
+build/
 Makefile.in
 cluster/Makefile.in
 cluster/Makefile

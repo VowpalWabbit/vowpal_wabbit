@@ -16,7 +16,6 @@ from enum import Enum
 import socket
 from typing import Any, List, Optional, Set
 
-import runtests_parser
 from run_tests_common import TestData
 import runtests_flatbuffer_converter as fb_converter
 
@@ -519,7 +518,22 @@ def create_test_dir(
 
 
 def find_vw_binary(test_base_ref_dir, user_supplied_bin_path):
-    vw_search_paths = [Path(test_base_ref_dir).joinpath("../build/vowpalwabbit")]
+    def is_python_invocation(file_path):
+        if not user_supplied_bin_path:
+            return False
+        elif (user_supplied_bin_path.startswith("python") and
+              user_supplied_bin_path.endswith("-m vowpalwabbit")):
+            return user_supplied_bin_path
+        else:
+            return False
+
+    if is_python_invocation(user_supplied_bin_path):
+        return user_supplied_bin_path
+
+    vw_search_paths = [
+        Path(test_base_ref_dir).joinpath("../build/vowpalwabbit")
+    ]
+
 
     def is_vw_binary(file_path):
         file_name = os.path.basename(file_path)
@@ -588,16 +602,6 @@ def find_or_use_user_supplied_path(
                 )
             )
         return user_supplied_bin_path
-
-
-def find_runtests_file(test_base_ref_dir):
-    def is_runtests_file(file_path):
-        file_name = os.path.basename(file_path)
-        return file_name == "RunTests"
-
-    possible_runtests_paths = [Path(test_base_ref_dir)]
-    return find_in_path(possible_runtests_paths, is_runtests_file, "RunTests")
-
 
 def do_dirty_check(test_base_ref_dir):
     result = subprocess.run(
@@ -739,9 +743,29 @@ def convert_tests_for_flatbuffers(
 
     return tests
 
+def check_test_ids(tests):
+    seen_ids: Set[int] = set()
+    for test in tests:
+        if "id" not in test:
+            raise ValueError("id field missing in test: {}".format(test))
+        if test["id"] in seen_ids:
+            raise ValueError("Duplicate found for id: {}".format(test["id"]))
+        seen_ids.add(test["id"])
+    
+    first_id = min(seen_ids)
+    if first_id != 1:
+        raise ValueError("Ids must start from 1. First id was: {}".format(first_id))
+
+    last_test_id = max(seen_ids)
+    if len(seen_ids) != (last_test_id):
+        missing_ids = []
+        for i in range(1, last_test_id + 1):
+            if i not in seen_ids:
+                missing_ids.append(i)
+        raise ValueError("Missing test ids: [{}]".format(", ".join(str(x) for x in missing_ids)))
 
 def convert_to_test_data(
-    tests: List[Any], vw_bin: str, spanning_tree_bin: Optional[str]
+    tests: List[Any], vw_bin: str, spanning_tree_bin: Optional[str], skipped_ids: List[int], extra_vw_options: str
 ) -> List[TestData]:
     results = []
     for test in tests:
@@ -765,20 +789,24 @@ def convert_to_test_data(
                 )
                 is_shell = True
         elif "vw_command" in test:
-            command_line = "{} {}".format(vw_bin, test["vw_command"])
+            command_line = "{} {} {}".format(vw_bin, test["vw_command"], extra_vw_options)
         else:
             skip = True
             skip_reason = "This test is an unknown type"
 
+        if test["id"] in skipped_ids:
+            skip = True
+            skip_reason = "Test skipped by --skip_test argument"
+
         results.append(
             TestData(
                 id=test["id"],
-                description=test["desc"],
+                description=test["desc"] if "desc" in test else "",
                 depends_on=test["depends_on"] if "depends_on" in test else [],
                 command_line=command_line,
                 is_shell=is_shell,
                 input_files=test["input_files"] if "input_files" in test else [],
-                comparison_files=test["diff_files"],
+                comparison_files=test["diff_files"] if "diff_files" in test else dict(),
                 skip=skip,
                 skip_reason=skip_reason,
             )
@@ -796,6 +824,8 @@ def get_test(test_number, tests):
 def main():
     working_dir = Path.home().joinpath(".vw_runtests_working_dir")
     test_ref_dir = Path(os.path.dirname(os.path.abspath(__file__)))
+
+    default_test_spec_file = Path(test_ref_dir).joinpath("core.vwtest.json")
 
     parser = argparse.ArgumentParser(
         formatter_class=argparse.ArgumentDefaultsHelpFormatter
@@ -852,7 +882,7 @@ def main():
         help="Directory to read test input files from",
     )
     parser.add_argument(
-        "-j", "--jobs", type=int, default=4, help="Number of tests to run in parallel"
+        "-j", "--jobs", type=int, default=os.cpu_count(), help="Number of tests to run in parallel. Default is current machine core count."
     )
     parser.add_argument(
         "--vw_bin_path",
@@ -868,10 +898,17 @@ def main():
         action="store_true",
     )
     parser.add_argument(
+        "--skip_test",
+        help="Skip specific test ids",
+        nargs='+',
+        default=[],
+        type=int,
+    )
+    parser.add_argument(
         "--test_spec",
         type=str,
-        help="Optional. If passed the given JSON test spec will be used, "
-        + "otherwise a test spec will be autogenerated from the RunTests test definitions",
+        default=default_test_spec_file,
+        help="Which vwtest test specification file to run",
     )
     parser.add_argument(
         "--no_color", action="store_true", help="Don't print color ANSI escape codes"
@@ -892,6 +929,9 @@ def main():
     )
     parser.add_argument(
         "--valgrind", action="store_true", help="Run tests with Valgrind"
+    )
+    parser.add_argument(
+        "-O", "--extra_options", type=str, help="Append extra options to VW command line tests.", default=""
     )
     args = parser.parse_args()
 
@@ -947,17 +987,13 @@ def main():
         )
         print("Using spanning tree binary: {}".format((spanning_tree_bin)))
 
-    if args.test_spec is None:
-        runtests_file = find_runtests_file(test_base_ref_dir)
-        tests = runtests_parser.file_to_obj(runtests_file)
-        tests = [x.__dict__ for x in tests]
-        print("Tests parsed from RunTests file: {}".format((runtests_file)))
-    else:
-        json_test_spec_content = open(args.test_spec).read()
-        tests = json.loads(json_test_spec_content)
-        print("Tests read from test spec file: {}".format((args.test_spec)))
+    json_test_spec_content = open(args.test_spec).read()
+    tests = json.loads(json_test_spec_content)
+    print("Tests read from file: {}".format((args.test_spec)))
 
-    tests = convert_to_test_data(tests, vw_bin, spanning_tree_bin)
+    check_test_ids(tests)
+
+    tests = convert_to_test_data(tests, vw_bin, spanning_tree_bin, args.skip_test, extra_vw_options=args.extra_options)
 
     print()
 

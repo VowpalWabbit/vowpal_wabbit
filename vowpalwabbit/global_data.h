@@ -17,6 +17,7 @@
 #include <array>
 #include <memory>
 #include <atomic>
+#include "future_compat.h"
 #include "vw_string_view.h"
 
 // Thread cannot be used in managed C++, tell the compiler that this is unmanaged even if included in a managed project.
@@ -62,6 +63,13 @@ using options_deleter_type = void (*)(VW::config::options_i*);
 
 struct shared_data;
 
+namespace VW
+{
+struct workspace;
+}
+
+using vw VW_DEPRECATED("Use VW::workspace instead of ::vw. ::vw will be removed in VW 10.") = VW::workspace;
+
 struct dictionary_info
 {
   std::string name;
@@ -69,7 +77,7 @@ struct dictionary_info
   std::shared_ptr<feature_dict> dict;
 };
 
-enum AllReduceType
+enum class AllReduceType
 {
   Socket,
   Thread
@@ -124,7 +132,9 @@ struct trace_message_wrapper
   ~trace_message_wrapper() = default;
 };
 
-struct vw
+namespace VW
+{
+struct workspace
 {
 private:
   std::shared_ptr<rand_state> _random_state_sp = std::make_shared<rand_state>();  // per instance random_state
@@ -160,6 +170,13 @@ public:
   bool default_bits;
 
   uint32_t hash_seed;
+
+#ifdef PRIVACY_ACTIVATION
+  bool privacy_activation = false;
+  // this is coupled with the bitset size in array_parameters which needs to be determined at compile time
+  size_t feature_bitset_size = 32;
+  size_t privacy_activation_threshold = 10;
+#endif
 
 #ifdef BUILD_FLATBUFFERS
   std::unique_ptr<VW::parsers::flatbuffer::parser> flat_converter;
@@ -313,17 +330,17 @@ public:
   // hack to support cb model loading into ccb reduction
   bool is_ccb_input_model = false;
 
-  vw();
-  ~vw();
+  workspace();
+  ~workspace();
   std::shared_ptr<rand_state> get_random_state() { return _random_state_sp; }
 
-  vw(const vw&) = delete;
-  vw& operator=(const vw&) = delete;
+  workspace(const VW::workspace&) = delete;
+  VW::workspace& operator=(const VW::workspace&) = delete;
 
   // vw object cannot be moved as many objects hold a pointer to it.
   // That pointer would be invalidated if it were to be moved.
-  vw(const vw&&) = delete;
-  vw& operator=(const vw&&) = delete;
+  workspace(const VW::workspace&&) = delete;
+  VW::workspace& operator=(const VW::workspace&&) = delete;
 
   std::string get_setupfn_name(reduction_setup_fn setup);
   void build_setupfn_name_dict(std::vector<std::tuple<std::string, reduction_setup_fn>>&);
@@ -331,6 +348,7 @@ public:
 private:
   std::unordered_map<reduction_setup_fn, std::string> _setup_name_map;
 };
+}  // namespace VW
 
 void print_result_by_ref(VW::io::writer* f, float res, float weight, const v_array<char>& tag);
 void binary_print_result_by_ref(VW::io::writer* f, float res, float weight, const v_array<char>& tag);

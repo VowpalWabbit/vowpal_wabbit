@@ -35,7 +35,7 @@ struct sender
   io_buf* buf = nullptr;
   std::unique_ptr<VW::io::socket> _socket;
   std::unique_ptr<VW::io::reader> _socket_reader;
-  vw* all = nullptr;  // loss ring_size others
+  VW::workspace* all = nullptr;  // loss ring_size others
   example** delay_ring = nullptr;
   size_t sent_index = 0;
   size_t received_index = 0;
@@ -94,7 +94,7 @@ void learn(sender& s, VW::LEARNER::base_learner& /*unused*/, example& ec)
   s.delay_ring[s.sent_index++ % s.all->example_parser->ring_size] = &ec;
 }
 
-void finish_example(vw& /*unused*/, sender& /*unused*/, example& /*unused*/) {}
+void finish_example(VW::workspace& /*unused*/, sender& /*unused*/, example& /*unused*/) {}
 
 void end_examples(sender& s)
 {
@@ -106,11 +106,11 @@ void end_examples(sender& s)
 VW::LEARNER::base_learner* sender_setup(VW::setup_base_i& stack_builder)
 {
   VW::config::options_i& options = *stack_builder.get_options();
-  vw& all = *stack_builder.get_all_pointer();
+  VW::workspace& all = *stack_builder.get_all_pointer();
   std::string host;
 
   option_group_definition sender_options("Network sending");
-  sender_options.add(make_option("sendto", host).keep().necessary().help("send examples to <host>"));
+  sender_options.add(make_option("sendto", host).keep().necessary().help("Send examples to <host>"));
 
   if (!options.add_parse_and_check_necessary(sender_options)) { return nullptr; }
 

@@ -7,13 +7,15 @@ Reading datafile = train-sets/ccb_simple_pdrop.json
 WARNING: Old string feature value behavior is deprecated in JSON/DSJSON and will be removed in a future version. Use `--chain_hash` to use new behavior and silence this warning.
 num sources = 1
 Enabled reductions: gd, generate_interactions, scorer-identity, csoaa_ldf-rank, cb_adf, cb_explore_adf_greedy, cb_sample, shared_feature_merger, ccb_explore_adf
+Input label = ccb
+Output pred = decision_probs
 average  since         example        example  current  current  current
 loss     last          counter         weight    label  predict features
--0.066667 -0.066667            1           10.0 2:-1,1:-1      2,1       21
+-0.066667 -0.066667            1           10.0 2:-1,1:-1      2,1       40
 
 finished run
 number of examples = 1
 weighted example sum = 9.999998
 weighted label sum = 0.000000
 average loss = -0.066667
-total feature number = 21
+total feature number = 40

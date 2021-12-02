@@ -48,7 +48,7 @@ struct nn
   polyprediction* hidden_units_pred = nullptr;
   polyprediction* hiddenbias_pred = nullptr;
 
-  vw* all = nullptr;  // many things
+  VW::workspace* all = nullptr;  // many things
   std::shared_ptr<rand_state> _random_state;
 
   ~nn()
@@ -81,7 +81,7 @@ static inline float fastexp(float p) { return fastpow2(1.442695040f * p); }
 
 static inline float fasttanh(float p) { return -1.0f + 2.0f / (1.0f + fastexp(-2.0f * p)); }
 
-void finish_setup(nn& n, vw& all)
+void finish_setup(nn& n, VW::workspace& all)
 {
   // TODO: output_layer audit
 
@@ -401,7 +401,7 @@ void multipredict(nn& n, single_learner& base, example& ec, size_t count, size_t
   ec.ft_offset -= static_cast<uint64_t>(step * count);
 }
 
-void finish_example(vw& all, nn&, example& ec)
+void finish_example(VW::workspace& all, nn&, example& ec)
 {
   std::unique_ptr<VW::io::writer> temp(nullptr);
   auto raw_prediction_guard = VW::swap_guard(all.raw_prediction, temp);
@@ -411,7 +411,7 @@ void finish_example(vw& all, nn&, example& ec)
 base_learner* nn_setup(VW::setup_base_i& stack_builder)
 {
   options_i& options = *stack_builder.get_options();
-  vw& all = *stack_builder.get_all_pointer();
+  VW::workspace& all = *stack_builder.get_all_pointer();
   auto n = VW::make_unique<nn>();
   bool meanfield = false;
   option_group_definition new_options("Neural Network");
@@ -419,10 +419,10 @@ base_learner* nn_setup(VW::setup_base_i& stack_builder)
       .add(make_option("nn", n->k).keep().necessary().help("Sigmoidal feedforward network with <k> hidden units"))
       .add(make_option("inpass", n->inpass)
                .keep()
-               .help("Train or test sigmoidal feedforward network with input passthrough."))
-      .add(make_option("multitask", n->multitask).keep().help("Share hidden layer across all reduced tasks."))
-      .add(make_option("dropout", n->dropout).keep().help("Train or test sigmoidal feedforward network using dropout."))
-      .add(make_option("meanfield", meanfield).help("Train or test sigmoidal feedforward network using mean field."));
+               .help("Train or test sigmoidal feedforward network with input passthrough"))
+      .add(make_option("multitask", n->multitask).keep().help("Share hidden layer across all reduced tasks"))
+      .add(make_option("dropout", n->dropout).keep().help("Train or test sigmoidal feedforward network using dropout"))
+      .add(make_option("meanfield", meanfield).help("Train or test sigmoidal feedforward network using mean field"));
 
   if (!options.add_parse_and_check_necessary(new_options)) return nullptr;
 
@@ -468,8 +468,8 @@ base_learner* nn_setup(VW::setup_base_i& stack_builder)
                 .set_params_per_weight(ws)
                 .set_learn_returns_prediction(true)
                 .set_multipredict(multipredict_f)
-                .set_prediction_type(VW::prediction_type_t::scalar)
-                .set_label_type(VW::label_type_t::simple)
+                .set_output_prediction_type(VW::prediction_type_t::scalar)
+                .set_input_label_type(VW::label_type_t::simple)
                 .set_finish_example(finish_example)
                 .set_end_pass(end_pass)
                 .build();

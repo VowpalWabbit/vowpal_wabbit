@@ -95,14 +95,14 @@ void initialize(Search::search& sch, size_t& num_actions, options_i& options)
 {
   task_data* D = new task_data();
 
-  option_group_definition new_options("search graphtask options");
+  option_group_definition new_options("Search Graphtask");
   new_options
-      .add(make_option("search_graph_num_loops", D->num_loops).default_value(2).help("how many loops to run [def: 2]"))
-      .add(make_option("search_graph_no_structure", D->use_structure).help("turn off edge features"))
+      .add(make_option("search_graph_num_loops", D->num_loops).default_value(2).help("How many loops to run [def: 2]"))
+      .add(make_option("search_graph_no_structure", D->use_structure).help("Turn off edge features"))
       .add(make_option("search_graph_separate_learners", D->separate_learners)
-               .help("use a different learner for each pass"))
+               .help("Use a different learner for each pass"))
       .add(make_option("search_graph_directed", D->directed)
-               .help("construct features based on directed graph semantics"));
+               .help("Construct features based on directed graph semantics"));
   options.add_and_parse(new_options);
 
   D->use_structure = !D->use_structure;
@@ -320,7 +320,7 @@ void add_edge_features(Search::search& sch, task_data& D, size_t n, multi_ex& ec
   ec[n]->reset_total_sum_feat_sq();
   ec[n]->num_features += ec[n]->feature_space[neighbor_namespace].size();
 
-  vw& all = sch.get_vw_pointer_unsafe();
+  VW::workspace& all = sch.get_vw_pointer_unsafe();
   for (const auto& i : all.interactions)
   {
     if (i.size() != 2) continue;

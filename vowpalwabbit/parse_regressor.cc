@@ -38,7 +38,7 @@ void initialize_weights_as_polar_normal(weight* weights, uint64_t index) { weigh
 // re-scaling to re-picking values outside the truncating boundary.
 // note:- boundary is twice the standard deviation.
 template <class T>
-void truncate(vw& all, T& weights)
+void truncate(VW::workspace& all, T& weights)
 {
   static double sd = calculate_sd(all, weights);
   std::for_each(weights.begin(), weights.end(), [](float& v) {
@@ -47,7 +47,7 @@ void truncate(vw& all, T& weights)
 }
 
 template <class T>
-double calculate_sd(vw& /* all */, T& weights)
+double calculate_sd(VW::workspace& /* all */, T& weights)
 {
   static int my_size = 0;
   std::for_each(weights.begin(), weights.end(), [](float /* v */) { my_size += 1; });
@@ -59,7 +59,7 @@ double calculate_sd(vw& /* all */, T& weights)
   return std::sqrt(sq_sum / my_size);
 }
 template <class T>
-void initialize_regressor(vw& all, T& weights)
+void initialize_regressor(VW::workspace& all, T& weights)
 {
   // Regressor is already initialized.
   if (weights.not_null()) return;
@@ -70,6 +70,9 @@ void initialize_regressor(vw& all, T& weights)
     uint32_t ss = weights.stride_shift();
     weights.~T();  // dealloc so that we can realloc, now with a known size
     new (&weights) T(length, ss);
+#ifdef PRIVACY_ACTIVATION
+    if (all.privacy_activation) { weights.privacy_activation_threshold(all.privacy_activation_threshold); }
+#endif
   }
   catch (const VW::vw_exception&)
   {
@@ -103,7 +106,7 @@ void initialize_regressor(vw& all, T& weights)
   }
 }
 
-void initialize_regressor(vw& all)
+void initialize_regressor(VW::workspace& all)
 {
   if (all.weights.sparse)
     initialize_regressor(all, all.weights.sparse_weights);
@@ -114,8 +117,8 @@ void initialize_regressor(vw& all)
 constexpr size_t default_buf_size = 512;
 
 // file_options will be written to when reading
-void save_load_header(
-    vw& all, io_buf& model_file, bool read, bool text, std::string& file_options, VW::config::options_i& options)
+void save_load_header(VW::workspace& all, io_buf& model_file, bool read, bool text, std::string& file_options,
+    VW::config::options_i& options)
 {
   if (model_file.num_files() > 0)
   {
@@ -383,12 +386,32 @@ void save_load_header(
     else
     {
       VW::config::options_serializer_boost_po serializer;
+
+      std::map<std::string, std::set<char>> merged_values = {{"ignore", {}}, {"ignore_linear", {}}, {"keep", {}}};
+
       for (auto const& option : options.get_all_options())
       {
-        if (option->m_keep && options.was_supplied(option->m_name)) { serializer.add(*option); }
+        if (option->m_keep && options.was_supplied(option->m_name))
+        {
+          if (merged_values.find(option->m_name) != merged_values.end())
+          {
+            // Merge and deduplicate the namespaces before serializing into the model file.
+            const auto& typed = dynamic_cast<const VW::config::typed_option<std::vector<std::string>>&>(*option);
+            for (const auto& v : typed.value()) { merged_values[option->m_name].insert(v.begin(), v.end()); }
+            continue;
+          }
+          serializer.add(*option);
+        }
       }
 
       auto serialized_keep_options = serializer.str();
+
+      // Save deduplicated values for ignore, ignore_linear, or keep.
+      for (const auto& kv : merged_values)
+      {
+        if (kv.second.empty()) continue;
+        serialized_keep_options += " --" + kv.first + " " + std::string(kv.second.begin(), kv.second.end());
+      }
 
       // We need to save our current PRG state
       if (all.get_random_state()->get_current_state() != 0)
@@ -427,7 +450,7 @@ void save_load_header(
   }
 }
 
-void dump_regressor(vw& all, io_buf& buf, bool as_text)
+void dump_regressor(VW::workspace& all, io_buf& buf, bool as_text)
 {
   if (buf.num_output_files() == 0) { THROW("Cannot dump regressor with an io buffer that has no output files."); }
   std::string unused;
@@ -438,7 +461,7 @@ void dump_regressor(vw& all, io_buf& buf, bool as_text)
   buf.close_file();
 }
 
-void dump_regressor(vw& all, const std::string& reg_name, bool as_text)
+void dump_regressor(VW::workspace& all, const std::string& reg_name, bool as_text)
 {
   if (reg_name == std::string("")) return;
   std::string start_name = reg_name + std::string(".writing");
@@ -450,11 +473,11 @@ void dump_regressor(vw& all, const std::string& reg_name, bool as_text)
   remove(reg_name.c_str());
 
   if (0 != rename(start_name.c_str(), reg_name.c_str()))
-    THROW("WARN: dump_regressor(vw& all, std::string reg_name, bool as_text): cannot rename: "
+    THROW("WARN: dump_regressor(VW::workspace& all, std::string reg_name, bool as_text): cannot rename: "
         << start_name.c_str() << " to " << reg_name.c_str());
 }
 
-void save_predictor(vw& all, const std::string& reg_name, size_t current_pass)
+void save_predictor(VW::workspace& all, const std::string& reg_name, size_t current_pass)
 {
   std::stringstream filename;
   filename << reg_name;
@@ -462,7 +485,7 @@ void save_predictor(vw& all, const std::string& reg_name, size_t current_pass)
   dump_regressor(all, filename.str(), false);
 }
 
-void finalize_regressor(vw& all, const std::string& reg_name)
+void finalize_regressor(VW::workspace& all, const std::string& reg_name)
 {
   if (!all.early_terminate)
   {
@@ -482,7 +505,7 @@ void finalize_regressor(vw& all, const std::string& reg_name)
   }
 }
 
-void read_regressor_file(vw& all, const std::vector<std::string>& all_intial, io_buf& io_temp)
+void read_regressor_file(VW::workspace& all, const std::vector<std::string>& all_intial, io_buf& io_temp)
 {
   if (all_intial.size() > 0)
   {
@@ -500,7 +523,8 @@ void read_regressor_file(vw& all, const std::vector<std::string>& all_intial, io
   }
 }
 
-void parse_mask_regressor_args(vw& all, const std::string& feature_mask, std::vector<std::string> initial_regressors)
+void parse_mask_regressor_args(
+    VW::workspace& all, const std::string& feature_mask, std::vector<std::string> initial_regressors)
 {
   // TODO does this extra check need to be used? I think it is duplicated but there may be some logic I am missing.
   std::string file_options;
@@ -544,7 +568,7 @@ void parse_mask_regressor_args(vw& all, const std::string& feature_mask, std::ve
 
 namespace VW
 {
-void save_predictor(vw& all, const std::string& reg_name) { dump_regressor(all, reg_name, false); }
+void save_predictor(VW::workspace& all, const std::string& reg_name) { dump_regressor(all, reg_name, false); }
 
-void save_predictor(vw& all, io_buf& buf) { dump_regressor(all, buf, false); }
+void save_predictor(VW::workspace& all, io_buf& buf) { dump_regressor(all, buf, false); }
 }  // namespace VW

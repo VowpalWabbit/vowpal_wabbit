@@ -1,4 +1,4 @@
-creating quadratic features for pairs: Tf ff 
+creating quadratic features for pairs: Tf ff
 final_regressor = models/0002a.model
 Num weight bits = 18
 learning rate = 10
@@ -8,6 +8,8 @@ using no cache
 Reading datafile = train-sets/0002.dat
 num sources = 1
 Enabled reductions: gd, scorer-identity, count_label
+Input label = simple
+Output pred = scalar
 average  since         example        example  current  current  current
 loss     last          counter         weight    label  predict features
 0.271591 0.271591            1            1.0   0.5211   0.0000      119

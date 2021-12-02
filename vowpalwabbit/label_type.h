@@ -24,7 +24,7 @@ enum class label_type_t : uint32_t
   nolabel,
   continuous  // continuous actions
 };
-string_view to_string(label_type_t);
+string_view to_string(VW::label_type_t);
 }  // namespace VW
 
 using label_type_t VW_DEPRECATED(

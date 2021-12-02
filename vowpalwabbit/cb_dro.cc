@@ -104,7 +104,7 @@ void learn_or_predict(cb_dro_data &data, multi_learner &base, multi_ex &examples
 base_learner* cb_dro_setup(VW::setup_base_i& stack_builder)
 {
   options_i& options = *stack_builder.get_options();
-  vw& all = *stack_builder.get_all_pointer();
+  VW::workspace& all = *stack_builder.get_all_pointer();
   double alpha;
   double tau;
   double wmax;
@@ -117,7 +117,7 @@ base_learner* cb_dro_setup(VW::setup_base_i& stack_builder)
       .add(make_option("cb_dro_wmax", wmax)
                .default_value(std::numeric_limits<double>::infinity())
                .keep()
-               .help("maximum importance weight for cb_dro"));
+               .help("Maximum importance weight for cb_dro"));
 
   if (!options.add_parse_and_check_necessary(new_options)) return nullptr;
 
@@ -149,8 +149,8 @@ base_learner* cb_dro_setup(VW::setup_base_i& stack_builder)
     auto* l = make_reduction_learner(std::move(data), as_multiline(stack_builder.setup_base_learner()),
         learn_or_predict<true, true>, learn_or_predict<false, true>,
         stack_builder.get_setupfn_name(cb_dro_setup) + "-cb_explore_adf")
-                  .set_prediction_type(VW::prediction_type_t::action_probs)
-                  .set_label_type(VW::label_type_t::cb)
+                  .set_output_prediction_type(VW::prediction_type_t::action_probs)
+                  .set_input_label_type(VW::label_type_t::cb)
                   .build();
     return make_base(*l);
   }
@@ -158,8 +158,8 @@ base_learner* cb_dro_setup(VW::setup_base_i& stack_builder)
   {
     auto* l = make_reduction_learner(std::move(data), as_multiline(stack_builder.setup_base_learner()),
         learn_or_predict<true, false>, learn_or_predict<false, false>, stack_builder.get_setupfn_name(cb_dro_setup))
-                  .set_prediction_type(VW::prediction_type_t::action_probs)
-                  .set_label_type(VW::label_type_t::cb)
+                  .set_output_prediction_type(VW::prediction_type_t::action_probs)
+                  .set_input_label_type(VW::label_type_t::cb)
                   .build();
     return make_base(*l);
   }

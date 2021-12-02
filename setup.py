@@ -5,13 +5,13 @@ import distutils.dir_util
 import os
 import platform
 import sys
+import subprocess
 from codecs import open
 from distutils.command.clean import clean as _clean
 from distutils.sysconfig import get_python_inc
 from setuptools import setup, Extension, find_packages, Distribution as _distribution
 from setuptools.command.build_ext import build_ext as _build_ext
 from setuptools.command.sdist import sdist as _sdist
-from setuptools.command.test import test as _test
 from setuptools.command.install_lib import install_lib as _install_lib
 from shutil import rmtree
 import multiprocessing
@@ -35,7 +35,7 @@ class Distribution(_distribution):
         global_options += [
             ('vcpkg-root=', None, 'Path to vcpkg root. For Windows only'),
         ]
- 
+
     def __init__(self, attrs=None):
         self.vcpkg_root = None
         self.enable_boost_cmake = None
@@ -106,11 +106,11 @@ class BuildPyLibVWBindingsModule(_build_ext):
             cmake_args += [
                 '-DBoost_NO_BOOST_CMAKE=ON'
             ]
-            
+
         if self.distribution.cmake_options is not None:
             argslist = self.distribution.cmake_options.split(';')
             cmake_args += argslist
-        
+
         # If we are being installed in a conda environment then use the dependencies from there.
         if 'CONDA_PREFIX' in os.environ:
             cmake_args.append('-DCMAKE_PREFIX_PATH={}'.format(os.environ['CONDA_PREFIX']))
@@ -162,7 +162,7 @@ class BuildPyLibVWBindingsModule(_build_ext):
 
             if (cmake_generator == "Visual Studio 16 2019"):
                 # The VS2019 generator now uses the -A option to select the toolchain's architecture
-                cmake_args += ['-Ax64'] 
+                cmake_args += ['-Ax64']
 
         os.chdir(str(self.build_temp))
         self.spawn(['cmake'] + cmake_args + [str(here)])
@@ -188,35 +188,6 @@ class InstallLib(_install_lib):
     def build(self):
         _install_lib.build(self)
 
-
-class Tox(_test):
-    """ Run tox tests with 'python setup.py test' """
-    tox_args = None
-    test_args = None
-    test_suite = None
-
-    user_options = [('tox-args=', 'a', "Arguments to pass to tox")]
-
-    def initialize_options(self):
-        _test.initialize_options(self)
-        self.tox_args = None
-
-    def finalize_options(self):
-        _test.finalize_options(self)
-        self.test_args = []
-        self.test_suite = True
-
-    def run_tests(self):
-        # import here, cause outside the eggs aren't loaded
-        import tox
-        import shlex
-        args = self.tox_args
-        if args:
-            args = shlex.split(self.tox_args)
-        errno = tox.cmdline(args=args)
-        sys.exit(errno)
-
-
 # Get the long description from the README file
 with open(os.path.join(pkg_path, 'README.rst'), encoding='utf-8') as f:
     long_description = f.read()
@@ -225,6 +196,15 @@ with open(os.path.join(pkg_path, 'README.rst'), encoding='utf-8') as f:
 config_path = os.path.join(here, 'version.txt')
 with open(config_path, encoding='utf-8') as f:
     version = f.readline().strip()
+
+try:
+    current_git_hash = subprocess.check_output(['git', 'rev-parse', '--short', 'HEAD']).decode('ascii').strip()
+    if current_git_hash:
+        version = version + "+" + current_git_hash
+except FileNotFoundError as e:
+    pass
+except subprocess.CalledProcessError as e:
+    pass
 
 setup(
     name='vowpalwabbit',
@@ -256,9 +236,6 @@ setup(
         'build_ext': BuildPyLibVWBindingsModule,
         'clean': Clean,
         'sdist': Sdist,
-        'test': Tox,
         'install_lib': InstallLib
     },
-    # tox.ini handles additional test dependencies
-    tests_require=['tox']
 )
