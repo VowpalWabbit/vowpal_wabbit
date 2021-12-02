@@ -1638,7 +1638,7 @@
   {
     "id": 134,
     "desc": "second order online learning",
-    "vw_command": "--OjaNewton -d train-sets/0001.dat -f models/second_order.model -p second_order.predict",
+    "vw_command": "--OjaNewton -d train-sets/0001.dat -f models/second_order.model -p second_order.predict --save_bare",
     "diff_files": {
       "stderr": "train-sets/ref/second_order.stderr",
       "second_order.predict": "pred-sets/ref/second_order.predict"
@@ -2460,7 +2460,7 @@
       "stdout": "test-sets/ref/chain_hash_json_test.stdout",
       "chain_hash_json_result.cmp": "test-sets/ref/chain_hash_json_result.cmp"
     },
-    "bash_command": "{VW} --audit --json --chain_hash -d train-sets/chain_hash_json_test.json --invert_hash chain_hash_json_result.cmp --chain_hash &&  tail -n +2 chain_hash_json_result.cmp > chain_hash_json_result.cmp.new &&  rm chain_hash_json_result.cmp &&  mv chain_hash_json_result.cmp.new chain_hash_json_result.cmp"
+    "bash_command": "{VW} --audit --json --chain_hash -d train-sets/chain_hash_json_test.json --invert_hash chain_hash_json_result.cmp --chain_hash --save_bare &&  tail -n +2 chain_hash_json_result.cmp > chain_hash_json_result.cmp.new &&  rm chain_hash_json_result.cmp &&  mv chain_hash_json_result.cmp.new chain_hash_json_result.cmp"
   },
   {
     "id": 208,
@@ -2470,7 +2470,7 @@
       "stdout": "test-sets/ref/chain_hash_text_result.stdout",
       "chain_hash_text_result.cmp": "test-sets/ref/chain_hash_text_result.cmp"
     },
-    "bash_command": "{VW} --audit -d train-sets/chain_hash_text_test.dat --invert_hash chain_hash_text_result.cmp --chain_hash &&  tail -n +2 chain_hash_text_result.cmp > chain_hash_text_result.cmp.new &&  rm chain_hash_text_result.cmp &&  mv chain_hash_text_result.cmp.new chain_hash_text_result.cmp"
+    "bash_command": "{VW} --audit -d train-sets/chain_hash_text_test.dat --invert_hash chain_hash_text_result.cmp --chain_hash --save_bare &&  tail -n +2 chain_hash_text_result.cmp > chain_hash_text_result.cmp.new &&  rm chain_hash_text_result.cmp &&  mv chain_hash_text_result.cmp.new chain_hash_text_result.cmp"
   },
   {
     "id": 209,
@@ -2492,7 +2492,7 @@
       "inv_hash_load_model.invert.txt": "train-sets/ref/inv_hash_load_model.invert.txt",
       "inv_hash_load_model.readable.txt": "train-sets/ref/inv_hash_load_model.readable.txt"
     },
-    "bash_command": "{VW} -d train-sets/inv_hash_load_model_data1.txt -f inv_hash_load_model.vw --noconstant  && {VW} -d train-sets/inv_hash_load_model_data2.txt -i inv_hash_load_model.vw --noconstant --readable_model inv_hash_load_model.readable.txt --invert_hash inv_hash_load_model.invert.txt"
+    "bash_command": "{VW} -d train-sets/inv_hash_load_model_data1.txt -f inv_hash_load_model.vw --noconstant --save_bare  && {VW} -d train-sets/inv_hash_load_model_data2.txt -i inv_hash_load_model.vw --noconstant --readable_model inv_hash_load_model.readable.txt --invert_hash inv_hash_load_model.invert.txt"
   },
   {
     "id": 211,
@@ -3898,7 +3898,7 @@
       "stderr": "train-sets/ref/cb_simple.stderr",
       "cb_simple_invert_hash.txt": "train-sets/ref/cb_simple_invert_hash.txt"
     },
-    "bash_command": "{VW} -d train-sets/cb_simple.json --dsjson --cb_explore_adf --invert_hash cb_simple_invert_hash.txt &&  tail -n +2 cb_simple_invert_hash.txt > cb_simple_invert_hash.txt.new &&  rm cb_simple_invert_hash.txt &&  mv cb_simple_invert_hash.txt.new cb_simple_invert_hash.txt"
+    "bash_command": "{VW} -d train-sets/cb_simple.json --dsjson --cb_explore_adf --invert_hash cb_simple_invert_hash.txt --save_bare &&  tail -n +2 cb_simple_invert_hash.txt > cb_simple_invert_hash.txt.new &&  rm cb_simple_invert_hash.txt &&  mv cb_simple_invert_hash.txt.new cb_simple_invert_hash.txt"
   },
   {
     "id": 328,
@@ -3907,7 +3907,7 @@
       "stderr": "train-sets/ref/cb_simple_pdrop.stderr",
       "cb_simple_pdrop_invert_hash.txt": "train-sets/ref/cb_simple_pdrop_invert_hash.txt"
     },
-    "bash_command": "{VW} -d train-sets/cb_simple_pdrop.json --dsjson --cb_explore_adf --invert_hash cb_simple_pdrop_invert_hash.txt &&  tail -n +2 cb_simple_pdrop_invert_hash.txt > cb_simple_pdrop_invert_hash.txt.new &&  rm cb_simple_pdrop_invert_hash.txt &&  mv cb_simple_pdrop_invert_hash.txt.new cb_simple_pdrop_invert_hash.txt"
+    "bash_command": "{VW} -d train-sets/cb_simple_pdrop.json --dsjson --cb_explore_adf --invert_hash cb_simple_pdrop_invert_hash.txt --save_bare &&  tail -n +2 cb_simple_pdrop_invert_hash.txt > cb_simple_pdrop_invert_hash.txt.new &&  rm cb_simple_pdrop_invert_hash.txt &&  mv cb_simple_pdrop_invert_hash.txt.new cb_simple_pdrop_invert_hash.txt"
   },
   {
     "id": 329,
@@ -3927,7 +3927,7 @@
       "stderr": "train-sets/ref/ccb_simple.stderr",
       "ccb_simple_invert_hash.txt": "train-sets/ref/ccb_simple_invert_hash.txt"
     },
-    "bash_command": "{VW} -d train-sets/ccb_simple.json --dsjson --ccb_explore_adf --invert_hash ccb_simple_invert_hash.txt &&  tail -n +2 ccb_simple_invert_hash.txt > ccb_simple_invert_hash.txt.new &&  rm ccb_simple_invert_hash.txt &&  mv ccb_simple_invert_hash.txt.new ccb_simple_invert_hash.txt"
+    "bash_command": "{VW} -d train-sets/ccb_simple.json --dsjson --ccb_explore_adf --invert_hash ccb_simple_invert_hash.txt --save_bare &&  tail -n +2 ccb_simple_invert_hash.txt > ccb_simple_invert_hash.txt.new &&  rm ccb_simple_invert_hash.txt &&  mv ccb_simple_invert_hash.txt.new ccb_simple_invert_hash.txt"
   },
   {
     "id": 331,
@@ -3936,7 +3936,7 @@
       "stderr": "train-sets/ref/ccb_simple_pdrop.stderr",
       "ccb_simple_pdrop_invert_hash.txt": "train-sets/ref/ccb_simple_pdrop_invert_hash.txt"
     },
-    "bash_command": "{VW} -d train-sets/ccb_simple_pdrop.json --dsjson --ccb_explore_adf --invert_hash ccb_simple_pdrop_invert_hash.txt &&  tail -n +2 ccb_simple_pdrop_invert_hash.txt > ccb_simple_pdrop_invert_hash.txt.new &&  rm ccb_simple_pdrop_invert_hash.txt &&  mv ccb_simple_pdrop_invert_hash.txt.new ccb_simple_pdrop_invert_hash.txt"
+    "bash_command": "{VW} -d train-sets/ccb_simple_pdrop.json --dsjson --ccb_explore_adf --invert_hash ccb_simple_pdrop_invert_hash.txt --save_bare &&  tail -n +2 ccb_simple_pdrop_invert_hash.txt > ccb_simple_pdrop_invert_hash.txt.new &&  rm ccb_simple_pdrop_invert_hash.txt &&  mv ccb_simple_pdrop_invert_hash.txt.new ccb_simple_pdrop_invert_hash.txt"
   },
   {
     "id": 332,
