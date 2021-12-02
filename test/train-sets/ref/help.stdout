@@ -141,8 +141,9 @@ Output Model Options:
   --invert_hash arg                     Output human-readable final regressor 
                                         with feature names.  Computationally 
                                         expensive
-  --save_resume                         Save extra state so learning can be 
-                                        resumed later with new data
+  --save_bare                           Do not save extra state for learning to
+                                        be resumed. Stored model can only be 
+                                        used for prediction
   --preserve_performance_counters       Reset performance counters when 
                                         warmstarting
   --save_per_pass                       Save the model after every pass over 

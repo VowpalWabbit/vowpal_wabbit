@@ -1121,6 +1121,7 @@ void parse_output_preds(options_i& options, VW::workspace& all)
 
 void parse_output_model(options_i& options, VW::workspace& all)
 {
+  bool save_bare = false;
   option_group_definition output_model_options("Output Model");
   output_model_options
       .add(make_option("final_regressor", all.final_regressor_name).short_name("f").help("Final regressor"))
@@ -1128,8 +1129,8 @@ void parse_output_model(options_i& options, VW::workspace& all)
                .help("Output human-readable final regressor with numeric features"))
       .add(make_option("invert_hash", all.inv_hash_regressor_name)
                .help("Output human-readable final regressor with feature names.  Computationally expensive"))
-      .add(make_option("save_resume", all.save_resume)
-               .help("Save extra state so learning can be resumed later with new data"))
+      .add(make_option("save_bare", save_bare)
+               .help("Do not save extra state for learning to be resumed. Stored model can only be used for prediction"))
       .add(make_option("preserve_performance_counters", all.preserve_performance_counters)
                .help("Reset performance counters when warmstarting"))
       .add(make_option("save_per_pass", all.save_per_pass).help("Save the model after every pass over data"))
@@ -1143,7 +1144,11 @@ void parse_output_model(options_i& options, VW::workspace& all)
   if (!all.final_regressor_name.empty() && !all.logger.quiet)
     *(all.trace_message) << "final_regressor = " << all.final_regressor_name << endl;
 
-  if (options.was_supplied("invert_hash")) all.hash_inv = true;
+  if (options.was_supplied("invert_hash")) { all.hash_inv = true; }
+  if (options.was_supplied("save_resume")) {
+    logger::errlog_warn("--save_resume flag is deprecated -- learning can now continue on saved models by default!");
+  }
+  if (save_bare) { all.save_resume = false; }
 
   // Question: This doesn't seem necessary
   // if (options.was_supplied("id") && find(arg.args.begin(), arg.args.end(), "--id") == arg.args.end())

@@ -1007,7 +1007,7 @@ void save_load_online_state(
 
   if (!read || all.model_file_ver >= VW::version_definitions::VERSION_SAVE_RESUME_FIX)
   {
-    // restore some data to allow --save_resume work more accurate
+    // restore some data to allow save_resume work more accurate
 
     // fix average loss
     msg << "total_weight " << total_weight << "\n";
@@ -1091,7 +1091,7 @@ void save_load(gd& g, io_buf& model_file, bool read, bool text)
       if (read && all.model_file_ver < VW::version_definitions::VERSION_SAVE_RESUME_FIX)
         *(all.trace_message)
             << std::endl
-            << "WARNING: --save_resume functionality is known to have inaccuracy in model files version less than "
+            << "WARNING: save_resume functionality is known to have inaccuracy in model files version less than "
             << VW::version_definitions::VERSION_SAVE_RESUME_FIX.to_string() << std::endl
             << std::endl;
       save_load_online_state(all, model_file, read, text, g.total_weight, &g);
@@ -1102,7 +1102,7 @@ void save_load(gd& g, io_buf& model_file, bool read, bool text)
       save_load_regressor(all, model_file, read, text);
     }
   }
-  if (!all.training)  // If the regressor was saved as --save_resume, then when testing we want to materialize the
+  if (!all.training)  // If the regressor was saved without --save_bare, then when testing we want to materialize the
                       // weights.
     sync_weights(all);
 }
