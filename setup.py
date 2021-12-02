@@ -7,13 +7,9 @@ import platform
 import sys
 import subprocess
 from codecs import open
-from distutils.command.clean import clean as _clean
 from distutils.sysconfig import get_python_inc
 from setuptools import setup, Extension, find_packages, Distribution as _distribution
 from setuptools.command.build_ext import build_ext as _build_ext
-from setuptools.command.sdist import sdist as _sdist
-from setuptools.command.install_lib import install_lib as _install_lib
-from shutil import rmtree
 import multiprocessing
 
 system = platform.system()
@@ -170,24 +166,6 @@ class BuildPyLibVWBindingsModule(_build_ext):
             self.spawn(['cmake', '--build', '.'] + build_args)
         os.chdir(str(here))
 
-
-class Clean(_clean):
-    """ Clean up after building python package directories """
-    def run(self):
-        rmtree(os.path.join(here, 'dist'), ignore_errors=True)
-        rmtree(os.path.join(here, 'build'), ignore_errors=True)
-        rmtree(os.path.join(here, 'vowpalwabbit.egg-info'), ignore_errors=True)
-        _clean.run(self)
-
-
-class Sdist(_sdist):
-    def run(self):
-        _sdist.run(self)
-
-class InstallLib(_install_lib):
-    def build(self):
-        _install_lib.build(self)
-
 # Get the long description from the README file
 with open(os.path.join(pkg_path, 'README.rst'), encoding='utf-8') as f:
     long_description = f.read()
@@ -233,9 +211,6 @@ setup(
     ext_modules=[CMakeExtension('pylibvw')],
     distclass=Distribution,
     cmdclass={
-        'build_ext': BuildPyLibVWBindingsModule,
-        'clean': Clean,
-        'sdist': Sdist,
-        'install_lib': InstallLib
+        'build_ext': BuildPyLibVWBindingsModule
     },
 )
