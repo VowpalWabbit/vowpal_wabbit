@@ -7,8 +7,8 @@ import sys
 import sysconfig
 import subprocess
 from codecs import open
-from setuptools import setup, Extension, find_packages, Distribution
-from setuptools.command.build_ext import build_ext
+from setuptools import setup, Extension, find_packages, Distribution as _distribution
+from setuptools.command.build_ext import build_ext as _build_ext
 import multiprocessing
 
 SYSTEM = platform.system()
@@ -25,8 +25,8 @@ PLAT_TO_CMAKE = {
 }
 
 
-class CustomDistribution(Distribution):
-    global_options = Distribution.global_options
+class CustomDistribution(_distribution):
+    global_options = _distribution.global_options
 
     global_options += [
         ("enable-boost-cmake", None, "Enable boost-cmake"),
@@ -49,7 +49,7 @@ class CustomDistribution(Distribution):
         self.cmake_options = None
         self.cmake_generator = None
         self.debug = False
-        Distribution.__init__(self, attrs)
+        _distribution.__init__(self, attrs)
 
 
 class CMakeExtension(Extension):
@@ -77,17 +77,17 @@ def get_ext_filename_without_platform_suffix(filename):
         return name[:idx] + ext
 
 
-class BuildPyLibVWBindingsModule(build_ext):
+class BuildPyLibVWBindingsModule(_build_ext):
     def get_ext_filename(self, ext_name):
         # don't append the extension suffix to the binary name
         # see https://stackoverflow.com/questions/38523941/change-cythons-naming-rules-for-so-files/40193040#40193040
-        filename = build_ext.get_ext_filename(self, ext_name)
+        filename = _build_ext.get_ext_filename(self, ext_name)
         return get_ext_filename_without_platform_suffix(filename)
 
     def run(self):
         for ext in self.extensions:
             self.build_cmake(ext)
-        build_ext.run(self)
+        _build_ext.run(self)
 
     def build_cmake(self, ext):
         # Ensure lib output directory is made
@@ -164,7 +164,7 @@ class BuildPyLibVWBindingsModule(build_ext):
                 build_args += ["--config", config]
 
         if "CMAKE_BUILD_PARALLEL_LEVEL" not in os.environ:
-            build_args += [f"-j{multiprocessing.cpu_count()}"]
+            build_args += ["--parallel", str(multiprocessing.cpu_count())]
 
         self.spawn(
             ["cmake", "-S", str(REPO_ROOT_DIR), "-B", str(self.build_temp)] + cmake_args
