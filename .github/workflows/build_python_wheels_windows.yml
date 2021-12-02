@@ -16,9 +16,9 @@ jobs:
       matrix:
         config:
         - { version: "3.6", vcpkg_manifest: "python\\vcpkg_default.json", overlay_ports: "python\\vcpkg_python_override_ports\\python36\\"}
-        - { version: "3.6", vcpkg_manifest: "python\\vcpkg_python37.json", overlay_ports: ""}
-        - { version: "3.8", vcpkg_manifest: "python\\vcpkg_python38.json", overlay_ports: "" }
-        - { version: "3.9", vcpkg_manifest: "python\\vcpkg_python39.json", overlay_ports: "" }
+        # - { version: "3.7", vcpkg_manifest: "python\\vcpkg_python37.json", overlay_ports: ""}
+        # - { version: "3.8", vcpkg_manifest: "python\\vcpkg_python38.json", overlay_ports: "" }
+        # - { version: "3.9", vcpkg_manifest: "python\\vcpkg_python39.json", overlay_ports: "" }
         - { version: "3.10", vcpkg_manifest: "python\\vcpkg_python310.json", overlay_ports: "" }
     steps:
       - name: Set up Python ${{ matrix.config.version }}
@@ -64,9 +64,9 @@ jobs:
       matrix:
         config:
         - { version: "3.6" }
-        - { version: "3.7" }
-        - { version: "3.8" }
-        - { version: "3.9" }
+        # - { version: "3.7" }
+        # - { version: "3.8" }
+        # - { version: "3.9" }
         - { version: "3.10" }
     steps:
       - uses: actions/checkout@v2
