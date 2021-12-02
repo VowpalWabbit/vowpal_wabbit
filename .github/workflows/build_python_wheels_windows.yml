@@ -15,7 +15,7 @@ jobs:
     strategy:
       matrix:
         config:
-        - { version: "3.6", vcpkg_manifest: "python/default_vcpkg.json", overlay_ports: "python/vcpkg_python_override_ports/python36"}
+        - { version: "3.6", vcpkg_manifest: "python\\default_vcpkg.json", overlay_ports: "python\\vcpkg_python_override_ports\\python36\\"}
         # - { version: "3.7", os: windows-2019, }
         # - { version: "3.8", os: windows-2019, }
         # - { version: "3.9", os: windows-2019, }
@@ -51,7 +51,7 @@ jobs:
           cd ${{github.workspace}}\\vowpal_wabbit
           cp ${{ matrix.config.vcpkg_manifest }} vcpkg.json
           pip install wheel 
-          pip wheel . -w ${{github.workspace}}\\wheel_output --global-option --vcpkg-root="${{github.workspace}}\\vcpkg" --global-option --cmake-generator="Visual Studio 16 2019" --global-option --cmake-options="-DVCPKG_OVERLAY_PORTS=${{ matrix.config.overlay_ports }}"  --verbose
+          pip wheel . -w ${{github.workspace}}\\wheel_output --global-option --vcpkg-root="${{github.workspace}}\\vcpkg" --global-option --cmake-generator="Visual Studio 16 2019" --global-option --cmake-options="-DVCPKG_OVERLAY_PORTS=${{github.workspace}}\\vowpal_wabbit\\${{ matrix.config.overlay_ports }}"  --verbose
       - name: Upload built wheel
         uses: actions/upload-artifact@v1
         with:
