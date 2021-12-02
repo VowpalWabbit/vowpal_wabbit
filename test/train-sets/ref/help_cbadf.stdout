@@ -43,6 +43,13 @@ Diagnostic Options:
 Randomization Options:
   --random_seed arg     Seed random number generator
 Feature Options:
+  --privacy_activation                  turns on aggregated weight exporting 
+                                        when the unique feature tags cross 
+                                        `privacy_activation_threshold`
+  --privacy_activation_threshold arg    takes effect when `privacy_activation` 
+                                        is turned on and is the number of 
+                                        unique tag hashes a weight needs to see
+                                        before it is exported
   --hash arg                            How to hash the features. Choices: 
                                         {all, strings}
   --hash_seed arg (=0, )                Seed for hash function
@@ -144,6 +151,8 @@ Output Model Options:
   --save_bare                           Do not save extra state for learning to
                                         be resumed. Stored model can only be 
                                         used for prediction
+  --save_resume                         This flag is now deprecated and models 
+                                        can continue learning by default
   --preserve_performance_counters       Reset performance counters when 
                                         warmstarting
   --save_per_pass                       Save the model after every pass over 
