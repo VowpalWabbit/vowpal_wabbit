@@ -113,6 +113,7 @@ set(vw_all_headers
   fast_pow10.h
   feature_group.h
   ftrl.h
+  freegrad.h
   gd_mf.h
   gd_predict.h
   gd.h
@@ -296,6 +297,7 @@ set(vw_all_sources
   explore_eval.cc
   feature_group.cc
   ftrl.cc
+  freegrad.cc
   gd_mf.cc
   gd.cc
   gen_cs_example.cc
@@ -411,6 +413,10 @@ if (BUILD_EXTERNAL_PARSER)
   target_compile_definitions(vw PUBLIC BUILD_EXTERNAL_PARSER)
   target_include_directories(vw PRIVATE ${EXTERNAL_PARSER_DIR})
   target_link_libraries(vw PRIVATE ${EXTERNAL_PARSER_LIBS})
+endif()
+
+if (BUILD_PRIVACY_ACTIVATION)
+  target_compile_definitions(vw PUBLIC PRIVACY_ACTIVATION)
 endif()
 
 if(BUILD_FLATBUFFERS)
