@@ -56,7 +56,6 @@ jobs:
           cd ${{github.workspace}}\\vowpal_wabbit
           pip install wheel
           pip wheel . -w ${{github.workspace}}\\wheel_output --global-option --vcpkg-root="${{github.workspace}}\\vcpkg" --verbose
-          ls build\lib.win-amd64-3.9\
       - name: Upload built wheel
         uses: actions/upload-artifact@v1
         with:
