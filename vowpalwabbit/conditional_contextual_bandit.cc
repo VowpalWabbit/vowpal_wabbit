@@ -197,7 +197,9 @@ void attach_label_to_example(
   example->l.cb.costs.push_back(data.cb_label);
 }
 
-void save_action_scores(ccb& data, decision_scores_t& decision_scores)
+// This is used for outputting predictions for a slot. It will exclude the chosen action for labeled examples,
+// otherwise it will exclude the action with the highest prediction.
+void save_action_scores_and_exclude_top_action(ccb& data, decision_scores_t& decision_scores)
 {
   auto& pred = data.shared->pred.a_s;
 
@@ -212,7 +214,8 @@ void save_action_scores(ccb& data, decision_scores_t& decision_scores)
   data.shared->pred.a_s.clear();
 }
 
-void remove_labeled_action(ccb& data, const multi_ex& examples)
+// This is used to exclude the chosen action for a slot for a labeled example where no_predict is enabled.
+void exclude_chosen_action(ccb& data, const multi_ex& examples)
 {
   int32_t action_index = -1;
   for (size_t i = 0; i < examples.size(); i++)
@@ -502,10 +505,10 @@ void learn_or_predict(ccb& data, multi_learner& base, multi_ex& examples)
           multiline_learn_or_predict<true>(base, data.cb_ex, examples[0]->ft_offset);
         }
 
-        if (!data.no_pred) { save_action_scores(data, decision_scores); }
+        if (!data.no_pred) { save_action_scores_and_exclude_top_action(data, decision_scores); }
         else
         {
-          remove_labeled_action(data, examples);
+          exclude_chosen_action(data, examples);
         }
 
         VW_DBG(examples) << "ccb "
