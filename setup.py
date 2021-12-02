@@ -21,7 +21,6 @@ system = platform.system()
 version_info = sys.version_info
 here = os.path.abspath(os.path.dirname(__file__))
 pkg_path = os.path.join(here, 'python')
-ports_path = os.path.join(here, 'ports')
 
 class Distribution(_distribution):
     global_options = _distribution.global_options
