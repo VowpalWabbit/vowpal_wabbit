@@ -670,18 +670,23 @@ base_learner* ccb_explore_adf_setup(VW::setup_base_i& stack_builder)
   auto data = VW::make_unique<ccb>();
   bool ccb_explore_adf_option = false;
   bool all_slots_loss_report = false;
+  std::string type_string = "mtr";
 
   data->is_ccb_input_model = all.is_ccb_input_model;
 
-  option_group_definition new_options("EXPERIMENTAL: Conditional Contextual Bandit Exploration with ADF");
+  option_group_definition new_options("Conditional Contextual Bandit Exploration with ADF");
   new_options
       .add(make_option("ccb_explore_adf", ccb_explore_adf_option)
                .keep()
                .necessary()
-               .help(
-                   "EXPERIMENTAL: Do Conditional Contextual Bandit learning with multiline action dependent features."))
+               .help("Do Conditional Contextual Bandit learning with multiline action dependent features."))
       .add(make_option("all_slots_loss", all_slots_loss_report).help("Report average loss from all slots"))
-      .add(make_option("no_predict", data->no_pred).help("Do not do a prediction when training"));
+      .add(make_option("no_predict", data->no_pred).help("Do not do a prediction when training"))
+      .add(make_option("cb_type", type_string)
+               .keep()
+               .default_value("mtr")
+               .one_of({"ips", "dm", "dr", "mtr", "sm"})
+               .help("Contextual bandit method to use"));
 
   if (!options.add_parse_and_check_necessary(new_options)) { return nullptr; }
   data->all_slots_loss_report = all_slots_loss_report;
@@ -693,6 +698,9 @@ base_learner* ccb_explore_adf_setup(VW::setup_base_i& stack_builder)
 
   if (options.was_supplied("no_predict") && options.was_supplied("p"))
   { THROW("Error: Cannot use flags --no_predict and -p simultaneously"); }
+
+  if (options.was_supplied("no_predict") && type_string != "mtr")
+  { THROW("Error: --no_predict flag can only be used with default cb_type mtr"); }
 
   if (!options.was_supplied("cb_sample") && !data->no_pred)
   {
