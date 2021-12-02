@@ -1,15 +1,18 @@
 # -*- coding: utf-8 -*-
 """ Vowpal Wabbit python setup module """
-
+import distutils.dir_util
 import os
 import platform
 import sys
 import sysconfig
 import subprocess
-import distutils
 from codecs import open
+from distutils.command.clean import clean as _clean
 from setuptools import setup, Extension, find_packages, Distribution as _distribution
 from setuptools.command.build_ext import build_ext as _build_ext
+from setuptools.command.sdist import sdist as _sdist
+from setuptools.command.install_lib import install_lib as _install_lib
+from shutil import rmtree
 import multiprocessing
 
 SYSTEM = platform.system()
@@ -33,18 +36,13 @@ class Distribution(_distribution):
         ("enable-boost-cmake", None, "Enable boost-cmake"),
         ("cmake-options=", None, "Additional semicolon-separated cmake setup options list"),
         ("debug", None, "Debug build"),
+        ("vcpkg-root=", None, "Path to vcpkg root"),
     ]
-
-    if SYSTEM == "Windows":
-        global_options += [
-            ("vcpkg-root=", None, "Path to vcpkg root. For Windows only"),
-        ]
 
     def __init__(self, attrs=None):
         self.vcpkg_root = None
         self.enable_boost_cmake = None
         self.cmake_options = None
-        self.cmake_generator = None
         self.debug = False
         _distribution.__init__(self, attrs)
 
@@ -87,8 +85,12 @@ class BuildPyLibVWBindingsModule(_build_ext):
         _build_ext.run(self)
 
     def build_cmake(self, ext):
+        # Make build directory
+        distutils.dir_util.mkpath(self.build_temp)
+
         # Ensure lib output directory is made
         lib_output_dir = os.path.join(REPO_ROOT_DIR, os.path.dirname(self.get_ext_fullpath(ext.name)))
+        distutils.dir_util.mkpath(lib_output_dir)
 
         # example of cmake args
         config = "Debug" if self.distribution.debug else "Release"
@@ -131,16 +133,7 @@ class BuildPyLibVWBindingsModule(_build_ext):
         # User can always override generator choice with the envvar. (CMake picks it up directly)
         cmake_generator = os.environ.get("CMAKE_GENERATOR", "")
         # If not on Windows use Ninja if it is available
-        if SYSTEM != "Windows":
-            if not cmake_generator:
-                try:
-                    # Try import it to see if the Python package is available
-                    import ninja  # noqa: F401
-
-                    cmake_args += ["-GNinja"]
-                except ImportError:
-                    pass
-        else:
+        if SYSTEM == "Windows":
             # Single config generators are handled "normally"
             single_config = any(x in cmake_generator for x in {"NMake", "Ninja"})
 
@@ -160,6 +153,7 @@ class BuildPyLibVWBindingsModule(_build_ext):
                 ]
                 build_args += ["--config", config]
 
+
         if "CMAKE_BUILD_PARALLEL_LEVEL" not in os.environ:
             build_args += ["--parallel", str(multiprocessing.cpu_count())]
 
@@ -168,6 +162,23 @@ class BuildPyLibVWBindingsModule(_build_ext):
         )
         self.spawn(["cmake", "--build", str(self.build_temp)] + build_args)
 
+class Clean(_clean):
+    """ Clean up after building python package directories """
+    def run(self):
+        rmtree(os.path.join(here, 'dist'), ignore_errors=True)
+        rmtree(os.path.join(here, 'build'), ignore_errors=True)
+        rmtree(os.path.join(here, 'vowpalwabbit.egg-info'), ignore_errors=True)
+        _clean.run(self)
+
+
+class Sdist(_sdist):
+    def run(self):
+        _sdist.run(self)
+
+
+class InstallLib(_install_lib):
+    def build(self):
+        _install_lib.build(self)
 
 # Get the long description from the README file
 with open(os.path.join(PYTHON_PACKAGE_DIR, "README.rst"), encoding="utf-8") as f:
@@ -212,9 +223,15 @@ setup(
     keywords="fast machine learning online classification regression",
     package_dir={"": os.path.relpath(PYTHON_PACKAGE_DIR)},
     packages=find_packages(where=PYTHON_PACKAGE_DIR),
+    platforms='any',
     zip_safe=False,
     include_package_data=True,
     ext_modules=[CMakeExtension("pylibvw")],
     distclass=Distribution,
-    cmdclass={"build_ext": BuildPyLibVWBindingsModule},
+    cmdclass={
+        'build_ext': BuildPyLibVWBindingsModule,
+        'clean': Clean,
+        'sdist': Sdist,
+        'install_lib': InstallLib
+    },
 )
