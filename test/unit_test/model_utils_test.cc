@@ -59,7 +59,7 @@ BOOST_AUTO_TEST_CASE(multiclass_label_save_load)
   io.add_file(VW::io::create_vector_writer(backing_vector));
   MULTICLASS::label_t multi_write = {7, 7.5};
   MULTICLASS::cache_label(multi_write, io);
-  //VW::model_utils::write_model_field(io, multi_write, "", false);
+  // VW::model_utils::write_model_field(io, multi_write, "", false);
   io.flush();
   io.close_files();
 
