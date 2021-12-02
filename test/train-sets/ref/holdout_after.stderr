@@ -6,6 +6,8 @@ using no cache
 Reading datafile = train-sets/0002.dat
 num sources = 1
 Enabled reductions: gd, scorer-identity, count_label
+Input label = simple
+Output pred = scalar
 average  since         example        example  current  current  current
 loss     last          counter         weight    label  predict features
 0.020368 0.020368          100          100.0   0.5266   0.5147       15

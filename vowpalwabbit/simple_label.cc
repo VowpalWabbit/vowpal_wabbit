@@ -107,7 +107,6 @@ size_t read_model_field(io_buf& io, simple_label_reduction_features& slrf)
   size_t bytes = 0;
   bytes += read_model_field(io, slrf.weight);
   bytes += read_model_field(io, slrf.initial);
-
   return bytes;
 }
 size_t write_model_field(

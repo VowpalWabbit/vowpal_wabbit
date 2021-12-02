@@ -97,9 +97,12 @@ struct example : public example_predict  // core example datatype.
   float weight = 1.f;  // a relative importance weight for the example, default = 1
   v_array<char> tag;   // An identifier for the example.
   size_t example_counter = 0;
+#ifdef PRIVACY_ACTIVATION
+  uint64_t tag_hash;  // Storing the hash of the tag for privacy preservation learning
+#endif
 
   // helpers
-  size_t num_features = 0;         // precomputed, cause it's fast&easy.
+  size_t num_features = 0;  // precomputed, cause it's fast&easy.
   size_t num_features_from_interactions = 0;
   float partial_prediction = 0.f;  // shared data for prediction.
   float updated_prediction = 0.f;  // estimated post-update prediction.

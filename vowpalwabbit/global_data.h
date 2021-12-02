@@ -17,6 +17,7 @@
 #include <array>
 #include <memory>
 #include <atomic>
+#include "future_compat.h"
 #include "vw_string_view.h"
 
 // Thread cannot be used in managed C++, tell the compiler that this is unmanaged even if included in a managed project.
@@ -67,8 +68,7 @@ namespace VW
 struct workspace;
 }
 
-// TODO: deprecate this alias.
-using vw = VW::workspace;
+using vw VW_DEPRECATED("Use VW::workspace instead of ::vw. ::vw will be removed in VW 10.") = VW::workspace;
 
 struct dictionary_info
 {
@@ -170,6 +170,13 @@ public:
   bool default_bits;
 
   uint32_t hash_seed;
+
+#ifdef PRIVACY_ACTIVATION
+  bool privacy_activation = false;
+  // this is coupled with the bitset size in array_parameters which needs to be determined at compile time
+  size_t feature_bitset_size = 32;
+  size_t privacy_activation_threshold = 10;
+#endif
 
 #ifdef BUILD_FLATBUFFERS
   std::unique_ptr<VW::parsers::flatbuffer::parser> flat_converter;

@@ -32,7 +32,7 @@ struct node
 
 struct plt
 {
-  vw* all = nullptr;
+  VW::workspace* all = nullptr;
 
   // tree structure
   uint32_t k = 0;     // number of labels
@@ -325,7 +325,7 @@ using namespace plt_ns;
 base_learner* plt_setup(VW::setup_base_i& stack_builder)
 {
   options_i& options = *stack_builder.get_options();
-  vw& all = *stack_builder.get_all_pointer();
+  VW::workspace& all = *stack_builder.get_all_pointer();
   auto tree = VW::make_unique<plt>();
   option_group_definition new_options("Probabilistic Label Tree");
   new_options.add(make_option("plt", tree->k).keep().necessary().help("Probabilistic Label Tree with <k> labels"))

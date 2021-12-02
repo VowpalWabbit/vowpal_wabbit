@@ -1165,7 +1165,10 @@
       "stderr": "test-sets/ref/backwards.stderr",
       "stdout": "test-sets/ref/backwards.stdout"
     },
-    "bash_command": "printf '3 |f a b c |e x y z\\n2 |f a y c |e x\\n' |  {VW} -i simple_model --invert_hash inv_hash.cmp &&  tail -n +2 inv_hash.cmp"
+    "bash_command": "printf '3 |f a b c |e x y z\\n2 |f a y c |e x\\n' |  {VW} -i model-sets/simple_model --invert_hash inv_hash.cmp &&  tail -n +2 inv_hash.cmp",
+    "input_files": [
+      "model-sets/simple_model"
+    ]
   },
   {
     "id": 97,
@@ -4221,5 +4224,193 @@
       "stdout": "train-sets/ref/truncated_model_crash.stdout"
     },
     "bash_command": "./negative-test.sh {VW} --no_stdin --cb_explore_adf --cover 3 --noconstant --quiet -i model-sets/truncated_model"
+  },
+  {
+    "id": 357,
+    "desc": "bad argument in one_of string",
+    "diff_files": {
+      "stderr": "train-sets/ref/cb_bad_one_of_string.stderr"
+    },
+    "bash_command": "./negative-test.sh {VW} --cb_adf -d train-sets/cb_test.ldf --cb_type bad_type"
+  },
+  {
+    "id": 358,
+    "desc": "bad argument in one_of int",
+    "diff_files": {
+      "stderr": "train-sets/ref/cb_bad_one_of_int.stderr"
+    },
+    "bash_command": "./negative-test.sh {VW} -k -d train-sets/lda-2pass-hang.dat --lda 10 -c --passes 2 --holdout_off --math-mode 5"
+  },
+  {
+    "id": 359,
+    "desc": "--probabilities --oaa one-indexed",
+    "diff_files": {
+      "stderr": "train-sets/ref/oaa_one_ind_probabilities.stderr",
+      "oaa_one_ind_probabilities.predict": "pred-sets/ref/oaa_one_ind_probabilities.predict"
+    },
+    "vw_command": "-d train-sets/probabilities_one_ind.dat --probabilities --oaa=4 --loss_function=logistic -p oaa_one_ind_probabilities.predict",
+    "input_files": [
+      "train-sets/probabilities_one_ind.dat"
+    ]
+  },
+  {
+    "id": 360,
+    "desc": "--probabilities --oaa zero-indexed",
+    "vw_command": "-d train-sets/probabilities_zero_ind.dat --probabilities --oaa=4 --loss_function=logistic -p oaa_zero_ind_probabilities.predict --indexing 0",
+    "diff_files": {
+      "stderr": "train-sets/ref/oaa_zero_ind_probabilities.stderr",
+      "oaa_zero_ind_probabilities.predict": "pred-sets/ref/oaa_zero_ind_probabilities.predict"
+    },
+    "input_files": [
+      "train-sets/probabilities_zero_ind.dat"
+    ]
+  },
+  {
+    "id": 361,
+    "desc": "--probabilities --oaa zero-indexed without flag",
+    "vw_command": "-d train-sets/probabilities_zero_ind.dat --probabilities --oaa=4 --loss_function=logistic -p oaa_zero_ind_no_flag_probabilities.predict",
+    "diff_files": {
+      "stderr": "train-sets/ref/oaa_zero_ind_no_flag_probabilities.stderr",
+      "oaa_zero_ind_no_flag_probabilities.predict": "pred-sets/ref/oaa_zero_ind_no_flag_probabilities.predict"
+    },
+    "input_files": [
+      "train-sets/probabilities_zero_ind.dat"
+    ]
+  },
+  {
+    "id": 362,
+    "desc": "--probabilities --oaa mixed-indexing",
+    "vw_command": "-d train-sets/probabilities_mixed_ind.dat --probabilities --oaa=4 --loss_function=logistic -p oaa_mixed_probabilities.predict",
+    "diff_files": {
+      "stderr": "train-sets/ref/oaa_mixed_probabilities.stderr",
+      "stdout": "train-sets/ref/oaa_mixed_probabilities.stdout",
+      "oaa_mixed_probabilities.predict": "pred-sets/ref/oaa_mixed_probabilities.predict"
+    },
+    "input_files": [
+      "train-sets/probabilities_mixed_ind.dat"
+    ]
+  },
+  {
+    "id": 363,
+    "desc": "check that ccb feature count adds up with slot ids",
+    "vw_command": "-d train-sets/ccb_audit.dat --ccb_explore_adf --audit --noconstant -P 1",
+    "diff_files": {
+      "stderr": "train-sets/ref/ccb_audit.stderr",
+      "stdout": "train-sets/ref/ccb_audit.stdout"
+    },
+    "input_files": [
+      "train-sets/ccb_audit.dat"
+    ]
+  },
+  {
+    "id": 364,
+    "desc": "check that ccb feature count adds up with multi-action multi-slot and -q ::",
+    "vw_command": "-d train-sets/ccb_audit_multi.dat --ccb_explore_adf --noconstant -q :: -P 1 --audit",
+    "diff_files": {
+      "stderr": "train-sets/ref/ccb_audit_multi.stderr",
+      "stdout": "train-sets/ref/ccb_audit_multi.stdout"
+    },
+    "input_files": [
+      "train-sets/ccb_audit_multi.dat"
+    ]
+  },
+  {
+    "id": 365,
+    "desc": "check that ccb feature count adds up with multi-action multi-slot, -q :: and constant",
+    "vw_command": "-d train-sets/ccb_audit_multi.dat --ccb_explore_adf -q :: -P 1 --audit",
+    "diff_files": {
+      "stderr": "train-sets/ref/ccb_audit_multi_constant.stderr",
+      "stdout": "train-sets/ref/ccb_audit_multi_constant.stdout"
+    },
+    "input_files": [
+      "train-sets/ccb_audit_multi.dat"
+    ]
+  },
+  {
+    "id": 366,
+    "desc": "check that ccb feature count adds up with multi-action multi-slot and -q ::, constant, using ccb_slot_namespace",
+    "vw_command": "-d train-sets/ccb_audit_multi_default_ns.dat --ccb_explore_adf -q :: -P 1 --audit",
+    "diff_files": {
+      "stderr": "train-sets/ref/ccb_audit_multi_default_ns.stderr",
+      "stdout": "train-sets/ref/ccb_audit_multi_default_ns.stdout"
+    },
+    "input_files": [
+      "train-sets/ccb_audit_multi_default_ns.dat"
+    ]
+  },
+  {
+    "id": 367,
+    "desc": "Igl with a dataset containing costs - This intentionally has the same reference file as 368",
+    "vw_command": "--cbify 2 --experimental_igl -d train-sets/rcv1_multiclass.dat",
+    "diff_files": {
+      "stderr": "train-sets/ref/igl_result.stderr"
+    },
+    "input_files": [
+      "train-sets/rcv1_multiclass.dat"
+    ]
+  },
+  {
+    "id": 368,
+    "desc": "Igl with a dataset containing rewards - This intentionally has the same reference file as 367",
+    "vw_command": "--cbify 2 --flip_loss_sign --experimental_igl -d train-sets/rcv1_multiclass.dat",
+    "diff_files": {
+      "stderr": "train-sets/ref/igl_result.stderr"
+    },
+    "input_files": [
+      "train-sets/rcv1_multiclass.dat"
+    ]
+  },
+  {
+    "id": 369,
+    "desc": "Freegrad",
+    "vw_command": "--freegrad -d train-sets/0001.dat -f models/freegrad.model -k -c --passes 4",
+    "diff_files": {
+      "stderr": "train-sets/ref/freegrad.stderr"
+    },
+    "input_files": [
+      "train-sets/0001.dat"
+    ]
+  },
+  {
+    "id": 370,
+    "desc": "Freegrad load model",
+    "vw_command": "-d train-sets/0001.dat -i models/freegrad.model -k -t -p freegrad.predict",
+    "diff_files": {
+      "stderr": "train-sets/ref/freegrad_load.stderr",
+      "freegrad.predict": "pred-sets/ref/freegrad.predict"
+    },
+    "input_files": [
+      "train-sets/0001.dat",
+      "models/freegrad.model"
+    ],
+    "depends_on": [
+      369
+    ]
+  },
+  {
+    "id": 371,
+    "desc": "SVM linear kernel save_load save",
+    "vw_command": "--ksvm --l2 1 --reprocess 5 -b 18 -d train-sets/rcv1_smaller.dat -f models/ksvm.model --save_resume",
+    "diff_files": {
+      "stderr": "train-sets/ref/ksvm_train.linear.save.stderr"
+    },
+    "input_files": [
+      "train-sets/rcv1_smaller.dat"
+    ]
+  },
+  {
+    "id": 372,
+    "desc": "SVM linear kernel save_load load",
+    "vw_command": "--ksvm --l2 1 --reprocess 5 -b 18 -d train-sets/rcv1_smaller.dat -i models/ksvm.model --save_resume",
+    "diff_files": {
+      "stderr": "train-sets/ref/ksvm_train.linear.load.stderr"
+    },
+    "input_files": [
+      "train-sets/rcv1_smaller.dat",
+      "models/ksvm.model"
+    ],
+    "depends_on": [
+      371
+    ]
   }
 ]
