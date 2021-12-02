@@ -59,9 +59,7 @@ class CMakeExtension(Extension):
 
 
 def get_ext_filename_without_platform_suffix(filename):
-    from distutils.sysconfig import get_config_var
-
-    ext_suffix = get_config_var("EXT_SUFFIX")
+    ext_suffix = sysconfig.get_config_var("EXT_SUFFIX")
     name, ext = os.path.splitext(filename)
 
     if not ext_suffix:
