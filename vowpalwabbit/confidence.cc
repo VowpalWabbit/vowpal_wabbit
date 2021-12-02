@@ -104,8 +104,10 @@ base_learner* confidence_setup(VW::setup_base_i& stack_builder)
 
   if (!all.training)
   {
-    logger::log_warn("Confidence does not work in test mode because learning algorithm state is needed.  Do not use --save_bare when "
-		     "saving the model and avoid --test_only");
+    logger::log_warn(
+        "Confidence does not work in test mode because learning algorithm state is needed.  Do not use --save_bare "
+        "when "
+        "saving the model and avoid --test_only");
     return nullptr;
   }
 

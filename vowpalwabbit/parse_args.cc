@@ -1129,8 +1129,9 @@ void parse_output_model(options_i& options, VW::workspace& all)
                .help("Output human-readable final regressor with numeric features"))
       .add(make_option("invert_hash", all.inv_hash_regressor_name)
                .help("Output human-readable final regressor with feature names.  Computationally expensive"))
-      .add(make_option("save_bare", save_bare)
-               .help("Do not save extra state for learning to be resumed. Stored model can only be used for prediction"))
+      .add(
+          make_option("save_bare", save_bare)
+              .help("Do not save extra state for learning to be resumed. Stored model can only be used for prediction"))
       .add(make_option("preserve_performance_counters", all.preserve_performance_counters)
                .help("Reset performance counters when warmstarting"))
       .add(make_option("save_per_pass", all.save_per_pass).help("Save the model after every pass over data"))
@@ -1145,7 +1146,8 @@ void parse_output_model(options_i& options, VW::workspace& all)
     *(all.trace_message) << "final_regressor = " << all.final_regressor_name << endl;
 
   if (options.was_supplied("invert_hash")) { all.hash_inv = true; }
-  if (options.was_supplied("save_resume")) {
+  if (options.was_supplied("save_resume"))
+  {
     logger::errlog_warn("--save_resume flag is deprecated -- learning can now continue on saved models by default!");
   }
   if (save_bare) { all.save_resume = false; }
