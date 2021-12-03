@@ -141,7 +141,7 @@ Output Model Options:
   --invert_hash arg                     Output human-readable final regressor 
                                         with feature names.  Computationally 
                                         expensive
-  --save_bare                           Do not save extra state for learning to
+  --predict_only_model                  Do not save extra state for learning to
                                         be resumed. Stored model can only be 
                                         used for prediction
   --save_resume                         This flag is now deprecated and models 

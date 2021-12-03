@@ -1,5 +1,5 @@
 """
-Test that the models generated with and without --save_bare produce the same predictions when loaded in test_mode.
+Test that the models generated with and without --predict_only_model produce the same predictions when loaded in test_mode.
 """
 import sys
 import os

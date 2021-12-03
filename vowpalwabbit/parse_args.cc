@@ -1121,7 +1121,7 @@ void parse_output_preds(options_i& options, VW::workspace& all)
 
 void parse_output_model(options_i& options, VW::workspace& all)
 {
-  bool save_bare = false;
+  bool predict_only_model = false;
   bool save_resume = false;
   option_group_definition output_model_options("Output Model");
   output_model_options
@@ -1131,7 +1131,7 @@ void parse_output_model(options_i& options, VW::workspace& all)
       .add(make_option("invert_hash", all.inv_hash_regressor_name)
                .help("Output human-readable final regressor with feature names.  Computationally expensive"))
       .add(
-          make_option("save_bare", save_bare)
+          make_option("predict_only_model", predict_only_model)
               .help("Do not save extra state for learning to be resumed. Stored model can only be used for prediction"))
       .add(make_option("save_resume", save_resume)
                .help("This flag is now deprecated and models can continue learning by default"))
@@ -1153,7 +1153,7 @@ void parse_output_model(options_i& options, VW::workspace& all)
   {
     logger::errlog_warn("--save_resume flag is deprecated -- learning can now continue on saved models by default!");
   }
-  if (save_bare) { all.save_resume = false; }
+  if (predict_only_model) { all.save_resume = false; }
 
   // Question: This doesn't seem necessary
   // if (options.was_supplied("id") && find(arg.args.begin(), arg.args.end(), "--id") == arg.args.end())

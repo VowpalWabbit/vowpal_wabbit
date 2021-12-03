@@ -40,7 +40,7 @@
   {
     "id": 4,
     "desc": "same, with -d",
-    "vw_command": "-k -d train-sets/0002.dat -f models/0002.model --invariant --save_bare",
+    "vw_command": "-k -d train-sets/0002.dat -f models/0002.model --invariant --predict_only_model",
     "diff_files": {
       "stdout": "train-sets/ref/0002.stdout",
       "stderr": "train-sets/ref/0002.stderr"
@@ -220,7 +220,7 @@
   {
     "id": 19,
     "desc": "neural network 3-parity with 2 hidden units",
-    "vw_command": "-k -c -d train-sets/3parity --hash all --passes 3000 -b 16 --nn 2 -l 10 --invariant -f models/0021.model --random_seed 19 --quiet --holdout_off --save_bare",
+    "vw_command": "-k -c -d train-sets/3parity --hash all --passes 3000 -b 16 --nn 2 -l 10 --invariant -f models/0021.model --random_seed 19 --quiet --holdout_off --predict_only_model",
     "diff_files": {
       "stderr": "train-sets/ref/3parity.stderr"
     },
@@ -364,7 +364,7 @@
   {
     "id": 30,
     "desc": "train --l1 regularized model",
-    "vw_command": "-d train-sets/0001.dat -f models/mask.model --invert_hash mask.predict --l1 0.01 --save_bare",
+    "vw_command": "-d train-sets/0001.dat -f models/mask.model --invert_hash mask.predict --l1 0.01 --predict_only_model",
     "diff_files": {
       "stderr": "train-sets/ref/mask.stderr"
     },
@@ -375,7 +375,7 @@
   {
     "id": 31,
     "desc": "train model using --feature_mask",
-    "vw_command": "-d train-sets/0001.dat --invert_hash remask.predict --feature_mask models/mask.model -f models/remask.model --save_bare",
+    "vw_command": "-d train-sets/0001.dat --invert_hash remask.predict --feature_mask models/mask.model -f models/remask.model --predict_only_model",
     "diff_files": {
       "stderr": "train-sets/ref/remask.stderr"
     },
@@ -407,7 +407,7 @@
   {
     "id": 33,
     "desc": "train model for topk recommender",
-    "vw_command": "-d train-sets/topk.vw -f topk.model -q MF --passes 100 --cache_file topk-train.cache -k --holdout_off --save_bare",
+    "vw_command": "-d train-sets/topk.vw -f topk.model -q MF --passes 100 --cache_file topk-train.cache -k --holdout_off --predict_only_model",
     "diff_files": {
       "stderr": "train-sets/ref/topk-train.stderr"
     },
@@ -418,7 +418,7 @@
   {
     "id": 34,
     "desc": "train model for topk recommender",
-    "vw_command": "-P 1 -d train-sets/topk.vw -i topk.model --top 2 -p topk-rec.predict --save_bare",
+    "vw_command": "-P 1 -d train-sets/topk.vw -i topk.model --top 2 -p topk-rec.predict --predict_only_model",
     "diff_files": {
       "stderr": "train-sets/ref/topk-rec.stderr",
       "topk-rec.predict": "train-sets/ref/topk-rec.predict"
@@ -522,7 +522,7 @@
   {
     "id": 43,
     "desc": "search sequence labeling, non-ldf train",
-    "vw_command": "-k -c -d train-sets/sequence_data --passes 20 --invariant --search_rollout ref --search_alpha 1e-8 --search_task sequence --search 5 --holdout_off -f models/sequence_data.model --save_bare",
+    "vw_command": "-k -c -d train-sets/sequence_data --passes 20 --invariant --search_rollout ref --search_alpha 1e-8 --search_task sequence --search 5 --holdout_off -f models/sequence_data.model --predict_only_model",
     "diff_files": {
       "stderr": "train-sets/ref/sequence_data.nonldf.train.stderr"
     },
@@ -587,7 +587,7 @@
   {
     "id": 48,
     "desc": "search sequence SPAN labeling BIO, non-ldf train, no rollouts",
-    "vw_command": "-k -c -d train-sets/sequencespan_data --passes 20 --invariant --search_rollout none --search_task sequencespan --search 7 --holdout_off -f models/sequencespan_data.model --save_bare",
+    "vw_command": "-k -c -d train-sets/sequencespan_data --passes 20 --invariant --search_rollout none --search_task sequencespan --search 7 --holdout_off -f models/sequencespan_data.model --predict_only_model",
     "diff_files": {
       "stderr": "train-sets/ref/sequencespan_data.nonldf.train.stderr"
     },
@@ -598,7 +598,7 @@
   {
     "id": 49,
     "desc": "search sequence SPAN labeling BIO, non-ldf test",
-    "vw_command": "-d train-sets/sequencespan_data -t -i models/sequencespan_data.model -p sequencespan_data.nonldf.test.predict --save_bare",
+    "vw_command": "-d train-sets/sequencespan_data -t -i models/sequencespan_data.model -p sequencespan_data.nonldf.test.predict --predict_only_model",
     "diff_files": {
       "stderr": "train-sets/ref/sequencespan_data.nonldf.test.stderr",
       "sequencespan_data.nonldf.test.predict": "train-sets/ref/sequencespan_data.nonldf.test.predict"
@@ -614,7 +614,7 @@
   {
     "id": 50,
     "desc": "search sequence SPAN labeling BILOU, non-ldf train",
-    "vw_command": "-k -c -d train-sets/sequencespan_data --passes 20 --invariant --search_rollout ref --search_alpha 1e-8 --search_task sequencespan --search_span_bilou --search 7 --holdout_off -f models/sequencespan_data.model --save_bare",
+    "vw_command": "-k -c -d train-sets/sequencespan_data --passes 20 --invariant --search_rollout ref --search_alpha 1e-8 --search_task sequencespan --search_span_bilou --search 7 --holdout_off -f models/sequencespan_data.model --predict_only_model",
     "diff_files": {
       "stderr": "train-sets/ref/sequencespan_data.nonldf-bilou.train.stderr"
     },
@@ -831,7 +831,7 @@
   {
     "id": 69,
     "desc": "(see Test 43/Test 44): search sequence labeling, with selective branching",
-    "vw_command": "-d train-sets/sequence_data -t -i models/sequence_data.model -p sequence_data.nonldf.beam.test.predict --search_metatask selective_branching --search_max_branch 10 --search_kbest 10 --save_bare",
+    "vw_command": "-d train-sets/sequence_data -t -i models/sequence_data.model -p sequence_data.nonldf.beam.test.predict --search_metatask selective_branching --search_max_branch 10 --search_kbest 10 --predict_only_model",
     "diff_files": {
       "stderr": "train-sets/ref/sequence_data.nonldf.beam.test.stderr",
       "sequence_data.nonldf.beam.test.predict": "train-sets/ref/sequence_data.nonldf.beam.test.predict"
@@ -1122,7 +1122,7 @@
       "stderr": "train-sets/ref/inv_hash.stderr",
       "inv_hash.cmp": "pred-sets/ref/inv_hash.cmp"
     },
-    "bash_command": "printf '3 |f a b c |e x y z\\n2 |f a y c |e x\\n' |  {VW} --oaa 3 -q :: --invert_hash inv_hash.cmp --save_bare &&  tail -n +2 inv_hash.cmp > inv_hash.cmp.new &&  rm inv_hash.cmp &&  mv inv_hash.cmp.new inv_hash.cmp"
+    "bash_command": "printf '3 |f a b c |e x y z\\n2 |f a y c |e x\\n' |  {VW} --oaa 3 -q :: --invert_hash inv_hash.cmp --predict_only_model &&  tail -n +2 inv_hash.cmp > inv_hash.cmp.new &&  rm inv_hash.cmp &&  mv inv_hash.cmp.new inv_hash.cmp"
   },
   {
     "id": 93,
@@ -1165,7 +1165,7 @@
       "stderr": "test-sets/ref/backwards.stderr",
       "stdout": "test-sets/ref/backwards.stdout"
     },
-    "bash_command": "printf '3 |f a b c |e x y z\\n2 |f a y c |e x\\n' |  {VW} -i model-sets/simple_model --invert_hash inv_hash.cmp --save_bare &&  tail -n +2 inv_hash.cmp",
+    "bash_command": "printf '3 |f a b c |e x y z\\n2 |f a y c |e x\\n' |  {VW} -i model-sets/simple_model --invert_hash inv_hash.cmp --predict_only_model &&  tail -n +2 inv_hash.cmp",
     "input_files": [
       "model-sets/simple_model"
     ]
@@ -1638,7 +1638,7 @@
   {
     "id": 134,
     "desc": "second order online learning",
-    "vw_command": "--OjaNewton -d train-sets/0001.dat -f models/second_order.model -p second_order.predict --save_bare",
+    "vw_command": "--OjaNewton -d train-sets/0001.dat -f models/second_order.model -p second_order.predict --predict_only_model",
     "diff_files": {
       "stderr": "train-sets/ref/second_order.stderr",
       "second_order.predict": "pred-sets/ref/second_order.predict"
@@ -2402,7 +2402,7 @@
   {
     "id": 202,
     "desc": "Test memory corruption issue in ccb_explore_adf where mtr was leaving a prediction behind",
-    "vw_command": "--ccb_explore_adf --ring_size 20 --dsjson --chain_hash -d train-sets/ccb_reuse_medium.dsjson --save_bare",
+    "vw_command": "--ccb_explore_adf --ring_size 20 --dsjson --chain_hash -d train-sets/ccb_reuse_medium.dsjson --predict_only_model",
     "diff_files": {
       "stderr": "train-sets/ref/ccb_reuse_medium.stderr"
     },
@@ -2460,7 +2460,7 @@
       "stdout": "test-sets/ref/chain_hash_json_test.stdout",
       "chain_hash_json_result.cmp": "test-sets/ref/chain_hash_json_result.cmp"
     },
-    "bash_command": "{VW} --audit --json --chain_hash -d train-sets/chain_hash_json_test.json --invert_hash chain_hash_json_result.cmp --chain_hash --save_bare &&  tail -n +2 chain_hash_json_result.cmp > chain_hash_json_result.cmp.new &&  rm chain_hash_json_result.cmp &&  mv chain_hash_json_result.cmp.new chain_hash_json_result.cmp"
+    "bash_command": "{VW} --audit --json --chain_hash -d train-sets/chain_hash_json_test.json --invert_hash chain_hash_json_result.cmp --chain_hash --predict_only_model &&  tail -n +2 chain_hash_json_result.cmp > chain_hash_json_result.cmp.new &&  rm chain_hash_json_result.cmp &&  mv chain_hash_json_result.cmp.new chain_hash_json_result.cmp"
   },
   {
     "id": 208,
@@ -2470,7 +2470,7 @@
       "stdout": "test-sets/ref/chain_hash_text_result.stdout",
       "chain_hash_text_result.cmp": "test-sets/ref/chain_hash_text_result.cmp"
     },
-    "bash_command": "{VW} --audit -d train-sets/chain_hash_text_test.dat --invert_hash chain_hash_text_result.cmp --chain_hash --save_bare &&  tail -n +2 chain_hash_text_result.cmp > chain_hash_text_result.cmp.new &&  rm chain_hash_text_result.cmp &&  mv chain_hash_text_result.cmp.new chain_hash_text_result.cmp"
+    "bash_command": "{VW} --audit -d train-sets/chain_hash_text_test.dat --invert_hash chain_hash_text_result.cmp --chain_hash --predict_only_model &&  tail -n +2 chain_hash_text_result.cmp > chain_hash_text_result.cmp.new &&  rm chain_hash_text_result.cmp &&  mv chain_hash_text_result.cmp.new chain_hash_text_result.cmp"
   },
   {
     "id": 209,
@@ -2492,7 +2492,7 @@
       "inv_hash_load_model.invert.txt": "train-sets/ref/inv_hash_load_model.invert.txt",
       "inv_hash_load_model.readable.txt": "train-sets/ref/inv_hash_load_model.readable.txt"
     },
-    "bash_command": "{VW} -d train-sets/inv_hash_load_model_data1.txt -f inv_hash_load_model.vw --noconstant --save_bare && {VW} -d train-sets/inv_hash_load_model_data2.txt -i inv_hash_load_model.vw --noconstant --readable_model inv_hash_load_model.readable.txt --invert_hash inv_hash_load_model.invert.txt --save_bare"
+    "bash_command": "{VW} -d train-sets/inv_hash_load_model_data1.txt -f inv_hash_load_model.vw --noconstant --predict_only_model && {VW} -d train-sets/inv_hash_load_model_data2.txt -i inv_hash_load_model.vw --noconstant --readable_model inv_hash_load_model.readable.txt --invert_hash inv_hash_load_model.invert.txt --predict_only_model"
   },
   {
     "id": 211,
@@ -2568,7 +2568,7 @@
   {
     "id": 217,
     "desc": "check plt training",
-    "vw_command": "-d train-sets/multilabel -f plt.model --plt 10 --sgd --save_bare",
+    "vw_command": "-d train-sets/multilabel -f plt.model --plt 10 --sgd --predict_only_model",
     "diff_files": {
       "stderr": "train-sets/ref/plt_multilabel.stderr"
     },
@@ -2674,7 +2674,7 @@
   {
     "id": 226,
     "desc": "cats train",
-    "vw_command": "--cats 4 --min_value=185 --max_value=23959 --bandwidth 3000 -d train-sets/cats.acpx --passes 1 -b 18 --coin --loss_option 1 -f cats.model --save_bare",
+    "vw_command": "--cats 4 --min_value=185 --max_value=23959 --bandwidth 3000 -d train-sets/cats.acpx --passes 1 -b 18 --coin --loss_option 1 -f cats.model --predict_only_model",
     "diff_files": {
       "stderr": "train-sets/ref/cats-train.stderr"
     },
@@ -2701,7 +2701,7 @@
   {
     "id": 228,
     "desc": "cats-pdf train",
-    "vw_command": "--cats_pdf 4 --min_value=185 --max_value=23959 --bandwidth 2000 -d train-sets/cats.acpx --passes 1 -b 18 --coin --loss_option 1 -f cats-pdf.model --save_bare",
+    "vw_command": "--cats_pdf 4 --min_value=185 --max_value=23959 --bandwidth 2000 -d train-sets/cats.acpx --passes 1 -b 18 --coin --loss_option 1 -f cats-pdf.model --predict_only_model",
     "diff_files": {
       "stderr": "train-sets/ref/cats-pdf-train.stderr"
     },
@@ -3051,7 +3051,7 @@
   {
     "id": 257,
     "desc": "CCB interactions with slot with default namespace",
-    "vw_command": "-d train-sets/ccb_test_interactions.dat --ccb_explore_adf --invert_hash w_out_slot_ns.interactions -q :: --save_bare",
+    "vw_command": "-d train-sets/ccb_test_interactions.dat --ccb_explore_adf --invert_hash w_out_slot_ns.interactions -q :: --predict_only_model",
     "diff_files": {
       "stderr": "train-sets/ref/ccb_test_interactions.stderr",
       "w_out_slot_ns.interactions": "train-sets/ref/w_out_slot_ns.interactions"
@@ -3319,7 +3319,7 @@
   {
     "id": 280,
     "desc": "cbzo: verify --readable_model file contents",
-    "vw_command": "-d train-sets/cbzo_constant.dat --holdout_off --cbzo --policy constant -l 0.001 --radius 0.1 --readable_model cbzo_constant_readable_model.txt --save_bare",
+    "vw_command": "-d train-sets/cbzo_constant.dat --holdout_off --cbzo --policy constant -l 0.001 --radius 0.1 --readable_model cbzo_constant_readable_model.txt --predict_only_model",
     "diff_files": {
       "cbzo_constant_readable_model.txt": "train-sets/ref/cbzo_constant_readable_model.txt"
     },
@@ -3330,7 +3330,7 @@
   {
     "id": 281,
     "desc": "cbzo: verify --invert_hash file contents",
-    "vw_command": "-d train-sets/cbzo_constant.dat --holdout_off --cbzo --policy constant -l 0.001 --radius 0.1 --invert_hash cbzo_constant_invert_hash.txt --save_bare",
+    "vw_command": "-d train-sets/cbzo_constant.dat --holdout_off --cbzo --policy constant -l 0.001 --radius 0.1 --invert_hash cbzo_constant_invert_hash.txt --predict_only_model",
     "diff_files": {
       "cbzo_constant_invert_hash.txt": "train-sets/ref/cbzo_constant_invert_hash.txt"
     },
@@ -3379,7 +3379,7 @@
   {
     "id": 285,
     "desc": "cbzo: verify --readable_model file contents",
-    "vw_command": "-d train-sets/cbzo_linear.dat --holdout_off --cbzo --policy linear -l 0.0001 --radius 0.1 --l1 0.2 --l2 0.3 --no_bias_regularization --readable_model cbzo_linear_readable_model.txt --save_bare",
+    "vw_command": "-d train-sets/cbzo_linear.dat --holdout_off --cbzo --policy linear -l 0.0001 --radius 0.1 --l1 0.2 --l2 0.3 --no_bias_regularization --readable_model cbzo_linear_readable_model.txt --predict_only_model",
     "diff_files": {
       "cbzo_linear_readable_model.txt": "train-sets/ref/cbzo_linear_readable_model.txt"
     },
@@ -3390,7 +3390,7 @@
   {
     "id": 286,
     "desc": "cbzo: verify --invert_hash file contents",
-    "vw_command": "-d train-sets/cbzo_linear.dat --holdout_off --cbzo --policy linear -l 0.0001 --radius 0.1 --l1 0.2 --l2 0.3 --no_bias_regularization --invert_hash cbzo_linear_invert_hash.txt --save_bare",
+    "vw_command": "-d train-sets/cbzo_linear.dat --holdout_off --cbzo --policy linear -l 0.0001 --radius 0.1 --l1 0.2 --l2 0.3 --no_bias_regularization --invert_hash cbzo_linear_invert_hash.txt --predict_only_model",
     "diff_files": {
       "cbzo_linear_invert_hash.txt": "train-sets/ref/cbzo_linear_invert_hash.txt"
     },
@@ -3441,7 +3441,7 @@
   {
     "id": 290,
     "desc": "Slates sanity check with interactions and invert hash",
-    "vw_command": "--slates -d train-sets/slates_simple_w_interactions.txt -p slates_simple_w_interactions.predict -q :: --invert_hash slates_w_interactions.inv --save_bare",
+    "vw_command": "--slates -d train-sets/slates_simple_w_interactions.txt -p slates_simple_w_interactions.predict -q :: --invert_hash slates_w_interactions.inv --predict_only_model",
     "diff_files": {
       "stderr": "train-sets/ref/slates_simple_w_interactions.stderr",
       "slates_simple_w_interactions.predict": "pred-sets/ref/slates_simple_w_interactions.predict",
@@ -3454,7 +3454,7 @@
   {
     "id": 291,
     "desc": "test -q :: with many interactions",
-    "vw_command": "-d train-sets/ccb_lots_of_interactions.dat --ccb_explore_adf -q :: --invert_hash ccb_lots_of_interactions.inv --save_bare",
+    "vw_command": "-d train-sets/ccb_lots_of_interactions.dat --ccb_explore_adf -q :: --invert_hash ccb_lots_of_interactions.inv --predict_only_model",
     "diff_files": {
       "stderr": "train-sets/ref/ccb_lots_of_interactions.stderr",
       "ccb_lots_of_interactions.inv": "pred-sets/ref/ccb_lots_of_interactions.inv"
@@ -3477,7 +3477,7 @@
   {
     "id": 293,
     "desc": "test -q :: with explicit interactions",
-    "vw_command": "-d train-sets/ccb_lots_of_interactions_mini.dat --ccb_explore_adf -q :: -q AB --interactions AAA --interactions ::: --invert_hash ccb_implicit_and_explicit_interactions.inv --save_bare",
+    "vw_command": "-d train-sets/ccb_lots_of_interactions_mini.dat --ccb_explore_adf -q :: -q AB --interactions AAA --interactions ::: --invert_hash ccb_implicit_and_explicit_interactions.inv --predict_only_model",
     "diff_files": {
       "stderr": "train-sets/ref/ccb_implicit_and_explicit_interactions.stderr",
       "ccb_implicit_and_explicit_interactions.inv": "pred-sets/ref/ccb_implicit_and_explicit_interactions.inv"
@@ -3489,7 +3489,7 @@
   {
     "id": 294,
     "desc": "test -q :: with explicit interactions and ignore",
-    "vw_command": "-d train-sets/ccb_lots_of_interactions_mini.dat --ignore C --ccb_explore_adf -q :: -q AB --interactions AAA --interactions ::: --invert_hash ccb_implicit_explicit_ignore_interactions.inv --save_bare",
+    "vw_command": "-d train-sets/ccb_lots_of_interactions_mini.dat --ignore C --ccb_explore_adf -q :: -q AB --interactions AAA --interactions ::: --invert_hash ccb_implicit_explicit_ignore_interactions.inv --predict_only_model",
     "diff_files": {
       "stderr": "train-sets/ref/ccb_implicit_explicit_ignore_interactions.stderr",
       "ccb_implicit_explicit_ignore_interactions.inv": "pred-sets/ref/ccb_implicit_explicit_ignore_interactions.inv"
@@ -3501,7 +3501,7 @@
   {
     "id": 295,
     "desc": "Test interact reduction",
-    "vw_command": "-d train-sets/interact.dat -p t288.predict --interact ab --readable_model t288.readable --save_bare",
+    "vw_command": "-d train-sets/interact.dat -p t288.predict --interact ab --readable_model t288.readable --predict_only_model",
     "diff_files": {
       "stderr": "test-sets/ref/t288.stderr",
       "t288.predict": "pred-sets/ref/t288.predict",
@@ -3514,7 +3514,7 @@
   {
     "id": 296,
     "desc": "FTRL readable model test. TODO: investigate slow convergence",
-    "vw_command": "-d train-sets/regression_simple.txt --noconstant --ftrl --invert_hash ftrl.readable --save_bare",
+    "vw_command": "-d train-sets/regression_simple.txt --noconstant --ftrl --invert_hash ftrl.readable --predict_only_model",
     "diff_files": {
       "ftrl.readable": "train-sets/ref/ftrl.readable"
     },
@@ -3525,7 +3525,7 @@
   {
     "id": 297,
     "desc": "pistol readable model test",
-    "vw_command": "-d train-sets/regression_simple.txt --noconstant --pistol --invert_hash pistol.readable --save_bare",
+    "vw_command": "-d train-sets/regression_simple.txt --noconstant --pistol --invert_hash pistol.readable --predict_only_model",
     "diff_files": {
       "pistol.readable": "train-sets/ref/pistol.readable"
     },
@@ -3536,7 +3536,7 @@
   {
     "id": 298,
     "desc": "coin readable model test",
-    "vw_command": "-d train-sets/regression_simple.txt --noconstant --coin --invert_hash coin.readable --save_bare",
+    "vw_command": "-d train-sets/regression_simple.txt --noconstant --coin --invert_hash coin.readable --predict_only_model",
     "diff_files": {
       "coin.readable": "train-sets/ref/coin.readable"
     },
@@ -3681,7 +3681,7 @@
   {
     "id": 310,
     "desc": "cats predict room tempertature learn",
-    "vw_command": "-d train-sets/cats_room_temp.json --cats 32 --bandwidth 3 --min_value 0 --max_value 100 -f models/cats_room_temp.model --coin --json --chain_hash --epsilon 0.5 --save_bare",
+    "vw_command": "-d train-sets/cats_room_temp.json --cats 32 --bandwidth 3 --min_value 0 --max_value 100 -f models/cats_room_temp.model --coin --json --chain_hash --epsilon 0.5 --predict_only_model",
     "diff_files": {
       "stderr": "train-sets/ref/cats_room_temp.stderr"
     },
@@ -3898,7 +3898,7 @@
       "stderr": "train-sets/ref/cb_simple.stderr",
       "cb_simple_invert_hash.txt": "train-sets/ref/cb_simple_invert_hash.txt"
     },
-    "bash_command": "{VW} -d train-sets/cb_simple.json --dsjson --cb_explore_adf --invert_hash cb_simple_invert_hash.txt --save_bare &&  tail -n +2 cb_simple_invert_hash.txt > cb_simple_invert_hash.txt.new &&  rm cb_simple_invert_hash.txt &&  mv cb_simple_invert_hash.txt.new cb_simple_invert_hash.txt"
+    "bash_command": "{VW} -d train-sets/cb_simple.json --dsjson --cb_explore_adf --invert_hash cb_simple_invert_hash.txt --predict_only_model &&  tail -n +2 cb_simple_invert_hash.txt > cb_simple_invert_hash.txt.new &&  rm cb_simple_invert_hash.txt &&  mv cb_simple_invert_hash.txt.new cb_simple_invert_hash.txt"
   },
   {
     "id": 328,
@@ -3907,7 +3907,7 @@
       "stderr": "train-sets/ref/cb_simple_pdrop.stderr",
       "cb_simple_pdrop_invert_hash.txt": "train-sets/ref/cb_simple_pdrop_invert_hash.txt"
     },
-    "bash_command": "{VW} -d train-sets/cb_simple_pdrop.json --dsjson --cb_explore_adf --invert_hash cb_simple_pdrop_invert_hash.txt --save_bare &&  tail -n +2 cb_simple_pdrop_invert_hash.txt > cb_simple_pdrop_invert_hash.txt.new &&  rm cb_simple_pdrop_invert_hash.txt &&  mv cb_simple_pdrop_invert_hash.txt.new cb_simple_pdrop_invert_hash.txt"
+    "bash_command": "{VW} -d train-sets/cb_simple_pdrop.json --dsjson --cb_explore_adf --invert_hash cb_simple_pdrop_invert_hash.txt --predict_only_model &&  tail -n +2 cb_simple_pdrop_invert_hash.txt > cb_simple_pdrop_invert_hash.txt.new &&  rm cb_simple_pdrop_invert_hash.txt &&  mv cb_simple_pdrop_invert_hash.txt.new cb_simple_pdrop_invert_hash.txt"
   },
   {
     "id": 329,
@@ -3927,7 +3927,7 @@
       "stderr": "train-sets/ref/ccb_simple.stderr",
       "ccb_simple_invert_hash.txt": "train-sets/ref/ccb_simple_invert_hash.txt"
     },
-    "bash_command": "{VW} -d train-sets/ccb_simple.json --dsjson --ccb_explore_adf --invert_hash ccb_simple_invert_hash.txt --save_bare &&  tail -n +2 ccb_simple_invert_hash.txt > ccb_simple_invert_hash.txt.new &&  rm ccb_simple_invert_hash.txt &&  mv ccb_simple_invert_hash.txt.new ccb_simple_invert_hash.txt"
+    "bash_command": "{VW} -d train-sets/ccb_simple.json --dsjson --ccb_explore_adf --invert_hash ccb_simple_invert_hash.txt --predict_only_model &&  tail -n +2 ccb_simple_invert_hash.txt > ccb_simple_invert_hash.txt.new &&  rm ccb_simple_invert_hash.txt &&  mv ccb_simple_invert_hash.txt.new ccb_simple_invert_hash.txt"
   },
   {
     "id": 331,
@@ -3936,7 +3936,7 @@
       "stderr": "train-sets/ref/ccb_simple_pdrop.stderr",
       "ccb_simple_pdrop_invert_hash.txt": "train-sets/ref/ccb_simple_pdrop_invert_hash.txt"
     },
-    "bash_command": "{VW} -d train-sets/ccb_simple_pdrop.json --dsjson --ccb_explore_adf --invert_hash ccb_simple_pdrop_invert_hash.txt --save_bare &&  tail -n +2 ccb_simple_pdrop_invert_hash.txt > ccb_simple_pdrop_invert_hash.txt.new &&  rm ccb_simple_pdrop_invert_hash.txt &&  mv ccb_simple_pdrop_invert_hash.txt.new ccb_simple_pdrop_invert_hash.txt"
+    "bash_command": "{VW} -d train-sets/ccb_simple_pdrop.json --dsjson --ccb_explore_adf --invert_hash ccb_simple_pdrop_invert_hash.txt --predict_only_model &&  tail -n +2 ccb_simple_pdrop_invert_hash.txt > ccb_simple_pdrop_invert_hash.txt.new &&  rm ccb_simple_pdrop_invert_hash.txt &&  mv ccb_simple_pdrop_invert_hash.txt.new ccb_simple_pdrop_invert_hash.txt"
   },
   {
     "id": 332,
@@ -3990,7 +3990,7 @@
   {
     "id": 336,
     "desc": "",
-    "vw_command": "-d train-sets/dupeindex_self.dat --noconstant --ignore_linear a --interactions aa --quiet --invert_hash dupeindex_self_quadratic.txt --save_bare",
+    "vw_command": "-d train-sets/dupeindex_self.dat --noconstant --ignore_linear a --interactions aa --quiet --invert_hash dupeindex_self_quadratic.txt --predict_only_model",
     "diff_files": {
       "dupeindex_self_quadratic.txt": "train-sets/ref/dupeindex_self_quadratic.txt"
     },
@@ -4001,7 +4001,7 @@
   {
     "id": 337,
     "desc": "",
-    "vw_command": "-d train-sets/dupeindex_self.dat --noconstant --ignore_linear a --interactions aaa --quiet --invert_hash dupeindex_self_cubic.txt --save_bare",
+    "vw_command": "-d train-sets/dupeindex_self.dat --noconstant --ignore_linear a --interactions aaa --quiet --invert_hash dupeindex_self_cubic.txt --predict_only_model",
     "diff_files": {
       "dupeindex_self_cubic.txt": "train-sets/ref/dupeindex_self_cubic.txt"
     },
@@ -4012,7 +4012,7 @@
   {
     "id": 338,
     "desc": "",
-    "vw_command": "-d train-sets/dupeindex_self.dat --noconstant --ignore_linear a --interactions aaaa --quiet --invert_hash dupeindex_self_quartic.txt --save_bare",
+    "vw_command": "-d train-sets/dupeindex_self.dat --noconstant --ignore_linear a --interactions aaaa --quiet --invert_hash dupeindex_self_quartic.txt --predict_only_model",
     "diff_files": {
       "dupeindex_self_quartic.txt": "train-sets/ref/dupeindex_self_quartic.txt"
     },

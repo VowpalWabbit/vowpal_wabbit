@@ -1102,7 +1102,7 @@ void save_load(gd& g, io_buf& model_file, bool read, bool text)
       save_load_regressor(all, model_file, read, text);
     }
   }
-  if (!all.training)  // If the regressor was saved without --save_bare, then when testing we want to materialize the
+  if (!all.training)  // If the regressor was saved without --predict_only_model, then when testing we want to materialize the
                       // weights.
     sync_weights(all);
 }

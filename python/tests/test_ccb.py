@@ -15,7 +15,7 @@ def test_ccb_single_slot_and_cb_equivalence_no_slot_features():
     # --- CCB
     ccb_model_file_name = "model_file_ccb_equiv.txt"
     ccb_workspace = pyvw.vw(quiet=True,
-                            save_bare=True,
+                            predict_only_model=True,
                             ccb_explore_adf=True,
                             readable_model=ccb_model_file_name)
 
@@ -37,7 +37,7 @@ def test_ccb_single_slot_and_cb_equivalence_no_slot_features():
     # --- CB
     cb_model_file_name = "model_file_cb_equiv.txt"
     cb_workspace = pyvw.vw(quiet=True,
-                           save_bare=True,
+                           predict_only_model=True,
                            cb_explore_adf=True,
                            readable_model=cb_model_file_name)
 
