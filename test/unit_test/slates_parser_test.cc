@@ -120,7 +120,7 @@ BOOST_AUTO_TEST_CASE(slates_cache_shared_label)
 
   VW::slates::label uncached_label;
   VW::slates::default_label(uncached_label);
-  VW::slates::read_cached_label(uncached_label, io_reader);
+  VW::model_utils::read_model_field(io_reader, uncached_label);
 
   BOOST_CHECK_EQUAL(uncached_label.type, VW::slates::example_type::shared);
   BOOST_CHECK_EQUAL(uncached_label.labeled, true);
@@ -143,7 +143,7 @@ BOOST_AUTO_TEST_CASE(slates_cache_action_label)
 
   VW::slates::label uncached_label;
   VW::slates::default_label(uncached_label);
-  VW::slates::read_cached_label(uncached_label, io_reader);
+  VW::model_utils::read_model_field(io_reader, uncached_label);
 
   BOOST_CHECK_EQUAL(uncached_label.type, VW::slates::example_type::action);
   BOOST_CHECK_EQUAL(uncached_label.labeled, false);
@@ -166,7 +166,7 @@ BOOST_AUTO_TEST_CASE(slates_cache_slot_label)
 
   VW::slates::label uncached_label;
   VW::slates::default_label(uncached_label);
-  VW::slates::read_cached_label(uncached_label, io_reader);
+  VW::model_utils::read_model_field(io_reader, uncached_label);
 
   BOOST_CHECK_EQUAL(uncached_label.type, VW::slates::example_type::slot);
   BOOST_CHECK_EQUAL(uncached_label.labeled, true);

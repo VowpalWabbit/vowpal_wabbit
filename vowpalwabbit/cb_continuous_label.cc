@@ -21,13 +21,6 @@ namespace logger = VW::io::logger;
 namespace CB
 {
 template <>
-size_t read_cached_label_additional_fields<VW::cb_continuous::continuous_label>(
-    VW::cb_continuous::continuous_label&, io_buf&)
-{
-  return 0;
-}
-
-template <>
 void cache_label_additional_fields<VW::cb_continuous::continuous_label>(
     const VW::cb_continuous::continuous_label&, io_buf&)
 {
@@ -139,7 +132,7 @@ label_parser the_label_parser = {
     },
     // read_cached_label
     [](polylabel& label, reduction_features& /*red_features*/, io_buf& cache) {
-      return CB::read_cached_label<continuous_label, continuous_label_elm>(label.cb_cont, cache);
+      return VW::model_utils::read_model_field(cache, label.cb_cont);
     },
     // get_weight
     // CB::weight just returns 1.f? This seems like it could be a bug...

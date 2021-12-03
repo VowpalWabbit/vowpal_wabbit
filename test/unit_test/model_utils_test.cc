@@ -10,6 +10,7 @@
 #include "model_utils.h"
 #include "io_buf.h"
 #include "example.h"
+#include "multiclass.h"
 
 BOOST_AUTO_TEST_CASE(string_save_load)
 {
@@ -49,7 +50,6 @@ BOOST_AUTO_TEST_CASE(simple_label_save_load)
   BOOST_CHECK_EQUAL(simple_read.label, 5);
 }
 
-#include "multiclass.cc"
 BOOST_AUTO_TEST_CASE(multiclass_label_save_load)
 {
   auto backing_vector = std::make_shared<std::vector<char>>();

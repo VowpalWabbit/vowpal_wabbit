@@ -38,37 +38,6 @@ namespace CCB
 {
 void default_label(label& ld);
 
-size_t read_cached_label(label& ld, io_buf& cache)
-{
-  // Since read_cached_features doesn't default the label we must do it here.
-  default_label(ld);
-
-  if (ld.outcome != nullptr) { ld.outcome->probabilities.clear(); }
-  ld.explicit_included_actions.clear();
-
-  size_t read_count = 0;
-  ld.type = cache.read_value_and_accumulate_size<CCB::example_type>("type", read_count);
-  auto is_outcome_present = cache.read_value_and_accumulate_size<bool>("is_outcome_present", read_count);
-  if (is_outcome_present)
-  {
-    ld.outcome = new CCB::conditional_contextual_bandit_outcome();
-    ld.outcome->cost = cache.read_value_and_accumulate_size<float>("outcome cost", read_count);
-    auto size_probs = cache.read_value_and_accumulate_size<uint32_t>("size_probs", read_count);
-    for (uint32_t i = 0; i < size_probs; i++)
-    {
-      ld.outcome->probabilities.push_back(
-          cache.read_value_and_accumulate_size<ACTION_SCORE::action_score>("a_s", read_count));
-    }
-  }
-
-  auto size_includes = cache.read_value_and_accumulate_size<uint32_t>("size_includes", read_count);
-  for (uint32_t i = 0; i < size_includes; i++)
-  { ld.explicit_included_actions.push_back(cache.read_value_and_accumulate_size<uint32_t>("include", read_count)); }
-
-  ld.weight = cache.read_value_and_accumulate_size<float>("weight", read_count);
-  return read_count;
-}
-
 float ccb_weight(const CCB::label& ld) { return ld.weight; }
 
 void cache_label(const label& ld, io_buf& cache)
@@ -233,7 +202,7 @@ label_parser ccb_label_parser = {
     },
     // read_cached_label
     [](polylabel& label, ::reduction_features& /*red_features*/, io_buf& cache) {
-      return read_cached_label(label.conditional_contextual_bandit, cache);
+      return VW::model_utils::read_model_field(cache, label.conditional_contextual_bandit);
     },
     // get_weight
     [](const polylabel& label, const ::reduction_features& /*red_features*/) {
@@ -267,10 +236,17 @@ size_t write_model_field(
 size_t read_model_field(io_buf& io, CCB::label& ccb)
 {
   size_t bytes = 0;
-  bool outcome_is_null;
+  // Since read_cached_features doesn't default the label we must do it here.
+  default_label(ccb);
+  if (ccb.outcome != nullptr) { ccb.outcome->probabilities.clear(); }
+  ccb.explicit_included_actions.clear();
   bytes += read_model_field(io, ccb.type);
-  bytes += read_model_field(io, outcome_is_null);
-  if (!outcome_is_null) { bytes += read_model_field(io, *ccb.outcome); }
+  bool outcome_is_present;
+  bytes += read_model_field(io, outcome_is_present);
+  if (outcome_is_present) {
+    ccb.outcome = new CCB::conditional_contextual_bandit_outcome();
+    bytes += read_model_field(io, *ccb.outcome);
+  }
   bytes += read_model_field(io, ccb.explicit_included_actions);
   bytes += read_model_field(io, ccb.weight);
   return bytes;
@@ -279,7 +255,7 @@ size_t write_model_field(io_buf& io, const CCB::label& ccb, const std::string& u
 {
   size_t bytes = 0;
   bytes += write_model_field(io, ccb.type, upstream_name + "_type", text);
-  bytes += write_model_field(io, ccb.outcome == nullptr, upstream_name + "_outcome_is_null", text);
+  bytes += write_model_field(io, ccb.outcome != nullptr, upstream_name + "_outcome_is_present", text);
   if (!(ccb.outcome == nullptr)) { bytes += write_model_field(io, *ccb.outcome, upstream_name + "_outcome", text); }
   bytes += write_model_field(io, ccb.explicit_included_actions, upstream_name + "_explicit_included_actions", text);
   bytes += write_model_field(io, ccb.weight, upstream_name + "_weight", text);

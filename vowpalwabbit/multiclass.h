@@ -31,6 +31,7 @@ void print_update_with_score(VW::workspace& all, example& ec, uint32_t predictio
 void finish_example(VW::workspace& all, example& ec, bool update_loss);
 
 bool test_label(const label_t& ld);
+void cache_label(const label_t&, io_buf&);
 
 template <class T>
 void finish_example(VW::workspace& all, T&, example& ec)

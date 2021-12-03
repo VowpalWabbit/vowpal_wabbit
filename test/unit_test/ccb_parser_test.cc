@@ -122,7 +122,7 @@ BOOST_AUTO_TEST_CASE(ccb_cache_label)
 
   auto uncached_label = VW::make_unique<CCB::label>();
   CCB::default_label(*uncached_label);
-  CCB::read_cached_label(*uncached_label, io_reader);
+  VW::model_utils::read_model_field(io_reader, *uncached_label);
 
   BOOST_CHECK_EQUAL(uncached_label->explicit_included_actions.size(), 2);
   BOOST_CHECK_EQUAL(uncached_label->explicit_included_actions[0], 3);

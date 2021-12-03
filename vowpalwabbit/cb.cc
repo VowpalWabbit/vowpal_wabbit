@@ -98,7 +98,7 @@ label_parser cb_label = {
     },
     // read_cached_label
     [](polylabel& label, reduction_features& /*red_features*/, io_buf& cache) {
-      return CB::read_cached_label(label.cb, cache);
+      return VW::model_utils::read_model_field(cache, label.cb);
     },
     // get_weight
     [](const polylabel& label, const reduction_features& /*red_features*/) { return label.cb.weight; },
@@ -175,16 +175,6 @@ namespace CB_EVAL
 {
 float weight(CB_EVAL::label& ld) { return ld.event.weight; }
 
-size_t read_cached_label(CB_EVAL::label& ld, io_buf& cache)
-{
-  char* c;
-  size_t total = sizeof(uint32_t);
-  if (cache.buf_read(c, total) < total) return 0;
-  ld.action = *reinterpret_cast<uint32_t*>(c);
-
-  return total + CB::read_cached_label(ld.event, cache);
-}
-
 void cache_label(const CB_EVAL::label& ld, io_buf& cache)
 {
   char* c;
@@ -226,7 +216,7 @@ label_parser cb_eval = {
     },
     // read_cached_label
     [](polylabel& label, reduction_features& /*red_features*/, io_buf& cache) {
-      return CB_EVAL::read_cached_label(label.cb_eval, cache);
+      return VW::model_utils::read_model_field(cache, label.cb_eval);
     },
     // get_weight
     [](const polylabel& /*label*/, const reduction_features& /*red_features*/) { return 1.f; },
@@ -262,6 +252,7 @@ size_t write_model_field(io_buf& io, const CB::cb_class& cbc, const std::string&
 size_t read_model_field(io_buf& io, CB::label& cb)
 {
   size_t bytes = 0;
+  cb.costs.clear();
   bytes += read_model_field(io, cb.costs);
   bytes += read_model_field(io, cb.weight);
   return bytes;

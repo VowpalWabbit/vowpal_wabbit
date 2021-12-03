@@ -55,23 +55,12 @@ char* bufread_label(label& ld, char* c, io_buf& cache)
   return c;
 }
 
-size_t read_cached_label(label& ld, io_buf& cache)
-{
-  ld.costs.clear();
-  char* c;
-  size_t total = sizeof(size_t);
-  if (cache.buf_read(c, static_cast<int>(total)) < total) return 0;
-  bufread_label(ld, c, cache);
-
-  return total;
-}
-
 float weight(const label&) { return 1.; }
 
 char* bufcache_label(const label& ld, char* c)
 {
-  *reinterpret_cast<size_t*>(c) = ld.costs.size();
-  c += sizeof(size_t);
+  *reinterpret_cast<uint32_t*>(c) = VW::convert(ld.costs.size());
+  c += sizeof(uint32_t);
   for (unsigned int i = 0; i < ld.costs.size(); i++)
   {
     *reinterpret_cast<wclass*>(c) = ld.costs[i];
@@ -83,7 +72,7 @@ char* bufcache_label(const label& ld, char* c)
 void cache_label(const label& ld, io_buf& cache)
 {
   char* c;
-  cache.buf_write(c, sizeof(size_t) + sizeof(wclass) * ld.costs.size());
+  cache.buf_write(c, sizeof(uint32_t) + sizeof(wclass) * VW::convert(ld.costs.size()));
   bufcache_label(ld, c);
 }
 
@@ -180,7 +169,7 @@ label_parser cs_label = {
     },
     // read_cached_label
     [](polylabel& label, reduction_features& /* red_features */, io_buf& cache) {
-      return read_cached_label(label.cs, cache);
+      return VW::model_utils::read_model_field(cache, label.cs);
     },
     // get_weight
     [](const polylabel& label, const reduction_features& /* red_features */) { return weight(label.cs); },
@@ -338,6 +327,7 @@ size_t write_model_field(io_buf& io, const COST_SENSITIVE::wclass& wc, const std
 size_t read_model_field(io_buf& io, COST_SENSITIVE::label& cs)
 {
   size_t bytes = 0;
+  cs.costs.clear();
   bytes += read_model_field(io, cs.costs);
   return bytes;
 }

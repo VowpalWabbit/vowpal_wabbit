@@ -19,24 +19,6 @@ namespace slates
 {
 void default_label(slates::label& v);
 
-size_t read_cached_label(slates::label& ld, io_buf& cache)
-{
-  // Since read_cached_features doesn't default the label we must do it here.
-  default_label(ld);
-
-  size_t read_count = 0;
-  ld.type = cache.read_value_and_accumulate_size<slates::example_type>("type", read_count);
-  ld.weight = cache.read_value_and_accumulate_size<float>("weight", read_count);
-  ld.labeled = cache.read_value_and_accumulate_size<bool>("labeled", read_count);
-  ld.cost = cache.read_value_and_accumulate_size<float>("cost", read_count);
-  ld.slot_id = cache.read_value_and_accumulate_size<uint32_t>("slot_id", read_count);
-
-  auto size_probs = cache.read_value_and_accumulate_size<uint32_t>("size_probs", read_count);
-  for (uint32_t i = 0; i < size_probs; i++)
-  { ld.probabilities.push_back(cache.read_value_and_accumulate_size<ACTION_SCORE::action_score>("a_s", read_count)); }
-  return read_count;
-}
-
 void cache_label(const slates::label& ld, io_buf& cache)
 {
   cache.write_value(ld.type);
@@ -157,7 +139,7 @@ label_parser slates_label_parser = {
     },
     // read_cached_label
     [](polylabel& label, reduction_features& /* red_features */, io_buf& cache) {
-      return read_cached_label(label.slates, cache);
+      return VW::model_utils::read_model_field(cache, label.slates);
     },
     // get_weight
     [](const polylabel& label, const reduction_features& /* red_features */) { return weight(label.slates); },
@@ -199,6 +181,8 @@ namespace model_utils
 {
 size_t read_model_field(io_buf& io, VW::slates::label& slates)
 {
+  // Since read_cached_features doesn't default the label we must do it here.
+  default_label(slates);
   size_t bytes = 0;
   bytes += read_model_field(io, slates.type);
   bytes += read_model_field(io, slates.weight);

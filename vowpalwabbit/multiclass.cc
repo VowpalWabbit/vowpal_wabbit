@@ -37,17 +37,6 @@ void cache_label(const label_t& ld, io_buf& cache)
   c += sizeof(ld.weight);
 }
 
-size_t read_cached_label(label_t& ld, io_buf& cache)
-{
-  char* c;
-  size_t total = sizeof(ld.label) + sizeof(ld.weight);
-  if (cache.buf_read(c, total) < total) return 0;
-  memcpy(&ld.label, c, sizeof(ld.label));
-  c += sizeof(ld.label);
-  memcpy(&ld.weight, c, sizeof(ld.weight));
-  c += sizeof(ld.weight);
-  return total;
-}
 float weight(const label_t& ld) { return (ld.weight > 0) ? ld.weight : 0.f; }
 bool test_label(const label_t& ld) { return ld.label == static_cast<uint32_t>(-1); }
 
@@ -97,7 +86,7 @@ label_parser mc_label = {
     },
     // read_cached_label
     [](polylabel& label, reduction_features& /* red_features */, io_buf& cache) {
-      return read_cached_label(label.multi, cache);
+      return VW::model_utils::read_model_field(cache, label.multi);
     },
     // get_weight
     [](const polylabel& label, const reduction_features& /* red_features */) { return weight(label.multi); },
