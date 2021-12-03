@@ -59,29 +59,25 @@ jobs:
           path: wheel_output
   test:
     needs: build
-    runs-on: windows-2019
+    runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        config:
-        - { version: "3.6" }
-        - { version: "3.7" }
-        - { version: "3.8" }
-        - { version: "3.9" }
-        - { version: "3.10" }
+        version: ["3.6", "3.7", "3.8", "3.9", "3.10"]
+        os: ["windows-2016", "windows-2019"]
     steps:
       - uses: actions/checkout@v2
-      - name: Set up Python ${{ matrix.config.version }}
+      - name: Set up Python ${{ matrix.version }}
         uses: actions/setup-python@v2
         with:
-          python-version: ${{ matrix.config.version }}
+          python-version: ${{ matrix.version }}
       - name: Download wheel
         uses: actions/download-artifact@v1
         with:
-          name: wheel_${{ matrix.config.version }}
+          name: wheel_${{ matrix.version }}
       - name: Install deps and test wheel
         shell: bash
         run: |
-          export wheel_files=(wheel_${{ matrix.config.version }}/*)
+          export wheel_files=(wheel_${{ matrix.version }}/*)
           export wheel_file="${wheel_files[0]}"
           echo Installing ${wheel_file}...
           pip install -r requirements.txt
