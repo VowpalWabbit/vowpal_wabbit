@@ -26,13 +26,14 @@ bool use_reduction(const VW::LEARNER::base_learner& base_learner)
   // TODO - workout a better check to determine if we should merge a shared header.
   // Probably the best way would be to determine which label types this is valid for and then check based on the base
   // label type.
-  std::vector<std::string>> enabled_reductions;
+  std::vector<std::string> > enabled_reductions;
   base_learner.get_enabled_reductions(enabled_reductions);
   for (const auto& enabled_reduction : enabled_reductions)
   {
     return std::any_of(reduction_names_to_enable_for.begin(), reduction_names_to_enable_for.end(),
-        [&enabled_reduction](const std::string& reduction_name_to_enable_for)
-        { return enabled_reduction.find(reduction_name_to_enable_for) != std::string::npos; });
+        [&enabled_reduction](const std::string& reduction_name_to_enable_for) {
+          return enabled_reduction.find(reduction_name_to_enable_for) != std::string::npos;
+        });
   }
   return false;
 }
@@ -102,9 +103,7 @@ VW::LEARNER::base_learner* shared_feature_merger_setup(VW::setup_base_i& stack_b
   VW::config::options_i& options = *stack_builder.get_options();
   VW::workspace& all = *stack_builder.get_all_pointer();
   auto* base = stack_builder.setup_base_learner();
-  if (base == nullptr)
-  { return nullptr;
-  }
+  if (base == nullptr) { return nullptr; }
   if (!use_reduction(*base)) { return base; }
 
   auto data = VW::make_unique<sfm_data>();
