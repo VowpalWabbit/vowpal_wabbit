@@ -18,16 +18,16 @@ namespace VW
 {
 namespace shared_feature_merger
 {
-static const std::vector<std::string> option_strings = {
+static const std::vector<std::string> reduction_names = {
     "csoaa_ldf", "wap_ldf", "cb_adf", "explore_eval", "cbify_ldf", "cb_explore_adf", "warm_cb"};
 
-bool use_reduction(config::options_i& options)
+bool use_reduction(const VW::LEARNER::base_learner& base_learner)
 {
-  for (const auto& opt : option_strings)
-  {
-    if (options.was_supplied(opt)) { return true; }
-  }
-  return false;
+  // TODO - workout a better check to determine if we should merge a shared header.
+  // Probably the best way would be to determine which label types this is valid for and then check based on the base label type.
+  const auto& base_name = base_learner.get_name();
+  return std::any_of(reduction_names.begin(), reduction_names.end(),
+      [&base_name](const std::string& reduction_name) { return base_name.find(reduction_name) != std::string::npos; });
 }
 
 struct sfm_metrics
@@ -94,16 +94,20 @@ VW::LEARNER::base_learner* shared_feature_merger_setup(VW::setup_base_i& stack_b
 {
   VW::config::options_i& options = *stack_builder.get_options();
   VW::workspace& all = *stack_builder.get_all_pointer();
-  if (!use_reduction(options)) { return nullptr; }
+  auto* base = stack_builder.setup_base_learner();
+  if (base == nullptr)
+  { return nullptr;
+  }
+  if (!use_reduction(*base)) { return base; }
 
   auto data = VW::make_unique<sfm_data>();
   if (options.was_supplied("extra_metrics")) { data->_metrics = VW::make_unique<sfm_metrics>(); }
 
-  auto* base = VW::LEARNER::as_multiline(stack_builder.setup_base_learner());
+  auto* multi_base = VW::LEARNER::as_multiline(base);
   data->label_type = all.example_parser->lbl_parser.label_type;
 
   // Both label and prediction types inherit that of base.
-  auto* learner = VW::LEARNER::make_reduction_learner(std::move(data), base, predict_or_learn<true>,
+  auto* learner = VW::LEARNER::make_reduction_learner(std::move(data), multi_base, predict_or_learn<true>,
       predict_or_learn<false>, stack_builder.get_setupfn_name(shared_feature_merger_setup))
                       .set_learn_returns_prediction(base->learn_returns_prediction)
                       .set_persist_metrics(persist)

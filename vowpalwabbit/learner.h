@@ -445,6 +445,11 @@ public:
     }
   }
 
+  const std::string& get_name() const
+  {
+    return name;
+  }
+
   prediction_type_t get_output_prediction_type() { return _output_pred_type; }
   prediction_type_t get_input_prediction_type() { return _input_pred_type; }
   label_type_t get_output_label_type() { return _output_label_type; }
