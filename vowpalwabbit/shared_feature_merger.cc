@@ -18,25 +18,21 @@ namespace VW
 {
 namespace shared_feature_merger
 {
-static const std::vector<std::string> reduction_names = {
+static const std::vector<std::string> reduction_names_to_enable_for = {
     "csoaa_ldf", "wap_ldf", "cb_adf", "explore_eval", "cbify_ldf", "cb_explore_adf", "warm_cb"};
 
-bool use_reduction(const VW::LEARNER::base_learner* base_learner)
+bool use_reduction(const VW::LEARNER::base_learner& base_learner)
 {
   // TODO - workout a better check to determine if we should merge a shared header.
   // Probably the best way would be to determine which label types this is valid for and then check based on the base
-  // label type. This recursive hack is because cb_sample may or may not sit under ccb_explore_adf
-  while (base_learner != nullptr)
+  // label type.
+  std::vector<std::string>> enabled_reductions;
+  base_learner.get_enabled_reductions(enabled_reductions);
+  for (const auto& enabled_reduction : enabled_reductions)
   {
-    const auto& base_name = base_learner->get_name();
-    const bool found = std::any_of(reduction_names.begin(), reduction_names.end(),
-        [&base_name](const std::string& reduction_name)
-        { return base_name.find(reduction_name) != std::string::npos; });
-    if (found) { return true; }
-    else
-    {
-      base_learner = base_learner->get_base();
-    }
+    return std::any_of(reduction_names_to_enable_for.begin(), reduction_names_to_enable_for.end(),
+        [&enabled_reduction](const std::string& reduction_name_to_enable_for)
+        { return enabled_reduction.find(reduction_name_to_enable_for) != std::string::npos; });
   }
   return false;
 }
@@ -109,7 +105,7 @@ VW::LEARNER::base_learner* shared_feature_merger_setup(VW::setup_base_i& stack_b
   if (base == nullptr)
   { return nullptr;
   }
-  if (!use_reduction(base)) { return base; }
+  if (!use_reduction(*base)) { return base; }
 
   auto data = VW::make_unique<sfm_data>();
   if (options.was_supplied("extra_metrics")) { data->_metrics = VW::make_unique<sfm_metrics>(); }
