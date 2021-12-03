@@ -2492,7 +2492,7 @@
       "inv_hash_load_model.invert.txt": "train-sets/ref/inv_hash_load_model.invert.txt",
       "inv_hash_load_model.readable.txt": "train-sets/ref/inv_hash_load_model.readable.txt"
     },
-    "bash_command": "{VW} -d train-sets/inv_hash_load_model_data1.txt -f inv_hash_load_model.vw --noconstant --save_bare  && {VW} -d train-sets/inv_hash_load_model_data2.txt -i inv_hash_load_model.vw --noconstant --readable_model inv_hash_load_model.readable.txt --invert_hash inv_hash_load_model.invert.txt"
+    "bash_command": "{VW} -d train-sets/inv_hash_load_model_data1.txt -f inv_hash_load_model.vw --noconstant --save_bare && {VW} -d train-sets/inv_hash_load_model_data2.txt -i inv_hash_load_model.vw --noconstant --readable_model inv_hash_load_model.readable.txt --invert_hash inv_hash_load_model.invert.txt --save_bare"
   },
   {
     "id": 211,
