@@ -10,6 +10,7 @@ PyPI Deployment Process
     * `Linux`_
     * `Windows`_
     * `MacOS`_
+        * CI doesnt produce `arm64` wheels. Use build_python_wheels.sh_ to build them locally on an ARM based MacOS device.
 1) When it is time to release a version on PyPI, download the set of artifacts from each workflow for the commit to release
 2) Upload package to PyPI
 
@@ -66,3 +67,4 @@ See `conda-forge documentation`_ for more details on maintaining packages. The s
 .. _MacOS: https://github.com/VowpalWabbit/vowpal_wabbit/actions?query=workflow%3A%22Build+MacOS+Python+Wheels%22
 .. _vowpalwabbit-feedstock repo: https://github.com/conda-forge/vowpalwabbit-feedstock
 .. _conda-forge documentation: https://conda-forge.org/docs/index.html
+.. _build_python_wheels.sh: ../.scripts/macos/build_python_wheels.sh
