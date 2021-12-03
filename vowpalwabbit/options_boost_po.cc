@@ -5,7 +5,7 @@
 #include "options_boost_po.h"
 #include "io/logger.h"
 #include "parse_primitives.h"
-#include "io/logger.h
+#include "io/logger.h"
 
 #include <sstream>
 #include <algorithm>
