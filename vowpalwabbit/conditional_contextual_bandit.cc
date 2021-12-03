@@ -106,6 +106,7 @@ struct ccb
 
   size_t base_learner_stride_shift = 0;
   bool all_slots_loss_report = false;
+  bool no_pred = false;
 
   VW::vector_pool<CB::cb_class> cb_label_pool;
   VW::v_array_pool<ACTION_SCORE::action_score> action_score_pool;
@@ -196,7 +197,9 @@ void attach_label_to_example(
   example->l.cb.costs.push_back(data.cb_label);
 }
 
-void save_action_scores(ccb& data, decision_scores_t& decision_scores)
+// This is used for outputting predictions for a slot. It will exclude the chosen action for labeled examples,
+// otherwise it will exclude the action with the highest prediction.
+void save_action_scores_and_exclude_top_action(ccb& data, decision_scores_t& decision_scores)
 {
   auto& pred = data.shared->pred.a_s;
 
@@ -209,6 +212,27 @@ void save_action_scores(ccb& data, decision_scores_t& decision_scores)
 
   decision_scores.emplace_back(std::move(pred));
   data.shared->pred.a_s.clear();
+}
+
+// This is used to exclude the chosen action for a slot for a labeled example where no_predict is enabled.
+void exclude_chosen_action(ccb& data, const multi_ex& examples)
+{
+  int32_t action_index = -1;
+  for (size_t i = 0; i < examples.size(); i++)
+  {
+    const CB::label& ld = examples[i]->l.cb;
+    if (ld.costs.size() == 1 && ld.costs[0].cost != FLT_MAX)
+    {
+      action_index = static_cast<int32_t>(i) - 1; /* un-1-index for shared */
+      break;
+    }
+  }
+  if (action_index == -1)
+  {
+    logger::errlog_warn("Unlabeled example used for learning only. Skipping over.");
+    return;
+  }
+  data.exclude_list[action_index] = true;
 }
 
 void clear_pred_and_label(ccb& data)
@@ -475,11 +499,18 @@ void learn_or_predict(ccb& data, multi_learner& base, multi_ex& examples)
         // The right thing to do here is to detect library mode and not have to
         // call predict if prediction is
         // not needed for learn.  This will be part of a future PR
-        if (!is_learn) multiline_learn_or_predict<false>(base, data.cb_ex, examples[0]->ft_offset);
+        if (!is_learn) { multiline_learn_or_predict<false>(base, data.cb_ex, examples[0]->ft_offset); }
+        else
+        {
+          multiline_learn_or_predict<true>(base, data.cb_ex, examples[0]->ft_offset);
+        }
 
-        if (is_learn) { multiline_learn_or_predict<true>(base, data.cb_ex, examples[0]->ft_offset); }
+        if (!data.no_pred) { save_action_scores_and_exclude_top_action(data, decision_scores); }
+        else
+        {
+          exclude_chosen_action(data, examples);
+        }
 
-        save_action_scores(data, decision_scores);
         VW_DBG(examples) << "ccb "
                          << "slot:" << slot_id << " " << ccb_decision_to_string(data) << std::endl;
         for (const auto& ex : data.cb_ex)
@@ -599,14 +630,17 @@ void output_example(VW::workspace& all, ccb& c, multi_ex& ec_seq)
 
 void finish_multiline_example(VW::workspace& all, ccb& data, multi_ex& ec_seq)
 {
-  if (!ec_seq.empty())
+  if (!ec_seq.empty() && !data.no_pred)
   {
     output_example(all, data, ec_seq);
     CB_ADF::global_print_newline(all.final_prediction_sink);
   }
 
-  for (auto& a_s : ec_seq[0]->pred.decision_scores) { return_collection(a_s, data.action_score_pool); }
-  ec_seq[0]->pred.decision_scores.clear();
+  if (!data.no_pred)
+  {
+    for (auto& a_s : ec_seq[0]->pred.decision_scores) { return_collection(a_s, data.action_score_pool); }
+    ec_seq[0]->pred.decision_scores.clear();
+  }
 
   VW::finish_example(all, ec_seq);
 }
@@ -636,17 +670,23 @@ base_learner* ccb_explore_adf_setup(VW::setup_base_i& stack_builder)
   auto data = VW::make_unique<ccb>();
   bool ccb_explore_adf_option = false;
   bool all_slots_loss_report = false;
+  std::string type_string = "mtr";
 
   data->is_ccb_input_model = all.is_ccb_input_model;
 
-  option_group_definition new_options("EXPERIMENTAL: Conditional Contextual Bandit Exploration with ADF");
+  option_group_definition new_options("Conditional Contextual Bandit Exploration with ADF");
   new_options
       .add(make_option("ccb_explore_adf", ccb_explore_adf_option)
                .keep()
                .necessary()
-               .help(
-                   "EXPERIMENTAL: Do Conditional Contextual Bandit learning with multiline action dependent features."))
-      .add(make_option("all_slots_loss", all_slots_loss_report).help("Report average loss from all slots"));
+               .help("Do Conditional Contextual Bandit learning with multiline action dependent features."))
+      .add(make_option("all_slots_loss", all_slots_loss_report).help("Report average loss from all slots"))
+      .add(make_option("no_predict", data->no_pred).help("Do not do a prediction when training"))
+      .add(make_option("cb_type", type_string)
+               .keep()
+               .default_value("mtr")
+               .one_of({"ips", "dm", "dr", "mtr", "sm"})
+               .help("Contextual bandit method to use"));
 
   if (!options.add_parse_and_check_necessary(new_options)) { return nullptr; }
   data->all_slots_loss_report = all_slots_loss_report;
@@ -656,7 +696,13 @@ base_learner* ccb_explore_adf_setup(VW::setup_base_i& stack_builder)
     options.add_and_parse(new_options);
   }
 
-  if (!options.was_supplied("cb_sample"))
+  if (options.was_supplied("no_predict") && options.was_supplied("p"))
+  { THROW("Error: Cannot use flags --no_predict and -p simultaneously"); }
+
+  if (options.was_supplied("no_predict") && type_string != "mtr")
+  { THROW("Error: --no_predict flag can only be used with default cb_type mtr"); }
+
+  if (!options.was_supplied("cb_sample") && !data->no_pred)
   {
     options.insert("cb_sample", "");
     options.add_and_parse(new_options);
