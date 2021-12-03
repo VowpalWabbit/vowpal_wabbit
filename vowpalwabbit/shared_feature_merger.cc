@@ -32,10 +32,13 @@ bool use_reduction(const VW::LEARNER::base_learner& base_learner)
   base_learner.get_enabled_reductions(enabled_reductions);
   for (const auto& enabled_reduction : enabled_reductions)
   {
-    return std::any_of(reduction_names_to_enable_for.begin(), reduction_names_to_enable_for.end(),
+    if (std::any_of(reduction_names_to_enable_for.begin(), reduction_names_to_enable_for.end(),
         [&](const std::string& reduction_name_to_enable_for) {
           return enabled_reduction.find(reduction_name_to_enable_for) != std::string::npos;
-        });
+        }))
+    {
+      return true;
+    }
   }
   return false;
 }
