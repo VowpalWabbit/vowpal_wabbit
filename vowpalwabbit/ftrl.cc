@@ -401,33 +401,46 @@ base_learner* ftrl_setup(VW::setup_base_i& stack_builder)
   VW::workspace& all = *stack_builder.get_all_pointer();
   auto b = VW::make_unique<ftrl>();
 
-  bool ftrl_option = false;
-  bool pistol = false;
-  bool coin = false;
+  bool ftrl_option_no_not_use = false;
+  bool pistol_no_not_use = false;
+  bool coin_no_not_use = false;
 
-  option_group_definition new_options("Follow the Regularized Leader");
-  new_options.add(make_option("ftrl", ftrl_option).keep().help("FTRL: Follow the Proximal Regularized Leader"))
-      .add(make_option("coin", coin).keep().help("Coin betting optimizer"))
-      .add(make_option("pistol", pistol).keep().help("PiSTOL: Parameter-free STOchastic Learning"))
+  option_group_definition ftrl_options("Follow the Regularized Leader - FTRL");
+  ftrl_options
+      .add(make_option("ftrl", ftrl_option_no_not_use).necessary().keep().help("FTRL: Follow the Proximal Regularized Leader"))
       .add(make_option("ftrl_alpha", b->ftrl_alpha).help("Learning rate for FTRL optimization"))
       .add(make_option("ftrl_beta", b->ftrl_beta).help("Learning rate for FTRL optimization"));
 
-  options.add_and_parse(new_options);
+  option_group_definition pistol_options("Follow the Regularized Leader - Pistol");
+  pistol_options
+      .add(make_option("pistol", pistol_no_not_use).keep().help("PiSTOL: Parameter-free STOchastic Learning"))
+      .add(make_option("ftrl_alpha", b->ftrl_alpha).help("Learning rate for FTRL optimization"))
+      .add(make_option("ftrl_beta", b->ftrl_beta).help("Learning rate for FTRL optimization"));
 
-  if (!ftrl_option && !pistol && !coin) { return nullptr; }
+  option_group_definition coin_options("Follow the Regularized Leader - Coin");
+  coin_options
+      .add(make_option("coin", coin_no_not_use).keep().help("Coin betting optimizer"))
+      .add(make_option("ftrl_alpha", b->ftrl_alpha).help("Learning rate for FTRL optimization"))
+      .add(make_option("ftrl_beta", b->ftrl_beta).help("Learning rate for FTRL optimization"));
+
+  const auto ftrl_enabled = options.add_parse_and_check_necessary(ftrl_options);
+  const auto pistol_enabled = options.add_parse_and_check_necessary(pistol_options);
+  const auto coin_enabled = options.add_parse_and_check_necessary(coin_options);
+
+  if (!ftrl_enabled && !pistol_enabled && !coin_enabled) { return nullptr; }
 
   // Defaults that are specific to the mode that was chosen.
-  if (ftrl_option)
+  if (ftrl_enabled)
   {
     b->ftrl_alpha = options.was_supplied("ftrl_alpha") ? b->ftrl_alpha : 0.005f;
     b->ftrl_beta = options.was_supplied("ftrl_beta") ? b->ftrl_beta : 0.1f;
   }
-  else if (pistol)
+  else if (pistol_enabled)
   {
     b->ftrl_alpha = options.was_supplied("ftrl_alpha") ? b->ftrl_alpha : 1.0f;
     b->ftrl_beta = options.was_supplied("ftrl_beta") ? b->ftrl_beta : 0.5f;
   }
-  else if (coin)
+  else if (coin_enabled)
   {
     b->ftrl_alpha = options.was_supplied("ftrl_alpha") ? b->ftrl_alpha : 4.0f;
     b->ftrl_beta = options.was_supplied("ftrl_beta") ? b->ftrl_beta : 1.0f;
@@ -442,7 +455,7 @@ base_learner* ftrl_setup(VW::setup_base_i& stack_builder)
   bool learn_returns_prediction = false;
 
   std::string algorithm_name;
-  if (ftrl_option)
+  if (ftrl_enabled)
   {
     algorithm_name = "Proximal-FTRL";
     if (all.audit || all.hash_inv)
@@ -452,7 +465,7 @@ base_learner* ftrl_setup(VW::setup_base_i& stack_builder)
     all.weights.stride_shift(2);  // NOTE: for more parameter storage
     b->ftrl_size = 3;
   }
-  else if (pistol)
+  else if (pistol_enabled)
   {
     algorithm_name = "PiSTOL";
     if (all.audit || all.hash_inv)
@@ -463,7 +476,7 @@ base_learner* ftrl_setup(VW::setup_base_i& stack_builder)
     b->ftrl_size = 4;
     learn_returns_prediction = true;
   }
-  else if (coin)
+  else if (coin_enabled)
   {
     algorithm_name = "Coin Betting";
     if (all.audit || all.hash_inv)

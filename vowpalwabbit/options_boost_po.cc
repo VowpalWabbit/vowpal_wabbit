@@ -284,7 +284,7 @@ void options_boost_po::check_unregistered()
       const auto& dependent_necessary_options = m_dependent_necessary_options.at(supplied);
 
       auto message = fmt::format(
-          "Option '{}' depends on another option which was not supplied. Possible combinations of options which would enable this option:\n", supplied);
+          "Option '{}' depends on another option (or combination of options) which was not supplied. Possible combinations of options which would enable this option are:\n", supplied);
       for (const auto& group : dependent_necessary_options)
       {
         message += fmt::format("\t{}\n", fmt::join(group, ", "));
