@@ -55,6 +55,19 @@ void options_boost_po::add_to_description(
 
 void options_boost_po::add_and_parse(const option_group_definition& group)
 {
+  internal_add_and_parse(group);
+
+  // Since there is no "necessary" conditional to these options they are all reachable.
+  for (const auto& opt_ptr : group.m_options)
+  {
+    m_reachable_options.insert(opt_ptr->m_name);
+    m_reachable_options.insert(opt_ptr->m_short_name);
+    m_reachable_options.insert("-" + opt_ptr->m_short_name);
+  }
+}
+
+void options_boost_po::internal_add_and_parse(const option_group_definition& group)
+{
   m_option_group_dic[m_current_reduction_tint].push_back(group);
 
   po::options_description new_options(group.m_name);
@@ -144,8 +157,24 @@ void options_boost_po::add_and_parse(const option_group_definition& group)
 
 bool options_boost_po::add_parse_and_check_necessary(const option_group_definition& group)
 {
-  this->add_and_parse(group);
-  return group.check_necessary_enabled(*this) && group.check_one_of();
+  this->internal_add_and_parse(group);
+
+  const auto is_necessary_enabled = group.check_necessary_enabled(*this);
+
+  // These options are only reachable if necessary was also passed.
+  for (const auto& opt_ptr : group.m_options)
+  {
+    if (is_necessary_enabled)
+    {
+      m_reachable_options.insert(opt_ptr->m_name);
+      m_reachable_options.insert(opt_ptr->m_short_name);
+      m_reachable_options.insert("-" + opt_ptr->m_short_name);
+    }
+    m_dependent_necessary_options[opt_ptr->m_name].push_back(group.m_necessary_flags);
+    m_dependent_necessary_options[opt_ptr->m_short_name].push_back(group.m_necessary_flags);
+    m_dependent_necessary_options["-" + opt_ptr->m_short_name].push_back(group.m_necessary_flags);
+  }
+  return is_necessary_enabled && group.check_one_of();
 }
 
 bool options_boost_po::was_supplied(const std::string& key) const
@@ -246,6 +275,23 @@ void options_boost_po::check_unregistered()
   {
     if (m_defined_options.count(supplied) == 0 && m_ignore_supplied.count(supplied) == 0)
     { THROW_EX(VW::vw_unrecognised_option_exception, "unrecognised option '--" << supplied << "'"); }
+  }
+
+  for (auto const& supplied : m_supplied_options)
+  {
+    if (m_reachable_options.count(supplied) == 0 && m_ignore_supplied.count(supplied) == 0)
+    {
+      const auto& dependent_necessary_options = m_dependent_necessary_options.at(supplied);
+
+      auto message = fmt::format(
+          "Option '{}' depends on another option which was not supplied. Possible combinations of options which would enable this option:\n", supplied);
+      for (const auto& group : dependent_necessary_options)
+      {
+        message += fmt::format("\t{}\n", fmt::join(group, ", "));
+      }
+
+      THROW_EX(VW::vw_unrecognised_option_exception, message);
+    }
   }
 }
 

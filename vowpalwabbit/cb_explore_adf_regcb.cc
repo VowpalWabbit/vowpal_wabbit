@@ -265,10 +265,11 @@ base_learner* setup(VW::setup_base_i& stack_builder)
   config::option_group_definition new_options("Contextual Bandit Exploration with ADF (RegCB)");
   new_options
       .add(make_option("cb_explore_adf", cb_explore_adf_option)
+               .necessary()
                .keep()
                .help("Online explore-exploit for a contextual bandit problem with multiline action dependent features"))
       .add(make_option("regcb", regcb).keep().help("RegCB-elim exploration"))
-      .add(make_option("regcbopt", regcbopt).keep().help("RegCB optimistic exploration"))
+      .add(make_option("regcbopt", regcbopt).necessary().keep().help("RegCB optimistic exploration"))
       .add(make_option("mellowness", c0).keep().default_value(0.1f).help("RegCB mellowness parameter c_0. Default 0.1"))
       .add(make_option("cb_min_cost", min_cb_cost).keep().default_value(0.f).help("Lower bound on cost"))
       .add(make_option("cb_max_cost", max_cb_cost).keep().default_value(1.f).help("Upper bound on cost"))
@@ -279,7 +280,7 @@ base_learner* setup(VW::setup_base_i& stack_builder)
                .one_of({"mtr"})
                .help("Contextual bandit method to use. RegCB only supports supervised regression (mtr)"));
 
-  options.add_and_parse(new_options);
+  options.add_parse_and_check_necessary(new_options);
 
   if (!cb_explore_adf_option || !(options.was_supplied("regcb") || options.was_supplied("regcbopt"))) return nullptr;
 
