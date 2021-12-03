@@ -13,6 +13,7 @@ namespace po = boost::program_options;
 #include <set>
 #include <algorithm>
 #include <string>
+#include <unordered_map>
 
 #include "options.h"
 #include "options_types.h"
