@@ -76,9 +76,9 @@ def do_test(filename, args, verbose=None, repeat_args=None, known_failure=False)
                 system('head -n %s %s | VW %s -f %s.full --quiet' % (split, filename, args, tmp_model), verbose=verbose)
 
                 if index:
-                    system('head -n %s %s | tail -n %s | VW --quiet --save_bare -f %s.resume -i %s.resume %s' % (split, filename, split - splits[index - 1], tmp_model, tmp_model, resume_args), verbose=verbose)
+                    system('head -n %s %s | tail -n %s | VW --quiet -f %s.resume -i %s.resume %s' % (split, filename, split - splits[index - 1], tmp_model, tmp_model, resume_args), verbose=verbose)
                 else:
-                    system('head -n %s %s | VW %s --quiet --save_bare -f %s.resume' % (split, filename, args, tmp_model), verbose=verbose)
+                    system('head -n %s %s | VW %s --quiet -f %s.resume' % (split, filename, args, tmp_model), verbose=verbose)
 
                 predictions_normal = read_output('head -n %s %s | tail -n %s | VW --quiet -i %s.full -t -p /dev/stdout' % (splits[index + 1], filename, splits[index + 1] - split, tmp_model), verbose=verbose)
                 predictions_resume = read_output('head -n %s %s | tail -n %s | VW --quiet -i %s.resume -t -p /dev/stdout' % (splits[index + 1], filename, splits[index + 1] - split, tmp_model), verbose=verbose)
