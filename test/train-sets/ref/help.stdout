@@ -430,10 +430,13 @@ Continuous Action Contextual Bandit using Zeroth-Order Optimization Options:
                            using Zeroth-Order Optimization
   --policy arg (=linear, ) Policy/Model to Learn
   --radius arg (=0.1, )    Exploration Radius
-EXPERIMENTAL: Conditional Contextual Bandit Exploration with ADF Options:
-  --ccb_explore_adf     EXPERIMENTAL: Do Conditional Contextual Bandit learning
-                        with multiline action dependent features.
-  --all_slots_loss      Report average loss from all slots
+Conditional Contextual Bandit Exploration with ADF Options:
+  --ccb_explore_adf      Do Conditional Contextual Bandit learning with 
+                         multiline action dependent features.
+  --all_slots_loss       Report average loss from all slots
+  --no_predict           Do not do a prediction when training
+  --cb_type arg (=mtr, ) Contextual bandit method to use. Choices: {dm, dr, 
+                         ips, mtr, sm}
 Importance Weight Classes Options:
   --classweight arg     Importance weight multiplier for class
 Confidence Options:
