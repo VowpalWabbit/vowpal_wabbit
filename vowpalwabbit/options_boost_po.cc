@@ -3,10 +3,11 @@
 // license as described in the file LICENSE.
 
 #include "options_boost_po.h"
+#include "io/logger.h"
 #include "parse_primitives.h"
+#include "io/logger.h
 
 #include <sstream>
-
 #include <algorithm>
 #include <iterator>
 #include <utility>
@@ -290,7 +291,7 @@ void options_boost_po::check_unregistered()
         message += fmt::format("\t{}\n", fmt::join(group, ", "));
       }
 
-      THROW_EX(VW::vw_unrecognised_option_exception, message);
+      VW::io::logger::errlog_warn(message);
     }
   }
 }
