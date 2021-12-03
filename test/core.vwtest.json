@@ -4389,6 +4389,60 @@
   },
   {
     "id": 371,
+    "desc": "Create CCB model with predictions",
+    "vw_command": "-d train-sets/ccb_test_interactions.dat --ccb_explore_adf -q :: -f models/ccb_with_predict.model --save_resume",
+    "diff_files": {
+      "stderr": "train-sets/ref/ccb_with_predict.stderr"
+    },
+    "input_files": [
+      "train-sets/ccb_test_interactions.dat"
+    ]
+  },
+  {
+    "id": 372,
+    "desc": "Predict on CCB model generated with predictions",
+    "vw_command": "-d train-sets/ccb_test_interactions.dat --ccb_explore_adf -q :: -i models/ccb_with_predict.model --save_resume -p ccb_with_predict.predict",
+    "diff_files": {
+      "stderr": "train-sets/ref/ccb_with_predict_loaded.stderr",
+      "ccb_with_predict.predict": "pred-sets/ref/ccb_with_predict.predict"
+    },
+    "input_files": [
+      "train-sets/ccb_test_interactions.dat",
+      "models/ccb_with_predict.model"
+    ],
+    "depends_on": [
+      371
+    ]
+  },
+  {
+    "id": 373,
+    "desc": "Create CCB model without predictions",
+    "vw_command": "-d train-sets/ccb_test_interactions.dat --ccb_explore_adf -q :: -f models/ccb_no_predict.model --save_resume --no_predict",
+    "diff_files": {
+      "stderr": "train-sets/ref/ccb_no_predict.stderr"
+    },
+    "input_files": [
+      "train-sets/ccb_test_interactions.dat"
+    ]
+  },
+  {
+    "id": 374,
+    "desc": "Predict on CCB model generated without predictions and ensure prediction is same as loaded model with predictions",
+    "vw_command": "-d train-sets/ccb_test_interactions.dat --ccb_explore_adf -q :: -i models/ccb_no_predict.model --save_resume -p ccb_no_predict.predict",
+    "diff_files": {
+      "stderr": "train-sets/ref/ccb_no_predict_loaded.stderr",
+      "ccb_no_predict.predict": "pred-sets/ref/ccb_with_predict.predict"
+    },
+    "input_files": [
+      "train-sets/ccb_test_interactions.dat",
+      "models/ccb_no_predict.model"
+    ],
+    "depends_on": [
+      373
+    ]
+  },
+  {
+    "id": 375,
     "desc": "SVM linear kernel save_load save",
     "vw_command": "--ksvm --l2 1 --reprocess 5 -b 18 -d train-sets/rcv1_smaller.dat -f models/ksvm.model --save_resume",
     "diff_files": {
@@ -4399,7 +4453,7 @@
     ]
   },
   {
-    "id": 372,
+    "id": 376,
     "desc": "SVM linear kernel save_load load",
     "vw_command": "--ksvm --l2 1 --reprocess 5 -b 18 -d train-sets/rcv1_smaller.dat -i models/ksvm.model --save_resume",
     "diff_files": {
