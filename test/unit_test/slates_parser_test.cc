@@ -112,7 +112,7 @@ BOOST_AUTO_TEST_CASE(slates_cache_shared_label)
 
   VW::slates::label label;
   parse_slates_label("slates shared 0.5", label);
-  VW::slates::cache_label(label, io_writer);
+  VW::model_utils::write_model_field(io_writer, label, "", false);
   io_writer.flush();
 
   io_buf io_reader;
@@ -135,7 +135,7 @@ BOOST_AUTO_TEST_CASE(slates_cache_action_label)
 
   VW::slates::label label;
   parse_slates_label("slates action 5", label);
-  VW::slates::cache_label(label, io_writer);
+  VW::model_utils::write_model_field(io_writer, label, "", false);
   io_writer.flush();
 
   io_buf io_reader;
@@ -158,7 +158,7 @@ BOOST_AUTO_TEST_CASE(slates_cache_slot_label)
 
   VW::slates::label label;
   parse_slates_label("slates slot 0:0.5,1:0.25,2:0.25", label);
-  VW::slates::cache_label(label, io_writer);
+  VW::model_utils::write_model_field(io_writer, label, "", false);
   io_writer.flush();
 
   io_buf io_reader;

@@ -19,17 +19,6 @@ namespace slates
 {
 void default_label(slates::label& v);
 
-void cache_label(const slates::label& ld, io_buf& cache)
-{
-  cache.write_value(ld.type);
-  cache.write_value(ld.weight);
-  cache.write_value(ld.labeled);
-  cache.write_value(ld.cost);
-  cache.write_value(VW::convert(ld.slot_id));
-  cache.write_value(VW::convert(ld.probabilities.size()));
-  for (const auto& score : ld.probabilities) { cache.write_value(score); }
-}
-
 float weight(const slates::label& ld) { return ld.weight; }
 
 void default_label(slates::label& ld) { ld.reset_to_default(); }
@@ -134,8 +123,8 @@ label_parser slates_label_parser = {
         const VW::named_labels* /* ldict */,
         const std::vector<VW::string_view>& words) { parse_label(label.slates, reuse_mem, words); },
     // cache_label
-    [](const polylabel& label, const reduction_features& /* red_features */, io_buf& cache) {
-      cache_label(label.slates, cache);
+    [](const polylabel& label, const reduction_features& /* red_features */, io_buf& cache, const std::string& upstream_name, bool text) {
+      return VW::model_utils::write_model_field(cache, label.slates, upstream_name, text);
     },
     // read_cached_label
     [](polylabel& label, reduction_features& /* red_features */, io_buf& cache) {

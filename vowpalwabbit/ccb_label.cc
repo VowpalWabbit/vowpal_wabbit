@@ -40,21 +40,6 @@ void default_label(label& ld);
 
 float ccb_weight(const CCB::label& ld) { return ld.weight; }
 
-void cache_label(const label& ld, io_buf& cache)
-{
-  cache.write_value(ld.type);
-  cache.write_value(ld.outcome != nullptr);
-  if (ld.outcome != nullptr)
-  {
-    cache.write_value(ld.outcome->cost);
-    cache.write_value(VW::convert(ld.outcome->probabilities.size()));
-    for (const auto& score : ld.outcome->probabilities) { cache.write_value(score); }
-  }
-  cache.write_value(VW::convert(ld.explicit_included_actions.size()));
-  for (const auto& included_action : ld.explicit_included_actions) { cache.write_value(included_action); }
-  cache.write_value(ld.weight);
-}
-
 void default_label(label& ld)
 {
   // This is tested against nullptr, so unfortunately as things are this must be deleted when not used.
@@ -197,8 +182,8 @@ label_parser ccb_label_parser = {
       parse_label(label.conditional_contextual_bandit, reuse_mem, words);
     },
     // cache_label
-    [](const polylabel& label, const ::reduction_features& /*red_features*/, io_buf& cache) {
-      cache_label(label.conditional_contextual_bandit, cache);
+    [](const polylabel& label, const ::reduction_features& /*red_features*/, io_buf& cache, const std::string& upstream_name, bool text) {
+      return VW::model_utils::write_model_field(cache, label.conditional_contextual_bandit, upstream_name, text);
     },
     // read_cached_label
     [](polylabel& label, ::reduction_features& /*red_features*/, io_buf& cache) {
@@ -243,7 +228,8 @@ size_t read_model_field(io_buf& io, CCB::label& ccb)
   bytes += read_model_field(io, ccb.type);
   bool outcome_is_present;
   bytes += read_model_field(io, outcome_is_present);
-  if (outcome_is_present) {
+  if (outcome_is_present)
+  {
     ccb.outcome = new CCB::conditional_contextual_bandit_outcome();
     bytes += read_model_field(io, *ccb.outcome);
   }

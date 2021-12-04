@@ -104,12 +104,12 @@ label_parser simple_label_parser = {
         const VW::named_labels* /*ldict*/,
         const std::vector<VW::string_view>& words) { parse_simple_label(label.simple, red_features, words); },
     // cache_label
-    [](const polylabel& label, const reduction_features& red_features, io_buf& cache) {
-      cache_simple_label(label.simple, red_features, cache);
+    [](const polylabel& label, const reduction_features&, io_buf& cache, const std::string& upstream_name, bool text) {
+      return VW::model_utils::write_model_field(cache, label.simple, upstream_name, text);
     },
     // read_cached_label
-    [](polylabel& label, reduction_features& red_features, io_buf& cache) {
-      return read_cached_simple_label(label.simple, red_features, cache);
+    [](polylabel& label, reduction_features&, io_buf& cache) {
+      return VW::model_utils::read_model_field(cache, label.simple);
     },
     // get_weight
     [](const polylabel& /*label*/, const reduction_features& red_features) { return get_weight(red_features); },

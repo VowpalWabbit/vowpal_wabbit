@@ -21,16 +21,9 @@ namespace logger = VW::io::logger;
 namespace CB
 {
 template <>
-void cache_label_additional_fields<VW::cb_continuous::continuous_label>(
-    const VW::cb_continuous::continuous_label&, io_buf&)
-{
-}
-
-template <>
 void default_label_additional_fields<VW::cb_continuous::continuous_label>(VW::cb_continuous::continuous_label&)
 {
 }
-
 }  // namespace CB
 
 void parse_pdf(const std::vector<VW::string_view>& words, size_t words_index, VW::label_parser_reuse_mem& reuse_mem,
@@ -127,9 +120,9 @@ label_parser the_label_parser = {
         const VW::named_labels* /*ldict*/,
         const std::vector<VW::string_view>& words) { parse_label(label.cb_cont, red_features, reuse_mem, words); },
     // cache_label
-    [](const polylabel& label, const reduction_features& /*red_features*/, io_buf& cache) {
-      CB::cache_label<continuous_label, continuous_label_elm>(label.cb_cont, cache);
-    },
+    [](const polylabel& label, const reduction_features& /*red_features*/, io_buf& cache,
+        const std::string& upstream_name,
+        bool text) { return VW::model_utils::write_model_field(cache, label.cb_cont, upstream_name, text); },
     // read_cached_label
     [](polylabel& label, reduction_features& /*red_features*/, io_buf& cache) {
       return VW::model_utils::read_model_field(cache, label.cb_cont);

@@ -14,22 +14,6 @@
 
 namespace CB
 {
-template <typename LabelT = CB::label>
-void cache_label_additional_fields(const LabelT& ld, io_buf& cache)
-{
-  cache.write_value(ld.weight);
-}
-
-template <typename LabelT = CB::label, typename LabelElmT = cb_class>
-void cache_label(const LabelT& ld, io_buf& cache)
-{
-  cache.write_value(VW::convert(ld.costs.size()));
-
-  for (size_t i = 0; i < ld.costs.size(); i++) { cache.write_value<LabelElmT>(ld.costs[i]); }
-
-  cache_label_additional_fields<LabelT>(ld, cache);
-}
-
 template <typename LabelT>
 void default_label_additional_fields(LabelT& ld)
 {

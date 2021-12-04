@@ -57,25 +57,6 @@ char* bufread_label(label& ld, char* c, io_buf& cache)
 
 float weight(const label&) { return 1.; }
 
-char* bufcache_label(const label& ld, char* c)
-{
-  *reinterpret_cast<uint32_t*>(c) = VW::convert(ld.costs.size());
-  c += sizeof(uint32_t);
-  for (unsigned int i = 0; i < ld.costs.size(); i++)
-  {
-    *reinterpret_cast<wclass*>(c) = ld.costs[i];
-    c += sizeof(wclass);
-  }
-  return c;
-}
-
-void cache_label(const label& ld, io_buf& cache)
-{
-  char* c;
-  cache.buf_write(c, sizeof(uint32_t) + sizeof(wclass) * VW::convert(ld.costs.size()));
-  bufcache_label(ld, c);
-}
-
 void default_label(label& ld) { ld.costs.clear(); }
 
 bool test_label_internal(const label& ld)
@@ -164,8 +145,8 @@ label_parser cs_label = {
         const VW::named_labels* ldict,
         const std::vector<VW::string_view>& words) { parse_label(label.cs, reuse_mem, ldict, words); },
     // cache_label
-    [](const polylabel& label, const reduction_features& /* red_features */, io_buf& cache) {
-      cache_label(label.cs, cache);
+    [](const polylabel& label, const reduction_features& /* red_features */, io_buf& cache, const std::string& upstream_name, bool text) {
+      return VW::model_utils::write_model_field(cache, label.cs, upstream_name, text);
     },
     // read_cached_label
     [](polylabel& label, reduction_features& /* red_features */, io_buf& cache) {

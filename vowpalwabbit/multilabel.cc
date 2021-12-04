@@ -21,25 +21,6 @@ namespace MULTILABEL
 {
 float weight(const MULTILABEL::labels&) { return 1.; }
 
-char* bufcache_label(const labels& ld, char* c)
-{
-  *reinterpret_cast<uint32_t*>(c) = ld.label_v.size();
-  c += sizeof(uint32_t);
-  for (unsigned int i = 0; i < ld.label_v.size(); i++)
-  {
-    *reinterpret_cast<uint32_t*>(c) = ld.label_v[i];
-    c += sizeof(uint32_t);
-  }
-  return c;
-}
-
-void cache_label(const MULTILABEL::labels& ld, io_buf& cache)
-{
-  char* c;
-  cache.buf_write(c, sizeof(uint32_t) + sizeof(uint32_t) * VW::convert(ld.label_v.size()));
-  bufcache_label(ld, c);
-}
-
 void default_label(MULTILABEL::labels& ld) { ld.label_v.clear(); }
 
 bool test_label(const MULTILABEL::labels& ld) { return ld.label_v.size() == 0; }
@@ -73,8 +54,8 @@ label_parser multilabel = {
         const VW::named_labels* /* ldict */,
         const std::vector<VW::string_view>& words) { parse_label(label.multilabels, reuse_mem, words); },
     // cache_label
-    [](const polylabel& label, const reduction_features& /* red_features */, io_buf& cache) {
-      cache_label(label.multilabels, cache);
+    [](const polylabel& label, const reduction_features& /* red_features */, io_buf& cache, const std::string& upstream_name, bool text) {
+      return VW::model_utils::write_model_field(cache, label.multilabels, upstream_name, text);
     },
     // read_cached_label
     [](polylabel& label, reduction_features& /* red_features */, io_buf& cache) {

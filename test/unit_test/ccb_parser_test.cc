@@ -114,7 +114,7 @@ BOOST_AUTO_TEST_CASE(ccb_cache_label)
 
   auto label = VW::make_unique<CCB::label>();
   parse_ccb_label("ccb slot 1:-2.0:0.5,2:0.25,3:0.25 3,4", *label.get());
-  CCB::cache_label(*label, io_writer);
+  VW::model_utils::write_model_field(io_writer, *label, "", false);
   io_writer.flush();
 
   io_buf io_reader;

@@ -27,16 +27,6 @@ void label_t::reset_to_default()
 
 void default_label(label_t& ld) { ld.reset_to_default(); }
 
-void cache_label(const label_t& ld, io_buf& cache)
-{
-  char* c;
-  cache.buf_write(c, sizeof(ld.label) + sizeof(ld.weight));
-  memcpy(c, &ld.label, sizeof(ld.label));
-  c += sizeof(ld.label);
-  memcpy(c, &ld.weight, sizeof(ld.weight));
-  c += sizeof(ld.weight);
-}
-
 float weight(const label_t& ld) { return (ld.weight > 0) ? ld.weight : 0.f; }
 bool test_label(const label_t& ld) { return ld.label == static_cast<uint32_t>(-1); }
 
@@ -81,8 +71,8 @@ label_parser mc_label = {
         const VW::named_labels* ldict,
         const std::vector<VW::string_view>& words) { parse_label(label.multi, ldict, words); },
     // cache_label
-    [](const polylabel& label, const reduction_features& /* red_features */, io_buf& cache) {
-      cache_label(label.multi, cache);
+    [](const polylabel& label, const reduction_features& /* red_features */, io_buf& cache, const std::string& upstream_name, bool text) {
+      return VW::model_utils::write_model_field(cache, label.multi, upstream_name, text);
     },
     // read_cached_label
     [](polylabel& label, reduction_features& /* red_features */, io_buf& cache) {
