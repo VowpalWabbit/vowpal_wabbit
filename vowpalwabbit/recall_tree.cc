@@ -63,7 +63,7 @@ struct node
 struct recall_tree
 {
   VW::workspace* all = nullptr;
-  std::shared_ptr<rand_state> _random_state;
+  std::shared_ptr<VW::rand_state> _random_state;
   uint32_t k = 0;
   bool node_only = false;
 

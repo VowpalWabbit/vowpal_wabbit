@@ -29,7 +29,7 @@ struct active_cover
   float* lambda_d = nullptr;
 
   VW::workspace* all = nullptr;  // statistics, loss
-  std::shared_ptr<rand_state> _random_state;
+  std::shared_ptr<VW::rand_state> _random_state;
 
   ~active_cover()
   {
