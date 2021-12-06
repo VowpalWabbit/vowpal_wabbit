@@ -168,18 +168,23 @@ public:
 class logloss : public loss_function
 {
   std::shared_ptr<rand_state> _rand_state;
+
 public:
   std::string getType() override { return "logistic"; }
 
-  logloss(std::shared_ptr<rand_state> rand):loss_function(), _rand_state(std::move(rand)) {}
+  logloss(std::shared_ptr<rand_state> rand) : loss_function(), _rand_state(std::move(rand)) {}
 
   float roundLoss(float label)
   {
-    if (label >= 0.f && label < 1.f) {
+    if (label >= 0.f && label < 1.f)
+    {
       // We will round and remap to -1.f or 1.f so we can reuse the subsequent computations
       auto x = _rand_state->get_and_update_random();
       if (x <= label) { label = 1.f; }
-      else { label = -1.f; }
+      else
+      {
+        label = -1.f;
+      }
     }
     return label;
   }
