@@ -16,7 +16,7 @@ private:
 
 public:
   rand_state() = default;
-  
+
   /**
    * @brief Construct a new rand state object with the given seed
    *
