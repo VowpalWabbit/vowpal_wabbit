@@ -25,9 +25,6 @@ static const std::vector<std::string> reduction_names_to_enable_for = {
 
 bool use_reduction(const VW::LEARNER::base_learner& base_learner)
 {
-  // TODO - workout a better check to determine if we should merge a shared header.
-  // Probably the best way would be to determine which label types this is valid for and then check based on the base
-  // label type.
   std::vector<std::string> enabled_reductions;
   base_learner.get_enabled_reductions(enabled_reductions);
   for (const auto& enabled_reduction : enabled_reductions)
