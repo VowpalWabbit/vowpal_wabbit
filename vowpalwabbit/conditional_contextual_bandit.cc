@@ -606,7 +606,7 @@ void output_example(VW::workspace& all, ccb& c, multi_ex& ec_seq)
       {
         const float l = CB_ALGS::get_cost_estimate(
             outcome->probabilities[TOP_ACTION_INDEX], outcome->cost, preds[i][TOP_ACTION_INDEX].action);
-        loss += l * preds[i][TOP_ACTION_INDEX].score;
+        loss += l * preds[i][TOP_ACTION_INDEX].score * c.slots[i]->weight;
       }
     }
   }
