@@ -192,7 +192,7 @@ def test_with_interaction():
 
     assert(without_save >= 0.70)
 
-    ctr = _test_helper_save_load(vw_arg="--save_resume --cb_explore_adf -q UA --quiet --epsilon 0.2 --random_seed 5")
+    ctr = _test_helper_save_load(vw_arg="--cb_explore_adf -q UA --quiet --epsilon 0.2 --random_seed 5")
     with_save = ctr[-1]
 
     assert(with_save >= 0.70)
@@ -210,7 +210,7 @@ def test_automl_reduction(config=3, sim_saveload=False):
     # 10281881982--audit --invert_hash
     args = f"--invert_hash readable.vw --automl {str(config)} --priority_type least_exclusion --cb_explore_adf --quiet --epsilon 0.2 --random_seed 5 --extra_metrics metrics.json --keep_configs --oracle_type rand"
     if sim_saveload:
-        ctr = _test_helper_save_load(vw_arg=f"--save_resume {args}", log_filename=f"custom_reduc_{str(config)}.txt")
+        ctr = _test_helper_save_load(vw_arg=f"{args}", log_filename=f"custom_reduc_{str(config)}.txt")
     else:
         ctr = _test_helper(vw_arg=args, log_filename=f"custom_reduc_{str(config)}.txt", num_iterations=4000)
 
