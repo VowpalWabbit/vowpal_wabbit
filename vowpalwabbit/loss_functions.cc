@@ -167,12 +167,12 @@ public:
 
 class logloss : public loss_function
 {
-  std::shared_ptr<rand_state> _rand_state;
+  std::shared_ptr<VW::rand_state> _rand_state;
 
 public:
   std::string getType() override { return "logistic"; }
 
-  logloss(std::shared_ptr<rand_state> rand) : loss_function(), _rand_state(std::move(rand)) {}
+  logloss(std::shared_ptr<VW::rand_state> rand) : loss_function(), _rand_state(std::move(rand)) {}
 
   float roundLoss(float label)
   {
