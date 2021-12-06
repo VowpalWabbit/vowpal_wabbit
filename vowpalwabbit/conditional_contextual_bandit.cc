@@ -584,7 +584,7 @@ std::string generate_ccb_label_printout(const std::vector<example*>& slots)
   return label_ss.str();
 }
 
-void output_example(VW::workspace& all, ccb& c, multi_ex& ec_seq)
+void output_example(VW::workspace& all, ccb& c, const multi_ex& ec_seq)
 {
   if (ec_seq.empty()) { return; }
 
