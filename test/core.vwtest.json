@@ -4440,7 +4440,7 @@
     "depends_on": [
       373
     ]
-  }
+  },
   {
     "id": 375,
     "desc": "test rounding in logistic loss",
