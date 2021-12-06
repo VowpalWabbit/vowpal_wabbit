@@ -40,7 +40,7 @@ struct boosting
   float gamma = 0.f;
   std::string alg = "";
   VW::workspace* all = nullptr;
-  std::shared_ptr<rand_state> _random_state;
+  std::shared_ptr<VW::rand_state> _random_state;
   std::vector<std::vector<int64_t> > C;
   std::vector<float> alpha;
   std::vector<float> v;

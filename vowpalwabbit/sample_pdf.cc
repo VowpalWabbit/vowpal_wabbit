@@ -34,10 +34,10 @@ struct sample_pdf
   int learn(example& ec, experimental::api_status* status);
   int predict(example& ec, experimental::api_status* status);
 
-  void init(single_learner* p_base, std::shared_ptr<rand_state> random_state);
+  void init(single_learner* p_base, std::shared_ptr<VW::rand_state> random_state);
 
 private:
-  std::shared_ptr<rand_state> _p_random_state;
+  std::shared_ptr<VW::rand_state> _p_random_state;
   continuous_actions::probability_density_function _pred_pdf;
   single_learner* _base = nullptr;
 };
@@ -73,7 +73,7 @@ int sample_pdf::predict(example& ec, experimental::api_status*)
   return VW::experimental::error_code::success;
 }
 
-void sample_pdf::init(single_learner* p_base, std::shared_ptr<rand_state> random_state)
+void sample_pdf::init(single_learner* p_base, std::shared_ptr<VW::rand_state> random_state)
 {
   _base = p_base;
   _p_random_state = std::move(random_state);
