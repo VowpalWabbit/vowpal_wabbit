@@ -42,7 +42,8 @@ label_parser no_label_parser = {
     [](polylabel& /* label */, reduction_features& /* red_features */, VW::label_parser_reuse_mem& /* reuse_mem */,
         const VW::named_labels* /* ldict */, const std::vector<VW::string_view>& words) { parse_no_label(words); },
     // cache_label
-    [](const polylabel& /* label */, const reduction_features& /* red_features */, io_buf& /* cache */, const std::string&, bool) -> size_t { return 1; },
+    [](const polylabel& /* label */, const reduction_features& /* red_features */, io_buf& /* cache */,
+        const std::string&, bool) -> size_t { return 1; },
     // read_cached_label
     [](polylabel& /* label */, reduction_features& /* red_features */, io_buf &
         /* cache */) -> size_t { return 1; },

@@ -182,7 +182,8 @@ label_parser ccb_label_parser = {
       parse_label(label.conditional_contextual_bandit, reuse_mem, words);
     },
     // cache_label
-    [](const polylabel& label, const ::reduction_features& /*red_features*/, io_buf& cache, const std::string& upstream_name, bool text) {
+    [](const polylabel& label, const ::reduction_features& /*red_features*/, io_buf& cache,
+        const std::string& upstream_name, bool text) {
       return VW::model_utils::write_model_field(cache, label.conditional_contextual_bandit, upstream_name, text);
     },
     // read_cached_label

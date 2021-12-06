@@ -123,9 +123,9 @@ label_parser slates_label_parser = {
         const VW::named_labels* /* ldict */,
         const std::vector<VW::string_view>& words) { parse_label(label.slates, reuse_mem, words); },
     // cache_label
-    [](const polylabel& label, const reduction_features& /* red_features */, io_buf& cache, const std::string& upstream_name, bool text) {
-      return VW::model_utils::write_model_field(cache, label.slates, upstream_name, text);
-    },
+    [](const polylabel& label, const reduction_features& /* red_features */, io_buf& cache,
+        const std::string& upstream_name,
+        bool text) { return VW::model_utils::write_model_field(cache, label.slates, upstream_name, text); },
     // read_cached_label
     [](polylabel& label, reduction_features& /* red_features */, io_buf& cache) {
       return VW::model_utils::read_model_field(cache, label.slates);
