@@ -3902,7 +3902,7 @@
   },
   {
     "id": 328,
-    "desc": "simple cb dsjson with pdrop. Required for having side-by-side comparison with the same one without pdrop from 327. TODO: update stderr when reported metrics pdrop issue is fixed",
+    "desc": "simple cb dsjson with pdrop. Required for having side-by-side comparison with the same one without pdrop from 327.",
     "diff_files": {
       "stderr": "train-sets/ref/cb_simple_pdrop.stderr",
       "cb_simple_pdrop_invert_hash.txt": "train-sets/ref/cb_simple_pdrop_invert_hash.txt"
@@ -3931,7 +3931,7 @@
   },
   {
     "id": 331,
-    "desc": "simple ccb dsjson with pdrop. Required for having side-by-side comparison with the same one without pdrop from 330. TODO: update stderr when reported metrics pdrop issue is fixed",
+    "desc": "simple ccb dsjson with pdrop. Required for having side-by-side comparison with the same one without pdrop from 330.",
     "diff_files": {
       "stderr": "train-sets/ref/ccb_simple_pdrop.stderr",
       "ccb_simple_pdrop_invert_hash.txt": "train-sets/ref/ccb_simple_pdrop_invert_hash.txt"
