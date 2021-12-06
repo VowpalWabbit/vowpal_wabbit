@@ -1151,7 +1151,7 @@ void parse_output_model(options_i& options, VW::workspace& all)
   if (options.was_supplied("invert_hash")) { all.hash_inv = true; }
   if (save_resume)
   {
-    logger::errlog_warn("--save_resume flag is deprecated -- learning can now continue on saved models by default!");
+    logger::errlog_warn("--save_resume flag is deprecated -- learning can now continue on saved models by default.");
   }
   if (predict_only_model) { all.save_resume = false; }
 
