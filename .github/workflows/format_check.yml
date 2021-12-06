@@ -40,7 +40,8 @@ jobs:
             echo "To fix:"
             echo -e "\tEnsure there is an upstream remote that points to: https://github.com/VowpalWabbit/vowpal_wabbit.git"
             echo -e "\tRun: \"git fetch upstream\""
-            echo -e "\tRun: \"git diff upstream/master...HEAD -U0 --no-color | clang-format-diff -r '^.*\.(cc|h)$' -p1 -i\""
+            echo -e "\tUse Docker: https://gist.github.com/jackgerrits/2736da5ffff871f7830aed6b55c0c73e"
+            echo -e "\tOr, Run: \"git diff upstream/master...HEAD -U0 --no-color | clang-format-diff -r '^.*\.(cc|h)$' -p1 -i\""
             exit 1
           else
             echo "No formatting issues found in the PR diff."
