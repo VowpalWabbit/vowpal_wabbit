@@ -167,12 +167,27 @@ public:
 
 class logloss : public loss_function
 {
+  std::shared_ptr<rand_state> _rand_state;
 public:
   std::string getType() override { return "logistic"; }
+
+  logloss(std::shared_ptr<rand_state> rand):loss_function(), _rand_state(std::move(rand)) {}
+
+  float roundLoss(float label)
+  {
+    if (label >= 0.f && label < 1.f) {
+      // We will round and remap to -1.f or 1.f so we can reuse the subsequent computations
+      auto x = _rand_state->get_and_update_random();
+      if (label <= x) { label = 1.f; }
+      else { label = -1.f; }
+    }
+    return label;
+  }
 
   float getLoss(shared_data*, float prediction, float label) override
   {
     // TODO: warning or error?
+    label = roundLoss(label);
     if (label != -1.f && label != 1.f)
       logger::log_warn("You are using label {} not -1 or 1 as loss function expects!", label);
     return log(1 + correctedExp(-label * prediction));
@@ -180,6 +195,7 @@ public:
 
   float getUpdate(float prediction, float label, float update_scale, float pred_per_update) override
   {
+    label = roundLoss(label);
     float w, x;
     float d = correctedExp(label * prediction);
     if (update_scale * pred_per_update < 1e-6)
@@ -196,6 +212,7 @@ public:
 
   float getUnsafeUpdate(float prediction, float label, float update_scale) override
   {
+    label = roundLoss(label);
     float d = correctedExp(label * prediction);
     return label * update_scale / (1 + d);
   }
@@ -222,18 +239,21 @@ public:
 
   float first_derivative(shared_data*, float prediction, float label) override
   {
+    label = roundLoss(label);
     float v = -label / (1 + correctedExp(label * prediction));
     return v;
   }
 
   float getSquareGrad(float prediction, float label) override
   {
+    label = roundLoss(label);
     float d = first_derivative(nullptr, prediction, label);
     return d * d;
   }
 
   float second_derivative(shared_data*, float prediction, float label) override
   {
+    label = roundLoss(label);
     float p = 1 / (1 + correctedExp(label * prediction));
 
     return p * (1 - p);
@@ -389,7 +409,7 @@ std::unique_ptr<loss_function> getLossFunction(
       all.sd->min_label = -50;
       all.sd->max_label = 50;
     }
-    return VW::make_unique<logloss>();
+    return VW::make_unique<logloss>(all.get_random_state());
   }
   else if (funcName == "quantile" || funcName == "pinball" || funcName == "absolute")
   {
