@@ -12,7 +12,7 @@
 
 struct active
 {
-  active(float active_c0, shared_data* shared_data, std::shared_ptr<rand_state> random_state,
+  active(float active_c0, shared_data* shared_data, std::shared_ptr<VW::rand_state> random_state,
       VW::version_struct model_version)
       : active_c0(active_c0)
       , _shared_data(shared_data)
@@ -23,7 +23,7 @@ struct active
 
   float active_c0;
   shared_data* _shared_data;  // statistics, loss
-  std::shared_ptr<rand_state> _random_state;
+  std::shared_ptr<VW::rand_state> _random_state;
 
   float _min_seen_label = 0.f;
   float _max_seen_label = 1.f;
