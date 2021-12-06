@@ -17,6 +17,8 @@ set(VW_SLIM_HEADERS
 
 add_library(vwslim ${VW_SLIM_SOURCES} ${VW_SLIM_HEADERS})
 
+target_link_libraries(vwslim PUBLIC ${spdlog_target} fmt::fmt PRIVATE)
+
 target_include_directories(vwslim PUBLIC
   ${CMAKE_CURRENT_LIST_DIR}/../include
   ${CMAKE_CURRENT_LIST_DIR}/../../)
