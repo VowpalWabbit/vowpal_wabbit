@@ -4444,12 +4444,12 @@
   {
     "id": 375,
     "desc": "test rounding in logistic loss",
-    "vw_command": "-d train-sets/cb_test_medium2.ldf --loss_function logistic --cb_explore_adf",
+    "vw_command": "-d train-sets/cb_test_non_binary_costs.ldf --loss_function logistic --cb_explore_adf",
     "diff_files": {
       "stderr": "train-sets/ref/logistic_rounding.stderr"
     },
     "input_files": [
-      "train-sets/cb_test_medium2.ldf"
+      "train-sets/cb_test_non_binary_costs.ldf"
     ]
   }
 ]
