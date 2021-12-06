@@ -217,7 +217,7 @@ void cb_explore_adf_base<ExploreType>::output_example(VW::workspace& all, multi_
     for (uint32_t i = 0; i < preds.size(); i++)
     {
       float l = CB_ALGS::get_cost_estimate(_known_cost, preds[i].action);
-      loss += l * preds[i].score;
+      loss += l * preds[i].score * ec_seq[i + 1]->weight;
     }
   }
   else
