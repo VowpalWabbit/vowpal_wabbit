@@ -15,6 +15,8 @@ private:
   uint64_t _random_state = 0;
 
 public:
+  rand_state() = default;
+  
   /**
    * @brief Construct a new rand state object with the given seed
    *
