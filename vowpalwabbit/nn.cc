@@ -49,7 +49,7 @@ struct nn
   polyprediction* hiddenbias_pred = nullptr;
 
   VW::workspace* all = nullptr;  // many things
-  std::shared_ptr<rand_state> _random_state;
+  std::shared_ptr<VW::rand_state> _random_state;
 
   ~nn()
   {
