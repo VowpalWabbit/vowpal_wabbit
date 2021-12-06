@@ -34,7 +34,7 @@ private:
   size_t _bag_size;
   bool _greedify;
   bool _first_only;
-  std::shared_ptr<rand_state> _random_state;
+  std::shared_ptr<VW::rand_state> _random_state;
 
   v_array<ACTION_SCORE::action_score> _action_probs;
   std::vector<float> _scores;
@@ -44,7 +44,7 @@ public:
   using PredictionT = v_array<ACTION_SCORE::action_score>;
 
   cb_explore_adf_bag(
-      float epsilon, size_t bag_size, bool greedify, bool first_only, std::shared_ptr<rand_state> random_state);
+      float epsilon, size_t bag_size, bool greedify, bool first_only, std::shared_ptr<VW::rand_state> random_state);
 
   // Should be called through cb_explore_adf_base for pre/post-processing
   void predict(VW::LEARNER::multi_learner &base, multi_ex &examples);
@@ -57,7 +57,7 @@ private:
 };
 
 cb_explore_adf_bag::cb_explore_adf_bag(
-    float epsilon, size_t bag_size, bool greedify, bool first_only, std::shared_ptr<rand_state> random_state)
+    float epsilon, size_t bag_size, bool greedify, bool first_only, std::shared_ptr<VW::rand_state> random_state)
     : _epsilon(epsilon)
     , _bag_size(bag_size)
     , _greedify(greedify)
