@@ -18,10 +18,11 @@ jobs:
     strategy:
       matrix:
         config:
-        - { version: 3.6, base_path: /opt/python/cp36-cp36m/, include_dir_name: python3.6m/, experimental: false }
-        - { version: 3.7, base_path: /opt/python/cp37-cp37m/, include_dir_name: python3.7m/, experimental: false }
-        - { version: 3.8, base_path: /opt/python/cp38-cp38/, include_dir_name: python3.8/, experimental: false }
-        - { version: 3.9, base_path: /opt/python/cp39-cp39/, include_dir_name: python3.9/, experimental: false }
+        - { version: "3.6", base_path: /opt/python/cp36-cp36m/, include_dir_name: python3.6m/, experimental: false }
+        - { version: "3.7", base_path: /opt/python/cp37-cp37m/, include_dir_name: python3.7m/, experimental: false }
+        - { version: "3.8", base_path: /opt/python/cp38-cp38/, include_dir_name: python3.8/, experimental: false }
+        - { version: "3.9", base_path: /opt/python/cp39-cp39/, include_dir_name: python3.9/, experimental: false }
+        - { version: "3.10", base_path: /opt/python/cp310-cp310/, include_dir_name: python3.10/, experimental: false }
     steps:
       # v1 must be used because newer versions require a node.js version that will not run on this old image.
       - uses: actions/checkout@v1
@@ -44,10 +45,11 @@ jobs:
     strategy:
       matrix:
         config:
-        - { version: 3.6, experimental: false }
-        - { version: 3.7, experimental: false }
-        - { version: 3.8, experimental: false }
-        - { version: 3.9, experimental: false }
+        - { version: "3.6", experimental: false }
+        - { version: "3.7", experimental: false }
+        - { version: "3.8", experimental: false }
+        - { version: "3.9", experimental: false }
+        - { version: "3.10", experimental: false }
     steps:
       - uses: actions/checkout@v1
       - name: Download Wheel
