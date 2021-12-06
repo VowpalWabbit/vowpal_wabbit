@@ -49,8 +49,8 @@ private:
   float _max_cost;
 
 public:
-  cb_explore_adf_synthcover(float epsilon, float psi, size_t synthcoversize, std::shared_ptr<VW::rand_state> random_state,
-      VW::version_struct model_file_version);
+  cb_explore_adf_synthcover(float epsilon, float psi, size_t synthcoversize,
+      std::shared_ptr<VW::rand_state> random_state, VW::version_struct model_file_version);
 
   // Should be called through cb_explore_adf_base for pre/post-processing
   void predict(VW::LEARNER::multi_learner& base, multi_ex& examples) { predict_or_learn_impl<false>(base, examples); }
