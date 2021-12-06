@@ -26,7 +26,7 @@ struct explore_eval
 {
   CB::cb_class known_cost;
   VW::workspace* all = nullptr;
-  std::shared_ptr<rand_state> _random_state;
+  std::shared_ptr<VW::rand_state> _random_state;
   uint64_t offset = 0;
   CB::label action_label;
   CB::label empty_label;

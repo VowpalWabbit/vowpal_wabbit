@@ -31,7 +31,7 @@ struct bs
   float ub = 0.f;
   std::vector<double> pred_vec;
   VW::workspace* all = nullptr;  // for raw prediction and loss
-  std::shared_ptr<rand_state> _random_state;
+  std::shared_ptr<VW::rand_state> _random_state;
 };
 
 void bs_predict_mean(VW::workspace& all, example& ec, std::vector<double>& pred_vec)
