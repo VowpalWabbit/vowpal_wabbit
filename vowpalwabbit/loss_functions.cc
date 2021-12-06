@@ -178,7 +178,7 @@ public:
     if (label >= 0.f && label < 1.f) {
       // We will round and remap to -1.f or 1.f so we can reuse the subsequent computations
       auto x = _rand_state->get_and_update_random();
-      if (label <= x) { label = 1.f; }
+      if (x <= label) { label = 1.f; }
       else { label = -1.f; }
     }
     return label;
