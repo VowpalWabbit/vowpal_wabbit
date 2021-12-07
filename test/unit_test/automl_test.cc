@@ -124,7 +124,7 @@ BOOST_AUTO_TEST_CASE(automl_save_load)
 
   ctr = simulator::_test_helper_save_load(
       "--automl 3 --priority_type least_exclusion --cb_explore_adf --quiet --epsilon 0.2 --random_seed 5 "
-      "--keep_configs --oracle_type rand --save_resume");
+      "--keep_configs --oracle_type rand");
   float with_save = ctr.back();
   BOOST_CHECK_GT(with_save, 0.7f);
 

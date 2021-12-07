@@ -96,9 +96,9 @@ void print_result(
   }
 }
 
-void output_example(VW::workspace& all, example& ec)
+void output_example(VW::workspace& all, const example& ec)
 {
-  label_data& ld = ec.l.simple;
+  const label_data& ld = ec.l.simple;
 
   all.sd->update(ec.test_only, ld.label != FLT_MAX, ec.loss, ec.weight, ec.get_num_features());
   if (ld.label != FLT_MAX) all.sd->weighted_labels += (static_cast<double>(ld.label)) * ec.weight;

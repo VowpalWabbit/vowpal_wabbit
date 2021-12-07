@@ -163,7 +163,7 @@ public:
   using cache_map = std::unordered_map<byte_array, scored_action, cached_item_hash, cached_item_equivalent>;
 
   VW::workspace* all;
-  std::shared_ptr<rand_state> _random_state;
+  std::shared_ptr<VW::rand_state> _random_state;
 
   uint64_t offset;
   bool auto_condition_features;  // do you want us to automatically add conditioning features?
@@ -714,7 +714,7 @@ void cerr_print_array(std::string str, v_array<T>& A)
   logger::errlog_info("{0} = [{1}]", str, fmt::join(A, " "));
 }
 
-size_t random(std::shared_ptr<rand_state>& rs, size_t max)
+size_t random(std::shared_ptr<VW::rand_state>& rs, size_t max)
 {
   return static_cast<size_t>(rs->get_and_update_random() * static_cast<float>(max));
 }
