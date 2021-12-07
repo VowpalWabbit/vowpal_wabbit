@@ -7,14 +7,18 @@
 #include <iostream>
 #include <memory>
 
-#pragma warning(push)
-#pragma warning(disable : 4635)
+#ifdef _WIN32
+#  pragma warning(push)
+#  pragma warning(disable : 4635)
 // Warnings emitted from this header are unrelated to this project.
 //     format.h(3525): warning C4635: XML document comment applied to
 //     'fmt.v7.format_system_error(fmt.v7.detail.buffer<System.SByte!System.Runtime.CompilerServices.IsSignUnspecifiedByte>*!System.Runtime.CompilerServices.IsImplicitlyDereferenced,System.Int32,fmt.v7.basic_string_view<System.SByte!System.Runtime.CompilerServices.IsSignUnspecifiedByte>)':
 //     badly-formed XML: Invalid at the top level of the document.
+#endif
 #include "fmt/format.h"
-#pragma warning(pop)
+#ifdef _WIN32
+#  pragma warning(pop)
+#endif
 
 #include "memory.h"
 #include "multiclass.h"
