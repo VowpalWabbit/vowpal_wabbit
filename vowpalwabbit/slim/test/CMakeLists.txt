@@ -21,4 +21,4 @@ add_executable(vw-slim-test
 
 target_link_libraries(vw-slim-test
   vwslim GTest::gtest GTest::gtest_main GTest::gmock GTest::gmock_main)
-add_test(NAME vw_unit_test COMMAND vw-slim-test)
+add_test(NAME vw_unit_test COMMAND vw-slim-test WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})

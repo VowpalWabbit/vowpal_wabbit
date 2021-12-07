@@ -86,9 +86,9 @@ static void benchmark_cb_adf_learn_privacy_preserving(benchmark::State& state, i
 }
 #endif
 
-static void benchmark_ccb_adf_learn(benchmark::State& state, std::string feature_string)
+static void benchmark_ccb_adf_learn(benchmark::State& state, std::string feature_string, std::string cmd = "")
 {
-  auto vw = VW::initialize("--ccb_explore_adf --quiet", nullptr, false, nullptr, nullptr);
+  auto vw = VW::initialize("--ccb_explore_adf --quiet" + cmd, nullptr, false, nullptr, nullptr);
 
   multi_ex examples;
   examples.push_back(VW::read_example(*vw, std::string("ccb shared |User " + feature_string)));
@@ -242,6 +242,9 @@ BENCHMARK_CAPTURE(benchmark_learn_simple, 1_feature, "1 | a");
 
 BENCHMARK_CAPTURE(benchmark_ccb_adf_learn, few_features, "a");
 BENCHMARK_CAPTURE(benchmark_ccb_adf_learn, many_features, "a b c d e f g h i j k l m n o p q r s t u v w x y z");
+BENCHMARK_CAPTURE(benchmark_ccb_adf_learn, few_features_no_predict, "a", " --no_predict");
+BENCHMARK_CAPTURE(benchmark_ccb_adf_learn, many_features_no_predic,
+    "a b c d e f g h i j k l m n o p q r s t u v w x y z", " --no_predict");
 
 BENCHMARK_CAPTURE(benchmark_cb_adf_learn, few_features, 2);
 BENCHMARK_CAPTURE(benchmark_cb_adf_learn, many_features, 120);

@@ -137,7 +137,7 @@ namespace VW
 struct workspace
 {
 private:
-  std::shared_ptr<rand_state> _random_state_sp = std::make_shared<rand_state>();  // per instance random_state
+  std::shared_ptr<VW::rand_state> _random_state_sp = std::make_shared<VW::rand_state>();  // per instance random_state
 
 public:
   shared_data* sd;
@@ -334,7 +334,7 @@ public:
 
   workspace();
   ~workspace();
-  std::shared_ptr<rand_state> get_random_state() { return _random_state_sp; }
+  std::shared_ptr<VW::rand_state> get_random_state() { return _random_state_sp; }
 
   workspace(const VW::workspace&) = delete;
   VW::workspace& operator=(const VW::workspace&) = delete;

@@ -262,7 +262,7 @@ workspace::workspace() : options(nullptr, nullptr)
   default_bits = true;
   daemon = false;
   num_children = 10;
-  save_resume = false;
+  save_resume = true;
   preserve_performance_counters = false;
 
   random_positive_weights = false;
