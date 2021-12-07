@@ -44,9 +44,9 @@ struct label
   std::vector<wclass> costs;
 };
 
-void output_example(VW::workspace& all, example& ec);
+void output_example(VW::workspace& all, const example& ec);
 void output_example(
-    VW::workspace& all, example& ec, const COST_SENSITIVE::label& cs_label, uint32_t multiclass_prediction);
+    VW::workspace& all, const example& ec, const COST_SENSITIVE::label& cs_label, uint32_t multiclass_prediction);
 void finish_example(VW::workspace& all, example& ec);
 template <class T>
 void finish_example(VW::workspace& all, T&, example& ec)
@@ -57,8 +57,8 @@ void finish_example(VW::workspace& all, T&, example& ec)
 void default_label(label& ld);
 extern label_parser cs_label;
 
-void print_update(
-    VW::workspace& all, bool is_test, example& ec, std::vector<example*>* ec_seq, bool multilabel, uint32_t prediction);
+void print_update(VW::workspace& all, bool is_test, const example& ec, const std::vector<example*>* ec_seq,
+    bool multilabel, uint32_t prediction);
 bool ec_is_example_header(example const& ec);  // example headers look like "0:-1" or just "shared"
 }  // namespace COST_SENSITIVE
 

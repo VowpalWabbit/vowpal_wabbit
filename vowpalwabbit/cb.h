@@ -49,8 +49,8 @@ bool ec_is_example_header(example const& ec);  // example headers look like "sha
 
 std::pair<bool, cb_class> get_observed_cost_cb(const label& ld);
 
-void print_update(
-    VW::workspace& all, bool is_test, example& ec, multi_ex* ec_seq, bool action_scores, CB::cb_class* known_cost);
+void print_update(VW::workspace& all, bool is_test, const example& ec, const multi_ex* ec_seq, bool action_scores,
+    const CB::cb_class* known_cost);
 }  // namespace CB
 
 namespace CB_EVAL

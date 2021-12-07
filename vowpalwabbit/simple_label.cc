@@ -32,7 +32,7 @@ void label_data::reset_to_default()
   label = FLT_MAX;
 }
 
-void print_update(VW::workspace& all, example& ec)
+void print_update(VW::workspace& all, const example& ec)
 {
   if (all.sd->weighted_labeled_examples + all.sd->weighted_unlabeled_examples >= all.sd->dump_interval &&
       !all.logger.quiet && !all.bfgs)
@@ -42,7 +42,7 @@ void print_update(VW::workspace& all, example& ec)
   }
 }
 
-void output_and_account_example(VW::workspace& all, example& ec)
+void output_and_account_example(VW::workspace& all, const example& ec)
 {
   const label_data& ld = ec.l.simple;
 
