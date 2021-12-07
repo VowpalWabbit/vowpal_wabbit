@@ -433,6 +433,15 @@ base_learner* ftrl_setup(VW::setup_base_i& stack_builder)
   const auto coin_enabled = options.add_parse_and_check_necessary(coin_options);
 
   if (!ftrl_enabled && !pistol_enabled && !coin_enabled) { return nullptr; }
+  size_t count = 0;
+  count += ftrl_enabled ? 1 : 0;
+  count += pistol_enabled ? 1 : 0;
+  count += coin_enabled ? 1 : 0;
+
+  if (count != 1)
+  {
+    THROW("You can only use one of 'ftrl', 'pistol', or 'coin' at a time.");
+  }
 
   // Defaults that are specific to the mode that was chosen.
   if (ftrl_enabled)
