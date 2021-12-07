@@ -34,7 +34,7 @@ class cb_sim
   const std::vector<std::string> users;
   const std::vector<std::string> times_of_day;
   const std::vector<std::string> actions;
-  rand_state random_state;
+  VW::rand_state random_state;
   float cost_sum = 0.f;
   std::vector<float> ctr;
   size_t callback_count;

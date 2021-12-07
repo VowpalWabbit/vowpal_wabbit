@@ -584,7 +584,7 @@ std::string generate_ccb_label_printout(const std::vector<example*>& slots)
   return label_ss.str();
 }
 
-void output_example(VW::workspace& all, ccb& c, multi_ex& ec_seq)
+void output_example(VW::workspace& all, ccb& c, const multi_ex& ec_seq)
 {
   if (ec_seq.empty()) { return; }
 
@@ -606,7 +606,7 @@ void output_example(VW::workspace& all, ccb& c, multi_ex& ec_seq)
       {
         const float l = CB_ALGS::get_cost_estimate(
             outcome->probabilities[TOP_ACTION_INDEX], outcome->cost, preds[i][TOP_ACTION_INDEX].action);
-        loss += l * preds[i][TOP_ACTION_INDEX].score;
+        loss += l * preds[i][TOP_ACTION_INDEX].score * ec_seq[SHARED_EX_INDEX]->weight;
       }
     }
   }
