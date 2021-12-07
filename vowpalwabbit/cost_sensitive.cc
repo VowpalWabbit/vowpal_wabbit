@@ -188,8 +188,8 @@ label_parser cs_label = {
     // label type
     VW::label_type_t::cs};
 
-void print_update(
-    VW::workspace& all, bool is_test, example& ec, multi_ex* ec_seq, bool action_scores, uint32_t prediction)
+void print_update(VW::workspace& all, bool is_test, const example& ec, const multi_ex* ec_seq, bool action_scores,
+    uint32_t prediction)
 {
   if (all.sd->weighted_examples() >= all.sd->dump_interval && !all.logger.quiet && !all.bfgs)
   {
@@ -235,7 +235,7 @@ void print_update(
 }
 
 void output_example(
-    VW::workspace& all, example& ec, const COST_SENSITIVE::label& cs_label, uint32_t multiclass_prediction)
+    VW::workspace& all, const example& ec, const COST_SENSITIVE::label& cs_label, uint32_t multiclass_prediction)
 {
   float loss = 0.;
   if (!test_label(cs_label))
@@ -285,7 +285,7 @@ void output_example(
   print_update(all, test_label(cs_label), ec, nullptr, false, multiclass_prediction);
 }
 
-void output_example(VW::workspace& all, example& ec) { output_example(all, ec, ec.l.cs, ec.pred.multiclass); }
+void output_example(VW::workspace& all, const example& ec) { output_example(all, ec, ec.l.cs, ec.pred.multiclass); }
 
 void finish_example(VW::workspace& all, example& ec)
 {
@@ -293,7 +293,7 @@ void finish_example(VW::workspace& all, example& ec)
   VW::finish_example(all, ec);
 }
 
-bool example_is_test(example& ec)
+bool example_is_test(const example& ec)
 {
   const auto& costs = ec.l.cs.costs;
   if (costs.size() == 0) return true;
@@ -302,7 +302,7 @@ bool example_is_test(example& ec)
   return true;
 }
 
-bool ec_is_example_header(example const& ec)  // example headers look like "shared"
+bool ec_is_example_header(const example& ec)  // example headers look like "shared"
 {
   const auto& costs = ec.l.cs.costs;
   if (costs.size() != 1) return false;

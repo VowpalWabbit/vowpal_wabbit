@@ -17,7 +17,7 @@ template <label_parser& lp>
 struct expreplay
 {
   VW::workspace* all = nullptr;
-  std::shared_ptr<rand_state> _random_state;
+  std::shared_ptr<VW::rand_state> _random_state;
   size_t N = 0;             // how big is the buffer?
   example* buf = nullptr;   // the deep copies of examples (N of them)
   bool* filled = nullptr;   // which of buf[] is filled
