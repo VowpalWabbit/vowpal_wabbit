@@ -413,13 +413,13 @@ base_learner* ftrl_setup(VW::setup_base_i& stack_builder)
 
   option_group_definition pistol_options("Follow the Regularized Leader - Pistol");
   pistol_options
-      .add(make_option("pistol", pistol_no_not_use).keep().help("PiSTOL: Parameter-free STOchastic Learning"))
+      .add(make_option("pistol", pistol_no_not_use).necessary().keep().help("PiSTOL: Parameter-free STOchastic Learning"))
       .add(make_option("ftrl_alpha", b->ftrl_alpha).help("Learning rate for FTRL optimization"))
       .add(make_option("ftrl_beta", b->ftrl_beta).help("Learning rate for FTRL optimization"));
 
   option_group_definition coin_options("Follow the Regularized Leader - Coin");
   coin_options
-      .add(make_option("coin", coin_no_not_use).keep().help("Coin betting optimizer"))
+      .add(make_option("coin", coin_no_not_use).necessary().keep().help("Coin betting optimizer"))
       .add(make_option("ftrl_alpha", b->ftrl_alpha).help("Learning rate for FTRL optimization"))
       .add(make_option("ftrl_beta", b->ftrl_beta).help("Learning rate for FTRL optimization"));
 
