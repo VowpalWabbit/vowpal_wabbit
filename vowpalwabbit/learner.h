@@ -427,7 +427,7 @@ public:
     finish_example_fd.print_example_f(all, finish_example_fd.data, (void*)&ec);
   }
 
-  void get_enabled_reductions(std::vector<std::string>& enabled_reductions)
+  void get_enabled_reductions(std::vector<std::string>& enabled_reductions) const
   {
     if (learn_fd.base) { learn_fd.base->get_enabled_reductions(enabled_reductions); }
     enabled_reductions.push_back(name);
