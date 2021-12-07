@@ -112,7 +112,7 @@ struct svm_params
   float loss_sum = 0.f;
 
   VW::workspace* all = nullptr;  // flatten, parallel
-  std::shared_ptr<rand_state> _random_state;
+  std::shared_ptr<VW::rand_state> _random_state;
 
   ~svm_params()
   {
