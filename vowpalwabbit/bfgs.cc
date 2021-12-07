@@ -1081,8 +1081,8 @@ base_learner* bfgs_setup(VW::setup_base_i& stack_builder)
   bfgs_options.add(
       make_option("bfgs", bfgs_option).keep().necessary().help("Use conjugate gradient based optimization"));
   bfgs_options.add(make_option("hessian_on", local_hessian_on).help("Use second derivative in line search"));
-  bfgs_options.add(make_option("mem", b->m).default_value(15).help("Memory in bfgs"));
-  bfgs_options.add(make_option("termination", b->rel_threshold).default_value(0.001f).help("Termination threshold"));
+  bfgs_options.add(make_option("mem", local_m).default_value(15).help("Memory in bfgs"));
+  bfgs_options.add(make_option("termination", local_rel_threshold).default_value(0.001f).help("Termination threshold"));
 
   auto conjugate_gradient_enabled = options.add_parse_and_check_necessary(conjugate_gradient_options);
   auto bfgs_enabled = options.add_parse_and_check_necessary(bfgs_options);
