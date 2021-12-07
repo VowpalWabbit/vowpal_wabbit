@@ -145,7 +145,7 @@ interaction_config_manager::interaction_config_manager(uint64_t global_lease, ui
     std::string oracle_type, priority_func* calc_priority)
     : global_lease(global_lease)
     , max_live_configs(max_live_configs)
-    , random_state(rand_state)
+    , random_state(std::move(rand_state))
     , priority_challengers(priority_challengers)
     , keep_configs(keep_configs)
     , oracle_type(std::move(oracle_type))
