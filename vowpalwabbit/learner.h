@@ -428,7 +428,7 @@ public:
     finish_example_fd.print_example_f(all, finish_example_fd.data, (void*)&ec);
   }
 
-  void get_enabled_reductions(std::vector<std::string>& enabled_reductions)
+  void get_enabled_reductions(std::vector<std::string>& enabled_reductions) const
   {
     if (learn_fd.base) { learn_fd.base->get_enabled_reductions(enabled_reductions); }
     enabled_reductions.push_back(name);
@@ -600,7 +600,7 @@ struct common_learner_builder
     return *static_cast<FluentBuilderT*>(this);
   }
 
-  FluentBuilderT& set_print_example(void (*fn_ptr)(VW::workspace& all, DataT&, ExampleT&))
+  FluentBuilderT& set_print_example(void (*fn_ptr)(VW::workspace& all, DataT&, const ExampleT&))
   {
     _learner->finish_example_fd.data = _learner->learn_fd.data;
     _learner->finish_example_fd.print_example_f = (end_fptr_type)(fn_ptr);
