@@ -18,9 +18,9 @@ struct labels
   v_array<uint32_t> label_v;
 };
 
-void output_example(VW::workspace& all, example& ec);
+void output_example(VW::workspace& all, const example& ec);
 
 extern label_parser multilabel;
 
-void print_update(VW::workspace& all, bool is_test, example& ec, const v_array<example*>* ec_seq);
+void print_update(VW::workspace& all, bool is_test, const example& ec, const v_array<example*>* ec_seq);
 }  // namespace MULTILABEL
