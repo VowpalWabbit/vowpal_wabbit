@@ -11,7 +11,6 @@
 #include "multiclass.h"
 #include "simple_label.h"
 #include "parser.h"
-#include "debug_log.h"
 
 #undef VW_DEBUG_LOG
 #define VW_DEBUG_LOG vw_dbg::learner
@@ -664,10 +663,13 @@ struct reduction_learner_builder
     set_params_per_weight(1);
     this->set_learn_returns_prediction(false);
 
-    // Default here is passthrough.
+    // By default, will produce what the base produces
     super::set_output_prediction_type(base->get_output_prediction_type());
-    super::set_input_prediction_type(base->get_input_prediction_type());
-    super::set_output_label_type(base->get_output_label_type());
+    // By default, will produce what the base produces
+    super::set_input_prediction_type(base->get_output_prediction_type());
+    // By default, will produce what the base expects
+    super::set_output_label_type(base->get_input_label_type());
+    // By default, will produce what the base expects
     super::set_input_label_type(base->get_input_label_type());
   }
 
@@ -703,10 +705,13 @@ struct reduction_no_data_learner_builder
     this->_learner->finisher_fd.func = static_cast<func_data::fn>(noop);
 
     set_params_per_weight(1);
-    // Default here is passthrough.
+    // By default, will produce what the base produces
     super::set_output_prediction_type(base->get_output_prediction_type());
-    super::set_input_prediction_type(base->get_input_prediction_type());
-    super::set_output_label_type(base->get_output_label_type());
+    // By default, will produce what the base produces
+    super::set_input_prediction_type(base->get_output_prediction_type());
+    // By default, will produce what the base expects
+    super::set_output_label_type(base->get_input_label_type());
+    // By default, will produce what the base expects
     super::set_input_label_type(base->get_input_label_type());
   }
 
