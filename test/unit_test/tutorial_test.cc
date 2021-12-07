@@ -21,7 +21,7 @@ BOOST_AUTO_TEST_CASE(cpp_simulator_with_interaction)
   float without_save = ctr.back();
   BOOST_CHECK_GT(without_save, 0.7f);
 
-  ctr = simulator::_test_helper_save_load("--cb_explore_adf -q UA --quiet --epsilon 0.2 --random_seed 5 --save_resume");
+  ctr = simulator::_test_helper_save_load("--cb_explore_adf -q UA --quiet --epsilon 0.2 --random_seed 5");
   float with_save = ctr.back();
   BOOST_CHECK_GT(with_save, 0.7f);
 
