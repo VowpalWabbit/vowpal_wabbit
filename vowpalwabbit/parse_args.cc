@@ -640,7 +640,7 @@ void parse_feature_tweaks(options_i& options, VW::workspace& all, bool interacti
         all.spelling_features[static_cast<unsigned char>(' ')] = true;
       else
         all.spelling_features[static_cast<size_t>(spelling_n[0])] = true;
-    }
+  }
   }
 
   if (options.was_supplied("q:"))
@@ -1048,6 +1048,10 @@ void parse_example_tweaks(options_i& options, VW::workspace& all)
   }
 
   all.loss = getLossFunction(all, loss_function, loss_parameter);
+  if (options.was_supplied("quantile_tau") && all.loss->getType() != "quantile")
+  {
+    logger::errlog_warn("Option 'quantile_tau' was passed but the quantile loss function is not being used. 'quantile_tau' value will be ignored.");
+  }
 
   if (all.l1_lambda < 0.f)
   {
