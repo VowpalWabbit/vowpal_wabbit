@@ -47,7 +47,7 @@ struct reader
   /// This function will throw if the reader does not support reseting. Users
   /// should check if this io_adapter is resetable before trying to reset.
   /// \throw VW::vw_exception if reader does not support resetting.
-  virtual void reset() { THROW("Reset not supported for this io_adapter"); }
+  virtual void reset() { THROW_OR_RETURN("Reset not supported for this io_adapter"); }
 
   /// \returns true if this reader can be reset, otherwise false
   bool is_resettable() const { return _is_resettable; }

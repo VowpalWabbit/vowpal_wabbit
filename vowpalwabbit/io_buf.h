@@ -123,7 +123,7 @@ public:
 
   uint32_t hash()
   {
-    if (!_verify_hash) THROW("HASH WAS NOT CALCULATED");
+    if (!_verify_hash) THROW_OR_RETURN("HASH WAS NOT CALCULATED", 0);
     return _hash;
   }
 
@@ -240,10 +240,10 @@ public:
     T value;
     if (buf_read(c, sizeof(T)) < sizeof(T))
     {
-      if (!debug_name.empty()) { THROW("Failed to read cache value: " << debug_name << ", with size: " << sizeof(T)); }
+      if (!debug_name.empty()) { THROW_OR_RETURN("Failed to read cache value: " << debug_name << ", with size: " << sizeof(T)); }
       else
       {
-        THROW("Failed to read cache value with size: " << sizeof(T));
+        THROW_OR_RETURN("Failed to read cache value with size: " << sizeof(T));
       }
     }
     value = *reinterpret_cast<T*>(c);
@@ -306,7 +306,7 @@ inline size_t bin_read(io_buf& i, char* data, size_t len)
 {
   uint32_t obj_len;
   size_t ret = i.bin_read_fixed(reinterpret_cast<char*>(&obj_len), sizeof(obj_len));
-  if (obj_len > len || ret < sizeof(uint32_t)) THROW("bad model format!");
+  if (obj_len > len || ret < sizeof(uint32_t)) THROW_OR_RETURN("bad model format!", 0);
 
   ret += i.bin_read_fixed(data, obj_len);
 
@@ -363,7 +363,7 @@ inline size_t bin_text_read_write_fixed_validated(
   size_t nbytes = bin_text_read_write_fixed(io, data, len, read, msg, text);
   if (read && len > 0)  // only validate bytes read/write if expected length > 0
   {
-    if (nbytes == 0) { THROW("Unexpected end of file encountered."); }
+    if (nbytes == 0) { THROW_OR_RETURN("Unexpected end of file encountered.", 0); }
   }
   return nbytes;
 }

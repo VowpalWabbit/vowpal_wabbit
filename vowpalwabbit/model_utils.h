@@ -22,7 +22,7 @@ namespace details
 {
 inline size_t check_length_matches(size_t actual_len, size_t expected_len)
 {
-  if (expected_len > 0 && actual_len != expected_len) { THROW("Unexpected end of file encountered."); }
+  if (expected_len > 0 && actual_len != expected_len) { THROW_OR_RETURN("Unexpected end of file encountered.", 0); }
   return actual_len;
 }
 
@@ -139,7 +139,7 @@ inline size_t read_model_field(io_buf& io, std::string& str)
 
 inline size_t write_model_field(io_buf& io, const std::string& str, const std::string& upstream_name, bool text)
 {
-  if (upstream_name.find("{}") != std::string::npos) { THROW("Field template not allowed for string."); }
+  if (upstream_name.find("{}") != std::string::npos) { THROW_OR_RETURN("Field template not allowed for string.", 0); }
   size_t bytes = 0;
   uint32_t str_size = static_cast<uint32_t>(str.size());
   bytes += write_model_field(io, str_size, upstream_name + ".size()", text);
@@ -171,7 +171,7 @@ size_t read_model_field(io_buf& io, std::set<T>& set)
 template <typename T>
 size_t write_model_field(io_buf& io, const std::set<T>& set, const std::string& upstream_name, bool text)
 {
-  if (upstream_name.find("{}") != std::string::npos) { THROW("Field template not allowed for set."); }
+  if (upstream_name.find("{}") != std::string::npos) { THROW_OR_RETURN("Field template not allowed for set.", 0); }
   size_t bytes = 0;
   uint32_t set_size = static_cast<uint32_t>(set.size());
   bytes += write_model_field(io, set_size, upstream_name + ".size()", text);
@@ -202,7 +202,7 @@ size_t read_model_field(io_buf& io, std::vector<T>& vec)
 template <typename T>
 size_t write_model_field(io_buf& io, const std::vector<T>& vec, const std::string& upstream_name, bool text)
 {
-  if (upstream_name.find("{}") != std::string::npos) { THROW("Field template not allowed for vector."); }
+  if (upstream_name.find("{}") != std::string::npos) { THROW_OR_RETURN("Field template not allowed for vector.", 0); }
   size_t bytes = 0;
   uint32_t vec_size = static_cast<uint32_t>(vec.size());
   bytes += write_model_field(io, vec_size, upstream_name + ".size()", text);
@@ -229,7 +229,7 @@ size_t read_model_field(io_buf& io, v_array<T>& vec)
 template <typename T>
 size_t write_model_field(io_buf& io, const v_array<T>& vec, const std::string& upstream_name, bool text)
 {
-  if (upstream_name.find("{}") != std::string::npos) { THROW("Field template not allowed for v_array."); }
+  if (upstream_name.find("{}") != std::string::npos) { THROW_OR_RETURN("Field template not allowed for v_array.", 0); }
   size_t bytes = 0;
   uint32_t vec_size = static_cast<uint32_t>(vec.size());
   bytes += write_model_field(io, vec_size, upstream_name + ".size()", text);
@@ -250,7 +250,7 @@ size_t read_model_field(io_buf& io, std::pair<F, S>& pair)
 template <typename F, typename S>
 size_t write_model_field(io_buf& io, const std::pair<F, S>& pair, const std::string& upstream_name, bool text)
 {
-  if (upstream_name.find("{}") != std::string::npos) { THROW("Field template not allowed for pair."); }
+  if (upstream_name.find("{}") != std::string::npos) { THROW_OR_RETURN("Field template not allowed for pair.", 0); }
   size_t bytes = 0;
   bytes += write_model_field(io, pair.first, upstream_name + ".first", text);
   bytes += write_model_field(io, pair.second, upstream_name + ".second", text);
@@ -275,7 +275,7 @@ size_t read_model_field(io_buf& io, std::priority_queue<T>& pq)
 template <typename T>
 size_t write_model_field(io_buf& io, const std::priority_queue<T>& pq, const std::string& upstream_name, bool text)
 {
-  if (upstream_name.find("{}") != std::string::npos) { THROW("Field template not allowed for priority_queue."); }
+  if (upstream_name.find("{}") != std::string::npos) { THROW_OR_RETURN("Field template not allowed for priority_queue.", 0); }
   std::priority_queue<T> pq_cp = pq;
   size_t bytes = 0;
   uint32_t queue_size = static_cast<uint32_t>(pq_cp.size());
@@ -309,7 +309,7 @@ size_t read_model_field(io_buf& io, std::map<K, V>& map)
 template <typename K, typename V>
 size_t write_model_field(io_buf& io, const std::map<K, V>& map, const std::string& upstream_name, bool text)
 {
-  if (upstream_name.find("{}") != std::string::npos) { THROW("Field template not allowed for map."); }
+  if (upstream_name.find("{}") != std::string::npos) { THROW_OR_RETURN("Field template not allowed for map.", 0); }
   size_t bytes = 0;
   uint32_t map_size = static_cast<uint32_t>(map.size());
   bytes += write_model_field(io, map_size, upstream_name + ".size()", text);
