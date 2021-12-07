@@ -114,7 +114,7 @@ label_parser multilabel = {
     // label type
     VW::label_type_t::multilabel};
 
-void print_update(VW::workspace& all, bool is_test, example& ec)
+void print_update(VW::workspace& all, bool is_test, const example& ec)
 {
   if (all.sd->weighted_examples() >= all.sd->dump_interval && !all.logger.quiet && !all.bfgs)
   {
@@ -132,9 +132,9 @@ void print_update(VW::workspace& all, bool is_test, example& ec)
   }
 }
 
-void output_example(VW::workspace& all, example& ec)
+void output_example(VW::workspace& all, const example& ec)
 {
-  auto& ld = ec.l.multilabels;
+  const auto& ld = ec.l.multilabels;
 
   float loss = 0.;
   if (!test_label(ld))

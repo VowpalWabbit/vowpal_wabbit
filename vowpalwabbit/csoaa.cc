@@ -184,7 +184,7 @@ struct ldf
   std::vector<action_scores> stored_preds;
 };
 
-bool ec_is_label_definition(example& ec)  // label defs look like "0:___" or just "label:___"
+bool ec_is_label_definition(const example& ec)  // label defs look like "0:___" or just "label:___"
 {
   if (ec.indices.empty()) return false;
   if (ec.indices[0] != 'l') return false;
@@ -583,9 +583,9 @@ void global_print_newline(VW::workspace& all)
   }
 }
 
-void output_example(VW::workspace& all, example& ec, bool& hit_loss, multi_ex* ec_seq, ldf& data)
+void output_example(VW::workspace& all, const example& ec, bool& hit_loss, const multi_ex* ec_seq, const ldf& data)
 {
-  label& ld = ec.l.cs;
+  const label& ld = ec.l.cs;
   const auto& costs = ld.costs;
 
   if (example_is_newline(ec)) return;
