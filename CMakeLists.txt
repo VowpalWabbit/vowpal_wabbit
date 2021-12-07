@@ -94,7 +94,6 @@ option(BUILD_PYTHON "Add Python targets." Off)
 option(BUILD_DOCS "Add documentation targets." Off)
 option(BUILD_EXPERIMENTAL_BINDING "Add targets for experimental bindings" OFF)
 option(LTO "Enable Link Time optimization (Requires Release build, only works with clang and linux/mac for now)." Off)
-option(BUILD_SLIM_VW "Add targets for slim version of VW which implements only predict() for a subset of VW reductions." OFF)
 option(RAPIDJSON_SYS_DEP "Override using the submodule for RapidJSON dependency. Instead will use find_package" OFF)
 option(FMT_SYS_DEP "Override using the submodule for FMT dependency. Instead will use find_package" OFF)
 option(SPDLOG_SYS_DEP "Override using the submodule for spdlog dependency. Instead will use find_package" OFF)
@@ -266,10 +265,6 @@ endif()
 
 if(BUILD_PYTHON)
   add_subdirectory(python)
-endif()
-
-if(BUILD_SLIM_VW)
-  add_subdirectory(vowpalwabbit/slim)
 endif()
 
 if(BUILD_BENCHMARKS)

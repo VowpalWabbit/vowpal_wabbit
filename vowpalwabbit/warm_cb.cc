@@ -50,7 +50,7 @@ struct warm_cb
   // used as the seed
   size_t example_counter = 0;
   VW::workspace* all = nullptr;
-  std::shared_ptr<rand_state> _random_state;
+  std::shared_ptr<VW::rand_state> _random_state;
   multi_ex ecs;
   float loss0 = 0.f;
   float loss1 = 0.f;

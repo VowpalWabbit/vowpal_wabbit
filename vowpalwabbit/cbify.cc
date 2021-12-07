@@ -509,7 +509,7 @@ void do_actual_learning_ldf(cbify& data, multi_learner& base, multi_ex& ec_seq)
   }
 }
 
-void output_example(VW::workspace& all, example& ec, bool& hit_loss, multi_ex* ec_seq)
+void output_example(VW::workspace& all, const example& ec, bool& hit_loss, const multi_ex* ec_seq)
 {
   const auto& costs = ec.l.cs.costs;
 
@@ -557,7 +557,7 @@ void output_example(VW::workspace& all, example& ec, bool& hit_loss, multi_ex* e
   COST_SENSITIVE::print_update(all, COST_SENSITIVE::cs_label.test_label(ec.l), ec, ec_seq, false, predicted_class);
 }
 
-void output_example_seq(VW::workspace& all, multi_ex& ec_seq)
+void output_example_seq(VW::workspace& all, const multi_ex& ec_seq)
 {
   if (ec_seq.empty()) return;
   all.sd->weighted_labeled_examples += ec_seq[0]->weight;

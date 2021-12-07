@@ -31,7 +31,7 @@ struct bs
   float ub = 0.f;
   std::vector<double> pred_vec;
   VW::workspace* all = nullptr;  // for raw prediction and loss
-  std::shared_ptr<rand_state> _random_state;
+  std::shared_ptr<VW::rand_state> _random_state;
 };
 
 void bs_predict_mean(VW::workspace& all, example& ec, std::vector<double>& pred_vec)
@@ -146,9 +146,9 @@ void print_result(VW::io::writer* f, float res, const v_array<char>& tag, float 
   }
 }
 
-void output_example(VW::workspace& all, bs& d, example& ec)
+void output_example(VW::workspace& all, bs& d, const example& ec)
 {
-  label_data& ld = ec.l.simple;
+  const label_data& ld = ec.l.simple;
 
   all.sd->update(ec.test_only, ld.label != FLT_MAX, ec.loss, ec.weight, ec.get_num_features());
   if (ld.label != FLT_MAX && !ec.test_only) all.sd->weighted_labels += (static_cast<double>(ld.label)) * ec.weight;
