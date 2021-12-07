@@ -275,7 +275,8 @@ size_t read_model_field(io_buf& io, std::priority_queue<T>& pq)
 template <typename T>
 size_t write_model_field(io_buf& io, const std::priority_queue<T>& pq, const std::string& upstream_name, bool text)
 {
-  if (upstream_name.find("{}") != std::string::npos) { THROW_OR_RETURN("Field template not allowed for priority_queue.", 0); }
+  if (upstream_name.find("{}") != std::string::npos)
+  { THROW_OR_RETURN("Field template not allowed for priority_queue.", 0); }
   std::priority_queue<T> pq_cp = pq;
   size_t bytes = 0;
   uint32_t queue_size = static_cast<uint32_t>(pq_cp.size());

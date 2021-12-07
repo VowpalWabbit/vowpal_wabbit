@@ -240,7 +240,8 @@ public:
     T value;
     if (buf_read(c, sizeof(T)) < sizeof(T))
     {
-      if (!debug_name.empty()) { THROW_OR_RETURN("Failed to read cache value: " << debug_name << ", with size: " << sizeof(T)); }
+      if (!debug_name.empty())
+      { THROW_OR_RETURN("Failed to read cache value: " << debug_name << ", with size: " << sizeof(T)); }
       else
       {
         THROW_OR_RETURN("Failed to read cache value with size: " << sizeof(T));
