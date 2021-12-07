@@ -65,6 +65,7 @@ struct bfgs
   VW::workspace* all = nullptr;  // prediction, regressor
   int m = 0;
   float rel_threshold = 0.f;  // termination threshold
+  bool hessian_on = false;
 
   double wolfe1_bound = 0.0;
 
@@ -767,7 +768,7 @@ int process_pass(VW::workspace& all, bfgs& b)
         status = LEARN_CURV;
       }
 
-      if (all.hessian_on)
+      if (b.hessian_on)
       {
         b.gradient_pass = false;  // now start computing curvature
       }
@@ -1066,23 +1067,27 @@ base_learner* bfgs_setup(VW::setup_base_i& stack_builder)
 
   auto b = VW::make_unique<bfgs>();
   bool conjugate_gradient = false;
+  option_group_definition conjugate_gradient_options("Conjugate Gradient");
+  conjugate_gradient_options.add(make_option("conjugate_gradient", conjugate_gradient)
+                                     .keep()
+                                     .necessary()
+                                     .help("Use conjugate gradient based optimization"));
+
   bool bfgs_option = false;
-  option_group_definition bfgs_outer_options("Conjugate Gradient");
-  bfgs_outer_options.add(make_option("conjugate_gradient", conjugate_gradient)
-                             .keep()
-                             .necessary()
-                             .help("Use conjugate gradient based optimization"));
-
-  option_group_definition bfgs_inner_options("LBFGS and Conjugate Gradient");
-  bfgs_inner_options.add(
+  int local_m = 0;
+  float local_rel_threshold = 0.f;
+  bool local_hessian_on = false;
+  option_group_definition bfgs_options("LBFGS and Conjugate Gradient");
+  bfgs_options.add(
       make_option("bfgs", bfgs_option).keep().necessary().help("Use conjugate gradient based optimization"));
-  bfgs_inner_options.add(make_option("hessian_on", all.hessian_on).help("Use second derivative in line search"));
-  bfgs_inner_options.add(make_option("mem", b->m).default_value(15).help("Memory in bfgs"));
-  bfgs_inner_options.add(
-      make_option("termination", b->rel_threshold).default_value(0.001f).help("Termination threshold"));
+  bfgs_options.add(make_option("hessian_on", local_hessian_on).help("Use second derivative in line search"));
+  bfgs_options.add(make_option("mem", b->m).default_value(15).help("Memory in bfgs"));
+  bfgs_options.add(make_option("termination", b->rel_threshold).default_value(0.001f).help("Termination threshold"));
 
-  if (!options.add_parse_and_check_necessary(bfgs_outer_options))
-    if (!options.add_parse_and_check_necessary(bfgs_inner_options)) return nullptr;
+  auto conjugate_gradient_enabled = options.add_parse_and_check_necessary(conjugate_gradient_options);
+  auto bfgs_enabled = options.add_parse_and_check_necessary(bfgs_options);
+  if (!conjugate_gradient_enabled && !bfgs_enabled) { return nullptr; }
+  if (conjugate_gradient_enabled && bfgs_enabled) { THROW("'conjugate_gradient' and 'bfgs' cannot be used together."); }
 
   b->all = &all;
   b->wolfe1_bound = 0.01;
@@ -1094,27 +1099,37 @@ base_learner* bfgs_setup(VW::setup_base_i& stack_builder)
   b->final_pass = all.numpasses;
   b->no_win_counter = 0;
 
+  if (bfgs_enabled)
+  {
+    b->m = local_m;
+    b->rel_threshold = local_rel_threshold;
+    b->hessian_on = local_hessian_on;
+  }
+
   if (!all.holdout_set_off)
   {
     all.sd->holdout_best_loss = FLT_MAX;
     b->early_stop_thres = options.get_typed_option<size_t>("early_terminate").value();
   }
 
-  if (b->m == 0) all.hessian_on = true;
+  if (b->m == 0) { b->hessian_on = true; }
 
   if (!all.logger.quiet)
   {
-    if (b->m > 0)
-      *(b->all->trace_message) << "enabling BFGS based optimization ";
+    if (b->m > 0) { *(all.trace_message) << "enabling BFGS based optimization "; }
     else
-      *(b->all->trace_message) << "enabling conjugate gradient optimization via BFGS ";
-    if (all.hessian_on)
-      *(b->all->trace_message) << "with curvature calculation" << std::endl;
+    {
+      *(all.trace_message) << "enabling conjugate gradient optimization via BFGS ";
+    }
+
+    if (b->hessian_on) { *(all.trace_message) << "with curvature calculation" << std::endl; }
     else
-      *(b->all->trace_message) << "**without** curvature calculation" << std::endl;
+    {
+      *(all.trace_message) << "**without** curvature calculation" << std::endl;
+    }
   }
 
-  if (all.numpasses < 2 && all.training) THROW("you must make at least 2 passes to use BFGS");
+  if (all.numpasses < 2 && all.training) { THROW("you must make at least 2 passes to use BFGS"); }
 
   all.bfgs = true;
   all.weights.stride_shift(2);
