@@ -11,6 +11,7 @@
 #include "multiclass.h"
 #include "simple_label.h"
 #include "parser.h"
+#include "debug_log.h"
 
 #undef VW_DEBUG_LOG
 #define VW_DEBUG_LOG vw_dbg::learner
