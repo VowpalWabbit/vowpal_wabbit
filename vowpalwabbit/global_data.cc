@@ -313,7 +313,7 @@ workspace::workspace() : options(nullptr, nullptr)
 
   add_constant = true;
   audit = false;
-  _audit_writer = VW::io::open_stdout();
+  audit_writer = VW::io::open_stdout();
 
   pass_length = std::numeric_limits<size_t>::max();
   passes_complete = 0;
