@@ -598,7 +598,7 @@ struct common_learner_builder
     return *static_cast<FluentBuilderT*>(this);
   }
 
-  FluentBuilderT& set_print_example(void (*fn_ptr)(VW::workspace& all, DataT&, ExampleT&))
+  FluentBuilderT& set_print_example(void (*fn_ptr)(VW::workspace& all, DataT&, const ExampleT&))
   {
     _learner->finish_example_fd.data = _learner->learn_fd.data;
     _learner->finish_example_fd.print_example_f = (end_fptr_type)(fn_ptr);
