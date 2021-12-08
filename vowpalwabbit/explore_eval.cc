@@ -53,7 +53,7 @@ void finish(explore_eval& data)
 // are specified. We print the first action and probability, based on
 // ordering by scores in the final output.
 
-void output_example(VW::workspace& all, explore_eval& c, example& ec, multi_ex* ec_seq)
+void output_example(VW::workspace& all, const explore_eval& c, const example& ec, const multi_ex* ec_seq)
 {
   if (example_is_newline_not_header(ec)) return;
 
@@ -102,7 +102,7 @@ void output_example(VW::workspace& all, explore_eval& c, example& ec, multi_ex* 
   CB::print_update(all, !labeled_example, ec, ec_seq, true, nullptr);
 }
 
-void output_example_seq(VW::workspace& all, explore_eval& data, multi_ex& ec_seq)
+void output_example_seq(VW::workspace& all, const explore_eval& data, const multi_ex& ec_seq)
 {
   if (ec_seq.size() > 0)
   {

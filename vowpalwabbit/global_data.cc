@@ -256,13 +256,12 @@ workspace::workspace() : options(nullptr, nullptr)
 
   bfgs = false;
   no_bias = false;
-  hessian_on = false;
   active = false;
   num_bits = 18;
   default_bits = true;
   daemon = false;
   num_children = 10;
-  save_resume = false;
+  save_resume = true;
   preserve_performance_counters = false;
 
   random_positive_weights = false;

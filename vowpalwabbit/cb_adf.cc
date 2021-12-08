@@ -88,7 +88,7 @@ private:
 public:
   void learn(VW::LEARNER::multi_learner& base, multi_ex& ec_seq);
   void predict(VW::LEARNER::multi_learner& base, multi_ex& ec_seq);
-  bool update_statistics(example& ec, multi_ex* ec_seq);
+  bool update_statistics(const example& ec, const multi_ex& ec_seq);
 
   cb_adf(shared_data* sd, VW::cb_type_t cb_type, VW::version_struct* model_file_ver, bool rank_all, float clip_p,
       bool no_predict)
@@ -267,7 +267,7 @@ void cb_adf::learn_MTR(multi_learner& base, multi_ex& examples)
 }
 
 // Validates a multiline example collection as a valid sequence for action dependent features format.
-example* test_adf_sequence(multi_ex& ec_seq)
+example* test_adf_sequence(const multi_ex& ec_seq)
 {
   if (ec_seq.empty()) THROW("cb_adf: At least one action must be provided for an example to be valid.");
 
@@ -345,12 +345,12 @@ void global_print_newline(const std::vector<std::unique_ptr<VW::io::writer>>& fi
 
 // how to
 
-bool cb_adf::update_statistics(example& ec, multi_ex* ec_seq)
+bool cb_adf::update_statistics(const example& ec, const multi_ex& ec_seq)
 {
   size_t num_features = 0;
 
   uint32_t action = ec.pred.a_s[0].action;
-  for (const auto& example : *ec_seq) num_features += example->get_num_features();
+  for (const auto& example : ec_seq) num_features += example->get_num_features();
 
   float loss = 0.;
 
@@ -360,13 +360,13 @@ bool cb_adf::update_statistics(example& ec, multi_ex* ec_seq)
     labeled_example = false;
 
   bool holdout_example = labeled_example;
-  for (auto const& i : *ec_seq) holdout_example &= i->test_only;
+  for (auto const& i : ec_seq) holdout_example &= i->test_only;
 
   _sd->update(holdout_example, labeled_example, loss, ec.weight, num_features);
   return labeled_example;
 }
 
-void output_example(VW::workspace& all, cb_adf& c, example& ec, multi_ex* ec_seq)
+void output_example(VW::workspace& all, cb_adf& c, const example& ec, const multi_ex& ec_seq)
 {
   if (example_is_newline_not_header(ec)) return;
 
@@ -390,12 +390,12 @@ void output_example(VW::workspace& all, cb_adf& c, example& ec, multi_ex* ec_seq
   }
 
   if (labeled_example)
-    CB::print_update(all, !labeled_example, ec, ec_seq, true, c.known_cost());
+    CB::print_update(all, !labeled_example, ec, &ec_seq, true, c.known_cost());
   else
-    CB::print_update(all, !labeled_example, ec, ec_seq, true, nullptr);
+    CB::print_update(all, !labeled_example, ec, &ec_seq, true, nullptr);
 }
 
-void output_rank_example(VW::workspace& all, cb_adf& c, example& ec, multi_ex* ec_seq)
+void output_rank_example(VW::workspace& all, cb_adf& c, const example& ec, const multi_ex& ec_seq)
 {
   const auto& costs = ec.l.cb.costs;
 
@@ -418,27 +418,26 @@ void output_rank_example(VW::workspace& all, cb_adf& c, example& ec, multi_ex* e
   }
 
   if (labeled_example)
-    CB::print_update(all, !labeled_example, ec, ec_seq, true, c.known_cost());
+    CB::print_update(all, !labeled_example, ec, &ec_seq, true, c.known_cost());
   else
-    CB::print_update(all, !labeled_example, ec, ec_seq, true, nullptr);
+    CB::print_update(all, !labeled_example, ec, &ec_seq, true, nullptr);
 }
 
-void output_example_seq(VW::workspace& all, cb_adf& data, multi_ex& ec_seq)
+void output_example_seq(VW::workspace& all, cb_adf& data, const multi_ex& ec_seq)
 {
   if (!ec_seq.empty())
   {
-    if (data.get_rank_all())
-      output_rank_example(all, data, **(ec_seq.begin()), &(ec_seq));
+    if (data.get_rank_all()) { output_rank_example(all, data, *ec_seq.front(), ec_seq); }
     else
     {
-      output_example(all, data, **(ec_seq.begin()), &(ec_seq));
+      output_example(all, data, *ec_seq.front(), ec_seq);
 
       if (all.raw_prediction != nullptr) all.print_text_by_ref(all.raw_prediction.get(), "", ec_seq[0]->tag);
     }
   }
 }
 
-void update_and_output(VW::workspace& all, cb_adf& data, multi_ex& ec_seq)
+void update_and_output(VW::workspace& all, cb_adf& data, const multi_ex& ec_seq)
 {
   if (!ec_seq.empty())
   {
