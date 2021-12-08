@@ -11,8 +11,6 @@ using namespace VW::LEARNER;
 using namespace VW;
 using namespace VW::config;
 
-namespace logger = VW::io::logger;
-
 namespace VW
 {
 struct cb_dro_data
@@ -132,12 +130,12 @@ base_learner* cb_dro_setup(VW::setup_base_i& stack_builder)
 
   if (wmax <= 1) { THROW("cb_dro_wmax must exceed 1"); }
 
-  if (!all.logger.quiet)
+  if (!all.quiet)
   {
-    *(all.trace_message) << "Using DRO for CB learning" << std::endl;
-    *(all.trace_message) << "cb_dro_alpha = " << alpha << std::endl;
-    *(all.trace_message) << "cb_dro_tau = " << tau << std::endl;
-    *(all.trace_message) << "cb_dro_wmax = " << wmax << std::endl;
+    *(all.driver_output) << "Using DRO for CB learning" << std::endl;
+    *(all.driver_output) << "cb_dro_alpha = " << alpha << std::endl;
+    *(all.driver_output) << "cb_dro_tau = " << tau << std::endl;
+    *(all.driver_output) << "cb_dro_wmax = " << wmax << std::endl;
   }
 
   auto data = VW::make_unique<cb_dro_data>(alpha, tau, wmax);

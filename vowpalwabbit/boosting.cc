@@ -15,6 +15,7 @@
 #include <cstdio>
 #include <string>
 #include <sstream>
+#include <utility>
 #include <vector>
 #include <memory>
 #include <fmt/core.h>
@@ -30,8 +31,6 @@
 using namespace VW::LEARNER;
 using namespace VW::config;
 
-namespace logger = VW::io::logger;
-
 using std::endl;
 
 struct boosting
@@ -45,6 +44,9 @@ struct boosting
   std::vector<float> alpha;
   std::vector<float> v;
   int t = 0;
+  VW::io::logger logger;
+
+  explicit boosting(VW::io::logger logger) : logger(std::move(logger)) {}
 };
 
 //---------------------------------------------------
@@ -309,7 +311,7 @@ void save_load_sampling(boosting& o, io_buf& model_file, bool read, bool text)
   {
     fmt::format_to(buffer, "{0} {1}\n", o.alpha[i], o.v[i]);
   }
-  logger::errlog_info("{}", fmt::to_string(buffer));
+  o.logger.info("{}", fmt::to_string(buffer));
 }
 
 void return_example(VW::workspace& all, boosting& /* a */, example& ec)
@@ -341,7 +343,7 @@ void save_load(boosting& o, io_buf& model_file, bool read, bool text)
       bin_text_write_fixed(model_file, reinterpret_cast<char*>(&(o.alpha[i])), sizeof(o.alpha[i]), os2, text);
     }
 
-  if (!o.all->logger.quiet)
+  if (!o.all->quiet)
   {
     // avoid making syscalls multiple times
     fmt::memory_buffer buffer;
@@ -359,7 +361,7 @@ void save_load(boosting& o, io_buf& model_file, bool read, bool text)
     {
       fmt::format_to(buffer, "{} \n", o.alpha[i]);
     }
-    logger::errlog_info("{}", fmt::to_string(buffer));
+    o.logger.info("{}", fmt::to_string(buffer));
   }
 }
 
@@ -369,7 +371,7 @@ VW::LEARNER::base_learner* boosting_setup(VW::setup_base_i& stack_builder)
 {
   options_i& options = *stack_builder.get_options();
   VW::workspace& all = *stack_builder.get_all_pointer();
-  auto data = VW::make_unique<boosting>();
+  auto data = VW::make_unique<boosting>(all.logger);
   option_group_definition new_options("Boosting");
   new_options.add(make_option("boosting", data->N).keep().necessary().help("Online boosting with <N> weak learners"))
       .add(make_option("gamma", data->gamma)
@@ -391,12 +393,13 @@ VW::LEARNER::base_learner* boosting_setup(VW::setup_base_i& stack_builder)
   // "adaptive" implements AdaBoost.OL (Algorithm 2 in BLK'15,
   // 	    using sampling rather than importance weighting)
 
-  logger::errlog_info("Number of weak learners = {}", data->N);
-  logger::errlog_info("Gamma = {}", data->gamma);
+  all.logger.info("Number of weak learners = {}", data->N);
+  all.logger.info("Gamma = {}", data->gamma);
 
   data->C = std::vector<std::vector<int64_t> >(data->N, std::vector<int64_t>(data->N, -1));
   data->t = 0;
   data->all = &all;
+  data->logger = all.logger;
   data->_random_state = all.get_random_state();
   data->alpha = std::vector<float>(data->N, 0);
   data->v = std::vector<float>(data->N, 1);
@@ -430,7 +433,7 @@ VW::LEARNER::base_learner* boosting_setup(VW::setup_base_i& stack_builder)
   }
   else
   {
-    THROW("Unrecognized boosting algorithm: \'" << data->alg << "\' Bailing!");
+    THROW("Unrecognized boosting algorithm: \'" << data->alg << "\'.");
   }
 
   auto* l = make_reduction_learner(std::move(data), as_singleline(stack_builder.setup_base_learner()), learn_ptr,

@@ -20,8 +20,6 @@
 using namespace VW::LEARNER;
 using namespace VW::config;
 
-namespace logger = VW::io::logger;
-
 float get_active_coin_bias(float k, float avg_loss, float g, float c0)
 {
   const float b = c0 * (std::log(k + 1.f) + 0.0001f) / (k + 0.0001f);
@@ -105,7 +103,7 @@ void predict_or_learn_active(active& a, single_learner& base, example& ec)
   }
 }
 
-void active_print_result(VW::io::writer* f, float res, float weight, const v_array<char>& tag)
+void active_print_result(VW::io::writer* f, float res, float weight, const v_array<char>& tag, VW::io::logger& logger)
 {
   if (f == nullptr) { return; }
 
@@ -118,7 +116,7 @@ void active_print_result(VW::io::writer* f, float res, float weight, const v_arr
   const auto ss_str = ss.str();
   ssize_t len = ss_str.size();
   ssize_t t = f->write(ss_str.c_str(), static_cast<unsigned int>(len));
-  if (t != len) { logger::errlog_error("write error: {}", VW::strerror_to_string(errno)); }
+  if (t != len) { logger.error("write error: {}", VW::strerror_to_string(errno)); }
 }
 
 void output_and_account_example(VW::workspace& all, active& a, example& ec)
@@ -133,8 +131,8 @@ void output_and_account_example(VW::workspace& all, active& a, example& ec)
   if (ld.label == FLT_MAX)
   { ai = query_decision(a, ec.confidence, static_cast<float>(all.sd->weighted_unlabeled_examples)); }
 
-  all.print_by_ref(all.raw_prediction.get(), ec.partial_prediction, -1, ec.tag);
-  for (auto& i : all.final_prediction_sink) { active_print_result(i.get(), ec.pred.scalar, ai, ec.tag); }
+  all.print_by_ref(all.raw_prediction.get(), ec.partial_prediction, -1, ec.tag, all.logger);
+  for (auto& i : all.final_prediction_sink) { active_print_result(i.get(), ec.pred.scalar, ai, ec.tag, all.logger); }
 
   print_update(all, ec);
 }

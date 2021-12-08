@@ -187,16 +187,16 @@ void shared_data::update_dump_interval(bool progress_add, float progress_arg)
 }
 
 // progressive validation header
-void shared_data::print_update_header(std::ostream& trace_message)
+void shared_data::print_update_header(std::ostream& driver_output)
 {
-  trace_message << std::left << std::setw(col_avg_loss) << std::left << "average"
+  driver_output << std::left << std::setw(col_avg_loss) << std::left << "average"
                 << " " << std::setw(col_since_last) << std::left << "since"
                 << " " << std::right << std::setw(col_example_counter) << "example"
                 << " " << std::setw(col_example_weight) << "example"
                 << " " << std::setw(col_current_label) << "current"
                 << " " << std::setw(col_current_predict) << "current"
                 << " " << std::setw(col_current_features) << "current" << std::endl;
-  trace_message << std::left << std::setw(col_avg_loss) << std::left << "loss"
+  driver_output << std::left << std::setw(col_avg_loss) << std::left << "loss"
                 << " " << std::setw(col_since_last) << std::left << "last"
                 << " " << std::right << std::setw(col_example_counter) << "counter"
                 << " " << std::setw(col_example_weight) << "weight"

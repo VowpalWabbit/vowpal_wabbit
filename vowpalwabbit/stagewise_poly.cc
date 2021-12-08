@@ -563,7 +563,7 @@ void reduce_min_max(uint8_t &v1, const uint8_t &v2)
   if (parent_or_depth != p_or_d2)
   {
 #ifdef DEBUG
-    std::cout << "Reducing parent with depth!!!!!";
+    std::cout << "Reducing parent with depth";
 #endif  // DEBUG
     return;
   }

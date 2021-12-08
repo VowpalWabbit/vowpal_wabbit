@@ -221,7 +221,7 @@ void predict_or_learn_regression_discrete(cbify& data, single_learner& base, exa
   cb.action = chosen_action + 1;
   cb.probability = ec.pred.a_s[chosen_action].score;
 
-  if (!cb.action) THROW("No action with non-zero probability found!");
+  if (!cb.action) THROW("No action with non-zero probability found.");
   float continuous_range = data.regression_data.max_value - data.regression_data.min_value;
   float converted_action =
       data.regression_data.min_value + chosen_action * continuous_range / data.regression_data.num_actions;
@@ -413,7 +413,7 @@ void learn_adf(cbify& data, multi_learner& base, example& ec)
   cl.action = out_ec.pred.a_s[data.chosen_action].action + 1;
   cl.probability = out_ec.pred.a_s[data.chosen_action].score;
 
-  if (!cl.action) THROW("No action with non-zero probability found!");
+  if (!cl.action) THROW("No action with non-zero probability found.");
 
   if (use_cs)
     cl.cost = loss_cs(data, csl.costs, cl.action);
@@ -474,7 +474,7 @@ void do_actual_learning_ldf(cbify& data, multi_learner& base, multi_ex& ec_seq)
   cl.action = data.cb_as[0][data.chosen_action].action + 1;
   cl.probability = data.cb_as[0][data.chosen_action].score;
 
-  if (!cl.action) THROW("No action with non-zero probability found!");
+  if (!cl.action) { THROW("No action with non-zero probability found."); }
 
   cl.cost = loss_csldf(data, data.cs_costs, cl.action);
 
@@ -539,7 +539,7 @@ void output_example(VW::workspace& all, const example& ec, bool& hit_loss, const
   }
 
   for (const auto& sink : all.final_prediction_sink)
-    all.print_by_ref(sink.get(), static_cast<float>(ec.pred.multiclass), 0, ec.tag);
+    all.print_by_ref(sink.get(), static_cast<float>(ec.pred.multiclass), 0, ec.tag, all.logger);
 
   if (all.raw_prediction != nullptr)
   {
@@ -551,7 +551,7 @@ void output_example(VW::workspace& all, const example& ec, bool& hit_loss, const
       outputStringStream << costs[i].class_index << ':' << costs[i].partial_prediction;
     }
     // outputStringStream << std::endl;
-    all.print_text_by_ref(all.raw_prediction.get(), outputStringStream.str(), ec.tag);
+    all.print_text_by_ref(all.raw_prediction.get(), outputStringStream.str(), ec.tag, all.logger);
   }
 
   COST_SENSITIVE::print_update(all, COST_SENSITIVE::cs_label.test_label(ec.l), ec, ec_seq, false, predicted_class);
@@ -569,7 +569,7 @@ void output_example_seq(VW::workspace& all, const multi_ex& ec_seq)
   if (all.raw_prediction != nullptr)
   {
     v_array<char> empty;
-    all.print_text_by_ref(all.raw_prediction.get(), "", empty);
+    all.print_text_by_ref(all.raw_prediction.get(), "", empty, all.logger);
   }
 }
 

@@ -147,9 +147,9 @@ inline bool reduction_output::does_example_have_label(const example& ec)
 
 void reduction_output::print_update_cb_cont(VW::workspace& all, const example& ec)
 {
-  if (all.sd->weighted_examples() >= all.sd->dump_interval && !all.logger.quiet && !all.bfgs)
+  if (all.sd->weighted_examples() >= all.sd->dump_interval && !all.quiet && !all.bfgs)
   {
-    all.sd->print_update(*all.trace_message, all.holdout_set_off, all.current_pass,
+    all.sd->print_update(*all.driver_output, all.holdout_set_off, all.current_pass,
         ec.test_only ? "unknown" : to_string(ec.l.cb_cont.costs[0]),  // Label
         to_string(ec.pred.pdf_value),                                 // Prediction
         ec.get_num_features(), all.progress_add, all.progress_arg);
@@ -195,7 +195,7 @@ LEARNER::base_learner* setup(setup_base_i& stack_builder)
     float leaf_width = (max_value - min_value) / (num_actions);  // aka unit range
     float half_leaf_width = leaf_width / 2.f;
     bandwidth = half_leaf_width;
-    *(all.trace_message) << "Bandwidth was not supplied, setting default to half the continuous action unit range: "
+    *(all.driver_output) << "Bandwidth was not supplied, setting default to half the continuous action unit range: "
                          << bandwidth << std::endl;
   }
 

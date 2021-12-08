@@ -6,7 +6,6 @@
 
 #include "constant.h"  // NUM_NAMESPACES
 #include "debug_log.h"
-#include "io/logger.h"
 #include "rand_state.h"
 #include "vw.h"
 #include "model_utils.h"
@@ -15,8 +14,6 @@
 
 using namespace VW::config;
 using namespace VW::LEARNER;
-
-namespace logger = VW::io::logger;
 
 /*
 This reduction implements the ChaCha algorithm from page 5 of the following paper:

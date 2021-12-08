@@ -20,8 +20,6 @@
 // needed for printing ranges of objects (eg: all elements of a vector)
 #include <fmt/ranges.h>
 
-namespace logger = VW::io::logger;
-
 label_data::label_data() { reset_to_default(); }
 
 label_data::label_data(float label) : label(label) {}
@@ -34,9 +32,9 @@ void label_data::reset_to_default()
 void print_update(VW::workspace& all, const example& ec)
 {
   if (all.sd->weighted_labeled_examples + all.sd->weighted_unlabeled_examples >= all.sd->dump_interval &&
-      !all.logger.quiet && !all.bfgs)
+      !all.quiet && !all.bfgs)
   {
-    all.sd->print_update(*all.trace_message, all.holdout_set_off, all.current_pass, ec.l.simple.label, ec.pred.scalar,
+    all.sd->print_update(*all.driver_output, all.holdout_set_off, all.current_pass, ec.l.simple.label, ec.pred.scalar,
         ec.get_num_features(), all.progress_add, all.progress_arg);
   }
 }
@@ -48,8 +46,8 @@ void output_and_account_example(VW::workspace& all, const example& ec)
   all.sd->update(ec.test_only, ld.label != FLT_MAX, ec.loss, ec.weight, ec.get_num_features());
   if (ld.label != FLT_MAX && !ec.test_only) all.sd->weighted_labels += (static_cast<double>(ld.label)) * ec.weight;
 
-  all.print_by_ref(all.raw_prediction.get(), ec.partial_prediction, -1, ec.tag);
-  for (auto& f : all.final_prediction_sink) { all.print_by_ref(f.get(), ec.pred.scalar, 0, ec.tag); }
+  all.print_by_ref(all.raw_prediction.get(), ec.partial_prediction, -1, ec.tag, all.logger);
+  for (auto& f : all.final_prediction_sink) { all.print_by_ref(f.get(), ec.pred.scalar, 0, ec.tag, all.logger); }
 
   print_update(all, ec);
 }

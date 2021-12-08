@@ -34,8 +34,6 @@ using namespace VW::LEARNER;
 using namespace VW;
 using namespace VW::config;
 
-namespace logger = VW::io::logger;
-
 template <typename T>
 void return_collection(v_array<T>& array, VW::v_array_pool<T>& pool)
 {
@@ -152,7 +150,7 @@ bool split_multi_example_and_stash_labels(const multi_ex& examples, ccb& data)
         data.slots.push_back(ex);
         break;
       default:
-        logger::log_error("ccb_adf_explore: badly formatted example - invalid example type");
+        data.all->logger.error("ccb_adf_explore: badly formatted example - invalid example type");
         return false;
     }
 
@@ -229,7 +227,7 @@ void exclude_chosen_action(ccb& data, const multi_ex& examples)
   }
   if (action_index == -1)
   {
-    logger::errlog_warn("Unlabeled example used for learning only. Skipping over.");
+    data.all->logger.warn("Unlabeled example used for learning only. Skipping over.");
     return;
   }
   data.exclude_list[action_index] = true;
@@ -551,7 +549,7 @@ void learn_or_predict(ccb& data, multi_learner& base, multi_ex& examples)
   }
   catch (std::exception& e)
   {
-    *(data.all->trace_message) << "CCB got exception from base reductions: " << e.what() << std::endl;
+    *(data.all->driver_output) << "CCB got exception from base reductions: " << e.what() << std::endl;
     throw;
   }
 }
@@ -613,7 +611,7 @@ void output_example(VW::workspace& all, ccb& c, const multi_ex& ec_seq)
 
   if (num_labeled > 0 && num_labeled < c.slots.size())
   {
-    logger::errlog_warn("Unlabeled example in train set, was this intentional?");
+    all.logger.warn("Unlabeled example in train set, was this intentional?");
   }
 
   bool holdout_example = num_labeled > 0;
@@ -623,7 +621,7 @@ void output_example(VW::workspace& all, ccb& c, const multi_ex& ec_seq)
   all.sd->update(holdout_example, num_labeled > 0, loss, ec_seq[SHARED_EX_INDEX]->weight, num_features);
 
   for (auto& sink : all.final_prediction_sink)
-  { VW::print_decision_scores(sink.get(), ec_seq[SHARED_EX_INDEX]->pred.decision_scores); }
+  { VW::print_decision_scores(sink.get(), ec_seq[SHARED_EX_INDEX]->pred.decision_scores, all.logger); }
 
   VW::print_update_ccb(all, c.slots, preds, num_features);
 }
@@ -633,7 +631,7 @@ void finish_multiline_example(VW::workspace& all, ccb& data, multi_ex& ec_seq)
   if (!ec_seq.empty() && !data.no_pred)
   {
     output_example(all, data, ec_seq);
-    CB_ADF::global_print_newline(all.final_prediction_sink);
+    CB_ADF::global_print_newline(all.final_prediction_sink, all.logger);
   }
 
   if (!data.no_pred)

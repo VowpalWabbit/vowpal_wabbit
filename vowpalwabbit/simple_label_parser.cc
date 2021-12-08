@@ -17,8 +17,6 @@
 // needed for printing ranges of objects (eg: all elements of a vector)
 #include <fmt/ranges.h>
 
-namespace logger = VW::io::logger;
-
 char* bufread_simple_label(label_data& ld, simple_label_reduction_features& red_features, char* c)
 {
   memcpy(&ld.label, c, sizeof(ld.label));
@@ -72,7 +70,7 @@ bool test_label(const label_data& ld) { return ld.label == FLT_MAX; }
 
 // Example: 0 1 0.5 'third_house | price:.53 sqft:.32 age:.87 1924
 // label := 0, weight := 1, initial := 0.5
-void parse_simple_label(label_data& ld, reduction_features& red_features, const std::vector<VW::string_view>& words)
+void parse_simple_label(label_data& ld, reduction_features& red_features, const std::vector<VW::string_view>& words, VW::io::logger& logger)
 {
   auto& simple_red_features = red_features.template get<simple_label_reduction_features>();
   switch (words.size())
@@ -80,19 +78,19 @@ void parse_simple_label(label_data& ld, reduction_features& red_features, const 
     case 0:
       break;
     case 1:
-      ld.label = float_of_string(words[0]);
+      ld.label = float_of_string(words[0], logger);
       break;
     case 2:
-      ld.label = float_of_string(words[0]);
-      simple_red_features.weight = float_of_string(words[1]);
+      ld.label = float_of_string(words[0], logger);
+      simple_red_features.weight = float_of_string(words[1], logger);
       break;
     case 3:
-      ld.label = float_of_string(words[0]);
-      simple_red_features.weight = float_of_string(words[1]);
-      simple_red_features.initial = float_of_string(words[2]);
+      ld.label = float_of_string(words[0], logger);
+      simple_red_features.weight = float_of_string(words[1], logger);
+      simple_red_features.initial = float_of_string(words[2], logger);
       break;
     default:
-      logger::log_error("Error: {0} is too many tokens for a simple label: {1}", words.size(), fmt::join(words, " "));
+      logger.error("Error: {0} is too many tokens for a simple label: {1}", words.size(), fmt::join(words, " "));
   }
 }
 
@@ -102,7 +100,7 @@ label_parser simple_label_parser = {
     // parse_label
     [](polylabel& label, reduction_features& red_features, VW::label_parser_reuse_mem& /*reuse_mem*/,
         const VW::named_labels* /*ldict*/,
-        const std::vector<VW::string_view>& words) { parse_simple_label(label.simple, red_features, words); },
+        const std::vector<VW::string_view>& words, VW::io::logger& logger) { parse_simple_label(label.simple, red_features, words, logger); },
     // cache_label
     [](const polylabel& label, const reduction_features& red_features, io_buf& cache) {
       cache_simple_label(label.simple, red_features, cache);

@@ -9,7 +9,7 @@ namespace VW
 {
 bool ends_with(VW::string_view full_string, VW::string_view ending) { return full_string.ends_with(ending); }
 
-std::string decode_inline_hex(VW::string_view arg)
+std::string decode_inline_hex(VW::string_view arg, VW::io::logger& logger)
 {
   constexpr size_t NUMBER_OF_HEX_CHARS = 2;
   // "\x" + hex chars
@@ -35,7 +35,7 @@ std::string decode_inline_hex(VW::string_view arg)
       }
       else
       {
-        io::logger::errlog_warn("Possibly malformed hex representation of a namespace: '\\x{}'", substr);
+        logger.warn("Possibly malformed hex representation of a namespace: '\\x{}'", substr);
         res.push_back(arg[pos++]);
       }
     }

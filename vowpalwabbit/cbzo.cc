@@ -6,6 +6,7 @@
 #include <cfloat>
 
 #include "gd.h"
+#include "io/logger.h"
 #include "io_buf.h"
 #include "parse_regressor.h"
 #include "cbzo.h"
@@ -165,7 +166,7 @@ inline std::string get_pred_repr(example& ec)
 
 void print_audit_features(VW::workspace& all, example& ec)
 {
-  if (all.audit) all.print_text_by_ref(all.stdout_adapter.get(), get_pred_repr(ec), ec.tag);
+  if (all.audit) all.print_text_by_ref(all.stdout_adapter.get(), get_pred_repr(ec), ec.tag, all.logger);
 
   GD::print_features(all, ec);
 }
@@ -248,9 +249,9 @@ void report_progress(VW::workspace& all, example& ec)
   all.sd->update(ec.test_only, is_labeled(ec), costs.empty() ? 0.0f : costs[0].cost, ec.weight, ec.get_num_features());
   all.sd->weighted_labels += ec.weight;
 
-  if (all.sd->weighted_examples() >= all.sd->dump_interval && !all.logger.quiet)
+  if (all.sd->weighted_examples() >= all.sd->dump_interval && !all.quiet)
   {
-    all.sd->print_update(*all.trace_message, all.holdout_set_off, all.current_pass,
+    all.sd->print_update(*all.driver_output, all.holdout_set_off, all.current_pass,
         ec.test_only ? "unknown" : to_string(costs[0]), get_pred_repr(ec), ec.get_num_features(), all.progress_add,
         all.progress_arg);
   }
@@ -259,7 +260,7 @@ void report_progress(VW::workspace& all, example& ec)
 void output_prediction(VW::workspace& all, example& ec)
 {
   std::string pred_repr = get_pred_repr(ec);
-  for (auto& sink : all.final_prediction_sink) all.print_text_by_ref(sink.get(), pred_repr, ec.tag);
+  for (auto& sink : all.final_prediction_sink) all.print_text_by_ref(sink.get(), pred_repr, ec.tag, all.logger);
 }
 
 void finish_example(VW::workspace& all, cbzo&, example& ec)
@@ -354,8 +355,9 @@ base_learner* setup(VW::setup_base_i& stack_builder)
     if (options.was_supplied("noconstant")) THROW("constant policy can't be learnt when --noconstant is used")
 
     if (!feature_mask_off)
-      *(all.trace_message)
-          << "warning: feature_mask used with constant policy (where there is only one weight to learn)." << std::endl;
+    {
+      all.logger.warn("Feature_mask used with constant policy (where there is only one weight to learn).");
+    }
   }
 
   all.example_parser->lbl_parser = cb_continuous::the_label_parser;

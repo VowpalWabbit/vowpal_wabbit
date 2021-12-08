@@ -26,9 +26,7 @@
 
 #include "io/logger.h"
 
-namespace logger = VW::io::logger;
-
-int open_socket(const char* host)
+int open_socket(const char* host, VW::io::logger& logger)
 {
 #ifdef _WIN32
   const char* colon = strchr(host, ':');
@@ -67,6 +65,6 @@ int open_socket(const char* host)
       write(sd, &id, sizeof(id)) < static_cast<int>(sizeof(id))
 #endif
   )
-    logger::errlog_error("write failed!");
+    logger.error("Write failed");
   return sd;
 }

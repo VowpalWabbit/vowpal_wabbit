@@ -11,7 +11,6 @@
 #include <cfloat>
 
 #include "distributionally_robust.h"
-#include "io/logger.h"
 #include "vw.h"
 #include "example.h"
 #include "model_utils.h"
@@ -23,8 +22,6 @@
 using namespace VW;
 using namespace VW::config;
 using namespace VW::LEARNER;
-
-namespace logger = VW::io::logger;
 
 namespace VW
 {

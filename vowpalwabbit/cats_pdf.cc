@@ -146,9 +146,9 @@ inline bool reduction_output::does_example_have_label(const example& ec)
 
 void reduction_output::print_update_cb_cont(VW::workspace& all, const example& ec)
 {
-  if (all.sd->weighted_examples() >= all.sd->dump_interval && !all.logger.quiet && !all.bfgs)
+  if (all.sd->weighted_examples() >= all.sd->dump_interval && !all.quiet && !all.bfgs)
   {
-    all.sd->print_update(*all.trace_message, all.holdout_set_off, all.current_pass,
+    all.sd->print_update(*all.driver_output, all.holdout_set_off, all.current_pass,
         ec.test_only ? "unknown" : to_string(ec.l.cb_cont.costs[0]),  // Label
         to_string(ec.pred.pdf),                                       // Prediction
         ec.get_num_features(), all.progress_add, all.progress_arg);

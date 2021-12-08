@@ -78,7 +78,7 @@ struct shared_data
   void update(bool test_example, bool labeled_example, float loss, float weight, size_t num_features);
   void update_dump_interval(bool progress_add, float progress_arg);
   /// progressive validation header
-  void print_update_header(std::ostream& trace_message);
+  void print_update_header(std::ostream& driver_output);
   void print_update(std::ostream& output_stream, bool holdout_set_off, size_t current_pass, float label,
       float prediction, size_t num_features, bool progress_add, float progress_arg);
   void print_update(std::ostream& output_stream, bool holdout_set_off, size_t current_pass, uint32_t label,

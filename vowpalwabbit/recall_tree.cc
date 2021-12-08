@@ -514,8 +514,8 @@ base_learner* recall_tree_setup(VW::setup_base_i& stack_builder)
 
   init_tree(*tree.get());
 
-  if (!all.logger.quiet)
-    *(all.trace_message) << "recall_tree:"
+  if (!all.quiet)
+    *(all.driver_output) << "recall_tree:"
                          << " node_only = " << tree->node_only << " bern_hyper = " << tree->bern_hyper
                          << " max_depth = " << tree->max_depth << " routing = "
                          << (all.training ? (tree->randomized_routing ? "randomized" : "deterministic")

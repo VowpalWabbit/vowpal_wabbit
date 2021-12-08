@@ -115,7 +115,7 @@ void initialize(Search::search& sch, size_t& num_actions, options_i& options)
 
   D->K = num_actions;
   D->numN = (D->directed + 1) * (D->K + 1);
-  *(sch.get_vw_pointer_unsafe().trace_message) << "K=" << D->K << ", numN=" << D->numN << std::endl;
+  *(sch.get_vw_pointer_unsafe().driver_output) << "K=" << D->K << ", numN=" << D->numN << std::endl;
   D->neighbor_predictions.resize(D->numN, 0.f);
 
   D->confusion_matrix.resize((D->K + 1) * (D->K + 1), 0);
@@ -187,7 +187,7 @@ void setup(Search::search& sch, multi_ex& ec)
       D.E++;
     else  // it's a node!
     {
-      if (D.E > 0) THROW("error: got a node after getting edges!");
+      if (D.E > 0) THROW("Got a node after getting edges");
 
       D.N++;
       if (ec[i]->l.cs.costs.size() > 0)
@@ -197,7 +197,7 @@ void setup(Search::search& sch, multi_ex& ec)
       }
     }
 
-  if ((D.N == 0) && (D.E > 0)) THROW("error: got edges without any nodes (perhaps ring_size is too small?)!");
+  if ((D.N == 0) && (D.E > 0)) THROW("Got edges without any nodes.");
 
   D.adj = std::vector<std::vector<size_t>>(D.N, std::vector<size_t>(0));
 

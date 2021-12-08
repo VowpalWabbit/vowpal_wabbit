@@ -7,6 +7,7 @@
 
 #include "v_array.h"
 #include "io/io_adapter.h"
+#include "io/logger.h"
 #include <iomanip>
 #include <iostream>
 #include <vector>
@@ -29,7 +30,7 @@ namespace VW
 // of CB for that call.
 using decision_scores_t = std::vector<ACTION_SCORE::action_scores>;
 
-void print_decision_scores(VW::io::writer* f, const VW::decision_scores_t& decision_scores);
+void print_decision_scores(VW::io::writer* f, const VW::decision_scores_t& decision_scores, VW::io::logger& logger);
 
 void print_update_ccb(VW::workspace& all, std::vector<example*>& slots, const VW::decision_scores_t& decision_scores,
     size_t num_features);

@@ -10,13 +10,15 @@
 #include "io/logger.h"
 
 using namespace VW::config;
-namespace logger = VW::io::logger;
 
 struct multi_oaa
 {
   size_t k = 0;
   bool probabilities = false;
   std::string link = "";
+  VW::io::logger logger;
+
+  explicit multi_oaa(VW::io::logger logger) : logger(std::move(logger)) {}
 };
 
 template <bool is_learn>
@@ -51,7 +53,7 @@ void predict_or_learn(multi_oaa& o, VW::LEARNER::single_learner& base, example& 
   {
     if (multilabel_index < multilabels.label_v.size())
     {
-      logger::log_error(
+      o.logger.error(
           "label {0} is not in {{0,{1}}} This won't work right.", multilabels.label_v[multilabel_index], o.k - 1);
     }
   }
@@ -77,7 +79,7 @@ void finish_example(VW::workspace& all, multi_oaa& o, example& ec)
       outputStringStream << ':' << ec.pred.scalars[i];
     }
     const auto ss_str = outputStringStream.str();
-    for (auto& sink : all.final_prediction_sink) all.print_text_by_ref(sink.get(), ss_str, ec.tag);
+    for (auto& sink : all.final_prediction_sink) all.print_text_by_ref(sink.get(), ss_str, ec.tag, all.logger);
   }
   MULTILABEL::output_example(all, ec);
   VW::finish_example(all, ec);
@@ -87,7 +89,7 @@ VW::LEARNER::base_learner* multilabel_oaa_setup(VW::setup_base_i& stack_builder)
 {
   options_i& options = *stack_builder.get_options();
   VW::workspace& all = *stack_builder.get_all_pointer();
-  auto data = VW::make_unique<multi_oaa>();
+  auto data = VW::make_unique<multi_oaa>(all.logger);
   option_group_definition new_options("Multilabel One Against All");
   new_options
       .add(make_option("multilabel_oaa", data->k).keep().necessary().help("One-against-all multilabel with <k> labels"))
@@ -116,8 +118,8 @@ VW::LEARNER::base_learner* multilabel_oaa_setup(VW::setup_base_i& stack_builder)
     pred_type = VW::prediction_type_t::scalars;
     auto loss_function_type = all.loss->getType();
     if (loss_function_type != "logistic")
-      logger::log_error(
-          "WARNING: --probabilities should be used only with --loss_function=logistic, currently using: {}",
+      all.logger.warn(
+          "--probabilities should be used only with --loss_function=logistic, currently using: {}",
           loss_function_type);
     // the three boolean template parameters are: is_learn, print_all and scores
     name_addition = "-prob";

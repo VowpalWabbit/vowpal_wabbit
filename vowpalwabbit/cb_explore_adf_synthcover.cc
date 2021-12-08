@@ -21,10 +21,6 @@
 #include <algorithm>
 #include <cmath>
 
-#include "io/logger.h"
-
-namespace logger = VW::io::logger;
-
 // All exploration algorithms return a vector of id, probability tuples, sorted in order of scores. The probabilities
 // are the probability with which each action should be replaced to the top of the list.
 
@@ -197,12 +193,12 @@ VW::LEARNER::base_learner* setup(VW::setup_base_i& stack_builder)
   if (epsilon < 0) { THROW("epsilon must be non-negative"); }
   if (psi <= 0) { THROW("synthcoverpsi must be positive"); }
 
-  if (!all.logger.quiet)
+  if (!all.quiet)
   {
-    *(all.trace_message) << "Using synthcover for CB exploration" << std::endl;
-    *(all.trace_message) << "synthcoversize = " << synthcoversize << std::endl;
-    if (epsilon > 0) *(all.trace_message) << "epsilon = " << epsilon << std::endl;
-    *(all.trace_message) << "synthcoverpsi = " << psi << std::endl;
+    *(all.driver_output) << "Using synthcover for CB exploration" << std::endl;
+    *(all.driver_output) << "synthcoversize = " << synthcoversize << std::endl;
+    if (epsilon > 0) *(all.driver_output) << "epsilon = " << epsilon << std::endl;
+    *(all.driver_output) << "synthcoverpsi = " << psi << std::endl;
   }
 
   size_t problem_multiplier = 1;

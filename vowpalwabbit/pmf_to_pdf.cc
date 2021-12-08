@@ -12,6 +12,8 @@
 #include "cb_label_parser.h"
 #include "shared_data.h"
 
+#include "io/logger.h"
+
 using namespace LEARNER;
 using namespace VW;
 using namespace VW::config;
@@ -176,7 +178,7 @@ void learn(pmf_to_pdf::reduction& data, single_learner&, example& ec) { data.lea
 
 void print_update(VW::workspace& all, bool is_test, const example& ec, std::stringstream& pred_string)
 {
-  if (all.sd->weighted_examples() >= all.sd->dump_interval && !all.logger.quiet && !all.bfgs)
+  if (all.sd->weighted_examples() >= all.sd->dump_interval && !all.quiet && !all.bfgs)
   {
     std::stringstream label_string;
     if (is_test)
@@ -186,7 +188,7 @@ void print_update(VW::workspace& all, bool is_test, const example& ec, std::stri
       const auto& cost = ec.l.cb.costs[0];
       label_string << cost.action << ":" << cost.cost << ":" << cost.probability;
     }
-    all.sd->print_update(*all.trace_message, all.holdout_set_off, all.current_pass, label_string.str(),
+    all.sd->print_update(*all.driver_output, all.holdout_set_off, all.current_pass, label_string.str(),
         pred_string.str(), ec.get_num_features(), all.progress_add, all.progress_arg);
   }
 }
@@ -221,7 +223,7 @@ void output_example(VW::workspace& all, reduction&, const example& ec, const CB:
   sprintf_s(temp_str, buffsz, "%d:%f", maxid, maxprob);
   sso << temp_str;
 
-  for (auto& sink : all.final_prediction_sink) all.print_text_by_ref(sink.get(), ss.str(), ec.tag);
+  for (auto& sink : all.final_prediction_sink) all.print_text_by_ref(sink.get(), ss.str(), ec.tag, all.logger);
 
   print_update(all, CB::is_test_label(ld), ec, sso);
 }
@@ -261,7 +263,7 @@ base_learner* setup(VW::setup_base_i& stack_builder)
 
   if (data->num_actions == 0) return nullptr;
   if (!options.was_supplied("min_value") || !options.was_supplied("max_value"))
-  { THROW("error: min and max values must be supplied with cb_continuous"); }
+  { THROW("Min and max values must be supplied with cb_continuous"); }
 
   float leaf_width = (data->max_value - data->min_value) / (data->num_actions);  // aka unit range
   float half_leaf_width = leaf_width / 2.f;
@@ -269,7 +271,7 @@ base_learner* setup(VW::setup_base_i& stack_builder)
   if (!options.was_supplied("bandwidth"))
   {
     data->bandwidth = half_leaf_width;
-    *(all.trace_message) << "Bandwidth was not supplied, setting default to half the continuous action unit range: "
+    *(all.driver_output) << "Bandwidth was not supplied, setting default to half the continuous action unit range: "
                          << data->bandwidth << std::endl;
   }
 
@@ -277,8 +279,7 @@ base_learner* setup(VW::setup_base_i& stack_builder)
 
   if (data->bandwidth >= (data->max_value - data->min_value))
   {
-    *(all.trace_message)
-        << "WARNING: Bandwidth is larger than continuous action range, this will result in a uniform pdf" << std::endl;
+    all.logger.warn("Bandwidth is larger than continuous action range, this will result in a uniform pdf.");
   }
 
   // Translate user provided bandwidth which is in terms of continuous action range (max_value - min_value)

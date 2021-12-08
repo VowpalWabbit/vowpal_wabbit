@@ -14,11 +14,10 @@
 
 #include "io/logger.h"
 
-namespace logger = VW::io::logger;
 
 namespace COST_SENSITIVE
 {
-void name_value(VW::string_view s, std::vector<VW::string_view>& name, float& v)
+void name_value(VW::string_view s, std::vector<VW::string_view>& name, float& v, VW::io::logger& logger)
 {
   tokenize(':', s, name);
 
@@ -29,11 +28,11 @@ void name_value(VW::string_view s, std::vector<VW::string_view>& name, float& v)
       v = 1.;
       break;
     case 2:
-      v = float_of_string(name[1]);
+      v = float_of_string(name[1], logger);
       if (std::isnan(v)) THROW("error NaN value for: " << name[0]);
       break;
     default:
-      logger::errlog_error("example with a weird name. What is '{}'?", s);
+      logger.error("example with a weird name. What is '{}'?", s);
   }
 }
 
@@ -101,7 +100,7 @@ bool test_label(const label& ld) { return test_label_internal(ld); }
 bool test_label(label& ld) { return test_label_internal(ld); }
 
 void parse_label(label& ld, VW::label_parser_reuse_mem& reuse_mem, const VW::named_labels* ldict,
-    const std::vector<VW::string_view>& words)
+    const std::vector<VW::string_view>& words, VW::io::logger& logger)
 {
   ld.costs.clear();
 
@@ -109,7 +108,7 @@ void parse_label(label& ld, VW::label_parser_reuse_mem& reuse_mem, const VW::nam
   if (words.size() == 1)
   {
     float fx;
-    name_value(words[0], reuse_mem.tokens, fx);
+    name_value(words[0], reuse_mem.tokens, fx, logger);
     bool eq_shared = reuse_mem.tokens[0] == "***shared***";
     bool eq_label = reuse_mem.tokens[0] == "***label***";
     if (ldict == nullptr)
@@ -122,7 +121,7 @@ void parse_label(label& ld, VW::label_parser_reuse_mem& reuse_mem, const VW::nam
       if (eq_shared)
       {
         if (reuse_mem.tokens.size() != 1)
-          logger::errlog_error("shared feature vectors should not have costs on: {}", words[0]);
+          logger.error("shared feature vectors should not have costs on: {}", words[0]);
         else
         {
           wclass f = {-FLT_MAX, 0, 0., 0.};
@@ -132,10 +131,10 @@ void parse_label(label& ld, VW::label_parser_reuse_mem& reuse_mem, const VW::nam
       if (eq_label)
       {
         if (reuse_mem.tokens.size() != 2)
-          logger::errlog_error("label feature vectors should have exactly one cost on: {}", words[0]);
+          logger.error("label feature vectors should have exactly one cost on: {}", words[0]);
         else
         {
-          wclass f = {float_of_string(reuse_mem.tokens[1]), 0, 0., 0.};
+          wclass f = {float_of_string(reuse_mem.tokens[1], logger), 0, 0., 0.};
           ld.costs.push_back(f);
         }
       }
@@ -147,14 +146,14 @@ void parse_label(label& ld, VW::label_parser_reuse_mem& reuse_mem, const VW::nam
   for (unsigned int i = 0; i < words.size(); i++)
   {
     wclass f = {0., 0, 0., 0.};
-    name_value(words[i], reuse_mem.tokens, f.x);
+    name_value(words[i], reuse_mem.tokens, f.x, logger);
 
     if (reuse_mem.tokens.size() == 0) THROW(" invalid cost: specification -- no names on: " << words[i]);
 
     if (reuse_mem.tokens.size() == 1 || reuse_mem.tokens.size() == 2 || reuse_mem.tokens.size() == 3)
     {
       f.class_index = ldict
-          ? ldict->get(reuse_mem.tokens[0])
+          ? ldict->get(reuse_mem.tokens[0], logger)
           : static_cast<uint32_t>(hashstring(reuse_mem.tokens[0].begin(), reuse_mem.tokens[0].length(), 0));
       if (reuse_mem.tokens.size() == 1 && f.x >= 0)  // test examples are specified just by un-valued class #s
         f.x = FLT_MAX;
@@ -172,7 +171,7 @@ label_parser cs_label = {
     // parse_label
     [](polylabel& label, reduction_features& /* red_features */, VW::label_parser_reuse_mem& reuse_mem,
         const VW::named_labels* ldict,
-        const std::vector<VW::string_view>& words) { parse_label(label.cs, reuse_mem, ldict, words); },
+        const std::vector<VW::string_view>& words, VW::io::logger& logger) { parse_label(label.cs, reuse_mem, ldict, words, logger); },
     // cache_label
     [](const polylabel& label, const reduction_features& /* red_features */, io_buf& cache) {
       cache_label(label.cs, cache);
@@ -191,7 +190,7 @@ label_parser cs_label = {
 void print_update(VW::workspace& all, bool is_test, const example& ec, const multi_ex* ec_seq, bool action_scores,
     uint32_t prediction)
 {
-  if (all.sd->weighted_examples() >= all.sd->dump_interval && !all.logger.quiet && !all.bfgs)
+  if (all.sd->weighted_examples() >= all.sd->dump_interval && !all.quiet && !all.bfgs)
   {
     size_t num_current_features = ec.get_num_features();
     // for csoaa_ldf we want features from the whole (multiline example),
@@ -224,12 +223,12 @@ void print_update(VW::workspace& all, bool is_test, const example& ec, const mul
       else
         pred_buf << ec.pred.a_s[0].action;
       if (action_scores) pred_buf << ".....";
-      all.sd->print_update(*all.trace_message, all.holdout_set_off, all.current_pass, label_buf, pred_buf.str(),
+      all.sd->print_update(*all.driver_output, all.holdout_set_off, all.current_pass, label_buf, pred_buf.str(),
           num_current_features, all.progress_add, all.progress_arg);
       ;
     }
     else
-      all.sd->print_update(*all.trace_message, all.holdout_set_off, all.current_pass, label_buf, prediction,
+      all.sd->print_update(*all.driver_output, all.holdout_set_off, all.current_pass, label_buf, prediction,
           num_current_features, all.progress_add, all.progress_arg);
   }
 }
@@ -251,7 +250,7 @@ void output_example(
       if (cl.x < min) min = cl.x;
     }
     if (chosen_loss == FLT_MAX)
-      logger::errlog_warn("csoaa predicted an invalid class. Are all multi-class labels in the {1..k} range?");
+      all.logger.warn("csoaa predicted an invalid class. Are all multi-class labels in the {1..k} range?");
 
     loss = (chosen_loss - min) * ec.weight;
     // TODO(alberto): add option somewhere to allow using absolute loss instead?
@@ -262,11 +261,11 @@ void output_example(
 
   for (auto& sink : all.final_prediction_sink)
   {
-    if (!all.sd->ldict) { all.print_by_ref(sink.get(), static_cast<float>(multiclass_prediction), 0, ec.tag); }
+    if (!all.sd->ldict) { all.print_by_ref(sink.get(), static_cast<float>(multiclass_prediction), 0, ec.tag, all.logger); }
     else
     {
       VW::string_view sv_pred = all.sd->ldict->get(multiclass_prediction);
-      all.print_text_by_ref(sink.get(), sv_pred.to_string(), ec.tag);
+      all.print_text_by_ref(sink.get(), sv_pred.to_string(), ec.tag, all.logger);
     }
   }
 
@@ -279,7 +278,7 @@ void output_example(
       if (i > 0) outputStringStream << ' ';
       outputStringStream << cl.class_index << ':' << cl.partial_prediction;
     }
-    all.print_text_by_ref(all.raw_prediction.get(), outputStringStream.str(), ec.tag);
+    all.print_text_by_ref(all.raw_prediction.get(), outputStringStream.str(), ec.tag, all.logger);
   }
 
   print_update(all, test_label(cs_label), ec, nullptr, false, multiclass_prediction);

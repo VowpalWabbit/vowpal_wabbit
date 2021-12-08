@@ -19,8 +19,6 @@ using namespace VW::config;
 using namespace VW::LEARNER;
 using namespace rapidjson;
 
-namespace logger = VW::io::logger;
-
 void insert_dsjson_metrics(
     const dsjson_metrics* ds_metrics, VW::metric_sink& metrics, const std::vector<std::string>& enabled_reductions)
 {
@@ -93,7 +91,7 @@ private:
   Writer<FileWriteStream>& _writer;
 };
 
-void list_to_json_file(const std::string& filename, const metric_sink& metrics)
+void list_to_json_file(const std::string& filename, const metric_sink& metrics, VW::io::logger& logger)
 {
   FILE* fp;
   if (VW::file_open(&fp, filename.c_str(), "wt") == 0)
@@ -108,7 +106,7 @@ void list_to_json_file(const std::string& filename, const metric_sink& metrics)
   }
   else
   {
-    logger::errlog_warn("skipping metrics. could not open file for metrics: {}", filename);
+    logger.warn("skipping metrics. could not open file for metrics: {}", filename);
   }
 }
 
@@ -125,13 +123,13 @@ void output_metrics(VW::workspace& all)
     if (all.external_parser) { all.external_parser->persist_metrics(list_metrics); }
 #endif
 
-    list_metrics.set_uint("total_log_calls", logger::get_log_count());
+    list_metrics.set_uint("total_log_calls", all.logger.get_log_count());
 
     std::vector<std::string> enabled_reductions;
     if (all.l != nullptr) { all.l->get_enabled_reductions(enabled_reductions); }
     insert_dsjson_metrics(all.example_parser->metrics.get(), list_metrics, enabled_reductions);
 
-    list_to_json_file(filename, list_metrics);
+    list_to_json_file(filename, list_metrics, all.logger);
   }
 }
 

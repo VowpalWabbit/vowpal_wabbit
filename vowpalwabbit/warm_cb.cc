@@ -24,8 +24,6 @@ using namespace exploration;
 using namespace ACTION_SCORE;
 using namespace VW::config;
 
-namespace logger = VW::io::logger;
-
 #define WARM_START 1
 #define INTERACTION 2
 #define SKIP 3
@@ -138,11 +136,11 @@ void finish(warm_cb& data)
 {
   uint32_t argmin = find_min(data.cumulative_costs);
 
-  if (!data.all->logger.quiet)
+  if (!data.all->quiet)
   {
-    *(data.all->trace_message) << "average variance estimate = " << data.cumu_var / data.inter_iter << std::endl;
-    *(data.all->trace_message) << "theoretical average variance = " << data.num_actions / data.epsilon << std::endl;
-    *(data.all->trace_message) << "last lambda chosen = " << data.lambdas[argmin] << " among lambdas ranging from "
+    *(data.all->driver_output) << "average variance estimate = " << data.cumu_var / data.inter_iter << std::endl;
+    *(data.all->driver_output) << "theoretical average variance = " << data.num_actions / data.epsilon << std::endl;
+    *(data.all->driver_output) << "last lambda chosen = " << data.lambdas[argmin] << " among lambdas ranging from "
                                << data.lambdas[0] << " to " << data.lambdas[data.choices_lambda - 1] << std::endl;
   }
 }
@@ -414,7 +412,7 @@ void predict_or_learn_bandit_adf(warm_cb& data, multi_learner& base, example& ec
   cl.action = a_s[chosen_action].action + 1;
   cl.probability = a_s[chosen_action].score;
 
-  if (!cl.action) THROW("No action with non-zero probability found!");
+  if (!cl.action) THROW("No action with non-zero probability found.");
 
   if (use_cs)
     cl.cost = loss_cs(data, ec.l.cs.costs, cl.action);
@@ -601,7 +599,7 @@ base_learner* warm_cb_setup(VW::setup_base_i& stack_builder)
 
   if (!options.was_supplied("epsilon"))
   {
-    logger::errlog_warn("Warning: no epsilon (greedy parameter) specified; resetting to 0.05");
+    all.logger.warn("No epsilon (greedy parameter) specified; resetting to 0.05");
     data->epsilon = 0.05f;
   }
 

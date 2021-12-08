@@ -33,8 +33,6 @@
 using namespace VW::LEARNER;
 using namespace VW::config;
 
-namespace logger = VW::io::logger;
-
 // todo:
 // 4. Factor various state out of VW::workspace&
 namespace GD
@@ -321,17 +319,17 @@ void print_features(VW::workspace& all, example& ec)
 
 void print_audit_features(VW::workspace& all, example& ec)
 {
-  if (all.audit) print_result_by_ref(all.stdout_adapter.get(), ec.pred.scalar, -1, ec.tag);
+  if (all.audit) print_result_by_ref(all.stdout_adapter.get(), ec.pred.scalar, -1, ec.tag, all.logger);
   fflush(stdout);
   print_features(all, ec);
 }
 
-float finalize_prediction(shared_data* sd, vw_logger&, float ret)
+float finalize_prediction(shared_data* sd, VW::io::logger& logger, float ret)
 {
   if (std::isnan(ret))
   {
     ret = 0.;
-    logger::errlog_warn("NAN prediction in example {0}, forcing {1}", sd->example_number + 1, ret);
+    logger.warn("NAN prediction in example {0}, forcing {1}", sd->example_number + 1, ret);
     return ret;
   }
   if (ret > sd->max_label) return sd->max_label;
@@ -487,6 +485,7 @@ struct norm_data
   float norm_x;
   power_data pd;
   float extra_state[4];
+  VW::io::logger* logger;
 };
 
 constexpr float x_min = 1.084202e-19f;
@@ -539,7 +538,8 @@ inline void pred_per_update_feature(norm_data& nd, float x, float& fw)
       if (x2 > x2_max)
       {
         norm_x2 = 1;
-        logger::errlog_error("your features have too much magnitude");
+        assert(nd.logger != nullptr);
+        nd.logger->error("your features have too much magnitude");
       }
       nd.norm_x += norm_x2;
     }
@@ -562,7 +562,7 @@ float get_pred_per_update(gd& g, example& ec)
 
   if (grad_squared == 0 && !stateless) return 1.;
 
-  norm_data nd = {grad_squared, 0., 0., {g.neg_power_t, g.neg_norm_power}, {0}};
+  norm_data nd = {grad_squared, 0., 0., {g.neg_power_t, g.neg_norm_power}, {0}, &g.all->logger};
   foreach_feature<norm_data,
       pred_per_update_feature<sqrt_rate, feature_mask_off, adaptive, normalized, spare, stateless> >(all, ec, nd);
   if VW_STD17_CONSTEXPR (normalized != 0)
@@ -654,7 +654,7 @@ float compute_update(gd& g, example& ec)
 
   if (std::isnan(update))
   {
-    logger::errlog_warn("update is NAN, replacing with 0");
+    g.all->logger.warn("update is NAN, replacing with 0");
     update = 0.;
   }
 
@@ -1089,16 +1089,14 @@ void save_load(gd& g, io_buf& model_file, bool read, bool text)
     if (resume)
     {
       if (read && all.model_file_ver < VW::version_definitions::VERSION_SAVE_RESUME_FIX)
-        *(all.trace_message)
-            << std::endl
-            << "WARNING: save_resume functionality is known to have inaccuracy in model files version less than "
-            << VW::version_definitions::VERSION_SAVE_RESUME_FIX.to_string() << std::endl
-            << std::endl;
+      {
+        g.all->logger.warn("save_resume functionality is known to have inaccuracy in model files version less than '{}'", VW::version_definitions::VERSION_SAVE_RESUME_FIX.to_string());
+      }
       save_load_online_state(all, model_file, read, text, g.total_weight, &g);
     }
     else
     {
-      if (!all.weights.not_null()) { THROW("Error: Model weights not initialized."); }
+      if (!all.weights.not_null()) { THROW("Model weights not initialized."); }
       save_load_regressor(all, model_file, read, text);
     }
   }
@@ -1280,9 +1278,9 @@ base_learner* setup(VW::setup_base_i& stack_builder)
   if (g->adax && !all.weights.adaptive) THROW("Cannot use adax without adaptive");
 
   if (pow(static_cast<double>(all.eta_decay_rate), static_cast<double>(all.numpasses)) < 0.0001)
-    *(all.trace_message) << "Warning: the learning rate for the last pass is multiplied by: "
-                         << pow(static_cast<double>(all.eta_decay_rate), static_cast<double>(all.numpasses))
-                         << " adjust --decay_learning_rate larger to avoid this." << std::endl;
+  {
+    all.logger.warn("The learning rate for the last pass is multiplied by '{}' adjust --decay_learning_rate larger to avoid this.", pow(static_cast<double>(all.eta_decay_rate), static_cast<double>(all.numpasses)));
+  }
 
   if (all.reg_mode % 2)
     if (all.audit || all.hash_inv)

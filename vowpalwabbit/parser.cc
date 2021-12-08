@@ -89,11 +89,11 @@ void handle_sigterm(int) { got_sigterm = true; }
 namespace VW
 {
 void parse_example_label(string_view label, const label_parser& lbl_parser, const named_labels* ldict,
-    label_parser_reuse_mem& reuse_mem, example& ec)
+    label_parser_reuse_mem& reuse_mem, example& ec, VW::io::logger& logger)
 {
   std::vector<string_view> words;
   tokenize(' ', label, words);
-  lbl_parser.parse_label(ec.l, ec._reduction_features, reuse_mem, ldict, words);
+  lbl_parser.parse_label(ec.l, ec._reduction_features, reuse_mem, ldict, words, logger);
 }
 }  // namespace VW
 
@@ -268,7 +268,12 @@ void reset_source(VW::workspace& all, size_t numbits)
       input.reset();
       for (auto& file : input.get_input_files())
       {
-        if (cache_numbits(*file) < numbits) { THROW("argh, a bug in caching of some sort!") }
+        const auto num_bits_cachefile = cache_numbits(*file);
+        if (num_bits_cachefile < numbits)
+        {
+          auto message = fmt::format("Num bits in the cache file is less than what was expected. Found '{}' but expected >= {}", num_bits_cachefile, numbits);
+          THROW(message);
+        }
       }
     }
   }
@@ -279,7 +284,7 @@ void make_write_cache(VW::workspace& all, std::string& newname, bool quiet)
   io_buf& output = all.example_parser->output;
   if (output.num_files() != 0)
   {
-    *(all.trace_message) << "Warning: you tried to make two write caches.  Only the first one will be made." << endl;
+    all.logger.warn("You tried to make two write caches. Only the first one will be made.");
     return;
   }
 
@@ -290,7 +295,7 @@ void make_write_cache(VW::workspace& all, std::string& newname, bool quiet)
   }
   catch (const std::exception&)
   {
-    *(all.trace_message) << "can't create cache file !" << all.example_parser->currentname << endl;
+    *(all.driver_output) << "Can't create cache file: " << all.example_parser->currentname << endl;
     return;
   }
 
@@ -304,7 +309,7 @@ void make_write_cache(VW::workspace& all, std::string& newname, bool quiet)
 
   all.example_parser->finalname = newname;
   all.example_parser->write_cache = true;
-  if (!quiet) *(all.trace_message) << "creating cache_file = " << newname << endl;
+  if (!quiet) *(all.driver_output) << "creating cache_file = " << newname << endl;
 }
 
 void parse_cache(VW::workspace& all, std::vector<std::string> cache_files, bool kill_cache, bool quiet)
@@ -331,14 +336,15 @@ void parse_cache(VW::workspace& all, std::vector<std::string> cache_files, bool 
       if (c < all.num_bits)
       {
         if (!quiet)
-          *(all.trace_message) << "WARNING: cache file is ignored as it's made with less bit precision than required!"
-                               << endl;
+        {
+          all.logger.warn("cache file is ignored as it's made with less bit precision than required.");
+        }
         all.example_parser->input.close_file();
         make_write_cache(all, file, quiet);
       }
       else
       {
-        if (!quiet) *(all.trace_message) << "using cache_file = " << file.c_str() << endl;
+        if (!quiet) *(all.driver_output) << "using cache_file = " << file.c_str() << endl;
         set_cache_reader(all);
         if (c == all.num_bits)
           all.example_parser->sorted_cache = true;
@@ -352,7 +358,7 @@ void parse_cache(VW::workspace& all, std::vector<std::string> cache_files, bool 
   all.parse_mask = (static_cast<uint64_t>(1) << all.num_bits) - 1;
   if (cache_files.size() == 0)
   {
-    if (!quiet) *(all.trace_message) << "using no cache" << endl;
+    if (!quiet) *(all.driver_output) << "using no cache" << endl;
   }
 }
 
@@ -380,20 +386,20 @@ void enable_sources(VW::workspace& all, bool quiet, size_t passes, input_options
     {
       std::stringstream msg;
       msg << "socket: " << VW::strerror_to_string(errno);
-      *(all.trace_message) << msg.str() << endl;
+      *(all.driver_output) << msg.str() << endl;
       THROW(msg.str().c_str());
     }
 
     int on = 1;
     if (setsockopt(all.example_parser->bound_sock, SOL_SOCKET, SO_REUSEADDR, reinterpret_cast<char*>(&on), sizeof(on)) <
         0)
-      *(all.trace_message) << "setsockopt SO_REUSEADDR: " << VW::strerror_to_string(errno) << endl;
+      *(all.driver_output) << "setsockopt SO_REUSEADDR: " << VW::strerror_to_string(errno) << endl;
 
     // Enable TCP Keep Alive to prevent socket leaks
     int enableTKA = 1;
     if (setsockopt(all.example_parser->bound_sock, SOL_SOCKET, SO_KEEPALIVE, reinterpret_cast<char*>(&enableTKA),
             sizeof(enableTKA)) < 0)
-      *(all.trace_message) << "setsockopt SO_KEEPALIVE: " << VW::strerror_to_string(errno) << endl;
+      *(all.driver_output) << "setsockopt SO_KEEPALIVE: " << VW::strerror_to_string(errno) << endl;
 
     sockaddr_in address;
     address.sin_family = AF_INET;
@@ -414,7 +420,7 @@ void enable_sources(VW::workspace& all, bool quiet, size_t passes, input_options
     {
       socklen_t address_size = sizeof(address);
       if (getsockname(all.example_parser->bound_sock, reinterpret_cast<sockaddr*>(&address), &address_size) < 0)
-      { *(all.trace_message) << "getsockname: " << VW::strerror_to_string(errno) << endl; }
+      { *(all.driver_output) << "getsockname: " << VW::strerror_to_string(errno) << endl; }
       std::ofstream port_file;
       port_file.open(input_options.port_file.c_str());
       if (!port_file.is_open()) THROW("error writing port file: " << input_options.port_file);
@@ -467,7 +473,7 @@ void enable_sources(VW::workspace& all, bool quiet, size_t passes, input_options
         // store fork value and run child process if child
         if ((children[i] = fork()) == 0)
         {
-          all.logger.quiet |= (i > 0);
+          all.quiet |= (i > 0);
           goto child;
         }
       }
@@ -491,7 +497,7 @@ void enable_sources(VW::workspace& all, bool quiet, size_t passes, input_options
         // If the child failed we still fork off another one, but log the issue.
         if (status != 0)
         {
-          VW::io::logger::errlog_warn(
+          all.logger.warn(
               "Daemon child process received exited with non-zero exit code: {}. Ignoring.", status);
         }
 
@@ -507,7 +513,7 @@ void enable_sources(VW::workspace& all, bool quiet, size_t passes, input_options
           {
             if ((children[i] = fork()) == 0)
             {
-              all.logger.quiet |= (i > 0);
+              all.quiet |= (i > 0);
               goto child;
             }
             break;
@@ -522,7 +528,7 @@ void enable_sources(VW::workspace& all, bool quiet, size_t passes, input_options
 #endif
     sockaddr_in client_address;
     socklen_t size = sizeof(client_address);
-    if (!all.logger.quiet) *(all.trace_message) << "calling accept" << endl;
+    if (!all.quiet) *(all.driver_output) << "calling accept" << endl;
     auto f_a =
         static_cast<int>(accept(all.example_parser->bound_sock, reinterpret_cast<sockaddr*>(&client_address), &size));
     if (f_a < 0) THROWERRNO("accept");
@@ -536,7 +542,7 @@ void enable_sources(VW::workspace& all, bool quiet, size_t passes, input_options
     all.final_prediction_sink.push_back(socket->get_writer());
 
     all.example_parser->input.add_file(socket->get_reader());
-    if (!all.logger.quiet) *(all.trace_message) << "reading data from port " << port << endl;
+    if (!all.quiet) *(all.driver_output) << "reading data from port " << port << endl;
 
     if (all.active) { set_string_reader(all); }
     else
@@ -551,7 +557,7 @@ void enable_sources(VW::workspace& all, bool quiet, size_t passes, input_options
   {
     if (all.example_parser->input.num_files() != 0)
     {
-      if (!quiet) *(all.trace_message) << "ignoring text input in favor of cache input" << endl;
+      if (!quiet) *(all.driver_output) << "ignoring text input in favor of cache input" << endl;
     }
     else
     {
@@ -583,7 +589,7 @@ void enable_sources(VW::workspace& all, bool quiet, size_t passes, input_options
           input_name = "none";
         }
 
-        if (!quiet) { *(all.trace_message) << "Reading datafile = " << input_name << endl; }
+        if (!quiet) { *(all.driver_output) << "Reading datafile = " << input_name << endl; }
 
         if (adapter) { all.example_parser->input.add_file(std::move(adapter)); }
       }
@@ -591,7 +597,7 @@ void enable_sources(VW::workspace& all, bool quiet, size_t passes, input_options
       {
         // when trying to fix this exception, consider that an empty filename_to_read is valid if all.stdin_off is false
         if (!filename_to_read.empty())
-        { *(all.trace_message) << "can't open '" << filename_to_read << "', sailing on!" << endl; }
+        { *(all.driver_output) << "can't open '" << filename_to_read << "', sailing on" << endl; }
         else
         {
           throw;
@@ -602,10 +608,8 @@ void enable_sources(VW::workspace& all, bool quiet, size_t passes, input_options
       {
         if (!input_options.chain_hash_json)
         {
-          *(all.trace_message)
-              << "WARNING: Old string feature value behavior is deprecated in JSON/DSJSON and will be removed in a "
-                 "future version. Use `--chain_hash` to use new behavior and silence this warning."
-              << endl;
+          all.logger.warn("Old string feature value behavior is deprecated in JSON/DSJSON and will be removed in a "
+                 "future version. Use `--chain_hash` to use new behavior and silence this warning.");
         }
         set_json_reader(all, input_options.dsjson);
       }
@@ -637,7 +641,7 @@ void enable_sources(VW::workspace& all, bool quiet, size_t passes, input_options
   if (passes > 1 && !all.example_parser->resettable)
     THROW("need a cache file for multiple passes : try using  --cache or --cache_file <name>");
 
-  if (!quiet && !all.daemon) *(all.trace_message) << "num sources = " << all.example_parser->input.num_files() << endl;
+  if (!quiet && !all.daemon) *(all.driver_output) << "num sources = " << all.example_parser->input.num_files() << endl;
 }
 
 void lock_done(parser& p)
@@ -868,7 +872,7 @@ void parse_example_label(VW::workspace& all, example& ec, const std::string& lab
   std::vector<VW::string_view> words;
   tokenize(' ', label, words);
   all.example_parser->lbl_parser.parse_label(
-      ec.l, ec._reduction_features, all.example_parser->parser_memory_to_reuse, all.sd->ldict.get(), words);
+      ec.l, ec._reduction_features, all.example_parser->parser_memory_to_reuse, all.sd->ldict.get(), words, all.logger);
 }
 
 void empty_example(VW::workspace& /*all*/, example& ec)

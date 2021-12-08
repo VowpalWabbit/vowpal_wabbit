@@ -14,8 +14,6 @@
 // needed for printing ranges of objects (eg: all elements of a vector)
 #include <fmt/ranges.h>
 
-namespace logger = VW::io::logger;
-
 namespace MULTILABEL
 {
 char* bufread_label(labels& ld, char* c, io_buf& cache)
@@ -72,7 +70,7 @@ void default_label(MULTILABEL::labels& ld) { ld.label_v.clear(); }
 bool test_label(const MULTILABEL::labels& ld) { return ld.label_v.size() == 0; }
 
 void parse_label(
-    MULTILABEL::labels& ld, VW::label_parser_reuse_mem& reuse_mem, const std::vector<VW::string_view>& words)
+    MULTILABEL::labels& ld, VW::label_parser_reuse_mem& reuse_mem, const std::vector<VW::string_view>& words, VW::io::logger& logger)
 {
   switch (words.size())
   {
@@ -83,12 +81,12 @@ void parse_label(
 
       for (const auto& parse_name : reuse_mem.tokens)
       {
-        uint32_t n = int_of_string(parse_name);
+        uint32_t n = int_of_string(parse_name, logger);
         ld.label_v.push_back(n);
       }
       break;
     default:
-      logger::errlog_error("example with an odd label, what is {}", fmt::join(words, " "));
+      logger.error("example with an odd label, what is {}", fmt::join(words, " "));
   }
 }
 
@@ -98,7 +96,7 @@ label_parser multilabel = {
     // parse_label
     [](polylabel& label, reduction_features& /* red_features */, VW::label_parser_reuse_mem& reuse_mem,
         const VW::named_labels* /* ldict */,
-        const std::vector<VW::string_view>& words) { parse_label(label.multilabels, reuse_mem, words); },
+        const std::vector<VW::string_view>& words, VW::io::logger& logger) { parse_label(label.multilabels, reuse_mem, words, logger); },
     // cache_label
     [](const polylabel& label, const reduction_features& /* red_features */, io_buf& cache) {
       cache_label(label.multilabels, cache);
@@ -116,7 +114,7 @@ label_parser multilabel = {
 
 void print_update(VW::workspace& all, bool is_test, const example& ec)
 {
-  if (all.sd->weighted_examples() >= all.sd->dump_interval && !all.logger.quiet && !all.bfgs)
+  if (all.sd->weighted_examples() >= all.sd->dump_interval && !all.quiet && !all.bfgs)
   {
     std::stringstream label_string;
     if (is_test)
@@ -127,7 +125,7 @@ void print_update(VW::workspace& all, bool is_test, const example& ec)
     std::stringstream pred_string;
     for (uint32_t i : ec.pred.multilabels.label_v) { pred_string << " " << i; }
 
-    all.sd->print_update(*all.trace_message, all.holdout_set_off, all.current_pass, label_string.str(),
+    all.sd->print_update(*all.driver_output, all.holdout_set_off, all.current_pass, label_string.str(),
         pred_string.str(), ec.get_num_features(), all.progress_add, all.progress_arg);
   }
 }
@@ -182,7 +180,7 @@ void output_example(VW::workspace& all, const example& ec)
         ss << ec.pred.multilabels.label_v[i];
       }
       ss << ' ';
-      all.print_text_by_ref(sink.get(), ss.str(), ec.tag);
+      all.print_text_by_ref(sink.get(), ss.str(), ec.tag, all.logger);
     }
   }
 

@@ -6,7 +6,6 @@
 #include "io/logger.h"
 
 using namespace VW::config;
-namespace logger = VW::io::logger;
 
 // this is used for the C++ library and python library hook; hopefully
 // it can be used for any foreign library too!
@@ -35,7 +34,7 @@ void run(Search::search& sch, multi_ex& /*ec*/)
   if (td->run_f)
     td->run_f(sch);
   else
-    logger::errlog_warn("warning: HookTask::structured_predict called before hook is set");
+    sch.get_vw_pointer_unsafe().logger.warn("HookTask::structured_predict called before hook is set");
 }
 
 void run_setup(Search::search& sch, multi_ex& /*ec*/)

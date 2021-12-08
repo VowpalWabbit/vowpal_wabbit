@@ -56,8 +56,6 @@ VW_WARNING_STATE_POP
 #  define _stricmp strcasecmp
 #endif
 
-namespace logger = VW::io::logger;
-
 using namespace rapidjson;
 
 namespace VW
@@ -511,7 +509,8 @@ struct LabelState : BaseState<audit>
 
   BaseState<audit>* String(Context<audit>& ctx, const char* str, rapidjson::SizeType /* len */, bool) override
   {
-    VW::parse_example_label(str, ctx._label_parser, ctx._ldict, *ctx._reuse_mem, *ctx.ex);
+    auto null_logger = VW::io::create_null_logger();
+    VW::parse_example_label(str, ctx._label_parser, ctx._ldict, *ctx._reuse_mem, *ctx.ex, null_logger);
     return ctx.previous_state;
   }
 
@@ -1749,11 +1748,11 @@ void read_line_json_s(VW::workspace& all, v_array<example*>& examples, char* lin
       line, length, example_factory, ex_factory_context, dedup_examples);
 }
 
-inline bool apply_pdrop(label_type_t label_type, float pdrop, v_array<example*>& examples)
+inline bool apply_pdrop(label_type_t label_type, float pdrop, v_array<example*>& examples, VW::io::logger& logger)
 {
   if (pdrop == 1.)
   {
-    logger::errlog_error("JSON parser error: examples with pdrop==1 are not supported");
+    logger.error("JSON parser error: examples with pdrop==1 are not supported");
     return false;
   }
   // Event with certain pdrop had (1-pdrop) as probability to survive,
@@ -1781,7 +1780,7 @@ bool read_line_decision_service_json(VW::workspace& all, v_array<example*>& exam
   if (all.example_parser->lbl_parser.label_type == VW::label_type_t::slates)
   {
     parse_slates_example_dsjson<audit>(all, examples, line, length, example_factory, ex_factory_context, data);
-    return apply_pdrop(all.example_parser->lbl_parser.label_type, data->probabilityOfDrop, examples);
+    return apply_pdrop(all.example_parser->lbl_parser.label_type, data->probabilityOfDrop, examples, all.logger);
   }
 
   std::vector<char> line_vec;
@@ -1822,13 +1821,13 @@ bool read_line_decision_service_json(VW::workspace& all, v_array<example*>& exam
     }
     else
     {
-      logger::errlog_error("JSON parser error at {0}: {1}. Handler: {2} State: {3}", result.Offset(),
+      all.logger.error("JSON parser error at {0}: {1}. Handler: {2} State: {3}", result.Offset(),
           GetParseError_En(result.Code()), handler.error().str(), (current_state ? current_state->name : "null"));
       return false;
     }
   }
 
-  return apply_pdrop(all.example_parser->lbl_parser.label_type, data->probabilityOfDrop, examples);
+  return apply_pdrop(all.example_parser->lbl_parser.label_type, data->probabilityOfDrop, examples, all.logger);
 }  // namespace VW
 }  // namespace VW
 

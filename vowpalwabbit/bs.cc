@@ -21,8 +21,6 @@
 using namespace VW::LEARNER;
 using namespace VW::config;
 
-namespace logger = VW::io::logger;
-
 struct bs
 {
   uint32_t B = 0;  // number of bootstrap rounds
@@ -129,7 +127,7 @@ void bs_predict_vote(example& ec, std::vector<double>& pred_vec)
   ec.loss = ((ec.pred.scalar == ec.l.simple.label) ? 0.f : 1.f) * ec.weight;
 }
 
-void print_result(VW::io::writer* f, float res, const v_array<char>& tag, float lb, float ub)
+void print_result(VW::io::writer* f, float res, const v_array<char>& tag, float lb, float ub, VW::io::logger& logger)
 {
   if (f == nullptr) { return; }
 
@@ -142,7 +140,7 @@ void print_result(VW::io::writer* f, float res, const v_array<char>& tag, float 
   ssize_t t = f->write(ss_str.c_str(), static_cast<unsigned int>(len));
   if (t != len)
   {
-    logger::errlog_error("write error: {}", VW::strerror_to_string(errno));
+    logger.error("write error: {}", VW::strerror_to_string(errno));
   }
 }
 
@@ -164,7 +162,7 @@ void output_example(VW::workspace& all, bs& d, const example& ec)
     }
   }
 
-  for (auto& sink : all.final_prediction_sink) print_result(sink.get(), ec.pred.scalar, ec.tag, d.lb, d.ub);
+  for (auto& sink : all.final_prediction_sink) print_result(sink.get(), ec.pred.scalar, ec.tag, d.lb, d.ub, all.logger);
 
   print_update(all, ec);
 }
@@ -212,7 +210,7 @@ void predict_or_learn(bs& d, single_learner& base, example& ec)
       THROW("Unknown bs_type specified: " << d.bs_type);
   }
 
-  if (shouldOutput) all.print_text_by_ref(all.raw_prediction.get(), outputStringStream.str(), ec.tag);
+  if (shouldOutput) all.print_text_by_ref(all.raw_prediction.get(), outputStringStream.str(), ec.tag, all.logger);
 }
 
 void finish_example(VW::workspace& all, bs& d, example& ec)
@@ -245,7 +243,7 @@ base_learner* bs_setup(VW::setup_base_i& stack_builder)
       data->bs_type = BS_TYPE_VOTE;
     else
     {
-      logger::errlog_warn("bs_type must be in {'mean','vote'}; resetting to mean.");
+      all.logger.warn("bs_type must be in {'mean','vote'}; resetting to mean.");
       data->bs_type = BS_TYPE_MEAN;
     }
   }

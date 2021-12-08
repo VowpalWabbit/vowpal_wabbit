@@ -12,11 +12,12 @@
 
 BOOST_AUTO_TEST_CASE(decode_inline_hex_test)
 {
-  BOOST_CHECK_EQUAL(VW::decode_inline_hex("test"), "test");
-  BOOST_CHECK_EQUAL(VW::decode_inline_hex("10"), "10");
-  BOOST_CHECK_EQUAL(VW::decode_inline_hex("\\x01"), "\x01");
-  BOOST_CHECK_EQUAL(VW::decode_inline_hex("\\xab"), "\xab");
-  BOOST_CHECK_EQUAL(VW::decode_inline_hex("\\x01 unrelated \\x56"), "\x01 unrelated \x56");
+  auto nl = VW::io::create_null_logger();
+  BOOST_CHECK_EQUAL(VW::decode_inline_hex("test", nl), "test");
+  BOOST_CHECK_EQUAL(VW::decode_inline_hex("10", nl), "10");
+  BOOST_CHECK_EQUAL(VW::decode_inline_hex("\\x01", nl), "\x01");
+  BOOST_CHECK_EQUAL(VW::decode_inline_hex("\\xab", nl), "\xab");
+  BOOST_CHECK_EQUAL(VW::decode_inline_hex("\\x01 unrelated \\x56", nl), "\x01 unrelated \x56");
 }
 
 BOOST_AUTO_TEST_CASE(parse_text_with_extents)

@@ -13,10 +13,6 @@ Alekh Agarwal and John Langford, with help Olivier Chapelle.
 #include "global_data.h"
 #include "vw_allreduce.h"
 
-#include "io/logger.h"
-
-namespace logger = VW::io::logger;
-
 void add_float(float& c1, const float& c2) { c1 += c2; }
 
 void accumulate(VW::workspace& all, parameters& weights, size_t offset)
@@ -117,7 +113,7 @@ void accumulate_weighted_avg(VW::workspace& all, parameters& weights)
 {
   if (!weights.adaptive)
   {
-    *(all.trace_message)
+    *(all.driver_output)
         << "Weighted averaging is implemented only for adaptive gradient, use accumulate_avg instead\n";
     return;
   }
@@ -141,7 +137,10 @@ void accumulate_weighted_avg(VW::workspace& all, parameters& weights)
     do_weighting(all, length, local_weights, weights.dense_weights);
 
   if (weights.sparse)
-    logger::log_error("sparse parameters not supported with parallel computation!");
+  {
+    delete[] local_weights;
+    THROW("Sparse parameters not supported with parallel computation");
+  }
   else
     all_reduce<float, add_float>(
         all, weights.dense_weights.first(), (static_cast<size_t>(length)) * (1ull << weights.stride_shift()));

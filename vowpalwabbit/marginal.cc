@@ -11,8 +11,6 @@
 #include "text_utils.h"
 
 using namespace VW::config;
-namespace logger = VW::io::logger;
-
 namespace MARGINAL
 {
 struct expert
@@ -32,7 +30,7 @@ struct data
 {
   data(float initial_numerator, float initial_denominator, float decay, bool update_before_learn,
       bool unweighted_marginals, bool compete, parameters* m_weights, loss_function* m_loss_function,
-      shared_data* m_shared_data)
+      shared_data* m_shared_data, VW::io::logger logger)
       : initial_numerator(initial_numerator)
       , initial_denominator(initial_denominator)
       , decay(decay)
@@ -42,6 +40,7 @@ struct data
       , m_weights(m_weights)
       , m_loss_function(m_loss_function)
       , m_shared_data(m_shared_data)
+      , m_logger(logger)
   {
     id_features.fill(false);
   }
@@ -49,7 +48,7 @@ struct data
   data(float initial_numerator, float initial_denominator, float decay, bool update_before_learn,
       bool unweighted_marginals, bool compete, VW::workspace& all)
       : data(initial_numerator, initial_denominator, decay, update_before_learn, unweighted_marginals, compete,
-            &all.weights, all.loss.get(), all.sd)
+            &all.weights, all.loss.get(), all.sd, all.logger)
   {
   }
 
@@ -76,6 +75,7 @@ struct data
   parameters* m_weights;
   loss_function* m_loss_function;
   shared_data* m_shared_data;
+  VW::io::logger m_logger;
 };
 
 float get_adanormalhedge_weights(float r, float c)
@@ -109,15 +109,14 @@ void make_marginal(data& sm, example& ec)
         const uint64_t first_index = j.index() & mask;
         if (++j == sm.temp[n].end())
         {
-          logger::log_warn(
-              "warning: id feature namespace has {} features. Should be a multiple of 2", sm.temp[n].size());
+          sm.m_logger.warn("id feature namespace has {} features. Should be a multiple of 2", sm.temp[n].size());
           break;
         }
         const float second_value = j.value();
         const uint64_t second_index = j.index() & mask;
         if (first_value != 1.f || second_value != 1.f)
         {
-          logger::log_warn("warning: bad id features, must have value 1.");
+          sm.m_logger.warn("Bad id features, must have value 1.");
           continue;
         }
         const uint64_t key = second_index + ec.ft_offset;
@@ -410,7 +409,7 @@ VW::LEARNER::base_learner* marginal_setup(VW::setup_base_i& stack_builder)
   auto d = VW::make_unique<MARGINAL::data>(
       initial_numerator, initial_denominator, decay, update_before_learn, unweighted_marginals, compete, *all);
 
-  marginal = VW::decode_inline_hex(marginal);
+  marginal = VW::decode_inline_hex(marginal, all->logger);
   if (marginal.find(':') != std::string::npos) { THROW("Cannot use wildcard with marginal.") }
   for (const auto ns : marginal) { d->id_features[static_cast<unsigned char>(ns)] = true; }
 

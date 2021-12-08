@@ -189,26 +189,26 @@ base_learner* lrq_setup(VW::setup_base_i& stack_builder)
     if (name.find(':') != std::string::npos) { THROW("--lrq does not support wildcards ':'"); }
   }
 
-  for (auto& lrq_name : lrq_names) lrq_name = VW::decode_inline_hex(lrq_name);
+  for (auto& lrq_name : lrq_names) lrq_name = VW::decode_inline_hex(lrq_name, all.logger);
 
   new (&lrq->lrpairs) std::set<std::string>(lrq_names.begin(), lrq_names.end());
 
   lrq->initial_seed = lrq->seed = all.random_seed | 8675309;
 
-  if (!all.logger.quiet)
+  if (!all.quiet)
   {
-    *(all.trace_message) << "creating low rank quadratic features for pairs: ";
-    if (lrq->dropout) *(all.trace_message) << "(using dropout) ";
+    *(all.driver_output) << "creating low rank quadratic features for pairs: ";
+    if (lrq->dropout) *(all.driver_output) << "(using dropout) ";
   }
 
   for (std::string const& i : lrq->lrpairs)
   {
-    if (!all.logger.quiet)
+    if (!all.quiet)
     {
       if ((i.length() < 3) || !valid_int(i.c_str() + 2))
         THROW("error, low-rank quadratic features must involve two sets and a rank.");
 
-      *(all.trace_message) << i << " ";
+      *(all.driver_output) << i << " ";
     }
     // TODO: colon-syntax
 
@@ -220,7 +220,7 @@ base_learner* lrq_setup(VW::setup_base_i& stack_builder)
     maxk = std::max(maxk, k);
   }
 
-  if (!all.logger.quiet) *(all.trace_message) << std::endl;
+  if (!all.quiet) *(all.driver_output) << std::endl;
 
   all.wpp = all.wpp * static_cast<uint64_t>(1 + maxk);
   auto base = stack_builder.setup_base_learner();

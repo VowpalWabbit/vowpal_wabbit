@@ -9,6 +9,9 @@
 #include <utility>
 
 #include <spdlog/spdlog.h>
+#include <spdlog/sinks/base_sink.h>
+#include <spdlog/sinks/stdout_sinks.h>
+#include <spdlog/sinks/null_sink.h>
 // needed for custom types (like string_view)
 #include <fmt/ostream.h>
 
@@ -16,39 +19,75 @@ namespace VW
 {
 namespace io
 {
-/*
-// TODO: this be an object thats passed around, not stand-alone functions
-struct logger {
-private:
-std::shared_ptr<spdlog::logger> _internal_logger;
-public:
-vw_logger()
-: _internal_logger(spdlog::default_logger()) {}
-
-template<typename FormatString, typename... Args>
-  void log_info(const FormatString &fmt, Args&&...args)
+namespace details
 {
-  _internal_logger->info(fmt, std::forward<Args>(args)...);
-}
-
-template<typename FormatString, typename... Args>
-  void log_error(const FormatString &fmt, Args&&...args)
+const constexpr char* default_pattern = "[%l] %v";
+struct logger_impl
 {
-  _internal_logger->error(fmt, std::forward<Args>(args)...);
-}
+  std::unique_ptr<spdlog::logger> _spdlog_logger;
+  size_t _max_limit;
+  size_t _log_count = 0;
 
+  logger_impl(std::unique_ptr<spdlog::logger> inner_logger, size_t max_limit = SIZE_MAX)
+      : _spdlog_logger(std::move(inner_logger)), _max_limit(max_limit)
+  {
+    _spdlog_logger->set_pattern(details::default_pattern);
+    _spdlog_logger->set_level(spdlog::level::info);
+  }
 
-template<typename FormatString, typename... Args>
-  void log_critical(const FormatString &fmt, Args&&...args)
-{
-  _internal_logger->critical(fmt, std::forward<Args>(args)...);
-}
+  template <typename FormatString, typename... Args>
+  void info(const FormatString& fmt, Args&&... args)
+  {
+    _log_count++;
+    if (_log_count <= _max_limit) { _spdlog_logger->info(fmt, std::forward<Args>(args)...); }
+  }
 
+  template <typename FormatString, typename... Args>
+  void warn(const FormatString& fmt, Args&&... args)
+  {
+    _log_count++;
+    if (_log_count <= _max_limit) { _spdlog_logger->warn(fmt, std::forward<Args>(args)...); }
+  }
+
+  template <typename FormatString, typename... Args>
+  void error(const FormatString& fmt, Args&&... args)
+  {
+    _log_count++;
+    if (_log_count <= _max_limit) { _spdlog_logger->error(fmt, std::forward<Args>(args)...); }
+  }
+
+  template <typename FormatString, typename... Args>
+  void critical(const FormatString& fmt, Args&&... args)
+  {
+    _log_count++;
+    // we ignore max_limit with critical log
+    _spdlog_logger->critical(fmt, std::forward<Args>(args)...);
+  }
 };
-*/
 
-namespace logger
+template <typename Mutex>
+class function_ptr_sink : public spdlog::sinks::base_sink<Mutex>
 {
+public:
+  using func_t = void (*)(void*, const std::string&);
+  function_ptr_sink(void* context, func_t func) : spdlog::sinks::base_sink<Mutex>(), _func(func), _context(context) {}
+
+protected:
+  void sink_it_(const spdlog::details::log_msg& msg) override
+  {
+    spdlog::memory_buf_t formatted;
+    spdlog::sinks::base_sink<Mutex>::formatter_->format(msg, formatted);
+    _func(_context, fmt::to_string(formatted));
+  }
+
+  void flush_() override {}
+
+  func_t _func;
+  void* _context;
+};
+
+}  // namespace details
+
 enum class log_level
 {
   trace = spdlog::level::trace,
@@ -60,97 +99,68 @@ enum class log_level
   off = spdlog::level::off
 };
 
-// FIXME: the get() call returns a shared_ptr. Keep a copy here to avoid unnecessary shared_ptr copies
-// This can go away once we move to an object-based logger
-namespace detail
+struct logger
 {
-extern std::shared_ptr<spdlog::logger> _stderr_logger;
-extern std::shared_ptr<spdlog::logger> _default_logger;
+private:
+  std::shared_ptr<details::logger_impl> _logger_impl;
 
-extern size_t max_limit;
-extern size_t log_count;
-}  // namespace detail
+  logger(std::shared_ptr<details::logger_impl> inner_logger) : _logger_impl(std::move(inner_logger)) {}
 
-// do we need the rest of the levels?
-template <typename FormatString, typename... Args>
-void log_info(const FormatString& fmt, Args&&... args)
-{
-  detail::log_count++;
-  if (detail::log_count <= detail::max_limit) detail::_default_logger->info(fmt, std::forward<Args>(args)...);
-}
+  friend logger create_stderr_logger();
+  friend logger create_null_logger();
+  friend logger create_custom_sink_logger(void* context, void (*func)(void*, const std::string&));
 
-template <typename FormatString, typename... Args>
-void log_warn(const FormatString& fmt, Args&&... args)
-{
-  detail::log_count++;
-  if (detail::log_count <= detail::max_limit) detail::_default_logger->warn(fmt, std::forward<Args>(args)...);
-}
-
-template <typename FormatString, typename... Args>
-void log_error(const FormatString& fmt, Args&&... args)
-{
-  detail::log_count++;
-  if (detail::log_count <= detail::max_limit) detail::_default_logger->error(fmt, std::forward<Args>(args)...);
-}
-
-template <typename FormatString, typename... Args>
-void log_critical(const FormatString& fmt, Args&&... args)
-{
-  detail::log_count++;
-  // we ignore max_limit with critical log
-  detail::_default_logger->critical(fmt, std::forward<Args>(args)...);
-}
-
-// These should go away once we move to an object-based logger
-// do we need the rest of the levels?
-template <typename FormatString, typename... Args>
-void errlog_info(const FormatString& fmt, Args&&... args)
-{
-  detail::log_count++;
-  if (detail::log_count <= detail::max_limit) { detail::_stderr_logger->info(fmt, std::forward<Args>(args)...); }
-}
-
-template <typename FormatString, typename... Args>
-void errlog_warn(const FormatString& fmt, Args&&... args)
-{
-  detail::log_count++;
-  if (detail::log_count <= detail::max_limit) { detail::_stderr_logger->warn(fmt, std::forward<Args>(args)...); }
-}
-
-template <typename FormatString, typename... Args>
-void errlog_error(const FormatString& fmt, Args&&... args)
-{
-  detail::log_count++;
-  if (detail::log_count <= detail::max_limit) { detail::_stderr_logger->error(fmt, std::forward<Args>(args)...); }
-}
-
-template <typename FormatString, typename... Args>
-void errlog_critical(const FormatString& fmt, Args&&... args)
-{
-  detail::log_count++;
-  // we ignore max_limit with critical log
-  detail::_stderr_logger->critical(fmt, std::forward<Args>(args)...);
-}
-
-// Ensure modifications to the header info are localized
-class pattern_guard
-{
 public:
-  pattern_guard(const std::string& pattern);
-  ~pattern_guard();
+  template <typename FormatString, typename... Args>
+  void info(const FormatString& fmt, Args&&... args)
+  {
+    _logger_impl->info(fmt, std::forward<Args>(args)...);
+  }
 
-  // Don't allow copying or moving
-  pattern_guard(const pattern_guard&) = delete;
-  pattern_guard& operator=(const pattern_guard&) = delete;
-  pattern_guard(const pattern_guard&&) = delete;
-  pattern_guard& operator=(const pattern_guard&&) = delete;
+  template <typename FormatString, typename... Args>
+  void warn(const FormatString& fmt, Args&&... args)
+  {
+    _logger_impl->warn(fmt, std::forward<Args>(args)...);
+  }
+
+  template <typename FormatString, typename... Args>
+  void error(const FormatString& fmt, Args&&... args)
+  {
+    _logger_impl->error(fmt, std::forward<Args>(args)...);
+  }
+
+  template <typename FormatString, typename... Args>
+  void critical(const FormatString& fmt, Args&&... args)
+  {
+    _logger_impl->critical(fmt, std::forward<Args>(args)...);
+  }
+
+  void set_level(log_level lvl);
+  void set_max_output(size_t max);
+  size_t get_log_count() const;
+  void log_summary();
 };
-void log_set_level(log_level lvl);
 
-void initialize_logger();
-void set_max_output(size_t max);
-size_t get_log_count();
-void log_summary();
-}  // namespace logger
+inline logger create_stderr_logger()
+{
+  auto stderr_sink = std::make_shared<spdlog::sinks::stderr_sink_mt>();
+  return logger(std::make_shared<details::logger_impl>(
+      std::unique_ptr<spdlog::logger>(new spdlog::logger("vowpal-stderr", stderr_sink))));
+}
+
+inline logger create_null_logger()
+{
+  auto null_sink = std::make_shared<spdlog::sinks::null_sink_st>();
+  return logger(std::make_shared<details::logger_impl>(
+      std::unique_ptr<spdlog::logger>(new spdlog::logger("vowpal-null", null_sink))));
+}
+
+inline logger create_custom_sink_logger(void* context, void (*func)(void*, const std::string&))
+{
+  auto fptr_sink = std::make_shared<details::function_ptr_sink<std::mutex>>(context, func);
+  return logger(std::make_shared<details::logger_impl>(
+      std::unique_ptr<spdlog::logger>(new spdlog::logger("vowpal-fptr", fptr_sink))));
+}
+
 }  // namespace io
 }  // namespace VW

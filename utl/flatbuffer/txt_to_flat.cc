@@ -42,16 +42,16 @@ VW::workspace* setup(std::unique_ptr<options_i, options_deleter_type> options)
   }
   all->vw_is_main = true;
 
-  if (!all->logger.quiet && !all->bfgs && !all->searchstr && !all->options->was_supplied("audit_regressor"))
+  if (!all->quiet && !all->bfgs && !all->searchstr && !all->options->was_supplied("audit_regressor"))
   {
-    *(all->trace_message) << std::left << std::setw(shared_data::col_avg_loss) << std::left << "average"
+    *(all->driver_output) << std::left << std::setw(shared_data::col_avg_loss) << std::left << "average"
                           << " " << std::setw(shared_data::col_since_last) << std::left << "since"
                           << " " << std::right << std::setw(shared_data::col_example_counter) << "example"
                           << " " << std::setw(shared_data::col_example_weight) << "example"
                           << " " << std::setw(shared_data::col_current_label) << "current"
                           << " " << std::setw(shared_data::col_current_predict) << "current"
                           << " " << std::setw(shared_data::col_current_features) << "current" << std::endl;
-    *(all->trace_message) << std::left << std::setw(shared_data::col_avg_loss) << std::left << "loss"
+    *(all->driver_output) << std::left << std::setw(shared_data::col_avg_loss) << std::left << "loss"
                           << " " << std::setw(shared_data::col_since_last) << std::left << "last"
                           << " " << std::right << std::setw(shared_data::col_example_counter) << "counter"
                           << " " << std::setw(shared_data::col_example_weight) << "weight"

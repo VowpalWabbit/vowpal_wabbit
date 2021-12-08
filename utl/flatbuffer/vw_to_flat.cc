@@ -486,6 +486,6 @@ void to_flat::convert_txt_to_flat(VW::workspace& all)
     write_to_file(collection, all.l->is_multiline(), multi_ex_builder, ex_builder, outfile);
   }
 
-  *(all.trace_message) << "Converted " << _examples << " examples" << std::endl;
-  *(all.trace_message) << "Flatbuffer " << output_flatbuffer_name << " created" << std::endl;
+  *(all.driver_output) << "Converted " << _examples << " examples" << std::endl;
+  *(all.driver_output) << "Flatbuffer " << output_flatbuffer_name << " created" << std::endl;
 }

@@ -54,6 +54,7 @@ struct cb_explore
   bool nounif = false;
   bool epsilon_decay = false;
   VW::version_struct model_file_version;
+  VW::io::logger* logger;
 
   size_t counter = 0;
 };
@@ -216,7 +217,7 @@ void predict_or_learn_cover(cb_explore& data, single_learner& base, example& ec)
     {
       data.cbcs.known_cost = CB::cb_class{};
     }
-    gen_cs_example<false>(data.cbcs, ec, data.cb_label, data.cs_label);
+    gen_cs_example<false>(data.cbcs, ec, data.cb_label, data.cs_label, *data.logger);
     for (uint32_t i = 0; i < num_actions; i++) probabilities[i] = 0.f;
 
     ec.l.cs = std::move(data.second_cs_label);
@@ -247,7 +248,7 @@ void predict_or_learn_cover(cb_explore& data, single_learner& base, example& ec)
 
 void print_update_cb_explore(VW::workspace& all, bool is_test, example& ec, std::stringstream& pred_string)
 {
-  if (all.sd->weighted_examples() >= all.sd->dump_interval && !all.logger.quiet && !all.bfgs)
+  if (all.sd->weighted_examples() >= all.sd->dump_interval && !all.quiet && !all.bfgs)
   {
     std::stringstream label_string;
     if (is_test)
@@ -257,7 +258,7 @@ void print_update_cb_explore(VW::workspace& all, bool is_test, example& ec, std:
       const auto& cost = ec.l.cb.costs[0];
       label_string << cost.action << ":" << cost.cost << ":" << cost.probability;
     }
-    all.sd->print_update(*all.trace_message, all.holdout_set_off, all.current_pass, label_string.str(),
+    all.sd->print_update(*all.driver_output, all.holdout_set_off, all.current_pass, label_string.str(),
         pred_string.str(), ec.get_num_features(), all.progress_add, all.progress_arg);
   }
 }
@@ -295,7 +296,7 @@ void generic_output_example(VW::workspace& all, float loss, example& ec, CB::lab
       maxid = ec.pred.a_s[i].action + 1;
     }
   }
-  for (auto& sink : all.final_prediction_sink) all.print_text_by_ref(sink.get(), ss.str(), ec.tag);
+  for (auto& sink : all.final_prediction_sink) all.print_text_by_ref(sink.get(), ss.str(), ec.tag, all.logger);
 
   std::stringstream sso;
   sso << maxid << ":" << std::fixed << maxprob;
@@ -372,6 +373,7 @@ base_learner* cb_explore_setup(VW::setup_base_i& stack_builder)
 
   single_learner* base = as_singleline(stack_builder.setup_base_learner());
   data->cbcs.scorer = all.scorer;
+  data->logger = &all.logger;
 
   void (*learn_ptr)(cb_explore&, single_learner&, example&);
   void (*predict_ptr)(cb_explore&, single_learner&, example&);

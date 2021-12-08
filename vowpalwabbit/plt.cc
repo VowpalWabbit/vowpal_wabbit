@@ -18,7 +18,6 @@
 
 using namespace VW::LEARNER;
 using namespace VW::config;
-namespace logger = VW::io::logger;
 
 namespace plt_ns
 {
@@ -108,7 +107,7 @@ void learn(plt& p, single_learner& base, example& ec)
       }
     }
     if (multilabels.label_v.back() >= p.k)
-      logger::log_error("label {0} is not in {{0,{1}}} This won't work right.",
+      p.all->logger.error("label {0} is not in {{0,{1}}} This won't work right.",
                         multilabels.label_v.back(), p.k - 1);
 
     for (auto& n : p.positive_nodes)
@@ -163,7 +162,7 @@ void predict(plt& p, single_learner& base, example& ec)
     if (label < p.k)
       p.true_labels.insert(label);
     else
-      logger::log_error("label {0} is not in {{0,{1}}} This won't work right.", label, p.k - 1);
+      p.all->logger.error("label {0} is not in {{0,{1}}} This won't work right.", label, p.k - 1);
   }
 
   p.node_queue.clear();  // clear node queue
@@ -286,17 +285,17 @@ void finish(plt& p)
       {
         correct += p.tp_at[i];
         // TODO: is this the correct logger?
-        *(p.all->trace_message) << "p@" << i + 1 << " = " << correct / (p.ec_count * (i + 1)) << std::endl;
-        *(p.all->trace_message) << "r@" << i + 1 << " = " << correct / p.true_count << std::endl;
+        *(p.all->driver_output) << "p@" << i + 1 << " = " << correct / (p.ec_count * (i + 1)) << std::endl;
+        *(p.all->driver_output) << "r@" << i + 1 << " = " << correct / p.true_count << std::endl;
       }
     }
 
     else if (p.threshold > 0)
     {
       // TODO: is this the correct logger?
-      *(p.all->trace_message) << "hamming loss = " << static_cast<double>(p.fp + p.fn) / p.ec_count << std::endl;
-      *(p.all->trace_message) << "precision = " << static_cast<double>(p.tp) / (p.tp + p.fp) << std::endl;
-      *(p.all->trace_message) << "recall = " << static_cast<double>(p.tp) / (p.tp + p.fn) << std::endl;
+      *(p.all->driver_output) << "hamming loss = " << static_cast<double>(p.fp + p.fn) / p.ec_count << std::endl;
+      *(p.all->driver_output) << "precision = " << static_cast<double>(p.tp) / (p.tp + p.fp) << std::endl;
+      *(p.all->driver_output) << "recall = " << static_cast<double>(p.tp) / (p.tp + p.fn) << std::endl;
     }
   }
 }
@@ -350,15 +349,15 @@ base_learner* plt_setup(VW::setup_base_i& stack_builder)
   tree->t = static_cast<uint32_t>(e + d);
   tree->ti = tree->t - tree->k;
 
-  if (!all.logger.quiet)
+  if (!all.quiet)
   {
-    *(all.trace_message) << "PLT k = " << tree->k << "\nkary_tree = " << tree->kary << std::endl;
+    *(all.driver_output) << "PLT k = " << tree->k << "\nkary_tree = " << tree->kary << std::endl;
     if (!all.training)
     {
-      if (tree->top_k > 0) { *(all.trace_message) << "top_k = " << tree->top_k << std::endl; }
+      if (tree->top_k > 0) { *(all.driver_output) << "top_k = " << tree->top_k << std::endl; }
       else
       {
-        *(all.trace_message) << "threshold = " << tree->threshold << std::endl;
+        *(all.driver_output) << "threshold = " << tree->threshold << std::endl;
       }
     }
   }
