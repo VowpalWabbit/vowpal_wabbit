@@ -313,16 +313,20 @@ void print_features(VW::workspace& all, example& ec)
     stable_sort(dat.results.begin(), dat.results.end());
     if (all.audit)
     {
-      for (string_value& sv : dat.results) std::cout << '\t' << sv.s;
-      std::cout << std::endl;
+      for (string_value& sv : dat.results)
+      {
+        all.audit_writer->write("\t", 1);
+        all.audit_writer->write(sv.s.data(), sv.s.size());
+      }
+      all.audit_writer->write("\n", 1);
     }
   }
 }
 
 void print_audit_features(VW::workspace& all, example& ec)
 {
-  if (all.audit) print_result_by_ref(all.stdout_adapter.get(), ec.pred.scalar, -1, ec.tag);
-  fflush(stdout);
+  if (all.audit) print_result_by_ref(all.audit_writer.get(), ec.pred.scalar, -1, ec.tag);
+
   print_features(all, ec);
 }
 
