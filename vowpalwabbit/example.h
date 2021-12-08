@@ -23,6 +23,7 @@
 #include "cb_continuous_label.h"
 #include "prob_dist_cont.h"
 #include "active_multiclass_prediction.h"
+#include "cache.h"
 
 #include <cstdint>
 #include <vector>
@@ -200,6 +201,10 @@ size_t read_model_field(io_buf&, polylabel&);
 size_t write_model_field(io_buf&, const polylabel&, const std::string&, bool);
 size_t read_model_field(io_buf&, flat_example&);
 size_t write_model_field(io_buf&, const flat_example&, const std::string&, bool);
+size_t read_model_field(io_buf&, features&);
+size_t write_model_field(io_buf&, const features&, const std::string&, bool);
+size_t read_model_field(io_buf&, VW::namespace_extent&);
+size_t write_model_field(io_buf&, const VW::namespace_extent&, const std::string&, bool);
 }  // namespace model_utils
 }  // namespace VW
 

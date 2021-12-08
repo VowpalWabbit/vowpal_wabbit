@@ -5,7 +5,6 @@
 #include "feature_group.h"
 
 #include "v_array.h"
-#include "model_utils.h"
 
 #include <vector>
 #include <algorithm>
@@ -306,46 +305,3 @@ void features::end_ns_extent()
     }
   }
 }
-
-namespace VW
-{
-namespace model_utils
-{
-size_t read_model_field(io_buf& io, features& fs)
-{
-  size_t bytes = 0;
-  bytes += read_model_field(io, fs.values);
-  bytes += read_model_field(io, fs.indicies);
-  bytes += read_model_field(io, fs.space_names);
-  bytes += read_model_field(io, fs.namespace_extents);
-  bytes += read_model_field(io, fs.sum_feat_sq);
-  return bytes;
-}
-size_t write_model_field(io_buf& io, const features& fs, const std::string& upstream_name, bool text)
-{
-  size_t bytes = 0;
-  bytes += write_model_field(io, fs.values, upstream_name + "_values", text);
-  bytes += write_model_field(io, fs.indicies, upstream_name + "_indicies", text);
-  bytes += write_model_field(io, fs.space_names, upstream_name + "_space_names", text);
-  bytes += write_model_field(io, fs.namespace_extents, upstream_name + "_namespace_extents", text);
-  bytes += write_model_field(io, fs.sum_feat_sq, upstream_name + "_sum_feat_sq", text);
-  return bytes;
-}
-size_t read_model_field(io_buf& io, VW::namespace_extent& ne)
-{
-  size_t bytes = 0;
-  bytes += read_model_field(io, ne.begin_index);
-  bytes += read_model_field(io, ne.end_index);
-  bytes += read_model_field(io, ne.hash);
-  return bytes;
-}
-size_t write_model_field(io_buf& io, const VW::namespace_extent& ne, const std::string& upstream_name, bool text)
-{
-  size_t bytes = 0;
-  bytes += write_model_field(io, ne.begin_index, upstream_name + "_begin_index", text);
-  bytes += write_model_field(io, ne.end_index, upstream_name + "_end_index", text);
-  bytes += write_model_field(io, ne.hash, upstream_name + "_hash", text);
-  return bytes;
-}
-}  // namespace model_utils
-}  // namespace VW
