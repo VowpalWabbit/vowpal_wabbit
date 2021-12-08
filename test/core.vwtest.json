@@ -4221,7 +4221,7 @@
     "id": 356,
     "desc": "fuzz testing crash due to partial model file",
     "diff_files": {
-      "stdout": "train-sets/ref/truncated_model_crash.stdout"
+      "stderr": "train-sets/ref/truncated_model_crash.stderr"
     },
     "bash_command": "./negative-test.sh {VW} --no_stdin --cb_explore_adf --cover 3 --noconstant --quiet -i model-sets/truncated_model"
   },
