@@ -176,7 +176,7 @@ public:
       return label * getLoss(nullptr, prediction, 1.f) + (1 - label) * getLoss(nullptr, prediction, -1.f);
     // TODO: warning or error?
     if (label != -1.f && label != 1.f)
-      logger::log_warn("You are using label {} not -1 or 1 or in [0,1] as loss function expects!", label);
+      logger::log_warn("The label {} is not -1 or 1 or in [0,1] as loss function expects", label);
     return log(1 + correctedExp(-label * prediction));
   }
 
