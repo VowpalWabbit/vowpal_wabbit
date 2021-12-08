@@ -314,7 +314,6 @@ namespace model_utils
 {
 size_t read_model_field(io_buf& io, features& fs)
 {
-  int a = 1;
   size_t bytes = 0;
   bytes += read_model_field(io, fs.values);
   bytes += read_model_field(io, fs.indicies);
