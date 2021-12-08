@@ -4441,5 +4441,15 @@
       373
     ]
   }
-
+  {
+    "id": 375,
+    "desc": "test non binary cost in logistic loss",
+    "vw_command": "-d train-sets/cb_test_non_binary_costs.ldf --loss_function logistic --cb_explore_adf",
+    "diff_files": {
+      "stderr": "train-sets/ref/logistic_non_binary.stderr"
+    },
+    "input_files": [
+      "train-sets/cb_test_non_binary_costs.ldf"
+    ]
+  }
 ]
