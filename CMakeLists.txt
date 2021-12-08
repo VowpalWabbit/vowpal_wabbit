@@ -4,11 +4,14 @@ set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_CURRENT_LIST_DIR}/cmake/")
 if(POLICY CMP0076)
   cmake_policy(SET CMP0076 NEW)
 endif()
-
 # Do not add /W3 to MSVC flags by default. We set this to /W4.
 if(POLICY CMP0092)
   cmake_policy(SET CMP0092 NEW)
 endif()
+
+# Allow vcpkg to use versions feature if it is enabled with a manifest.
+# Right now this is done for the Python CIs.
+list(APPEND VCPKG_FEATURE_FLAGS "versions")
 
 # Read version into variable
 file(READ version.txt PACKAGE_VERSION)
