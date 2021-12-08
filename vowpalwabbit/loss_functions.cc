@@ -172,8 +172,8 @@ public:
 
   float getLoss(shared_data*, float prediction, float label) override
   {
-	if (label >= 0.f  && label < 1.f)
-	  return label * getLoss(nullptr, prediction, 1.f) + (1 - label) * getLoss(nullptr, prediction, -1.f);
+    if (label >= 0.f && label < 1.f)
+      return label * getLoss(nullptr, prediction, 1.f) + (1 - label) * getLoss(nullptr, prediction, -1.f);
     // TODO: warning or error?
     if (label != -1.f && label != 1.f)
       logger::log_warn("You are using label {} not -1 or 1 or in [0,1] as loss function expects!", label);
@@ -182,9 +182,9 @@ public:
 
   float getUpdate(float prediction, float label, float update_scale, float pred_per_update) override
   {
-	if (label >= 0.f  && label < 1.f)
-	  return label * getUpdate(prediction, 1.f, update_scale, pred_per_update) +
-		(1 - label) * getUpdate(prediction, -1.f, update_scale, pred_per_update);
+    if (label >= 0.f && label < 1.f)
+      return label * getUpdate(prediction, 1.f, update_scale, pred_per_update) +
+          (1 - label) * getUpdate(prediction, -1.f, update_scale, pred_per_update);
     float w, x;
     float d = correctedExp(label * prediction);
     if (update_scale * pred_per_update < 1e-6)
@@ -201,9 +201,9 @@ public:
 
   float getUnsafeUpdate(float prediction, float label, float update_scale) override
   {
-	if (label >= 0.f  && label < 1.f)
-	  return label * getUnsafeUpdate(prediction, 1.f, update_scale) +
-		(1 - label) * getUnsafeUpdate(prediction, -1.f, update_scale);
+    if (label >= 0.f && label < 1.f)
+      return label * getUnsafeUpdate(prediction, 1.f, update_scale) +
+          (1 - label) * getUnsafeUpdate(prediction, -1.f, update_scale);
 
     float d = correctedExp(label * prediction);
     return label * update_scale / (1 + d);
@@ -231,9 +231,9 @@ public:
 
   float first_derivative(shared_data*, float prediction, float label) override
   {
-	if (label >= 0.f  && label < 1.f)
-	  return label * first_derivative(nullptr, prediction, 1.f) +
-		(1-label) * first_derivative(nullptr, prediction, -1.f);
+    if (label >= 0.f && label < 1.f)
+      return label * first_derivative(nullptr, prediction, 1.f) +
+          (1 - label) * first_derivative(nullptr, prediction, -1.f);
 
     float v = -label / (1 + correctedExp(label * prediction));
     return v;
@@ -247,9 +247,9 @@ public:
 
   float second_derivative(shared_data*, float prediction, float label) override
   {
-	if (label >= 0.f  && label < 1.f)
-	  return label * second_derivative(nullptr, prediction, 1.f) +
-		(1-label) * second_derivative(nullptr, prediction, -1.f);
+    if (label >= 0.f && label < 1.f)
+      return label * second_derivative(nullptr, prediction, 1.f) +
+          (1 - label) * second_derivative(nullptr, prediction, -1.f);
     float p = 1 / (1 + correctedExp(label * prediction));
 
     return p * (1 - p);
