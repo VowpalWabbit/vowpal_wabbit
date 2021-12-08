@@ -1654,20 +1654,12 @@ VW::workspace* initialize_with_builder(std::unique_ptr<options_i, options_delete
   catch (VW::save_load_model_exception& e)
   {
     auto msg = fmt::format("{}, model files = {}", e.what(), fmt::join(all.initial_regressors, ", "));
-
     delete &all;
-
     throw save_load_model_exception(e.Filename(), e.LineNumber(), msg);
-  }
-  catch (std::exception& e)
-  {
-    *(all.trace_message) << "Error: " << e.what() << endl;
-    finish(all);
-    throw;
   }
   catch (...)
   {
-    finish(all);
+    delete &all;
     throw;
   }
 }

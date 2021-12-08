@@ -195,7 +195,6 @@ public:
   float initial_constant;
 
   bool bfgs;
-  bool hessian_on;
 
   bool save_resume;
   bool preserve_performance_counters;
