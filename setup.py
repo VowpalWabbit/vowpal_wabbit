@@ -98,7 +98,7 @@ class BuildPyLibVWBindingsModule(_build_ext):
             '-DPY_VERSION=' + '{v[0]}.{v[1]}'.format(v=version_info),
             '-DBUILD_PYTHON=On',
             '-DBUILD_TESTS=Off',
-            '-DWARNINGS=Off'
+            '-DWARNINGS=Off',
         ]
         if self.distribution.enable_boost_cmake is None:
             # Add this flag as default since testing indicates its safe.
