@@ -15,6 +15,7 @@
 #include "vw_versions.h"
 #include "version.h"
 #include "label_parser.h"
+#include "io/logger.h"
 
 #include <cmath>
 #include <vector>
@@ -280,7 +281,13 @@ base_learner* setup(VW::setup_base_i& stack_builder)
                .one_of({"mtr"})
                .help("Contextual bandit method to use. RegCB only supports supervised regression (mtr)"));
 
-  if (!options.add_parse_and_check_necessary(new_options)) { return nullptr; }
+  auto enabled = options.add_parse_and_check_necessary(new_options);
+  if (regcbopt && !regcb)
+  {
+    VW::io::logger::errlog_warn("RegCB used to be able to be enabled with either --regcb or --regcbopt. Enabling with --regcbopt only is now deprecated. Please add --regcb to your command line in addition to --regcbopt.");
+    enabled = true;
+  }
+  if (!enabled) { return nullptr; }
 
   // Ensure serialization of cb_adf in all cases.
   if (!options.was_supplied("cb_adf")) { options.insert("cb_adf", ""); }
