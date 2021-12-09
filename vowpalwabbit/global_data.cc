@@ -256,7 +256,6 @@ workspace::workspace() : options(nullptr, nullptr)
 
   bfgs = false;
   no_bias = false;
-  hessian_on = false;
   active = false;
   num_bits = 18;
   default_bits = true;
@@ -313,6 +312,7 @@ workspace::workspace() : options(nullptr, nullptr)
 
   add_constant = true;
   audit = false;
+  audit_writer = VW::io::open_stdout();
 
   pass_length = std::numeric_limits<size_t>::max();
   passes_complete = 0;

@@ -1048,6 +1048,12 @@ void parse_example_tweaks(options_i& options, VW::workspace& all)
   }
 
   all.loss = getLossFunction(all, loss_function, loss_parameter);
+  if (options.was_supplied("quantile_tau") && all.loss->getType() != "quantile")
+  {
+    logger::errlog_warn(
+        "Option 'quantile_tau' was passed but the quantile loss function is not being used. 'quantile_tau' value will "
+        "be ignored.");
+  }
 
   if (all.l1_lambda < 0.f)
   {
@@ -1654,20 +1660,12 @@ VW::workspace* initialize_with_builder(std::unique_ptr<options_i, options_delete
   catch (VW::save_load_model_exception& e)
   {
     auto msg = fmt::format("{}, model files = {}", e.what(), fmt::join(all.initial_regressors, ", "));
-
     delete &all;
-
     throw save_load_model_exception(e.Filename(), e.LineNumber(), msg);
-  }
-  catch (std::exception& e)
-  {
-    *(all.trace_message) << "Error: " << e.what() << endl;
-    finish(all);
-    throw;
   }
   catch (...)
   {
-    finish(all);
+    delete &all;
     throw;
   }
 }
