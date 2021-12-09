@@ -17,7 +17,7 @@
 
 namespace test_helpers
 {
-void make_example(multi_ex& examples, vw& vw, int arm, float* costs, float* probs)
+void make_example(multi_ex& examples, VW::workspace& vw, int arm, float* costs, float* probs)
 {
   examples.push_back(VW::read_example(vw, "shared | shared_f"));
   for (int i = 0; i < 4; ++i)
@@ -141,8 +141,7 @@ VW::metric_sink run_simulation(int steps, int switch_step)
 {
   using namespace test_helpers;
   auto* vw = VW::initialize(
-      "--cb_explore_adf --baseline_challenger_cb --quiet --extra_metrics ut_metrics.json --random_seed 5  "
-      "--save_resume");
+      "--cb_explore_adf --baseline_challenger_cb --quiet --extra_metrics ut_metrics.json --random_seed 5");
   float costs_p0[] = {-0.1, -0.3, -0.3, -1.0};
   float probs_p0[] = {0.05, 0.05, 0.05, 0.85};
 
@@ -160,7 +159,7 @@ VW::metric_sink run_simulation(int steps, int switch_step)
     {
       VW::save_predictor(*vw, "model_file.vw");
       VW::finish(*vw);
-      vw = VW::initialize("--quiet --extra_metrics ut_metrics.json --save_resume -i model_file.vw");
+      vw = VW::initialize("--quiet --extra_metrics ut_metrics.json -i model_file.vw");
     }
   }
   VW::metric_sink metrics;

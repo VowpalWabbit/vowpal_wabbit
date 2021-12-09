@@ -7,6 +7,8 @@ using no cache
 Reading datafile = train-sets/cb_explore_cover.dat
 num sources = 1
 Enabled reductions: gd, scorer-identity, csoaa, cb, cb_explore-cover
+Input label = cb
+Output pred = action_probs
 average  since         example        example  current  current  current
 loss     last          counter         weight    label  predict features
 0.000000 0.000000            1            1.0  1:0:0.5 1:0.500000        3

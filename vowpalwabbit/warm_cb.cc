@@ -49,8 +49,8 @@ struct warm_cb
   action_scores a_s;
   // used as the seed
   size_t example_counter = 0;
-  vw* all = nullptr;
-  std::shared_ptr<rand_state> _random_state;
+  VW::workspace* all = nullptr;
+  std::shared_ptr<VW::rand_state> _random_state;
   multi_ex ecs;
   float loss0 = 0.f;
   float loss1 = 0.f;
@@ -608,7 +608,7 @@ base_learner* warm_cb_setup(VW::setup_base_i& stack_builder)
   void (*learn_pred_ptr)(warm_cb&, multi_learner&, example&);
   size_t ws = data->choices_lambda;
   std::string name_addition;
-  void (*finish_ptr)(vw&, warm_cb&, example&);
+  void (*finish_ptr)(VW::workspace&, warm_cb&, example&);
   VW::label_type_t label_type;
 
   if (use_cs)

@@ -11,6 +11,7 @@
 #include "reductions.h"
 #include "learner.h"
 #include <map>
+#include <memory>
 #include <set>
 #include <queue>
 
@@ -28,8 +29,8 @@ VW::LEARNER::base_learner* automl_setup(VW::setup_base_i&);
 
 namespace details
 {
-void fail_if_enabled(vw&, const std::set<std::string>&);
-// void print_weights_nonzero(vw*, uint64, dense_parameters&);
+void fail_if_enabled(VW::workspace&, const std::set<std::string>&);
+// void print_weights_nonzero(VW::workspace*, uint64, dense_parameters&);
 }  // namespace details
 
 constexpr uint64_t MAX_CONFIGS = 10;
@@ -110,8 +111,7 @@ struct interaction_config_manager : config_manager
   uint64_t current_champ = 0;
   uint64_t global_lease;
   uint64_t max_live_configs;
-  uint64_t seed;
-  rand_state random_state;
+  std::shared_ptr<VW::rand_state> random_state;
   uint64_t priority_challengers;
   uint64_t valid_config_size = 0;
   bool keep_configs;
@@ -129,7 +129,7 @@ struct interaction_config_manager : config_manager
   // Maybe not needed with oracle, maps priority to config index, unused configs
   std::priority_queue<std::pair<float, uint64_t>> index_queue;
 
-  interaction_config_manager(uint64_t, uint64_t, uint64_t, uint64_t, bool, std::string,
+  interaction_config_manager(uint64_t, uint64_t, std::shared_ptr<VW::rand_state>, uint64_t, bool, std::string,
       float (*)(const exclusion_config&, const std::map<namespace_index, uint64_t>&));
 
   void apply_config(example*, uint64_t);

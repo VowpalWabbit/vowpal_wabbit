@@ -23,6 +23,8 @@
 
 #include "rand48.h"
 #include "learner.h"
+#include "prediction_type.h"
+#include "label_type.h"
 #include "parse_example.h"
 #include "best_constant.h"
 #include "vw_exception.h"
@@ -507,7 +509,7 @@ std::vector<namespace_index> parse_char_interactions(VW::string_view input)
   return result;
 }
 
-std::vector<extent_term> parse_full_name_interactions(vw& all, VW::string_view str)
+std::vector<extent_term> parse_full_name_interactions(VW::workspace& all, VW::string_view str)
 {
   std::vector<extent_term> result;
   auto encoded = VW::decode_inline_hex(str);
@@ -536,8 +538,8 @@ std::vector<extent_term> parse_full_name_interactions(vw& all, VW::string_view s
   return result;
 }
 
-void parse_feature_tweaks(
-    options_i& options, vw& all, bool interactions_settings_duplicated, std::vector<std::string>& dictionary_nses)
+void parse_feature_tweaks(options_i& options, VW::workspace& all, bool interactions_settings_duplicated,
+    std::vector<std::string>& dictionary_nses)
 {
   std::string hash_function("strings");
   uint32_t new_bits;
@@ -563,6 +565,14 @@ void parse_feature_tweaks(
 
   option_group_definition feature_options("Feature");
   feature_options
+#ifdef PRIVACY_ACTIVATION
+      .add(make_option("privacy_activation", all.privacy_activation)
+               .help("turns on aggregated weight exporting when the unique feature tags cross "
+                     "`privacy_activation_threshold`"))
+      .add(make_option("privacy_activation_threshold", all.privacy_activation_threshold)
+               .help("takes effect when `privacy_activation` is turned on and is the number of unique tag hashes a "
+                     "weight needs to see before it is exported"))
+#endif
       .add(make_option("hash", hash_function).keep().one_of({"strings", "all"}).help("How to hash the features"))
       .add(make_option("hash_seed", all.hash_seed).keep().default_value(0).help("Seed for hash function"))
       .add(make_option("ignore", ignores).keep().help("Ignore namespaces beginning with character <arg>"))
@@ -795,7 +805,7 @@ void parse_feature_tweaks(
     }
   }
 
-  for (size_t i = 0; i < 256; i++)
+  for (size_t i = 0; i < NUM_NAMESPACES; i++)
   {
     all.ignore[i] = false;
     all.ignore_linear[i] = false;
@@ -815,10 +825,11 @@ void parse_feature_tweaks(
 
     if (!all.logger.quiet)
     {
-      *(all.trace_message) << "ignoring namespaces beginning with: ";
-      for (auto const& ignore : ignores)
-        for (auto const character : ignore) *(all.trace_message) << character << " ";
-
+      *(all.trace_message) << "ignoring namespaces beginning with:";
+      for (size_t i = 0; i < NUM_NAMESPACES; ++i)
+      {
+        if (all.ignore[i]) *(all.trace_message) << " " << static_cast<unsigned char>(i);
+      }
       *(all.trace_message) << endl;
     }
   }
@@ -835,17 +846,18 @@ void parse_feature_tweaks(
 
     if (!all.logger.quiet)
     {
-      *(all.trace_message) << "ignoring linear terms for namespaces beginning with: ";
-      for (auto const& ignore : ignore_linears)
-        for (auto const character : ignore) *(all.trace_message) << character << " ";
-
+      *(all.trace_message) << "ignoring linear terms for namespaces beginning with:";
+      for (size_t i = 0; i < NUM_NAMESPACES; ++i)
+      {
+        if (all.ignore_linear[i]) *(all.trace_message) << " " << static_cast<unsigned char>(i);
+      }
       *(all.trace_message) << endl;
     }
   }
 
   if (options.was_supplied("keep"))
   {
-    for (size_t i = 0; i < 256; i++) all.ignore[i] = true;
+    for (size_t i = 0; i < NUM_NAMESPACES; i++) all.ignore[i] = true;
 
     all.ignore_some = true;
 
@@ -857,10 +869,11 @@ void parse_feature_tweaks(
 
     if (!all.logger.quiet)
     {
-      *(all.trace_message) << "using namespaces beginning with: ";
-      for (auto const& keep : keeps)
-        for (auto const character : keep) *(all.trace_message) << character << " ";
-
+      *(all.trace_message) << "using namespaces beginning with:";
+      for (size_t i = 0; i < NUM_NAMESPACES; ++i)
+      {
+        if (!all.ignore[i]) *(all.trace_message) << " " << static_cast<unsigned char>(i);
+      }
       *(all.trace_message) << endl;
     }
   }
@@ -871,7 +884,7 @@ void parse_feature_tweaks(
   if (options.was_supplied("redefine"))
   {
     // initial values: i-th namespace is redefined to i itself
-    for (size_t i = 0; i < 256; i++) all.redefine[i] = static_cast<unsigned char>(i);
+    for (size_t i = 0; i < NUM_NAMESPACES; i++) all.redefine[i] = static_cast<unsigned char>(i);
 
     // note: --redefine declaration order is matter
     // so --redefine :=L --redefine ab:=M  --ignore L  will ignore all except a and b under new M namspace
@@ -922,7 +935,7 @@ void parse_feature_tweaks(
           else
           {
             // wildcard found: redefine all except default and break
-            for (size_t j = 0; j < 256; j++) all.redefine[j] = new_namespace;
+            for (size_t j = 0; j < NUM_NAMESPACES; j++) all.redefine[j] = new_namespace;
             break;  // break processing S
           }
         }
@@ -1108,6 +1121,8 @@ void parse_output_preds(options_i& options, VW::workspace& all)
 
 void parse_output_model(options_i& options, VW::workspace& all)
 {
+  bool predict_only_model = false;
+  bool save_resume = false;
   option_group_definition output_model_options("Output Model");
   output_model_options
       .add(make_option("final_regressor", all.final_regressor_name).short_name("f").help("Final regressor"))
@@ -1115,8 +1130,11 @@ void parse_output_model(options_i& options, VW::workspace& all)
                .help("Output human-readable final regressor with numeric features"))
       .add(make_option("invert_hash", all.inv_hash_regressor_name)
                .help("Output human-readable final regressor with feature names.  Computationally expensive"))
-      .add(make_option("save_resume", all.save_resume)
-               .help("Save extra state so learning can be resumed later with new data"))
+      .add(
+          make_option("predict_only_model", predict_only_model)
+              .help("Do not save extra state for learning to be resumed. Stored model can only be used for prediction"))
+      .add(make_option("save_resume", save_resume)
+               .help("This flag is now deprecated and models can continue learning by default"))
       .add(make_option("preserve_performance_counters", all.preserve_performance_counters)
                .help("Reset performance counters when warmstarting"))
       .add(make_option("save_per_pass", all.save_per_pass).help("Save the model after every pass over data"))
@@ -1130,7 +1148,12 @@ void parse_output_model(options_i& options, VW::workspace& all)
   if (!all.final_regressor_name.empty() && !all.logger.quiet)
     *(all.trace_message) << "final_regressor = " << all.final_regressor_name << endl;
 
-  if (options.was_supplied("invert_hash")) all.hash_inv = true;
+  if (options.was_supplied("invert_hash")) { all.hash_inv = true; }
+  if (save_resume)
+  {
+    logger::errlog_warn("--save_resume flag is deprecated -- learning can now continue on saved models by default.");
+  }
+  if (predict_only_model) { all.save_resume = false; }
 
   // Question: This doesn't seem necessary
   // if (options.was_supplied("id") && find(arg.args.begin(), arg.args.end(), "--id") == arg.args.end())
@@ -1346,6 +1369,7 @@ void merge_options_from_header_strings(const std::vector<std::string>& strings, 
         first_seen = false;
         continue;
       }
+
       saved_key = opt.string_key;
       is_ccb_input_model = is_ccb_input_model || (saved_key == "ccb_explore_adf");
 
@@ -1382,7 +1406,7 @@ options_i& load_header_merge_options(
 
   interactions_settings_duplicated = check_interaction_settings_collision(options, file_options);
 
-  // Convert file_options into  vector.
+  // Convert file_options into vector.
   std::istringstream ss{file_options};
   const std::vector<std::string> container{
       std::istream_iterator<std::string>{ss}, std::istream_iterator<std::string>{}};
@@ -1610,6 +1634,13 @@ VW::workspace* initialize_with_builder(std::unique_ptr<options_i, options_delete
     }
 
     print_enabled_reductions(all, enabled_reductions);
+
+    if (!all.logger.quiet)
+    {
+      *(all.trace_message) << "Input label = " << VW::to_string(all.l->get_input_label_type()).substr(14) << std::endl;
+      *(all.trace_message) << "Output pred = " << VW::to_string(all.l->get_output_prediction_type()).substr(19)
+                           << std::endl;
+    }
 
     if (!all.options->get_typed_option<bool>("dry_run").value())
     {

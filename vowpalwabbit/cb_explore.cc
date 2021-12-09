@@ -35,7 +35,7 @@ namespace CB_EXPLORE
 {
 struct cb_explore
 {
-  std::shared_ptr<rand_state> _random_state;
+  std::shared_ptr<VW::rand_state> _random_state;
   cb_to_cs cbcs;
   v_array<uint32_t> preds;
   v_array<float> cover_probs;

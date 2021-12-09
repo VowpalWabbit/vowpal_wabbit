@@ -186,6 +186,7 @@
     <ClInclude Include="example.h" />
     <ClInclude Include="explore_eval.h" />
     <ClInclude Include="feature_group.h" />
+    <ClInclude Include="freegrad.h" />
     <ClInclude Include="ftrl.h" />
     <ClInclude Include="gd_mf.h" />
     <ClInclude Include="gd.h" />
@@ -195,6 +196,7 @@
     <ClInclude Include="global_data.h" />
     <ClInclude Include="guard.h" />
     <ClInclude Include="interact.h" />
+    <ClInclude Include="interaction_ground.h" />
     <ClInclude Include="interactions_predict.h" />
     <ClInclude Include="cached_learner.h" />
     <ClInclude Include="interactions.h" />
@@ -360,6 +362,7 @@
     <ClCompile Include="example.cc" />
     <ClCompile Include="explore_eval.cc" />
     <ClCompile Include="feature_group.cc" />
+    <ClCompile Include="freegrad.cc" />
     <ClCompile Include="ftrl.cc" />
     <ClCompile Include="gd_mf.cc" />
     <ClCompile Include="gd.cc" />
@@ -367,6 +370,7 @@
     <ClCompile Include="generate_interactions.cc" />
     <ClCompile Include="global_data.cc" />
     <ClCompile Include="interact.cc" />
+    <ClCompile Include="interaction_ground.cc" />
     <ClCompile Include="interactions.cc" />
     <ClCompile Include="reduction_stack.cc" />
     <ClCompile Include="io/io_adapter.cc" />

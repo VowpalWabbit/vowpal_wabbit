@@ -1,13 +1,13 @@
 Version 8.11.0
-Id 
+Id
 Min label:0
 Max label:1
 bits:18
 lda:0
 0 ngram:
 0 skip:
-options: --ignore_linear a --interactions aa
-Checksum: 3168990293
+options: --interactions aa --ignore_linear a
+Checksum: 827642570
 :0
 ab^feat_2*ac^feat_3:10184:0.079422
 ac^feat_4*ac^feat_4:18898:0.079422

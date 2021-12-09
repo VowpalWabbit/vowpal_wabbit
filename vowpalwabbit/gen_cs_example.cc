@@ -145,6 +145,7 @@ void gen_cs_example_mtr(cb_to_cs_adf& c, multi_ex& ec_seq, COST_SENSITIVE::label
       c.mtr_example = static_cast<uint32_t>(i);
       c.mtr_ec_seq.push_back(ec_seq[i]);
       cs_labels.costs.push_back(wc);
+      break;
     }
   }
 }

@@ -7,7 +7,7 @@
 #include "vw.h"
 #include "vw_string_view.h"
 
-void substring_to_example(vw* all, example* ae, VW::string_view example);
+void substring_to_example(VW::workspace* all, example* ae, VW::string_view example);
 
 namespace VW
 {

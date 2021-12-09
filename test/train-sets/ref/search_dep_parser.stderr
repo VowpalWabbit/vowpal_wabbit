@@ -7,6 +7,8 @@ creating cache_file = train-sets/wsj_small.dparser.vw.gz.cache
 Reading datafile = train-sets/wsj_small.dparser.vw.gz
 num sources = 1
 Enabled reductions: gd, scorer-identity, csoaa, search_task
+Input label = cs
+Output pred = multiclass
 average    since      instance            current true      current predicted   cur   cur   predic    cache  examples          
 loss       last        counter           output prefix          output prefix  pass   pol     made     hits    gener  beta    
 88.000000  88.000000         1  [43:1 5:2 5:2 5:2 1..] [0:8 1:1 2:1 3:1 4:..]     0     0      144        0      144  0.014199

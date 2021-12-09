@@ -7,6 +7,7 @@
 #include "constant.h"  // NUM_NAMESPACES
 #include "debug_log.h"
 #include "io/logger.h"
+#include "rand_state.h"
 #include "vw.h"
 #include "model_utils.h"
 
@@ -68,7 +69,7 @@ namespace details
 {
 // fail if incompatible reductions got setup
 // todo: audit if they reference global all interactions
-void fail_if_enabled(vw& all, const std::set<std::string>& not_compat)
+void fail_if_enabled(VW::workspace& all, const std::set<std::string>& not_compat)
 {
   std::vector<std::string> enabled_reductions;
   if (all.l != nullptr) all.l->get_enabled_reductions(enabled_reductions);
@@ -139,17 +140,17 @@ void automl<CMType>::one_step(multi_learner& base, multi_ex& ec, CB::cb_class& l
 // config_manager is a state machine (config_manager_state) 'time' moves forward after a call into one_step()
 // this can also be interpreted as a pre-learn() hook since it gets called by a learn() right before calling
 // into its own base_learner.learn(). see learn_automl(...)
-interaction_config_manager::interaction_config_manager(uint64_t global_lease, uint64_t max_live_configs, uint64_t seed,
-    uint64_t priority_challengers, bool keep_configs, std::string oracle_type, priority_func* calc_priority)
+interaction_config_manager::interaction_config_manager(uint64_t global_lease, uint64_t max_live_configs,
+    std::shared_ptr<VW::rand_state> rand_state, uint64_t priority_challengers, bool keep_configs,
+    std::string oracle_type, priority_func* calc_priority)
     : global_lease(global_lease)
     , max_live_configs(max_live_configs)
-    , seed(seed)
+    , random_state(std::move(rand_state))
     , priority_challengers(priority_challengers)
     , keep_configs(keep_configs)
     , oracle_type(std::move(oracle_type))
     , calc_priority(calc_priority)
 {
-  random_state.set_random_state(seed);
   configs[0] = exclusion_config(global_lease);
   configs[0].state = VW::automl::config_state::Live;
   scores.push_back(scored_config());
@@ -238,7 +239,7 @@ void interaction_config_manager::config_oracle()
   {
     for (uint64_t i = 0; i < CONFIGS_PER_CHAMP_CHANGE; ++i)
     {
-      uint64_t rand_ind = static_cast<uint64_t>(random_state.get_and_update_random() * champ_interactions.size());
+      uint64_t rand_ind = static_cast<uint64_t>(random_state->get_and_update_random() * champ_interactions.size());
       namespace_index ns1 = champ_interactions[rand_ind][0];
       namespace_index ns2 = champ_interactions[rand_ind][1];
       std::map<namespace_index, std::set<namespace_index>> new_exclusions(
@@ -582,13 +583,13 @@ void persist(automl<CMType>& data, metric_sink& metrics)
 }
 
 template <typename CMType>
-void finish_example(vw& all, automl<CMType>& data, multi_ex& ec)
+void finish_example(VW::workspace& all, automl<CMType>& data, multi_ex& ec)
 {
   {
     uint64_t champ_live_slot = data.cm->current_champ;
     for (example* ex : ec) { data.cm->apply_config(ex, champ_live_slot); }
 
-    auto restore_guard = VW::scope_exit([&data, &ec, &champ_live_slot] {
+    auto restore_guard = VW::scope_exit([&data, &ec] {
       for (example* ex : ec) { data.cm->revert_config(ex); }
     });
 
@@ -632,7 +633,7 @@ float calc_priority_empty(const exclusion_config& config, const std::map<namespa
 VW::LEARNER::base_learner* automl_setup(VW::setup_base_i& stack_builder)
 {
   options_i& options = *stack_builder.get_options();
-  vw& all = *stack_builder.get_all_pointer();
+  VW::workspace& all = *stack_builder.get_all_pointer();
 
   uint64_t global_lease;
   uint64_t max_live_configs;
@@ -690,7 +691,7 @@ VW::LEARNER::base_learner* automl_setup(VW::setup_base_i& stack_builder)
 
   if (priority_challengers < 0) { priority_challengers = (static_cast<int>(max_live_configs) - 1) / 2; }
 
-  auto cm = VW::make_unique<interaction_config_manager>(global_lease, max_live_configs, all.random_seed,
+  auto cm = VW::make_unique<interaction_config_manager>(global_lease, max_live_configs, all.get_random_state(),
       static_cast<uint64_t>(priority_challengers), keep_configs, oracle_type, calc_priority);
   auto data = VW::make_unique<automl<interaction_config_manager>>(std::move(cm));
   assert(max_live_configs <= MAX_CONFIGS);

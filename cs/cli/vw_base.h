@@ -51,11 +51,11 @@ private:
   /// </summary>
   System::Int32 m_instanceCount;
 
-internal:
-  /// <summary>
-  /// The native vowpal wabbit data structure.
-  /// </summary>
-  vw* m_vw;
+  internal :
+      /// <summary>
+      /// The native vowpal wabbit data structure.
+      /// </summary>
+      VW::workspace* m_vw;
 
   /// <summary>
   /// Thread-safe increment of reference count.

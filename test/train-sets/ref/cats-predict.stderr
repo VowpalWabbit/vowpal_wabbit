@@ -11,6 +11,8 @@ using no cache
 Reading datafile = train-sets/cats.acpx
 num sources = 1
 Enabled reductions: ftrl-Coin Betting, scorer-identity, binary, cats_tree, get_pmf, pmf_to_pdf, cb_explore_pdf, cats_pdf, sample_pdf, cats
+Input label = continuous
+Output pred = action_pdf_value
 average  since         example        example  current  current  current
 loss     last          counter         weight    label  predict features
 0.000000 0.000000            1            1.0 {185.121,0.657567,6.20426e-05} 17540.9,0.000160436       10

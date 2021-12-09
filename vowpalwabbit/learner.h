@@ -427,7 +427,7 @@ public:
     finish_example_fd.print_example_f(all, finish_example_fd.data, (void*)&ec);
   }
 
-  void get_enabled_reductions(std::vector<std::string>& enabled_reductions)
+  void get_enabled_reductions(std::vector<std::string>& enabled_reductions) const
   {
     if (learn_fd.base) { learn_fd.base->get_enabled_reductions(enabled_reductions); }
     enabled_reductions.push_back(name);
@@ -598,7 +598,7 @@ struct common_learner_builder
     return *static_cast<FluentBuilderT*>(this);
   }
 
-  FluentBuilderT& set_print_example(void (*fn_ptr)(VW::workspace& all, DataT&, ExampleT&))
+  FluentBuilderT& set_print_example(void (*fn_ptr)(VW::workspace& all, DataT&, const ExampleT&))
   {
     _learner->finish_example_fd.data = _learner->learn_fd.data;
     _learner->finish_example_fd.print_example_f = (end_fptr_type)(fn_ptr);
@@ -664,10 +664,13 @@ struct reduction_learner_builder
     set_params_per_weight(1);
     this->set_learn_returns_prediction(false);
 
-    // Default here is passthrough.
+    // By default, will produce what the base produces
     super::set_output_prediction_type(base->get_output_prediction_type());
-    super::set_input_prediction_type(base->get_input_prediction_type());
-    super::set_output_label_type(base->get_output_label_type());
+    // By default, will produce what the base produces
+    super::set_input_prediction_type(base->get_output_prediction_type());
+    // By default, will produce what the base expects
+    super::set_output_label_type(base->get_input_label_type());
+    // By default, will produce what the base expects
     super::set_input_label_type(base->get_input_label_type());
   }
 
@@ -703,10 +706,13 @@ struct reduction_no_data_learner_builder
     this->_learner->finisher_fd.func = static_cast<func_data::fn>(noop);
 
     set_params_per_weight(1);
-    // Default here is passthrough.
+    // By default, will produce what the base produces
     super::set_output_prediction_type(base->get_output_prediction_type());
-    super::set_input_prediction_type(base->get_input_prediction_type());
-    super::set_output_label_type(base->get_output_label_type());
+    // By default, will produce what the base produces
+    super::set_input_prediction_type(base->get_output_prediction_type());
+    // By default, will produce what the base expects
+    super::set_output_label_type(base->get_input_label_type());
+    // By default, will produce what the base expects
     super::set_input_label_type(base->get_input_label_type());
   }
 

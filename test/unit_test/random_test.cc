@@ -4,7 +4,7 @@
 
 #include <boost/test/unit_test.hpp>
 #include <explore_internal.h>
-#include <rand_state.h>
+#include "rand_state.h"
 #include "test_common.h"
 
 BOOST_AUTO_TEST_CASE(reproduce_max_boundary_issue)
@@ -25,7 +25,7 @@ BOOST_AUTO_TEST_CASE(reproduce_max_boundary_issue)
 
 BOOST_AUTO_TEST_CASE(check_rand_state_cross_platform)
 {
-  rand_state random_state;
+  VW::rand_state random_state;
   random_state.set_random_state(10);
   BOOST_CHECK_CLOSE(random_state.get_and_update_random(), 0.0170166492, FLOAT_TOL);
   BOOST_CHECK_CLOSE(random_state.get_and_update_random(), 0.370730162, FLOAT_TOL);

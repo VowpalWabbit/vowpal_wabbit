@@ -20,7 +20,7 @@ enum class prediction_type_t : uint32_t
   multiclass,
   multilabels,
   prob,
-  multiclassprobs,
+  multiclassprobs,  // not in use (technically oaa.cc)
   decision_probs,
   action_pdf_value,
   active_multiclass,

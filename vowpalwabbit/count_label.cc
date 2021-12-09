@@ -44,11 +44,11 @@ void count_label_multi(reduction_data& data, VW::LEARNER::multi_learner& base, m
 }
 
 // This reduction must delegate finish to the one it is above as this is just a utility counter.
-void finish_example_multi(vw& all, reduction_data& data, multi_ex& ec)
+void finish_example_multi(VW::workspace& all, reduction_data& data, multi_ex& ec)
 {
   VW::LEARNER::as_multiline(data._base)->finish_example(all, ec);
 }
-void finish_example_single(vw& all, reduction_data& data, example& ec)
+void finish_example_single(VW::workspace& all, reduction_data& data, example& ec)
 {
   VW::LEARNER::as_singleline(data._base)->finish_example(all, ec);
 }

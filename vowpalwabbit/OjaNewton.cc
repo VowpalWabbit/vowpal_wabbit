@@ -30,8 +30,8 @@ struct oja_n_update_data
 
 struct OjaNewton
 {
-  vw* all = nullptr;
-  std::shared_ptr<rand_state> _random_state;
+  VW::workspace* all = nullptr;
+  std::shared_ptr<VW::rand_state> _random_state;
   int m = 0;
   int epoch_size = 0;
   float alpha = 0.f;
