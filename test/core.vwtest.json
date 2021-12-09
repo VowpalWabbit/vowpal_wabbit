@@ -744,7 +744,7 @@
     "diff_files": {
       "stdout": "test-sets/ref/vw-daemon.stdout"
     },
-    "bash_command": "./daemon-test.sh --port 54249 --vw {VW}",
+    "bash_command": "./daemon-test.sh --port 54249 --vw '{VW}'",
     "input_files": ["daemon-test.sh"]
   },
   {
@@ -1855,7 +1855,7 @@
     "diff_files": {
       "stdout": "test-sets/ref/vw-daemon.stdout"
     },
-    "bash_command": "./daemon-test.sh --foreground --port 54250 --vw {VW}",
+    "bash_command": "./daemon-test.sh --foreground --port 54250 --vw '{VW}'",
     "input_files": ["daemon-test.sh"]
   },
   {
@@ -2631,7 +2631,7 @@
     "diff_files": {
       "stdout": "test-sets/ref/vw-daemon.stdout"
     },
-    "bash_command": "./daemon-test.sh --json --port 54251 --vw {VW}",
+    "bash_command": "./daemon-test.sh --json --port 54251 --vw '{VW}'",
     "input_files": ["daemon-test.sh"]
   },
   {
