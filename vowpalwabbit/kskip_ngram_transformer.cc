@@ -50,18 +50,18 @@ void compile_gram(const std::vector<std::string>& grams, std::array<uint32_t, NU
     if (isdigit(gram[0]) != 0)
     {
       int n = atoi(gram.c_str());
-      logger.info("Generating {0}-{1} for all namespaces.", n, descriptor);
+      logger.err_info("Generating {0}-{1} for all namespaces.", n, descriptor);
       for (size_t j = 0; j < NUM_NAMESPACES; j++) { dest[j] = n; }
     }
     else if (gram.size() == 1)
     {
-      logger.error("You must specify the namespace index before the n");
+      logger.out_error("You must specify the namespace index before the n");
     }
     else
     {
       int n = atoi(gram.c_str() + 1);
       dest[static_cast<uint32_t>(static_cast<unsigned char>(*gram.c_str()))] = n;
-      logger.info("Generating {0}-{1} for {2} namespaces.", n, descriptor, gram[0]);
+      logger.err_info("Generating {0}-{1} for {2} namespaces.", n, descriptor, gram[0]);
     }
   }
 }

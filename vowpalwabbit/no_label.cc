@@ -28,7 +28,7 @@ void parse_no_label(const std::vector<VW::string_view>& words, VW::io::logger& l
     case 0:
       break;
     default:
-      logger.error("Error: {0} is too many tokens for a simple label: {1}",
+      logger.out_error("Error: {0} is too many tokens for a simple label: {1}",
       words.size(), fmt::join(words, " "));
   }
 }

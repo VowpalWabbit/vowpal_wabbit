@@ -107,7 +107,7 @@ void learn(plt& p, single_learner& base, example& ec)
       }
     }
     if (multilabels.label_v.back() >= p.k)
-      p.all->logger.error("label {0} is not in {{0,{1}}} This won't work right.",
+      p.all->logger.out_error("label {0} is not in {{0,{1}}} This won't work right.",
                         multilabels.label_v.back(), p.k - 1);
 
     for (auto& n : p.positive_nodes)
@@ -162,7 +162,7 @@ void predict(plt& p, single_learner& base, example& ec)
     if (label < p.k)
       p.true_labels.insert(label);
     else
-      p.all->logger.error("label {0} is not in {{0,{1}}} This won't work right.", label, p.k - 1);
+      p.all->logger.out_error("label {0} is not in {{0,{1}}} This won't work right.", label, p.k - 1);
   }
 
   p.node_queue.clear();  // clear node queue

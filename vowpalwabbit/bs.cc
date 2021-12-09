@@ -140,7 +140,7 @@ void print_result(VW::io::writer* f, float res, const v_array<char>& tag, float 
   ssize_t t = f->write(ss_str.c_str(), static_cast<unsigned int>(len));
   if (t != len)
   {
-    logger.error("write error: {}", VW::strerror_to_string(errno));
+    logger.err_error("write error: {}", VW::strerror_to_string(errno));
   }
 }
 
@@ -243,7 +243,7 @@ base_learner* bs_setup(VW::setup_base_i& stack_builder)
       data->bs_type = BS_TYPE_VOTE;
     else
     {
-      all.logger.warn("bs_type must be in {'mean','vote'}; resetting to mean.");
+      all.logger.err_warn("bs_type must be in {'mean','vote'}; resetting to mean.");
       data->bs_type = BS_TYPE_MEAN;
     }
   }

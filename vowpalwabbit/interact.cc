@@ -66,13 +66,13 @@ void multiply(features& f_dest, features& f_src2, interact& in)
     // checking for sorting requirement
     if (cur_id1 < prev_id1)
     {
-      in.all->logger.error("interact features are out of order: {0} < {1}. Skipping features.", cur_id1, prev_id1);
+      in.all->logger.out_error("interact features are out of order: {0} < {1}. Skipping features.", cur_id1, prev_id1);
       return;
     }
 
     if (cur_id2 < prev_id2)
     {
-      in.all->logger.error("interact features are out of order: {0} < {1}. Skipping features.", cur_id2, prev_id2);
+      in.all->logger.out_error("interact features are out of order: {0} < {1}. Skipping features.", cur_id2, prev_id2);
       return;
     }
 
@@ -154,7 +154,7 @@ VW::LEARNER::base_learner* interact_setup(VW::setup_base_i& stack_builder)
 
   if (s.length() != 2)
   {
-    all.logger.error("Need two namespace arguments to interact: {} won't do EXITING", s);
+    all.logger.err_error("Need two namespace arguments to interact: {} won't do EXITING", s);
     return nullptr;
   }
 
@@ -162,7 +162,7 @@ VW::LEARNER::base_learner* interact_setup(VW::setup_base_i& stack_builder)
 
   data->n1 = static_cast<unsigned char>(s[0]);
   data->n2 = static_cast<unsigned char>(s[1]);
-  all.logger.info("Interacting namespaces {0:c} and {1:c}", data->n1, data->n2);
+  all.logger.err_info("Interacting namespaces {0:c} and {1:c}", data->n1, data->n2);
   data->all = &all;
 
   auto* l = make_reduction_learner(std::move(data), as_singleline(stack_builder.setup_base_learner()),

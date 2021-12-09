@@ -311,7 +311,7 @@ void save_load_sampling(boosting& o, io_buf& model_file, bool read, bool text)
   {
     fmt::format_to(buffer, "{0} {1}\n", o.alpha[i], o.v[i]);
   }
-  o.logger.info("{}", fmt::to_string(buffer));
+  o.logger.err_info("{}", fmt::to_string(buffer));
 }
 
 void return_example(VW::workspace& all, boosting& /* a */, example& ec)
@@ -361,7 +361,7 @@ void save_load(boosting& o, io_buf& model_file, bool read, bool text)
     {
       fmt::format_to(buffer, "{} \n", o.alpha[i]);
     }
-    o.logger.info("{}", fmt::to_string(buffer));
+    o.logger.err_info("{}", fmt::to_string(buffer));
   }
 }
 
@@ -393,8 +393,8 @@ VW::LEARNER::base_learner* boosting_setup(VW::setup_base_i& stack_builder)
   // "adaptive" implements AdaBoost.OL (Algorithm 2 in BLK'15,
   // 	    using sampling rather than importance weighting)
 
-  all.logger.info("Number of weak learners = {}", data->N);
-  all.logger.info("Gamma = {}", data->gamma);
+  all.logger.err_info("Number of weak learners = {}", data->N);
+  all.logger.err_info("Gamma = {}", data->gamma);
 
   data->C = std::vector<std::vector<int64_t> >(data->N, std::vector<int64_t>(data->N, -1));
   data->t = 0;

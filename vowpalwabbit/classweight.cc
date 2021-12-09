@@ -25,7 +25,7 @@ struct classweights
       std::getline(inner_ss, klass, ':');
       std::getline(inner_ss, weight, ':');
 
-      if (!klass.size() || !weight.size()) { THROW("error: while parsing --classweight " << item); }
+      if (!klass.size() || !weight.size()) { THROW("error while parsing --classweight " << item); }
 
       int klass_int = std::stoi(klass);
       float weight_double = std::stof(weight);

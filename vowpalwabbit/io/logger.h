@@ -15,53 +15,179 @@
 // needed for custom types (like string_view)
 #include <fmt/ostream.h>
 
+#include "../vw_exception.h"
+
 namespace VW
 {
 namespace io
 {
+enum class output_location
+{
+  out,
+  err,
+  compat
+};
+
+output_location get_output_location(const std::string& name);
+
 namespace details
 {
 const constexpr char* default_pattern = "[%l] %v";
 struct logger_impl
 {
-  std::unique_ptr<spdlog::logger> _spdlog_logger;
-  size_t _max_limit;
+  std::unique_ptr<spdlog::logger> _spdlog_stdout_logger;
+  std::unique_ptr<spdlog::logger> _spdlog_stderr_logger;
+  size_t _max_limit = SIZE_MAX;
   size_t _log_count = 0;
+  output_location _location = output_location::compat;
 
-  logger_impl(std::unique_ptr<spdlog::logger> inner_logger, size_t max_limit = SIZE_MAX)
-      : _spdlog_logger(std::move(inner_logger)), _max_limit(max_limit)
+  logger_impl(std::unique_ptr<spdlog::logger> inner_stdout_logger, std::unique_ptr<spdlog::logger> inner_stderr_logger)
+      : _spdlog_stdout_logger(std::move(inner_stdout_logger)), _spdlog_stderr_logger(std::move(inner_stderr_logger))
   {
-    _spdlog_logger->set_pattern(details::default_pattern);
-    _spdlog_logger->set_level(spdlog::level::info);
+    _spdlog_stdout_logger->set_pattern(details::default_pattern);
+    _spdlog_stdout_logger->set_level(spdlog::level::info);
+    _spdlog_stderr_logger->set_pattern(details::default_pattern);
+    _spdlog_stderr_logger->set_level(spdlog::level::info);
   }
 
   template <typename FormatString, typename... Args>
-  void info(const FormatString& fmt, Args&&... args)
-  {
-    _log_count++;
-    if (_log_count <= _max_limit) { _spdlog_logger->info(fmt, std::forward<Args>(args)...); }
-  }
-
-  template <typename FormatString, typename... Args>
-  void warn(const FormatString& fmt, Args&&... args)
+  void err_info(const FormatString& fmt, Args&&... args)
   {
     _log_count++;
-    if (_log_count <= _max_limit) { _spdlog_logger->warn(fmt, std::forward<Args>(args)...); }
+    if (_log_count <= _max_limit)
+    {
+      if (_location == output_location::compat) { _spdlog_stderr_logger->info(fmt, std::forward<Args>(args)...); }
+      else if (_location == output_location::err)
+      {
+        _spdlog_stderr_logger->info(fmt, std::forward<Args>(args)...);
+      }
+      else
+      {
+        _spdlog_stdout_logger->info(fmt, std::forward<Args>(args)...);
+      }
+    }
   }
 
   template <typename FormatString, typename... Args>
-  void error(const FormatString& fmt, Args&&... args)
+  void err_warn(const FormatString& fmt, Args&&... args)
   {
     _log_count++;
-    if (_log_count <= _max_limit) { _spdlog_logger->error(fmt, std::forward<Args>(args)...); }
+    if (_log_count <= _max_limit)
+    {
+      if (_location == output_location::compat) { _spdlog_stderr_logger->warn(fmt, std::forward<Args>(args)...); }
+      else if (_location == output_location::err)
+      {
+        _spdlog_stderr_logger->warn(fmt, std::forward<Args>(args)...);
+      }
+      else
+      {
+        _spdlog_stdout_logger->warn(fmt, std::forward<Args>(args)...);
+      }
+    }
   }
 
   template <typename FormatString, typename... Args>
-  void critical(const FormatString& fmt, Args&&... args)
+  void err_error(const FormatString& fmt, Args&&... args)
+  {
+    _log_count++;
+    if (_log_count <= _max_limit)
+    {
+      if (_location == output_location::compat) { _spdlog_stderr_logger->error(fmt, std::forward<Args>(args)...); }
+      else if (_location == output_location::err)
+      {
+        _spdlog_stderr_logger->error(fmt, std::forward<Args>(args)...);
+      }
+      else
+      {
+        _spdlog_stdout_logger->error(fmt, std::forward<Args>(args)...);
+      }
+    }
+  }
+
+  template <typename FormatString, typename... Args>
+  void err_critical(const FormatString& fmt, Args&&... args)
   {
     _log_count++;
     // we ignore max_limit with critical log
-    _spdlog_logger->critical(fmt, std::forward<Args>(args)...);
+    if (_location == output_location::compat) { _spdlog_stderr_logger->critical(fmt, std::forward<Args>(args)...); }
+    else if (_location == output_location::err)
+    {
+      _spdlog_stderr_logger->critical(fmt, std::forward<Args>(args)...);
+    }
+    else
+    {
+      _spdlog_stdout_logger->critical(fmt, std::forward<Args>(args)...);
+    }
+  }
+
+  template <typename FormatString, typename... Args>
+  void out_info(const FormatString& fmt, Args&&... args)
+  {
+    _log_count++;
+    if (_log_count <= _max_limit)
+    {
+      if (_location == output_location::compat) { _spdlog_stdout_logger->info(fmt, std::forward<Args>(args)...); }
+      else if (_location == output_location::err)
+      {
+        _spdlog_stderr_logger->info(fmt, std::forward<Args>(args)...);
+      }
+      else
+      {
+        _spdlog_stdout_logger->info(fmt, std::forward<Args>(args)...);
+      }
+    }
+  }
+
+  template <typename FormatString, typename... Args>
+  void out_warn(const FormatString& fmt, Args&&... args)
+  {
+    _log_count++;
+    if (_log_count <= _max_limit)
+    {
+      if (_location == output_location::compat) { _spdlog_stdout_logger->warn(fmt, std::forward<Args>(args)...); }
+      else if (_location == output_location::err)
+      {
+        _spdlog_stderr_logger->warn(fmt, std::forward<Args>(args)...);
+      }
+      else
+      {
+        _spdlog_stdout_logger->warn(fmt, std::forward<Args>(args)...);
+      }
+    }
+  }
+
+  template <typename FormatString, typename... Args>
+  void out_error(const FormatString& fmt, Args&&... args)
+  {
+    _log_count++;
+    if (_log_count <= _max_limit)
+    {
+      if (_location == output_location::compat) { _spdlog_stdout_logger->error(fmt, std::forward<Args>(args)...); }
+      else if (_location == output_location::err)
+      {
+        _spdlog_stderr_logger->error(fmt, std::forward<Args>(args)...);
+      }
+      else
+      {
+        _spdlog_stdout_logger->error(fmt, std::forward<Args>(args)...);
+      }
+    }
+  }
+
+  template <typename FormatString, typename... Args>
+  void out_critical(const FormatString& fmt, Args&&... args)
+  {
+    _log_count++;
+    // we ignore max_limit with critical log
+    if (_location == output_location::compat) { _spdlog_stdout_logger->critical(fmt, std::forward<Args>(args)...); }
+    else if (_location == output_location::err)
+    {
+      _spdlog_stderr_logger->critical(fmt, std::forward<Args>(args)...);
+    }
+    else
+    {
+      _spdlog_stdout_logger->critical(fmt, std::forward<Args>(args)...);
+    }
   }
 };
 
@@ -99,6 +225,8 @@ enum class log_level
   off = spdlog::level::off
 };
 
+log_level get_log_level(const std::string& level);
+
 struct logger
 {
 private:
@@ -106,60 +234,96 @@ private:
 
   logger(std::shared_ptr<details::logger_impl> inner_logger) : _logger_impl(std::move(inner_logger)) {}
 
-  friend logger create_stderr_logger();
+  friend logger create_default_logger();
   friend logger create_null_logger();
   friend logger create_custom_sink_logger(void* context, void (*func)(void*, const std::string&));
 
 public:
   template <typename FormatString, typename... Args>
-  void info(const FormatString& fmt, Args&&... args)
+  void err_info(const FormatString& fmt, Args&&... args)
   {
-    _logger_impl->info(fmt, std::forward<Args>(args)...);
+    _logger_impl->err_info(fmt, std::forward<Args>(args)...);
   }
 
   template <typename FormatString, typename... Args>
-  void warn(const FormatString& fmt, Args&&... args)
+  void err_warn(const FormatString& fmt, Args&&... args)
   {
-    _logger_impl->warn(fmt, std::forward<Args>(args)...);
+    _logger_impl->err_warn(fmt, std::forward<Args>(args)...);
   }
 
   template <typename FormatString, typename... Args>
-  void error(const FormatString& fmt, Args&&... args)
+  void err_error(const FormatString& fmt, Args&&... args)
   {
-    _logger_impl->error(fmt, std::forward<Args>(args)...);
+    _logger_impl->err_error(fmt, std::forward<Args>(args)...);
   }
 
   template <typename FormatString, typename... Args>
-  void critical(const FormatString& fmt, Args&&... args)
+  void err_critical(const FormatString& fmt, Args&&... args)
   {
-    _logger_impl->critical(fmt, std::forward<Args>(args)...);
+    _logger_impl->err_critical(fmt, std::forward<Args>(args)...);
+  }
+
+  template <typename FormatString, typename... Args>
+  void out_info(const FormatString& fmt, Args&&... args)
+  {
+    _logger_impl->out_info(fmt, std::forward<Args>(args)...);
+  }
+
+  template <typename FormatString, typename... Args>
+  void out_warn(const FormatString& fmt, Args&&... args)
+  {
+    _logger_impl->out_warn(fmt, std::forward<Args>(args)...);
+  }
+
+  template <typename FormatString, typename... Args>
+  void out_error(const FormatString& fmt, Args&&... args)
+  {
+    _logger_impl->out_error(fmt, std::forward<Args>(args)...);
+  }
+
+  template <typename FormatString, typename... Args>
+  void out_critical(const FormatString& fmt, Args&&... args)
+  {
+    _logger_impl->out_critical(fmt, std::forward<Args>(args)...);
   }
 
   void set_level(log_level lvl);
   void set_max_output(size_t max);
+  void set_location(output_location location);
   size_t get_log_count() const;
   void log_summary();
 };
 
-inline logger create_stderr_logger()
+inline logger create_default_logger()
 {
+  auto stdout_sink = std::make_shared<spdlog::sinks::stdout_sink_mt>();
   auto stderr_sink = std::make_shared<spdlog::sinks::stderr_sink_mt>();
   return logger(std::make_shared<details::logger_impl>(
-      std::unique_ptr<spdlog::logger>(new spdlog::logger("vowpal-stderr", stderr_sink))));
+      std::unique_ptr<spdlog::logger>(new spdlog::logger("vowpal-stdout", stdout_sink)),
+      std::unique_ptr<spdlog::logger>(new spdlog::logger("vowpal-stderr", stderr_sink))
+
+          ));
 }
 
 inline logger create_null_logger()
 {
-  auto null_sink = std::make_shared<spdlog::sinks::null_sink_st>();
+  auto null_out_sink = std::make_shared<spdlog::sinks::null_sink_st>();
+  auto null_err_sink = std::make_shared<spdlog::sinks::null_sink_st>();
   return logger(std::make_shared<details::logger_impl>(
-      std::unique_ptr<spdlog::logger>(new spdlog::logger("vowpal-null", null_sink))));
+      std::unique_ptr<spdlog::logger>(new spdlog::logger("vowpal-stdout", null_out_sink)),
+      std::unique_ptr<spdlog::logger>(new spdlog::logger("vowpal-stderr", null_err_sink))
+
+          ));
 }
 
 inline logger create_custom_sink_logger(void* context, void (*func)(void*, const std::string&))
 {
-  auto fptr_sink = std::make_shared<details::function_ptr_sink<std::mutex>>(context, func);
+  auto fptr_out_sink = std::make_shared<details::function_ptr_sink<std::mutex>>(context, func);
+  auto fptr_err_sink = std::make_shared<details::function_ptr_sink<std::mutex>>(context, func);
   return logger(std::make_shared<details::logger_impl>(
-      std::unique_ptr<spdlog::logger>(new spdlog::logger("vowpal-fptr", fptr_sink))));
+      std::unique_ptr<spdlog::logger>(new spdlog::logger("vowpal-stdout", fptr_out_sink)),
+      std::unique_ptr<spdlog::logger>(new spdlog::logger("vowpal-stdout", fptr_err_sink))
+          ));
 }
 
 }  // namespace io

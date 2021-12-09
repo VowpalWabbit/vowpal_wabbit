@@ -86,7 +86,7 @@ void parse_label(
       }
       break;
     default:
-      logger.error("example with an odd label, what is {}", fmt::join(words, " "));
+      logger.err_error("example with an odd label, what is {}", fmt::join(words, " "));
   }
 }
 

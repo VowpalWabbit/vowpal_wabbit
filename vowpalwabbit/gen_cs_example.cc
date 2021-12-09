@@ -22,7 +22,7 @@ float safe_probability(float prob, VW::io::logger& logger)
 {
   if (prob <= 0.)
   {
-    logger.warn("Probability {} is not possible, replacing with 1e-3.  Fix your dataset. ", prob);
+    logger.out_warn("Probability {} is not possible, replacing with 1e-3.  Fix your dataset. ", prob);
     return 1e-3f;
   }
   else

@@ -188,7 +188,9 @@ static int make_hot_sv(svm_params& params, size_t svi)
   svm_model* model = params.model;
   size_t n = model->num_support;
   if (svi >= model->num_support)
-    *params.all->driver_output << "Internal error at " << __FILE__ << ":" << __LINE__ << endl;
+  {
+    params.all->logger.err_error("Internal error at {}:{}", __FILE__, __LINE__);
+  }
   // rotate params fields
   svm_example* svi_e = model->support_vec[svi];
   int alloc = svi_e->compute_kernels(params);
@@ -287,7 +289,7 @@ int save_load_flat_example(io_buf& model_file, bool read, flat_example*& fec)
         brw = model_file.bin_write_fixed(fec->tag, static_cast<uint32_t>(fec->tag_len) * sizeof(char));
         if (!brw)
         {
-          // bin_write_fixed wrote 0 bytes
+          // bin_write_fixed wrote 0 bytes. TODO errlog_error?
           return 2;
         }
       }
@@ -312,12 +314,10 @@ void save_load_svm_model(svm_params& params, io_buf& model_file, bool read, bool
   svm_model* model = params.model;
   // TODO: check about initialization
 
-  // params.all->opts_n_args.driver_output<<"Save load svm "<<read<<" "<<text<< endl;
   if (model_file.num_files() == 0) return;
   std::stringstream msg;
   bin_text_read_write_fixed(
       model_file, reinterpret_cast<char*>(&(model->num_support)), sizeof(model->num_support), read, msg, text);
-  // params.all->opts_n_args.driver_output<<"Read num support "<<model->num_support<< endl;
 
   flat_example* fec = nullptr;
   if (read) { model->support_vec.reserve(model->num_support); }
@@ -478,7 +478,9 @@ int remove(svm_params& params, size_t svi)
 {
   svm_model* model = params.model;
   if (svi >= model->num_support)
-    *params.all->driver_output << "Internal error at " << __FILE__ << ":" << __LINE__ << endl;
+  {
+    params.all->logger.err_error("Internal error at {}:{}", __FILE__, __LINE__);
+  }
   // shift params fields
   svm_example* svi_e = model->support_vec[svi];
   for (size_t i = svi; i < model->num_support - 1; ++i)

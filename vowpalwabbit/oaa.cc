@@ -50,12 +50,12 @@ void learn_randomized(oaa& o, VW::LEARNER::single_learner& base, example& ec)
   // Label validation
   if (o.indexing == 0 && ld.label >= o.k)
   {
-    o.all->logger.warn("label {0} is not in {{0,{1}}}. This won't work for 0-indexed actions.", ld.label, o.k - 1);
+    o.all->logger.out_warn("label {0} is not in {{0,{1}}}. This won't work for 0-indexed actions.", ld.label, o.k - 1);
     ec.l.multi.label = 0;
   }
   else if (o.indexing == 1 && (ld.label < 1 || ld.label > o.k))
   {
-    o.all->logger.warn("label {0} is not in {{1,{1}}}. This won't work for 1-indexed actions.", ld.label, o.k);
+    o.all->logger.out_warn("label {0} is not in {{1,{1}}}. This won't work for 1-indexed actions.", ld.label, o.k);
     ec.l.multi.label = static_cast<uint32_t>(o.k);
   }
 
@@ -109,13 +109,13 @@ void learn(oaa& o, VW::LEARNER::single_learner& base, example& ec)
   // Label validation
   if (o.indexing == 0 && mc_label_data.label >= o.k)
   {
-    o.all->logger.warn(
+    o.all->logger.out_warn(
         "label {0} is not in {{0,{1}}}. This won't work for 0-indexed actions.", mc_label_data.label, o.k - 1);
     ec.l.multi.label = 0;
   }
   else if (o.indexing == 1 && (mc_label_data.label < 1 || mc_label_data.label > o.k))
   {
-    o.all->logger.warn("label {0} is not in {{1,{1}}}. This won't work for 1-indexed actions.", mc_label_data.label, o.k);
+    o.all->logger.out_warn("label {0} is not in {{1,{1}}}. This won't work for 1-indexed actions.", mc_label_data.label, o.k);
     ec.l.multi.label = static_cast<uint32_t>(o.k);
   }
 
@@ -346,7 +346,7 @@ VW::LEARNER::base_learner* oaa_setup(VW::setup_base_i& stack_builder)
       auto loss_function_type = all.loss->getType();
       if (loss_function_type != "logistic")
       {
-        all.logger.warn("--probabilities should be used only with --loss_function=logistic, currently using: {}",
+        all.logger.out_warn("--probabilities should be used only with --loss_function=logistic, currently using: {}",
             loss_function_type);
       }
       // the three boolean template parameters are: is_learn, print_all and scores

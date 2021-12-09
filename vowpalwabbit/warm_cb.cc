@@ -599,7 +599,7 @@ base_learner* warm_cb_setup(VW::setup_base_i& stack_builder)
 
   if (!options.was_supplied("epsilon"))
   {
-    all.logger.warn("No epsilon (greedy parameter) specified; resetting to 0.05");
+    all.logger.err_warn("No epsilon (greedy parameter) specified; resetting to 0.05");
     data->epsilon = 0.05f;
   }
 

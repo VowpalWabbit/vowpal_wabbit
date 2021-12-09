@@ -711,12 +711,12 @@ base_learner* cbify_setup(VW::setup_base_i& stack_builder)
   if (use_reg)
   {
     // Check invalid parameter combinations
-    if (data->use_adf) { THROW("error: incompatible options: cb_explore_adf and cbify_reg"); }
-    if (use_cs) { THROW("error: incompatible options: cbify_cs and cbify_reg"); }
+    if (data->use_adf) { THROW("Incompatible options: cb_explore_adf and cbify_reg"); }
+    if (use_cs) { THROW("Incompatible options: cbify_cs and cbify_reg"); }
     if (!options.was_supplied("min_value") || !options.was_supplied("max_value"))
-    { THROW("error: min and max values must be supplied with cbify_reg"); }
+    { THROW("Min and max values must be supplied with cbify_reg"); }
 
-    if (use_discrete && options.was_supplied("cats")) { THROW("error: incompatible options: cb_discrete and cats"); }
+    if (use_discrete && options.was_supplied("cats")) { THROW("Incompatible options: cb_discrete and cats"); }
     else if (use_discrete)
     {
       std::stringstream ss;
@@ -726,7 +726,7 @@ base_learner* cbify_setup(VW::setup_base_i& stack_builder)
     else if (options.was_supplied("cats"))
     {
       if (cb_continuous_num_actions != num_actions)
-        THROW("error: different number of actions specified for cbify and cb_continuous");
+        THROW("Different number of actions specified for cbify and cb_continuous");
     }
     else
     {

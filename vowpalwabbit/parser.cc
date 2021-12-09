@@ -284,7 +284,7 @@ void make_write_cache(VW::workspace& all, std::string& newname, bool quiet)
   io_buf& output = all.example_parser->output;
   if (output.num_files() != 0)
   {
-    all.logger.warn("You tried to make two write caches. Only the first one will be made.");
+    all.logger.err_warn("You tried to make two write caches. Only the first one will be made.");
     return;
   }
 
@@ -295,7 +295,7 @@ void make_write_cache(VW::workspace& all, std::string& newname, bool quiet)
   }
   catch (const std::exception&)
   {
-    *(all.driver_output) << "Can't create cache file: " << all.example_parser->currentname << endl;
+    all.logger.err_error("Can't create cache file: {}", all.example_parser->currentname);
     return;
   }
 
@@ -337,7 +337,7 @@ void parse_cache(VW::workspace& all, std::vector<std::string> cache_files, bool 
       {
         if (!quiet)
         {
-          all.logger.warn("cache file is ignored as it's made with less bit precision than required.");
+          all.logger.err_warn("cache file is ignored as it's made with less bit precision than required.");
         }
         all.example_parser->input.close_file();
         make_write_cache(all, file, quiet);
@@ -497,7 +497,7 @@ void enable_sources(VW::workspace& all, bool quiet, size_t passes, input_options
         // If the child failed we still fork off another one, but log the issue.
         if (status != 0)
         {
-          all.logger.warn(
+          all.logger.err_warn(
               "Daemon child process received exited with non-zero exit code: {}. Ignoring.", status);
         }
 
@@ -597,7 +597,9 @@ void enable_sources(VW::workspace& all, bool quiet, size_t passes, input_options
       {
         // when trying to fix this exception, consider that an empty filename_to_read is valid if all.stdin_off is false
         if (!filename_to_read.empty())
-        { *(all.driver_output) << "can't open '" << filename_to_read << "', sailing on" << endl; }
+        {
+          all.logger.err_error("can't open '{}', sailing on", filename_to_read);
+        }
         else
         {
           throw;
@@ -608,7 +610,7 @@ void enable_sources(VW::workspace& all, bool quiet, size_t passes, input_options
       {
         if (!input_options.chain_hash_json)
         {
-          all.logger.warn("Old string feature value behavior is deprecated in JSON/DSJSON and will be removed in a "
+          all.logger.err_warn("Old string feature value behavior is deprecated in JSON/DSJSON and will be removed in a "
                  "future version. Use `--chain_hash` to use new behavior and silence this warning.");
         }
         set_json_reader(all, input_options.dsjson);

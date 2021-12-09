@@ -90,7 +90,7 @@ void parse_simple_label(label_data& ld, reduction_features& red_features, const 
       simple_red_features.initial = float_of_string(words[2], logger);
       break;
     default:
-      logger.error("Error: {0} is too many tokens for a simple label: {1}", words.size(), fmt::join(words, " "));
+      logger.out_error("Error: {0} is too many tokens for a simple label: {1}", words.size(), fmt::join(words, " "));
   }
 }
 

@@ -58,7 +58,7 @@ void predict_or_learn(cb& data, single_learner& base, example& ec)
 
   // cost observed, not default
   if (optional_cost.first && (c.known_cost.action < 1 || c.known_cost.action > c.num_actions))
-    data.logger.error("invalid action: {}", c.known_cost.action);
+    data.logger.err_error("invalid action: {}", c.known_cost.action);
 
   // generate a cost-sensitive example to update classifiers
   gen_cs_example<is_learn>(c, ec, ec.l.cb, ec.l.cs, data.logger);
@@ -199,7 +199,7 @@ base_learner* cb_algs_setup(VW::setup_base_i& stack_builder)
       break;
     case VW::cb_type_t::mtr:
     case VW::cb_type_t::sm:
-      data->logger.warn("cb_type must be in {'ips','dm','dr'}; resetting to dr. Input received: {}",
+      data->logger.err_warn("cb_type must be in {'ips','dm','dr'}; resetting to dr. Input received: {}",
           VW::to_string(c.cb_type));
       c.cb_type = VW::cb_type_t::dr;
       break;

@@ -100,7 +100,7 @@ public:
     }
     else
     {
-      logger.warn(ss.str());
+      logger.err_warn(ss.str());
     }
   }
 

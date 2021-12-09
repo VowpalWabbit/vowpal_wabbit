@@ -356,7 +356,7 @@ base_learner* setup(VW::setup_base_i& stack_builder)
 
     if (!feature_mask_off)
     {
-      all.logger.warn("Feature_mask used with constant policy (where there is only one weight to learn).");
+      all.logger.err_warn("Feature_mask used with constant policy (where there is only one weight to learn).");
     }
   }
 

@@ -279,7 +279,7 @@ base_learner* setup(VW::setup_base_i& stack_builder)
 
   if (data->bandwidth >= (data->max_value - data->min_value))
   {
-    all.logger.warn("Bandwidth is larger than continuous action range, this will result in a uniform pdf.");
+    all.logger.err_warn("Bandwidth is larger than continuous action range, this will result in a uniform pdf.");
   }
 
   // Translate user provided bandwidth which is in terms of continuous action range (max_value - min_value)

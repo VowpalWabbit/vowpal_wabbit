@@ -73,7 +73,7 @@ void fail_if_enabled(VW::workspace& all, const std::set<std::string>& not_compat
 
   for (const auto& reduction : enabled_reductions)
   {
-    if (not_compat.count(reduction) > 0) THROW("Error: automl does not yet support this reduction: " + reduction);
+    if (not_compat.count(reduction) > 0) THROW("automl does not yet support this reduction: " + reduction);
   }
 }
 }  // namespace details
@@ -281,7 +281,7 @@ void interaction_config_manager::config_oracle()
   }
   else
   {
-    THROW("Error: unknown oracle type.");
+    THROW("Unknown oracle type.");
   }
 }
 
@@ -683,7 +683,7 @@ VW::LEARNER::base_learner* automl_setup(VW::setup_base_i& stack_builder)
   }
   else
   {
-    THROW("Error: Invalid priority function provided");
+    THROW("Invalid priority function provided");
   }
 
   if (priority_challengers < 0) { priority_challengers = (static_cast<int>(max_live_configs) - 1) / 2; }

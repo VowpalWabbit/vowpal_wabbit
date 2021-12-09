@@ -285,7 +285,6 @@ void parse_diagnostics(options_i& options, VW::workspace& all)
       .add(make_option("progress", progress_arg)
                .short_name("P")
                .help("Progress update frequency. int: additive, float: multiplicative"))
-      .add(make_option("quiet", all.quiet).help("Don't output diagnostics and progress updates"))
       .add(make_option("limit_output", upper_limit).help("Avoid chatty output. Limit total printed lines"))
       .add(make_option("dry_run", skip_driver)
                .help("Parse arguments and print corresponding metadata. Will not execute driver"))
@@ -295,10 +294,9 @@ void parse_diagnostics(options_i& options, VW::workspace& all)
 
   options.add_and_parse(diagnostic_group);
 
-  if (help) { all.quiet = true; }
-
-  if (all.quiet)
+  if (help)
   {
+    all.quiet = true;
     all.logger.set_level(VW::io::log_level::off);
     // This is valid:
     // https://stackoverflow.com/questions/25690636/is-it-valid-to-construct-an-stdostream-from-a-null-buffer This
@@ -328,7 +326,7 @@ void parse_diagnostics(options_i& options, VW::workspace& all)
       all.progress_add = true;
       if (all.progress_arg < 1)
       {
-        all.logger.warn("Additive --progress <int> can't be < 1: forcing to 1");
+        all.logger.err_warn("Additive --progress <int> can't be < 1: forcing to 1");
         all.progress_arg = 1;
       }
       all.sd->dump_interval = all.progress_arg;
@@ -340,12 +338,12 @@ void parse_diagnostics(options_i& options, VW::workspace& all)
 
       if (all.progress_arg <= 1.f)
       {
-        all.logger.warn("Multiplicative --progress <float> '{}' is <= 1.0: adding 1.0", progress_arg);
+        all.logger.err_warn("Multiplicative --progress <float> '{}' is <= 1.0: adding 1.0", progress_arg);
         all.progress_arg += 1.f;
       }
       else if (all.progress_arg > 9.f)
       {
-        all.logger.warn("Multiplicative --progress <float> '' is > 9.0: you probably meant to use an integer", progress_arg);
+        all.logger.err_warn("Multiplicative --progress <float> '' is > 9.0: you probably meant to use an integer", progress_arg);
       }
       all.sd->dump_interval = 1.f;
     }
@@ -400,7 +398,7 @@ input_options parse_source(VW::workspace& all, options_i& options)
   if (positional_tokens.size() == 1) { all.data_filename = positional_tokens[0]; }
   else if (positional_tokens.size() > 1)
   {
-    all.logger.warn("Multiple data files passed as positional parameters, only the first one will be "
+    all.logger.err_warn("Multiple data files passed as positional parameters, only the first one will be "
                             "read and the rest will be ignored.");
   }
 
@@ -641,7 +639,7 @@ void parse_feature_tweaks(options_i& options, VW::workspace& all, bool interacti
 
   if (options.was_supplied("q:"))
   {
-    all.logger.warn("'--q:' is deprecated and not supported. You can use : as a wildcard in interactions.");
+    all.logger.err_warn("'--q:' is deprecated and not supported. You can use : as a wildcard in interactions.");
   }
 
   if (options.was_supplied("affix")) parse_affix_argument(all, VW::decode_inline_hex(affix, all.logger));
@@ -692,7 +690,7 @@ void parse_feature_tweaks(options_i& options, VW::workspace& all, bool interacti
        ||
        interactions_settings_duplicated /*settings were restored from model file to file_options and overriden by params from command line*/)
   {
-    all.logger.warn("model file has set of {-q, --cubic, --interactions} settings stored, but they'll be "
+    all.logger.err_warn("model file has set of {-q, --cubic, --interactions} settings stored, but they'll be "
            "OVERRIDDEN by set of {-q, --cubic, --interactions} settings from command line.");
     // in case arrays were already filled in with values from old model file - reset them
     if (!all.interactions.empty()) { all.interactions.clear(); }
@@ -749,7 +747,7 @@ void parse_feature_tweaks(options_i& options, VW::workspace& all, bool interacti
           [](const std::vector<namespace_index>& interaction) { return INTERACTIONS::contains_wildcard(interaction); });
       if (any_contain_wildcards)
       {
-        all.logger.warn("Any duplicate namespace interactions will be removed\n"
+        all.logger.err_warn("Any duplicate namespace interactions will be removed\n"
                              "You can use --leave_duplicate_interactions to disable this behaviour.");
       }
     }
@@ -765,12 +763,12 @@ void parse_feature_tweaks(options_i& options, VW::workspace& all, bool interacti
 
     if (removed_cnt > 0 && !all.quiet)
     {
-      all.logger.warn("Duplicate namespace interactions were found. Removed: {}.\nYou can use --leave_duplicate_interactions to disable this behaviour.", removed_cnt);
+      all.logger.err_warn("Duplicate namespace interactions were found. Removed: {}.\nYou can use --leave_duplicate_interactions to disable this behaviour.", removed_cnt);
     }
 
     if (sorted_cnt > 0 && !all.quiet)
     {
-      all.logger.warn("Some interactions contain duplicate characters and their characters order has been changed. Interactions affected: {}.", sorted_cnt);
+      all.logger.err_warn("Some interactions contain duplicate characters and their characters order has been changed. Interactions affected: {}.", sorted_cnt);
     }
 
     all.interactions = std::move(decoded_interactions);
@@ -904,7 +902,7 @@ void parse_feature_tweaks(options_i& options, VW::workspace& all, bool interacti
 
       if (++operator_pos > 3)  // seek operator end
       {
-        all.logger.warn("Multiple namespaces are used in target part of --redefine argument. Only first one ('{}') will be used as target namespace.", new_namespace);
+        all.logger.err_warn("Multiple namespaces are used in target part of --redefine argument. Only first one ('{}') will be used as target namespace.", new_namespace);
       }
       all.redefine_some = true;
 
@@ -1037,7 +1035,7 @@ void parse_example_tweaks(options_i& options, VW::workspace& all)
   all.loss = getLossFunction(all, loss_function, loss_parameter);
   if (options.was_supplied("quantile_tau") && all.loss->getType() != "quantile")
   {
-    logger::errlog_warn(
+    all.logger.err_warn(
         "Option 'quantile_tau' was passed but the quantile loss function is not being used. 'quantile_tau' value will "
         "be ignored.");
   }
@@ -1090,7 +1088,7 @@ void parse_output_preds(options_i& options, VW::workspace& all)
       }
       catch (...)
       {
-        *(all.driver_output) << "Error opening the predictions file: " << predictions << endl;
+        all.logger.err_error("Error opening the predictions file: {}", predictions);
       }
     }
   }
@@ -1102,7 +1100,7 @@ void parse_output_preds(options_i& options, VW::workspace& all)
       *(all.driver_output) << "raw predictions = " << raw_predictions << endl;
       if (options.was_supplied("binary"))
       {
-        all.logger.warn("--raw_predictions has no defined value when --binary specified, expect no output");
+        all.logger.err_warn("--raw_predictions has no defined value when --binary specified, expect no output");
       }
     }
     if (raw_predictions == "stdout") { all.raw_prediction = VW::io::open_stdout(); }
@@ -1145,7 +1143,7 @@ void parse_output_model(options_i& options, VW::workspace& all)
   if (options.was_supplied("invert_hash")) { all.hash_inv = true; }
   if (save_resume)
   {
-    all.logger.warn("--save_resume flag is deprecated -- learning can now continue on saved models by default.");
+    all.logger.err_warn("--save_resume flag is deprecated -- learning can now continue on saved models by default.");
   }
   if (predict_only_model) { all.save_resume = false; }
 
@@ -1190,17 +1188,73 @@ ssize_t trace_message_wrapper_adapter(void* context, const char* buffer, size_t 
 VW::workspace& parse_args(
     std::unique_ptr<options_i, options_deleter_type> options, trace_message_t trace_listener, void* trace_context)
 {
-  auto logger = trace_listener != nullptr ? VW::io::create_custom_sink_logger(trace_context, trace_listener) : VW::io::create_stderr_logger();
+  auto logger = trace_listener != nullptr ? VW::io::create_custom_sink_logger(trace_context, trace_listener) : VW::io::create_default_logger();
+
+  bool quiet = false;
+  bool driver_output_off = false;
+  std::string driver_output_stream;
+  std::string log_level;
+  std::string log_output_stream;
+  option_group_definition logging_options("Logging options");
+  logging_options
+    .add(make_option("quiet", quiet).help("Don't output diagnostics and progress updates. Supplying this implies --log_level off and --driver_output_off."))
+    .add(make_option("driver_output_off", driver_output_off).help("Disable output for the driver."))
+    .add(make_option("driver_output_stream", driver_output_stream).default_value("stderr").one_of({"stdout", "stderr"}).help("Specify the stream to output driver output to."))
+    .add(make_option("log_level", log_level).default_value("info").one_of({"info", "warn", "error", "critical", "off"}).help("Log level for logging messages. Specifying this wil override --quiet for log output."))
+    .add(make_option("log_output_stream", log_output_stream).default_value("compat").one_of({"stdout", "stderr", "compat"}).help("Specify the stream to output log messages to. In the past VW's choice of stream for logging messages wasn't consistent. Suppling compat will maintain that old behavior. Compat is now deprecated so it is recommended that stdout or stderr is chosen."));
+
+  options->add_and_parse(logging_options);
+
+  if (quiet)
+  {
+    // If a user supplies an explicit log level, then we'll respect that.
+    if (!options->was_supplied("log_level"))
+    {
+      log_level = "off";
+    }
+    driver_output_off = true;
+  }
+
+  auto level = VW::io::get_log_level(log_level);
+  logger.set_level(level);
+  auto location = VW::io::get_output_location(log_output_stream);
+  logger.set_location(location);
+
+  // Don't print a warning if the user specifically chose to use compat.
+  if(level != VW::io::log_level::off && location == VW::io::output_location::compat && !options->was_supplied("log_output_stream"))
+  {
+    logger.err_warn("The current default logging behavior of VW is to log to a mix of stderr and stdout for logging based messages. This behavior is now deprecated. Please specify the stream to log to with --log_output_stream stdout|stderr to silence this message.");
+  }
+
   VW::workspace& all = *(new VW::workspace(logger));
   all.options = std::move(options);
+  all.quiet = quiet;
 
-  if (trace_listener)
+  if(driver_output_off)
   {
-    // Since the trace_message_t interface uses a string and the writer interface uses a buffer we unfortunately
-    // need to adapt between them here.
-    all.trace_message_wrapper_context = std::make_shared<trace_message_wrapper>(trace_context, trace_listener);
-    all.driver_output = VW::make_unique<VW::io::owning_ostream>(VW::make_unique<VW::io::writer_stream_buf>(
-        VW::io::create_custom_writer(all.trace_message_wrapper_context.get(), trace_message_wrapper_adapter)));
+    // This is valid:
+    // https://stackoverflow.com/questions/25690636/is-it-valid-to-construct-an-stdostream-from-a-null-buffer This
+    // results in the ostream not outputting anything.
+    all.driver_output = VW::make_unique<std::ostream>(nullptr);
+  }
+  else
+  {
+    if (trace_listener != nullptr)
+    {
+      // Since the trace_message_t interface uses a string and the writer interface uses a buffer we unfortunately
+      // need to adapt between them here.
+      all.trace_message_wrapper_context = std::make_shared<trace_message_wrapper>(trace_context, trace_listener);
+      all.driver_output = VW::make_unique<VW::io::owning_ostream>(VW::make_unique<VW::io::writer_stream_buf>(
+          VW::io::create_custom_writer(all.trace_message_wrapper_context.get(), trace_message_wrapper_adapter)));
+    }
+    else if (driver_output_stream == "stdout")
+    {
+      all.driver_output = VW::make_unique<std::ostream>(std::cout.rdbuf());
+    }
+    else
+    {
+      all.driver_output = VW::make_unique<std::ostream>(std::cerr.rdbuf());
+    }
   }
 
   try

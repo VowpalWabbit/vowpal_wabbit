@@ -1325,7 +1325,7 @@ base_learner* lda_setup(VW::setup_base_i& stack_builder)
 
   if (all.eta > 1.)
   {
-    all.logger.warn("your learning rate is too high, setting it to 1");
+    all.logger.err_warn("your learning rate is too high, setting it to 1");
     all.eta = std::min(all.eta, 1.f);
   }
 

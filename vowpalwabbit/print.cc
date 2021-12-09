@@ -9,7 +9,7 @@ using namespace VW::config;
 
 using std::cout;
 
-// TODO: This file should probably(?) use driver_output
+// TODO: This file should probably(?) use trace_message
 struct print
 {
   print(VW::workspace* all) : all(all) {}

@@ -1,6 +1,6 @@
 [info] Generating 2-grams for all namespaces.
 creating quadratic features for pairs: ::
-WARNING: any duplicate namespace interactions will be removed
+[warning] Any duplicate namespace interactions will be removed
 You can use --leave_duplicate_interactions to disable this behaviour.
 final_regressor = hash_seed5.model
 Num weight bits = 18

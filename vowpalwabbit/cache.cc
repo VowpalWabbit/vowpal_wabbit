@@ -108,7 +108,7 @@ int VW::read_example_from_cache(io_buf& input, example* ae, label_parser& lbl_pa
     unsigned char index = 0;
     if ((temp = input.buf_read(c, sizeof(index) + sizeof(size_t))) < sizeof(index) + sizeof(size_t))
     {
-      logger.error("truncated example! {} {} ", temp, char_size + sizeof(size_t));
+      logger.err_error("truncated example! {} {} ", temp, char_size + sizeof(size_t));
       return 0;
     }
 
@@ -123,7 +123,7 @@ int VW::read_example_from_cache(io_buf& input, example* ae, label_parser& lbl_pa
     total += storage;
     if (input.buf_read(c, storage) < storage)
     {
-      logger.error("truncated example! wanted: {} bytes ", storage);
+      logger.err_error("truncated example! wanted: {} bytes ", storage);
       return 0;
     }
 

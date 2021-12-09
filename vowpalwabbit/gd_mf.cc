@@ -264,7 +264,7 @@ void save_load(gdmf& d, io_buf& model_file, bool read, bool text)
 
   if (model_file.num_files() > 0)
   {
-    if (!all.weights.not_null()) { THROW("Error: Model weights not initialized."); }
+    if (!all.weights.not_null()) { THROW("Model weights not initialized when trying to load into them."); }
     uint64_t i = 0;
     size_t brw = 1;
     do

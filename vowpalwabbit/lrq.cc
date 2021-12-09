@@ -206,7 +206,7 @@ base_learner* lrq_setup(VW::setup_base_i& stack_builder)
     if (!all.quiet)
     {
       if ((i.length() < 3) || !valid_int(i.c_str() + 2))
-        THROW("error, low-rank quadratic features must involve two sets and a rank.");
+        THROW("Low-rank quadratic features must involve two sets and a rank: " << i);
 
       *(all.driver_output) << i << " ";
     }
