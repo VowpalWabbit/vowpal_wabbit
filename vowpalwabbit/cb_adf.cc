@@ -98,7 +98,7 @@ public:
       , _no_predict(no_predict)
       , _rank_all(rank_all)
       , _clip_p(clip_p)
-      , _logger(logger)
+      , _logger(std::move(logger))
   {
     _gen_cs.cb_type = cb_type;
   }
