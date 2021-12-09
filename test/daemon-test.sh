@@ -40,7 +40,7 @@ do
 done
 
 # -- make sure we can find vw first
-if [ -x "$VW" ]; then
+if [ $(${VW} --version) -eq 1 ]; then
     : cool found vw at: $VW
 else
     echo "$NAME: can not find 'vw' in $PATH - sorry"
