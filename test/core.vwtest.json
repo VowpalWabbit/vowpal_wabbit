@@ -2099,7 +2099,7 @@
   {
     "id": 174,
     "desc": "cbify adf, regcbopt",
-    "vw_command": "--cbify 10 --cb_explore_adf --cb_type mtr --regcbopt --mellowness 0.01 -d train-sets/multiclass",
+    "vw_command": "--cbify 10 --cb_explore_adf --cb_type mtr --regcb --regcbopt --mellowness 0.01 -d train-sets/multiclass",
     "diff_files": {
       "stderr": "train-sets/ref/cbify_regcbopt.stderr"
     },
@@ -2110,7 +2110,7 @@
   {
     "id": 175,
     "desc": "cbify ldf, regcbopt",
-    "vw_command": "-d train-sets/cs_test.ldf --cbify_ldf --cb_type mtr --regcbopt --mellowness 0.01",
+    "vw_command": "-d train-sets/cs_test.ldf --cbify_ldf --cb_type mtr --regcb --regcbopt --mellowness 0.01",
     "diff_files": {
       "stderr": "train-sets/ref/cbify_ldf_regcbopt.stderr"
     },
