@@ -57,6 +57,7 @@ if __name__ == "__main__":
             "--passes",
             "1",
             "--holdout_off",
+            "--predict_only_model",
             "--readable_model",
             "readable_model" + str(index) + ".txt",
         ]
