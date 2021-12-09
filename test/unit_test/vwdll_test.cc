@@ -7,6 +7,7 @@
 #include "vwdll.h"
 #include "vw.h"
 #include "test_common.h"
+#include "vw_string_view.h"
 
 using namespace boost::unit_test;
 
@@ -72,6 +73,34 @@ BOOST_AUTO_TEST_CASE(vw_dll_parsed_and_constructed_example_parity)
   VW_Finish(handle1);
   VW_Finish(handle2);
 }
+
+// This test seems to have issues on the older MSVC compiler CI, but no issues in the newer.
+#if (defined(_MSC_VER) && (_MSC_VER >= 1920)) || !defined(_MSC_VER)
+
+BOOST_AUTO_TEST_CASE(vw_dll_get_audit_output)
+{
+  // parse example
+  VW_HANDLE handle = VW_InitializeA("--noconstant --quiet --audit");
+  VW_CaptureAuditData(handle);
+  VW_EXAMPLE example_parsed;
+  example_parsed = VW_ReadExampleA(handle, "1 | test example");
+  VW_Learn(handle, example_parsed);
+
+  size_t audit_size = 0;
+  char* audit_data = VW_GetAuditDataA(handle, &audit_size);
+
+  VW::string_view expected_audit = R"(0
+	test:250387:1:0@0	example:99909:1:0@0
+)";
+  VW::string_view audit_data_view(audit_data, audit_size);
+  BOOST_CHECK_EQUAL(audit_data_view, expected_audit);
+
+  VW_FreeAuditDataA(handle, audit_data);
+  VW_FinishExample(handle, example_parsed);
+  VW_Finish(handle);
+}
+
+#endif
 
 #ifndef __APPLE__
 BOOST_AUTO_TEST_CASE(vw_dll_parse_escaped)
