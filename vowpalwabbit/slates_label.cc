@@ -10,6 +10,7 @@
 #include "constant.h"
 #include "vw_math.h"
 #include "parse_primitives.h"
+#include "model_utils.h"
 #include <numeric>
 
 namespace VW
@@ -17,35 +18,6 @@ namespace VW
 namespace slates
 {
 void default_label(slates::label& v);
-
-size_t read_cached_label(slates::label& ld, io_buf& cache)
-{
-  // Since read_cached_features doesn't default the label we must do it here.
-  default_label(ld);
-
-  size_t read_count = 0;
-  ld.type = cache.read_value_and_accumulate_size<slates::example_type>("type", read_count);
-  ld.weight = cache.read_value_and_accumulate_size<float>("weight", read_count);
-  ld.labeled = cache.read_value_and_accumulate_size<bool>("labeled", read_count);
-  ld.cost = cache.read_value_and_accumulate_size<float>("cost", read_count);
-  ld.slot_id = cache.read_value_and_accumulate_size<uint32_t>("slot_id", read_count);
-
-  auto size_probs = cache.read_value_and_accumulate_size<uint32_t>("size_probs", read_count);
-  for (uint32_t i = 0; i < size_probs; i++)
-  { ld.probabilities.push_back(cache.read_value_and_accumulate_size<ACTION_SCORE::action_score>("a_s", read_count)); }
-  return read_count;
-}
-
-void cache_label(const slates::label& ld, io_buf& cache)
-{
-  cache.write_value(ld.type);
-  cache.write_value(ld.weight);
-  cache.write_value(ld.labeled);
-  cache.write_value(ld.cost);
-  cache.write_value(VW::convert(ld.slot_id));
-  cache.write_value(VW::convert(ld.probabilities.size()));
-  for (const auto& score : ld.probabilities) { cache.write_value(score); }
-}
 
 float weight(const slates::label& ld) { return ld.weight; }
 
@@ -151,12 +123,12 @@ label_parser slates_label_parser = {
         const VW::named_labels* /* ldict */,
         const std::vector<VW::string_view>& words) { parse_label(label.slates, reuse_mem, words); },
     // cache_label
-    [](const polylabel& label, const reduction_features& /* red_features */, io_buf& cache) {
-      cache_label(label.slates, cache);
-    },
+    [](const polylabel& label, const reduction_features& /* red_features */, io_buf& cache,
+        const std::string& upstream_name,
+        bool text) { return VW::model_utils::write_model_field(cache, label.slates, upstream_name, text); },
     // read_cached_label
     [](polylabel& label, reduction_features& /* red_features */, io_buf& cache) {
-      return read_cached_label(label.slates, cache);
+      return VW::model_utils::read_model_field(cache, label.slates);
     },
     // get_weight
     [](const polylabel& label, const reduction_features& /* red_features */) { return weight(label.slates); },
@@ -191,3 +163,34 @@ VW::string_view VW::to_string(VW::slates::example_type ex_type)
 
 #undef CASE
 }
+
+namespace VW
+{
+namespace model_utils
+{
+size_t read_model_field(io_buf& io, VW::slates::label& slates)
+{
+  // Since read_cached_features doesn't default the label we must do it here.
+  default_label(slates);
+  size_t bytes = 0;
+  bytes += read_model_field(io, slates.type);
+  bytes += read_model_field(io, slates.weight);
+  bytes += read_model_field(io, slates.labeled);
+  bytes += read_model_field(io, slates.cost);
+  bytes += read_model_field(io, slates.slot_id);
+  bytes += read_model_field(io, slates.probabilities);
+  return bytes;
+}
+size_t write_model_field(io_buf& io, const VW::slates::label& slates, const std::string& upstream_name, bool text)
+{
+  size_t bytes = 0;
+  bytes += write_model_field(io, slates.type, upstream_name + "_type", text);
+  bytes += write_model_field(io, slates.weight, upstream_name + "_weight", text);
+  bytes += write_model_field(io, slates.labeled, upstream_name + "_labeled", text);
+  bytes += write_model_field(io, slates.cost, upstream_name + "_cost", text);
+  bytes += write_model_field(io, slates.slot_id, upstream_name + "_slot_id", text);
+  bytes += write_model_field(io, slates.probabilities, upstream_name + "_probabilities", text);
+  return bytes;
+}
+}  // namespace model_utils
+}  // namespace VW

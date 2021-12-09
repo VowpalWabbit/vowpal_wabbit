@@ -12,6 +12,8 @@
 #include "vw_string_view.h"
 #include "parse_primitives.h"
 #include "vw_string_view_fmt.h"
+#include "simple_label_parser.h"
+#include "model_utils.h"
 
 #include "io/logger.h"
 // needed for printing ranges of objects (eg: all elements of a vector)
@@ -104,12 +106,12 @@ label_parser simple_label_parser = {
         const VW::named_labels* /*ldict*/,
         const std::vector<VW::string_view>& words) { parse_simple_label(label.simple, red_features, words); },
     // cache_label
-    [](const polylabel& label, const reduction_features& red_features, io_buf& cache) {
-      cache_simple_label(label.simple, red_features, cache);
+    [](const polylabel& label, const reduction_features&, io_buf& cache, const std::string& upstream_name, bool text) {
+      return VW::model_utils::write_model_field(cache, label.simple, upstream_name, text);
     },
     // read_cached_label
-    [](polylabel& label, reduction_features& red_features, io_buf& cache) {
-      return read_cached_simple_label(label.simple, red_features, cache);
+    [](polylabel& label, reduction_features&, io_buf& cache) {
+      return VW::model_utils::read_model_field(cache, label.simple);
     },
     // get_weight
     [](const polylabel& /*label*/, const reduction_features& red_features) { return get_weight(red_features); },
@@ -117,3 +119,37 @@ label_parser simple_label_parser = {
     [](const polylabel& label) { return test_label(label.simple); },
     // label type
     VW::label_type_t::simple};
+
+namespace VW
+{
+namespace model_utils
+{
+size_t read_model_field(io_buf& io, label_data& ld)
+{
+  size_t bytes = 0;
+  bytes += read_model_field(io, ld.label);
+  return bytes;
+}
+size_t write_model_field(io_buf& io, const label_data& ld, const std::string& upstream_name, bool text)
+{
+  size_t bytes = 0;
+  bytes += write_model_field(io, ld.label, upstream_name + "_label", text);
+  return bytes;
+}
+size_t read_model_field(io_buf& io, simple_label_reduction_features& slrf)
+{
+  size_t bytes = 0;
+  bytes += read_model_field(io, slrf.weight);
+  bytes += read_model_field(io, slrf.initial);
+  return bytes;
+}
+size_t write_model_field(
+    io_buf& io, const simple_label_reduction_features& slrf, const std::string& upstream_name, bool text)
+{
+  size_t bytes = 0;
+  bytes += write_model_field(io, slrf.weight, upstream_name + "_weight", text);
+  bytes += write_model_field(io, slrf.initial, upstream_name + "_initial", text);
+  return bytes;
+}
+}  // namespace model_utils
+}  // namespace VW
