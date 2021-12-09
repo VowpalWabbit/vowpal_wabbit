@@ -25,23 +25,8 @@ using namespace VW::config;
 
 VW::workspace* setup(options_i& options)
 {
-  VW::workspace* all = nullptr;
-  try
-  {
-    all = VW::initialize(options);
-  }
-  catch (const std::exception& ex)
-  {
-    std::cout << ex.what() << std::endl;
-    throw;
-  }
-  catch (...)
-  {
-    std::cout << "unknown exception" << std::endl;
-    throw;
-  }
+  VW::workspace* all = VW::initialize(options);
   all->vw_is_main = true;
-
   return all;
 }
 
@@ -138,9 +123,13 @@ int main(int argc, char* argv[])
     // sans the excess exception noise, and core dump.
     // TODO: If loggers are instantiated within struct vw, this line lives outside of that. Log as critical for now
     std::cerr << "[critical] vw: " << e.what() << std::endl;
-    // cin.ignore();
     return 1;
   }
-  // cin.ignore();
+  catch (...)
+  {
+    std::cerr << "[critical] Unknown exception occurred" << std::endl;
+    return 1;
+  }
+
   return 0;
 }
