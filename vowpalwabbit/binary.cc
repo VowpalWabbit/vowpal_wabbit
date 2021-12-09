@@ -20,7 +20,6 @@ namespace VW
 {
 namespace binary
 {
-
 struct binary_data
 {
   VW::io::logger logger;

@@ -1094,7 +1094,9 @@ void save_load(gd& g, io_buf& model_file, bool read, bool text)
     {
       if (read && all.model_file_ver < VW::version_definitions::VERSION_SAVE_RESUME_FIX)
       {
-        g.all->logger.err_warn("save_resume functionality is known to have inaccuracy in model files version less than '{}'", VW::version_definitions::VERSION_SAVE_RESUME_FIX.to_string());
+        g.all->logger.err_warn(
+            "save_resume functionality is known to have inaccuracy in model files version less than '{}'",
+            VW::version_definitions::VERSION_SAVE_RESUME_FIX.to_string());
       }
       save_load_online_state(all, model_file, read, text, g.total_weight, &g);
     }
@@ -1283,7 +1285,9 @@ base_learner* setup(VW::setup_base_i& stack_builder)
 
   if (pow(static_cast<double>(all.eta_decay_rate), static_cast<double>(all.numpasses)) < 0.0001)
   {
-    all.logger.err_warn("The learning rate for the last pass is multiplied by '{}' adjust --decay_learning_rate larger to avoid this.", pow(static_cast<double>(all.eta_decay_rate), static_cast<double>(all.numpasses)));
+    all.logger.err_warn(
+        "The learning rate for the last pass is multiplied by '{}' adjust --decay_learning_rate larger to avoid this.",
+        pow(static_cast<double>(all.eta_decay_rate), static_cast<double>(all.numpasses)));
   }
 
   if (all.reg_mode % 2)

@@ -44,7 +44,8 @@ struct cb_to_cs_adf
 
 float safe_probability(float prob, VW::io::logger& logger);
 
-void gen_cs_example_ips(cb_to_cs& c, const CB::label& ld, COST_SENSITIVE::label& cs_ld, VW::io::logger& logger, float clip_p = 0.f);
+void gen_cs_example_ips(
+    cb_to_cs& c, const CB::label& ld, COST_SENSITIVE::label& cs_ld, VW::io::logger& logger, float clip_p = 0.f);
 
 template <bool is_learn>
 void gen_cs_example_dm(cb_to_cs& c, example& ec, const CB::label& ld, COST_SENSITIVE::label& cs_ld)
@@ -183,7 +184,8 @@ void gen_cs_example(cb_to_cs& c, example& ec, const CB::label& ld, COST_SENSITIV
 
 void gen_cs_test_example(const multi_ex& examples, COST_SENSITIVE::label& cs_labels);
 
-void gen_cs_example_ips(const multi_ex& examples, COST_SENSITIVE::label& cs_labels, VW::io::logger& logger, float clip_p = 0.f);
+void gen_cs_example_ips(
+    const multi_ex& examples, COST_SENSITIVE::label& cs_labels, VW::io::logger& logger, float clip_p = 0.f);
 
 void gen_cs_example_dm(const multi_ex& examples, COST_SENSITIVE::label& cs_labels);
 

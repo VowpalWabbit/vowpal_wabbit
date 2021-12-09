@@ -278,9 +278,7 @@ base_learner* setup(VW::setup_base_i& stack_builder)
   if (!(data->bandwidth >= 0.0f)) { THROW("error: Bandwidth must be positive"); }
 
   if (data->bandwidth >= (data->max_value - data->min_value))
-  {
-    all.logger.err_warn("Bandwidth is larger than continuous action range, this will result in a uniform pdf.");
-  }
+  { all.logger.err_warn("Bandwidth is larger than continuous action range, this will result in a uniform pdf."); }
 
   // Translate user provided bandwidth which is in terms of continuous action range (max_value - min_value)
   // to the internal tree bandwidth which is in terms of #actions

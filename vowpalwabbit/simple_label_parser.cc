@@ -70,7 +70,8 @@ bool test_label(const label_data& ld) { return ld.label == FLT_MAX; }
 
 // Example: 0 1 0.5 'third_house | price:.53 sqft:.32 age:.87 1924
 // label := 0, weight := 1, initial := 0.5
-void parse_simple_label(label_data& ld, reduction_features& red_features, const std::vector<VW::string_view>& words, VW::io::logger& logger)
+void parse_simple_label(
+    label_data& ld, reduction_features& red_features, const std::vector<VW::string_view>& words, VW::io::logger& logger)
 {
   auto& simple_red_features = red_features.template get<simple_label_reduction_features>();
   switch (words.size())
@@ -99,8 +100,8 @@ label_parser simple_label_parser = {
     [](polylabel& label) { default_simple_label(label.simple); },
     // parse_label
     [](polylabel& label, reduction_features& red_features, VW::label_parser_reuse_mem& /*reuse_mem*/,
-        const VW::named_labels* /*ldict*/,
-        const std::vector<VW::string_view>& words, VW::io::logger& logger) { parse_simple_label(label.simple, red_features, words, logger); },
+        const VW::named_labels* /*ldict*/, const std::vector<VW::string_view>& words,
+        VW::io::logger& logger) { parse_simple_label(label.simple, red_features, words, logger); },
     // cache_label
     [](const polylabel& label, const reduction_features& red_features, io_buf& cache) {
       cache_simple_label(label.simple, red_features, cache);

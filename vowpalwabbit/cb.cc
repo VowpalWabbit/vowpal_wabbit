@@ -30,7 +30,8 @@ std::pair<bool, cb_class> get_observed_cost_cb(const label& ld)
   return std::make_pair(false, CB::cb_class{});
 }
 
-void parse_label(CB::label& ld, VW::label_parser_reuse_mem& reuse_mem, const std::vector<VW::string_view>& words, VW::io::logger& logger)
+void parse_label(CB::label& ld, VW::label_parser_reuse_mem& reuse_mem, const std::vector<VW::string_view>& words,
+    VW::io::logger& logger)
 {
   ld.weight = 1.0;
 
@@ -87,8 +88,8 @@ label_parser cb_label = {
     [](polylabel& label) { CB::default_label(label.cb); },
     // parse_label
     [](polylabel& label, reduction_features& /*red_features*/, VW::label_parser_reuse_mem& reuse_mem,
-        const VW::named_labels* /*ldict*/,
-        const std::vector<VW::string_view>& words, VW::io::logger& logger) { CB::parse_label(label.cb, reuse_mem, words, logger); },
+        const VW::named_labels* /*ldict*/, const std::vector<VW::string_view>& words,
+        VW::io::logger& logger) { CB::parse_label(label.cb, reuse_mem, words, logger); },
     // cache_label
     [](const polylabel& label, const reduction_features& /*red_features*/, io_buf& cache) {
       CB::cache_label(label.cb, cache);
@@ -199,7 +200,8 @@ void default_label(CB_EVAL::label& ld)
 
 bool test_label(const CB_EVAL::label& ld) { return CB::is_test_label(ld.event); }
 
-void parse_label(CB_EVAL::label& ld, VW::label_parser_reuse_mem& reuse_mem, const std::vector<VW::string_view>& words, VW::io::logger& logger)
+void parse_label(CB_EVAL::label& ld, VW::label_parser_reuse_mem& reuse_mem, const std::vector<VW::string_view>& words,
+    VW::io::logger& logger)
 {
   if (words.size() < 2) THROW("Evaluation can not happen without an action and an exploration");
 
@@ -215,8 +217,8 @@ label_parser cb_eval = {
     [](polylabel& label) { CB_EVAL::default_label(label.cb_eval); },
     // parse_label
     [](polylabel& label, reduction_features& /*red_features*/, VW::label_parser_reuse_mem& reuse_mem,
-        const VW::named_labels* /*ldict*/,
-        const std::vector<VW::string_view>& words, VW::io::logger& logger) { CB_EVAL::parse_label(label.cb_eval, reuse_mem, words, logger); },
+        const VW::named_labels* /*ldict*/, const std::vector<VW::string_view>& words,
+        VW::io::logger& logger) { CB_EVAL::parse_label(label.cb_eval, reuse_mem, words, logger); },
     // cache_label
     [](const polylabel& label, const reduction_features& /*red_features*/, io_buf& cache) {
       CB_EVAL::cache_label(label.cb_eval, cache);

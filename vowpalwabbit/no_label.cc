@@ -28,8 +28,7 @@ void parse_no_label(const std::vector<VW::string_view>& words, VW::io::logger& l
     case 0:
       break;
     default:
-      logger.out_error("Error: {0} is too many tokens for a simple label: {1}",
-      words.size(), fmt::join(words, " "));
+      logger.out_error("Error: {0} is too many tokens for a simple label: {1}", words.size(), fmt::join(words, " "));
   }
 }
 
@@ -38,7 +37,8 @@ label_parser no_label_parser = {
     [](polylabel& /* label */) {},
     // parse_label
     [](polylabel& /* label */, reduction_features& /* red_features */, VW::label_parser_reuse_mem& /* reuse_mem */,
-        const VW::named_labels* /* ldict */, const std::vector<VW::string_view>& words, VW::io::logger& logger) { parse_no_label(words, logger); },
+        const VW::named_labels* /* ldict */, const std::vector<VW::string_view>& words,
+        VW::io::logger& logger) { parse_no_label(words, logger); },
     // cache_label
     [](const polylabel& /* label */, const reduction_features& /* red_features */, io_buf& /* cache */) {},
     // read_cached_label
@@ -53,8 +53,8 @@ label_parser no_label_parser = {
 
 void print_no_label_update(VW::workspace& all, example& ec)
 {
-  if (all.sd->weighted_labeled_examples + all.sd->weighted_unlabeled_examples >= all.sd->dump_interval &&
-      !all.quiet && !all.bfgs)
+  if (all.sd->weighted_labeled_examples + all.sd->weighted_unlabeled_examples >= all.sd->dump_interval && !all.quiet &&
+      !all.bfgs)
   {
     all.sd->print_update(*all.driver_output, all.holdout_set_off, all.current_pass, 0.f, ec.pred.scalar,
         ec.get_num_features(), all.progress_add, all.progress_arg);

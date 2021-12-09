@@ -50,7 +50,8 @@ size_t read_cached_label(label_t& ld, io_buf& cache)
 float weight(const label_t& ld) { return (ld.weight > 0) ? ld.weight : 0.f; }
 bool test_label(const label_t& ld) { return ld.label == static_cast<uint32_t>(-1); }
 
-void parse_label(label_t& ld, const VW::named_labels* ldict, const std::vector<VW::string_view>& words, VW::io::logger& logger)
+void parse_label(
+    label_t& ld, const VW::named_labels* ldict, const std::vector<VW::string_view>& words, VW::io::logger& logger)
 {
   switch (words.size())
   {
@@ -88,8 +89,8 @@ label_parser mc_label = {
     [](polylabel& label) { default_label(label.multi); },
     // parse_label
     [](polylabel& label, reduction_features& /* red_features */, VW::label_parser_reuse_mem& /* reuse_mem */,
-        const VW::named_labels* ldict,
-        const std::vector<VW::string_view>& words, VW::io::logger& logger) { parse_label(label.multi, ldict, words, logger); },
+        const VW::named_labels* ldict, const std::vector<VW::string_view>& words,
+        VW::io::logger& logger) { parse_label(label.multi, ldict, words, logger); },
     // cache_label
     [](const polylabel& label, const reduction_features& /* red_features */, io_buf& cache) {
       cache_label(label.multi, cache);

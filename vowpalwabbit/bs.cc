@@ -138,10 +138,7 @@ void print_result(VW::io::writer* f, float res, const v_array<char>& tag, float 
   const auto ss_str = ss.str();
   ssize_t len = ss_str.size();
   ssize_t t = f->write(ss_str.c_str(), static_cast<unsigned int>(len));
-  if (t != len)
-  {
-    logger.err_error("write error: {}", VW::strerror_to_string(errno));
-  }
+  if (t != len) { logger.err_error("write error: {}", VW::strerror_to_string(errno)); }
 }
 
 void output_example(VW::workspace& all, bs& d, const example& ec)

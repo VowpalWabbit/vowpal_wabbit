@@ -37,8 +37,16 @@ int main(int argc, char* argv[])
   std::string log_output_stream;
   option_group_definition driver_config("Driver");
   driver_config.add(make_option("onethread", should_use_onethread).help("Disable parse thread"));
-  driver_config.add(make_option("log_level", log_level).default_value("info").one_of({"info", "warn", "error", "critical", "off"}).help("Log level for logging messages. Specifying this wil override --quiet for log output."));
-  driver_config.add(make_option("log_output_stream", log_output_stream).default_value("compat").one_of({"stdout", "stderr", "compat"}).help("Specify the stream to output log messages to. In the past VW's choice of stream for logging messages wasn't consistent. Suppling compat will maintain that old behavior. Compat is now deprecated so it is recommended that stdout or stderr is chosen."));
+  driver_config.add(make_option("log_level", log_level)
+                        .default_value("info")
+                        .one_of({"info", "warn", "error", "critical", "off"})
+                        .help("Log level for logging messages. Specifying this wil override --quiet for log output."));
+  driver_config.add(make_option("log_output_stream", log_output_stream)
+                        .default_value("compat")
+                        .one_of({"stdout", "stderr", "compat"})
+                        .help("Specify the stream to output log messages to. In the past VW's choice of stream for "
+                              "logging messages wasn't consistent. Suppling compat will maintain that old behavior. "
+                              "Compat is now deprecated so it is recommended that stdout or stderr is chosen."));
 
   try
   {
@@ -118,9 +126,7 @@ int main(int argc, char* argv[])
     if (log_level != "off")
     {
       if (log_output_stream == "compat" || log_output_stream == "stderr")
-      {
-        std::cerr << "[critical] vw (" << e.Filename() << ":" << e.LineNumber() << "): " << e.what() << std::endl;
-      }
+      { std::cerr << "[critical] vw (" << e.Filename() << ":" << e.LineNumber() << "): " << e.what() << std::endl; }
       else
       {
         std::cout << "[critical] vw (" << e.Filename() << ":" << e.LineNumber() << "): " << e.what() << std::endl;
@@ -138,9 +144,7 @@ int main(int argc, char* argv[])
     if (log_level != "off")
     {
       if (log_output_stream == "compat" || log_output_stream == "stderr")
-      {
-        std::cerr << "[critical] vw: " << e.what() << std::endl;
-      }
+      { std::cerr << "[critical] vw: " << e.what() << std::endl; }
       else
       {
         std::cout << "[critical] vw: " << e.what() << std::endl;
@@ -153,9 +157,7 @@ int main(int argc, char* argv[])
     if (log_level != "off")
     {
       if (log_output_stream == "compat" || log_output_stream == "stderr")
-      {
-        std::cerr << "[critical] Unknown exception occurred" << std::endl;
-      }
+      { std::cerr << "[critical] Unknown exception occurred" << std::endl; }
       else
       {
         std::cout << "[critical] vw: unknown exception" << std::endl;

@@ -1973,8 +1973,8 @@ void run_task(search& sch, multi_ex& ec)
     priv.task->run(sch, ec);
 }
 
-void verify_active_csoaa(
-    COST_SENSITIVE::label& losses, const std::vector<std::pair<CS::wclass&, bool>>& known, size_t t, float multiplier, VW::io::logger& logger)
+void verify_active_csoaa(COST_SENSITIVE::label& losses, const std::vector<std::pair<CS::wclass&, bool>>& known,
+    size_t t, float multiplier, VW::io::logger& logger)
 {
   float threshold = multiplier / std::sqrt(static_cast<float>(t));
   cdbg << "verify_active_csoaa, losses = [";
@@ -1990,8 +1990,8 @@ void verify_active_csoaa(
       if (err > threshold)
       {
         logger.err_error("verify_active_csoaa failed: truth {0}:{1}, known[{2}]={3}, error={4} vs threshold {5}",
-                             wc.class_index /*0*/, wc.x/*1*/, i/*2*/, known[i].first.partial_prediction/*3*/,
-                             err/*4*/, threshold/*5*/);
+            wc.class_index /*0*/, wc.x /*1*/, i /*2*/, known[i].first.partial_prediction /*3*/, err /*4*/,
+            threshold /*5*/);
       }
     }
     i++;
@@ -2161,8 +2161,8 @@ void train_single_example(search& sch, bool is_test_ex, bool is_holdout_ex, mult
       //                           priv.learn_loss);
     }
     if (priv.active_csoaa_verify > 0.)
-      verify_active_csoaa(
-          priv.learn_losses.cs, priv.active_known[priv.learn_t], ec_seq[0]->example_counter, priv.active_csoaa_verify, priv.all->logger);
+      verify_active_csoaa(priv.learn_losses.cs, priv.active_known[priv.learn_t], ec_seq[0]->example_counter,
+          priv.active_csoaa_verify, priv.all->logger);
 
     if (skipped_all_actions)
     {
@@ -2446,13 +2446,9 @@ std::vector<CS::label> read_allowed_transitions(action A, const char* filename, 
   while ((rd = fscanf_s(f, "%d:%d", &from, &to)) > 0)
   {
     if ((from < 0) || (from > static_cast<int>(A)))
-    {
-      logger.err_warn("Ignoring transition from {0} because it's out of the range [0,{1}]", from, A);
-    }
+    { logger.err_warn("Ignoring transition from {0} because it's out of the range [0,{1}]", from, A); }
     if ((to < 0) || (to > static_cast<int>(A)))
-    {
-      logger.err_warn("Ignoring transition to {0} because it's out of the range [0,{1}]", to, A);
-    }
+    { logger.err_warn("Ignoring transition to {0} because it's out of the range [0,{1}]", to, A); }
     bg[from * (A + 1) + to] = true;
     count++;
   }
@@ -2686,8 +2682,9 @@ base_learner* setup(VW::setup_base_i& stack_builder)
     priv.total_number_of_policies = tmp_number_of_policies;
     if (priv.current_policy >
         0)  // we loaded a file but total number of policies didn't match what is needed for training
-      all.logger.err_warn("You're attempting to train more classifiers than was allocated initially. "
-                          "Likely to cause bad performance.");
+      all.logger.err_warn(
+          "You're attempting to train more classifiers than was allocated initially. "
+          "Likely to cause bad performance.");
   }
 
   // current policy currently points to a new policy we would train
@@ -2933,9 +2930,7 @@ std::stringstream& search::output()
 void search::set_options(uint32_t opts)
 {
   if (this->priv->all->vw_is_main && (this->priv->state != SearchState::INITIALIZE))
-  {
-    priv->all->logger.err_warn("Task should not set options except in initialize function.");
-  }
+  { priv->all->logger.err_warn("Task should not set options except in initialize function."); }
   if ((opts & AUTO_CONDITION_FEATURES) != 0) this->priv->auto_condition_features = true;
   if ((opts & AUTO_HAMMING_LOSS) != 0) this->priv->auto_hamming_loss = true;
   if ((opts & EXAMPLES_DONT_CHANGE) != 0) this->priv->examples_dont_change = true;
@@ -2949,17 +2944,14 @@ void search::set_options(uint32_t opts)
   if (this->priv->use_action_costs && (this->priv->rollout_method != RollMethod::NO_ROLLOUT))
   {
     priv->all->logger.err_warn(
-      "Task is designed to use rollout costs, but this only works when --search_rollout none is specified."
-    );
+        "Task is designed to use rollout costs, but this only works when --search_rollout none is specified.");
   }
 }
 
 void search::set_label_parser(label_parser& lp, bool (*is_test)(const polylabel&))
 {
   if (this->priv->all->vw_is_main && (this->priv->state != SearchState::INITIALIZE))
-  {
-    priv->all->logger.err_warn("Task should not set label parser except in initialize function.");
-  }
+  { priv->all->logger.err_warn("Task should not set label parser except in initialize function."); }
   this->priv->all->example_parser->lbl_parser = lp;
   this->priv->all->example_parser->lbl_parser.test_label = is_test;
   this->priv->label_is_test = is_test;

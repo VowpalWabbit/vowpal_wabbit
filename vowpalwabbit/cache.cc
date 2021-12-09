@@ -79,7 +79,8 @@ void VW::write_example_to_cache(io_buf& output, example* ae, label_parser& lbl_p
   output.bin_write_fixed(temp_buffer._backing_buffer->data(), temp_buffer._backing_buffer->size());
 }
 
-int VW::read_example_from_cache(io_buf& input, example* ae, label_parser& lbl_parser, bool sorted_cache, VW::io::logger& logger)
+int VW::read_example_from_cache(
+    io_buf& input, example* ae, label_parser& lbl_parser, bool sorted_cache, VW::io::logger& logger)
 {
   // Unused for now.
   uint64_t size;

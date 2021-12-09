@@ -47,7 +47,8 @@ void predict_or_learn_with_confidence(confidence& /* c */, single_learner& base,
   ec.confidence = fabsf(ec.pred.scalar - threshold) / sensitivity;
 }
 
-void confidence_print_result(VW::io::writer* f, float res, float confidence, const v_array<char>& tag, VW::io::logger& logger)
+void confidence_print_result(
+    VW::io::writer* f, float res, float confidence, const v_array<char>& tag, VW::io::logger& logger)
 {
   if (f != nullptr)
   {
@@ -59,10 +60,7 @@ void confidence_print_result(VW::io::writer* f, float res, float confidence, con
     auto ss_string(ss.str());
     ssize_t len = ss_string.size();
     ssize_t t = f->write(ss_string.c_str(), static_cast<unsigned int>(len));
-    if (t != len)
-    {
-      logger.err_error("write error: {}", VW::strerror_to_string(errno));
-    }
+    if (t != len) { logger.err_error("write error: {}", VW::strerror_to_string(errno)); }
   }
 }
 

@@ -322,8 +322,7 @@ inline logger create_custom_sink_logger(void* context, void (*func)(void*, const
   auto fptr_err_sink = std::make_shared<details::function_ptr_sink<std::mutex>>(context, func);
   return logger(std::make_shared<details::logger_impl>(
       std::unique_ptr<spdlog::logger>(new spdlog::logger("vowpal-stdout", fptr_out_sink)),
-      std::unique_ptr<spdlog::logger>(new spdlog::logger("vowpal-stdout", fptr_err_sink))
-          ));
+      std::unique_ptr<spdlog::logger>(new spdlog::logger("vowpal-stdout", fptr_err_sink))));
 }
 
 }  // namespace io

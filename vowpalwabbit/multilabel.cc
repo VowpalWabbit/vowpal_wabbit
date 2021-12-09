@@ -69,8 +69,8 @@ void default_label(MULTILABEL::labels& ld) { ld.label_v.clear(); }
 
 bool test_label(const MULTILABEL::labels& ld) { return ld.label_v.size() == 0; }
 
-void parse_label(
-    MULTILABEL::labels& ld, VW::label_parser_reuse_mem& reuse_mem, const std::vector<VW::string_view>& words, VW::io::logger& logger)
+void parse_label(MULTILABEL::labels& ld, VW::label_parser_reuse_mem& reuse_mem,
+    const std::vector<VW::string_view>& words, VW::io::logger& logger)
 {
   switch (words.size())
   {
@@ -95,8 +95,8 @@ label_parser multilabel = {
     [](polylabel& label) { default_label(label.multilabels); },
     // parse_label
     [](polylabel& label, reduction_features& /* red_features */, VW::label_parser_reuse_mem& reuse_mem,
-        const VW::named_labels* /* ldict */,
-        const std::vector<VW::string_view>& words, VW::io::logger& logger) { parse_label(label.multilabels, reuse_mem, words, logger); },
+        const VW::named_labels* /* ldict */, const std::vector<VW::string_view>& words,
+        VW::io::logger& logger) { parse_label(label.multilabels, reuse_mem, words, logger); },
     // cache_label
     [](const polylabel& label, const reduction_features& /* red_features */, io_buf& cache) {
       cache_label(label.multilabels, cache);

@@ -119,8 +119,7 @@ VW::LEARNER::base_learner* multilabel_oaa_setup(VW::setup_base_i& stack_builder)
     auto loss_function_type = all.loss->getType();
     if (loss_function_type != "logistic")
       all.logger.out_warn(
-          "--probabilities should be used only with --loss_function=logistic, currently using: {}",
-          loss_function_type);
+          "--probabilities should be used only with --loss_function=logistic, currently using: {}", loss_function_type);
     // the three boolean template parameters are: is_learn, print_all and scores
     name_addition = "-prob";
   }

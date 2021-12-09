@@ -229,7 +229,8 @@ void cb_explore_adf_base<ExploreType>::output_example(VW::workspace& all, const 
 
   all.sd->update(holdout_example, labeled_example, loss, ec.weight, num_features);
 
-  for (auto& sink : all.final_prediction_sink) ACTION_SCORE::print_action_score(sink.get(), ec.pred.a_s, ec.tag, all.logger);
+  for (auto& sink : all.final_prediction_sink)
+    ACTION_SCORE::print_action_score(sink.get(), ec.pred.a_s, ec.tag, all.logger);
 
   if (all.raw_prediction != nullptr)
   {

@@ -12,7 +12,8 @@
 
 namespace ACTION_SCORE
 {
-void print_action_score(VW::io::writer* f, const v_array<action_score>& a_s, const v_array<char>& tag, VW::io::logger& logger)
+void print_action_score(
+    VW::io::writer* f, const v_array<action_score>& a_s, const v_array<char>& tag, VW::io::logger& logger)
 {
   if (f == nullptr) { return; }
 

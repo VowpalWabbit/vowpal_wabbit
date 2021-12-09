@@ -103,7 +103,7 @@ ACTION_SCORE::action_score convert_to_score(
     const VW::string_view& action_id_str, const VW::string_view& probability_str, VW::io::logger& logger)
 {
   auto action_id = static_cast<uint32_t>(int_of_string(action_id_str, logger));
-  auto probability = float_of_string(probability_str,logger);
+  auto probability = float_of_string(probability_str, logger);
   if (std::isnan(probability)) THROW("error NaN probability: " << probability_str);
 
   if (probability > 1.0)
@@ -150,12 +150,15 @@ CCB::conditional_contextual_bandit_outcome* parse_outcome(VW::string_view outcom
   return &ccb_outcome;
 }
 
-void parse_explicit_inclusions(CCB::label& ld, const std::vector<VW::string_view>& split_inclusions, VW::io::logger& logger)
+void parse_explicit_inclusions(
+    CCB::label& ld, const std::vector<VW::string_view>& split_inclusions, VW::io::logger& logger)
 {
-  for (const auto& inclusion : split_inclusions) { ld.explicit_included_actions.push_back(int_of_string(inclusion, logger)); }
+  for (const auto& inclusion : split_inclusions)
+  { ld.explicit_included_actions.push_back(int_of_string(inclusion, logger)); }
 }
 
-void parse_label(label& ld, VW::label_parser_reuse_mem& reuse_mem, const std::vector<VW::string_view>& words, VW::io::logger& logger)
+void parse_label(
+    label& ld, VW::label_parser_reuse_mem& reuse_mem, const std::vector<VW::string_view>& words, VW::io::logger& logger)
 {
   ld.weight = 1.0;
 
@@ -221,9 +224,8 @@ label_parser ccb_label_parser = {
     [](polylabel& label) { default_label(label.conditional_contextual_bandit); },
     // parse_label
     [](polylabel& label, ::reduction_features& /*red_features*/, VW::label_parser_reuse_mem& reuse_mem,
-        const VW::named_labels* /*ldict*/, const std::vector<VW::string_view>& words, VW::io::logger& logger) {
-      parse_label(label.conditional_contextual_bandit, reuse_mem, words, logger);
-    },
+        const VW::named_labels* /*ldict*/, const std::vector<VW::string_view>& words,
+        VW::io::logger& logger) { parse_label(label.conditional_contextual_bandit, reuse_mem, words, logger); },
     // cache_label
     [](const polylabel& label, const ::reduction_features& /*red_features*/, io_buf& cache) {
       cache_label(label.conditional_contextual_bandit, cache);

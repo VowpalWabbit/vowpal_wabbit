@@ -271,7 +271,9 @@ void reset_source(VW::workspace& all, size_t numbits)
         const auto num_bits_cachefile = cache_numbits(*file);
         if (num_bits_cachefile < numbits)
         {
-          auto message = fmt::format("Num bits in the cache file is less than what was expected. Found '{}' but expected >= {}", num_bits_cachefile, numbits);
+          auto message =
+              fmt::format("Num bits in the cache file is less than what was expected. Found '{}' but expected >= {}",
+                  num_bits_cachefile, numbits);
           THROW(message);
         }
       }
@@ -336,9 +338,7 @@ void parse_cache(VW::workspace& all, std::vector<std::string> cache_files, bool 
       if (c < all.num_bits)
       {
         if (!quiet)
-        {
-          all.logger.err_warn("cache file is ignored as it's made with less bit precision than required.");
-        }
+        { all.logger.err_warn("cache file is ignored as it's made with less bit precision than required."); }
         all.example_parser->input.close_file();
         make_write_cache(all, file, quiet);
       }
@@ -497,8 +497,7 @@ void enable_sources(VW::workspace& all, bool quiet, size_t passes, input_options
         // If the child failed we still fork off another one, but log the issue.
         if (status != 0)
         {
-          all.logger.err_warn(
-              "Daemon child process received exited with non-zero exit code: {}. Ignoring.", status);
+          all.logger.err_warn("Daemon child process received exited with non-zero exit code: {}. Ignoring.", status);
         }
 
         if (got_sigterm)
@@ -596,10 +595,7 @@ void enable_sources(VW::workspace& all, bool quiet, size_t passes, input_options
       catch (std::exception const&)
       {
         // when trying to fix this exception, consider that an empty filename_to_read is valid if all.stdin_off is false
-        if (!filename_to_read.empty())
-        {
-          all.logger.err_error("can't open '{}', sailing on", filename_to_read);
-        }
+        if (!filename_to_read.empty()) { all.logger.err_error("can't open '{}', sailing on", filename_to_read); }
         else
         {
           throw;
@@ -610,8 +606,9 @@ void enable_sources(VW::workspace& all, bool quiet, size_t passes, input_options
       {
         if (!input_options.chain_hash_json)
         {
-          all.logger.err_warn("Old string feature value behavior is deprecated in JSON/DSJSON and will be removed in a "
-                 "future version. Use `--chain_hash` to use new behavior and silence this warning.");
+          all.logger.err_warn(
+              "Old string feature value behavior is deprecated in JSON/DSJSON and will be removed in a "
+              "future version. Use `--chain_hash` to use new behavior and silence this warning.");
         }
         set_json_reader(all, input_options.dsjson);
       }

@@ -170,8 +170,8 @@ label_parser cs_label = {
     [](polylabel& label) { default_label(label.cs); },
     // parse_label
     [](polylabel& label, reduction_features& /* red_features */, VW::label_parser_reuse_mem& reuse_mem,
-        const VW::named_labels* ldict,
-        const std::vector<VW::string_view>& words, VW::io::logger& logger) { parse_label(label.cs, reuse_mem, ldict, words, logger); },
+        const VW::named_labels* ldict, const std::vector<VW::string_view>& words,
+        VW::io::logger& logger) { parse_label(label.cs, reuse_mem, ldict, words, logger); },
     // cache_label
     [](const polylabel& label, const reduction_features& /* red_features */, io_buf& cache) {
       cache_label(label.cs, cache);
@@ -261,7 +261,8 @@ void output_example(
 
   for (auto& sink : all.final_prediction_sink)
   {
-    if (!all.sd->ldict) { all.print_by_ref(sink.get(), static_cast<float>(multiclass_prediction), 0, ec.tag, all.logger); }
+    if (!all.sd->ldict)
+    { all.print_by_ref(sink.get(), static_cast<float>(multiclass_prediction), 0, ec.tag, all.logger); }
     else
     {
       VW::string_view sv_pred = all.sd->ldict->get(multiclass_prediction);

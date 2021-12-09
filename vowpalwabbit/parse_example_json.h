@@ -1590,7 +1590,7 @@ public:
     _chain_hash = chain_hash;
     _reuse_mem = reuse_mem;
     _ldict = ldict;
-    _logger=logger;
+    _logger = logger;
 
     key = " ";
     key_length = 1;
@@ -1798,8 +1798,8 @@ bool read_line_decision_service_json(VW::workspace& all, v_array<example*>& exam
 
   VWReaderHandler<audit>& handler = parser.handler;
   handler.init(all.example_parser->lbl_parser, all.example_parser->hasher, all.hash_seed, all.parse_mask,
-      all.chain_hash_json, &all.example_parser->parser_memory_to_reuse, all.sd->ldict.get(), &all.logger, &examples, &ss,
-      line + length, example_factory, ex_factory_context);
+      all.chain_hash_json, &all.example_parser->parser_memory_to_reuse, all.sd->ldict.get(), &all.logger, &examples,
+      &ss, line + length, example_factory, ex_factory_context);
 
   handler.ctx.SetStartStateToDecisionService(data);
   handler.ctx.decision_service_data = data;

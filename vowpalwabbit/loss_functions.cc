@@ -123,6 +123,7 @@ public:
 class hingeloss : public loss_function
 {
   VW::io::logger logger;
+
 public:
   explicit hingeloss(VW::io::logger logger) : logger(logger) {}
 
@@ -168,6 +169,7 @@ public:
 class logloss : public loss_function
 {
   VW::io::logger logger;
+
 public:
   explicit logloss(VW::io::logger logger) : logger(logger) {}
 
@@ -316,6 +318,7 @@ public:
 class poisson_loss : public loss_function
 {
   VW::io::logger logger;
+
 public:
   explicit poisson_loss(VW::io::logger logger) : logger(logger) {}
 
@@ -323,10 +326,7 @@ public:
 
   float getLoss(shared_data*, float prediction, float label) override
   {
-    if (label < 0.f)
-    {
-      logger.out_warn("The poisson loss function expects a label >= 0 but received '{}'.", label);
-    }
+    if (label < 0.f) { logger.out_warn("The poisson loss function expects a label >= 0 but received '{}'.", label); }
     float exp_prediction = expf(prediction);
     // deviance is used instead of log-likelihood
     return 2 * (label * (logf(label + 1e-6f) - prediction) - (label - exp_prediction));

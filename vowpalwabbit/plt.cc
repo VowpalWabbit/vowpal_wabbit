@@ -107,8 +107,8 @@ void learn(plt& p, single_learner& base, example& ec)
       }
     }
     if (multilabels.label_v.back() >= p.k)
-      p.all->logger.out_error("label {0} is not in {{0,{1}}} This won't work right.",
-                        multilabels.label_v.back(), p.k - 1);
+      p.all->logger.out_error(
+          "label {0} is not in {{0,{1}}} This won't work right.", multilabels.label_v.back(), p.k - 1);
 
     for (auto& n : p.positive_nodes)
     {

@@ -1377,7 +1377,8 @@ BOOST_PYTHON_MODULE(pylibvw)
       .def("output", &search_output, "Add a string to the coutput (should only do if should_output returns True)")
       .def("get_num_actions", &search_get_num_actions, "Return the total number of actions search was initialized with")
       .def("set_structured_predict_hook", &set_structured_predict_hook,
-          "Set the hook (function pointer) that search should use for structured prediction (This is rarely called by the end user. It is used internally.)")
+          "Set the hook (function pointer) that search should use for structured prediction (This is rarely called by "
+          "the end user. It is used internally.)")
       .def("set_force_oracle", &set_force_oracle, "For oracle decoding when .predict is run")
       .def("is_ldf", &Search::search::is_ldf, "check whether this search task is running in LDF mode")
 

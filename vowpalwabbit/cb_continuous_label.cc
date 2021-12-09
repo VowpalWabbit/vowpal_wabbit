@@ -47,9 +47,9 @@ void parse_pdf(const std::vector<VW::string_view>& words, size_t words_index, VW
     tokenize(':', words[i], reuse_mem.tokens);
     if (reuse_mem.tokens.empty() || reuse_mem.tokens.size() < 3) { continue; }
     VW::continuous_actions::pdf_segment seg;
-    seg.left = float_of_string(reuse_mem.tokens[0],logger);
-    seg.right = float_of_string(reuse_mem.tokens[1],logger);
-    seg.pdf_value = float_of_string(reuse_mem.tokens[2],logger);
+    seg.left = float_of_string(reuse_mem.tokens[0], logger);
+    seg.right = float_of_string(reuse_mem.tokens[1], logger);
+    seg.pdf_value = float_of_string(reuse_mem.tokens[2], logger);
     cats_reduction_features.pdf.push_back(seg);
   }
   if (!VW::continuous_actions::is_valid_pdf(cats_reduction_features.pdf)) { cats_reduction_features.pdf.clear(); }
@@ -128,8 +128,8 @@ label_parser the_label_parser = {
     [](polylabel& label) { CB::default_label<continuous_label>(label.cb_cont); },
     // parse_label
     [](polylabel& label, reduction_features& red_features, VW::label_parser_reuse_mem& reuse_mem,
-        const VW::named_labels* /*ldict*/,
-        const std::vector<VW::string_view>& words, VW::io::logger& logger) { parse_label(label.cb_cont, red_features, reuse_mem, words, logger); },
+        const VW::named_labels* /*ldict*/, const std::vector<VW::string_view>& words,
+        VW::io::logger& logger) { parse_label(label.cb_cont, red_features, reuse_mem, words, logger); },
     // cache_label
     [](const polylabel& label, const reduction_features& /*red_features*/, io_buf& cache) {
       CB::cache_label<continuous_label, continuous_label_elm>(label.cb_cont, cache);

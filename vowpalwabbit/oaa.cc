@@ -115,7 +115,8 @@ void learn(oaa& o, VW::LEARNER::single_learner& base, example& ec)
   }
   else if (o.indexing == 1 && (mc_label_data.label < 1 || mc_label_data.label > o.k))
   {
-    o.all->logger.out_warn("label {0} is not in {{1,{1}}}. This won't work for 1-indexed actions.", mc_label_data.label, o.k);
+    o.all->logger.out_warn(
+        "label {0} is not in {{1,{1}}}. This won't work for 1-indexed actions.", mc_label_data.label, o.k);
     ec.l.multi.label = static_cast<uint32_t>(o.k);
   }
 

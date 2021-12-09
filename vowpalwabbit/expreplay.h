@@ -108,8 +108,8 @@ VW::LEARNER::base_learner* expreplay_setup(VW::setup_base_i& stack_builder)
   er->filled = calloc_or_throw<bool>(er->N);
 
   if (!all.quiet)
-    *(all.driver_output) << "experience replay level=" << er_level << ", buffer=" << er->N << ", replay count=" << er->replay_count
-              << std::endl;
+    *(all.driver_output) << "experience replay level=" << er_level << ", buffer=" << er->N
+                         << ", replay count=" << er->replay_count << std::endl;
 
   er->base = VW::LEARNER::as_singleline(stack_builder.setup_base_learner());
   auto* l = VW::LEARNER::make_reduction_learner(std::move(er), er->base, learn<lp>, predict<lp>, replay_string)

@@ -355,14 +355,14 @@ public:
       _cur_channel_v = parseFloat(sv.begin(), end_read, sv.end());
       if (end_read + _read_idx >= _line.size())
       {
-        parserWarning(
-            "malformed example! Float expected after : \"", _line.substr(0, _read_idx), "\"", _ae->example_counter, *logger);
+        parserWarning("malformed example! Float expected after : \"", _line.substr(0, _read_idx), "\"",
+            _ae->example_counter, *logger);
       }
       if (std::isnan(_cur_channel_v))
       {
         _cur_channel_v = 1.f;
-        parserWarning("Invalid namespace value:\"", _line.substr(_read_idx),
-            "\" read as NaN. Replacing with 1.", _ae->example_counter, *logger);
+        parserWarning("Invalid namespace value:\"", _line.substr(_read_idx), "\" read as NaN. Replacing with 1.",
+            _ae->example_counter, *logger);
       }
       _read_idx += end_read;
     }
@@ -380,8 +380,8 @@ public:
         _line[_read_idx] == ':' || _line[_read_idx] == '\r')
     {
       // syntax error
-      parserWarning(
-          "malformed example! String expected after : \"", _line.substr(0, _read_idx), "\"", _ae->example_counter, *logger);
+      parserWarning("malformed example! String expected after : \"", _line.substr(0, _read_idx), "\"",
+          _ae->example_counter, *logger);
     }
     else
     {
@@ -467,8 +467,8 @@ public:
     if (_read_idx < _line.size() && _line[_read_idx] != '\r')
     {
       // syntax error
-      parserWarning(
-          "malformed example! '|' or EOL expected after : \"", _line.substr(0, _read_idx), "\"", _ae->example_counter, *logger);
+      parserWarning("malformed example! '|' or EOL expected after : \"", _line.substr(0, _read_idx), "\"",
+          _ae->example_counter, *logger);
     }
   }
 

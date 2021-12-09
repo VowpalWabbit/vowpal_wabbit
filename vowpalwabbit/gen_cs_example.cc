@@ -17,7 +17,6 @@ using namespace VW::LEARNER;
 using namespace CB_ALGS;
 using namespace CB;
 
-
 float safe_probability(float prob, VW::io::logger& logger)
 {
   if (prob <= 0.)
@@ -30,7 +29,8 @@ float safe_probability(float prob, VW::io::logger& logger)
 }
 
 // Multiline version
-void gen_cs_example_ips(const multi_ex& examples, COST_SENSITIVE::label& cs_labels, VW::io::logger& logger, float clip_p)
+void gen_cs_example_ips(
+    const multi_ex& examples, COST_SENSITIVE::label& cs_labels, VW::io::logger& logger, float clip_p)
 {
   cs_labels.costs.clear();
   for (uint32_t i = 0; i < examples.size(); i++)
@@ -70,7 +70,8 @@ void gen_cs_test_example(const multi_ex& examples, COST_SENSITIVE::label& cs_lab
 }
 
 // single line version
-void gen_cs_example_ips(cb_to_cs& c, const CB::label& ld, COST_SENSITIVE::label& cs_ld, VW::io::logger& logger, float clip_p)
+void gen_cs_example_ips(
+    cb_to_cs& c, const CB::label& ld, COST_SENSITIVE::label& cs_ld, VW::io::logger& logger, float clip_p)
 {
   // this implements the inverse propensity score method, where cost are importance weighted by the probability of the
   // chosen action generate cost-sensitive example

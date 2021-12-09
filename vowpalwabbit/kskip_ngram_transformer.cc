@@ -43,7 +43,7 @@ void add_grams(
 }
 
 void compile_gram(const std::vector<std::string>& grams, std::array<uint32_t, NUM_NAMESPACES>& dest,
-      const std::string& descriptor, bool /*quiet*/, VW::io::logger& logger)
+    const std::string& descriptor, bool /*quiet*/, VW::io::logger& logger)
 {
   for (const auto& gram : grams)
   {

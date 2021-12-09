@@ -247,8 +247,8 @@ void unsubtract_example(example* ec, VW::io::logger& logger)
   if (ec->indices.back() != wap_ldf_namespace)
   {
     logger.err_error(
-      "Internal error (bug): trying to unsubtract_example, but either it wasn't added, or something was added "
-      "after and not removed");
+        "Internal error (bug): trying to unsubtract_example, but either it wasn't added, or something was added "
+        "after and not removed");
     return;
   }
 
@@ -632,8 +632,8 @@ void output_example(VW::workspace& all, const example& ec, bool& hit_loss, const
   }
 
   for (auto& sink : all.final_prediction_sink)
-    all.print_by_ref(
-        sink.get(), data.is_probabilities ? ec.pred.prob : static_cast<float>(ec.pred.multiclass), 0, ec.tag, all.logger);
+    all.print_by_ref(sink.get(), data.is_probabilities ? ec.pred.prob : static_cast<float>(ec.pred.multiclass), 0,
+        ec.tag, all.logger);
 
   if (all.raw_prediction != nullptr)
   {
@@ -681,7 +681,8 @@ void output_rank_example(VW::workspace& all, example& head_ec, bool& hit_loss, m
     assert(loss >= 0);
   }
 
-  for (auto& sink : all.final_prediction_sink) print_action_score(sink.get(), head_ec.pred.a_s, head_ec.tag, all.logger);
+  for (auto& sink : all.final_prediction_sink)
+    print_action_score(sink.get(), head_ec.pred.a_s, head_ec.tag, all.logger);
 
   if (all.raw_prediction != nullptr)
   {
@@ -897,8 +898,7 @@ base_learner* csldf_setup(VW::setup_base_i& stack_builder)
     if (loss_function_type != "logistic")
     {
       all.logger.out_warn(
-          "--probabilities should be used only with --loss_function=logistic, currently using: {}",
-          loss_function_type);
+          "--probabilities should be used only with --loss_function=logistic, currently using: {}", loss_function_type);
     }
     if (!ld->treat_as_classifier)
     { all.logger.out_warn("--probabilities should be used with --csoaa_ldf=mc (or --oaa, --multilabel_oaa)"); }

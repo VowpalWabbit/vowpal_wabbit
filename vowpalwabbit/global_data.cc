@@ -210,7 +210,8 @@ void workspace::finish_example(multi_ex& ec)
 }
 }  // namespace VW
 
-void compile_limits(std::vector<std::string> limits, std::array<uint32_t, NUM_NAMESPACES>& dest, bool /*quiet*/, VW::io::logger& logger)
+void compile_limits(
+    std::vector<std::string> limits, std::array<uint32_t, NUM_NAMESPACES>& dest, bool /*quiet*/, VW::io::logger& logger)
 {
   for (size_t i = 0; i < limits.size(); i++)
   {

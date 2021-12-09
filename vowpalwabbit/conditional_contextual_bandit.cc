@@ -610,9 +610,7 @@ void output_example(VW::workspace& all, ccb& c, const multi_ex& ec_seq)
   }
 
   if (num_labeled > 0 && num_labeled < c.slots.size())
-  {
-    all.logger.err_warn("Unlabeled example in train set, was this intentional?");
-  }
+  { all.logger.err_warn("Unlabeled example in train set, was this intentional?"); }
 
   bool holdout_example = num_labeled > 0;
   for (const auto& example : ec_seq) { holdout_example &= example->test_only; }

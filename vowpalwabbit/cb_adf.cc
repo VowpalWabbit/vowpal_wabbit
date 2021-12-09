@@ -333,7 +333,8 @@ void cb_adf::predict(multi_learner& base, multi_ex& ec_seq)
   cs_ldf_learn_or_predict<false>(base, ec_seq, _cb_labels, _cs_labels, _prepped_cs_labels, false, _offset);
 }
 
-void global_print_newline(const std::vector<std::unique_ptr<VW::io::writer>>& final_prediction_sink, VW::io::logger& logger)
+void global_print_newline(
+    const std::vector<std::unique_ptr<VW::io::writer>>& final_prediction_sink, VW::io::logger& logger)
 {
   char temp[1];
   temp[0] = '\n';
@@ -374,7 +375,8 @@ void output_example(VW::workspace& all, cb_adf& c, const example& ec, const mult
   bool labeled_example = c.update_statistics(ec, ec_seq);
 
   uint32_t action = ec.pred.a_s[0].action;
-  for (auto& sink : all.final_prediction_sink) { all.print_by_ref(sink.get(), static_cast<float>(action), 0, ec.tag, all.logger); }
+  for (auto& sink : all.final_prediction_sink)
+  { all.print_by_ref(sink.get(), static_cast<float>(action), 0, ec.tag, all.logger); }
 
   if (all.raw_prediction != nullptr)
   {
@@ -433,7 +435,8 @@ void output_example_seq(VW::workspace& all, cb_adf& data, const multi_ex& ec_seq
     {
       output_example(all, data, *ec_seq.front(), ec_seq);
 
-      if (all.raw_prediction != nullptr) all.print_text_by_ref(all.raw_prediction.get(), "", ec_seq[0]->tag, all.logger);
+      if (all.raw_prediction != nullptr)
+        all.print_text_by_ref(all.raw_prediction.get(), "", ec_seq[0]->tag, all.logger);
     }
   }
 }
@@ -537,9 +540,7 @@ base_learner* cb_adf_setup(VW::setup_base_i& stack_builder)
   }
 
   if (clip_p > 0.f && cb_type == VW::cb_type_t::sm)
-  {
-    all.logger.err_warn("Clipping probability not yet implemented for cb_type sm; p will not be clipped.");
-  }
+  { all.logger.err_warn("Clipping probability not yet implemented for cb_type sm; p will not be clipped."); }
 
   // Push necessary flags.
   if ((!options.was_supplied("csoaa_ldf") && !options.was_supplied("wap_ldf")) || rank_all ||
