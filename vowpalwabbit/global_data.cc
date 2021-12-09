@@ -310,6 +310,7 @@ workspace::workspace(VW::io::logger logger) : options(nullptr, nullptr), logger(
 
   add_constant = true;
   audit = false;
+  audit_writer = VW::io::open_stdout();
 
   pass_length = std::numeric_limits<size_t>::max();
   passes_complete = 0;

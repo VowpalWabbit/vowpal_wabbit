@@ -13,6 +13,7 @@
 #include "parse_args.h"
 #include "vw.h"
 #include "memory.h"
+#include "io/io_adapter.h"
 
 // This interface now provides "wide" functions for compatibility with .NET interop
 // The default functions assume a wide (16 bit char pointer) that is converted to a utf8-string and passed to
@@ -390,5 +391,29 @@ VW_DLL_PUBLIC void VW_CALLING_CONV VW_CopyModelData(
 VW_DLL_PUBLIC void VW_CALLING_CONV VW_FreeIOBuf(VW_IOBUF bufferHandle)
 {
   delete static_cast<buffer_holder*>(bufferHandle);
+}
+
+VW_DLL_PUBLIC void VW_CALLING_CONV VW_CaptureAuditData(VW_HANDLE handle) {
+  auto* all = static_cast<VW::workspace*>(handle);
+  all->audit_buffer = std::make_shared<std::vector<char>>();
+  all->audit_writer = VW::io::create_vector_writer(all->audit_buffer);
+}
+
+VW_DLL_PUBLIC void VW_CALLING_CONV VW_ClearCapturedAuditData(VW_HANDLE handle) {
+  auto* all = static_cast<VW::workspace*>(handle);
+  all->audit_buffer->clear();
+}
+
+VW_DLL_PUBLIC char* VW_CALLING_CONV VW_GetAuditDataA(VW_HANDLE handle, size_t* size) {
+  auto* all = static_cast<VW::workspace*>(handle);
+  const auto buffer_size = all->audit_buffer->size();
+  *size = buffer_size;
+  char* data = new char[buffer_size];
+  memcpy(data, all->audit_buffer->data(), buffer_size);
+  return data;
+}
+
+VW_DLL_PUBLIC void VW_CALLING_CONV VW_FreeAuditDataA(VW_HANDLE handle, char* data) {
+  delete[] data;
 }
 }
