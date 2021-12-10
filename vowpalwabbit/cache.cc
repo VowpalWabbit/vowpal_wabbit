@@ -124,7 +124,7 @@ size_t read_index_and_cached_features(io_buf& input, unsigned char& index, featu
     }
     uint64_t diff = i >> 2;
     int64_t s_diff = ZigZagDecode(diff);
-    //if (s_diff < 0) ae->sorted = false;
+    // if (s_diff < 0) ae->sorted = false;
     i = last + s_diff;
     last = i;
     ours.push_back(v, i);
