@@ -93,7 +93,6 @@ void predict_or_learn_active(active& a, single_learner& base, example& ec)
     // the opposite of what was predicted. 0 and 1 are used for the expected min
     // and max labels to be coming in from the active interactor.
     ec.l.simple.label = (ec.pred.scalar >= threshold) ? a._min_seen_label : a._max_seen_label;
-    std::cout << a._min_seen_label << std::endl;
     ec.confidence = std::abs(ec.pred.scalar - threshold) / base.sensitivity(ec);
     ec.l.simple.label = FLT_MAX;
   }
