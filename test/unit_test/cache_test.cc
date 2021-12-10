@@ -26,8 +26,10 @@ BOOST_AUTO_TEST_CASE(write_and_read_features_from_cache)
   io_buf io_reader;
   io_reader.add_file(VW::io::create_buffer_view(backing_vector->data(), backing_vector->size()));
 
+  v_array<example*> examples;
   example dest_ex;
-  VW::read_example_from_cache(io_reader, &dest_ex, vw.example_parser->lbl_parser, vw.example_parser->sorted_cache);
+  examples.push_back(&dest_ex);
+  VW::read_example_from_cache(&vw, io_reader, examples);
 
   BOOST_CHECK_EQUAL(dest_ex.indices.size(), 2);
   BOOST_CHECK_EQUAL(dest_ex.feature_space['n'].size(), 3);

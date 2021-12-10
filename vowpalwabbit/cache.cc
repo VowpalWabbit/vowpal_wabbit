@@ -79,11 +79,38 @@ void VW::write_example_to_cache(io_buf& output, example* ae, label_parser& lbl_p
   output.bin_write_fixed(temp_buffer._backing_buffer->data(), temp_buffer._backing_buffer->size());
 }
 
-int VW::read_example_from_cache(io_buf& input, example* ae, label_parser& lbl_parser, bool sorted_cache)
+void read_cached_features(char*& c, char*& end, features& ours, example* ae)
 {
-  // Unused for now.
+  uint64_t last = 0;
+
+  for (; c != end;)
+  {
+    feature_index i = 0;
+    c = run_len_decode(c, i);
+    feature_value v = 1.f;
+    if (i & neg_1)
+      v = -1.;
+    else if (i & general)
+    {
+      v = (reinterpret_cast<one_float*>(c))->f;
+      c += sizeof(float);
+    }
+    uint64_t diff = i >> 2;
+    int64_t s_diff = ZigZagDecode(diff);
+    if (s_diff < 0) ae->sorted = false;
+    i = last + s_diff;
+    last = i;
+    ours.push_back(v, i);
+  }
+}
+
+int VW::read_example_from_cache(VW::workspace* all, io_buf& input, v_array<example*>& examples)
+{
   uint64_t size;
   char* read_ptr;
+  example* ae = examples[0];
+  label_parser& lbl_parser = all->example_parser->lbl_parser;
+  bool sorted_cache = all->example_parser->sorted_cache;
   if (input.buf_read(read_ptr, sizeof(size)) < sizeof(size)) { return 0; }
   memcpy(&size, read_ptr, sizeof(size));
 
@@ -129,37 +156,11 @@ int VW::read_example_from_cache(io_buf& input, example* ae, label_parser& lbl_pa
 
     char* end = c + storage;
 
-    uint64_t last = 0;
-
-    for (; c != end;)
-    {
-      feature_index i = 0;
-      c = run_len_decode(c, i);
-      feature_value v = 1.f;
-      if (i & neg_1)
-        v = -1.;
-      else if (i & general)
-      {
-        v = (reinterpret_cast<one_float*>(c))->f;
-        c += sizeof(float);
-      }
-      uint64_t diff = i >> 2;
-      int64_t s_diff = ZigZagDecode(diff);
-      if (s_diff < 0) ae->sorted = false;
-      i = last + s_diff;
-      last = i;
-      ours.push_back(v, i);
-    }
+    read_cached_features(c, end, ours, ae);
     input.set(c);
   }
 
   return static_cast<int>(total);
-}
-
-int read_cached_features(VW::workspace* all, io_buf& buf, v_array<example*>& examples)
-{
-  return VW::read_example_from_cache(
-      buf, examples[0], all->example_parser->lbl_parser, all->example_parser->sorted_cache);
 }
 
 inline uint64_t ZigZagEncode(int64_t n)

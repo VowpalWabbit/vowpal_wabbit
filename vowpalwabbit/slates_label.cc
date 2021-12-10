@@ -20,7 +20,7 @@ void default_label(slates::label& v);
 
 size_t read_cached_label(slates::label& ld, io_buf& cache)
 {
-  // Since read_cached_features doesn't default the label we must do it here.
+  // Since read_example_from_cache doesn't default the label we must do it here.
   default_label(ld);
 
   size_t read_count = 0;

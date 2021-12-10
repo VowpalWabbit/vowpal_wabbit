@@ -39,7 +39,7 @@ void default_label(label& ld);
 
 size_t read_cached_label(label& ld, io_buf& cache)
 {
-  // Since read_cached_features doesn't default the label we must do it here.
+  // Since read_example_from_cache doesn't default the label we must do it here.
   default_label(ld);
 
   if (ld.outcome != nullptr) { ld.outcome->probabilities.clear(); }
