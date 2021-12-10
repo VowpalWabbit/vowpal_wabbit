@@ -83,20 +83,22 @@ void VW::write_example_to_cache(io_buf& output, example* ae, label_parser& lbl_p
   output.bin_write_fixed(temp_buffer._backing_buffer->data(), temp_buffer._backing_buffer->size());
 }
 
-std::pair<size_t, bool> read_cached_index_and_features(io_buf& input, unsigned char& index, features& ours)
+size_t read_cached_index(io_buf& input, unsigned char& index, char*& c)
 {
-  size_t total = 0;
-  char* c;
   size_t temp;
-  bool sorted = true;
   if ((temp = input.buf_read(c, sizeof(index) + sizeof(size_t))) < sizeof(index) + sizeof(size_t))
   {
     VW::io::logger::errlog_error("truncated example! {} {} ", temp, char_size + sizeof(size_t));
-    return std::make_pair(total, sorted);
+    return 0;
   }
-
   index = *reinterpret_cast<unsigned char*>(c);
-  c += sizeof(index);
+  return sizeof(index);
+}
+
+size_t read_cached_features(io_buf& input, features& ours, bool& sorted, char*& c)
+{
+  size_t total = 0;
+  c += sizeof(unsigned char);
 
   size_t storage = *reinterpret_cast<size_t*>(c);
   c += sizeof(size_t);
@@ -105,7 +107,7 @@ std::pair<size_t, bool> read_cached_index_and_features(io_buf& input, unsigned c
   if (input.buf_read(c, storage) < storage)
   {
     VW::io::logger::errlog_error("truncated example! wanted: {} bytes ", storage);
-    return std::make_pair(total, sorted);
+    return total;
   }
 
   char* end = c + storage;
@@ -131,7 +133,7 @@ std::pair<size_t, bool> read_cached_index_and_features(io_buf& input, unsigned c
     ours.push_back(v, i);
   }
   input.set(c);
-  return std::make_pair(total, sorted);
+  return total;
 }
 
 int VW::read_example_from_cache(VW::workspace* all, io_buf& input, v_array<example*>& examples)
@@ -140,11 +142,10 @@ int VW::read_example_from_cache(VW::workspace* all, io_buf& input, v_array<examp
   char* read_ptr;
   example* ae = examples[0];
   label_parser& lbl_parser = all->example_parser->lbl_parser;
-  bool sorted_cache = all->example_parser->sorted_cache;
   if (input.buf_read(read_ptr, sizeof(size)) < sizeof(size)) { return 0; }
   memcpy(&size, read_ptr, sizeof(size));
 
-  ae->sorted = sorted_cache;
+  ae->sorted = all->example_parser->sorted_cache;
   size_t total = lbl_parser.read_cached_label(ae->l, ae->_reduction_features, input);
   if (total == 0) { return 0; }
   if (read_cached_tag(input, ae) == 0) { return 0; }
@@ -159,13 +160,13 @@ int VW::read_example_from_cache(VW::workspace* all, io_buf& input, v_array<examp
   unsigned char num_indices = input.read_value<unsigned char>("num_indices");
   for (; num_indices > 0; num_indices--)
   {
-    unsigned char index;
-    features ours;
-    std::pair<size_t, bool> feat_size_and_sorted = read_cached_index_and_features(input, index, ours);
-    total += feat_size_and_sorted.first;
-    ae->sorted = feat_size_and_sorted.second;
+    unsigned char index = 0;
+    char* c;
+    total += read_cached_index(input, index, c);
     ae->indices.push_back(static_cast<size_t>(index));
-    std::swap(ours, ae->feature_space[index]);
+    bool sorted = true;
+    total += read_cached_features(input, ae->feature_space[index], sorted, c);
+    ae->sorted = sorted;
   }
 
   return static_cast<int>(total);
