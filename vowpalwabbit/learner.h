@@ -7,6 +7,19 @@
 #include <iostream>
 #include <memory>
 
+#ifdef _WIN32
+#  pragma warning(push)
+#  pragma warning(disable : 4635)
+// Warnings emitted from this header are unrelated to this project.
+//     format.h(3525): warning C4635: XML document comment applied to
+//     'fmt.v7.format_system_error(fmt.v7.detail.buffer<System.SByte!System.Runtime.CompilerServices.IsSignUnspecifiedByte>*!System.Runtime.CompilerServices.IsImplicitlyDereferenced,System.Int32,fmt.v7.basic_string_view<System.SByte!System.Runtime.CompilerServices.IsSignUnspecifiedByte>)':
+//     badly-formed XML: Invalid at the top level of the document.
+#endif
+#include "fmt/format.h"
+#ifdef _WIN32
+#  pragma warning(pop)
+#endif
+
 #include "memory.h"
 #include "multiclass.h"
 #include "simple_label.h"
@@ -18,7 +31,6 @@
 
 #include "future_compat.h"
 #include "example.h"
-#include <memory>
 #include "scope_exit.h"
 #include "metric_sink.h"
 
@@ -450,28 +462,29 @@ public:
   label_type_t get_output_label_type() { return _output_label_type; }
   label_type_t get_input_label_type() { return _input_label_type; }
   bool is_multiline() { return _is_multiline; }
+  const std::string& get_name() { return name; }
 };
 
 template <class T, class E>
 base_learner* make_base(learner<T, E>& base)
 {
-  return (base_learner*)(&base);
+  return reinterpret_cast<base_learner*>(&base);
 }
 
 template <class T, class E>
 multi_learner* as_multiline(learner<T, E>* l)
 {
-  if (l->is_multiline())  // Tried to use a singleline reduction as a multiline reduction
-    return (multi_learner*)(l);
-  THROW("Tried to use a singleline reduction as a multiline reduction");
+  if (l->is_multiline()) { return reinterpret_cast<multi_learner*>(l); }
+  auto message = fmt::format("Tried to use a singleline reduction as a multiline reduction Name: {}", l->get_name());
+  THROW(message);
 }
 
 template <class T, class E>
 single_learner* as_singleline(learner<T, E>* l)
 {
-  if (!l->is_multiline())  // Tried to use a multiline reduction as a singleline reduction
-    return (single_learner*)(l);
-  THROW("Tried to use a multiline reduction as a singleline reduction");
+  if (!l->is_multiline()) { return reinterpret_cast<single_learner*>(l); }
+  auto message = fmt::format("Tried to use a multiline reduction as a singleline reduction. Name: {}", l->get_name());
+  THROW(message);
 }
 
 template <bool is_learn>
