@@ -2674,7 +2674,7 @@
   {
     "id": 226,
     "desc": "cats train",
-    "vw_command": "--cats 4 --min_value=185 --max_value=23959 --bandwidth 3000 -d train-sets/cats.acpx --passes 1 -b 18 --coin --loss_option 1 -f cats.model --predict_only_model",
+    "vw_command": "--cats 4 --min_value=185 --max_value=23959 --bandwidth 3000 -d train-sets/cats.acpx --passes 1 -b 18 --coin -f cats.model --predict_only_model",
     "diff_files": {
       "stderr": "train-sets/ref/cats-train.stderr"
     },
@@ -2701,7 +2701,7 @@
   {
     "id": 228,
     "desc": "cats-pdf train",
-    "vw_command": "--cats_pdf 4 --min_value=185 --max_value=23959 --bandwidth 2000 -d train-sets/cats.acpx --passes 1 -b 18 --coin --loss_option 1 -f cats-pdf.model --predict_only_model",
+    "vw_command": "--cats_pdf 4 --min_value=185 --max_value=23959 --bandwidth 2000 -d train-sets/cats.acpx --passes 1 -b 18 --coin -f cats-pdf.model --predict_only_model",
     "diff_files": {
       "stderr": "train-sets/ref/cats-pdf-train.stderr"
     },
