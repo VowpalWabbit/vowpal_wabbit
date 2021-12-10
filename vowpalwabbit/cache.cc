@@ -71,16 +71,43 @@ void VW::write_example_to_cache(io_buf& output, example* ae, label_parser& lbl_p
 {
   temp_buffer._backing_buffer->clear();
   lbl_parser.cache_label(ae->l, ae->_reduction_features, temp_buffer._temporary_cache_buffer);
-  cache_features(temp_buffer._temporary_cache_buffer, ae, parse_mask);
-  temp_buffer._temporary_cache_buffer.flush();
+  cache_tag(temp_buffer._temporary_cache_buffer, ae->tag);
+  io_buf& temp_cache = temp_buffer._temporary_cache_buffer;
+  temp_cache.write_value<unsigned char>(ae->is_newline ? newline_example : non_newline_example);
+  temp_cache.write_value<unsigned char>(static_cast<unsigned char>(ae->indices.size()));
+  for (namespace_index ns : ae->indices) cache_index_and_features(temp_cache, ns, ae->feature_space[ns], parse_mask);
+  temp_cache.flush();
 
   uint64_t example_size = temp_buffer._backing_buffer->size();
   output.write_value(example_size);
   output.bin_write_fixed(temp_buffer._backing_buffer->data(), temp_buffer._backing_buffer->size());
 }
 
-void read_cached_features(char*& c, char*& end, features& ours, example* ae)
+size_t read_index_and_cached_features(io_buf& input, unsigned char& index, features& ours)
 {
+  size_t total = 0;
+  char* c;
+  size_t temp;
+  if ((temp = input.buf_read(c, sizeof(index) + sizeof(size_t))) < sizeof(index) + sizeof(size_t))
+  {
+    VW::io::logger::errlog_error("truncated example! {} {} ", temp, char_size + sizeof(size_t));
+    return 0;
+  }
+
+  index = *reinterpret_cast<unsigned char*>(c);
+  c += sizeof(index);
+
+  size_t storage = *reinterpret_cast<size_t*>(c);
+  c += sizeof(size_t);
+  input.set(c);
+  total += storage;
+  if (input.buf_read(c, storage) < storage)
+  {
+    VW::io::logger::errlog_error("truncated example! wanted: {} bytes ", storage);
+    return 0;
+  }
+
+  char* end = c + storage;
   uint64_t last = 0;
 
   for (; c != end;)
@@ -97,11 +124,13 @@ void read_cached_features(char*& c, char*& end, features& ours, example* ae)
     }
     uint64_t diff = i >> 2;
     int64_t s_diff = ZigZagDecode(diff);
-    if (s_diff < 0) ae->sorted = false;
+    //if (s_diff < 0) ae->sorted = false;
     i = last + s_diff;
     last = i;
     ours.push_back(v, i);
   }
+  input.set(c);
+  return total;
 }
 
 int VW::read_example_from_cache(VW::workspace* all, io_buf& input, v_array<example*>& examples)
@@ -127,37 +156,13 @@ int VW::read_example_from_cache(VW::workspace* all, io_buf& input, v_array<examp
 
   // read indices
   unsigned char num_indices = input.read_value<unsigned char>("num_indices");
-
-  char* c;
   for (; num_indices > 0; num_indices--)
   {
-    size_t temp;
-    unsigned char index = 0;
-    if ((temp = input.buf_read(c, sizeof(index) + sizeof(size_t))) < sizeof(index) + sizeof(size_t))
-    {
-      VW::io::logger::errlog_error("truncated example! {} {} ", temp, char_size + sizeof(size_t));
-      return 0;
-    }
-
-    index = *reinterpret_cast<unsigned char*>(c);
-    c += sizeof(index);
-
+    unsigned char index;
+    features ours;
+    total += read_index_and_cached_features(input, index, ours);
     ae->indices.push_back(static_cast<size_t>(index));
-    features& ours = ae->feature_space[index];
-    size_t storage = *reinterpret_cast<size_t*>(c);
-    c += sizeof(size_t);
-    input.set(c);
-    total += storage;
-    if (input.buf_read(c, storage) < storage)
-    {
-      VW::io::logger::errlog_error("truncated example! wanted: {} bytes ", storage);
-      return 0;
-    }
-
-    char* end = c + storage;
-
-    read_cached_features(c, end, ours, ae);
-    input.set(c);
+    std::swap(ours, ae->feature_space[index]);
   }
 
   return static_cast<int>(total);
@@ -178,7 +183,7 @@ void output_byte(io_buf& cache, unsigned char s)
   cache.set(c);
 }
 
-void output_features(io_buf& cache, unsigned char index, features& fs, uint64_t mask)
+void cache_index_and_features(io_buf& cache, unsigned char index, features& fs, uint64_t mask)
 {
   char* c;
   size_t storage = fs.size() * int_size;
@@ -225,15 +230,6 @@ void cache_tag(io_buf& cache, const v_array<char>& tag)
   memcpy(c, tag.begin(), tag.size());
   c += tag.size();
   cache.set(c);
-}
-
-void cache_features(io_buf& cache, example* ae, uint64_t mask)
-{
-  cache_tag(cache, ae->tag);
-
-  cache.write_value<unsigned char>(ae->is_newline ? newline_example : non_newline_example);
-  cache.write_value<unsigned char>(static_cast<unsigned char>(ae->indices.size()));
-  for (namespace_index ns : ae->indices) output_features(cache, ns, ae->feature_space[ns], mask);
 }
 
 uint32_t VW::convert(size_t number)
