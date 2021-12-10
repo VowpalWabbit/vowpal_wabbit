@@ -438,10 +438,7 @@ base_learner* ftrl_setup(VW::setup_base_i& stack_builder)
   count += pistol_enabled ? 1 : 0;
   count += coin_enabled ? 1 : 0;
 
-  if (count != 1)
-  {
-    THROW("You can only use one of 'ftrl', 'pistol', or 'coin' at a time.");
-  }
+  if (count != 1) { THROW("You can only use one of 'ftrl', 'pistol', or 'coin' at a time."); }
 
   // Defaults that are specific to the mode that was chosen.
   if (ftrl_enabled)

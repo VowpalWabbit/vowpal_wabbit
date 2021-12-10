@@ -284,7 +284,9 @@ base_learner* setup(VW::setup_base_i& stack_builder)
   auto enabled = options.add_parse_and_check_necessary(new_options);
   if (regcbopt && !regcb)
   {
-    VW::io::logger::errlog_warn("RegCB used to be able to be enabled with either --regcb or --regcbopt. Enabling with --regcbopt only is now deprecated. Please add --regcb to your command line in addition to --regcbopt.");
+    VW::io::logger::errlog_warn(
+        "RegCB used to be able to be enabled with either --regcb or --regcbopt. Enabling with --regcbopt only is now "
+        "deprecated. Please add --regcb to your command line in addition to --regcbopt.");
     enabled = true;
   }
   if (!enabled) { return nullptr; }
