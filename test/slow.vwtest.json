@@ -5,6 +5,7 @@
     "bash_command": "python3 save_resume_test.py --filename train-sets/rcv1_small.dat --verbose_on_fail --vw {VW}",
     "input_files": [
       "train-sets/rcv1_small.dat",
+      "train-sets/multiclass",
       "save_resume_test.py"
     ]
   },
