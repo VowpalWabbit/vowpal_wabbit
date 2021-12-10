@@ -83,15 +83,16 @@ void VW::write_example_to_cache(io_buf& output, example* ae, label_parser& lbl_p
   output.bin_write_fixed(temp_buffer._backing_buffer->data(), temp_buffer._backing_buffer->size());
 }
 
-size_t read_index_and_cached_features(io_buf& input, unsigned char& index, features& ours)
+std::pair<size_t, bool> read_cached_index_and_features(io_buf& input, unsigned char& index, features& ours)
 {
   size_t total = 0;
   char* c;
   size_t temp;
+  bool sorted = true;
   if ((temp = input.buf_read(c, sizeof(index) + sizeof(size_t))) < sizeof(index) + sizeof(size_t))
   {
     VW::io::logger::errlog_error("truncated example! {} {} ", temp, char_size + sizeof(size_t));
-    return 0;
+    return std::make_pair(total, sorted);
   }
 
   index = *reinterpret_cast<unsigned char*>(c);
@@ -104,7 +105,7 @@ size_t read_index_and_cached_features(io_buf& input, unsigned char& index, featu
   if (input.buf_read(c, storage) < storage)
   {
     VW::io::logger::errlog_error("truncated example! wanted: {} bytes ", storage);
-    return 0;
+    return std::make_pair(total, sorted);
   }
 
   char* end = c + storage;
@@ -124,13 +125,13 @@ size_t read_index_and_cached_features(io_buf& input, unsigned char& index, featu
     }
     uint64_t diff = i >> 2;
     int64_t s_diff = ZigZagDecode(diff);
-    // if (s_diff < 0) ae->sorted = false;
+    if (s_diff < 0) { sorted = false; }
     i = last + s_diff;
     last = i;
     ours.push_back(v, i);
   }
   input.set(c);
-  return total;
+  return std::make_pair(total, sorted);
 }
 
 int VW::read_example_from_cache(VW::workspace* all, io_buf& input, v_array<example*>& examples)
@@ -160,7 +161,9 @@ int VW::read_example_from_cache(VW::workspace* all, io_buf& input, v_array<examp
   {
     unsigned char index;
     features ours;
-    total += read_index_and_cached_features(input, index, ours);
+    std::pair<size_t, bool> feat_size_and_sorted = read_cached_index_and_features(input, index, ours);
+    total += feat_size_and_sorted.first;
+    ae->sorted = feat_size_and_sorted.second;
     ae->indices.push_back(static_cast<size_t>(index));
     std::swap(ours, ae->feature_space[index]);
   }

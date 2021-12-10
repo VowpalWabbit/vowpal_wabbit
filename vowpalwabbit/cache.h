@@ -20,11 +20,9 @@ char* run_len_decode(char* p, size_t& i);
 char* run_len_encode(char* p, size_t i);
 
 void cache_tag(io_buf& cache, const v_array<char>& tag);
-void cache_features(io_buf& cache, example* ae, uint64_t mask);
 void output_byte(io_buf& cache, unsigned char s);
 void cache_index_and_features(io_buf& cache, unsigned char index, features& fs, uint64_t mask);
-
-size_t read_index_and_cached_features(io_buf& input, unsigned char& index, features& ours);
+std::pair<size_t, bool> read_cached_index_and_features(io_buf& input, unsigned char& index, features& ours);
 
 namespace VW
 {
