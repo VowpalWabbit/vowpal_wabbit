@@ -70,9 +70,9 @@ void VW::write_example_to_cache(io_buf& output, example* ae, label_parser& lbl_p
     VW::details::cache_temp_buffer& temp_buffer)
 {
   temp_buffer._backing_buffer->clear();
-  lbl_parser.cache_label(ae->l, ae->_reduction_features, temp_buffer._temporary_cache_buffer);
-  cache_tag(temp_buffer._temporary_cache_buffer, ae->tag);
   io_buf& temp_cache = temp_buffer._temporary_cache_buffer;
+  lbl_parser.cache_label(ae->l, ae->_reduction_features, temp_cache);
+  cache_tag(temp_cache, ae->tag);
   temp_cache.write_value<unsigned char>(ae->is_newline ? newline_example : non_newline_example);
   temp_cache.write_value<unsigned char>(static_cast<unsigned char>(ae->indices.size()));
   for (namespace_index ns : ae->indices) cache_index_and_features(temp_cache, ns, ae->feature_space[ns], parse_mask);
@@ -187,7 +187,7 @@ void output_byte(io_buf& cache, unsigned char s)
   cache.set(c);
 }
 
-void cache_index_and_features(io_buf& cache, unsigned char index, features& fs, uint64_t mask)
+void cache_index_and_features(io_buf& cache, unsigned char index, const features& fs, uint64_t mask)
 {
   char* c;
   size_t storage = fs.size() * int_size;
