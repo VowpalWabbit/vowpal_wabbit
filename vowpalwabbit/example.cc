@@ -332,7 +332,8 @@ size_t read_model_field(io_buf& io, flat_example& fe, label_parser& lbl_parser)
   bytes += read_cached_features(io, fe.fs, sorted, c);
   return bytes;
 }
-size_t write_model_field(io_buf& io, const flat_example& fe, const std::string& upstream_name, bool text, label_parser& lbl_parser, uint64_t parse_mask)
+size_t write_model_field(io_buf& io, const flat_example& fe, const std::string& upstream_name, bool text,
+    label_parser& lbl_parser, uint64_t parse_mask)
 {
   size_t bytes = 0;
   lbl_parser.cache_label(fe.l, fe._reduction_features, io);

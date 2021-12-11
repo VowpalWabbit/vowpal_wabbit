@@ -48,7 +48,7 @@ struct no_lock_object_pool
 
   ~no_lock_object_pool()
   {
-    //assert(m_pool.size() == size());
+    assert(m_pool.size() == size());
     while (!m_pool.empty())
     {
       auto front = m_pool.front();
