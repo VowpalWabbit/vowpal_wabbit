@@ -158,15 +158,13 @@ int VW::read_example_from_cache(VW::workspace* all, io_buf& input, v_array<examp
 
   // read indices
   unsigned char num_indices = input.read_value<unsigned char>("num_indices");
+  char* c;
   for (; num_indices > 0; num_indices--)
   {
     unsigned char index = 0;
-    char* c;
     total += read_cached_index(input, index, c);
     ae->indices.push_back(static_cast<size_t>(index));
-    bool sorted = true;
-    total += read_cached_features(input, ae->feature_space[index], sorted, c);
-    ae->sorted = sorted;
+    total += read_cached_features(input, ae->feature_space[index], ae->sorted, c);
   }
 
   return static_cast<int>(total);
