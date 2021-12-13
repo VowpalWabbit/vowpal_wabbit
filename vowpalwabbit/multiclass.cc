@@ -180,6 +180,7 @@ size_t read_model_field(io_buf& io, MULTICLASS::label_t& multi)
   bytes += read_model_field(io, multi.weight);
   return bytes;
 }
+
 size_t write_model_field(io_buf& io, const MULTICLASS::label_t& multi, const std::string& upstream_name, bool text)
 {
   size_t bytes = 0;

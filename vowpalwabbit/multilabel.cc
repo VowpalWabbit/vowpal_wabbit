@@ -154,6 +154,7 @@ size_t read_model_field(io_buf& io, MULTILABEL::labels& multi)
   bytes += read_model_field(io, multi.label_v);
   return bytes;
 }
+
 size_t write_model_field(io_buf& io, const MULTILABEL::labels& multi, const std::string& upstream_name, bool text)
 {
   size_t bytes = 0;

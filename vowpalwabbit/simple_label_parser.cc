@@ -130,12 +130,14 @@ size_t read_model_field(io_buf& io, label_data& ld)
   bytes += read_model_field(io, ld.label);
   return bytes;
 }
+
 size_t write_model_field(io_buf& io, const label_data& ld, const std::string& upstream_name, bool text)
 {
   size_t bytes = 0;
   bytes += write_model_field(io, ld.label, upstream_name + "_label", text);
   return bytes;
 }
+
 size_t read_model_field(io_buf& io, simple_label_reduction_features& slrf)
 {
   size_t bytes = 0;
@@ -143,6 +145,7 @@ size_t read_model_field(io_buf& io, simple_label_reduction_features& slrf)
   bytes += read_model_field(io, slrf.initial);
   return bytes;
 }
+
 size_t write_model_field(
     io_buf& io, const simple_label_reduction_features& slrf, const std::string& upstream_name, bool text)
 {

@@ -296,6 +296,7 @@ size_t read_model_field(io_buf& io, COST_SENSITIVE::wclass& wc)
   bytes += read_model_field(io, wc.wap_value);
   return bytes;
 }
+
 size_t write_model_field(io_buf& io, const COST_SENSITIVE::wclass& wc, const std::string& upstream_name, bool text)
 {
   size_t bytes = 0;
@@ -305,6 +306,7 @@ size_t write_model_field(io_buf& io, const COST_SENSITIVE::wclass& wc, const std
   bytes += write_model_field(io, wc.wap_value, upstream_name + "_wap_value", text);
   return bytes;
 }
+
 size_t read_model_field(io_buf& io, COST_SENSITIVE::label& cs)
 {
   size_t bytes = 0;
@@ -312,6 +314,7 @@ size_t read_model_field(io_buf& io, COST_SENSITIVE::label& cs)
   bytes += read_model_field(io, cs.costs);
   return bytes;
 }
+
 size_t write_model_field(io_buf& io, const COST_SENSITIVE::label& cs, const std::string& upstream_name, bool text)
 {
   size_t bytes = 0;

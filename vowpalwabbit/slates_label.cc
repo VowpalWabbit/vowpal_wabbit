@@ -181,6 +181,7 @@ size_t read_model_field(io_buf& io, VW::slates::label& slates)
   bytes += read_model_field(io, slates.probabilities);
   return bytes;
 }
+
 size_t write_model_field(io_buf& io, const VW::slates::label& slates, const std::string& upstream_name, bool text)
 {
   size_t bytes = 0;

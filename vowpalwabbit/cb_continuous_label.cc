@@ -165,6 +165,7 @@ size_t read_model_field(io_buf& io, VW::cb_continuous::continuous_label_elm& cle
   bytes += read_model_field(io, cle.pdf_value);
   return bytes;
 }
+
 size_t write_model_field(
     io_buf& io, const VW::cb_continuous::continuous_label_elm& cle, const std::string& upstream_name, bool text)
 {
@@ -174,12 +175,14 @@ size_t write_model_field(
   bytes += write_model_field(io, cle.pdf_value, upstream_name + "_pdf_value", text);
   return bytes;
 }
+
 size_t read_model_field(io_buf& io, VW::cb_continuous::continuous_label& cl)
 {
   size_t bytes = 0;
   bytes += read_model_field(io, cl.costs);
   return bytes;
 }
+
 size_t write_model_field(
     io_buf& io, const VW::cb_continuous::continuous_label& cl, const std::string& upstream_name, bool text)
 {

@@ -231,6 +231,7 @@ size_t read_model_field(io_buf& io, CB::cb_class& cbc)
   bytes += read_model_field(io, cbc.partial_prediction);
   return bytes;
 }
+
 size_t write_model_field(io_buf& io, const CB::cb_class& cbc, const std::string& upstream_name, bool text)
 {
   size_t bytes = 0;
@@ -240,6 +241,7 @@ size_t write_model_field(io_buf& io, const CB::cb_class& cbc, const std::string&
   bytes += write_model_field(io, cbc.partial_prediction, upstream_name + "_partial_prediction", text);
   return bytes;
 }
+
 size_t read_model_field(io_buf& io, CB::label& cb)
 {
   size_t bytes = 0;
@@ -248,6 +250,7 @@ size_t read_model_field(io_buf& io, CB::label& cb)
   bytes += read_model_field(io, cb.weight);
   return bytes;
 }
+
 size_t write_model_field(io_buf& io, const CB::label& cb, const std::string& upstream_name, bool text)
 {
   size_t bytes = 0;
@@ -255,6 +258,7 @@ size_t write_model_field(io_buf& io, const CB::label& cb, const std::string& ups
   bytes += write_model_field(io, cb.weight, upstream_name + "_weight", text);
   return bytes;
 }
+
 size_t read_model_field(io_buf& io, CB_EVAL::label& cbe)
 {
   size_t bytes = 0;
@@ -262,6 +266,7 @@ size_t read_model_field(io_buf& io, CB_EVAL::label& cbe)
   bytes += read_model_field(io, cbe.event);
   return bytes;
 }
+
 size_t write_model_field(io_buf& io, const CB_EVAL::label& cbe, const std::string& upstream_name, bool text)
 {
   size_t bytes = 0;
