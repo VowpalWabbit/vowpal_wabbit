@@ -75,7 +75,12 @@ void VW::write_example_to_cache(io_buf& output, example* ae, label_parser& lbl_p
   cache_tag(temp_cache, ae->tag);
   temp_cache.write_value<unsigned char>(ae->is_newline ? newline_example : non_newline_example);
   temp_cache.write_value<unsigned char>(static_cast<unsigned char>(ae->indices.size()));
-  for (namespace_index ns : ae->indices) cache_index_and_features(temp_cache, ns, ae->feature_space[ns], parse_mask);
+  for (namespace_index ns : ae->indices)
+  {
+    char* c;
+    cache_index(temp_cache, ns, ae->feature_space[ns], parse_mask, c);
+    cache_features(temp_cache, ae->feature_space[ns], parse_mask, c);
+  }
   temp_cache.flush();
 
   uint64_t example_size = temp_buffer._backing_buffer->size();
@@ -92,14 +97,13 @@ size_t read_cached_index(io_buf& input, unsigned char& index, char*& c)
     return 0;
   }
   index = *reinterpret_cast<unsigned char*>(c);
+  c += sizeof(index);
   return sizeof(index);
 }
 
 size_t read_cached_features(io_buf& input, features& ours, bool& sorted, char*& c)
 {
   size_t total = 0;
-  c += sizeof(unsigned char);
-
   size_t storage = *reinterpret_cast<size_t*>(c);
   c += sizeof(size_t);
   input.set(c);
@@ -185,9 +189,8 @@ void output_byte(io_buf& cache, unsigned char s)
   cache.set(c);
 }
 
-void cache_index_and_features(io_buf& cache, unsigned char index, const features& fs, uint64_t mask)
+void cache_index(io_buf& cache, unsigned char index, const features& fs, uint64_t mask, char*& c)
 {
-  char* c;
   size_t storage = fs.size() * int_size;
   for (feature_value f : fs.values)
     if (f != 1. && f != -1.) storage += sizeof(feature_value);
@@ -195,7 +198,10 @@ void cache_index_and_features(io_buf& cache, unsigned char index, const features
   cache.buf_write(c, sizeof(index) + storage + sizeof(size_t));
   *reinterpret_cast<unsigned char*>(c) = index;
   c += sizeof(index);
+}
 
+void cache_features(io_buf& cache, const features& fs, uint64_t mask, char*& c)
+{
   char* storage_size_loc = c;
   c += sizeof(size_t);
 
