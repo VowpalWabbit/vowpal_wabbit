@@ -78,7 +78,7 @@ void VW::write_example_to_cache(io_buf& output, example* ae, label_parser& lbl_p
   for (namespace_index ns : ae->indices)
   {
     char* c;
-    cache_index(temp_cache, ns, ae->feature_space[ns], parse_mask, c);
+    cache_index(temp_cache, ns, ae->feature_space[ns], c);
     cache_features(temp_cache, ae->feature_space[ns], parse_mask, c);
   }
   temp_cache.flush();
@@ -189,7 +189,7 @@ void output_byte(io_buf& cache, unsigned char s)
   cache.set(c);
 }
 
-void cache_index(io_buf& cache, unsigned char index, const features& fs, uint64_t mask, char*& c)
+void cache_index(io_buf& cache, unsigned char index, const features& fs, char*& c)
 {
   size_t storage = fs.size() * int_size;
   for (feature_value f : fs.values)

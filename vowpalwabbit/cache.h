@@ -21,7 +21,7 @@ char* run_len_encode(char* p, size_t i);
 
 void cache_tag(io_buf& cache, const v_array<char>& tag);
 void output_byte(io_buf& cache, unsigned char s);
-void cache_index(io_buf& cache, unsigned char index, const features& fs, uint64_t mask, char*& c);
+void cache_index(io_buf& cache, unsigned char index, const features& fs, char*& c);
 void cache_features(io_buf& cache, const features& fs, uint64_t mask, char*& c);
 size_t read_cached_index(io_buf& input, unsigned char& index, char*& c);
 size_t read_cached_features(io_buf& input, features& ours, bool& sorted, char*& c);

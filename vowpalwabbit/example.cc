@@ -346,7 +346,7 @@ size_t write_model_field(io_buf& io, const flat_example& fe, const std::string& 
   bytes += write_model_field(io, fe.num_features, upstream_name + "_num_features", text);
   bytes += write_model_field(io, fe.total_sum_feat_sq, upstream_name + "_total_sum_feat_sq", text);
   char* c;
-  cache_index(io, 0, fe.fs, parse_mask, c);
+  cache_index(io, 0, fe.fs, c);
   cache_features(io, fe.fs, parse_mask, c);
   return bytes;
 }
