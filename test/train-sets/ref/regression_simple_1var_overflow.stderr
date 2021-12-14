@@ -1,0 +1,38 @@
+creating quadratic features for pairs: ::
+WARNING: any duplicate namespace interactions will be removed
+You can use --leave_duplicate_interactions to disable this behaviour.
+Enabling FTRL based optimization
+Algorithm used: Coin Betting
+ftrl_alpha = 4
+ftrl_beta = 1
+Num weight bits = 18
+learning rate = 0.5
+initial_t = 0
+power_t = 0.5
+using no cache
+Reading datafile = train-sets/regression_simple_1var_overflow.txt
+num sources = 1
+Enabled reductions: ftrl-Coin Betting, generate_interactions, scorer-identity, count_label
+Input label = simple
+Output pred = scalar
+average  since         example        example  current  current  current
+loss     last          counter         weight    label  predict features
+[error] Your features have too much magnitude. Example is ignored
+0.010000 0.010000            2            1.0   0.1000   0.0000        3
+0.005000 0.000000            3            2.0   0.2000   0.2000        3
+0.003333 0.000000            4            3.0   0.3000   0.3000        3
+0.004892 0.009570            5            4.0   0.4000   0.3022        3
+0.003914 0.000000            6            5.0   0.5000   0.5000        3
+0.003262 0.000000            7            6.0   0.6000   0.6000        3
+0.003293 0.003478            8            7.0   0.7000   0.6410        3
+0.002881 0.000000            9            8.0   0.8000   0.8000        3
+0.002869 0.002770           10            9.0   0.9000   0.8474        3
+0.002582 0.000000           11           10.0   1.0000   1.0000        3
+
+finished run
+number of examples = 11
+weighted example sum = 10.000000
+weighted label sum = 5.500000
+average loss = 0.002582
+best constant = 0.550000
+total feature number = 33

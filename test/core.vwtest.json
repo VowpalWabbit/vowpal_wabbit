@@ -4440,6 +4440,16 @@
     "depends_on": [
       373
     ]
+  },
+  {
+    "id": 375,
+    "desc": "Capturing overflowing in coin betting",
+    "vw_command": "--coin -q :: -d train-sets/regression_simple_1var_overflow.txt -P 1",
+    "diff_files": {
+      "stderr": "train-sets/ref/regression_simple_1var_overflow.stderr"
+    },
+    "input_files": [
+      "train-sets/regression_simple_1var_overflow.dat"
+    ]
   }
-
 ]
