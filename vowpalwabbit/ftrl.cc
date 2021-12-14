@@ -373,7 +373,7 @@ void learn_coin_betting(ftrl& a, base_learner& base, example& ec)
   }
   else
   {
-    logger::errlog_error("Your features have too much magnitude. Example is ignored");
+    logger::errlog_error("The features have too much magnitude. Example is ignored");
   }
 }
 
