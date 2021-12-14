@@ -221,22 +221,30 @@ void inner_coin_betting_update_after_prediction(ftrl_update_data& d, float x, fl
   w[W_XT] /= d.average_squared_norm_x;
 }
 
-void coin_betting_predict(ftrl& b, base_learner&, example& ec)
+bool coin_betting_predict(ftrl& b, base_learner&, example& ec)
 {
+  constexpr float x2_max = FLT_MAX;
   b.data.predict = 0;
   b.data.normalized_squared_norm_x = 0;
 
   size_t num_features_from_interactions = 0;
   GD::foreach_feature<ftrl_update_data, inner_coin_betting_predict>(*b.all, ec, b.data, num_features_from_interactions);
   ec.num_features_from_interactions = num_features_from_interactions;
+  ec.num_features_from_interactions = num_features_from_interactions;
+  const double normalized_sum_norm_x =
+      b.all->normalized_sum_norm_x + (static_cast<double>(ec.weight)) * b.data.normalized_squared_norm_x;
+  if (normalized_sum_norm_x <= x2_max)
+  {
+    b.all->normalized_sum_norm_x = normalized_sum_norm_x;
+    b.total_weight += ec.weight;
+    b.data.average_squared_norm_x = (static_cast<float>((b.all->normalized_sum_norm_x + 1e-6) / b.total_weight));
 
-  b.all->normalized_sum_norm_x += (static_cast<double>(ec.weight)) * b.data.normalized_squared_norm_x;
-  b.total_weight += ec.weight;
-  b.data.average_squared_norm_x = (static_cast<float>((b.all->normalized_sum_norm_x + 1e-6) / b.total_weight));
+    ec.partial_prediction = b.data.predict / b.data.average_squared_norm_x;
 
-  ec.partial_prediction = b.data.predict / b.data.average_squared_norm_x;
-
-  ec.pred.scalar = GD::finalize_prediction(b.all->sd, b.all->logger, ec.partial_prediction);
+    ec.pred.scalar = GD::finalize_prediction(b.all->sd, b.all->logger, ec.partial_prediction);
+    return true;
+  }
+  return false;
 }
 
 void update_state_and_predict_pistol(ftrl& b, base_learner&, example& ec)
@@ -357,10 +365,16 @@ template <bool audit>
 void learn_coin_betting(ftrl& a, base_learner& base, example& ec)
 {
   // update state based on the example and predict
-  coin_betting_predict(a, base, ec);
-  if (audit) GD::print_audit_features(*(a.all), ec);
-  // update state based on the prediction
-  coin_betting_update_after_prediction(a, ec);
+  if (coin_betting_predict(a, base, ec))
+  {
+    if (audit) GD::print_audit_features(*(a.all), ec);
+    // update state based on the prediction
+    coin_betting_update_after_prediction(a, ec);
+  }
+  else
+  {
+    logger::errlog_error("Your features have too much magnitude. Example is ignored");
+  }
 }
 
 void save_load(ftrl& b, io_buf& model_file, bool read, bool text)
