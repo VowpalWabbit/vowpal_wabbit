@@ -4449,7 +4449,7 @@
       "stderr": "train-sets/ref/regression_simple_1var_overflow.stderr"
     },
     "input_files": [
-      "train-sets/regression_simple_1var_overflow.dat"
+      "train-sets/regression_simple_1var_overflow.txt"
     ]
   }
 ]
