@@ -244,6 +244,7 @@ bool coin_betting_predict(ftrl& b, base_learner&, example& ec)
     ec.pred.scalar = GD::finalize_prediction(b.all->sd, b.all->logger, ec.partial_prediction);
     return true;
   }
+  ec.weight = 0;
   return false;
 }
 
