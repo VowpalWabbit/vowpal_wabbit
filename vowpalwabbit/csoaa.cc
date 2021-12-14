@@ -48,10 +48,7 @@ inline void inner_loop(single_learner& base, example& ec, uint32_t i, float cost
   {
     ec.weight = (cost == FLT_MAX) ? 0.f : 1.f;
     ec.l.simple.label = cost;
-    if (indexing == 0)
-    {
-      base.learn(ec, i);
-    }
+    if (indexing == 0) { base.learn(ec, i); }
     else
     {
       base.learn(ec, i - 1);
@@ -59,10 +56,7 @@ inline void inner_loop(single_learner& base, example& ec, uint32_t i, float cost
   }
   else
   {
-    if (indexing == 0)
-    {
-      base.predict(ec, i);
-    }
+    if (indexing == 0) { base.predict(ec, i); }
     else
     {
       base.predict(ec, i - 1);
@@ -98,7 +92,8 @@ void predict_or_learn(csoaa& c, single_learner& base, example& ec)
       // Label validation
       if (c.indexing == 0 && lbl >= c.num_classes)
       {
-        logger::log_warn("label {0} is not in {{0,{1}}}. This won't work for 0-indexed actions.", lbl, c.num_classes - 1);
+        logger::log_warn(
+            "label {0} is not in {{0,{1}}}. This won't work for 0-indexed actions.", lbl, c.num_classes - 1);
         lbl = 0;
       }
       else if (c.indexing == 1 && (lbl < 1 || lbl > c.num_classes))
@@ -156,7 +151,8 @@ void predict_or_learn(csoaa& c, single_learner& base, example& ec)
   else
   {
     float temp;
-    for (uint32_t i = 1; i <= c.num_classes; i++) inner_loop<false>(base, ec, i, FLT_MAX, prediction, score, temp, c.indexing);
+    for (uint32_t i = 1; i <= c.num_classes; i++)
+      inner_loop<false>(base, ec, i, FLT_MAX, prediction, score, temp, c.indexing);
   }
 
   if (ec.passthrough)
@@ -193,8 +189,8 @@ base_learner* csoaa_setup(VW::setup_base_i& stack_builder)
   VW::workspace& all = *stack_builder.get_all_pointer();
   auto c = VW::make_unique<csoaa>();
   option_group_definition new_options("Cost Sensitive One Against All");
-  new_options.add(
-      make_option("csoaa", c->num_classes).keep().necessary().help("One-against-all multiclass with <k> costs"))
+  new_options
+      .add(make_option("csoaa", c->num_classes).keep().necessary().help("One-against-all multiclass with <k> costs"))
       .add(make_option("indexing", c->indexing).one_of({0, 1}).keep().help("Choose between 0 or 1-indexing"));
 
   if (!options.add_parse_and_check_necessary(new_options)) return nullptr;
