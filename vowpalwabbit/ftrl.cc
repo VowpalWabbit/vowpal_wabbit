@@ -230,7 +230,6 @@ bool coin_betting_predict(ftrl& b, base_learner&, example& ec)
   size_t num_features_from_interactions = 0;
   GD::foreach_feature<ftrl_update_data, inner_coin_betting_predict>(*b.all, ec, b.data, num_features_from_interactions);
   ec.num_features_from_interactions = num_features_from_interactions;
-  ec.num_features_from_interactions = num_features_from_interactions;
   const double normalized_sum_norm_x =
       b.all->normalized_sum_norm_x + (static_cast<double>(ec.weight)) * b.data.normalized_squared_norm_x;
   if (normalized_sum_norm_x <= x2_max)
