@@ -10,7 +10,7 @@ This creates a binary tree topology over a set of n nodes that connect.
 #include "spanning_tree.h"
 #include "vw_exception.h"
 
-#ifdef _WIN32 || __APPLE__
+#if defined(_WIN32) || defined(__APPLE__)
 int daemon(int a, int b) { return 0; }
 int getpid() { return (int)::GetCurrentProcessId(); }
 #endif
