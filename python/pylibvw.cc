@@ -570,7 +570,7 @@ uint32_t ex_num_features(example_ptr ec, unsigned char ns) { return (uint32_t)ec
 
 uint32_t ex_feature(example_ptr ec, unsigned char ns, uint32_t i)
 {
-  return (uint32_t)ec->feature_space[ns].indicies[i];
+  return (uint32_t)ec->feature_space[ns].indices[i];
 }
 
 float ex_feature_weight(example_ptr ec, unsigned char ns, uint32_t i) { return ec->feature_space[ns].values[i]; }
@@ -686,7 +686,7 @@ bool ex_pop_feature(example_ptr ec, unsigned char ns)
   if (ec->feature_space[ns].size() == 0) return false;
   float val = ec->feature_space[ns].values.back();
   ec->feature_space[ns].values.pop_back();
-  if (ec->feature_space[ns].indicies.size() > 0) ec->feature_space[ns].indicies.pop_back();
+  if (ec->feature_space[ns].indices.size() > 0) ec->feature_space[ns].indices.pop_back();
   if (ec->feature_space[ns].space_names.size() > 0) ec->feature_space[ns].space_names.pop_back();
   ec->num_features--;
   ec->feature_space[ns].sum_feat_sq -= val * val;
@@ -751,7 +751,7 @@ void unsetup_example(vw_ptr vwP, example_ptr ae)
   uint32_t multiplier = all.wpp << all.weights.stride_shift();
   if (multiplier != 1)  // make room for per-feature information.
     for (auto ns : ae->indices)
-      for (auto& idx : ae->feature_space[ns].indicies) idx /= multiplier;
+      for (auto& idx : ae->feature_space[ns].indices) idx /= multiplier;
 }
 
 void ex_set_label_string(example_ptr ec, vw_ptr vw, std::string label, size_t labelType)

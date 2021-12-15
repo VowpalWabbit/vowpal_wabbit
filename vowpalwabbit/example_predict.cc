@@ -33,9 +33,9 @@ std::string features_to_string(const example_predict& ec)
   strstream << "[off=" << ec.ft_offset << "]";
   for (auto& f : ec.feature_space)
   {
-    auto ind_iter = f.indicies.cbegin();
+    auto ind_iter = f.indices.cbegin();
     auto val_iter = f.values.cbegin();
-    for (; ind_iter != f.indicies.cend(); ++ind_iter, ++val_iter)
+    for (; ind_iter != f.indices.cend(); ++ind_iter, ++val_iter)
     {
       strstream << "[h=" << *ind_iter << ","
                 << "v=" << *val_iter << "]";

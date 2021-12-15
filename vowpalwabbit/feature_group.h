@@ -385,7 +385,7 @@ struct features
       ns_extent_iterator<const features, const_audit_iterator, std::vector<VW::namespace_extent>::const_iterator>;
 
   v_array<feature_value> values;           // Always needed.
-  v_array<feature_index> indicies;         // Optional for sparse data.
+  v_array<feature_index> indices;         // Optional for sparse data.
   std::vector<audit_strings> space_names;  // Optional for audit mode.
 
   // Each extent represents a range [begin, end) of values which exist in a
@@ -411,29 +411,29 @@ struct features
   inline bool nonempty() const { return !empty(); }
 
   // default iterator for values & features
-  inline iterator begin() { return {values.begin(), indicies.begin()}; }
-  inline const_iterator begin() const { return {values.begin(), indicies.begin()}; }
-  inline iterator end() { return {values.end(), indicies.end()}; }
-  inline const_iterator end() const { return {values.end(), indicies.end()}; }
+  inline iterator begin() { return {values.begin(), indices.begin()}; }
+  inline const_iterator begin() const { return {values.begin(), indices.begin()}; }
+  inline iterator end() { return {values.end(), indices.end()}; }
+  inline const_iterator end() const { return {values.end(), indices.end()}; }
 
-  inline const_iterator cbegin() const { return {values.cbegin(), indicies.cbegin()}; }
-  inline const_iterator cend() const { return {values.cend(), indicies.cend()}; }
+  inline const_iterator cbegin() const { return {values.cbegin(), indices.cbegin()}; }
+  inline const_iterator cend() const { return {values.cend(), indices.cend()}; }
 
   inline VW::generic_range<audit_iterator> audit_range() { return {audit_begin(), audit_end()}; }
   inline VW::generic_range<const_audit_iterator> audit_range() const { return {audit_cbegin(), audit_cend()}; }
 
-  inline audit_iterator audit_begin() { return {values.begin(), indicies.begin(), space_names.data()}; }
-  inline const_audit_iterator audit_begin() const { return {values.begin(), indicies.begin(), space_names.data()}; }
-  inline audit_iterator audit_end() { return {values.end(), indicies.end(), space_names.data() + space_names.size()}; }
+  inline audit_iterator audit_begin() { return {values.begin(), indices.begin(), space_names.data()}; }
+  inline const_audit_iterator audit_begin() const { return {values.begin(), indices.begin(), space_names.data()}; }
+  inline audit_iterator audit_end() { return {values.end(), indices.end(), space_names.data() + space_names.size()}; }
   inline const_audit_iterator audit_end() const
   {
-    return {values.end(), indicies.end(), space_names.data() + space_names.size()};
+    return {values.end(), indices.end(), space_names.data() + space_names.size()};
   }
 
-  inline const_audit_iterator audit_cbegin() const { return {values.begin(), indicies.begin(), space_names.data()}; }
+  inline const_audit_iterator audit_cbegin() const { return {values.begin(), indices.begin(), space_names.data()}; }
   inline const_audit_iterator audit_cend() const
   {
-    return {values.end(), indicies.end(), space_names.data() + space_names.size()};
+    return {values.end(), indices.end(), space_names.data() + space_names.size()};
   }
 
   extent_iterator hash_extents_begin(uint64_t hash) { return {this, hash, namespace_extents.begin()}; }

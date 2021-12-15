@@ -100,11 +100,11 @@ int main(int argc, char *argv[])
     features& left = ec->feature_space[left_ns];
     for (size_t i = 0; i < left.size(); ++i)
     {
-      left_linear << left.space_names[i].second << '\t' << weights[left.indicies[i]];
+      left_linear << left.space_names[i].second << '\t' << weights[left.indices[i]];
 
       left_quadratic << left.space_names[i].second;
       for (size_t k = 1; k <= rank; k++)
-        left_quadratic << '\t' << weights[(left.indicies[i] + k)];
+        left_quadratic << '\t' << weights[(left.indices[i] + k)];
     }
     left_linear << std::endl;
     left_quadratic << std::endl;
@@ -113,11 +113,11 @@ int main(int argc, char *argv[])
     features& right = ec->feature_space[right_ns];
     for (size_t i = 0; i < right.size(); ++i)
     {
-      right_linear << right.space_names[i].second << '\t' << weights[right.indicies[i]];
+      right_linear << right.space_names[i].second << '\t' << weights[right.indices[i]];
 
       right_quadratic << right.space_names[i].second;
       for (size_t k = 1; k <= rank; k++)
-        right_quadratic << '\t' << weights[(right.indicies[i] + k + rank)];
+        right_quadratic << '\t' << weights[(right.indices[i] + k + rank)];
     }
     right_linear << std::endl;
     right_quadratic << std::endl;
@@ -126,7 +126,7 @@ int main(int argc, char *argv[])
   }
 
   // write constant
-  constant << weights[ec->feature_space[constant_namespace].indicies[0]] << std::endl;
+  constant << weights[ec->feature_space[constant_namespace].indices[0]] << std::endl;
 
   // clean up
   VW::finish(*model);
