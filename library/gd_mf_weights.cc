@@ -103,8 +103,7 @@ int main(int argc, char *argv[])
       left_linear << left.space_names[i].second << '\t' << weights[left.indices[i]];
 
       left_quadratic << left.space_names[i].second;
-      for (size_t k = 1; k <= rank; k++)
-        left_quadratic << '\t' << weights[(left.indices[i] + k)];
+      for (size_t k = 1; k <= rank; k++) left_quadratic << '\t' << weights[(left.indices[i] + k)];
     }
     left_linear << std::endl;
     left_quadratic << std::endl;
@@ -116,8 +115,7 @@ int main(int argc, char *argv[])
       right_linear << right.space_names[i].second << '\t' << weights[right.indices[i]];
 
       right_quadratic << right.space_names[i].second;
-      for (size_t k = 1; k <= rank; k++)
-        right_quadratic << '\t' << weights[(right.indices[i] + k + rank)];
+      for (size_t k = 1; k <= rank; k++) right_quadratic << '\t' << weights[(right.indices[i] + k + rank)];
     }
     right_linear << std::endl;
     right_quadratic << std::endl;

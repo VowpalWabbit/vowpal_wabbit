@@ -568,10 +568,7 @@ unsigned char ex_namespace(example_ptr ec, uint32_t ns) { return ec->indices[ns]
 
 uint32_t ex_num_features(example_ptr ec, unsigned char ns) { return (uint32_t)ec->feature_space[ns].size(); }
 
-uint32_t ex_feature(example_ptr ec, unsigned char ns, uint32_t i)
-{
-  return (uint32_t)ec->feature_space[ns].indices[i];
-}
+uint32_t ex_feature(example_ptr ec, unsigned char ns, uint32_t i) { return (uint32_t)ec->feature_space[ns].indices[i]; }
 
 float ex_feature_weight(example_ptr ec, unsigned char ns, uint32_t i) { return ec->feature_space[ns].values[i]; }
 
