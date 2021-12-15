@@ -12,6 +12,8 @@ This creates a binary tree topology over a set of n nodes that connect.
 
 #if defined(_WIN32) || defined(__APPLE__)
 int daemon(int a, int b) { return 0; }
+#endif
+#ifdef _WIN32
 int getpid() { return (int)::GetCurrentProcessId(); }
 #endif
 
