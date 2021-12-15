@@ -17,6 +17,7 @@ struct vw_dbg
   static constexpr bool binary =              false;
   static constexpr bool cb_adf =              false;
   static constexpr bool csoaa =               false;
+  static constexpr bool csoaa_ldf =           false;
   static constexpr bool cs_active =           false;
   static constexpr bool cats_tree =           false;
   static constexpr bool cats_pdf =            false;
@@ -34,7 +35,7 @@ struct vw_dbg
 
   static constexpr bool track_stack = default_log | learner | search | gd | gd_predict | binary | cb_adf | csoaa |
       cs_active | cats_tree | cats_pdf | cats | cb_explore_pdf | cb_explore | cbify | get_pmf | sample_pdf |
-      cb_explore_get_pmf | cb_sample_pdf | ccb | scorer | cb_sample;
+      cb_explore_get_pmf | cb_sample_pdf | ccb | scorer | cb_sample | csoaa_ldf;
 };
 
 #define VW_DEBUG_LOG vw_dbg::default_log

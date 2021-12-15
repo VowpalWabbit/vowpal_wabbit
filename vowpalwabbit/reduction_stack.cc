@@ -19,6 +19,7 @@
 #include "automl.h"
 #include "ect.h"
 #include "csoaa.h"
+#include "csoaa_ldf.h"
 #include "cb_algs.h"
 #include "cb_adf.h"
 #include "interaction_ground.h"
