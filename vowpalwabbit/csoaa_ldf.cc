@@ -30,7 +30,6 @@ using namespace ACTION_SCORE;
 
 namespace CSOAA
 {
-
 // TODO: passthrough for ldf
 struct ldf
 {
@@ -116,8 +115,8 @@ void unsubtract_example(example* ec)
   if (ec->indices.back() != wap_ldf_namespace)
   {
     logger::errlog_error(
-      "internal error (bug): trying to unsubtract_example, but either it wasn't added, or something was added "
-      "after and not removed!");
+        "internal error (bug): trying to unsubtract_example, but either it wasn't added, or something was added "
+        "after and not removed!");
     return;
   }
 
@@ -703,14 +702,15 @@ base_learner* csldf_setup(VW::setup_base_i& stack_builder)
   std::string wap_ldf;
 
   option_group_definition csldf_outer_options("Cost Sensitive One Against All with Label Dependent Features");
-  csldf_outer_options.add(make_option("csoaa_ldf", csoaa_ldf)
-                              .keep()
-                              .necessary()
-                              .help("Use one-against-all multiclass learning with label dependent features"))
-  .add(make_option("ldf_override", ldf_override)
-          .help("Override singleline or multiline from csoaa_ldf or wap_ldf, eg if stored in file"))
-  .add(make_option("csoaa_rank", ld->rank).keep().help("Return actions sorted by score order"))
-  .add(make_option("probabilities", ld->is_probabilities).keep().help("Predict probabilities of all classes"));
+  csldf_outer_options
+      .add(make_option("csoaa_ldf", csoaa_ldf)
+               .keep()
+               .necessary()
+               .help("Use one-against-all multiclass learning with label dependent features"))
+      .add(make_option("ldf_override", ldf_override)
+               .help("Override singleline or multiline from csoaa_ldf or wap_ldf, eg if stored in file"))
+      .add(make_option("csoaa_rank", ld->rank).keep().help("Return actions sorted by score order"))
+      .add(make_option("probabilities", ld->is_probabilities).keep().help("Predict probabilities of all classes"));
 
   option_group_definition csldf_inner_options("Cost Sensitive Weighted All-Pairs with Label Dependent Features");
   csldf_inner_options.add(make_option("wap_ldf", wap_ldf)
@@ -719,7 +719,9 @@ base_learner* csldf_setup(VW::setup_base_i& stack_builder)
                               .help("Use weighted all-pairs multiclass learning with label dependent features.  "
                                     "Specify singleline or multiline."));
 
-  if (!options.add_parse_and_check_necessary(csldf_outer_options) && !options.add_parse_and_check_necessary(csldf_inner_options)) { return nullptr; }
+  if (!options.add_parse_and_check_necessary(csldf_outer_options) &&
+      !options.add_parse_and_check_necessary(csldf_inner_options))
+  { return nullptr; }
 
   // csoaa_ldf does logistic link manually for probabilities because the unlinked values are
   // required elsewhere. This implemenation will provide correct probabilities regardless
