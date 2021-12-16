@@ -4443,6 +4443,42 @@
   },
   {
     "id": 375,
+    "desc": "Use csoaa with 1-indexing flag",
+    "vw_command": "-d train-sets/csoaa_1_ind.dat --csoaa 4 -p csoaa_1_ind.predict --indexing 1",
+    "diff_files": {
+      "stderr": "train-sets/ref/csoaa_1_ind.stderr",
+      "csoaa_1_ind.predict": "pred-sets/ref/csoaa_1_ind.predict"
+    },
+    "input_files": [
+      "train-sets/csoaa_1_ind.dat"
+    ]
+  },
+  {
+    "id": 376,
+    "desc": "Use csoaa with auto-detect 1-indexing",
+    "vw_command": "-d train-sets/csoaa_1_ind.dat --csoaa 4 -p csoaa_1_ind_auto.predict",
+    "diff_files": {
+      "stderr": "train-sets/ref/csoaa_1_ind_auto.stderr",
+      "csoaa_1_ind_auto.predict": "pred-sets/ref/csoaa_1_ind.predict"
+    },
+    "input_files": [
+      "train-sets/csoaa_1_ind.dat"
+    ]
+  },
+  {
+    "id": 377,
+    "desc": "Use csoaa with on 1-indexed data set with 0-indexing flag",
+    "vw_command": "-d train-sets/csoaa_1_ind.dat --csoaa 4 --indexing 0",
+    "diff_files": {
+      "stderr": "train-sets/ref/csoaa_1_ind_0_flag.stderr",
+      "stdout": "train-sets/ref/csoaa_1_ind_0_flag.stdout"
+    },
+    "input_files": [
+      "train-sets/csoaa_1_ind.dat"
+    ]
+  },
+  {
+    "id": 378,
     "desc": "SVM linear kernel save_load save",
     "vw_command": "--ksvm --l2 1 --reprocess 5 -b 18 -d train-sets/rcv1_smaller.dat -f models/ksvm.model",
     "diff_files": {
@@ -4453,7 +4489,7 @@
     ]
   },
   {
-    "id": 376,
+    "id": 379,
     "desc": "SVM linear kernel save_load load",
     "vw_command": "--ksvm --l2 1 --reprocess 5 -b 18 -d train-sets/rcv1_smaller.dat -i models/ksvm.model",
     "diff_files": {
@@ -4464,7 +4500,7 @@
       "models/ksvm.model"
     ],
     "depends_on": [
-      375
+      378
     ]
   }
 ]
