@@ -29,7 +29,7 @@ struct csoaa
 
 template <bool is_learn>
 inline void inner_loop(single_learner& base, example& ec, uint32_t i, float cost, uint32_t& prediction, float& score,
-    float& partial_prediction, int& indexing)
+    float& partial_prediction, int indexing)
 {
   if (is_learn)
   {
@@ -70,9 +70,14 @@ void predict_or_learn(csoaa& c, single_learner& base, example& ec)
     {
       auto& lbl = cost.class_index;
       // Update indexing
-      if (c.indexing == -1 && lbl == 0) { c.indexing = 0; }
+      if (c.indexing == -1 && lbl == 0)
+      {
+        logger::log_info("label 0 found -- labels are now considered 0-indexed.");
+        c.indexing = 0;
+      }
       else if (c.indexing == -1 && lbl == c.num_classes)
       {
+        logger::log_info("label {0} found -- labels are now considered 1-indexed.", c.num_classes);
         c.indexing = 1;
       }
 
