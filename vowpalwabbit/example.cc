@@ -336,7 +336,7 @@ size_t write_model_field(io_buf& io, const flat_example& fe, const std::string& 
     label_parser& lbl_parser, uint64_t parse_mask)
 {
   size_t bytes = 0;
-  lbl_parser.cache_label(fe.l, fe._reduction_features, io);
+  lbl_parser.cache_label(fe.l, fe._reduction_features, io, upstream_name + "_label", text);
   bytes += write_model_field(io, fe.tag_len, upstream_name + "_tag_len", text);
   bytes += write_model_field(io, fe.tag == nullptr, upstream_name + "_tag_is_null", text);
   if (!(fe.tag == nullptr)) { bytes += write_model_field(io, *fe.tag, upstream_name + "_tag", text); }
