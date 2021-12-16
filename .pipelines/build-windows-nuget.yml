@@ -19,6 +19,10 @@ variables:
   VCPKG_BINARY_SOURCES: 'clear;files,C:\Users\VssAdministrator\AppData\Local\vcpkg\archives,readwrite'
 
 steps:
+- powershell: |
+    Set-MpPreference -DisableArchiveScanning $true
+    Set-MpPreference -DisableRealtimeMonitoring $true
+    Set-MpPreference -DisableBehaviorMonitoring $true
 - task: VisualStudioTestPlatformInstaller@1
   inputs:
     packageFeedSelector: 'nugetOrg' # Options: nugetOrg, customFeed, netShare
