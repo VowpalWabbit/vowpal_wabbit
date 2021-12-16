@@ -384,12 +384,12 @@ void initialize(Search::search& sch, size_t& num_actions, options_i& /*options*/
 }
 
 // this is totally bogus for the example -- you'd never actually do this!
-void my_update_example_indicies(
+void my_update_example_indices(
     Search::search& sch, bool /* audit */, example* ec, uint64_t mult_amount, uint64_t plus_amount)
 {
   size_t ss = sch.get_stride_shift();
   for (features& fs : *ec)
-    for (feature_index& idx : fs.indicies) idx = (((idx >> ss) * mult_amount) + plus_amount) << ss;
+    for (feature_index& idx : fs.indices) idx = (((idx >> ss) * mult_amount) + plus_amount) << ss;
 }
 
 void run(Search::search& sch, multi_ex& ec)
@@ -404,7 +404,7 @@ void run(Search::search& sch, multi_ex& ec)
       {
         VW::copy_example_data(&data->ldf_examples[a], ec[i]);  // copy but leave label alone!
         // now, offset it appropriately for the action id
-        my_update_example_indicies(sch, true, &data->ldf_examples[a], 28904713, 4832917 * static_cast<uint64_t>(a));
+        my_update_example_indices(sch, true, &data->ldf_examples[a], 28904713, 4832917 * static_cast<uint64_t>(a));
       }
 
       // regardless of whether the example is needed or not, the class info is needed
