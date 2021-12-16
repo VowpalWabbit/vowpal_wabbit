@@ -146,7 +146,8 @@ int VW::read_example_from_cache(VW::workspace* all, io_buf& input, v_array<examp
   if (input.buf_read(read_ptr, sizeof(uint64_t)) < sizeof(uint64_t)) { return 0; }
 
   examples[0]->sorted = all->example_parser->sorted_cache;
-  size_t total = all->example_parser->lbl_parser.read_cached_label(examples[0]->l, examples[0]->_reduction_features, input);
+  size_t total =
+      all->example_parser->lbl_parser.read_cached_label(examples[0]->l, examples[0]->_reduction_features, input);
   if (total == 0) { return 0; }
   if (read_cached_tag(input, examples[0]) == 0) { return 0; }
   examples[0]->is_newline = input.read_value<unsigned char>("newline_indicator") == newline_example;
