@@ -37,10 +37,10 @@ BOOST_AUTO_TEST_CASE(write_and_read_features_from_cache)
 
   check_collections_with_float_tolerance(
       src_ex.feature_space['s'].values, dest_ex.feature_space['s'].values, FLOAT_TOL);
-  check_collections_exact(src_ex.feature_space['s'].indicies, dest_ex.feature_space['s'].indicies);
+  check_collections_exact(src_ex.feature_space['s'].indices, dest_ex.feature_space['s'].indices);
   check_collections_with_float_tolerance(
       src_ex.feature_space['n'].values, dest_ex.feature_space['n'].values, FLOAT_TOL);
-  check_collections_exact(src_ex.feature_space['n'].indicies, dest_ex.feature_space['n'].indicies);
+  check_collections_exact(src_ex.feature_space['n'].indices, dest_ex.feature_space['n'].indices);
 
   VW::finish(vw);
 }
