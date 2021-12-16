@@ -130,7 +130,7 @@ void add_all_features(example &ex, example &src, unsigned char tgt_ns, uint64_t 
   features &tgt_fs = ex.feature_space[tgt_ns];
   for (namespace_index ns : src.indices)
     if (ns != constant_namespace)  // ignore constant_namespace
-      for (feature_index i : src.feature_space[ns].indicies)
+      for (feature_index i : src.feature_space[ns].indices)
         tgt_fs.push_back(1.0f, ((i / multiplier + offset) * multiplier) & mask);
 }
 
