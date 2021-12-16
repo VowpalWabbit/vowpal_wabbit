@@ -1,1 +1,2 @@
+[info] label 0 found -- labels are now considered 0-indexed.
 [warning] label 4 is not in {0,3}. This won't work for 0-indexed actions.

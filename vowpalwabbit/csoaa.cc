@@ -21,22 +21,34 @@ namespace CSOAA
 struct csoaa
 {
   uint32_t num_classes = 0;
+  int indexing = -1;
+  bool search = false;
   polyprediction* pred = nullptr;
   ~csoaa() { free(pred); }
 };
 
 template <bool is_learn>
 inline void inner_loop(single_learner& base, example& ec, uint32_t i, float cost, uint32_t& prediction, float& score,
-    float& partial_prediction)
+    float& partial_prediction, int indexing)
 {
   if (is_learn)
   {
     ec.weight = (cost == FLT_MAX) ? 0.f : 1.f;
     ec.l.simple.label = cost;
-    base.learn(ec, i - 1);
+    if (indexing == 0) { base.learn(ec, i); }
+    else
+    {
+      base.learn(ec, i - 1);
+    }
   }
   else
-    base.predict(ec, i - 1);
+  {
+    if (indexing == 0) { base.predict(ec, i); }
+    else
+    {
+      base.predict(ec, i - 1);
+    }
+  }
 
   partial_prediction = ec.partial_prediction;
   if (ec.partial_prediction < score || (ec.partial_prediction == score && i < prediction))
@@ -52,12 +64,44 @@ inline void inner_loop(single_learner& base, example& ec, uint32_t i, float cost
 template <bool is_learn>
 void predict_or_learn(csoaa& c, single_learner& base, example& ec)
 {
+  if (!c.search)
+  {
+    for (auto& cost : ec.l.cs.costs)
+    {
+      auto& lbl = cost.class_index;
+      // Update indexing
+      if (c.indexing == -1 && lbl == 0)
+      {
+        logger::log_info("label 0 found -- labels are now considered 0-indexed.");
+        c.indexing = 0;
+      }
+      else if (c.indexing == -1 && lbl == c.num_classes)
+      {
+        logger::log_info("label {0} found -- labels are now considered 1-indexed.", c.num_classes);
+        c.indexing = 1;
+      }
+
+      // Label validation
+      if (c.indexing == 0 && lbl >= c.num_classes)
+      {
+        logger::log_warn(
+            "label {0} is not in {{0,{1}}}. This won't work for 0-indexed actions.", lbl, c.num_classes - 1);
+        lbl = 0;
+      }
+      else if (c.indexing == 1 && (lbl < 1 || lbl > c.num_classes))
+      {
+        logger::log_warn("label {0} is not in {{1,{1}}}. This won't work for 1-indexed actions.", lbl, c.num_classes);
+        lbl = static_cast<uint32_t>(c.num_classes);
+      }
+    }
+  }
+
   COST_SENSITIVE::label ld = std::move(ec.l.cs);
 
   // Guard example state restore against throws
   auto restore_guard = VW::scope_exit([&ld, &ec] { ec.l.cs = std::move(ld); });
 
-  uint32_t prediction = 1;
+  uint32_t prediction = (c.indexing == 0) ? 0 : 1;
   float score = FLT_MAX;
   size_t pt_start = ec.passthrough ? ec.passthrough->size() : 0;
   ec.l.simple = {0.};
@@ -68,7 +112,7 @@ void predict_or_learn(csoaa& c, single_learner& base, example& ec)
   if (!ld.costs.empty())
   {
     for (auto& cl : ld.costs)
-      inner_loop<is_learn>(base, ec, cl.class_index, cl.x, prediction, score, cl.partial_prediction);
+      inner_loop<is_learn>(base, ec, cl.class_index, cl.x, prediction, score, cl.partial_prediction, c.indexing);
     ec.partial_prediction = score;
   }
   else if (dont_learn)
@@ -77,17 +121,30 @@ void predict_or_learn(csoaa& c, single_learner& base, example& ec)
     ec._reduction_features.template get<simple_label_reduction_features>().reset_to_default();
 
     base.multipredict(ec, 0, c.num_classes, c.pred, false);
-    for (uint32_t i = 1; i <= c.num_classes; i++)
+    if (c.indexing == 0)
     {
-      add_passthrough_feature(ec, i, c.pred[i - 1].scalar);
-      if (c.pred[i - 1].scalar < c.pred[prediction - 1].scalar) prediction = i;
+      for (uint32_t i = 0; i <= c.num_classes; i++)
+      {
+        add_passthrough_feature(ec, i, c.pred[i].scalar);
+        if (c.pred[i].scalar < c.pred[prediction].scalar) prediction = i;
+      }
+      ec.partial_prediction = c.pred[prediction].scalar;
     }
-    ec.partial_prediction = c.pred[prediction - 1].scalar;
+    else
+    {
+      for (uint32_t i = 1; i <= c.num_classes; i++)
+      {
+        add_passthrough_feature(ec, i, c.pred[i - 1].scalar);
+        if (c.pred[i - 1].scalar < c.pred[prediction - 1].scalar) prediction = i;
+      }
+      ec.partial_prediction = c.pred[prediction - 1].scalar;
+    }
   }
   else
   {
     float temp;
-    for (uint32_t i = 1; i <= c.num_classes; i++) inner_loop<false>(base, ec, i, FLT_MAX, prediction, score, temp);
+    for (uint32_t i = 1; i <= c.num_classes; i++)
+      inner_loop<false>(base, ec, i, FLT_MAX, prediction, score, temp, c.indexing);
   }
 
   if (ec.passthrough)
@@ -124,13 +181,15 @@ base_learner* csoaa_setup(VW::setup_base_i& stack_builder)
   VW::workspace& all = *stack_builder.get_all_pointer();
   auto c = VW::make_unique<csoaa>();
   option_group_definition new_options("Cost Sensitive One Against All");
-  new_options.add(
-      make_option("csoaa", c->num_classes).keep().necessary().help("One-against-all multiclass with <k> costs"));
+  new_options
+      .add(make_option("csoaa", c->num_classes).keep().necessary().help("One-against-all multiclass with <k> costs"))
+      .add(make_option("indexing", c->indexing).one_of({0, 1}).keep().help("Choose between 0 or 1-indexing"));
 
   if (!options.add_parse_and_check_necessary(new_options)) return nullptr;
 
   if (options.was_supplied("probabilities"))
   { THROW("Error: csoaa does not support probabilities flag, please use oaa or multilabel_oaa"); }
+  c->search = options.was_supplied("search");
 
   c->pred = calloc_or_throw<polyprediction>(c->num_classes);
   size_t ws = c->num_classes;

@@ -467,6 +467,7 @@ Cost Sensitive Active Learning Options:
   --csa_debug                           Print debug stuff for cs_active
 Cost Sensitive One Against All Options:
   --csoaa arg           One-against-all multiclass with <k> costs
+  --indexing arg        Choose between 0 or 1-indexing. Choices: {0, 1}
 Cost Sensitive One Against All with Label Dependent Features Options:
   --csoaa_ldf arg       Use one-against-all multiclass learning with label 
                         dependent features
