@@ -23,6 +23,8 @@ steps:
     Set-MpPreference -DisableArchiveScanning $true
     Set-MpPreference -DisableRealtimeMonitoring $true
     Set-MpPreference -DisableBehaviorMonitoring $true
+    Add-MpPreference -ExclusionExtension ".pdb"
+    Add-MpPreference -ExclusionExtension ".lib"
 - task: VisualStudioTestPlatformInstaller@1
   inputs:
     packageFeedSelector: 'nugetOrg' # Options: nugetOrg, customFeed, netShare
