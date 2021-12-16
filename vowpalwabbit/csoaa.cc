@@ -100,7 +100,7 @@ void predict_or_learn(csoaa& c, single_learner& base, example& ec)
       if ((val > ec.partial_prediction) && (val < second_best_cost))
       {
         second_best_cost = val;
-        second_best = ec.passthrough->indicies[pt_start + i];
+        second_best = ec.passthrough->indices[pt_start + i];
       }
     }
     if (second_best_cost < FLT_MAX)

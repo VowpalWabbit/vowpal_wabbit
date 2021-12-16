@@ -412,7 +412,7 @@ void to_flat::convert_txt_to_flat(VW::workspace& all)
     {
       for (features& fs : *ae)
       {
-        for (auto& j : fs.indicies) { j /= multiplier; }
+        for (auto& j : fs.indices) { j /= multiplier; }
       }
     }
     std::vector<flatbuffers::Offset<VW::parsers::flatbuffer::Namespace>> namespaces;
