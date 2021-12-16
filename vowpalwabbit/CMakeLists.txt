@@ -99,6 +99,7 @@ set(vw_all_headers
   crossplat_compat.h
   cs_active.h
   csoaa.h
+  csoaa_ldf.h
   debug_print.h
   decision_scores.h
   distributionally_robust.h
@@ -289,6 +290,7 @@ set(vw_all_sources
   crossplat_compat.cc
   cs_active.cc
   csoaa.cc
+  csoaa_ldf.cc
   decision_scores.cc
   distributionally_robust.cc
   ect.cc

@@ -178,6 +178,7 @@
     <ClInclude Include="crossplat_compat.h" />
     <ClInclude Include="cs_active.h" />
     <ClInclude Include="csoaa.h" />
+    <ClInclude Include="csoaa_ldf.h" />
     <ClInclude Include="decision_scores.h" />
     <ClInclude Include="distributionally_robust.h" />
     <ClInclude Include="ect.h" />
@@ -355,6 +356,7 @@
     <ClCompile Include="cost_sensitive.cc" />
     <ClCompile Include="cs_active.cc" />
     <ClCompile Include="csoaa.cc" />
+    <ClCompile Include="csoaa_ldf.cc" />
     <ClCompile Include="decision_scores.cc" />
     <ClCompile Include="distributionally_robust.cc" />
     <ClCompile Include="ect.cc" />

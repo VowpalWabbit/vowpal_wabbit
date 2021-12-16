@@ -112,7 +112,7 @@ BOOST_AUTO_TEST_CASE(slates_cache_shared_label)
 
   VW::slates::label label;
   parse_slates_label("slates shared 0.5", label);
-  VW::slates::cache_label(label, io_writer);
+  VW::model_utils::write_model_field(io_writer, label, "", false);
   io_writer.flush();
 
   io_buf io_reader;
@@ -120,7 +120,7 @@ BOOST_AUTO_TEST_CASE(slates_cache_shared_label)
 
   VW::slates::label uncached_label;
   VW::slates::default_label(uncached_label);
-  VW::slates::read_cached_label(uncached_label, io_reader);
+  VW::model_utils::read_model_field(io_reader, uncached_label);
 
   BOOST_CHECK_EQUAL(uncached_label.type, VW::slates::example_type::shared);
   BOOST_CHECK_EQUAL(uncached_label.labeled, true);
@@ -135,7 +135,7 @@ BOOST_AUTO_TEST_CASE(slates_cache_action_label)
 
   VW::slates::label label;
   parse_slates_label("slates action 5", label);
-  VW::slates::cache_label(label, io_writer);
+  VW::model_utils::write_model_field(io_writer, label, "", false);
   io_writer.flush();
 
   io_buf io_reader;
@@ -143,7 +143,7 @@ BOOST_AUTO_TEST_CASE(slates_cache_action_label)
 
   VW::slates::label uncached_label;
   VW::slates::default_label(uncached_label);
-  VW::slates::read_cached_label(uncached_label, io_reader);
+  VW::model_utils::read_model_field(io_reader, uncached_label);
 
   BOOST_CHECK_EQUAL(uncached_label.type, VW::slates::example_type::action);
   BOOST_CHECK_EQUAL(uncached_label.labeled, false);
@@ -158,7 +158,7 @@ BOOST_AUTO_TEST_CASE(slates_cache_slot_label)
 
   VW::slates::label label;
   parse_slates_label("slates slot 0:0.5,1:0.25,2:0.25", label);
-  VW::slates::cache_label(label, io_writer);
+  VW::model_utils::write_model_field(io_writer, label, "", false);
   io_writer.flush();
 
   io_buf io_reader;
@@ -166,7 +166,7 @@ BOOST_AUTO_TEST_CASE(slates_cache_slot_label)
 
   VW::slates::label uncached_label;
   VW::slates::default_label(uncached_label);
-  VW::slates::read_cached_label(uncached_label, io_reader);
+  VW::model_utils::read_model_field(io_reader, uncached_label);
 
   BOOST_CHECK_EQUAL(uncached_label.type, VW::slates::example_type::slot);
   BOOST_CHECK_EQUAL(uncached_label.labeled, true);
