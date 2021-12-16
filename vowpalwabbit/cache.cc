@@ -142,23 +142,14 @@ size_t read_cached_features(io_buf& input, features& ours, bool& sorted, char*& 
 
 int VW::read_example_from_cache(VW::workspace* all, io_buf& input, v_array<example*>& examples)
 {
-  uint64_t size;
   char* read_ptr;
-  example* ae = examples[0];
-  label_parser& lbl_parser = all->example_parser->lbl_parser;
-  if (input.buf_read(read_ptr, sizeof(size)) < sizeof(size)) { return 0; }
-  memcpy(&size, read_ptr, sizeof(size));
+  if (input.buf_read(read_ptr, sizeof(uint64_t)) < sizeof(uint64_t)) { return 0; }
 
-  ae->sorted = all->example_parser->sorted_cache;
-  size_t total = lbl_parser.read_cached_label(ae->l, ae->_reduction_features, input);
+  examples[0]->sorted = all->example_parser->sorted_cache;
+  size_t total = all->example_parser->lbl_parser.read_cached_label(examples[0]->l, examples[0]->_reduction_features, input);
   if (total == 0) { return 0; }
-  if (read_cached_tag(input, ae) == 0) { return 0; }
-  unsigned char newline_indicator = input.read_value<unsigned char>("newline_indicator");
-  if (newline_indicator == newline_example) { ae->is_newline = true; }
-  else
-  {
-    ae->is_newline = false;
-  }
+  if (read_cached_tag(input, examples[0]) == 0) { return 0; }
+  examples[0]->is_newline = input.read_value<unsigned char>("newline_indicator") == newline_example;
 
   // read indices
   unsigned char num_indices = input.read_value<unsigned char>("num_indices");
@@ -167,8 +158,8 @@ int VW::read_example_from_cache(VW::workspace* all, io_buf& input, v_array<examp
   {
     unsigned char index = 0;
     total += read_cached_index(input, index, c);
-    ae->indices.push_back(static_cast<size_t>(index));
-    total += read_cached_features(input, ae->feature_space[index], ae->sorted, c);
+    examples[0]->indices.push_back(static_cast<size_t>(index));
+    total += read_cached_features(input, examples[0]->feature_space[index], examples[0]->sorted, c);
   }
 
   return static_cast<int>(total);
