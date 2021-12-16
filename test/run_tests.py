@@ -777,6 +777,9 @@ def convert_to_test_data(
             if sys.platform == "win32":
                 skip = True
                 skip_reason = "bash_command is unsupported on Windows"
+            elif sys.platform == "darwin" and ("daemon" in test["bash_command"] or "spanning_tree" in test["bash_command"]):
+                skip = True
+                skip_reason = "daemon not currently supported in MacOS"
             else:
                 if spanning_tree_bin is None and (
                     "SPANNING_TREE" in test["bash_command"]
