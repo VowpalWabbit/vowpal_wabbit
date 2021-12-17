@@ -284,6 +284,9 @@ struct options_exporter : options_i
       option_obj.AddMember("short_name", short_name_value, allocator);
       option_obj.AddMember("keep", option->m_keep, allocator);
       option_obj.AddMember("necessary", option->m_necessary, allocator);
+      rapidjson::Value one_of_value;
+      one_of_value.SetString(option->m_one_of_str, allocator);
+      option_obj.AddMember("one_of", one_of_value, allocator);
       inject_type_info(option_obj, option, allocator);
 
       options_array.PushBack(option_obj, allocator);
