@@ -90,7 +90,7 @@ struct option_builder
 
   option_builder& one_of(std::set<typename T::value_type> args)
   {
-    m_option_obj.m_one_of_str = fmt::format("{{{0}}}",fmt::join(args, ", "));
+    m_option_obj.m_one_of_str = fmt::format("{{{0}}}", fmt::join(args, ", "));
     m_option_obj.set_one_of(args);
     return *this;
   }
