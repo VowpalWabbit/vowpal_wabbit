@@ -472,11 +472,6 @@ def create_test_dir(
 ):
     test_working_dir = Path(test_base_dir).joinpath("test_{}".format((test_id)))
 
-    # Delete the directory to ensure we always start with a clean slate.
-    # Some implicit files like cache files might change behavior and are harder to track based on "input_files"
-    if test_working_dir.exists():
-        shutil.rmtree(test_working_dir)
-
     Path(test_working_dir).mkdir(parents=True, exist_ok=True)
 
     # Required as workaround until #2686 is fixed.
