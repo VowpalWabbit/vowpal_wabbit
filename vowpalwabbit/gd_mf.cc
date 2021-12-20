@@ -181,7 +181,7 @@ template <class T>
 void sd_offset_update(T& weights, features& fs, uint64_t offset, float update, float regularization)
 {
   for (size_t i = 0; i < fs.size(); i++)
-    (&weights[fs.indicies[i]])[offset] += update * fs.values[i] - regularization * (&weights[fs.indicies[i]])[offset];
+    (&weights[fs.indices[i]])[offset] += update * fs.values[i] - regularization * (&weights[fs.indices[i]])[offset];
 }
 
 template <class T>

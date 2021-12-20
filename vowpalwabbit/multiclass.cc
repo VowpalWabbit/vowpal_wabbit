@@ -11,6 +11,7 @@
 #include "example.h"
 #include "parse_primitives.h"
 #include "shared_data.h"
+#include "model_utils.h"
 
 namespace MULTICLASS
 {
@@ -26,27 +27,6 @@ void label_t::reset_to_default()
 
 void default_label(label_t& ld) { ld.reset_to_default(); }
 
-void cache_label(const label_t& ld, io_buf& cache)
-{
-  char* c;
-  cache.buf_write(c, sizeof(ld.label) + sizeof(ld.weight));
-  memcpy(c, &ld.label, sizeof(ld.label));
-  c += sizeof(ld.label);
-  memcpy(c, &ld.weight, sizeof(ld.weight));
-  c += sizeof(ld.weight);
-}
-
-size_t read_cached_label(label_t& ld, io_buf& cache)
-{
-  char* c;
-  size_t total = sizeof(ld.label) + sizeof(ld.weight);
-  if (cache.buf_read(c, total) < total) return 0;
-  memcpy(&ld.label, c, sizeof(ld.label));
-  c += sizeof(ld.label);
-  memcpy(&ld.weight, c, sizeof(ld.weight));
-  c += sizeof(ld.weight);
-  return total;
-}
 float weight(const label_t& ld) { return (ld.weight > 0) ? ld.weight : 0.f; }
 bool test_label(const label_t& ld) { return ld.label == static_cast<uint32_t>(-1); }
 
@@ -91,12 +71,12 @@ label_parser mc_label = {
         const VW::named_labels* ldict,
         const std::vector<VW::string_view>& words) { parse_label(label.multi, ldict, words); },
     // cache_label
-    [](const polylabel& label, const reduction_features& /* red_features */, io_buf& cache) {
-      cache_label(label.multi, cache);
-    },
+    [](const polylabel& label, const reduction_features& /* red_features */, io_buf& cache,
+        const std::string& upstream_name,
+        bool text) { return VW::model_utils::write_model_field(cache, label.multi, upstream_name, text); },
     // read_cached_label
     [](polylabel& label, reduction_features& /* red_features */, io_buf& cache) {
-      return read_cached_label(label.multi, cache);
+      return VW::model_utils::read_model_field(cache, label.multi);
     },
     // get_weight
     [](const polylabel& label, const reduction_features& /* red_features */) { return weight(label.multi); },
@@ -188,3 +168,25 @@ void finish_example(VW::workspace& all, example& ec, bool update_loss)
   VW::finish_example(all, ec);
 }
 }  // namespace MULTICLASS
+
+namespace VW
+{
+namespace model_utils
+{
+size_t read_model_field(io_buf& io, MULTICLASS::label_t& multi)
+{
+  size_t bytes = 0;
+  bytes += read_model_field(io, multi.label);
+  bytes += read_model_field(io, multi.weight);
+  return bytes;
+}
+
+size_t write_model_field(io_buf& io, const MULTICLASS::label_t& multi, const std::string& upstream_name, bool text)
+{
+  size_t bytes = 0;
+  bytes += write_model_field(io, multi.label, upstream_name + "_label", text);
+  bytes += write_model_field(io, multi.weight, upstream_name + "_weight", text);
+  return bytes;
+}
+}  // namespace model_utils
+}  // namespace VW
