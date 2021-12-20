@@ -17,7 +17,7 @@ Input label = simple
 Output pred = scalar
 average  since         example        example  current  current  current
 loss     last          counter         weight    label  predict features
-[error] Your features have too much magnitude. Example is ignored
+[error] The features have too much magnitude. Example is ignored
 0.010000 0.010000            2            1.0   0.1000   0.0000        3
 0.005000 0.000000            3            2.0   0.2000   0.2000        3
 0.003333 0.000000            4            3.0   0.3000   0.3000        3
