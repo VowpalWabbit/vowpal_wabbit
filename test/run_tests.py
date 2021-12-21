@@ -981,7 +981,7 @@ def main():
     if args.for_flatbuffers:
         to_flatbuff = find_to_flatbuf_binary(test_base_ref_dir, args.to_flatbuff_path)
         tests = convert_tests_for_flatbuffers(
-            tests, to_flatbuff, args.working_dir, color_enum
+            tests, to_flatbuff, test_base_working_dir, color_enum
         )
 
     # Because bash_command based tests don't specify all inputs and outputs they must operate in the test directory directly.
