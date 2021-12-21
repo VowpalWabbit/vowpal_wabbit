@@ -952,7 +952,7 @@ def main():
     )
 
     vw_bin = find_vw_binary(test_base_ref_dir, args.vw_bin_path)
-    print(f"Using VW binary: {vw_bin.resolve()}")
+    print(f"Using VW binary: {vw_bin}")
 
     spanning_tree_bin: Optional[Path] = None
     if not args.skip_spanning_tree_tests:
