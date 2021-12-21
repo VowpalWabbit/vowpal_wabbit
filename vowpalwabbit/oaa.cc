@@ -40,9 +40,14 @@ struct oaa
 void learn_randomized(oaa& o, VW::LEARNER::single_learner& base, example& ec)
 {
   // Update indexing
-  if (o.indexing == -1 && ec.l.multi.label == 0) { o.indexing = 0; }
+  if (o.indexing == -1 && ec.l.multi.label == 0)
+  {
+    logger::log_info("label 0 found -- labels are now considered 0-indexed.");
+    o.indexing = 0;
+  }
   else if (o.indexing == -1 && ec.l.multi.label == o.k)
   {
+    logger::log_info("label {0} found -- labels are now considered 1-indexed.", o.k);
     o.indexing = 1;
   }
 
@@ -98,9 +103,14 @@ template <bool print_all, bool scores, bool probabilities>
 void learn(oaa& o, VW::LEARNER::single_learner& base, example& ec)
 {
   // Update indexing
-  if (o.indexing == -1 && ec.l.multi.label == 0) { o.indexing = 0; }
+  if (o.indexing == -1 && ec.l.multi.label == 0)
+  {
+    logger::log_info("label 0 found -- labels are now considered 0-indexed.");
+    o.indexing = 0;
+  }
   else if (o.indexing == -1 && ec.l.multi.label == o.k)
   {
+    logger::log_info("label {0} found -- labels are now considered 1-indexed.", o.k);
     o.indexing = 1;
   }
 

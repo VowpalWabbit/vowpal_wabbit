@@ -6,7 +6,7 @@ pr:
 - '*'
 
 pool:
-  vmImage: 'macOS-10.14'
+  vmImage: 'macOS-10.15'
 
 steps:
 - bash: .scripts/macos/restore.sh $(Build.SourcesDirectory)
