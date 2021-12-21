@@ -170,7 +170,11 @@ def create_file_diff(
     text_one_list = [line.strip() for line in text_one.strip().splitlines()]
     text_two_list = [line.strip() for line in text_two.strip().splitlines()]
     diff = difflib.unified_diff(
-        text_two_list, text_one_list, fromfile=file_name_two, tofile=file_name_one, lineterm=""
+        text_two_list,
+        text_one_list,
+        fromfile=file_name_two,
+        tofile=file_name_one,
+        lineterm="",
     )
     return list([line for line in diff])
 
@@ -298,7 +302,10 @@ def run_command_line_test(
         if not success:
             completed_tests.report_completion(test.id, False)
             return TestOutcome(
-                test.id, Result.SKIPPED, {}, skip_reason=f"Test {test.id} depends on test {dep} which failed."
+                test.id,
+                Result.SKIPPED,
+                {},
+                skip_reason=f"Test {test.id} depends on test {dep} which failed.",
             )
 
     try:
@@ -367,7 +374,11 @@ def run_command_line_test(
                 else:
                     success = False
                     message = f"valgrind failed with command: '{command_line}'"
-                    diff = valgrind_log_file_path.open("r", encoding="utf-8").read().split("\n")
+                    diff = (
+                        valgrind_log_file_path.open("r", encoding="utf-8")
+                        .read()
+                        .split("\n")
+                    )
             elif return_code != 0:
                 success = False
                 message = "non-valgrind failure error code"
@@ -399,7 +410,9 @@ def run_command_line_test(
                     False, f"Failed to open ref file: {ref_file}", []
                 )
                 continue
-            is_different, reason = is_output_different(output_content, ref_content, epsilon, fuzzy_compare=fuzzy_compare)
+            is_different, reason = is_output_different(
+                output_content, ref_content, epsilon, fuzzy_compare=fuzzy_compare
+            )
             if is_different and overwrite:
                 with ref_file_ref_dir.open("w") as writer:
                     writer.write(output_content)
@@ -441,7 +454,10 @@ def create_test_dir(
                 [(test_base_dir / f"test_{x}" / f) for x in dependencies]
             )
             search_paths.extend(
-                [(test_base_dir / f"test_{x}" / os.path.basename(f)) for x in dependencies]
+                [
+                    (test_base_dir / f"test_{x}" / os.path.basename(f))
+                    for x in dependencies
+                ]
             )  # for input_files with a full path
         for search_path in search_paths:
             if search_path.exists() and not search_path.is_dir():
@@ -592,7 +608,9 @@ def calculate_test_to_run_explicitly(
     tests_to_run_explicitly: Set[int] = set()
     for test_number in explicit_tests:
         if test_number > len(tests):
-            raise ValueError(f"Error: Test number {test_number} does not exist. There are {len(tests)} tests in total.")
+            raise ValueError(
+                f"Error: Test number {test_number} does not exist. There are {len(tests)} tests in total."
+            )
         tests_to_run_explicitly.add(test_number)
         tests_to_run_explicitly = set.union(
             tests_to_run_explicitly, get_deps(test_number, tests)
@@ -721,7 +739,10 @@ def convert_to_test_data(
             if sys.platform == "win32":
                 skip = True
                 skip_reason = "bash_command is unsupported on Windows"
-            elif sys.platform == "darwin" and ("daemon" in test["bash_command"] or "spanning_tree" in test["bash_command"]):
+            elif sys.platform == "darwin" and (
+                "daemon" in test["bash_command"]
+                or "spanning_tree" in test["bash_command"]
+            ):
                 skip = True
                 skip_reason = "daemon not currently supported in MacOS"
             else:
@@ -955,7 +976,7 @@ def main():
         vw_bin,
         spanning_tree_bin,
         args.skip_test,
-        extra_vw_options=args.extra_options
+        extra_vw_options=args.extra_options,
     )
 
     print()
