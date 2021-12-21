@@ -409,7 +409,7 @@ def run_command_line_test(
                 message = f"Diff not OK, {reason}"
             else:
                 message = f"Diff OK, {reason}"
-            checks[output_file] = DiffCheck(is_different == False, message, diff)
+            checks[output_file] = DiffCheck(is_different is False, message, diff)
     except:
         completed_tests.report_completion(test.id, False)
         raise
