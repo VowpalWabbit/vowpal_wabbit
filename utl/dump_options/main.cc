@@ -279,16 +279,36 @@ struct options_exporter : options_i
       rapidjson::Value help_value;
       help_value.SetString(option->m_help, allocator);
       option_obj.AddMember("help", help_value, allocator);
-      rapidjson::Value short_name_value;
-      short_name_value.SetString(option->m_short_name, allocator);
-      option_obj.AddMember("short_name", short_name_value, allocator);
+      if (option->m_short_name != "")
+      {
+        rapidjson::Value short_name_value;
+        short_name_value.SetString(option->m_short_name, allocator);
+        option_obj.AddMember("short_name", short_name_value, allocator);
+      }
       option_obj.AddMember("keep", option->m_keep, allocator);
       option_obj.AddMember("necessary", option->m_necessary, allocator);
       rapidjson::Value one_of_value;
-      one_of_value.SetString(option->m_one_of_str, allocator);
-      option_obj.AddMember("one_of", one_of_value, allocator);
+      if (option->m_one_of_str != "")
+      {
+        rapidjson::Value one_of_array(rapidjson::kArrayType);
+        std::istringstream iss(option->m_one_of_str);
+        std::string item;
+        while (std::getline(iss, item, ','))
+        {
+          rapidjson::Value one_of_val;
+          if (option->m_type_hash == typed_option<std::string>::type_hash())
+          {
+            one_of_val.SetString(item, allocator);
+          }
+          else
+          {
+            one_of_val.SetInt(std::stoi(item));
+          }
+          one_of_array.PushBack(one_of_val, allocator);
+        }
+        option_obj.AddMember("one_of", one_of_array, allocator);
+      }
       inject_type_info(option_obj, option, allocator);
-
       options_array.PushBack(option_obj, allocator);
     }
 
