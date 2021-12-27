@@ -296,10 +296,7 @@ struct options_exporter : options_i
         while (std::getline(iss, item, ','))
         {
           rapidjson::Value one_of_val;
-          if (option->m_type_hash == typed_option<std::string>::type_hash())
-          {
-            one_of_val.SetString(item, allocator);
-          }
+          if (option->m_type_hash == typed_option<std::string>::type_hash()) { one_of_val.SetString(item, allocator); }
           else
           {
             one_of_val.SetInt(std::stoi(item));
