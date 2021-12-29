@@ -48,14 +48,14 @@ class Completion:
         self.condition = threading.Condition(self.lock)
         self.completed: Dict[int, bool] = dict()
 
-    def report_completion(self, id, success):
+    def report_completion(self, id: int, success: bool) -> None:
         self.lock.acquire()
         self.completed[id] = success
         self.condition.notify_all()
         self.lock.release()
 
-    def wait_for_completion_get_success(self, id):
-        def is_complete():
+    def wait_for_completion_get_success(self, id: int) -> bool:
+        def is_complete() -> bool:
             return id in self.completed
 
         self.lock.acquire()
@@ -109,7 +109,7 @@ class TestOutcome:
         self.skip_reason = skip_reason
 
 
-def try_decode(binary_object) -> str:
+def try_decode(binary_object: Optional[bytes]) -> str:
     return binary_object.decode("utf-8") if binary_object is not None else ""
 
 
