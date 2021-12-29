@@ -287,7 +287,6 @@ struct options_exporter : options_i
       }
       option_obj.AddMember("keep", option->m_keep, allocator);
       option_obj.AddMember("necessary", option->m_necessary, allocator);
-      rapidjson::Value one_of_value;
       if (option->m_type_hash == typed_option<std::string>::type_hash())
       {
         const auto str_option = std::dynamic_pointer_cast<typed_option<std::string>>(option);
