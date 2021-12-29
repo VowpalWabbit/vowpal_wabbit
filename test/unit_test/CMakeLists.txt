@@ -10,8 +10,8 @@ add_executable(vw-unit-test.out
   ccb_parser_test.cc
   ccb_test.cc
   chain_hashing.cc
-  chain_hashing.cc
   continuous_actions_parser_test.cc
+  custom_reduction_test.cc
   distributionally_robust_test.cc
   dsjson_parser_test.cc
   error_test.cc
@@ -26,6 +26,7 @@ add_executable(vw-unit-test.out
   json_parser_test.cc
   main.cc
   math_test.cc
+  minimal_custom_reduction.cc
   multiclass_label_parser_test.cc
   numeric_cast_test.cc
   object_pool_test.cc
@@ -38,9 +39,6 @@ add_executable(vw-unit-test.out
   pmf_to_pdf_test.cc
   power_test.cc
   prediction_test.cc
-  custom_reduction_test.cc
-  minimal_custom_reduction.cc
-  random_test.cc
   random_test.cc
   scope_exit_test.cc
   simulator.cc
