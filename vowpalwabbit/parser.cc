@@ -756,7 +756,7 @@ void setup_example(VW::workspace& all, example* ae)
 
   if (multiplier != 1)  // make room for per-feature information.
     for (features& fs : *ae)
-      for (auto& j : fs.indicies) j *= multiplier;
+      for (auto& j : fs.indices) j *= multiplier;
   ae->num_features = 0;
   for (const features& fs : *ae)
   {
@@ -848,7 +848,7 @@ primitive_feature_space* export_example(VW::workspace& all, example* ec, size_t&
     auto& f = ec->feature_space[i];
     for (size_t f_count = 0; f_count < fs_ptr[fs_count].len; f_count++)
     {
-      feature t = {f.values[f_count], f.indicies[f_count]};
+      feature t = {f.values[f_count], f.indices[f_count]};
       t.weight_index >>= stride_shift;
       fs_ptr[fs_count].fs[f_count] = t;
     }
