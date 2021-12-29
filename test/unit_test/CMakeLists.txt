@@ -4,7 +4,7 @@ add_executable(vw-unit-test.out
   baseline_cb_test.cc
   cache_test.cc
   cats_test.cc
-  cats_tree_tests.cc
+  cats_tree_test.cc
   cats_user_provided_pdf.cc
   cb_explore_adf_test.cc
   ccb_parser_test.cc
@@ -27,10 +27,10 @@ add_executable(vw-unit-test.out
   main.cc
   math_test.cc
   multiclass_label_parser_test.cc
-  numeric_cast_tests.cc
+  numeric_cast_test.cc
   object_pool_test.cc
-  offset_tree_tests.cc
-  offset_tree_tests.cc
+  offset_tree_test.cc
+  offset_tree_test.cc
   options_boost_po_test.cc
   options_test.cc
   ostream_test.cc
@@ -48,11 +48,11 @@ add_executable(vw-unit-test.out
   simulator.h
   slates_parser_test.cc
   slates_test.cc
-  stable_unique_tests.cc
+  stable_unique_test.cc
   tag_utils_test.cc
   test_common.cc
   test_common.h
-  tokenize_tests.cc
+  tokenize_test.cc
   tutorial_test.cc
   v_array_test.cc
   vw_versions_test.cc

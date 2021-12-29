@@ -90,7 +90,7 @@
     <ClCompile Include="options_test.cc">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="offset_tree_tests.cc">
+    <ClCompile Include="offset_tree_test.cc">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="ostream_test.cc">
@@ -102,7 +102,7 @@
     <ClCompile Include="options_boost_po_test.cc">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="stable_unique_tests.cc">
+    <ClCompile Include="stable_unique_test.cc">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="vwdll_test.cc">
@@ -114,7 +114,7 @@
     <ClCompile Include="pmf_to_pdf_test.cc">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="cats_tree_tests.cc">
+    <ClCompile Include="cats_tree_test.cc">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="ccb_test.cc">
@@ -138,7 +138,7 @@
     <ClCompile Include="slates_test.cc">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="stable_unique_tests.cc">
+    <ClCompile Include="stable_unique_test.cc">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="tag_utils_test.cc">
@@ -150,7 +150,7 @@
     <ClCompile Include="vwdll_test.cc">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="numeric_cast_tests.cc">
+    <ClCompile Include="numeric_cast_test.cc">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="parse_args_test.cc">
