@@ -30,7 +30,6 @@ add_executable(vw-unit-test.out
   numeric_cast_test.cc
   object_pool_test.cc
   offset_tree_test.cc
-  offset_tree_test.cc
   options_boost_po_test.cc
   options_test.cc
   ostream_test.cc

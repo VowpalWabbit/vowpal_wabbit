@@ -138,9 +138,6 @@
     <ClCompile Include="slates_test.cc">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="stable_unique_test.cc">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="tag_utils_test.cc">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -157,6 +154,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="simulator.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="tokenize_test.cc">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="tutorial_test.cc">
