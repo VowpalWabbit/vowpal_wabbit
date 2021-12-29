@@ -205,8 +205,6 @@ def is_line_different(
             )
         else:
             if output_token != ref_token:
-                print(output_tokens)
-                print(ref_tokens)
                 return (
                     True,
                     f"Mismatch at token {output_token} {ref_token}",
