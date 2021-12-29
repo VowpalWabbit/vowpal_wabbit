@@ -857,6 +857,37 @@ uint32_t ex_get_cbandits_class(example_ptr ec, uint32_t i) { return ec->l.cb.cos
 float ex_get_cbandits_probability(example_ptr ec, uint32_t i) { return ec->l.cb.costs[i].probability; }
 float ex_get_cbandits_partial_prediction(example_ptr ec, uint32_t i) { return ec->l.cb.costs[i].partial_prediction; }
 
+uint32_t ex_get_ccbandits_prediction(example_ptr ec) { return ec->pred.multiclass; }
+const char* ex_get_ccbandits_type(example_ptr ec)
+{ 
+  switch(ec->l.conditional_contextual_bandit->type)
+  {
+    case CCB::example_type::shared:
+      return "shared";
+    case CCB::example_type::action:
+      return "action";
+    case CCB::example_type::slot:
+      return "slot";
+    default:
+      return "default";
+  }
+}
+float ex_get_ccbandits_cost(example_ptr ec)
+{ 
+  auto* outcome_ptr = ec->l.conditional_contextual_bandit->conditional_contextual_bandit_outcome;
+  return outcome_ptr == nullptr ? 0.f : outcome_ptr->cost;
+}
+uint32_t ex_get_ccbandits_class(example_ptr ec, uint32_t i)
+{
+  auto* outcome_ptr = ec->l.conditional_contextual_bandit->conditional_contextual_bandit_outcome;
+  return outcome_ptr == nullptr ? -1 : outcome_ptr->probabilities[i]->action;
+}
+float ex_get_ccbandits_probability(example_ptr ec, uint32_t i)
+{
+  auto* outcome_ptr = ec->l.conditional_contextual_bandit->conditional_contextual_bandit_outcome;
+  return outcome_ptr == nullptr ? 0.f : outcome_ptr->probabilities[i]->score;
+}
+
 // example_counter is being overriden by lableType!
 size_t get_example_counter(example_ptr ec) { return ec->example_counter; }
 uint64_t get_ft_offset(example_ptr ec) { return ec->ft_offset; }
