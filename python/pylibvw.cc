@@ -560,6 +560,16 @@ std::string varray_char_to_string(v_array<char>& a)
   return ret;
 }
 
+template <class T>
+py::list varray_to_pylist(const v_array<T>& a)
+{
+	typename v_array<T>::iterator iter;
+	py::list list;
+	for (iter = a.begin(); iter != a.end(); ++iter)
+		list.append(*iter);
+	return list;
+}
+
 std::string my_get_tag(example_ptr ec) { return varray_char_to_string(ec->tag); }
 
 uint32_t ex_num_namespaces(example_ptr ec) { return (uint32_t)ec->indices.size(); }
@@ -892,10 +902,12 @@ uint32_t ex_get_ccb_num_included_actions(example_ptr ec)
   auto label = ec->l.conditional_contextual_bandit;
   return label.type != CCB::slot ? 0 : label.explicit_included_actions.size();
 }
-int ex_get_included_action(example_ptr ec, uint32_t i)
+py::list ex_get_ccb_explicitly_included_actions(example_ptr ec)
 {
   auto label = ec->l.conditional_contextual_bandit;
-  return label.type != CCB::slot ? -1 : label.explicit_included_actions[i]; 
+  if (label.type != CCB::slot)
+    return varray_to_pylist(varray<unint32_t>());
+  return varary_to_pylist(label.explicit_included_actions);
 }
 
 // example_counter is being overriden by lableType!
