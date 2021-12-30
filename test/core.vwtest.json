@@ -4490,6 +4490,41 @@
   },
   {
     "id": 379,
+    "desc": "Validate cost sensitive feature count with shared",
+    "vw_command": "-d train-sets/csoaa_ldf_shared.dat --csoaa_ldf m --audit",
+    "diff_files": {
+      "stderr": "train-sets/ref/csoaa_ldf_shared.stderr",
+      "stdout": "train-sets/ref/csoaa_ldf_shared.stdout"
+    },
+    "input_files": [
+      "train-sets/csoaa_ldf_shared.dat"
+    ]
+  },
+  {
+    "id": 380,
+    "desc": "Validate cost sensitive feature count with shared and --noconstant",
+    "vw_command": "-d train-sets/csoaa_ldf_shared.dat --csoaa_ldf m --noconstant --audit",
+    "diff_files": {
+      "stderr": "train-sets/ref/csoaa_ldf_shared_noconstant.stderr",
+      "stdout": "train-sets/ref/csoaa_ldf_shared_noconstant.stdout"
+    },
+    "input_files": [
+      "train-sets/csoaa_ldf_shared.dat"
+    ]
+  },
+  {
+    "id": 381,
+    "desc": "SVM linear kernel save_load save",
+    "vw_command": "--ksvm --l2 1 --reprocess 5 -b 18 -d train-sets/rcv1_smaller.dat -f models/ksvm.model",
+    "diff_files": {
+      "stderr": "train-sets/ref/ksvm_train.linear.save.stderr"
+    },
+    "input_files": [
+      "train-sets/rcv1_smaller.dat"
+    ]
+  },
+  {
+    "id": 382,
     "desc": "SVM linear kernel save_load load",
     "vw_command": "--ksvm --l2 1 --reprocess 5 -b 18 -d train-sets/rcv1_smaller.dat -i models/ksvm.model",
     "diff_files": {
@@ -4500,7 +4535,7 @@
       "models/ksvm.model"
     ],
     "depends_on": [
-      378
+      381
     ]
   }
 ]
