@@ -319,11 +319,11 @@ public:
             if (dict_fs.empty()) { _ae->indices.push_back(dictionary_namespace); }
             dict_fs.start_ns_extent(dictionary_namespace);
             dict_fs.values.insert(dict_fs.values.end(), feats->values.begin(), feats->values.end());
-            dict_fs.indicies.insert(dict_fs.indicies.end(), feats->indicies.begin(), feats->indicies.end());
+            dict_fs.indices.insert(dict_fs.indices.end(), feats->indices.begin(), feats->indices.end());
             dict_fs.sum_feat_sq += feats->sum_feat_sq;
             if (audit)
             {
-              for (const auto& id : feats->indicies)
+              for (const auto& id : feats->indices)
               {
                 std::stringstream ss;
                 ss << _index << '_';

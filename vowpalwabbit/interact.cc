@@ -49,10 +49,10 @@ void multiply(features& f_dest, features& f_src2, interact& in)
   features& f_src1 = in.feat_store;
   VW::workspace* all = in.all;
   uint64_t weight_mask = all->weights.mask();
-  uint64_t base_id1 = f_src1.indicies[0] & weight_mask;
-  uint64_t base_id2 = f_src2.indicies[0] & weight_mask;
+  uint64_t base_id1 = f_src1.indices[0] & weight_mask;
+  uint64_t base_id2 = f_src2.indices[0] & weight_mask;
 
-  f_dest.push_back(f_src1.values[0] * f_src2.values[0], f_src1.indicies[0]);
+  f_dest.push_back(f_src1.values[0] * f_src2.values[0], f_src1.indices[0]);
 
   uint64_t prev_id1 = 0;
   uint64_t prev_id2 = 0;
@@ -60,8 +60,8 @@ void multiply(features& f_dest, features& f_src2, interact& in)
   for (size_t i1 = 1, i2 = 1; i1 < f_src1.size() && i2 < f_src2.size();)
   {
     // calculating the relative offset from the namespace offset used to match features
-    uint64_t cur_id1 = static_cast<uint64_t>(((f_src1.indicies[i1] & weight_mask) - base_id1) & weight_mask);
-    uint64_t cur_id2 = static_cast<uint64_t>(((f_src2.indicies[i2] & weight_mask) - base_id2) & weight_mask);
+    uint64_t cur_id1 = static_cast<uint64_t>(((f_src1.indices[i1] & weight_mask) - base_id1) & weight_mask);
+    uint64_t cur_id2 = static_cast<uint64_t>(((f_src2.indices[i2] & weight_mask) - base_id2) & weight_mask);
 
     // checking for sorting requirement
     if (cur_id1 < prev_id1)
@@ -78,7 +78,7 @@ void multiply(features& f_dest, features& f_src2, interact& in)
 
     if (cur_id1 == cur_id2)
     {
-      f_dest.push_back(f_src1.values[i1] * f_src2.values[i2], f_src1.indicies[i1]);
+      f_dest.push_back(f_src1.values[i1] * f_src2.values[i2], f_src1.indices[i1]);
       i1++;
       i2++;
     }

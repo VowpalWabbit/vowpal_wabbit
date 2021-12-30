@@ -265,10 +265,10 @@ int save_load_flat_example(io_buf& model_file, bool read, flat_example*& fec)
         brw = model_file.bin_read_fixed(reinterpret_cast<char*>(fs.values.begin()), len * sizeof(feature_value));
         if (!brw) return 3;
 
-        len = fs.indicies.size();
-        fs.indicies.clear();
-        fs.indicies.resize_but_with_stl_behavior(len);
-        brw = model_file.bin_read_fixed(reinterpret_cast<char*>(fs.indicies.begin()), len * sizeof(feature_index));
+        len = fs.indices.size();
+        fs.indices.clear();
+        fs.indices.resize_but_with_stl_behavior(len);
+        brw = model_file.bin_read_fixed(reinterpret_cast<char*>(fs.indices.begin()), len * sizeof(feature_index));
         if (!brw) return 3;
       }
     }
@@ -295,8 +295,8 @@ int save_load_flat_example(io_buf& model_file, bool read, flat_example*& fec)
         brw = model_file.bin_write_fixed(reinterpret_cast<char*>(fec->fs.values.begin()),
             static_cast<uint32_t>(fec->fs.size()) * sizeof(feature_value));
         if (!brw) return 3;
-        brw = model_file.bin_write_fixed(reinterpret_cast<char*>(fec->fs.indicies.begin()),
-            static_cast<uint32_t>(fec->fs.indicies.size()) * sizeof(feature_index));
+        brw = model_file.bin_write_fixed(reinterpret_cast<char*>(fec->fs.indices.begin()),
+            static_cast<uint32_t>(fec->fs.indices.size()) * sizeof(feature_index));
         if (!brw) return 3;
       }
     }
@@ -360,17 +360,17 @@ float linear_kernel(const flat_example* fec1, const flat_example* fec2)
 
   features& fs_1 = const_cast<features&>(fec1->fs);
   features& fs_2 = const_cast<features&>(fec2->fs);
-  if (fs_2.indicies.size() == 0) return 0.f;
+  if (fs_2.indices.size() == 0) return 0.f;
 
   int numint = 0;
   for (size_t idx1 = 0, idx2 = 0; idx1 < fs_1.size() && idx2 < fs_2.size(); idx1++)
   {
-    uint64_t ec1pos = fs_1.indicies[idx1];
-    uint64_t ec2pos = fs_2.indicies[idx2];
-    // params.all->opts_n_args.driver_output<<ec1pos<<" "<<ec2pos<<" "<<idx1<<" "<<idx2<<" "<<f->x<<" "<<ec2f->x<< endl;
+    uint64_t ec1pos = fs_1.indices[idx1];
+    uint64_t ec2pos = fs_2.indices[idx2];
+    // params.all->opts_n_args.trace_message<<ec1pos<<" "<<ec2pos<<" "<<idx1<<" "<<idx2<<" "<<f->x<<" "<<ec2f->x<< endl;
     if (ec1pos < ec2pos) continue;
 
-    while (ec1pos > ec2pos && ++idx2 < fs_2.size()) ec2pos = fs_2.indicies[idx2];
+    while (ec1pos > ec2pos && ++idx2 < fs_2.size()) ec2pos = fs_2.indices[idx2];
 
     if (ec1pos == ec2pos)
     {

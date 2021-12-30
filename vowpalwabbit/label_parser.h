@@ -32,7 +32,8 @@ struct label_parser
   void (*default_label)(polylabel& label);
   void (*parse_label)(polylabel& label, reduction_features& red_features, VW::label_parser_reuse_mem& reuse_mem,
       const VW::named_labels* ldict, const std::vector<VW::string_view>& words, VW::io::logger& logger);
-  void (*cache_label)(const polylabel& label, const reduction_features& red_features, io_buf& cache);
+  void (*cache_label)(const polylabel& label, const reduction_features& red_features, io_buf& cache,
+        const std::string& upstream_name, bool text);
   size_t (*read_cached_label)(polylabel& label, reduction_features& red_features, io_buf& cache);
   float (*get_weight)(const polylabel& label, const reduction_features& red_features);
   bool (*test_label)(const polylabel& label);

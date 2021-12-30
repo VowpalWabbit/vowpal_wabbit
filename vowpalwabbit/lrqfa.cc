@@ -70,7 +70,7 @@ void predict_or_learn(LRQFAstate& lrq, single_learner& base, example& ec)
         {
           features& fs = ec.feature_space[left];
           float lfx = fs.values[lfn];
-          uint64_t lindex = fs.indicies[lfn];
+          uint64_t lindex = fs.indices[lfn];
           for (unsigned int n = 1; n <= k; ++n)
           {
             uint64_t lwindex = (lindex +
@@ -88,7 +88,7 @@ void predict_or_learn(LRQFAstate& lrq, single_learner& base, example& ec)
               //                    feature* rf = ec.atomics[right].begin + rfn;
               // NB: ec.ft_offset added by base learner
               float rfx = rfs.values[rfn];
-              uint64_t rindex = rfs.indicies[rfn];
+              uint64_t rindex = rfs.indices[rfn];
               uint64_t rwindex = (rindex + (static_cast<uint64_t>(lfd_id * k + n) << stride_shift));
 
               rfs.push_back(*lw * lfx * rfx, rwindex);

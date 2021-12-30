@@ -70,7 +70,7 @@ void VW::write_example_to_cache(io_buf& output, example* ae, label_parser& lbl_p
     VW::details::cache_temp_buffer& temp_buffer)
 {
   temp_buffer._backing_buffer->clear();
-  lbl_parser.cache_label(ae->l, ae->_reduction_features, temp_buffer._temporary_cache_buffer);
+  lbl_parser.cache_label(ae->l, ae->_reduction_features, temp_buffer._temporary_cache_buffer, "", false);
   cache_features(temp_buffer._temporary_cache_buffer, ae, parse_mask);
   temp_buffer._temporary_cache_buffer.flush();
 

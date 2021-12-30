@@ -16,9 +16,9 @@ void add_grams(
     size_t last = initial_length - gram_mask.back();
     for (size_t i = 0; i < last; i++)
     {
-      uint64_t new_index = fs.indicies[i];
+      uint64_t new_index = fs.indices[i];
       for (size_t n = 1; n < gram_mask.size(); n++)
-      { new_index = new_index * quadratic_constant + fs.indicies[i + gram_mask[n]]; }
+      { new_index = new_index * quadratic_constant + fs.indices[i + gram_mask[n]]; }
 
       fs.push_back(1., new_index);
       if (!fs.space_names.empty())

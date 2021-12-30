@@ -123,7 +123,7 @@ void finish_setup(nn& n, VW::workspace& all)
   n.outputweight.extent_interactions = &all.extent_interactions;
   n.outputweight.indices.push_back(nn_output_namespace);
   features& outfs = n.output_layer.feature_space[nn_output_namespace];
-  n.outputweight.feature_space[nn_output_namespace].push_back(outfs.values[0], outfs.indicies[0]);
+  n.outputweight.feature_space[nn_output_namespace].push_back(outfs.values[0], outfs.indices[0]);
   if (all.audit || all.hash_inv)
     n.outputweight.feature_space[nn_output_namespace].space_names.push_back(audit_strings("", "OutputWeight"));
   n.outputweight.feature_space[nn_output_namespace].values[0] = 1;
@@ -240,7 +240,7 @@ void predict_or_learn_multi(nn& n, single_learner& base, example& ec)
       out_fs.values[i] = sigmah;
       out_fs.sum_feat_sq += sigmah * sigmah;
 
-      n.outputweight.feature_space[nn_output_namespace].indicies[0] = out_fs.indicies[i];
+      n.outputweight.feature_space[nn_output_namespace].indices[0] = out_fs.indices[i];
       base.predict(n.outputweight, n.k);
       float wf = n.outputweight.pred.scalar;
 
@@ -334,8 +334,8 @@ void predict_or_learn_multi(nn& n, single_learner& base, example& ec)
             {
               float sigmah = n.output_layer.feature_space[nn_output_namespace].values[i] / dropscale;
               float sigmahprime = dropscale * (1.0f - sigmah * sigmah);
-              n.outputweight.feature_space[nn_output_namespace].indicies[0] =
-                  n.output_layer.feature_space[nn_output_namespace].indicies[i];
+              n.outputweight.feature_space[nn_output_namespace].indices[0] =
+                  n.output_layer.feature_space[nn_output_namespace].indices[i];
               base.predict(n.outputweight, n.k);
               float nu = n.outputweight.pred.scalar;
               float gradhw = 0.5f * nu * gradient * sigmahprime;
