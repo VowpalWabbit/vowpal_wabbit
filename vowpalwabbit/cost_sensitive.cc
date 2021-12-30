@@ -170,8 +170,15 @@ void print_update(VW::workspace& all, bool is_test, const example& ec, const mul
     if (ec_seq != nullptr)
     {
       num_current_features = 0;
-      // TODO: including quadratic and cubic.
-      for (auto& ecc : *ec_seq) num_current_features += ecc->get_num_features();
+      for (const auto& ecc : *ec_seq)
+      {
+        if (COST_SENSITIVE::ec_is_example_header(*ecc))
+        { num_current_features += (ec_seq->size() - 1) * (ecc->get_num_features() - ecc->feature_space[constant_namespace].size()); }
+        else
+        {
+          num_current_features += ecc->get_num_features();
+        }
+      }
     }
 
     std::string label_buf;
