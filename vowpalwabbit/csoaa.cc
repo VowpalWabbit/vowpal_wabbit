@@ -5,6 +5,8 @@
 #include "vw_exception.h"
 #include "csoaa.h"
 
+#include <utility>
+
 #include "io/logger.h"
 
 using namespace VW::LEARNER;
@@ -22,6 +24,8 @@ struct csoaa
   int indexing = -1;
   bool search = false;
   polyprediction* pred = nullptr;
+  VW::io::logger logger;
+  csoaa(VW::io::logger logger) : logger(std::move(logger)) {}
   ~csoaa() { free(pred); }
 };
 
@@ -70,25 +74,25 @@ void predict_or_learn(csoaa& c, single_learner& base, example& ec)
       // Update indexing
       if (c.indexing == -1 && lbl == 0)
       {
-        logger::log_info("label 0 found -- labels are now considered 0-indexed.");
+        c.logger.err_info("label 0 found -- labels are now considered 0-indexed.");
         c.indexing = 0;
       }
       else if (c.indexing == -1 && lbl == c.num_classes)
       {
-        logger::log_info("label {0} found -- labels are now considered 1-indexed.", c.num_classes);
+        c.logger.err_info("label {0} found -- labels are now considered 1-indexed.", c.num_classes);
         c.indexing = 1;
       }
 
       // Label validation
       if (c.indexing == 0 && lbl >= c.num_classes)
       {
-        logger::log_warn(
+        c.logger.err_info(
             "label {0} is not in {{0,{1}}}. This won't work for 0-indexed actions.", lbl, c.num_classes - 1);
         lbl = 0;
       }
       else if (c.indexing == 1 && (lbl < 1 || lbl > c.num_classes))
       {
-        logger::log_warn("label {0} is not in {{1,{1}}}. This won't work for 1-indexed actions.", lbl, c.num_classes);
+        c.logger.err_info("label {0} is not in {{1,{1}}}. This won't work for 1-indexed actions.", lbl, c.num_classes);
         lbl = static_cast<uint32_t>(c.num_classes);
       }
     }
@@ -177,7 +181,7 @@ base_learner* csoaa_setup(VW::setup_base_i& stack_builder)
 {
   options_i& options = *stack_builder.get_options();
   VW::workspace& all = *stack_builder.get_all_pointer();
-  auto c = VW::make_unique<csoaa>();
+  auto c = VW::make_unique<csoaa>(all.logger);
   option_group_definition new_options("Cost Sensitive One Against All");
   new_options
       .add(make_option("csoaa", c->num_classes).keep().necessary().help("One-against-all multiclass with <k> costs"))

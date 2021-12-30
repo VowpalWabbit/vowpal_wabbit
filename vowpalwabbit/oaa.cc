@@ -28,6 +28,9 @@ struct oaa
   uint32_t* subsample_order = nullptr;  // for randomized subsampling, in what order should we touch classes
   size_t subsample_id = 0;              // for randomized subsampling, where do we live in the list
   int indexing = -1;                    // for 0 or 1 indexing
+  VW::io::logger logger;
+
+  oaa(VW::io::logger logger) : logger(std::move(logger)) {}
 
   ~oaa()
   {
@@ -41,12 +44,12 @@ void learn_randomized(oaa& o, VW::LEARNER::single_learner& base, example& ec)
   // Update indexing
   if (o.indexing == -1 && ec.l.multi.label == 0)
   {
-    logger::log_info("label 0 found -- labels are now considered 0-indexed.");
+    o.logger.err_info("label 0 found -- labels are now considered 0-indexed.");
     o.indexing = 0;
   }
   else if (o.indexing == -1 && ec.l.multi.label == o.k)
   {
-    logger::log_info("label {0} found -- labels are now considered 1-indexed.", o.k);
+    o.logger.err_info("label {0} found -- labels are now considered 1-indexed.", o.k);
     o.indexing = 1;
   }
 
@@ -104,12 +107,12 @@ void learn(oaa& o, VW::LEARNER::single_learner& base, example& ec)
   // Update indexing
   if (o.indexing == -1 && ec.l.multi.label == 0)
   {
-    logger::log_info("label 0 found -- labels are now considered 0-indexed.");
+    o.logger.err_info("label 0 found -- labels are now considered 0-indexed.");
     o.indexing = 0;
   }
   else if (o.indexing == -1 && ec.l.multi.label == o.k)
   {
-    logger::log_info("label {0} found -- labels are now considered 1-indexed.", o.k);
+    o.logger.err_info("label {0} found -- labels are now considered 1-indexed.", o.k);
     o.indexing = 1;
   }
 
@@ -294,7 +297,7 @@ VW::LEARNER::base_learner* oaa_setup(VW::setup_base_i& stack_builder)
 {
   options_i& options = *stack_builder.get_options();
   VW::workspace& all = *stack_builder.get_all_pointer();
-  auto data = VW::make_unique<oaa>();
+  auto data = VW::make_unique<oaa>(all.logger);
   bool probabilities = false;
   bool scores = false;
   option_group_definition new_options("One Against All");

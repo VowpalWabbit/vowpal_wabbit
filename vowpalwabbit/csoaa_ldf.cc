@@ -18,8 +18,6 @@
 
 #include "io/logger.h"
 
-namespace logger = VW::io::logger;
-
 using namespace VW::LEARNER;
 using namespace COST_SENSITIVE;
 using namespace VW::config;
