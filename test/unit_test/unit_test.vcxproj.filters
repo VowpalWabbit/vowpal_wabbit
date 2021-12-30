@@ -21,7 +21,19 @@
     <ClCompile Include="automl_weights_test.cc">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="baseline_cb_test.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
     <ClCompile Include="cache_test.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="cats_test.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="cats_tree_test.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="cats_user_provided_pdf.cc">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="cb_explore_adf_test.cc">
@@ -33,13 +45,13 @@
     <ClCompile Include="ccb_test.cc">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="cats_test.cc">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="cats_user_provided_pdf.cc">
+    <ClCompile Include="chain_hashing.cc">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="continuous_actions_parser_test.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="custom_reduction_test.cc">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="distributionally_robust_test.cc">
@@ -54,10 +66,16 @@
     <ClCompile Include="example_header_test.cc">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="example_test.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
     <ClCompile Include="explore_test.cc">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="feature_group_test.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="flatbuffer_parser_test.cc">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="guard_test.cc">
@@ -81,7 +99,19 @@
     <ClCompile Include="math_test.cc">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="minimal_custom_reduction.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="multiclass_label_parser_test.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="numeric_cast_test.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
     <ClCompile Include="object_pool_test.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="offset_tree_test.cc">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="options_boost_po_test.cc">
@@ -90,55 +120,40 @@
     <ClCompile Include="options_test.cc">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="offset_tree_tests.cc">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="ostream_test.cc">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="power_test.cc">
+    <ClCompile Include="parse_args_test.cc">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="options_boost_po_test.cc">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="stable_unique_tests.cc">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="vwdll_test.cc">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="random_test.cc">
+    <ClCompile Include="parser_test.cc">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="pmf_to_pdf_test.cc">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="cats_tree_tests.cc">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="ccb_test.cc">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="slates_parser_test.cc">
+    <ClCompile Include="power_test.cc">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="prediction_test.cc">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="custom_reduction_test.cc">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="minimal_custom_reduction.cc">
+    <ClCompile Include="random_test.cc">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="scope_exit_test.cc">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="simulator.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="slates_parser_test.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
     <ClCompile Include="slates_test.cc">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="stable_unique_tests.cc">
+    <ClCompile Include="stable_unique_test.cc">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="tag_utils_test.cc">
@@ -147,31 +162,22 @@
     <ClCompile Include="test_common.cc">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="vwdll_test.cc">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="numeric_cast_tests.cc">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="parse_args_test.cc">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="simulator.cc">
+    <ClCompile Include="tokenize_test.cc">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="tutorial_test.cc">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="v_array_test.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
     <ClCompile Include="vw_versions_test.cc">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="vwdll_test.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
     <ClCompile Include="weights_test.cc">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="flatbuffer_parser_test.cc">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="v_array_test.cc">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

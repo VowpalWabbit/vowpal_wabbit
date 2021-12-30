@@ -17,7 +17,7 @@
  */
 void unique_features(features& fs, int max)
 {
-  if (fs.indicies.empty()) return;
+  if (fs.indices.empty()) return;
   if (max == 0)
   {
     fs.clear();
@@ -29,17 +29,17 @@ void unique_features(features& fs, int max)
     return;
   }
 
-  auto flat_extents = VW::details::flatten_namespace_extents(fs.namespace_extents, fs.indicies.size());
+  auto flat_extents = VW::details::flatten_namespace_extents(fs.namespace_extents, fs.indices.size());
 
   auto last_index = std::size_t{0};
   for (auto i = std::size_t{1}; i != fs.size(); ++i)
   {
-    if (fs.indicies[i] != fs.indicies[last_index])
+    if (fs.indices[i] != fs.indices[last_index])
     {
       if (i != ++last_index)
       {
         fs.values[last_index] = fs.values[i];
-        fs.indicies[last_index] = fs.indicies[i];
+        fs.indices[last_index] = fs.indices[i];
         flat_extents[last_index] = flat_extents[i];
         if (!fs.space_names.empty()) { fs.space_names[last_index] = std::move(fs.space_names[i]); }
       }

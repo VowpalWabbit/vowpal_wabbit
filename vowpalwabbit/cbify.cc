@@ -160,7 +160,7 @@ void cbify_adf_data::copy_example_to_adf(parameters& weights, example& ec)
     // offset indices for given action
     for (features& fs : eca)
     {
-      for (feature_index& idx : fs.indicies)
+      for (feature_index& idx : fs.indices)
       {
         auto rawidx = idx;
         rawidx -= rawidx & custom_index_mask;
