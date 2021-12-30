@@ -196,7 +196,8 @@ void cb_explore_adf_base<ExploreType>::output_example(VW::workspace& all, const 
   {
     if (CB::ec_is_example_header(*example))
     {
-      num_features += (ec_seq.size() - 1) * (example->get_num_features() - example->feature_space[constant_namespace].size());
+      num_features +=
+          (ec_seq.size() - 1) * (example->get_num_features() - example->feature_space[constant_namespace].size());
       num_namespaces += (ec_seq.size() - 1) * example->indices.size();
     }
     else

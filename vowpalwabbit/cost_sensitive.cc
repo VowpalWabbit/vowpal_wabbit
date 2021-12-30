@@ -173,7 +173,10 @@ void print_update(VW::workspace& all, bool is_test, const example& ec, const mul
       for (const auto& ecc : *ec_seq)
       {
         if (COST_SENSITIVE::ec_is_example_header(*ecc))
-        { num_current_features += (ec_seq->size() - 1) * (ecc->get_num_features() - ecc->feature_space[constant_namespace].size()); }
+        {
+          num_current_features +=
+              (ec_seq->size() - 1) * (ecc->get_num_features() - ecc->feature_space[constant_namespace].size());
+        }
         else
         {
           num_current_features += ecc->get_num_features();

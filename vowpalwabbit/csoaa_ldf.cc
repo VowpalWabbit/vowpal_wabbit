@@ -459,13 +459,14 @@ void output_example(VW::workspace& all, const example& ec, bool& hit_loss, const
 
   if (COST_SENSITIVE::ec_is_example_header(ec))
   {
-    all.sd->total_features += (ec_seq->size() - 1) * (ec.get_num_features() - ec.feature_space[constant_namespace].size());
+    all.sd->total_features +=
+        (ec_seq->size() - 1) * (ec.get_num_features() - ec.feature_space[constant_namespace].size());
   }
   else
   {
     all.sd->total_features += ec.get_num_features();
   }
-  
+
   float loss = 0.f;
 
   uint32_t predicted_class = 0;
