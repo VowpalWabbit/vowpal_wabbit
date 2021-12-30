@@ -4476,5 +4476,41 @@
     "input_files": [
       "train-sets/csoaa_1_ind.dat"
     ]
+  },
+  {
+    "id": 378,
+    "desc": "Validate CB feature count with shared and --noconstant",
+    "vw_command": "-d train-sets/cb_test.ldf --cb_explore_adf --noconstant --audit",
+    "diff_files": {
+      "stderr": "train-sets/ref/cb_shared_noconstant.stderr",
+      "stdout": "train-sets/ref/cb_shared_noconstant.stdout"
+    },
+    "input_files": [
+      "train-sets/cb_test.ldf"
+    ]
+  },
+  {
+    "id": 379,
+    "desc": "Validate cost sensitive feature count with shared",
+    "vw_command": "-d train-sets/csoaa_ldf_shared.dat --csoaa_ldf m --audit",
+    "diff_files": {
+      "stderr": "train-sets/ref/csoaa_ldf_shared.stderr",
+      "stdout": "train-sets/ref/csoaa_ldf_shared.stdout"
+    },
+    "input_files": [
+      "train-sets/csoaa_ldf_shared.dat"
+    ]
+  },
+  {
+    "id": 380,
+    "desc": "Validate cost sensitive feature count with shared and --noconstant",
+    "vw_command": "-d train-sets/csoaa_ldf_shared.dat --csoaa_ldf m --noconstant --audit",
+    "diff_files": {
+      "stderr": "train-sets/ref/csoaa_ldf_shared_noconstant.stderr",
+      "stdout": "train-sets/ref/csoaa_ldf_shared_noconstant.stdout"
+    },
+    "input_files": [
+      "train-sets/csoaa_ldf_shared.dat"
+    ]
   }
 ]
