@@ -240,8 +240,8 @@
     <ClInclude Include="parse_args.h" />
     <ClInclude Include="parse_dispatch_loop.h" />
     <ClInclude Include="parse_example.h" />
-    <ClInclude Include="parse_example_json.h" />
     <ClInclude Condition="'$(BuildFlatbuffers)'=='ON'" Include="parser\flatbuffer\parse_example_flatbuffer.h" />
+    <ClInclude Include="parse_example_json.h" />
     <ClInclude Include="parse_primitives.h" />
     <ClInclude Include="parse_regressor.h" />
     <ClInclude Include="parse_slates_example_json.h" />
@@ -294,15 +294,6 @@
     <ClInclude Include="warm_cb.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="../ext_libs/fmt/src/format.cc" />
-    <ClCompile Include="../ext_libs/fmt/src/os.cc" />
-    <ClCompile Include="../ext_libs/spdlog/src/async.cpp" />
-    <ClCompile Include="../ext_libs/spdlog/src/cfg.cpp" />
-    <ClCompile Include="../ext_libs/spdlog/src/color_sinks.cpp" />
-    <ClCompile Include="../ext_libs/spdlog/src/file_sinks.cpp" />
-    <ClCompile Include="../ext_libs/spdlog/src/fmt.cpp" />
-    <ClCompile Include="../ext_libs/spdlog/src/spdlog.cpp" />
-    <ClCompile Include="../ext_libs/spdlog/src/stdout_sinks.cpp" />
     <ClCompile Include="accumulate.cc" />
     <ClCompile Include="action_score.cc" />
     <ClCompile Include="active.cc" />
@@ -310,6 +301,7 @@
     <ClCompile Include="allreduce_sockets.cc" />
     <ClCompile Include="allreduce_threads.cc" />
     <ClCompile Include="api_status.cc" />
+    <ClCompile Include="../ext_libs/spdlog/src/async.cpp" />
     <ClCompile Include="audit_regressor.cc" />
     <ClCompile Include="autolink.cc" />
     <ClCompile Include="automl.cc" />
@@ -347,7 +339,9 @@
     <ClCompile Include="cbzo.cc" />
     <ClCompile Include="ccb_label.cc" />
     <ClCompile Include="ccb_reduction_features.cc" />
+    <ClCompile Include="../ext_libs/spdlog/src/cfg.cpp" />
     <ClCompile Include="classweight.cc" />
+    <ClCompile Include="../ext_libs/spdlog/src/color_sinks.cpp" />
     <ClCompile Include="conditional_contextual_bandit.cc" />
     <ClCompile Include="confidence.cc" />
     <ClCompile Include="cost_sensitive.cc" />
@@ -363,6 +357,9 @@
     <ClCompile Include="example_predict.cc" />
     <ClCompile Include="explore_eval.cc" />
     <ClCompile Include="feature_group.cc" />
+    <ClCompile Include="../ext_libs/spdlog/src/file_sinks.cpp" />
+    <ClCompile Include="../ext_libs/spdlog/src/fmt.cpp" />
+    <ClCompile Include="../ext_libs/fmt/src/format.cc" />
     <ClCompile Include="freegrad.cc" />
     <ClCompile Include="ftrl.cc" />
     <ClCompile Include="gd.cc" />
@@ -374,9 +371,8 @@
     <ClCompile Include="interact.cc" />
     <ClCompile Include="interaction_ground.cc" />
     <ClCompile Include="interactions.cc" />
-    <ClCompile Include="io_buf.cc" />
     <ClCompile Include="io/io_adapter.cc" />
-    <ClCompile Include="io\logger.cc" />
+    <ClCompile Include="io_buf.cc" />
     <ClCompile Include="kernel_svm.cc" />
     <ClCompile Include="kskip_ngram_transformer.cc" />
     <ClCompile Include="label_dictionary.cc" />
@@ -385,6 +381,7 @@
     <ClCompile Include="lda_core.cc" />
     <ClCompile Include="learner.cc" />
     <ClCompile Include="log_multi.cc" />
+    <ClCompile Include="io/logger.cc" />
     <ClCompile Include="loss_functions.cc" />
     <ClCompile Include="lrq.cc" />
     <ClCompile Include="lrqfa.cc" />
@@ -407,10 +404,11 @@
     <ClCompile Include="OjaNewton.cc" />
     <ClCompile Include="options_boost_po.cc" />
     <ClCompile Include="options_serializer_boost_po.cc" />
+    <ClCompile Include="../ext_libs/fmt/src/os.cc" />
     <ClCompile Include="parse_args.cc" />
     <ClCompile Include="parse_example.cc" />
-    <ClCompile Condition="'$(BuildFlatbuffers)'=='ON'" Include="parser\flatbuffer\parse_example_flatbuffer.cc" />
-    <ClCompile Condition="'$(BuildFlatbuffers)'=='ON'" Include="parser\flatbuffer\parse_label.cc" />
+    <ClCompile Condition="'$(BuildFlatbuffers)'=='ON'" Include="parser/flatbuffer/parse_example_flatbuffer.cc" />
+    <ClCompile Condition="'$(BuildFlatbuffers)'=='ON'" Include="parser/flatbuffer/parse_label.cc" />
     <ClCompile Include="parse_primitives.cc" />
     <ClCompile Include="parse_regressor.cc" />
     <ClCompile Include="parser.cc" />
@@ -440,7 +438,9 @@
     <ClCompile Include="slates.cc" />
     <ClCompile Include="slates_label.cc" />
     <ClCompile Include="spanning_tree.cc" />
+    <ClCompile Include="../ext_libs/spdlog/src/spdlog.cpp" />
     <ClCompile Include="stagewise_poly.cc" />
+    <ClCompile Include="../ext_libs/spdlog/src/stdout_sinks.cpp" />
     <ClCompile Include="svrg.cc" />
     <ClCompile Include="tag_utils.cc" />
     <ClCompile Include="text_utils.cc" />
