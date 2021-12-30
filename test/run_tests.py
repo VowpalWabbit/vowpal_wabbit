@@ -465,7 +465,7 @@ def create_test_dir(
         test_dest_file = test_working_dir / f
         if file_to_copy == test_dest_file:
             continue
-        Path(test_dest_file.parent).mkdir(parents=True, exist_ok=True)
+        test_dest_file.parent.mkdir(parents=True, exist_ok=True)
         # We always want to replace this file in case it is the output of another test
         if test_dest_file.exists():
             test_dest_file.unlink()
