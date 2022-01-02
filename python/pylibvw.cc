@@ -63,6 +63,11 @@ const size_t pPDF = 10;
 const size_t pACTIVE_MULTICLASS = 11;
 const size_t pNOPRED = 12;
 
+const size_t tUNSET = 0;
+const size_t tACTION = 1;
+const size_t tSHARED = 2;
+const size_t tSLOT = 3;
+
 void dont_delete_me(void* arg) {}
 
 class OptionManager
@@ -867,24 +872,24 @@ uint32_t ex_get_cbandits_class(example_ptr ec, uint32_t i) { return ec->l.cb.cos
 float ex_get_cbandits_probability(example_ptr ec, uint32_t i) { return ec->l.cb.costs[i].probability; }
 float ex_get_cbandits_partial_prediction(example_ptr ec, uint32_t i) { return ec->l.cb.costs[i].partial_prediction; }
 
-const char* ex_get_ccb_type(example_ptr ec)
+const size_t ex_get_ccb_type(example_ptr ec)
 {
   switch(ec->l.conditional_contextual_bandit.type)
   {
     case CCB::example_type::shared:
-      return "shared";
+      return tSHARED;
     case CCB::example_type::action:
-      return "action";
+      return tACTION;
     case CCB::example_type::slot:
-      return "slot";
+      return tSLOT;
     default:
-      return "unset";
+      return tUNSET;
   }
 }
 float ex_get_ccb_cost(example_ptr ec)
 {
   auto* outcome_ptr = ec->l.conditional_contextual_bandit.conditional_contextual_bandit_outcome;
-  return outcome_ptr == nullptr ? 0.f : outcome_ptr->cost;
+  return outcome_ptr == nullptr ? -FLT_MAX : outcome_ptr->cost;
 }
 int ex_get_ccb_class(example_ptr ec, uint32_t i)
 {
@@ -906,7 +911,7 @@ py::list ex_get_ccb_explicitly_included_actions(example_ptr ec)
 {
   auto label = ec->l.conditional_contextual_bandit;
   if (label.type != CCB::slot)
-    return varray_to_pylist(varray<unint32_t>());
+    return py::list{};
   return varary_to_pylist(label.explicit_included_actions);
 }
 
@@ -1381,7 +1386,21 @@ BOOST_PYTHON_MODULE(pylibvw)
           "get_cbandits_num_costs)")
       .def("get_cbandits_partial_prediction", &ex_get_cbandits_partial_prediction,
           "Assuming a contextual_bandits label type, get the partial prediction for a given pair (i=0.. "
-          "get_cbandits_num_costs)");
+          "get_cbandits_num_costs)")
+      .def("get_ccb_type", &ex_get_ccb_type,
+          "Assuming a conditional_contextual_bandits label type, get the type of example")
+      .def("get_ccb_cost", &ex_get_ccb_cost,
+          "Assuming a conditional_contextual_bandits label type, get the cost of the given label")
+      .def("get_ccb_class", &ex_get_ccb_class,
+          "Assuming a conditional_contextual_bandits label type, get the label for a given pair (i=0.. get_ccb_num_included_actions())")
+      .def("get_ccb_probability", &ex_get_ccb_probability,
+          "Assuming a conditional_contextual_bandits label type, get the probability for a given pair (i=0.. get_ccb_num_included_actions())")
+      .def("get_ccb_weight", &ex_get_ccb_weight,
+          "Assuming a conditional_contextual_bandits label type, get the weight of the example.")
+      .def("get_ccb_num_included_actions", &ex_get_ccb_num_included_actions,
+          "Assuming a conditional_contextual_bandits label type, get the set of included actions.")
+      .def("get_ccb_explicitly_included_actions", &ex_get_ccb_explicitly_included_actions,
+          "Assuming a conditional_contextual_bandits label type, get the array of explicitly included actions for the slot");
 
   py::class_<Search::predictor, predictor_ptr, boost::noncopyable>("predictor", py::no_init)
       .def("set_input", &my_set_input, "set the input (an example) for this predictor (non-LDF mode only)")
