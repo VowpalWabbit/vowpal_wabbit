@@ -889,23 +889,23 @@ const size_t ex_get_ccb_type(example_ptr ec)
 float ex_get_ccb_cost(example_ptr ec)
 {
   auto* outcome_ptr = ec->l.conditional_contextual_bandit.conditional_contextual_bandit_outcome;
-  return outcome_ptr == nullptr ? -FLT_MAX : outcome_ptr->cost;
+  return outcome_ptr == nullptr ? Py_None : outcome_ptr->cost;
 }
-int ex_get_ccb_class(example_ptr ec, uint32_t i)
+size_t ex_get_ccb_class(example_ptr ec, uint32_t i)
 {
   auto* outcome_ptr = ec->l.conditional_contextual_bandit.conditional_contextual_bandit_outcome;
-  return outcome_ptr == nullptr ? -1 : outcome_ptr->probabilities[i]->action;
+  return outcome_ptr == nullptr ? Py_None : outcome_ptr->probabilities[i]->action;
 }
 float ex_get_ccb_probability(example_ptr ec, uint32_t i)
 {
   auto* outcome_ptr = ec->l.conditional_contextual_bandit.conditional_contextual_bandit_outcome;
-  return outcome_ptr == nullptr ? 0.f : outcome_ptr->probabilities[i]->score;
+  return outcome_ptr == nullptr ? Py_None : outcome_ptr->probabilities[i]->score;
 }
 float ex_get_ccb_weight(example_ptr ec) { return ec->l.conditional_contextual_bandit.weight; }
 uint32_t ex_get_ccb_num_included_actions(example_ptr ec)
 {
   auto label = ec->l.conditional_contextual_bandit;
-  return label.type != CCB::slot ? 0 : label.explicit_included_actions.size();
+  return label.explicit_included_actions.size();
 }
 py::list ex_get_ccb_explicitly_included_actions(example_ptr ec)
 {
