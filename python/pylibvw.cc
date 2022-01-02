@@ -568,10 +568,9 @@ std::string varray_char_to_string(v_array<char>& a)
 template <class T>
 py::list varray_to_pylist(const v_array<T>& a)
 {
-	typename v_array<T>::iterator iter;
 	py::list list;
-	for (iter = a.begin(); iter != a.end(); ++iter)
-		list.append(*iter);
+  for (const auto& elem : a):
+    list.append(a)
 	return list;
 }
 
@@ -912,7 +911,7 @@ py::list ex_get_ccb_explicitly_included_actions(example_ptr ec)
   auto label = ec->l.conditional_contextual_bandit;
   if (label.type != CCB::slot)
     return py::list{};
-  return varary_to_pylist(label.explicit_included_actions);
+  return varray_to_pylist(label.explicit_included_actions);
 }
 
 // example_counter is being overriden by lableType!
