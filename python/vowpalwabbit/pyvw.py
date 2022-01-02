@@ -1157,6 +1157,53 @@ class cbandits_label(abstract_label):
             ["{}:{}:{}".format(c.action, c.cost, c.probability) for c in self.costs]
         )
 
+class ccb_label(abstract_label):
+    """Class for conditional contextual bandits VW label"""
+
+    def __init__(self, type = "unset", cost=0, top_class=0, top_probability=0, explicitly_included_actions=[]):
+        abstract_label.__init__(self)
+        if isinstance(cost, example):
+            self.from_example(cost)
+        else:
+            self.type = type
+            self.cost = cost
+            self.top_class = top_class
+            self.top_probability = top_probability
+            self.explicitly_included_actions = explicitly_included_actions
+
+    def from_example(self, ex):
+        class wclass:
+            def __init__(
+                self,
+                type=pylibvw.vw.tUNSET, 
+                top_prediction=None,
+                cost=0,
+                weight=0,
+                explicitly_included_actions=[],
+                **kwargs
+            ):
+                if kwargs.get("label", False):
+                    action = kwargs["label"]
+                    warnings.warn(
+                        "label has been deprecated. Please use 'action' instead.",
+                        DeprecationWarning,
+                    )
+                self.type = {
+                    pylibvw.vw.tUNSET: "unset",
+                    pylibvw.vw.tSHARED: "shared",
+                    pylibvw.vw.tACTION: "action",
+                    pylibvw.vw.tSLOT: "slot",
+                }[type]
+                self.weight = weight
+                self.top_action, self.top_probability = top_prediction
+                self.label = self.top_action
+                self.cost = cost
+                self.explicitly_included_actions = explicitly_included_actions
+        self.out_label = wclass(ex.get_ccb_type(), get_prediction(ex, pylibvw.vw.pDECISION_SCORES),
+                ex.get_ccb_cost(), ex.get_ccb_weight(), ex.get_ccb_explicitly_included_actions())
+
+    def __str__(self):
+        return f"{self.type}:{str(self.top_action or ' ')}:{str(self.top_probability or ' ')}:{self.explicitly_included_actions}"
 
 class example(pylibvw.example):
     """The example class is a (non-trivial) wrapper around
