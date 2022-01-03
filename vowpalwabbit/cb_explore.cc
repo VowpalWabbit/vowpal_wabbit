@@ -18,6 +18,7 @@
 #include "shared_data.h"
 
 #include <memory>
+#include <utility>
 
 using namespace VW::LEARNER;
 using namespace ACTION_SCORE;
@@ -54,9 +55,11 @@ struct cb_explore
   bool nounif = false;
   bool epsilon_decay = false;
   VW::version_struct model_file_version;
-  VW::io::logger* logger;
+  VW::io::logger logger;
 
   size_t counter = 0;
+
+  cb_explore(VW::io::logger logger) : logger(std::move(logger)) {}
 };
 
 template <bool is_learn>
@@ -217,7 +220,7 @@ void predict_or_learn_cover(cb_explore& data, single_learner& base, example& ec)
     {
       data.cbcs.known_cost = CB::cb_class{};
     }
-    gen_cs_example<false>(data.cbcs, ec, data.cb_label, data.cs_label, *data.logger);
+    gen_cs_example<false>(data.cbcs, ec, data.cb_label, data.cs_label, data.logger);
     for (uint32_t i = 0; i < num_actions; i++) probabilities[i] = 0.f;
 
     ec.l.cs = std::move(data.second_cs_label);
@@ -329,7 +332,7 @@ base_learner* cb_explore_setup(VW::setup_base_i& stack_builder)
 {
   options_i& options = *stack_builder.get_options();
   VW::workspace& all = *stack_builder.get_all_pointer();
-  auto data = VW::make_unique<cb_explore>();
+  auto data = VW::make_unique<cb_explore>(all.logger);
   option_group_definition new_options("Contextual Bandit Exploration");
   new_options
       .add(make_option("cb_explore", data->cbcs.num_actions)
@@ -373,7 +376,6 @@ base_learner* cb_explore_setup(VW::setup_base_i& stack_builder)
 
   single_learner* base = as_singleline(stack_builder.setup_base_learner());
   data->cbcs.scorer = all.scorer;
-  data->logger = &all.logger;
 
   void (*learn_ptr)(cb_explore&, single_learner&, example&);
   void (*predict_ptr)(cb_explore&, single_learner&, example&);
