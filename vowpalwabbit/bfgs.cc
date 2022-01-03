@@ -889,8 +889,7 @@ void end_pass(bfgs& b)
       if (b.final_pass == b.current_pass)
       {
         *(b.all->driver_output) << "Maximum number of passes reached. ";
-        if (!b.output_regularizer)
-          *(b.all->driver_output) << "To optimize further, increase the number of passes\n";
+        if (!b.output_regularizer) *(b.all->driver_output) << "To optimize further, increase the number of passes\n";
         if (b.output_regularizer)
         {
           *(b.all->driver_output) << "\nRegular model file has been created. ";
