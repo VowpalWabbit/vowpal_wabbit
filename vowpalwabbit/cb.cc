@@ -139,7 +139,10 @@ void print_update(VW::workspace& all, bool is_test, const example& ec, const mul
       for (size_t i = 0; i < (*ec_seq).size(); i++)
       {
         if (CB::ec_is_example_header(*(*ec_seq)[i]))
-        { num_features += (ec_seq->size() - 1) * (*ec_seq)[i]->get_num_features(); }
+        {
+          num_features += (ec_seq->size() - 1) *
+              ((*ec_seq)[i]->get_num_features() - (*ec_seq)[i]->feature_space[constant_namespace].size());
+        }
         else
         {
           num_features += (*ec_seq)[i]->get_num_features();
