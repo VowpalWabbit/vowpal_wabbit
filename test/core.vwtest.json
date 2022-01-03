@@ -4512,5 +4512,14 @@
     "input_files": [
       "train-sets/csoaa_ldf_shared.dat"
     ]
+  },
+  {
+    "id": 381,
+    "desc": "Test that epsilon without enabling a reduction which uses it produces a warning.",
+    "vw_command": "--no_stdin --epsilon 5",
+    "diff_files": {
+      "stderr": "train-sets/ref/epsilon_warning.stderr"
+    },
+    "input_files": []
   }
 ]
