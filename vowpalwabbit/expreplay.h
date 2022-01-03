@@ -108,7 +108,7 @@ VW::LEARNER::base_learner* expreplay_setup(VW::setup_base_i& stack_builder)
   er->filled = calloc_or_throw<bool>(er->N);
 
   if (!all.quiet)
-    *(all.driver_output) << "experience replay level=" << er_level << ", buffer=" << er->N
+    *(all.trace_message) << "experience replay level=" << er_level << ", buffer=" << er->N
                          << ", replay count=" << er->replay_count << std::endl;
 
   er->base = VW::LEARNER::as_singleline(stack_builder.setup_base_learner());

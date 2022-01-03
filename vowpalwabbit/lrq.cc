@@ -197,8 +197,8 @@ base_learner* lrq_setup(VW::setup_base_i& stack_builder)
 
   if (!all.quiet)
   {
-    *(all.driver_output) << "creating low rank quadratic features for pairs: ";
-    if (lrq->dropout) *(all.driver_output) << "(using dropout) ";
+    *(all.trace_message) << "creating low rank quadratic features for pairs: ";
+    if (lrq->dropout) *(all.trace_message) << "(using dropout) ";
   }
 
   for (std::string const& i : lrq->lrpairs)
@@ -208,7 +208,7 @@ base_learner* lrq_setup(VW::setup_base_i& stack_builder)
       if ((i.length() < 3) || !valid_int(i.c_str() + 2))
         THROW("Low-rank quadratic features must involve two sets and a rank: " << i);
 
-      *(all.driver_output) << i << " ";
+      *(all.trace_message) << i << " ";
     }
     // TODO: colon-syntax
 
@@ -220,7 +220,7 @@ base_learner* lrq_setup(VW::setup_base_i& stack_builder)
     maxk = std::max(maxk, k);
   }
 
-  if (!all.quiet) *(all.driver_output) << std::endl;
+  if (!all.quiet) *(all.trace_message) << std::endl;
 
   all.wpp = all.wpp * static_cast<uint64_t>(1 + maxk);
   auto base = stack_builder.setup_base_learner();

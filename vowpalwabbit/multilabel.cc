@@ -79,7 +79,7 @@ void print_update(VW::workspace& all, bool is_test, const example& ec)
     std::stringstream pred_string;
     for (uint32_t i : ec.pred.multilabels.label_v) { pred_string << " " << i; }
 
-    all.sd->print_update(*all.driver_output, all.holdout_set_off, all.current_pass, label_string.str(),
+    all.sd->print_update(*all.trace_message, all.holdout_set_off, all.current_pass, label_string.str(),
         pred_string.str(), ec.get_num_features(), all.progress_add, all.progress_arg);
   }
 }

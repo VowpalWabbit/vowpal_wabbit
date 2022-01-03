@@ -888,12 +888,12 @@ void end_pass(bfgs& b)
       // reaching the max number of passes regardless of convergence
       if (b.final_pass == b.current_pass)
       {
-        *(b.all->driver_output) << "Maximum number of passes reached. ";
-        if (!b.output_regularizer) *(b.all->driver_output) << "To optimize further, increase the number of passes\n";
+        *(b.all->trace_message) << "Maximum number of passes reached. ";
+        if (!b.output_regularizer) *(b.all->trace_message) << "To optimize further, increase the number of passes\n";
         if (b.output_regularizer)
         {
-          *(b.all->driver_output) << "\nRegular model file has been created. ";
-          *(b.all->driver_output) << "Output feature regularizer file is created only when the convergence is reached. "
+          *(b.all->trace_message) << "\nRegular model file has been created. ";
+          *(b.all->trace_message) << "Output feature regularizer file is created only when the convergence is reached. "
                                      "Try increasing the number of passes for convergence\n";
           b.output_regularizer = false;
         }
@@ -913,7 +913,7 @@ void end_pass(bfgs& b)
         if (b.early_stop_thres == b.no_win_counter)
         {
           set_done(*all);
-          *(b.all->driver_output) << "Early termination reached w.r.t. holdout set error";
+          *(b.all->trace_message) << "Early termination reached w.r.t. holdout set error";
         }
       }
       if (b.final_pass == b.current_pass)
@@ -1115,16 +1115,16 @@ base_learner* bfgs_setup(VW::setup_base_i& stack_builder)
 
   if (!all.quiet)
   {
-    if (b->m > 0) { *(all.driver_output) << "enabling BFGS based optimization "; }
+    if (b->m > 0) { *(all.trace_message) << "enabling BFGS based optimization "; }
     else
     {
-      *(all.driver_output) << "enabling conjugate gradient optimization via BFGS ";
+      *(all.trace_message) << "enabling conjugate gradient optimization via BFGS ";
     }
 
-    if (b->hessian_on) { *(all.driver_output) << "with curvature calculation" << std::endl; }
+    if (b->hessian_on) { *(all.trace_message) << "with curvature calculation" << std::endl; }
     else
     {
-      *(all.driver_output) << "**without** curvature calculation" << std::endl;
+      *(all.trace_message) << "**without** curvature calculation" << std::endl;
     }
   }
 

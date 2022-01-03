@@ -242,7 +242,7 @@ workspace::workspace(VW::io::logger logger) : options(nullptr, nullptr), logger(
 {
   sd = new shared_data();
   // Default is stderr.
-  driver_output = VW::make_unique<std::ostream>(std::cout.rdbuf());
+  trace_message = VW::make_unique<std::ostream>(std::cout.rdbuf());
 
   l = nullptr;
   scorer = nullptr;

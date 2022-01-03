@@ -121,7 +121,7 @@ void learn(svrg& s, base_learner& base, example& ec)
   {
     if (s.prev_pass != pass && !s.all->quiet)
     {
-      *(s.all->driver_output) << "svrg pass " << pass << ": committing stable point" << std::endl;
+      *(s.all->trace_message) << "svrg pass " << pass << ": committing stable point" << std::endl;
       for (uint32_t j = 0; j < VW::num_weights(*s.all); j++)
       {
         float w = VW::get_weight(*s.all, j, W_INNER);
@@ -129,7 +129,7 @@ void learn(svrg& s, base_learner& base, example& ec)
         VW::set_weight(*s.all, j, W_STABLEGRAD, 0.f);
       }
       s.stable_grad_count = 0;
-      *(s.all->driver_output) << "svrg pass " << pass << ": computing exact gradient" << std::endl;
+      *(s.all->trace_message) << "svrg pass " << pass << ": computing exact gradient" << std::endl;
     }
     update_stable(s, ec);
     s.stable_grad_count++;
@@ -137,7 +137,7 @@ void learn(svrg& s, base_learner& base, example& ec)
   else  // Perform updates
   {
     if (s.prev_pass != pass && !s.all->quiet)
-    { *(s.all->driver_output) << "svrg pass " << pass << ": taking steps" << std::endl; }
+    { *(s.all->trace_message) << "svrg pass " << pass << ": taking steps" << std::endl; }
     update_inner(s, ec);
   }
 

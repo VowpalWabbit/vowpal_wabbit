@@ -195,10 +195,10 @@ VW::LEARNER::base_learner* setup(VW::setup_base_i& stack_builder)
 
   if (!all.quiet)
   {
-    *(all.driver_output) << "Using synthcover for CB exploration" << std::endl;
-    *(all.driver_output) << "synthcoversize = " << synthcoversize << std::endl;
-    if (epsilon > 0) *(all.driver_output) << "epsilon = " << epsilon << std::endl;
-    *(all.driver_output) << "synthcoverpsi = " << psi << std::endl;
+    *(all.trace_message) << "Using synthcover for CB exploration" << std::endl;
+    *(all.trace_message) << "synthcoversize = " << synthcoversize << std::endl;
+    if (epsilon > 0) *(all.trace_message) << "epsilon = " << epsilon << std::endl;
+    *(all.trace_message) << "synthcoverpsi = " << psi << std::endl;
   }
 
   size_t problem_multiplier = 1;

@@ -119,19 +119,19 @@ struct svm_params
     free(pool);
     if (all)
     {
-      *(all->driver_output) << "Num support = " << model->num_support << endl;
-      *(all->driver_output) << "Number of kernel evaluations = " << num_kernel_evals << " "
+      *(all->trace_message) << "Num support = " << model->num_support << endl;
+      *(all->trace_message) << "Number of kernel evaluations = " << num_kernel_evals << " "
                             << "Number of cache queries = " << num_cache_evals << endl;
-      *(all->driver_output) << "Total loss = " << loss_sum << endl;
+      *(all->trace_message) << "Total loss = " << loss_sum << endl;
     }
     if (model) { free_svm_model(model); }
-    if (all) { *(all->driver_output) << "Done freeing model" << endl; }
+    if (all) { *(all->trace_message) << "Done freeing model" << endl; }
 
     free(kernel_params);
     if (all)
     {
-      *(all->driver_output) << "Done freeing kernel params" << endl;
-      *(all->driver_output) << "Done with finish " << endl;
+      *(all->trace_message) << "Done freeing kernel params" << endl;
+      *(all->trace_message) << "Done with finish " << endl;
     }
   }
 };
@@ -283,7 +283,7 @@ void save_load(svm_params& params, io_buf& model_file, bool read, bool text)
 {
   if (text)
   {
-    *params.all->driver_output << "Not supporting readable model for kernel svm currently" << endl;
+    *params.all->trace_message << "Not supporting readable model for kernel svm currently" << endl;
     return;
   }
 
@@ -652,7 +652,7 @@ void train(svm_params& params)
             if (subopt[max_pos] > 0)
             {
               if (!overshoot && max_pos == static_cast<size_t>(model_pos) && max_pos > 0 && j == 0)
-                *params.all->driver_output << "Shouldn't reprocess right after process." << endl;
+                *params.all->trace_message << "Shouldn't reprocess right after process." << endl;
               if (max_pos * model->num_support <= params.maxcache) make_hot_sv(params, max_pos);
               update(params, max_pos);
             }
@@ -690,8 +690,8 @@ void learn(svm_params& params, base_learner&, example& ec)
     if (params.all->training && ec.example_counter % 100 == 0) trim_cache(params);
     if (params.all->training && ec.example_counter % 1000 == 0 && ec.example_counter >= 2)
     {
-      *params.all->driver_output << "Number of support vectors = " << params.model->num_support << endl;
-      *params.all->driver_output << "Number of kernel evaluations = " << num_kernel_evals << " "
+      *params.all->trace_message << "Number of support vectors = " << params.model->num_support << endl;
+      *params.all->trace_message << "Number of kernel evaluations = " << num_kernel_evals << " "
                                  << "Number of cache queries = " << num_cache_evals << " loss sum = " << params.loss_sum
                                  << " " << params.model->alpha[params.model->num_support - 1] << " "
                                  << params.model->alpha[params.model->num_support - 2] << endl;
@@ -764,20 +764,20 @@ VW::LEARNER::base_learner* kernel_svm_setup(VW::setup_base_i& stack_builder)
 
   params->lambda = all.l2_lambda;
   if (params->lambda == 0.) params->lambda = 1.;
-  *params->all->driver_output << "Lambda = " << params->lambda << endl;
-  *params->all->driver_output << "Kernel = " << kernel_type << endl;
+  *params->all->trace_message << "Lambda = " << params->lambda << endl;
+  *params->all->trace_message << "Kernel = " << kernel_type << endl;
 
   if (kernel_type.compare("rbf") == 0)
   {
     params->kernel_type = SVM_KER_RBF;
-    *params->all->driver_output << "bandwidth = " << bandwidth << endl;
+    *params->all->trace_message << "bandwidth = " << bandwidth << endl;
     params->kernel_params = &calloc_or_throw<double>();
     *(static_cast<float*>(params->kernel_params)) = bandwidth;
   }
   else if (kernel_type.compare("poly") == 0)
   {
     params->kernel_type = SVM_KER_POLY;
-    *params->all->driver_output << "degree = " << degree << endl;
+    *params->all->trace_message << "degree = " << degree << endl;
     params->kernel_params = &calloc_or_throw<int>();
     *(static_cast<int*>(params->kernel_params)) = degree;
   }

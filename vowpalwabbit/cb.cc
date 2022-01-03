@@ -163,11 +163,11 @@ void print_update(VW::workspace& all, bool is_test, const example& ec, const mul
         pred_buf << ec.pred.a_s[0].action << ":" << ec.pred.a_s[0].score << "...";
       else
         pred_buf << "no action";
-      all.sd->print_update(*all.driver_output, all.holdout_set_off, all.current_pass, label_buf, pred_buf.str(),
+      all.sd->print_update(*all.trace_message, all.holdout_set_off, all.current_pass, label_buf, pred_buf.str(),
           num_features, all.progress_add, all.progress_arg);
     }
     else
-      all.sd->print_update(*all.driver_output, all.holdout_set_off, all.current_pass, label_buf,
+      all.sd->print_update(*all.trace_message, all.holdout_set_off, all.current_pass, label_buf,
           static_cast<uint32_t>(pred), num_features, all.progress_add, all.progress_arg);
   }
 }

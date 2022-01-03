@@ -480,10 +480,10 @@ base_learner* ftrl_setup(VW::setup_base_i& stack_builder)
 
   if (!all.quiet)
   {
-    *(all.driver_output) << "Enabling FTRL based optimization" << std::endl;
-    *(all.driver_output) << "Algorithm used: " << algorithm_name << std::endl;
-    *(all.driver_output) << "ftrl_alpha = " << b->ftrl_alpha << std::endl;
-    *(all.driver_output) << "ftrl_beta = " << b->ftrl_beta << std::endl;
+    *(all.trace_message) << "Enabling FTRL based optimization" << std::endl;
+    *(all.trace_message) << "Algorithm used: " << algorithm_name << std::endl;
+    *(all.trace_message) << "ftrl_alpha = " << b->ftrl_alpha << std::endl;
+    *(all.trace_message) << "ftrl_beta = " << b->ftrl_beta << std::endl;
   }
 
   if (!all.holdout_set_off)

@@ -515,7 +515,7 @@ void read_regressor_file(VW::workspace& all, const std::vector<std::string>& all
 
     if (!all.quiet)
     {
-      // *(all.driver_output) << "initial_regressor = " << regs[0] << std::endl;
+      // *(all.trace_message) << "initial_regressor = " << regs[0] << std::endl;
       if (all_intial.size() > 1)
       { all.logger.err_warn("Ignoring remaining {} initial regressors", (all_intial.size() - 1)); }
     }

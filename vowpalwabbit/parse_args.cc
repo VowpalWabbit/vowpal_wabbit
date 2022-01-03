@@ -131,7 +131,7 @@ void parse_dictionary_argument(VW::workspace& all, const std::string& str)
   uint64_t fd_hash = hash_file_contents(file_adapter.get());
 
   if (!all.quiet)
-    *(all.driver_output) << "scanned dictionary '" << s << "' from '" << file_name << "', hash=" << std::hex << fd_hash
+    *(all.trace_message) << "scanned dictionary '" << s << "' from '" << file_name << "', hash=" << std::hex << fd_hash
                          << std::dec << endl;
 
   // see if we've already read this dictionary
@@ -213,7 +213,7 @@ void parse_dictionary_argument(VW::workspace& all, const std::string& str)
   VW::dealloc_examples(ec, 1);
 
   if (!all.quiet)
-    *(all.driver_output) << "dictionary " << s << " contains " << map->size() << " item"
+    *(all.trace_message) << "dictionary " << s << " contains " << map->size() << " item"
                          << (map->size() == 1 ? "" : "s") << endl;
 
   all.namespace_dictionaries[static_cast<size_t>(ns)].push_back(map);
@@ -299,7 +299,7 @@ void parse_diagnostics(options_i& options, VW::workspace& all)
     // This is valid:
     // https://stackoverflow.com/questions/25690636/is-it-valid-to-construct-an-stdostream-from-a-null-buffer This
     // results in the ostream not outputting anything.
-    all.driver_output = VW::make_unique<std::ostream>(nullptr);
+    all.trace_message = VW::make_unique<std::ostream>(nullptr);
   }
 
   // pass all.quiet around
@@ -418,7 +418,7 @@ input_options parse_source(VW::workspace& all, options_i& options)
           options.was_supplied("output_feature_regularizer_text")))
   {
     all.holdout_set_off = true;
-    *(all.driver_output) << "Making holdout_set_off=true since output regularizer specified" << endl;
+    *(all.trace_message) << "Making holdout_set_off=true since output regularizer specified" << endl;
   }
 
   return parsed_options;
@@ -704,7 +704,7 @@ void parse_feature_tweaks(options_i& options, VW::workspace& all, bool interacti
 
     if (!all.quiet)
     {
-      *(all.driver_output) << fmt::format("creating quadratic features for pairs: {}\n", fmt::join(quadratics, " "));
+      *(all.trace_message) << fmt::format("creating quadratic features for pairs: {}\n", fmt::join(quadratics, " "));
     }
   }
 
@@ -718,7 +718,7 @@ void parse_feature_tweaks(options_i& options, VW::workspace& all, bool interacti
     }
 
     if (!all.quiet)
-    { *(all.driver_output) << fmt::format("creating cubic features for triples: {}\n", fmt::join(cubics, " ")); }
+    { *(all.trace_message) << fmt::format("creating cubic features for triples: {}\n", fmt::join(cubics, " ")); }
   }
 
   if (options.was_supplied("interactions"))
@@ -731,7 +731,7 @@ void parse_feature_tweaks(options_i& options, VW::workspace& all, bool interacti
     }
     if (!all.quiet)
     {
-      *(all.driver_output) << fmt::format(
+      *(all.trace_message) << fmt::format(
           "creating features for following interactions: {}\n", fmt::join(interactions, " "));
     }
   }
@@ -815,12 +815,12 @@ void parse_feature_tweaks(options_i& options, VW::workspace& all, bool interacti
 
     if (!all.quiet)
     {
-      *(all.driver_output) << "ignoring namespaces beginning with:";
+      *(all.trace_message) << "ignoring namespaces beginning with:";
       for (size_t i = 0; i < NUM_NAMESPACES; ++i)
       {
-        if (all.ignore[i]) *(all.driver_output) << " " << static_cast<unsigned char>(i);
+        if (all.ignore[i]) *(all.trace_message) << " " << static_cast<unsigned char>(i);
       }
-      *(all.driver_output) << endl;
+      *(all.trace_message) << endl;
     }
   }
 
@@ -836,12 +836,12 @@ void parse_feature_tweaks(options_i& options, VW::workspace& all, bool interacti
 
     if (!all.quiet)
     {
-      *(all.driver_output) << "ignoring linear terms for namespaces beginning with:";
+      *(all.trace_message) << "ignoring linear terms for namespaces beginning with:";
       for (size_t i = 0; i < NUM_NAMESPACES; ++i)
       {
-        if (all.ignore_linear[i]) *(all.driver_output) << " " << static_cast<unsigned char>(i);
+        if (all.ignore_linear[i]) *(all.trace_message) << " " << static_cast<unsigned char>(i);
       }
-      *(all.driver_output) << endl;
+      *(all.trace_message) << endl;
     }
   }
 
@@ -859,12 +859,12 @@ void parse_feature_tweaks(options_i& options, VW::workspace& all, bool interacti
 
     if (!all.quiet)
     {
-      *(all.driver_output) << "using namespaces beginning with:";
+      *(all.trace_message) << "using namespaces beginning with:";
       for (size_t i = 0; i < NUM_NAMESPACES; ++i)
       {
-        if (!all.ignore[i]) *(all.driver_output) << " " << static_cast<unsigned char>(i);
+        if (!all.ignore[i]) *(all.trace_message) << " " << static_cast<unsigned char>(i);
       }
-      *(all.driver_output) << endl;
+      *(all.trace_message) << endl;
     }
   }
 
@@ -1018,7 +1018,7 @@ void parse_example_tweaks(options_i& options, VW::workspace& all)
 
   if (test_only || all.eta == 0.)
   {
-    if (!all.quiet) *(all.driver_output) << "only testing" << endl;
+    if (!all.quiet) *(all.trace_message) << "only testing" << endl;
     all.training = false;
     if (all.lda > 0) all.eta = 0;
   }
@@ -1036,7 +1036,7 @@ void parse_example_tweaks(options_i& options, VW::workspace& all)
   if (options.was_supplied("named_labels"))
   {
     all.sd->ldict = VW::make_unique<VW::named_labels>(named_labels);
-    if (!all.quiet) *(all.driver_output) << "parsed " << all.sd->ldict->getK() << " named labels" << endl;
+    if (!all.quiet) *(all.trace_message) << "parsed " << all.sd->ldict->getK() << " named labels" << endl;
   }
 
   all.loss = getLossFunction(all, loss_function, loss_parameter);
@@ -1049,12 +1049,12 @@ void parse_example_tweaks(options_i& options, VW::workspace& all)
 
   if (all.l1_lambda < 0.f)
   {
-    *(all.driver_output) << "l1_lambda should be nonnegative: resetting from " << all.l1_lambda << " to 0" << endl;
+    *(all.trace_message) << "l1_lambda should be nonnegative: resetting from " << all.l1_lambda << " to 0" << endl;
     all.l1_lambda = 0.f;
   }
   if (all.l2_lambda < 0.f)
   {
-    *(all.driver_output) << "l2_lambda should be nonnegative: resetting from " << all.l2_lambda << " to 0" << endl;
+    *(all.trace_message) << "l2_lambda should be nonnegative: resetting from " << all.l2_lambda << " to 0" << endl;
     all.l2_lambda = 0.f;
   }
   all.reg_mode += (all.l1_lambda > 0.) ? 1 : 0;
@@ -1062,8 +1062,8 @@ void parse_example_tweaks(options_i& options, VW::workspace& all)
   if (!all.quiet)
   {
     if (all.reg_mode % 2 && !options.was_supplied("bfgs"))
-      *(all.driver_output) << "using l1 regularization = " << all.l1_lambda << endl;
-    if (all.reg_mode > 1) *(all.driver_output) << "using l2 regularization = " << all.l2_lambda << endl;
+      *(all.trace_message) << "using l1 regularization = " << all.l1_lambda << endl;
+    if (all.reg_mode > 1) *(all.trace_message) << "using l2 regularization = " << all.l2_lambda << endl;
   }
 }
 
@@ -1081,7 +1081,7 @@ void parse_output_preds(options_i& options, VW::workspace& all)
 
   if (options.was_supplied("predictions"))
   {
-    if (!all.quiet) *(all.driver_output) << "predictions = " << predictions << endl;
+    if (!all.quiet) *(all.trace_message) << "predictions = " << predictions << endl;
 
     if (predictions == "stdout")
     {
@@ -1104,7 +1104,7 @@ void parse_output_preds(options_i& options, VW::workspace& all)
   {
     if (!all.quiet)
     {
-      *(all.driver_output) << "raw predictions = " << raw_predictions << endl;
+      *(all.trace_message) << "raw predictions = " << raw_predictions << endl;
       if (options.was_supplied("binary"))
       { all.logger.err_warn("--raw_predictions has no defined value when --binary specified, expect no output"); }
     }
@@ -1143,7 +1143,7 @@ void parse_output_model(options_i& options, VW::workspace& all)
   options.add_and_parse(output_model_options);
 
   if (!all.final_regressor_name.empty() && !all.quiet)
-    *(all.driver_output) << "final_regressor = " << all.final_regressor_name << endl;
+    *(all.trace_message) << "final_regressor = " << all.final_regressor_name << endl;
 
   if (options.was_supplied("invert_hash")) { all.hash_inv = true; }
   if (save_resume)
@@ -1261,7 +1261,7 @@ VW::workspace& parse_args(
     // This is valid:
     // https://stackoverflow.com/questions/25690636/is-it-valid-to-construct-an-stdostream-from-a-null-buffer This
     // results in the ostream not outputting anything.
-    all.driver_output = VW::make_unique<std::ostream>(nullptr);
+    all.trace_message = VW::make_unique<std::ostream>(nullptr);
   }
   else
   {
@@ -1270,16 +1270,16 @@ VW::workspace& parse_args(
       // Since the trace_message_t interface uses a string and the writer interface uses a buffer we unfortunately
       // need to adapt between them here.
       all.trace_message_wrapper_context = std::make_shared<trace_message_wrapper>(trace_context, trace_listener);
-      all.driver_output = VW::make_unique<VW::io::owning_ostream>(VW::make_unique<VW::io::writer_stream_buf>(
+      all.trace_message = VW::make_unique<VW::io::owning_ostream>(VW::make_unique<VW::io::writer_stream_buf>(
           VW::io::create_custom_writer(all.trace_message_wrapper_context.get(), trace_message_wrapper_adapter)));
     }
     else if (driver_output_stream == "stdout")
     {
-      all.driver_output = VW::make_unique<std::ostream>(std::cout.rdbuf());
+      all.trace_message = VW::make_unique<std::ostream>(std::cout.rdbuf());
     }
     else
     {
-      all.driver_output = VW::make_unique<std::ostream>(std::cerr.rdbuf());
+      all.trace_message = VW::make_unique<std::ostream>(std::cerr.rdbuf());
     }
   }
 
@@ -1530,11 +1530,11 @@ void instantiate_learner(VW::workspace& all, std::unique_ptr<VW::setup_base_i> l
 
   if (!all.quiet)
   {
-    *(all.driver_output) << "Num weight bits = " << all.num_bits << endl;
-    *(all.driver_output) << "learning rate = " << all.eta << endl;
-    *(all.driver_output) << "initial_t = " << all.sd->t << endl;
-    *(all.driver_output) << "power_t = " << all.power_t << endl;
-    if (all.numpasses > 1) *(all.driver_output) << "decay_learning_rate = " << all.eta_decay_rate << endl;
+    *(all.trace_message) << "Num weight bits = " << all.num_bits << endl;
+    *(all.trace_message) << "learning rate = " << all.eta << endl;
+    *(all.trace_message) << "initial_t = " << all.sd->t << endl;
+    *(all.trace_message) << "power_t = " << all.power_t << endl;
+    if (all.numpasses > 1) *(all.trace_message) << "decay_learning_rate = " << all.eta_decay_rate << endl;
   }
 }
 
@@ -1651,7 +1651,7 @@ void print_enabled_reductions(VW::workspace& all, std::vector<std::string>& enab
     std::copy(
         enabled_reductions.begin(), enabled_reductions.end() - 1, std::ostream_iterator<std::string>(imploded, delim));
 
-    *(all.driver_output) << "Enabled reductions: " << imploded.str() << enabled_reductions.back() << std::endl;
+    *(all.trace_message) << "Enabled reductions: " << imploded.str() << enabled_reductions.back() << std::endl;
   }
 }
 
@@ -1711,15 +1711,15 @@ VW::workspace* initialize_with_builder(std::unique_ptr<options_i, options_delete
 
     if (!all.quiet)
     {
-      *(all.driver_output) << "Input label = " << VW::to_string(all.l->get_input_label_type()).substr(14) << std::endl;
-      *(all.driver_output) << "Output pred = " << VW::to_string(all.l->get_output_prediction_type()).substr(19)
+      *(all.trace_message) << "Input label = " << VW::to_string(all.l->get_input_label_type()).substr(14) << std::endl;
+      *(all.trace_message) << "Output pred = " << VW::to_string(all.l->get_output_prediction_type()).substr(19)
                            << std::endl;
     }
 
     if (!all.options->get_typed_option<bool>("dry_run").value())
     {
       if (!all.quiet && !all.bfgs && !all.searchstr && !all.options->was_supplied("audit_regressor"))
-      { all.sd->print_update_header(*all.driver_output); }
+      { all.sd->print_update_header(*all.trace_message); }
       all.l->init_driver();
     }
 
@@ -1865,36 +1865,36 @@ void finish(VW::workspace& all, bool delete_all)
   // also update VowpalWabbit::PerformanceStatistics::get() (vowpalwabbit.cpp)
   if (!all.quiet && !all.options->was_supplied("audit_regressor"))
   {
-    all.driver_output->precision(6);
-    *(all.driver_output) << std::fixed;
-    *(all.driver_output) << endl << "finished run";
+    all.trace_message->precision(6);
+    *(all.trace_message) << std::fixed;
+    *(all.trace_message) << endl << "finished run";
     if (all.current_pass == 0 || all.current_pass == 1)
-      *(all.driver_output) << endl << "number of examples = " << all.sd->example_number;
+      *(all.trace_message) << endl << "number of examples = " << all.sd->example_number;
     else
     {
-      *(all.driver_output) << endl << "number of examples per pass = " << all.sd->example_number / all.current_pass;
-      *(all.driver_output) << endl << "passes used = " << all.current_pass;
+      *(all.trace_message) << endl << "number of examples per pass = " << all.sd->example_number / all.current_pass;
+      *(all.trace_message) << endl << "passes used = " << all.current_pass;
     }
-    *(all.driver_output) << endl << "weighted example sum = " << all.sd->weighted_examples();
-    *(all.driver_output) << endl << "weighted label sum = " << all.sd->weighted_labels;
-    *(all.driver_output) << endl << "average loss = ";
+    *(all.trace_message) << endl << "weighted example sum = " << all.sd->weighted_examples();
+    *(all.trace_message) << endl << "weighted label sum = " << all.sd->weighted_labels;
+    *(all.trace_message) << endl << "average loss = ";
     if (all.holdout_set_off)
       if (all.sd->weighted_labeled_examples > 0)
-        *(all.driver_output) << all.sd->sum_loss / all.sd->weighted_labeled_examples;
+        *(all.trace_message) << all.sd->sum_loss / all.sd->weighted_labeled_examples;
       else
-        *(all.driver_output) << "n.a.";
+        *(all.trace_message) << "n.a.";
     else if ((all.sd->holdout_best_loss == FLT_MAX) || (all.sd->holdout_best_loss == FLT_MAX * 0.5))
-      *(all.driver_output) << "undefined (no holdout)";
+      *(all.trace_message) << "undefined (no holdout)";
     else
-      *(all.driver_output) << all.sd->holdout_best_loss << " h";
+      *(all.trace_message) << all.sd->holdout_best_loss << " h";
     if (all.sd->report_multiclass_log_loss)
     {
       if (all.holdout_set_off)
-        *(all.driver_output) << endl
+        *(all.trace_message) << endl
                              << "average multiclass log loss = "
                              << all.sd->multiclass_log_loss / all.sd->weighted_labeled_examples;
       else
-        *(all.driver_output) << endl
+        *(all.trace_message) << endl
                              << "average multiclass log loss = "
                              << all.sd->holdout_multiclass_log_loss / all.sd->weighted_labeled_examples << " h";
     }
@@ -1903,14 +1903,14 @@ void finish(VW::workspace& all, bool delete_all)
     float best_constant_loss;
     if (get_best_constant(all.loss.get(), all.sd, best_constant, best_constant_loss))
     {
-      *(all.driver_output) << endl << "best constant = " << best_constant;
+      *(all.trace_message) << endl << "best constant = " << best_constant;
       if (best_constant_loss != FLT_MIN)
-        *(all.driver_output) << endl << "best constant's loss = " << best_constant_loss;
+        *(all.trace_message) << endl << "best constant's loss = " << best_constant_loss;
     }
 
-    *(all.driver_output) << endl << "total feature number = " << all.sd->total_features;
-    if (all.sd->queries > 0) *(all.driver_output) << endl << "total queries = " << all.sd->queries;
-    *(all.driver_output) << endl;
+    *(all.trace_message) << endl << "total feature number = " << all.sd->total_features;
+    if (all.sd->queries > 0) *(all.trace_message) << endl << "total queries = " << all.sd->queries;
+    *(all.trace_message) << endl;
   }
 
   // implement finally.

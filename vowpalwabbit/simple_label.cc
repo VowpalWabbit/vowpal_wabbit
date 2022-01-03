@@ -34,7 +34,7 @@ void print_update(VW::workspace& all, const example& ec)
   if (all.sd->weighted_labeled_examples + all.sd->weighted_unlabeled_examples >= all.sd->dump_interval && !all.quiet &&
       !all.bfgs)
   {
-    all.sd->print_update(*all.driver_output, all.holdout_set_off, all.current_pass, ec.l.simple.label, ec.pred.scalar,
+    all.sd->print_update(*all.trace_message, all.holdout_set_off, all.current_pass, ec.l.simple.label, ec.pred.scalar,
         ec.get_num_features(), all.progress_add, all.progress_arg);
   }
 }

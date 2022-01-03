@@ -345,8 +345,8 @@ base_learner* VW::freegrad_setup(VW::setup_base_i& stack_builder)
 
   if (!fg_ptr->all->quiet)
   {
-    *(fg_ptr->all->driver_output) << "Enabling FreeGrad based optimization" << std::endl;
-    *(fg_ptr->all->driver_output) << "Algorithm used: " << algorithm_name << std::endl;
+    *(fg_ptr->all->trace_message) << "Enabling FreeGrad based optimization" << std::endl;
+    *(fg_ptr->all->trace_message) << "Algorithm used: " << algorithm_name << std::endl;
   }
 
   if (!fg_ptr->all->holdout_set_off)

@@ -162,7 +162,7 @@ void audit_regressor(audit_regressor_data& rd, VW::LEARNER::single_learner& base
 
 inline void print_ex(VW::workspace& all, size_t ex_processed, size_t vals_found, size_t progress)
 {
-  *(all.driver_output) << std::left << std::setw(shared_data::col_example_counter) << ex_processed << " " << std::right
+  *(all.trace_message) << std::left << std::setw(shared_data::col_example_counter) << ex_processed << " " << std::right
                        << std::setw(9) << vals_found << " " << std::right << std::setw(12) << progress << '%'
                        << std::endl;
 }
@@ -194,7 +194,7 @@ void finish(audit_regressor_data& rd)
 
   if (rd.values_audited < rd.loaded_regressor_values)
   {
-    *rd.all->driver_output << fmt::format(
+    *rd.all->trace_message << fmt::format(
         "Note: for some reason audit couldn't find all regressor values in dataset ({} of {} found).\n",
         rd.values_audited, rd.loaded_regressor_values);
   }
@@ -246,11 +246,11 @@ void init_driver(audit_regressor_data& dat)
 
   if (!dat.all->quiet)
   {
-    *dat.all->driver_output << "Regressor contains " << dat.loaded_regressor_values << " values\n";
-    *dat.all->driver_output << std::left << std::setw(shared_data::col_example_counter) << "example"
+    *dat.all->trace_message << "Regressor contains " << dat.loaded_regressor_values << " values\n";
+    *dat.all->trace_message << std::left << std::setw(shared_data::col_example_counter) << "example"
                             << " " << std::setw(shared_data::col_example_weight) << "values"
                             << " " << std::setw(shared_data::col_current_label) << "total" << std::endl;
-    *dat.all->driver_output << std::left << std::setw(shared_data::col_example_counter) << "counter"
+    *dat.all->trace_message << std::left << std::setw(shared_data::col_example_counter) << "counter"
                             << " " << std::setw(shared_data::col_example_weight) << "audited"
                             << " " << std::setw(shared_data::col_current_label) << "progress" << std::endl;
   }

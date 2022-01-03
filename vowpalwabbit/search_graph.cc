@@ -115,7 +115,7 @@ void initialize(Search::search& sch, size_t& num_actions, options_i& options)
 
   D->K = num_actions;
   D->numN = (D->directed + 1) * (D->K + 1);
-  *(sch.get_vw_pointer_unsafe().driver_output) << "K=" << D->K << ", numN=" << D->numN << std::endl;
+  *(sch.get_vw_pointer_unsafe().trace_message) << "K=" << D->K << ", numN=" << D->numN << std::endl;
   D->neighbor_predictions.resize(D->numN, 0.f);
 
   D->confusion_matrix.resize((D->K + 1) * (D->K + 1), 0);

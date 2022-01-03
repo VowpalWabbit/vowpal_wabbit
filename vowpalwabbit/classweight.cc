@@ -92,7 +92,7 @@ VW::LEARNER::base_learner* classweight_setup(VW::setup_base_i& stack_builder)
 
   for (auto& s : classweight_array) cweights->load_string(s);
 
-  if (!all.quiet) *(all.driver_output) << "parsed " << cweights->weights.size() << " class weights" << std::endl;
+  if (!all.quiet) *(all.trace_message) << "parsed " << cweights->weights.size() << " class weights" << std::endl;
 
   VW::LEARNER::single_learner* base = as_singleline(stack_builder.setup_base_learner());
 

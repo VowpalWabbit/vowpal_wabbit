@@ -483,7 +483,7 @@ std::string number_to_natural(size_t big)
 
 void print_update(search_private& priv)
 {
-  // TODO: This function should be outputting to driver_output(?), but is mixing ostream and printf formats
+  // TODO: This function should be outputting to trace_message(?), but is mixing ostream and printf formats
   //       Currently there is no way to convert an ostream to FILE*, so the lines will need to be converted
   //       to ostream format
   VW::workspace& all = *priv.all;

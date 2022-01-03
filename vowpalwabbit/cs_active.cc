@@ -186,21 +186,21 @@ void predict_or_learn(cs_active& cs_a, single_learner& base, example& ec)
     filename << cs_a.all->final_regressor_name << "." << ec.example_counter << "." << cs_a.all->sd->queries << "."
              << cs_a.num_any_queries;
     VW::save_predictor(*(cs_a.all), filename.str());
-    *(cs_a.all->driver_output) << endl << "Number of examples with at least one query = " << cs_a.num_any_queries;
+    *(cs_a.all->trace_message) << endl << "Number of examples with at least one query = " << cs_a.num_any_queries;
     // Double label query budget
     cs_a.min_labels *= 2;
 
     for (size_t i = 0; i < cs_a.examples_by_queries.size(); i++)
     {
-      *(cs_a.all->driver_output) << endl
+      *(cs_a.all->trace_message) << endl
                                  << "examples with " << i << " labels queried = " << cs_a.examples_by_queries[i];
     }
 
-    *(cs_a.all->driver_output) << endl << "labels outside of cost range = " << cs_a.labels_outside_range;
-    *(cs_a.all->driver_output) << endl
+    *(cs_a.all->trace_message) << endl << "labels outside of cost range = " << cs_a.labels_outside_range;
+    *(cs_a.all->trace_message) << endl
                                << "average distance to range = "
                                << cs_a.distance_to_range / (static_cast<float>(cs_a.labels_outside_range));
-    *(cs_a.all->driver_output) << endl
+    *(cs_a.all->trace_message) << endl
                                << "average range = " << cs_a.range / (static_cast<float>(cs_a.labels_outside_range));
   }
 

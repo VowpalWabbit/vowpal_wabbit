@@ -132,10 +132,10 @@ base_learner* cb_dro_setup(VW::setup_base_i& stack_builder)
 
   if (!all.quiet)
   {
-    *(all.driver_output) << "Using DRO for CB learning" << std::endl;
-    *(all.driver_output) << "cb_dro_alpha = " << alpha << std::endl;
-    *(all.driver_output) << "cb_dro_tau = " << tau << std::endl;
-    *(all.driver_output) << "cb_dro_wmax = " << wmax << std::endl;
+    *(all.trace_message) << "Using DRO for CB learning" << std::endl;
+    *(all.trace_message) << "cb_dro_alpha = " << alpha << std::endl;
+    *(all.trace_message) << "cb_dro_tau = " << tau << std::endl;
+    *(all.trace_message) << "cb_dro_wmax = " << wmax << std::endl;
   }
 
   auto data = VW::make_unique<cb_dro_data>(alpha, tau, wmax);

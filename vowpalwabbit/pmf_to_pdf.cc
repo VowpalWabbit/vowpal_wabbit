@@ -188,7 +188,7 @@ void print_update(VW::workspace& all, bool is_test, const example& ec, std::stri
       const auto& cost = ec.l.cb.costs[0];
       label_string << cost.action << ":" << cost.cost << ":" << cost.probability;
     }
-    all.sd->print_update(*all.driver_output, all.holdout_set_off, all.current_pass, label_string.str(),
+    all.sd->print_update(*all.trace_message, all.holdout_set_off, all.current_pass, label_string.str(),
         pred_string.str(), ec.get_num_features(), all.progress_add, all.progress_arg);
   }
 }
@@ -271,7 +271,7 @@ base_learner* setup(VW::setup_base_i& stack_builder)
   if (!options.was_supplied("bandwidth"))
   {
     data->bandwidth = half_leaf_width;
-    *(all.driver_output) << "Bandwidth was not supplied, setting default to half the continuous action unit range: "
+    *(all.trace_message) << "Bandwidth was not supplied, setting default to half the continuous action unit range: "
                          << data->bandwidth << std::endl;
   }
 

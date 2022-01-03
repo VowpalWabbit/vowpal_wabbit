@@ -30,13 +30,13 @@ bool contains_valid_namespaces(VW::workspace& all, features& f_src1, features& f
   {
     // Anchor feature must be a number instead of text so that the relative offsets functions correctly but I don't
     // think we are able to test for this here.
-    *(all.driver_output) << "Namespace '" << static_cast<char>(in.n1) << "' misses anchor feature with value 1";
+    *(all.trace_message) << "Namespace '" << static_cast<char>(in.n1) << "' misses anchor feature with value 1";
     return false;
   }
 
   if (f_src2.values[0] != 1)
   {
-    *(all.driver_output) << "Namespace '" << static_cast<char>(in.n2) << "' misses anchor feature with value 1";
+    *(all.trace_message) << "Namespace '" << static_cast<char>(in.n2) << "' misses anchor feature with value 1";
     return false;
   }
 

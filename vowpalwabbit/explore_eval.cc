@@ -43,9 +43,9 @@ void finish(explore_eval& data)
 {
   if (!data.all->quiet)
   {
-    *(data.all->driver_output) << "update count = " << data.update_count << std::endl;
-    if (data.violations > 0) *(data.all->driver_output) << "violation count = " << data.violations << std::endl;
-    if (!data.fixed_multiplier) *(data.all->driver_output) << "final multiplier = " << data.multiplier << std::endl;
+    *(data.all->trace_message) << "update count = " << data.update_count << std::endl;
+    if (data.violations > 0) *(data.all->trace_message) << "violation count = " << data.violations << std::endl;
+    if (!data.fixed_multiplier) *(data.all->trace_message) << "final multiplier = " << data.multiplier << std::endl;
   }
 }
 

@@ -24,7 +24,7 @@ using namespace VW::LEARNER;
 using namespace VW::config;
 
 // TODO: This file has several cout print statements. It looks like
-//       they should be using driver_output, but its difficult to tell
+//       they should be using trace_message, but its difficult to tell
 namespace memory_tree_ns
 {
 ///////////////////////Helper//////////////////////////////
@@ -1241,7 +1241,7 @@ base_learner* memory_tree_setup(VW::setup_base_i& stack_builder)
   init_tree(*tree);
 
   if (!all.quiet)
-    *(all.driver_output) << "memory_tree:"
+    *(all.trace_message) << "memory_tree:"
                          << " "
                          << "max_nodes = " << tree->max_nodes << " "
                          << "max_leaf_examples = " << tree->max_leaf_examples << " "

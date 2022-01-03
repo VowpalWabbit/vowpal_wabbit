@@ -813,7 +813,7 @@ void return_example(VW::workspace& all, example& ec)
   for (auto& sink : all.final_prediction_sink) { MWT::print_scalars(sink.get(), ec.pred.scalars, ec.tag, all.logger); }
 
   if (all.sd->weighted_examples() >= all.sd->dump_interval && !all.quiet)
-    all.sd->print_update(*all.driver_output, all.holdout_set_off, all.current_pass, "none", 0, ec.get_num_features(),
+    all.sd->print_update(*all.trace_message, all.holdout_set_off, all.current_pass, "none", 0, ec.get_num_features(),
         all.progress_add, all.progress_arg);
   VW::finish_example(all, ec);
 }

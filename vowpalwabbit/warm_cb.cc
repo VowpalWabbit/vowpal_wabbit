@@ -138,9 +138,9 @@ void finish(warm_cb& data)
 
   if (!data.all->quiet)
   {
-    *(data.all->driver_output) << "average variance estimate = " << data.cumu_var / data.inter_iter << std::endl;
-    *(data.all->driver_output) << "theoretical average variance = " << data.num_actions / data.epsilon << std::endl;
-    *(data.all->driver_output) << "last lambda chosen = " << data.lambdas[argmin] << " among lambdas ranging from "
+    *(data.all->trace_message) << "average variance estimate = " << data.cumu_var / data.inter_iter << std::endl;
+    *(data.all->trace_message) << "theoretical average variance = " << data.num_actions / data.epsilon << std::endl;
+    *(data.all->trace_message) << "last lambda chosen = " << data.lambdas[argmin] << " among lambdas ranging from "
                                << data.lambdas[0] << " to " << data.lambdas[data.choices_lambda - 1] << std::endl;
   }
 }
