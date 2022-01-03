@@ -440,60 +440,41 @@ base_learner* ftrl_setup(VW::setup_base_i& stack_builder)
 
   if (count != 1) { THROW("You can only use one of 'ftrl', 'pistol', or 'coin' at a time."); }
 
-  // Defaults that are specific to the mode that was chosen.
-  if (ftrl_enabled)
-  {
-    b->ftrl_alpha = options.was_supplied("ftrl_alpha") ? b->ftrl_alpha : 0.005f;
-    b->ftrl_beta = options.was_supplied("ftrl_beta") ? b->ftrl_beta : 0.1f;
-  }
-  else if (pistol_enabled)
-  {
-    b->ftrl_alpha = options.was_supplied("ftrl_alpha") ? b->ftrl_alpha : 1.0f;
-    b->ftrl_beta = options.was_supplied("ftrl_beta") ? b->ftrl_beta : 0.5f;
-  }
-  else if (coin_enabled)
-  {
-    b->ftrl_alpha = options.was_supplied("ftrl_alpha") ? b->ftrl_alpha : 4.0f;
-    b->ftrl_beta = options.was_supplied("ftrl_beta") ? b->ftrl_beta : 1.0f;
-  }
-
   b->all = &all;
   b->no_win_counter = 0;
   b->all->normalized_sum_norm_x = 0;
   b->total_weight = 0;
 
+  std::string algorithm_name;
   void (*learn_ptr)(ftrl&, base_learner&, example&) = nullptr;
   bool learn_returns_prediction = false;
 
-  std::string algorithm_name;
+  // Defaults that are specific to the mode that was chosen.
   if (ftrl_enabled)
   {
+    b->ftrl_alpha = options.was_supplied("ftrl_alpha") ? b->ftrl_alpha : 0.005f;
+    b->ftrl_beta = options.was_supplied("ftrl_beta") ? b->ftrl_beta : 0.1f;
     algorithm_name = "Proximal-FTRL";
-    if (all.audit || all.hash_inv)
-      learn_ptr = learn_proximal<true>;
-    else
-      learn_ptr = learn_proximal<false>;
+    learn_ptr = all.audit || all.hash_inv ? learn_proximal<true> : learn_proximal<false>;
     all.weights.stride_shift(2);  // NOTE: for more parameter storage
     b->ftrl_size = 3;
   }
   else if (pistol_enabled)
   {
+    b->ftrl_alpha = options.was_supplied("ftrl_alpha") ? b->ftrl_alpha : 1.0f;
+    b->ftrl_beta = options.was_supplied("ftrl_beta") ? b->ftrl_beta : 0.5f;
     algorithm_name = "PiSTOL";
-    if (all.audit || all.hash_inv)
-      learn_ptr = learn_pistol<true>;
-    else
-      learn_ptr = learn_pistol<false>;
+    learn_ptr = all.audit || all.hash_inv ? learn_pistol<true> : learn_pistol<false>;
     all.weights.stride_shift(2);  // NOTE: for more parameter storage
     b->ftrl_size = 4;
     learn_returns_prediction = true;
   }
   else if (coin_enabled)
   {
+    b->ftrl_alpha = options.was_supplied("ftrl_alpha") ? b->ftrl_alpha : 4.0f;
+    b->ftrl_beta = options.was_supplied("ftrl_beta") ? b->ftrl_beta : 1.0f;
     algorithm_name = "Coin Betting";
-    if (all.audit || all.hash_inv)
-      learn_ptr = learn_coin_betting<true>;
-    else
-      learn_ptr = learn_coin_betting<false>;
+    learn_ptr = all.audit || all.hash_inv ? learn_coin_betting<true> : learn_coin_betting<false>;
     all.weights.stride_shift(3);  // NOTE: for more parameter storage
     b->ftrl_size = 6;
     learn_returns_prediction = true;
