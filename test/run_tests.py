@@ -460,7 +460,7 @@ def create_test_dir(
 
         if file_to_copy is None:
             dependent_tests = ", ".join(dependencies)
-            raise ValueError(f"Input file '{f}' couldn't be found for test {test_id}. Searched in '{test_ref_dir}' as well as outputs of dependent tests: [{}]".format(f, , test_ref_dir, ))
+            raise ValueError(f"Input file '{f}' couldn't be found for test {test_id}. Searched in '{test_ref_dir}' as well as outputs of dependent tests: [{dependent_tests}]")
 
         test_dest_file = test_working_dir / f
         if file_to_copy == test_dest_file:
