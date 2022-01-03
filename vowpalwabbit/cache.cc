@@ -74,6 +74,7 @@ void VW::write_example_to_cache(io_buf& output, example* ae, label_parser& lbl_p
   lbl_parser.cache_label(ae->l, ae->_reduction_features, temp_cache, "_label", false);
   cache_tag(temp_cache, ae->tag);
   temp_cache.write_value<unsigned char>(ae->is_newline ? newline_example : non_newline_example);
+  assert(ae->indices.size() < 256);
   temp_cache.write_value<unsigned char>(static_cast<unsigned char>(ae->indices.size()));
   for (namespace_index ns : ae->indices)
   {
