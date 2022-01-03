@@ -25,7 +25,11 @@ do
             ;;
         --port)
             PORT="$2"
-            shift 
+            shift
+            ;;
+        --vw)
+            VW="$2"
+            shift
             ;;
         *)
             echo "$NAME: unknown argument $1"
@@ -35,8 +39,11 @@ do
     shift
 done
 
+# Test if the VW command is available
+${VW} --version > /dev/null 2>&1
+
 # -- make sure we can find vw first
-if [ -x "$VW" ]; then
+if [ $? -eq 0 ]; then
     : cool found vw at: $VW
 else
     echo "$NAME: can not find 'vw' in $PATH - sorry"
