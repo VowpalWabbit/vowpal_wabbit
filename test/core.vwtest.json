@@ -1040,7 +1040,7 @@
   {
     "id": 86,
     "desc": "check --csoaa_rank on csoaa_ldf",
-    "vw_command": "--csoaa_ldf multiline --csoaa_rank -d train-sets/cs_test_multilabel.ldf -p multilabel_ldf.predict --noconstant",
+    "vw_command": "--csoaa_ldf multiline --csoaa_rank -d train-sets/cs_test_multilabel.ldf -p multilabel_ldf.predict --noconstant -P 1",
     "diff_files": {
       "stderr": "train-sets/ref/multilabel_ldf.stderr",
       "multilabel_ldf.predict": "pred-sets/ref/multilabel_ldf.predict"
