@@ -90,11 +90,15 @@ VW::LEARNER::base_learner* setup(VW::setup_base_i& stack_builder)
   new_options
       .add(make_option("cb_explore_adf", cb_explore_adf_option)
                .keep()
+               .necessary()
                .help("Online explore-exploit for a contextual bandit problem with multiline action dependent features"))
       .add(make_option("epsilon", epsilon).keep().allow_override().help("Epsilon-greedy exploration"))
       .add(make_option("first_only", first_only).keep().help("Only explore the first action in a tie-breaking event"));
 
-  options.add_and_parse(new_options);
+  // This is a special case "cb_explore_adf" is needed to enable this. BUT it is only enabled when all of the other
+  // "cb_explore_adf" types are disabled. This is why we don't check the return value of the
+  // add_parse_and_check_necessary call like we do elsewhere.
+  options.add_parse_and_check_necessary(new_options);
 
   // NOTE: epsilon-greedy is the default explore type.
   // This basically runs if none of the other explore strategies are used

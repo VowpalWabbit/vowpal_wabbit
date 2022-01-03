@@ -432,7 +432,7 @@ void predict_csoaa_ldf_rank(ldf& data, single_learner& base, multi_ex& ec_seq_al
     make_single_prediction(data, base, *ec);
     action_score s;
     s.score = ec->partial_prediction;
-    s.action = k;
+    s.action = ec->l.cs.costs[0].class_index;
     data.a_s.push_back(s);
   }
 }
@@ -541,16 +541,14 @@ void output_rank_example(VW::workspace& all, example& head_ec, bool& hit_loss, m
 
   if (!COST_SENSITIVE::cs_label.test_label(head_ec.l))
   {
-    size_t idx = 0;
     for (example* ex : *ec_seq)
     {
       if (hit_loss) break;
-      if (preds[0].action == idx)
+      if (preds[0].action == ex->l.cs.costs[0].class_index)
       {
         loss = ex->l.cs.costs[0].x;
         hit_loss = true;
       }
-      idx++;
     }
     all.sd->sum_loss += loss;
     all.sd->sum_loss_since_last_dump += loss;
