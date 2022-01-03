@@ -185,7 +185,7 @@ private:
   std::set<std::string> m_defined_options;
 
   std::set<std::string> m_reachable_options;
-  std::unordered_map<std::string, std::vector<std::unordered_set<std::string>>> m_dependent_necessary_options;
+  std::unordered_map<std::string, std::vector<std::set<std::string>>> m_dependent_necessary_options;
 };
 
 template <typename T>

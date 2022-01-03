@@ -8,7 +8,7 @@ num sources = 0
 [warning] Option 'epsilon' depends on another option (or combination of options) which was not supplied. Possible combinations of options which would enable this option are:
 	cb_explore_pdf
 	warm_cb
-	cb_explore_adf, bag
+	bag, cb_explore_adf
 	cb_explore_adf, cover
 	cb_explore_adf, first
 	cb_explore_adf, synthcover
