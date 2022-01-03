@@ -890,7 +890,7 @@ void end_pass(bfgs& b)
       {
         *(b.all->driver_output) << "Maximum number of passes reached. ";
         if (!b.output_regularizer)
-          *(b.all->driver_output) << "If you want to optimize further, increase the number of passes\n";
+          *(b.all->driver_output) << "To optimize further, increase the number of passes\n";
         if (b.output_regularizer)
         {
           *(b.all->driver_output) << "\nRegular model file has been created. ";
@@ -1129,7 +1129,7 @@ base_learner* bfgs_setup(VW::setup_base_i& stack_builder)
     }
   }
 
-  if (all.numpasses < 2 && all.training) { THROW("you must make at least 2 passes to use BFGS"); }
+  if (all.numpasses < 2 && all.training) { THROW("At least 2 passes must be used for BFGS"); }
 
   all.bfgs = true;
   all.weights.stride_shift(2);

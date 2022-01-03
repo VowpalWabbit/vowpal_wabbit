@@ -340,7 +340,7 @@ void parse_diagnostics(options_i& options, VW::workspace& all)
       else if (all.progress_arg > 9.f)
       {
         all.logger.err_warn(
-            "Multiplicative --progress <float> '' is > 9.0: you probably meant to use an integer", progress_arg);
+            "Multiplicative --progress <float> '' is > 9.0: Did you mean mean to use an integer?", progress_arg);
       }
       all.sd->dump_interval = 1.f;
     }
@@ -636,14 +636,14 @@ void parse_feature_tweaks(options_i& options, VW::workspace& all, bool interacti
   }
 
   if (options.was_supplied("q:"))
-  { all.logger.err_warn("'--q:' is deprecated and not supported. You can use : as a wildcard in interactions."); }
+  { all.logger.err_warn("'--q:' is deprecated and not supported. Use : as a wildcard in interactions."); }
 
   if (options.was_supplied("affix")) parse_affix_argument(all, VW::decode_inline_hex(affix, all.logger));
 
   // Process ngram and skips arguments
   if (options.was_supplied("skips"))
   {
-    if (!options.was_supplied("ngram")) { THROW("You can not skip unless ngram is > 1") }
+    if (!options.was_supplied("ngram")) { THROW("skip cannot be used unless ngram is > 1") }
   }
 
   if (options.was_supplied("ngram"))
@@ -746,7 +746,7 @@ void parse_feature_tweaks(options_i& options, VW::workspace& all, bool interacti
       {
         all.logger.err_warn(
             "Any duplicate namespace interactions will be removed\n"
-            "You can use --leave_duplicate_interactions to disable this behaviour.");
+            "--leave_duplicate_interactions can be used to disable this behaviour.");
       }
     }
 
@@ -762,7 +762,7 @@ void parse_feature_tweaks(options_i& options, VW::workspace& all, bool interacti
     if (removed_cnt > 0 && !all.quiet)
     {
       all.logger.err_warn(
-          "Duplicate namespace interactions were found. Removed: {}.\nYou can use --leave_duplicate_interactions to "
+          "Duplicate namespace interactions were found. Removed: {}.\n--leave_duplicate_interactions can be used to "
           "disable this behaviour.",
           removed_cnt);
     }
@@ -1347,7 +1347,7 @@ VW::workspace& parse_args(
             all.options->was_supplied("unique_id")) &&
         !(all.options->was_supplied("total") && all.options->was_supplied("node") &&
             all.options->was_supplied("unique_id")))
-    { THROW("you must specificy unique_id, total, and node if you specify any") }
+    { THROW("unique_id, total, and node must be all be specified if any are specified.") }
 
     if (all.options->was_supplied("span_server"))
     {

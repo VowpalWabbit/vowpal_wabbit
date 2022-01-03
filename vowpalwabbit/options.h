@@ -359,7 +359,7 @@ struct options_name_extractor : options_i
 
   void add_and_parse(const option_group_definition&) override
   {
-    THROW("you should use add_parse_and_check_necessary() inside a reduction setup");
+    THROW("add_parse_and_check_necessary() should be used inside a reduction setup instead.");
   };
 
   bool add_parse_and_check_necessary(const option_group_definition& group) override

@@ -316,7 +316,7 @@ VW::LEARNER::base_learner* oaa_setup(VW::setup_base_i& stack_builder)
   if (probabilities && options.was_supplied("link")) { options.replace("link", "identity"); }
 
   if (all.sd->ldict && (data->k != all.sd->ldict->getK()))
-    THROW("error: you have " << all.sd->ldict->getK() << " named labels; use that as the argument to oaa")
+    THROW("There are " << all.sd->ldict->getK() << " named labels. Use that as the argument to oaa.")
 
   data->all = &all;
   data->pred = calloc_or_throw<polyprediction>(data->k);
@@ -327,7 +327,7 @@ VW::LEARNER::base_learner* oaa_setup(VW::setup_base_i& stack_builder)
     if (data->num_subsample >= data->k)
     {
       data->num_subsample = 0;
-      *(all.driver_output) << "oaa is turning off subsampling because your parameter >= K" << std::endl;
+      *(all.driver_output) << "oaa is turning off subsampling because parameter >= K" << std::endl;
     }
     else
     {

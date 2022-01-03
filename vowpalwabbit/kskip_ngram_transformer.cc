@@ -55,7 +55,7 @@ void compile_gram(const std::vector<std::string>& grams, std::array<uint32_t, NU
     }
     else if (gram.size() == 1)
     {
-      logger.out_error("You must specify the namespace index before the n");
+      logger.out_error("The namespace index must be specified before the n");
     }
     else
     {
