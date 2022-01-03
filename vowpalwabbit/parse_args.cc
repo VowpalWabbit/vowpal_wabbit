@@ -278,14 +278,12 @@ void parse_diagnostics(options_i& options, VW::workspace& all)
   bool help = false;
   bool skip_driver = false;
   std::string progress_arg;
-  size_t upper_limit = 0;
   option_group_definition diagnostic_group("Diagnostic");
   diagnostic_group.add(make_option("version", version_arg).help("Version information"))
       .add(make_option("audit", all.audit).short_name("a").help("Print weights of features"))
       .add(make_option("progress", progress_arg)
                .short_name("P")
                .help("Progress update frequency. int: additive, float: multiplicative"))
-      .add(make_option("limit_output", upper_limit).help("Avoid chatty output. Limit total printed lines"))
       .add(make_option("dry_run", skip_driver)
                .help("Parse arguments and print corresponding metadata. Will not execute driver"))
       .add(make_option("help", help)
@@ -303,8 +301,6 @@ void parse_diagnostics(options_i& options, VW::workspace& all)
     // results in the ostream not outputting anything.
     all.driver_output = VW::make_unique<std::ostream>(nullptr);
   }
-
-  if (options.was_supplied("limit_output")) all.logger.set_max_output(upper_limit);
 
   // pass all.quiet around
   if (all.all_reduce) all.all_reduce->quiet = all.quiet;
@@ -1205,6 +1201,7 @@ VW::workspace& parse_args(
   std::string driver_output_stream;
   std::string log_level;
   std::string log_output_stream;
+  size_t upper_limit = 0;
   option_group_definition logging_options("Logging options");
   logging_options
       .add(make_option("quiet", quiet)
@@ -1224,7 +1221,10 @@ VW::workspace& parse_args(
                .one_of({"stdout", "stderr", "compat"})
                .help("Specify the stream to output log messages to. In the past VW's choice of stream for logging "
                      "messages wasn't consistent. Suppling compat will maintain that old behavior. Compat is now "
-                     "deprecated so it is recommended that stdout or stderr is chosen."));
+                     "deprecated so it is recommended that stdout or stderr is chosen."))
+      .add(make_option("limit_output", upper_limit)
+               .default_value(0)
+               .help("Avoid chatty output. Limit total printed lines. 0 means unbounded."));
 
   options->add_and_parse(logging_options);
 
@@ -1249,6 +1249,8 @@ VW::workspace& parse_args(
         "messages. This behavior is now deprecated. Please specify the stream to log to with --log_output_stream "
         "stdout|stderr to silence this message.");
   }
+
+  if (options->was_supplied("limit_output") && (upper_limit != 0)) { logger.set_max_output(upper_limit); }
 
   VW::workspace& all = *(new VW::workspace(logger));
   all.options = std::move(options);
