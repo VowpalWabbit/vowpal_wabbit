@@ -63,7 +63,9 @@ void send_features(io_buf* b, example& ec, uint32_t mask)
   for (namespace_index ns : ec.indices)
   {
     if (ns == constant_namespace) { continue; }
-    output_features(*b, ns, ec.feature_space[ns], mask);
+    char* c;
+    cache_index(*b, ns, ec.feature_space[ns], c);
+    cache_features(*b, ec.feature_space[ns], mask, c);
   }
   b->flush();
 }
