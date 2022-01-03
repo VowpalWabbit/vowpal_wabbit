@@ -172,7 +172,7 @@ bool options_boost_po::add_parse_and_check_necessary(const option_group_definiti
       m_reachable_options.insert("-" + opt_ptr->m_short_name);
     }
     // We need to convert the unordered set to an ordered one for stable output.
-    std::set necessary_flags_set(group.m_necessary_flags.begin(), group.m_necessary_flags.end());
+    std::set<std::string> necessary_flags_set(group.m_necessary_flags.begin(), group.m_necessary_flags.end());
     m_dependent_necessary_options[opt_ptr->m_name].push_back(necessary_flags_set);
     m_dependent_necessary_options[opt_ptr->m_short_name].push_back(necessary_flags_set);
     m_dependent_necessary_options["-" + opt_ptr->m_short_name].push_back(necessary_flags_set);
