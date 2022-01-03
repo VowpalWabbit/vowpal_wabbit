@@ -83,7 +83,7 @@ private:
   const bool _rank_all;
   const float _clip_p;
 
-  VW::io::logger _logger;
+  VW::io::logger logger;
 
 public:
   void learn(VW::LEARNER::multi_learner& base, multi_ex& ec_seq);
@@ -98,7 +98,7 @@ public:
       , _no_predict(no_predict)
       , _rank_all(rank_all)
       , _clip_p(clip_p)
-      , _logger(std::move(logger))
+      , logger(std::move(logger))
   {
     _gen_cs.cb_type = cb_type;
   }
@@ -130,7 +130,7 @@ private:
 
 void cb_adf::learn_IPS(multi_learner& base, multi_ex& examples)
 {
-  gen_cs_example_ips(examples, _cs_labels, _logger, _clip_p);
+  gen_cs_example_ips(examples, _cs_labels, logger, _clip_p);
   cs_ldf_learn_or_predict<true>(base, examples, _cb_labels, _cs_labels, _prepped_cs_labels, true, _offset);
 }
 
@@ -165,7 +165,7 @@ void cb_adf::learn_SM(multi_learner& base, multi_ex& examples)
     if (ld.costs.size() == 1 && ld.costs[0].cost != FLT_MAX)
     {
       chosen_action = i;
-      example_weight = ld.costs[0].cost / safe_probability(ld.costs[0].probability, _logger);
+      example_weight = ld.costs[0].cost / safe_probability(ld.costs[0].probability, logger);
 
       // Importance weights of examples cannot be negative.
       // So we use a trick: set |w| as weight, and use sign(w) as an offset in the regression target.
@@ -240,7 +240,7 @@ void cb_adf::learn_MTR(multi_learner& base, multi_ex& examples)
 {
   if (PREDICT)  // first get the prediction to return
   {
-    gen_cs_example_ips(examples, _cs_labels, _logger);
+    gen_cs_example_ips(examples, _cs_labels, logger);
     cs_ldf_learn_or_predict<false>(base, examples, _cb_labels, _cs_labels, _prepped_cs_labels, false, _offset);
     std::swap(examples[0]->pred.a_s, _a_s);
   }
