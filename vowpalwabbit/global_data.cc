@@ -223,7 +223,7 @@ void compile_limits(
       for (size_t j = 0; j < 256; j++) dest[j] = n;
     }
     else if (limit.size() == 1)
-      logger.out_error("You must specify the namespace index before the n");
+      logger.out_error("The namespace index must be specified before the n");
     else
     {
       int n = atoi(limit.c_str() + 1);

@@ -286,7 +286,7 @@ void make_write_cache(VW::workspace& all, std::string& newname, bool quiet)
   io_buf& output = all.example_parser->output;
   if (output.num_files() != 0)
   {
-    all.logger.err_warn("You tried to make two write caches. Only the first one will be made.");
+    all.logger.err_warn("There was an attempt tried to make two write caches. Only the first one will be made.");
     return;
   }
 

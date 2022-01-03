@@ -374,15 +374,11 @@ float linear_kernel(const flat_example* fec1, const flat_example* fec2)
 
     if (ec1pos == ec2pos)
     {
-      // params.all->opts_n_args.driver_output<<ec1pos<<" "<<ec2pos<<" "<<idx1<<" "<<idx2<<" "<<f->x<<"
-      // "<<ec2f->x<< endl;
       numint++;
       dotprod += fs_1.values[idx1] * fs_2.values[idx2];
       ++idx2;
     }
   }
-  // params.all->opts_n_args.driver_output<< endl;
-  // params.all->opts_n_args.driver_output<<"numint = "<<numint<<" dotprod = "<<dotprod<< endl;
   return dotprod;
 }
 
@@ -517,10 +513,8 @@ int add(svm_params& params, svm_example* fec)
 
 bool update(svm_params& params, size_t pos)
 {
-  // params.all->opts_n_args.driver_output<<"Update\n";
   svm_model* model = params.model;
   bool overshoot = false;
-  // params.all->opts_n_args.driver_output<<"Updating model "<<pos<<" "<<model->num_support<<" ";
   svm_example* fec = model->support_vec[pos];
   label_data& ld = fec->ex.l.simple;
   fec->compute_kernels(params);
@@ -547,7 +541,6 @@ bool update(svm_params& params, size_t pos)
 
   if (std::fabs(diff) > 1.)
   {
-    // params.all->opts_n_args.driver_output<<"Here\n";
     diff = static_cast<float>(diff > 0) - (diff < 0);
     ai = alpha_old + diff;
   }
@@ -593,7 +586,6 @@ void sync_queries(VW::workspace& all, svm_params& params, bool* train_pool)
 
   size_t* sizes = calloc_or_throw<size_t>(all.all_reduce->total);
   sizes[all.all_reduce->node] = b->unflushed_bytes_count();
-  // params.all->opts_n_args.driver_output<<"Sizes = "<<sizes[all.node]<<" ";
   all_reduce<size_t, add_size_t>(all, sizes, all.all_reduce->total);
 
   size_t prev_sum = 0, total_sum = 0;
@@ -603,7 +595,6 @@ void sync_queries(VW::workspace& all, svm_params& params, bool* train_pool)
     total_sum += sizes[i];
   }
 
-  // params.all->opts_n_args.driver_output<<total_sum<<" "<<prev_sum<< endl;
   if (total_sum > 0)
   {
     queries = calloc_or_throw<char>(total_sum);
@@ -640,7 +631,6 @@ void sync_queries(VW::workspace& all, svm_params& params, bool* train_pool)
 
 void train(svm_params& params)
 {
-  // params.all->opts_n_args.driver_output<<"In train "<<params.all->training<< endl;
 
   bool* train_pool = calloc_or_throw<bool>(params.pool_size);
   for (size_t i = 0; i < params.pool_size; i++) train_pool[i] = false;
@@ -657,15 +647,10 @@ void train(svm_params& params)
         scoremap.insert(std::pair<const double, const size_t>(std::fabs(scores[i]), i));
 
       std::multimap<double, size_t>::iterator iter = scoremap.begin();
-      // params.all->opts_n_args.driver_output<<params.pool_size<<" "<<"Scoremap: ";
-      // for(;iter != scoremap.end();iter++)
-      // params.all->opts_n_args.driver_output<<iter->first<<" "<<iter->second<<"
-      // "<<((label_data*)params.pool[iter->second]->ld)->label<<"\t"; params.all->opts_n_args.driver_output<< endl;
       iter = scoremap.begin();
 
       for (size_t train_size = 1; iter != scoremap.end() && train_size <= params.subsample; train_size++)
       {
-        // params.all->opts_n_args.driver_output<<train_size<<" "<<iter->second<<" "<<iter->first<< endl;
         train_pool[iter->second] = 1;
         iter++;
       }
@@ -703,14 +688,11 @@ void train(svm_params& params)
 
     for (size_t i = 0; i < params.pool_pos; i++)
     {
-      // params.all->opts_n_args.driver_output<<"process: "<<i<<" "<<train_pool[i]<< endl;
       int model_pos = -1;
       if (params.active)
       {
         if (train_pool[i])
         {
-          // params.all->opts_n_args.driver_output<<"i = "<<i<<"train_pool[i] = "<<train_pool[i]<<"
-          // "<<params.pool[i]->example_counter<< endl;
           model_pos = add(params, params.pool[i]);
         }
       }

@@ -543,7 +543,7 @@ inline void pred_per_update_feature(norm_data& nd, float x, float& fw)
       {
         norm_x2 = 1;
         assert(nd.logger != nullptr);
-        nd.logger->err_error("your features have too much magnitude");
+        nd.logger->err_error("The features have too much magnitude");
       }
       nd.norm_x += norm_x2;
     }

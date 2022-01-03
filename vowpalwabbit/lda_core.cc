@@ -533,8 +533,7 @@ float lda::digamma(float x)
     default:
       // Should not happen.
       std::cerr << "lda::digamma: Trampled or invalid math mode, aborting" << std::endl;
-      ;
-      abort();
+      std::abort();
       return 0.0f;
   }
 }
@@ -551,8 +550,7 @@ float lda::lgamma(float x)
       return ldamath::lgamma<float, lda_math_mode::USE_SIMD>(x);
     default:
       std::cerr << "lda::lgamma: Trampled or invalid math mode, aborting" << std::endl;
-      ;
-      abort();
+      std::abort();
       return 0.0f;
   }
 }
@@ -569,8 +567,7 @@ float lda::powf(float x, float p)
       return ldamath::powf<float, lda_math_mode::USE_SIMD>(x, p);
     default:
       std::cerr << "lda::powf: Trampled or invalid math mode, aborting" << std::endl;
-      ;
-      abort();
+      std::abort();
       return 0.0f;
   }
 }
@@ -590,8 +587,7 @@ void lda::expdigammify(VW::workspace& all_, float* gamma)
       break;
     default:
       std::cerr << "lda::expdigammify: Trampled or invalid math mode, aborting" << std::endl;
-      ;
-      abort();
+      std::abort();
   }
 }
 
@@ -610,8 +606,7 @@ void lda::expdigammify_2(VW::workspace& all_, float* gamma, float* norm)
       break;
     default:
       std::cerr << "lda::expdigammify_2: Trampled or invalid math mode, aborting" << std::endl;
-      ;
-      abort();
+      std::abort();
   }
 }
 
@@ -1330,7 +1325,7 @@ base_learner* lda_setup(VW::setup_base_i& stack_builder)
 
   if (all.eta > 1.)
   {
-    all.logger.err_warn("your learning rate is too high, setting it to 1");
+    all.logger.err_warn("The learning rate is too high, setting it to 1");
     all.eta = std::min(all.eta, 1.f);
   }
 
