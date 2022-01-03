@@ -142,6 +142,7 @@ size_t read_cached_features(io_buf& input, features& ours, bool& sorted, char*& 
 
 int VW::read_example_from_cache(VW::workspace* all, io_buf& input, v_array<example*>& examples)
 {
+  // uint64_t size; TODO: Use to be able to skip cached examples on a read failure.
   char* read_ptr;
   if (input.buf_read(read_ptr, sizeof(uint64_t)) < sizeof(uint64_t)) { return 0; }
 

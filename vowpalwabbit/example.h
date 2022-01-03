@@ -197,8 +197,9 @@ using example_factory_t = example& (*)(void*);
 
 namespace model_utils
 {
-size_t read_model_field(io_buf&, flat_example&, label_parser&);
-size_t write_model_field(io_buf&, const flat_example&, const std::string&, bool, label_parser&, uint64_t);
+size_t read_model_field(io_buf& io, flat_example& fe, label_parser& lbl_parser);
+size_t write_model_field(io_buf& io, const flat_example& fe, const std::string& upstream_name, bool text,
+    label_parser& lbl_parser, uint64_t parse_mask);
 }  // namespace model_utils
 }  // namespace VW
 
