@@ -92,9 +92,7 @@ size_t read_cached_index(io_buf& input, unsigned char& index, char*& c)
 {
   size_t temp;
   if ((temp = input.buf_read(c, sizeof(index) + sizeof(size_t))) < sizeof(index) + sizeof(size_t))
-  {
-    THROW("Ran out of cache while reading example. File may be truncated.");
-  }
+  { THROW("Ran out of cache while reading example. File may be truncated."); }
   index = *reinterpret_cast<unsigned char*>(c);
   c += sizeof(index);
   return sizeof(index);
@@ -107,10 +105,7 @@ size_t read_cached_features(io_buf& input, features& ours, bool& sorted, char*& 
   c += sizeof(size_t);
   input.set(c);
   total += storage;
-  if (input.buf_read(c, storage) < storage)
-  {
-    THROW("Ran out of cache while reading example. File may be truncated.");
-  }
+  if (input.buf_read(c, storage) < storage) { THROW("Ran out of cache while reading example. File may be truncated."); }
 
   char* end = c + storage;
   uint64_t last = 0;
