@@ -13,6 +13,7 @@ namespace po = boost::program_options;
 #include <set>
 #include <algorithm>
 #include <string>
+#include <unordered_map>
 
 #include "options.h"
 #include "options_types.h"
@@ -155,6 +156,7 @@ private:
   void add_to_description(std::shared_ptr<typed_option<T>> opt, po::options_description& options_description);
 
   void add_to_option_group_collection(const option_group_definition& group);
+  void internal_add_and_parse(const option_group_definition& group);
 
 private:
   // Collection that tracks for now
@@ -181,6 +183,9 @@ private:
 
   // All options that a description was provided for.
   std::set<std::string> m_defined_options;
+
+  std::set<std::string> m_reachable_options;
+  std::unordered_map<std::string, std::vector<std::set<std::string>>> m_dependent_necessary_options;
 };
 
 template <typename T>

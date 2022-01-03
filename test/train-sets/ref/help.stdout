@@ -501,10 +501,16 @@ FreeGrad Options:
   --radius arg          Radius of the l2-ball for the projection. If not 
                         supplied, an adaptive radius will be used.
   --fepsilon arg (=1, ) Initial wealth
-Follow the Regularized Leader Options:
+Follow the Regularized Leader - FTRL Options:
   --ftrl                FTRL: Follow the Proximal Regularized Leader
-  --coin                Coin betting optimizer
+  --ftrl_alpha arg      Learning rate for FTRL optimization
+  --ftrl_beta arg       Learning rate for FTRL optimization
+Follow the Regularized Leader - Pistol Options:
   --pistol              PiSTOL: Parameter-free STOchastic Learning
+  --ftrl_alpha arg      Learning rate for FTRL optimization
+  --ftrl_beta arg       Learning rate for FTRL optimization
+Follow the Regularized Leader - Coin Options:
+  --coin                Coin betting optimizer
   --ftrl_alpha arg      Learning rate for FTRL optimization
   --ftrl_beta arg       Learning rate for FTRL optimization
 Gradient Descent Options:

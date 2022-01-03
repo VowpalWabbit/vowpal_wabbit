@@ -745,7 +745,7 @@ base_learner* cbify_setup(VW::setup_base_i& stack_builder)
     }
   }
 
-  if (data->use_adf)
+  if (data->use_adf && (options.was_supplied("regcb") || options.was_supplied("squarecb")))
   {
     options.insert("cb_min_cost", std::to_string(data->loss0));
     options.insert("cb_max_cost", std::to_string(data->loss1));

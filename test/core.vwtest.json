@@ -2102,7 +2102,7 @@
   {
     "id": 174,
     "desc": "cbify adf, regcbopt",
-    "vw_command": "--cbify 10 --cb_explore_adf --cb_type mtr --regcbopt --mellowness 0.01 -d train-sets/multiclass",
+    "vw_command": "--cbify 10 --cb_explore_adf --cb_type mtr --regcb --regcbopt --mellowness 0.01 -d train-sets/multiclass",
     "diff_files": {
       "stderr": "train-sets/ref/cbify_regcbopt.stderr"
     },
@@ -2113,7 +2113,7 @@
   {
     "id": 175,
     "desc": "cbify ldf, regcbopt",
-    "vw_command": "-d train-sets/cs_test.ldf --cbify_ldf --cb_type mtr --regcbopt --mellowness 0.01",
+    "vw_command": "-d train-sets/cs_test.ldf --cbify_ldf --cb_type mtr --regcb --regcbopt --mellowness 0.01",
     "diff_files": {
       "stderr": "train-sets/ref/cbify_ldf_regcbopt.stderr"
     },
@@ -2692,7 +2692,7 @@
   {
     "id": 226,
     "desc": "cats train",
-    "vw_command": "--cats 4 --min_value=185 --max_value=23959 --bandwidth 3000 -d train-sets/cats.acpx --passes 1 -b 18 --coin --loss_option 1 -f cats.model --predict_only_model",
+    "vw_command": "--cats 4 --min_value=185 --max_value=23959 --bandwidth 3000 -d train-sets/cats.acpx --passes 1 -b 18 --coin -f cats.model --predict_only_model",
     "diff_files": {
       "stderr": "train-sets/ref/cats-train.stderr"
     },
@@ -2719,7 +2719,7 @@
   {
     "id": 228,
     "desc": "cats-pdf train",
-    "vw_command": "--cats_pdf 4 --min_value=185 --max_value=23959 --bandwidth 2000 -d train-sets/cats.acpx --passes 1 -b 18 --coin --loss_option 1 -f cats-pdf.model --predict_only_model",
+    "vw_command": "--cats_pdf 4 --min_value=185 --max_value=23959 --bandwidth 2000 -d train-sets/cats.acpx --passes 1 -b 18 --coin -f cats-pdf.model --predict_only_model",
     "diff_files": {
       "stderr": "train-sets/ref/cats-pdf-train.stderr"
     },
@@ -4587,5 +4587,14 @@
     "depends_on": [
       381
     ]
+  },
+  {
+    "id": 383,
+    "desc": "Test that epsilon without enabling a reduction which uses it produces a warning.",
+    "vw_command": "--no_stdin --epsilon 5",
+    "diff_files": {
+      "stderr": "train-sets/ref/epsilon_warning.stderr"
+    },
+    "input_files": [] 
   }
 ]
