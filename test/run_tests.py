@@ -307,17 +307,13 @@ def run_command_line_test(
             )
 
     try:
-        if test.is_shell:
-            # Because we don't really know what shell scripts do, we need to run them in the tests dir.
-            current_test_working_dir = ref_dir
-        else:
-            current_test_working_dir = create_test_dir(
-                test.id,
-                test.input_files,
-                base_working_dir,
-                ref_dir,
-                dependencies=test.depends_on,
-            )
+        current_test_working_dir = create_test_dir(
+            test.id,
+            test.input_files,
+            base_working_dir,
+            ref_dir,
+            dependencies=test.depends_on,
+        )
 
         command_line = test.command_line
         if valgrind:
@@ -463,7 +459,8 @@ def create_test_dir(
                 break
 
         if file_to_copy is None:
-            raise ValueError(f"{f} couldn't be found for test {test_id}")
+            dependent_tests = ", ".join(dependencies)
+            raise ValueError(f"Input file '{f}' couldn't be found for test {test_id}. Searched in '{test_ref_dir}' as well as outputs of dependent tests: [{dependent_tests}]")
 
         test_dest_file = test_working_dir / f
         if file_to_copy == test_dest_file:
@@ -472,7 +469,7 @@ def create_test_dir(
         # We always want to replace this file in case it is the output of another test
         if test_dest_file.exists():
             test_dest_file.unlink()
-        shutil.copyfile(str(file_to_copy), str(test_dest_file))
+        shutil.copy(str(file_to_copy), str(test_dest_file))
     return test_working_dir
 
 
@@ -1002,16 +999,6 @@ def main():
         tests = convert_tests_for_flatbuffers(
             tests, to_flatbuff, test_base_working_dir, color_enum
         )
-
-    # Because bash_command based tests don't specify all inputs and outputs they must operate in the test directory directly.
-    # This means that if they run in parallel they can break each other by touching the same files.
-    # Until we can move to a test spec which allows us to specify the input/output we need to add dependencies between them here.
-    prev_bash_test = None
-    for test in tests:
-        if test.is_shell:
-            if prev_bash_test is not None:
-                test.depends_on.append(prev_bash_test.id)
-            prev_bash_test = test
 
     tasks: List[Future[TestOutcome]] = []
     completed_tests = Completion()
