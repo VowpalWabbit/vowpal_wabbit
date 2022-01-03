@@ -323,7 +323,7 @@ void print_features(VW::workspace& all, example& ec)
 
 void print_audit_features(VW::workspace& all, example& ec)
 {
-  if (all.audit) print_result_by_ref(all.stdout_adapter.get(), ec.pred.scalar, -1, ec.tag, all.logger);
+  if (all.audit) print_result_by_ref(all.audit_writer.get(), ec.pred.scalar, -1, ec.tag, all.logger);
   fflush(stdout);
   print_features(all, ec);
 }
