@@ -1182,12 +1182,6 @@ class ccb_label(abstract_label):
                 explicitly_included_actions=[],
                 **kwargs
             ):
-                if kwargs.get("label", False):
-                    action = kwargs["label"]
-                    warnings.warn(
-                        "label has been deprecated. Please use 'action' instead.",
-                        DeprecationWarning,
-                    )
                 self.type = {
                     pylibvw.vw.tUNSET: "unset",
                     pylibvw.vw.tSHARED: "shared",
