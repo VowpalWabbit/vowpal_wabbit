@@ -284,7 +284,7 @@ VW::LEARNER::base_learner* setup(VW::setup_base_i& stack_builder)
     case VW::cb_type_t::dm:
     case VW::cb_type_t::sm:
       all.logger.err_warn(
-          "cb_type must be in {'ips','dr','mtr'}; resetting to mtr. Input received: {}", VW::to_string(cb_type));
+          "cb_type must be in {{'ips','dr','mtr'}}; resetting to mtr. Input received: {}", VW::to_string(cb_type));
       options.replace("cb_type", "mtr");
       cb_type = VW::cb_type_t::mtr;
       break;

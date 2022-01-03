@@ -237,6 +237,7 @@ base_learner* mwt_setup(VW::setup_base_i& stack_builder)
 
   c->evals.resize(all.length(), policy_data{});
 
+  bool cb_added = false;
   if (c->num_classes > 0)
   {
     c->learn = true;
@@ -246,11 +247,15 @@ base_learner* mwt_setup(VW::setup_base_i& stack_builder)
       std::stringstream ss;
       ss << c->num_classes;
       options.insert("cb", ss.str());
+      cb_added = true;
     }
   }
 
-  // default to legacy cb implementation
-  options.insert("cb_force_legacy", "");
+  if (options.was_supplied("cb") || cb_added)
+  {
+    // default to legacy cb implementation
+    options.insert("cb_force_legacy", "");
+  }
 
   std::string name_addition;
   void (*learn_ptr)(mwt&, single_learner&, example&);

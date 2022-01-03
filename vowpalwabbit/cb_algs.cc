@@ -199,8 +199,8 @@ base_learner* cb_algs_setup(VW::setup_base_i& stack_builder)
       break;
     case VW::cb_type_t::mtr:
     case VW::cb_type_t::sm:
-      data->logger.err_warn(
-          "cb_type must be in {'ips','dm','dr'}; resetting to dr. Input received: {}", VW::to_string(c.cb_type));
+      data->logger.err_warn((
+          "cb_type must be in {{'ips','dm','dr'}}; resetting to dr. Input received: {}", VW::to_string(c.cb_type));
       c.cb_type = VW::cb_type_t::dr;
       break;
   }

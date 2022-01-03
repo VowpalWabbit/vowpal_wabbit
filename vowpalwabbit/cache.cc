@@ -13,7 +13,6 @@
 #include "io/logger.h"
 
 constexpr size_t int_size = 11;
-constexpr size_t char_size = 2;
 constexpr size_t neg_1 = 1;
 constexpr size_t general = 2;
 constexpr unsigned char newline_example = '1';
@@ -93,10 +92,7 @@ size_t read_cached_index(io_buf& input, unsigned char& index, char*& c, VW::io::
 {
   size_t temp;
   if ((temp = input.buf_read(c, sizeof(index) + sizeof(size_t))) < sizeof(index) + sizeof(size_t))
-  {
-    logger.err_error("truncated example! {} {} ", temp, char_size + sizeof(size_t));
-    return 0;
-  }
+  { THROW("Ran out of cache while reading example. File may be truncated."); }
   index = *reinterpret_cast<unsigned char*>(c);
   c += sizeof(index);
   return sizeof(index);
@@ -109,11 +105,7 @@ size_t read_cached_features(io_buf& input, features& ours, bool& sorted, char*& 
   c += sizeof(size_t);
   input.set(c);
   total += storage;
-  if (input.buf_read(c, storage) < storage)
-  {
-    logger.err_error("truncated example! wanted: {} bytes ", storage);
-    return total;
-  }
+  if (input.buf_read(c, storage) < storage) { THROW("Ran out of cache while reading example. File may be truncated."); }
 
   char* end = c + storage;
   uint64_t last = 0;
@@ -146,6 +138,8 @@ int VW::read_example_from_cache(VW::workspace* all, io_buf& input, v_array<examp
   assert(all != nullptr);
   // uint64_t size; TODO: Use to be able to skip cached examples on a read failure.
   char* read_ptr;
+  // If this read returns 0 bytes, it means that we've reached the end of the cache file in an expected way.
+  // (As opposed to being unable to get the next bytes while midway through reading an example)
   if (input.buf_read(read_ptr, sizeof(uint64_t)) < sizeof(uint64_t)) { return 0; }
 
   examples[0]->sorted = all->example_parser->sorted_cache;
