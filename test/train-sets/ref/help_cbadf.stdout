@@ -33,6 +33,8 @@ Logging options Options:
                                         now deprecated so it is recommended 
                                         that stdout or stderr is chosen.. 
                                         Choices: {compat, stderr, stdout}
+  --limit_output arg (=0, )             Avoid chatty output. Limit total 
+                                        printed lines. 0 means unbounded.
 VW Options:
   --ring_size arg (=256, ) Size of example ring
   --strict_parse           Throw on malformed examples
@@ -67,7 +69,6 @@ Diagnostic Options:
   -a [ --audit ]        Print weights of features
   -P [ --progress ] arg Progress update frequency. int: additive, float: 
                         multiplicative
-  --limit_output arg    Avoid chatty output. Limit total printed lines
   --dry_run             Parse arguments and print corresponding metadata. Will 
                         not execute driver
   -h [ --help ]         More information on vowpal wabbit can be found here 
@@ -75,6 +76,13 @@ Diagnostic Options:
 Randomization Options:
   --random_seed arg     Seed random number generator
 Feature Options:
+  --privacy_activation                  turns on aggregated weight exporting 
+                                        when the unique feature tags cross 
+                                        `privacy_activation_threshold`
+  --privacy_activation_threshold arg    takes effect when `privacy_activation` 
+                                        is turned on and is the number of 
+                                        unique tag hashes a weight needs to see
+                                        before it is exported
   --hash arg                            How to hash the features. Choices: 
                                         {all, strings}
   --hash_seed arg (=0, )                Seed for hash function

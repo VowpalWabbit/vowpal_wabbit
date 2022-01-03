@@ -746,7 +746,7 @@ void parse_feature_tweaks(options_i& options, VW::workspace& all, bool interacti
       {
         all.logger.err_warn(
             "Any duplicate namespace interactions will be removed\n"
-            "--leave_duplicate_interactions can be used to disable this behaviour.");
+            "You can use --leave_duplicate_interactions to disable this behaviour.");
       }
     }
 
@@ -762,7 +762,7 @@ void parse_feature_tweaks(options_i& options, VW::workspace& all, bool interacti
     if (removed_cnt > 0 && !all.quiet)
     {
       all.logger.err_warn(
-          "Duplicate namespace interactions were found. Removed: {}.\n--leave_duplicate_interactions can be used to "
+          "Duplicate namespace interactions were found. Removed: {}.\nYou can use --leave_duplicate_interactions to "
           "disable this behaviour.",
           removed_cnt);
     }

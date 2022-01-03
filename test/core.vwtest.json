@@ -4494,7 +4494,7 @@
   {
     "id": 375,
     "desc": "Use csoaa with 1-indexing flag",
-    "vw_command": "-d train-sets/csoaa_1_ind.dat --csoaa 4 -p csoaa_1_ind.predict --indexing 1",
+    "vw_command": "-d train-sets/csoaa_1_ind.dat --csoaa 4 -p csoaa_1_ind.predict --indexing 1 --log_output_stream compat",
     "diff_files": {
       "stderr": "train-sets/ref/csoaa_1_ind.stderr",
       "csoaa_1_ind.predict": "pred-sets/ref/csoaa_1_ind.predict"
@@ -4506,7 +4506,7 @@
   {
     "id": 376,
     "desc": "Use csoaa with auto-detect 1-indexing",
-    "vw_command": "-d train-sets/csoaa_1_ind.dat --csoaa 4 -p csoaa_1_ind_auto.predict",
+    "vw_command": "-d train-sets/csoaa_1_ind.dat --csoaa 4 -p csoaa_1_ind_auto.predict --log_output_stream compat",
     "diff_files": {
       "stderr": "train-sets/ref/csoaa_1_ind_auto.stderr",
       "csoaa_1_ind_auto.predict": "pred-sets/ref/csoaa_1_ind.predict"
@@ -4518,7 +4518,7 @@
   {
     "id": 377,
     "desc": "Use csoaa with on 1-indexed data set with 0-indexing flag",
-    "vw_command": "-d train-sets/csoaa_1_ind.dat --csoaa 4 --indexing 0",
+    "vw_command": "-d train-sets/csoaa_1_ind.dat --csoaa 4 --indexing 0 --log_output_stream compat",
     "diff_files": {
       "stderr": "train-sets/ref/csoaa_1_ind_0_flag.stderr",
       "stdout": "train-sets/ref/csoaa_1_ind_0_flag.stdout"
@@ -4530,7 +4530,7 @@
   {
     "id": 378,
     "desc": "Validate CB feature count with shared and --noconstant",
-    "vw_command": "-d train-sets/cb_test.ldf --cb_explore_adf --noconstant --audit",
+    "vw_command": "-d train-sets/cb_test.ldf --cb_explore_adf --noconstant --audit --log_output_stream compat",
     "diff_files": {
       "stderr": "train-sets/ref/cb_shared_noconstant.stderr",
       "stdout": "train-sets/ref/cb_shared_noconstant.stdout"
@@ -4542,7 +4542,7 @@
   {
     "id": 379,
     "desc": "Validate cost sensitive feature count with shared",
-    "vw_command": "-d train-sets/csoaa_ldf_shared.dat --csoaa_ldf m --audit",
+    "vw_command": "-d train-sets/csoaa_ldf_shared.dat --csoaa_ldf m --audit --log_output_stream compat",
     "diff_files": {
       "stderr": "train-sets/ref/csoaa_ldf_shared.stderr",
       "stdout": "train-sets/ref/csoaa_ldf_shared.stdout"
@@ -4554,7 +4554,7 @@
   {
     "id": 380,
     "desc": "Validate cost sensitive feature count with shared and --noconstant",
-    "vw_command": "-d train-sets/csoaa_ldf_shared.dat --csoaa_ldf m --noconstant --audit",
+    "vw_command": "-d train-sets/csoaa_ldf_shared.dat --csoaa_ldf m --noconstant --audit --log_output_stream compat",
     "diff_files": {
       "stderr": "train-sets/ref/csoaa_ldf_shared_noconstant.stderr",
       "stdout": "train-sets/ref/csoaa_ldf_shared_noconstant.stdout"
