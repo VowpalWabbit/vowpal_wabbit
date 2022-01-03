@@ -335,15 +335,15 @@ base_learner* cs_active_setup(VW::setup_base_i& stack_builder)
   data->t = 1;
 
   auto loss_function_type = all.loss->getType();
-  if (loss_function_type != "squared") THROW("You can't use non-squared loss with cs_active");
+  if (loss_function_type != "squared") THROW("non-squared loss can't be used with --cs_active");
 
-  if (options.was_supplied("lda")) THROW("You can't combine lda and active learning");
+  if (options.was_supplied("lda")) THROW("lda can't be combined with active learning");
 
-  if (options.was_supplied("active")) THROW("You can't use --cs_active and --active at the same time");
+  if (options.was_supplied("active")) THROW("--cs_active can't be used with --active");
 
-  if (options.was_supplied("active_cover")) THROW("You can't use --cs_active and --active_cover at the same time");
+  if (options.was_supplied("active_cover")) THROW("--cs_active can't be used with --active_cover");
 
-  if (options.was_supplied("csoaa")) THROW("You can't use --cs_active and --csoaa at the same time");
+  if (options.was_supplied("csoaa")) THROW("--cs_active can't be used with --csoaa");
 
   if (!options.was_supplied("adax")) { all.logger.err_warn("--cs_active should be used with --adax"); }
 
