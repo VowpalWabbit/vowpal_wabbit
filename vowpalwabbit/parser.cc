@@ -144,7 +144,7 @@ uint32_t cache_numbits(VW::io::reader& cache_reader)
   return cache_numbits;
 }
 
-void set_cache_reader(VW::workspace& all) { all.example_parser->reader = read_cached_features; }
+void set_cache_reader(VW::workspace& all) { all.example_parser->reader = VW::read_example_from_cache; }
 
 void set_string_reader(VW::workspace& all)
 {
@@ -190,7 +190,7 @@ void set_daemon_reader(VW::workspace& all, bool json = false, bool dsjson = fals
 {
   if (all.example_parser->input.isbinary())
   {
-    all.example_parser->reader = read_cached_features;
+    all.example_parser->reader = VW::read_example_from_cache;
     all.print_by_ref = binary_print_result_by_ref;
   }
   else if (json || dsjson)
