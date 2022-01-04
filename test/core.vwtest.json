@@ -4596,6 +4596,17 @@
     "diff_files": {
       "stderr": "train-sets/ref/epsilon_warning.stderr"
     },
-    "input_files": []
+    "input_files": [] 
+  },
+  {
+    "id": 384,
+    "desc": "Marginal --invert_hash features check",
+    "vw_command": "--marginal f -d train-sets/marginal_features --noconstant --initial_numerator 0.5 --initial_denominator 1.0 --decay 0.001 --invert_hash marginal_invert_hash_readable_model.txt --log_output_stream compat",
+    "diff_files": {
+      "marginal_invert_hash_readable_model.txt": "train-sets/ref/marginal_invert_hash_readable_model.txt"
+    },
+    "input_files": [
+      "train-sets/marginal_features"
+    ]
   }
 ]
