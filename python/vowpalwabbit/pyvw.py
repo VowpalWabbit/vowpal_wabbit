@@ -1162,7 +1162,7 @@ class ccb_label(abstract_label):
 
     def __init__(self, type = "unset", cost=0, top_class=0, top_probability=0, explicitly_included_actions=[]):
         abstract_label.__init__(self)
-        if isinstance(cost, example):
+        if isinstance(type, example):
             self.from_example(cost)
         else:
             self.type = type
