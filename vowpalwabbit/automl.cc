@@ -123,7 +123,7 @@ void scored_config::update(float w, float r)
   last_r = r;
 }
 
-void scored_config::persist(metric_sink& metrics, const std::string& suffix)
+void scored_config::persist(metric_sink& metrics, const std::string& suffix, bool verbose)
 {
   metrics.set_uint("upcnt" + suffix, update_count);
   metrics.set_float("ips" + suffix, current_ips());
@@ -132,7 +132,7 @@ void scored_config::persist(metric_sink& metrics, const std::string& suffix)
   metrics.set_float("w" + suffix, last_w);
   metrics.set_float("r" + suffix, last_r);
   metrics.set_uint("conf_idx" + suffix, config_index);
-  metrics.set_string("interactions" + suffix, details::interaction_vec_t_to_string(live_interactions));
+  if (verbose) { metrics.set_string("interactions" + suffix, details::interaction_vec_t_to_string(live_interactions)); }
 }
 
 float scored_config::current_ips() const { return (update_count > 0) ? ips / update_count : 0; }
@@ -523,15 +523,18 @@ void interaction_config_manager::update_champ()
   }
 }
 
-void interaction_config_manager::persist(metric_sink& metrics)
+void interaction_config_manager::persist(metric_sink& metrics, bool verbose)
 {
   metrics.set_uint("test_county", total_learn_count);
   metrics.set_uint("current_champ", current_champ);
   for (uint64_t live_slot = 0; live_slot < scores.size(); ++live_slot)
   {
-    scores[live_slot].persist(metrics, "_" + std::to_string(live_slot));
-    auto& exclusions = configs[scores[live_slot].config_index].exclusions;
-    metrics.set_string("exclusionc_" + std::to_string(live_slot), details::exclusions_to_string(exclusions));
+    scores[live_slot].persist(metrics, "_" + std::to_string(live_slot), verbose);
+    if (verbose)
+    {
+      auto& exclusions = configs[scores[live_slot].config_index].exclusions;
+      metrics.set_string("exclusionc_" + std::to_string(live_slot), details::exclusions_to_string(exclusions));
+    }
   }
   metrics.set_uint("total_champ_switches", total_champ_switches);
 }
@@ -618,10 +621,14 @@ void learn_automl(automl<CMType>& data, multi_learner& base, multi_ex& ec)
   assert(ec[0]->interactions == nullptr);
 }
 
-template <typename CMType>
+template <typename CMType, bool verbose>
 void persist(automl<CMType>& data, metric_sink& metrics)
 {
-  data.cm->persist(metrics);
+  if (verbose) { data.cm->persist(metrics, true); }
+  else
+  {
+    data.cm->persist(metrics, false);
+  }
 }
 
 template <typename CMType>
@@ -683,6 +690,7 @@ VW::LEARNER::base_learner* automl_setup(VW::setup_base_i& stack_builder)
   std::string priority_type;
   int priority_challengers;
   bool keep_configs = false;
+  bool verbose_metrics = false;
   std::string oracle_type;
 
   option_group_definition new_options("Automl");
@@ -711,6 +719,7 @@ VW::LEARNER::base_learner* automl_setup(VW::setup_base_i& stack_builder)
                .default_value(-1)
                .help("Set number of priority challengers to use"))
       .add(make_option("keep_configs", keep_configs).keep().help("keep all configs after champ change"))
+      .add(make_option("verbose_metrics", verbose_metrics).help("extended metrics for debugging"))
       .add(make_option("oracle_type", oracle_type)
                .keep()
                .default_value("one_diff")
@@ -763,18 +772,34 @@ VW::LEARNER::base_learner* automl_setup(VW::setup_base_i& stack_builder)
     data->adf_learner = as_multiline(base_learner->get_learner_by_name_prefix("cb_explore_adf_"));
     auto ppw = max_live_configs;
 
-    auto* l = make_reduction_learner(std::move(data), as_multiline(base_learner),
-        learn_automl<interaction_config_manager, true>, predict_automl<interaction_config_manager, true>,
-        stack_builder.get_setupfn_name(automl_setup))
-                  .set_params_per_weight(ppw)  // refactor pm
-                  .set_finish_example(finish_example<interaction_config_manager>)
-                  .set_save_load(save_load_aml<interaction_config_manager>)
-                  .set_persist_metrics(persist<interaction_config_manager>)
-                  .set_output_prediction_type(base_learner->get_output_prediction_type())
-                  .set_learn_returns_prediction(true)
-                  .build();
-
-    return make_base(*l);
+    if (verbose_metrics)
+    {
+      auto* l = make_reduction_learner(std::move(data), as_multiline(base_learner),
+          learn_automl<interaction_config_manager, true>, predict_automl<interaction_config_manager, true>,
+          stack_builder.get_setupfn_name(automl_setup))
+                    .set_params_per_weight(ppw)  // refactor pm
+                    .set_finish_example(finish_example<interaction_config_manager>)
+                    .set_save_load(save_load_aml<interaction_config_manager>)
+                    .set_persist_metrics(persist<interaction_config_manager, true>)
+                    .set_output_prediction_type(base_learner->get_output_prediction_type())
+                    .set_learn_returns_prediction(true)
+                    .build();
+      return make_base(*l);
+    }
+    else
+    {
+      auto* l = make_reduction_learner(std::move(data), as_multiline(base_learner),
+          learn_automl<interaction_config_manager, true>, predict_automl<interaction_config_manager, true>,
+          stack_builder.get_setupfn_name(automl_setup))
+                    .set_params_per_weight(ppw)  // refactor pm
+                    .set_finish_example(finish_example<interaction_config_manager>)
+                    .set_save_load(save_load_aml<interaction_config_manager>)
+                    .set_persist_metrics(persist<interaction_config_manager, false>)
+                    .set_output_prediction_type(base_learner->get_output_prediction_type())
+                    .set_learn_returns_prediction(true)
+                    .build();
+      return make_base(*l);
+    }
   }
   else
   {

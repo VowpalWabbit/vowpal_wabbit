@@ -52,7 +52,7 @@ struct scored_config
 
   void update(float w, float r);
   void save_load(io_buf&, bool, bool);
-  void persist(metric_sink&, const std::string&);
+  void persist(metric_sink&, const std::string&, bool);
   float current_ips() const;
   void reset_stats();
 };
@@ -95,7 +95,7 @@ struct config_manager
   // This fn is the 'undo' of configure_interactions
   void revert_config(example*);
   void save_load(io_buf&, bool, bool);
-  void persist(metric_sink&);
+  void persist(metric_sink&, bool);
 
   // Public Chacha functions
   void config_oracle();
@@ -138,7 +138,7 @@ struct interaction_config_manager : config_manager
   void apply_config(example*, uint64_t);
   void revert_config(example*);
   void save_load(io_buf&, bool, bool);
-  void persist(metric_sink&);
+  void persist(metric_sink&, bool);
 
   // Public Chacha functions
   void config_oracle();
