@@ -40,7 +40,7 @@ struct data
       , m_weights(m_weights)
       , m_loss_function(m_loss_function)
       , m_shared_data(m_shared_data)
-      , m_logger(logger)
+      , m_logger(std::move(logger))
   {
     id_features.fill(false);
   }
