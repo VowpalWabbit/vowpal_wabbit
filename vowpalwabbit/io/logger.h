@@ -8,12 +8,25 @@
 #include <string>
 #include <utility>
 
-#include <spdlog/spdlog.h>
-#include <spdlog/sinks/base_sink.h>
-#include <spdlog/sinks/stdout_sinks.h>
-#include <spdlog/sinks/null_sink.h>
+#ifdef _M_CEE
+#  pragma managed(push, off)
+#  undef _M_CEE
+#  include <spdlog/spdlog.h>
+#  include <spdlog/sinks/base_sink.h>
+#  include <spdlog/sinks/stdout_sinks.h>
+#  include <spdlog/sinks/null_sink.h>
 // needed for custom types (like string_view)
-#include <fmt/ostream.h>
+#  include <fmt/ostream.h>
+#  define _M_CEE 001
+#  pragma managed(pop)
+#else
+#  include <spdlog/spdlog.h>
+#  include <spdlog/sinks/base_sink.h>
+#  include <spdlog/sinks/stdout_sinks.h>
+#  include <spdlog/sinks/null_sink.h>
+// needed for custom types (like string_view)
+#  include <fmt/ostream.h>
+#endif
 
 #include "../vw_exception.h"
 
