@@ -106,7 +106,8 @@ struct label
 };
 
 void default_label(CCB::label& ld);
-void parse_label(label& ld, VW::label_parser_reuse_mem& reuse_mem, const std::vector<VW::string_view>& words, VW::io::logger& logger);
+void parse_label(label& ld, VW::label_parser_reuse_mem& reuse_mem, const std::vector<VW::string_view>& words,
+    VW::io::logger& logger);
 
 extern label_parser ccb_label_parser;
 }  // namespace CCB

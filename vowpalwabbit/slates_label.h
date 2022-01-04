@@ -57,7 +57,8 @@ struct label
 };
 
 void default_label(VW::slates::label& v);
-void parse_label(slates::label& ld, VW::label_parser_reuse_mem& reuse_mem, const std::vector<VW::string_view>& words, VW::io::logger& logger);
+void parse_label(slates::label& ld, VW::label_parser_reuse_mem& reuse_mem, const std::vector<VW::string_view>& words,
+    VW::io::logger& logger);
 
 extern label_parser slates_label_parser;
 }  // namespace slates

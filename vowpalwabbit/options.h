@@ -400,7 +400,10 @@ struct options_name_extractor : options_i
     THROW("options_name_extractor does not implement this method");
   };
 
-  void check_unregistered(VW::io::logger& /* logger */) override { THROW("options_name_extractor does not implement this method"); };
+  void check_unregistered(VW::io::logger& /* logger */) override
+  {
+    THROW("options_name_extractor does not implement this method");
+  };
 
   std::vector<std::shared_ptr<base_option>> get_all_options() override
   {
