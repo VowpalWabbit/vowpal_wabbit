@@ -163,7 +163,7 @@ public:
   using cache_map = std::unordered_map<byte_array, scored_action, cached_item_hash, cached_item_equivalent>;
 
   VW::workspace* all;
-  std::shared_ptr<rand_state> _random_state;
+  std::shared_ptr<VW::rand_state> _random_state;
 
   uint64_t offset;
   bool auto_condition_features;  // do you want us to automatically add conditioning features?
@@ -562,7 +562,7 @@ void add_new_feature(search_private& priv, float val, uint64_t idx)
   uint64_t idx2 = ((idx & mask) >> ss) & mask;
   features& fs = priv.dat_new_feature_ec->feature_space[priv.dat_new_feature_namespace];
   fs.push_back(val * priv.dat_new_feature_value, ((priv.dat_new_feature_idx + idx2) << ss));
-  cdbg << "adding: " << fs.indicies.back() << ':' << fs.values.back() << endl;
+  cdbg << "adding: " << fs.indices.back() << ':' << fs.values.back() << endl;
   if (priv.all->audit)
   {
     std::stringstream temp;
@@ -714,7 +714,7 @@ void cerr_print_array(std::string str, v_array<T>& A)
   logger::errlog_info("{0} = [{1}]", str, fmt::join(A, " "));
 }
 
-size_t random(std::shared_ptr<rand_state>& rs, size_t max)
+size_t random(std::shared_ptr<VW::rand_state>& rs, size_t max)
 {
   return static_cast<size_t>(rs->get_and_update_random() * static_cast<float>(max));
 }
@@ -791,7 +791,7 @@ void add_example_conditioning(search_private& priv, example& ec, size_t conditio
       for (size_t k = 0; k < fs.size(); k++)
         if ((fs.values[k] > 1e-10) || (fs.values[k] < -1e-10))
         {
-          uint64_t fid = 84913 + 48371803 * (extra_offset + 8392817 * name) + 840137 * (4891 + fs.indicies[k]);
+          uint64_t fid = 84913 + 48371803 * (extra_offset + 8392817 * name) + 840137 * (4891 + fs.indices[k]);
           if (priv.all->audit)
           {
             priv.dat_new_feature_audit_ss.str("");
@@ -1776,7 +1776,7 @@ action search_predict(search_private& priv, example* ecs, size_t ec_cnt, ptag my
 
           cdbg << "passthrough = [";
           for (size_t kk = 0; kk < priv.last_action_repr.size(); kk++)
-            cdbg << ' ' << priv.last_action_repr.indicies[kk] << ':' << priv.last_action_repr.values[kk];
+            cdbg << ' ' << priv.last_action_repr.indices[kk] << ':' << priv.last_action_repr.values[kk];
           cdbg << " ]" << endl;
 
           ecs[0].passthrough = nullptr;

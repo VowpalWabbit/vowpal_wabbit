@@ -4,11 +4,14 @@ set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_CURRENT_LIST_DIR}/cmake/")
 if(POLICY CMP0076)
   cmake_policy(SET CMP0076 NEW)
 endif()
-
 # Do not add /W3 to MSVC flags by default. We set this to /W4.
 if(POLICY CMP0092)
   cmake_policy(SET CMP0092 NEW)
 endif()
+
+# Allow vcpkg to use versions feature if it is enabled with a manifest.
+# Right now this is done for the Python CIs.
+list(APPEND VCPKG_FEATURE_FLAGS "versions")
 
 # Read version into variable
 file(READ version.txt PACKAGE_VERSION)
@@ -94,11 +97,11 @@ option(BUILD_PYTHON "Add Python targets." Off)
 option(BUILD_DOCS "Add documentation targets." Off)
 option(BUILD_EXPERIMENTAL_BINDING "Add targets for experimental bindings" OFF)
 option(LTO "Enable Link Time optimization (Requires Release build, only works with clang and linux/mac for now)." Off)
-option(BUILD_SLIM_VW "Add targets for slim version of VW which implements only predict() for a subset of VW reductions." OFF)
 option(RAPIDJSON_SYS_DEP "Override using the submodule for RapidJSON dependency. Instead will use find_package" OFF)
 option(FMT_SYS_DEP "Override using the submodule for FMT dependency. Instead will use find_package" OFF)
 option(SPDLOG_SYS_DEP "Override using the submodule for spdlog dependency. Instead will use find_package" OFF)
 option(BUILD_FLATBUFFERS "Build flatbuffers" OFF)
+option(BUILD_PRIVACY_ACTIVATION "Enable privacy activation feature" OFF)
 
 string(TOUPPER "${CMAKE_BUILD_TYPE}" CONFIG)
 
@@ -265,10 +268,6 @@ endif()
 
 if(BUILD_PYTHON)
   add_subdirectory(python)
-endif()
-
-if(BUILD_SLIM_VW)
-  add_subdirectory(vowpalwabbit/slim)
 endif()
 
 if(BUILD_BENCHMARKS)

@@ -88,10 +88,10 @@ void audit_regressor_lda(audit_regressor_data& rd, VW::LEARNER::single_learner& 
     for (size_t j = 0; j < fs.size(); ++j)
     {
       tempstream << '\t' << fs.space_names[j].first << '^' << fs.space_names[j].second << ':'
-                 << ((fs.indicies[j] >> weights.stride_shift()) & all.parse_mask);
+                 << ((fs.indices[j] >> weights.stride_shift()) & all.parse_mask);
       for (size_t k = 0; k < all.lda; k++)
       {
-        weight& w = weights[(fs.indicies[j] + k)];
+        weight& w = weights[(fs.indices[j] + k)];
         tempstream << ':' << w;
         w = 0.;
       }
@@ -125,14 +125,14 @@ void audit_regressor(audit_regressor_data& rd, VW::LEARNER::single_learner& base
           for (size_t j = 0; j < fs.size(); ++j)
           {
             audit_regressor_interaction(rd, &fs.space_names[j]);
-            audit_regressor_feature(rd, fs.values[j], static_cast<uint32_t>(fs.indicies[j]) + ec.ft_offset);
+            audit_regressor_feature(rd, fs.values[j], static_cast<uint32_t>(fs.indices[j]) + ec.ft_offset);
             audit_regressor_interaction(rd, nullptr);
           }
         }
         else
         {
           for (size_t j = 0; j < fs.size(); ++j)
-          { audit_regressor_feature(rd, fs.values[j], static_cast<uint32_t>(fs.indicies[j]) + ec.ft_offset); }
+          { audit_regressor_feature(rd, fs.values[j], static_cast<uint32_t>(fs.indices[j]) + ec.ft_offset); }
         }
       }
 
@@ -218,7 +218,7 @@ void init_driver(audit_regressor_data& dat)
       !dat.all->options->was_supplied("kill_cache"))
   { THROW("audit_regressor is incompatible with a cache file. Use it in single pass mode only.") }
 
-  dat.all->sd->dump_interval = 1.;  // regressor could initialize these if saved with --save_resume
+  dat.all->sd->dump_interval = 1.;  // regressor could initialize these if saved without --predict_only_model
   dat.all->sd->example_number = 0;
 
   dat.increment = dat.all->l->increment / dat.all->l->weights;

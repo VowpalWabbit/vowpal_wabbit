@@ -94,7 +94,7 @@ void learn_eval(cb& data, single_learner&, example& ec)
   ec.pred.multiclass = ec.l.cb_eval.action;
 }
 
-void output_example(VW::workspace& all, cb& data, example& ec, CB::label& ld)
+void output_example(VW::workspace& all, cb& data, const example& ec, const CB::label& ld)
 {
   float loss = 0.;
 
@@ -104,7 +104,8 @@ void output_example(VW::workspace& all, cb& data, example& ec, CB::label& ld)
   generic_output_example(all, loss, ec, ld, &c.known_cost);
 }
 
-void generic_output_example(VW::workspace& all, float loss, example& ec, const CB::label& ld, CB::cb_class* known_cost)
+void generic_output_example(
+    VW::workspace& all, float loss, const example& ec, const CB::label& ld, const CB::cb_class* known_cost)
 {
   all.sd->update(ec.test_only, !CB::is_test_label(ld), loss, 1.f, ec.get_num_features());
 
@@ -197,8 +198,8 @@ base_learner* cb_algs_setup(VW::setup_base_i& stack_builder)
       break;
     case VW::cb_type_t::mtr:
     case VW::cb_type_t::sm:
-      logger::errlog_warn("warning: cb_type must be in {'ips','dm','dr'}; resetting to dr. Input received: {}",
-          VW::to_string(c.cb_type));
+      logger::errlog_warn(
+          "cb_type must be in {{'ips','dm','dr'}}; resetting to dr. Input received: {}", VW::to_string(c.cb_type));
       c.cb_type = VW::cb_type_t::dr;
       break;
   }

@@ -50,7 +50,7 @@ struct warm_cb
   // used as the seed
   size_t example_counter = 0;
   VW::workspace* all = nullptr;
-  std::shared_ptr<rand_state> _random_state;
+  std::shared_ptr<VW::rand_state> _random_state;
   multi_ex ecs;
   float loss0 = 0.f;
   float loss1 = 0.f;
@@ -162,10 +162,10 @@ void copy_example_to_adf(warm_cb& data, example& ec)
     // copy data
     VW::copy_example_data(&eca, &ec);
 
-    // offset indicies for given action
+    // offset indices for given action
     for (features& fs : eca)
     {
-      for (feature_index& idx : fs.indicies)
+      for (feature_index& idx : fs.indices)
       { idx = ((((idx >> ss) * 28904713) + 4832917 * static_cast<uint64_t>(a)) << ss) & mask; }
     }
 
@@ -584,8 +584,13 @@ base_learner* warm_cb_setup(VW::setup_base_i& stack_builder)
 
   init_adf_data(*data.get(), num_actions);
 
-  options.insert("cb_min_cost", std::to_string(data->loss0));
-  options.insert("cb_max_cost", std::to_string(data->loss1));
+  // We aren't checking for "cb_explore_adf", and these will be invalid without it.
+  // However, this reduction in general is not checking for that either.
+  if ((options.was_supplied("regcb") || options.was_supplied("squarecb")))
+  {
+    options.insert("cb_min_cost", std::to_string(data->loss0));
+    options.insert("cb_max_cost", std::to_string(data->loss1));
+  }
 
   if (options.was_supplied("baseline"))
   {

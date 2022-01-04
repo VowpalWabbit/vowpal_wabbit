@@ -23,6 +23,7 @@
 #include "cb_continuous_label.h"
 #include "prob_dist_cont.h"
 #include "active_multiclass_prediction.h"
+#include "cache.h"
 
 #include <cstdint>
 #include <vector>
@@ -40,7 +41,7 @@ void setup_example(VW::workspace& all, example* ae);
 
 struct polylabel
 {
-  no_label::no_label empty;
+  no_label::no_label empty = static_cast<char>(0);
   label_data simple;
   MULTICLASS::label_t multi;
   COST_SENSITIVE::label cs;
@@ -97,9 +98,12 @@ struct example : public example_predict  // core example datatype.
   float weight = 1.f;  // a relative importance weight for the example, default = 1
   v_array<char> tag;   // An identifier for the example.
   size_t example_counter = 0;
+#ifdef PRIVACY_ACTIVATION
+  uint64_t tag_hash;  // Storing the hash of the tag for privacy preservation learning
+#endif
 
   // helpers
-  size_t num_features = 0;         // precomputed, cause it's fast&easy.
+  size_t num_features = 0;  // precomputed, cause it's fast&easy.
   size_t num_features_from_interactions = 0;
   float partial_prediction = 0.f;  // shared data for prediction.
   float updated_prediction = 0.f;  // estimated post-update prediction.
@@ -191,6 +195,12 @@ void return_multiple_example(VW::workspace& all, v_array<example*>& examples);
 
 using example_factory_t = example& (*)(void*);
 
+namespace model_utils
+{
+size_t read_model_field(io_buf& io, flat_example& fe, label_parser& lbl_parser);
+size_t write_model_field(io_buf& io, const flat_example& fe, const std::string& upstream_name, bool text,
+    label_parser& lbl_parser, uint64_t parse_mask);
+}  // namespace model_utils
 }  // namespace VW
 
 std::string simple_label_to_string(const example& ec);

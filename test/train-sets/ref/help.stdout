@@ -141,8 +141,11 @@ Output Model Options:
   --invert_hash arg                     Output human-readable final regressor 
                                         with feature names.  Computationally 
                                         expensive
-  --save_resume                         Save extra state so learning can be 
-                                        resumed later with new data
+  --predict_only_model                  Do not save extra state for learning to
+                                        be resumed. Stored model can only be 
+                                        used for prediction
+  --save_resume                         This flag is now deprecated and models 
+                                        can continue learning by default
   --preserve_performance_counters       Reset performance counters when 
                                         warmstarting
   --save_per_pass                       Save the model after every pass over 
@@ -420,6 +423,7 @@ Make Multiclass into Contextual Bandit Options:
   --loss_01_ratio arg (=0.1, ) Ratio of zero loss for 0/1 loss
   --loss0 arg (=0, )           Loss for correct label
   --loss1 arg (=1, )           Loss for incorrect label
+  --flip_loss_sign             Flip sign of loss (use reward instead of loss)
 Make csoaa_ldf into Contextual Bandit Options:
   --cbify_ldf           Convert csoaa_ldf into a contextual bandit problem
   --loss0 arg (=0, )    Loss for correct label
@@ -429,10 +433,13 @@ Continuous Action Contextual Bandit using Zeroth-Order Optimization Options:
                            using Zeroth-Order Optimization
   --policy arg (=linear, ) Policy/Model to Learn
   --radius arg (=0.1, )    Exploration Radius
-EXPERIMENTAL: Conditional Contextual Bandit Exploration with ADF Options:
-  --ccb_explore_adf     EXPERIMENTAL: Do Conditional Contextual Bandit learning
-                        with multiline action dependent features.
-  --all_slots_loss      Report average loss from all slots
+Conditional Contextual Bandit Exploration with ADF Options:
+  --ccb_explore_adf      Do Conditional Contextual Bandit learning with 
+                         multiline action dependent features.
+  --all_slots_loss       Report average loss from all slots
+  --no_predict           Do not do a prediction when training
+  --cb_type arg (=mtr, ) Contextual bandit method to use. Choices: {dm, dr, 
+                         ips, mtr, sm}
 Importance Weight Classes Options:
   --classweight arg     Importance weight multiplier for class
 Confidence Options:
@@ -460,6 +467,7 @@ Cost Sensitive Active Learning Options:
   --csa_debug                           Print debug stuff for cs_active
 Cost Sensitive One Against All Options:
   --csoaa arg           One-against-all multiclass with <k> costs
+  --indexing arg        Choose between 0 or 1-indexing. Choices: {0, 1}
 Cost Sensitive One Against All with Label Dependent Features Options:
   --csoaa_ldf arg       Use one-against-all multiclass learning with label 
                         dependent features
@@ -475,6 +483,9 @@ Error Correcting Tournament Options:
   --error arg (=0, )       Errors allowed by ECT
   --link arg (=identity, ) Specify the link function. Choices: {glf1, identity,
                            logistic, poisson}
+Interaction Grounded Learning Options:
+  --experimental_igl    Experimental: Do Interaction Grounding with multiline 
+                        action dependent features.
 Explore Evaluation Options:
   --explore_eval        Evaluate explore_eval adf policies
   --multiplier arg      Multiplier used to make all rejection sample 
@@ -482,10 +493,24 @@ Explore Evaluation Options:
 Debug: Metrics Options:
   --extra_metrics arg   Specify filename to write metrics to. Note: There is no
                         fixed schema
-Follow the Regularized Leader Options:
+FreeGrad Options:
+  --freegrad            Diagonal FreeGrad Algorithm
+  --restart             Use the FreeRange restarts
+  --project             Project the outputs to adapt to both the lipschitz and 
+                        comparator norm
+  --radius arg          Radius of the l2-ball for the projection. If not 
+                        supplied, an adaptive radius will be used.
+  --fepsilon arg (=1, ) Initial wealth
+Follow the Regularized Leader - FTRL Options:
   --ftrl                FTRL: Follow the Proximal Regularized Leader
-  --coin                Coin betting optimizer
+  --ftrl_alpha arg      Learning rate for FTRL optimization
+  --ftrl_beta arg       Learning rate for FTRL optimization
+Follow the Regularized Leader - Pistol Options:
   --pistol              PiSTOL: Parameter-free STOchastic Learning
+  --ftrl_alpha arg      Learning rate for FTRL optimization
+  --ftrl_beta arg       Learning rate for FTRL optimization
+Follow the Regularized Leader - Coin Options:
+  --coin                Coin betting optimizer
   --ftrl_alpha arg      Learning rate for FTRL optimization
   --ftrl_beta arg       Learning rate for FTRL optimization
 Gradient Descent Options:

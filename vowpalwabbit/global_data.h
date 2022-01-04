@@ -137,7 +137,7 @@ namespace VW
 struct workspace
 {
 private:
-  std::shared_ptr<rand_state> _random_state_sp = std::make_shared<rand_state>();  // per instance random_state
+  std::shared_ptr<VW::rand_state> _random_state_sp = std::make_shared<VW::rand_state>();  // per instance random_state
 
 public:
   shared_data* sd;
@@ -171,6 +171,13 @@ public:
 
   uint32_t hash_seed;
 
+#ifdef PRIVACY_ACTIVATION
+  bool privacy_activation = false;
+  // this is coupled with the bitset size in array_parameters which needs to be determined at compile time
+  size_t feature_bitset_size = 32;
+  size_t privacy_activation_threshold = 10;
+#endif
+
 #ifdef BUILD_FLATBUFFERS
   std::unique_ptr<VW::parsers::flatbuffer::parser> flat_converter;
 #endif
@@ -188,7 +195,6 @@ public:
   float initial_constant;
 
   bool bfgs;
-  bool hessian_on;
 
   bool save_resume;
   bool preserve_performance_counters;
@@ -257,6 +263,8 @@ public:
 
   vw_logger logger;
   bool audit;     // should I print lots of debugging information?
+  std::shared_ptr<std::vector<char>> audit_buffer;
+  std::unique_ptr<VW::io::writer> audit_writer;
   bool training;  // Should I train if lable data is available?
   bool active;
   bool invariant_updates;  // Should we use importance aware/safe updates
@@ -325,7 +333,7 @@ public:
 
   workspace();
   ~workspace();
-  std::shared_ptr<rand_state> get_random_state() { return _random_state_sp; }
+  std::shared_ptr<VW::rand_state> get_random_state() { return _random_state_sp; }
 
   workspace(const VW::workspace&) = delete;
   VW::workspace& operator=(const VW::workspace&) = delete;

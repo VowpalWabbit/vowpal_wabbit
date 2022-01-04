@@ -10,6 +10,8 @@
 #endif
 
 #include "memory.h"
+#include <bitset>
+#include <unordered_map>
 
 using weight = float;
 
@@ -51,6 +53,17 @@ private:
   uint64_t _weight_mask;  // (stride*(1 << num_bits) -1)
   uint32_t _stride_shift;
   bool _seeded;  // whether the instance is sharing model state with others
+#ifdef PRIVACY_ACTIVATION
+  // struct to store the tag hash and if it is set or not
+  struct tag_hash_info
+  {
+    uint64_t tag_hash;
+    bool is_set = false;
+  };
+  size_t _privacy_activation_threshold;
+  std::shared_ptr<std::unordered_map<uint64_t, std::bitset<32>>> _feature_bitset;  // define the bitset for each feature
+  tag_hash_info _tag_info;
+#endif
 
 public:
   using iterator = dense_iterator<weight>;
@@ -60,10 +73,24 @@ public:
       , _weight_mask((length << stride_shift) - 1)
       , _stride_shift(stride_shift)
       , _seeded(false)
+#ifdef PRIVACY_ACTIVATION
+      , _privacy_activation_threshold(0)
+      , _feature_bitset(nullptr)
+#endif
   {
   }
 
-  dense_parameters() : _begin(nullptr), _weight_mask(0), _stride_shift(0), _seeded(false) {}
+  dense_parameters()
+      : _begin(nullptr)
+      , _weight_mask(0)
+      , _stride_shift(0)
+      , _seeded(false)
+#ifdef PRIVACY_ACTIVATION
+      , _privacy_activation_threshold(0)
+      , _feature_bitset(nullptr)
+#endif
+  {
+  }
 
   bool not_null() { return (_weight_mask > 0 && _begin != nullptr); }
 
@@ -85,7 +112,38 @@ public:
   const_iterator cend() { return const_iterator(_begin + _weight_mask + 1, _begin, stride()); }
 
   inline const weight& operator[](size_t i) const { return _begin[i & _weight_mask]; }
-  inline weight& operator[](size_t i) { return _begin[i & _weight_mask]; }
+  inline weight& operator[](size_t i)
+  {
+#ifdef PRIVACY_ACTIVATION
+    if (_feature_bitset && _tag_info.is_set)
+    {
+      // lookup a bit for a feature in the bitset using the
+      // tag hash and turn it on
+      (*_feature_bitset)[i & _weight_mask][_tag_info.tag_hash] = 1;
+    }
+#endif
+    return _begin[i & _weight_mask];
+  }
+
+#ifdef PRIVACY_ACTIVATION
+  void set_tag(uint64_t tag_hash)
+  {
+    if (_feature_bitset)
+    {
+      _tag_info.tag_hash = tag_hash;
+      _tag_info.is_set = true;
+    }
+  }
+
+  void unset_tag() { _tag_info.is_set = false; }
+
+  // function to check if the number of bits set to 1 are greater than a threshold for a feature
+  bool is_activated(uint64_t index)
+  {
+    if (!_feature_bitset) { return false; }
+    return (*_feature_bitset)[index].count() >= _privacy_activation_threshold;
+  }
+#endif
 
   void shallow_copy(const dense_parameters& input)
   {
@@ -94,6 +152,10 @@ public:
     _weight_mask = input._weight_mask;
     _stride_shift = input._stride_shift;
     _seeded = true;
+#ifdef PRIVACY_ACTIVATION
+    _privacy_activation_threshold = input._privacy_activation_threshold;
+    _feature_bitset = input._feature_bitset;
+#endif
   }
 
   inline weight& strided_index(size_t index) { return operator[](index << _stride_shift); }
@@ -166,6 +228,14 @@ public:
   uint32_t stride_shift() const { return _stride_shift; }
 
   void stride_shift(uint32_t stride_shift) { _stride_shift = stride_shift; }
+
+#ifdef PRIVACY_ACTIVATION
+  void privacy_activation_threshold(size_t privacy_activation_threshold)
+  {
+    _privacy_activation_threshold = privacy_activation_threshold;
+    _feature_bitset = std::make_shared<std::unordered_map<uint64_t, std::bitset<32>>>();
+  }
+#endif
 
 #ifndef _WIN32
 #  ifndef DISABLE_SHARED_WEIGHTS

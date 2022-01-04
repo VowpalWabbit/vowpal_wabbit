@@ -50,17 +50,17 @@ public class VWActionScoresLearnerTest extends VWTestHelper {
 
         ActionScores[] expected = new ActionScores[]{
                 actionScores(
-                        actionScore(1, -1.0573887f),
-                        actionScore(0, -0.033036415f),
-                        actionScore(2, 1.0063205f)
+                        actionScore(2, -1.0573887f),
+                        actionScore(1, -0.033036415f),
+                        actionScore(3, 1.0063205f)
                 ),
                 actionScores(
-                        actionScore(1, -1.0342788f),
-                        actionScore(0, 0.9994181f)
+                        actionScore(2, -1.0342788f),
+                        actionScore(1, 0.9994181f)
                 ),
                 actionScores(
-                        actionScore(0, 0.033397526f),
-                        actionScore(1, 1.0227613f)
+                        actionScore(1, 0.033397526f),
+                        actionScore(3, 1.0227613f)
                 )
         };
 

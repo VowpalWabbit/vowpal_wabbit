@@ -63,7 +63,9 @@ void send_features(io_buf* b, example& ec, uint32_t mask)
   for (namespace_index ns : ec.indices)
   {
     if (ns == constant_namespace) { continue; }
-    output_features(*b, ns, ec.feature_space[ns], mask);
+    char* c;
+    cache_index(*b, ns, ec.feature_space[ns], c);
+    cache_features(*b, ec.feature_space[ns], mask, c);
   }
   b->flush();
 }
@@ -88,7 +90,8 @@ void learn(sender& s, VW::LEARNER::base_learner& /*unused*/, example& ec)
   if (s.received_index + s.all->example_parser->ring_size / 2 - 1 == s.sent_index) { receive_result(s); }
 
   s.all->set_minmax(s.all->sd, ec.l.simple.label);
-  s.all->example_parser->lbl_parser.cache_label(ec.l, ec._reduction_features, *s.buf);  // send label information.
+  s.all->example_parser->lbl_parser.cache_label(
+      ec.l, ec._reduction_features, *s.buf, "", false);  // send label information.
   cache_tag(*s.buf, ec.tag);
   send_features(s.buf, ec, static_cast<uint32_t>(s.all->parse_mask));
   s.delay_ring[s.sent_index++ % s.all->example_parser->ring_size] = &ec;

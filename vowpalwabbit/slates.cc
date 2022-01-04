@@ -164,7 +164,7 @@ float get_estimate(
   return cost * p_over_ps;
 }
 
-void output_example(VW::workspace& all, slates_data& /*c*/, multi_ex& ec_seq)
+void output_example(VW::workspace& all, const slates_data& /*c*/, const multi_ex& ec_seq)
 {
   std::vector<example*> slots;
   size_t num_features = 0;

@@ -313,16 +313,20 @@ void print_features(VW::workspace& all, example& ec)
     stable_sort(dat.results.begin(), dat.results.end());
     if (all.audit)
     {
-      for (string_value& sv : dat.results) std::cout << '\t' << sv.s;
-      std::cout << std::endl;
+      for (string_value& sv : dat.results)
+      {
+        all.audit_writer->write("\t", 1);
+        all.audit_writer->write(sv.s.data(), sv.s.size());
+      }
+      all.audit_writer->write("\n", 1);
     }
   }
 }
 
 void print_audit_features(VW::workspace& all, example& ec)
 {
-  if (all.audit) print_result_by_ref(all.stdout_adapter.get(), ec.pred.scalar, -1, ec.tag);
-  fflush(stdout);
+  if (all.audit) print_result_by_ref(all.audit_writer.get(), ec.pred.scalar, -1, ec.tag);
+
   print_features(all, ec);
 }
 
@@ -669,11 +673,32 @@ void update(gd& g, base_learner&, example& ec)
   float update;
   if ((update = compute_update<sparse_l2, invariant, sqrt_rate, feature_mask_off, adax, adaptive, normalized, spare>(
            g, ec)) != 0.)
+  {
+#ifdef PRIVACY_ACTIVATION
+    if (g.all->weights.sparse && g.all->privacy_activation)
+    {
+      g.all->weights.sparse_weights.set_tag(ec.tag_hash);
+      train<sqrt_rate, feature_mask_off, adaptive, normalized, spare>(g, ec, update);
+      g.all->weights.sparse_weights.unset_tag();
+    }
+    else if (!g.all->weights.sparse && g.all->privacy_activation)
+    {
+      g.all->weights.dense_weights.set_tag(ec.tag_hash);
+      train<sqrt_rate, feature_mask_off, adaptive, normalized, spare>(g, ec, update);
+      g.all->weights.dense_weights.unset_tag();
+    }
+    else
+    {
+      train<sqrt_rate, feature_mask_off, adaptive, normalized, spare>(g, ec, update);
+    }
+#else
     train<sqrt_rate, feature_mask_off, adaptive, normalized, spare>(g, ec, update);
+#endif
+  }
 
   if (g.all->sd->contraction < 1e-9 || g.all->sd->gravity > 1e3)  // updating weights now to avoid numerical instability
     sync_weights(*g.all);
-}
+}  // namespace GD
 
 template <bool sparse_l2, bool invariant, bool sqrt_rate, bool feature_mask_off, bool adax, size_t adaptive,
     size_t normalized, size_t spare>
@@ -733,7 +758,11 @@ void save_load_regressor(VW::workspace& all, io_buf& model_file, bool read, bool
     for (auto it = weights.begin(); it != weights.end(); ++it)
     {
       const auto weight_value = *it;
+#ifdef PRIVACY_ACTIVATION
+      if (*it != 0.f && (!all.privacy_activation || (weights.is_activated(it.index()) && all.privacy_activation)))
+#else
       if (*it != 0.f)
+#endif
       {
         const auto weight_index = it.index() >> weights.stride_shift();
 
@@ -776,8 +805,11 @@ void save_load_regressor(VW::workspace& all, io_buf& model_file, bool read, bool
   else  // write
   {
     for (typename T::iterator v = weights.begin(); v != weights.end(); ++v)
-    {
+#ifdef PRIVACY_ACTIVATION
+      if (*v != 0. && (!all.privacy_activation || (weights.is_activated(v.index()) && all.privacy_activation)))
+#else
       if (*v != 0.)
+#endif
       {
         i = v.index() >> weights.stride_shift();
         std::stringstream msg;
@@ -785,7 +817,6 @@ void save_load_regressor(VW::workspace& all, io_buf& model_file, bool read, bool
         msg << ":" << *v << "\n";
         brw += bin_text_write_fixed(model_file, (char*)&(*v), sizeof(*v), msg, text);
       }
-    }
   }
 }
 
@@ -843,7 +874,11 @@ void save_load_online_state(VW::workspace& all, io_buf& model_file, bool read, b
 
       if (all.print_invert)  // write readable model with feature names
       {
+#ifdef PRIVACY_ACTIVATION
+        if (*v != 0.f && (!all.privacy_activation || (weights.is_activated(v.index()) && all.privacy_activation)))
+#else
         if (*v != 0.f)
+#endif
         {
           const auto map_it = all.index_name_map.find(i);
           if (map_it != all.index_name_map.end())
@@ -976,7 +1011,7 @@ void save_load_online_state(
 
   if (!read || all.model_file_ver >= VW::version_definitions::VERSION_SAVE_RESUME_FIX)
   {
-    // restore some data to allow --save_resume work more accurate
+    // restore some data to allow save_resume work more accurate
 
     // fix average loss
     msg << "total_weight " << total_weight << "\n";
@@ -1060,7 +1095,7 @@ void save_load(gd& g, io_buf& model_file, bool read, bool text)
       if (read && all.model_file_ver < VW::version_definitions::VERSION_SAVE_RESUME_FIX)
         *(all.trace_message)
             << std::endl
-            << "WARNING: --save_resume functionality is known to have inaccuracy in model files version less than "
+            << "WARNING: save_resume functionality is known to have inaccuracy in model files version less than "
             << VW::version_definitions::VERSION_SAVE_RESUME_FIX.to_string() << std::endl
             << std::endl;
       save_load_online_state(all, model_file, read, text, g.total_weight, &g);
@@ -1071,8 +1106,8 @@ void save_load(gd& g, io_buf& model_file, bool read, bool text)
       save_load_regressor(all, model_file, read, text);
     }
   }
-  if (!all.training)  // If the regressor was saved as --save_resume, then when testing we want to materialize the
-                      // weights.
+  if (!all.training)  // If the regressor was saved without --predict_only_model, then when testing we want to
+                      // materialize the weights.
     sync_weights(all);
 }
 

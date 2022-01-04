@@ -12,6 +12,7 @@
 #include "learner.h"
 #include "array_parameters_dense.h"
 #include <map>
+#include <memory>
 #include <set>
 #include <queue>
 
@@ -112,8 +113,7 @@ struct interaction_config_manager : config_manager
   uint64_t current_champ = 0;
   uint64_t global_lease;
   uint64_t max_live_configs;
-  uint64_t seed;
-  rand_state random_state;
+  std::shared_ptr<VW::rand_state> random_state;
   uint64_t priority_challengers;
   uint64_t valid_config_size = 0;
   bool keep_configs;
@@ -132,8 +132,8 @@ struct interaction_config_manager : config_manager
   // Maybe not needed with oracle, maps priority to config index, unused configs
   std::priority_queue<std::pair<float, uint64_t>> index_queue;
 
-  interaction_config_manager(uint64_t, uint64_t, uint64_t, uint64_t, bool, std::string, dense_parameters&,
-      float (*)(const exclusion_config&, const std::map<namespace_index, uint64_t>&));
+  interaction_config_manager(uint64_t, uint64_t, std::shared_ptr<VW::rand_state>, uint64_t, bool, std::string,
+      dense_parameters&, float (*)(const exclusion_config&, const std::map<namespace_index, uint64_t>&));
 
   void apply_config(example*, uint64_t);
   void revert_config(example*);

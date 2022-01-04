@@ -279,13 +279,45 @@ struct options_exporter : options_i
       rapidjson::Value help_value;
       help_value.SetString(option->m_help, allocator);
       option_obj.AddMember("help", help_value, allocator);
-      rapidjson::Value short_name_value;
-      short_name_value.SetString(option->m_short_name, allocator);
-      option_obj.AddMember("short_name", short_name_value, allocator);
+      if (option->m_short_name != "")
+      {
+        rapidjson::Value short_name_value;
+        short_name_value.SetString(option->m_short_name, allocator);
+        option_obj.AddMember("short_name", short_name_value, allocator);
+      }
       option_obj.AddMember("keep", option->m_keep, allocator);
       option_obj.AddMember("necessary", option->m_necessary, allocator);
+      if (option->m_type_hash == typed_option<std::string>::type_hash())
+      {
+        const auto str_option = std::dynamic_pointer_cast<typed_option<std::string>>(option);
+        if (!str_option->one_of().empty())
+        {
+          rapidjson::Value one_of_array(rapidjson::kArrayType);
+          for (const auto& str : str_option->one_of())
+          {
+            rapidjson::Value one_of_val;
+            one_of_val.SetString(str, allocator);
+            one_of_array.PushBack(one_of_val, allocator);
+          }
+          option_obj.AddMember("one_of", one_of_array, allocator);
+        }
+      }
+      else if (option->m_type_hash == typed_option<int>::type_hash())
+      {
+        const auto int_option = std::dynamic_pointer_cast<typed_option<int>>(option);
+        if (!int_option->one_of().empty())
+        {
+          rapidjson::Value one_of_array(rapidjson::kArrayType);
+          for (const int i : int_option->one_of())
+          {
+            rapidjson::Value one_of_val;
+            one_of_val.SetInt(i);
+            one_of_array.PushBack(one_of_val, allocator);
+          }
+          option_obj.AddMember("one_of", one_of_array, allocator);
+        }
+      }
       inject_type_info(option_obj, option, allocator);
-
       options_array.PushBack(option_obj, allocator);
     }
 

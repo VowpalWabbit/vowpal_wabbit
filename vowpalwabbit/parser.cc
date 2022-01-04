@@ -144,7 +144,7 @@ uint32_t cache_numbits(VW::io::reader& cache_reader)
   return cache_numbits;
 }
 
-void set_cache_reader(VW::workspace& all) { all.example_parser->reader = read_cached_features; }
+void set_cache_reader(VW::workspace& all) { all.example_parser->reader = VW::read_example_from_cache; }
 
 void set_string_reader(VW::workspace& all)
 {
@@ -190,7 +190,7 @@ void set_daemon_reader(VW::workspace& all, bool json = false, bool dsjson = fals
 {
   if (all.example_parser->input.isbinary())
   {
-    all.example_parser->reader = read_cached_features;
+    all.example_parser->reader = VW::read_example_from_cache;
     all.print_by_ref = binary_print_result_by_ref;
   }
   else if (json || dsjson)
@@ -717,6 +717,11 @@ void setup_example(VW::workspace& all, example* ae)
   // If this example has a test only label then it is true regardless.
   ae->test_only |= all.example_parser->lbl_parser.test_label(ae->l);
 
+#ifdef PRIVACY_ACTIVATION
+  if (all.privacy_activation)
+  { ae->tag_hash = hashall(ae->tag.begin(), ae->tag.size(), all.hash_seed) % all.feature_bitset_size; }
+#endif
+
   if (all.example_parser->emptylines_separate_examples &&
       (example_is_newline(*ae) &&
           (all.example_parser->lbl_parser.label_type != label_type_t::ccb || CCB::ec_is_example_unset(*ae))))
@@ -751,7 +756,7 @@ void setup_example(VW::workspace& all, example* ae)
 
   if (multiplier != 1)  // make room for per-feature information.
     for (features& fs : *ae)
-      for (auto& j : fs.indicies) j *= multiplier;
+      for (auto& j : fs.indices) j *= multiplier;
   ae->num_features = 0;
   for (const features& fs : *ae)
   {
@@ -843,7 +848,7 @@ primitive_feature_space* export_example(VW::workspace& all, example* ec, size_t&
     auto& f = ec->feature_space[i];
     for (size_t f_count = 0; f_count < fs_ptr[fs_count].len; f_count++)
     {
-      feature t = {f.values[f_count], f.indicies[f_count]};
+      feature t = {f.values[f_count], f.indices[f_count]};
       t.weight_index >>= stride_shift;
       fs_ptr[fs_count].fs[f_count] = t;
     }
@@ -872,6 +877,9 @@ void empty_example(VW::workspace& /*all*/, example& ec)
 
   ec.indices.clear();
   ec.tag.clear();
+#ifdef PRIVACY_ACTIVATION
+  ec.tag_hash = 0;
+#endif
   ec.sorted = false;
   ec.end_pass = false;
   ec.is_newline = false;

@@ -174,7 +174,7 @@ void predict(pmf_to_pdf::reduction& data, single_learner&, example& ec) { data.p
 
 void learn(pmf_to_pdf::reduction& data, single_learner&, example& ec) { data.learn(ec); }
 
-void print_update(VW::workspace& all, bool is_test, example& ec, std::stringstream& pred_string)
+void print_update(VW::workspace& all, bool is_test, const example& ec, std::stringstream& pred_string)
 {
   if (all.sd->weighted_examples() >= all.sd->dump_interval && !all.logger.quiet && !all.bfgs)
   {
@@ -191,7 +191,7 @@ void print_update(VW::workspace& all, bool is_test, example& ec, std::stringstre
   }
 }
 
-void output_example(VW::workspace& all, reduction&, example& ec, CB::label& ld)
+void output_example(VW::workspace& all, reduction&, const example& ec, const CB::label& ld)
 {
   float loss = 0.;
   auto optional_cost = get_observed_cost_cb(ec.l.cb);

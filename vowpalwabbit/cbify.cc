@@ -57,6 +57,7 @@ struct cbify
   cbify_adf_data adf_data;
   float loss0 = 0.f;
   float loss1 = 0.f;
+  bool flip_loss_sign = false;
   uint32_t chosen_action = 0;
 
   // for ldf inputs
@@ -67,10 +68,11 @@ struct cbify
 
 float loss(const cbify& data, uint32_t label, uint32_t final_prediction)
 {
+  float mult = data.flip_loss_sign ? -1.f : 1.f;
   if (label != final_prediction)
-    return data.loss1;
+    return mult * data.loss1;
   else
-    return data.loss0;
+    return mult * data.loss0;
 }
 
 float loss_cs(const cbify& data, const std::vector<COST_SENSITIVE::wclass>& costs, uint32_t final_prediction)
@@ -158,7 +160,7 @@ void cbify_adf_data::copy_example_to_adf(parameters& weights, example& ec)
     // offset indices for given action
     for (features& fs : eca)
     {
-      for (feature_index& idx : fs.indicies)
+      for (feature_index& idx : fs.indices)
       {
         auto rawidx = idx;
         rawidx -= rawidx & custom_index_mask;
@@ -507,7 +509,7 @@ void do_actual_learning_ldf(cbify& data, multi_learner& base, multi_ex& ec_seq)
   }
 }
 
-void output_example(VW::workspace& all, example& ec, bool& hit_loss, multi_ex* ec_seq)
+void output_example(VW::workspace& all, const example& ec, bool& hit_loss, const multi_ex* ec_seq)
 {
   const auto& costs = ec.l.cs.costs;
 
@@ -555,7 +557,7 @@ void output_example(VW::workspace& all, example& ec, bool& hit_loss, multi_ex* e
   COST_SENSITIVE::print_update(all, COST_SENSITIVE::cs_label.test_label(ec.l), ec, ec_seq, false, predicted_class);
 }
 
-void output_example_seq(VW::workspace& all, multi_ex& ec_seq)
+void output_example_seq(VW::workspace& all, const multi_ex& ec_seq)
 {
   if (ec_seq.empty()) return;
   all.sd->weighted_labeled_examples += ec_seq[0]->weight;
@@ -694,7 +696,10 @@ base_learner* cbify_setup(VW::setup_base_i& stack_builder)
                .default_value(0.1f)
                .help("Ratio of zero loss for 0/1 loss"))
       .add(make_option("loss0", data->loss0).default_value(0.f).help("Loss for correct label"))
-      .add(make_option("loss1", data->loss1).default_value(1.f).help("Loss for incorrect label"));
+      .add(make_option("loss1", data->loss1).default_value(1.f).help("Loss for incorrect label"))
+      .add(make_option("flip_loss_sign", data->flip_loss_sign)
+               .keep()
+               .help("Flip sign of loss (use reward instead of loss)"));
 
   if (!options.add_parse_and_check_necessary(new_options)) return nullptr;
 
@@ -740,7 +745,7 @@ base_learner* cbify_setup(VW::setup_base_i& stack_builder)
     }
   }
 
-  if (data->use_adf)
+  if (data->use_adf && (options.was_supplied("regcb") || options.was_supplied("squarecb")))
   {
     options.insert("cb_min_cost", std::to_string(data->loss0));
     options.insert("cb_max_cost", std::to_string(data->loss1));

@@ -65,7 +65,7 @@ void diag_kronecker_prod_fs_test(
   // originally called delete_v, but that doesn't seem right. Clearing instead
   // prod_f.~features();
   prod_f.clear();
-  if (f2.indicies.size() == 0) return;
+  if (f2.indices.size() == 0) return;
 
   float denominator = std::pow(norm_sq1 * norm_sq2, 0.5f);
   size_t idx1 = 0;
@@ -73,8 +73,8 @@ void diag_kronecker_prod_fs_test(
 
   while (idx1 < f1.size() && idx2 < f2.size())
   {
-    uint64_t ec1pos = f1.indicies[idx1];
-    uint64_t ec2pos = f2.indicies[idx2];
+    uint64_t ec1pos = f1.indices[idx1];
+    uint64_t ec2pos = f2.indices[idx2];
 
     if (ec1pos < ec2pos)
       idx1++;
@@ -163,7 +163,7 @@ struct node
 struct memory_tree
 {
   VW::workspace* all = nullptr;
-  std::shared_ptr<rand_state> _random_state;
+  std::shared_ptr<VW::rand_state> _random_state;
 
   std::vector<node> nodes;  // array of nodes.
   // v_array<node> nodes;         // array of nodes.
@@ -233,15 +233,15 @@ float linear_kernel(const flat_example* fec1, const flat_example* fec2)
 
   features& fs_1 = const_cast<features&>(fec1->fs);
   features& fs_2 = const_cast<features&>(fec2->fs);
-  if (fs_2.indicies.size() == 0) return 0.f;
+  if (fs_2.indices.size() == 0) return 0.f;
 
   for (size_t idx1 = 0, idx2 = 0; idx1 < fs_1.size() && idx2 < fs_2.size(); idx1++)
   {
-    uint64_t ec1pos = fs_1.indicies[idx1];
-    uint64_t ec2pos = fs_2.indicies[idx2];
+    uint64_t ec1pos = fs_1.indices[idx1];
+    uint64_t ec2pos = fs_2.indices[idx2];
     if (ec1pos < ec2pos) continue;
 
-    while (ec1pos > ec2pos && ++idx2 < fs_2.size()) ec2pos = fs_2.indicies[idx2];
+    while (ec1pos > ec2pos && ++idx2 < fs_2.size()) ec2pos = fs_2.indices[idx2];
 
     if (ec1pos == ec2pos)
     {
@@ -1114,11 +1114,11 @@ void save_load_example(example* ec, io_buf& model_file, bool& read, bool& text, 
     {
       fs->clear();
       fs->values.clear();
-      fs->indicies.clear();
+      fs->indices.clear();
       for (uint32_t f_i = 0; f_i < feat_size; f_i++) { fs->push_back(0, 0); }
     }
     for (uint32_t f_i = 0; f_i < feat_size; f_i++) writeit(fs->values[f_i], "value");
-    for (uint32_t f_i = 0; f_i < feat_size; f_i++) writeit(fs->indicies[f_i], "index");
+    for (uint32_t f_i = 0; f_i < feat_size; f_i++) writeit(fs->indices[f_i], "index");
   }
 }
 
