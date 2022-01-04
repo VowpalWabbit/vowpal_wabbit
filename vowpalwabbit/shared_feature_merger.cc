@@ -71,7 +71,11 @@ void predict_or_learn(sfm_data& data, VW::LEARNER::multi_learner& base, multi_ex
 
   if (data._metrics)
   {
-    if (is_learn && has_example_header) { data._metrics->count_learn_example_with_shared++; }
+    VW_WARNING_STATE_PUSH
+    VW_WARNING_DISABLE_CPP_17_LANG_EXT
+    VW_WARNING_DISABLE_COND_CONST_EXPR
+    if VW_STD17_CONSTEXPR (is_learn && has_example_header) { data._metrics->count_learn_example_with_shared++; }
+    VW_WARNING_STATE_POP
   }
 }
 

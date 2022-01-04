@@ -83,13 +83,16 @@ float linear_inference(VW::workspace& all, example& ec)
   return dotprod;
 }
 
+VW_WARNING_STATE_PUSH
+VW_WARNING_DISABLE_CPP_17_LANG_EXT
+VW_WARNING_DISABLE_COND_CONST_EXPR
 template <uint8_t policy>
 float inference(VW::workspace& all, example& ec)
 {
-  if (policy == constant_policy)
+  if VW_STD17_CONSTEXPR (policy == constant_policy)
     return constant_inference(all);
 
-  else if (policy == linear_policy)
+  else if VW_STD17_CONSTEXPR (policy == linear_policy)
     return linear_inference(all, ec);
 
   else
@@ -100,7 +103,7 @@ template <bool feature_mask_off>
 void constant_update(cbzo& data, example& ec)
 {
   float fw = get_weight(*data.all, constant, 0);
-  if (feature_mask_off || fw != 0.0f)
+  if VW_STD17_CONSTEXPR (feature_mask_off || fw != 0.0f)
   {
     float action_centroid = inference<constant_policy>(*data.all, ec);
     float grad = ec.l.cb_cont.costs[0].cost / (ec.l.cb_cont.costs[0].action - action_centroid);
@@ -115,7 +118,7 @@ void linear_per_feature_update(linear_update_data& upd_data, float x, uint64_t f
 {
   float fw = get_weight(*upd_data.all, fi, 0);
 
-  if (feature_mask_off || fw != 0.0f)
+  if VW_STD17_CONSTEXPR (feature_mask_off || fw != 0.0f)
   {
     float update = upd_data.mult * (upd_data.part_grad * x + (l1_grad(*upd_data.all, fi) + l2_grad(*upd_data.all, fi)));
     set_weight(*upd_data.all, fi, 0, fw + update);
@@ -142,15 +145,16 @@ void linear_update(cbzo& data, example& ec)
 template <uint8_t policy, bool feature_mask_off>
 void update_weights(cbzo& data, example& ec)
 {
-  if (policy == constant_policy)
+  if VW_STD17_CONSTEXPR (policy == constant_policy)
     constant_update<feature_mask_off>(data, ec);
 
-  else if (policy == linear_policy)
+  else if VW_STD17_CONSTEXPR (policy == linear_policy)
     linear_update<feature_mask_off>(data, ec);
 
   else
     THROW("Unknown policy encountered: " << policy)
 }
+VW_WARNING_STATE_POP
 
 void set_minmax(shared_data* sd, float label, bool min_fixed, bool max_fixed)
 {

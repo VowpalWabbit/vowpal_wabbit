@@ -536,7 +536,6 @@ float lda::digamma(float x)
       // Should not happen.
       logger::errlog_critical("lda::digamma: Trampled or invalid math mode, aborting");
       abort();
-      return 0.0f;
   }
 }
 
@@ -553,7 +552,6 @@ float lda::lgamma(float x)
     default:
       logger::errlog_critical("lda::lgamma: Trampled or invalid math mode, aborting");
       abort();
-      return 0.0f;
   }
 }
 
@@ -570,7 +568,6 @@ float lda::powf(float x, float p)
     default:
       logger::errlog_critical("lda::powf: Trampled or invalid math mode, aborting");
       abort();
-      return 0.0f;
   }
 }
 

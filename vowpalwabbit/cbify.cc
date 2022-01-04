@@ -109,6 +109,8 @@ void finish_cbify_reg(cbify_reg& data, std::ostream* trace_stream)
   if (trace_stream != nullptr) (*trace_stream) << "Max Cost=" << data.max_cost << std::endl;
 }
 
+VW_WARNING_STATE_PUSH
+VW_WARNING_DISABLE_HIDE_CLASS_MEMBER
 void cbify_adf_data::init_adf_data(const std::size_t num_actions, std::size_t increment,
     std::vector<std::vector<namespace_index>>& interactions, std::vector<std::vector<extent_term>>& extent_interactions)
 {
@@ -137,6 +139,7 @@ void cbify_adf_data::init_adf_data(const std::size_t num_actions, std::size_t in
 
   this->custom_index_mask = (static_cast<uint64_t>(1) << power_2) - 1;
 }
+VW_WARNING_STATE_POP
 
 cbify_adf_data::~cbify_adf_data()
 {

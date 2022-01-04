@@ -81,6 +81,7 @@ void predict_or_learn(mwt& c, single_learner& base, example& ec)
 
   VW_WARNING_STATE_PUSH
   VW_WARNING_DISABLE_CPP_17_LANG_EXT
+  VW_WARNING_DISABLE_COND_CONST_EXPR
   if VW_STD17_CONSTEXPR (exclude || learn)
   {
     c.indices.clear();
@@ -118,6 +119,7 @@ void predict_or_learn(mwt& c, single_learner& base, example& ec)
 
   VW_WARNING_STATE_PUSH
   VW_WARNING_DISABLE_CPP_17_LANG_EXT
+  VW_WARNING_DISABLE_COND_CONST_EXPR
   if VW_STD17_CONSTEXPR (exclude || learn)
     while (!c.indices.empty())
     {

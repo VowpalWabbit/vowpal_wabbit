@@ -216,17 +216,17 @@ void print_update(VW::workspace& all, bool is_test, const example& ec, const mul
 }
 
 void output_example(
-    VW::workspace& all, const example& ec, const COST_SENSITIVE::label& cs_label, uint32_t multiclass_prediction)
+    VW::workspace& all, const example& ec, const COST_SENSITIVE::label& label, uint32_t multiclass_prediction)
 {
   float loss = 0.;
-  if (!test_label(cs_label))
+  if (!test_label(label))
   {
     // need to compute exact loss
     size_t pred = static_cast<size_t>(multiclass_prediction);
 
     float chosen_loss = FLT_MAX;
     float min = FLT_MAX;
-    for (const auto& cl : cs_label.costs)
+    for (const auto& cl : label.costs)
     {
       if (cl.class_index == pred) chosen_loss = cl.x;
       if (cl.x < min) min = cl.x;
@@ -239,7 +239,7 @@ void output_example(
     // loss = chosen_loss;
   }
 
-  all.sd->update(ec.test_only, !test_label(cs_label), loss, ec.weight, ec.get_num_features());
+  all.sd->update(ec.test_only, !test_label(label), loss, ec.weight, ec.get_num_features());
 
   for (auto& sink : all.final_prediction_sink)
   {
@@ -254,16 +254,16 @@ void output_example(
   if (all.raw_prediction != nullptr)
   {
     std::stringstream outputStringStream;
-    for (unsigned int i = 0; i < cs_label.costs.size(); i++)
+    for (unsigned int i = 0; i < label.costs.size(); i++)
     {
-      wclass cl = cs_label.costs[i];
+      wclass cl = label.costs[i];
       if (i > 0) outputStringStream << ' ';
       outputStringStream << cl.class_index << ':' << cl.partial_prediction;
     }
     all.print_text_by_ref(all.raw_prediction.get(), outputStringStream.str(), ec.tag);
   }
 
-  print_update(all, test_label(cs_label), ec, nullptr, false, multiclass_prediction);
+  print_update(all, test_label(label), ec, nullptr, false, multiclass_prediction);
 }
 
 void output_example(VW::workspace& all, const example& ec) { output_example(all, ec, ec.l.cs, ec.pred.multiclass); }
