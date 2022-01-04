@@ -76,7 +76,7 @@ class FlatbufferTest:
                 for line in contents:
                     if (
                         "--dsjson" in self.stashed_vw_command
-                        and "WARNING: Old string feature value behavior is deprecated in JSON/DSJSON"
+                        and "[warning] Old string feature value behavior is deprecated in JSON/DSJSON"
                         in line
                     ):
                         continue
