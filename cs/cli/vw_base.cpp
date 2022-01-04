@@ -237,9 +237,10 @@ void VowpalWabbitBase::SaveModel(String^ filename)
     throw gcnew ArgumentException("Filename must not be null or empty");
 
   String^ directoryName = System::IO::Path::GetDirectoryName(filename);
-
   if (!String::IsNullOrEmpty(directoryName))
-  { System::IO::Directory::CreateDirectory(directoryName);
+  {
+    auto dir = msclr::interop::marshal_as<std::string>(directoryName);
+    CreateDirectoryA(dir.c_str(), nullptr);
   }
 
   auto name = msclr::interop::marshal_as<std::string>(filename);

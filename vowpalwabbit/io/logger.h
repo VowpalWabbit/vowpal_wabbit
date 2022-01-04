@@ -15,8 +15,6 @@
 #  include <spdlog/sinks/base_sink.h>
 #  include <spdlog/sinks/stdout_sinks.h>
 #  include <spdlog/sinks/null_sink.h>
-// needed for custom types (like string_view)
-#  include <fmt/ostream.h>
 #  define _M_CEE 001
 #  pragma managed(pop)
 #else
@@ -24,9 +22,11 @@
 #  include <spdlog/sinks/base_sink.h>
 #  include <spdlog/sinks/stdout_sinks.h>
 #  include <spdlog/sinks/null_sink.h>
-// needed for custom types (like string_view)
-#  include <fmt/ostream.h>
 #endif
+
+// needed for custom types (like string_view)
+#include <fmt/ostream.h>
+
 
 #include "../vw_exception.h"
 
