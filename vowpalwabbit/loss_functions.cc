@@ -125,7 +125,7 @@ class hingeloss : public loss_function
   VW::io::logger logger;
 
 public:
-  explicit hingeloss(VW::io::logger logger) : logger(logger) {}
+  explicit hingeloss(VW::io::logger logger) : logger(std::move(logger)) {}
 
   std::string getType() override { return "hinge"; }
 
@@ -171,7 +171,7 @@ class logloss : public loss_function
   VW::io::logger logger;
 
 public:
-  explicit logloss(VW::io::logger logger) : logger(logger) {}
+  explicit logloss(VW::io::logger logger) : logger(std::move(logger)) {}
 
   std::string getType() override { return "logistic"; }
 
@@ -320,7 +320,7 @@ class poisson_loss : public loss_function
   VW::io::logger logger;
 
 public:
-  explicit poisson_loss(VW::io::logger logger) : logger(logger) {}
+  explicit poisson_loss(VW::io::logger logger) : logger(std::move(logger)) {}
 
   std::string getType() override { return "poisson"; }
 
