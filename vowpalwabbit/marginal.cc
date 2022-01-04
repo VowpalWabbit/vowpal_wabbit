@@ -114,7 +114,8 @@ void make_marginal(data& sm, example& ec)
         const uint64_t first_index = j.index() & mask;
         if (++j == sm.temp[n].end())
         {
-          sm.m_logger.out_warn("marginal feature namespace has {} features. Should be a multiple of 2", sm.temp[n].size());
+          sm.m_logger.out_warn(
+              "marginal feature namespace has {} features. Should be a multiple of 2", sm.temp[n].size());
           break;
         }
         const float second_value = j.value();
