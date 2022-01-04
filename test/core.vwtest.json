@@ -2692,7 +2692,7 @@
   {
     "id": 226,
     "desc": "cats train",
-    "vw_command": "--cats 4 --min_value=185 --max_value=23959 --bandwidth 3000 -d train-sets/cats.acpx --passes 1 -b 18 --coin --loss_option 1 -f cats.model --predict_only_model --log_output_stream compat",
+    "vw_command": "--cats 4 --min_value=185 --max_value=23959 --bandwidth 3000 -d train-sets/cats.acpx --passes 1 -b 18 --coin -f cats.model --predict_only_model --log_output_stream compat",
     "diff_files": {
       "stderr": "train-sets/ref/cats-train.stderr"
     },
@@ -4566,7 +4566,7 @@
   {
     "id": 381,
     "desc": "SVM linear kernel save_load save",
-    "vw_command": "--ksvm --l2 1 --reprocess 5 -b 18 -d train-sets/rcv1_smaller.dat -f models/ksvm.model",
+    "vw_command": "--ksvm --l2 1 --reprocess 5 -b 18 -d train-sets/rcv1_smaller.dat -f models/ksvm.model --log_output_stream compat",
     "diff_files": {
       "stderr": "train-sets/ref/ksvm_train.linear.save.stderr"
     },
@@ -4577,7 +4577,7 @@
   {
     "id": 382,
     "desc": "SVM linear kernel save_load load",
-    "vw_command": "--ksvm --l2 1 --reprocess 5 -b 18 -d train-sets/rcv1_smaller.dat -i models/ksvm.model",
+    "vw_command": "--ksvm --l2 1 --reprocess 5 -b 18 -d train-sets/rcv1_smaller.dat -i models/ksvm.model --log_output_stream compat",
     "diff_files": {
       "stderr": "train-sets/ref/ksvm_train.linear.load.stderr"
     },
@@ -4592,7 +4592,7 @@
   {
     "id": 383,
     "desc": "Test that epsilon without enabling a reduction which uses it produces a warning.",
-    "vw_command": "--no_stdin --epsilon 5",
+    "vw_command": "--no_stdin --epsilon 5 --log_output_stream stderr --driver_output_off",
     "diff_files": {
       "stderr": "train-sets/ref/epsilon_warning.stderr"
     },

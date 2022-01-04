@@ -88,7 +88,7 @@ void VW::write_example_to_cache(io_buf& output, example* ae, label_parser& lbl_p
   output.bin_write_fixed(temp_buffer._backing_buffer->data(), temp_buffer._backing_buffer->size());
 }
 
-size_t read_cached_index(io_buf& input, unsigned char& index, char*& c, VW::io::logger& logger)
+size_t read_cached_index(io_buf& input, unsigned char& index, char*& c)
 {
   size_t temp;
   if ((temp = input.buf_read(c, sizeof(index) + sizeof(size_t))) < sizeof(index) + sizeof(size_t))
@@ -98,7 +98,7 @@ size_t read_cached_index(io_buf& input, unsigned char& index, char*& c, VW::io::
   return sizeof(index);
 }
 
-size_t read_cached_features(io_buf& input, features& ours, bool& sorted, char*& c, VW::io::logger& logger)
+size_t read_cached_features(io_buf& input, features& ours, bool& sorted, char*& c)
 {
   size_t total = 0;
   size_t storage = *reinterpret_cast<size_t*>(c);
@@ -155,9 +155,9 @@ int VW::read_example_from_cache(VW::workspace* all, io_buf& input, v_array<examp
   for (; num_indices > 0; num_indices--)
   {
     unsigned char index = 0;
-    total += read_cached_index(input, index, c, all->logger);
+    total += read_cached_index(input, index, c);
     examples[0]->indices.push_back(static_cast<size_t>(index));
-    total += read_cached_features(input, examples[0]->feature_space[index], examples[0]->sorted, c, all->logger);
+    total += read_cached_features(input, examples[0]->feature_space[index], examples[0]->sorted, c);
   }
 
   return static_cast<int>(total);

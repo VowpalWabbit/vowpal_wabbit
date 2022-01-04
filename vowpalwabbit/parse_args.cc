@@ -1695,7 +1695,7 @@ VW::workspace* initialize_with_builder(std::unique_ptr<options_i, options_delete
     // we must delay so parse_mask is fully defined.
     for (const auto& name_space : dictionary_namespaces) parse_dictionary_argument(all, name_space);
 
-    all.options->check_unregistered();
+    all.options->check_unregistered(all.logger);
 
     std::vector<std::string> enabled_reductions;
     if (all.l != nullptr) all.l->get_enabled_reductions(enabled_reductions);
