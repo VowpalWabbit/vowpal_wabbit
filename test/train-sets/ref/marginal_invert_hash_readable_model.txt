@@ -1,0 +1,36 @@
+Version 8.11.0
+Id 
+Min label:0
+Max label:1
+bits:18
+lda:0
+0 ngram:
+0 skip:
+options: --marginal f
+Checksum: 1022815765
+marginals size = 6
+f^constant2*id6:1.24875:2.997
+f^constant*id3:0.7495:1.999
+f^constant*id2:1.4995:1.999
+f^constant2*id5:1.9985:2.997
+f^constant*id4:0.9995:1.999
+f^constant*id1:0.9995:1.999
+:1
+initial_t 0
+norm normalizer 7.56231
+t 4
+sum_loss 0.886291
+sum_loss_since_last_dump 0
+dump_interval 8
+min_label 0
+max_label 1
+weighted_labeled_examples 4
+weighted_labels 2.25
+weighted_unlabeled_examples 0
+example_number 4
+total_features 16
+total_weight 4
+sd::oec.weighted_labeled_examples 4
+current_pass 1
+f^constant:17187:0.527579 0.886291 0.5
+f^constant2:261506:0.516337 0.883632 0.5

@@ -32,7 +32,7 @@ struct data
 {
   data(float initial_numerator, float initial_denominator, float decay, bool update_before_learn,
       bool unweighted_marginals, bool compete, parameters* m_weights, loss_function* m_loss_function,
-      shared_data* m_shared_data)
+      shared_data* m_shared_data, bool m_hash_inv)
       : initial_numerator(initial_numerator)
       , initial_denominator(initial_denominator)
       , decay(decay)
@@ -42,6 +42,7 @@ struct data
       , m_weights(m_weights)
       , m_loss_function(m_loss_function)
       , m_shared_data(m_shared_data)
+      , m_hash_inv(m_hash_inv)
   {
     id_features.fill(false);
   }
@@ -49,7 +50,7 @@ struct data
   data(float initial_numerator, float initial_denominator, float decay, bool update_before_learn,
       bool unweighted_marginals, bool compete, VW::workspace& all)
       : data(initial_numerator, initial_denominator, decay, update_before_learn, unweighted_marginals, compete,
-            &all.weights, all.loss.get(), all.sd)
+            &all.weights, all.loss.get(), all.sd, all.hash_inv)
   {
   }
 
@@ -76,6 +77,8 @@ struct data
   parameters* m_weights;
   loss_function* m_loss_function;
   shared_data* m_shared_data;
+  bool m_hash_inv;
+  std::unordered_map<uint64_t, std::string> inverse_hashes;
 };
 
 float get_adanormalhedge_weights(float r, float c)
@@ -103,14 +106,14 @@ void make_marginal(data& sm, example& ec)
       std::swap(sm.temp[n], *i);
       features& f = *i;
       f.clear();
+      size_t inv_hash_idx = 0;
       for (auto j = sm.temp[n].begin(); j != sm.temp[n].end(); ++j)
       {
         const float first_value = j.value();
         const uint64_t first_index = j.index() & mask;
         if (++j == sm.temp[n].end())
         {
-          logger::log_warn(
-              "warning: id feature namespace has {} features. Should be a multiple of 2", sm.temp[n].size());
+          logger::log_warn("marginal feature namespace has {} features. Should be a multiple of 2", sm.temp[n].size());
           break;
         }
         const float second_value = j.value();
@@ -128,6 +131,14 @@ void make_marginal(data& sm, example& ec)
           {
             expert e = {0, 0, 1.};
             sm.expert_state.insert(std::make_pair(key, std::make_pair(e, e)));
+          }
+          if (sm.m_hash_inv)
+          {
+            std::ostringstream ss;
+            std::vector<audit_strings>& sn = sm.temp[n].space_names;
+            ss << sn[inv_hash_idx].first << "^" << sn[inv_hash_idx].second << "*" << sn[inv_hash_idx + 1].second;
+            sm.inverse_hashes.insert(std::make_pair(key,ss.str()));
+            inv_hash_idx += 2;
           }
         }
         const auto marginal_pred = static_cast<float>(sm.marginals[key].first / sm.marginals[key].second);
@@ -291,7 +302,15 @@ void save_load(data& sm, io_buf& io, bool read, bool text)
     if (!read)
     {
       index = iter->first >> stride_shift;
-      msg << index << ":";
+      if (sm.m_hash_inv)
+      {
+        msg << sm.inverse_hashes[iter->first];
+      }
+      else
+      {
+        msg << index;
+      }
+      msg << ":";
     }
     bin_text_read_write_fixed(io, reinterpret_cast<char*>(&index), sizeof(index), read, msg, text);
     double numerator;
