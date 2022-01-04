@@ -3,6 +3,7 @@
 // license as described in the file LICENSE.
 
 #include <unordered_map>
+#include <map>
 #include "reductions.h"
 #include "correctedMath.h"
 #include "interactions.h"
@@ -62,7 +63,7 @@ struct data
 
   std::array<bool, 256> id_features;
   std::array<features, 256> temp;  // temporary storage when reducing.
-  std::unordered_map<uint64_t, marginal> marginals;
+  std::map<uint64_t, marginal> marginals;
 
   // bookkeeping variables for experts
   bool compete;
