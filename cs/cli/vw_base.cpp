@@ -240,6 +240,8 @@ void VowpalWabbitBase::SaveModel(String^ filename)
   if (!String::IsNullOrEmpty(directoryName))
   {
     auto dir = msclr::interop::marshal_as<std::string>(directoryName);
+    // CreateDirectoryA requires a LPCSTR (long, pointer to c-string) so .c_str() should work.
+    // The second argument, lpSecurityAttributes, is optional.
     CreateDirectoryA(dir.c_str(), nullptr);
   }
 
