@@ -27,7 +27,6 @@
 // needed for custom types (like string_view)
 #include <fmt/ostream.h>
 
-
 #include "../vw_exception.h"
 
 namespace VW
