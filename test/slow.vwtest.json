@@ -4,7 +4,9 @@
     "desc": "save_resume_test",
     "bash_command": "python3 save_resume_test.py --filename train-sets/rcv1_small.dat --verbose_on_fail --vw {VW}",
     "input_files": [
-      "train-sets/rcv1_small.dat"
+      "train-sets/rcv1_small.dat",
+      "train-sets/multiclass",
+      "save_resume_test.py"
     ]
   },
   {
@@ -12,7 +14,8 @@
     "desc": "test_race_condition",
     "bash_command": "python3 repeat.py 1024 {VW} train-sets/rcv1_small.dat --holdout_after 100",
     "input_files": [
-      "train-sets/rcv1_small.dat"
+      "train-sets/rcv1_small.dat",
+      "repeat.py"
     ]
   }
 ]

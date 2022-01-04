@@ -744,7 +744,8 @@
     "diff_files": {
       "stdout": "test-sets/ref/vw-daemon.stdout"
     },
-    "bash_command": "./daemon-test.sh --port 54249"
+    "bash_command": "./daemon-test.sh --port 54249 --vw '{VW}'",
+    "input_files": ["daemon-test.sh"]
   },
   {
     "id": 62,
@@ -1040,7 +1041,7 @@
   {
     "id": 86,
     "desc": "check --csoaa_rank on csoaa_ldf",
-    "vw_command": "--csoaa_ldf multiline --csoaa_rank -d train-sets/cs_test_multilabel.ldf -p multilabel_ldf.predict --noconstant",
+    "vw_command": "--csoaa_ldf multiline --csoaa_rank -d train-sets/cs_test_multilabel.ldf -p multilabel_ldf.predict --noconstant -P 1",
     "diff_files": {
       "stderr": "train-sets/ref/multilabel_ldf.stderr",
       "multilabel_ldf.predict": "pred-sets/ref/multilabel_ldf.predict"
@@ -1854,7 +1855,8 @@
     "diff_files": {
       "stdout": "test-sets/ref/vw-daemon.stdout"
     },
-    "bash_command": "./daemon-test.sh --foreground --port 54250"
+    "bash_command": "./daemon-test.sh --foreground --port 54250 --vw '{VW}'",
+    "input_files": ["daemon-test.sh"]
   },
   {
     "id": 153,
@@ -1898,7 +1900,8 @@
     "id": 156,
     "desc": "--cubic regression verification",
     "diff_files": {},
-    "bash_command": "./cubic-test.sh {VW}"
+    "bash_command": "./cubic-test.sh {VW}",
+    "input_files": ["cubic-test.sh"]
   },
   {
     "id": 157,
@@ -2099,7 +2102,7 @@
   {
     "id": 174,
     "desc": "cbify adf, regcbopt",
-    "vw_command": "--cbify 10 --cb_explore_adf --cb_type mtr --regcbopt --mellowness 0.01 -d train-sets/multiclass",
+    "vw_command": "--cbify 10 --cb_explore_adf --cb_type mtr --regcb --regcbopt --mellowness 0.01 -d train-sets/multiclass",
     "diff_files": {
       "stderr": "train-sets/ref/cbify_regcbopt.stderr"
     },
@@ -2110,7 +2113,7 @@
   {
     "id": 175,
     "desc": "cbify ldf, regcbopt",
-    "vw_command": "-d train-sets/cs_test.ldf --cbify_ldf --cb_type mtr --regcbopt --mellowness 0.01",
+    "vw_command": "-d train-sets/cs_test.ldf --cbify_ldf --cb_type mtr --regcb --regcbopt --mellowness 0.01",
     "diff_files": {
       "stderr": "train-sets/ref/cbify_ldf_regcbopt.stderr"
     },
@@ -2122,7 +2125,8 @@
     "id": 176,
     "desc": "same model on cluster mode",
     "diff_files": {},
-    "bash_command": "./same-model-test.sh"
+    "bash_command": "python3 same-model-test.py --vw {VW} --spanning_tree {SPANNING_TREE} --data_files train-sets/same_model_test.0.dat train-sets/same_model_test.1.dat",
+    "input_files": ["same-model-test.py","train-sets/same_model_test.0.dat", "train-sets/same_model_test.1.dat"]
   },
   {
     "id": 177,
@@ -2310,7 +2314,8 @@
     "diff_files": {
       "stderr": "train-sets/ref/malformed-onethread-strict_parse.stderr"
     },
-    "bash_command": "./negative-test.sh {VW} -d train-sets/malformed.dat --onethread --strict_parse"
+    "bash_command": "./negative-test.sh {VW} -d train-sets/malformed.dat --onethread --strict_parse",
+    "input_files": ["./negative-test.sh","train-sets/malformed.dat"]
   },
   {
     "id": 194,
@@ -2318,7 +2323,8 @@
     "diff_files": {
       "stderr": "train-sets/ref/malformed-strict_parse.stderr"
     },
-    "bash_command": "./negative-test.sh {VW} -d train-sets/malformed.dat --strict_parse"
+    "bash_command": "./negative-test.sh {VW} -d train-sets/malformed.dat --strict_parse",
+    "input_files": ["./negative-test.sh","train-sets/malformed.dat"]
   },
   {
     "id": 195,
@@ -2418,7 +2424,8 @@
       "stdout": "test-sets/ref/cluster.stdout",
       "cluster.predict": "pred-sets/ref/cluster.predict"
     },
-    "bash_command": "python3 ./cluster_test.py --vw {VW} --spanning_tree {SPANNING_TREE}  --test_file test-sets/0001.dat --data_files train-sets/0001.dat train-sets/0002.dat  --prediction_file cluster.predict"
+    "bash_command": "python3 ./cluster_test.py --vw {VW} --spanning_tree {SPANNING_TREE} --test_file test-sets/0001.dat --data_files train-sets/0001.dat train-sets/0002.dat  --prediction_file cluster.predict",
+    "input_files": ["cluster_test.py","test-sets/0001.dat", "train-sets/0001.dat", "train-sets/0002.dat"]
   },
   {
     "id": 204,
@@ -2460,7 +2467,10 @@
       "stdout": "test-sets/ref/chain_hash_json_test.stdout",
       "chain_hash_json_result.cmp": "test-sets/ref/chain_hash_json_result.cmp"
     },
-    "bash_command": "{VW} --audit --json --chain_hash -d train-sets/chain_hash_json_test.json --invert_hash chain_hash_json_result.cmp --chain_hash --predict_only_model &&  tail -n +2 chain_hash_json_result.cmp > chain_hash_json_result.cmp.new &&  rm chain_hash_json_result.cmp &&  mv chain_hash_json_result.cmp.new chain_hash_json_result.cmp"
+    "bash_command": "{VW} --audit --json --chain_hash -d train-sets/chain_hash_json_test.json --invert_hash chain_hash_json_result.cmp --chain_hash --predict_only_model &&  tail -n +2 chain_hash_json_result.cmp > chain_hash_json_result.cmp.new &&  rm chain_hash_json_result.cmp &&  mv chain_hash_json_result.cmp.new chain_hash_json_result.cmp",
+    "input_files": [
+      "train-sets/chain_hash_json_test.json"
+    ]
   },
   {
     "id": 208,
@@ -2470,7 +2480,10 @@
       "stdout": "test-sets/ref/chain_hash_text_result.stdout",
       "chain_hash_text_result.cmp": "test-sets/ref/chain_hash_text_result.cmp"
     },
-    "bash_command": "{VW} --audit -d train-sets/chain_hash_text_test.dat --invert_hash chain_hash_text_result.cmp --chain_hash --predict_only_model &&  tail -n +2 chain_hash_text_result.cmp > chain_hash_text_result.cmp.new &&  rm chain_hash_text_result.cmp &&  mv chain_hash_text_result.cmp.new chain_hash_text_result.cmp"
+    "bash_command": "{VW} --audit -d train-sets/chain_hash_text_test.dat --invert_hash chain_hash_text_result.cmp --chain_hash --predict_only_model &&  tail -n +2 chain_hash_text_result.cmp > chain_hash_text_result.cmp.new &&  rm chain_hash_text_result.cmp &&  mv chain_hash_text_result.cmp.new chain_hash_text_result.cmp",
+    "input_files": [
+      "train-sets/chain_hash_text_test.dat"
+    ]
   },
   {
     "id": 209,
@@ -2492,7 +2505,11 @@
       "inv_hash_load_model.invert.txt": "train-sets/ref/inv_hash_load_model.invert.txt",
       "inv_hash_load_model.readable.txt": "train-sets/ref/inv_hash_load_model.readable.txt"
     },
-    "bash_command": "{VW} -d train-sets/inv_hash_load_model_data1.txt -f inv_hash_load_model.vw --noconstant --predict_only_model && {VW} -d train-sets/inv_hash_load_model_data2.txt -i inv_hash_load_model.vw --noconstant --readable_model inv_hash_load_model.readable.txt --invert_hash inv_hash_load_model.invert.txt --predict_only_model"
+    "bash_command": "{VW} -d train-sets/inv_hash_load_model_data1.txt -f inv_hash_load_model.vw --noconstant --predict_only_model && {VW} -d train-sets/inv_hash_load_model_data2.txt -i inv_hash_load_model.vw --noconstant --readable_model inv_hash_load_model.readable.txt --invert_hash inv_hash_load_model.invert.txt --predict_only_model",
+    "input_files": [
+      "train-sets/inv_hash_load_model_data1.txt",
+      "train-sets/inv_hash_load_model_data2.txt"
+    ]
   },
   {
     "id": 211,
@@ -2614,7 +2631,8 @@
     "diff_files": {
       "stdout": "test-sets/ref/vw-daemon.stdout"
     },
-    "bash_command": "./daemon-test.sh --json --port 54251"
+    "bash_command": "./daemon-test.sh --json --port 54251 --vw '{VW}'",
+    "input_files": ["daemon-test.sh"]
   },
   {
     "id": 221,
@@ -2674,7 +2692,7 @@
   {
     "id": 226,
     "desc": "cats train",
-    "vw_command": "--cats 4 --min_value=185 --max_value=23959 --bandwidth 3000 -d train-sets/cats.acpx --passes 1 -b 18 --coin --loss_option 1 -f cats.model --predict_only_model",
+    "vw_command": "--cats 4 --min_value=185 --max_value=23959 --bandwidth 3000 -d train-sets/cats.acpx --passes 1 -b 18 --coin -f cats.model --predict_only_model",
     "diff_files": {
       "stderr": "train-sets/ref/cats-train.stderr"
     },
@@ -2701,7 +2719,7 @@
   {
     "id": 228,
     "desc": "cats-pdf train",
-    "vw_command": "--cats_pdf 4 --min_value=185 --max_value=23959 --bandwidth 2000 -d train-sets/cats.acpx --passes 1 -b 18 --coin --loss_option 1 -f cats-pdf.model --predict_only_model",
+    "vw_command": "--cats_pdf 4 --min_value=185 --max_value=23959 --bandwidth 2000 -d train-sets/cats.acpx --passes 1 -b 18 --coin -f cats-pdf.model --predict_only_model",
     "diff_files": {
       "stderr": "train-sets/ref/cats-pdf-train.stderr"
     },
@@ -3898,7 +3916,10 @@
       "stderr": "train-sets/ref/cb_simple.stderr",
       "cb_simple_invert_hash.txt": "train-sets/ref/cb_simple_invert_hash.txt"
     },
-    "bash_command": "{VW} -d train-sets/cb_simple.json --dsjson --cb_explore_adf --invert_hash cb_simple_invert_hash.txt --predict_only_model &&  tail -n +2 cb_simple_invert_hash.txt > cb_simple_invert_hash.txt.new &&  rm cb_simple_invert_hash.txt &&  mv cb_simple_invert_hash.txt.new cb_simple_invert_hash.txt"
+    "bash_command": "{VW} -d train-sets/cb_simple.json --dsjson --cb_explore_adf --invert_hash cb_simple_invert_hash.txt --predict_only_model &&  tail -n +2 cb_simple_invert_hash.txt > cb_simple_invert_hash.txt.new &&  rm cb_simple_invert_hash.txt &&  mv cb_simple_invert_hash.txt.new cb_simple_invert_hash.txt",
+    "input_files": [
+      "train-sets/cb_simple.json"
+    ]
   },
   {
     "id": 328,
@@ -3907,7 +3928,10 @@
       "stderr": "train-sets/ref/cb_simple_pdrop.stderr",
       "cb_simple_pdrop_invert_hash.txt": "train-sets/ref/cb_simple_pdrop_invert_hash.txt"
     },
-    "bash_command": "{VW} -d train-sets/cb_simple_pdrop.json --dsjson --cb_explore_adf --invert_hash cb_simple_pdrop_invert_hash.txt --predict_only_model &&  tail -n +2 cb_simple_pdrop_invert_hash.txt > cb_simple_pdrop_invert_hash.txt.new &&  rm cb_simple_pdrop_invert_hash.txt &&  mv cb_simple_pdrop_invert_hash.txt.new cb_simple_pdrop_invert_hash.txt"
+    "bash_command": "{VW} -d train-sets/cb_simple_pdrop.json --dsjson --cb_explore_adf --invert_hash cb_simple_pdrop_invert_hash.txt --predict_only_model &&  tail -n +2 cb_simple_pdrop_invert_hash.txt > cb_simple_pdrop_invert_hash.txt.new &&  rm cb_simple_pdrop_invert_hash.txt &&  mv cb_simple_pdrop_invert_hash.txt.new cb_simple_pdrop_invert_hash.txt",
+    "input_files": [
+      "train-sets/cb_simple_pdrop.json"
+    ]
   },
   {
     "id": 329,
@@ -3927,7 +3951,10 @@
       "stderr": "train-sets/ref/ccb_simple.stderr",
       "ccb_simple_invert_hash.txt": "train-sets/ref/ccb_simple_invert_hash.txt"
     },
-    "bash_command": "{VW} -d train-sets/ccb_simple.json --dsjson --ccb_explore_adf --invert_hash ccb_simple_invert_hash.txt --predict_only_model &&  tail -n +2 ccb_simple_invert_hash.txt > ccb_simple_invert_hash.txt.new &&  rm ccb_simple_invert_hash.txt &&  mv ccb_simple_invert_hash.txt.new ccb_simple_invert_hash.txt"
+    "bash_command": "{VW} -d train-sets/ccb_simple.json --dsjson --ccb_explore_adf --invert_hash ccb_simple_invert_hash.txt --predict_only_model &&  tail -n +2 ccb_simple_invert_hash.txt > ccb_simple_invert_hash.txt.new &&  rm ccb_simple_invert_hash.txt &&  mv ccb_simple_invert_hash.txt.new ccb_simple_invert_hash.txt",
+    "input_files": [
+      "train-sets/ccb_simple.json"
+    ]
   },
   {
     "id": 331,
@@ -3936,7 +3963,10 @@
       "stderr": "train-sets/ref/ccb_simple_pdrop.stderr",
       "ccb_simple_pdrop_invert_hash.txt": "train-sets/ref/ccb_simple_pdrop_invert_hash.txt"
     },
-    "bash_command": "{VW} -d train-sets/ccb_simple_pdrop.json --dsjson --ccb_explore_adf --invert_hash ccb_simple_pdrop_invert_hash.txt --predict_only_model &&  tail -n +2 ccb_simple_pdrop_invert_hash.txt > ccb_simple_pdrop_invert_hash.txt.new &&  rm ccb_simple_pdrop_invert_hash.txt &&  mv ccb_simple_pdrop_invert_hash.txt.new ccb_simple_pdrop_invert_hash.txt"
+    "bash_command": "{VW} -d train-sets/ccb_simple_pdrop.json --dsjson --ccb_explore_adf --invert_hash ccb_simple_pdrop_invert_hash.txt --predict_only_model &&  tail -n +2 ccb_simple_pdrop_invert_hash.txt > ccb_simple_pdrop_invert_hash.txt.new &&  rm ccb_simple_pdrop_invert_hash.txt &&  mv ccb_simple_pdrop_invert_hash.txt.new ccb_simple_pdrop_invert_hash.txt",
+    "input_files": [
+      "train-sets/ccb_simple_pdrop.json"
+    ]
   },
   {
     "id": 332,
@@ -4146,7 +4176,11 @@
     "diff_files": {
       "stderr": "train-sets/ref/corrupt_weights_gd.stderr"
     },
-    "bash_command": "./negative-test.sh {VW} --no_stdin --cb_explore_adf --cover 3 --noconstant --quiet -i model-sets/corrupted_weights_gd.model"
+    "bash_command": "./negative-test.sh {VW} --no_stdin --cb_explore_adf --cover 3 --noconstant --quiet -i model-sets/corrupted_weights_gd.model",
+    "input_files": [
+      "negative-test.sh",
+      "model-sets/corrupted_weights_gd.model"
+    ]
   },
   {
     "id": 350,
@@ -4154,7 +4188,11 @@
     "diff_files": {
       "stderr": "train-sets/ref/corrupt_weights_gd_mf.stderr"
     },
-    "bash_command": "./negative-test.sh {VW} --no_stdin --cb_explore_adf --cover 3 --noconstant --quiet -i model-sets/corrupted_weights_gd_mf.model"
+    "bash_command": "./negative-test.sh {VW} --no_stdin --cb_explore_adf --cover 3 --noconstant --quiet -i model-sets/corrupted_weights_gd_mf.model",
+    "input_files": [
+      "negative-test.sh",
+      "model-sets/corrupted_weights_gd_mf.model"
+    ]
   },
   {
     "id": 351,
@@ -4223,7 +4261,11 @@
     "diff_files": {
       "stderr": "train-sets/ref/truncated_model_crash.stderr"
     },
-    "bash_command": "./negative-test.sh {VW} --no_stdin --cb_explore_adf --cover 3 --noconstant --quiet -i model-sets/truncated_model"
+    "bash_command": "./negative-test.sh {VW} --no_stdin --cb_explore_adf --cover 3 --noconstant --quiet -i model-sets/truncated_model",
+    "input_files": [
+      "negative-test.sh",
+      "model-sets/truncated_model"
+    ]
   },
   {
     "id": 357,
@@ -4231,7 +4273,11 @@
     "diff_files": {
       "stderr": "train-sets/ref/cb_bad_one_of_string.stderr"
     },
-    "bash_command": "./negative-test.sh {VW} --cb_adf -d train-sets/cb_test.ldf --cb_type bad_type"
+    "bash_command": "./negative-test.sh {VW} --cb_adf -d train-sets/cb_test.ldf --cb_type bad_type",
+    "input_files": [
+      "negative-test.sh",
+      "train-sets/cb_test.ldf"
+    ]
   },
   {
     "id": 358,
@@ -4239,16 +4285,20 @@
     "diff_files": {
       "stderr": "train-sets/ref/cb_bad_one_of_int.stderr"
     },
-    "bash_command": "./negative-test.sh {VW} -k -d train-sets/lda-2pass-hang.dat --lda 10 -c --passes 2 --holdout_off --math-mode 5"
+    "bash_command": "./negative-test.sh {VW} -k -d train-sets/lda-2pass-hang.dat --lda 10 -c --passes 2 --holdout_off --math-mode 5",
+    "input_files": [
+      "negative-test.sh",
+      "train-sets/lda-2pass-hang.dat"
+    ]
   },
   {
     "id": 359,
     "desc": "--probabilities --oaa one-indexed",
+    "vw_command": "-d train-sets/probabilities_one_ind.dat --probabilities --oaa=4 --loss_function=logistic -p oaa_one_ind_probabilities.predict",
     "diff_files": {
       "stderr": "train-sets/ref/oaa_one_ind_probabilities.stderr",
       "oaa_one_ind_probabilities.predict": "pred-sets/ref/oaa_one_ind_probabilities.predict"
     },
-    "vw_command": "-d train-sets/probabilities_one_ind.dat --probabilities --oaa=4 --loss_function=logistic -p oaa_one_ind_probabilities.predict",
     "input_files": [
       "train-sets/probabilities_one_ind.dat"
     ]
@@ -4479,14 +4529,13 @@
   },
   {
     "id": 378,
-    "desc": "Validate CB feature count with shared and --noconstant",
-    "vw_command": "-d train-sets/cb_test.ldf --cb_explore_adf --noconstant --audit",
+    "desc": "SVM linear kernel save_load save",
+    "vw_command": "--ksvm --l2 1 --reprocess 5 -b 18 -d train-sets/rcv1_smaller.dat -f models/ksvm.model",
     "diff_files": {
-      "stderr": "train-sets/ref/cb_shared_noconstant.stderr",
-      "stdout": "train-sets/ref/cb_shared_noconstant.stdout"
+      "stderr": "train-sets/ref/ksvm_train.linear.save.stderr"
     },
     "input_files": [
-      "train-sets/cb_test.ldf"
+      "train-sets/rcv1_smaller.dat"
     ]
   },
   {
@@ -4511,6 +4560,52 @@
     },
     "input_files": [
       "train-sets/csoaa_ldf_shared.dat"
+    ]
+  },
+  {
+    "id": 381,
+    "desc": "SVM linear kernel save_load save",
+    "vw_command": "--ksvm --l2 1 --reprocess 5 -b 18 -d train-sets/rcv1_smaller.dat -f models/ksvm.model",
+    "diff_files": {
+      "stderr": "train-sets/ref/ksvm_train.linear.save.stderr"
+    },
+    "input_files": [
+      "train-sets/rcv1_smaller.dat"
+    ]
+  },
+  {
+    "id": 382,
+    "desc": "SVM linear kernel save_load load",
+    "vw_command": "--ksvm --l2 1 --reprocess 5 -b 18 -d train-sets/rcv1_smaller.dat -i models/ksvm.model",
+    "diff_files": {
+      "stderr": "train-sets/ref/ksvm_train.linear.load.stderr"
+    },
+    "input_files": [
+      "train-sets/rcv1_smaller.dat",
+      "models/ksvm.model"
+    ],
+    "depends_on": [
+      381
+    ]
+  },
+  {
+    "id": 383,
+    "desc": "Test that epsilon without enabling a reduction which uses it produces a warning.",
+    "vw_command": "--no_stdin --epsilon 5",
+    "diff_files": {
+      "stderr": "train-sets/ref/epsilon_warning.stderr"
+    },
+    "input_files": [] 
+  },
+  {
+    "id": 384,
+    "desc": "Marginal --invert_hash features check",
+    "vw_command": "--marginal f -d train-sets/marginal_features --noconstant --initial_numerator 0.5 --initial_denominator 1.0 --decay 0.001 --invert_hash marginal_invert_hash_readable_model.txt",
+    "diff_files": {
+      "marginal_invert_hash_readable_model.txt": "train-sets/ref/marginal_invert_hash_readable_model.txt"
+    },
+    "input_files": [
+      "train-sets/marginal_features"
     ]
   }
 ]
