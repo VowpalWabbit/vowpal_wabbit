@@ -87,11 +87,11 @@ struct prediction
 // parameters for auto-conditioning
 struct auto_condition_settings
 {
-  size_t max_bias_ngram_length = 0;  // add a "bias" feature for each ngram up to and including this length. eg., if it's 1,
-                                 // then you get a single feature for each conditional
-  size_t max_quad_ngram_length = 0;  // add bias *times* input features for each ngram up to and including this length
-  float feature_value = 0.f;           // how much weight should the conditional features get?
-  bool use_passthrough_repr = false;     // should we ask lower-level reductions for their internal state?
+  size_t max_bias_ngram_length = 0;  // add a "bias" feature for each ngram up to and including this length. eg., if
+                                     // it's 1, then you get a single feature for each conditional
+  size_t max_quad_ngram_length = 0;   // add bias *times* input features for each ngram up to and including this length
+  float feature_value = 0.f;          // how much weight should the conditional features get?
+  bool use_passthrough_repr = false;  // should we ask lower-level reductions for their internal state?
 };
 
 struct scored_action
@@ -174,27 +174,27 @@ public:
 
   v_array<int32_t> neighbor_features;  // ugly encoding of neighbor feature requirements
   auto_condition_settings acset;       // settings for auto-conditioning
-  size_t history_length = 0;               // value of --search_history_length, used by some tasks, default 1
+  size_t history_length = 0;           // value of --search_history_length, used by some tasks, default 1
 
-  size_t A = 0;                 // total number of actions, [1..A]; 0 means ldf
-  size_t num_learners = 0;      // total number of learners;
-  bool cb_learner = false;          // do contextual bandit learning on action (was "! rollout_all_actions" which was confusing)
+  size_t A = 0;             // total number of actions, [1..A]; 0 means ldf
+  size_t num_learners = 0;  // total number of learners;
+  bool cb_learner = false;  // do contextual bandit learning on action (was "! rollout_all_actions" which was confusing)
   SearchState state;        // current state of learning
   size_t learn_learner_id = 0;  // we allow user to use different learners for different states
-  int mix_per_roll_policy = 0;  // for MIX_PER_ROLL, we need to choose a policy to use; this is where it's stored (-2 means
-                            // "not selected yet")
-  bool no_caching = false;          // turn off caching
+  int mix_per_roll_policy = 0;  // for MIX_PER_ROLL, we need to choose a policy to use; this is where it's stored (-2
+                                // means "not selected yet")
+  bool no_caching = false;       // turn off caching
   size_t rollout_num_steps = 0;  // how many calls of "loss" before we stop really predicting on rollouts and switch to
-                             // oracle (0 means "infinite")
-  bool linear_ordering = false;      // insist that examples are generated in linear order (rather that the default hoopla
-                             // permutation)
+                                 // oracle (0 means "infinite")
+  bool linear_ordering = false;  // insist that examples are generated in linear order (rather that the default hoopla
+                                 // permutation)
   bool (*label_is_test)(const polylabel&) = nullptr;  // tell me if the label data from an example is test
 
-  size_t t = 0;                                     // current search step
-  size_t T = 0;                                     // length of root trajectory
+  size_t t = 0;                                 // current search step
+  size_t T = 0;                                 // length of root trajectory
   std::vector<example> learn_ec_copy;           // copy of example(s) at learn_t
-  example* learn_ec_ref = nullptr;                        // reference to example at learn_t, when there's no example munging
-  size_t learn_ec_ref_cnt = 0;                      // how many are there (for LDF mode only; otherwise 1)
+  example* learn_ec_ref = nullptr;              // reference to example at learn_t, when there's no example munging
+  size_t learn_ec_ref_cnt = 0;                  // how many are there (for LDF mode only; otherwise 1)
   v_array<ptag> learn_condition_on;             // a copy of the tags used for conditioning at the training position
   std::vector<action_repr> learn_condition_on_act;  // the actions taken
   v_array<char> learn_condition_on_names;       // the names of the actions
@@ -202,23 +202,23 @@ public:
   std::vector<action_repr> ptag_to_action;      // tag to action mapping for conditioning
   std::vector<action> test_action_sequence;  // if test-mode was run, what was the corresponding action sequence; it's a
                                              // vector cuz we might expose it to the library
-  action learn_oracle_action = 0;                // store an oracle action for debugging purposes
+  action learn_oracle_action = 0;            // store an oracle action for debugging purposes
   features last_action_repr;
 
   polylabel allowed_actions_cache;
 
-  size_t loss_declared_cnt = 0;                 // how many times did run declare any loss (implicitly or explicitly)?
+  size_t loss_declared_cnt = 0;             // how many times did run declare any loss (implicitly or explicitly)?
   v_array<scored_action> train_trajectory;  // the training trajectory
-  size_t learn_t = 0;                           // what time step are we learning on?
-  size_t learn_a_idx = 0;                       // what action index are we trying?
-  bool done_with_all_actions = false;               // set to true when there are no more learn_a_idx to go
+  size_t learn_t = 0;                       // what time step are we learning on?
+  size_t learn_a_idx = 0;                   // what action index are we trying?
+  bool done_with_all_actions = false;       // set to true when there are no more learn_a_idx to go
 
   float test_loss = 0.f;   // loss incurred when run INIT_TEST
   float learn_loss = 0.f;  // loss incurred when run LEARN
   float train_loss = 0.f;  // loss incurred when run INIT_TRAIN
 
-  bool hit_new_pass = false;     // have we hit a new pass?
-  bool force_oracle = false;     // insist on using the oracle to make predictions
+  bool hit_new_pass = false;   // have we hit a new pass?
+  bool force_oracle = false;   // insist on using the oracle to make predictions
   float perturb_oracle = 0.f;  // with this probability, choose a random action instead of oracle action
 
   size_t num_calls_to_run = 0;
@@ -242,12 +242,12 @@ public:
   RollMethod rollout_method;
   RollMethod rollin_method;
   float subsample_timesteps = 0.f;  // train at every time step or just a (random) subset?
-  bool xv = false;  // train three separate policies -- two for providing examples to the other and a third training on the
-            // union (which will be used at test time -- TODO)
+  bool xv = false;  // train three separate policies -- two for providing examples to the other and a third training on
+                    // the union (which will be used at test time -- TODO)
 
   bool allow_current_policy = false;  // should the current policy be used for training? true for dagger
-  bool adaptive_beta = false;  // used to implement dagger-like algorithms. if true, beta = 1-(1-alpha)^n after n updates, and
-                       // policy is mixed with oracle as \pi' = (1-beta)\pi^* + beta \pi
+  bool adaptive_beta = false;         // used to implement dagger-like algorithms. if true, beta = 1-(1-alpha)^n after n
+                               // updates, and policy is mixed with oracle as \pi' = (1-beta)\pi^* + beta \pi
   size_t passes_per_policy = 0;  // if we're not in dagger-mode, then we need to know how many passes to train a policy
 
   uint32_t current_policy = 0;  // what policy are we training right now?
@@ -294,8 +294,8 @@ public:
   search_task* task = nullptr;          // your task!
   search_metatask* metatask = nullptr;  // your (optional) metatask
   BaseTask* metaoverride = nullptr;
-  size_t meta_t = 0;  // the metatask has it's own notion of time. meta_t+t, during a single run, is the way to think about
-                  // the "real" decision step but this really only matters for caching purposes
+  size_t meta_t = 0;  // the metatask has it's own notion of time. meta_t+t, during a single run, is the way to think
+                      // about the "real" decision step but this really only matters for caching purposes
   v_array<v_array<action_cache>*>
       memo_foreach_action;  // when foreach_action is on, we need to cache TRAIN trajectory actions for LEARN
 
@@ -2557,7 +2557,8 @@ base_learner* setup(VW::setup_base_i& stack_builder)
   new_options.add(make_option("search_task", task_string)
                       .keep()
                       .necessary()
-                      .one_of({"sequence", "sequencespan", "sequence_ctg", "argmax", "sequence_demoldf", "multiclasstask", "dep_parser", "entity_relation", "hook", "graph"})
+                      .one_of({"sequence", "sequencespan", "sequence_ctg", "argmax", "sequence_demoldf",
+                          "multiclasstask", "dep_parser", "entity_relation", "hook", "graph"})
                       .help("The search task (use \"--search_task list\" to get a list of available tasks)"));
   new_options.add(make_option("search_metatask", metatask_string)
                       .keep()
