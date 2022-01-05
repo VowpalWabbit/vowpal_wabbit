@@ -595,7 +595,7 @@ void enable_sources(VW::workspace& all, bool quiet, size_t passes, input_options
       catch (std::exception const&)
       {
         // when trying to fix this exception, consider that an empty filename_to_read is valid if all.stdin_off is false
-        if (!filename_to_read.empty()) { all.logger.err_error("can't open '{}', sailing on", filename_to_read); }
+        if (!filename_to_read.empty()) { all.logger.err_error("can't open '{}', sailing on!", filename_to_read); }
         else
         {
           throw;
