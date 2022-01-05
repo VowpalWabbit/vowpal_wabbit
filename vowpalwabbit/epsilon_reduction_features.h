@@ -14,15 +14,9 @@ struct reduction_features
 {
   float epsilon;
 
-  reduction_features()
-  {
-    epsilon = -1.f;
-  }
+  reduction_features() { epsilon = -1.f; }
 
-  void clear()
-  {
-    epsilon = -1.f;
-  }
+  void clear() { epsilon = -1.f; }
 };
 }  // namespace greedy
 }  // namespace cb_explore_adf

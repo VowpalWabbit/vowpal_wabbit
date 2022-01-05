@@ -90,7 +90,8 @@ inline const simple_label_reduction_features& reduction_features::get<simple_lab
 }
 
 template <>
-inline VW::cb_explore_adf::greedy::reduction_features& reduction_features::get<VW::cb_explore_adf::greedy::reduction_features>()
+inline VW::cb_explore_adf::greedy::reduction_features&
+reduction_features::get<VW::cb_explore_adf::greedy::reduction_features>()
 {
   return _epsilon_reduction_features;
 }
