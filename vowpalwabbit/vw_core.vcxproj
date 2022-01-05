@@ -182,6 +182,7 @@
     <ClInclude Include="decision_scores.h" />
     <ClInclude Include="distributionally_robust.h" />
     <ClInclude Include="ect.h" />
+    <ClInclude Include="epsilon_reduction_features.h" />
     <ClInclude Include="error_constants.h" />
     <ClInclude Include="error_data.h" />
     <ClInclude Include="example.h" />

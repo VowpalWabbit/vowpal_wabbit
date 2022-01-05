@@ -60,6 +60,9 @@
     <ClCompile Include="dsjson_parser_test.cc">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="epsilon_test.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
     <ClCompile Include="error_test.cc">
       <Filter>Source Files</Filter>
     </ClCompile>

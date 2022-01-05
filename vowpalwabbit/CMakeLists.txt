@@ -109,6 +109,7 @@ set(vw_all_headers
   decision_scores.h
   distributionally_robust.h
   ect.h
+  epsilon_reduction_features.h
   error_constants.h
   error_data.h
   example.h
