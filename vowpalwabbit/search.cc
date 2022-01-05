@@ -33,8 +33,6 @@ using namespace VW::config;
 namespace CS = COST_SENSITIVE;
 namespace MC = MULTICLASS;
 
-namespace logger = VW::io::logger;
-
 using std::endl;
 
 namespace Search
@@ -350,7 +348,7 @@ int random_policy(search_private& priv, bool allow_current, bool allow_optimal, 
     if (allow_current) return static_cast<int>(priv.current_policy);
     if (priv.current_policy > 0) return ((static_cast<int>(priv.current_policy)) - 1);
     if (allow_optimal) return -1;
-    logger::errlog_error("internal error (bug): no valid policies to choose from!  defaulting to current");
+    priv.all->logger.err_error("internal error (bug): no valid policies to choose from!  defaulting to current");
     return static_cast<int>(priv.current_policy);
   }
 
@@ -359,7 +357,7 @@ int random_policy(search_private& priv, bool allow_current, bool allow_optimal, 
 
   if (num_valid_policies == 0)
   {
-    logger::errlog_error("internal error (bug): no valid policies to choose from!  defaulting to current");
+    priv.all->logger.err_error("internal error (bug): no valid policies to choose from!  defaulting to current");
     return static_cast<int>(priv.current_policy);
   }
   else if (num_valid_policies == 1)
@@ -418,7 +416,7 @@ bool should_print_update(VW::workspace& all, bool hit_new_pass = false)
   if (PRINT_UPDATE_EVERY_EXAMPLE) return true;
   if (PRINT_UPDATE_EVERY_PASS)
     if (hit_new_pass) return true;
-  return (all.sd->weighted_examples() >= all.sd->dump_interval) && !all.logger.quiet && !all.bfgs;
+  return (all.sd->weighted_examples() >= all.sd->dump_interval) && !all.quiet && !all.bfgs;
 }
 
 bool might_print_update(VW::workspace& all)
@@ -428,7 +426,7 @@ bool might_print_update(VW::workspace& all)
 
   if (PRINT_UPDATE_EVERY_EXAMPLE) return true;
   if (PRINT_UPDATE_EVERY_PASS) return true;  // SPEEDUP: make this better
-  return (all.sd->weighted_examples() + 1. >= all.sd->dump_interval) && !all.logger.quiet && !all.bfgs;
+  return (all.sd->weighted_examples() + 1. >= all.sd->dump_interval) && !all.quiet && !all.bfgs;
 }
 
 bool must_run_test(VW::workspace& all, multi_ex& ec, bool is_test_ex)
@@ -442,7 +440,7 @@ bool must_run_test(VW::workspace& all, multi_ex& ec, bool is_test_ex)
       //     current_pass == 0
       //     OR holdout is off
       //     OR it's a test example
-      ((!all.logger.quiet || !all.vw_is_main) &&  // had to disable this because of library mode!
+      ((!all.quiet || !all.vw_is_main) &&  // had to disable this because of library mode!
           (!is_test_ex) &&
           (all.holdout_set_off ||                          // no holdout
               ec[0]->test_only || (all.current_pass == 0)  // we need error rates for progressive cost
@@ -491,7 +489,7 @@ void print_update(search_private& priv)
   //       Currently there is no way to convert an ostream to FILE*, so the lines will need to be converted
   //       to ostream format
   VW::workspace& all = *priv.all;
-  if (!priv.printed_output_header && !all.logger.quiet)
+  if (!priv.printed_output_header && !all.quiet)
   {
     const char* header_fmt = "%-10s %-10s %8s%24s %22s %5s %5s  %7s  %7s  %7s  %-8s\n";
     fprintf(stderr, header_fmt, "average", "since", "instance", "current true", "current predicted", "cur", "cur",
@@ -709,11 +707,6 @@ void cdbg_print_array(const std::string& str, v_array<T>& A)
   cdbg << str << " = [";
   for (size_t i = 0; i < A.size(); i++) cdbg << " " << A[i];
   cdbg << " ]" << endl;
-}
-template <class T>
-void cerr_print_array(std::string str, v_array<T>& A)
-{
-  logger::errlog_info("{0} = [{1}]", str, fmt::join(A, " "));
 }
 
 size_t random(std::shared_ptr<VW::rand_state>& rs, size_t max)
@@ -1221,7 +1214,7 @@ action single_prediction_notLDF(search_private& priv, example& ec, int policy, c
       (*priv.rawOutputStringStream) << cs_get_cost_index(priv.cb_learner, ec.l, k) << ':'
                                     << cs_get_cost_partial_prediction(priv.cb_learner, ec.l, k);
     }
-    all.print_text_by_ref(all.raw_prediction.get(), priv.rawOutputStringStream->str(), ec.tag);
+    all.print_text_by_ref(all.raw_prediction.get(), priv.rawOutputStringStream->str(), ec.tag, all.logger);
   }
 
   ec.l = old_label;
@@ -1982,8 +1975,8 @@ void run_task(search& sch, multi_ex& ec)
     priv.task->run(sch, ec);
 }
 
-void verify_active_csoaa(
-    COST_SENSITIVE::label& losses, const std::vector<std::pair<CS::wclass&, bool>>& known, size_t t, float multiplier)
+void verify_active_csoaa(COST_SENSITIVE::label& losses, const std::vector<std::pair<CS::wclass&, bool>>& known,
+    size_t t, float multiplier, VW::io::logger& logger)
 {
   float threshold = multiplier / std::sqrt(static_cast<float>(t));
   cdbg << "verify_active_csoaa, losses = [";
@@ -1998,9 +1991,9 @@ void verify_active_csoaa(
       float err = static_cast<float>(std::pow(known[i].first.partial_prediction - wc.x, 2));
       if (err > threshold)
       {
-        logger::errlog_error("verify_active_csoaa failed: truth {0}:{1}, known[{2}]={3}, error={4} vs threshold {5}",
-                             wc.class_index /*0*/, wc.x/*1*/, i/*2*/, known[i].first.partial_prediction/*3*/,
-                             err/*4*/, threshold/*5*/);
+        logger.err_error("verify_active_csoaa failed: truth {0}:{1}, known[{2}]={3}, error={4} vs threshold {5}",
+            wc.class_index /*0*/, wc.x /*1*/, i /*2*/, known[i].first.partial_prediction /*3*/, err /*4*/,
+            threshold /*5*/);
       }
     }
     i++;
@@ -2074,9 +2067,9 @@ void train_single_example(search& sch, bool is_test_ex, bool is_holdout_ex, mult
 
     // generate output
     for (auto& sink : all.final_prediction_sink)
-    { all.print_text_by_ref(sink.get(), priv.pred_string->str(), ec_seq[0]->tag); }
+    { all.print_text_by_ref(sink.get(), priv.pred_string->str(), ec_seq[0]->tag, all.logger); }
 
-    if (all.raw_prediction != nullptr) all.print_text_by_ref(all.raw_prediction.get(), "", ec_seq[0]->tag);
+    if (all.raw_prediction != nullptr) all.print_text_by_ref(all.raw_prediction.get(), "", ec_seq[0]->tag, all.logger);
   }
 
   // if we're not training, then we're done!
@@ -2170,8 +2163,8 @@ void train_single_example(search& sch, bool is_test_ex, bool is_holdout_ex, mult
       //                           priv.learn_loss);
     }
     if (priv.active_csoaa_verify > 0.)
-      verify_active_csoaa(
-          priv.learn_losses.cs, priv.active_known[priv.learn_t], ec_seq[0]->example_counter, priv.active_csoaa_verify);
+      verify_active_csoaa(priv.learn_losses.cs, priv.active_known[priv.learn_t], ec_seq[0]->example_counter,
+          priv.active_csoaa_verify, priv.all->logger);
 
     if (skipped_all_actions)
     {
@@ -2232,7 +2225,7 @@ void inline adjust_auto_condition(search_private& priv)
     // turn off auto-condition if it's irrelevant
     if ((priv.history_length == 0) || (priv.acset.feature_value == 0.f))
     {
-      logger::errlog_warn("warning: turning off AUTO_CONDITION_FEATURES because settings make it useless");
+      priv.all->logger.err_warn("Turning off AUTO_CONDITION_FEATURES because settings make it useless");
       priv.auto_condition_features = false;
     }
   }
@@ -2321,7 +2314,7 @@ void end_pass(search& sch)
     if (all->training) priv.current_policy++;
     if (priv.current_policy > priv.total_number_of_policies)
     {
-      logger::errlog_error("internal error (bug): too many policies; not advancing");
+      priv.all->logger.err_error("internal error (bug): too many policies; not advancing");
       priv.current_policy = priv.total_number_of_policies;
     }
     // reset search_trained_nb_policies in options_from_file so it is saved to regressor file later
@@ -2401,11 +2394,11 @@ void search_initialize(VW::workspace* all, search& sch)
   priv.rawOutputStringStream = VW::make_unique<std::stringstream>();
 }
 
-void ensure_param(float& v, float lo, float hi, float def, const char* str)
+void ensure_param(float& v, float lo, float hi, float def, const char* str, VW::io::logger& logger)
 {
   if ((v < lo) || (v > hi))
   {
-    logger::errlog_warn(str);
+    logger.err_warn(str);
     v = def;
   }
 }
@@ -2437,13 +2430,13 @@ void search_finish(search& sch)
   search_private& priv = *sch.priv;
   cdbg << "search_finish" << endl;
 
-  if (priv.active_csoaa) logger::errlog_info("search calls to run = {}", priv.num_calls_to_run);
+  if (priv.active_csoaa) priv.all->logger.err_info("search calls to run = {}", priv.num_calls_to_run);
 
   if (priv.task->finish) priv.task->finish(sch);
   if (priv.metatask && priv.metatask->finish) priv.metatask->finish(sch);
 }
 
-std::vector<CS::label> read_allowed_transitions(action A, const char* filename)
+std::vector<CS::label> read_allowed_transitions(action A, const char* filename, VW::io::logger& logger)
 {
   FILE* f;
   if (VW::file_open(&f, filename, "r") != 0)
@@ -2455,13 +2448,9 @@ std::vector<CS::label> read_allowed_transitions(action A, const char* filename)
   while ((rd = fscanf_s(f, "%d:%d", &from, &to)) > 0)
   {
     if ((from < 0) || (from > static_cast<int>(A)))
-    {
-      logger::errlog_warn("warning: ignoring transition from {0} because it's out of the range [0,{1}]", from, A);
-    }
+    { logger.err_warn("Ignoring transition from {0} because it's out of the range [0,{1}]", from, A); }
     if ((to < 0) || (to > static_cast<int>(A)))
-    {
-      logger::errlog_warn("warning: ignoring transition to {0} because it's out of the range [0,{1}]", to, A);
-    }
+    { logger.err_warn("Ignoring transition to {0} because it's out of the range [0,{1}]", to, A); }
     bg[from * (A + 1) + to] = true;
     count++;
   }
@@ -2487,12 +2476,12 @@ std::vector<CS::label> read_allowed_transitions(action A, const char* filename)
   }
   free(bg);
 
-  logger::errlog_info("read {0} allowed transitions from {1}", count, filename);
+  logger.err_info("read {0} allowed transitions from {1}", count, filename);
 
   return allowed;
 }
 
-void parse_neighbor_features(VW::string_view nf_strview, v_array<int32_t>& neighbor_features)
+void parse_neighbor_features(VW::string_view nf_strview, v_array<int32_t>& neighbor_features, VW::io::logger& logger)
 {
   neighbor_features.clear();
   if (nf_strview.empty()) return;
@@ -2517,17 +2506,17 @@ void parse_neighbor_features(VW::string_view nf_strview, v_array<int32_t>& neigh
     char ns = ' ';
     if (cmd.size() == 1)
     {
-      posn = int_of_string(cmd[0]);
+      posn = int_of_string(cmd[0], logger);
       ns = ' ';
     }
     else if (cmd.size() == 2)
     {
-      posn = int_of_string(cmd[0]);
+      posn = int_of_string(cmd[0], logger);
       ns = (!cmd[1].empty()) ? cmd[1].front() : ' ';
     }
     else
     {
-      logger::errlog_warn("warning: ignoring malformed neighbor specification: '{}'", strview);
+      logger.err_warn("Ignoring malformed neighbor specification: '{}'", strview);
     }
     int32_t enc = (posn << 24) | (ns & 0xFF);
     neighbor_features.push_back(enc);
@@ -2622,7 +2611,7 @@ base_learner* setup(VW::setup_base_i& stack_builder)
 
   search_initialize(&all, *sch.get());
 
-  parse_neighbor_features(neighbor_features_string, sch->priv->neighbor_features);
+  parse_neighbor_features(neighbor_features_string, sch->priv->neighbor_features, all.logger);
 
   if (interpolation_string == "data")  // run as dagger
   {
@@ -2676,8 +2665,8 @@ base_learner* setup(VW::setup_base_i& stack_builder)
     priv.gte_label.cs.costs.clear();
   }
 
-  ensure_param(priv.beta, 0.0, 1.0, 0.5, "warning: search_beta must be in (0,1); resetting to 0.5");
-  ensure_param(priv.alpha, 0.0, 1.0, 1e-10f, "warning: search_alpha must be in (0,1); resetting to 1e-10");
+  ensure_param(priv.beta, 0.0, 1.0, 0.5, "Search_beta must be in (0,1); resetting to 0.5", all.logger);
+  ensure_param(priv.alpha, 0.0, 1.0, 1e-10f, "Search_alpha must be in (0,1); resetting to 1e-10", all.logger);
 
   priv.num_calls_to_run = 0;
 
@@ -2697,8 +2686,9 @@ base_learner* setup(VW::setup_base_i& stack_builder)
     priv.total_number_of_policies = tmp_number_of_policies;
     if (priv.current_policy >
         0)  // we loaded a file but total number of policies didn't match what is needed for training
-      logger::errlog_warn("warning: you're attempting to train more classifiers than was allocated initially. "
-                          "Likely to cause bad performance.");
+      all.logger.err_warn(
+          "You're attempting to train more classifiers than was allocated initially. "
+          "Likely to cause bad performance.");
   }
 
   // current policy currently points to a new policy we would train
@@ -2783,7 +2773,7 @@ base_learner* setup(VW::setup_base_i& stack_builder)
   VW::label_type_t expected_label_type = all.example_parser->lbl_parser.label_type;
 
   if (options.was_supplied("search_allowed_transitions"))
-    read_allowed_transitions(static_cast<action>(priv.A), search_allowed_transitions.c_str());
+    read_allowed_transitions(static_cast<action>(priv.A), search_allowed_transitions.c_str(), all.logger);
 
   // set up auto-history (used to only do this if AUTO_CONDITION_FEATURES was on, but that doesn't work for hooktask)
   handle_condition_options(all, priv.acset);
@@ -2944,7 +2934,7 @@ std::stringstream& search::output()
 void search::set_options(uint32_t opts)
 {
   if (this->priv->all->vw_is_main && (this->priv->state != SearchState::INITIALIZE))
-    logger::errlog_warn("warning: task should not set options except in initialize function!");
+  { priv->all->logger.err_warn("Task should not set options except in initialize function."); }
   if ((opts & AUTO_CONDITION_FEATURES) != 0) this->priv->auto_condition_features = true;
   if ((opts & AUTO_HAMMING_LOSS) != 0) this->priv->auto_hamming_loss = true;
   if ((opts & EXAMPLES_DONT_CHANGE) != 0) this->priv->examples_dont_change = true;
@@ -2953,18 +2943,19 @@ void search::set_options(uint32_t opts)
   if ((opts & ACTION_COSTS) != 0) this->priv->use_action_costs = true;
 
   if (this->priv->is_ldf && this->priv->use_action_costs)
-    THROW("using LDF and actions costs is not yet implemented; turn off action costs");  // TODO fix
+    THROW("Using LDF and actions costs is not yet implemented; turn off action costs.");  // TODO fix
 
   if (this->priv->use_action_costs && (this->priv->rollout_method != RollMethod::NO_ROLLOUT))
-    logger::errlog_warn(
-      "warning: task is designed to use rollout costs, but this only works when --search_rollout none is specified"
-    );
+  {
+    priv->all->logger.err_warn(
+        "Task is designed to use rollout costs, but this only works when --search_rollout none is specified.");
+  }
 }
 
 void search::set_label_parser(label_parser& lp, bool (*is_test)(const polylabel&))
 {
   if (this->priv->all->vw_is_main && (this->priv->state != SearchState::INITIALIZE))
-    logger::errlog_warn("warning: task should not set label parser except in initialize function!");
+  { priv->all->logger.err_warn("Task should not set label parser except in initialize function."); }
   this->priv->all->example_parser->lbl_parser = lp;
   this->priv->all->example_parser->lbl_parser.test_label = is_test;
   this->priv->label_is_test = is_test;

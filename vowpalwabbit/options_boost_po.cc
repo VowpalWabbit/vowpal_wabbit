@@ -272,7 +272,7 @@ std::shared_ptr<const base_option> VW::config::options_boost_po::get_option(cons
 }
 
 // Check all supplied arguments against defined args.
-void options_boost_po::check_unregistered()
+void options_boost_po::check_unregistered(VW::io::logger& logger)
 {
   for (auto const& supplied : m_supplied_options)
   {
@@ -293,7 +293,7 @@ void options_boost_po::check_unregistered()
       for (const auto& group : dependent_necessary_options)
       { message += fmt::format("\t{}\n", fmt::join(group, ", ")); }
 
-      VW::io::logger::errlog_warn(message);
+      logger.err_warn(message);
     }
   }
 }

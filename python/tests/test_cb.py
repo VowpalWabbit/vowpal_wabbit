@@ -44,7 +44,7 @@ def test_getting_started_example_legacy_cb():
 def helper_getting_started_example(which_cb):
     train_df, test_df = helper_get_data()
 
-    vw = pyvw.vw(which_cb + " 4", enable_logging=True)
+    vw = pyvw.vw(which_cb + " 4 --log_level off", enable_logging=True)
 
     for i in train_df.index:
         action = train_df.loc[i, "action"]
@@ -53,7 +53,7 @@ def helper_getting_started_example(which_cb):
         feature1 = train_df.loc[i, "feature1"]
         feature2 = train_df.loc[i, "feature2"]
         feature3 = train_df.loc[i, "feature3"]
-        
+
         learn_example = str(action) + ":" + str(cost) + ":" + str(probability) + " | " + str(feature1) + " " + str(feature2) + " " + str(feature3)
         vw.learn(learn_example)
 
@@ -78,7 +78,7 @@ def helper_getting_started_example(which_cb):
         test_file = "test-sets/ref/python_test_cb_legacy.stderr"
     else:
         test_file = "test-sets/ref/python_test_cb.stderr"
-    
+
     with open(path.join(helper_get_test_dir(), test_file), 'r') as file:
         actual = file.readlines()
         for j, i in zip(actual, output):
@@ -99,7 +99,7 @@ def test_getting_started_example_with():
             feature1 = train_df.loc[i, "feature1"]
             feature2 = train_df.loc[i, "feature2"]
             feature3 = train_df.loc[i, "feature3"]
-            
+
             learn_example = str(action) + ":" + str(cost) + ":" + str(probability) + " | " + str(feature1) + " " + str(feature2) + " " + str(feature3)
             vw.learn(learn_example)
 
@@ -112,5 +112,5 @@ def test_getting_started_example_with():
             choice = vw.predict("| "+str(feature1)+" "+str(feature2)+" "+str(feature3))
             assert isinstance(choice, int), "choice should be int"
             assert choice == 3, "predicted action should be 3"
-    
+
     assert vw.finished == True, "with syntax should finish() vw instance"

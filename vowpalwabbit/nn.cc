@@ -20,8 +20,6 @@
 using namespace VW::LEARNER;
 using namespace VW::config;
 
-namespace logger = VW::io::logger;
-
 constexpr float hidden_min_activation = -3;
 constexpr float hidden_max_activation = 3;
 constexpr uint64_t nn_constant = 533357803;
@@ -309,7 +307,7 @@ void predict_or_learn_multi(nn& n, single_learner& base, example& ec)
     if (shouldOutput)
     {
       outputStringStream << ' ' << n.output_layer.partial_prediction;
-      n.all->print_text_by_ref(n.all->raw_prediction.get(), outputStringStream.str(), ec.tag);
+      n.all->print_text_by_ref(n.all->raw_prediction.get(), outputStringStream.str(), ec.tag, n.all->logger);
     }
 
     if (is_learn)
@@ -429,20 +427,20 @@ base_learner* nn_setup(VW::setup_base_i& stack_builder)
   n->all = &all;
   n->_random_state = all.get_random_state();
 
-  if (n->multitask && !all.logger.quiet)
-    logger::errlog_info("using multitask sharing for neural network {}", (all.training ? "training" : "testing"));
+  if (n->multitask && !all.quiet)
+    all.logger.err_info("using multitask sharing for neural network {}", (all.training ? "training" : "testing"));
 
   if (options.was_supplied("meanfield"))
   {
     n->dropout = false;
-    logger::errlog_info("using mean field for neural network {}", (all.training ? "training" : "testing"));
+    all.logger.err_info("using mean field for neural network {}", (all.training ? "training" : "testing"));
   }
 
-  if (n->dropout && !all.logger.quiet)
-    logger::errlog_info("using dropout for neural network {}", (all.training ? "training" : "testing"));
+  if (n->dropout && !all.quiet)
+    all.logger.err_info("using dropout for neural network {}", (all.training ? "training" : "testing"));
 
-  if (n->inpass && !all.logger.quiet)
-    logger::errlog_info("using input passthrough for neural network {}", (all.training ? "training" : "testing"));
+  if (n->inpass && !all.quiet)
+    all.logger.err_info("using input passthrough for neural network {}", (all.training ? "training" : "testing"));
 
   n->finished_setup = false;
   n->squared_loss = getLossFunction(all, "squared", 0);

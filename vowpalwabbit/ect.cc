@@ -20,8 +20,6 @@
 using namespace VW::LEARNER;
 using namespace VW::config;
 
-namespace logger = VW::io::logger;
-
 struct direction
 {
   size_t id;          // unique id for node
@@ -53,6 +51,9 @@ struct ect
   uint32_t last_pair = 0;
 
   v_array<bool> tournaments_won;
+  VW::io::logger logger;
+
+  explicit ect(VW::io::logger logger) : logger(std::move(logger)) {}
 };
 
 bool exists(const v_array<size_t>& db)
@@ -62,12 +63,12 @@ bool exists(const v_array<size_t>& db)
   return false;
 }
 
-size_t final_depth(size_t eliminations)
+size_t final_depth(size_t eliminations, VW::io::logger& logger)
 {
   eliminations--;
   for (size_t i = 0; i < 32; i++)
     if (eliminations >> i == 0) return i;
-  logger::errlog_error("too many eliminations");
+  logger.err_error("too many eliminations");
   return 31;
 }
 
@@ -76,18 +77,6 @@ bool not_empty(std::vector<v_array<uint32_t>> const& tournaments)
   auto const first_non_empty_tournament = std::find_if(tournaments.cbegin(), tournaments.cend(),
       [](const v_array<uint32_t>& tournament) { return !tournament.empty(); });
   return first_non_empty_tournament != tournaments.cend();
-}
-
-void print_level(std::vector<v_array<uint32_t>> const& level)
-{
-  fmt::memory_buffer buffer;
-  for (auto const& t : level)
-  {
-    for (auto i : t) fmt::format_to(buffer, " {}", i);
-    fmt::format_to(buffer, " | ");
-  }
-  logger::pattern_guard("%v");
-  logger::log_info("{}", fmt::to_string(buffer));
 }
 
 size_t create_circuit(ect& e, uint64_t max_label, uint64_t eliminations)
@@ -170,7 +159,7 @@ size_t create_circuit(ect& e, uint64_t max_label, uint64_t eliminations)
 
   e.last_pair = static_cast<uint32_t>((max_label - 1) * eliminations);
 
-  if (max_label > 1) e.tree_height = final_depth(eliminations);
+  if (max_label > 1) e.tree_height = final_depth(eliminations, e.logger);
 
   return e.last_pair + (eliminations - 1);
 }
@@ -262,7 +251,8 @@ void ect_train(ect& e, single_learner& base, example& ec)
   } while (id != 0);
 
   //TODO: error? warn? info? what level is this supposed to be?
-  if (e.tournaments_won.empty()) logger::log_error("badness!");
+  if (e.tournaments_won.empty())
+    e.logger.out_error("Internal error occurred. tournaments_won was empty which should not be possible.");
 
   // tournaments_won is a bit vector determining which tournaments the label won.
   for (size_t i = 0; i < e.tree_height; i++)
@@ -306,7 +296,7 @@ void predict(ect& e, single_learner& base, example& ec)
   {
     // In order to print curly braces, they need to be embedded within curly braces to escape them.
     // The funny looking part will just print {1, e.k}
-    logger::log_warn("label {0} is not in {{1, {1}}} This won't work right.", mc.label, e.k);
+    e.logger.out_warn("label {0} is not in {{1, {1}}} This won't work right.", mc.label, e.k);
   }
   ec.pred.multiclass = ect_predict(e, base, ec);
   ec.l.multi = mc;
@@ -326,7 +316,7 @@ base_learner* ect_setup(VW::setup_base_i& stack_builder)
 {
   options_i& options = *stack_builder.get_options();
   VW::workspace& all = *stack_builder.get_all_pointer();
-  auto data = VW::make_unique<ect>();
+  auto data = VW::make_unique<ect>(all.logger);
   std::string link;
   option_group_definition new_options("Error Correcting Tournament");
   new_options.add(make_option("ect", data->k).keep().necessary().help("Error correcting tournament with <k> labels"))

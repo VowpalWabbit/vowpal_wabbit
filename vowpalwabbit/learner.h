@@ -130,8 +130,6 @@ inline void noop_persist_metrics(void*, metric_sink&) {}
 inline void noop(void*) {}
 inline float noop_sensitivity(void*, base_learner&, example&)
 {
-  // TODO: where should this print to? Just delete this?
-  std::cout << std::endl;
   return 0.;
 }
 float recur_sensitivity(void*, base_learner&, example&);

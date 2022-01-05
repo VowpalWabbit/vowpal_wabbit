@@ -19,8 +19,6 @@
 
 using namespace VW::LEARNER;
 
-namespace logger = VW::io::logger;
-
 namespace CB
 {
 // This return value should be treated like an optional. If first is false then the second value should not be read.
@@ -33,7 +31,8 @@ std::pair<bool, cb_class> get_observed_cost_cb(const label& ld)
   return std::make_pair(false, CB::cb_class{});
 }
 
-void parse_label(CB::label& ld, VW::label_parser_reuse_mem& reuse_mem, const std::vector<VW::string_view>& words)
+void parse_label(CB::label& ld, VW::label_parser_reuse_mem& reuse_mem, const std::vector<VW::string_view>& words,
+    VW::io::logger& logger)
 {
   ld.weight = 1.0;
 
@@ -52,24 +51,24 @@ void parse_label(CB::label& ld, VW::label_parser_reuse_mem& reuse_mem, const std
     f.action = static_cast<uint32_t>(hashstring(reuse_mem.tokens[0].begin(), reuse_mem.tokens[0].length(), 0));
     f.cost = FLT_MAX;
 
-    if (reuse_mem.tokens.size() > 1) f.cost = float_of_string(reuse_mem.tokens[1]);
+    if (reuse_mem.tokens.size() > 1) f.cost = float_of_string(reuse_mem.tokens[1], logger);
 
     if (std::isnan(f.cost)) THROW("error NaN cost (" << reuse_mem.tokens[1] << " for action: " << reuse_mem.tokens[0]);
 
     f.probability = .0;
-    if (reuse_mem.tokens.size() > 2) f.probability = float_of_string(reuse_mem.tokens[2]);
+    if (reuse_mem.tokens.size() > 2) f.probability = float_of_string(reuse_mem.tokens[2], logger);
 
     if (std::isnan(f.probability))
       THROW("error NaN probability (" << reuse_mem.tokens[2] << " for action: " << reuse_mem.tokens[0]);
 
     if (f.probability > 1.0)
     {
-      logger::errlog_warn("invalid probability > 1 specified for an action, resetting to 1.");
+      logger.err_warn("invalid probability > 1 specified for an action, resetting to 1.");
       f.probability = 1.0;
     }
     if (f.probability < 0.0)
     {
-      logger::errlog_warn("invalid probability < 0 specified for an action, resetting to 0.");
+      logger.err_warn("invalid probability < 0 specified for an action, resetting to 0.");
       f.probability = .0;
     }
     if (reuse_mem.tokens[0] == "shared")
@@ -77,7 +76,7 @@ void parse_label(CB::label& ld, VW::label_parser_reuse_mem& reuse_mem, const std
       if (reuse_mem.tokens.size() == 1) { f.probability = -1.f; }
       else
       {
-        logger::errlog_warn("shared feature vectors should not have costs");
+        logger.err_warn("shared feature vectors should not have costs");
       }
     }
 
@@ -90,8 +89,8 @@ label_parser cb_label = {
     [](polylabel& label) { CB::default_label(label.cb); },
     // parse_label
     [](polylabel& label, reduction_features& /*red_features*/, VW::label_parser_reuse_mem& reuse_mem,
-        const VW::named_labels* /*ldict*/,
-        const std::vector<VW::string_view>& words) { CB::parse_label(label.cb, reuse_mem, words); },
+        const VW::named_labels* /*ldict*/, const std::vector<VW::string_view>& words,
+        VW::io::logger& logger) { CB::parse_label(label.cb, reuse_mem, words, logger); },
     // cache_label
     [](const polylabel& label, const reduction_features& /*red_features*/, io_buf& cache,
         const std::string& upstream_name,
@@ -128,7 +127,7 @@ std::string known_cost_to_str(const CB::cb_class* known_cost)
 void print_update(VW::workspace& all, bool is_test, const example& ec, const multi_ex* ec_seq, bool action_scores,
     const CB::cb_class* known_cost)
 {
-  if (all.sd->weighted_examples() >= all.sd->dump_interval && !all.logger.quiet && !all.bfgs)
+  if (all.sd->weighted_examples() >= all.sd->dump_interval && !all.quiet && !all.bfgs)
   {
     size_t num_features = ec.get_num_features();
 
@@ -186,7 +185,8 @@ void default_label(CB_EVAL::label& ld)
 
 bool test_label(const CB_EVAL::label& ld) { return CB::is_test_label(ld.event); }
 
-void parse_label(CB_EVAL::label& ld, VW::label_parser_reuse_mem& reuse_mem, const std::vector<VW::string_view>& words)
+void parse_label(CB_EVAL::label& ld, VW::label_parser_reuse_mem& reuse_mem, const std::vector<VW::string_view>& words,
+    VW::io::logger& logger)
 {
   if (words.size() < 2) THROW("Evaluation can not happen without an action and an exploration");
 
@@ -194,7 +194,7 @@ void parse_label(CB_EVAL::label& ld, VW::label_parser_reuse_mem& reuse_mem, cons
 
   // TODO - make this a span and there is no allocation
   const auto rest_of_tokens = std::vector<VW::string_view>(words.begin() + 1, words.end());
-  CB::parse_label(ld.event, reuse_mem, rest_of_tokens);
+  CB::parse_label(ld.event, reuse_mem, rest_of_tokens, logger);
 }
 
 label_parser cb_eval = {
@@ -202,8 +202,8 @@ label_parser cb_eval = {
     [](polylabel& label) { CB_EVAL::default_label(label.cb_eval); },
     // parse_label
     [](polylabel& label, reduction_features& /*red_features*/, VW::label_parser_reuse_mem& reuse_mem,
-        const VW::named_labels* /*ldict*/,
-        const std::vector<VW::string_view>& words) { CB_EVAL::parse_label(label.cb_eval, reuse_mem, words); },
+        const VW::named_labels* /*ldict*/, const std::vector<VW::string_view>& words,
+        VW::io::logger& logger) { CB_EVAL::parse_label(label.cb_eval, reuse_mem, words, logger); },
     // cache_label
     [](const polylabel& label, const reduction_features& /*red_features*/, io_buf& cache,
         const std::string& upstream_name,

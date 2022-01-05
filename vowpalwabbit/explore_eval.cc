@@ -41,7 +41,7 @@ struct explore_eval
 
 void finish(explore_eval& data)
 {
-  if (!data.all->logger.quiet)
+  if (!data.all->quiet)
   {
     *(data.all->trace_message) << "update count = " << data.update_count << std::endl;
     if (data.violations > 0) *(data.all->trace_message) << "violation count = " << data.violations << std::endl;
@@ -83,7 +83,7 @@ void output_example(VW::workspace& all, const explore_eval& c, const example& ec
 
   all.sd->update(holdout_example, labeled_example, loss, ec.weight, num_features);
 
-  for (auto& sink : all.final_prediction_sink) print_action_score(sink.get(), ec.pred.a_s, ec.tag);
+  for (auto& sink : all.final_prediction_sink) print_action_score(sink.get(), ec.pred.a_s, ec.tag, all.logger);
 
   if (all.raw_prediction != nullptr)
   {
@@ -96,7 +96,7 @@ void output_example(VW::workspace& all, const explore_eval& c, const example& ec
       if (i > 0) outputStringStream << ' ';
       outputStringStream << costs[i].action << ':' << costs[i].partial_prediction;
     }
-    all.print_text_by_ref(all.raw_prediction.get(), outputStringStream.str(), ec.tag);
+    all.print_text_by_ref(all.raw_prediction.get(), outputStringStream.str(), ec.tag, all.logger);
   }
 
   CB::print_update(all, !labeled_example, ec, ec_seq, true, nullptr);
@@ -107,7 +107,7 @@ void output_example_seq(VW::workspace& all, const explore_eval& data, const mult
   if (ec_seq.size() > 0)
   {
     output_example(all, data, **(ec_seq.begin()), &(ec_seq));
-    if (all.raw_prediction != nullptr) all.print_text_by_ref(all.raw_prediction.get(), "", ec_seq[0]->tag);
+    if (all.raw_prediction != nullptr) all.print_text_by_ref(all.raw_prediction.get(), "", ec_seq[0]->tag, all.logger);
   }
 }
 
@@ -116,7 +116,7 @@ void finish_multiline_example(VW::workspace& all, explore_eval& data, multi_ex& 
   if (ec_seq.size() > 0)
   {
     output_example_seq(all, data, ec_seq);
-    CB_ADF::global_print_newline(all.final_prediction_sink);
+    CB_ADF::global_print_newline(all.final_prediction_sink, all.logger);
   }
   VW::finish_example(all, ec_seq);
 }

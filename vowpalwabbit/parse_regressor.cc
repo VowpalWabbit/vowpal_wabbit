@@ -29,6 +29,7 @@
 #include "vw_versions.h"
 #include "options_serializer_boost_po.h"
 #include "shared_data.h"
+#include "io/logger.h"
 
 void initialize_weights_as_random_positive(weight* weights, uint64_t index) { weights[0] = 0.1f * merand48(index); }
 void initialize_weights_as_random(weight* weights, uint64_t index) { weights[0] = merand48(index) - 0.5f; }
@@ -290,9 +291,10 @@ void save_load_header(VW::workspace& all, io_buf& model_file, bool read, bool te
         }
         else
         {
-          *(all.trace_message) << "WARNING: this model file contains 'rank: " << rank
-                               << "' value but it will be ignored as another value specified via the command line."
-                               << std::endl;
+          all.logger.err_warn(
+              "This model file contains 'rank: {}' value but it will be ignored as another value specified via the "
+              "command line.",
+              rank);
         }
       }
     }
@@ -365,7 +367,7 @@ void save_load_header(VW::workspace& all, io_buf& model_file, bool read, bool te
     {
       uint32_t len;
       size_t ret = model_file.bin_read_fixed(reinterpret_cast<char*>(&len), sizeof(len));
-      if (len > 104857600 /*sanity check: 100 Mb*/ || ret < sizeof(uint32_t)) THROW("bad model format!");
+      if (len > 104857600 /*sanity check: 100 Mb*/ || ret < sizeof(uint32_t)) THROW("Bad model format.");
       if (buff2.size() < len) { buff2.resize(len); }
       bytes_read_write += model_file.bin_read_fixed(buff2.data(), len) + ret;
 
@@ -511,14 +513,11 @@ void read_regressor_file(VW::workspace& all, const std::vector<std::string>& all
   {
     io_temp.add_file(VW::io::open_file_reader(all_intial[0]));
 
-    if (!all.logger.quiet)
+    if (!all.quiet)
     {
       // *(all.trace_message) << "initial_regressor = " << regs[0] << std::endl;
       if (all_intial.size() > 1)
-      {
-        *(all.trace_message) << "warning: ignoring remaining " << (all_intial.size() - 1) << " initial regressors"
-                             << std::endl;
-      }
+      { all.logger.err_warn("Ignoring remaining {} initial regressors", (all_intial.size() - 1)); }
     }
   }
 }
