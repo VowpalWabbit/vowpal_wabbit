@@ -1,5 +1,41 @@
 Driver Options:
-  --onethread           Disable parse thread
+  --onethread                         Disable parse thread
+  --log_level arg (=info, )           Log level for logging messages. 
+                                      Specifying this wil override --quiet for 
+                                      log output.. Choices: {critical, error, 
+                                      info, off, warn}
+  --log_output_stream arg (=compat, ) Specify the stream to output log messages
+                                      to. In the past VW's choice of stream for
+                                      logging messages wasn't consistent. 
+                                      Suppling compat will maintain that old 
+                                      behavior. Compat is now deprecated so it 
+                                      is recommended that stdout or stderr is 
+                                      chosen.. Choices: {compat, stderr, 
+                                      stdout}
+Logging options Options:
+  --quiet                               Don't output diagnostics and progress 
+                                        updates. Supplying this implies 
+                                        --log_level off and --driver_output_off
+                                        . Supplying this overrides an explicit 
+                                        log_level argument.
+  --driver_output_off                   Disable output for the driver.
+  --driver_output_stream arg (=stderr, )
+                                        Specify the stream to output driver 
+                                        output to.. Choices: {stderr, stdout}
+  --log_level arg (=info, )             Log level for logging messages. 
+                                        Specifying this wil override --quiet 
+                                        for log output.. Choices: {critical, 
+                                        error, info, off, warn}
+  --log_output_stream arg (=compat, )   Specify the stream to output log 
+                                        messages to. In the past VW's choice of
+                                        stream for logging messages wasn't 
+                                        consistent. Suppling compat will 
+                                        maintain that old behavior. Compat is 
+                                        now deprecated so it is recommended 
+                                        that stdout or stderr is chosen.. 
+                                        Choices: {compat, stderr, stdout}
+  --limit_output arg (=0, )             Avoid chatty output. Limit total 
+                                        printed lines. 0 means unbounded.
 VW Options:
   --ring_size arg (=256, ) Size of example ring
   --strict_parse           Throw on malformed examples
@@ -34,8 +70,6 @@ Diagnostic Options:
   -a [ --audit ]        Print weights of features
   -P [ --progress ] arg Progress update frequency. int: additive, float: 
                         multiplicative
-  --quiet               Don't output diagnostics and progress updates
-  --limit_output arg    Avoid chatty output. Limit total printed lines
   --dry_run             Parse arguments and print corresponding metadata. Will 
                         not execute driver
   -h [ --help ]         More information on vowpal wabbit can be found here 

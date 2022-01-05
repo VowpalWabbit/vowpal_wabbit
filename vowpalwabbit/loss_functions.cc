@@ -13,8 +13,6 @@
 
 #include "io/logger.h"
 
-namespace logger = VW::io::logger;
-
 class squaredloss : public loss_function
 {
 public:
@@ -124,14 +122,17 @@ public:
 
 class hingeloss : public loss_function
 {
+  VW::io::logger logger;
+
 public:
+  explicit hingeloss(VW::io::logger logger) : logger(std::move(logger)) {}
+
   std::string getType() override { return "hinge"; }
 
   float getLoss(shared_data*, float prediction, float label) override
   {
-    // TODO: warning or error?
     if (label != -1.f && label != 1.f)
-      logger::log_warn("You are using label {} not -1 or 1 as loss function expects!", label);
+      logger.out_warn("The label {} is not -1 or 1 or in [0,1] as the hinge loss function expects.", label);
     float e = 1 - label * prediction;
     return (e > 0) ? e : 0;
   }
@@ -167,14 +168,17 @@ public:
 
 class logloss : public loss_function
 {
+  VW::io::logger logger;
+
 public:
+  explicit logloss(VW::io::logger logger) : logger(std::move(logger)) {}
+
   std::string getType() override { return "logistic"; }
 
   float getLoss(shared_data*, float prediction, float label) override
   {
-    // TODO: warning or error?
     if (label != -1.f && label != 1.f)
-      logger::log_warn("You are using label {} not -1 or 1 as loss function expects!", label);
+      logger.out_warn("The label {} is not -1 or 1 or in [0,1] as the logistic loss function expects.", label);
     return log(1 + correctedExp(-label * prediction));
   }
 
@@ -313,14 +317,16 @@ public:
 
 class poisson_loss : public loss_function
 {
+  VW::io::logger logger;
+
 public:
+  explicit poisson_loss(VW::io::logger logger) : logger(std::move(logger)) {}
+
   std::string getType() override { return "poisson"; }
 
   float getLoss(shared_data*, float prediction, float label) override
   {
-    // TODO: warning or error?
-    if (label < 0.f)
-      logger::log_warn("You are using label {} but loss function expects label >= 0!", label);
+    if (label < 0.f) { logger.out_warn("The poisson loss function expects a label >= 0 but received '{}'.", label); }
     float exp_prediction = expf(prediction);
     // deviance is used instead of log-likelihood
     return 2 * (label * (logf(label + 1e-6f) - prediction) - (label - exp_prediction));
@@ -380,7 +386,7 @@ std::unique_ptr<loss_function> getLossFunction(
   }
   else if (funcName == "hinge")
   {
-    return VW::make_unique<hingeloss>();
+    return VW::make_unique<hingeloss>(all.logger);
   }
   else if (funcName == "logistic")
   {
@@ -389,7 +395,7 @@ std::unique_ptr<loss_function> getLossFunction(
       all.sd->min_label = -50;
       all.sd->max_label = 50;
     }
-    return VW::make_unique<logloss>();
+    return VW::make_unique<logloss>(all.logger);
   }
   else if (funcName == "quantile" || funcName == "pinball" || funcName == "absolute")
   {
@@ -402,8 +408,8 @@ std::unique_ptr<loss_function> getLossFunction(
       all.sd->min_label = -50;
       all.sd->max_label = 50;
     }
-    return VW::make_unique<poisson_loss>();
+    return VW::make_unique<poisson_loss>(all.logger);
   }
   else
-    THROW("Invalid loss function name: \'" << funcName << "\' Bailing!");
+    THROW("Invalid loss function name: \'" << funcName << "\'.");
 }

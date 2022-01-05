@@ -1,5 +1,5 @@
 creating quadratic features for pairs: ::
-WARNING: any duplicate namespace interactions will be removed
+[warning] Any duplicate namespace interactions will be removed
 You can use --leave_duplicate_interactions to disable this behaviour.
 final_regressor = models/ccb_no_predict.model
 Num weight bits = 18

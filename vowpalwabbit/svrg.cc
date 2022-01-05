@@ -119,7 +119,7 @@ void learn(svrg& s, base_learner& base, example& ec)
 
   if (pass % (s.stage_size + 1) == 0)  // Compute exact gradient
   {
-    if (s.prev_pass != pass && !s.all->logger.quiet)
+    if (s.prev_pass != pass && !s.all->quiet)
     {
       *(s.all->trace_message) << "svrg pass " << pass << ": committing stable point" << std::endl;
       for (uint32_t j = 0; j < VW::num_weights(*s.all); j++)
@@ -136,7 +136,7 @@ void learn(svrg& s, base_learner& base, example& ec)
   }
   else  // Perform updates
   {
-    if (s.prev_pass != pass && !s.all->logger.quiet)
+    if (s.prev_pass != pass && !s.all->quiet)
     { *(s.all->trace_message) << "svrg pass " << pass << ": taking steps" << std::endl; }
     update_inner(s, ec);
   }

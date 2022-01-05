@@ -1,8 +1,8 @@
 creating quadratic features for pairs: :: AB
 creating features for following interactions: AAA :::
-WARNING: any duplicate namespace interactions will be removed
+[warning] Any duplicate namespace interactions will be removed
 You can use --leave_duplicate_interactions to disable this behaviour.
-ignoring namespaces beginning with: C 
+ignoring namespaces beginning with: C
 Num weight bits = 18
 learning rate = 0.5
 initial_t = 0

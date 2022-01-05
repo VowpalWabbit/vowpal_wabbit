@@ -25,7 +25,7 @@ struct classweights
       std::getline(inner_ss, klass, ':');
       std::getline(inner_ss, weight, ':');
 
-      if (!klass.size() || !weight.size()) { THROW("error: while parsing --classweight " << item); }
+      if (!klass.size() || !weight.size()) { THROW("error while parsing --classweight " << item); }
 
       int klass_int = std::stoi(klass);
       float weight_double = std::stof(weight);
@@ -92,7 +92,7 @@ VW::LEARNER::base_learner* classweight_setup(VW::setup_base_i& stack_builder)
 
   for (auto& s : classweight_array) cweights->load_string(s);
 
-  if (!all.logger.quiet) *(all.trace_message) << "parsed " << cweights->weights.size() << " class weights" << std::endl;
+  if (!all.quiet) *(all.trace_message) << "parsed " << cweights->weights.size() << " class weights" << std::endl;
 
   VW::LEARNER::single_learner* base = as_singleline(stack_builder.setup_base_learner());
 

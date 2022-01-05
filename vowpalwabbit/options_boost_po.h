@@ -55,7 +55,7 @@ struct options_boost_po : public options_i
   bool add_parse_and_check_necessary(const option_group_definition& group) override;
   bool was_supplied(const std::string& key) const override;
   std::string help(const std::vector<std::string>& enabled_reductions) const override;
-  void check_unregistered() override;
+  void check_unregistered(VW::io::logger& logger) override;
   std::vector<std::shared_ptr<base_option>> get_all_options() override;
   std::vector<std::shared_ptr<const base_option>> get_all_options() const override;
   std::shared_ptr<base_option> get_option(const std::string& key) override;

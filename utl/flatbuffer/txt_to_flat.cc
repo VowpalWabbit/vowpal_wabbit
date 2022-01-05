@@ -42,7 +42,7 @@ VW::workspace* setup(std::unique_ptr<options_i, options_deleter_type> options)
   }
   all->vw_is_main = true;
 
-  if (!all->logger.quiet && !all->bfgs && !all->searchstr && !all->options->was_supplied("audit_regressor"))
+  if (!all->quiet && !all->bfgs && !all->searchstr && !all->options->was_supplied("audit_regressor"))
   {
     *(all->trace_message) << std::left << std::setw(shared_data::col_avg_loss) << std::left << "average"
                           << " " << std::setw(shared_data::col_since_last) << std::left << "since"

@@ -54,6 +54,8 @@
 #include "version.h"
 #include "kskip_ngram_transformer.h"
 
+#include "io/logger.h"
+
 typedef float weight;
 
 using feature_dict = std::unordered_map<std::string, std::unique_ptr<features>>;
@@ -84,17 +86,6 @@ enum class AllReduceType
 };
 
 class AllReduce;
-
-struct vw_logger
-{
-  bool quiet;
-  size_t upper_limit;
-
-  vw_logger() : quiet(false) {}
-
-  vw_logger(const vw_logger& other) = delete;
-  vw_logger& operator=(const vw_logger& other) = delete;
-};
 
 #ifdef BUILD_EXTERNAL_PARSER
 // forward declarations
@@ -261,7 +252,8 @@ public:
   std::array<std::vector<std::shared_ptr<feature_dict>>, NUM_NAMESPACES>
       namespace_dictionaries{};  // each namespace has a list of dictionaries attached to it
 
-  vw_logger logger;
+  VW::io::logger logger;
+  bool quiet;
   bool audit;     // should I print lots of debugging information?
   std::shared_ptr<std::vector<char>> audit_buffer;
   std::unique_ptr<VW::io::writer> audit_writer;
@@ -298,8 +290,8 @@ public:
   std::vector<std::unique_ptr<VW::io::writer>> final_prediction_sink;  // set to send global predictions to.
   std::unique_ptr<VW::io::writer> raw_prediction;                      // file descriptors for text output.
 
-  void (*print_by_ref)(VW::io::writer*, float, float, const v_array<char>&);
-  void (*print_text_by_ref)(VW::io::writer*, const std::string&, const v_array<char>&);
+  void (*print_by_ref)(VW::io::writer*, float, float, const v_array<char>&, VW::io::logger&);
+  void (*print_text_by_ref)(VW::io::writer*, const std::string&, const v_array<char>&, VW::io::logger&);
   std::unique_ptr<loss_function> loss;
 
   bool stdin_off;
@@ -331,7 +323,7 @@ public:
   // hack to support cb model loading into ccb reduction
   bool is_ccb_input_model = false;
 
-  workspace();
+  explicit workspace(VW::io::logger logger);
   ~workspace();
   std::shared_ptr<VW::rand_state> get_random_state() { return _random_state_sp; }
 
@@ -351,13 +343,15 @@ private:
 };
 }  // namespace VW
 
-void print_result_by_ref(VW::io::writer* f, float res, float weight, const v_array<char>& tag);
-void binary_print_result_by_ref(VW::io::writer* f, float res, float weight, const v_array<char>& tag);
+void print_result_by_ref(VW::io::writer* f, float res, float weight, const v_array<char>& tag, VW::io::logger& logger);
+void binary_print_result_by_ref(
+    VW::io::writer* f, float res, float weight, const v_array<char>& tag, VW::io::logger& logger);
 
 void noop_mm(shared_data*, float label);
 void get_prediction(VW::io::reader* f, float& res, float& weight);
 void compile_gram(
     std::vector<std::string> grams, std::array<uint32_t, NUM_NAMESPACES>& dest, char* descriptor, bool quiet);
-void compile_limits(std::vector<std::string> limits, std::array<uint32_t, NUM_NAMESPACES>& dest, bool quiet);
+void compile_limits(
+    std::vector<std::string> limits, std::array<uint32_t, NUM_NAMESPACES>& dest, bool quiet, VW::io::logger& logger);
 
 int print_tag_by_ref(std::stringstream& ss, const v_array<char>& tag);

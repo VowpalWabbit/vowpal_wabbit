@@ -49,7 +49,7 @@ struct sender
 
 void open_sockets(sender& s, const std::string& host)
 {
-  s._socket = VW::io::wrap_socket_descriptor(open_socket(host.c_str()));
+  s._socket = VW::io::wrap_socket_descriptor(open_socket(host.c_str(), s.all->logger));
   s._socket_reader = s._socket->get_reader();
   s.buf = new io_buf();
   s.buf->add_file(s._socket->get_writer());
