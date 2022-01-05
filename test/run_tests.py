@@ -731,26 +731,28 @@ def convert_to_test_data(
         is_shell = False
         command_line = ""
         if "bash_command" in test:
-            if sys.platform == "win32":
-                skip = True
-                skip_reason = "bash_command is unsupported on Windows"
-            elif sys.platform == "darwin" and (
+            command_line = test["bash_command"].format(
+                    VW=vw_bin, SPANNING_TREE=spanning_tree_bin
+                )
+            is_shell = True
+
+            if sys.platform == "darwin" and (
                 "daemon" in test["bash_command"]
                 or "spanning_tree" in test["bash_command"]
             ):
                 skip = True
                 skip_reason = "daemon not currently supported in MacOS"
-            else:
-                if spanning_tree_bin is None and (
-                    "SPANNING_TREE" in test["bash_command"]
-                    or "spanning_tree" in test["bash_command"]
-                ):
-                    skip = True
-                    skip_reason = "Test using spanning_tree skipped because of --skip_spanning_tree_tests argument"
-                command_line = test["bash_command"].format(
-                    VW=vw_bin, SPANNING_TREE=spanning_tree_bin
-                )
-                is_shell = True
+            elif sys.platform == "win32":
+                skip = True
+                skip_reason = "bash_command is unsupported on Windows"
+
+            if spanning_tree_bin is None and (
+                "SPANNING_TREE" in test["bash_command"]
+                or "spanning_tree" in test["bash_command"]
+            ):
+                skip = True
+                skip_reason = "Test using spanning_tree skipped because of --skip_spanning_tree_tests argument"
+
         elif "vw_command" in test:
             command_line = f"{vw_bin} {test['vw_command']} {extra_vw_options}"
         else:
@@ -947,6 +949,9 @@ def main():
     )
 
     vw_bin = find_vw_binary(test_base_ref_dir, args.vw_bin_path)
+    if vw_bin is None:
+        print("Can't find vw binary. Did you build the 'vw-bin' target?")
+        sys.exit(1)
     print(f"Using VW binary: {vw_bin}")
 
     spanning_tree_bin: Optional[Path] = None
@@ -954,6 +959,10 @@ def main():
         spanning_tree_bin = find_spanning_tree_binary(
             test_base_ref_dir, args.spanning_tree_bin_path
         )
+        if spanning_tree_bin is None:
+            print("Can't find spanning tree binary. Did you build the 'spanning_tree' target?")
+            sys.exit(1)
+
         print(f"Using spanning tree binary: {spanning_tree_bin.resolve()}")
 
     test_spec_path = Path(args.test_spec)
@@ -995,9 +1004,12 @@ def main():
                 test.skip_reason = "This is a flatbuffer test, can be run with --include_flatbuffers flag"
 
     if args.for_flatbuffers:
-        to_flatbuff = find_to_flatbuf_binary(test_base_ref_dir, args.to_flatbuff_path)
+        to_flatbuff_bin = find_to_flatbuf_binary(test_base_ref_dir, args.to_flatbuff_path)
+        if to_flatbuff_bin is None:
+            print("Can't find to_flatbuff binary. Did you build the 'to_flatbuff' target?")
+            sys.exit(1)
         tests = convert_tests_for_flatbuffers(
-            tests, to_flatbuff, test_base_working_dir, color_enum
+            tests, to_flatbuff_bin, test_base_working_dir, color_enum
         )
 
     tasks: List[Future[TestOutcome]] = []
