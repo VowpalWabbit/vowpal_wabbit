@@ -32,9 +32,8 @@ struct cb_sample_data
     // If base.learn() does not return prediction then we need to predict first
     // so that there is something to sample from
     VW_WARNING_STATE_PUSH
-    VW_WARNING_DISABLE_CPP_17_LANG_EXT
     VW_WARNING_DISABLE_COND_CONST_EXPR
-    if VW_STD17_CONSTEXPR (is_learn && !base.learn_returns_prediction)
+    if (is_learn && !base.learn_returns_prediction)
       multiline_learn_or_predict<false>(base, examples, examples[0]->ft_offset);
     VW_WARNING_STATE_POP
 
