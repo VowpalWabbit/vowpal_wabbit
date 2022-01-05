@@ -683,7 +683,7 @@ Search Options:
   --search_task arg                     The search task (use "--search_task 
                                         list" to get a list of available 
                                         tasks). Choices: {argmax, dep_parser, 
-                                        entity_relation, graph, hook, 
+                                        entity_relation, graph, hook, list, 
                                         multiclasstask, sequence, sequence_ctg,
                                         sequence_demoldf, sequencespan}
   --search_metatask arg                 The search metatask (use 

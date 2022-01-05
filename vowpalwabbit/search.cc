@@ -2558,7 +2558,7 @@ base_learner* setup(VW::setup_base_i& stack_builder)
                       .keep()
                       .necessary()
                       .one_of({"sequence", "sequencespan", "sequence_ctg", "argmax", "sequence_demoldf",
-                          "multiclasstask", "dep_parser", "entity_relation", "hook", "graph"})
+                          "multiclasstask", "dep_parser", "entity_relation", "hook", "graph", "list"})
                       .help("The search task (use \"--search_task list\" to get a list of available tasks)"));
   new_options.add(make_option("search_metatask", metatask_string)
                       .keep()
