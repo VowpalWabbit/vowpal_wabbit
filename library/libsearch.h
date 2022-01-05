@@ -35,7 +35,6 @@ public:
   virtual ~SearchTask()
   { trigger.clear(); // the individual examples get cleaned up below
     VW::dealloc_examples(bogus_example, 1);
-    free(bogus_example);
   }
 
   virtual void _run(Search::search&sch, INPUT& input_example, OUTPUT& output) {}  // YOU MUST DEFINE THIS FUNCTION!
