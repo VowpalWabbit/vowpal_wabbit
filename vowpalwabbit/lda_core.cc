@@ -534,7 +534,6 @@ float lda::digamma(float x)
       // Should not happen.
       std::cerr << "lda::digamma: Trampled or invalid math mode, aborting" << std::endl;
       std::abort();
-      return 0.0f;
   }
 }
 
@@ -551,7 +550,6 @@ float lda::lgamma(float x)
     default:
       std::cerr << "lda::lgamma: Trampled or invalid math mode, aborting" << std::endl;
       std::abort();
-      return 0.0f;
   }
 }
 
@@ -568,7 +566,6 @@ float lda::powf(float x, float p)
     default:
       std::cerr << "lda::powf: Trampled or invalid math mode, aborting" << std::endl;
       std::abort();
-      return 0.0f;
   }
 }
 

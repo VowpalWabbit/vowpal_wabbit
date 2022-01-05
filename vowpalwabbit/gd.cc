@@ -101,7 +101,7 @@ static inline float InvSqrt(float x)
   return x;
 }
 VW_WARNING_STATE_PUSH
-VW_WARNING_DISABLE_CPP_17_LANG_EXT
+VW_WARNING_DISABLE_COND_CONST_EXPR
 template <bool sqrt_rate, bool feature_mask_off, size_t adaptive, size_t normalized, size_t spare>
 inline void update_feature(float& update, float x, float& fw)
 {

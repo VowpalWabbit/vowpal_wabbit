@@ -84,13 +84,15 @@ float linear_inference(VW::workspace& all, example& ec)
   return dotprod;
 }
 
+VW_WARNING_STATE_PUSH
+VW_WARNING_DISABLE_COND_CONST_EXPR
 template <uint8_t policy>
 float inference(VW::workspace& all, example& ec)
 {
-  if (policy == constant_policy)
+  if VW_STD17_CONSTEXPR (policy == constant_policy)
     return constant_inference(all);
 
-  else if (policy == linear_policy)
+  else if VW_STD17_CONSTEXPR (policy == linear_policy)
     return linear_inference(all, ec);
 
   else
@@ -143,15 +145,16 @@ void linear_update(cbzo& data, example& ec)
 template <uint8_t policy, bool feature_mask_off>
 void update_weights(cbzo& data, example& ec)
 {
-  if (policy == constant_policy)
+  if VW_STD17_CONSTEXPR (policy == constant_policy)
     constant_update<feature_mask_off>(data, ec);
 
-  else if (policy == linear_policy)
+  else if VW_STD17_CONSTEXPR (policy == linear_policy)
     linear_update<feature_mask_off>(data, ec);
 
   else
     THROW("Unknown policy encountered: " << policy)
 }
+VW_WARNING_STATE_POP
 
 void set_minmax(shared_data* sd, float label, bool min_fixed, bool max_fixed)
 {
