@@ -109,13 +109,14 @@ void test_buildin_task()
   cerr << endl << endl << "##### run commandline vw #####" << endl << endl;
   // train a model on the command line
   int ret = system(
-      "../vowpalwabbit/vw -k -c --holdout_off --passes 20 --search 4 --search_task hook -d sequence.data -f "
+      "../vowpalwabbit/vw -c -k --holdout_off --passes 20 --search 4 --search_task sequence -d "
+      "../../test/train-sets/sequence_data -f "
       "sequence.model");
   if (ret != 0) cerr << "../vowpalwabbit/vw failed" << endl;
 
   // now, load that model using the BuiltInTask library
   cerr << endl << endl << "##### test BuiltInTask #####" << endl << endl;
-  VW::workspace& vw_obj = *VW::initialize("-t -i sequence.model --search_task hook");
+  VW::workspace& vw_obj = *VW::initialize("-t --search_task hook");
   { // create a new scope for the task object
     BuiltInTask task(vw_obj, &SequenceTask::task);
     multi_ex V;
@@ -137,7 +138,7 @@ void test_buildin_task()
   VW::finish(vw_obj, false);
 }
 
-int main(int argc, char *argv[])
+int main(int argc, char* argv[])
 {
   train();
   predict();
