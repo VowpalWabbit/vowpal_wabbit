@@ -109,14 +109,14 @@ void finish_cbify_reg(cbify_reg& data, std::ostream* trace_stream)
   if (trace_stream != nullptr) (*trace_stream) << "Max Cost=" << data.max_cost << std::endl;
 }
 
-void cbify_adf_data::init_adf_data(const std::size_t num_actions, std::size_t increment,
+void cbify_adf_data::init_adf_data(const std::size_t num_actions_, std::size_t increment_,
     std::vector<std::vector<namespace_index>>& interactions, std::vector<std::vector<extent_term>>& extent_interactions)
 {
-  this->num_actions = num_actions;
-  this->increment = increment;
+  this->num_actions = num_actions_;
+  this->increment = increment_;
 
-  ecs.resize(num_actions);
-  for (size_t a = 0; a < num_actions; ++a)
+  ecs.resize(num_actions_);
+  for (size_t a = 0; a < num_actions_; ++a)
   {
     ecs[a] = VW::alloc_examples(1);
     auto& lab = ecs[a]->l.cb;
@@ -126,7 +126,7 @@ void cbify_adf_data::init_adf_data(const std::size_t num_actions, std::size_t in
   }
 
   // cache mask for copy routine
-  uint64_t total = num_actions * increment;
+  uint64_t total = num_actions_ * increment_;
   uint64_t power_2 = 0;
 
   while (total > 0)
