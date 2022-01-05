@@ -16,7 +16,8 @@ Logging options Options:
   --quiet                               Don't output diagnostics and progress 
                                         updates. Supplying this implies 
                                         --log_level off and --driver_output_off
-                                        .
+                                        . Supplying this overrides an explicit 
+                                        log_level argument.
   --driver_output_off                   Disable output for the driver.
   --driver_output_stream arg (=stderr, )
                                         Specify the stream to output driver 
