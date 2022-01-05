@@ -3281,7 +3281,7 @@
   {
     "id": 275,
     "desc": "vw --help",
-    "vw_command": "--help --log_output_stream compat",
+    "vw_command": "--help",
     "diff_files": {
       "stderr": "train-sets/ref/help.stderr",
       "stdout": "train-sets/ref/help.stdout"
