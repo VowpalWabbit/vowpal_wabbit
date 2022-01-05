@@ -224,6 +224,7 @@ Automl Options:
                                      Choices: {least_exclusion, none}
   --priority_challengers arg (=-1, ) Set number of priority challengers to use
   --keep_configs                     keep all configs after champ change
+  --verbose_metrics                  extended metrics for debugging
   --oracle_type arg (=one_diff, )    Set oracle to generate configs. Choices: 
                                      {one_diff, rand}
 Baseline Options:

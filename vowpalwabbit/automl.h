@@ -10,6 +10,7 @@
 #include "action_score.h"
 #include "reductions.h"
 #include "learner.h"
+#include "array_parameters_dense.h"
 #include <map>
 #include <memory>
 #include <set>
@@ -51,7 +52,7 @@ struct scored_config
 
   void update(float w, float r);
   void save_load(io_buf&, bool, bool);
-  void persist(metric_sink&, const std::string&);
+  void persist(metric_sink&, const std::string&, bool);
   float current_ips() const;
   void reset_stats();
 };
@@ -94,7 +95,7 @@ struct config_manager
   // This fn is the 'undo' of configure_interactions
   void revert_config(example*);
   void save_load(io_buf&, bool, bool);
-  void persist(metric_sink&);
+  void persist(metric_sink&, bool);
 
   // Public Chacha functions
   void config_oracle();
@@ -107,6 +108,7 @@ using priority_func = float(const exclusion_config&, const std::map<namespace_in
 
 struct interaction_config_manager : config_manager
 {
+  uint64_t total_champ_switches = 0;
   uint64_t total_learn_count = 0;
   uint64_t current_champ = 0;
   uint64_t global_lease;
@@ -116,6 +118,7 @@ struct interaction_config_manager : config_manager
   uint64_t valid_config_size = 0;
   bool keep_configs;
   std::string oracle_type;
+  dense_parameters& weights;
 
   // Stores all namespaces currently seen -- Namespace switch could we use array, ask Jack
   std::map<namespace_index, uint64_t> ns_counter;
@@ -130,12 +133,12 @@ struct interaction_config_manager : config_manager
   std::priority_queue<std::pair<float, uint64_t>> index_queue;
 
   interaction_config_manager(uint64_t, uint64_t, std::shared_ptr<VW::rand_state>, uint64_t, bool, std::string,
-      float (*)(const exclusion_config&, const std::map<namespace_index, uint64_t>&));
+      dense_parameters&, float (*)(const exclusion_config&, const std::map<namespace_index, uint64_t>&));
 
   void apply_config(example*, uint64_t);
   void revert_config(example*);
   void save_load(io_buf&, bool, bool);
-  void persist(metric_sink&);
+  void persist(metric_sink&, bool);
 
   // Public Chacha functions
   void config_oracle();
