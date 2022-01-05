@@ -87,8 +87,8 @@ struct prediction
 // parameters for auto-conditioning
 struct auto_condition_settings
 {
-  size_t max_bias_ngram_length = 0;  // add a "bias" feature for each ngram up to and including this length. eg., if
-                                     // it's 1, then you get a single feature for each conditional
+  size_t max_bias_ngram_length = 0;   // add a "bias" feature for each ngram up to and including this length. eg., if
+                                      // it's 1, then you get a single feature for each conditional
   size_t max_quad_ngram_length = 0;   // add bias *times* input features for each ngram up to and including this length
   float feature_value = 0.f;          // how much weight should the conditional features get?
   bool use_passthrough_repr = false;  // should we ask lower-level reductions for their internal state?
@@ -180,9 +180,9 @@ public:
   size_t num_learners = 0;  // total number of learners;
   bool cb_learner = false;  // do contextual bandit learning on action (was "! rollout_all_actions" which was confusing)
   SearchState state;        // current state of learning
-  size_t learn_learner_id = 0;  // we allow user to use different learners for different states
-  int mix_per_roll_policy = 0;  // for MIX_PER_ROLL, we need to choose a policy to use; this is where it's stored (-2
-                                // means "not selected yet")
+  size_t learn_learner_id = 0;   // we allow user to use different learners for different states
+  int mix_per_roll_policy = 0;   // for MIX_PER_ROLL, we need to choose a policy to use; this is where it's stored (-2
+                                 // means "not selected yet")
   bool no_caching = false;       // turn off caching
   size_t rollout_num_steps = 0;  // how many calls of "loss" before we stop really predicting on rollouts and switch to
                                  // oracle (0 means "infinite")
@@ -247,7 +247,7 @@ public:
 
   bool allow_current_policy = false;  // should the current policy be used for training? true for dagger
   bool adaptive_beta = false;         // used to implement dagger-like algorithms. if true, beta = 1-(1-alpha)^n after n
-                               // updates, and policy is mixed with oracle as \pi' = (1-beta)\pi^* + beta \pi
+                                      // updates, and policy is mixed with oracle as \pi' = (1-beta)\pi^* + beta \pi
   size_t passes_per_policy = 0;  // if we're not in dagger-mode, then we need to know how many passes to train a policy
 
   uint32_t current_policy = 0;  // what policy are we training right now?
