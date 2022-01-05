@@ -1206,7 +1206,7 @@ VW::workspace& parse_args(
   logging_options
       .add(make_option("quiet", quiet)
                .help("Don't output diagnostics and progress updates. Supplying this implies --log_level off and "
-                     "--driver_output_off."))
+                     "--driver_output_off. Supplying this overrides an explicit log_level argument."))
       .add(make_option("driver_output_off", driver_output_off).help("Disable output for the driver."))
       .add(make_option("driver_output_stream", driver_output_stream)
                .default_value("stderr")
@@ -1230,8 +1230,7 @@ VW::workspace& parse_args(
 
   if (quiet)
   {
-    // If a user supplies an explicit log level, then we'll respect that.
-    if (!options->was_supplied("log_level")) { log_level = "off"; }
+    log_level = "off";
     driver_output_off = true;
   }
 
