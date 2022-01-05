@@ -399,7 +399,6 @@ VW::LEARNER::base_learner* boosting_setup(VW::setup_base_i& stack_builder)
   data->C = std::vector<std::vector<int64_t> >(data->N, std::vector<int64_t>(data->N, -1));
   data->t = 0;
   data->all = &all;
-  data->logger = all.logger;
   data->_random_state = all.get_random_state();
   data->alpha = std::vector<float>(data->N, 0);
   data->v = std::vector<float>(data->N, 1);
