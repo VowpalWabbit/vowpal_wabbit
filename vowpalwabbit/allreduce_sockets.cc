@@ -292,7 +292,7 @@ void AllReduceSockets::broadcast(char* buffer, const size_t n)
     if (socks.parent != -1)
     {
       // there is data to be read from the parent
-      if (parent_read_pos == n) THROW("I think parent has no data to send but they think they do.");
+      if (parent_read_pos == n) THROW("There is no data to be read from the parent");
 
       size_t count = std::min(ar_buf_size, n - parent_read_pos);
       int read_size = recv(socks.parent, buffer + parent_read_pos, static_cast<int>(count), 0);
