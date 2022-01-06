@@ -233,7 +233,7 @@
     <ClInclude Include="oaa.h" />
     <ClInclude Include="object_pool.h" />
     <ClInclude Include="offset_tree.h" />
-    <ClInclude Include="OjaNewton.h" />
+    <ClInclude Include="oja_newton.h" />
     <ClInclude Include="options.h" />
     <ClInclude Include="options_boost_po.h" />
     <ClInclude Include="options_serializer_boost_po.h" />
@@ -402,7 +402,7 @@
     <ClCompile Include="noop.cc" />
     <ClCompile Include="oaa.cc" />
     <ClCompile Include="offset_tree.cc" />
-    <ClCompile Include="OjaNewton.cc" />
+    <ClCompile Include="oja_newton.cc" />
     <ClCompile Include="options_boost_po.cc" />
     <ClCompile Include="options_serializer_boost_po.cc" />
     <ClCompile Include="../ext_libs/fmt/src/os.cc" />

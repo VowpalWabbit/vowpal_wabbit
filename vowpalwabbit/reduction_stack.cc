@@ -64,7 +64,7 @@
 #include "cs_active.h"
 #include "kernel_svm.h"
 #include "interact.h"
-#include "OjaNewton.h"
+#include "oja_newton.h"
 #include "audit_regressor.h"
 #include "marginal.h"
 #include "metrics.h"
