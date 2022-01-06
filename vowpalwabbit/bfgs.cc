@@ -1066,7 +1066,7 @@ base_learner* bfgs_setup(VW::setup_base_i& stack_builder)
 
   auto b = VW::make_unique<bfgs>();
   bool conjugate_gradient = false;
-  option_group_definition conjugate_gradient_options("Conjugate Gradient");
+  option_group_definition conjugate_gradient_options("[Reduction] Conjugate Gradient");
   conjugate_gradient_options.add(make_option("conjugate_gradient", conjugate_gradient)
                                      .keep()
                                      .necessary()
@@ -1076,7 +1076,7 @@ base_learner* bfgs_setup(VW::setup_base_i& stack_builder)
   int local_m = 0;
   float local_rel_threshold = 0.f;
   bool local_hessian_on = false;
-  option_group_definition bfgs_options("LBFGS and Conjugate Gradient");
+  option_group_definition bfgs_options("[Reduction] LBFGS and Conjugate Gradient");
   bfgs_options.add(
       make_option("bfgs", bfgs_option).keep().necessary().help("Use conjugate gradient based optimization"));
   bfgs_options.add(make_option("hessian_on", local_hessian_on).help("Use second derivative in line search"));

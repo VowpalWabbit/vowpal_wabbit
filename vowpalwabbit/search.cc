@@ -2405,7 +2405,7 @@ void ensure_param(float& v, float lo, float hi, float def, const char* str, VW::
 
 void handle_condition_options(VW::workspace& all, auto_condition_settings& acset)
 {
-  option_group_definition new_options("Search Auto-Conditioning");
+  option_group_definition new_options("[Search] Search Auto-Conditioning");
   new_options.add(make_option("search_max_bias_ngram_length", acset.max_bias_ngram_length)
                       .keep()
                       .default_value(1)
@@ -2540,7 +2540,7 @@ base_learner* setup(VW::setup_base_i& stack_builder)
   std::string search_allowed_transitions;
 
   priv.A = 1;
-  option_group_definition new_options("Search");
+  option_group_definition new_options("[Reduction] Search");
   new_options.add(
       make_option("search", priv.A).keep().help("Use learning to search, argument=maximum action id or 0 for LDF"));
   new_options.add(make_option("search_task", task_string)

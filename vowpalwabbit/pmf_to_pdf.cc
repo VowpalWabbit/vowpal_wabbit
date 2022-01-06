@@ -240,7 +240,7 @@ base_learner* setup(VW::setup_base_i& stack_builder)
   VW::workspace& all = *stack_builder.get_all_pointer();
   auto data = VW::make_unique<pmf_to_pdf::reduction>();
 
-  option_group_definition new_options("Convert Discrete PMF into Continuous PDF");
+  option_group_definition new_options("[Reduction] Convert Discrete PMF into Continuous PDF");
   new_options
       .add(make_option("pmf_to_pdf", data->num_actions)
                .default_value(0)

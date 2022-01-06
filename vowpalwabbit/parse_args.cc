@@ -1072,7 +1072,7 @@ void parse_output_preds(options_i& options, VW::workspace& all)
   std::string predictions;
   std::string raw_predictions;
 
-  option_group_definition output_options("Output");
+  option_group_definition output_options("Prediction Output");
   output_options.add(make_option("predictions", predictions).short_name("p").help("File to output predictions to"))
       .add(make_option("raw_predictions", raw_predictions)
                .short_name("r")
@@ -1286,7 +1286,7 @@ VW::workspace& parse_args(
 
     bool strict_parse = false;
     int ring_size_tmp;
-    option_group_definition vw_args("VW");
+    option_group_definition vw_args("Parser");
     vw_args.add(make_option("ring_size", ring_size_tmp).default_value(256).help("Size of example ring"))
         .add(make_option("strict_parse", strict_parse).help("Throw on malformed examples"));
     all.options->add_and_parse(vw_args);

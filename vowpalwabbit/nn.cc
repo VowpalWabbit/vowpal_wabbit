@@ -412,7 +412,7 @@ base_learner* nn_setup(VW::setup_base_i& stack_builder)
   VW::workspace& all = *stack_builder.get_all_pointer();
   auto n = VW::make_unique<nn>();
   bool meanfield = false;
-  option_group_definition new_options("Neural Network");
+  option_group_definition new_options("[Reduction] Neural Network");
   new_options
       .add(make_option("nn", n->k).keep().necessary().help("Sigmoidal feedforward network with <k> hidden units"))
       .add(make_option("inpass", n->inpass)

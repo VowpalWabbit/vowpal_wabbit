@@ -525,7 +525,7 @@ base_learner* warm_cb_setup(VW::setup_base_i& stack_builder)
   auto data = VW::make_unique<warm_cb>();
   bool use_cs;
 
-  option_group_definition new_options("Make Multiclass into Warm-starting Contextual Bandit");
+  option_group_definition new_options("[Reduction] Warm start contextual bandit");
 
   new_options
       .add(make_option("warm_cb", num_actions)

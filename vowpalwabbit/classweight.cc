@@ -84,7 +84,7 @@ VW::LEARNER::base_learner* classweight_setup(VW::setup_base_i& stack_builder)
   VW::workspace& all = *stack_builder.get_all_pointer();
   std::vector<std::string> classweight_array;
   auto cweights = VW::make_unique<classweights>();
-  option_group_definition new_options("Importance Weight Classes");
+  option_group_definition new_options("[Reduction]  Importance Weight Classes");
   new_options.add(
       make_option("classweight", classweight_array).necessary().help("Importance weight multiplier for class"));
 

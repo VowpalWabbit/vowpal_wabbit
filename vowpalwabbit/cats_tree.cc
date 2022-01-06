@@ -340,7 +340,7 @@ base_learner* setup(setup_base_i& stack_builder)
   options_i& options = *stack_builder.get_options();
   VW::workspace& all = *stack_builder.get_all_pointer();
 
-  option_group_definition new_options("CATS Tree");
+  option_group_definition new_options("[Reduction] CATS Tree");
   uint32_t num_actions;  // = K = 2^D
   uint32_t bandwidth;    // = 2^h#
   std::string link;

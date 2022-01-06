@@ -155,7 +155,7 @@ base_learner* cb_algs_setup(VW::setup_base_i& stack_builder)
   bool eval = false;
   bool force_legacy = true;
 
-  option_group_definition new_options("Contextual Bandit");
+  option_group_definition new_options("[Reduction] Contextual Bandit");
   new_options
       .add(make_option("cb", data->cbcs.num_actions)
                .keep()

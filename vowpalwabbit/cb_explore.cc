@@ -333,7 +333,7 @@ base_learner* cb_explore_setup(VW::setup_base_i& stack_builder)
   options_i& options = *stack_builder.get_options();
   VW::workspace& all = *stack_builder.get_all_pointer();
   auto data = VW::make_unique<cb_explore>(all.logger);
-  option_group_definition new_options("Contextual Bandit Exploration");
+  option_group_definition new_options("[Reduction] Contextual Bandit Exploration");
   new_options
       .add(make_option("cb_explore", data->cbcs.num_actions)
                .keep()

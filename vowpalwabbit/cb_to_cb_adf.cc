@@ -111,7 +111,7 @@ VW::LEARNER::base_learner* cb_to_cb_adf_setup(VW::setup_base_i& stack_builder)
   uint32_t cbx_num_actions;
   uint32_t cbi_num_actions;
 
-  option_group_definition new_options("Contextual Bandit: cb -> cb_adf");
+  option_group_definition new_options("[Reduction] Contextual Bandit: cb -> cb_adf");
   new_options
       .add(make_option("cb_to_cbadf", num_actions).necessary().help("Maps cb_adf to cb. Disable with cb_force_legacy"))
       .add(make_option("cb", num_actions).keep().help("Maps cb_adf to cb. Disable with cb_force_legacy"))
