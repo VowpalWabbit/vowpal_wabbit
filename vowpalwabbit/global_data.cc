@@ -18,6 +18,7 @@
 #include "named_labels.h"
 #include "shared_data.h"
 #include "reduction_stack.h"
+#include "vw_string_view.h"
 #ifdef BUILD_FLATBUFFERS
 #  include "parser/flatbuffer/parse_example_flatbuffer.h"
 #endif
@@ -75,17 +76,6 @@ void binary_print_result_by_ref(VW::io::writer* f, float res, float weight, cons
     send_prediction(f, ps);
   }
 }
-
-int print_tag_by_ref(std::stringstream& ss, const v_array<char>& tag)
-{
-  if (tag.begin() != tag.end())
-  {
-    ss << ' ';
-    ss.write(tag.begin(), sizeof(char) * tag.size());
-  }
-  return tag.begin() != tag.end();
-}
-
 namespace VW
 {
 std::string workspace::get_setupfn_name(reduction_setup_fn setup_fn)
@@ -109,7 +99,7 @@ void print_result_by_ref(VW::io::writer* f, float res, float, const v_array<char
     auto saved_precision = ss.precision();
     if (floorf(res) == res) ss << std::setprecision(0);
     ss << std::fixed << res << std::setprecision(saved_precision);
-    print_tag_by_ref(ss, tag);
+    if (!tag.empty()) { ss << " " << VW::string_view{tag.begin(), tag.size()}; }
     ss << '\n';
     ssize_t len = ss.str().size();
     ssize_t t = f->write(ss.str().c_str(), static_cast<unsigned int>(len));
@@ -123,7 +113,7 @@ void print_raw_text_by_ref(VW::io::writer* f, const std::string& s, const v_arra
 
   std::stringstream ss;
   ss << s;
-  print_tag_by_ref(ss, tag);
+  if (!tag.empty()) { ss << " " << VW::string_view{tag.begin(), tag.size()}; }
   ss << '\n';
   ssize_t len = ss.str().size();
   ssize_t t = f->write(ss.str().c_str(), static_cast<unsigned int>(len));
