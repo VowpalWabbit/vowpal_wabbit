@@ -5,6 +5,7 @@
 #pragma once
 
 #include "io/io_adapter.h"
+#include "io/logger.h"
 #include <iterator>
 #include "v_array.h"
 
@@ -78,7 +79,8 @@ inline int score_comp(const void* p1, const void* p2)
 
 inline int reverse_order(const void* p1, const void* p2) { return score_comp(p2, p1); }
 
-void print_action_score(VW::io::writer* f, const v_array<action_score>& a_s, const v_array<char>&);
+void print_action_score(
+    VW::io::writer* f, const v_array<action_score>& a_s, const v_array<char>&, VW::io::logger& logger);
 
 std::ostream& operator<<(std::ostream& os, const action_score& a_s);
 }  // namespace ACTION_SCORE

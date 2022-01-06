@@ -718,10 +718,10 @@ void unsetup_example(vw_ptr vwP, example_ptr ae)
   ae->reset_total_sum_feat_sq();
   ae->loss = 0.;
 
-  if (all.ignore_some) { THROW("error: cannot unsetup example when some namespaces are ignored!"); }
+  if (all.ignore_some) { THROW("Cannot unsetup example when some namespaces are ignored"); }
 
   if (all.skip_gram_transformer != nullptr && !all.skip_gram_transformer->get_initial_ngram_definitions().empty())
-  { THROW("error: cannot unsetup example when ngrams are in use!"); }
+  { THROW("Cannot unsetup example when ngrams are in use"); }
 
   if (all.add_constant)
   {
@@ -733,7 +733,7 @@ void unsetup_example(vw_ptr vwP, example_ptr ae)
       int j = (int)(N - 1 - i);
       if (ae->indices[j] == constant_namespace)
       {
-        if (hit_constant >= 0) { THROW("error: hit constant namespace twice!"); }
+        if (hit_constant >= 0) { THROW("Constant namespace was found twice. It can only exist 1 or 0 times."); }
         hit_constant = j;
         break;
       }
@@ -912,7 +912,7 @@ void verify_search_set_properly(search_ptr sch)
   if (sch->task_name == nullptr) { THROW("set_structured_predict_hook: search task not initialized properly"); }
 
   if (std::strcmp(sch->task_name, "hook") != 0)
-  { THROW("set_structured_predict_hook: trying to set hook when search task is not 'hook'!"); }
+  { THROW("set_structured_predict_hook: trying to set hook when search task is not 'hook'."); }
 }
 
 uint32_t search_get_num_actions(search_ptr sch)
@@ -1374,8 +1374,8 @@ BOOST_PYTHON_MODULE(pylibvw)
       .def("output", &search_output, "Add a string to the coutput (should only do if should_output returns True)")
       .def("get_num_actions", &search_get_num_actions, "Return the total number of actions search was initialized with")
       .def("set_structured_predict_hook", &set_structured_predict_hook,
-          "Set the hook (function pointer) that search should use for structured prediction (you don't want to call "
-          "this yourself!")
+          "Set the hook (function pointer) that search should use for structured prediction (This is rarely called by "
+          "the end user. It is used internally.)")
       .def("set_force_oracle", &set_force_oracle, "For oracle decoding when .predict is run")
       .def("is_ldf", &Search::search::is_ldf, "check whether this search task is running in LDF mode")
 

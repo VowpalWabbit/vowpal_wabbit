@@ -5,6 +5,8 @@
 #include <string>
 #include <memory>
 
+#include "io/logger.h"
+
 struct shared_data;
 namespace VW
 {

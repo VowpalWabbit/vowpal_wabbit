@@ -341,7 +341,7 @@ BOOST_AUTO_TEST_CASE(compile_interactions_cubic_permutations)
 
 BOOST_AUTO_TEST_CASE(parse_full_name_interactions_test)
 {
-  auto* vw = VW::initialize("");
+  auto* vw = VW::initialize("--quiet");
 
   {
     auto a = parse_full_name_interactions(*vw, "a|b");

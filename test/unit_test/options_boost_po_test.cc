@@ -337,7 +337,8 @@ BOOST_AUTO_TEST_CASE(unregistered_options)
   BOOST_CHECK_NO_THROW(options->add_and_parse(arg_group));
   BOOST_CHECK_EQUAL(int_opt, 3);
 
-  BOOST_CHECK_THROW(options->check_unregistered(), VW::vw_exception);
+  auto null_logger = VW::io::create_null_logger();
+  BOOST_CHECK_THROW(options->check_unregistered(null_logger), VW::vw_exception);
 }
 
 BOOST_AUTO_TEST_CASE(check_necessary)

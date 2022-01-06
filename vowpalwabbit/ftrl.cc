@@ -15,8 +15,6 @@ using namespace VW::LEARNER;
 using namespace VW::config;
 using namespace VW::math;
 
-namespace logger = VW::io::logger;
-
 #define W_XT 0  // current parameter
 #define W_ZT 1  // in proximal is "accumulated z(t) = z(t-1) + g(t) + sigma*w(t)", in general is the dual weight vector
 #define W_G2 2  // accumulated gradient information
@@ -485,7 +483,7 @@ base_learner* ftrl_setup(VW::setup_base_i& stack_builder)
   b->data.l1_lambda = b->all->l1_lambda;
   b->data.l2_lambda = b->all->l2_lambda;
 
-  if (!all.logger.quiet)
+  if (!all.quiet)
   {
     *(all.trace_message) << "Enabling FTRL based optimization" << std::endl;
     *(all.trace_message) << "Algorithm used: " << algorithm_name << std::endl;

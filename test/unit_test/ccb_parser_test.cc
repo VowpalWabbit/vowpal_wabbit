@@ -5,6 +5,7 @@
 #include <boost/test/unit_test.hpp>
 #include <boost/test/test_tools.hpp>
 
+#include "io/logger.h"
 #include "memory.h"
 #include "test_common.h"
 
@@ -21,7 +22,8 @@ void parse_ccb_label(VW::string_view label, CCB::label& l)
   tokenize(' ', label, words);
   CCB::default_label(l);
   VW::label_parser_reuse_mem mem;
-  CCB::parse_label(l, mem, words);
+  auto null_logger = VW::io::create_null_logger();
+  CCB::parse_label(l, mem, words, null_logger);
 }
 
 BOOST_AUTO_TEST_CASE(ccb_parse_label)

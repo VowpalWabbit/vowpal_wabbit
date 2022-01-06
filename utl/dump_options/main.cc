@@ -342,7 +342,7 @@ struct options_exporter : options_i
     throw std::runtime_error{"This function is not defined."};
   }
 
-  void check_unregistered() override {}
+  void check_unregistered(VW::io::logger& /* logger */) override {}
 
   std::vector<std::shared_ptr<base_option>> get_all_options() override
   {

@@ -6,6 +6,7 @@
 #include "v_array.h"
 #include "io_buf.h"
 #include "example.h"
+#include "io/logger.h"
 
 namespace VW
 {

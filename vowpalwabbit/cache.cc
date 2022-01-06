@@ -135,6 +135,7 @@ size_t read_cached_features(io_buf& input, features& ours, bool& sorted, char*& 
 
 int VW::read_example_from_cache(VW::workspace* all, io_buf& input, v_array<example*>& examples)
 {
+  assert(all != nullptr);
   // uint64_t size; TODO: Use to be able to skip cached examples on a read failure.
   char* read_ptr;
   // If this read returns 0 bytes, it means that we've reached the end of the cache file in an expected way.

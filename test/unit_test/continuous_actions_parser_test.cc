@@ -5,6 +5,7 @@
 #include <boost/test/unit_test.hpp>
 #include <boost/test/test_tools.hpp>
 
+#include "io/logger.h"
 #include "test_common.h"
 
 #include <vector>
@@ -20,7 +21,8 @@ void parse_label(label_parser& lp, VW::string_view label, polylabel& l, reductio
   tokenize(' ', label, words);
   lp.default_label(l);
   VW::label_parser_reuse_mem mem;
-  lp.parse_label(l, red_fts, mem, nullptr, words);
+  auto null_logger = VW::io::create_null_logger();
+  lp.parse_label(l, red_fts, mem, nullptr, words, null_logger);
 }
 
 BOOST_AUTO_TEST_CASE(continuous_actions_parse_label)
