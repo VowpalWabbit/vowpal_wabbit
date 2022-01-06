@@ -1,3 +1,4 @@
+[warning] The old default logging behavior of logging to a mix of stdout and stderr is deprecated. Please choose either 'stdout' or 'stderr' for --log_output_stream to silence this warning.
 final_regressor = cmt.model
 memory_tree: max_nodes = 1204 max_leaf_examples = 102 alpha = 0.1 oas = 0 online =1 
 Num weight bits = 18

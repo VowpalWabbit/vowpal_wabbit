@@ -168,7 +168,7 @@ set(vw_all_headers
   oaa.h
   object_pool.h
   offset_tree.h
-  OjaNewton.h
+  oja_newton.h
   options.h
   options_boost_po.h
   options_serializer_boost_po.h
@@ -340,7 +340,7 @@ set(vw_all_sources
   noop.cc
   oaa.cc
   offset_tree.cc
-  OjaNewton.cc
+  oja_newton.cc
   options_boost_po.cc
   options_serializer_boost_po.cc
   parse_args.cc
