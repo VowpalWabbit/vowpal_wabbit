@@ -565,7 +565,11 @@ void parse_feature_tweaks(options_i& options, VW::workspace& all, bool interacti
                .help("takes effect when `privacy_activation` is turned on and is the number of unique tag hashes a "
                      "weight needs to see before it is exported"))
 #endif
-      .add(make_option("hash", hash_function).default_value("strings").keep().one_of({"strings", "all"}).help("How to hash the features"))
+      .add(make_option("hash", hash_function)
+               .default_value("strings")
+               .keep()
+               .one_of({"strings", "all"})
+               .help("How to hash the features"))
       .add(make_option("hash_seed", all.hash_seed).keep().default_value(0).help("Seed for hash function"))
       .add(make_option("ignore", ignores).keep().help("Ignore namespaces beginning with character <arg>"))
       .add(make_option("ignore_linear", ignore_linears)
@@ -581,7 +585,10 @@ void parse_feature_tweaks(options_i& options, VW::workspace& all, bool interacti
                .keep())
       .add(make_option("bit_precision", new_bits).short_name("b").help("Number of bits in the feature table"))
       .add(make_option("noconstant", noconstant).help("Don't add a constant feature"))
-      .add(make_option("constant", all.initial_constant).default_value(0.0).short_name("C").help("Set initial value of constant"))
+      .add(make_option("constant", all.initial_constant)
+               .default_value(0.0)
+               .short_name("C")
+               .help("Set initial value of constant"))
       .add(make_option("ngram", ngram_strings)
                .help("Generate N grams. To generate N grams for a single namespace 'foo', arg should be fN"))
       .add(make_option("skips", skip_strings)
@@ -1302,7 +1309,8 @@ VW::workspace& parse_args(
     option_group_definition update_args("Update");
     update_args.add(make_option("learning_rate", all.eta).help("Set learning rate").short_name("l"))
         .add(make_option("power_t", all.power_t).default_value(0.5f).help("T power value"))
-        .add(make_option("decay_learning_rate", all.eta_decay_rate).default_value(1.0)
+        .add(make_option("decay_learning_rate", all.eta_decay_rate)
+                 .default_value(1.0)
                  .help("Set Decay factor for learning_rate between passes"))
         .add(make_option("initial_t", all.sd->t).help("Initial t value"))
         .add(make_option("feature_mask", all.feature_mask)
@@ -1313,7 +1321,9 @@ VW::workspace& parse_args(
     option_group_definition weight_args("Weight");
     weight_args
         .add(make_option("initial_regressor", all.initial_regressors).help("Initial regressor(s)").short_name("i"))
-        .add(make_option("initial_weight", all.initial_weight).default_value(0.f).help("Set all weights to an initial value of arg"))
+        .add(make_option("initial_weight", all.initial_weight)
+                 .default_value(0.f)
+                 .help("Set all weights to an initial value of arg"))
         .add(make_option("random_weights", all.random_weights).help("Make initial weights random"))
         .add(make_option("normal_weights", all.normal_weights).help("Make initial weights normal"))
         .add(make_option("truncated_normal_weights", all.tnormal_weights).help("Make initial weights truncated normal"))
