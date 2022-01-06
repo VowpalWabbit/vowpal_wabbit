@@ -81,7 +81,7 @@ public:
   // TODO: Currently this function is called by both warning and error conditions. We only log
   //      to warning here though.
   inline FORCE_INLINE void parserWarning(
-      const char* message, VW::string_view var_msg, const char* message2, size_t example_number, VW::io::logger& logger)
+      const char* message, VW::string_view var_msg, const char* message2, size_t example_number, VW::io::logger& warn_logger)
   {
     // VW::string_view will output the entire view into the output stream.
     // That means if there is a null character somewhere in the range, it will terminate
@@ -100,7 +100,7 @@ public:
     }
     else
     {
-      logger.err_warn(ss.str());
+      warn_logger.err_warn(ss.str());
     }
   }
 
