@@ -1243,7 +1243,8 @@ VW::workspace& parse_args(
   if (level != VW::io::log_level::off && location == VW::io::output_location::compat)
   {
     logger.err_warn(
-        "The old default logging behavior of logging to a mix of stdout and stderr is deprecated. Please choose either 'stdout' or 'stderr' for --log_output_stream to silence this warning.");
+        "The old default logging behavior of logging to a mix of stdout and stderr is deprecated. Please choose either "
+        "'stdout' or 'stderr' for --log_output_stream to silence this warning.");
   }
 
   if (options->was_supplied("limit_output") && (upper_limit != 0)) { logger.set_max_output(upper_limit); }
