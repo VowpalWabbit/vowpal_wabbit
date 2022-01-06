@@ -476,11 +476,12 @@ void train()
   Generator gen(vw_obj, nullptr); // &dict);
   for (size_t pass=1; pass<=20; pass++)
   { cerr << "===== pass " << pass << " =====" << endl;
-    run_istream(gen, "phrase-table.tr", true);
-    run_istream(gen, "phrase-table.tr", false, 300000);
-    run_istream(gen, "phrase-table.te", false, 100000);
+    //run_istream(gen, "phrase-table.tr", true);
+    //run_istream(gen, "phrase-table.tr", false, 300000);
+    //run_istream(gen, "phrase-table.te", false, 100000);
+    run_easy();
   }
-  VW::finish(vw_obj);
+  VW::finish(vw_obj, false);
 }
 
 void predict()
