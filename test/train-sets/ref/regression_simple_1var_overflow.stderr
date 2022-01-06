@@ -1,5 +1,6 @@
+[warning] The current default logging behavior of VW is to log to a mix of stderr and stdout for logging based messages. This behavior is now deprecated. Please specify the stream to log to with --log_output_stream stdout|stderr to silence this message.
 creating quadratic features for pairs: ::
-WARNING: any duplicate namespace interactions will be removed
+[warning] Any duplicate namespace interactions will be removed
 You can use --leave_duplicate_interactions to disable this behaviour.
 Enabling FTRL based optimization
 Algorithm used: Coin Betting
