@@ -85,11 +85,11 @@ struct prediction
 // parameters for auto-conditioning
 struct auto_condition_settings
 {
-  size_t max_bias_ngram_length;  // add a "bias" feature for each ngram up to and including this length. eg., if it's 1,
-                                 // then you get a single feature for each conditional
-  size_t max_quad_ngram_length;  // add bias *times* input features for each ngram up to and including this length
-  float feature_value;           // how much weight should the conditional features get?
-  bool use_passthrough_repr;     // should we ask lower-level reductions for their internal state?
+  size_t max_bias_ngram_length = 0;   // add a "bias" feature for each ngram up to and including this length. eg., if
+                                      // it's 1, then you get a single feature for each conditional
+  size_t max_quad_ngram_length = 0;   // add bias *times* input features for each ngram up to and including this length
+  float feature_value = 0.f;          // how much weight should the conditional features get?
+  bool use_passthrough_repr = false;  // should we ask lower-level reductions for their internal state?
 };
 
 struct scored_action
@@ -160,39 +160,39 @@ private:
 public:
   using cache_map = std::unordered_map<byte_array, scored_action, cached_item_hash, cached_item_equivalent>;
 
-  VW::workspace* all;
+  VW::workspace* all = nullptr;
   std::shared_ptr<VW::rand_state> _random_state;
 
-  uint64_t offset;
-  bool auto_condition_features;  // do you want us to automatically add conditioning features?
-  bool auto_hamming_loss;        // if you're just optimizing hamming loss, we can do it for you!
-  bool examples_dont_change;     // set to true if you don't do any internal example munging
-  bool is_ldf;                   // user declared ldf
-  bool use_action_costs;         // task promises to define per-action rollout-by-ref costs
+  uint64_t offset = 0;
+  bool auto_condition_features = false;  // do you want us to automatically add conditioning features?
+  bool auto_hamming_loss = false;        // if you're just optimizing hamming loss, we can do it for you!
+  bool examples_dont_change = false;     // set to true if you don't do any internal example munging
+  bool is_ldf = false;                   // user declared ldf
+  bool use_action_costs = false;         // task promises to define per-action rollout-by-ref costs
 
   v_array<int32_t> neighbor_features;  // ugly encoding of neighbor feature requirements
   auto_condition_settings acset;       // settings for auto-conditioning
-  size_t history_length;               // value of --search_history_length, used by some tasks, default 1
+  size_t history_length = 0;           // value of --search_history_length, used by some tasks, default 1
 
-  size_t A;                 // total number of actions, [1..A]; 0 means ldf
-  size_t num_learners;      // total number of learners;
-  bool cb_learner;          // do contextual bandit learning on action (was "! rollout_all_actions" which was confusing)
+  size_t A = 0;             // total number of actions, [1..A]; 0 means ldf
+  size_t num_learners = 0;  // total number of learners;
+  bool cb_learner = false;  // do contextual bandit learning on action (was "! rollout_all_actions" which was confusing)
   SearchState state;        // current state of learning
-  size_t learn_learner_id;  // we allow user to use different learners for different states
-  int mix_per_roll_policy;  // for MIX_PER_ROLL, we need to choose a policy to use; this is where it's stored (-2 means
-                            // "not selected yet")
-  bool no_caching;          // turn off caching
-  size_t rollout_num_steps;  // how many calls of "loss" before we stop really predicting on rollouts and switch to
-                             // oracle (0 means "infinite")
-  bool linear_ordering;      // insist that examples are generated in linear order (rather that the default hoopla
-                             // permutation)
-  bool (*label_is_test)(const polylabel&);  // tell me if the label data from an example is test
+  size_t learn_learner_id = 0;   // we allow user to use different learners for different states
+  int mix_per_roll_policy = 0;   // for MIX_PER_ROLL, we need to choose a policy to use; this is where it's stored (-2
+                                 // means "not selected yet")
+  bool no_caching = false;       // turn off caching
+  size_t rollout_num_steps = 0;  // how many calls of "loss" before we stop really predicting on rollouts and switch to
+                                 // oracle (0 means "infinite")
+  bool linear_ordering = false;  // insist that examples are generated in linear order (rather that the default hoopla
+                                 // permutation)
+  bool (*label_is_test)(const polylabel&) = nullptr;  // tell me if the label data from an example is test
 
-  size_t t;                                     // current search step
-  size_t T;                                     // length of root trajectory
+  size_t t = 0;                                 // current search step
+  size_t T = 0;                                 // length of root trajectory
   std::vector<example> learn_ec_copy;           // copy of example(s) at learn_t
-  example* learn_ec_ref;                        // reference to example at learn_t, when there's no example munging
-  size_t learn_ec_ref_cnt;                      // how many are there (for LDF mode only; otherwise 1)
+  example* learn_ec_ref = nullptr;              // reference to example at learn_t, when there's no example munging
+  size_t learn_ec_ref_cnt = 0;                  // how many are there (for LDF mode only; otherwise 1)
   v_array<ptag> learn_condition_on;             // a copy of the tags used for conditioning at the training position
   std::vector<action_repr> learn_condition_on_act;  // the actions taken
   v_array<char> learn_condition_on_names;       // the names of the actions
@@ -200,73 +200,75 @@ public:
   std::vector<action_repr> ptag_to_action;      // tag to action mapping for conditioning
   std::vector<action> test_action_sequence;  // if test-mode was run, what was the corresponding action sequence; it's a
                                              // vector cuz we might expose it to the library
-  action learn_oracle_action;                // store an oracle action for debugging purposes
+  action learn_oracle_action = 0;            // store an oracle action for debugging purposes
   features last_action_repr;
 
   polylabel allowed_actions_cache;
 
-  size_t loss_declared_cnt;                 // how many times did run declare any loss (implicitly or explicitly)?
+  size_t loss_declared_cnt = 0;             // how many times did run declare any loss (implicitly or explicitly)?
   v_array<scored_action> train_trajectory;  // the training trajectory
-  size_t learn_t;                           // what time step are we learning on?
-  size_t learn_a_idx;                       // what action index are we trying?
-  bool done_with_all_actions;               // set to true when there are no more learn_a_idx to go
+  size_t learn_t = 0;                       // what time step are we learning on?
+  size_t learn_a_idx = 0;                   // what action index are we trying?
+  bool done_with_all_actions = false;       // set to true when there are no more learn_a_idx to go
 
-  float test_loss;   // loss incurred when run INIT_TEST
-  float learn_loss;  // loss incurred when run LEARN
-  float train_loss;  // loss incurred when run INIT_TRAIN
+  float test_loss = 0.f;   // loss incurred when run INIT_TEST
+  float learn_loss = 0.f;  // loss incurred when run LEARN
+  float train_loss = 0.f;  // loss incurred when run INIT_TRAIN
 
-  bool hit_new_pass;     // have we hit a new pass?
-  bool force_oracle;     // insist on using the oracle to make predictions
-  float perturb_oracle;  // with this probability, choose a random action instead of oracle action
+  bool hit_new_pass = false;   // have we hit a new pass?
+  bool force_oracle = false;   // insist on using the oracle to make predictions
+  float perturb_oracle = 0.f;  // with this probability, choose a random action instead of oracle action
 
-  size_t num_calls_to_run, num_calls_to_run_previous, save_every_k_runs;
+  size_t num_calls_to_run = 0;
+  size_t num_calls_to_run_previous = 0;
+  size_t save_every_k_runs = 0;
 
   // if we're printing to stderr we need to remember if we've printed the header yet
   // (i.e., we do this if we're driving)
-  bool printed_output_header;
+  bool printed_output_header = false;
 
   // various strings for different search states
-  bool should_produce_string;
+  bool should_produce_string = false;
   std::unique_ptr<std::stringstream> pred_string;
   std::unique_ptr<std::stringstream> truth_string;
   std::unique_ptr<std::stringstream> bad_string_stream;
 
   // parameters controlling interpolation
-  float beta;   // interpolation rate
-  float alpha;  // parameter used to adapt beta for dagger (see above comment), should be in (0,1)
+  float beta = 0.f;   // interpolation rate
+  float alpha = 0.f;  // parameter used to adapt beta for dagger (see above comment), should be in (0,1)
 
   RollMethod rollout_method;
   RollMethod rollin_method;
-  float subsample_timesteps;  // train at every time step or just a (random) subset?
-  bool xv;  // train three separate policies -- two for providing examples to the other and a third training on the
-            // union (which will be used at test time -- TODO)
+  float subsample_timesteps = 0.f;  // train at every time step or just a (random) subset?
+  bool xv = false;  // train three separate policies -- two for providing examples to the other and a third training on
+                    // the union (which will be used at test time -- TODO)
 
-  bool allow_current_policy;  // should the current policy be used for training? true for dagger
-  bool adaptive_beta;  // used to implement dagger-like algorithms. if true, beta = 1-(1-alpha)^n after n updates, and
-                       // policy is mixed with oracle as \pi' = (1-beta)\pi^* + beta \pi
-  size_t passes_per_policy;  // if we're not in dagger-mode, then we need to know how many passes to train a policy
+  bool allow_current_policy = false;  // should the current policy be used for training? true for dagger
+  bool adaptive_beta = false;         // used to implement dagger-like algorithms. if true, beta = 1-(1-alpha)^n after n
+                                      // updates, and policy is mixed with oracle as \pi' = (1-beta)\pi^* + beta \pi
+  size_t passes_per_policy = 0;  // if we're not in dagger-mode, then we need to know how many passes to train a policy
 
-  uint32_t current_policy;  // what policy are we training right now?
+  uint32_t current_policy = 0;  // what policy are we training right now?
 
   // various statistics for reporting
-  size_t num_features;
-  uint32_t total_number_of_policies;
-  size_t read_example_last_id;
-  size_t passes_since_new_policy;
-  size_t read_example_last_pass;
-  size_t total_examples_generated;
-  size_t total_predictions_made;
-  size_t total_cache_hits;
+  size_t num_features = 0;
+  uint32_t total_number_of_policies = 0;
+  size_t read_example_last_id = 0;
+  size_t passes_since_new_policy = 0;
+  size_t read_example_last_pass = 0;
+  size_t total_examples_generated = 0;
+  size_t total_predictions_made = 0;
+  size_t total_cache_hits = 0;
 
   cache_map cache_hash_map;
 
   // for foreach_feature temporary storage for conditioning
-  uint64_t dat_new_feature_idx;
-  example* dat_new_feature_ec;
+  uint64_t dat_new_feature_idx = 0;
+  example* dat_new_feature_ec = nullptr;
   std::stringstream dat_new_feature_audit_ss;
-  size_t dat_new_feature_namespace;
-  std::string* dat_new_feature_feature_space;
-  float dat_new_feature_value;
+  size_t dat_new_feature_namespace = 0;
+  std::string* dat_new_feature_feature_space = nullptr;
+  float dat_new_feature_value = 0.f;
 
   // to reduce memory allocation
   std::unique_ptr<std::stringstream> rawOutputStringStream;
@@ -277,9 +279,9 @@ public:
   polylabel gte_label;
   std::vector<std::pair<float, size_t>> active_uncertainty;
   std::vector<std::vector<std::pair<CS::wclass&, bool>>> active_known;
-  bool force_setup_ec_ref;
-  bool active_csoaa;
-  float active_csoaa_verify;
+  bool force_setup_ec_ref = false;
+  bool active_csoaa = false;
+  float active_csoaa_verify = 0.f;
 
   VW::LEARNER::multi_learner* multi_base_learner = nullptr;
   VW::LEARNER::single_learner* single_base_learner = nullptr;
@@ -287,11 +289,11 @@ public:
 
   CS::label empty_cs_label;
 
-  search_task* task;          // your task!
-  search_metatask* metatask;  // your (optional) metatask
-  BaseTask* metaoverride;
-  size_t meta_t;  // the metatask has it's own notion of time. meta_t+t, during a single run, is the way to think about
-                  // the "real" decision step but this really only matters for caching purposes
+  search_task* task = nullptr;          // your task!
+  search_metatask* metatask = nullptr;  // your (optional) metatask
+  BaseTask* metaoverride = nullptr;
+  size_t meta_t = 0;  // the metatask has it's own notion of time. meta_t+t, during a single run, is the way to think
+                      // about the "real" decision step but this really only matters for caching purposes
   v_array<v_array<action_cache>*>
       memo_foreach_action;  // when foreach_action is on, we need to cache TRAIN trajectory actions for LEARN
 
@@ -2544,6 +2546,8 @@ base_learner* setup(VW::setup_base_i& stack_builder)
   new_options.add(make_option("search_task", task_string)
                       .keep()
                       .necessary()
+                      .one_of({"sequence", "sequencespan", "sequence_ctg", "argmax", "sequence_demoldf",
+                          "multiclasstask", "dep_parser", "entity_relation", "hook", "graph", "list"})
                       .help("The search task (use \"--search_task list\" to get a list of available tasks)"));
   new_options.add(make_option("search_metatask", metatask_string)
                       .keep()
