@@ -1240,13 +1240,10 @@ VW::workspace& parse_args(
   logger.set_location(location);
 
   // Don't print a warning if the user specifically chose to use compat.
-  if (level != VW::io::log_level::off && location == VW::io::output_location::compat &&
-      !options->was_supplied("log_output_stream"))
+  if (level != VW::io::log_level::off && location == VW::io::output_location::compat)
   {
     logger.err_warn(
-        "The current default logging behavior of VW is to log to a mix of stderr and stdout for logging based "
-        "messages. This behavior is now deprecated. Please specify the stream to log to with --log_output_stream "
-        "stdout|stderr to silence this message.");
+        "The old default logging behavior of logging to a mix of stdout and stderr is deprecated. Please choose either 'stdout' or 'stderr' for --log_output_stream to silence this warning.");
   }
 
   if (options->was_supplied("limit_output") && (upper_limit != 0)) { logger.set_max_output(upper_limit); }
