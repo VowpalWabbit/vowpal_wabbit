@@ -1,1 +1,2 @@
+[warning] The old default logging behavior of logging to a mix of stdout and stderr is deprecated. Please choose either 'stdout' or 'stderr' for --log_output_stream to silence this warning.
 [critical] vw (options.h:339): Error: 'bad_type' is not a valid choice for option --cb_type. Please select from {dm, dr, ips, mtr, sm}
