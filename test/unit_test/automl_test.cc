@@ -237,7 +237,7 @@ BOOST_AUTO_TEST_CASE(assert_live_configs_and_lease)
 BOOST_AUTO_TEST_CASE(cpp_simulator_automl)
 {
   auto ctr = simulator::_test_helper(
-      "--cb_explore_adf --quiet --epsilon 0.2 --random_seed 5 --extra_metrics --automl 3 --priority_type "
+      "--cb_explore_adf --quiet --epsilon 0.2 --random_seed 5 --automl 3 --priority_type "
       "least_exclusion --keep_configs --oracle_type rand");
   BOOST_CHECK_GT(ctr.back(), 0.6f);
 }
