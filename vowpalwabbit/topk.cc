@@ -85,7 +85,7 @@ void print_result(VW::io::writer* file_descriptor,
     for (auto it = view.first; it != view.second; it++)
     {
       ss << std::fixed << it->first << " ";
-      ss << VW::string_view{it->second.begin(), it->second.size()};
+      if (!it->second.empty()) { ss << " " << VW::string_view{it->second.begin(), it->second.size()}; }
       ss << " \n";
     }
     ss << '\n';

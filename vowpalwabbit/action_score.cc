@@ -25,7 +25,7 @@ void print_action_score(
     if (i > 0) ss << ',';
     ss << a_s[i].action << ':' << a_s[i].score;
   }
-  ss << " " << VW::string_view(tag.begin(), tag.size());
+  if (!tag.empty()) { ss << " " << VW::string_view(tag.begin(), tag.size()); }
   ss << '\n';
   const auto ss_str = ss.str();
   ssize_t len = ss_str.size();

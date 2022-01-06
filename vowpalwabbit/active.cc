@@ -109,12 +109,8 @@ void active_print_result(VW::io::writer* f, float res, float weight, const v_arr
 
   std::stringstream ss;
   ss << std::fixed << res;
-  if (tag.empty()) { ss << ' '; }
-  else
-  {
-    ss << " " << VW::string_view{tag.begin(), tag.size()};
-  }
-
+  ss << " ";
+  if (!tag.empty()) { ss << VW::string_view{tag.begin(), tag.size()}; }
   if (weight >= 0) { ss << " " << std::fixed << weight; }
   ss << '\n';
   const auto ss_str = ss.str();

@@ -99,7 +99,7 @@ void print_result_by_ref(VW::io::writer* f, float res, float, const v_array<char
     auto saved_precision = ss.precision();
     if (floorf(res) == res) ss << std::setprecision(0);
     ss << std::fixed << res << std::setprecision(saved_precision);
-    ss << " " << VW::string_view{tag.begin(), tag.size()};
+    if (!tag.empty()) { ss << " " << VW::string_view{tag.begin(), tag.size()}; }
     ss << '\n';
     ssize_t len = ss.str().size();
     ssize_t t = f->write(ss.str().c_str(), static_cast<unsigned int>(len));
@@ -113,7 +113,7 @@ void print_raw_text_by_ref(VW::io::writer* f, const std::string& s, const v_arra
 
   std::stringstream ss;
   ss << s;
-  ss << " " << VW::string_view{tag.begin(), tag.size()};
+  if (!tag.empty()) { ss << " " << VW::string_view{tag.begin(), tag.size()}; }
   ss << '\n';
   ssize_t len = ss.str().size();
   ssize_t t = f->write(ss.str().c_str(), static_cast<unsigned int>(len));
