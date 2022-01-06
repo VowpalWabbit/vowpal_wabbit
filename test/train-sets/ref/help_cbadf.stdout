@@ -40,17 +40,18 @@ VW Options:
   --ring_size arg (=256, ) Size of example ring
   --strict_parse           Throw on malformed examples
 Update Options:
-  -l [ --learning_rate ] arg Set learning rate
-  --power_t arg              T power value
-  --decay_learning_rate arg  Set Decay factor for learning_rate between passes
-  --initial_t arg            Initial t value
-  --feature_mask arg         Use existing regressor to determine which 
-                             parameters may be updated.  If no 
-                             initial_regressor given, also used for initial 
-                             weights.
+  -l [ --learning_rate ] arg       Set learning rate
+  --power_t arg (=0.5, )           T power value
+  --decay_learning_rate arg (=1, ) Set Decay factor for learning_rate between 
+                                   passes
+  --initial_t arg                  Initial t value
+  --feature_mask arg               Use existing regressor to determine which 
+                                   parameters may be updated.  If no 
+                                   initial_regressor given, also used for 
+                                   initial weights.
 Weight Options:
   -i [ --initial_regressor ] arg  Initial regressor(s)
-  --initial_weight arg            Set all weights to an initial value of arg
+  --initial_weight arg (=0, )     Set all weights to an initial value of arg
   --random_weights                Make initial weights random
   --normal_weights                Make initial weights normal
   --truncated_normal_weights      Make initial weights truncated normal
@@ -75,9 +76,9 @@ Diagnostic Options:
   -h [ --help ]         More information on vowpal wabbit can be found here 
                         https://vowpalwabbit.org
 Randomization Options:
-  --random_seed arg     Seed random number generator
+  --random_seed arg (=0, ) Seed random number generator
 Feature Options:
-  --hash arg                            How to hash the features. Choices: 
+  --hash arg (=strings, )               How to hash the features. Choices: 
                                         {all, strings}
   --hash_seed arg (=0, )                Seed for hash function
   --ignore arg                          Ignore namespaces beginning with 
@@ -94,7 +95,7 @@ Feature Options:
                                         ':' as a wildcard in S.
   -b [ --bit_precision ] arg            Number of bits in the feature table
   --noconstant                          Don't add a constant feature
-  -C [ --constant ] arg                 Set initial value of constant
+  -C [ --constant ] arg (=0, )          Set initial value of constant
   --ngram arg                           Generate N grams. To generate N grams 
                                         for a single namespace 'foo', arg 
                                         should be fN
@@ -148,7 +149,7 @@ Example Options:
   --early_terminate arg (=3, )     Specify the number of passes tolerated when 
                                    holdout loss doesn't decrease before early 
                                    termination
-  --passes arg                     Number of Training Passes
+  --passes arg (=1, )              Number of Training Passes
   --initial_pass_length arg        Initial number of examples per pass
   --examples arg                   Number of examples to parse
   --min_prediction arg             Smallest prediction to output
@@ -161,8 +162,8 @@ Example Options:
                                    hinge, logistic, poisson, quantile, squared}
   --quantile_tau arg (=0.5, )      Parameter \tau associated with Quantile 
                                    loss. Defaults to 0.5
-  --l1 arg                         L_1 lambda
-  --l2 arg                         L_2 lambda
+  --l1 arg (=0, )                  L_1 lambda
+  --l2 arg (=0, )                  L_2 lambda
   --no_bias_regularization         No bias in regularization
   --named_labels arg               Use names for labels (multiclass, etc.) 
                                    rather than integers, argument specified all
