@@ -133,7 +133,7 @@ void print_result(VW::io::writer* f, float res, const v_array<char>& tag, float 
 
   std::stringstream ss;
   ss << std::fixed << res;
-  print_tag_by_ref(ss, tag);
+  ss << " " << VW::string_view{tag.begin(), tag.size()};
   ss << std::fixed << ' ' << lb << ' ' << ub << '\n';
   const auto ss_str = ss.str();
   ssize_t len = ss_str.size();
