@@ -1,6 +1,6 @@
 [info] Generating 2-grams for all namespaces.
 creating quadratic features for pairs: ::
-WARNING: any duplicate namespace interactions will be removed
+[warning] Any duplicate namespace interactions will be removed
 You can use --leave_duplicate_interactions to disable this behaviour.
 only testing
 Num weight bits = 18

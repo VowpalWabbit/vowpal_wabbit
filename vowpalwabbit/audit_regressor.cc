@@ -170,7 +170,7 @@ inline void print_ex(VW::workspace& all, size_t ex_processed, size_t vals_found,
 void finish_example(VW::workspace& all, audit_regressor_data& rd, example& ec)
 {
   bool printed = false;
-  if (static_cast<float>(ec.example_counter + std::size_t{1}) >= all.sd->dump_interval && !all.logger.quiet)
+  if (static_cast<float>(ec.example_counter + std::size_t{1}) >= all.sd->dump_interval && !all.quiet)
   {
     print_ex(all, ec.example_counter + 1, rd.values_audited, rd.values_audited * 100 / rd.loaded_regressor_values);
     all.sd->weighted_unlabeled_examples = static_cast<double>(ec.example_counter + 1);  // used in update_dump_interval
@@ -244,7 +244,7 @@ void init_driver(audit_regressor_data& dat)
 
   if (dat.loaded_regressor_values == 0) { THROW("regressor has no non-zero weights. Nothing to audit.") }
 
-  if (!dat.all->logger.quiet)
+  if (!dat.all->quiet)
   {
     *dat.all->trace_message << "Regressor contains " << dat.loaded_regressor_values << " values\n";
     *dat.all->trace_message << std::left << std::setw(shared_data::col_example_counter) << "example"

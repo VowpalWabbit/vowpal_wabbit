@@ -39,8 +39,6 @@
 using namespace VW::config;
 using namespace VW::LEARNER;
 
-namespace logger = VW::io::logger;
-
 enum class lda_math_mode : int
 {
   USE_SIMD = 0,
@@ -534,9 +532,8 @@ float lda::digamma(float x)
       return ldamath::digamma<float, lda_math_mode::USE_SIMD>(x);
     default:
       // Should not happen.
-      logger::errlog_critical("lda::digamma: Trampled or invalid math mode, aborting");
-      abort();
-      return 0.0f;
+      std::cerr << "lda::digamma: Trampled or invalid math mode, aborting" << std::endl;
+      std::abort();
   }
 }
 
@@ -551,9 +548,8 @@ float lda::lgamma(float x)
     case lda_math_mode::USE_SIMD:
       return ldamath::lgamma<float, lda_math_mode::USE_SIMD>(x);
     default:
-      logger::errlog_critical("lda::lgamma: Trampled or invalid math mode, aborting");
-      abort();
-      return 0.0f;
+      std::cerr << "lda::lgamma: Trampled or invalid math mode, aborting" << std::endl;
+      std::abort();
   }
 }
 
@@ -568,9 +564,8 @@ float lda::powf(float x, float p)
     case lda_math_mode::USE_SIMD:
       return ldamath::powf<float, lda_math_mode::USE_SIMD>(x, p);
     default:
-      logger::errlog_critical("lda::powf: Trampled or invalid math mode, aborting");
-      abort();
-      return 0.0f;
+      std::cerr << "lda::powf: Trampled or invalid math mode, aborting" << std::endl;
+      std::abort();
   }
 }
 
@@ -588,8 +583,8 @@ void lda::expdigammify(VW::workspace& all_, float* gamma)
       ldamath::expdigammify<float, lda_math_mode::USE_SIMD>(all_, gamma, underflow_threshold, 0.0f);
       break;
     default:
-      logger::errlog_critical("lda::expdigammify: Trampled or invalid math mode, aborting");
-      abort();
+      std::cerr << "lda::expdigammify: Trampled or invalid math mode, aborting" << std::endl;
+      std::abort();
   }
 }
 
@@ -607,8 +602,8 @@ void lda::expdigammify_2(VW::workspace& all_, float* gamma, float* norm)
       ldamath::expdigammify_2<float, lda_math_mode::USE_SIMD>(all_, gamma, norm, underflow_threshold);
       break;
     default:
-      logger::errlog_critical("lda::expdigammify_2: Trampled or invalid math mode, aborting");
-      abort();
+      std::cerr << "lda::expdigammify_2: Trampled or invalid math mode, aborting" << std::endl;
+      std::abort();
   }
 }
 
@@ -812,9 +807,9 @@ void save_load(lda &l, io_buf &model_file, bool read, bool text)
 void return_example(VW::workspace& all, example& ec)
 {
   all.sd->update(ec.test_only, true, ec.loss, ec.weight, ec.get_num_features());
-  for (auto &sink : all.final_prediction_sink) { MWT::print_scalars(sink.get(), ec.pred.scalars, ec.tag); }
+  for (auto& sink : all.final_prediction_sink) { MWT::print_scalars(sink.get(), ec.pred.scalars, ec.tag, all.logger); }
 
-  if (all.sd->weighted_examples() >= all.sd->dump_interval && !all.logger.quiet)
+  if (all.sd->weighted_examples() >= all.sd->dump_interval && !all.quiet)
     all.sd->print_update(*all.trace_message, all.holdout_set_off, all.current_pass, "none", 0, ec.get_num_features(),
         all.progress_add, all.progress_arg);
   VW::finish_example(all, ec);
@@ -1327,7 +1322,7 @@ base_learner* lda_setup(VW::setup_base_i& stack_builder)
 
   if (all.eta > 1.)
   {
-    logger::errlog_warn("your learning rate is too high, setting it to 1");
+    all.logger.err_warn("The learning rate is too high, setting it to 1");
     all.eta = std::min(all.eta, 1.f);
   }
 

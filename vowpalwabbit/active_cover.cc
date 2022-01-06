@@ -239,9 +239,9 @@ base_learner* active_cover_setup(VW::setup_base_i& stack_builder)
 
   if (data->oracular) data->cover_size = 0;
 
-  if (options.was_supplied("lda")) THROW("error: you can't combine lda and active learning");
+  if (options.was_supplied("lda")) THROW("lda canot be combined with active learning");
 
-  if (options.was_supplied("active")) THROW("error: you can't use --active_cover and --active at the same time");
+  if (options.was_supplied("active")) THROW("--active_cover cannot be combined with --active");
 
   auto* base = as_singleline(stack_builder.setup_base_learner());
 

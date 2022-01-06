@@ -19,7 +19,8 @@ void parse_label(label_parser& lp, VW::string_view label, polylabel& l)
   lp.default_label(l);
   reduction_features red_fts;
   VW::label_parser_reuse_mem mem;
-  lp.parse_label(l, red_fts, mem, nullptr, words);
+  auto null_logger = VW::io::create_null_logger();
+  lp.parse_label(l, red_fts, mem, nullptr, words, null_logger);
 }
 
 BOOST_AUTO_TEST_CASE(multiclass_label_parser)

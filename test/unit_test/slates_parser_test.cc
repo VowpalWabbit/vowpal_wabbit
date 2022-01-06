@@ -5,6 +5,7 @@
 #include <boost/test/unit_test.hpp>
 #include <boost/test/test_tools.hpp>
 
+#include "io/logger.h"
 #include "test_common.h"
 
 #include <vector>
@@ -20,7 +21,8 @@ void parse_slates_label(VW::string_view label, VW::slates::label& l)
   VW::slates::default_label(l);
   reduction_features red_fts;
   VW::label_parser_reuse_mem mem;
-  VW::slates::parse_label(l, mem, words);
+  auto null_logger = VW::io::create_null_logger();
+  VW::slates::parse_label(l, mem, words, null_logger);
 }
 
 BOOST_AUTO_TEST_CASE(slates_parse_label)

@@ -214,7 +214,7 @@ void SpanningTree::Run()
     {
       if (!m_quiet)
         std::cout << dotted_quad << "(" << hostname << ':' << ntohs(m_port) << "): invalid id=" << id
-                  << " >=  " << total << " !" << std::endl;
+                  << " >=  " << total << std::endl;
       ok = false;
     }
     partial partial_nodeset;

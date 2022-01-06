@@ -44,6 +44,7 @@ private:
   GEN_CS::cb_to_cs_adf _gen_cs;
 
   VW::version_struct _model_file_version;
+  VW::io::logger _logger;
 
   v_array<ACTION_SCORE::action_score> _action_probs;
   std::vector<float> _scores;
@@ -55,7 +56,7 @@ private:
 public:
   cb_explore_adf_cover(size_t cover_size, float psi, bool nounif, float epsilon, bool epsilon_decay, bool first_only,
       VW::LEARNER::multi_learner* cs_ldf_learner, VW::LEARNER::single_learner* scorer, VW::cb_type_t cb_type,
-      VW::version_struct model_file_version);
+      VW::version_struct model_file_version, VW::io::logger logger);
 
   // Should be called through cb_explore_adf_base for pre/post-processing
   void predict(VW::LEARNER::multi_learner& base, multi_ex& examples) { predict_or_learn_impl<false>(base, examples); }
@@ -69,7 +70,7 @@ private:
 
 cb_explore_adf_cover::cb_explore_adf_cover(size_t cover_size, float psi, bool nounif, float epsilon, bool epsilon_decay,
     bool first_only, VW::LEARNER::multi_learner* cs_ldf_learner, VW::LEARNER::single_learner* scorer,
-    VW::cb_type_t cb_type, VW::version_struct model_file_version)
+    VW::cb_type_t cb_type, VW::version_struct model_file_version, VW::io::logger logger)
     : _cover_size(cover_size)
     , _psi(psi)
     , _nounif(nounif)
@@ -79,6 +80,7 @@ cb_explore_adf_cover::cb_explore_adf_cover(size_t cover_size, float psi, bool no
     , _counter(0)
     , _cs_ldf_learner(cs_ldf_learner)
     , _model_file_version(model_file_version)
+    , _logger(std::move(logger))
 {
   _gen_cs.cb_type = cb_type;
   _gen_cs.scorer = scorer;
@@ -98,7 +100,7 @@ void cb_explore_adf_cover::predict_or_learn_impl(VW::LEARNER::multi_learner& bas
     if (is_mtr)  // use DR estimates for non-ERM policies in MTR
       GEN_CS::gen_cs_example_dr<true>(_gen_cs, examples, _cs_labels);
     else
-      GEN_CS::gen_cs_example<false>(_gen_cs, examples, _cs_labels);
+      GEN_CS::gen_cs_example<false>(_gen_cs, examples, _cs_labels, _logger);
 
     if (base.learn_returns_prediction)
     {
@@ -115,7 +117,7 @@ void cb_explore_adf_cover::predict_or_learn_impl(VW::LEARNER::multi_learner& bas
   }
   else
   {
-    GEN_CS::gen_cs_example_ips(examples, _cs_labels);
+    GEN_CS::gen_cs_example_ips(examples, _cs_labels, _logger);
     VW::LEARNER::multiline_learn_or_predict<false>(base, examples, examples[0]->ft_offset);
   }
   v_array<ACTION_SCORE::action_score>& preds = examples[0]->pred.a_s;
@@ -277,12 +279,12 @@ VW::LEARNER::base_learner* setup(VW::setup_base_i& stack_builder)
     case VW::cb_type_t::ips:
       break;
     case VW::cb_type_t::mtr:
-      VW::io::logger::errlog_warn("currently, mtr is only used for the first policy in cover, other policies use dr");
+      all.logger.err_warn("currently, mtr is only used for the first policy in cover, other policies use dr");
       break;
     case VW::cb_type_t::dm:
     case VW::cb_type_t::sm:
-      VW::io::logger::errlog_warn(
-          "cb_type must be in {'ips','dr','mtr'}; resetting to mtr. Input received: {}", VW::to_string(cb_type));
+      all.logger.err_warn(
+          "cb_type must be in {{'ips','dr','mtr'}}; resetting to mtr. Input received: {}", VW::to_string(cb_type));
       options.replace("cb_type", "mtr");
       cb_type = VW::cb_type_t::mtr;
       break;
@@ -313,7 +315,7 @@ VW::LEARNER::base_learner* setup(VW::setup_base_i& stack_builder)
 
   using explore_type = cb_explore_adf_base<cb_explore_adf_cover>;
   auto data = VW::make_unique<explore_type>(with_metrics, cover_size, psi, nounif, epsilon, epsilon_decay, first_only,
-      as_multiline(all.cost_sensitive), all.scorer, cb_type, all.model_file_ver);
+      as_multiline(all.cost_sensitive), all.scorer, cb_type, all.model_file_ver, all.logger);
   auto* l = make_reduction_learner(
       std::move(data), base, explore_type::learn, explore_type::predict, stack_builder.get_setupfn_name(setup))
                 .set_learn_returns_prediction(true)

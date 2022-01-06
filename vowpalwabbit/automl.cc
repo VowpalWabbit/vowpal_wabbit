@@ -6,7 +6,6 @@
 
 #include "constant.h"  // NUM_NAMESPACES
 #include "debug_log.h"
-#include "io/logger.h"
 #include "rand_state.h"
 #include "vw.h"
 #include "model_utils.h"
@@ -15,8 +14,6 @@
 
 using namespace VW::config;
 using namespace VW::LEARNER;
-
-namespace logger = VW::io::logger;
 
 /*
 This reduction implements the ChaCha algorithm from page 5 of the following paper:
@@ -76,8 +73,41 @@ void fail_if_enabled(VW::workspace& all, const std::set<std::string>& not_compat
 
   for (const auto& reduction : enabled_reductions)
   {
-    if (not_compat.count(reduction) > 0) THROW("Error: automl does not yet support this reduction: " + reduction);
+    if (not_compat.count(reduction) > 0) THROW("automl does not yet support this reduction: " + reduction);
   }
+}
+
+std::string interaction_vec_t_to_string(const std::vector<std::vector<namespace_index>>& interactions)
+{
+  std::stringstream ss;
+  for (const std::vector<namespace_index>& v : interactions)
+  {
+    ss << "-q ";
+    for (namespace_index c : v)
+    {
+      c = (c == constant_namespace) ? '0' : c;
+      ss << c;
+    }
+    ss << " ";
+  }
+  return ss.str();
+}
+std::string exclusions_to_string(const std::map<namespace_index, std::set<namespace_index>>& exclusions)
+{
+  std::stringstream ss;
+  for (auto const& x : exclusions)
+  {
+    auto ns1 = x.first;
+    ns1 = (ns1 == constant_namespace) ? '0' : ns1;
+    ss << ns1 << ": [";
+    for (auto ns : x.second)
+    {
+      ns = (ns == constant_namespace) ? '0' : ns;
+      ss << ns << " ";
+    }
+    ss << "] ";
+  }
+  return ss.str();
 }
 }  // namespace details
 
@@ -90,7 +120,7 @@ void scored_config::update(float w, float r)
   last_r = r;
 }
 
-void scored_config::persist(metric_sink& metrics, const std::string& suffix)
+void scored_config::persist(metric_sink& metrics, const std::string& suffix, bool verbose)
 {
   metrics.set_uint("upcnt" + suffix, update_count);
   metrics.set_float("ips" + suffix, current_ips());
@@ -99,6 +129,7 @@ void scored_config::persist(metric_sink& metrics, const std::string& suffix)
   metrics.set_float("w" + suffix, last_w);
   metrics.set_float("r" + suffix, last_r);
   metrics.set_uint("conf_idx" + suffix, config_index);
+  if (verbose) { metrics.set_string("interactions" + suffix, details::interaction_vec_t_to_string(live_interactions)); }
 }
 
 float scored_config::current_ips() const { return (update_count > 0) ? ips / update_count : 0; }
@@ -142,13 +173,14 @@ void automl<CMType>::one_step(multi_learner& base, multi_ex& ec, CB::cb_class& l
 // into its own base_learner.learn(). see learn_automl(...)
 interaction_config_manager::interaction_config_manager(uint64_t global_lease, uint64_t max_live_configs,
     std::shared_ptr<VW::rand_state> rand_state, uint64_t priority_challengers, bool keep_configs,
-    std::string oracle_type, priority_func* calc_priority)
+    std::string oracle_type, dense_parameters& weights, priority_func* calc_priority)
     : global_lease(global_lease)
     , max_live_configs(max_live_configs)
     , random_state(std::move(rand_state))
     , priority_challengers(priority_challengers)
     , keep_configs(keep_configs)
     , oracle_type(std::move(oracle_type))
+    , weights(weights)
     , calc_priority(calc_priority)
 {
   configs[0] = exclusion_config(global_lease);
@@ -284,7 +316,7 @@ void interaction_config_manager::config_oracle()
   }
   else
   {
-    THROW("Error: unknown oracle type.");
+    THROW("Unknown oracle type.");
   }
 }
 
@@ -362,6 +394,7 @@ void interaction_config_manager::schedule()
       uint64_t new_live_config_index = choose();
       scores[live_slot].config_index = new_live_config_index;
       configs[new_live_config_index].state = VW::automl::config_state::Live;
+      weights.copy_offsets(current_champ, live_slot, 4);
       // Regenerate interactions each time an exclusion is swapped in
       gen_quadratic_interactions(live_slot);
       // We may also want to 0 out weights here? Currently keep all same in live_slot position
@@ -465,6 +498,7 @@ void interaction_config_manager::update_champ()
   }
   if (champ_change)
   {
+    this->total_champ_switches++;
     if (!keep_configs)
     {
       while (!index_queue.empty()) { index_queue.pop(); };
@@ -486,12 +520,20 @@ void interaction_config_manager::update_champ()
   }
 }
 
-void interaction_config_manager::persist(metric_sink& metrics)
+void interaction_config_manager::persist(metric_sink& metrics, bool verbose)
 {
   metrics.set_uint("test_county", total_learn_count);
   metrics.set_uint("current_champ", current_champ);
   for (uint64_t live_slot = 0; live_slot < scores.size(); ++live_slot)
-  { scores[live_slot].persist(metrics, "_" + std::to_string(live_slot)); }
+  {
+    scores[live_slot].persist(metrics, "_" + std::to_string(live_slot), verbose);
+    if (verbose)
+    {
+      auto& exclusions = configs[scores[live_slot].config_index].exclusions;
+      metrics.set_string("exclusionc_" + std::to_string(live_slot), details::exclusions_to_string(exclusions));
+    }
+  }
+  metrics.set_uint("total_champ_switches", total_champ_switches);
 }
 
 // This sets up example with correct ineractions vector
@@ -576,10 +618,14 @@ void learn_automl(automl<CMType>& data, multi_learner& base, multi_ex& ec)
   assert(ec[0]->interactions == nullptr);
 }
 
-template <typename CMType>
+template <typename CMType, bool verbose>
 void persist(automl<CMType>& data, metric_sink& metrics)
 {
-  data.cm->persist(metrics);
+  if (verbose) { data.cm->persist(metrics, true); }
+  else
+  {
+    data.cm->persist(metrics, false);
+  }
 }
 
 template <typename CMType>
@@ -641,6 +687,7 @@ VW::LEARNER::base_learner* automl_setup(VW::setup_base_i& stack_builder)
   std::string priority_type;
   int priority_challengers;
   bool keep_configs = false;
+  bool verbose_metrics = false;
   std::string oracle_type;
 
   option_group_definition new_options("Automl");
@@ -669,6 +716,7 @@ VW::LEARNER::base_learner* automl_setup(VW::setup_base_i& stack_builder)
                .default_value(-1)
                .help("Set number of priority challengers to use"))
       .add(make_option("keep_configs", keep_configs).keep().help("keep all configs after champ change"))
+      .add(make_option("verbose_metrics", verbose_metrics).help("extended metrics for debugging"))
       .add(make_option("oracle_type", oracle_type)
                .keep()
                .default_value("one_diff")
@@ -686,13 +734,13 @@ VW::LEARNER::base_learner* automl_setup(VW::setup_base_i& stack_builder)
   }
   else
   {
-    THROW("Error: Invalid priority function provided");
+    THROW("Invalid priority function provided");
   }
 
   if (priority_challengers < 0) { priority_challengers = (static_cast<int>(max_live_configs) - 1) / 2; }
 
   auto cm = VW::make_unique<interaction_config_manager>(global_lease, max_live_configs, all.get_random_state(),
-      static_cast<uint64_t>(priority_challengers), keep_configs, oracle_type, calc_priority);
+      static_cast<uint64_t>(priority_challengers), keep_configs, oracle_type, all.weights.dense_weights, calc_priority);
   auto data = VW::make_unique<automl<interaction_config_manager>>(std::move(cm));
   assert(max_live_configs <= MAX_CONFIGS);
 
@@ -721,18 +769,34 @@ VW::LEARNER::base_learner* automl_setup(VW::setup_base_i& stack_builder)
     data->adf_learner = as_multiline(base_learner->get_learner_by_name_prefix("cb_explore_adf_"));
     auto ppw = max_live_configs;
 
-    auto* l = make_reduction_learner(std::move(data), as_multiline(base_learner),
-        learn_automl<interaction_config_manager, true>, predict_automl<interaction_config_manager, true>,
-        stack_builder.get_setupfn_name(automl_setup))
-                  .set_params_per_weight(ppw)  // refactor pm
-                  .set_finish_example(finish_example<interaction_config_manager>)
-                  .set_save_load(save_load_aml<interaction_config_manager>)
-                  .set_persist_metrics(persist<interaction_config_manager>)
-                  .set_output_prediction_type(base_learner->get_output_prediction_type())
-                  .set_learn_returns_prediction(true)
-                  .build();
-
-    return make_base(*l);
+    if (verbose_metrics)
+    {
+      auto* l = make_reduction_learner(std::move(data), as_multiline(base_learner),
+          learn_automl<interaction_config_manager, true>, predict_automl<interaction_config_manager, true>,
+          stack_builder.get_setupfn_name(automl_setup))
+                    .set_params_per_weight(ppw)  // refactor pm
+                    .set_finish_example(finish_example<interaction_config_manager>)
+                    .set_save_load(save_load_aml<interaction_config_manager>)
+                    .set_persist_metrics(persist<interaction_config_manager, true>)
+                    .set_output_prediction_type(base_learner->get_output_prediction_type())
+                    .set_learn_returns_prediction(true)
+                    .build();
+      return make_base(*l);
+    }
+    else
+    {
+      auto* l = make_reduction_learner(std::move(data), as_multiline(base_learner),
+          learn_automl<interaction_config_manager, true>, predict_automl<interaction_config_manager, true>,
+          stack_builder.get_setupfn_name(automl_setup))
+                    .set_params_per_weight(ppw)  // refactor pm
+                    .set_finish_example(finish_example<interaction_config_manager>)
+                    .set_save_load(save_load_aml<interaction_config_manager>)
+                    .set_persist_metrics(persist<interaction_config_manager, false>)
+                    .set_output_prediction_type(base_learner->get_output_prediction_type())
+                    .set_learn_returns_prediction(true)
+                    .build();
+      return make_base(*l);
+    }
   }
   else
   {

@@ -16,8 +16,6 @@
 
 #include "io/logger.h"
 
-namespace logger = VW::io::logger;
-
 size_t read_features(io_buf& buf, char*& line, size_t& num_chars)
 {
   line = nullptr;
@@ -76,13 +74,14 @@ public:
   uint32_t _hash_seed;
   uint64_t _parse_mask;
   std::array<std::vector<std::shared_ptr<feature_dict>>, NUM_NAMESPACES>* _namespace_dictionaries;
+  VW::io::logger* logger;
 
   ~TC_parser() {}
 
   // TODO: Currently this function is called by both warning and error conditions. We only log
   //      to warning here though.
   inline FORCE_INLINE void parserWarning(
-      const char* message, VW::string_view var_msg, const char* message2, size_t example_number)
+      const char* message, VW::string_view var_msg, const char* message2, size_t example_number, VW::io::logger& logger)
   {
     // VW::string_view will output the entire view into the output stream.
     // That means if there is a null character somewhere in the range, it will terminate
@@ -101,7 +100,7 @@ public:
     }
     else
     {
-      logger::errlog_warn(ss.str());
+      logger.err_warn(ss.str());
     }
   }
 
@@ -140,8 +139,8 @@ public:
       if (std::isnan(_v))
       {
         _v = float_feature_value = 0.f;
-        parserWarning("warning: invalid feature value:\"", _line.substr(_read_idx), "\" read as NaN. Replacing with 0.",
-            _ae->example_counter);
+        parserWarning("Invalid feature value:\"", _line.substr(_read_idx), "\" read as NaN. Replacing with 0.",
+            _ae->example_counter, *logger);
       }
       _read_idx += end_read;
       return true;
@@ -151,7 +150,7 @@ public:
       _v = float_feature_value = 0.f;
       // syntax error
       parserWarning("malformed example! '|', ':', space, or EOL expected after : \"", _line.substr(0, _read_idx), "\"",
-          _ae->example_counter);
+          _ae->example_counter, *logger);
       return true;
     }
   }
@@ -356,14 +355,14 @@ public:
       _cur_channel_v = parseFloat(sv.begin(), end_read, sv.end());
       if (end_read + _read_idx >= _line.size())
       {
-        parserWarning(
-            "malformed example! Float expected after : \"", _line.substr(0, _read_idx), "\"", _ae->example_counter);
+        parserWarning("malformed example! Float expected after : \"", _line.substr(0, _read_idx), "\"",
+            _ae->example_counter, *logger);
       }
       if (std::isnan(_cur_channel_v))
       {
         _cur_channel_v = 1.f;
-        parserWarning("warning: invalid namespace value:\"", _line.substr(_read_idx),
-            "\" read as NaN. Replacing with 1.", _ae->example_counter);
+        parserWarning("Invalid namespace value:\"", _line.substr(_read_idx), "\" read as NaN. Replacing with 1.",
+            _ae->example_counter, *logger);
       }
       _read_idx += end_read;
     }
@@ -371,7 +370,7 @@ public:
     {
       // syntax error
       parserWarning("malformed example! '|',':', space, or EOL expected after : \"", _line.substr(0, _read_idx), "\"",
-          _ae->example_counter);
+          _ae->example_counter, *logger);
     }
   }
 
@@ -381,8 +380,8 @@ public:
         _line[_read_idx] == ':' || _line[_read_idx] == '\r')
     {
       // syntax error
-      parserWarning(
-          "malformed example! String expected after : \"", _line.substr(0, _read_idx), "\"", _ae->example_counter);
+      parserWarning("malformed example! String expected after : \"", _line.substr(0, _read_idx), "\"",
+          _ae->example_counter, *logger);
     }
     else
     {
@@ -409,7 +408,7 @@ public:
     {
       // syntax error
       parserWarning("malformed example! '|',space, or EOL expected after : \"", _line.substr(0, _read_idx), "\"",
-          _ae->example_counter);
+          _ae->example_counter, *logger);
     }
   }
 
@@ -449,7 +448,7 @@ public:
     {
       // syntax error
       parserWarning("malformed example! '|',String,space, or EOL expected after : \"", _line.substr(0, _read_idx), "\"",
-          _ae->example_counter);
+          _ae->example_counter, *logger);
     }
 
     if (_new_index && _ae->feature_space[_index].size() > 0) _ae->indices.push_back(_index);
@@ -468,8 +467,8 @@ public:
     if (_read_idx < _line.size() && _line[_read_idx] != '\r')
     {
       // syntax error
-      parserWarning(
-          "malformed example! '|' or EOL expected after : \"", _line.substr(0, _read_idx), "\"", _ae->example_counter);
+      parserWarning("malformed example! '|' or EOL expected after : \"", _line.substr(0, _read_idx), "\"",
+          _ae->example_counter, *logger);
     }
   }
 
@@ -487,6 +486,7 @@ public:
       this->_namespace_dictionaries = &all.namespace_dictionaries;
       this->_hash_seed = all.hash_seed;
       this->_parse_mask = all.parse_mask;
+      this->logger = &all.logger;
       listNameSpace();
     }
     else
@@ -532,7 +532,7 @@ void substring_to_example(VW::workspace* all, example* ae, VW::string_view examp
   if (!all->example_parser->words.empty())
   {
     all->example_parser->lbl_parser.parse_label(ae->l, ae->_reduction_features,
-        all->example_parser->parser_memory_to_reuse, all->sd->ldict.get(), all->example_parser->words);
+        all->example_parser->parser_memory_to_reuse, all->sd->ldict.get(), all->example_parser->words, all->logger);
   }
 
   if (bar_idx != VW::string_view::npos)

@@ -49,7 +49,7 @@ struct sender
 
 void open_sockets(sender& s, const std::string& host)
 {
-  s._socket = VW::io::wrap_socket_descriptor(open_socket(host.c_str()));
+  s._socket = VW::io::wrap_socket_descriptor(open_socket(host.c_str(), s.all->logger));
   s._socket_reader = s._socket->get_reader();
   s.buf = new io_buf();
   s.buf->add_file(s._socket->get_writer());
@@ -63,7 +63,9 @@ void send_features(io_buf* b, example& ec, uint32_t mask)
   for (namespace_index ns : ec.indices)
   {
     if (ns == constant_namespace) { continue; }
-    output_features(*b, ns, ec.feature_space[ns], mask);
+    char* c;
+    cache_index(*b, ns, ec.feature_space[ns], c);
+    cache_features(*b, ec.feature_space[ns], mask, c);
   }
   b->flush();
 }

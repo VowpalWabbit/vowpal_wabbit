@@ -15,8 +15,6 @@ using namespace VW::LEARNER;
 using namespace VW::config;
 using namespace VW::math;
 
-namespace logger = VW::io::logger;
-
 #define W_XT 0  // current parameter
 #define W_ZT 1  // in proximal is "accumulated z(t) = z(t-1) + g(t) + sigma*w(t)", in general is the dual weight vector
 #define W_G2 2  // accumulated gradient information
@@ -415,75 +413,80 @@ base_learner* ftrl_setup(VW::setup_base_i& stack_builder)
   VW::workspace& all = *stack_builder.get_all_pointer();
   auto b = VW::make_unique<ftrl>();
 
-  bool ftrl_option = false;
-  bool pistol = false;
-  bool coin = false;
+  bool ftrl_option_no_not_use = false;
+  bool pistol_no_not_use = false;
+  bool coin_no_not_use = false;
 
-  option_group_definition new_options("Follow the Regularized Leader");
-  new_options.add(make_option("ftrl", ftrl_option).keep().help("FTRL: Follow the Proximal Regularized Leader"))
-      .add(make_option("coin", coin).keep().help("Coin betting optimizer"))
-      .add(make_option("pistol", pistol).keep().help("PiSTOL: Parameter-free STOchastic Learning"))
+  option_group_definition ftrl_options("Follow the Regularized Leader - FTRL");
+  ftrl_options
+      .add(make_option("ftrl", ftrl_option_no_not_use)
+               .necessary()
+               .keep()
+               .help("FTRL: Follow the Proximal Regularized Leader"))
       .add(make_option("ftrl_alpha", b->ftrl_alpha).help("Learning rate for FTRL optimization"))
       .add(make_option("ftrl_beta", b->ftrl_beta).help("Learning rate for FTRL optimization"));
 
-  options.add_and_parse(new_options);
+  option_group_definition pistol_options("Follow the Regularized Leader - Pistol");
+  pistol_options
+      .add(make_option("pistol", pistol_no_not_use)
+               .necessary()
+               .keep()
+               .help("PiSTOL: Parameter-free STOchastic Learning"))
+      .add(make_option("ftrl_alpha", b->ftrl_alpha).help("Learning rate for FTRL optimization"))
+      .add(make_option("ftrl_beta", b->ftrl_beta).help("Learning rate for FTRL optimization"));
 
-  if (!ftrl_option && !pistol && !coin) { return nullptr; }
+  option_group_definition coin_options("Follow the Regularized Leader - Coin");
+  coin_options.add(make_option("coin", coin_no_not_use).necessary().keep().help("Coin betting optimizer"))
+      .add(make_option("ftrl_alpha", b->ftrl_alpha).help("Learning rate for FTRL optimization"))
+      .add(make_option("ftrl_beta", b->ftrl_beta).help("Learning rate for FTRL optimization"));
 
-  // Defaults that are specific to the mode that was chosen.
-  if (ftrl_option)
-  {
-    b->ftrl_alpha = options.was_supplied("ftrl_alpha") ? b->ftrl_alpha : 0.005f;
-    b->ftrl_beta = options.was_supplied("ftrl_beta") ? b->ftrl_beta : 0.1f;
-  }
-  else if (pistol)
-  {
-    b->ftrl_alpha = options.was_supplied("ftrl_alpha") ? b->ftrl_alpha : 1.0f;
-    b->ftrl_beta = options.was_supplied("ftrl_beta") ? b->ftrl_beta : 0.5f;
-  }
-  else if (coin)
-  {
-    b->ftrl_alpha = options.was_supplied("ftrl_alpha") ? b->ftrl_alpha : 4.0f;
-    b->ftrl_beta = options.was_supplied("ftrl_beta") ? b->ftrl_beta : 1.0f;
-  }
+  const auto ftrl_enabled = options.add_parse_and_check_necessary(ftrl_options);
+  const auto pistol_enabled = options.add_parse_and_check_necessary(pistol_options);
+  const auto coin_enabled = options.add_parse_and_check_necessary(coin_options);
+
+  if (!ftrl_enabled && !pistol_enabled && !coin_enabled) { return nullptr; }
+  size_t count = 0;
+  count += ftrl_enabled ? 1 : 0;
+  count += pistol_enabled ? 1 : 0;
+  count += coin_enabled ? 1 : 0;
+
+  if (count != 1) { THROW("You can only use one of 'ftrl', 'pistol', or 'coin' at a time."); }
 
   b->all = &all;
   b->no_win_counter = 0;
   b->all->normalized_sum_norm_x = 0;
   b->total_weight = 0;
 
+  std::string algorithm_name;
   void (*learn_ptr)(ftrl&, base_learner&, example&) = nullptr;
   bool learn_returns_prediction = false;
 
-  std::string algorithm_name;
-  if (ftrl_option)
+  // Defaults that are specific to the mode that was chosen.
+  if (ftrl_enabled)
   {
+    b->ftrl_alpha = options.was_supplied("ftrl_alpha") ? b->ftrl_alpha : 0.005f;
+    b->ftrl_beta = options.was_supplied("ftrl_beta") ? b->ftrl_beta : 0.1f;
     algorithm_name = "Proximal-FTRL";
-    if (all.audit || all.hash_inv)
-      learn_ptr = learn_proximal<true>;
-    else
-      learn_ptr = learn_proximal<false>;
+    learn_ptr = all.audit || all.hash_inv ? learn_proximal<true> : learn_proximal<false>;
     all.weights.stride_shift(2);  // NOTE: for more parameter storage
     b->ftrl_size = 3;
   }
-  else if (pistol)
+  else if (pistol_enabled)
   {
+    b->ftrl_alpha = options.was_supplied("ftrl_alpha") ? b->ftrl_alpha : 1.0f;
+    b->ftrl_beta = options.was_supplied("ftrl_beta") ? b->ftrl_beta : 0.5f;
     algorithm_name = "PiSTOL";
-    if (all.audit || all.hash_inv)
-      learn_ptr = learn_pistol<true>;
-    else
-      learn_ptr = learn_pistol<false>;
+    learn_ptr = all.audit || all.hash_inv ? learn_pistol<true> : learn_pistol<false>;
     all.weights.stride_shift(2);  // NOTE: for more parameter storage
     b->ftrl_size = 4;
     learn_returns_prediction = true;
   }
-  else if (coin)
+  else if (coin_enabled)
   {
+    b->ftrl_alpha = options.was_supplied("ftrl_alpha") ? b->ftrl_alpha : 4.0f;
+    b->ftrl_beta = options.was_supplied("ftrl_beta") ? b->ftrl_beta : 1.0f;
     algorithm_name = "Coin Betting";
-    if (all.audit || all.hash_inv)
-      learn_ptr = learn_coin_betting<true>;
-    else
-      learn_ptr = learn_coin_betting<false>;
+    learn_ptr = all.audit || all.hash_inv ? learn_coin_betting<true> : learn_coin_betting<false>;
     all.weights.stride_shift(3);  // NOTE: for more parameter storage
     b->ftrl_size = 6;
     learn_returns_prediction = true;
@@ -494,7 +497,7 @@ base_learner* ftrl_setup(VW::setup_base_i& stack_builder)
   b->data.l1_lambda = b->all->l1_lambda;
   b->data.l2_lambda = b->all->l2_lambda;
 
-  if (!all.logger.quiet)
+  if (!all.quiet)
   {
     *(all.trace_message) << "Enabling FTRL based optimization" << std::endl;
     *(all.trace_message) << "Algorithm used: " << algorithm_name << std::endl;

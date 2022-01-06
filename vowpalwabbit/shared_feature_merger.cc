@@ -20,23 +20,6 @@ namespace VW
 {
 namespace shared_feature_merger
 {
-static const std::vector<std::string> reduction_names_to_enable_for = {
-    "csoaa_ldf", "wap_ldf", "cb_adf", "explore_eval", "cbify_ldf", "cb_explore_adf", "warm_cb"};
-
-bool use_reduction(const VW::LEARNER::base_learner& base_learner)
-{
-  std::vector<std::string> enabled_reductions;
-  base_learner.get_enabled_reductions(enabled_reductions);
-  for (const auto& enabled_reduction : enabled_reductions)
-  {
-    if (std::any_of(reduction_names_to_enable_for.begin(), reduction_names_to_enable_for.end(),
-            [&](const std::string& reduction_name_to_enable_for) {
-              return enabled_reduction.find(reduction_name_to_enable_for) != std::string::npos;
-            }))
-    { return true; }
-  }
-  return false;
-}
 
 struct sfm_metrics
 {
@@ -88,7 +71,10 @@ void predict_or_learn(sfm_data& data, VW::LEARNER::multi_learner& base, multi_ex
 
   if (data._metrics)
   {
+    VW_WARNING_STATE_PUSH
+    VW_WARNING_DISABLE_COND_CONST_EXPR
     if (is_learn && has_example_header) { data._metrics->count_learn_example_with_shared++; }
+    VW_WARNING_STATE_POP
   }
 }
 
@@ -104,7 +90,8 @@ VW::LEARNER::base_learner* shared_feature_merger_setup(VW::setup_base_i& stack_b
   VW::workspace& all = *stack_builder.get_all_pointer();
   auto* base = stack_builder.setup_base_learner();
   if (base == nullptr) { return nullptr; }
-  if (!use_reduction(*base)) { return base; }
+  std::set<label_type_t> sfm_labels = {label_type_t::cb, label_type_t::cs};
+  if (sfm_labels.find(base->get_input_label_type()) == sfm_labels.end() || !base->is_multiline()) { return base; }
 
   auto data = VW::make_unique<sfm_data>();
   if (options.was_supplied("extra_metrics")) { data->_metrics = VW::make_unique<sfm_metrics>(); }

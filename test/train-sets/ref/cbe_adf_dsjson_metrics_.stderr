@@ -6,20 +6,20 @@ initial_t = 0
 power_t = 0.5
 using no cache
 Reading datafile = train-sets/decisionservice.json
-WARNING: Old string feature value behavior is deprecated in JSON/DSJSON and will be removed in a future version. Use `--chain_hash` to use new behavior and silence this warning.
+[warning] Old string feature value behavior is deprecated in JSON/DSJSON and will be removed in a future version. Use `--chain_hash` to use new behavior and silence this warning.
 num sources = 1
 Enabled reductions: gd, scorer-identity, csoaa_ldf-rank, cb_adf, cb_explore_adf_greedy, automl, shared_feature_merger, extra_metrics
 Input label = cb
 Output pred = action_probs
 average  since         example        example  current  current  current
 loss     last          counter         weight    label  predict features
--0.102041 -0.102041            1            1.0 9:-1:0.82        0:0.0833333...    10475
--0.051020 0.000000            2            2.0 9:0:0.82        7:0.816667...    10411
--0.040816 -0.020408            3            3.0 9:-1:0.82        7:0.816667...    10411
+-0.102041 -0.102041            1            1.0 9:-1:0.82        0:0.0833333...    10463
+-0.051020 0.000000            2            2.0 9:0:0.82        7:0.816667...    10399
+-0.040816 -0.020408            3            3.0 9:-1:0.82        7:0.816667...    10399
 
 finished run
 number of examples = 3
 weighted example sum = 3.000000
 weighted label sum = 0.000000
 average loss = -0.040816
-total feature number = 31297
+total feature number = 31261

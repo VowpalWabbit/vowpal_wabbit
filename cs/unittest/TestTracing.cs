@@ -28,9 +28,9 @@ namespace cs_unittest
             }
 
             var trace = string.Join("\n", messages);
-            var expected = 25;
+            var expected = 26;
             Assert.AreEqual(expected, messages.Count, $"Expected {expected} lines. Found {messages.Count}. '{trace}'");
-            Assert.AreEqual("total feature number = 4", messages[24]);
+            Assert.AreEqual("total feature number = 4", messages[25]);
         }
     }
 }

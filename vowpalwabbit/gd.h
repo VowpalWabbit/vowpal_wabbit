@@ -17,7 +17,7 @@ VW::LEARNER::base_learner* setup(VW::setup_base_i& stack_builder);
 
 struct gd;
 
-float finalize_prediction(shared_data* sd, vw_logger& logger, float ret);
+float finalize_prediction(shared_data* sd, VW::io::logger& logger, float ret);
 void print_features(VW::workspace& all, example& ec);
 void print_audit_features(VW::workspace&, example& ec);
 void save_load_regressor(VW::workspace& all, io_buf& model_file, bool read, bool text);

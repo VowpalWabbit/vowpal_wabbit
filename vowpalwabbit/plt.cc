@@ -18,7 +18,6 @@
 
 using namespace VW::LEARNER;
 using namespace VW::config;
-namespace logger = VW::io::logger;
 
 namespace plt_ns
 {
@@ -108,8 +107,8 @@ void learn(plt& p, single_learner& base, example& ec)
       }
     }
     if (multilabels.label_v.back() >= p.k)
-      logger::log_error("label {0} is not in {{0,{1}}} This won't work right.",
-                        multilabels.label_v.back(), p.k - 1);
+      p.all->logger.out_error(
+          "label {0} is not in {{0,{1}}} This won't work right.", multilabels.label_v.back(), p.k - 1);
 
     for (auto& n : p.positive_nodes)
     {
@@ -163,7 +162,7 @@ void predict(plt& p, single_learner& base, example& ec)
     if (label < p.k)
       p.true_labels.insert(label);
     else
-      logger::log_error("label {0} is not in {{0,{1}}} This won't work right.", label, p.k - 1);
+      p.all->logger.out_error("label {0} is not in {{0,{1}}} This won't work right.", label, p.k - 1);
   }
 
   p.node_queue.clear();  // clear node queue
@@ -350,7 +349,7 @@ base_learner* plt_setup(VW::setup_base_i& stack_builder)
   tree->t = static_cast<uint32_t>(e + d);
   tree->ti = tree->t - tree->k;
 
-  if (!all.logger.quiet)
+  if (!all.quiet)
   {
     *(all.trace_message) << "PLT k = " << tree->k << "\nkary_tree = " << tree->kary << std::endl;
     if (!all.training)

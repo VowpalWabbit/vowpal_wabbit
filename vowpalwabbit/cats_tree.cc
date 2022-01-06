@@ -94,7 +94,7 @@ void min_depth_binary_tree::build_tree(uint32_t num_nodes, uint32_t bandwidth)
       bool left_only = false;
       if (bandwidth)
       {
-        right_only = (id == (_num_leaf_nodes / (2 * bandwidth) - 1));
+        right_only = (id == (((_num_leaf_nodes / bandwidth) / 2) - 1));
         left_only = (id == (_num_leaf_nodes / (bandwidth)-2));
       }
       nodes.emplace_back(id, 0, 0, i, depth, left_only, right_only, true);
@@ -102,7 +102,7 @@ void min_depth_binary_tree::build_tree(uint32_t num_nodes, uint32_t bandwidth)
       id = 2 * i + 2;
       if (bandwidth)
       {
-        right_only = (id == (_num_leaf_nodes / (2 * bandwidth) - 1));
+        right_only = (id == (((_num_leaf_nodes / bandwidth) / 2) - 1));
         left_only = (id == (_num_leaf_nodes / (bandwidth)-2));
       }
       nodes.emplace_back(id, 0, 0, i, depth, left_only, right_only, true);
@@ -361,7 +361,7 @@ base_learner* setup(setup_base_i& stack_builder)
 
   auto tree = VW::make_unique<cats_tree>();
   tree->init(num_actions, bandwidth);
-  tree->set_trace_message(all.trace_message.get(), all.logger.quiet);
+  tree->set_trace_message(all.trace_message.get(), all.quiet);
 
   base_learner* base = stack_builder.setup_base_learner();
   int32_t params_per_weight = tree->learner_count();

@@ -22,10 +22,10 @@
 #include "vw_allreduce.h"
 #include "rand48.h"
 #include "reductions.h"
+#include "model_utils.h"
+#include "example.h"
 
 #include "io/logger.h"
-
-namespace logger = VW::io::logger;
 
 #define SVM_KER_LIN 0
 #define SVM_KER_RBF 1
@@ -189,8 +189,7 @@ static int make_hot_sv(svm_params& params, size_t svi)
 {
   svm_model* model = params.model;
   size_t n = model->num_support;
-  if (svi >= model->num_support)
-    *params.all->trace_message << "Internal error at " << __FILE__ << ":" << __LINE__ << endl;
+  if (svi >= model->num_support) { params.all->logger.err_error("Internal error at {}:{}", __FILE__, __LINE__); }
   // rotate params fields
   svm_example* svi_e = model->support_vec[svi];
   int alloc = svi_e->compute_kernels(params);
@@ -243,101 +242,32 @@ static int trim_cache(svm_params& params)
   return alloc;
 }
 
-int save_load_flat_example(io_buf& model_file, bool read, flat_example*& fec)
-{
-  size_t brw = 1;
-  if (read)
-  {
-    fec = &calloc_or_throw<flat_example>();
-    brw = model_file.bin_read_fixed(reinterpret_cast<char*>(fec), sizeof(flat_example));
-
-    if (brw > 0)
-    {
-      if (fec->tag_len > 0)
-      {
-        fec->tag = calloc_or_throw<char>(fec->tag_len);
-        brw = model_file.bin_read_fixed(fec->tag, fec->tag_len * sizeof(char));
-        if (!brw) return 2;
-      }
-      if (fec->fs.size() > 0)
-      {
-        features& fs = fec->fs;
-        size_t len = fs.size();
-        fs.values.clear();
-        fs.values.resize_but_with_stl_behavior(len);
-        brw = model_file.bin_read_fixed(reinterpret_cast<char*>(fs.values.begin()), len * sizeof(feature_value));
-        if (!brw) return 3;
-
-        len = fs.indices.size();
-        fs.indices.clear();
-        fs.indices.resize_but_with_stl_behavior(len);
-        brw = model_file.bin_read_fixed(reinterpret_cast<char*>(fs.indices.begin()), len * sizeof(feature_index));
-        if (!brw) return 3;
-      }
-    }
-    else
-      return 1;
-  }
-  else
-  {
-    brw = model_file.bin_write_fixed(reinterpret_cast<char*>(fec), sizeof(flat_example));
-
-    if (brw > 0)
-    {
-      if (fec->tag_len > 0)
-      {
-        brw = model_file.bin_write_fixed(fec->tag, static_cast<uint32_t>(fec->tag_len) * sizeof(char));
-        if (!brw)
-        {
-	  // I'm assuming this is an error condition?
-          logger::errlog_error("{0} {1}", fec->tag_len, fec->tag);
-          return 2;
-        }
-      }
-      if (fec->fs.size() > 0)
-      {
-        brw = model_file.bin_write_fixed(reinterpret_cast<char*>(fec->fs.values.begin()),
-            static_cast<uint32_t>(fec->fs.size()) * sizeof(feature_value));
-        if (!brw) return 3;
-        brw = model_file.bin_write_fixed(reinterpret_cast<char*>(fec->fs.indices.begin()),
-            static_cast<uint32_t>(fec->fs.indices.size()) * sizeof(feature_index));
-        if (!brw) return 3;
-      }
-    }
-    else
-      return 1;
-  }
-  return 0;
-}
-
 void save_load_svm_model(svm_params& params, io_buf& model_file, bool read, bool text)
 {
   svm_model* model = params.model;
   // TODO: check about initialization
 
-  // params.all->opts_n_args.trace_message<<"Save load svm "<<read<<" "<<text<< endl;
   if (model_file.num_files() == 0) return;
   std::stringstream msg;
   bin_text_read_write_fixed(
       model_file, reinterpret_cast<char*>(&(model->num_support)), sizeof(model->num_support), read, msg, text);
-  // params.all->opts_n_args.trace_message<<"Read num support "<<model->num_support<< endl;
 
-  flat_example* fec = nullptr;
   if (read) { model->support_vec.reserve(model->num_support); }
 
   for (uint32_t i = 0; i < model->num_support; i++)
   {
     if (read)
     {
-      save_load_flat_example(model_file, read, fec);
-      svm_example* tmp = &calloc_or_throw<svm_example>();
-      tmp->init_svm_example(fec);
+      auto fec = VW::make_unique<flat_example>();
+      auto* tmp = &calloc_or_throw<svm_example>();
+      VW::model_utils::read_model_field(model_file, *fec, params.all->example_parser->lbl_parser);
+      tmp->ex = *fec;
       model->support_vec.push_back(tmp);
     }
     else
     {
-      fec = &(model->support_vec[i]->ex);
-      save_load_flat_example(model_file, read, fec);
+      VW::model_utils::write_model_field(model_file, model->support_vec[i]->ex, "_flat_example", false,
+          params.all->example_parser->lbl_parser, params.all->parse_mask);
     }
   }
 
@@ -380,15 +310,11 @@ float linear_kernel(const flat_example* fec1, const flat_example* fec2)
 
     if (ec1pos == ec2pos)
     {
-      // params.all->opts_n_args.trace_message<<ec1pos<<" "<<ec2pos<<" "<<idx1<<" "<<idx2<<" "<<f->x<<"
-      // "<<ec2f->x<< endl;
       numint++;
       dotprod += fs_1.values[idx1] * fs_2.values[idx2];
       ++idx2;
     }
   }
-  // params.all->opts_n_args.trace_message<< endl;
-  // params.all->opts_n_args.trace_message<<"numint = "<<numint<<" dotprod = "<<dotprod<< endl;
   return dotprod;
 }
 
@@ -480,8 +406,7 @@ size_t suboptimality(svm_model* model, double* subopt)
 int remove(svm_params& params, size_t svi)
 {
   svm_model* model = params.model;
-  if (svi >= model->num_support)
-    *params.all->trace_message << "Internal error at " << __FILE__ << ":" << __LINE__ << endl;
+  if (svi >= model->num_support) { params.all->logger.err_error("Internal error at {}:{}", __FILE__, __LINE__); }
   // shift params fields
   svm_example* svi_e = model->support_vec[svi];
   for (size_t i = svi; i < model->num_support - 1; ++i)
@@ -524,10 +449,8 @@ int add(svm_params& params, svm_example* fec)
 
 bool update(svm_params& params, size_t pos)
 {
-  // params.all->opts_n_args.trace_message<<"Update\n";
   svm_model* model = params.model;
   bool overshoot = false;
-  // params.all->opts_n_args.trace_message<<"Updating model "<<pos<<" "<<model->num_support<<" ";
   svm_example* fec = model->support_vec[pos];
   label_data& ld = fec->ex.l.simple;
   fec->compute_kernels(params);
@@ -554,7 +477,6 @@ bool update(svm_params& params, size_t pos)
 
   if (std::fabs(diff) > 1.)
   {
-    // params.all->opts_n_args.trace_message<<"Here\n";
     diff = static_cast<float>(diff > 0) - (diff < 0);
     ai = alpha_old + diff;
   }
@@ -594,13 +516,13 @@ void sync_queries(VW::workspace& all, svm_params& params, bool* train_pool)
     if (!train_pool[i]) continue;
 
     fec = &(params.pool[i]->ex);
-    save_load_flat_example(*b, false, fec);
+    VW::model_utils::write_model_field(
+        *b, *fec, "_flat_example", false, all.example_parser->lbl_parser, all.parse_mask);
     delete params.pool[i];
   }
 
   size_t* sizes = calloc_or_throw<size_t>(all.all_reduce->total);
   sizes[all.all_reduce->node] = b->unflushed_bytes_count();
-  // params.all->opts_n_args.trace_message<<"Sizes = "<<sizes[all.node]<<" ";
   all_reduce<size_t, add_size_t>(all, sizes, all.all_reduce->total);
 
   size_t prev_sum = 0, total_sum = 0;
@@ -610,7 +532,6 @@ void sync_queries(VW::workspace& all, svm_params& params, bool* train_pool)
     total_sum += sizes[i];
   }
 
-  // params.all->opts_n_args.trace_message<<total_sum<<" "<<prev_sum<< endl;
   if (total_sum > 0)
   {
     queries = calloc_or_throw<char>(total_sum);
@@ -625,7 +546,7 @@ void sync_queries(VW::workspace& all, svm_params& params, bool* train_pool)
 
     for (size_t i = 0; i < params.pool_size; i++)
     {
-      if (!save_load_flat_example(*b, true, fec))
+      if (!VW::model_utils::read_model_field(*b, *fec, all.example_parser->lbl_parser))
       {
         params.pool[i] = &calloc_or_throw<svm_example>();
         params.pool[i]->init_svm_example(fec);
@@ -647,7 +568,6 @@ void sync_queries(VW::workspace& all, svm_params& params, bool* train_pool)
 
 void train(svm_params& params)
 {
-  // params.all->opts_n_args.trace_message<<"In train "<<params.all->training<< endl;
 
   bool* train_pool = calloc_or_throw<bool>(params.pool_size);
   for (size_t i = 0; i < params.pool_size; i++) train_pool[i] = false;
@@ -664,15 +584,10 @@ void train(svm_params& params)
         scoremap.insert(std::pair<const double, const size_t>(std::fabs(scores[i]), i));
 
       std::multimap<double, size_t>::iterator iter = scoremap.begin();
-      // params.all->opts_n_args.trace_message<<params.pool_size<<" "<<"Scoremap: ";
-      // for(;iter != scoremap.end();iter++)
-      // params.all->opts_n_args.trace_message<<iter->first<<" "<<iter->second<<"
-      // "<<((label_data*)params.pool[iter->second]->ld)->label<<"\t"; params.all->opts_n_args.trace_message<< endl;
       iter = scoremap.begin();
 
       for (size_t train_size = 1; iter != scoremap.end() && train_size <= params.subsample; train_size++)
       {
-        // params.all->opts_n_args.trace_message<<train_size<<" "<<iter->second<<" "<<iter->first<< endl;
         train_pool[iter->second] = 1;
         iter++;
       }
@@ -710,14 +625,11 @@ void train(svm_params& params)
 
     for (size_t i = 0; i < params.pool_pos; i++)
     {
-      // params.all->opts_n_args.trace_message<<"process: "<<i<<" "<<train_pool[i]<< endl;
       int model_pos = -1;
       if (params.active)
       {
         if (train_pool[i])
         {
-          // params.all->opts_n_args.trace_message<<"i = "<<i<<"train_pool[i] = "<<train_pool[i]<<"
-          // "<<params.pool[i]->example_counter<< endl;
           model_pos = add(params, params.pool[i]);
         }
       }
@@ -740,7 +652,7 @@ void train(svm_params& params)
             if (subopt[max_pos] > 0)
             {
               if (!overshoot && max_pos == static_cast<size_t>(model_pos) && max_pos > 0 && j == 0)
-                *params.all->trace_message << "Shouldn't reprocess right after process!!!" << endl;
+                *params.all->trace_message << "Shouldn't reprocess right after process." << endl;
               if (max_pos * model->num_support <= params.maxcache) make_hot_sv(params, max_pos);
               update(params, max_pos);
             }
