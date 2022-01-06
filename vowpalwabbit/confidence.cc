@@ -55,7 +55,7 @@ void confidence_print_result(
     std::stringstream ss;
     ss << std::fixed << res << " " << confidence;
     ss << " ";
-    if (!tag.empty()) { ss << " " << VW::string_view{tag.begin(), tag.size()}; }
+    if (!tag.empty()) { ss << VW::string_view{tag.begin(), tag.size()}; }
     ss << '\n';
     // avoid serializing the stringstream multiple times
     auto ss_string(ss.str());
