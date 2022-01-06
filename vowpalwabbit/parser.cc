@@ -384,10 +384,7 @@ void enable_sources(VW::workspace& all, bool quiet, size_t passes, input_options
     all.example_parser->bound_sock = static_cast<int>(socket(PF_INET, SOCK_STREAM, 0));
     if (all.example_parser->bound_sock < 0)
     {
-      std::stringstream msg;
-      msg << "socket: " << VW::strerror_to_string(errno);
-      *(all.trace_message) << msg.str() << endl;
-      THROW(msg.str().c_str());
+      THROW(fmt::format("socket: {}", VW::strerror_to_string(errno)));
     }
 
     int on = 1;

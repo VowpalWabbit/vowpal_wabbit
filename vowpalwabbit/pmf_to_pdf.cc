@@ -271,8 +271,7 @@ base_learner* setup(VW::setup_base_i& stack_builder)
   if (!options.was_supplied("bandwidth"))
   {
     data->bandwidth = half_leaf_width;
-    *(all.trace_message) << "Bandwidth was not supplied, setting default to half the continuous action unit range: "
-                         << data->bandwidth << std::endl;
+    all.logger.err_info("Bandwidth was not supplied, setting default to half the continuous action unit range: {}", data->bandwidth);
   }
 
   if (!(data->bandwidth >= 0.0f)) { THROW("error: Bandwidth must be positive"); }
