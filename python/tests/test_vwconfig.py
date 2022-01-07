@@ -15,10 +15,10 @@ def helper_options_to_list_strings(config):
     return cmd_str_list
 
 def test_vw_config_manager():
-    expected_set = {'--quiet', '--loss_function logistic', '--data /root/vowpal_wabbit/test/train-sets/rcv1_small.dat'}
+    expected_set = {'--quiet', '--loss_function logistic', '--data test/train-sets/rcv1_small.dat'}
     expected_reductions = {'gd', 'scorer-identity', 'count_label'}
 
-    vw = pyvw.vw(arg_str="--loss_function logistic -d /root/vowpal_wabbit/test/train-sets/rcv1_small.dat --quiet")
+    vw = pyvw.vw(arg_str="--loss_function logistic -d test/train-sets/rcv1_small.dat --quiet")
     config = vw.get_config()
     enabled_reductions = vw.get_enabled_reductions()
 
