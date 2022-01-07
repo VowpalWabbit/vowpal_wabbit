@@ -75,16 +75,12 @@ void options_boost_po::internal_add_and_parse(const option_group_definition& gro
 
   for (const auto& opt_ptr : group.m_options)
   {
-    if (opt_ptr->m_necessary)
-    {
-      opt_ptr->m_help += " (required to enable this reduction)";
-    }
+    if (opt_ptr->m_necessary) { opt_ptr->m_help += " (required to enable this reduction)"; }
 
     add_to_description(opt_ptr, new_options);
     m_defined_options.insert(opt_ptr->m_name);
     m_defined_options.insert(opt_ptr->m_short_name);
     m_defined_options.insert("-" + opt_ptr->m_short_name);
-
 
     // The last definition is kept. There was a bug where using .insert at a later pointer changed the command line but
     // the previously defined option's default value was serialized into the model. This resolves that state info.

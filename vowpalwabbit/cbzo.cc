@@ -331,7 +331,8 @@ base_learner* setup(VW::setup_base_i& stack_builder)
   std::string policy_str;
   bool cbzo_option = false;
 
-  option_group_definition new_options("[Reduction] Continuous Action Contextual Bandit using Zeroth-Order Optimization");
+  option_group_definition new_options(
+      "[Reduction] Continuous Action Contextual Bandit using Zeroth-Order Optimization");
   new_options
       .add(make_option("cbzo", cbzo_option)
                .keep()
