@@ -92,7 +92,11 @@ VW::LEARNER::base_learner* setup(VW::setup_base_i& stack_builder)
                .keep()
                .necessary()
                .help("Online explore-exploit for a contextual bandit problem with multiline action dependent features"))
-      .add(make_option("epsilon", epsilon).keep().allow_override().help("Epsilon-greedy exploration"))
+      .add(make_option("epsilon", epsilon)
+               .default_value(0.05f)
+               .keep()
+               .allow_override()
+               .help("Epsilon-greedy exploration"))
       .add(make_option("first_only", first_only).keep().help("Only explore the first action in a tie-breaking event"));
 
   // This is a special case "cb_explore_adf" is needed to enable this. BUT it is only enabled when all of the other
@@ -116,8 +120,6 @@ VW::LEARNER::base_learner* setup(VW::setup_base_i& stack_builder)
   }
 
   size_t problem_multiplier = 1;
-
-  if (!options.was_supplied("epsilon")) epsilon = 0.05f;
 
   VW::LEARNER::multi_learner* base = as_multiline(stack_builder.setup_base_learner());
   all.example_parser->lbl_parser = CB::cb_label;
