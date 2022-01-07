@@ -21,7 +21,7 @@ struct interact
   size_t num_features = 0;
 };
 
-bool contains_valid_namespaces(VW::workspace& all, features& f_src1, features& f_src2, interact& in)
+bool contains_valid_namespaces(features& f_src1, features& f_src2, interact& in, VW::io::logger& logger)
 {
   // first feature must be 1 so we're sure that the anchor feature is present
   if (f_src1.size() == 0 || f_src2.size() == 0) return false;
@@ -30,13 +30,13 @@ bool contains_valid_namespaces(VW::workspace& all, features& f_src1, features& f
   {
     // Anchor feature must be a number instead of text so that the relative offsets functions correctly but I don't
     // think we are able to test for this here.
-    *(all.trace_message) << "Namespace '" << static_cast<char>(in.n1) << "' misses anchor feature with value 1";
+    logger.err_error("Namespace '{}' misses anchor feature with value 1", static_cast<char>(in.n1));
     return false;
   }
 
   if (f_src2.values[0] != 1)
   {
-    *(all.trace_message) << "Namespace '" << static_cast<char>(in.n2) << "' misses anchor feature with value 1";
+    logger.err_error("Namespace '{}' misses anchor feature with value 1", static_cast<char>(in.n2));
     return false;
   }
 
@@ -97,7 +97,7 @@ void predict_or_learn(interact& in, VW::LEARNER::single_learner& base, example& 
   features& f1 = ec.feature_space[in.n1];
   features& f2 = ec.feature_space[in.n2];
 
-  if (!contains_valid_namespaces(*in.all, f1, f2, in))
+  if (!contains_valid_namespaces(f1, f2, in, in.all->logger))
   {
     if (is_learn)
       base.learn(ec);
