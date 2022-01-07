@@ -25,8 +25,8 @@ namespace cs_test
 
             var input = new List<Test1>();
 
-            using (var vwStr = new VowpalWabbit(" -k -c --passes 8 -l 20 --power_t 1 --initial_t 128000  --ngram 3 --skips 1 --invariant --holdout_off"))
-            using (var vw = new VowpalWabbit<Test1>(new VowpalWabbitSettings(" -k -c --passes 8 -l 20 --power_t 1 --initial_t 128000  --ngram 3 --skips 1 --invariant --holdout_off")
+            using (var vwStr = new VowpalWabbit(" -k --cache_file test1and2.str --passes 8 -l 20 --power_t 1 --initial_t 128000  --ngram 3 --skips 1 --invariant --holdout_off"))
+            using (var vw = new VowpalWabbit<Test1>(new VowpalWabbitSettings(" -k --cache_file test1and2 --passes 8 -l 20 --power_t 1 --initial_t 128000  --ngram 3 --skips 1 --invariant --holdout_off")
                 { EnableExampleCaching = false }))
             using (var vwValidate = new VowpalWabbitExampleValidator<Test1>("-l 20 --power_t 1 --initial_t 128000  --ngram 3 --skips 1 --invariant --holdout_off"))
             {
