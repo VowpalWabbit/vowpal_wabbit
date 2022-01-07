@@ -10,8 +10,6 @@
 #include "cb_label_parser.h"
 
 using namespace VW::LEARNER;
-using std::cout;
-using std::endl;
 using std::pair;
 using std::vector;
 
