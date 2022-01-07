@@ -16,7 +16,8 @@ struct reduction_features
 
   reduction_features() { epsilon = -1.f; }
 
-  void clear() { epsilon = -1.f; }
+  bool is_valid_epsilon() { return epsilon >= 0.f; }
+  void reset_to_default() { epsilon = -1.f; }
 };
 }  // namespace greedy
 }  // namespace cb_explore_adf

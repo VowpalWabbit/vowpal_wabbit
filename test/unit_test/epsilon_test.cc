@@ -20,7 +20,7 @@ BOOST_AUTO_TEST_CASE(set_epsilon_test)
   ep_fts.epsilon = 0.5f;
   auto& ep_fts2 = examples[0]->_reduction_features.template get<VW::cb_explore_adf::greedy::reduction_features>();
   BOOST_CHECK_EQUAL(ep_fts2.epsilon, 0.5f);
-  ep_fts2.clear();
+  ep_fts2.reset_to_default();
   BOOST_CHECK_EQUAL(ep_fts2.epsilon, -1.f);
   vw->finish_example(examples);
   VW::finish(*vw);

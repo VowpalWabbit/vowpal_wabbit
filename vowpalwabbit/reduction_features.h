@@ -48,7 +48,7 @@ public:
     _ccb_reduction_features.clear();
     _contact_reduction_features.clear();
     _simple_label_reduction_features.reset_to_default();
-    _epsilon_reduction_features.clear();
+    _epsilon_reduction_features.reset_to_default();
   }
 };
 

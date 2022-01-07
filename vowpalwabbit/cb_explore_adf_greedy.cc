@@ -53,7 +53,7 @@ void cb_explore_adf_greedy::update_example_prediction(multi_ex& examples)
   uint32_t num_actions = static_cast<uint32_t>(preds.size());
 
   auto& ep_fts = examples[0]->_reduction_features.template get<reduction_features>();
-  float actual_ep = (ep_fts.epsilon >= 0.f) ? ep_fts.epsilon : _epsilon;
+  float actual_ep = (ep_fts.is_valid_epsilon()) ? ep_fts.epsilon : _epsilon;
 
   size_t tied_actions = fill_tied(preds);
 
