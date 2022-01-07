@@ -491,7 +491,7 @@ base_learner* recall_tree_setup(VW::setup_base_i& stack_builder)
   options_i& options = *stack_builder.get_options();
   VW::workspace& all = *stack_builder.get_all_pointer();
   auto tree = VW::make_unique<recall_tree>();
-  option_group_definition new_options("Recall Tree");
+  option_group_definition new_options("[Reduction] Recall Tree");
   new_options.add(make_option("recall_tree", tree->k).keep().necessary().help("Use online tree for multiclass"))
       .add(make_option("max_candidates", tree->max_candidates)
                .keep()

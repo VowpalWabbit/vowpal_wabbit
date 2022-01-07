@@ -501,7 +501,7 @@ base_learner* log_multi_setup(VW::setup_base_i& stack_builder)  // learner setup
   VW::workspace& all = *stack_builder.get_all_pointer();
 
   auto data = VW::make_unique<log_multi>();
-  option_group_definition new_options("Logarithmic Time Multiclass Tree");
+  option_group_definition new_options("[Reduction] Logarithmic Time Multiclass Tree");
   new_options.add(make_option("log_multi", data->k).keep().necessary().help("Use online tree for multiclass"))
       .add(make_option("no_progress", data->progress).help("Disable progressive validation"))
       .add(make_option("swap_resistance", data->swap_resist)

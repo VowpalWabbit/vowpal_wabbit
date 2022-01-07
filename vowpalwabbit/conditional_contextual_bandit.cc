@@ -670,7 +670,7 @@ base_learner* ccb_explore_adf_setup(VW::setup_base_i& stack_builder)
 
   data->is_ccb_input_model = all.is_ccb_input_model;
 
-  option_group_definition new_options("Conditional Contextual Bandit Exploration with ADF");
+  option_group_definition new_options("[Reduction] Conditional Contextual Bandit Exploration with ADF");
   new_options
       .add(make_option("ccb_explore_adf", ccb_explore_adf_option)
                .keep()

@@ -117,7 +117,7 @@ base_learner* cb_sample_setup(VW::setup_base_i& stack_builder)
   VW::workspace& all = *stack_builder.get_all_pointer();
   bool cb_sample_option = false;
 
-  option_group_definition new_options("CB Sample");
+  option_group_definition new_options("[Reduction] CB Sample");
   new_options.add(
       make_option("cb_sample", cb_sample_option).keep().necessary().help("Sample from CB pdf and swap top action"));
 

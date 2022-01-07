@@ -101,7 +101,7 @@ base_learner* setup(VW::setup_base_i& stack_builder)
   bool cb_explore_adf_option = false;
   size_t tau = 0;
   float epsilon = 0.;
-  config::option_group_definition new_options("Contextual Bandit Exploration with ADF (tau-first)");
+  config::option_group_definition new_options("[Reduction] Contextual Bandit Exploration with ADF (tau-first)");
   new_options
       .add(make_option("cb_explore_adf", cb_explore_adf_option)
                .keep()

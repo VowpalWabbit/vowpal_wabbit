@@ -1077,7 +1077,7 @@ void parse_output_preds(options_i& options, VW::workspace& all)
   std::string predictions;
   std::string raw_predictions;
 
-  option_group_definition output_options("Output");
+  option_group_definition output_options("Prediction Output");
   output_options.add(make_option("predictions", predictions).short_name("p").help("File to output predictions to"))
       .add(make_option("raw_predictions", raw_predictions)
                .short_name("r")
@@ -1213,7 +1213,7 @@ VW::workspace& parse_args(
                .help("Don't output diagnostics and progress updates. Supplying this implies --log_level off and "
                      "--driver_output_off. Supplying this overrides an explicit log_level argument."))
       .add(make_option("driver_output_off", driver_output_off).help("Disable output for the driver."))
-      .add(make_option("driver_output_stream", driver_output_stream)
+      .add(make_option("driver_output", driver_output_stream)
                .default_value("stderr")
                .one_of({"stdout", "stderr"})
                .help("Specify the stream to output driver output to."))
@@ -1221,7 +1221,7 @@ VW::workspace& parse_args(
                .default_value("info")
                .one_of({"info", "warn", "error", "critical", "off"})
                .help("Log level for logging messages. Specifying this wil override --quiet for log output."))
-      .add(make_option("log_output_stream", log_output_stream)
+      .add(make_option("log_output", log_output_stream)
                .default_value("compat")
                .one_of({"stdout", "stderr", "compat"})
                .help("Specify the stream to output log messages to. In the past VW's choice of stream for logging "
@@ -1249,7 +1249,7 @@ VW::workspace& parse_args(
   {
     logger.err_warn(
         "The old default logging behavior of logging to a mix of stdout and stderr is deprecated. Please choose either "
-        "'stdout' or 'stderr' for --log_output_stream to silence this warning.");
+        "'stdout' or 'stderr' for --log_output to silence this warning.");
   }
 
   if (options->was_supplied("limit_output") && (upper_limit != 0)) { logger.set_max_output(upper_limit); }
@@ -1291,7 +1291,7 @@ VW::workspace& parse_args(
 
     bool strict_parse = false;
     int ring_size_tmp;
-    option_group_definition vw_args("VW");
+    option_group_definition vw_args("Parser");
     vw_args.add(make_option("ring_size", ring_size_tmp).default_value(256).help("Size of example ring"))
         .add(make_option("strict_parse", strict_parse).help("Throw on malformed examples"));
     all.options->add_and_parse(vw_args);

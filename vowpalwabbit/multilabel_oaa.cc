@@ -90,7 +90,7 @@ VW::LEARNER::base_learner* multilabel_oaa_setup(VW::setup_base_i& stack_builder)
   options_i& options = *stack_builder.get_options();
   VW::workspace& all = *stack_builder.get_all_pointer();
   auto data = VW::make_unique<multi_oaa>(all.logger);
-  option_group_definition new_options("Multilabel One Against All");
+  option_group_definition new_options("[Reduction] Multilabel One Against All");
   new_options
       .add(make_option("multilabel_oaa", data->k).keep().necessary().help("One-against-all multilabel with <k> labels"))
       .add(make_option("probabilities", data->probabilities).help("Predict probabilities of all classes"))

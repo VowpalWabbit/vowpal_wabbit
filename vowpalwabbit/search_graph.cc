@@ -95,7 +95,7 @@ void initialize(Search::search& sch, size_t& num_actions, options_i& options)
 {
   task_data* D = new task_data();
 
-  option_group_definition new_options("Search Graphtask");
+  option_group_definition new_options("[Search] Search Graphtask");
   new_options
       .add(make_option("search_graph_num_loops", D->num_loops).default_value(2).help("How many loops to run [def: 2]"))
       .add(make_option("search_graph_no_structure", D->use_structure).help("Turn off edge features"))

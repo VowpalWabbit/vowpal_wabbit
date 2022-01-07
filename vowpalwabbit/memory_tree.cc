@@ -1203,7 +1203,7 @@ base_learner* memory_tree_setup(VW::setup_base_i& stack_builder)
   VW::workspace& all = *stack_builder.get_all_pointer();
   using namespace memory_tree_ns;
   auto tree = VW::make_unique<memory_tree>();
-  option_group_definition new_options("Memory Tree");
+  option_group_definition new_options("[Reduction] Memory Tree");
 
   new_options
       .add(make_option("memory_tree", tree->max_nodes)

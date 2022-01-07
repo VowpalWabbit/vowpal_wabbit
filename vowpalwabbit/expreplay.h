@@ -87,7 +87,7 @@ VW::LEARNER::base_learner* expreplay_setup(VW::setup_base_i& stack_builder)
   replay_count_string += "_count";
 
   auto er = VW::make_unique<expreplay<lp>>();
-  VW::config::option_group_definition new_options("Experience Replay / " + replay_string);
+  VW::config::option_group_definition new_options("[Reduction] Experience Replay / " + replay_string);
   new_options
       .add(VW::config::make_option(replay_string, er->N)
                .keep()
