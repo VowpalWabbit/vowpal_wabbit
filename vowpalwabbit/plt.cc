@@ -326,7 +326,7 @@ base_learner* plt_setup(VW::setup_base_i& stack_builder)
   options_i& options = *stack_builder.get_options();
   VW::workspace& all = *stack_builder.get_all_pointer();
   auto tree = VW::make_unique<plt>();
-  option_group_definition new_options("Probabilistic Label Tree");
+  option_group_definition new_options("[Reduction] Probabilistic Label Tree");
   new_options.add(make_option("plt", tree->k).keep().necessary().help("Probabilistic Label Tree with <k> labels"))
       .add(make_option("kary_tree", tree->kary).keep().default_value(2).help("Use <k>-ary tree"))
       .add(make_option("threshold", tree->threshold)

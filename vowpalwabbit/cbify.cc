@@ -668,7 +668,7 @@ base_learner* cbify_setup(VW::setup_base_i& stack_builder)
   bool use_reg;  // todo: check
   bool use_discrete;
 
-  option_group_definition new_options("Make Multiclass into Contextual Bandit");
+  option_group_definition new_options("[Reduction] CBify");
   new_options
       .add(make_option("cbify", num_actions)
                .keep()
@@ -862,7 +862,7 @@ base_learner* cbifyldf_setup(VW::setup_base_i& stack_builder)
   auto data = VW::make_unique<cbify>();
   bool cbify_ldf_option = false;
 
-  option_group_definition new_options("Make csoaa_ldf into Contextual Bandit");
+  option_group_definition new_options("[Reduction] Make csoaa_ldf into Contextual Bandit");
   new_options
       .add(make_option("cbify_ldf", cbify_ldf_option)
                .keep()

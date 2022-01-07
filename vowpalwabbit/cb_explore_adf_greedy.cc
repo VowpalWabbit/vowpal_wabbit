@@ -88,7 +88,7 @@ VW::LEARNER::base_learner* setup(VW::setup_base_i& stack_builder)
   float epsilon = 0.;
   bool first_only = false;
 
-  config::option_group_definition new_options("Contextual Bandit Exploration with ADF (greedy)");
+  config::option_group_definition new_options("[Reduction] Contextual Bandit Exploration with ADF (greedy)");
   new_options
       .add(make_option("cb_explore_adf", cb_explore_adf_option)
                .keep()

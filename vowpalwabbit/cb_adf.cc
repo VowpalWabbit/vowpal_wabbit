@@ -489,7 +489,7 @@ base_learner* cb_adf_setup(VW::setup_base_i& stack_builder)
   float clip_p;
   bool no_predict;
 
-  option_group_definition new_options("Contextual Bandit with Action Dependent Features");
+  option_group_definition new_options("[Reduction] Contextual Bandit with Action Dependent Features");
   new_options
       .add(make_option("cb_adf", cb_adf_option)
                .keep()

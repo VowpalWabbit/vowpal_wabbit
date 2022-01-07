@@ -175,7 +175,7 @@ base_learner* lrq_setup(VW::setup_base_i& stack_builder)
   VW::workspace& all = *stack_builder.get_all_pointer();
   auto lrq = VW::make_unique<LRQstate>();
   std::vector<std::string> lrq_names;
-  option_group_definition new_options("Low Rank Quadratics");
+  option_group_definition new_options("[Reduction] Low Rank Quadratics");
   new_options.add(make_option("lrq", lrq_names).keep().necessary().help("Use low rank quadratic features"))
       .add(make_option("lrqdropout", lrq->dropout).keep().help("Use dropout training for low rank quadratic features"));
 
