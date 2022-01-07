@@ -1,3 +1,4 @@
+[warning] The old default logging behavior of logging to a mix of stdout and stderr is deprecated. Please choose either 'stdout' or 'stderr' for --log_output_stream to silence this warning.
 final_regressor = models/bfgs_precon.model
 enabling BFGS based optimization **without** curvature calculation
 Num weight bits = 18
@@ -5,8 +6,7 @@ learning rate = 0.5
 initial_t = 0
 power_t = 0.5
 decay_learning_rate = 1
-m = 15
-Allocated 34M for weights and mem
+[info] m = 15, allocated 34M for weights and mem
 ## avg. loss 	der. mag. 	d. m. cond.	 wolfe1    	wolfe2    	mix fraction	curvature 	dir. magnitude	step size
 creating cache_file = train-sets/rcv1_small.dat.cache
 Reading datafile = train-sets/rcv1_small.dat

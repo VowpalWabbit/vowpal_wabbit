@@ -1,3 +1,4 @@
+[warning] The old default logging behavior of logging to a mix of stdout and stderr is deprecated. Please choose either 'stdout' or 'stderr' for --log_output_stream to silence this warning.
 using l2 regularization = 1
 predictions = ksvm_train.linear.predict
 Lambda = 1
@@ -34,6 +35,3 @@ total feature number = 19870
 Num support = 246
 Number of kernel evaluations = 174784 Number of cache queries = 119191
 Total loss = 202.410751
-Done freeing model
-Done freeing kernel params
-Done with finish 
