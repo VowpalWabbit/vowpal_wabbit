@@ -668,7 +668,7 @@ base_learner* cbify_setup(VW::setup_base_i& stack_builder)
   bool use_reg;  // todo: check
   bool use_discrete;
 
-  option_group_definition new_options("CBify: Make Multiclass into Contextual Bandit");
+  option_group_definition new_options("Make Multiclass into Contextual Bandit");
   new_options
       .add(make_option("cbify", num_actions)
                .keep()

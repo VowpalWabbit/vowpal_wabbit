@@ -343,12 +343,12 @@ Contextual Bandit Exploration Options:
                           in cover
   --psi arg (=1, )        Disagreement parameter for cover
 Contextual Bandit Exploration with ADF (bagging) Options:
-  --cb_explore_adf        Online explore-exploit for a contextual bandit 
-                          problem with multiline action dependent features
-  --epsilon arg (=0.05, ) Epsilon-greedy exploration
-  --bag arg               Bagging-based exploration
-  --greedify              Always update first policy once in bagging
-  --first_only            Only explore the first action in a tie-breaking event
+  --cb_explore_adf      Online explore-exploit for a contextual bandit problem 
+                        with multiline action dependent features
+  --epsilon arg (=0, )  Epsilon-greedy exploration
+  --bag arg             Bagging-based exploration
+  --greedify            Always update first policy once in bagging
+  --first_only          Only explore the first action in a tie-breaking event
 Contextual Bandit Exploration with ADF (online cover) Options:
   --cb_explore_adf        Online explore-exploit for a contextual bandit 
                           problem with multiline action dependent features
@@ -361,10 +361,10 @@ Contextual Bandit Exploration with ADF (online cover) Options:
                           mtr}
   --epsilon arg (=0.05, ) Epsilon-greedy exploration
 Contextual Bandit Exploration with ADF (tau-first) Options:
-  --cb_explore_adf        Online explore-exploit for a contextual bandit 
-                          problem with multiline action dependent features
-  --first arg             Tau-first exploration
-  --epsilon arg (=0.05, ) Epsilon-greedy exploration
+  --cb_explore_adf      Online explore-exploit for a contextual bandit problem 
+                        with multiline action dependent features
+  --first arg           Tau-first exploration
+  --epsilon arg (=0, )  Epsilon-greedy exploration
 Contextual Bandit Exploration with ADF (greedy) Options:
   --cb_explore_adf        Online explore-exploit for a contextual bandit 
                           problem with multiline action dependent features
@@ -386,18 +386,18 @@ Contextual Bandit Exploration with ADF (RegCB) Options:
 Contextual Bandit Exploration with ADF (rnd) Options:
   --cb_explore_adf             Online explore-exploit for a contextual bandit 
                                problem with multiline action dependent features
-  --epsilon arg (=0.05, )      Minimum exploration probability
+  --epsilon arg (=0, )         Minimum exploration probability
   --rnd arg                    Rnd based exploration
   --rnd_alpha arg (=0.1, )     CI width for rnd (bigger => more exploration on 
                                repeating features)
   --rnd_invlambda arg (=0.1, ) Covariance regularization strength rnd (bigger 
                                => more exploration on new features)
 Contextual Bandit Exploration with ADF (softmax) Options:
-  --cb_explore_adf        Online explore-exploit for a contextual bandit 
-                          problem with multiline action dependent features
-  --epsilon arg (=0.05, ) Epsilon-greedy exploration
-  --softmax               Softmax exploration
-  --lambda arg (=1, )     Parameter for softmax
+  --cb_explore_adf      Online explore-exploit for a contextual bandit problem 
+                        with multiline action dependent features
+  --epsilon arg (=0, )  Epsilon-greedy exploration
+  --softmax             Softmax exploration
+  --lambda arg (=1, )   Parameter for softmax
 Contextual Bandit Exploration with ADF (SquareCB) Options:
   --cb_explore_adf              Online explore-exploit for a contextual bandit 
                                 problem with multiline action dependent 
@@ -420,7 +420,7 @@ Contextual Bandit Exploration with ADF (synthetic cover) Options:
   --cb_explore_adf              Online explore-exploit for a contextual bandit 
                                 problem with multiline action dependent 
                                 features
-  --epsilon arg (=0.05, )       Epsilon-greedy exploration
+  --epsilon arg (=0, )          Epsilon-greedy exploration
   --synthcover                  Use synthetic cover exploration
   --synthcoverpsi arg (=0.1, )  Exploration reward bonus
   --synthcoversize arg (=100, ) Number of policies in cover
@@ -440,7 +440,7 @@ Contextual Bandit: cb -> cb_adf Options:
                         cb_force_legacy
   --cbify arg           Translate cbify to cb_adf. Disable with cb_force_legacy
   --cb_force_legacy     Default to non-adf cb implementation (cb_algs)
-CBify: Make Multiclass into Contextual Bandit Options:
+Make Multiclass into Contextual Bandit Options:
   --cbify arg                  Convert multiclass on <k> classes into a 
                                contextual bandit problem
   --cbify_cs                   Consume cost-sensitive classification examples 
