@@ -1,3 +1,4 @@
+[warning] The old default logging behavior of logging to a mix of stdout and stderr is deprecated. Please choose either 'stdout' or 'stderr' for --log_output_stream to silence this warning.
 predictions = cbe_adf_cover.predict
 [warning] currently, mtr is only used for the first policy in cover, other policies use dr
 Num weight bits = 18

@@ -471,16 +471,18 @@ void train()
   //dict.print();
 
   std::string init_str("--search 29 -b 28 --quiet --search_task hook --ring_size 1024 --search_rollin learn --search_rollout none -q i: --ngram i15 --skips i5 --ngram c15 --ngram w6 --skips c3 --skips w3"); //  --search_use_passthrough_repr"); // -q si -q wi -q ci -q di  -f my_model
-  VW::workspace& vw_obj = *VW::initialize(init_str);
+  VW::workspace* vw_obj = VW::initialize(init_str);
   cerr << init_str << endl;
-  Generator gen(vw_obj, nullptr); // &dict);
+  // Generator gen(*vw_obj, nullptr); // &dict);
   for (size_t pass=1; pass<=20; pass++)
-  { cerr << "===== pass " << pass << " =====" << endl;
-    run_istream(gen, "phrase-table.tr", true);
-    run_istream(gen, "phrase-table.tr", false, 300000);
-    run_istream(gen, "phrase-table.te", false, 100000);
+  {
+    cerr << "===== pass " << pass << " =====" << endl;
+    // run_istream(gen, "phrase-table.tr", true);
+    // run_istream(gen, "phrase-table.tr", false, 300000);
+    // run_istream(gen, "phrase-table.te", false, 100000);
+    run_easy();
   }
-  VW::finish(vw_obj);
+  VW::finish(*vw_obj);
 }
 
 void predict()
