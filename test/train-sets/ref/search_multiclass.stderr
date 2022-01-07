@@ -1,4 +1,4 @@
-[warning] The old default logging behavior of logging to a mix of stdout and stderr is deprecated. Please choose either 'stdout' or 'stderr' for --log_output_stream to silence this warning.
+[warning] The old default logging behavior of logging to a mix of stdout and stderr is deprecated. Please choose either 'stdout' or 'stderr' for --log_output to silence this warning.
 Num weight bits = 18
 learning rate = 0.5
 initial_t = 0
@@ -10,8 +10,8 @@ num sources = 1
 Enabled reductions: gd, scorer-identity, csoaa, search_task
 Input label = multiclass
 Output pred = multiclass
-average    since      instance            current true      current predicted   cur   cur   predic    cache  examples          
-loss       last        counter           output prefix          output prefix  pass   pol     made     hits    gener  beta    
+average    since      instance            current true      current predicted   cur   cur   predic    cache  examples
+loss       last        counter           output prefix          output prefix  pass   pol     made     hits    gener  beta
 0.000000   0.000000          1  [1                   ] [1                   ]     0     0        4        0        4  0.000300
 0.500000   1.000000          2  [2                   ] [1                   ]     0     0        8        0        8  0.000700
 0.750000   1.000000          4  [4                   ] [2                   ]     0     0       16        0       16  0.001499

@@ -1,4 +1,4 @@
-[warning] The old default logging behavior of logging to a mix of stdout and stderr is deprecated. Please choose either 'stdout' or 'stderr' for --log_output_stream to silence this warning.
+[warning] The old default logging behavior of logging to a mix of stdout and stderr is deprecated. Please choose either 'stdout' or 'stderr' for --log_output to silence this warning.
 predictions = cats-pdf.predict
 Enabling FTRL based optimization
 Algorithm used: Coin Betting
@@ -29,4 +29,4 @@ weighted example sum = 57.000000
 weighted label sum = 57.000000
 average loss = 0.267669
 total feature number = 570
-Learn() count per node: id=0, #l=21; id=1, #l=37; id=2, #l=20; 
+Learn() count per node: id=0, #l=21; id=1, #l=37; id=2, #l=20;
