@@ -2474,13 +2474,13 @@
   },
   {
     "id": 208,
-    "desc": "Enable chain hash option for text example",
+    "desc": "Use chain hashing for text example",
     "diff_files": {
       "stderr": "test-sets/ref/chain_hash_text_result.stderr",
       "stdout": "test-sets/ref/chain_hash_text_result.stdout",
       "chain_hash_text_result.cmp": "test-sets/ref/chain_hash_text_result.cmp"
     },
-    "bash_command": "{VW} --audit -d train-sets/chain_hash_text_test.dat --invert_hash chain_hash_text_result.cmp --chain_hash --predict_only_model &&  tail -n +2 chain_hash_text_result.cmp > chain_hash_text_result.cmp.new &&  rm chain_hash_text_result.cmp &&  mv chain_hash_text_result.cmp.new chain_hash_text_result.cmp",
+    "bash_command": "{VW} --audit -d train-sets/chain_hash_text_test.dat --invert_hash chain_hash_text_result.cmp --predict_only_model &&  tail -n +2 chain_hash_text_result.cmp > chain_hash_text_result.cmp.new &&  rm chain_hash_text_result.cmp &&  mv chain_hash_text_result.cmp.new chain_hash_text_result.cmp",
     "input_files": [
       "train-sets/chain_hash_text_test.dat"
     ]

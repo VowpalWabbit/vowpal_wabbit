@@ -216,9 +216,7 @@ Input Options:
                         accept local input instead of starting in daemon mode
   --chain_hash          Enable chain hash in JSON for feature name and string 
                         feature value. e.g. {'A': {'B': 'C'}} is hashed as 
-                        A^B^C. Note: this will become the default in a future 
-                        version, so enabling this option will migrate you to 
-                        the new behavior and silence the warning.
+                        A^B^C.
   --flatbuffer          Data file will be interpreted as a flatbuffer file
 OjaNewton Options:
   --OjaNewton                    Online Newton with Oja's Sketch
