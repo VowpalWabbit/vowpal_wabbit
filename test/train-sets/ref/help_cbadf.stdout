@@ -3,7 +3,7 @@ Driver Options:
   --log_level arg (=info, )                  Log level for logging messages. Specifying this wil 
                                              override --quiet for log output.. Choices: {critical, 
                                              error, info, off, warn}
-  --log_output_stream arg (=compat, )        Specify the stream to output log messages to. In the 
+  --log_output arg (=compat, )               Specify the stream to output log messages to. In the 
                                              past VW's choice of stream for logging messages wasn't
                                              consistent. Suppling compat will maintain that old 
                                              behavior. Compat is now deprecated so it is 
@@ -15,12 +15,12 @@ Logging options Options:
                                              --driver_output_off. Supplying this overrides an 
                                              explicit log_level argument.
   --driver_output_off                        Disable output for the driver.
-  --driver_output_stream arg (=stderr, )     Specify the stream to output driver output to.. 
+  --driver_output arg (=stderr, )            Specify the stream to output driver output to.. 
                                              Choices: {stderr, stdout}
   --log_level arg (=info, )                  Log level for logging messages. Specifying this wil 
                                              override --quiet for log output.. Choices: {critical, 
                                              error, info, off, warn}
-  --log_output_stream arg (=compat, )        Specify the stream to output log messages to. In the 
+  --log_output arg (=compat, )               Specify the stream to output log messages to. In the 
                                              past VW's choice of stream for logging messages wasn't
                                              consistent. Suppling compat will maintain that old 
                                              behavior. Compat is now deprecated so it is 

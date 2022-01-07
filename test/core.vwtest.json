@@ -3876,7 +3876,7 @@
   {
     "id": 324,
     "desc": "test dsjson with some errors. Since logging is not thread safe, diff might fail randomnly. Added onethread to minimize error. Line 57 of ccb_data_parse_error.json has a missing quote on purpose",
-    "vw_command": "-d train-sets/ccb_data_parse_error.json --dsjson --ccb_explore_adf --extra_metrics metrics_ccb_parse_error.json --onethread --log_output_stream stderr",
+    "vw_command": "-d train-sets/ccb_data_parse_error.json --dsjson --ccb_explore_adf --extra_metrics metrics_ccb_parse_error.json --onethread --log_output stderr",
     "diff_files": {
       "stderr": "train-sets/ref/metrics_ccb_parse_error.stderr",
       "metrics_ccb_parse_error.json": "test-sets/ref/metrics_ccb_parse_error.json"
@@ -3888,7 +3888,7 @@
   {
     "id": 325,
     "desc": "test dsjson with some errors and limit output. Since logging is not thread safe, diff might fail randomnly. Added onethread to minimize error. Line 57 of ccb_data_parse_error.json has a missing quote on purpose. shares same metric file as test 324",
-    "vw_command": "-d train-sets/ccb_data_parse_error.json --dsjson --ccb_explore_adf --extra_metrics metrics_ccb_parse_error.json --onethread --limit_output 2 --log_output_stream stderr",
+    "vw_command": "-d train-sets/ccb_data_parse_error.json --dsjson --ccb_explore_adf --extra_metrics metrics_ccb_parse_error.json --onethread --limit_output 2 --log_output stderr",
     "diff_files": {
       "stderr": "train-sets/ref/metrics_ccb_parse_error_limit.stderr",
       "metrics_ccb_parse_error.json": "test-sets/ref/metrics_ccb_parse_error.json"
@@ -3900,7 +3900,7 @@
   {
     "id": 326,
     "desc": "test dsjson with some errors with quiet. Since logging is not thread safe, diff might fail randomnly. Added onethread to minimize error. Line 57 of ccb_data_parse_error.json has a missing quote on purpose. shares same metric file as test 324",
-    "vw_command": "-d train-sets/ccb_data_parse_error.json --dsjson --ccb_explore_adf --extra_metrics metrics_ccb_parse_error.json --onethread --quiet --log_output_stream stderr",
+    "vw_command": "-d train-sets/ccb_data_parse_error.json --dsjson --ccb_explore_adf --extra_metrics metrics_ccb_parse_error.json --onethread --quiet --log_output stderr",
     "diff_files": {
       "stderr": "train-sets/ref/metrics_ccb_parse_error_quiet.stderr",
       "metrics_ccb_parse_error.json": "test-sets/ref/metrics_ccb_parse_error.json"
@@ -4592,7 +4592,7 @@
   {
     "id": 383,
     "desc": "Test that epsilon without enabling a reduction which uses it produces a warning.",
-    "vw_command": "--no_stdin --epsilon 5 --log_output_stream stderr --driver_output_off",
+    "vw_command": "--no_stdin --epsilon 5 --log_output stderr --driver_output_off",
     "diff_files": {
       "stderr": "train-sets/ref/epsilon_warning.stderr"
     },
