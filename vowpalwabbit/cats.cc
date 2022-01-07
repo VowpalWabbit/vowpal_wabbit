@@ -195,8 +195,8 @@ LEARNER::base_learner* setup(setup_base_i& stack_builder)
     float leaf_width = (max_value - min_value) / (num_actions);  // aka unit range
     float half_leaf_width = leaf_width / 2.f;
     bandwidth = half_leaf_width;
-    *(all.trace_message) << "Bandwidth was not supplied, setting default to half the continuous action unit range: "
-                         << bandwidth << std::endl;
+    all.logger.err_info(
+        "Bandwidth was not supplied, setting default to half the continuous action unit range: {}", bandwidth);
   }
 
   LEARNER::base_learner* p_base = stack_builder.setup_base_learner();

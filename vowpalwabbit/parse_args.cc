@@ -49,7 +49,6 @@
 #  include "parse_example_binary.h"
 #endif
 
-using std::cout;
 using std::endl;
 using namespace VW::config;
 
@@ -1700,7 +1699,7 @@ VW::workspace* initialize_with_builder(std::unique_ptr<options_i, options_delete
     // upon direct query for help -- spit it out to stdout;
     if (all.options->get_typed_option<bool>("help").value())
     {
-      cout << all.options->help(enabled_reductions);
+      std::cout << all.options->help(enabled_reductions);
       exit(0);
     }
 

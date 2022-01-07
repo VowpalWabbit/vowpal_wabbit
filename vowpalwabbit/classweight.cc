@@ -91,8 +91,7 @@ VW::LEARNER::base_learner* classweight_setup(VW::setup_base_i& stack_builder)
   if (!options.add_parse_and_check_necessary(new_options)) return nullptr;
 
   for (auto& s : classweight_array) cweights->load_string(s);
-
-  if (!all.quiet) *(all.trace_message) << "parsed " << cweights->weights.size() << " class weights" << std::endl;
+  all.logger.err_info("parsed {} class weights", cweights->weights.size());
 
   VW::LEARNER::single_learner* base = as_singleline(stack_builder.setup_base_learner());
 

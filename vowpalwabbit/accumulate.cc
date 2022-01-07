@@ -113,8 +113,7 @@ void accumulate_weighted_avg(VW::workspace& all, parameters& weights)
 {
   if (!weights.adaptive)
   {
-    *(all.trace_message)
-        << "Weighted averaging is implemented only for adaptive gradient, use accumulate_avg instead\n";
+    all.logger.err_warn("Weighted averaging is implemented only for adaptive gradient, use accumulate_avg instead");
     return;
   }
 
