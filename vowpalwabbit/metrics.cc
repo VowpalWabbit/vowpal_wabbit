@@ -159,7 +159,7 @@ VW::LEARNER::base_learner* metrics_setup(VW::setup_base_i& stack_builder)
   options_i& options = *stack_builder.get_options();
   auto data = VW::make_unique<metrics_data>();
 
-  option_group_definition new_options("Debug: Metrics");
+  option_group_definition new_options("[Reduction] Debug Metrics");
   new_options.add(make_option("extra_metrics", data->out_file)
                       .necessary()
                       .help("Specify filename to write metrics to. Note: There is no fixed schema"));

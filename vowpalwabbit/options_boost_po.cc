@@ -70,11 +70,17 @@ void options_boost_po::add_and_parse(const option_group_definition& group)
 void options_boost_po::internal_add_and_parse(const option_group_definition& group)
 {
   m_option_group_dic[m_current_reduction_tint].push_back(group);
+  // Overall option help line width in characters
+  constexpr unsigned int HELP_LINE_WIDTH = 100;
+  // Width in characters of the left column (one with option name and default value)
+  constexpr unsigned int OPTION_NAME_COLUMN_WIDTH = 45;
 
-  po::options_description new_options(group.m_name);
+  po::options_description new_options(group.m_name, HELP_LINE_WIDTH);
 
   for (const auto& opt_ptr : group.m_options)
   {
+    if (opt_ptr->m_necessary) { opt_ptr->m_help += " (required to enable this reduction)"; }
+
     add_to_description(opt_ptr, new_options);
     m_defined_options.insert(opt_ptr->m_name);
     m_defined_options.insert(opt_ptr->m_short_name);
@@ -90,7 +96,7 @@ void options_boost_po::internal_add_and_parse(const option_group_definition& gro
   if (m_added_help_group_names.count(group.m_name) == 0)
   {
     // Add the help for the given options.
-    new_options.print(m_help_stringstream[m_current_reduction_tint]);
+    new_options.print(m_help_stringstream[m_current_reduction_tint], OPTION_NAME_COLUMN_WIDTH);
     m_added_help_group_names.insert(group.m_name);
   }
 

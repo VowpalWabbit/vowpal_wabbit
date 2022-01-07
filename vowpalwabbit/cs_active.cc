@@ -300,7 +300,7 @@ base_learner* cs_active_setup(VW::setup_base_i& stack_builder)
 
   bool simulation = false;
   int domination;
-  option_group_definition new_options("Cost Sensitive Active Learning");
+  option_group_definition new_options("[Reduction] Cost Sensitive Active Learning");
   new_options
       .add(make_option("cs_active", data->num_classes)
                .keep()

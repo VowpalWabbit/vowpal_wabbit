@@ -716,7 +716,7 @@ VW::LEARNER::base_learner* kernel_svm_setup(VW::setup_base_i& stack_builder)
 
   bool ksvm = false;
 
-  option_group_definition new_options("Kernel SVM");
+  option_group_definition new_options("[Reduction] Kernel SVM");
   new_options.add(make_option("ksvm", ksvm).keep().necessary().help("Kernel svm"))
       .add(make_option("reprocess", params->reprocess).default_value(1).help("Number of reprocess steps for LASVM"))
       .add(make_option("pool_greedy", params->active_pool_greedy).help("Use greedy selection on mini pools"))

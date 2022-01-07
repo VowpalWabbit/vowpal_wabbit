@@ -1201,7 +1201,7 @@ base_learner* setup(VW::setup_base_i& stack_builder)
   bool invariant = false;
   bool normalized = false;
 
-  option_group_definition new_options("Gradient Descent");
+  option_group_definition new_options("[Reduction] Gradient Descent");
   new_options.add(make_option("sgd", sgd).help("Use regular stochastic gradient descent update").keep(all.save_resume))
       .add(make_option("adaptive", adaptive).help("Use adaptive, individual learning rates").keep(all.save_resume))
       .add(make_option("adax", adax).help("Use adaptive learning rates with x^2 instead of g^2x^2"))

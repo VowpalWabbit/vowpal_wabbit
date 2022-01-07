@@ -262,7 +262,7 @@ VW::LEARNER::base_learner* audit_regressor_setup(VW::setup_base_i& stack_builder
   VW::workspace& all = *stack_builder.get_all_pointer();
 
   std::string out_file;
-  option_group_definition new_options("Audit Regressor");
+  option_group_definition new_options("[Reduction] Audit Regressor");
   new_options.add(make_option("audit_regressor", out_file)
                       .keep()
                       .necessary()

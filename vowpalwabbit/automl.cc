@@ -690,7 +690,7 @@ VW::LEARNER::base_learner* automl_setup(VW::setup_base_i& stack_builder)
   bool verbose_metrics = false;
   std::string oracle_type;
 
-  option_group_definition new_options("Automl");
+  option_group_definition new_options("[Reduction] Automl");
   new_options
       .add(make_option("automl", max_live_configs)
                .necessary()
