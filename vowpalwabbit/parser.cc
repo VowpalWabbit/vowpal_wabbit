@@ -586,14 +586,9 @@ void enable_sources(VW::workspace& all, bool quiet, size_t passes, input_options
 
         if (adapter) { all.example_parser->input.add_file(std::move(adapter)); }
       }
-      catch (std::exception const&)
+      catch (std::exception const& ex)
       {
-        // when trying to fix this exception, consider that an empty filename_to_read is valid if all.stdin_off is false
-        if (!filename_to_read.empty()) { all.logger.err_error("can't open '{}', sailing on!", filename_to_read); }
-        else
-        {
-          throw;
-        }
+        THROW("Failed to open input data file '" << filename_to_read << "'. Inner error: " << ex.what());
       }
 
       if (input_options.json || input_options.dsjson)
