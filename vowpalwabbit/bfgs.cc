@@ -1017,13 +1017,10 @@ void save_load(bfgs& b, io_buf& model_file, bool read, bool text)
 
     uint32_t stride_shift = all->weights.stride_shift();
 
-    if (!all->quiet)
-      std::cerr << "m = " << m << std::endl
-                << "Allocated "
-                << (static_cast<long unsigned int>(all->length()) *
-                           (sizeof(float) * (b.mem_stride) + (sizeof(weight) << stride_shift)) >>
-                       20)
-                << "M for weights and mem" << std::endl;
+    b.all->logger.err_info("m = {}, allocated {}M for weights and mem", m,
+        static_cast<long unsigned int>(all->length()) *
+                (sizeof(float) * (b.mem_stride) + (sizeof(weight) << stride_shift)) >>
+            20);
 
     b.net_time = 0.0;
     b.t_start_global = std::chrono::system_clock::now();

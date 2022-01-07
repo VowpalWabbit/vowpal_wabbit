@@ -7,8 +7,6 @@
 
 using namespace VW::config;
 
-using std::cout;
-
 // TODO: This file should probably(?) use trace_message
 struct print
 {
@@ -16,33 +14,35 @@ struct print
   VW::workspace* all;
 };  // regressor, feature loop
 
-void print_feature(VW::workspace& /* all */, float value, uint64_t index)
+void print_feature(VW::workspace& all, float value, uint64_t index)
 {
-  cout << index;
-  if (value != 1.) cout << ":" << value;
-  cout << " ";
+  (*all.trace_message) << index;
+  if (value != 1.) { (*all.trace_message) << ":" << value; }
+  (*all.trace_message) << " ";
 }
 
 void learn(print& p, VW::LEARNER::base_learner&, example& ec)
 {
+  assert(p.all != nullptr);
+  auto& all = *p.all;
   if (ec.l.simple.label != FLT_MAX)
   {
-    cout << ec.l.simple.label << " ";
+    (*all.trace_message) << ec.l.simple.label << " ";
     const auto& simple_red_features = ec._reduction_features.template get<simple_label_reduction_features>();
     if (ec.weight != 1 || simple_red_features.initial != 0)
     {
-      cout << ec.weight << " ";
-      if (simple_red_features.initial != 0) cout << simple_red_features.initial << " ";
+      (*all.trace_message) << ec.weight << " ";
+      if (simple_red_features.initial != 0) (*all.trace_message) << simple_red_features.initial << " ";
     }
   }
   if (!ec.tag.empty())
   {
-    cout << '\'';
-    cout.write(ec.tag.begin(), ec.tag.size());
+    (*all.trace_message) << '\'';
+    (*all.trace_message).write(ec.tag.begin(), ec.tag.size());
   }
-  cout << "| ";
+  (*all.trace_message) << "| ";
   GD::foreach_feature<VW::workspace, uint64_t, print_feature>(*(p.all), ec, *p.all);
-  cout << std::endl;
+  (*all.trace_message) << std::endl;
 }
 
 VW::LEARNER::base_learner* print_setup(VW::setup_base_i& stack_builder)

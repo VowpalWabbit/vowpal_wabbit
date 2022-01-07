@@ -327,7 +327,7 @@ VW::LEARNER::base_learner* oaa_setup(VW::setup_base_i& stack_builder)
     if (data->num_subsample >= data->k)
     {
       data->num_subsample = 0;
-      *(all.trace_message) << "oaa is turning off subsampling because parameter >= K" << std::endl;
+      all.logger.err_info("oaa is turning off subsampling because parameter >= K");
     }
     else
     {
