@@ -408,7 +408,7 @@ VW::LEARNER::base_learner* marginal_setup(VW::setup_base_i& stack_builder)
   bool update_before_learn = false;
   bool unweighted_marginals = false;
   float decay;
-  option_group_definition marginal_options("Marginal");
+  option_group_definition marginal_options("[Reduction] Marginal");
   marginal_options.add(
       make_option("marginal", marginal).keep().necessary().help("Substitute marginal label estimates for ids"));
   marginal_options.add(

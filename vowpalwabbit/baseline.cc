@@ -163,7 +163,7 @@ base_learner* baseline_setup(VW::setup_base_i& stack_builder)
   bool baseline_option = false;
   std::string loss_function;
 
-  option_group_definition new_options("Baseline");
+  option_group_definition new_options("[Reduction] Baseline");
   new_options
       .add(make_option("baseline", baseline_option)
                .keep()

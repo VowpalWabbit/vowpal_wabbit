@@ -182,7 +182,7 @@ base_learner* csoaa_setup(VW::setup_base_i& stack_builder)
   options_i& options = *stack_builder.get_options();
   VW::workspace& all = *stack_builder.get_all_pointer();
   auto c = VW::make_unique<csoaa>(all.logger);
-  option_group_definition new_options("Cost Sensitive One Against All");
+  option_group_definition new_options("[Reduction] Cost Sensitive One Against All");
   new_options
       .add(make_option("csoaa", c->num_classes).keep().necessary().help("One-against-all multiclass with <k> costs"))
       .add(make_option("indexing", c->indexing).one_of({0, 1}).keep().help("Choose between 0 or 1-indexing"));

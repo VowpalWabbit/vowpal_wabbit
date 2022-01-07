@@ -165,7 +165,7 @@ LEARNER::base_learner* setup(setup_base_i& stack_builder)
   options_i& options = *stack_builder.get_options();
   VW::workspace& all = *stack_builder.get_all_pointer();
 
-  option_group_definition new_options("Continuous Actions Tree with Smoothing");
+  option_group_definition new_options("[Reduction] Continuous Actions Tree with Smoothing");
   uint32_t num_actions = 0;
   float bandwidth = 0;
   float min_value = 0;

@@ -1276,7 +1276,7 @@ base_learner* lda_setup(VW::setup_base_i& stack_builder)
   VW::workspace& all = *stack_builder.get_all_pointer();
 
   auto ld = VW::make_unique<lda>();
-  option_group_definition new_options("Latent Dirichlet Allocation");
+  option_group_definition new_options("[Reduction] Latent Dirichlet Allocation");
   int math_mode;
   new_options.add(make_option("lda", ld->topics).keep().necessary().help("Run lda with <int> topics"))
       .add(make_option("lda_alpha", ld->lda_alpha)

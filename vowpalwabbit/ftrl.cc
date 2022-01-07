@@ -403,7 +403,7 @@ base_learner* ftrl_setup(VW::setup_base_i& stack_builder)
   bool pistol_no_not_use = false;
   bool coin_no_not_use = false;
 
-  option_group_definition ftrl_options("Follow the Regularized Leader - FTRL");
+  option_group_definition ftrl_options("[Reduction] Follow the Regularized Leader - FTRL");
   ftrl_options
       .add(make_option("ftrl", ftrl_option_no_not_use)
                .necessary()
@@ -412,7 +412,7 @@ base_learner* ftrl_setup(VW::setup_base_i& stack_builder)
       .add(make_option("ftrl_alpha", b->ftrl_alpha).help("Learning rate for FTRL optimization"))
       .add(make_option("ftrl_beta", b->ftrl_beta).help("Learning rate for FTRL optimization"));
 
-  option_group_definition pistol_options("Follow the Regularized Leader - Pistol");
+  option_group_definition pistol_options("[Reduction] Follow the Regularized Leader - Pistol");
   pistol_options
       .add(make_option("pistol", pistol_no_not_use)
                .necessary()
@@ -421,7 +421,7 @@ base_learner* ftrl_setup(VW::setup_base_i& stack_builder)
       .add(make_option("ftrl_alpha", b->ftrl_alpha).help("Learning rate for FTRL optimization"))
       .add(make_option("ftrl_beta", b->ftrl_beta).help("Learning rate for FTRL optimization"));
 
-  option_group_definition coin_options("Follow the Regularized Leader - Coin");
+  option_group_definition coin_options("[Reduction] Follow the Regularized Leader - Coin");
   coin_options.add(make_option("coin", coin_no_not_use).necessary().keep().help("Coin betting optimizer"))
       .add(make_option("ftrl_alpha", b->ftrl_alpha).help("Learning rate for FTRL optimization"))
       .add(make_option("ftrl_beta", b->ftrl_beta).help("Learning rate for FTRL optimization"));

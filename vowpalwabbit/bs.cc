@@ -222,7 +222,7 @@ base_learner* bs_setup(VW::setup_base_i& stack_builder)
   VW::workspace& all = *stack_builder.get_all_pointer();
   auto data = VW::make_unique<bs>();
   std::string type_string("mean");
-  option_group_definition new_options("Bootstrap");
+  option_group_definition new_options("[Reduction] Bootstrap");
   new_options
       .add(make_option("bootstrap", data->B).keep().necessary().help("K-way bootstrap by online importance resampling"))
       .add(make_option("bs_type", type_string).keep().one_of({"mean", "vote"}).help("Prediction type"));
