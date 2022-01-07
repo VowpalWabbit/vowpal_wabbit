@@ -1,3 +1,4 @@
+[warning] The old default logging behavior of logging to a mix of stdout and stderr is deprecated. Please choose either 'stdout' or 'stderr' for --log_output_stream to silence this warning.
 using l2 regularization = 1
 Lambda = 1
 Kernel = linear
@@ -33,6 +34,3 @@ total feature number = 19870
 Num support = 380
 Number of kernel evaluations = 409817 Number of cache queries = 264012
 Total loss = 17.626629
-Done freeing model
-Done freeing kernel params
-Done with finish 

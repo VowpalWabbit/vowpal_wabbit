@@ -353,5 +353,3 @@ void compile_gram(
     std::vector<std::string> grams, std::array<uint32_t, NUM_NAMESPACES>& dest, char* descriptor, bool quiet);
 void compile_limits(
     std::vector<std::string> limits, std::array<uint32_t, NUM_NAMESPACES>& dest, bool quiet, VW::io::logger& logger);
-
-int print_tag_by_ref(std::stringstream& ss, const v_array<char>& tag);

@@ -1,3 +1,4 @@
+[warning] The old default logging behavior of logging to a mix of stdout and stderr is deprecated. Please choose either 'stdout' or 'stderr' for --log_output_stream to silence this warning.
 creating quadratic features for pairs: ::
 [warning] Any duplicate namespace interactions will be removed
 You can use --leave_duplicate_interactions to disable this behaviour.
@@ -30,4 +31,4 @@ weighted example sum = 10.000000
 weighted label sum = 10.000000
 average loss = 0.000000
 total feature number = 60
-Learn() count per node: id=0, #l=0; id=1, #l=0; id=2, #l=1; id=3, #l=0; id=4, #l=0; id=5, #l=0; id=6, #l=1; id=7, #l=0; id=8, #l=0; id=9, #l=0; id=10, #l=0; id=11, #l=0; id=12, #l=0; id=13, #l=0; id=14, #l=0; id=15, #l=0;
+Learn() count per node: id=0, #l=0; id=1, #l=0; id=2, #l=1; id=3, #l=0; id=4, #l=0; id=5, #l=0; id=6, #l=1; id=7, #l=0; id=8, #l=0; id=9, #l=0; id=10, #l=0; id=11, #l=0; id=12, #l=0; id=13, #l=0; id=14, #l=0; id=15, #l=0; 
