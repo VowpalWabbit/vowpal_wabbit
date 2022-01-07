@@ -34,6 +34,3 @@ total feature number = 19870
 Num support = 380
 Number of kernel evaluations = 409817 Number of cache queries = 264012
 Total loss = 17.626629
-Done freeing model
-Done freeing kernel params
-Done with finish 
