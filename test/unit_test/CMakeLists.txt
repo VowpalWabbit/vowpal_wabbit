@@ -53,6 +53,7 @@ add_executable(vw-unit-test.out
   tutorial_test.cc
   v_array_test.cc
   vw_versions_test.cc
+  vwdll_test.cc
   weights_test.cc
 )
 
