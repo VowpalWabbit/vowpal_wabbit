@@ -1,3 +1,4 @@
+[warning] The old default logging behavior of logging to a mix of stdout and stderr is deprecated. Please choose either 'stdout' or 'stderr' for --log_output to silence this warning.
 only testing
 predictions = sequence_data.ldf.test.predict
 Num weight bits = 18
@@ -10,8 +11,8 @@ num sources = 1
 Enabled reductions: gd, scorer-identity, csoaa_ldf, shared_feature_merger, search_task
 Input label = multiclass
 Output pred = multiclass
-average    since      instance            current true      current predicted   cur   cur   predic    cache  examples          
-loss       last        counter           output prefix          output prefix  pass   pol     made     hits    gener  beta    
+average    since      instance            current true      current predicted   cur   cur   predic    cache  examples
+loss       last        counter           output prefix          output prefix  pass   pol     made     hits    gener  beta
 0.000000   0.000000          1  [5 4 3 2 1           ] [5 4 3 2 1           ]     0     0        5        0        0  0.000000
 
 finished run

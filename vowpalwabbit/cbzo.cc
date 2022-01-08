@@ -6,6 +6,7 @@
 #include <cfloat>
 
 #include "gd.h"
+#include "io/logger.h"
 #include "io_buf.h"
 #include "parse_regressor.h"
 #include "cbzo.h"
@@ -83,13 +84,15 @@ float linear_inference(VW::workspace& all, example& ec)
   return dotprod;
 }
 
+VW_WARNING_STATE_PUSH
+VW_WARNING_DISABLE_COND_CONST_EXPR
 template <uint8_t policy>
 float inference(VW::workspace& all, example& ec)
 {
-  if (policy == constant_policy)
+  if VW_STD17_CONSTEXPR (policy == constant_policy)
     return constant_inference(all);
 
-  else if (policy == linear_policy)
+  else if VW_STD17_CONSTEXPR (policy == linear_policy)
     return linear_inference(all, ec);
 
   else
@@ -142,15 +145,16 @@ void linear_update(cbzo& data, example& ec)
 template <uint8_t policy, bool feature_mask_off>
 void update_weights(cbzo& data, example& ec)
 {
-  if (policy == constant_policy)
+  if VW_STD17_CONSTEXPR (policy == constant_policy)
     constant_update<feature_mask_off>(data, ec);
 
-  else if (policy == linear_policy)
+  else if VW_STD17_CONSTEXPR (policy == linear_policy)
     linear_update<feature_mask_off>(data, ec);
 
   else
     THROW("Unknown policy encountered: " << policy)
 }
+VW_WARNING_STATE_POP
 
 void set_minmax(shared_data* sd, float label, bool min_fixed, bool max_fixed)
 {
@@ -165,7 +169,7 @@ inline std::string get_pred_repr(example& ec)
 
 void print_audit_features(VW::workspace& all, example& ec)
 {
-  if (all.audit) all.print_text_by_ref(all.stdout_adapter.get(), get_pred_repr(ec), ec.tag);
+  if (all.audit) all.print_text_by_ref(all.stdout_adapter.get(), get_pred_repr(ec), ec.tag, all.logger);
 
   GD::print_features(all, ec);
 }
@@ -248,7 +252,7 @@ void report_progress(VW::workspace& all, example& ec)
   all.sd->update(ec.test_only, is_labeled(ec), costs.empty() ? 0.0f : costs[0].cost, ec.weight, ec.get_num_features());
   all.sd->weighted_labels += ec.weight;
 
-  if (all.sd->weighted_examples() >= all.sd->dump_interval && !all.logger.quiet)
+  if (all.sd->weighted_examples() >= all.sd->dump_interval && !all.quiet)
   {
     all.sd->print_update(*all.trace_message, all.holdout_set_off, all.current_pass,
         ec.test_only ? "unknown" : to_string(costs[0]), get_pred_repr(ec), ec.get_num_features(), all.progress_add,
@@ -259,7 +263,7 @@ void report_progress(VW::workspace& all, example& ec)
 void output_prediction(VW::workspace& all, example& ec)
 {
   std::string pred_repr = get_pred_repr(ec);
-  for (auto& sink : all.final_prediction_sink) all.print_text_by_ref(sink.get(), pred_repr, ec.tag);
+  for (auto& sink : all.final_prediction_sink) all.print_text_by_ref(sink.get(), pred_repr, ec.tag, all.logger);
 }
 
 void finish_example(VW::workspace& all, cbzo&, example& ec)
@@ -327,7 +331,8 @@ base_learner* setup(VW::setup_base_i& stack_builder)
   std::string policy_str;
   bool cbzo_option = false;
 
-  option_group_definition new_options("Continuous Action Contextual Bandit using Zeroth-Order Optimization");
+  option_group_definition new_options(
+      "[Reduction] Continuous Action Contextual Bandit using Zeroth-Order Optimization");
   new_options
       .add(make_option("cbzo", cbzo_option)
                .keep()
@@ -354,8 +359,7 @@ base_learner* setup(VW::setup_base_i& stack_builder)
     if (options.was_supplied("noconstant")) THROW("constant policy can't be learnt when --noconstant is used")
 
     if (!feature_mask_off)
-      *(all.trace_message)
-          << "warning: feature_mask used with constant policy (where there is only one weight to learn)." << std::endl;
+    { all.logger.err_warn("Feature_mask used with constant policy (where there is only one weight to learn)."); }
   }
 
   all.example_parser->lbl_parser = cb_continuous::the_label_parser;

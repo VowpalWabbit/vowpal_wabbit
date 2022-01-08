@@ -143,7 +143,7 @@ VW::LEARNER::base_learner* lrqfa_setup(VW::setup_base_i& stack_builder)
   options_i& options = *stack_builder.get_options();
   VW::workspace& all = *stack_builder.get_all_pointer();
   std::string lrqfa;
-  option_group_definition new_options("Low Rank Quadratics FA");
+  option_group_definition new_options("[Reduction] Low Rank Quadratics FA");
   new_options.add(
       make_option("lrqfa", lrqfa).keep().necessary().help("Use low rank quadratic features with field aware weights"));
 
@@ -154,7 +154,7 @@ VW::LEARNER::base_learner* lrqfa_setup(VW::setup_base_i& stack_builder)
 
   if (lrqfa.find(':') != std::string::npos) { THROW("--lrqfa does not support wildcards ':'"); }
 
-  std::string lrqopt = VW::decode_inline_hex(lrqfa);
+  std::string lrqopt = VW::decode_inline_hex(lrqfa, all.logger);
   size_t last_index = lrqopt.find_last_not_of("0123456789");
   new (&lrq->field_name) std::string(lrqopt.substr(0, last_index + 1));  // make sure there is no duplicates
   lrq->k = atoi(lrqopt.substr(last_index + 1).c_str());

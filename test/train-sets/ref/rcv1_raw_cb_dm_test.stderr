@@ -1,3 +1,4 @@
+[warning] The old default logging behavior of logging to a mix of stdout and stderr is deprecated. Please choose either 'stdout' or 'stderr' for --log_output to silence this warning.
 [info] Generating 2-grams for all namespaces.
 [info] Generating 4-skips for all namespaces.
 only testing

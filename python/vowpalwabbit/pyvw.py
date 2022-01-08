@@ -1203,6 +1203,7 @@ class ccb_label(abstract_label):
             self.explict_included_actions =  ex.get_ccb_explicitly_included_actions()
             self.weight = ex.get_ccb_weight()
             self.outcome = slot_outcome(ex)
+
         else:
             self.type = type
             self.explicit_included_actions = explicit_included_actions

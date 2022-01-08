@@ -32,8 +32,6 @@ using namespace VW::LEARNER;
 using namespace VW;
 using namespace VW::config;
 
-namespace logger = VW::io::logger;
-
 namespace CCB
 {
 void default_label(label& ld);
@@ -57,20 +55,20 @@ void default_label(label& ld)
 bool test_label(const CCB::label& ld) { return ld.outcome == nullptr; }
 
 ACTION_SCORE::action_score convert_to_score(
-    const VW::string_view& action_id_str, const VW::string_view& probability_str)
+    const VW::string_view& action_id_str, const VW::string_view& probability_str, VW::io::logger& logger)
 {
-  auto action_id = static_cast<uint32_t>(int_of_string(action_id_str));
-  auto probability = float_of_string(probability_str);
+  auto action_id = static_cast<uint32_t>(int_of_string(action_id_str, logger));
+  auto probability = float_of_string(probability_str, logger);
   if (std::isnan(probability)) THROW("error NaN probability: " << probability_str);
 
   if (probability > 1.0)
   {
-    logger::errlog_warn("invalid probability > 1 specified for an action, resetting to 1.");
+    logger.err_warn("invalid probability > 1 specified for an action, resetting to 1.");
     probability = 1.0;
   }
   if (probability < 0.0)
   {
-    logger::errlog_warn("invalid probability < 0 specified for an action, resetting to 0.");
+    logger.err_warn("invalid probability < 0 specified for an action, resetting to 0.");
     probability = .0;
   }
 
@@ -78,7 +76,7 @@ ACTION_SCORE::action_score convert_to_score(
 }
 
 //<action>:<cost>:<probability>,<action>:<probability>,<action>:<probability>,…
-CCB::conditional_contextual_bandit_outcome* parse_outcome(VW::string_view outcome)
+CCB::conditional_contextual_bandit_outcome* parse_outcome(VW::string_view outcome, VW::io::logger& logger)
 {
   auto& ccb_outcome = *(new CCB::conditional_contextual_bandit_outcome());
 
@@ -90,9 +88,9 @@ CCB::conditional_contextual_bandit_outcome* parse_outcome(VW::string_view outcom
 
   if (split_colons.size() != 3) THROW("Malformed ccb label");
 
-  ccb_outcome.probabilities.push_back(convert_to_score(split_colons[0], split_colons[2]));
+  ccb_outcome.probabilities.push_back(convert_to_score(split_colons[0], split_colons[2], logger));
 
-  ccb_outcome.cost = float_of_string(split_colons[1]);
+  ccb_outcome.cost = float_of_string(split_colons[1], logger);
   if (std::isnan(ccb_outcome.cost)) THROW("error NaN cost: " << split_colons[1]);
 
   split_colons.clear();
@@ -101,18 +99,21 @@ CCB::conditional_contextual_bandit_outcome* parse_outcome(VW::string_view outcom
   {
     tokenize(':', split_commas[i], split_colons);
     if (split_colons.size() != 2) THROW("Must be action probability pairs");
-    ccb_outcome.probabilities.push_back(convert_to_score(split_colons[0], split_colons[1]));
+    ccb_outcome.probabilities.push_back(convert_to_score(split_colons[0], split_colons[1], logger));
   }
 
   return &ccb_outcome;
 }
 
-void parse_explicit_inclusions(CCB::label& ld, const std::vector<VW::string_view>& split_inclusions)
+void parse_explicit_inclusions(
+    CCB::label& ld, const std::vector<VW::string_view>& split_inclusions, VW::io::logger& logger)
 {
-  for (const auto& inclusion : split_inclusions) { ld.explicit_included_actions.push_back(int_of_string(inclusion)); }
+  for (const auto& inclusion : split_inclusions)
+  { ld.explicit_included_actions.push_back(int_of_string(inclusion, logger)); }
 }
 
-void parse_label(label& ld, VW::label_parser_reuse_mem& reuse_mem, const std::vector<VW::string_view>& words)
+void parse_label(
+    label& ld, VW::label_parser_reuse_mem& reuse_mem, const std::vector<VW::string_view>& words, VW::io::logger& logger)
 {
   ld.weight = 1.0;
 
@@ -143,12 +144,12 @@ void parse_label(label& ld, VW::label_parser_reuse_mem& reuse_mem, const std::ve
       {
         if (ld.outcome != nullptr) { THROW("There may be only 1 outcome associated with a slot.") }
 
-        ld.outcome = parse_outcome(words[i]);
+        ld.outcome = parse_outcome(words[i], logger);
       }
       else
       {
         tokenize(',', words[i], reuse_mem.tokens);
-        parse_explicit_inclusions(ld, reuse_mem.tokens);
+        parse_explicit_inclusions(ld, reuse_mem.tokens, logger);
       }
     }
 
@@ -178,9 +179,8 @@ label_parser ccb_label_parser = {
     [](polylabel& label) { default_label(label.conditional_contextual_bandit); },
     // parse_label
     [](polylabel& label, ::reduction_features& /*red_features*/, VW::label_parser_reuse_mem& reuse_mem,
-        const VW::named_labels* /*ldict*/, const std::vector<VW::string_view>& words) {
-      parse_label(label.conditional_contextual_bandit, reuse_mem, words);
-    },
+        const VW::named_labels* /*ldict*/, const std::vector<VW::string_view>& words,
+        VW::io::logger& logger) { parse_label(label.conditional_contextual_bandit, reuse_mem, words, logger); },
     // cache_label
     [](const polylabel& label, const ::reduction_features& /*red_features*/, io_buf& cache,
         const std::string& upstream_name, bool text) {

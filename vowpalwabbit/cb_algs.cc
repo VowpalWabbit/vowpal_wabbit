@@ -20,13 +20,14 @@ using namespace VW::config;
 using namespace CB;
 using namespace GEN_CS;
 
-namespace logger = VW::io::logger;
-
 namespace CB_ALGS
 {
 struct cb
 {
   cb_to_cs cbcs;
+  VW::io::logger logger;
+
+  cb(VW::io::logger logger) : logger(std::move(logger)) {}
 };
 
 bool know_all_cost_example(CB::label& ld)
@@ -57,10 +58,10 @@ void predict_or_learn(cb& data, single_learner& base, example& ec)
 
   // cost observed, not default
   if (optional_cost.first && (c.known_cost.action < 1 || c.known_cost.action > c.num_actions))
-    logger::errlog_error("invalid action: {}", c.known_cost.action);
+    data.logger.err_error("invalid action: {}", c.known_cost.action);
 
   // generate a cost-sensitive example to update classifiers
-  gen_cs_example<is_learn>(c, ec, ec.l.cb, ec.l.cs);
+  gen_cs_example<is_learn>(c, ec, ec.l.cb, ec.l.cs, data.logger);
 
   if (c.cb_type != VW::cb_type_t::dm)
   {
@@ -86,7 +87,7 @@ void learn_eval(cb& data, single_learner&, example& ec)
   {
     c.known_cost = CB::cb_class{};
   }
-  gen_cs_example<true>(c, ec, ec.l.cb_eval.event, ec.l.cs);
+  gen_cs_example<true>(c, ec, ec.l.cb_eval.event, ec.l.cs, data.logger);
 
   for (size_t i = 0; i < ec.l.cb_eval.event.costs.size(); i++)
     ec.l.cb_eval.event.costs[i].partial_prediction = ec.l.cs.costs[i].partial_prediction;
@@ -110,7 +111,7 @@ void generic_output_example(
   all.sd->update(ec.test_only, !CB::is_test_label(ld), loss, 1.f, ec.get_num_features());
 
   for (auto& sink : all.final_prediction_sink)
-    all.print_by_ref(sink.get(), static_cast<float>(ec.pred.multiclass), 0, ec.tag);
+    all.print_by_ref(sink.get(), static_cast<float>(ec.pred.multiclass), 0, ec.tag, all.logger);
 
   if (all.raw_prediction != nullptr)
   {
@@ -121,7 +122,7 @@ void generic_output_example(
       if (i > 0) outputStringStream << ' ';
       outputStringStream << cl.action << ':' << cl.partial_prediction;
     }
-    all.print_text_by_ref(all.raw_prediction.get(), outputStringStream.str(), ec.tag);
+    all.print_text_by_ref(all.raw_prediction.get(), outputStringStream.str(), ec.tag, all.logger);
   }
 
   bool is_ld_test_label = CB::is_test_label(ld);
@@ -149,12 +150,12 @@ base_learner* cb_algs_setup(VW::setup_base_i& stack_builder)
 {
   options_i& options = *stack_builder.get_options();
   VW::workspace& all = *stack_builder.get_all_pointer();
-  auto data = VW::make_unique<cb>();
+  auto data = VW::make_unique<cb>(all.logger);
   std::string type_string = "dr";
   bool eval = false;
   bool force_legacy = true;
 
-  option_group_definition new_options("Contextual Bandit");
+  option_group_definition new_options("[Reduction] Contextual Bandit");
   new_options
       .add(make_option("cb", data->cbcs.num_actions)
                .keep()
@@ -198,8 +199,8 @@ base_learner* cb_algs_setup(VW::setup_base_i& stack_builder)
       break;
     case VW::cb_type_t::mtr:
     case VW::cb_type_t::sm:
-      logger::errlog_warn("warning: cb_type must be in {'ips','dm','dr'}; resetting to dr. Input received: {}",
-          VW::to_string(c.cb_type));
+      data->logger.err_warn(
+          "cb_type must be in {{'ips','dm','dr'}}; resetting to dr. Input received: {}", VW::to_string(c.cb_type));
       c.cb_type = VW::cb_type_t::dr;
       break;
   }

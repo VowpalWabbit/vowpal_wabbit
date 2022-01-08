@@ -1,3 +1,4 @@
+[warning] The old default logging behavior of logging to a mix of stdout and stderr is deprecated. Please choose either 'stdout' or 'stderr' for --log_output to silence this warning.
 Enabling FTRL based optimization
 Algorithm used: Coin Betting
 ftrl_alpha = 4
@@ -28,4 +29,4 @@ weighted label sum = 707915.049332
 average loss = 0.182851
 best constant = 14158.300781
 total feature number = 500
-Learn() count per node: id=0, #l=3; id=1, #l=0; id=2, #l=0; 
+Learn() count per node: id=0, #l=3; id=1, #l=0; id=2, #l=0;

@@ -16,8 +16,6 @@
 
 using namespace LEARNER;
 
-namespace logger = VW::io::logger;
-
 namespace CB
 {
 template <>
@@ -27,7 +25,7 @@ void default_label_additional_fields<VW::cb_continuous::continuous_label>(VW::cb
 }  // namespace CB
 
 void parse_pdf(const std::vector<VW::string_view>& words, size_t words_index, VW::label_parser_reuse_mem& reuse_mem,
-    reduction_features& red_features)
+    reduction_features& red_features, VW::io::logger& logger)
 {
   auto& cats_reduction_features = red_features.template get<VW::continuous_actions::reduction_features>();
   for (size_t i = words_index; i < words.size(); i++)
@@ -36,23 +34,23 @@ void parse_pdf(const std::vector<VW::string_view>& words, size_t words_index, VW
     tokenize(':', words[i], reuse_mem.tokens);
     if (reuse_mem.tokens.empty() || reuse_mem.tokens.size() < 3) { continue; }
     VW::continuous_actions::pdf_segment seg;
-    seg.left = float_of_string(reuse_mem.tokens[0]);
-    seg.right = float_of_string(reuse_mem.tokens[1]);
-    seg.pdf_value = float_of_string(reuse_mem.tokens[2]);
+    seg.left = float_of_string(reuse_mem.tokens[0], logger);
+    seg.right = float_of_string(reuse_mem.tokens[1], logger);
+    seg.pdf_value = float_of_string(reuse_mem.tokens[2], logger);
     cats_reduction_features.pdf.push_back(seg);
   }
   if (!VW::continuous_actions::is_valid_pdf(cats_reduction_features.pdf)) { cats_reduction_features.pdf.clear(); }
 }
 
 void parse_chosen_action(const std::vector<VW::string_view>& words, size_t words_index,
-    VW::label_parser_reuse_mem& reuse_mem, reduction_features& red_features)
+    VW::label_parser_reuse_mem& reuse_mem, reduction_features& red_features, VW::io::logger& logger)
 {
   auto& cats_reduction_features = red_features.template get<VW::continuous_actions::reduction_features>();
   for (size_t i = words_index; i < words.size(); i++)
   {
     tokenize(':', words[i], reuse_mem.tokens);
     if (reuse_mem.tokens.empty() || reuse_mem.tokens.size() < 1) { continue; }
-    cats_reduction_features.chosen_action = float_of_string(reuse_mem.tokens[0]);
+    cats_reduction_features.chosen_action = float_of_string(reuse_mem.tokens[0], logger);
     break;  // there can only be one chosen action
   }
 }
@@ -64,7 +62,7 @@ namespace cb_continuous
 ////////////////////////////////////////////////////
 // Begin: parse a,c,p label format
 void parse_label(continuous_label& ld, reduction_features& red_features, VW::label_parser_reuse_mem& reuse_mem,
-    const std::vector<VW::string_view>& words)
+    const std::vector<VW::string_view>& words, VW::io::logger& logger)
 {
   ld.costs.clear();
 
@@ -74,10 +72,10 @@ void parse_label(continuous_label& ld, reduction_features& red_features, VW::lab
 
   for (size_t i = 1; i < words.size(); i++)
   {
-    if (words[i] == PDF) { parse_pdf(words, i + 1, reuse_mem, red_features); }
+    if (words[i] == PDF) { parse_pdf(words, i + 1, reuse_mem, red_features, logger); }
     else if (words[i] == CHOSEN_ACTION)
     {
-      parse_chosen_action(words, i + 1, reuse_mem, red_features);
+      parse_chosen_action(words, i + 1, reuse_mem, red_features, logger);
     }
     else if (words[i - 1] == CA_LABEL)
     {
@@ -88,22 +86,22 @@ void parse_label(continuous_label& ld, reduction_features& red_features, VW::lab
         THROW("malformed cost specification: "
             << "reuse_mem.tokens");
 
-      f.action = float_of_string(reuse_mem.tokens[0]);
+      f.action = float_of_string(reuse_mem.tokens[0], logger);
 
-      if (reuse_mem.tokens.size() > 1) f.cost = float_of_string(reuse_mem.tokens[1]);
+      if (reuse_mem.tokens.size() > 1) f.cost = float_of_string(reuse_mem.tokens[1], logger);
 
       if (std::isnan(f.cost))
         THROW("error NaN cost (" << reuse_mem.tokens[1] << " for action: " << reuse_mem.tokens[0]);
 
       f.pdf_value = .0;
-      if (reuse_mem.tokens.size() > 2) f.pdf_value = float_of_string(reuse_mem.tokens[2]);
+      if (reuse_mem.tokens.size() > 2) f.pdf_value = float_of_string(reuse_mem.tokens[2], logger);
 
       if (std::isnan(f.pdf_value))
         THROW("error NaN pdf_value (" << reuse_mem.tokens[2] << " for action: " << reuse_mem.tokens[0]);
 
       if (f.pdf_value < 0.0)
       {
-        logger::errlog_warn("invalid pdf_value < 0 specified for an action, resetting to 0.");
+        logger.err_warn("invalid pdf_value < 0 specified for an action, resetting to 0.");
         f.pdf_value = .0;
       }
 
@@ -117,8 +115,8 @@ label_parser the_label_parser = {
     [](polylabel& label) { CB::default_label<continuous_label>(label.cb_cont); },
     // parse_label
     [](polylabel& label, reduction_features& red_features, VW::label_parser_reuse_mem& reuse_mem,
-        const VW::named_labels* /*ldict*/,
-        const std::vector<VW::string_view>& words) { parse_label(label.cb_cont, red_features, reuse_mem, words); },
+        const VW::named_labels* /*ldict*/, const std::vector<VW::string_view>& words,
+        VW::io::logger& logger) { parse_label(label.cb_cont, red_features, reuse_mem, words, logger); },
     // cache_label
     [](const polylabel& label, const reduction_features& /*red_features*/, io_buf& cache,
         const std::string& upstream_name,

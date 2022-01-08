@@ -25,7 +25,7 @@ struct classweights
       std::getline(inner_ss, klass, ':');
       std::getline(inner_ss, weight, ':');
 
-      if (!klass.size() || !weight.size()) { THROW("error: while parsing --classweight " << item); }
+      if (!klass.size() || !weight.size()) { THROW("error while parsing --classweight " << item); }
 
       int klass_int = std::stoi(klass);
       float weight_double = std::stof(weight);
@@ -84,15 +84,14 @@ VW::LEARNER::base_learner* classweight_setup(VW::setup_base_i& stack_builder)
   VW::workspace& all = *stack_builder.get_all_pointer();
   std::vector<std::string> classweight_array;
   auto cweights = VW::make_unique<classweights>();
-  option_group_definition new_options("Importance Weight Classes");
+  option_group_definition new_options("[Reduction]  Importance Weight Classes");
   new_options.add(
       make_option("classweight", classweight_array).necessary().help("Importance weight multiplier for class"));
 
   if (!options.add_parse_and_check_necessary(new_options)) return nullptr;
 
   for (auto& s : classweight_array) cweights->load_string(s);
-
-  if (!all.logger.quiet) *(all.trace_message) << "parsed " << cweights->weights.size() << " class weights" << std::endl;
+  all.logger.err_info("parsed {} class weights", cweights->weights.size());
 
   VW::LEARNER::single_learner* base = as_singleline(stack_builder.setup_base_learner());
 

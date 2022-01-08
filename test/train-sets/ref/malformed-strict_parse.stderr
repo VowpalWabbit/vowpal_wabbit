@@ -1,3 +1,4 @@
+[warning] The old default logging behavior of logging to a mix of stdout and stderr is deprecated. Please choose either 'stdout' or 'stderr' for --log_output to silence this warning.
 Num weight bits = 18
 learning rate = 0.5
 initial_t = 0
@@ -10,7 +11,6 @@ Input label = simple
 Output pred = scalar
 average  since         example        example  current  current  current
 loss     last          counter         weight    label  predict features
-[error] vw example #0(parse_example.cc:100): malformed example! '|',space, or EOL expected after : "| x:0.7"in Example #0: "| x:0.7"
+[error] vw example #0(parse_example.cc:99): malformed example! '|',space, or EOL expected after : "| x:0.7"in Example #0: "| x:0.7"
 
-[critical] vw (parse_example.cc:100): malformed example! '|',space, or EOL expected after : "| x:0.7"in Example #0: "| x:0.7"
-
+[critical] vw (parse_example.cc:99): malformed example! '|',space, or EOL expected after : "| x:0.7"in Example #0: "| x:0.7"

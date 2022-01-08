@@ -21,22 +21,20 @@ void run(Search::search& sch, multi_ex& ec)
 {
   // Can't do a lambda capture of the output since it changes the signature of the lambda function
   sch.base_task(ec)
-      .foreach_action(
-          [](Search::search& sch, size_t t, float min_cost, action a, bool taken, float a_cost) -> void {
-            *(sch.get_vw_pointer_unsafe().trace_message)
-              << "==DebugMT== foreach_action(t=" << t << ", min_cost=" << min_cost << ", a=" << a
-              << ", taken=" << taken << ", a_cost=" << a_cost << ")" << std::endl;
-          })
+      .foreach_action([](Search::search& sch, size_t t, float min_cost, action a, bool taken, float a_cost) -> void {
+        *(sch.get_vw_pointer_unsafe().trace_message)
+            << "==DebugMT== foreach_action(t=" << t << ", min_cost=" << min_cost << ", a=" << a << ", taken=" << taken
+            << ", a_cost=" << a_cost << ")" << std::endl;
+      })
 
       .post_prediction([](Search::search& sch, size_t t, action a, float a_cost) -> void {
-          *(sch.get_vw_pointer_unsafe().trace_message)
+        *(sch.get_vw_pointer_unsafe().trace_message)
             << "==DebugMT== post_prediction(t=" << t << ", a=" << a << ", a_cost=" << a_cost << ")" << std::endl;
       })
 
       .maybe_override_prediction([](Search::search& sch, size_t t, action& a, float& a_cost) -> bool {
-          *(sch.get_vw_pointer_unsafe().trace_message)
-            << "==DebugMT== maybe_override_prediction(t=" << t << ", a=" << a << ", a_cost=" << a_cost << ")"
-            << std::endl;
+        *(sch.get_vw_pointer_unsafe().trace_message) << "==DebugMT== maybe_override_prediction(t=" << t << ", a=" << a
+                                                     << ", a_cost=" << a_cost << ")" << std::endl;
         return false;
       })
 
@@ -88,7 +86,7 @@ void initialize(Search::search& sch, size_t& /*num_actions*/, options_i& options
 {
   size_t max_branches = 2;
   size_t kbest = 0;
-  option_group_definition new_options("Selective Branching");
+  option_group_definition new_options("[Search] Selective Branching");
   new_options
       .add(make_option("search_max_branch", max_branches)
                .default_value(2)

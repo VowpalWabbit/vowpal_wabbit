@@ -109,14 +109,14 @@ void finish_cbify_reg(cbify_reg& data, std::ostream* trace_stream)
   if (trace_stream != nullptr) (*trace_stream) << "Max Cost=" << data.max_cost << std::endl;
 }
 
-void cbify_adf_data::init_adf_data(const std::size_t num_actions, std::size_t increment,
+void cbify_adf_data::init_adf_data(const std::size_t num_actions_, std::size_t increment_,
     std::vector<std::vector<namespace_index>>& interactions, std::vector<std::vector<extent_term>>& extent_interactions)
 {
-  this->num_actions = num_actions;
-  this->increment = increment;
+  this->num_actions = num_actions_;
+  this->increment = increment_;
 
-  ecs.resize(num_actions);
-  for (size_t a = 0; a < num_actions; ++a)
+  ecs.resize(num_actions_);
+  for (size_t a = 0; a < num_actions_; ++a)
   {
     ecs[a] = VW::alloc_examples(1);
     auto& lab = ecs[a]->l.cb;
@@ -126,7 +126,7 @@ void cbify_adf_data::init_adf_data(const std::size_t num_actions, std::size_t in
   }
 
   // cache mask for copy routine
-  uint64_t total = num_actions * increment;
+  uint64_t total = num_actions_ * increment_;
   uint64_t power_2 = 0;
 
   while (total > 0)
@@ -221,7 +221,7 @@ void predict_or_learn_regression_discrete(cbify& data, single_learner& base, exa
   cb.action = chosen_action + 1;
   cb.probability = ec.pred.a_s[chosen_action].score;
 
-  if (!cb.action) THROW("No action with non-zero probability found!");
+  if (!cb.action) THROW("No action with non-zero probability found.");
   float continuous_range = data.regression_data.max_value - data.regression_data.min_value;
   float converted_action =
       data.regression_data.min_value + chosen_action * continuous_range / data.regression_data.num_actions;
@@ -413,7 +413,7 @@ void learn_adf(cbify& data, multi_learner& base, example& ec)
   cl.action = out_ec.pred.a_s[data.chosen_action].action + 1;
   cl.probability = out_ec.pred.a_s[data.chosen_action].score;
 
-  if (!cl.action) THROW("No action with non-zero probability found!");
+  if (!cl.action) THROW("No action with non-zero probability found.");
 
   if (use_cs)
     cl.cost = loss_cs(data, csl.costs, cl.action);
@@ -474,7 +474,7 @@ void do_actual_learning_ldf(cbify& data, multi_learner& base, multi_ex& ec_seq)
   cl.action = data.cb_as[0][data.chosen_action].action + 1;
   cl.probability = data.cb_as[0][data.chosen_action].score;
 
-  if (!cl.action) THROW("No action with non-zero probability found!");
+  if (!cl.action) { THROW("No action with non-zero probability found."); }
 
   cl.cost = loss_csldf(data, data.cs_costs, cl.action);
 
@@ -539,7 +539,7 @@ void output_example(VW::workspace& all, const example& ec, bool& hit_loss, const
   }
 
   for (const auto& sink : all.final_prediction_sink)
-    all.print_by_ref(sink.get(), static_cast<float>(ec.pred.multiclass), 0, ec.tag);
+    all.print_by_ref(sink.get(), static_cast<float>(ec.pred.multiclass), 0, ec.tag, all.logger);
 
   if (all.raw_prediction != nullptr)
   {
@@ -551,7 +551,7 @@ void output_example(VW::workspace& all, const example& ec, bool& hit_loss, const
       outputStringStream << costs[i].class_index << ':' << costs[i].partial_prediction;
     }
     // outputStringStream << std::endl;
-    all.print_text_by_ref(all.raw_prediction.get(), outputStringStream.str(), ec.tag);
+    all.print_text_by_ref(all.raw_prediction.get(), outputStringStream.str(), ec.tag, all.logger);
   }
 
   COST_SENSITIVE::print_update(all, COST_SENSITIVE::cs_label.test_label(ec.l), ec, ec_seq, false, predicted_class);
@@ -569,7 +569,7 @@ void output_example_seq(VW::workspace& all, const multi_ex& ec_seq)
   if (all.raw_prediction != nullptr)
   {
     v_array<char> empty;
-    all.print_text_by_ref(all.raw_prediction.get(), "", empty);
+    all.print_text_by_ref(all.raw_prediction.get(), "", empty, all.logger);
   }
 }
 
@@ -668,7 +668,7 @@ base_learner* cbify_setup(VW::setup_base_i& stack_builder)
   bool use_reg;  // todo: check
   bool use_discrete;
 
-  option_group_definition new_options("Make Multiclass into Contextual Bandit");
+  option_group_definition new_options("[Reduction] CBify");
   new_options
       .add(make_option("cbify", num_actions)
                .keep()
@@ -711,12 +711,12 @@ base_learner* cbify_setup(VW::setup_base_i& stack_builder)
   if (use_reg)
   {
     // Check invalid parameter combinations
-    if (data->use_adf) { THROW("error: incompatible options: cb_explore_adf and cbify_reg"); }
-    if (use_cs) { THROW("error: incompatible options: cbify_cs and cbify_reg"); }
+    if (data->use_adf) { THROW("Incompatible options: cb_explore_adf and cbify_reg"); }
+    if (use_cs) { THROW("Incompatible options: cbify_cs and cbify_reg"); }
     if (!options.was_supplied("min_value") || !options.was_supplied("max_value"))
-    { THROW("error: min and max values must be supplied with cbify_reg"); }
+    { THROW("Min and max values must be supplied with cbify_reg"); }
 
-    if (use_discrete && options.was_supplied("cats")) { THROW("error: incompatible options: cb_discrete and cats"); }
+    if (use_discrete && options.was_supplied("cats")) { THROW("Incompatible options: cb_discrete and cats"); }
     else if (use_discrete)
     {
       std::stringstream ss;
@@ -726,7 +726,7 @@ base_learner* cbify_setup(VW::setup_base_i& stack_builder)
     else if (options.was_supplied("cats"))
     {
       if (cb_continuous_num_actions != num_actions)
-        THROW("error: different number of actions specified for cbify and cb_continuous");
+        THROW("Different number of actions specified for cbify and cb_continuous");
     }
     else
     {
@@ -745,7 +745,7 @@ base_learner* cbify_setup(VW::setup_base_i& stack_builder)
     }
   }
 
-  if (data->use_adf)
+  if (data->use_adf && (options.was_supplied("regcb") || options.was_supplied("squarecb")))
   {
     options.insert("cb_min_cost", std::to_string(data->loss0));
     options.insert("cb_max_cost", std::to_string(data->loss1));
@@ -862,7 +862,7 @@ base_learner* cbifyldf_setup(VW::setup_base_i& stack_builder)
   auto data = VW::make_unique<cbify>();
   bool cbify_ldf_option = false;
 
-  option_group_definition new_options("Make csoaa_ldf into Contextual Bandit");
+  option_group_definition new_options("[Reduction] Make csoaa_ldf into Contextual Bandit");
   new_options
       .add(make_option("cbify_ldf", cbify_ldf_option)
                .keep()

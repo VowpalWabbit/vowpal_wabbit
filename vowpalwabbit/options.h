@@ -20,6 +20,7 @@
 
 #include "options_types.h"
 #include "vw_exception.h"
+#include "io/logger.h"
 
 namespace VW
 {
@@ -293,7 +294,7 @@ struct options_i
   }
 
   // Will throw if any options were supplied that do not having a matching argument specification.
-  virtual void check_unregistered() = 0;
+  virtual void check_unregistered(VW::io::logger& logger) = 0;
 
   virtual ~options_i() = default;
 };
@@ -359,7 +360,7 @@ struct options_name_extractor : options_i
 
   void add_and_parse(const option_group_definition&) override
   {
-    THROW("you should use add_parse_and_check_necessary() inside a reduction setup");
+    THROW("add_parse_and_check_necessary() should be used inside a reduction setup instead.");
   };
 
   bool add_parse_and_check_necessary(const option_group_definition& group) override
@@ -399,7 +400,10 @@ struct options_name_extractor : options_i
     THROW("options_name_extractor does not implement this method");
   };
 
-  void check_unregistered() override { THROW("options_name_extractor does not implement this method"); };
+  void check_unregistered(VW::io::logger& /* logger */) override
+  {
+    THROW("options_name_extractor does not implement this method");
+  };
 
   std::vector<std::shared_ptr<base_option>> get_all_options() override
   {

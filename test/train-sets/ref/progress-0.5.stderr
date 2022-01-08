@@ -1,4 +1,5 @@
-warning: multiplicative --progress <float>: 0.5 is <= 1.0: adding 1.0
+[warning] The old default logging behavior of logging to a mix of stdout and stderr is deprecated. Please choose either 'stdout' or 'stderr' for --log_output to silence this warning.
+[warning] Multiplicative --progress <float> '0.5' is <= 1.0: adding 1.0
 Num weight bits = 18
 learning rate = 0.5
 initial_t = 0

@@ -25,7 +25,7 @@ namespace cs_unittest
         public void TestConfidence()
         {
             var rnd = new Random(42);
-            using (var vw = new VowpalWabbit<Data>("--confidence -f model.conf --ngram 1 --bit_precision 8 --random_seed 123 --passes 2 -k -c model.conf.cache"))
+            using (var vw = new VowpalWabbit<Data>("--confidence -f model.conf --ngram 1 --bit_precision 8 --random_seed 123 --passes 2 -k --cache_file model.conf.cache"))
             {
                 for (int i = 0; i < 100; i++)
                 {
@@ -42,9 +42,9 @@ namespace cs_unittest
                 Assert.IsTrue(pred.Confidence > 5);
             }
 
-            Assert.IsTrue(File.Exists("model.conf.cache.cache"));
-            File.Delete("model.conf.cache.cache");
-            Assert.IsFalse(File.Exists("model.conf.cache.cache"));
+            Assert.IsTrue(File.Exists("model.conf.cache"));
+            File.Delete("model.conf.cache");
+            Assert.IsFalse(File.Exists("model.conf.cache"));
         }
 
         [TestMethod]
@@ -52,7 +52,7 @@ namespace cs_unittest
         public void TestConfidenceWithStringLines()
         {
             var rnd = new Random(42);
-            using (var vw = new VowpalWabbit("--confidence -f model.conf --ngram 1 --bit_precision 18 --random_seed 123 --passes 2 -k -c model.conf.cache"))
+            using (var vw = new VowpalWabbit("--confidence -f model.conf --ngram 1 --bit_precision 18 --random_seed 123 --passes 2 -k -c --cache_file model.conf.cache"))
             {
                 for (int i = 0; i < 100; i++)
                 {

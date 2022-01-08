@@ -204,7 +204,7 @@ void output_example(VW::workspace& all, const slates_data& /*c*/, const multi_ex
   all.sd->update(holdout_example, is_labelled, loss, ec_seq[SHARED_EX_INDEX]->weight, num_features);
 
   for (auto& sink : all.final_prediction_sink)
-  { VW::print_decision_scores(sink.get(), ec_seq[SHARED_EX_INDEX]->pred.decision_scores); }
+  { VW::print_decision_scores(sink.get(), ec_seq[SHARED_EX_INDEX]->pred.decision_scores, all.logger); }
 
   VW::print_update_slates(all, slots, predictions, num_features);
 }
@@ -214,7 +214,7 @@ void finish_multiline_example(VW::workspace& all, slates_data& data, multi_ex& e
   if (!ec_seq.empty())
   {
     output_example(all, data, ec_seq);
-    CB_ADF::global_print_newline(all.final_prediction_sink);
+    CB_ADF::global_print_newline(all.final_prediction_sink, all.logger);
     for (auto& action_scores : ec_seq[0]->pred.decision_scores) { action_scores.clear(); }
     ec_seq[0]->pred.decision_scores.clear();
   }
@@ -238,7 +238,7 @@ VW::LEARNER::base_learner* slates_setup(VW::setup_base_i& stack_builder)
   VW::workspace& all = *stack_builder.get_all_pointer();
   auto data = VW::make_unique<slates_data>();
   bool slates_option = false;
-  option_group_definition new_options("Slates");
+  option_group_definition new_options("[Reduction] Slates");
   new_options.add(make_option("slates", slates_option).keep().necessary().help("Enable slates reduction"));
 
   if (!options.add_parse_and_check_necessary(new_options)) { return nullptr; }

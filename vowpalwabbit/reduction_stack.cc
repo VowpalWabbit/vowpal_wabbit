@@ -64,7 +64,7 @@
 #include "cs_active.h"
 #include "kernel_svm.h"
 #include "interact.h"
-#include "OjaNewton.h"
+#include "oja_newton.h"
 #include "audit_regressor.h"
 #include "marginal.h"
 #include "metrics.h"
@@ -101,7 +101,7 @@ void register_reductions(std::vector<reduction_setup_fn>& reductions,
       {generate_interactions_setup, "generate_interactions"}, {VW::count_label_setup, "count_label"}};
 
   auto name_extractor = VW::config::options_name_extractor();
-  VW::workspace dummy_all;
+  VW::workspace dummy_all(VW::io::create_null_logger());
 
   VW::cached_learner null_ptr_learner(dummy_all, name_extractor, nullptr);
 

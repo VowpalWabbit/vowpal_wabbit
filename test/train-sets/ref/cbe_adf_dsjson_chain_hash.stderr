@@ -1,3 +1,4 @@
+[warning] The old default logging behavior of logging to a mix of stdout and stderr is deprecated. Please choose either 'stdout' or 'stderr' for --log_output to silence this warning.
 creating quadratic features for pairs: GT
 predictions = cbe_adf_dsjson_chain_hash.predict
 Num weight bits = 18
@@ -12,13 +13,13 @@ Input label = cb
 Output pred = action_probs
 average  since         example        example  current  current  current
 loss     last          counter         weight    label  predict features
--0.102041 -0.102041            1            1.0 9:-1:0.82        0:0.0833333...     1233
--0.051020 0.000000            2            2.0 9:0:0.82        6:0.816667...     1233
--0.040816 -0.020408            3            3.0 9:-1:0.82        6:0.816667...     1233
+-0.102041 -0.102041            1            1.0 9:-1:0.82        0:0.0833333...     1221
+-0.051020 0.000000            2            2.0 9:0:0.82        6:0.816667...     1221
+-0.040816 -0.020408            3            3.0 9:-1:0.82        6:0.816667...     1221
 
 finished run
 number of examples = 3
 weighted example sum = 3.000000
 weighted label sum = 0.000000
 average loss = -0.040816
-total feature number = 3699
+total feature number = 3663

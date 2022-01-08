@@ -9,12 +9,12 @@
 #include "global_data.h"
 
 #include "io/logger.h"
-
-namespace logger = VW::io::logger;
+#include "vw_string_view.h"
 
 namespace ACTION_SCORE
 {
-void print_action_score(VW::io::writer* f, const v_array<action_score>& a_s, const v_array<char>& tag)
+void print_action_score(
+    VW::io::writer* f, const v_array<action_score>& a_s, const v_array<char>& tag, VW::io::logger& logger)
 {
   if (f == nullptr) { return; }
 
@@ -25,12 +25,12 @@ void print_action_score(VW::io::writer* f, const v_array<action_score>& a_s, con
     if (i > 0) ss << ',';
     ss << a_s[i].action << ':' << a_s[i].score;
   }
-  print_tag_by_ref(ss, tag);
+  if (!tag.empty()) { ss << " " << VW::string_view(tag.begin(), tag.size()); }
   ss << '\n';
   const auto ss_str = ss.str();
   ssize_t len = ss_str.size();
   ssize_t t = f->write(ss_str.c_str(), static_cast<unsigned int>(len));
-  if (t != len) logger::errlog_error("write error: {}", VW::strerror_to_string(errno));
+  if (t != len) { logger.err_error("write error: {}", VW::strerror_to_string(errno)); }
 }
 
 std::ostream& operator<<(std::ostream& os, const action_score& a_s)

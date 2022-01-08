@@ -306,7 +306,7 @@ base_learner* VW::freegrad_setup(VW::setup_base_i& stack_builder)
   float radius;
   float fepsilon;
 
-  option_group_definition new_options("FreeGrad");
+  option_group_definition new_options("[Reduction] FreeGrad");
   new_options.add(make_option("freegrad", freegrad_enabled).necessary().keep().help("Diagonal FreeGrad Algorithm"))
       .add(make_option("restart", restart).help("Use the FreeRange restarts"))
       .add(make_option("project", project)
@@ -343,7 +343,7 @@ base_learner* VW::freegrad_setup(VW::setup_base_i& stack_builder)
   fg_ptr->all->weights.stride_shift(3);  // NOTE: for more parameter storage
   fg_ptr->freegrad_size = 6;
 
-  if (!fg_ptr->all->logger.quiet)
+  if (!fg_ptr->all->quiet)
   {
     *(fg_ptr->all->trace_message) << "Enabling FreeGrad based optimization" << std::endl;
     *(fg_ptr->all->trace_message) << "Algorithm used: " << algorithm_name << std::endl;
