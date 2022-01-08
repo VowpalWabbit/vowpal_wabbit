@@ -11,8 +11,6 @@ using namespace VW::LEARNER;
 using namespace VW;
 using namespace VW::config;
 
-namespace logger = VW::io::logger;
-
 namespace VW
 {
 struct cb_dro_data
@@ -110,7 +108,7 @@ base_learner* cb_dro_setup(VW::setup_base_i& stack_builder)
   double wmax;
   bool cb_dro_option = false;
 
-  option_group_definition new_options("CB Distributionally Robust Optimization");
+  option_group_definition new_options("[Reduction] CB Distributionally Robust Optimization");
   new_options.add(make_option("cb_dro", cb_dro_option).keep().necessary().help("Use DRO for cb learning"))
       .add(make_option("cb_dro_alpha", alpha).default_value(0.05).keep().help("Confidence level for cb dro"))
       .add(make_option("cb_dro_tau", tau).default_value(0.999).keep().help("Time constant for count decay for cb dro"))
@@ -132,7 +130,7 @@ base_learner* cb_dro_setup(VW::setup_base_i& stack_builder)
 
   if (wmax <= 1) { THROW("cb_dro_wmax must exceed 1"); }
 
-  if (!all.logger.quiet)
+  if (!all.quiet)
   {
     *(all.trace_message) << "Using DRO for CB learning" << std::endl;
     *(all.trace_message) << "cb_dro_alpha = " << alpha << std::endl;

@@ -1,3 +1,4 @@
+[warning] The old default logging behavior of logging to a mix of stdout and stderr is deprecated. Please choose either 'stdout' or 'stderr' for --log_output to silence this warning.
 Num weight bits = 18
 learning rate = 0.5
 initial_t = 0
@@ -10,7 +11,7 @@ Input label = cb
 Output pred = action_scores
 average  since         example        example  current  current  current
 loss     last          counter         weight    label  predict features
-0.000000 0.000000            1            1.0 1:0:0.33        0:0...       11
+0.000000 0.000000            1            1.0 1:0:0.33        0:0...        8
 
 finished run
 number of examples = 1

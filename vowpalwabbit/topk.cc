@@ -15,7 +15,6 @@
 #include "io/logger.h"
 
 using namespace VW::config;
-namespace logger = VW::io::logger;
 
 namespace VW
 {
@@ -77,8 +76,8 @@ std::pair<VW::topk::const_iterator_t, VW::topk::const_iterator_t> VW::topk::get_
 
 void VW::topk::clear_container() { _pr_queue.clear(); }
 
-void print_result(
-    VW::io::writer* file_descriptor, std::pair<VW::topk::const_iterator_t, VW::topk::const_iterator_t> const& view)
+void print_result(VW::io::writer* file_descriptor,
+    std::pair<VW::topk::const_iterator_t, VW::topk::const_iterator_t> const& view, VW::io::logger& logger)
 {
   if (file_descriptor != nullptr)
   {
@@ -86,13 +85,13 @@ void print_result(
     for (auto it = view.first; it != view.second; it++)
     {
       ss << std::fixed << it->first << " ";
-      print_tag_by_ref(ss, it->second);
+      if (!it->second.empty()) { ss << " " << VW::string_view{it->second.begin(), it->second.size()}; }
       ss << " \n";
     }
     ss << '\n';
     ssize_t len = ss.str().size();
     auto t = file_descriptor->write(ss.str().c_str(), len);
-    if (t != len) logger::errlog_error("write error: {}", VW::strerror_to_string(errno));
+    if (t != len) logger.err_error("write error: {}", VW::strerror_to_string(errno));
   }
 }
 
@@ -118,7 +117,7 @@ void predict_or_learn(VW::topk& d, VW::LEARNER::single_learner& base, multi_ex& 
 void finish_example(VW::workspace& all, VW::topk& d, multi_ex& ec_seq)
 {
   for (auto ec : ec_seq) output_example(all, *ec);
-  for (auto& sink : all.final_prediction_sink) print_result(sink.get(), d.get_container_view());
+  for (auto& sink : all.final_prediction_sink) print_result(sink.get(), d.get_container_view(), all.logger);
   d.clear_container();
   VW::finish_example(all, ec_seq);
 }
@@ -127,7 +126,7 @@ VW::LEARNER::base_learner* topk_setup(VW::setup_base_i& stack_builder)
 {
   options_i& options = *stack_builder.get_options();
   uint32_t K;
-  option_group_definition new_options("Top K");
+  option_group_definition new_options("[Reduction] Top K");
   new_options.add(make_option("top", K).keep().necessary().help("Top k recommendation"));
 
   if (!options.add_parse_and_check_necessary(new_options)) return nullptr;

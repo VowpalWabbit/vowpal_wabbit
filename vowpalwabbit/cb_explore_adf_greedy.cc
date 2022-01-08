@@ -50,19 +50,21 @@ cb_explore_adf_greedy::cb_explore_adf_greedy(float epsilon, bool first_only)
 void cb_explore_adf_greedy::update_example_prediction(multi_ex& examples)
 {
   ACTION_SCORE::action_scores& preds = examples[0]->pred.a_s;
-
   uint32_t num_actions = static_cast<uint32_t>(preds.size());
+
+  auto& ep_fts = examples[0]->_reduction_features.template get<reduction_features>();
+  float actual_ep = (ep_fts.is_valid_epsilon()) ? ep_fts.epsilon : _epsilon;
 
   size_t tied_actions = fill_tied(preds);
 
-  const float prob = _epsilon / num_actions;
+  const float prob = actual_ep / num_actions;
   for (size_t i = 0; i < num_actions; i++) preds[i].score = prob;
   if (!_first_only)
   {
-    for (size_t i = 0; i < tied_actions; ++i) preds[i].score += (1.f - _epsilon) / tied_actions;
+    for (size_t i = 0; i < tied_actions; ++i) preds[i].score += (1.f - actual_ep) / tied_actions;
   }
   else
-    preds[0].score += 1.f - _epsilon;
+    preds[0].score += 1.f - actual_ep;
 }
 
 template <bool is_learn>
@@ -86,15 +88,23 @@ VW::LEARNER::base_learner* setup(VW::setup_base_i& stack_builder)
   float epsilon = 0.;
   bool first_only = false;
 
-  config::option_group_definition new_options("Contextual Bandit Exploration with ADF (greedy)");
+  config::option_group_definition new_options("[Reduction] Contextual Bandit Exploration with ADF (greedy)");
   new_options
       .add(make_option("cb_explore_adf", cb_explore_adf_option)
                .keep()
+               .necessary()
                .help("Online explore-exploit for a contextual bandit problem with multiline action dependent features"))
-      .add(make_option("epsilon", epsilon).keep().allow_override().help("Epsilon-greedy exploration"))
+      .add(make_option("epsilon", epsilon)
+               .default_value(0.05f)
+               .keep()
+               .allow_override()
+               .help("Epsilon-greedy exploration"))
       .add(make_option("first_only", first_only).keep().help("Only explore the first action in a tie-breaking event"));
 
-  options.add_and_parse(new_options);
+  // This is a special case "cb_explore_adf" is needed to enable this. BUT it is only enabled when all of the other
+  // "cb_explore_adf" types are disabled. This is why we don't check the return value of the
+  // add_parse_and_check_necessary call like we do elsewhere.
+  options.add_parse_and_check_necessary(new_options);
 
   // NOTE: epsilon-greedy is the default explore type.
   // This basically runs if none of the other explore strategies are used
@@ -112,8 +122,6 @@ VW::LEARNER::base_learner* setup(VW::setup_base_i& stack_builder)
   }
 
   size_t problem_multiplier = 1;
-
-  if (!options.was_supplied("epsilon")) epsilon = 0.05f;
 
   VW::LEARNER::multi_learner* base = as_multiline(stack_builder.setup_base_learner());
   all.example_parser->lbl_parser = CB::cb_label;

@@ -30,36 +30,37 @@ void default_label(label_t& ld) { ld.reset_to_default(); }
 float weight(const label_t& ld) { return (ld.weight > 0) ? ld.weight : 0.f; }
 bool test_label(const label_t& ld) { return ld.label == static_cast<uint32_t>(-1); }
 
-void parse_label(label_t& ld, const VW::named_labels* ldict, const std::vector<VW::string_view>& words)
+void parse_label(
+    label_t& ld, const VW::named_labels* ldict, const std::vector<VW::string_view>& words, VW::io::logger& logger)
 {
   switch (words.size())
   {
     case 0:
       break;
     case 1:
-      if (ldict) { ld.label = ldict->get(words[0]); }
+      if (ldict) { ld.label = ldict->get(words[0], logger); }
       else
       {
         char* char_after_int = nullptr;
-        ld.label = int_of_string(words[0], char_after_int);
+        ld.label = int_of_string(words[0], char_after_int, logger);
         if (char_after_int != nullptr && *char_after_int != ' ' && *char_after_int != '\0')
-        { THROW("malformed example: label has trailing character(s): " << *char_after_int); }
+        { THROW("Malformed example: label has trailing character(s): " << *char_after_int); }
       }
       ld.weight = 1.0;
       break;
     case 2:
-      if (ldict) { ld.label = ldict->get(words[0]); }
+      if (ldict) { ld.label = ldict->get(words[0], logger); }
       else
       {
         char* char_after_int = nullptr;
-        ld.label = int_of_string(words[0], char_after_int);
+        ld.label = int_of_string(words[0], char_after_int, logger);
         if (char_after_int != nullptr && *char_after_int != ' ' && *char_after_int != '\0')
-        { THROW("malformed example: label has trailing character(s): " << *char_after_int); }
+        { THROW("Malformed example: label has trailing character(s): " << *char_after_int); }
       }
-      ld.weight = float_of_string(words[1]);
+      ld.weight = float_of_string(words[1], logger);
       break;
     default:
-      THROW("malformed example, words.size() = " << words.size());
+      THROW("Malformed example, words.size() = " << words.size());
   }
 }
 
@@ -68,8 +69,8 @@ label_parser mc_label = {
     [](polylabel& label) { default_label(label.multi); },
     // parse_label
     [](polylabel& label, reduction_features& /* red_features */, VW::label_parser_reuse_mem& /* reuse_mem */,
-        const VW::named_labels* ldict,
-        const std::vector<VW::string_view>& words) { parse_label(label.multi, ldict, words); },
+        const VW::named_labels* ldict, const std::vector<VW::string_view>& words,
+        VW::io::logger& logger) { parse_label(label.multi, ldict, words, logger); },
     // cache_label
     [](const polylabel& label, const reduction_features& /* red_features */, io_buf& cache,
         const std::string& upstream_name,
@@ -129,7 +130,7 @@ void direct_print_update(VW::workspace& all, example& ec, uint32_t prediction)
 template <void (*T)(VW::workspace&, example&, uint32_t)>
 void print_update(VW::workspace& all, example& ec, uint32_t prediction)
 {
-  if (all.sd->weighted_examples() >= all.sd->dump_interval && !all.logger.quiet && !all.bfgs)
+  if (all.sd->weighted_examples() >= all.sd->dump_interval && !all.quiet && !all.bfgs)
   {
     if (!all.sd->ldict)
       T(all, ec, prediction);
@@ -157,11 +158,11 @@ void finish_example(VW::workspace& all, example& ec, bool update_loss)
 
   for (auto& sink : all.final_prediction_sink)
     if (!all.sd->ldict)
-      all.print_by_ref(sink.get(), static_cast<float>(ec.pred.multiclass), 0, ec.tag);
+      all.print_by_ref(sink.get(), static_cast<float>(ec.pred.multiclass), 0, ec.tag, all.logger);
     else
     {
       VW::string_view sv_pred = all.sd->ldict->get(ec.pred.multiclass);
-      all.print_text_by_ref(sink.get(), sv_pred.to_string(), ec.tag);
+      all.print_text_by_ref(sink.get(), sv_pred.to_string(), ec.tag, all.logger);
     }
 
   MULTICLASS::print_update<direct_print_update>(all, ec, ec.pred.multiclass);

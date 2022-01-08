@@ -87,7 +87,7 @@ VW::LEARNER::base_learner* expreplay_setup(VW::setup_base_i& stack_builder)
   replay_count_string += "_count";
 
   auto er = VW::make_unique<expreplay<lp>>();
-  VW::config::option_group_definition new_options("Experience Replay / " + replay_string);
+  VW::config::option_group_definition new_options("[Reduction] Experience Replay / " + replay_string);
   new_options
       .add(VW::config::make_option(replay_string, er->N)
                .keep()
@@ -107,9 +107,9 @@ VW::LEARNER::base_learner* expreplay_setup(VW::setup_base_i& stack_builder)
   er->buf->extent_interactions = &all.extent_interactions;
   er->filled = calloc_or_throw<bool>(er->N);
 
-  if (!all.logger.quiet)
-    *(all.trace_message) << "experience replay level=" << er_level << ", buffer=" << er->N << ", replay count=" << er->replay_count
-              << std::endl;
+  if (!all.quiet)
+    *(all.trace_message) << "experience replay level=" << er_level << ", buffer=" << er->N
+                         << ", replay count=" << er->replay_count << std::endl;
 
   er->base = VW::LEARNER::as_singleline(stack_builder.setup_base_learner());
   auto* l = VW::LEARNER::make_reduction_learner(std::move(er), er->base, learn<lp>, predict<lp>, replay_string)

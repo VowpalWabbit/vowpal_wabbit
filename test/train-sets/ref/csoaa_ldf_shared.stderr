@@ -1,0 +1,21 @@
+[warning] The old default logging behavior of logging to a mix of stdout and stderr is deprecated. Please choose either 'stdout' or 'stderr' for --log_output to silence this warning.
+Num weight bits = 18
+learning rate = 0.5
+initial_t = 0
+power_t = 0.5
+using no cache
+Reading datafile = train-sets/csoaa_ldf_shared.dat
+num sources = 1
+Enabled reductions: gd, scorer-identity, csoaa_ldf, shared_feature_merger
+Input label = cs
+Output pred = multiclass
+average  since         example        example  current  current  current
+loss     last          counter         weight    label  predict features
+0.000000 0.000000            1            1.0    known        1       10
+
+finished run
+number of examples = 1
+weighted example sum = 1.000000
+weighted label sum = 0.000000
+average loss = 0.000000
+total feature number = 10

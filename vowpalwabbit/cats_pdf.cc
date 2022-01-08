@@ -146,7 +146,7 @@ inline bool reduction_output::does_example_have_label(const example& ec)
 
 void reduction_output::print_update_cb_cont(VW::workspace& all, const example& ec)
 {
-  if (all.sd->weighted_examples() >= all.sd->dump_interval && !all.logger.quiet && !all.bfgs)
+  if (all.sd->weighted_examples() >= all.sd->dump_interval && !all.quiet && !all.bfgs)
   {
     all.sd->print_update(*all.trace_message, all.holdout_set_off, all.current_pass,
         ec.test_only ? "unknown" : to_string(ec.l.cb_cont.costs[0]),  // Label
@@ -164,7 +164,7 @@ LEARNER::base_learner* setup(setup_base_i& stack_builder)
   options_i& options = *stack_builder.get_options();
   VW::workspace& all = *stack_builder.get_all_pointer();
 
-  option_group_definition new_options("Continuous Action Tree with Smoothing with Full Pdf");
+  option_group_definition new_options("[Reduction] Continuous Action Tree with Smoothing with Full Pdf");
   int num_actions = 0;
   new_options.add(
       make_option("cats_pdf", num_actions).keep().necessary().help("Number of tree labels <k> for cats_pdf"));

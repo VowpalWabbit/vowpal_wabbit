@@ -63,13 +63,14 @@ VW::LEARNER::base_learner* setup(VW::setup_base_i& stack_builder)
   bool softmax = false;
   float epsilon = 0.;
   float lambda = 0.;
-  config::option_group_definition new_options("Contextual Bandit Exploration with ADF (softmax)");
+  config::option_group_definition new_options("[Reduction] Contextual Bandit Exploration with ADF (softmax)");
   new_options
       .add(make_option("cb_explore_adf", cb_explore_adf_option)
                .keep()
                .necessary()
                .help("Online explore-exploit for a contextual bandit problem with multiline action dependent features"))
-      .add(make_option("epsilon", epsilon).keep().allow_override().help("Epsilon-greedy exploration"))
+      .add(
+          make_option("epsilon", epsilon).default_value(0.f).keep().allow_override().help("Epsilon-greedy exploration"))
       .add(make_option("softmax", softmax).keep().necessary().help("Softmax exploration"))
       .add(make_option("lambda", lambda).keep().allow_override().default_value(1.f).help("Parameter for softmax"));
 

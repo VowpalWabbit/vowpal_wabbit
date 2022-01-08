@@ -33,7 +33,8 @@ bool test_label(const slates::label& ld) { return ld.labeled == false; }
 // For a more complete description of the grammar, including examples see:
 // https://github.com/VowpalWabbit/vowpal_wabbit/wiki/Slates
 
-void parse_label(slates::label& ld, VW::label_parser_reuse_mem& reuse_mem, const std::vector<VW::string_view>& words)
+void parse_label(slates::label& ld, VW::label_parser_reuse_mem& reuse_mem, const std::vector<VW::string_view>& words,
+    VW::io::logger& logger)
 {
   ld.weight = 1;
 
@@ -48,7 +49,7 @@ void parse_label(slates::label& ld, VW::label_parser_reuse_mem& reuse_mem, const
     // There is a cost defined.
     if (words.size() == 3)
     {
-      ld.cost = float_of_string(words[2]);
+      ld.cost = float_of_string(words[2], logger);
       ld.labeled = true;
     }
     else if (words.size() != 2)
@@ -62,7 +63,7 @@ void parse_label(slates::label& ld, VW::label_parser_reuse_mem& reuse_mem, const
     if (words.size() != 3) { THROW("Slates action labels must be of the form: slates action <slot_id>"); }
 
     char* char_after_int = nullptr;
-    ld.slot_id = int_of_string(words[2], char_after_int);
+    ld.slot_id = int_of_string(words[2], char_after_int, logger);
     if (char_after_int != nullptr && *char_after_int != ' ' && *char_after_int != '\0')
     { THROW("Slot id seems to be malformed"); }
 
@@ -83,7 +84,7 @@ void parse_label(slates::label& ld, VW::label_parser_reuse_mem& reuse_mem, const
 
         // Element 0 is the action, element 1 is the probability
         ld.probabilities.push_back(
-            {static_cast<uint32_t>(int_of_string(split_colons[0])), float_of_string(split_colons[1])});
+            {static_cast<uint32_t>(int_of_string(split_colons[0], logger)), float_of_string(split_colons[1], logger)});
       }
 
       // If a full distribution has been given, check if it sums to 1, otherwise throw.
@@ -120,8 +121,8 @@ label_parser slates_label_parser = {
     [](polylabel& label) { default_label(label.slates); },
     // parse_label
     [](polylabel& label, reduction_features& /* red_features */, VW::label_parser_reuse_mem& reuse_mem,
-        const VW::named_labels* /* ldict */,
-        const std::vector<VW::string_view>& words) { parse_label(label.slates, reuse_mem, words); },
+        const VW::named_labels* /* ldict */, const std::vector<VW::string_view>& words,
+        VW::io::logger& logger) { parse_label(label.slates, reuse_mem, words, logger); },
     // cache_label
     [](const polylabel& label, const reduction_features& /* red_features */, io_buf& cache,
         const std::string& upstream_name,

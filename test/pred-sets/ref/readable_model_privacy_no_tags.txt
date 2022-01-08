@@ -1,13 +1,13 @@
 Version 8.11.0
-Id 
+Id
 Min label:0
 Max label:1
 bits:18
 lda:0
 0 ngram:
 0 skip:
-options: --cb_adf --cb_explore_adf --cb_max_cost 1 --cb_min_cost 0 --cb_type mtr --cbify 2 --csoaa_ldf multiline --csoaa_rank
-Checksum: 2467443617
+options: --cb_adf --cb_explore_adf --cb_type mtr --cbify 2 --csoaa_ldf multiline --csoaa_rank
+Checksum: 456234792
 event_sum 31
 action_sum 62
 :0

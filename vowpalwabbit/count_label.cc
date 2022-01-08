@@ -58,7 +58,7 @@ namespace VW
 VW::LEARNER::base_learner* count_label_setup(VW::setup_base_i& stack_builder)
 {
   bool dont_output_best_constant = false;
-  VW::config::option_group_definition reduction_options("count_label");
+  VW::config::option_group_definition reduction_options("[Reduction] Count label");
   reduction_options.add(VW::config::make_option("dont_output_best_constant", dont_output_best_constant)
                             .help("Don't track the best constant used in the output"));
 
@@ -75,7 +75,7 @@ VW::LEARNER::base_learner* count_label_setup(VW::setup_base_i& stack_builder)
   {
     if (base_label_type != label_type_t::simple)
     {
-      VW::io::logger::log_warn(
+      all->logger.out_warn(
           "--dont_output_best_constant is not relevant. best constant is only tracked if the label type is simple.");
     }
 

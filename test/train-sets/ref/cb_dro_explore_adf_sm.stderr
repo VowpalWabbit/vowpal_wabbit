@@ -1,3 +1,4 @@
+[warning] The old default logging behavior of logging to a mix of stdout and stderr is deprecated. Please choose either 'stdout' or 'stderr' for --log_output to silence this warning.
 predictions = cb_dro_explore_adf_sm.predict
 Using DRO for CB learning
 cb_dro_alpha = 0.05
@@ -15,13 +16,13 @@ Input label = cb
 Output pred = action_probs
 average  since         example        example  current  current  current
 loss     last          counter         weight    label  predict features
-2.000000 2.000000            1            1.0 0:1.5:0.25        0:0.333333...       15
-1.050000 0.100000            2            2.0 0:1.5:0.25        2:0.966667...       15
-0.500000 -0.050000            4            4.0 0:-2:0.5        2:0.9625...       20
+2.000000 2.000000            1            1.0 0:1.5:0.25        0:0.333333...       12
+1.050000 0.100000            2            2.0 0:1.5:0.25        2:0.966667...       12
+0.500000 -0.050000            4            4.0 0:-2:0.5        2:0.9625...       16
 
 finished run
 number of examples = 4
 weighted example sum = 4.000000
 weighted label sum = 0.000000
 average loss = 0.500000
-total feature number = 65
+total feature number = 52

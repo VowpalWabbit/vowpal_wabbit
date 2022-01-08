@@ -563,7 +563,7 @@ void reduce_min_max(uint8_t &v1, const uint8_t &v2)
   if (parent_or_depth != p_or_d2)
   {
 #ifdef DEBUG
-    std::cout << "Reducing parent with depth!!!!!";
+    std::cout << "Reducing parent with depth";
 #endif  // DEBUG
     return;
   }
@@ -659,7 +659,7 @@ base_learner* stagewise_poly_setup(VW::setup_base_i& stack_builder)
   VW::workspace& all = *stack_builder.get_all_pointer();
   auto poly = VW::make_unique<stagewise_poly>();
   bool stage_poly = false;
-  option_group_definition new_options("Stagewise Polynomial");
+  option_group_definition new_options("[Reduction] Stagewise Polynomial");
   new_options
       .add(make_option("stage_poly", stage_poly).keep().necessary().help("Use stagewise polynomial feature learning"))
       .add(make_option("sched_exponent", poly->sched_exponent)

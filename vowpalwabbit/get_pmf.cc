@@ -90,7 +90,7 @@ void predict_or_learn(get_pmf& reduction, single_learner&, example& ec)
 LEARNER::base_learner* get_pmf_setup(VW::setup_base_i& stack_builder)
 {
   options_i& options = *stack_builder.get_options();
-  option_group_definition new_options("Continuous Actions: Convert to Pmf");
+  option_group_definition new_options("[Reduction] Continuous Actions: Convert to Pmf");
   bool invoked = false;
   float epsilon = 0.0f;
   new_options.add(

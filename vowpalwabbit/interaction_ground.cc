@@ -79,7 +79,7 @@ base_learner* VW::interaction_ground_setup(VW::setup_base_i& stack_builder)
   options_i& options = *stack_builder.get_options();
   bool igl_option = false;
 
-  option_group_definition new_options("Interaction Grounded Learning");
+  option_group_definition new_options("[Reduction] Interaction Grounded Learning");
   new_options.add(make_option("experimental_igl", igl_option)
                       .keep()
                       .necessary()

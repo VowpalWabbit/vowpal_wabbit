@@ -14,7 +14,6 @@
 #include "io/logger.h"
 
 using namespace VW::config;
-namespace logger = VW::io::logger;
 
 static constexpr bool PRINT_ALL = true;
 static constexpr bool SCORES = true;
@@ -29,6 +28,9 @@ struct oaa
   uint32_t* subsample_order = nullptr;  // for randomized subsampling, in what order should we touch classes
   size_t subsample_id = 0;              // for randomized subsampling, where do we live in the list
   int indexing = -1;                    // for 0 or 1 indexing
+  VW::io::logger logger;
+
+  oaa(VW::io::logger logger) : logger(std::move(logger)) {}
 
   ~oaa()
   {
@@ -42,12 +44,12 @@ void learn_randomized(oaa& o, VW::LEARNER::single_learner& base, example& ec)
   // Update indexing
   if (o.indexing == -1 && ec.l.multi.label == 0)
   {
-    logger::log_info("label 0 found -- labels are now considered 0-indexed.");
+    o.logger.out_info("label 0 found -- labels are now considered 0-indexed.");
     o.indexing = 0;
   }
   else if (o.indexing == -1 && ec.l.multi.label == o.k)
   {
-    logger::log_info("label {0} found -- labels are now considered 1-indexed.", o.k);
+    o.logger.out_info("label {0} found -- labels are now considered 1-indexed.", o.k);
     o.indexing = 1;
   }
 
@@ -56,12 +58,12 @@ void learn_randomized(oaa& o, VW::LEARNER::single_learner& base, example& ec)
   // Label validation
   if (o.indexing == 0 && ld.label >= o.k)
   {
-    logger::log_warn("label {0} is not in {{0,{1}}}. This won't work for 0-indexed actions.", ld.label, o.k - 1);
+    o.all->logger.out_warn("label {0} is not in {{0,{1}}}. This won't work for 0-indexed actions.", ld.label, o.k - 1);
     ec.l.multi.label = 0;
   }
   else if (o.indexing == 1 && (ld.label < 1 || ld.label > o.k))
   {
-    logger::log_warn("label {0} is not in {{1,{1}}}. This won't work for 1-indexed actions.", ld.label, o.k);
+    o.all->logger.out_warn("label {0} is not in {{1,{1}}}. This won't work for 1-indexed actions.", ld.label, o.k);
     ec.l.multi.label = static_cast<uint32_t>(o.k);
   }
 
@@ -105,12 +107,12 @@ void learn(oaa& o, VW::LEARNER::single_learner& base, example& ec)
   // Update indexing
   if (o.indexing == -1 && ec.l.multi.label == 0)
   {
-    logger::log_info("label 0 found -- labels are now considered 0-indexed.");
+    o.logger.out_info("label 0 found -- labels are now considered 0-indexed.");
     o.indexing = 0;
   }
   else if (o.indexing == -1 && ec.l.multi.label == o.k)
   {
-    logger::log_info("label {0} found -- labels are now considered 1-indexed.", o.k);
+    o.logger.out_info("label {0} found -- labels are now considered 1-indexed.", o.k);
     o.indexing = 1;
   }
 
@@ -120,13 +122,14 @@ void learn(oaa& o, VW::LEARNER::single_learner& base, example& ec)
   // Label validation
   if (o.indexing == 0 && mc_label_data.label >= o.k)
   {
-    logger::log_warn(
+    o.all->logger.out_warn(
         "label {0} is not in {{0,{1}}}. This won't work for 0-indexed actions.", mc_label_data.label, o.k - 1);
     ec.l.multi.label = 0;
   }
   else if (o.indexing == 1 && (mc_label_data.label < 1 || mc_label_data.label > o.k))
   {
-    logger::log_warn("label {0} is not in {{1,{1}}}. This won't work for 1-indexed actions.", mc_label_data.label, o.k);
+    o.all->logger.out_warn(
+        "label {0} is not in {{1,{1}}}. This won't work for 1-indexed actions.", mc_label_data.label, o.k);
     ec.l.multi.label = static_cast<uint32_t>(o.k);
   }
 
@@ -195,7 +198,7 @@ void predict(oaa& o, LEARNER::single_learner& base, example& ec)
     {
       for (uint32_t i = 1; i <= o.k; i++) output_string_stream << ' ' << i << ':' << o.pred[i - 1].scalar;
     }
-    o.all->print_text_by_ref(o.all->raw_prediction.get(), output_string_stream.str(), ec.tag);
+    o.all->print_text_by_ref(o.all->raw_prediction.get(), output_string_stream.str(), ec.tag, o.all->logger);
   }
 
   // The predictions are an array of scores (as opposed to a single index of a
@@ -271,7 +274,7 @@ void finish_example_scores(VW::workspace& all, oaa& o, example& ec)
     outputStringStream << ':' << ec.pred.scalars[corrected_ind];
   }
   const auto ss_str = outputStringStream.str();
-  for (auto& sink : all.final_prediction_sink) all.print_text_by_ref(sink.get(), ss_str, ec.tag);
+  for (auto& sink : all.final_prediction_sink) all.print_text_by_ref(sink.get(), ss_str, ec.tag, all.logger);
 
   // === Report updates using zero-one loss
   all.sd->update(
@@ -294,10 +297,10 @@ VW::LEARNER::base_learner* oaa_setup(VW::setup_base_i& stack_builder)
 {
   options_i& options = *stack_builder.get_options();
   VW::workspace& all = *stack_builder.get_all_pointer();
-  auto data = VW::make_unique<oaa>();
+  auto data = VW::make_unique<oaa>(all.logger);
   bool probabilities = false;
   bool scores = false;
-  option_group_definition new_options("One Against All");
+  option_group_definition new_options("[Reduction] One Against All");
   new_options.add(make_option("oaa", data->k).keep().necessary().help("One-against-all multiclass with <k> labels"))
       .add(make_option("oaa_subsample", data->num_subsample)
                .help("Subsample this number of negative examples when learning"))
@@ -313,7 +316,7 @@ VW::LEARNER::base_learner* oaa_setup(VW::setup_base_i& stack_builder)
   if (probabilities && options.was_supplied("link")) { options.replace("link", "identity"); }
 
   if (all.sd->ldict && (data->k != all.sd->ldict->getK()))
-    THROW("error: you have " << all.sd->ldict->getK() << " named labels; use that as the argument to oaa")
+    THROW("There are " << all.sd->ldict->getK() << " named labels. Use that as the argument to oaa.")
 
   data->all = &all;
   data->pred = calloc_or_throw<polyprediction>(data->k);
@@ -324,7 +327,7 @@ VW::LEARNER::base_learner* oaa_setup(VW::setup_base_i& stack_builder)
     if (data->num_subsample >= data->k)
     {
       data->num_subsample = 0;
-      *(all.trace_message) << "oaa is turning off subsampling because your parameter >= K" << std::endl;
+      all.logger.err_info("oaa is turning off subsampling because parameter >= K");
     }
     else
     {
@@ -357,8 +360,7 @@ VW::LEARNER::base_learner* oaa_setup(VW::setup_base_i& stack_builder)
       auto loss_function_type = all.loss->getType();
       if (loss_function_type != "logistic")
       {
-        logger::log_error(
-            "WARNING: --probabilities should be used only with --loss_function=logistic, currently using: {}",
+        all.logger.out_warn("--probabilities should be used only with --loss_function=logistic, currently using: {}",
             loss_function_type);
       }
       // the three boolean template parameters are: is_learn, print_all and scores

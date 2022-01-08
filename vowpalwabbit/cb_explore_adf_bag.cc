@@ -158,13 +158,14 @@ VW::LEARNER::base_learner* setup(VW::setup_base_i& stack_builder)
   size_t bag_size = 0;
   bool greedify = false;
   bool first_only = false;
-  config::option_group_definition new_options("Contextual Bandit Exploration with ADF (bagging)");
+  config::option_group_definition new_options("[Reduction] Contextual Bandit Exploration with ADF (bagging)");
   new_options
       .add(make_option("cb_explore_adf", cb_explore_adf_option)
                .keep()
                .necessary()
                .help("Online explore-exploit for a contextual bandit problem with multiline action dependent features"))
-      .add(make_option("epsilon", epsilon).keep().allow_override().help("Epsilon-greedy exploration"))
+      .add(
+          make_option("epsilon", epsilon).keep().default_value(0.f).allow_override().help("Epsilon-greedy exploration"))
       .add(make_option("bag", bag_size).keep().necessary().help("Bagging-based exploration"))
       .add(make_option("greedify", greedify).keep().help("Always update first policy once in bagging"))
       .add(make_option("first_only", first_only).keep().help("Only explore the first action in a tie-breaking event"));

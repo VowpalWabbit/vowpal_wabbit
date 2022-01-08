@@ -11,7 +11,6 @@
 #include <cfloat>
 
 #include "distributionally_robust.h"
-#include "io/logger.h"
 #include "vw.h"
 #include "example.h"
 #include "model_utils.h"
@@ -23,8 +22,6 @@
 using namespace VW;
 using namespace VW::config;
 using namespace VW::LEARNER;
-
-namespace logger = VW::io::logger;
 
 namespace VW
 {
@@ -201,10 +198,13 @@ VW::LEARNER::base_learner* baseline_challenger_cb_setup(VW::setup_base_i& stack_
   double tau;
   bool is_enabled = false;
 
-  option_group_definition new_options(
-      "Baseline challenger reduction: Build a CI around the baseline action and use it instead of the model if it's "
-      "perfoming better");
-  new_options.add(make_option("baseline_challenger_cb", is_enabled).necessary().keep().help("Enable reduction"))
+  option_group_definition new_options("[Reduction] Baseline challenger");
+  new_options
+      .add(make_option("baseline_challenger_cb", is_enabled)
+               .necessary()
+               .keep()
+               .help("Build a CI around the baseline action and use it instead of the model if it's "
+                     "perfoming better"))
       .add(make_option("cb_c_alpha", alpha).default_value(DEFAULT_ALPHA).keep().help("Confidence level for "))
       .add(make_option("cb_c_tau", tau).default_value(DEFAULT_TAU).keep().help("Time constant for count decay"));
 

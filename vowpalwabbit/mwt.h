@@ -5,10 +5,11 @@
 #include "reductions_fwd.h"
 
 #include "io/io_adapter.h"
+#include "io/logger.h"
 
 VW::LEARNER::base_learner* mwt_setup(VW::setup_base_i& stack_builder);
 
 namespace MWT
 {
-void print_scalars(VW::io::writer* f, v_array<float>& scalars, v_array<char>& tag);
+void print_scalars(VW::io::writer* f, v_array<float>& scalars, v_array<char>& tag, VW::io::logger& logger);
 }  // namespace MWT

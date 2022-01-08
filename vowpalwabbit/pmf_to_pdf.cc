@@ -12,6 +12,8 @@
 #include "cb_label_parser.h"
 #include "shared_data.h"
 
+#include "io/logger.h"
+
 using namespace LEARNER;
 using namespace VW;
 using namespace VW::config;
@@ -176,7 +178,7 @@ void learn(pmf_to_pdf::reduction& data, single_learner&, example& ec) { data.lea
 
 void print_update(VW::workspace& all, bool is_test, const example& ec, std::stringstream& pred_string)
 {
-  if (all.sd->weighted_examples() >= all.sd->dump_interval && !all.logger.quiet && !all.bfgs)
+  if (all.sd->weighted_examples() >= all.sd->dump_interval && !all.quiet && !all.bfgs)
   {
     std::stringstream label_string;
     if (is_test)
@@ -221,7 +223,7 @@ void output_example(VW::workspace& all, reduction&, const example& ec, const CB:
   sprintf_s(temp_str, buffsz, "%d:%f", maxid, maxprob);
   sso << temp_str;
 
-  for (auto& sink : all.final_prediction_sink) all.print_text_by_ref(sink.get(), ss.str(), ec.tag);
+  for (auto& sink : all.final_prediction_sink) all.print_text_by_ref(sink.get(), ss.str(), ec.tag, all.logger);
 
   print_update(all, CB::is_test_label(ld), ec, sso);
 }
@@ -238,7 +240,7 @@ base_learner* setup(VW::setup_base_i& stack_builder)
   VW::workspace& all = *stack_builder.get_all_pointer();
   auto data = VW::make_unique<pmf_to_pdf::reduction>();
 
-  option_group_definition new_options("Convert Discrete PMF into Continuous PDF");
+  option_group_definition new_options("[Reduction] Convert Discrete PMF into Continuous PDF");
   new_options
       .add(make_option("pmf_to_pdf", data->num_actions)
                .default_value(0)
@@ -261,7 +263,7 @@ base_learner* setup(VW::setup_base_i& stack_builder)
 
   if (data->num_actions == 0) return nullptr;
   if (!options.was_supplied("min_value") || !options.was_supplied("max_value"))
-  { THROW("error: min and max values must be supplied with cb_continuous"); }
+  { THROW("Min and max values must be supplied with cb_continuous"); }
 
   float leaf_width = (data->max_value - data->min_value) / (data->num_actions);  // aka unit range
   float half_leaf_width = leaf_width / 2.f;
@@ -269,17 +271,14 @@ base_learner* setup(VW::setup_base_i& stack_builder)
   if (!options.was_supplied("bandwidth"))
   {
     data->bandwidth = half_leaf_width;
-    *(all.trace_message) << "Bandwidth was not supplied, setting default to half the continuous action unit range: "
-                         << data->bandwidth << std::endl;
+    all.logger.err_info(
+        "Bandwidth was not supplied, setting default to half the continuous action unit range: {}", data->bandwidth);
   }
 
   if (!(data->bandwidth >= 0.0f)) { THROW("error: Bandwidth must be positive"); }
 
   if (data->bandwidth >= (data->max_value - data->min_value))
-  {
-    *(all.trace_message)
-        << "WARNING: Bandwidth is larger than continuous action range, this will result in a uniform pdf" << std::endl;
-  }
+  { all.logger.err_warn("Bandwidth is larger than continuous action range, this will result in a uniform pdf."); }
 
   // Translate user provided bandwidth which is in terms of continuous action range (max_value - min_value)
   // to the internal tree bandwidth which is in terms of #actions

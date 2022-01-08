@@ -7,7 +7,6 @@
 #include "io/logger.h"
 
 using namespace VW::config;
-namespace logger = VW::io::logger;
 
 #define R_NONE 10      // label for NONE relation
 #define LABEL_SKIP 11  // label for SKIP
@@ -46,7 +45,7 @@ void initialize(Search::search& sch, size_t& /*num_actions*/, options_i& options
   task_data* my_task_data = new task_data();
   sch.set_task_data<task_data>(my_task_data);
 
-  option_group_definition new_options("Entity Relation");
+  option_group_definition new_options("[Search] Entity Relation");
   new_options
       .add(make_option("relation_cost", my_task_data->relation_cost).keep().default_value(1.f).help("Relation Cost"))
       .add(make_option("entity_cost", my_task_data->entity_cost).keep().default_value(1.f).help("Entity Cost"))
@@ -102,7 +101,7 @@ void initialize(Search::search& sch, size_t& /*num_actions*/, options_i& options
       sch.set_is_ldf(true);
       break;
     default:
-      logger::errlog_error("search order {} is undefined", my_task_data->search_order);
+      sch.get_vw_pointer_unsafe().logger.err_error("search order {} is undefined", my_task_data->search_order);
   }
 }
 
@@ -402,7 +401,7 @@ void run(Search::search& sch, multi_ex& ec)
       entity_first_decoding(sch, ec, predictions, true);  // LDF = true
       break;
     default:
-      logger::errlog_error("search order {} is undefined", my_task_data->search_order);
+      sch.get_vw_pointer_unsafe().logger.err_error("search order {} is undefined", my_task_data->search_order);
   }
 
   for (size_t i = 0; i < ec.size(); i++)

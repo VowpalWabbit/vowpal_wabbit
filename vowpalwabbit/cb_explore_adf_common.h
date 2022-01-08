@@ -196,7 +196,8 @@ void cb_explore_adf_base<ExploreType>::output_example(VW::workspace& all, const 
   {
     if (CB::ec_is_example_header(*example))
     {
-      num_features += (ec_seq.size() - 1) * example->get_num_features();
+      num_features +=
+          (ec_seq.size() - 1) * (example->get_num_features() - example->feature_space[constant_namespace].size());
       num_namespaces += (ec_seq.size() - 1) * example->indices.size();
     }
     else
@@ -229,7 +230,8 @@ void cb_explore_adf_base<ExploreType>::output_example(VW::workspace& all, const 
 
   all.sd->update(holdout_example, labeled_example, loss, ec.weight, num_features);
 
-  for (auto& sink : all.final_prediction_sink) ACTION_SCORE::print_action_score(sink.get(), ec.pred.a_s, ec.tag);
+  for (auto& sink : all.final_prediction_sink)
+    ACTION_SCORE::print_action_score(sink.get(), ec.pred.a_s, ec.tag, all.logger);
 
   if (all.raw_prediction != nullptr)
   {
@@ -242,7 +244,7 @@ void cb_explore_adf_base<ExploreType>::output_example(VW::workspace& all, const 
       if (i > 0) outputStringStream << ' ';
       outputStringStream << costs[i].action << ':' << costs[i].partial_prediction;
     }
-    all.print_text_by_ref(all.raw_prediction.get(), outputStringStream.str(), ec.tag);
+    all.print_text_by_ref(all.raw_prediction.get(), outputStringStream.str(), ec.tag, all.logger);
   }
 
   if (labeled_example)
@@ -257,7 +259,7 @@ void cb_explore_adf_base<ExploreType>::output_example_seq(VW::workspace& all, co
   if (ec_seq.size() > 0)
   {
     output_example(all, ec_seq);
-    if (all.raw_prediction != nullptr) all.print_text_by_ref(all.raw_prediction.get(), "", ec_seq[0]->tag);
+    if (all.raw_prediction != nullptr) all.print_text_by_ref(all.raw_prediction.get(), "", ec_seq[0]->tag, all.logger);
   }
 }
 
@@ -277,7 +279,7 @@ void cb_explore_adf_base<ExploreType>::print_multiline_example(
   if (ec_seq.size() > 0)
   {
     data.output_example_seq(all, ec_seq);
-    CB_ADF::global_print_newline(all.final_prediction_sink);
+    CB_ADF::global_print_newline(all.final_prediction_sink, all.logger);
   }
 }
 

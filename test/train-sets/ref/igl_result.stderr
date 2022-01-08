@@ -1,13 +1,14 @@
+[warning] The old default logging behavior of logging to a mix of stdout and stderr is deprecated. Please choose either 'stdout' or 'stderr' for --log_output to silence this warning.
 Num weight bits = 18
 learning rate = 0.5
 initial_t = 0
 power_t = 0.5
 using no cache
 Reading datafile = train-sets/rcv1_multiclass.dat
-Input label = multiclass
-Output pred = multiclass
 num sources = 1
 Enabled reductions: gd, scorer-identity, csoaa_ldf-rank, cb_adf, experimental_igl, cb_explore_adf_greedy, shared_feature_merger, cbify-adf
+Input label = multiclass
+Output pred = multiclass
 average  since         example        example  current  current  current
 loss     last          counter         weight    label  predict features
 1.000000 1.000000            1            1.0        2        1      128

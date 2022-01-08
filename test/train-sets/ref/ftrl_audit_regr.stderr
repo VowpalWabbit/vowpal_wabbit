@@ -1,3 +1,4 @@
+[warning] The old default logging behavior of logging to a mix of stdout and stderr is deprecated. Please choose either 'stdout' or 'stderr' for --log_output to silence this warning.
 Enabling FTRL based optimization
 Algorithm used: Proximal-FTRL
 ftrl_alpha = 0.005
@@ -12,7 +13,7 @@ num sources = 1
 Input label = simple
 Output pred = scalar
 Regressor contains 1121 values
-example      values         total   
+example      values         total
 counter      audited        progress
 1                   36            3%
 2                   85            7%

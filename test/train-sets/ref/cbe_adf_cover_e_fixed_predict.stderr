@@ -1,3 +1,4 @@
+[warning] The old default logging behavior of logging to a mix of stdout and stderr is deprecated. Please choose either 'stdout' or 'stderr' for --log_output to silence this warning.
 only testing
 predictions = cbe_adf_cover_e_fixed.predict
 [warning] currently, mtr is only used for the first policy in cover, other policies use dr
@@ -13,9 +14,9 @@ Input label = cb
 Output pred = action_probs
 average  since         example        example  current  current  current
 loss     last          counter         weight    label  predict features
-0.333333 0.333333            1            1.0  0:1:0.5        1:0.555556...       21
+0.333333 0.333333            1            1.0  0:1:0.5        1:0.555556...       18
 0.166667 0.000000            2            2.0  1:0:0.5        1:0.666667...        8
-0.222222 0.333333            4            4.0  0:1:0.5        1:0.555556...       21
+0.222222 0.333333            4            4.0  0:1:0.5        1:0.555556...       18
 0.166667 0.111111            8            8.0  1:0:0.5        1:0.666667...        8
 
 finished run
@@ -23,4 +24,4 @@ number of examples = 15
 weighted example sum = 15.000000
 weighted label sum = 0.000000
 average loss = 0.166667
-total feature number = 185
+total feature number = 170
