@@ -4,6 +4,8 @@
 from __future__ import division
 import pylibvw
 import warnings
+import enum
+from typing import List, Tuple, Optional
 
 # baked in con py boost https://wiki.python.org/moin/boost.python/FAQ#The_constructors_of_some_classes_I_am_trying_to_wrap_are_private_because_instances_must_be_created_by_using_a_factory._Is_it_possible_to_wrap_such_classes.3F
 class VWOption:
@@ -1157,47 +1159,58 @@ class cbandits_label(abstract_label):
             ["{}:{}:{}".format(c.action, c.cost, c.probability) for c in self.costs]
         )
 
-class ccb_label(abstract_label):
-    """Class for conditional contextual bandits VW label"""
+class ccb_label_type(enum.Enum):
+    UNSET = pylibvw.vw.tUNSET
+    SHARED = pylibvw.vw.tSHARED
+    ACTION = pylibvw.vw.tACTION
+    SLOT = pylibvw.vw.tSLOT
 
-    def __init__(self, type = "unset", cost=0, top_class=0, top_probability=0, explicitly_included_actions=[]):
+class slot_outcome:
+  cost: float = 0
+  action_probs: List[Tuple[int, float]]
+  
+  def __init__(self, cost, action_probs, ex=None):
+    if isinstance(ex, example):
+        self.from_example(ex)
+    else:
+        self.cost = cost
+        self.action_probs = action_probs
+
+  def from_example(self, ex):
+    self.cost = ex.get_ccb_cost()
+    self.action_probs = []
+    for i in range(ex.get_ccb_num_included_actions()):
+        self.action_probs.append((ex.get_ccb_class(i), ex.get_ccb_probs(i)))
+
+  def __str__(self):
+    top_action, top_prob = self.action_probs[0]
+    out = f"{top_action}:{top_prob}:{self.cost}"
+    for action, prob in self.action_probs[1:]:
+        out += f",{action}:{prob}"
+    return out
+
+class ccb_label(abstract_label):
+  type: ccb_label_type = ccb_label_type.UNSET
+  explicit_included_actions: List[int] = []
+  weight: float = 0
+  outcome: Optional[slot_outcome] = None
+"""Class for conditional contextual bandits VW label"""
+
+    def __init__(self, type: ccb_label_type, explicit_included_actions: List[int], weight: float, outcome: Optional[slot_outcome], ex=None):
         abstract_label.__init__(self)
-        if isinstance(cost, example):
-            self.from_example(cost)
+        if isinstance(ex, example):
+            self.type = ex.get_ccb_type()
+            self.explict_included_actions =  ex.get_ccb_explicitly_included_actions()
+            self.weight = ex.get_ccb_weight()
+            self.outcome = slot_outcome(ex)
         else:
             self.type = type
-            self.cost = cost
-            self.top_class = top_class
-            self.top_probability = top_probability
-            self.explicitly_included_actions = explicitly_included_actions
-
-    def from_example(self, ex):
-        class wclass:
-            def __init__(
-                self,
-                type=pylibvw.vw.tUNSET, 
-                top_prediction=None,
-                cost=0,
-                weight=0,
-                explicitly_included_actions=[],
-                **kwargs
-            ):
-                self.type = {
-                    pylibvw.vw.tUNSET: "unset",
-                    pylibvw.vw.tSHARED: "shared",
-                    pylibvw.vw.tACTION: "action",
-                    pylibvw.vw.tSLOT: "slot",
-                }[type]
-                self.weight = weight
-                self.top_action, self.top_probability = top_prediction
-                self.label = self.top_action
-                self.cost = cost
-                self.explicitly_included_actions = explicitly_included_actions
-        self.out_label = wclass(ex.get_ccb_type(), get_prediction(ex, pylibvw.vw.pDECISION_SCORES),
-                ex.get_ccb_cost(), ex.get_ccb_weight(), ex.get_ccb_explicitly_included_actions())
+            self.explicit_included_actions = explicit_included_actions
+            self.weight = weight
+            self.outcome = outcome
 
     def __str__(self):
-        return f"{self.type}:{str(self.top_action or ' ')}:{str(self.top_probability or ' ')}:{self.explicitly_included_actions}"
+        return f"ccb {self.type} {str(self.outcome or '')} {str(self.explicit_included_actions or '')}"
 
 class example(pylibvw.example):
     """The example class is a (non-trivial) wrapper around
