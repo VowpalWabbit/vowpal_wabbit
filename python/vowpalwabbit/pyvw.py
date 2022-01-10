@@ -1159,17 +1159,18 @@ class cbandits_label(abstract_label):
             ["{}:{}:{}".format(c.action, c.cost, c.probability) for c in self.costs]
         )
 
-class ccb_label_type(enum.Enum):
+class CCBLabelType(enum.Enum):
     UNSET = pylibvw.vw.tUNSET
     SHARED = pylibvw.vw.tSHARED
     ACTION = pylibvw.vw.tACTION
     SLOT = pylibvw.vw.tSLOT
 
-class slot_outcome:
-  cost: float = 0
+class CCBSlotOutcome:
+  cost: float
   action_probs: List[Tuple[int, float]]
-  
-  def __init__(self, cost, action_probs, ex=None):
+
+  def __init__(self, cost=0, action_probs=[], **kwargs):
+    ex = kwargs.get('ex')
     if isinstance(ex, example):
         self.from_example(ex)
     else:
@@ -1189,21 +1190,21 @@ class slot_outcome:
         out += f",{action}:{prob}"
     return out
 
-class ccb_label(abstract_label):
-  type: ccb_label_type = ccb_label_type.UNSET
-  explicit_included_actions: List[int] = []
-  weight: float = 0
-  outcome: Optional[slot_outcome] = None
-"""Class for conditional contextual bandits VW label"""
+class CCBLabel(abstract_label):
+    """Class for conditional contextual bandits VW label"""
+    type: CCBLabelType
+    explicit_included_actions: List[int]
+    weight: float
+    outcome: Optional[CCBSlotOutcome]
 
-    def __init__(self, type: ccb_label_type, explicit_included_actions: List[int], weight: float, outcome: Optional[slot_outcome], ex=None):
+    def __init__(self, type=CCBLabelType.UNSET, explicit_included_actions=[], weight=1, outcome=None, **kwargs):
         abstract_label.__init__(self)
+        ex = kwargs.get('ex')
         if isinstance(ex, example):
             self.type = ex.get_ccb_type()
             self.explict_included_actions =  ex.get_ccb_explicitly_included_actions()
             self.weight = ex.get_ccb_weight()
-            self.outcome = slot_outcome(ex)
-
+            self.outcome = CCBSlotOutcome(ex=ex)
         else:
             self.type = type
             self.explicit_included_actions = explicit_included_actions
