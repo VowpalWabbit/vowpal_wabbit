@@ -8,6 +8,7 @@ import warnings
 
 from enum import IntEnum
 
+
 class LabelType(IntEnum):
     BINARY = 1
     SIMPLE = 1
@@ -20,6 +21,7 @@ class LabelType(IntEnum):
     CONTINUOUS = 8
     CONTEXTUAL_BANDIT_EVAL = 9
     MULTILABEL = 10
+
 
 class PredictionType(IntEnum):
     SCALAR = 0
@@ -35,6 +37,7 @@ class PredictionType(IntEnum):
     PDF = 10
     ACTIVE_MULTICLASS = 11
     NOPRED = 12
+
 
 # baked in con py boost https://wiki.python.org/moin/boost.python/FAQ#The_constructors_of_some_classes_I_am_trying_to_wrap_are_private_because_instances_must_be_created_by_using_a_factory._Is_it_possible_to_wrap_such_classes.3F
 class VWOption:
@@ -200,7 +203,9 @@ class SearchTask:
         for my_example in data_iterator.__iter__():
             self._call_vw(my_example, isTest=False)
 
-    def example(self, initStringOrDict=None, labelType: Optional[Union[int, LabelType]] = None):
+    def example(
+        self, initStringOrDict=None, labelType: Optional[Union[int, LabelType]] = None
+    ):
         """Create an example initStringOrDict can specify example as VW
         formatted string, or a dictionary labelType can specify the desire
         label type
@@ -594,7 +599,7 @@ class vw(pylibvw.vw):
         if new_example:
             self.finish_example(ec)
 
-    def predict(self, ec, prediction_type: Optional[Union[int, PredictionType]] =None):
+    def predict(self, ec, prediction_type: Optional[Union[int, PredictionType]] = None):
         """Just make a prediction on the example
 
         Parameters
@@ -677,7 +682,9 @@ class vw(pylibvw.vw):
         else:
             raise Exception("enable_logging set to false")
 
-    def example(self, stringOrDict=None, labelType: Optional[Union[int, LabelType]] = None):
+    def example(
+        self, stringOrDict=None, labelType: Optional[Union[int, LabelType]] = None
+    ):
         """Create an example initStringOrDict can specify example as VW
         formatted string, or a dictionary labelType can specify the desire
         label type
@@ -710,12 +717,7 @@ class vw(pylibvw.vw):
         sch = self.get_search_ptr()
 
         def predict(
-            examples,
-            my_tag,
-            oracle,
-            condition=None,
-            allowed=None,
-            learner_id=0,
+            examples, my_tag, oracle, condition=None, allowed=None, learner_id=0,
         ):
             """The basic (via-reduction) prediction mechanism
 
