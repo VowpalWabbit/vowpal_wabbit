@@ -3,7 +3,7 @@
 
 import importlib
 
-__all__ = ["__version__", "pyvw", "sklearn_vw", "DFtoVW"]
+__all__ = ["pyvw", "sklearn_vw", "DFtoVW"]
 
 
 def __getattr__(name):
