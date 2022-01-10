@@ -34,6 +34,7 @@
     <ClCompile Include="custom_reduction_test.cc" />
     <ClCompile Include="distributionally_robust_test.cc" />
     <ClCompile Include="dsjson_parser_test.cc" />
+    <ClCompile Include="epsilon_test.cc" />
     <ClCompile Include="error_test.cc" />
     <ClCompile Include="example_header_test.cc" />
     <ClCompile Include="example_test.cc" />

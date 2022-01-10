@@ -50,19 +50,21 @@ cb_explore_adf_greedy::cb_explore_adf_greedy(float epsilon, bool first_only)
 void cb_explore_adf_greedy::update_example_prediction(multi_ex& examples)
 {
   ACTION_SCORE::action_scores& preds = examples[0]->pred.a_s;
-
   uint32_t num_actions = static_cast<uint32_t>(preds.size());
+
+  auto& ep_fts = examples[0]->_reduction_features.template get<reduction_features>();
+  float actual_ep = (ep_fts.is_valid_epsilon()) ? ep_fts.epsilon : _epsilon;
 
   size_t tied_actions = fill_tied(preds);
 
-  const float prob = _epsilon / num_actions;
+  const float prob = actual_ep / num_actions;
   for (size_t i = 0; i < num_actions; i++) preds[i].score = prob;
   if (!_first_only)
   {
-    for (size_t i = 0; i < tied_actions; ++i) preds[i].score += (1.f - _epsilon) / tied_actions;
+    for (size_t i = 0; i < tied_actions; ++i) preds[i].score += (1.f - actual_ep) / tied_actions;
   }
   else
-    preds[0].score += 1.f - _epsilon;
+    preds[0].score += 1.f - actual_ep;
 }
 
 template <bool is_learn>
