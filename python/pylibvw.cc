@@ -568,10 +568,12 @@ std::string varray_char_to_string(v_array<char>& a)
 template <class T>
 py::list varray_to_pylist(const v_array<T>& a)
 {
-	py::list list;
-  for (const auto& elem : a):
-    list.append(a)
-	return list;
+ 	py::list list;
+  for (const auto& elem : a) 
+  {
+    list.append(a);
+  }
+ 	return list;
 }
 
 std::string my_get_tag(example_ptr ec) { return varray_char_to_string(ec->tag); }
