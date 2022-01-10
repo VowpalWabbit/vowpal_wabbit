@@ -887,21 +887,21 @@ size_t ex_get_ccb_type(example_ptr ec)
       return tUNSET;
   }
 }
-float ex_get_ccb_cost(example_ptr ec)
+py::object* ex_get_ccb_cost(example_ptr ec)
 {
   auto* outcome_ptr = ec->l.conditional_contextual_bandit.conditional_contextual_bandit_outcome;
-  return outcome_ptr == nullptr ? Py_None : outcome_ptr->cost;
+  return outcome_ptr == nullptr ? Py_None : value_to_pyobject<float>(outcome_ptr->cost);
 }
 uint32_t ex_get_ccb_num_included_actions(example_ptr ec)
 {
   const auto& label = ec->l.conditional_contextual_bandit;
   return label.explicit_included_actions.size();
 }
-size_t ex_get_ccb_class(example_ptr ec, uint32_t i)
+py::object* to_pyobject ex_get_ccb_class(example_ptr ec, uint32_t i)
 {
   if (i >= ex_get_ccb_num_included_actions(ec)) { THROW("Class index out of bounds"); }
   auto* outcome_ptr = ec->l.conditional_contextual_bandit.conditional_contextual_bandit_outcome;
-  return outcome_ptr == nullptr ? Py_None : outcome_ptr->probabilities[i]->action;
+  return outcome_ptr == nullptr ? Py_None : value_to_pyobject<uint32_t>(outcome_ptr->probabilities[i]->action);
 }
 float ex_get_ccb_probability(example_ptr ec, uint32_t i)
 {
