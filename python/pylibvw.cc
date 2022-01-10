@@ -908,7 +908,7 @@ uint32_t ex_get_ccb_num_included_actions(example_ptr ec)
 }
 py::list ex_get_ccb_explicitly_included_actions(example_ptr ec)
 {
-  auto label = ec->l.conditional_contextual_bandit;
+  const auto& label = ec->l.conditional_contextual_bandit;
   if (label.type != CCB::slot)
     return py::list{};
   return varray_to_pylist(label.explicit_included_actions);
