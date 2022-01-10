@@ -1227,7 +1227,7 @@ class CCBLabel(abstract_label):
             self.outcome = outcome
 
     def __str__(self):
-        return f"ccb {self.type} {str(self.outcome or '')} {str(self.explicit_included_actions or '')}"
+        return f"ccb {self.type.name.lower()} {str(self.outcome or '')} {str(self.explicit_included_actions or '')}"
 
 
 class example(pylibvw.example):
