@@ -1159,50 +1159,61 @@ class cbandits_label(abstract_label):
             ["{}:{}:{}".format(c.action, c.cost, c.probability) for c in self.costs]
         )
 
+
 class CCBLabelType(enum.Enum):
     UNSET = pylibvw.vw.tUNSET
     SHARED = pylibvw.vw.tSHARED
     ACTION = pylibvw.vw.tACTION
     SLOT = pylibvw.vw.tSLOT
 
+
 class CCBSlotOutcome:
-  cost: float
-  action_probs: List[Tuple[int, float]]
+    cost: float
+    action_probs: List[Tuple[int, float]]
 
-  def __init__(self, cost=0, action_probs=[], **kwargs):
-    ex = kwargs.get('ex')
-    if isinstance(ex, example):
-        self.from_example(ex)
-    else:
-        self.cost = cost
-        self.action_probs = action_probs
+    def __init__(self, cost=0, action_probs=[], **kwargs):
+        ex = kwargs.get("ex")
+        if isinstance(ex, example):
+            self.from_example(ex)
+        else:
+            self.cost = cost
+            self.action_probs = action_probs
 
-  def from_example(self, ex):
-    self.cost = ex.get_ccb_cost()
-    self.action_probs = []
-    for i in range(ex.get_ccb_num_included_actions()):
-        self.action_probs.append((ex.get_ccb_class(i), ex.get_ccb_probs(i)))
+    def from_example(self, ex):
+        self.cost = ex.get_ccb_cost()
+        self.action_probs = []
+        for i in range(ex.get_ccb_num_included_actions()):
+            self.action_probs.append((ex.get_ccb_class(i), ex.get_ccb_probs(i)))
 
-  def __str__(self):
-    top_action, top_prob = self.action_probs[0]
-    out = f"{top_action}:{top_prob}:{self.cost}"
-    for action, prob in self.action_probs[1:]:
-        out += f",{action}:{prob}"
-    return out
+    def __str__(self):
+        top_action, top_prob = self.action_probs[0]
+        out = f"{top_action}:{top_prob}:{self.cost}"
+        for action, prob in self.action_probs[1:]:
+            out += f",{action}:{prob}"
+        return out
+
 
 class CCBLabel(abstract_label):
     """Class for conditional contextual bandits VW label"""
+
     type: CCBLabelType
     explicit_included_actions: List[int]
     weight: float
     outcome: Optional[CCBSlotOutcome]
 
-    def __init__(self, type=CCBLabelType.UNSET, explicit_included_actions=[], weight=1, outcome=None, **kwargs):
+    def __init__(
+        self,
+        type=CCBLabelType.UNSET,
+        explicit_included_actions=[],
+        weight=1,
+        outcome=None,
+        **kwargs,
+    ):
         abstract_label.__init__(self)
-        ex = kwargs.get('ex')
+        ex = kwargs.get("ex")
         if isinstance(ex, example):
             self.type = ex.get_ccb_type()
-            self.explict_included_actions =  ex.get_ccb_explicitly_included_actions()
+            self.explict_included_actions = ex.get_ccb_explicitly_included_actions()
             self.weight = ex.get_ccb_weight()
             self.outcome = CCBSlotOutcome(ex=ex)
         else:
@@ -1213,6 +1224,7 @@ class CCBLabel(abstract_label):
 
     def __str__(self):
         return f"ccb {self.type} {str(self.outcome or '')} {str(self.explicit_included_actions or '')}"
+
 
 class example(pylibvw.example):
     """The example class is a (non-trivial) wrapper around
