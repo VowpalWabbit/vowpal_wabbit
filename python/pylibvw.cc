@@ -903,7 +903,7 @@ float ex_get_ccb_probability(example_ptr ec, uint32_t i)
 float ex_get_ccb_weight(example_ptr ec) { return ec->l.conditional_contextual_bandit.weight; }
 uint32_t ex_get_ccb_num_included_actions(example_ptr ec)
 {
-  auto label = ec->l.conditional_contextual_bandit;
+  const auto& label = ec->l.conditional_contextual_bandit;
   return label.explicit_included_actions.size();
 }
 py::list ex_get_ccb_explicitly_included_actions(example_ptr ec)
