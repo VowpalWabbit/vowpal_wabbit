@@ -5,8 +5,8 @@ bits:18
 lda:0
 0 ngram:
 0 skip:
-options:
-Checksum: 2704463348
+options: --chain_hash
+Checksum: 2756098922
 :0
 emotion^happiness^true:106841:0.205255
 Constant:116060:0.702477
