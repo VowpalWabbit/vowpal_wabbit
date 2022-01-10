@@ -1225,10 +1225,10 @@ class example(pylibvw.example):
         self.labelType: Optional[LabelType] = None
         if isinstance(labelType, LabelType):
             label_int = labelType.value
-            self.labelType = labelType
         elif isinstance(labelType, int):
             label_int = labelType
-            self.labelType = LabelType(label_int)
+            if label_int != 0:
+                self.labelType = LabelType(label_int)
 
         if initStringOrDictOrRawExample is None:
             pylibvw.example.__init__(self, vw, label_int)
