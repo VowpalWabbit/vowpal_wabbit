@@ -1215,7 +1215,9 @@ class CCBLabel(abstract_label):
             self.type = ex.get_ccb_type()
             self.explict_included_actions = ex.get_ccb_explicitly_included_actions()
             self.weight = ex.get_ccb_weight()
-            self.outcome = CCBSlotOutcome(ex=ex)
+            self.outcome = (
+                CCBSlotOutcome(ex=ex) if self.type == CCBLabelType.SLOT else None
+            )
         else:
             self.type = type
             self.explicit_included_actions = explicit_included_actions
