@@ -1171,15 +1171,17 @@ class CCBSlotOutcome:
     cost: float
     action_probs: List[Tuple[int, float]]
 
-    def __init__(self, cost=0, action_probs=[], **kwargs):
-        ex = kwargs.get("ex")
+    def __init__(
+        self, cost: float = 0, action_probs: List[Tuple[int, float]] = [], **kwargs
+    ):
+        ex: example = kwargs.get("ex")
         if isinstance(ex, example):
             self.from_example(ex)
         else:
             self.cost = cost
             self.action_probs = action_probs
 
-    def from_example(self, ex):
+    def from_example(self, ex: example):
         self.cost = ex.get_ccb_cost()
         self.action_probs = []
         for i in range(ex.get_ccb_num_included_actions()):
@@ -1203,14 +1205,14 @@ class CCBLabel(abstract_label):
 
     def __init__(
         self,
-        type=CCBLabelType.UNSET,
-        explicit_included_actions=[],
-        weight=1,
-        outcome=None,
+        type: CCBLabelType = CCBLabelType.UNSET,
+        explicit_included_actions: List[int] = [],
+        weight: float = 1,
+        outcome: Optional[CCBSlotOutcome] = None,
         **kwargs,
     ):
         abstract_label.__init__(self)
-        ex = kwargs.get("ex")
+        ex: example = kwargs.get("ex")
         if isinstance(ex, example):
             self.type = ex.get_ccb_type()
             self.explict_included_actions = ex.get_ccb_explicitly_included_actions()
