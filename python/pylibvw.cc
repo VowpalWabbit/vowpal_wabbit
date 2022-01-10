@@ -871,7 +871,7 @@ uint32_t ex_get_cbandits_class(example_ptr ec, uint32_t i) { return ec->l.cb.cos
 float ex_get_cbandits_probability(example_ptr ec, uint32_t i) { return ec->l.cb.costs[i].probability; }
 float ex_get_cbandits_partial_prediction(example_ptr ec, uint32_t i) { return ec->l.cb.costs[i].partial_prediction; }
 
-const size_t ex_get_ccb_type(example_ptr ec)
+size_t ex_get_ccb_type(example_ptr ec)
 {
   switch(ec->l.conditional_contextual_bandit.type)
   {
