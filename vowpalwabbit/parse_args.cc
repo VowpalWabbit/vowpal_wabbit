@@ -1270,7 +1270,7 @@ VW::workspace& parse_args(
   {
     if (trace_listener != nullptr)
     {
-      if (options->was_supplied("log_output"))
+      if (all.options->was_supplied("log_output"))
       {
         all.logger.err_warn("--log_output option is unused. This is because when a custom trace_listener is being used.");
       }
