@@ -25,6 +25,8 @@ if override_package_version != None:
     version = override_package_version
 else:
     version = vowpalwabbit.__version__
+    if ("+" in version):
+        version = version.split("+")[0]
 
 release = version
 
