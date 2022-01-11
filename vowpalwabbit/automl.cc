@@ -808,8 +808,7 @@ size_t read_model_field(io_buf& io, VW::automl::aml_score& amls)
 size_t write_model_field(io_buf& io, const VW::automl::aml_score& amls, const std::string& upstream_name, bool text)
 {
   size_t bytes = 0;
-  bytes +=
-      write_model_field(io, reinterpret_cast<const VW::scored_config&>(amls), upstream_name + "_scored_config", text);
+  bytes += write_model_field(io, reinterpret_cast<const VW::scored_config&>(amls), upstream_name + "", text);
   bytes += write_model_field(io, amls.config_index, upstream_name + "_index", text);
   bytes += write_model_field(io, amls.eligible_to_inactivate, upstream_name + "_eligible_to_inactivate", text);
   return bytes;
