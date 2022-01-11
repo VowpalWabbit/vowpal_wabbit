@@ -106,7 +106,7 @@ BOOST_AUTO_TEST_CASE(vw_dll_get_audit_output)
 BOOST_AUTO_TEST_CASE(vw_dll_parse_escaped)
 {
   // This call doesn't escape and so sees --nonexistent_option as a standalone invalid argument.
-  BOOST_CHECK_THROW(VW_InitializeA("--id test\\ --nonexistent_option --quiet"), VW::vw_unrecognised_option_exception);
+  BOOST_CHECK_EQUAL(VW_InitializeA("--id test\\ --nonexistent_option --quiet"), nullptr);
 
   // The space is escaped and so the data argument becomes "test --nonexistent_option"
   VW_HANDLE handle1 = VW_InitializeEscapedA("--id test\\ --nonexistent_option --quiet");
