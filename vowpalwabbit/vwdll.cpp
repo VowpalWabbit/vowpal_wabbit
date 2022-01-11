@@ -60,45 +60,21 @@ VW_DLL_PUBLIC VW_HANDLE VW_CALLING_CONV VW_InitializeEscaped(const char16_t* pst
 
 VW_DLL_PUBLIC VW_HANDLE VW_CALLING_CONV VW_InitializeA(const char * pstrArgs)
 {
-  try
-  {
-    string s(pstrArgs);
-    VW::workspace* all = VW::initialize(s);
-    return static_cast<VW_HANDLE>(all);
-  }
-  catch (...)
-  {
-    throw;
-  }
+  VW::workspace* all = VW::initialize(static_cast<std::string>(pstrArgs));
+  return static_cast<VW_HANDLE>(all);
 }
 
 VW_DLL_PUBLIC VW_HANDLE VW_CALLING_CONV VW_InitializeEscapedA(const char* pstrArgs)
 {
-  try
-  {
-    std::string s(pstrArgs);
-    auto all = VW::initialize_escaped(s);
-    return static_cast<VW_HANDLE>(all);
-  }
-  catch (...)
-  {
-    throw;
-  }
+  VW::workspace* all = VW::initialize_escaped(static_cast<std::string>(pstrArgs));
+  return static_cast<VW_HANDLE>(all);
 }
 
 VW_DLL_PUBLIC VW_HANDLE VW_CALLING_CONV VW_SeedWithModel(VW_HANDLE handle, const char * extraArgs)
 {
-  try
-  {
-    string s(extraArgs);
-    VW::workspace* origmodel = static_cast<VW::workspace*>(handle);
-    VW::workspace* newmodel = VW::seed_vw_model(origmodel, s);
-    return static_cast<VW_HANDLE>(newmodel);
-  }
-  catch (...)
-  {
-    throw;
-  }
+  VW::workspace* origmodel = static_cast<VW::workspace*>(handle);
+  VW::workspace* newmodel = VW::seed_vw_model(origmodel, static_cast<std::string>(extraArgs));
+  return static_cast<VW_HANDLE>(newmodel);
 }
 
 VW_DLL_PUBLIC void      VW_CALLING_CONV VW_Finish_Passes(VW_HANDLE handle)
