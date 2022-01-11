@@ -2,6 +2,7 @@
 """Python binding for pylibvw class"""
 
 from __future__ import division
+from typing import List
 import pylibvw
 import warnings
 
@@ -648,10 +649,14 @@ class vw(pylibvw.vw):
             self.init = False
             self.finished = True
 
-    # returns the latest vw log
-    # call after vw.finish() for complete log
-    # useful for debugging
-    def get_log(self):
+    def get_log(self) -> List[str]:
+        """Get all log messages produced. One line per item in the list. To get the complete log including run results, this should be called after :func:`~vowpalwabbit.pyvw.vw.finish`
+
+        Raises:
+            Exception: Raises an exception if this function is called but the init function was called without setting enable_logging to True
+
+        Returns: A list of strings, where each item is a line in the log
+        """
         if self.log_fwd:
             return self.log_fwd.messages
         else:
