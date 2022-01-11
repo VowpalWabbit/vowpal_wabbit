@@ -113,7 +113,7 @@ std::string exclusions_to_string(const std::map<namespace_index, std::set<namesp
 
 void aml_score::persist(metric_sink& metrics, const std::string& suffix, bool verbose)
 {
-  sc.persist(metrics, suffix);
+  VW::scored_config::persist(metrics, suffix);
   metrics.set_uint("conf_idx" + suffix, config_index);
   if (verbose) { metrics.set_string("interactions" + suffix, details::interaction_vec_t_to_string(live_interactions)); }
 }
@@ -343,7 +343,7 @@ void interaction_config_manager::schedule()
     3. A config has reached its lease
     */
     if (need_new_score || configs[scores[live_slot].config_index].state == VW::automl::config_state::Removed ||
-        scores[live_slot].sc.update_count >= configs[scores[live_slot].config_index].lease)
+        scores[live_slot].update_count >= configs[scores[live_slot].config_index].lease)
     {
       // Double the lease check swap for eligible_to_inactivate configs
       if (!need_new_score && configs[scores[live_slot].config_index].state == VW::automl::config_state::Live)
@@ -365,7 +365,7 @@ void interaction_config_manager::schedule()
       if (!need_new_score && configs[scores[live_slot].config_index].state == VW::automl::config_state::Live)
       { configs[scores[live_slot].config_index].state = VW::automl::config_state::Inactive; }
       // Set all features of new live config
-      scores[live_slot].sc.reset_stats();
+      scores[live_slot].reset_stats();
       uint64_t new_live_config_index = choose();
       scores[live_slot].config_index = new_live_config_index;
       configs[new_live_config_index].state = VW::automl::config_state::Live;
@@ -400,8 +400,8 @@ void interaction_config_manager::update_champ()
   // Update ips and lower bound for live configs
   for (uint64_t live_slot = 0; live_slot < scores.size(); ++live_slot)
   {
-    float ips = scores[live_slot].sc.current_ips();
-    distributionally_robust::ScoredDual sd = scores[live_slot].sc.chisq.recompute_duals();
+    float ips = scores[live_slot].current_ips();
+    distributionally_robust::ScoredDual sd = scores[live_slot].chisq.recompute_duals();
     float lower_bound = static_cast<float>(sd.first);
     configs[scores[live_slot].config_index].ips = ips;
     configs[scores[live_slot].config_index].lower_bound = lower_bound;
@@ -452,7 +452,7 @@ void interaction_config_manager::update_champ()
         }
         configs[scores[worst_live_slot].config_index].lease *= 2;
         configs[scores[worst_live_slot].config_index].state = VW::automl::config_state::Inactive;
-        scores[worst_live_slot].sc.reset_stats();
+        scores[worst_live_slot].reset_stats();
         scores[worst_live_slot].config_index = config_index;
         configs[scores[worst_live_slot].config_index].state = VW::automl::config_state::Live;
         gen_quadratic_interactions(worst_live_slot);
@@ -555,7 +555,7 @@ void automl<CMType>::offset_learn(multi_learner& base, multi_ex& ec, CB::cb_clas
     if (!base.learn_returns_prediction) { base.predict(ec, live_slot); }
     base.learn(ec, live_slot);
     const uint32_t chosen_action = ec[0]->pred.a_s[0].action;
-    cm->scores[live_slot].sc.update(chosen_action == labelled_action ? w : 0, r);
+    cm->scores[live_slot].update(chosen_action == labelled_action ? w : 0, r);
 
     // cache the champ
     if (cm->current_champ == live_slot) { champ_a_s = std::move(ec[0]->pred.a_s); }
@@ -799,7 +799,7 @@ size_t write_model_field(
 size_t read_model_field(io_buf& io, VW::automl::aml_score& amls)
 {
   size_t bytes = 0;
-  bytes += read_model_field(io, amls.sc);
+  bytes += read_model_field(io, reinterpret_cast<VW::scored_config&>(amls));
   bytes += read_model_field(io, amls.config_index);
   bytes += read_model_field(io, amls.eligible_to_inactivate);
   return bytes;
@@ -808,7 +808,8 @@ size_t read_model_field(io_buf& io, VW::automl::aml_score& amls)
 size_t write_model_field(io_buf& io, const VW::automl::aml_score& amls, const std::string& upstream_name, bool text)
 {
   size_t bytes = 0;
-  bytes += write_model_field(io, amls.sc, upstream_name + "_scored_config", text);
+  bytes +=
+      write_model_field(io, reinterpret_cast<const VW::scored_config&>(amls), upstream_name + "_scored_config", text);
   bytes += write_model_field(io, amls.config_index, upstream_name + "_index", text);
   bytes += write_model_field(io, amls.eligible_to_inactivate, upstream_name + "_eligible_to_inactivate", text);
   return bytes;

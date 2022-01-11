@@ -38,9 +38,8 @@ void fail_if_enabled(VW::workspace&, const std::set<std::string>&);
 constexpr uint64_t MAX_CONFIGS = 10;
 constexpr uint64_t CONFIGS_PER_CHAMP_CHANGE = 5;
 
-struct aml_score
+struct aml_score : VW::scored_config
 {
-  VW::scored_config sc;
   uint64_t config_index = 0;
   bool eligible_to_inactivate = false;
   interaction_vec_t live_interactions;  // Live pre-allocated vectors in use

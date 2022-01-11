@@ -218,9 +218,9 @@ BOOST_AUTO_TEST_CASE(assert_live_configs_and_lease)
     BOOST_CHECK_EQUAL(aml->cm->configs[3].lease, 10);
     BOOST_CHECK_EQUAL(aml->cm->configs[2].lease, 10);
     BOOST_CHECK_EQUAL(aml->cm->configs[4].lease, 20);
-    BOOST_CHECK_EQUAL(aml->cm->scores[0].sc.update_count, 15);
-    BOOST_CHECK_EQUAL(aml->cm->scores[1].sc.update_count, 14);
-    BOOST_CHECK_EQUAL(aml->cm->scores[2].sc.update_count, 4);
+    BOOST_CHECK_EQUAL(aml->cm->scores[0].update_count, 15);
+    BOOST_CHECK_EQUAL(aml->cm->scores[1].update_count, 14);
+    BOOST_CHECK_EQUAL(aml->cm->scores[2].update_count, 4);
     BOOST_CHECK_EQUAL(aml->cm->index_queue.size(), 2);
     return true;
   });
