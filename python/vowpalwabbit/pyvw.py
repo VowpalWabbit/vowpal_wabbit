@@ -721,7 +721,12 @@ class vw(pylibvw.vw):
         sch = self.get_search_ptr()
 
         def predict(
-            examples, my_tag, oracle, condition=None, allowed=None, learner_id=0,
+            examples,
+            my_tag,
+            oracle,
+            condition=None,
+            allowed=None,
+            learner_id=0,
         ):
             """The basic (via-reduction) prediction mechanism
 
