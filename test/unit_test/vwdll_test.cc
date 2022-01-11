@@ -105,9 +105,6 @@ BOOST_AUTO_TEST_CASE(vw_dll_get_audit_output)
 #ifndef __APPLE__
 BOOST_AUTO_TEST_CASE(vw_dll_parse_escaped)
 {
-  // This call doesn't escape and so sees --nonexistent_option as a standalone invalid argument.
-  BOOST_CHECK_EQUAL(VW_InitializeA("--id test\\ --nonexistent_option --quiet"), nullptr);
-
   // The space is escaped and so the data argument becomes "test --nonexistent_option"
   VW_HANDLE handle1 = VW_InitializeEscapedA("--id test\\ --nonexistent_option --quiet");
   BOOST_CHECK(handle1 != nullptr);
