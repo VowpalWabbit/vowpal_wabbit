@@ -11,6 +11,7 @@
 #include "reductions.h"
 #include "learner.h"
 #include "array_parameters_dense.h"
+#include "scored_config.h"
 #include <map>
 #include <memory>
 #include <set>
@@ -37,24 +38,13 @@ void fail_if_enabled(VW::workspace&, const std::set<std::string>&);
 constexpr uint64_t MAX_CONFIGS = 10;
 constexpr uint64_t CONFIGS_PER_CHAMP_CHANGE = 5;
 
-struct scored_config
+struct aml_score : VW::scored_config
 {
-  VW::distributionally_robust::ChiSquared chisq;
-  float ips = 0.0;
-  float last_w = 0.0;
-  float last_r = 0.0;
-  uint64_t update_count = 0;
   uint64_t config_index = 0;
   bool eligible_to_inactivate = false;
   interaction_vec_t live_interactions;  // Live pre-allocated vectors in use
 
-  scored_config() : chisq(0.05, 0.999, 0, std::numeric_limits<double>::infinity()) {}
-
-  void update(float w, float r);
-  void save_load(io_buf&, bool, bool);
   void persist(metric_sink&, const std::string&, bool);
-  float current_ips() const;
-  void reset_stats();
 };
 
 // all possible states of exclusion config
@@ -75,8 +65,6 @@ struct exclusion_config
   config_state state = VW::automl::config_state::New;
 
   exclusion_config(uint64_t lease = 10) : lease(lease) {}
-
-  void save_load(io_buf&, bool, bool);
 };
 
 // all possible states of automl
@@ -94,7 +82,6 @@ struct config_manager
   void apply_config(example*, uint64_t);
   // This fn is the 'undo' of configure_interactions
   void revert_config(example*);
-  void save_load(io_buf&, bool, bool);
   void persist(metric_sink&, bool);
 
   // Public Chacha functions
@@ -127,7 +114,7 @@ struct interaction_config_manager : config_manager
   std::map<uint64_t, exclusion_config> configs;
 
   // Stores scores of live configs, size will never exceed max_live_configs
-  std::vector<scored_config> scores;
+  std::vector<aml_score> scores;
 
   // Maybe not needed with oracle, maps priority to config index, unused configs
   std::priority_queue<std::pair<float, uint64_t>> index_queue;
@@ -137,7 +124,6 @@ struct interaction_config_manager : config_manager
 
   void apply_config(example*, uint64_t);
   void revert_config(example*);
-  void save_load(io_buf&, bool, bool);
   void persist(metric_sink&, bool);
 
   // Public Chacha functions
@@ -181,12 +167,12 @@ namespace model_utils
 template <typename CMType>
 size_t write_model_field(io_buf&, const VW::automl::automl<CMType>&, const std::string&, bool);
 size_t read_model_field(io_buf&, VW::automl::exclusion_config&);
-size_t read_model_field(io_buf&, VW::automl::scored_config&);
+size_t read_model_field(io_buf&, VW::automl::aml_score&);
 size_t read_model_field(io_buf&, VW::automl::interaction_config_manager&);
 template <typename CMType>
 size_t read_model_field(io_buf&, VW::automl::automl<CMType>&);
 size_t write_model_field(io_buf&, const VW::automl::exclusion_config&, const std::string&, bool);
-size_t write_model_field(io_buf&, const VW::automl::scored_config&, const std::string&, bool);
+size_t write_model_field(io_buf&, const VW::automl::aml_score&, const std::string&, bool);
 size_t write_model_field(io_buf&, const VW::automl::interaction_config_manager&, const std::string&, bool);
 }  // namespace model_utils
 }  // namespace VW
