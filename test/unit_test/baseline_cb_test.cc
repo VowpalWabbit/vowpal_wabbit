@@ -47,8 +47,8 @@ BOOST_AUTO_TEST_CASE(baseline_cb_baseline_performs_badly)
   using namespace test_helpers;
   auto& vw = *VW::initialize(
       "--cb_explore_adf --baseline_challenger_cb --quiet --extra_metrics ut_metrics.json --random_seed 5");
-  float costs_p0[] = {-0.1, -0.3, -0.3, -1.0};
-  float probs_p0[] = {0.05, 0.05, 0.05, 0.85};
+  float costs_p0[] = {-0.1f, -0.3f, -0.3f, -1.0f};
+  float probs_p0[] = {0.05f, 0.05f, 0.05f, 0.85f};
 
   uint64_t state = 37;
   for (int i = 0; i < 50; ++i)
@@ -87,11 +87,11 @@ BOOST_AUTO_TEST_CASE(baseline_cb_baseline_takes_over_policy)
   auto& vw = *VW::initialize(
       "--cb_explore_adf --baseline_challenger_cb --cb_c_tau 0.995 --quiet --power_t 0 -l 0.001 --extra_metrics "
       "ut_metrics.json --random_seed 5");
-  float costs_p0[] = {-0.1, -0.3, -0.3, -1.0};
-  float probs_p0[] = {0.05, 0.05, 0.05, 0.85};
+  float costs_p0[] = {-0.1f, -0.3f, -0.3f, -1.0f};
+  float probs_p0[] = {0.05f, 0.05f, 0.05f, 0.85f};
 
-  float costs_p1[] = {-1.0, -0.3, -0.3, -0.1};
-  float probs_p1[] = {0.05, 0.05, 0.05, 0.85};
+  float costs_p1[] = {-1.0f, -0.3f, -0.3f, -0.1f};
+  float probs_p1[] = {0.05f, 0.05f, 0.05f, 0.85f};
 
   uint64_t state = 37;
   for (int i = 0; i < 500; ++i)
@@ -142,8 +142,8 @@ VW::metric_sink run_simulation(int steps, int switch_step)
   using namespace test_helpers;
   auto* vw = VW::initialize(
       "--cb_explore_adf --baseline_challenger_cb --quiet --extra_metrics ut_metrics.json --random_seed 5");
-  float costs_p0[] = {-0.1, -0.3, -0.3, -1.0};
-  float probs_p0[] = {0.05, 0.05, 0.05, 0.85};
+  float costs_p0[] = {-0.1f, -0.3f, -0.3f, -1.0f};
+  float probs_p0[] = {0.05f, 0.05f, 0.05f, 0.85f};
 
   uint64_t state = 37;
 
