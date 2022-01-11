@@ -89,9 +89,7 @@ struct primitive_feature_space  // just a helper definition.
   size_t len;
 };
 
-// The next commands deal with creating examples.  Caution: VW does not all allow creation of many examples at once by
-// default.  You can adjust the exact number by tweaking ring_size.
-
+// The next commands deal with creating examples.
 /* The simplest of two ways to create an example.  An example_line is the literal line in a VW-format datafile.
  */
 example* read_example(VW::workspace& all, const char* example_line);

@@ -30,6 +30,9 @@ Logging options Options:
                                              means unbounded.
 Parser Options:
   --ring_size arg (=256, )                   Size of example ring
+  --example_queue_limit arg (=256, )         Max number of examples to store after parsing but 
+                                             before the learner has processed. Rarely needs to be 
+                                             changed.
   --strict_parse                             Throw on malformed examples
 Update Options:
   -l [ --learning_rate ] arg                 Set learning rate
