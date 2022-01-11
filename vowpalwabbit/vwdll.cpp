@@ -59,16 +59,31 @@ VW_DLL_PUBLIC VW_HANDLE VW_CALLING_CONV VW_InitializeEscaped(const char16_t* pst
 
 
 VW_DLL_PUBLIC VW_HANDLE VW_CALLING_CONV VW_InitializeA(const char * pstrArgs)
-{ string s(pstrArgs);
-  VW::workspace* all = VW::initialize(s);
-  return static_cast<VW_HANDLE>(all);
+{
+  try
+  {
+    string s(pstrArgs);
+    VW::workspace* all = VW::initialize(s);
+    return static_cast<VW_HANDLE>(all);
+  }
+  catch (...)
+  {
+    throw;
+  }
 }
 
 VW_DLL_PUBLIC VW_HANDLE VW_CALLING_CONV VW_InitializeEscapedA(const char* pstrArgs)
 {
-  std::string s(pstrArgs);
-  auto all = VW::initialize_escaped(s);
-  return static_cast<VW_HANDLE>(all);
+  try
+  {
+    std::string s(pstrArgs);
+    auto all = VW::initialize_escaped(s);
+    return static_cast<VW_HANDLE>(all);
+  }
+  catch (...)
+  {
+    throw;
+  }
 }
 
 VW_DLL_PUBLIC VW_HANDLE VW_CALLING_CONV VW_SeedWithModel(VW_HANDLE handle, const char * extraArgs)
