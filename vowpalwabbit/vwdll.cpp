@@ -88,10 +88,17 @@ VW_DLL_PUBLIC VW_HANDLE VW_CALLING_CONV VW_InitializeEscapedA(const char* pstrAr
 
 VW_DLL_PUBLIC VW_HANDLE VW_CALLING_CONV VW_SeedWithModel(VW_HANDLE handle, const char * extraArgs)
 {
-  string s(extraArgs);
-  VW::workspace* origmodel = static_cast<VW::workspace*>(handle);
-  VW::workspace* newmodel = VW::seed_vw_model(origmodel, s);
-  return static_cast<VW_HANDLE>(newmodel);
+  try
+  {
+    string s(extraArgs);
+    VW::workspace* origmodel = static_cast<VW::workspace*>(handle);
+    VW::workspace* newmodel = VW::seed_vw_model(origmodel, s);
+    return static_cast<VW_HANDLE>(newmodel);
+  }
+  catch (...)
+  {
+    throw;
+  }
 }
 
 VW_DLL_PUBLIC void      VW_CALLING_CONV VW_Finish_Passes(VW_HANDLE handle)
