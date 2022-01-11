@@ -259,6 +259,7 @@
     <ClInclude Include="reduction_features.h" />
     <ClInclude Include="reduction_stack.h" />
     <ClInclude Include="sample_pdf.h" />
+    <ClInclude Include="scored_config.h" />
     <ClInclude Include="scorer.h" />
     <ClInclude Include="search_dep_parser.h" />
     <ClInclude Include="search_entityrelationtask.h" />
@@ -423,6 +424,7 @@
     <ClCompile Include="reduction_stack.cc" />
     <ClCompile Include="sample_pdf.cc" />
     <ClCompile Include="scorer.cc" />
+    <ClCompile Include="scored_config.cc" />
     <ClCompile Include="search.cc" />
     <ClCompile Include="search_dep_parser.cc" />
     <ClCompile Include="search_entityrelationtask.cc" />

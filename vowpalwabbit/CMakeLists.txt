@@ -197,6 +197,7 @@ set(vw_all_headers
   sample_pdf.h
   scope_exit.h
   scorer.h
+  scored_config.h
   search_dep_parser.h
   search_entityrelationtask.h
   search_graph.h
@@ -359,6 +360,7 @@ set(vw_all_sources
   reduction_stack.cc
   sample_pdf.cc
   scorer.cc
+  scored_config.cc
   search_dep_parser.cc
   search_entityrelationtask.cc
   search_graph.cc
