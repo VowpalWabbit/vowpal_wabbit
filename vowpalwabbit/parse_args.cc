@@ -1309,8 +1309,7 @@ VW::workspace& parse_args(
     if (all.options->was_supplied("ring_size"))
     {
       final_example_queue_limit = ring_size;
-      all.logger.err_warn(
-          "--ring_size is deprecated and has been replaced with --example_queue_limit");
+      all.logger.err_warn("--ring_size is deprecated and has been replaced with --example_queue_limit");
       if (all.options->was_supplied("example_queue_limit"))
       {
         final_example_queue_limit = example_queue_limit;

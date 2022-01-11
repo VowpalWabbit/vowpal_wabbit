@@ -91,7 +91,8 @@ void train()
 {
   // initialize VW as usual, but use 'hook' as the search_task
   cerr << endl << endl << "##### train() #####" << endl << endl;
-  VW::workspace& vw_obj = *VW::initialize("--search 4 --quiet --search_task hook --example_queue_limit 1024 -f my_model");
+  VW::workspace& vw_obj =
+      *VW::initialize("--search 4 --quiet --search_task hook --example_queue_limit 1024 -f my_model");
   run(vw_obj);
   VW::finish(vw_obj, false);
 }
