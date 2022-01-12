@@ -136,9 +136,9 @@ def test_multilabel_prediction_type():
     del model
 
 
-def test_CBandits_label():
+def test_cbandits_label():
     model = vw(cb=4, quiet=True)
-    cbl = pyvw.CBandits_label(model.example("1:10:0.5 |"))
+    cbl = pyvw.cbandits_label(model.example("1:10:0.5 |"))
     assert cbl.costs[0].action == 1
     assert cbl.costs[0].probability == 0.5
     assert cbl.costs[0].partial_prediction == 0
@@ -146,9 +146,9 @@ def test_CBandits_label():
     assert str(cbl) == "1:10.0:0.5"
     del model
 
-def test_CBContinuous_label():
+def test_CBContinuousLabel():
     model = vw(cats=4, min_value=185, max_value=23959, bandwidth=3000, quiet=True)
-    cb_contl = pyvw.CBContinuous_label(model.example("ca 1:10:0.5 |"))
+    cb_contl = pyvw.CBContinuousLabel(model.example("ca 1:10:0.5 |"))
     assert cb_contl.costs[0].action == 1
     assert cb_contl.costs[0].pdf_value == 0.5
     assert cb_contl.costs[0].cost == 10.0

@@ -1134,7 +1134,7 @@ class cost_sensitive_label(abstract_label):
         return " ".join(["{}:{}".format(c.label, c.cost) for c in self.costs])
 
 
-class cb_class:
+class CBLabelElement:
     def __init__(
         self, action=None, cost=0.0, partial_prediction=0.0, probability=0.0, **kwargs
     ):
@@ -1151,10 +1151,10 @@ class cb_class:
         self.probability = probability
 
 
-class CBandits_label(abstract_label):
+class cbandits_label(abstract_label):
     """Class for contextual bandits VW label"""
 
-    def __init__(self, costs: List[cb_class] = [], prediction: float = 0.0):
+    def __init__(self, costs: List[CBLabelElement] = [], prediction: float = 0.0):
         abstract_label.__init__(self)
         if isinstance(costs, example):
             self.from_example(costs)
@@ -1162,11 +1162,11 @@ class CBandits_label(abstract_label):
             self.costs = costs
             self.prediction = prediction
 
-    def from_example(self, ex: List[cb_class]):
+    def from_example(self, ex: List[CBLabelElement]):
         self.prediction = ex.get_cbandits_prediction()
         self.costs = []
         for i in range(ex.get_cbandits_num_costs()):
-            cb = cb_class(
+            cb = CBLabelElement(
                 ex.get_cbandits_class(i),
                 ex.get_cbandits_cost(i),
                 ex.get_cbandits_partial_prediction(i),
@@ -1180,7 +1180,7 @@ class CBandits_label(abstract_label):
         )
 
 
-class continuous_label_elm:
+class ContinuousLabelElement:
     def __init__(
         self,
         action=None,
@@ -1192,20 +1192,20 @@ class continuous_label_elm:
         self.pdf_value = pdf_value
 
 
-class CBContinuous_label(abstract_label):
+class CBContinuousLabel(abstract_label):
     """Class for cb_continuous VW label"""
 
-    def __init__(self, costs: List[continuous_label_elm] = []):
+    def __init__(self, costs: List[ContinuousLabelElement] = []):
         abstract_label.__init__(self)
         if isinstance(costs, example):
             self.from_example(costs)
         else:
             self.costs = costs
 
-    def from_example(self, ex: List[continuous_label_elm]):
+    def from_example(self, ex: List[ContinuousLabelElement]):
         self.costs = []
         for i in range(ex.get_cb_continuous_num_costs()):
-            elem = continuous_label_elm(
+            elem = ContinuousLabelElement(
                 ex.get_cb_continuous_class(i),
                 ex.get_cb_continuous_cost(i),
                 ex.get_cb_continuous_pdf_value(i),
