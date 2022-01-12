@@ -65,8 +65,7 @@ BOOST_AUTO_TEST_CASE(typed_option_collection_parsing)
 {
   std::vector<std::string> str_opt;
 
-  char command_line[] =
-      "exe --str_opt test_str another";
+  char command_line[] = "exe --str_opt test_str another";
   int argc;
   // Only the returned char* needs to be deleted as the individual pointers simply point into command_line.
   auto argv = convert_to_command_args(command_line, argc);
