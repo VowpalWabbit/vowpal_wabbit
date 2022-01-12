@@ -1106,7 +1106,7 @@ class MulticlassProbabilitiesLabel(AbstractLabel):
             self.prediction = prediction
 
     def from_example(self, ex: "example"):
-        self.prediction = get_prediction(ex, pylibvw.vw.pMULTICLASSPROBS)
+        self.prediction = get_prediction(ex, PredictionType.MULTICLASSPROBS)
 
     def __str__(self):
         s = []
