@@ -17,6 +17,7 @@
 #include "slates_label.h"
 #include "simple_label_parser.h"
 #include "shared_data.h"
+#include "multilabel.h"
 
 // see http://www.boost.org/doc/libs/1_56_0/doc/html/bbv2/installation.html
 #define BOOST_PYTHON_USE_GCC_SYMBOL_VISIBILITY 1
@@ -48,6 +49,8 @@ const size_t lMAX = 5;
 const size_t lCONDITIONAL_CONTEXTUAL_BANDIT = 6;
 const size_t lSLATES = 7;
 const size_t lCONTINUOUS = 8;
+const size_t lCONTEXTUAL_BANDIT_EVAL = 9;
+const size_t lMULTILABEL = 10;
 
 const size_t pSCALAR = 0;
 const size_t pSCALARS = 1;
@@ -375,6 +378,10 @@ label_parser* get_label_parser(VW::workspace* all, size_t labelType)
       return &VW::slates::slates_label_parser;
     case lCONTINUOUS:
       return &VW::cb_continuous::the_label_parser;
+    case lCONTEXTUAL_BANDIT_EVAL:
+      return &CB_EVAL::cb_eval;
+    case lMULTILABEL:
+      return &MULTILABEL::multilabel;
     default:
       THROW("get_label_parser called on invalid label type");
   }
