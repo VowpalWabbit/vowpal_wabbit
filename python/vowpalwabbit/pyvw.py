@@ -1136,7 +1136,12 @@ class cost_sensitive_label(abstract_label):
 
 class CBLabelElement:
     def __init__(
-        self, action: int = None, cost: int = 0.0, partial_prediction: float = 0.0, probability: float = 0.0, **kwargs
+        self,
+        action: int = None,
+        cost: int = 0.0,
+        partial_prediction: float = 0.0,
+        probability: float = 0.0,
+        **kwargs
     ):
         if kwargs.get("label", False):
             action = kwargs["label"]
@@ -1181,12 +1186,7 @@ class cbandits_label(abstract_label):
 
 
 class CBContinuousLabelElement:
-    def __init__(
-        self,
-        action: int = None,
-        cost: float = 0.0,
-        pdf_value: float = 0.0
-    ):
+    def __init__(self, action: int = None, cost: float = 0.0, pdf_value: float = 0.0):
         self.action = action
         self.cost = cost
         self.pdf_value = pdf_value
