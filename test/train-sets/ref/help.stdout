@@ -5,7 +5,7 @@ Driver Options:
                                              error, info, off, warn}
   --log_output arg (=compat, )               Specify the stream to output log messages to. In the 
                                              past VW's choice of stream for logging messages wasn't
-                                             consistent. Suppling compat will maintain that old 
+                                             consistent. Supplying compat will maintain that old 
                                              behavior. Compat is now deprecated so it is 
                                              recommended that stdout or stderr is chosen.. Choices:
                                              {compat, stderr, stdout}
@@ -22,7 +22,7 @@ Logging options Options:
                                              error, info, off, warn}
   --log_output arg (=compat, )               Specify the stream to output log messages to. In the 
                                              past VW's choice of stream for logging messages wasn't
-                                             consistent. Suppling compat will maintain that old 
+                                             consistent. Supplying compat will maintain that old 
                                              behavior. Compat is now deprecated so it is 
                                              recommended that stdout or stderr is chosen.. Choices:
                                              {compat, stderr, stdout}
