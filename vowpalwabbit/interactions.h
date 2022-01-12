@@ -172,9 +172,9 @@ std::vector<std::vector<T>> generate_namespace_combinations_with_repetition(
   if ((namespaces.size() + num_to_pick) <= 21)
   {
     auto num_combinations = VW::math::number_of_combinations_with_repetition(
-        static_cast<int64_t>(namespaces.size()), static_cast<int64_t>(num_to_pick));
+        static_cast<uint64_t>(namespaces.size()), static_cast<uint64_t>(num_to_pick));
     // If this is too large for size_t thats fine we just wont reserve.
-    if (num_combinations < std::numeric_limits<size_t>::max())
+    if (static_cast<uint64_t>(num_combinations) < static_cast<uint64_t>(std::numeric_limits<size_t>::max()))
     { result.reserve(static_cast<size_t>(num_combinations)); }
   }
 
