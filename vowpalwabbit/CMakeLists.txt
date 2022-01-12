@@ -533,9 +533,9 @@ endif()
 # This is used by Travis to not build vw_c_wrapper, this required <codecvt> which became available in GCC 5.1
 if(NOT DEFINED DO_NOT_BUILD_VW_C_WRAPPER)
   if(STATIC_LINK_VW)
-    add_library(vw_c_wrapper vwdll.cpp)
+    add_library(vw_c_wrapper vwdll.cc)
   else()
-    add_library(vw_c_wrapper SHARED vwdll.cpp)
+    add_library(vw_c_wrapper SHARED vwdll.cc)
   endif()
 
   add_library(VowpalWabbit::vw_c_wrapper ALIAS vw_c_wrapper)
