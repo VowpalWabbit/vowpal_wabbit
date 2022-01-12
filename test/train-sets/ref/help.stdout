@@ -107,8 +107,6 @@ Feature Options:
                                              of namespaces. For ex. this is a duplicate: '-q ab -q 
                                              ba' and a lot more in '-q ::'.
   -q [ --quadratic ] arg                     Create and use quadratic features
-  --q: arg                                   DEPRECATED ':' corresponds to a wildcard for all 
-                                             printable characters
   --cubic arg                                Create and use cubic features
 Example Options:
   -t [ --testonly ]                          Ignore label information and just test
