@@ -768,35 +768,18 @@ VW::LEARNER::base_learner* automl_setup(VW::setup_base_i& stack_builder)
     // fetch cb_explore_adf to call directly into the print routine twice
     data->adf_learner = as_multiline(base_learner->get_learner_by_name_prefix("cb_explore_adf_"));
     auto ppw = max_live_configs;
-
-    if (verbose_metrics)
-    {
-      auto* l = make_reduction_learner(std::move(data), as_multiline(base_learner),
-          learn_automl<interaction_config_manager, true>, predict_automl<interaction_config_manager, true>,
-          stack_builder.get_setupfn_name(automl_setup))
-                    .set_params_per_weight(ppw)  // refactor pm
-                    .set_finish_example(finish_example<interaction_config_manager>)
-                    .set_save_load(save_load_aml<interaction_config_manager>)
-                    .set_persist_metrics(persist<interaction_config_manager, true>)
-                    .set_output_prediction_type(base_learner->get_output_prediction_type())
-                    .set_learn_returns_prediction(true)
-                    .build();
-      return make_base(*l);
-    }
-    else
-    {
-      auto* l = make_reduction_learner(std::move(data), as_multiline(base_learner),
-          learn_automl<interaction_config_manager, true>, predict_automl<interaction_config_manager, true>,
-          stack_builder.get_setupfn_name(automl_setup))
-                    .set_params_per_weight(ppw)  // refactor pm
-                    .set_finish_example(finish_example<interaction_config_manager>)
-                    .set_save_load(save_load_aml<interaction_config_manager>)
-                    .set_persist_metrics(persist<interaction_config_manager, false>)
-                    .set_output_prediction_type(base_learner->get_output_prediction_type())
-                    .set_learn_returns_prediction(true)
-                    .build();
-      return make_base(*l);
-    }
+    auto* persist_ptr = verbose_metrics ? persist<interaction_config_manager, true> : persist<interaction_config_manager, false>;
+    auto* l = make_reduction_learner(std::move(data), as_multiline(base_learner),
+        learn_automl<interaction_config_manager, true>, predict_automl<interaction_config_manager, true>,
+        stack_builder.get_setupfn_name(automl_setup))
+                  .set_params_per_weight(ppw)  // refactor pm
+                  .set_finish_example(finish_example<interaction_config_manager>)
+                  .set_save_load(save_load_aml<interaction_config_manager>)
+                  .set_persist_metrics(persist_ptr)
+                  .set_output_prediction_type(base_learner->get_output_prediction_type())
+                  .set_learn_returns_prediction(true)
+                  .build();
+    return make_base(*l);
   }
   else
   {
