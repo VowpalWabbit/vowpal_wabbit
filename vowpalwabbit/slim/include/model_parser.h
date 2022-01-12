@@ -123,7 +123,7 @@ public:
   template <typename W>
   int read_weights(std::unique_ptr<W>& weights, uint32_t num_bits, uint32_t stride_shift)
   {
-    size_t weight_length = static_cast <size_t>(1 << num_bits);
+    size_t weight_length = static_cast<size_t>(1 << num_bits);
 
     weights = std::unique_ptr<W>(new W(weight_length));
     weights->stride_shift(stride_shift);

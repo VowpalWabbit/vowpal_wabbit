@@ -277,10 +277,7 @@ public:
 
     RETURN_ON_FAIL(mp.read("num_bits", _num_bits));
     // Cannot use more than 32 bits on a 32 bit architecture
-    if (sizeof(size_t) == 4 && _num_bits > 32)
-    {
-      return E_VW_PREDICT_ERR_INVALID_MODEL;
-    }
+    if (sizeof(size_t) == 4 && _num_bits > 32) { return E_VW_PREDICT_ERR_INVALID_MODEL; }
 
     RETURN_ON_FAIL(mp.skip(sizeof(uint32_t)));  // "lda"
 

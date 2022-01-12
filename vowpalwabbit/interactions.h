@@ -175,9 +175,7 @@ std::vector<std::vector<T>> generate_namespace_combinations_with_repetition(
         static_cast<int64_t>(namespaces.size()), static_cast<int64_t>(num_to_pick));
     // If this is too large for size_t thats fine we just wont reserve.
     if (num_combinations < std::numeric_limits<size_t>::max())
-    {
-      result.reserve(static_cast<size_t>(num_combinations));
-    }
+    { result.reserve(static_cast<size_t>(num_combinations)); }
   }
 
   auto last_index = namespaces.size() - 1;
