@@ -170,7 +170,15 @@ std::vector<std::vector<T>> generate_namespace_combinations_with_repetition(
   // This computation involves factorials and so can only be done with relatively small inputs.
   // Factorial 22 would result in 64 bit overflow.
   if ((namespaces.size() + num_to_pick) <= 21)
-  { result.reserve(VW::math::number_of_combinations_with_repetition(namespaces.size(), num_to_pick)); }
+  {
+    auto num_combinations = VW::math::number_of_combinations_with_repetition(
+        static_cast<int64_t>(namespaces.size()), static_cast<int64_t>(num_to_pick));
+    // If this is too large for size_t thats fine we just wont reserve.
+    if (num_combinations < std::numeric_limits<size_t>::max())
+    {
+      result.reserve(static_cast<size_t>(num_combinations));
+    }
+  }
 
   auto last_index = namespaces.size() - 1;
   // last index is used to signal when done

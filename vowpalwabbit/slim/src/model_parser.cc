@@ -1,5 +1,7 @@
 #include "model_parser.h"
 
+#include <vw_exception.h>
+
 namespace vw_slim
 {
 model_parser::model_parser(const char* model, size_t length)
@@ -17,7 +19,11 @@ const char* model_parser::position() { return _model; }
 uint32_t model_parser::checksum() { return _checksum; }
 
 int model_parser::read(const char* field_name, size_t field_length, const char** ret)
-{  // check if we're inside the buffer
+{
+  // Only used in debug mode
+  _UNUSED(field_name);
+
+  // check if we're inside the buffer
   const char* new_model = _model + field_length;
   if (new_model > _model_end) return E_VW_PREDICT_ERR_INVALID_MODEL;
 

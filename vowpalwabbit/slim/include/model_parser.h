@@ -109,7 +109,7 @@ public:
       RETURN_ON_FAIL((read<T, false>("gd.weight.index", idx)));
       if (idx > weight_length) return E_VW_PREDICT_ERR_WEIGHT_INDEX_OUT_OF_RANGE;
 
-      float& w = (*weights)[idx];
+      float& w = (*weights)[static_cast<size_t>(idx)];
       RETURN_ON_FAIL((read<float, false>("gd.weight.value", w)));
 
 #ifdef MODEL_PARSER_DEBUG
@@ -123,7 +123,7 @@ public:
   template <typename W>
   int read_weights(std::unique_ptr<W>& weights, uint32_t num_bits, uint32_t stride_shift)
   {
-    uint64_t weight_length = (uint64_t)1 << num_bits;
+    size_t weight_length = static_cast <size_t>(1 << num_bits);
 
     weights = std::unique_ptr<W>(new W(weight_length));
     weights->stride_shift(stride_shift);
@@ -131,6 +131,9 @@ public:
     if (num_bits < 31) { RETURN_ON_FAIL((read_weights<uint32_t, W>(weights, weight_length))); }
     else
     {
+      // Can't load a 64 bit model on 32 bit arch.
+      if (sizeof(size_t) == 4) { return E_VW_PREDICT_ERR_INVALID_MODEL; }
+
       RETURN_ON_FAIL((read_weights<uint64_t, W>(weights, weight_length)));
     }
 
