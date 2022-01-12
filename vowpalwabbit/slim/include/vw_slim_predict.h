@@ -17,159 +17,6 @@
 
 namespace vw_slim
 {
-namespace internal
-{
-template <typename It1, typename It2>
-class location_reference;
-
-template <typename It1, typename It2>
-class location_value
-{
-public:
-  using Val1 = typename std::iterator_traits<It1>::value_type;
-  using Val2 = typename std::iterator_traits<It2>::value_type;
-
-  Val1 _val1;
-  Val2 _val2;
-
-  location_value(const location_reference<It1, It2>& rhs) : _val1(*rhs._ptr1), _val2(*rhs._ptr2) {}
-};
-
-template <typename It1, typename It2>
-class location_reference
-{
-public:
-  It1 _ptr1;
-  It2 _ptr2;
-  using Ref = location_reference<It1, It2>;
-  using Val = location_value<It1, It2>;
-
-  location_reference() = delete;
-
-  location_reference(const Ref& other) : _ptr1(other._ptr1), _ptr2(other._ptr2) {}
-
-  location_reference(It1 first, It2 second) : _ptr1(first), _ptr2(second) {}
-
-  location_reference& operator=(const Val& rhs)
-  {
-    *_ptr1 = rhs._val1;
-    *_ptr2 = rhs._val2;
-    return *this;
-  }
-
-  location_reference& operator=(const Ref& rhs)
-  {
-    *_ptr1 = *rhs._ptr1;
-    *_ptr2 = *rhs._ptr2;
-    return *this;
-  }
-
-  friend void swap(const location_reference& a, const location_reference& b)
-  {
-    std::iter_swap(a._ptr1, b._ptr1);
-    std::iter_swap(a._ptr2, b._ptr2);
-  }
-};
-
-template <typename It1, typename It2>
-class collection_pair_iterator
-{
-  It1 _ptr1;
-  It2 _ptr2;
-
-public:
-  using Iter = collection_pair_iterator<It1, It2>;
-  using Loc = location_value<It1, It2>;
-  using Ref = location_reference<It1, It2>;
-
-  using iterator_category = std::random_access_iterator_tag;
-  using value_type = location_value<It1, It2>;
-  using difference_type = size_t;
-  using pointer = value_type*;
-  using reference = location_reference<It1, It2>;
-
-  collection_pair_iterator(It1 first, It2 second) : _ptr1(first), _ptr2(second) {}
-
-  // must support: a) default-construction, b) copy-construction, c) copy-assignment, d) destruction
-  collection_pair_iterator() = default;
-  collection_pair_iterator(const collection_pair_iterator& rhs) = default;
-  collection_pair_iterator& operator=(const collection_pair_iterator& rhs) = default;
-
-  // must support: a == b; a != b;
-  bool operator==(const Iter& rhs) const { return (_ptr1 == rhs._ptr1 && _ptr2 == rhs._ptr2); }
-  bool operator!=(const Iter& rhs) const { return !(operator==(rhs)); }
-
-  // must support: b = *a; a->m ;
-  // must support: *a = t;
-  Ref operator*() { return Ref(_ptr1, _ptr2); }  // Non-conforming - normally returns loc&
-
-  // VS library 14.25.28610 requires operator[] (since it's a random access iterator)
-  Ref operator[](size_t n) { return Ref(_ptr1 + n, _ptr2 + n); }
-
-  // must support: ++a; a++; *a++;
-  Iter& operator++()
-  {
-    ++_ptr1;
-    ++_ptr2;
-    return *this;
-  }
-
-  Iter operator++(int)
-  {
-    Iter ret(*this);
-    ++_ptr1;
-    ++_ptr2;
-    return ret;
-  }
-
-  // must support: --a; a--; *a--;
-  Iter& operator--()
-  {
-    --_ptr1;
-    --_ptr2;
-    return *this;
-  }
-
-  Iter operator--(int)
-  {
-    Iter ret(*this);
-    --_ptr1;
-    --_ptr2;
-    return ret;
-  }
-
-  // must support: a + n; n + a; a - n; a - b
-  Iter operator+(const size_t n) const { return Iter(_ptr1 + n, _ptr2 + n); }
-  // friend Iter operator+(const size_t, const Iter&);
-  Iter operator-(const size_t n) const { return Iter(_ptr1 - n, _ptr2 - n); }
-  size_t operator-(const Iter& rhs) const { return _ptr1 - rhs._ptr1; }
-
-  // must support: a > b; a < b; a <= b; a >= b;
-  bool operator<(const Iter& rhs) const { return _ptr1 < rhs._ptr1; }
-  bool operator>(const Iter& rhs) const { return _ptr1 > rhs._ptr1; }
-  bool operator<=(const Iter& rhs) const { return _ptr1 <= rhs._ptr1; }
-  bool operator>=(const Iter& rhs) const { return _ptr1 >= rhs._ptr1; }
-
-  // must support: a += n; a -= n;
-  Iter& operator+=(size_t n)
-  {
-    _ptr1 += n;
-    _ptr2 += n;
-    return *this;
-  }
-
-  Iter& operator-=(size_t n)
-  {
-    _ptr1 -= n;
-    _ptr2 -= n;
-    return *this;
-  }
-};
-}  // namespace internal
-}  // namespace vw_slim
-
-namespace vw_slim
-{
 /**
  * @brief Exploration algorithm specified by the model.
  */
@@ -590,30 +437,30 @@ public:
 
     assert(pdf_first <= pdf_last);
     const size_t size = std::distance(pdf_first, pdf_last);
-    using zipped_tuple_t = std::tuple<typename PdfIt::value_type, typename InputScoreIt::value_type, typename OutputIt::value_type>;
+    using zipped_tuple_t =
+        std::tuple<typename PdfIt::value_type, typename InputScoreIt::value_type, typename OutputIt::value_type>;
     std::vector<zipped_tuple_t> zipped_values;
     zipped_values.reserve(size);
     auto pdf_it = pdf_first;
     auto scores_it = scores_first;
     auto ranking_it = ranking_begin;
-    for (size_t i = 0; i < size; i++) {
+    for (size_t i = 0; i < size; i++)
+    {
       zipped_values.emplace_back(*pdf_it, *scores_it, *ranking_it);
       ++pdf_it;
       ++scores_it;
       ++ranking_it;
     }
 
-     std::sort(zipped_values.begin(), zipped_values.end(),
-        [](const zipped_tuple_t& l, const zipped_tuple_t& r)
-        {
-          return std::get<1>(l) < std::get<1>(r);
-        });
+    std::sort(zipped_values.begin(), zipped_values.end(),
+        [](const zipped_tuple_t& l, const zipped_tuple_t& r) { return std::get<1>(l) < std::get<1>(r); });
 
     for (const auto& zipped_value : zipped_values)
-     {
-       *pdf_first = std::get<0>(zipped_value);
-       *scores_first = std::get<1>(zipped_value);
-       *ranking_begin = std::get<2>(zipped_value);
+    {
+      *pdf_first = std::get<0>(zipped_value);
+      *ranking_begin = std::get<2>(zipped_value);
+      pdf_first++;
+      ranking_begin++;
     }
 
     return S_EXPLORATION_OK;
