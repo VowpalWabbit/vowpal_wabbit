@@ -1015,24 +1015,30 @@ class example_namespace:
         self.ex.push_features(self.ns, featureList)
 
 
-class abstract_label:
+class AbstractLabel:
     """An abstract class for a VW label."""
 
     def __init__(self):
         pass
 
-    def from_example(self, ex):
+    def from_example(self, ex: pylibvw.example):
         """grab a label from a given VW example"""
         raise Exception("from_example not yet implemented")
 
 
-class simple_label(abstract_label):
+class SimpleLabel(AbstractLabel):
     """Class for simple VW label"""
 
-    def __init__(self, label=0.0, weight=1.0, initial=0.0, prediction=0.0):
+    def __init__(
+        self,
+        label: Union[pylibvw.example, float] = 0.0,
+        weight: float = 1.0,
+        initial: float = 0.0,
+        prediction: float = 0.0,
+    ):
         if not isinstance(label, (example, float)):
             raise TypeError("Label should be float or an example.")
-        abstract_label.__init__(self)
+        AbstractLabel.__init__(self)
         if isinstance(label, example):
             self.from_example(label)
         else:
@@ -1041,7 +1047,7 @@ class simple_label(abstract_label):
             self.initial = initial
             self.prediction = prediction
 
-    def from_example(self, ex):
+    def from_example(self, ex: pylibvw.example):
         self.label = ex.get_simplelabel_label()
         self.weight = ex.get_simplelabel_weight()
         self.initial = ex.get_simplelabel_initial()
@@ -1054,13 +1060,18 @@ class simple_label(abstract_label):
         return s
 
 
-class multiclass_label(abstract_label):
+class MulticlassLabel(AbstractLabel):
     """Class for multiclass VW label with prediction"""
 
-    def __init__(self, label=1, weight=1.0, prediction=1):
+    def __init__(
+        self,
+        label: Union[pylibvw.example, int] = 1,
+        weight: float = 1.0,
+        prediction: int = 1,
+    ):
         if not isinstance(label, (example, int)):
             raise TypeError("Label should be integer or an example.")
-        abstract_label.__init__(self)
+        AbstractLabel.__init__(self)
         if isinstance(label, example):
             self.from_example(label)
         else:
@@ -1068,7 +1079,7 @@ class multiclass_label(abstract_label):
             self.weight = weight
             self.prediction = prediction
 
-    def from_example(self, ex):
+    def from_example(self, ex: pylibvw.example):
         self.label = ex.get_multiclass_label()
         self.weight = ex.get_multiclass_weight()
         self.prediction = ex.get_multiclass_prediction()
@@ -1080,18 +1091,22 @@ class multiclass_label(abstract_label):
         return s
 
 
-class multiclass_probabilities_label(abstract_label):
+class MulticlassProbabilitiesLabel(AbstractLabel):
     """Class for multiclass VW label with probabilities"""
 
-    def __init__(self, label, prediction=None):
-        abstract_label.__init__(self)
+    def __init__(
+        self,
+        label: Optional[pylibvw.example] = None,
+        prediction: Optional[float] = None,
+    ):
+        AbstractLabel.__init__(self)
         if isinstance(label, example):
             self.from_example(label)
         else:
             self.prediction = prediction
 
-    def from_example(self, ex):
-        self.prediction = get_prediction(ex, PredictionType.MULTICLASSPROBS)
+    def from_example(self, ex: pylibvw.example):
+        self.prediction = get_prediction(ex, pylibvw.vw.pMULTICLASSPROBS)
 
     def __str__(self):
         s = []
@@ -1100,45 +1115,56 @@ class multiclass_probabilities_label(abstract_label):
         return " ".join(s)
 
 
-class cost_sensitive_label(abstract_label):
+class CostSensitiveElement:
+    def __init__(
+        self,
+        label: int,
+        cost: float = 0.0,
+        partial_prediction: float = 0.0,
+        wap_value: float = 0.0,
+    ):
+        self.label = label
+        self.cost = cost
+        self.partial_prediction = partial_prediction
+        self.wap_value = wap_value
+
+
+class CostSensitiveLabel(AbstractLabel):
     """Class for cost sensative VW label"""
 
-    def __init__(self, costs=[], prediction=0):
-        abstract_label.__init__(self)
+    def __init__(
+        self,
+        costs: Union[pylibvw.example, List[CostSensitiveElement]] = [],
+        prediction: float = 0,
+    ):
+        AbstractLabel.__init__(self)
         if isinstance(costs, example):
             self.from_example(costs)
         else:
             self.costs = costs
             self.prediction = prediction
 
-    def from_example(self, ex):
-        class wclass:
-            def __init__(self, label, cost=0.0, partial_prediction=0.0, wap_value=0.0):
-                self.label = label
-                self.cost = cost
-                self.partial_prediction = partial_prediction
-                self.wap_value = wap_value
-
+    def from_example(self, ex: pylibvw.example):
         self.prediction = ex.get_costsensitive_prediction()
         self.costs = []
         for i in range(ex.get_costsensitive_num_costs()):
-            wc = wclass(
+            cs = CostSensitiveElement(
                 ex.get_costsensitive_class(i),
                 ex.get_costsensitive_cost(i),
                 ex.get_costsensitive_partial_prediction(i),
                 ex.get_costsensitive_wap_value(i),
             )
-            self.costs.append(wc)
+            self.costs.append(cs)
 
     def __str__(self):
         return " ".join(["{}:{}".format(c.label, c.cost) for c in self.costs])
 
 
-class cbandits_label(abstract_label):
+class CBLabel(AbstractLabel):
     """Class for contextual bandits VW label"""
 
     def __init__(self, costs=[], prediction=0):
-        abstract_label.__init__(self)
+        AbstractLabel.__init__(self)
         if isinstance(costs, example):
             self.from_example(costs)
         else:
@@ -1597,8 +1623,8 @@ class example(pylibvw.example):
                 v = self.feature_weight(ns, i)
                 yield f, v
 
-    def get_label(self, label_class=simple_label):
-        """Given a known label class (default is simple_label), get
+    def get_label(self, label_class=SimpleLabel):
+        """Given a known label class (default is Simplelabel), get
         the corresponding label structure for this example.
 
         Parameters
@@ -1606,6 +1632,63 @@ class example(pylibvw.example):
 
         label_class : label classes
             Get the label of the example of label_class type, by default is
-            simple_label
+            Simplelabel
         """
         return label_class(self)
+
+
+############################ DEPREECATED CLASSES ############################
+
+
+class abstract_label(AbstractLabel):
+    def __init__(self):
+        AbstractLabel.__init__(self)
+        warnings.warn(
+            "abstract_label has been deprecated. Please use 'AbstractLabel' instead.",
+            DeprecationWarning,
+        )
+
+
+class simple_label(SimpleLabel):
+    def __init__(self):
+        SimpleLabel.__init__(self)
+        warnings.warn(
+            "simple_label has been deprecated. Please use 'SimpleLabel' instead.",
+            DeprecationWarning,
+        )
+
+
+class multiclass_label(MulticlassLabel):
+    def __init__(self):
+        MulticlassLabel.__init__(self)
+        warnings.warn(
+            "multiclass_label has been deprecated. Please use 'MulticlassLabel' instead.",
+            DeprecationWarning,
+        )
+
+
+class multiclass_probabilities_label(MulticlassProbabilitiesLabel):
+    def __init__(self):
+        MulticlassProbabilitiesLabel.__init__(self)
+        warnings.warn(
+            "multiclass_probabilities_label has been deprecated. Please use 'MulticlassProbabilitiesLabel' instead.",
+            DeprecationWarning,
+        )
+
+
+class cost_sensitive_label(CostSensitiveLabel):
+    def __init__(self):
+        CostSensitiveLabel.__init__(self)
+        warnings.warn(
+            "cost_sensitive_label has been deprecated. Please use 'CostSensitiveLabel' instead.",
+            DeprecationWarning,
+        )
+
+
+class cbandits_label(CBLabel):
+    def __init__(self):
+        CBLabel.__init__(self)
+        warnings.warn(
+            "cbandits_label has been deprecated. Please use 'CBLabel' instead.",
+            DeprecationWarning,
+        )
