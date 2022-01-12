@@ -85,8 +85,8 @@ public:
   using iterator_category = std::random_access_iterator_tag;
   using value_type = location_value<It1, It2>;
   using difference_type = size_t;
-  using pointer = location_reference<It1, It2> ;
-  using reference = location_value<It1, It2>&;
+  using pointer = value_type*;
+  using reference = location_reference<It1, It2>;
 
   collection_pair_iterator(It1 first, It2 second) : _ptr1(first), _ptr2(second) {}
 
@@ -585,16 +585,36 @@ public:
     // Initialize ranking with actions 0,1,2,3 ...
     std::iota(ranking_begin, ranking_last, 0);
 
-    // Pdf starts out in the same order as ranking.  Ranking and pdf should been sorted
-    // in the order specified by scores.
-    using CP = internal::collection_pair_iterator<OutputIt, PdfIt>;
-    using Iter = typename CP::Iter;
-    using Loc = typename CP::Loc;
-    const Iter begin_coll(ranking_begin, pdf_first);
-    const Iter end_coll(ranking_last, pdf_last);
-    std::sort(begin_coll, end_coll, [&scores_first](const Loc& l, const Loc& r) {
-      return scores_first[size_t(l._val1)] < scores_first[size_t(r._val1)];
-    });
+    assert(std::distance(pdf_first, pdf_last) == std::distance(scores_first, scores_last));
+    assert(std::distance(pdf_first, pdf_last) == std::distance(ranking_begin, ranking_last));
+
+    assert(pdf_first <= pdf_last);
+    const size_t size = std::distance(pdf_first, pdf_last);
+    using zipped_tuple_t = std::tuple<typename PdfIt::value_type, typename InputScoreIt::value_type, typename OutputIt::value_type>;
+    std::vector<zipped_tuple_t> zipped_values;
+    zipped_values.reserve(size);
+    auto pdf_it = pdf_first;
+    auto scores_it = scores_first;
+    auto ranking_it = ranking_begin;
+    for (size_t i = 0; i < size; i++) {
+      zipped_values.emplace_back(*pdf_it, *scores_it, *ranking_it);
+      ++pdf_it;
+      ++scores_it;
+      ++ranking_it;
+    }
+
+     std::sort(zipped_values.begin(), zipped_values.end(),
+        [](const zipped_tuple_t& l, const zipped_tuple_t& r)
+        {
+          return std::get<1>(l) < std::get<1>(r);
+        });
+
+    for (const auto& zipped_value : zipped_values)
+     {
+       *pdf_first = std::get<0>(zipped_value);
+       *scores_first = std::get<1>(zipped_value);
+       *ranking_begin = std::get<2>(zipped_value);
+    }
 
     return S_EXPLORATION_OK;
   }
