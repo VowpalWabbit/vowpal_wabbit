@@ -111,36 +111,11 @@ std::string exclusions_to_string(const std::map<namespace_index, std::set<namesp
 }
 }  // namespace details
 
-void scored_config::update(float w, float r)
+void aml_score::persist(metric_sink& metrics, const std::string& suffix, bool verbose)
 {
-  update_count++;
-  chisq.update(w, r);
-  ips += r * w;
-  last_w = w;
-  last_r = r;
-}
-
-void scored_config::persist(metric_sink& metrics, const std::string& suffix, bool verbose)
-{
-  metrics.set_uint("upcnt" + suffix, update_count);
-  metrics.set_float("ips" + suffix, current_ips());
-  distributionally_robust::ScoredDual sd = chisq.recompute_duals();
-  metrics.set_float("bound" + suffix, static_cast<float>(sd.first));
-  metrics.set_float("w" + suffix, last_w);
-  metrics.set_float("r" + suffix, last_r);
+  VW::scored_config::persist(metrics, suffix);
   metrics.set_uint("conf_idx" + suffix, config_index);
   if (verbose) { metrics.set_string("interactions" + suffix, details::interaction_vec_t_to_string(live_interactions)); }
-}
-
-float scored_config::current_ips() const { return (update_count > 0) ? ips / update_count : 0; }
-
-void scored_config::reset_stats()
-{
-  chisq.reset(0.05, 0.999);
-  ips = 0.0;
-  last_w = 0.0;
-  last_r = 0.0;
-  update_count = 0;
 }
 
 template <typename CMType>
@@ -185,7 +160,7 @@ interaction_config_manager::interaction_config_manager(uint64_t global_lease, ui
 {
   configs[0] = exclusion_config(global_lease);
   configs[0].state = VW::automl::config_state::Live;
-  scores.push_back(scored_config());
+  scores.push_back(aml_score());
   ++valid_config_size;
 }
 
@@ -383,7 +358,7 @@ void interaction_config_manager::schedule()
       // Allocate new score if we haven't reached maximum yet
       if (need_new_score)
       {
-        scores.push_back(scored_config());
+        scores.push_back(aml_score());
         if (live_slot > priority_challengers) { scores.back().eligible_to_inactivate = true; }
       }
       // Only inactivate current config if lease is reached
@@ -510,7 +485,7 @@ void interaction_config_manager::update_champ()
         std::swap(zero_ind, new_champ);
         scores[current_champ].config_index = 0;
       }
-      scored_config champ_score = std::move(scores[current_champ]);
+      aml_score champ_score = std::move(scores[current_champ]);
       scores.clear();
       scores.push_back(std::move(champ_score));
       current_champ = 0;
@@ -566,6 +541,9 @@ void predict_automl(automl<CMType>& data, multi_learner& base, multi_ex& ec)
 template <typename CMType>
 void automl<CMType>::offset_learn(multi_learner& base, multi_ex& ec, CB::cb_class& logged, uint64_t labelled_action)
 {
+  const float w = logged.probability > 0 ? 1 / logged.probability : 0;
+  const float r = -logged.cost;
+
   for (uint64_t live_slot = 0; live_slot < cm->scores.size(); ++live_slot)
   {
     for (example* ex : ec) { cm->apply_config(ex, live_slot); }
@@ -575,21 +553,8 @@ void automl<CMType>::offset_learn(multi_learner& base, multi_ex& ec, CB::cb_clas
     });
 
     if (!base.learn_returns_prediction) { base.predict(ec, live_slot); }
-
     base.learn(ec, live_slot);
-
-    const auto& action_scores = ec[0]->pred.a_s;
-    // cb_adf => first action is a greedy action
-    const auto maxit = action_scores.begin();
-    const uint32_t chosen_action = maxit->action;
-
-    // extra asserts
-    assert(chosen_action < ec.size());
-    assert(labelled_action < ec.size());
-
-    const float w = logged.probability > 0 ? 1 / logged.probability : 0;
-    const float r = -logged.cost;
-
+    const uint32_t chosen_action = ec[0]->pred.a_s[0].action;
     cm->scores[live_slot].update(chosen_action == labelled_action ? w : 0, r);
 
     // cache the champ
@@ -831,29 +796,21 @@ size_t write_model_field(
   return bytes;
 }
 
-size_t read_model_field(io_buf& io, VW::automl::scored_config& sc)
+size_t read_model_field(io_buf& io, VW::automl::aml_score& amls)
 {
   size_t bytes = 0;
-  bytes += read_model_field(io, sc.ips);
-  bytes += read_model_field(io, sc.update_count);
-  bytes += read_model_field(io, sc.last_w);
-  bytes += read_model_field(io, sc.last_r);
-  bytes += read_model_field(io, sc.config_index);
-  bytes += read_model_field(io, sc.eligible_to_inactivate);
-  bytes += read_model_field(io, sc.chisq);
+  bytes += read_model_field(io, reinterpret_cast<VW::scored_config&>(amls));
+  bytes += read_model_field(io, amls.config_index);
+  bytes += read_model_field(io, amls.eligible_to_inactivate);
   return bytes;
 }
 
-size_t write_model_field(io_buf& io, const VW::automl::scored_config& sc, const std::string& upstream_name, bool text)
+size_t write_model_field(io_buf& io, const VW::automl::aml_score& amls, const std::string& upstream_name, bool text)
 {
   size_t bytes = 0;
-  bytes += write_model_field(io, sc.ips, upstream_name + "_ips", text);
-  bytes += write_model_field(io, sc.update_count, upstream_name + "_count", text);
-  bytes += write_model_field(io, sc.last_w, upstream_name + "_lastw", text);
-  bytes += write_model_field(io, sc.last_r, upstream_name + "_lastr", text);
-  bytes += write_model_field(io, sc.config_index, upstream_name + "_index", text);
-  bytes += write_model_field(io, sc.eligible_to_inactivate, upstream_name + "_eligible_to_inactivate", text);
-  bytes += write_model_field(io, sc.chisq, upstream_name + "_chisq", text);
+  bytes += write_model_field(io, reinterpret_cast<const VW::scored_config&>(amls), upstream_name, text);
+  bytes += write_model_field(io, amls.config_index, upstream_name + "_index", text);
+  bytes += write_model_field(io, amls.eligible_to_inactivate, upstream_name + "_eligible_to_inactivate", text);
   return bytes;
 }
 
