@@ -5,7 +5,6 @@ import distutils.dir_util
 import os
 import platform
 import sys
-import subprocess
 from codecs import open
 from distutils.command.clean import clean as _clean
 from distutils.sysconfig import get_python_inc
@@ -196,15 +195,6 @@ with open(os.path.join(pkg_path, 'README.rst'), encoding='utf-8') as f:
 config_path = os.path.join(here, 'version.txt')
 with open(config_path, encoding='utf-8') as f:
     version = f.readline().strip()
-
-try:
-    current_git_hash = subprocess.check_output(['git', 'rev-parse', '--short', 'HEAD']).decode('ascii').strip()
-    if current_git_hash:
-        version = version + "+" + current_git_hash
-except FileNotFoundError as e:
-    pass
-except subprocess.CalledProcessError as e:
-    pass
 
 setup(
     name='vowpalwabbit',
