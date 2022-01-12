@@ -1021,7 +1021,7 @@ class AbstractLabel:
     def __init__(self):
         pass
 
-    def from_example(self, ex: pylibvw.example):
+    def from_example(self, ex: "example"):
         """grab a label from a given VW example"""
         raise Exception("from_example not yet implemented")
 
@@ -1031,7 +1031,7 @@ class SimpleLabel(AbstractLabel):
 
     def __init__(
         self,
-        label: Union[pylibvw.example, float] = 0.0,
+        label: Union["example", float] = 0.0,
         weight: float = 1.0,
         initial: float = 0.0,
         prediction: float = 0.0,
@@ -1047,7 +1047,7 @@ class SimpleLabel(AbstractLabel):
             self.initial = initial
             self.prediction = prediction
 
-    def from_example(self, ex: pylibvw.example):
+    def from_example(self, ex: "example"):
         self.label = ex.get_simplelabel_label()
         self.weight = ex.get_simplelabel_weight()
         self.initial = ex.get_simplelabel_initial()
@@ -1065,7 +1065,7 @@ class MulticlassLabel(AbstractLabel):
 
     def __init__(
         self,
-        label: Union[pylibvw.example, int] = 1,
+        label: Union["example", int] = 1,
         weight: float = 1.0,
         prediction: int = 1,
     ):
@@ -1079,7 +1079,7 @@ class MulticlassLabel(AbstractLabel):
             self.weight = weight
             self.prediction = prediction
 
-    def from_example(self, ex: pylibvw.example):
+    def from_example(self, ex: "example"):
         self.label = ex.get_multiclass_label()
         self.weight = ex.get_multiclass_weight()
         self.prediction = ex.get_multiclass_prediction()
@@ -1096,7 +1096,7 @@ class MulticlassProbabilitiesLabel(AbstractLabel):
 
     def __init__(
         self,
-        label: Optional[pylibvw.example] = None,
+        label: Optional["example"] = None,
         prediction: Optional[float] = None,
     ):
         AbstractLabel.__init__(self)
@@ -1105,7 +1105,7 @@ class MulticlassProbabilitiesLabel(AbstractLabel):
         else:
             self.prediction = prediction
 
-    def from_example(self, ex: pylibvw.example):
+    def from_example(self, ex: "example"):
         self.prediction = get_prediction(ex, pylibvw.vw.pMULTICLASSPROBS)
 
     def __str__(self):
@@ -1134,7 +1134,7 @@ class CostSensitiveLabel(AbstractLabel):
 
     def __init__(
         self,
-        costs: Union[pylibvw.example, List[CostSensitiveElement]] = [],
+        costs: Union["example", List[CostSensitiveElement]] = [],
         prediction: float = 0,
     ):
         AbstractLabel.__init__(self)
@@ -1144,7 +1144,7 @@ class CostSensitiveLabel(AbstractLabel):
             self.costs = costs
             self.prediction = prediction
 
-    def from_example(self, ex: pylibvw.example):
+    def from_example(self, ex: "example"):
         self.prediction = ex.get_costsensitive_prediction()
         self.costs = []
         for i in range(ex.get_costsensitive_num_costs()):
