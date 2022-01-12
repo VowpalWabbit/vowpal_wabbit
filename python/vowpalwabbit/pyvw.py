@@ -1183,6 +1183,41 @@ class cbandits_label(abstract_label):
             ["{}:{}:{}".format(c.action, c.cost, c.probability) for c in self.costs]
         )
 
+class cb_continuous_label(abstract_label):
+    """Class for cb_continuous VW label"""
+
+    def __init__(self, costs=[]):
+        abstract_label.__init__(self)
+        if isinstance(costs, example):
+            self.from_example(costs)
+        else:
+            self.costs = costs
+
+    def from_example(self, ex):
+        class wclass:
+            def __init__(
+                self,
+                action=None,
+                cost=0.0,
+                pdf_value=0.0,
+            ):
+                self.action = action
+                self.cost = cost
+                self.pdf_value = pdf_value
+
+        self.costs = []
+        for i in range(ex.get_cb_continuous_num_costs()):
+            wc = wclass(
+                ex.get_cb_continuous_class(i),
+                ex.get_cb_continuous_cost(i),
+                ex.get_cb_continuous_pdf_value(i),
+            )
+            self.costs.append(wc)
+
+    def __str__(self):
+        return "ca " + " ".join(
+            ["{}:{}:{}".format(c.action, c.cost, c.pdf_value) for c in self.costs]
+    )
 
 class example(pylibvw.example):
     """The example class is a (non-trivial) wrapper around

@@ -864,6 +864,11 @@ uint32_t ex_get_cbandits_class(example_ptr ec, uint32_t i) { return ec->l.cb.cos
 float ex_get_cbandits_probability(example_ptr ec, uint32_t i) { return ec->l.cb.costs[i].probability; }
 float ex_get_cbandits_partial_prediction(example_ptr ec, uint32_t i) { return ec->l.cb.costs[i].partial_prediction; }
 
+uint32_t ex_get_cb_continuous_num_costs(example_ptr ec) { return (uint32_t)ec->l.cb_cont.costs.size(); }
+float ex_get_cb_continuous_cost(example_ptr ec, uint32_t i) { return ec->l.cb_cont.costs[i].cost; }
+uint32_t ex_get_cb_continuous_class(example_ptr ec, uint32_t i) { return ec->l.cb_cont.costs[i].action; }
+float ex_get_cb_continuous_pdf_value(example_ptr ec, uint32_t i) { return ec->l.cb_cont.costs[i].pdf_value; }
+
 // example_counter is being overriden by lableType!
 size_t get_example_counter(example_ptr ec) { return ec->example_counter; }
 uint64_t get_ft_offset(example_ptr ec) { return ec->ft_offset; }
@@ -1335,7 +1340,15 @@ BOOST_PYTHON_MODULE(pylibvw)
           "get_cbandits_num_costs)")
       .def("get_cbandits_partial_prediction", &ex_get_cbandits_partial_prediction,
           "Assuming a contextual_bandits label type, get the partial prediction for a given pair (i=0.. "
-          "get_cbandits_num_costs)");
+          "get_cbandits_num_costs)")
+      .def("get_cb_continuous_num_costs", &ex_get_cb_continuous_num_costs,
+          "Assuming a cb_continuous label type, get the total number of costs")
+      .def("get_cb_continuous_cost", &ex_get_cb_continuous_cost,
+          "Assuming a cb_continuous label type, get the cost at a given index (i=0.. get_cb_continuous_num_costs)")
+      .def("get_cb_continuous_class", &ex_get_cb_continuous_class,
+          "Assuming a cb_continuous label type, get the label at a given index (i=0.. get_cb_continuous_num_costs)")
+      .def("get_cb_continuous_pdf_value", &ex_get_cb_continuous_pdf_value,
+          "Assuming a cb_continuous label type, get the pdf_value at a given index (i=0.. get_cb_continuous_num_costs)");
 
   py::class_<Search::predictor, predictor_ptr, boost::noncopyable>("predictor", py::no_init)
       .def("set_input", &my_set_input, "set the input (an example) for this predictor (non-LDF mode only)")

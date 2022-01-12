@@ -146,6 +146,15 @@ def test_cbandits_label():
     assert str(cbl) == "1:10.0:0.5"
     del model
 
+def test_cb_continuous_label():
+    model = vw(cats=4, min_value=185, max_value=23959, bandwidth=3000, quiet=True)
+    cb_contl = pyvw.cb_continuous_label(model.example("ca 1:10:0.5 |"))
+    assert cb_contl.costs[0].action == 1
+    assert cb_contl.costs[0].pdf_value == 0.5
+    assert cb_contl.costs[0].cost == 10.0
+    assert str(cb_contl) == "ca 1:10.0:0.5"
+    del model
+
 
 def test_cost_sensitive_label():
     model = vw(csoaa=4, quiet=True)
