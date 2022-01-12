@@ -1348,7 +1348,8 @@ BOOST_PYTHON_MODULE(pylibvw)
       .def("get_cb_continuous_class", &ex_get_cb_continuous_class,
           "Assuming a cb_continuous label type, get the label at a given index (i=0.. get_cb_continuous_num_costs)")
       .def("get_cb_continuous_pdf_value", &ex_get_cb_continuous_pdf_value,
-          "Assuming a cb_continuous label type, get the pdf_value at a given index (i=0.. get_cb_continuous_num_costs)");
+          "Assuming a cb_continuous label type, get the pdf_value at a given index (i=0.. "
+          "get_cb_continuous_num_costs)");
 
   py::class_<Search::predictor, predictor_ptr, boost::noncopyable>("predictor", py::no_init)
       .def("set_input", &my_set_input, "set the input (an example) for this predictor (non-LDF mode only)")
