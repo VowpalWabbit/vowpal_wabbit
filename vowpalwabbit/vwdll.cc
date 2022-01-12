@@ -59,7 +59,8 @@ VW_DLL_PUBLIC VW_HANDLE VW_CALLING_CONV VW_InitializeEscaped(const char16_t* pst
 
 
 VW_DLL_PUBLIC VW_HANDLE VW_CALLING_CONV VW_InitializeA(const char * pstrArgs)
-{ string s(pstrArgs);
+{
+  string s(pstrArgs);
   VW::workspace* all = VW::initialize(s);
   return static_cast<VW_HANDLE>(all);
 }
