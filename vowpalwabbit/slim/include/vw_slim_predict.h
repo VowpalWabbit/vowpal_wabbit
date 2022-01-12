@@ -219,9 +219,9 @@ public:
 /**
  * @brief Vowpal Wabbit slim predictor. Supports: regression, multi-class classification and contextual bandits.
  */
+template <typename W>
 class vw_predict
 {
-  using W = dense_parameters;
   std::unique_ptr<W> _weights;
   std::string _id;
   std::string _version;
