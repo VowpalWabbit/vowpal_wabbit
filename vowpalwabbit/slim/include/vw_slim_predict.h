@@ -73,10 +73,6 @@ public:
 
 template <typename It1, typename It2>
 class collection_pair_iterator
-    : public std::iterator<std::random_access_iterator_tag, location_value<It1, It2>,  // value type
-          size_t,                                                                      // difference type
-          location_reference<It1, It2>                                                 // reference_type
-          >
 {
   It1 _ptr1;
   It2 _ptr2;
@@ -85,6 +81,12 @@ public:
   using Iter = collection_pair_iterator<It1, It2>;
   using Loc = location_value<It1, It2>;
   using Ref = location_reference<It1, It2>;
+
+  using iterator_category = std::random_access_iterator_tag;
+  using value_type = location_value<It1, It2>;
+  using difference_type = size_t;
+  using pointer = location_reference<It1, It2> ;
+  using reference = location_value<It1, It2>&;
 
   collection_pair_iterator(It1 first, It2 second) : _ptr1(first), _ptr2(second) {}
 
