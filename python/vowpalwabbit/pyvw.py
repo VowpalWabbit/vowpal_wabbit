@@ -1134,10 +1134,27 @@ class cost_sensitive_label(abstract_label):
         return " ".join(["{}:{}".format(c.label, c.cost) for c in self.costs])
 
 
-class cbandits_label(abstract_label):
+class cb_class:
+    def __init__(
+        self, action=None, cost=0.0, partial_prediction=0.0, probability=0.0, **kwargs
+    ):
+        if kwargs.get("label", False):
+            action = kwargs["label"]
+            warnings.warn(
+                "label has been deprecated. Please use 'action' instead.",
+                DeprecationWarning,
+            )
+        self.label = action
+        self.action = action
+        self.cost = cost
+        self.partial_prediction = partial_prediction
+        self.probability = probability
+
+
+class CBandits_label(abstract_label):
     """Class for contextual bandits VW label"""
 
-    def __init__(self, costs=[], prediction=0):
+    def __init__(self, costs: List[cb_class] = [], prediction: float = 0.0):
         abstract_label.__init__(self)
         if isinstance(costs, example):
             self.from_example(costs)
@@ -1145,38 +1162,17 @@ class cbandits_label(abstract_label):
             self.costs = costs
             self.prediction = prediction
 
-    def from_example(self, ex):
-        class wclass:
-            def __init__(
-                self,
-                action=None,
-                cost=0.0,
-                partial_prediction=0.0,
-                probability=0.0,
-                **kwargs
-            ):
-                if kwargs.get("label", False):
-                    action = kwargs["label"]
-                    warnings.warn(
-                        "label has been deprecated. Please use 'action' instead.",
-                        DeprecationWarning,
-                    )
-                self.label = action
-                self.action = action
-                self.cost = cost
-                self.partial_prediction = partial_prediction
-                self.probability = probability
-
+    def from_example(self, ex: List[cb_class]):
         self.prediction = ex.get_cbandits_prediction()
         self.costs = []
         for i in range(ex.get_cbandits_num_costs()):
-            wc = wclass(
+            cb = cb_class(
                 ex.get_cbandits_class(i),
                 ex.get_cbandits_cost(i),
                 ex.get_cbandits_partial_prediction(i),
                 ex.get_cbandits_probability(i),
             )
-            self.costs.append(wc)
+            self.costs.append(cb)
 
     def __str__(self):
         return " ".join(
@@ -1184,36 +1180,37 @@ class cbandits_label(abstract_label):
         )
 
 
-class cb_continuous_label(abstract_label):
+class continuous_label_elm:
+    def __init__(
+        self,
+        action=None,
+        cost=0.0,
+        pdf_value=0.0,
+    ):
+        self.action = action
+        self.cost = cost
+        self.pdf_value = pdf_value
+
+
+class CBContinuous_label(abstract_label):
     """Class for cb_continuous VW label"""
 
-    def __init__(self, costs=[]):
+    def __init__(self, costs: List[continuous_label_elm] = []):
         abstract_label.__init__(self)
         if isinstance(costs, example):
             self.from_example(costs)
         else:
             self.costs = costs
 
-    def from_example(self, ex):
-        class wclass:
-            def __init__(
-                self,
-                action=None,
-                cost=0.0,
-                pdf_value=0.0,
-            ):
-                self.action = action
-                self.cost = cost
-                self.pdf_value = pdf_value
-
+    def from_example(self, ex: List[continuous_label_elm]):
         self.costs = []
         for i in range(ex.get_cb_continuous_num_costs()):
-            wc = wclass(
+            elem = continuous_label_elm(
                 ex.get_cb_continuous_class(i),
                 ex.get_cb_continuous_cost(i),
                 ex.get_cb_continuous_pdf_value(i),
             )
-            self.costs.append(wc)
+            self.costs.append(elem)
 
     def __str__(self):
         return "ca " + " ".join(
