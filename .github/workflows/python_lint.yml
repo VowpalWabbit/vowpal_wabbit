@@ -26,6 +26,8 @@ jobs:
         shell: bash
         run: |
           echo "${{ matrix.config.base_path }}bin" >> $GITHUB_PATH
+      - name: Upgrade Pip
+        run: pip install --upgrade pip
       - name: Build + check
         shell: bash
         run: |
