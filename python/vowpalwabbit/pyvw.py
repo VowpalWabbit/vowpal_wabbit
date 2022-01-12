@@ -1201,9 +1201,7 @@ class CBContinuousLabelElement:
 class CBContinuousLabel(abstract_label):
     """Class for cb_continuous VW label"""
 
-    def __init__(
-        self, costs: Union["example", List[CBContinuousLabelElement]] = []
-    ):
+    def __init__(self, costs: Union["example", List[CBContinuousLabelElement]] = []):
         abstract_label.__init__(self)
         if isinstance(costs, example):
             self.from_example(costs)
