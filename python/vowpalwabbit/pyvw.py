@@ -1161,7 +1161,7 @@ class cbandits_label(abstract_label):
 
     def __init__(
         self,
-        costs: Union[pylibvw.example, List[CBLabelElement]] = [],
+        costs: Union["example", List[CBLabelElement]] = [],
         prediction: float = 0.0,
     ):
         abstract_label.__init__(self)
@@ -1171,7 +1171,7 @@ class cbandits_label(abstract_label):
             self.costs = costs
             self.prediction = prediction
 
-    def from_example(self, ex: pylibvw.example):
+    def from_example(self, ex: "example"):
         self.prediction = ex.get_cbandits_prediction()
         self.costs = []
         for i in range(ex.get_cbandits_num_costs()):
@@ -1202,7 +1202,7 @@ class CBContinuousLabel(abstract_label):
     """Class for cb_continuous VW label"""
 
     def __init__(
-        self, costs: Union[pylibvw.example, List[CBContinuousLabelElement]] = []
+        self, costs: Union["example", List[CBContinuousLabelElement]] = []
     ):
         abstract_label.__init__(self)
         if isinstance(costs, example):
@@ -1210,7 +1210,7 @@ class CBContinuousLabel(abstract_label):
         else:
             self.costs = costs
 
-    def from_example(self, ex: pylibvw.example):
+    def from_example(self, ex: "example"):
         self.costs = []
         for i in range(ex.get_cb_continuous_num_costs()):
             elem = CBContinuousLabelElement(
