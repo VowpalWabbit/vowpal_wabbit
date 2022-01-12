@@ -45,7 +45,7 @@ int main(int argc, char* argv[])
                         .default_value("compat")
                         .one_of({"stdout", "stderr", "compat"})
                         .help("Specify the stream to output log messages to. In the past VW's choice of stream for "
-                              "logging messages wasn't consistent. Suppling compat will maintain that old behavior. "
+                              "logging messages wasn't consistent. supplying compat will maintain that old behavior. "
                               "Compat is now deprecated so it is recommended that stdout or stderr is chosen."));
 
   try
