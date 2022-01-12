@@ -1183,6 +1183,7 @@ class cbandits_label(abstract_label):
             ["{}:{}:{}".format(c.action, c.cost, c.probability) for c in self.costs]
         )
 
+
 class cb_continuous_label(abstract_label):
     """Class for cb_continuous VW label"""
 
@@ -1217,7 +1218,8 @@ class cb_continuous_label(abstract_label):
     def __str__(self):
         return "ca " + " ".join(
             ["{}:{}:{}".format(c.action, c.cost, c.pdf_value) for c in self.costs]
-    )
+        )
+
 
 class example(pylibvw.example):
     """The example class is a (non-trivial) wrapper around
