@@ -142,8 +142,8 @@ base_learner* cb_dro_setup(VW::setup_base_i& stack_builder)
 
   if (!data->isValid()) { THROW("invalid cb_dro parameter values supplied"); }
 
-  void (*learn_ptr)(cb_dro_data &, multi_learner &, multi_ex &);
-  void (*pred_ptr)(cb_dro_data &, multi_learner &, multi_ex &);
+  void (*learn_ptr)(cb_dro_data&, multi_learner&, multi_ex&);
+  void (*pred_ptr)(cb_dro_data&, multi_learner&, multi_ex&);
   std::string name_addition;
   if (options.was_supplied("cb_explore_adf"))
   {
@@ -158,8 +158,8 @@ base_learner* cb_dro_setup(VW::setup_base_i& stack_builder)
     name_addition = "";
   }
 
-  auto* l = make_reduction_learner(std::move(data), as_multiline(stack_builder.setup_base_learner()),
-      learn_ptr, pred_ptr, stack_builder.get_setupfn_name(cb_dro_setup) + name_addition)
+  auto* l = make_reduction_learner(std::move(data), as_multiline(stack_builder.setup_base_learner()), learn_ptr,
+      pred_ptr, stack_builder.get_setupfn_name(cb_dro_setup) + name_addition)
                 .set_output_prediction_type(VW::prediction_type_t::action_probs)
                 .set_input_label_type(VW::label_type_t::cb)
                 .build();
