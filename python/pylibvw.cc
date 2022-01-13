@@ -904,7 +904,7 @@ float ex_get_cb_continuous_pdf_value(example_ptr ec, uint32_t i)
 
 size_t ex_get_slates_type(example_ptr ec)
 {
-  switch(ec->l.slates.type)
+  switch (ec->l.slates.type)
   {
     case VW::slates::example_type::shared:
       return tSHARED;
@@ -1409,16 +1409,11 @@ BOOST_PYTHON_MODULE(pylibvw)
       .def("get_cb_continuous_pdf_value", &ex_get_cb_continuous_pdf_value,
           "Assuming a cb_continuous label type, get the pdf_value at a given index (i=0.. "
           "get_cb_continuous_num_costs)")
-      .def("get_slates_type", &ex_get_slates_type,
-          "Assuming a slates label type, get the type of example")
-      .def("get_slates_weight", &ex_get_slates_weight,
-          "Assuming a slates label type, get the weight of example")
-      .def("get_slates_labeled", &ex_get_slates_labeled,
-          "Assuming a slates label type, get if example is labeled")
-      .def("get_slates_cost", &ex_get_slates_cost,
-          "Assuming a slates label type, get the cost of example")
-      .def("get_slates_slot_id", &ex_get_slates_slot_id,
-          "Assuming a slates label type, get the slot_id of example")
+      .def("get_slates_type", &ex_get_slates_type, "Assuming a slates label type, get the type of example")
+      .def("get_slates_weight", &ex_get_slates_weight, "Assuming a slates label type, get the weight of example")
+      .def("get_slates_labeled", &ex_get_slates_labeled, "Assuming a slates label type, get if example is labeled")
+      .def("get_slates_cost", &ex_get_slates_cost, "Assuming a slates label type, get the cost of example")
+      .def("get_slates_slot_id", &ex_get_slates_slot_id, "Assuming a slates label type, get the slot_id of example")
       .def("get_slates_num_probabilities", &ex_get_slates_num_probabilities,
           "Assuming a slates label type, get number of actions in example")
       .def("get_slates_action", &ex_get_slates_action,
