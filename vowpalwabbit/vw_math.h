@@ -27,24 +27,24 @@ bool are_same_rel(T lhs, T rhs, T tolerance = DEFAULT_TOLERANCE)
   return std::abs(lhs - rhs) <= (tolerance * (std::abs(lhs) + std::abs(rhs)));
 }
 
-VW_STD14_CONSTEXPR inline uint64_t factorial(uint64_t n) noexcept
+VW_STD14_CONSTEXPR inline int64_t factorial(int64_t n) noexcept
 {
-  uint64_t result = 1;
-  for (uint64_t i = 2; i <= n; i++) { result *= i; }
+  int64_t result = 1;
+  for (int64_t i = 2; i <= n; i++) { result *= i; }
   return result;
 }
 
 /// Both n and k must be non-zero
-inline uint64_t number_of_combinations_with_repetition(uint64_t n, uint64_t k)
+inline int64_t number_of_combinations_with_repetition(int64_t n, int64_t k)
 {
   if ((n + k) > 21)
   { THROW_OR_RETURN_NORMAL("Magnitude of (n + k) is too large (> 21). Cannot compute combinations.", 0); }
   return factorial(n + k - 1) / (factorial(n - 1) * factorial(k));
 }
 
-inline uint64_t number_of_permutations_with_repetition(uint64_t n, uint64_t k)
+inline int64_t number_of_permutations_with_repetition(int64_t n, int64_t k)
 {
-  return static_cast<uint64_t>(std::pow(n, k));
+  return static_cast<int64_t>(std::pow(n, k));
 }
 
 constexpr inline float sign(float w) noexcept { return (w <= 0.f) ? -1.f : 1.f; }
