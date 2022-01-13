@@ -2,9 +2,42 @@
 """Python binding for pylibvw class"""
 
 from __future__ import division
-from typing import List
+from typing import List, Optional, Union
 import pylibvw
 import warnings
+
+from enum import IntEnum
+
+
+class LabelType(IntEnum):
+    BINARY = 1
+    SIMPLE = 1
+    MULTICLASS = 2
+    COST_SENSITIVE = 3
+    CONTEXTUAL_BANDIT = 4
+    MAX = 5
+    CONDITIONAL_CONTEXTUAL_BANDIT = 6
+    SLATES = 7
+    CONTINUOUS = 8
+    CONTEXTUAL_BANDIT_EVAL = 9
+    MULTILABEL = 10
+
+
+class PredictionType(IntEnum):
+    SCALAR = 0
+    SCALARS = 1
+    ACTION_SCORES = 2
+    ACTION_PROBS = 3
+    MULTICLASS = 4
+    MULTILABELS = 5
+    PROB = 6
+    MULTICLASSPROBS = 7
+    DECISION_SCORES = 8
+    ACTION_PDF_VALUE = 9
+    PDF = 10
+    ACTIVE_MULTICLASS = 11
+    NOPRED = 12
+
 
 # baked in con py boost https://wiki.python.org/moin/boost.python/FAQ#The_constructors_of_some_classes_I_am_trying_to_wrap_are_private_because_instances_must_be_created_by_using_a_factory._Is_it_possible_to_wrap_such_classes.3F
 class VWOption:
@@ -170,7 +203,9 @@ class SearchTask:
         for my_example in data_iterator.__iter__():
             self._call_vw(my_example, isTest=False)
 
-    def example(self, initStringOrDict=None, labelType=pylibvw.vw.lDefault):
+    def example(
+        self, initStringOrDict=None, labelType: Optional[Union[int, LabelType]] = None
+    ):
         """Create an example initStringOrDict can specify example as VW
         formatted string, or a dictionary labelType can specify the desire
         label type
@@ -180,18 +215,7 @@ class SearchTask:
 
         initStringOrDict : str/dict
             Example in either string or dictionary form
-        labelType : integer
-            - 0 : lDEFAULT
-            - 1 : lBINARY
-            - 2 : lMULTICLASS
-            - 3 : lCOST_SENSITIVE
-            - 4 : lCONTEXTUAL_BANDIT
-            - 5 : lMAX
-            - 6 : lCONDITIONAL_CONTEXTUAL_BANDIT
-            - 7 : lSLATES
-            - 8 : lCONTINUOUS
-            The integer is used to map the corresponding labelType using the
-            above available options
+        labelType : The direct integer value of the :py:obj:`~vowpalwabbit.pyvw.LabelType` enum can be used or the enum directly. Supplying 0 or None means to use the default label type based on the setup VW learner.
 
         Returns
         -------
@@ -199,10 +223,18 @@ class SearchTask:
         out : Example
 
         """
+
+        # None will implicitly be lDEFAULT which is 0.
+        label_int = 0
+        if isinstance(labelType, LabelType):
+            label_int = labelType.value
+        elif isinstance(labelType, int):
+            label_int = labelType
+
         if self.sch.predict_needs_example():
-            return self.vw.example(initStringOrDict, labelType)
+            return self.vw.example(initStringOrDict, label_int)
         else:
-            return self.vw.example(None, labelType)
+            return self.vw.example(None, label_int)
 
     def predict(self, my_example, useOracle=False):
         """Predict on the example
@@ -224,36 +256,22 @@ class SearchTask:
         return self._output
 
 
-def get_prediction(ec, prediction_type):
+def get_prediction(ec, prediction_type: Union[int, PredictionType]):
     """Get specified type of prediction from example
 
     Parameters
     ----------
 
     ec : Example
-    prediction_type : integer
-        - 0: pSCALAR
-        - 1: pSCALARS
-        - 2: pACTION_SCORES
-        - 3: pACTION_PROBS
-        - 4: pMULTICLASS
-        - 5: pMULTILABELS
-        - 6: pPROB
-        - 7: pMULTICLASSPROBS
-        - 8: pDECISION_SCORES
-        - 9: pACTION_PDF_VALUE
-        - 10: pPDF
-        - 11: pACTIVE_MULTICLASS
-        - 12: pNOPRED
+    prediction_type : either the integer value of the :py:obj:`~vowpalwabbit.pyvw.PredictionType` enum or the enum itself
 
     Examples
     --------
 
     >>> from vowpalwabbit import pyvw
-    >>> import pylibvw
     >>> vw = pyvw.vw(quiet=True)
     >>> ex = vw.example('1 |a two features |b more features here')
-    >>> pyvw.get_prediction(ex, pylibvw.vw.pSCALAR)
+    >>> pyvw.get_prediction(ex, pyvw.PredictionType.SCALAR)
     0.0
 
     Returns
@@ -262,6 +280,9 @@ def get_prediction(ec, prediction_type):
     out : integer/list
         Prediction according to parameter prediction_type
     """
+    if isinstance(prediction_type, PredictionType):
+        prediction_type = prediction_type.value
+
     switch_prediction_type = {
         pylibvw.vw.pSCALAR: ec.get_simplelabel_prediction,
         pylibvw.vw.pSCALARS: ec.get_scalars,
@@ -287,7 +308,7 @@ def get_all_vw_options():
     return config
 
 
-class log_forward:
+class _log_forward:
     def __init__(self):
         self.current_message = ""
         self.messages = []
@@ -304,11 +325,11 @@ class vw(pylibvw.vw):
     object; you're probably best off using this directly and ignoring
     the pylibvw.vw structure entirely."""
 
-    log_wrapper = None
+    _log_wrapper = None
     parser_ran = False
     init = False
     finished = False
-    log_fwd = None
+    _log_fwd = None
 
     def __init__(self, arg_str=None, enable_logging=False, **kw):
         """Initialize the vw object.
@@ -359,11 +380,11 @@ class vw(pylibvw.vw):
             l = [arg_str] + l
 
         if enable_logging:
-            self.log_fwd = log_forward()
-            self.log_wrapper = pylibvw.vw_log(self.log_fwd)
+            self._log_fwd = _log_forward()
+            self._log_wrapper = pylibvw.vw_log(self._log_fwd)
 
-        if self.log_wrapper:
-            super(vw, self).__init__(" ".join(l), self.log_wrapper)
+        if self._log_wrapper:
+            super(vw, self).__init__(" ".join(l), self._log_wrapper)
         else:
             super(vw, self).__init__(" ".join(l))
         self.init = True
@@ -389,7 +410,7 @@ class vw(pylibvw.vw):
     def __exit__(self, exc_type, exc_value, traceback):
         self.finish()
 
-    def parse(self, str_ex, labelType=pylibvw.vw.lDefault):
+    def parse(self, str_ex, labelType: Optional[Union[int, LabelType]] = None):
         """Returns a collection of examples for a multiline example learner or
         a single example for a single example learner.
 
@@ -400,18 +421,7 @@ class vw(pylibvw.vw):
             string representing examples. If the string is multiline then each
             line is considered as an example. In case of list, each string
             element is considered as an example
-        labelType : integer
-            - 0 : lDEFAULT
-            - 1 : lBINARY
-            - 2 : lMULTICLASS
-            - 3 : lCOST_SENSITIVE
-            - 4 : lCONTEXTUAL_BANDIT
-            - 5 : lMAX
-            - 6 : lCONDITIONAL_CONTEXTUAL_BANDIT
-            - 7 : lSLATES
-            - 8 : lCONTINUOUS
-            The integer is used to map the corresponding labelType using the
-            above available options
+        labelType : The direct integer value of the :py:obj:`~vowpalwabbit.pyvw.LabelType` enum can be used or the enum directly. Supplying 0 or None means to use the default label type based on the setup VW learner.
 
         Examples
         --------
@@ -448,10 +458,18 @@ class vw(pylibvw.vw):
 
         if isinstance(str_ex, list):
             str_ex = "\n".join(str_ex)
+
+        # None will implicitly be lDEFAULT which is 0.
+        label_int = 0
+        if isinstance(labelType, LabelType):
+            label_int = labelType.value
+        elif isinstance(labelType, int):
+            label_int = labelType
+
         str_ex = str_ex.replace("\r", "")
         str_ex = str_ex.strip()
         ec = self._parse(str_ex)
-        ec = [example(self, x, labelType) for x in ec]
+        ec = [example(self, x, label_int) for x in ec]
         for ex in ec:
             ex.setup_done = True
         if not self._is_multiline():
@@ -537,6 +555,12 @@ class vw(pylibvw.vw):
         feat_hash = self.hash_feature(feature_name, space_hash)
         return self.get_weight(feat_hash)
 
+    def get_label_type(self) -> LabelType:
+        return LabelType(super().get_label_type())
+
+    def get_prediction_type(self) -> PredictionType:
+        return PredictionType(super().get_prediction_type())
+
     def learn(self, ec):
         """Perform an online update
 
@@ -575,7 +599,7 @@ class vw(pylibvw.vw):
         if new_example:
             self.finish_example(ec)
 
-    def predict(self, ec, prediction_type=None):
+    def predict(self, ec, prediction_type: Optional[Union[int, PredictionType]] = None):
         """Just make a prediction on the example
 
         Parameters
@@ -626,7 +650,7 @@ class vw(pylibvw.vw):
             pylibvw.vw.predict_multi(self, ec)
 
         if prediction_type is None:
-            prediction_type = pylibvw.vw.get_prediction_type(self)
+            prediction_type = self.get_prediction_type()
 
         if isinstance(ec, example):
             prediction = get_prediction(ec, prediction_type)
@@ -657,12 +681,14 @@ class vw(pylibvw.vw):
 
         Returns: A list of strings, where each item is a line in the log
         """
-        if self.log_fwd:
-            return self.log_fwd.messages
+        if self._log_fwd:
+            return self._log_fwd.messages
         else:
             raise Exception("enable_logging set to false")
 
-    def example(self, stringOrDict=None, labelType=pylibvw.vw.lDefault):
+    def example(
+        self, stringOrDict=None, labelType: Optional[Union[int, LabelType]] = None
+    ):
         """Create an example initStringOrDict can specify example as VW
         formatted string, or a dictionary labelType can specify the desire
         label type
@@ -672,18 +698,7 @@ class vw(pylibvw.vw):
 
         initStringOrDict : str/dict
             Example in either string or dictionary form
-        labelType : integer
-            - 0 : lDEFAULT
-            - 1 : lBINARY
-            - 2 : lMULTICLASS
-            - 3 : lCOST_SENSITIVE
-            - 4 : lCONTEXTUAL_BANDIT
-            - 5 : lMAX
-            - 6 : lCONDITIONAL_CONTEXTUAL_BANDIT
-            - 7 : lSLATES
-            - 8 : lCONTINUOUS
-            The integer is used to map the corresponding labelType using the
-            above available options
+        labelType : The direct integer value of the :py:obj:`~vowpalwabbit.pyvw.LabelType` enum can be used or the enum directly. Supplying 0 or None means to use the default label type based on the setup VW learner.
 
         Returns
         -------
@@ -691,7 +706,13 @@ class vw(pylibvw.vw):
         out : Example
 
         """
-        return example(self, stringOrDict, labelType)
+        # None will implicitly be lDEFAULT which is 0.
+        label_int = 0
+        if isinstance(labelType, LabelType):
+            label_int = labelType.value
+        elif isinstance(labelType, int):
+            label_int = labelType
+        return example(self, stringOrDict, label_int)
 
     def __del__(self):
         self.finish()
@@ -994,24 +1015,30 @@ class example_namespace:
         self.ex.push_features(self.ns, featureList)
 
 
-class abstract_label:
+class AbstractLabel:
     """An abstract class for a VW label."""
 
     def __init__(self):
         pass
 
-    def from_example(self, ex):
+    def from_example(self, ex: "example"):
         """grab a label from a given VW example"""
         raise Exception("from_example not yet implemented")
 
 
-class simple_label(abstract_label):
+class SimpleLabel(AbstractLabel):
     """Class for simple VW label"""
 
-    def __init__(self, label=0.0, weight=1.0, initial=0.0, prediction=0.0):
+    def __init__(
+        self,
+        label: Union["example", float] = 0.0,
+        weight: float = 1.0,
+        initial: float = 0.0,
+        prediction: float = 0.0,
+    ):
         if not isinstance(label, (example, float)):
             raise TypeError("Label should be float or an example.")
-        abstract_label.__init__(self)
+        AbstractLabel.__init__(self)
         if isinstance(label, example):
             self.from_example(label)
         else:
@@ -1020,7 +1047,7 @@ class simple_label(abstract_label):
             self.initial = initial
             self.prediction = prediction
 
-    def from_example(self, ex):
+    def from_example(self, ex: "example"):
         self.label = ex.get_simplelabel_label()
         self.weight = ex.get_simplelabel_weight()
         self.initial = ex.get_simplelabel_initial()
@@ -1033,13 +1060,18 @@ class simple_label(abstract_label):
         return s
 
 
-class multiclass_label(abstract_label):
+class MulticlassLabel(AbstractLabel):
     """Class for multiclass VW label with prediction"""
 
-    def __init__(self, label=1, weight=1.0, prediction=1):
+    def __init__(
+        self,
+        label: Union["example", int] = 1,
+        weight: float = 1.0,
+        prediction: int = 1,
+    ):
         if not isinstance(label, (example, int)):
             raise TypeError("Label should be integer or an example.")
-        abstract_label.__init__(self)
+        AbstractLabel.__init__(self)
         if isinstance(label, example):
             self.from_example(label)
         else:
@@ -1047,7 +1079,7 @@ class multiclass_label(abstract_label):
             self.weight = weight
             self.prediction = prediction
 
-    def from_example(self, ex):
+    def from_example(self, ex: "example"):
         self.label = ex.get_multiclass_label()
         self.weight = ex.get_multiclass_weight()
         self.prediction = ex.get_multiclass_prediction()
@@ -1059,18 +1091,22 @@ class multiclass_label(abstract_label):
         return s
 
 
-class multiclass_probabilities_label(abstract_label):
+class MulticlassProbabilitiesLabel(AbstractLabel):
     """Class for multiclass VW label with probabilities"""
 
-    def __init__(self, label, prediction=None):
-        abstract_label.__init__(self)
+    def __init__(
+        self,
+        label: Optional["example"] = None,
+        prediction: Optional[float] = None,
+    ):
+        AbstractLabel.__init__(self)
         if isinstance(label, example):
             self.from_example(label)
         else:
             self.prediction = prediction
 
-    def from_example(self, ex):
-        self.prediction = get_prediction(ex, pylibvw.vw.pMULTICLASSPROBS)
+    def from_example(self, ex: "example"):
+        self.prediction = get_prediction(ex, PredictionType.MULTICLASSPROBS)
 
     def __str__(self):
         s = []
@@ -1079,87 +1115,138 @@ class multiclass_probabilities_label(abstract_label):
         return " ".join(s)
 
 
-class cost_sensitive_label(abstract_label):
+class CostSensitiveElement:
+    def __init__(
+        self,
+        label: int,
+        cost: float = 0.0,
+        partial_prediction: float = 0.0,
+        wap_value: float = 0.0,
+    ):
+        self.label = label
+        self.cost = cost
+        self.partial_prediction = partial_prediction
+        self.wap_value = wap_value
+
+
+class CostSensitiveLabel(AbstractLabel):
     """Class for cost sensative VW label"""
 
-    def __init__(self, costs=[], prediction=0):
-        abstract_label.__init__(self)
+    def __init__(
+        self,
+        costs: Union["example", List[CostSensitiveElement]] = [],
+        prediction: float = 0,
+    ):
+        AbstractLabel.__init__(self)
         if isinstance(costs, example):
             self.from_example(costs)
         else:
             self.costs = costs
             self.prediction = prediction
 
-    def from_example(self, ex):
-        class wclass:
-            def __init__(self, label, cost=0.0, partial_prediction=0.0, wap_value=0.0):
-                self.label = label
-                self.cost = cost
-                self.partial_prediction = partial_prediction
-                self.wap_value = wap_value
-
+    def from_example(self, ex: "example"):
         self.prediction = ex.get_costsensitive_prediction()
         self.costs = []
         for i in range(ex.get_costsensitive_num_costs()):
-            wc = wclass(
+            cs = CostSensitiveElement(
                 ex.get_costsensitive_class(i),
                 ex.get_costsensitive_cost(i),
                 ex.get_costsensitive_partial_prediction(i),
                 ex.get_costsensitive_wap_value(i),
             )
-            self.costs.append(wc)
+            self.costs.append(cs)
 
     def __str__(self):
         return " ".join(["{}:{}".format(c.label, c.cost) for c in self.costs])
 
 
-class cbandits_label(abstract_label):
+class CBLabelElement:
+    def __init__(
+        self,
+        action: Optional[int] = None,
+        cost: float = 0.0,
+        partial_prediction: float = 0.0,
+        probability: float = 0.0,
+        **kwargs
+    ):
+        if kwargs.get("label", False):
+            action = kwargs["label"]
+            warnings.warn(
+                "label has been deprecated. Please use 'action' instead.",
+                DeprecationWarning,
+            )
+        self.label = action
+        self.action = action
+        self.cost = cost
+        self.partial_prediction = partial_prediction
+        self.probability = probability
+
+
+class CBLabel(AbstractLabel):
     """Class for contextual bandits VW label"""
 
-    def __init__(self, costs=[], prediction=0):
-        abstract_label.__init__(self)
+    def __init__(
+        self,
+        costs: Union["example", List[CBLabelElement]] = [],
+        prediction: float = 0.0,
+    ):
+        AbstractLabel.__init__(self)
         if isinstance(costs, example):
             self.from_example(costs)
         else:
             self.costs = costs
             self.prediction = prediction
 
-    def from_example(self, ex):
-        class wclass:
-            def __init__(
-                self,
-                action=None,
-                cost=0.0,
-                partial_prediction=0.0,
-                probability=0.0,
-                **kwargs
-            ):
-                if kwargs.get("label", False):
-                    action = kwargs["label"]
-                    warnings.warn(
-                        "label has been deprecated. Please use 'action' instead.",
-                        DeprecationWarning,
-                    )
-                self.label = action
-                self.action = action
-                self.cost = cost
-                self.partial_prediction = partial_prediction
-                self.probability = probability
-
+    def from_example(self, ex: "example"):
         self.prediction = ex.get_cbandits_prediction()
         self.costs = []
         for i in range(ex.get_cbandits_num_costs()):
-            wc = wclass(
+            cb = CBLabelElement(
                 ex.get_cbandits_class(i),
                 ex.get_cbandits_cost(i),
                 ex.get_cbandits_partial_prediction(i),
                 ex.get_cbandits_probability(i),
             )
-            self.costs.append(wc)
+            self.costs.append(cb)
 
     def __str__(self):
         return " ".join(
             ["{}:{}:{}".format(c.action, c.cost, c.probability) for c in self.costs]
+        )
+
+
+class CBContinuousLabelElement:
+    def __init__(
+        self, action: Optional[int] = None, cost: float = 0.0, pdf_value: float = 0.0
+    ):
+        self.action = action
+        self.cost = cost
+        self.pdf_value = pdf_value
+
+
+class CBContinuousLabel(AbstractLabel):
+    """Class for cb_continuous VW label"""
+
+    def __init__(self, costs: Union["example", List[CBContinuousLabelElement]] = []):
+        AbstractLabel.__init__(self)
+        if isinstance(costs, example):
+            self.from_example(costs)
+        else:
+            self.costs = costs
+
+    def from_example(self, ex: "example"):
+        self.costs = []
+        for i in range(ex.get_cb_continuous_num_costs()):
+            elem = CBContinuousLabelElement(
+                ex.get_cb_continuous_class(i),
+                ex.get_cb_continuous_cost(i),
+                ex.get_cb_continuous_pdf_value(i),
+            )
+            self.costs.append(elem)
+
+    def __str__(self):
+        return "ca " + " ".join(
+            ["{}:{}:{}".format(c.action, c.cost, c.pdf_value) for c in self.costs]
         )
 
 
@@ -1173,7 +1260,7 @@ class example(pylibvw.example):
         self,
         vw,
         initStringOrDictOrRawExample=None,
-        labelType=pylibvw.vw.lDefault,
+        labelType: Optional[Union[int, LabelType]] = None,
     ):
         """Construct a new example from vw.
 
@@ -1191,18 +1278,7 @@ class example(pylibvw.example):
             features in that dictionary. finally, if it's a function,
             we (repeatedly) execute it fn() until it's not a function
             any more(for lazy feature computation). By default is None
-        labelType : integer
-            - 0 : lDEFAULT
-            - 1 : lBINARY
-            - 2 : lMULTICLASS
-            - 3 : lCOST_SENSITIVE
-            - 4 : lCONTEXTUAL_BANDIT
-            - 5 : lMAX
-            - 6 : lCONDITIONAL_CONTEXTUAL_BANDIT
-            - 7 : lSLATES
-            - 8 : lCONTINUOUS
-            The integer is used to map the corresponding labelType using the
-            above available options
+        labelType : The direct integer value of the :py:obj:`~vowpalwabbit.pyvw.LabelType` enum can be used or the enum directly. Supplying 0 or None means to use the default label type based on the setup VW learner.
 
         Returns
         -------
@@ -1219,16 +1295,26 @@ class example(pylibvw.example):
         while hasattr(initStringOrDictOrRawExample, "__call__"):
             initStringOrDictOrRawExample = initStringOrDictOrRawExample()
 
+        # None will implicitly be lDEFAULT which is 0.
+        label_int = 0
+        self.labelType: Optional[LabelType] = None
+        if isinstance(labelType, LabelType):
+            label_int = labelType.value
+        elif isinstance(labelType, int):
+            label_int = labelType
+            if label_int != 0:
+                self.labelType = LabelType(label_int)
+
         if initStringOrDictOrRawExample is None:
-            pylibvw.example.__init__(self, vw, labelType)
+            pylibvw.example.__init__(self, vw, label_int)
             self.setup_done = False
         elif isinstance(initStringOrDictOrRawExample, str):
-            pylibvw.example.__init__(self, vw, labelType, initStringOrDictOrRawExample)
+            pylibvw.example.__init__(self, vw, label_int, initStringOrDictOrRawExample)
             self.setup_done = True
         elif isinstance(initStringOrDictOrRawExample, pylibvw.example):
-            pylibvw.example.__init__(self, vw, labelType, initStringOrDictOrRawExample)
+            pylibvw.example.__init__(self, vw, label_int, initStringOrDictOrRawExample)
         elif isinstance(initStringOrDictOrRawExample, dict):
-            pylibvw.example.__init__(self, vw, labelType)
+            pylibvw.example.__init__(self, vw, label_int)
             self.vw = vw
             self.stride = vw.get_stride()
             self.finished = False
@@ -1242,7 +1328,6 @@ class example(pylibvw.example):
         self.vw = vw
         self.stride = vw.get_stride()
         self.finished = False
-        self.labelType = labelType
 
     def get_ns(self, id):
         """Construct a namespace_id
@@ -1324,7 +1409,8 @@ class example(pylibvw.example):
             a new label to this example, formatted as a string (ala the VW data
             file format)
         """
-        pylibvw.example.set_label_string(self, self.vw, string, self.labelType)
+        label_int = 0 if self.labelType is None else self.labelType.value
+        pylibvw.example.set_label_string(self, self.vw, string, label_int)
 
     def setup_example(self):
         """If this example hasn't already been setup (ie, quadratic
@@ -1577,8 +1663,8 @@ class example(pylibvw.example):
                 v = self.feature_weight(ns, i)
                 yield f, v
 
-    def get_label(self, label_class=simple_label):
-        """Given a known label class (default is simple_label), get
+    def get_label(self, label_class=SimpleLabel):
+        """Given a known label class (default is Simplelabel), get
         the corresponding label structure for this example.
 
         Parameters
@@ -1586,6 +1672,63 @@ class example(pylibvw.example):
 
         label_class : label classes
             Get the label of the example of label_class type, by default is
-            simple_label
+            Simplelabel
         """
         return label_class(self)
+
+
+############################ DEPREECATED CLASSES ############################
+
+
+class abstract_label(AbstractLabel):
+    def __init__(self):
+        AbstractLabel.__init__(self)
+        warnings.warn(
+            "abstract_label has been deprecated. Please use 'AbstractLabel' instead.",
+            DeprecationWarning,
+        )
+
+
+class simple_label(SimpleLabel):
+    def __init__(self):
+        SimpleLabel.__init__(self)
+        warnings.warn(
+            "simple_label has been deprecated. Please use 'SimpleLabel' instead.",
+            DeprecationWarning,
+        )
+
+
+class multiclass_label(MulticlassLabel):
+    def __init__(self):
+        MulticlassLabel.__init__(self)
+        warnings.warn(
+            "multiclass_label has been deprecated. Please use 'MulticlassLabel' instead.",
+            DeprecationWarning,
+        )
+
+
+class multiclass_probabilities_label(MulticlassProbabilitiesLabel):
+    def __init__(self):
+        MulticlassProbabilitiesLabel.__init__(self)
+        warnings.warn(
+            "multiclass_probabilities_label has been deprecated. Please use 'MulticlassProbabilitiesLabel' instead.",
+            DeprecationWarning,
+        )
+
+
+class cost_sensitive_label(CostSensitiveLabel):
+    def __init__(self):
+        CostSensitiveLabel.__init__(self)
+        warnings.warn(
+            "cost_sensitive_label has been deprecated. Please use 'CostSensitiveLabel' instead.",
+            DeprecationWarning,
+        )
+
+
+class cbandits_label(CBLabel):
+    def __init__(self):
+        CBLabel.__init__(self)
+        warnings.warn(
+            "cbandits_label has been deprecated. Please use 'CBLabel' instead.",
+            DeprecationWarning,
+        )
