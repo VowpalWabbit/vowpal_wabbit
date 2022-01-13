@@ -42,7 +42,7 @@ inline uint64_t number_of_combinations_with_repetition(uint64_t n, uint64_t k)
   return factorial(n + k - 1) / (factorial(n - 1) * factorial(k));
 }
 
-inline int64_t number_of_permutations_with_repetition(uint64_t n, uint64_t k)
+inline uint64_t number_of_permutations_with_repetition(uint64_t n, uint64_t k)
 {
   return static_cast<uint64_t>(std::pow(n, k));
 }
@@ -50,7 +50,7 @@ inline int64_t number_of_permutations_with_repetition(uint64_t n, uint64_t k)
 constexpr inline float sign(float w) noexcept { return (w <= 0.f) ? -1.f : 1.f; }
 
 /// C(n,k) = n!/(k!(n-k)!)
-VW_STD14_CONSTEXPR inline uint64_t choose(int64_t n, int64_t k) noexcept
+VW_STD14_CONSTEXPR inline int64_t choose(int64_t n, int64_t k) noexcept
 {
   if (k > n) return 0;
   if (k < 0) return 0;
