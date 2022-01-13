@@ -1,0 +1,29 @@
+[warning] The old default logging behavior of logging to a mix of stdout and stderr is deprecated. Please choose either 'stdout' or 'stderr' for --log_output to silence this warning.
+[info] Generating 3-grams for all namespaces.
+[info] Generating 1-skips for all namespaces.
+enabling BFGS based optimization **without** curvature calculation
+Num weight bits = 18
+learning rate = 0.5
+initial_t = 0
+power_t = 0.5
+decay_learning_rate = 1
+[info] m = 15, allocated 34M for weights and mem
+## avg. loss 	der. mag. 	d. m. cond.	 wolfe1    	wolfe2    	mix fraction	curvature 	dir. magnitude	step size
+using cache_file = test-sets/0001.dat.cache
+ignoring text input in favor of cache input
+num sources = 1
+Enabled reductions: bfgs, scorer-identity, count_label
+Input label = simple
+Output pred = scalar
+ 1 0.23560   	3.13607   	94.68915  	          	          	          	31119.57753	17991.60547	0.00304
+Maximum number of passes reached. To optimize further, increase the number of passes
+
+finished run
+number of examples per pass = 90
+passes used = 2
+weighted example sum = 180.000000
+weighted label sum = 102.000000
+average loss = 0.273508 h
+best constant = 0.566667
+best constant's loss = 0.245556
+total feature number = 52032

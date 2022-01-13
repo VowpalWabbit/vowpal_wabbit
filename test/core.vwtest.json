@@ -4608,5 +4608,46 @@
     "input_files": [
       "train-sets/marginal_features"
     ]
+  },
+  {
+    "id": 385,
+    "desc": "BFGS read in a save_resume model - should fail",
+    "bash_command": "./negative-test.sh {VW} -d test-sets/0001.dat -i models/0001_1.model --bfgs --passes 2 -c",
+    "diff_files": {
+      "stderr": "train-sets/ref/bfgs_save_resume_fail.stderr",
+      "stdout": "train-sets/ref/bfgs_save_resume_fail.stdout"
+    },
+    "input_files": [
+      "./negative-test.sh",
+      "models/0001_1.model",
+      "test-sets/0001.dat"
+    ],
+    "depends_on": [1]
+  },
+  {
+    "id": 386,
+    "desc": "Test 1 but produces a predict only model",
+    "vw_command": "-k -l 20 --initial_t 128000 --power_t 1 -d train-sets/0001.dat -f models/0001_1_predict_only.model -c --passes 8 --invariant --ngram 3 --skips 1 --holdout_off --predict_only_model",
+    "diff_files": {
+      "stderr": "train-sets/ref/0001_predict_only.stderr",
+      "stdout": "train-sets/ref/0001_predict_only.stdout"
+    },
+    "input_files": [
+      "train-sets/0001.dat"
+    ]
+  },
+  {
+    "id": 387,
+    "desc": "BFGS read in a predict only model",
+    "vw_command": "-d test-sets/0001.dat -i models/0001_1_predict_only.model --bfgs --passes 2 -c --predict_only_model",
+    "diff_files": {
+      "stderr": "train-sets/ref/bfgs_load_sgd.stderr",
+      "stdout": "train-sets/ref/bfgs_load_sgd.stdout"
+    },
+    "input_files": [
+      "models/0001_1_predict_only.model",
+      "test-sets/0001.dat"
+    ],
+    "depends_on": [386]
   }
 ]
