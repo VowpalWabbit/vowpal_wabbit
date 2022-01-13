@@ -1240,10 +1240,7 @@ VW::workspace& parse_args(
 
   // Don't print warning if a custom log output trace_listener is supplied.
   if (trace_listener == nullptr && location == VW::io::output_location::compat)
-  {
-    logger.err_warn(
-        "'compat' mode for --log_output is deprecated and will be removed in a future release.");
-  }
+  { logger.err_warn("'compat' mode for --log_output is deprecated and will be removed in a future release."); }
 
   if (options->was_supplied("limit_output") && (upper_limit != 0)) { logger.set_max_output(upper_limit); }
 
