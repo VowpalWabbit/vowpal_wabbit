@@ -864,10 +864,43 @@ float ex_get_costsensitive_wap_value(example_ptr ec, uint32_t i) { return ec->l.
 
 uint32_t ex_get_cbandits_prediction(example_ptr ec) { return ec->pred.multiclass; }
 uint32_t ex_get_cbandits_num_costs(example_ptr ec) { return (uint32_t)ec->l.cb.costs.size(); }
-float ex_get_cbandits_cost(example_ptr ec, uint32_t i) { return ec->l.cb.costs[i].cost; }
-uint32_t ex_get_cbandits_class(example_ptr ec, uint32_t i) { return ec->l.cb.costs[i].action; }
-float ex_get_cbandits_probability(example_ptr ec, uint32_t i) { return ec->l.cb.costs[i].probability; }
-float ex_get_cbandits_partial_prediction(example_ptr ec, uint32_t i) { return ec->l.cb.costs[i].partial_prediction; }
+float ex_get_cbandits_cost(example_ptr ec, uint32_t i)
+{
+  if (i >= ex_get_cbandits_num_costs(ec)) { THROW("Cost index out of bounds"); }
+  return ec->l.cb.costs[i].cost;
+}
+uint32_t ex_get_cbandits_class(example_ptr ec, uint32_t i)
+{
+  if (i >= ex_get_cbandits_num_costs(ec)) { THROW("Class index out of bounds"); }
+  return ec->l.cb.costs[i].action;
+}
+float ex_get_cbandits_probability(example_ptr ec, uint32_t i)
+{
+  if (i >= ex_get_cbandits_num_costs(ec)) { THROW("Probability index out of bounds"); }
+  return ec->l.cb.costs[i].probability;
+}
+float ex_get_cbandits_partial_prediction(example_ptr ec, uint32_t i)
+{
+  if (i >= ex_get_cbandits_num_costs(ec)) { THROW("Partial prediction index out of bounds"); }
+  return ec->l.cb.costs[i].partial_prediction;
+}
+
+uint32_t ex_get_cb_continuous_num_costs(example_ptr ec) { return (uint32_t)ec->l.cb_cont.costs.size(); }
+float ex_get_cb_continuous_cost(example_ptr ec, uint32_t i)
+{
+  if (i >= ex_get_cb_continuous_num_costs(ec)) { THROW("Cost index out of bounds"); }
+  return ec->l.cb_cont.costs[i].cost;
+}
+uint32_t ex_get_cb_continuous_class(example_ptr ec, uint32_t i)
+{
+  if (i >= ex_get_cb_continuous_num_costs(ec)) { THROW("Class index out of bounds"); }
+  return ec->l.cb_cont.costs[i].action;
+}
+float ex_get_cb_continuous_pdf_value(example_ptr ec, uint32_t i)
+{
+  if (i >= ex_get_cb_continuous_num_costs(ec)) { THROW("Pdf_value index out of bounds"); }
+  return ec->l.cb_cont.costs[i].pdf_value;
+}
 
 size_t ex_get_slates_type(example_ptr ec)
 {
@@ -1367,6 +1400,15 @@ BOOST_PYTHON_MODULE(pylibvw)
       .def("get_cbandits_partial_prediction", &ex_get_cbandits_partial_prediction,
           "Assuming a contextual_bandits label type, get the partial prediction for a given pair (i=0.. "
           "get_cbandits_num_costs)")
+      .def("get_cb_continuous_num_costs", &ex_get_cb_continuous_num_costs,
+          "Assuming a cb_continuous label type, get the total number of costs")
+      .def("get_cb_continuous_cost", &ex_get_cb_continuous_cost,
+          "Assuming a cb_continuous label type, get the cost at a given index (i=0.. get_cb_continuous_num_costs)")
+      .def("get_cb_continuous_class", &ex_get_cb_continuous_class,
+          "Assuming a cb_continuous label type, get the label at a given index (i=0.. get_cb_continuous_num_costs)")
+      .def("get_cb_continuous_pdf_value", &ex_get_cb_continuous_pdf_value,
+          "Assuming a cb_continuous label type, get the pdf_value at a given index (i=0.. "
+          "get_cb_continuous_num_costs)")
       .def("get_slates_type", &ex_get_slates_type,
           "Assuming a slates label type, get the type of example")
       .def("get_slates_weight", &ex_get_slates_weight,

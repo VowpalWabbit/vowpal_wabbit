@@ -136,9 +136,9 @@ def test_multilabel_prediction_type():
     del model
 
 
-def test_cbandits_label():
+def test_CBLabel():
     model = vw(cb=4, quiet=True)
-    cbl = pyvw.cbandits_label(model.example("1:10:0.5 |"))
+    cbl = pyvw.CBLabel(model.example("1:10:0.5 |"))
     assert cbl.costs[0].action == 1
     assert cbl.costs[0].probability == 0.5
     assert cbl.costs[0].partial_prediction == 0
@@ -146,10 +146,19 @@ def test_cbandits_label():
     assert str(cbl) == "1:10.0:0.5"
     del model
 
+def test_CBContinuousLabel():
+    model = vw(cats=4, min_value=185, max_value=23959, bandwidth=3000, quiet=True)
+    cb_contl = pyvw.CBContinuousLabel(model.example("ca 1:10:0.5 |"))
+    assert cb_contl.costs[0].action == 1
+    assert cb_contl.costs[0].pdf_value == 0.5
+    assert cb_contl.costs[0].cost == 10.0
+    assert str(cb_contl) == "ca 1:10.0:0.5"
+    del model
 
-def test_cost_sensitive_label():
+
+def test_CostSensitiveLabel():
     model = vw(csoaa=4, quiet=True)
-    csl = pyvw.cost_sensitive_label(model.example("2:5 |"))
+    csl = pyvw.CostSensitiveLabel(model.example("2:5 |"))
     assert csl.costs[0].label == 2
     assert csl.costs[0].wap_value == 0.0
     assert csl.costs[0].partial_prediction == 0.0
@@ -158,16 +167,16 @@ def test_cost_sensitive_label():
     del model
 
 
-def test_multiclass_probabilities_label():
+def test_MulticlassProbabilitiesLabel():
     n = 4
     model = pyvw.vw(
         loss_function="logistic", oaa=n, probabilities=True, quiet=True
     )
     ex = model.example("1 | a b c d", 2)
     model.learn(ex)
-    mpl = pyvw.multiclass_probabilities_label(ex)
+    mpl = pyvw.MulticlassProbabilitiesLabel(ex)
     assert str(mpl) == "1:0.25 2:0.25 3:0.25 4:0.25"
-    mpl = pyvw.multiclass_probabilities_label([1, 2, 3], [0.4, 0.3, 0.3])
+    mpl = pyvw.MulticlassProbabilitiesLabel([1, 2, 3], [0.4, 0.3, 0.3])
     assert str(mpl) == "1:0.4 2:0.3 3:0.3"
 
 
@@ -188,12 +197,12 @@ def test_slates_label():
     assert slates_slot_label.type == pyvw.SlatesLabelType.SLOT
     assert slates_slot_label.labeled == True
     assert slates_slot_label.probabilities[0].action == 1
-    assert slates_slot_label.probabilities[0].probability == 0.8
+    assert isclose(slates_slot_label.probabilities[0].score, 0.8)
     assert slates_slot_label.probabilities[1].action == 0
-    assert slates_slot_label.probabilities[1].probability == 0.1
+    assert isclose(slates_slot_label.probabilities[1].score, 0.1)
     assert slates_slot_label.probabilities[2].action == 2
-    assert slates_slot_label.probabilities[2].probability == 0.1
-    assert str(slates_slot_label.probabilities[2]) == "slates slot 1:0.8,0:0.1,2:0.1"
+    assert isclose(slates_slot_label.probabilities[2].score, 0.1)
+    assert str(slates_slot_label) == "slates slot 1:0.8,0:0.1,2:0.1"
     del model
 
 
@@ -323,8 +332,8 @@ def test_example_namespace():
     assert ex_nm.num_features_in() == 4
 
 
-def test_simple_label():
-    sl = pyvw.simple_label(2.0, weight=0.5)
+def test_SimpleLabel():
+    sl = pyvw.SimpleLabel(2.0, weight=0.5)
     assert sl.label == 2.0
     assert sl.weight == 0.5
     assert sl.prediction == 0.0
@@ -332,10 +341,10 @@ def test_simple_label():
     assert str(sl) == "2.0:0.5"
 
 
-def test_simple_label_example():
+def test_SimpleLabel_example():
     vw_ex = vw(quiet=True)
     ex = vw_ex.example("1 |a two features |b more features here")
-    sl2 = pyvw.simple_label(ex)
+    sl2 = pyvw.SimpleLabel(ex)
     assert sl2.label == 1.0
     assert sl2.weight == 1.0
     assert sl2.prediction == 0.0
@@ -343,19 +352,19 @@ def test_simple_label_example():
     assert str(sl2) == "1.0"
 
 
-def test_multiclass_label():
-    ml = pyvw.multiclass_label(2, weight=0.2)
+def test_MulticlassLabel():
+    ml = pyvw.MulticlassLabel(2, weight=0.2)
     assert ml.label == 2
     assert ml.weight == 0.2
     assert ml.prediction == 1
     assert str(ml) == "2:0.2"
 
 
-def test_multiclass_label_example():
+def test_MulticlassLabel_example():
     n = 4
     model = pyvw.vw(loss_function="logistic", oaa=n, quiet=True)
     ex = model.example("1 | a b c d", 2)
-    ml2 = pyvw.multiclass_label(ex)
+    ml2 = pyvw.MulticlassLabel(ex)
     assert ml2.label == 1
     assert ml2.weight == 1.0
     assert ml2.prediction == 0
@@ -385,7 +394,7 @@ def test_example_label():
     vw_ex = vw(quiet=True)
     ex = vw_ex.example("1 |a two features |b more features here")
     ex.set_label_string("1.0")
-    assert isinstance(ex.get_label(), pyvw.simple_label)
+    assert isinstance(ex.get_label(), pyvw.SimpleLabel)
 
 
 def test_example_features():
@@ -515,3 +524,11 @@ def test_constructor_exception_is_safe():
         vw = pyvw.vw("--invalid_option")
     except:
         pass
+
+def test_deceprecated_labels():
+    pyvw.abstract_label()
+    pyvw.simple_label()
+    pyvw.multiclass_label()
+    pyvw.multiclass_probabilities_label()
+    pyvw.cost_sensitive_label()
+    pyvw.cbandits_label()
