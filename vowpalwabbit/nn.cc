@@ -428,19 +428,19 @@ base_learner* nn_setup(VW::setup_base_i& stack_builder)
   n->_random_state = all.get_random_state();
 
   if (n->multitask && !all.quiet)
-    all.logger.err_info("using multitask sharing for neural network {}", (all.training ? "training" : "testing"));
+    all.logger.info("using multitask sharing for neural network {}", (all.training ? "training" : "testing"));
 
   if (options.was_supplied("meanfield"))
   {
     n->dropout = false;
-    all.logger.err_info("using mean field for neural network {}", (all.training ? "training" : "testing"));
+    all.logger.info("using mean field for neural network {}", (all.training ? "training" : "testing"));
   }
 
   if (n->dropout && !all.quiet)
-    all.logger.err_info("using dropout for neural network {}", (all.training ? "training" : "testing"));
+    all.logger.info("using dropout for neural network {}", (all.training ? "training" : "testing"));
 
   if (n->inpass && !all.quiet)
-    all.logger.err_info("using input passthrough for neural network {}", (all.training ? "training" : "testing"));
+    all.logger.info("using input passthrough for neural network {}", (all.training ? "training" : "testing"));
 
   n->finished_setup = false;
   n->squared_loss = getLossFunction(all, "squared", 0);

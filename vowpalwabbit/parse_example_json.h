@@ -1755,7 +1755,7 @@ inline bool apply_pdrop(label_type_t label_type, float pdrop, v_array<example*>&
 {
   if (pdrop == 1.)
   {
-    logger.err_error("JSON parser error: examples with pdrop==1 are not supported");
+    logger.error("JSON parser error: examples with pdrop==1 are not supported");
     return false;
   }
   // Event with certain pdrop had (1-pdrop) as probability to survive,
@@ -1824,7 +1824,7 @@ bool read_line_decision_service_json(VW::workspace& all, v_array<example*>& exam
     }
     else
     {
-      all.logger.err_error("JSON parser error at {0}: {1}. Handler: {2} State: {3}", result.Offset(),
+      all.logger.error("JSON parser error at {0}: {1}. Handler: {2} State: {3}", result.Offset(),
           GetParseError_En(result.Code()), handler.error().str(), (current_state ? current_state->name : "null"));
       return false;
     }

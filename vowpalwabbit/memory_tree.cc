@@ -329,7 +329,7 @@ inline int random_sample_example_pop(memory_tree& b, uint64_t& cn)
     else
     {
       std::cout << cn << " " << b.nodes[cn].nl << " " << b.nodes[cn].nr << std::endl;
-      b.all->logger.out_error("Error:  nl = 0, and nr = 0");
+      b.all->logger.error("Error:  nl = 0, and nr = 0");
       exit(0);
     }
 
@@ -540,7 +540,7 @@ inline uint32_t hamming_loss(v_array<uint32_t>& array_1, v_array<uint32_t>& arra
 
 void collect_labels_from_leaf(memory_tree& b, const uint64_t cn, v_array<uint32_t>& leaf_labs)
 {
-  if (b.nodes[cn].internal != -1) b.all->logger.out_error("something is wrong, it should be a leaf node");
+  if (b.nodes[cn].internal != -1) b.all->logger.error("something is wrong, it should be a leaf node");
 
   leaf_labs.clear();
   for (size_t i = 0; i < b.nodes[cn].examples_index.size(); i++)

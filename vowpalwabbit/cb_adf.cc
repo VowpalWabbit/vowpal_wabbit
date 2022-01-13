@@ -341,7 +341,7 @@ void global_print_newline(
   for (auto& sink : final_prediction_sink)
   {
     ssize_t t = sink->write(temp, 1);
-    if (t != 1) { logger.err_error("write error: {}", VW::strerror_to_string(errno)); }
+    if (t != 1) { logger.error("write error: {}", VW::strerror_to_string(errno)); }
   }
 }
 
@@ -526,7 +526,7 @@ base_learner* cb_adf_setup(VW::setup_base_i& stack_builder)
   }
   catch (const VW::vw_exception& /*exception*/)
   {
-    all.logger.out_warn(
+    all.logger.warn(
         "cb_type must be in {'ips','dr','mtr','dm','sm'}; resetting to mtr. Input was: '{}'", type_string);
 
     cb_type = VW::cb_type_t::mtr;
@@ -540,7 +540,7 @@ base_learner* cb_adf_setup(VW::setup_base_i& stack_builder)
   }
 
   if (clip_p > 0.f && cb_type == VW::cb_type_t::sm)
-  { all.logger.err_warn("Clipping probability not yet implemented for cb_type sm; p will not be clipped."); }
+  { all.logger.warn("Clipping probability not yet implemented for cb_type sm; p will not be clipped."); }
 
   // Push necessary flags.
   if ((!options.was_supplied("csoaa_ldf") && !options.was_supplied("wap_ldf")) || rank_all ||

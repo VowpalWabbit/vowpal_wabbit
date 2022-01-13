@@ -40,7 +40,7 @@ void parse_label(MULTILABEL::labels& ld, VW::label_parser_reuse_mem& reuse_mem,
       }
       break;
     default:
-      logger.err_error("example with an odd label, what is {}", fmt::join(words, " "));
+      logger.error("example with an odd label, what is {}", fmt::join(words, " "));
   }
 }
 

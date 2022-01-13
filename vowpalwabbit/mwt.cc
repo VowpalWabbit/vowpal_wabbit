@@ -45,7 +45,7 @@ struct mwt
 
 void value_policy(mwt& c, float val, uint64_t index)  // estimate the value of a single feature.
 {
-  if (val < 0 || std::floor(val) != val) c.all->logger.out_error("error {} is not a valid action", val);
+  if (val < 0 || std::floor(val) != val) c.all->logger.error("error {} is not a valid action", val);
 
   uint32_t value = static_cast<uint32_t>(val);
   uint64_t new_index = (index & c.all->weights.mask()) >> c.all->weights.stride_shift();
@@ -153,7 +153,7 @@ void print_scalars(VW::io::writer* f, v_array<float>& scalars, v_array<char>& ta
     ss << '\n';
     ssize_t len = ss.str().size();
     ssize_t t = f->write(ss.str().c_str(), static_cast<unsigned int>(len));
-    if (t != len) logger.err_error("write error: {}", VW::strerror_to_string(errno));
+    if (t != len) logger.error("write error: {}", VW::strerror_to_string(errno));
   }
 }
 

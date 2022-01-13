@@ -106,13 +106,13 @@ void unsubtract_example(example* ec, VW::io::logger& logger)
 {
   if (ec->indices.empty())
   {
-    logger.err_error("Internal error (bug): trying to unsubtract_example, but there are no namespaces");
+    logger.error("Internal error (bug): trying to unsubtract_example, but there are no namespaces");
     return;
   }
 
   if (ec->indices.back() != wap_ldf_namespace)
   {
-    logger.err_error(
+    logger.error(
         "Internal error (bug): trying to unsubtract_example, but either it wasn't added, or something was added "
         "after and not removed");
     return;
@@ -163,7 +163,7 @@ bool test_ldf_sequence(ldf& /*data*/, multi_ex& ec_seq, VW::io::logger& logger)
     if (COST_SENSITIVE::cs_label.test_label(ec->l) != isTest)
     {
       isTest = true;
-      logger.err_warn("ldf example has mix of train/test data; assuming test");
+      logger.warn("ldf example has mix of train/test data; assuming test");
     }
   }
   return isTest;
@@ -443,7 +443,7 @@ void global_print_newline(VW::workspace& all)
   {
     ssize_t t;
     t = sink->write(temp, 1);
-    if (t != 1) all.logger.err_error("write error: {}", VW::strerror_to_string(errno));
+    if (t != 1) all.logger.error("write error: {}", VW::strerror_to_string(errno));
   }
 }
 
@@ -770,11 +770,11 @@ base_learner* csldf_setup(VW::setup_base_i& stack_builder)
     auto loss_function_type = all.loss->getType();
     if (loss_function_type != "logistic")
     {
-      all.logger.out_warn(
+      all.logger.warn(
           "--probabilities should be used only with --loss_function=logistic, currently using: {}", loss_function_type);
     }
     if (!ld->treat_as_classifier)
-    { all.logger.out_warn("--probabilities should be used with --csoaa_ldf=mc (or --oaa, --multilabel_oaa)"); }
+    { all.logger.warn("--probabilities should be used with --csoaa_ldf=mc (or --oaa, --multilabel_oaa)"); }
   }
 
   all.example_parser->emptylines_separate_examples = true;  // TODO: check this to be sure!!!  !ld->is_singleline;

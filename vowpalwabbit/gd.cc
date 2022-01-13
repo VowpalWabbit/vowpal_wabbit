@@ -333,7 +333,7 @@ float finalize_prediction(shared_data* sd, VW::io::logger& logger, float ret)
   if (std::isnan(ret))
   {
     ret = 0.;
-    logger.err_warn("NAN prediction in example {0}, forcing {1}", sd->example_number + 1, ret);
+    logger.warn("NAN prediction in example {0}, forcing {1}", sd->example_number + 1, ret);
     return ret;
   }
   if (ret > sd->max_label) return sd->max_label;
@@ -543,7 +543,7 @@ inline void pred_per_update_feature(norm_data& nd, float x, float& fw)
       {
         norm_x2 = 1;
         assert(nd.logger != nullptr);
-        nd.logger->err_error("The features have too much magnitude");
+        nd.logger->error("The features have too much magnitude");
       }
       nd.norm_x += norm_x2;
     }
@@ -658,7 +658,7 @@ float compute_update(gd& g, example& ec)
 
   if (std::isnan(update))
   {
-    g.all->logger.err_warn("update is NAN, replacing with 0");
+    g.all->logger.warn("update is NAN, replacing with 0");
     update = 0.;
   }
 
@@ -1094,7 +1094,7 @@ void save_load(gd& g, io_buf& model_file, bool read, bool text)
     {
       if (read && all.model_file_ver < VW::version_definitions::VERSION_SAVE_RESUME_FIX)
       {
-        g.all->logger.err_warn(
+        g.all->logger.warn(
             "save_resume functionality is known to have inaccuracy in model files version less than '{}'",
             VW::version_definitions::VERSION_SAVE_RESUME_FIX.to_string());
       }
@@ -1285,7 +1285,7 @@ base_learner* setup(VW::setup_base_i& stack_builder)
 
   if (pow(static_cast<double>(all.eta_decay_rate), static_cast<double>(all.numpasses)) < 0.0001)
   {
-    all.logger.err_warn(
+    all.logger.warn(
         "The learning rate for the last pass is multiplied by '{}' adjust --decay_learning_rate larger to avoid this.",
         pow(static_cast<double>(all.eta_decay_rate), static_cast<double>(all.numpasses)));
   }

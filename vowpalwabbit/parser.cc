@@ -286,7 +286,7 @@ void make_write_cache(VW::workspace& all, std::string& newname, bool quiet)
   io_buf& output = all.example_parser->output;
   if (output.num_files() != 0)
   {
-    all.logger.err_warn("There was an attempt tried to make two write caches. Only the first one will be made.");
+    all.logger.warn("There was an attempt tried to make two write caches. Only the first one will be made.");
     return;
   }
 
@@ -297,7 +297,7 @@ void make_write_cache(VW::workspace& all, std::string& newname, bool quiet)
   }
   catch (const std::exception&)
   {
-    all.logger.err_error("Can't create cache file: {}", all.example_parser->currentname);
+    all.logger.error("Can't create cache file: {}", all.example_parser->currentname);
     return;
   }
 
@@ -338,7 +338,7 @@ void parse_cache(VW::workspace& all, std::vector<std::string> cache_files, bool 
       if (c < all.num_bits)
       {
         if (!quiet)
-        { all.logger.err_warn("cache file is ignored as it's made with less bit precision than required."); }
+        { all.logger.warn("cache file is ignored as it's made with less bit precision than required."); }
         all.example_parser->input.close_file();
         make_write_cache(all, file, quiet);
       }
@@ -491,7 +491,7 @@ void enable_sources(VW::workspace& all, bool quiet, size_t passes, input_options
         // If the child failed we still fork off another one, but log the issue.
         if (status != 0)
         {
-          all.logger.err_warn("Daemon child process received exited with non-zero exit code: {}. Ignoring.", status);
+          all.logger.warn("Daemon child process received exited with non-zero exit code: {}. Ignoring.", status);
         }
 
         if (got_sigterm)

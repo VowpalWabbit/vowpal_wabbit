@@ -175,7 +175,7 @@ static int make_hot_sv(svm_params& params, size_t svi)
 {
   svm_model* model = params.model;
   size_t n = model->num_support;
-  if (svi >= model->num_support) { params.all->logger.err_error("Internal error at {}:{}", __FILE__, __LINE__); }
+  if (svi >= model->num_support) { params.all->logger.error("Internal error at {}:{}", __FILE__, __LINE__); }
   // rotate params fields
   svm_example* svi_e = model->support_vec[svi];
   int alloc = svi_e->compute_kernels(params);
@@ -392,7 +392,7 @@ size_t suboptimality(svm_model* model, double* subopt)
 int remove(svm_params& params, size_t svi)
 {
   svm_model* model = params.model;
-  if (svi >= model->num_support) { params.all->logger.err_error("Internal error at {}:{}", __FILE__, __LINE__); }
+  if (svi >= model->num_support) { params.all->logger.error("Internal error at {}:{}", __FILE__, __LINE__); }
   // shift params fields
   svm_example* svi_e = model->support_vec[svi];
   for (size_t i = svi; i < model->num_support - 1; ++i)

@@ -103,7 +103,7 @@ void print_result_by_ref(VW::io::writer* f, float res, float, const v_array<char
     ss << '\n';
     ssize_t len = ss.str().size();
     ssize_t t = f->write(ss.str().c_str(), static_cast<unsigned int>(len));
-    if (t != len) { logger.err_error("write error: {}", VW::strerror_to_string(errno)); }
+    if (t != len) { logger.error("write error: {}", VW::strerror_to_string(errno)); }
   }
 }
 
@@ -117,7 +117,7 @@ void print_raw_text_by_ref(VW::io::writer* f, const std::string& s, const v_arra
   ss << '\n';
   ssize_t len = ss.str().size();
   ssize_t t = f->write(ss.str().c_str(), static_cast<unsigned int>(len));
-  if (t != len) { logger.err_error("write error: {}", VW::strerror_to_string(errno)); }
+  if (t != len) { logger.error("write error: {}", VW::strerror_to_string(errno)); }
 }
 
 void set_mm(shared_data* sd, float label)
@@ -209,16 +209,16 @@ void compile_limits(
     if (isdigit(limit[0]))
     {
       int n = atoi(limit.c_str());
-      logger.err_warn("limiting to {} features for each namespace.", n);
+      logger.warn("limiting to {} features for each namespace.", n);
       for (size_t j = 0; j < 256; j++) dest[j] = n;
     }
     else if (limit.size() == 1)
-      logger.out_error("The namespace index must be specified before the n");
+      logger.error("The namespace index must be specified before the n");
     else
     {
       int n = atoi(limit.c_str() + 1);
       dest[static_cast<uint32_t>(limit[0])] = n;
-      logger.err_warn("limiting to {0} for namespaces {1}", n, limit[0]);
+      logger.warn("limiting to {0} for namespaces {1}", n, limit[0]);
     }
   }
 }

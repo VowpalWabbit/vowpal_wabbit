@@ -271,14 +271,14 @@ base_learner* setup(VW::setup_base_i& stack_builder)
   if (!options.was_supplied("bandwidth"))
   {
     data->bandwidth = half_leaf_width;
-    all.logger.err_info(
+    all.logger.info(
         "Bandwidth was not supplied, setting default to half the continuous action unit range: {}", data->bandwidth);
   }
 
   if (!(data->bandwidth >= 0.0f)) { THROW("error: Bandwidth must be positive"); }
 
   if (data->bandwidth >= (data->max_value - data->min_value))
-  { all.logger.err_warn("Bandwidth is larger than continuous action range, this will result in a uniform pdf."); }
+  { all.logger.warn("Bandwidth is larger than continuous action range, this will result in a uniform pdf."); }
 
   // Translate user provided bandwidth which is in terms of continuous action range (max_value - min_value)
   // to the internal tree bandwidth which is in terms of #actions

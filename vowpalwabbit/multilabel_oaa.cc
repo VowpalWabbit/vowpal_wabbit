@@ -53,7 +53,7 @@ void predict_or_learn(multi_oaa& o, VW::LEARNER::single_learner& base, example& 
   {
     if (multilabel_index < multilabels.label_v.size())
     {
-      o.logger.out_error(
+      o.logger.error(
           "label {0} is not in {{0,{1}}} This won't work right.", multilabels.label_v[multilabel_index], o.k - 1);
     }
   }
@@ -118,7 +118,7 @@ VW::LEARNER::base_learner* multilabel_oaa_setup(VW::setup_base_i& stack_builder)
     pred_type = VW::prediction_type_t::scalars;
     auto loss_function_type = all.loss->getType();
     if (loss_function_type != "logistic")
-      all.logger.out_warn(
+      all.logger.warn(
           "--probabilities should be used only with --loss_function=logistic, currently using: {}", loss_function_type);
     // the three boolean template parameters are: is_learn, print_all and scores
     name_addition = "-prob";

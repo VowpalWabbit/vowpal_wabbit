@@ -1017,7 +1017,7 @@ void save_load(bfgs& b, io_buf& model_file, bool read, bool text)
 
     uint32_t stride_shift = all->weights.stride_shift();
 
-    b.all->logger.err_info("m = {}, allocated {}M for weights and mem", m,
+    b.all->logger.info("m = {}, allocated {}M for weights and mem", m,
         static_cast<long unsigned int>(all->length()) *
                 (sizeof(float) * (b.mem_stride) + (sizeof(weight) << stride_shift)) >>
             20);

@@ -291,7 +291,7 @@ void save_load_header(VW::workspace& all, io_buf& model_file, bool read, bool te
         }
         else
         {
-          all.logger.err_warn(
+          all.logger.warn(
               "This model file contains 'rank: {}' value but it will be ignored as another value specified via the "
               "command line.",
               rank);
@@ -517,7 +517,7 @@ void read_regressor_file(VW::workspace& all, const std::vector<std::string>& all
     {
       // *(all.trace_message) << "initial_regressor = " << regs[0] << std::endl;
       if (all_intial.size() > 1)
-      { all.logger.err_warn("Ignoring remaining {} initial regressors", (all_intial.size() - 1)); }
+      { all.logger.warn("Ignoring remaining {} initial regressors", (all_intial.size() - 1)); }
     }
   }
 }

@@ -91,7 +91,7 @@ void print_result(VW::io::writer* file_descriptor,
     ss << '\n';
     ssize_t len = ss.str().size();
     auto t = file_descriptor->write(ss.str().c_str(), len);
-    if (t != len) logger.err_error("write error: {}", VW::strerror_to_string(errno));
+    if (t != len) logger.error("write error: {}", VW::strerror_to_string(errno));
   }
 }
 

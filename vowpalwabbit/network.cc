@@ -65,6 +65,6 @@ int open_socket(const char* host, VW::io::logger& logger)
       write(sd, &id, sizeof(id)) < static_cast<int>(sizeof(id))
 #endif
   )
-    logger.err_error("Write failed");
+    logger.error("Write failed");
   return sd;
 }
