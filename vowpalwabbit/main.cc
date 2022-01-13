@@ -43,8 +43,10 @@ int main(int argc, char* argv[])
                         .help("Log level for logging messages. Specifying this wil override --quiet for log output."));
   driver_config.add(make_option("log_output", log_output_stream)
                         .default_value("stdout")
-                        .one_of({"stdout", "stderr"})
-                        .help("Specify the stream to output log messages to."));
+                        .one_of({"stdout", "stderr", "compat"})
+                        .help("Specify the stream to output log messages to. In the past VW's choice of stream for "
+                              "logging messages wasn't consistent. Supplying compat will maintain that old behavior. "
+                              "Compat is now deprecated so it is recommended that stdout or stderr is chosen."));
 
   try
   {
@@ -123,7 +125,7 @@ int main(int argc, char* argv[])
   {
     if (log_level != "off")
     {
-      if (log_output_stream == "stderr")
+      if (log_output_stream == "compat" || log_output_stream == "stderr")
       { std::cerr << "[critical] vw (" << e.Filename() << ":" << e.LineNumber() << "): " << e.what() << std::endl; }
       else
       {
@@ -141,7 +143,8 @@ int main(int argc, char* argv[])
     // TODO: If loggers are instantiated within struct vw, this line lives outside of that. Log as critical for now
     if (log_level != "off")
     {
-      if (log_output_stream == "stderr") { std::cerr << "[critical] vw: " << e.what() << std::endl; }
+      if (log_output_stream == "compat" || log_output_stream == "stderr")
+      { std::cerr << "[critical] vw: " << e.what() << std::endl; }
       else
       {
         std::cout << "[critical] vw: " << e.what() << std::endl;
@@ -153,7 +156,8 @@ int main(int argc, char* argv[])
   {
     if (log_level != "off")
     {
-      if (log_output_stream == "stderr") { std::cerr << "[critical] Unknown exception occurred" << std::endl; }
+      if (log_output_stream == "compat" || log_output_stream == "stderr")
+      { std::cerr << "[critical] Unknown exception occurred" << std::endl; }
       else
       {
         std::cout << "[critical] vw: unknown exception" << std::endl;
