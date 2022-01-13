@@ -1,8 +1,4 @@
-[warning] The old default logging behavior of logging to a mix of stdout and stderr is deprecated. Please choose either 'stdout' or 'stderr' for --log_output to silence this warning.
-[warning] model file has set of {-q, --cubic, --interactions} settings stored, but they'll be OVERRIDDEN by set of {-q, --cubic, --interactions} settings from command line.
 creating quadratic features for pairs: ::
-[warning] Any duplicate namespace interactions will be removed
-You can use --leave_duplicate_interactions to disable this behaviour.
 predictions = ccb_no_predict.predict
 Num weight bits = 18
 learning rate = 0.5
