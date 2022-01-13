@@ -2,6 +2,7 @@ from vowpalwabbit import pyvw
 
 import pytest
 
+
 def helper_options_to_list_strings(config):
     cmd_str_list = []
 
@@ -14,11 +15,18 @@ def helper_options_to_list_strings(config):
 
     return cmd_str_list
 
-def test_vw_config_manager():
-    expected_set = {'--quiet', '--loss_function logistic', '--data test/train-sets/rcv1_small.dat'}
-    expected_reductions = {'gd', 'scorer-identity', 'count_label'}
 
-    vw = pyvw.vw(arg_str="--loss_function logistic -d test/train-sets/rcv1_small.dat --quiet")
+def test_vw_config_manager():
+    expected_set = {
+        "--quiet",
+        "--loss_function logistic",
+        "--data test/train-sets/rcv1_small.dat",
+    }
+    expected_reductions = {"gd", "scorer-identity", "count_label"}
+
+    vw = pyvw.vw(
+        arg_str="--loss_function logistic -d test/train-sets/rcv1_small.dat --quiet"
+    )
     config = vw.get_config()
     enabled_reductions = vw.get_enabled_reductions()
 
@@ -38,6 +46,7 @@ def test_vw_config_manager():
     assert set(new_cmd_str_list) == expected_set
 
     other_vw.finish()
+
 
 def test_vw_get_all_options():
     config = pyvw.get_all_vw_options()

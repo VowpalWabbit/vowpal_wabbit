@@ -9,7 +9,8 @@ BIT_SIZE = 18
 # Since these tests still run with Python 2, this is required.
 # Otherwise we could use math.isclose
 def isclose(a, b, rel_tol=1e-05, abs_tol=0.0):
-    return abs(a-b) <= max(rel_tol * max(abs(a), abs(b)), abs_tol)
+    return abs(a - b) <= max(rel_tol * max(abs(a), abs(b)), abs_tol)
+
 
 class TestVW:
 
@@ -160,9 +161,7 @@ def test_cost_sensitive_label():
 
 def test_multiclass_probabilities_label():
     n = 4
-    model = pyvw.vw(
-        loss_function="logistic", oaa=n, probabilities=True, quiet=True
-    )
+    model = pyvw.vw(loss_function="logistic", oaa=n, probabilities=True, quiet=True)
     ex = model.example("1 | a b c d", 2)
     model.learn(ex)
     mpl = pyvw.multiclass_probabilities_label(ex)
@@ -281,9 +280,7 @@ def test_example_namespace():
     vw_ex = vw(quiet=True)
     ex = vw_ex.example("1 |a two features |b more features here")
     ns_id = pyvw.namespace_id(ex, 1)
-    ex_nm = pyvw.example_namespace(
-        ex, ns_id, ns_hash=vw_ex.hash_space(ns_id.ns)
-    )
+    ex_nm = pyvw.example_namespace(ex, ns_id, ns_hash=vw_ex.hash_space(ns_id.ns))
     assert isinstance(ex_nm.ex, pyvw.example)
     assert isinstance(ex_nm.ns, pyvw.namespace_id)
     assert ex_nm.ns_hash == 2514386435
@@ -380,12 +377,12 @@ def test_example_features():
 def test_get_weight_name():
     model = vw(quiet=True)
     model.learn("1 | a a b c |ns x")
-    assert model.get_weight_from_name("a") != 0.
-    assert model.get_weight_from_name("b") != 0.
+    assert model.get_weight_from_name("a") != 0.0
+    assert model.get_weight_from_name("b") != 0.0
     assert model.get_weight_from_name("b") == model.get_weight_from_name("c")
     assert model.get_weight_from_name("a") != model.get_weight_from_name("b")
-    assert model.get_weight_from_name("x") == 0.
-    assert model.get_weight_from_name("x", "ns") != 0.
+    assert model.get_weight_from_name("x") == 0.0
+    assert model.get_weight_from_name("x", "ns") != 0.0
     assert model.get_weight_from_name("x", "ns") == model.get_weight_from_name("b")
 
 
@@ -394,15 +391,18 @@ def test_runparser_cmd_string():
     assert vw.parser_ran == True, "vw should set parser_ran to true if --data present"
     vw.finish()
 
+
 def test_runparser_cmd_string_short():
     vw = pyvw.vw("-d ./test/train-sets/rcv1_small.dat")
     assert vw.parser_ran == True, "vw should set parser_ran to true if --data present"
     vw.finish()
 
+
 def test_not_runparser_cmd_string():
     vw = pyvw.vw("")
     assert vw.parser_ran == False, "vw should set parser_ran to false"
     vw.finish()
+
 
 def check_error_raises(type, argument):
     """
@@ -423,66 +423,69 @@ def check_error_raises(type, argument):
     with pytest.raises(type) as error:
         argument()
 
-def test_dsjson():
-    vw = pyvw.vw('--cb_explore_adf --epsilon 0.2 --dsjson')
 
-    ex_l_str='{"_label_cost":-1.0,"_label_probability":0.5,"_label_Action":1,"_labelIndex":0,"o":[{"v":1.0,"EventId":"38cbf24f-70b2-4c76-aa0c-970d0c8d388e","ActionTaken":false}],"Timestamp":"2020-11-15T17:09:31.8350000Z","Version":"1","EventId":"38cbf24f-70b2-4c76-aa0c-970d0c8d388e","a":[1,2],"c":{ "GUser":{"id":"person5","major":"engineering","hobby":"hiking","favorite_character":"spock"}, "_multi": [ { "TAction":{"topic":"SkiConditions-VT"} }, { "TAction":{"topic":"HerbGarden"} } ] },"p":[0.5,0.5],"VWState":{"m":"N/A"}}\n'
+def test_dsjson():
+    vw = pyvw.vw("--cb_explore_adf --epsilon 0.2 --dsjson")
+
+    ex_l_str = '{"_label_cost":-1.0,"_label_probability":0.5,"_label_Action":1,"_labelIndex":0,"o":[{"v":1.0,"EventId":"38cbf24f-70b2-4c76-aa0c-970d0c8d388e","ActionTaken":false}],"Timestamp":"2020-11-15T17:09:31.8350000Z","Version":"1","EventId":"38cbf24f-70b2-4c76-aa0c-970d0c8d388e","a":[1,2],"c":{ "GUser":{"id":"person5","major":"engineering","hobby":"hiking","favorite_character":"spock"}, "_multi": [ { "TAction":{"topic":"SkiConditions-VT"} }, { "TAction":{"topic":"HerbGarden"} } ] },"p":[0.5,0.5],"VWState":{"m":"N/A"}}\n'
     ex_l = vw.parse(ex_l_str)
     vw.learn(ex_l)
     pred = ex_l[0].get_action_scores()
     expected = [0.5, 0.5]
     assert len(pred) == len(expected)
-    for a,b in zip(pred, expected):
+    for a, b in zip(pred, expected):
         assert isclose(a, b)
     vw.finish_example(ex_l)
 
-    ex_p='{"_label_cost":-1.0,"_label_probability":0.5,"_label_Action":1,"_labelIndex":0,"o":[{"v":1.0,"EventId":"38cbf24f-70b2-4c76-aa0c-970d0c8d388e","ActionTaken":false}],"Timestamp":"2020-11-15T17:09:31.8350000Z","Version":"1","EventId":"38cbf24f-70b2-4c76-aa0c-970d0c8d388e","a":[1,2],"c":{ "GUser":{"id":"person5","major":"engineering","hobby":"hiking","favorite_character":"spock"}, "_multi": [ { "TAction":{"topic":"SkiConditions-VT"} }, { "TAction":{"topic":"HerbGarden"} } ] },"p":[0.5,0.5],"VWState":{"m":"N/A"}}\n'
+    ex_p = '{"_label_cost":-1.0,"_label_probability":0.5,"_label_Action":1,"_labelIndex":0,"o":[{"v":1.0,"EventId":"38cbf24f-70b2-4c76-aa0c-970d0c8d388e","ActionTaken":false}],"Timestamp":"2020-11-15T17:09:31.8350000Z","Version":"1","EventId":"38cbf24f-70b2-4c76-aa0c-970d0c8d388e","a":[1,2],"c":{ "GUser":{"id":"person5","major":"engineering","hobby":"hiking","favorite_character":"spock"}, "_multi": [ { "TAction":{"topic":"SkiConditions-VT"} }, { "TAction":{"topic":"HerbGarden"} } ] },"p":[0.5,0.5],"VWState":{"m":"N/A"}}\n'
     pred = vw.predict(ex_p)
     expected = [0.9, 0.1]
     assert len(pred) == len(expected)
-    for a,b in zip(pred, expected):
+    for a, b in zip(pred, expected):
         assert isclose(a, b)
+
 
 def test_dsjson_with_metrics():
-    vw = pyvw.vw('--extra_metrics metrics.json --cb_explore_adf --epsilon 0.2 --dsjson')
+    vw = pyvw.vw("--extra_metrics metrics.json --cb_explore_adf --epsilon 0.2 --dsjson")
 
-    ex_l_str='{"_label_cost":-0.9,"_label_probability":0.5,"_label_Action":1,"_labelIndex":0,"o":[{"v":1.0,"EventId":"38cbf24f-70b2-4c76-aa0c-970d0c8d388e","ActionTaken":false}],"Timestamp":"2020-11-15T17:09:31.8350000Z","Version":"1","EventId":"38cbf24f-70b2-4c76-aa0c-970d0c8d388e","a":[1,2],"c":{ "GUser":{"id":"person5","major":"engineering","hobby":"hiking","favorite_character":"spock"}, "_multi": [ { "TAction":{"topic":"SkiConditions-VT"} }, { "TAction":{"topic":"HerbGarden"} } ] },"p":[0.5,0.5],"VWState":{"m":"N/A"}}\n'
+    ex_l_str = '{"_label_cost":-0.9,"_label_probability":0.5,"_label_Action":1,"_labelIndex":0,"o":[{"v":1.0,"EventId":"38cbf24f-70b2-4c76-aa0c-970d0c8d388e","ActionTaken":false}],"Timestamp":"2020-11-15T17:09:31.8350000Z","Version":"1","EventId":"38cbf24f-70b2-4c76-aa0c-970d0c8d388e","a":[1,2],"c":{ "GUser":{"id":"person5","major":"engineering","hobby":"hiking","favorite_character":"spock"}, "_multi": [ { "TAction":{"topic":"SkiConditions-VT"} }, { "TAction":{"topic":"HerbGarden"} } ] },"p":[0.5,0.5],"VWState":{"m":"N/A"}}\n'
     ex_l = vw.parse(ex_l_str)
     vw.learn(ex_l)
     pred = ex_l[0].get_action_scores()
     expected = [0.5, 0.5]
     assert len(pred) == len(expected)
-    for a,b in zip(pred, expected):
+    for a, b in zip(pred, expected):
         assert isclose(a, b)
     vw.finish_example(ex_l)
 
-    ex_p='{"_label_cost":-1.0,"_label_probability":0.5,"_label_Action":1,"_labelIndex":0,"o":[{"v":1.0,"EventId":"38cbf24f-70b2-4c76-aa0c-970d0c8d388e","ActionTaken":false}],"Timestamp":"2020-11-15T17:09:31.8350000Z","Version":"1","EventId":"38cbf24f-70b2-4c76-aa0c-970d0c8d388e","a":[1,2],"c":{ "GUser":{"id":"person5","major":"engineering","hobby":"hiking","favorite_character":"spock"}, "_multi": [ { "TAction":{"topic":"SkiConditions-VT"} }, { "TAction":{"topic":"HerbGarden"} } ] },"p":[0.5,0.5],"VWState":{"m":"N/A"}}\n'
+    ex_p = '{"_label_cost":-1.0,"_label_probability":0.5,"_label_Action":1,"_labelIndex":0,"o":[{"v":1.0,"EventId":"38cbf24f-70b2-4c76-aa0c-970d0c8d388e","ActionTaken":false}],"Timestamp":"2020-11-15T17:09:31.8350000Z","Version":"1","EventId":"38cbf24f-70b2-4c76-aa0c-970d0c8d388e","a":[1,2],"c":{ "GUser":{"id":"person5","major":"engineering","hobby":"hiking","favorite_character":"spock"}, "_multi": [ { "TAction":{"topic":"SkiConditions-VT"} }, { "TAction":{"topic":"HerbGarden"} } ] },"p":[0.5,0.5],"VWState":{"m":"N/A"}}\n'
     pred = vw.predict(ex_p)
     expected = [0.9, 0.1]
     assert len(pred) == len(expected)
-    for a,b in zip(pred, expected):
+    for a, b in zip(pred, expected):
         assert isclose(a, b)
 
     learner_metric_dict = vw.get_learner_metrics()
-    assert(len(vw.get_learner_metrics()) == 17)
+    assert len(vw.get_learner_metrics()) == 17
 
-    assert(learner_metric_dict["total_predict_calls"] == 2)
-    assert(learner_metric_dict["total_learn_calls"] == 1)
-    assert(learner_metric_dict["cbea_labeled_ex"] == 1)
-    assert(learner_metric_dict["cbea_predict_in_learn"] == 0)
-    assert(learner_metric_dict["cbea_label_first_action"] == 1)
-    assert(learner_metric_dict["cbea_label_not_first"] == 0)
-    assert(pytest.approx(learner_metric_dict["cbea_sum_cost"]) == -0.9)
-    assert(pytest.approx(learner_metric_dict["cbea_sum_cost_baseline"]) == -0.9)
-    assert(learner_metric_dict["cbea_non_zero_cost"] == 1)
-    assert(pytest.approx(learner_metric_dict["cbea_avg_feat_per_event"]) == 24)
-    assert(pytest.approx(learner_metric_dict["cbea_avg_actions_per_event"]) == 2)
-    assert(pytest.approx(learner_metric_dict["cbea_avg_ns_per_event"]) == 16)
-    assert(pytest.approx(learner_metric_dict["cbea_avg_feat_per_action"]) == 12)
-    assert(pytest.approx(learner_metric_dict["cbea_avg_ns_per_action"]) == 8)
-    assert(learner_metric_dict["cbea_min_actions"] == 2)
-    assert(learner_metric_dict["cbea_max_actions"] == 2)
-    assert(learner_metric_dict["sfm_count_learn_example_with_shared"] == 1)
+    assert learner_metric_dict["total_predict_calls"] == 2
+    assert learner_metric_dict["total_learn_calls"] == 1
+    assert learner_metric_dict["cbea_labeled_ex"] == 1
+    assert learner_metric_dict["cbea_predict_in_learn"] == 0
+    assert learner_metric_dict["cbea_label_first_action"] == 1
+    assert learner_metric_dict["cbea_label_not_first"] == 0
+    assert pytest.approx(learner_metric_dict["cbea_sum_cost"]) == -0.9
+    assert pytest.approx(learner_metric_dict["cbea_sum_cost_baseline"]) == -0.9
+    assert learner_metric_dict["cbea_non_zero_cost"] == 1
+    assert pytest.approx(learner_metric_dict["cbea_avg_feat_per_event"]) == 24
+    assert pytest.approx(learner_metric_dict["cbea_avg_actions_per_event"]) == 2
+    assert pytest.approx(learner_metric_dict["cbea_avg_ns_per_event"]) == 16
+    assert pytest.approx(learner_metric_dict["cbea_avg_feat_per_action"]) == 12
+    assert pytest.approx(learner_metric_dict["cbea_avg_ns_per_action"]) == 8
+    assert learner_metric_dict["cbea_min_actions"] == 2
+    assert learner_metric_dict["cbea_max_actions"] == 2
+    assert learner_metric_dict["sfm_count_learn_example_with_shared"] == 1
+
 
 def test_constructor_exception_is_safe():
     try:

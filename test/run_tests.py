@@ -460,7 +460,9 @@ def create_test_dir(
 
         if file_to_copy is None:
             dependent_tests = ", ".join(dependencies)
-            raise ValueError(f"Input file '{f}' couldn't be found for test {test_id}. Searched in '{test_ref_dir}' as well as outputs of dependent tests: [{dependent_tests}]")
+            raise ValueError(
+                f"Input file '{f}' couldn't be found for test {test_id}. Searched in '{test_ref_dir}' as well as outputs of dependent tests: [{dependent_tests}]"
+            )
 
         test_dest_file = test_working_dir / f
         if file_to_copy == test_dest_file:
@@ -732,8 +734,8 @@ def convert_to_test_data(
         command_line = ""
         if "bash_command" in test:
             command_line = test["bash_command"].format(
-                    VW=vw_bin, SPANNING_TREE=spanning_tree_bin
-                )
+                VW=vw_bin, SPANNING_TREE=spanning_tree_bin
+            )
             is_shell = True
 
             if sys.platform == "darwin" and (
@@ -960,7 +962,9 @@ def main():
             test_base_ref_dir, args.spanning_tree_bin_path
         )
         if spanning_tree_bin is None:
-            print("Can't find spanning tree binary. Did you build the 'spanning_tree' target?")
+            print(
+                "Can't find spanning tree binary. Did you build the 'spanning_tree' target?"
+            )
             sys.exit(1)
 
         print(f"Using spanning tree binary: {spanning_tree_bin.resolve()}")
@@ -1004,9 +1008,13 @@ def main():
                 test.skip_reason = "This is a flatbuffer test, can be run with --include_flatbuffers flag"
 
     if args.for_flatbuffers:
-        to_flatbuff_bin = find_to_flatbuf_binary(test_base_ref_dir, args.to_flatbuff_path)
+        to_flatbuff_bin = find_to_flatbuf_binary(
+            test_base_ref_dir, args.to_flatbuff_path
+        )
         if to_flatbuff_bin is None:
-            print("Can't find to_flatbuff binary. Did you build the 'to_flatbuff' target?")
+            print(
+                "Can't find to_flatbuff binary. Did you build the 'to_flatbuff' target?"
+            )
             sys.exit(1)
         tests = convert_tests_for_flatbuffers(
             tests, to_flatbuff_bin, test_base_working_dir, color_enum
