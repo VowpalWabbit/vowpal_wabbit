@@ -927,7 +927,7 @@ uint32_t ex_get_slates_action(example_ptr ec, uint32_t i)
   return ec->l.slates.probabilities[i].action;
 }
 float ex_get_slates_probability(example_ptr ec, uint32_t i)
-{ 
+{
   if (i >= ex_get_slates_num_probabilities(ec)) { THROW("Probability index out of bounds"); }
   return ec->l.slates.probabilities[i].score;
 }
