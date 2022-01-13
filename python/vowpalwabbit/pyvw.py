@@ -1160,10 +1160,36 @@ class CostSensitiveLabel(AbstractLabel):
         return " ".join(["{}:{}".format(c.label, c.cost) for c in self.costs])
 
 
+class CBLabelElement:
+    def __init__(
+        self,
+        action: Optional[int] = None,
+        cost: float = 0.0,
+        partial_prediction: float = 0.0,
+        probability: float = 0.0,
+        **kwargs
+    ):
+        if kwargs.get("label", False):
+            action = kwargs["label"]
+            warnings.warn(
+                "label has been deprecated. Please use 'action' instead.",
+                DeprecationWarning,
+            )
+        self.label = action
+        self.action = action
+        self.cost = cost
+        self.partial_prediction = partial_prediction
+        self.probability = probability
+
+
 class CBLabel(AbstractLabel):
     """Class for contextual bandits VW label"""
 
-    def __init__(self, costs=[], prediction=0):
+    def __init__(
+        self,
+        costs: Union["example", List[CBLabelElement]] = [],
+        prediction: float = 0.0,
+    ):
         AbstractLabel.__init__(self)
         if isinstance(costs, example):
             self.from_example(costs)
@@ -1171,42 +1197,56 @@ class CBLabel(AbstractLabel):
             self.costs = costs
             self.prediction = prediction
 
-    def from_example(self, ex):
-        class wclass:
-            def __init__(
-                self,
-                action=None,
-                cost=0.0,
-                partial_prediction=0.0,
-                probability=0.0,
-                **kwargs
-            ):
-                if kwargs.get("label", False):
-                    action = kwargs["label"]
-                    warnings.warn(
-                        "label has been deprecated. Please use 'action' instead.",
-                        DeprecationWarning,
-                    )
-                self.label = action
-                self.action = action
-                self.cost = cost
-                self.partial_prediction = partial_prediction
-                self.probability = probability
-
+    def from_example(self, ex: "example"):
         self.prediction = ex.get_cbandits_prediction()
         self.costs = []
         for i in range(ex.get_cbandits_num_costs()):
-            wc = wclass(
+            cb = CBLabelElement(
                 ex.get_cbandits_class(i),
                 ex.get_cbandits_cost(i),
                 ex.get_cbandits_partial_prediction(i),
                 ex.get_cbandits_probability(i),
             )
-            self.costs.append(wc)
+            self.costs.append(cb)
 
     def __str__(self):
         return " ".join(
             ["{}:{}:{}".format(c.action, c.cost, c.probability) for c in self.costs]
+        )
+
+
+class CBContinuousLabelElement:
+    def __init__(
+        self, action: Optional[int] = None, cost: float = 0.0, pdf_value: float = 0.0
+    ):
+        self.action = action
+        self.cost = cost
+        self.pdf_value = pdf_value
+
+
+class CBContinuousLabel(AbstractLabel):
+    """Class for cb_continuous VW label"""
+
+    def __init__(self, costs: Union["example", List[CBContinuousLabelElement]] = []):
+        AbstractLabel.__init__(self)
+        if isinstance(costs, example):
+            self.from_example(costs)
+        else:
+            self.costs = costs
+
+    def from_example(self, ex: "example"):
+        self.costs = []
+        for i in range(ex.get_cb_continuous_num_costs()):
+            elem = CBContinuousLabelElement(
+                ex.get_cb_continuous_class(i),
+                ex.get_cb_continuous_cost(i),
+                ex.get_cb_continuous_pdf_value(i),
+            )
+            self.costs.append(elem)
+
+    def __str__(self):
+        return "ca " + " ".join(
+            ["{}:{}:{}".format(c.action, c.cost, c.pdf_value) for c in self.costs]
         )
 
 
