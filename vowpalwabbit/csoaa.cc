@@ -86,8 +86,7 @@ void predict_or_learn(csoaa& c, single_learner& base, example& ec)
       // Label validation
       if (c.indexing == 0 && lbl >= c.num_classes)
       {
-        c.logger.warn(
-            "label {0} is not in {{0,{1}}}. This won't work for 0-indexed actions.", lbl, c.num_classes - 1);
+        c.logger.warn("label {0} is not in {{0,{1}}}. This won't work for 0-indexed actions.", lbl, c.num_classes - 1);
         lbl = 0;
       }
       else if (c.indexing == 1 && (lbl < 1 || lbl > c.num_classes))

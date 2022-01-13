@@ -141,8 +141,7 @@ int main(int argc, char* argv[])
     // TODO: If loggers are instantiated within struct vw, this line lives outside of that. Log as critical for now
     if (log_level != "off")
     {
-      if (log_output_stream == "stderr")
-      { std::cerr << "[critical] vw: " << e.what() << std::endl; }
+      if (log_output_stream == "stderr") { std::cerr << "[critical] vw: " << e.what() << std::endl; }
       else
       {
         std::cout << "[critical] vw: " << e.what() << std::endl;
@@ -154,8 +153,7 @@ int main(int argc, char* argv[])
   {
     if (log_level != "off")
     {
-      if (log_output_stream == "stderr")
-      { std::cerr << "[critical] Unknown exception occurred" << std::endl; }
+      if (log_output_stream == "stderr") { std::cerr << "[critical] Unknown exception occurred" << std::endl; }
       else
       {
         std::cout << "[critical] vw: unknown exception" << std::endl;

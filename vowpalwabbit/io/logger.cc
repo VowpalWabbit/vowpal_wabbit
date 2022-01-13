@@ -10,7 +10,7 @@ namespace io
 {
 namespace details
 {
-  template <typename Mutex>
+template <typename Mutex>
 class function_ptr_sink : public spdlog::sinks::base_sink<Mutex>
 {
 public:
@@ -30,7 +30,7 @@ protected:
   func_t _func;
   void* _context;
 };
-}
+}  // namespace details
 
 void logger::set_level(log_level lvl)
 {
@@ -48,8 +48,7 @@ void logger::log_summary()
 {
   if (_logger_impl->_max_limit != SIZE_MAX && _logger_impl->_log_count > _logger_impl->_max_limit)
   {
-    _logger_impl->critical(
-        "Omitted some log lines. Re-run without --limit_output N for full log. Total log lines: {}",
+    _logger_impl->critical("Omitted some log lines. Re-run without --limit_output N for full log. Total log lines: {}",
         _logger_impl->_log_count);
   }
 }

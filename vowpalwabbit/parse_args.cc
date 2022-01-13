@@ -1146,9 +1146,7 @@ void parse_output_model(options_i& options, VW::workspace& all)
 
   if (options.was_supplied("invert_hash")) { all.hash_inv = true; }
   if (save_resume)
-  {
-    all.logger.warn("--save_resume flag is deprecated -- learning can now continue on saved models by default.");
-  }
+  { all.logger.warn("--save_resume flag is deprecated -- learning can now continue on saved models by default."); }
   if (predict_only_model) { all.save_resume = false; }
 
   // Question: This doesn't seem necessary
@@ -1256,7 +1254,8 @@ VW::workspace& parse_args(
       if (all.options->was_supplied("log_output"))
       {
         all.logger.warn(
-            "--log_output option is unused. This is because when a custom trace_listener is being used all output is sent to that.");
+            "--log_output option is unused. This is because when a custom trace_listener is being used all output is "
+            "sent to that.");
       }
 
       // Since the trace_message_t interface uses a string and the writer interface uses a buffer we unfortunately

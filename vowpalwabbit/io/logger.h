@@ -67,10 +67,7 @@ struct logger_impl
     _log_count++;
     if (_log_count <= _max_limit)
     {
-      if (_location == output_location::err)
-      {
-        _spdlog_stderr_logger->info(fmt, std::forward<Args>(args)...);
-      }
+      if (_location == output_location::err) { _spdlog_stderr_logger->info(fmt, std::forward<Args>(args)...); }
       else
       {
         _spdlog_stdout_logger->info(fmt, std::forward<Args>(args)...);
@@ -84,10 +81,7 @@ struct logger_impl
     _log_count++;
     if (_log_count <= _max_limit)
     {
-      if (_location == output_location::err)
-      {
-        _spdlog_stderr_logger->warn(fmt, std::forward<Args>(args)...);
-      }
+      if (_location == output_location::err) { _spdlog_stderr_logger->warn(fmt, std::forward<Args>(args)...); }
       else
       {
         _spdlog_stdout_logger->warn(fmt, std::forward<Args>(args)...);
@@ -101,10 +95,7 @@ struct logger_impl
     _log_count++;
     if (_log_count <= _max_limit)
     {
-      if (_location == output_location::err)
-      {
-        _spdlog_stderr_logger->error(fmt, std::forward<Args>(args)...);
-      }
+      if (_location == output_location::err) { _spdlog_stderr_logger->error(fmt, std::forward<Args>(args)...); }
       else
       {
         _spdlog_stdout_logger->error(fmt, std::forward<Args>(args)...);
@@ -117,10 +108,7 @@ struct logger_impl
   {
     _log_count++;
     // we ignore max_limit with critical log
-    if (_location == output_location::err)
-    {
-      _spdlog_stderr_logger->critical(fmt, std::forward<Args>(args)...);
-    }
+    if (_location == output_location::err) { _spdlog_stderr_logger->critical(fmt, std::forward<Args>(args)...); }
     else
     {
       _spdlog_stdout_logger->critical(fmt, std::forward<Args>(args)...);

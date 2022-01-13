@@ -337,8 +337,7 @@ void parse_cache(VW::workspace& all, std::vector<std::string> cache_files, bool 
       uint64_t c = cache_numbits(*all.example_parser->input.get_input_files().back());
       if (c < all.num_bits)
       {
-        if (!quiet)
-        { all.logger.warn("cache file is ignored as it's made with less bit precision than required."); }
+        if (!quiet) { all.logger.warn("cache file is ignored as it's made with less bit precision than required."); }
         all.example_parser->input.close_file();
         make_write_cache(all, file, quiet);
       }
@@ -490,9 +489,7 @@ void enable_sources(VW::workspace& all, bool quiet, size_t passes, input_options
 
         // If the child failed we still fork off another one, but log the issue.
         if (status != 0)
-        {
-          all.logger.warn("Daemon child process received exited with non-zero exit code: {}. Ignoring.", status);
-        }
+        { all.logger.warn("Daemon child process received exited with non-zero exit code: {}. Ignoring.", status); }
 
         if (got_sigterm)
         {
