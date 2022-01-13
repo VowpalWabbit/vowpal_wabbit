@@ -624,9 +624,8 @@ void parse_feature_tweaks(options_i& options, VW::workspace& all, bool interacti
     }
   }
 
-  if (options.was_supplied("affix")) {
-    parse_affix_argument(VW::decode_inline_hex(affix, all.logger), all.affix_features);
-    }
+  if (options.was_supplied("affix"))
+  { parse_affix_argument(VW::decode_inline_hex(affix, all.logger), all.affix_features); }
 
   // Process ngram and skips arguments
   if (options.was_supplied("skips"))
@@ -1761,7 +1760,7 @@ VW::workspace* initialize_escaped(
 {
   auto escaped_tokens = escaped_tokenize(' ', s);
   std::unique_ptr<options_i, options_deleter_type> options(
-    new config::options_boost_po(escaped_tokens), [](VW::config::options_i* ptr) { delete ptr; });
+      new config::options_boost_po(escaped_tokens), [](VW::config::options_i* ptr) { delete ptr; });
   return initialize(std::move(options), model, skip_model_load, trace_listener, trace_context);
 }
 

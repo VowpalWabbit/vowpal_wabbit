@@ -57,13 +57,7 @@ void parse_affix_argument(const std::string& str, std::array<uint64_t, NUM_NAMES
 
 namespace VW
 {
-inline bool affix_is_prefix(uint64_t affix_value)
-{
-  return affix_value & 0x1;
-}
+inline bool affix_is_prefix(uint64_t affix_value) { return affix_value & 0x1; }
 
-inline uint64_t affix_length(uint64_t affix_value)
-{
-  return (affix_value >> 1) & 0x7;
-}
-}
+inline uint64_t affix_length(uint64_t affix_value) { return (affix_value >> 1) & 0x7; }
+}  // namespace VW
