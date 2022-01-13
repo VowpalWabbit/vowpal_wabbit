@@ -1,1 +1,0 @@
-[critical] vw (gd_mf.cc:268): model load failed. Error Details: Model weights object was not initialized when trying to data load into it., model files = model-sets/corrupted_weights_gd.model
