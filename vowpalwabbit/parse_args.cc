@@ -1291,15 +1291,33 @@ VW::workspace& parse_args(
 
     bool strict_parse = false;
     int ring_size_tmp;
+    int64_t example_queue_limit_tmp;
     option_group_definition vw_args("Parser");
     vw_args.add(make_option("ring_size", ring_size_tmp).default_value(256).help("Size of example ring"))
+        .add(make_option("example_queue_limit", example_queue_limit_tmp)
+                 .default_value(256)
+                 .help("Max number of examples to store after parsing but before the learner has processed. Rarely "
+                       "needs to be changed."))
         .add(make_option("strict_parse", strict_parse).help("Throw on malformed examples"));
     all.options->add_and_parse(vw_args);
 
     if (ring_size_tmp <= 0) { THROW("ring_size should be positive") }
+    if (example_queue_limit_tmp <= 0) { THROW("ring_size should be positive") }
     auto ring_size = static_cast<size_t>(ring_size_tmp);
+    auto example_queue_limit = static_cast<size_t>(example_queue_limit_tmp);
+    auto final_example_queue_limit = example_queue_limit;
+    if (all.options->was_supplied("ring_size"))
+    {
+      final_example_queue_limit = ring_size;
+      all.logger.err_warn("--ring_size is deprecated and has been replaced with --example_queue_limit");
+      if (all.options->was_supplied("example_queue_limit"))
+      {
+        final_example_queue_limit = example_queue_limit;
+        all.logger.err_info("--example_queue_limit overrides --ring_size");
+      }
+    }
 
-    all.example_parser = new parser{ring_size, strict_parse};
+    all.example_parser = new parser{final_example_queue_limit, strict_parse};
     all.example_parser->_shared_data = all.sd;
 
     option_group_definition update_args("Update");
