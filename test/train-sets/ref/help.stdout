@@ -3,7 +3,7 @@ Driver Options:
   --log_level arg (=info, )                  Log level for logging messages. Specifying this wil 
                                              override --quiet for log output.. Choices: {critical, 
                                              error, info, off, warn}
-  --log_output arg (=compat, )               Specify the stream to output log messages to. In the 
+  --log_output arg (=stdout, )               Specify the stream to output log messages to. In the 
                                              past VW's choice of stream for logging messages wasn't
                                              consistent. Supplying compat will maintain that old 
                                              behavior. Compat is now deprecated so it is 
@@ -20,7 +20,7 @@ Logging options Options:
   --log_level arg (=info, )                  Log level for logging messages. Specifying this wil 
                                              override --quiet for log output.. Choices: {critical, 
                                              error, info, off, warn}
-  --log_output arg (=compat, )               Specify the stream to output log messages to. In the 
+  --log_output arg (=stdout, )               Specify the stream to output log messages to. In the 
                                              past VW's choice of stream for logging messages wasn't
                                              consistent. Supplying compat will maintain that old 
                                              behavior. Compat is now deprecated so it is 
