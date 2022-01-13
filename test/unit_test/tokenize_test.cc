@@ -117,10 +117,10 @@ BOOST_AUTO_TEST_CASE(tokenize_basic_string_with_escape_final_character) {
 
 BOOST_AUTO_TEST_CASE(tokenize_to_argv_with_space) {
   int argc = 0;
-  char** argv = VW::to_argv_escaped("--ring_size 1024 -f my_model\\ best.model", argc);
+  char** argv = VW::to_argv_escaped("--example_queue_limit 1024 -f my_model\\ best.model", argc);
   BOOST_CHECK_EQUAL(argc, 5);
   BOOST_CHECK_EQUAL(argv[0], "b");
-  BOOST_CHECK_EQUAL(argv[1], "--ring_size");
+  BOOST_CHECK_EQUAL(argv[1], "--example_queue_limit");
   BOOST_CHECK_EQUAL(argv[2], "1024");
   BOOST_CHECK_EQUAL(argv[3], "-f");
   BOOST_CHECK_EQUAL(argv[4], "my_model best.model");

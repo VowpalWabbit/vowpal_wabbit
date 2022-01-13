@@ -373,7 +373,7 @@ private:
 void run_easy()
 {
   VW::workspace& vw_obj = *VW::initialize(
-      "--search 29 --quiet --search_task hook --ring_size 1024 --search_rollin learn --search_rollout none");
+      "--search 29 --quiet --search_task hook --example_queue_limit 1024 --search_rollin learn --search_rollout none");
   Generator task(vw_obj);
   output out("");
 
@@ -470,7 +470,11 @@ void train()
   dict.build_max();
   //dict.print();
 
-  std::string init_str("--search 29 -b 28 --quiet --search_task hook --ring_size 1024 --search_rollin learn --search_rollout none -q i: --ngram i15 --skips i5 --ngram c15 --ngram w6 --skips c3 --skips w3"); //  --search_use_passthrough_repr"); // -q si -q wi -q ci -q di  -f my_model
+  std::string init_str(
+      "--search 29 -b 28 --quiet --search_task hook --example_queue_limit 1024 --search_rollin learn --search_rollout "
+      "none -q i: --ngram i15 --skips i5 --ngram c15 --ngram w6 --skips c3 --skips w3");  //  --search_use_passthrough_repr");
+                                                                                          //  // -q si -q wi -q ci -q di
+                                                                                          //  -f my_model
   VW::workspace* vw_obj = VW::initialize(init_str);
   cerr << init_str << endl;
   // Generator gen(*vw_obj, nullptr); // &dict);
@@ -487,7 +491,7 @@ void train()
 
 void predict()
 {
-  VW::workspace& vw_obj = *VW::initialize("--quiet -t --ring_size 1024 -i my_model");
+  VW::workspace& vw_obj = *VW::initialize("--quiet -t --example_queue_limit 1024 -i my_model");
   //run(vw_obj);
   VW::finish(vw_obj);
 }
