@@ -1,10 +1,7 @@
-[warning] The old default logging behavior of logging to a mix of stdout and stderr is deprecated. Please choose either 'stdout' or 'stderr' for --log_output to silence this warning.
-[info] Generating 3-grams for all namespaces.
-[info] Generating 1-skips for all namespaces.
 enabling BFGS based optimization **without** curvature calculation
 Num weight bits = 18
 learning rate = 0.5
 initial_t = 0
 power_t = 0.5
 decay_learning_rate = 1
-[critical] vw (bfgs.cc:1003): model load failed. Error Details: BFGS does not support models with save_resume data. Only models produced and consumed with --predict_only_model can be used with BFGS., model files = models/0001_1.model
+## avg. loss 	der. mag. 	d. m. cond.	 wolfe1    	wolfe2    	mix fraction	curvature 	dir. magnitude	step size

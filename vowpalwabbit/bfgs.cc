@@ -998,13 +998,6 @@ void save_load(bfgs& b, io_buf& model_file, bool read, bool text)
 {
   VW::workspace* all = b.all;
 
-  if (all->save_resume)
-  {
-    THROW(
-        "BFGS does not support models with save_resume data. Only models produced and consumed with "
-        "--predict_only_model can be used with BFGS.");
-  }
-
   uint32_t length = 1 << all->num_bits;
 
   if (read)
@@ -1050,6 +1043,13 @@ void save_load(bfgs& b, io_buf& model_file, bool read, bool text)
 
   if (model_file.num_files() > 0)
   {
+    if (all->save_resume)
+    {
+      THROW(
+          "BFGS does not support models with save_resume data. Only models produced and consumed with "
+          "--predict_only_model can be used with BFGS.");
+    }
+
     std::stringstream msg;
     msg << ":" << reg_vector << "\n";
     bin_text_read_write_fixed(model_file, reinterpret_cast<char*>(&reg_vector), sizeof(reg_vector), read, msg, text);
