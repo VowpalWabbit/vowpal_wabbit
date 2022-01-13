@@ -13,6 +13,7 @@
 #include "vw_string_view.h"
 #include "future_compat.h"
 #include "shared_data.h"
+#include "parse_args.h"
 
 #include "io/logger.h"
 
@@ -237,8 +238,8 @@ public:
 
         while (affix > 0)
         {
-          bool is_prefix = affix & 0x1;
-          uint64_t len = (affix >> 1) & 0x7;
+          bool is_prefix = VW::affix_is_prefix(affix);
+          uint64_t len = VW::affix_length(affix);
           VW::string_view affix_name(feature_name);
           if (affix_name.size() > len)
           {

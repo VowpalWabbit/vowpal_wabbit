@@ -53,3 +53,17 @@ inline bool ends_with(const std::string& full_string, const std::string& ending)
 }
 
 std::vector<extent_term> parse_full_name_interactions(VW::workspace& all, VW::string_view str);
+void parse_affix_argument(const std::string& str, std::array<uint64_t, NUM_NAMESPACES>& affix_output);
+
+namespace VW
+{
+inline bool affix_is_prefix(uint64_t affix_value)
+{
+  return affix_value & 0x1;
+}
+
+inline uint64_t affix_length(uint64_t affix_value)
+{
+  return (affix_value >> 1) & 0x7;
+}
+}

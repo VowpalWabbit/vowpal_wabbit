@@ -568,3 +568,16 @@ BOOST_AUTO_TEST_CASE(merge_option_from_cb_header)
 
   BOOST_CHECK_EQUAL(false, is_ccb_model);
 }
+
+BOOST_AUTO_TEST_CASE(parse_affix_features_test)
+{
+  std::array<uint64_t, NUM_NAMESPACES> affix_features;
+  parse_affix_argument("+2a,-3b,+1", affix_features);
+
+  BOOST_CHECK_EQUAL(VW::affix_is_prefix(affix_features['a']), true);
+  BOOST_CHECK_EQUAL(VW::affix_length(affix_features['a']), 2);
+  BOOST_CHECK_EQUAL(VW::affix_is_prefix(affix_features['b']), false);
+  BOOST_CHECK_EQUAL(VW::affix_length(affix_features['b']), 3);
+  BOOST_CHECK_EQUAL(VW::affix_is_prefix(affix_features[' ']), true);
+  BOOST_CHECK_EQUAL(VW::affix_length(affix_features[' ']), 1);
+}

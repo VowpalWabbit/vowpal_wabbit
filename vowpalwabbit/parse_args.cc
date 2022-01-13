@@ -39,6 +39,7 @@
 #include "options_boost_po.h"
 #include "options_serializer_boost_po.h"
 #include "named_labels.h"
+#include "parse_primitives.h"
 
 #include "io/io_adapter.h"
 #include "io/custom_streambuf.h"
@@ -220,55 +221,41 @@ void parse_dictionary_argument(VW::workspace& all, const std::string& str)
   all.loaded_dictionaries.push_back(info);
 }
 
-void parse_affix_argument(VW::workspace& all, const std::string& str)
+void parse_affix_argument(const std::string& str, std::array<uint64_t, NUM_NAMESPACES>& affix_output)
 {
   if (str.length() == 0) return;
-  char* cstr = calloc_or_throw<char>(str.length() + 1);
-  VW::string_cpy(cstr, (str.length() + 1), str.c_str());
+  std::vector<std::string> tokens;
+  tokenize(',', str, tokens);
 
-  char* next_token;
-  char* p = strtok_s(cstr, ",", &next_token);
-
-  try
+  for (const auto& token : tokens)
   {
-    while (p)
+    assert(token.length() > 0);
+    auto q = token.c_str();
+    uint16_t prefix = 1;
+    if (q[0] == '+') { q++; }
+    else if (q[0] == '-')
     {
-      char* q = p;
-      uint16_t prefix = 1;
-      if (q[0] == '+') { q++; }
-      else if (q[0] == '-')
-      {
-        prefix = 0;
-        q++;
-      }
-      if ((q[0] < '1') || (q[0] > '7')) THROW("malformed affix argument (length must be 1..7): " << p)
-
-      auto len = static_cast<uint16_t>(q[0] - '0');
-      auto ns = static_cast<uint16_t>(' ');  // default namespace
-      if (q[1] != 0)
-      {
-        if (valid_ns(q[1]))
-          ns = static_cast<uint16_t>(q[1]);
-        else
-          THROW("malformed affix argument (invalid namespace): " << p)
-
-        if (q[2] != 0) THROW("malformed affix argument (too long): " << p)
-      }
-
-      uint16_t afx = (len << 1) | (prefix & 0x1);
-      all.affix_features[ns] <<= 4;
-      all.affix_features[ns] |= afx;
-
-      p = strtok_s(nullptr, ",", &next_token);
+      prefix = 0;
+      q++;
     }
-  }
-  catch (...)
-  {
-    free(cstr);
-    throw;
-  }
+    if ((q[0] < '1') || (q[0] > '7')) { THROW("malformed affix argument (length must be 1..7): " << token) }
+    auto len = static_cast<uint16_t>(q[0] - '0');
+    auto ns = static_cast<uint16_t>(' ');  // default namespace
+    if (q[1] != 0)
+    {
+      if (valid_ns(q[1])) { ns = static_cast<uint16_t>(q[1]); }
+      else
+      {
+        THROW("malformed affix argument (invalid namespace): " << token)
+      }
 
-  free(cstr);
+      if (q[2] != 0) { THROW("malformed affix argument (too long): " << token) }
+    }
+
+    uint16_t afx = (len << 1) | (prefix & 0x1);
+    affix_output[ns] <<= 4;
+    affix_output[ns] |= afx;
+  }
 }
 
 void parse_diagnostics(options_i& options, VW::workspace& all)
@@ -637,7 +624,9 @@ void parse_feature_tweaks(options_i& options, VW::workspace& all, bool interacti
     }
   }
 
-  if (options.was_supplied("affix")) parse_affix_argument(all, VW::decode_inline_hex(affix, all.logger));
+  if (options.was_supplied("affix")) {
+    parse_affix_argument(VW::decode_inline_hex(affix, all.logger), all.affix_features);
+    }
 
   // Process ngram and skips arguments
   if (options.was_supplied("skips"))
@@ -1625,7 +1614,7 @@ char** to_argv_escaped(std::string const& s, int& argc)
   for (size_t i = 0; i < tokens.size(); i++)
   {
     argv[i + 1] = calloc_or_throw<char>(tokens[i].length() + 1);
-    sprintf_s(argv[i + 1], (tokens[i].length() + 1), "%s", tokens[i].data());
+    std::memcpy(argv[i + 1], tokens[i].c_str(), tokens[i].length());
   }
 
   argc = static_cast<int>(tokens.size() + 1);
@@ -1770,22 +1759,10 @@ VW::workspace* initialize(std::unique_ptr<options_i, options_deleter_type> optio
 VW::workspace* initialize_escaped(
     std::string const& s, io_buf* model, bool skip_model_load, trace_message_t trace_listener, void* trace_context)
 {
-  int argc = 0;
-  char** argv = to_argv_escaped(s, argc);
-  VW::workspace* ret = nullptr;
-
-  try
-  {
-    ret = initialize(argc, argv, model, skip_model_load, trace_listener, trace_context);
-  }
-  catch (...)
-  {
-    free_args(argc, argv);
-    throw;
-  }
-
-  free_args(argc, argv);
-  return ret;
+  auto escaped_tokens = escaped_tokenize(' ', s);
+  std::unique_ptr<options_i, options_deleter_type> options(
+    new config::options_boost_po(escaped_tokens), [](VW::config::options_i* ptr) { delete ptr; });
+  return initialize(std::move(options), model, skip_model_load, trace_listener, trace_context);
 }
 
 VW::workspace* initialize_with_builder(int argc, char* argv[], io_buf* model, bool skip_model_load,
