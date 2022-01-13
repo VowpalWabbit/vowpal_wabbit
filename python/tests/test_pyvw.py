@@ -147,6 +147,7 @@ def test_CBLabel():
     assert str(cbl) == "1:10.0:0.5"
     del model
 
+
 def test_CBContinuousLabel():
     model = vw(cats=4, min_value=185, max_value=23959, bandwidth=3000, quiet=True)
     cb_contl = pyvw.CBContinuousLabel(model.example("ca 1:10:0.5 |"))
@@ -501,6 +502,7 @@ def test_constructor_exception_is_safe():
         vw = pyvw.vw("--invalid_option")
     except:
         pass
+
 
 def test_deceprecated_labels():
     pyvw.abstract_label()
