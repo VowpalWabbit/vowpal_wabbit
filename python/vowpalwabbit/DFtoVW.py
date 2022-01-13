@@ -52,7 +52,8 @@ class _Col:
         if valid_name != name:
             warnings.warn(
                 "Name '{name}' was not a valid feature/namespace name. It has been renamed '{valid_name}'".format(
-                    name=name, valid_name=valid_name,
+                    name=name,
+                    valid_name=valid_name,
                 )
             )
 
@@ -697,7 +698,12 @@ class DFtoVW:
     """
 
     def __init__(
-        self, df, features=None, namespaces=None, label=None, tag=None,
+        self,
+        df,
+        features=None,
+        namespaces=None,
+        label=None,
+        tag=None,
     ):
         """Initialize a DFtoVW instance.
 
@@ -989,8 +995,11 @@ class DFtoVW:
             missing_cols_str = repr(missing_cols)[1:-1]
             if len(error_msg) > 0:
                 error_msg += " "
-            error_msg += "In '{attribute}': column(s) {colnames} not found in dataframe.".format(
-                attribute=attribute_name, colnames=missing_cols_str,
+            error_msg += (
+                "In '{attribute}': column(s) {colnames} not found in dataframe.".format(
+                    attribute=attribute_name,
+                    colnames=missing_cols_str,
+                )
             )
         raise ValueError(error_msg)
 
@@ -1034,10 +1043,12 @@ class DFtoVW:
             try:
                 [x.check_col_type(self.df) for x in attribute_value]
             except TypeError as type_error:
-                type_error_msg = "In argument '{attribute}' of '{class_name}', {error}".format(
-                    class_name=class_name,
-                    attribute=attribute_name,
-                    error=str(type_error),
+                type_error_msg = (
+                    "In argument '{attribute}' of '{class_name}', {error}".format(
+                        class_name=class_name,
+                        attribute=attribute_name,
+                        error=str(type_error),
+                    )
                 )
                 raise TypeError(type_error_msg)
 
@@ -1045,10 +1056,12 @@ class DFtoVW:
             try:
                 [x.check_col_value(self.df) for x in attribute_value]
             except ValueError as value_error:
-                value_error_msg = "In argument '{attribute}' of '{class_name}', {error}".format(
-                    class_name=class_name,
-                    attribute=attribute_name,
-                    error=str(value_error),
+                value_error_msg = (
+                    "In argument '{attribute}' of '{class_name}', {error}".format(
+                        class_name=class_name,
+                        attribute=attribute_name,
+                        error=str(value_error),
+                    )
                 )
                 raise ValueError(value_error_msg)
 
