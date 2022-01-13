@@ -1,6 +1,4 @@
-[warning] The old default logging behavior of logging to a mix of stdout and stderr is deprecated. Please choose either 'stdout' or 'stderr' for --log_output to silence this warning.
 final_regressor = models/cover_adf_e_dec.model
-[warning] currently, mtr is only used for the first policy in cover, other policies use dr
 Num weight bits = 18
 learning rate = 0.5
 initial_t = 0
