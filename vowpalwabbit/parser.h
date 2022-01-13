@@ -54,10 +54,10 @@ struct input_options;
 struct dsjson_metrics;
 struct parser
 {
-  parser(size_t ring_size, bool strict_parse_)
-      : example_pool{ring_size}
-      , ready_parsed_examples{ring_size}
-      , ring_size{ring_size}
+  parser(size_t example_queue_limit, bool strict_parse_)
+      : example_pool{example_queue_limit}
+      , ready_parsed_examples{example_queue_limit}
+      , example_queue_limit{example_queue_limit}
       , num_examples_taken_from_pool(0)
       , num_setup_examples(0)
       , num_finished_examples(0)
@@ -101,7 +101,7 @@ struct parser
   bool sort_features = false;
   bool sorted_cache = false;
 
-  const size_t ring_size;
+  size_t example_queue_limit;
   std::atomic<uint64_t> num_examples_taken_from_pool;
   std::atomic<uint64_t> num_setup_examples;
   std::atomic<uint64_t> num_finished_examples;

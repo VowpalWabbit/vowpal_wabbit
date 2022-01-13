@@ -1327,7 +1327,7 @@ base_learner* lda_setup(VW::setup_base_i& stack_builder)
   }
 
   size_t minibatch2 = next_pow2(ld->minibatch);
-  if (minibatch2 > all.example_parser->ring_size)
+  if (minibatch2 > all.example_parser->example_queue_limit)
   {
     bool previous_strict_parse = all.example_parser->strict_parse;
     delete all.example_parser;
