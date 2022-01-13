@@ -921,8 +921,16 @@ bool ex_get_slates_labeled(example_ptr ec) { return ec->l.slates.labeled; }
 float ex_get_slates_cost(example_ptr ec) { return ec->l.slates.cost; }
 uint32_t ex_get_slates_slot_id(example_ptr ec) { return ec->l.slates.slot_id; }
 size_t ex_get_slates_num_probabilities(example_ptr ec) { return ec->l.slates.probabilities.size(); }
-uint32_t ex_get_slates_action(example_ptr ec, uint32_t i) { return ec->l.slates.probabilities[i].action; }
-float ex_get_slates_probability(example_ptr ec, uint32_t i) { return ec->l.slates.probabilities[i].score; }
+uint32_t ex_get_slates_action(example_ptr ec, uint32_t i)
+{
+  if (i >= ex_get_slates_num_probabilities(ec)) { THROW("Action index out of bounds"); }
+  return ec->l.slates.probabilities[i].action;
+}
+float ex_get_slates_probability(example_ptr ec, uint32_t i)
+{ 
+  if (i >= ex_get_slates_num_probabilities(ec)) { THROW("Probability index out of bounds"); }
+  return ec->l.slates.probabilities[i].score;
+}
 
 // example_counter is being overriden by lableType!
 size_t get_example_counter(example_ptr ec) { return ec->example_counter; }
