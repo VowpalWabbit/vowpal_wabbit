@@ -171,6 +171,32 @@ def test_multiclass_probabilities_label():
     assert str(mpl) == "1:0.4 2:0.3 3:0.3"
 
 
+def test_slates_label():
+    model = vw(slates=True, quiet=True)
+    slates_shared_label = pyvw.SlatesLabel(model.example("slates shared 0.8 | shared_0 shared_1"))
+    slates_action_label = pyvw.SlatesLabel(model.example("slates action 1 | action_3"))
+    slates_slot_label = pyvw.SlatesLabel(model.example("slates slot 1:0.8,0:0.1,2:0.1 | slot_0"))
+    assert slates_shared_label.type == pyvw.SlatesLabelType.SHARED
+    assert slates_shared_label.labeled == True
+    assert isclose(slates_shared_label.cost, 0.8)
+    assert str(slates_shared_label) == "slates shared 0.8"
+    assert slates_action_label.type == pyvw.SlatesLabelType.ACTION
+    assert slates_action_label.labeled == False
+    assert slates_action_label.weight == 1.0
+    assert slates_action_label.slot_id == 1
+    assert str(slates_action_label) == "slates action 1"
+    assert slates_slot_label.type == pyvw.SlatesLabelType.SLOT
+    assert slates_slot_label.labeled == True
+    assert slates_slot_label.probabilities[0].action == 1
+    assert slates_slot_label.probabilities[0].probability == 0.8
+    assert slates_slot_label.probabilities[1].action == 0
+    assert slates_slot_label.probabilities[1].probability == 0.1
+    assert slates_slot_label.probabilities[2].action == 2
+    assert slates_slot_label.probabilities[2].probability == 0.1
+    assert str(slates_slot_label.probabilities[2]) == "slates slot 1:0.8,0:0.1,2:0.1"
+    del model
+
+
 def test_regressor_args():
     # load and parse external data file
     data_file = os.path.join(

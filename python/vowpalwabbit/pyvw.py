@@ -2,7 +2,7 @@
 """Python binding for pylibvw class"""
 
 from __future__ import division
-from typing import List, Optional, Union
+from typing import List, Tuple, Optional, Union
 import pylibvw
 import warnings
 
@@ -1183,6 +1183,54 @@ class cbandits_label(abstract_label):
             ["{}:{}:{}".format(c.action, c.cost, c.probability) for c in self.costs]
         )
 
+class SlatesLabelType(IntEnum):
+    UNSET = pylibvw.vw.tUNSET
+    SHARED = pylibvw.vw.tSHARED
+    ACTION = pylibvw.vw.tACTION
+    SLOT = pylibvw.vw.tSLOT
+
+class SlatesLabel(abstract_label):
+    """Class for slates VW label"""
+
+    def __init__(
+        self,
+        type: Union["example", SlatesLabelType] = SlatesLabelType.UNSET, 
+        weight: float = 1.0,
+        labeled: bool = False,
+        cost: float = 0.0,
+        slot_id: int = 0,
+        probabilities: List[Tuple[int, float]] = []
+        ):
+        abstract_label.__init__(self)
+        if isinstance(type, example):
+            self.from_example(type)
+        else:
+            self.type = type
+            self.weight = weight
+            self.labeled = labeled
+            self.cost = cost
+            self.slot_id = slot_id
+            self.probabilities = probabilities
+
+    def from_example(self, ex: "example"):
+        self.type = ex.get_slates_type()
+        self.weight = ex.get_slates_weight()
+        self.labeled = ex.get_slates_labeled()
+        self.cost = ex.get_slates_cost()
+        self.slot_id = ex.get_slates_slot_id()
+        self.probabilities = []
+        for i in range(ex.get_slates_num_probabilities()):
+            self.probabilities.append((ex.get_slates_action(i), ex.get_slates_probability(i)))
+
+    def __str__(self):
+        ret = "slates "
+        if self.type == SlatesLabelType.SHARED:
+            ret += "shared {}".format(round(self.cost, 2))
+        elif self.type == SlatesLabelType.ACTION:
+            ret += "action {}".format(self.slot_id)
+        elif self.type == SlatesLabelType.SLOT:
+            ret += "slot " + ",".join(["{}:{}".format(a, round(p,2)) for a,p in self.probabilities])
+        return ret
 
 class example(pylibvw.example):
     """The example class is a (non-trivial) wrapper around
