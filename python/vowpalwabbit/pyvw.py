@@ -2,7 +2,7 @@
 """Python binding for pylibvw class"""
 
 from __future__ import division
-from typing import List, Tuple, Optional, Union
+from typing import List, Optional, Union
 import pylibvw
 import warnings
 
