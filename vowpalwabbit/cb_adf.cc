@@ -526,7 +526,7 @@ base_learner* cb_adf_setup(VW::setup_base_i& stack_builder)
   }
   catch (const VW::vw_exception& /*exception*/)
   {
-    all.logger.warn("cb_type must be in {'ips','dr','mtr','dm','sm'}; resetting to mtr. Input was: '{}'", type_string);
+    all.logger.err_warn("cb_type must be in {'ips','dr','mtr','dm','sm'}; resetting to mtr. Input was: '{}'", type_string);
     cb_type = VW::cb_type_t::mtr;
   }
 
