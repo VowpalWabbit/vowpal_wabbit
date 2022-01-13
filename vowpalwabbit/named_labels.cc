@@ -50,7 +50,7 @@ uint32_t VW::named_labels::get(VW::string_view s, VW::io::logger& logger) const
   auto iter = m_name2id.find(s);
   if (iter == m_name2id.end())
   {
-    logger.warn("Missing named label '{}'", s);
+    logger.err_warn("Missing named label '{}'", s);
     return 0;
   }
   return iter->second;

@@ -101,7 +101,7 @@ void parse_label(continuous_label& ld, reduction_features& red_features, VW::lab
 
       if (f.pdf_value < 0.0)
       {
-        logger.warn("invalid pdf_value < 0 specified for an action, resetting to 0.");
+        logger.err_warn("invalid pdf_value < 0 specified for an action, resetting to 0.");
         f.pdf_value = .0;
       }
 

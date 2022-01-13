@@ -117,7 +117,7 @@ inline float float_of_string(VW::string_view s, VW::io::logger& logger)
   float f = parseFloat(s.begin(), end_idx, s.end());
   if ((end_idx == 0 && s.size() > 0) || std::isnan(f))
   {
-    logger.warn("'{}' is not a good float, replacing with 0", s);
+    logger.out_warn("'{}' is not a good float, replacing with 0", s);
     f = 0;
   }
   return f;
@@ -129,7 +129,7 @@ inline int int_of_string(VW::string_view s, char*& end, VW::io::logger& logger)
   int i = strtol(s.begin(), &end, 10);
   if (end <= s.begin() && s.size() > 0)
   {
-    logger.warn("'{}' is not a good int, replacing with 0", s);
+    logger.out_warn("'{}' is not a good int, replacing with 0", s);
     i = 0;
   }
 

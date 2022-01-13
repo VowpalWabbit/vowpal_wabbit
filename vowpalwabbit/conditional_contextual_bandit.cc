@@ -150,7 +150,7 @@ bool split_multi_example_and_stash_labels(const multi_ex& examples, ccb& data)
         data.slots.push_back(ex);
         break;
       default:
-        data.all->logger.error("ccb_adf_explore: badly formatted example - invalid example type");
+        data.all->logger.out_error("ccb_adf_explore: badly formatted example - invalid example type");
         return false;
     }
 
@@ -227,7 +227,7 @@ void exclude_chosen_action(ccb& data, const multi_ex& examples)
   }
   if (action_index == -1)
   {
-    data.all->logger.warn("Unlabeled example used for learning only. Skipping over.");
+    data.all->logger.err_warn("Unlabeled example used for learning only. Skipping over.");
     return;
   }
   data.exclude_list[action_index] = true;
@@ -549,7 +549,7 @@ void learn_or_predict(ccb& data, multi_learner& base, multi_ex& examples)
   }
   catch (std::exception& e)
   {
-    data.all->logger.error("CCB got exception from base reductions: {}", e.what());
+    data.all->logger.err_error("CCB got exception from base reductions: {}", e.what());
     throw;
   }
 }
@@ -610,7 +610,7 @@ void output_example(VW::workspace& all, ccb& c, const multi_ex& ec_seq)
   }
 
   if (num_labeled > 0 && num_labeled < c.slots.size())
-  { all.logger.warn("Unlabeled example in train set, was this intentional?"); }
+  { all.logger.err_warn("Unlabeled example in train set, was this intentional?"); }
 
   bool holdout_example = num_labeled > 0;
   for (const auto& example : ec_seq) { holdout_example &= example->test_only; }

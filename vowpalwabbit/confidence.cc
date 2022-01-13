@@ -61,7 +61,7 @@ void confidence_print_result(
     auto ss_string(ss.str());
     ssize_t len = ss_string.size();
     ssize_t t = f->write(ss_string.c_str(), static_cast<unsigned int>(len));
-    if (t != len) { logger.error("write error: {}", VW::strerror_to_string(errno)); }
+    if (t != len) { logger.err_error("write error: {}", VW::strerror_to_string(errno)); }
   }
 }
 
@@ -101,7 +101,7 @@ base_learner* confidence_setup(VW::setup_base_i& stack_builder)
 
   if (!all.training)
   {
-    all.logger.warn(
+    all.logger.out_warn(
         "Confidence does not work in test mode because learning algorithm state is needed.  Do not use "
         "--predict_only_model "
         "when "

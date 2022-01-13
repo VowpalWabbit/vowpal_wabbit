@@ -35,7 +35,7 @@ std::string decode_inline_hex(VW::string_view arg, VW::io::logger& logger)
       }
       else
       {
-        logger.warn("Possibly malformed hex representation of a namespace: '\\x{}'", substr);
+        logger.err_warn("Possibly malformed hex representation of a namespace: '\\x{}'", substr);
         res.push_back(arg[pos++]);
       }
     }

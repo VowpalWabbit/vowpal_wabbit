@@ -348,7 +348,7 @@ int random_policy(search_private& priv, bool allow_current, bool allow_optimal, 
     if (allow_current) return static_cast<int>(priv.current_policy);
     if (priv.current_policy > 0) return ((static_cast<int>(priv.current_policy)) - 1);
     if (allow_optimal) return -1;
-    priv.all->logger.error("internal error (bug): no valid policies to choose from!  defaulting to current");
+    priv.all->logger.err_error("internal error (bug): no valid policies to choose from!  defaulting to current");
     return static_cast<int>(priv.current_policy);
   }
 
@@ -357,7 +357,7 @@ int random_policy(search_private& priv, bool allow_current, bool allow_optimal, 
 
   if (num_valid_policies == 0)
   {
-    priv.all->logger.error("internal error (bug): no valid policies to choose from!  defaulting to current");
+    priv.all->logger.err_error("internal error (bug): no valid policies to choose from!  defaulting to current");
     return static_cast<int>(priv.current_policy);
   }
   else if (num_valid_policies == 1)
@@ -1991,7 +1991,7 @@ void verify_active_csoaa(COST_SENSITIVE::label& losses, const std::vector<std::p
       float err = static_cast<float>(std::pow(known[i].first.partial_prediction - wc.x, 2));
       if (err > threshold)
       {
-        logger.error("verify_active_csoaa failed: truth {0}:{1}, known[{2}]={3}, error={4} vs threshold {5}",
+        logger.err_error("verify_active_csoaa failed: truth {0}:{1}, known[{2}]={3}, error={4} vs threshold {5}",
             wc.class_index /*0*/, wc.x /*1*/, i /*2*/, known[i].first.partial_prediction /*3*/, err /*4*/,
             threshold /*5*/);
       }
@@ -2225,7 +2225,7 @@ void inline adjust_auto_condition(search_private& priv)
     // turn off auto-condition if it's irrelevant
     if ((priv.history_length == 0) || (priv.acset.feature_value == 0.f))
     {
-      priv.all->logger.warn("Turning off AUTO_CONDITION_FEATURES because settings make it useless");
+      priv.all->logger.err_warn("Turning off AUTO_CONDITION_FEATURES because settings make it useless");
       priv.auto_condition_features = false;
     }
   }
@@ -2314,7 +2314,7 @@ void end_pass(search& sch)
     if (all->training) priv.current_policy++;
     if (priv.current_policy > priv.total_number_of_policies)
     {
-      priv.all->logger.error("internal error (bug): too many policies; not advancing");
+      priv.all->logger.err_error("internal error (bug): too many policies; not advancing");
       priv.current_policy = priv.total_number_of_policies;
     }
     // reset search_trained_nb_policies in options_from_file so it is saved to regressor file later
@@ -2398,7 +2398,7 @@ void ensure_param(float& v, float lo, float hi, float def, const char* str, VW::
 {
   if ((v < lo) || (v > hi))
   {
-    logger.warn(str);
+    logger.err_warn(str);
     v = def;
   }
 }
@@ -2430,7 +2430,7 @@ void search_finish(search& sch)
   search_private& priv = *sch.priv;
   cdbg << "search_finish" << endl;
 
-  if (priv.active_csoaa) priv.all->logger.info("search calls to run = {}", priv.num_calls_to_run);
+  if (priv.active_csoaa) priv.all->logger.err_info("search calls to run = {}", priv.num_calls_to_run);
 
   if (priv.task->finish) priv.task->finish(sch);
   if (priv.metatask && priv.metatask->finish) priv.metatask->finish(sch);
@@ -2448,9 +2448,9 @@ std::vector<CS::label> read_allowed_transitions(action A, const char* filename, 
   while ((rd = fscanf_s(f, "%d:%d", &from, &to)) > 0)
   {
     if ((from < 0) || (from > static_cast<int>(A)))
-    { logger.warn("Ignoring transition from {0} because it's out of the range [0,{1}]", from, A); }
+    { logger.err_warn("Ignoring transition from {0} because it's out of the range [0,{1}]", from, A); }
     if ((to < 0) || (to > static_cast<int>(A)))
-    { logger.warn("Ignoring transition to {0} because it's out of the range [0,{1}]", to, A); }
+    { logger.err_warn("Ignoring transition to {0} because it's out of the range [0,{1}]", to, A); }
     bg[from * (A + 1) + to] = true;
     count++;
   }
@@ -2476,7 +2476,7 @@ std::vector<CS::label> read_allowed_transitions(action A, const char* filename, 
   }
   free(bg);
 
-  logger.info("read {0} allowed transitions from {1}", count, filename);
+  logger.err_info("read {0} allowed transitions from {1}", count, filename);
 
   return allowed;
 }
@@ -2516,7 +2516,7 @@ void parse_neighbor_features(VW::string_view nf_strview, v_array<int32_t>& neigh
     }
     else
     {
-      logger.warn("Ignoring malformed neighbor specification: '{}'", strview);
+      logger.err_warn("Ignoring malformed neighbor specification: '{}'", strview);
     }
     int32_t enc = (posn << 24) | (ns & 0xFF);
     neighbor_features.push_back(enc);
@@ -2686,7 +2686,7 @@ base_learner* setup(VW::setup_base_i& stack_builder)
     priv.total_number_of_policies = tmp_number_of_policies;
     if (priv.current_policy >
         0)  // we loaded a file but total number of policies didn't match what is needed for training
-      all.logger.warn(
+      all.logger.err_warn(
           "You're attempting to train more classifiers than was allocated initially. "
           "Likely to cause bad performance.");
   }
@@ -2934,7 +2934,7 @@ std::stringstream& search::output()
 void search::set_options(uint32_t opts)
 {
   if (this->priv->all->vw_is_main && (this->priv->state != SearchState::INITIALIZE))
-  { priv->all->logger.warn("Task should not set options except in initialize function."); }
+  { priv->all->logger.err_warn("Task should not set options except in initialize function."); }
   if ((opts & AUTO_CONDITION_FEATURES) != 0) this->priv->auto_condition_features = true;
   if ((opts & AUTO_HAMMING_LOSS) != 0) this->priv->auto_hamming_loss = true;
   if ((opts & EXAMPLES_DONT_CHANGE) != 0) this->priv->examples_dont_change = true;
@@ -2947,7 +2947,7 @@ void search::set_options(uint32_t opts)
 
   if (this->priv->use_action_costs && (this->priv->rollout_method != RollMethod::NO_ROLLOUT))
   {
-    priv->all->logger.warn(
+    priv->all->logger.err_warn(
         "Task is designed to use rollout costs, but this only works when --search_rollout none is specified.");
   }
 }
@@ -2955,7 +2955,7 @@ void search::set_options(uint32_t opts)
 void search::set_label_parser(label_parser& lp, bool (*is_test)(const polylabel&))
 {
   if (this->priv->all->vw_is_main && (this->priv->state != SearchState::INITIALIZE))
-  { priv->all->logger.warn("Task should not set label parser except in initialize function."); }
+  { priv->all->logger.err_warn("Task should not set label parser except in initialize function."); }
   this->priv->all->example_parser->lbl_parser = lp;
   this->priv->all->example_parser->lbl_parser.test_label = is_test;
   this->priv->label_is_test = is_test;

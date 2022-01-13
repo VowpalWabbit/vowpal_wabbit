@@ -100,7 +100,7 @@ public:
     }
     else
     {
-      warn_logger.warn(ss.str());
+      warn_logger.err_warn(ss.str());
     }
   }
 

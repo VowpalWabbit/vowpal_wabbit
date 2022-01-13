@@ -68,7 +68,7 @@ size_t final_depth(size_t eliminations, VW::io::logger& logger)
   eliminations--;
   for (size_t i = 0; i < 32; i++)
     if (eliminations >> i == 0) return i;
-  logger.error("too many eliminations");
+  logger.err_error("too many eliminations");
   return 31;
 }
 
@@ -252,7 +252,7 @@ void ect_train(ect& e, single_learner& base, example& ec)
 
   //TODO: error? warn? info? what level is this supposed to be?
   if (e.tournaments_won.empty())
-    e.logger.error("Internal error occurred. tournaments_won was empty which should not be possible.");
+    e.logger.out_error("Internal error occurred. tournaments_won was empty which should not be possible.");
 
   // tournaments_won is a bit vector determining which tournaments the label won.
   for (size_t i = 0; i < e.tree_height; i++)
@@ -296,7 +296,7 @@ void predict(ect& e, single_learner& base, example& ec)
   {
     // In order to print curly braces, they need to be embedded within curly braces to escape them.
     // The funny looking part will just print {1, e.k}
-    e.logger.warn("label {0} is not in {{1, {1}}} This won't work right.", mc.label, e.k);
+    e.logger.out_warn("label {0} is not in {{1, {1}}} This won't work right.", mc.label, e.k);
   }
   ec.pred.multiclass = ect_predict(e, base, ec);
   ec.l.multi = mc;

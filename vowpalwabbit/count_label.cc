@@ -75,7 +75,7 @@ VW::LEARNER::base_learner* count_label_setup(VW::setup_base_i& stack_builder)
   {
     if (base_label_type != label_type_t::simple)
     {
-      all->logger.warn(
+      all->logger.out_warn(
           "--dont_output_best_constant is not relevant. best constant is only tracked if the label type is simple.");
     }
 

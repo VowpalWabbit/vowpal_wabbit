@@ -359,7 +359,7 @@ base_learner* setup(VW::setup_base_i& stack_builder)
     if (options.was_supplied("noconstant")) THROW("constant policy can't be learnt when --noconstant is used")
 
     if (!feature_mask_off)
-    { all.logger.warn("Feature_mask used with constant policy (where there is only one weight to learn)."); }
+    { all.logger.err_warn("Feature_mask used with constant policy (where there is only one weight to learn)."); }
   }
 
   all.example_parser->lbl_parser = cb_continuous::the_label_parser;

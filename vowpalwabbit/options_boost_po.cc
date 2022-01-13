@@ -299,7 +299,7 @@ void options_boost_po::check_unregistered(VW::io::logger& logger)
       for (const auto& group : dependent_necessary_options)
       { message += fmt::format("\t{}\n", fmt::join(group, ", ")); }
 
-      logger.warn(message);
+      logger.err_warn(message);
     }
   }
 }

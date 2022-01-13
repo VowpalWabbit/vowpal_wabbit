@@ -321,7 +321,7 @@ void parse_diagnostics(options_i& options, VW::workspace& all)
       all.progress_add = true;
       if (all.progress_arg < 1)
       {
-        all.logger.warn("Additive --progress <int> can't be < 1: forcing to 1");
+        all.logger.err_warn("Additive --progress <int> can't be < 1: forcing to 1");
         all.progress_arg = 1;
       }
       all.sd->dump_interval = all.progress_arg;
@@ -333,12 +333,12 @@ void parse_diagnostics(options_i& options, VW::workspace& all)
 
       if (all.progress_arg <= 1.f)
       {
-        all.logger.warn("Multiplicative --progress <float> '{}' is <= 1.0: adding 1.0", progress_arg);
+        all.logger.err_warn("Multiplicative --progress <float> '{}' is <= 1.0: adding 1.0", progress_arg);
         all.progress_arg += 1.f;
       }
       else if (all.progress_arg > 9.f)
       {
-        all.logger.warn(
+        all.logger.err_warn(
             "Multiplicative --progress <float> '' is > 9.0: Did you mean mean to use an integer?", progress_arg);
       }
       all.sd->dump_interval = 1.f;
@@ -393,7 +393,7 @@ input_options parse_source(VW::workspace& all, options_i& options)
   if (positional_tokens.size() == 1) { all.data_filename = positional_tokens[0]; }
   else if (positional_tokens.size() > 1)
   {
-    all.logger.warn(
+    all.logger.err_warn(
         "Multiple data files passed as positional parameters, only the first one will be "
         "read and the rest will be ignored.");
   }
@@ -685,7 +685,7 @@ void parse_feature_tweaks(options_i& options, VW::workspace& all, bool interacti
        ||
        interactions_settings_duplicated /*settings were restored from model file to file_options and overriden by params from command line*/)
   {
-    all.logger.warn(
+    all.logger.err_warn(
         "model file has set of {-q, --cubic, --interactions} settings stored, but they'll be "
         "OVERRIDDEN by set of {-q, --cubic, --interactions} settings from command line.");
     // in case arrays were already filled in with values from old model file - reset them
@@ -743,7 +743,7 @@ void parse_feature_tweaks(options_i& options, VW::workspace& all, bool interacti
           [](const std::vector<namespace_index>& interaction) { return INTERACTIONS::contains_wildcard(interaction); });
       if (any_contain_wildcards)
       {
-        all.logger.warn(
+        all.logger.err_warn(
             "Any duplicate namespace interactions will be removed\n"
             "You can use --leave_duplicate_interactions to disable this behaviour.");
       }
@@ -760,7 +760,7 @@ void parse_feature_tweaks(options_i& options, VW::workspace& all, bool interacti
 
     if (removed_cnt > 0 && !all.quiet)
     {
-      all.logger.warn(
+      all.logger.err_warn(
           "Duplicate namespace interactions were found. Removed: {}.\nYou can use --leave_duplicate_interactions to "
           "disable this behaviour.",
           removed_cnt);
@@ -768,7 +768,7 @@ void parse_feature_tweaks(options_i& options, VW::workspace& all, bool interacti
 
     if (sorted_cnt > 0 && !all.quiet)
     {
-      all.logger.warn(
+      all.logger.err_warn(
           "Some interactions contain duplicate characters and their characters order has been changed. Interactions "
           "affected: {}.",
           sorted_cnt);
@@ -905,7 +905,7 @@ void parse_feature_tweaks(options_i& options, VW::workspace& all, bool interacti
 
       if (++operator_pos > 3)  // seek operator end
       {
-        all.logger.warn(
+        all.logger.err_warn(
             "Multiple namespaces are used in target part of --redefine argument. Only first one ('{}') will be used as "
             "target namespace.",
             new_namespace);
@@ -1041,7 +1041,7 @@ void parse_example_tweaks(options_i& options, VW::workspace& all)
   all.loss = getLossFunction(all, loss_function, loss_parameter);
   if (options.was_supplied("quantile_tau") && all.loss->getType() != "quantile")
   {
-    all.logger.warn(
+    all.logger.err_warn(
         "Option 'quantile_tau' was passed but the quantile loss function is not being used. 'quantile_tau' value will "
         "be ignored.");
   }
@@ -1094,7 +1094,7 @@ void parse_output_preds(options_i& options, VW::workspace& all)
       }
       catch (...)
       {
-        all.logger.error("Error opening the predictions file: {}", predictions);
+        all.logger.err_error("Error opening the predictions file: {}", predictions);
       }
     }
   }
@@ -1105,7 +1105,7 @@ void parse_output_preds(options_i& options, VW::workspace& all)
     {
       *(all.trace_message) << "raw predictions = " << raw_predictions << endl;
       if (options.was_supplied("binary"))
-      { all.logger.warn("--raw_predictions has no defined value when --binary specified, expect no output"); }
+      { all.logger.err_warn("--raw_predictions has no defined value when --binary specified, expect no output"); }
     }
     if (raw_predictions == "stdout") { all.raw_prediction = VW::io::open_stdout(); }
     else
@@ -1146,7 +1146,9 @@ void parse_output_model(options_i& options, VW::workspace& all)
 
   if (options.was_supplied("invert_hash")) { all.hash_inv = true; }
   if (save_resume)
-  { all.logger.warn("--save_resume flag is deprecated -- learning can now continue on saved models by default."); }
+  {
+    all.logger.err_warn("--save_resume flag is deprecated -- learning can now continue on saved models by default.");
+  }
   if (predict_only_model) { all.save_resume = false; }
 
   // Question: This doesn't seem necessary
@@ -1253,9 +1255,8 @@ VW::workspace& parse_args(
     {
       if (all.options->was_supplied("log_output"))
       {
-        all.logger.warn(
-            "--log_output option is unused. This is because when a custom trace_listener is being used all output is "
-            "sent to that.");
+        all.logger.err_warn(
+            "--log_output option is unused. This is because when a custom trace_listener is being used.");
       }
 
       // Since the trace_message_t interface uses a string and the writer interface uses a buffer we unfortunately
@@ -1298,11 +1299,11 @@ VW::workspace& parse_args(
     if (all.options->was_supplied("ring_size"))
     {
       final_example_queue_limit = ring_size;
-      all.logger.warn("--ring_size is deprecated and has been replaced with --example_queue_limit");
+      all.logger.err_warn("--ring_size is deprecated and has been replaced with --example_queue_limit");
       if (all.options->was_supplied("example_queue_limit"))
       {
         final_example_queue_limit = example_queue_limit;
-        all.logger.info("--example_queue_limit overrides --ring_size");
+        all.logger.err_info("--example_queue_limit overrides --ring_size");
       }
     }
 

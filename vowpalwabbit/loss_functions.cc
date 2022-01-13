@@ -132,7 +132,7 @@ public:
   float getLoss(shared_data*, float prediction, float label) override
   {
     if (label != -1.f && label != 1.f)
-      logger.warn("The label {} is not -1 or 1 or in [0,1] as the hinge loss function expects.", label);
+      logger.out_warn("The label {} is not -1 or 1 or in [0,1] as the hinge loss function expects.", label);
     float e = 1 - label * prediction;
     return (e > 0) ? e : 0;
   }
@@ -178,7 +178,7 @@ public:
   float getLoss(shared_data*, float prediction, float label) override
   {
     if (label != -1.f && label != 1.f)
-      logger.warn("The label {} is not -1 or 1 or in [0,1] as the logistic loss function expects.", label);
+      logger.out_warn("The label {} is not -1 or 1 or in [0,1] as the logistic loss function expects.", label);
     return log(1 + correctedExp(-label * prediction));
   }
 
@@ -326,7 +326,7 @@ public:
 
   float getLoss(shared_data*, float prediction, float label) override
   {
-    if (label < 0.f) { logger.warn("The poisson loss function expects a label >= 0 but received '{}'.", label); }
+    if (label < 0.f) { logger.out_warn("The poisson loss function expects a label >= 0 but received '{}'.", label); }
     float exp_prediction = expf(prediction);
     // deviance is used instead of log-likelihood
     return 2 * (label * (logf(label + 1e-6f) - prediction) - (label - exp_prediction));

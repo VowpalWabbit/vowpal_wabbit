@@ -279,11 +279,11 @@ VW::LEARNER::base_learner* setup(VW::setup_base_i& stack_builder)
     case VW::cb_type_t::ips:
       break;
     case VW::cb_type_t::mtr:
-      all.logger.warn("currently, mtr is only used for the first policy in cover, other policies use dr");
+      all.logger.err_warn("currently, mtr is only used for the first policy in cover, other policies use dr");
       break;
     case VW::cb_type_t::dm:
     case VW::cb_type_t::sm:
-      all.logger.warn(
+      all.logger.err_warn(
           "cb_type must be in {{'ips','dr','mtr'}}; resetting to mtr. Input received: {}", VW::to_string(cb_type));
       options.replace("cb_type", "mtr");
       cb_type = VW::cb_type_t::mtr;

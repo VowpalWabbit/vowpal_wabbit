@@ -106,7 +106,7 @@ void list_to_json_file(const std::string& filename, const metric_sink& metrics, 
   }
   else
   {
-    logger.warn("skipping metrics. could not open file for metrics: {}", filename);
+    logger.err_warn("skipping metrics. could not open file for metrics: {}", filename);
   }
 }
 

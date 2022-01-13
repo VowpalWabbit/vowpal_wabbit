@@ -54,7 +54,7 @@ socket_t AllReduceSockets::sock_connect(const uint32_t ip, const int port, VW::i
             NI_NUMERICSERV))
       THROWERRNO("getnameinfo(" << dotted_quad << ")");
 
-    logger.info("connecting to {0} = {1}:{2}", dotted_quad, hostname, ntohs(static_cast<u_short>(port)));
+    logger.err_info("connecting to {0} = {1}:{2}", dotted_quad, hostname, ntohs(static_cast<u_short>(port)));
   }
 
   size_t count = 0;
@@ -62,7 +62,7 @@ socket_t AllReduceSockets::sock_connect(const uint32_t ip, const int port, VW::i
   while ((ret = connect(sock, reinterpret_cast<sockaddr*>(&far_end), sizeof(far_end))) == -1 && count < 100)
   {
     count++;
-    logger.error("connection attempt {0} failed: {1}", count, VW::strerror_to_string(errno));
+    logger.err_error("connection attempt {0} failed: {1}", count, VW::strerror_to_string(errno));
 #ifdef _WIN32
     Sleep(1);
 #else
@@ -88,13 +88,13 @@ socket_t AllReduceSockets::getsock(VW::io::logger& logger)
 #ifndef _WIN32
   int on = 1;
   if (setsockopt(sock, SOL_SOCKET, SO_REUSEADDR, reinterpret_cast<char*>(&on), sizeof(on)) < 0)
-  { logger.error("setsockopt SO_REUSEADDR: {}", VW::strerror_to_string(errno)); }
+  { logger.err_error("setsockopt SO_REUSEADDR: {}", VW::strerror_to_string(errno)); }
 #endif
 
   // Enable TCP Keep Alive to prevent socket leaks
   int enableTKA = 1;
   if (setsockopt(sock, SOL_SOCKET, SO_KEEPALIVE, reinterpret_cast<char*>(&enableTKA), sizeof(enableTKA)) < 0)
-  { logger.error("setsockopt SO_KEEPALIVE: {}", VW::strerror_to_string(errno)); }
+  { logger.err_error("setsockopt SO_KEEPALIVE: {}", VW::strerror_to_string(errno)); }
 
   return sock;
 }
@@ -121,26 +121,26 @@ void AllReduceSockets::all_reduce_init(VW::io::logger& logger)
   { THROW("Write unique_id=" << unique_id << " to span server failed"); }
   else
   {
-    logger.info("wrote unique_id={}", unique_id);
+    logger.err_info("wrote unique_id={}", unique_id);
   }
   if (send(master_sock, reinterpret_cast<const char*>(&total), sizeof(total), 0) < static_cast<int>(sizeof(total)))
   { THROW("Write total=" << total << " to span server failed"); }
   else
   {
-    logger.info("wrote total={}", total);
+    logger.err_info("wrote total={}", total);
   }
   if (send(master_sock, (char*)&node, sizeof(node), 0) < static_cast<int>(sizeof(node)))
   { THROW("Write node=" << node << " to span server failed"); }
   else
   {
-    logger.info("wrote node={}", node);
+    logger.err_info("wrote node={}", node);
   }
   int ok;
   if (recv(master_sock, reinterpret_cast<char*>(&ok), sizeof(ok), 0) < static_cast<int>(sizeof(ok)))
   { THROW("Read ok from span server failed"); }
   else
   {
-    logger.info("Read ok={}", ok);
+    logger.err_info("Read ok={}", ok);
   }
   if (!ok) THROW("Mapper already connected");
 
@@ -153,7 +153,7 @@ void AllReduceSockets::all_reduce_init(VW::io::logger& logger)
   { THROW("Read kid_count from span server failed"); }
   else
   {
-    logger.info("Read kid_count={}", kid_count);
+    logger.err_info("Read kid_count={}", kid_count);
   }
 
   auto sock = static_cast<socket_t>(-1);
@@ -187,7 +187,7 @@ void AllReduceSockets::all_reduce_init(VW::io::logger& logger)
       {
         if (listen(sock, kid_count) < 0)
         {
-          logger.error("Listen: {}", VW::strerror_to_string(errno));
+          logger.err_error("Listen: {}", VW::strerror_to_string(errno));
           CLOSESOCK(sock);
           sock = getsock(logger);
         }
@@ -210,10 +210,10 @@ void AllReduceSockets::all_reduce_init(VW::io::logger& logger)
   {
     char dotted_quad[INET_ADDRSTRLEN];
     if (nullptr == inet_ntop(AF_INET, reinterpret_cast<char*>(&parent_ip), dotted_quad, INET_ADDRSTRLEN))
-    { logger.error("Read parent_ip={0}(inet_ntop: {1})", parent_ip, VW::strerror_to_string(errno)); }
+    { logger.err_error("Read parent_ip={0}(inet_ntop: {1})", parent_ip, VW::strerror_to_string(errno)); }
     else
     {
-      logger.info("Read parent_ip={}", dotted_quad);
+      logger.err_info("Read parent_ip={}", dotted_quad);
     }
   }
   if (recv(master_sock, reinterpret_cast<char*>(&parent_port), sizeof(parent_port), 0) <
@@ -221,7 +221,7 @@ void AllReduceSockets::all_reduce_init(VW::io::logger& logger)
   { THROW("Read parent_port failed"); }
   else
   {
-    logger.info("Read parent_port={}", parent_port);
+    logger.err_info("Read parent_port={}", parent_port);
   }
 
   CLOSESOCK(master_sock);

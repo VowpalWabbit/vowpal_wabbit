@@ -114,14 +114,15 @@ void make_marginal(data& sm, example& ec)
         const uint64_t first_index = j.index() & mask;
         if (++j == sm.temp[n].end())
         {
-          sm.m_logger.warn("marginal feature namespace has {} features. Should be a multiple of 2", sm.temp[n].size());
+          sm.m_logger.out_warn(
+              "marginal feature namespace has {} features. Should be a multiple of 2", sm.temp[n].size());
           break;
         }
         const float second_value = j.value();
         const uint64_t second_index = j.index() & mask;
         if (first_value != 1.f || second_value != 1.f)
         {
-          sm.m_logger.warn("Bad id features, must have value 1.");
+          sm.m_logger.out_warn("Bad id features, must have value 1.");
           continue;
         }
         const uint64_t key = second_index + ec.ft_offset;

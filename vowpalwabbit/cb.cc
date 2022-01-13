@@ -63,12 +63,12 @@ void parse_label(CB::label& ld, VW::label_parser_reuse_mem& reuse_mem, const std
 
     if (f.probability > 1.0)
     {
-      logger.warn("invalid probability > 1 specified for an action, resetting to 1.");
+      logger.err_warn("invalid probability > 1 specified for an action, resetting to 1.");
       f.probability = 1.0;
     }
     if (f.probability < 0.0)
     {
-      logger.warn("invalid probability < 0 specified for an action, resetting to 0.");
+      logger.err_warn("invalid probability < 0 specified for an action, resetting to 0.");
       f.probability = .0;
     }
     if (reuse_mem.tokens[0] == "shared")
@@ -76,7 +76,7 @@ void parse_label(CB::label& ld, VW::label_parser_reuse_mem& reuse_mem, const std
       if (reuse_mem.tokens.size() == 1) { f.probability = -1.f; }
       else
       {
-        logger.warn("shared feature vectors should not have costs");
+        logger.err_warn("shared feature vectors should not have costs");
       }
     }
 
