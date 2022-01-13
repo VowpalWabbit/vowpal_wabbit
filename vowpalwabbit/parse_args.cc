@@ -1204,7 +1204,7 @@ VW::workspace& parse_args(
                .one_of({"info", "warn", "error", "critical", "off"})
                .help("Log level for logging messages. Specifying this wil override --quiet for log output."))
       .add(make_option("log_output", log_output_stream)
-               .default_value("compat")
+               .default_value("stdout")
                .one_of({"stdout", "stderr", "compat"})
                .help("Specify the stream to output log messages to. In the past VW's choice of stream for logging "
                      "messages wasn't consistent. Supplying compat will maintain that old behavior. Compat is now "
@@ -1227,12 +1227,8 @@ VW::workspace& parse_args(
   logger.set_location(location);
 
   // Don't print warning if a custom log output trace_listener is supplied.
-  if (trace_listener == nullptr && level != VW::io::log_level::off && location == VW::io::output_location::compat)
-  {
-    logger.err_warn(
-        "The old default logging behavior of logging to a mix of stdout and stderr is deprecated. Please choose either "
-        "'stdout' or 'stderr' for --log_output to silence this warning.");
-  }
+  if (trace_listener == nullptr && location == VW::io::output_location::compat)
+  { logger.err_warn("'compat' mode for --log_output is deprecated and will be removed in a future release."); }
 
   if (options->was_supplied("limit_output") && (upper_limit != 0)) { logger.set_max_output(upper_limit); }
 

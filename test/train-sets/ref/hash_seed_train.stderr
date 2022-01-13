@@ -1,8 +1,4 @@
-[warning] The old default logging behavior of logging to a mix of stdout and stderr is deprecated. Please choose either 'stdout' or 'stderr' for --log_output to silence this warning.
-[info] Generating 2-grams for all namespaces.
 creating quadratic features for pairs: ::
-[warning] Any duplicate namespace interactions will be removed
-You can use --leave_duplicate_interactions to disable this behaviour.
 final_regressor = hash_seed5.model
 Num weight bits = 18
 learning rate = 0.5
