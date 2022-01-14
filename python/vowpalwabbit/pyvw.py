@@ -1819,12 +1819,3 @@ class cost_sensitive_label(metaclass=_DeprecatedClassMeta):
 
 class cbandits_label(metaclass=_DeprecatedClassMeta):
     _DeprecatedClassMeta__alias = CBLabel
-
-
-class cbandits_label(CBLabel):
-    def __init__(self):
-        CBLabel.__init__(self)
-        warnings.warn(
-            "cbandits_label has been deprecated. Please use 'CBLabel' instead.",
-            DeprecationWarning,
-        )
