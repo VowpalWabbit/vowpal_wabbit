@@ -459,7 +459,8 @@ def create_test_dir(
                 break
 
         if file_to_copy is None:
-            dependent_tests = ", ".join(dependencies)
+            str_deps =  [str(dep) for dep in dependencies]
+            dependent_tests = ", ".join(str_deps)
             raise ValueError(
                 f"Input file '{f}' couldn't be found for test {test_id}. Searched in '{test_ref_dir}' as well as outputs of dependent tests: [{dependent_tests}]"
             )
