@@ -27,9 +27,11 @@ error = 0
 expected = None
 
 for counter in range(1, count + 1):
-    p = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, universal_newlines=True)
-    out, err = p.communicate('')
-    out += err or ''
+    p = subprocess.Popen(
+        cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, universal_newlines=True
+    )
+    out, err = p.communicate("")
+    out += err or ""
     if expected is None:
         expected = out
         continue
@@ -41,10 +43,10 @@ for counter in range(1, count + 1):
 
     if expected != out:
         failed = True
-        sys.stderr.write('\nOutput changed:\n\n')
+        sys.stderr.write("\nOutput changed:\n\n")
         d = difflib.Differ()
-        diff = d.compare(expected.split('\n'), out.split('\n'))
-        sys.stderr.write('\n'.join(diff) + '\n')
+        diff = d.compare(expected.split("\n"), out.split("\n"))
+        sys.stderr.write("\n".join(diff) + "\n")
 
     if failed:
         error += 1
