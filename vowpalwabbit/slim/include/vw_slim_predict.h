@@ -14,6 +14,7 @@
 #include "model_parser.h"
 #include "opts.h"
 #include "interactions.h"
+#include "array_parameters_dense.h"
 
 namespace vw_slim
 {
@@ -237,7 +238,7 @@ class vw_predict
   float _minimum_epsilon;
   float _epsilon;
   float _lambda;
-  int _bag_size;
+  size_t _bag_size;
   uint32_t _num_bits;
 
   uint32_t _stride_shift;
@@ -275,6 +276,8 @@ public:
     RETURN_ON_FAIL(mp.skip(sizeof(float)));  // "max_label"
 
     RETURN_ON_FAIL(mp.read("num_bits", _num_bits));
+    // Cannot use more than 32 bits on a 32 bit architecture
+    if (sizeof(size_t) == 4 && _num_bits > 32) { return E_VW_PREDICT_ERR_INVALID_MODEL; }
 
     RETURN_ON_FAIL(mp.skip(sizeof(uint32_t)));  // "lda"
 
@@ -322,8 +325,12 @@ public:
     if (_command_line_arguments.find("--cb_explore_adf") != std::string::npos)
     {
       // parse exploration options
-      if (find_opt_int(_command_line_arguments, "--bag", _bag_size))
+      int bag_size;
+      if (find_opt_int(_command_line_arguments, "--bag", bag_size))
       {
+        if (bag_size < 0) { return E_VW_PREDICT_ERR_INVALID_MODEL; }
+        _bag_size = static_cast<size_t>(bag_size);
+
         _exploration = vw_predict_exploration::bag;
         num_weights = _bag_size;
 
@@ -371,7 +378,6 @@ public:
     if (gd_resume) return E_VW_PREDICT_ERR_GD_RESUME_NOT_SUPPORTED;
 
     // read sparse weights into dense
-    uint64_t weight_length = (uint64_t)1 << _num_bits;
     _stride_shift = (uint32_t)ceil_log_2(num_weights);
 
     RETURN_ON_FAIL(mp.read_weights<W>(_weights, _num_bits, _stride_shift));
