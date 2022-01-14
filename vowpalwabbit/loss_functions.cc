@@ -214,7 +214,7 @@ public:
     double w = x >= 1. ? 0.86 * x + 0.01 : correctedExp(0.8 * x - 0.65);  // initial guess
     double r = x >= 1. ? x - log(w) - w : 0.2 * x + 0.65 - w;             // residual
     double t = 1. + w;
-    double u = 2. * t * (t + 2. * r / 3.);                          // magic
+    double u = 2. * t * (t + 2. * r / 3.);                                     // magic
     return static_cast<float>(w * (1. + r / t * (u - r) / (u - 2. * r)) - x);  // more magic
   }
 

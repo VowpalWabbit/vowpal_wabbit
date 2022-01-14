@@ -15,7 +15,6 @@
 
 #include "io/logger.h"
 
-
 namespace COST_SENSITIVE
 {
 void name_value(VW::string_view s, std::vector<VW::string_view>& name, float& v, VW::io::logger& logger)

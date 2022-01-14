@@ -445,7 +445,6 @@ inline void generate_interactions(const std::vector<std::vector<namespace_index>
   // current list of namespaces to interact.
   for (const auto& ns : interactions)
   {
-
 #ifndef GEN_INTER_LOOP
 
     // unless GEN_INTER_LOOP is defined we use nested 'for' loops for interactions length 2 (pairs) and 3 (triples)

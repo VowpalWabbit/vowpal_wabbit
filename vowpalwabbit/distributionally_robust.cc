@@ -13,7 +13,6 @@
 
 namespace VW
 {
-
 namespace distributionally_robust
 {
 double ChiSquared::chisq_onedof_isf(double alpha)

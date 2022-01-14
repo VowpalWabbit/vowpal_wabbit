@@ -213,7 +213,7 @@ void predict_or_learn(cs_active& cs_a, single_learner& base, example& ec)
 
   float min_max_cost = FLT_MAX;
   float t = static_cast<float>(cs_a.t);  // ec.example_t;  // current round
-  float t_prev = t - 1.f;   // ec.weight; // last round
+  float t_prev = t - 1.f;                // ec.weight; // last round
 
   float eta = cs_a.c1 * (cs_a.cost_max - cs_a.cost_min) / std::sqrt(t);  // threshold on cost range
   float delta = cs_a.c0 * std::log((cs_a.num_classes * std::max(t_prev, 1.f))) *
