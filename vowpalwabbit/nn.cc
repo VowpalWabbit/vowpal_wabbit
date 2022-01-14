@@ -16,7 +16,6 @@
 
 #include "io/logger.h"
 
-
 using namespace VW::LEARNER;
 using namespace VW::config;
 
