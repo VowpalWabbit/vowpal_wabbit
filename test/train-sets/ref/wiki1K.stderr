@@ -1,4 +1,3 @@
-[warning] The old default logging behavior of logging to a mix of stdout and stderr is deprecated. Please choose either 'stdout' or 'stderr' for --log_output to silence this warning.
 Num weight bits = 13
 learning rate = 1
 initial_t = 0

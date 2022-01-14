@@ -35,7 +35,7 @@ struct sender
   io_buf* buf = nullptr;
   std::unique_ptr<VW::io::socket> _socket;
   std::unique_ptr<VW::io::reader> _socket_reader;
-  VW::workspace* all = nullptr;  // loss ring_size others
+  VW::workspace* all = nullptr;  // loss example_queue_limit others
   example** delay_ring = nullptr;
   size_t sent_index = 0;
   size_t received_index = 0;
@@ -76,7 +76,7 @@ void receive_result(sender& s)
   float weight;
 
   get_prediction(s._socket_reader.get(), res, weight);
-  example& ec = *s.delay_ring[s.received_index++ % s.all->example_parser->ring_size];
+  example& ec = *s.delay_ring[s.received_index++ % s.all->example_parser->example_queue_limit];
   ec.pred.scalar = res;
 
   label_data& ld = ec.l.simple;
@@ -87,14 +87,14 @@ void receive_result(sender& s)
 
 void learn(sender& s, VW::LEARNER::base_learner& /*unused*/, example& ec)
 {
-  if (s.received_index + s.all->example_parser->ring_size / 2 - 1 == s.sent_index) { receive_result(s); }
+  if (s.received_index + s.all->example_parser->example_queue_limit / 2 - 1 == s.sent_index) { receive_result(s); }
 
   s.all->set_minmax(s.all->sd, ec.l.simple.label);
   s.all->example_parser->lbl_parser.cache_label(
       ec.l, ec._reduction_features, *s.buf, "", false);  // send label information.
   cache_tag(*s.buf, ec.tag);
   send_features(s.buf, ec, static_cast<uint32_t>(s.all->parse_mask));
-  s.delay_ring[s.sent_index++ % s.all->example_parser->ring_size] = &ec;
+  s.delay_ring[s.sent_index++ % s.all->example_parser->example_queue_limit] = &ec;
 }
 
 void finish_example(VW::workspace& /*unused*/, sender& /*unused*/, example& /*unused*/) {}
@@ -121,7 +121,7 @@ VW::LEARNER::base_learner* sender_setup(VW::setup_base_i& stack_builder)
   open_sockets(*s, host);
 
   s->all = &all;
-  s->delay_ring = calloc_or_throw<example*>(all.example_parser->ring_size);
+  s->delay_ring = calloc_or_throw<example*>(all.example_parser->example_queue_limit);
 
   auto* l = VW::LEARNER::make_base_learner(std::move(s), learn, learn, stack_builder.get_setupfn_name(sender_setup),
       VW::prediction_type_t::scalar, VW::label_type_t::simple)
