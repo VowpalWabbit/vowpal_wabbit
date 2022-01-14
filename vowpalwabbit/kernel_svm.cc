@@ -554,7 +554,6 @@ void sync_queries(VW::workspace& all, svm_params& params, bool* train_pool)
 
 void train(svm_params& params)
 {
-
   bool* train_pool = calloc_or_throw<bool>(params.pool_size);
   for (size_t i = 0; i < params.pool_size; i++) train_pool[i] = false;
 
@@ -614,10 +613,7 @@ void train(svm_params& params)
       int model_pos = -1;
       if (params.active)
       {
-        if (train_pool[i])
-        {
-          model_pos = add(params, params.pool[i]);
-        }
+        if (train_pool[i]) { model_pos = add(params, params.pool[i]); }
       }
       else
         model_pos = add(params, params.pool[i]);

@@ -923,16 +923,15 @@ public:
       else if (length == 8 && !strncmp(str, "_slot_id", 8))
       {
         if (ctx._label_parser.label_type != VW::label_type_t::slates)
-        { THROW("Can only use _slot_id with slates examples"); } ctx.uint_state.output_uint = &ctx.ex->l.slates.slot_id;
+        { THROW("Can only use _slot_id with slates examples"); }
+        ctx.uint_state.output_uint = &ctx.ex->l.slates.slot_id;
         ctx.array_float_state.return_state = this;
         return &ctx.array_float_state;
       }
 
       else if (ctx.key_length == 20 && !strncmp(str, "_original_label_cost", 20))
       {
-        if(!ctx.decision_service_data) {
-          THROW("_original_label_cost is only valid in DSJson");
-        }
+        if (!ctx.decision_service_data) { THROW("_original_label_cost is only valid in DSJson"); }
         ctx.original_label_cost_state.aggr_float = &ctx.decision_service_data->originalLabelCost;
         ctx.original_label_cost_state.first_slot_float = &ctx.decision_service_data->originalLabelCostFirstSlot;
         ctx.original_label_cost_state.return_state = this;
@@ -1171,14 +1170,11 @@ public:
 
 // AggrFunc prototype is void (*)(float *input_output, float f);
 // Basic Aggregation Types
-namespace float_aggregation {
-inline void set(float* output, float f) {
-  *output = f;
-}
-inline void add(float* output, float f) {
-  *output += f;
-}
-}
+namespace float_aggregation
+{
+inline void set(float* output, float f) { *output = f; }
+inline void add(float* output, float f) { *output += f; }
+}  // namespace float_aggregation
 
 template <bool audit, void (*func)(float*, float)>
 class FloatToFloatState : public BaseState<audit>
@@ -1195,10 +1191,7 @@ public:
     return return_state;
   }
 
-  BaseState<audit>* Uint(Context<audit>& ctx, unsigned i) override
-  {
-    return Float(ctx, static_cast<float>(i));
-  }
+  BaseState<audit>* Uint(Context<audit>& ctx, unsigned i) override { return Float(ctx, static_cast<float>(i)); }
 
   BaseState<audit>* Null(Context<audit>& /*ctx*/) override
   {
@@ -1224,17 +1217,15 @@ public:
   BaseState<audit>* Float(Context<audit>& /*ctx*/, float f) override
   {
     *aggr_float += f;
-    if(!seen_first) {
+    if (!seen_first)
+    {
       seen_first = true;
       *first_slot_float = f;
     }
     return return_state;
   }
 
-  BaseState<audit>* Uint(Context<audit>& ctx, unsigned i) override
-  {
-    return Float(ctx, static_cast<float>(i));
-  }
+  BaseState<audit>* Uint(Context<audit>& ctx, unsigned i) override { return Float(ctx, static_cast<float>(i)); }
 
   BaseState<audit>* Null(Context<audit>& /*ctx*/) override
   {
@@ -1242,7 +1233,6 @@ public:
     return return_state;
   }
 };
-
 
 template <bool audit>
 class UIntDedupState : public BaseState<audit>
