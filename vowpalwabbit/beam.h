@@ -21,14 +21,14 @@ struct beam_element
 {
   uint32_t hash;  // a cached hash value -- if a ~= b then h(a) must== h(b)
   float cost;     // cost of this element
-  T *data;        // pointer to element data -- rarely accessed!
+  T* data;        // pointer to element data -- rarely accessed!
   bool active;    // is this currently active
   //  bool     recombined;                 // if we're not the BEST then we've been recombined
   //  v_array<T*> * recomb_friends;   // if we're the BEST (among ~= elements), then recomb_friends is everything that's
   //  equivalent to us but worse... NOT USED if we're not doing k-best predictions
 };
 
-inline int compare_on_cost(const void *void_a, const void *void_b)
+inline int compare_on_cost(const void* void_a, const void* void_b)
 {
   if (void_a == void_b) return 0;
   const beam_element<void>* a = static_cast<const beam_element<void>*>(void_a);
@@ -47,7 +47,7 @@ inline int compare_on_cost(const void *void_a, const void *void_b)
     return 0;
 }
 
-inline int compare_on_hash_then_cost(const void *void_a, const void *void_b)
+inline int compare_on_hash_then_cost(const void* void_a, const void* void_b)
 {
   if (void_a == void_b) return 0;
   const beam_element<void>* a = static_cast<const beam_element<void>*>(void_a);
@@ -81,17 +81,17 @@ private:
   float worst_cost;           // what is the cost of the worst (highest cost) item in the beam
   float best_cost;            // what is the cost of the best (lowest cost) item in the beam
   float prune_if_gt;          // prune any element with cost greater than this
-  T *best_cost_data;          // easy access to best-cost item
+  T* best_cost_data;          // easy access to best-cost item
   bool do_kbest;
   v_array<beam_element<T>> A;  // the actual data
   //  v_array<v_array<beam_element<T>*>> recomb_buckets;
 
   //  static size_t NUM_RECOMB_BUCKETS = 10231;
 
-  bool (*is_equivalent)(T *, T *);  // test if two items are equivalent; nullptr means don't do hypothesis recombination
+  bool (*is_equivalent)(T*, T*);  // test if two items are equivalent; nullptr means don't do hypothesis recombination
 
 public:
-  beam(size_t beam_size, float prune_coeff = FLT_MAX, bool (*test_equiv)(T *, T *) = nullptr, bool kbest = false)
+  beam(size_t beam_size, float prune_coeff = FLT_MAX, bool (*test_equiv)(T*, T*) = nullptr, bool kbest = false)
       : beam_size(beam_size), pruning_coefficient(prune_coeff), do_kbest(kbest), is_equivalent(test_equiv)
   {
     count = 0;
@@ -108,7 +108,7 @@ public:
 
   inline bool might_insert(float cost) { return (cost <= prune_if_gt) && ((count < beam_size) || (cost < worst_cost)); }
 
-  bool insert(T *data, float cost, uint32_t hash)  // returns TRUE iff element was actually added
+  bool insert(T* data, float cost, uint32_t hash)  // returns TRUE iff element was actually added
   {
     if (!might_insert(cost)) return false;
 
@@ -175,21 +175,21 @@ public:
     return true;
   }
 
-  beam_element<T> *get_best_item()
+  beam_element<T>* get_best_item()
   {
     if (count == 0) return nullptr;
-    beam_element<T> *ret = A.begin;
+    beam_element<T>* ret = A.begin;
     while ((ret != A.end) && (!ret->active)) ++ret;
     return (ret == A.end) ? nullptr : ret;
   }
 
-  beam_element<T> *pop_best_item()
+  beam_element<T>* pop_best_item()
   {
     if (count == 0) return nullptr;
 
-    beam_element<T> *ret = nullptr;
+    beam_element<T>* ret = nullptr;
     float next_best_cost = FLT_MAX;
-    for (beam_element<T> *el = A.begin; el != A.end; el++)
+    for (beam_element<T>* el = A.begin; el != A.end; el++)
       if ((ret == nullptr) && el->active && (el->cost <= best_cost))
         ret = el;
       else if (el->active && (el->cost < next_best_cost))
@@ -250,7 +250,7 @@ public:
     }
   }
 
-  void compact(void (*free_data)(T *) = nullptr)
+  void compact(void (*free_data)(T*) = nullptr)
   {
     if (is_equivalent) do_recombination();
     qsort(A.begin, A.size(), sizeof(beam_element<T>), compare_on_cost);  // TODO: quick select
@@ -262,7 +262,7 @@ public:
       while ((count > 1) && !A[count - 1].active) count--;
 
     if (free_data)
-      for (beam_element<T> *be = A.begin + count; be != A.end; ++be) free_data(be->data);
+      for (beam_element<T>* be = A.begin + count; be != A.end; ++be) free_data(be->data);
 
     A.end = A.begin + count;
 
@@ -272,15 +272,15 @@ public:
     best_cost_data = A[0].data;
   }
 
-  void maybe_compact(void (*free_data)(T *) = nullptr)
+  void maybe_compact(void (*free_data)(T*) = nullptr)
   {
     if (count >= beam_size * 10) compact(free_data);
   }
 
-  void erase(void (*free_data)(T *) = nullptr)
+  void erase(void (*free_data)(T*) = nullptr)
   {
     if (free_data)
-      for (beam_element<T> *be = A.begin; be != A.end; ++be) free_data(be->data);
+      for (beam_element<T>* be = A.begin; be != A.end; ++be) free_data(be->data);
     A.erase();
     count = 0;
     worst_cost = -FLT_MAX;
@@ -289,13 +289,10 @@ public:
     best_cost_data = nullptr;
   }
 
-  ~beam()
-  {
-    assert(A.size() == 0);
-  }
+  ~beam() { assert(A.size() == 0); }
 
-  beam_element<T> *begin() { return A.begin; }
-  beam_element<T> *end() { return A.end; }
+  beam_element<T>* begin() { return A.begin; }
+  beam_element<T>* end() { return A.end; }
   size_t size() { return count; }
   bool empty() { return A.empty(); }
   size_t get_beam_size() { return beam_size; }

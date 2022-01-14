@@ -20,7 +20,7 @@ struct cb_dro_data
   bool isValid() { return chisq.isValid(); }
 
   template <bool is_learn, bool is_explore>
-  inline void learn_or_predict(multi_learner &base, multi_ex &examples)
+  inline void learn_or_predict(multi_learner& base, multi_ex& examples)
   {
     // Some explanation required.
     //
@@ -39,7 +39,7 @@ struct cb_dro_data
     if (is_learn)
     {
       const auto it =
-          std::find_if(examples.begin(), examples.end(), [](example *item) { return !item->l.cb.costs.empty(); });
+          std::find_if(examples.begin(), examples.end(), [](example* item) { return !item->l.cb.costs.empty(); });
 
       if (it != examples.end())
       {
@@ -53,7 +53,7 @@ struct cb_dro_data
 
         const auto maxit = is_explore
             ? std::max_element(action_scores.begin(), action_scores.end(),
-                  [](const ACTION_SCORE::action_score &a, const ACTION_SCORE::action_score &b) {
+                  [](const ACTION_SCORE::action_score& a, const ACTION_SCORE::action_score& b) {
                     return ACTION_SCORE::score_comp(&a, &b) < 0;
                   })
             : action_scores.begin();
@@ -73,8 +73,8 @@ struct cb_dro_data
         save_weight.clear();
         save_weight.reserve(examples.size());
         std::transform(examples.cbegin(), examples.cend(), std::back_inserter(save_weight),
-            [](example *item) { return item->weight; });
-        std::for_each(examples.begin(), examples.end(), [qlb](example *item) { item->weight *= qlb; });
+            [](example* item) { return item->weight; });
+        std::for_each(examples.begin(), examples.end(), [qlb](example* item) { item->weight *= qlb; });
 
         // TODO: make sure descendants "do the right thing" with example->weight
         multiline_learn_or_predict<true>(base, examples, examples[0]->ft_offset);
@@ -82,7 +82,7 @@ struct cb_dro_data
         // restore the original weights
         auto save_weight_it = save_weight.begin();
         std::for_each(
-            examples.begin(), examples.end(), [&save_weight_it](example *item) { item->weight = *save_weight_it++; });
+            examples.begin(), examples.end(), [&save_weight_it](example* item) { item->weight = *save_weight_it++; });
       }
     }
   }
@@ -94,7 +94,7 @@ private:
 }  // namespace VW
 
 template <bool is_learn, bool is_explore>
-void learn_or_predict(cb_dro_data &data, multi_learner &base, multi_ex &examples)
+void learn_or_predict(cb_dro_data& data, multi_learner& base, multi_ex& examples)
 {
   data.learn_or_predict<is_learn, is_explore>(base, examples);
 }

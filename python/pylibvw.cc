@@ -42,10 +42,11 @@ typedef boost::shared_ptr<py_log_wrapper> py_log_wrapper_ptr;
 
 const size_t lDEFAULT = 0;
 const size_t lBINARY = 1;
+const size_t lSIMPLE = 1;
 const size_t lMULTICLASS = 2;
 const size_t lCOST_SENSITIVE = 3;
 const size_t lCONTEXTUAL_BANDIT = 4;
-const size_t lMAX = 5;
+const size_t lMAX = 5;  // DEPRECATED
 const size_t lCONDITIONAL_CONTEXTUAL_BANDIT = 6;
 const size_t lSLATES = 7;
 const size_t lCONTINUOUS = 8;
@@ -364,7 +365,7 @@ label_parser* get_label_parser(VW::workspace* all, size_t labelType)
   {
     case lDEFAULT:
       return all ? &all->example_parser->lbl_parser : NULL;
-    case lBINARY:
+    case lBINARY:  // or #lSIMPLE
       return &simple_label_parser;
     case lMULTICLASS:
       return &MULTICLASS::mc_label;
@@ -1279,15 +1280,20 @@ BOOST_PYTHON_MODULE(pylibvw)
       .def_readonly("lDefault", lDEFAULT,
           "Default label type (whatever vw was initialized with) -- used as input to the example() initializer")
       .def_readonly("lBinary", lBINARY, "Binary label type -- used as input to the example() initializer")
+      .def_readonly("lSimple", lSIMPLE, "Simple label type -- used as input to the example() initializer")
       .def_readonly("lMulticlass", lMULTICLASS, "Multiclass label type -- used as input to the example() initializer")
       .def_readonly("lCostSensitive", lCOST_SENSITIVE,
           "Cost sensitive label type (for LDF!) -- used as input to the example() initializer")
       .def_readonly("lContextualBandit", lCONTEXTUAL_BANDIT,
           "Contextual bandit label type -- used as input to the example() initializer")
+      .def_readonly("lMax", lMAX, "DEPRECATED: Max label type -- used as input to the example() initializer")
       .def_readonly("lConditionalContextualBandit", lCONDITIONAL_CONTEXTUAL_BANDIT,
           "Conditional Contextual bandit label type -- used as input to the example() initializer")
       .def_readonly("lSlates", lSLATES, "Slates label type -- used as input to the example() initializer")
       .def_readonly("lContinuous", lCONTINUOUS, "Continuous label type -- used as input to the example() initializer")
+      .def_readonly("lContextualBanditEval", lCONTEXTUAL_BANDIT_EVAL,
+          "Contextual bandit eval label type -- used as input to the example() initializer")
+      .def_readonly("lMultilabel", lMULTILABEL, "Multilabel label type -- used as input to the example() initializer")
 
       .def_readonly("pSCALAR", pSCALAR, "Scalar prediction type")
       .def_readonly("pSCALARS", pSCALARS, "Multiple scalar-valued prediction type")
@@ -1302,6 +1308,7 @@ BOOST_PYTHON_MODULE(pylibvw)
       .def_readonly("pPDF", pPDF, "PDF prediction type")
       .def_readonly("pACTIVE_MULTICLASS", pACTIVE_MULTICLASS, "Active multiclass prediction type")
       .def_readonly("pNOPRED", pNOPRED, "Nopred prediction type")
+
       .def_readonly("tUNSET", tUNSET, "Unset label type for CCB and Slates")
       .def_readonly("tSHARED", tSHARED, "Shared label type for CCB and Slates")
       .def_readonly("tACTION", tACTION, "Action label type for CCB and Slates")
