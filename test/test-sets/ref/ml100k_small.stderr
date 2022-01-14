@@ -1,9 +1,9 @@
 creating quadratic features for pairs: ui
 only testing
 Num weight bits = 16
-learning rate = 10
+learning rate = 0.05
 initial_t = 1
-power_t = 0.5
+power_t = 0
 using no cache
 Reading datafile = test-sets/ml100k_small_test
 num sources = 1

@@ -1,6 +1,6 @@
 only testing
 Num weight bits = 24
-learning rate = 0.5
+learning rate = 0.125
 initial_t = 0
 power_t = 0.5
 using no cache

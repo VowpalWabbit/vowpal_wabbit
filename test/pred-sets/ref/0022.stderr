@@ -1,7 +1,7 @@
 only testing
 predictions = 0022.predict
 Num weight bits = 16
-learning rate = 0.5
+learning rate = 10
 initial_t = 0
 power_t = 0.5
 using no cache

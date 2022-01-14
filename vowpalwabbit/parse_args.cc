@@ -1066,6 +1066,23 @@ void parse_example_tweaks(options_i& options, VW::workspace& all)
   }
 }
 
+void parse_update_options(options_i& options, VW::workspace& all)
+{
+    option_group_definition update_args("Update");
+    update_args.add(make_option("learning_rate", all.eta).keep().help("Set learning rate").short_name("l"))
+        .add(make_option("power_t", all.power_t).keep().default_value(0.5f).help("T power value"))
+        .add(make_option("decay_learning_rate", all.eta_decay_rate)
+                 .keep()
+                 .default_value(1.f)
+                 .help("Set Decay factor for learning_rate between passes"))
+        .add(make_option("initial_t", all.sd->t).help("Initial t value"))
+        .add(make_option("feature_mask", all.feature_mask)
+                 .help("Use existing regressor to determine which parameters may be updated.  If no initial_regressor "
+                       "given, also used for initial weights."));
+    options.add_and_parse(update_args);
+    all.initial_t = static_cast<float>(all.sd->t);
+}
+
 void parse_output_preds(options_i& options, VW::workspace& all)
 {
   std::string predictions;
@@ -1316,18 +1333,6 @@ VW::workspace& parse_args(
     all.example_parser = new parser{final_example_queue_limit, strict_parse};
     all.example_parser->_shared_data = all.sd;
 
-    option_group_definition update_args("Update");
-    update_args.add(make_option("learning_rate", all.eta).help("Set learning rate").short_name("l"))
-        .add(make_option("power_t", all.power_t).default_value(0.5f).help("T power value"))
-        .add(make_option("decay_learning_rate", all.eta_decay_rate)
-                 .default_value(1.f)
-                 .help("Set Decay factor for learning_rate between passes"))
-        .add(make_option("initial_t", all.sd->t).help("Initial t value"))
-        .add(make_option("feature_mask", all.feature_mask)
-                 .help("Use existing regressor to determine which parameters may be updated.  If no initial_regressor "
-                       "given, also used for initial weights."));
-    all.options->add_and_parse(update_args);
-
     option_group_definition weight_args("Weight");
     weight_args
         .add(make_option("initial_regressor", all.initial_regressors).help("Initial regressor(s)").short_name("i"))
@@ -1377,7 +1382,6 @@ VW::workspace& parse_args(
 
     parse_diagnostics(*all.options, all);
 
-    all.initial_t = static_cast<float>(all.sd->t);
     return all;
   }
   catch (...)
@@ -1517,6 +1521,8 @@ void parse_modules(options_i& options, VW::workspace& all, bool interactions_set
   rand_options.add(make_option("random_seed", all.random_seed).default_value(0).help("Seed random number generator"));
   options.add_and_parse(rand_options);
   all.get_random_state()->set_random_state(all.random_seed);
+
+  parse_update_options(options, all);
 
   parse_feature_tweaks(options, all, interactions_settings_duplicated, dictionary_namespaces);  // feature tweaks
 
