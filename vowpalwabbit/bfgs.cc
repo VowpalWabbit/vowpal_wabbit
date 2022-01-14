@@ -1045,7 +1045,8 @@ void save_load(bfgs& b, io_buf& model_file, bool read, bool text)
   {
     if (all->save_resume)
     {
-      const auto* const msg = "BFGS does not support models with save_resume data. Only models produced and consumed with "
+      const auto* const msg =
+          "BFGS does not support models with save_resume data. Only models produced and consumed with "
           "--predict_only_model can be used with BFGS.";
       THROW(msg);
     }
