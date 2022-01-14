@@ -46,7 +46,7 @@ const size_t lSIMPLE = 1;
 const size_t lMULTICLASS = 2;
 const size_t lCOST_SENSITIVE = 3;
 const size_t lCONTEXTUAL_BANDIT = 4;
-const size_t lMAX = 5;
+const size_t lMAX = 5; // DEPRECATED
 const size_t lCONDITIONAL_CONTEXTUAL_BANDIT = 6;
 const size_t lSLATES = 7;
 const size_t lCONTINUOUS = 8;
@@ -1286,7 +1286,7 @@ BOOST_PYTHON_MODULE(pylibvw)
           "Cost sensitive label type (for LDF!) -- used as input to the example() initializer")
       .def_readonly("lContextualBandit", lCONTEXTUAL_BANDIT,
           "Contextual bandit label type -- used as input to the example() initializer")
-      .def_readonly("lMax", lMAX, "Max label type -- used as input to the example() initializer")
+      .def_readonly("lMax", lMAX, "DEPRECATED: Max label type -- used as input to the example() initializer")
       .def_readonly("lConditionalContextualBandit", lCONDITIONAL_CONTEXTUAL_BANDIT,
           "Conditional Contextual bandit label type -- used as input to the example() initializer")
       .def_readonly("lSlates", lSLATES, "Slates label type -- used as input to the example() initializer")

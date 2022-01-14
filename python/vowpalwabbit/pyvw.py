@@ -16,7 +16,7 @@ class LabelType(IntEnum):
     MULTICLASS = pylibvw.vw.lMulticlass
     COST_SENSITIVE = pylibvw.vw.lCostSensitive
     CONTEXTUAL_BANDIT = pylibvw.vw.lContextualBandit
-    MAX = pylibvw.vw.lMax
+    MAX = pylibvw.vw.lMax # DEPRECATED
     CONDITIONAL_CONTEXTUAL_BANDIT = pylibvw.vw.lConditionalContextualBandit
     SLATES = pylibvw.vw.lSlates
     CONTINUOUS = pylibvw.vw.lContinuous
