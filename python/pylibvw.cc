@@ -66,6 +66,11 @@ const size_t pPDF = 10;
 const size_t pACTIVE_MULTICLASS = 11;
 const size_t pNOPRED = 12;
 
+const size_t tSHARED = 0;
+const size_t tACTION = 1;
+const size_t tSLOT = 2;
+const size_t tUNSET = 3;
+
 void dont_delete_me(void* arg) {}
 
 class OptionManager
@@ -897,6 +902,36 @@ float ex_get_cb_continuous_pdf_value(example_ptr ec, uint32_t i)
   return ec->l.cb_cont.costs[i].pdf_value;
 }
 
+size_t ex_get_slates_type(example_ptr ec)
+{
+  switch (ec->l.slates.type)
+  {
+    case VW::slates::example_type::shared:
+      return tSHARED;
+    case VW::slates::example_type::action:
+      return tACTION;
+    case VW::slates::example_type::slot:
+      return tSLOT;
+    default:
+      return tUNSET;
+  }
+}
+float ex_get_slates_weight(example_ptr ec) { return ec->l.slates.weight; }
+bool ex_get_slates_labeled(example_ptr ec) { return ec->l.slates.labeled; }
+float ex_get_slates_cost(example_ptr ec) { return ec->l.slates.cost; }
+uint32_t ex_get_slates_slot_id(example_ptr ec) { return ec->l.slates.slot_id; }
+size_t ex_get_slates_num_probabilities(example_ptr ec) { return ec->l.slates.probabilities.size(); }
+uint32_t ex_get_slates_action(example_ptr ec, uint32_t i)
+{
+  if (i >= ex_get_slates_num_probabilities(ec)) { THROW("Action index out of bounds"); }
+  return ec->l.slates.probabilities[i].action;
+}
+float ex_get_slates_probability(example_ptr ec, uint32_t i)
+{
+  if (i >= ex_get_slates_num_probabilities(ec)) { THROW("Probability index out of bounds"); }
+  return ec->l.slates.probabilities[i].score;
+}
+
 // example_counter is being overriden by lableType!
 size_t get_example_counter(example_ptr ec) { return ec->example_counter; }
 uint64_t get_ft_offset(example_ptr ec) { return ec->ft_offset; }
@@ -1266,7 +1301,11 @@ BOOST_PYTHON_MODULE(pylibvw)
       .def_readonly("pACTION_PDF_VALUE", pACTION_PDF_VALUE, "Action pdf value prediction type")
       .def_readonly("pPDF", pPDF, "PDF prediction type")
       .def_readonly("pACTIVE_MULTICLASS", pACTIVE_MULTICLASS, "Active multiclass prediction type")
-      .def_readonly("pNOPRED", pNOPRED, "Nopred prediction type");
+      .def_readonly("pNOPRED", pNOPRED, "Nopred prediction type")
+      .def_readonly("tUNSET", tUNSET, "Unset label type for CCB and Slates")
+      .def_readonly("tSHARED", tSHARED, "Shared label type for CCB and Slates")
+      .def_readonly("tACTION", tACTION, "Action label type for CCB and Slates")
+      .def_readonly("tSLOT", tSLOT, "Slot label type for CCB and Slates");
 
   // define the example class
   py::class_<example, example_ptr, boost::noncopyable>("example", py::no_init)
@@ -1377,7 +1416,18 @@ BOOST_PYTHON_MODULE(pylibvw)
           "Assuming a cb_continuous label type, get the label at a given index (i=0.. get_cb_continuous_num_costs)")
       .def("get_cb_continuous_pdf_value", &ex_get_cb_continuous_pdf_value,
           "Assuming a cb_continuous label type, get the pdf_value at a given index (i=0.. "
-          "get_cb_continuous_num_costs)");
+          "get_cb_continuous_num_costs)")
+      .def("get_slates_type", &ex_get_slates_type, "Assuming a slates label type, get the type of example")
+      .def("get_slates_weight", &ex_get_slates_weight, "Assuming a slates label type, get the weight of example")
+      .def("get_slates_labeled", &ex_get_slates_labeled, "Assuming a slates label type, get if example is labeled")
+      .def("get_slates_cost", &ex_get_slates_cost, "Assuming a slates label type, get the cost of example")
+      .def("get_slates_slot_id", &ex_get_slates_slot_id, "Assuming a slates label type, get the slot_id of example")
+      .def("get_slates_num_probabilities", &ex_get_slates_num_probabilities,
+          "Assuming a slates label type, get number of actions in example")
+      .def("get_slates_action", &ex_get_slates_action,
+          "Assuming a slates label type, get the action of example at index i")
+      .def("get_slates_probability", &ex_get_slates_probability,
+          "Assuming a slates label type, get the probability of example at index i");
 
   py::class_<Search::predictor, predictor_ptr, boost::noncopyable>("predictor", py::no_init)
       .def("set_input", &my_set_input, "set the input (an example) for this predictor (non-LDF mode only)")
