@@ -10,33 +10,34 @@ from enum import IntEnum
 
 
 class LabelType(IntEnum):
-    BINARY = 1
-    SIMPLE = 1
-    MULTICLASS = 2
-    COST_SENSITIVE = 3
-    CONTEXTUAL_BANDIT = 4
-    MAX = 5
-    CONDITIONAL_CONTEXTUAL_BANDIT = 6
-    SLATES = 7
-    CONTINUOUS = 8
-    CONTEXTUAL_BANDIT_EVAL = 9
-    MULTILABEL = 10
+    DEFAULT = pylibvw.vw.lDefault
+    BINARY = pylibvw.vw.lBinary
+    SIMPLE = pylibvw.vw.lSimple
+    MULTICLASS = pylibvw.vw.lMulticlass
+    COST_SENSITIVE = pylibvw.vw.lCostSensitive
+    CONTEXTUAL_BANDIT = pylibvw.vw.lContextualBandit
+    MAX = pylibvw.vw.lMax
+    CONDITIONAL_CONTEXTUAL_BANDIT = pylibvw.vw.lConditionalContextualBandit
+    SLATES = pylibvw.vw.lSlates
+    CONTINUOUS = pylibvw.vw.lContinuous
+    CONTEXTUAL_BANDIT_EVAL = pylibvw.vw.lContextualBanditEval
+    MULTILABEL = pylibvw.vw.lMultilabel
 
 
 class PredictionType(IntEnum):
-    SCALAR = 0
-    SCALARS = 1
-    ACTION_SCORES = 2
-    ACTION_PROBS = 3
-    MULTICLASS = 4
-    MULTILABELS = 5
-    PROB = 6
-    MULTICLASSPROBS = 7
-    DECISION_SCORES = 8
-    ACTION_PDF_VALUE = 9
-    PDF = 10
-    ACTIVE_MULTICLASS = 11
-    NOPRED = 12
+    SCALAR = pylibvw.vw.pSCALAR
+    SCALARS = pylibvw.vw.pSCALARS
+    ACTION_SCORES = pylibvw.vw.pACTION_SCORES
+    ACTION_PROBS = pylibvw.vw.pACTION_PROBS
+    MULTICLASS = pylibvw.vw.pMULTICLASS
+    MULTILABELS = pylibvw.vw.pMULTILABELS
+    PROB = pylibvw.vw.pPROB
+    MULTICLASSPROBS = pylibvw.vw.pMULTICLASSPROBS
+    DECISION_SCORES = pylibvw.vw.pDECISION_SCORES
+    ACTION_PDF_VALUE = pylibvw.vw.pACTION_PDF_VALUE
+    PDF = pylibvw.vw.pPDF
+    ACTIVE_MULTICLASS = pylibvw.vw.pACTIVE_MULTICLASS
+    NOPRED = pylibvw.vw.pNOPRED
 
 
 # baked in con py boost https://wiki.python.org/moin/boost.python/FAQ#The_constructors_of_some_classes_I_am_trying_to_wrap_are_private_because_instances_must_be_created_by_using_a_factory._Is_it_possible_to_wrap_such_classes.3F
