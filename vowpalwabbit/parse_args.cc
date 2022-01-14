@@ -1068,19 +1068,19 @@ void parse_example_tweaks(options_i& options, VW::workspace& all)
 
 void parse_update_options(options_i& options, VW::workspace& all)
 {
-    option_group_definition update_args("Update");
-    update_args.add(make_option("learning_rate", all.eta).keep().help("Set learning rate").short_name("l"))
-        .add(make_option("power_t", all.power_t).keep().default_value(0.5f).help("T power value"))
-        .add(make_option("decay_learning_rate", all.eta_decay_rate)
-                 .keep()
-                 .default_value(1.f)
-                 .help("Set Decay factor for learning_rate between passes"))
-        .add(make_option("initial_t", all.sd->t).help("Initial t value"))
-        .add(make_option("feature_mask", all.feature_mask)
-                 .help("Use existing regressor to determine which parameters may be updated.  If no initial_regressor "
-                       "given, also used for initial weights."));
-    options.add_and_parse(update_args);
-    all.initial_t = static_cast<float>(all.sd->t);
+  option_group_definition update_args("Update");
+  update_args.add(make_option("learning_rate", all.eta).keep().help("Set learning rate").short_name("l"))
+      .add(make_option("power_t", all.power_t).keep().default_value(0.5f).help("T power value"))
+      .add(make_option("decay_learning_rate", all.eta_decay_rate)
+               .keep()
+               .default_value(1.f)
+               .help("Set Decay factor for learning_rate between passes"))
+      .add(make_option("initial_t", all.sd->t).help("Initial t value"))
+      .add(make_option("feature_mask", all.feature_mask)
+               .help("Use existing regressor to determine which parameters may be updated.  If no initial_regressor "
+                     "given, also used for initial weights."));
+  options.add_and_parse(update_args);
+  all.initial_t = static_cast<float>(all.sd->t);
 }
 
 void parse_output_preds(options_i& options, VW::workspace& all)
