@@ -32,8 +32,8 @@ struct expreplay
   }
 };
 
-template <label_parser &lp>
-void learn(expreplay<lp> &er, LEARNER::single_learner &base, example &ec)
+template <label_parser& lp>
+void learn(expreplay<lp>& er, LEARNER::single_learner& base, example& ec)
 {
   // Cannot learn if the example weight is 0.
   if (lp.get_weight(ec.l, ec._reduction_features) == 0.) return;
@@ -51,15 +51,15 @@ void learn(expreplay<lp> &er, LEARNER::single_learner &base, example &ec)
   VW::copy_example_data_with_label(&er.buf[n], &ec);
 }
 
-template <label_parser &lp>
-void predict(expreplay<lp> &, LEARNER::single_learner &base, example &ec)
+template <label_parser& lp>
+void predict(expreplay<lp>&, LEARNER::single_learner& base, example& ec)
 {
   base.predict(ec);
 }
 
-template <label_parser &lp>
-void multipredict(expreplay<lp> &, LEARNER::single_learner &base, example &ec, size_t count, size_t step,
-    polyprediction *pred, bool finalize_predictions)
+template <label_parser& lp>
+void multipredict(expreplay<lp>&, LEARNER::single_learner& base, example& ec, size_t count, size_t step,
+    polyprediction* pred, bool finalize_predictions)
 {
   base.multipredict(ec, count, step, pred, finalize_predictions);
 }

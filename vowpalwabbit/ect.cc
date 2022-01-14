@@ -250,7 +250,7 @@ void ect_train(ect& e, single_learner& base, example& ec)
     }
   } while (id != 0);
 
-  //TODO: error? warn? info? what level is this supposed to be?
+  // TODO: error? warn? info? what level is this supposed to be?
   if (e.tournaments_won.empty())
     e.logger.out_error("Internal error occurred. tournaments_won was empty which should not be possible.");
 

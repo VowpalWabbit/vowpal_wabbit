@@ -47,10 +47,10 @@ public:
       float epsilon, size_t bag_size, bool greedify, bool first_only, std::shared_ptr<VW::rand_state> random_state);
 
   // Should be called through cb_explore_adf_base for pre/post-processing
-  void predict(VW::LEARNER::multi_learner &base, multi_ex &examples);
-  void learn(VW::LEARNER::multi_learner &base, multi_ex &examples);
+  void predict(VW::LEARNER::multi_learner& base, multi_ex& examples);
+  void learn(VW::LEARNER::multi_learner& base, multi_ex& examples);
 
-  const PredictionT &get_cached_prediction() { return _action_probs; };
+  const PredictionT& get_cached_prediction() { return _action_probs; };
 
 private:
   uint32_t get_bag_learner_update_count(uint32_t learner_index);
@@ -76,7 +76,7 @@ uint32_t cb_explore_adf_bag::get_bag_learner_update_count(uint32_t learner_index
     return BS::weight_gen(_random_state);
 }
 
-void cb_explore_adf_bag::predict(VW::LEARNER::multi_learner &base, multi_ex &examples)
+void cb_explore_adf_bag::predict(VW::LEARNER::multi_learner& base, multi_ex& examples)
 {
   // Randomize over predictions from a base set of predictors
   v_array<ACTION_SCORE::action_score>& preds = examples[0]->pred.a_s;
@@ -118,7 +118,7 @@ void cb_explore_adf_bag::predict(VW::LEARNER::multi_learner &base, multi_ex &exa
   std::copy(std::begin(_action_probs), std::end(_action_probs), std::begin(preds));
 }
 
-void cb_explore_adf_bag::learn(VW::LEARNER::multi_learner &base, multi_ex &examples)
+void cb_explore_adf_bag::learn(VW::LEARNER::multi_learner& base, multi_ex& examples)
 {
   for (uint32_t i = 0; i < _bag_size; i++)
   {
