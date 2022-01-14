@@ -306,7 +306,7 @@ void options_boost_po::check_unregistered(VW::io::logger& logger)
 
 template <>
 void options_boost_po::add_to_description_impl<typelist<>>(
-    const std::shared_ptr<base_option>&, po::options_description&)
+    const std::shared_ptr<base_option>& opt, po::options_description& /*description*/)
 {
-  THROW("That is an unsupported option type.");
+  THROW(fmt::format("Option '{}' has an unsupported option type.", opt->m_name));
 }
