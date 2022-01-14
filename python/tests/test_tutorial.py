@@ -152,7 +152,7 @@ class Simulator:
                 #     print(actions.index(action))
                 vw_format = vw.parse(
                     self.to_vw_example_format(context, actions, (action, cost, prob)),
-                    pyvw.vw.lContextualBandit,
+                    pyvw.LabelType.CONTEXTUAL_BANDIT,
                 )
                 # 6. Learn
                 vw.learn(vw_format)
@@ -172,7 +172,7 @@ class Simulator:
 def _test_helper(
     vw_arg: str, num_iterations=2000, seed=10, has_automl=False, log_filename=None
 ):
-    vw = pyvw.vw(arg_str=vw_arg)
+    vw = pyvw.Workspace(arg_str=vw_arg)
     has_automl = "automl" in vw.get_enabled_reductions()
     sim = Simulator(seed=seed, has_automl=has_automl, debug_logfile=log_filename)
     ctr = sim.run_simulation(
@@ -189,7 +189,7 @@ def _test_helper_save_load(
     split = 1500
     before_save = num_iterations - split
 
-    first_vw = pyvw.vw(arg_str=vw_arg)
+    first_vw = pyvw.Workspace(arg_str=vw_arg)
     has_automl = "automl" in first_vw.get_enabled_reductions()
     sim = Simulator(seed=seed, has_automl=has_automl, debug_logfile=log_filename)
     # first chunk
@@ -201,7 +201,9 @@ def _test_helper_save_load(
     first_vw.save(model_file)
     first_vw.finish()
     # reload in another instance
-    other_vw = pyvw.vw(f"-i {model_file} {vw_arg}")  # todo remove vw_arg from here
+    other_vw = pyvw.Workspace(
+        f"-i {model_file} {vw_arg}"
+    )  # todo remove vw_arg from here
     # continue
     ctr = sim.run_simulation(
         other_vw,
@@ -266,7 +268,7 @@ def test_automl_reduction(config=3, sim_saveload=False):
     elif config == 3:  # with three live configs
         assert ctr[-1] > 0.75
     else:
-        assert false
+        assert False
 
 
 # good for attaching debugger
