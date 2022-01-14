@@ -14,10 +14,12 @@ def count_weights_from_readable_model_file_for_equiv_test(file_name):
 def test_ccb_single_slot_and_cb_equivalence_no_slot_features():
     # --- CCB
     ccb_model_file_name = "model_file_ccb_equiv.txt"
-    ccb_workspace = pyvw.vw(quiet=True,
-                            predict_only_model=True,
-                            ccb_explore_adf=True,
-                            readable_model=ccb_model_file_name)
+    ccb_workspace = pyvw.vw(
+        quiet=True,
+        predict_only_model=True,
+        ccb_explore_adf=True,
+        readable_model=ccb_model_file_name,
+    )
 
     ccb_ex = """
     ccb shared |User b
@@ -32,14 +34,17 @@ def test_ccb_single_slot_and_cb_equivalence_no_slot_features():
     ccb_workspace.finish()
 
     ccb_num_weights = count_weights_from_readable_model_file_for_equiv_test(
-        ccb_model_file_name)
+        ccb_model_file_name
+    )
 
     # --- CB
     cb_model_file_name = "model_file_cb_equiv.txt"
-    cb_workspace = pyvw.vw(quiet=True,
-                           predict_only_model=True,
-                           cb_explore_adf=True,
-                           readable_model=cb_model_file_name)
+    cb_workspace = pyvw.vw(
+        quiet=True,
+        predict_only_model=True,
+        cb_explore_adf=True,
+        readable_model=cb_model_file_name,
+    )
 
     cb_ex = """
     shared |User b
@@ -53,7 +58,8 @@ def test_ccb_single_slot_and_cb_equivalence_no_slot_features():
     cb_workspace.learn(cb_ex)
     cb_workspace.finish()
     cb_num_weights = count_weights_from_readable_model_file_for_equiv_test(
-        cb_model_file_name)
+        cb_model_file_name
+    )
 
     assert ccb_num_weights == cb_num_weights
 
@@ -61,9 +67,9 @@ def test_ccb_single_slot_and_cb_equivalence_no_slot_features():
 def test_ccb_single_slot_and_cb_non_equivalence_with_slot_features():
     # --- CCB
     ccb_model_file_name = "model_file_ccb_no_equiv.txt"
-    ccb_workspace = pyvw.vw(quiet=True,
-                            ccb_explore_adf=True,
-                            readable_model=ccb_model_file_name)
+    ccb_workspace = pyvw.vw(
+        quiet=True, ccb_explore_adf=True, readable_model=ccb_model_file_name
+    )
 
     ccb_ex = """
     ccb shared |User b
@@ -78,13 +84,14 @@ def test_ccb_single_slot_and_cb_non_equivalence_with_slot_features():
     ccb_workspace.finish()
 
     ccb_num_weights = count_weights_from_readable_model_file_for_equiv_test(
-        ccb_model_file_name)
+        ccb_model_file_name
+    )
 
     # --- CB
     cb_model_file_name = "model_file_cb_no_equiv.txt"
-    cb_workspace = pyvw.vw(quiet=True,
-                           cb_explore_adf=True,
-                           readable_model=cb_model_file_name)
+    cb_workspace = pyvw.vw(
+        quiet=True, cb_explore_adf=True, readable_model=cb_model_file_name
+    )
 
     cb_ex = """
     shared |User b
@@ -98,7 +105,8 @@ def test_ccb_single_slot_and_cb_non_equivalence_with_slot_features():
     cb_workspace.learn(cb_ex)
     cb_workspace.finish()
     cb_num_weights = count_weights_from_readable_model_file_for_equiv_test(
-        cb_model_file_name)
+        cb_model_file_name
+    )
 
     # Since there was at least one slot feature supplied, the equivalent mode
     # does not apply and so we expect there to be more weights in the CCB model.

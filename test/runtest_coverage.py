@@ -4,7 +4,7 @@ import os
 from pathlib import Path
 
 
-def get_latest_tests(file_path = None):
+def get_latest_tests(file_path=None):
     if file_path is None:
         test_ref_dir = Path(os.path.dirname(os.path.abspath(__file__)))
         file_path = Path(test_ref_dir).joinpath("core.vwtest.json")
