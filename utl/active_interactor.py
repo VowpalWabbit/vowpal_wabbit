@@ -108,7 +108,12 @@ def check_file_exists(file_path: str, file_mode: str) -> None:
 
 
 def get_label(
-    example: str, minus1: bool, i: int, tag: str, pred: float, input_fn: Callable[[str], str]
+    example: str,
+    minus1: bool,
+    i: int,
+    tag: str,
+    pred: float,
+    input_fn: Callable[[str], str],
 ) -> Optional[str]:
     print(
         'Request for example {}: tag="{}", prediction={}: {}'.format(
