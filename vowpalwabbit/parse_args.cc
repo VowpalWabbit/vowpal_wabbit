@@ -551,7 +551,6 @@ void parse_feature_tweaks(options_i& options, VW::workspace& all, bool interacti
   bool noconstant;
   bool leave_duplicate_interactions;
   std::string affix;
-  std::string q_colon;
 
   option_group_definition feature_options("Feature");
   feature_options
@@ -620,8 +619,6 @@ void parse_feature_tweaks(options_i& options, VW::workspace& all, bool interacti
                .help("Don't remove interactions with duplicate combinations of namespaces. For ex. this is a "
                      "duplicate: '-q ab -q ba' and a lot more in '-q ::'."))
       .add(make_option("quadratic", quadratics).short_name("q").keep().help("Create and use quadratic features"))
-      // TODO this option is unused - remove?
-      .add(make_option("q:", q_colon).help("DEPRECATED ':' corresponds to a wildcard for all printable characters"))
       .add(make_option("cubic", cubics).keep().help("Create and use cubic features"));
   options.add_and_parse(feature_options);
 
@@ -639,9 +636,6 @@ void parse_feature_tweaks(options_i& options, VW::workspace& all, bool interacti
         all.spelling_features[static_cast<size_t>(spelling_n[0])] = true;
     }
   }
-
-  if (options.was_supplied("q:"))
-  { all.logger.err_warn("'--q:' is deprecated and not supported. Use : as a wildcard in interactions."); }
 
   if (options.was_supplied("affix")) parse_affix_argument(all, VW::decode_inline_hex(affix, all.logger));
 
@@ -1222,10 +1216,10 @@ VW::workspace& parse_args(
                .one_of({"info", "warn", "error", "critical", "off"})
                .help("Log level for logging messages. Specifying this wil override --quiet for log output."))
       .add(make_option("log_output", log_output_stream)
-               .default_value("compat")
+               .default_value("stdout")
                .one_of({"stdout", "stderr", "compat"})
                .help("Specify the stream to output log messages to. In the past VW's choice of stream for logging "
-                     "messages wasn't consistent. Suppling compat will maintain that old behavior. Compat is now "
+                     "messages wasn't consistent. Supplying compat will maintain that old behavior. Compat is now "
                      "deprecated so it is recommended that stdout or stderr is chosen."))
       .add(make_option("limit_output", upper_limit)
                .default_value(0)
@@ -1245,12 +1239,8 @@ VW::workspace& parse_args(
   logger.set_location(location);
 
   // Don't print warning if a custom log output trace_listener is supplied.
-  if (trace_listener == nullptr && level != VW::io::log_level::off && location == VW::io::output_location::compat)
-  {
-    logger.err_warn(
-        "The old default logging behavior of logging to a mix of stdout and stderr is deprecated. Please choose either "
-        "'stdout' or 'stderr' for --log_output to silence this warning.");
-  }
+  if (trace_listener == nullptr && location == VW::io::output_location::compat)
+  { logger.err_warn("'compat' mode for --log_output is deprecated and will be removed in a future release."); }
 
   if (options->was_supplied("limit_output") && (upper_limit != 0)) { logger.set_max_output(upper_limit); }
 
@@ -1297,15 +1287,33 @@ VW::workspace& parse_args(
 
     bool strict_parse = false;
     int ring_size_tmp;
+    int64_t example_queue_limit_tmp;
     option_group_definition vw_args("Parser");
     vw_args.add(make_option("ring_size", ring_size_tmp).default_value(256).help("Size of example ring"))
+        .add(make_option("example_queue_limit", example_queue_limit_tmp)
+                 .default_value(256)
+                 .help("Max number of examples to store after parsing but before the learner has processed. Rarely "
+                       "needs to be changed."))
         .add(make_option("strict_parse", strict_parse).help("Throw on malformed examples"));
     all.options->add_and_parse(vw_args);
 
     if (ring_size_tmp <= 0) { THROW("ring_size should be positive") }
+    if (example_queue_limit_tmp <= 0) { THROW("ring_size should be positive") }
     auto ring_size = static_cast<size_t>(ring_size_tmp);
+    auto example_queue_limit = static_cast<size_t>(example_queue_limit_tmp);
+    auto final_example_queue_limit = example_queue_limit;
+    if (all.options->was_supplied("ring_size"))
+    {
+      final_example_queue_limit = ring_size;
+      all.logger.err_warn("--ring_size is deprecated and has been replaced with --example_queue_limit");
+      if (all.options->was_supplied("example_queue_limit"))
+      {
+        final_example_queue_limit = example_queue_limit;
+        all.logger.err_info("--example_queue_limit overrides --ring_size");
+      }
+    }
 
-    all.example_parser = new parser{ring_size, strict_parse};
+    all.example_parser = new parser{final_example_queue_limit, strict_parse};
     all.example_parser->_shared_data = all.sd;
 
     option_group_definition update_args("Update");

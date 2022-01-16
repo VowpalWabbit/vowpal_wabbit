@@ -104,7 +104,7 @@
     <ClInclude Include="vwdll.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="vwdll.cpp" />
+    <ClCompile Include="vwdll.cc" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />

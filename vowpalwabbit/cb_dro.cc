@@ -20,7 +20,7 @@ struct cb_dro_data
   bool isValid() { return chisq.isValid(); }
 
   template <bool is_learn, bool is_explore>
-  inline void learn_or_predict(multi_learner &base, multi_ex &examples)
+  inline void learn_or_predict(multi_learner& base, multi_ex& examples)
   {
     // Some explanation required.
     //
@@ -39,7 +39,7 @@ struct cb_dro_data
     if (is_learn)
     {
       const auto it =
-          std::find_if(examples.begin(), examples.end(), [](example *item) { return !item->l.cb.costs.empty(); });
+          std::find_if(examples.begin(), examples.end(), [](example* item) { return !item->l.cb.costs.empty(); });
 
       if (it != examples.end())
       {
@@ -53,7 +53,7 @@ struct cb_dro_data
 
         const auto maxit = is_explore
             ? std::max_element(action_scores.begin(), action_scores.end(),
-                  [](const ACTION_SCORE::action_score &a, const ACTION_SCORE::action_score &b) {
+                  [](const ACTION_SCORE::action_score& a, const ACTION_SCORE::action_score& b) {
                     return ACTION_SCORE::score_comp(&a, &b) < 0;
                   })
             : action_scores.begin();
@@ -73,8 +73,8 @@ struct cb_dro_data
         save_weight.clear();
         save_weight.reserve(examples.size());
         std::transform(examples.cbegin(), examples.cend(), std::back_inserter(save_weight),
-            [](example *item) { return item->weight; });
-        std::for_each(examples.begin(), examples.end(), [qlb](example *item) { item->weight *= qlb; });
+            [](example* item) { return item->weight; });
+        std::for_each(examples.begin(), examples.end(), [qlb](example* item) { item->weight *= qlb; });
 
         // TODO: make sure descendants "do the right thing" with example->weight
         multiline_learn_or_predict<true>(base, examples, examples[0]->ft_offset);
@@ -82,7 +82,7 @@ struct cb_dro_data
         // restore the original weights
         auto save_weight_it = save_weight.begin();
         std::for_each(
-            examples.begin(), examples.end(), [&save_weight_it](example *item) { item->weight = *save_weight_it++; });
+            examples.begin(), examples.end(), [&save_weight_it](example* item) { item->weight = *save_weight_it++; });
       }
     }
   }
@@ -94,7 +94,7 @@ private:
 }  // namespace VW
 
 template <bool is_learn, bool is_explore>
-void learn_or_predict(cb_dro_data &data, multi_learner &base, multi_ex &examples)
+void learn_or_predict(cb_dro_data& data, multi_learner& base, multi_ex& examples)
 {
   data.learn_or_predict<is_learn, is_explore>(base, examples);
 }
@@ -142,23 +142,26 @@ base_learner* cb_dro_setup(VW::setup_base_i& stack_builder)
 
   if (!data->isValid()) { THROW("invalid cb_dro parameter values supplied"); }
 
+  void (*learn_ptr)(cb_dro_data&, multi_learner&, multi_ex&);
+  void (*pred_ptr)(cb_dro_data&, multi_learner&, multi_ex&);
+  std::string name_addition;
   if (options.was_supplied("cb_explore_adf"))
   {
-    auto* l = make_reduction_learner(std::move(data), as_multiline(stack_builder.setup_base_learner()),
-        learn_or_predict<true, true>, learn_or_predict<false, true>,
-        stack_builder.get_setupfn_name(cb_dro_setup) + "-cb_explore_adf")
-                  .set_output_prediction_type(VW::prediction_type_t::action_probs)
-                  .set_input_label_type(VW::label_type_t::cb)
-                  .build();
-    return make_base(*l);
+    learn_ptr = learn_or_predict<true, true>;
+    pred_ptr = learn_or_predict<false, true>;
+    name_addition = "-cb_explore_adf";
   }
   else
   {
-    auto* l = make_reduction_learner(std::move(data), as_multiline(stack_builder.setup_base_learner()),
-        learn_or_predict<true, false>, learn_or_predict<false, false>, stack_builder.get_setupfn_name(cb_dro_setup))
-                  .set_output_prediction_type(VW::prediction_type_t::action_probs)
-                  .set_input_label_type(VW::label_type_t::cb)
-                  .build();
-    return make_base(*l);
+    learn_ptr = learn_or_predict<true, false>;
+    pred_ptr = learn_or_predict<false, false>;
+    name_addition = "";
   }
+
+  auto* l = make_reduction_learner(std::move(data), as_multiline(stack_builder.setup_base_learner()), learn_ptr,
+      pred_ptr, stack_builder.get_setupfn_name(cb_dro_setup) + name_addition)
+                .set_output_prediction_type(VW::prediction_type_t::action_probs)
+                .set_input_label_type(VW::label_type_t::cb)
+                .build();
+  return make_base(*l);
 }

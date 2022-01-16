@@ -3,9 +3,9 @@ Driver Options:
   --log_level arg (=info, )                  Log level for logging messages. Specifying this wil 
                                              override --quiet for log output.. Choices: {critical, 
                                              error, info, off, warn}
-  --log_output arg (=compat, )               Specify the stream to output log messages to. In the 
+  --log_output arg (=stdout, )               Specify the stream to output log messages to. In the 
                                              past VW's choice of stream for logging messages wasn't
-                                             consistent. Suppling compat will maintain that old 
+                                             consistent. Supplying compat will maintain that old 
                                              behavior. Compat is now deprecated so it is 
                                              recommended that stdout or stderr is chosen.. Choices:
                                              {compat, stderr, stdout}
@@ -20,9 +20,9 @@ Logging options Options:
   --log_level arg (=info, )                  Log level for logging messages. Specifying this wil 
                                              override --quiet for log output.. Choices: {critical, 
                                              error, info, off, warn}
-  --log_output arg (=compat, )               Specify the stream to output log messages to. In the 
+  --log_output arg (=stdout, )               Specify the stream to output log messages to. In the 
                                              past VW's choice of stream for logging messages wasn't
-                                             consistent. Suppling compat will maintain that old 
+                                             consistent. Supplying compat will maintain that old 
                                              behavior. Compat is now deprecated so it is 
                                              recommended that stdout or stderr is chosen.. Choices:
                                              {compat, stderr, stdout}
@@ -30,6 +30,9 @@ Logging options Options:
                                              means unbounded.
 Parser Options:
   --ring_size arg (=256, )                   Size of example ring
+  --example_queue_limit arg (=256, )         Max number of examples to store after parsing but 
+                                             before the learner has processed. Rarely needs to be 
+                                             changed.
   --strict_parse                             Throw on malformed examples
 Update Options:
   -l [ --learning_rate ] arg                 Set learning rate
@@ -107,8 +110,6 @@ Feature Options:
                                              of namespaces. For ex. this is a duplicate: '-q ab -q 
                                              ba' and a lot more in '-q ::'.
   -q [ --quadratic ] arg                     Create and use quadratic features
-  --q: arg                                   DEPRECATED ':' corresponds to a wildcard for all 
-                                             printable characters
   --cubic arg                                Create and use cubic features
 Example Options:
   -t [ --testonly ]                          Ignore label information and just test

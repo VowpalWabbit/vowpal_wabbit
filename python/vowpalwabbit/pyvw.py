@@ -5,40 +5,40 @@ from __future__ import division
 from typing import List, Optional, Union
 import pylibvw
 import warnings
-import enum
 from typing import List, Tuple, Optional
 
 from enum import IntEnum
 
 
 class LabelType(IntEnum):
-    BINARY = 1
-    SIMPLE = 1
-    MULTICLASS = 2
-    COST_SENSITIVE = 3
-    CONTEXTUAL_BANDIT = 4
-    MAX = 5
-    CONDITIONAL_CONTEXTUAL_BANDIT = 6
-    SLATES = 7
-    CONTINUOUS = 8
-    CONTEXTUAL_BANDIT_EVAL = 9
-    MULTILABEL = 10
+    DEFAULT = pylibvw.vw.lDefault
+    BINARY = pylibvw.vw.lBinary
+    SIMPLE = pylibvw.vw.lSimple
+    MULTICLASS = pylibvw.vw.lMulticlass
+    COST_SENSITIVE = pylibvw.vw.lCostSensitive
+    CONTEXTUAL_BANDIT = pylibvw.vw.lContextualBandit
+    MAX = pylibvw.vw.lMax  # DEPRECATED
+    CONDITIONAL_CONTEXTUAL_BANDIT = pylibvw.vw.lConditionalContextualBandit
+    SLATES = pylibvw.vw.lSlates
+    CONTINUOUS = pylibvw.vw.lContinuous
+    CONTEXTUAL_BANDIT_EVAL = pylibvw.vw.lContextualBanditEval
+    MULTILABEL = pylibvw.vw.lMultilabel
 
 
 class PredictionType(IntEnum):
-    SCALAR = 0
-    SCALARS = 1
-    ACTION_SCORES = 2
-    ACTION_PROBS = 3
-    MULTICLASS = 4
-    MULTILABELS = 5
-    PROB = 6
-    MULTICLASSPROBS = 7
-    DECISION_SCORES = 8
-    ACTION_PDF_VALUE = 9
-    PDF = 10
-    ACTIVE_MULTICLASS = 11
-    NOPRED = 12
+    SCALAR = pylibvw.vw.pSCALAR
+    SCALARS = pylibvw.vw.pSCALARS
+    ACTION_SCORES = pylibvw.vw.pACTION_SCORES
+    ACTION_PROBS = pylibvw.vw.pACTION_PROBS
+    MULTICLASS = pylibvw.vw.pMULTICLASS
+    MULTILABELS = pylibvw.vw.pMULTILABELS
+    PROB = pylibvw.vw.pPROB
+    MULTICLASSPROBS = pylibvw.vw.pMULTICLASSPROBS
+    DECISION_SCORES = pylibvw.vw.pDECISION_SCORES
+    ACTION_PDF_VALUE = pylibvw.vw.pACTION_PDF_VALUE
+    PDF = pylibvw.vw.pPDF
+    ACTIVE_MULTICLASS = pylibvw.vw.pACTIVE_MULTICLASS
+    NOPRED = pylibvw.vw.pNOPRED
 
 
 # baked in con py boost https://wiki.python.org/moin/boost.python/FAQ#The_constructors_of_some_classes_I_am_trying_to_wrap_are_private_because_instances_must_be_created_by_using_a_factory._Is_it_possible_to_wrap_such_classes.3F
@@ -1017,24 +1017,30 @@ class example_namespace:
         self.ex.push_features(self.ns, featureList)
 
 
-class abstract_label:
+class AbstractLabel:
     """An abstract class for a VW label."""
 
     def __init__(self):
         pass
 
-    def from_example(self, ex):
+    def from_example(self, ex: "example"):
         """grab a label from a given VW example"""
         raise Exception("from_example not yet implemented")
 
 
-class simple_label(abstract_label):
+class SimpleLabel(AbstractLabel):
     """Class for simple VW label"""
 
-    def __init__(self, label=0.0, weight=1.0, initial=0.0, prediction=0.0):
+    def __init__(
+        self,
+        label: Union["example", float] = 0.0,
+        weight: float = 1.0,
+        initial: float = 0.0,
+        prediction: float = 0.0,
+    ):
         if not isinstance(label, (example, float)):
             raise TypeError("Label should be float or an example.")
-        abstract_label.__init__(self)
+        AbstractLabel.__init__(self)
         if isinstance(label, example):
             self.from_example(label)
         else:
@@ -1043,7 +1049,7 @@ class simple_label(abstract_label):
             self.initial = initial
             self.prediction = prediction
 
-    def from_example(self, ex):
+    def from_example(self, ex: "example"):
         self.label = ex.get_simplelabel_label()
         self.weight = ex.get_simplelabel_weight()
         self.initial = ex.get_simplelabel_initial()
@@ -1056,13 +1062,15 @@ class simple_label(abstract_label):
         return s
 
 
-class multiclass_label(abstract_label):
+class MulticlassLabel(AbstractLabel):
     """Class for multiclass VW label with prediction"""
 
-    def __init__(self, label=1, weight=1.0, prediction=1):
+    def __init__(
+        self, label: Union["example", int] = 1, weight: float = 1.0, prediction: int = 1
+    ):
         if not isinstance(label, (example, int)):
             raise TypeError("Label should be integer or an example.")
-        abstract_label.__init__(self)
+        AbstractLabel.__init__(self)
         if isinstance(label, example):
             self.from_example(label)
         else:
@@ -1070,7 +1078,7 @@ class multiclass_label(abstract_label):
             self.weight = weight
             self.prediction = prediction
 
-    def from_example(self, ex):
+    def from_example(self, ex: "example"):
         self.label = ex.get_multiclass_label()
         self.weight = ex.get_multiclass_weight()
         self.prediction = ex.get_multiclass_prediction()
@@ -1082,17 +1090,19 @@ class multiclass_label(abstract_label):
         return s
 
 
-class multiclass_probabilities_label(abstract_label):
+class MulticlassProbabilitiesLabel(AbstractLabel):
     """Class for multiclass VW label with probabilities"""
 
-    def __init__(self, label, prediction=None):
-        abstract_label.__init__(self)
+    def __init__(
+        self, label: Optional["example"] = None, prediction: Optional[float] = None
+    ):
+        AbstractLabel.__init__(self)
         if isinstance(label, example):
             self.from_example(label)
         else:
             self.prediction = prediction
 
-    def from_example(self, ex):
+    def from_example(self, ex: "example"):
         self.prediction = get_prediction(ex, PredictionType.MULTICLASSPROBS)
 
     def __str__(self):
@@ -1102,83 +1112,99 @@ class multiclass_probabilities_label(abstract_label):
         return " ".join(s)
 
 
-class cost_sensitive_label(abstract_label):
+class CostSensitiveElement:
+    def __init__(
+        self,
+        label: int,
+        cost: float = 0.0,
+        partial_prediction: float = 0.0,
+        wap_value: float = 0.0,
+    ):
+        self.label = label
+        self.cost = cost
+        self.partial_prediction = partial_prediction
+        self.wap_value = wap_value
+
+
+class CostSensitiveLabel(AbstractLabel):
     """Class for cost sensative VW label"""
 
-    def __init__(self, costs=[], prediction=0):
-        abstract_label.__init__(self)
+    def __init__(
+        self,
+        costs: Union["example", List[CostSensitiveElement]] = [],
+        prediction: float = 0,
+    ):
+        AbstractLabel.__init__(self)
         if isinstance(costs, example):
             self.from_example(costs)
         else:
             self.costs = costs
             self.prediction = prediction
 
-    def from_example(self, ex):
-        class wclass:
-            def __init__(self, label, cost=0.0, partial_prediction=0.0, wap_value=0.0):
-                self.label = label
-                self.cost = cost
-                self.partial_prediction = partial_prediction
-                self.wap_value = wap_value
-
+    def from_example(self, ex: "example"):
         self.prediction = ex.get_costsensitive_prediction()
         self.costs = []
         for i in range(ex.get_costsensitive_num_costs()):
-            wc = wclass(
+            cs = CostSensitiveElement(
                 ex.get_costsensitive_class(i),
                 ex.get_costsensitive_cost(i),
                 ex.get_costsensitive_partial_prediction(i),
                 ex.get_costsensitive_wap_value(i),
             )
-            self.costs.append(wc)
+            self.costs.append(cs)
 
     def __str__(self):
         return " ".join(["{}:{}".format(c.label, c.cost) for c in self.costs])
 
 
-class cbandits_label(abstract_label):
+class CBLabelElement:
+    def __init__(
+        self,
+        action: Optional[int] = None,
+        cost: float = 0.0,
+        partial_prediction: float = 0.0,
+        probability: float = 0.0,
+        **kwargs
+    ):
+        if kwargs.get("label", False):
+            action = kwargs["label"]
+            warnings.warn(
+                "label has been deprecated. Please use 'action' instead.",
+                DeprecationWarning,
+            )
+        self.label = action
+        self.action = action
+        self.cost = cost
+        self.partial_prediction = partial_prediction
+        self.probability = probability
+
+
+class CBLabel(AbstractLabel):
     """Class for contextual bandits VW label"""
 
-    def __init__(self, costs=[], prediction=0):
-        abstract_label.__init__(self)
+    def __init__(
+        self,
+        costs: Union["example", List[CBLabelElement]] = [],
+        prediction: float = 0.0,
+    ):
+        AbstractLabel.__init__(self)
         if isinstance(costs, example):
             self.from_example(costs)
         else:
             self.costs = costs
             self.prediction = prediction
 
-    def from_example(self, ex):
-        class wclass:
-            def __init__(
-                self,
-                action=None,
-                cost=0.0,
-                partial_prediction=0.0,
-                probability=0.0,
-                **kwargs
-            ):
-                if kwargs.get("label", False):
-                    action = kwargs["label"]
-                    warnings.warn(
-                        "label has been deprecated. Please use 'action' instead.",
-                        DeprecationWarning,
-                    )
-                self.label = action
-                self.action = action
-                self.cost = cost
-                self.partial_prediction = partial_prediction
-                self.probability = probability
-
+    def from_example(self, ex: "example"):
         self.prediction = ex.get_cbandits_prediction()
         self.costs = []
         for i in range(ex.get_cbandits_num_costs()):
-            wc = wclass(
+            cb = CBLabelElement(
                 ex.get_cbandits_class(i),
                 ex.get_cbandits_cost(i),
                 ex.get_cbandits_partial_prediction(i),
                 ex.get_cbandits_probability(i),
             )
-            self.costs.append(wc)
+            self.costs.append(cb)
 
     def __str__(self):
         return " ".join(
@@ -1186,12 +1212,17 @@ class cbandits_label(abstract_label):
         )
 
 
-class CCBLabelType(enum.Enum):
+class CCBLabelType(IntEnum):
     UNSET = pylibvw.vw.tUNSET
     SHARED = pylibvw.vw.tSHARED
     ACTION = pylibvw.vw.tACTION
     SLOT = pylibvw.vw.tSLOT
 
+class SlatesLabelType(IntEnum):
+    UNSET = pylibvw.vw.tUNSET
+    SHARED = pylibvw.vw.tSHARED
+    ACTION = pylibvw.vw.tACTION
+    SLOT = pylibvw.vw.tSLOT
 
 class CCBSlotOutcome:
     cost: float
@@ -1257,6 +1288,96 @@ class CCBLabel(abstract_label):
     def __str__(self):
         return f"ccb {self.type.name.lower()} {str(self.outcome or '')} {str(self.explicit_included_actions or '')}"
 
+class ActionScore:
+    def __init__(self, action: int, score: float):
+        self.action = action
+        self.score = score
+
+
+class SlatesLabel(AbstractLabel):
+    """Class for slates VW label"""
+
+    def __init__(
+        self,
+        type: Union["example", SlatesLabelType] = SlatesLabelType.UNSET,
+        weight: float = 1.0,
+        labeled: bool = False,
+        cost: float = 0.0,
+        slot_id: int = 0,
+        probabilities: List[ActionScore] = [],
+    ):
+        abstract_label.__init__(self)
+        if isinstance(type, example):
+            self.from_example(type)
+        else:
+            self.type = type
+            self.weight = weight
+            self.labeled = labeled
+            self.cost = cost
+            self.slot_id = slot_id
+            self.probabilities = probabilities
+
+    def from_example(self, ex: "example"):
+        self.type = ex.get_slates_type()
+        self.weight = ex.get_slates_weight()
+        self.labeled = ex.get_slates_labeled()
+        self.cost = ex.get_slates_cost()
+        self.slot_id = ex.get_slates_slot_id()
+        self.probabilities = []
+        for i in range(ex.get_slates_num_probabilities()):
+            self.probabilities.append(
+                ActionScore(ex.get_slates_action(i), ex.get_slates_probability(i))
+            )
+
+    def __str__(self):
+        ret = "slates "
+        if self.type == SlatesLabelType.SHARED:
+            ret += "shared {}".format(round(self.cost, 2))
+        elif self.type == SlatesLabelType.ACTION:
+            ret += "action {}".format(self.slot_id)
+        elif self.type == SlatesLabelType.SLOT:
+            ret += "slot " + ",".join(
+                [
+                    "{}:{}".format(a_s.action, round(a_s.score, 2))
+                    for a_s in self.probabilities
+                ]
+            )
+        return ret
+
+
+class CBContinuousLabelElement:
+    def __init__(
+        self, action: Optional[int] = None, cost: float = 0.0, pdf_value: float = 0.0
+    ):
+        self.action = action
+        self.cost = cost
+        self.pdf_value = pdf_value
+
+
+class CBContinuousLabel(AbstractLabel):
+    """Class for cb_continuous VW label"""
+
+    def __init__(self, costs: Union["example", List[CBContinuousLabelElement]] = []):
+        AbstractLabel.__init__(self)
+        if isinstance(costs, example):
+            self.from_example(costs)
+        else:
+            self.costs = costs
+
+    def from_example(self, ex: "example"):
+        self.costs = []
+        for i in range(ex.get_cb_continuous_num_costs()):
+            elem = CBContinuousLabelElement(
+                ex.get_cb_continuous_class(i),
+                ex.get_cb_continuous_cost(i),
+                ex.get_cb_continuous_pdf_value(i),
+            )
+            self.costs.append(elem)
+
+    def __str__(self):
+        return "ca " + " ".join(
+            ["{}:{}:{}".format(c.action, c.cost, c.pdf_value) for c in self.costs]
+        )
 
 class example(pylibvw.example):
     """The example class is a (non-trivial) wrapper around
@@ -1671,8 +1792,8 @@ class example(pylibvw.example):
                 v = self.feature_weight(ns, i)
                 yield f, v
 
-    def get_label(self, label_class=simple_label):
-        """Given a known label class (default is simple_label), get
+    def get_label(self, label_class=SimpleLabel):
+        """Given a known label class (default is Simplelabel), get
         the corresponding label structure for this example.
 
         Parameters
@@ -1680,6 +1801,63 @@ class example(pylibvw.example):
 
         label_class : label classes
             Get the label of the example of label_class type, by default is
-            simple_label
+            Simplelabel
         """
         return label_class(self)
+
+
+############################ DEPREECATED CLASSES ############################
+
+
+class abstract_label(AbstractLabel):
+    def __init__(self):
+        AbstractLabel.__init__(self)
+        warnings.warn(
+            "abstract_label has been deprecated. Please use 'AbstractLabel' instead.",
+            DeprecationWarning,
+        )
+
+
+class simple_label(SimpleLabel):
+    def __init__(self):
+        SimpleLabel.__init__(self)
+        warnings.warn(
+            "simple_label has been deprecated. Please use 'SimpleLabel' instead.",
+            DeprecationWarning,
+        )
+
+
+class multiclass_label(MulticlassLabel):
+    def __init__(self):
+        MulticlassLabel.__init__(self)
+        warnings.warn(
+            "multiclass_label has been deprecated. Please use 'MulticlassLabel' instead.",
+            DeprecationWarning,
+        )
+
+
+class multiclass_probabilities_label(MulticlassProbabilitiesLabel):
+    def __init__(self):
+        MulticlassProbabilitiesLabel.__init__(self)
+        warnings.warn(
+            "multiclass_probabilities_label has been deprecated. Please use 'MulticlassProbabilitiesLabel' instead.",
+            DeprecationWarning,
+        )
+
+
+class cost_sensitive_label(CostSensitiveLabel):
+    def __init__(self):
+        CostSensitiveLabel.__init__(self)
+        warnings.warn(
+            "cost_sensitive_label has been deprecated. Please use 'CostSensitiveLabel' instead.",
+            DeprecationWarning,
+        )
+
+
+class cbandits_label(CBLabel):
+    def __init__(self):
+        CBLabel.__init__(self)
+        warnings.warn(
+            "cbandits_label has been deprecated. Please use 'CBLabel' instead.",
+            DeprecationWarning,
+        )

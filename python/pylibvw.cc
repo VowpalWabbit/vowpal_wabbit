@@ -42,10 +42,11 @@ typedef boost::shared_ptr<py_log_wrapper> py_log_wrapper_ptr;
 
 const size_t lDEFAULT = 0;
 const size_t lBINARY = 1;
+const size_t lSIMPLE = 1;
 const size_t lMULTICLASS = 2;
 const size_t lCOST_SENSITIVE = 3;
 const size_t lCONTEXTUAL_BANDIT = 4;
-const size_t lMAX = 5;
+const size_t lMAX = 5;  // DEPRECATED
 const size_t lCONDITIONAL_CONTEXTUAL_BANDIT = 6;
 const size_t lSLATES = 7;
 const size_t lCONTINUOUS = 8;
@@ -66,10 +67,10 @@ const size_t pPDF = 10;
 const size_t pACTIVE_MULTICLASS = 11;
 const size_t pNOPRED = 12;
 
-const size_t tUNSET = 0;
+const size_t tSHARED = 0;
 const size_t tACTION = 1;
-const size_t tSHARED = 2;
-const size_t tSLOT = 3;
+const size_t tSLOT = 2;
+const size_t tUNSET = 3;
 
 void dont_delete_me(void* arg) {}
 
@@ -364,7 +365,7 @@ label_parser* get_label_parser(VW::workspace* all, size_t labelType)
   {
     case lDEFAULT:
       return all ? &all->example_parser->lbl_parser : NULL;
-    case lBINARY:
+    case lBINARY:  // or #lSIMPLE
       return &simple_label_parser;
     case lMULTICLASS:
       return &MULTICLASS::mc_label;
@@ -875,10 +876,73 @@ float ex_get_costsensitive_wap_value(example_ptr ec, uint32_t i) { return ec->l.
 
 uint32_t ex_get_cbandits_prediction(example_ptr ec) { return ec->pred.multiclass; }
 uint32_t ex_get_cbandits_num_costs(example_ptr ec) { return (uint32_t)ec->l.cb.costs.size(); }
-float ex_get_cbandits_cost(example_ptr ec, uint32_t i) { return ec->l.cb.costs[i].cost; }
-uint32_t ex_get_cbandits_class(example_ptr ec, uint32_t i) { return ec->l.cb.costs[i].action; }
-float ex_get_cbandits_probability(example_ptr ec, uint32_t i) { return ec->l.cb.costs[i].probability; }
-float ex_get_cbandits_partial_prediction(example_ptr ec, uint32_t i) { return ec->l.cb.costs[i].partial_prediction; }
+float ex_get_cbandits_cost(example_ptr ec, uint32_t i)
+{
+  if (i >= ex_get_cbandits_num_costs(ec)) { THROW("Cost index out of bounds"); }
+  return ec->l.cb.costs[i].cost;
+}
+uint32_t ex_get_cbandits_class(example_ptr ec, uint32_t i)
+{
+  if (i >= ex_get_cbandits_num_costs(ec)) { THROW("Class index out of bounds"); }
+  return ec->l.cb.costs[i].action;
+}
+float ex_get_cbandits_probability(example_ptr ec, uint32_t i)
+{
+  if (i >= ex_get_cbandits_num_costs(ec)) { THROW("Probability index out of bounds"); }
+  return ec->l.cb.costs[i].probability;
+}
+float ex_get_cbandits_partial_prediction(example_ptr ec, uint32_t i)
+{
+  if (i >= ex_get_cbandits_num_costs(ec)) { THROW("Partial prediction index out of bounds"); }
+  return ec->l.cb.costs[i].partial_prediction;
+}
+
+uint32_t ex_get_cb_continuous_num_costs(example_ptr ec) { return (uint32_t)ec->l.cb_cont.costs.size(); }
+float ex_get_cb_continuous_cost(example_ptr ec, uint32_t i)
+{
+  if (i >= ex_get_cb_continuous_num_costs(ec)) { THROW("Cost index out of bounds"); }
+  return ec->l.cb_cont.costs[i].cost;
+}
+uint32_t ex_get_cb_continuous_class(example_ptr ec, uint32_t i)
+{
+  if (i >= ex_get_cb_continuous_num_costs(ec)) { THROW("Class index out of bounds"); }
+  return ec->l.cb_cont.costs[i].action;
+}
+float ex_get_cb_continuous_pdf_value(example_ptr ec, uint32_t i)
+{
+  if (i >= ex_get_cb_continuous_num_costs(ec)) { THROW("Pdf_value index out of bounds"); }
+  return ec->l.cb_cont.costs[i].pdf_value;
+}
+
+size_t ex_get_slates_type(example_ptr ec)
+{
+  switch (ec->l.slates.type)
+  {
+    case VW::slates::example_type::shared:
+      return tSHARED;
+    case VW::slates::example_type::action:
+      return tACTION;
+    case VW::slates::example_type::slot:
+      return tSLOT;
+    default:
+      return tUNSET;
+  }
+}
+float ex_get_slates_weight(example_ptr ec) { return ec->l.slates.weight; }
+bool ex_get_slates_labeled(example_ptr ec) { return ec->l.slates.labeled; }
+float ex_get_slates_cost(example_ptr ec) { return ec->l.slates.cost; }
+uint32_t ex_get_slates_slot_id(example_ptr ec) { return ec->l.slates.slot_id; }
+size_t ex_get_slates_num_probabilities(example_ptr ec) { return ec->l.slates.probabilities.size(); }
+uint32_t ex_get_slates_action(example_ptr ec, uint32_t i)
+{
+  if (i >= ex_get_slates_num_probabilities(ec)) { THROW("Action index out of bounds"); }
+  return ec->l.slates.probabilities[i].action;
+}
+float ex_get_slates_probability(example_ptr ec, uint32_t i)
+{
+  if (i >= ex_get_slates_num_probabilities(ec)) { THROW("Probability index out of bounds"); }
+  return ec->l.slates.probabilities[i].score;
+}
 
 size_t ex_get_ccb_type(example_ptr ec)
 {
@@ -1271,15 +1335,20 @@ BOOST_PYTHON_MODULE(pylibvw)
       .def_readonly("lDefault", lDEFAULT,
           "Default label type (whatever vw was initialized with) -- used as input to the example() initializer")
       .def_readonly("lBinary", lBINARY, "Binary label type -- used as input to the example() initializer")
+      .def_readonly("lSimple", lSIMPLE, "Simple label type -- used as input to the example() initializer")
       .def_readonly("lMulticlass", lMULTICLASS, "Multiclass label type -- used as input to the example() initializer")
       .def_readonly("lCostSensitive", lCOST_SENSITIVE,
           "Cost sensitive label type (for LDF!) -- used as input to the example() initializer")
       .def_readonly("lContextualBandit", lCONTEXTUAL_BANDIT,
           "Contextual bandit label type -- used as input to the example() initializer")
+      .def_readonly("lMax", lMAX, "DEPRECATED: Max label type -- used as input to the example() initializer")
       .def_readonly("lConditionalContextualBandit", lCONDITIONAL_CONTEXTUAL_BANDIT,
           "Conditional Contextual bandit label type -- used as input to the example() initializer")
       .def_readonly("lSlates", lSLATES, "Slates label type -- used as input to the example() initializer")
       .def_readonly("lContinuous", lCONTINUOUS, "Continuous label type -- used as input to the example() initializer")
+      .def_readonly("lContextualBanditEval", lCONTEXTUAL_BANDIT_EVAL,
+          "Contextual bandit eval label type -- used as input to the example() initializer")
+      .def_readonly("lMultilabel", lMULTILABEL, "Multilabel label type -- used as input to the example() initializer")
 
       .def_readonly("pSCALAR", pSCALAR, "Scalar prediction type")
       .def_readonly("pSCALARS", pSCALARS, "Multiple scalar-valued prediction type")
@@ -1293,7 +1362,12 @@ BOOST_PYTHON_MODULE(pylibvw)
       .def_readonly("pACTION_PDF_VALUE", pACTION_PDF_VALUE, "Action pdf value prediction type")
       .def_readonly("pPDF", pPDF, "PDF prediction type")
       .def_readonly("pACTIVE_MULTICLASS", pACTIVE_MULTICLASS, "Active multiclass prediction type")
-      .def_readonly("pNOPRED", pNOPRED, "Nopred prediction type");
+      .def_readonly("pNOPRED", pNOPRED, "Nopred prediction type")
+
+      .def_readonly("tUNSET", tUNSET, "Unset label type for CCB and Slates")
+      .def_readonly("tSHARED", tSHARED, "Shared label type for CCB and Slates")
+      .def_readonly("tACTION", tACTION, "Action label type for CCB and Slates")
+      .def_readonly("tSLOT", tSLOT, "Slot label type for CCB and Slates");
 
   // define the example class
   py::class_<example, example_ptr, boost::noncopyable>("example", py::no_init)
@@ -1409,7 +1483,27 @@ BOOST_PYTHON_MODULE(pylibvw)
       .def("get_ccb_weight", &ex_get_ccb_weight,
           "Assuming a conditional_contextual_bandits label type, get the weight of the example.")
       .def("get_ccb_explicitly_included_actions", &ex_get_ccb_explicitly_included_actions,
-          "Assuming a conditional_contextual_bandits label type, get the array of explicitly included actions for the slot");
+          "Assuming a conditional_contextual_bandits label type, get the array of explicitly included actions for the slot")
+      .def("get_cb_continuous_num_costs", &ex_get_cb_continuous_num_costs,
+          "Assuming a cb_continuous label type, get the total number of costs")
+      .def("get_cb_continuous_cost", &ex_get_cb_continuous_cost,
+          "Assuming a cb_continuous label type, get the cost at a given index (i=0.. get_cb_continuous_num_costs)")
+      .def("get_cb_continuous_class", &ex_get_cb_continuous_class,
+          "Assuming a cb_continuous label type, get the label at a given index (i=0.. get_cb_continuous_num_costs)")
+      .def("get_cb_continuous_pdf_value", &ex_get_cb_continuous_pdf_value,
+          "Assuming a cb_continuous label type, get the pdf_value at a given index (i=0.. "
+          "get_cb_continuous_num_costs)")
+      .def("get_slates_type", &ex_get_slates_type, "Assuming a slates label type, get the type of example")
+      .def("get_slates_weight", &ex_get_slates_weight, "Assuming a slates label type, get the weight of example")
+      .def("get_slates_labeled", &ex_get_slates_labeled, "Assuming a slates label type, get if example is labeled")
+      .def("get_slates_cost", &ex_get_slates_cost, "Assuming a slates label type, get the cost of example")
+      .def("get_slates_slot_id", &ex_get_slates_slot_id, "Assuming a slates label type, get the slot_id of example")
+      .def("get_slates_num_probabilities", &ex_get_slates_num_probabilities,
+          "Assuming a slates label type, get number of actions in example")
+      .def("get_slates_action", &ex_get_slates_action,
+          "Assuming a slates label type, get the action of example at index i")
+      .def("get_slates_probability", &ex_get_slates_probability,
+          "Assuming a slates label type, get the probability of example at index i");
 
   py::class_<Search::predictor, predictor_ptr, boost::noncopyable>("predictor", py::no_init)
       .def("set_input", &my_set_input, "set the input (an example) for this predictor (non-LDF mode only)")

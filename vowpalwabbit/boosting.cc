@@ -297,20 +297,14 @@ void save_load_sampling(boosting& o, io_buf& model_file, bool read, bool text)
 
   // avoid making syscalls multiple times
   fmt::memory_buffer buffer;
-  if (read)
-  {
-    fmt::format_to(buffer, "Loading alpha and v: \n");
-  }
+  if (read) { fmt::format_to(buffer, "Loading alpha and v: \n"); }
   else
   {
     fmt::format_to(buffer, "Saving alpha and v, current weighted_examples = {}\n",
-		      o.all->sd->weighted_labeled_examples + o.all->sd->weighted_unlabeled_examples);
+        o.all->sd->weighted_labeled_examples + o.all->sd->weighted_unlabeled_examples);
   }
 
-  for (int i = 0; i < o.N; i++)
-  {
-    fmt::format_to(buffer, "{0} {1}\n", o.alpha[i], o.v[i]);
-  }
+  for (int i = 0; i < o.N; i++) { fmt::format_to(buffer, "{0} {1}\n", o.alpha[i], o.v[i]); }
   o.logger.err_info("{}", fmt::to_string(buffer));
 }
 
@@ -347,20 +341,13 @@ void save_load(boosting& o, io_buf& model_file, bool read, bool text)
   {
     // avoid making syscalls multiple times
     fmt::memory_buffer buffer;
-    if (read)
-    {
-      fmt::format_to(buffer, "Loading alpha: \n");
-    }
+    if (read) { fmt::format_to(buffer, "Loading alpha: \n"); }
     else
     {
-      fmt::format_to(buffer, "Saving alpha, current weighted_examples = {)\n",
-		       o.all->sd->weighted_examples());
+      fmt::format_to(buffer, "Saving alpha, current weighted_examples = {)\n", o.all->sd->weighted_examples());
     }
 
-    for (int i = 0; i < o.N; i++)
-    {
-      fmt::format_to(buffer, "{} \n", o.alpha[i]);
-    }
+    for (int i = 0; i < o.N; i++) { fmt::format_to(buffer, "{} \n", o.alpha[i]); }
     o.logger.err_info("{}", fmt::to_string(buffer));
   }
 }

@@ -1,4 +1,4 @@
-# Linear Regression Tutorial
+# Command Line Linear Regression
 
 This tutorial demonstrates how to approach a regression problem with Vowpal Wabbit. It features an overview of a linear regression problem using a Vowpal Wabbit workflow tutorial with examples, introduces unique Vowpal Wabbit features, and explains how to structure input and understand the results.
 
