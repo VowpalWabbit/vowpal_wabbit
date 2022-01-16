@@ -1269,7 +1269,7 @@ class CCBLabel(AbstractLabel):
         abstract_label.__init__(self)
         ex: example = kwargs.get("ex")
         if isinstance(ex, example):
-            if not ex.labelType == pylibvw.vw.lCONDITIONAL_CONTEXTUAL_BANDIT:
+            if not ex.labelType == LabelType.CONDITIONAL_CONTEXTUAL_BANDIT:
                 raise ValueError("Example should have CCB type.")
             self.type = ex.get_ccb_type()
             self.explict_included_actions = ex.get_ccb_explicitly_included_actions()
