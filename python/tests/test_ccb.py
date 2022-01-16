@@ -114,7 +114,7 @@ def test_ccb_single_slot_and_cb_non_equivalence_with_slot_features():
 
 
 def test_ccb_invalid_example_label_type():
-    model = pyvw.vw()
+    model = pyvw.vw(quiet=True)
     example = pyvw.example(vw=model, labelType=pyvw.LabelType.DEFAULT)
     with pytest.raises(ValueError) as value_error:
         label = pyvw.CCBLabel(ex=example)
@@ -123,7 +123,7 @@ def test_ccb_invalid_example_label_type():
 
 
 def test_ccb_non_slot_none_outcome():
-    model = pyvw.vw()
+    model = pyvw.vw(quiet=True)
     example = pyvw.example(
         vw=model, labelType=pyvw.LabelType.CONDITIONAL_CONTEXTUAL_BANDIT
     )
