@@ -1218,19 +1218,22 @@ class CCBLabelType(IntEnum):
     ACTION = pylibvw.vw.tACTION
     SLOT = pylibvw.vw.tSLOT
 
+
 class SlatesLabelType(IntEnum):
     UNSET = pylibvw.vw.tUNSET
     SHARED = pylibvw.vw.tSHARED
     ACTION = pylibvw.vw.tACTION
     SLOT = pylibvw.vw.tSLOT
 
-class CCBSlotOutcome:
-    cost: float
-    action_probs: List[Tuple[int, float]]
 
-    def __init__(
-        self, cost: float = 0, action_probs: List[Tuple[int, float]] = [], **kwargs
-    ):
+class ActionScore:
+    def __init__(self, action: int, score: float):
+        self.action = action
+        self.score = score
+
+
+class CCBSlotOutcome:
+    def __init__(self, cost: float = 0, action_probs: List[ActionScore] = [], **kwargs):
         ex: example = kwargs.get("ex")
         if isinstance(ex, example):
             self.from_example(ex)
@@ -1238,27 +1241,22 @@ class CCBSlotOutcome:
             self.cost = cost
             self.action_probs = action_probs
 
-    def from_example(self, ex: example):
+    def from_example(self, ex: "example"):
         self.cost = ex.get_ccb_cost()
         self.action_probs = []
         for i in range(ex.get_ccb_num_included_actions()):
             self.action_probs.append((ex.get_ccb_class(i), ex.get_ccb_probs(i)))
 
     def __str__(self):
-        top_action, top_prob = self.action_probs[0]
-        out = f"{top_action}:{top_prob}:{self.cost}"
-        for action, prob in self.action_probs[1:]:
-            out += f",{action}:{prob}"
+        top_action, top_score = self.action_probs.action, self.action_probs.score
+        out = f"{top_action}:{top_score}:{self.cost}"
+        for action_score in self.action_probs[1:]:
+            out += f",{action_score.action}:{action_score.score}"
         return out
 
 
-class CCBLabel(abstract_label):
+class CCBLabel(AbstractLabel):
     """Class for conditional contextual bandits VW label"""
-
-    type: CCBLabelType
-    explicit_included_actions: List[int]
-    weight: float
-    outcome: Optional[CCBSlotOutcome]
 
     def __init__(
         self,
@@ -1287,11 +1285,6 @@ class CCBLabel(abstract_label):
 
     def __str__(self):
         return f"ccb {self.type.name.lower()} {str(self.outcome or '')} {str(self.explicit_included_actions or '')}"
-
-class ActionScore:
-    def __init__(self, action: int, score: float):
-        self.action = action
-        self.score = score
 
 
 class SlatesLabel(AbstractLabel):
@@ -1378,6 +1371,7 @@ class CBContinuousLabel(AbstractLabel):
         return "ca " + " ".join(
             ["{}:{}:{}".format(c.action, c.cost, c.pdf_value) for c in self.costs]
         )
+
 
 class example(pylibvw.example):
     """The example class is a (non-trivial) wrapper around
