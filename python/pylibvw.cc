@@ -960,7 +960,7 @@ size_t ex_get_ccb_type(example_ptr ec)
 }
 py::object ex_get_ccb_cost(example_ptr ec)
 {
-  auto* outcome_ptr = ec->l.conditional_contextual_bandit.conditional_contextual_bandit_outcome;
+  auto* outcome_ptr = ec->l.conditional_contextual_bandit.outcome;
   return outcome_ptr == nullptr ? py::object() : py::object(outcome_ptr->cost);
 }
 uint32_t ex_get_ccb_num_included_actions(example_ptr ec)
@@ -968,23 +968,23 @@ uint32_t ex_get_ccb_num_included_actions(example_ptr ec)
   const auto& label = ec->l.conditional_contextual_bandit;
   return label.explicit_included_actions.size();
 }
-py::object to_pyobject ex_get_ccb_class(example_ptr ec, uint32_t i)
+py::object ex_get_ccb_class(example_ptr ec, uint32_t i)
 {
   if (i >= ex_get_ccb_num_included_actions(ec)) { THROW("Class index out of bounds"); }
-  auto* outcome_ptr = ec->l.conditional_contextual_bandit.conditional_contextual_bandit_outcome;
-  return outcome_ptr == nullptr ? py::object() : py::object(outcome_ptr->probabilities[i]->action);
+  auto* outcome_ptr = ec->l.conditional_contextual_bandit.outcome;
+  return outcome_ptr == nullptr ? py::object() : py::object(outcome_ptr->probabilities[i].action);
 }
 py::object ex_get_ccb_probability(example_ptr ec, uint32_t i)
 {
   if (i >= ex_get_ccb_num_included_actions(ec))  { THROW("Action probability index out of bounds"); }
-  auto* outcome_ptr = ec->l.conditional_contextual_bandit.conditional_contextual_bandit_outcome;
-  return outcome_ptr == nullptr ? py::object(): py::object(outcome_ptr->probabilities[i]->score);
+  auto* outcome_ptr = ec->l.conditional_contextual_bandit.outcome;
+  return outcome_ptr == nullptr ? py::object(): py::object(outcome_ptr->probabilities[i].score);
 }
 float ex_get_ccb_weight(example_ptr ec) { return ec->l.conditional_contextual_bandit.weight; }
 py::list ex_get_ccb_explicitly_included_actions(example_ptr ec)
 {
   const auto& label = ec->l.conditional_contextual_bandit;
-  if (label.type != CCB::slot) { return py::list{}; }
+  if (label.type != CCB::example_type::slot) { return py::list{}; }
   return varray_to_pylist(label.explicit_included_actions);
 }
 
