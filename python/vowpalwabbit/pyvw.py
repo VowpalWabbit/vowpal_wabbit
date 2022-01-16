@@ -5,7 +5,6 @@ from __future__ import division
 from typing import List, Optional, Union
 import pylibvw
 import warnings
-from typing import List, Tuple, Optional
 
 from enum import IntEnum
 
