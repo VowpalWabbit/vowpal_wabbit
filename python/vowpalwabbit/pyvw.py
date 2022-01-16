@@ -1266,11 +1266,11 @@ class CCBLabel(AbstractLabel):
         outcome: Optional[CCBSlotOutcome] = None,
         **kwargs,
     ):
-        abstract_label.__init__(self)
+        AbstractLabel.__init__(self)
         ex: example = kwargs.get("ex")
         if isinstance(ex, example):
             if not ex.labelType == LabelType.CONDITIONAL_CONTEXTUAL_BANDIT:
-                raise ValueError("Example should have CCB type.")
+                raise ValueError("Example should have CCB label type.")
             self.type = ex.get_ccb_type()
             self.explict_included_actions = ex.get_ccb_explicitly_included_actions()
             self.weight = ex.get_ccb_weight()
@@ -1423,6 +1423,9 @@ class example(pylibvw.example):
         self.labelType: Optional[LabelType] = None
         if isinstance(labelType, LabelType):
             label_int = labelType.value
+            # Keep self.labelType as None if provided label is DEFAULT.
+            if labelType != LabelType.DEFAULT:
+                self.labelType = labelType
         elif isinstance(labelType, int):
             label_int = labelType
             if label_int != 0:
