@@ -376,10 +376,9 @@ input_options parse_source(VW::workspace& all, options_i& options)
                .help("Force a loaded daemon or active learning model to accept local input instead of starting in "
                      "daemon mode"))
       .add(make_option("chain_hash", parsed_options.chain_hash_json)
+               .keep()
                .help("Enable chain hash in JSON for feature name and string feature value. e.g. {'A': {'B': 'C'}} is "
-                     "hashed as "
-                     "A^B^C. Note: this will become the default in a future version, so enabling this option will "
-                     "migrate you to the new behavior and silence the warning."))
+                     "hashed as A^B^C."))
       .add(make_option("flatbuffer", parsed_options.flatbuffer)
                .help("Data file will be interpreted as a flatbuffer file"));
 #ifdef BUILD_EXTERNAL_PARSER
@@ -1245,8 +1244,8 @@ VW::workspace& parse_args(
   auto location = VW::io::get_output_location(log_output_stream);
   logger.set_location(location);
 
-  // Don't print a warning if the user specifically chose to use compat.
-  if (level != VW::io::log_level::off && location == VW::io::output_location::compat)
+  // Don't print warning if a custom log output trace_listener is supplied.
+  if (trace_listener == nullptr && level != VW::io::log_level::off && location == VW::io::output_location::compat)
   {
     logger.err_warn(
         "The old default logging behavior of logging to a mix of stdout and stderr is deprecated. Please choose either "
@@ -1270,6 +1269,12 @@ VW::workspace& parse_args(
   {
     if (trace_listener != nullptr)
     {
+      if (all.options->was_supplied("log_output"))
+      {
+        all.logger.err_warn(
+            "--log_output option is unused. This is because when a custom trace_listener is being used.");
+      }
+
       // Since the trace_message_t interface uses a string and the writer interface uses a buffer we unfortunately
       // need to adapt between them here.
       all.trace_message_wrapper_context = std::make_shared<trace_message_wrapper>(trace_context, trace_listener);

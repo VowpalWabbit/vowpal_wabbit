@@ -4,7 +4,6 @@ initial_t = 0
 power_t = 0.5
 using no cache
 Reading datafile = train-sets/ccb_data_parse_error.json
-[warning] Old string feature value behavior is deprecated in JSON/DSJSON and will be removed in a future version. Use `--chain_hash` to use new behavior and silence this warning.
 num sources = 1
 Enabled reductions: gd, generate_interactions, scorer-identity, csoaa_ldf-rank, cb_adf, cb_explore_adf_greedy, cb_sample, shared_feature_merger, ccb_explore_adf, extra_metrics
 Input label = ccb
