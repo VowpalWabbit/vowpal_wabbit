@@ -1474,7 +1474,7 @@ BOOST_PYTHON_MODULE(pylibvw)
           "Assuming a conditional_contextual_bandits label type, get the type of example")
       .def("get_ccb_cost", &ex_get_ccb_cost,
           "Assuming a conditional_contextual_bandits label type, get the cost of the given label")
-       .def("get_ccb_num_included_actions", &ex_get_ccb_num_included_actions,
+      .def("get_ccb_num_included_actions", &ex_get_ccb_num_included_actions,
           "Assuming a conditional_contextual_bandits label type, get the number of included actions.")
       .def("get_ccb_class", &ex_get_ccb_class,
           "Assuming a conditional_contextual_bandits label type, get the label for a given pair (i=0.. get_ccb_num_included_actions())")
