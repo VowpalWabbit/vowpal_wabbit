@@ -186,10 +186,10 @@ public:
       _context.template process<multi_ex, learn_multi_ex>(ec_seq);
       ec_seq.clear();
     }
-
-    // Send out the end-of-pass notification after doing learning
-    if (ec->end_pass)
+    else if (ec->end_pass)
     {
+      // Send out the end-of-pass notification after doing learning
+
       // Because the end_pass example is used to complete the in-flight multi_ex prior
       // to this call we should have no more in-flight multi_ex here.
       assert(ec_seq.empty());
