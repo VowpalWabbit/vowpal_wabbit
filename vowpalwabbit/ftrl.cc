@@ -190,7 +190,8 @@ void inner_coin_betting_predict(ftrl_update_data& d, float x, float& wref)
   if (w[W_MG] * w_mx > 0) w_xt = ((d.ftrl_alpha + w[W_WE]) / (w[W_MG] * w_mx * (w[W_MG] * w_mx + w[W_G2]))) * w[W_ZT];
 
   d.predict += w_xt * x;
-  if (w_mx > 0) {
+  if (w_mx > 0)
+  {
     const float x_normalized = x / w_mx;
     d.normalized_squared_norm_x += x_normalized * x_normalized;
   }
