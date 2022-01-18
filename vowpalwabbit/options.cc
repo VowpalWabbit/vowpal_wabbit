@@ -9,9 +9,8 @@ namespace VW
 {
 namespace config
 {
-  namespace details
-  {
-
+namespace details
+{
 template <typename T>
 bool handle_option_if_t(base_option& opt, typed_option_handler& handler)
 {
@@ -26,16 +25,15 @@ bool handle_option_if_t(base_option& opt, typed_option_handler& handler)
   return false;
 }
 
-  template <typename TTypes>
-  void handle_option_impl(base_option& opt, typed_option_handler& handler)
-  {
-    if (handle_option_if_t<typename TTypes::head>(opt, handler)) { return; }
-    handle_option_impl<typename TTypes::tail>(opt, handler);
-  }
+template <typename TTypes>
+void handle_option_impl(base_option& opt, typed_option_handler& handler)
+{
+  if (handle_option_if_t<typename TTypes::head>(opt, handler)) { return; }
+  handle_option_impl<typename TTypes::tail>(opt, handler);
+}
 
 template <>
-void handle_option_impl<typelist<>>(
-    base_option& opt, typed_option_handler& /*handler*/)
+void handle_option_impl<typelist<>>(base_option& opt, typed_option_handler& /*handler*/)
 {
   THROW(fmt::format("Option '{}' has an unsupported option type.", opt.m_name));
 }
@@ -44,6 +42,6 @@ void handle_option_by_type(base_option& opt, typed_option_handler& handler)
 {
   handle_option_impl<supported_options_types>(opt, handler);
 }
-}
+}  // namespace details
 }  // namespace config
 }  // namespace VW

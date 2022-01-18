@@ -42,7 +42,6 @@ namespace VW
 {
 namespace config
 {
-
 struct boost_options_description_adder;
 
 struct options_boost_po : public options_i

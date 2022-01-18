@@ -226,7 +226,7 @@ struct typed_option_handler
 };
 
 void handle_option_by_type(base_option& opt, typed_option_handler& handler);
-}
+}  // namespace details
 
 template <typename T>
 option_builder<typed_option_with_location<T>> make_option(const std::string& name, T& location)

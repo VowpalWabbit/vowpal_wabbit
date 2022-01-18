@@ -36,7 +36,6 @@ struct options_serializer_boost_po : options_serializer_i, details::typed_option
   void handle(typed_option<std::vector<std::string>>& option) override;
 
 private:
-
   template <typename T>
   void serialize(typed_option<T>& typed_option)
   {

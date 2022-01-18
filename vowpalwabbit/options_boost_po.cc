@@ -47,8 +47,9 @@ void options_boost_po::add_and_parse(const option_group_definition& group)
   }
 }
 
-namespace VW{
-  namespace config
+namespace VW
+{
+namespace config
 {
 template <typename T>
 void check_disagreeing_option_values(T value, const std::string& name, const std::vector<T>& final_arguments)
@@ -89,8 +90,7 @@ po::typed_value<std::vector<T>>* add_notifier(
 }
 
 template <typename T>
-po::typed_value<std::vector<T>>* add_notifier(
-    typed_option<T>& opt, po::typed_value<std::vector<T>>* po_value)
+po::typed_value<std::vector<T>>* add_notifier(typed_option<T>& opt, po::typed_value<std::vector<T>>* po_value)
 {
   return po_value->notifier([&opt](std::vector<T> final_arguments) {
     T result = final_arguments[0];
@@ -116,8 +116,7 @@ po::typed_value<std::vector<T>>* get_base_boost_value(typed_option<T>& opt)
 }
 
 template <typename T>
-po::typed_value<std::vector<T>>* get_base_boost_value(
-    typed_option<std::vector<T>>& opt)
+po::typed_value<std::vector<T>>* get_base_boost_value(typed_option<std::vector<T>>& opt)
 {
   auto value = po::value<std::vector<T>>();
 
@@ -133,8 +132,7 @@ po::typed_value<std::vector<T>>* convert_to_boost_value(typed_option<T>& opt)
 }
 
 template <typename T>
-po::typed_value<std::vector<T>>* convert_to_boost_value(
-    typed_option<std::vector<T>>& opt)
+po::typed_value<std::vector<T>>* convert_to_boost_value(typed_option<std::vector<T>>& opt)
 {
   return get_base_boost_value(opt)->multitoken();
 }
@@ -158,39 +156,43 @@ struct boost_options_description_adder : details::typed_option_handler
 {
   options_boost_po& m_options_boost_po;
   po::options_description& m_target_options_description;
-  boost_options_description_adder(options_boost_po& options_boost_po, po::options_description& options_description) : m_options_boost_po(options_boost_po), m_target_options_description(options_description) {}
-
-  void handle(typed_option<uint32_t>& option) override {add_to_description(option); }
-  void handle(typed_option<int>& option) override {add_to_description(option); }
-  void handle(typed_option<size_t>& option) override {add_to_description(option); }
-  void handle(typed_option<uint64_t>& option) override {add_to_description(option); }
-  void handle(typed_option<int64_t>& option) override {add_to_description(option); }
-  void handle(typed_option<float>& option) override {add_to_description(option); }
-  void handle(typed_option<double>& option) override {add_to_description(option); }
-  void handle(typed_option<std::string>& option) override {add_to_description(option); }
-  void handle(typed_option<bool>& option) override {add_to_description(option); }
-  void handle(typed_option<std::vector<std::string>>& option) override {add_to_description(option); }
-
-template <typename T>
-void add_to_description(    typed_option<T>& opt)
-{
-  std::string boost_option_name = opt.m_name;
-  if (opt.m_short_name != "")
+  boost_options_description_adder(options_boost_po& options_boost_po, po::options_description& options_description)
+      : m_options_boost_po(options_boost_po), m_target_options_description(options_description)
   {
-    boost_option_name += ",";
-    boost_option_name += opt.m_short_name;
   }
-  m_target_options_description.add_options()(boost_option_name.c_str(), convert_to_boost_value(opt), opt.m_help.c_str());
 
-  if (m_options_boost_po.m_defined_options.count(opt.m_name) == 0)
+  void handle(typed_option<uint32_t>& option) override { add_to_description(option); }
+  void handle(typed_option<int>& option) override { add_to_description(option); }
+  void handle(typed_option<size_t>& option) override { add_to_description(option); }
+  void handle(typed_option<uint64_t>& option) override { add_to_description(option); }
+  void handle(typed_option<int64_t>& option) override { add_to_description(option); }
+  void handle(typed_option<float>& option) override { add_to_description(option); }
+  void handle(typed_option<double>& option) override { add_to_description(option); }
+  void handle(typed_option<std::string>& option) override { add_to_description(option); }
+  void handle(typed_option<bool>& option) override { add_to_description(option); }
+  void handle(typed_option<std::vector<std::string>>& option) override { add_to_description(option); }
+
+  template <typename T>
+  void add_to_description(typed_option<T>& opt)
   {
-    // TODO may need to add noop notifier here.
-    m_options_boost_po.master_description.add_options()(boost_option_name.c_str(), convert_to_boost_value(opt), "");
+    std::string boost_option_name = opt.m_name;
+    if (opt.m_short_name != "")
+    {
+      boost_option_name += ",";
+      boost_option_name += opt.m_short_name;
+    }
+    m_target_options_description.add_options()(
+        boost_option_name.c_str(), convert_to_boost_value(opt), opt.m_help.c_str());
+
+    if (m_options_boost_po.m_defined_options.count(opt.m_name) == 0)
+    {
+      // TODO may need to add noop notifier here.
+      m_options_boost_po.master_description.add_options()(boost_option_name.c_str(), convert_to_boost_value(opt), "");
+    }
   }
-}
 };
-}}
-
+}  // namespace config
+}  // namespace VW
 
 void options_boost_po::internal_add_and_parse(const option_group_definition& group)
 {
