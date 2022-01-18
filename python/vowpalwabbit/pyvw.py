@@ -1103,7 +1103,7 @@ class SimpleLabel(AbstractLabel):
         self.prediction = prediction
 
     @staticmethod
-    def from_example(ex: "example"):
+    def from_example(ex: "Example"):
         label = ex.get_simplelabel_label()
         weight = ex.get_simplelabel_weight()
         initial = ex.get_simplelabel_initial()
@@ -1127,7 +1127,7 @@ class MulticlassLabel(AbstractLabel):
         self.prediction = prediction
 
     @staticmethod
-    def from_example(ex: "example"):
+    def from_example(ex: "Example"):
         label = ex.get_multiclass_label()
         weight = ex.get_multiclass_weight()
         prediction = ex.get_multiclass_prediction()
@@ -1148,7 +1148,7 @@ class MulticlassProbabilitiesLabel(AbstractLabel):
         self.prediction = prediction
 
     @staticmethod
-    def from_example(ex: "example"):
+    def from_example(ex: "Example"):
         prediction = get_prediction(ex, PredictionType.MULTICLASSPROBS)
         return MulticlassProbabilitiesLabel(prediction)
 
@@ -1186,7 +1186,7 @@ class CostSensitiveLabel(AbstractLabel):
         self.prediction = prediction
 
     @staticmethod
-    def from_example(ex: "example"):
+    def from_example(ex: "Example"):
         prediction = ex.get_costsensitive_prediction()
         costs = []
         for i in range(ex.get_costsensitive_num_costs()):
@@ -1238,7 +1238,7 @@ class CBLabel(AbstractLabel):
         self.prediction = prediction
 
     @staticmethod
-    def from_example(ex: "example"):
+    def from_example(ex: "Example"):
         prediction = ex.get_cbandits_prediction()
         costs = []
         for i in range(ex.get_cbandits_num_costs()):
@@ -1291,7 +1291,7 @@ class SlatesLabel(AbstractLabel):
         self.probabilities = probabilities
 
     @staticmethod
-    def from_example(ex: "example"):
+    def from_example(ex: "Example"):
         type = ex.get_slates_type()
         weight = ex.get_slates_weight()
         labeled = ex.get_slates_labeled()
@@ -1337,7 +1337,7 @@ class CBContinuousLabel(AbstractLabel):
         self.costs = costs
 
     @staticmethod
-    def from_example(ex: "example"):
+    def from_example(ex: "Example"):
         costs = []
         for i in range(ex.get_cb_continuous_num_costs()):
             elem = CBContinuousLabelElement(
