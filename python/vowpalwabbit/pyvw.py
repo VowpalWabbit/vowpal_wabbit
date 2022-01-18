@@ -1077,9 +1077,13 @@ class AbstractLabel:
     def __init__(self):
         pass
 
-    def from_example(self, ex: "Example"):
+    @staticmethod
+    def from_example(ex: "Example"):
         """grab a label from a given VW example"""
         raise Exception("from_example not yet implemented")
+
+    def __str__(self):
+        raise Exception("__str__ not yet implemented")
 
 
 class SimpleLabel(AbstractLabel):
