@@ -4,6 +4,7 @@
 
 #include "options_boost_po.h"
 #include "io/logger.h"
+#include "options.h"
 #include "parse_primitives.h"
 #include "io/logger.h"
 
@@ -33,27 +34,6 @@ bool is_number(const VW::string_view& s)
   return true;
 }
 
-template <>
-po::typed_value<std::vector<bool>>* options_boost_po::convert_to_boost_value(std::shared_ptr<typed_option<bool>>& opt)
-{
-  auto value = get_base_boost_value(opt);
-
-  if (opt->default_value_supplied())
-  { THROW("Using a bool option type acts as a switch, no explicit default value is allowed.") }
-
-  value->default_value({false});
-  value->zero_tokens();
-  value->implicit_value({true});
-
-  return add_notifier(opt, value);
-}
-
-void options_boost_po::add_to_description(
-    const std::shared_ptr<base_option>& opt, po::options_description& options_description)
-{
-  add_to_description_impl<supported_options_types>(opt, options_description);
-}
-
 void options_boost_po::add_and_parse(const option_group_definition& group)
 {
   internal_add_and_parse(group);
@@ -67,6 +47,151 @@ void options_boost_po::add_and_parse(const option_group_definition& group)
   }
 }
 
+namespace VW{
+  namespace config
+{
+template <typename T>
+void check_disagreeing_option_values(T value, const std::string& name, const std::vector<T>& final_arguments)
+{
+  for (auto const& item : final_arguments)
+  {
+    if (item != value)
+    {
+      std::stringstream ss;
+      ss << "Disagreeing option values for '" << name << "': '" << value << "' vs '" << item << "'";
+      THROW_EX(VW::vw_argument_disagreement_exception, ss.str());
+    }
+  }
+}
+// This is another spot that we need to specialize std::vector<bool> because of its lack of reference operator...
+inline void check_disagreeing_option_values(
+    bool value, const std::string& name, const std::vector<bool>& final_arguments)
+{
+  for (auto const item : final_arguments)
+  {
+    if (item != value)
+    {
+      std::stringstream ss;
+      ss << "Disagreeing option values for '" << name << "': '" << value << "' vs '" << item << "'";
+      THROW_EX(VW::vw_argument_disagreement_exception, ss.str());
+    }
+  }
+}
+
+template <typename T>
+po::typed_value<std::vector<T>>* add_notifier(
+    typed_option<std::vector<T>>& opt, po::typed_value<std::vector<T>>* po_value)
+{
+  return po_value->notifier([&opt](std::vector<T> final_arguments) {
+    // Set the value for the listening location.
+    opt.value(final_arguments, true /*called_from_add_and_parse*/);
+  });
+}
+
+template <typename T>
+po::typed_value<std::vector<T>>* add_notifier(
+    typed_option<T>& opt, po::typed_value<std::vector<T>>* po_value)
+{
+  return po_value->notifier([&opt](std::vector<T> final_arguments) {
+    T result = final_arguments[0];
+
+    // Due to the way options get added to the vector, the model options are at the end, and the
+    // command-line options are at the front. To allow override from command-line over model file,
+    // simply keep the first item, and suppress the error.
+    if (!opt.m_allow_override) { check_disagreeing_option_values(result, opt.m_name, final_arguments); }
+
+    // Set the value for the listening location.
+    opt.value(result, true /*called_from_add_and_parse*/);
+  });
+}
+
+template <typename T>
+po::typed_value<std::vector<T>>* get_base_boost_value(typed_option<T>& opt)
+{
+  auto value = po::value<std::vector<T>>();
+
+  if (opt.default_value_supplied()) { value->default_value({opt.default_value()}); }
+
+  return add_notifier(opt, value)->composing();
+}
+
+template <typename T>
+po::typed_value<std::vector<T>>* get_base_boost_value(
+    typed_option<std::vector<T>>& opt)
+{
+  auto value = po::value<std::vector<T>>();
+
+  if (opt.default_value_supplied()) { value->default_value(opt.default_value()); }
+
+  return add_notifier(opt, value)->composing();
+}
+
+template <typename T>
+po::typed_value<std::vector<T>>* convert_to_boost_value(typed_option<T>& opt)
+{
+  return get_base_boost_value(opt);
+}
+
+template <typename T>
+po::typed_value<std::vector<T>>* convert_to_boost_value(
+    typed_option<std::vector<T>>& opt)
+{
+  return get_base_boost_value(opt)->multitoken();
+}
+
+template <>
+po::typed_value<std::vector<bool>>* convert_to_boost_value(typed_option<bool>& opt)
+{
+  auto value = get_base_boost_value(opt);
+
+  if (opt.default_value_supplied())
+  { THROW("Using a bool option type acts as a switch, no explicit default value is allowed.") }
+
+  value->default_value({false});
+  value->zero_tokens();
+  value->implicit_value({true});
+
+  return add_notifier(opt, value);
+}
+
+struct boost_options_description_adder : details::typed_option_handler
+{
+  options_boost_po& m_options_boost_po;
+  po::options_description& m_target_options_description;
+  boost_options_description_adder(options_boost_po& options_boost_po, po::options_description& options_description) : m_options_boost_po(options_boost_po), m_target_options_description(options_description) {}
+
+  void handle(typed_option<uint32_t>& option) override {add_to_description(option); }
+  void handle(typed_option<int>& option) override {add_to_description(option); }
+  void handle(typed_option<size_t>& option) override {add_to_description(option); }
+  void handle(typed_option<uint64_t>& option) override {add_to_description(option); }
+  void handle(typed_option<int64_t>& option) override {add_to_description(option); }
+  void handle(typed_option<float>& option) override {add_to_description(option); }
+  void handle(typed_option<double>& option) override {add_to_description(option); }
+  void handle(typed_option<std::string>& option) override {add_to_description(option); }
+  void handle(typed_option<bool>& option) override {add_to_description(option); }
+  void handle(typed_option<std::vector<std::string>>& option) override {add_to_description(option); }
+
+template <typename T>
+void add_to_description(    typed_option<T>& opt)
+{
+  std::string boost_option_name = opt.m_name;
+  if (opt.m_short_name != "")
+  {
+    boost_option_name += ",";
+    boost_option_name += opt.m_short_name;
+  }
+  m_target_options_description.add_options()(boost_option_name.c_str(), convert_to_boost_value(opt), opt.m_help.c_str());
+
+  if (m_options_boost_po.m_defined_options.count(opt.m_name) == 0)
+  {
+    // TODO may need to add noop notifier here.
+    m_options_boost_po.master_description.add_options()(boost_option_name.c_str(), convert_to_boost_value(opt), "");
+  }
+}
+};
+}}
+
+
 void options_boost_po::internal_add_and_parse(const option_group_definition& group)
 {
   m_option_group_dic[m_current_reduction_tint].push_back(group);
@@ -77,11 +202,13 @@ void options_boost_po::internal_add_and_parse(const option_group_definition& gro
 
   po::options_description new_options(group.m_name, HELP_LINE_WIDTH);
 
+  boost_options_description_adder adder(*this, new_options);
+
   for (const auto& opt_ptr : group.m_options)
   {
     if (opt_ptr->m_necessary) { opt_ptr->m_help += " (required to enable this reduction)"; }
 
-    add_to_description(opt_ptr, new_options);
+    details::handle_option_by_type(*opt_ptr, adder);
     m_defined_options.insert(opt_ptr->m_name);
     m_defined_options.insert(opt_ptr->m_short_name);
     m_defined_options.insert("-" + opt_ptr->m_short_name);
@@ -302,11 +429,4 @@ void options_boost_po::check_unregistered(VW::io::logger& logger)
       logger.err_warn(message);
     }
   }
-}
-
-template <>
-void options_boost_po::add_to_description_impl<typelist<>>(
-    const std::shared_ptr<base_option>& opt, po::options_description& /*description*/)
-{
-  THROW(fmt::format("Option '{}' has an unsupported option type.", opt->m_name));
 }

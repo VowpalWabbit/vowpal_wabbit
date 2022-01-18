@@ -404,6 +404,7 @@
     <ClCompile Include="oaa.cc" />
     <ClCompile Include="offset_tree.cc" />
     <ClCompile Include="oja_newton.cc" />
+    <ClCompile Include="options.cc" />
     <ClCompile Include="options_boost_po.cc" />
     <ClCompile Include="options_serializer_boost_po.cc" />
     <ClCompile Include="../ext_libs/fmt/src/os.cc" />

@@ -343,6 +343,7 @@ set(vw_all_sources
   oaa.cc
   offset_tree.cc
   oja_newton.cc
+  options.cc
   options_boost_po.cc
   options_serializer_boost_po.cc
   parse_args.cc

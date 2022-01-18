@@ -209,6 +209,25 @@ private:
   T* m_location = nullptr;
 };
 
+namespace details
+{
+struct typed_option_handler
+{
+  virtual void handle(typed_option<uint32_t>& option) = 0;
+  virtual void handle(typed_option<int>& option) = 0;
+  virtual void handle(typed_option<size_t>& option) = 0;
+  virtual void handle(typed_option<uint64_t>& option) = 0;
+  virtual void handle(typed_option<int64_t>& option) = 0;
+  virtual void handle(typed_option<float>& option) = 0;
+  virtual void handle(typed_option<double>& option) = 0;
+  virtual void handle(typed_option<std::string>& option) = 0;
+  virtual void handle(typed_option<bool>& option) = 0;
+  virtual void handle(typed_option<std::vector<std::string>>& option) = 0;
+};
+
+void handle_option_by_type(base_option& opt, typed_option_handler& handler);
+}
+
 template <typename T>
 option_builder<typed_option_with_location<T>> make_option(const std::string& name, T& location)
 {
@@ -258,39 +277,6 @@ struct options_i
     if (base.m_type_hash != typed_option<T>::type_hash()) { throw std::bad_cast(); }
 
     return dynamic_cast<const typed_option<T>&>(base);
-  }
-
-  template <typename T>
-  struct is_vector
-  {
-    static const bool value = false;
-  };
-
-  template <typename T, typename A>
-  struct is_vector<std::vector<T, A>>
-  {
-    static const bool value = true;
-  };
-
-  // Check if option values exist and match.
-  // Add if it does not exist.
-  template <typename T>
-  bool insert_arguments(const std::string& name, T expected_val)
-  {
-    static_assert(!is_vector<T>::value, "insert_arguments does not support vectors");
-
-    if (was_supplied(name))
-    {
-      T found_val = get_typed_option<T>(name).value();
-      if (found_val != expected_val) { return false; }
-    }
-    else
-    {
-      std::stringstream ss;
-      ss << expected_val;
-      insert(name, ss.str());
-    }
-    return true;
   }
 
   // Will throw if any options were supplied that do not having a matching argument specification.
