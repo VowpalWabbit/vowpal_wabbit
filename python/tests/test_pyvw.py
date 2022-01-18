@@ -138,13 +138,8 @@ def test_multilabel_prediction_type():
 
 
 def test_CBLabel():
-<<<<<<< HEAD
-    model = vw(cb=4, quiet=True)
-    cbl = pyvw.CBLabel.from_example(model.example("1:10:0.5 |"))
-=======
     model = Workspace(cb=4, quiet=True)
-    cbl = pyvw.CBLabel(model.example("1:10:0.5 |"))
->>>>>>> upstream/master
+    cbl = pyvw.CBLabel.from_example(model.example("1:10:0.5 |"))
     assert cbl.costs[0].action == 1
     assert cbl.costs[0].probability == 0.5
     assert cbl.costs[0].partial_prediction == 0
@@ -154,13 +149,8 @@ def test_CBLabel():
 
 
 def test_CBContinuousLabel():
-<<<<<<< HEAD
-    model = vw(cats=4, min_value=185, max_value=23959, bandwidth=3000, quiet=True)
-    cb_contl = pyvw.CBContinuousLabel.from_example(model.example("ca 1:10:0.5 |"))
-=======
     model = Workspace(cats=4, min_value=185, max_value=23959, bandwidth=3000, quiet=True)
-    cb_contl = pyvw.CBContinuousLabel(model.example("ca 1:10:0.5 |"))
->>>>>>> upstream/master
+    cb_contl = pyvw.CBContinuousLabel.from_example(model.example("ca 1:10:0.5 |"))
     assert cb_contl.costs[0].action == 1
     assert cb_contl.costs[0].pdf_value == 0.5
     assert cb_contl.costs[0].cost == 10.0
@@ -169,13 +159,8 @@ def test_CBContinuousLabel():
 
 
 def test_CostSensitiveLabel():
-<<<<<<< HEAD
-    model = vw(csoaa=4, quiet=True)
-    csl = pyvw.CostSensitiveLabel.from_example(model.example("2:5 |"))
-=======
     model = Workspace(csoaa=4, quiet=True)
-    csl = pyvw.CostSensitiveLabel(model.example("2:5 |"))
->>>>>>> upstream/master
+    csl = pyvw.CostSensitiveLabel.from_example(model.example("2:5 |"))
     assert csl.costs[0].label == 2
     assert csl.costs[0].wap_value == 0.0
     assert csl.costs[0].partial_prediction == 0.0
@@ -196,17 +181,10 @@ def test_MulticlassProbabilitiesLabel():
 
 
 def test_slates_label():
-<<<<<<< HEAD
-    model = vw(slates=True, quiet=True)
+    model = Workspace(slates=True, quiet=True)
     slates_shared_label = pyvw.SlatesLabel.from_example(model.example("slates shared 0.8 | shared_0 shared_1"))
     slates_action_label = pyvw.SlatesLabel.from_example(model.example("slates action 1 | action_3"))
     slates_slot_label = pyvw.SlatesLabel.from_example(model.example("slates slot 1:0.8,0:0.1,2:0.1 | slot_0"))
-=======
-    model = Workspace(slates=True, quiet=True)
-    slates_shared_label = pyvw.SlatesLabel(model.example("slates shared 0.8 | shared_0 shared_1"))
-    slates_action_label = pyvw.SlatesLabel(model.example("slates action 1 | action_3"))
-    slates_slot_label = pyvw.SlatesLabel(model.example("slates slot 1:0.8,0:0.1,2:0.1 | slot_0"))
->>>>>>> upstream/master
     assert slates_shared_label.type == pyvw.SlatesLabelType.SHARED
     assert slates_shared_label.labeled == True
     assert isclose(slates_shared_label.cost, 0.8)
