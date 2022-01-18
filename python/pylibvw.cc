@@ -470,7 +470,7 @@ example* my_empty_example0(vw_ptr vw, size_t labelType)
   lp->default_label(ec->l);
   ec->interactions = &vw->interactions;
   ec->extent_interactions = &vw->extent_interactions;
-  //if (labelType == lCOST_SENSITIVE)
+  // if (labelType == lCOST_SENSITIVE)
   //{
   //  COST_SENSITIVE::wclass zero = {0., 1, 0., 0.};
   //  ec->l.cs.costs.push_back(zero);
