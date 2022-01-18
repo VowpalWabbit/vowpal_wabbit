@@ -9,6 +9,63 @@ import warnings
 from enum import IntEnum
 
 
+# From stack overflow: https://stackoverflow.com/a/52087847/2214524
+class _DeprecatedClassMeta(type):
+    def __new__(cls, name, bases, classdict, *args, **kwargs):
+        alias = classdict.get("_DeprecatedClassMeta__alias")
+
+        if alias is not None:
+
+            def new(cls, *args, **kwargs):
+                alias = getattr(cls, "_DeprecatedClassMeta__alias")
+
+                if alias is not None:
+                    warnings.warn(
+                        "{} has been renamed to {}, the alias will be "
+                        "removed in the future".format(cls.__name__, alias.__name__),
+                        DeprecationWarning,
+                        stacklevel=2,
+                    )
+
+                return alias(*args, **kwargs)
+
+            classdict["__new__"] = new
+            classdict["_DeprecatedClassMeta__alias"] = alias
+
+        fixed_bases = []
+
+        for b in bases:
+            alias = getattr(b, "_DeprecatedClassMeta__alias", None)
+
+            if alias is not None:
+                warnings.warn(
+                    "{} has been renamed to {}, the alias will be "
+                    "removed in the future".format(b.__name__, alias.__name__),
+                    DeprecationWarning,
+                    stacklevel=2,
+                )
+
+            # Avoid duplicate base classes.
+            b = alias or b
+            if b not in fixed_bases:
+                fixed_bases.append(b)
+
+        fixed_bases = tuple(fixed_bases)
+
+        return super().__new__(cls, name, fixed_bases, classdict, *args, **kwargs)
+
+    def __instancecheck__(cls, instance):
+        return any(
+            cls.__subclasscheck__(c) for c in {type(instance), instance.__class__}
+        )
+
+    def __subclasscheck__(cls, subclass):
+        if subclass is cls:
+            return True
+        else:
+            return issubclass(subclass, getattr(cls, "_DeprecatedClassMeta__alias"))
+
+
 class LabelType(IntEnum):
     DEFAULT = pylibvw.vw.lDefault
     BINARY = pylibvw.vw.lBinary
@@ -1740,55 +1797,25 @@ class example(pylibvw.example):
 ############################ DEPREECATED CLASSES ############################
 
 
-class abstract_label(AbstractLabel):
-    def __init__(self):
-        AbstractLabel.__init__(self)
-        warnings.warn(
-            "abstract_label has been deprecated. Please use 'AbstractLabel' instead.",
-            DeprecationWarning,
-        )
+class abstract_label(metaclass=_DeprecatedClassMeta):
+    _DeprecatedClassMeta__alias = AbstractLabel
 
 
-class simple_label(SimpleLabel):
-    def __init__(self):
-        SimpleLabel.__init__(self)
-        warnings.warn(
-            "simple_label has been deprecated. Please use 'SimpleLabel' instead.",
-            DeprecationWarning,
-        )
+class simple_label(metaclass=_DeprecatedClassMeta):
+    _DeprecatedClassMeta__alias = SimpleLabel
 
 
-class multiclass_label(MulticlassLabel):
-    def __init__(self):
-        MulticlassLabel.__init__(self)
-        warnings.warn(
-            "multiclass_label has been deprecated. Please use 'MulticlassLabel' instead.",
-            DeprecationWarning,
-        )
+class multiclass_label(metaclass=_DeprecatedClassMeta):
+    _DeprecatedClassMeta__alias = MulticlassLabel
 
 
-class multiclass_probabilities_label(MulticlassProbabilitiesLabel):
-    def __init__(self):
-        MulticlassProbabilitiesLabel.__init__(self)
-        warnings.warn(
-            "multiclass_probabilities_label has been deprecated. Please use 'MulticlassProbabilitiesLabel' instead.",
-            DeprecationWarning,
-        )
+class multiclass_probabilities_label(metaclass=_DeprecatedClassMeta):
+    _DeprecatedClassMeta__alias = MulticlassProbabilitiesLabel
 
 
-class cost_sensitive_label(CostSensitiveLabel):
-    def __init__(self):
-        CostSensitiveLabel.__init__(self)
-        warnings.warn(
-            "cost_sensitive_label has been deprecated. Please use 'CostSensitiveLabel' instead.",
-            DeprecationWarning,
-        )
+class cost_sensitive_label(metaclass=_DeprecatedClassMeta):
+    _DeprecatedClassMeta__alias = CostSensitiveLabel
 
 
-class cbandits_label(CBLabel):
-    def __init__(self):
-        CBLabel.__init__(self)
-        warnings.warn(
-            "cbandits_label has been deprecated. Please use 'CBLabel' instead.",
-            DeprecationWarning,
-        )
+class cbandits_label(metaclass=_DeprecatedClassMeta):
+    _DeprecatedClassMeta__alias = CBLabel
