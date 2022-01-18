@@ -460,8 +460,6 @@ size_t my_get_prediction_type(vw_ptr all)
 void my_delete_example(void* voidec)
 {
   example* ec = (example*)voidec;
-  size_t labelType = ec->example_counter;
-  label_parser* lp = get_label_parser(NULL, labelType);
   VW::dealloc_examples(ec, 1);
 }
 
@@ -472,12 +470,6 @@ example* my_empty_example0(vw_ptr vw, size_t labelType)
   lp->default_label(ec->l);
   ec->interactions = &vw->interactions;
   ec->extent_interactions = &vw->extent_interactions;
-  if (labelType == lCOST_SENSITIVE)
-  {
-    COST_SENSITIVE::wclass zero = {0., 1, 0., 0.};
-    ec->l.cs.costs.push_back(zero);
-  }
-  ec->example_counter = labelType;
   return ec;
 }
 
@@ -492,13 +484,11 @@ example_ptr my_read_example(vw_ptr all, size_t labelType, char* str)
   example* ec = my_empty_example0(all, labelType);
   VW::read_line(*all, ec, str);
   VW::setup_example(*all, ec);
-  ec->example_counter = labelType;
   return boost::shared_ptr<example>(ec, my_delete_example);
 }
 
 example_ptr my_existing_example(vw_ptr all, size_t labelType, example_ptr existing_example)
 {
-  existing_example->example_counter = labelType;
   return existing_example;
   // return boost::shared_ptr<example>(existing_example);
 }
