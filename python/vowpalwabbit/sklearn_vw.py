@@ -33,7 +33,7 @@ class VW(BaseEstimator):
         flag to convert X input to vw format
     convert_labels : bool
         Convert labels of the form [0,1] to [-1,1]
-    vw_ : pyvw.vw
+    vw_ : pyvw.Workspace
         vw instance
     """
 
@@ -491,7 +491,7 @@ class VW(BaseEstimator):
         Returns
         -------
 
-        vw : pyvw.vw instance
+        vw : pyvw.Workspace instance
 
         """
         return self.vw_
@@ -541,7 +541,7 @@ class VW(BaseEstimator):
         # add vw attributes
         params.update(self._get_vw_params())
 
-        self.vw_ = pyvw.vw(**params)
+        self.vw_ = pyvw.Workspace(**params)
 
         if X is not None:
             if self.convert_to_vw:
