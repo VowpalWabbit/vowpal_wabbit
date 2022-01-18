@@ -576,12 +576,9 @@ std::string varray_char_to_string(v_array<char>& a)
 template <class T>
 py::list varray_to_pylist(const v_array<T>& a)
 {
- 	py::list list;
-  for (const auto& elem : a)
-  {
-    list.append(a);
-  }
- 	return list;
+  py::list list;
+  for (const auto& elem : a) { list.append(a); }
+  return list;
 }
 
 std::string my_get_tag(example_ptr ec) { return varray_char_to_string(ec->tag); }
@@ -946,7 +943,7 @@ float ex_get_slates_probability(example_ptr ec, uint32_t i)
 
 size_t ex_get_ccb_type(example_ptr ec)
 {
-  switch(ec->l.conditional_contextual_bandit.type)
+  switch (ec->l.conditional_contextual_bandit.type)
   {
     case CCB::example_type::shared:
       return tSHARED;
@@ -976,9 +973,9 @@ py::object ex_get_ccb_class(example_ptr ec, uint32_t i)
 }
 py::object ex_get_ccb_probability(example_ptr ec, uint32_t i)
 {
-  if (i >= ex_get_ccb_num_included_actions(ec))  { THROW("Action probability index out of bounds"); }
+  if (i >= ex_get_ccb_num_included_actions(ec)) { THROW("Action probability index out of bounds"); }
   auto* outcome_ptr = ec->l.conditional_contextual_bandit.outcome;
-  return outcome_ptr == nullptr ? py::object(): py::object(outcome_ptr->probabilities[i].score);
+  return outcome_ptr == nullptr ? py::object() : py::object(outcome_ptr->probabilities[i].score);
 }
 float ex_get_ccb_weight(example_ptr ec) { return ec->l.conditional_contextual_bandit.weight; }
 py::list ex_get_ccb_explicitly_included_actions(example_ptr ec)
@@ -1474,16 +1471,19 @@ BOOST_PYTHON_MODULE(pylibvw)
           "Assuming a conditional_contextual_bandits label type, get the type of example")
       .def("get_ccb_cost", &ex_get_ccb_cost,
           "Assuming a conditional_contextual_bandits label type, get the cost of the given label")
-       .def("get_ccb_num_included_actions", &ex_get_ccb_num_included_actions,
+      .def("get_ccb_num_included_actions", &ex_get_ccb_num_included_actions,
           "Assuming a conditional_contextual_bandits label type, get the number of included actions.")
       .def("get_ccb_class", &ex_get_ccb_class,
-          "Assuming a conditional_contextual_bandits label type, get the label for a given pair (i=0.. get_ccb_num_included_actions())")
+          "Assuming a conditional_contextual_bandits label type, get the label for a given pair (i=0.. "
+          "get_ccb_num_included_actions())")
       .def("get_ccb_probability", &ex_get_ccb_probability,
-          "Assuming a conditional_contextual_bandits label type, get the probability for a given pair (i=0.. get_ccb_num_included_actions())")
+          "Assuming a conditional_contextual_bandits label type, get the probability for a given pair (i=0.. "
+          "get_ccb_num_included_actions())")
       .def("get_ccb_weight", &ex_get_ccb_weight,
           "Assuming a conditional_contextual_bandits label type, get the weight of the example.")
       .def("get_ccb_explicitly_included_actions", &ex_get_ccb_explicitly_included_actions,
-          "Assuming a conditional_contextual_bandits label type, get the array of explicitly included actions for the slot")
+          "Assuming a conditional_contextual_bandits label type, get the array of explicitly included actions for the "
+          "slot")
       .def("get_cb_continuous_num_costs", &ex_get_cb_continuous_num_costs,
           "Assuming a cb_continuous label type, get the total number of costs")
       .def("get_cb_continuous_cost", &ex_get_cb_continuous_cost,
