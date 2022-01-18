@@ -128,10 +128,7 @@ void generic_driver_onethread(VW::workspace& all);
 inline void noop_save_load(void*, io_buf&, bool, bool) {}
 inline void noop_persist_metrics(void*, metric_sink&) {}
 inline void noop(void*) {}
-inline float noop_sensitivity(void*, base_learner&, example&)
-{
-  return 0.;
-}
+inline float noop_sensitivity(void*, base_learner&, example&) { return 0.; }
 float recur_sensitivity(void*, base_learner&, example&);
 
 inline void debug_increment_depth(example& ex)
@@ -392,7 +389,6 @@ public:
     persist_metrics_fd.save_metric_f(persist_metrics_fd.data, metrics);
     if (persist_metrics_fd.base) persist_metrics_fd.base->persist_metrics(metrics);
   }
-
 
   inline void finish()
   {

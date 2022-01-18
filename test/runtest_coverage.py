@@ -4,7 +4,7 @@ import os
 from pathlib import Path
 
 
-def get_latest_tests(file_path = None):
+def get_latest_tests(file_path=None):
     if file_path is None:
         test_ref_dir = Path(os.path.dirname(os.path.abspath(__file__)))
         file_path = Path(test_ref_dir).joinpath("core.vwtest.json")
@@ -32,7 +32,7 @@ def to_json():
 
 
 def get_config_of_vw_cmd(test):
-    vw = pyvw.vw(arg_str=test["vw_command"])
+    vw = pyvw.Workspace(arg_str=test["vw_command"])
     config = vw.get_config()
     enabled_reductions = vw.get_enabled_reductions()
     vw.finish()

@@ -9,34 +9,92 @@ import warnings
 from enum import IntEnum
 
 
+# From stack overflow: https://stackoverflow.com/a/52087847/2214524
+class _DeprecatedClassMeta(type):
+    def __new__(cls, name, bases, classdict, *args, **kwargs):
+        alias = classdict.get("_DeprecatedClassMeta__alias")
+
+        if alias is not None:
+
+            def new(cls, *args, **kwargs):
+                alias = getattr(cls, "_DeprecatedClassMeta__alias")
+
+                if alias is not None:
+                    warnings.warn(
+                        "{} has been renamed to {}, the alias will be "
+                        "removed in the future".format(cls.__name__, alias.__name__),
+                        DeprecationWarning,
+                        stacklevel=2,
+                    )
+
+                return alias(*args, **kwargs)
+
+            classdict["__new__"] = new
+            classdict["_DeprecatedClassMeta__alias"] = alias
+
+        fixed_bases = []
+
+        for b in bases:
+            alias = getattr(b, "_DeprecatedClassMeta__alias", None)
+
+            if alias is not None:
+                warnings.warn(
+                    "{} has been renamed to {}, the alias will be "
+                    "removed in the future".format(b.__name__, alias.__name__),
+                    DeprecationWarning,
+                    stacklevel=2,
+                )
+
+            # Avoid duplicate base classes.
+            b = alias or b
+            if b not in fixed_bases:
+                fixed_bases.append(b)
+
+        fixed_bases = tuple(fixed_bases)
+
+        return super().__new__(cls, name, fixed_bases, classdict, *args, **kwargs)
+
+    def __instancecheck__(cls, instance):
+        return any(
+            cls.__subclasscheck__(c) for c in {type(instance), instance.__class__}
+        )
+
+    def __subclasscheck__(cls, subclass):
+        if subclass is cls:
+            return True
+        else:
+            return issubclass(subclass, getattr(cls, "_DeprecatedClassMeta__alias"))
+
+
 class LabelType(IntEnum):
-    BINARY = 1
-    SIMPLE = 1
-    MULTICLASS = 2
-    COST_SENSITIVE = 3
-    CONTEXTUAL_BANDIT = 4
-    MAX = 5
-    CONDITIONAL_CONTEXTUAL_BANDIT = 6
-    SLATES = 7
-    CONTINUOUS = 8
-    CONTEXTUAL_BANDIT_EVAL = 9
-    MULTILABEL = 10
+    DEFAULT = pylibvw.vw.lDefault
+    BINARY = pylibvw.vw.lBinary
+    SIMPLE = pylibvw.vw.lSimple
+    MULTICLASS = pylibvw.vw.lMulticlass
+    COST_SENSITIVE = pylibvw.vw.lCostSensitive
+    CONTEXTUAL_BANDIT = pylibvw.vw.lContextualBandit
+    MAX = pylibvw.vw.lMax  # DEPRECATED
+    CONDITIONAL_CONTEXTUAL_BANDIT = pylibvw.vw.lConditionalContextualBandit
+    SLATES = pylibvw.vw.lSlates
+    CONTINUOUS = pylibvw.vw.lContinuous
+    CONTEXTUAL_BANDIT_EVAL = pylibvw.vw.lContextualBanditEval
+    MULTILABEL = pylibvw.vw.lMultilabel
 
 
 class PredictionType(IntEnum):
-    SCALAR = 0
-    SCALARS = 1
-    ACTION_SCORES = 2
-    ACTION_PROBS = 3
-    MULTICLASS = 4
-    MULTILABELS = 5
-    PROB = 6
-    MULTICLASSPROBS = 7
-    DECISION_SCORES = 8
-    ACTION_PDF_VALUE = 9
-    PDF = 10
-    ACTIVE_MULTICLASS = 11
-    NOPRED = 12
+    SCALAR = pylibvw.vw.pSCALAR
+    SCALARS = pylibvw.vw.pSCALARS
+    ACTION_SCORES = pylibvw.vw.pACTION_SCORES
+    ACTION_PROBS = pylibvw.vw.pACTION_PROBS
+    MULTICLASS = pylibvw.vw.pMULTICLASS
+    MULTILABELS = pylibvw.vw.pMULTILABELS
+    PROB = pylibvw.vw.pPROB
+    MULTICLASSPROBS = pylibvw.vw.pMULTICLASSPROBS
+    DECISION_SCORES = pylibvw.vw.pDECISION_SCORES
+    ACTION_PDF_VALUE = pylibvw.vw.pACTION_PDF_VALUE
+    PDF = pylibvw.vw.pPDF
+    ACTIVE_MULTICLASS = pylibvw.vw.pACTIVE_MULTICLASS
+    NOPRED = pylibvw.vw.pNOPRED
 
 
 # baked in con py boost https://wiki.python.org/moin/boost.python/FAQ#The_constructors_of_some_classes_I_am_trying_to_wrap_are_private_because_instances_must_be_created_by_using_a_factory._Is_it_possible_to_wrap_such_classes.3F
@@ -232,9 +290,9 @@ class SearchTask:
             label_int = labelType
 
         if self.sch.predict_needs_example():
-            return self.vw.example(initStringOrDict, label_int)
+            return self.vw.Example(initStringOrDict, label_int)
         else:
-            return self.vw.example(None, label_int)
+            return self.vw.Example(None, label_int)
 
     def predict(self, my_example, useOracle=False):
         """Predict on the example
@@ -269,7 +327,7 @@ def get_prediction(ec, prediction_type: Union[int, PredictionType]):
     --------
 
     >>> from vowpalwabbit import pyvw
-    >>> vw = pyvw.vw(quiet=True)
+    >>> vw = pyvw.Workspace(quiet=True)
     >>> ex = vw.example('1 |a two features |b more features here')
     >>> pyvw.get_prediction(ex, pyvw.PredictionType.SCALAR)
     0.0
@@ -302,7 +360,7 @@ def get_prediction(ec, prediction_type: Union[int, PredictionType]):
 
 
 def get_all_vw_options():
-    temp = vw("--dry_run")
+    temp = Workspace("--dry_run")
     config = temp.get_config(filtered_enabled_reductions_only=False)
     temp.finish()
     return config
@@ -320,10 +378,8 @@ class _log_forward:
             self.current_message = ""
 
 
-class vw(pylibvw.vw):
-    """The pyvw.vw object is a (trivial) wrapper around the pylibvw.vw
-    object; you're probably best off using this directly and ignoring
-    the pylibvw.vw structure entirely."""
+class Workspace(pylibvw.vw):
+    """Workspace exposes most of the library functionality. It wraps the native code. The Workspace Python class should always be used instead of the binding glue class."""
 
     _log_wrapper = None
     parser_ran = False
@@ -347,15 +403,15 @@ class vw(pylibvw.vw):
         --------
 
         >>> from vowpalwabbit import pyvw
-        >>> vw1 = pyvw.vw('--audit')
-        >>> vw2 = pyvw.vw(audit=True, b=24, k=True, c=True, l2=0.001)
-        >>> vw3 = pyvw.vw("--audit", b=26)
-        >>> vw4 = pyvw.vw(q=["ab", "ac"])
+        >>> vw1 = pyvw.Workspace('--audit')
+        >>> vw2 = pyvw.Workspace(audit=True, b=24, k=True, c=True, l2=0.001)
+        >>> vw3 = pyvw.Workspace("--audit", b=26)
+        >>> vw4 = pyvw.Workspace(q=["ab", "ac"])
 
         Returns
         -------
 
-        self : vw
+        self : Workspace
         """
 
         def format_input_pair(key, val):
@@ -384,9 +440,9 @@ class vw(pylibvw.vw):
             self._log_wrapper = pylibvw.vw_log(self._log_fwd)
 
         if self._log_wrapper:
-            super(vw, self).__init__(" ".join(l), self._log_wrapper)
+            super().__init__(" ".join(l), self._log_wrapper)
         else:
-            super(vw, self).__init__(" ".join(l))
+            super().__init__(" ".join(l))
         self.init = True
 
         # check to see if native parser needs to run
@@ -427,11 +483,11 @@ class vw(pylibvw.vw):
         --------
 
         >>> from vowpalwabbit import pyvw
-        >>> model = pyvw.vw(quiet=True)
+        >>> model = pyvw.Workspace(quiet=True)
         >>> ex = model.parse("0:0.1:0.75 | a:0.5 b:1 c:2")
         >>> type(ex)
-        <class 'vowpalwabbit.pyvw.example'>
-        >>> model = pyvw.vw(quiet=True, cb_adf=True)
+        <class 'vowpalwabbit.pyvw.Example'>
+        >>> model = pyvw.Workspace(quiet=True, cb_adf=True)
         >>> ex = model.parse(["| a:1 b:0.5", "0:0.1:0.75 | a:0.5 b:1 c:2"])
         >>> type(ex)
         <class 'list'>
@@ -446,7 +502,7 @@ class vw(pylibvw.vw):
         """
 
         # check if already parsed
-        if isinstance(str_ex, example) and getattr(str_ex, "setup_done", None):
+        if isinstance(str_ex, Example) and getattr(str_ex, "setup_done", None):
             return str_ex
 
         elif isinstance(str_ex, list):
@@ -469,7 +525,7 @@ class vw(pylibvw.vw):
         str_ex = str_ex.replace("\r", "")
         str_ex = str_ex.strip()
         ec = self._parse(str_ex)
-        ec = [example(self, x, label_int) for x in ec]
+        ec = [Example(self, x, label_int) for x in ec]
         for ex in ec:
             ex.setup_done = True
         if not self._is_multiline():
@@ -491,7 +547,7 @@ class vw(pylibvw.vw):
             example to be finished
         """
 
-        if isinstance(ex, example):
+        if isinstance(ex, Example):
             if self._is_multiline():
                 raise ValueError(
                     "Learner is multiline but single example was passed to "
@@ -567,7 +623,7 @@ class vw(pylibvw.vw):
         Parameters
         ----------
 
-        ec : example/str/list
+        ec : Example/str/list
             examples on which the model gets updated
         """
         # If a string was given, parse it before passing to learner.
@@ -582,7 +638,7 @@ class vw(pylibvw.vw):
             ec = self.parse(ec)
             new_example = True
 
-        if isinstance(ec, example):
+        if isinstance(ec, Example):
             if not getattr(ec, "setup_done", None):
                 ec.setup_example()
             pylibvw.vw.learn(self, ec)
@@ -635,16 +691,16 @@ class vw(pylibvw.vw):
             ec = self.parse(ec)
             new_example = True
 
-        if not isinstance(ec, example) and not isinstance(ec, list):
+        if not isinstance(ec, Example) and not isinstance(ec, list):
             raise TypeError(
                 "expecting string, example object, or list of example objects"
                 " as ec argument for predict, got %s" % type(ec)
             )
 
-        if isinstance(ec, example) and not getattr(ec, "setup_done", True):
+        if isinstance(ec, Example) and not getattr(ec, "setup_done", True):
             ec.setup_example()
 
-        if isinstance(ec, example):
+        if isinstance(ec, Example):
             pylibvw.vw.predict(self, ec)
         else:
             pylibvw.vw.predict_multi(self, ec)
@@ -652,7 +708,7 @@ class vw(pylibvw.vw):
         if prediction_type is None:
             prediction_type = self.get_prediction_type()
 
-        if isinstance(ec, example):
+        if isinstance(ec, Example):
             prediction = get_prediction(ec, prediction_type)
         else:
             prediction = get_prediction(ec[0], prediction_type)
@@ -712,7 +768,7 @@ class vw(pylibvw.vw):
             label_int = labelType.value
         elif isinstance(labelType, int):
             label_int = labelType
-        return example(self, stringOrDict, label_int)
+        return Example(self, stringOrDict, label_int)
 
     def __del__(self):
         self.finish()
@@ -790,7 +846,7 @@ class vw(pylibvw.vw):
                         ec = examples[n]
                         while hasattr(ec, "__call__"):
                             ec = ec()  # unfold the lambdas
-                        if not isinstance(ec, example) and not isinstance(
+                        if not isinstance(ec, Example) and not isinstance(
                             ec, pylibvw.example
                         ):
                             raise TypeError(
@@ -886,14 +942,14 @@ class vw(pylibvw.vw):
         )
 
 
-class namespace_id:
-    """The namespace_id class is simply a wrapper to convert between
+class NamespaceId:
+    """The NamespaceId class is simply a wrapper to convert between
     hash spaces referred to by character (eg 'x') versus their index
     in a particular example. Mostly used internally, you shouldn't
     really need to touch this."""
 
     def __init__(self, ex, id):
-        """Given an example and an id, construct a namespace_id.
+        """Given an example and an id, construct a NamespaceId.
 
         Parameters
         ----------
@@ -908,7 +964,7 @@ class namespace_id:
         Returns
         -------
 
-        self : namespace_id
+        self : NamespaceId
         """
         if isinstance(id, int):  # you've specified a namespace by index
             if id < 0 or id >= ex.num_namespaces():
@@ -928,22 +984,22 @@ class namespace_id:
             )
 
 
-class example_namespace:
-    """The example_namespace class is a helper class that allows you
+class ExampleNamespace:
+    """The ExampleNamespace class is a helper class that allows you
     to extract namespaces from examples and operate at a namespace
     level rather than an example level. Mainly this is done to enable
     indexing like ex['x'][0] to get the 0th feature in namespace 'x'
     in example ex."""
 
     def __init__(self, ex, ns, ns_hash=None):
-        """Construct an example_namespace
+        """Construct an ExampleNamespace
 
         Parameters
         ----------
 
         ex : Example
             examples from which namespace is to be extracted
-        ns : namespace_id
+        ns : NamespaceId
             Target namespace
         ns_hash : Optional, by default is None
             The hash of the namespace
@@ -951,10 +1007,10 @@ class example_namespace:
         Returns
         -------
 
-        self : example_namespace
+        self : ExampleNamespace
         """
-        if not isinstance(ns, namespace_id):
-            raise TypeError("ns should an instance of namespace_id.")
+        if not isinstance(ns, NamespaceId):
+            raise TypeError("ns should an instance of NamespaceId.")
         self.ex = ex
         self.ns = ns
         self.ns_hash = ns_hash
@@ -1021,7 +1077,7 @@ class AbstractLabel:
     def __init__(self):
         pass
 
-    def from_example(self, ex: "example"):
+    def from_example(self, ex: "Example"):
         """grab a label from a given VW example"""
         raise Exception("from_example not yet implemented")
 
@@ -1294,10 +1350,10 @@ class CBContinuousLabel(AbstractLabel):
         )
 
 
-class example(pylibvw.example):
-    """The example class is a (non-trivial) wrapper around
-    pylibvw.example. Most of the wrapping is to make the interface
-    easier to use (by making the types safer via namespace_id) and
+class Example(pylibvw.example):
+    """The example class is a wrapper around
+    pylibvw.example. pylibvw.example should not be used. Most of the wrapping is to make the interface
+    easier to use (by making the types safer via NamespaceId) and
     also with added python-specific functionality."""
 
     def __init__(
@@ -1374,30 +1430,30 @@ class example(pylibvw.example):
         self.finished = False
 
     def get_ns(self, id):
-        """Construct a namespace_id
+        """Construct a NamespaceId
 
         Parameters
         ----------
 
-        id : namespace_id/str/integer
+        id : NamespaceId/str/integer
             id used to create namespace
 
         Returns
         -------
 
-        out : namespace_id
-            namespace_id created using parameter passed(if id was namespace_id,
+        out : NamespaceId
+            NamespaceId created using parameter passed(if id was NamespaceId,
             just return it directly)
         """
-        if isinstance(id, namespace_id):
+        if isinstance(id, NamespaceId):
             return id
         else:
-            return namespace_id(self, id)
+            return NamespaceId(self, id)
 
     def __getitem__(self, id):
-        """Get an example_namespace object associated with the given
+        """Get an ExampleNamespace object associated with the given
         namespace id."""
-        return example_namespace(self, self.get_ns(id))
+        return ExampleNamespace(self, self.get_ns(id))
 
     def feature(self, ns, i):
         """Get the i-th hashed feature id in a given namespace
@@ -1665,7 +1721,7 @@ class example(pylibvw.example):
         --------
 
         >>> from vowpalwabbit import pyvw
-        >>> vw = pyvw.vw(quiet=True)
+        >>> vw = pyvw.Workspace(quiet=True)
         >>> ex = vw.example('1 |a two features |b more features here')
         >>> ex.push_features('x', ['a', 'b'])
         >>> ex.push_features('y', [('c', 1.), 'd'])
@@ -1724,55 +1780,41 @@ class example(pylibvw.example):
 ############################ DEPREECATED CLASSES ############################
 
 
-class abstract_label(AbstractLabel):
-    def __init__(self):
-        AbstractLabel.__init__(self)
-        warnings.warn(
-            "abstract_label has been deprecated. Please use 'AbstractLabel' instead.",
-            DeprecationWarning,
-        )
+class abstract_label(metaclass=_DeprecatedClassMeta):
+    _DeprecatedClassMeta__alias = AbstractLabel
 
 
-class simple_label(SimpleLabel):
-    def __init__(self):
-        SimpleLabel.__init__(self)
-        warnings.warn(
-            "simple_label has been deprecated. Please use 'SimpleLabel' instead.",
-            DeprecationWarning,
-        )
+class simple_label(metaclass=_DeprecatedClassMeta):
+    _DeprecatedClassMeta__alias = SimpleLabel
 
 
-class multiclass_label(MulticlassLabel):
-    def __init__(self):
-        MulticlassLabel.__init__(self)
-        warnings.warn(
-            "multiclass_label has been deprecated. Please use 'MulticlassLabel' instead.",
-            DeprecationWarning,
-        )
+class multiclass_label(metaclass=_DeprecatedClassMeta):
+    _DeprecatedClassMeta__alias = MulticlassLabel
 
 
-class multiclass_probabilities_label(MulticlassProbabilitiesLabel):
-    def __init__(self):
-        MulticlassProbabilitiesLabel.__init__(self)
-        warnings.warn(
-            "multiclass_probabilities_label has been deprecated. Please use 'MulticlassProbabilitiesLabel' instead.",
-            DeprecationWarning,
-        )
+class multiclass_probabilities_label(metaclass=_DeprecatedClassMeta):
+    _DeprecatedClassMeta__alias = MulticlassProbabilitiesLabel
 
 
-class cost_sensitive_label(CostSensitiveLabel):
-    def __init__(self):
-        CostSensitiveLabel.__init__(self)
-        warnings.warn(
-            "cost_sensitive_label has been deprecated. Please use 'CostSensitiveLabel' instead.",
-            DeprecationWarning,
-        )
+class cost_sensitive_label(metaclass=_DeprecatedClassMeta):
+    _DeprecatedClassMeta__alias = CostSensitiveLabel
 
 
-class cbandits_label(CBLabel):
-    def __init__(self):
-        CBLabel.__init__(self)
-        warnings.warn(
-            "cbandits_label has been deprecated. Please use 'CBLabel' instead.",
-            DeprecationWarning,
-        )
+class cbandits_label(metaclass=_DeprecatedClassMeta):
+    _DeprecatedClassMeta__alias = CBLabel
+
+
+class namespace_id(metaclass=_DeprecatedClassMeta):
+    _DeprecatedClassMeta__alias = NamespaceId
+
+
+class example_namespace(metaclass=_DeprecatedClassMeta):
+    _DeprecatedClassMeta__alias = ExampleNamespace
+
+
+class vw(metaclass=_DeprecatedClassMeta):
+    _DeprecatedClassMeta__alias = Workspace
+
+
+class example(metaclass=_DeprecatedClassMeta):
+    _DeprecatedClassMeta__alias = Example

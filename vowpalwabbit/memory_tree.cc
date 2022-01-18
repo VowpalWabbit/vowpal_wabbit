@@ -194,7 +194,7 @@ struct memory_tree
   size_t current_pass = 0;  // for tracking # of passes over the dataset
   size_t final_pass = 0;
 
-  int top_K;  // commands:
+  int top_K;         // commands:
   bool oas = false;  // indicator for multi-label classification (oas = 1)
   int dream_at_update = 0;
 
@@ -492,7 +492,7 @@ void split_leaf(memory_tree& b, single_learner& base, const uint64_t cn)
       b.examples[ec_pos]->l.multilabels = multilabels;
     }
   }
-  b.nodes[cn].examples_index.clear();                                                    // empty the cn's example list
+  b.nodes[cn].examples_index.clear();  // empty the cn's example list
   b.nodes[cn].nl =
       std::max(static_cast<double>(b.nodes[left_child].examples_index.size()), 0.001);  // avoid to set nl to zero
   b.nodes[cn].nr =

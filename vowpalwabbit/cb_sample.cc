@@ -27,7 +27,7 @@ struct cb_sample_data
   explicit cb_sample_data(std::shared_ptr<VW::rand_state>&& random_state) : _random_state(random_state) {}
 
   template <bool is_learn>
-  inline void learn_or_predict(multi_learner &base, multi_ex &examples)
+  inline void learn_or_predict(multi_learner& base, multi_ex& examples)
   {
     // If base.learn() does not return prediction then we need to predict first
     // so that there is something to sample from
@@ -39,13 +39,13 @@ struct cb_sample_data
 
     multiline_learn_or_predict<is_learn>(base, examples, examples[0]->ft_offset);
 
-    auto &action_scores = examples[0]->pred.a_s;
+    auto& action_scores = examples[0]->pred.a_s;
 
     uint32_t chosen_action = 0;
     int64_t maybe_labelled_action = -1;
 
     // Find that chosen action in the learning case, skip the shared example.
-    auto it = std::find_if(examples.begin(), examples.end(), [](example *item) { return !item->l.cb.costs.empty(); });
+    auto it = std::find_if(examples.begin(), examples.end(), [](example* item) { return !item->l.cb.costs.empty(); });
     if (it != examples.end()) { maybe_labelled_action = static_cast<int64_t>(std::distance(examples.begin(), it)); }
 
     // If we are learning and have a label, then take that action as the chosen action. Otherwise sample the
@@ -57,7 +57,7 @@ struct cb_sample_data
       // This only matters if the prediction decided to explore, but the same output should happen for the learn case.
       for (size_t i = 0; i < action_scores.size(); i++)
       {
-        auto &a_s = action_scores[i];
+        auto& a_s = action_scores[i];
         if (a_s.action == static_cast<uint32_t>(maybe_labelled_action))
         {
           chosen_action = static_cast<uint32_t>(i);
@@ -92,7 +92,7 @@ struct cb_sample_data
     _UNUSED(result);
   }
 
-  std::string cb_decision_to_string(const ACTION_SCORE::action_scores &action_scores)
+  std::string cb_decision_to_string(const ACTION_SCORE::action_scores& action_scores)
   {
     std::ostringstream ostrm;
     if (action_scores.empty()) return "";
@@ -106,7 +106,7 @@ private:
 }  // namespace VW
 
 template <bool is_learn>
-void learn_or_predict(cb_sample_data &data, multi_learner &base, multi_ex &examples)
+void learn_or_predict(cb_sample_data& data, multi_learner& base, multi_ex& examples)
 {
   data.learn_or_predict<is_learn>(base, examples);
 }

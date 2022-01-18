@@ -77,12 +77,12 @@ struct task_data
   size_t wpp;
 
   // per-example data
-  uint32_t N;                            // number of nodes
-  uint32_t E;                            // number of edges
-  std::vector<std::vector<size_t>> adj;  // adj[n] is a vector of *edge example ids* that contain n
-  std::vector<uint32_t> bfs;             // order of nodes to process
-  std::vector<size_t> pred;              // predictions
-  example* cur_node;                     // pointer to the current node for add_edge_features_fn
+  uint32_t N;                               // number of nodes
+  uint32_t E;                               // number of edges
+  std::vector<std::vector<size_t>> adj;     // adj[n] is a vector of *edge example ids* that contain n
+  std::vector<uint32_t> bfs;                // order of nodes to process
+  std::vector<size_t> pred;                 // predictions
+  example* cur_node;                        // pointer to the current node for add_edge_features_fn
   std::vector<float> neighbor_predictions;  // prediction on this neighbor for add_edge_features_fn
   std::vector<uint32_t> confusion_matrix;
   std::vector<float> true_counts;
@@ -327,9 +327,7 @@ void add_edge_features(Search::search& sch, task_data& D, size_t n, multi_ex& ec
     int i0 = static_cast<int>(i[0]);
     int i1 = static_cast<int>(i[1]);
     if ((i0 == static_cast<int>(neighbor_namespace)) || (i1 == static_cast<int>(neighbor_namespace)))
-    {
-      ec[n]->num_features += ec[n]->feature_space[i0].size() * ec[n]->feature_space[i1].size();
-    }
+    { ec[n]->num_features += ec[n]->feature_space[i0].size() * ec[n]->feature_space[i1].size(); }
   }
 }
 

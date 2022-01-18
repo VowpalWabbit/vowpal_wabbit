@@ -24,10 +24,7 @@ label_data::label_data() { reset_to_default(); }
 
 label_data::label_data(float label) : label(label) {}
 
-void label_data::reset_to_default()
-{
-  label = FLT_MAX;
-}
+void label_data::reset_to_default() { label = FLT_MAX; }
 
 void print_update(VW::workspace& all, const example& ec)
 {
