@@ -210,6 +210,8 @@ BOOST_AUTO_TEST_CASE(assert_live_configs_and_lease)
     BOOST_CHECK(aml->current_state == VW::automl::automl_state::Experimenting);
     BOOST_CHECK_EQUAL(aml->cm->total_learn_count, 15);
     BOOST_CHECK_EQUAL(aml->cm->current_champ, 0);
+    BOOST_CHECK_CLOSE(aml->cm->automl_alpha, 0.05, FLOAT_TOL);
+    BOOST_CHECK_CLOSE(aml->cm->automl_tau, 0.999, FLOAT_TOL);
     BOOST_CHECK_EQUAL(aml->cm->scores[0].config_index, 0);
     BOOST_CHECK_EQUAL(aml->cm->scores[1].config_index, 5);
     BOOST_CHECK_EQUAL(aml->cm->scores[2].config_index, 3);
