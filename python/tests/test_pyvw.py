@@ -179,6 +179,7 @@ def test_MulticlassProbabilitiesLabel():
     mpl = pyvw.MulticlassProbabilitiesLabel([1, 2, 3], [0.4, 0.3, 0.3])
     assert str(mpl) == "1:0.4 2:0.3 3:0.3"
 
+
 def test_ccb_label():
     model = vw(ccb_explore_adf=True, quiet=True)
     ccb_shared_label = pyvw.CCBLabel(model.example("ccb shared | shared_0 shared_1"))
@@ -188,13 +189,11 @@ def test_ccb_label():
     assert len(ccb_shared_label.explicit_included_actions) == 0
     assert ccb_shared_label.outcome is None
     assert str(ccb_shared_label) == "ccb shared"
-
     assert ccb_action_label.type == pyvw.CCBLabelType.ACTION
     assert len(ccb_action_label.explicit_included_actions) == 0
     assert ccb_action_label.weight == 1.0
     assert ccb_action_label.outcome is None
     assert str(ccb_action_label) == "ccb action"
-
     assert ccb_slot_label.type == pyvw.CCBLabelType.SLOT
     assert ccb_slot_label.explicit_included_actions[0] == 0
     assert ccb_slot_label.outcome.action_probs[0].action == 0
@@ -203,11 +202,16 @@ def test_ccb_label():
     assert str(ccb_slot_label) == "ccb slot 0:0.8:1.0 0"
     del model
 
+
 def test_slates_label():
     model = vw(slates=True, quiet=True)
-    slates_shared_label = pyvw.SlatesLabel(model.example("slates shared 0.8 | shared_0 shared_1"))
+    slates_shared_label = pyvw.SlatesLabel(
+        model.example("slates shared 0.8 | shared_0 shared_1")
+    )
     slates_action_label = pyvw.SlatesLabel(model.example("slates action 1 | action_3"))
-    slates_slot_label = pyvw.SlatesLabel(model.example("slates slot 1:0.8,0:0.1,2:0.1 | slot_0"))
+    slates_slot_label = pyvw.SlatesLabel(
+        model.example("slates slot 1:0.8,0:0.1,2:0.1 | slot_0")
+    )
     assert slates_shared_label.type == pyvw.SlatesLabelType.SHARED
     assert slates_shared_label.labeled == True
     assert isclose(slates_shared_label.cost, 0.8)
