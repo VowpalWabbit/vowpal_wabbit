@@ -114,7 +114,7 @@ def test_ccb_single_slot_and_cb_non_equivalence_with_slot_features():
 
 
 def test_ccb_non_slot_none_outcome():
-    model = pyvw.vw(quiet=True)
+    model = pyvw.Workspace(quiet=True)
     example = pyvw.example(
         vw=model, labelType=pyvw.LabelType.CONDITIONAL_CONTEXTUAL_BANDIT
     )
