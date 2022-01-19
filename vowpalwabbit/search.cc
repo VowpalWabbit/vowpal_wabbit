@@ -188,16 +188,16 @@ public:
                                  // permutation)
   bool (*label_is_test)(const polylabel&) = nullptr;  // tell me if the label data from an example is test
 
-  size_t t = 0;                                 // current search step
-  size_t T = 0;                                 // length of root trajectory
-  std::vector<example> learn_ec_copy;           // copy of example(s) at learn_t
-  example* learn_ec_ref = nullptr;              // reference to example at learn_t, when there's no example munging
-  size_t learn_ec_ref_cnt = 0;                  // how many are there (for LDF mode only; otherwise 1)
-  v_array<ptag> learn_condition_on;             // a copy of the tags used for conditioning at the training position
+  size_t t = 0;                                     // current search step
+  size_t T = 0;                                     // length of root trajectory
+  std::vector<example> learn_ec_copy;               // copy of example(s) at learn_t
+  example* learn_ec_ref = nullptr;                  // reference to example at learn_t, when there's no example munging
+  size_t learn_ec_ref_cnt = 0;                      // how many are there (for LDF mode only; otherwise 1)
+  v_array<ptag> learn_condition_on;                 // a copy of the tags used for conditioning at the training position
   std::vector<action_repr> learn_condition_on_act;  // the actions taken
-  v_array<char> learn_condition_on_names;       // the names of the actions
-  v_array<action> learn_allowed_actions;        // which actions were allowed at training time?
-  std::vector<action_repr> ptag_to_action;      // tag to action mapping for conditioning
+  v_array<char> learn_condition_on_names;           // the names of the actions
+  v_array<action> learn_allowed_actions;            // which actions were allowed at training time?
+  std::vector<action_repr> ptag_to_action;          // tag to action mapping for conditioning
   std::vector<action> test_action_sequence;  // if test-mode was run, what was the corresponding action sequence; it's a
                                              // vector cuz we might expose it to the library
   action learn_oracle_action = 0;            // store an oracle action for debugging purposes
@@ -310,10 +310,7 @@ public:
 void clear_memo_foreach_action(search_private& priv)
 {
   for (size_t i = 0; i < priv.memo_foreach_action.size(); i++)
-    if (priv.memo_foreach_action[i])
-    {
-      delete priv.memo_foreach_action[i];
-    }
+    if (priv.memo_foreach_action[i]) { delete priv.memo_foreach_action[i]; }
   priv.memo_foreach_action.clear();
 }
 
@@ -1129,9 +1126,7 @@ action single_prediction_notLDF(search_private& priv, example& ec, int policy, c
     }
     v_array<action_cache>* this_cache = nullptr;
     if (need_memo_foreach_action(priv) && (override_action == static_cast<action>(-1)))
-    {
-      this_cache = new v_array<action_cache>();
-    }
+    { this_cache = new v_array<action_cache>(); }
     for (size_t k = 0; k < K; k++)
     {
       action cl = cs_get_cost_index(priv.cb_learner, ec.l, k);
@@ -1243,10 +1238,7 @@ action single_prediction_LDF(search_private& priv, example* ecs, size_t ec_cnt, 
   size_t start_K = (priv.is_ldf && COST_SENSITIVE::ec_is_example_header(ecs[0])) ? 1 : 0;
 
   v_array<action_cache>* this_cache = nullptr;
-  if (need_partial_predictions)
-  {
-    this_cache = new v_array<action_cache>();
-  }
+  if (need_partial_predictions) { this_cache = new v_array<action_cache>(); }
 
   for (action a = static_cast<uint32_t>(start_K); a < ec_cnt; a++)
   {
@@ -2993,13 +2985,7 @@ void search::set_force_oracle(bool force) { this->priv->force_oracle = force; }
 
 // predictor implementation
 predictor::predictor(search& sch, ptag my_tag)
-    : is_ldf(false)
-    , my_tag(my_tag)
-    , ec(nullptr)
-    , ec_cnt(0)
-    , weight(1.)
-    , learner_id(0)
-    , sch(sch)
+    : is_ldf(false), my_tag(my_tag), ec(nullptr), ec_cnt(0), weight(1.), learner_id(0), sch(sch)
 {
 }
 

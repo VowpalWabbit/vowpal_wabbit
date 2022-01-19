@@ -20,7 +20,6 @@ namespace VW
 {
 namespace shared_feature_merger
 {
-
 struct sfm_metrics
 {
   size_t count_learn_example_with_shared = 0;

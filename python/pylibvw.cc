@@ -42,10 +42,11 @@ typedef boost::shared_ptr<py_log_wrapper> py_log_wrapper_ptr;
 
 const size_t lDEFAULT = 0;
 const size_t lBINARY = 1;
+const size_t lSIMPLE = 1;
 const size_t lMULTICLASS = 2;
 const size_t lCOST_SENSITIVE = 3;
 const size_t lCONTEXTUAL_BANDIT = 4;
-const size_t lMAX = 5;
+const size_t lMAX = 5;  // DEPRECATED
 const size_t lCONDITIONAL_CONTEXTUAL_BANDIT = 6;
 const size_t lSLATES = 7;
 const size_t lCONTINUOUS = 8;
@@ -364,7 +365,7 @@ label_parser* get_label_parser(VW::workspace* all, size_t labelType)
   {
     case lDEFAULT:
       return all ? &all->example_parser->lbl_parser : NULL;
-    case lBINARY:
+    case lBINARY:  // or #lSIMPLE
       return &simple_label_parser;
     case lMULTICLASS:
       return &MULTICLASS::mc_label;
@@ -459,8 +460,6 @@ size_t my_get_prediction_type(vw_ptr all)
 void my_delete_example(void* voidec)
 {
   example* ec = (example*)voidec;
-  size_t labelType = ec->example_counter;
-  label_parser* lp = get_label_parser(NULL, labelType);
   VW::dealloc_examples(ec, 1);
 }
 
@@ -471,12 +470,6 @@ example* my_empty_example0(vw_ptr vw, size_t labelType)
   lp->default_label(ec->l);
   ec->interactions = &vw->interactions;
   ec->extent_interactions = &vw->extent_interactions;
-  if (labelType == lCOST_SENSITIVE)
-  {
-    COST_SENSITIVE::wclass zero = {0., 1, 0., 0.};
-    ec->l.cs.costs.push_back(zero);
-  }
-  ec->example_counter = labelType;
   return ec;
 }
 
@@ -491,13 +484,11 @@ example_ptr my_read_example(vw_ptr all, size_t labelType, char* str)
   example* ec = my_empty_example0(all, labelType);
   VW::read_line(*all, ec, str);
   VW::setup_example(*all, ec);
-  ec->example_counter = labelType;
   return boost::shared_ptr<example>(ec, my_delete_example);
 }
 
 example_ptr my_existing_example(vw_ptr all, size_t labelType, example_ptr existing_example)
 {
-  existing_example->example_counter = labelType;
   return existing_example;
   // return boost::shared_ptr<example>(existing_example);
 }
@@ -1279,15 +1270,20 @@ BOOST_PYTHON_MODULE(pylibvw)
       .def_readonly("lDefault", lDEFAULT,
           "Default label type (whatever vw was initialized with) -- used as input to the example() initializer")
       .def_readonly("lBinary", lBINARY, "Binary label type -- used as input to the example() initializer")
+      .def_readonly("lSimple", lSIMPLE, "Simple label type -- used as input to the example() initializer")
       .def_readonly("lMulticlass", lMULTICLASS, "Multiclass label type -- used as input to the example() initializer")
       .def_readonly("lCostSensitive", lCOST_SENSITIVE,
           "Cost sensitive label type (for LDF!) -- used as input to the example() initializer")
       .def_readonly("lContextualBandit", lCONTEXTUAL_BANDIT,
           "Contextual bandit label type -- used as input to the example() initializer")
+      .def_readonly("lMax", lMAX, "DEPRECATED: Max label type -- used as input to the example() initializer")
       .def_readonly("lConditionalContextualBandit", lCONDITIONAL_CONTEXTUAL_BANDIT,
           "Conditional Contextual bandit label type -- used as input to the example() initializer")
       .def_readonly("lSlates", lSLATES, "Slates label type -- used as input to the example() initializer")
       .def_readonly("lContinuous", lCONTINUOUS, "Continuous label type -- used as input to the example() initializer")
+      .def_readonly("lContextualBanditEval", lCONTEXTUAL_BANDIT_EVAL,
+          "Contextual bandit eval label type -- used as input to the example() initializer")
+      .def_readonly("lMultilabel", lMULTILABEL, "Multilabel label type -- used as input to the example() initializer")
 
       .def_readonly("pSCALAR", pSCALAR, "Scalar prediction type")
       .def_readonly("pSCALARS", pSCALARS, "Multiple scalar-valued prediction type")
@@ -1302,6 +1298,7 @@ BOOST_PYTHON_MODULE(pylibvw)
       .def_readonly("pPDF", pPDF, "PDF prediction type")
       .def_readonly("pACTIVE_MULTICLASS", pACTIVE_MULTICLASS, "Active multiclass prediction type")
       .def_readonly("pNOPRED", pNOPRED, "Nopred prediction type")
+
       .def_readonly("tUNSET", tUNSET, "Unset label type for CCB and Slates")
       .def_readonly("tSHARED", tSHARED, "Shared label type for CCB and Slates")
       .def_readonly("tACTION", tACTION, "Action label type for CCB and Slates")

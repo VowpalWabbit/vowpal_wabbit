@@ -28,7 +28,7 @@ struct policy_data
 
 struct mwt
 {
-  bool namespaces[256];        // the set of namespaces to evaluate.
+  bool namespaces[256];            // the set of namespaces to evaluate.
   std::vector<policy_data> evals;  // accrued losses of features.
   std::pair<bool, CB::cb_class> optional_observation;
   v_array<uint64_t> policies;

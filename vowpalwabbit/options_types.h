@@ -35,9 +35,8 @@ public:
 
 // is_scalar detection relies on only accepting std::vector<T> for vector types. If that changes, update
 // is_scalar_impl below.
-using supported_options_types = typelist<unsigned int, int, size_t, uint64_t, int64_t, float, double, char, std::string,
-    bool, std::vector<int>, std::vector<uint64_t>, std::vector<int64_t>, std::vector<size_t>, std::vector<float>,
-    std::vector<double>, std::vector<char>, std::vector<std::string>>;
+using supported_options_types =
+    typelist<uint32_t, int, size_t, uint64_t, int64_t, float, double, std::string, bool, std::vector<std::string>>;
 
 namespace is_scalar_impl
 {

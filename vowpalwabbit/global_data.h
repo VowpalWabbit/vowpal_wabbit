@@ -254,7 +254,7 @@ public:
 
   VW::io::logger logger;
   bool quiet;
-  bool audit;     // should I print lots of debugging information?
+  bool audit;  // should I print lots of debugging information?
   std::shared_ptr<std::vector<char>> audit_buffer;
   std::unique_ptr<VW::io::writer> audit_writer;
   bool training;  // Should I train if lable data is available?
