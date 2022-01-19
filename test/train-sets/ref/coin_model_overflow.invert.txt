@@ -1,0 +1,30 @@
+Version 8.11.0
+Id
+Min label:0
+Max label:1
+bits:18
+lda:0
+0 ngram:
+0 skip:
+options: --coin --quadratic ::
+Checksum: 3154474596
+:1
+initial_t 0
+norm normalizer 3
+t 1
+sum_loss 1
+sum_loss_since_last_dump 0
+dump_interval 2
+min_label 0
+max_label 1
+weighted_labeled_examples 1
+weighted_labels 1
+weighted_unlabeled_examples 0
+example_number 1
+total_features 3
+total_weight 1
+sd::oec.weighted_labeled_examples 1
+current_pass 1
+34875:0 2e+10 2e+10 1e+10 0 2
+116060:0 2 2 1 0 2
+195802:0 2e+20 2e+20 1e+20 0 2
