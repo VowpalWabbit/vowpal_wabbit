@@ -41,7 +41,7 @@ constexpr uint64_t CONFIGS_PER_CHAMP_CHANGE = 5;
 struct aml_score : VW::scored_config
 {
   aml_score() : VW::scored_config() {}
-  aml_score(float alpha) : VW::scored_config(alpha) {}
+  aml_score(double alpha) : VW::scored_config(alpha) {}
   uint64_t config_index = 0;
   bool eligible_to_inactivate = false;
   interaction_vec_t live_interactions;  // Live pre-allocated vectors in use
