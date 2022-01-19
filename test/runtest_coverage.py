@@ -32,7 +32,7 @@ def to_json():
 
 
 def get_config_of_vw_cmd(test):
-    vw = pyvw.vw(arg_str=test["vw_command"])
+    vw = pyvw.Workspace(arg_str=test["vw_command"])
     config = vw.get_config()
     enabled_reductions = vw.get_enabled_reductions()
     vw.finish()

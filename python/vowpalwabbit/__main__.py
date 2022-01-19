@@ -9,7 +9,7 @@ from vowpalwabbit import pyvw
 
 def main():
     opts = sys.argv[1:]
-    pyvw.vw(" ".join(opts))
+    pyvw.Workspace(" ".join(opts))
 
 
 if __name__ == "__main__":
