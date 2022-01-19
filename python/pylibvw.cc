@@ -950,7 +950,7 @@ py::object ex_get_ccb_cost(example_ptr ec)
   auto* outcome_ptr = ec->l.conditional_contextual_bandit.outcome;
   return outcome_ptr == nullptr ? py::object() : py::object(outcome_ptr->cost);
 }
-uint32_t ex_get_ccb_num_included_actions(example_ptr ec)
+uint32_t ex_get_ccb_num_explicitly_included_actions(example_ptr ec)
 {
   const auto& label = ec->l.conditional_contextual_bandit;
   return label.explicit_included_actions.size();
