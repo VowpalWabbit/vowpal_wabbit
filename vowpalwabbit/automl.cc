@@ -711,7 +711,8 @@ VW::LEARNER::base_learner* automl_setup(VW::setup_base_i& stack_builder)
   if (priority_challengers < 0) { priority_challengers = (static_cast<int>(max_live_configs) - 1) / 2; }
 
   auto cm = VW::make_unique<interaction_config_manager>(global_lease, max_live_configs, all.get_random_state(),
-      static_cast<uint64_t>(priority_challengers), keep_configs, oracle_type, all.weights.dense_weights, calc_priority, confidence_interval);
+      static_cast<uint64_t>(priority_challengers), keep_configs, oracle_type, all.weights.dense_weights, calc_priority,
+      confidence_interval);
   auto data = VW::make_unique<automl<interaction_config_manager>>(std::move(cm));
   assert(max_live_configs <= MAX_CONFIGS);
 
