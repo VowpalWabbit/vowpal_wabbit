@@ -723,7 +723,7 @@ base_learner* csldf_setup(VW::setup_base_i& stack_builder)
   csldf_inner_options.add(make_option("wap_ldf", wap_ldf)
                               .keep()
                               .necessary()
-                              .help("Use weighted all-pairs multiclass learning with label dependent features.  "
+                              .help("Use weighted all-pairs multiclass learning with label dependent features. "
                                     "Specify singleline or multiline."));
 
   if (!options.add_parse_and_check_necessary(csldf_outer_options))

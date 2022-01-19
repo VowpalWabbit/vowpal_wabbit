@@ -259,8 +259,8 @@ workspace::workspace(VW::io::logger logger) : options(nullptr, nullptr), logger(
 
   set_minmax = set_mm;
 
-  power_t = 0.5;
-  eta = 0.5;  // default learning rate for normalized adaptive updates, this is switched to 10 by default for the other
+  power_t = 0.5f;
+  eta = 0.5f;  // default learning rate for normalized adaptive updates, this is switched to 10 by default for the other
               // updates (see parse_args.cc)
   numpasses = 1;
 

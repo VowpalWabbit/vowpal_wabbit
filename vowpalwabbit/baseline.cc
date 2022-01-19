@@ -41,7 +41,7 @@ struct baseline
   example ec;
   VW::workspace* all = nullptr;
   bool lr_scaling = false;  // whether to scale baseline learning rate based on max label
-  float lr_multiplier = 0.f;
+  float lr_multiplier = 1.f;
   bool global_only = false;  // only use a global constant for the baseline
   bool global_initialized = false;
   bool check_enabled = false;  // only use baseline when the example contains enabled flag
@@ -169,7 +169,7 @@ base_learner* baseline_setup(VW::setup_base_i& stack_builder)
                .keep()
                .necessary()
                .help("Learn an additive baseline (from constant features) and a residual separately in regression"))
-      .add(make_option("lr_multiplier", data->lr_multiplier).help("Learning rate multiplier for baseline model"))
+      .add(make_option("lr_multiplier", data->lr_multiplier).default_value(1.f).help("Learning rate multiplier for baseline model"))
       .add(make_option("global_only", data->global_only)
                .keep()
                .help("Use separate example with only global constant for baseline predictions"))
