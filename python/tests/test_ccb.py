@@ -120,4 +120,5 @@ def test_ccb_non_slot_none_outcome():
     )
     label = pyvw.CCBLabel(example)
     # CCB label is set to UNSET by default.
-    assert label.outcome == None
+    assert label.type == pyvw.CCBLabelType.UNSET
+    assert label.outcome is None
