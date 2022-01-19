@@ -12,7 +12,6 @@
 #include "learner.h"
 #include "array_parameters_dense.h"
 #include "scored_config.h"
-#include "baseline_challenger_cb.h"
 #include <map>
 #include <memory>
 #include <set>

@@ -28,7 +28,7 @@ void scored_config::persist(metric_sink& metrics, const std::string& suffix)
 
 float scored_config::current_ips() const { return (update_count > 0) ? ips / update_count : 0; }
 
-void scored_config::reset_stats(double alpha = 0.05, double tau = 0.999)
+void scored_config::reset_stats(double alpha = DEFAULT_ALPHA, double tau = DEFAULT_TAU)
 {
   chisq.reset(alpha, tau);
   ips = 0.0;
