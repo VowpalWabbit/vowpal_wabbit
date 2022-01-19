@@ -221,15 +221,15 @@ base_learner* active_cover_setup(VW::setup_base_i& stack_builder)
       .add(make_option("mellowness", data->active_c0)
                .keep()
                .default_value(8.f)
-               .help("Active learning mellowness parameter c_0. Default 8"))
+               .help("Active learning mellowness parameter c_0"))
       .add(make_option("alpha", data->alpha)
                .default_value(1.f)
-               .help("Active learning variance upper bound parameter alpha. Default 1"))
+               .help("Active learning variance upper bound parameter alpha"))
       .add(make_option("beta_scale", data->beta_scale)
                .default_value(sqrtf(10.f))
-               .help("Active learning variance upper bound parameter beta_scale. Default std::sqrt(10)"))
-      .add(make_option("cover", data->cover_size).keep().default_value(12).help("Cover size. Default 12"))
-      .add(make_option("oracular", data->oracular).help("Use Oracular-CAL style query or not. Default false"));
+               .help("Active learning variance upper bound parameter beta_scale"))
+      .add(make_option("cover", data->cover_size).keep().default_value(12).help("Cover size"))
+      .add(make_option("oracular", data->oracular).help("Use Oracular-CAL style query or not"));
 
   if (!options.add_parse_and_check_necessary(new_options)) return nullptr;
 
