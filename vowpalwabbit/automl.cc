@@ -148,7 +148,8 @@ void automl<CMType>::one_step(multi_learner& base, multi_ex& ec, CB::cb_class& l
 // into its own base_learner.learn(). see learn_automl(...)
 interaction_config_manager::interaction_config_manager(uint64_t global_lease, uint64_t max_live_configs,
     std::shared_ptr<VW::rand_state> rand_state, uint64_t priority_challengers, bool keep_configs,
-    std::string oracle_type, dense_parameters& weights, priority_func* calc_priority, double automl_alpha, double automl_tau)
+    std::string oracle_type, dense_parameters& weights, priority_func* calc_priority, double automl_alpha,
+    double automl_tau)
     : global_lease(global_lease)
     , max_live_configs(max_live_configs)
     , random_state(std::move(rand_state))

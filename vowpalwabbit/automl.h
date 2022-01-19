@@ -126,7 +126,8 @@ struct interaction_config_manager : config_manager
   std::priority_queue<std::pair<float, uint64_t>> index_queue;
 
   interaction_config_manager(uint64_t, uint64_t, std::shared_ptr<VW::rand_state>, uint64_t, bool, std::string,
-      dense_parameters&, float (*)(const exclusion_config&, const std::map<namespace_index, uint64_t>&), double, double);
+      dense_parameters&, float (*)(const exclusion_config&, const std::map<namespace_index, uint64_t>&), double,
+      double);
 
   void apply_config(example*, uint64_t);
   void revert_config(example*);
