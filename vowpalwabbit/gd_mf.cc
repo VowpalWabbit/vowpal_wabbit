@@ -333,8 +333,9 @@ base_learner* gd_mf_setup(VW::setup_base_i& stack_builder)
   bool conjugate_gradient = false;
   option_group_definition gf_md_options("[Reduction] Gradient Descent Matrix Factorization");
   gf_md_options.add(make_option("rank", data->rank).keep().necessary().help("Rank for matrix factorization"))
-    .add(make_option("bfgs", bfgs).help("Option not supported by this reduction")) // Not supported, need to be checked to be false.
-    .add(make_option("conjugate_gradient", conjugate_gradient).help("Option not supported by this reduction"));
+      .add(make_option("bfgs", bfgs)
+               .help("Option not supported by this reduction"))  // Not supported, need to be checked to be false.
+      .add(make_option("conjugate_gradient", conjugate_gradient).help("Option not supported by this reduction"));
 
   if (!options.add_parse_and_check_necessary(gf_md_options)) return nullptr;
 
