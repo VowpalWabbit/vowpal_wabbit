@@ -139,7 +139,7 @@ def test_multilabel_prediction_type():
 
 def test_CBLabel():
     model = Workspace(cb=4, quiet=True)
-    cbl = pyvw.CBLabel(model.example("1:10:0.5 |"))
+    cbl = pyvw.CBLabel.from_example(model.example("1:10:0.5 |"))
     assert cbl.costs[0].action == 1
     assert cbl.costs[0].probability == 0.5
     assert cbl.costs[0].partial_prediction == 0
@@ -150,7 +150,7 @@ def test_CBLabel():
 
 def test_CBContinuousLabel():
     model = Workspace(cats=4, min_value=185, max_value=23959, bandwidth=3000, quiet=True)
-    cb_contl = pyvw.CBContinuousLabel(model.example("ca 1:10:0.5 |"))
+    cb_contl = pyvw.CBContinuousLabel.from_example(model.example("ca 1:10:0.5 |"))
     assert cb_contl.costs[0].action == 1
     assert cb_contl.costs[0].pdf_value == 0.5
     assert cb_contl.costs[0].cost == 10.0
@@ -160,7 +160,7 @@ def test_CBContinuousLabel():
 
 def test_CostSensitiveLabel():
     model = Workspace(csoaa=4, quiet=True)
-    csl = pyvw.CostSensitiveLabel(model.example("2:5 |"))
+    csl = pyvw.CostSensitiveLabel.from_example(model.example("2:5 |"))
     assert csl.costs[0].label == 2
     assert csl.costs[0].wap_value == 0.0
     assert csl.costs[0].partial_prediction == 0.0
@@ -174,17 +174,17 @@ def test_MulticlassProbabilitiesLabel():
     model = pyvw.Workspace(loss_function="logistic", oaa=n, probabilities=True, quiet=True)
     ex = model.example("1 | a b c d", 2)
     model.learn(ex)
-    mpl = pyvw.MulticlassProbabilitiesLabel(ex)
+    mpl = pyvw.MulticlassProbabilitiesLabel.from_example(ex)
     assert str(mpl) == "1:0.25 2:0.25 3:0.25 4:0.25"
-    mpl = pyvw.MulticlassProbabilitiesLabel([1, 2, 3], [0.4, 0.3, 0.3])
+    mpl = pyvw.MulticlassProbabilitiesLabel([0.4, 0.3, 0.3])
     assert str(mpl) == "1:0.4 2:0.3 3:0.3"
 
 
 def test_slates_label():
     model = Workspace(slates=True, quiet=True)
-    slates_shared_label = pyvw.SlatesLabel(model.example("slates shared 0.8 | shared_0 shared_1"))
-    slates_action_label = pyvw.SlatesLabel(model.example("slates action 1 | action_3"))
-    slates_slot_label = pyvw.SlatesLabel(model.example("slates slot 1:0.8,0:0.1,2:0.1 | slot_0"))
+    slates_shared_label = pyvw.SlatesLabel.from_example(model.example("slates shared 0.8 | shared_0 shared_1"))
+    slates_action_label = pyvw.SlatesLabel.from_example(model.example("slates action 1 | action_3"))
+    slates_slot_label = pyvw.SlatesLabel.from_example(model.example("slates slot 1:0.8,0:0.1,2:0.1 | slot_0"))
     assert slates_shared_label.type == pyvw.SlatesLabelType.SHARED
     assert slates_shared_label.labeled == True
     assert isclose(slates_shared_label.cost, 0.8)
@@ -342,7 +342,7 @@ def test_SimpleLabel():
 def test_SimpleLabel_example():
     vw_ex = Workspace(quiet=True)
     ex = vw_ex.example("1 |a two features |b more features here")
-    sl2 = pyvw.SimpleLabel(ex)
+    sl2 = pyvw.SimpleLabel.from_example(ex)
     assert sl2.label == 1.0
     assert sl2.weight == 1.0
     assert sl2.prediction == 0.0
@@ -362,7 +362,7 @@ def test_MulticlassLabel_example():
     n = 4
     model = pyvw.Workspace(loss_function="logistic", oaa=n, quiet=True)
     ex = model.example("1 | a b c d", 2)
-    ml2 = pyvw.MulticlassLabel(ex)
+    ml2 = pyvw.MulticlassLabel.from_example(ex)
     assert ml2.label == 1
     assert ml2.weight == 1.0
     assert ml2.prediction == 0

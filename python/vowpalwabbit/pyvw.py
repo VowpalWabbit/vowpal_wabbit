@@ -1077,9 +1077,13 @@ class AbstractLabel:
     def __init__(self):
         pass
 
-    def from_example(self, ex: "Example"):
+    @staticmethod
+    def from_example(ex: "Example"):
         """grab a label from a given VW example"""
         raise Exception("from_example not yet implemented")
+
+    def __str__(self):
+        raise Exception("__str__ not yet implemented")
 
 
 class SimpleLabel(AbstractLabel):
@@ -1087,27 +1091,24 @@ class SimpleLabel(AbstractLabel):
 
     def __init__(
         self,
-        label: Union["Example", float] = 0.0,
+        label: float = 0.0,
         weight: float = 1.0,
         initial: float = 0.0,
         prediction: float = 0.0,
     ):
-        if not isinstance(label, (Example, float)):
-            raise TypeError("Label should be float or an example.")
         AbstractLabel.__init__(self)
-        if isinstance(label, Example):
-            self.from_example(label)
-        else:
-            self.label = label
-            self.weight = weight
-            self.initial = initial
-            self.prediction = prediction
+        self.label = label
+        self.weight = weight
+        self.initial = initial
+        self.prediction = prediction
 
-    def from_example(self, ex: "Example"):
-        self.label = ex.get_simplelabel_label()
-        self.weight = ex.get_simplelabel_weight()
-        self.initial = ex.get_simplelabel_initial()
-        self.prediction = ex.get_simplelabel_prediction()
+    @staticmethod
+    def from_example(ex: "Example"):
+        label = ex.get_simplelabel_label()
+        weight = ex.get_simplelabel_weight()
+        initial = ex.get_simplelabel_initial()
+        prediction = ex.get_simplelabel_prediction()
+        return SimpleLabel(label, weight, initial, prediction)
 
     def __str__(self):
         s = str(self.label)
@@ -1119,23 +1120,18 @@ class SimpleLabel(AbstractLabel):
 class MulticlassLabel(AbstractLabel):
     """Class for multiclass VW label with prediction"""
 
-    def __init__(
-        self, label: Union["Example", int] = 1, weight: float = 1.0, prediction: int = 1
-    ):
-        if not isinstance(label, (Example, int)):
-            raise TypeError("Label should be integer or an example.")
+    def __init__(self, label: int = 1, weight: float = 1.0, prediction: int = 1):
         AbstractLabel.__init__(self)
-        if isinstance(label, Example):
-            self.from_example(label)
-        else:
-            self.label = label
-            self.weight = weight
-            self.prediction = prediction
+        self.label = label
+        self.weight = weight
+        self.prediction = prediction
 
-    def from_example(self, ex: "Example"):
-        self.label = ex.get_multiclass_label()
-        self.weight = ex.get_multiclass_weight()
-        self.prediction = ex.get_multiclass_prediction()
+    @staticmethod
+    def from_example(ex: "Example"):
+        label = ex.get_multiclass_label()
+        weight = ex.get_multiclass_weight()
+        prediction = ex.get_multiclass_prediction()
+        return MulticlassLabel(label, weight, prediction)
 
     def __str__(self):
         s = str(self.label)
@@ -1147,17 +1143,14 @@ class MulticlassLabel(AbstractLabel):
 class MulticlassProbabilitiesLabel(AbstractLabel):
     """Class for multiclass VW label with probabilities"""
 
-    def __init__(
-        self, label: Optional["Example"] = None, prediction: Optional[float] = None
-    ):
+    def __init__(self, prediction: Optional[float] = None):
         AbstractLabel.__init__(self)
-        if isinstance(label, Example):
-            self.from_example(label)
-        else:
-            self.prediction = prediction
+        self.prediction = prediction
 
-    def from_example(self, ex: "Example"):
-        self.prediction = get_prediction(ex, PredictionType.MULTICLASSPROBS)
+    @staticmethod
+    def from_example(ex: "Example"):
+        prediction = get_prediction(ex, PredictionType.MULTICLASSPROBS)
+        return MulticlassProbabilitiesLabel(prediction)
 
     def __str__(self):
         s = []
@@ -1185,19 +1178,17 @@ class CostSensitiveLabel(AbstractLabel):
 
     def __init__(
         self,
-        costs: Union["Example", List[CostSensitiveElement]] = [],
-        prediction: float = 0,
+        costs: List[CostSensitiveElement] = [],
+        prediction: float = 0.0,
     ):
         AbstractLabel.__init__(self)
-        if isinstance(costs, Example):
-            self.from_example(costs)
-        else:
-            self.costs = costs
-            self.prediction = prediction
+        self.costs = costs
+        self.prediction = prediction
 
-    def from_example(self, ex: "Example"):
-        self.prediction = ex.get_costsensitive_prediction()
-        self.costs = []
+    @staticmethod
+    def from_example(ex: "Example"):
+        prediction = ex.get_costsensitive_prediction()
+        costs = []
         for i in range(ex.get_costsensitive_num_costs()):
             cs = CostSensitiveElement(
                 ex.get_costsensitive_class(i),
@@ -1205,7 +1196,8 @@ class CostSensitiveLabel(AbstractLabel):
                 ex.get_costsensitive_partial_prediction(i),
                 ex.get_costsensitive_wap_value(i),
             )
-            self.costs.append(cs)
+            costs.append(cs)
+        return CostSensitiveLabel(costs, prediction)
 
     def __str__(self):
         return " ".join(["{}:{}".format(c.label, c.cost) for c in self.costs])
@@ -1238,19 +1230,17 @@ class CBLabel(AbstractLabel):
 
     def __init__(
         self,
-        costs: Union["Example", List[CBLabelElement]] = [],
+        costs: List[CBLabelElement] = [],
         prediction: float = 0.0,
     ):
         AbstractLabel.__init__(self)
-        if isinstance(costs, Example):
-            self.from_example(costs)
-        else:
-            self.costs = costs
-            self.prediction = prediction
+        self.costs = costs
+        self.prediction = prediction
 
-    def from_example(self, ex: "Example"):
-        self.prediction = ex.get_cbandits_prediction()
-        self.costs = []
+    @staticmethod
+    def from_example(ex: "Example"):
+        prediction = ex.get_cbandits_prediction()
+        costs = []
         for i in range(ex.get_cbandits_num_costs()):
             cb = CBLabelElement(
                 ex.get_cbandits_class(i),
@@ -1258,7 +1248,8 @@ class CBLabel(AbstractLabel):
                 ex.get_cbandits_partial_prediction(i),
                 ex.get_cbandits_probability(i),
             )
-            self.costs.append(cb)
+            costs.append(cb)
+        return CBLabel(costs, prediction)
 
     def __str__(self):
         return " ".join(
@@ -1284,7 +1275,7 @@ class SlatesLabel(AbstractLabel):
 
     def __init__(
         self,
-        type: Union["Example", SlatesLabelType] = SlatesLabelType.UNSET,
+        type: SlatesLabelType = SlatesLabelType.UNSET,
         weight: float = 1.0,
         labeled: bool = False,
         cost: float = 0.0,
@@ -1292,27 +1283,26 @@ class SlatesLabel(AbstractLabel):
         probabilities: List[ActionScore] = [],
     ):
         abstract_label.__init__(self)
-        if isinstance(type, Example):
-            self.from_example(type)
-        else:
-            self.type = type
-            self.weight = weight
-            self.labeled = labeled
-            self.cost = cost
-            self.slot_id = slot_id
-            self.probabilities = probabilities
+        self.type = type
+        self.weight = weight
+        self.labeled = labeled
+        self.cost = cost
+        self.slot_id = slot_id
+        self.probabilities = probabilities
 
-    def from_example(self, ex: "Example"):
-        self.type = ex.get_slates_type()
-        self.weight = ex.get_slates_weight()
-        self.labeled = ex.get_slates_labeled()
-        self.cost = ex.get_slates_cost()
-        self.slot_id = ex.get_slates_slot_id()
-        self.probabilities = []
+    @staticmethod
+    def from_example(ex: "Example"):
+        type = ex.get_slates_type()
+        weight = ex.get_slates_weight()
+        labeled = ex.get_slates_labeled()
+        cost = ex.get_slates_cost()
+        slot_id = ex.get_slates_slot_id()
+        probabilities = []
         for i in range(ex.get_slates_num_probabilities()):
-            self.probabilities.append(
+            probabilities.append(
                 ActionScore(ex.get_slates_action(i), ex.get_slates_probability(i))
             )
+        return SlatesLabel(type, weight, labeled, cost, slot_id, probabilities)
 
     def __str__(self):
         ret = "slates "
@@ -1342,22 +1332,21 @@ class CBContinuousLabelElement:
 class CBContinuousLabel(AbstractLabel):
     """Class for cb_continuous VW label"""
 
-    def __init__(self, costs: Union["Example", List[CBContinuousLabelElement]] = []):
+    def __init__(self, costs: List[CBContinuousLabelElement] = []):
         AbstractLabel.__init__(self)
-        if isinstance(costs, Example):
-            self.from_example(costs)
-        else:
-            self.costs = costs
+        self.costs = costs
 
-    def from_example(self, ex: "Example"):
-        self.costs = []
+    @staticmethod
+    def from_example(ex: "Example"):
+        costs = []
         for i in range(ex.get_cb_continuous_num_costs()):
             elem = CBContinuousLabelElement(
                 ex.get_cb_continuous_class(i),
                 ex.get_cb_continuous_cost(i),
                 ex.get_cb_continuous_pdf_value(i),
             )
-            self.costs.append(elem)
+            costs.append(elem)
+        return CBContinuousLabel(costs)
 
     def __str__(self):
         return "ca " + " ".join(
@@ -1789,7 +1778,7 @@ class Example(pylibvw.example):
             Get the label of the example of label_class type, by default is
             Simplelabel
         """
-        return label_class(self)
+        return label_class.from_example(self)
 
 
 ############################ DEPREECATED CLASSES ############################
