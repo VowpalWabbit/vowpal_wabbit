@@ -181,10 +181,16 @@ def test_MulticlassProbabilitiesLabel():
 
 
 def test_ccb_label():
-    model = vw(ccb_explore_adf=True, quiet=True)
-    ccb_shared_label = pyvw.CCBLabel(model.example("ccb shared | shared_0 shared_1"))
-    ccb_action_label = pyvw.CCBLabel(model.example("ccb action | action_1 action_3"))
-    ccb_slot_label = pyvw.CCBLabel(model.example("ccb slot 0:0.8:1.0 0 | slot_0"))
+    model = Workspace(ccb_explore_adf=True, quiet=True)
+    ccb_shared_label = pyvw.CCBLabel.from_example(
+        (model.example("ccb shared | shared_0 shared_1"))
+    )
+    ccb_action_label = pyvw.CCBLabel.from_example(
+        (model.example("ccb action | action_1 action_3"))
+    )
+    ccb_slot_label = pyvw.CCBLabel.from_example(
+        (model.example("ccb slot 0:0.8:1.0 0 | slot_0"))
+    )
     assert ccb_shared_label.type == pyvw.CCBLabelType.SHARED
     assert len(ccb_shared_label.explicit_included_actions) == 0
     assert ccb_shared_label.outcome is None

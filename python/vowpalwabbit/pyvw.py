@@ -1278,22 +1278,19 @@ class ActionScore:
 
 
 class CCBSlotOutcome:
-    def __init__(
-        self, cost: Union["example", float] = 0, action_probs: List[ActionScore] = []
-    ):
-        if isinstance(cost, example):
-            self.from_example(cost)
-        else:
-            self.cost = cost
-            self.action_probs = action_probs
+    def __init__(self, cost: float = 0, action_probs: List[ActionScore] = []):
+        self.cost = cost
+        self.action_probs = action_probs
 
-    def from_example(self, ex: "example"):
-        self.cost = ex.get_ccb_cost()
-        self.action_probs = []
+    @staticmethod
+    def from_example(ex: "Example"):
+        cost = ex.get_ccb_cost()
+        action_probs = []
         for i in range(ex.get_ccb_num_included_actions()):
-            self.action_probs.append(
+            action_probs.append(
                 ActionScore(ex.get_ccb_class(i), ex.get_ccb_probability(i))
             )
+        return CCBSlotOutcome(cost, action_probs)
 
     def __str__(self):
         top_action, top_score = self.action_probs[0].action, self.action_probs[0].score
@@ -1308,25 +1305,24 @@ class CCBLabel(AbstractLabel):
 
     def __init__(
         self,
-        type: Union["example", CCBLabelType] = CCBLabelType.UNSET,
+        type: CCBLabelType = CCBLabelType.UNSET,
         explicit_included_actions: List[int] = [],
         weight: float = 1,
         outcome: Optional[CCBSlotOutcome] = None,
     ):
         AbstractLabel.__init__(self)
-        if isinstance(type, example):
-            self.from_example(type)
-        else:
-            self.type = type
-            self.explicit_included_actions = explicit_included_actions
-            self.weight = weight
-            self.outcome = outcome
+        self.type = type
+        self.explicit_included_actions = explicit_included_actions
+        self.weight = weight
+        self.outcome = outcome
 
-    def from_example(self, ex: "example"):
-        self.type = ex.get_ccb_type()
-        self.explicit_included_actions = ex.get_ccb_explicitly_included_actions()
-        self.weight = ex.get_ccb_weight()
-        self.outcome = CCBSlotOutcome(ex) if self.type == CCBLabelType.SLOT else None
+    @staticmethod
+    def from_example(ex: "Example"):
+        type = ex.get_ccb_type()
+        explicit_included_actions = ex.get_ccb_explicitly_included_actions()
+        weight = ex.get_ccb_weight()
+        outcome = CCBSlotOutcome.from_example(ex) if type == CCBLabelType.SLOT else None
+        return CCBLabel(type, explicit_included_actions, weight, outcome)
 
     def __str__(self):
         ret = "ccb "

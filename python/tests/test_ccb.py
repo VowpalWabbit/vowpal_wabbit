@@ -118,7 +118,7 @@ def test_ccb_non_slot_none_outcome():
     example = pyvw.Example(
         vw=model, labelType=pyvw.LabelType.CONDITIONAL_CONTEXTUAL_BANDIT
     )
-    label = pyvw.CCBLabel(example)
+    label = example.get_label(pyvw.CCBLabel)
     # CCB label is set to UNSET by default.
     assert label.type == pyvw.CCBLabelType.UNSET
     assert label.outcome is None
