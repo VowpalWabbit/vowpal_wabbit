@@ -5002,5 +5002,16 @@
       "test-sets/0001.dat"
     ],
     "depends_on": [386]
+  },
+  {
+    "id": 388,
+    "desc": "Capturing overflowing in coin betting",
+    "vw_command": "--coin -q :: -d train-sets/regression_simple_1var_overflow.txt --invert_hash coin_model_overflow.invert.txt",
+    "diff_files": {
+      "coin_model_overflow.invert.txt": "train-sets/ref/coin_model_overflow.invert.txt"
+    },
+    "input_files": [
+      "train-sets/regression_simple_1var_overflow.txt"
+    ]
   }
 ]
