@@ -577,7 +577,7 @@ template <class T>
 py::list varray_to_pylist(const v_array<T>& a)
 {
   py::list list;
-  for (const auto& elem : a) { list.append(a); }
+  for (const auto& elem : a) { list.append(elem); }
   return list;
 }
 
