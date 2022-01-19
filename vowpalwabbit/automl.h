@@ -12,6 +12,7 @@
 #include "learner.h"
 #include "array_parameters_dense.h"
 #include "scored_config.h"
+#include "baseline_challenger_cb.h"
 #include <map>
 #include <memory>
 #include <set>
@@ -41,7 +42,7 @@ constexpr uint64_t CONFIGS_PER_CHAMP_CHANGE = 5;
 struct aml_score : VW::scored_config
 {
   aml_score() : VW::scored_config() {}
-  aml_score(double alpha) : VW::scored_config(alpha) {}
+  aml_score(double alpha, double tau) : VW::scored_config(alpha, tau) {}
   uint64_t config_index = 0;
   bool eligible_to_inactivate = false;
   interaction_vec_t live_interactions;  // Live pre-allocated vectors in use
@@ -109,7 +110,8 @@ struct interaction_config_manager : config_manager
   std::string oracle_type;
   dense_parameters& weights;
   priority_func* calc_priority;
-  double confidence_interval;
+  double automl_alpha;
+  double automl_tau;
 
   // Stores all namespaces currently seen -- Namespace switch could we use array, ask Jack
   std::map<namespace_index, uint64_t> ns_counter;
@@ -124,7 +126,7 @@ struct interaction_config_manager : config_manager
   std::priority_queue<std::pair<float, uint64_t>> index_queue;
 
   interaction_config_manager(uint64_t, uint64_t, std::shared_ptr<VW::rand_state>, uint64_t, bool, std::string,
-      dense_parameters&, float (*)(const exclusion_config&, const std::map<namespace_index, uint64_t>&), double);
+      dense_parameters&, float (*)(const exclusion_config&, const std::map<namespace_index, uint64_t>&), double, double);
 
   void apply_config(example*, uint64_t);
   void revert_config(example*);
