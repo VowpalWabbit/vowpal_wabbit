@@ -39,7 +39,7 @@ You can use the python wrapper directly like this:
 .. code-block:: python
 
     >>> from vowpalwabbit import pyvw
-    >>> vw = pyvw.vw(quiet=True)
+    >>> vw = pyvw.Workspace(quiet=True)
     >>> ex = vw.example('1 | a b c')
     >>> vw.learn(ex)
     >>> vw.predict(ex)

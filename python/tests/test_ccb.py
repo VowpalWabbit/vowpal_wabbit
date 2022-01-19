@@ -14,7 +14,7 @@ def count_weights_from_readable_model_file_for_equiv_test(file_name):
 def test_ccb_single_slot_and_cb_equivalence_no_slot_features():
     # --- CCB
     ccb_model_file_name = "model_file_ccb_equiv.txt"
-    ccb_workspace = pyvw.vw(
+    ccb_workspace = pyvw.Workspace(
         quiet=True,
         predict_only_model=True,
         ccb_explore_adf=True,
@@ -39,7 +39,7 @@ def test_ccb_single_slot_and_cb_equivalence_no_slot_features():
 
     # --- CB
     cb_model_file_name = "model_file_cb_equiv.txt"
-    cb_workspace = pyvw.vw(
+    cb_workspace = pyvw.Workspace(
         quiet=True,
         predict_only_model=True,
         cb_explore_adf=True,
@@ -67,7 +67,7 @@ def test_ccb_single_slot_and_cb_equivalence_no_slot_features():
 def test_ccb_single_slot_and_cb_non_equivalence_with_slot_features():
     # --- CCB
     ccb_model_file_name = "model_file_ccb_no_equiv.txt"
-    ccb_workspace = pyvw.vw(
+    ccb_workspace = pyvw.Workspace(
         quiet=True, ccb_explore_adf=True, readable_model=ccb_model_file_name
     )
 
@@ -89,7 +89,7 @@ def test_ccb_single_slot_and_cb_non_equivalence_with_slot_features():
 
     # --- CB
     cb_model_file_name = "model_file_cb_no_equiv.txt"
-    cb_workspace = pyvw.vw(
+    cb_workspace = pyvw.Workspace(
         quiet=True, cb_explore_adf=True, readable_model=cb_model_file_name
     )
 
