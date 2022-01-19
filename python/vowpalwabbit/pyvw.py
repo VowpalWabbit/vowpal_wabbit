@@ -1232,10 +1232,11 @@ class ActionScore:
 
 
 class CCBSlotOutcome:
-    def __init__(self, cost: float = 0, action_probs: List[ActionScore] = [], **kwargs):
-        ex: example = kwargs.get("ex")
-        if isinstance(ex, example):
-            self.from_example(ex)
+    def __init__(
+        self, cost: Union["example", float] = 0, action_probs: List[ActionScore] = []
+    ):
+        if isinstance(cost, example):
+            self.from_example(cost)
         else:
             self.cost = cost
             self.action_probs = action_probs
@@ -1244,11 +1245,13 @@ class CCBSlotOutcome:
         self.cost = ex.get_ccb_cost()
         self.action_probs = []
         for i in range(ex.get_ccb_num_included_actions()):
-            self.action_probs.append((ex.get_ccb_class(i), ex.get_ccb_probs(i)))
+            self.action_probs.append(
+                ActionScore(ex.get_ccb_class(i), ex.get_ccb_probability(i))
+            )
 
     def __str__(self):
-        top_action, top_score = self.action_probs.action, self.action_probs.score
-        out = f"{top_action}:{top_score}:{self.cost}"
+        top_action, top_score = self.action_probs[0].action, self.action_probs[0].score
+        out = "{}:{}:{}".format(top_action, round(self.cost, 2), round(top_score, 2))
         for action_score in self.action_probs[1:]:
             out += f",{action_score.action}:{action_score.score}"
         return out
@@ -1259,31 +1262,40 @@ class CCBLabel(AbstractLabel):
 
     def __init__(
         self,
-        type: CCBLabelType = CCBLabelType.UNSET,
+        type: Union["example", CCBLabelType] = CCBLabelType.UNSET,
         explicit_included_actions: List[int] = [],
         weight: float = 1,
         outcome: Optional[CCBSlotOutcome] = None,
-        **kwargs,
     ):
         AbstractLabel.__init__(self)
-        ex: example = kwargs.get("ex")
-        if isinstance(ex, example):
-            if not ex.labelType == LabelType.CONDITIONAL_CONTEXTUAL_BANDIT:
-                raise ValueError("Example should have CCB label type.")
-            self.type = ex.get_ccb_type()
-            self.explict_included_actions = ex.get_ccb_explicitly_included_actions()
-            self.weight = ex.get_ccb_weight()
-            self.outcome = (
-                CCBSlotOutcome(ex=ex) if self.type == CCBLabelType.SLOT else None
-            )
+        if isinstance(type, example):
+            self.from_example(type)
         else:
             self.type = type
             self.explicit_included_actions = explicit_included_actions
             self.weight = weight
             self.outcome = outcome
 
+    def from_example(self, ex: "example"):
+        self.type = ex.get_ccb_type()
+        self.explicit_included_actions = ex.get_ccb_explicitly_included_actions()
+        self.weight = ex.get_ccb_weight()
+        self.outcome = CCBSlotOutcome(ex) if self.type == CCBLabelType.SLOT else None
+
     def __str__(self):
-        return f"ccb {self.type.name.lower()} {str(self.outcome or '')} {str(self.explicit_included_actions or '')}"
+        ret = "ccb "
+        if self.type == CCBLabelType.SHARED:
+            ret += "shared"
+        elif self.type == CCBLabelType.ACTION:
+            ret += "action"
+        elif self.type == CCBLabelType.SLOT:
+            ret += (
+                "slot "
+                + str(self.outcome)
+                + " "
+                + ",".join(map(str, self.explicit_included_actions))
+            )
+        return ret
 
 
 class SlatesLabel(AbstractLabel):
