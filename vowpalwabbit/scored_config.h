@@ -17,6 +17,7 @@ struct scored_config
   uint64_t update_count = 0;
 
   scored_config() : chisq(0.05, 0.999, 0, std::numeric_limits<double>::infinity()) {}
+  scored_config(float alpha) : chisq(alpha, 0.999, 0, std::numeric_limits<double>::infinity()) {}
 
   void update(float w, float r);
   void persist(metric_sink&, const std::string&);

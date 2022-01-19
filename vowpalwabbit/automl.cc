@@ -148,7 +148,7 @@ void automl<CMType>::one_step(multi_learner& base, multi_ex& ec, CB::cb_class& l
 // into its own base_learner.learn(). see learn_automl(...)
 interaction_config_manager::interaction_config_manager(uint64_t global_lease, uint64_t max_live_configs,
     std::shared_ptr<VW::rand_state> rand_state, uint64_t priority_challengers, bool keep_configs,
-    std::string oracle_type, dense_parameters& weights, priority_func* calc_priority)
+    std::string oracle_type, dense_parameters& weights, priority_func* calc_priority, float confidence_interval)
     : global_lease(global_lease)
     , max_live_configs(max_live_configs)
     , random_state(std::move(rand_state))
@@ -157,10 +157,11 @@ interaction_config_manager::interaction_config_manager(uint64_t global_lease, ui
     , oracle_type(std::move(oracle_type))
     , weights(weights)
     , calc_priority(calc_priority)
+    , confidence_interval(confidence_interval)
 {
   configs[0] = exclusion_config(global_lease);
   configs[0].state = VW::automl::config_state::Live;
-  scores.push_back(aml_score());
+  scores.push_back(aml_score(confidence_interval));
   ++valid_config_size;
 }
 
@@ -358,7 +359,7 @@ void interaction_config_manager::schedule()
       // Allocate new score if we haven't reached maximum yet
       if (need_new_score)
       {
-        scores.push_back(aml_score());
+        scores.push_back(aml_score(confidence_interval));
         if (live_slot > priority_challengers) { scores.back().eligible_to_inactivate = true; }
       }
       // Only inactivate current config if lease is reached
@@ -654,6 +655,7 @@ VW::LEARNER::base_learner* automl_setup(VW::setup_base_i& stack_builder)
   bool keep_configs = false;
   bool verbose_metrics = false;
   std::string oracle_type;
+  float confidence_interval;
 
   option_group_definition new_options("[Reduction] Automl");
   new_options
@@ -686,7 +688,11 @@ VW::LEARNER::base_learner* automl_setup(VW::setup_base_i& stack_builder)
                .keep()
                .default_value("one_diff")
                .one_of({"one_diff", "rand"})
-               .help("Set oracle to generate configs"));
+               .help("Set oracle to generate configs"))
+      .add(make_option("confidence_interval", confidence_interval)
+               .keep()
+               .default_value(.05)
+               .help("Set confidence interval for champion change"));
 
   if (!options.add_parse_and_check_necessary(new_options)) return nullptr;
 
@@ -705,7 +711,7 @@ VW::LEARNER::base_learner* automl_setup(VW::setup_base_i& stack_builder)
   if (priority_challengers < 0) { priority_challengers = (static_cast<int>(max_live_configs) - 1) / 2; }
 
   auto cm = VW::make_unique<interaction_config_manager>(global_lease, max_live_configs, all.get_random_state(),
-      static_cast<uint64_t>(priority_challengers), keep_configs, oracle_type, all.weights.dense_weights, calc_priority);
+      static_cast<uint64_t>(priority_challengers), keep_configs, oracle_type, all.weights.dense_weights, calc_priority, confidence_interval);
   auto data = VW::make_unique<automl<interaction_config_manager>>(std::move(cm));
   assert(max_live_configs <= MAX_CONFIGS);
 

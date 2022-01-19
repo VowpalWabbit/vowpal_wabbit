@@ -224,6 +224,7 @@ Input Options:
   --verbose_metrics                          extended metrics for debugging
   --oracle_type arg (=one_diff, )            Set oracle to generate configs. Choices: {one_diff, 
                                              rand}
+  --confidence_interval arg (=0.05, )        Set confidence interval for champion change
 [Reduction] Baseline Options:
   --baseline                                 Learn an additive baseline (from constant features) 
                                              and a residual separately in regression (required to 
