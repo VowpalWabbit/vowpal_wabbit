@@ -312,7 +312,7 @@ base_learner* VW::freegrad_setup(VW::setup_base_i& stack_builder)
       .add(make_option("project", project)
                .help("Project the outputs to adapt to both the lipschitz and comparator norm"))
       .add(make_option("radius", radius)
-               .help("Radius of the l2-ball for the projection. If not supplied, an adaptive radius will be used."))
+               .help("Radius of the l2-ball for the projection. If not supplied, an adaptive radius will be used"))
       .add(make_option("fepsilon", fepsilon).default_value(1.f).help("Initial wealth"));
 
   if (!options.add_parse_and_check_necessary(new_options)) { return nullptr; }

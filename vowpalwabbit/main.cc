@@ -40,13 +40,13 @@ int main(int argc, char* argv[])
   driver_config.add(make_option("log_level", log_level)
                         .default_value("info")
                         .one_of({"info", "warn", "error", "critical", "off"})
-                        .help("Log level for logging messages. Specifying this wil override --quiet for log output."));
+                        .help("Log level for logging messages. Specifying this wil override --quiet for log output"));
   driver_config.add(make_option("log_output", log_output_stream)
                         .default_value("stdout")
                         .one_of({"stdout", "stderr", "compat"})
                         .help("Specify the stream to output log messages to. In the past VW's choice of stream for "
                               "logging messages wasn't consistent. Supplying compat will maintain that old behavior. "
-                              "Compat is now deprecated so it is recommended that stdout or stderr is chosen."));
+                              "Compat is now deprecated so it is recommended that stdout or stderr is chosen"));
 
   try
   {

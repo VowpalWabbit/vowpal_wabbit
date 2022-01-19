@@ -2531,73 +2531,73 @@ base_learner* setup(VW::setup_base_i& stack_builder)
   uint32_t search_trained_nb_policies;
   std::string search_allowed_transitions;
 
-  priv.A = 1;
   option_group_definition new_options("[Reduction] Search");
-  new_options.add(
-      make_option("search", priv.A).keep().help("Use learning to search, argument=maximum action id or 0 for LDF"));
-  new_options.add(make_option("search_task", task_string)
-                      .keep()
-                      .necessary()
-                      .one_of({"sequence", "sequencespan", "sequence_ctg", "argmax", "sequence_demoldf",
-                          "multiclasstask", "dep_parser", "entity_relation", "hook", "graph", "list"})
-                      .help("The search task (use \"--search_task list\" to get a list of available tasks)"));
-  new_options.add(make_option("search_metatask", metatask_string)
-                      .keep()
-                      .help("The search metatask (use \"--search_metatask list\" to get a list of available metatasks."
-                            " Note: a valid search_task needs to be supplied in addition for this to output.)"));
-  new_options.add(make_option("search_interpolation", interpolation_string)
-                      .keep()
-                      .help("At what level should interpolation happen? [*data|policy]"));
-  new_options.add(make_option("search_rollout", rollout_string)
-                      .one_of({"policy", "learn", "oracle", "ref", "mix_per_state", "mix_per_roll", "mix", "none"})
-                      .help("How should rollouts be executed"));
-  new_options.add(make_option("search_rollin", rollin_string)
-                      .one_of({"policy", "learn", "oracle", "ref", "mix_per_state", "mix_per_roll", "mix"})
-                      .help("How should past trajectories be generated"));
-  new_options.add(make_option("search_passes_per_policy", priv.passes_per_policy)
-                      .default_value(1)
-                      .help("Number of passes per policy (only valid for search_interpolation=policy)"));
-  new_options.add(make_option("search_beta", priv.beta)
-                      .default_value(0.5f)
-                      .help("Interpolation rate for policies (only valid for search_interpolation=policy)"));
-  new_options.add(make_option("search_alpha", priv.alpha)
-                      .default_value(1e-10f)
-                      .help("Annealed beta = 1-(1-alpha)^t (only valid for search_interpolation=data)"));
-  new_options.add(make_option("search_total_nb_policies", priv.total_number_of_policies)
-                      .help("If we are going to train the policies through multiple separate calls to vw, we need to "
-                            "specify this parameter and tell vw how many policies are eventually going to be trained"));
-  new_options.add(make_option("search_trained_nb_policies", search_trained_nb_policies)
-                      .help("The number of trained policies in a file"));
-  new_options.add(make_option("search_allowed_transitions", search_allowed_transitions)
-                      .help("Read file of allowed transitions [def: all transitions are allowed]"));
-  new_options.add(make_option("search_subsample_time", priv.subsample_timesteps)
-                      .help("Instead of training at all timesteps, use a subset. if value in (0,1), train on a random "
-                            "v%. if v>=1, train on precisely v steps per example, if v<=-1, use active learning"));
-  new_options.add(
-      make_option("search_neighbor_features", neighbor_features_string)
-          .keep()
-          .help("Copy features from neighboring lines. argument looks like: '-1:a,+2' meaning copy previous line "
-                "namespace a and next next line from namespace _unnamed_, where ',' separates them"));
-  new_options.add(make_option("search_rollout_num_steps", priv.rollout_num_steps)
-                      .help("How many calls of \"loss\" before we stop really predicting on rollouts and switch to "
-                            "oracle (default means \"infinite\")"));
-  new_options.add(make_option("search_history_length", priv.history_length)
-                      .keep()
-                      .default_value(1)
-                      .help("Some tasks allow you to specify how much history their depend on; specify that here"));
-  new_options.add(make_option("search_no_caching", priv.no_caching)
-                      .help("Turn off the built-in caching ability (makes things slower, but technically more safe)"));
-  new_options.add(
-      make_option("search_xv", priv.xv).help("Train two separate policies, alternating prediction/learning"));
-  new_options.add(make_option("search_perturb_oracle", priv.perturb_oracle)
-                      .default_value(0.f)
-                      .help("Perturb the oracle on rollin with this probability"));
-  new_options.add(make_option("search_linear_ordering", priv.linear_ordering)
-                      .help("Insist on generating examples in linear order (def: hoopla permutation)"));
-  new_options.add(make_option("search_active_verify", priv.active_csoaa_verify)
-                      .help("Verify that active learning is doing the right thing (arg = multiplier, should be = "
-                            "cost_range * range_c)"));
-  new_options.add(make_option("search_save_every_k_runs", priv.save_every_k_runs).help("Save model every k runs"));
+  new_options
+      .add(make_option("search", priv.A)
+               .keep()
+               .default_value(1)
+               .help("Use learning to search, argument=maximum action id or 0 for LDF"))
+      .add(make_option("search_task", task_string)
+               .keep()
+               .necessary()
+               .one_of({"sequence", "sequencespan", "sequence_ctg", "argmax", "sequence_demoldf", "multiclasstask",
+                   "dep_parser", "entity_relation", "hook", "graph", "list"})
+               .help("The search task (use \"--search_task list\" to get a list of available tasks)"))
+      .add(make_option("search_metatask", metatask_string)
+               .keep()
+               .help("The search metatask (use \"--search_metatask list\" to get a list of available metatasks."
+                     " Note: a valid search_task needs to be supplied in addition for this to output.)"))
+      .add(make_option("search_interpolation", interpolation_string)
+               .keep()
+               .help("At what level should interpolation happen? [*data|policy]"))
+      .add(make_option("search_rollout", rollout_string)
+               .one_of({"policy", "learn", "oracle", "ref", "mix_per_state", "mix_per_roll", "mix", "none"})
+               .help("How should rollouts be executed"))
+      .add(make_option("search_rollin", rollin_string)
+               .one_of({"policy", "learn", "oracle", "ref", "mix_per_state", "mix_per_roll", "mix"})
+               .help("How should past trajectories be generated"))
+      .add(make_option("search_passes_per_policy", priv.passes_per_policy)
+               .default_value(1)
+               .help("Number of passes per policy (only valid for search_interpolation=policy)"))
+      .add(make_option("search_beta", priv.beta)
+               .default_value(0.5f)
+               .help("Interpolation rate for policies (only valid for search_interpolation=policy)"))
+      .add(make_option("search_alpha", priv.alpha)
+               .default_value(1e-10f)
+               .help("Annealed beta = 1-(1-alpha)^t (only valid for search_interpolation=data)"))
+      .add(make_option("search_total_nb_policies", priv.total_number_of_policies)
+               .help("If we are going to train the policies through multiple separate calls to vw, we need to "
+                     "specify this parameter and tell vw how many policies are eventually going to be trained"))
+      .add(make_option("search_trained_nb_policies", search_trained_nb_policies)
+               .help("The number of trained policies in a file"))
+      .add(make_option("search_allowed_transitions", search_allowed_transitions)
+               .help("Read file of allowed transitions [def: all transitions are allowed]"))
+      .add(make_option("search_subsample_time", priv.subsample_timesteps)
+               .help("Instead of training at all timesteps, use a subset. if value in (0,1), train on a random "
+                     "v%. if v>=1, train on precisely v steps per example, if v<=-1, use active learning"))
+      .add(make_option("search_neighbor_features", neighbor_features_string)
+               .keep()
+               .help("Copy features from neighboring lines. argument looks like: '-1:a,+2' meaning copy previous line "
+                     "namespace a and next next line from namespace _unnamed_, where ',' separates them"))
+      .add(make_option("search_rollout_num_steps", priv.rollout_num_steps)
+               .help("How many calls of \"loss\" before we stop really predicting on rollouts and switch to "
+                     "oracle (default means \"infinite\")"))
+      .add(make_option("search_history_length", priv.history_length)
+               .keep()
+               .default_value(1)
+               .help("Some tasks allow you to specify how much history their depend on; specify that here"))
+      .add(make_option("search_no_caching", priv.no_caching)
+               .help("Turn off the built-in caching ability (makes things slower, but technically more safe)"))
+      .add(make_option("search_xv", priv.xv).help("Train two separate policies, alternating prediction/learning"))
+      .add(make_option("search_perturb_oracle", priv.perturb_oracle)
+               .default_value(0.f)
+               .help("Perturb the oracle on rollin with this probability"))
+      .add(make_option("search_linear_ordering", priv.linear_ordering)
+               .help("Insist on generating examples in linear order (def: hoopla permutation)"))
+      .add(make_option("search_active_verify", priv.active_csoaa_verify)
+               .help("Verify that active learning is doing the right thing (arg = multiplier, should be = "
+                     "cost_range * range_c)"))
+      .add(make_option("search_save_every_k_runs", priv.save_every_k_runs).help("Save model every k runs"));
 
   if (!options.add_parse_and_check_necessary(new_options)) return nullptr;
 
