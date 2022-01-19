@@ -148,7 +148,7 @@ void automl<CMType>::one_step(multi_learner& base, multi_ex& ec, CB::cb_class& l
 // into its own base_learner.learn(). see learn_automl(...)
 interaction_config_manager::interaction_config_manager(uint64_t global_lease, uint64_t max_live_configs,
     std::shared_ptr<VW::rand_state> rand_state, uint64_t priority_challengers, bool keep_configs,
-    std::string oracle_type, dense_parameters& weights, priority_func* calc_priority, float confidence_interval)
+    std::string oracle_type, dense_parameters& weights, priority_func* calc_priority, double confidence_interval)
     : global_lease(global_lease)
     , max_live_configs(max_live_configs)
     , random_state(std::move(rand_state))
@@ -366,7 +366,7 @@ void interaction_config_manager::schedule()
       if (!need_new_score && configs[scores[live_slot].config_index].state == VW::automl::config_state::Live)
       { configs[scores[live_slot].config_index].state = VW::automl::config_state::Inactive; }
       // Set all features of new live config
-      scores[live_slot].reset_stats();
+      scores[live_slot].reset_stats(confidence_interval);
       uint64_t new_live_config_index = choose();
       scores[live_slot].config_index = new_live_config_index;
       configs[new_live_config_index].state = VW::automl::config_state::Live;
@@ -453,7 +453,7 @@ void interaction_config_manager::update_champ()
         }
         configs[scores[worst_live_slot].config_index].lease *= 2;
         configs[scores[worst_live_slot].config_index].state = VW::automl::config_state::Inactive;
-        scores[worst_live_slot].reset_stats();
+        scores[worst_live_slot].reset_stats(confidence_interval);
         scores[worst_live_slot].config_index = config_index;
         configs[scores[worst_live_slot].config_index].state = VW::automl::config_state::Live;
         gen_quadratic_interactions(worst_live_slot);
@@ -655,7 +655,7 @@ VW::LEARNER::base_learner* automl_setup(VW::setup_base_i& stack_builder)
   bool keep_configs = false;
   bool verbose_metrics = false;
   std::string oracle_type;
-  float confidence_interval;
+  double confidence_interval;
 
   option_group_definition new_options("[Reduction] Automl");
   new_options
