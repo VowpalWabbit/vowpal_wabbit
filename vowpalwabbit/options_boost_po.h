@@ -194,7 +194,7 @@ po::typed_value<std::vector<T>>* options_boost_po::get_base_boost_value(std::sha
   auto value = po::value<std::vector<T>>();
 
   if (opt->default_value_supplied())
-  { value->default_value({opt->default_value()}, fmt::format("{}", opt->default_value())); }
+  { value->default_value({opt->default_value()}, fmt::format("Default:{}", opt->default_value())); }
 
   return add_notifier(opt, value)->composing();
 }
@@ -206,7 +206,7 @@ po::typed_value<std::vector<T>>* options_boost_po::get_base_boost_value(
   auto value = po::value<std::vector<T>>();
 
   if (opt->default_value_supplied())
-  { value->default_value(opt->default_value(), fmt::format("{}", opt->default_value())); }
+  { value->default_value(opt->default_value(), fmt::format("Default:{}", opt->default_value())); }
 
   return add_notifier(opt, value)->composing();
 }
