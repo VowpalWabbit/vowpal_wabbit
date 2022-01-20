@@ -38,8 +38,8 @@ You can use the python wrapper directly like this:
 
 .. code-block:: python
 
-    >>> from vowpalwabbit import pyvw
-    >>> vw = pyvw.Workspace(quiet=True)
+    >>> from vowpalwabbit import Workspace
+    >>> vw = Workspace(quiet=True)
     >>> ex = vw.example('1 | a b c')
     >>> vw.learn(ex)
     >>> vw.predict(ex)
@@ -51,7 +51,7 @@ Or you can use the included scikit-learn interface like this:
     >>> import numpy as np
     >>> from sklearn import datasets
     >>> from sklearn.model_selection import train_test_split
-    >>> from vowpalwabbit.sklearn_vw import VWClassifier
+    >>> from vowpalwabbit.sklearn import VWClassifier
     >>>
     >>> # generate some data
     >>> X, y = datasets.make_hastie_10_2(n_samples=10000, random_state=1)

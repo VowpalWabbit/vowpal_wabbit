@@ -1,13 +1,10 @@
-from vowpalwabbit import pyvw
-
-import pytest
-
+import vowpalwabbit
 
 def test_cats():
     min_value = 10
     max_value = 20
 
-    vw = pyvw.Workspace(
+    vw = vowpalwabbit.Workspace(
         "--cats 4 --min_value "
         + str(min_value)
         + " --max_value "
@@ -15,13 +12,13 @@ def test_cats():
         + " --bandwidth 1"
     )
     vw_example = vw.parse(
-        "ca 15:0.657567:6.20426e-05 | f1 f2 f3 f4", pyvw.LabelType.CONTINUOUS
+        "ca 15:0.657567:6.20426e-05 | f1 f2 f3 f4", vowpalwabbit.LabelType.CONTINUOUS
     )
     vw.learn(vw_example)
     vw.finish_example(vw_example)
 
     assert (
-        vw.get_prediction_type() == pyvw.PredictionType.ACTION_PDF_VALUE
+        vw.get_prediction_type() == vowpalwabbit.PredictionType.ACTION_PDF_VALUE
     ), "prediction_type should be action_pdf_value"
 
     action, pdf_value = vw.predict("| f1 f2 f3 f4")
@@ -34,7 +31,7 @@ def test_cats_pdf():
     min_value = 10
     max_value = 20
 
-    vw = pyvw.Workspace(
+    vw = vowpalwabbit.Workspace(
         "--cats_pdf 4 --min_value "
         + str(min_value)
         + " --max_value "
@@ -42,13 +39,13 @@ def test_cats_pdf():
         + " --bandwidth 1"
     )
     vw_example = vw.parse(
-        "ca 15:0.657567:6.20426e-05 | f1 f2 f3 f4", pyvw.LabelType.CONTINUOUS
+        "ca 15:0.657567:6.20426e-05 | f1 f2 f3 f4", vowpalwabbit.LabelType.CONTINUOUS
     )
     vw.learn(vw_example)
     vw.finish_example(vw_example)
 
     assert (
-        vw.get_prediction_type() == pyvw.PredictionType.PDF
+        vw.get_prediction_type() == vowpalwabbit.PredictionType.PDF
     ), "prediction_type should be pdf"
 
     pdf_segments = vw.predict("| f1 f2 f3 f4")

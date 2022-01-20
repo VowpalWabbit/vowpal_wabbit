@@ -208,7 +208,7 @@ class SearchTask:
         See Also
         --------
 
-        pyvw.vw
+        :py:obj:`~vowpalwabbit.Workspace`.
 
         """
 
@@ -273,7 +273,7 @@ class SearchTask:
 
         initStringOrDict : str/dict
             Example in either string or dictionary form
-        labelType : The direct integer value of the :py:obj:`~vowpalwabbit.pyvw.LabelType` enum can be used or the enum directly. Supplying 0 or None means to use the default label type based on the setup VW learner.
+        labelType : The direct integer value of the :py:obj:`~vowpalwabbit.LabelType` enum can be used or the enum directly. Supplying 0 or None means to use the default label type based on the setup VW learner.
 
         Returns
         -------
@@ -321,15 +321,15 @@ def get_prediction(ec, prediction_type: Union[int, PredictionType]):
     ----------
 
     ec : Example
-    prediction_type : either the integer value of the :py:obj:`~vowpalwabbit.pyvw.PredictionType` enum or the enum itself
+    prediction_type : either the integer value of the :py:obj:`~vowpalwabbit.PredictionType` enum or the enum itself
 
     Examples
     --------
 
-    >>> from vowpalwabbit import pyvw
-    >>> vw = pyvw.Workspace(quiet=True)
+    >>> from vowpalwabbit import Workspace, PredictionType, pyvw
+    >>> vw = Workspace(quiet=True)
     >>> ex = vw.example('1 |a two features |b more features here')
-    >>> pyvw.get_prediction(ex, pyvw.PredictionType.SCALAR)
+    >>> pyvw.get_prediction(ex, PredictionType.SCALAR)
     0.0
 
     Returns
@@ -402,11 +402,11 @@ class Workspace(pylibvw.vw):
         Examples
         --------
 
-        >>> from vowpalwabbit import pyvw
-        >>> vw1 = pyvw.Workspace('--audit')
-        >>> vw2 = pyvw.Workspace(audit=True, b=24, k=True, c=True, l2=0.001)
-        >>> vw3 = pyvw.Workspace("--audit", b=26)
-        >>> vw4 = pyvw.Workspace(q=["ab", "ac"])
+        >>> from vowpalwabbit import Workspace
+        >>> vw1 = Workspace('--audit')
+        >>> vw2 = Workspace(audit=True, b=24, k=True, c=True, l2=0.001)
+        >>> vw3 = Workspace("--audit", b=26)
+        >>> vw4 = Workspace(q=["ab", "ac"])
 
         Returns
         -------
@@ -477,17 +477,17 @@ class Workspace(pylibvw.vw):
             string representing examples. If the string is multiline then each
             line is considered as an example. In case of list, each string
             element is considered as an example
-        labelType : The direct integer value of the :py:obj:`~vowpalwabbit.pyvw.LabelType` enum can be used or the enum directly. Supplying 0 or None means to use the default label type based on the setup VW learner.
+        labelType : The direct integer value of the :py:obj:`~vowpalwabbit.LabelType` enum can be used or the enum directly. Supplying 0 or None means to use the default label type based on the setup VW learner.
 
         Examples
         --------
 
-        >>> from vowpalwabbit import pyvw
-        >>> model = pyvw.Workspace(quiet=True)
+        >>> from vowpalwabbit import Workspace
+        >>> model = Workspace(quiet=True)
         >>> ex = model.parse("0:0.1:0.75 | a:0.5 b:1 c:2")
         >>> type(ex)
         <class 'vowpalwabbit.pyvw.Example'>
-        >>> model = pyvw.Workspace(quiet=True, cb_adf=True)
+        >>> model = Workspace(quiet=True, cb_adf=True)
         >>> ex = model.parse(["| a:1 b:0.5", "0:0.1:0.75 | a:0.5 b:1 c:2"])
         >>> type(ex)
         <class 'list'>
@@ -730,7 +730,7 @@ class Workspace(pylibvw.vw):
             self.finished = True
 
     def get_log(self) -> List[str]:
-        """Get all log messages produced. One line per item in the list. To get the complete log including run results, this should be called after :func:`~vowpalwabbit.pyvw.vw.finish`
+        """Get all log messages produced. One line per item in the list. To get the complete log including run results, this should be called after :func:`~vowpalwabbit.vw.finish`
 
         Raises:
             Exception: Raises an exception if this function is called but the init function was called without setting enable_logging to True
@@ -754,7 +754,7 @@ class Workspace(pylibvw.vw):
 
         initStringOrDict : str/dict
             Example in either string or dictionary form
-        labelType : The direct integer value of the :py:obj:`~vowpalwabbit.pyvw.LabelType` enum can be used or the enum directly. Supplying 0 or None means to use the default label type based on the setup VW learner.
+        labelType : The direct integer value of the :py:obj:`~vowpalwabbit.LabelType` enum can be used or the enum directly. Supplying 0 or None means to use the default label type based on the setup VW learner.
 
         Returns
         -------
@@ -1459,7 +1459,7 @@ class Example(pylibvw.example):
             features in that dictionary. finally, if it's a function,
             we (repeatedly) execute it fn() until it's not a function
             any more(for lazy feature computation). By default is None
-        labelType : The direct integer value of the :py:obj:`~vowpalwabbit.pyvw.LabelType` enum can be used or the enum directly. Supplying 0 or None means to use the default label type based on the setup VW learner.
+        labelType : The direct integer value of the :py:obj:`~vowpalwabbit.LabelType` enum can be used or the enum directly. Supplying 0 or None means to use the default label type based on the setup VW learner.
 
         Returns
         -------
@@ -1469,7 +1469,7 @@ class Example(pylibvw.example):
         See Also
         --------
 
-        pyvw.vw
+        vowpalwabbit.Workspace
 
         """
 
@@ -1804,8 +1804,8 @@ class Example(pylibvw.example):
         Examples
         --------
 
-        >>> from vowpalwabbit import pyvw
-        >>> vw = pyvw.Workspace(quiet=True)
+        >>> from vowpalwabbit import Workspace
+        >>> vw = Workspace(quiet=True)
         >>> ex = vw.example('1 |a two features |b more features here')
         >>> ex.push_features('x', ['a', 'b'])
         >>> ex.push_features('y', [('c', 1.), 'd'])
@@ -1865,60 +1865,60 @@ class Example(pylibvw.example):
 
 
 class abstract_label(metaclass=_DeprecatedClassMeta):
-    """This has been renamed to :py:obj:`~vowpalwabbit.pyvw.AbstractLabel`. `abstract_label` is now deprecated."""
+    """This has been renamed to :py:obj:`~vowpalwabbit.AbstractLabel`. `abstract_label` is now deprecated."""
 
     _DeprecatedClassMeta__alias = AbstractLabel
 
 
 class simple_label(metaclass=_DeprecatedClassMeta):
-    """This has been renamed to :py:obj:`~vowpalwabbit.pyvw.SimpleLabel`. `simple_label` is now deprecated."""
+    """This has been renamed to :py:obj:`~vowpalwabbit.SimpleLabel`. `simple_label` is now deprecated."""
 
     _DeprecatedClassMeta__alias = SimpleLabel
 
 
 class multiclass_label(metaclass=_DeprecatedClassMeta):
-    """This has been renamed to :py:obj:`~vowpalwabbit.pyvw.MulticlassLabel`. `multiclass_label` is now deprecated."""
+    """This has been renamed to :py:obj:`~vowpalwabbit.MulticlassLabel`. `multiclass_label` is now deprecated."""
 
     _DeprecatedClassMeta__alias = MulticlassLabel
 
 
 class multiclass_probabilities_label(metaclass=_DeprecatedClassMeta):
-    """This has been renamed to :py:obj:`~vowpalwabbit.pyvw.MulticlassProbabilitiesLabel`. `multiclass_probabilities_label` is now deprecated."""
+    """This has been renamed to :py:obj:`~vowpalwabbit.MulticlassProbabilitiesLabel`. `multiclass_probabilities_label` is now deprecated."""
 
     _DeprecatedClassMeta__alias = MulticlassProbabilitiesLabel
 
 
 class cost_sensitive_label(metaclass=_DeprecatedClassMeta):
-    """This has been renamed to :py:obj:`~vowpalwabbit.pyvw.CostSensitiveLabel`. `cost_sensitive_label` is now deprecated."""
+    """This has been renamed to :py:obj:`~vowpalwabbit.CostSensitiveLabel`. `cost_sensitive_label` is now deprecated."""
 
     _DeprecatedClassMeta__alias = CostSensitiveLabel
 
 
 class cbandits_label(metaclass=_DeprecatedClassMeta):
-    """This has been renamed to :py:obj:`~vowpalwabbit.pyvw.CBLabel`. `cbandits_label` is now deprecated."""
+    """This has been renamed to :py:obj:`~vowpalwabbit.CBLabel`. `cbandits_label` is now deprecated."""
 
     _DeprecatedClassMeta__alias = CBLabel
 
 
 class namespace_id(metaclass=_DeprecatedClassMeta):
-    """This has been renamed to :py:obj:`~vowpalwabbit.pyvw.NamespaceId`. `namespace_id` is now deprecated."""
+    """This has been renamed to :py:obj:`~vowpalwabbit.NamespaceId`. `namespace_id` is now deprecated."""
 
     _DeprecatedClassMeta__alias = NamespaceId
 
 
 class example_namespace(metaclass=_DeprecatedClassMeta):
-    """This has been renamed to :py:obj:`~vowpalwabbit.pyvw.ExampleNamespace`. `example_namespace` is now deprecated."""
+    """This has been renamed to :py:obj:`~vowpalwabbit.ExampleNamespace`. `example_namespace` is now deprecated."""
 
     _DeprecatedClassMeta__alias = ExampleNamespace
 
 
 class vw(metaclass=_DeprecatedClassMeta):
-    """This has been renamed to :py:obj:`~vowpalwabbit.pyvw.Workspace`. `vw` is now deprecated."""
+    """This has been renamed to :py:obj:`~vowpalwabbit.Workspace`. `vw` is now deprecated."""
 
     _DeprecatedClassMeta__alias = Workspace
 
 
 class example(metaclass=_DeprecatedClassMeta):
-    """This has been renamed to :py:obj:`~vowpalwabbit.pyvw.Example`. `example` is now deprecated."""
+    """This has been renamed to :py:obj:`~vowpalwabbit.Example`. `example` is now deprecated."""
 
     _DeprecatedClassMeta__alias = Example

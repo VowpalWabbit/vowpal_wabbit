@@ -1532,7 +1532,7 @@ BOOST_PYTHON_MODULE(pylibvw)
       .def("predict", &Search::predictor::predict, "make a prediction");
 
   py::class_<py_log_wrapper, py_log_wrapper_ptr>(
-      "vw_log", "do not use, see pyvw.vw.init(enable_logging..)", py::init<py::object>());
+      "vw_log", "do not use, see pyvw.Workspace.init(enable_logging..)", py::init<py::object>());
 
   py::class_<Search::search, search_ptr>("search")
       .def("set_options", &Search::search::set_options, "Set global search options (auto conditioning, etc.)")
