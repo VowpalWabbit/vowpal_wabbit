@@ -990,7 +990,7 @@ class VWMultiClassifier(VWClassifier):
         >>> import numpy as np
         >>> X = np.array([ [10, 10], [8, 10], [-5, 5.5], [-5.4, 5.5], [-20, -20],  [-15, -20] ])
         >>> y = np.array([1, 1, 2, 2, 3, 3])
-        >>> from vowpalwabbit.sklearn_vw import VWMultiClassifier
+        >>> from vowpalwabbit.sklearn import VWMultiClassifier
         >>> model = VWMultiClassifier(oaa=3, loss_function='logistic')
         >>> _ = model.fit(X, y)
         >>> model.predict_proba(X)
@@ -1043,7 +1043,7 @@ def tovw(x, y=None, sample_weight=None, convert_labels=False):
 
     >>> import pandas as pd
     >>> from sklearn.feature_extraction.text import HashingVectorizer
-    >>> from vowpalwabbit.sklearn_vw import tovw
+    >>> from vowpalwabbit.sklearn import tovw
     >>> X = pd.Series(['cat', 'dog', 'cat', 'cat'], name='catdog')
     >>> y = pd.Series([-1, 1, -1, -1], name='label')
     >>> hv = HashingVectorizer()

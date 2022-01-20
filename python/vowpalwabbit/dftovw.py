@@ -521,7 +521,7 @@ class Namespace(object):
 
         Examples
         --------
-        >>> from vowpalwabbit.DFtoVW import Namespace, Feature
+        >>> from vowpalwabbit.dftovw import Namespace, Feature
         >>> ns_one_feature = Namespace(Feature("a"))
         >>> ns_multi_features = Namespace([Feature("a"), Feature("b")])
         >>> ns_one_feature_with_name = Namespace(Feature("a"), name="FirstNamespace")
@@ -723,7 +723,7 @@ class DFtoVW:
 
         Examples
         --------
-        >>> from vowpalwabbit.DFtoVW import DFtoVW, SimpleLabel, Feature, Namespace
+        >>> from vowpalwabbit.dftovw import DFtoVW, SimpleLabel, Feature, Namespace
         >>> import pandas as pd
 
         >>> df = pd.DataFrame({"y": [1], "a": [2], "b": [3], "c": [4]})
@@ -802,7 +802,7 @@ class DFtoVW:
 
         Examples
         --------
-        >>> from vowpalwabbit.DFtoVW import DFtoVW
+        >>> from vowpalwabbit.dftovw import DFtoVW
         >>> import pandas as pd
         >>> df = pd.DataFrame({"y": [1], "x": [2]})
         >>> conv = DFtoVW.from_colnames(y="y", x="x", df=df)
