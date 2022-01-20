@@ -11,6 +11,7 @@
 #include <algorithm>
 #include <iterator>
 #include <utility>
+#include <regex>
 
 #include <boost/exception/exception.hpp>
 #include <boost/throw_exception.hpp>
@@ -41,7 +42,7 @@ po::typed_value<std::vector<bool>>* options_boost_po::convert_to_boost_value(std
   if (opt->default_value_supplied())
   { THROW("Using a bool option type acts as a switch, no explicit default value is allowed.") }
 
-  value->default_value({false}, "false");
+  value->default_value({false},"Default: false");
   value->zero_tokens();
   value->implicit_value({true}, "true");
 
@@ -234,7 +235,7 @@ std::string options_boost_po::help(const std::vector<std::string>& enabled_reduc
     }
   }
 
-  return help.str();
+  return std::regex_replace(help.str(), std::regex("\\(=Default:"), "(Default: ");
 }
 
 std::vector<std::shared_ptr<base_option>> options_boost_po::get_all_options()
