@@ -1478,8 +1478,7 @@ BOOST_PYTHON_MODULE(pylibvw)
           "get_costsensitive_num_costs)")
       .def("get_cbandits_prediction", &ex_get_cbandits_prediction,
           "Assuming a contextual_bandits label type, get the prediction")
-      .def("get_cbandits_weight", &ex_get_cbandits_weight,
-          "Assuming a contextual_bandits label type, get the weight")
+      .def("get_cbandits_weight", &ex_get_cbandits_weight, "Assuming a contextual_bandits label type, get the weight")
       .def("get_cbandits_num_costs", &ex_get_cbandits_num_costs,
           "Assuming a contextual_bandits label type, get the total number of label/cost pairs")
       .def("get_cbandits_cost", &ex_get_cbandits_cost,
@@ -1492,10 +1491,8 @@ BOOST_PYTHON_MODULE(pylibvw)
       .def("get_cbandits_partial_prediction", &ex_get_cbandits_partial_prediction,
           "Assuming a contextual_bandits label type, get the partial prediction for a given pair (i=0.. "
           "get_cbandits_num_costs)")
-      .def("get_cb_eval_action", &ex_get_cb_eval_action,
-          "Assuming a cb_eval label type, get action")
-      .def("get_cb_eval_weight", &ex_get_cb_eval_weight,
-          "Assuming a cb_eval label type, get weight")
+      .def("get_cb_eval_action", &ex_get_cb_eval_action, "Assuming a cb_eval label type, get action")
+      .def("get_cb_eval_weight", &ex_get_cb_eval_weight, "Assuming a cb_eval label type, get weight")
       .def("get_cb_eval_num_costs", &ex_get_cb_eval_num_costs,
           "Assuming a cb_eval label type, get the total number of label/cost pairs")
       .def("get_cb_eval_cost", &ex_get_cb_eval_cost,
