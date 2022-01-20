@@ -134,7 +134,7 @@
     "\n",
     "\n",
     "print('training LDF')\n",
-    "vw = pyvw.vw(\"--search 0 --csoaa_ldf m --search_task hook --ring_size 1024 --quiet -q ef -q ep\")\n",
+    "vw = pyvw.Workspace(\"--search 0 --csoaa_ldf m --search_task hook --ring_size 1024 --quiet -q ef -q ep\")\n",
     "task = vw.init_search_task(WordAligner)\n",
     "for p in range(10):\n",
     "    task.learn(my_dataset)\n",

@@ -95,7 +95,7 @@ void predict_or_learn(LRQstate& lrq, single_learner& base, example& ec)
       for (unsigned int lfn = 0; lfn < lrq.orig_size[left]; ++lfn)
       {
         float lfx = left_fs.values[lfn];
-        uint64_t lindex = left_fs.indicies[lfn] + ec.ft_offset;
+        uint64_t lindex = left_fs.indices[lfn] + ec.ft_offset;
         for (unsigned int n = 1; n <= k; ++n)
         {
           if (!do_dropout || cheesyrbit(lrq.seed))
@@ -117,7 +117,7 @@ void predict_or_learn(LRQstate& lrq, single_learner& base, example& ec)
             {
               // NB: ec.ft_offset added by base learner
               float rfx = right_fs.values[rfn];
-              uint64_t rindex = right_fs.indicies[rfn];
+              uint64_t rindex = right_fs.indices[rfn];
               uint64_t rwindex = (rindex + (static_cast<uint64_t>(n) << stride_shift));
 
               right_fs.push_back(scale * *lw * lfx * rfx, rwindex);
@@ -175,7 +175,7 @@ base_learner* lrq_setup(VW::setup_base_i& stack_builder)
   VW::workspace& all = *stack_builder.get_all_pointer();
   auto lrq = VW::make_unique<LRQstate>();
   std::vector<std::string> lrq_names;
-  option_group_definition new_options("Low Rank Quadratics");
+  option_group_definition new_options("[Reduction] Low Rank Quadratics");
   new_options.add(make_option("lrq", lrq_names).keep().necessary().help("Use low rank quadratic features"))
       .add(make_option("lrqdropout", lrq->dropout).keep().help("Use dropout training for low rank quadratic features"));
 
@@ -189,13 +189,13 @@ base_learner* lrq_setup(VW::setup_base_i& stack_builder)
     if (name.find(':') != std::string::npos) { THROW("--lrq does not support wildcards ':'"); }
   }
 
-  for (auto& lrq_name : lrq_names) lrq_name = VW::decode_inline_hex(lrq_name);
+  for (auto& lrq_name : lrq_names) lrq_name = VW::decode_inline_hex(lrq_name, all.logger);
 
   new (&lrq->lrpairs) std::set<std::string>(lrq_names.begin(), lrq_names.end());
 
   lrq->initial_seed = lrq->seed = all.random_seed | 8675309;
 
-  if (!all.logger.quiet)
+  if (!all.quiet)
   {
     *(all.trace_message) << "creating low rank quadratic features for pairs: ";
     if (lrq->dropout) *(all.trace_message) << "(using dropout) ";
@@ -203,10 +203,10 @@ base_learner* lrq_setup(VW::setup_base_i& stack_builder)
 
   for (std::string const& i : lrq->lrpairs)
   {
-    if (!all.logger.quiet)
+    if (!all.quiet)
     {
       if ((i.length() < 3) || !valid_int(i.c_str() + 2))
-        THROW("error, low-rank quadratic features must involve two sets and a rank.");
+        THROW("Low-rank quadratic features must involve two sets and a rank: " << i);
 
       *(all.trace_message) << i << " ";
     }
@@ -220,7 +220,7 @@ base_learner* lrq_setup(VW::setup_base_i& stack_builder)
     maxk = std::max(maxk, k);
   }
 
-  if (!all.logger.quiet) *(all.trace_message) << std::endl;
+  if (!all.quiet) *(all.trace_message) << std::endl;
 
   all.wpp = all.wpp * static_cast<uint64_t>(1 + maxk);
   auto base = stack_builder.setup_base_learner();

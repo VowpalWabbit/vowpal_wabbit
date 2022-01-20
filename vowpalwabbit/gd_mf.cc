@@ -79,7 +79,7 @@ void mf_print_offset_features(gdmf& d, example& ec, size_t offset)
 
 void mf_print_audit_features(gdmf& d, example& ec, size_t offset)
 {
-  print_result_by_ref(d.all->stdout_adapter.get(), ec.pred.scalar, -1, ec.tag);
+  print_result_by_ref(d.all->stdout_adapter.get(), ec.pred.scalar, -1, ec.tag, d.all->logger);
   mf_print_offset_features(d, ec, offset);
 }
 
@@ -181,7 +181,7 @@ template <class T>
 void sd_offset_update(T& weights, features& fs, uint64_t offset, float update, float regularization)
 {
   for (size_t i = 0; i < fs.size(); i++)
-    (&weights[fs.indicies[i]])[offset] += update * fs.values[i] - regularization * (&weights[fs.indicies[i]])[offset];
+    (&weights[fs.indices[i]])[offset] += update * fs.values[i] - regularization * (&weights[fs.indices[i]])[offset];
 }
 
 template <class T>
@@ -264,7 +264,8 @@ void save_load(gdmf& d, io_buf& model_file, bool read, bool text)
 
   if (model_file.num_files() > 0)
   {
-    if (!all.weights.not_null()) { THROW("Error: Model weights not initialized."); }
+    if (!all.weights.not_null())
+    { THROW("Model weights object was not initialized when trying to data load into it."); }
     uint64_t i = 0;
     size_t brw = 1;
     do
@@ -330,13 +331,11 @@ base_learner* gd_mf_setup(VW::setup_base_i& stack_builder)
 
   bool bfgs = false;
   bool conjugate_gradient = false;
-  option_group_definition gf_md_options("Gradient Descent Matrix Factorization");
-  gf_md_options.add(make_option("rank", data->rank).keep().necessary().help("Rank for matrix factorization"));
-
-  // Not supported, need to be checked to be false.
-  gf_md_options.add(make_option("bfgs", bfgs).help("Option not supported by this reduction"));
-  gf_md_options.add(
-      make_option("conjugate_gradient", conjugate_gradient).help("Option not supported by this reduction"));
+  option_group_definition gf_md_options("[Reduction] Gradient Descent Matrix Factorization");
+  gf_md_options.add(make_option("rank", data->rank).keep().necessary().help("Rank for matrix factorization"))
+      .add(make_option("bfgs", bfgs)
+               .help("Option not supported by this reduction"))  // Not supported, need to be checked to be false.
+      .add(make_option("conjugate_gradient", conjugate_gradient).help("Option not supported by this reduction"));
 
   if (!options.add_parse_and_check_necessary(gf_md_options)) return nullptr;
 

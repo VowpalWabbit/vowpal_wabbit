@@ -77,12 +77,12 @@ struct task_data
   size_t wpp;
 
   // per-example data
-  uint32_t N;                            // number of nodes
-  uint32_t E;                            // number of edges
-  std::vector<std::vector<size_t>> adj;  // adj[n] is a vector of *edge example ids* that contain n
-  std::vector<uint32_t> bfs;             // order of nodes to process
-  std::vector<size_t> pred;              // predictions
-  example* cur_node;                     // pointer to the current node for add_edge_features_fn
+  uint32_t N;                               // number of nodes
+  uint32_t E;                               // number of edges
+  std::vector<std::vector<size_t>> adj;     // adj[n] is a vector of *edge example ids* that contain n
+  std::vector<uint32_t> bfs;                // order of nodes to process
+  std::vector<size_t> pred;                 // predictions
+  example* cur_node;                        // pointer to the current node for add_edge_features_fn
   std::vector<float> neighbor_predictions;  // prediction on this neighbor for add_edge_features_fn
   std::vector<uint32_t> confusion_matrix;
   std::vector<float> true_counts;
@@ -95,7 +95,7 @@ void initialize(Search::search& sch, size_t& num_actions, options_i& options)
 {
   task_data* D = new task_data();
 
-  option_group_definition new_options("Search Graphtask");
+  option_group_definition new_options("[Search] Search Graphtask");
   new_options
       .add(make_option("search_graph_num_loops", D->num_loops).default_value(2).help("How many loops to run [def: 2]"))
       .add(make_option("search_graph_no_structure", D->use_structure).help("Turn off edge features"))
@@ -187,7 +187,7 @@ void setup(Search::search& sch, multi_ex& ec)
       D.E++;
     else  // it's a node!
     {
-      if (D.E > 0) THROW("error: got a node after getting edges!");
+      if (D.E > 0) THROW("Got a node after getting edges");
 
       D.N++;
       if (ec[i]->l.cs.costs.size() > 0)
@@ -197,7 +197,7 @@ void setup(Search::search& sch, multi_ex& ec)
       }
     }
 
-  if ((D.N == 0) && (D.E > 0)) THROW("error: got edges without any nodes (perhaps ring_size is too small?)!");
+  if ((D.N == 0) && (D.E > 0)) THROW("Got edges without any nodes.");
 
   D.adj = std::vector<std::vector<size_t>>(D.N, std::vector<size_t>(0));
 
@@ -327,9 +327,7 @@ void add_edge_features(Search::search& sch, task_data& D, size_t n, multi_ex& ec
     int i0 = static_cast<int>(i[0]);
     int i1 = static_cast<int>(i[1]);
     if ((i0 == static_cast<int>(neighbor_namespace)) || (i1 == static_cast<int>(neighbor_namespace)))
-    {
-      ec[n]->num_features += ec[n]->feature_space[i0].size() * ec[n]->feature_space[i1].size();
-    }
+    { ec[n]->num_features += ec[n]->feature_space[i0].size() * ec[n]->feature_space[i1].size(); }
   }
 }
 

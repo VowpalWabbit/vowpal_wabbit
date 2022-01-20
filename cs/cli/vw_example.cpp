@@ -121,7 +121,7 @@ void FormatIndices(example* a, System::Text::StringBuilder^ sb)
 System::String^ FormatIndices(example* a, example *b)
 { auto sb = gcnew System::Text::StringBuilder();
 
-  sb->AppendFormat("Namespace indicies differ: {0} vs {1}. this.indices: [",
+  sb->AppendFormat("Namespace indices differ: {0} vs {1}. this.indices: [",
                    a->indices.size(),
                    b->indices.size());
 
@@ -165,7 +165,7 @@ bool FloatEqual(float a, float b)
 System::String^ FormatFeatures(VW::workspace* vw, features& arr)
 { auto sb = gcnew System::Text::StringBuilder();
   for (size_t i = 0; i < arr.values.size(); i++)
-  { sb->Append(FormatFeature(vw, arr.values[i], arr.indicies[i]))->Append(" ");
+  { sb->Append(FormatFeature(vw, arr.values[i], arr.indices[i]))->Append(" ");
   }
 
   return sb->ToString();
@@ -174,12 +174,12 @@ System::String^ FormatFeatures(VW::workspace* vw, features& arr)
 System::String^ CompareFeatures(VW::workspace* vw, features& fa, features& fb, unsigned char ns)
 { std::vector<size_t> fa_missing;
   for (size_t ia = 0, ib = 0; ia < fa.values.size(); ia++)
-  { auto masked_weight_index = fa.indicies[ia] & vw->weights.mask();
-    auto other_masked_weight_index = fb.indicies[ib] & vw->weights.mask();
+  { auto masked_weight_index = fa.indices[ia] & vw->weights.mask();
+    auto other_masked_weight_index = fb.indices[ib] & vw->weights.mask();
 
     /*System::Diagnostics::Debug::WriteLine(System::String::Format("{0} -> {1} vs {2} -> {3}",
-      fa.indicies[ia], masked_weight_index,
-      fb.indicies[ib], other_masked_weight_index
+      fa.indices[ia], masked_weight_index,
+      fb.indices[ib], other_masked_weight_index
       ));*/
 
     if (masked_weight_index == other_masked_weight_index && FloatEqual(fa.values[ia], fb.values[ib]))
@@ -189,10 +189,10 @@ System::String^ CompareFeatures(VW::workspace* vw, features& fa, features& fb, u
       size_t ib_old = ib;
       bool found = false;
       for (ib = 0; ib < fb.values.size(); ib++)
-      { auto other_masked_weight_index = fb.indicies[ib] & vw->weights.mask();
+      { auto other_masked_weight_index = fb.indices[ib] & vw->weights.mask();
         if (masked_weight_index == other_masked_weight_index)
         { if (!FloatEqual(fa.values[ia], fb.values[ib]))
-          { return FormatFeature(vw, fa.values[ia], fa.indicies[ia], fb.values[ib], fb.indicies[ib]);
+          { return FormatFeature(vw, fa.values[ia], fa.indices[ia], fb.values[ib], fb.indices[ib]);
           }
           else
           { found = true;
@@ -214,7 +214,7 @@ System::String^ CompareFeatures(VW::workspace* vw, features& fa, features& fb, u
     diff->AppendFormat("missing features in ns '{0}'/'{1}': ", ns, gcnew Char(ns));
     for (size_t& ia : fa_missing)
     { diff->AppendFormat("this.weight_index = {0}, x = {1}, ",
-                         fa.indicies[ia] & vw->weights.mask(),
+                         fa.indices[ia] & vw->weights.mask(),
                          fa.values[ia]);
     }
 

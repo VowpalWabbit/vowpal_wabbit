@@ -10,7 +10,10 @@
 #include "action_score.h"
 #include "reductions.h"
 #include "learner.h"
+#include "array_parameters_dense.h"
+#include "scored_config.h"
 #include <map>
+#include <memory>
 #include <set>
 #include <queue>
 
@@ -35,24 +38,15 @@ void fail_if_enabled(VW::workspace&, const std::set<std::string>&);
 constexpr uint64_t MAX_CONFIGS = 10;
 constexpr uint64_t CONFIGS_PER_CHAMP_CHANGE = 5;
 
-struct scored_config
+struct aml_score : VW::scored_config
 {
-  VW::distributionally_robust::ChiSquared chisq;
-  float ips = 0.0;
-  float last_w = 0.0;
-  float last_r = 0.0;
-  uint64_t update_count = 0;
+  aml_score() : VW::scored_config() {}
+  aml_score(double alpha, double tau) : VW::scored_config(alpha, tau) {}
   uint64_t config_index = 0;
   bool eligible_to_inactivate = false;
   interaction_vec_t live_interactions;  // Live pre-allocated vectors in use
 
-  scored_config() : chisq(0.05, 0.999, 0, std::numeric_limits<double>::infinity()) {}
-
-  void update(float w, float r);
-  void save_load(io_buf&, bool, bool);
-  void persist(metric_sink&, const std::string&);
-  float current_ips() const;
-  void reset_stats();
+  void persist(metric_sink&, const std::string&, bool);
 };
 
 // all possible states of exclusion config
@@ -73,8 +67,6 @@ struct exclusion_config
   config_state state = VW::automl::config_state::New;
 
   exclusion_config(uint64_t lease = 10) : lease(lease) {}
-
-  void save_load(io_buf&, bool, bool);
 };
 
 // all possible states of automl
@@ -92,8 +84,7 @@ struct config_manager
   void apply_config(example*, uint64_t);
   // This fn is the 'undo' of configure_interactions
   void revert_config(example*);
-  void save_load(io_buf&, bool, bool);
-  void persist(metric_sink&);
+  void persist(metric_sink&, bool);
 
   // Public Chacha functions
   void config_oracle();
@@ -106,16 +97,20 @@ using priority_func = float(const exclusion_config&, const std::map<namespace_in
 
 struct interaction_config_manager : config_manager
 {
+  uint64_t total_champ_switches = 0;
   uint64_t total_learn_count = 0;
   uint64_t current_champ = 0;
   uint64_t global_lease;
   uint64_t max_live_configs;
-  uint64_t seed;
-  rand_state random_state;
+  std::shared_ptr<VW::rand_state> random_state;
   uint64_t priority_challengers;
   uint64_t valid_config_size = 0;
   bool keep_configs;
   std::string oracle_type;
+  dense_parameters& weights;
+  priority_func* calc_priority;
+  double automl_alpha;
+  double automl_tau;
 
   // Stores all namespaces currently seen -- Namespace switch could we use array, ask Jack
   std::map<namespace_index, uint64_t> ns_counter;
@@ -124,18 +119,18 @@ struct interaction_config_manager : config_manager
   std::map<uint64_t, exclusion_config> configs;
 
   // Stores scores of live configs, size will never exceed max_live_configs
-  std::vector<scored_config> scores;
+  std::vector<aml_score> scores;
 
   // Maybe not needed with oracle, maps priority to config index, unused configs
   std::priority_queue<std::pair<float, uint64_t>> index_queue;
 
-  interaction_config_manager(uint64_t, uint64_t, uint64_t, uint64_t, bool, std::string,
-      float (*)(const exclusion_config&, const std::map<namespace_index, uint64_t>&));
+  interaction_config_manager(uint64_t, uint64_t, std::shared_ptr<VW::rand_state>, uint64_t, bool, std::string,
+      dense_parameters&, float (*)(const exclusion_config&, const std::map<namespace_index, uint64_t>&), double,
+      double);
 
   void apply_config(example*, uint64_t);
   void revert_config(example*);
-  void save_load(io_buf&, bool, bool);
-  void persist(metric_sink&);
+  void persist(metric_sink&, bool);
 
   // Public Chacha functions
   void config_oracle();
@@ -150,7 +145,6 @@ private:
   bool better(const exclusion_config&, const exclusion_config&) const;
   bool worse(const exclusion_config&, const exclusion_config&) const;
   uint64_t choose();
-  priority_func* calc_priority;
   bool repopulate_index_queue();
   bool swap_eligible_to_inactivate(uint64_t);
   void insert_config(std::map<namespace_index, std::set<namespace_index>>&&);
@@ -178,12 +172,12 @@ namespace model_utils
 template <typename CMType>
 size_t write_model_field(io_buf&, const VW::automl::automl<CMType>&, const std::string&, bool);
 size_t read_model_field(io_buf&, VW::automl::exclusion_config&);
-size_t read_model_field(io_buf&, VW::automl::scored_config&);
+size_t read_model_field(io_buf&, VW::automl::aml_score&);
 size_t read_model_field(io_buf&, VW::automl::interaction_config_manager&);
 template <typename CMType>
 size_t read_model_field(io_buf&, VW::automl::automl<CMType>&);
 size_t write_model_field(io_buf&, const VW::automl::exclusion_config&, const std::string&, bool);
-size_t write_model_field(io_buf&, const VW::automl::scored_config&, const std::string&, bool);
+size_t write_model_field(io_buf&, const VW::automl::aml_score&, const std::string&, bool);
 size_t write_model_field(io_buf&, const VW::automl::interaction_config_manager&, const std::string&, bool);
 }  // namespace model_utils
 }  // namespace VW

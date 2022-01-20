@@ -8,7 +8,8 @@ using std::cerr;
 using std::endl;
 
 struct wt
-{ std::string word;
+{
+  std::string word;
   uint32_t tag;
   wt(std::string w, uint32_t t) : word(w), tag(t) {}
 };
@@ -18,17 +19,20 @@ class SequenceLabelerTask : public SearchTask<std::vector<wt>, std::vector<uint3
 public:
   SequenceLabelerTask(VW::workspace& vw_obj)
       : SearchTask<std::vector<wt>, std::vector<uint32_t> >(vw_obj)  // must run parent constructor!
-  { sch.set_options( Search::AUTO_HAMMING_LOSS | Search::AUTO_CONDITION_FEATURES );
+  {
+    sch.set_options(Search::AUTO_HAMMING_LOSS | Search::AUTO_CONDITION_FEATURES);
     HookTask::task_data* d = sch.get_task_data<HookTask::task_data>();
     cerr << "num_actions = " << d->num_actions << endl;
   }
 
   // using vanilla vw interface
   void _run(Search::search& sch, std::vector<wt> & input_example, std::vector<uint32_t> & output)
-  { output.clear();
+  {
+    output.clear();
     //ptag currently uint32_t
     for (ptag i=0; i<input_example.size(); i++)
-    { example* ex = VW::read_example(vw_obj, std::string("1 |w ") + input_example[i].word);
+    {
+      example* ex = VW::read_example(vw_obj, std::string("1 |w ") + input_example[i].word);
       action p =
           Search::predictor(sch, i + 1).set_input(*ex).set_oracle(input_example[i].tag).set_condition(i, 'p').predict();
       VW::finish_example(vw_obj, *ex);
@@ -58,7 +62,8 @@ public:
 };
 
 void run(VW::workspace& vw_obj)
-{ // we put this in its own scope so that its destructor on
+{
+  // we put this in its own scope so that its destructor on
   // SequenceLabelerTask gets called *before* VW::finish gets called;
   // otherwise we'll get a segfault :(. i'm not sure what to do about
   // this :(.
@@ -82,31 +87,37 @@ void run(VW::workspace& vw_obj)
   cerr << "should have printed: 1 2 3 1 4 2" << endl;
 }
 
-
 void train()
-{ // initialize VW as usual, but use 'hook' as the search_task
+{
+  // initialize VW as usual, but use 'hook' as the search_task
   cerr << endl << endl << "##### train() #####" << endl << endl;
-  VW::workspace& vw_obj = *VW::initialize("--search 4 --quiet --search_task hook --ring_size 1024 -f my_model");
+  VW::workspace& vw_obj =
+      *VW::initialize("--search 4 --quiet --search_task hook --example_queue_limit 1024 -f my_model");
   run(vw_obj);
-  VW::finish(vw_obj);
+  VW::finish(vw_obj, false);
 }
 
 void predict()
-{ cerr << endl << endl << "##### predict() #####" << endl << endl;
-  VW::workspace& vw_obj = *VW::initialize("--quiet -t --ring_size 1024 -i my_model");
+{
+  cerr << endl << endl << "##### predict() #####" << endl << endl;
+  VW::workspace& vw_obj = *VW::initialize("--quiet -t --example_queue_limit 1024 -i my_model");
   run(vw_obj);
-  VW::finish(vw_obj);
+  VW::finish(vw_obj, false);
 }
 
 void test_buildin_task()
-{ cerr << endl << endl << "##### run commandline vw #####" << endl << endl;
+{
+  cerr << endl << endl << "##### run commandline vw #####" << endl << endl;
   // train a model on the command line
-  int ret = system("../vowpalwabbit/vw -k -c --holdout_off --passes 20 --search 4 --search_task sequence -d sequence.data -f sequence.model");
+  int ret = system(
+      "../vowpalwabbit/vw -c -k --holdout_off --passes 20 --search 4 --search_task sequence -d "
+      "../../test/train-sets/sequence_data -f "
+      "sequence.model");
   if (ret != 0) cerr << "../vowpalwabbit/vw failed" << endl;
 
   // now, load that model using the BuiltInTask library
   cerr << endl << endl << "##### test BuiltInTask #####" << endl << endl;
-  VW::workspace& vw_obj = *VW::initialize("-t -i sequence.model --search_task hook");
+  VW::workspace& vw_obj = *VW::initialize("-t --search_task hook");
   { // create a new scope for the task object
     BuiltInTask task(vw_obj, &SequenceTask::task);
     multi_ex V;
@@ -125,11 +136,12 @@ void test_buildin_task()
       VW::finish_example(vw_obj, *V[i]);
   }
 
-  VW::finish(vw_obj);
+  VW::finish(vw_obj, false);
 }
 
-int main(int argc, char *argv[])
-{ train();
+int main(int argc, char* argv[])
+{
+  train();
   predict();
   test_buildin_task();
 }

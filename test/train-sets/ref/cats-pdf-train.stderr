@@ -28,4 +28,4 @@ weighted example sum = 57.000000
 weighted label sum = 57.000000
 average loss = 0.267669
 total feature number = 570
-Learn() count per node: id=0, #l=21; id=1, #l=37; id=2, #l=20; 
+Learn() count per node: id=0, #l=21; id=1, #l=37; id=2, #l=20;

@@ -1,5 +1,5 @@
 creating quadratic features for pairs: xx
-ignoring linear terms for namespaces beginning with: x 
+ignoring linear terms for namespaces beginning with: x
 Num weight bits = 18
 learning rate = 0.5
 initial_t = 0

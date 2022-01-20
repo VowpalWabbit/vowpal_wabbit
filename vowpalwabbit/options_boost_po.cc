@@ -3,10 +3,11 @@
 // license as described in the file LICENSE.
 
 #include "options_boost_po.h"
+#include "io/logger.h"
 #include "parse_primitives.h"
+#include "io/logger.h"
 
 #include <sstream>
-
 #include <algorithm>
 #include <iterator>
 #include <utility>
@@ -40,9 +41,9 @@ po::typed_value<std::vector<bool>>* options_boost_po::convert_to_boost_value(std
   if (opt->default_value_supplied())
   { THROW("Using a bool option type acts as a switch, no explicit default value is allowed.") }
 
-  value->default_value({false});
+  value->default_value({false}, "false");
   value->zero_tokens();
-  value->implicit_value({true});
+  value->implicit_value({true}, "true");
 
   return add_notifier(opt, value);
 }
@@ -55,12 +56,31 @@ void options_boost_po::add_to_description(
 
 void options_boost_po::add_and_parse(const option_group_definition& group)
 {
-  m_option_group_dict[m_current_reduction_tint].push_back(group);
+  internal_add_and_parse(group);
 
-  po::options_description new_options(group.m_name);
+  // Since there is no "necessary" conditional to these options they are all reachable.
+  for (const auto& opt_ptr : group.m_options)
+  {
+    m_reachable_options.insert(opt_ptr->m_name);
+    m_reachable_options.insert(opt_ptr->m_short_name);
+    m_reachable_options.insert("-" + opt_ptr->m_short_name);
+  }
+}
+
+void options_boost_po::internal_add_and_parse(const option_group_definition& group)
+{
+  m_option_group_dic[m_current_reduction_tint].push_back(group);
+  // Overall option help line width in characters
+  constexpr unsigned int HELP_LINE_WIDTH = 100;
+  // Width in characters of the left column (one with option name and default value)
+  constexpr unsigned int OPTION_NAME_COLUMN_WIDTH = 45;
+
+  po::options_description new_options(group.m_name, HELP_LINE_WIDTH);
 
   for (const auto& opt_ptr : group.m_options)
   {
+    if (opt_ptr->m_necessary) { opt_ptr->m_help += " (required to enable this reduction)"; }
+
     add_to_description(opt_ptr, new_options);
     m_defined_options.insert(opt_ptr->m_name);
     m_defined_options.insert(opt_ptr->m_short_name);
@@ -76,7 +96,7 @@ void options_boost_po::add_and_parse(const option_group_definition& group)
   if (m_added_help_group_names.count(group.m_name) == 0)
   {
     // Add the help for the given options.
-    new_options.print(m_help_stringstream[m_current_reduction_tint]);
+    new_options.print(m_help_stringstream[m_current_reduction_tint], OPTION_NAME_COLUMN_WIDTH);
     m_added_help_group_names.insert(group.m_name);
   }
 
@@ -144,8 +164,26 @@ void options_boost_po::add_and_parse(const option_group_definition& group)
 
 bool options_boost_po::add_parse_and_check_necessary(const option_group_definition& group)
 {
-  this->add_and_parse(group);
-  return group.check_necessary_enabled(*this) && group.check_one_of();
+  this->internal_add_and_parse(group);
+
+  const auto is_necessary_enabled = group.check_necessary_enabled(*this);
+
+  // These options are only reachable if necessary was also passed.
+  for (const auto& opt_ptr : group.m_options)
+  {
+    if (is_necessary_enabled)
+    {
+      m_reachable_options.insert(opt_ptr->m_name);
+      m_reachable_options.insert(opt_ptr->m_short_name);
+      m_reachable_options.insert("-" + opt_ptr->m_short_name);
+    }
+    // We need to convert the unordered set to an ordered one for stable output.
+    std::set<std::string> necessary_flags_set(group.m_necessary_flags.begin(), group.m_necessary_flags.end());
+    m_dependent_necessary_options[opt_ptr->m_name].push_back(necessary_flags_set);
+    m_dependent_necessary_options[opt_ptr->m_short_name].push_back(necessary_flags_set);
+    m_dependent_necessary_options["-" + opt_ptr->m_short_name].push_back(necessary_flags_set);
+  }
+  return is_necessary_enabled && group.check_one_of();
 }
 
 bool options_boost_po::was_supplied(const std::string& key) const
@@ -240,18 +278,35 @@ std::shared_ptr<const base_option> VW::config::options_boost_po::get_option(cons
 }
 
 // Check all supplied arguments against defined args.
-void options_boost_po::check_unregistered()
+void options_boost_po::check_unregistered(VW::io::logger& logger)
 {
   for (auto const& supplied : m_supplied_options)
   {
     if (m_defined_options.count(supplied) == 0 && m_ignore_supplied.count(supplied) == 0)
     { THROW_EX(VW::vw_unrecognised_option_exception, "unrecognised option '--" << supplied << "'"); }
   }
+
+  for (auto const& supplied : m_supplied_options)
+  {
+    if (m_reachable_options.count(supplied) == 0 && m_ignore_supplied.count(supplied) == 0)
+    {
+      const auto& dependent_necessary_options = m_dependent_necessary_options.at(supplied);
+
+      auto message = fmt::format(
+          "Option '{}' depends on another option (or combination of options) which was not supplied. Possible "
+          "combinations of options which would enable this option are:\n",
+          supplied);
+      for (const auto& group : dependent_necessary_options)
+      { message += fmt::format("\t{}\n", fmt::join(group, ", ")); }
+
+      logger.err_warn(message);
+    }
+  }
 }
 
 template <>
 void options_boost_po::add_to_description_impl<typelist<>>(
-    const std::shared_ptr<base_option>&, po::options_description&)
+    const std::shared_ptr<base_option>& opt, po::options_description& /*description*/)
 {
-  THROW("That is an unsupported option type.");
+  THROW(fmt::format("Option '{}' has an unsupported option type.", opt->m_name));
 }

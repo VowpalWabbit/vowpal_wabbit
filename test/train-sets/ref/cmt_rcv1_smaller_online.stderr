@@ -1,4 +1,4 @@
-memory_tree: max_nodes = 10 max_leaf_examples = 33 alpha = 0.1 oas = 0 online =1 
+memory_tree: max_nodes = 10 max_leaf_examples = 33 alpha = 0.1 oas = 0 online =1
 Num weight bits = 15
 learning rate = 0.001
 initial_t = 0

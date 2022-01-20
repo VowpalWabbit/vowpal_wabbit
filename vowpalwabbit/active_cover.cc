@@ -29,7 +29,7 @@ struct active_cover
   float* lambda_d = nullptr;
 
   VW::workspace* all = nullptr;  // statistics, loss
-  std::shared_ptr<rand_state> _random_state;
+  std::shared_ptr<VW::rand_state> _random_state;
 
   ~active_cover()
   {
@@ -212,7 +212,7 @@ base_learner* active_cover_setup(VW::setup_base_i& stack_builder)
   VW::workspace& all = *stack_builder.get_all_pointer();
 
   auto data = VW::make_unique<active_cover>();
-  option_group_definition new_options("Active Learning with Cover");
+  option_group_definition new_options("[Reduction] Active Learning with Cover");
 
   bool active_cover_option = false;
   new_options
@@ -221,15 +221,15 @@ base_learner* active_cover_setup(VW::setup_base_i& stack_builder)
       .add(make_option("mellowness", data->active_c0)
                .keep()
                .default_value(8.f)
-               .help("Active learning mellowness parameter c_0. Default 8"))
+               .help("Active learning mellowness parameter c_0"))
       .add(make_option("alpha", data->alpha)
                .default_value(1.f)
-               .help("Active learning variance upper bound parameter alpha. Default 1"))
+               .help("Active learning variance upper bound parameter alpha"))
       .add(make_option("beta_scale", data->beta_scale)
                .default_value(sqrtf(10.f))
-               .help("Active learning variance upper bound parameter beta_scale. Default std::sqrt(10)"))
-      .add(make_option("cover", data->cover_size).keep().default_value(12).help("Cover size. Default 12"))
-      .add(make_option("oracular", data->oracular).help("Use Oracular-CAL style query or not. Default false"));
+               .help("Active learning variance upper bound parameter beta_scale"))
+      .add(make_option("cover", data->cover_size).keep().default_value(12).help("Cover size"))
+      .add(make_option("oracular", data->oracular).help("Use Oracular-CAL style query or not"));
 
   if (!options.add_parse_and_check_necessary(new_options)) return nullptr;
 
@@ -239,9 +239,9 @@ base_learner* active_cover_setup(VW::setup_base_i& stack_builder)
 
   if (data->oracular) data->cover_size = 0;
 
-  if (options.was_supplied("lda")) THROW("error: you can't combine lda and active learning");
+  if (options.was_supplied("lda")) THROW("lda canot be combined with active learning");
 
-  if (options.was_supplied("active")) THROW("error: you can't use --active_cover and --active at the same time");
+  if (options.was_supplied("active")) THROW("--active_cover cannot be combined with --active");
 
   auto* base = as_singleline(stack_builder.setup_base_learner());
 

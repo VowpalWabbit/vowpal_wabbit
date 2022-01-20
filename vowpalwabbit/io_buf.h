@@ -306,7 +306,7 @@ inline size_t bin_read(io_buf& i, char* data, size_t len)
 {
   uint32_t obj_len;
   size_t ret = i.bin_read_fixed(reinterpret_cast<char*>(&obj_len), sizeof(obj_len));
-  if (obj_len > len || ret < sizeof(uint32_t)) THROW("bad model format!");
+  if (obj_len > len || ret < sizeof(uint32_t)) THROW("Bad model format.");
 
   ret += i.bin_read_fixed(data, obj_len);
 

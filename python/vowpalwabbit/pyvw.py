@@ -2,9 +2,100 @@
 """Python binding for pylibvw class"""
 
 from __future__ import division
-import abc
+from typing import List, Optional, Union
 import pylibvw
 import warnings
+
+from enum import IntEnum
+
+
+# From stack overflow: https://stackoverflow.com/a/52087847/2214524
+class _DeprecatedClassMeta(type):
+    def __new__(cls, name, bases, classdict, *args, **kwargs):
+        alias = classdict.get("_DeprecatedClassMeta__alias")
+
+        if alias is not None:
+
+            def new(cls, *args, **kwargs):
+                alias = getattr(cls, "_DeprecatedClassMeta__alias")
+
+                if alias is not None:
+                    warnings.warn(
+                        "{} has been renamed to {}, the alias will be "
+                        "removed in the future".format(cls.__name__, alias.__name__),
+                        DeprecationWarning,
+                        stacklevel=2,
+                    )
+
+                return alias(*args, **kwargs)
+
+            classdict["__new__"] = new
+            classdict["_DeprecatedClassMeta__alias"] = alias
+
+        fixed_bases = []
+
+        for b in bases:
+            alias = getattr(b, "_DeprecatedClassMeta__alias", None)
+
+            if alias is not None:
+                warnings.warn(
+                    "{} has been renamed to {}, the alias will be "
+                    "removed in the future".format(b.__name__, alias.__name__),
+                    DeprecationWarning,
+                    stacklevel=2,
+                )
+
+            # Avoid duplicate base classes.
+            b = alias or b
+            if b not in fixed_bases:
+                fixed_bases.append(b)
+
+        fixed_bases = tuple(fixed_bases)
+
+        return super().__new__(cls, name, fixed_bases, classdict, *args, **kwargs)
+
+    def __instancecheck__(cls, instance):
+        return any(
+            cls.__subclasscheck__(c) for c in {type(instance), instance.__class__}
+        )
+
+    def __subclasscheck__(cls, subclass):
+        if subclass is cls:
+            return True
+        else:
+            return issubclass(subclass, getattr(cls, "_DeprecatedClassMeta__alias"))
+
+
+class LabelType(IntEnum):
+    DEFAULT = pylibvw.vw.lDefault
+    BINARY = pylibvw.vw.lBinary
+    SIMPLE = pylibvw.vw.lSimple
+    MULTICLASS = pylibvw.vw.lMulticlass
+    COST_SENSITIVE = pylibvw.vw.lCostSensitive
+    CONTEXTUAL_BANDIT = pylibvw.vw.lContextualBandit
+    MAX = pylibvw.vw.lMax  # DEPRECATED
+    CONDITIONAL_CONTEXTUAL_BANDIT = pylibvw.vw.lConditionalContextualBandit
+    SLATES = pylibvw.vw.lSlates
+    CONTINUOUS = pylibvw.vw.lContinuous
+    CONTEXTUAL_BANDIT_EVAL = pylibvw.vw.lContextualBanditEval
+    MULTILABEL = pylibvw.vw.lMultilabel
+
+
+class PredictionType(IntEnum):
+    SCALAR = pylibvw.vw.pSCALAR
+    SCALARS = pylibvw.vw.pSCALARS
+    ACTION_SCORES = pylibvw.vw.pACTION_SCORES
+    ACTION_PROBS = pylibvw.vw.pACTION_PROBS
+    MULTICLASS = pylibvw.vw.pMULTICLASS
+    MULTILABELS = pylibvw.vw.pMULTILABELS
+    PROB = pylibvw.vw.pPROB
+    MULTICLASSPROBS = pylibvw.vw.pMULTICLASSPROBS
+    DECISION_SCORES = pylibvw.vw.pDECISION_SCORES
+    ACTION_PDF_VALUE = pylibvw.vw.pACTION_PDF_VALUE
+    PDF = pylibvw.vw.pPDF
+    ACTIVE_MULTICLASS = pylibvw.vw.pACTIVE_MULTICLASS
+    NOPRED = pylibvw.vw.pNOPRED
+
 
 # baked in con py boost https://wiki.python.org/moin/boost.python/FAQ#The_constructors_of_some_classes_I_am_trying_to_wrap_are_private_because_instances_must_be_created_by_using_a_factory._Is_it_possible_to_wrap_such_classes.3F
 class VWOption:
@@ -242,7 +333,9 @@ class SearchTask:
         for my_example in data_iterator.__iter__():
             self._call_vw(my_example, isTest=False)
 
-    def example(self, initStringOrDict=None, labelType=pylibvw.vw.lDefault):
+    def example(
+        self, initStringOrDict=None, labelType: Optional[Union[int, LabelType]] = None
+    ):
         """Create an example initStringOrDict can specify example as VW
         formatted string, or a dictionary labelType can specify the desire
         label type
@@ -252,18 +345,7 @@ class SearchTask:
 
         initStringOrDict : str/dict
             Example in either string or dictionary form
-        labelType : integer
-            - 0 : lDEFAULT
-            - 1 : lBINARY
-            - 2 : lMULTICLASS
-            - 3 : lCOST_SENSITIVE
-            - 4 : lCONTEXTUAL_BANDIT
-            - 5 : lMAX
-            - 6 : lCONDITIONAL_CONTEXTUAL_BANDIT
-            - 7 : lSLATES
-            - 8 : lCONTINUOUS
-            The integer is used to map the corresponding labelType using the
-            above available options
+        labelType : The direct integer value of the :py:obj:`~vowpalwabbit.pyvw.LabelType` enum can be used or the enum directly. Supplying 0 or None means to use the default label type based on the setup VW learner.
 
         Returns
         -------
@@ -271,10 +353,18 @@ class SearchTask:
         out : Example
 
         """
+
+        # None will implicitly be lDEFAULT which is 0.
+        label_int = 0
+        if isinstance(labelType, LabelType):
+            label_int = labelType.value
+        elif isinstance(labelType, int):
+            label_int = labelType
+
         if self.sch.predict_needs_example():
-            return self.vw.example(initStringOrDict, labelType)
+            return self.vw.Example(initStringOrDict, label_int)
         else:
-            return self.vw.example(None, labelType)
+            return self.vw.Example(None, label_int)
 
     def predict(self, my_example, useOracle=False):
         """Predict on the example
@@ -296,36 +386,22 @@ class SearchTask:
         return self._output
 
 
-def get_prediction(ec, prediction_type):
+def get_prediction(ec, prediction_type: Union[int, PredictionType]):
     """Get specified type of prediction from example
 
     Parameters
     ----------
 
     ec : Example
-    prediction_type : integer
-        - 0: pSCALAR
-        - 1: pSCALARS
-        - 2: pACTION_SCORES
-        - 3: pACTION_PROBS
-        - 4: pMULTICLASS
-        - 5: pMULTILABELS
-        - 6: pPROB
-        - 7: pMULTICLASSPROBS
-        - 8: pDECISION_SCORES
-        - 9: pACTION_PDF_VALUE
-        - 10: pPDF
-        - 11: pACTIVE_MULTICLASS
-        - 12: pNOPRED
+    prediction_type : either the integer value of the :py:obj:`~vowpalwabbit.pyvw.PredictionType` enum or the enum itself
 
     Examples
     --------
 
     >>> from vowpalwabbit import pyvw
-    >>> import pylibvw
-    >>> vw = pyvw.vw(quiet=True)
+    >>> vw = pyvw.Workspace(quiet=True)
     >>> ex = vw.example('1 |a two features |b more features here')
-    >>> pyvw.get_prediction(ex, pylibvw.vw.pSCALAR)
+    >>> pyvw.get_prediction(ex, pyvw.PredictionType.SCALAR)
     0.0
 
     Returns
@@ -334,6 +410,9 @@ def get_prediction(ec, prediction_type):
     out : integer/list
         Prediction according to parameter prediction_type
     """
+    if isinstance(prediction_type, PredictionType):
+        prediction_type = prediction_type.value
+
     switch_prediction_type = {
         pylibvw.vw.pSCALAR: ec.get_simplelabel_prediction,
         pylibvw.vw.pSCALARS: ec.get_scalars,
@@ -353,13 +432,13 @@ def get_prediction(ec, prediction_type):
 
 
 def get_all_vw_options():
-    temp = vw("--dry_run")
+    temp = Workspace("--dry_run")
     config = temp.get_config(filtered_enabled_reductions_only=False)
     temp.finish()
     return config
 
 
-class log_forward:
+class _log_forward:
     def __init__(self):
         self.current_message = ""
         self.messages = []
@@ -371,16 +450,14 @@ class log_forward:
             self.current_message = ""
 
 
-class vw(pylibvw.vw):
-    """The pyvw.vw object is a (trivial) wrapper around the pylibvw.vw
-    object; you're probably best off using this directly and ignoring
-    the pylibvw.vw structure entirely."""
+class Workspace(pylibvw.vw):
+    """Workspace exposes most of the library functionality. It wraps the native code. The Workspace Python class should always be used instead of the binding glue class."""
 
-    log_wrapper = None
+    _log_wrapper = None
     parser_ran = False
     init = False
     finished = False
-    log_fwd = None
+    _log_fwd = None
 
     def __init__(self, arg_str=None, python_reduction=None, enable_logging=False, **kw):
         """Initialize the vw object.
@@ -398,15 +475,15 @@ class vw(pylibvw.vw):
         --------
 
         >>> from vowpalwabbit import pyvw
-        >>> vw1 = pyvw.vw('--audit')
-        >>> vw2 = pyvw.vw(audit=True, b=24, k=True, c=True, l2=0.001)
-        >>> vw3 = pyvw.vw("--audit", b=26)
-        >>> vw4 = pyvw.vw(q=["ab", "ac"])
+        >>> vw1 = pyvw.Workspace('--audit')
+        >>> vw2 = pyvw.Workspace(audit=True, b=24, k=True, c=True, l2=0.001)
+        >>> vw3 = pyvw.Workspace("--audit", b=26)
+        >>> vw4 = pyvw.Workspace(q=["ab", "ac"])
 
         Returns
         -------
 
-        self : vw
+        self : Workspace
         """
 
         def format_input_pair(key, val):
@@ -431,13 +508,13 @@ class vw(pylibvw.vw):
             l = [arg_str] + l
 
         if enable_logging:
-            self.log_fwd = log_forward()
-            self.log_wrapper = pylibvw.vw_log(self.log_fwd)
+            self._log_fwd = _log_forward()
+            self._log_wrapper = pylibvw.vw_log(self._log_fwd)
         else:
-            self.log_wrapper = None
+            self._log_wrapper = None
 
         if python_reduction is None:
-            super(vw, self).__init__(" ".join(l), self.log_wrapper)
+            super(vw, self).__init__(" ".join(l), self._log_wrapper)
         else:
             if issubclass(python_reduction, ReductionInterface):
                 self._py_reduction = python_reduction()
@@ -445,6 +522,7 @@ class vw(pylibvw.vw):
                 self._py_reduction.reduction_init(self)
             else:
                 raise TypeError("The python_reduction argument must be a class that inherits from ReductionInterface")
+
         self.init = True
 
         # check to see if native parser needs to run
@@ -468,7 +546,7 @@ class vw(pylibvw.vw):
     def __exit__(self, exc_type, exc_value, traceback):
         self.finish()
 
-    def parse(self, str_ex, labelType=pylibvw.vw.lDefault):
+    def parse(self, str_ex, labelType: Optional[Union[int, LabelType]] = None):
         """Returns a collection of examples for a multiline example learner or
         a single example for a single example learner.
 
@@ -479,28 +557,17 @@ class vw(pylibvw.vw):
             string representing examples. If the string is multiline then each
             line is considered as an example. In case of list, each string
             element is considered as an example
-        labelType : integer
-            - 0 : lDEFAULT
-            - 1 : lBINARY
-            - 2 : lMULTICLASS
-            - 3 : lCOST_SENSITIVE
-            - 4 : lCONTEXTUAL_BANDIT
-            - 5 : lMAX
-            - 6 : lCONDITIONAL_CONTEXTUAL_BANDIT
-            - 7 : lSLATES
-            - 8 : lCONTINUOUS
-            The integer is used to map the corresponding labelType using the
-            above available options
+        labelType : The direct integer value of the :py:obj:`~vowpalwabbit.pyvw.LabelType` enum can be used or the enum directly. Supplying 0 or None means to use the default label type based on the setup VW learner.
 
         Examples
         --------
 
         >>> from vowpalwabbit import pyvw
-        >>> model = pyvw.vw(quiet=True)
+        >>> model = pyvw.Workspace(quiet=True)
         >>> ex = model.parse("0:0.1:0.75 | a:0.5 b:1 c:2")
         >>> type(ex)
-        <class 'vowpalwabbit.pyvw.example'>
-        >>> model = pyvw.vw(quiet=True, cb_adf=True)
+        <class 'vowpalwabbit.pyvw.Example'>
+        >>> model = pyvw.Workspace(quiet=True, cb_adf=True)
         >>> ex = model.parse(["| a:1 b:0.5", "0:0.1:0.75 | a:0.5 b:1 c:2"])
         >>> type(ex)
         <class 'list'>
@@ -515,7 +582,7 @@ class vw(pylibvw.vw):
         """
 
         # check if already parsed
-        if isinstance(str_ex, example) and getattr(str_ex, "setup_done", None):
+        if isinstance(str_ex, Example) and getattr(str_ex, "setup_done", None):
             return str_ex
 
         elif isinstance(str_ex, list):
@@ -527,10 +594,18 @@ class vw(pylibvw.vw):
 
         if isinstance(str_ex, list):
             str_ex = "\n".join(str_ex)
+
+        # None will implicitly be lDEFAULT which is 0.
+        label_int = 0
+        if isinstance(labelType, LabelType):
+            label_int = labelType.value
+        elif isinstance(labelType, int):
+            label_int = labelType
+
         str_ex = str_ex.replace("\r", "")
         str_ex = str_ex.strip()
         ec = self._parse(str_ex)
-        ec = [example(self, x, labelType) for x in ec]
+        ec = [Example(self, x, label_int) for x in ec]
         for ex in ec:
             ex.setup_done = True
         if not self._is_multiline():
@@ -552,7 +627,7 @@ class vw(pylibvw.vw):
             example to be finished
         """
 
-        if isinstance(ex, example):
+        if isinstance(ex, Example):
             if self._is_multiline():
                 raise ValueError(
                     "Learner is multiline but single example was passed to "
@@ -616,13 +691,19 @@ class vw(pylibvw.vw):
         feat_hash = self.hash_feature(feature_name, space_hash)
         return self.get_weight(feat_hash)
 
+    def get_label_type(self) -> LabelType:
+        return LabelType(super().get_label_type())
+
+    def get_prediction_type(self) -> PredictionType:
+        return PredictionType(super().get_prediction_type())
+
     def learn(self, ec):
         """Perform an online update
 
         Parameters
         ----------
 
-        ec : example/str/list
+        ec : Example/str/list
             examples on which the model gets updated
         """
         # If a string was given, parse it before passing to learner.
@@ -637,7 +718,7 @@ class vw(pylibvw.vw):
             ec = self.parse(ec)
             new_example = True
 
-        if isinstance(ec, example):
+        if isinstance(ec, Example):
             if not getattr(ec, "setup_done", None):
                 ec.setup_example()
             pylibvw.vw.learn(self, ec)
@@ -654,7 +735,7 @@ class vw(pylibvw.vw):
         if new_example:
             self.finish_example(ec)
 
-    def predict(self, ec, prediction_type=None):
+    def predict(self, ec, prediction_type: Optional[Union[int, PredictionType]] = None):
         """Just make a prediction on the example
 
         Parameters
@@ -690,24 +771,24 @@ class vw(pylibvw.vw):
             ec = self.parse(ec)
             new_example = True
 
-        if not isinstance(ec, example) and not isinstance(ec, list):
+        if not isinstance(ec, Example) and not isinstance(ec, list):
             raise TypeError(
                 "expecting string, example object, or list of example objects"
                 " as ec argument for predict, got %s" % type(ec)
             )
 
-        if isinstance(ec, example) and not getattr(ec, "setup_done", True):
+        if isinstance(ec, Example) and not getattr(ec, "setup_done", True):
             ec.setup_example()
 
-        if isinstance(ec, example):
+        if isinstance(ec, Example):
             pylibvw.vw.predict(self, ec)
         else:
             pylibvw.vw.predict_multi(self, ec)
 
         if prediction_type is None:
-            prediction_type = pylibvw.vw.get_prediction_type(self)
+            prediction_type = self.get_prediction_type()
 
-        if isinstance(ec, example):
+        if isinstance(ec, Example):
             prediction = get_prediction(ec, prediction_type)
         else:
             prediction = get_prediction(ec[0], prediction_type)
@@ -728,16 +809,22 @@ class vw(pylibvw.vw):
             self.init = False
             self.finished = True
 
-    # returns the latest vw log
-    # call after vw.finish() for complete log
-    # useful for debugging
-    def get_log(self):
-        if self.log_fwd:
-            return self.log_fwd.messages
+    def get_log(self) -> List[str]:
+        """Get all log messages produced. One line per item in the list. To get the complete log including run results, this should be called after :func:`~vowpalwabbit.pyvw.vw.finish`
+
+        Raises:
+            Exception: Raises an exception if this function is called but the init function was called without setting enable_logging to True
+
+        Returns: A list of strings, where each item is a line in the log
+        """
+        if self._log_fwd:
+            return self._log_fwd.messages
         else:
             raise Exception("enable_logging set to false")
 
-    def example(self, stringOrDict=None, labelType=pylibvw.vw.lDefault):
+    def example(
+        self, stringOrDict=None, labelType: Optional[Union[int, LabelType]] = None
+    ):
         """Create an example initStringOrDict can specify example as VW
         formatted string, or a dictionary labelType can specify the desire
         label type
@@ -747,18 +834,7 @@ class vw(pylibvw.vw):
 
         initStringOrDict : str/dict
             Example in either string or dictionary form
-        labelType : integer
-            - 0 : lDEFAULT
-            - 1 : lBINARY
-            - 2 : lMULTICLASS
-            - 3 : lCOST_SENSITIVE
-            - 4 : lCONTEXTUAL_BANDIT
-            - 5 : lMAX
-            - 6 : lCONDITIONAL_CONTEXTUAL_BANDIT
-            - 7 : lSLATES
-            - 8 : lCONTINUOUS
-            The integer is used to map the corresponding labelType using the
-            above available options
+        labelType : The direct integer value of the :py:obj:`~vowpalwabbit.pyvw.LabelType` enum can be used or the enum directly. Supplying 0 or None means to use the default label type based on the setup VW learner.
 
         Returns
         -------
@@ -766,7 +842,13 @@ class vw(pylibvw.vw):
         out : Example
 
         """
-        return example(self, stringOrDict, labelType)
+        # None will implicitly be lDEFAULT which is 0.
+        label_int = 0
+        if isinstance(labelType, LabelType):
+            label_int = labelType.value
+        elif isinstance(labelType, int):
+            label_int = labelType
+        return Example(self, stringOrDict, label_int)
 
     def __del__(self):
         self.finish()
@@ -844,7 +926,7 @@ class vw(pylibvw.vw):
                         ec = examples[n]
                         while hasattr(ec, "__call__"):
                             ec = ec()  # unfold the lambdas
-                        if not isinstance(ec, example) and not isinstance(
+                        if not isinstance(ec, Example) and not isinstance(
                             ec, pylibvw.example
                         ):
                             raise TypeError(
@@ -940,14 +1022,14 @@ class vw(pylibvw.vw):
         )
 
 
-class namespace_id:
-    """The namespace_id class is simply a wrapper to convert between
+class NamespaceId:
+    """The NamespaceId class is simply a wrapper to convert between
     hash spaces referred to by character (eg 'x') versus their index
     in a particular example. Mostly used internally, you shouldn't
     really need to touch this."""
 
     def __init__(self, ex, id):
-        """Given an example and an id, construct a namespace_id.
+        """Given an example and an id, construct a NamespaceId.
 
         Parameters
         ----------
@@ -962,7 +1044,7 @@ class namespace_id:
         Returns
         -------
 
-        self : namespace_id
+        self : NamespaceId
         """
         if isinstance(id, int):  # you've specified a namespace by index
             if id < 0 or id >= ex.num_namespaces():
@@ -982,22 +1064,22 @@ class namespace_id:
             )
 
 
-class example_namespace:
-    """The example_namespace class is a helper class that allows you
+class ExampleNamespace:
+    """The ExampleNamespace class is a helper class that allows you
     to extract namespaces from examples and operate at a namespace
     level rather than an example level. Mainly this is done to enable
     indexing like ex['x'][0] to get the 0th feature in namespace 'x'
     in example ex."""
 
     def __init__(self, ex, ns, ns_hash=None):
-        """Construct an example_namespace
+        """Construct an ExampleNamespace
 
         Parameters
         ----------
 
         ex : Example
             examples from which namespace is to be extracted
-        ns : namespace_id
+        ns : NamespaceId
             Target namespace
         ns_hash : Optional, by default is None
             The hash of the namespace
@@ -1005,10 +1087,10 @@ class example_namespace:
         Returns
         -------
 
-        self : example_namespace
+        self : ExampleNamespace
         """
-        if not isinstance(ns, namespace_id):
-            raise TypeError("ns should an instance of namespace_id.")
+        if not isinstance(ns, NamespaceId):
+            raise TypeError("ns should an instance of NamespaceId.")
         self.ex = ex
         self.ns = ns
         self.ns_hash = ns_hash
@@ -1069,37 +1151,44 @@ class example_namespace:
         self.ex.push_features(self.ns, featureList)
 
 
-class abstract_label:
+class AbstractLabel:
     """An abstract class for a VW label."""
 
     def __init__(self):
         pass
 
-    def from_example(self, ex):
+    @staticmethod
+    def from_example(ex: "Example"):
         """grab a label from a given VW example"""
         raise Exception("from_example not yet implemented")
 
+    def __str__(self):
+        raise Exception("__str__ not yet implemented")
 
-class simple_label(abstract_label):
+
+class SimpleLabel(AbstractLabel):
     """Class for simple VW label"""
 
-    def __init__(self, label=0.0, weight=1.0, initial=0.0, prediction=0.0):
-        if not isinstance(label, (example, float)):
-            raise TypeError("Label should be float or an example.")
-        abstract_label.__init__(self)
-        if isinstance(label, example):
-            self.from_example(label)
-        else:
-            self.label = label
-            self.weight = weight
-            self.initial = initial
-            self.prediction = prediction
+    def __init__(
+        self,
+        label: float = 0.0,
+        weight: float = 1.0,
+        initial: float = 0.0,
+        prediction: float = 0.0,
+    ):
+        AbstractLabel.__init__(self)
+        self.label = label
+        self.weight = weight
+        self.initial = initial
+        self.prediction = prediction
 
-    def from_example(self, ex):
-        self.label = ex.get_simplelabel_label()
-        self.weight = ex.get_simplelabel_weight()
-        self.initial = ex.get_simplelabel_initial()
-        self.prediction = ex.get_simplelabel_prediction()
+    @staticmethod
+    def from_example(ex: "Example"):
+        label = ex.get_simplelabel_label()
+        weight = ex.get_simplelabel_weight()
+        initial = ex.get_simplelabel_initial()
+        prediction = ex.get_simplelabel_prediction()
+        return SimpleLabel(label, weight, initial, prediction)
 
     def __str__(self):
         s = str(self.label)
@@ -1108,24 +1197,21 @@ class simple_label(abstract_label):
         return s
 
 
-class multiclass_label(abstract_label):
+class MulticlassLabel(AbstractLabel):
     """Class for multiclass VW label with prediction"""
 
-    def __init__(self, label=1, weight=1.0, prediction=1):
-        if not isinstance(label, (example, int)):
-            raise TypeError("Label should be integer or an example.")
-        abstract_label.__init__(self)
-        if isinstance(label, example):
-            self.from_example(label)
-        else:
-            self.label = label
-            self.weight = weight
-            self.prediction = prediction
+    def __init__(self, label: int = 1, weight: float = 1.0, prediction: int = 1):
+        AbstractLabel.__init__(self)
+        self.label = label
+        self.weight = weight
+        self.prediction = prediction
 
-    def from_example(self, ex):
-        self.label = ex.get_multiclass_label()
-        self.weight = ex.get_multiclass_weight()
-        self.prediction = ex.get_multiclass_prediction()
+    @staticmethod
+    def from_example(ex: "Example"):
+        label = ex.get_multiclass_label()
+        weight = ex.get_multiclass_weight()
+        prediction = ex.get_multiclass_prediction()
+        return MulticlassLabel(label, weight, prediction)
 
     def __str__(self):
         s = str(self.label)
@@ -1134,18 +1220,17 @@ class multiclass_label(abstract_label):
         return s
 
 
-class multiclass_probabilities_label(abstract_label):
+class MulticlassProbabilitiesLabel(AbstractLabel):
     """Class for multiclass VW label with probabilities"""
 
-    def __init__(self, label, prediction=None):
-        abstract_label.__init__(self)
-        if isinstance(label, example):
-            self.from_example(label)
-        else:
-            self.prediction = prediction
+    def __init__(self, prediction: Optional[float] = None):
+        AbstractLabel.__init__(self)
+        self.prediction = prediction
 
-    def from_example(self, ex):
-        self.prediction = get_prediction(ex, pylibvw.vw.pMULTICLASSPROBS)
+    @staticmethod
+    def from_example(ex: "Example"):
+        prediction = get_prediction(ex, PredictionType.MULTICLASSPROBS)
+        return MulticlassProbabilitiesLabel(prediction)
 
     def __str__(self):
         s = []
@@ -1154,83 +1239,97 @@ class multiclass_probabilities_label(abstract_label):
         return " ".join(s)
 
 
-class cost_sensitive_label(abstract_label):
+class CostSensitiveElement:
+    def __init__(
+        self,
+        label: int,
+        cost: float = 0.0,
+        partial_prediction: float = 0.0,
+        wap_value: float = 0.0,
+    ):
+        self.label = label
+        self.cost = cost
+        self.partial_prediction = partial_prediction
+        self.wap_value = wap_value
+
+
+class CostSensitiveLabel(AbstractLabel):
     """Class for cost sensative VW label"""
 
-    def __init__(self, costs=[], prediction=0):
-        abstract_label.__init__(self)
-        if isinstance(costs, example):
-            self.from_example(costs)
-        else:
-            self.costs = costs
-            self.prediction = prediction
+    def __init__(
+        self,
+        costs: List[CostSensitiveElement] = [],
+        prediction: float = 0.0,
+    ):
+        AbstractLabel.__init__(self)
+        self.costs = costs
+        self.prediction = prediction
 
-    def from_example(self, ex):
-        class wclass:
-            def __init__(self, label, cost=0.0, partial_prediction=0.0, wap_value=0.0):
-                self.label = label
-                self.cost = cost
-                self.partial_prediction = partial_prediction
-                self.wap_value = wap_value
-
-        self.prediction = ex.get_costsensitive_prediction()
-        self.costs = []
+    @staticmethod
+    def from_example(ex: "Example"):
+        prediction = ex.get_costsensitive_prediction()
+        costs = []
         for i in range(ex.get_costsensitive_num_costs()):
-            wc = wclass(
+            cs = CostSensitiveElement(
                 ex.get_costsensitive_class(i),
                 ex.get_costsensitive_cost(i),
                 ex.get_costsensitive_partial_prediction(i),
                 ex.get_costsensitive_wap_value(i),
             )
-            self.costs.append(wc)
+            costs.append(cs)
+        return CostSensitiveLabel(costs, prediction)
 
     def __str__(self):
         return " ".join(["{}:{}".format(c.label, c.cost) for c in self.costs])
 
 
-class cbandits_label(abstract_label):
+class CBLabelElement:
+    def __init__(
+        self,
+        action: Optional[int] = None,
+        cost: float = 0.0,
+        partial_prediction: float = 0.0,
+        probability: float = 0.0,
+        **kwargs
+    ):
+        if kwargs.get("label", False):
+            action = kwargs["label"]
+            warnings.warn(
+                "label has been deprecated. Please use 'action' instead.",
+                DeprecationWarning,
+            )
+        self.label = action
+        self.action = action
+        self.cost = cost
+        self.partial_prediction = partial_prediction
+        self.probability = probability
+
+
+class CBLabel(AbstractLabel):
     """Class for contextual bandits VW label"""
 
-    def __init__(self, costs=[], prediction=0):
-        abstract_label.__init__(self)
-        if isinstance(costs, example):
-            self.from_example(costs)
-        else:
-            self.costs = costs
-            self.prediction = prediction
+    def __init__(
+        self,
+        costs: List[CBLabelElement] = [],
+        prediction: float = 0.0,
+    ):
+        AbstractLabel.__init__(self)
+        self.costs = costs
+        self.prediction = prediction
 
-    def from_example(self, ex):
-        class wclass:
-            def __init__(
-                self,
-                action=None,
-                cost=0.0,
-                partial_prediction=0.0,
-                probability=0.0,
-                **kwargs
-            ):
-                if kwargs.get("label", False):
-                    action = kwargs["label"]
-                    warnings.warn(
-                        "label has been deprecated. Please use 'action' instead.",
-                        DeprecationWarning,
-                    )
-                self.label = action
-                self.action = action
-                self.cost = cost
-                self.partial_prediction = partial_prediction
-                self.probability = probability
-
-        self.prediction = ex.get_cbandits_prediction()
-        self.costs = []
+    @staticmethod
+    def from_example(ex: "Example"):
+        prediction = ex.get_cbandits_prediction()
+        costs = []
         for i in range(ex.get_cbandits_num_costs()):
-            wc = wclass(
+            cb = CBLabelElement(
                 ex.get_cbandits_class(i),
                 ex.get_cbandits_cost(i),
                 ex.get_cbandits_partial_prediction(i),
                 ex.get_cbandits_probability(i),
             )
-            self.costs.append(wc)
+            costs.append(cb)
+        return CBLabel(costs, prediction)
 
     def __str__(self):
         return " ".join(
@@ -1238,17 +1337,114 @@ class cbandits_label(abstract_label):
         )
 
 
-class example(pylibvw.example):
-    """The example class is a (non-trivial) wrapper around
-    pylibvw.example. Most of the wrapping is to make the interface
-    easier to use (by making the types safer via namespace_id) and
+class SlatesLabelType(IntEnum):
+    UNSET = pylibvw.vw.tUNSET
+    SHARED = pylibvw.vw.tSHARED
+    ACTION = pylibvw.vw.tACTION
+    SLOT = pylibvw.vw.tSLOT
+
+
+class ActionScore:
+    def __init__(self, action: int, score: float):
+        self.action = action
+        self.score = score
+
+
+class SlatesLabel(AbstractLabel):
+    """Class for slates VW label"""
+
+    def __init__(
+        self,
+        type: SlatesLabelType = SlatesLabelType.UNSET,
+        weight: float = 1.0,
+        labeled: bool = False,
+        cost: float = 0.0,
+        slot_id: int = 0,
+        probabilities: List[ActionScore] = [],
+    ):
+        abstract_label.__init__(self)
+        self.type = type
+        self.weight = weight
+        self.labeled = labeled
+        self.cost = cost
+        self.slot_id = slot_id
+        self.probabilities = probabilities
+
+    @staticmethod
+    def from_example(ex: "Example"):
+        type = ex.get_slates_type()
+        weight = ex.get_slates_weight()
+        labeled = ex.get_slates_labeled()
+        cost = ex.get_slates_cost()
+        slot_id = ex.get_slates_slot_id()
+        probabilities = []
+        for i in range(ex.get_slates_num_probabilities()):
+            probabilities.append(
+                ActionScore(ex.get_slates_action(i), ex.get_slates_probability(i))
+            )
+        return SlatesLabel(type, weight, labeled, cost, slot_id, probabilities)
+
+    def __str__(self):
+        ret = "slates "
+        if self.type == SlatesLabelType.SHARED:
+            ret += "shared {}".format(round(self.cost, 2))
+        elif self.type == SlatesLabelType.ACTION:
+            ret += "action {}".format(self.slot_id)
+        elif self.type == SlatesLabelType.SLOT:
+            ret += "slot " + ",".join(
+                [
+                    "{}:{}".format(a_s.action, round(a_s.score, 2))
+                    for a_s in self.probabilities
+                ]
+            )
+        return ret
+
+
+class CBContinuousLabelElement:
+    def __init__(
+        self, action: Optional[int] = None, cost: float = 0.0, pdf_value: float = 0.0
+    ):
+        self.action = action
+        self.cost = cost
+        self.pdf_value = pdf_value
+
+
+class CBContinuousLabel(AbstractLabel):
+    """Class for cb_continuous VW label"""
+
+    def __init__(self, costs: List[CBContinuousLabelElement] = []):
+        AbstractLabel.__init__(self)
+        self.costs = costs
+
+    @staticmethod
+    def from_example(ex: "Example"):
+        costs = []
+        for i in range(ex.get_cb_continuous_num_costs()):
+            elem = CBContinuousLabelElement(
+                ex.get_cb_continuous_class(i),
+                ex.get_cb_continuous_cost(i),
+                ex.get_cb_continuous_pdf_value(i),
+            )
+            costs.append(elem)
+        return CBContinuousLabel(costs)
+
+    def __str__(self):
+        return "ca " + " ".join(
+            ["{}:{}:{}".format(c.action, c.cost, c.pdf_value) for c in self.costs]
+        )
+
+
+class Example(pylibvw.example):
+    """The example class is a wrapper around
+    pylibvw.example. pylibvw.example should not be used. Most of the wrapping is to make the interface
+    easier to use (by making the types safer via NamespaceId) and
     also with added python-specific functionality."""
 
     def __init__(
         self,
         vw,
         initStringOrDictOrRawExample=None,
-        labelType=pylibvw.vw.lDefault,
+        labelType: Optional[Union[int, LabelType]] = None,
     ):
         """Construct a new example from vw.
 
@@ -1266,18 +1462,7 @@ class example(pylibvw.example):
             features in that dictionary. finally, if it's a function,
             we (repeatedly) execute it fn() until it's not a function
             any more(for lazy feature computation). By default is None
-        labelType : integer
-            - 0 : lDEFAULT
-            - 1 : lBINARY
-            - 2 : lMULTICLASS
-            - 3 : lCOST_SENSITIVE
-            - 4 : lCONTEXTUAL_BANDIT
-            - 5 : lMAX
-            - 6 : lCONDITIONAL_CONTEXTUAL_BANDIT
-            - 7 : lSLATES
-            - 8 : lCONTINUOUS
-            The integer is used to map the corresponding labelType using the
-            above available options
+        labelType : The direct integer value of the :py:obj:`~vowpalwabbit.pyvw.LabelType` enum can be used or the enum directly. Supplying 0 or None means to use the default label type based on the setup VW learner.
 
         Returns
         -------
@@ -1294,16 +1479,26 @@ class example(pylibvw.example):
         while hasattr(initStringOrDictOrRawExample, "__call__"):
             initStringOrDictOrRawExample = initStringOrDictOrRawExample()
 
+        # None will implicitly be lDEFAULT which is 0.
+        label_int = 0
+        self.labelType: Optional[LabelType] = None
+        if isinstance(labelType, LabelType):
+            label_int = labelType.value
+        elif isinstance(labelType, int):
+            label_int = labelType
+            if label_int != 0:
+                self.labelType = LabelType(label_int)
+
         if initStringOrDictOrRawExample is None:
-            pylibvw.example.__init__(self, vw, labelType)
+            pylibvw.example.__init__(self, vw, label_int)
             self.setup_done = False
         elif isinstance(initStringOrDictOrRawExample, str):
-            pylibvw.example.__init__(self, vw, labelType, initStringOrDictOrRawExample)
+            pylibvw.example.__init__(self, vw, label_int, initStringOrDictOrRawExample)
             self.setup_done = True
         elif isinstance(initStringOrDictOrRawExample, pylibvw.example):
-            pylibvw.example.__init__(self, vw, labelType, initStringOrDictOrRawExample)
+            pylibvw.example.__init__(self, vw, label_int, initStringOrDictOrRawExample)
         elif isinstance(initStringOrDictOrRawExample, dict):
-            pylibvw.example.__init__(self, vw, labelType)
+            pylibvw.example.__init__(self, vw, label_int)
             self.vw = vw
             self.stride = vw.get_stride()
             self.finished = False
@@ -1317,33 +1512,32 @@ class example(pylibvw.example):
         self.vw = vw
         self.stride = vw.get_stride()
         self.finished = False
-        self.labelType = labelType
 
     def get_ns(self, id):
-        """Construct a namespace_id
+        """Construct a NamespaceId
 
         Parameters
         ----------
 
-        id : namespace_id/str/integer
+        id : NamespaceId/str/integer
             id used to create namespace
 
         Returns
         -------
 
-        out : namespace_id
-            namespace_id created using parameter passed(if id was namespace_id,
+        out : NamespaceId
+            NamespaceId created using parameter passed(if id was NamespaceId,
             just return it directly)
         """
-        if isinstance(id, namespace_id):
+        if isinstance(id, NamespaceId):
             return id
         else:
-            return namespace_id(self, id)
+            return NamespaceId(self, id)
 
     def __getitem__(self, id):
-        """Get an example_namespace object associated with the given
+        """Get an ExampleNamespace object associated with the given
         namespace id."""
-        return example_namespace(self, self.get_ns(id))
+        return ExampleNamespace(self, self.get_ns(id))
 
     def feature(self, ns, i):
         """Get the i-th hashed feature id in a given namespace
@@ -1399,7 +1593,8 @@ class example(pylibvw.example):
             a new label to this example, formatted as a string (ala the VW data
             file format)
         """
-        pylibvw.example.set_label_string(self, self.vw, string, self.labelType)
+        label_int = 0 if self.labelType is None else self.labelType.value
+        pylibvw.example.set_label_string(self, self.vw, string, label_int)
 
     def setup_example(self):
         """If this example hasn't already been setup (ie, quadratic
@@ -1610,7 +1805,7 @@ class example(pylibvw.example):
         --------
 
         >>> from vowpalwabbit import pyvw
-        >>> vw = pyvw.vw(quiet=True)
+        >>> vw = pyvw.Workspace(quiet=True)
         >>> ex = vw.example('1 |a two features |b more features here')
         >>> ex.push_features('x', ['a', 'b'])
         >>> ex.push_features('y', [('c', 1.), 'd'])
@@ -1652,8 +1847,8 @@ class example(pylibvw.example):
                 v = self.feature_weight(ns, i)
                 yield f, v
 
-    def get_label(self, label_class=simple_label):
-        """Given a known label class (default is simple_label), get
+    def get_label(self, label_class=SimpleLabel):
+        """Given a known label class (default is Simplelabel), get
         the corresponding label structure for this example.
 
         Parameters
@@ -1661,6 +1856,69 @@ class example(pylibvw.example):
 
         label_class : label classes
             Get the label of the example of label_class type, by default is
-            simple_label
+            Simplelabel
         """
-        return label_class(self)
+        return label_class.from_example(self)
+
+
+############################ DEPREECATED CLASSES ############################
+
+
+class abstract_label(metaclass=_DeprecatedClassMeta):
+    """This has been renamed to :py:obj:`~vowpalwabbit.pyvw.AbstractLabel`. `abstract_label` is now deprecated."""
+
+    _DeprecatedClassMeta__alias = AbstractLabel
+
+
+class simple_label(metaclass=_DeprecatedClassMeta):
+    """This has been renamed to :py:obj:`~vowpalwabbit.pyvw.SimpleLabel`. `simple_label` is now deprecated."""
+
+    _DeprecatedClassMeta__alias = SimpleLabel
+
+
+class multiclass_label(metaclass=_DeprecatedClassMeta):
+    """This has been renamed to :py:obj:`~vowpalwabbit.pyvw.MulticlassLabel`. `multiclass_label` is now deprecated."""
+
+    _DeprecatedClassMeta__alias = MulticlassLabel
+
+
+class multiclass_probabilities_label(metaclass=_DeprecatedClassMeta):
+    """This has been renamed to :py:obj:`~vowpalwabbit.pyvw.MulticlassProbabilitiesLabel`. `multiclass_probabilities_label` is now deprecated."""
+
+    _DeprecatedClassMeta__alias = MulticlassProbabilitiesLabel
+
+
+class cost_sensitive_label(metaclass=_DeprecatedClassMeta):
+    """This has been renamed to :py:obj:`~vowpalwabbit.pyvw.CostSensitiveLabel`. `cost_sensitive_label` is now deprecated."""
+
+    _DeprecatedClassMeta__alias = CostSensitiveLabel
+
+
+class cbandits_label(metaclass=_DeprecatedClassMeta):
+    """This has been renamed to :py:obj:`~vowpalwabbit.pyvw.CBLabel`. `cbandits_label` is now deprecated."""
+
+    _DeprecatedClassMeta__alias = CBLabel
+
+
+class namespace_id(metaclass=_DeprecatedClassMeta):
+    """This has been renamed to :py:obj:`~vowpalwabbit.pyvw.NamespaceId`. `namespace_id` is now deprecated."""
+
+    _DeprecatedClassMeta__alias = NamespaceId
+
+
+class example_namespace(metaclass=_DeprecatedClassMeta):
+    """This has been renamed to :py:obj:`~vowpalwabbit.pyvw.ExampleNamespace`. `example_namespace` is now deprecated."""
+
+    _DeprecatedClassMeta__alias = ExampleNamespace
+
+
+class vw(metaclass=_DeprecatedClassMeta):
+    """This has been renamed to :py:obj:`~vowpalwabbit.pyvw.Workspace`. `vw` is now deprecated."""
+
+    _DeprecatedClassMeta__alias = Workspace
+
+
+class example(metaclass=_DeprecatedClassMeta):
+    """This has been renamed to :py:obj:`~vowpalwabbit.pyvw.Example`. `example` is now deprecated."""
+
+    _DeprecatedClassMeta__alias = Example

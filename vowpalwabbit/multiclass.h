@@ -3,6 +3,7 @@
 // license as described in the file LICENSE.
 #pragma once
 #include "label_parser.h"
+#include "io_buf.h"
 
 struct example;
 namespace VW
@@ -43,3 +44,12 @@ void finish_example_without_loss(VW::workspace& all, T&, example& ec)
   finish_example(all, ec, false);
 }
 }  // namespace MULTICLASS
+
+namespace VW
+{
+namespace model_utils
+{
+size_t read_model_field(io_buf&, MULTICLASS::label_t&);
+size_t write_model_field(io_buf&, const MULTICLASS::label_t&, const std::string&, bool);
+}  // namespace model_utils
+}  // namespace VW

@@ -22,7 +22,6 @@
 
 using namespace VW::LEARNER;
 using namespace VW::config;
-namespace logger = VW::io::logger;
 
 // TODO: This file has several cout print statements. It looks like
 //       they should be using trace_message, but its difficult to tell
@@ -35,7 +34,7 @@ void remove_at_index(std::vector<T>& array, uint32_t index)
 {
   if (index >= array.size())
   {
-    logger::log_error("ERROR: index is larger than the size");
+    THROW("remove_at_index: index is larger than the size");
     return;
   }
 
@@ -65,7 +64,7 @@ void diag_kronecker_prod_fs_test(
   // originally called delete_v, but that doesn't seem right. Clearing instead
   // prod_f.~features();
   prod_f.clear();
-  if (f2.indicies.size() == 0) return;
+  if (f2.indices.size() == 0) return;
 
   float denominator = std::pow(norm_sq1 * norm_sq2, 0.5f);
   size_t idx1 = 0;
@@ -73,8 +72,8 @@ void diag_kronecker_prod_fs_test(
 
   while (idx1 < f1.size() && idx2 < f2.size())
   {
-    uint64_t ec1pos = f1.indicies[idx1];
-    uint64_t ec2pos = f2.indicies[idx2];
+    uint64_t ec1pos = f1.indices[idx1];
+    uint64_t ec2pos = f2.indices[idx2];
 
     if (ec1pos < ec2pos)
       idx1++;
@@ -163,7 +162,7 @@ struct node
 struct memory_tree
 {
   VW::workspace* all = nullptr;
-  std::shared_ptr<rand_state> _random_state;
+  std::shared_ptr<VW::rand_state> _random_state;
 
   std::vector<node> nodes;  // array of nodes.
   // v_array<node> nodes;         // array of nodes.
@@ -195,7 +194,7 @@ struct memory_tree
   size_t current_pass = 0;  // for tracking # of passes over the dataset
   size_t final_pass = 0;
 
-  int top_K;  // commands:
+  int top_K;         // commands:
   bool oas = false;  // indicator for multi-label classification (oas = 1)
   int dream_at_update = 0;
 
@@ -233,15 +232,15 @@ float linear_kernel(const flat_example* fec1, const flat_example* fec2)
 
   features& fs_1 = const_cast<features&>(fec1->fs);
   features& fs_2 = const_cast<features&>(fec2->fs);
-  if (fs_2.indicies.size() == 0) return 0.f;
+  if (fs_2.indices.size() == 0) return 0.f;
 
   for (size_t idx1 = 0, idx2 = 0; idx1 < fs_1.size() && idx2 < fs_2.size(); idx1++)
   {
-    uint64_t ec1pos = fs_1.indicies[idx1];
-    uint64_t ec2pos = fs_2.indicies[idx2];
+    uint64_t ec1pos = fs_1.indices[idx1];
+    uint64_t ec2pos = fs_2.indices[idx2];
     if (ec1pos < ec2pos) continue;
 
-    while (ec1pos > ec2pos && ++idx2 < fs_2.size()) ec2pos = fs_2.indicies[idx2];
+    while (ec1pos > ec2pos && ++idx2 < fs_2.size()) ec2pos = fs_2.indices[idx2];
 
     if (ec1pos == ec2pos)
     {
@@ -330,7 +329,7 @@ inline int random_sample_example_pop(memory_tree& b, uint64_t& cn)
     else
     {
       std::cout << cn << " " << b.nodes[cn].nl << " " << b.nodes[cn].nr << std::endl;
-      logger::log_error("Error:  nl = 0, and nr = 0, exit...");
+      b.all->logger.out_error("Error:  nl = 0, and nr = 0");
       exit(0);
     }
 
@@ -493,7 +492,7 @@ void split_leaf(memory_tree& b, single_learner& base, const uint64_t cn)
       b.examples[ec_pos]->l.multilabels = multilabels;
     }
   }
-  b.nodes[cn].examples_index.clear();                                                    // empty the cn's example list
+  b.nodes[cn].examples_index.clear();  // empty the cn's example list
   b.nodes[cn].nl =
       std::max(static_cast<double>(b.nodes[left_child].examples_index.size()), 0.001);  // avoid to set nl to zero
   b.nodes[cn].nr =
@@ -541,7 +540,7 @@ inline uint32_t hamming_loss(v_array<uint32_t>& array_1, v_array<uint32_t>& arra
 
 void collect_labels_from_leaf(memory_tree& b, const uint64_t cn, v_array<uint32_t>& leaf_labs)
 {
-  if (b.nodes[cn].internal != -1) logger::log_error("something is wrong, it should be a leaf node");
+  if (b.nodes[cn].internal != -1) b.all->logger.out_error("something is wrong, it should be a leaf node");
 
   leaf_labs.clear();
   for (size_t i = 0; i < b.nodes[cn].examples_index.size(); i++)
@@ -1114,11 +1113,11 @@ void save_load_example(example* ec, io_buf& model_file, bool& read, bool& text, 
     {
       fs->clear();
       fs->values.clear();
-      fs->indicies.clear();
+      fs->indices.clear();
       for (uint32_t f_i = 0; f_i < feat_size; f_i++) { fs->push_back(0, 0); }
     }
     for (uint32_t f_i = 0; f_i < feat_size; f_i++) writeit(fs->values[f_i], "value");
-    for (uint32_t f_i = 0; f_i < feat_size; f_i++) writeit(fs->indicies[f_i], "index");
+    for (uint32_t f_i = 0; f_i < feat_size; f_i++) writeit(fs->indices[f_i], "index");
   }
 }
 
@@ -1204,7 +1203,7 @@ base_learner* memory_tree_setup(VW::setup_base_i& stack_builder)
   VW::workspace& all = *stack_builder.get_all_pointer();
   using namespace memory_tree_ns;
   auto tree = VW::make_unique<memory_tree>();
-  option_group_definition new_options("Memory Tree");
+  option_group_definition new_options("[Reduction] Memory Tree");
 
   new_options
       .add(make_option("memory_tree", tree->max_nodes)
@@ -1222,7 +1221,7 @@ base_learner* memory_tree_setup(VW::setup_base_i& stack_builder)
       .add(make_option("dream_repeats", tree->dream_repeats)
                .default_value(1)
                .help("Number of dream operations per example (default = 1)"))
-      .add(make_option("top_K", tree->top_K).default_value(1).help("Top K prediction error (default 1)"))
+      .add(make_option("top_K", tree->top_K).default_value(1).help("Top K prediction error"))
       .add(make_option("learn_at_leaf", tree->learn_at_leaf).help("Enable learning at leaf"))
       .add(make_option("oas", tree->oas).help("Use oas at the leaf"))
       .add(make_option("dream_at_update", tree->dream_at_update)
@@ -1241,7 +1240,7 @@ base_learner* memory_tree_setup(VW::setup_base_i& stack_builder)
 
   init_tree(*tree);
 
-  if (!all.logger.quiet)
+  if (!all.quiet)
     *(all.trace_message) << "memory_tree:"
                          << " "
                          << "max_nodes = " << tree->max_nodes << " "

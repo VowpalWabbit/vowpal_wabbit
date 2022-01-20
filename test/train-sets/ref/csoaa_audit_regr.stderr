@@ -10,7 +10,7 @@ num sources = 1
 Input label = cs
 Output pred = multiclass
 Regressor contains 18 values
-example      values         total   
+example      values         total
 counter      audited        progress
 1                    6           33%
 2                    9           50%

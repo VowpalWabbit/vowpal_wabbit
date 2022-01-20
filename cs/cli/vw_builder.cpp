@@ -93,7 +93,7 @@ void VowpalWabbitNamespaceBuilder::AddFeaturesUnchecked(uint64_t weight_index_ba
   { float x = *begin;
     if (x != 0)
     { m_features->values.push_back_unchecked(x);
-      m_features->indicies.push_back_unchecked(weight_index_base);
+      m_features->indices.push_back_unchecked(weight_index_base);
     }
     weight_index_base++;
   }
@@ -109,7 +109,7 @@ void VowpalWabbitNamespaceBuilder::AddFeature(uint64_t weight_index, float x)
 
 void VowpalWabbitNamespaceBuilder::PreAllocate(int size)
 { m_features->values.reserve(m_features->values.size() + size);
-  m_features->indicies.reserve(m_features->indicies.size() + size);
+  m_features->indices.reserve(m_features->indices.size() + size);
 }
 
 size_t VowpalWabbitNamespaceBuilder::FeatureCount::get()

@@ -11,20 +11,19 @@
 
 #include "io/logger.h"
 
-namespace logger = VW::io::logger;
-
 namespace GEN_CS
 {
 using namespace VW::LEARNER;
 using namespace CB_ALGS;
 using namespace CB;
 
-
-float safe_probability(float prob)
+float safe_probability(float prob, VW::io::logger& logger)
 {
   if (prob <= 0.)
   {
-    logger::log_warn("Probability {} is not possible, replacing with 1e-3.  Fix your dataset. ", prob);
+    logger.out_warn(
+        "Probability {} is not possible, replacing with 1e-3. There seems to be something wrong with the dataset.",
+        prob);
     return 1e-3f;
   }
   else
@@ -32,7 +31,8 @@ float safe_probability(float prob)
 }
 
 // Multiline version
-void gen_cs_example_ips(const multi_ex& examples, COST_SENSITIVE::label& cs_labels, float clip_p)
+void gen_cs_example_ips(
+    const multi_ex& examples, COST_SENSITIVE::label& cs_labels, VW::io::logger& logger, float clip_p)
 {
   cs_labels.costs.clear();
   for (uint32_t i = 0; i < examples.size(); i++)
@@ -41,7 +41,7 @@ void gen_cs_example_ips(const multi_ex& examples, COST_SENSITIVE::label& cs_labe
 
     COST_SENSITIVE::wclass wc = {0., i, 0., 0.};
     if (ld.costs.size() == 1 && ld.costs[0].cost != FLT_MAX)
-      wc.x = ld.costs[0].cost / safe_probability(std::max(ld.costs[0].probability, clip_p));
+      wc.x = ld.costs[0].cost / safe_probability(std::max(ld.costs[0].probability, clip_p), logger);
     cs_labels.costs.push_back(wc);
   }
 }
@@ -72,7 +72,8 @@ void gen_cs_test_example(const multi_ex& examples, COST_SENSITIVE::label& cs_lab
 }
 
 // single line version
-void gen_cs_example_ips(cb_to_cs& c, const CB::label& ld, COST_SENSITIVE::label& cs_ld, float clip_p)
+void gen_cs_example_ips(
+    cb_to_cs& c, const CB::label& ld, COST_SENSITIVE::label& cs_ld, VW::io::logger& logger, float clip_p)
 {
   // this implements the inverse propensity score method, where cost are importance weighted by the probability of the
   // chosen action generate cost-sensitive example
@@ -87,7 +88,7 @@ void gen_cs_example_ips(cb_to_cs& c, const CB::label& ld, COST_SENSITIVE::label&
       if (i == c.known_cost.action)
       {
         // use importance weighted cost for observed action, 0 otherwise
-        wc.x = c.known_cost.cost / safe_probability(std::max(c.known_cost.probability, clip_p));
+        wc.x = c.known_cost.cost / safe_probability(std::max(c.known_cost.probability, clip_p), logger);
 
         // ips can be thought as the doubly robust method with a fixed regressor that predicts 0 costs for everything
         // update the loss of this regressor
@@ -110,7 +111,7 @@ void gen_cs_example_ips(cb_to_cs& c, const CB::label& ld, COST_SENSITIVE::label&
       if (cl.action == c.known_cost.action)
       {
         // use importance weighted cost for observed action, 0 otherwise
-        wc.x = c.known_cost.cost / safe_probability(std::max(c.known_cost.probability, clip_p));
+        wc.x = c.known_cost.cost / safe_probability(std::max(c.known_cost.probability, clip_p), logger);
 
         // ips can be thought as the doubly robust method with a fixed regressor that predicts 0 costs for everything
         // update the loss of this regressor
@@ -145,6 +146,7 @@ void gen_cs_example_mtr(cb_to_cs_adf& c, multi_ex& ec_seq, COST_SENSITIVE::label
       c.mtr_example = static_cast<uint32_t>(i);
       c.mtr_ec_seq.push_back(ec_seq[i]);
       cs_labels.costs.push_back(wc);
+      break;
     }
   }
 }

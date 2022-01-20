@@ -1,6 +1,4 @@
 creating quadratic features for pairs: ::
-WARNING: any duplicate namespace interactions will be removed
-You can use --leave_duplicate_interactions to disable this behaviour.
 predictions = slates_simple_w_interactions.predict
 Num weight bits = 18
 learning rate = 0.5

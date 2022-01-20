@@ -1,5 +1,3 @@
-[info] Generating 2-grams for all namespaces.
-[info] Generating 4-skips for all namespaces.
 predictions = rcv1_raw_cb_explore_legacy.preds
 Num weight bits = 24
 learning rate = 0.25

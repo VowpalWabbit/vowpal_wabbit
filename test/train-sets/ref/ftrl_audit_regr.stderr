@@ -12,7 +12,7 @@ num sources = 1
 Input label = simple
 Output pred = scalar
 Regressor contains 1121 values
-example      values         total   
+example      values         total
 counter      audited        progress
 1                   36            3%
 2                   85            7%

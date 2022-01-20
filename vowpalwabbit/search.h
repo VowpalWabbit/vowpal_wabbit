@@ -215,15 +215,15 @@ struct search
   BaseTask base_task(multi_ex& ec) { return BaseTask(this, ec); }
 
   // internal data that you don't get to see!
-  search_private* priv;
-  std::shared_ptr<void> task_data;      // your task data!
-  std::shared_ptr<void> metatask_data;  // your metatask data!
-  const char* task_name;
-  const char* metatask_name;
+  search_private* priv = nullptr;
+  std::shared_ptr<void> task_data = nullptr;      // your task data!
+  std::shared_ptr<void> metatask_data = nullptr;  // your metatask data!
+  const char* task_name = nullptr;
+  const char* metatask_name = nullptr;
 
   VW::workspace& get_vw_pointer_unsafe();  // although you should rarely need this, some times you need a pointer to the
                                            // vw data structure :(
-  void set_force_oracle(bool force);  // if the library wants to force search to use the oracle, set this to true
+  void set_force_oracle(bool force);       // if the library wants to force search to use the oracle, set this to true
   search();
   ~search();
 };

@@ -33,8 +33,6 @@ using namespace VW::config;
 namespace CS = COST_SENSITIVE;
 namespace MC = MULTICLASS;
 
-namespace logger = VW::io::logger;
-
 using std::endl;
 
 namespace Search
@@ -87,11 +85,11 @@ struct prediction
 // parameters for auto-conditioning
 struct auto_condition_settings
 {
-  size_t max_bias_ngram_length;  // add a "bias" feature for each ngram up to and including this length. eg., if it's 1,
-                                 // then you get a single feature for each conditional
-  size_t max_quad_ngram_length;  // add bias *times* input features for each ngram up to and including this length
-  float feature_value;           // how much weight should the conditional features get?
-  bool use_passthrough_repr;     // should we ask lower-level reductions for their internal state?
+  size_t max_bias_ngram_length = 0;   // add a "bias" feature for each ngram up to and including this length. eg., if
+                                      // it's 1, then you get a single feature for each conditional
+  size_t max_quad_ngram_length = 0;   // add bias *times* input features for each ngram up to and including this length
+  float feature_value = 0.f;          // how much weight should the conditional features get?
+  bool use_passthrough_repr = false;  // should we ask lower-level reductions for their internal state?
 };
 
 struct scored_action
@@ -162,113 +160,115 @@ private:
 public:
   using cache_map = std::unordered_map<byte_array, scored_action, cached_item_hash, cached_item_equivalent>;
 
-  VW::workspace* all;
-  std::shared_ptr<rand_state> _random_state;
+  VW::workspace* all = nullptr;
+  std::shared_ptr<VW::rand_state> _random_state;
 
-  uint64_t offset;
-  bool auto_condition_features;  // do you want us to automatically add conditioning features?
-  bool auto_hamming_loss;        // if you're just optimizing hamming loss, we can do it for you!
-  bool examples_dont_change;     // set to true if you don't do any internal example munging
-  bool is_ldf;                   // user declared ldf
-  bool use_action_costs;         // task promises to define per-action rollout-by-ref costs
+  uint64_t offset = 0;
+  bool auto_condition_features = false;  // do you want us to automatically add conditioning features?
+  bool auto_hamming_loss = false;        // if you're just optimizing hamming loss, we can do it for you!
+  bool examples_dont_change = false;     // set to true if you don't do any internal example munging
+  bool is_ldf = false;                   // user declared ldf
+  bool use_action_costs = false;         // task promises to define per-action rollout-by-ref costs
 
   v_array<int32_t> neighbor_features;  // ugly encoding of neighbor feature requirements
   auto_condition_settings acset;       // settings for auto-conditioning
-  size_t history_length;               // value of --search_history_length, used by some tasks, default 1
+  size_t history_length = 0;           // value of --search_history_length, used by some tasks, default 1
 
-  size_t A;                 // total number of actions, [1..A]; 0 means ldf
-  size_t num_learners;      // total number of learners;
-  bool cb_learner;          // do contextual bandit learning on action (was "! rollout_all_actions" which was confusing)
+  size_t A = 0;             // total number of actions, [1..A]; 0 means ldf
+  size_t num_learners = 0;  // total number of learners;
+  bool cb_learner = false;  // do contextual bandit learning on action (was "! rollout_all_actions" which was confusing)
   SearchState state;        // current state of learning
-  size_t learn_learner_id;  // we allow user to use different learners for different states
-  int mix_per_roll_policy;  // for MIX_PER_ROLL, we need to choose a policy to use; this is where it's stored (-2 means
-                            // "not selected yet")
-  bool no_caching;          // turn off caching
-  size_t rollout_num_steps;  // how many calls of "loss" before we stop really predicting on rollouts and switch to
-                             // oracle (0 means "infinite")
-  bool linear_ordering;      // insist that examples are generated in linear order (rather that the default hoopla
-                             // permutation)
-  bool (*label_is_test)(const polylabel&);  // tell me if the label data from an example is test
+  size_t learn_learner_id = 0;   // we allow user to use different learners for different states
+  int mix_per_roll_policy = 0;   // for MIX_PER_ROLL, we need to choose a policy to use; this is where it's stored (-2
+                                 // means "not selected yet")
+  bool no_caching = false;       // turn off caching
+  size_t rollout_num_steps = 0;  // how many calls of "loss" before we stop really predicting on rollouts and switch to
+                                 // oracle (0 means "infinite")
+  bool linear_ordering = false;  // insist that examples are generated in linear order (rather that the default hoopla
+                                 // permutation)
+  bool (*label_is_test)(const polylabel&) = nullptr;  // tell me if the label data from an example is test
 
-  size_t t;                                     // current search step
-  size_t T;                                     // length of root trajectory
-  std::vector<example> learn_ec_copy;           // copy of example(s) at learn_t
-  example* learn_ec_ref;                        // reference to example at learn_t, when there's no example munging
-  size_t learn_ec_ref_cnt;                      // how many are there (for LDF mode only; otherwise 1)
-  v_array<ptag> learn_condition_on;             // a copy of the tags used for conditioning at the training position
+  size_t t = 0;                                     // current search step
+  size_t T = 0;                                     // length of root trajectory
+  std::vector<example> learn_ec_copy;               // copy of example(s) at learn_t
+  example* learn_ec_ref = nullptr;                  // reference to example at learn_t, when there's no example munging
+  size_t learn_ec_ref_cnt = 0;                      // how many are there (for LDF mode only; otherwise 1)
+  v_array<ptag> learn_condition_on;                 // a copy of the tags used for conditioning at the training position
   std::vector<action_repr> learn_condition_on_act;  // the actions taken
-  v_array<char> learn_condition_on_names;       // the names of the actions
-  v_array<action> learn_allowed_actions;        // which actions were allowed at training time?
-  std::vector<action_repr> ptag_to_action;      // tag to action mapping for conditioning
+  v_array<char> learn_condition_on_names;           // the names of the actions
+  v_array<action> learn_allowed_actions;            // which actions were allowed at training time?
+  std::vector<action_repr> ptag_to_action;          // tag to action mapping for conditioning
   std::vector<action> test_action_sequence;  // if test-mode was run, what was the corresponding action sequence; it's a
                                              // vector cuz we might expose it to the library
-  action learn_oracle_action;                // store an oracle action for debugging purposes
+  action learn_oracle_action = 0;            // store an oracle action for debugging purposes
   features last_action_repr;
 
   polylabel allowed_actions_cache;
 
-  size_t loss_declared_cnt;                 // how many times did run declare any loss (implicitly or explicitly)?
+  size_t loss_declared_cnt = 0;             // how many times did run declare any loss (implicitly or explicitly)?
   v_array<scored_action> train_trajectory;  // the training trajectory
-  size_t learn_t;                           // what time step are we learning on?
-  size_t learn_a_idx;                       // what action index are we trying?
-  bool done_with_all_actions;               // set to true when there are no more learn_a_idx to go
+  size_t learn_t = 0;                       // what time step are we learning on?
+  size_t learn_a_idx = 0;                   // what action index are we trying?
+  bool done_with_all_actions = false;       // set to true when there are no more learn_a_idx to go
 
-  float test_loss;   // loss incurred when run INIT_TEST
-  float learn_loss;  // loss incurred when run LEARN
-  float train_loss;  // loss incurred when run INIT_TRAIN
+  float test_loss = 0.f;   // loss incurred when run INIT_TEST
+  float learn_loss = 0.f;  // loss incurred when run LEARN
+  float train_loss = 0.f;  // loss incurred when run INIT_TRAIN
 
-  bool hit_new_pass;     // have we hit a new pass?
-  bool force_oracle;     // insist on using the oracle to make predictions
-  float perturb_oracle;  // with this probability, choose a random action instead of oracle action
+  bool hit_new_pass = false;   // have we hit a new pass?
+  bool force_oracle = false;   // insist on using the oracle to make predictions
+  float perturb_oracle = 0.f;  // with this probability, choose a random action instead of oracle action
 
-  size_t num_calls_to_run, num_calls_to_run_previous, save_every_k_runs;
+  size_t num_calls_to_run = 0;
+  size_t num_calls_to_run_previous = 0;
+  size_t save_every_k_runs = 0;
 
   // if we're printing to stderr we need to remember if we've printed the header yet
   // (i.e., we do this if we're driving)
-  bool printed_output_header;
+  bool printed_output_header = false;
 
   // various strings for different search states
-  bool should_produce_string;
+  bool should_produce_string = false;
   std::unique_ptr<std::stringstream> pred_string;
   std::unique_ptr<std::stringstream> truth_string;
   std::unique_ptr<std::stringstream> bad_string_stream;
 
   // parameters controlling interpolation
-  float beta;   // interpolation rate
-  float alpha;  // parameter used to adapt beta for dagger (see above comment), should be in (0,1)
+  float beta = 0.f;   // interpolation rate
+  float alpha = 0.f;  // parameter used to adapt beta for dagger (see above comment), should be in (0,1)
 
   RollMethod rollout_method;
   RollMethod rollin_method;
-  float subsample_timesteps;  // train at every time step or just a (random) subset?
-  bool xv;  // train three separate policies -- two for providing examples to the other and a third training on the
-            // union (which will be used at test time -- TODO)
+  float subsample_timesteps = 0.f;  // train at every time step or just a (random) subset?
+  bool xv = false;  // train three separate policies -- two for providing examples to the other and a third training on
+                    // the union (which will be used at test time -- TODO)
 
-  bool allow_current_policy;  // should the current policy be used for training? true for dagger
-  bool adaptive_beta;  // used to implement dagger-like algorithms. if true, beta = 1-(1-alpha)^n after n updates, and
-                       // policy is mixed with oracle as \pi' = (1-beta)\pi^* + beta \pi
-  size_t passes_per_policy;  // if we're not in dagger-mode, then we need to know how many passes to train a policy
+  bool allow_current_policy = false;  // should the current policy be used for training? true for dagger
+  bool adaptive_beta = false;         // used to implement dagger-like algorithms. if true, beta = 1-(1-alpha)^n after n
+                                      // updates, and policy is mixed with oracle as \pi' = (1-beta)\pi^* + beta \pi
+  size_t passes_per_policy = 0;  // if we're not in dagger-mode, then we need to know how many passes to train a policy
 
-  uint32_t current_policy;  // what policy are we training right now?
+  uint32_t current_policy = 0;  // what policy are we training right now?
 
   // various statistics for reporting
-  size_t num_features;
-  uint32_t total_number_of_policies;
-  size_t read_example_last_id;
-  size_t passes_since_new_policy;
-  size_t read_example_last_pass;
-  size_t total_examples_generated;
-  size_t total_predictions_made;
-  size_t total_cache_hits;
+  size_t num_features = 0;
+  uint32_t total_number_of_policies = 0;
+  size_t read_example_last_id = 0;
+  size_t passes_since_new_policy = 0;
+  size_t read_example_last_pass = 0;
+  size_t total_examples_generated = 0;
+  size_t total_predictions_made = 0;
+  size_t total_cache_hits = 0;
 
   cache_map cache_hash_map;
 
   // for foreach_feature temporary storage for conditioning
-  uint64_t dat_new_feature_idx;
-  example* dat_new_feature_ec;
+  uint64_t dat_new_feature_idx = 0;
+  example* dat_new_feature_ec = nullptr;
   std::stringstream dat_new_feature_audit_ss;
-  size_t dat_new_feature_namespace;
-  std::string* dat_new_feature_feature_space;
-  float dat_new_feature_value;
+  size_t dat_new_feature_namespace = 0;
+  std::string* dat_new_feature_feature_space = nullptr;
+  float dat_new_feature_value = 0.f;
 
   // to reduce memory allocation
   std::unique_ptr<std::stringstream> rawOutputStringStream;
@@ -279,9 +279,9 @@ public:
   polylabel gte_label;
   std::vector<std::pair<float, size_t>> active_uncertainty;
   std::vector<std::vector<std::pair<CS::wclass&, bool>>> active_known;
-  bool force_setup_ec_ref;
-  bool active_csoaa;
-  float active_csoaa_verify;
+  bool force_setup_ec_ref = false;
+  bool active_csoaa = false;
+  float active_csoaa_verify = 0.f;
 
   VW::LEARNER::multi_learner* multi_base_learner = nullptr;
   VW::LEARNER::single_learner* single_base_learner = nullptr;
@@ -289,11 +289,11 @@ public:
 
   CS::label empty_cs_label;
 
-  search_task* task;          // your task!
-  search_metatask* metatask;  // your (optional) metatask
-  BaseTask* metaoverride;
-  size_t meta_t;  // the metatask has it's own notion of time. meta_t+t, during a single run, is the way to think about
-                  // the "real" decision step but this really only matters for caching purposes
+  search_task* task = nullptr;          // your task!
+  search_metatask* metatask = nullptr;  // your (optional) metatask
+  BaseTask* metaoverride = nullptr;
+  size_t meta_t = 0;  // the metatask has it's own notion of time. meta_t+t, during a single run, is the way to think
+                      // about the "real" decision step but this really only matters for caching purposes
   v_array<v_array<action_cache>*>
       memo_foreach_action;  // when foreach_action is on, we need to cache TRAIN trajectory actions for LEARN
 
@@ -310,10 +310,7 @@ public:
 void clear_memo_foreach_action(search_private& priv)
 {
   for (size_t i = 0; i < priv.memo_foreach_action.size(); i++)
-    if (priv.memo_foreach_action[i])
-    {
-      delete priv.memo_foreach_action[i];
-    }
+    if (priv.memo_foreach_action[i]) { delete priv.memo_foreach_action[i]; }
   priv.memo_foreach_action.clear();
 }
 
@@ -348,7 +345,7 @@ int random_policy(search_private& priv, bool allow_current, bool allow_optimal, 
     if (allow_current) return static_cast<int>(priv.current_policy);
     if (priv.current_policy > 0) return ((static_cast<int>(priv.current_policy)) - 1);
     if (allow_optimal) return -1;
-    logger::errlog_error("internal error (bug): no valid policies to choose from!  defaulting to current");
+    priv.all->logger.err_error("internal error (bug): no valid policies to choose from!  defaulting to current");
     return static_cast<int>(priv.current_policy);
   }
 
@@ -357,7 +354,7 @@ int random_policy(search_private& priv, bool allow_current, bool allow_optimal, 
 
   if (num_valid_policies == 0)
   {
-    logger::errlog_error("internal error (bug): no valid policies to choose from!  defaulting to current");
+    priv.all->logger.err_error("internal error (bug): no valid policies to choose from!  defaulting to current");
     return static_cast<int>(priv.current_policy);
   }
   else if (num_valid_policies == 1)
@@ -416,7 +413,7 @@ bool should_print_update(VW::workspace& all, bool hit_new_pass = false)
   if (PRINT_UPDATE_EVERY_EXAMPLE) return true;
   if (PRINT_UPDATE_EVERY_PASS)
     if (hit_new_pass) return true;
-  return (all.sd->weighted_examples() >= all.sd->dump_interval) && !all.logger.quiet && !all.bfgs;
+  return (all.sd->weighted_examples() >= all.sd->dump_interval) && !all.quiet && !all.bfgs;
 }
 
 bool might_print_update(VW::workspace& all)
@@ -426,7 +423,7 @@ bool might_print_update(VW::workspace& all)
 
   if (PRINT_UPDATE_EVERY_EXAMPLE) return true;
   if (PRINT_UPDATE_EVERY_PASS) return true;  // SPEEDUP: make this better
-  return (all.sd->weighted_examples() + 1. >= all.sd->dump_interval) && !all.logger.quiet && !all.bfgs;
+  return (all.sd->weighted_examples() + 1. >= all.sd->dump_interval) && !all.quiet && !all.bfgs;
 }
 
 bool must_run_test(VW::workspace& all, multi_ex& ec, bool is_test_ex)
@@ -440,7 +437,7 @@ bool must_run_test(VW::workspace& all, multi_ex& ec, bool is_test_ex)
       //     current_pass == 0
       //     OR holdout is off
       //     OR it's a test example
-      ((!all.logger.quiet || !all.vw_is_main) &&  // had to disable this because of library mode!
+      ((!all.quiet || !all.vw_is_main) &&  // had to disable this because of library mode!
           (!is_test_ex) &&
           (all.holdout_set_off ||                          // no holdout
               ec[0]->test_only || (all.current_pass == 0)  // we need error rates for progressive cost
@@ -489,7 +486,7 @@ void print_update(search_private& priv)
   //       Currently there is no way to convert an ostream to FILE*, so the lines will need to be converted
   //       to ostream format
   VW::workspace& all = *priv.all;
-  if (!priv.printed_output_header && !all.logger.quiet)
+  if (!priv.printed_output_header && !all.quiet)
   {
     const char* header_fmt = "%-10s %-10s %8s%24s %22s %5s %5s  %7s  %7s  %7s  %-8s\n";
     fprintf(stderr, header_fmt, "average", "since", "instance", "current true", "current predicted", "cur", "cur",
@@ -562,7 +559,7 @@ void add_new_feature(search_private& priv, float val, uint64_t idx)
   uint64_t idx2 = ((idx & mask) >> ss) & mask;
   features& fs = priv.dat_new_feature_ec->feature_space[priv.dat_new_feature_namespace];
   fs.push_back(val * priv.dat_new_feature_value, ((priv.dat_new_feature_idx + idx2) << ss));
-  cdbg << "adding: " << fs.indicies.back() << ':' << fs.values.back() << endl;
+  cdbg << "adding: " << fs.indices.back() << ':' << fs.values.back() << endl;
   if (priv.all->audit)
   {
     std::stringstream temp;
@@ -708,13 +705,8 @@ void cdbg_print_array(const std::string& str, v_array<T>& A)
   for (size_t i = 0; i < A.size(); i++) cdbg << " " << A[i];
   cdbg << " ]" << endl;
 }
-template <class T>
-void cerr_print_array(std::string str, v_array<T>& A)
-{
-  logger::errlog_info("{0} = [{1}]", str, fmt::join(A, " "));
-}
 
-size_t random(std::shared_ptr<rand_state>& rs, size_t max)
+size_t random(std::shared_ptr<VW::rand_state>& rs, size_t max)
 {
   return static_cast<size_t>(rs->get_and_update_random() * static_cast<float>(max));
 }
@@ -791,7 +783,7 @@ void add_example_conditioning(search_private& priv, example& ec, size_t conditio
       for (size_t k = 0; k < fs.size(); k++)
         if ((fs.values[k] > 1e-10) || (fs.values[k] < -1e-10))
         {
-          uint64_t fid = 84913 + 48371803 * (extra_offset + 8392817 * name) + 840137 * (4891 + fs.indicies[k]);
+          uint64_t fid = 84913 + 48371803 * (extra_offset + 8392817 * name) + 840137 * (4891 + fs.indices[k]);
           if (priv.all->audit)
           {
             priv.dat_new_feature_audit_ss.str("");
@@ -1134,9 +1126,7 @@ action single_prediction_notLDF(search_private& priv, example& ec, int policy, c
     }
     v_array<action_cache>* this_cache = nullptr;
     if (need_memo_foreach_action(priv) && (override_action == static_cast<action>(-1)))
-    {
-      this_cache = new v_array<action_cache>();
-    }
+    { this_cache = new v_array<action_cache>(); }
     for (size_t k = 0; k < K; k++)
     {
       action cl = cs_get_cost_index(priv.cb_learner, ec.l, k);
@@ -1219,7 +1209,7 @@ action single_prediction_notLDF(search_private& priv, example& ec, int policy, c
       (*priv.rawOutputStringStream) << cs_get_cost_index(priv.cb_learner, ec.l, k) << ':'
                                     << cs_get_cost_partial_prediction(priv.cb_learner, ec.l, k);
     }
-    all.print_text_by_ref(all.raw_prediction.get(), priv.rawOutputStringStream->str(), ec.tag);
+    all.print_text_by_ref(all.raw_prediction.get(), priv.rawOutputStringStream->str(), ec.tag, all.logger);
   }
 
   ec.l = old_label;
@@ -1248,10 +1238,7 @@ action single_prediction_LDF(search_private& priv, example* ecs, size_t ec_cnt, 
   size_t start_K = (priv.is_ldf && COST_SENSITIVE::ec_is_example_header(ecs[0])) ? 1 : 0;
 
   v_array<action_cache>* this_cache = nullptr;
-  if (need_partial_predictions)
-  {
-    this_cache = new v_array<action_cache>();
-  }
+  if (need_partial_predictions) { this_cache = new v_array<action_cache>(); }
 
   for (action a = static_cast<uint32_t>(start_K); a < ec_cnt; a++)
   {
@@ -1776,7 +1763,7 @@ action search_predict(search_private& priv, example* ecs, size_t ec_cnt, ptag my
 
           cdbg << "passthrough = [";
           for (size_t kk = 0; kk < priv.last_action_repr.size(); kk++)
-            cdbg << ' ' << priv.last_action_repr.indicies[kk] << ':' << priv.last_action_repr.values[kk];
+            cdbg << ' ' << priv.last_action_repr.indices[kk] << ':' << priv.last_action_repr.values[kk];
           cdbg << " ]" << endl;
 
           ecs[0].passthrough = nullptr;
@@ -1980,8 +1967,8 @@ void run_task(search& sch, multi_ex& ec)
     priv.task->run(sch, ec);
 }
 
-void verify_active_csoaa(
-    COST_SENSITIVE::label& losses, const std::vector<std::pair<CS::wclass&, bool>>& known, size_t t, float multiplier)
+void verify_active_csoaa(COST_SENSITIVE::label& losses, const std::vector<std::pair<CS::wclass&, bool>>& known,
+    size_t t, float multiplier, VW::io::logger& logger)
 {
   float threshold = multiplier / std::sqrt(static_cast<float>(t));
   cdbg << "verify_active_csoaa, losses = [";
@@ -1996,9 +1983,9 @@ void verify_active_csoaa(
       float err = static_cast<float>(std::pow(known[i].first.partial_prediction - wc.x, 2));
       if (err > threshold)
       {
-        logger::errlog_error("verify_active_csoaa failed: truth {0}:{1}, known[{2}]={3}, error={4} vs threshold {5}",
-                             wc.class_index /*0*/, wc.x/*1*/, i/*2*/, known[i].first.partial_prediction/*3*/,
-                             err/*4*/, threshold/*5*/);
+        logger.err_error("verify_active_csoaa failed: truth {0}:{1}, known[{2}]={3}, error={4} vs threshold {5}",
+            wc.class_index /*0*/, wc.x /*1*/, i /*2*/, known[i].first.partial_prediction /*3*/, err /*4*/,
+            threshold /*5*/);
       }
     }
     i++;
@@ -2072,9 +2059,9 @@ void train_single_example(search& sch, bool is_test_ex, bool is_holdout_ex, mult
 
     // generate output
     for (auto& sink : all.final_prediction_sink)
-    { all.print_text_by_ref(sink.get(), priv.pred_string->str(), ec_seq[0]->tag); }
+    { all.print_text_by_ref(sink.get(), priv.pred_string->str(), ec_seq[0]->tag, all.logger); }
 
-    if (all.raw_prediction != nullptr) all.print_text_by_ref(all.raw_prediction.get(), "", ec_seq[0]->tag);
+    if (all.raw_prediction != nullptr) all.print_text_by_ref(all.raw_prediction.get(), "", ec_seq[0]->tag, all.logger);
   }
 
   // if we're not training, then we're done!
@@ -2168,8 +2155,8 @@ void train_single_example(search& sch, bool is_test_ex, bool is_holdout_ex, mult
       //                           priv.learn_loss);
     }
     if (priv.active_csoaa_verify > 0.)
-      verify_active_csoaa(
-          priv.learn_losses.cs, priv.active_known[priv.learn_t], ec_seq[0]->example_counter, priv.active_csoaa_verify);
+      verify_active_csoaa(priv.learn_losses.cs, priv.active_known[priv.learn_t], ec_seq[0]->example_counter,
+          priv.active_csoaa_verify, priv.all->logger);
 
     if (skipped_all_actions)
     {
@@ -2230,7 +2217,7 @@ void inline adjust_auto_condition(search_private& priv)
     // turn off auto-condition if it's irrelevant
     if ((priv.history_length == 0) || (priv.acset.feature_value == 0.f))
     {
-      logger::errlog_warn("warning: turning off AUTO_CONDITION_FEATURES because settings make it useless");
+      priv.all->logger.err_warn("Turning off AUTO_CONDITION_FEATURES because settings make it useless");
       priv.auto_condition_features = false;
     }
   }
@@ -2319,7 +2306,7 @@ void end_pass(search& sch)
     if (all->training) priv.current_policy++;
     if (priv.current_policy > priv.total_number_of_policies)
     {
-      logger::errlog_error("internal error (bug): too many policies; not advancing");
+      priv.all->logger.err_error("internal error (bug): too many policies; not advancing");
       priv.current_policy = priv.total_number_of_policies;
     }
     // reset search_trained_nb_policies in options_from_file so it is saved to regressor file later
@@ -2399,18 +2386,18 @@ void search_initialize(VW::workspace* all, search& sch)
   priv.rawOutputStringStream = VW::make_unique<std::stringstream>();
 }
 
-void ensure_param(float& v, float lo, float hi, float def, const char* str)
+void ensure_param(float& v, float lo, float hi, float def, const char* str, VW::io::logger& logger)
 {
   if ((v < lo) || (v > hi))
   {
-    logger::errlog_warn(str);
+    logger.err_warn(str);
     v = def;
   }
 }
 
 void handle_condition_options(VW::workspace& all, auto_condition_settings& acset)
 {
-  option_group_definition new_options("Search Auto-Conditioning");
+  option_group_definition new_options("[Search] Search Auto-Conditioning");
   new_options.add(make_option("search_max_bias_ngram_length", acset.max_bias_ngram_length)
                       .keep()
                       .default_value(1)
@@ -2435,13 +2422,13 @@ void search_finish(search& sch)
   search_private& priv = *sch.priv;
   cdbg << "search_finish" << endl;
 
-  if (priv.active_csoaa) logger::errlog_info("search calls to run = {}", priv.num_calls_to_run);
+  if (priv.active_csoaa) priv.all->logger.err_info("search calls to run = {}", priv.num_calls_to_run);
 
   if (priv.task->finish) priv.task->finish(sch);
   if (priv.metatask && priv.metatask->finish) priv.metatask->finish(sch);
 }
 
-std::vector<CS::label> read_allowed_transitions(action A, const char* filename)
+std::vector<CS::label> read_allowed_transitions(action A, const char* filename, VW::io::logger& logger)
 {
   FILE* f;
   if (VW::file_open(&f, filename, "r") != 0)
@@ -2453,13 +2440,9 @@ std::vector<CS::label> read_allowed_transitions(action A, const char* filename)
   while ((rd = fscanf_s(f, "%d:%d", &from, &to)) > 0)
   {
     if ((from < 0) || (from > static_cast<int>(A)))
-    {
-      logger::errlog_warn("warning: ignoring transition from {0} because it's out of the range [0,{1}]", from, A);
-    }
+    { logger.err_warn("Ignoring transition from {0} because it's out of the range [0,{1}]", from, A); }
     if ((to < 0) || (to > static_cast<int>(A)))
-    {
-      logger::errlog_warn("warning: ignoring transition to {0} because it's out of the range [0,{1}]", to, A);
-    }
+    { logger.err_warn("Ignoring transition to {0} because it's out of the range [0,{1}]", to, A); }
     bg[from * (A + 1) + to] = true;
     count++;
   }
@@ -2485,12 +2468,12 @@ std::vector<CS::label> read_allowed_transitions(action A, const char* filename)
   }
   free(bg);
 
-  logger::errlog_info("read {0} allowed transitions from {1}", count, filename);
+  logger.err_info("read {0} allowed transitions from {1}", count, filename);
 
   return allowed;
 }
 
-void parse_neighbor_features(VW::string_view nf_strview, v_array<int32_t>& neighbor_features)
+void parse_neighbor_features(VW::string_view nf_strview, v_array<int32_t>& neighbor_features, VW::io::logger& logger)
 {
   neighbor_features.clear();
   if (nf_strview.empty()) return;
@@ -2515,17 +2498,17 @@ void parse_neighbor_features(VW::string_view nf_strview, v_array<int32_t>& neigh
     char ns = ' ';
     if (cmd.size() == 1)
     {
-      posn = int_of_string(cmd[0]);
+      posn = int_of_string(cmd[0], logger);
       ns = ' ';
     }
     else if (cmd.size() == 2)
     {
-      posn = int_of_string(cmd[0]);
+      posn = int_of_string(cmd[0], logger);
       ns = (!cmd[1].empty()) ? cmd[1].front() : ' ';
     }
     else
     {
-      logger::errlog_warn("warning: ignoring malformed neighbor specification: '{}'", strview);
+      logger.err_warn("Ignoring malformed neighbor specification: '{}'", strview);
     }
     int32_t enc = (posn << 24) | (ns & 0xFF);
     neighbor_features.push_back(enc);
@@ -2548,77 +2531,79 @@ base_learner* setup(VW::setup_base_i& stack_builder)
   uint32_t search_trained_nb_policies;
   std::string search_allowed_transitions;
 
-  priv.A = 1;
-  option_group_definition new_options("Search");
-  new_options.add(
-      make_option("search", priv.A).keep().help("Use learning to search, argument=maximum action id or 0 for LDF"));
-  new_options.add(make_option("search_task", task_string)
-                      .keep()
-                      .necessary()
-                      .help("The search task (use \"--search_task list\" to get a list of available tasks)"));
-  new_options.add(make_option("search_metatask", metatask_string)
-                      .keep()
-                      .help("The search metatask (use \"--search_metatask list\" to get a list of available metatasks."
-                            " Note: a valid search_task needs to be supplied in addition for this to output.)"));
-  new_options.add(make_option("search_interpolation", interpolation_string)
-                      .keep()
-                      .help("At what level should interpolation happen? [*data|policy]"));
-  new_options.add(make_option("search_rollout", rollout_string)
-                      .one_of({"policy", "learn", "oracle", "ref", "mix_per_state", "mix_per_roll", "mix", "none"})
-                      .help("How should rollouts be executed"));
-  new_options.add(make_option("search_rollin", rollin_string)
-                      .one_of({"policy", "learn", "oracle", "ref", "mix_per_state", "mix_per_roll", "mix"})
-                      .help("How should past trajectories be generated"));
-  new_options.add(make_option("search_passes_per_policy", priv.passes_per_policy)
-                      .default_value(1)
-                      .help("Number of passes per policy (only valid for search_interpolation=policy)"));
-  new_options.add(make_option("search_beta", priv.beta)
-                      .default_value(0.5f)
-                      .help("Interpolation rate for policies (only valid for search_interpolation=policy)"));
-  new_options.add(make_option("search_alpha", priv.alpha)
-                      .default_value(1e-10f)
-                      .help("Annealed beta = 1-(1-alpha)^t (only valid for search_interpolation=data)"));
-  new_options.add(make_option("search_total_nb_policies", priv.total_number_of_policies)
-                      .help("If we are going to train the policies through multiple separate calls to vw, we need to "
-                            "specify this parameter and tell vw how many policies are eventually going to be trained"));
-  new_options.add(make_option("search_trained_nb_policies", search_trained_nb_policies)
-                      .help("The number of trained policies in a file"));
-  new_options.add(make_option("search_allowed_transitions", search_allowed_transitions)
-                      .help("Read file of allowed transitions [def: all transitions are allowed]"));
-  new_options.add(make_option("search_subsample_time", priv.subsample_timesteps)
-                      .help("Instead of training at all timesteps, use a subset. if value in (0,1), train on a random "
-                            "v%. if v>=1, train on precisely v steps per example, if v<=-1, use active learning"));
-  new_options.add(
-      make_option("search_neighbor_features", neighbor_features_string)
-          .keep()
-          .help("Copy features from neighboring lines. argument looks like: '-1:a,+2' meaning copy previous line "
-                "namespace a and next next line from namespace _unnamed_, where ',' separates them"));
-  new_options.add(make_option("search_rollout_num_steps", priv.rollout_num_steps)
-                      .help("How many calls of \"loss\" before we stop really predicting on rollouts and switch to "
-                            "oracle (default means \"infinite\")"));
-  new_options.add(make_option("search_history_length", priv.history_length)
-                      .keep()
-                      .default_value(1)
-                      .help("Some tasks allow you to specify how much history their depend on; specify that here"));
-  new_options.add(make_option("search_no_caching", priv.no_caching)
-                      .help("Turn off the built-in caching ability (makes things slower, but technically more safe)"));
-  new_options.add(
-      make_option("search_xv", priv.xv).help("Train two separate policies, alternating prediction/learning"));
-  new_options.add(make_option("search_perturb_oracle", priv.perturb_oracle)
-                      .default_value(0.f)
-                      .help("Perturb the oracle on rollin with this probability"));
-  new_options.add(make_option("search_linear_ordering", priv.linear_ordering)
-                      .help("Insist on generating examples in linear order (def: hoopla permutation)"));
-  new_options.add(make_option("search_active_verify", priv.active_csoaa_verify)
-                      .help("Verify that active learning is doing the right thing (arg = multiplier, should be = "
-                            "cost_range * range_c)"));
-  new_options.add(make_option("search_save_every_k_runs", priv.save_every_k_runs).help("Save model every k runs"));
+  option_group_definition new_options("[Reduction] Search");
+  new_options
+      .add(make_option("search", priv.A)
+               .keep()
+               .default_value(1)
+               .help("Use learning to search, argument=maximum action id or 0 for LDF"))
+      .add(make_option("search_task", task_string)
+               .keep()
+               .necessary()
+               .one_of({"sequence", "sequencespan", "sequence_ctg", "argmax", "sequence_demoldf", "multiclasstask",
+                   "dep_parser", "entity_relation", "hook", "graph", "list"})
+               .help("The search task (use \"--search_task list\" to get a list of available tasks)"))
+      .add(make_option("search_metatask", metatask_string)
+               .keep()
+               .help("The search metatask (use \"--search_metatask list\" to get a list of available metatasks."
+                     " Note: a valid search_task needs to be supplied in addition for this to output.)"))
+      .add(make_option("search_interpolation", interpolation_string)
+               .keep()
+               .help("At what level should interpolation happen? [*data|policy]"))
+      .add(make_option("search_rollout", rollout_string)
+               .one_of({"policy", "learn", "oracle", "ref", "mix_per_state", "mix_per_roll", "mix", "none"})
+               .help("How should rollouts be executed"))
+      .add(make_option("search_rollin", rollin_string)
+               .one_of({"policy", "learn", "oracle", "ref", "mix_per_state", "mix_per_roll", "mix"})
+               .help("How should past trajectories be generated"))
+      .add(make_option("search_passes_per_policy", priv.passes_per_policy)
+               .default_value(1)
+               .help("Number of passes per policy (only valid for search_interpolation=policy)"))
+      .add(make_option("search_beta", priv.beta)
+               .default_value(0.5f)
+               .help("Interpolation rate for policies (only valid for search_interpolation=policy)"))
+      .add(make_option("search_alpha", priv.alpha)
+               .default_value(1e-10f)
+               .help("Annealed beta = 1-(1-alpha)^t (only valid for search_interpolation=data)"))
+      .add(make_option("search_total_nb_policies", priv.total_number_of_policies)
+               .help("If we are going to train the policies through multiple separate calls to vw, we need to "
+                     "specify this parameter and tell vw how many policies are eventually going to be trained"))
+      .add(make_option("search_trained_nb_policies", search_trained_nb_policies)
+               .help("The number of trained policies in a file"))
+      .add(make_option("search_allowed_transitions", search_allowed_transitions)
+               .help("Read file of allowed transitions [def: all transitions are allowed]"))
+      .add(make_option("search_subsample_time", priv.subsample_timesteps)
+               .help("Instead of training at all timesteps, use a subset. if value in (0,1), train on a random "
+                     "v%. if v>=1, train on precisely v steps per example, if v<=-1, use active learning"))
+      .add(make_option("search_neighbor_features", neighbor_features_string)
+               .keep()
+               .help("Copy features from neighboring lines. argument looks like: '-1:a,+2' meaning copy previous line "
+                     "namespace a and next next line from namespace _unnamed_, where ',' separates them"))
+      .add(make_option("search_rollout_num_steps", priv.rollout_num_steps)
+               .help("How many calls of \"loss\" before we stop really predicting on rollouts and switch to "
+                     "oracle (default means \"infinite\")"))
+      .add(make_option("search_history_length", priv.history_length)
+               .keep()
+               .default_value(1)
+               .help("Some tasks allow you to specify how much history their depend on; specify that here"))
+      .add(make_option("search_no_caching", priv.no_caching)
+               .help("Turn off the built-in caching ability (makes things slower, but technically more safe)"))
+      .add(make_option("search_xv", priv.xv).help("Train two separate policies, alternating prediction/learning"))
+      .add(make_option("search_perturb_oracle", priv.perturb_oracle)
+               .default_value(0.f)
+               .help("Perturb the oracle on rollin with this probability"))
+      .add(make_option("search_linear_ordering", priv.linear_ordering)
+               .help("Insist on generating examples in linear order (def: hoopla permutation)"))
+      .add(make_option("search_active_verify", priv.active_csoaa_verify)
+               .help("Verify that active learning is doing the right thing (arg = multiplier, should be = "
+                     "cost_range * range_c)"))
+      .add(make_option("search_save_every_k_runs", priv.save_every_k_runs).help("Save model every k runs"));
 
   if (!options.add_parse_and_check_necessary(new_options)) return nullptr;
 
   search_initialize(&all, *sch.get());
 
-  parse_neighbor_features(neighbor_features_string, sch->priv->neighbor_features);
+  parse_neighbor_features(neighbor_features_string, sch->priv->neighbor_features, all.logger);
 
   if (interpolation_string == "data")  // run as dagger
   {
@@ -2672,8 +2657,8 @@ base_learner* setup(VW::setup_base_i& stack_builder)
     priv.gte_label.cs.costs.clear();
   }
 
-  ensure_param(priv.beta, 0.0, 1.0, 0.5, "warning: search_beta must be in (0,1); resetting to 0.5");
-  ensure_param(priv.alpha, 0.0, 1.0, 1e-10f, "warning: search_alpha must be in (0,1); resetting to 1e-10");
+  ensure_param(priv.beta, 0.0, 1.0, 0.5, "Search_beta must be in (0,1); resetting to 0.5", all.logger);
+  ensure_param(priv.alpha, 0.0, 1.0, 1e-10f, "Search_alpha must be in (0,1); resetting to 1e-10", all.logger);
 
   priv.num_calls_to_run = 0;
 
@@ -2693,8 +2678,9 @@ base_learner* setup(VW::setup_base_i& stack_builder)
     priv.total_number_of_policies = tmp_number_of_policies;
     if (priv.current_policy >
         0)  // we loaded a file but total number of policies didn't match what is needed for training
-      logger::errlog_warn("warning: you're attempting to train more classifiers than was allocated initially. "
-                          "Likely to cause bad performance.");
+      all.logger.err_warn(
+          "You're attempting to train more classifiers than was allocated initially. "
+          "Likely to cause bad performance.");
   }
 
   // current policy currently points to a new policy we would train
@@ -2779,7 +2765,7 @@ base_learner* setup(VW::setup_base_i& stack_builder)
   VW::label_type_t expected_label_type = all.example_parser->lbl_parser.label_type;
 
   if (options.was_supplied("search_allowed_transitions"))
-    read_allowed_transitions(static_cast<action>(priv.A), search_allowed_transitions.c_str());
+    read_allowed_transitions(static_cast<action>(priv.A), search_allowed_transitions.c_str(), all.logger);
 
   // set up auto-history (used to only do this if AUTO_CONDITION_FEATURES was on, but that doesn't work for hooktask)
   handle_condition_options(all, priv.acset);
@@ -2940,7 +2926,7 @@ std::stringstream& search::output()
 void search::set_options(uint32_t opts)
 {
   if (this->priv->all->vw_is_main && (this->priv->state != SearchState::INITIALIZE))
-    logger::errlog_warn("warning: task should not set options except in initialize function!");
+  { priv->all->logger.err_warn("Task should not set options except in initialize function."); }
   if ((opts & AUTO_CONDITION_FEATURES) != 0) this->priv->auto_condition_features = true;
   if ((opts & AUTO_HAMMING_LOSS) != 0) this->priv->auto_hamming_loss = true;
   if ((opts & EXAMPLES_DONT_CHANGE) != 0) this->priv->examples_dont_change = true;
@@ -2949,18 +2935,19 @@ void search::set_options(uint32_t opts)
   if ((opts & ACTION_COSTS) != 0) this->priv->use_action_costs = true;
 
   if (this->priv->is_ldf && this->priv->use_action_costs)
-    THROW("using LDF and actions costs is not yet implemented; turn off action costs");  // TODO fix
+    THROW("Using LDF and actions costs is not yet implemented; turn off action costs.");  // TODO fix
 
   if (this->priv->use_action_costs && (this->priv->rollout_method != RollMethod::NO_ROLLOUT))
-    logger::errlog_warn(
-      "warning: task is designed to use rollout costs, but this only works when --search_rollout none is specified"
-    );
+  {
+    priv->all->logger.err_warn(
+        "Task is designed to use rollout costs, but this only works when --search_rollout none is specified.");
+  }
 }
 
 void search::set_label_parser(label_parser& lp, bool (*is_test)(const polylabel&))
 {
   if (this->priv->all->vw_is_main && (this->priv->state != SearchState::INITIALIZE))
-    logger::errlog_warn("warning: task should not set label parser except in initialize function!");
+  { priv->all->logger.err_warn("Task should not set label parser except in initialize function."); }
   this->priv->all->example_parser->lbl_parser = lp;
   this->priv->all->example_parser->lbl_parser.test_label = is_test;
   this->priv->label_is_test = is_test;
@@ -2998,13 +2985,7 @@ void search::set_force_oracle(bool force) { this->priv->force_oracle = force; }
 
 // predictor implementation
 predictor::predictor(search& sch, ptag my_tag)
-    : is_ldf(false)
-    , my_tag(my_tag)
-    , ec(nullptr)
-    , ec_cnt(0)
-    , weight(1.)
-    , learner_id(0)
-    , sch(sch)
+    : is_ldf(false), my_tag(my_tag), ec(nullptr), ec_cnt(0), weight(1.), learner_id(0), sch(sch)
 {
 }
 

@@ -74,12 +74,6 @@ class FlatbufferTest:
             with open(stderr_file, "r") as f, open(stderr_test_file, "w") as tmp_f:
                 contents = [self.replace_line(line) for line in f]
                 for line in contents:
-                    if (
-                        "--dsjson" in self.stashed_vw_command
-                        and "WARNING: Old string feature value behavior is deprecated in JSON/DSJSON"
-                        in line
-                    ):
-                        continue
                     tmp_f.write(line)
 
             self.test.comparison_files["stderr"] = str(stderr_test_file)

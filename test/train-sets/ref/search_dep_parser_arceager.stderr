@@ -9,8 +9,8 @@ num sources = 1
 Enabled reductions: gd, scorer-identity, csoaa, search_task
 Input label = cs
 Output pred = multiclass
-average    since      instance            current true      current predicted   cur   cur   predic    cache  examples          
-loss       last        counter           output prefix          output prefix  pass   pol     made     hits    gener  beta    
+average    since      instance            current true      current predicted   cur   cur   predic    cache  examples
+loss       last        counter           output prefix          output prefix  pass   pol     made     hits    gener  beta
 97.000000  97.000000         1  [43:1 5:2 5:2 5:2 1..] [0:1 0:1 0:1 0:1 0:..]     0     0       97        0       97  0.000960
 52.500000  8.000000          2  [2:2 3:5 0:8 3:7 3:4 ] [2:2 0:8 4:2 2:3 2:4 ]     0     0      106        0      106  0.001049
 26.250000  0.000000          4  [2:2 3:5 0:8 3:7 3:4 ] [2:2 3:5 0:8 3:7 3:4 ]     1     0      115        0      212  0.002108

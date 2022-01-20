@@ -24,8 +24,6 @@ using namespace exploration;
 using namespace ACTION_SCORE;
 using namespace VW::config;
 
-namespace logger = VW::io::logger;
-
 #define WARM_START 1
 #define INTERACTION 2
 #define SKIP 3
@@ -50,7 +48,7 @@ struct warm_cb
   // used as the seed
   size_t example_counter = 0;
   VW::workspace* all = nullptr;
-  std::shared_ptr<rand_state> _random_state;
+  std::shared_ptr<VW::rand_state> _random_state;
   multi_ex ecs;
   float loss0 = 0.f;
   float loss1 = 0.f;
@@ -138,7 +136,7 @@ void finish(warm_cb& data)
 {
   uint32_t argmin = find_min(data.cumulative_costs);
 
-  if (!data.all->logger.quiet)
+  if (!data.all->quiet)
   {
     *(data.all->trace_message) << "average variance estimate = " << data.cumu_var / data.inter_iter << std::endl;
     *(data.all->trace_message) << "theoretical average variance = " << data.num_actions / data.epsilon << std::endl;
@@ -162,10 +160,10 @@ void copy_example_to_adf(warm_cb& data, example& ec)
     // copy data
     VW::copy_example_data(&eca, &ec);
 
-    // offset indicies for given action
+    // offset indices for given action
     for (features& fs : eca)
     {
-      for (feature_index& idx : fs.indicies)
+      for (feature_index& idx : fs.indices)
       { idx = ((((idx >> ss) * 28904713) + 4832917 * static_cast<uint64_t>(a)) << ss) & mask; }
     }
 
@@ -414,7 +412,7 @@ void predict_or_learn_bandit_adf(warm_cb& data, multi_learner& base, example& ec
   cl.action = a_s[chosen_action].action + 1;
   cl.probability = a_s[chosen_action].score;
 
-  if (!cl.action) THROW("No action with non-zero probability found!");
+  if (!cl.action) THROW("No action with non-zero probability found.");
 
   if (use_cs)
     cl.cost = loss_cs(data, ec.l.cs.costs, cl.action);
@@ -527,7 +525,7 @@ base_learner* warm_cb_setup(VW::setup_base_i& stack_builder)
   auto data = VW::make_unique<warm_cb>();
   bool use_cs;
 
-  option_group_definition new_options("Make Multiclass into Warm-starting Contextual Bandit");
+  option_group_definition new_options("[Reduction] Warm start contextual bandit");
 
   new_options
       .add(make_option("warm_cb", num_actions)
@@ -584,8 +582,13 @@ base_learner* warm_cb_setup(VW::setup_base_i& stack_builder)
 
   init_adf_data(*data.get(), num_actions);
 
-  options.insert("cb_min_cost", std::to_string(data->loss0));
-  options.insert("cb_max_cost", std::to_string(data->loss1));
+  // We aren't checking for "cb_explore_adf", and these will be invalid without it.
+  // However, this reduction in general is not checking for that either.
+  if ((options.was_supplied("regcb") || options.was_supplied("squarecb")))
+  {
+    options.insert("cb_min_cost", std::to_string(data->loss0));
+    options.insert("cb_max_cost", std::to_string(data->loss1));
+  }
 
   if (options.was_supplied("baseline"))
   {
@@ -601,7 +604,7 @@ base_learner* warm_cb_setup(VW::setup_base_i& stack_builder)
 
   if (!options.was_supplied("epsilon"))
   {
-    logger::errlog_warn("Warning: no epsilon (greedy parameter) specified; resetting to 0.05");
+    all.logger.err_warn("No epsilon (greedy parameter) specified; resetting to 0.05");
     data->epsilon = 0.05f;
   }
 

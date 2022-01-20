@@ -17,8 +17,6 @@ using namespace VW::LEARNER;
 using namespace CB_ALGS;
 using namespace VW::config;
 
-namespace logger = VW::io::logger;
-
 namespace MWT
 {
 struct policy_data
@@ -30,7 +28,7 @@ struct policy_data
 
 struct mwt
 {
-  bool namespaces[256];        // the set of namespaces to evaluate.
+  bool namespaces[256];            // the set of namespaces to evaluate.
   std::vector<policy_data> evals;  // accrued losses of features.
   std::pair<bool, CB::cb_class> optional_observation;
   v_array<uint64_t> policies;
@@ -47,7 +45,7 @@ struct mwt
 
 void value_policy(mwt& c, float val, uint64_t index)  // estimate the value of a single feature.
 {
-  if (val < 0 || std::floor(val) != val) logger::log_error("error {} is not a valid action", val);
+  if (val < 0 || std::floor(val) != val) c.all->logger.out_error("error {} is not a valid action", val);
 
   uint32_t value = static_cast<uint32_t>(val);
   uint64_t new_index = (index & c.all->weights.mask()) >> c.all->weights.stride_shift();
@@ -80,7 +78,7 @@ void predict_or_learn(mwt& c, single_learner& base, example& ec)
   }
 
   VW_WARNING_STATE_PUSH
-  VW_WARNING_DISABLE_CPP_17_LANG_EXT
+  VW_WARNING_DISABLE_COND_CONST_EXPR
   if VW_STD17_CONSTEXPR (exclude || learn)
   {
     c.indices.clear();
@@ -117,7 +115,7 @@ void predict_or_learn(mwt& c, single_learner& base, example& ec)
   }
 
   VW_WARNING_STATE_PUSH
-  VW_WARNING_DISABLE_CPP_17_LANG_EXT
+  VW_WARNING_DISABLE_COND_CONST_EXPR
   if VW_STD17_CONSTEXPR (exclude || learn)
     while (!c.indices.empty())
     {
@@ -136,7 +134,7 @@ void predict_or_learn(mwt& c, single_learner& base, example& ec)
   ec.pred.scalars = preds;
 }
 
-void print_scalars(VW::io::writer* f, v_array<float>& scalars, v_array<char>& tag)
+void print_scalars(VW::io::writer* f, v_array<float>& scalars, v_array<char>& tag, VW::io::logger& logger)
 {
   if (f != nullptr)
   {
@@ -155,7 +153,7 @@ void print_scalars(VW::io::writer* f, v_array<float>& scalars, v_array<char>& ta
     ss << '\n';
     ssize_t len = ss.str().size();
     ssize_t t = f->write(ss.str().c_str(), static_cast<unsigned int>(len));
-    if (t != len) logger::errlog_error("write error: {}", VW::strerror_to_string(errno));
+    if (t != len) logger.err_error("write error: {}", VW::strerror_to_string(errno));
   }
 }
 
@@ -167,7 +165,7 @@ void finish_example(VW::workspace& all, mwt& c, example& ec)
       loss = get_cost_estimate(c.optional_observation.second, static_cast<uint32_t>(ec.pred.scalars[0]));
   all.sd->update(ec.test_only, c.optional_observation.first, loss, 1.f, ec.get_num_features());
 
-  for (auto& sink : all.final_prediction_sink) print_scalars(sink.get(), ec.pred.scalars, ec.tag);
+  for (auto& sink : all.final_prediction_sink) print_scalars(sink.get(), ec.pred.scalars, ec.tag, all.logger);
 
   if (c.learn)
   {
@@ -227,7 +225,7 @@ base_learner* mwt_setup(VW::setup_base_i& stack_builder)
   auto c = VW::make_unique<mwt>();
   std::string s;
   bool exclude_eval = false;
-  option_group_definition new_options("Multiworld Testing");
+  option_group_definition new_options("[Reduction] Multiworld Testing");
   new_options.add(make_option("multiworld_test", s).keep().necessary().help("Evaluate features as a policies"))
       .add(make_option("learn", c->num_classes).help("Do Contextual Bandit learning on <n> classes"))
       .add(make_option("exclude_eval", exclude_eval).help("Discard mwt policy features before learning"));
@@ -239,6 +237,7 @@ base_learner* mwt_setup(VW::setup_base_i& stack_builder)
 
   c->evals.resize(all.length(), policy_data{});
 
+  bool cb_added = false;
   if (c->num_classes > 0)
   {
     c->learn = true;
@@ -248,11 +247,15 @@ base_learner* mwt_setup(VW::setup_base_i& stack_builder)
       std::stringstream ss;
       ss << c->num_classes;
       options.insert("cb", ss.str());
+      cb_added = true;
     }
   }
 
-  // default to legacy cb implementation
-  options.insert("cb_force_legacy", "");
+  if (options.was_supplied("cb") || cb_added)
+  {
+    // default to legacy cb implementation
+    options.insert("cb_force_legacy", "");
+  }
 
   std::string name_addition;
   void (*learn_ptr)(mwt&, single_learner&, example&);

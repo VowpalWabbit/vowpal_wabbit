@@ -264,14 +264,18 @@ base_learner* setup(VW::setup_base_i& stack_builder)
   float alpha = 0.;
   float invlambda = 0.;
   uint32_t numrnd = 1;
-  config::option_group_definition new_options("Contextual Bandit Exploration with ADF (rnd)");
+  config::option_group_definition new_options("[Reduction] Contextual Bandit Exploration with ADF (rnd)");
   new_options
       .add(make_option("cb_explore_adf", cb_explore_adf_option)
                .keep()
                .necessary()
                .help("Online explore-exploit for a contextual bandit problem with multiline action dependent features"))
-      .add(make_option("epsilon", epsilon).keep().allow_override().help("Minimum exploration probability"))
-      .add(make_option("rnd", numrnd).keep().necessary().help("Rnd based exploration"))
+      .add(make_option("epsilon", epsilon)
+               .keep()
+               .default_value(0.f)
+               .allow_override()
+               .help("Minimum exploration probability"))
+      .add(make_option("rnd", numrnd).keep().default_value(1).necessary().help("Rnd based exploration"))
       .add(make_option("rnd_alpha", alpha)
                .keep()
                .allow_override()

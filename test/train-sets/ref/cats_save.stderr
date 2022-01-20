@@ -1,6 +1,4 @@
 creating quadratic features for pairs: ::
-WARNING: any duplicate namespace interactions will be removed
-You can use --leave_duplicate_interactions to disable this behaviour.
 final_regressor = models/cats_train.model
 predictions = cats_save.predict
 Enabling FTRL based optimization

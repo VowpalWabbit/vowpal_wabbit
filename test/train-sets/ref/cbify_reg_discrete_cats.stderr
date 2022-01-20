@@ -28,4 +28,4 @@ weighted label sum = 8528.000000
 average loss = 0.449400
 best constant = 170.559998
 total feature number = 500
-Learn() count per node: id=0, #l=3; id=1, #l=3; id=2, #l=1; id=3, #l=3; id=4, #l=1; id=5, #l=1; id=6, #l=0; id=7, #l=3; id=8, #l=1; id=9, #l=1; id=10, #l=0; id=11, #l=1; id=12, #l=0; id=13, #l=0; id=14, #l=0; id=15, #l=3; 
+Learn() count per node: id=0, #l=3; id=1, #l=3; id=2, #l=1; id=3, #l=3; id=4, #l=1; id=5, #l=1; id=6, #l=0; id=7, #l=3; id=8, #l=1; id=9, #l=1; id=10, #l=0; id=11, #l=1; id=12, #l=0; id=13, #l=0; id=14, #l=0; id=15, #l=3;

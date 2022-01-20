@@ -1,6 +1,4 @@
 creating quadratic features for pairs: ::
-WARNING: any duplicate namespace interactions will be removed
-You can use --leave_duplicate_interactions to disable this behaviour.
 final_regressor = models/288.model
 Num weight bits = 18
 learning rate = 0.5

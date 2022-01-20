@@ -40,7 +40,7 @@ void save(example& ec, VW::workspace& all)
   if ((ec.tag).size() >= 6 && (ec.tag)[4] == '_')
     final_regressor_name = std::string(ec.tag.begin() + 5, (ec.tag).size() - 5);
 
-  if (!all.logger.quiet) *(all.trace_message) << "saving regressor to " << final_regressor_name << std::endl;
+  if (!all.quiet) *(all.trace_message) << "saving regressor to " << final_regressor_name << std::endl;
   ::save_predictor(all, final_regressor_name, 0);
 
   VW::finish_example(all, ec);
@@ -141,16 +141,7 @@ private:
     const bool is_test_ec = master.example_parser->lbl_parser.test_label(ec->l);
     const bool is_newline = (example_is_newline_not_header(*ec, master) && is_test_ec);
 
-    // In the case of end-of-pass example, we need to treat it as an indicator of
-    // multi_ex completion, but we should not call finish_example on it, until after
-    // doing learning on the multi_ex, otherwise we lose track of it being an end-
-    // of-pass example, and cannot chain to end_pass()
     if (!is_newline && !ec->end_pass) { ec_seq.push_back(ec); }
-    else if (!ec->end_pass)
-    {
-      VW::finish_example(master, *ec);
-    }
-
     // A terminating example can occur when there have been no featureful examples
     // collected. In this case, do not trigger a learn.
     return (is_newline || ec->end_pass) && !ec_seq.empty();
@@ -162,8 +153,6 @@ private:
       return complete_multi_ex(ec);
     // Explicitly do not process the end-of-pass examples here: It needs to be done
     // after learning on the collected multi_ex
-    // else if (ec->end_pass)
-    //   _context.template process<example, end_pass>(*ec);
     else if (is_save_cmd(ec))
       _context.template process<example, save>(*ec);
     else
@@ -186,14 +175,20 @@ public:
       _context.template process<multi_ex, learn_multi_ex>(ec_seq);
       ec_seq.clear();
     }
-
-    // Send out the end-of-pass notification after doing learning
+    // after we learn, cleanup is_newline or end_pass example
     if (ec->end_pass)
     {
       // Because the end_pass example is used to complete the in-flight multi_ex prior
       // to this call we should have no more in-flight multi_ex here.
       assert(ec_seq.empty());
       _context.template process<example, end_pass>(*ec);
+    }
+    else if (ec->is_newline)
+    {
+      // Because the is_newline example is used to complete the in-flight multi_ex prior
+      // to this call we should have no more in-flight multi_ex here.
+      assert(ec_seq.empty());
+      VW::finish_example(_context.get_master(), *ec);
     }
   }
 

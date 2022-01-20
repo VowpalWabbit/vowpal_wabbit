@@ -10,8 +10,6 @@
 
 using namespace VW::config;
 
-namespace logger = VW::io::logger;
-
 struct interact
 {
   // namespaces to interact
@@ -23,7 +21,7 @@ struct interact
   size_t num_features = 0;
 };
 
-bool contains_valid_namespaces(VW::workspace& all, features& f_src1, features& f_src2, interact& in)
+bool contains_valid_namespaces(features& f_src1, features& f_src2, interact& in, VW::io::logger& logger)
 {
   // first feature must be 1 so we're sure that the anchor feature is present
   if (f_src1.size() == 0 || f_src2.size() == 0) return false;
@@ -32,13 +30,13 @@ bool contains_valid_namespaces(VW::workspace& all, features& f_src1, features& f
   {
     // Anchor feature must be a number instead of text so that the relative offsets functions correctly but I don't
     // think we are able to test for this here.
-    *(all.trace_message) << "Namespace '" << static_cast<char>(in.n1) << "' misses anchor feature with value 1";
+    logger.err_error("Namespace '{}' misses anchor feature with value 1", static_cast<char>(in.n1));
     return false;
   }
 
   if (f_src2.values[0] != 1)
   {
-    *(all.trace_message) << "Namespace '" << static_cast<char>(in.n2) << "' misses anchor feature with value 1";
+    logger.err_error("Namespace '{}' misses anchor feature with value 1", static_cast<char>(in.n2));
     return false;
   }
 
@@ -51,10 +49,10 @@ void multiply(features& f_dest, features& f_src2, interact& in)
   features& f_src1 = in.feat_store;
   VW::workspace* all = in.all;
   uint64_t weight_mask = all->weights.mask();
-  uint64_t base_id1 = f_src1.indicies[0] & weight_mask;
-  uint64_t base_id2 = f_src2.indicies[0] & weight_mask;
+  uint64_t base_id1 = f_src1.indices[0] & weight_mask;
+  uint64_t base_id2 = f_src2.indices[0] & weight_mask;
 
-  f_dest.push_back(f_src1.values[0] * f_src2.values[0], f_src1.indicies[0]);
+  f_dest.push_back(f_src1.values[0] * f_src2.values[0], f_src1.indices[0]);
 
   uint64_t prev_id1 = 0;
   uint64_t prev_id2 = 0;
@@ -62,25 +60,25 @@ void multiply(features& f_dest, features& f_src2, interact& in)
   for (size_t i1 = 1, i2 = 1; i1 < f_src1.size() && i2 < f_src2.size();)
   {
     // calculating the relative offset from the namespace offset used to match features
-    uint64_t cur_id1 = static_cast<uint64_t>(((f_src1.indicies[i1] & weight_mask) - base_id1) & weight_mask);
-    uint64_t cur_id2 = static_cast<uint64_t>(((f_src2.indicies[i2] & weight_mask) - base_id2) & weight_mask);
+    uint64_t cur_id1 = static_cast<uint64_t>(((f_src1.indices[i1] & weight_mask) - base_id1) & weight_mask);
+    uint64_t cur_id2 = static_cast<uint64_t>(((f_src2.indices[i2] & weight_mask) - base_id2) & weight_mask);
 
     // checking for sorting requirement
     if (cur_id1 < prev_id1)
     {
-      logger::log_error("interact features are out of order: {0} < {1}. Skipping features.", cur_id1, prev_id1);
+      in.all->logger.out_error("interact features are out of order: {0} < {1}. Skipping features.", cur_id1, prev_id1);
       return;
     }
 
     if (cur_id2 < prev_id2)
     {
-      logger::log_error("interact features are out of order: {0} < {1}. Skipping features.", cur_id2, prev_id2);
+      in.all->logger.out_error("interact features are out of order: {0} < {1}. Skipping features.", cur_id2, prev_id2);
       return;
     }
 
     if (cur_id1 == cur_id2)
     {
-      f_dest.push_back(f_src1.values[i1] * f_src2.values[i2], f_src1.indicies[i1]);
+      f_dest.push_back(f_src1.values[i1] * f_src2.values[i2], f_src1.indices[i1]);
       i1++;
       i2++;
     }
@@ -99,7 +97,7 @@ void predict_or_learn(interact& in, VW::LEARNER::single_learner& base, example& 
   features& f1 = ec.feature_space[in.n1];
   features& f2 = ec.feature_space[in.n2];
 
-  if (!contains_valid_namespaces(*in.all, f1, f2, in))
+  if (!contains_valid_namespaces(f1, f2, in, in.all->logger))
   {
     if (is_learn)
       base.learn(ec);
@@ -146,7 +144,7 @@ VW::LEARNER::base_learner* interact_setup(VW::setup_base_i& stack_builder)
   options_i& options = *stack_builder.get_options();
   VW::workspace& all = *stack_builder.get_all_pointer();
   std::string s;
-  option_group_definition new_options("Interact via Elementwise Multiplication");
+  option_group_definition new_options("[Reduction] Interact via Elementwise Multiplication");
   new_options.add(make_option("interact", s)
                       .keep()
                       .necessary()
@@ -156,7 +154,7 @@ VW::LEARNER::base_learner* interact_setup(VW::setup_base_i& stack_builder)
 
   if (s.length() != 2)
   {
-    logger::errlog_error("Need two namespace arguments to interact: {} won't do EXITING", s);
+    all.logger.err_error("Need two namespace arguments to interact: {} won't do EXITING", s);
     return nullptr;
   }
 
@@ -164,7 +162,7 @@ VW::LEARNER::base_learner* interact_setup(VW::setup_base_i& stack_builder)
 
   data->n1 = static_cast<unsigned char>(s[0]);
   data->n2 = static_cast<unsigned char>(s[1]);
-  logger::errlog_info("Interacting namespaces {0:c} and {1:c}", data->n1, data->n2);
+  all.logger.err_info("Interacting namespaces {0:c} and {1:c}", data->n1, data->n2);
   data->all = &all;
 
   auto* l = make_reduction_learner(std::move(data), as_singleline(stack_builder.setup_base_learner()),

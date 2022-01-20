@@ -1,4 +1,3 @@
-WARNING: model file has set of {-q, --cubic, --interactions} settings stored, but they'll be OVERRIDEN by set of {-q, --cubic, --interactions} settings from command line.
 creating quadratic features for pairs: UA
 only testing
 Num weight bits = 18
@@ -13,17 +12,17 @@ Input label = cb
 Output pred = action_probs
 average  since         example        example  current  current  current
 loss     last          counter         weight    label  predict features
-0.000000 0.000000            1            1.0 4:0:0.14        0:0.142857...       49
-0.000000 0.000000            2            2.0 0:0:0.14        0:1...       49
-0.000000 0.000000            4            4.0 1:0:0.14        2:0.142857...       49
-0.000000 0.000000            8            8.0 3:0:0.14        2:1...       49
-0.000000 0.000000           16           16.0 3:0:0.14        2:1...       49
-0.000000 0.000000           32           32.0 3:0:0.14        2:0.142857...       49
--0.086024 -0.172048           64           64.0 0:0:0.77        0:1...       49
+0.000000 0.000000            1            1.0 4:0:0.14        0:0.142857...       42
+0.000000 0.000000            2            2.0 0:0:0.14        0:1...       42
+0.000000 0.000000            4            4.0 1:0:0.14        2:0.142857...       42
+0.000000 0.000000            8            8.0 3:0:0.14        2:1...       42
+0.000000 0.000000           16           16.0 3:0:0.14        2:1...       42
+0.000000 0.000000           32           32.0 3:0:0.14        2:0.142857...       42
+-0.086024 -0.172048           64           64.0 0:0:0.77        0:1...       42
 
 finished run
 number of examples = 113
 weighted example sum = 113.000000
 weighted label sum = 0.000000
 average loss = -0.084646
-total feature number = 5537
+total feature number = 4746

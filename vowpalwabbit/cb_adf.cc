@@ -27,8 +27,6 @@ using namespace CB_ALGS;
 using namespace VW::config;
 using namespace exploration;
 
-namespace logger = VW::io::logger;
-
 namespace CB_ADF
 {
 cb_class get_observed_cost_or_default_cb_adf(const multi_ex& examples)
@@ -85,19 +83,22 @@ private:
   const bool _rank_all;
   const float _clip_p;
 
+  VW::io::logger logger;
+
 public:
   void learn(VW::LEARNER::multi_learner& base, multi_ex& ec_seq);
   void predict(VW::LEARNER::multi_learner& base, multi_ex& ec_seq);
-  bool update_statistics(example& ec, multi_ex* ec_seq);
+  bool update_statistics(const example& ec, const multi_ex& ec_seq);
 
   cb_adf(shared_data* sd, VW::cb_type_t cb_type, VW::version_struct* model_file_ver, bool rank_all, float clip_p,
-      bool no_predict)
+      bool no_predict, VW::io::logger logger)
       : _sd(sd)
       , _model_file_ver(model_file_ver)
       , _offset(0)
       , _no_predict(no_predict)
       , _rank_all(rank_all)
       , _clip_p(clip_p)
+      , logger(std::move(logger))
   {
     _gen_cs.cb_type = cb_type;
   }
@@ -129,7 +130,7 @@ private:
 
 void cb_adf::learn_IPS(multi_learner& base, multi_ex& examples)
 {
-  gen_cs_example_ips(examples, _cs_labels, _clip_p);
+  gen_cs_example_ips(examples, _cs_labels, logger, _clip_p);
   cs_ldf_learn_or_predict<true>(base, examples, _cb_labels, _cs_labels, _prepped_cs_labels, true, _offset);
 }
 
@@ -164,7 +165,7 @@ void cb_adf::learn_SM(multi_learner& base, multi_ex& examples)
     if (ld.costs.size() == 1 && ld.costs[0].cost != FLT_MAX)
     {
       chosen_action = i;
-      example_weight = ld.costs[0].cost / safe_probability(ld.costs[0].probability);
+      example_weight = ld.costs[0].cost / safe_probability(ld.costs[0].probability, logger);
 
       // Importance weights of examples cannot be negative.
       // So we use a trick: set |w| as weight, and use sign(w) as an offset in the regression target.
@@ -239,7 +240,7 @@ void cb_adf::learn_MTR(multi_learner& base, multi_ex& examples)
 {
   if (PREDICT)  // first get the prediction to return
   {
-    gen_cs_example_ips(examples, _cs_labels);
+    gen_cs_example_ips(examples, _cs_labels, logger);
     cs_ldf_learn_or_predict<false>(base, examples, _cb_labels, _cs_labels, _prepped_cs_labels, false, _offset);
     std::swap(examples[0]->pred.a_s, _a_s);
   }
@@ -267,7 +268,7 @@ void cb_adf::learn_MTR(multi_learner& base, multi_ex& examples)
 }
 
 // Validates a multiline example collection as a valid sequence for action dependent features format.
-example* test_adf_sequence(multi_ex& ec_seq)
+example* test_adf_sequence(const multi_ex& ec_seq)
 {
   if (ec_seq.empty()) THROW("cb_adf: At least one action must be provided for an example to be valid.");
 
@@ -332,25 +333,26 @@ void cb_adf::predict(multi_learner& base, multi_ex& ec_seq)
   cs_ldf_learn_or_predict<false>(base, ec_seq, _cb_labels, _cs_labels, _prepped_cs_labels, false, _offset);
 }
 
-void global_print_newline(const std::vector<std::unique_ptr<VW::io::writer>>& final_prediction_sink)
+void global_print_newline(
+    const std::vector<std::unique_ptr<VW::io::writer>>& final_prediction_sink, VW::io::logger& logger)
 {
   char temp[1];
   temp[0] = '\n';
   for (auto& sink : final_prediction_sink)
   {
     ssize_t t = sink->write(temp, 1);
-    if (t != 1) logger::errlog_error("write error: {}", VW::strerror_to_string(errno));
+    if (t != 1) { logger.err_error("write error: {}", VW::strerror_to_string(errno)); }
   }
 }
 
 // how to
 
-bool cb_adf::update_statistics(example& ec, multi_ex* ec_seq)
+bool cb_adf::update_statistics(const example& ec, const multi_ex& ec_seq)
 {
   size_t num_features = 0;
 
   uint32_t action = ec.pred.a_s[0].action;
-  for (const auto& example : *ec_seq) num_features += example->get_num_features();
+  for (const auto& example : ec_seq) num_features += example->get_num_features();
 
   float loss = 0.;
 
@@ -360,20 +362,21 @@ bool cb_adf::update_statistics(example& ec, multi_ex* ec_seq)
     labeled_example = false;
 
   bool holdout_example = labeled_example;
-  for (auto const& i : *ec_seq) holdout_example &= i->test_only;
+  for (auto const& i : ec_seq) holdout_example &= i->test_only;
 
   _sd->update(holdout_example, labeled_example, loss, ec.weight, num_features);
   return labeled_example;
 }
 
-void output_example(VW::workspace& all, cb_adf& c, example& ec, multi_ex* ec_seq)
+void output_example(VW::workspace& all, cb_adf& c, const example& ec, const multi_ex& ec_seq)
 {
   if (example_is_newline_not_header(ec)) return;
 
   bool labeled_example = c.update_statistics(ec, ec_seq);
 
   uint32_t action = ec.pred.a_s[0].action;
-  for (auto& sink : all.final_prediction_sink) { all.print_by_ref(sink.get(), static_cast<float>(action), 0, ec.tag); }
+  for (auto& sink : all.final_prediction_sink)
+  { all.print_by_ref(sink.get(), static_cast<float>(action), 0, ec.tag, all.logger); }
 
   if (all.raw_prediction != nullptr)
   {
@@ -386,16 +389,16 @@ void output_example(VW::workspace& all, cb_adf& c, example& ec, multi_ex* ec_seq
       if (i > 0) outputStringStream << ' ';
       outputStringStream << costs[i].action << ':' << costs[i].partial_prediction;
     }
-    all.print_text_by_ref(all.raw_prediction.get(), outputStringStream.str(), ec.tag);
+    all.print_text_by_ref(all.raw_prediction.get(), outputStringStream.str(), ec.tag, all.logger);
   }
 
   if (labeled_example)
-    CB::print_update(all, !labeled_example, ec, ec_seq, true, c.known_cost());
+    CB::print_update(all, !labeled_example, ec, &ec_seq, true, c.known_cost());
   else
-    CB::print_update(all, !labeled_example, ec, ec_seq, true, nullptr);
+    CB::print_update(all, !labeled_example, ec, &ec_seq, true, nullptr);
 }
 
-void output_rank_example(VW::workspace& all, cb_adf& c, example& ec, multi_ex* ec_seq)
+void output_rank_example(VW::workspace& all, cb_adf& c, const example& ec, const multi_ex& ec_seq)
 {
   const auto& costs = ec.l.cb.costs;
 
@@ -403,7 +406,7 @@ void output_rank_example(VW::workspace& all, cb_adf& c, example& ec, multi_ex* e
 
   bool labeled_example = c.update_statistics(ec, ec_seq);
 
-  for (auto& sink : all.final_prediction_sink) print_action_score(sink.get(), ec.pred.a_s, ec.tag);
+  for (auto& sink : all.final_prediction_sink) print_action_score(sink.get(), ec.pred.a_s, ec.tag, all.logger);
 
   if (all.raw_prediction != nullptr)
   {
@@ -414,36 +417,36 @@ void output_rank_example(VW::workspace& all, cb_adf& c, example& ec, multi_ex* e
       if (i > 0) outputStringStream << ' ';
       outputStringStream << costs[i].action << ':' << costs[i].partial_prediction;
     }
-    all.print_text_by_ref(all.raw_prediction.get(), outputStringStream.str(), ec.tag);
+    all.print_text_by_ref(all.raw_prediction.get(), outputStringStream.str(), ec.tag, all.logger);
   }
 
   if (labeled_example)
-    CB::print_update(all, !labeled_example, ec, ec_seq, true, c.known_cost());
+    CB::print_update(all, !labeled_example, ec, &ec_seq, true, c.known_cost());
   else
-    CB::print_update(all, !labeled_example, ec, ec_seq, true, nullptr);
+    CB::print_update(all, !labeled_example, ec, &ec_seq, true, nullptr);
 }
 
-void output_example_seq(VW::workspace& all, cb_adf& data, multi_ex& ec_seq)
+void output_example_seq(VW::workspace& all, cb_adf& data, const multi_ex& ec_seq)
 {
   if (!ec_seq.empty())
   {
-    if (data.get_rank_all())
-      output_rank_example(all, data, **(ec_seq.begin()), &(ec_seq));
+    if (data.get_rank_all()) { output_rank_example(all, data, *ec_seq.front(), ec_seq); }
     else
     {
-      output_example(all, data, **(ec_seq.begin()), &(ec_seq));
+      output_example(all, data, *ec_seq.front(), ec_seq);
 
-      if (all.raw_prediction != nullptr) all.print_text_by_ref(all.raw_prediction.get(), "", ec_seq[0]->tag);
+      if (all.raw_prediction != nullptr)
+        all.print_text_by_ref(all.raw_prediction.get(), "", ec_seq[0]->tag, all.logger);
     }
   }
 }
 
-void update_and_output(VW::workspace& all, cb_adf& data, multi_ex& ec_seq)
+void update_and_output(VW::workspace& all, cb_adf& data, const multi_ex& ec_seq)
 {
   if (!ec_seq.empty())
   {
     output_example_seq(all, data, ec_seq);
-    global_print_newline(all.final_prediction_sink);
+    global_print_newline(all.final_prediction_sink, all.logger);
   }
 }
 
@@ -486,7 +489,7 @@ base_learner* cb_adf_setup(VW::setup_base_i& stack_builder)
   float clip_p;
   bool no_predict;
 
-  option_group_definition new_options("Contextual Bandit with Action Dependent Features");
+  option_group_definition new_options("[Reduction] Contextual Bandit with Action Dependent Features");
   new_options
       .add(make_option("cb_adf", cb_adf_option)
                .keep()
@@ -523,9 +526,8 @@ base_learner* cb_adf_setup(VW::setup_base_i& stack_builder)
   }
   catch (const VW::vw_exception& /*exception*/)
   {
-    logger::log_warn(
-        "warning: cb_type must be in {'ips','dr','mtr','dm','sm'}; resetting to mtr. Input was: '{}'", type_string);
-
+    all.logger.err_warn(
+        "cb_type must be in {'ips','dr','mtr','dm','sm'}; resetting to mtr. Input was: '{}'", type_string);
     cb_type = VW::cb_type_t::mtr;
   }
 
@@ -537,8 +539,7 @@ base_learner* cb_adf_setup(VW::setup_base_i& stack_builder)
   }
 
   if (clip_p > 0.f && cb_type == VW::cb_type_t::sm)
-    *(all.trace_message) << "warning: clipping probability not yet implemented for cb_type sm; p will not be clipped."
-                         << std::endl;
+  { all.logger.err_warn("Clipping probability not yet implemented for cb_type sm; p will not be clipped."); }
 
   // Push necessary flags.
   if ((!options.was_supplied("csoaa_ldf") && !options.was_supplied("wap_ldf")) || rank_all ||
@@ -551,7 +552,7 @@ base_learner* cb_adf_setup(VW::setup_base_i& stack_builder)
 
   if (options.was_supplied("baseline") && check_baseline_enabled) { options.insert("check_enabled", ""); }
 
-  auto ld = VW::make_unique<cb_adf>(all.sd, cb_type, &all.model_file_ver, rank_all, clip_p, no_predict);
+  auto ld = VW::make_unique<cb_adf>(all.sd, cb_type, &all.model_file_ver, rank_all, clip_p, no_predict, all.logger);
 
   auto base = as_multiline(stack_builder.setup_base_learner());
   all.example_parser->lbl_parser = CB::cb_label;

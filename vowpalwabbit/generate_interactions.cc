@@ -136,7 +136,7 @@ VW::LEARNER::base_learner* generate_interactions_setup(VW::setup_base_i& stack_b
   options_i& options = *stack_builder.get_options();
   VW::workspace& all = *stack_builder.get_all_pointer();
   bool leave_duplicate_interactions;
-  option_group_definition new_options("Generate Interactions");
+  option_group_definition new_options("[Reduction] Generate Interactions");
   new_options.add(make_option("leave_duplicate_interactions", leave_duplicate_interactions)
                       .help("Don't remove interactions with duplicate combinations of namespaces. For ex. this is a "
                             "duplicate: '-q ab -q ba' and a lot more in '-q ::'."));

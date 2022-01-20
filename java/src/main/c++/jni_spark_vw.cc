@@ -412,7 +412,7 @@ JNIEXPORT void JNICALL Java_org_vowpalwabbit_spark_VowpalWabbitExample_addToName
 
     // pre-allocate
     features->values.reserve(features->values.capacity() + size);
-    features->indicies.reserve(features->indicies.capacity() + size);
+    features->indices.reserve(features->indices.capacity() + size);
 
     double* values_itr = values0;
     double* values_end = values0 + size;
@@ -422,7 +422,7 @@ JNIEXPORT void JNICALL Java_org_vowpalwabbit_spark_VowpalWabbitExample_addToName
       if (x != 0)
       {
         features->values.push_back_unchecked(x);
-        features->indicies.push_back_unchecked(weight_index_base & mask);
+        features->indices.push_back_unchecked(weight_index_base & mask);
       }
     }
   }
@@ -454,7 +454,7 @@ JNIEXPORT void JNICALL Java_org_vowpalwabbit_spark_VowpalWabbitExample_addToName
 
     // pre-allocate
     features->values.reserve(features->values.capacity() + size);
-    features->indicies.reserve(features->indicies.capacity() + size);
+    features->indices.reserve(features->indices.capacity() + size);
 
     int* indices_itr = indices0;
     int* indices_end = indices0 + size;
@@ -465,7 +465,7 @@ JNIEXPORT void JNICALL Java_org_vowpalwabbit_spark_VowpalWabbitExample_addToName
       if (x != 0)
       {
         features->values.push_back_unchecked(x);
-        features->indicies.push_back_unchecked(*indices_itr & mask);
+        features->indices.push_back_unchecked(*indices_itr & mask);
       }
     }
   }

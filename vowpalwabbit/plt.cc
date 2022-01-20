@@ -18,7 +18,6 @@
 
 using namespace VW::LEARNER;
 using namespace VW::config;
-namespace logger = VW::io::logger;
 
 namespace plt_ns
 {
@@ -49,7 +48,7 @@ struct plt
   float threshold = 0.f;
   uint32_t top_k = 0;
   std::vector<polyprediction> node_preds;  // for storing results of base.multipredict
-  std::vector<node> node_queue;        // container for queue used for both types of predictions
+  std::vector<node> node_queue;            // container for queue used for both types of predictions
 
   // for measuring predictive performance
   std::unordered_set<uint32_t> true_labels;
@@ -108,8 +107,8 @@ void learn(plt& p, single_learner& base, example& ec)
       }
     }
     if (multilabels.label_v.back() >= p.k)
-      logger::log_error("label {0} is not in {{0,{1}}} This won't work right.",
-                        multilabels.label_v.back(), p.k - 1);
+      p.all->logger.out_error(
+          "label {0} is not in {{0,{1}}} This won't work right.", multilabels.label_v.back(), p.k - 1);
 
     for (auto& n : p.positive_nodes)
     {
@@ -163,7 +162,7 @@ void predict(plt& p, single_learner& base, example& ec)
     if (label < p.k)
       p.true_labels.insert(label);
     else
-      logger::log_error("label {0} is not in {{0,{1}}} This won't work right.", label, p.k - 1);
+      p.all->logger.out_error("label {0} is not in {{0,{1}}} This won't work right.", label, p.k - 1);
   }
 
   p.node_queue.clear();  // clear node queue
@@ -327,7 +326,7 @@ base_learner* plt_setup(VW::setup_base_i& stack_builder)
   options_i& options = *stack_builder.get_options();
   VW::workspace& all = *stack_builder.get_all_pointer();
   auto tree = VW::make_unique<plt>();
-  option_group_definition new_options("Probabilistic Label Tree");
+  option_group_definition new_options("[Reduction] Probabilistic Label Tree");
   new_options.add(make_option("plt", tree->k).keep().necessary().help("Probabilistic Label Tree with <k> labels"))
       .add(make_option("kary_tree", tree->kary).keep().default_value(2).help("Use <k>-ary tree"))
       .add(make_option("threshold", tree->threshold)
@@ -350,7 +349,7 @@ base_learner* plt_setup(VW::setup_base_i& stack_builder)
   tree->t = static_cast<uint32_t>(e + d);
   tree->ti = tree->t - tree->k;
 
-  if (!all.logger.quiet)
+  if (!all.quiet)
   {
     *(all.trace_message) << "PLT k = " << tree->k << "\nkary_tree = " << tree->kary << std::endl;
     if (!all.training)

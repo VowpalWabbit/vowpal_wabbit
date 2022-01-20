@@ -48,7 +48,7 @@ static void bench_cache_io_buf(benchmark::State& state, ExtraArgs&&... extra_arg
 
   for (auto _ : state)
   {
-    read_cached_features(vw, io_buffer, examples);
+    VW::read_example_from_cache(vw, io_buffer, examples);
     VW::empty_example(*vw, *examples[0]);
     io_buffer.reset();
     benchmark::ClobberMemory();

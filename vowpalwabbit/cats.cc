@@ -147,7 +147,7 @@ inline bool reduction_output::does_example_have_label(const example& ec)
 
 void reduction_output::print_update_cb_cont(VW::workspace& all, const example& ec)
 {
-  if (all.sd->weighted_examples() >= all.sd->dump_interval && !all.logger.quiet && !all.bfgs)
+  if (all.sd->weighted_examples() >= all.sd->dump_interval && !all.quiet && !all.bfgs)
   {
     all.sd->print_update(*all.trace_message, all.holdout_set_off, all.current_pass,
         ec.test_only ? "unknown" : to_string(ec.l.cb_cont.costs[0]),  // Label
@@ -165,7 +165,7 @@ LEARNER::base_learner* setup(setup_base_i& stack_builder)
   options_i& options = *stack_builder.get_options();
   VW::workspace& all = *stack_builder.get_all_pointer();
 
-  option_group_definition new_options("Continuous Actions Tree with Smoothing");
+  option_group_definition new_options("[Reduction] Continuous Actions Tree with Smoothing");
   uint32_t num_actions = 0;
   float bandwidth = 0;
   float min_value = 0;
@@ -195,8 +195,8 @@ LEARNER::base_learner* setup(setup_base_i& stack_builder)
     float leaf_width = (max_value - min_value) / (num_actions);  // aka unit range
     float half_leaf_width = leaf_width / 2.f;
     bandwidth = half_leaf_width;
-    *(all.trace_message) << "Bandwidth was not supplied, setting default to half the continuous action unit range: "
-                         << bandwidth << std::endl;
+    all.logger.err_info(
+        "Bandwidth was not supplied, setting default to half the continuous action unit range: {}", bandwidth);
   }
 
   LEARNER::base_learner* p_base = stack_builder.setup_base_learner();

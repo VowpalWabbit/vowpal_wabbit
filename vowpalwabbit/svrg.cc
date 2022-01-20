@@ -119,7 +119,7 @@ void learn(svrg& s, base_learner& base, example& ec)
 
   if (pass % (s.stage_size + 1) == 0)  // Compute exact gradient
   {
-    if (s.prev_pass != pass && !s.all->logger.quiet)
+    if (s.prev_pass != pass && !s.all->quiet)
     {
       *(s.all->trace_message) << "svrg pass " << pass << ": committing stable point" << std::endl;
       for (uint32_t j = 0; j < VW::num_weights(*s.all); j++)
@@ -136,7 +136,7 @@ void learn(svrg& s, base_learner& base, example& ec)
   }
   else  // Perform updates
   {
-    if (s.prev_pass != pass && !s.all->logger.quiet)
+    if (s.prev_pass != pass && !s.all->quiet)
     { *(s.all->trace_message) << "svrg pass " << pass << ": taking steps" << std::endl; }
     update_inner(s, ec);
   }
@@ -174,7 +174,7 @@ base_learner* svrg_setup(VW::setup_base_i& stack_builder)
   auto s = VW::make_unique<svrg>(&all);
 
   bool svrg_option = false;
-  option_group_definition new_options("Stochastic Variance Reduced Gradient");
+  option_group_definition new_options("[Reduction] Stochastic Variance Reduced Gradient");
   new_options
       .add(make_option("svrg", svrg_option).keep().necessary().help("Streaming Stochastic Variance Reduced Gradient"))
       .add(make_option("stage_size", s->stage_size).default_value(1).help("Number of passes per SVRG stage"));

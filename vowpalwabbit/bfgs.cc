@@ -65,6 +65,7 @@ struct bfgs
   VW::workspace* all = nullptr;  // prediction, regressor
   int m = 0;
   float rel_threshold = 0.f;  // termination threshold
+  bool hessian_on = false;
 
   double wolfe1_bound = 0.0;
 
@@ -254,7 +255,7 @@ void bfgs_iter_start(
     ((&(*w))[W_GT]) = 0;
   }
   lastj = 0;
-  if (!all.logger.quiet)
+  if (!all.quiet)
     fprintf(stderr, "%-10.5f\t%-10.5f\t%-10s\t%-10s\t%-10s\t", g1_g1 / (importance_weight_sum * importance_weight_sum),
         g1_Hg1 / importance_weight_sum, "", "", "");
 }
@@ -302,12 +303,12 @@ void bfgs_iter_middle(
       (&(*w))[W_GT] = 0;
     }
     // TODO: spdlog can't print partial log lines. Figure out how to handle this..
-    if (!all.logger.quiet) fprintf(stderr, "%f\t", beta);
+    if (!all.quiet) fprintf(stderr, "%f\t", beta);
     return;
   }
   else
   {
-    if (!all.logger.quiet) fprintf(stderr, "%-10s\t", "");
+    if (!all.quiet) fprintf(stderr, "%-10s\t", "");
   }
 
   // implement bfgs
@@ -423,7 +424,7 @@ double wolfe_eval(VW::workspace& all, bfgs& b, float* mem, double loss_sum, doub
   double wolfe2 = g1_d / g0_d;
   // double new_step_cross = (loss_sum-previous_loss_sum-g1_d*step)/(g0_d-g1_d);
 
-  if (!all.logger.quiet)
+  if (!all.quiet)
     fprintf(stderr, "%-10.5f\t%-10.5f\t%s%-10f\t%-10f\t", g1_g1 / (importance_weight_sum * importance_weight_sum),
         g1_Hg1 / importance_weight_sum, " ", wolfe1, wolfe2);
   return 0.5 * step_size;
@@ -648,7 +649,7 @@ int process_pass(VW::workspace& all, bfgs& b)
       accumulate(all, all.weights, 1);            // Accumulate gradients from all nodes
     }
     if (all.l2_lambda > 0.) b.loss_sum += add_regularization(all, b, all.l2_lambda);
-    if (!all.logger.quiet)
+    if (!all.quiet)
       fprintf(stderr, "%2lu %-10.5f\t", static_cast<long unsigned int>(b.current_pass) + 1,
           b.loss_sum / b.importance_weight_sum);
 
@@ -668,7 +669,7 @@ int process_pass(VW::workspace& all, bfgs& b)
       b.t_end_global = std::chrono::system_clock::now();
       b.net_time = static_cast<double>(
           std::chrono::duration_cast<std::chrono::milliseconds>(b.t_end_global - b.t_start_global).count());
-      if (!all.logger.quiet) fprintf(stderr, "%-10s\t%-10.5f\t%-.5f\n", "", d_mag, b.step_size);
+      if (!all.quiet) fprintf(stderr, "%-10s\t%-10.5f\t%-.5f\n", "", d_mag, b.step_size);
       b.predictions.clear();
       update_weight(all, b.step_size);
     }
@@ -686,7 +687,7 @@ int process_pass(VW::workspace& all, bfgs& b)
       accumulate(all, all.weights, 1);         // Accumulate gradients from all nodes
     }
     if (all.l2_lambda > 0.) b.loss_sum += add_regularization(all, b, all.l2_lambda);
-    if (!all.logger.quiet)
+    if (!all.quiet)
     {
       if (!all.holdout_set_off && b.current_pass >= 1)
       {
@@ -727,7 +728,7 @@ int process_pass(VW::workspace& all, bfgs& b)
       b.net_time = static_cast<double>(
           std::chrono::duration_cast<std::chrono::milliseconds>(b.t_end_global - b.t_start_global).count());
       float ratio = (b.step_size == 0.f) ? 0.f : static_cast<float>(new_step) / b.step_size;
-      if (!all.logger.quiet) fprintf(stderr, "%-10s\t%-10s\t(revise x %.1f)\t%-.5f\n", "", "", ratio, new_step);
+      if (!all.quiet) fprintf(stderr, "%-10s\t%-10s\t(revise x %.1f)\t%-.5f\n", "", "", ratio, new_step);
       b.predictions.clear();
       update_weight(all, static_cast<float>(-b.step_size + new_step));
       b.step_size = static_cast<float>(new_step);
@@ -767,7 +768,7 @@ int process_pass(VW::workspace& all, bfgs& b)
         status = LEARN_CURV;
       }
 
-      if (all.hessian_on)
+      if (b.hessian_on)
       {
         b.gradient_pass = false;  // now start computing curvature
       }
@@ -777,7 +778,7 @@ int process_pass(VW::workspace& all, bfgs& b)
         b.t_end_global = std::chrono::system_clock::now();
         b.net_time = static_cast<double>(
             std::chrono::duration_cast<std::chrono::milliseconds>(b.t_end_global - b.t_start_global).count());
-        if (!all.logger.quiet) fprintf(stderr, "%-10s\t%-10.5f\t%-.5f\n", "", d_mag, b.step_size);
+        if (!all.quiet) fprintf(stderr, "%-10s\t%-10.5f\t%-.5f\n", "", d_mag, b.step_size);
         b.predictions.clear();
         update_weight(all, b.step_size);
       }
@@ -819,7 +820,7 @@ int process_pass(VW::workspace& all, bfgs& b)
     b.net_time = static_cast<double>(
         std::chrono::duration_cast<std::chrono::milliseconds>(b.t_end_global - b.t_start_global).count());
 
-    if (!all.logger.quiet)
+    if (!all.quiet)
       fprintf(stderr, "%-10.5f\t%-10.5f\t%-.5f\n", b.curvature / b.importance_weight_sum, d_mag, b.step_size);
     b.gradient_pass = true;
   }  // now start computing derivatives.
@@ -888,8 +889,7 @@ void end_pass(bfgs& b)
       if (b.final_pass == b.current_pass)
       {
         *(b.all->trace_message) << "Maximum number of passes reached. ";
-        if (!b.output_regularizer)
-          *(b.all->trace_message) << "If you want to optimize further, increase the number of passes\n";
+        if (!b.output_regularizer) *(b.all->trace_message) << "To optimize further, increase the number of passes\n";
         if (b.output_regularizer)
         {
           *(b.all->trace_message) << "\nRegular model file has been created. ";
@@ -1017,18 +1017,15 @@ void save_load(bfgs& b, io_buf& model_file, bool read, bool text)
 
     uint32_t stride_shift = all->weights.stride_shift();
 
-    if (!all->logger.quiet)
-      std::cerr << "m = " << m << std::endl
-                << "Allocated "
-                << (static_cast<long unsigned int>(all->length()) *
-                           (sizeof(float) * (b.mem_stride) + (sizeof(weight) << stride_shift)) >>
-                       20)
-                << "M for weights and mem" << std::endl;
+    b.all->logger.err_info("m = {}, allocated {}M for weights and mem", m,
+        static_cast<long unsigned int>(all->length()) *
+                (sizeof(float) * (b.mem_stride) + (sizeof(weight) << stride_shift)) >>
+            20);
 
     b.net_time = 0.0;
     b.t_start_global = std::chrono::system_clock::now();
 
-    if (!all->logger.quiet)
+    if (!all->quiet)
     {
       const char* header_fmt = "%2s %-10s\t%-10s\t%-10s\t %-10s\t%-10s\t%-10s\t%-10s\t%-10s\t%-s\n";
       fprintf(stderr, header_fmt, "##", "avg. loss", "der. mag.", "d. m. cond.", "wolfe1", "wolfe2", "mix fraction",
@@ -1046,6 +1043,14 @@ void save_load(bfgs& b, io_buf& model_file, bool read, bool text)
 
   if (model_file.num_files() > 0)
   {
+    if (all->save_resume)
+    {
+      const auto* const msg =
+          "BFGS does not support models with save_resume data. Only models produced and consumed with "
+          "--predict_only_model can be used with BFGS.";
+      THROW(msg);
+    }
+
     std::stringstream msg;
     msg << ":" << reg_vector << "\n";
     bin_text_read_write_fixed(model_file, reinterpret_cast<char*>(&reg_vector), sizeof(reg_vector), read, msg, text);
@@ -1066,23 +1071,27 @@ base_learner* bfgs_setup(VW::setup_base_i& stack_builder)
 
   auto b = VW::make_unique<bfgs>();
   bool conjugate_gradient = false;
+  option_group_definition conjugate_gradient_options("[Reduction] Conjugate Gradient");
+  conjugate_gradient_options.add(make_option("conjugate_gradient", conjugate_gradient)
+                                     .keep()
+                                     .necessary()
+                                     .help("Use conjugate gradient based optimization"));
+
   bool bfgs_option = false;
-  option_group_definition bfgs_outer_options("Conjugate Gradient");
-  bfgs_outer_options.add(make_option("conjugate_gradient", conjugate_gradient)
-                             .keep()
-                             .necessary()
-                             .help("Use conjugate gradient based optimization"));
-
-  option_group_definition bfgs_inner_options("LBFGS and Conjugate Gradient");
-  bfgs_inner_options.add(
+  int local_m = 0;
+  float local_rel_threshold = 0.f;
+  bool local_hessian_on = false;
+  option_group_definition bfgs_options("[Reduction] LBFGS and Conjugate Gradient");
+  bfgs_options.add(
       make_option("bfgs", bfgs_option).keep().necessary().help("Use conjugate gradient based optimization"));
-  bfgs_inner_options.add(make_option("hessian_on", all.hessian_on).help("Use second derivative in line search"));
-  bfgs_inner_options.add(make_option("mem", b->m).default_value(15).help("Memory in bfgs"));
-  bfgs_inner_options.add(
-      make_option("termination", b->rel_threshold).default_value(0.001f).help("Termination threshold"));
+  bfgs_options.add(make_option("hessian_on", local_hessian_on).help("Use second derivative in line search"));
+  bfgs_options.add(make_option("mem", local_m).default_value(15).help("Memory in bfgs"));
+  bfgs_options.add(make_option("termination", local_rel_threshold).default_value(0.001f).help("Termination threshold"));
 
-  if (!options.add_parse_and_check_necessary(bfgs_outer_options))
-    if (!options.add_parse_and_check_necessary(bfgs_inner_options)) return nullptr;
+  auto conjugate_gradient_enabled = options.add_parse_and_check_necessary(conjugate_gradient_options);
+  auto bfgs_enabled = options.add_parse_and_check_necessary(bfgs_options);
+  if (!conjugate_gradient_enabled && !bfgs_enabled) { return nullptr; }
+  if (conjugate_gradient_enabled && bfgs_enabled) { THROW("'conjugate_gradient' and 'bfgs' cannot be used together."); }
 
   b->all = &all;
   b->wolfe1_bound = 0.01;
@@ -1094,27 +1103,37 @@ base_learner* bfgs_setup(VW::setup_base_i& stack_builder)
   b->final_pass = all.numpasses;
   b->no_win_counter = 0;
 
+  if (bfgs_enabled)
+  {
+    b->m = local_m;
+    b->rel_threshold = local_rel_threshold;
+    b->hessian_on = local_hessian_on;
+  }
+
   if (!all.holdout_set_off)
   {
     all.sd->holdout_best_loss = FLT_MAX;
     b->early_stop_thres = options.get_typed_option<size_t>("early_terminate").value();
   }
 
-  if (b->m == 0) all.hessian_on = true;
+  if (b->m == 0) { b->hessian_on = true; }
 
-  if (!all.logger.quiet)
+  if (!all.quiet)
   {
-    if (b->m > 0)
-      *(b->all->trace_message) << "enabling BFGS based optimization ";
+    if (b->m > 0) { *(all.trace_message) << "enabling BFGS based optimization "; }
     else
-      *(b->all->trace_message) << "enabling conjugate gradient optimization via BFGS ";
-    if (all.hessian_on)
-      *(b->all->trace_message) << "with curvature calculation" << std::endl;
+    {
+      *(all.trace_message) << "enabling conjugate gradient optimization via BFGS ";
+    }
+
+    if (b->hessian_on) { *(all.trace_message) << "with curvature calculation" << std::endl; }
     else
-      *(b->all->trace_message) << "**without** curvature calculation" << std::endl;
+    {
+      *(all.trace_message) << "**without** curvature calculation" << std::endl;
+    }
   }
 
-  if (all.numpasses < 2 && all.training) THROW("you must make at least 2 passes to use BFGS");
+  if (all.numpasses < 2 && all.training) { THROW("At least 2 passes must be used for BFGS"); }
 
   all.bfgs = true;
   all.weights.stride_shift(2);

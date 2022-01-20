@@ -5,6 +5,7 @@
 #include <boost/test/unit_test.hpp>
 #include <boost/test/test_tools.hpp>
 
+#include "io/logger.h"
 #include "memory.h"
 #include "test_common.h"
 
@@ -21,7 +22,8 @@ void parse_ccb_label(VW::string_view label, CCB::label& l)
   tokenize(' ', label, words);
   CCB::default_label(l);
   VW::label_parser_reuse_mem mem;
-  CCB::parse_label(l, mem, words);
+  auto null_logger = VW::io::create_null_logger();
+  CCB::parse_label(l, mem, words, null_logger);
 }
 
 BOOST_AUTO_TEST_CASE(ccb_parse_label)
@@ -114,7 +116,7 @@ BOOST_AUTO_TEST_CASE(ccb_cache_label)
 
   auto label = VW::make_unique<CCB::label>();
   parse_ccb_label("ccb slot 1:-2.0:0.5,2:0.25,3:0.25 3,4", *label.get());
-  CCB::cache_label(*label, io_writer);
+  VW::model_utils::write_model_field(io_writer, *label, "", false);
   io_writer.flush();
 
   io_buf io_reader;
@@ -122,7 +124,7 @@ BOOST_AUTO_TEST_CASE(ccb_cache_label)
 
   auto uncached_label = VW::make_unique<CCB::label>();
   CCB::default_label(*uncached_label);
-  CCB::read_cached_label(*uncached_label, io_reader);
+  VW::model_utils::read_model_field(io_reader, *uncached_label);
 
   BOOST_CHECK_EQUAL(uncached_label->explicit_included_actions.size(), 2);
   BOOST_CHECK_EQUAL(uncached_label->explicit_included_actions[0], 3);

@@ -16,11 +16,8 @@
 
 #include "io/logger.h"
 
-
 using namespace VW::LEARNER;
 using namespace VW::config;
-
-namespace logger = VW::io::logger;
 
 constexpr float hidden_min_activation = -3;
 constexpr float hidden_max_activation = 3;
@@ -49,7 +46,7 @@ struct nn
   polyprediction* hiddenbias_pred = nullptr;
 
   VW::workspace* all = nullptr;  // many things
-  std::shared_ptr<rand_state> _random_state;
+  std::shared_ptr<VW::rand_state> _random_state;
 
   ~nn()
   {
@@ -125,7 +122,7 @@ void finish_setup(nn& n, VW::workspace& all)
   n.outputweight.extent_interactions = &all.extent_interactions;
   n.outputweight.indices.push_back(nn_output_namespace);
   features& outfs = n.output_layer.feature_space[nn_output_namespace];
-  n.outputweight.feature_space[nn_output_namespace].push_back(outfs.values[0], outfs.indicies[0]);
+  n.outputweight.feature_space[nn_output_namespace].push_back(outfs.values[0], outfs.indices[0]);
   if (all.audit || all.hash_inv)
     n.outputweight.feature_space[nn_output_namespace].space_names.push_back(audit_strings("", "OutputWeight"));
   n.outputweight.feature_space[nn_output_namespace].values[0] = 1;
@@ -242,7 +239,7 @@ void predict_or_learn_multi(nn& n, single_learner& base, example& ec)
       out_fs.values[i] = sigmah;
       out_fs.sum_feat_sq += sigmah * sigmah;
 
-      n.outputweight.feature_space[nn_output_namespace].indicies[0] = out_fs.indicies[i];
+      n.outputweight.feature_space[nn_output_namespace].indices[0] = out_fs.indices[i];
       base.predict(n.outputweight, n.k);
       float wf = n.outputweight.pred.scalar;
 
@@ -309,7 +306,7 @@ void predict_or_learn_multi(nn& n, single_learner& base, example& ec)
     if (shouldOutput)
     {
       outputStringStream << ' ' << n.output_layer.partial_prediction;
-      n.all->print_text_by_ref(n.all->raw_prediction.get(), outputStringStream.str(), ec.tag);
+      n.all->print_text_by_ref(n.all->raw_prediction.get(), outputStringStream.str(), ec.tag, n.all->logger);
     }
 
     if (is_learn)
@@ -336,8 +333,8 @@ void predict_or_learn_multi(nn& n, single_learner& base, example& ec)
             {
               float sigmah = n.output_layer.feature_space[nn_output_namespace].values[i] / dropscale;
               float sigmahprime = dropscale * (1.0f - sigmah * sigmah);
-              n.outputweight.feature_space[nn_output_namespace].indicies[0] =
-                  n.output_layer.feature_space[nn_output_namespace].indicies[i];
+              n.outputweight.feature_space[nn_output_namespace].indices[0] =
+                  n.output_layer.feature_space[nn_output_namespace].indices[i];
               base.predict(n.outputweight, n.k);
               float nu = n.outputweight.pred.scalar;
               float gradhw = 0.5f * nu * gradient * sigmahprime;
@@ -414,7 +411,7 @@ base_learner* nn_setup(VW::setup_base_i& stack_builder)
   VW::workspace& all = *stack_builder.get_all_pointer();
   auto n = VW::make_unique<nn>();
   bool meanfield = false;
-  option_group_definition new_options("Neural Network");
+  option_group_definition new_options("[Reduction] Neural Network");
   new_options
       .add(make_option("nn", n->k).keep().necessary().help("Sigmoidal feedforward network with <k> hidden units"))
       .add(make_option("inpass", n->inpass)
@@ -429,20 +426,20 @@ base_learner* nn_setup(VW::setup_base_i& stack_builder)
   n->all = &all;
   n->_random_state = all.get_random_state();
 
-  if (n->multitask && !all.logger.quiet)
-    logger::errlog_info("using multitask sharing for neural network {}", (all.training ? "training" : "testing"));
+  if (n->multitask && !all.quiet)
+    all.logger.err_info("using multitask sharing for neural network {}", (all.training ? "training" : "testing"));
 
   if (options.was_supplied("meanfield"))
   {
     n->dropout = false;
-    logger::errlog_info("using mean field for neural network {}", (all.training ? "training" : "testing"));
+    all.logger.err_info("using mean field for neural network {}", (all.training ? "training" : "testing"));
   }
 
-  if (n->dropout && !all.logger.quiet)
-    logger::errlog_info("using dropout for neural network {}", (all.training ? "training" : "testing"));
+  if (n->dropout && !all.quiet)
+    all.logger.err_info("using dropout for neural network {}", (all.training ? "training" : "testing"));
 
-  if (n->inpass && !all.logger.quiet)
-    logger::errlog_info("using input passthrough for neural network {}", (all.training ? "training" : "testing"));
+  if (n->inpass && !all.quiet)
+    all.logger.err_info("using input passthrough for neural network {}", (all.training ? "training" : "testing"));
 
   n->finished_setup = false;
   n->squared_loss = getLossFunction(all, "squared", 0);

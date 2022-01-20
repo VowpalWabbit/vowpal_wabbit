@@ -13,6 +13,7 @@ namespace po = boost::program_options;
 #include <set>
 #include <algorithm>
 #include <string>
+#include <unordered_map>
 
 #include "options.h"
 #include "options_types.h"
@@ -54,7 +55,7 @@ struct options_boost_po : public options_i
   bool add_parse_and_check_necessary(const option_group_definition& group) override;
   bool was_supplied(const std::string& key) const override;
   std::string help(const std::vector<std::string>& enabled_reductions) const override;
-  void check_unregistered() override;
+  void check_unregistered(VW::io::logger& logger) override;
   std::vector<std::shared_ptr<base_option>> get_all_options() override;
   std::vector<std::shared_ptr<const base_option>> get_all_options() const override;
   std::shared_ptr<base_option> get_option(const std::string& key) override;
@@ -155,6 +156,7 @@ private:
   void add_to_description(std::shared_ptr<typed_option<T>> opt, po::options_description& options_description);
 
   void add_to_option_group_collection(const option_group_definition& group);
+  void internal_add_and_parse(const option_group_definition& group);
 
 private:
   // Collection that tracks for now
@@ -181,6 +183,9 @@ private:
 
   // All options that a description was provided for.
   std::set<std::string> m_defined_options;
+
+  std::set<std::string> m_reachable_options;
+  std::unordered_map<std::string, std::vector<std::set<std::string>>> m_dependent_necessary_options;
 };
 
 template <typename T>
@@ -188,7 +193,8 @@ po::typed_value<std::vector<T>>* options_boost_po::get_base_boost_value(std::sha
 {
   auto value = po::value<std::vector<T>>();
 
-  if (opt->default_value_supplied()) { value->default_value({opt->default_value()}); }
+  if (opt->default_value_supplied())
+  { value->default_value({opt->default_value()}, fmt::format("{}", opt->default_value())); }
 
   return add_notifier(opt, value)->composing();
 }
@@ -199,7 +205,8 @@ po::typed_value<std::vector<T>>* options_boost_po::get_base_boost_value(
 {
   auto value = po::value<std::vector<T>>();
 
-  if (opt->default_value_supplied()) { value->default_value(opt->default_value()); }
+  if (opt->default_value_supplied())
+  { value->default_value(opt->default_value(), fmt::format("{}", opt->default_value())); }
 
   return add_notifier(opt, value)->composing();
 }

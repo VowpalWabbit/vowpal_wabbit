@@ -88,10 +88,10 @@ void audit_regressor_lda(audit_regressor_data& rd, VW::LEARNER::single_learner& 
     for (size_t j = 0; j < fs.size(); ++j)
     {
       tempstream << '\t' << fs.space_names[j].first << '^' << fs.space_names[j].second << ':'
-                 << ((fs.indicies[j] >> weights.stride_shift()) & all.parse_mask);
+                 << ((fs.indices[j] >> weights.stride_shift()) & all.parse_mask);
       for (size_t k = 0; k < all.lda; k++)
       {
-        weight& w = weights[(fs.indicies[j] + k)];
+        weight& w = weights[(fs.indices[j] + k)];
         tempstream << ':' << w;
         w = 0.;
       }
@@ -125,14 +125,14 @@ void audit_regressor(audit_regressor_data& rd, VW::LEARNER::single_learner& base
           for (size_t j = 0; j < fs.size(); ++j)
           {
             audit_regressor_interaction(rd, &fs.space_names[j]);
-            audit_regressor_feature(rd, fs.values[j], static_cast<uint32_t>(fs.indicies[j]) + ec.ft_offset);
+            audit_regressor_feature(rd, fs.values[j], static_cast<uint32_t>(fs.indices[j]) + ec.ft_offset);
             audit_regressor_interaction(rd, nullptr);
           }
         }
         else
         {
           for (size_t j = 0; j < fs.size(); ++j)
-          { audit_regressor_feature(rd, fs.values[j], static_cast<uint32_t>(fs.indicies[j]) + ec.ft_offset); }
+          { audit_regressor_feature(rd, fs.values[j], static_cast<uint32_t>(fs.indices[j]) + ec.ft_offset); }
         }
       }
 
@@ -170,7 +170,7 @@ inline void print_ex(VW::workspace& all, size_t ex_processed, size_t vals_found,
 void finish_example(VW::workspace& all, audit_regressor_data& rd, example& ec)
 {
   bool printed = false;
-  if (static_cast<float>(ec.example_counter + std::size_t{1}) >= all.sd->dump_interval && !all.logger.quiet)
+  if (static_cast<float>(ec.example_counter + std::size_t{1}) >= all.sd->dump_interval && !all.quiet)
   {
     print_ex(all, ec.example_counter + 1, rd.values_audited, rd.values_audited * 100 / rd.loaded_regressor_values);
     all.sd->weighted_unlabeled_examples = static_cast<double>(ec.example_counter + 1);  // used in update_dump_interval
@@ -218,7 +218,7 @@ void init_driver(audit_regressor_data& dat)
       !dat.all->options->was_supplied("kill_cache"))
   { THROW("audit_regressor is incompatible with a cache file. Use it in single pass mode only.") }
 
-  dat.all->sd->dump_interval = 1.;  // regressor could initialize these if saved with --save_resume
+  dat.all->sd->dump_interval = 1.;  // regressor could initialize these if saved without --predict_only_model
   dat.all->sd->example_number = 0;
 
   dat.increment = dat.all->l->increment / dat.all->l->weights;
@@ -244,7 +244,7 @@ void init_driver(audit_regressor_data& dat)
 
   if (dat.loaded_regressor_values == 0) { THROW("regressor has no non-zero weights. Nothing to audit.") }
 
-  if (!dat.all->logger.quiet)
+  if (!dat.all->quiet)
   {
     *dat.all->trace_message << "Regressor contains " << dat.loaded_regressor_values << " values\n";
     *dat.all->trace_message << std::left << std::setw(shared_data::col_example_counter) << "example"
@@ -262,7 +262,7 @@ VW::LEARNER::base_learner* audit_regressor_setup(VW::setup_base_i& stack_builder
   VW::workspace& all = *stack_builder.get_all_pointer();
 
   std::string out_file;
-  option_group_definition new_options("Audit Regressor");
+  option_group_definition new_options("[Reduction] Audit Regressor");
   new_options.add(make_option("audit_regressor", out_file)
                       .keep()
                       .necessary()

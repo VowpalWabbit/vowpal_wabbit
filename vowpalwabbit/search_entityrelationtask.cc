@@ -7,7 +7,6 @@
 #include "io/logger.h"
 
 using namespace VW::config;
-namespace logger = VW::io::logger;
 
 #define R_NONE 10      // label for NONE relation
 #define LABEL_SKIP 11  // label for SKIP
@@ -24,7 +23,7 @@ namespace EntityRelationTask
 using namespace Search;
 namespace CS = COST_SENSITIVE;
 
-void update_example_indicies(bool audit, example* ec, uint64_t mult_amount, uint64_t plus_amount);
+void update_example_indices(bool audit, example* ec, uint64_t mult_amount, uint64_t plus_amount);
 
 struct task_data
 {
@@ -46,7 +45,7 @@ void initialize(Search::search& sch, size_t& /*num_actions*/, options_i& options
   task_data* my_task_data = new task_data();
   sch.set_task_data<task_data>(my_task_data);
 
-  option_group_definition new_options("Entity Relation");
+  option_group_definition new_options("[Search] Entity Relation");
   new_options
       .add(make_option("relation_cost", my_task_data->relation_cost).keep().default_value(1.f).help("Relation Cost"))
       .add(make_option("entity_cost", my_task_data->entity_cost).keep().default_value(1.f).help("Entity Cost"))
@@ -102,7 +101,7 @@ void initialize(Search::search& sch, size_t& /*num_actions*/, options_i& options
       sch.set_is_ldf(true);
       break;
     default:
-      logger::errlog_error("search order {} is undefined", my_task_data->search_order);
+      sch.get_vw_pointer_unsafe().logger.err_error("search order {} is undefined", my_task_data->search_order);
   }
 }
 
@@ -163,7 +162,7 @@ size_t predict_entity(
       for (uint32_t a = 0; a < 4; a++)
       {
         VW::copy_example_data(&my_task_data->ldf_entity[a], ex);
-        update_example_indicies(true, &my_task_data->ldf_entity[a], 28904713, 4832917 * static_cast<uint64_t>(a + 1));
+        update_example_indices(true, &my_task_data->ldf_entity[a], 28904713, 4832917 * static_cast<uint64_t>(a + 1));
         CS::label& lab = my_task_data->ldf_entity[a].l.cs;
         lab.costs[0].x = 0.f;
         lab.costs[0].class_index = a;
@@ -246,7 +245,7 @@ size_t predict_relation(Search::search& sch, example* ex, v_array<size_t>& predi
       for (size_t a = 0; a < constrained_relation_labels.size(); a++)
       {
         VW::copy_example_data(&my_task_data->ldf_relation[a], ex);
-        update_example_indicies(true, &my_task_data->ldf_relation[a], 28904713,
+        update_example_indices(true, &my_task_data->ldf_relation[a], 28904713,
             4832917 * static_cast<uint64_t>(constrained_relation_labels[a]));
         CS::label& lab = my_task_data->ldf_relation[a].l.cs;
         lab.costs[0].x = 0.f;
@@ -402,7 +401,7 @@ void run(Search::search& sch, multi_ex& ec)
       entity_first_decoding(sch, ec, predictions, true);  // LDF = true
       break;
     default:
-      logger::errlog_error("search order {} is undefined", my_task_data->search_order);
+      sch.get_vw_pointer_unsafe().logger.err_error("search order {} is undefined", my_task_data->search_order);
   }
 
   for (size_t i = 0; i < ec.size(); i++)
@@ -411,9 +410,9 @@ void run(Search::search& sch, multi_ex& ec)
   }
 }
 // this is totally bogus for the example -- you'd never actually do this!
-void update_example_indicies(bool /* audit */, example* ec, uint64_t mult_amount, uint64_t plus_amount)
+void update_example_indices(bool /* audit */, example* ec, uint64_t mult_amount, uint64_t plus_amount)
 {
   for (features& fs : *ec)
-    for (feature_index& idx : fs.indicies) idx = ((idx * mult_amount) + plus_amount);
+    for (feature_index& idx : fs.indices) idx = ((idx * mult_amount) + plus_amount);
 }
 }  // namespace EntityRelationTask

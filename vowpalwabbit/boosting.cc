@@ -15,6 +15,7 @@
 #include <cstdio>
 #include <string>
 #include <sstream>
+#include <utility>
 #include <vector>
 #include <memory>
 #include <fmt/core.h>
@@ -30,8 +31,6 @@
 using namespace VW::LEARNER;
 using namespace VW::config;
 
-namespace logger = VW::io::logger;
-
 using std::endl;
 
 struct boosting
@@ -40,11 +39,14 @@ struct boosting
   float gamma = 0.f;
   std::string alg = "";
   VW::workspace* all = nullptr;
-  std::shared_ptr<rand_state> _random_state;
+  std::shared_ptr<VW::rand_state> _random_state;
   std::vector<std::vector<int64_t> > C;
   std::vector<float> alpha;
   std::vector<float> v;
   int t = 0;
+  VW::io::logger logger;
+
+  explicit boosting(VW::io::logger logger) : logger(std::move(logger)) {}
 };
 
 //---------------------------------------------------
@@ -295,21 +297,15 @@ void save_load_sampling(boosting& o, io_buf& model_file, bool read, bool text)
 
   // avoid making syscalls multiple times
   fmt::memory_buffer buffer;
-  if (read)
-  {
-    fmt::format_to(buffer, "Loading alpha and v: \n");
-  }
+  if (read) { fmt::format_to(buffer, "Loading alpha and v: \n"); }
   else
   {
     fmt::format_to(buffer, "Saving alpha and v, current weighted_examples = {}\n",
-		      o.all->sd->weighted_labeled_examples + o.all->sd->weighted_unlabeled_examples);
+        o.all->sd->weighted_labeled_examples + o.all->sd->weighted_unlabeled_examples);
   }
 
-  for (int i = 0; i < o.N; i++)
-  {
-    fmt::format_to(buffer, "{0} {1}\n", o.alpha[i], o.v[i]);
-  }
-  logger::errlog_info("{}", fmt::to_string(buffer));
+  for (int i = 0; i < o.N; i++) { fmt::format_to(buffer, "{0} {1}\n", o.alpha[i], o.v[i]); }
+  o.logger.err_info("{}", fmt::to_string(buffer));
 }
 
 void return_example(VW::workspace& all, boosting& /* a */, example& ec)
@@ -341,25 +337,18 @@ void save_load(boosting& o, io_buf& model_file, bool read, bool text)
       bin_text_write_fixed(model_file, reinterpret_cast<char*>(&(o.alpha[i])), sizeof(o.alpha[i]), os2, text);
     }
 
-  if (!o.all->logger.quiet)
+  if (!o.all->quiet)
   {
     // avoid making syscalls multiple times
     fmt::memory_buffer buffer;
-    if (read)
-    {
-      fmt::format_to(buffer, "Loading alpha: \n");
-    }
+    if (read) { fmt::format_to(buffer, "Loading alpha: \n"); }
     else
     {
-      fmt::format_to(buffer, "Saving alpha, current weighted_examples = {)\n",
-		       o.all->sd->weighted_examples());
+      fmt::format_to(buffer, "Saving alpha, current weighted_examples = {)\n", o.all->sd->weighted_examples());
     }
 
-    for (int i = 0; i < o.N; i++)
-    {
-      fmt::format_to(buffer, "{} \n", o.alpha[i]);
-    }
-    logger::errlog_info("{}", fmt::to_string(buffer));
+    for (int i = 0; i < o.N; i++) { fmt::format_to(buffer, "{} \n", o.alpha[i]); }
+    o.logger.err_info("{}", fmt::to_string(buffer));
   }
 }
 
@@ -369,8 +358,8 @@ VW::LEARNER::base_learner* boosting_setup(VW::setup_base_i& stack_builder)
 {
   options_i& options = *stack_builder.get_options();
   VW::workspace& all = *stack_builder.get_all_pointer();
-  auto data = VW::make_unique<boosting>();
-  option_group_definition new_options("Boosting");
+  auto data = VW::make_unique<boosting>(all.logger);
+  option_group_definition new_options("[Reduction] Boosting");
   new_options.add(make_option("boosting", data->N).keep().necessary().help("Online boosting with <N> weak learners"))
       .add(make_option("gamma", data->gamma)
                .default_value(0.1f)
@@ -391,8 +380,8 @@ VW::LEARNER::base_learner* boosting_setup(VW::setup_base_i& stack_builder)
   // "adaptive" implements AdaBoost.OL (Algorithm 2 in BLK'15,
   // 	    using sampling rather than importance weighting)
 
-  logger::errlog_info("Number of weak learners = {}", data->N);
-  logger::errlog_info("Gamma = {}", data->gamma);
+  all.logger.err_info("Number of weak learners = {}", data->N);
+  all.logger.err_info("Gamma = {}", data->gamma);
 
   data->C = std::vector<std::vector<int64_t> >(data->N, std::vector<int64_t>(data->N, -1));
   data->t = 0;
@@ -430,7 +419,7 @@ VW::LEARNER::base_learner* boosting_setup(VW::setup_base_i& stack_builder)
   }
   else
   {
-    THROW("Unrecognized boosting algorithm: \'" << data->alg << "\' Bailing!");
+    THROW("Unrecognized boosting algorithm: \'" << data->alg << "\'.");
   }
 
   auto* l = make_reduction_learner(std::move(data), as_singleline(stack_builder.setup_base_learner()), learn_ptr,

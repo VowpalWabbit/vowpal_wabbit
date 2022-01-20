@@ -34,7 +34,7 @@ private:
   size_t _bag_size;
   bool _greedify;
   bool _first_only;
-  std::shared_ptr<rand_state> _random_state;
+  std::shared_ptr<VW::rand_state> _random_state;
 
   v_array<ACTION_SCORE::action_score> _action_probs;
   std::vector<float> _scores;
@@ -44,20 +44,20 @@ public:
   using PredictionT = v_array<ACTION_SCORE::action_score>;
 
   cb_explore_adf_bag(
-      float epsilon, size_t bag_size, bool greedify, bool first_only, std::shared_ptr<rand_state> random_state);
+      float epsilon, size_t bag_size, bool greedify, bool first_only, std::shared_ptr<VW::rand_state> random_state);
 
   // Should be called through cb_explore_adf_base for pre/post-processing
-  void predict(VW::LEARNER::multi_learner &base, multi_ex &examples);
-  void learn(VW::LEARNER::multi_learner &base, multi_ex &examples);
+  void predict(VW::LEARNER::multi_learner& base, multi_ex& examples);
+  void learn(VW::LEARNER::multi_learner& base, multi_ex& examples);
 
-  const PredictionT &get_cached_prediction() { return _action_probs; };
+  const PredictionT& get_cached_prediction() { return _action_probs; };
 
 private:
   uint32_t get_bag_learner_update_count(uint32_t learner_index);
 };
 
 cb_explore_adf_bag::cb_explore_adf_bag(
-    float epsilon, size_t bag_size, bool greedify, bool first_only, std::shared_ptr<rand_state> random_state)
+    float epsilon, size_t bag_size, bool greedify, bool first_only, std::shared_ptr<VW::rand_state> random_state)
     : _epsilon(epsilon)
     , _bag_size(bag_size)
     , _greedify(greedify)
@@ -76,7 +76,7 @@ uint32_t cb_explore_adf_bag::get_bag_learner_update_count(uint32_t learner_index
     return BS::weight_gen(_random_state);
 }
 
-void cb_explore_adf_bag::predict(VW::LEARNER::multi_learner &base, multi_ex &examples)
+void cb_explore_adf_bag::predict(VW::LEARNER::multi_learner& base, multi_ex& examples)
 {
   // Randomize over predictions from a base set of predictors
   v_array<ACTION_SCORE::action_score>& preds = examples[0]->pred.a_s;
@@ -118,7 +118,7 @@ void cb_explore_adf_bag::predict(VW::LEARNER::multi_learner &base, multi_ex &exa
   std::copy(std::begin(_action_probs), std::end(_action_probs), std::begin(preds));
 }
 
-void cb_explore_adf_bag::learn(VW::LEARNER::multi_learner &base, multi_ex &examples)
+void cb_explore_adf_bag::learn(VW::LEARNER::multi_learner& base, multi_ex& examples)
 {
   for (uint32_t i = 0; i < _bag_size; i++)
   {
@@ -141,7 +141,7 @@ void finish_bag_example(VW::workspace& all, cb_explore_adf_base<cb_explore_adf_b
   cb_explore_adf_base<cb_explore_adf_bag>::finish_multiline_example(all, data, ec_seq);
 }
 
-void print_bag_example(VW::workspace& all, cb_explore_adf_base<cb_explore_adf_bag>& data, multi_ex& ec_seq)
+void print_bag_example(VW::workspace& all, cb_explore_adf_base<cb_explore_adf_bag>& data, const multi_ex& ec_seq)
 {
   assert(ec_seq.size() > 0);
   ec_seq[0]->pred.a_s = data.explore.get_cached_prediction();
@@ -158,13 +158,14 @@ VW::LEARNER::base_learner* setup(VW::setup_base_i& stack_builder)
   size_t bag_size = 0;
   bool greedify = false;
   bool first_only = false;
-  config::option_group_definition new_options("Contextual Bandit Exploration with ADF (bagging)");
+  config::option_group_definition new_options("[Reduction] Contextual Bandit Exploration with ADF (bagging)");
   new_options
       .add(make_option("cb_explore_adf", cb_explore_adf_option)
                .keep()
                .necessary()
                .help("Online explore-exploit for a contextual bandit problem with multiline action dependent features"))
-      .add(make_option("epsilon", epsilon).keep().allow_override().help("Epsilon-greedy exploration"))
+      .add(
+          make_option("epsilon", epsilon).keep().default_value(0.f).allow_override().help("Epsilon-greedy exploration"))
       .add(make_option("bag", bag_size).keep().necessary().help("Bagging-based exploration"))
       .add(make_option("greedify", greedify).keep().help("Always update first policy once in bagging"))
       .add(make_option("first_only", first_only).keep().help("Only explore the first action in a tie-breaking event"));

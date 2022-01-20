@@ -6,6 +6,7 @@
 #include "ccb_reduction_features.h"
 #include "continuous_actions_reduction_features.h"
 #include "simple_label.h"
+#include "epsilon_reduction_features.h"
 
 /*
  * class reduction_features
@@ -33,6 +34,7 @@ private:
   CCB::reduction_features _ccb_reduction_features;
   VW::continuous_actions::reduction_features _contact_reduction_features;
   simple_label_reduction_features _simple_label_reduction_features;
+  VW::cb_explore_adf::greedy::reduction_features _epsilon_reduction_features;
 
 public:
   template <typename T>
@@ -46,6 +48,7 @@ public:
     _ccb_reduction_features.clear();
     _contact_reduction_features.clear();
     _simple_label_reduction_features.reset_to_default();
+    _epsilon_reduction_features.reset_to_default();
   }
 };
 
@@ -84,4 +87,18 @@ template <>
 inline const simple_label_reduction_features& reduction_features::get<simple_label_reduction_features>() const
 {
   return _simple_label_reduction_features;
+}
+
+template <>
+inline VW::cb_explore_adf::greedy::reduction_features&
+reduction_features::get<VW::cb_explore_adf::greedy::reduction_features>()
+{
+  return _epsilon_reduction_features;
+}
+
+template <>
+inline const VW::cb_explore_adf::greedy::reduction_features&
+reduction_features::get<VW::cb_explore_adf::greedy::reduction_features>() const
+{
+  return _epsilon_reduction_features;
 }

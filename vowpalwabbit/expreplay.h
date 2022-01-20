@@ -17,7 +17,7 @@ template <label_parser& lp>
 struct expreplay
 {
   VW::workspace* all = nullptr;
-  std::shared_ptr<rand_state> _random_state;
+  std::shared_ptr<VW::rand_state> _random_state;
   size_t N = 0;             // how big is the buffer?
   example* buf = nullptr;   // the deep copies of examples (N of them)
   bool* filled = nullptr;   // which of buf[] is filled
@@ -32,8 +32,8 @@ struct expreplay
   }
 };
 
-template <label_parser &lp>
-void learn(expreplay<lp> &er, LEARNER::single_learner &base, example &ec)
+template <label_parser& lp>
+void learn(expreplay<lp>& er, LEARNER::single_learner& base, example& ec)
 {
   // Cannot learn if the example weight is 0.
   if (lp.get_weight(ec.l, ec._reduction_features) == 0.) return;
@@ -51,15 +51,15 @@ void learn(expreplay<lp> &er, LEARNER::single_learner &base, example &ec)
   VW::copy_example_data_with_label(&er.buf[n], &ec);
 }
 
-template <label_parser &lp>
-void predict(expreplay<lp> &, LEARNER::single_learner &base, example &ec)
+template <label_parser& lp>
+void predict(expreplay<lp>&, LEARNER::single_learner& base, example& ec)
 {
   base.predict(ec);
 }
 
-template <label_parser &lp>
-void multipredict(expreplay<lp> &, LEARNER::single_learner &base, example &ec, size_t count, size_t step,
-    polyprediction *pred, bool finalize_predictions)
+template <label_parser& lp>
+void multipredict(expreplay<lp>&, LEARNER::single_learner& base, example& ec, size_t count, size_t step,
+    polyprediction* pred, bool finalize_predictions)
 {
   base.multipredict(ec, count, step, pred, finalize_predictions);
 }
@@ -87,7 +87,7 @@ VW::LEARNER::base_learner* expreplay_setup(VW::setup_base_i& stack_builder)
   replay_count_string += "_count";
 
   auto er = VW::make_unique<expreplay<lp>>();
-  VW::config::option_group_definition new_options("Experience Replay / " + replay_string);
+  VW::config::option_group_definition new_options("[Reduction] Experience Replay / " + replay_string);
   new_options
       .add(VW::config::make_option(replay_string, er->N)
                .keep()
@@ -107,9 +107,9 @@ VW::LEARNER::base_learner* expreplay_setup(VW::setup_base_i& stack_builder)
   er->buf->extent_interactions = &all.extent_interactions;
   er->filled = calloc_or_throw<bool>(er->N);
 
-  if (!all.logger.quiet)
-    *(all.trace_message) << "experience replay level=" << er_level << ", buffer=" << er->N << ", replay count=" << er->replay_count
-              << std::endl;
+  if (!all.quiet)
+    *(all.trace_message) << "experience replay level=" << er_level << ", buffer=" << er->N
+                         << ", replay count=" << er->replay_count << std::endl;
 
   er->base = VW::LEARNER::as_singleline(stack_builder.setup_base_learner());
   auto* l = VW::LEARNER::make_reduction_learner(std::move(er), er->base, learn<lp>, predict<lp>, replay_string)
