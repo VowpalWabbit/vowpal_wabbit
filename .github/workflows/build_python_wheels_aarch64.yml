@@ -1,8 +1,10 @@
 name: Linux_AArch64 / Python
 
 on:
-  schedule:
-    - cron:  '30 5 * * *'
+  push:
+    branches:
+      - master
+      - 'releases/**'
 
 jobs:
   Build-aarch64:
