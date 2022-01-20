@@ -56,9 +56,6 @@ private:
   double n;
 };
 
-constexpr double DEFAULT_TAU = 0.999;
-constexpr double DEFAULT_ALPHA = 0.05;
-
 struct baseline_challenger_data
 {
   distributionally_robust::ChiSquared baseline;
@@ -205,7 +202,7 @@ VW::LEARNER::base_learner* baseline_challenger_cb_setup(VW::setup_base_i& stack_
                .keep()
                .help("Build a CI around the baseline action and use it instead of the model if it's "
                      "perfoming better"))
-      .add(make_option("cb_c_alpha", alpha).default_value(DEFAULT_ALPHA).keep().help("Confidence level for "))
+      .add(make_option("cb_c_alpha", alpha).default_value(DEFAULT_ALPHA).keep().help("Confidence level for baseline"))
       .add(make_option("cb_c_tau", tau).default_value(DEFAULT_TAU).keep().help("Time constant for count decay"));
 
   if (!options.add_parse_and_check_necessary(new_options)) { return nullptr; }

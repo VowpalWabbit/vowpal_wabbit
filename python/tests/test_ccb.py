@@ -1,5 +1,5 @@
 from vowpalwabbit import pyvw
-
+import pytest
 
 # Named specifically as the delimiter used is specific for the number of actions
 # used in this test case.
@@ -14,7 +14,7 @@ def count_weights_from_readable_model_file_for_equiv_test(file_name):
 def test_ccb_single_slot_and_cb_equivalence_no_slot_features():
     # --- CCB
     ccb_model_file_name = "model_file_ccb_equiv.txt"
-    ccb_workspace = pyvw.vw(
+    ccb_workspace = pyvw.Workspace(
         quiet=True,
         predict_only_model=True,
         ccb_explore_adf=True,
@@ -39,7 +39,7 @@ def test_ccb_single_slot_and_cb_equivalence_no_slot_features():
 
     # --- CB
     cb_model_file_name = "model_file_cb_equiv.txt"
-    cb_workspace = pyvw.vw(
+    cb_workspace = pyvw.Workspace(
         quiet=True,
         predict_only_model=True,
         cb_explore_adf=True,
@@ -67,7 +67,7 @@ def test_ccb_single_slot_and_cb_equivalence_no_slot_features():
 def test_ccb_single_slot_and_cb_non_equivalence_with_slot_features():
     # --- CCB
     ccb_model_file_name = "model_file_ccb_no_equiv.txt"
-    ccb_workspace = pyvw.vw(
+    ccb_workspace = pyvw.Workspace(
         quiet=True, ccb_explore_adf=True, readable_model=ccb_model_file_name
     )
 
@@ -89,7 +89,7 @@ def test_ccb_single_slot_and_cb_non_equivalence_with_slot_features():
 
     # --- CB
     cb_model_file_name = "model_file_cb_no_equiv.txt"
-    cb_workspace = pyvw.vw(
+    cb_workspace = pyvw.Workspace(
         quiet=True, cb_explore_adf=True, readable_model=cb_model_file_name
     )
 
@@ -111,3 +111,14 @@ def test_ccb_single_slot_and_cb_non_equivalence_with_slot_features():
     # Since there was at least one slot feature supplied, the equivalent mode
     # does not apply and so we expect there to be more weights in the CCB model.
     assert ccb_num_weights > cb_num_weights
+
+
+def test_ccb_non_slot_none_outcome():
+    model = pyvw.Workspace(quiet=True)
+    example = pyvw.Example(
+        vw=model, labelType=pyvw.LabelType.CONDITIONAL_CONTEXTUAL_BANDIT
+    )
+    label = example.get_label(pyvw.CCBLabel)
+    # CCB label is set to UNSET by default.
+    assert label.type == pyvw.CCBLabelType.UNSET
+    assert label.outcome is None

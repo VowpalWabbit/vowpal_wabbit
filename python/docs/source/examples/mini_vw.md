@@ -14,7 +14,7 @@ learnFromStrings = False
 
 
 def mini_vw(inputFile, numPasses, otherArgs):
-    vw = pyvw.vw(otherArgs)
+    vw = pyvw.Workspace(otherArgs)
     for p in range(numPasses):
         print('pass', (p+1))
         h = open(inputFile, 'r')

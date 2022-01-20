@@ -42,10 +42,11 @@ typedef boost::shared_ptr<py_log_wrapper> py_log_wrapper_ptr;
 
 const size_t lDEFAULT = 0;
 const size_t lBINARY = 1;
+const size_t lSIMPLE = 1;
 const size_t lMULTICLASS = 2;
 const size_t lCOST_SENSITIVE = 3;
 const size_t lCONTEXTUAL_BANDIT = 4;
-const size_t lMAX = 5;
+const size_t lMAX = 5;  // DEPRECATED
 const size_t lCONDITIONAL_CONTEXTUAL_BANDIT = 6;
 const size_t lSLATES = 7;
 const size_t lCONTINUOUS = 8;
@@ -364,7 +365,7 @@ label_parser* get_label_parser(VW::workspace* all, size_t labelType)
   {
     case lDEFAULT:
       return all ? &all->example_parser->lbl_parser : NULL;
-    case lBINARY:
+    case lBINARY:  // or #lSIMPLE
       return &simple_label_parser;
     case lMULTICLASS:
       return &MULTICLASS::mc_label;
@@ -459,8 +460,6 @@ size_t my_get_prediction_type(vw_ptr all)
 void my_delete_example(void* voidec)
 {
   example* ec = (example*)voidec;
-  size_t labelType = ec->example_counter;
-  label_parser* lp = get_label_parser(NULL, labelType);
   VW::dealloc_examples(ec, 1);
 }
 
@@ -471,12 +470,6 @@ example* my_empty_example0(vw_ptr vw, size_t labelType)
   lp->default_label(ec->l);
   ec->interactions = &vw->interactions;
   ec->extent_interactions = &vw->extent_interactions;
-  if (labelType == lCOST_SENSITIVE)
-  {
-    COST_SENSITIVE::wclass zero = {0., 1, 0., 0.};
-    ec->l.cs.costs.push_back(zero);
-  }
-  ec->example_counter = labelType;
   return ec;
 }
 
@@ -491,13 +484,11 @@ example_ptr my_read_example(vw_ptr all, size_t labelType, char* str)
   example* ec = my_empty_example0(all, labelType);
   VW::read_line(*all, ec, str);
   VW::setup_example(*all, ec);
-  ec->example_counter = labelType;
   return boost::shared_ptr<example>(ec, my_delete_example);
 }
 
 example_ptr my_existing_example(vw_ptr all, size_t labelType, example_ptr existing_example)
 {
-  existing_example->example_counter = labelType;
   return existing_example;
   // return boost::shared_ptr<example>(existing_example);
 }
@@ -570,6 +561,14 @@ std::string varray_char_to_string(v_array<char>& a)
   std::string ret = "";
   for (auto c : a) ret += c;
   return ret;
+}
+
+template <class T>
+py::list varray_to_pylist(const v_array<T>& a)
+{
+  py::list list;
+  for (const auto& elem : a) { list.append(elem); }
+  return list;
 }
 
 std::string my_get_tag(example_ptr ec) { return varray_char_to_string(ec->tag); }
@@ -932,6 +931,58 @@ float ex_get_slates_probability(example_ptr ec, uint32_t i)
   return ec->l.slates.probabilities[i].score;
 }
 
+size_t ex_get_ccb_type(example_ptr ec)
+{
+  switch (ec->l.conditional_contextual_bandit.type)
+  {
+    case CCB::example_type::shared:
+      return tSHARED;
+    case CCB::example_type::action:
+      return tACTION;
+    case CCB::example_type::slot:
+      return tSLOT;
+    default:
+      return tUNSET;
+  }
+}
+bool ex_get_ccb_has_outcome(example_ptr ec) { return ec->l.conditional_contextual_bandit.outcome != nullptr; }
+py::object ex_get_ccb_cost(example_ptr ec)
+{
+  if (!ex_get_ccb_has_outcome(ec)) return py::object();
+  return py::object(ec->l.conditional_contextual_bandit.outcome->cost);
+}
+size_t ex_get_ccb_num_probabilities(example_ptr ec)
+{
+  if (!ex_get_ccb_has_outcome(ec)) return 0;
+  return ec->l.conditional_contextual_bandit.outcome->probabilities.size();
+}
+size_t ex_get_ccb_num_explicitly_included_actions(example_ptr ec)
+{
+  const auto& label = ec->l.conditional_contextual_bandit;
+  return label.explicit_included_actions.size();
+}
+py::object ex_get_ccb_action(example_ptr ec, uint32_t i)
+{
+  if (i >= ex_get_ccb_num_probabilities(ec)) { THROW("Action index out of bounds"); }
+  if (!ex_get_ccb_has_outcome(ec)) return py::object();
+  const auto* outcome_ptr = ec->l.conditional_contextual_bandit.outcome;
+  return py::object(outcome_ptr->probabilities[i].action);
+}
+py::object ex_get_ccb_probability(example_ptr ec, uint32_t i)
+{
+  if (i >= ex_get_ccb_num_probabilities(ec)) { THROW("Probability index out of bounds"); }
+  if (!ex_get_ccb_has_outcome(ec)) { return py::object(); }
+  const auto* outcome_ptr = ec->l.conditional_contextual_bandit.outcome;
+  return py::object(outcome_ptr->probabilities[i].score);
+}
+float ex_get_ccb_weight(example_ptr ec) { return ec->l.conditional_contextual_bandit.weight; }
+py::object ex_get_ccb_explicitly_included_actions(example_ptr ec)
+{
+  const auto& label = ec->l.conditional_contextual_bandit;
+  if (!ex_get_ccb_has_outcome(ec)) { return py::object(); }
+  return varray_to_pylist(label.explicit_included_actions);
+}
+
 // example_counter is being overriden by lableType!
 size_t get_example_counter(example_ptr ec) { return ec->example_counter; }
 uint64_t get_ft_offset(example_ptr ec) { return ec->ft_offset; }
@@ -1279,15 +1330,20 @@ BOOST_PYTHON_MODULE(pylibvw)
       .def_readonly("lDefault", lDEFAULT,
           "Default label type (whatever vw was initialized with) -- used as input to the example() initializer")
       .def_readonly("lBinary", lBINARY, "Binary label type -- used as input to the example() initializer")
+      .def_readonly("lSimple", lSIMPLE, "Simple label type -- used as input to the example() initializer")
       .def_readonly("lMulticlass", lMULTICLASS, "Multiclass label type -- used as input to the example() initializer")
       .def_readonly("lCostSensitive", lCOST_SENSITIVE,
           "Cost sensitive label type (for LDF!) -- used as input to the example() initializer")
       .def_readonly("lContextualBandit", lCONTEXTUAL_BANDIT,
           "Contextual bandit label type -- used as input to the example() initializer")
+      .def_readonly("lMax", lMAX, "DEPRECATED: Max label type -- used as input to the example() initializer")
       .def_readonly("lConditionalContextualBandit", lCONDITIONAL_CONTEXTUAL_BANDIT,
           "Conditional Contextual bandit label type -- used as input to the example() initializer")
       .def_readonly("lSlates", lSLATES, "Slates label type -- used as input to the example() initializer")
       .def_readonly("lContinuous", lCONTINUOUS, "Continuous label type -- used as input to the example() initializer")
+      .def_readonly("lContextualBanditEval", lCONTEXTUAL_BANDIT_EVAL,
+          "Contextual bandit eval label type -- used as input to the example() initializer")
+      .def_readonly("lMultilabel", lMULTILABEL, "Multilabel label type -- used as input to the example() initializer")
 
       .def_readonly("pSCALAR", pSCALAR, "Scalar prediction type")
       .def_readonly("pSCALARS", pSCALARS, "Multiple scalar-valued prediction type")
@@ -1302,6 +1358,7 @@ BOOST_PYTHON_MODULE(pylibvw)
       .def_readonly("pPDF", pPDF, "PDF prediction type")
       .def_readonly("pACTIVE_MULTICLASS", pACTIVE_MULTICLASS, "Active multiclass prediction type")
       .def_readonly("pNOPRED", pNOPRED, "Nopred prediction type")
+
       .def_readonly("tUNSET", tUNSET, "Unset label type for CCB and Slates")
       .def_readonly("tSHARED", tSHARED, "Shared label type for CCB and Slates")
       .def_readonly("tACTION", tACTION, "Action label type for CCB and Slates")
@@ -1408,6 +1465,25 @@ BOOST_PYTHON_MODULE(pylibvw)
       .def("get_cbandits_partial_prediction", &ex_get_cbandits_partial_prediction,
           "Assuming a contextual_bandits label type, get the partial prediction for a given pair (i=0.. "
           "get_cbandits_num_costs)")
+      .def("get_ccb_type", &ex_get_ccb_type,
+          "Assuming a conditional_contextual_bandits label type, get the type of example")
+      .def("get_ccb_has_outcome", &ex_get_ccb_has_outcome,
+          "Assuming a conditional_contextual_bandits label type, verify if it has an outcome.")
+      .def("get_ccb_cost", &ex_get_ccb_cost,
+          "Assuming a conditional_contextual_bandits label type, get the cost of the given label")
+      .def("get_ccb_num_probabilities", &ex_get_ccb_num_probabilities,
+          "Assuming a conditional_contextual_bandits label type, get number of actions in example")
+      .def("get_ccb_num_explicitly_included_actions", &ex_get_ccb_num_explicitly_included_actions,
+          "Assuming a conditional_contextual_bandits label type, get the number of included actions.")
+      .def("get_ccb_action", &ex_get_ccb_action,
+          "Assuming a conditional_contextual_bandits label type, get the action of example at index i")
+      .def("get_ccb_probability", &ex_get_ccb_probability,
+          "Assuming a conditional_contextual_bandits label type, get the probability of example at index i")
+      .def("get_ccb_weight", &ex_get_ccb_weight,
+          "Assuming a conditional_contextual_bandits label type, get the weight of the example.")
+      .def("get_ccb_explicitly_included_actions", &ex_get_ccb_explicitly_included_actions,
+          "Assuming a conditional_contextual_bandits label type, get the array of explicitly included actions for the "
+          "slot")
       .def("get_cb_continuous_num_costs", &ex_get_cb_continuous_num_costs,
           "Assuming a cb_continuous label type, get the total number of costs")
       .def("get_cb_continuous_cost", &ex_get_cb_continuous_cost,

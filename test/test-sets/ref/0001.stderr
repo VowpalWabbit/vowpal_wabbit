@@ -1,8 +1,8 @@
 only testing
 predictions = 0001.predict
 Num weight bits = 18
-learning rate = 20
-initial_t = 1
+learning rate = 2.56e+06
+initial_t = 128000
 power_t = 1
 using no cache
 Reading datafile = train-sets/0001.dat

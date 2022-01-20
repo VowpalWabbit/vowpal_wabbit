@@ -91,8 +91,8 @@ struct parser
   shared_data* _shared_data = nullptr;
 
   hash_func_t hasher;
-  bool resettable;           // Whether or not the input can be reset.
-  io_buf output;             // Where to output the cache.
+  bool resettable;  // Whether or not the input can be reset.
+  io_buf output;    // Where to output the cache.
   VW::details::cache_temp_buffer _cache_temp_buffer;
   std::string currentname;
   std::string finalname;

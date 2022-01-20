@@ -194,7 +194,7 @@ struct memory_tree
   size_t current_pass = 0;  // for tracking # of passes over the dataset
   size_t final_pass = 0;
 
-  int top_K;  // commands:
+  int top_K;         // commands:
   bool oas = false;  // indicator for multi-label classification (oas = 1)
   int dream_at_update = 0;
 
@@ -492,7 +492,7 @@ void split_leaf(memory_tree& b, single_learner& base, const uint64_t cn)
       b.examples[ec_pos]->l.multilabels = multilabels;
     }
   }
-  b.nodes[cn].examples_index.clear();                                                    // empty the cn's example list
+  b.nodes[cn].examples_index.clear();  // empty the cn's example list
   b.nodes[cn].nl =
       std::max(static_cast<double>(b.nodes[left_child].examples_index.size()), 0.001);  // avoid to set nl to zero
   b.nodes[cn].nr =
@@ -1221,7 +1221,7 @@ base_learner* memory_tree_setup(VW::setup_base_i& stack_builder)
       .add(make_option("dream_repeats", tree->dream_repeats)
                .default_value(1)
                .help("Number of dream operations per example (default = 1)"))
-      .add(make_option("top_K", tree->top_K).default_value(1).help("Top K prediction error (default 1)"))
+      .add(make_option("top_K", tree->top_K).default_value(1).help("Top K prediction error"))
       .add(make_option("learn_at_leaf", tree->learn_at_leaf).help("Enable learning at leaf"))
       .add(make_option("oas", tree->oas).help("Use oas at the leaf"))
       .add(make_option("dream_at_update", tree->dream_at_update)

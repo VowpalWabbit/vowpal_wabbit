@@ -591,10 +591,7 @@ void enable_sources(VW::workspace& all, bool quiet, size_t passes, input_options
         THROW("Failed to open input data file '" << filename_to_read << "'. Inner error: " << ex.what());
       }
 
-      if (input_options.json || input_options.dsjson)
-      {
-        set_json_reader(all, input_options.dsjson);
-      }
+      if (input_options.json || input_options.dsjson) { set_json_reader(all, input_options.dsjson); }
 #ifdef BUILD_FLATBUFFERS
       else if (input_options.flatbuffer)
       {
@@ -744,10 +741,7 @@ void setup_example(VW::workspace& all, example* ae)
     for (features& fs : *ae)
       for (auto& j : fs.indices) j *= multiplier;
   ae->num_features = 0;
-  for (const features& fs : *ae)
-  {
-    ae->num_features += fs.size();
-  }
+  for (const features& fs : *ae) { ae->num_features += fs.size(); }
 
   // Set the interactions for this example to the global set.
   ae->interactions = &all.interactions;

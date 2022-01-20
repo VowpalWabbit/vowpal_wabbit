@@ -992,8 +992,12 @@ void parse_example_tweaks(options_i& options, VW::workspace& all)
               .help(
                   "Specify the number of passes tolerated when holdout loss doesn't decrease before early termination"))
       .add(make_option("passes", all.numpasses).default_value(1).help("Number of Training Passes"))
-      .add(make_option("initial_pass_length", all.pass_length).help("Initial number of examples per pass"))
-      .add(make_option("examples", all.max_examples).help("Number of examples to parse"))
+      .add(make_option("initial_pass_length", all.pass_length)
+               .default_value(std::numeric_limits<size_t>::max())
+               .help("Initial number of examples per pass"))
+      .add(make_option("examples", all.max_examples)
+               .default_value(std::numeric_limits<size_t>::max())
+               .help("Number of examples to parse"))
       .add(make_option("min_prediction", all.sd->min_label).help("Smallest prediction to output"))
       .add(make_option("max_prediction", all.sd->max_label).help("Largest prediction to output"))
       .add(make_option("sort_features", all.example_parser->sort_features)
@@ -1069,16 +1073,16 @@ void parse_example_tweaks(options_i& options, VW::workspace& all)
 void parse_update_options(options_i& options, VW::workspace& all)
 {
   option_group_definition update_args("Update");
-  update_args.add(make_option("learning_rate", all.eta).keep().help("Set learning rate").short_name("l"))
-      .add(make_option("power_t", all.power_t).keep().default_value(0.5f).help("T power value"))
+  update_args.add(make_option("learning_rate", all.eta).default_value(0.5f).keep().allow_override().help("Set learning rate").short_name("l"))
+      .add(make_option("power_t", all.power_t).default_value(0.5f).keep().allow_override().help("T power value"))
       .add(make_option("decay_learning_rate", all.eta_decay_rate)
-               .keep()
-               .default_value(1.f)
-               .help("Set Decay factor for learning_rate between passes"))
-      .add(make_option("initial_t", all.sd->t).help("Initial t value"))
+                .default_value(1.f)
+                .help("Set Decay factor for learning_rate between passes"))
+      .add(make_option("initial_t", all.sd->t).keep().allow_override().help("Initial t value"))
       .add(make_option("feature_mask", all.feature_mask)
-               .help("Use existing regressor to determine which parameters may be updated.  If no initial_regressor "
-                     "given, also used for initial weights."));
+                .help("Use existing regressor to determine which parameters may be updated.  If no initial_regressor "
+                      "given, also used for initial weights."));
+  all.options->add_and_parse(update_args);
   options.add_and_parse(update_args);
   all.initial_t = static_cast<float>(all.sd->t);
 }
@@ -1218,7 +1222,7 @@ VW::workspace& parse_args(
   std::string log_level;
   std::string log_output_stream;
   size_t upper_limit = 0;
-  option_group_definition logging_options("Logging options");
+  option_group_definition logging_options("Logging");
   logging_options
       .add(make_option("quiet", quiet)
                .help("Don't output diagnostics and progress updates. Supplying this implies --log_level off and "

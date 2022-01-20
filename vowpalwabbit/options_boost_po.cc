@@ -41,9 +41,9 @@ po::typed_value<std::vector<bool>>* options_boost_po::convert_to_boost_value(std
   if (opt->default_value_supplied())
   { THROW("Using a bool option type acts as a switch, no explicit default value is allowed.") }
 
-  value->default_value({false});
+  value->default_value({false}, "false");
   value->zero_tokens();
-  value->implicit_value({true});
+  value->implicit_value({true}, "true");
 
   return add_notifier(opt, value);
 }
@@ -306,7 +306,7 @@ void options_boost_po::check_unregistered(VW::io::logger& logger)
 
 template <>
 void options_boost_po::add_to_description_impl<typelist<>>(
-    const std::shared_ptr<base_option>&, po::options_description&)
+    const std::shared_ptr<base_option>& opt, po::options_description& /*description*/)
 {
-  THROW("That is an unsupported option type.");
+  THROW(fmt::format("Option '{}' has an unsupported option type.", opt->m_name));
 }

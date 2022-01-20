@@ -148,7 +148,8 @@ void automl<CMType>::one_step(multi_learner& base, multi_ex& ec, CB::cb_class& l
 // into its own base_learner.learn(). see learn_automl(...)
 interaction_config_manager::interaction_config_manager(uint64_t global_lease, uint64_t max_live_configs,
     std::shared_ptr<VW::rand_state> rand_state, uint64_t priority_challengers, bool keep_configs,
-    std::string oracle_type, dense_parameters& weights, priority_func* calc_priority)
+    std::string oracle_type, dense_parameters& weights, priority_func* calc_priority, double automl_alpha,
+    double automl_tau)
     : global_lease(global_lease)
     , max_live_configs(max_live_configs)
     , random_state(std::move(rand_state))
@@ -157,10 +158,12 @@ interaction_config_manager::interaction_config_manager(uint64_t global_lease, ui
     , oracle_type(std::move(oracle_type))
     , weights(weights)
     , calc_priority(calc_priority)
+    , automl_alpha(automl_alpha)
+    , automl_tau(automl_tau)
 {
   configs[0] = exclusion_config(global_lease);
   configs[0].state = VW::automl::config_state::Live;
-  scores.push_back(aml_score());
+  scores.push_back(aml_score(automl_alpha, automl_tau));
   ++valid_config_size;
 }
 
@@ -358,14 +361,14 @@ void interaction_config_manager::schedule()
       // Allocate new score if we haven't reached maximum yet
       if (need_new_score)
       {
-        scores.push_back(aml_score());
+        scores.push_back(aml_score(automl_alpha, automl_tau));
         if (live_slot > priority_challengers) { scores.back().eligible_to_inactivate = true; }
       }
       // Only inactivate current config if lease is reached
       if (!need_new_score && configs[scores[live_slot].config_index].state == VW::automl::config_state::Live)
       { configs[scores[live_slot].config_index].state = VW::automl::config_state::Inactive; }
       // Set all features of new live config
-      scores[live_slot].reset_stats();
+      scores[live_slot].reset_stats(automl_alpha, automl_tau);
       uint64_t new_live_config_index = choose();
       scores[live_slot].config_index = new_live_config_index;
       configs[new_live_config_index].state = VW::automl::config_state::Live;
@@ -452,7 +455,7 @@ void interaction_config_manager::update_champ()
         }
         configs[scores[worst_live_slot].config_index].lease *= 2;
         configs[scores[worst_live_slot].config_index].state = VW::automl::config_state::Inactive;
-        scores[worst_live_slot].reset_stats();
+        scores[worst_live_slot].reset_stats(automl_alpha, automl_tau);
         scores[worst_live_slot].config_index = config_index;
         configs[scores[worst_live_slot].config_index].state = VW::automl::config_state::Live;
         gen_quadratic_interactions(worst_live_slot);
@@ -654,6 +657,8 @@ VW::LEARNER::base_learner* automl_setup(VW::setup_base_i& stack_builder)
   bool keep_configs = false;
   bool verbose_metrics = false;
   std::string oracle_type;
+  double automl_alpha;
+  double automl_tau;
 
   option_group_definition new_options("[Reduction] Automl");
   new_options
@@ -680,13 +685,21 @@ VW::LEARNER::base_learner* automl_setup(VW::setup_base_i& stack_builder)
                .keep()
                .default_value(-1)
                .help("Set number of priority challengers to use"))
-      .add(make_option("keep_configs", keep_configs).keep().help("keep all configs after champ change"))
-      .add(make_option("verbose_metrics", verbose_metrics).help("extended metrics for debugging"))
+      .add(make_option("keep_configs", keep_configs).keep().help("Keep all configs after champ change"))
+      .add(make_option("verbose_metrics", verbose_metrics).help("Extended metrics for debugging"))
       .add(make_option("oracle_type", oracle_type)
                .keep()
                .default_value("one_diff")
                .one_of({"one_diff", "rand"})
-               .help("Set oracle to generate configs"));
+               .help("Set oracle to generate configs"))
+      .add(make_option("automl_alpha", automl_alpha)
+               .keep()
+               .default_value(DEFAULT_ALPHA)
+               .help("Set confidence interval for champion change"))
+      .add(make_option("automl_tau", automl_tau)
+               .keep()
+               .default_value(DEFAULT_TAU)
+               .help("Time constant for count decay"));
 
   if (!options.add_parse_and_check_necessary(new_options)) return nullptr;
 
@@ -705,7 +718,8 @@ VW::LEARNER::base_learner* automl_setup(VW::setup_base_i& stack_builder)
   if (priority_challengers < 0) { priority_challengers = (static_cast<int>(max_live_configs) - 1) / 2; }
 
   auto cm = VW::make_unique<interaction_config_manager>(global_lease, max_live_configs, all.get_random_state(),
-      static_cast<uint64_t>(priority_challengers), keep_configs, oracle_type, all.weights.dense_weights, calc_priority);
+      static_cast<uint64_t>(priority_challengers), keep_configs, oracle_type, all.weights.dense_weights, calc_priority,
+      automl_alpha, automl_tau);
   auto data = VW::make_unique<automl<interaction_config_manager>>(std::move(cm));
   assert(max_live_configs <= MAX_CONFIGS);
 

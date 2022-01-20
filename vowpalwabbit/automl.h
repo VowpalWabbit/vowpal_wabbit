@@ -40,6 +40,8 @@ constexpr uint64_t CONFIGS_PER_CHAMP_CHANGE = 5;
 
 struct aml_score : VW::scored_config
 {
+  aml_score() : VW::scored_config() {}
+  aml_score(double alpha, double tau) : VW::scored_config(alpha, tau) {}
   uint64_t config_index = 0;
   bool eligible_to_inactivate = false;
   interaction_vec_t live_interactions;  // Live pre-allocated vectors in use
@@ -106,6 +108,9 @@ struct interaction_config_manager : config_manager
   bool keep_configs;
   std::string oracle_type;
   dense_parameters& weights;
+  priority_func* calc_priority;
+  double automl_alpha;
+  double automl_tau;
 
   // Stores all namespaces currently seen -- Namespace switch could we use array, ask Jack
   std::map<namespace_index, uint64_t> ns_counter;
@@ -120,7 +125,8 @@ struct interaction_config_manager : config_manager
   std::priority_queue<std::pair<float, uint64_t>> index_queue;
 
   interaction_config_manager(uint64_t, uint64_t, std::shared_ptr<VW::rand_state>, uint64_t, bool, std::string,
-      dense_parameters&, float (*)(const exclusion_config&, const std::map<namespace_index, uint64_t>&));
+      dense_parameters&, float (*)(const exclusion_config&, const std::map<namespace_index, uint64_t>&), double,
+      double);
 
   void apply_config(example*, uint64_t);
   void revert_config(example*);
@@ -139,7 +145,6 @@ private:
   bool better(const exclusion_config&, const exclusion_config&) const;
   bool worse(const exclusion_config&, const exclusion_config&) const;
   uint64_t choose();
-  priority_func* calc_priority;
   bool repopulate_index_queue();
   bool swap_eligible_to_inactivate(uint64_t);
   void insert_config(std::map<namespace_index, std::set<namespace_index>>&&);

@@ -1,7 +1,7 @@
 import os
 
 from vowpalwabbit import pyvw
-from vowpalwabbit.pyvw import vw
+from vowpalwabbit.pyvw import Workspace
 import pytest
 
 BIT_SIZE = 18
@@ -14,10 +14,10 @@ def isclose(a, b, rel_tol=1e-05, abs_tol=0.0):
 
 class TestVW:
 
-    model = vw(quiet=True, b=BIT_SIZE)
+    model = Workspace(quiet=True, b=BIT_SIZE)
 
     def test_constructor(self):
-        assert isinstance(self.model, vw)
+        assert isinstance(self.model, Workspace)
 
     def test_learn_predict(self):
         ex = self.model.example("1 | a b c")
@@ -50,7 +50,7 @@ class TestVW:
 
 
 def test_delete():
-    model = vw(quiet=True, b=BIT_SIZE)
+    model = Workspace(quiet=True, b=BIT_SIZE)
     assert "model" in locals()
     del model
     assert "model" not in locals()
@@ -60,7 +60,7 @@ def test_delete():
 
 
 def test_scalar_prediction_type():
-    model = vw(quiet=True)
+    model = Workspace(quiet=True)
     model.learn("1 | a b c")
     assert model.get_prediction_type() == model.pSCALAR
     prediction = model.predict(" | a b c")
@@ -70,9 +70,9 @@ def test_scalar_prediction_type():
 
 def test_scalars_prediction_type():
     n = 3
-    model = vw(loss_function="logistic", oaa=n, probabilities=True, quiet=True)
+    model = Workspace(loss_function="logistic", oaa=n, probabilities=True, quiet=True)
     model.learn("1 | a b c")
-    assert model.get_prediction_type() == model.pSCALARS
+    assert model.get_prediction_type() == pyvw.PredictionType.SCALARS
     prediction = model.predict(" | a b c")
     assert isinstance(prediction, list)
     assert len(prediction) == n
@@ -81,16 +81,16 @@ def test_scalars_prediction_type():
 
 def test_multiclass_prediction_type():
     n = 3
-    model = vw(loss_function="logistic", oaa=n, quiet=True)
+    model = Workspace(loss_function="logistic", oaa=n, quiet=True)
     model.learn("1 | a b c")
-    assert model.get_prediction_type() == model.pMULTICLASS
+    assert model.get_prediction_type() == pyvw.PredictionType.MULTICLASS
     prediction = model.predict(" | a b c")
     assert isinstance(prediction, int)
     del model
 
 
 def test_prob_prediction_type():
-    model = vw(
+    model = Workspace(
         loss_function="logistic",
         csoaa_ldf="mc",
         probabilities=True,
@@ -101,7 +101,7 @@ def test_prob_prediction_type():
         model.example("2:0.8  | a b c"),
     ]
     model.learn(multi_ex)
-    assert model.get_prediction_type() == model.pPROB
+    assert model.get_prediction_type() == pyvw.PredictionType.PROB
     multi_ex = [model.example("1 | a b c"), model.example("2 | a b c")]
     prediction = model.predict(multi_ex)
     assert isinstance(prediction, float)
@@ -109,7 +109,7 @@ def test_prob_prediction_type():
 
 
 def test_action_scores_prediction_type():
-    model = vw(loss_function="logistic", csoaa_ldf="m", quiet=True)
+    model = Workspace(loss_function="logistic", csoaa_ldf="m", quiet=True)
     multi_ex = [model.example("1:1 | a b c"), model.example("2:-1  | a b c")]
     model.learn(multi_ex)
     assert model.get_prediction_type() == model.pMULTICLASS
@@ -120,7 +120,7 @@ def test_action_scores_prediction_type():
 
 
 def test_action_probs_prediction_type():
-    model = vw(cb_explore=2, ngram=2, quiet=True)
+    model = Workspace(cb_explore=2, ngram=2, quiet=True)
     model.learn("1 | a b c")
     assert model.get_prediction_type() == model.pACTION_PROBS
     prediction = model.predict(" | a b c")
@@ -129,7 +129,7 @@ def test_action_probs_prediction_type():
 
 
 def test_multilabel_prediction_type():
-    model = vw(multilabel_oaa=4, quiet=True)
+    model = Workspace(multilabel_oaa=4, quiet=True)
     model.learn("1 | a b c")
     assert model.get_prediction_type() == model.pMULTILABELS
     prediction = model.predict(" | a b c")
@@ -138,8 +138,8 @@ def test_multilabel_prediction_type():
 
 
 def test_CBLabel():
-    model = vw(cb=4, quiet=True)
-    cbl = pyvw.CBLabel(model.example("1:10:0.5 |"))
+    model = Workspace(cb=4, quiet=True)
+    cbl = pyvw.CBLabel.from_example(model.example("1:10:0.5 |"))
     assert cbl.costs[0].action == 1
     assert cbl.costs[0].probability == 0.5
     assert cbl.costs[0].partial_prediction == 0
@@ -149,8 +149,8 @@ def test_CBLabel():
 
 
 def test_CBContinuousLabel():
-    model = vw(cats=4, min_value=185, max_value=23959, bandwidth=3000, quiet=True)
-    cb_contl = pyvw.CBContinuousLabel(model.example("ca 1:10:0.5 |"))
+    model = Workspace(cats=4, min_value=185, max_value=23959, bandwidth=3000, quiet=True)
+    cb_contl = pyvw.CBContinuousLabel.from_example(model.example("ca 1:10:0.5 |"))
     assert cb_contl.costs[0].action == 1
     assert cb_contl.costs[0].pdf_value == 0.5
     assert cb_contl.costs[0].cost == 10.0
@@ -159,8 +159,8 @@ def test_CBContinuousLabel():
 
 
 def test_CostSensitiveLabel():
-    model = vw(csoaa=4, quiet=True)
-    csl = pyvw.CostSensitiveLabel(model.example("2:5 |"))
+    model = Workspace(csoaa=4, quiet=True)
+    csl = pyvw.CostSensitiveLabel.from_example(model.example("2:5 |"))
     assert csl.costs[0].label == 2
     assert csl.costs[0].wap_value == 0.0
     assert csl.costs[0].partial_prediction == 0.0
@@ -171,20 +171,54 @@ def test_CostSensitiveLabel():
 
 def test_MulticlassProbabilitiesLabel():
     n = 4
-    model = pyvw.vw(loss_function="logistic", oaa=n, probabilities=True, quiet=True)
+    model = pyvw.Workspace(loss_function="logistic", oaa=n, probabilities=True, quiet=True)
     ex = model.example("1 | a b c d", 2)
     model.learn(ex)
-    mpl = pyvw.MulticlassProbabilitiesLabel(ex)
+    mpl = pyvw.MulticlassProbabilitiesLabel.from_example(ex)
     assert str(mpl) == "1:0.25 2:0.25 3:0.25 4:0.25"
-    mpl = pyvw.MulticlassProbabilitiesLabel([1, 2, 3], [0.4, 0.3, 0.3])
+    mpl = pyvw.MulticlassProbabilitiesLabel([0.4, 0.3, 0.3])
     assert str(mpl) == "1:0.4 2:0.3 3:0.3"
 
 
+def test_ccb_label():
+    model = Workspace(ccb_explore_adf=True, quiet=True)
+    ccb_shared_label = pyvw.CCBLabel.from_example(
+        (model.example("ccb shared | shared_0 shared_1"))
+    )
+    ccb_action_label = pyvw.CCBLabel.from_example(
+        (model.example("ccb action | action_1 action_3"))
+    )
+    ccb_slot_label = pyvw.CCBLabel.from_example(
+        (model.example("ccb slot 0:0.8:1.0 0 | slot_0"))
+    )
+    ccb_slot_pred_label = pyvw.CCBLabel.from_example((model.example("ccb slot |")))
+    assert ccb_shared_label.type == pyvw.CCBLabelType.SHARED
+    assert ccb_shared_label.explicit_included_actions is None
+    assert ccb_shared_label.outcome is None
+    assert str(ccb_shared_label) == "ccb shared"
+    assert ccb_action_label.type == pyvw.CCBLabelType.ACTION
+    assert ccb_action_label.explicit_included_actions is None
+    assert ccb_action_label.weight == 1.0
+    assert ccb_action_label.outcome is None
+    assert str(ccb_action_label) == "ccb action"
+    assert ccb_slot_label.type == pyvw.CCBLabelType.SLOT
+    assert ccb_slot_label.explicit_included_actions[0] == 0
+    assert ccb_slot_label.outcome.action_probs[0].action == 0
+    assert isclose(ccb_slot_label.outcome.action_probs[0].score, 1.0)
+    assert isclose(ccb_slot_label.outcome.cost, 0.8)
+    assert str(ccb_slot_label) == "ccb slot 0:0.8:1.0 0"
+    assert ccb_slot_pred_label.type == pyvw.CCBLabelType.SLOT
+    assert ccb_slot_pred_label.explicit_included_actions is None
+    assert ccb_slot_pred_label.outcome is None
+    assert str(ccb_slot_pred_label) == "ccb slot"
+    del model
+
+
 def test_slates_label():
-    model = vw(slates=True, quiet=True)
-    slates_shared_label = pyvw.SlatesLabel(model.example("slates shared 0.8 | shared_0 shared_1"))
-    slates_action_label = pyvw.SlatesLabel(model.example("slates action 1 | action_3"))
-    slates_slot_label = pyvw.SlatesLabel(model.example("slates slot 1:0.8,0:0.1,2:0.1 | slot_0"))
+    model = Workspace(slates=True, quiet=True)
+    slates_shared_label = pyvw.SlatesLabel.from_example(model.example("slates shared 0.8 | shared_0 shared_1"))
+    slates_action_label = pyvw.SlatesLabel.from_example(model.example("slates action 1 | action_3"))
+    slates_slot_label = pyvw.SlatesLabel.from_example(model.example("slates slot 1:0.8,0:0.1,2:0.1 | slot_0"))
     assert slates_shared_label.type == pyvw.SlatesLabelType.SHARED
     assert slates_shared_label.labeled == True
     assert isclose(slates_shared_label.cost, 0.8)
@@ -211,7 +245,7 @@ def test_regressor_args():
     data_file = os.path.join(
         os.path.dirname(os.path.realpath(__file__)), "resources", "train.dat"
     )
-    model = vw(oaa=3, data=data_file, passes=30, c=True, k=True)
+    model = Workspace(oaa=3, data=data_file, passes=30, c=True, k=True)
     assert model.predict("| feature1:2.5") == 1
 
     # update model in memory
@@ -224,7 +258,7 @@ def test_regressor_args():
     del model
 
     # load initial regressor and confirm updated prediction
-    new_model = vw(i="tmp.model", quiet=True)
+    new_model = Workspace(i="tmp.model", quiet=True)
     assert new_model.predict("| feature1:2.5") == 3
     del new_model
 
@@ -235,7 +269,7 @@ def test_regressor_args():
 
 def test_keys_with_list_of_values():
     # No exception in creating and executing model with a key/list pair
-    model = vw(quiet=True, q=["fa", "fb"])
+    model = Workspace(quiet=True, q=["fa", "fb"])
     model.learn("1 | a b c")
     prediction = model.predict(" | a b c")
     assert isinstance(prediction, float)
@@ -243,7 +277,7 @@ def test_keys_with_list_of_values():
 
 
 def helper_parse(examples):
-    model = vw(quiet=True, cb_adf=True)
+    model = Workspace(quiet=True, cb_adf=True)
     ex = model.parse(examples)
     assert len(ex) == 2
     model.learn(ex)
@@ -270,14 +304,14 @@ def test_parse():
 
 
 def test_parse_2():
-    model = vw(quiet=True, cb_adf=True)
+    model = Workspace(quiet=True, cb_adf=True)
     ex = model.parse("| a:1 b:0.5\n0:0.1:0.75 | a:0.5 b:1 c:2")
     assert len(ex) == 2
     model.learn(ex)
     model.finish_example(ex)
     model.finish()
 
-    model = vw(quiet=True, cb_adf=True)
+    model = Workspace(quiet=True, cb_adf=True)
     ex = model.parse(["| a:1 b:0.5", "0:0.1:0.75 | a:0.5 b:1 c:2"])
     assert len(ex) == 2
     model.learn(ex)
@@ -286,7 +320,7 @@ def test_parse_2():
 
 
 def test_learn_predict_multiline():
-    model = vw(quiet=True, cb_adf=True)
+    model = Workspace(quiet=True, cb_adf=True)
     ex = model.parse(["| a:1 b:0.5", "0:0.1:0.75 | a:0.5 b:1 c:2"])
     assert model.predict(ex) == [0.0, 0.0]
     model.finish_example(ex)
@@ -296,11 +330,11 @@ def test_learn_predict_multiline():
 
 
 def test_namespace_id():
-    vw_ex = vw(quiet=True)
+    vw_ex = Workspace(quiet=True)
     ex = vw_ex.example("1 |a two features |b more features here")
-    nm1 = pyvw.namespace_id(ex, 0)
-    nm2 = pyvw.namespace_id(ex, 1)
-    nm3 = pyvw.namespace_id(ex, 2)
+    nm1 = pyvw.NamespaceId(ex, 0)
+    nm2 = pyvw.NamespaceId(ex, 1)
+    nm3 = pyvw.NamespaceId(ex, 2)
     assert nm1.id == 0
     assert nm1.ord_ns == 97
     assert nm1.ns == "a"
@@ -313,12 +347,12 @@ def test_namespace_id():
 
 
 def test_example_namespace():
-    vw_ex = vw(quiet=True)
+    vw_ex = Workspace(quiet=True)
     ex = vw_ex.example("1 |a two features |b more features here")
-    ns_id = pyvw.namespace_id(ex, 1)
-    ex_nm = pyvw.example_namespace(ex, ns_id, ns_hash=vw_ex.hash_space(ns_id.ns))
-    assert isinstance(ex_nm.ex, pyvw.example)
-    assert isinstance(ex_nm.ns, pyvw.namespace_id)
+    ns_id = pyvw.NamespaceId(ex, 1)
+    ex_nm = pyvw.ExampleNamespace(ex, ns_id, ns_hash=vw_ex.hash_space(ns_id.ns))
+    assert isinstance(ex_nm.ex, pyvw.Example)
+    assert isinstance(ex_nm.ns, pyvw.NamespaceId)
     assert ex_nm.ns_hash == 2514386435
     assert ex_nm.num_features_in() == 3
     assert ex_nm[2] == (11617, 1.0)  # represents (feature, value)
@@ -340,9 +374,9 @@ def test_SimpleLabel():
 
 
 def test_SimpleLabel_example():
-    vw_ex = vw(quiet=True)
+    vw_ex = Workspace(quiet=True)
     ex = vw_ex.example("1 |a two features |b more features here")
-    sl2 = pyvw.SimpleLabel(ex)
+    sl2 = pyvw.SimpleLabel.from_example(ex)
     assert sl2.label == 1.0
     assert sl2.weight == 1.0
     assert sl2.prediction == 0.0
@@ -360,9 +394,9 @@ def test_MulticlassLabel():
 
 def test_MulticlassLabel_example():
     n = 4
-    model = pyvw.vw(loss_function="logistic", oaa=n, quiet=True)
+    model = pyvw.Workspace(loss_function="logistic", oaa=n, quiet=True)
     ex = model.example("1 | a b c d", 2)
-    ml2 = pyvw.MulticlassLabel(ex)
+    ml2 = pyvw.MulticlassLabel.from_example(ex)
     assert ml2.label == 1
     assert ml2.weight == 1.0
     assert ml2.prediction == 0
@@ -370,17 +404,17 @@ def test_MulticlassLabel_example():
 
 
 def test_example_namespace_id():
-    vw_ex = vw(quiet=True)
+    vw_ex = Workspace(quiet=True)
     ex = vw_ex.example("1 |a two features |b more features here")
-    ns = pyvw.namespace_id(ex, 1)
-    assert isinstance(ex.get_ns(1), pyvw.namespace_id)
-    assert isinstance(ex[2], pyvw.example_namespace)
+    ns = pyvw.NamespaceId(ex, 1)
+    assert isinstance(ex.get_ns(1), pyvw.NamespaceId)
+    assert isinstance(ex[2], pyvw.ExampleNamespace)
     assert ex.setup_done is True
     assert ex.num_features_in(ns) == 3
 
 
 def test_example_learn():
-    vw_ex = vw(quiet=True)
+    vw_ex = Workspace(quiet=True)
     ex = vw_ex.example("1 |a two features |b more features here")
     ex.learn()
     assert ex.setup_done is True
@@ -389,29 +423,29 @@ def test_example_learn():
 
 
 def test_example_label():
-    vw_ex = vw(quiet=True)
+    vw_ex = Workspace(quiet=True)
     ex = vw_ex.example("1 |a two features |b more features here")
     ex.set_label_string("1.0")
     assert isinstance(ex.get_label(), pyvw.SimpleLabel)
 
 
 def test_example_features():
-    vw_ex = vw(quiet=True)
+    vw_ex = Workspace(quiet=True)
     ex = vw_ex.example("1 |a two features |b more features here")
-    ns = pyvw.namespace_id(ex, 1)
+    ns = pyvw.NamespaceId(ex, 1)
     assert ex.get_feature_id(ns, "a") == 127530
     ex.push_hashed_feature(ns, 1122)
     ex.push_features("x", [("c", 1.0), "d"])
     ex.push_feature(ns, 11000)
     assert ex.num_features_in("x") == 2
     assert ex.sum_feat_sq(ns) == 5.0
-    ns2 = pyvw.namespace_id(ex, 2)
+    ns2 = pyvw.NamespaceId(ex, 2)
     ex.push_namespace(ns2)
     assert ex.pop_namespace()
 
 
 def test_get_weight_name():
-    model = vw(quiet=True)
+    model = Workspace(quiet=True)
     model.learn("1 | a a b c |ns x")
     assert model.get_weight_from_name("a") != 0.0
     assert model.get_weight_from_name("b") != 0.0
@@ -423,19 +457,19 @@ def test_get_weight_name():
 
 
 def test_runparser_cmd_string():
-    vw = pyvw.vw("--data ./test/train-sets/rcv1_small.dat")
+    vw = pyvw.Workspace("--data ./test/train-sets/rcv1_small.dat")
     assert vw.parser_ran == True, "vw should set parser_ran to true if --data present"
     vw.finish()
 
 
 def test_runparser_cmd_string_short():
-    vw = pyvw.vw("-d ./test/train-sets/rcv1_small.dat")
+    vw = pyvw.Workspace("-d ./test/train-sets/rcv1_small.dat")
     assert vw.parser_ran == True, "vw should set parser_ran to true if --data present"
     vw.finish()
 
 
 def test_not_runparser_cmd_string():
-    vw = pyvw.vw("")
+    vw = pyvw.Workspace("")
     assert vw.parser_ran == False, "vw should set parser_ran to false"
     vw.finish()
 
@@ -452,7 +486,7 @@ def check_error_raises(type, argument):
 
     Example:
     >>> ex = ["|a", "|b"]
-    >>> vw = pyvw.vw(quiet=True)
+    >>> vw = pyvw.Workspace(quiet=True)
     >>> check_error_raises(TypeError, lambda: vw.learn(ex))
 
     """
@@ -461,7 +495,7 @@ def check_error_raises(type, argument):
 
 
 def test_dsjson():
-    vw = pyvw.vw("--cb_explore_adf --epsilon 0.2 --dsjson")
+    vw = pyvw.Workspace("--cb_explore_adf --epsilon 0.2 --dsjson")
 
     ex_l_str = '{"_label_cost":-1.0,"_label_probability":0.5,"_label_Action":1,"_labelIndex":0,"o":[{"v":1.0,"EventId":"38cbf24f-70b2-4c76-aa0c-970d0c8d388e","ActionTaken":false}],"Timestamp":"2020-11-15T17:09:31.8350000Z","Version":"1","EventId":"38cbf24f-70b2-4c76-aa0c-970d0c8d388e","a":[1,2],"c":{ "GUser":{"id":"person5","major":"engineering","hobby":"hiking","favorite_character":"spock"}, "_multi": [ { "TAction":{"topic":"SkiConditions-VT"} }, { "TAction":{"topic":"HerbGarden"} } ] },"p":[0.5,0.5],"VWState":{"m":"N/A"}}\n'
     ex_l = vw.parse(ex_l_str)
@@ -482,7 +516,7 @@ def test_dsjson():
 
 
 def test_dsjson_with_metrics():
-    vw = pyvw.vw("--extra_metrics metrics.json --cb_explore_adf --epsilon 0.2 --dsjson")
+    vw = pyvw.Workspace("--extra_metrics metrics.json --cb_explore_adf --epsilon 0.2 --dsjson")
 
     ex_l_str = '{"_label_cost":-0.9,"_label_probability":0.5,"_label_Action":1,"_labelIndex":0,"o":[{"v":1.0,"EventId":"38cbf24f-70b2-4c76-aa0c-970d0c8d388e","ActionTaken":false}],"Timestamp":"2020-11-15T17:09:31.8350000Z","Version":"1","EventId":"38cbf24f-70b2-4c76-aa0c-970d0c8d388e","a":[1,2],"c":{ "GUser":{"id":"person5","major":"engineering","hobby":"hiking","favorite_character":"spock"}, "_multi": [ { "TAction":{"topic":"SkiConditions-VT"} }, { "TAction":{"topic":"HerbGarden"} } ] },"p":[0.5,0.5],"VWState":{"m":"N/A"}}\n'
     ex_l = vw.parse(ex_l_str)
@@ -525,7 +559,7 @@ def test_dsjson_with_metrics():
 
 def test_constructor_exception_is_safe():
     try:
-        vw = pyvw.vw("--invalid_option")
+        vw = pyvw.Workspace("--invalid_option")
     except:
         pass
 
