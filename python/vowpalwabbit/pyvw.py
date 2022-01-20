@@ -2,6 +2,7 @@
 """Python binding for pylibvw class"""
 
 from __future__ import division
+import abc
 from typing import List, Optional, Union
 import pylibvw
 import warnings
@@ -197,11 +198,12 @@ class Learner:
     def predict(self, ec):
         self.vw_cpp_bridge.call_base_learner(ec, False)
 
-    def multi_learn(self, examples, offset = 0, id = 0):
+    def multi_learn(self, examples, offset=0, id=0):
         self.vw_cpp_bridge.call_multi_learner(examples, True)
 
-    def multi_predict(self, examples, offset = 0, id = 0):
+    def multi_predict(self, examples, offset=0, id=0):
         self.vw_cpp_bridge.call_multi_learner(examples, False)
+
 
 class ModelIO:
     def __init__(self, vw_cpp_bridge):
@@ -211,18 +213,23 @@ class ModelIO:
     def read_write(self):
         print("read and writing")
 
+
 # compatible with Python 2 *and* 3
-ABC = abc.ABCMeta('ABC', (object,), {'__slots__': ()})
+ABC = abc.ABCMeta("ABC", (object,), {"__slots__": ()})
+
 
 def no_impl(method):
-  method.no_impl = True
-  return method
+    method.no_impl = True
+    return method
+
 
 # End user (pyvw library consumer) will have to create a class that
 # inherits from ReductionInterface and implements the custom _predict() and
 # _learn(). Optionally the user can also implement _finish_example()
 # if needed. See test_pyreduction.py for examples
 """ReductionInterface class"""
+
+
 class ReductionInterface(ABC):
     @abc.abstractmethod
     def _predict(self, ec, learner):
@@ -254,10 +261,11 @@ class ReductionInterface(ABC):
         self._predict(ec, Learner(vwbridge))
 
     def _is_finish_example_implemented(self):
-        return not hasattr(self._finish_example, 'no_impl')
+        return not hasattr(self._finish_example, "no_impl")
 
     def _is_save_load_implemented(self):
-        return not hasattr(self._save_load, 'no_impl')
+        return not hasattr(self._save_load, "no_impl")
+
 
 class SearchTask:
     """Search task class"""
@@ -514,14 +522,18 @@ class Workspace(pylibvw.vw):
             self._log_wrapper = None
 
         if python_reduction is None:
-            super(vw, self).__init__(" ".join(l), self._log_wrapper)
+            super(Workspace, self).__init__(" ".join(l), self._log_wrapper)
         else:
             if issubclass(python_reduction, ReductionInterface):
                 self._py_reduction = python_reduction()
-                super(vw, self).__init__(" ".join(l), self.log_wrapper, self._py_reduction)
+                super(Workspace, self).__init__(
+                    " ".join(l), self._log_wrapper, self._py_reduction
+                )
                 self._py_reduction.reduction_init(self)
             else:
-                raise TypeError("The python_reduction argument must be a class that inherits from ReductionInterface")
+                raise TypeError(
+                    "The python_reduction argument must be a class that inherits from ReductionInterface"
+                )
 
         self.init = True
 

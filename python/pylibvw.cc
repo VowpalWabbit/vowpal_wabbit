@@ -74,8 +74,6 @@ const size_t tACTION = 1;
 const size_t tSLOT = 2;
 const size_t tUNSET = 3;
 
-void dont_delete_me(void* arg) {}
-
 class OptionManager
 {
   std::map<std::string, std::vector<VW::config::option_group_definition>> m_option_group_dic;

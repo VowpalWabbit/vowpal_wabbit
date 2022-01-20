@@ -75,14 +75,15 @@ VW::LEARNER::base_learner* wrapper_reduction_setup(
   bool should_register_finish_example = pr->instance->should_register_finish_example();
   bool should_set_save_load = pr->instance->should_register_saveload();
 
-  auto* l = VW::LEARNER::make_reduction_learner(std::move(pr), as_singleline(stack_builder.setup_base_learner()),
-      wrapper::learn, wrapper::predict, std::string("python_single"))
-                .build();
+  auto l = VW::LEARNER::make_reduction_learner(std::move(pr), as_singleline(stack_builder.setup_base_learner()),
+      wrapper::learn, wrapper::predict, std::string("python_single"));
 
-  if (should_register_finish_example) l->set_finish_example(finish_example);
-  if (should_set_save_load) l->set_save_load(save_load);
+  if (should_register_finish_example) l.set_finish_example(finish_example);
+  if (should_set_save_load) l.set_save_load(save_load);
 
-  return make_base(*l);
+  auto* l2 = l.build();
+
+  return make_base(*l2);
 }
 
 using namespace wrapper;
@@ -97,15 +98,16 @@ VW::LEARNER::base_learner* wrapper_reduction_multiline_setup(
   bool should_register_finish_example = pr->instance->should_register_finish_example();
   bool should_set_save_load = pr->instance->should_register_saveload();
 
-  auto* l = VW::LEARNER::make_reduction_learner(std::move(pr), as_multiline(stack_builder.setup_base_learner()),
+  auto l = VW::LEARNER::make_reduction_learner(std::move(pr), as_multiline(stack_builder.setup_base_learner()),
       wrapper::multi_learn, wrapper::multi_predict, std::string("python_multi"))
-                .set_prediction_type(prediction_type_t::action_probs)
-                .build();
+               .set_input_prediction_type(prediction_type_t::action_probs);
 
-  if (should_register_finish_example) l->set_finish_example(finish_multiex);
-  if (should_set_save_load) l->set_save_load(save_load);
+  if (should_register_finish_example) l.set_finish_example(finish_multiex);
+  if (should_set_save_load) l.set_save_load(save_load);
 
-  return make_base(*l);
+  auto* l2 = l.build();
+
+  return make_base(*l2);
 }
 
 using namespace wrapper;
@@ -120,12 +122,13 @@ VW::LEARNER::base_learner* wrapper_reduction_base_setup(
   bool should_register_finish_example = pr->instance->should_register_finish_example();
   bool should_set_save_load = pr->instance->should_register_saveload();
 
-  auto* l = VW::LEARNER::make_base_learner<wrap, example>(std::move(pr), wrapper::base_learn, wrapper::base_predict,
-      std::string("python_base"), prediction_type_t::scalar, label_type_t::simple)
-                .build();
+  auto l = VW::LEARNER::make_base_learner<wrap, example>(std::move(pr), wrapper::base_learn, wrapper::base_predict,
+      std::string("python_base"), prediction_type_t::scalar, label_type_t::simple);
 
-  if (should_register_finish_example) l->set_finish_example(finish_example);
-  if (should_set_save_load) l->set_save_load(save_load);
+  if (should_register_finish_example) l.set_finish_example(finish_example);
+  if (should_set_save_load) l.set_save_load(save_load);
 
-  return make_base(*l);
+  auto* l2 = l.build();
+
+  return make_base(*l2);
 }
