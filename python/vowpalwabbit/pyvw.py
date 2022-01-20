@@ -1231,15 +1231,15 @@ class CBLabel(AbstractLabel):
     def __init__(
         self,
         costs: List[CBLabelElement] = [],
-        prediction: float = 0.0,
+        weight: float = 1.0,
     ):
         AbstractLabel.__init__(self)
         self.costs = costs
-        self.prediction = prediction
+        self.weight = weight
 
     @staticmethod
     def from_example(ex: "Example"):
-        prediction = ex.get_cbandits_prediction()
+        weight = ex.get_cbandits_weight()
         costs = []
         for i in range(ex.get_cbandits_num_costs()):
             cb = CBLabelElement(
@@ -1249,11 +1249,52 @@ class CBLabel(AbstractLabel):
                 ex.get_cbandits_probability(i),
             )
             costs.append(cb)
-        return CBLabel(costs, prediction)
+        return CBLabel(costs, weight)
 
     def __str__(self):
         return " ".join(
             ["{}:{}:{}".format(c.action, c.cost, c.probability) for c in self.costs]
+        )
+
+
+class CBEvalLabel(AbstractLabel):
+    """Class for contextual bandits eval VW label"""
+
+    def __init__(
+        self,
+        action: int = 0,
+        cb_label: CBLabel = CBLabel(),
+    ):
+        AbstractLabel.__init__(self)
+        self.action = action
+        self.cb_label = cb_label
+
+    @staticmethod
+    def from_example(ex: "example"):
+        action = ex.get_cb_eval_action()
+        weight = ex.get_cb_eval_weight()
+        costs = []
+        for i in range(ex.get_cb_eval_num_costs()):
+            cb = CBLabelElement(
+                ex.get_cb_eval_class(i),
+                ex.get_cb_eval_cost(i),
+                ex.get_cb_eval_partial_prediction(i),
+                ex.get_cb_eval_probability(i),
+            )
+            costs.append(cb)
+        cb_label = CBLabel(costs, weight)
+        return CBEvalLabel(action, cb_label)
+
+    def __str__(self):
+        return (
+            str(self.action)
+            + " "
+            + " ".join(
+                [
+                    "{}:{}:{}".format(c.action, c.cost, c.probability)
+                    for c in self.cb_label.costs
+                ]
+            )
         )
 
 
@@ -1457,7 +1498,7 @@ class Example(pylibvw.example):
             it would be from a VW data file into an example (and
             "setup_example" is run). if it is a dict, then we add all
             features in that dictionary. finally, if it's a function,
-            we (repeatedly) execute it fn() until it's not a function
+        we (repeatedly) execute it fn() until it's not a function
             any more(for lazy feature computation). By default is None
         labelType : The direct integer value of the :py:obj:`~vowpalwabbit.pyvw.LabelType` enum can be used or the enum directly. Supplying 0 or None means to use the default label type based on the setup VW learner.
 

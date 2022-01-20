@@ -8,6 +8,7 @@ __all__ = [
     "ActionScore",
     "CBContinuousLabel",
     "CBContinuousLabelElement",
+    "CBEvalLabel",
     "CBLabel",
     "CBLabelElement",
     "CCBLabel",
