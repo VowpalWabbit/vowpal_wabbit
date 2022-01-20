@@ -109,7 +109,7 @@ namespace cs_unittest
 
             using (var vw = new VowpalWabbit("-i model1"))
             {
-                Assert.AreEqual(0.5f, vw.Native.Arguments.LearningRate);
+                Assert.AreEqual(0.1f, vw.Native.Arguments.LearningRate);
             }
 
             using (var vw = new VowpalWabbit("-i model1 -q ab -l 0.4"))

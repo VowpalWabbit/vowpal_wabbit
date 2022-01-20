@@ -1073,15 +1073,21 @@ void parse_example_tweaks(options_i& options, VW::workspace& all)
 void parse_update_options(options_i& options, VW::workspace& all)
 {
   option_group_definition update_args("Update");
-  update_args.add(make_option("learning_rate", all.eta).default_value(0.5f).keep().allow_override().help("Set learning rate").short_name("l"))
+  update_args
+      .add(make_option("learning_rate", all.eta)
+               .default_value(0.5f)
+               .keep()
+               .allow_override()
+               .help("Set learning rate")
+               .short_name("l"))
       .add(make_option("power_t", all.power_t).default_value(0.5f).keep().allow_override().help("T power value"))
       .add(make_option("decay_learning_rate", all.eta_decay_rate)
-                .default_value(1.f)
-                .help("Set Decay factor for learning_rate between passes"))
+               .default_value(1.f)
+               .help("Set Decay factor for learning_rate between passes"))
       .add(make_option("initial_t", all.sd->t).keep().allow_override().help("Initial t value"))
       .add(make_option("feature_mask", all.feature_mask)
-                .help("Use existing regressor to determine which parameters may be updated.  If no initial_regressor "
-                      "given, also used for initial weights."));
+               .help("Use existing regressor to determine which parameters may be updated.  If no initial_regressor "
+                     "given, also used for initial weights."));
   all.options->add_and_parse(update_args);
   options.add_and_parse(update_args);
   all.initial_t = static_cast<float>(all.sd->t);
