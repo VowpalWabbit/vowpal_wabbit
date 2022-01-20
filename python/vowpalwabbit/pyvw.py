@@ -1210,7 +1210,7 @@ class CBLabelElement:
         cost: float = 0.0,
         partial_prediction: float = 0.0,
         probability: float = 0.0,
-        **kwargs
+        **kwargs,
     ):
         if kwargs.get("label", False):
             action = kwargs["label"]
@@ -1257,6 +1257,13 @@ class CBLabel(AbstractLabel):
         )
 
 
+class CCBLabelType(IntEnum):
+    UNSET = pylibvw.vw.tUNSET
+    SHARED = pylibvw.vw.tSHARED
+    ACTION = pylibvw.vw.tACTION
+    SLOT = pylibvw.vw.tSLOT
+
+
 class SlatesLabelType(IntEnum):
     UNSET = pylibvw.vw.tUNSET
     SHARED = pylibvw.vw.tSHARED
@@ -1268,6 +1275,76 @@ class ActionScore:
     def __init__(self, action: int, score: float):
         self.action = action
         self.score = score
+
+
+class CCBSlotOutcome:
+    def __init__(
+        self,
+        cost: Optional[float] = None,
+        action_probs: Optional[List[ActionScore]] = None,
+    ):
+        self.cost = cost
+        self.action_probs = action_probs
+
+    def __str__(self):
+        if not self.cost and not self.action_probs:
+            return ""
+        top_action, top_score = self.action_probs[0].action, self.action_probs[0].score
+        out = "{}:{}:{}".format(top_action, round(self.cost, 2), round(top_score, 2))
+        for action_score in self.action_probs[1:]:
+            out += f",{action_score.action}:{action_score.score}"
+        return out
+
+
+class CCBLabel(AbstractLabel):
+    """Class for conditional contextual bandits VW label"""
+
+    def __init__(
+        self,
+        type: CCBLabelType = CCBLabelType.UNSET,
+        explicit_included_actions: Optional[List[int]] = None,
+        weight: float = 1,
+        has_outcome: bool = False,
+        outcome: Optional[CCBSlotOutcome] = None,
+    ):
+        AbstractLabel.__init__(self)
+        self.type = type
+        self.explicit_included_actions = explicit_included_actions
+        self.weight = weight
+        self.has_outcome = has_outcome
+        self.outcome = outcome
+
+    @staticmethod
+    def from_example(ex: "Example"):
+        type = ex.get_ccb_type()
+        explicit_included_actions = ex.get_ccb_explicitly_included_actions()
+        weight = ex.get_ccb_weight()
+        has_outcome = ex.get_ccb_has_outcome()
+        cost = ex.get_ccb_cost()
+        action_probs = []
+        for i in range(ex.get_ccb_num_probabilities()):
+            action_probs.append(
+                ActionScore(ex.get_ccb_action(i), ex.get_ccb_probability(i))
+            )
+        outcome = CCBSlotOutcome(cost, action_probs) if has_outcome else None
+        return CCBLabel(type, explicit_included_actions, weight, has_outcome, outcome)
+
+    def __str__(self):
+        ret = "ccb "
+        if self.type == CCBLabelType.SHARED:
+            ret += "shared"
+        elif self.type == CCBLabelType.ACTION:
+            ret += "action"
+        elif self.type == CCBLabelType.SLOT:
+            ret += "slot"
+        if self.has_outcome:
+            ret += (
+                " "
+                + str(self.outcome)
+                + " "
+                + ",".join(map(str, self.explicit_included_actions))
+            )
+        return ret
 
 
 class SlatesLabel(AbstractLabel):
@@ -1404,6 +1481,9 @@ class Example(pylibvw.example):
         self.labelType: Optional[LabelType] = None
         if isinstance(labelType, LabelType):
             label_int = labelType.value
+            # Keep self.labelType as None if provided label is DEFAULT.
+            if labelType != LabelType.DEFAULT:
+                self.labelType = labelType
         elif isinstance(labelType, int):
             label_int = labelType
             if label_int != 0:

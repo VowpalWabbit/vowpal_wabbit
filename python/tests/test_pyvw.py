@@ -180,6 +180,40 @@ def test_MulticlassProbabilitiesLabel():
     assert str(mpl) == "1:0.4 2:0.3 3:0.3"
 
 
+def test_ccb_label():
+    model = Workspace(ccb_explore_adf=True, quiet=True)
+    ccb_shared_label = pyvw.CCBLabel.from_example(
+        (model.example("ccb shared | shared_0 shared_1"))
+    )
+    ccb_action_label = pyvw.CCBLabel.from_example(
+        (model.example("ccb action | action_1 action_3"))
+    )
+    ccb_slot_label = pyvw.CCBLabel.from_example(
+        (model.example("ccb slot 0:0.8:1.0 0 | slot_0"))
+    )
+    ccb_slot_pred_label = pyvw.CCBLabel.from_example((model.example("ccb slot |")))
+    assert ccb_shared_label.type == pyvw.CCBLabelType.SHARED
+    assert ccb_shared_label.explicit_included_actions is None
+    assert ccb_shared_label.outcome is None
+    assert str(ccb_shared_label) == "ccb shared"
+    assert ccb_action_label.type == pyvw.CCBLabelType.ACTION
+    assert ccb_action_label.explicit_included_actions is None
+    assert ccb_action_label.weight == 1.0
+    assert ccb_action_label.outcome is None
+    assert str(ccb_action_label) == "ccb action"
+    assert ccb_slot_label.type == pyvw.CCBLabelType.SLOT
+    assert ccb_slot_label.explicit_included_actions[0] == 0
+    assert ccb_slot_label.outcome.action_probs[0].action == 0
+    assert isclose(ccb_slot_label.outcome.action_probs[0].score, 1.0)
+    assert isclose(ccb_slot_label.outcome.cost, 0.8)
+    assert str(ccb_slot_label) == "ccb slot 0:0.8:1.0 0"
+    assert ccb_slot_pred_label.type == pyvw.CCBLabelType.SLOT
+    assert ccb_slot_pred_label.explicit_included_actions is None
+    assert ccb_slot_pred_label.outcome is None
+    assert str(ccb_slot_pred_label) == "ccb slot"
+    del model
+
+
 def test_slates_label():
     model = Workspace(slates=True, quiet=True)
     slates_shared_label = pyvw.SlatesLabel.from_example(model.example("slates shared 0.8 | shared_0 shared_1"))
