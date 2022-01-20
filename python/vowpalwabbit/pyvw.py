@@ -2,9 +2,10 @@
 """Python binding for pylibvw class"""
 
 from __future__ import division
-from typing import List, Optional, Union
+from typing import Any, List, Optional, Union
 import pylibvw
 import warnings
+import inspect
 
 from enum import IntEnum
 
@@ -67,13 +68,10 @@ class _DeprecatedClassMeta(type):
 
 
 class LabelType(IntEnum):
-    DEFAULT = pylibvw.vw.lDefault
-    BINARY = pylibvw.vw.lBinary
     SIMPLE = pylibvw.vw.lSimple
     MULTICLASS = pylibvw.vw.lMulticlass
     COST_SENSITIVE = pylibvw.vw.lCostSensitive
     CONTEXTUAL_BANDIT = pylibvw.vw.lContextualBandit
-    MAX = pylibvw.vw.lMax  # DEPRECATED
     CONDITIONAL_CONTEXTUAL_BANDIT = pylibvw.vw.lConditionalContextualBandit
     SLATES = pylibvw.vw.lSlates
     CONTINUOUS = pylibvw.vw.lContinuous
@@ -281,18 +279,10 @@ class SearchTask:
         out : Example
 
         """
-
-        # None will implicitly be lDEFAULT which is 0.
-        label_int = 0
-        if isinstance(labelType, LabelType):
-            label_int = labelType.value
-        elif isinstance(labelType, int):
-            label_int = labelType
-
         if self.sch.predict_needs_example():
-            return self.vw.Example(initStringOrDict, label_int)
+            return self.vw.Example(initStringOrDict, labelType)
         else:
-            return self.vw.Example(None, label_int)
+            return self.vw.Example(None, labelType)
 
     def predict(self, my_example, useOracle=False):
         """Predict on the example
@@ -338,25 +328,40 @@ def get_prediction(ec, prediction_type: Union[int, PredictionType]):
     out : integer/list
         Prediction according to parameter prediction_type
     """
-    if isinstance(prediction_type, PredictionType):
-        prediction_type = prediction_type.value
+    warnings.warn(
+        "get_prediction is deprecated, use Example.get_prediction instead.",
+        DeprecationWarning,
+    )
+    return ec.get_prediction(prediction_type)
 
-    switch_prediction_type = {
-        pylibvw.vw.pSCALAR: ec.get_simplelabel_prediction,
-        pylibvw.vw.pSCALARS: ec.get_scalars,
-        pylibvw.vw.pACTION_SCORES: ec.get_action_scores,
-        pylibvw.vw.pACTION_PROBS: ec.get_action_scores,
-        pylibvw.vw.pMULTICLASS: ec.get_multiclass_prediction,
-        pylibvw.vw.pMULTILABELS: ec.get_multilabel_predictions,
-        pylibvw.vw.pPROB: ec.get_prob,
-        pylibvw.vw.pMULTICLASSPROBS: ec.get_scalars,
-        pylibvw.vw.pDECISION_SCORES: ec.get_decision_scores,
-        pylibvw.vw.pACTION_PDF_VALUE: ec.get_action_pdf_value,
-        pylibvw.vw.pPDF: ec.get_pdf,
-        pylibvw.vw.pACTIVE_MULTICLASS: ec.get_active_multiclass,
-        pylibvw.vw.pNOPRED: ec.get_nopred,
+
+def get_label_class_from_enum(
+    label_type: LabelType,
+) -> Union[
+    "SimpleLabel",
+    "MulticlassLabel",
+    "CostSensitiveLabel",
+    "CBLabel",
+    "CCBLabel",
+    "SlatesLabel",
+    "CBContinuousLabel",
+]:
+    switch_label_type = {
+        LabelType.SIMPLE: SimpleLabel,
+        LabelType.MULTICLASS: MulticlassLabel,
+        LabelType.COST_SENSITIVE: CostSensitiveLabel,
+        LabelType.CONTEXTUAL_BANDIT: CBLabel,
+        LabelType.CONDITIONAL_CONTEXTUAL_BANDIT: CCBLabel,
+        LabelType.SLATES: SlatesLabel,
+        LabelType.CONTINUOUS: CBContinuousLabel,
+        LabelType.CONTEXTUAL_BANDIT_EVAL: None,
+        LabelType.MULTILABEL: None,
     }
-    return switch_prediction_type[prediction_type]()
+
+    label_class = switch_label_type[label_type]
+    if label_class is None:
+        raise ValueError("No known label class for {}".format(label_type))
+    return label_class
 
 
 def get_all_vw_options():
@@ -515,17 +520,10 @@ class Workspace(pylibvw.vw):
         if isinstance(str_ex, list):
             str_ex = "\n".join(str_ex)
 
-        # None will implicitly be lDEFAULT which is 0.
-        label_int = 0
-        if isinstance(labelType, LabelType):
-            label_int = labelType.value
-        elif isinstance(labelType, int):
-            label_int = labelType
-
         str_ex = str_ex.replace("\r", "")
         str_ex = str_ex.strip()
         ec = self._parse(str_ex)
-        ec = [Example(self, x, label_int) for x in ec]
+        ec = [Example(self, x, labelType) for x in ec]
         for ex in ec:
             ex.setup_done = True
         if not self._is_multiline():
@@ -709,9 +707,9 @@ class Workspace(pylibvw.vw):
             prediction_type = self.get_prediction_type()
 
         if isinstance(ec, Example):
-            prediction = get_prediction(ec, prediction_type)
+            prediction = ec.get_prediction(prediction_type)
         else:
-            prediction = get_prediction(ec[0], prediction_type)
+            prediction = ec[0].get_prediction(prediction_type)
 
         if new_example:
             self.finish_example(ec)
@@ -762,13 +760,7 @@ class Workspace(pylibvw.vw):
         out : Example
 
         """
-        # None will implicitly be lDEFAULT which is 0.
-        label_int = 0
-        if isinstance(labelType, LabelType):
-            label_int = labelType.value
-        elif isinstance(labelType, int):
-            label_int = labelType
-        return Example(self, stringOrDict, label_int)
+        return Example(self, stringOrDict, labelType)
 
     def __del__(self):
         self.finish()
@@ -1437,9 +1429,15 @@ class Example(pylibvw.example):
     easier to use (by making the types safer via NamespaceId) and
     also with added python-specific functionality."""
 
+    labelType: LabelType
+    vw: Workspace
+    stride: int
+    setup_done: bool
+    finished: bool
+
     def __init__(
         self,
-        vw,
+        vw: Workspace,
         initStringOrDictOrRawExample=None,
         labelType: Optional[Union[int, LabelType]] = None,
     ):
@@ -1459,8 +1457,7 @@ class Example(pylibvw.example):
             features in that dictionary. finally, if it's a function,
             we (repeatedly) execute it fn() until it's not a function
             any more(for lazy feature computation). By default is None
-        labelType : The direct integer value of the :py:obj:`~vowpalwabbit.pyvw.LabelType` enum can be used or the enum directly. Supplying 0 or None means to use the default label type based on the setup VW learner.
-
+        labelType : :py:obj:`~vowpalwabbit.LabelType` value or corresponding integer value (integer is deprecateds). Supplying 0 or None means to use the default label type based on the setup VW learner.
         Returns
         -------
 
@@ -1476,29 +1473,35 @@ class Example(pylibvw.example):
         while hasattr(initStringOrDictOrRawExample, "__call__"):
             initStringOrDictOrRawExample = initStringOrDictOrRawExample()
 
-        # None will implicitly be lDEFAULT which is 0.
-        label_int = 0
-        self.labelType: Optional[LabelType] = None
-        if isinstance(labelType, LabelType):
-            label_int = labelType.value
-            # Keep self.labelType as None if provided label is DEFAULT.
-            if labelType != LabelType.DEFAULT:
+        if not isinstance(labelType, LabelType) and isinstance(labelType, int):
+            warnings.warn(
+                "labelType should be a LabelType enum value. Using an integer is deprecated.",
+                DeprecationWarning,
+            )
+            if labelType == 0:
+                self.labelType = vw.get_label_type()
+            else:
+                self.labelType = LabelType(labelType)
+        else:
+            if labelType is None:
+                self.labelType = vw.get_label_type()
+            else:
                 self.labelType = labelType
-        elif isinstance(labelType, int):
-            label_int = labelType
-            if label_int != 0:
-                self.labelType = LabelType(label_int)
 
         if initStringOrDictOrRawExample is None:
-            pylibvw.example.__init__(self, vw, label_int)
+            pylibvw.example.__init__(self, vw, self.labelType.value)
             self.setup_done = False
         elif isinstance(initStringOrDictOrRawExample, str):
-            pylibvw.example.__init__(self, vw, label_int, initStringOrDictOrRawExample)
+            pylibvw.example.__init__(
+                self, vw, self.labelType.value, initStringOrDictOrRawExample
+            )
             self.setup_done = True
         elif isinstance(initStringOrDictOrRawExample, pylibvw.example):
-            pylibvw.example.__init__(self, vw, label_int, initStringOrDictOrRawExample)
+            pylibvw.example.__init__(
+                self, vw, self.labelType.value, initStringOrDictOrRawExample
+            )
         elif isinstance(initStringOrDictOrRawExample, dict):
-            pylibvw.example.__init__(self, vw, label_int)
+            pylibvw.example.__init__(self, vw, self.labelType.value)
             self.vw = vw
             self.stride = vw.get_stride()
             self.finished = False
@@ -1847,18 +1850,121 @@ class Example(pylibvw.example):
                 v = self.feature_weight(ns, i)
                 yield f, v
 
-    def get_label(self, label_class=SimpleLabel):
-        """Given a known label class (default is Simplelabel), get
-        the corresponding label structure for this example.
+    def get_label(
+        self, label_class: Optional[Union[int, LabelType, AbstractLabel]] = None
+    ) -> Union[
+        "SimpleLabel",
+        "MulticlassLabel",
+        "CostSensitiveLabel",
+        "CBLabel",
+        "CCBLabel",
+        "SlatesLabel",
+        "CBContinuousLabel",
+    ]:
+        """Get the label object of this example.
 
         Parameters
         ----------
 
-        label_class : label classes
-            Get the label of the example of label_class type, by default is
-            Simplelabel
+        label_class :
+            - None should be used unless you know what you are doing.
+            - Corresponding :py:obj:`~vowpalwabbit.LabelType` for the prediction type to be retrieved.
+            - The ability to pass an AbstractLabel or an int are legacy requirements and are deprecated. All new usage of this function should pass a LabelType.
+            - If None, self.labelType will be used
+
+        See Also
+        --------
+        :py:obj:`vowpalwabbit.Workspace.get_label_type`
+
         """
-        return label_class.from_example(self)
+
+        if label_class is None:
+            label_class = self.labelType
+
+        label_class_type = None
+        if inspect.isclass(label_class) and issubclass(label_class, AbstractLabel):
+            warnings.warn(
+                "Passing an AbstractLabel to get_prediction is deprecated and will be removed in a future release. Please pass a LabelType instead.",
+                DeprecationWarning,
+            )
+            label_class_type = label_class
+        else:
+            if not isinstance(label_class, LabelType) and isinstance(label_class, int):
+                warnings.warn(
+                    "Passing an integer to get_prediction is deprecated and will be removed in a future release. Please pass a LabelType instead.",
+                    DeprecationWarning,
+                )
+                if label_class == 0:
+                    label_class = None
+                else:
+                    label_class = LabelType(label_class)
+
+            label_class_type = get_label_class_from_enum(label_class)
+
+        return label_class_type.from_example(self)
+
+    def get_prediction(
+        self, prediction_type: Optional[Union[int, PredictionType]] = None
+    ) -> Any:
+        """Get prediction object from this example.
+
+        Parameters
+        ----------
+
+        prediction_type :
+            - None should be used unless you know what you are doing.
+            - Corresponding :py:obj:`~vowpalwabbit.PredictionType` for the prediction type to be retrieved.
+            - Supplying the equivalent integer of the PredictionType is deprecated and will be removed in a future release.
+            - If None, the label type of the example's owning Workspace instance will be used.
+
+
+        Examples
+        --------
+
+        >>> from vowpalwabbit import Workspace, PredictionType
+        >>> vw = Workspace(quiet=True)
+        >>> ex = vw.example('1 |a two features |b more features here')
+        >>> ex.get_prediction(ex, PredictionType.SCALAR)
+        0.0
+
+        Returns
+        -------
+
+        out : Prediction according to parameter prediction_type
+
+        See Also
+        --------
+        :py:obj:`vowpalwabbit.Workspace.get_prediction_type`
+        """
+
+        if prediction_type is None:
+            prediction_type = self.vw.get_prediction_type()
+
+        if not isinstance(prediction_type, PredictionType) and isinstance(
+            prediction_type, int
+        ):
+            warnings.warn(
+                "Passing an integer to get_prediction is deprecated and will be removed in a future release. Please pass a PredictionType instead.",
+                DeprecationWarning,
+            )
+            prediction_type = PredictionType(prediction_type)
+
+        switch_prediction_type = {
+            PredictionType.SCALAR: self.get_simplelabel_prediction,
+            PredictionType.SCALARS: self.get_scalars,
+            PredictionType.ACTION_SCORES: self.get_action_scores,
+            PredictionType.ACTION_PROBS: self.get_action_scores,
+            PredictionType.MULTICLASS: self.get_multiclass_prediction,
+            PredictionType.MULTILABELS: self.get_multilabel_predictions,
+            PredictionType.PROB: self.get_prob,
+            PredictionType.MULTICLASSPROBS: self.get_scalars,
+            PredictionType.DECISION_SCORES: self.get_decision_scores,
+            PredictionType.ACTION_PDF_VALUE: self.get_action_pdf_value,
+            PredictionType.PDF: self.get_pdf,
+            PredictionType.ACTIVE_MULTICLASS: self.get_active_multiclass,
+            PredictionType.NOPRED: self.get_nopred,
+        }
+        return switch_prediction_type[prediction_type]()
 
 
 ############################ DEPREECATED CLASSES ############################

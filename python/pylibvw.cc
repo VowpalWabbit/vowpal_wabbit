@@ -416,6 +416,10 @@ size_t my_get_label_type(VW::workspace* all)
   {
     return lCONTINUOUS;
   }
+  else if (lp->parse_label == MULTILABEL::multilabel.parse_label)
+  {
+    return lMULTILABEL;
+  }
   else
   {
     THROW("unsupported label parser used");
