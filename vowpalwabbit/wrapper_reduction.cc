@@ -4,6 +4,7 @@
 
 #include "wrapper_reduction.h"
 
+#include "global_data.h"
 #include "reductions.h"
 #include "vw.h"
 
@@ -45,13 +46,13 @@ void multi_predict(wrap& wrap, multi_learner& base, multi_ex& examples)
   wrap.instance->actual_predict(&examples);
 }
 
-void finish_example(vw& all, wrap& wrap, example& ec)
+void finish_example(VW::workspace& all, wrap& wrap, example& ec)
 {
   wrap.instance->actual_finish_example(&ec);
   VW::finish_example(all, ec);
 }
 
-void finish_multiex(vw& all, wrap& wrap, multi_ex& examples)
+void finish_multiex(VW::workspace& all, wrap& wrap, multi_ex& examples)
 {
   wrap.instance->actual_finish_example(&examples);
   VW::finish_example(all, examples);
