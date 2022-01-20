@@ -191,12 +191,13 @@ def test_ccb_label():
     ccb_slot_label = pyvw.CCBLabel.from_example(
         (model.example("ccb slot 0:0.8:1.0 0 | slot_0"))
     )
+    ccb_slot_pred_label = pyvw.CCBLabel.from_example((model.example("ccb slot |")))
     assert ccb_shared_label.type == pyvw.CCBLabelType.SHARED
-    assert len(ccb_shared_label.explicit_included_actions) == 0
+    assert ccb_shared_label.explicit_included_actions is None
     assert ccb_shared_label.outcome is None
     assert str(ccb_shared_label) == "ccb shared"
     assert ccb_action_label.type == pyvw.CCBLabelType.ACTION
-    assert len(ccb_action_label.explicit_included_actions) == 0
+    assert ccb_action_label.explicit_included_actions is None
     assert ccb_action_label.weight == 1.0
     assert ccb_action_label.outcome is None
     assert str(ccb_action_label) == "ccb action"
@@ -206,6 +207,10 @@ def test_ccb_label():
     assert isclose(ccb_slot_label.outcome.action_probs[0].score, 1.0)
     assert isclose(ccb_slot_label.outcome.cost, 0.8)
     assert str(ccb_slot_label) == "ccb slot 0:0.8:1.0 0"
+    assert ccb_slot_pred_label.type == pyvw.CCBLabelType.SLOT
+    assert ccb_slot_pred_label.explicit_included_actions is None
+    assert ccb_slot_pred_label.outcome is None
+    assert str(ccb_slot_pred_label) == "ccb slot"
     del model
 
 
