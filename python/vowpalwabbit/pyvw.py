@@ -1278,11 +1278,7 @@ class ActionScore:
 
 
 class CCBSlotOutcome:
-    def __init__(
-        self,
-        cost: float = None,
-        action_probs: List[ActionScore] = None,
-    ):
+    def __init__(self, cost: float, action_probs: List[ActionScore]):
         self.cost = cost
         self.action_probs = action_probs
 
