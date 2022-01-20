@@ -197,7 +197,7 @@ VW::LEARNER::base_learner* baseline_challenger_cb_setup(VW::setup_base_i& stack_
 
   option_group_definition new_options("[Reduction] Baseline challenger");
   new_options
-      .add(make_option("baseline_challenger_cb", is_enabled)
+      .add(make_option("Experimental: baseline_challenger_cb", is_enabled)
                .necessary()
                .keep()
                .help("Build a CI around the baseline action and use it instead of the model if it's "
