@@ -5,11 +5,6 @@ import importlib as _importlib
 import warnings as _warnings
 
 __all__ = [
-    "pyvw",
-    "sklearn_vw",
-    "sklearn",
-    "DFtoVW",
-    "dftovw",
     "LabelType",
     "PredictionType",
     "Workspace",
