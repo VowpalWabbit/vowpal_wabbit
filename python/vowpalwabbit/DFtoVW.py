@@ -2,6 +2,8 @@ import warnings
 import numpy as np
 import pandas as pd
 
+print(__name__)
+
 
 class _Col:
     """_Col class. It refers to a column of a dataframe."""
