@@ -181,12 +181,6 @@ Input Options:
                                              feature value. e.g. {'A': {'B': 'C'}} is hashed as 
                                              A^B^C.
   --flatbuffer                               Data file will be interpreted as a flatbuffer file
-[Reduction] Baseline challenger Options:
-  --Experimental: baseline_challenger_cb     Build a CI around the baseline action and use it 
-                                             instead of the model if it's perfoming better 
-                                             (required to enable this reduction)
-  --cb_c_alpha arg (=0.05)                   Confidence level for baseline
-  --cb_c_tau arg (=0.999)                    Time constant for count decay
 [Reduction] OjaNewton Options:
   --OjaNewton                                Online Newton with Oja's Sketch (required to enable 
                                              this reduction)
@@ -241,6 +235,12 @@ Input Options:
                                              baseline predictions
   --check_enabled                            Only use baseline when the example contains enabled 
                                              flag
+[Reduction] Baseline challenger Options:
+  --baseline_challenger_cb                   Experimental: Build a CI around the baseline action 
+                                             and use it instead of the model if it's perfoming 
+                                             better (required to enable this reduction)
+  --cb_c_alpha arg (=0.05)                   Confidence level for baseline
+  --cb_c_tau arg (=0.999)                    Time constant for count decay
 [Reduction] Conjugate Gradient Options:
   --conjugate_gradient                       Use conjugate gradient based optimization (required to
                                              enable this reduction)
