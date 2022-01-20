@@ -114,7 +114,7 @@ struct options_boost_po : public options_i
 
   std::map<std::string, std::vector<option_group_definition>> get_collection_of_options() const override
   {
-    return m_option_group_dict;
+    return m_option_group_dic;
   }
 
   const std::string m_default_tint = "general";
@@ -161,7 +161,7 @@ private:
 private:
   // Collection that tracks for now
   // setup_function_id (str) -> list of option_group_definition
-  std::map<std::string, std::vector<option_group_definition>> m_option_group_dict;
+  std::map<std::string, std::vector<option_group_definition>> m_option_group_dic;
 
   std::string m_current_reduction_tint = m_default_tint;
 
