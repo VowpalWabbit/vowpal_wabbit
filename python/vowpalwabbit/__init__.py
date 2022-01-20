@@ -35,6 +35,7 @@ from .pyvw import (
     ActionScore,
     CBContinuousLabel,
     CBContinuousLabelElement,
+    CBEvalLabel,
     CBLabel,
     CBLabelElement,
     CCBLabel,

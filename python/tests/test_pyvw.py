@@ -4,6 +4,8 @@ from vowpalwabbit import pyvw
 from vowpalwabbit.pyvw import Workspace
 import pytest
 
+from python import vowpalwabbit
+
 BIT_SIZE = 18
 
 # Since these tests still run with Python 2, this is required.
@@ -151,7 +153,7 @@ def test_CBLabel():
 
 def test_CBEvalLabel():
     model = Workspace(cb=4, eval=True, quiet=True)
-    cbel = pyvw.CBEvalLabel.from_example(model.example("3 1:10:0.5 |"))
+    cbel = vowpalwabbit.CBEvalLabel.from_example(model.example("3 1:10:0.5 |"))
     assert cbel.action == 3
     assert cbel.cb_label.weight == 1.0
     assert cbel.cb_label.costs[0].action == 1

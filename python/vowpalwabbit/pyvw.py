@@ -1270,7 +1270,7 @@ class CBEvalLabel(AbstractLabel):
         self.cb_label = cb_label
 
     @staticmethod
-    def from_example(ex: "example"):
+    def from_example(ex: "Example"):
         action = ex.get_cb_eval_action()
         weight = ex.get_cb_eval_weight()
         costs = []
@@ -1287,8 +1287,7 @@ class CBEvalLabel(AbstractLabel):
 
     def __str__(self):
         return (
-            str(self.action)
-            + " "
+            f"{self.action} "
             + " ".join(
                 [
                     "{}:{}:{}".format(c.action, c.cost, c.probability)
@@ -1498,7 +1497,7 @@ class Example(pylibvw.example):
             it would be from a VW data file into an example (and
             "setup_example" is run). if it is a dict, then we add all
             features in that dictionary. finally, if it's a function,
-        we (repeatedly) execute it fn() until it's not a function
+            we (repeatedly) execute it fn() until it's not a function
             any more(for lazy feature computation). By default is None
         labelType : The direct integer value of the :py:obj:`~vowpalwabbit.pyvw.LabelType` enum can be used or the enum directly. Supplying 0 or None means to use the default label type based on the setup VW learner.
 
