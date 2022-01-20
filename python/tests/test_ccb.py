@@ -1,5 +1,5 @@
 from vowpalwabbit import pyvw
-
+import pytest
 
 # Named specifically as the delimiter used is specific for the number of actions
 # used in this test case.
@@ -111,3 +111,14 @@ def test_ccb_single_slot_and_cb_non_equivalence_with_slot_features():
     # Since there was at least one slot feature supplied, the equivalent mode
     # does not apply and so we expect there to be more weights in the CCB model.
     assert ccb_num_weights > cb_num_weights
+
+
+def test_ccb_non_slot_none_outcome():
+    model = pyvw.Workspace(quiet=True)
+    example = pyvw.Example(
+        vw=model, labelType=pyvw.LabelType.CONDITIONAL_CONTEXTUAL_BANDIT
+    )
+    label = example.get_label(pyvw.CCBLabel)
+    # CCB label is set to UNSET by default.
+    assert label.type == pyvw.CCBLabelType.UNSET
+    assert label.outcome is None
