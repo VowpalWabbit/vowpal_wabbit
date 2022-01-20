@@ -3,6 +3,7 @@ import os
 import vowpalwabbit
 from vowpalwabbit import Workspace
 import pytest
+import warnings
 
 BIT_SIZE = 18
 
@@ -565,9 +566,11 @@ def test_constructor_exception_is_safe():
 
 
 def test_deceprecated_labels():
-    vowpalwabbit.abstract_label()
-    vowpalwabbit.simple_label()
-    vowpalwabbit.multiclass_label()
-    vowpalwabbit.multiclass_probabilities_label()
-    vowpalwabbit.cost_sensitive_label()
-    vowpalwabbit.cbandits_label()
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore")
+        vowpalwabbit.pyvw.abstract_label()
+        vowpalwabbit.pyvw.simple_label()
+        vowpalwabbit.pyvw.multiclass_label()
+        vowpalwabbit.pyvw.multiclass_probabilities_label()
+        vowpalwabbit.pyvw.cost_sensitive_label()
+        vowpalwabbit.pyvw.cbandits_label()
