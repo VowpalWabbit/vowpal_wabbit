@@ -955,7 +955,7 @@ float ex_get_ccb_outcome_cost(example_ptr ec)
 
 size_t ex_get_ccb_num_probabilities(example_ptr ec)
 {
-  if (!ex_get_ccb_has_outcome(ec))  { THROW("This label has no outcome"); }
+  if (!ex_get_ccb_has_outcome(ec)) { THROW("This label has no outcome"); }
   return ec->l.conditional_contextual_bandit.outcome->probabilities.size();
 }
 
@@ -976,7 +976,7 @@ uint32_t ex_get_ccb_action(example_ptr ec, uint32_t i)
 float ex_get_ccb_probability(example_ptr ec, uint32_t i)
 {
   if (i >= ex_get_ccb_num_probabilities(ec)) { THROW("Probability index out of bounds"); }
-  if (!ex_get_ccb_has_outcome(ec))  { THROW("This label has no outcome"); }
+  if (!ex_get_ccb_has_outcome(ec)) { THROW("This label has no outcome"); }
   const auto* outcome_ptr = ec->l.conditional_contextual_bandit.outcome;
   return outcome_ptr->probabilities[i].score;
 }
