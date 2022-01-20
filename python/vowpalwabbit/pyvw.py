@@ -1473,7 +1473,11 @@ class Example(pylibvw.example):
         while hasattr(initStringOrDictOrRawExample, "__call__"):
             initStringOrDictOrRawExample = initStringOrDictOrRawExample()
 
-        if not isinstance(labelType, LabelType) and isinstance(labelType, int):
+        if labelType is None:
+            self.labelType = vw.get_label_type()
+        elif isinstance(labelType, LabelType):
+            self.labelType = labelType
+        elif isinstance(labelType, int):
             warnings.warn(
                 "labelType should be a LabelType enum value. Using an integer is deprecated.",
                 DeprecationWarning,
@@ -1483,10 +1487,7 @@ class Example(pylibvw.example):
             else:
                 self.labelType = LabelType(labelType)
         else:
-            if labelType is None:
-                self.labelType = vw.get_label_type()
-            else:
-                self.labelType = labelType
+            raise ValueError("labelType must be a LabelType enum value, integer or None")
 
         if initStringOrDictOrRawExample is None:
             pylibvw.example.__init__(self, vw, self.labelType.value)
@@ -1924,7 +1925,7 @@ class Example(pylibvw.example):
         >>> from vowpalwabbit import Workspace, PredictionType
         >>> vw = Workspace(quiet=True)
         >>> ex = vw.example('1 |a two features |b more features here')
-        >>> ex.get_prediction(ex, PredictionType.SCALAR)
+        >>> ex.get_prediction()
         0.0
 
         Returns
