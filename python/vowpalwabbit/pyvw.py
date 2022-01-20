@@ -1278,21 +1278,17 @@ class ActionScore:
 
 
 class CCBSlotOutcome:
-    def __init__(self, cost: float = 0, action_probs: List[ActionScore] = []):
+    def __init__(
+        self,
+        cost: Optional[float] = None,
+        action_probs: Optional[List[ActionScore]] = None,
+    ):
         self.cost = cost
         self.action_probs = action_probs
 
-    @staticmethod
-    def from_example(ex: "Example"):
-        cost = ex.get_ccb_cost()
-        action_probs = []
-        for i in range(ex.get_ccb_num_included_actions()):
-            action_probs.append(
-                ActionScore(ex.get_ccb_class(i), ex.get_ccb_probability(i))
-            )
-        return CCBSlotOutcome(cost, action_probs)
-
     def __str__(self):
+        if not self.cost and not self.action_probs:
+            return ""
         top_action, top_score = self.action_probs[0].action, self.action_probs[0].score
         out = "{}:{}:{}".format(top_action, round(self.cost, 2), round(top_score, 2))
         for action_score in self.action_probs[1:]:
@@ -1306,14 +1302,16 @@ class CCBLabel(AbstractLabel):
     def __init__(
         self,
         type: CCBLabelType = CCBLabelType.UNSET,
-        explicit_included_actions: List[int] = [],
+        explicit_included_actions: Optional[List[int]] = None,
         weight: float = 1,
+        has_outcome: bool = False,
         outcome: Optional[CCBSlotOutcome] = None,
     ):
         AbstractLabel.__init__(self)
         self.type = type
         self.explicit_included_actions = explicit_included_actions
         self.weight = weight
+        self.has_outcome = has_outcome
         self.outcome = outcome
 
     @staticmethod
@@ -1321,8 +1319,15 @@ class CCBLabel(AbstractLabel):
         type = ex.get_ccb_type()
         explicit_included_actions = ex.get_ccb_explicitly_included_actions()
         weight = ex.get_ccb_weight()
-        outcome = CCBSlotOutcome.from_example(ex) if type == CCBLabelType.SLOT else None
-        return CCBLabel(type, explicit_included_actions, weight, outcome)
+        has_outcome = ex.get_ccb_has_outcome()
+        cost = ex.get_ccb_cost()
+        action_probs = []
+        for i in range(ex.get_ccb_num_probabilities()):
+            action_probs.append(
+                ActionScore(ex.get_ccb_action(i), ex.get_ccb_probability(i))
+            )
+        outcome = CCBSlotOutcome(cost, action_probs) if has_outcome else None
+        return CCBLabel(type, explicit_included_actions, weight, has_outcome, outcome)
 
     def __str__(self):
         ret = "ccb "
@@ -1331,8 +1336,10 @@ class CCBLabel(AbstractLabel):
         elif self.type == CCBLabelType.ACTION:
             ret += "action"
         elif self.type == CCBLabelType.SLOT:
+            ret += "slot"
+        if self.has_outcome:
             ret += (
-                "slot "
+                " "
                 + str(self.outcome)
                 + " "
                 + ",".join(map(str, self.explicit_included_actions))
