@@ -9,7 +9,7 @@ from scipy.sparse import csr_matrix
 from sklearn import datasets, __version__ as sklearn_version
 from sklearn.model_selection import KFold
 from sklearn.utils.estimator_checks import check_estimator
-from vowpalwabbit.sklearn_vw import (
+from vowpalwabbit.sklearn import (
     VW,
     VWClassifier,
     VWRegressor,
