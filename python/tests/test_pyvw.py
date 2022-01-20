@@ -2,9 +2,8 @@ import os
 
 from vowpalwabbit import pyvw
 from vowpalwabbit.pyvw import Workspace
+import vowpalwabbit
 import pytest
-
-from python import vowpalwabbit
 
 BIT_SIZE = 18
 

@@ -1262,8 +1262,8 @@ class CBEvalLabel(AbstractLabel):
 
     def __init__(
         self,
-        action: Optional[int] = None,
-        cb_label: Optional[CBLabel] = None,
+        action: int,
+        cb_label: CBLabel,
     ):
         AbstractLabel.__init__(self)
         self.action = action
