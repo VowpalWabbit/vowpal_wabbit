@@ -1210,7 +1210,7 @@ class CBLabelElement:
         cost: float = 0.0,
         partial_prediction: float = 0.0,
         probability: float = 0.0,
-        **kwargs
+        **kwargs,
     ):
         if kwargs.get("label", False):
             action = kwargs["label"]
