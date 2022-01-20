@@ -1286,14 +1286,11 @@ class CBEvalLabel(AbstractLabel):
         return CBEvalLabel(action, cb_label)
 
     def __str__(self):
-        return (
-            f"{self.action} "
-            + " ".join(
-                [
-                    "{}:{}:{}".format(c.action, c.cost, c.probability)
-                    for c in self.cb_label.costs
-                ]
-            )
+        return f"{self.action} " + " ".join(
+            [
+                "{}:{}:{}".format(c.action, c.cost, c.probability)
+                for c in self.cb_label.costs
+            ]
         )
 
 
