@@ -1858,40 +1858,60 @@ class Example(pylibvw.example):
 
 
 class abstract_label(metaclass=_DeprecatedClassMeta):
+    """This has been renamed to :py:obj:`~vowpalwabbit.pyvw.AbstractLabel`. `abstract_label` is now deprecated."""
+
     _DeprecatedClassMeta__alias = AbstractLabel
 
 
 class simple_label(metaclass=_DeprecatedClassMeta):
+    """This has been renamed to :py:obj:`~vowpalwabbit.pyvw.SimpleLabel`. `simple_label` is now deprecated."""
+
     _DeprecatedClassMeta__alias = SimpleLabel
 
 
 class multiclass_label(metaclass=_DeprecatedClassMeta):
+    """This has been renamed to :py:obj:`~vowpalwabbit.pyvw.MulticlassLabel`. `multiclass_label` is now deprecated."""
+
     _DeprecatedClassMeta__alias = MulticlassLabel
 
 
 class multiclass_probabilities_label(metaclass=_DeprecatedClassMeta):
+    """This has been renamed to :py:obj:`~vowpalwabbit.pyvw.MulticlassProbabilitiesLabel`. `multiclass_probabilities_label` is now deprecated."""
+
     _DeprecatedClassMeta__alias = MulticlassProbabilitiesLabel
 
 
 class cost_sensitive_label(metaclass=_DeprecatedClassMeta):
+    """This has been renamed to :py:obj:`~vowpalwabbit.pyvw.CostSensitiveLabel`. `cost_sensitive_label` is now deprecated."""
+
     _DeprecatedClassMeta__alias = CostSensitiveLabel
 
 
 class cbandits_label(metaclass=_DeprecatedClassMeta):
+    """This has been renamed to :py:obj:`~vowpalwabbit.pyvw.CBLabel`. `cbandits_label` is now deprecated."""
+
     _DeprecatedClassMeta__alias = CBLabel
 
 
 class namespace_id(metaclass=_DeprecatedClassMeta):
+    """This has been renamed to :py:obj:`~vowpalwabbit.pyvw.NamespaceId`. `namespace_id` is now deprecated."""
+
     _DeprecatedClassMeta__alias = NamespaceId
 
 
 class example_namespace(metaclass=_DeprecatedClassMeta):
+    """This has been renamed to :py:obj:`~vowpalwabbit.pyvw.ExampleNamespace`. `example_namespace` is now deprecated."""
+
     _DeprecatedClassMeta__alias = ExampleNamespace
 
 
 class vw(metaclass=_DeprecatedClassMeta):
+    """This has been renamed to :py:obj:`~vowpalwabbit.pyvw.Workspace`. `vw` is now deprecated."""
+
     _DeprecatedClassMeta__alias = Workspace
 
 
 class example(metaclass=_DeprecatedClassMeta):
+    """This has been renamed to :py:obj:`~vowpalwabbit.pyvw.Example`. `example` is now deprecated."""
+
     _DeprecatedClassMeta__alias = Example

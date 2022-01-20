@@ -199,6 +199,8 @@ size_t write_model_field(
 size_t read_model_field(io_buf& io, VW::distributionally_robust::ChiSquared& chisq)
 {
   size_t bytes = 0;
+  bytes += read_model_field(io, chisq.alpha);
+  bytes += read_model_field(io, chisq.tau);
   bytes += read_model_field(io, chisq.n);
   bytes += read_model_field(io, chisq.sumw);
   bytes += read_model_field(io, chisq.sumwsq);
@@ -219,6 +221,8 @@ size_t write_model_field(
     io_buf& io, const VW::distributionally_robust::ChiSquared& chisq, const std::string& upstream_name, bool text)
 {
   size_t bytes = 0;
+  bytes += write_model_field(io, chisq.alpha, upstream_name + "_alpha", text);
+  bytes += write_model_field(io, chisq.tau, upstream_name + "_tau", text);
   bytes += write_model_field(io, chisq.n, upstream_name + "_n", text);
   bytes += write_model_field(io, chisq.sumw, upstream_name + "_sumw", text);
   bytes += write_model_field(io, chisq.sumwsq, upstream_name + "_sumwsq", text);

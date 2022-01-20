@@ -41,9 +41,9 @@ po::typed_value<std::vector<bool>>* options_boost_po::convert_to_boost_value(std
   if (opt->default_value_supplied())
   { THROW("Using a bool option type acts as a switch, no explicit default value is allowed.") }
 
-  value->default_value({false});
+  value->default_value({false}, "false");
   value->zero_tokens();
-  value->implicit_value({true});
+  value->implicit_value({true}, "true");
 
   return add_notifier(opt, value);
 }

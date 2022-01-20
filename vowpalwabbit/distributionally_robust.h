@@ -9,6 +9,9 @@
 #include <tuple>
 #include "io_buf.h"
 
+constexpr double DEFAULT_TAU = 0.999;
+constexpr double DEFAULT_ALPHA = 0.05;
+
 namespace VW
 {
 namespace distributionally_robust
