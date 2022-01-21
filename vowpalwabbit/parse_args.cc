@@ -1084,7 +1084,7 @@ void parse_update_options(options_i& options, VW::workspace& all)
       .add(make_option("decay_learning_rate", all.eta_decay_rate)
                .default_value(1.f)
                .help("Set Decay factor for learning_rate between passes"))
-      .add(make_option("initial_t", all.sd->t).keep().allow_override().help("Initial t value"))
+      .add(make_option("initial_t", all.sd->t).help("Initial t value"))
       .add(make_option("feature_mask", all.feature_mask)
                .help("Use existing regressor to determine which parameters may be updated.  If no initial_regressor "
                      "given, also used for initial weights."));
@@ -1562,15 +1562,6 @@ void instantiate_learner(VW::workspace& all, std::unique_ptr<VW::setup_base_i> l
   // avoids misuse of this interface:
   learner_builder.reset();
   assert(learner_builder == nullptr);
-
-  if (!all.quiet)
-  {
-    *(all.trace_message) << "Num weight bits = " << all.num_bits << endl;
-    *(all.trace_message) << "learning rate = " << all.eta << endl;
-    *(all.trace_message) << "initial_t = " << all.sd->t << endl;
-    *(all.trace_message) << "power_t = " << all.power_t << endl;
-    if (all.numpasses > 1) *(all.trace_message) << "decay_learning_rate = " << all.eta_decay_rate << endl;
-  }
 }
 
 void parse_sources(options_i& options, VW::workspace& all, io_buf& model, bool skip_model_load)
@@ -1726,6 +1717,14 @@ VW::workspace* initialize_with_builder(std::unique_ptr<options_i, options_delete
     parse_modules(*all.options, all, interactions_settings_duplicated, dictionary_namespaces);
     instantiate_learner(all, std::move(learner_builder));
     parse_sources(*all.options, all, *model, skip_model_load);
+    if (!all.quiet)
+    {
+      *(all.trace_message) << "Num weight bits = " << all.num_bits << endl;
+      *(all.trace_message) << "learning rate = " << all.eta << endl;
+      *(all.trace_message) << "initial_t = " << all.sd->t << endl;
+      *(all.trace_message) << "power_t = " << all.power_t << endl;
+      if (all.numpasses > 1) *(all.trace_message) << "decay_learning_rate = " << all.eta_decay_rate << endl;
+    }
 
     // we must delay so parse_mask is fully defined.
     for (const auto& name_space : dictionary_namespaces) parse_dictionary_argument(all, name_space);

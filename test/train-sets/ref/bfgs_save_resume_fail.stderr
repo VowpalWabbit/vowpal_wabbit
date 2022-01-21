@@ -1,7 +1,2 @@
 enabling BFGS based optimization **without** curvature calculation
-Num weight bits = 18
-learning rate = 20
-initial_t = 128000
-power_t = 1
-decay_learning_rate = 1
 ## avg. loss 	der. mag. 	d. m. cond.	 wolfe1    	wolfe2    	mix fraction	curvature 	dir. magnitude	step size

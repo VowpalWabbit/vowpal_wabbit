@@ -2,13 +2,13 @@ Enabling FTRL based optimization
 Algorithm used: Coin Betting
 ftrl_alpha = 4
 ftrl_beta = 1
+using no cache
+Reading datafile = train-sets/regression/cbify-reg.dat
+num sources = 1
 Num weight bits = 18
 learning rate = 0.5
 initial_t = 0
 power_t = 0.5
-using no cache
-Reading datafile = train-sets/regression/cbify-reg.dat
-num sources = 1
 Enabled reductions: ftrl-Coin Betting, scorer-identity, binary, cats_tree, get_pmf, pmf_to_pdf, cb_explore_pdf, cats_pdf, sample_pdf, cats, cbify-reg, count_label
 Input label = simple
 Output pred = scalar
@@ -28,4 +28,4 @@ weighted label sum = 707915.049332
 average loss = 0.182851
 best constant = 14158.300781
 total feature number = 500
-Learn() count per node: id=0, #l=3; id=1, #l=0; id=2, #l=0;
+Learn() count per node: id=0, #l=3; id=1, #l=0; id=2, #l=0; 

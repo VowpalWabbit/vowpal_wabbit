@@ -1,11 +1,11 @@
 predictions = t288.predict
+using no cache
+Reading datafile = train-sets/interact.dat
+num sources = 1
 Num weight bits = 18
 learning rate = 0.5
 initial_t = 0
 power_t = 0.5
-using no cache
-Reading datafile = train-sets/interact.dat
-num sources = 1
 Enabled reductions: gd, scorer-identity, interact, count_label
 Input label = simple
 Output pred = scalar

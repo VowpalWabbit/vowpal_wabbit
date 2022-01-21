@@ -1,11 +1,11 @@
 recall_tree: node_only = 0 bern_hyper = 1 max_depth = 4 routing = deterministic
+using no cache
+Reading datafile = train-sets/multiclass
+num sources = 1
 Num weight bits = 18
 learning rate = 0.5
 initial_t = 0
 power_t = 0.5
-using no cache
-Reading datafile = train-sets/multiclass
-num sources = 1
 Enabled reductions: gd, scorer-identity, recall_tree, classweight-multi
 Input label = multiclass
 Output pred = multiclass
