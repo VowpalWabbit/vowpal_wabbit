@@ -164,7 +164,9 @@ def test_CBEvalLabel():
 
 
 def test_CBContinuousLabel():
-    model = Workspace(cats=4, min_value=185, max_value=23959, bandwidth=3000, quiet=True)
+    model = Workspace(
+        cats=4, min_value=185, max_value=23959, bandwidth=3000, quiet=True
+    )
     cb_contl = vowpalwabbit.CBContinuousLabel.from_example(model.example("ca 1:10:0.5 |"))
     assert cb_contl.costs[0].action == 1
     assert cb_contl.costs[0].pdf_value == 0.5
@@ -198,21 +200,21 @@ def test_MulticlassProbabilitiesLabel():
 def test_ccb_label():
     model = Workspace(ccb_explore_adf=True, quiet=True)
     ccb_shared_label = vowpalwabbit.CCBLabel.from_example(
-        (model.example("ccb shared | shared_0 shared_1"))
+        model.example("ccb shared | shared_0 shared_1")
     )
     ccb_action_label = vowpalwabbit.CCBLabel.from_example(
-        (model.example("ccb action | action_1 action_3"))
+        model.example("ccb action | action_1 action_3")
     )
     ccb_slot_label = vowpalwabbit.CCBLabel.from_example(
-        (model.example("ccb slot 0:0.8:1.0 0 | slot_0"))
+        model.example("ccb slot 0:0.8:1.0 0 | slot_0")
     )
-    ccb_slot_pred_label = vowpalwabbit.CCBLabel.from_example((model.example("ccb slot |")))
+    ccb_slot_pred_label = vowpalwabbit.CCBLabel.from_example(model.example("ccb slot |"))
     assert ccb_shared_label.type == vowpalwabbit.CCBLabelType.SHARED
-    assert ccb_shared_label.explicit_included_actions is None
+    assert len(ccb_shared_label.explicit_included_actions) == 0
     assert ccb_shared_label.outcome is None
     assert str(ccb_shared_label) == "ccb shared"
     assert ccb_action_label.type == vowpalwabbit.CCBLabelType.ACTION
-    assert ccb_action_label.explicit_included_actions is None
+    assert len(ccb_action_label.explicit_included_actions) == 0
     assert ccb_action_label.weight == 1.0
     assert ccb_action_label.outcome is None
     assert str(ccb_action_label) == "ccb action"
@@ -223,7 +225,7 @@ def test_ccb_label():
     assert isclose(ccb_slot_label.outcome.cost, 0.8)
     assert str(ccb_slot_label) == "ccb slot 0:0.8:1.0 0"
     assert ccb_slot_pred_label.type == vowpalwabbit.CCBLabelType.SLOT
-    assert ccb_slot_pred_label.explicit_included_actions is None
+    assert len(ccb_slot_pred_label.explicit_included_actions) == 0
     assert ccb_slot_pred_label.outcome is None
     assert str(ccb_slot_pred_label) == "ccb slot"
     del model
@@ -231,9 +233,15 @@ def test_ccb_label():
 
 def test_slates_label():
     model = Workspace(slates=True, quiet=True)
-    slates_shared_label = vowpalwabbit.SlatesLabel.from_example(model.example("slates shared 0.8 | shared_0 shared_1"))
-    slates_action_label = vowpalwabbit.SlatesLabel.from_example(model.example("slates action 1 | action_3"))
-    slates_slot_label = vowpalwabbit.SlatesLabel.from_example(model.example("slates slot 1:0.8,0:0.1,2:0.1 | slot_0"))
+    slates_shared_label = vowpalwabbit.SlatesLabel.from_example(
+        model.example("slates shared 0.8 | shared_0 shared_1")
+    )
+    slates_action_label = vowpalwabbit.SlatesLabel.from_example(
+        model.example("slates action 1 | action_3")
+    )
+    slates_slot_label = vowpalwabbit.SlatesLabel.from_example(
+        model.example("slates slot 1:0.8,0:0.1,2:0.1 | slot_0")
+    )
     assert slates_shared_label.type == vowpalwabbit.SlatesLabelType.SHARED
     assert slates_shared_label.labeled == True
     assert isclose(slates_shared_label.cost, 0.8)
@@ -531,7 +539,9 @@ def test_dsjson():
 
 
 def test_dsjson_with_metrics():
-    vw = vowpalwabbit.Workspace("--extra_metrics metrics.json --cb_explore_adf --epsilon 0.2 --dsjson")
+    vw = vowpalwabbit.Workspace(
+        "--extra_metrics metrics.json --cb_explore_adf --epsilon 0.2 --dsjson"
+    )
 
     ex_l_str = '{"_label_cost":-0.9,"_label_probability":0.5,"_label_Action":1,"_labelIndex":0,"o":[{"v":1.0,"EventId":"38cbf24f-70b2-4c76-aa0c-970d0c8d388e","ActionTaken":false}],"Timestamp":"2020-11-15T17:09:31.8350000Z","Version":"1","EventId":"38cbf24f-70b2-4c76-aa0c-970d0c8d388e","a":[1,2],"c":{ "GUser":{"id":"person5","major":"engineering","hobby":"hiking","favorite_character":"spock"}, "_multi": [ { "TAction":{"topic":"SkiConditions-VT"} }, { "TAction":{"topic":"HerbGarden"} } ] },"p":[0.5,0.5],"VWState":{"m":"N/A"}}\n'
     ex_l = vw.parse(ex_l_str)
