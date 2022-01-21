@@ -1486,9 +1486,7 @@ class Multilabel(AbstractLabel):
 
     @staticmethod
     def from_example(ex: "Example"):
-        labels = []
-        for i in range(ex.get_multilabel_num_labels()):
-            labels.append(ex.get_multilabel_label(i))
+        labels = ex.get_multilabel_labels()
         return Multilabel(labels)
 
     def __str__(self):
