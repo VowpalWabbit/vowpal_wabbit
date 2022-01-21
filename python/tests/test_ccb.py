@@ -113,7 +113,7 @@ def test_ccb_single_slot_and_cb_non_equivalence_with_slot_features():
 
 
 def test_ccb_non_slot_none_outcome():
-    model = pyvw.Workspace(quiet=True, ccb_explore_adf=True)
+    model = vowpalwabbit.Workspace(quiet=True, ccb_explore_adf=True)
     example = vowpalwabbit.Example(
         vw=model, labelType=vowpalwabbit.LabelType.CONDITIONAL_CONTEXTUAL_BANDIT
     )
