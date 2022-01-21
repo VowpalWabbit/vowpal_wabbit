@@ -391,7 +391,7 @@ label_parser* get_label_parser(VW::workspace* all, size_t labelType)
 size_t my_get_label_type(VW::workspace* all)
 {
   label_parser* lp = &all->example_parser->lbl_parser;
-  if (lp->parse_label == simple_label_parser.parse_label) { return lBINARY; }
+  if (lp->parse_label == simple_label_parser.parse_label) { return lSIMPLE; }
   else if (lp->parse_label == MULTICLASS::mc_label.parse_label)
   {
     return lMULTICLASS;
@@ -403,6 +403,10 @@ size_t my_get_label_type(VW::workspace* all)
   else if (lp->parse_label == CB::cb_label.parse_label)
   {
     return lCONTEXTUAL_BANDIT;
+  }
+  else if (lp->parse_label == CB_EVAL::cb_eval.parse_label)
+  {
+    return lCONTEXTUAL_BANDIT_EVAL;
   }
   else if (lp->parse_label == CCB::ccb_label_parser.parse_label)
   {

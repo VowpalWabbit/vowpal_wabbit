@@ -2,7 +2,7 @@
 """Python binding for pylibvw class"""
 
 from __future__ import division
-from typing import Any, List, Optional, Union
+from typing import Any, List, Optional, Tuple, Type, Union
 import pylibvw
 import warnings
 import inspect
@@ -337,14 +337,14 @@ def get_prediction(ec, prediction_type: Union[int, PredictionType]):
 
 def get_label_class_from_enum(
     label_type: LabelType,
-) -> Union[
+) -> Type[Union[
     "SimpleLabel",
     "MulticlassLabel",
     "CostSensitiveLabel",
     "CBLabel",
     "CCBLabel",
     "SlatesLabel",
-    "CBContinuousLabel",
+    "CBContinuousLabel"]
 ]:
     switch_label_type = {
         LabelType.SIMPLE: SimpleLabel,
@@ -1719,9 +1719,9 @@ class Example(pylibvw.example):
             Hashed feature id
 
         .. note::
-        If --hash all is on, then get_feature_id(ns,"5") !=
-        get_feature_id(ns, 5). If you've already hashed the namespace,
-        you can optionally provide that value to avoid re-hashing it.
+            If --hash all is on, then get_feature_id(ns,"5") !=
+            get_feature_id(ns, 5). If you've already hashed the namespace,
+            you can optionally provide that value to avoid re-hashing it.
         """
         if isinstance(feature, int):
             return feature
@@ -1905,14 +1905,14 @@ class Example(pylibvw.example):
         ----------
 
         label_class :
-            - None should be used unless you know what you are doing.
-            - Corresponding :py:obj:`~vowpalwabbit.LabelType` for the prediction type to be retrieved.
+            - If None, self.labelType will be used.
+            - If int then corresponding :py:obj:`~vowpalwabbit.pyvw.LabelType` for the label type to be retrieved.
             - The ability to pass an AbstractLabel or an int are legacy requirements and are deprecated. All new usage of this function should pass a LabelType.
-            - If None, self.labelType will be used
 
         See Also
         --------
-        :py:obj:`vowpalwabbit.Workspace.get_label_type`
+
+        :meth:`vowpalwabbit.Workspace.get_label_type`
 
         """
 
@@ -1943,17 +1943,17 @@ class Example(pylibvw.example):
 
     def get_prediction(
         self, prediction_type: Optional[Union[int, PredictionType]] = None
-    ) -> Any:
+    ) -> Union[float, List[float], int, List[int], float, List[List[Tuple[int, float]]], Tuple[int, float], List[Tuple[float, float, float]], Tuple[int, List[int]], str]:
+
         """Get prediction object from this example.
 
         Parameters
         ----------
 
         prediction_type :
-            - None should be used unless you know what you are doing.
-            - Corresponding :py:obj:`~vowpalwabbit.PredictionType` for the prediction type to be retrieved.
-            - Supplying the equivalent integer of the PredictionType is deprecated and will be removed in a future release.
             - If None, the label type of the example's owning Workspace instance will be used.
+            - If int then corresponding :py:obj:`~vowpalwabbit.pyvw.PredictionType` for the prediction type to be retrieved.
+            - Supplying an int is deprecated and will be removed in a future release.
 
 
         Examples
@@ -1969,10 +1969,23 @@ class Example(pylibvw.example):
         -------
 
         out : Prediction according to parameter prediction_type
+            - :py:obj:`~vowpalwabbit.PredictionType.SCALAR`: float
+            - :py:obj:`~vowpalwabbit.PredictionType.SCALARS`: List[float]
+            - :py:obj:`~vowpalwabbit.PredictionType.ACTION_SCORES`: List[float]
+            - :py:obj:`~vowpalwabbit.PredictionType.ACTION_PROBS`: List[float]
+            - :py:obj:`~vowpalwabbit.PredictionType.MULTICLASS`: int
+            - :py:obj:`~vowpalwabbit.PredictionType.MULTILABELS`: List[int]
+            - :py:obj:`~vowpalwabbit.PredictionType.PROB`: float
+            - :py:obj:`~vowpalwabbit.PredictionType.MULTICLASSPROBS`: List[float]
+            - :py:obj:`~vowpalwabbit.PredictionType.DECISION_SCORES`: List[List[Tuple[int, float]]]
+            - :py:obj:`~vowpalwabbit.PredictionType.ACTION_PDF_VALUE`: Tuple[int, float]
+            - :py:obj:`~vowpalwabbit.PredictionType.PDF`: List[Tuple[float, float, float]]
+            - :py:obj:`~vowpalwabbit.PredictionType.ACTIVE_MULTICLASS`: Tuple[int, List[int]]
+            - :py:obj:`~vowpalwabbit.PredictionType.NOPRED`: str
 
         See Also
         --------
-        :py:obj:`vowpalwabbit.Workspace.get_prediction_type`
+        :meth:`vowpalwabbit.Workspace.get_prediction_type`
         """
 
         if prediction_type is None:
