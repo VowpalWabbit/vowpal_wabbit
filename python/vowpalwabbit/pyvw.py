@@ -1072,7 +1072,7 @@ class AbstractLabel:
         pass
 
     @staticmethod
-    def from_example(ex: "Example"):
+    def from_example(ex: "Example") -> "AbstractLabel":
         """grab a label from a given VW example"""
         raise Exception("from_example not yet implemented")
 
@@ -1895,6 +1895,7 @@ class Example(pylibvw.example):
     def get_label(
         self, label_class: Optional[Union[int, LabelType, AbstractLabel]] = None
     ) -> Union[
+        "AbstractLabel",
         "SimpleLabel",
         "MulticlassLabel",
         "CostSensitiveLabel",
