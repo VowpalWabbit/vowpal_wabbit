@@ -862,6 +862,7 @@ float ex_get_costsensitive_partial_prediction(example_ptr ec, uint32_t i)
 float ex_get_costsensitive_wap_value(example_ptr ec, uint32_t i) { return ec->l.cs.costs[i].wap_value; }
 
 uint32_t ex_get_cbandits_prediction(example_ptr ec) { return ec->pred.multiclass; }
+uint32_t ex_get_cbandits_weight(example_ptr ec) { return ec->l.cb.weight; }
 uint32_t ex_get_cbandits_num_costs(example_ptr ec) { return (uint32_t)ec->l.cb.costs.size(); }
 float ex_get_cbandits_cost(example_ptr ec, uint32_t i)
 {
@@ -882,6 +883,30 @@ float ex_get_cbandits_partial_prediction(example_ptr ec, uint32_t i)
 {
   if (i >= ex_get_cbandits_num_costs(ec)) { THROW("Partial prediction index out of bounds"); }
   return ec->l.cb.costs[i].partial_prediction;
+}
+
+uint32_t ex_get_cb_eval_action(example_ptr ec) { return ec->l.cb_eval.action; }
+uint32_t ex_get_cb_eval_weight(example_ptr ec) { return ec->l.cb_eval.event.weight; }
+uint32_t ex_get_cb_eval_num_costs(example_ptr ec) { return (uint32_t)ec->l.cb_eval.event.costs.size(); }
+float ex_get_cb_eval_cost(example_ptr ec, uint32_t i)
+{
+  if (i >= ex_get_cb_eval_num_costs(ec)) { THROW("Cost index out of bounds"); }
+  return ec->l.cb_eval.event.costs[i].cost;
+}
+uint32_t ex_get_cb_eval_class(example_ptr ec, uint32_t i)
+{
+  if (i >= ex_get_cb_eval_num_costs(ec)) { THROW("Class index out of bounds"); }
+  return ec->l.cb_eval.event.costs[i].action;
+}
+float ex_get_cb_eval_probability(example_ptr ec, uint32_t i)
+{
+  if (i >= ex_get_cb_eval_num_costs(ec)) { THROW("Probability index out of bounds"); }
+  return ec->l.cb_eval.event.costs[i].probability;
+}
+float ex_get_cb_eval_partial_prediction(example_ptr ec, uint32_t i)
+{
+  if (i >= ex_get_cb_eval_num_costs(ec)) { THROW("Partial prediction index out of bounds"); }
+  return ec->l.cb_eval.event.costs[i].partial_prediction;
 }
 
 uint32_t ex_get_cb_continuous_num_costs(example_ptr ec) { return (uint32_t)ec->l.cb_cont.costs.size(); }
@@ -1459,6 +1484,7 @@ BOOST_PYTHON_MODULE(pylibvw)
           "get_costsensitive_num_costs)")
       .def("get_cbandits_prediction", &ex_get_cbandits_prediction,
           "Assuming a contextual_bandits label type, get the prediction")
+      .def("get_cbandits_weight", &ex_get_cbandits_weight, "Assuming a contextual_bandits label type, get the weight")
       .def("get_cbandits_num_costs", &ex_get_cbandits_num_costs,
           "Assuming a contextual_bandits label type, get the total number of label/cost pairs")
       .def("get_cbandits_cost", &ex_get_cbandits_cost,
@@ -1471,6 +1497,20 @@ BOOST_PYTHON_MODULE(pylibvw)
       .def("get_cbandits_partial_prediction", &ex_get_cbandits_partial_prediction,
           "Assuming a contextual_bandits label type, get the partial prediction for a given pair (i=0.. "
           "get_cbandits_num_costs)")
+      .def("get_cb_eval_action", &ex_get_cb_eval_action, "Assuming a cb_eval label type, get action")
+      .def("get_cb_eval_weight", &ex_get_cb_eval_weight, "Assuming a cb_eval label type, get weight")
+      .def("get_cb_eval_num_costs", &ex_get_cb_eval_num_costs,
+          "Assuming a cb_eval label type, get the total number of label/cost pairs")
+      .def("get_cb_eval_cost", &ex_get_cb_eval_cost,
+          "Assuming a cb_eval label type, get the cost for a given pair (i=0.. get_cb_eval_num_costs)")
+      .def("get_cb_eval_class", &ex_get_cb_eval_class,
+          "Assuming a cb_eval label type, get the label for a given pair (i=0.. get_cb_eval_num_costs)")
+      .def("get_cb_eval_probability", &ex_get_cb_eval_probability,
+          "Assuming a cb_eval label type, get the bandits probability for a given pair (i=0.. "
+          "get_cb_eval_num_costs)")
+      .def("get_cb_eval_partial_prediction", &ex_get_cb_eval_partial_prediction,
+          "Assuming a cb_eval label type, get the partial prediction for a given pair (i=0.. "
+          "get_cb_eval_num_costs)")
       .def("get_ccb_type", &ex_get_ccb_type,
           "Assuming a conditional_contextual_bandits label type, get the type of example")
       .def("get_ccb_has_outcome", &ex_get_ccb_has_outcome,
