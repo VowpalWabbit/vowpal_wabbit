@@ -612,10 +612,10 @@ class Workspace(pylibvw.vw):
         return self.get_weight(feat_hash)
 
     def get_label_type(self) -> LabelType:
-        return LabelType(super().get_label_type())
+        return LabelType(super()._get_label_type())
 
     def get_prediction_type(self) -> PredictionType:
-        return PredictionType(super().get_prediction_type())
+        return PredictionType(super()._get_prediction_type())
 
     def learn(self, ec):
         """Perform an online update
