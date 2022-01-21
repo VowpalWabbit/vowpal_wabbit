@@ -337,14 +337,16 @@ def get_prediction(ec, prediction_type: Union[int, PredictionType]):
 
 def get_label_class_from_enum(
     label_type: LabelType,
-) -> Type[Union[
-    "SimpleLabel",
-    "MulticlassLabel",
-    "CostSensitiveLabel",
-    "CBLabel",
-    "CCBLabel",
-    "SlatesLabel",
-    "CBContinuousLabel"]
+) -> Type[
+    Union[
+        "SimpleLabel",
+        "MulticlassLabel",
+        "CostSensitiveLabel",
+        "CBLabel",
+        "CCBLabel",
+        "SlatesLabel",
+        "CBContinuousLabel",
+    ]
 ]:
     switch_label_type = {
         LabelType.SIMPLE: SimpleLabel,
@@ -1524,7 +1526,9 @@ class Example(pylibvw.example):
             else:
                 self.labelType = LabelType(labelType)
         else:
-            raise ValueError("labelType must be a LabelType enum value, integer or None")
+            raise ValueError(
+                "labelType must be a LabelType enum value, integer or None"
+            )
 
         if initStringOrDictOrRawExample is None:
             pylibvw.example.__init__(self, vw, self.labelType.value)
@@ -1943,7 +1947,18 @@ class Example(pylibvw.example):
 
     def get_prediction(
         self, prediction_type: Optional[Union[int, PredictionType]] = None
-    ) -> Union[float, List[float], int, List[int], float, List[List[Tuple[int, float]]], Tuple[int, float], List[Tuple[float, float, float]], Tuple[int, List[int]], str]:
+    ) -> Union[
+        float,
+        List[float],
+        int,
+        List[int],
+        float,
+        List[List[Tuple[int, float]]],
+        Tuple[int, float],
+        List[Tuple[float, float, float]],
+        Tuple[int, List[int]],
+        str,
+    ]:
 
         """Get prediction object from this example.
 
