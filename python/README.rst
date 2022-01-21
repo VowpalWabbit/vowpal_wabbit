@@ -38,8 +38,8 @@ You can use the python wrapper directly like this:
 
 .. code-block:: python
 
-    >>> from vowpalwabbit import Workspace
-    >>> vw = Workspace(quiet=True)
+    >>> import vowpalwabbit
+    >>> vw = vowpalwabbit.Workspace(quiet=True)
     >>> ex = vw.example('1 | a b c')
     >>> vw.learn(ex)
     >>> vw.predict(ex)
