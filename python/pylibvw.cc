@@ -1022,6 +1022,13 @@ py::list ex_get_ccb_explicitly_included_actions(example_ptr ec)
   return varray_to_pylist(label.explicit_included_actions);
 }
 
+py::list ex_get_multilabel_labels(example_ptr ec)
+{
+  py::list l;
+  for (const auto& v : ec->l.multilabels.label_v) { l.append(v); }
+  return l;
+}
+
 // example_counter is being overriden by lableType!
 size_t get_example_counter(example_ptr ec) { return ec->example_counter; }
 uint64_t get_ft_offset(example_ptr ec) { return ec->ft_offset; }
@@ -1557,7 +1564,9 @@ BOOST_PYTHON_MODULE(pylibvw)
       .def("get_slates_action", &ex_get_slates_action,
           "Assuming a slates label type, get the action of example at index i")
       .def("get_slates_probability", &ex_get_slates_probability,
-          "Assuming a slates label type, get the probability of example at index i");
+          "Assuming a slates label type, get the probability of example at index i")
+      .def(
+          "get_multilabel_labels", &ex_get_multilabel_labels, "Assuming a multilabel label type, get a list of labels");
 
   py::class_<Search::predictor, predictor_ptr, boost::noncopyable>("predictor", py::no_init)
       .def("set_input", &my_set_input, "set the input (an example) for this predictor (non-LDF mode only)")

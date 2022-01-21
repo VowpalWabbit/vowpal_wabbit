@@ -1455,6 +1455,22 @@ class CBContinuousLabel(AbstractLabel):
         )
 
 
+class Multilabel(AbstractLabel):
+    """Class for multilabel VW label"""
+
+    def __init__(self, labels: List[int]):
+        AbstractLabel.__init__(self)
+        self.labels = labels
+
+    @staticmethod
+    def from_example(ex: "Example"):
+        labels = ex.get_multilabel_labels()
+        return Multilabel(labels)
+
+    def __str__(self):
+        return ",".join(f"{l}" for l in self.labels)
+
+
 class Example(pylibvw.example):
     """The example class is a wrapper around
     pylibvw.example. pylibvw.example should not be used. Most of the wrapping is to make the interface
