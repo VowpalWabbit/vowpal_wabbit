@@ -264,6 +264,14 @@ def test_slates_label():
     assert str(slates_slot_label) == "slates slot 1:0.8,0:0.1,2:0.1"
     del model
 
+def test_multilabel_label():
+    model = Workspace(multilabel_oaa=5, quiet=True)
+    multil = vowpalwabbit.MultilabelLabel.from_example(model.example("1,2,3 |"))
+    assert len(multil.labels) == 3
+    assert multil.labels[0] == 1
+    assert multil.labels[1] == 2
+    assert multil.labels[2] == 3
+    assert str(multil) == "1,2,3"
 
 def test_regressor_args():
     # load and parse external data file
