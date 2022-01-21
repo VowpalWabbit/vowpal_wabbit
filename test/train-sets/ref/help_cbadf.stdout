@@ -1,9 +1,9 @@
 Driver Options:
   --onethread                                Disable parse thread
-  --log_level arg (=info)                    Log level for logging messages. Specifying this wil 
+  --log_level arg (Default: info)            Log level for logging messages. Specifying this wil 
                                              override --quiet for log output. Choices: {critical, 
                                              error, info, off, warn}
-  --log_output arg (=stdout)                 Specify the stream to output log messages to. In the 
+  --log_output arg (Default: stdout)         Specify the stream to output log messages to. In the 
                                              past VW's choice of stream for logging messages wasn't
                                              consistent. Supplying compat will maintain that old 
                                              behavior. Compat is now deprecated so it is 
@@ -15,28 +15,28 @@ Logging Options:
                                              --driver_output_off. Supplying this overrides an 
                                              explicit log_level argument.
   --driver_output_off                        Disable output for the driver.
-  --driver_output arg (=stderr)              Specify the stream to output driver output to.. 
+  --driver_output arg (Default: stderr)      Specify the stream to output driver output to.. 
                                              Choices: {stderr, stdout}
-  --log_level arg (=info)                    Log level for logging messages. Specifying this wil 
+  --log_level arg (Default: info)            Log level for logging messages. Specifying this wil 
                                              override --quiet for log output.. Choices: {critical, 
                                              error, info, off, warn}
-  --log_output arg (=stdout)                 Specify the stream to output log messages to. In the 
+  --log_output arg (Default: stdout)         Specify the stream to output log messages to. In the 
                                              past VW's choice of stream for logging messages wasn't
                                              consistent. Supplying compat will maintain that old 
                                              behavior. Compat is now deprecated so it is 
                                              recommended that stdout or stderr is chosen.. Choices:
                                              {compat, stderr, stdout}
-  --limit_output arg (=0)                    Avoid chatty output. Limit total printed lines. 0 
+  --limit_output arg (Default: 0)            Avoid chatty output. Limit total printed lines. 0 
                                              means unbounded.
 Parser Options:
-  --ring_size arg (=256)                     Size of example ring
-  --example_queue_limit arg (=256)           Max number of examples to store after parsing but 
+  --ring_size arg (Default: 256)             Size of example ring
+  --example_queue_limit arg (Default: 256)   Max number of examples to store after parsing but 
                                              before the learner has processed. Rarely needs to be 
                                              changed.
   --strict_parse                             Throw on malformed examples
 Weight Options:
   -i [ --initial_regressor ] arg             Initial regressor(s)
-  --initial_weight arg (=0)                  Set all weights to an initial value of arg
+  --initial_weight arg (Default: 0)          Set all weights to an initial value of arg
   --random_weights                           Make initial weights random
   --normal_weights                           Make initial weights normal
   --truncated_normal_weights                 Make initial weights truncated normal
@@ -44,10 +44,10 @@ Weight Options:
   --input_feature_regularizer arg            Per feature regularization input file
 Parallelization Options:
   --span_server arg                          Location of server for setting up spanning tree
-  --unique_id arg (=0)                       Unique id used for cluster parallel jobs
-  --total arg (=1)                           Total number of nodes used in cluster parallel job
-  --node arg (=0)                            Node number in cluster parallel job
-  --span_server_port arg (=26543)            Port of the server for setting up spanning tree
+  --unique_id arg (Default: 0)               Unique id used for cluster parallel jobs
+  --total arg (Default: 1)                   Total number of nodes used in cluster parallel job
+  --node arg (Default: 0)                    Node number in cluster parallel job
+  --span_server_port arg (Default: 26543)    Port of the server for setting up spanning tree
 Diagnostic Options:
   --version                                  Version information
   -a [ --audit ]                             Print weights of features
@@ -58,18 +58,18 @@ Diagnostic Options:
   -h [ --help ]                              More information on vowpal wabbit can be found here 
                                              https://vowpalwabbit.org
 Randomization Options:
-  --random_seed arg (=0)                     Seed random number generator
+  --random_seed arg (Default: 0)             Seed random number generator
 Update Options:
-  -l [ --learning_rate ] arg (=0.5)          Set learning rate
-  --power_t arg (=0.5)                       T power value
-  --decay_learning_rate arg (=1)             Set Decay factor for learning_rate between passes
+  -l [ --learning_rate ] arg (Default: 0.5)  Set learning rate
+  --power_t arg (Default: 0.5)               T power value
+  --decay_learning_rate arg (Default: 1)     Set Decay factor for learning_rate between passes
   --initial_t arg                            Initial t value
   --feature_mask arg                         Use existing regressor to determine which parameters 
                                              may be updated.  If no initial_regressor given, also 
                                              used for initial weights.
 Feature Options:
-  --hash arg (=strings)                      How to hash the features. Choices: {all, strings}
-  --hash_seed arg (=0)                       Seed for hash function
+  --hash arg (Default: strings)              How to hash the features. Choices: {all, strings}
+  --hash_seed arg (Default: 0)               Seed for hash function
   --ignore arg                               Ignore namespaces beginning with character <arg>
   --ignore_linear arg                        Ignore namespaces beginning with character <arg> for 
                                              linear terms only
@@ -80,7 +80,7 @@ Feature Options:
                                              as default namespace. Use ':' as a wildcard in S.
   -b [ --bit_precision ] arg                 Number of bits in the feature table
   --noconstant                               Don't add a constant feature
-  -C [ --constant ] arg (=0)                 Set initial value of constant
+  -C [ --constant ] arg (Default: 0)         Set initial value of constant
   --ngram arg                                Generate N grams. To generate N grams for a single 
                                              namespace 'foo', arg should be fN
   --skips arg                                Generate skips in N grams. This in conjunction with 
@@ -114,26 +114,27 @@ Feature Options:
 Example Options:
   -t [ --testonly ]                          Ignore label information and just test
   --holdout_off                              No holdout data in multiple passes
-  --holdout_period arg (=10)                 Holdout period for test only
+  --holdout_period arg (Default: 10)         Holdout period for test only
   --holdout_after arg                        Holdout after n training examples, default off 
                                              (disables holdout_period)
-  --early_terminate arg (=3)                 Specify the number of passes tolerated when holdout 
+  --early_terminate arg (Default: 3)         Specify the number of passes tolerated when holdout 
                                              loss doesn't decrease before early termination
-  --passes arg (=1)                          Number of Training Passes
-  --initial_pass_length arg (=18446744073709551615)
+  --passes arg (Default: 1)                  Number of Training Passes
+  --initial_pass_length arg (Default: 18446744073709551615)
                                              Initial number of examples per pass
-  --examples arg (=18446744073709551615)     Number of examples to parse
+  --examples arg (Default: 18446744073709551615)
+                                             Number of examples to parse
   --min_prediction arg                       Smallest prediction to output
   --max_prediction arg                       Largest prediction to output
   --sort_features                            Turn this on to disregard order in which features have
                                              been defined. This will lead to smaller cache sizes
-  --loss_function arg (=squared)             Specify the loss function to be used, uses squared by 
+  --loss_function arg (Default: squared)     Specify the loss function to be used, uses squared by 
                                              default. Choices: {classic, hinge, logistic, poisson, 
                                              quantile, squared}
-  --quantile_tau arg (=0.5)                  Parameter \tau associated with Quantile loss. Defaults
+  --quantile_tau arg (Default: 0.5)          Parameter \tau associated with Quantile loss. Defaults
                                              to 0.5
-  --l1 arg (=0)                              L_1 lambda
-  --l2 arg (=0)                              L_2 lambda
+  --l1 arg (Default: 0)                      L_1 lambda
+  --l2 arg (Default: 0)                      L_2 lambda
   --no_bias_regularization                   No bias in regularization
   --named_labels arg                         Use names for labels (multiclass, etc.) rather than 
                                              integers, argument specified all possible labels, 
@@ -187,12 +188,12 @@ Input Options:
   --adax                                     Use adaptive learning rates with x^2 instead of g^2x^2
   --invariant                                Use safe/importance aware updates
   --normalized                               Use per feature normalized updates
-  --sparse_l2 arg (=0)                       Degree of l2 regularization applied to activated 
+  --sparse_l2 arg (Default: 0)               Degree of l2 regularization applied to activated 
                                              sparse parameters
-  --l1_state arg (=0)                        Amount of accumulated implicit l1 regularization
-  --l2_state arg (=1)                        Amount of accumulated implicit l2 regularization
+  --l1_state arg (Default: 0)                Amount of accumulated implicit l1 regularization
+  --l2_state arg (Default: 1)                Amount of accumulated implicit l2 regularization
 [Reduction] Scorer Options:
-  --link arg (=identity)                     Specify the link function. Choices: {glf1, identity, 
+  --link arg (Default: identity)             Specify the link function. Choices: {glf1, identity, 
                                              logistic, poisson}
 [Reduction] Cost Sensitive One Against All with Label Dependent Features Options:
   --csoaa_ldf arg                            Use one-against-all multiclass learning with label 
@@ -206,7 +207,7 @@ Input Options:
                                              dependent features (required to enable this reduction)
   --rank_all                                 Return actions sorted by score order
   --no_predict                               Do not do a prediction when training
-  --clip_p arg (=0)                          Clipping probability in importance weight. Default: 
+  --clip_p arg (Default: 0)                  Clipping probability in importance weight. Default: 
                                              0.f (no clipping)
-  --cb_type arg (=mtr)                       Contextual bandit method to use. Choices: {dm, dr, 
+  --cb_type arg (Default: mtr)               Contextual bandit method to use. Choices: {dm, dr, 
                                              ips, mtr, sm}
