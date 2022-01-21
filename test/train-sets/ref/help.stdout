@@ -214,8 +214,8 @@ Input Options:
   --autolink arg                             Create link function with polynomial d (required to 
                                              enable this reduction)
 [Reduction] Automl Options:
-  --automl arg (Default: 3)                  Set number of live configs (required to enable this 
-                                             reduction)
+  --automl arg (Default: 3)                  Experimental: Set number of live configs (required to 
+                                             enable this reduction)
   --global_lease arg (Default: 10)           Set initial lease for automl interactions
   --cm_type arg (Default: interaction)       Set type of config manager. Choices: {interaction}
   --priority_type arg (Default: none)        Set function to determine next config. Choices: 
@@ -237,9 +237,9 @@ Input Options:
   --check_enabled                            Only use baseline when the example contains enabled 
                                              flag
 [Reduction] Baseline challenger Options:
-  --baseline_challenger_cb                   Build a CI around the baseline action and use it 
-                                             instead of the model if it's perfoming better 
-                                             (required to enable this reduction)
+  --baseline_challenger_cb                   Experimental: Build a CI around the baseline action 
+                                             and use it instead of the model if it's perfoming 
+                                             better (required to enable this reduction)
   --cb_c_alpha arg (Default: 0.05)           Confidence level for baseline
   --cb_c_tau arg (Default: 0.999)            Time constant for count decay
 [Reduction] Conjugate Gradient Options:

@@ -2,6 +2,7 @@ import os
 
 from vowpalwabbit import pyvw
 from vowpalwabbit.pyvw import Workspace
+import vowpalwabbit
 import pytest
 
 BIT_SIZE = 18
@@ -140,11 +141,25 @@ def test_multilabel_prediction_type():
 def test_CBLabel():
     model = Workspace(cb=4, quiet=True)
     cbl = pyvw.CBLabel.from_example(model.example("1:10:0.5 |"))
+    assert cbl.weight == 1.0
     assert cbl.costs[0].action == 1
     assert cbl.costs[0].probability == 0.5
     assert cbl.costs[0].partial_prediction == 0
     assert cbl.costs[0].cost == 10.0
     assert str(cbl) == "1:10.0:0.5"
+    del model
+
+
+def test_CBEvalLabel():
+    model = Workspace(cb=4, eval=True, quiet=True)
+    cbel = vowpalwabbit.CBEvalLabel.from_example(model.example("3 1:10:0.5 |"))
+    assert cbel.action == 3
+    assert cbel.cb_label.weight == 1.0
+    assert cbel.cb_label.costs[0].action == 1
+    assert cbel.cb_label.costs[0].probability == 0.5
+    assert cbel.cb_label.costs[0].partial_prediction == 0
+    assert cbel.cb_label.costs[0].cost == 10.0
+    assert str(cbel) == "3 1:10.0:0.5"
     del model
 
 

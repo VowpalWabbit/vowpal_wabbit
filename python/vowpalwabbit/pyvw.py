@@ -1223,15 +1223,15 @@ class CBLabel(AbstractLabel):
     def __init__(
         self,
         costs: List[CBLabelElement] = [],
-        prediction: float = 0.0,
+        weight: float = 1.0,
     ):
         AbstractLabel.__init__(self)
         self.costs = costs
-        self.prediction = prediction
+        self.weight = weight
 
     @staticmethod
     def from_example(ex: "Example"):
-        prediction = ex.get_cbandits_prediction()
+        weight = ex.get_cbandits_weight()
         costs = []
         for i in range(ex.get_cbandits_num_costs()):
             cb = CBLabelElement(
@@ -1241,11 +1241,48 @@ class CBLabel(AbstractLabel):
                 ex.get_cbandits_probability(i),
             )
             costs.append(cb)
-        return CBLabel(costs, prediction)
+        return CBLabel(costs, weight)
 
     def __str__(self):
         return " ".join(
             ["{}:{}:{}".format(c.action, c.cost, c.probability) for c in self.costs]
+        )
+
+
+class CBEvalLabel(AbstractLabel):
+    """Class for contextual bandits eval VW label"""
+
+    def __init__(
+        self,
+        action: int,
+        cb_label: CBLabel,
+    ):
+        AbstractLabel.__init__(self)
+        self.action = action
+        self.cb_label = cb_label
+
+    @staticmethod
+    def from_example(ex: "Example"):
+        action = ex.get_cb_eval_action()
+        weight = ex.get_cb_eval_weight()
+        costs = []
+        for i in range(ex.get_cb_eval_num_costs()):
+            cb = CBLabelElement(
+                ex.get_cb_eval_class(i),
+                ex.get_cb_eval_cost(i),
+                ex.get_cb_eval_partial_prediction(i),
+                ex.get_cb_eval_probability(i),
+            )
+            costs.append(cb)
+        cb_label = CBLabel(costs, weight)
+        return CBEvalLabel(action, cb_label)
+
+    def __str__(self):
+        return f"{self.action} " + " ".join(
+            [
+                "{}:{}:{}".format(c.action, c.cost, c.probability)
+                for c in self.cb_label.costs
+            ]
         )
 
 
