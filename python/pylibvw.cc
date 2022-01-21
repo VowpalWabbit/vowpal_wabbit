@@ -391,7 +391,7 @@ label_parser* get_label_parser(VW::workspace* all, size_t labelType)
 size_t my_get_label_type(VW::workspace* all)
 {
   label_parser* lp = &all->example_parser->lbl_parser;
-  if (lp->parse_label == simple_label_parser.parse_label) { return lBINARY; }
+  if (lp->parse_label == simple_label_parser.parse_label) { return lSIMPLE; }
   else if (lp->parse_label == MULTICLASS::mc_label.parse_label)
   {
     return lMULTICLASS;
@@ -404,6 +404,10 @@ size_t my_get_label_type(VW::workspace* all)
   {
     return lCONTEXTUAL_BANDIT;
   }
+  else if (lp->parse_label == CB_EVAL::cb_eval.parse_label)
+  {
+    return lCONTEXTUAL_BANDIT_EVAL;
+  }
   else if (lp->parse_label == CCB::ccb_label_parser.parse_label)
   {
     return lCONDITIONAL_CONTEXTUAL_BANDIT;
@@ -415,6 +419,10 @@ size_t my_get_label_type(VW::workspace* all)
   else if (lp->parse_label == VW::cb_continuous::the_label_parser.parse_label)
   {
     return lCONTINUOUS;
+  }
+  else if (lp->parse_label == MULTILABEL::multilabel.parse_label)
+  {
+    return lMULTILABEL;
   }
   else
   {
@@ -1347,8 +1355,8 @@ BOOST_PYTHON_MODULE(pylibvw)
       .def("set_weight", &VW::set_weight, "set the weight for a particular index")
       .def("get_stride", &VW::get_stride, "return the internal stride")
 
-      .def("get_label_type", &my_get_label_type, "return parse label type")
-      .def("get_prediction_type", &my_get_prediction_type, "return prediction type")
+      .def("_get_label_type", &my_get_label_type, "return parse label type")
+      .def("_get_prediction_type", &my_get_prediction_type, "return prediction type")
       .def("get_sum_loss", &get_sum_loss, "return the total cumulative loss suffered so far")
       .def("get_holdout_sum_loss", &get_holdout_sum_loss, "return the total cumulative holdout loss suffered so far")
       .def("get_weighted_examples", &get_weighted_examples, "return the total weight of examples so far")

@@ -266,7 +266,7 @@ def test_slates_label():
 
 def test_multilabel_label():
     model = Workspace(multilabel_oaa=5, quiet=True)
-    multil = vowpalwabbit.Multilabel.from_example(model.example("1,2,3 |"))
+    multil = vowpalwabbit.MultilabelLabel.from_example(model.example("1,2,3 |"))
     assert len(multil.labels) == 3
     assert multil.labels[0] == 1
     assert multil.labels[1] == 2
