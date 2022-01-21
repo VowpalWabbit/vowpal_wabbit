@@ -391,7 +391,7 @@ label_parser* get_label_parser(VW::workspace* all, size_t labelType)
 size_t my_get_label_type(VW::workspace* all)
 {
   label_parser* lp = &all->example_parser->lbl_parser;
-  if (lp->parse_label == simple_label_parser.parse_label) { return lBINARY; }
+  if (lp->parse_label == simple_label_parser.parse_label) { return lSIMPLE; }
   else if (lp->parse_label == MULTICLASS::mc_label.parse_label)
   {
     return lMULTICLASS;
@@ -404,6 +404,10 @@ size_t my_get_label_type(VW::workspace* all)
   {
     return lCONTEXTUAL_BANDIT;
   }
+  else if (lp->parse_label == CB_EVAL::cb_eval.parse_label)
+  {
+    return lCONTEXTUAL_BANDIT_EVAL;
+  }
   else if (lp->parse_label == CCB::ccb_label_parser.parse_label)
   {
     return lCONDITIONAL_CONTEXTUAL_BANDIT;
@@ -415,6 +419,10 @@ size_t my_get_label_type(VW::workspace* all)
   else if (lp->parse_label == VW::cb_continuous::the_label_parser.parse_label)
   {
     return lCONTINUOUS;
+  }
+  else if (lp->parse_label == MULTILABEL::multilabel.parse_label)
+  {
+    return lMULTILABEL;
   }
   else
   {
@@ -1014,6 +1022,13 @@ py::list ex_get_ccb_explicitly_included_actions(example_ptr ec)
   return varray_to_pylist(label.explicit_included_actions);
 }
 
+py::list ex_get_multilabel_labels(example_ptr ec)
+{
+  py::list l;
+  for (const auto& v : ec->l.multilabels.label_v) { l.append(v); }
+  return l;
+}
+
 // example_counter is being overriden by lableType!
 size_t get_example_counter(example_ptr ec) { return ec->example_counter; }
 uint64_t get_ft_offset(example_ptr ec) { return ec->ft_offset; }
@@ -1340,8 +1355,8 @@ BOOST_PYTHON_MODULE(pylibvw)
       .def("set_weight", &VW::set_weight, "set the weight for a particular index")
       .def("get_stride", &VW::get_stride, "return the internal stride")
 
-      .def("get_label_type", &my_get_label_type, "return parse label type")
-      .def("get_prediction_type", &my_get_prediction_type, "return prediction type")
+      .def("_get_label_type", &my_get_label_type, "return parse label type")
+      .def("_get_prediction_type", &my_get_prediction_type, "return prediction type")
       .def("get_sum_loss", &get_sum_loss, "return the total cumulative loss suffered so far")
       .def("get_holdout_sum_loss", &get_holdout_sum_loss, "return the total cumulative holdout loss suffered so far")
       .def("get_weighted_examples", &get_weighted_examples, "return the total weight of examples so far")
@@ -1549,7 +1564,9 @@ BOOST_PYTHON_MODULE(pylibvw)
       .def("get_slates_action", &ex_get_slates_action,
           "Assuming a slates label type, get the action of example at index i")
       .def("get_slates_probability", &ex_get_slates_probability,
-          "Assuming a slates label type, get the probability of example at index i");
+          "Assuming a slates label type, get the probability of example at index i")
+      .def(
+          "get_multilabel_labels", &ex_get_multilabel_labels, "Assuming a multilabel label type, get a list of labels");
 
   py::class_<Search::predictor, predictor_ptr, boost::noncopyable>("predictor", py::no_init)
       .def("set_input", &my_set_input, "set the input (an example) for this predictor (non-LDF mode only)")
