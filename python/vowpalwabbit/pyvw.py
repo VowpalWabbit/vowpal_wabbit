@@ -1468,15 +1468,6 @@ class CBContinuousLabel(AbstractLabel):
         )
 
 
-class CBContinuousLabelElement:
-    def __init__(
-        self, action: Optional[int] = None, cost: float = 0.0, pdf_value: float = 0.0
-    ):
-        self.action = action
-        self.cost = cost
-        self.pdf_value = pdf_value
-
-
 class Multilabel(AbstractLabel):
     """Class for multilabel VW label"""
 
