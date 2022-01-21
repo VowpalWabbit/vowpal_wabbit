@@ -1,14 +1,14 @@
 final_regressor = models/freegrad.model
 Enabling FreeGrad based optimization
 Algorithm used: FreeGrad
+creating cache_file = train-sets/0001.dat.cache
+Reading datafile = train-sets/0001.dat
+num sources = 1
 Num weight bits = 18
 learning rate = 0.5
 initial_t = 0
 power_t = 0.5
 decay_learning_rate = 1
-creating cache_file = train-sets/0001.dat.cache
-Reading datafile = train-sets/0001.dat
-num sources = 1
 Enabled reductions: freegrad, scorer-identity, count_label
 Input label = simple
 Output pred = scalar

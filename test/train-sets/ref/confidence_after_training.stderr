@@ -1,11 +1,11 @@
 predictions = confidence_after_training.preds
+using no cache
+Reading datafile = ./train-sets/rcv1_small.dat
+num sources = 1
 Num weight bits = 18
 learning rate = 0.5
 initial_t = 0.1
 power_t = 0.5
-using no cache
-Reading datafile = ./train-sets/rcv1_small.dat
-num sources = 1
 Enabled reductions: gd, confidence, scorer-identity, count_label
 Input label = simple
 Output pred = scalar
