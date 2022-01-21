@@ -346,6 +346,8 @@ def get_label_class_from_enum(
         "CCBLabel",
         "SlatesLabel",
         "CBContinuousLabel",
+        "CBEvalLabel",
+        "MultilabelLabel",
     ]
 ]:
     switch_label_type = {
@@ -356,14 +358,11 @@ def get_label_class_from_enum(
         LabelType.CONDITIONAL_CONTEXTUAL_BANDIT: CCBLabel,
         LabelType.SLATES: SlatesLabel,
         LabelType.CONTINUOUS: CBContinuousLabel,
-        LabelType.CONTEXTUAL_BANDIT_EVAL: None,
-        LabelType.MULTILABEL: None,
+        LabelType.CONTEXTUAL_BANDIT_EVAL: CBEvalLabel,
+        LabelType.MULTILABEL: MultilabelLabel,
     }
 
-    label_class = switch_label_type[label_type]
-    if label_class is None:
-        raise ValueError("No known label class for {}".format(label_type))
-    return label_class
+    return switch_label_type[label_type]
 
 
 def get_all_vw_options():
@@ -1455,7 +1454,7 @@ class CBContinuousLabel(AbstractLabel):
         )
 
 
-class Multilabel(AbstractLabel):
+class MultilabelLabel(AbstractLabel):
     """Class for multilabel VW label"""
 
     def __init__(self, labels: List[int]):
@@ -1465,7 +1464,7 @@ class Multilabel(AbstractLabel):
     @staticmethod
     def from_example(ex: "Example"):
         labels = ex.get_multilabel_labels()
-        return Multilabel(labels)
+        return MultilabelLabel(labels)
 
     def __str__(self):
         return ",".join(f"{l}" for l in self.labels)
