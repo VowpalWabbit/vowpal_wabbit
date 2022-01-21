@@ -971,40 +971,46 @@ size_t ex_get_ccb_type(example_ptr ec)
   }
 }
 bool ex_get_ccb_has_outcome(example_ptr ec) { return ec->l.conditional_contextual_bandit.outcome != nullptr; }
-py::object ex_get_ccb_cost(example_ptr ec)
+
+float ex_get_ccb_outcome_cost(example_ptr ec)
 {
-  if (!ex_get_ccb_has_outcome(ec)) return py::object();
-  return py::object(ec->l.conditional_contextual_bandit.outcome->cost);
+  if (!ex_get_ccb_has_outcome(ec)) { THROW("This label has no outcome"); }
+  return ec->l.conditional_contextual_bandit.outcome->cost;
 }
+
 size_t ex_get_ccb_num_probabilities(example_ptr ec)
 {
-  if (!ex_get_ccb_has_outcome(ec)) return 0;
+  if (!ex_get_ccb_has_outcome(ec)) { THROW("This label has no outcome"); }
   return ec->l.conditional_contextual_bandit.outcome->probabilities.size();
 }
+
 size_t ex_get_ccb_num_explicitly_included_actions(example_ptr ec)
 {
   const auto& label = ec->l.conditional_contextual_bandit;
   return label.explicit_included_actions.size();
 }
-py::object ex_get_ccb_action(example_ptr ec, uint32_t i)
+
+uint32_t ex_get_ccb_action(example_ptr ec, uint32_t i)
 {
   if (i >= ex_get_ccb_num_probabilities(ec)) { THROW("Action index out of bounds"); }
-  if (!ex_get_ccb_has_outcome(ec)) return py::object();
+  if (!ex_get_ccb_has_outcome(ec)) { THROW("This label has no outcome"); }
   const auto* outcome_ptr = ec->l.conditional_contextual_bandit.outcome;
-  return py::object(outcome_ptr->probabilities[i].action);
+  return outcome_ptr->probabilities[i].action;
 }
-py::object ex_get_ccb_probability(example_ptr ec, uint32_t i)
+
+float ex_get_ccb_probability(example_ptr ec, uint32_t i)
 {
   if (i >= ex_get_ccb_num_probabilities(ec)) { THROW("Probability index out of bounds"); }
-  if (!ex_get_ccb_has_outcome(ec)) { return py::object(); }
+  if (!ex_get_ccb_has_outcome(ec)) { THROW("This label has no outcome"); }
   const auto* outcome_ptr = ec->l.conditional_contextual_bandit.outcome;
-  return py::object(outcome_ptr->probabilities[i].score);
+  return outcome_ptr->probabilities[i].score;
 }
+
 float ex_get_ccb_weight(example_ptr ec) { return ec->l.conditional_contextual_bandit.weight; }
-py::object ex_get_ccb_explicitly_included_actions(example_ptr ec)
+
+py::list ex_get_ccb_explicitly_included_actions(example_ptr ec)
 {
   const auto& label = ec->l.conditional_contextual_bandit;
-  if (!ex_get_ccb_has_outcome(ec)) { return py::object(); }
   return varray_to_pylist(label.explicit_included_actions);
 }
 
@@ -1516,7 +1522,7 @@ BOOST_PYTHON_MODULE(pylibvw)
           "Assuming a conditional_contextual_bandits label type, get the type of example")
       .def("get_ccb_has_outcome", &ex_get_ccb_has_outcome,
           "Assuming a conditional_contextual_bandits label type, verify if it has an outcome.")
-      .def("get_ccb_cost", &ex_get_ccb_cost,
+      .def("get_ccb_cost", &ex_get_ccb_outcome_cost,
           "Assuming a conditional_contextual_bandits label type, get the cost of the given label")
       .def("get_ccb_num_probabilities", &ex_get_ccb_num_probabilities,
           "Assuming a conditional_contextual_bandits label type, get number of actions in example")
