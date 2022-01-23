@@ -22,7 +22,7 @@ struct scored_config
   void update(float w, float r);
   void persist(metric_sink&, const std::string&);
   float current_ips() const;
-  void reset_stats(double, double);
+  void reset_stats(double alpha = DEFAULT_ALPHA, double tau = DEFAULT_TAU);
 };
 
 namespace model_utils

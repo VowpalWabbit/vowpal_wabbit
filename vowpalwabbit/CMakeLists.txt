@@ -46,6 +46,7 @@ set(vw_all_headers
   active.h
   active_cover.h
   active_multiclass_prediction.h
+  ae.h
   allreduce.h
   api_status.h
   array_parameters.h
@@ -248,6 +249,7 @@ set(vw_all_sources
   action_score.cc
   active.cc
   active_cover.cc
+  ae.cc
   api_status.cc
   audit_regressor.cc
   autolink.cc

@@ -1,4 +1,5 @@
 add_executable(vw-unit-test.out
+  ae_test.cc
   automl_test.cc
   automl_weights_test.cc
   baseline_cb_test.cc

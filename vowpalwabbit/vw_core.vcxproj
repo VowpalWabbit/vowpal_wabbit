@@ -126,6 +126,7 @@
     <ClInclude Include="active.h" />
     <ClInclude Include="active_cover.h" />
     <ClInclude Include="allreduce.h" />
+    <ClInclude Include="ae.h" />
     <ClInclude Include="api_status.h" />
     <ClInclude Include="array_parameters.h" />
     <ClInclude Include="audit_regressor.h" />
@@ -300,6 +301,7 @@
     <ClCompile Include="action_score.cc" />
     <ClCompile Include="active.cc" />
     <ClCompile Include="active_cover.cc" />
+    <ClCompile Include="ae.cc" />
     <ClCompile Include="allreduce_sockets.cc" />
     <ClCompile Include="allreduce_threads.cc" />
     <ClCompile Include="api_status.cc" />
