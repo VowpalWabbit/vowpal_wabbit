@@ -206,10 +206,10 @@ Input Options:
                                              beta_scale
   --cover arg (Default: 12)                  Cover size
   --oracular                                 Use Oracular-CAL style query or not
-  Aged Exploration Options:
-  --agedexp arg (=3, )                       Set number of exploration models (required to enable 
+Aged Exploration Options:
+  --agedexp arg (Default: 3)                 Set number of exploration models (required to enable 
                                              this reduction)
-  --epsilon arg (=0.05, )                    Epsilon-greedy exploration initial value
+  --epsilon arg (Default: 0.05)              Epsilon-greedy exploration initial value
 [Reduction] Audit Regressor Options:
   --audit_regressor arg                      Stores feature names and their regressor values. Same 
                                              dataset must be used for both regressor training and 
