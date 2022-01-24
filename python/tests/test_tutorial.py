@@ -1,4 +1,4 @@
-from vowpalwabbit import pyvw
+import vowpalwabbit
 import DistributionallyRobustUnitTestData as dro
 
 import collections
@@ -152,7 +152,7 @@ class Simulator:
                 #     print(actions.index(action))
                 vw_format = vw.parse(
                     self.to_vw_example_format(context, actions, (action, cost, prob)),
-                    pyvw.LabelType.CONTEXTUAL_BANDIT,
+                    vowpalwabbit.LabelType.CONTEXTUAL_BANDIT,
                 )
                 # 6. Learn
                 vw.learn(vw_format)
@@ -172,7 +172,7 @@ class Simulator:
 def _test_helper(
     vw_arg: str, num_iterations=2000, seed=10, has_automl=False, log_filename=None
 ):
-    vw = pyvw.Workspace(arg_str=vw_arg)
+    vw = vowpalwabbit.Workspace(arg_str=vw_arg)
     has_automl = "automl" in vw.get_enabled_reductions()
     sim = Simulator(seed=seed, has_automl=has_automl, debug_logfile=log_filename)
     ctr = sim.run_simulation(
@@ -189,7 +189,7 @@ def _test_helper_save_load(
     split = 1500
     before_save = num_iterations - split
 
-    first_vw = pyvw.Workspace(arg_str=vw_arg)
+    first_vw = vowpalwabbit.Workspace(arg_str=vw_arg)
     has_automl = "automl" in first_vw.get_enabled_reductions()
     sim = Simulator(seed=seed, has_automl=has_automl, debug_logfile=log_filename)
     # first chunk
@@ -201,7 +201,7 @@ def _test_helper_save_load(
     first_vw.save(model_file)
     first_vw.finish()
     # reload in another instance
-    other_vw = pyvw.Workspace(
+    other_vw = vowpalwabbit.Workspace(
         f"-i {model_file} {vw_arg}"
     )  # todo remove vw_arg from here
     # continue
