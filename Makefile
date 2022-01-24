@@ -16,7 +16,7 @@ ensure_cmake_profile:
 
 ensure_cmake_valgrind:
 	mkdir -p build
-	cd build; cmake .. -DVALGRIND_PROFILE=On
+	cd build; cmake .. -DVALGRIND_PROFILE=On -DCMAKE_BUILD_TYPE=Debug
 
 ensure_cmake_static:
 	mkdir -p build
