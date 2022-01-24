@@ -1,12 +1,12 @@
 ignoring namespaces beginning with: w
+creating cache_file = train-sets/dictionary_test.dat.cache
+Reading datafile = train-sets/dictionary_test.dat
+num sources = 1
 Num weight bits = 18
 learning rate = 0.5
 initial_t = 0
 power_t = 0.5
 decay_learning_rate = 1
-creating cache_file = train-sets/dictionary_test.dat.cache
-Reading datafile = train-sets/dictionary_test.dat
-num sources = 1
 scanned dictionary 'dictionary_test.dict' from 'train-sets/dictionary_test.dict', hash=3226e82e3d58b6b2
 dictionary dictionary_test.dict contains 4 items
 scanned dictionary 'dictionary_test.dict.gz' from 'train-sets/dictionary_test.dict.gz', hash=3226e82e3d58b6b2

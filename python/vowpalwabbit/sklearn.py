@@ -16,7 +16,7 @@ from sklearn.utils.extmath import log_logistic
 from sklearn.linear_model import LogisticRegression
 from sklearn.datasets import dump_svmlight_file
 from sklearn.utils import check_array, check_X_y, shuffle
-from vowpalwabbit import pyvw
+from vowpalwabbit import Workspace
 
 DEFAULT_NS = ""
 CONSTANT_HASH = 116060
@@ -33,7 +33,7 @@ class VW(BaseEstimator):
         flag to convert X input to vw format
     convert_labels : bool
         Convert labels of the form [0,1] to [-1,1]
-    vw_ : pyvw.Workspace
+    vw_ : vowpalwabbit.Workspace
         vw instance
     """
 
@@ -491,7 +491,7 @@ class VW(BaseEstimator):
         Returns
         -------
 
-        vw : pyvw.Workspace instance
+        vw : vowpalwabbit.Workspace instance
 
         """
         return self.vw_
@@ -541,7 +541,7 @@ class VW(BaseEstimator):
         # add vw attributes
         params.update(self._get_vw_params())
 
-        self.vw_ = pyvw.Workspace(**params)
+        self.vw_ = Workspace(**params)
 
         if X is not None:
             if self.convert_to_vw:

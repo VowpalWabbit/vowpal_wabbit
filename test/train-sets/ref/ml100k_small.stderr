@@ -1,14 +1,14 @@
 creating quadratic features for pairs: ui
 using l2 regularization = 2e-06
 final_regressor = models/movielens.reg
+creating cache_file = train-sets/ml100k_small_train.cache
+Reading datafile = train-sets/ml100k_small_train
+num sources = 1
 Num weight bits = 16
 learning rate = 0.05
 initial_t = 1
 power_t = 0
 decay_learning_rate = 0.97
-creating cache_file = train-sets/ml100k_small_train.cache
-Reading datafile = train-sets/ml100k_small_train
-num sources = 1
 Enabled reductions: rank, scorer-identity, count_label
 Input label = simple
 Output pred = scalar

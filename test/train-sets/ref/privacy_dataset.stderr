@@ -1,10 +1,10 @@
+using no cache
+Reading datafile = train-sets/privacy_dataset
+num sources = 1
 Num weight bits = 18
 learning rate = 0.5
 initial_t = 0
 power_t = 0.5
-using no cache
-Reading datafile = train-sets/privacy_dataset
-num sources = 1
 Enabled reductions: gd, scorer-identity, csoaa_ldf-rank, cb_adf, cb_explore_adf_greedy, shared_feature_merger, cbify-adf
 Input label = multiclass
 Output pred = multiclass

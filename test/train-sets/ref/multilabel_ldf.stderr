@@ -1,11 +1,11 @@
 predictions = multilabel_ldf.predict
+using no cache
+Reading datafile = train-sets/cs_test_multilabel.ldf
+num sources = 1
 Num weight bits = 18
 learning rate = 0.5
 initial_t = 0
 power_t = 0.5
-using no cache
-Reading datafile = train-sets/cs_test_multilabel.ldf
-num sources = 1
 Enabled reductions: gd, scorer-identity, csoaa_ldf-rank, shared_feature_merger
 Input label = cs
 Output pred = action_scores

@@ -3,13 +3,13 @@ Enabling FTRL based optimization
 Algorithm used: Coin Betting
 ftrl_alpha = 4
 ftrl_beta = 1
+using no cache
+Reading datafile = train-sets/cats.acpx
+num sources = 1
 Num weight bits = 18
 learning rate = 0.5
 initial_t = 0
 power_t = 0.5
-using no cache
-Reading datafile = train-sets/cats.acpx
-num sources = 1
 Enabled reductions: ftrl-Coin Betting, scorer-identity, binary, cats_tree, get_pmf, pmf_to_pdf, cb_explore_pdf, cats_pdf
 Input label = continuous
 Output pred = pdf
@@ -28,4 +28,4 @@ weighted example sum = 57.000000
 weighted label sum = 57.000000
 average loss = 0.267669
 total feature number = 570
-Learn() count per node: id=0, #l=21; id=1, #l=37; id=2, #l=20;
+Learn() count per node: id=0, #l=21; id=1, #l=37; id=2, #l=20; 
