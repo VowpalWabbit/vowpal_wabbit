@@ -283,8 +283,7 @@ public:
   bool active_csoaa = false;
   float active_csoaa_verify = 0.f;
 
-  VW::LEARNER::multi_learner* multi_base_learner = nullptr;
-  VW::LEARNER::single_learner* single_base_learner = nullptr;
+  VW::LEARNER::base_learner* base_learner;
   clock_t start_clock_time;
 
   CS::label empty_cs_label;
@@ -1100,8 +1099,7 @@ action single_prediction_notLDF(search_private& priv, example& ec, int policy, c
     cdbg << ' ' << ec.l.cs.costs[i].class_index << ':' << ec.l.cs.costs[i].x;
   cdbg << " ]" << endl;
 
-  assert(priv.single_base_learner != nullptr);
-  priv.single_base_learner->predict(ec, policy);
+  as_singleline(priv.base_learner)->predict(ec, policy);
 
   uint32_t act = priv.active_csoaa ? ec.pred.active_multiclass.predicted_class : ec.pred.multiclass;
   cdbg << "a=" << act << " from";
@@ -1253,8 +1251,7 @@ action single_prediction_LDF(search_private& priv, example* ecs, size_t ec_cnt, 
     ecs[a].ft_offset = priv.offset;
     tmp.push_back(&ecs[a]);
 
-    assert(priv.multi_base_learner != nullptr);
-    priv.multi_base_learner->predict(tmp, policy);
+    as_multiline(priv.base_learner)->predict(tmp, policy);
 
     ecs[a].ft_offset = old_offset;
     cdbg << "partial_prediction[" << a << "] = " << ecs[a].partial_prediction << endl;
@@ -1428,10 +1425,9 @@ void generate_training_example(search_private& priv, polylabel& losses, float we
     for (size_t is_local = 0; is_local <= static_cast<size_t>(priv.xv); is_local++)
     {
       int learner = select_learner(priv, priv.current_policy, priv.learn_learner_id, true, is_local > 0);
-      cdbg << "BEGIN single_base_learner->learn(ec, " << learner << ")" << endl;
-      assert(priv.single_base_learner != nullptr);
-      priv.single_base_learner->learn(ec, learner);
-      cdbg << "END   single_base_learner->learn(ec, " << learner << ")" << endl;
+      cdbg << "BEGIN base_learner->learn(ec, " << learner << ")" << endl;
+      as_singleline(priv.base_learner)->learn(ec, learner);
+      cdbg << "END   base_learner->learn(ec, " << learner << ")" << endl;
     }
     if (add_conditioning) del_example_conditioning(priv, ec);
     ec.l = old_label;
@@ -1480,8 +1476,7 @@ void generate_training_example(search_private& priv, polylabel& losses, float we
       }
 
       // learn with the multiline example
-      assert(priv.multi_base_learner != nullptr);
-      priv.multi_base_learner->learn(tmp, learner);
+      as_multiline(priv.base_learner)->learn(tmp, learner);
 
       // restore the offsets in examples
       int i = 0;
@@ -2224,7 +2219,7 @@ void inline adjust_auto_condition(search_private& priv)
 }
 
 template <bool is_learn>
-void do_actual_learning(search& sch, multi_ex& ec_seq)
+void do_actual_learning(search& sch, base_learner& base, multi_ex& ec_seq)
 {
   if (ec_seq.size() == 0) return;  // nothing to do :)
 
@@ -2233,6 +2228,7 @@ void do_actual_learning(search& sch, multi_ex& ec_seq)
 
   search_private& priv = *sch.priv;
   priv.offset = ec_seq[0]->ft_offset;
+  priv.base_learner = &base;
 
   adjust_auto_condition(priv);
   priv.read_example_last_id = ec_seq[ec_seq.size() - 1]->example_counter;
@@ -2272,24 +2268,6 @@ void do_actual_learning(search& sch, multi_ex& ec_seq)
   del_neighbor_features(priv, ec_seq);
 
   if (priv.task->run_takedown) priv.task->run_takedown(sch, ec_seq);
-}
-
-template <bool is_learn>
-void do_actual_learning_ldf(search& sch, multi_learner& base, multi_ex& ec_seq)
-{
-  if (ec_seq.size() == 0) return;  // nothing to do :)
-  search_private& priv = *sch.priv;
-  priv.multi_base_learner = &base;
-  do_actual_learning<is_learn>(sch, ec_seq);
-}
-
-template <bool is_learn>
-void do_actual_learning_non_ldf(search& sch, single_learner& base, multi_ex& ec_seq)
-{
-  if (ec_seq.size() == 0) return;  // nothing to do :)
-  search_private& priv = *sch.priv;
-  priv.single_base_learner = &base;
-  do_actual_learning<is_learn>(sch, ec_seq);
 }
 
 void end_pass(search& sch)
@@ -2783,39 +2761,20 @@ base_learner* setup(VW::setup_base_i& stack_builder)
 
   // No normal prediction is produced so the base prediction type is used. That type is unlikely to be accessible
   // though. TODO: either let search return a prediction or add a NO_PRED type.
-  learner<search, multi_ex>* l;
-  if (sch->is_ldf())
-  {
-    // base is multiline
-    l = VW::LEARNER::make_reduction_learner(std::move(sch), as_multiline(base), do_actual_learning_ldf<true>,
-        do_actual_learning_ldf<false>, stack_builder.get_setupfn_name(setup))
-            .set_learn_returns_prediction(true)
-            .set_params_per_weight(priv.total_number_of_policies * priv.num_learners)
-            .set_finish_example(finish_multiline_example)
-            .set_end_examples(end_examples)
-            .set_finish(search_finish)
-            .set_end_pass(end_pass)
-            .set_input_label_type(expected_label_type)
-            // .set_output_label(priv.cb_learner ? label_type_t::cb : label_type_t::cs)
-            // .set_input_prediction(priv.active_csoaa ? ec.pred.active_multiclass.predicted_class : ec.pred.multiclass)
-            .build();
-  }
-  else
-  {
-    // base is singleline
-    l = VW::LEARNER::make_reduction_learner(std::move(sch), as_singleline(base), do_actual_learning_non_ldf<true>,
-        do_actual_learning_non_ldf<false>, stack_builder.get_setupfn_name(setup))
-            .set_learn_returns_prediction(true)
-            .set_params_per_weight(priv.total_number_of_policies * priv.num_learners)
-            .set_finish_example(finish_multiline_example)
-            .set_end_examples(end_examples)
-            .set_finish(search_finish)
-            .set_end_pass(end_pass)
-            .set_input_label_type(expected_label_type)
-            // .set_output_label(priv.cb_learner ? label_type_t::cb : label_type_t::cs)
-            // .set_input_prediction(priv.active_csoaa ? ec.pred.active_multiclass.predicted_class : ec.pred.multiclass)
-            .build();
-  }
+
+  // base is multiline
+  learner<search, multi_ex>*  l = VW::LEARNER::make_reduction_learner(std::move(sch), base, do_actual_learning<true>,
+      do_actual_learning<false>, stack_builder.get_setupfn_name(setup))
+          .set_learn_returns_prediction(true)
+          .set_params_per_weight(priv.total_number_of_policies * priv.num_learners)
+          .set_finish_example(finish_multiline_example)
+          .set_end_examples(end_examples)
+          .set_finish(search_finish)
+          .set_end_pass(end_pass)
+          .set_input_label_type(expected_label_type)
+          // .set_output_label(priv.cb_learner ? label_type_t::cb : label_type_t::cs)
+          // .set_input_prediction(priv.active_csoaa ? ec.pred.active_multiclass.predicted_class : ec.pred.multiclass)
+          .build();
 
   return make_base(*l);
 }
@@ -2838,7 +2797,6 @@ float action_cost_loss(action a, const action* act, const float* costs, size_t s
 
 // the interface:
 bool search::is_ldf() { return priv->is_ldf; }
-void search::set_is_ldf(bool is_ldf) { priv->is_ldf = is_ldf; }
 
 action search::predict(example& ec, ptag mytag, const action* oracle_actions, size_t oracle_actions_cnt,
     const ptag* condition_on, const char* condition_on_names, const action* allowed_actions, size_t allowed_actions_cnt,
