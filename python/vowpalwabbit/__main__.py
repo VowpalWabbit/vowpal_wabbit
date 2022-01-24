@@ -1,6 +1,6 @@
 import sys
 
-from vowpalwabbit import pyvw
+import vowpalwabbit
 
 # Known limitations:
 # - Stdin cannot be used
@@ -9,7 +9,7 @@ from vowpalwabbit import pyvw
 
 def main():
     opts = sys.argv[1:]
-    pyvw.Workspace(" ".join(opts))
+    vowpalwabbit.Workspace(" ".join(opts))
 
 
 if __name__ == "__main__":
