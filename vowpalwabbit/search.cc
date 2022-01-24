@@ -2763,8 +2763,9 @@ base_learner* setup(VW::setup_base_i& stack_builder)
   // though. TODO: either let search return a prediction or add a NO_PRED type.
 
   // base is multiline
-  learner<search, multi_ex>*  l = VW::LEARNER::make_reduction_learner(std::move(sch), base, do_actual_learning<true>,
-      do_actual_learning<false>, stack_builder.get_setupfn_name(setup))
+  learner<search, multi_ex>* l =
+      VW::LEARNER::make_reduction_learner(std::move(sch), base, do_actual_learning<true>, do_actual_learning<false>,
+          stack_builder.get_setupfn_name(setup))
           .set_learn_returns_prediction(true)
           .set_params_per_weight(priv.total_number_of_policies * priv.num_learners)
           .set_finish_example(finish_multiline_example)
