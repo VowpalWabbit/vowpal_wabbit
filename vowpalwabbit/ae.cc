@@ -93,15 +93,16 @@ void predict(ae_data& data, VW::LEARNER::multi_learner& base, multi_ex& examples
   base.predict(examples, active_iter->get_model_idx());
 }
 
-void learn(ae_data& data, VW::LEARNER::multi_learner& base, multi_ex& ec)
+void learn(ae_data& data, VW::LEARNER::multi_learner& base, multi_ex& examples)
 {
   CB::cb_class logged{};
   uint64_t labelled_action = 0;
-  const auto it = std::find_if(ec.begin(), ec.end(), [](example* item) { return !item->l.cb.costs.empty(); });
-  if (it != ec.end())
+  const auto it =
+      std::find_if(examples.begin(), examples.end(), [](example* item) { return !item->l.cb.costs.empty(); });
+  if (it != examples.end())
   {
     logged = (*it)->l.cb.costs[0];
-    labelled_action = std::distance(ec.begin(), it);
+    labelled_action = std::distance(examples.begin(), it);
   }
 
   // Process each model, then update the upper/lower bounds for each model
@@ -109,10 +110,10 @@ void learn(ae_data& data, VW::LEARNER::multi_learner& base, multi_ex& ec)
   {
     // Update the scoring of all configs
     // Only call if learn calls predict is set
-    if (!base.learn_returns_prediction) { base.predict(ec, config_iter->get_model_idx()); }
-    base.learn(ec, config_iter->get_model_idx());
+    if (!base.learn_returns_prediction) { base.predict(examples, config_iter->get_model_idx()); }
+    base.learn(examples, config_iter->get_model_idx());
 
-    const uint32_t chosen_action = ec[0]->pred.a_s[0].action;
+    const uint32_t chosen_action = examples[0]->pred.a_s[0].action;
     const float w = logged.probability > 0 ? 1 / logged.probability : 0;
     const float r = -logged.cost;
     config_iter->update_bounds((chosen_action == labelled_action) ? 0 : w, r);
@@ -147,9 +148,9 @@ void learn(ae_data& data, VW::LEARNER::multi_learner& base, multi_ex& ec)
   }
 }
 
-void finish_example(VW::workspace& all, ae_data& data, multi_ex& ec)
+void finish_example(VW::workspace& all, ae_data& data, multi_ex& examples)
 {
-  VW::finish_example(all, ec);
+  VW::finish_example(all, examples);
   _UNUSED(data);
 }
 
