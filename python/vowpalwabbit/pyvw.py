@@ -280,9 +280,9 @@ class SearchTask:
 
         """
         if self.sch.predict_needs_example():
-            return self.vw.Example(initStringOrDict, labelType)
+            return self.vw.example(initStringOrDict, labelType)
         else:
-            return self.vw.Example(None, labelType)
+            return self.vw.example(None, labelType)
 
     def predict(self, my_example, useOracle=False):
         """Predict on the example
