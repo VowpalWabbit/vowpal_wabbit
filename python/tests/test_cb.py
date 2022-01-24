@@ -1,10 +1,7 @@
 import pandas as pd
-import sklearn as sk
-import numpy as np
 from os import path
-from vowpalwabbit import pyvw
+import vowpalwabbit
 
-import pytest
 import unittest
 import platform
 
@@ -93,7 +90,7 @@ def test_getting_started_example_legacy_cb():
 def helper_getting_started_example(which_cb):
     train_df, test_df = helper_get_data()
 
-    vw = pyvw.Workspace(which_cb + " 4 --log_level off", enable_logging=True)
+    vw = vowpalwabbit.Workspace(which_cb + " 4 --log_level off", enable_logging=True)
 
     for i in train_df.index:
         action = train_df.loc[i, "action"]
@@ -154,9 +151,9 @@ def test_getting_started_example_with():
     train_df, test_df = helper_get_data()
 
     # with syntax calls into vw.finish() automatically.
-    # you actually want to use 'with pyvw.Workspace("--cb 4") as vw:'
+    # you actually want to use 'with vowpalwabbit.Workspace("--cb 4") as vw:'
     # but we need to assert on vw.finished for test purposes
-    vw = pyvw.Workspace("--cb 4")
+    vw = vowpalwabbit.Workspace("--cb 4")
     with vw as vw:
         for i in train_df.index:
             action = train_df.loc[i, "action"]

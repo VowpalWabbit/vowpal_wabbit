@@ -1,5 +1,5 @@
 from vowpalwabbit import pyvw
-
+import vowpalwabbit
 
 def helper_options_to_list_strings(config):
     cmd_str_list = []
@@ -22,7 +22,7 @@ def test_vw_config_manager():
     }
     expected_reductions = {"gd", "scorer-identity", "count_label"}
 
-    vw = pyvw.Workspace(
+    vw = vowpalwabbit.Workspace(
         arg_str="--loss_function logistic -d test/train-sets/rcv1_small.dat --quiet"
     )
     config = vw.get_config()
@@ -37,7 +37,7 @@ def test_vw_config_manager():
     # do another iteration generating the cmd string from the output of previous
     new_args = " ".join(cmd_str_list)
 
-    other_vw = pyvw.Workspace(new_args)
+    other_vw = vowpalwabbit.Workspace(new_args)
     new_config = vw.get_config()
     new_cmd_str_list = helper_options_to_list_strings(new_config)
 
