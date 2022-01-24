@@ -176,7 +176,7 @@ class AttributeDescriptor(object):
         self.min_value = min_value
         self.max_value = max_value
 
-    def __set__(self, instance: Any, arg: str) -> None:
+    def __set__(self, instance: "AttributeDescriptor", arg: str) -> None:
         """Implement set protocol to enforce type (and value range) checking
         for managed class such as SimpleLabel, MulticlassLabel, Feature, etc.
 
@@ -213,12 +213,12 @@ class AttributeDescriptor(object):
 class SimpleLabel(object):
     """The simple label type for the constructor of DFtoVW."""
 
-    label = AttributeDescriptor("label", expected_type=(int, float))
+    label: Any = AttributeDescriptor("label", expected_type=(int, float))
     """Simple label value column name"""
-    weight = AttributeDescriptor("weight", expected_type=(int, float))
+    weight: Any = AttributeDescriptor("weight", expected_type=(int, float))
     """Simple label weight column name"""
 
-    def __init__(self, label: str, weight: Optional[str] = None):
+    def __init__(self, label: Hashable, weight: Optional[Hashable] = None):
         """Initialize a SimpleLabel instance.
 
         Args:
@@ -246,12 +246,12 @@ class SimpleLabel(object):
 class MulticlassLabel(object):
     """The multiclass label type for the constructor of DFtoVW."""
 
-    label = AttributeDescriptor("label", expected_type=(int,), min_value=1)
+    label: Any = AttributeDescriptor("label", expected_type=(int,), min_value=1)
     """Multiclass label value column name"""
-    weight = AttributeDescriptor("weight", expected_type=(int, float), min_value=0)
+    weight: Any = AttributeDescriptor("weight", expected_type=(int, float), min_value=0)
     """Multiclass label weight column name"""
 
-    def __init__(self, label: str, weight: Optional[str] = None):
+    def __init__(self, label: Hashable, weight: Optional[Hashable] = None):
         """Initialize a MulticlassLabel instance.
 
         Args:
@@ -279,10 +279,10 @@ class MulticlassLabel(object):
 class MultiLabel(object):
     """The multi labels type for the constructor of DFtoVW."""
 
-    label = AttributeDescriptor("label", expected_type=(int,), min_value=1)
+    label: Any = AttributeDescriptor("label", expected_type=(int,), min_value=1)
     """Multilabel label value column name"""
 
-    def __init__(self, label: Union[str, List[str]]):
+    def __init__(self, label: Union[Hashable, List[Hashable]]):
         """Initialize a MultiLabel instance.
 
         Args:
@@ -312,17 +312,17 @@ class MultiLabel(object):
 class ContextualbanditLabel(object):
     """The contextual bandit label type for the constructor of DFtoVW."""
 
-    action = AttributeDescriptor("action", expected_type=(int,), min_value=1)
+    action: Any = AttributeDescriptor("action", expected_type=(int,), min_value=1)
     """Contextual bandit label action column name"""
 
-    cost = AttributeDescriptor("cost", expected_type=(float, int))
+    cost: Any = AttributeDescriptor("cost", expected_type=(float, int))
     """Contextual bandit label cost column name"""
-    probability = AttributeDescriptor(
+    probability: Any = AttributeDescriptor(
         "probability", expected_type=(float,), min_value=0, max_value=1
     )
     """Contextual bandit label probability column name"""
 
-    def __init__(self, action: str, cost: str, probability: str):
+    def __init__(self, action: Hashable, cost: Hashable, probability: Hashable):
         """Initialize a ContextualbanditLabel instance.
 
         Args:
@@ -357,12 +357,12 @@ class ContextualbanditLabel(object):
 class Feature(object):
     """The feature type for the constructor of DFtoVW"""
 
-    value = AttributeDescriptor("value", expected_type=(str, int, float))
+    value: Any = AttributeDescriptor("value", expected_type=(str, int, float))
     """Feature value column name"""
 
     def __init__(
         self,
-        value: str,
+        value: Hashable,
         rename_feature: Optional[str] = None,
         as_type: Optional[str] = None,
     ):
@@ -407,10 +407,10 @@ class Feature(object):
 class _Tag(object):
     """A tag for the constructor of DFtoVW"""
 
-    tag = AttributeDescriptor("tag", expected_type=(str, int, float))
+    tag: Any = AttributeDescriptor("tag", expected_type=(str, int, float))
     """Tag column name"""
 
-    def __init__(self, tag: str):
+    def __init__(self, tag: Hashable):
         """
         Initialize a Tag instance.
 
@@ -556,6 +556,9 @@ class _ListLabel(object):
 
         # Unpack columns
         columns = set()
+        # Override the type to Any as labels have complex machinery that is not yet communicated via its type.
+        label_list: List[Any] = label_list
+
         for label in label_list:
             columns.update(label.columns)
         self.columns = columns
