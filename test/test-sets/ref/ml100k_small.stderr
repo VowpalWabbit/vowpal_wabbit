@@ -1,12 +1,12 @@
 creating quadratic features for pairs: ui
 only testing
-Num weight bits = 16
-learning rate = 10
-initial_t = 1
-power_t = 0.5
 using no cache
 Reading datafile = test-sets/ml100k_small_test
 num sources = 1
+Num weight bits = 16
+learning rate = 0.05
+initial_t = 1
+power_t = 0
 Enabled reductions: rank, scorer-identity, count_label
 Input label = simple
 Output pred = scalar

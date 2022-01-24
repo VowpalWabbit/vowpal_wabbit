@@ -46,6 +46,7 @@ extensions = [
 ]
 
 numpydoc_show_class_members = False
+autodoc_typehints_format = "short"
 
 templates_path = ["_templates"]
 

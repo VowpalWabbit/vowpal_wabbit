@@ -1,12 +1,12 @@
 only testing
 predictions = cbe_cover_e_fixed.predict
-Num weight bits = 18
-learning rate = 0.5
-initial_t = 0
-power_t = 0.5
 using no cache
 Reading datafile = train-sets/cb_explore_cover.dat
 num sources = 1
+Num weight bits = 18
+learning rate = 0.5
+initial_t = 8
+power_t = 0.5
 Enabled reductions: gd, scorer-identity, csoaa_ldf-rank, cb_adf, cb_explore_adf_cover, shared_feature_merger, cb_to_cbadf
 Input label = cb
 Output pred = action_probs

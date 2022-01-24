@@ -1070,6 +1070,29 @@ void parse_example_tweaks(options_i& options, VW::workspace& all)
   }
 }
 
+void parse_update_options(options_i& options, VW::workspace& all)
+{
+  option_group_definition update_args("Update");
+  update_args
+      .add(make_option("learning_rate", all.eta)
+               .default_value(0.5f)
+               .keep()
+               .allow_override()
+               .help("Set learning rate")
+               .short_name("l"))
+      .add(make_option("power_t", all.power_t).default_value(0.5f).keep().allow_override().help("T power value"))
+      .add(make_option("decay_learning_rate", all.eta_decay_rate)
+               .default_value(1.f)
+               .help("Set Decay factor for learning_rate between passes"))
+      .add(make_option("initial_t", all.sd->t).help("Initial t value"))
+      .add(make_option("feature_mask", all.feature_mask)
+               .help("Use existing regressor to determine which parameters may be updated.  If no initial_regressor "
+                     "given, also used for initial weights."));
+  all.options->add_and_parse(update_args);
+  options.add_and_parse(update_args);
+  all.initial_t = static_cast<float>(all.sd->t);
+}
+
 void parse_output_preds(options_i& options, VW::workspace& all)
 {
   std::string predictions;
@@ -1320,18 +1343,6 @@ VW::workspace& parse_args(
     all.example_parser = new parser{final_example_queue_limit, strict_parse};
     all.example_parser->_shared_data = all.sd;
 
-    option_group_definition update_args("Update");
-    update_args.add(make_option("learning_rate", all.eta).default_value(0.5f).help("Set learning rate").short_name("l"))
-        .add(make_option("power_t", all.power_t).default_value(0.5f).help("T power value"))
-        .add(make_option("decay_learning_rate", all.eta_decay_rate)
-                 .default_value(1.f)
-                 .help("Set Decay factor for learning_rate between passes"))
-        .add(make_option("initial_t", all.sd->t).help("Initial t value"))
-        .add(make_option("feature_mask", all.feature_mask)
-                 .help("Use existing regressor to determine which parameters may be updated.  If no initial_regressor "
-                       "given, also used for initial weights."));
-    all.options->add_and_parse(update_args);
-
     option_group_definition weight_args("Weight");
     weight_args
         .add(make_option("initial_regressor", all.initial_regressors).help("Initial regressor(s)").short_name("i"))
@@ -1381,7 +1392,6 @@ VW::workspace& parse_args(
 
     parse_diagnostics(*all.options, all);
 
-    all.initial_t = static_cast<float>(all.sd->t);
     return all;
   }
   catch (...)
@@ -1522,6 +1532,8 @@ void parse_modules(options_i& options, VW::workspace& all, bool interactions_set
   options.add_and_parse(rand_options);
   all.get_random_state()->set_random_state(all.random_seed);
 
+  parse_update_options(options, all);
+
   parse_feature_tweaks(options, all, interactions_settings_duplicated, dictionary_namespaces);  // feature tweaks
 
   parse_example_tweaks(options, all);  // example manipulation
@@ -1550,15 +1562,6 @@ void instantiate_learner(VW::workspace& all, std::unique_ptr<VW::setup_base_i> l
   // avoids misuse of this interface:
   learner_builder.reset();
   assert(learner_builder == nullptr);
-
-  if (!all.quiet)
-  {
-    *(all.trace_message) << "Num weight bits = " << all.num_bits << endl;
-    *(all.trace_message) << "learning rate = " << all.eta << endl;
-    *(all.trace_message) << "initial_t = " << all.sd->t << endl;
-    *(all.trace_message) << "power_t = " << all.power_t << endl;
-    if (all.numpasses > 1) *(all.trace_message) << "decay_learning_rate = " << all.eta_decay_rate << endl;
-  }
 }
 
 void parse_sources(options_i& options, VW::workspace& all, io_buf& model, bool skip_model_load)
@@ -1714,6 +1717,14 @@ VW::workspace* initialize_with_builder(std::unique_ptr<options_i, options_delete
     parse_modules(*all.options, all, interactions_settings_duplicated, dictionary_namespaces);
     instantiate_learner(all, std::move(learner_builder));
     parse_sources(*all.options, all, *model, skip_model_load);
+    if (!all.quiet)
+    {
+      *(all.trace_message) << "Num weight bits = " << all.num_bits << endl;
+      *(all.trace_message) << "learning rate = " << all.eta << endl;
+      *(all.trace_message) << "initial_t = " << all.sd->t << endl;
+      *(all.trace_message) << "power_t = " << all.power_t << endl;
+      if (all.numpasses > 1) *(all.trace_message) << "decay_learning_rate = " << all.eta_decay_rate << endl;
+    }
 
     // we must delay so parse_mask is fully defined.
     for (const auto& name_space : dictionary_namespaces) parse_dictionary_argument(all, name_space);
