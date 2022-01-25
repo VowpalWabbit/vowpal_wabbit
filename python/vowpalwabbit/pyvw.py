@@ -2,7 +2,7 @@
 """Python binding for pylibvw class"""
 
 from __future__ import division
-from typing import Any, List, Optional, Tuple, Type, Union
+from typing import Any, Dict, Iterator, List, Optional, Tuple, Type, Union
 import pylibvw
 import warnings
 import inspect
@@ -241,18 +241,27 @@ class SearchTask:
             self._call_vw(my_example, isTest=False)
 
     def example(
-        self, initStringOrDict=None, labelType: Optional[Union[int, LabelType]] = None
+        self,
+        initStringOrDict: Optional[
+            Union[
+                str,
+                Dict[str, List[Union[Tuple[Union[str, int], float], Union[str, int]]]],
+                Any,
+                pylibvw.example,
+            ]
+        ] = None,
+        labelType: Optional[Union[int, LabelType]] = None,
     ) -> "Example":
         """Create an example initStringOrDict can specify example as VW
         formatted string, or a dictionary labelType can specify the desire
         label type
 
         Args:
-            initStringOrDict (str/dict): Example in either string or dictionary form
-            labelType : The direct integer value of the :py:obj:`~vowpalwabbit.LabelType` enum can be used or the enum directly. Supplying 0 or None means to use the default label type based on the setup VW learner.
+            initStringOrDict: See description in :py:meth:`~vowpalwabbit.Example.__init__` for valid values
+            labelType : See description in :py:meth:`~vowpalwabbit.Example.__init__` for valid values
 
         Returns:
-            contructed example object
+            Constructed example object
         """
         if self.sch.predict_needs_example():
             return self.vw.example(initStringOrDict, labelType)
@@ -487,12 +496,13 @@ class Workspace(pylibvw.vw):
                 )
         return ec
 
-    def finish_example(self, ex):
-        """Should only be used in conjunction with the parse method
+    def finish_example(self, ex: Union["Example", List["Example"]]) -> None:
+        """Every example that is created with :py:meth:`~vowpalwabbit.Workspace.parse`, :py:meth:`~vowpalwabbit.Workspace.example`, or :py:class:`~vowpalwabbit.Example`, should be passed to this method when you are finished with them.
+
+        This will return them to the Workspace instance to be reused and it will update internal statistics. If you care about statistics of used Examples then you should only use them once before passing them to finish.
 
         Args:
-            ex : Example
-                example to be finished
+            ex: example or examples to be finished
         """
 
         if isinstance(ex, Example):
@@ -515,11 +525,11 @@ class Workspace(pylibvw.vw):
                 for x in ex:
                     x.finished = True
 
-    def num_weights(self):
+    def num_weights(self) -> int:
         """Get length of weight vector."""
         return pylibvw.vw.num_weights(self)
 
-    def get_weight(self, index, offset=0):
+    def get_weight(self, index, offset=0) -> float:
         """Get the weight at a particular position in the (learned) weight
         vector.
 
@@ -532,7 +542,9 @@ class Workspace(pylibvw.vw):
         """
         return pylibvw.vw.get_weight(self, index, offset)
 
-    def get_weight_from_name(self, feature_name: str, namespace_name: str = " "):
+    def get_weight_from_name(
+        self, feature_name: str, namespace_name: str = " "
+    ) -> float:
         """Get the weight based on the feature name and the namespace name.
 
         Args
@@ -556,7 +568,7 @@ class Workspace(pylibvw.vw):
         """Perform an online update
 
         Args:
-            ec: examples on which the model gets updated
+            ec: Examples on which the model gets updated. If using a single object the learner must be a single line learner. If using a list of objects the learner must be a multiline learner. If passing strings they are parsed using :py:meth:`~vowpalwabbit.Workspace.parse` before being learned from. If passing Example objects then they must be given to :py:meth:`~vowpalwabbit.Workspace.finish_example` at a later point.
         """
         # If a string was given, parse it before passing to learner.
         new_example = False
@@ -592,17 +604,14 @@ class Workspace(pylibvw.vw):
         ec: Union["Example", List["Example"], str, List[str]],
         prediction_type: Optional[Union[int, PredictionType]] = None,
     ):
-        """Just make a prediction on the example
+        """Make a prediction on the example
 
         Args:
-            ec: examples to be predicted
-            prediction_type : optional, by default is None
-                if provided then the matching return type is
-                used otherwise the the learner's prediction type will determine the
-                output.
+            ec: Examples of which to get a prediction from. If using a single object the learner must be a single line learner. If using a list of objects the learner must be a multiline learner. If passing strings they are parsed using :py:meth:`~vowpalwabbit.Workspace.parse` before being predicted on. If passing Example objects then they must be given to :py:meth:`~vowpalwabbit.Workspace.finish_example` at a later point.
+            prediction_type: If none, use the prediction type of the example object. This is usually what is wanted. To request a specific type a value can be supplied here.
 
         Returns:
-            Prediction made on each examples
+            Prediction based on the given example
         """
 
         new_example = False
@@ -649,11 +658,11 @@ class Workspace(pylibvw.vw):
 
         return prediction
 
-    def save(self, filename):
+    def save(self, filename: str) -> None:
         """save model to disk"""
         pylibvw.vw.save(self, filename)
 
-    def finish(self):
+    def finish(self) -> None:
         """stop VW by calling finish (and, eg, write weights to disk)"""
         if not self.finished and self.init:
             pylibvw.vw.finish(self)
@@ -675,17 +684,22 @@ class Workspace(pylibvw.vw):
             raise Exception("enable_logging set to false")
 
     def example(
-        self, stringOrDict=None, labelType: Optional[Union[int, LabelType]] = None
+        self,
+        stringOrDict: Optional[
+            Union[
+                str,
+                Dict[str, List[Union[Tuple[Union[str, int], float], Union[str, int]]]],
+                Any,
+                pylibvw.example,
+            ]
+        ] = None,
+        labelType: Optional[Union[int, LabelType]] = None,
     ) -> "Example":
-        """Create an example initStringOrDict can specify example as VW
-        formatted string, or a dictionary labelType can specify the desire
-        label type
+        """Helper function to create an example object associated with this Workspace instance.
 
         Args:
-            initStringOrDict : str/dict
-                Example in either string or dictionary form
-            labelType : The direct integer value of the :py:obj:`~vowpalwabbit.LabelType` enum can be used or the enum directly. Supplying 0 or None means to use the default label type based on the setup VW learner.
-
+            stringOrDict: See description in :py:meth:`~vowpalwabbit.Example.__init__` for valid values
+            labelType : See description in :py:meth:`~vowpalwabbit.Example.__init__` for valid values
         Returns:
             Constructed Example
 
@@ -866,16 +880,21 @@ class NamespaceId:
     in a particular example. Mostly used internally, you shouldn't
     really need to touch this."""
 
-    def __init__(self, ex, id):
+    id: Optional[int]
+    """Index into the list of example feature groups for this given namespace"""
+    ns: str
+    """Single character respresenting the namespace index"""
+    ord_ns: int
+    """Integer representation of the ns field"""
+
+    def __init__(self, ex: "Example", id: Union[int, str]):
         """Given an example and an id, construct a NamespaceId.
 
         Args:
-            ex : Example
-                example used to create a namespace id
-            id : integer/str
-                The id can either be an integer (in which case we take it to be an
-                index into ex.indices[]) or a string (in which case we take
-                the first character as the namespace id).
+            ex: example used to create a namespace id
+            id:
+                - If int, uses that as an index into this Examples list of feature groups to get the namespace id character
+                - If str, uses the first character as the namespace id character
         """
         if isinstance(id, int):  # you've specified a namespace by index
             if id < 0 or id >= ex.num_namespaces():
@@ -902,14 +921,13 @@ class ExampleNamespace:
     indexing like ex['x'][0] to get the 0th feature in namespace 'x'
     in example ex."""
 
-    def __init__(self, ex, ns, ns_hash=None):
+    def __init__(self, ex: "Example", ns: NamespaceId, ns_hash: Optional[int] = None):
         """Construct an ExampleNamespace
 
         Args:
-            ex (Example): examples from which namespace is to be extracted
-            ns (NamespaceId): Target namespace
-            ns_hash : Optional, by default is None
-                The hash of the namespace
+            ex: examples from which namespace is to be extracted
+            ns: Target namespace
+            ns_hash: The hash of the namespace
         """
         if not isinstance(ns, NamespaceId):
             raise TypeError("ns should an instance of NamespaceId.")
@@ -917,31 +935,29 @@ class ExampleNamespace:
         self.ns = ns
         self.ns_hash = ns_hash
 
-    def num_features_in(self):
+    def num_features_in(self) -> int:
         """Return the total number of features in this namespace."""
         return self.ex.num_features_in(self.ns)
 
-    def __getitem__(self, i):
+    def __getitem__(self, i) -> Tuple[int, float]:
         """Get the feature/value pair for the ith feature in this
         namespace."""
         f = self.ex.feature(self.ns, i)
         v = self.ex.feature_weight(self.ns, i)
         return (f, v)
 
-    def iter_features(self):
+    def iter_features(self) -> Iterator[Tuple[int, float]]:
         """iterate over all feature/value pairs in this namespace."""
         for i in range(self.num_features_in()):
             yield self[i]
 
-    def push_feature(self, feature, v=1.0):
+    def push_feature(self, feature: Union[str, int], v: float = 1.0):
         """Add an unhashed feature to the current namespace (fails if
         setup has already run on this example).
 
         Args:
-            feature : integer/str
-                Feature to be pushed to current namespace
-            v : float
-                Feature value, by default is 1.0
+            feature: Feature to be pushed to current namespace
+            v: Feature value, by default is 1.0
         """
         if self.ns_hash is None:
             self.ns_hash = self.ex.vw.hash_space(self.ns)
@@ -953,21 +969,30 @@ class ExampleNamespace:
         features to pop."""
         return self.ex.pop_feature(self.ns)
 
-    def push_features(self, ns, featureList):
+    def push_features(self, feature_list, feature_list_legacy=None):
         """Push a list of features to a given namespace.
 
         Args:
-            ns : namespace
-                namespace to which feature list is to be pushed
-            featureList : list
-                Each feature in the list can either be an integer (already hashed)
+            feature_list (List[Union[Tuple[Union[str, int], float], Union[str, int]]]): Each feature in the list can either be an integer (already hashed)
                 or a string (to be hashed) and may be paired with a value or not
                 (if not, the value is assumed to be 1.0).
 
+
         Examples:
             See :py:meth:`vowpalwabbit.Example.push_features` for examples.
+
+            This function used to have a `ns` argument that never did anything and a `featureList` argument. The `ns` argument has been removed, so inly a feature list should be passed now.
+            The function checks if the old way of calling was used and issues a warning.
         """
-        self.ex.push_features(self.ns, featureList)
+
+        if feature_list_legacy is not None:
+            warnings.warn(
+                "push_features only accepts a single positional argument now. Please remove the first unused ns argument.",
+                DeprecationWarning,
+            )
+            feature_list = feature_list_legacy
+
+        self.ex.push_features(self.ns, feature_list)
 
 
 class AbstractLabel:
@@ -978,7 +1003,11 @@ class AbstractLabel:
 
     @staticmethod
     def from_example(ex: "Example") -> "AbstractLabel":
-        """grab a label from a given VW example"""
+        """Extract a label from the given example.
+
+        Args:
+            ex: example from which label is to be extracted
+        """
         raise Exception("from_example not yet implemented")
 
     def __str__(self):
@@ -1391,23 +1420,36 @@ class Example(pylibvw.example):
     def __init__(
         self,
         vw: Workspace,
-        initStringOrDictOrRawExample=None,
+        initStringOrDictOrRawExample: Optional[
+            Union[
+                str,
+                Dict[str, List[Union[Tuple[Union[str, int], float], Union[str, int]]]],
+                Any,
+                pylibvw.example,
+            ]
+        ] = None,
         labelType: Optional[Union[int, LabelType]] = None,
     ):
         """Construct a new example from vw.
 
         Args:
             vw : Owning workspace of this example object
-            initStringOrDictOrRawExample (dict/string/None): If initString is None, you get an "empty" example which you
-                can construct by hand (see, eg, example.push_features).
-                If initString is a string, then this string is parsed as
-                it would be from a VW data file into an example (and
-                "setup_example" is run). if it is a dict, then we add all
-                features in that dictionary. Finally, if it's a function,
-                we (repeatedly) execute it fn() until it's not a function
-                any more(for lazy feature computation). Passing a function is deprecated. By default is None
-            labelType: :py:obj:`~vowpalwabbit.LabelType` value or corresponding integer value (integer is deprecated). Supplying 0 or None means to use the default label type based on the setup VW learner.
+            initStringOrDictOrRawExample: Content to initialize the example with.
 
+                - If None, created as an empty example
+                - If a string, parsed as a VW example string
+                - If a pylibvw.example, wraps the native example. This is advanced and should rarely be used.
+                - If is a callable object will be called until it is no longer callable. At that point it should be another of the supported types.
+
+                    .. deprecated:: 9.0.0
+                        Using a callable object is no longer supported.
+
+                - If a dict, the keys are the namespace names and the values can either be an integer (already hashed) or a string (to be hashed) and may be paired with a value or not
+                (if not, the value is assumed to be 1.0).
+            labelType: Which label type this example contains. If None (or 0), the label type is inferred from the workspace configuration.
+
+                .. deprecated:: 9.0.0
+                        Supplying an integer is no longer supported. Use the LabelType enum instead.
         See Also:
             :py:class:`~vowpalwabbit.Workspace`
         """
@@ -1465,7 +1507,7 @@ class Example(pylibvw.example):
         self.stride = vw.get_stride()
         self.finished = False
 
-    def get_ns(self, id) -> NamespaceId:
+    def get_ns(self, id: Union[NamespaceId, str, int]) -> NamespaceId:
         """Construct a NamespaceId
 
         Argss:
@@ -1480,19 +1522,17 @@ class Example(pylibvw.example):
         else:
             return NamespaceId(self, id)
 
-    def __getitem__(self, id):
+    def __getitem__(self, id: Union[NamespaceId, str, int]) -> ExampleNamespace:
         """Get an ExampleNamespace object associated with the given
         namespace id."""
         return ExampleNamespace(self, self.get_ns(id))
 
-    def feature(self, ns, i) -> int:
+    def feature(self, ns: Union[NamespaceId, str, int], i: int) -> int:
         """Get the i-th hashed feature id in a given namespace
 
         Args:
-            ns : namespace
-                namespace used to get the feature
-            i : integer
-                to get i-th hashed feature id in a given ns. It must range from
+            ns: namespace used to get the feature
+            i: to get i-th hashed feature id in a given ns. It must range from
                 0 to self.num_features_in(ns)-1
 
         Returns:
@@ -1504,14 +1544,12 @@ class Example(pylibvw.example):
             f = (f - self.get_ft_offset()) // self.stride
         return f
 
-    def feature_weight(self, ns, i) -> float:
+    def feature_weight(self, ns: Union[NamespaceId, str, int], i: int) -> float:
         """Get the value(weight) associated with a given feature id
 
         Args:
-            ns : namespace
-                namespace used to get the feature id
-            i : integer
-                to get the weight of i-th feature in the given ns. It must range
+            ns: namespace used to get the feature id
+            i: to get the weight of i-th feature in the given ns. It must range
                 from 0 to self.num_features_in(ns)-1
 
         Returns:
@@ -1554,7 +1592,7 @@ class Example(pylibvw.example):
             self.setup_example()
         self.vw.learn(self)
 
-    def sum_feat_sq(self, ns) -> float:
+    def sum_feat_sq(self, ns: Union[NamespaceId, str, int]) -> float:
         """Get the total sum feature-value squared for a given
         namespace
 
@@ -1567,7 +1605,7 @@ class Example(pylibvw.example):
         """
         return pylibvw.example.sum_feat_sq(self, self.get_ns(ns).ord_ns)
 
-    def num_features_in(self, ns) -> int:
+    def num_features_in(self, ns: Union[NamespaceId, str, int]) -> int:
         """Get the total number of features in a given namespace
 
         Args:
@@ -1579,18 +1617,20 @@ class Example(pylibvw.example):
         """
         return pylibvw.example.num_features_in(self, self.get_ns(ns).ord_ns)
 
-    def get_feature_id(self, ns, feature, ns_hash=None) -> int:
+    def get_feature_id(
+        self,
+        ns: Union[NamespaceId, str, int],
+        feature: Union[int, str],
+        ns_hash: Optional[int] = None,
+    ) -> int:
         """Get the hashed feature id for a given feature in a given
         namespace. feature can either be an integer (already a feature
         id) or a string, in which case it is hashed.
 
         Args:
-            ns : namespace
-                namespace used to get the feature
-            feature : integer/string
-                If integer the already a feature else will be hashed
-            ns_hash : Optional, by default is None
-                The hash of the namespace
+            ns: namespace used to get the feature
+            feature: If integer the already a feature else will be hashed
+            ns_hash: The hash of the namespace. Optional.
 
         Returns:
             Hashed feature id
@@ -1608,7 +1648,9 @@ class Example(pylibvw.example):
             return self.vw.hash_feature(feature, ns_hash)
         raise Exception("cannot extract feature of type: " + str(type(feature)))
 
-    def push_hashed_feature(self, ns, f, v=1.0) -> None:
+    def push_hashed_feature(
+        self, ns: Union[NamespaceId, str, int], f: int, v: float = 1.0
+    ) -> None:
         """Add a hashed feature to a given namespace.
 
         Args:
@@ -1623,28 +1665,30 @@ class Example(pylibvw.example):
             self.unsetup_example()
         pylibvw.example.push_hashed_feature(self, self.get_ns(ns).ord_ns, f, v)
 
-    def push_feature(self, ns, feature, v=1.0, ns_hash=None) -> None:
+    def push_feature(
+        self,
+        ns: Union[NamespaceId, str, int],
+        feature: Union[str, int],
+        v: float = 1.0,
+        ns_hash: Optional[int] = None,
+    ) -> None:
         """Add an unhashed feature to a given namespace
 
         Args:
-            ns : namespace
-                namespace in which the feature is to be pushed
-            f : integer
-                feature
-            v : float
-                The value of the feature, be default is 1.0
+            ns: namespace in which the feature is to be pushed
+            f: feature
+            v: The value of the feature, be default is 1.0
             ns_hash : Optional, by default is None
                 The hash of the namespace
         """
         f = self.get_feature_id(ns, feature, ns_hash)
         self.push_hashed_feature(ns, f, v)
 
-    def pop_feature(self, ns) -> bool:
+    def pop_feature(self, ns: Union[NamespaceId, str, int]) -> bool:
         """Remove the top feature from a given namespace
 
         Args:
-            ns : namespace
-                namespace from which feature is popped
+            ns: namespace from which feature is popped
 
         Returns:
             True if feature was removed else False as no feature was there to
@@ -1654,14 +1698,13 @@ class Example(pylibvw.example):
             self.unsetup_example()
         return pylibvw.example.pop_feature(self, self.get_ns(ns).ord_ns)
 
-    def push_namespace(self, ns) -> None:
+    def push_namespace(self, ns: Union[NamespaceId, str, int]) -> None:
         """Push a new namespace onto this example.
         You should only do this if you're sure that this example doesn't
         already have the given namespace
 
         Args:
-            ns : namespace
-                namespace which is to be pushed onto example
+            ns: namespace which is to be pushed onto example
 
         """
         if self.setup_done:
@@ -1679,25 +1722,26 @@ class Example(pylibvw.example):
             self.unsetup_example()
         return pylibvw.example.pop_namespace(self)
 
-    def ensure_namespace_exists(self, ns):
+    def ensure_namespace_exists(self, ns: Union[NamespaceId, str, int]):
         """Check to see if a namespace already exists.
 
         Args:
-            ns : namespace
-                If namespace exists does, do nothing. If it doesn't, add it.
+            ns: If namespace exists does, do nothing. If it doesn't, add it.
         """
         if self.setup_done:
             self.unsetup_example()
         return pylibvw.example.ensure_namespace_exists(self, self.get_ns(ns).ord_ns)
 
-    def push_features(self, ns, featureList):
+    def push_features(
+        self,
+        ns: Union[NamespaceId, str, int],
+        featureList: List[Union[Tuple[Union[str, int], float], Union[str, int]]],
+    ):
         """Push a list of features to a given namespace.
 
         Args:
-            ns :  namespace
-                namespace in which the features are pushed
-            featureList : list
-                Each feature in the list can either be an integer
+            ns: namespace in which the features are pushed
+            featureList : Each feature in the list can either be an integer
                 (already hashed) or a string (to be hashed) and may be
                 paired with a value or not (if not, the value is assumed to be 1.0
 
@@ -1735,7 +1779,7 @@ class Example(pylibvw.example):
         #                        + str(type(feature)))
         #     self.push_feature(ns, f, v, ns_hash)
 
-    def iter_features(self):
+    def iter_features(self) -> Iterator[Tuple[int, float]]:
         """Iterate over all feature/value pairs in this example (all
         namespace included)."""
         for ns_id in range(self.num_namespaces()):  # iterate over every namespace

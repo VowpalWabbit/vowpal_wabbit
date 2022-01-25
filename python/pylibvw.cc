@@ -600,6 +600,7 @@ void ex_push_feature(example_ptr ec, unsigned char ns, uint32_t fid, float v)
   ec->reset_total_sum_feat_sq();
 }
 
+// List[Union[Tuple[Union[str,int], float], Union[str,int]]]
 void ex_push_feature_list(example_ptr ec, vw_ptr vw, unsigned char ns, py::list& a)
 {  // warning: assumes namespace exists!
   char ns_str[2] = {(char)ns, 0};
@@ -672,6 +673,7 @@ void ex_ensure_namespace_exists(example_ptr ec, unsigned char ns)
   ex_push_namespace(ec, ns);
 }
 
+// Dict[str, List[Union[Tuple[Union[str,int], float], Union[str,int]]]]
 void ex_push_dictionary(example_ptr ec, vw_ptr vw, py::dict& dict)
 {
   const py::object objectKeys = py::object(py::handle<>(PyObject_GetIter(dict.keys().ptr())));
