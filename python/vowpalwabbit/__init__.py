@@ -5,6 +5,7 @@ import importlib as _importlib
 import warnings as _warnings
 
 __all__ = [
+    "AbstractLabel",
     "ActionScore",
     "CBContinuousLabel",
     "CBContinuousLabelElement",
@@ -33,6 +34,7 @@ __all__ = [
 from .version import __version__
 from . import pyvw
 from .pyvw import (
+    AbstractLabel,
     ActionScore,
     CBContinuousLabel,
     CBContinuousLabelElement,
