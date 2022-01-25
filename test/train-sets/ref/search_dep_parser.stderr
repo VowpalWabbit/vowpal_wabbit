@@ -11,15 +11,15 @@ Input label = cs
 Output pred = multiclass
 average    since      instance            current true      current predicted   cur   cur   predic    cache  examples          
 loss       last        counter           output prefix          output prefix  pass   pol     made     hits    gener  beta    
-88.000000  88.000000         1  [43:1 5:2 5:2 5:2 1..] [0:8 1:1 2:1 3:1 4:..]     0     0      144        0      144  0.014199
-48.000000  8.000000          2  [2:2 3:5 0:8 3:7 3:4 ] [0:8 1:1 2:1 3:3 1:4 ]     0     0      157        0      156  0.015381
-28.750000  9.500000          4  [2:2 3:5 0:8 3:7 3:4 ] [2:2 3:5 0:8 3:7 3:4 ]     1     0      319        0      312  0.030623
-14.625000  0.500000          8  [2:2 3:5 0:8 3:7 3:4 ] [2:2 3:5 0:8 3:7 3:4 ]     3     0      642        0      624  0.060402
+88.000000  88.000000         1  [43:1 5:2 5:2 5:2 1..] [0:8 1:1 2:1 3:1 4:..]     0     0      144        0      141  0.013903
+47.500000  7.000000          2  [2:2 3:5 0:8 3:7 99..] [4:2 4:2 4:2 0:8 99..]     0     0      154        0      150  0.014790
+29.000000  10.500000         4  [2:2 3:5 0:8 3:7 99..] [2:2 3:5 0:8 3:7 99..]     1     0      307        0      300  0.029459
+14.500000  0.000000          8  [2:2 3:5 0:8 3:7 99..] [2:2 3:5 0:8 3:7 99..]     3     0      618        0      600  0.058144
 
 finished run
 number of examples per pass = 2
 passes used = 6
 weighted example sum = 12.000000
 weighted label sum = 0.000000
-average loss = 9.916667
-total feature number = 275092
+average loss = 9.666667
+total feature number = 267433

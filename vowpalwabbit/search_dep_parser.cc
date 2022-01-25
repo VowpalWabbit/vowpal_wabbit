@@ -333,7 +333,7 @@ void get_valid_actions(Search::search& sch, v_array<uint32_t>& valid_action, uin
   {
     temp.clear();
     for (size_t i = 0; i <= 4; i++) temp.push_back(1);
-    if (idx > n)
+    if (idx >= n)
     {
       temp[SHIFT] = 0;
       temp[REDUCE_RIGHT] = 0;
@@ -597,9 +597,9 @@ void run(Search::search& sch, multi_ex& ec)
   Search::predictor P(sch, static_cast<ptag>(0));
   while (true)
   {
-    if (sys == arc_hybrid && stack.size() <= 1 && idx > n)
+    if (sys == arc_hybrid && stack.size() <= 1 && idx >= n)
       break;
-    else if (sys == arc_eager && stack.size() == 0 && idx > n)
+    else if (sys == arc_eager && stack.size() == 0 && idx >= n)
       break;
     bool computedFeatures = false;
     if (sch.predictNeedsExample())
