@@ -970,19 +970,31 @@ class ExampleNamespace:
         return self.ex.pop_feature(self.ns)
 
     def push_features(
-        self, featureList: List[Union[Tuple[Union[str, int], float], Union[str, int]]]
+        self, feature_list, feature_list_legacy=None
     ):
         """Push a list of features to a given namespace.
 
         Args:
-            featureList : Each feature in the list can either be an integer (already hashed)
+            feature_list (List[Union[Tuple[Union[str, int], float], Union[str, int]]]): Each feature in the list can either be an integer (already hashed)
                 or a string (to be hashed) and may be paired with a value or not
                 (if not, the value is assumed to be 1.0).
 
+
         Examples:
             See :py:meth:`vowpalwabbit.Example.push_features` for examples.
+
+            This function used to have a `ns` argument that never did anything and a `featureList` argument. The `ns` argument has been removed, so inly a feature list should be passed now.
+            The function checks if the old way of calling was used and issues a warning.
         """
-        self.ex.push_features(self.ns, featureList)
+
+        if feature_list_legacy is not None:
+            warnings.warn(
+                "push_features only accepts a single positional argument now. Please remove the first unused ns argument.",
+                DeprecationWarning,
+            )
+            feature_list = feature_list_legacy
+
+        self.ex.push_features(self.ns, feature_list)
 
 
 class AbstractLabel:
