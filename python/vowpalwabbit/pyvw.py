@@ -1450,12 +1450,15 @@ class Example(pylibvw.example):
 
                 .. deprecated:: 9.0.0
                         Supplying an integer is no longer supported. Use the LabelType enum instead.
-
         See Also:
             :py:class:`~vowpalwabbit.Workspace`
         """
 
         while hasattr(initStringOrDictOrRawExample, "__call__"):
+            warnings.warn(
+                "Passing a callable object for initStringOrDictOrRawExample is deprecated and will be removed in a future version.",
+                DeprecationWarning,
+            )
             initStringOrDictOrRawExample = initStringOrDictOrRawExample()
 
         if labelType is None:
@@ -1787,7 +1790,7 @@ class Example(pylibvw.example):
                 yield f, v
 
     def get_label(
-        self, label_class: Optional[Union[int, LabelType, AbstractLabel]] = None
+        self, label_class: Optional[Union[int, LabelType, Type[AbstractLabel]]] = None
     ) -> Union[
         "AbstractLabel",
         "SimpleLabel",
