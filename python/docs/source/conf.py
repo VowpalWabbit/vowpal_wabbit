@@ -38,8 +38,10 @@ extensions = [
     "sphinx.ext.doctest",
     "sphinx.ext.intersphinx",
     "sphinx.ext.coverage",
-    "numpydoc",
+    "sphinx.ext.napoleon",
     "sphinx.ext.githubpages",
+    "sphinx.ext.todo",
+    "sphinx_autodoc_typehints",
     "sphinx_thebe",
     "myst_nb",
     "sphinx_reredirects",
@@ -47,6 +49,7 @@ extensions = [
 
 numpydoc_show_class_members = False
 autodoc_typehints_format = "short"
+todo_include_todos = True
 
 templates_path = ["_templates"]
 
@@ -122,7 +125,10 @@ html_sidebars = {"**": ["search-field.html", "nav-toc-override.html"]}
 # -- Options for intersphinx extension ---------------------------------------
 
 # Example configuration for intersphinx: refer to the Python standard library.
-intersphinx_mapping = {"https://docs.python.org/": None}
+intersphinx_mapping = {
+    "https://docs.python.org/3/": None,
+    "http://pandas.pydata.org/pandas-docs/dev": None
+}
 
 html_favicon = "favicon.png"
 
