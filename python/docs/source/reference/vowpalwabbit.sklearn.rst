@@ -7,7 +7,8 @@ This is an optional module which implements `sklearn` compatability.
 Deprecated alias
 ----------------
 
-`vowpalwabbit.sklearn_vw` is a deprecated alias for :py:obj:`vowpalwabbit.sklearn`
+.. deprecated:: 9.0.0
+    The module name ``vowpalwabbit.sklearn_vw`` has been renamed to :py:mod:`vowpalwabbit.sklearn`. Please use the new module name instead.
 
 Example usage
 -------------
