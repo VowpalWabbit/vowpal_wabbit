@@ -190,24 +190,13 @@ class SearchTask:
 
     def __init__(self, vw, sch, num_actions):
         """
-        Parameters
-        ----------
+        Args:
+            vw: The workspace instance
+            sch: The search instance
+            num_actions (int): The number of actions with the object can be initialized with
 
-        vw : vw object
-        sch : search object
-        num_actions : integer
-            The number of actions with the object can be initialized with
-
-        Returns
-        -------
-
-        self : SearchTask
-
-        See Also
-        --------
-
-        :py:obj:`~vowpalwabbit.Workspace`.
-
+        See Also:
+            :py:class:`~vowpalwabbit.Workspace`
         """
 
         self.vw = vw
@@ -244,61 +233,42 @@ class SearchTask:
     def learn(self, data_iterator):
         """Train search task by providing an iterator of examples.
 
-        Parameters
-        ----------
-
-        data_iterator: iterable objects
-            Consists of examples to be learned
-
-        Returns
-        -------
-
-        self : SearchTask
-
+        Args:
+            data_iterator: iterable objects
+                Consists of examples to be learned
         """
         for my_example in data_iterator.__iter__():
             self._call_vw(my_example, isTest=False)
 
     def example(
         self, initStringOrDict=None, labelType: Optional[Union[int, LabelType]] = None
-    ):
+    ) -> "Example":
         """Create an example initStringOrDict can specify example as VW
         formatted string, or a dictionary labelType can specify the desire
         label type
 
-        Parameters
-        ----------
+        Args:
+            initStringOrDict (str/dict): Example in either string or dictionary form
+            labelType : The direct integer value of the :py:obj:`~vowpalwabbit.LabelType` enum can be used or the enum directly. Supplying 0 or None means to use the default label type based on the setup VW learner.
 
-        initStringOrDict : str/dict
-            Example in either string or dictionary form
-        labelType : The direct integer value of the :py:obj:`~vowpalwabbit.LabelType` enum can be used or the enum directly. Supplying 0 or None means to use the default label type based on the setup VW learner.
-
-        Returns
-        -------
-
-        out : Example
-
+        Returns:
+            contructed example object
         """
         if self.sch.predict_needs_example():
-            return self.vw.Example(initStringOrDict, labelType)
+            return self.vw.example(initStringOrDict, labelType)
         else:
-            return self.vw.Example(None, labelType)
+            return self.vw.example(None, labelType)
 
-    def predict(self, my_example, useOracle=False):
+    def predict(self, my_example, useOracle: bool = False):
         """Predict on the example
 
-        Parameters
-        ----------
+        Args:
+            my_example (Example):
+                example used for prediction
+            useOracle : Use oracle for this prediction
 
-        my_example : Example
-            example used for prediction
-        useOracle : bool
-
-        Returns
-        -------
-
-        out : integer
-            Prediction on the example
+        Returns:
+            int: prediction of this example
         """
         self._call_vw(my_example, isTest=True, useOracle=useOracle)
         return self._output
@@ -307,25 +277,21 @@ class SearchTask:
 def get_prediction(ec, prediction_type: Union[int, PredictionType]):
     """Get specified type of prediction from example
 
-    Parameters
-    ----------
+    .. deprecated:: 9.0.0
+        Use :py:meth:`~vowpalwabbit.Example.get_prediction` instead
 
-    ec : Example
-    prediction_type : either the integer value of the :py:obj:`~vowpalwabbit.PredictionType` enum or the enum itself
+    Args:
+        ec : Example
+        prediction_type : either the integer value of the :py:obj:`~vowpalwabbit.PredictionType` enum or the enum itself
 
-    Examples
-    --------
+    Examples:
+        >>> from vowpalwabbit import Workspace, PredictionType, pyvw
+        >>> vw = Workspace(quiet=True)
+        >>> ex = vw.example('1 |a two features |b more features here')
+        >>> pyvw.get_prediction(ex, PredictionType.SCALAR)
+        0.0
 
-    >>> from vowpalwabbit import Workspace, PredictionType, pyvw
-    >>> vw = Workspace(quiet=True)
-    >>> ex = vw.example('1 |a two features |b more features here')
-    >>> pyvw.get_prediction(ex, PredictionType.SCALAR)
-    0.0
-
-    Returns
-    -------
-
-    out : integer/list
+    Returns:
         Prediction according to parameter prediction_type
     """
     warnings.warn(
@@ -394,30 +360,20 @@ class Workspace(pylibvw.vw):
     _log_fwd = None
 
     def __init__(self, arg_str=None, enable_logging=False, **kw):
-        """Initialize the vw object.
+        """Initialize the Workspace object.
 
-        Parameters
-        ----------
+        Args:
+            arg_str (str): The command line arguments to initialize VW with,
+                for example "--audit". By default is None.
+            enable_logging (bool): Enable captured logging. By default is False. This must be True to be able to call :py:meth:`~vowpalwabbit.Workspace.get_log`
+            **kw : Using key/value pairs for different options available. Using this append an option to the command line in the form of "--key value", or in the case of a bool "--key" if true.
 
-        arg_str : str
-            The command line arguments to initialize VW with,
-            for example "--audit". By default is None.
-
-        **kw : Using key/value pairs for different options available
-
-        Examples
-        --------
-
-        >>> from vowpalwabbit import Workspace
-        >>> vw1 = Workspace('--audit')
-        >>> vw2 = Workspace(audit=True, b=24, k=True, c=True, l2=0.001)
-        >>> vw3 = Workspace("--audit", b=26)
-        >>> vw4 = Workspace(q=["ab", "ac"])
-
-        Returns
-        -------
-
-        self : Workspace
+        Examples:
+            >>> from vowpalwabbit import Workspace
+            >>> vw1 = Workspace('--audit')
+            >>> vw2 = Workspace(audit=True, b=24, k=True, c=True, l2=0.001)
+            >>> vw3 = Workspace("--audit", b=26)
+            >>> vw4 = Workspace(q=["ab", "ac"])
         """
 
         def format_input_pair(key, val):
@@ -472,39 +428,34 @@ class Workspace(pylibvw.vw):
     def __exit__(self, exc_type, exc_value, traceback):
         self.finish()
 
-    def parse(self, str_ex, labelType: Optional[Union[int, LabelType]] = None):
+    def parse(
+        self, str_ex, labelType: Optional[Union[int, LabelType]] = None
+    ) -> Union["Example", List["Example"]]:
         """Returns a collection of examples for a multiline example learner or
         a single example for a single example learner.
 
-        Parameters
-        ----------
+        Args:
+            str_ex : str/list of str
+                string representing examples. If the string is multiline then each
+                line is considered as an example. In case of list, each string
+                element is considered as an example
+            labelType : The direct integer value of the :py:obj:`~vowpalwabbit.LabelType` enum can be used or the enum directly. Supplying 0 or None means to use the default label type based on the setup VW learner.
 
-        str_ex : str/list of str
-            string representing examples. If the string is multiline then each
-            line is considered as an example. In case of list, each string
-            element is considered as an example
-        labelType : The direct integer value of the :py:obj:`~vowpalwabbit.LabelType` enum can be used or the enum directly. Supplying 0 or None means to use the default label type based on the setup VW learner.
+        Examples:
+            >>> from vowpalwabbit import Workspace
+            >>> model = Workspace(quiet=True)
+            >>> ex = model.parse("0:0.1:0.75 | a:0.5 b:1 c:2")
+            >>> type(ex)
+            <class 'vowpalwabbit.pyvw.Example'>
+            >>> model = Workspace(quiet=True, cb_adf=True)
+            >>> ex = model.parse(["| a:1 b:0.5", "0:0.1:0.75 | a:0.5 b:1 c:2"])
+            >>> type(ex)
+            <class 'list'>
+            >>> len(ex) # Shows the multiline example is parsed
+            2
 
-        Examples
-        --------
-
-        >>> from vowpalwabbit import Workspace
-        >>> model = Workspace(quiet=True)
-        >>> ex = model.parse("0:0.1:0.75 | a:0.5 b:1 c:2")
-        >>> type(ex)
-        <class 'vowpalwabbit.pyvw.Example'>
-        >>> model = Workspace(quiet=True, cb_adf=True)
-        >>> ex = model.parse(["| a:1 b:0.5", "0:0.1:0.75 | a:0.5 b:1 c:2"])
-        >>> type(ex)
-        <class 'list'>
-        >>> len(ex) # Shows the multiline example is parsed
-        2
-
-        Returns
-        -------
-
-        ec : list
-            list of examples parsed
+        Returns:
+            Either a single example or list of examples.
         """
 
         # check if already parsed
@@ -539,11 +490,9 @@ class Workspace(pylibvw.vw):
     def finish_example(self, ex):
         """Should only be used in conjunction with the parse method
 
-        Parameters
-        ----------
-
-        ex : Example
-            example to be finished
+        Args:
+            ex : Example
+                example to be finished
         """
 
         if isinstance(ex, Example):
@@ -574,37 +523,24 @@ class Workspace(pylibvw.vw):
         """Get the weight at a particular position in the (learned) weight
         vector.
 
-        Parameters
-        ----------
+        Args:
+            index (int): position in the learned  weight vector
+            offset (int): By default is 0
 
-        index : integer
-            position in the learned  weight vector
-        offset : integer
-            By default is 0
-
-        Returns
-        -------
-
-        weight : float
-            Weight at the given index
-
+        Returns:
+            float: Weight at the given index
         """
         return pylibvw.vw.get_weight(self, index, offset)
 
-    def get_weight_from_name(self, feature_name, namespace_name=" "):
+    def get_weight_from_name(self, feature_name: str, namespace_name: str = " "):
         """Get the weight based on the feature name and the namespace name.
 
-        Parameters
-        ----------
-        feature_name : str
-            The name of the feature
-        namespace_name : str, by default is ""
-            The name of the namespace where the feature lives
+        Args
+            feature_name: The name of the feature
+            namespace_name: The name of the namespace where the feature lives
 
-        Returns
-        -------
-        weight : float
-            Weight for the given feature and namespace name
+        Returns:
+            float: Weight for the given feature and namespace name
         """
         space_hash = self.hash_space(namespace_name)
         feat_hash = self.hash_feature(feature_name, space_hash)
@@ -616,14 +552,11 @@ class Workspace(pylibvw.vw):
     def get_prediction_type(self) -> PredictionType:
         return PredictionType(super()._get_prediction_type())
 
-    def learn(self, ec):
+    def learn(self, ec: Union["Example", List["Example"], str, List[str]]) -> None:
         """Perform an online update
 
-        Parameters
-        ----------
-
-        ec : Example/str/list
-            examples on which the model gets updated
+        Args:
+            ec: examples on which the model gets updated
         """
         # If a string was given, parse it before passing to learner.
         new_example = False
@@ -654,23 +587,22 @@ class Workspace(pylibvw.vw):
         if new_example:
             self.finish_example(ec)
 
-    def predict(self, ec, prediction_type: Optional[Union[int, PredictionType]] = None):
+    def predict(
+        self,
+        ec: Union["Example", List["Example"], str, List[str]],
+        prediction_type: Optional[Union[int, PredictionType]] = None,
+    ):
         """Just make a prediction on the example
 
-        Parameters
-        ----------
+        Args:
+            ec: examples to be predicted
+            prediction_type : optional, by default is None
+                if provided then the matching return type is
+                used otherwise the the learner's prediction type will determine the
+                output.
 
-        ec : Example/list/str
-            examples to be predicted
-        prediction_type : optional, by default is None
-            if provided then the matching return type is
-            used otherwise the the learner's prediction type will determine the
-            output.
-
-        Returns
-        -------
-
-        prediction : Prediction made on each examples
+        Returns:
+            Prediction made on each examples
         """
 
         new_example = False
@@ -734,7 +666,8 @@ class Workspace(pylibvw.vw):
         Raises:
             Exception: Raises an exception if this function is called but the init function was called without setting enable_logging to True
 
-        Returns: A list of strings, where each item is a line in the log
+        Returns:
+            A list of strings, where each item is a line in the log
         """
         if self._log_fwd:
             return self._log_fwd.messages
@@ -743,22 +676,18 @@ class Workspace(pylibvw.vw):
 
     def example(
         self, stringOrDict=None, labelType: Optional[Union[int, LabelType]] = None
-    ):
+    ) -> "Example":
         """Create an example initStringOrDict can specify example as VW
         formatted string, or a dictionary labelType can specify the desire
         label type
 
-        Parameters
-        ----------
+        Args:
+            initStringOrDict : str/dict
+                Example in either string or dictionary form
+            labelType : The direct integer value of the :py:obj:`~vowpalwabbit.LabelType` enum can be used or the enum directly. Supplying 0 or None means to use the default label type based on the setup VW learner.
 
-        initStringOrDict : str/dict
-            Example in either string or dictionary form
-        labelType : The direct integer value of the :py:obj:`~vowpalwabbit.LabelType` enum can be used or the enum directly. Supplying 0 or None means to use the default label type based on the setup VW learner.
-
-        Returns
-        -------
-
-        out : Example
+        Returns:
+            Constructed Example
 
         """
         return Example(self, stringOrDict, labelType)
@@ -779,48 +708,44 @@ class Workspace(pylibvw.vw):
         ):
             """The basic (via-reduction) prediction mechanism
 
-            Parameters
-            ----------
+            Args:
 
-            examples : Example/list
-                can be a single example (interpreted as
-                non-LDF mode) or a list of examples (interpreted as
-                LDF mode).  it can also be a lambda function that
-                returns a single example or list of examples, and in
-                that list, each element can also be a lambda function
-                that returns an example. this is done for lazy
-                example construction (aka speed).
+                examples : Example/list
+                    can be a single example (interpreted as
+                    non-LDF mode) or a list of examples (interpreted as
+                    LDF mode).  it can also be a lambda function that
+                    returns a single example or list of examples, and in
+                    that list, each element can also be a lambda function
+                    that returns an example. this is done for lazy
+                    example construction (aka speed).
 
-            my_tag : integer
-                should be an integer id, specifying this prediction
+                my_tag : integer
+                    should be an integer id, specifying this prediction
 
-            oracle : label/list
-                can be a single label (or in LDF mode a single
-                array index in 'examples') or a list of such labels if
-                the oracle policy is indecisive; if it is None, then
-                the oracle doesn't care
+                oracle : label/list
+                    can be a single label (or in LDF mode a single
+                    array index in 'examples') or a list of such labels if
+                    the oracle policy is indecisive; if it is None, then
+                    the oracle doesn't care
 
-            condition : Optional, by default is None
-                should be either: (1) a (tag,char) pair, indicating
-                to condition on the given tag with identifier from the char;
-                or (2) a (tag,len,char) triple, indicating to condition on
-                tag, tag-1, tag-2, ..., tag-len with identifiers char,
-                char+1, char+2, ..., char+len. or it can be a (heterogenous)
-                list of such things.
+                condition : Optional, by default is None
+                    should be either: (1) a (tag,char) pair, indicating
+                    to condition on the given tag with identifier from the char;
+                    or (2) a (tag,len,char) triple, indicating to condition on
+                    tag, tag-1, tag-2, ..., tag-len with identifiers char,
+                    char+1, char+2, ..., char+len. or it can be a (heterogenous)
+                    list of such things.
 
-            allowed : optional, by default id None
-                can be None, in which case all actions are allowed;
-                or it can be list of valid actions (in LDF mode, this should
-                be None and you should encode the valid actions in 'examples')
+                allowed : optional, by default id None
+                    can be None, in which case all actions are allowed;
+                    or it can be list of valid actions (in LDF mode, this should
+                    be None and you should encode the valid actions in 'examples')
 
-            learner_id : integer
-                specifies the underlying learner id
+                learner_id : integer
+                    specifies the underlying learner id
 
-            Returns
-            -------
-
-            out : integer
-                a single prediction.
+            Returns:
+                integer: a single prediction.
 
             """
             P = sch.get_predictor(my_tag)
@@ -944,20 +869,13 @@ class NamespaceId:
     def __init__(self, ex, id):
         """Given an example and an id, construct a NamespaceId.
 
-        Parameters
-        ----------
-
-        ex : Example
-            example used to create a namespace id
-        id : integer/str
-            The id can either be an integer (in which case we take it to be an
-            index into ex.indices[]) or a string (in which case we take
-            the first character as the namespace id).
-
-        Returns
-        -------
-
-        self : NamespaceId
+        Args:
+            ex : Example
+                example used to create a namespace id
+            id : integer/str
+                The id can either be an integer (in which case we take it to be an
+                index into ex.indices[]) or a string (in which case we take
+                the first character as the namespace id).
         """
         if isinstance(id, int):  # you've specified a namespace by index
             if id < 0 or id >= ex.num_namespaces():
@@ -987,20 +905,11 @@ class ExampleNamespace:
     def __init__(self, ex, ns, ns_hash=None):
         """Construct an ExampleNamespace
 
-        Parameters
-        ----------
-
-        ex : Example
-            examples from which namespace is to be extracted
-        ns : NamespaceId
-            Target namespace
-        ns_hash : Optional, by default is None
-            The hash of the namespace
-
-        Returns
-        -------
-
-        self : ExampleNamespace
+        Args:
+            ex (Example): examples from which namespace is to be extracted
+            ns (NamespaceId): Target namespace
+            ns_hash : Optional, by default is None
+                The hash of the namespace
         """
         if not isinstance(ns, NamespaceId):
             raise TypeError("ns should an instance of NamespaceId.")
@@ -1028,14 +937,11 @@ class ExampleNamespace:
         """Add an unhashed feature to the current namespace (fails if
         setup has already run on this example).
 
-        Parameters
-        ----------
-
-        feature : integer/str
-            Feature to be pushed to current namespace
-        v : float
-            Feature value, by default is 1.0
-
+        Args:
+            feature : integer/str
+                Feature to be pushed to current namespace
+            v : float
+                Feature value, by default is 1.0
         """
         if self.ns_hash is None:
             self.ns_hash = self.ex.vw.hash_space(self.ns)
@@ -1050,16 +956,16 @@ class ExampleNamespace:
     def push_features(self, ns, featureList):
         """Push a list of features to a given namespace.
 
-        Parameters
-        ----------
+        Args:
+            ns : namespace
+                namespace to which feature list is to be pushed
+            featureList : list
+                Each feature in the list can either be an integer (already hashed)
+                or a string (to be hashed) and may be paired with a value or not
+                (if not, the value is assumed to be 1.0).
 
-        ns : namespace
-            namespace to which feature list is to be pushed
-        featureList : list
-            Each feature in the list can either be an integer (already hashed)
-            or a string (to be hashed) and may be paired with a value or not
-            (if not, the value is assumed to be 1.0).
-        See example.push_features for examples.
+        Examples:
+            See :py:meth:`vowpalwabbit.Example.push_features` for examples.
         """
         self.ex.push_features(self.ns, featureList)
 
@@ -1490,34 +1396,27 @@ class Example(pylibvw.example):
     ):
         """Construct a new example from vw.
 
-        Parameters
-        ----------
+        Args:
+            vw : Owning workspace of this example object
+            initStringOrDictOrRawExample (dict/string/None): If initString is None, you get an "empty" example which you
+                can construct by hand (see, eg, example.push_features).
+                If initString is a string, then this string is parsed as
+                it would be from a VW data file into an example (and
+                "setup_example" is run). if it is a dict, then we add all
+                features in that dictionary. Finally, if it's a function,
+                we (repeatedly) execute it fn() until it's not a function
+                any more(for lazy feature computation). Passing a function is deprecated. By default is None
+            labelType: :py:obj:`~vowpalwabbit.LabelType` value or corresponding integer value (integer is deprecated). Supplying 0 or None means to use the default label type based on the setup VW learner.
 
-        vw : vw
-            vw model
-        initStringOrDictOrRawExample : dict/string/None
-            If initString is None, you get an "empty" example which you
-            can construct by hand (see, eg, example.push_features).
-            If initString is a string, then this string is parsed as
-            it would be from a VW data file into an example (and
-            "setup_example" is run). if it is a dict, then we add all
-            features in that dictionary. finally, if it's a function,
-            we (repeatedly) execute it fn() until it's not a function
-            any more(for lazy feature computation). By default is None
-        labelType : :py:obj:`~vowpalwabbit.LabelType` value or corresponding integer value (integer is deprecated). Supplying 0 or None means to use the default label type based on the setup VW learner.
-        Returns
-        -------
-
-        self : Example
-
-        See Also
-        --------
-
-        vowpalwabbit.Workspace
-
+        See Also:
+            :py:class:`~vowpalwabbit.Workspace`
         """
 
         while hasattr(initStringOrDictOrRawExample, "__call__"):
+            warnings.warn(
+                "Passing a callable object for initStringOrDictOrRawExample is deprecated and will be removed in a future version.",
+                DeprecationWarning,
+            )
             initStringOrDictOrRawExample = initStringOrDictOrRawExample()
 
         if labelType is None:
@@ -1566,20 +1465,14 @@ class Example(pylibvw.example):
         self.stride = vw.get_stride()
         self.finished = False
 
-    def get_ns(self, id):
+    def get_ns(self, id) -> NamespaceId:
         """Construct a NamespaceId
 
-        Parameters
-        ----------
+        Argss:
+            id (NamespaceId/str/integer): id used to create namespace
 
-        id : NamespaceId/str/integer
-            id used to create namespace
-
-        Returns
-        -------
-
-        out : NamespaceId
-            NamespaceId created using parameter passed(if id was NamespaceId,
+        Returns:
+             NamespaceId created using parameter passed(if id was NamespaceId,
             just return it directly)
         """
         if isinstance(id, NamespaceId):
@@ -1592,22 +1485,17 @@ class Example(pylibvw.example):
         namespace id."""
         return ExampleNamespace(self, self.get_ns(id))
 
-    def feature(self, ns, i):
+    def feature(self, ns, i) -> int:
         """Get the i-th hashed feature id in a given namespace
 
-        Parameters
-        ----------
+        Args:
+            ns : namespace
+                namespace used to get the feature
+            i : integer
+                to get i-th hashed feature id in a given ns. It must range from
+                0 to self.num_features_in(ns)-1
 
-        ns : namespace
-            namespace used to get the feature
-        i : integer
-            to get i-th hashed feature id in a given ns. It must range from
-            0 to self.num_features_in(ns)-1
-
-        Returns
-        -------
-
-        f : integer
+        Returns:
             i-th hashed feature-id in a given ns
         """
         ns = self.get_ns(ns)  # guaranteed to be a single character
@@ -1616,35 +1504,27 @@ class Example(pylibvw.example):
             f = (f - self.get_ft_offset()) // self.stride
         return f
 
-    def feature_weight(self, ns, i):
+    def feature_weight(self, ns, i) -> float:
         """Get the value(weight) associated with a given feature id
 
-        Parameters
-        ----------
+        Args:
+            ns : namespace
+                namespace used to get the feature id
+            i : integer
+                to get the weight of i-th feature in the given ns. It must range
+                from 0 to self.num_features_in(ns)-1
 
-        ns : namespace
-            namespace used to get the feature id
-        i : integer
-            to get the weight of i-th feature in the given ns. It must range
-            from 0 to self.num_features_in(ns)-1
-
-        Returns
-        -------
-
-        out : float
+        Returns:
             weight(value) of the i-th feature of given ns
         """
         return pylibvw.example.feature_weight(self, self.get_ns(ns).ord_ns, i)
 
-    def set_label_string(self, string):
+    def set_label_string(self, string: str) -> None:
         """Give this example a new label
 
-        Parameters
-        ----------
-
-        string : str
-            a new label to this example, formatted as a string (ala the VW data
-            file format)
+        Args:
+            string: a new label to this example, formatted as a string (ala the VW data
+                file format)
         """
         label_int = 0 if self.labelType is None else self.labelType.value
         pylibvw.example.set_label_string(self, self.vw, string, label_int)
@@ -1674,60 +1554,45 @@ class Example(pylibvw.example):
             self.setup_example()
         self.vw.learn(self)
 
-    def sum_feat_sq(self, ns):
+    def sum_feat_sq(self, ns) -> float:
         """Get the total sum feature-value squared for a given
         namespace
 
-        Parameters
-        ----------
+        Args:
+            ns : namespace
+                Get the total sum feature-value squared of this namespace
 
-        ns : namespace
-            Get the total sum feature-value squared of this namespace
-
-        Returns
-        -------
-
-        sum_sq : float
+        Returns:
             Total sum feature-value squared of the given ns
         """
         return pylibvw.example.sum_feat_sq(self, self.get_ns(ns).ord_ns)
 
-    def num_features_in(self, ns):
+    def num_features_in(self, ns) -> int:
         """Get the total number of features in a given namespace
 
-        Parameters
-        ----------
+        Args:
+            ns : namespace
+                Get the total features of this namespace
 
-        ns : namespace
-            Get the total features of this namespace
-
-        Returns
-        -------
-
-        num_features : integer
+        Returns:
             Total number of features in the given ns
         """
         return pylibvw.example.num_features_in(self, self.get_ns(ns).ord_ns)
 
-    def get_feature_id(self, ns, feature, ns_hash=None):
+    def get_feature_id(self, ns, feature, ns_hash=None) -> int:
         """Get the hashed feature id for a given feature in a given
         namespace. feature can either be an integer (already a feature
         id) or a string, in which case it is hashed.
 
-        Parameters
-        ----------
+        Args:
+            ns : namespace
+                namespace used to get the feature
+            feature : integer/string
+                If integer the already a feature else will be hashed
+            ns_hash : Optional, by default is None
+                The hash of the namespace
 
-        ns : namespace
-            namespace used to get the feature
-        feature : integer/string
-            If integer the already a feature else will be hashed
-        ns_hash : Optional, by default is None
-            The hash of the namespace
-
-        Returns
-        -------
-
-        out : integer
+        Returns:
             Hashed feature id
 
         .. note::
@@ -1743,54 +1608,45 @@ class Example(pylibvw.example):
             return self.vw.hash_feature(feature, ns_hash)
         raise Exception("cannot extract feature of type: " + str(type(feature)))
 
-    def push_hashed_feature(self, ns, f, v=1.0):
+    def push_hashed_feature(self, ns, f, v=1.0) -> None:
         """Add a hashed feature to a given namespace.
 
-        Parameters
-        ----------
-
-        ns : namespace
-            namespace in which the feature is to be pushed
-        f : integer
-            feature
-        v : float
-            The value of the feature, be default is 1.0
+        Args:
+            ns : namespace
+                namespace in which the feature is to be pushed
+            f : integer
+                feature
+            v : float
+                The value of the feature, be default is 1.0
         """
         if self.setup_done:
             self.unsetup_example()
         pylibvw.example.push_hashed_feature(self, self.get_ns(ns).ord_ns, f, v)
 
-    def push_feature(self, ns, feature, v=1.0, ns_hash=None):
+    def push_feature(self, ns, feature, v=1.0, ns_hash=None) -> None:
         """Add an unhashed feature to a given namespace
 
-        Parameters
-        ----------
-
-        ns : namespace
-            namespace in which the feature is to be pushed
-        f : integer
-            feature
-        v : float
-            The value of the feature, be default is 1.0
-        ns_hash : Optional, by default is None
-            The hash of the namespace
+        Args:
+            ns : namespace
+                namespace in which the feature is to be pushed
+            f : integer
+                feature
+            v : float
+                The value of the feature, be default is 1.0
+            ns_hash : Optional, by default is None
+                The hash of the namespace
         """
         f = self.get_feature_id(ns, feature, ns_hash)
         self.push_hashed_feature(ns, f, v)
 
-    def pop_feature(self, ns):
+    def pop_feature(self, ns) -> bool:
         """Remove the top feature from a given namespace
 
-        Parameters
-        ----------
+        Args:
+            ns : namespace
+                namespace from which feature is popped
 
-        ns : namespace
-            namespace from which feature is popped
-
-        Returns
-        -------
-
-        out : bool
+        Returns:
             True if feature was removed else False as no feature was there to
             pop
         """
@@ -1798,29 +1654,24 @@ class Example(pylibvw.example):
             self.unsetup_example()
         return pylibvw.example.pop_feature(self, self.get_ns(ns).ord_ns)
 
-    def push_namespace(self, ns):
+    def push_namespace(self, ns) -> None:
         """Push a new namespace onto this example.
         You should only do this if you're sure that this example doesn't
         already have the given namespace
 
-        Parameters
-        ----------
-
-        ns : namespace
-            namespace which is to be pushed onto example
+        Args:
+            ns : namespace
+                namespace which is to be pushed onto example
 
         """
         if self.setup_done:
             self.unsetup_example()
         pylibvw.example.push_namespace(self, self.get_ns(ns).ord_ns)
 
-    def pop_namespace(self):
+    def pop_namespace(self) -> bool:
         """Remove the top namespace from an example
 
-        Returns
-        -------
-
-        out : bool
+        Returns:
             True if namespace was removed else False as no namespace was there
             to pop
         """
@@ -1831,11 +1682,9 @@ class Example(pylibvw.example):
     def ensure_namespace_exists(self, ns):
         """Check to see if a namespace already exists.
 
-        Parameters
-        ----------
-
-        ns : namespace
-            If namespace exists does, do nothing. If it doesn't, add it.
+        Args:
+            ns : namespace
+                If namespace exists does, do nothing. If it doesn't, add it.
         """
         if self.setup_done:
             self.unsetup_example()
@@ -1844,31 +1693,27 @@ class Example(pylibvw.example):
     def push_features(self, ns, featureList):
         """Push a list of features to a given namespace.
 
-        Parameters
-        ----------
+        Args:
+            ns :  namespace
+                namespace in which the features are pushed
+            featureList : list
+                Each feature in the list can either be an integer
+                (already hashed) or a string (to be hashed) and may be
+                paired with a value or not (if not, the value is assumed to be 1.0
 
-        ns :  namespace
-            namespace in which the features are pushed
-        featureList : list
-            Each feature in the list can either be an integer
-            (already hashed) or a string (to be hashed) and may be
-            paired with a value or not (if not, the value is assumed to be 1.0
-
-        Examples
-        --------
-
-        >>> from vowpalwabbit import Workspace
-        >>> vw = Workspace(quiet=True)
-        >>> ex = vw.example('1 |a two features |b more features here')
-        >>> ex.push_features('x', ['a', 'b'])
-        >>> ex.push_features('y', [('c', 1.), 'd'])
-        >>> space_hash = vw.hash_space('x')
-        >>> feat_hash  = vw.hash_feature('a', space_hash)
-        >>> ex.push_features('x', [feat_hash]) #'x' should match the space_hash!
-        >>> ex.num_features_in('x')
-        3
-        >>> ex.num_features_in('y')
-        2
+        Examples:
+            >>> from vowpalwabbit import Workspace
+            >>> vw = Workspace(quiet=True)
+            >>> ex = vw.example('1 |a two features |b more features here')
+            >>> ex.push_features('x', ['a', 'b'])
+            >>> ex.push_features('y', [('c', 1.), 'd'])
+            >>> space_hash = vw.hash_space('x')
+            >>> feat_hash  = vw.hash_feature('a', space_hash)
+            >>> ex.push_features('x', [feat_hash]) #'x' should match the space_hash!
+            >>> ex.num_features_in('x')
+            3
+            >>> ex.num_features_in('y')
+            2
         """
         ns = self.get_ns(ns)
         self.ensure_namespace_exists(ns)
@@ -1901,7 +1746,7 @@ class Example(pylibvw.example):
                 yield f, v
 
     def get_label(
-        self, label_class: Optional[Union[int, LabelType, AbstractLabel]] = None
+        self, label_class: Optional[Union[int, LabelType, Type[AbstractLabel]]] = None
     ) -> Union[
         "AbstractLabel",
         "SimpleLabel",
@@ -1914,18 +1759,14 @@ class Example(pylibvw.example):
     ]:
         """Get the label object of this example.
 
-        Parameters
-        ----------
+        Args:
+            label_class :
+                - If None, self.labelType will be used.
+                - If int then corresponding :py:obj:`~vowpalwabbit.pyvw.LabelType` for the label type to be retrieved.
+                - The ability to pass an AbstractLabel or an int are legacy requirements and are deprecated. All new usage of this function should pass a LabelType.
 
-        label_class :
-            - If None, self.labelType will be used.
-            - If int then corresponding :py:obj:`~vowpalwabbit.pyvw.LabelType` for the label type to be retrieved.
-            - The ability to pass an AbstractLabel or an int are legacy requirements and are deprecated. All new usage of this function should pass a LabelType.
-
-        See Also
-        --------
-
-        :meth:`vowpalwabbit.Workspace.get_label_type`
+        See Also:
+            :meth:`vowpalwabbit.Workspace.get_label_type`
 
         """
 
@@ -1971,45 +1812,37 @@ class Example(pylibvw.example):
 
         """Get prediction object from this example.
 
-        Parameters
-        ----------
+        Args:
+            prediction_type:
+                - If None, the label type of the example's owning Workspace instance will be used.
+                - If int then corresponding :py:obj:`~vowpalwabbit.pyvw.PredictionType` for the prediction type to be retrieved.
+                - Supplying an int is deprecated and will be removed in a future release.
 
-        prediction_type :
-            - If None, the label type of the example's owning Workspace instance will be used.
-            - If int then corresponding :py:obj:`~vowpalwabbit.pyvw.PredictionType` for the prediction type to be retrieved.
-            - Supplying an int is deprecated and will be removed in a future release.
+        Returns:
+            Prediction according to parameter prediction_type
+                - :py:obj:`~vowpalwabbit.PredictionType.SCALAR`: float
+                - :py:obj:`~vowpalwabbit.PredictionType.SCALARS`: List[float]
+                - :py:obj:`~vowpalwabbit.PredictionType.ACTION_SCORES`: List[float]
+                - :py:obj:`~vowpalwabbit.PredictionType.ACTION_PROBS`: List[float]
+                - :py:obj:`~vowpalwabbit.PredictionType.MULTICLASS`: int
+                - :py:obj:`~vowpalwabbit.PredictionType.MULTILABELS`: List[int]
+                - :py:obj:`~vowpalwabbit.PredictionType.PROB`: float
+                - :py:obj:`~vowpalwabbit.PredictionType.MULTICLASSPROBS`: List[float]
+                - :py:obj:`~vowpalwabbit.PredictionType.DECISION_SCORES`: List[List[Tuple[int, float]]]
+                - :py:obj:`~vowpalwabbit.PredictionType.ACTION_PDF_VALUE`: Tuple[int, float]
+                - :py:obj:`~vowpalwabbit.PredictionType.PDF`: List[Tuple[float, float, float]]
+                - :py:obj:`~vowpalwabbit.PredictionType.ACTIVE_MULTICLASS`: Tuple[int, List[int]]
+                - :py:obj:`~vowpalwabbit.PredictionType.NOPRED`: str
 
+        Examples:
+            >>> from vowpalwabbit import Workspace, PredictionType
+            >>> vw = Workspace(quiet=True)
+            >>> ex = vw.example('1 |a two features |b more features here')
+            >>> ex.get_prediction()
+            0.0
 
-        Examples
-        --------
-
-        >>> from vowpalwabbit import Workspace, PredictionType
-        >>> vw = Workspace(quiet=True)
-        >>> ex = vw.example('1 |a two features |b more features here')
-        >>> ex.get_prediction()
-        0.0
-
-        Returns
-        -------
-
-        out : Prediction according to parameter prediction_type
-            - :py:obj:`~vowpalwabbit.PredictionType.SCALAR`: float
-            - :py:obj:`~vowpalwabbit.PredictionType.SCALARS`: List[float]
-            - :py:obj:`~vowpalwabbit.PredictionType.ACTION_SCORES`: List[float]
-            - :py:obj:`~vowpalwabbit.PredictionType.ACTION_PROBS`: List[float]
-            - :py:obj:`~vowpalwabbit.PredictionType.MULTICLASS`: int
-            - :py:obj:`~vowpalwabbit.PredictionType.MULTILABELS`: List[int]
-            - :py:obj:`~vowpalwabbit.PredictionType.PROB`: float
-            - :py:obj:`~vowpalwabbit.PredictionType.MULTICLASSPROBS`: List[float]
-            - :py:obj:`~vowpalwabbit.PredictionType.DECISION_SCORES`: List[List[Tuple[int, float]]]
-            - :py:obj:`~vowpalwabbit.PredictionType.ACTION_PDF_VALUE`: Tuple[int, float]
-            - :py:obj:`~vowpalwabbit.PredictionType.PDF`: List[Tuple[float, float, float]]
-            - :py:obj:`~vowpalwabbit.PredictionType.ACTIVE_MULTICLASS`: Tuple[int, List[int]]
-            - :py:obj:`~vowpalwabbit.PredictionType.NOPRED`: str
-
-        See Also
-        --------
-        :meth:`vowpalwabbit.Workspace.get_prediction_type`
+        See Also:
+            :meth:`vowpalwabbit.Workspace.get_prediction_type`
         """
 
         if prediction_type is None:
@@ -2046,60 +1879,90 @@ class Example(pylibvw.example):
 
 
 class abstract_label(metaclass=_DeprecatedClassMeta):
-    """This has been renamed to :py:obj:`~vowpalwabbit.AbstractLabel`. `abstract_label` is now deprecated."""
+    """
+    .. deprecated:: 9.0.0
+        This has been renamed to :py:obj:`~vowpalwabbit.AbstractLabel`. `abstract_label` is now deprecated.
+    """
 
     _DeprecatedClassMeta__alias = AbstractLabel
 
 
 class simple_label(metaclass=_DeprecatedClassMeta):
-    """This has been renamed to :py:obj:`~vowpalwabbit.SimpleLabel`. `simple_label` is now deprecated."""
+    """
+    .. deprecated:: 9.0.0
+        This has been renamed to :py:obj:`~vowpalwabbit.SimpleLabel`. `simple_label` is now deprecated.
+    """
 
     _DeprecatedClassMeta__alias = SimpleLabel
 
 
 class multiclass_label(metaclass=_DeprecatedClassMeta):
-    """This has been renamed to :py:obj:`~vowpalwabbit.MulticlassLabel`. `multiclass_label` is now deprecated."""
+    """
+    .. deprecated:: 9.0.0
+        This has been renamed to :py:obj:`~vowpalwabbit.MulticlassLabel`. `multiclass_label` is now deprecated.
+    """
 
     _DeprecatedClassMeta__alias = MulticlassLabel
 
 
 class multiclass_probabilities_label(metaclass=_DeprecatedClassMeta):
-    """This has been renamed to :py:obj:`~vowpalwabbit.MulticlassProbabilitiesLabel`. `multiclass_probabilities_label` is now deprecated."""
+    """
+    .. deprecated:: 9.0.0
+        This has been renamed to :py:obj:`~vowpalwabbit.MulticlassProbabilitiesLabel`. `multiclass_probabilities_label` is now deprecated.
+    """
 
     _DeprecatedClassMeta__alias = MulticlassProbabilitiesLabel
 
 
 class cost_sensitive_label(metaclass=_DeprecatedClassMeta):
-    """This has been renamed to :py:obj:`~vowpalwabbit.CostSensitiveLabel`. `cost_sensitive_label` is now deprecated."""
+    """
+    .. deprecated:: 9.0.0
+        This has been renamed to :py:obj:`~vowpalwabbit.CostSensitiveLabel`. `cost_sensitive_label` is now deprecated.
+    """
 
     _DeprecatedClassMeta__alias = CostSensitiveLabel
 
 
 class cbandits_label(metaclass=_DeprecatedClassMeta):
-    """This has been renamed to :py:obj:`~vowpalwabbit.CBLabel`. `cbandits_label` is now deprecated."""
+    """
+    .. deprecated:: 9.0.0
+        This has been renamed to :py:obj:`~vowpalwabbit.CBLabel`. `cbandits_label` is now deprecated.
+    """
 
     _DeprecatedClassMeta__alias = CBLabel
 
 
 class namespace_id(metaclass=_DeprecatedClassMeta):
-    """This has been renamed to :py:obj:`~vowpalwabbit.NamespaceId`. `namespace_id` is now deprecated."""
+    """
+    .. deprecated:: 9.0.0
+        This has been renamed to :py:obj:`~vowpalwabbit.NamespaceId`. `namespace_id` is now deprecated.
+    """
 
     _DeprecatedClassMeta__alias = NamespaceId
 
 
 class example_namespace(metaclass=_DeprecatedClassMeta):
-    """This has been renamed to :py:obj:`~vowpalwabbit.ExampleNamespace`. `example_namespace` is now deprecated."""
+    """
+    .. deprecated:: 9.0.0
+        This has been renamed to :py:obj:`~vowpalwabbit.ExampleNamespace`. `example_namespace` is now deprecated.
+    """
 
     _DeprecatedClassMeta__alias = ExampleNamespace
 
 
 class vw(metaclass=_DeprecatedClassMeta):
-    """This has been renamed to :py:obj:`~vowpalwabbit.Workspace`. `vw` is now deprecated."""
+    """
+    .. deprecated:: 9.0.0
+        This has been renamed to :py:obj:`~vowpalwabbit.Workspace`. `vw` is now deprecated.
+    """
 
     _DeprecatedClassMeta__alias = Workspace
 
 
 class example(metaclass=_DeprecatedClassMeta):
-    """This has been renamed to :py:obj:`~vowpalwabbit.Example`. `example` is now deprecated."""
+    """
+    .. deprecated:: 9.0.0
+        This has been renamed to :py:obj:`~vowpalwabbit.Example`. `example` is now deprecated.
+    """
 
     _DeprecatedClassMeta__alias = Example
