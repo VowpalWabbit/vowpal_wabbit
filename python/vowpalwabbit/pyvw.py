@@ -607,7 +607,7 @@ class Workspace(pylibvw.vw):
         """Make a prediction on the example
 
         Args:
-            ec: Examples of which to get a prediction frmo. If using a single object the learner must be a single line learner. If using a list of objects the learner must be a multiline learner. If passing strings they are parsed using :py:meth:`~vowpalwabbit.Workspace.parse` before being predicted on. If passing Example objects then they must be given to :py:meth:`~vowpalwabbit.Workspace.finish_example` at a later point.
+            ec: Examples of which to get a prediction from. If using a single object the learner must be a single line learner. If using a list of objects the learner must be a multiline learner. If passing strings they are parsed using :py:meth:`~vowpalwabbit.Workspace.parse` before being predicted on. If passing Example objects then they must be given to :py:meth:`~vowpalwabbit.Workspace.finish_example` at a later point.
             prediction_type: If none, use the prediction type of the example object. This is usually what is wanted. To request a specific type a value can be supplied here.
 
         Returns:
