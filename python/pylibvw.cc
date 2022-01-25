@@ -673,7 +673,6 @@ void ex_ensure_namespace_exists(example_ptr ec, unsigned char ns)
   ex_push_namespace(ec, ns);
 }
 
-
 // Dict[str, List[Union[Tuple[Union[str,int], float], Union[str,int]]]]
 void ex_push_dictionary(example_ptr ec, vw_ptr vw, py::dict& dict)
 {
