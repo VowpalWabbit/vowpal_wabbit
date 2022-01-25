@@ -86,3 +86,53 @@ jobs:
         run: |
           cd test
           python run_tests.py -E 0.001 -f --skip_spanning_tree_tests --vw_bin_path "python3 -m vowpalwabbit" --skip_test 60 61 92 96 149 152 177 193 194 195 220 275 276 324 325 326 349 350 356 357 358 385
+  make_source:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-python@v2
+        with:
+          python-version: '3.8'
+          architecture: 'x64'
+      - name: Install dependencies
+        shell: bash
+        run: python setup.py sdist
+      - name: Upload built wheel
+        uses: actions/upload-artifact@v2
+        with:
+          name: python_source_distribution
+          path: dist/*.tar.gz
+  build_source:
+    needs: make_source
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/setup-python@v2
+        with:
+          python-version: '3.8'
+          architecture: 'x64'
+      - name: Download Wheel
+        uses: actions/download-artifact@v1
+        with:
+          name: python_source_distribution
+      - name: Install dependencies
+        shell: bash
+        run: |
+          sudo apt update
+          sudo apt install libboost-dev libboost-program-options-dev libboost-system-dev libboost-math-dev libboost-thread-dev libboost-test-dev libboost-python-dev zlib1g-dev cmake g++
+      - name: Install source dist
+        shell: bash
+        run: |
+          export src_files=(python_source_distribution/*)
+          export src_file="${src_files[0]}"
+          echo Installing ${src_file}...
+          pip install ${src_file}
+      - uses: actions/checkout@v2
+      - name: Install dependencies
+        shell: bash
+        run: |
+          pip install -r requirements.txt
+          pip install pytest
+      - name: Run unit tests
+        shell: bash
+        run: |
+          python -m pytest ./python/tests/
