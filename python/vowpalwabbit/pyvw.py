@@ -1403,9 +1403,9 @@ class Example(pylibvw.example):
                 If initString is a string, then this string is parsed as
                 it would be from a VW data file into an example (and
                 "setup_example" is run). if it is a dict, then we add all
-                features in that dictionary. finally, if it's a function,
+                features in that dictionary. Finally, if it's a function,
                 we (repeatedly) execute it fn() until it's not a function
-                any more(for lazy feature computation). By default is None
+                any more(for lazy feature computation). Passing a function is deprecated. By default is None
             labelType: :py:obj:`~vowpalwabbit.LabelType` value or corresponding integer value (integer is deprecated). Supplying 0 or None means to use the default label type based on the setup VW learner.
 
         See Also:
@@ -1413,6 +1413,10 @@ class Example(pylibvw.example):
         """
 
         while hasattr(initStringOrDictOrRawExample, "__call__"):
+            warnings.warn(
+                "Passing a callable object for initStringOrDictOrRawExample is deprecated and will be removed in a future version.",
+                DeprecationWarning,
+            )
             initStringOrDictOrRawExample = initStringOrDictOrRawExample()
 
         if labelType is None:
@@ -1742,7 +1746,7 @@ class Example(pylibvw.example):
                 yield f, v
 
     def get_label(
-        self, label_class: Optional[Union[int, LabelType, AbstractLabel]] = None
+        self, label_class: Optional[Union[int, LabelType, Type[AbstractLabel]]] = None
     ) -> Union[
         "AbstractLabel",
         "SimpleLabel",
