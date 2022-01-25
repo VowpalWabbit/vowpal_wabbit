@@ -452,7 +452,7 @@ class VW(BaseEstimator):
         """Sets coefficients weights from ordered sparse matrix
 
         Args:
-        coefs (sparse matrix): coefficient weights for model
+            coefs (sparse matrix): coefficient weights for model
         """
 
         model = self.get_vw()
@@ -649,7 +649,7 @@ class VWMultiClassifier(VWClassifier):
 
     classes_ = None
     """Class labels"""
-    estimator_: Dict = None
+    estimator_ = None
     """"type of estimator to use [csoaa, ect, oaa, wap] and number of classes"""
 
     def __init__(self, probabilities=True, **kwargs):
