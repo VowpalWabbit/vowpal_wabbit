@@ -969,9 +969,7 @@ class ExampleNamespace:
         features to pop."""
         return self.ex.pop_feature(self.ns)
 
-    def push_features(
-        self, feature_list, feature_list_legacy=None
-    ):
+    def push_features(self, feature_list, feature_list_legacy=None):
         """Push a list of features to a given namespace.
 
         Args:
