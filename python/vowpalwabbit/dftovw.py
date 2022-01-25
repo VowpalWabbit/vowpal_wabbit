@@ -595,13 +595,9 @@ class _ListLabel(object):
         """Return the string representation of the labels of the underlying list, separated by a pre-defined character.
 
         Args:
-        ----------
-        df: pandas.DataFrame
-            The dataframe from which to select the columns.
+            df: The dataframe from which to select the columns.
 
-        Returns
-        -------
-        pandas.Series
+        Returns:
             The _ListLabel string representation.
         """
         for (i, label) in enumerate(self):
