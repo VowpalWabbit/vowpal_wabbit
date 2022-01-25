@@ -97,8 +97,6 @@ void initialize(Search::search& sch, size_t& /*num_actions*/, options_i& options
   else
     sch.set_num_learners(3);
 
-  sch.set_is_ldf(false);
-
   std::vector<std::vector<namespace_index>> newpairs{{'B', 'C'}, {'B', 'E'}, {'B', 'B'}, {'C', 'C'}, {'D', 'D'},
       {'E', 'E'}, {'F', 'F'}, {'G', 'G'}, {'E', 'F'}, {'B', 'H'}, {'B', 'J'}, {'E', 'L'}, {'d', 'B'}, {'d', 'C'},
       {'d', 'D'}, {'d', 'E'}, {'d', 'F'}, {'d', 'G'}, {'d', 'd'}};
