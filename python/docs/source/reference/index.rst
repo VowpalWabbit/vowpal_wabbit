@@ -20,7 +20,7 @@ Optional modules
 
 
 Implementation/internal modules
-----------------
+-------------------------------
 
 .. toctree::
    :maxdepth: 1
