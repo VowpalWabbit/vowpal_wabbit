@@ -8,6 +8,7 @@
 #include "reductions.h"
 #include "rand48.h"
 #include <cfloat>
+#include <limits>
 #include "vw.h"
 #include "vw_exception.h"
 #include "csoaa.h"
@@ -299,7 +300,9 @@ base_learner* cs_active_setup(VW::setup_base_i& stack_builder)
   auto data = VW::make_unique<cs_active>();
 
   bool simulation = false;
-  int domination;
+  int32_t domination;
+  uint64_t max_labels;
+  uint64_t min_labels;
   option_group_definition new_options("[Reduction] Cost Sensitive Active Learning");
   new_options
       .add(make_option("cs_active", data->num_classes)
@@ -313,11 +316,11 @@ base_learner* cs_active_setup(VW::setup_base_i& stack_builder)
       .add(make_option("range_c", data->c1)
                .default_value(0.5f)
                .help("Parameter controlling the threshold for per-label cost uncertainty"))
-      .add(make_option("max_labels", data->max_labels)
-               .default_value(std::numeric_limits<size_t>::max())
+      .add(make_option("max_labels", max_labels)
+               .default_value(std::numeric_limits<uint64_t>::max())
                .help("Maximum number of label queries"))
-      .add(make_option("min_labels", data->min_labels)
-               .default_value(std::numeric_limits<size_t>::max())
+      .add(make_option("min_labels", min_labels)
+               .default_value(std::numeric_limits<uint64_t>::max())
                .help("Minimum number of label queries"))
       .add(make_option("cost_max", data->cost_max).default_value(1.f).help("Cost upper bound"))
       .add(make_option("cost_min", data->cost_min).default_value(0.f).help("Cost lower bound"))
@@ -325,7 +328,8 @@ base_learner* cs_active_setup(VW::setup_base_i& stack_builder)
       .add(make_option("csa_debug", data->print_debug_stuff).help("Print debug stuff for cs_active"));
 
   if (!options.add_parse_and_check_necessary(new_options)) return nullptr;
-
+  data->max_labels = max_labels == std::numeric_limits<uint64_t>::max() ? std::numeric_limits<size_t>::max() : max_labels;
+  data->min_labels = min_labels == std::numeric_limits<uint64_t>::max() ? std::numeric_limits<size_t>::max() : min_labels;
   data->use_domination = true;
   if (options.was_supplied("domination") && !domination) data->use_domination = false;
 

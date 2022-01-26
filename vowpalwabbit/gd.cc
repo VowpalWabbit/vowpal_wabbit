@@ -151,12 +151,12 @@ void end_pass(gd& g)
     if (all.sd->gravity != 0.)
     {
       g.all->options->replace("l1_state", std::to_string(all.sd->gravity));
-      g.all->options->get_typed_option<double>("l1_state").value(all.sd->gravity);
+      g.all->options->get_typed_option<float>("l1_state").value(static_cast<float>(all.sd->gravity));
     }
     if (all.sd->contraction != 1.)
     {
       g.all->options->replace("l2_state", std::to_string(all.sd->contraction));
-      g.all->options->get_typed_option<double>("l2_state").value(all.sd->contraction);
+      g.all->options->get_typed_option<float>("l2_state").value(static_cast<float>(all.sd->contraction));
     }
   }
   else
@@ -1201,6 +1201,9 @@ base_learner* setup(VW::setup_base_i& stack_builder)
   bool invariant = false;
   bool normalized = false;
 
+  float gravity = 0.f;
+  float contraction = 0.f;
+
   option_group_definition new_options("[Reduction] Gradient Descent");
   new_options.add(make_option("sgd", sgd).help("Use regular stochastic gradient descent update").keep(all.save_resume))
       .add(make_option("adaptive", adaptive).help("Use adaptive, individual learning rates").keep(all.save_resume))
@@ -1210,13 +1213,13 @@ base_learner* setup(VW::setup_base_i& stack_builder)
       .add(make_option("sparse_l2", g->sparse_l2)
                .default_value(0.f)
                .help("Degree of l2 regularization applied to activated sparse parameters"))
-      .add(make_option("l1_state", all.sd->gravity)
+      .add(make_option("l1_state", gravity)
                .keep(all.save_resume)
-               .default_value(0.)
+               .default_value(0.f)
                .help("Amount of accumulated implicit l1 regularization"))
-      .add(make_option("l2_state", all.sd->contraction)
+      .add(make_option("l2_state", contraction)
                .keep(all.save_resume)
-               .default_value(1.)
+               .default_value(1.f)
                .help("Amount of accumulated implicit l2 regularization"));
   options.add_and_parse(new_options);
 
@@ -1226,6 +1229,8 @@ base_learner* setup(VW::setup_base_i& stack_builder)
   g->total_weight = 0.;
   all.weights.adaptive = true;
   all.weights.normalized = true;
+  all.sd->gravity = gravity;
+  all.sd->contraction = contraction;
   g->neg_norm_power = (all.weights.adaptive ? (all.power_t - 1.f) : -1.f);
   g->neg_power_t = -all.power_t;
 
@@ -1242,7 +1247,7 @@ base_learner* setup(VW::setup_base_i& stack_builder)
   if (!all.holdout_set_off)
   {
     all.sd->holdout_best_loss = FLT_MAX;
-    g->early_stop_thres = options.get_typed_option<size_t>("early_terminate").value();
+    g->early_stop_thres = options.get_typed_option<uint64_t>("early_terminate").value();
   }
 
   g->initial_constant = all.initial_constant;

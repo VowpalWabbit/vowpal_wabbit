@@ -3,6 +3,7 @@
 // license as described in the file LICENSE.
 
 #include "cb_explore_adf_cover.h"
+#include "numeric_casts.h"
 #include "reductions.h"
 #include "cb_adf.h"
 #include "rand48.h"
@@ -233,7 +234,7 @@ VW::LEARNER::base_learner* setup(VW::setup_base_i& stack_builder)
 
   bool cb_explore_adf_option = false;
   std::string type_string = "mtr";
-  size_t cover_size = 0;
+  uint64_t cover_size = 0;
   float psi = 0.;
   bool nounif = false;
   bool first_only = false;
@@ -314,7 +315,7 @@ VW::LEARNER::base_learner* setup(VW::setup_base_i& stack_builder)
   bool with_metrics = options.was_supplied("extra_metrics");
 
   using explore_type = cb_explore_adf_base<cb_explore_adf_cover>;
-  auto data = VW::make_unique<explore_type>(with_metrics, cover_size, psi, nounif, epsilon, epsilon_decay, first_only,
+  auto data = VW::make_unique<explore_type>(with_metrics, VW::cast_to_smaller_type<size_t>(cover_size), psi, nounif, epsilon, epsilon_decay, first_only,
       as_multiline(all.cost_sensitive), all.scorer, cb_type, all.model_file_ver, all.logger);
   auto* l = make_reduction_learner(
       std::move(data), base, explore_type::learn, explore_type::predict, stack_builder.get_setupfn_name(setup))

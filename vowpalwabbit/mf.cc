@@ -2,6 +2,8 @@
 // individual contributors. All rights reserved. Released under a BSD (revised)
 // license as described in the file LICENSE.
 
+#include <_types/_uint64_t.h>
+#include "numeric_casts.h"
 #ifdef _WIN32
 #  define NOMINMAX
 #  include <winsock2.h>
@@ -190,12 +192,14 @@ base_learner* mf_setup(VW::setup_base_i& stack_builder)
   options_i& options = *stack_builder.get_options();
   VW::workspace& all = *stack_builder.get_all_pointer();
   auto data = VW::make_unique<mf>();
+  uint64_t rank;
   option_group_definition new_options("[Reduction] Matrix Factorization Reduction");
   new_options.add(
-      make_option("new_mf", data->rank).keep().necessary().help("Rank for reduction-based matrix factorization"));
+      make_option("new_mf", rank).keep().necessary().help("Rank for reduction-based matrix factorization"));
 
   if (!options.add_parse_and_check_necessary(new_options)) return nullptr;
 
+  data->rank = VW::cast_to_smaller_type<size_t>(rank);
   data->all = &all;
   // store global pairs in local data structure and clear global pairs
   // for eventual calls to base learner

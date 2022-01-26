@@ -2,6 +2,9 @@
 // individual contributors. All rights reserved. Released under a BSD (revised)
 // license as described in the file LICENSE.
 #include "search_graph.h"
+#include <_types/_uint64_t.h>
+#include "memory.h"
+#include "numeric_casts.h"
 #include "vw.h"
 #include "gd.h"
 #include "vw_exception.h"
@@ -93,11 +96,12 @@ inline bool example_is_test(const polylabel& l) { return l.cs.costs.empty(); }
 
 void initialize(Search::search& sch, size_t& num_actions, options_i& options)
 {
-  task_data* D = new task_data();
+  auto D = VW::make_unique<task_data>();
+  uint64_t num_loops;
 
   option_group_definition new_options("[Search] Search Graphtask");
   new_options
-      .add(make_option("search_graph_num_loops", D->num_loops).default_value(2).help("How many loops to run [def: 2]"))
+      .add(make_option("search_graph_num_loops", num_loops).default_value(2).help("How many loops to run [def: 2]"))
       .add(make_option("search_graph_no_structure", D->use_structure).help("Turn off edge features"))
       .add(make_option("search_graph_separate_learners", D->separate_learners)
                .help("Use a different learner for each pass"))
@@ -105,6 +109,7 @@ void initialize(Search::search& sch, size_t& num_actions, options_i& options)
                .help("Construct features based on directed graph semantics"));
   options.add_and_parse(new_options);
 
+  D->num_loops = VW::cast_to_smaller_type<size_t>(num_loops);
   D->use_structure = !D->use_structure;
 
   if (D->num_loops <= 1)
@@ -125,7 +130,7 @@ void initialize(Search::search& sch, size_t& num_actions, options_i& options)
 
   if (D->separate_learners) sch.set_num_learners(D->num_loops);
 
-  sch.set_task_data<task_data>(D);
+  sch.set_task_data<task_data>(D.release());
   sch.set_options(0);  // Search::AUTO_HAMMING_LOSS
   sch.set_label_parser(COST_SENSITIVE::cs_label, example_is_test);
 }

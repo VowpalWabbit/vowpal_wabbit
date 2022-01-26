@@ -4,6 +4,7 @@
 #include <float.h>
 #include <errno.h>
 
+#include "numeric_casts.h"
 #include "reductions.h"
 #include "vw.h"
 #include "search.h"
@@ -84,8 +85,8 @@ struct task_data
 
 void initialize(Search::search& sch, size_t& /*num_actions*/, options_i& options)
 {
-  size_t max_branches = 2;
-  size_t kbest = 0;
+  uint64_t max_branches = 2;
+  uint64_t kbest = 0;
   option_group_definition new_options("[Search] Selective Branching");
   new_options
       .add(make_option("search_max_branch", max_branches)
@@ -96,7 +97,7 @@ void initialize(Search::search& sch, size_t& /*num_actions*/, options_i& options
                .help("Number of best items to output (0=just like non-selectional-branching, default)"));
   options.add_and_parse(new_options);
 
-  task_data* d = new task_data(max_branches, kbest);
+  task_data* d = new task_data(VW::cast_to_smaller_type<size_t>(max_branches), VW::cast_to_smaller_type<size_t>(kbest));
   sch.set_metatask_data(d);
 }
 

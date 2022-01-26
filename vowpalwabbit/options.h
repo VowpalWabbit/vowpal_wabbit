@@ -66,7 +66,19 @@ struct option_builder
   {
     return fmt::format("{}. Choices: {{{}}}", help, fmt::join(s, ", "));
   }
-  std::string help_one_of(const std::string& help, const std::set<int>& s)
+  std::string help_one_of(const std::string& help, const std::set<int32_t>& s)
+  {
+    return fmt::format("{}. Choices: {{{}}}", help, fmt::join(s, ", "));
+  }
+  std::string help_one_of(const std::string& help, const std::set<int64_t>& s)
+  {
+    return fmt::format("{}. Choices: {{{}}}", help, fmt::join(s, ", "));
+  }
+    std::string help_one_of(const std::string& help, const std::set<uint32_t>& s)
+  {
+    return fmt::format("{}. Choices: {{{}}}", help, fmt::join(s, ", "));
+  }
+  std::string help_one_of(const std::string& help, const std::set<uint64_t>& s)
   {
     return fmt::format("{}. Choices: {{{}}}", help, fmt::join(s, ", "));
   }
@@ -132,6 +144,13 @@ template <typename T>
 struct typed_option : base_option
 {
   using value_type = T;
+
+  static_assert(std::is_same<T, uint32_t>::value || std::is_same<T, uint64_t>::value ||
+          std::is_same<T, int32_t>::value || std::is_same<T, int64_t>::value || std::is_same<T, float>::value ||
+          std::is_same<T, std::string>::value || std::is_same<T, bool>::value ||
+          std::is_same<T, std::vector<std::string>>::value,
+      "typed_option<T>, T must be one of uint32_t, uint64_t, int32_t, int64_t, float, std::string, bool, "
+      "std::vector<std::string");
 
   typed_option(const std::string& name) : base_option(name, typeid(T).hash_code()) {}
 
@@ -213,12 +232,6 @@ template <typename T>
 option_builder<typed_option_with_location<T>> make_option(const std::string& name, T& location)
 {
   return typed_option_with_location<T>(name, location);
-}
-
-template <typename T>
-option_builder<typed_option<T>> make_option(const std::string& name)
-{
-  return option_builder<typed_option<T>>(name);
 }
 
 struct option_group_definition;

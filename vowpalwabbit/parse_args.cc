@@ -12,6 +12,7 @@
 #include <utility>
 
 #include "constant.h"
+#include "numeric_casts.h"
 #include "parse_regressor.h"
 #include "parser.h"
 #include "parse_primitives.h"
@@ -977,8 +978,12 @@ void parse_example_tweaks(options_i& options, VW::workspace& all)
   std::string named_labels;
   std::string loss_function;
   float loss_parameter = 0.0;
-  size_t early_terminate_passes;
+  uint64_t early_terminate_passes;
   bool test_only = false;
+
+  uint64_t numpasses;
+  int64_t pass_length;
+  int64_t max_examples;
 
   option_group_definition example_options("Example");
   example_options.add(make_option("testonly", test_only).short_name("t").help("Ignore label information and just test"))
@@ -991,13 +996,13 @@ void parse_example_tweaks(options_i& options, VW::workspace& all)
               .default_value(3)
               .help(
                   "Specify the number of passes tolerated when holdout loss doesn't decrease before early termination"))
-      .add(make_option("passes", all.numpasses).default_value(1).help("Number of Training Passes"))
-      .add(make_option("initial_pass_length", all.pass_length)
-               .default_value(std::numeric_limits<size_t>::max())
-               .help("Initial number of examples per pass"))
-      .add(make_option("examples", all.max_examples)
-               .default_value(std::numeric_limits<size_t>::max())
-               .help("Number of examples to parse"))
+      .add(make_option("passes", numpasses).default_value(1).help("Number of Training Passes"))
+      .add(make_option("initial_pass_length", pass_length)
+               .default_value(-1)
+               .help("Initial number of examples per pass. -1 for no limit"))
+      .add(make_option("examples", max_examples)
+               .default_value(-1)
+               .help("Number of examples to parse. -1 for no limit"))
       .add(make_option("min_prediction", all.sd->min_label).help("Smallest prediction to output"))
       .add(make_option("max_prediction", all.sd->max_label).help("Largest prediction to output"))
       .add(make_option("sort_features", all.example_parser->sort_features)
@@ -1018,6 +1023,20 @@ void parse_example_tweaks(options_i& options, VW::workspace& all)
                .help("Use names for labels (multiclass, etc.) rather than integers, argument specified all possible "
                      "labels, comma-sep, eg \"--named_labels Noun,Verb,Adj,Punc\""));
   options.add_and_parse(example_options);
+
+  all.numpasses = VW::cast_to_smaller_type<size_t>(numpasses);
+  if (pass_length < -1)
+  {
+    THROW("pass_length must be -1 or positive");
+  }
+
+  if (max_examples < -1)
+  {
+    THROW("--examples must be -1 or positive");
+  }
+
+  all.pass_length = pass_length == -1 ? std::numeric_limits<size_t>::max() : VW::cast_signed_to_unsigned<size_t>(pass_length);
+  all.max_examples  = max_examples == -1 ? std::numeric_limits<size_t>::max() : VW::cast_signed_to_unsigned<size_t>(max_examples);
 
   if (test_only || all.eta == 0.)
   {
@@ -1073,6 +1092,7 @@ void parse_example_tweaks(options_i& options, VW::workspace& all)
 void parse_update_options(options_i& options, VW::workspace& all)
 {
   option_group_definition update_args("Update");
+  float t_arg = 0.f;
   update_args
       .add(make_option("learning_rate", all.eta)
                .default_value(0.5f)
@@ -1084,12 +1104,15 @@ void parse_update_options(options_i& options, VW::workspace& all)
       .add(make_option("decay_learning_rate", all.eta_decay_rate)
                .default_value(1.f)
                .help("Set Decay factor for learning_rate between passes"))
-      .add(make_option("initial_t", all.sd->t).help("Initial t value"))
+      .add(make_option("initial_t", t_arg).help("Initial t value"))
       .add(make_option("feature_mask", all.feature_mask)
                .help("Use existing regressor to determine which parameters may be updated.  If no initial_regressor "
                      "given, also used for initial weights."));
-  all.options->add_and_parse(update_args);
   options.add_and_parse(update_args);
+  if (options.was_supplied("initial_t"))
+  {
+    all.sd->t = t_arg;
+  }
   all.initial_t = static_cast<float>(all.sd->t);
 }
 
@@ -1227,7 +1250,7 @@ VW::workspace& parse_args(
   std::string driver_output_stream;
   std::string log_level;
   std::string log_output_stream;
-  size_t upper_limit = 0;
+  uint64_t upper_limit = 0;
   option_group_definition logging_options("Logging");
   logging_options
       .add(make_option("quiet", quiet)
@@ -1269,7 +1292,7 @@ VW::workspace& parse_args(
   if (trace_listener == nullptr && location == VW::io::output_location::compat)
   { logger.err_warn("'compat' mode for --log_output is deprecated and will be removed in a future release."); }
 
-  if (options->was_supplied("limit_output") && (upper_limit != 0)) { logger.set_max_output(upper_limit); }
+  if (options->was_supplied("limit_output") && (upper_limit != 0)) { logger.set_max_output(VW::cast_to_smaller_type<size_t>(upper_limit)); }
 
   VW::workspace& all = *(new VW::workspace(logger));
   all.options = std::move(options);
@@ -1358,11 +1381,11 @@ VW::workspace& parse_args(
     all.options->add_and_parse(weight_args);
 
     std::string span_server_arg;
-    int span_server_port_arg;
+    int32_t span_server_port_arg;
     // bool threads_arg;
-    size_t unique_id_arg;
-    size_t total_arg;
-    size_t node_arg;
+    uint64_t unique_id_arg;
+    uint64_t total_arg;
+    uint64_t node_arg;
     option_group_definition parallelization_args("Parallelization");
     parallelization_args
         .add(make_option("span_server", span_server_arg).help("Location of server for setting up spanning tree"))
@@ -1387,7 +1410,7 @@ VW::workspace& parse_args(
     {
       all.all_reduce_type = AllReduceType::Socket;
       all.all_reduce =
-          new AllReduceSockets(span_server_arg, span_server_port_arg, unique_id_arg, total_arg, node_arg, all.quiet);
+          new AllReduceSockets(span_server_arg, VW::cast_to_smaller_type<int>(span_server_port_arg), VW::cast_to_smaller_type<size_t>(unique_id_arg), VW::cast_to_smaller_type<size_t>(total_arg), VW::cast_to_smaller_type<size_t>(node_arg), all.quiet);
     }
 
     parse_diagnostics(*all.options, all);

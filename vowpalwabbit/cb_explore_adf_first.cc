@@ -4,6 +4,7 @@
 
 #include "cb_explore_adf_first.h"
 
+#include "numeric_casts.h"
 #include "reductions.h"
 #include "cb_adf.h"
 #include "rand48.h"
@@ -99,7 +100,7 @@ base_learner* setup(VW::setup_base_i& stack_builder)
   VW::workspace& all = *stack_builder.get_all_pointer();
   using config::make_option;
   bool cb_explore_adf_option = false;
-  size_t tau = 0;
+  uint64_t tau = 0;
   float epsilon = 0.;
   config::option_group_definition new_options("[Reduction] Contextual Bandit Exploration with ADF (tau-first)");
   new_options
@@ -127,7 +128,7 @@ base_learner* setup(VW::setup_base_i& stack_builder)
   bool with_metrics = options.was_supplied("extra_metrics");
 
   using explore_type = cb_explore_adf_base<cb_explore_adf_first>;
-  auto data = VW::make_unique<explore_type>(with_metrics, tau, epsilon, all.model_file_ver);
+  auto data = VW::make_unique<explore_type>(with_metrics, VW::cast_to_smaller_type<size_t>(tau), epsilon, all.model_file_ver);
 
   if (epsilon < 0.0 || epsilon > 1.0) { THROW("The value of epsilon must be in [0,1]"); }
   auto* l = make_reduction_learner(

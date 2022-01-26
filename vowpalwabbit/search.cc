@@ -6,6 +6,7 @@
 #include <math.h>
 #include <memory>
 #include <algorithm>
+#include "numeric_casts.h"
 #include "vw.h"
 #include "rand48.h"
 #include "reductions.h"
@@ -2375,13 +2376,15 @@ void ensure_param(float& v, float lo, float hi, float def, const char* str, VW::
 
 void handle_condition_options(VW::workspace& all, auto_condition_settings& acset)
 {
+  uint64_t max_bias_ngram_length;
+  uint64_t max_quad_ngram_length;
   option_group_definition new_options("[Search] Search Auto-Conditioning");
-  new_options.add(make_option("search_max_bias_ngram_length", acset.max_bias_ngram_length)
+  new_options.add(make_option("search_max_bias_ngram_length", max_bias_ngram_length)
                       .keep()
                       .default_value(1)
                       .help("Add a \"bias\" feature for each ngram up to and including this length. eg., if it's 1 "
                             "(default), then you get a single feature for each conditional"));
-  new_options.add(make_option("search_max_quad_ngram_length", acset.max_quad_ngram_length)
+  new_options.add(make_option("search_max_quad_ngram_length", max_quad_ngram_length)
                       .keep()
                       .default_value(0)
                       .help("Add bias *times* input features for each ngram up to and including this length (def: 0)"));
@@ -2393,6 +2396,8 @@ void handle_condition_options(VW::workspace& all, auto_condition_settings& acset
                       .keep()
                       .help("Should we use lower-level reduction _internal state_ as additional features? (def: no)"));
   all.options->add_and_parse(new_options);
+  acset.max_bias_ngram_length = VW::cast_to_smaller_type<size_t>(max_bias_ngram_length);
+  acset.max_quad_ngram_length=  VW::cast_to_smaller_type<size_t>(max_quad_ngram_length);
 }
 
 void search_finish(search& sch)
@@ -2505,13 +2510,18 @@ base_learner* setup(VW::setup_base_i& stack_builder)
   std::string neighbor_features_string;
   std::string rollout_string = "mix_per_state";
   std::string rollin_string = "mix_per_state";
+  uint64_t A;
+  uint64_t passes_per_policy;
+  uint64_t history_length;
+  uint64_t rollout_num_steps;
+  uint64_t save_every_k_runs;
 
   uint32_t search_trained_nb_policies;
   std::string search_allowed_transitions;
 
   option_group_definition new_options("[Reduction] Search");
   new_options
-      .add(make_option("search", priv.A)
+      .add(make_option("search", A)
                .keep()
                .default_value(1)
                .help("Use learning to search, argument=maximum action id or 0 for LDF"))
@@ -2534,7 +2544,7 @@ base_learner* setup(VW::setup_base_i& stack_builder)
       .add(make_option("search_rollin", rollin_string)
                .one_of({"policy", "learn", "oracle", "ref", "mix_per_state", "mix_per_roll", "mix"})
                .help("How should past trajectories be generated"))
-      .add(make_option("search_passes_per_policy", priv.passes_per_policy)
+      .add(make_option("search_passes_per_policy", passes_per_policy)
                .default_value(1)
                .help("Number of passes per policy (only valid for search_interpolation=policy)"))
       .add(make_option("search_beta", priv.beta)
@@ -2557,10 +2567,10 @@ base_learner* setup(VW::setup_base_i& stack_builder)
                .keep()
                .help("Copy features from neighboring lines. argument looks like: '-1:a,+2' meaning copy previous line "
                      "namespace a and next next line from namespace _unnamed_, where ',' separates them"))
-      .add(make_option("search_rollout_num_steps", priv.rollout_num_steps)
+      .add(make_option("search_rollout_num_steps", rollout_num_steps).default_value(0)
                .help("How many calls of \"loss\" before we stop really predicting on rollouts and switch to "
                      "oracle (default means \"infinite\")"))
-      .add(make_option("search_history_length", priv.history_length)
+      .add(make_option("search_history_length", history_length)
                .keep()
                .default_value(1)
                .help("Some tasks allow you to specify how much history their depend on; specify that here"))
@@ -2575,9 +2585,15 @@ base_learner* setup(VW::setup_base_i& stack_builder)
       .add(make_option("search_active_verify", priv.active_csoaa_verify)
                .help("Verify that active learning is doing the right thing (arg = multiplier, should be = "
                      "cost_range * range_c)"))
-      .add(make_option("search_save_every_k_runs", priv.save_every_k_runs).help("Save model every k runs"));
+      .add(make_option("search_save_every_k_runs", save_every_k_runs).default_value(0).help("Save model every k runs"));
 
   if (!options.add_parse_and_check_necessary(new_options)) return nullptr;
+
+  priv.A = VW::cast_to_smaller_type<size_t>(A);
+  priv.passes_per_policy = VW::cast_to_smaller_type<size_t>(passes_per_policy);
+  priv.rollout_num_steps = VW::cast_to_smaller_type<size_t>(rollout_num_steps);
+  priv.history_length = VW::cast_to_smaller_type<size_t>(history_length);
+  priv.save_every_k_runs = VW::cast_to_smaller_type<size_t>(save_every_k_runs);
 
   search_initialize(&all, *sch.get());
 

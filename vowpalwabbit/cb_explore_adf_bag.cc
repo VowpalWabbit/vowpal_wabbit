@@ -5,6 +5,7 @@
 #include "cb_explore_adf_bag.h"
 
 #include "cb_explore_adf_common.h"
+#include "numeric_casts.h"
 #include "reductions.h"
 #include "cb_adf.h"
 #include "rand48.h"
@@ -155,7 +156,7 @@ VW::LEARNER::base_learner* setup(VW::setup_base_i& stack_builder)
   using config::make_option;
   bool cb_explore_adf_option = false;
   float epsilon = 0.;
-  size_t bag_size = 0;
+  uint64_t bag_size = 0;
   bool greedify = false;
   bool first_only = false;
   config::option_group_definition new_options("[Reduction] Contextual Bandit Exploration with ADF (bagging)");
@@ -180,7 +181,7 @@ VW::LEARNER::base_learner* setup(VW::setup_base_i& stack_builder)
   // predict before training is called.
   if (!options.was_supplied("no_predict")) { options.insert("no_predict", ""); }
 
-  size_t problem_multiplier = bag_size;
+  size_t problem_multiplier = VW::cast_to_smaller_type<size_t>(bag_size);
   VW::LEARNER::multi_learner* base = as_multiline(stack_builder.setup_base_learner());
   all.example_parser->lbl_parser = CB::cb_label;
 
@@ -188,7 +189,7 @@ VW::LEARNER::base_learner* setup(VW::setup_base_i& stack_builder)
 
   using explore_type = cb_explore_adf_base<cb_explore_adf_bag>;
   auto data =
-      VW::make_unique<explore_type>(with_metrics, epsilon, bag_size, greedify, first_only, all.get_random_state());
+      VW::make_unique<explore_type>(with_metrics, epsilon, VW::cast_to_smaller_type<size_t>(bag_size), greedify, first_only, all.get_random_state());
   auto* l = make_reduction_learner(
       std::move(data), base, explore_type::learn, explore_type::predict, stack_builder.get_setupfn_name(setup))
                 .set_params_per_weight(problem_multiplier)

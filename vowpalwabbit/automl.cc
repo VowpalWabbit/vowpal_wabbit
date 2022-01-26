@@ -653,12 +653,12 @@ VW::LEARNER::base_learner* automl_setup(VW::setup_base_i& stack_builder)
   uint64_t max_live_configs;
   std::string cm_type;
   std::string priority_type;
-  int priority_challengers;
+  int32_t priority_challengers;
   bool keep_configs = false;
   bool verbose_metrics = false;
   std::string oracle_type;
-  double automl_alpha;
-  double automl_tau;
+  float automl_alpha;
+  float automl_tau;
 
   option_group_definition new_options("[Reduction] Automl");
   new_options

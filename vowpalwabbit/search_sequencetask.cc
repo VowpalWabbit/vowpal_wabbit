@@ -2,6 +2,8 @@
 // individual contributors. All rights reserved. Released under a BSD (revised)
 // license as described in the file LICENSE.
 #include "search_sequencetask.h"
+#include "memory.h"
+#include "numeric_casts.h"
 #include "vw.h"
 
 using namespace VW::config;
@@ -128,15 +130,17 @@ struct task_data
 
 void initialize(Search::search& sch, size_t& num_actions, options_i& options)
 {
-  task_data* D = new task_data();
-
+  uint64_t multipass;
   bool search_span_bilou = false;
   option_group_definition new_options("[Search] Search Sequencespan");
   new_options
       .add(make_option("search_span_bilou", search_span_bilou)
                .help("Switch to (internal) BILOU encoding instead of BIO encoding"))
-      .add(make_option("search_span_multipass", D->multipass).default_value(1).help("Do multiple passes"));
+      .add(make_option("search_span_multipass", multipass).default_value(1).help("Do multiple passes"));
   options.add_and_parse(new_options);
+
+  auto D = VW::make_unique<task_data>();
+  D->multipass = VW::cast_to_smaller_type<size_t>(multipass);
 
   if (search_span_bilou)
   {
@@ -169,7 +173,7 @@ void initialize(Search::search& sch, size_t& num_actions, options_i& options)
     D->only_two_allowed.push_back(0);
   }
 
-  sch.set_task_data<task_data>(D);
+  sch.set_task_data<task_data>(D.release());
   sch.set_options(Search::AUTO_CONDITION_FEATURES |  // automatically add history features to our examples, please
       Search::AUTO_HAMMING_LOSS |     // please just use hamming loss on individual predictions -- we won't declare loss
       Search::EXAMPLES_DONT_CHANGE |  // we don't do any internal example munging

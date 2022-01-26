@@ -10,6 +10,7 @@
 #include <cassert>
 #include <memory>
 
+#include "numeric_casts.h"
 #include "parse_example.h"
 #include "constant.h"
 #include "gd.h"
@@ -93,7 +94,7 @@ struct svm_params
   size_t pool_size = 0;
   size_t pool_pos = 0;
   size_t subsample = 0;  // NOTE: Eliminating subsample to only support 1/pool_size
-  size_t reprocess = 0;
+  uint64_t reprocess = 0;
 
   svm_model* model = nullptr;
   size_t maxcache = 0;
@@ -709,16 +710,19 @@ VW::LEARNER::base_learner* kernel_svm_setup(VW::setup_base_i& stack_builder)
   std::string kernel_type;
   float bandwidth = 1.f;
   int degree = 2;
+  uint64_t pool_size;
+  uint64_t reprocess;
+  uint64_t subsample;
 
   bool ksvm = false;
 
   option_group_definition new_options("[Reduction] Kernel SVM");
   new_options.add(make_option("ksvm", ksvm).keep().necessary().help("Kernel svm"))
-      .add(make_option("reprocess", params->reprocess).default_value(1).help("Number of reprocess steps for LASVM"))
+      .add(make_option("reprocess", reprocess).default_value(1).help("Number of reprocess steps for LASVM"))
       .add(make_option("pool_greedy", params->active_pool_greedy).help("Use greedy selection on mini pools"))
       .add(make_option("para_active", params->para_active).help("Do parallel active learning"))
-      .add(make_option("pool_size", params->pool_size).default_value(1).help("Size of pools for active learning"))
-      .add(make_option("subsample", params->subsample)
+      .add(make_option("pool_size", pool_size).default_value(1).help("Size of pools for active learning"))
+      .add(make_option("subsample", subsample)
                .default_value(1)
                .help("Number of items to subsample from the pool"))
       .add(make_option("kernel", kernel_type)
@@ -730,6 +734,11 @@ VW::LEARNER::base_learner* kernel_svm_setup(VW::setup_base_i& stack_builder)
       .add(make_option("degree", degree).keep().default_value(2).help("Degree of poly kernel"));
 
   if (!options.add_parse_and_check_necessary(new_options)) { return nullptr; }
+
+  params->pool_size = VW::cast_to_smaller_type<size_t>(pool_size);
+  params->reprocess = VW::cast_to_smaller_type<size_t>(reprocess);
+  params->subsample = VW::cast_to_smaller_type<size_t>(subsample);
+
 
   std::string loss_function = "hinge";
   float loss_parameter = 0.0;

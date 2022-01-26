@@ -12,7 +12,7 @@ struct input_options
 {
   bool daemon;
   bool foreground;
-  size_t port;
+  uint32_t port;
   std::string pid_file;
   std::string port_file;
 
