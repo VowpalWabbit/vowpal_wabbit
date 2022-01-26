@@ -146,7 +146,7 @@ struct typed_option : base_option
   using value_type = T;
 
   static_assert(std::is_same<T, uint32_t>::value || std::is_same<T, uint64_t>::value ||
-          std::is_same<T, int32_t>::value || std::is_same<T, int64_t>::value || std::is_same<T, float>::value ||
+          std::is_same<T, int32_t>::value || std::is_same<T, int64_t>::value || std::is_same<T, float>::value || std::is_same<T, double>::value ||
           std::is_same<T, std::string>::value || std::is_same<T, bool>::value ||
           std::is_same<T, std::vector<std::string>>::value,
       "typed_option<T>, T must be one of uint32_t, uint64_t, int32_t, int64_t, float, std::string, bool, "
