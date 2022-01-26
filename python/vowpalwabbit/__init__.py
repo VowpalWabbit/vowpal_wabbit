@@ -5,6 +5,7 @@ import importlib as _importlib
 import warnings as _warnings
 
 __all__ = [
+    "AbstractLabel",
     "ActionScore",
     "CBContinuousLabel",
     "CBContinuousLabelElement",
@@ -21,6 +22,7 @@ __all__ = [
     "LabelType",
     "MulticlassLabel",
     "MulticlassProbabilitiesLabel",
+    "MultilabelLabel",
     "NamespaceId",
     "PredictionType",
     "SimpleLabel",
@@ -32,6 +34,7 @@ __all__ = [
 from .version import __version__
 from . import pyvw
 from .pyvw import (
+    AbstractLabel,
     ActionScore,
     CBContinuousLabel,
     CBContinuousLabelElement,
@@ -48,6 +51,7 @@ from .pyvw import (
     LabelType,
     MulticlassLabel,
     MulticlassProbabilitiesLabel,
+    MultilabelLabel,
     NamespaceId,
     PredictionType,
     SimpleLabel,
@@ -62,13 +66,6 @@ def __getattr__(name):
         name = "dftovw"
         _warnings.warn(
             "Module DFtoVW has been renamed to dftovw. Please use the new name. The old alias will be removed in a future version.",
-            DeprecationWarning,
-        )
-        return _importlib.import_module("." + name, __name__)
-    if name == "sklearn_vw":
-        name = "sklearn"
-        _warnings.warn(
-            "Module sklearn_vw has been renamed to sklearn. Please use the new name. The old alias will be removed in a future version.",
             DeprecationWarning,
         )
         return _importlib.import_module("." + name, __name__)

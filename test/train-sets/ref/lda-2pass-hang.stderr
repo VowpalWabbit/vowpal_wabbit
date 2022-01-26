@@ -1,11 +1,11 @@
+creating cache_file = train-sets/lda-2pass-hang.dat.cache
+Reading datafile = train-sets/lda-2pass-hang.dat
+num sources = 1
 Num weight bits = 18
 learning rate = 0.5
 initial_t = 0
 power_t = 0.5
 decay_learning_rate = 1
-creating cache_file = train-sets/lda-2pass-hang.dat.cache
-Reading datafile = train-sets/lda-2pass-hang.dat
-num sources = 1
 Enabled reductions: lda
 Input label = nolabel
 Output pred = scalars

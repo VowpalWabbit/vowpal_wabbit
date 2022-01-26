@@ -1,6 +1,7 @@
 import warnings
 import numpy as np
 import pandas as pd
+from typing import Any, Hashable, List, Optional, Tuple, Type, Union
 
 
 class _Col:
@@ -13,19 +14,20 @@ class _Col:
         str: np.dtype("O"),
     }
 
-    def __init__(self, colname, expected_type, min_value=None, max_value=None):
+    def __init__(
+        self,
+        colname: Hashable,
+        expected_type: Tuple,
+        min_value: Optional[Union[int, float]] = None,
+        max_value: Optional[Union[int, float]] = None,
+    ):
         """Initialize a _Col instance
 
-        Parameters
-        ----------
-        colname: any hashable type (str/int/float/tuple/etc.)
-            The column name.
-        expected_type: tuple
-            The expected type of the column.
-        min_value: int/float
-            The minimum value to which the column must be superior or equal to.
-        max_value: int/float
-            The maximum value to which the column must be inferior or equal to.
+        Args:
+            colname:  The column name. (any hashable type (str/int/float/tuple/etc.))
+            expected_type: The expected type of the column.
+            min_value: The minimum value to which the column must be superior or equal to.
+            max_value: The maximum value to which the column must be inferior or equal to.
         """
         self.colname = colname
         self.expected_type = expected_type
@@ -33,17 +35,13 @@ class _Col:
         self.max_value = max_value
 
     @staticmethod
-    def make_valid_name(name):
+    def make_valid_name(name: str) -> str:
         """Returns a feature/namespace name that is compatible with VW (no ':' nor ' ').
 
-        Parameters
-        ----------
-        name : str
-            The name that will be made valid.
+        Args:
+            name: The name that will be made valid.
 
-        Returns
-        -------
-        valid_name : str
+        Returns:
             A valid VW feature name.
         """
         name = str(name)
@@ -59,22 +57,16 @@ class _Col:
 
         return valid_name
 
-    def get_col(self, df):
+    def get_col(self, df: pd.DataFrame) -> pd.Series:
         """Returns the column defined in attribute 'colname' from the dataframe 'df'.
 
-        Parameters
-        ----------
-        df : pandas.DataFrame
-            The dataframe from which to select the column.
+        Args:
+            df: The dataframe from which to select the column.
 
-        Raises
-        ------
-        KeyError
-            If the column is not found in the dataframe.
+        Raises:
+            KeyError: If the column is not found in the dataframe.
 
-        Returns
-        -------
-        out : pandas.Series
+        Returns:
             The column defined in attribute 'colname' from the dataframe 'df'.
         """
         try:
@@ -86,29 +78,23 @@ class _Col:
         else:
             return out.fillna("").apply(str)
 
-    def is_number(self, df):
+    def is_number(self, df: pd.DataFrame) -> bool:
         """Check if the column is of type number.
 
-        Parameters
-        ----------
-        df : pandas.DataFrame
-            The dataframe from which to check the column's type.
+        Args:
+            df: The dataframe from which to check the column's type.
         """
         col_type = df[self.colname].dtype
         return np.issubdtype(col_type, np.number)
 
-    def check_col_type(self, df):
+    def check_col_type(self, df: pd.DataFrame) -> None:
         """Check if the type of the column is valid.
 
-        Parameters
-        ----------
-        df : pandas.DataFrame
-            The dataframe from which to check the column.
+        Args:
+            df: The dataframe from which to check the column.
 
-        Raises
-        ------
-        TypeError
-            If the type of the column is not valid.
+        Raises:
+            TypeError: If the type of the column is not valid.
         """
         expected_type = [
             self.mapping_python_numpy[exp_type] for exp_type in self.expected_type
@@ -123,16 +109,14 @@ class _Col:
                 )
             )
 
-    def check_col_value(self, df):
+    def check_col_value(self, df: pd.DataFrame) -> None:
         """Check if the value range of the column is valid.
-        Parameters
-        ----------
-        df : pandas.DataFrame
-            The dataframe from which to check the column.
-        Raises
-        ------
-        ValueError
-            If the values of the column are not valid.
+
+        Args:
+            df: The dataframe from which to check the column.
+
+        Raises:
+            ValueError: If the values of the column are not valid.
         """
         if self.min_value is not None and self.max_value is not None:
             col_value = df[self.colname]
@@ -166,23 +150,22 @@ class AttributeDescriptor(object):
     class is used in the following managed class: SimpleLabel, MulticlassLabel, Feature, etc.
     """
 
-    def __init__(self, attribute_name, expected_type, min_value=None, max_value=None):
+    def __init__(
+        self,
+        attribute_name: str,
+        expected_type: Tuple[Type, ...],
+        min_value: Optional[Union[str, int, float]] = None,
+        max_value: Optional[Union[str, int, float]] = None,
+    ):
         """Initialize an AttributeDescriptor instance
 
-        Parameters
-        ----------
-        attribute_name: str
-            The name of the attribute.
-        expected_type: tuple
-            The expected type of the attribute.
-        min_value: str/int/float
-            The minimum value of the attribute.
-        max_value: str/int/float
-            The maximum value of the attribute.
-        Raises
-        ------
-        TypeError
-            If one of the arguments passed is not of valid type.
+        Args:
+            attribute_name: The name of the attribute.
+            expected_type: The expected type of the attribute.
+            min_value: The minimum value of the attribute.
+            max_value: The maximum value of the attribute.
+        Raises:
+            TypeError: If one of the arguments passed is not of valid type.
         """
         if not isinstance(attribute_name, str):
             raise TypeError("Argument 'attribute_name' must be a string")
@@ -193,16 +176,13 @@ class AttributeDescriptor(object):
         self.min_value = min_value
         self.max_value = max_value
 
-    def __set__(self, instance, arg):
+    def __set__(self, instance: "AttributeDescriptor", arg: str) -> None:
         """Implement set protocol to enforce type (and value range) checking
         for managed class such as SimpleLabel, MulticlassLabel, Feature, etc.
 
-        Parameters
-        ----------
-        instance: object
-            The managed instance.
-        arg: str
-            The argument to set.
+        Args:
+            instance: The managed instance.
+            arg: The argument to set.
         """
         # initialize empty set that register the column names
         if "columns" not in instance.__dict__:
@@ -233,37 +213,28 @@ class AttributeDescriptor(object):
 class SimpleLabel(object):
     """The simple label type for the constructor of DFtoVW."""
 
-    label = AttributeDescriptor("label", expected_type=(int, float))
-    weight = AttributeDescriptor("weight", expected_type=(int, float))
+    label: Any = AttributeDescriptor("label", expected_type=(int, float))
+    """Simple label value column name"""
+    weight: Any = AttributeDescriptor("weight", expected_type=(int, float))
+    """Simple label weight column name"""
 
-    def __init__(self, label, weight=None):
+    def __init__(self, label: Hashable, weight: Optional[Hashable] = None):
         """Initialize a SimpleLabel instance.
 
-        Parameters
-        ----------
-        label : str
-            The column name with the label.
-        weight : str
-            The column name with the weight.
-
-        Returns
-        -------
-        self : SimpleLabel
+        Args:
+            label: The column name with the label.
+            weight: The column name with the weight.
         """
         self.label = label
         self.weight = weight
 
-    def process(self, df):
+    def process(self, df: pd.DataFrame) -> pd.Series:
         """Returns the SimpleLabel string representation.
 
-        Parameters
-        ----------
-        df : pandas.DataFrame
-            The dataframe from which to select the column.
+        Args:
+            df: The dataframe from which to select the column.
 
-        Returns
-        -------
-        pandas.Series
+        Returns:
             The SimpleLabel string representation.
         """
         out = self.label.get_col(df)
@@ -275,37 +246,28 @@ class SimpleLabel(object):
 class MulticlassLabel(object):
     """The multiclass label type for the constructor of DFtoVW."""
 
-    label = AttributeDescriptor("label", expected_type=(int,), min_value=1)
-    weight = AttributeDescriptor("weight", expected_type=(int, float), min_value=0)
+    label: Any = AttributeDescriptor("label", expected_type=(int,), min_value=1)
+    """Multiclass label value column name"""
+    weight: Any = AttributeDescriptor("weight", expected_type=(int, float), min_value=0)
+    """Multiclass label weight column name"""
 
-    def __init__(self, label, weight=None):
+    def __init__(self, label: Hashable, weight: Optional[Hashable] = None):
         """Initialize a MulticlassLabel instance.
 
-        Parameters
-        ----------
-        label : str
-            The column name with the multi class label.
-        weight: str, optional
-            The column name with the (importance) weight of the multi class label.
-
-        Returns
-        -------
-        self : MulticlassLabel
+        Args:
+            label: The column name with the multi class label.
+            weight: The column name with the (importance) weight of the multi class label.
         """
         self.label = label
         self.weight = weight
 
-    def process(self, df):
+    def process(self, df: pd.DataFrame) -> pd.Series:
         """Returns the MulticlassLabel string representation.
 
-        Parameters
-        ----------
-        df : pandas.DataFrame
-            The dataframe from which to select the column(s).
+        Args:
+        df: The dataframe from which to select the column(s).
 
-        Returns
-        -------
-        pandas.Series
+        Returns:
             The MulticlassLabel string representation.
         """
         out = self.label.get_col(df)
@@ -317,33 +279,24 @@ class MulticlassLabel(object):
 class MultiLabel(object):
     """The multi labels type for the constructor of DFtoVW."""
 
-    label = AttributeDescriptor("label", expected_type=(int,), min_value=1)
+    label: Any = AttributeDescriptor("label", expected_type=(int,), min_value=1)
+    """Multilabel label value column name"""
 
-    def __init__(self, label):
+    def __init__(self, label: Union[Hashable, List[Hashable]]):
         """Initialize a MultiLabel instance.
 
-        Parameters
-        ----------
-        label : str or list of str
-            The (list of) column name(s) of the multi label(s).
-
-        Returns
-        -------
-        self : MulticlassLabel
+        Args:
+            label: The (list of) column name(s) of the multi label(s).
         """
         self.label = label
 
-    def process(self, df):
+    def process(self, df: pd.DataFrame) -> pd.Series:
         """Returns the MultiLabel string representation.
 
-        Parameters
-        ----------
-        df : pandas.DataFrame
-            The dataframe from which to select the column(s).
+        Args:
+            df: The dataframe from which to select the column(s).
 
-        Returns
-        -------
-        pandas.Series
+        Returns:
             The MultiLabel string representation.
         """
         labels = self.label if isinstance(self.label, list) else [self.label]
@@ -359,39 +312,35 @@ class MultiLabel(object):
 class ContextualbanditLabel(object):
     """The contextual bandit label type for the constructor of DFtoVW."""
 
-    action = AttributeDescriptor("action", expected_type=(int,), min_value=1)
-    cost = AttributeDescriptor("cost", expected_type=(float, int))
-    probability = AttributeDescriptor(
+    action: Any = AttributeDescriptor("action", expected_type=(int,), min_value=1)
+    """Contextual bandit label action column name"""
+
+    cost: Any = AttributeDescriptor("cost", expected_type=(float, int))
+    """Contextual bandit label cost column name"""
+    probability: Any = AttributeDescriptor(
         "probability", expected_type=(float,), min_value=0, max_value=1
     )
+    """Contextual bandit label probability column name"""
 
-    def __init__(self, action, cost, probability):
+    def __init__(self, action: Hashable, cost: Hashable, probability: Hashable):
         """Initialize a ContextualbanditLabel instance.
-        Parameters
-        ----------
-        action: str
-            The action taken where we observed the cost.
-        cost: str
-            The cost observed for this action (lower is better)
-        probability: str
-            The probability of the exploration policy to choose this action when collecting the data.
-        Returns
-        -------
-        self : ContextualbanditLabel
+
+        Args:
+            action: The action taken where we observed the cost.
+            cost: The cost observed for this action (lower is better)
+            probability: The probability of the exploration policy to choose this action when collecting the data.
         """
         self.action = action
         self.cost = cost
         self.probability = probability
 
-    def process(self, df):
+    def process(self, df: pd.DataFrame) -> pd.Series:
         """Returns the ContextualbanditLabel string representation.
-        Parameters
-        ----------
-        df : pandas.DataFrame
-            The dataframe from which to select the column(s).
-        Returns
-        -------
-        pandas.Series
+
+        Args:
+            df: The dataframe from which to select the column(s).
+
+        Returns:
             The ContextualbanditLabel string representation.
         """
         out = (
@@ -408,23 +357,22 @@ class ContextualbanditLabel(object):
 class Feature(object):
     """The feature type for the constructor of DFtoVW"""
 
-    value = AttributeDescriptor("value", expected_type=(str, int, float))
+    value: Any = AttributeDescriptor("value", expected_type=(str, int, float))
+    """Feature value column name"""
 
-    def __init__(self, value, rename_feature=None, as_type=None):
+    def __init__(
+        self,
+        value: Hashable,
+        rename_feature: Optional[str] = None,
+        as_type: Optional[str] = None,
+    ):
         """
         Initialize a Feature instance.
 
-        Parameters
-        ----------
-        value : str
-            The column name with the value of the feature.
-        rename_feature : str, optional
-            The name to use instead of the default (which is the column name defined in the value argument).
-        as_type: str
-            Enforce a specific type ('numerical' or 'categorical')
-        Returns
-        -------
-        self : Feature
+        Args:
+            value: The column name with the value of the feature.
+            rename_feature: The name to use instead of the default (which is the column name defined in the value argument).
+            as_type: Enforce a specific type ('numerical' or 'categorical')
         """
         self.value = value
         self.name = _Col.make_valid_name(
@@ -437,17 +385,13 @@ class Feature(object):
         else:
             self.as_type = as_type
 
-    def process(self, df):
+    def process(self, df: pd.DataFrame) -> pd.Series:
         """Returns the Feature string representation.
 
-        Parameters
-        ----------
-        df : pandas.DataFrame
-            The dataframe from which to select the column(s).
+        Args:
+            df: The dataframe from which to select the column(s).
 
-        Returns
-        -------
-        pandas.Series
+        Returns:
             The Feature string representation.
         """
         value_col = self.value.get_col(df)
@@ -463,35 +407,25 @@ class Feature(object):
 class _Tag(object):
     """A tag for the constructor of DFtoVW"""
 
-    tag = AttributeDescriptor("tag", expected_type=(str, int, float))
+    tag: Any = AttributeDescriptor("tag", expected_type=(str, int, float))
+    """Tag column name"""
 
-    def __init__(self, tag):
+    def __init__(self, tag: Hashable):
         """
         Initialize a Tag instance.
 
-        Parameters
-        ----------
-        tag : str
-            The column name with the tag.
-
-        Returns
-        -------
-        self : _Tag
+        Args:
+            tag: The column name with the tag.
         """
         self.tag = tag
 
-    def process(self, df):
+    def process(self, df: pd.DataFrame) -> pd.Series:
         """Returns the _Tag string representation.
 
-        Parameters
-        ----------
-        df : pandas.DataFrame
-            The dataframe from which to select the column.
+        Args:
+            df: The dataframe from which to select the column.
 
-        Returns
-        -------
-        pandas.Series
-            The Tag string representation.
+        Returns: The Tag string representation.
         """
         return self.tag.get_col(df)
 
@@ -506,30 +440,26 @@ class Namespace(object):
         name=(str, int, float), value=(int, float), features=(Feature,)
     )
 
-    def __init__(self, features, name=None, value=None):
+    def __init__(
+        self,
+        features: Union[Feature, List[Feature]],
+        name: Optional[Union[str, int, float]] = None,
+        value: Optional[Union[int, float]] = None,
+    ):
         """Initialize a Namespace instance.
 
-        Parameters
-        ----------
-        features : Feature or list of Feature
-            A (list of) Feature object(s) that form the namespace.
-        name : str/int/float, optional
-            The name of the namespace.
-        value : int/float, optional
-            A constant that specify the scaling factor for the features of this
-            namespace.
+        Args:
+            features: A (list of) Feature object(s) that form the namespace.
+            name: The name of the namespace.
+            value: A constant that specify the scaling factor for the features of this
+                namespace.
 
-        Examples
-        --------
-        >>> from vowpalwabbit.dftovw import Namespace, Feature
-        >>> ns_one_feature = Namespace(Feature("a"))
-        >>> ns_multi_features = Namespace([Feature("a"), Feature("b")])
-        >>> ns_one_feature_with_name = Namespace(Feature("a"), name="FirstNamespace")
-        >>> ns_one_feature_with_name_and_value = Namespace(Feature("a"), name="FirstNamespace", value=2)
-
-        Returns
-        -------
-        self : Namespace
+        Examples:
+            >>> from vowpalwabbit.dftovw import Namespace, Feature
+            >>> ns_one_feature = Namespace(Feature("a"))
+            >>> ns_multi_features = Namespace([Feature("a"), Feature("b")])
+            >>> ns_one_feature_with_name = Namespace(Feature("a"), name="FirstNamespace")
+            >>> ns_one_feature_with_name_and_value = Namespace(Feature("a"), name="FirstNamespace", value=2)
         """
 
         if (value is not None) and (name is None or name == ""):
@@ -546,10 +476,8 @@ class Namespace(object):
     def check_attributes_type(self):
         """Check if attributes are of valid type.
 
-        Raises
-        ------
-        TypeError
-            If one of the attribute is not valid.
+        Raises:
+            TypeError: If one of the attribute is not valid.
         """
         for attribute_name in ["name", "value"]:
             attribute_value = getattr(self, attribute_name)
@@ -576,12 +504,10 @@ class Namespace(object):
                 "In Namespace, argument 'features' should be a Feature or a list of Feature."
             )
 
-    def process(self):
+    def process(self) -> str:
         """Returns the Namespace string representation
 
-        Returns
-        -------
-        str
+        Returns:
             The Namespace string representation.
         """
         out = ["|"]
@@ -600,21 +526,17 @@ class _ListLabel(object):
     that the user could provide in the `label` argument of `DFtoVW`. The class only accepts
     a pre-defined set of label classes (defined in the class attribute `available_labels`).
 
-    Parameters
-    ----------
-    label_list : list
-        The list of labels that the user passed in the attribute label of DFtoVW.
+    Args:
+        label_list: The list of labels that the user passed in the attribute label of DFtoVW.
 
-    Raises
-    ------
-    ValueError
-        If the list passed has mixed types or if the labels should not be used in a list.
+    Raises:
+        ValueError: If the list passed has mixed types or if the labels should not be used in a list.
     """
 
     available_labels = (ContextualbanditLabel, MultiLabel)
     sep_by_label = dict(ContextualbanditLabel=" ", MultiLabel=",")
 
-    def __init__(self, label_list):
+    def __init__(self, label_list: List[Union[ContextualbanditLabel, MultiLabel]]):
 
         instance_classes = set(
             [type(label_instance).__name__ for label_instance in label_list]
@@ -634,6 +556,9 @@ class _ListLabel(object):
 
         # Unpack columns
         columns = set()
+        # Override the type to Any as labels have complex machinery that is not yet communicated via its type.
+        label_list: List[Any] = label_list
+
         for label in label_list:
             columns.update(label.columns)
         self.columns = columns
@@ -666,17 +591,13 @@ class _ListLabel(object):
     def __len__(self):
         return len(self.label_list)
 
-    def process(self, df):
+    def process(self, df: pd.DataFrame) -> pd.Series:
         """Return the string representation of the labels of the underlying list, separated by a pre-defined character.
 
-        Parameters
-        ----------
-        df : pandas.DataFrame
-            The dataframe from which to select the columns.
+        Args:
+            df: The dataframe from which to select the columns.
 
-        Returns
-        -------
-        pandas.Series
+        Returns:
             The _ListLabel string representation.
         """
         for (i, label) in enumerate(self):
@@ -699,64 +620,62 @@ class DFtoVW:
 
     def __init__(
         self,
-        df,
-        features=None,
-        namespaces=None,
-        label=None,
-        tag=None,
+        df: pd.DataFrame,
+        features: Optional[Union[Feature, List[Feature]]] = None,
+        namespaces: Optional[Union[Namespace, List[Namespace]]] = None,
+        label: Optional[
+            Union[
+                SimpleLabel,
+                MulticlassLabel,
+                MultiLabel,
+                ContextualbanditLabel,
+                List[MultiLabel],
+                List[ContextualbanditLabel],
+            ]
+        ] = None,
+        tag: Optional[str] = None,
     ):
         """Initialize a DFtoVW instance.
 
-        Parameters
-        ----------
-        df : pandas.DataFrame
-            The dataframe to convert to VW input format.
-        features: Feature/list of Feature
-            One or more Feature object(s).
-        namespaces : Namespace/list of Namespace
-            One or more Namespace object(s), each of being composed of one or
-            more Feature object(s).
-        label : SimpleLabel/MulticlassLabel/MultiLabel
-            The label.
-        tag :  str/int/float
-            The tag (used as identifiers for examples).
+        Args:
+            df: The dataframe to convert to VW input format.
+            features: One or more Feature object(s).
+            namespaces: One or more Namespace object(s), each of being composed of one or
+                more Feature object(s).
+            label: One or more label objects used to build the label string
+            tag: The tag column name (used as identifiers for examples).
 
-        Examples
-        --------
-        >>> from vowpalwabbit.dftovw import DFtoVW, SimpleLabel, Feature, Namespace
-        >>> import pandas as pd
+        Examples:
+            >>> from vowpalwabbit.dftovw import DFtoVW, SimpleLabel, Feature, Namespace
+            >>> import pandas as pd
 
-        >>> df = pd.DataFrame({"y": [1], "a": [2], "b": [3], "c": [4]})
-        >>> conv1 = DFtoVW(df=df,
-        ...                label=SimpleLabel("y"),
-        ...                features=Feature("a"))
-        >>> conv1.convert_df()
-        ['1 | a:2']
+            >>> df = pd.DataFrame({"y": [1], "a": [2], "b": [3], "c": [4]})
+            >>> conv1 = DFtoVW(df=df,
+            ...                label=SimpleLabel("y"),
+            ...                features=Feature("a"))
+            >>> conv1.convert_df()
+            ['1 | a:2']
 
-        >>> conv2 = DFtoVW(df=df,
-        ...                label=SimpleLabel("y"),
-        ...                features=[Feature(col) for col in ["a", "b"]])
-        >>> conv2.convert_df()
-        ['1 | a:2 b:3']
+            >>> conv2 = DFtoVW(df=df,
+            ...                label=SimpleLabel("y"),
+            ...                features=[Feature(col) for col in ["a", "b"]])
+            >>> conv2.convert_df()
+            ['1 | a:2 b:3']
 
-        >>> conv3 = DFtoVW(df=df,
-        ...                label=SimpleLabel("y"),
-        ...                namespaces=Namespace(
-        ...                        name="DoubleIt", value=2,
-        ...                        features=Feature(value="a", rename_feature="feat_a")))
-        >>> conv3.convert_df()
-        ['1 |DoubleIt:2 feat_a:2']
+            >>> conv3 = DFtoVW(df=df,
+            ...                label=SimpleLabel("y"),
+            ...                namespaces=Namespace(
+            ...                        name="DoubleIt", value=2,
+            ...                        features=Feature(value="a", rename_feature="feat_a")))
+            >>> conv3.convert_df()
+            ['1 |DoubleIt:2 feat_a:2']
 
-        >>> conv4 = DFtoVW(df=df,
-        ...                label=SimpleLabel("y"),
-        ...                namespaces=[Namespace(name="NS1", features=[Feature(col) for col in ["a", "c"]]),
-        ...                            Namespace(name="NS2", features=Feature("b"))])
-        >>> conv4.convert_df()
-        ['1 |NS1 a:2 c:4 |NS2 b:3']
-
-        Returns
-        -------
-        self : DFtoVW
+            >>> conv4 = DFtoVW(df=df,
+            ...                label=SimpleLabel("y"),
+            ...                namespaces=[Namespace(name="NS1", features=[Feature(col) for col in ["a", "c"]]),
+            ...                            Namespace(name="NS2", features=Feature("b"))])
+            >>> conv4.convert_df()
+            ['1 |NS1 a:2 c:4 |NS2 b:3']
         """
         self.df = df
         self.n_rows = df.shape[0]
@@ -779,45 +698,42 @@ class DFtoVW:
         self.check_columns_type_and_values()
 
     @classmethod
-    def from_colnames(cls, y, x, df, label_type="simple_label"):
+    def from_colnames(
+        cls,
+        y: Union[Hashable, List[Hashable]],
+        x: Union[Hashable, List[Hashable]],
+        df: pd.DataFrame,
+        label_type: str = "simple_label",
+    ) -> "DFtoVW":
         """Build DFtoVW instance using column names only.
 
-        Parameters
-        ----------
-        y : (list of) any hashable type (str/int/float/tuple/etc.) representing a column name
-            The column for the label.
-        x : (list of) any hashable type (str/int/float/tuple/etc.) representing a column name
-            The column(s) for the feature(s).
-        df : pandas.DataFrame
-            The dataframe used.
-        label_type: str (default: 'simple_label')
-            The type of the label. Available labels: 'simple_label', 'multiclass_label', 'multi_label'.
+        Args:
+            y: (list of) any hashable type (str/int/float/tuple/etc.) representing a column name
+                The column for the label.
+            x: (list of) any hashable type (str/int/float/tuple/etc.) representing a column name
+                The column(s) for the feature(s).
+            df: The dataframe used.
+            label_type: The type of the label. Available labels: 'simple_label', 'multiclass_label', 'multi_label'. (default: 'simple_label')
 
-        Raises
-        ------
-        TypeError
-            If argument label is not of valid type.
-        ValueError
-            If argument label_type is not valid.
+        Raises:
+            TypeError: If argument label is not of valid type.
+            ValueError: If argument label_type is not valid.
 
-        Examples
-        --------
-        >>> from vowpalwabbit.dftovw import DFtoVW
-        >>> import pandas as pd
-        >>> df = pd.DataFrame({"y": [1], "x": [2]})
-        >>> conv = DFtoVW.from_colnames(y="y", x="x", df=df)
-        >>> conv.convert_df()
-        ['1 | x:2']
+        Examples:
+            >>> from vowpalwabbit.dftovw import DFtoVW
+            >>> import pandas as pd
+            >>> df = pd.DataFrame({"y": [1], "x": [2]})
+            >>> conv = DFtoVW.from_colnames(y="y", x="x", df=df)
+            >>> conv.convert_df()
+            ['1 | x:2']
 
-        >>> df2 = pd.DataFrame({"y": [1], "x1": [2], "x2": [3], "x3": [4]})
-        >>> conv2 = DFtoVW.from_colnames(y="y", x=sorted(list(set(df2.columns) - set("y"))), df=df2)
-        >>> conv2.convert_df()
-        ['1 | x1:2 x2:3 x3:4']
+            >>> df2 = pd.DataFrame({"y": [1], "x1": [2], "x2": [3], "x3": [4]})
+            >>> conv2 = DFtoVW.from_colnames(y="y", x=sorted(list(set(df2.columns) - set("y"))), df=df2)
+            >>> conv2.convert_df()
+            ['1 | x1:2 x2:3 x3:4']
 
-        Returns
-        -------
-        DFtoVW
-            A initialized DFtoVW instance.
+        Returns:
+            An initialized DFtoVW instance.
         """
         dict_label_type = {
             "simple_label": SimpleLabel,
@@ -850,10 +766,10 @@ class DFtoVW:
         namespaces = Namespace(features=[Feature(value=colname) for colname in x])
         return cls(namespaces=namespaces, label=label, df=df)
 
-    def check_features_type(self, features):
+    def check_features_type(self, features: Union[Feature, List[Feature]]):
         """Check if the features argument is of type Feature.
 
-        Parameters
+        Args:
         ----------
         features: (list of) Feature,
             The features argument to check.
@@ -872,20 +788,19 @@ class DFtoVW:
                 "Argument 'features' should be a Feature or a list of Feature."
             )
 
-    def set_namespaces(self, namespaces, features):
-        """Set namespaces attributes
+    def set_namespaces(
+        self,
+        namespaces: Optional[Union[Namespace, List[Namespace]]],
+        features: Optional[Union[Feature, List[Feature]]],
+    ):
+        """Set namespaces attributes. Only one of namespaces or features should be passed when being called.
 
-        Parameters
-        ----------
-        namespaces: Namespace / list of Namespace objects
-            The namespaces argument.
-        features: Feature / list of Feature objects
-            The features argument.
+        Args:
+            namespaces: The namespaces argument.
+            features: The features argument.
 
-        Raise
-        -----
-            ValueError:
-                If argument 'features' or 'namespaces' are not valid.
+        Raises:
+            ValueError: If argument 'features' or 'namespaces' are not valid.
         """
         if (features is None) and (namespaces is None):
             raise ValueError("Missing 'features' or 'namespace' argument")
@@ -906,10 +821,8 @@ class DFtoVW:
     def check_label_type(self):
         """Check label type.
 
-        Raises
-        ------
-        TypeError
-            If label is not of type SimpleLabel or MulticlassLabel.
+        Raises:
+            TypeError: If label is not of type SimpleLabel, MulticlassLabel, Multilabel, ContextualbanditLabel.
         """
         available_labels = (
             SimpleLabel,
@@ -930,10 +843,8 @@ class DFtoVW:
     def check_namespaces_type(self):
         """Check if namespaces arguments are of type Namespace.
 
-        Raises
-        ------
-        TypeError
-            If namespaces are not of type Namespace or list of Namespace.
+        Raises:
+            TypeError: If namespaces are not of type Namespace or list of Namespace.
         """
         wrong_type_namespaces = [
             not isinstance(namespace, Namespace) for namespace in self.namespaces
@@ -985,10 +896,8 @@ class DFtoVW:
     def raise_missing_col_error(self, missing_cols_dict):
         """Raises error if some columns are missing.
 
-        Raises
-        ------
-        ValueError
-            If one or more columns are not in the dataframe.
+        Raises:
+            ValueError: If one or more columns are not in the dataframe.
         """
         error_msg = ""
         for attribute_name, missing_cols in missing_cols_dict.items():
@@ -1022,12 +931,9 @@ class DFtoVW:
         which the errors occur are prepend to the error message to be more
         explicit about where the error occurs in the formula.
 
-        Raises
-        ------
-        TypeError
-            If a column is not of valid type.
-        ValueError
-            If a column values are not in the valid range.
+        Raises:
+            TypeError: If a column is not of valid type.
+            ValueError: If a column values are not in the valid range.
         """
         class_name = type(instance).__name__
 
@@ -1065,12 +971,10 @@ class DFtoVW:
                 )
                 raise ValueError(value_error_msg)
 
-    def convert_df(self):
+    def convert_df(self) -> List[str]:
         """Main method that converts the dataframe to the VW format.
 
-        Returns
-        -------
-        list
+        Returns:
             The list of parsed lines in VW format.
         """
         self.out = self.empty_col()
@@ -1084,22 +988,18 @@ class DFtoVW:
 
         return self.out.to_list()
 
-    def empty_col(self):
+    def empty_col(self) -> pd.Series:
         """Create an empty string column.
 
-        Returns
-        -------
-        pandas.Series
+        Returns:
             A column of empty string with as much rows as the input dataframe.
         """
         return pd.Series(data=[""] * self.n_rows, index=self.df.index)
 
-    def process_label_and_tag(self):
+    def process_label_and_tag(self) -> pd.Series:
         """Process the label and tag into a unique column.
 
-        Returns
-        -------
-        out : pandas.Series
+        Returns:
             A column where each row is the processed label and tag.
         """
         out = self.empty_col()
@@ -1109,17 +1009,13 @@ class DFtoVW:
             out += self.tag.process(self.df)
         return out
 
-    def process_features(self, features):
+    def process_features(self, features: List[Feature]) -> pd.Series:
         """Process the features (of a namespace) into a unique column.
 
-        Parameters
-        ----------
-        features : list of Feature
-            The list of Feature objects.
+        Args:
+            features: The list of Feature objects.
 
-        Returns
-        -------
-        out : pandas.Series
+        Returns:
             The column of the processed features.
         """
         out = self.empty_col()

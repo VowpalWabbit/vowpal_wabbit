@@ -34,14 +34,6 @@ Parser Options:
                                              before the learner has processed. Rarely needs to be 
                                              changed.
   --strict_parse                             Throw on malformed examples
-Update Options:
-  -l [ --learning_rate ] arg (Default: 0.5)  Set learning rate
-  --power_t arg (Default: 0.5)               T power value
-  --decay_learning_rate arg (Default: 1)     Set Decay factor for learning_rate between passes
-  --initial_t arg                            Initial t value
-  --feature_mask arg                         Use existing regressor to determine which parameters 
-                                             may be updated.  If no initial_regressor given, also 
-                                             used for initial weights.
 Weight Options:
   -i [ --initial_regressor ] arg             Initial regressor(s)
   --initial_weight arg (Default: 0)          Set all weights to an initial value of arg
@@ -67,6 +59,14 @@ Diagnostic Options:
                                              https://vowpalwabbit.org
 Randomization Options:
   --random_seed arg (Default: 0)             Seed random number generator
+Update Options:
+  -l [ --learning_rate ] arg (Default: 0.5)  Set learning rate
+  --power_t arg (Default: 0.5)               T power value
+  --decay_learning_rate arg (Default: 1)     Set Decay factor for learning_rate between passes
+  --initial_t arg                            Initial t value
+  --feature_mask arg                         Use existing regressor to determine which parameters 
+                                             may be updated.  If no initial_regressor given, also 
+                                             used for initial weights.
 Feature Options:
   --hash arg (Default: strings)              How to hash the features. Choices: {all, strings}
   --hash_seed arg (Default: 0)               Seed for hash function
