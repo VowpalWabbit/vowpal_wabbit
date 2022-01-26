@@ -116,7 +116,7 @@ VW::LEARNER::base_learner* cb_to_cb_adf_setup(VW::setup_base_i& stack_builder)
       .add(make_option("cb_to_cbadf", num_actions)
                .help("Flag is unused and has no effect. It should not be passed. The cb_to_cbadf reduction is "
                      "automatically enabled if cb, cb_explore or cbify are used. This flag will be removed in a future "
-                     "release but not the reduction."))
+                     "release but not the functionality."))
       .add(make_option("cb", num_actions).keep().help("Maps cb_adf to cb. Disable with cb_force_legacy"))
       .add(make_option("cb_explore", cbx_num_actions)
                .keep()
@@ -131,7 +131,7 @@ VW::LEARNER::base_learner* cb_to_cb_adf_setup(VW::setup_base_i& stack_builder)
     all.logger.out_warn(
         "The flag --cb_to_cbadf has no effect and should not be supplied. The cb_to_cbadf reduction is automatically "
         "enabled if cb, cb_explore or cbify are used. The cb_to_cbadf reduction can be force disabled with "
-        "--cb_force_legacy. This flag will be removed in a future release but not the reduction.");
+        "--cb_force_legacy. This flag will be removed in a future release but not the functionality.");
   }
 
   if (options.was_supplied("eval")) { return nullptr; }

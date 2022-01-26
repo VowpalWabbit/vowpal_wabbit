@@ -425,8 +425,11 @@ Input Options:
   --cb_sample                                Sample from CB pdf and swap top action (required to 
                                              enable this reduction)
 [Reduction] Contextual Bandit: cb -> cb_adf Options:
-  --cb_to_cbadf arg                          Maps cb_adf to cb. Disable with cb_force_legacy 
-                                             (required to enable this reduction)
+  --cb_to_cbadf arg                          Flag is unused and has no effect. It should not be 
+                                             passed. The cb_to_cbadf reduction is automatically 
+                                             enabled if cb, cb_explore or cbify are used. This flag
+                                             will be removed in a future release but not the 
+                                             functionality.
   --cb arg                                   Maps cb_adf to cb. Disable with cb_force_legacy
   --cb_explore arg                           Translate cb explore to cb_explore_adf. Disable with 
                                              cb_force_legacy
