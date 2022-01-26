@@ -113,7 +113,10 @@ VW::LEARNER::base_learner* cb_to_cb_adf_setup(VW::setup_base_i& stack_builder)
 
   option_group_definition new_options("[Reduction] Contextual Bandit: cb -> cb_adf");
   new_options
-      .add(make_option("cb_to_cbadf", num_actions).necessary().help("Maps cb_adf to cb. Disable with cb_force_legacy"))
+      .add(make_option("cb_to_cbadf", num_actions)
+               .help("Flag is unused and has no effect. It should not be passed. The cb_to_cbadf reduction is "
+                     "automatically enabled if cb, cb_explore or cbify are used. This flag will be removed in a future "
+                     "release but not the reduction."))
       .add(make_option("cb", num_actions).keep().help("Maps cb_adf to cb. Disable with cb_force_legacy"))
       .add(make_option("cb_explore", cbx_num_actions)
                .keep()
@@ -121,18 +124,26 @@ VW::LEARNER::base_learner* cb_to_cb_adf_setup(VW::setup_base_i& stack_builder)
       .add(make_option("cbify", cbi_num_actions).keep().help("Translate cbify to cb_adf. Disable with cb_force_legacy"))
       .add(make_option("cb_force_legacy", force_legacy).keep().help("Default to non-adf cb implementation (cb_algs)"));
 
-  options.add_parse_and_check_necessary(new_options);
+  options.add_and_parse(new_options);
 
-  if (options.was_supplied("eval")) return nullptr;
+  if (options.was_supplied("cb_to_cbadf"))
+  {
+    all.logger.out_warn(
+        "The flag --cb_to_cbadf has no effect and should not be supplied. The cb_to_cbadf reduction is automatically "
+        "enabled if cb, cb_explore or cbify are used. The cb_to_cbadf reduction can be force disabled with "
+        "--cb_force_legacy. This flag will be removed in a future release but not the reduction.");
+  }
+
+  if (options.was_supplied("eval")) { return nullptr; }
 
   // ANY model created with older version should default to --cb_force_legacy
   if (all.model_file_ver != VW::version_definitions::EMPTY_VERSION_FILE)
   { compat_old_cb = !(all.model_file_ver >= VW::version_definitions::VERSION_FILE_WITH_CB_TO_CBADF); }
 
   // not compatible with adf
-  if (options.was_supplied("cbify_reg")) compat_old_cb = true;
+  if (options.was_supplied("cbify_reg")) { compat_old_cb = true; }
 
-  if (force_legacy) compat_old_cb = true;
+  if (force_legacy) { compat_old_cb = true; }
 
   bool override_cb = options.was_supplied("cb");
   bool override_cb_explore = options.was_supplied("cb_explore");
@@ -155,7 +166,7 @@ VW::LEARNER::base_learner* cb_to_cb_adf_setup(VW::setup_base_i& stack_builder)
   }
 
   // if cb_explore_adf is being specified this is a noop
-  if (override_cbify && options.was_supplied("cb_explore_adf")) return nullptr;
+  if (override_cbify && options.was_supplied("cb_explore_adf")) { return nullptr; }
 
   if (override_cbify)
   {
@@ -182,7 +193,7 @@ VW::LEARNER::base_learner* cb_to_cb_adf_setup(VW::setup_base_i& stack_builder)
 
   multi_learner* base = as_multiline(stack_builder.setup_base_learner());
 
-  if (num_actions <= 0) THROW("cb num actions must be positive");
+  if (num_actions <= 0) { THROW("cb num actions must be positive"); }
 
   data->adf_data.init_adf_data(num_actions, base->increment, all.interactions, all.extent_interactions);
 
