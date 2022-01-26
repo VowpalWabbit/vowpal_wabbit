@@ -1,5 +1,7 @@
 # Python 8.11 to 9 migration
 
+You can do nothing and everything should still work when migrating to VW 9. But if you want to move to the new way avoid deprecation warnings and future breaks here's a rundown.
+
 ## Imports
 
 Modules are now direcly accessible from the root module. In the past `from vowpalwabbit import ...` was needed, but now `import vowpalwabbit` and accessing with `.` will work.
