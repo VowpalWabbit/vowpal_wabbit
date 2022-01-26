@@ -2,7 +2,6 @@
 // individual contributors. All rights reserved. Released under a BSD (revised)
 // license as described in the file LICENSE.
 
-#include <_types/_uint64_t.h>
 #include "numeric_casts.h"
 #ifdef _WIN32
 #  define NOMINMAX
