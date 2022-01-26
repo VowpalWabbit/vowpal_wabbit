@@ -257,9 +257,10 @@ base_learner* active_cover_setup(VW::setup_base_i& stack_builder)
     data->lambda_d[i] = 1.f / 8.f;
   }
 
+  const auto saved_cover_size = data->cover_size;
   auto* l = VW::LEARNER::make_reduction_learner(std::move(data), base, predict_or_learn_active_cover<true>,
       predict_or_learn_active_cover<false>, stack_builder.get_setupfn_name(active_cover_setup))
-                .set_params_per_weight(cover_size + 1)
+                .set_params_per_weight(saved_cover_size + 1)
                 .set_output_prediction_type(VW::prediction_type_t::scalar)
                 .set_input_label_type(VW::label_type_t::simple)
                 .build();

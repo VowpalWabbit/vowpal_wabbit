@@ -178,7 +178,10 @@ struct typed_option : base_option
     return fmt::format("Error: '{}' is not a valid choice for option --{}. Please select from {{{}}}", value, m_name,
         fmt::join(m_one_of, ", "));
   }
-  std::string invalid_choice_error(const int& value) { return invalid_choice_error(std::to_string(value)); }
+  std::string invalid_choice_error(const int32_t& value) { return invalid_choice_error(std::to_string(value)); }
+  std::string invalid_choice_error(const int64_t& value) { return invalid_choice_error(std::to_string(value)); }
+  std::string invalid_choice_error(const uint32_t& value) { return invalid_choice_error(std::to_string(value)); }
+  std::string invalid_choice_error(const uint64_t& value) { return invalid_choice_error(std::to_string(value)); }
 
   // Typed option children sometimes use stack local variables that are only valid for the initial set from add and
   // parse, so we need to signal when that is the case.
