@@ -1,6 +1,6 @@
 # Python 8.11 to 9 migration
 
-You can do nothing and everything should still work when migrating to VW 9. But if you want to move to the new way avoid deprecation warnings and future breaks here's a rundown.
+You can do nothing and everything should still work when migrating to VW 9. But if you want to move to the new way to avoid deprecation warnings and future breaks here's a rundown.
 
 ## Imports
 
