@@ -27,3 +27,12 @@ Implementation/internal modules
 
    vowpalwabbit.pyvw
    vowpalwabbit.pyvw.pylibvw
+
+
+Migration guides
+----------------
+
+.. toctree::
+   :maxdepth: 1
+
+   python_8110_900_migration_guide
