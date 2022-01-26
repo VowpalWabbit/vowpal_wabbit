@@ -14,11 +14,11 @@ Logging Options:
                                              Supplying this implies --log_level off and 
                                              --driver_output_off. Supplying this overrides an 
                                              explicit log_level argument.
-  --driver_output_off                        Disable output for the driver.
-  --driver_output arg (Default: stderr)      Specify the stream to output driver output to.. 
+  --driver_output_off                        Disable output for the driver
+  --driver_output arg (Default: stderr)      Specify the stream to output driver output to. 
                                              Choices: {stderr, stdout}
   --log_level arg (Default: info)            Log level for logging messages. Specifying this wil 
-                                             override --quiet for log output.. Choices: {critical, 
+                                             override --quiet for log output. Choices: {critical, 
                                              error, info, off, warn}
   --log_output arg (Default: stdout)         Specify the stream to output log messages to. In the 
                                              past VW's choice of stream for logging messages wasn't
@@ -27,7 +27,7 @@ Logging Options:
                                              recommended that stdout or stderr is chosen.. Choices:
                                              {compat, stderr, stdout}
   --limit_output arg (Default: 0)            Avoid chatty output. Limit total printed lines. 0 
-                                             means unbounded.
+                                             means unbounded
 Parser Options:
   --ring_size arg (Default: 256)             Size of example ring
   --example_queue_limit arg (Default: 256)   Max number of examples to store after parsing but 
@@ -423,8 +423,11 @@ Input Options:
   --cb_sample                                Sample from CB pdf and swap top action (required to 
                                              enable this reduction)
 [Reduction] Contextual Bandit: cb -> cb_adf Options:
-  --cb_to_cbadf arg                          Maps cb_adf to cb. Disable with cb_force_legacy 
-                                             (required to enable this reduction)
+  --cb_to_cbadf arg                          Flag is unused and has no effect. It should not be 
+                                             passed. The cb_to_cbadf reduction is automatically 
+                                             enabled if cb, cb_explore or cbify are used. This flag
+                                             will be removed in a future release but not the 
+                                             functionality.
   --cb arg                                   Maps cb_adf to cb. Disable with cb_force_legacy
   --cb_explore arg                           Translate cb explore to cb_explore_adf. Disable with 
                                              cb_force_legacy
@@ -463,7 +466,7 @@ Input Options:
   --radius arg (Default: 0.1)                Exploration Radius
 [Reduction] Conditional Contextual Bandit Exploration with ADF Options:
   --ccb_explore_adf                          Do Conditional Contextual Bandit learning with 
-                                             multiline action dependent features. (required to 
+                                             multiline action dependent features (required to 
                                              enable this reduction)
   --all_slots_loss                           Report average loss from all slots
   --no_predict                               Do not do a prediction when training
@@ -738,7 +741,7 @@ Input Options:
                                              sequence_demoldf, sequencespan} (required to enable 
                                              this reduction)
   --search_metatask arg                      The search metatask (use "--search_metatask list" to 
-                                             get a list of available metatasks. Note: a valid 
+                                             get a list of available metatasks Note: a valid 
                                              search_task needs to be supplied in addition for this 
                                              to output.)
   --search_interpolation arg                 At what level should interpolation happen? 
