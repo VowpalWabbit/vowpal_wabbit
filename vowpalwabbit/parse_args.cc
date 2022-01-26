@@ -1210,15 +1210,15 @@ VW::workspace& parse_args(
       .add(make_option("quiet", quiet)
                .help("Don't output diagnostics and progress updates. Supplying this implies --log_level off and "
                      "--driver_output_off. Supplying this overrides an explicit log_level argument."))
-      .add(make_option("driver_output_off", driver_output_off).help("Disable output for the driver."))
+      .add(make_option("driver_output_off", driver_output_off).help("Disable output for the driver"))
       .add(make_option("driver_output", driver_output_stream)
                .default_value("stderr")
                .one_of({"stdout", "stderr"})
-               .help("Specify the stream to output driver output to."))
+               .help("Specify the stream to output driver output to"))
       .add(make_option("log_level", log_level)
                .default_value("info")
                .one_of({"info", "warn", "error", "critical", "off"})
-               .help("Log level for logging messages. Specifying this wil override --quiet for log output."))
+               .help("Log level for logging messages. Specifying this wil override --quiet for log output"))
       .add(make_option("log_output", log_output_stream)
                .default_value("stdout")
                .one_of({"stdout", "stderr", "compat"})
@@ -1227,7 +1227,7 @@ VW::workspace& parse_args(
                      "deprecated so it is recommended that stdout or stderr is chosen."))
       .add(make_option("limit_output", upper_limit)
                .default_value(0)
-               .help("Avoid chatty output. Limit total printed lines. 0 means unbounded."));
+               .help("Avoid chatty output. Limit total printed lines. 0 means unbounded"));
 
   options->add_and_parse(logging_options);
 
