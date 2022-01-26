@@ -194,8 +194,7 @@ base_learner* mf_setup(VW::setup_base_i& stack_builder)
   auto data = VW::make_unique<mf>();
   uint64_t rank;
   option_group_definition new_options("[Reduction] Matrix Factorization Reduction");
-  new_options.add(
-      make_option("new_mf", rank).keep().necessary().help("Rank for reduction-based matrix factorization"));
+  new_options.add(make_option("new_mf", rank).keep().necessary().help("Rank for reduction-based matrix factorization"));
 
   if (!options.add_parse_and_check_necessary(new_options)) return nullptr;
 

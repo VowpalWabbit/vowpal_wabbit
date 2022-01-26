@@ -210,8 +210,8 @@ VW::LEARNER::base_learner* setup(VW::setup_base_i& stack_builder)
   bool with_metrics = options.was_supplied("extra_metrics");
 
   using explore_type = cb_explore_adf_base<cb_explore_adf_synthcover>;
-  auto data = VW::make_unique<explore_type>(
-      with_metrics, epsilon, psi, VW::cast_to_smaller_type<size_t>(synthcoversize), all.get_random_state(), all.model_file_ver);
+  auto data = VW::make_unique<explore_type>(with_metrics, epsilon, psi,
+      VW::cast_to_smaller_type<size_t>(synthcoversize), all.get_random_state(), all.model_file_ver);
   auto* l = make_reduction_learner(
       std::move(data), base, explore_type::learn, explore_type::predict, stack_builder.get_setupfn_name(setup))
                 .set_params_per_weight(problem_multiplier)

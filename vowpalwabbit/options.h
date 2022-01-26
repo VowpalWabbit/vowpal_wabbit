@@ -74,7 +74,7 @@ struct option_builder
   {
     return fmt::format("{}. Choices: {{{}}}", help, fmt::join(s, ", "));
   }
-    std::string help_one_of(const std::string& help, const std::set<uint32_t>& s)
+  std::string help_one_of(const std::string& help, const std::set<uint32_t>& s)
   {
     return fmt::format("{}. Choices: {{{}}}", help, fmt::join(s, ", "));
   }

@@ -328,8 +328,10 @@ base_learner* cs_active_setup(VW::setup_base_i& stack_builder)
       .add(make_option("csa_debug", data->print_debug_stuff).help("Print debug stuff for cs_active"));
 
   if (!options.add_parse_and_check_necessary(new_options)) return nullptr;
-  data->max_labels = max_labels == std::numeric_limits<uint64_t>::max() ? std::numeric_limits<size_t>::max() : max_labels;
-  data->min_labels = min_labels == std::numeric_limits<uint64_t>::max() ? std::numeric_limits<size_t>::max() : min_labels;
+  data->max_labels =
+      max_labels == std::numeric_limits<uint64_t>::max() ? std::numeric_limits<size_t>::max() : max_labels;
+  data->min_labels =
+      min_labels == std::numeric_limits<uint64_t>::max() ? std::numeric_limits<size_t>::max() : min_labels;
   data->use_domination = true;
   if (options.was_supplied("domination") && !domination) data->use_domination = false;
 

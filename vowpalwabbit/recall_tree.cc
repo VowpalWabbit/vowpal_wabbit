@@ -496,9 +496,7 @@ base_learner* recall_tree_setup(VW::setup_base_i& stack_builder)
   uint64_t max_candidates = 0;
   uint64_t max_depth = 0;
   new_options.add(make_option("recall_tree", tree->k).keep().necessary().help("Use online tree for multiclass"))
-      .add(make_option("max_candidates",max_candidates )
-               .keep()
-               .help("Maximum number of labels per leaf in the tree"))
+      .add(make_option("max_candidates", max_candidates).keep().help("Maximum number of labels per leaf in the tree"))
       .add(make_option("bern_hyper", tree->bern_hyper).default_value(1.f).help("Recall tree depth penalty"))
       .add(make_option("max_depth", max_depth).keep().help("Maximum depth of the tree, default log_2 (#classes)"))
       .add(make_option("node_only", tree->node_only).keep().help("Only use node features, not full path features"))

@@ -1000,9 +1000,7 @@ void parse_example_tweaks(options_i& options, VW::workspace& all)
       .add(make_option("initial_pass_length", pass_length)
                .default_value(-1)
                .help("Initial number of examples per pass. -1 for no limit"))
-      .add(make_option("examples", max_examples)
-               .default_value(-1)
-               .help("Number of examples to parse. -1 for no limit"))
+      .add(make_option("examples", max_examples).default_value(-1).help("Number of examples to parse. -1 for no limit"))
       .add(make_option("min_prediction", all.sd->min_label).help("Smallest prediction to output"))
       .add(make_option("max_prediction", all.sd->max_label).help("Largest prediction to output"))
       .add(make_option("sort_features", all.example_parser->sort_features)
@@ -1025,18 +1023,14 @@ void parse_example_tweaks(options_i& options, VW::workspace& all)
   options.add_and_parse(example_options);
 
   all.numpasses = VW::cast_to_smaller_type<size_t>(numpasses);
-  if (pass_length < -1)
-  {
-    THROW("pass_length must be -1 or positive");
-  }
+  if (pass_length < -1) { THROW("pass_length must be -1 or positive"); }
 
-  if (max_examples < -1)
-  {
-    THROW("--examples must be -1 or positive");
-  }
+  if (max_examples < -1) { THROW("--examples must be -1 or positive"); }
 
-  all.pass_length = pass_length == -1 ? std::numeric_limits<size_t>::max() : VW::cast_signed_to_unsigned<size_t>(pass_length);
-  all.max_examples  = max_examples == -1 ? std::numeric_limits<size_t>::max() : VW::cast_signed_to_unsigned<size_t>(max_examples);
+  all.pass_length =
+      pass_length == -1 ? std::numeric_limits<size_t>::max() : VW::cast_signed_to_unsigned<size_t>(pass_length);
+  all.max_examples =
+      max_examples == -1 ? std::numeric_limits<size_t>::max() : VW::cast_signed_to_unsigned<size_t>(max_examples);
 
   if (test_only || all.eta == 0.)
   {
@@ -1109,10 +1103,7 @@ void parse_update_options(options_i& options, VW::workspace& all)
                .help("Use existing regressor to determine which parameters may be updated.  If no initial_regressor "
                      "given, also used for initial weights."));
   options.add_and_parse(update_args);
-  if (options.was_supplied("initial_t"))
-  {
-    all.sd->t = t_arg;
-  }
+  if (options.was_supplied("initial_t")) { all.sd->t = t_arg; }
   all.initial_t = static_cast<float>(all.sd->t);
 }
 
@@ -1292,7 +1283,8 @@ VW::workspace& parse_args(
   if (trace_listener == nullptr && location == VW::io::output_location::compat)
   { logger.err_warn("'compat' mode for --log_output is deprecated and will be removed in a future release."); }
 
-  if (options->was_supplied("limit_output") && (upper_limit != 0)) { logger.set_max_output(VW::cast_to_smaller_type<size_t>(upper_limit)); }
+  if (options->was_supplied("limit_output") && (upper_limit != 0))
+  { logger.set_max_output(VW::cast_to_smaller_type<size_t>(upper_limit)); }
 
   VW::workspace& all = *(new VW::workspace(logger));
   all.options = std::move(options);
@@ -1409,8 +1401,9 @@ VW::workspace& parse_args(
     if (all.options->was_supplied("span_server"))
     {
       all.all_reduce_type = AllReduceType::Socket;
-      all.all_reduce =
-          new AllReduceSockets(span_server_arg, VW::cast_to_smaller_type<int>(span_server_port_arg), VW::cast_to_smaller_type<size_t>(unique_id_arg), VW::cast_to_smaller_type<size_t>(total_arg), VW::cast_to_smaller_type<size_t>(node_arg), all.quiet);
+      all.all_reduce = new AllReduceSockets(span_server_arg, VW::cast_to_smaller_type<int>(span_server_port_arg),
+          VW::cast_to_smaller_type<size_t>(unique_id_arg), VW::cast_to_smaller_type<size_t>(total_arg),
+          VW::cast_to_smaller_type<size_t>(node_arg), all.quiet);
     }
 
     parse_diagnostics(*all.options, all);

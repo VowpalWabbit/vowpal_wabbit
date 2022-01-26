@@ -722,9 +722,7 @@ VW::LEARNER::base_learner* kernel_svm_setup(VW::setup_base_i& stack_builder)
       .add(make_option("pool_greedy", params->active_pool_greedy).help("Use greedy selection on mini pools"))
       .add(make_option("para_active", params->para_active).help("Do parallel active learning"))
       .add(make_option("pool_size", pool_size).default_value(1).help("Size of pools for active learning"))
-      .add(make_option("subsample", subsample)
-               .default_value(1)
-               .help("Number of items to subsample from the pool"))
+      .add(make_option("subsample", subsample).default_value(1).help("Number of items to subsample from the pool"))
       .add(make_option("kernel", kernel_type)
                .keep()
                .default_value("linear")
@@ -738,7 +736,6 @@ VW::LEARNER::base_learner* kernel_svm_setup(VW::setup_base_i& stack_builder)
   params->pool_size = VW::cast_to_smaller_type<size_t>(pool_size);
   params->reprocess = VW::cast_to_smaller_type<size_t>(reprocess);
   params->subsample = VW::cast_to_smaller_type<size_t>(subsample);
-
 
   std::string loss_function = "hinge";
   float loss_parameter = 0.0;

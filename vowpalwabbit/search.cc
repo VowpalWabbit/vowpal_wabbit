@@ -2397,7 +2397,7 @@ void handle_condition_options(VW::workspace& all, auto_condition_settings& acset
                       .help("Should we use lower-level reduction _internal state_ as additional features? (def: no)"));
   all.options->add_and_parse(new_options);
   acset.max_bias_ngram_length = VW::cast_to_smaller_type<size_t>(max_bias_ngram_length);
-  acset.max_quad_ngram_length=  VW::cast_to_smaller_type<size_t>(max_quad_ngram_length);
+  acset.max_quad_ngram_length = VW::cast_to_smaller_type<size_t>(max_quad_ngram_length);
 }
 
 void search_finish(search& sch)
@@ -2567,7 +2567,8 @@ base_learner* setup(VW::setup_base_i& stack_builder)
                .keep()
                .help("Copy features from neighboring lines. argument looks like: '-1:a,+2' meaning copy previous line "
                      "namespace a and next next line from namespace _unnamed_, where ',' separates them"))
-      .add(make_option("search_rollout_num_steps", rollout_num_steps).default_value(0)
+      .add(make_option("search_rollout_num_steps", rollout_num_steps)
+               .default_value(0)
                .help("How many calls of \"loss\" before we stop really predicting on rollouts and switch to "
                      "oracle (default means \"infinite\")"))
       .add(make_option("search_history_length", history_length)
