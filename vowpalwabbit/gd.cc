@@ -1026,12 +1026,26 @@ void save_load_online_state(
   if (!read || all.model_file_ver >= VW::version_definitions::VERSION_FILE_WITH_L1_AND_L2_STATE_IN_MODEL_DATA)
   {
     msg << "l1_state " << all.sd->gravity << "\n";
+    auto local_gravity = all.sd->gravity;
     bin_text_read_write_fixed(
-        model_file, reinterpret_cast<char*>(&all.sd->gravity), sizeof(all.sd->gravity), read, msg, text);
+        model_file, reinterpret_cast<char*>(&local_gravity), sizeof(local_gravity), read, msg, text);
+
+    // If the value read from the model differs from the command line supplied value then the user provided some value. We should use that.
+    if (read && local_gravity != all.sd->gravity)
+    {
+      all.sd->gravity = local_gravity;
+    }
 
     msg << "l2_state " << all.sd->contraction << "\n";
+    auto local_contraction = all.sd->contraction;
     bin_text_read_write_fixed(
-        model_file, reinterpret_cast<char*>(&all.sd->contraction), sizeof(all.sd->contraction), read, msg, text);
+        model_file, reinterpret_cast<char*>(&local_contraction), sizeof(local_contraction), read, msg, text);
+
+    // If the value read from the model differs from the command line supplied value then the user provided some value. We should use that.
+    if (read && local_contraction != all.sd->contraction)
+    {
+      all.sd->contraction = local_contraction;
+    }
   }
 
   if (read &&
