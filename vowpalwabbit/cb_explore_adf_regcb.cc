@@ -61,13 +61,13 @@ public:
   ~cb_explore_adf_regcb() = default;
 
   // Should be called through cb_explore_adf_base for pre/post-processing
-  void predict(multi_learner& base, multi_ex& examples) { predict_or_learn_impl<false>(base, examples); }
-  void learn(multi_learner& base, multi_ex& examples) { predict_or_learn_impl<true>(base, examples); }
+  void predict(multi_learner& base, multi_ex& examples) { predict_impl(base, examples); }
+  void learn(multi_learner& base, multi_ex& examples) { learn_impl(base, examples); }
   void save_load(io_buf& io, bool read, bool text);
 
 private:
-  template <bool is_learn>
-  void predict_or_learn_impl(multi_learner& base, multi_ex& examples);
+  void predict_impl(multi_learner& base, multi_ex& examples);
+  void learn_impl(multi_learner& base, multi_ex& examples);
 
   void get_cost_ranges(float delta, multi_learner& base, multi_ex& examples, bool min_only);
   float binary_search(float fhat, float delta, float sens, float tol = 1e-6);
@@ -170,23 +170,9 @@ void cb_explore_adf_regcb::get_cost_ranges(float delta, multi_learner& base, mul
   }
 }
 
-template <bool is_learn>
-void cb_explore_adf_regcb::predict_or_learn_impl(multi_learner& base, multi_ex& examples)
+void cb_explore_adf_regcb::predict_impl(multi_learner& base, multi_ex& examples)
 {
-  if (is_learn)
-  {
-    for (size_t i = 0; i < examples.size() - 1; ++i)
-    {
-      CB::label& ld = examples[i]->l.cb;
-      if (ld.costs.size() == 1) ld.costs[0].probability = 1.f;  // no importance weighting
-    }
-
-    multiline_learn_or_predict<true>(base, examples, examples[0]->ft_offset);
-    ++_counter;
-  }
-  else
-    multiline_learn_or_predict<false>(base, examples, examples[0]->ft_offset);
-
+  multiline_learn_or_predict<false>(base, examples, examples[0]->ft_offset);
   v_array<ACTION_SCORE::action_score>& preds = examples[0]->pred.a_s;
   uint32_t num_actions = static_cast<uint32_t>(preds.size());
 
@@ -194,48 +180,58 @@ void cb_explore_adf_regcb::predict_or_learn_impl(multi_learner& base, multi_ex& 
   // threshold on empirical loss difference
   const float delta =
       _c0 * std::log(static_cast<float>(num_actions * _counter)) * static_cast<float>(std::pow(max_range, 2));
+  get_cost_ranges(delta, base, examples, /*min_only=*/_regcbopt);
 
-  if (!is_learn)
+  if (_regcbopt)  // optimistic variant
   {
-    get_cost_ranges(delta, base, examples, /*min_only=*/_regcbopt);
-
-    if (_regcbopt)  // optimistic variant
+    float min_cost = FLT_MAX;
+    size_t a_opt = 0;  // optimistic action
+    for (size_t a = 0; a < num_actions; ++a)
     {
-      float min_cost = FLT_MAX;
-      size_t a_opt = 0;  // optimistic action
-      for (size_t a = 0; a < num_actions; ++a)
+      if (_min_costs[a] < min_cost)
       {
-        if (_min_costs[a] < min_cost)
-        {
-          min_cost = _min_costs[a];
-          a_opt = a;
-        }
-      }
-      for (size_t i = 0; i < preds.size(); ++i)
-      {
-        if (preds[i].action == a_opt || (!_first_only && _min_costs[preds[i].action] == min_cost))
-          preds[i].score = 1;
-        else
-          preds[i].score = 0;
+        min_cost = _min_costs[a];
+        a_opt = a;
       }
     }
-    else  // elimination variant
+    for (size_t i = 0; i < preds.size(); ++i)
     {
-      float min_max_cost = FLT_MAX;
-      for (size_t a = 0; a < num_actions; ++a)
-        if (_max_costs[a] < min_max_cost) min_max_cost = _max_costs[a];
-      for (size_t i = 0; i < preds.size(); ++i)
-      {
-        if (_min_costs[preds[i].action] <= min_max_cost)
-          preds[i].score = 1;
-        else
-          preds[i].score = 0;
-        // explore uniformly on support
-        exploration::enforce_minimum_probability(
-            1.0, /*update_zero_elements=*/false, begin_scores(preds), end_scores(preds));
-      }
+      if (preds[i].action == a_opt || (!_first_only && _min_costs[preds[i].action] == min_cost))
+        preds[i].score = 1;
+      else
+        preds[i].score = 0;
     }
   }
+  else  // elimination variant
+  {
+    float min_max_cost = FLT_MAX;
+    for (size_t a = 0; a < num_actions; ++a)
+      if (_max_costs[a] < min_max_cost) min_max_cost = _max_costs[a];
+    for (size_t i = 0; i < preds.size(); ++i)
+    {
+      if (_min_costs[preds[i].action] <= min_max_cost)
+        preds[i].score = 1;
+      else
+        preds[i].score = 0;
+      // explore uniformly on support
+      exploration::enforce_minimum_probability(
+          1.0, /*update_zero_elements=*/false, begin_scores(preds), end_scores(preds));
+    }
+  }
+}
+
+void cb_explore_adf_regcb::learn_impl(multi_learner& base, multi_ex& examples)
+{
+  v_array<ACTION_SCORE::action_score> preds = std::move(examples[0]->pred.a_s);
+  for (size_t i = 0; i < examples.size() - 1; ++i)
+  {
+    CB::label& ld = examples[i]->l.cb;
+    if (ld.costs.size() == 1) ld.costs[0].probability = 1.f;  // no importance weighting
+  }
+
+  multiline_learn_or_predict<true>(base, examples, examples[0]->ft_offset);
+  ++_counter;
+  examples[0]->pred.a_s = std::move(preds);
 }
 
 void cb_explore_adf_regcb::save_load(io_buf& io, bool read, bool text)
