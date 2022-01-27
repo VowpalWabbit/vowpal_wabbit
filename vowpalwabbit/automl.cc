@@ -200,7 +200,7 @@ void interaction_config_manager::pre_process(const multi_ex& ecs)
   {
     for (const auto& ns : ex->indices)
     {
-      if (NS_EXCLUDE_LIST.find(ns) != NS_EXCLUDE_LIST.end()) { continue; }
+      if (std::find(NS_EXCLUDE_LIST.begin(), NS_EXCLUDE_LIST.end(), ns) != NS_EXCLUDE_LIST.end()) { continue; }
       ns_counter[ns]++;
       if (ns_counter[ns] == 1) { new_ns_seen = true; }
     }
