@@ -6,10 +6,6 @@ on:
       - master
       - 'releases/**'
 
-concurrency: 
-  group: ${{ github.head_ref }}
-  cancel-in-progress: true
-
 jobs:
   benchmark:
     container:
