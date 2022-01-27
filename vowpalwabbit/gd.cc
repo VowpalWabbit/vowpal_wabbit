@@ -145,22 +145,9 @@ void train(gd& g, example& ec, float update)
 void end_pass(gd& g)
 {
   VW::workspace& all = *g.all;
-  if (all.save_resume)
-  {
-    // TODO work out a better system to update state that will be saved in the model.
-    if (all.sd->gravity != 0.)
-    {
-      g.all->options->replace("l1_state", std::to_string(all.sd->gravity));
-      g.all->options->get_typed_option<double>("l1_state").value(all.sd->gravity);
-    }
-    if (all.sd->contraction != 1.)
-    {
-      g.all->options->replace("l2_state", std::to_string(all.sd->contraction));
-      g.all->options->get_typed_option<double>("l2_state").value(all.sd->contraction);
-    }
-  }
-  else
-    sync_weights(all);
+
+  if (!all.save_resume) { sync_weights(all); }
+
   if (all.all_reduce != nullptr)
   {
     if (all.weights.adaptive)
@@ -1036,6 +1023,17 @@ void save_load_online_state(
     }
   }
 
+  if (!read || all.model_file_ver >= VW::version_definitions::VERSION_FILE_WITH_L1_AND_L2_STATE_IN_MODEL_DATA)
+  {
+    msg << "l1_state " << all.sd->gravity << "\n";
+    bin_text_read_write_fixed(
+        model_file, reinterpret_cast<char*>(&all.sd->gravity), sizeof(all.sd->gravity), read, msg, text);
+
+    msg << "l2_state " << all.sd->contraction << "\n";
+    bin_text_read_write_fixed(
+        model_file, reinterpret_cast<char*>(&all.sd->contraction), sizeof(all.sd->contraction), read, msg, text);
+  }
+
   if (read &&
       (!all.training ||
           !all.preserve_performance_counters))  // reset various things so that we report test set performance properly
@@ -1201,6 +1199,9 @@ base_learner* setup(VW::setup_base_i& stack_builder)
   bool invariant = false;
   bool normalized = false;
 
+  float l1_state = 0.f;
+  float l2_state = 1.f;
+
   option_group_definition new_options("[Reduction] Gradient Descent");
   new_options.add(make_option("sgd", sgd).help("Use regular stochastic gradient descent update").keep(all.save_resume))
       .add(make_option("adaptive", adaptive).help("Use adaptive, individual learning rates").keep(all.save_resume))
@@ -1210,15 +1211,22 @@ base_learner* setup(VW::setup_base_i& stack_builder)
       .add(make_option("sparse_l2", g->sparse_l2)
                .default_value(0.f)
                .help("Degree of l2 regularization applied to activated sparse parameters"))
-      .add(make_option("l1_state", all.sd->gravity)
-               .keep(all.save_resume)
-               .default_value(0.)
-               .help("Amount of accumulated implicit l1 regularization"))
-      .add(make_option("l2_state", all.sd->contraction)
-               .keep(all.save_resume)
-               .default_value(1.)
-               .help("Amount of accumulated implicit l2 regularization"));
+      .add(make_option("l1_state", l1_state).default_value(0.).help("Amount of accumulated implicit l1 regularization"))
+      .add(
+          make_option("l2_state", l2_state).default_value(1.).help("Amount of accumulated implicit l2 regularization"));
   options.add_and_parse(new_options);
+
+  if (options.was_supplied("l1_state"))
+  {
+    all.sd->gravity = l1_state;
+    all.sd->contraction = l2_state;
+  }
+
+  if (options.was_supplied("l2_state"))
+  {
+    all.sd->gravity = l1_state;
+    all.sd->contraction = l2_state;
+  }
 
   g->all = &all;
   g->all->normalized_sum_norm_x = 0;
