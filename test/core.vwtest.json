@@ -5017,9 +5017,10 @@
   {
     "id": 389,
     "desc": "Test using automl with ccb",
-    "vw_command": "--ccb_explore_adf --example_queue_limit 7 -d train-sets/ccb_reuse_small.data --automl 3",
+    "vw_command": "--ccb_explore_adf --example_queue_limit 7 -d train-sets/ccb_reuse_small.data --automl 3 --extra_metrics aml_ccb_metrics.json",
     "diff_files": {
       "stderr": "train-sets/ref/ccb_reuse_small_automl.stderr",
+      "aml_ccb_metrics.json": "test-sets/ref/aml_ccb_metrics.json",
       "stdout": "train-sets/ref/ccb_reuse_small_automl.stdout"
     },
     "input_files": [
