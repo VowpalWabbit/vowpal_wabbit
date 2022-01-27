@@ -33,6 +33,9 @@
 using namespace VW::LEARNER;
 using namespace VW::config;
 
+constexpr double L1_STATE_DEFAULT = 0.;
+constexpr double L2_STATE_DEFAULT = 1.;
+
 // todo:
 // 4. Factor various state out of VW::workspace&
 namespace GD
@@ -1030,22 +1033,26 @@ void save_load_online_state(
     bin_text_read_write_fixed(
         model_file, reinterpret_cast<char*>(&local_gravity), sizeof(local_gravity), read, msg, text);
 
-    // If the value read from the model differs from the command line supplied value then the user provided some value. We should use that.
-    if (read && local_gravity != all.sd->gravity)
-    {
-      all.sd->gravity = local_gravity;
-    }
+    // all.sd->gravity - command line value
+    // local_gravity - model value
+    // 1. If command line value is non-default, use that value
+    // 2. Else if model is non-default, use that value
+    // 3. Else use default
+    if (read && (all.sd->gravity == L1_STATE_DEFAULT) && (local_gravity != L1_STATE_DEFAULT))
+    { all.sd->gravity = local_gravity; }
 
     msg << "l2_state " << all.sd->contraction << "\n";
     auto local_contraction = all.sd->contraction;
     bin_text_read_write_fixed(
         model_file, reinterpret_cast<char*>(&local_contraction), sizeof(local_contraction), read, msg, text);
 
-    // If the value read from the model differs from the command line supplied value then the user provided some value. We should use that.
-    if (read && local_contraction != all.sd->contraction)
-    {
-      all.sd->contraction = local_contraction;
-    }
+    // all.sd->contraction - command line value
+    // local_contraction - model value
+    // 1. If command line value is non-default, use that value
+    // 2. Else if model is non-default, use that value
+    // 3. Else use default
+    if (read && (all.sd->contraction == L2_STATE_DEFAULT) && (local_contraction != L2_STATE_DEFAULT))
+    { all.sd->contraction = local_contraction; }
   }
 
   if (read &&
@@ -1213,9 +1220,6 @@ base_learner* setup(VW::setup_base_i& stack_builder)
   bool invariant = false;
   bool normalized = false;
 
-  float l1_state = 0.f;
-  float l2_state = 1.f;
-
   option_group_definition new_options("[Reduction] Gradient Descent");
   new_options.add(make_option("sgd", sgd).help("Use regular stochastic gradient descent update").keep(all.save_resume))
       .add(make_option("adaptive", adaptive).help("Use adaptive, individual learning rates").keep(all.save_resume))
@@ -1225,22 +1229,13 @@ base_learner* setup(VW::setup_base_i& stack_builder)
       .add(make_option("sparse_l2", g->sparse_l2)
                .default_value(0.f)
                .help("Degree of l2 regularization applied to activated sparse parameters"))
-      .add(make_option("l1_state", l1_state).default_value(0.).help("Amount of accumulated implicit l1 regularization"))
-      .add(
-          make_option("l2_state", l2_state).default_value(1.).help("Amount of accumulated implicit l2 regularization"));
+      .add(make_option("l1_state", all.sd->gravity)
+               .default_value(L1_STATE_DEFAULT)
+               .help("Amount of accumulated implicit l1 regularization"))
+      .add(make_option("l2_state", all.sd->contraction)
+               .default_value(L2_STATE_DEFAULT)
+               .help("Amount of accumulated implicit l2 regularization"));
   options.add_and_parse(new_options);
-
-  if (options.was_supplied("l1_state"))
-  {
-    all.sd->gravity = l1_state;
-    all.sd->contraction = l2_state;
-  }
-
-  if (options.was_supplied("l2_state"))
-  {
-    all.sd->gravity = l1_state;
-    all.sd->contraction = l2_state;
-  }
 
   g->all = &all;
   g->all->normalized_sum_norm_x = 0;
