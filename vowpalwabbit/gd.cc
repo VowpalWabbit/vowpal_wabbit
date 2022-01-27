@@ -1230,9 +1230,11 @@ base_learner* setup(VW::setup_base_i& stack_builder)
                .default_value(0.f)
                .help("Degree of l2 regularization applied to activated sparse parameters"))
       .add(make_option("l1_state", all.sd->gravity)
+               .allow_override()
                .default_value(L1_STATE_DEFAULT)
                .help("Amount of accumulated implicit l1 regularization"))
       .add(make_option("l2_state", all.sd->contraction)
+               .allow_override()
                .default_value(L2_STATE_DEFAULT)
                .help("Amount of accumulated implicit l2 regularization"));
   options.add_and_parse(new_options);
