@@ -5013,5 +5013,34 @@
     "input_files": [
       "train-sets/regression_simple_1var_overflow.txt"
     ]
+  },
+  {
+    "id": 389,
+    "desc": "Produce model with default l1 and l2 state",
+    "vw_command": "--readable_model l1_l2_default_model.txt -f l1_l2_default_model.model --no_stdin --quiet",
+    "diff_files": {
+      "l1_l2_default_model.txt": "train-sets/ref/l1_l2_default_model.txt"
+    },
+    "input_files": []
+  },
+  {
+    "id": 390,
+    "desc": "Override l1 and l2 state",
+    "vw_command": "--readable_model l1_l2_override_model.txt -f l1_l2_override_model.model -i l1_l2_default_model.model --l1_state 5.34 --l2_state 0.003 --no_stdin --quiet",
+    "diff_files": {
+      "l1_l2_override_model.txt": "train-sets/ref/l1_l2_override_model.txt"
+    },
+    "depends_on": [389],
+    "input_files": ["l1_l2_default_model.model"]
+  },
+  {
+    "id": 391,
+    "desc": "Override l1 and leave l2 as model state",
+    "vw_command": "--readable_model l1_override_l2_leave_model.txt -f l1_override_l2_leave_model.model -i l1_l2_override_model.model --l1_state 89.4 --no_stdin --quiet",
+    "diff_files": {
+      "l1_override_l2_leave_model.txt": "train-sets/ref/l1_override_l2_leave_model.txt"
+    },
+    "depends_on": [390],
+    "input_files": ["l1_l2_override_model.model"]
   }
 ]
