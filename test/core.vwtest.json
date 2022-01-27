@@ -5014,5 +5014,16 @@
     "input_files": [
       "train-sets/regression_simple_1var_overflow.txt"
     ]
+  },
+  {
+    "id": 389,
+    "desc": "Test using automl with ccb",
+    "vw_command": "--ccb_explore_adf --example_queue_limit 7 -d train-sets/ccb_reuse_small.data --automl 3 --verbose_metrics --extra_metrics aml_ccb_metrics.json",
+    "diff_files": {
+      "aml_ccb_metrics.json": "test-sets/ref/aml_ccb_metrics.json"
+    },
+    "input_files": [
+      "train-sets/ccb_reuse_small.data"
+    ]
   }
 ]
