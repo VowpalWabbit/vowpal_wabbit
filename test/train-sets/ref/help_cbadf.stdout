@@ -14,11 +14,11 @@ Logging Options:
                                              Supplying this implies --log_level off and 
                                              --driver_output_off. Supplying this overrides an 
                                              explicit log_level argument.
-  --driver_output_off                        Disable output for the driver.
-  --driver_output arg (Default: stderr)      Specify the stream to output driver output to.. 
+  --driver_output_off                        Disable output for the driver
+  --driver_output arg (Default: stderr)      Specify the stream to output driver output to. 
                                              Choices: {stderr, stdout}
   --log_level arg (Default: info)            Log level for logging messages. Specifying this wil 
-                                             override --quiet for log output.. Choices: {critical, 
+                                             override --quiet for log output. Choices: {critical, 
                                              error, info, off, warn}
   --log_output arg (Default: stdout)         Specify the stream to output log messages to. In the 
                                              past VW's choice of stream for logging messages wasn't
@@ -27,7 +27,7 @@ Logging Options:
                                              recommended that stdout or stderr is chosen.. Choices:
                                              {compat, stderr, stdout}
   --limit_output arg (Default: 0)            Avoid chatty output. Limit total printed lines. 0 
-                                             means unbounded.
+                                             means unbounded
 Parser Options:
   --ring_size arg (Default: 256)             Size of example ring
   --example_queue_limit arg (Default: 256)   Max number of examples to store after parsing but 

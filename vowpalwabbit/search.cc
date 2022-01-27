@@ -2523,7 +2523,7 @@ base_learner* setup(VW::setup_base_i& stack_builder)
                .help("The search task (use \"--search_task list\" to get a list of available tasks)"))
       .add(make_option("search_metatask", metatask_string)
                .keep()
-               .help("The search metatask (use \"--search_metatask list\" to get a list of available metatasks."
+               .help("The search metatask (use \"--search_metatask list\" to get a list of available metatasks"
                      " Note: a valid search_task needs to be supplied in addition for this to output.)"))
       .add(make_option("search_interpolation", interpolation_string)
                .keep()

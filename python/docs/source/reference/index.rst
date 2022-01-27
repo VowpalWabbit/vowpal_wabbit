@@ -20,10 +20,19 @@ Optional modules
 
 
 Implementation/internal modules
-----------------
+-------------------------------
 
 .. toctree::
    :maxdepth: 1
 
    vowpalwabbit.pyvw
    vowpalwabbit.pyvw.pylibvw
+
+
+Migration guides
+----------------
+
+.. toctree::
+   :maxdepth: 1
+
+   python_8110_900_migration_guide
