@@ -243,7 +243,6 @@ void process_examples(queue_type& examples, handler_type& handler)
 {
   example* ec;
   while ((ec = examples.pop()) != nullptr) { handler.on_example(ec); }
-  handler.process_remaining();
 }
 
 template <typename context_type>
@@ -254,12 +253,14 @@ void generic_driver(ready_examples_queue& examples, context_type& context)
     using handler_type = multi_example_handler<context_type>;
     handler_type handler(context);
     process_examples(examples, handler);
+    handler.process_remaining();
   }
   else
   {
     using handler_type = single_example_handler<context_type>;
     handler_type handler(context);
     process_examples(examples, handler);
+    handler.process_remaining();
   }
   drain_examples(context.get_master());
 }
@@ -289,6 +290,7 @@ void generic_driver_onethread(VW::workspace& all)
     process_examples(examples_queue, handler);
   };
   parse_dispatch(all, multi_ex_fptr);
+  handler.process_remaining();
   all.l->end_examples();
 }
 
