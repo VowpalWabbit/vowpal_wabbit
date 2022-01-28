@@ -1165,7 +1165,7 @@ void parse_output_model(options_i& options, VW::workspace& all)
       .add(make_option("invert_hash", all.inv_hash_regressor_name)
                .help("Output human-readable final regressor with feature names.  Computationally expensive"))
       .add(
-          make_option("predict_only_model", predict_only_model)
+          make_option("predict_only_model", predict_only_model).keep()
               .help("Do not save extra state for learning to be resumed. Stored model can only be used for prediction"))
       .add(make_option("save_resume", save_resume)
                .help("This flag is now deprecated and models can continue learning by default"))
@@ -1731,10 +1731,14 @@ VW::workspace* initialize_with_builder(std::unique_ptr<options_i, options_delete
     if (!all.quiet)
     {
       *(all.trace_message) << "Num weight bits = " << all.num_bits << endl;
-      *(all.trace_message) << "learning rate = " << all.eta << endl;
-      *(all.trace_message) << "initial_t = " << all.sd->t << endl;
-      *(all.trace_message) << "power_t = " << all.power_t << endl;
-      if (all.numpasses > 1) *(all.trace_message) << "decay_learning_rate = " << all.eta_decay_rate << endl;
+      // Don't print learning learning-related options for loaded predict_only models
+      if (!(all.options->was_supplied("initial_regressor") && all.options->was_supplied("predict_only_model")))
+      {
+        *(all.trace_message) << "learning rate = " << all.eta << endl;
+        *(all.trace_message) << "initial_t = " << all.sd->t << endl;
+        *(all.trace_message) << "power_t = " << all.power_t << endl;
+        if (all.numpasses > 1) *(all.trace_message) << "decay_learning_rate = " << all.eta_decay_rate << endl;
+      }
     }
 
     // we must delay so parse_mask is fully defined.

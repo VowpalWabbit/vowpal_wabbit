@@ -1,4 +1,4 @@
-Version 8.11.0
+Version 9.0.0
 Id 
 Min label:0
 Max label:1
@@ -6,8 +6,8 @@ bits:18
 lda:0
 0 ngram:
 0 skip:
-options: --interact ab
-Checksum: 2819888933
+options: --interact ab --predict_only_model
+Checksum: 406056234
 :0
 80026:0.148807
 80029:-22.8098

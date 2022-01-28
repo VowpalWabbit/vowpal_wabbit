@@ -1,4 +1,4 @@
-Version 8.11.0
+Version 9.0.0
 Id 
 Min label:0
 Max label:2
@@ -6,8 +6,8 @@ bits:18
 lda:0
 0 ngram:
 0 skip:
-options:
-Checksum: 955426453
+options: --predict_only_model
+Checksum: 1356145559
 :0
 39524:0.253423
 51985:0.187343
