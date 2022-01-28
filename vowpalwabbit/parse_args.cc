@@ -1547,13 +1547,13 @@ void parse_modules(options_i& options, VW::workspace& all, bool interactions_set
   options.add_and_parse(rand_options);
   all.get_random_state()->set_random_state(all.random_seed);
 
-  parse_update_options(options, all);
-
   parse_feature_tweaks(options, all, interactions_settings_duplicated, dictionary_namespaces);  // feature tweaks
 
   parse_example_tweaks(options, all);  // example manipulation
 
   parse_output_model(options, all);
+
+  parse_update_options(options, all);
 
   parse_output_preds(options, all);
 }

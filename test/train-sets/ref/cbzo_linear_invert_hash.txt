@@ -1,13 +1,13 @@
-Version 9.0.0
-Id
+Version 8.11.0
+Id 
 Min label:-3.35097
 Max label:3.13689
 bits:18
 lda:0
 0 ngram:
 0 skip:
-options: --cbzo --learning_rate 9.99999974737875e-05 --policy linear
-Checksum: 1028194067
+options: --cbzo --policy linear
+Checksum: 1941174661
 ns^b:50664:-0.452471
 Constant:116060:-0.0388234
 ns^d:130684:0.255139
