@@ -6,6 +6,6 @@ bits:18
 lda:0
 0 ngram:
 0 skip:
-options: --cbzo --policy constant --predict_only_model
-Checksum: 1104269498
+options: --cbzo --policy constant
+Checksum: 2756831268
 116060:3.57507

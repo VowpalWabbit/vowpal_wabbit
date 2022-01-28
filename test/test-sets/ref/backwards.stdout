@@ -6,8 +6,8 @@ bits:18
 lda:0
 0 ngram:
 0 skip:
-options: --oaa 3 --predict_only_model
-Checksum: 1844250157
+options: --oaa 3
+Checksum: 4098939232
 :0
 f^c*e^y:20368:-0.0540374
 f^c*e^y[1]:20369:-0.0908917

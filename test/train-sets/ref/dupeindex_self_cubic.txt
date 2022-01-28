@@ -6,8 +6,8 @@ bits:18
 lda:0
 0 ngram:
 0 skip:
-options: --interactions aaa --predict_only_model --ignore_linear a
-Checksum: 3027603064
+options: --interactions aaa --ignore_linear a
+Checksum: 681042618
 :0
 ab^feat_1*ab^feat_1*ab^feat_2:9267:0.0446532
 ac^feat_3*ac^feat_4*ac^feat_4:10957:0.0446532

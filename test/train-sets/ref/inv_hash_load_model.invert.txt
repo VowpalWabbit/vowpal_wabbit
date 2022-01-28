@@ -6,8 +6,8 @@ bits:18
 lda:0
 0 ngram:
 0 skip:
-options: --predict_only_model
-Checksum: 1356145559
+options:
+Checksum: 955426453
 :0
 :39524:0.253423
 feature_second_run_one:51985:0.187343

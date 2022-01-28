@@ -6,8 +6,8 @@ bits:18
 lda:0
 0 ngram:
 0 skip:
-options: --interact ab --predict_only_model
-Checksum: 406056234
+options: --interact ab
+Checksum: 2819888933
 :0
 80026:0.148807
 80029:-22.8098

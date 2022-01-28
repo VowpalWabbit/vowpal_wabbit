@@ -147,13 +147,13 @@ Output Model Options:
   --output_feature_regularizer_text arg      Per feature regularization output file, in text
   --id arg                                   User supplied ID embedded into the final regressor
 Update Options:
+  -l [ --learning_rate ] arg (Default: 0.5)  Set learning rate
+  --power_t arg (Default: 0.5)               T power value
   --decay_learning_rate arg (Default: 1)     Set Decay factor for learning_rate between passes
   --initial_t arg                            Initial t value
   --feature_mask arg                         Use existing regressor to determine which parameters 
                                              may be updated.  If no initial_regressor given, also 
                                              used for initial weights.
-  -l [ --learning_rate ] arg (Default: 0.5)  Set learning rate
-  --power_t arg (Default: 0.5)               T power value
 Prediction Output Options:
   -p [ --predictions ] arg                   File to output predictions to
   -r [ --raw_predictions ] arg               File to output unnormalized predictions to

@@ -6,8 +6,8 @@ bits:18
 lda:0
 0 ngram:
 0 skip:
-options: --pistol --predict_only_model
-Checksum: 3264716507
+options: --pistol
+Checksum: 844022391
 :0
 f2:82936:1
 f1:259761:1

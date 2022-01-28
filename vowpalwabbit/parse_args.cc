@@ -1074,6 +1074,13 @@ void parse_update_options(options_i& options, VW::workspace& all)
 {
   option_group_definition update_args("Update");
   update_args
+      .add(make_option("learning_rate", all.eta)
+                .default_value(0.5f)
+                .keep(all.save_resume)
+                .allow_override(all.save_resume)
+                .help("Set learning rate")
+                .short_name("l"))
+      .add(make_option("power_t", all.power_t).default_value(0.5f).keep(all.save_resume).allow_override(all.save_resume).help("T power value"))
       .add(make_option("decay_learning_rate", all.eta_decay_rate)
                .default_value(1.f)
                .help("Set Decay factor for learning_rate between passes"))
@@ -1081,24 +1088,6 @@ void parse_update_options(options_i& options, VW::workspace& all)
       .add(make_option("feature_mask", all.feature_mask)
                .help("Use existing regressor to determine which parameters may be updated.  If no initial_regressor "
                      "given, also used for initial weights."));
-
-  // Only keep() and allow_override() for learning_rate and power_t in save_resume models
-  if (all.save_resume)
-  {
-    update_args
-        .add(make_option("learning_rate", all.eta)
-                 .default_value(0.5f)
-                 .keep()
-                 .allow_override()
-                 .help("Set learning rate")
-                 .short_name("l"))
-        .add(make_option("power_t", all.power_t).default_value(0.5f).keep().allow_override().help("T power value"));
-  }
-  else
-  {
-    update_args.add(make_option("learning_rate", all.eta).default_value(0.5f).help("Set learning rate").short_name("l"))
-        .add(make_option("power_t", all.power_t).default_value(0.5f).help("T power value"));
-  }
 
   options.add_and_parse(update_args);
   all.initial_t = static_cast<float>(all.sd->t);
@@ -1165,7 +1154,7 @@ void parse_output_model(options_i& options, VW::workspace& all)
       .add(make_option("invert_hash", all.inv_hash_regressor_name)
                .help("Output human-readable final regressor with feature names.  Computationally expensive"))
       .add(
-          make_option("predict_only_model", predict_only_model).keep()
+          make_option("predict_only_model", predict_only_model)
               .help("Do not save extra state for learning to be resumed. Stored model can only be used for prediction"))
       .add(make_option("save_resume", save_resume)
                .help("This flag is now deprecated and models can continue learning by default"))
@@ -1731,14 +1720,10 @@ VW::workspace* initialize_with_builder(std::unique_ptr<options_i, options_delete
     if (!all.quiet)
     {
       *(all.trace_message) << "Num weight bits = " << all.num_bits << endl;
-      // Don't print learning learning-related options for loaded predict_only models
-      if (!(all.options->was_supplied("initial_regressor") && all.options->was_supplied("predict_only_model")))
-      {
-        *(all.trace_message) << "learning rate = " << all.eta << endl;
-        *(all.trace_message) << "initial_t = " << all.sd->t << endl;
-        *(all.trace_message) << "power_t = " << all.power_t << endl;
-        if (all.numpasses > 1) *(all.trace_message) << "decay_learning_rate = " << all.eta_decay_rate << endl;
-      }
+      *(all.trace_message) << "learning rate = " << all.eta << endl;
+      *(all.trace_message) << "initial_t = " << all.sd->t << endl;
+      *(all.trace_message) << "power_t = " << all.power_t << endl;
+      if (all.numpasses > 1) *(all.trace_message) << "decay_learning_rate = " << all.eta_decay_rate << endl;
     }
 
     // we must delay so parse_mask is fully defined.
