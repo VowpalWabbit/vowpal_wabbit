@@ -192,8 +192,11 @@ public:
 
   void process_remaining()
   {
-    _context.template process<multi_ex, learn_multi_ex>(ec_seq);
-    ec_seq.clear();
+    if (!ec_seq.empty())
+    {
+      _context.template process<multi_ex, learn_multi_ex>(ec_seq);
+      ec_seq.clear();
+    }
   }
 
 private:
