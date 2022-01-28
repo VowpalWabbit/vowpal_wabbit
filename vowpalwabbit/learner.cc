@@ -127,6 +127,8 @@ public:
       _context.template process<example, learn_ex>(*ec);
   }
 
+  void process_remaining() {}
+
 private:
   context_type _context;
 };
@@ -162,11 +164,7 @@ private:
 
 public:
   multi_example_handler(const context_type context) : _context(context) {}
-
-  ~multi_example_handler()
-  {
-    if (!ec_seq.empty()) { _context.template process<multi_ex, learn_multi_ex>(ec_seq); }
-  }
+  ~multi_example_handler() = default;
 
   void on_example(example* ec)
   {
@@ -190,6 +188,12 @@ public:
       assert(ec_seq.empty());
       VW::finish_example(_context.get_master(), *ec);
     }
+  }
+
+  void process_remaining()
+  {
+    _context.template process<multi_ex, learn_multi_ex>(ec_seq);
+    ec_seq.clear();
   }
 
 private:
@@ -235,8 +239,8 @@ template <typename queue_type, typename handler_type>
 void process_examples(queue_type& examples, handler_type& handler)
 {
   example* ec;
-
-  while ((ec = examples.pop()) != nullptr) handler.on_example(ec);
+  while ((ec = examples.pop()) != nullptr) { handler.on_example(ec); }
+  handler.process_remaining();
 }
 
 template <typename context_type>
