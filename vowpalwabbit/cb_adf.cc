@@ -8,6 +8,7 @@
 #include "cb_algs.h"
 #include "vw_exception.h"
 #include "gen_cs_example.h"
+#include "vw_string_view.h"
 #include "vw_versions.h"
 #include "explore.h"
 #include "cb_adf.h"
@@ -277,7 +278,13 @@ example* test_adf_sequence(const multi_ex& ec_seq)
   for (auto* ec : ec_seq)
   {
     // Check if there is more than one cost for this example.
-    if (ec->l.cb.costs.size() > 1) THROW("cb_adf: badly formatted example, only one cost can be known.");
+    if (ec->l.cb.costs.size() > 1)
+    {
+      auto message = fmt::format(
+          "cb_adf: badly formatted example, only one cost can be known but found {}. Example number={}, tag={}",
+          ec->l.cb.costs.size(), ec->example_counter, VW::string_view{ec->tag.data(), ec->tag.size()});
+      THROW(message);
+    }
 
     // Check whether the cost was initialized to a value.
     if (ec->l.cb.costs.size() == 1 && ec->l.cb.costs[0].cost != FLT_MAX)
