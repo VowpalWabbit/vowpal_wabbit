@@ -1086,22 +1086,18 @@ void parse_update_options(options_i& options, VW::workspace& all)
   if (all.save_resume)
   {
     update_args
-      .add(make_option("learning_rate", all.eta)
-               .default_value(0.5f)
-               .keep()
-               .allow_override()
-               .help("Set learning rate")
-               .short_name("l"))
-      .add(make_option("power_t", all.power_t).default_value(0.5f).keep().allow_override().help("T power value"));
+        .add(make_option("learning_rate", all.eta)
+                 .default_value(0.5f)
+                 .keep()
+                 .allow_override()
+                 .help("Set learning rate")
+                 .short_name("l"))
+        .add(make_option("power_t", all.power_t).default_value(0.5f).keep().allow_override().help("T power value"));
   }
   else
   {
-    update_args
-      .add(make_option("learning_rate", all.eta)
-               .default_value(0.5f)
-               .help("Set learning rate")
-               .short_name("l"))
-      .add(make_option("power_t", all.power_t).default_value(0.5f).help("T power value"));
+    update_args.add(make_option("learning_rate", all.eta).default_value(0.5f).help("Set learning rate").short_name("l"))
+        .add(make_option("power_t", all.power_t).default_value(0.5f).help("T power value"));
   }
 
   options.add_and_parse(update_args);
