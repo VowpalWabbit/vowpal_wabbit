@@ -4153,9 +4153,10 @@
   {
     "id": 322,
     "desc": "regcb save_load, save model",
-    "vw_command": "-d train-sets/cb_load.dat --cb_explore_adf -q UA --regcb -f models/regcb_ld.model --mellowness .001",
+    "vw_command": "-d train-sets/cb_load.dat --cb_explore_adf -q UA --regcb -f models/regcb_ld.model --mellowness .001 -p regcb_pred.predict",
     "diff_files": {
       "stderr": "train-sets/ref/regcb_save.stderr",
+      "regcb_pred.predict": "pred-sets/ref/regcb_pred.predict",
       "stdout": "train-sets/ref/regcb_save.stdout"
     },
     "input_files": [
@@ -5061,5 +5062,16 @@
       "l1l2_migrate_override.txt": "train-sets/ref/l1l2_migrate_override.txt"
     },
     "input_files": ["model-sets/save_resume_with_l1l2_state.model"]
+  },
+  {
+    "id": 394,
+    "desc": "Test using automl with ccb",
+    "vw_command": "--ccb_explore_adf --example_queue_limit 7 -d train-sets/ccb_reuse_small.data --automl 3 --verbose_metrics --extra_metrics aml_ccb_metrics.json",
+    "diff_files": {
+      "aml_ccb_metrics.json": "test-sets/ref/aml_ccb_metrics.json"
+    },
+    "input_files": [
+      "train-sets/ccb_reuse_small.data"
+    ]
   }
 ]

@@ -37,6 +37,7 @@ void fail_if_enabled(VW::workspace&, const std::set<std::string>&);
 
 constexpr uint64_t MAX_CONFIGS = 10;
 constexpr uint64_t CONFIGS_PER_CHAMP_CHANGE = 5;
+const std::vector<unsigned char> NS_EXCLUDE_LIST = {ccb_slot_namespace, ccb_id_namespace};
 
 struct aml_score : VW::scored_config
 {
