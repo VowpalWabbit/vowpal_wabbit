@@ -22,7 +22,8 @@ PyPI Deployment Process
     .. code-block:: bash
         
         $ # Repeat for each wheel
-        $ twine upload --repository-url https://test.pypi.org/simple/ -u vowpalwabbit vowpalwabbit-<VERSION>-cp37-cp37m-manylinux2010_x86_64.whl
+        $ twine check vowpalwabbit-<VERSION>-cp37-cp37m-manylinux2010_x86_64.whl
+        $ twine upload -u vowpalwabbit vowpalwabbit-<VERSION>-cp37-cp37m-manylinux2010_x86_64.whl
         $ cd /tmp
         $ virtualenv test_vw_package
         $ source test_vw_package/bin/activate
