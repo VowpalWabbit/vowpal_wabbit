@@ -166,6 +166,8 @@ total_features 31261
 total_weight 0.714286
 sd::oec.weighted_labeled_examples 3
 current_pass 1
+l1_state 0
+l2_state 1
 824:-0.00325627 0.276448 1
 825:-0.0032949 0.27746 1
 826:-0.0032966 0.277586 1
