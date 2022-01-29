@@ -44,8 +44,27 @@ endif()
 
 # create the lib
 add_library(pylibvw SHARED pylibvw.cc)
-
 set_target_properties(pylibvw PROPERTIES PREFIX "")
+
+# The python setup.py script should communicate what suffix it wants.
+if(VW_PYTHON_SHARED_LIB_SUFFIX)
+  set_target_properties(pylibvw PROPERTIES SUFFIX ${VW_PYTHON_SHARED_LIB_SUFFIX})
+else()
+  # fallback to previous suffix selection logic
+  if (NOT WIN32)
+    # OSX builds a .dylib and then attempts to find a .so. Just build a .so file and things work
+    set_target_properties(pylibvw PROPERTIES SUFFIX ".so")
+  else()
+    # Force Windows to build with a .pyd extension
+    set_target_properties(pylibvw PROPERTIES SUFFIX ".pyd")
+  endif()
+endif()
+
+if (NOT WIN32)
+  # Windows links dynamically
+  target_compile_definitions(pylibvw PUBLIC BOOST_PYTHON_STATIC_LIB)
+endif()
+
 if (NOT WIN32)
   # Windows links dynamically
   target_compile_definitions(pylibvw PUBLIC BOOST_PYTHON_STATIC_LIB)

@@ -14,6 +14,7 @@ from setuptools.command.sdist import sdist as _sdist
 from setuptools.command.install_lib import install_lib as _install_lib
 from shutil import rmtree
 import multiprocessing
+import sysconfig
 
 system = platform.system()
 version_info = sys.version_info
@@ -109,6 +110,11 @@ class BuildPyLibVWBindingsModule(_build_ext):
             "-DBUILD_TESTS=Off",
             "-DWARNINGS=Off",
         ]
+
+        required_shared_lib_suffix = sysconfig.get_config_vars("EXT_SUFFIX")
+        if required_shared_lib_suffix is not None:
+            cmake_args += ["-DVW_PYTHON_SHARED_LIB_SUFFIX={}".format(required_shared_lib_suffix)]
+
         if self.distribution.enable_boost_cmake is None:
             # Add this flag as default since testing indicates its safe.
             # But add a way to disable it in case it becomes a problem
