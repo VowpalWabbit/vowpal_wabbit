@@ -111,7 +111,7 @@ class BuildPyLibVWBindingsModule(_build_ext):
             "-DWARNINGS=Off",
         ]
 
-        required_shared_lib_suffix = sysconfig.get_config_vars("EXT_SUFFIX")
+        required_shared_lib_suffix = sysconfig.get_config_var("EXT_SUFFIX")
         if required_shared_lib_suffix is not None:
             cmake_args += ["-DVW_PYTHON_SHARED_LIB_SUFFIX={}".format(required_shared_lib_suffix)]
 
