@@ -78,11 +78,15 @@ def get_ext_filename_without_platform_suffix(filename):
 
 
 class BuildPyLibVWBindingsModule(_build_ext):
-    # def get_ext_filename(self, ext_name):
-    #     # don't append the extension suffix to the binary name
-    #     # see https://stackoverflow.com/questions/38523941/change-cythons-naming-rules-for-so-files/40193040#40193040
-    #     filename = _build_ext.get_ext_filename(self, ext_name)
-    #     return get_ext_filename_without_platform_suffix(filename)
+    def get_ext_filename(self, ext_name):
+        # don't append the extension suffix to the binary name
+        # see https://stackoverflow.com/questions/38523941/change-cythons-naming-rules-for-so-files/40193040#40193040
+        print("--------------")
+        print(ext_name)
+        print(_build_ext.get_ext_filename(ext_name))
+        print("--------------")
+
+        return _build_ext.get_ext_filename(self, ext_name)
 
     def run(self):
         for ext in self.extensions:
@@ -91,6 +95,7 @@ class BuildPyLibVWBindingsModule(_build_ext):
         _build_ext.run(self)
 
     def build_cmake(self, ext):
+
         # Make build directory
         distutils.dir_util.mkpath(self.build_temp)
 
@@ -111,13 +116,9 @@ class BuildPyLibVWBindingsModule(_build_ext):
             "-DWARNINGS=Off",
         ]
 
-
-        if system == "Windows":
-            cmake_args += ["-DVW_PYTHON_SHARED_LIB_SUFFIX=.pyd"]
-        else:
-            required_shared_lib_suffix = sysconfig.get_config_var("EXT_SUFFIX")
-            if required_shared_lib_suffix is not None:
-                cmake_args += ["-DVW_PYTHON_SHARED_LIB_SUFFIX={}".format(required_shared_lib_suffix)]
+        required_shared_lib_suffix = sysconfig.get_config_var("EXT_SUFFIX")
+        if required_shared_lib_suffix is not None:
+            cmake_args += ["-DVW_PYTHON_SHARED_LIB_SUFFIX={}".format(required_shared_lib_suffix)]
 
         if self.distribution.enable_boost_cmake is None:
             # Add this flag as default since testing indicates its safe.
