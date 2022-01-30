@@ -1,4 +1,5 @@
 import vowpalwabbit
+import pytest
 
 # Named specifically as the delimiter used is specific for the number of actions
 # used in this test case.
@@ -121,3 +122,12 @@ def test_ccb_non_slot_none_outcome():
     # CCB label is set to UNSET by default.
     assert label.type == vowpalwabbit.CCBLabelType.UNSET
     assert label.outcome is None
+
+
+def test_ccb_invalid_label_type():
+    model = vowpalwabbit.Workspace(quiet=True, ccb_explore_adf=True)
+    example = vowpalwabbit.Example(vw=model, labelType=vowpalwabbit.LabelType.SIMPLE)
+    with pytest.raises(ValueError) as value_error:
+        vowpalwabbit.CCBLabel.from_example(example)
+    expected = "Invalid label type: SIMPLE, expected: CONDITIONAL_CONTEXTUAL_BANDIT."
+    assert expected == str(value_error.value)

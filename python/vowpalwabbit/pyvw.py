@@ -1032,6 +1032,10 @@ class SimpleLabel(AbstractLabel):
 
     @staticmethod
     def from_example(ex: "Example"):
+        if not ex.labelType is LabelType.SIMPLE:
+            raise ValueError(
+                f"Invalid label type: {ex.labelType.name}, expected: SIMPLE."
+            )
         label = ex.get_simplelabel_label()
         weight = ex.get_simplelabel_weight()
         initial = ex.get_simplelabel_initial()
@@ -1056,6 +1060,10 @@ class MulticlassLabel(AbstractLabel):
 
     @staticmethod
     def from_example(ex: "Example"):
+        if not ex.labelType is LabelType.MULTICLASS:
+            raise ValueError(
+                f"Invalid label type: {ex.labelType.name}, expected: MULTICLASS."
+            )
         label = ex.get_multiclass_label()
         weight = ex.get_multiclass_weight()
         prediction = ex.get_multiclass_prediction()
@@ -1077,6 +1085,10 @@ class MulticlassProbabilitiesLabel(AbstractLabel):
 
     @staticmethod
     def from_example(ex: "Example"):
+        if not ex.labelType is LabelType.MUL:
+            raise ValueError(
+                f"Invalid label type: {ex.labelType.name}, expected: MULTICLASS."
+            )
         prediction = get_prediction(ex, PredictionType.MULTICLASSPROBS)
         return MulticlassProbabilitiesLabel(prediction)
 
@@ -1115,6 +1127,10 @@ class CostSensitiveLabel(AbstractLabel):
 
     @staticmethod
     def from_example(ex: "Example"):
+        if not ex.labelType is LabelType.COST_SENSITIVE:
+            raise ValueError(
+                f"Invalid label type: {ex.labelType.name}, expected: COST_SENSITIVE."
+            )
         prediction = ex.get_costsensitive_prediction()
         costs = []
         for i in range(ex.get_costsensitive_num_costs()):
@@ -1167,6 +1183,10 @@ class CBLabel(AbstractLabel):
 
     @staticmethod
     def from_example(ex: "Example"):
+        if not ex.labelType is LabelType.CONTEXTUAL_BANDIT:
+            raise ValueError(
+                f"Invalid label type: {ex.labelType.name}, expected: CONTEXTUAL_BANDIT."
+            )
         weight = ex.get_cbandits_weight()
         costs = []
         for i in range(ex.get_cbandits_num_costs()):
@@ -1199,6 +1219,10 @@ class CBEvalLabel(AbstractLabel):
 
     @staticmethod
     def from_example(ex: "Example"):
+        if not ex.labelType is LabelType.CONTEXTUAL_BANDIT_EVAL:
+            raise ValueError(
+                f"Invalid label type: {ex.labelType.name}, expected: CONTEXTUAL_BANDIT_EVAL."
+            )
         action = ex.get_cb_eval_action()
         weight = ex.get_cb_eval_weight()
         costs = []
@@ -1273,6 +1297,10 @@ class CCBLabel(AbstractLabel):
 
     @staticmethod
     def from_example(ex: "Example"):
+        if not ex.labelType is LabelType.CONDITIONAL_CONTEXTUAL_BANDIT:
+            raise ValueError(
+                f"Invalid label type: {ex.labelType.name}, expected: CONDITIONAL_CONTEXTUAL_BANDIT."
+            )
         type = ex.get_ccb_type()
         explicit_included_actions = ex.get_ccb_explicitly_included_actions()
         weight = ex.get_ccb_weight()
@@ -1327,6 +1355,10 @@ class SlatesLabel(AbstractLabel):
 
     @staticmethod
     def from_example(ex: "Example"):
+        if not ex.labelType is LabelType.SLATES:
+            raise ValueError(
+                f"Invalid label type: {ex.labelType.name}, expected: SLATES."
+            )
         type = ex.get_slates_type()
         weight = ex.get_slates_weight()
         labeled = ex.get_slates_labeled()
@@ -1373,6 +1405,10 @@ class CBContinuousLabel(AbstractLabel):
 
     @staticmethod
     def from_example(ex: "Example"):
+        if not ex.labelType is LabelType.CONTINUOUS:
+            raise ValueError(
+                f"Invalid label type: {ex.labelType.name}, expected: CONTINUOUS."
+            )
         costs = []
         for i in range(ex.get_cb_continuous_num_costs()):
             elem = CBContinuousLabelElement(
@@ -1398,6 +1434,10 @@ class MultilabelLabel(AbstractLabel):
 
     @staticmethod
     def from_example(ex: "Example"):
+        if not ex.labelType is LabelType.MULTILABEL:
+            raise ValueError(
+                f"Invalid label type: {ex.labelType.name}, expected: MULTILABEL."
+            )
         labels = ex.get_multilabel_labels()
         return MultilabelLabel(labels)
 
