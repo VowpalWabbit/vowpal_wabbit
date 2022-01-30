@@ -1085,7 +1085,7 @@ class MulticlassProbabilitiesLabel(AbstractLabel):
 
     @staticmethod
     def from_example(ex: "Example"):
-        if not ex.labelType is LabelType.MUL:
+        if not ex.labelType is LabelType.MULTICLASS:
             raise ValueError(
                 f"Invalid label type: {ex.labelType.name}, expected: MULTICLASS."
             )
