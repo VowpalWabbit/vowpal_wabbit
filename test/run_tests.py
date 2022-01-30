@@ -518,7 +518,11 @@ def find_spanning_tree_binary(
     def is_spanning_tree_binary(file: Path) -> bool:
         return file.name == "spanning_tree"
 
-    user_supplied_bin_path = Path(user_supplied_bin_path)
+    user_supplied_bin_path = (
+        Path(user_supplied_bin_path)
+        if user_supplied_bin_path is not None
+        else None
+    )
     
     return find_or_use_user_supplied_path(
         test_base_ref_dir=test_base_ref_dir,
@@ -538,7 +542,11 @@ def find_to_flatbuf_binary(
     def is_to_flatbuff_binary(file: Path) -> bool:
         return file.name == "to_flatbuff"
 
-    user_supplied_bin_path = Path(user_supplied_bin_path)
+    user_supplied_bin_path = (
+        Path(user_supplied_bin_path)
+        if user_supplied_bin_path is not None
+        else None
+    )
     
     return find_or_use_user_supplied_path(
         test_base_ref_dir=test_base_ref_dir,
