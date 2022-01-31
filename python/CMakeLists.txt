@@ -46,8 +46,6 @@ endif()
 add_library(pylibvw SHARED pylibvw.cc)
 set_target_properties(pylibvw PROPERTIES PREFIX "")
 
-message(STATUS VW_PYTHON_SHARED_LIB_SUFFIX ${VW_PYTHON_SHARED_LIB_SUFFIX})
-
 # The python setup.py script should communicate what suffix it wants.
 if(VW_PYTHON_SHARED_LIB_SUFFIX)
   set_target_properties(pylibvw PROPERTIES SUFFIX ${VW_PYTHON_SHARED_LIB_SUFFIX})
