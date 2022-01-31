@@ -125,7 +125,6 @@ size_t write_model_field(io_buf&, const CCB::label&, const std::string&, bool);
 }  // namespace model_utils
 }  // namespace VW
 
-
 template <>
 struct fmt::formatter<CCB::example_type> : formatter<std::string>
 {
