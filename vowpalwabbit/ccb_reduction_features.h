@@ -5,7 +5,6 @@
 #pragma once
 
 #include "v_array.h"
-#include "fmt/format.h"
 
 #include <cstdint>
 
@@ -31,12 +30,3 @@ namespace VW
 {
 const char* to_string(CCB::example_type type);
 }  // namespace VW
-
-template <>
-struct fmt::formatter<CCB::example_type> : formatter<std::string>
-{
-  auto format(CCB::example_type c, format_context& ctx) -> decltype(ctx.out())
-  {
-    return formatter<std::string>::format(std::string{VW::to_string(c)}, ctx);
-  }
-};
