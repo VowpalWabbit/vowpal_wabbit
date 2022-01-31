@@ -15,6 +15,8 @@
 #include "vw_string_view.h"
 #include "io_buf.h"
 
+#include "fmt/format.h"
+
 namespace CCB
 {
 struct conditional_contextual_bandit_outcome
@@ -122,3 +124,12 @@ size_t read_model_field(io_buf&, CCB::label&);
 size_t write_model_field(io_buf&, const CCB::label&, const std::string&, bool);
 }  // namespace model_utils
 }  // namespace VW
+
+template <>
+struct fmt::formatter<CCB::example_type> : formatter<std::string>
+{
+  auto format(CCB::example_type c, format_context& ctx) -> decltype(ctx.out())
+  {
+    return formatter<std::string>::format(std::string{VW::to_string(c)}, ctx);
+  }
+};
