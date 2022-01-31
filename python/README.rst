@@ -1,7 +1,7 @@
 Vowpal Wabbit Python Wrapper
 ============================
 
-.. image:: https://badge.fury.io/py/vowpalwabbit.svg
+.. figure:: https://badge.fury.io/py/vowpalwabbit.svg
     :target: https://pypi.python.org/pypi/vowpalwabbit
 
 Vowpal Wabbit is a fast machine learning library for online learning, and this is the python wrapper for the project.
