@@ -1,5 +1,5 @@
 Version 9.0.0
-Id 
+Id
 Min label:-1
 Max label:0
 bits:18
@@ -8,7 +8,7 @@ lda:0
 0 skip:
 options: --automl 3 --cb_adf --cb_explore_adf --cb_type mtr --csoaa_ldf multiline --csoaa_rank --epsilon 0.200000002980232 --keep_configs --oracle_type rand --priority_type least_exclusion --random_seed 13881481101454338915
 Checksum: 166296216
-_automl_state = 1
+_automl_state = Experimenting
 _automl_config_manager_count = 3
 _automl_config_manager_champ = 0
 _automl_config_manager_valid_config_size = 6
@@ -39,7 +39,7 @@ _automl_config_manager_configs[0]_exclusions.size() = 0
 _automl_config_manager_configs[0]_lease = 10
 _automl_config_manager_configs[0]_ips = 0
 _automl_config_manager_configs[0]_lower_bound = 0
-_automl_config_manager_configs[0]_state = 1
+_automl_config_manager_configs[0]_state = Live
 _automl_config_manager_configs.key1 = 1
 _automl_config_manager_configs[1]_exclusions.size() = 1
 _automl_config_manager_configs[1]_exclusions.key0 = 69
@@ -48,7 +48,7 @@ _automl_config_manager_configs[1]_exclusions[69][0] = 69
 _automl_config_manager_configs[1]_lease = 10
 _automl_config_manager_configs[1]_ips = 0
 _automl_config_manager_configs[1]_lower_bound = inf
-_automl_config_manager_configs[1]_state = 0
+_automl_config_manager_configs[1]_state = New
 _automl_config_manager_configs.key2 = 2
 _automl_config_manager_configs[2]_exclusions.size() = 1
 _automl_config_manager_configs[2]_exclusions.key0 = 69
@@ -57,7 +57,7 @@ _automl_config_manager_configs[2]_exclusions[69][0] = 77
 _automl_config_manager_configs[2]_lease = 10
 _automl_config_manager_configs[2]_ips = 0
 _automl_config_manager_configs[2]_lower_bound = 0
-_automl_config_manager_configs[2]_state = 1
+_automl_config_manager_configs[2]_state = Live
 _automl_config_manager_configs.key3 = 3
 _automl_config_manager_configs[3]_exclusions.size() = 1
 _automl_config_manager_configs[3]_exclusions.key0 = 69
@@ -66,7 +66,7 @@ _automl_config_manager_configs[3]_exclusions[69][0] = 77
 _automl_config_manager_configs[3]_lease = 10
 _automl_config_manager_configs[3]_ips = 0
 _automl_config_manager_configs[3]_lower_bound = 0
-_automl_config_manager_configs[3]_state = 1
+_automl_config_manager_configs[3]_state = Live
 _automl_config_manager_configs.key4 = 4
 _automl_config_manager_configs[4]_exclusions.size() = 1
 _automl_config_manager_configs[4]_exclusions.key0 = 82
@@ -75,7 +75,7 @@ _automl_config_manager_configs[4]_exclusions[82][0] = 106
 _automl_config_manager_configs[4]_lease = 10
 _automl_config_manager_configs[4]_ips = 0
 _automl_config_manager_configs[4]_lower_bound = inf
-_automl_config_manager_configs[4]_state = 0
+_automl_config_manager_configs[4]_state = New
 _automl_config_manager_configs.key5 = 5
 _automl_config_manager_configs[5]_exclusions.size() = 1
 _automl_config_manager_configs[5]_exclusions.key0 = 105
@@ -84,7 +84,7 @@ _automl_config_manager_configs[5]_exclusions[105][0] = 128
 _automl_config_manager_configs[5]_lease = 10
 _automl_config_manager_configs[5]_ips = 0
 _automl_config_manager_configs[5]_lower_bound = inf
-_automl_config_manager_configs[5]_state = 0
+_automl_config_manager_configs[5]_state = New
 _automl_config_manager_scores.size() = 3
 _automl_config_manager_scores[0]_chisq_alpha = 0.05
 _automl_config_manager_scores[0]_chisq_tau = 0.999
