@@ -71,6 +71,8 @@ jobs:
       - name: Run twine check
         shell: bash
         run: |
+          export wheel_files=(wheel_${{ matrix.config.version }}/*)
+          export wheel_file="${wheel_files[0]}"
           twine check ${wheel_file}
       - name: Run unit tests
         shell: bash
