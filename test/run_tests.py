@@ -460,7 +460,7 @@ def create_test_dir(
                 break
 
         if file_to_copy is None:
-            str_deps =  [str(dep) for dep in dependencies]
+            str_deps = [str(dep) for dep in dependencies]
             dependent_tests = ", ".join(str_deps)
             raise ValueError(
                 f"Input file '{f}' couldn't be found for test {test_id}. Searched in '{test_ref_dir}' as well as outputs of dependent tests: [{dependent_tests}]"
@@ -520,9 +520,7 @@ def find_spanning_tree_binary(
         return file.name == "spanning_tree"
 
     user_supplied_bin_path = (
-        Path(user_supplied_bin_path)
-        if user_supplied_bin_path is not None
-        else None
+        Path(user_supplied_bin_path) if user_supplied_bin_path is not None else None
     )
 
     return find_or_use_user_supplied_path(
@@ -544,9 +542,7 @@ def find_to_flatbuf_binary(
         return file.name == "to_flatbuff"
 
     user_supplied_bin_path = (
-        Path(user_supplied_bin_path)
-        if user_supplied_bin_path is not None
-        else None
+        Path(user_supplied_bin_path) if user_supplied_bin_path is not None else None
     )
 
     return find_or_use_user_supplied_path(
