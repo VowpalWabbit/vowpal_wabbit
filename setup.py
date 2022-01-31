@@ -83,7 +83,7 @@ class BuildPyLibVWBindingsModule(_build_ext):
         # see https://stackoverflow.com/questions/38523941/change-cythons-naming-rules-for-so-files/40193040#40193040
         print("--------------")
         print(ext_name)
-        print(_build_ext.get_ext_filename(ext_name))
+        print(_build_ext.get_ext_filename(self, ext_name))
         print("--------------")
 
         return _build_ext.get_ext_filename(self, ext_name)
