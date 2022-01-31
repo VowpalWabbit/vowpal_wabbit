@@ -866,23 +866,28 @@ VW::string_view to_string(automl::automl_state state)
 {
   switch (state)
   {
-    case automl::automl_state::Collecting: return "Collecting";
-    case automl::automl_state::Experimenting: return "Experimenting";
+    case automl::automl_state::Collecting:
+      return "Collecting";
+    case automl::automl_state::Experimenting:
+      return "Experimenting";
   }
 
   assert(false);
   return "unknown";
 }
 
-
 VW::string_view to_string(automl::config_state state)
 {
   switch (state)
   {
-    case automl::config_state::New: return "New";
-    case automl::config_state::Live: return "Live";
-    case automl::config_state::Inactive: return "Inactive";
-    case automl::config_state::Removed: return "Removed";
+    case automl::config_state::New:
+      return "New";
+    case automl::config_state::Live:
+      return "Live";
+    case automl::config_state::Inactive:
+      return "Inactive";
+    case automl::config_state::Removed:
+      return "Removed";
   }
 
   assert(false);

@@ -72,8 +72,11 @@ size_t write_model_field(io_buf&, const VW::slates::label&, const std::string&, 
 }  // namespace model_utils
 }  // namespace VW
 
-template <> struct fmt::formatter<VW::slates::example_type> : formatter<std::string> {
-  auto format(VW::slates::example_type c, format_context& ctx) -> decltype(ctx.out()) {
+template <>
+struct fmt::formatter<VW::slates::example_type> : formatter<std::string>
+{
+  auto format(VW::slates::example_type c, format_context& ctx) -> decltype(ctx.out())
+  {
     return formatter<std::string>::format(std::string{VW::to_string(c)}, ctx);
   }
 };
