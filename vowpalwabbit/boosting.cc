@@ -344,7 +344,8 @@ void save_load(boosting& o, io_buf& model_file, bool read, bool text)
     if (read) { fmt::format_to(std::back_inserter(buffer), "Loading alpha: \n"); }
     else
     {
-      fmt::format_to(std::back_inserter(buffer), "Saving alpha, current weighted_examples = {)\n", o.all->sd->weighted_examples());
+      fmt::format_to(
+          std::back_inserter(buffer), "Saving alpha, current weighted_examples = {)\n", o.all->sd->weighted_examples());
     }
 
     for (int i = 0; i < o.N; i++) { fmt::format_to(std::back_inserter(buffer), "{} \n", o.alpha[i]); }

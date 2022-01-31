@@ -79,7 +79,6 @@ enum class automl_state
   Experimenting
 };
 
-
 struct config_manager
 {
   // This fn is responsible for applying a config
@@ -171,7 +170,6 @@ private:
 
 }  // namespace automl
 
-
 VW::string_view to_string(automl::automl_state state);
 VW::string_view to_string(automl::config_state state);
 
@@ -190,14 +188,20 @@ size_t write_model_field(io_buf&, const VW::automl::interaction_config_manager&,
 }  // namespace model_utils
 }  // namespace VW
 
-template <> struct fmt::formatter<VW::automl::automl_state> : formatter<std::string> {
-  auto format(VW::automl::automl_state c, format_context& ctx) -> decltype(ctx.out()) {
+template <>
+struct fmt::formatter<VW::automl::automl_state> : formatter<std::string>
+{
+  auto format(VW::automl::automl_state c, format_context& ctx) -> decltype(ctx.out())
+  {
     return formatter<std::string>::format(std::string{VW::to_string(c)}, ctx);
   }
 };
 
-template <> struct fmt::formatter<VW::automl::config_state> : formatter<std::string> {
-  auto format(VW::automl::config_state c, format_context& ctx) -> decltype(ctx.out()) {
+template <>
+struct fmt::formatter<VW::automl::config_state> : formatter<std::string>
+{
+  auto format(VW::automl::config_state c, format_context& ctx) -> decltype(ctx.out())
+  {
     return formatter<std::string>::format(std::string{VW::to_string(c)}, ctx);
   }
 };
