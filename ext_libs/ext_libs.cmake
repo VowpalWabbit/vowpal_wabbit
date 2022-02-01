@@ -2,8 +2,8 @@
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 
 if(FMT_SYS_DEP)
-  # fmt was initially built against 7.1.3. Its possible earlier versions will also work, but that needs to be tested
-  find_package(fmt 7.1.3 REQUIRED)
+  # fmt is now built against 8.1.1. Its possible earlier versions will also work, but that needs to be tested
+  find_package(fmt REQUIRED)
 else()
   if(VW_INSTALL)
     set(FMT_INSTALL ON CACHE BOOL "install fmt library" FORCE)
@@ -14,8 +14,8 @@ endif()
 if(SPDLOG_SYS_DEP)
   # use header-only mode with system-installed spdlog to ensure a consistent version of fmt is used
   set(spdlog_target spdlog::spdlog_header_only)
-  # spdlog was initially built against 1.8.2. Its possible earlier versions will also work, but that needs to be tested
-  find_package(spdlog 1.8.2 CONFIG REQUIRED)
+  # spdlog is now built against 1.9.2. Its possible earlier versions will also work, but that needs to be tested
+  find_package(spdlog CONFIG REQUIRED)
 else()
   set(spdlog_target spdlog::spdlog)
   set(SPDLOG_FMT_EXTERNAL ON CACHE BOOL "Enable external FMTLIB in spdlog" FORCE)
