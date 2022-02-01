@@ -195,6 +195,7 @@ setup(
     version=version,
     python_requires=">=3.6",
     description="Vowpal Wabbit Python package",
+    long_description_content_type="text/x-rst",
     long_description=long_description,
     url="https://github.com/VowpalWabbit/vowpal_wabbit",
     author="Scott Graham",

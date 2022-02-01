@@ -12,10 +12,12 @@
 #include "learner.h"
 #include "array_parameters_dense.h"
 #include "scored_config.h"
+#include "vw_string_view.h"
 #include <map>
 #include <memory>
 #include <set>
 #include <queue>
+#include <fmt/format.h>
 
 using namespace VW::config;
 using namespace VW::LEARNER;
@@ -168,6 +170,9 @@ private:
 
 }  // namespace automl
 
+VW::string_view to_string(automl::automl_state state);
+VW::string_view to_string(automl::config_state state);
+
 namespace model_utils
 {
 template <typename CMType>
@@ -182,3 +187,21 @@ size_t write_model_field(io_buf&, const VW::automl::aml_score&, const std::strin
 size_t write_model_field(io_buf&, const VW::automl::interaction_config_manager&, const std::string&, bool);
 }  // namespace model_utils
 }  // namespace VW
+
+template <>
+struct fmt::formatter<VW::automl::automl_state> : formatter<std::string>
+{
+  auto format(VW::automl::automl_state c, format_context& ctx) -> decltype(ctx.out())
+  {
+    return formatter<std::string>::format(std::string{VW::to_string(c)}, ctx);
+  }
+};
+
+template <>
+struct fmt::formatter<VW::automl::config_state> : formatter<std::string>
+{
+  auto format(VW::automl::config_state c, format_context& ctx) -> decltype(ctx.out())
+  {
+    return formatter<std::string>::format(std::string{VW::to_string(c)}, ctx);
+  }
+};
