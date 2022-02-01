@@ -28,13 +28,8 @@
 #include "io/logger.h"
 #include "shared_data.h"
 
-#include <boost/version.hpp>
 #include <boost/math/special_functions/digamma.hpp>
 #include <boost/math/special_functions/gamma.hpp>
-
-#if BOOST_VERSION >= 105600
-#  include <boost/align/is_aligned.hpp>
-#endif
 
 using namespace VW::config;
 using namespace VW::LEARNER;
@@ -161,11 +156,8 @@ namespace
 {
 inline bool is_aligned16(void* ptr)
 {
-#    if BOOST_VERSION >= 105600
-  return boost::alignment::is_aligned(16, ptr);
-#    else
-  return ((reinterpret_cast<uintptr_t>(ptr) & 0x0f) == 0);
-#    endif
+  constexpr std::size_t alignment = 16;
+  return (reinterpret_cast<std::size_t>(ptr) & (alignment - 1)) == 0;
 }
 }  // namespace
 
