@@ -59,14 +59,6 @@ Diagnostic Options:
                                              https://vowpalwabbit.org
 Randomization Options:
   --random_seed arg (Default: 0)             Seed random number generator
-Update Options:
-  -l [ --learning_rate ] arg (Default: 0.5)  Set learning rate
-  --power_t arg (Default: 0.5)               T power value
-  --decay_learning_rate arg (Default: 1)     Set Decay factor for learning_rate between passes
-  --initial_t arg                            Initial t value
-  --feature_mask arg                         Use existing regressor to determine which parameters 
-                                             may be updated.  If no initial_regressor given, also 
-                                             used for initial weights.
 Feature Options:
   --hash arg (Default: strings)              How to hash the features. Choices: {all, strings}
   --hash_seed arg (Default: 0)               Seed for hash function
@@ -154,6 +146,14 @@ Output Model Options:
   --output_feature_regularizer_binary arg    Per feature regularization output file
   --output_feature_regularizer_text arg      Per feature regularization output file, in text
   --id arg                                   User supplied ID embedded into the final regressor
+Update Options:
+  -l [ --learning_rate ] arg (Default: 0.5)  Set learning rate
+  --power_t arg (Default: 0.5)               T power value
+  --decay_learning_rate arg (Default: 1)     Set Decay factor for learning_rate between passes
+  --initial_t arg                            Initial t value
+  --feature_mask arg                         Use existing regressor to determine which parameters 
+                                             may be updated.  If no initial_regressor given, also 
+                                             used for initial weights.
 Prediction Output Options:
   -p [ --predictions ] arg                   File to output predictions to
   -r [ --raw_predictions ] arg               File to output unnormalized predictions to
