@@ -4046,9 +4046,10 @@
   {
     "id": 314,
     "desc": "squarecb save_load, save model",
-    "vw_command": "-d train-sets/cb_load.dat --cb_explore_adf -q UA --squarecb -f models/sqcb_ld.model",
+    "vw_command": "-d train-sets/cb_load.dat --cb_explore_adf -q UA --squarecb -f models/sqcb_ld.model -p squarecb_pred.predict",
     "diff_files": {
       "stderr": "train-sets/ref/squarecb_save.stderr",
+      "squarecb_pred.predict": "pred-sets/ref/squarecb_pred.predict",
       "stdout": "train-sets/ref/squarecb_save.stdout"
     },
     "input_files": [
