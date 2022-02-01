@@ -20,6 +20,7 @@ using namespace VW::ae;
 BOOST_AUTO_TEST_CASE(ae_test)
 {
   // we initialize the reduction pointing to position 0 as champ, that config is hard-coded to empty
-  auto ctr = simulator::_test_helper("--agedexp 3 --cb_explore_adf --quiet --epsilon 0.2 --random_seed 5");
+  auto ctr =
+      simulator::_test_helper("--agedexp --model_count 3 --cb_explore_adf --quiet --epsilon 0.2 --random_seed 5");
   float with_save = ctr.back();
 }

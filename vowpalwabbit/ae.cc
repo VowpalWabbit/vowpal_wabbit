@@ -10,7 +10,7 @@
 #include "vw.h"
 #include "label_type.h"
 #include "prediction_type.h"
-#include "scored_config.h"
+#include "model_utils.h"
 
 #include <string>
 #include <algorithm>
@@ -25,32 +25,6 @@ namespace VW
 {
 namespace ae
 {
-struct ae_score : scored_config
-{
-  ae_score() : _lower_bound(0), _model_idx(0) {}
-  ae_score(uint64_t model_idx) : _lower_bound(0), _model_idx(model_idx) {}
-  float get_upper_bound() const { return this->current_ips(); }
-  float get_lower_bound() const { return _lower_bound; }
-  uint64_t get_model_idx() const { return _model_idx; }
-  void update_bounds(float w, float r);
-
-  float _lower_bound;
-  uint64_t _model_idx;
-};
-
-struct ae_data
-{
-  ae_data(float _epsilon, uint64_t num_configs, parameters& weights) : scored_configs(num_configs), weights(weights)
-  {
-    initial_epsilon = _epsilon;
-    for (uint64_t i = 0; i < num_configs; ++i) { scored_configs[i]._model_idx = i; }
-  }
-  float initial_epsilon;
-  std::vector<uint64_t> update_counts;
-  std::vector<ae_score> scored_configs;
-  parameters& weights;
-};
-
 void ae_score::update_bounds(float w, float r)
 {
   update(w, r);
@@ -78,18 +52,13 @@ void reset_models(ForwardIt first, ForwardIt end, parameters& weights, uint64_t 
   }
 }
 
-float decayed_epsilon(float initial_epsilon, uint64_t update_count)
-{
-  // Return some function of initial epsilon and update count (cube root?)
-  _UNUSED(update_count);
-  return initial_epsilon;
-}
+float decayed_epsilon(uint64_t update_count) { return pow(update_count + 1, -1.f / 3.f); }
 
 void predict(ae_data& data, VW::LEARNER::multi_learner& base, multi_ex& examples)
 {
   auto& ep_fts = examples[0]->_reduction_features.template get<VW::cb_explore_adf::greedy::reduction_features>();
   auto active_iter = data.scored_configs.end() - 1;
-  ep_fts.epsilon = decayed_epsilon(data.initial_epsilon, active_iter->update_count);
+  ep_fts.epsilon = decayed_epsilon(active_iter->update_count);
   base.predict(examples, active_iter->get_model_idx());
 }
 
@@ -139,7 +108,8 @@ void learn(ae_data& data, VW::LEARNER::multi_learner& base, multi_ex& examples)
   auto model_idx = model_count - 1;
   for (auto candidate_iter = champion_iter + 1; candidate_iter != end_iter; ++candidate_iter, --model_idx)
   {
-    if (candidate_iter->update_count > (pow(champion_iter->update_count, model_idx / model_count)))
+    if (candidate_iter->update_count > data.min_scope &&
+        candidate_iter->update_count > (pow(champion_iter->update_count, model_idx / model_count)))
     {
       auto n_iter = swap_models(candidate_iter + 1, candidate_iter, end_iter);
       reset_models(n_iter, end_iter, data.weights, model_count);
@@ -148,36 +118,26 @@ void learn(ae_data& data, VW::LEARNER::multi_learner& base, multi_ex& examples)
   }
 }
 
-void finish_example(VW::workspace& all, ae_data& data, multi_ex& examples)
-{
-  VW::finish_example(all, examples);
-  _UNUSED(data);
-}
-
 VW::LEARNER::base_learner* ae_setup(VW::setup_base_i& stack_builder)
 {
   VW::config::options_i& options = *stack_builder.get_options();
   VW::workspace& all = *stack_builder.get_all_pointer();
 
   std::string arg;
+  bool ae_option;
   uint64_t model_count;
-  float epsilon;
+  uint64_t min_scope;
 
   option_group_definition new_options("Aged Exploration");
-  new_options
-      .add(make_option("agedexp", model_count)
-               .necessary()
+  new_options.add(make_option("agedexp", ae_option).necessary().keep().help("Use decay of exploration reduction"))
+      .add(make_option("model_count", model_count).keep().default_value(3).help("Set number of exploration models"))
+      .add(make_option("min_scope", min_scope)
                .keep()
-               .default_value(3)
-               .help("Set number of exploration models"))
-      .add(make_option("epsilon", epsilon)
-               .keep()
-               .allow_override()
-               .default_value(0.05f)
-               .help("Epsilon-greedy exploration initial value"));
+               .default_value(10)
+               .help("Minimum example count of model before removing"));
 
   if (!options.add_parse_and_check_necessary(new_options)) { return nullptr; }
-  auto data = VW::make_unique<ae_data>(epsilon, model_count, all.weights);
+  auto data = VW::make_unique<ae_data>(model_count, min_scope, all.weights);
 
   // make sure we setup the rest of the stack with cleared interactions
   // to make sure there are not subtle bugs
@@ -188,7 +148,6 @@ VW::LEARNER::base_learner* ae_setup(VW::setup_base_i& stack_builder)
         predict, stack_builder.get_setupfn_name(ae_setup))
                         .set_params_per_weight(model_count)
                         .set_output_prediction_type(base_learner->get_output_prediction_type())
-                        .set_finish_example(finish_example)
                         .build();
 
     return VW::LEARNER::make_base(*learner);
@@ -201,4 +160,41 @@ VW::LEARNER::base_learner* ae_setup(VW::setup_base_i& stack_builder)
 }
 
 }  // namespace ae
+
+namespace model_utils
+{
+size_t read_model_field(io_buf& io, VW::ae::ae_score& score)
+{
+  size_t bytes = 0;
+  bytes += read_model_field(io, reinterpret_cast<VW::scored_config&>(score));
+  bytes += read_model_field(io, score._lower_bound);
+  bytes += read_model_field(io, score._model_idx);
+  return bytes;
+}
+
+size_t write_model_field(io_buf& io, const VW::ae::ae_score& score, const std::string& upstream_name, bool text)
+{
+  size_t bytes = 0;
+  bytes += write_model_field(io, reinterpret_cast<const VW::scored_config&>(score), upstream_name, text);
+  bytes += write_model_field(io, score._lower_bound, upstream_name + "_lower_bound", text);
+  bytes += write_model_field(io, score._model_idx, upstream_name + "_model_idx", text);
+  return bytes;
+}
+
+size_t read_model_field(io_buf& io, VW::ae::ae_data& ae)
+{
+  size_t bytes = 0;
+  bytes += read_model_field(io, ae.update_counts);
+  bytes += read_model_field(io, ae.scored_configs);
+  return bytes;
+}
+
+size_t write_model_field(io_buf& io, const VW::ae::ae_data& ae, const std::string& upstream_name, bool text)
+{
+  size_t bytes = 0;
+  bytes += write_model_field(io, ae.update_counts, upstream_name + "_update_counts", text);
+  bytes += write_model_field(io, ae.scored_configs, upstream_name + "_scored_configs", text);
+  return bytes;
+}
+}  // namespace model_utils
 }  // namespace VW
