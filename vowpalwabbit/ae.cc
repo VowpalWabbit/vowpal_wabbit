@@ -32,7 +32,6 @@ void ae_score::update_bounds(float w, float r)
   // update the lower bound
   distributionally_robust::ScoredDual sd = this->chisq.recompute_duals();
   _lower_bound = static_cast<float>(sd.first);
-  ++update_count;
 }
 
 template <class ForwardIt>
@@ -109,12 +108,22 @@ void learn(ae_data& data, VW::LEARNER::multi_learner& base, multi_ex& examples)
   for (auto candidate_iter = champion_iter + 1; candidate_iter != end_iter; ++candidate_iter, --model_idx)
   {
     if (candidate_iter->update_count > data.min_scope &&
-        candidate_iter->update_count > (pow(champion_iter->update_count, model_idx / model_count)))
+        candidate_iter->update_count > (pow(champion_iter->update_count, static_cast<float>(model_idx) / model_count)))
     {
       auto n_iter = swap_models(candidate_iter + 1, candidate_iter, end_iter);
       reset_models(n_iter, end_iter, data.weights, model_count);
       break;
     }
+  }
+}
+
+void save_load_ae(ae_data& ae, io_buf& io, bool read, bool text)
+{
+  if (io.num_files() == 0) { return; }
+  if (read) { VW::model_utils::read_model_field(io, ae); }
+  else
+  {
+    VW::model_utils::write_model_field(io, ae, "_ae", text);
   }
 }
 
@@ -148,6 +157,7 @@ VW::LEARNER::base_learner* ae_setup(VW::setup_base_i& stack_builder)
         predict, stack_builder.get_setupfn_name(ae_setup))
                         .set_params_per_weight(model_count)
                         .set_output_prediction_type(base_learner->get_output_prediction_type())
+                        .set_save_load(save_load_ae)
                         .build();
 
     return VW::LEARNER::make_base(*learner);
@@ -184,7 +194,7 @@ size_t write_model_field(io_buf& io, const VW::ae::ae_score& score, const std::s
 size_t read_model_field(io_buf& io, VW::ae::ae_data& ae)
 {
   size_t bytes = 0;
-  bytes += read_model_field(io, ae.update_counts);
+  ae.scored_configs.clear();
   bytes += read_model_field(io, ae.scored_configs);
   return bytes;
 }
@@ -192,7 +202,6 @@ size_t read_model_field(io_buf& io, VW::ae::ae_data& ae)
 size_t write_model_field(io_buf& io, const VW::ae::ae_data& ae, const std::string& upstream_name, bool text)
 {
   size_t bytes = 0;
-  bytes += write_model_field(io, ae.update_counts, upstream_name + "_update_counts", text);
   bytes += write_model_field(io, ae.scored_configs, upstream_name + "_scored_configs", text);
   return bytes;
 }

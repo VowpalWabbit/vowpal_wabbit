@@ -29,11 +29,11 @@ struct ae_score : scored_config
 
 struct ae_data
 {
-  ae_data(uint64_t num_configs, uint64_t min_scope, parameters& weights) : scored_configs(num_configs), min_scope(min_scope), weights(weights)
+  ae_data(uint64_t num_configs, uint64_t min_scope, parameters& weights)
+      : scored_configs(num_configs), min_scope(min_scope), weights(weights)
   {
     for (uint64_t i = 0; i < num_configs; ++i) { scored_configs[i]._model_idx = i; }
   }
-  std::vector<uint64_t> update_counts;
   std::vector<ae_score> scored_configs;
   uint64_t min_scope;
   parameters& weights;

@@ -24,3 +24,18 @@ BOOST_AUTO_TEST_CASE(ae_test)
       simulator::_test_helper("--agedexp --model_count 3 --cb_explore_adf --quiet --epsilon 0.2 --random_seed 5");
   float with_save = ctr.back();
 }
+
+BOOST_AUTO_TEST_CASE(ae_save_load)
+{
+  callback_map empty_hooks;
+  auto ctr = simulator::_test_helper_hook("--agedexp --model_count 5 --cb_explore_adf --quiet", empty_hooks);
+  float without_save = ctr.back();
+  BOOST_CHECK_GT(without_save, 0.3f);
+
+  ctr = simulator::_test_helper_save_load("--agedexp --model_count 5 --cb_explore_adf --quiet");
+
+  float with_save = ctr.back();
+  BOOST_CHECK_GT(with_save, 0.3f);
+
+  BOOST_CHECK_CLOSE(without_save, with_save, FLOAT_TOL);
+}
