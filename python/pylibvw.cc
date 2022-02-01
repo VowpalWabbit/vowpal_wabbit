@@ -1209,7 +1209,7 @@ int32_t po_get_int(search_ptr sch, std::string arg)
   }
   try
   {
-    return (int32_t)d->arg->get_typed_option<int64_t>(arg).value();
+    return static_cast<int32_t>(d->arg->get_typed_option<int64_t>(arg).value());
   }
   catch (...)
   {
