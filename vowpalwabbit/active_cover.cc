@@ -6,6 +6,7 @@
 #include <cerrno>
 #include <cfloat>
 #include <memory>
+#include "numeric_casts.h"
 #include "reductions.h"
 #include "rand48.h"
 #include "float.h"
@@ -215,6 +216,7 @@ base_learner* active_cover_setup(VW::setup_base_i& stack_builder)
   option_group_definition new_options("[Reduction] Active Learning with Cover");
 
   bool active_cover_option = false;
+  uint64_t cover_size = 0;
   new_options
       .add(
           make_option("active_cover", active_cover_option).keep().necessary().help("Enable active learning with cover"))
@@ -228,7 +230,7 @@ base_learner* active_cover_setup(VW::setup_base_i& stack_builder)
       .add(make_option("beta_scale", data->beta_scale)
                .default_value(sqrtf(10.f))
                .help("Active learning variance upper bound parameter beta_scale"))
-      .add(make_option("cover", data->cover_size).keep().default_value(12).help("Cover size"))
+      .add(make_option("cover", cover_size).keep().default_value(12).help("Cover size"))
       .add(make_option("oracular", data->oracular).help("Use Oracular-CAL style query or not"));
 
   if (!options.add_parse_and_check_necessary(new_options)) return nullptr;
@@ -236,6 +238,7 @@ base_learner* active_cover_setup(VW::setup_base_i& stack_builder)
   data->all = &all;
   data->_random_state = all.get_random_state();
   data->beta_scale *= data->beta_scale;
+  data->cover_size = VW::cast_to_smaller_type<size_t>(cover_size);
 
   if (data->oracular) data->cover_size = 0;
 
@@ -254,10 +257,10 @@ base_learner* active_cover_setup(VW::setup_base_i& stack_builder)
     data->lambda_d[i] = 1.f / 8.f;
   }
 
-  const auto cover_size = data->cover_size;
+  const auto saved_cover_size = data->cover_size;
   auto* l = VW::LEARNER::make_reduction_learner(std::move(data), base, predict_or_learn_active_cover<true>,
       predict_or_learn_active_cover<false>, stack_builder.get_setupfn_name(active_cover_setup))
-                .set_params_per_weight(cover_size + 1)
+                .set_params_per_weight(saved_cover_size + 1)
                 .set_output_prediction_type(VW::prediction_type_t::scalar)
                 .set_input_label_type(VW::label_type_t::simple)
                 .build();

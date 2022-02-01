@@ -6,6 +6,7 @@
 
 #include <sys/types.h>
 #include "io/logger.h"
+#include "numeric_casts.h"
 
 #ifndef _WIN32
 #  include <sys/mman.h>
@@ -458,7 +459,7 @@ void enable_sources(VW::workspace& all, bool quiet, size_t passes, input_options
       all.example_parser->_shared_data = sd;
 
       // create children
-      size_t num_children = all.num_children;
+      size_t num_children = VW::cast_to_smaller_type<size_t>(all.num_children);
       v_array<int> children;
       children.resize_but_with_stl_behavior(num_children);
       for (size_t i = 0; i < num_children; i++)

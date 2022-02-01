@@ -66,7 +66,19 @@ struct option_builder
   {
     return fmt::format("{}. Choices: {{{}}}", help, fmt::join(s, ", "));
   }
-  std::string help_one_of(const std::string& help, const std::set<int>& s)
+  std::string help_one_of(const std::string& help, const std::set<int32_t>& s)
+  {
+    return fmt::format("{}. Choices: {{{}}}", help, fmt::join(s, ", "));
+  }
+  std::string help_one_of(const std::string& help, const std::set<int64_t>& s)
+  {
+    return fmt::format("{}. Choices: {{{}}}", help, fmt::join(s, ", "));
+  }
+  std::string help_one_of(const std::string& help, const std::set<uint32_t>& s)
+  {
+    return fmt::format("{}. Choices: {{{}}}", help, fmt::join(s, ", "));
+  }
+  std::string help_one_of(const std::string& help, const std::set<uint64_t>& s)
   {
     return fmt::format("{}. Choices: {{{}}}", help, fmt::join(s, ", "));
   }
@@ -133,6 +145,13 @@ struct typed_option : base_option
 {
   using value_type = T;
 
+  static_assert(std::is_same<T, uint32_t>::value || std::is_same<T, uint64_t>::value ||
+          std::is_same<T, int32_t>::value || std::is_same<T, int64_t>::value || std::is_same<T, float>::value ||
+          std::is_same<T, double>::value || std::is_same<T, std::string>::value || std::is_same<T, bool>::value ||
+          std::is_same<T, std::vector<std::string>>::value,
+      "typed_option<T>, T must be one of uint32_t, uint64_t, int32_t, int64_t, float, std::string, bool, "
+      "std::vector<std::string");
+
   typed_option(const std::string& name) : base_option(name, typeid(T).hash_code()) {}
 
   static size_t type_hash() { return typeid(T).hash_code(); }
@@ -159,7 +178,10 @@ struct typed_option : base_option
     return fmt::format("Error: '{}' is not a valid choice for option --{}. Please select from {{{}}}", value, m_name,
         fmt::join(m_one_of, ", "));
   }
-  std::string invalid_choice_error(const int& value) { return invalid_choice_error(std::to_string(value)); }
+  std::string invalid_choice_error(const int32_t& value) { return invalid_choice_error(std::to_string(value)); }
+  std::string invalid_choice_error(const int64_t& value) { return invalid_choice_error(std::to_string(value)); }
+  std::string invalid_choice_error(const uint32_t& value) { return invalid_choice_error(std::to_string(value)); }
+  std::string invalid_choice_error(const uint64_t& value) { return invalid_choice_error(std::to_string(value)); }
 
   // Typed option children sometimes use stack local variables that are only valid for the initial set from add and
   // parse, so we need to signal when that is the case.
@@ -213,12 +235,6 @@ template <typename T>
 option_builder<typed_option_with_location<T>> make_option(const std::string& name, T& location)
 {
   return typed_option_with_location<T>(name, location);
-}
-
-template <typename T>
-option_builder<typed_option<T>> make_option(const std::string& name)
-{
-  return option_builder<typed_option<T>>(name);
 }
 
 struct option_group_definition;
