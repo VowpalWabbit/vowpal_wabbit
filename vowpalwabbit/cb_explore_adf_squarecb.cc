@@ -69,14 +69,11 @@ public:
   ~cb_explore_adf_squarecb() = default;
 
   // Should be called through cb_explore_adf_base for pre/post-processing
-  void predict(multi_learner& base, multi_ex& examples) { predict_or_learn_impl<false>(base, examples); }
-  void learn(multi_learner& base, multi_ex& examples) { predict_or_learn_impl<true>(base, examples); }
+  void predict(multi_learner& base, multi_ex& examples);
+  void learn(multi_learner& base, multi_ex& examples);
   void save_load(io_buf& io, bool read, bool text);
 
 private:
-  template <bool is_learn>
-  void predict_or_learn_impl(multi_learner& base, multi_ex& examples);
-
   void get_cost_ranges(float delta, multi_learner& base, multi_ex& examples, bool min_only);
   float binary_search(float fhat, float delta, float sens, float tol = 1e-6);
 };
@@ -192,22 +189,9 @@ void cb_explore_adf_squarecb::get_cost_ranges(float delta, multi_learner& base, 
   }
 }
 
-template <bool is_learn>
-void cb_explore_adf_squarecb::predict_or_learn_impl(multi_learner& base, multi_ex& examples)
+void cb_explore_adf_squarecb::predict(multi_learner& base, multi_ex& examples)
 {
-  if (is_learn)
-  {
-    for (size_t i = 0; i < examples.size() - 1; ++i)
-    {
-      CB::label& ld = examples[i]->l.cb;
-      if (ld.costs.size() == 1) ld.costs[0].probability = 1.f;  // no importance weighting
-    }
-
-    multiline_learn_or_predict<true>(base, examples, examples[0]->ft_offset);
-    ++_counter;
-  }
-  else
-    multiline_learn_or_predict<false>(base, examples, examples[0]->ft_offset);
+  multiline_learn_or_predict<false>(base, examples, examples[0]->ft_offset);
 
   v_array<ACTION_SCORE::action_score>& preds = examples[0]->pred.a_s;
   uint32_t num_actions = static_cast<uint32_t>(preds.size());
@@ -222,71 +206,82 @@ void cb_explore_adf_squarecb::predict_or_learn_impl(multi_learner& base, multi_e
       _c0 * std::log(static_cast<float>(num_actions * _counter)) * static_cast<float>(std::pow(max_range, 2));
 
   // SquareCB Exploration
-  if (!is_learn)
+  if (!_elim)  // Vanilla variant (perform SquareCB exploration over all actions)
   {
-    if (!_elim)  // Vanilla variant (perform SquareCB exploration over all actions)
+    size_t a_min = 0;
+    float min_cost = preds[0].score;
+    // Compute highest-scoring action
+    for (size_t a = 0; a < num_actions; ++a)
     {
-      size_t a_min = 0;
-      float min_cost = preds[0].score;
-      // Compute highest-scoring action
-      for (size_t a = 0; a < num_actions; ++a)
+      if (preds[a].score < min_cost)
       {
-        if (preds[a].score < min_cost)
-        {
-          a_min = a;
-          min_cost = preds[a].score;
-        }
+        a_min = a;
+        min_cost = preds[a].score;
       }
-      // Compute probabilities using SquareCB rule.
-      float total_weight = 0;
-      float pa = 0;
-      for (size_t a = 0; a < num_actions; ++a)
+    }
+    // Compute probabilities using SquareCB rule.
+    float total_weight = 0;
+    float pa = 0;
+    for (size_t a = 0; a < num_actions; ++a)
+    {
+      if (a == a_min) continue;
+      pa = 1.f / (num_actions + gamma * (preds[a].score - min_cost));
+      preds[a].score = pa;
+      total_weight += pa;
+    }
+    preds[a_min].score = 1.f - total_weight;
+  }
+  else  // elimination variant
+  {
+    get_cost_ranges(delta, base, examples, /*min_only=*/false);
+
+    float min_max_cost = FLT_MAX;
+    for (size_t a = 0; a < num_actions; ++a)
+      if (_max_costs[a] < min_max_cost) min_max_cost = _max_costs[a];
+
+    size_t a_min = 0;
+    size_t num_surviving_actions = 0;
+    float min_cost = FLT_MAX;
+    // Compute plausible / surviving actions.
+    for (size_t a = 0; a < num_actions; ++a)
+    {
+      if (preds[a].score < min_cost && _min_costs[preds[a].action] <= min_max_cost)
+      {
+        a_min = a;
+        min_cost = preds[a].score;
+        num_surviving_actions += 1;
+      }
+    }
+    float total_weight = 0;
+    float pa = 0;
+    // Compute probabilities for surviving actions using SquareCB rule.
+    for (size_t a = 0; a < num_actions; ++a)
+    {
+      if (_min_costs[preds[a].action] > min_max_cost) { preds[a].score = 0; }
+      else
       {
         if (a == a_min) continue;
-        pa = 1.f / (num_actions + gamma * (preds[a].score - min_cost));
+        pa = 1.f / (num_surviving_actions + gamma * (preds[a].score - min_cost));
         preds[a].score = pa;
         total_weight += pa;
       }
-      preds[a_min].score = 1.f - total_weight;
     }
-    else  // elimination variant
-    {
-      get_cost_ranges(delta, base, examples, /*min_only=*/false);
-
-      float min_max_cost = FLT_MAX;
-      for (size_t a = 0; a < num_actions; ++a)
-        if (_max_costs[a] < min_max_cost) min_max_cost = _max_costs[a];
-
-      size_t a_min = 0;
-      size_t num_surviving_actions = 0;
-      float min_cost = FLT_MAX;
-      // Compute plausible / surviving actions.
-      for (size_t a = 0; a < num_actions; ++a)
-      {
-        if (preds[a].score < min_cost && _min_costs[preds[a].action] <= min_max_cost)
-        {
-          a_min = a;
-          min_cost = preds[a].score;
-          num_surviving_actions += 1;
-        }
-      }
-      float total_weight = 0;
-      float pa = 0;
-      // // Compute probabilities for surviving actions using SquareCB rule.
-      for (size_t a = 0; a < num_actions; ++a)
-      {
-        if (_min_costs[preds[a].action] > min_max_cost) { preds[a].score = 0; }
-        else
-        {
-          if (a == a_min) continue;
-          pa = 1.f / (num_surviving_actions + gamma * (preds[a].score - min_cost));
-          preds[a].score = pa;
-          total_weight += pa;
-        }
-      }
-      preds[a_min].score = 1.f - total_weight;
-    }
+    preds[a_min].score = 1.f - total_weight;
   }
+}
+
+void cb_explore_adf_squarecb::learn(multi_learner& base, multi_ex& examples)
+{
+  v_array<ACTION_SCORE::action_score> preds = std::move(examples[0]->pred.a_s);
+  for (size_t i = 0; i < examples.size() - 1; ++i)
+  {
+    CB::label& ld = examples[i]->l.cb;
+    if (ld.costs.size() == 1) ld.costs[0].probability = 1.f;  // no importance weighting
+  }
+
+  multiline_learn_or_predict<true>(base, examples, examples[0]->ft_offset);
+  ++_counter;
+  examples[0]->pred.a_s = std::move(preds);
 }
 
 void cb_explore_adf_squarecb::save_load(io_buf& io, bool read, bool text)
