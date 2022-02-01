@@ -1090,11 +1090,15 @@ void parse_update_options(options_i& options, VW::workspace& all)
   update_args
       .add(make_option("learning_rate", all.eta)
                .default_value(0.5f)
-               .keep()
-               .allow_override()
+               .keep(all.save_resume)
+               .allow_override(all.save_resume)
                .help("Set learning rate")
                .short_name("l"))
-      .add(make_option("power_t", all.power_t).default_value(0.5f).keep().allow_override().help("T power value"))
+      .add(make_option("power_t", all.power_t)
+               .default_value(0.5f)
+               .keep(all.save_resume)
+               .allow_override(all.save_resume)
+               .help("T power value"))
       .add(make_option("decay_learning_rate", all.eta_decay_rate)
                .default_value(1.f)
                .help("Set Decay factor for learning_rate between passes"))
@@ -1548,13 +1552,13 @@ void parse_modules(options_i& options, VW::workspace& all, bool interactions_set
   options.add_and_parse(rand_options);
   all.get_random_state()->set_random_state(all.random_seed);
 
-  parse_update_options(options, all);
-
   parse_feature_tweaks(options, all, interactions_settings_duplicated, dictionary_namespaces);  // feature tweaks
 
   parse_example_tweaks(options, all);  // example manipulation
 
   parse_output_model(options, all);
+
+  parse_update_options(options, all);
 
   parse_output_preds(options, all);
 }

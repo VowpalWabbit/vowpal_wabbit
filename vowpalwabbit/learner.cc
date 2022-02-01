@@ -127,6 +127,8 @@ public:
       _context.template process<example, learn_ex>(*ec);
   }
 
+  void process_remaining() {}
+
 private:
   context_type _context;
 };
@@ -162,11 +164,7 @@ private:
 
 public:
   multi_example_handler(const context_type context) : _context(context) {}
-
-  ~multi_example_handler()
-  {
-    if (!ec_seq.empty()) { _context.template process<multi_ex, learn_multi_ex>(ec_seq); }
-  }
+  ~multi_example_handler() = default;
 
   void on_example(example* ec)
   {
@@ -189,6 +187,15 @@ public:
       // to this call we should have no more in-flight multi_ex here.
       assert(ec_seq.empty());
       VW::finish_example(_context.get_master(), *ec);
+    }
+  }
+
+  void process_remaining()
+  {
+    if (!ec_seq.empty())
+    {
+      _context.template process<multi_ex, learn_multi_ex>(ec_seq);
+      ec_seq.clear();
     }
   }
 
@@ -235,8 +242,7 @@ template <typename queue_type, typename handler_type>
 void process_examples(queue_type& examples, handler_type& handler)
 {
   example* ec;
-
-  while ((ec = examples.pop()) != nullptr) handler.on_example(ec);
+  while ((ec = examples.pop()) != nullptr) { handler.on_example(ec); }
 }
 
 template <typename context_type>
@@ -247,12 +253,14 @@ void generic_driver(ready_examples_queue& examples, context_type& context)
     using handler_type = multi_example_handler<context_type>;
     handler_type handler(context);
     process_examples(examples, handler);
+    handler.process_remaining();
   }
   else
   {
     using handler_type = single_example_handler<context_type>;
     handler_type handler(context);
     process_examples(examples, handler);
+    handler.process_remaining();
   }
   drain_examples(context.get_master());
 }
@@ -282,6 +290,7 @@ void generic_driver_onethread(VW::workspace& all)
     process_examples(examples_queue, handler);
   };
   parse_dispatch(all, multi_ex_fptr);
+  handler.process_remaining();
   all.l->end_examples();
 }
 

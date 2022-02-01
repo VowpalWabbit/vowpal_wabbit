@@ -200,6 +200,7 @@ void interaction_config_manager::pre_process(const multi_ex& ecs)
   {
     for (const auto& ns : ex->indices)
     {
+      if (std::find(NS_EXCLUDE_LIST.begin(), NS_EXCLUDE_LIST.end(), ns) != NS_EXCLUDE_LIST.end()) { continue; }
       ns_counter[ns]++;
       if (ns_counter[ns] == 1) { new_ns_seen = true; }
     }
@@ -860,4 +861,36 @@ size_t write_model_field(io_buf& io, const VW::automl::automl<CMType>& aml, cons
 }
 
 }  // namespace model_utils
+
+VW::string_view to_string(automl::automl_state state)
+{
+  switch (state)
+  {
+    case automl::automl_state::Collecting:
+      return "Collecting";
+    case automl::automl_state::Experimenting:
+      return "Experimenting";
+  }
+
+  assert(false);
+  return "unknown";
+}
+
+VW::string_view to_string(automl::config_state state)
+{
+  switch (state)
+  {
+    case automl::config_state::New:
+      return "New";
+    case automl::config_state::Live:
+      return "Live";
+    case automl::config_state::Inactive:
+      return "Inactive";
+    case automl::config_state::Removed:
+      return "Removed";
+  }
+
+  assert(false);
+  return "unknown";
+}
 }  // namespace VW

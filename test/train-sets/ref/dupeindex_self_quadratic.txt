@@ -1,5 +1,5 @@
-Version 8.11.0
-Id
+Version 9.0.0
+Id 
 Min label:0
 Max label:1
 bits:18
@@ -9,13 +9,13 @@ lda:0
 options: --interactions aa --ignore_linear a
 Checksum: 827642570
 :0
-ab^feat_2*ac^feat_3:10184:0.079422
-ac^feat_4*ac^feat_4:18898:0.079422
-ab^feat_1*ab^feat_2:106798:0.079422
-ab^feat_1*ab^feat_1:115074:0.079422
-ab^feat_2*ac^feat_4:124206:0.079422
-ac^feat_3*ac^feat_3:139138:0.079422
-ab^feat_1*ac^feat_3:161532:0.079422
-ab^feat_1*ac^feat_4:242714:0.079422
-ac^feat_3*ac^feat_4:253284:0.079422
-ab^feat_2*ab^feat_2:258074:0.079422
+ab^feat_2*ac^feat_3:10184:0.079418
+ac^feat_4*ac^feat_4:18898:0.079418
+ab^feat_1*ab^feat_2:106798:0.079418
+ab^feat_1*ab^feat_1:115074:0.079418
+ab^feat_2*ac^feat_4:124206:0.079418
+ac^feat_3*ac^feat_3:139138:0.079418
+ab^feat_1*ac^feat_3:161532:0.079418
+ab^feat_1*ac^feat_4:242714:0.079418
+ac^feat_3*ac^feat_4:253284:0.079418
+ab^feat_2*ab^feat_2:258074:0.079418

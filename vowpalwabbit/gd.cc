@@ -33,6 +33,9 @@
 using namespace VW::LEARNER;
 using namespace VW::config;
 
+constexpr double L1_STATE_DEFAULT = 0.;
+constexpr double L2_STATE_DEFAULT = 1.;
+
 // todo:
 // 4. Factor various state out of VW::workspace&
 namespace GD
@@ -145,22 +148,9 @@ void train(gd& g, example& ec, float update)
 void end_pass(gd& g)
 {
   VW::workspace& all = *g.all;
-  if (all.save_resume)
-  {
-    // TODO work out a better system to update state that will be saved in the model.
-    if (all.sd->gravity != 0.)
-    {
-      g.all->options->replace("l1_state", std::to_string(all.sd->gravity));
-      g.all->options->get_typed_option<double>("l1_state").value(all.sd->gravity);
-    }
-    if (all.sd->contraction != 1.)
-    {
-      g.all->options->replace("l2_state", std::to_string(all.sd->contraction));
-      g.all->options->get_typed_option<double>("l2_state").value(all.sd->contraction);
-    }
-  }
-  else
-    sync_weights(all);
+
+  if (!all.save_resume) { sync_weights(all); }
+
   if (all.all_reduce != nullptr)
   {
     if (all.weights.adaptive)
@@ -1036,6 +1026,35 @@ void save_load_online_state(
     }
   }
 
+  if (!read || all.model_file_ver >= VW::version_definitions::VERSION_FILE_WITH_L1_AND_L2_STATE_IN_MODEL_DATA)
+  {
+    msg << "l1_state " << all.sd->gravity << "\n";
+    auto local_gravity = all.sd->gravity;
+    bin_text_read_write_fixed(
+        model_file, reinterpret_cast<char*>(&local_gravity), sizeof(local_gravity), read, msg, text);
+
+    // all.sd->gravity - command line value
+    // local_gravity - model value
+    // 1. If command line value is non-default, use that value
+    // 2. Else if model is non-default, use that value
+    // 3. Else use default
+    if (read && (all.sd->gravity == L1_STATE_DEFAULT) && (local_gravity != L1_STATE_DEFAULT))
+    { all.sd->gravity = local_gravity; }
+
+    msg << "l2_state " << all.sd->contraction << "\n";
+    auto local_contraction = all.sd->contraction;
+    bin_text_read_write_fixed(
+        model_file, reinterpret_cast<char*>(&local_contraction), sizeof(local_contraction), read, msg, text);
+
+    // all.sd->contraction - command line value
+    // local_contraction - model value
+    // 1. If command line value is non-default, use that value
+    // 2. Else if model is non-default, use that value
+    // 3. Else use default
+    if (read && (all.sd->contraction == L2_STATE_DEFAULT) && (local_contraction != L2_STATE_DEFAULT))
+    { all.sd->contraction = local_contraction; }
+  }
+
   if (read &&
       (!all.training ||
           !all.preserve_performance_counters))  // reset various things so that we report test set performance properly
@@ -1211,12 +1230,12 @@ base_learner* setup(VW::setup_base_i& stack_builder)
                .default_value(0.f)
                .help("Degree of l2 regularization applied to activated sparse parameters"))
       .add(make_option("l1_state", all.sd->gravity)
-               .keep(all.save_resume)
-               .default_value(0.f)
+               .allow_override()
+               .default_value(L1_STATE_DEFAULT)
                .help("Amount of accumulated implicit l1 regularization"))
       .add(make_option("l2_state", all.sd->contraction)
-               .keep(all.save_resume)
-               .default_value(1.f)
+               .allow_override()
+               .default_value(L2_STATE_DEFAULT)
                .help("Amount of accumulated implicit l2 regularization"));
   options.add_and_parse(new_options);
 
