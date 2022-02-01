@@ -55,34 +55,7 @@ class CMakeExtension(Extension):
         Extension.__init__(self, name, sources=[])
 
 
-def get_ext_filename_without_platform_suffix(filename):
-    from distutils.sysconfig import get_config_var
-
-    ext_suffix = get_config_var("EXT_SUFFIX")
-    name, ext = os.path.splitext(filename)
-
-    if not ext_suffix:
-        return filename
-
-    if ext_suffix == ext:
-        return filename
-
-    ext_suffix = ext_suffix.replace(ext, "")
-    idx = name.find(ext_suffix)
-
-    if idx == -1:
-        return filename
-    else:
-        return name[:idx] + ext
-
-
 class BuildPyLibVWBindingsModule(_build_ext):
-    def get_ext_filename(self, ext_name):
-        # don't append the extension suffix to the binary name
-        # see https://stackoverflow.com/questions/38523941/change-cythons-naming-rules-for-so-files/40193040#40193040
-        filename = _build_ext.get_ext_filename(self, ext_name)
-        return get_ext_filename_without_platform_suffix(filename)
-
     def run(self):
         for ext in self.extensions:
             self.build_cmake(ext)
@@ -90,6 +63,7 @@ class BuildPyLibVWBindingsModule(_build_ext):
         _build_ext.run(self)
 
     def build_cmake(self, ext):
+
         # Make build directory
         distutils.dir_util.mkpath(self.build_temp)
 
@@ -109,6 +83,19 @@ class BuildPyLibVWBindingsModule(_build_ext):
             "-DBUILD_TESTS=Off",
             "-DWARNINGS=Off",
         ]
+
+        # This doesn't work as expected for Python3.6 and 3.7 on Windows.
+        # See bug: https://bugs.python.org/issue39825
+        if system == "Windows" and sys.version_info.minor < 8:
+            from distutils import sysconfig as distutils_sysconfig
+            required_shared_lib_suffix = distutils_sysconfig.get_config_var('EXT_SUFFIX')
+        else:
+            import sysconfig
+            required_shared_lib_suffix = sysconfig.get_config_var("EXT_SUFFIX")
+
+        if required_shared_lib_suffix is not None:
+            cmake_args += ["-DVW_PYTHON_SHARED_LIB_SUFFIX={}".format(required_shared_lib_suffix)]
+
         if self.distribution.enable_boost_cmake is None:
             # Add this flag as default since testing indicates its safe.
             # But add a way to disable it in case it becomes a problem
