@@ -63,7 +63,8 @@ jobs:
           export wheel_file="${wheel_files[0]}"
           echo Installing ${wheel_file}...
           pip install -r requirements.txt
-          pip install pytest
+          pip install pytest twine
           pip install ${wheel_file}
+          twine check ${wheel_file}
           python -m pytest ./python/tests/
           python ./python/tests/run_doctest.py
