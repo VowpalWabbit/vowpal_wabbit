@@ -61,8 +61,8 @@ jobs:
     - name: Download Wheel
       uses: actions/download-artifact@v1
       with:
-        name: aarch64_wheel_${{ matrix.config.version }}      
-    - name: Build Wheel
+        name: aarch64_wheel_${{ matrix.config.version }}
+    - name: Test Wheel
       run: |
             docker run --rm -v ${{ github.workspace }}:/io:rw --workdir=/io \
             arm64v8/ubuntu \
@@ -75,11 +75,12 @@ jobs:
             source .env/bin/activate && \
             pip install --upgrade pip && \
             pip install -r requirements.txt && \
-            pip install pytest && \
+            pip install pytest twine && \
             export wheel_files=(aarch64_wheel_${{ matrix.config.version }}/*) && \
             export wheel_file="${wheel_files[0]}" && \
             echo Installing ${wheel_file}... && \
             pip install ${wheel_file} && \
+            twine check ${wheel_file} && \
             python --version && \
             python -m pytest ./python/tests/ && \
             deactivate'
