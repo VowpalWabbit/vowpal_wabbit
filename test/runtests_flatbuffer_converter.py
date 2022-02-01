@@ -4,7 +4,7 @@ import os.path
 import subprocess
 from pathlib import Path
 import re
-from typing import Optional
+from typing import List, Optional, Tuple
 
 from run_tests_common import TestData
 
@@ -22,7 +22,7 @@ class FlatbufferTest:
         self.stashed_input_files = copy.copy(self.test.input_files)
         self.stashed_vw_command = copy.copy(self.test.command_line)
         self.test_id = str(self.test.id)
-        self.files_to_be_converted = []
+        self.files_to_be_converted: List[Tuple[int, str, str]] = []
         self.depends_on_cmd = (
             copy.copy(depends_on_test.stashed_command_line)
             if (depends_on_test is not None)
