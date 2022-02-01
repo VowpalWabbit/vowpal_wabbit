@@ -3,6 +3,7 @@
 // license as described in the file LICENSE.
 #include <sstream>
 #include <cfloat>
+#include "numeric_casts.h"
 #include "reductions.h"
 #include "vw.h"
 #include "shared_data.h"
@@ -91,8 +92,9 @@ VW::LEARNER::base_learner* multilabel_oaa_setup(VW::setup_base_i& stack_builder)
   VW::workspace& all = *stack_builder.get_all_pointer();
   auto data = VW::make_unique<multi_oaa>(all.logger);
   option_group_definition new_options("[Reduction] Multilabel One Against All");
+  uint64_t k;
   new_options
-      .add(make_option("multilabel_oaa", data->k).keep().necessary().help("One-against-all multilabel with <k> labels"))
+      .add(make_option("multilabel_oaa", k).keep().necessary().help("One-against-all multilabel with <k> labels"))
       .add(make_option("probabilities", data->probabilities).help("Predict probabilities of all classes"))
       .add(make_option("link", data->link)
                .default_value("identity")
@@ -102,6 +104,7 @@ VW::LEARNER::base_learner* multilabel_oaa_setup(VW::setup_base_i& stack_builder)
 
   if (!options.add_parse_and_check_necessary(new_options)) return nullptr;
 
+  data->k = VW::cast_to_smaller_type<size_t>(k);
   std::string name_addition;
   VW::prediction_type_t pred_type;
   size_t ws = data->k;

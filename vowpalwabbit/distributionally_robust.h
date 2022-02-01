@@ -9,8 +9,8 @@
 #include <tuple>
 #include "io_buf.h"
 
-constexpr double DEFAULT_TAU = 0.999;
-constexpr double DEFAULT_ALPHA = 0.05;
+constexpr float DEFAULT_TAU = 0.999f;
+constexpr float DEFAULT_ALPHA = 0.05f;
 
 namespace VW
 {
