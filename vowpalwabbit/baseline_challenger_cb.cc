@@ -191,8 +191,8 @@ void persist_metrics(baseline_challenger_data& data, metric_sink& metrics)
 VW::LEARNER::base_learner* baseline_challenger_cb_setup(VW::setup_base_i& stack_builder)
 {
   options_i& options = *stack_builder.get_options();
-  double alpha;
-  double tau;
+  float alpha;
+  float tau;
   bool is_enabled = false;
 
   option_group_definition new_options("[Reduction] Baseline challenger");

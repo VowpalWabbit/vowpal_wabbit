@@ -1113,7 +1113,7 @@ base_learner* bfgs_setup(VW::setup_base_i& stack_builder)
   if (!all.holdout_set_off)
   {
     all.sd->holdout_best_loss = FLT_MAX;
-    b->early_stop_thres = options.get_typed_option<size_t>("early_terminate").value();
+    b->early_stop_thres = options.get_typed_option<uint64_t>("early_terminate").value();
   }
 
   if (b->m == 0) { b->hessian_on = true; }

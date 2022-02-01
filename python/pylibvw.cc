@@ -1202,14 +1202,14 @@ int32_t po_get_int(search_ptr sch, std::string arg)
   HookTask::task_data* d = sch->get_task_data<HookTask::task_data>();
   try
   {
-    return d->arg->get_typed_option<int>(arg).value();
+    return d->arg->get_typed_option<int32_t>(arg).value();
   }
   catch (...)
   {
   }
   try
   {
-    return (int32_t)d->arg->get_typed_option<size_t>(arg).value();
+    return static_cast<int32_t>(d->arg->get_typed_option<int64_t>(arg).value());
   }
   catch (...)
   {
@@ -1228,36 +1228,9 @@ int32_t po_get_int(search_ptr sch, std::string arg)
   catch (...)
   {
   }
-  try
-  {
-    return d->arg->get_typed_option<uint16_t>(arg).value();
-  }
-  catch (...)
-  {
-  }
-  try
-  {
-    return d->arg->get_typed_option<int32_t>(arg).value();
-  }
-  catch (...)
-  {
-  }
-  try
-  {
-    return (int32_t)d->arg->get_typed_option<int64_t>(arg).value();
-  }
-  catch (...)
-  {
-  }
-  try
-  {
-    return (int32_t)d->arg->get_typed_option<int16_t>(arg).value();
-  }
-  catch (...)
-  {
-  }
+
   // we know this'll fail but do it anyway to get the exception
-  return d->arg->get_typed_option<int>(arg).value();
+  return d->arg->get_typed_option<int32_t>(arg).value();
 }
 
 PyObject* po_get(search_ptr sch, std::string arg)
