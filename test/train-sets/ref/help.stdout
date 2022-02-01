@@ -207,9 +207,10 @@ Input Options:
   --cover arg (Default: 12)                  Cover size
   --oracular                                 Use Oracular-CAL style query or not
 Aged Exploration Options:
-  --agedexp arg (Default: 3)                 Set number of exploration models (required to enable 
+  --agedexp                                  Use decay of exploration reduction (required to enable
                                              this reduction)
-  --epsilon arg (Default: 0.05)              Epsilon-greedy exploration initial value
+  --model_count arg (Default: 3)             Set number of exploration models
+  --min_scope arg (Default: 10)              Minimum example count of model before removing
 [Reduction] Audit Regressor Options:
   --audit_regressor arg                      Stores feature names and their regressor values. Same 
                                              dataset must be used for both regressor training and 
