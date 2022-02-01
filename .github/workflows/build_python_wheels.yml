@@ -39,8 +39,8 @@ jobs:
   test:
     needs: build
     runs-on: ubuntu-latest
-    fail-fast: false
     strategy:
+      fail-fast: false
       matrix:
         config:
         - { python_version: "3.6", artifact_version: "3.6" }
