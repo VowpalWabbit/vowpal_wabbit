@@ -1,1 +1,1 @@
-[critical] vw (options.h:339): Error: '5' is not a valid choice for option --math-mode. Please select from {0, 1, 2}
+[critical] vw (options.h:341): Error: '5' is not a valid choice for option --math-mode. Please select from {0, 1, 2}

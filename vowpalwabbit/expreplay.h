@@ -3,7 +3,9 @@
 // license as described in the file LICENSE.
 
 #pragma once
+#include <sys/types.h>
 #include "learner.h"
+#include "numeric_casts.h"
 #include "vw.h"
 
 #include "rand48.h"
@@ -85,21 +87,25 @@ VW::LEARNER::base_learner* expreplay_setup(VW::setup_base_i& stack_builder)
   replay_string += er_level;
   std::string replay_count_string = replay_string;
   replay_count_string += "_count";
+  uint64_t N;
+  uint64_t replay_count;
 
   auto er = VW::make_unique<expreplay<lp>>();
   VW::config::option_group_definition new_options("[Reduction] Experience Replay / " + replay_string);
   new_options
-      .add(VW::config::make_option(replay_string, er->N)
+      .add(VW::config::make_option(replay_string, N)
                .keep()
                .necessary()
                .help("Use experience replay at a specified level [b=classification/regression, m=multiclass, c=cost "
                      "sensitive] with specified buffer size"))
-      .add(VW::config::make_option(replay_count_string, er->replay_count)
+      .add(VW::config::make_option(replay_count_string, replay_count)
                .default_value(1)
                .help("How many times (in expectation) should each example be played (default: 1 = permuting)"));
 
-  if (!options.add_parse_and_check_necessary(new_options) || er->N == 0) return nullptr;
+  if (!options.add_parse_and_check_necessary(new_options) || N == 0) return nullptr;
 
+  er->N = VW::cast_to_smaller_type<size_t>(N);
+  er->replay_count = VW::cast_to_smaller_type<size_t>(replay_count);
   er->all = &all;
   er->_random_state = all.get_random_state();
   er->buf = VW::alloc_examples(er->N);

@@ -66,7 +66,19 @@ struct option_builder
   {
     return fmt::format("{}. Choices: {{{}}}", help, fmt::join(s, ", "));
   }
-  std::string help_one_of(const std::string& help, const std::set<int>& s)
+  std::string help_one_of(const std::string& help, const std::set<int32_t>& s)
+  {
+    return fmt::format("{}. Choices: {{{}}}", help, fmt::join(s, ", "));
+  }
+  std::string help_one_of(const std::string& help, const std::set<int64_t>& s)
+  {
+    return fmt::format("{}. Choices: {{{}}}", help, fmt::join(s, ", "));
+  }
+  std::string help_one_of(const std::string& help, const std::set<uint32_t>& s)
+  {
+    return fmt::format("{}. Choices: {{{}}}", help, fmt::join(s, ", "));
+  }
+  std::string help_one_of(const std::string& help, const std::set<uint64_t>& s)
   {
     return fmt::format("{}. Choices: {{{}}}", help, fmt::join(s, ", "));
   }
@@ -112,6 +124,21 @@ private:
   T m_option_obj;
 };
 
+template <typename>
+struct typed_option;
+
+struct typed_option_visitor
+{
+  virtual void visit(typed_option<uint32_t>& /*option*/){};
+  virtual void visit(typed_option<uint64_t>& /*option*/){};
+  virtual void visit(typed_option<int64_t>& /*option*/){};
+  virtual void visit(typed_option<int32_t>& /*option*/){};
+  virtual void visit(typed_option<bool>& /*option*/){};
+  virtual void visit(typed_option<float>& /*option*/){};
+  virtual void visit(typed_option<std::string>& /*option*/){};
+  virtual void visit(typed_option<std::vector<std::string>>& /*option*/){};
+};
+
 struct base_option
 {
   base_option(std::string name, size_t type_hash) : m_name(std::move(name)), m_type_hash(type_hash) {}
@@ -125,6 +152,8 @@ struct base_option
   bool m_allow_override = false;
   std::string m_one_of_err = "";
 
+  virtual void accept(typed_option_visitor& handler) = 0;
+
   virtual ~base_option() = default;
 };
 
@@ -132,6 +161,13 @@ template <typename T>
 struct typed_option : base_option
 {
   using value_type = T;
+
+  static_assert(std::is_same<T, uint32_t>::value || std::is_same<T, uint64_t>::value ||
+          std::is_same<T, int32_t>::value || std::is_same<T, int64_t>::value || std::is_same<T, float>::value ||
+          std::is_same<T, std::string>::value || std::is_same<T, bool>::value ||
+          std::is_same<T, std::vector<std::string>>::value,
+      "typed_option<T>, T must be one of uint32_t, uint64_t, int32_t, int64_t, float, std::string, bool, "
+      "std::vector<std::string");
 
   typed_option(const std::string& name) : base_option(name, typeid(T).hash_code()) {}
 
@@ -159,7 +195,10 @@ struct typed_option : base_option
     return fmt::format("Error: '{}' is not a valid choice for option --{}. Please select from {{{}}}", value, m_name,
         fmt::join(m_one_of, ", "));
   }
-  std::string invalid_choice_error(const int& value) { return invalid_choice_error(std::to_string(value)); }
+  std::string invalid_choice_error(const int32_t& value) { return invalid_choice_error(std::to_string(value)); }
+  std::string invalid_choice_error(const int64_t& value) { return invalid_choice_error(std::to_string(value)); }
+  std::string invalid_choice_error(const uint32_t& value) { return invalid_choice_error(std::to_string(value)); }
+  std::string invalid_choice_error(const uint64_t& value) { return invalid_choice_error(std::to_string(value)); }
 
   // Typed option children sometimes use stack local variables that are only valid for the initial set from add and
   // parse, so we need to signal when that is the case.
@@ -180,6 +219,8 @@ struct typed_option : base_option
   void set_one_of(const std::set<value_type>& one_of_set) { m_one_of = one_of_set; }
 
   const std::set<value_type>& one_of() const { return m_one_of; }
+
+  void accept(typed_option_visitor& visitor) override { visitor.visit(*this); }
 
 protected:
   // Allows inheriting classes to handle set values. Noop by default.
@@ -213,12 +254,6 @@ template <typename T>
 option_builder<typed_option_with_location<T>> make_option(const std::string& name, T& location)
 {
   return typed_option_with_location<T>(name, location);
-}
-
-template <typename T>
-option_builder<typed_option<T>> make_option(const std::string& name)
-{
-  return option_builder<typed_option<T>>(name);
 }
 
 struct option_group_definition;
@@ -258,39 +293,6 @@ struct options_i
     if (base.m_type_hash != typed_option<T>::type_hash()) { throw std::bad_cast(); }
 
     return dynamic_cast<const typed_option<T>&>(base);
-  }
-
-  template <typename T>
-  struct is_vector
-  {
-    static const bool value = false;
-  };
-
-  template <typename T, typename A>
-  struct is_vector<std::vector<T, A>>
-  {
-    static const bool value = true;
-  };
-
-  // Check if option values exist and match.
-  // Add if it does not exist.
-  template <typename T>
-  bool insert_arguments(const std::string& name, T expected_val)
-  {
-    static_assert(!is_vector<T>::value, "insert_arguments does not support vectors");
-
-    if (was_supplied(name))
-    {
-      T found_val = get_typed_option<T>(name).value();
-      if (found_val != expected_val) { return false; }
-    }
-    else
-    {
-      std::stringstream ss;
-      ss << expected_val;
-      insert(name, ss.str());
-    }
-    return true;
   }
 
   // Will throw if any options were supplied that do not having a matching argument specification.

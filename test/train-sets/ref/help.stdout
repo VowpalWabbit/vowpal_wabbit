@@ -112,10 +112,8 @@ Example Options:
   --early_terminate arg (Default: 3)         Specify the number of passes tolerated when holdout 
                                              loss doesn't decrease before early termination
   --passes arg (Default: 1)                  Number of Training Passes
-  --initial_pass_length arg (Default: 18446744073709551615)
-                                             Initial number of examples per pass
-  --examples arg (Default: 18446744073709551615)
-                                             Number of examples to parse
+  --initial_pass_length arg (Default: -1)    Initial number of examples per pass. -1 for no limit
+  --examples arg (Default: -1)               Number of examples to parse. -1 for no limit
   --min_prediction arg                       Smallest prediction to output
   --max_prediction arg                       Largest prediction to output
   --sort_features                            Turn this on to disregard order in which features have
@@ -781,7 +779,8 @@ Aged Exploration Options:
                                              like: '-1:a,+2' meaning copy previous line namespace a
                                              and next next line from namespace _unnamed_, where ','
                                              separates them
-  --search_rollout_num_steps arg             How many calls of "loss" before we stop really 
+  --search_rollout_num_steps arg (Default: 0)
+                                             How many calls of "loss" before we stop really 
                                              predicting on rollouts and switch to oracle (default 
                                              means "infinite")
   --search_history_length arg (Default: 1)   Some tasks allow you to specify how much history their
@@ -795,7 +794,8 @@ Aged Exploration Options:
                                              hoopla permutation)
   --search_active_verify arg                 Verify that active learning is doing the right thing 
                                              (arg = multiplier, should be = cost_range * range_c)
-  --search_save_every_k_runs arg             Save model every k runs
+  --search_save_every_k_runs arg (Default: 0)
+                                             Save model every k runs
 Network sending Options:
   --sendto arg                               Send examples to <host> (required to enable this 
                                              reduction)
