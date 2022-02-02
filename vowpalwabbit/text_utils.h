@@ -25,4 +25,14 @@ bool ends_with(VW::string_view full_string, VW::string_view ending);
  * with hex values replaced with corresponding byte.
  */
 std::string decode_inline_hex(VW::string_view arg, VW::io::logger& logger);
+
+/**
+ * @brief Wrap text by whole words with the given column width.
+ *
+ * @param text text to wrap
+ * @param width column width to wrap to
+ * @return std::string copy of string with required newlines
+ */
+std::string wrap_text(std::string_view text, size_t width);
+
 }  // namespace VW

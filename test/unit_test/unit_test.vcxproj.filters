@@ -168,6 +168,9 @@
     <ClCompile Include="tokenize_test.cc">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="text_utils_test.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
     <ClCompile Include="tutorial_test.cc">
       <Filter>Source Files</Filter>
     </ClCompile>

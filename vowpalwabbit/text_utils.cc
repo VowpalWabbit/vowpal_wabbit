@@ -5,6 +5,8 @@
 #include "text_utils.h"
 #include "io/logger.h"
 
+#include <sstream>
+
 namespace VW
 {
 bool ends_with(VW::string_view full_string, VW::string_view ending) { return full_string.ends_with(ending); }
@@ -49,6 +51,24 @@ std::string decode_inline_hex(VW::string_view arg, VW::io::logger& logger)
   while (pos < arg.size()) { res.push_back(arg[pos++]); }
 
   return res;
+}
+
+std::string wrap_text(std::string_view text, size_t width)
+{
+  std::stringstream ss;
+  size_t start_line = 0;
+  size_t pos = 0;
+  std::string delim = "";
+  while (pos < text.size())
+  {
+    while (pos < text.size() && ((text[pos] != ' ') || (pos - start_line) < width)) { pos++; }
+    if (pos > text.size()) { pos = text.size(); }
+    ss << delim << text.substr(start_line, pos - start_line);
+    delim = "\n";
+    pos += 1;
+    start_line = pos;
+  }
+  return ss.str();
 }
 
 }  // namespace VW
