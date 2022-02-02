@@ -69,6 +69,7 @@
     <ClCompile Include="stable_unique_test.cc" />
     <ClCompile Include="tag_utils_test.cc" />
     <ClCompile Include="test_common.cc" />
+    <ClCompile Include="text_utils_test.cc" />
     <ClCompile Include="tokenize_test.cc" />
     <ClCompile Include="tutorial_test.cc" />
     <ClCompile Include="v_array_test.cc" />

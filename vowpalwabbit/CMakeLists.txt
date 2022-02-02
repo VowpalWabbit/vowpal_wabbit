@@ -345,6 +345,7 @@ set(vw_all_sources
   oja_newton.cc
   options_boost_po.cc
   options_serializer_boost_po.cc
+  options.cc
   parse_args.cc
   parse_example.cc
   parse_primitives.cc

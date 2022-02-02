@@ -51,8 +51,7 @@ struct options_boost_po : public options_i
   options_boost_po(options_boost_po&) = delete;
   options_boost_po& operator=(options_boost_po&) = delete;
 
-  void add_and_parse(const option_group_definition& group) override;
-  bool add_parse_and_check_necessary(const option_group_definition& group) override;
+  void internal_add_and_parse(const option_group_definition& group) override;
   bool was_supplied(const std::string& key) const override;
   std::string help(const std::vector<std::string>& enabled_reductions) const override;
   void check_unregistered(VW::io::logger& logger) override;
@@ -156,7 +155,6 @@ private:
   void add_to_description(std::shared_ptr<typed_option<T>> opt, po::options_description& options_description);
 
   void add_to_option_group_collection(const option_group_definition& group);
-  void internal_add_and_parse(const option_group_definition& group);
 
 private:
   // Collection that tracks for now
