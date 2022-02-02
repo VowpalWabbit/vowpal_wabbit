@@ -124,6 +124,21 @@ private:
   T m_option_obj;
 };
 
+template <typename>
+struct typed_option;
+
+struct typed_option_visitor
+{
+  virtual void visit(typed_option<uint32_t>& /*option*/){};
+  virtual void visit(typed_option<uint64_t>& /*option*/){};
+  virtual void visit(typed_option<int64_t>& /*option*/){};
+  virtual void visit(typed_option<int32_t>& /*option*/){};
+  virtual void visit(typed_option<bool>& /*option*/){};
+  virtual void visit(typed_option<float>& /*option*/){};
+  virtual void visit(typed_option<std::string>& /*option*/){};
+  virtual void visit(typed_option<std::vector<std::string>>& /*option*/){};
+};
+
 struct base_option
 {
   base_option(std::string name, size_t type_hash) : m_name(std::move(name)), m_type_hash(type_hash) {}
@@ -137,6 +152,8 @@ struct base_option
   bool m_allow_override = false;
   std::string m_one_of_err = "";
 
+  virtual void accept(typed_option_visitor& handler) = 0;
+
   virtual ~base_option() = default;
 };
 
@@ -147,7 +164,7 @@ struct typed_option : base_option
 
   static_assert(std::is_same<T, uint32_t>::value || std::is_same<T, uint64_t>::value ||
           std::is_same<T, int32_t>::value || std::is_same<T, int64_t>::value || std::is_same<T, float>::value ||
-          std::is_same<T, double>::value || std::is_same<T, std::string>::value || std::is_same<T, bool>::value ||
+          std::is_same<T, std::string>::value || std::is_same<T, bool>::value ||
           std::is_same<T, std::vector<std::string>>::value,
       "typed_option<T>, T must be one of uint32_t, uint64_t, int32_t, int64_t, float, std::string, bool, "
       "std::vector<std::string");
@@ -202,6 +219,8 @@ struct typed_option : base_option
   void set_one_of(const std::set<value_type>& one_of_set) { m_one_of = one_of_set; }
 
   const std::set<value_type>& one_of() const { return m_one_of; }
+
+  void accept(typed_option_visitor& visitor) override { visitor.visit(*this); }
 
 protected:
   // Allows inheriting classes to handle set values. Noop by default.
