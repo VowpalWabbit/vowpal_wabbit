@@ -26,6 +26,16 @@ namespace VW
 {
 namespace config
 {
+namespace details
+{
+template <typename ValueT>
+std::string format_one_of_error(const ValueT& value, const std::set<ValueT>& possible_values, const std::string& name)
+{
+  return fmt::format("Error: '{}' is not a valid choice for option --{}. Please select from {{{}}}", value, name,
+      fmt::join(possible_values, ", "));
+}
+}  // namespace details
+
 struct base_option;
 
 // option_builder decouples the specific type of the option and the interface
@@ -150,7 +160,6 @@ struct base_option
   bool m_keep = false;
   bool m_necessary = false;
   bool m_allow_override = false;
-  std::string m_one_of_err = "";
 
   virtual void accept(typed_option_visitor& handler) = 0;
 
@@ -185,28 +194,15 @@ struct typed_option : base_option
 
   bool value_supplied() const { return m_value.get() != nullptr; }
 
-  template <typename U>
-  std::string invalid_choice_error(const U&)
-  {
-    return "";
-  }
-  std::string invalid_choice_error(const std::string& value)
-  {
-    return fmt::format("Error: '{}' is not a valid choice for option --{}. Please select from {{{}}}", value, m_name,
-        fmt::join(m_one_of, ", "));
-  }
-  std::string invalid_choice_error(const int32_t& value) { return invalid_choice_error(std::to_string(value)); }
-  std::string invalid_choice_error(const int64_t& value) { return invalid_choice_error(std::to_string(value)); }
-  std::string invalid_choice_error(const uint32_t& value) { return invalid_choice_error(std::to_string(value)); }
-  std::string invalid_choice_error(const uint64_t& value) { return invalid_choice_error(std::to_string(value)); }
-
   // Typed option children sometimes use stack local variables that are only valid for the initial set from add and
   // parse, so we need to signal when that is the case.
   typed_option& value(T value, bool called_from_add_and_parse = false)
   {
     m_value = std::make_shared<T>(value);
     value_set_callback(value, called_from_add_and_parse);
-    if (m_one_of.size() > 0 && (m_one_of.find(value) == m_one_of.end())) { m_one_of_err = invalid_choice_error(value); }
+    // If there was a one of group and our value was not in it, we need to throw an error.
+    if (!m_one_of.empty() && (m_one_of.find(value) == m_one_of.end()))
+    { THROW(details::format_one_of_error(value, m_one_of, m_name)); }
     return *this;
   }
 
@@ -331,16 +327,6 @@ struct option_group_definition
     for (const auto& elem : m_necessary_flags) { check_if_all_necessary_enabled &= options.was_supplied(elem); }
 
     return check_if_all_necessary_enabled;
-  }
-
-  // will check if one_of condition is met for all options
-  bool check_one_of() const
-  {
-    for (const auto& option : m_options)
-    {
-      if (!option->m_one_of_err.empty()) { THROW(option->m_one_of_err); }
-    }
-    return true;
   }
 
   template <typename T>

@@ -184,7 +184,7 @@ bool options_boost_po::add_parse_and_check_necessary(const option_group_definiti
     m_dependent_necessary_options[opt_ptr->m_short_name].push_back(necessary_flags_set);
     m_dependent_necessary_options["-" + opt_ptr->m_short_name].push_back(necessary_flags_set);
   }
-  return is_necessary_enabled && group.check_one_of();
+  return is_necessary_enabled;
 }
 
 bool options_boost_po::was_supplied(const std::string& key) const
