@@ -16,5 +16,4 @@ bool options_i::add_parse_and_check_necessary(const option_group_definition& gro
 {
   internal_add_and_parse(group);
   return group.check_necessary_enabled(*this) && group.check_one_of();
-  ;
 }

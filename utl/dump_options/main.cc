@@ -249,7 +249,7 @@ struct options_exporter : options_i
     inject_type_info_if_t<std::vector<std::string>>("list<string>", obj, option, allocator);
   }
 
-  void add_and_parse(const option_group_definition& group) override
+  void internal_add_and_parse(const option_group_definition& group)
   {
     rapidjson::Document::AllocatorType& allocator = _document.GetAllocator();
 
@@ -315,12 +315,6 @@ struct options_exporter : options_i
 
     group_object.AddMember("options", options_array, allocator);
     _document["option_groups"].PushBack(group_object, allocator);
-  }
-
-  bool add_parse_and_check_necessary(const option_group_definition& group) override
-  {
-    add_and_parse(group);
-    return false;
   }
 
   bool was_supplied(const std::string&) const override { return false; }
