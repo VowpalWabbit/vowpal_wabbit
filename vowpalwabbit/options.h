@@ -260,10 +260,12 @@ struct option_group_definition;
 
 struct options_i
 {
-  virtual void add_and_parse(const option_group_definition& group) = 0;
+  virtual void internal_add_and_parse(const option_group_definition& group) = 0;
+  void add_and_parse(const option_group_definition& group);
+  bool add_parse_and_check_necessary(const option_group_definition& group);
+
   virtual void tint(const std::string& reduction_name) = 0;
   virtual void reset_tint() = 0;
-  virtual bool add_parse_and_check_necessary(const option_group_definition& group) = 0;
   virtual bool was_supplied(const std::string& key) const = 0;
   virtual std::string help(const std::vector<std::string>& enabled_reductions) const = 0;
 
@@ -280,19 +282,13 @@ struct options_i
   template <typename T>
   typed_option<T>& get_typed_option(const std::string& key)
   {
-    base_option& base = *get_option(key);
-    if (base.m_type_hash != typed_option<T>::type_hash()) { throw std::bad_cast(); }
-
-    return dynamic_cast<typed_option<T>&>(base);
+    return dynamic_cast<typed_option<T>&>(*get_option(key));
   }
 
   template <typename T>
   const typed_option<T>& get_typed_option(const std::string& key) const
   {
-    const base_option& base = *get_option(key);
-    if (base.m_type_hash != typed_option<T>::type_hash()) { throw std::bad_cast(); }
-
-    return dynamic_cast<const typed_option<T>&>(base);
+    return dynamic_cast<const typed_option<T>&>(*get_option(key));
   }
 
   // Will throw if any options were supplied that do not having a matching argument specification.
@@ -320,6 +316,8 @@ struct option_group_definition
   {
     return add(std::move(op));
   }
+
+  bool contains_necessary_options() const { return !m_necessary_flags.empty(); }
 
   // will check if ALL of 'necessary' options were suplied
   bool check_necessary_enabled(const options_i& options) const
@@ -360,14 +358,9 @@ struct options_name_extractor : options_i
   std::string generated_name;
   std::set<std::string> m_added_help_group_names;
 
-  void add_and_parse(const option_group_definition&) override
+  void internal_add_and_parse(const option_group_definition& group) override
   {
-    THROW("add_parse_and_check_necessary() should be used inside a reduction setup instead.");
-  };
-
-  bool add_parse_and_check_necessary(const option_group_definition& group) override
-  {
-    if (group.m_necessary_flags.empty()) { THROW("reductions must specify at least one .necessary() option"); }
+    if (!group.contains_necessary_options()) { THROW("reductions must specify at least one .necessary() option"); }
 
     if (m_added_help_group_names.count(group.m_name) == 0) { m_added_help_group_names.insert(group.m_name); }
     else
@@ -381,14 +374,13 @@ struct options_name_extractor : options_i
     {
       if (opt->m_necessary)
       {
-        if (generated_name.empty())
-          generated_name += opt->m_name;
+        if (generated_name.empty()) { generated_name += opt->m_name; }
         else
+        {
           generated_name += "_" + opt->m_name;
+        }
       }
     }
-
-    return false;
   };
 
   bool was_supplied(const std::string&) const override { return false; };
