@@ -53,7 +53,7 @@ std::string decode_inline_hex(VW::string_view arg, VW::io::logger& logger)
   return res;
 }
 
-std::string wrap_text(std::string_view text, size_t width)
+std::string wrap_text(VW::string_view text, size_t width)
 {
   std::stringstream ss;
   size_t start_line = 0;
