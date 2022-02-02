@@ -124,19 +124,19 @@ private:
   T m_option_obj;
 };
 
-template<typename>
+template <typename>
 struct typed_option;
 
 struct typed_option_visitor
 {
-  virtual void visit(typed_option<uint32_t>& /*option*/) {};
-  virtual void visit(typed_option<uint64_t>& /*option*/) {};
-  virtual void visit(typed_option<int64_t>& /*option*/) {};
-  virtual void visit(typed_option<int32_t>& /*option*/) {};
-  virtual void visit(typed_option<bool>& /*option*/) {};
-  virtual void visit(typed_option<float>& /*option*/) {};
-  virtual void visit(typed_option<std::string>& /*option*/) {};
-  virtual void visit(typed_option<std::vector<std::string>>& /*option*/) {};
+  virtual void visit(typed_option<uint32_t>& /*option*/){};
+  virtual void visit(typed_option<uint64_t>& /*option*/){};
+  virtual void visit(typed_option<int64_t>& /*option*/){};
+  virtual void visit(typed_option<int32_t>& /*option*/){};
+  virtual void visit(typed_option<bool>& /*option*/){};
+  virtual void visit(typed_option<float>& /*option*/){};
+  virtual void visit(typed_option<std::string>& /*option*/){};
+  virtual void visit(typed_option<std::vector<std::string>>& /*option*/){};
 };
 
 struct base_option
@@ -220,10 +220,7 @@ struct typed_option : base_option
 
   const std::set<value_type>& one_of() const { return m_one_of; }
 
-  void accept(typed_option_visitor& visitor) override
-  {
-    visitor.visit(*this);
-  }
+  void accept(typed_option_visitor& visitor) override { visitor.visit(*this); }
 
 protected:
   // Allows inheriting classes to handle set values. Noop by default.

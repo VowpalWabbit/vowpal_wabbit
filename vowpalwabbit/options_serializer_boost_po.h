@@ -6,7 +6,6 @@
 
 #include "options.h"
 
-
 #include <string>
 #include <sstream>
 
@@ -14,7 +13,6 @@ namespace VW
 {
 namespace config
 {
-
 struct options_serializer_boost_po : options_serializer_i, typed_option_visitor
 {
   options_serializer_boost_po() { m_output_stream.precision(15); }
