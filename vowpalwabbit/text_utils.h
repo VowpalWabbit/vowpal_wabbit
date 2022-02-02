@@ -33,6 +33,6 @@ std::string decode_inline_hex(VW::string_view arg, VW::io::logger& logger);
  * @param width column width to wrap to
  * @return std::string copy of string with required newlines
  */
-std::string wrap_text(std::string_view text, size_t width);
+std::string wrap_text(VW::string_view text, size_t width);
 
 }  // namespace VW
