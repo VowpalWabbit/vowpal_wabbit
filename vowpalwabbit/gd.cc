@@ -1220,6 +1220,11 @@ base_learner* setup(VW::setup_base_i& stack_builder)
   bool invariant = false;
   bool normalized = false;
 
+  all.sd->gravity = L1_STATE_DEFAULT;
+  all.sd->contraction = L2_STATE_DEFAULT;
+  float local_gravity = 0;
+  float local_contraction = 0;
+
   option_group_definition new_options("[Reduction] Gradient Descent");
   new_options.add(make_option("sgd", sgd).help("Use regular stochastic gradient descent update").keep(all.save_resume))
       .add(make_option("adaptive", adaptive).help("Use adaptive, individual learning rates").keep(all.save_resume))
@@ -1229,15 +1234,18 @@ base_learner* setup(VW::setup_base_i& stack_builder)
       .add(make_option("sparse_l2", g->sparse_l2)
                .default_value(0.f)
                .help("Degree of l2 regularization applied to activated sparse parameters"))
-      .add(make_option("l1_state", all.sd->gravity)
+      .add(make_option("l1_state", local_gravity)
                .allow_override()
                .default_value(L1_STATE_DEFAULT)
                .help("Amount of accumulated implicit l1 regularization"))
-      .add(make_option("l2_state", all.sd->contraction)
+      .add(make_option("l2_state", local_contraction)
                .allow_override()
                .default_value(L2_STATE_DEFAULT)
                .help("Amount of accumulated implicit l2 regularization"));
   options.add_and_parse(new_options);
+
+  if (options.was_supplied("l1_state")) { all.sd->gravity = local_gravity; }
+  if (options.was_supplied("l2_state")) { all.sd->contraction = local_contraction; }
 
   g->all = &all;
   g->all->normalized_sum_norm_x = 0;
@@ -1261,7 +1269,7 @@ base_learner* setup(VW::setup_base_i& stack_builder)
   if (!all.holdout_set_off)
   {
     all.sd->holdout_best_loss = FLT_MAX;
-    g->early_stop_thres = options.get_typed_option<size_t>("early_terminate").value();
+    g->early_stop_thres = options.get_typed_option<uint64_t>("early_terminate").value();
   }
 
   g->initial_constant = all.initial_constant;

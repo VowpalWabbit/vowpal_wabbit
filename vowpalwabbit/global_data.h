@@ -179,7 +179,7 @@ public:
   std::string data_filename;
 
   bool daemon;
-  size_t num_children;
+  uint64_t num_children;
 
   bool save_per_pass;
   float initial_weight;

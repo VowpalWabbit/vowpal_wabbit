@@ -5,6 +5,7 @@
 #include "gd.h"
 #include "cost_sensitive.h"
 #include "label_dictionary.h"  // for add_example_namespaces_from_example
+#include "numeric_casts.h"
 #include "vw.h"
 #include "vw_exception.h"
 
@@ -63,11 +64,12 @@ void initialize(Search::search& sch, size_t& /*num_actions*/, options_i& options
 {
   VW::workspace& all = sch.get_vw_pointer_unsafe();
   task_data* data = new task_data();
-  data->action_loss.resize_but_with_stl_behavior(5);
   sch.set_task_data<task_data>(data);
+  data->action_loss.resize_but_with_stl_behavior(5);
+  uint64_t root_label;
 
   option_group_definition new_options("[Search] Dependency Parser");
-  new_options.add(make_option("root_label", data->root_label)
+  new_options.add(make_option("root_label", root_label)
                       .keep()
                       .default_value(8)
                       .help("Ensure that there is only one root in each sentence"));
@@ -85,6 +87,7 @@ void initialize(Search::search& sch, size_t& /*num_actions*/, options_i& options
   new_options.add(
       make_option("old_style_labels", data->old_style_labels).keep().help("Use old hack of label information"));
   options.add_and_parse(new_options);
+  data->root_label = VW::cast_to_smaller_type<size_t>(root_label);
 
   data->ex.indices.push_back(val_namespace);
   for (size_t i = 1; i < 14; i++) data->ex.indices.push_back(static_cast<unsigned char>(i) + 'A');

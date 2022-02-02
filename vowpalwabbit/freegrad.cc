@@ -352,7 +352,7 @@ base_learner* VW::freegrad_setup(VW::setup_base_i& stack_builder)
   if (!fg_ptr->all->holdout_set_off)
   {
     fg_ptr->all->sd->holdout_best_loss = FLT_MAX;
-    fg_ptr->early_stop_thres = options.get_typed_option<size_t>("early_terminate").value();
+    fg_ptr->early_stop_thres = options.get_typed_option<uint64_t>("early_terminate").value();
   }
 
   auto predict_ptr = (fg_ptr->all->audit || fg_ptr->all->hash_inv) ? predict<true> : predict<false>;
