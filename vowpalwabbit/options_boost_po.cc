@@ -58,17 +58,12 @@ void options_boost_po::add_to_description(
 void options_boost_po::internal_add_and_parse(const option_group_definition& group)
 {
   m_option_group_dic[m_current_reduction_tint].push_back(group);
-  // Overall option help line width in characters
-  constexpr unsigned int HELP_LINE_WIDTH = 100;
-  // Width in characters of the left column (one with option name and default value)
-  constexpr unsigned int OPTION_NAME_COLUMN_WIDTH = 45;
+  m_option_group_list.push_back(group);
 
-  po::options_description new_options(group.m_name, HELP_LINE_WIDTH);
+  po::options_description new_options(group.m_name);
 
   for (const auto& opt_ptr : group.m_options)
   {
-    if (opt_ptr->m_necessary) { opt_ptr->m_help += " (required to enable this reduction)"; }
-
     add_to_description(opt_ptr, new_options);
     m_defined_options.insert(opt_ptr->m_name);
     m_defined_options.insert(opt_ptr->m_short_name);
@@ -77,15 +72,6 @@ void options_boost_po::internal_add_and_parse(const option_group_definition& gro
     // The last definition is kept. There was a bug where using .insert at a later pointer changed the command line but
     // the previously defined option's default value was serialized into the model. This resolves that state info.
     m_options[opt_ptr->m_name] = opt_ptr;
-  }
-
-  // setup functions can call multiply times into add_and_parse,
-  // we have to guard to avoid adding help multiple times
-  if (m_added_help_group_names.count(group.m_name) == 0)
-  {
-    // Add the help for the given options.
-    new_options.print(m_help_stringstream[m_current_reduction_tint], OPTION_NAME_COLUMN_WIDTH);
-    m_added_help_group_names.insert(group.m_name);
   }
 
   try
@@ -182,46 +168,6 @@ bool options_boost_po::was_supplied(const std::string& key) const
   auto keys = {std::string("--" + key), std::string("-" + key)};
   return std::find_first_of(std::begin(m_command_line), std::end(m_command_line), std::begin(keys), std::end(keys)) !=
       std::end(m_command_line);
-}
-
-std::string options_boost_po::help(const std::vector<std::string>& enabled_reductions = {}) const
-{
-  std::stringstream help;
-
-  // add general help
-  help << m_help_stringstream.find(m_default_tint)->second.rdbuf();
-
-  // check if user only supplied --help or -h
-  if (m_supplied_options.size() <= 2)
-  {
-    for (const auto& curr : m_help_stringstream)
-    {
-      if (curr.first.compare(m_default_tint) != 0) help << curr.second.rdbuf();
-    }
-  }
-  else
-  {
-    // add help message of only enabled reductions
-    for (const auto& reduction : enabled_reductions)
-    {
-      auto it = m_help_stringstream.find(reduction);
-      if (it != m_help_stringstream.end()) { help << it->second.rdbuf(); }
-      else
-      {
-        // some reductions register with a longer name,
-        // signaled by a - (see scorer.cc)
-        // we have to search only the prefix part
-        std::string::size_type pos = reduction.find('-');
-        if (pos != std::string::npos)
-        {
-          auto it_inner = m_help_stringstream.find(reduction.substr(0, pos));
-          if (it_inner != m_help_stringstream.end()) { help << it_inner->second.rdbuf(); }
-        }
-      }
-    }
-  }
-
-  return std::regex_replace(help.str(), std::regex("\\(=Default:"), "(Default: ");
 }
 
 std::vector<std::shared_ptr<base_option>> options_boost_po::get_all_options()
