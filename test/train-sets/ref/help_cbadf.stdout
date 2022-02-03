@@ -1,4 +1,4 @@
-Diagnostic Options
+Diagnostic Options:
     --version                               Version information (type: bool)
     -a, --audit                             Print weights of features (type: bool)
     -P, --progress arg                      Progress update frequency. int: additive, float: multiplicative
@@ -7,9 +7,9 @@ Diagnostic Options
                                             driver (type: bool)
     -h, --help                              More information on vowpal wabbit can be found here https://vowpalwabbit.org
                                             (type: bool)
-Driver Options
+Driver Options:
     --onethread                             Disable parse thread (type: bool)
-Example Options
+Example Options:
     -t, --testonly                          Ignore label information and just test (type: bool)
     --holdout_off                           No holdout data in multiple passes (type: bool)
     --holdout_period arg                    Holdout period for test only (type: uint, default: 10)
@@ -37,7 +37,7 @@ Example Options
     --named_labels arg                      Use names for labels (multiclass, etc.) rather than integers,
                                             argument specified all possible labels, comma-sep, eg "--named_labels
                                             Noun,Verb,Adj,Punc" (type: str, keep)
-Feature Options
+Feature Options:
     --hash arg                              How to hash the features (type: str, default: strings, keep,
                                             choices {all, strings})
     --hash_seed arg                         Seed for hash function (type: uint, default: 0, keep)
@@ -84,7 +84,7 @@ Feature Options
                                             '-q ::'. (type: bool)
     -q, --quadratic args...                 Create and use quadratic features (type: list[str], keep)
     --cubic args...                         Create and use cubic features (type: list[str], keep)
-Input Options
+Input Options:
     -d, --data arg                          Example set (type: str)
     --daemon                                Persistent daemon mode on port 26542 (type: bool)
     --foreground                            In persistent daemon mode, do not run in the background (type:
@@ -109,7 +109,7 @@ Input Options
                                             value. e.g. {'A': {'B': 'C'}} is hashed as A^B^C. (type: bool,
                                             keep)
     --flatbuffer                            Data file will be interpreted as a flatbuffer file (type: bool)
-Logging Options
+Logging Options:
     --quiet                                 Don't output diagnostics and progress updates. Supplying this
                                             implies --log_level off and --driver_output_off. Supplying this
                                             overrides an explicit log_level argument. (type: bool)
@@ -126,7 +126,7 @@ Logging Options
                                             str, default: stdout, choices {compat, stderr, stdout})
     --limit_output arg                      Avoid chatty output. Limit total printed lines. 0 means unbounded
                                             (type: uint, default: 0)
-Output Model Options
+Output Model Options:
     -f, --final_regressor arg               Final regressor (type: str)
     --readable_model arg                    Output human-readable final regressor with numeric features (type:
                                             str)
@@ -141,7 +141,7 @@ Output Model Options
     --output_feature_regularizer_binary arg Per feature regularization output file (type: str)
     --output_feature_regularizer_text arg   Per feature regularization output file, in text (type: str)
     --id arg                                User supplied ID embedded into the final regressor (type: str)
-Parallelization Options
+Parallelization Options:
     --span_server arg                       Location of server for setting up spanning tree (type: str)
     --unique_id arg                         Unique id used for cluster parallel jobs (type: uint, default:
                                             0)
@@ -150,18 +150,18 @@ Parallelization Options
     --node arg                              Node number in cluster parallel job (type: uint, default: 0)
     --span_server_port arg                  Port of the server for setting up spanning tree (type: int, default:
                                             26543)
-Parser Options
+Parser Options:
     --ring_size arg                         Size of example ring (type: int, default: 256)
     --example_queue_limit arg               Max number of examples to store after parsing but before the
                                             learner has processed. Rarely needs to be changed. (type: int,
                                             default: 256)
     --strict_parse                          Throw on malformed examples (type: bool)
-Prediction Output Options
+Prediction Output Options:
     -p, --predictions arg                   File to output predictions to (type: str)
     -r, --raw_predictions arg               File to output unnormalized predictions to (type: str)
-Randomization Options
+Randomization Options:
     --random_seed arg                       Seed random number generator (type: uint, default: 0)
-Update Options
+Update Options:
     -l, --learning_rate arg                 Set learning rate (type: float, default: 0.5, keep)
     --power_t arg                           T power value (type: float, default: 0.5, keep)
     --decay_learning_rate arg               Set Decay factor for learning_rate between passes (type: float,
@@ -170,7 +170,7 @@ Update Options
     --feature_mask arg                      Use existing regressor to determine which parameters may be updated.
                                              If no initial_regressor given, also used for initial weights.
                                             (type: str)
-Weight Options
+Weight Options:
     -i, --initial_regressor args...         Initial regressor(s) (type: list[str])
     --initial_weight arg                    Set all weights to an initial value of arg (type: float, default:
                                             0)
@@ -179,7 +179,7 @@ Weight Options
     --truncated_normal_weights              Make initial weights truncated normal (type: bool)
     --sparse_weights                        Use a sparse datastructure for weights (type: bool)
     --input_feature_regularizer arg         Per feature regularization input file (type: str)
-[Reduction] Contextual Bandit with Action Dependent Features Options
+[Reduction] Contextual Bandit with Action Dependent Features Options:
     --cb_adf                                Do Contextual Bandit learning with multiline action dependent
                                             features (type: bool, keep, necessary)
     --rank_all                              Return actions sorted by score order (type: bool, keep)
@@ -188,7 +188,7 @@ Weight Options
                                             (type: float, default: 0, keep)
     --cb_type arg                           Contextual bandit method to use (type: str, default: mtr, keep,
                                             choices {dm, dr, ips, mtr, sm})
-[Reduction] Contextual Bandit with Action Dependent Features Options
+[Reduction] Contextual Bandit with Action Dependent Features Options:
     --cb_adf                                Do Contextual Bandit learning with multiline action dependent
                                             features (type: bool, keep, necessary)
     --rank_all                              Return actions sorted by score order (type: bool, keep)
@@ -197,7 +197,7 @@ Weight Options
                                             (type: float, default: 0, keep)
     --cb_type arg                           Contextual bandit method to use (type: str, default: mtr, keep,
                                             choices {dm, dr, ips, mtr, sm})
-[Reduction] Contextual Bandit: cb -> cb_adf Options
+[Reduction] Contextual Bandit: cb -> cb_adf Options:
     --cb_to_cbadf arg                       Flag is unused and has no effect. It should not be passed. The
                                             cb_to_cbadf reduction is automatically enabled if cb, cb_explore
                                             or cbify are used. This flag will be removed in a future release
@@ -209,20 +209,20 @@ Weight Options
     --cbify arg                             Translate cbify to cb_adf. Disable with cb_force_legacy (type:
                                             uint, keep)
     --cb_force_legacy                       Default to non-adf cb implementation (cb_algs) (type: bool, keep)
-[Reduction] Cost Sensitive One Against All with Label Dependent Features Options
+[Reduction] Cost Sensitive One Against All with Label Dependent Features Options:
     --csoaa_ldf arg                         Use one-against-all multiclass learning with label dependent
                                             features (type: str, keep, necessary)
     --ldf_override arg                      Override singleline or multiline from csoaa_ldf or wap_ldf, eg
                                             if stored in file (type: str)
     --csoaa_rank                            Return actions sorted by score order (type: bool, keep)
     --probabilities                         Predict probabilities of all classes (type: bool, keep)
-[Reduction] Count label Options
+[Reduction] Count label Options:
     --dont_output_best_constant             Don't track the best constant used in the output (type: bool)
-[Reduction] Generate Interactions Options
+[Reduction] Generate Interactions Options:
     --leave_duplicate_interactions          Don't remove interactions with duplicate combinations of namespaces.
                                             For ex. this is a duplicate: '-q ab -q ba' and a lot more in
                                             '-q ::'. (type: bool)
-[Reduction] Gradient Descent Options
+[Reduction] Gradient Descent Options:
     --sgd                                   Use regular stochastic gradient descent update (type: bool, keep)
     --adaptive                              Use adaptive, individual learning rates (type: bool, keep)
     --adax                                  Use adaptive learning rates with x^2 instead of g^2x^2 (type:
@@ -235,6 +235,6 @@ Weight Options
                                             default: 0)
     --l2_state arg                          Amount of accumulated implicit l2 regularization (type: float,
                                             default: 1)
-[Reduction] Scorer Options
+[Reduction] Scorer Options:
     --link arg                              Specify the link function (type: str, default: identity, keep,
                                             choices {glf1, identity, logistic, poisson})

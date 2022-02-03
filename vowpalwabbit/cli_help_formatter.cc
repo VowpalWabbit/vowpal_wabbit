@@ -130,9 +130,6 @@ std::vector<std::string> split_string_by_newline(const std::string& str)
 
   return result;
 }
-// --link {glf1, identity, logistic, poi
-//   --link {glf1, identity, logistic, poisson}
-//     type: str, default: identity, keep
 
 constexpr size_t LEFT_COL_WIDTH = 40;
 constexpr size_t RIGHT_COL_WIDTH = 60;
@@ -143,7 +140,7 @@ std::string cli_help_formatter::format_help(const std::vector<option_group_defin
   std::stringstream overall_ss;
   for (const auto& group : groups)
   {
-    overall_ss << group.m_name << "\n";
+    overall_ss << group.m_name << ":\n";
     for (const auto& option : group.m_options)
     {
       if (option->m_hidden_from_help) { continue; }
