@@ -7,7 +7,7 @@
 #include "example.h"
 #include "label_dictionary.h"
 #include "learner.h"
-#include "options.h"
+#include "config/options.h"
 
 #include "vw.h"
 #include "scope_exit.h"

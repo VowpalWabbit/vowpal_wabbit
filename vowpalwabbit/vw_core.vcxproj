@@ -237,7 +237,7 @@
     <ClInclude Include="oja_newton.h" />
     <ClInclude Include="options.h" />
     <ClInclude Include="options_boost_po.h" />
-    <ClInclude Include="options_serializer_boost_po.h" />
+    <ClInclude Include="cli_options_serializer.h" />
     <ClInclude Include="options_types.h" />
     <ClInclude Include="parse_args.h" />
     <ClInclude Include="parse_dispatch_loop.h" />
@@ -407,7 +407,7 @@
     <ClCompile Include="offset_tree.cc" />
     <ClCompile Include="oja_newton.cc" />
     <ClCompile Include="options_boost_po.cc" />
-    <ClCompile Include="options_serializer_boost_po.cc" />
+    <ClCompile Include="cli_options_serializer.cc" />
     <ClCompile Include="options.cc" />
     <ClCompile Include="../ext_libs/fmt/src/os.cc" />
     <ClCompile Include="parse_args.cc" />

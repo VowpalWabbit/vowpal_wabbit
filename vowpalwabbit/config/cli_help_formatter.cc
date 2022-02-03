@@ -2,10 +2,10 @@
 // individual contributors. All rights reserved. Released under a BSD (revised)
 // license as described in the file LICENSE.
 
-#include "cli_help_formatter.h"
+#include "config/cli_help_formatter.h"
 #include <sstream>
 #include <string>
-#include "options.h"
+#include "config/options.h"
 #include "text_utils.h"
 
 using namespace VW::config;

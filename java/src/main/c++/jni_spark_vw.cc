@@ -2,7 +2,7 @@
 #include "vw_exception.h"
 #include "best_constant.h"
 #include "util.h"
-#include "options_serializer_boost_po.h"
+#include "cli_options_serializer.h"
 #include "learner.h"
 #include "simple_label_parser.h"
 #include <algorithm>
@@ -209,7 +209,7 @@ JNIEXPORT jobject JNICALL Java_org_vowpalwabbit_spark_VowpalWabbitNative_getArgu
   auto* all = reinterpret_cast<VW::workspace*>(get_native_pointer(env, vwObj));
 
   // serialize the command line
-  VW::config::options_serializer_boost_po serializer;
+  VW::config::cli_options_serializer serializer;
   for (auto const& option : all->options->get_all_options())
   {
     if (all->options->was_supplied(option->m_name))

@@ -2,7 +2,10 @@
 // individual contributors. All rights reserved. Released under a BSD (revised)
 // license as described in the file LICENSE.
 
-#include "options.h"
+#include "config/options.h"
+#include "config/option_group_definition.h"
+
+#include <algorithm>
 
 using namespace VW::config;
 
@@ -75,7 +78,13 @@ bool options_i::add_parse_and_check_necessary(const option_group_definition& gro
     m_options[option->m_name] = option;
   }
 
-  return group.check_necessary_enabled(*this) && group.check_one_of();
+  auto necessary_enabled = group.check_necessary_enabled(*this);
+  if (necessary_enabled)
+  {
+    group.check_one_of();
+  }
+
+  return necessary_enabled;
 }
 
 void options_i::tint(const std::string& reduction_name) { m_current_reduction_tint = reduction_name; }
