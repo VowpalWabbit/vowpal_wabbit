@@ -161,10 +161,10 @@ std::string cli_help_formatter::format_help(const std::vector<option_group_defin
       ss_description << " (type: " << type_string(*option);
 
       if (!default_value_string(*option).empty()) { ss_description << ", default: " << default_value_string(*option); }
-      if (option->m_keep) { ss_description << ", keep"; }
-      if (option->m_necessary) { ss_description << ", necessary"; }
       auto one_of = one_of_string(*option);
       if (!one_of.empty()) { ss_description << ", choices {" << one_of << "}"; }
+      if (option->m_keep) { ss_description << ", keep"; }
+      if (option->m_necessary) { ss_description << ", necessary"; }
       ss_description << ")";
 
       auto help_lines = split_string_by_newline(VW::wrap_text(ss_description.str(), RIGHT_COL_WIDTH));

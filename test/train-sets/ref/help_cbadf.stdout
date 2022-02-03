@@ -38,8 +38,8 @@ Example Options:
                                             argument specified all possible labels, comma-sep, eg "--named_labels
                                             Noun,Verb,Adj,Punc" (type: str, keep)
 Feature Options:
-    --hash arg                              How to hash the features (type: str, default: strings, keep,
-                                            choices {all, strings})
+    --hash arg                              How to hash the features (type: str, default: strings, choices
+                                            {all, strings}, keep)
     --hash_seed arg                         Seed for hash function (type: uint, default: 0, keep)
     --ignore args...                        Ignore namespaces beginning with character <arg> (type: list[str],
                                             keep)
@@ -186,8 +186,8 @@ Weight Options:
     --no_predict                            Do not do a prediction when training (type: bool)
     --clip_p arg                            Clipping probability in importance weight. Default: 0.f (no clipping)
                                             (type: float, default: 0, keep)
-    --cb_type arg                           Contextual bandit method to use (type: str, default: mtr, keep,
-                                            choices {dm, dr, ips, mtr, sm})
+    --cb_type arg                           Contextual bandit method to use (type: str, default: mtr, choices
+                                            {dm, dr, ips, mtr, sm}, keep)
 [Reduction] Contextual Bandit with Action Dependent Features Options:
     --cb_adf                                Do Contextual Bandit learning with multiline action dependent
                                             features (type: bool, keep, necessary)
@@ -195,8 +195,8 @@ Weight Options:
     --no_predict                            Do not do a prediction when training (type: bool)
     --clip_p arg                            Clipping probability in importance weight. Default: 0.f (no clipping)
                                             (type: float, default: 0, keep)
-    --cb_type arg                           Contextual bandit method to use (type: str, default: mtr, keep,
-                                            choices {dm, dr, ips, mtr, sm})
+    --cb_type arg                           Contextual bandit method to use (type: str, default: mtr, choices
+                                            {dm, dr, ips, mtr, sm}, keep)
 [Reduction] Contextual Bandit: cb -> cb_adf Options:
     --cb_to_cbadf arg                       Flag is unused and has no effect. It should not be passed. The
                                             cb_to_cbadf reduction is automatically enabled if cb, cb_explore
@@ -236,5 +236,5 @@ Weight Options:
     --l2_state arg                          Amount of accumulated implicit l2 regularization (type: float,
                                             default: 1)
 [Reduction] Scorer Options:
-    --link arg                              Specify the link function (type: str, default: identity, keep,
-                                            choices {glf1, identity, logistic, poisson})
+    --link arg                              Specify the link function (type: str, default: identity, choices
+                                            {glf1, identity, logistic, poisson}, keep)

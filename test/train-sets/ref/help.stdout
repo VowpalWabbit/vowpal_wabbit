@@ -38,8 +38,8 @@ Example Options:
                                             argument specified all possible labels, comma-sep, eg "--named_labels
                                             Noun,Verb,Adj,Punc" (type: str, keep)
 Feature Options:
-    --hash arg                              How to hash the features (type: str, default: strings, keep,
-                                            choices {all, strings})
+    --hash arg                              How to hash the features (type: str, default: strings, choices
+                                            {all, strings}, keep)
     --hash_seed arg                         Seed for hash function (type: uint, default: 0, keep)
     --ignore args...                        Ignore namespaces beginning with character <arg> (type: list[str],
                                             keep)
@@ -210,15 +210,15 @@ Weight Options:
     --global_lease arg                      Set initial lease for automl interactions (type: uint, default:
                                             10, keep)
     --cm_type arg                           Set type of config manager (type: str, default: interaction,
-                                            keep, choices {interaction})
+                                            choices {interaction}, keep)
     --priority_type arg                     Set function to determine next config (type: str, default: none,
-                                            keep, choices {least_exclusion, none})
+                                            choices {least_exclusion, none}, keep)
     --priority_challengers arg              Set number of priority challengers to use (type: int, default:
                                             -1, keep)
     --keep_configs                          Keep all configs after champ change (type: bool, keep)
     --verbose_metrics                       Extended metrics for debugging (type: bool)
     --oracle_type arg                       Set oracle to generate configs (type: str, default: one_diff,
-                                            keep, choices {one_diff, rand})
+                                            choices {one_diff, rand}, keep)
     --automl_alpha arg                      Set confidence interval for champion change (type: float, default:
                                             0.05, keep)
     --automl_tau arg                        Time constant for count decay (type: float, default: 0.999, keep)
@@ -245,19 +245,19 @@ Weight Options:
     --gamma arg                             Weak learner's edge (=0.1), used only by online BBM (type: float,
                                             default: 0.1)
     --alg arg                               Specify the boosting algorithm: BBM (default), logistic (AdaBoost.OL.W),
-                                            adaptive (AdaBoost.OL) (type: str, default: BBM, keep, choices
-                                            {BBM, adaptive, logistic})
+                                            adaptive (AdaBoost.OL) (type: str, default: BBM, choices {BBM,
+                                            adaptive, logistic}, keep)
 [Reduction] Bootstrap Options:
     --bootstrap arg                         K-way bootstrap by online importance resampling (type: uint,
                                             keep, necessary)
-    --bs_type arg                           Prediction type (type: str, default: mean, keep, choices {mean,
-                                            vote})
+    --bs_type arg                           Prediction type (type: str, default: mean, choices {mean, vote},
+                                            keep)
 [Reduction] CATS Tree Options:
     --cats_tree arg                         CATS Tree with <k> labels (type: uint, keep, necessary)
     --tree_bandwidth arg                    Tree bandwidth for continuous actions in terms of #actions (type:
                                             uint, default: 0, keep)
     --link arg                              The learner in each node must return a prediction in range [-1,1],
-                                            so only glf1 is allowed (type: str, keep, choices {glf1})
+                                            so only glf1 is allowed (type: str, choices {glf1}, keep)
 [Reduction] CB Distributionally Robust Optimization Options:
     --cb_dro                                Use DRO for cb learning (type: bool, keep, necessary)
     --cb_dro_alpha arg                      Confidence level for cb dro (type: float, default: 0.05, keep)
@@ -293,8 +293,8 @@ Weight Options:
                                             dependent features (type: bool, keep, necessary)
     --all_slots_loss                        Report average loss from all slots (type: bool)
     --no_predict                            Do not do a prediction when training (type: bool)
-    --cb_type arg                           Contextual bandit method to use (type: str, default: mtr, keep,
-                                            choices {dm, dr, ips, mtr, sm})
+    --cb_type arg                           Contextual bandit method to use (type: str, default: mtr, choices
+                                            {dm, dr, ips, mtr, sm}, keep)
 [Reduction] Confidence Options:
     --confidence                            Get confidence for binary predictions (type: bool, keep, necessary)
     --confidence_after_training             Confidence after training (type: bool)
@@ -323,7 +323,7 @@ Weight Options:
     --first_only                            Only explore the first action in a tie-breaking event (type:
                                             bool, keep)
     --cb_type arg                           Contextual bandit method to use. RegCB only supports supervised
-                                            regression (mtr) (type: str, default: mtr, keep, choices {mtr})
+                                            regression (mtr) (type: str, default: mtr, choices {mtr}, keep)
 [Reduction] Contextual Bandit Exploration with ADF (SquareCB) Options:
     --cb_explore_adf                        Online explore-exploit for a contextual bandit problem with multiline
                                             action dependent features (type: bool, keep, necessary)
@@ -341,7 +341,7 @@ Weight Options:
     --cb_max_cost arg                       Upper bound on cost. Only used with --elim (type: float, default:
                                             1, keep)
     --cb_type arg                           Contextual bandit method to use. SquareCB only supports supervised
-                                            regression (mtr) (type: str, default: mtr, keep, choices {mtr})
+                                            regression (mtr) (type: str, default: mtr, choices {mtr}, keep)
 [Reduction] Contextual Bandit Exploration with ADF (bagging) Options:
     --cb_explore_adf                        Online explore-exploit for a contextual bandit problem with multiline
                                             action dependent features (type: bool, keep, necessary)
@@ -365,8 +365,8 @@ Weight Options:
                                             (type: bool, keep)
     --first_only                            Only explore the first action in a tie-breaking event (type:
                                             bool, keep)
-    --cb_type arg                           Contextual bandit method to use (type: str, default: mtr, keep,
-                                            choices {dr, ips, mtr})
+    --cb_type arg                           Contextual bandit method to use (type: str, default: mtr, choices
+                                            {dr, ips, mtr}, keep)
     --epsilon arg                           Epsilon-greedy exploration (type: float, default: 0.05, keep)
 [Reduction] Contextual Bandit Exploration with ADF (rnd) Options:
     --cb_explore_adf                        Online explore-exploit for a contextual bandit problem with multiline
@@ -398,8 +398,8 @@ Weight Options:
 [Reduction] Contextual Bandit Options:
     --cb arg                                Use contextual bandit learning with <k> costs (type: uint, keep,
                                             necessary)
-    --cb_type arg                           Contextual bandit method to use (type: str, default: dr, keep,
-                                            choices {dm, dr, ips, mtr, sm})
+    --cb_type arg                           Contextual bandit method to use (type: str, default: dr, choices
+                                            {dm, dr, ips, mtr, sm}, keep)
     --eval                                  Evaluate a policy rather than optimizing (type: bool)
     --cb_force_legacy                       Default to non-adf cb implementation (cb_to_cb_adf) (type: bool,
                                             keep)
@@ -410,8 +410,8 @@ Weight Options:
     --no_predict                            Do not do a prediction when training (type: bool)
     --clip_p arg                            Clipping probability in importance weight. Default: 0.f (no clipping)
                                             (type: float, default: 0, keep)
-    --cb_type arg                           Contextual bandit method to use (type: str, default: mtr, keep,
-                                            choices {dm, dr, ips, mtr, sm})
+    --cb_type arg                           Contextual bandit method to use (type: str, default: mtr, choices
+                                            {dm, dr, ips, mtr, sm}, keep)
 [Reduction] Contextual Bandit: cb -> cb_adf Options:
     --cb_to_cbadf arg                       Flag is unused and has no effect. It should not be passed. The
                                             cb_to_cbadf reduction is automatically enabled if cb, cb_explore
@@ -490,8 +490,7 @@ Weight Options:
 [Reduction] Cost Sensitive One Against All Options:
     --csoaa arg                             One-against-all multiclass with <k> costs (type: uint, keep,
                                             necessary)
-    --indexing arg                          Choose between 0 or 1-indexing (type: int, keep, choices {0,
-                                            1})
+    --indexing arg                          Choose between 0 or 1-indexing (type: int, choices {0, 1}, keep)
 [Reduction] Cost Sensitive One Against All with Label Dependent Features Options:
     --csoaa_ldf arg                         Use one-against-all multiclass learning with label dependent
                                             features (type: str, keep, necessary)
@@ -512,8 +511,8 @@ Weight Options:
     --ect arg                               Error correcting tournament with <k> labels (type: uint, keep,
                                             necessary)
     --error arg                             Errors allowed by ECT (type: uint, default: 0, keep)
-    --link arg                              Specify the link function (type: str, default: identity, keep,
-                                            choices {glf1, identity, logistic, poisson})
+    --link arg                              Specify the link function (type: str, default: identity, choices
+                                            {glf1, identity, logistic, poisson}, keep)
 [Reduction] Experience Replay / replay_b Options:
     --replay_b arg                          Use experience replay at a specified level [b=classification/regression,
                                             m=multiclass, c=cost sensitive] with specified buffer size (type:
@@ -593,8 +592,8 @@ Weight Options:
     --pool_size arg                         Size of pools for active learning (type: uint, default: 1)
     --subsample arg                         Number of items to subsample from the pool (type: uint, default:
                                             1)
-    --kernel arg                            Type of kernel (type: str, default: linear, keep, choices {linear,
-                                            poly, rbf})
+    --kernel arg                            Type of kernel (type: str, default: linear, choices {linear,
+                                            poly, rbf}, keep)
     --bandwidth arg                         Bandwidth of rbf kernel (type: float, default: 1, keep)
     --degree arg                            Degree of poly kernel (type: int, default: 2, keep)
 [Reduction] LBFGS and Conjugate Gradient Options:
@@ -665,8 +664,8 @@ Weight Options:
     --multilabel_oaa arg                    One-against-all multilabel with <k> labels (type: uint, keep,
                                             necessary)
     --probabilities                         Predict probabilities of all classes (type: bool)
-    --link arg                              Specify the link function (type: str, default: identity, keep,
-                                            choices {glf1, identity, logistic, poisson})
+    --link arg                              Specify the link function (type: str, default: identity, choices
+                                            {glf1, identity, logistic, poisson}, keep)
 [Reduction] Multiworld Testing Options:
     --multiworld_test arg                   Evaluate features as a policies (type: str, keep, necessary)
     --learn arg                             Do Contextual Bandit learning on <n> classes (type: uint)
@@ -701,8 +700,7 @@ Weight Options:
                                             uint)
     --probabilities                         Predict probabilities of all classes (type: bool)
     --scores                                Output raw scores per class (type: bool)
-    --indexing arg                          Choose between 0 or 1-indexing (type: int, keep, choices {0,
-                                            1})
+    --indexing arg                          Choose between 0 or 1-indexing (type: int, choices {0, 1}, keep)
 [Reduction] Print Psuedolearner Options:
     --print                                 Print examples (type: bool, keep, necessary)
 [Reduction] Probabilistic Label Tree Options:
@@ -721,15 +719,15 @@ Weight Options:
     --node_only                             Only use node features, not full path features (type: bool, keep)
     --randomized_routing                    Randomized routing (type: bool, keep)
 [Reduction] Scorer Options:
-    --link arg                              Specify the link function (type: str, default: identity, keep,
-                                            choices {glf1, identity, logistic, poisson})
+    --link arg                              Specify the link function (type: str, default: identity, choices
+                                            {glf1, identity, logistic, poisson}, keep)
 [Reduction] Search Options:
     --search arg                            Use learning to search, argument=maximum action id or 0 for LDF
                                             (type: uint, default: 1, keep)
     --search_task arg                       The search task (use "--search_task list" to get a list of available
-                                            tasks) (type: str, keep, necessary, choices {argmax, dep_parser,
-                                            entity_relation, graph, hook, list, multiclasstask, sequence,
-                                            sequence_ctg, sequence_demoldf, sequencespan})
+                                            tasks) (type: str, choices {argmax, dep_parser, entity_relation,
+                                            graph, hook, list, multiclasstask, sequence, sequence_ctg, sequence_demoldf,
+                                            sequencespan}, keep, necessary)
     --search_metatask arg                   The search metatask (use "--search_metatask list" to get a list
                                             of available metatasks Note: a valid search_task needs to be
                                             supplied in addition for this to output.) (type: str, keep)
