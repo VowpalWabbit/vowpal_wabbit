@@ -239,25 +239,17 @@ struct options_exporter : options_i
   void inject_type_info(rapidjson::Value& obj, const std::shared_ptr<base_option>& option,
       rapidjson::Document::AllocatorType& allocator) const
   {
-    inject_type_info_if_t<unsigned int>("unsigned int", obj, option, allocator);
-    inject_type_info_if_t<int>("int", obj, option, allocator);
+    inject_type_info_if_t<uint32_t>("uint32_t", obj, option, allocator);
     inject_type_info_if_t<uint64_t>("uint64_t", obj, option, allocator);
+    inject_type_info_if_t<int32_t>("int32_t", obj, option, allocator);
     inject_type_info_if_t<int64_t>("int64_t", obj, option, allocator);
     inject_type_info_if_t<float>("float", obj, option, allocator);
-    inject_type_info_if_t<double>("double", obj, option, allocator);
-    inject_type_info_if_t<char>("char", obj, option, allocator);
     inject_type_info_if_t<std::string>("string", obj, option, allocator);
     inject_type_info_if_t<bool>("bool", obj, option, allocator);
-    inject_type_info_if_t<std::vector<int>>("list<int>", obj, option, allocator);
-    inject_type_info_if_t<std::vector<uint64_t>>("list<uint64_t>", obj, option, allocator);
-    inject_type_info_if_t<std::vector<int64_t>>("list<int64_t>", obj, option, allocator);
-    inject_type_info_if_t<std::vector<float>>("list<float>", obj, option, allocator);
-    inject_type_info_if_t<std::vector<double>>("list<double>", obj, option, allocator);
-    inject_type_info_if_t<std::vector<char>>("list<char>", obj, option, allocator);
     inject_type_info_if_t<std::vector<std::string>>("list<string>", obj, option, allocator);
   }
 
-  void add_and_parse(const option_group_definition& group) override
+  void internal_add_and_parse(const option_group_definition& group)
   {
     rapidjson::Document::AllocatorType& allocator = _document.GetAllocator();
 
@@ -323,12 +315,6 @@ struct options_exporter : options_i
 
     group_object.AddMember("options", options_array, allocator);
     _document["option_groups"].PushBack(group_object, allocator);
-  }
-
-  bool add_parse_and_check_necessary(const option_group_definition& group) override
-  {
-    add_and_parse(group);
-    return false;
   }
 
   bool was_supplied(const std::string&) const override { return false; }

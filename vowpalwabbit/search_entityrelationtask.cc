@@ -2,6 +2,7 @@
 // individual contributors. All rights reserved. Released under a BSD (revised)
 // license as described in the file LICENSE.
 #include "search_entityrelationtask.h"
+#include "numeric_casts.h"
 #include "vw.h"
 
 #include "io/logger.h"
@@ -44,6 +45,7 @@ void initialize(Search::search& sch, size_t& /*num_actions*/, options_i& options
 {
   task_data* my_task_data = new task_data();
   sch.set_task_data<task_data>(my_task_data);
+  uint64_t search_order;
 
   option_group_definition new_options("[Search] Entity Relation");
   new_options
@@ -58,11 +60,13 @@ void initialize(Search::search& sch, size_t& /*num_actions*/, options_i& options
                .keep()
                .default_value(0.01f)
                .help("Skip Cost (only used when search_order = skip"))
-      .add(make_option("search_order", my_task_data->search_order)
+      .add(make_option("search_order", search_order)
                .keep()
                .default_value(0)
                .help("Search Order 0: EntityFirst 1: Mix 2: Skip 3: EntityFirst(LDF)"));
   options.add_and_parse(new_options);
+
+  my_task_data->search_order = VW::cast_to_smaller_type<size_t>(search_order);
 
   // setup entity and relation labels
   // Entity label 1:E_Other 2:E_Peop 3:E_Org 4:E_Loc

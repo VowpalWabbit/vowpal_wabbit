@@ -55,19 +55,6 @@ void options_boost_po::add_to_description(
   add_to_description_impl<supported_options_types>(opt, options_description);
 }
 
-void options_boost_po::add_and_parse(const option_group_definition& group)
-{
-  internal_add_and_parse(group);
-
-  // Since there is no "necessary" conditional to these options they are all reachable.
-  for (const auto& opt_ptr : group.m_options)
-  {
-    m_reachable_options.insert(opt_ptr->m_name);
-    m_reachable_options.insert(opt_ptr->m_short_name);
-    m_reachable_options.insert("-" + opt_ptr->m_short_name);
-  }
-}
-
 void options_boost_po::internal_add_and_parse(const option_group_definition& group)
 {
   m_option_group_dic[m_current_reduction_tint].push_back(group);
@@ -161,30 +148,29 @@ void options_boost_po::internal_add_and_parse(const option_group_definition& gro
   {
     THROW(ex.what());
   }
-}
 
-bool options_boost_po::add_parse_and_check_necessary(const option_group_definition& group)
-{
-  this->internal_add_and_parse(group);
-
+  const auto contains_necessary_options = group.contains_necessary_options();
   const auto is_necessary_enabled = group.check_necessary_enabled(*this);
 
   // These options are only reachable if necessary was also passed.
   for (const auto& opt_ptr : group.m_options)
   {
-    if (is_necessary_enabled)
+    if ((contains_necessary_options && is_necessary_enabled) || !contains_necessary_options)
     {
       m_reachable_options.insert(opt_ptr->m_name);
       m_reachable_options.insert(opt_ptr->m_short_name);
       m_reachable_options.insert("-" + opt_ptr->m_short_name);
     }
-    // We need to convert the unordered set to an ordered one for stable output.
-    std::set<std::string> necessary_flags_set(group.m_necessary_flags.begin(), group.m_necessary_flags.end());
-    m_dependent_necessary_options[opt_ptr->m_name].push_back(necessary_flags_set);
-    m_dependent_necessary_options[opt_ptr->m_short_name].push_back(necessary_flags_set);
-    m_dependent_necessary_options["-" + opt_ptr->m_short_name].push_back(necessary_flags_set);
+
+    if (contains_necessary_options)
+    {
+      // We need to convert the unordered set to an ordered one for stable output.
+      std::set<std::string> necessary_flags_set(group.m_necessary_flags.begin(), group.m_necessary_flags.end());
+      m_dependent_necessary_options[opt_ptr->m_name].push_back(necessary_flags_set);
+      m_dependent_necessary_options[opt_ptr->m_short_name].push_back(necessary_flags_set);
+      m_dependent_necessary_options["-" + opt_ptr->m_short_name].push_back(necessary_flags_set);
+    }
   }
-  return is_necessary_enabled && group.check_one_of();
 }
 
 bool options_boost_po::was_supplied(const std::string& key) const

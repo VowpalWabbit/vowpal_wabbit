@@ -406,6 +406,7 @@
     <ClCompile Include="oja_newton.cc" />
     <ClCompile Include="options_boost_po.cc" />
     <ClCompile Include="options_serializer_boost_po.cc" />
+    <ClCompile Include="options.cc" />
     <ClCompile Include="../ext_libs/fmt/src/os.cc" />
     <ClCompile Include="parse_args.cc" />
     <ClCompile Include="parse_example.cc" />

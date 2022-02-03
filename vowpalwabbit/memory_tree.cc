@@ -11,6 +11,7 @@
 #include <ctime>
 #include <memory>
 
+#include "numeric_casts.h"
 #include "reductions.h"
 #include "rand48.h"
 #include "vw.h"
@@ -1203,18 +1204,19 @@ base_learner* memory_tree_setup(VW::setup_base_i& stack_builder)
   VW::workspace& all = *stack_builder.get_all_pointer();
   using namespace memory_tree_ns;
   auto tree = VW::make_unique<memory_tree>();
+  uint64_t max_nodes;
+  uint64_t max_num_labels;
+  uint64_t leaf_example_multiplier;
   option_group_definition new_options("[Reduction] Memory Tree");
 
   new_options
-      .add(make_option("memory_tree", tree->max_nodes)
+      .add(make_option("memory_tree", max_nodes)
                .keep()
                .necessary()
                .default_value(0)
                .help("Make a memory tree with at most <n> nodes"))
-      .add(make_option("max_number_of_labels", tree->max_num_labels)
-               .default_value(10)
-               .help("Max number of unique label"))
-      .add(make_option("leaf_example_multiplier", tree->leaf_example_multiplier)
+      .add(make_option("max_number_of_labels", max_num_labels).default_value(10).help("Max number of unique label"))
+      .add(make_option("leaf_example_multiplier", leaf_example_multiplier)
                .default_value(1)
                .help("Multiplier on examples per leaf (default = log nodes)"))
       .add(make_option("alpha", tree->alpha).default_value(0.1f).help("Alpha"))
@@ -1230,7 +1232,9 @@ base_learner* memory_tree_setup(VW::setup_base_i& stack_builder)
       .add(make_option("online", tree->online).help("Turn on dream operations at reward based update as well"));
 
   if (!options.add_parse_and_check_necessary(new_options)) { return nullptr; }
-
+  tree->max_nodes = VW::cast_to_smaller_type<size_t>(max_nodes);
+  tree->max_num_labels = VW::cast_to_smaller_type<size_t>(max_num_labels);
+  tree->leaf_example_multiplier = VW::cast_to_smaller_type<size_t>(leaf_example_multiplier);
   tree->all = &all;
   tree->_random_state = all.get_random_state();
   tree->current_pass = 0;

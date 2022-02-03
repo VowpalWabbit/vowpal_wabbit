@@ -322,10 +322,13 @@ def run_command_line_test(
             )
             command_line = f"valgrind --quiet --error-exitcode=100 --track-origins=yes --leak-check=full --log-file={valgrind_log_file_path} {command_line}"
 
+        cmd: Union[str, List[str]]
         if test.is_shell:
             cmd = command_line
         else:
             cmd = shlex.split(command_line)
+
+        checks: Dict[str, Union[StatusCheck, DiffCheck]] = dict()
 
         try:
             result = subprocess.run(
@@ -339,7 +342,7 @@ def run_command_line_test(
         except subprocess.TimeoutExpired as e:
             stdout = try_decode(e.stdout)
             stderr = try_decode(e.stderr)
-            checks = dict()
+
             checks["timeout"] = StatusCheck(False, f"{e.cmd} timed out", stdout, stderr)
             return TestOutcome(
                 test.id, Result.FAIL, checks, skip_reason=test.skip_reason
@@ -348,8 +351,6 @@ def run_command_line_test(
         return_code = result.returncode
         stdout = try_decode(result.stdout)
         stderr = try_decode(result.stderr)
-
-        checks = dict()
         success = return_code == 0 or (
             return_code == 100 and test.is_shell and valgrind
         )
@@ -459,7 +460,7 @@ def create_test_dir(
                 break
 
         if file_to_copy is None:
-            str_deps =  [str(dep) for dep in dependencies]
+            str_deps = [str(dep) for dep in dependencies]
             dependent_tests = ", ".join(str_deps)
             raise ValueError(
                 f"Input file '{f}' couldn't be found for test {test_id}. Searched in '{test_ref_dir}' as well as outputs of dependent tests: [{dependent_tests}]"
@@ -479,7 +480,7 @@ def create_test_dir(
 def find_vw_binary(
     test_base_ref_dir: Path, user_supplied_bin_path_or_python_invocation: Optional[str]
 ) -> Optional[Union[str, Path]]:
-    def is_python_invocation(binary_name: str) -> bool:
+    def is_python_invocation(binary_name: Optional[str]) -> bool:
         if not binary_name:
             return False
         elif binary_name.startswith("python") and binary_name.endswith(
@@ -511,7 +512,7 @@ def find_vw_binary(
 
 
 def find_spanning_tree_binary(
-    test_base_ref_dir: Path, user_supplied_bin_path: Path
+    test_base_ref_dir: Path, user_supplied_bin_path: Optional[str]
 ) -> Optional[Path]:
     spanning_tree_search_path = [test_base_ref_dir / ".." / "build" / "cluster"]
 
@@ -519,11 +520,9 @@ def find_spanning_tree_binary(
         return file.name == "spanning_tree"
 
     user_supplied_bin_path = (
-        Path(user_supplied_bin_path)
-        if user_supplied_bin_path is not None
-        else None
+        Path(user_supplied_bin_path) if user_supplied_bin_path is not None else None
     )
-    
+
     return find_or_use_user_supplied_path(
         test_base_ref_dir=test_base_ref_dir,
         user_supplied_bin_path=user_supplied_bin_path,
@@ -533,7 +532,7 @@ def find_spanning_tree_binary(
 
 
 def find_to_flatbuf_binary(
-    test_base_ref_dir: Path, user_supplied_bin_path: Path
+    test_base_ref_dir: Path, user_supplied_bin_path: Optional[str]
 ) -> Optional[Path]:
     to_flatbuff_search_path = [
         test_base_ref_dir / ".." / "build" / "utl" / "flatbuffer"
@@ -543,11 +542,9 @@ def find_to_flatbuf_binary(
         return file.name == "to_flatbuff"
 
     user_supplied_bin_path = (
-        Path(user_supplied_bin_path)
-        if user_supplied_bin_path is not None
-        else None
+        Path(user_supplied_bin_path) if user_supplied_bin_path is not None else None
     )
-    
+
     return find_or_use_user_supplied_path(
         test_base_ref_dir=test_base_ref_dir,
         user_supplied_bin_path=user_supplied_bin_path,
