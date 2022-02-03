@@ -83,7 +83,8 @@ void add_one_of<std::string>(
 }
 
 template <>
-void add_one_of<std::vector<std::string>>(rapidjson::Value& obj, const std::set<std::vector<std::string>>& value, rapidjson::Document::AllocatorType& allocator)
+void add_one_of<std::vector<std::string>>(rapidjson::Value& obj, const std::set<std::vector<std::string>>& value,
+    rapidjson::Document::AllocatorType& allocator)
 {
   THROW("not supported");
 }
@@ -188,7 +189,6 @@ int main(int argc, char* argv[])
   // define the _document as an object rather than an array
   doc.SetObject();
 
-
   rapidjson::Value version_object(rapidjson::kObjectType);
   rapidjson::Value version_text;
   version_text.SetString(VW::version.to_string(), allocator);
@@ -199,7 +199,8 @@ int main(int argc, char* argv[])
   doc.AddMember("version_info", version_object, allocator);
 
   json_help_formatter formatter(std::move(doc));
-  std::cout << formatter.format_help(vw->options->get_all_option_group_definitions()) << std::endl;;
+  std::cout << formatter.format_help(vw->options->get_all_option_group_definitions()) << std::endl;
+  ;
   delete vw;
 
   return 0;
