@@ -249,7 +249,7 @@ struct options_exporter : options_i
     inject_type_info_if_t<std::vector<std::string>>("list<string>", obj, option, allocator);
   }
 
-  void internal_add_and_parse(const option_group_definition& group)
+  void internal_add_and_parse(const option_group_definition& group) override
   {
     rapidjson::Document::AllocatorType& allocator = _document.GetAllocator();
 
@@ -323,11 +323,6 @@ struct options_exporter : options_i
 
   void reset_tint() override {}
 
-  std::string help(const std::vector<std::string>&) const override
-  {
-    throw std::runtime_error{"This function is not defined."};
-  }
-
   void check_unregistered(VW::io::logger& /* logger */) override {}
 
   std::vector<std::shared_ptr<base_option>> get_all_options() override
@@ -357,6 +352,15 @@ struct options_exporter : options_i
   }
 
   std::map<std::string, std::vector<option_group_definition>> get_collection_of_options() const override
+  {
+    throw std::runtime_error{"This function is not defined."};
+  }
+
+  const std::vector<option_group_definition>& get_all_option_group_definitions() const override
+  {
+    throw std::runtime_error{"This function is not defined."};
+  }
+  const std::set<std::string>& get_supplied_options() const override
   {
     throw std::runtime_error{"This function is not defined."};
   }

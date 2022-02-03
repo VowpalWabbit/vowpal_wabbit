@@ -35,6 +35,7 @@
 #include "metrics.h"
 #include "text_utils.h"
 #include "interactions.h"
+#include "cli_help_formatter.h"
 
 #include "options.h"
 #include "options_boost_po.h"
@@ -1757,8 +1758,18 @@ VW::workspace* initialize_with_builder(std::unique_ptr<options_i, options_delete
     // upon direct query for help -- spit it out to stdout;
     if (all.options->get_typed_option<bool>("help").value())
     {
-      std::cout << all.options->help(enabled_reductions);
-      exit(0);
+      const auto num_supplied = all.options->get_supplied_options().size();
+      auto option_groups = all.options->get_all_option_group_definitions();
+      std::sort(option_groups.begin(), option_groups.end(),
+          [](const VW::config::option_group_definition& a, const VW::config::option_group_definition& b) {
+            return a.m_name < b.m_name;
+          });
+      // Help is added as help and h. So greater than 2 means there is more command line there.
+      if (num_supplied > 2) { option_groups = remove_disabled_necessary_options(*all.options, option_groups); }
+
+      VW::config::cli_help_formatter formatter;
+      std::cout << formatter.format_help(option_groups);
+      std::exit(0);
     }
 
     print_enabled_reductions(all, enabled_reductions);
