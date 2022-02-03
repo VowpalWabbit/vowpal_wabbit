@@ -37,7 +37,5 @@ BOOST_AUTO_TEST_CASE(ae_save_load)
   float with_save = ctr.back();
   BOOST_CHECK_GT(with_save, 0.3f);
 
-  auto ctr2 = simulator::_test_helper_save_load("--cb_explore_adf --quiet -q ::");
-
   BOOST_CHECK_CLOSE(without_save, with_save, FLOAT_TOL);
 }
