@@ -51,7 +51,7 @@ void reset_models(ForwardIt first, ForwardIt end, parameters& weights, uint64_t 
   }
 }
 
-float decayed_epsilon(uint64_t update_count) { return pow(update_count + 1, -1.f / 3.f); }
+float decayed_epsilon(uint64_t update_count) { return static_cast<float>(pow(update_count + 1, -1.f / 3.f)); }
 
 void predict(ae_data& data, VW::LEARNER::multi_learner& base, multi_ex& examples)
 {
@@ -79,6 +79,8 @@ void learn(ae_data& data, VW::LEARNER::multi_learner& base, multi_ex& examples)
     // Update the scoring of all configs
     // Only call if learn calls predict is set
     if (!base.learn_returns_prediction) { base.predict(examples, config_iter->get_model_idx()); }
+    auto& ep_fts = examples[0]->_reduction_features.template get<VW::cb_explore_adf::greedy::reduction_features>();
+    ep_fts.epsilon = decayed_epsilon(config_iter->update_count);
     base.learn(examples, config_iter->get_model_idx());
 
     const uint32_t chosen_action = examples[0]->pred.a_s[0].action;
