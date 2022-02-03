@@ -4,6 +4,8 @@
 
 #include "options.h"
 
+#include <algorithm>
+
 using namespace VW::config;
 
 std::vector<std::shared_ptr<base_option>> options_i::get_all_options()
