@@ -5,7 +5,7 @@
 #pragma once
 #include <vector>
 #include "learner.h"
-#include "options.h"
+#include "config/options.h"
 #include "error_reporting.h"
 namespace VW
 {

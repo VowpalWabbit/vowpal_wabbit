@@ -89,7 +89,7 @@
   </ItemDefinitionGroup>
   <ItemDefinitionGroup>
     <ClCompile>
-      <AdditionalIncludeDirectories>..\explore\static;./win32;%(AdditionalIncludeDirectories);$(ProjectDir)\..\ext_libs\rapidjson\include;$(ProjectDir)\..\explore;$(ProjectDir)\..\ext_libs\fmt\include;$(ProjectDir)\..\ext_libs\spdlog\include</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)\..\vowpalwabbit;$(ProjectDir)..\explore\static;./win32;%(AdditionalIncludeDirectories);$(ProjectDir)\..\ext_libs\rapidjson\include;$(ProjectDir)\..\explore;$(ProjectDir)\..\ext_libs\fmt\include;$(ProjectDir)\..\ext_libs\spdlog\include</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>ZLIB_WINAPI;$(BUILD_FLATBUFFERS);SPDLOG_COMPILED_LIB;SPDLOG_FMT_EXTERNAL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalOptions>/D "_CRT_SECURE_NO_WARNINGS" %(AdditionalOptions)</AdditionalOptions>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
@@ -168,9 +168,18 @@
     <ClInclude Include="ccb_label.h" />
     <ClInclude Include="ccb_reduction_features.h" />
     <ClInclude Include="classweight.h" />
-    <ClInclude Include="cli_help_formatter.h" />
     <ClInclude Include="conditional_contextual_bandit.h" />
     <ClInclude Include="confidence.h" />
+    <ClInclude Include="config/cli_help_formatter.h"/>
+    <ClInclude Include="config/cli_options_serializer.h"/>
+    <ClInclude Include="config/help_formatter.h"/>
+    <ClInclude Include="config/option_group_definition.h"/>
+    <ClInclude Include="config/options_boost_po.h"/>
+    <ClInclude Include="config/options_name_extractor.h"/>
+    <ClInclude Include="config/options_serializer.h"/>
+    <ClInclude Include="config/options_types.h"/>
+    <ClInclude Include="config/options.h"/>
+    <ClInclude Include="config/option.h"/>
     <ClInclude Include="constant.h" />
     <ClInclude Include="continuous_actions_reduction_features.h" />
     <ClInclude Include="cost_sensitive.h" />
@@ -235,10 +244,6 @@
     <ClInclude Include="object_pool.h" />
     <ClInclude Include="offset_tree.h" />
     <ClInclude Include="oja_newton.h" />
-    <ClInclude Include="options.h" />
-    <ClInclude Include="options_boost_po.h" />
-    <ClInclude Include="options_serializer_boost_po.h" />
-    <ClInclude Include="options_types.h" />
     <ClInclude Include="parse_args.h" />
     <ClInclude Include="parse_dispatch_loop.h" />
     <ClInclude Include="parse_example.h" />
@@ -344,10 +349,16 @@
     <ClCompile Include="ccb_reduction_features.cc" />
     <ClCompile Include="../ext_libs/spdlog/src/cfg.cpp" />
     <ClCompile Include="classweight.cc" />
-    <ClCompile Include="cli_help_formatter.cc" />
     <ClCompile Include="../ext_libs/spdlog/src/color_sinks.cpp" />
     <ClCompile Include="conditional_contextual_bandit.cc" />
     <ClCompile Include="confidence.cc" />
+    <ClCompile Include="config/cli_help_formatter.cc"/>
+    <ClCompile Include="config/cli_options_serializer.cc"/>
+    <ClCompile Include="config/help_formatter.cc"/>
+    <ClCompile Include="config/option_group_definition.cc"/>
+    <ClCompile Include="config/options_boost_po.cc"/>
+    <ClCompile Include="config/options_name_extractor.cc"/>
+    <ClCompile Include="config/options.cc"/>
     <ClCompile Include="cost_sensitive.cc" />
     <ClCompile Include="count_label.cc" />
     <ClCompile Include="crossplat_compat.cc" />
@@ -406,9 +417,6 @@
     <ClCompile Include="oaa.cc" />
     <ClCompile Include="offset_tree.cc" />
     <ClCompile Include="oja_newton.cc" />
-    <ClCompile Include="options_boost_po.cc" />
-    <ClCompile Include="options_serializer_boost_po.cc" />
-    <ClCompile Include="options.cc" />
     <ClCompile Include="../ext_libs/fmt/src/os.cc" />
     <ClCompile Include="parse_args.cc" />
     <ClCompile Include="parse_example.cc" />

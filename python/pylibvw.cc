@@ -11,8 +11,8 @@
 #include "search_hooktask.h"
 #include "parse_example.h"
 #include "gd.h"
-#include "options_boost_po.h"
-#include "options_serializer_boost_po.h"
+#include "config/options_boost_po.h"
+#include "config/cli_options_serializer.h"
 #include "future_compat.h"
 #include "slates_label.h"
 #include "simple_label_parser.h"
@@ -334,7 +334,7 @@ const char* get_model_id(vw_ptr all) { return all->id.c_str(); }
 
 std::string get_arguments(vw_ptr all)
 {
-  VW::config::options_serializer_boost_po serializer;
+  VW::config::cli_options_serializer serializer;
   for (auto const& option : all->options->get_all_options())
   {
     if (all->options->was_supplied(option->m_name)) serializer.add(*option);

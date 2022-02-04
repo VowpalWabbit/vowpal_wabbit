@@ -15,9 +15,10 @@ namespace po = boost::program_options;
 #include <string>
 #include <unordered_map>
 
-#include "options.h"
-#include "options_types.h"
+#include "config/options.h"
+#include "config/options_types.h"
 #include "vw_exception.h"
+#include "future_compat.h"
 
 // Boost Program Options requires that all types that have a default option are ostreamable
 namespace std
@@ -38,64 +39,21 @@ namespace config
 {
 struct options_boost_po : public options_i
 {
-  options_boost_po(int argc, char** argv) : options_boost_po(std::vector<std::string>(argv + 1, argv + argc)) {}
-
-  options_boost_po(const std::vector<std::string>& args) : m_command_line(args) {}
+  options_boost_po(int argc, char** argv);
+  options_boost_po(const std::vector<std::string>& args);
 
   options_boost_po(options_boost_po&) = delete;
   options_boost_po& operator=(options_boost_po&) = delete;
 
   void internal_add_and_parse(const option_group_definition& group) override;
-  bool was_supplied(const std::string& key) const override;
+  VW_ATTR(nodiscard) bool was_supplied(const std::string& key) const override;
   void check_unregistered(VW::io::logger& logger) override;
-  const std::set<std::string>& get_supplied_options() const override { return m_supplied_options; }
-
-  void insert(const std::string& key, const std::string& value) override
-  {
-    m_command_line.push_back("--" + key);
-    if (!value.empty()) { m_command_line.push_back(value); }
-  }
+  VW_ATTR(nodiscard) const std::set<std::string>& get_supplied_options() const override;
+  void insert(const std::string& key, const std::string& value) override;
 
   // Note: does not work for vector options.
-  void replace(const std::string& key, const std::string& value) override
-  {
-    auto full_key = "--" + key;
-    auto it = std::find(m_command_line.begin(), m_command_line.end(), full_key);
-
-    // Not found, insert instead.
-    if (it == m_command_line.end())
-    {
-      insert(key, value);
-      return;
-    }
-
-    // Check if it is the final option or the next option is not a value.
-    if (it + 1 == m_command_line.end() || (*(it + 1)).find("--") != std::string::npos)
-    { THROW(key + " option does not have a value."); }
-
-    // Actually replace the value.
-    *(it + 1) = value;
-  }
-
-  std::vector<std::string> get_positional_tokens() const override
-  {
-    po::positional_options_description p;
-    p.add("__positional__", -1);
-    auto copied_description = master_description;
-    copied_description.add_options()("__positional__", po::value<std::vector<std::string>>()->composing(), "");
-    po::parsed_options pos = po::command_line_parser(m_command_line)
-                                 .style(po::command_line_style::default_style ^ po::command_line_style::allow_guessing)
-                                 .options(copied_description)
-                                 .allow_unregistered()
-                                 .positional(p)
-                                 .run();
-
-    po::variables_map vm;
-    po::store(pos, vm);
-
-    if (vm.count("__positional__") != 0) { return vm["__positional__"].as<std::vector<std::string>>(); }
-    return std::vector<std::string>();
-  }
+  void replace(const std::string& key, const std::string& value) override;
+  VW_ATTR(nodiscard) std::vector<std::string> get_positional_tokens() const override;
 
 private:
   template <typename T>

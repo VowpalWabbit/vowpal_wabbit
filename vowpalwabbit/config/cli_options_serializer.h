@@ -4,7 +4,8 @@
 
 #pragma once
 
-#include "options.h"
+#include "config/options_serializer.h"
+#include "config/option.h"
 
 #include <string>
 #include <sstream>
@@ -13,9 +14,9 @@ namespace VW
 {
 namespace config
 {
-struct options_serializer_boost_po : options_serializer_i, typed_option_visitor
+struct cli_options_serializer : options_serializer_i, typed_option_visitor
 {
-  options_serializer_boost_po() { m_output_stream.precision(15); }
+  cli_options_serializer();
 
   void add(base_option& option) override;
   std::string str() const override;

@@ -17,8 +17,8 @@
 #include "vw_exception.h"
 #include <fstream>
 
-#include "options.h"
-#include "options_boost_po.h"
+#include "config/options.h"
+#include "config/options_boost_po.h"
 #include "vw_to_flat.h"
 
 using namespace VW::config;

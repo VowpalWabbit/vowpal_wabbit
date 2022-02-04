@@ -8,8 +8,8 @@
 #include "test_common.h"
 
 #include "memory.h"
-#include "options_boost_po.h"
-#include "options_serializer_boost_po.h"
+#include "config/options_boost_po.h"
+#include "config/cli_options_serializer.h"
 
 #include <memory>
 #include <vector>
@@ -289,7 +289,7 @@ BOOST_AUTO_TEST_CASE(kept_command_line)
   BOOST_CHECK_EQUAL(bool_opt, false);
   BOOST_CHECK_EQUAL(other_bool_opt, true);
 
-  options_serializer_boost_po serializer;
+  cli_options_serializer serializer;
   for (auto& opt : options->get_all_options())
   {
     if (opt->m_keep) { serializer.add(*opt); }
