@@ -100,8 +100,13 @@ option(LTO "Enable Link Time optimization (Requires Release build, only works wi
 option(RAPIDJSON_SYS_DEP "Override using the submodule for RapidJSON dependency. Instead will use find_package" OFF)
 option(FMT_SYS_DEP "Override using the submodule for FMT dependency. Instead will use find_package" OFF)
 option(SPDLOG_SYS_DEP "Override using the submodule for spdlog dependency. Instead will use find_package" OFF)
+option(VW_ZLIB_SYS_DEP "Override using the submodule for zlib dependency. Instead will use find_package" ON)
 option(BUILD_FLATBUFFERS "Build flatbuffers" OFF)
 option(BUILD_PRIVACY_ACTIVATION "Enable privacy activation feature" OFF)
+
+if(VW_INSTALL AND NOT VW_ZLIB_SYS_DEP)
+  message(FATAL_ERROR "To use install VW_ZLIB_SYS_DEP must be used")
+endif()
 
 string(TOUPPER "${CMAKE_BUILD_TYPE}" CONFIG)
 
@@ -180,6 +185,7 @@ endif()
 if(STATIC_LINK_VW_JAVA)
   set(Boost_USE_STATIC_LIBS ON)
   set(CMAKE_FIND_LIBRARY_SUFFIXES ${STATIC_LIB_SUFFIXES})
+  set(BUILD_SHARED_LIBS OFF)
 else()
   if(STATIC_LINK_VW)
     set(Boost_USE_STATIC_LIBS ON)
@@ -216,7 +222,6 @@ endif()
 
 # Align and foreach are also required, for some reason they can't be specified as components though.
 find_package(Boost REQUIRED COMPONENTS program_options system)
-find_package(ZLIB REQUIRED)
 if(BUILD_FLATBUFFERS)
   find_package(flatbuffers REQUIRED)
 endif()
