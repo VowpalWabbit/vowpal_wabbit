@@ -149,7 +149,6 @@ BOOST_AUTO_TEST_CASE(name_extraction_should_throw)
   BOOST_REQUIRE_THROW(name_extractor.add_parse_and_check_necessary(ag), VW::vw_exception);
 
   // should throw since these methods will never be implemented by options_name_extractor
-  BOOST_REQUIRE_THROW(name_extractor.help({}), VW::vw_exception);
   auto null_logger = VW::io::create_null_logger();
   BOOST_REQUIRE_THROW(name_extractor.check_unregistered(null_logger), VW::vw_exception);
   BOOST_REQUIRE_THROW(name_extractor.get_all_options(), VW::vw_exception);
