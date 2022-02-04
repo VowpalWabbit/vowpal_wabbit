@@ -169,6 +169,7 @@
     <ClInclude Include="ccb_label.h" />
     <ClInclude Include="ccb_reduction_features.h" />
     <ClInclude Include="classweight.h" />
+    <ClInclude Include="cli_help_formatter.h" />
     <ClInclude Include="conditional_contextual_bandit.h" />
     <ClInclude Include="confidence.h" />
     <ClInclude Include="constant.h" />
@@ -345,6 +346,7 @@
     <ClCompile Include="ccb_reduction_features.cc" />
     <ClCompile Include="../ext_libs/spdlog/src/cfg.cpp" />
     <ClCompile Include="classweight.cc" />
+    <ClCompile Include="cli_help_formatter.cc" />
     <ClCompile Include="../ext_libs/spdlog/src/color_sinks.cpp" />
     <ClCompile Include="conditional_contextual_bandit.cc" />
     <ClCompile Include="confidence.cc" />

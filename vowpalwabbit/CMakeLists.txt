@@ -92,6 +92,7 @@ set(vw_all_headers
   ccb_label.h
   ccb_reduction_features.h
   classweight.h
+  cli_help_formatter.h
   compat.h
   conditional_contextual_bandit.h
   confidence.h
@@ -289,6 +290,7 @@ set(vw_all_sources
   ccb_label.cc
   ccb_reduction_features.cc
   classweight.cc
+  cli_help_formatter.cc
   conditional_contextual_bandit.cc
   confidence.cc
   cost_sensitive.cc
