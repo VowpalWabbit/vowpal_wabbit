@@ -125,11 +125,14 @@ size_t write_model_field(io_buf&, const CCB::label&, const std::string&, bool);
 }  // namespace model_utils
 }  // namespace VW
 
+namespace fmt
+{
 template <>
-struct fmt::formatter<CCB::example_type> : formatter<std::string>
+struct formatter<CCB::example_type> : formatter<std::string>
 {
   auto format(CCB::example_type c, format_context& ctx) -> decltype(ctx.out())
   {
     return formatter<std::string>::format(std::string{VW::to_string(c)}, ctx);
   }
 };
+}  // namespace fmt

@@ -1,844 +1,820 @@
-Driver Options:
-  --onethread                                Disable parse thread
-  --log_level arg (Default: info)            Log level for logging messages. Specifying this wil 
-                                             override --quiet for log output. Choices: {critical, 
-                                             error, info, off, warn}
-  --log_output arg (Default: stdout)         Specify the stream to output log messages to. In the 
-                                             past VW's choice of stream for logging messages wasn't
-                                             consistent. Supplying compat will maintain that old 
-                                             behavior. Compat is now deprecated so it is 
-                                             recommended that stdout or stderr is chosen. Choices: 
-                                             {compat, stderr, stdout}
-Logging Options:
-  --quiet                                    Don't output diagnostics and progress updates. 
-                                             Supplying this implies --log_level off and 
-                                             --driver_output_off. Supplying this overrides an 
-                                             explicit log_level argument.
-  --driver_output_off                        Disable output for the driver
-  --driver_output arg (Default: stderr)      Specify the stream to output driver output to. 
-                                             Choices: {stderr, stdout}
-  --log_level arg (Default: info)            Log level for logging messages. Specifying this wil 
-                                             override --quiet for log output. Choices: {critical, 
-                                             error, info, off, warn}
-  --log_output arg (Default: stdout)         Specify the stream to output log messages to. In the 
-                                             past VW's choice of stream for logging messages wasn't
-                                             consistent. Supplying compat will maintain that old 
-                                             behavior. Compat is now deprecated so it is 
-                                             recommended that stdout or stderr is chosen.. Choices:
-                                             {compat, stderr, stdout}
-  --limit_output arg (Default: 0)            Avoid chatty output. Limit total printed lines. 0 
-                                             means unbounded
-Parser Options:
-  --ring_size arg (Default: 256)             Size of example ring
-  --example_queue_limit arg (Default: 256)   Max number of examples to store after parsing but 
-                                             before the learner has processed. Rarely needs to be 
-                                             changed.
-  --strict_parse                             Throw on malformed examples
-Weight Options:
-  -i [ --initial_regressor ] arg             Initial regressor(s)
-  --initial_weight arg (Default: 0)          Set all weights to an initial value of arg
-  --random_weights                           Make initial weights random
-  --normal_weights                           Make initial weights normal
-  --truncated_normal_weights                 Make initial weights truncated normal
-  --sparse_weights                           Use a sparse datastructure for weights
-  --input_feature_regularizer arg            Per feature regularization input file
-Parallelization Options:
-  --span_server arg                          Location of server for setting up spanning tree
-  --unique_id arg (Default: 0)               Unique id used for cluster parallel jobs
-  --total arg (Default: 1)                   Total number of nodes used in cluster parallel job
-  --node arg (Default: 0)                    Node number in cluster parallel job
-  --span_server_port arg (Default: 26543)    Port of the server for setting up spanning tree
 Diagnostic Options:
-  --version                                  Version information
-  -a [ --audit ]                             Print weights of features
-  -P [ --progress ] arg                      Progress update frequency. int: additive, float: 
-                                             multiplicative
-  --dry_run                                  Parse arguments and print corresponding metadata. Will
-                                             not execute driver
-  -h [ --help ]                              More information on vowpal wabbit can be found here 
-                                             https://vowpalwabbit.org
-Randomization Options:
-  --random_seed arg (Default: 0)             Seed random number generator
-Feature Options:
-  --hash arg (Default: strings)              How to hash the features. Choices: {all, strings}
-  --hash_seed arg (Default: 0)               Seed for hash function
-  --ignore arg                               Ignore namespaces beginning with character <arg>
-  --ignore_linear arg                        Ignore namespaces beginning with character <arg> for 
-                                             linear terms only
-  --keep arg                                 Keep namespaces beginning with character <arg>
-  --redefine arg                             Redefine namespaces beginning with characters of 
-                                             std::string S as namespace N. <arg> shall be in form 
-                                             'N:=S' where := is operator. Empty N or S are treated 
-                                             as default namespace. Use ':' as a wildcard in S.
-  -b [ --bit_precision ] arg                 Number of bits in the feature table
-  --noconstant                               Don't add a constant feature
-  -C [ --constant ] arg (Default: 0)         Set initial value of constant
-  --ngram arg                                Generate N grams. To generate N grams for a single 
-                                             namespace 'foo', arg should be fN
-  --skips arg                                Generate skips in N grams. This in conjunction with 
-                                             the ngram tag can be used to generate generalized 
-                                             n-skip-k-gram. To generate n-skips for a single 
-                                             namespace 'foo', arg should be fN.
-  --feature_limit arg                        Limit to N unique features per namespace. To apply to 
-                                             a single namespace 'foo', arg should be fN
-  --affix arg                                Generate prefixes/suffixes of features; argument 
-                                             '+2a,-3b,+1' means generate 2-char prefixes for 
-                                             namespace a, 3-char suffixes for b and 1 char prefixes
-                                             for default namespace
-  --spelling arg                             Compute spelling features for a give namespace (use 
-                                             '_' for default namespace)
-  --dictionary arg                           Read a dictionary for additional features (arg either 
-                                             'x:file' or just 'file')
-  --dictionary_path arg                      Look in this directory for dictionaries; defaults to 
-                                             current directory or env{PATH}
-  --interactions arg                         Create feature interactions of any level between 
-                                             namespaces
-  --experimental_full_name_interactions arg  EXPERIMENTAL: Create feature interactions of any level
-                                             between namespaces by specifying the full name of each
-                                             namespace.
-  --permutations                             Use permutations instead of combinations for feature 
-                                             interactions of same namespace
-  --leave_duplicate_interactions             Don't remove interactions with duplicate combinations 
-                                             of namespaces. For ex. this is a duplicate: '-q ab -q 
-                                             ba' and a lot more in '-q ::'.
-  -q [ --quadratic ] arg                     Create and use quadratic features
-  --cubic arg                                Create and use cubic features
+    --version                               Version information (type: bool)
+    -a, --audit                             Print weights of features (type: bool)
+    -P, --progress arg                      Progress update frequency. int: additive, float: multiplicative
+                                            (type: str)
+    --dry_run                               Parse arguments and print corresponding metadata. Will not execute
+                                            driver (type: bool)
+    -h, --help                              More information on vowpal wabbit can be found here https://vowpalwabbit.org
+                                            (type: bool)
+Driver Options:
+    --onethread                             Disable parse thread (type: bool)
 Example Options:
-  -t [ --testonly ]                          Ignore label information and just test
-  --holdout_off                              No holdout data in multiple passes
-  --holdout_period arg (Default: 10)         Holdout period for test only
-  --holdout_after arg                        Holdout after n training examples, default off 
-                                             (disables holdout_period)
-  --early_terminate arg (Default: 3)         Specify the number of passes tolerated when holdout 
-                                             loss doesn't decrease before early termination
-  --passes arg (Default: 1)                  Number of Training Passes
-  --initial_pass_length arg (Default: -1)    Initial number of examples per pass. -1 for no limit
-  --examples arg (Default: -1)               Number of examples to parse. -1 for no limit
-  --min_prediction arg                       Smallest prediction to output
-  --max_prediction arg                       Largest prediction to output
-  --sort_features                            Turn this on to disregard order in which features have
-                                             been defined. This will lead to smaller cache sizes
-  --loss_function arg (Default: squared)     Specify the loss function to be used, uses squared by 
-                                             default. Choices: {classic, hinge, logistic, poisson, 
-                                             quantile, squared}
-  --quantile_tau arg (Default: 0.5)          Parameter \tau associated with Quantile loss. Defaults
-                                             to 0.5
-  --l1 arg (Default: 0)                      L_1 lambda
-  --l2 arg (Default: 0)                      L_2 lambda
-  --no_bias_regularization                   No bias in regularization
-  --named_labels arg                         Use names for labels (multiclass, etc.) rather than 
-                                             integers, argument specified all possible labels, 
-                                             comma-sep, eg "--named_labels Noun,Verb,Adj,Punc"
-Output Model Options:
-  -f [ --final_regressor ] arg               Final regressor
-  --readable_model arg                       Output human-readable final regressor with numeric 
-                                             features
-  --invert_hash arg                          Output human-readable final regressor with feature 
-                                             names.  Computationally expensive
-  --predict_only_model                       Do not save extra state for learning to be resumed. 
-                                             Stored model can only be used for prediction
-  --save_resume                              This flag is now deprecated and models can continue 
-                                             learning by default
-  --preserve_performance_counters            Reset performance counters when warmstarting
-  --save_per_pass                            Save the model after every pass over data
-  --output_feature_regularizer_binary arg    Per feature regularization output file
-  --output_feature_regularizer_text arg      Per feature regularization output file, in text
-  --id arg                                   User supplied ID embedded into the final regressor
-Update Options:
-  -l [ --learning_rate ] arg (Default: 0.5)  Set learning rate
-  --power_t arg (Default: 0.5)               T power value
-  --decay_learning_rate arg (Default: 1)     Set Decay factor for learning_rate between passes
-  --initial_t arg                            Initial t value
-  --feature_mask arg                         Use existing regressor to determine which parameters 
-                                             may be updated.  If no initial_regressor given, also 
-                                             used for initial weights.
-Prediction Output Options:
-  -p [ --predictions ] arg                   File to output predictions to
-  -r [ --raw_predictions ] arg               File to output unnormalized predictions to
+    -t, --testonly                          Ignore label information and just test (type: bool)
+    --holdout_off                           No holdout data in multiple passes (type: bool)
+    --holdout_period arg                    Holdout period for test only (type: uint, default: 10)
+    --holdout_after arg                     Holdout after n training examples, default off (disables holdout_period)
+                                            (type: uint)
+    --early_terminate arg                   Specify the number of passes tolerated when holdout loss doesn't
+                                            decrease before early termination (type: uint, default: 3)
+    --passes arg                            Number of Training Passes (type: uint, default: 1)
+    --initial_pass_length arg               Initial number of examples per pass. -1 for no limit (type: int,
+                                            default: -1)
+    --examples arg                          Number of examples to parse. -1 for no limit (type: int, default:
+                                            -1)
+    --min_prediction arg                    Smallest prediction to output (type: float)
+    --max_prediction arg                    Largest prediction to output (type: float)
+    --sort_features                         Turn this on to disregard order in which features have been defined.
+                                            This will lead to smaller cache sizes (type: bool)
+    --loss_function arg                     Specify the loss function to be used, uses squared by default
+                                            (type: str, default: squared, choices {classic, hinge, logistic,
+                                            poisson, quantile, squared})
+    --quantile_tau arg                      Parameter \tau associated with Quantile loss. Defaults to 0.5
+                                            (type: float, default: 0.5)
+    --l1 arg                                L_1 lambda (type: float, default: 0)
+    --l2 arg                                L_2 lambda (type: float, default: 0)
+    --no_bias_regularization                No bias in regularization (type: bool)
+    --named_labels arg                      Use names for labels (multiclass, etc.) rather than integers,
+                                            argument specified all possible labels, comma-sep, eg "--named_labels
+                                            Noun,Verb,Adj,Punc" (type: str, keep)
+Feature Options:
+    --hash arg                              How to hash the features (type: str, default: strings, choices
+                                            {all, strings}, keep)
+    --hash_seed arg                         Seed for hash function (type: uint, default: 0, keep)
+    --ignore args...                        Ignore namespaces beginning with character <arg> (type: list[str],
+                                            keep)
+    --ignore_linear args...                 Ignore namespaces beginning with character <arg> for linear terms
+                                            only (type: list[str], keep)
+    --keep args...                          Keep namespaces beginning with character <arg> (type: list[str],
+                                            keep)
+    --redefine args...                      Redefine namespaces beginning with characters of std::string
+                                            S as namespace N. <arg> shall be in form 'N:=S' where := is operator.
+                                            Empty N or S are treated as default namespace. Use ':' as a wildcard
+                                            in S. (type: list[str], keep)
+    -b, --bit_precision arg                 Number of bits in the feature table (type: uint)
+    --noconstant                            Don't add a constant feature (type: bool)
+    -C, --constant arg                      Set initial value of constant (type: float, default: 0)
+    --ngram args...                         Generate N grams. To generate N grams for a single namespace
+                                            'foo', arg should be fN (type: list[str])
+    --skips args...                         Generate skips in N grams. This in conjunction with the ngram
+                                            tag can be used to generate generalized n-skip-k-gram. To generate
+                                            n-skips for a single namespace 'foo', arg should be fN. (type:
+                                            list[str])
+    --feature_limit args...                 Limit to N unique features per namespace. To apply to a single
+                                            namespace 'foo', arg should be fN (type: list[str])
+    --affix arg                             Generate prefixes/suffixes of features; argument '+2a,-3b,+1'
+                                            means generate 2-char prefixes for namespace a, 3-char suffixes
+                                            for b and 1 char prefixes for default namespace (type: str, keep)
+    --spelling args...                      Compute spelling features for a give namespace (use '_' for default
+                                            namespace) (type: list[str], keep)
+    --dictionary args...                    Read a dictionary for additional features (arg either 'x:file'
+                                            or just 'file') (type: list[str], keep)
+    --dictionary_path args...               Look in this directory for dictionaries; defaults to current
+                                            directory or env{PATH} (type: list[str])
+    --interactions args...                  Create feature interactions of any level between namespaces (type:
+                                            list[str], keep)
+    --experimental_full_name_interactions args...
+                                            EXPERIMENTAL: Create feature interactions of any level between
+                                            namespaces by specifying the full name of each namespace. (type:
+                                            list[str], keep)
+    --permutations                          Use permutations instead of combinations for feature interactions
+                                            of same namespace (type: bool)
+    --leave_duplicate_interactions          Don't remove interactions with duplicate combinations of namespaces.
+                                            For ex. this is a duplicate: '-q ab -q ba' and a lot more in
+                                            '-q ::'. (type: bool)
+    -q, --quadratic args...                 Create and use quadratic features (type: list[str], keep)
+    --cubic args...                         Create and use cubic features (type: list[str], keep)
 Input Options:
-  -d [ --data ] arg                          Example set
-  --daemon                                   Persistent daemon mode on port 26542
-  --foreground                               In persistent daemon mode, do not run in the 
-                                             background
-  --port arg                                 Port to listen on; use 0 to pick unused port
-  --num_children arg                         Number of children for persistent daemon mode
-  --pid_file arg                             Write pid file in persistent daemon mode
-  --port_file arg                            Write port used in persistent daemon mode
-  -c [ --cache ]                             Use a cache.  The default is <data>.cache
-  --cache_file arg                           The location(s) of cache_file
-  --json                                     Enable JSON parsing
-  --dsjson                                   Enable Decision Service JSON parsing
-  -k [ --kill_cache ]                        Do not reuse existing cache: create a new one always
-  --compressed                               use gzip format whenever possible. If a cache file is 
-                                             being created, this option creates a compressed cache 
-                                             file. A mixture of raw-text & compressed inputs are 
-                                             supported with autodetection.
-  --no_stdin                                 Do not default to reading from stdin
-  --no_daemon                                Force a loaded daemon or active learning model to 
-                                             accept local input instead of starting in daemon mode
-  --chain_hash                               Enable chain hash in JSON for feature name and string 
-                                             feature value. e.g. {'A': {'B': 'C'}} is hashed as 
-                                             A^B^C.
-  --flatbuffer                               Data file will be interpreted as a flatbuffer file
-[Reduction] OjaNewton Options:
-  --OjaNewton                                Online Newton with Oja's Sketch (required to enable 
-                                             this reduction)
-  --sketch_size arg (Default: 10)            Size of sketch
-  --epoch_size arg (Default: 1)              Size of epoch
-  --alpha arg (Default: 1)                   Mutiplicative constant for indentiy
-  --alpha_inverse arg                        One over alpha, similar to learning rate
-  --learning_rate_cnt arg (Default: 2)       Constant for the learning rate 1/t
-  --normalize arg                            Normalize the features or not
-  --random_init arg                          Randomize initialization of Oja or not
-[Reduction] Active Learning Options:
-  --active                                   Enable active learning (required to enable this 
-                                             reduction)
-  --simulation                               Active learning simulation mode
-  --mellowness arg (Default: 8)              Active learning mellowness parameter c_0. Default 8
-[Reduction] Active Learning with Cover Options:
-  --active_cover                             Enable active learning with cover (required to enable 
-                                             this reduction)
-  --mellowness arg (Default: 8)              Active learning mellowness parameter c_0
-  --alpha arg (Default: 1)                   Active learning variance upper bound parameter alpha
-  --beta_scale arg (Default: 3.1622777)      Active learning variance upper bound parameter 
-                                             beta_scale
-  --cover arg (Default: 12)                  Cover size
-  --oracular                                 Use Oracular-CAL style query or not
-[Reduction] Audit Regressor Options:
-  --audit_regressor arg                      Stores feature names and their regressor values. Same 
-                                             dataset must be used for both regressor training and 
-                                             this mode. (required to enable this reduction)
-[Reduction] Autolink Options:
-  --autolink arg                             Create link function with polynomial d (required to 
-                                             enable this reduction)
-[Reduction] Automl Options:
-  --automl arg (Default: 3)                  Experimental: Set number of live configs (required to 
-                                             enable this reduction)
-  --global_lease arg (Default: 10)           Set initial lease for automl interactions
-  --cm_type arg (Default: interaction)       Set type of config manager. Choices: {interaction}
-  --priority_type arg (Default: none)        Set function to determine next config. Choices: 
-                                             {least_exclusion, none}
-  --priority_challengers arg (Default: -1)   Set number of priority challengers to use
-  --keep_configs                             Keep all configs after champ change
-  --verbose_metrics                          Extended metrics for debugging
-  --oracle_type arg (Default: one_diff)      Set oracle to generate configs. Choices: {one_diff, 
-                                             rand}
-  --automl_alpha arg (Default: 0.05)         Set confidence interval for champion change
-  --automl_tau arg (Default: 0.999)          Time constant for count decay
-[Reduction] Baseline Options:
-  --baseline                                 Learn an additive baseline (from constant features) 
-                                             and a residual separately in regression (required to 
-                                             enable this reduction)
-  --lr_multiplier arg (Default: 1)           Learning rate multiplier for baseline model
-  --global_only                              Use separate example with only global constant for 
-                                             baseline predictions
-  --check_enabled                            Only use baseline when the example contains enabled 
-                                             flag
-[Reduction] Baseline challenger Options:
-  --baseline_challenger_cb                   Experimental: Build a CI around the baseline action 
-                                             and use it instead of the model if it's perfoming 
-                                             better (required to enable this reduction)
-  --cb_c_alpha arg (Default: 0.05)           Confidence level for baseline
-  --cb_c_tau arg (Default: 0.999)            Time constant for count decay
-[Reduction] Conjugate Gradient Options:
-  --conjugate_gradient                       Use conjugate gradient based optimization (required to
-                                             enable this reduction)
-[Reduction] LBFGS and Conjugate Gradient Options:
-  --bfgs                                     Use conjugate gradient based optimization (required to
-                                             enable this reduction)
-  --hessian_on                               Use second derivative in line search
-  --mem arg (Default: 15)                    Memory in bfgs
-  --termination arg (Default: 0.001)         Termination threshold
-[Reduction] Binary Loss Options:
-  --binary                                   Report loss as binary classification on -1,1 (required
-                                             to enable this reduction)
-[Reduction] Boosting Options:
-  --boosting arg                             Online boosting with <N> weak learners (required to 
-                                             enable this reduction)
-  --gamma arg (Default: 0.1)                 Weak learner's edge (=0.1), used only by online BBM
-  --alg arg (Default: BBM)                   Specify the boosting algorithm: BBM (default), 
-                                             logistic (AdaBoost.OL.W), adaptive (AdaBoost.OL). 
-                                             Choices: {BBM, adaptive, logistic}
-[Reduction] Bootstrap Options:
-  --bootstrap arg                            K-way bootstrap by online importance resampling 
-                                             (required to enable this reduction)
-  --bs_type arg (Default: mean)              Prediction type. Choices: {mean, vote}
-[Reduction] Continuous Actions Tree with Smoothing Options:
-  --cats arg                                 Number of discrete actions <k> for cats (required to 
-                                             enable this reduction)
-  --min_value arg                            Minimum continuous value
-  --max_value arg                            Maximum continuous value
-  --bandwidth arg                            Bandwidth (radius) of randomization around discrete 
-                                             actions in terms of continuous range. By default will 
-                                             be set to half of the continuous action unit-range 
-                                             resulting in smoothing that stays inside the action 
-                                             space unit-range:
-                                             unit_range = (max_value - min_value)/num-of-actions
-                                             default bandwidth = unit_range / 2.0
-[Reduction] Continuous Action Tree with Smoothing with Full Pdf Options:
-  --cats_pdf arg                             Number of tree labels <k> for cats_pdf (required to 
-                                             enable this reduction)
-[Reduction] CATS Tree Options:
-  --cats_tree arg                            CATS Tree with <k> labels (required to enable this 
-                                             reduction)
-  --tree_bandwidth arg (Default: 0)          Tree bandwidth for continuous actions in terms of 
-                                             #actions
-  --link arg                                 The learner in each node must return a prediction in 
-                                             range [-1,1], so only glf1 is allowed. Choices: {glf1}
-[Reduction] Contextual Bandit Options:
-  --cb arg                                   Use contextual bandit learning with <k> costs 
-                                             (required to enable this reduction)
-  --cb_type arg (Default: dr)                Contextual bandit method to use. Choices: {dm, dr, 
-                                             ips, mtr, sm}
-  --eval                                     Evaluate a policy rather than optimizing
-  --cb_force_legacy                          Default to non-adf cb implementation (cb_to_cb_adf)
-[Reduction] Contextual Bandit with Action Dependent Features Options:
-  --cb_adf                                   Do Contextual Bandit learning with multiline action 
-                                             dependent features (required to enable this reduction)
-  --rank_all                                 Return actions sorted by score order
-  --no_predict                               Do not do a prediction when training
-  --clip_p arg (Default: 0)                  Clipping probability in importance weight. Default: 
-                                             0.f (no clipping)
-  --cb_type arg (Default: mtr)               Contextual bandit method to use. Choices: {dm, dr, 
-                                             ips, mtr, sm}
-[Reduction] CB Distributionally Robust Optimization Options:
-  --cb_dro                                   Use DRO for cb learning (required to enable this 
-                                             reduction)
-  --cb_dro_alpha arg (Default: 0.05)         Confidence level for cb dro
-  --cb_dro_tau arg (Default: 0.999)          Time constant for count decay for cb dro
-  --cb_dro_wmax arg (Default: inf)           Maximum importance weight for cb_dro
-[Reduction] Contextual Bandit Exploration Options:
-  --cb_explore arg                           Online explore-exploit for a <k> action contextual 
-                                             bandit problem (required to enable this reduction)
-  --first arg                                Tau-first exploration
-  --epsilon arg (Default: 0.05)              Epsilon-greedy exploration
-  --bag arg                                  Bagging-based exploration
-  --cover arg                                Online cover based exploration
-  --nounif                                   Do not explore uniformly on zero-probability actions 
-                                             in cover
-  --psi arg (Default: 1)                     Disagreement parameter for cover
-[Reduction] Contextual Bandit Exploration with ADF (bagging) Options:
-  --cb_explore_adf                           Online explore-exploit for a contextual bandit problem
-                                             with multiline action dependent features (required to 
-                                             enable this reduction)
-  --epsilon arg (Default: 0)                 Epsilon-greedy exploration
-  --bag arg                                  Bagging-based exploration (required to enable this 
-                                             reduction)
-  --greedify                                 Always update first policy once in bagging
-  --first_only                               Only explore the first action in a tie-breaking event
-[Reduction] Contextual Bandit Exploration with ADF (online cover) Options:
-  --cb_explore_adf                           Online explore-exploit for a contextual bandit problem
-                                             with multiline action dependent features (required to 
-                                             enable this reduction)
-  --cover arg                                Online cover based exploration (required to enable 
-                                             this reduction)
-  --psi arg (Default: 1)                     Disagreement parameter for cover
-  --nounif                                   Do not explore uniformly on zero-probability actions 
-                                             in cover
-  --first_only                               Only explore the first action in a tie-breaking event
-  --cb_type arg (Default: mtr)               Contextual bandit method to use. Choices: {dr, ips, 
-                                             mtr}
-  --epsilon arg (Default: 0.05)              Epsilon-greedy exploration
-[Reduction] Contextual Bandit Exploration with ADF (tau-first) Options:
-  --cb_explore_adf                           Online explore-exploit for a contextual bandit problem
-                                             with multiline action dependent features (required to 
-                                             enable this reduction)
-  --first arg                                Tau-first exploration (required to enable this 
-                                             reduction)
-  --epsilon arg (Default: 0)                 Epsilon-greedy exploration
-[Reduction] Contextual Bandit Exploration with ADF (greedy) Options:
-  --cb_explore_adf                           Online explore-exploit for a contextual bandit problem
-                                             with multiline action dependent features (required to 
-                                             enable this reduction)
-  --epsilon arg (Default: 0.05)              Epsilon-greedy exploration
-  --first_only                               Only explore the first action in a tie-breaking event
-[Reduction] Contextual Bandit Exploration with ADF (RegCB) Options:
-  --cb_explore_adf                           Online explore-exploit for a contextual bandit problem
-                                             with multiline action dependent features (required to 
-                                             enable this reduction)
-  --regcb                                    RegCB-elim exploration (required to enable this 
-                                             reduction)
-  --regcbopt                                 RegCB optimistic exploration
-  --mellowness arg (Default: 0.1)            RegCB mellowness parameter c_0. Default 0.1
-  --cb_min_cost arg (Default: 0)             Lower bound on cost
-  --cb_max_cost arg (Default: 1)             Upper bound on cost
-  --first_only                               Only explore the first action in a tie-breaking event
-  --cb_type arg (Default: mtr)               Contextual bandit method to use. RegCB only supports 
-                                             supervised regression (mtr). Choices: {mtr}
-[Reduction] Contextual Bandit Exploration with ADF (rnd) Options:
-  --cb_explore_adf                           Online explore-exploit for a contextual bandit problem
-                                             with multiline action dependent features (required to 
-                                             enable this reduction)
-  --epsilon arg (Default: 0)                 Minimum exploration probability
-  --rnd arg (Default: 1)                     Rnd based exploration (required to enable this 
-                                             reduction)
-  --rnd_alpha arg (Default: 0.1)             CI width for rnd (bigger => more exploration on 
-                                             repeating features)
-  --rnd_invlambda arg (Default: 0.1)         Covariance regularization strength rnd (bigger => more
-                                             exploration on new features)
-[Reduction] Contextual Bandit Exploration with ADF (softmax) Options:
-  --cb_explore_adf                           Online explore-exploit for a contextual bandit problem
-                                             with multiline action dependent features (required to 
-                                             enable this reduction)
-  --epsilon arg (Default: 0)                 Epsilon-greedy exploration
-  --softmax                                  Softmax exploration (required to enable this 
-                                             reduction)
-  --lambda arg (Default: 1)                  Parameter for softmax
-[Reduction] Contextual Bandit Exploration with ADF (SquareCB) Options:
-  --cb_explore_adf                           Online explore-exploit for a contextual bandit problem
-                                             with multiline action dependent features (required to 
-                                             enable this reduction)
-  --squarecb                                 SquareCB exploration (required to enable this 
-                                             reduction)
-  --gamma_scale arg (Default: 10)            Sets SquareCB greediness parameter to 
-                                             gamma=[gamma_scale]*[num examples]^1/2
-  --gamma_exponent arg (Default: 0.5)        Exponent on [num examples] in SquareCB greediness 
-                                             parameter gamma
-  --elim                                     Only perform SquareCB exploration over plausible 
-                                             actions (computed via RegCB strategy)
-  --mellowness arg (Default: 0.001)          Mellowness parameter c_0 for computing plausible 
-                                             action set. Only used with --elim
-  --cb_min_cost arg (Default: 0)             Lower bound on cost. Only used with --elim
-  --cb_max_cost arg (Default: 1)             Upper bound on cost. Only used with --elim
-  --cb_type arg (Default: mtr)               Contextual bandit method to use. SquareCB only 
-                                             supports supervised regression (mtr). Choices: {mtr}
-[Reduction] Contextual Bandit Exploration with ADF (synthetic cover) Options:
-  --cb_explore_adf                           Online explore-exploit for a contextual bandit problem
-                                             with multiline action dependent features (required to 
-                                             enable this reduction)
-  --epsilon arg (Default: 0)                 Epsilon-greedy exploration
-  --synthcover                               Use synthetic cover exploration (required to enable 
-                                             this reduction)
-  --synthcoverpsi arg (Default: 0.1)         Exploration reward bonus
-  --synthcoversize arg (Default: 100)        Number of policies in cover
-[Reduction] Continuous Actions: cb_explore_pdf Options:
-  --cb_explore_pdf                           Sample a pdf and pick a continuous valued action 
-                                             (required to enable this reduction)
-  --epsilon arg (Default: 0.05)              Epsilon-greedy exploration
-  --min_value arg (Default: 0)               Min value for continuous range
-  --max_value arg (Default: 1)               Max value for continuous range
-  --first_only                               Use user provided first action or user provided pdf or
-                                             uniform random
-[Reduction] CB Sample Options:
-  --cb_sample                                Sample from CB pdf and swap top action (required to 
-                                             enable this reduction)
-[Reduction] Contextual Bandit: cb -> cb_adf Options:
-  --cb_to_cbadf arg                          Flag is unused and has no effect. It should not be 
-                                             passed. The cb_to_cbadf reduction is automatically 
-                                             enabled if cb, cb_explore or cbify are used. This flag
-                                             will be removed in a future release but not the 
-                                             functionality.
-  --cb arg                                   Maps cb_adf to cb. Disable with cb_force_legacy
-  --cb_explore arg                           Translate cb explore to cb_explore_adf. Disable with 
-                                             cb_force_legacy
-  --cbify arg                                Translate cbify to cb_adf. Disable with 
-                                             cb_force_legacy
-  --cb_force_legacy                          Default to non-adf cb implementation (cb_algs)
-[Reduction] CBify Options:
-  --cbify arg                                Convert multiclass on <k> classes into a contextual 
-                                             bandit problem (required to enable this reduction)
-  --cbify_cs                                 Consume cost-sensitive classification examples instead
-                                             of multiclass
-  --cbify_reg                                Consume regression examples instead of multiclass and 
-                                             cost sensitive
-  --cats arg (Default: 0)                    Continuous action tree with smoothing
-  --cb_discrete                              Discretizes continuous space and adds cb_explore as 
-                                             option
-  --min_value arg                            Minimum continuous value
-  --max_value arg                            Maximum continuous value
-  --loss_option arg (Default: 0)             Loss options for regression - 0:squared, 1:absolute, 
-                                             2:0/1
-  --loss_report arg (Default: 0)             Loss report option - 0:normalized, 1:denormalized
-  --loss_01_ratio arg (Default: 0.1)         Ratio of zero loss for 0/1 loss
-  --loss0 arg (Default: 0)                   Loss for correct label
-  --loss1 arg (Default: 1)                   Loss for incorrect label
-  --flip_loss_sign                           Flip sign of loss (use reward instead of loss)
-[Reduction] Make csoaa_ldf into Contextual Bandit Options:
-  --cbify_ldf                                Convert csoaa_ldf into a contextual bandit problem 
-                                             (required to enable this reduction)
-  --loss0 arg (Default: 0)                   Loss for correct label
-  --loss1 arg (Default: 1)                   Loss for incorrect label
-[Reduction] Continuous Action Contextual Bandit using Zeroth-Order Optimization Options:
-  --cbzo                                     Solve 1-slot Continuous Action Contextual Bandit using
-                                             Zeroth-Order Optimization (required to enable this 
-                                             reduction)
-  --policy arg (Default: linear)             Policy/Model to Learn
-  --radius arg (Default: 0.1)                Exploration Radius
-[Reduction] Conditional Contextual Bandit Exploration with ADF Options:
-  --ccb_explore_adf                          Do Conditional Contextual Bandit learning with 
-                                             multiline action dependent features (required to 
-                                             enable this reduction)
-  --all_slots_loss                           Report average loss from all slots
-  --no_predict                               Do not do a prediction when training
-  --cb_type arg (Default: mtr)               Contextual bandit method to use. Choices: {dm, dr, 
-                                             ips, mtr, sm}
-[Reduction]  Importance Weight Classes Options:
-  --classweight arg                          Importance weight multiplier for class (required to 
-                                             enable this reduction)
-[Reduction] Confidence Options:
-  --confidence                               Get confidence for binary predictions (required to 
-                                             enable this reduction)
-  --confidence_after_training                Confidence after training
-[Reduction] Count label Options:
-  --dont_output_best_constant                Don't track the best constant used in the output
-[Reduction] Cost Sensitive Active Learning Options:
-  --cs_active arg                            Cost-sensitive active learning with <k> costs 
-                                             (required to enable this reduction)
-  --simulation                               Cost-sensitive active learning simulation mode
-  --baseline                                 Cost-sensitive active learning baseline
-  --domination arg (Default: 1)              Cost-sensitive active learning use domination
-  --mellowness arg (Default: 0.1)            Mellowness parameter c_0
-  --range_c arg (Default: 0.5)               Parameter controlling the threshold for per-label cost
-                                             uncertainty
-  --max_labels arg (Default: 18446744073709551615)
-                                             Maximum number of label queries
-  --min_labels arg (Default: 18446744073709551615)
-                                             Minimum number of label queries
-  --cost_max arg (Default: 1)                Cost upper bound
-  --cost_min arg (Default: 0)                Cost lower bound
-  --csa_debug                                Print debug stuff for cs_active
-[Reduction] Cost Sensitive One Against All Options:
-  --csoaa arg                                One-against-all multiclass with <k> costs (required to
-                                             enable this reduction)
-  --indexing arg                             Choose between 0 or 1-indexing. Choices: {0, 1}
-[Reduction] Cost Sensitive One Against All with Label Dependent Features Options:
-  --csoaa_ldf arg                            Use one-against-all multiclass learning with label 
-                                             dependent features (required to enable this reduction)
-  --ldf_override arg                         Override singleline or multiline from csoaa_ldf or 
-                                             wap_ldf, eg if stored in file
-  --csoaa_rank                               Return actions sorted by score order
-  --probabilities                            Predict probabilities of all classes
-[Reduction] Cost Sensitive Weighted All-Pairs with Label Dependent Features Options:
-  --wap_ldf arg                              Use weighted all-pairs multiclass learning with label 
-                                             dependent features. Specify singleline or multiline. 
-                                             (required to enable this reduction)
-[Reduction] Error Correcting Tournament Options:
-  --ect arg                                  Error correcting tournament with <k> labels (required 
-                                             to enable this reduction)
-  --error arg (Default: 0)                   Errors allowed by ECT
-  --link arg (Default: identity)             Specify the link function. Choices: {glf1, identity, 
-                                             logistic, poisson}
-[Reduction] Interaction Grounded Learning Options:
-  --experimental_igl                         Experimental: Do Interaction Grounding with multiline 
-                                             action dependent features (required to enable this 
-                                             reduction)
-[Reduction] Explore Evaluation Options:
-  --explore_eval                             Evaluate explore_eval adf policies (required to enable
-                                             this reduction)
-  --multiplier arg                           Multiplier used to make all rejection sample 
-                                             probabilities <= 1
-[Reduction] Debug Metrics Options:
-  --extra_metrics arg                        Specify filename to write metrics to. Note: There is 
-                                             no fixed schema (required to enable this reduction)
-[Reduction] FreeGrad Options:
-  --freegrad                                 Diagonal FreeGrad Algorithm (required to enable this 
-                                             reduction)
-  --restart                                  Use the FreeRange restarts
-  --project                                  Project the outputs to adapt to both the lipschitz and
-                                             comparator norm
-  --radius arg                               Radius of the l2-ball for the projection. If not 
-                                             supplied, an adaptive radius will be used
-  --fepsilon arg (Default: 1)                Initial wealth
-[Reduction] Follow the Regularized Leader - FTRL Options:
-  --ftrl                                     FTRL: Follow the Proximal Regularized Leader (required
-                                             to enable this reduction)
-  --ftrl_alpha arg                           Learning rate for FTRL optimization
-  --ftrl_beta arg                            Learning rate for FTRL optimization
-[Reduction] Follow the Regularized Leader - Pistol Options:
-  --pistol                                   PiSTOL: Parameter-free STOchastic Learning (required 
-                                             to enable this reduction)
-  --ftrl_alpha arg                           Learning rate for FTRL optimization
-  --ftrl_beta arg                            Learning rate for FTRL optimization
-[Reduction] Follow the Regularized Leader - Coin Options:
-  --coin                                     Coin betting optimizer (required to enable this 
-                                             reduction)
-  --ftrl_alpha arg                           Learning rate for FTRL optimization
-  --ftrl_beta arg                            Learning rate for FTRL optimization
-[Reduction] Gradient Descent Options:
-  --sgd                                      Use regular stochastic gradient descent update
-  --adaptive                                 Use adaptive, individual learning rates
-  --adax                                     Use adaptive learning rates with x^2 instead of g^2x^2
-  --invariant                                Use safe/importance aware updates
-  --normalized                               Use per feature normalized updates
-  --sparse_l2 arg (Default: 0)               Degree of l2 regularization applied to activated 
-                                             sparse parameters
-  --l1_state arg (Default: 0)                Amount of accumulated implicit l1 regularization
-  --l2_state arg (Default: 1)                Amount of accumulated implicit l2 regularization
-[Reduction] Generate Interactions Options:
-  --leave_duplicate_interactions             Don't remove interactions with duplicate combinations 
-                                             of namespaces. For ex. this is a duplicate: '-q ab -q 
-                                             ba' and a lot more in '-q ::'.
-[Reduction] Continuous Actions: Convert to Pmf Options:
-  --get_pmf                                  Convert a single multiclass prediction to a pmf 
-                                             (required to enable this reduction)
-[Reduction] Interact via Elementwise Multiplication Options:
-  --interact arg                             Put weights on feature products from namespaces <n1> 
-                                             and <n2> (required to enable this reduction)
-[Reduction] Kernel SVM Options:
-  --ksvm                                     Kernel svm (required to enable this reduction)
-  --reprocess arg (Default: 1)               Number of reprocess steps for LASVM
-  --pool_greedy                              Use greedy selection on mini pools
-  --para_active                              Do parallel active learning
-  --pool_size arg (Default: 1)               Size of pools for active learning
-  --subsample arg (Default: 1)               Number of items to subsample from the pool
-  --kernel arg (Default: linear)             Type of kernel. Choices: {linear, poly, rbf}
-  --bandwidth arg (Default: 1)               Bandwidth of rbf kernel
-  --degree arg (Default: 2)                  Degree of poly kernel
-[Reduction] Latent Dirichlet Allocation Options:
-  --lda arg                                  Run lda with <int> topics (required to enable this 
-                                             reduction)
-  --lda_alpha arg (Default: 0.1)             Prior on sparsity of per-document topic weights
-  --lda_rho arg (Default: 0.1)               Prior on sparsity of topic distributions
-  --lda_D arg (Default: 10000)               Number of documents
-  --lda_epsilon arg (Default: 0.001)         Loop convergence threshold
-  --minibatch arg (Default: 1)               Minibatch size, for LDA
-  --math-mode arg (Default: 0)               Math mode: 0=simd, 1=accuracy, 2=fast-approx. Choices:
-                                             {0, 1, 2}
-  --metrics                                  Compute metrics
-[Reduction] Logarithmic Time Multiclass Tree Options:
-  --log_multi arg                            Use online tree for multiclass (required to enable 
-                                             this reduction)
-  --no_progress                              Disable progressive validation
-  --swap_resistance arg (Default: 4)         Higher = more resistance to swap, default=4
-[Reduction] Low Rank Quadratics Options:
-  --lrq arg                                  Use low rank quadratic features (required to enable 
-                                             this reduction)
-  --lrqdropout                               Use dropout training for low rank quadratic features
-[Reduction] Low Rank Quadratics FA Options:
-  --lrqfa arg                                Use low rank quadratic features with field aware 
-                                             weights (required to enable this reduction)
-[Reduction] Marginal Options:
-  --marginal arg                             Substitute marginal label estimates for ids (required 
-                                             to enable this reduction)
-  --initial_denominator arg (Default: 1)     Initial denominator
-  --initial_numerator arg (Default: 0.5)     Initial numerator
-  --compete                                  Enable competition with marginal features
-  --update_before_learn                      Update marginal values before learning
-  --unweighted_marginals                     Ignore importance weights when computing marginals
-  --decay arg (Default: 0)                   Decay multiplier per event (1e-3 for example)
-[Reduction] Memory Tree Options:
-  --memory_tree arg (Default: 0)             Make a memory tree with at most <n> nodes (required to
-                                             enable this reduction)
-  --max_number_of_labels arg (Default: 10)   Max number of unique label
-  --leaf_example_multiplier arg (Default: 1) Multiplier on examples per leaf (default = log nodes)
-  --alpha arg (Default: 0.1)                 Alpha
-  --dream_repeats arg (Default: 1)           Number of dream operations per example (default = 1)
-  --top_K arg (Default: 1)                   Top K prediction error
-  --learn_at_leaf                            Enable learning at leaf
-  --oas                                      Use oas at the leaf
-  --dream_at_update arg (Default: 0)         Turn on dream operations at reward based update as 
-                                             well
-  --online                                   Turn on dream operations at reward based update as 
-                                             well
-[Reduction] Multilabel One Against All Options:
-  --multilabel_oaa arg                       One-against-all multilabel with <k> labels (required 
-                                             to enable this reduction)
-  --probabilities                            Predict probabilities of all classes
-  --link arg (Default: identity)             Specify the link function. Choices: {glf1, identity, 
-                                             logistic, poisson}
-[Reduction] Multiworld Testing Options:
-  --multiworld_test arg                      Evaluate features as a policies (required to enable 
-                                             this reduction)
-  --learn arg                                Do Contextual Bandit learning on <n> classes
-  --exclude_eval                             Discard mwt policy features before learning
-[Reduction] Matrix Factorization Reduction Options:
-  --new_mf arg                               Rank for reduction-based matrix factorization 
-                                             (required to enable this reduction)
-[Reduction] Neural Network Options:
-  --nn arg                                   Sigmoidal feedforward network with <k> hidden units 
-                                             (required to enable this reduction)
-  --inpass                                   Train or test sigmoidal feedforward network with input
-                                             passthrough
-  --multitask                                Share hidden layer across all reduced tasks
-  --dropout                                  Train or test sigmoidal feedforward network using 
-                                             dropout
-  --meanfield                                Train or test sigmoidal feedforward network using mean
-                                             field
-[Reduction] Noop Base Learner Options:
-  --noop                                     Do no learning (required to enable this reduction)
-[Reduction] One Against All Options:
-  --oaa arg                                  One-against-all multiclass with <k> labels (required 
-                                             to enable this reduction)
-  --oaa_subsample arg                        Subsample this number of negative examples when 
-                                             learning
-  --probabilities                            Predict probabilities of all classes
-  --scores                                   Output raw scores per class
-  --indexing arg                             Choose between 0 or 1-indexing. Choices: {0, 1}
-[Reduction] Offset Tree Options:
-  --ot arg                                   Offset tree with <k> labels (required to enable this 
-                                             reduction)
-[Reduction] Probabilistic Label Tree Options:
-  --plt arg                                  Probabilistic Label Tree with <k> labels (required to 
-                                             enable this reduction)
-  --kary_tree arg (Default: 2)               Use <k>-ary tree
-  --threshold arg (Default: 0.5)             Predict labels with conditional marginal probability 
-                                             greater than <thr> threshold
-  --top_k arg (Default: 0)                   Predict top-<k> labels instead of labels above 
-                                             threshold
-[Reduction] Convert Discrete PMF into Continuous PDF Options:
-  --pmf_to_pdf arg (Default: 0)              Number of discrete actions <k> for pmf_to_pdf 
-                                             (required to enable this reduction)
-  --min_value arg                            Minimum continuous value
-  --max_value arg                            Maximum continuous value
-  --bandwidth arg                            Bandwidth (radius) of randomization around discrete 
-                                             actions in terms of continuous range. By default will 
-                                             be set to half of the continuous action unit-range 
-                                             resulting in smoothing that stays inside the action 
-                                             space unit-range:
-                                             unit_range = (max_value - min_value)/num-of-actions
-                                             default bandwidth = unit_range / 2.0
-  --first_only                               Use user provided first action or user provided pdf or
-                                             uniform random
-[Reduction] Print Psuedolearner Options:
-  --print                                    Print examples (required to enable this reduction)
-[Reduction] Gradient Descent Matrix Factorization Options:
-  --rank arg                                 Rank for matrix factorization (required to enable this
-                                             reduction)
-  --bfgs                                     Option not supported by this reduction
-  --conjugate_gradient                       Option not supported by this reduction
-[Reduction] Recall Tree Options:
-  --recall_tree arg                          Use online tree for multiclass (required to enable 
-                                             this reduction)
-  --max_candidates arg                       Maximum number of labels per leaf in the tree
-  --bern_hyper arg (Default: 1)              Recall tree depth penalty
-  --max_depth arg                            Maximum depth of the tree, default log_2 (#classes)
-  --node_only                                Only use node features, not full path features
-  --randomized_routing                       Randomized routing
-[Reduction] Experience Replay / replay_b Options:
-  --replay_b arg                             Use experience replay at a specified level 
-                                             [b=classification/regression, m=multiclass, c=cost 
-                                             sensitive] with specified buffer size (required to 
-                                             enable this reduction)
-  --replay_b_count arg (Default: 1)          How many times (in expectation) should each example be
-                                             played (default: 1 = permuting)
-[Reduction] Experience Replay / replay_c Options:
-  --replay_c arg                             Use experience replay at a specified level 
-                                             [b=classification/regression, m=multiclass, c=cost 
-                                             sensitive] with specified buffer size (required to 
-                                             enable this reduction)
-  --replay_c_count arg (Default: 1)          How many times (in expectation) should each example be
-                                             played (default: 1 = permuting)
-[Reduction] Experience Replay / replay_m Options:
-  --replay_m arg                             Use experience replay at a specified level 
-                                             [b=classification/regression, m=multiclass, c=cost 
-                                             sensitive] with specified buffer size (required to 
-                                             enable this reduction)
-  --replay_m_count arg (Default: 1)          How many times (in expectation) should each example be
-                                             played (default: 1 = permuting)
-[Reduction] Continuous Actions: Sample Pdf Options:
-  --sample_pdf                               Sample a pdf and pick a continuous valued action 
-                                             (required to enable this reduction)
-[Reduction] Scorer Options:
-  --link arg (Default: identity)             Specify the link function. Choices: {glf1, identity, 
-                                             logistic, poisson}
-[Reduction] Search Options:
-  --search arg (Default: 1)                  Use learning to search, argument=maximum action id or 
-                                             0 for LDF
-  --search_task arg                          The search task (use "--search_task list" to get a 
-                                             list of available tasks). Choices: {argmax, 
-                                             dep_parser, entity_relation, graph, hook, list, 
-                                             multiclasstask, sequence, sequence_ctg, 
-                                             sequence_demoldf, sequencespan} (required to enable 
-                                             this reduction)
-  --search_metatask arg                      The search metatask (use "--search_metatask list" to 
-                                             get a list of available metatasks Note: a valid 
-                                             search_task needs to be supplied in addition for this 
-                                             to output.)
-  --search_interpolation arg                 At what level should interpolation happen? 
-                                             [*data|policy]
-  --search_rollout arg                       How should rollouts be executed. Choices: {learn, mix,
-                                             mix_per_roll, mix_per_state, none, oracle, policy, 
-                                             ref}
-  --search_rollin arg                        How should past trajectories be generated. Choices: 
-                                             {learn, mix, mix_per_roll, mix_per_state, oracle, 
-                                             policy, ref}
-  --search_passes_per_policy arg (Default: 1)
-                                             Number of passes per policy (only valid for 
-                                             search_interpolation=policy)
-  --search_beta arg (Default: 0.5)           Interpolation rate for policies (only valid for 
-                                             search_interpolation=policy)
-  --search_alpha arg (Default: 1e-10)        Annealed beta = 1-(1-alpha)^t (only valid for 
-                                             search_interpolation=data)
-  --search_total_nb_policies arg             If we are going to train the policies through multiple
-                                             separate calls to vw, we need to specify this 
-                                             parameter and tell vw how many policies are eventually
-                                             going to be trained
-  --search_trained_nb_policies arg           The number of trained policies in a file
-  --search_allowed_transitions arg           Read file of allowed transitions [def: all transitions
-                                             are allowed]
-  --search_subsample_time arg                Instead of training at all timesteps, use a subset. if
-                                             value in (0,1), train on a random v%. if v>=1, train 
-                                             on precisely v steps per example, if v<=-1, use active
-                                             learning
-  --search_neighbor_features arg             Copy features from neighboring lines. argument looks 
-                                             like: '-1:a,+2' meaning copy previous line namespace a
-                                             and next next line from namespace _unnamed_, where ','
-                                             separates them
-  --search_rollout_num_steps arg (Default: 0)
-                                             How many calls of "loss" before we stop really 
-                                             predicting on rollouts and switch to oracle (default 
-                                             means "infinite")
-  --search_history_length arg (Default: 1)   Some tasks allow you to specify how much history their
-                                             depend on; specify that here
-  --search_no_caching                        Turn off the built-in caching ability (makes things 
-                                             slower, but technically more safe)
-  --search_xv                                Train two separate policies, alternating 
-                                             prediction/learning
-  --search_perturb_oracle arg (Default: 0)   Perturb the oracle on rollin with this probability
-  --search_linear_ordering                   Insist on generating examples in linear order (def: 
-                                             hoopla permutation)
-  --search_active_verify arg                 Verify that active learning is doing the right thing 
-                                             (arg = multiplier, should be = cost_range * range_c)
-  --search_save_every_k_runs arg (Default: 0)
-                                             Save model every k runs
+    -d, --data arg                          Example set (type: str)
+    --daemon                                Persistent daemon mode on port 26542 (type: bool)
+    --foreground                            In persistent daemon mode, do not run in the background (type:
+                                            bool)
+    --port arg                              Port to listen on; use 0 to pick unused port (type: uint)
+    --num_children arg                      Number of children for persistent daemon mode (type: uint)
+    --pid_file arg                          Write pid file in persistent daemon mode (type: str)
+    --port_file arg                         Write port used in persistent daemon mode (type: str)
+    -c, --cache                             Use a cache.  The default is <data>.cache (type: bool)
+    --cache_file args...                    The location(s) of cache_file (type: list[str])
+    --json                                  Enable JSON parsing (type: bool)
+    --dsjson                                Enable Decision Service JSON parsing (type: bool)
+    -k, --kill_cache                        Do not reuse existing cache: create a new one always (type: bool)
+    --compressed                            use gzip format whenever possible. If a cache file is being created,
+                                            this option creates a compressed cache file. A mixture of raw-text
+                                            & compressed inputs are supported with autodetection. (type:
+                                            bool)
+    --no_stdin                              Do not default to reading from stdin (type: bool)
+    --no_daemon                             Force a loaded daemon or active learning model to accept local
+                                            input instead of starting in daemon mode (type: bool)
+    --chain_hash                            Enable chain hash in JSON for feature name and string feature
+                                            value. e.g. {'A': {'B': 'C'}} is hashed as A^B^C. (type: bool,
+                                            keep)
+    --flatbuffer                            Data file will be interpreted as a flatbuffer file (type: bool)
+Logging Options:
+    --quiet                                 Don't output diagnostics and progress updates. Supplying this
+                                            implies --log_level off and --driver_output_off. Supplying this
+                                            overrides an explicit log_level argument. (type: bool)
+    --driver_output_off                     Disable output for the driver (type: bool)
+    --driver_output arg                     Specify the stream to output driver output to (type: str, default:
+                                            stderr, choices {stderr, stdout})
+    --log_level arg                         Log level for logging messages. Specifying this wil override
+                                            --quiet for log output (type: str, default: info, choices {critical,
+                                            error, info, off, warn})
+    --log_output arg                        Specify the stream to output log messages to. In the past VW's
+                                            choice of stream for logging messages wasn't consistent. Supplying
+                                            compat will maintain that old behavior. Compat is now deprecated
+                                            so it is recommended that stdout or stderr is chosen. (type:
+                                            str, default: stdout, choices {compat, stderr, stdout})
+    --limit_output arg                      Avoid chatty output. Limit total printed lines. 0 means unbounded
+                                            (type: uint, default: 0)
 Network sending Options:
-  --sendto arg                               Send examples to <host> (required to enable this 
-                                             reduction)
+    --sendto arg                            Send examples to <host> (type: str, keep, necessary)
+Output Model Options:
+    -f, --final_regressor arg               Final regressor (type: str)
+    --readable_model arg                    Output human-readable final regressor with numeric features (type:
+                                            str)
+    --invert_hash arg                       Output human-readable final regressor with feature names.  Computationally
+                                            expensive (type: str)
+    --predict_only_model                    Do not save extra state for learning to be resumed. Stored model
+                                            can only be used for prediction (type: bool)
+    --save_resume                           This flag is now deprecated and models can continue learning
+                                            by default (type: bool)
+    --preserve_performance_counters         Reset performance counters when warmstarting (type: bool)
+    --save_per_pass                         Save the model after every pass over data (type: bool)
+    --output_feature_regularizer_binary arg Per feature regularization output file (type: str)
+    --output_feature_regularizer_text arg   Per feature regularization output file, in text (type: str)
+    --id arg                                User supplied ID embedded into the final regressor (type: str)
+Parallelization Options:
+    --span_server arg                       Location of server for setting up spanning tree (type: str)
+    --unique_id arg                         Unique id used for cluster parallel jobs (type: uint, default:
+                                            0)
+    --total arg                             Total number of nodes used in cluster parallel job (type: uint,
+                                            default: 1)
+    --node arg                              Node number in cluster parallel job (type: uint, default: 0)
+    --span_server_port arg                  Port of the server for setting up spanning tree (type: int, default:
+                                            26543)
+Parser Options:
+    --ring_size arg                         Size of example ring (type: int, default: 256)
+    --example_queue_limit arg               Max number of examples to store after parsing but before the
+                                            learner has processed. Rarely needs to be changed. (type: int,
+                                            default: 256)
+    --strict_parse                          Throw on malformed examples (type: bool)
+Prediction Output Options:
+    -p, --predictions arg                   File to output predictions to (type: str)
+    -r, --raw_predictions arg               File to output unnormalized predictions to (type: str)
+Randomization Options:
+    --random_seed arg                       Seed random number generator (type: uint, default: 0)
+Update Options:
+    -l, --learning_rate arg                 Set learning rate (type: float, default: 0.5, keep)
+    --power_t arg                           T power value (type: float, default: 0.5, keep)
+    --decay_learning_rate arg               Set Decay factor for learning_rate between passes (type: float,
+                                            default: 1)
+    --initial_t arg                         Initial t value (type: float)
+    --feature_mask arg                      Use existing regressor to determine which parameters may be updated.
+                                             If no initial_regressor given, also used for initial weights.
+                                            (type: str)
+Weight Options:
+    -i, --initial_regressor args...         Initial regressor(s) (type: list[str])
+    --initial_weight arg                    Set all weights to an initial value of arg (type: float, default:
+                                            0)
+    --random_weights                        Make initial weights random (type: bool)
+    --normal_weights                        Make initial weights normal (type: bool)
+    --truncated_normal_weights              Make initial weights truncated normal (type: bool)
+    --sparse_weights                        Use a sparse datastructure for weights (type: bool)
+    --input_feature_regularizer arg         Per feature regularization input file (type: str)
+[Reduction]  Importance Weight Classes Options:
+    --classweight args...                   Importance weight multiplier for class (type: list[str], necessary)
+[Reduction] Active Learning Options:
+    --active                                Enable active learning (type: bool, keep, necessary)
+    --simulation                            Active learning simulation mode (type: bool)
+    --mellowness arg                        Active learning mellowness parameter c_0. Default 8 (type: float,
+                                            default: 8, keep)
+[Reduction] Active Learning with Cover Options:
+    --active_cover                          Enable active learning with cover (type: bool, keep, necessary)
+    --mellowness arg                        Active learning mellowness parameter c_0 (type: float, default:
+                                            8, keep)
+    --alpha arg                             Active learning variance upper bound parameter alpha (type: float,
+                                            default: 1)
+    --beta_scale arg                        Active learning variance upper bound parameter beta_scale (type:
+                                            float, default: 3.1622777)
+    --cover arg                             Cover size (type: uint, default: 12, keep)
+    --oracular                              Use Oracular-CAL style query or not (type: bool)
+[Reduction] Audit Regressor Options:
+    --audit_regressor arg                   Stores feature names and their regressor values. Same dataset
+                                            must be used for both regressor training and this mode. (type:
+                                            str, keep, necessary)
+[Reduction] Autolink Options:
+    --autolink arg                          Create link function with polynomial d (type: uint, keep, necessary)
+[Reduction] Automl Options:
+    --automl arg                            Experimental: Set number of live configs (type: uint, default:
+                                            3, keep, necessary)
+    --global_lease arg                      Set initial lease for automl interactions (type: uint, default:
+                                            10, keep)
+    --cm_type arg                           Set type of config manager (type: str, default: interaction,
+                                            choices {interaction}, keep)
+    --priority_type arg                     Set function to determine next config (type: str, default: none,
+                                            choices {least_exclusion, none}, keep)
+    --priority_challengers arg              Set number of priority challengers to use (type: int, default:
+                                            -1, keep)
+    --keep_configs                          Keep all configs after champ change (type: bool, keep)
+    --verbose_metrics                       Extended metrics for debugging (type: bool)
+    --oracle_type arg                       Set oracle to generate configs (type: str, default: one_diff,
+                                            choices {one_diff, rand}, keep)
+    --automl_alpha arg                      Set confidence interval for champion change (type: float, default:
+                                            0.05, keep)
+    --automl_tau arg                        Time constant for count decay (type: float, default: 0.999, keep)
+[Reduction] Baseline Options:
+    --baseline                              Learn an additive baseline (from constant features) and a residual
+                                            separately in regression (type: bool, keep, necessary)
+    --lr_multiplier arg                     Learning rate multiplier for baseline model (type: float, default:
+                                            1)
+    --global_only                           Use separate example with only global constant for baseline predictions
+                                            (type: bool, keep)
+    --check_enabled                         Only use baseline when the example contains enabled flag (type:
+                                            bool, keep)
+[Reduction] Baseline challenger Options:
+    --baseline_challenger_cb                Experimental: Build a CI around the baseline action and use it
+                                            instead of the model if it's perfoming better (type: bool, keep,
+                                            necessary)
+    --cb_c_alpha arg                        Confidence level for baseline (type: float, default: 0.05, keep)
+    --cb_c_tau arg                          Time constant for count decay (type: float, default: 0.999, keep)
+[Reduction] Binary Loss Options:
+    --binary                                Report loss as binary classification on -1,1 (type: bool, keep,
+                                            necessary)
+[Reduction] Boosting Options:
+    --boosting arg                          Online boosting with <N> weak learners (type: int, keep, necessary)
+    --gamma arg                             Weak learner's edge (=0.1), used only by online BBM (type: float,
+                                            default: 0.1)
+    --alg arg                               Specify the boosting algorithm: BBM (default), logistic (AdaBoost.OL.W),
+                                            adaptive (AdaBoost.OL) (type: str, default: BBM, choices {BBM,
+                                            adaptive, logistic}, keep)
+[Reduction] Bootstrap Options:
+    --bootstrap arg                         K-way bootstrap by online importance resampling (type: uint,
+                                            keep, necessary)
+    --bs_type arg                           Prediction type (type: str, default: mean, choices {mean, vote},
+                                            keep)
+[Reduction] CATS Tree Options:
+    --cats_tree arg                         CATS Tree with <k> labels (type: uint, keep, necessary)
+    --tree_bandwidth arg                    Tree bandwidth for continuous actions in terms of #actions (type:
+                                            uint, default: 0, keep)
+    --link arg                              The learner in each node must return a prediction in range [-1,1],
+                                            so only glf1 is allowed (type: str, choices {glf1}, keep)
+[Reduction] CB Distributionally Robust Optimization Options:
+    --cb_dro                                Use DRO for cb learning (type: bool, keep, necessary)
+    --cb_dro_alpha arg                      Confidence level for cb dro (type: float, default: 0.05, keep)
+    --cb_dro_tau arg                        Time constant for count decay for cb dro (type: float, default:
+                                            0.999, keep)
+    --cb_dro_wmax arg                       Maximum importance weight for cb_dro (type: float, default: inf,
+                                            keep)
+[Reduction] CB Sample Options:
+    --cb_sample                             Sample from CB pdf and swap top action (type: bool, keep, necessary)
+[Reduction] CBify Options:
+    --cbify arg                             Convert multiclass on <k> classes into a contextual bandit problem
+                                            (type: uint, keep, necessary)
+    --cbify_cs                              Consume cost-sensitive classification examples instead of multiclass
+                                            (type: bool)
+    --cbify_reg                             Consume regression examples instead of multiclass and cost sensitive
+                                            (type: bool)
+    --cats arg                              Continuous action tree with smoothing (type: uint, default: 0,
+                                            keep)
+    --cb_discrete                           Discretizes continuous space and adds cb_explore as option (type:
+                                            bool, keep)
+    --min_value arg                         Minimum continuous value (type: float, keep)
+    --max_value arg                         Maximum continuous value (type: float, keep)
+    --loss_option arg                       Loss options for regression - 0:squared, 1:absolute, 2:0/1 (type:
+                                            int, default: 0)
+    --loss_report arg                       Loss report option - 0:normalized, 1:denormalized (type: int,
+                                            default: 0)
+    --loss_01_ratio arg                     Ratio of zero loss for 0/1 loss (type: float, default: 0.1)
+    --loss0 arg                             Loss for correct label (type: float, default: 0)
+    --loss1 arg                             Loss for incorrect label (type: float, default: 1)
+    --flip_loss_sign                        Flip sign of loss (use reward instead of loss) (type: bool, keep)
+[Reduction] Conditional Contextual Bandit Exploration with ADF Options:
+    --ccb_explore_adf                       Do Conditional Contextual Bandit learning with multiline action
+                                            dependent features (type: bool, keep, necessary)
+    --all_slots_loss                        Report average loss from all slots (type: bool)
+    --no_predict                            Do not do a prediction when training (type: bool)
+    --cb_type arg                           Contextual bandit method to use (type: str, default: mtr, choices
+                                            {dm, dr, ips, mtr, sm}, keep)
+[Reduction] Confidence Options:
+    --confidence                            Get confidence for binary predictions (type: bool, keep, necessary)
+    --confidence_after_training             Confidence after training (type: bool)
+[Reduction] Conjugate Gradient Options:
+    --conjugate_gradient                    Use conjugate gradient based optimization (type: bool, keep,
+                                            necessary)
+[Reduction] Contextual Bandit Exploration Options:
+    --cb_explore arg                        Online explore-exploit for a <k> action contextual bandit problem
+                                            (type: uint, keep, necessary)
+    --first arg                             Tau-first exploration (type: uint, keep)
+    --epsilon arg                           Epsilon-greedy exploration (type: float, default: 0.05, keep)
+    --bag arg                               Bagging-based exploration (type: uint, keep)
+    --cover arg                             Online cover based exploration (type: uint, keep)
+    --nounif                                Do not explore uniformly on zero-probability actions in cover
+                                            (type: bool, keep)
+    --psi arg                               Disagreement parameter for cover (type: float, default: 1, keep)
+[Reduction] Contextual Bandit Exploration with ADF (RegCB) Options:
+    --cb_explore_adf                        Online explore-exploit for a contextual bandit problem with multiline
+                                            action dependent features (type: bool, keep, necessary)
+    --regcb                                 RegCB-elim exploration (type: bool, keep, necessary)
+    --regcbopt                              RegCB optimistic exploration (type: bool, keep)
+    --mellowness arg                        RegCB mellowness parameter c_0. Default 0.1 (type: float, default:
+                                            0.1, keep)
+    --cb_min_cost arg                       Lower bound on cost (type: float, default: 0, keep)
+    --cb_max_cost arg                       Upper bound on cost (type: float, default: 1, keep)
+    --first_only                            Only explore the first action in a tie-breaking event (type:
+                                            bool, keep)
+    --cb_type arg                           Contextual bandit method to use. RegCB only supports supervised
+                                            regression (mtr) (type: str, default: mtr, choices {mtr}, keep)
+[Reduction] Contextual Bandit Exploration with ADF (SquareCB) Options:
+    --cb_explore_adf                        Online explore-exploit for a contextual bandit problem with multiline
+                                            action dependent features (type: bool, keep, necessary)
+    --squarecb                              SquareCB exploration (type: bool, keep, necessary)
+    --gamma_scale arg                       Sets SquareCB greediness parameter to gamma=[gamma_scale]*[num
+                                            examples]^1/2 (type: float, default: 10, keep)
+    --gamma_exponent arg                    Exponent on [num examples] in SquareCB greediness parameter gamma
+                                            (type: float, default: 0.5, keep)
+    --elim                                  Only perform SquareCB exploration over plausible actions (computed
+                                            via RegCB strategy) (type: bool, keep)
+    --mellowness arg                        Mellowness parameter c_0 for computing plausible action set.
+                                            Only used with --elim (type: float, default: 0.001, keep)
+    --cb_min_cost arg                       Lower bound on cost. Only used with --elim (type: float, default:
+                                            0, keep)
+    --cb_max_cost arg                       Upper bound on cost. Only used with --elim (type: float, default:
+                                            1, keep)
+    --cb_type arg                           Contextual bandit method to use. SquareCB only supports supervised
+                                            regression (mtr) (type: str, default: mtr, choices {mtr}, keep)
+[Reduction] Contextual Bandit Exploration with ADF (bagging) Options:
+    --cb_explore_adf                        Online explore-exploit for a contextual bandit problem with multiline
+                                            action dependent features (type: bool, keep, necessary)
+    --epsilon arg                           Epsilon-greedy exploration (type: float, default: 0, keep)
+    --bag arg                               Bagging-based exploration (type: uint, keep, necessary)
+    --greedify                              Always update first policy once in bagging (type: bool, keep)
+    --first_only                            Only explore the first action in a tie-breaking event (type:
+                                            bool, keep)
+[Reduction] Contextual Bandit Exploration with ADF (greedy) Options:
+    --cb_explore_adf                        Online explore-exploit for a contextual bandit problem with multiline
+                                            action dependent features (type: bool, keep, necessary)
+    --epsilon arg                           Epsilon-greedy exploration (type: float, default: 0.05, keep)
+    --first_only                            Only explore the first action in a tie-breaking event (type:
+                                            bool, keep)
+[Reduction] Contextual Bandit Exploration with ADF (online cover) Options:
+    --cb_explore_adf                        Online explore-exploit for a contextual bandit problem with multiline
+                                            action dependent features (type: bool, keep, necessary)
+    --cover arg                             Online cover based exploration (type: uint, keep, necessary)
+    --psi arg                               Disagreement parameter for cover (type: float, default: 1, keep)
+    --nounif                                Do not explore uniformly on zero-probability actions in cover
+                                            (type: bool, keep)
+    --first_only                            Only explore the first action in a tie-breaking event (type:
+                                            bool, keep)
+    --cb_type arg                           Contextual bandit method to use (type: str, default: mtr, choices
+                                            {dr, ips, mtr}, keep)
+    --epsilon arg                           Epsilon-greedy exploration (type: float, default: 0.05, keep)
+[Reduction] Contextual Bandit Exploration with ADF (rnd) Options:
+    --cb_explore_adf                        Online explore-exploit for a contextual bandit problem with multiline
+                                            action dependent features (type: bool, keep, necessary)
+    --epsilon arg                           Minimum exploration probability (type: float, default: 0, keep)
+    --rnd arg                               Rnd based exploration (type: uint, default: 1, keep, necessary)
+    --rnd_alpha arg                         CI width for rnd (bigger => more exploration on repeating features)
+                                            (type: float, default: 0.1, keep)
+    --rnd_invlambda arg                     Covariance regularization strength rnd (bigger => more exploration
+                                            on new features) (type: float, default: 0.1, keep)
+[Reduction] Contextual Bandit Exploration with ADF (softmax) Options:
+    --cb_explore_adf                        Online explore-exploit for a contextual bandit problem with multiline
+                                            action dependent features (type: bool, keep, necessary)
+    --epsilon arg                           Epsilon-greedy exploration (type: float, default: 0, keep)
+    --softmax                               Softmax exploration (type: bool, keep, necessary)
+    --lambda arg                            Parameter for softmax (type: float, default: 1, keep)
+[Reduction] Contextual Bandit Exploration with ADF (synthetic cover) Options:
+    --cb_explore_adf                        Online explore-exploit for a contextual bandit problem with multiline
+                                            action dependent features (type: bool, keep, necessary)
+    --epsilon arg                           Epsilon-greedy exploration (type: float, default: 0, keep)
+    --synthcover                            Use synthetic cover exploration (type: bool, keep, necessary)
+    --synthcoverpsi arg                     Exploration reward bonus (type: float, default: 0.1, keep)
+    --synthcoversize arg                    Number of policies in cover (type: uint, default: 100, keep)
+[Reduction] Contextual Bandit Exploration with ADF (tau-first) Options:
+    --cb_explore_adf                        Online explore-exploit for a contextual bandit problem with multiline
+                                            action dependent features (type: bool, keep, necessary)
+    --first arg                             Tau-first exploration (type: uint, keep, necessary)
+    --epsilon arg                           Epsilon-greedy exploration (type: float, default: 0, keep)
+[Reduction] Contextual Bandit Options:
+    --cb arg                                Use contextual bandit learning with <k> costs (type: uint, keep,
+                                            necessary)
+    --cb_type arg                           Contextual bandit method to use (type: str, default: dr, choices
+                                            {dm, dr, ips, mtr, sm}, keep)
+    --eval                                  Evaluate a policy rather than optimizing (type: bool)
+    --cb_force_legacy                       Default to non-adf cb implementation (cb_to_cb_adf) (type: bool,
+                                            keep)
+[Reduction] Contextual Bandit with Action Dependent Features Options:
+    --cb_adf                                Do Contextual Bandit learning with multiline action dependent
+                                            features (type: bool, keep, necessary)
+    --rank_all                              Return actions sorted by score order (type: bool, keep)
+    --no_predict                            Do not do a prediction when training (type: bool)
+    --clip_p arg                            Clipping probability in importance weight. Default: 0.f (no clipping)
+                                            (type: float, default: 0, keep)
+    --cb_type arg                           Contextual bandit method to use (type: str, default: mtr, choices
+                                            {dm, dr, ips, mtr, sm}, keep)
+[Reduction] Contextual Bandit: cb -> cb_adf Options:
+    --cb_to_cbadf arg                       Flag is unused and has no effect. It should not be passed. The
+                                            cb_to_cbadf reduction is automatically enabled if cb, cb_explore
+                                            or cbify are used. This flag will be removed in a future release
+                                            but not the functionality. (type: uint)
+    --cb arg                                Maps cb_adf to cb. Disable with cb_force_legacy (type: uint,
+                                            keep)
+    --cb_explore arg                        Translate cb explore to cb_explore_adf. Disable with cb_force_legacy
+                                            (type: uint, keep)
+    --cbify arg                             Translate cbify to cb_adf. Disable with cb_force_legacy (type:
+                                            uint, keep)
+    --cb_force_legacy                       Default to non-adf cb implementation (cb_algs) (type: bool, keep)
+[Reduction] Continuous Action Contextual Bandit using Zeroth-Order Optimization Options:
+    --cbzo                                  Solve 1-slot Continuous Action Contextual Bandit using Zeroth-Order
+                                            Optimization (type: bool, keep, necessary)
+    --policy arg                            Policy/Model to Learn (type: str, default: linear, keep)
+    --radius arg                            Exploration Radius (type: float, default: 0.1, keep)
+[Reduction] Continuous Action Tree with Smoothing with Full Pdf Options:
+    --cats_pdf arg                          Number of tree labels <k> for cats_pdf (type: int, keep, necessary)
+[Reduction] Continuous Actions Tree with Smoothing Options:
+    --cats arg                              Number of discrete actions <k> for cats (type: uint, keep, necessary)
+    --min_value arg                         Minimum continuous value (type: float, keep)
+    --max_value arg                         Maximum continuous value (type: float, keep)
+    --bandwidth arg                         Bandwidth (radius) of randomization around discrete actions in
+                                            terms of continuous range. By default will be set to half of
+                                            the continuous action unit-range resulting in smoothing that
+                                            stays inside the action space unit-range:
+                                            unit_range = (max_value
+                                            - min_value)/num-of-actions
+                                            default bandwidth = unit_range /
+                                            2.0 (type: float, keep)
+[Reduction] Continuous Actions: Convert to Pmf Options:
+    --get_pmf                               Convert a single multiclass prediction to a pmf (type: bool,
+                                            keep, necessary)
+[Reduction] Continuous Actions: Sample Pdf Options:
+    --sample_pdf                            Sample a pdf and pick a continuous valued action (type: bool,
+                                            keep, necessary)
+[Reduction] Continuous Actions: cb_explore_pdf Options:
+    --cb_explore_pdf                        Sample a pdf and pick a continuous valued action (type: bool,
+                                            keep, necessary)
+    --epsilon arg                           Epsilon-greedy exploration (type: float, default: 0.05, keep)
+    --min_value arg                         Min value for continuous range (type: float, default: 0, keep)
+    --max_value arg                         Max value for continuous range (type: float, default: 1, keep)
+    --first_only                            Use user provided first action or user provided pdf or uniform
+                                            random (type: bool, keep)
+[Reduction] Convert Discrete PMF into Continuous PDF Options:
+    --pmf_to_pdf arg                        Number of discrete actions <k> for pmf_to_pdf (type: uint, default:
+                                            0, keep, necessary)
+    --min_value arg                         Minimum continuous value (type: float, keep)
+    --max_value arg                         Maximum continuous value (type: float, keep)
+    --bandwidth arg                         Bandwidth (radius) of randomization around discrete actions in
+                                            terms of continuous range. By default will be set to half of
+                                            the continuous action unit-range resulting in smoothing that
+                                            stays inside the action space unit-range:
+                                            unit_range = (max_value
+                                            - min_value)/num-of-actions
+                                            default bandwidth = unit_range /
+                                            2.0 (type: float, keep)
+    --first_only                            Use user provided first action or user provided pdf or uniform
+                                            random (type: bool, keep)
+[Reduction] Cost Sensitive Active Learning Options:
+    --cs_active arg                         Cost-sensitive active learning with <k> costs (type: uint, keep,
+                                            necessary)
+    --simulation                            Cost-sensitive active learning simulation mode (type: bool)
+    --baseline                              Cost-sensitive active learning baseline (type: bool)
+    --domination arg                        Cost-sensitive active learning use domination (type: int, default:
+                                            1)
+    --mellowness arg                        Mellowness parameter c_0 (type: float, default: 0.1, keep)
+    --range_c arg                           Parameter controlling the threshold for per-label cost uncertainty
+                                            (type: float, default: 0.5)
+    --max_labels arg                        Maximum number of label queries (type: uint, default: 18446744073709551615)
+    --min_labels arg                        Minimum number of label queries (type: uint, default: 18446744073709551615)
+    --cost_max arg                          Cost upper bound (type: float, default: 1)
+    --cost_min arg                          Cost lower bound (type: float, default: 0)
+    --csa_debug                             Print debug stuff for cs_active (type: bool)
+[Reduction] Cost Sensitive One Against All Options:
+    --csoaa arg                             One-against-all multiclass with <k> costs (type: uint, keep,
+                                            necessary)
+    --indexing arg                          Choose between 0 or 1-indexing (type: int, choices {0, 1}, keep)
+[Reduction] Cost Sensitive One Against All with Label Dependent Features Options:
+    --csoaa_ldf arg                         Use one-against-all multiclass learning with label dependent
+                                            features (type: str, keep, necessary)
+    --ldf_override arg                      Override singleline or multiline from csoaa_ldf or wap_ldf, eg
+                                            if stored in file (type: str)
+    --csoaa_rank                            Return actions sorted by score order (type: bool, keep)
+    --probabilities                         Predict probabilities of all classes (type: bool, keep)
+[Reduction] Cost Sensitive Weighted All-Pairs with Label Dependent Features Options:
+    --wap_ldf arg                           Use weighted all-pairs multiclass learning with label dependent
+                                            features. Specify singleline or multiline. (type: str, keep,
+                                            necessary)
+[Reduction] Count label Options:
+    --dont_output_best_constant             Don't track the best constant used in the output (type: bool)
+[Reduction] Debug Metrics Options:
+    --extra_metrics arg                     Specify filename to write metrics to. Note: There is no fixed
+                                            schema (type: str, necessary)
+[Reduction] Error Correcting Tournament Options:
+    --ect arg                               Error correcting tournament with <k> labels (type: uint, keep,
+                                            necessary)
+    --error arg                             Errors allowed by ECT (type: uint, default: 0, keep)
+    --link arg                              Specify the link function (type: str, default: identity, choices
+                                            {glf1, identity, logistic, poisson}, keep)
+[Reduction] Experience Replay / replay_b Options:
+    --replay_b arg                          Use experience replay at a specified level [b=classification/regression,
+                                            m=multiclass, c=cost sensitive] with specified buffer size (type:
+                                            uint, keep, necessary)
+    --replay_b_count arg                    How many times (in expectation) should each example be played
+                                            (default: 1 = permuting) (type: uint, default: 1)
+[Reduction] Experience Replay / replay_c Options:
+    --replay_c arg                          Use experience replay at a specified level [b=classification/regression,
+                                            m=multiclass, c=cost sensitive] with specified buffer size (type:
+                                            uint, keep, necessary)
+    --replay_c_count arg                    How many times (in expectation) should each example be played
+                                            (default: 1 = permuting) (type: uint, default: 1)
+[Reduction] Experience Replay / replay_m Options:
+    --replay_m arg                          Use experience replay at a specified level [b=classification/regression,
+                                            m=multiclass, c=cost sensitive] with specified buffer size (type:
+                                            uint, keep, necessary)
+    --replay_m_count arg                    How many times (in expectation) should each example be played
+                                            (default: 1 = permuting) (type: uint, default: 1)
+[Reduction] Explore Evaluation Options:
+    --explore_eval                          Evaluate explore_eval adf policies (type: bool, keep, necessary)
+    --multiplier arg                        Multiplier used to make all rejection sample probabilities <=
+                                            1 (type: float)
+[Reduction] Follow the Regularized Leader - Coin Options:
+    --coin                                  Coin betting optimizer (type: bool, keep, necessary)
+    --ftrl_alpha arg                        Learning rate for FTRL optimization (type: float)
+    --ftrl_beta arg                         Learning rate for FTRL optimization (type: float)
+[Reduction] Follow the Regularized Leader - FTRL Options:
+    --ftrl                                  FTRL: Follow the Proximal Regularized Leader (type: bool, keep,
+                                            necessary)
+    --ftrl_alpha arg                        Learning rate for FTRL optimization (type: float)
+    --ftrl_beta arg                         Learning rate for FTRL optimization (type: float)
+[Reduction] Follow the Regularized Leader - Pistol Options:
+    --pistol                                PiSTOL: Parameter-free STOchastic Learning (type: bool, keep,
+                                            necessary)
+    --ftrl_alpha arg                        Learning rate for FTRL optimization (type: float)
+    --ftrl_beta arg                         Learning rate for FTRL optimization (type: float)
+[Reduction] FreeGrad Options:
+    --freegrad                              Diagonal FreeGrad Algorithm (type: bool, keep, necessary)
+    --restart                               Use the FreeRange restarts (type: bool)
+    --project                               Project the outputs to adapt to both the lipschitz and comparator
+                                            norm (type: bool)
+    --radius arg                            Radius of the l2-ball for the projection. If not supplied, an
+                                            adaptive radius will be used (type: float)
+    --fepsilon arg                          Initial wealth (type: float, default: 1)
+[Reduction] Generate Interactions Options:
+    --leave_duplicate_interactions          Don't remove interactions with duplicate combinations of namespaces.
+                                            For ex. this is a duplicate: '-q ab -q ba' and a lot more in
+                                            '-q ::'. (type: bool)
+[Reduction] Gradient Descent Matrix Factorization Options:
+    --rank arg                              Rank for matrix factorization (type: uint, keep, necessary)
+    --bfgs                                  Option not supported by this reduction (type: bool)
+    --conjugate_gradient                    Option not supported by this reduction (type: bool)
+[Reduction] Gradient Descent Options:
+    --sgd                                   Use regular stochastic gradient descent update (type: bool, keep)
+    --adaptive                              Use adaptive, individual learning rates (type: bool, keep)
+    --adax                                  Use adaptive learning rates with x^2 instead of g^2x^2 (type:
+                                            bool)
+    --invariant                             Use safe/importance aware updates (type: bool, keep)
+    --normalized                            Use per feature normalized updates (type: bool, keep)
+    --sparse_l2 arg                         Degree of l2 regularization applied to activated sparse parameters
+                                            (type: float, default: 0)
+    --l1_state arg                          Amount of accumulated implicit l1 regularization (type: float,
+                                            default: 0)
+    --l2_state arg                          Amount of accumulated implicit l2 regularization (type: float,
+                                            default: 1)
+[Reduction] Interact via Elementwise Multiplication Options:
+    --interact arg                          Put weights on feature products from namespaces <n1> and <n2>
+                                            (type: str, keep, necessary)
+[Reduction] Interaction Grounded Learning Options:
+    --experimental_igl                      Experimental: Do Interaction Grounding with multiline action
+                                            dependent features (type: bool, keep, necessary)
+[Reduction] Kernel SVM Options:
+    --ksvm                                  Kernel svm (type: bool, keep, necessary)
+    --reprocess arg                         Number of reprocess steps for LASVM (type: uint, default: 1)
+    --pool_greedy                           Use greedy selection on mini pools (type: bool)
+    --para_active                           Do parallel active learning (type: bool)
+    --pool_size arg                         Size of pools for active learning (type: uint, default: 1)
+    --subsample arg                         Number of items to subsample from the pool (type: uint, default:
+                                            1)
+    --kernel arg                            Type of kernel (type: str, default: linear, choices {linear,
+                                            poly, rbf}, keep)
+    --bandwidth arg                         Bandwidth of rbf kernel (type: float, default: 1, keep)
+    --degree arg                            Degree of poly kernel (type: int, default: 2, keep)
+[Reduction] LBFGS and Conjugate Gradient Options:
+    --bfgs                                  Use conjugate gradient based optimization (type: bool, keep,
+                                            necessary)
+    --hessian_on                            Use second derivative in line search (type: bool)
+    --mem arg                               Memory in bfgs (type: int, default: 15)
+    --termination arg                       Termination threshold (type: float, default: 0.001)
+[Reduction] Latent Dirichlet Allocation Options:
+    --lda arg                               Run lda with <int> topics (type: uint, keep, necessary)
+    --lda_alpha arg                         Prior on sparsity of per-document topic weights (type: float,
+                                            default: 0.1, keep)
+    --lda_rho arg                           Prior on sparsity of topic distributions (type: float, default:
+                                            0.1, keep)
+    --lda_D arg                             Number of documents (type: float, default: 10000)
+    --lda_epsilon arg                       Loop convergence threshold (type: float, default: 0.001)
+    --minibatch arg                         Minibatch size, for LDA (type: uint, default: 1)
+    --math-mode arg                         Math mode: 0=simd, 1=accuracy, 2=fast-approx (type: int, default:
+                                            0, choices {0, 1, 2})
+    --metrics                               Compute metrics (type: bool)
+[Reduction] Logarithmic Time Multiclass Tree Options:
+    --log_multi arg                         Use online tree for multiclass (type: uint, keep, necessary)
+    --no_progress                           Disable progressive validation (type: bool)
+    --swap_resistance arg                   Higher = more resistance to swap, default=4 (type: uint, default:
+                                            4)
+[Reduction] Low Rank Quadratics FA Options:
+    --lrqfa arg                             Use low rank quadratic features with field aware weights (type:
+                                            str, keep, necessary)
+[Reduction] Low Rank Quadratics Options:
+    --lrq args...                           Use low rank quadratic features (type: list[str], keep, necessary)
+    --lrqdropout                            Use dropout training for low rank quadratic features (type: bool,
+                                            keep)
+[Reduction] Make csoaa_ldf into Contextual Bandit Options:
+    --cbify_ldf                             Convert csoaa_ldf into a contextual bandit problem (type: bool,
+                                            keep, necessary)
+    --loss0 arg                             Loss for correct label (type: float, default: 0)
+    --loss1 arg                             Loss for incorrect label (type: float, default: 1)
+[Reduction] Marginal Options:
+    --marginal arg                          Substitute marginal label estimates for ids (type: str, keep,
+                                            necessary)
+    --initial_denominator arg               Initial denominator (type: float, default: 1)
+    --initial_numerator arg                 Initial numerator (type: float, default: 0.5)
+    --compete                               Enable competition with marginal features (type: bool)
+    --update_before_learn                   Update marginal values before learning (type: bool)
+    --unweighted_marginals                  Ignore importance weights when computing marginals (type: bool)
+    --decay arg                             Decay multiplier per event (1e-3 for example) (type: float, default:
+                                            0)
+[Reduction] Matrix Factorization Reduction Options:
+    --new_mf arg                            Rank for reduction-based matrix factorization (type: uint, keep,
+                                            necessary)
+[Reduction] Memory Tree Options:
+    --memory_tree arg                       Make a memory tree with at most <n> nodes (type: uint, default:
+                                            0, keep, necessary)
+    --max_number_of_labels arg              Max number of unique label (type: uint, default: 10)
+    --leaf_example_multiplier arg           Multiplier on examples per leaf (default = log nodes) (type:
+                                            uint, default: 1)
+    --alpha arg                             Alpha (type: float, default: 0.1)
+    --dream_repeats arg                     Number of dream operations per example (default = 1) (type: uint,
+                                            default: 1)
+    --top_K arg                             Top K prediction error (type: int, default: 1)
+    --learn_at_leaf                         Enable learning at leaf (type: bool)
+    --oas                                   Use oas at the leaf (type: bool)
+    --dream_at_update arg                   Turn on dream operations at reward based update as well (type:
+                                            int, default: 0)
+    --online                                Turn on dream operations at reward based update as well (type:
+                                            bool)
+[Reduction] Multilabel One Against All Options:
+    --multilabel_oaa arg                    One-against-all multilabel with <k> labels (type: uint, keep,
+                                            necessary)
+    --probabilities                         Predict probabilities of all classes (type: bool)
+    --link arg                              Specify the link function (type: str, default: identity, choices
+                                            {glf1, identity, logistic, poisson}, keep)
+[Reduction] Multiworld Testing Options:
+    --multiworld_test arg                   Evaluate features as a policies (type: str, keep, necessary)
+    --learn arg                             Do Contextual Bandit learning on <n> classes (type: uint)
+    --exclude_eval                          Discard mwt policy features before learning (type: bool)
+[Reduction] Neural Network Options:
+    --nn arg                                Sigmoidal feedforward network with <k> hidden units (type: uint,
+                                            keep, necessary)
+    --inpass                                Train or test sigmoidal feedforward network with input passthrough
+                                            (type: bool, keep)
+    --multitask                             Share hidden layer across all reduced tasks (type: bool, keep)
+    --dropout                               Train or test sigmoidal feedforward network using dropout (type:
+                                            bool, keep)
+    --meanfield                             Train or test sigmoidal feedforward network using mean field
+                                            (type: bool)
+[Reduction] Noop Base Learner Options:
+    --noop                                  Do no learning (type: bool, keep, necessary)
+[Reduction] Offset Tree Options:
+    --ot arg                                Offset tree with <k> labels (type: uint, keep, necessary)
+[Reduction] OjaNewton Options:
+    --OjaNewton                             Online Newton with Oja's Sketch (type: bool, keep, necessary)
+    --sketch_size arg                       Size of sketch (type: int, default: 10)
+    --epoch_size arg                        Size of epoch (type: int, default: 1)
+    --alpha arg                             Mutiplicative constant for indentiy (type: float, default: 1)
+    --alpha_inverse arg                     One over alpha, similar to learning rate (type: float)
+    --learning_rate_cnt arg                 Constant for the learning rate 1/t (type: float, default: 2)
+    --normalize arg                         Normalize the features or not (type: str)
+    --random_init arg                       Randomize initialization of Oja or not (type: str)
+[Reduction] One Against All Options:
+    --oaa arg                               One-against-all multiclass with <k> labels (type: uint, keep,
+                                            necessary)
+    --oaa_subsample arg                     Subsample this number of negative examples when learning (type:
+                                            uint)
+    --probabilities                         Predict probabilities of all classes (type: bool)
+    --scores                                Output raw scores per class (type: bool)
+    --indexing arg                          Choose between 0 or 1-indexing (type: int, choices {0, 1}, keep)
+[Reduction] Print Psuedolearner Options:
+    --print                                 Print examples (type: bool, keep, necessary)
+[Reduction] Probabilistic Label Tree Options:
+    --plt arg                               Probabilistic Label Tree with <k> labels (type: uint, keep, necessary)
+    --kary_tree arg                         Use <k>-ary tree (type: uint, default: 2, keep)
+    --threshold arg                         Predict labels with conditional marginal probability greater
+                                            than <thr> threshold (type: float, default: 0.5)
+    --top_k arg                             Predict top-<k> labels instead of labels above threshold (type:
+                                            uint, default: 0)
+[Reduction] Recall Tree Options:
+    --recall_tree arg                       Use online tree for multiclass (type: uint, keep, necessary)
+    --max_candidates arg                    Maximum number of labels per leaf in the tree (type: uint, keep)
+    --bern_hyper arg                        Recall tree depth penalty (type: float, default: 1)
+    --max_depth arg                         Maximum depth of the tree, default log_2 (#classes) (type: uint,
+                                            keep)
+    --node_only                             Only use node features, not full path features (type: bool, keep)
+    --randomized_routing                    Randomized routing (type: bool, keep)
+[Reduction] Scorer Options:
+    --link arg                              Specify the link function (type: str, default: identity, choices
+                                            {glf1, identity, logistic, poisson}, keep)
+[Reduction] Search Options:
+    --search arg                            Use learning to search, argument=maximum action id or 0 for LDF
+                                            (type: uint, default: 1, keep)
+    --search_task arg                       The search task (use "--search_task list" to get a list of available
+                                            tasks) (type: str, choices {argmax, dep_parser, entity_relation,
+                                            graph, hook, list, multiclasstask, sequence, sequence_ctg, sequence_demoldf,
+                                            sequencespan}, keep, necessary)
+    --search_metatask arg                   The search metatask (use "--search_metatask list" to get a list
+                                            of available metatasks Note: a valid search_task needs to be
+                                            supplied in addition for this to output.) (type: str, keep)
+    --search_interpolation arg              At what level should interpolation happen? [*data|policy] (type:
+                                            str, keep)
+    --search_rollout arg                    How should rollouts be executed (type: str, choices {learn, mix,
+                                            mix_per_roll, mix_per_state, none, oracle, policy, ref})
+    --search_rollin arg                     How should past trajectories be generated (type: str, choices
+                                            {learn, mix, mix_per_roll, mix_per_state, oracle, policy, ref})
+    --search_passes_per_policy arg          Number of passes per policy (only valid for search_interpolation=policy)
+                                            (type: uint, default: 1)
+    --search_beta arg                       Interpolation rate for policies (only valid for search_interpolation=policy)
+                                            (type: float, default: 0.5)
+    --search_alpha arg                      Annealed beta = 1-(1-alpha)^t (only valid for search_interpolation=data)
+                                            (type: float, default: 1e-10)
+    --search_total_nb_policies arg          If we are going to train the policies through multiple separate
+                                            calls to vw, we need to specify this parameter and tell vw how
+                                            many policies are eventually going to be trained (type: uint)
+    --search_trained_nb_policies arg        The number of trained policies in a file (type: uint)
+    --search_allowed_transitions arg        Read file of allowed transitions [def: all transitions are allowed]
+                                            (type: str)
+    --search_subsample_time arg             Instead of training at all timesteps, use a subset. if value
+                                            in (0,1), train on a random v%. if v>=1, train on precisely v
+                                            steps per example, if v<=-1, use active learning (type: float)
+    --search_neighbor_features arg          Copy features from neighboring lines. argument looks like: '-1:a,+2'
+                                            meaning copy previous line namespace a and next next line from
+                                            namespace _unnamed_, where ',' separates them (type: str, keep)
+    --search_rollout_num_steps arg          How many calls of "loss" before we stop really predicting on
+                                            rollouts and switch to oracle (default means "infinite") (type:
+                                            uint, default: 0)
+    --search_history_length arg             Some tasks allow you to specify how much history their depend
+                                            on; specify that here (type: uint, default: 1, keep)
+    --search_no_caching                     Turn off the built-in caching ability (makes things slower, but
+                                            technically more safe) (type: bool)
+    --search_xv                             Train two separate policies, alternating prediction/learning
+                                            (type: bool)
+    --search_perturb_oracle arg             Perturb the oracle on rollin with this probability (type: float,
+                                            default: 0)
+    --search_linear_ordering                Insist on generating examples in linear order (def: hoopla permutation)
+                                            (type: bool)
+    --search_active_verify arg              Verify that active learning is doing the right thing (arg = multiplier,
+                                            should be = cost_range * range_c) (type: float)
+    --search_save_every_k_runs arg          Save model every k runs (type: uint, default: 0)
 [Reduction] Slates Options:
-  --slates                                   Enable slates reduction (required to enable this 
-                                             reduction)
+    --slates                                Enable slates reduction (type: bool, keep, necessary)
 [Reduction] Stagewise Polynomial Options:
-  --stage_poly                               Use stagewise polynomial feature learning (required to
-                                             enable this reduction)
-  --sched_exponent arg (Default: 1)          Exponent controlling quantity of included features
-  --batch_sz arg (Default: 1000)             Multiplier on batch size before including more 
-                                             features
-  --batch_sz_no_doubling                     Batch_sz does not double
+    --stage_poly                            Use stagewise polynomial feature learning (type: bool, keep,
+                                            necessary)
+    --sched_exponent arg                    Exponent controlling quantity of included features (type: float,
+                                            default: 1)
+    --batch_sz arg                          Multiplier on batch size before including more features (type:
+                                            uint, default: 1000)
+    --batch_sz_no_doubling                  Batch_sz does not double (type: bool)
 [Reduction] Stochastic Variance Reduced Gradient Options:
-  --svrg                                     Streaming Stochastic Variance Reduced Gradient 
-                                             (required to enable this reduction)
-  --stage_size arg (Default: 1)              Number of passes per SVRG stage
+    --svrg                                  Streaming Stochastic Variance Reduced Gradient (type: bool, keep,
+                                            necessary)
+    --stage_size arg                        Number of passes per SVRG stage (type: int, default: 1)
 [Reduction] Top K Options:
-  --top arg                                  Top k recommendation (required to enable this 
-                                             reduction)
+    --top arg                               Top k recommendation (type: uint, keep, necessary)
 [Reduction] Warm start contextual bandit Options:
-  --warm_cb arg                              Convert multiclass on <k> classes into a contextual 
-                                             bandit problem (required to enable this reduction)
-  --warm_cb_cs                               Consume cost-sensitive classification examples instead
-                                             of multiclass
-  --loss0 arg (Default: 0)                   Loss for correct label
-  --loss1 arg (Default: 1)                   Loss for incorrect label
-  --warm_start arg (Default: 0)              Number of training examples for warm start phase
-  --epsilon arg                              Epsilon-greedy exploration
-  --interaction arg (Default: 4294967295)    Number of examples for the interactive contextual 
-                                             bandit learning phase
-  --warm_start_update                        Indicator of warm start updates
-  --interaction_update                       Indicator of interaction updates
-  --corrupt_type_warm_start arg (Default: 1) Type of label corruption in the warm start phase (1: 
-                                             uniformly at random, 2: circular, 3: replacing with 
-                                             overwriting label). Choices: {1, 2, 3}
-  --corrupt_prob_warm_start arg (Default: 0) Probability of label corruption in the warm start 
-                                             phase
-  --choices_lambda arg (Default: 1)          The number of candidate lambdas to aggregate (lambda 
-                                             is the importance weight parameter between the two 
-                                             sources)
-  --lambda_scheme arg (Default: 1)           The scheme for generating candidate lambda set (1: 
-                                             center lambda=0.5, 2: center lambda=0.5, min lambda=0,
-                                             max lambda=1, 3: center lambda=epsilon/(1+epsilon), 4:
-                                             center lambda=epsilon/(1+epsilon), min lambda=0, max 
-                                             lambda=1); the rest of candidate lambda values are 
-                                             generated using a doubling scheme. Choices: {1, 2, 3, 
-                                             4}
-  --overwrite_label arg (Default: 1)         The label used by type 3 corruptions (overwriting)
-  --sim_bandit                               Simulate contextual bandit updates on warm start 
-                                             examples
+    --warm_cb arg                           Convert multiclass on <k> classes into a contextual bandit problem
+                                            (type: uint, keep, necessary)
+    --warm_cb_cs                            Consume cost-sensitive classification examples instead of multiclass
+                                            (type: bool)
+    --loss0 arg                             Loss for correct label (type: float, default: 0)
+    --loss1 arg                             Loss for incorrect label (type: float, default: 1)
+    --warm_start arg                        Number of training examples for warm start phase (type: uint,
+                                            default: 0)
+    --epsilon arg                           Epsilon-greedy exploration (type: float, keep)
+    --interaction arg                       Number of examples for the interactive contextual bandit learning
+                                            phase (type: uint, default: 4294967295)
+    --warm_start_update                     Indicator of warm start updates (type: bool)
+    --interaction_update                    Indicator of interaction updates (type: bool)
+    --corrupt_type_warm_start arg           Type of label corruption in the warm start phase (1: uniformly
+                                            at random, 2: circular, 3: replacing with overwriting label)
+                                            (type: int, default: 1, choices {1, 2, 3})
+    --corrupt_prob_warm_start arg           Probability of label corruption in the warm start phase (type:
+                                            float, default: 0)
+    --choices_lambda arg                    The number of candidate lambdas to aggregate (lambda is the importance
+                                            weight parameter between the two sources) (type: uint, default:
+                                            1)
+    --lambda_scheme arg                     The scheme for generating candidate lambda set (1: center lambda=0.5,
+                                            2: center lambda=0.5, min lambda=0, max lambda=1, 3: center lambda=epsilon/(1+epsilon),
+                                            4: center lambda=epsilon/(1+epsilon), min lambda=0, max lambda=1);
+                                            the rest of candidate lambda values are generated using a doubling
+                                            scheme (type: int, default: 1, choices {1, 2, 3, 4})
+    --overwrite_label arg                   The label used by type 3 corruptions (overwriting) (type: uint,
+                                            default: 1)
+    --sim_bandit                            Simulate contextual bandit updates on warm start examples (type:
+                                            bool)

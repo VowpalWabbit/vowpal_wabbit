@@ -149,17 +149,11 @@ BOOST_AUTO_TEST_CASE(name_extraction_should_throw)
   BOOST_REQUIRE_THROW(name_extractor.add_parse_and_check_necessary(ag), VW::vw_exception);
 
   // should throw since these methods will never be implemented by options_name_extractor
-  BOOST_REQUIRE_THROW(name_extractor.help({}), VW::vw_exception);
   auto null_logger = VW::io::create_null_logger();
   BOOST_REQUIRE_THROW(name_extractor.check_unregistered(null_logger), VW::vw_exception);
-  BOOST_REQUIRE_THROW(name_extractor.get_all_options(), VW::vw_exception);
-  BOOST_REQUIRE_THROW(name_extractor.get_option("opt2"), VW::vw_exception);
   BOOST_REQUIRE_THROW(name_extractor.insert("opt2", "blah"), VW::vw_exception);
   BOOST_REQUIRE_THROW(name_extractor.replace("opt2", "blah"), VW::vw_exception);
   BOOST_REQUIRE_THROW(name_extractor.get_positional_tokens(), VW::vw_exception);
-  BOOST_REQUIRE_THROW(name_extractor.tint("nonsense"), VW::vw_exception);
-  BOOST_REQUIRE_THROW(name_extractor.reset_tint(), VW::vw_exception);
-  BOOST_REQUIRE_THROW(name_extractor.get_collection_of_options(), VW::vw_exception);
 }
 
 BOOST_AUTO_TEST_CASE(name_extraction_recycle)
