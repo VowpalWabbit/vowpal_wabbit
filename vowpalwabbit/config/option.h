@@ -4,11 +4,12 @@
 
 #pragma once
 
+#include <memory>
+#include <set>
 #include <string>
 #include <type_traits>
 #include <typeinfo>
-#include <memory>
-#include <set>
+#include <vector>
 
 #include <fmt/format.h>
 
