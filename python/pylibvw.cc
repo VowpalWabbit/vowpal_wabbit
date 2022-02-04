@@ -12,7 +12,7 @@
 #include "parse_example.h"
 #include "gd.h"
 #include "config/options_boost_po.h"
-#include "cli_options_serializer.h"
+#include "config/cli_options_serializer.h"
 #include "future_compat.h"
 #include "slates_label.h"
 #include "simple_label_parser.h"

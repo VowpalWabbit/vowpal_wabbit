@@ -4,7 +4,8 @@
 
 #define RAPIDJSON_HAS_STDSTRING 1
 
-#include "config/options.h"
+#include "config/help_formatter.h"
+#include "config/option_group_definition.h"
 #include "vw.h"
 #include "version.h"
 
