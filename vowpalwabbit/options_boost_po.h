@@ -53,12 +53,16 @@ struct options_boost_po : public options_i
 
   void internal_add_and_parse(const option_group_definition& group) override;
   bool was_supplied(const std::string& key) const override;
-  std::string help(const std::vector<std::string>& enabled_reductions) const override;
   void check_unregistered(VW::io::logger& logger) override;
   std::vector<std::shared_ptr<base_option>> get_all_options() override;
   std::vector<std::shared_ptr<const base_option>> get_all_options() const override;
   std::shared_ptr<base_option> get_option(const std::string& key) override;
   std::shared_ptr<const base_option> get_option(const std::string& key) const override;
+  const std::vector<option_group_definition>& get_all_option_group_definitions() const override
+  {
+    return m_option_group_list;
+  }
+  const std::set<std::string>& get_supplied_options() const override { return m_supplied_options; }
 
   void tint(const std::string& reduction_name) override { m_current_reduction_tint = reduction_name; }
 
@@ -160,6 +164,7 @@ private:
   // Collection that tracks for now
   // setup_function_id (str) -> list of option_group_definition
   std::map<std::string, std::vector<option_group_definition>> m_option_group_dic;
+  std::vector<option_group_definition> m_option_group_list;
 
   std::string m_current_reduction_tint = m_default_tint;
 
@@ -168,8 +173,6 @@ private:
   std::vector<std::string> m_command_line;
 
   std::map<std::string, std::stringstream> m_help_stringstream;
-
-  std::set<std::string> m_added_help_group_names;
 
   // All options that were supplied on the command line.
   std::set<std::string> m_supplied_options;

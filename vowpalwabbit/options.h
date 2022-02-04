@@ -57,35 +57,16 @@ struct option_builder
     return *this;
   }
 
-  template <typename U>
-  std::string help_one_of(const std::string&, const std::set<U>&)
-  {
-    THROW("Error: cannot handle non-string or arithmetic types in one_of().");
-  }
-  std::string help_one_of(const std::string& help, const std::set<std::string>& s)
-  {
-    return fmt::format("{}. Choices: {{{}}}", help, fmt::join(s, ", "));
-  }
-  std::string help_one_of(const std::string& help, const std::set<int32_t>& s)
-  {
-    return fmt::format("{}. Choices: {{{}}}", help, fmt::join(s, ", "));
-  }
-  std::string help_one_of(const std::string& help, const std::set<int64_t>& s)
-  {
-    return fmt::format("{}. Choices: {{{}}}", help, fmt::join(s, ", "));
-  }
-  std::string help_one_of(const std::string& help, const std::set<uint32_t>& s)
-  {
-    return fmt::format("{}. Choices: {{{}}}", help, fmt::join(s, ", "));
-  }
-  std::string help_one_of(const std::string& help, const std::set<uint64_t>& s)
-  {
-    return fmt::format("{}. Choices: {{{}}}", help, fmt::join(s, ", "));
-  }
-
   option_builder& help(const std::string& help)
   {
-    m_option_obj.m_help = m_option_obj.one_of().empty() ? help : help_one_of(help, m_option_obj.one_of());
+    m_option_obj.m_help = help;
+    return *this;
+  }
+
+  /// Hides the option from help output.
+  option_builder& hidden(bool hidden = true)
+  {
+    m_option_obj.m_hidden_from_help = hidden;
     return *this;
   }
 
@@ -150,6 +131,7 @@ struct base_option
   bool m_keep = false;
   bool m_necessary = false;
   bool m_allow_override = false;
+  bool m_hidden_from_help = false;
   std::string m_one_of_err = "";
 
   virtual void accept(typed_option_visitor& handler) = 0;
@@ -257,7 +239,6 @@ option_builder<typed_option_with_location<T>> make_option(const std::string& nam
 }
 
 struct option_group_definition;
-
 struct options_i
 {
   virtual void internal_add_and_parse(const option_group_definition& group) = 0;
@@ -267,13 +248,14 @@ struct options_i
   virtual void tint(const std::string& reduction_name) = 0;
   virtual void reset_tint() = 0;
   virtual bool was_supplied(const std::string& key) const = 0;
-  virtual std::string help(const std::vector<std::string>& enabled_reductions) const = 0;
 
   virtual std::vector<std::shared_ptr<base_option>> get_all_options() = 0;
   virtual std::vector<std::shared_ptr<const base_option>> get_all_options() const = 0;
   virtual std::shared_ptr<base_option> get_option(const std::string& key) = 0;
   virtual std::shared_ptr<const base_option> get_option(const std::string& key) const = 0;
   virtual std::map<std::string, std::vector<option_group_definition>> get_collection_of_options() const = 0;
+  virtual const std::vector<option_group_definition>& get_all_option_group_definitions() const = 0;
+  virtual const std::set<std::string>& get_supplied_options() const = 0;
 
   virtual void insert(const std::string& key, const std::string& value) = 0;
   virtual void replace(const std::string& key, const std::string& value) = 0;
@@ -353,11 +335,31 @@ struct option_group_definition
   std::vector<std::shared_ptr<base_option>> m_options;
 };
 
+inline std::vector<option_group_definition> remove_disabled_necessary_options(
+    options_i& options, const std::vector<option_group_definition>& groups)
+{
+  std::vector<option_group_definition> result;
+  for (const auto& group : groups)
+  {
+    if ((group.contains_necessary_options() && group.check_necessary_enabled(options)) ||
+        !group.contains_necessary_options())
+    { result.push_back(group); }
+  }
+  return result;
+}
+
+struct help_formatter
+{
+  virtual std::string format_help(const std::vector<option_group_definition>& groups) = 0;
+  virtual ~help_formatter() = default;
+};
+
 struct options_name_extractor : options_i
 {
   std::string generated_name;
   std::set<std::string> m_added_help_group_names;
-
+  std::vector<option_group_definition> m_unused_groups;
+  std::set<std::string> m_unused_supplied;
   void internal_add_and_parse(const option_group_definition& group) override
   {
     if (!group.contains_necessary_options()) { THROW("reductions must specify at least one .necessary() option"); }
@@ -388,11 +390,11 @@ struct options_name_extractor : options_i
   void tint(const std::string&) override { THROW("options_name_extractor does not implement this method"); };
 
   void reset_tint() override { THROW("options_name_extractor does not implement this method"); };
-
-  std::string help(const std::vector<std::string>&) const override
+  const std::vector<option_group_definition>& get_all_option_group_definitions() const override
   {
-    THROW("options_name_extractor does not implement this method");
-  };
+    return m_unused_groups;
+  }
+  const std::set<std::string>& get_supplied_options() const override { return m_unused_supplied; }
 
   void check_unregistered(VW::io::logger& /* logger */) override
   {
