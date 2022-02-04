@@ -38,23 +38,5 @@ public:
 using supported_options_types =
     typelist<uint32_t, uint64_t, int32_t, int64_t, float, std::string, bool, std::vector<std::string>>;
 
-namespace is_scalar_impl
-{
-template <typename T>
-struct is_scalar_option_type : std::true_type
-{
-};
-template <typename... Args>
-struct is_scalar_option_type<std::vector<Args...>> : std::false_type
-{
-};
-}  // namespace is_scalar_impl
-
-template <typename T>
-struct is_scalar_option_type
-{
-  static constexpr bool const value = is_scalar_impl::is_scalar_option_type<typename std::decay<T>::type>::value;
-};
-
 }  // namespace config
 }  // namespace VW

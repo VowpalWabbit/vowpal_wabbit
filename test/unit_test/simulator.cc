@@ -22,27 +22,42 @@ cb_sim::cb_sim(uint64_t seed)
   callback_count = 0;
 }
 
-float cb_sim::get_cost(const std::map<std::string, std::string>& context, const std::string& action, bool swap_reward)
+float cb_sim::get_reaction(const std::map<std::string, std::string>& context, const std::string& action, bool add_noise, bool swap_reward)
 {
-  auto reward = USER_DISLIKED_ARTICLE;
+  float like_reward = USER_LIKED_ARTICLE;
+  float dislike_reward = USER_DISLIKED_ARTICLE;
+  if (add_noise)
+  {
+    like_reward += random_state.get_and_update_random();
+    dislike_reward += random_state.get_and_update_random();
+  }
+
+
+  float reward = dislike_reward;
   if (context.at("user") == "Tom")
   {
-    if (context.at("time_of_day") == "morning" && action == "politics") { reward = USER_LIKED_ARTICLE; }
+    if (context.at("time_of_day") == "morning" && action == "politics")
+    {
+      reward = like_reward;
+    }
     else if (context.at("time_of_day") == "afternoon" && action == "music")
     {
-      reward = USER_LIKED_ARTICLE;
+      reward = like_reward;
     }
   }
   else if (context.at("user") == "Anna")
   {
-    if (context.at("time_of_day") == "morning" && action == "sports") { reward = USER_LIKED_ARTICLE; }
+    if (context.at("time_of_day") == "morning" && action == "sports")
+    { 
+      reward = like_reward;
+    }
     else if (context.at("time_of_day") == "afternoon" && action == "politics")
     {
-      reward = USER_LIKED_ARTICLE;
+      reward = like_reward;
     }
   }
 
-  if (swap_reward) { return (reward == USER_LIKED_ARTICLE) ? USER_DISLIKED_ARTICLE : USER_LIKED_ARTICLE; }
+  if (swap_reward) return (reward == like_reward) ? dislike_reward : like_reward;
   return reward;
 }
 
@@ -119,8 +134,8 @@ void cb_sim::call_if_exists(VW::workspace& vw, multi_ex& ex, const callback_map&
   }
 }
 
-std::vector<float> cb_sim::run_simulation_hook(
-    VW::workspace* vw, size_t num_iterations, callback_map& callbacks, bool do_learn, size_t shift, const std::vector<uint64_t>& swap_after)
+std::vector<float> cb_sim::run_simulation_hook(VW::workspace* vw, size_t num_iterations, callback_map& callbacks,
+    bool do_learn, size_t shift, bool add_noise, uint64_t num_useless_features, const std::vector<uint64_t>& swap_after)
 {
   // check if there's a callback for the first possible element,
   // in this case most likely 0th event
@@ -146,13 +161,17 @@ std::vector<float> cb_sim::run_simulation_hook(
     auto time_of_day = choose_time_of_day();
 
     // 3. Pass context to vw to get an action
-    const std::map<std::string, std::string> context{{"user", user}, {"time_of_day", time_of_day}};
+    std::map<std::string, std::string> context{{"user", user}, {"time_of_day", time_of_day}};
+    // Add useless features if specified
+    for (uint64_t j = 0; j < num_useless_features; ++j)
+    { context.insert(std::pair<std::string, std::string>(std::to_string(j), std::to_string(j))); }
     auto action_prob = get_action(vw, context);
     auto chosen_action = action_prob.first;
     auto prob = action_prob.second;
 
     // 4. Get cost of the action we chose
-    float cost = get_cost(context, chosen_action, swap_reward);
+    // Check for reward swap
+    float cost = get_reaction(context, chosen_action, add_noise, swap_reward);
     cost_sum += cost;
 
     if (do_learn)

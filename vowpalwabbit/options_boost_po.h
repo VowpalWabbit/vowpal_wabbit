@@ -28,15 +28,9 @@ std::ostream& operator<<(std::ostream& os, const std::vector<T>& vec)
   for (auto const& item : vec) { os << item << ", "; }
   return os;
 }
-
-// The std::vector<bool> specialization does not support ref access, so we need to handle this differently.
-std::ostream& operator<<(std::ostream& os, const std::vector<bool>& vec);
 }  // namespace std
 
-template std::ostream& std::operator<<<int>(std::ostream&, const std::vector<int>&);
-template std::ostream& std::operator<<<char>(std::ostream&, const std::vector<char>&);
 template std::ostream& std::operator<<<std::string>(std::ostream&, const std::vector<std::string>&);
-template std::ostream& std::operator<<<float>(std::ostream&, const std::vector<float>&);
 
 namespace VW
 {
@@ -53,16 +47,8 @@ struct options_boost_po : public options_i
 
   void internal_add_and_parse(const option_group_definition& group) override;
   bool was_supplied(const std::string& key) const override;
-  std::string help(const std::vector<std::string>& enabled_reductions) const override;
   void check_unregistered(VW::io::logger& logger) override;
-  std::vector<std::shared_ptr<base_option>> get_all_options() override;
-  std::vector<std::shared_ptr<const base_option>> get_all_options() const override;
-  std::shared_ptr<base_option> get_option(const std::string& key) override;
-  std::shared_ptr<const base_option> get_option(const std::string& key) const override;
-
-  void tint(const std::string& reduction_name) override { m_current_reduction_tint = reduction_name; }
-
-  void reset_tint() override { m_current_reduction_tint = m_default_tint; }
+  const std::set<std::string>& get_supplied_options() const override { return m_supplied_options; }
 
   void insert(const std::string& key, const std::string& value) override
   {
@@ -111,13 +97,6 @@ struct options_boost_po : public options_i
     return std::vector<std::string>();
   }
 
-  std::map<std::string, std::vector<option_group_definition>> get_collection_of_options() const override
-  {
-    return m_option_group_dic;
-  }
-
-  const std::string m_default_tint = "general";
-
 private:
   template <typename T>
   typename po::typed_value<std::vector<T>>* get_base_boost_value(std::shared_ptr<typed_option<T>>& opt);
@@ -157,19 +136,7 @@ private:
   void add_to_option_group_collection(const option_group_definition& group);
 
 private:
-  // Collection that tracks for now
-  // setup_function_id (str) -> list of option_group_definition
-  std::map<std::string, std::vector<option_group_definition>> m_option_group_dic;
-
-  std::string m_current_reduction_tint = m_default_tint;
-
-  std::map<std::string, std::shared_ptr<base_option>> m_options;
-
   std::vector<std::string> m_command_line;
-
-  std::map<std::string, std::stringstream> m_help_stringstream;
-
-  std::set<std::string> m_added_help_group_names;
 
   // All options that were supplied on the command line.
   std::set<std::string> m_supplied_options;
