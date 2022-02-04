@@ -409,7 +409,7 @@ add_library(vw STATIC ${vw_all_sources} ${vw_all_headers})
 
 target_link_libraries(vw
   PUBLIC
-    VowpalWabbit::explore VowpalWabbit::allreduce Boost::math ${spdlog_target} fmt::fmt
+    VowpalWabbit::explore VowpalWabbit::allreduce ${boost_math_target} ${spdlog_target} fmt::fmt
   PRIVATE
     Boost::program_options ${CMAKE_DL_LIBS} ${LINK_THREADS} vw_io
     # Workaround an issue where RapidJSON needed to be exported tom install the target. This is
