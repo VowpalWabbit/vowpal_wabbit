@@ -1,1 +1,1 @@
-[critical] vw (options.h:321): Error: 'bad_type' is not a valid choice for option --cb_type. Please select from {dm, dr, ips, mtr, sm}
+[critical] vw (options.h:345): Error: 'bad_type' is not a valid choice for option --cb_type. Please select from {dm, dr, ips, mtr, sm}
