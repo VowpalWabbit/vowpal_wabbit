@@ -102,7 +102,8 @@ option(SPDLOG_SYS_DEP "Override using the submodule for spdlog dependency. Inste
 option(BUILD_FLATBUFFERS "Build flatbuffers" OFF)
 option(BUILD_PRIVACY_ACTIVATION "Enable privacy activation feature" OFF)
 
-if(BUILD_TESTS)
+# The only way to tell it was used is if it was turned off, since the default is true.
+if(NOT BUILD_TESTS)
   message(WARNING "Use standard option BUILD_TESTING instead of BUILD_TESTS. BUILD_TESTS will be removed in the future.")
   SET(BUILD_TESTING ${BUILD_TESTS} CACHE BOOL "Set value to BUILD_TESTING")
 endif()
