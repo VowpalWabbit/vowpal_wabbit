@@ -11,19 +11,11 @@
 #include <algorithm>
 #include <iterator>
 #include <utility>
-#include <regex>
 
 #include <boost/exception/exception.hpp>
 #include <boost/throw_exception.hpp>
 
 using namespace VW::config;
-
-std::ostream& std::operator<<(std::ostream& os, const std::vector<bool>& vec)
-{
-  // The lack of & is the only different bit to the template in the header.
-  for (auto const item : vec) { os << item << ", "; }
-  return os;
-}
 
 bool is_number(const VW::string_view& s)
 {
@@ -57,35 +49,13 @@ void options_boost_po::add_to_description(
 
 void options_boost_po::internal_add_and_parse(const option_group_definition& group)
 {
-  m_option_group_dic[m_current_reduction_tint].push_back(group);
-  // Overall option help line width in characters
-  constexpr unsigned int HELP_LINE_WIDTH = 100;
-  // Width in characters of the left column (one with option name and default value)
-  constexpr unsigned int OPTION_NAME_COLUMN_WIDTH = 45;
-
-  po::options_description new_options(group.m_name, HELP_LINE_WIDTH);
-
+  po::options_description new_options(group.m_name);
   for (const auto& opt_ptr : group.m_options)
   {
-    if (opt_ptr->m_necessary) { opt_ptr->m_help += " (required to enable this reduction)"; }
-
     add_to_description(opt_ptr, new_options);
     m_defined_options.insert(opt_ptr->m_name);
     m_defined_options.insert(opt_ptr->m_short_name);
     m_defined_options.insert("-" + opt_ptr->m_short_name);
-
-    // The last definition is kept. There was a bug where using .insert at a later pointer changed the command line but
-    // the previously defined option's default value was serialized into the model. This resolves that state info.
-    m_options[opt_ptr->m_name] = opt_ptr;
-  }
-
-  // setup functions can call multiply times into add_and_parse,
-  // we have to guard to avoid adding help multiple times
-  if (m_added_help_group_names.count(group.m_name) == 0)
-  {
-    // Add the help for the given options.
-    new_options.print(m_help_stringstream[m_current_reduction_tint], OPTION_NAME_COLUMN_WIDTH);
-    m_added_help_group_names.insert(group.m_name);
   }
 
   try
@@ -184,85 +154,6 @@ bool options_boost_po::was_supplied(const std::string& key) const
       std::end(m_command_line);
 }
 
-std::string options_boost_po::help(const std::vector<std::string>& enabled_reductions = {}) const
-{
-  std::stringstream help;
-
-  // add general help
-  help << m_help_stringstream.find(m_default_tint)->second.rdbuf();
-
-  // check if user only supplied --help or -h
-  if (m_supplied_options.size() <= 2)
-  {
-    for (const auto& curr : m_help_stringstream)
-    {
-      if (curr.first.compare(m_default_tint) != 0) help << curr.second.rdbuf();
-    }
-  }
-  else
-  {
-    // add help message of only enabled reductions
-    for (const auto& reduction : enabled_reductions)
-    {
-      auto it = m_help_stringstream.find(reduction);
-      if (it != m_help_stringstream.end()) { help << it->second.rdbuf(); }
-      else
-      {
-        // some reductions register with a longer name,
-        // signaled by a - (see scorer.cc)
-        // we have to search only the prefix part
-        std::string::size_type pos = reduction.find('-');
-        if (pos != std::string::npos)
-        {
-          auto it_inner = m_help_stringstream.find(reduction.substr(0, pos));
-          if (it_inner != m_help_stringstream.end()) { help << it_inner->second.rdbuf(); }
-        }
-      }
-    }
-  }
-
-  return std::regex_replace(help.str(), std::regex("\\(=Default:"), "(Default: ");
-}
-
-std::vector<std::shared_ptr<base_option>> options_boost_po::get_all_options()
-{
-  std::vector<std::shared_ptr<base_option>> output_values;
-
-  std::transform(m_options.begin(), m_options.end(), std::back_inserter(output_values),
-      [](std::pair<const std::string, std::shared_ptr<base_option>>& kv) { return kv.second; });
-
-  return output_values;
-}
-
-std::vector<std::shared_ptr<const base_option>> VW::config::options_boost_po::get_all_options() const
-{
-  std::vector<std::shared_ptr<const base_option>> output_values;
-  output_values.reserve(m_options.size());
-  for (const auto& kv : m_options) { output_values.push_back(kv.second); }
-  return output_values;
-}
-
-// This function is called by both the const and non-const version. The const version will implicitly upgrade the
-// shared_ptr to const
-std::shared_ptr<base_option> internal_get_option(
-    const std::string& key, const std::map<std::string, std::shared_ptr<VW::config::base_option>>& options)
-{
-  auto it = options.find(key);
-  if (it != options.end()) { return it->second; }
-
-  throw std::out_of_range(key + " was not found.");
-}
-
-std::shared_ptr<base_option> VW::config::options_boost_po::get_option(const std::string& key)
-{
-  return internal_get_option(key, m_options);
-}
-
-std::shared_ptr<const base_option> VW::config::options_boost_po::get_option(const std::string& key) const
-{
-  // shared_ptr can implicitly upgrade to const from non-const
-  return internal_get_option(key, m_options);
-}
 
 // Check all supplied arguments against defined args.
 void options_boost_po::check_unregistered(VW::io::logger& logger)
