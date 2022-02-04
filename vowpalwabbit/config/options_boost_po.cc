@@ -2,7 +2,7 @@
 // individual contributors. All rights reserved. Released under a BSD (revised)
 // license as described in the file LICENSE.
 
-#include "options_boost_po.h"
+#include "config/options_boost_po.h"
 #include "io/logger.h"
 #include "parse_primitives.h"
 #include "io/logger.h"
@@ -25,6 +25,13 @@ bool is_number(const VW::string_view& s)
 
   return true;
 }
+
+options_boost_po::options_boost_po(int argc, char** argv)
+    : options_boost_po(std::vector<std::string>(argv + 1, argv + argc))
+{
+}
+
+options_boost_po::options_boost_po(const std::vector<std::string>& args) : m_command_line(args) {}
 
 template <>
 po::typed_value<std::vector<bool>>* options_boost_po::convert_to_boost_value(std::shared_ptr<typed_option<bool>>& opt)
@@ -154,7 +161,6 @@ bool options_boost_po::was_supplied(const std::string& key) const
       std::end(m_command_line);
 }
 
-
 // Check all supplied arguments against defined args.
 void options_boost_po::check_unregistered(VW::io::logger& logger)
 {
@@ -187,4 +193,53 @@ void options_boost_po::add_to_description_impl<typelist<>>(
     const std::shared_ptr<base_option>& opt, po::options_description& /*description*/)
 {
   THROW(fmt::format("Option '{}' has an unsupported option type.", opt->m_name));
+}
+
+const std::set<std::string>& options_boost_po::get_supplied_options() const { return m_supplied_options; }
+
+void options_boost_po::insert(const std::string& key, const std::string& value)
+{
+  m_command_line.push_back("--" + key);
+  if (!value.empty()) { m_command_line.push_back(value); }
+}
+
+// Note: does not work for vector options.
+void options_boost_po::replace(const std::string& key, const std::string& value)
+{
+  auto full_key = "--" + key;
+  auto it = std::find(m_command_line.begin(), m_command_line.end(), full_key);
+
+  // Not found, insert instead.
+  if (it == m_command_line.end())
+  {
+    insert(key, value);
+    return;
+  }
+
+  // Check if it is the final option or the next option is not a value.
+  if (it + 1 == m_command_line.end() || (*(it + 1)).find("--") != std::string::npos)
+  { THROW(key + " option does not have a value."); }
+
+  // Actually replace the value.
+  *(it + 1) = value;
+}
+
+std::vector<std::string> options_boost_po::get_positional_tokens() const
+{
+  po::positional_options_description p;
+  p.add("__positional__", -1);
+  auto copied_description = master_description;
+  copied_description.add_options()("__positional__", po::value<std::vector<std::string>>()->composing(), "");
+  po::parsed_options pos = po::command_line_parser(m_command_line)
+                               .style(po::command_line_style::default_style ^ po::command_line_style::allow_guessing)
+                               .options(copied_description)
+                               .allow_unregistered()
+                               .positional(p)
+                               .run();
+
+  po::variables_map vm;
+  po::store(pos, vm);
+
+  if (vm.count("__positional__") != 0) { return vm["__positional__"].as<std::vector<std::string>>(); }
+  return std::vector<std::string>();
 }

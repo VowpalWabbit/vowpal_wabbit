@@ -4,7 +4,7 @@
 
 #pragma once
 #include "learner.h"
-#include "options.h"
+#include "config/options.h"
 #include "api_status.h"
 
 namespace VW

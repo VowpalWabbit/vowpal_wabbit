@@ -7,13 +7,13 @@
 #include <vector>
 
 #include "vw_to_flat.h"
-#include "options.h"
+#include "config/options.h"
 #include "parse_args.h"
 #include "parse_regressor.h"
 #include "accumulate.h"
 #include "best_constant.h"
 #include "vw_exception.h"
-#include "options_boost_po.h"
+#include "config/options_boost_po.h"
 #include "hash.h"
 #include "cb_algs.h"
 #include "shared_data.h"

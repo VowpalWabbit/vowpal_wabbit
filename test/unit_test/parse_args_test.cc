@@ -6,7 +6,7 @@
 #include <boost/test/test_tools.hpp>
 
 #include "parse_args.h"
-#include "options_boost_po.h"
+#include "config/options_boost_po.h"
 
 #include <vector>
 #include <string>

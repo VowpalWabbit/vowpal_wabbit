@@ -3,7 +3,8 @@
 #include "global_data.h"  // to get vw struct
 #include "cached_learner.h"
 #include "learner.h"
-#include "options.h"
+#include "config/options.h"
+#include "config/options_name_extractor.h"
 #include "reductions_fwd.h"
 
 // reductions / setup functions

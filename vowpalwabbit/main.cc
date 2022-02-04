@@ -18,8 +18,8 @@
 #include <fstream>
 
 #include "vw.h"
-#include "options.h"
-#include "options_boost_po.h"
+#include "config/options.h"
+#include "config/options_boost_po.h"
 
 using namespace VW::config;
 

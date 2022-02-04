@@ -50,7 +50,7 @@
 #include "allreduce.h"
 #include "interactions_predict.h"
 
-#include "options.h"
+#include "config/options.h"
 #include "version.h"
 #include "kskip_ngram_transformer.h"
 
