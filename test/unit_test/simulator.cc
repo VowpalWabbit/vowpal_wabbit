@@ -247,7 +247,7 @@ std::vector<float> _test_helper_hook(const std::string& vw_arg, callback_map& ho
   BOOST_CHECK(true);
   auto* vw = VW::initialize(vw_arg);
   simulator::cb_sim sim(seed);
-  auto ctr = sim.run_simulation_hook(vw, num_iterations, hooks, true, 1, swap_after);
+  auto ctr = sim.run_simulation_hook(vw, num_iterations, hooks, true, 1, false, 0, swap_after);
   VW::finish(*vw);
   return ctr;
 }
