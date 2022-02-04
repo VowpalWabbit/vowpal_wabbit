@@ -33,7 +33,7 @@ void options_name_extractor::internal_add_and_parse(const option_group_definitio
   }
 }
 
-bool options_name_extractor::was_supplied(const std::string&) const { return false; };
+bool options_name_extractor::was_supplied(const std::string&) const { return false; }
 const std::set<std::string>& options_name_extractor::get_supplied_options() const { return m_unused; }
 
 void options_name_extractor::check_unregistered(VW::io::logger& /* logger */)
