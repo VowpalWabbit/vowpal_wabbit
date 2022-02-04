@@ -19,7 +19,6 @@ namespace VW
 {
 namespace config
 {
-
 struct options_i
 {
   void add_and_parse(const option_group_definition& group);
@@ -35,13 +34,15 @@ struct options_i
   VW_ATTR(nodiscard) const std::vector<option_group_definition>& get_all_option_group_definitions() const;
 
   template <typename T>
-  VW_ATTR(nodiscard) typed_option<T>& get_typed_option(const std::string& key)
+  VW_ATTR(nodiscard)
+  typed_option<T>& get_typed_option(const std::string& key)
   {
     return dynamic_cast<typed_option<T>&>(*get_option(key));
   }
 
   template <typename T>
-  VW_ATTR(nodiscard) const typed_option<T>& get_typed_option(const std::string& key) const
+  VW_ATTR(nodiscard)
+  const typed_option<T>& get_typed_option(const std::string& key) const
   {
     return dynamic_cast<const typed_option<T>&>(*get_option(key));
   }
@@ -57,8 +58,8 @@ struct options_i
   virtual ~options_i() = default;
 
   static constexpr const char* m_default_tint = "general";
-protected:
 
+protected:
   // Collection that tracks for now
   // setup_function_id (str) -> list of option_group_definition
   std::map<std::string, std::vector<option_group_definition>> m_option_group_dic;

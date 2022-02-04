@@ -112,13 +112,11 @@ private:
   T m_option_obj;
 };
 
-
 template <typename T>
 option_builder<typed_option_with_location<T>> make_option(const std::string& name, T& location)
 {
   return typed_option_with_location<T>(name, location);
 }
-
 
 }  // namespace config
 }  // namespace VW

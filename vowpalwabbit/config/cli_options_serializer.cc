@@ -17,7 +17,8 @@ void serialize(std::stringstream& output, const typed_option<T>& typed_option)
 }
 
 template <>
-void serialize<std::vector<std::string>>(std::stringstream& output, const typed_option<std::vector<std::string>>& typed_option)
+void serialize<std::vector<std::string>>(
+    std::stringstream& output, const typed_option<std::vector<std::string>>& typed_option)
 {
   auto vec = typed_option.value();
   if (!vec.empty())

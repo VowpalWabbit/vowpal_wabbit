@@ -39,9 +39,7 @@ po::typed_value<std::vector<bool>>* options_boost_po::convert_to_boost_value(std
   auto value = get_base_boost_value(opt);
 
   if (opt->default_value_supplied())
-  {
-    THROW("Using a bool option type acts as a switch, no explicit default value is allowed.")
-  }
+  { THROW("Using a bool option type acts as a switch, no explicit default value is allowed.") }
 
   value->default_value({false}, "Default:false");
   value->zero_tokens();
@@ -169,9 +167,7 @@ void options_boost_po::check_unregistered(VW::io::logger& logger)
   for (auto const& supplied : m_supplied_options)
   {
     if (m_defined_options.count(supplied) == 0 && m_ignore_supplied.count(supplied) == 0)
-    {
-      THROW_EX(VW::vw_unrecognised_option_exception, "unrecognised option '--" << supplied << "'");
-    }
+    { THROW_EX(VW::vw_unrecognised_option_exception, "unrecognised option '--" << supplied << "'"); }
   }
 
   for (auto const& supplied : m_supplied_options)
@@ -185,9 +181,7 @@ void options_boost_po::check_unregistered(VW::io::logger& logger)
           "combinations of options which would enable this option are:\n",
           supplied);
       for (const auto& group : dependent_necessary_options)
-      {
-        message += fmt::format("\t{}\n", fmt::join(group, ", "));
-      }
+      { message += fmt::format("\t{}\n", fmt::join(group, ", ")); }
 
       logger.err_warn(message);
     }
@@ -224,9 +218,7 @@ void options_boost_po::replace(const std::string& key, const std::string& value)
 
   // Check if it is the final option or the next option is not a value.
   if (it + 1 == m_command_line.end() || (*(it + 1)).find("--") != std::string::npos)
-  {
-    THROW(key + " option does not have a value.");
-  }
+  { THROW(key + " option does not have a value."); }
 
   // Actually replace the value.
   *(it + 1) = value;

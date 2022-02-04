@@ -13,7 +13,6 @@ namespace VW
 {
 namespace config
 {
-
 struct options_serializer_i
 {
   virtual void add(base_option& argument) = 0;

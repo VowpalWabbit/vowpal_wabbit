@@ -11,7 +11,6 @@ namespace VW
 {
 namespace config
 {
-
 struct option_group_definition;
 struct options_i;
 

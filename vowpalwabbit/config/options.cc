@@ -79,10 +79,7 @@ bool options_i::add_parse_and_check_necessary(const option_group_definition& gro
   }
 
   auto necessary_enabled = group.check_necessary_enabled(*this);
-  if (necessary_enabled)
-  {
-    group.check_one_of();
-  }
+  if (necessary_enabled) { group.check_one_of(); }
 
   return necessary_enabled;
 }

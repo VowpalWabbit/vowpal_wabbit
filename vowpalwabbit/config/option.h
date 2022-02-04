@@ -18,7 +18,6 @@ namespace VW
 {
 namespace config
 {
-
 template <typename>
 struct typed_option;
 

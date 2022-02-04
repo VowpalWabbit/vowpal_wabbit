@@ -18,7 +18,6 @@ namespace VW
 {
 namespace config
 {
-
 struct options_i;
 
 struct option_group_definition
@@ -60,7 +59,6 @@ struct option_group_definition
   std::unordered_set<std::string> m_necessary_flags;
   std::vector<std::shared_ptr<base_option>> m_options;
 };
-
 
 }  // namespace config
 }  // namespace VW

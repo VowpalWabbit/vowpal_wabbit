@@ -15,7 +15,6 @@ namespace VW
 {
 namespace config
 {
-
 struct options_name_extractor : options_i
 {
   std::string generated_name;
@@ -31,6 +30,5 @@ struct options_name_extractor : options_i
   VW_ATTR(nodiscard) std::vector<std::string> get_positional_tokens() const override;
 };
 
-
-}
+}  // namespace config
 }  // namespace VW
