@@ -6,7 +6,7 @@
 
 #include <msclr\marshal_cppstd.h>
 #include "vw.h"
-#include "cli_options_serializer.h"
+#include "config/cli_options_serializer.h"
 #include <algorithm>
 
 using namespace System;

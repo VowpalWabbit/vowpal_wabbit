@@ -2,7 +2,7 @@
 #include "vw_exception.h"
 #include "best_constant.h"
 #include "util.h"
-#include "cli_options_serializer.h"
+#include "config/cli_options_serializer.h"
 #include "learner.h"
 #include "simple_label_parser.h"
 #include <algorithm>
