@@ -56,8 +56,8 @@ struct options_i
   virtual void check_unregistered(VW::io::logger& logger) = 0;
   virtual ~options_i() = default;
 
-protected:
   static constexpr const char* m_default_tint = "general";
+protected:
 
   // Collection that tracks for now
   // setup_function_id (str) -> list of option_group_definition
