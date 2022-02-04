@@ -122,8 +122,8 @@ void cb_sim::call_if_exists(VW::workspace& vw, multi_ex& ex, const callback_map&
   }
 }
 
-std::vector<float> cb_sim::run_simulation_hook(
-    VW::workspace* vw, size_t num_iterations, callback_map& callbacks, bool do_learn, size_t shift, bool add_noise, uint64_t num_useless_features)
+std::vector<float> cb_sim::run_simulation_hook(VW::workspace* vw, size_t num_iterations, callback_map& callbacks,
+    bool do_learn, size_t shift, bool add_noise, uint64_t num_useless_features)
 {
   // check if there's a callback for the first possible element,
   // in this case most likely 0th event
@@ -142,7 +142,8 @@ std::vector<float> cb_sim::run_simulation_hook(
     // 3. Pass context to vw to get an action
     std::map<std::string, std::string> context{{"user", user}, {"time_of_day", time_of_day}};
     // Add useless features if specified
-    for (uint64_t j = 0; j < num_useless_features; ++j) { context.insert(std::pair<std::string, std::string>(std::to_string(j), std::to_string(j))); }
+    for (uint64_t j = 0; j < num_useless_features; ++j)
+    { context.insert(std::pair<std::string, std::string>(std::to_string(j), std::to_string(j))); }
     auto action_prob = get_action(vw, context);
     auto chosen_action = action_prob.first;
     auto prob = action_prob.second;

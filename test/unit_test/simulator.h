@@ -52,7 +52,8 @@ public:
   const std::string& choose_user();
   const std::string& choose_time_of_day();
   std::vector<float> run_simulation(VW::workspace*, size_t, bool = true, size_t = 1);
-  std::vector<float> run_simulation_hook(VW::workspace*, size_t, callback_map&, bool = true, size_t = 1, bool = false, uint64_t = 0);
+  std::vector<float> run_simulation_hook(
+      VW::workspace*, size_t, callback_map&, bool = true, size_t = 1, bool = false, uint64_t = 0);
 
 private:
   void call_if_exists(VW::workspace&, multi_ex&, const callback_map&, const size_t);
