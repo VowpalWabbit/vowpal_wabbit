@@ -25,6 +25,16 @@ BOOST_AUTO_TEST_CASE(ae_test)
   float with_save = ctr.back();
 }
 
+BOOST_AUTO_TEST_CASE(ae_test_champ_switch)
+{
+  callback_map empty_hooks;
+  std::vector<uint64_t> swap_after = {100, 200, 300, 400};
+  size_t num_iterations = 3000;
+  int seed = 10;
+  auto ctr = simulator::_test_helper_hook("--agedexp --model_count 5 --cb_explore_adf --quiet  -q ::",
+                                            empty_hooks, num_iterations, seed, swap_after);
+}
+
 BOOST_AUTO_TEST_CASE(ae_save_load)
 {
   callback_map empty_hooks;
