@@ -87,7 +87,6 @@ option(WARNINGS "Turn on warning flags. ON by default." ON)
 option(WARNING_AS_ERROR "Turn on warning as error. OFF by default." OFF)
 option(STATIC_LINK_VW "Link VW executable statically. Off by default." OFF)
 option(STATIC_LINK_VW_JAVA "Link VW-JNI shared library statically. Off by default." OFF)
-
 option(VW_INSTALL "Add install targets." ON)
 option(BUILD_TESTS "Build and enable tests." ON)
 option(BUILD_BENCHMARKS "Build benchmarks" OFF)
@@ -102,6 +101,27 @@ option(FMT_SYS_DEP "Override using the submodule for FMT dependency. Instead wil
 option(SPDLOG_SYS_DEP "Override using the submodule for spdlog dependency. Instead will use find_package" OFF)
 option(BUILD_FLATBUFFERS "Build flatbuffers" OFF)
 option(BUILD_PRIVACY_ACTIVATION "Enable privacy activation feature" OFF)
+
+if(BUILD_TESTS)
+  message(WARNING "Use standard option BUILD_TESTING instead of BUILD_TESTS. BUILD_TESTS will be removed in the future.")
+  SET(BUILD_TESTING ${BUILD_TESTS} CACHE BOOL "Set value to BUILD_TESTING")
+endif()
+
+if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
+    include(CTest)
+endif()
+
+if(VW_INSTALL AND NOT FMT_SYS_DEP)
+  message(WARNING "Installing with a vendored version of fmt is not recommended. Use FMT_SYS_DEP to use a system dependency and silence this warning.")
+endif()
+
+if(VW_INSTALL AND NOT SPDLOG_SYS_DEP)
+  message(WARNING "Installing with a vendored version of spdlog is not recommended. Use SPDLOG_SYS_DEP to use a system dependency and silence this warning.")
+endif()
+
+if(VW_INSTALL AND NOT RAPIDJSON_SYS_DEP)
+  message(WARNING "Installing with a vendored version of rapidjson is not recommended. Use SPDLOG_SYS_DEP to use a system dependency and silence this warning.")
+endif()
 
 string(TOUPPER "${CMAKE_BUILD_TYPE}" CONFIG)
 
@@ -274,11 +294,9 @@ if(BUILD_BENCHMARKS)
   add_subdirectory(test/benchmarks)
 endif()
 
-if(BUILD_TESTS)
+if(BUILD_TESTING)
   # Boost test is only required if we are building tests
   find_package(Boost REQUIRED COMPONENTS unit_test_framework)
-
-  enable_testing()
   add_subdirectory(test)
 
   set(vw_c_api_unit_test_target "")
