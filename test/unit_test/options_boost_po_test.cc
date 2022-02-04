@@ -4,7 +4,9 @@
 
 #include <boost/test/unit_test.hpp>
 #include <boost/test/test_tools.hpp>
+#include <boost/mpl/vector.hpp>
 
+#include "config/options_cli.h"
 #include "test_common.h"
 
 #include "memory.h"
@@ -33,7 +35,10 @@ std::array<char*, N> convert_to_command_args(char* command_line, int& argc)
   return argv;
 }
 
-BOOST_AUTO_TEST_CASE(typed_options_parsing)
+using option_types = boost::mpl::vector<options_boost_po, options_cli>;
+
+
+BOOST_AUTO_TEST_CASE_TEMPLATE(typed_options_parsing, T, option_types)
 {
   std::string str_arg;
   int int_opt;
@@ -45,7 +50,7 @@ BOOST_AUTO_TEST_CASE(typed_options_parsing)
   // Only the returned char* needs to be deleted as the individual pointers simply point into command_line.
   auto argv = convert_to_command_args(command_line, argc);
 
-  std::unique_ptr<options_i> options = std::unique_ptr<options_boost_po>(new options_boost_po(argc, argv.data()));
+  std::unique_ptr<options_i> options = std::unique_ptr<T>(new T(argc, argv.data()));
 
   option_group_definition arg_group("group");
   arg_group.add(make_option("str_opt", str_arg));
