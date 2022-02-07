@@ -117,12 +117,10 @@ struct cli_typed_option_handler : typed_option_visitor
     }
   }
 
-  // 1. bool options. If zero args, set to true. If there are args process them. If there are any >1 sized vectors move
-  // them to positional.
-
   template <typename T>
   void handle_typed_option(typed_option<T>& option)
   {
+    // Now that we know this is a scalar option, move all following args to the positional vector.
     if (m_options.m_tokens.find(option.m_name) != m_options.m_tokens.end())
     {
       move_excess_to_positional(m_options.m_tokens[option.m_name]);
@@ -154,6 +152,7 @@ struct cli_typed_option_handler : typed_option_visitor
       std::string token_to_use = flattened_tokens.front();
       if (!option.m_allow_override) { check_disagreeing_option_values(token_to_use, option.m_name, flattened_tokens); }
 
+      // TODO: more robust and helpful value parsing. i.e. detect if a narrowing float conversion occurs
       T value;
       std::stringstream ss;
       ss << token_to_use;
@@ -221,7 +220,7 @@ struct cli_typed_option_handler : typed_option_visitor
     // Handle values
     else
     {
-      for (auto& token_list : all_tokens)
+      for (const auto& token_list : all_tokens)
       {
         if (token_list.empty()) { THROW("No value supplied for " << option.m_name) }
       }
