@@ -94,4 +94,4 @@ std::map<std::string, std::vector<option_group_definition>> options_i::get_colle
 const std::vector<option_group_definition>& options_i::get_all_option_group_definitions() const
 {
   return m_option_group_definitions;
-};
+}
