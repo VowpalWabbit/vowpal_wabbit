@@ -99,13 +99,13 @@ set(vw_all_headers
   config/cli_options_serializer.h
   config/help_formatter.h
   config/option_group_definition.h
+  config/option.h
   config/options_boost_po.h
   config/options_cli.h
   config/options_name_extractor.h
   config/options_serializer.h
   config/options_types.h
   config/options.h
-  config/option.h
   constant.h
   continuous_actions_reduction_features.h
   correctedMath.h

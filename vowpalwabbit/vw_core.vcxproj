@@ -89,7 +89,7 @@
   </ItemDefinitionGroup>
   <ItemDefinitionGroup>
     <ClCompile>
-      <AdditionalIncludeDirectories>..\explore\static;./win32;%(AdditionalIncludeDirectories);$(ProjectDir)\..\ext_libs\rapidjson\include;$(ProjectDir)\..\explore;$(ProjectDir)\..\ext_libs\fmt\include;$(ProjectDir)\..\ext_libs\spdlog\include</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)\..\vowpalwabbit;$(ProjectDir)..\explore\static;./win32;%(AdditionalIncludeDirectories);$(ProjectDir)\..\ext_libs\rapidjson\include;$(ProjectDir)\..\explore;$(ProjectDir)\..\ext_libs\fmt\include;$(ProjectDir)\..\ext_libs\spdlog\include</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>ZLIB_WINAPI;$(BUILD_FLATBUFFERS);SPDLOG_COMPILED_LIB;SPDLOG_FMT_EXTERNAL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalOptions>/D "_CRT_SECURE_NO_WARNINGS" %(AdditionalOptions)</AdditionalOptions>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
@@ -168,7 +168,6 @@
     <ClInclude Include="ccb_label.h" />
     <ClInclude Include="ccb_reduction_features.h" />
     <ClInclude Include="classweight.h" />
-    <ClInclude Include="cli_help_formatter.h" />
     <ClInclude Include="conditional_contextual_bandit.h" />
     <ClInclude Include="confidence.h" />
     <ClInclude Include="config/cli_help_formatter.h"/>
@@ -350,7 +349,6 @@
     <ClCompile Include="ccb_reduction_features.cc" />
     <ClCompile Include="../ext_libs/spdlog/src/cfg.cpp" />
     <ClCompile Include="classweight.cc" />
-    <ClCompile Include="cli_help_formatter.cc" />
     <ClCompile Include="../ext_libs/spdlog/src/color_sinks.cpp" />
     <ClCompile Include="conditional_contextual_bandit.cc" />
     <ClCompile Include="confidence.cc" />
