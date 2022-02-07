@@ -315,6 +315,78 @@ public:
   float tau;
 };
 
+class expectileloss : public loss_function
+{
+public:
+  expectileloss(float& q_) : q(q_) {}
+
+  std::string getType() override { return "expectile"; }
+  float getParameter() override { return q; }
+
+  float getLoss(shared_data*, float prediction, float label) override
+  {
+    float e = label - prediction;
+    if (e > 0)
+      return q * e * e;
+    else
+      return (1.f - q) * e * e;
+  }
+
+  float getUpdate(float prediction, float label, float update_scale, float pred_per_update) override
+  {
+    float err = label - prediction;
+    if (err == 0) return 0;
+    float normal = update_scale * pred_per_update;  // base update size
+    if (err > 0)
+    {
+      normal = 2.f * q * err * normal;
+      return (normal < err ? 2.f * q * err * update_scale : err / pred_per_update); //err / pred_per_update <-check this
+    }
+    else
+    {
+      normal = 2.f * (1.f - q) * err * normal;
+      return (normal > err ? 2.f * (1.f - q) * err * update_scale : err / pred_per_update);
+    }
+  }
+
+  float getUnsafeUpdate(float prediction, float label, float update_scale) override
+  {
+    float err = label - prediction;
+    if (err == 0) return 0;
+    if (err > 0) return 2.f * q * err * update_scale; // -first_der * update_scale
+    return 2.f * (1.f - q) * err * update_scale;
+  }
+
+  float getRevertingWeight(shared_data* sd, float prediction, float eta_t) override
+  {
+    float v, t;
+    t = 0.5f * (sd->min_label + sd->max_label);
+    if (prediction > t)
+      v = 2.f * (1.f - q) * e; // -first_der reverse
+    else
+      v = 2.f * q * e;
+    return (t - prediction) / (eta_t * v);  //check this
+  }
+
+  float first_derivative(shared_data*, float prediction, float label) override
+  {
+    float e = label - prediction;
+    if (e == 0) return 0;
+    return e > 0 ? -2.f * q * e : -2.f * (1.f - q) * e ;
+  }
+
+  float getSquareGrad(float prediction, float label) override
+  {
+    float fd = first_derivative(nullptr, prediction, label);
+    return fd * fd;
+  }
+
+  float second_derivative(shared_data*, float prediction, float label) override
+    float e = label - prediction;
+    if (e == 0) return 0;
+    return e > 0 ? 2.f * q : 2.f * (1.f - q);
+};
+
 class poisson_loss : public loss_function
 {
   VW::io::logger logger;
@@ -400,6 +472,10 @@ std::unique_ptr<loss_function> getLossFunction(
   else if (funcName == "quantile" || funcName == "pinball" || funcName == "absolute")
   {
     return VW::make_unique<quantileloss>(function_parameter);
+  }
+  else if (funcName == "expectile")
+  {
+    return VW::make_unique<expectileloss>(function_parameter);
   }
   else if (funcName == "poisson")
   {
