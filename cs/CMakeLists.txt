@@ -1,7 +1,7 @@
 message(STATUS "Building .NET Framework Bindings")
 enable_language(CSharp)
 
-# Explicitly set the `PlatformTarget` for C# projects, since AnyCPU can result in 
+# Explicitly set the `PlatformTarget` for C# projects, since AnyCPU can result in
 # System.BadImageFormatException throws, when trying to load C++/CLI assemblies.
 IF(CMAKE_GENERATOR_PLATFORM STREQUAL "x64")
   SET(CMAKE_CSharp_FLAGS "/platform:x64")
@@ -25,7 +25,7 @@ add_subdirectory(cs_console)
 
 add_subdirectory(examples/simulator)
 
-if (BUILD_TESTS)
+if (BUILD_TESTING)
   add_subdirectory(testcommon)
   add_subdirectory(unittest)
   add_subdirectory(cs_unittest_nofriend)

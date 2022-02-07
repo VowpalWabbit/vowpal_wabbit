@@ -1,4 +1,4 @@
-if(BUILD_TESTS)
+if(BUILD_TESTING)
   add_executable(vw_c_api_unit_test
     test_main.cc
     placeholder_test.cc
