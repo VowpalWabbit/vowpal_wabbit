@@ -25,8 +25,7 @@ struct cli_typed_option_handler;
 
 struct options_cli : public options_i, typed_option_visitor
 {
-  options_cli(int argc, char** argv);
-  options_cli(const std::vector<std::string>& args);
+  options_cli(std::vector<std::string> args);
 
   void internal_add_and_parse(const option_group_definition& group) override;
   VW_ATTR(nodiscard) bool was_supplied(const std::string& key) const override;
@@ -40,6 +39,8 @@ struct options_cli : public options_i, typed_option_visitor
   friend struct details::cli_typed_option_handler;
 
 private:
+  void process_command_line();
+
   std::vector<std::string> m_command_line;
 
   // Key is either short or long name

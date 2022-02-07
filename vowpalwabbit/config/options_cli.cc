@@ -5,6 +5,7 @@
 #include "config/options_cli.h"
 
 #include <memory>
+#include <utility>
 #include <vector>
 #include <sstream>
 #include <set>
@@ -233,12 +234,10 @@ struct cli_typed_option_handler : typed_option_visitor
 
 }  // namespace details
 
-options_cli::options_cli(int argc, char** argv) : options_cli(std::vector<std::string>(argv + 1, argv + argc)) {}
-
-options_cli::options_cli(const std::vector<std::string>& args) : m_command_line(args)
+void options_cli::process_command_line()
 {
   std::string last_opt;
-  for (const auto& arg : args)
+  for (const auto& arg : m_command_line)
   {
     if (arg.find("--") == 0)
     {
@@ -293,6 +292,8 @@ options_cli::options_cli(const std::vector<std::string>& args) : m_command_line(
   }
 }
 
+options_cli::options_cli(std::vector<std::string> args) : m_command_line(std::move(args)) { process_command_line(); }
+
 void options_cli::internal_add_and_parse(const option_group_definition& group)
 {
   for (const auto& opt_ptr : group.m_options)
@@ -327,6 +328,7 @@ void options_cli::internal_add_and_parse(const option_group_definition& group)
     }
   }
 }
+
 bool options_cli::was_supplied(const std::string& key) const { return m_tokens.find(key) != m_tokens.end(); }
 
 void options_cli::check_unregistered(VW::io::logger& logger)
