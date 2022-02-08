@@ -299,7 +299,7 @@ void generic_output_example(VW::workspace& all, float loss, example& ec, CB::lab
       maxid = ec.pred.a_s[i].action + 1;
     }
   }
-  for (auto& sink : all.final_prediction_sink) all.print_text_by_ref(sink.get(), ss.str(), ec.tag, all.logger);
+  for (auto& sink : all.final_prediction_sink) { all.print_text_by_ref(*sink, ss.str(), ec.tag); }
 
   std::stringstream sso;
   sso << maxid << ":" << std::fixed << maxprob;

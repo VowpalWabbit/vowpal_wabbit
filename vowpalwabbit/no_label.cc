@@ -66,8 +66,8 @@ void output_and_account_no_label_example(VW::workspace& all, example& ec)
 {
   all.sd->update(ec.test_only, false, ec.loss, ec.weight, ec.get_num_features());
 
-  all.print_by_ref(all.raw_prediction.get(), ec.partial_prediction, -1, ec.tag, all.logger);
-  for (auto& sink : all.final_prediction_sink) { all.print_by_ref(sink.get(), ec.pred.scalar, 0, ec.tag, all.logger); }
+  if (all.raw_prediction) { all.print_by_ref(*all.raw_prediction, ec.partial_prediction, -1, ec.tag); }
+  for (auto& sink : all.final_prediction_sink) { all.print_by_ref(*sink, ec.pred.scalar, 0, ec.tag); }
 
   print_no_label_update(all, ec);
 }

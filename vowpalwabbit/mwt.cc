@@ -134,27 +134,19 @@ void predict_or_learn(mwt& c, single_learner& base, example& ec)
   ec.pred.scalars = preds;
 }
 
-void print_scalars(VW::io::writer* f, v_array<float>& scalars, v_array<char>& tag, VW::io::logger& logger)
+void print_scalars(std::ostream& output, v_array<float>& scalars, v_array<char>& tag)
 {
-  if (f != nullptr)
+  for (size_t i = 0; i < scalars.size(); i++)
   {
-    std::stringstream ss;
-
-    for (size_t i = 0; i < scalars.size(); i++)
-    {
-      if (i > 0) ss << ' ';
-      ss << scalars[i];
-    }
-    for (size_t i = 0; i < tag.size(); i++)
-    {
-      if (i == 0) ss << ' ';
-      ss << tag[i];
-    }
-    ss << '\n';
-    ssize_t len = ss.str().size();
-    ssize_t t = f->write(ss.str().c_str(), static_cast<unsigned int>(len));
-    if (t != len) logger.err_error("write error: {}", VW::strerror_to_string(errno));
+    if (i > 0) output << ' ';
+    output << scalars[i];
   }
+  for (size_t i = 0; i < tag.size(); i++)
+  {
+    if (i == 0) output << ' ';
+    output << tag[i];
+  }
+  output << '\n';
 }
 
 void finish_example(VW::workspace& all, mwt& c, example& ec)
@@ -165,7 +157,7 @@ void finish_example(VW::workspace& all, mwt& c, example& ec)
       loss = get_cost_estimate(c.optional_observation.second, static_cast<uint32_t>(ec.pred.scalars[0]));
   all.sd->update(ec.test_only, c.optional_observation.first, loss, 1.f, ec.get_num_features());
 
-  for (auto& sink : all.final_prediction_sink) print_scalars(sink.get(), ec.pred.scalars, ec.tag, all.logger);
+  for (auto& sink : all.final_prediction_sink) { print_scalars(*sink, ec.pred.scalars, ec.tag); }
 
   if (c.learn)
   {

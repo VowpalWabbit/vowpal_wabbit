@@ -1130,13 +1130,14 @@ void parse_output_preds(options_i& options, VW::workspace& all)
 
     if (predictions == "stdout")
     {
-      all.final_prediction_sink.push_back(VW::io::open_stdout());  // stdout
+      all.final_prediction_sink.push_back(VW::make_unique<std::ostream>(std::cout.rdbuf()));  // stdout
     }
     else
     {
       try
       {
-        all.final_prediction_sink.push_back(VW::io::open_file_writer(predictions));
+        all.final_prediction_sink.push_back(VW::make_unique<VW::io::owning_ostream>(
+            VW::make_unique<VW::io::writer_stream_buf>(VW::io::open_file_writer(predictions))));
       }
       catch (...)
       {
@@ -1153,10 +1154,11 @@ void parse_output_preds(options_i& options, VW::workspace& all)
       if (options.was_supplied("binary"))
       { all.logger.err_warn("--raw_predictions has no defined value when --binary specified, expect no output"); }
     }
-    if (raw_predictions == "stdout") { all.raw_prediction = VW::io::open_stdout(); }
+    if (raw_predictions == "stdout") { all.raw_prediction = VW::make_unique<std::ostream>(std::cout.rdbuf()); }
     else
     {
-      all.raw_prediction = VW::io::open_file_writer(raw_predictions);
+      all.raw_prediction = VW::make_unique<VW::io::owning_ostream>(
+          VW::make_unique<VW::io::writer_stream_buf>(VW::io::open_file_writer(raw_predictions)));
     }
   }
 }

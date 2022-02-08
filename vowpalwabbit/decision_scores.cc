@@ -51,25 +51,17 @@ void print_update(VW::workspace& all, const std::vector<example*>& slots, const 
 
 namespace VW
 {
-void print_decision_scores(VW::io::writer* f, const VW::decision_scores_t& decision_scores, VW::io::logger& logger)
+void print_decision_scores(std::ostream& output, const VW::decision_scores_t& decision_scores)
 {
-  if (f != nullptr)
+  for (const auto& slot : decision_scores)
   {
-    std::stringstream ss;
-    for (const auto& slot : decision_scores)
+    std::string delimiter;
+    for (const auto& action_score : slot)
     {
-      std::string delimiter;
-      for (const auto& action_score : slot)
-      {
-        ss << delimiter << action_score.action << ':' << action_score.score;
-        delimiter = ",";
-      }
-      ss << '\n';
+      output << delimiter << action_score.action << ':' << action_score.score;
+      delimiter = ",";
     }
-    const auto str = ss.str();
-    ssize_t len = str.size();
-    ssize_t t = f->write(str.c_str(), static_cast<unsigned int>(len));
-    if (t != len) { logger.err_error("write error: {}", VW::strerror_to_string(errno)); }
+    output << '\n';
   }
 }
 

@@ -2,8 +2,10 @@
 // individual contributors. All rights reserved. Released under a BSD (revised)
 // license as described in the file LICENSE.
 
-#include <ostream>
 #include <memory>
+#include <ostream>
+#include <streambuf>
+#include <utility>
 
 namespace VW
 {
@@ -16,6 +18,8 @@ public:
       : std::ostream(output.get()), _output_buffer(std::move(output))
   {
   }
+
+  ~owning_ostream() override { this->flush(); }
 
 private:
   std::unique_ptr<std::streambuf> _output_buffer;

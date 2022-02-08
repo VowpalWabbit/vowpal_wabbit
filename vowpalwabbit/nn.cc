@@ -306,7 +306,7 @@ void predict_or_learn_multi(nn& n, single_learner& base, example& ec)
     if (shouldOutput)
     {
       outputStringStream << ' ' << n.output_layer.partial_prediction;
-      n.all->print_text_by_ref(n.all->raw_prediction.get(), outputStringStream.str(), ec.tag, n.all->logger);
+      n.all->print_text_by_ref(*n.all->raw_prediction, outputStringStream.str(), ec.tag);
     }
 
     if (is_learn)
@@ -400,7 +400,7 @@ void multipredict(nn& n, single_learner& base, example& ec, size_t count, size_t
 
 void finish_example(VW::workspace& all, nn&, example& ec)
 {
-  std::unique_ptr<VW::io::writer> temp(nullptr);
+  std::unique_ptr<std::ostream> temp(nullptr);
   auto raw_prediction_guard = VW::swap_guard(all.raw_prediction, temp);
   return_simple_example(all, nullptr, ec);
 }

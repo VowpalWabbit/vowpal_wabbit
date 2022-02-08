@@ -1208,7 +1208,7 @@ action single_prediction_notLDF(search_private& priv, example& ec, int policy, c
       (*priv.rawOutputStringStream) << cs_get_cost_index(priv.cb_learner, ec.l, k) << ':'
                                     << cs_get_cost_partial_prediction(priv.cb_learner, ec.l, k);
     }
-    all.print_text_by_ref(all.raw_prediction.get(), priv.rawOutputStringStream->str(), ec.tag, all.logger);
+    if (all.raw_prediction) { all.print_text_by_ref(*all.raw_prediction, priv.rawOutputStringStream->str(), ec.tag); }
   }
 
   ec.l = old_label;
@@ -2055,9 +2055,9 @@ void train_single_example(search& sch, bool is_test_ex, bool is_holdout_ex, mult
 
     // generate output
     for (auto& sink : all.final_prediction_sink)
-    { all.print_text_by_ref(sink.get(), priv.pred_string->str(), ec_seq[0]->tag, all.logger); }
+    { all.print_text_by_ref(*sink, priv.pred_string->str(), ec_seq[0]->tag); }
 
-    if (all.raw_prediction != nullptr) all.print_text_by_ref(all.raw_prediction.get(), "", ec_seq[0]->tag, all.logger);
+    if (all.raw_prediction != nullptr) { all.print_text_by_ref(*all.raw_prediction, "", ec_seq[0]->tag); }
   }
 
   // if we're not training, then we're done!

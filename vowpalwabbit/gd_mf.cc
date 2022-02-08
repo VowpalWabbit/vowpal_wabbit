@@ -32,8 +32,8 @@ struct gdmf
 
 void mf_print_offset_features(gdmf& d, example& ec, size_t offset)
 {
-  // TODO: Where should audit stuff output to?
   VW::workspace& all = *d.all;
+  auto& audit_output = *all.audit_writer;
   parameters& weights = all.weights;
   uint64_t mask = weights.mask();
   for (features& fs : ec)
@@ -41,10 +41,10 @@ void mf_print_offset_features(gdmf& d, example& ec, size_t offset)
     bool audit = !fs.space_names.empty();
     for (const auto& f : fs.audit_range())
     {
-      std::cout << '\t';
-      if (audit) std::cout << f.audit()->first << '^' << f.audit()->second << ':';
-      std::cout << f.index() << "(" << ((f.index() + offset) & mask) << ")" << ':' << f.value();
-      std::cout << ':' << (&weights[f.index()])[offset];
+      audit_output << '\t';
+      if (audit) audit_output << f.audit()->first << '^' << f.audit()->second << ':';
+      audit_output << f.index() << "(" << ((f.index() + offset) & mask) << ")" << ':' << f.value();
+      audit_output << ':' << (&weights[f.index()])[offset];
     }
   }
   for (const auto& i : all.interactions)
@@ -60,26 +60,27 @@ void mf_print_offset_features(gdmf& d, example& ec, size_t offset)
         for (const auto& f1 : ec.feature_space[static_cast<unsigned char>(i[0])].audit_range())
           for (const auto& f2 : ec.feature_space[static_cast<unsigned char>(i[1])].audit_range())
           {
-            std::cout << '\t' << f1.audit()->first << k << '^' << f1.audit()->second << ':' << ((f1.index() + k) & mask)
-                      << "(" << ((f1.index() + offset + k) & mask) << ")" << ':' << f1.value();
-            std::cout << ':' << (&weights[f1.index()])[offset + k];
+            audit_output << '\t' << f1.audit()->first << k << '^' << f1.audit()->second << ':'
+                         << ((f1.index() + k) & mask) << "(" << ((f1.index() + offset + k) & mask) << ")" << ':'
+                         << f1.value();
+            audit_output << ':' << (&weights[f1.index()])[offset + k];
 
-            std::cout << ':' << f2.audit()->first << k << '^' << f2.audit()->second << ':'
-                      << ((f2.index() + k + d.rank) & mask) << "(" << ((f2.index() + offset + k + d.rank) & mask) << ")"
-                      << ':' << f2.value();
-            std::cout << ':' << (&weights[f2.index()])[offset + k + d.rank];
+            audit_output << ':' << f2.audit()->first << k << '^' << f2.audit()->second << ':'
+                         << ((f2.index() + k + d.rank) & mask) << "(" << ((f2.index() + offset + k + d.rank) & mask)
+                         << ")" << ':' << f2.value();
+            audit_output << ':' << (&weights[f2.index()])[offset + k + d.rank];
 
-            std::cout << ':' << (&weights[f1.index()])[offset + k] * (&weights[f2.index()])[offset + k + d.rank];
+            audit_output << ':' << (&weights[f1.index()])[offset + k] * (&weights[f2.index()])[offset + k + d.rank];
           }
       }
     }
   }
-  std::cout << std::endl;
+  audit_output << std::endl;
 }
 
 void mf_print_audit_features(gdmf& d, example& ec, size_t offset)
 {
-  print_result_by_ref(d.all->stdout_adapter.get(), ec.pred.scalar, -1, ec.tag, d.all->logger);
+  print_result_by_ref(*d.all->audit_writer, ec.pred.scalar, -1, ec.tag);
   mf_print_offset_features(d, ec, offset);
 }
 

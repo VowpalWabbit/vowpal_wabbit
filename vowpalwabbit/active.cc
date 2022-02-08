@@ -103,20 +103,13 @@ void predict_or_learn_active(active& a, single_learner& base, example& ec)
   }
 }
 
-void active_print_result(VW::io::writer* f, float res, float weight, const v_array<char>& tag, VW::io::logger& logger)
+void active_print_result(std::ostream& output, float res, float weight, const v_array<char>& tag)
 {
-  if (f == nullptr) { return; }
-
-  std::stringstream ss;
-  ss << std::fixed << res;
-  ss << " ";
-  if (!tag.empty()) { ss << VW::string_view{tag.begin(), tag.size()}; }
-  if (weight >= 0) { ss << " " << std::fixed << weight; }
-  ss << '\n';
-  const auto ss_str = ss.str();
-  ssize_t len = ss_str.size();
-  ssize_t t = f->write(ss_str.c_str(), static_cast<unsigned int>(len));
-  if (t != len) { logger.err_error("write error: {}", VW::strerror_to_string(errno)); }
+  output << std::fixed << res;
+  output << " ";
+  if (!tag.empty()) { output << VW::string_view{tag.begin(), tag.size()}; }
+  if (weight >= 0) { output << " " << std::fixed << weight; }
+  output << '\n';
 }
 
 void output_and_account_example(VW::workspace& all, active& a, example& ec)
@@ -131,8 +124,8 @@ void output_and_account_example(VW::workspace& all, active& a, example& ec)
   if (ld.label == FLT_MAX)
   { ai = query_decision(a, ec.confidence, static_cast<float>(all.sd->weighted_unlabeled_examples)); }
 
-  all.print_by_ref(all.raw_prediction.get(), ec.partial_prediction, -1, ec.tag, all.logger);
-  for (auto& i : all.final_prediction_sink) { active_print_result(i.get(), ec.pred.scalar, ai, ec.tag, all.logger); }
+  if (all.raw_prediction) { all.print_by_ref(*all.raw_prediction, ec.partial_prediction, -1, ec.tag); }
+  for (auto& i : all.final_prediction_sink) { active_print_result(*i, ec.pred.scalar, ai, ec.tag); }
 
   print_update(all, ec);
 }

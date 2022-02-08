@@ -111,7 +111,7 @@ void generic_output_example(
   all.sd->update(ec.test_only, !CB::is_test_label(ld), loss, 1.f, ec.get_num_features());
 
   for (auto& sink : all.final_prediction_sink)
-    all.print_by_ref(sink.get(), static_cast<float>(ec.pred.multiclass), 0, ec.tag, all.logger);
+  { all.print_by_ref(*sink, static_cast<float>(ec.pred.multiclass), 0, ec.tag); }
 
   if (all.raw_prediction != nullptr)
   {
@@ -122,7 +122,7 @@ void generic_output_example(
       if (i > 0) outputStringStream << ' ';
       outputStringStream << cl.action << ':' << cl.partial_prediction;
     }
-    all.print_text_by_ref(all.raw_prediction.get(), outputStringStream.str(), ec.tag, all.logger);
+    if (all.raw_prediction) { all.print_text_by_ref(*all.raw_prediction, outputStringStream.str(), ec.tag); }
   }
 
   bool is_ld_test_label = CB::is_test_label(ld);

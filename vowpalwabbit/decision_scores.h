@@ -1,4 +1,3 @@
-
 // Copyright (c) by respective owners including Yahoo!, Microsoft, and
 // individual contributors. All rights reserved. Released under a BSD (revised)
 // license as described in the file LICENSE.
@@ -6,10 +5,8 @@
 #pragma once
 
 #include "v_array.h"
-#include "io/io_adapter.h"
-#include "io/logger.h"
 #include <iomanip>
-#include <iostream>
+#include <ostream>
 #include <vector>
 
 namespace ACTION_SCORE
@@ -30,7 +27,7 @@ namespace VW
 // of CB for that call.
 using decision_scores_t = std::vector<ACTION_SCORE::action_scores>;
 
-void print_decision_scores(VW::io::writer* f, const VW::decision_scores_t& decision_scores, VW::io::logger& logger);
+void print_decision_scores(std::ostream& output, const VW::decision_scores_t& decision_scores);
 
 void print_update_ccb(VW::workspace& all, std::vector<example*>& slots, const VW::decision_scores_t& decision_scores,
     size_t num_features);

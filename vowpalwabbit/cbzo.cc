@@ -164,12 +164,12 @@ void set_minmax(shared_data* sd, float label, bool min_fixed, bool max_fixed)
 
 inline std::string get_pred_repr(example& ec)
 {
-  return continuous_actions::to_string(ec.pred.pdf, false, std::numeric_limits<float>::max_digits10);
+  return continuous_actions::to_string(ec.pred.pdf, std::numeric_limits<float>::max_digits10);
 }
 
 void print_audit_features(VW::workspace& all, example& ec)
 {
-  if (all.audit) all.print_text_by_ref(all.stdout_adapter.get(), get_pred_repr(ec), ec.tag, all.logger);
+  if (all.audit) { all.print_text_by_ref(*all.audit_writer, get_pred_repr(ec), ec.tag); }
 
   GD::print_features(all, ec);
 }
@@ -263,7 +263,7 @@ void report_progress(VW::workspace& all, example& ec)
 void output_prediction(VW::workspace& all, example& ec)
 {
   std::string pred_repr = get_pred_repr(ec);
-  for (auto& sink : all.final_prediction_sink) all.print_text_by_ref(sink.get(), pred_repr, ec.tag, all.logger);
+  for (auto& sink : all.final_prediction_sink) { all.print_text_by_ref(*sink, pred_repr, ec.tag); }
 }
 
 void finish_example(VW::workspace& all, cbzo&, example& ec)

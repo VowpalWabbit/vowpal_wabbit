@@ -43,8 +43,8 @@ void output_and_account_example(VW::workspace& all, const example& ec)
   all.sd->update(ec.test_only, ld.label != FLT_MAX, ec.loss, ec.weight, ec.get_num_features());
   if (ld.label != FLT_MAX && !ec.test_only) all.sd->weighted_labels += (static_cast<double>(ld.label)) * ec.weight;
 
-  all.print_by_ref(all.raw_prediction.get(), ec.partial_prediction, -1, ec.tag, all.logger);
-  for (auto& f : all.final_prediction_sink) { all.print_by_ref(f.get(), ec.pred.scalar, 0, ec.tag, all.logger); }
+  if (all.raw_prediction) { all.print_by_ref(*all.raw_prediction, ec.partial_prediction, -1, ec.tag); }
+  for (auto& f : all.final_prediction_sink) { all.print_by_ref(*f, ec.pred.scalar, 0, ec.tag); }
 
   print_update(all, ec);
 }

@@ -241,12 +241,11 @@ void output_example(
 
   for (auto& sink : all.final_prediction_sink)
   {
-    if (!all.sd->ldict)
-    { all.print_by_ref(sink.get(), static_cast<float>(multiclass_prediction), 0, ec.tag, all.logger); }
+    if (!all.sd->ldict) { all.print_by_ref(*sink, static_cast<float>(multiclass_prediction), 0, ec.tag); }
     else
     {
       VW::string_view sv_pred = all.sd->ldict->get(multiclass_prediction);
-      all.print_text_by_ref(sink.get(), sv_pred.to_string(), ec.tag, all.logger);
+      all.print_text_by_ref(*sink, sv_pred.to_string(), ec.tag);
     }
   }
 
@@ -259,7 +258,7 @@ void output_example(
       if (i > 0) outputStringStream << ' ';
       outputStringStream << cl.class_index << ':' << cl.partial_prediction;
     }
-    all.print_text_by_ref(all.raw_prediction.get(), outputStringStream.str(), ec.tag, all.logger);
+    if (all.raw_prediction) { all.print_text_by_ref(*all.raw_prediction, outputStringStream.str(), ec.tag); }
   }
 
   print_update(all, test_label(label), ec, nullptr, false, multiclass_prediction);

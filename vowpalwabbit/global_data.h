@@ -205,8 +205,6 @@ public:
 
   uint32_t wpp;
 
-  std::unique_ptr<VW::io::writer> stdout_adapter;
-
   std::vector<std::string> initial_regressors;
 
   std::string feature_mask;
@@ -256,7 +254,7 @@ public:
   bool quiet;
   bool audit;  // should I print lots of debugging information?
   std::shared_ptr<std::vector<char>> audit_buffer;
-  std::unique_ptr<VW::io::writer> audit_writer;
+  std::unique_ptr<std::ostream> audit_writer;
   bool training;  // Should I train if lable data is available?
   bool active;
   bool invariant_updates;  // Should we use importance aware/safe updates
@@ -287,11 +285,11 @@ public:
   size_t length() { return (static_cast<size_t>(1)) << num_bits; };
 
   // Prediction output
-  std::vector<std::unique_ptr<VW::io::writer>> final_prediction_sink;  // set to send global predictions to.
-  std::unique_ptr<VW::io::writer> raw_prediction;                      // file descriptors for text output.
+  std::vector<std::unique_ptr<std::ostream>> final_prediction_sink;  // set to send global predictions to.
+  std::unique_ptr<std::ostream> raw_prediction;                      // file descriptors for text output.
 
-  void (*print_by_ref)(VW::io::writer*, float, float, const v_array<char>&, VW::io::logger&);
-  void (*print_text_by_ref)(VW::io::writer*, const std::string&, const v_array<char>&, VW::io::logger&);
+  void (*print_by_ref)(std::ostream&, float, float, const v_array<char>&);
+  void (*print_text_by_ref)(std::ostream&, const std::string&, const v_array<char>&);
   std::unique_ptr<loss_function> loss;
 
   bool stdin_off;
@@ -343,9 +341,8 @@ private:
 };
 }  // namespace VW
 
-void print_result_by_ref(VW::io::writer* f, float res, float weight, const v_array<char>& tag, VW::io::logger& logger);
-void binary_print_result_by_ref(
-    VW::io::writer* f, float res, float weight, const v_array<char>& tag, VW::io::logger& logger);
+void print_result_by_ref(std::ostream& f, float res, float weight, const v_array<char>& tag);
+void binary_print_result_by_ref(std::ostream& f, float res, float weight, const v_array<char>& tag);
 
 void noop_mm(shared_data*, float label);
 void get_prediction(VW::io::reader* f, float& res, float& weight);

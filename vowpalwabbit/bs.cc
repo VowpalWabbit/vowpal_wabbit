@@ -127,18 +127,11 @@ void bs_predict_vote(example& ec, std::vector<double>& pred_vec)
   ec.loss = ((ec.pred.scalar == ec.l.simple.label) ? 0.f : 1.f) * ec.weight;
 }
 
-void print_result(VW::io::writer* f, float res, const v_array<char>& tag, float lb, float ub, VW::io::logger& logger)
+void print_result(std::ostream& output, float res, const v_array<char>& tag, float lb, float ub)
 {
-  if (f == nullptr) { return; }
-
-  std::stringstream ss;
-  ss << std::fixed << res;
-  if (!tag.empty()) { ss << " " << VW::string_view{tag.begin(), tag.size()}; }
-  ss << std::fixed << ' ' << lb << ' ' << ub << '\n';
-  const auto ss_str = ss.str();
-  ssize_t len = ss_str.size();
-  ssize_t t = f->write(ss_str.c_str(), static_cast<unsigned int>(len));
-  if (t != len) { logger.err_error("write error: {}", VW::strerror_to_string(errno)); }
+  output << std::fixed << res;
+  if (!tag.empty()) { output << " " << tag; }
+  output << std::fixed << ' ' << lb << ' ' << ub << '\n';
 }
 
 void output_example(VW::workspace& all, bs& d, const example& ec)
@@ -159,7 +152,7 @@ void output_example(VW::workspace& all, bs& d, const example& ec)
     }
   }
 
-  for (auto& sink : all.final_prediction_sink) print_result(sink.get(), ec.pred.scalar, ec.tag, d.lb, d.ub, all.logger);
+  for (auto& sink : all.final_prediction_sink) { print_result(*sink, ec.pred.scalar, ec.tag, d.lb, d.ub); }
 
   print_update(all, ec);
 }
@@ -207,7 +200,8 @@ void predict_or_learn(bs& d, single_learner& base, example& ec)
       THROW("Unknown bs_type specified: " << d.bs_type);
   }
 
-  if (shouldOutput) all.print_text_by_ref(all.raw_prediction.get(), outputStringStream.str(), ec.tag, all.logger);
+  if (shouldOutput && all.raw_prediction)
+  { all.print_text_by_ref(*all.raw_prediction, outputStringStream.str(), ec.tag); }
 }
 
 void finish_example(VW::workspace& all, bs& d, example& ec)

@@ -538,8 +538,8 @@ void output_example(VW::workspace& all, const example& ec, bool& hit_loss, const
     all.sd->sum_loss_since_last_dump += loss;
   }
 
-  for (const auto& sink : all.final_prediction_sink)
-    all.print_by_ref(sink.get(), static_cast<float>(ec.pred.multiclass), 0, ec.tag, all.logger);
+  for (auto& sink : all.final_prediction_sink)
+  { all.print_by_ref(*sink, static_cast<float>(ec.pred.multiclass), 0, ec.tag); }
 
   if (all.raw_prediction != nullptr)
   {
@@ -551,7 +551,7 @@ void output_example(VW::workspace& all, const example& ec, bool& hit_loss, const
       outputStringStream << costs[i].class_index << ':' << costs[i].partial_prediction;
     }
     // outputStringStream << std::endl;
-    all.print_text_by_ref(all.raw_prediction.get(), outputStringStream.str(), ec.tag, all.logger);
+    if (all.raw_prediction) { all.print_text_by_ref(*all.raw_prediction, outputStringStream.str(), ec.tag); }
   }
 
   COST_SENSITIVE::print_update(all, COST_SENSITIVE::cs_label.test_label(ec.l), ec, ec_seq, false, predicted_class);
@@ -566,11 +566,7 @@ void output_example_seq(VW::workspace& all, const multi_ex& ec_seq)
   bool hit_loss = false;
   for (example* ec : ec_seq) output_example(all, *ec, hit_loss, &(ec_seq));
 
-  if (all.raw_prediction != nullptr)
-  {
-    v_array<char> empty;
-    all.print_text_by_ref(all.raw_prediction.get(), "", empty, all.logger);
-  }
+  if (all.raw_prediction != nullptr) { *all.raw_prediction << "\n"; }
 }
 
 void output_example_regression_discrete(VW::workspace& all, cbify& data, example& ec)
@@ -612,7 +608,7 @@ void output_example_regression(VW::workspace& all, cbify& data, example& ec)
 }
 
 void output_cb_reg_predictions(
-    std::vector<std::unique_ptr<VW::io::writer>>& predict_file_descriptors, continuous_label& label)
+    std::vector<std::unique_ptr<std::ostream>>& predict_file_descriptors, continuous_label& label)
 {
   std::stringstream strm;
   if (label.costs.size() == 1)
@@ -628,8 +624,8 @@ void output_cb_reg_predictions(
   {
     strm << "ERR Too many costs found. Expecting one." << std::endl;
   }
-  const std::string str = strm.str();
-  for (auto& f : predict_file_descriptors) { f->write(str.c_str(), str.size()); }
+
+  for (auto& f : predict_file_descriptors) { *f << strm.str(); }
 }
 
 void finish_example_cb_reg_continous(VW::workspace& all, cbify& data, example& ec)
@@ -652,7 +648,6 @@ void finish_multiline_example(VW::workspace& all, cbify&, multi_ex& ec_seq)
   if (!ec_seq.empty())
   {
     output_example_seq(all, ec_seq);
-    // global_print_newline(all);
   }
   VW::finish_example(all, ec_seq);
 }

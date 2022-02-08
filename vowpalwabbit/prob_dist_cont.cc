@@ -12,11 +12,10 @@ namespace VW
 {
 namespace continuous_actions
 {
-std::string to_string(const probability_density_function_value& pdf_value, bool newline)
+std::string to_string(const probability_density_function_value& pdf_value)
 {
   std::stringstream strm;
   strm << pdf_value.action << "," << pdf_value.pdf_value;
-  if (newline) strm << endl;
   return strm.str();
 }
 
@@ -28,7 +27,7 @@ std::string to_string(const pdf_segment& seg)
 }
 
 // Convert pdf to string of form 'begin-end:pdf_value, ... '
-std::string to_string(const probability_density_function& pdf, bool newline, int precision)
+std::string to_string(const probability_density_function& pdf, int precision)
 {
   std::stringstream ss;
   if (precision >= 0) ss << std::setprecision(precision);
@@ -38,8 +37,6 @@ std::string to_string(const probability_density_function& pdf, bool newline, int
     if (i > 0) ss << ',';
     ss << pdf[i].left << '-' << pdf[i].right << ':' << pdf[i].pdf_value;
   }
-
-  if (newline) ss << endl;
 
   return ss.str();
 }

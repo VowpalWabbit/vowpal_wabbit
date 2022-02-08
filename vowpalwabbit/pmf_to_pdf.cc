@@ -223,7 +223,7 @@ void output_example(VW::workspace& all, reduction&, const example& ec, const CB:
   sprintf_s(temp_str, buffsz, "%d:%f", maxid, maxprob);
   sso << temp_str;
 
-  for (auto& sink : all.final_prediction_sink) all.print_text_by_ref(sink.get(), ss.str(), ec.tag, all.logger);
+  for (auto& sink : all.final_prediction_sink) { all.print_text_by_ref(*sink, ss.str(), ec.tag); }
 
   print_update(all, CB::is_test_label(ld), ec, sso);
 }

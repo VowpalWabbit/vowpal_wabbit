@@ -619,7 +619,7 @@ void output_example(VW::workspace& all, ccb& c, const multi_ex& ec_seq)
   all.sd->update(holdout_example, num_labeled > 0, loss, ec_seq[SHARED_EX_INDEX]->weight, num_features);
 
   for (auto& sink : all.final_prediction_sink)
-  { VW::print_decision_scores(sink.get(), ec_seq[SHARED_EX_INDEX]->pred.decision_scores, all.logger); }
+  { VW::print_decision_scores(*sink, ec_seq[SHARED_EX_INDEX]->pred.decision_scores); }
 
   VW::print_update_ccb(all, c.slots, preds, num_features);
 }
@@ -629,7 +629,7 @@ void finish_multiline_example(VW::workspace& all, ccb& data, multi_ex& ec_seq)
   if (!ec_seq.empty() && !data.no_pred)
   {
     output_example(all, data, ec_seq);
-    CB_ADF::global_print_newline(all.final_prediction_sink, all.logger);
+    for (auto& sink : all.final_prediction_sink) { *sink << '\n'; }
   }
 
   if (!data.no_pred)

@@ -99,7 +99,7 @@ class reduction_output
 {
 public:
   static void report_progress(VW::workspace& all, const cats_pdf&, const example& ec);
-  static void output_predictions(std::vector<std::unique_ptr<VW::io::writer>>& predict_file_descriptors,
+  static void output_predictions(std::vector<std::unique_ptr<std::ostream>>& predict_file_descriptors,
       const continuous_actions::probability_density_function& prediction);
 
 private:
@@ -116,16 +116,12 @@ void finish_example(VW::workspace& all, cats_pdf& data, example& ec)
   VW::finish_example(all, ec);
 }
 
-void reduction_output::output_predictions(std::vector<std::unique_ptr<VW::io::writer>>& predict_file_descriptors,
+void reduction_output::output_predictions(std::vector<std::unique_ptr<std::ostream>>& predict_file_descriptors,
     const continuous_actions::probability_density_function& prediction)
 {
   // output to the prediction to all files
-  const std::string str = to_string(prediction, true);
-  for (auto& f : predict_file_descriptors)
-  {
-    f->write(str.c_str(), str.size());
-    f->write("\n", 1);
-  }
+  const std::string str = to_string(prediction);
+  for (auto& output : predict_file_descriptors) { *output << str << "\n\n"; }
 }
 
 // "average loss" "since last" "example counter" "example weight"

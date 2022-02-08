@@ -76,23 +76,15 @@ std::pair<VW::topk::const_iterator_t, VW::topk::const_iterator_t> VW::topk::get_
 
 void VW::topk::clear_container() { _pr_queue.clear(); }
 
-void print_result(VW::io::writer* file_descriptor,
-    std::pair<VW::topk::const_iterator_t, VW::topk::const_iterator_t> const& view, VW::io::logger& logger)
+void print_result(std::ostream& output, std::pair<VW::topk::const_iterator_t, VW::topk::const_iterator_t> const& view)
 {
-  if (file_descriptor != nullptr)
+  for (auto it = view.first; it != view.second; it++)
   {
-    std::stringstream ss;
-    for (auto it = view.first; it != view.second; it++)
-    {
-      ss << std::fixed << it->first << " ";
-      if (!it->second.empty()) { ss << " " << VW::string_view{it->second.begin(), it->second.size()}; }
-      ss << " \n";
-    }
-    ss << '\n';
-    ssize_t len = ss.str().size();
-    auto t = file_descriptor->write(ss.str().c_str(), len);
-    if (t != len) logger.err_error("write error: {}", VW::strerror_to_string(errno));
+    output << std::fixed << it->first << " ";
+    if (!it->second.empty()) { output << " " << VW::string_view{it->second.begin(), it->second.size()}; }
+    output << " \n";
   }
+  output << '\n';
 }
 
 void output_example(VW::workspace& all, const example& ec)
@@ -117,7 +109,7 @@ void predict_or_learn(VW::topk& d, VW::LEARNER::single_learner& base, multi_ex& 
 void finish_example(VW::workspace& all, VW::topk& d, multi_ex& ec_seq)
 {
   for (auto ec : ec_seq) output_example(all, *ec);
-  for (auto& sink : all.final_prediction_sink) print_result(sink.get(), d.get_container_view(), all.logger);
+  for (auto& sink : all.final_prediction_sink) { print_result(*sink, d.get_container_view()); }
   d.clear_container();
   VW::finish_example(all, ec_seq);
 }

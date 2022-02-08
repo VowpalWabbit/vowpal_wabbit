@@ -198,7 +198,7 @@ void predict(oaa& o, LEARNER::single_learner& base, example& ec)
     {
       for (uint32_t i = 1; i <= o.k; i++) output_string_stream << ' ' << i << ':' << o.pred[i - 1].scalar;
     }
-    o.all->print_text_by_ref(o.all->raw_prediction.get(), output_string_stream.str(), ec.tag, o.all->logger);
+    if (o.all->raw_prediction) { o.all->print_text_by_ref(*o.all->raw_prediction, output_string_stream.str(), ec.tag); }
   }
 
   // The predictions are an array of scores (as opposed to a single index of a
@@ -274,7 +274,7 @@ void finish_example_scores(VW::workspace& all, oaa& o, example& ec)
     outputStringStream << ':' << ec.pred.scalars[corrected_ind];
   }
   const auto ss_str = outputStringStream.str();
-  for (auto& sink : all.final_prediction_sink) all.print_text_by_ref(sink.get(), ss_str, ec.tag, all.logger);
+  for (auto& sink : all.final_prediction_sink) { all.print_text_by_ref(*sink, ss_str, ec.tag); }
 
   // === Report updates using zero-one loss
   all.sd->update(

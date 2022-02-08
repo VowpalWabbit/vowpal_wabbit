@@ -340,18 +340,6 @@ void cb_adf::predict(multi_learner& base, multi_ex& ec_seq)
   cs_ldf_learn_or_predict<false>(base, ec_seq, _cb_labels, _cs_labels, _prepped_cs_labels, false, _offset);
 }
 
-void global_print_newline(
-    const std::vector<std::unique_ptr<VW::io::writer>>& final_prediction_sink, VW::io::logger& logger)
-{
-  char temp[1];
-  temp[0] = '\n';
-  for (auto& sink : final_prediction_sink)
-  {
-    ssize_t t = sink->write(temp, 1);
-    if (t != 1) { logger.err_error("write error: {}", VW::strerror_to_string(errno)); }
-  }
-}
-
 // how to
 
 bool cb_adf::update_statistics(const example& ec, const multi_ex& ec_seq)
@@ -382,8 +370,7 @@ void output_example(VW::workspace& all, cb_adf& c, const example& ec, const mult
   bool labeled_example = c.update_statistics(ec, ec_seq);
 
   uint32_t action = ec.pred.a_s[0].action;
-  for (auto& sink : all.final_prediction_sink)
-  { all.print_by_ref(sink.get(), static_cast<float>(action), 0, ec.tag, all.logger); }
+  for (auto& sink : all.final_prediction_sink) { all.print_by_ref(*sink, static_cast<float>(action), 0, ec.tag); }
 
   if (all.raw_prediction != nullptr)
   {
@@ -396,7 +383,7 @@ void output_example(VW::workspace& all, cb_adf& c, const example& ec, const mult
       if (i > 0) outputStringStream << ' ';
       outputStringStream << costs[i].action << ':' << costs[i].partial_prediction;
     }
-    all.print_text_by_ref(all.raw_prediction.get(), outputStringStream.str(), ec.tag, all.logger);
+    if (all.raw_prediction) { all.print_text_by_ref(*all.raw_prediction, outputStringStream.str(), ec.tag); }
   }
 
   if (labeled_example)
@@ -413,7 +400,7 @@ void output_rank_example(VW::workspace& all, cb_adf& c, const example& ec, const
 
   bool labeled_example = c.update_statistics(ec, ec_seq);
 
-  for (auto& sink : all.final_prediction_sink) print_action_score(sink.get(), ec.pred.a_s, ec.tag, all.logger);
+  for (auto& sink : all.final_prediction_sink) { print_action_score(*sink, ec.pred.a_s, ec.tag); }
 
   if (all.raw_prediction != nullptr)
   {
@@ -424,7 +411,7 @@ void output_rank_example(VW::workspace& all, cb_adf& c, const example& ec, const
       if (i > 0) outputStringStream << ' ';
       outputStringStream << costs[i].action << ':' << costs[i].partial_prediction;
     }
-    all.print_text_by_ref(all.raw_prediction.get(), outputStringStream.str(), ec.tag, all.logger);
+    if (all.raw_prediction) { all.print_text_by_ref(*all.raw_prediction, outputStringStream.str(), ec.tag); }
   }
 
   if (labeled_example)
@@ -442,8 +429,7 @@ void output_example_seq(VW::workspace& all, cb_adf& data, const multi_ex& ec_seq
     {
       output_example(all, data, *ec_seq.front(), ec_seq);
 
-      if (all.raw_prediction != nullptr)
-        all.print_text_by_ref(all.raw_prediction.get(), "", ec_seq[0]->tag, all.logger);
+      if (all.raw_prediction != nullptr) { all.print_text_by_ref(*all.raw_prediction, "", ec_seq[0]->tag); }
     }
   }
 }
@@ -453,7 +439,8 @@ void update_and_output(VW::workspace& all, cb_adf& data, const multi_ex& ec_seq)
   if (!ec_seq.empty())
   {
     output_example_seq(all, data, ec_seq);
-    global_print_newline(all.final_prediction_sink, all.logger);
+
+    for (auto& sink : all.final_prediction_sink) { *sink << '\n'; }
   }
 }
 

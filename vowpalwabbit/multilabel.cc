@@ -134,7 +134,7 @@ void output_example(VW::workspace& all, const example& ec)
         ss << ec.pred.multilabels.label_v[i];
       }
       ss << ' ';
-      all.print_text_by_ref(sink.get(), ss.str(), ec.tag, all.logger);
+      all.print_text_by_ref(*sink, ss.str(), ec.tag);
     }
   }
 

@@ -47,22 +47,12 @@ void predict_or_learn_with_confidence(confidence& /* c */, single_learner& base,
   ec.confidence = fabsf(ec.pred.scalar - threshold) / sensitivity;
 }
 
-void confidence_print_result(
-    VW::io::writer* f, float res, float confidence, const v_array<char>& tag, VW::io::logger& logger)
+void confidence_print_result(std::ostream& output, float res, float confidence, const v_array<char>& tag)
 {
-  if (f != nullptr)
-  {
-    std::stringstream ss;
-    ss << std::fixed << res << " " << confidence;
-    ss << " ";
-    if (!tag.empty()) { ss << VW::string_view{tag.begin(), tag.size()}; }
-    ss << '\n';
-    // avoid serializing the stringstream multiple times
-    auto ss_string(ss.str());
-    ssize_t len = ss_string.size();
-    ssize_t t = f->write(ss_string.c_str(), static_cast<unsigned int>(len));
-    if (t != len) { logger.err_error("write error: {}", VW::strerror_to_string(errno)); }
-  }
+  output << std::fixed << res << " " << confidence;
+  output << " ";
+  if (!tag.empty()) { output << tag; }
+  output << '\n';
 }
 
 void output_and_account_confidence_example(VW::workspace& all, example& ec)
@@ -73,9 +63,9 @@ void output_and_account_confidence_example(VW::workspace& all, example& ec)
   if (ld.label != FLT_MAX && !ec.test_only) all.sd->weighted_labels += ld.label * ec.weight;
   all.sd->weighted_unlabeled_examples += ld.label == FLT_MAX ? ec.weight : 0;
 
-  all.print_by_ref(all.raw_prediction.get(), ec.partial_prediction, -1, ec.tag, all.logger);
+  if (all.raw_prediction) { all.print_by_ref(*all.raw_prediction, ec.partial_prediction, -1, ec.tag); }
   for (const auto& sink : all.final_prediction_sink)
-  { confidence_print_result(sink.get(), ec.pred.scalar, ec.confidence, ec.tag, all.logger); }
+  { confidence_print_result(*sink, ec.pred.scalar, ec.confidence, ec.tag); }
 
   print_update(all, ec);
 }

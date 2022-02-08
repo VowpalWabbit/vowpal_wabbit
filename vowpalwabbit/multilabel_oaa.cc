@@ -80,7 +80,7 @@ void finish_example(VW::workspace& all, multi_oaa& o, example& ec)
       outputStringStream << ':' << ec.pred.scalars[i];
     }
     const auto ss_str = outputStringStream.str();
-    for (auto& sink : all.final_prediction_sink) all.print_text_by_ref(sink.get(), ss_str, ec.tag, all.logger);
+    for (auto& sink : all.final_prediction_sink) { all.print_text_by_ref(*sink, ss_str, ec.tag); }
   }
   MULTILABEL::output_example(all, ec);
   VW::finish_example(all, ec);

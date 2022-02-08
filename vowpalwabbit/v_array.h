@@ -386,6 +386,13 @@ std::ostream& operator<<(std::ostream& os, const v_array<T>& v)
   return os;
 }
 
+template <>
+inline std::ostream& operator<<<char>(std::ostream& os, const v_array<char>& v)
+{
+  for (char i : v) { os << i; }
+  return os;
+}
+
 template <class T, class U>
 std::ostream& operator<<(std::ostream& os, const v_array<std::pair<T, U> >& v)
 {

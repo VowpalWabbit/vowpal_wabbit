@@ -6,6 +6,8 @@
 
 #include <sys/types.h>
 #include "io/logger.h"
+#include "io/owning_stream.h"
+#include "io/custom_streambuf.h"
 #include "numeric_casts.h"
 
 #ifndef _WIN32
@@ -258,7 +260,8 @@ void reset_source(VW::workspace& all, size_t numbits)
       // note: breaking cluster parallel online learning by dropping support for id
 
       auto socket = VW::io::wrap_socket_descriptor(f);
-      all.final_prediction_sink.push_back(socket->get_writer());
+      all.final_prediction_sink.push_back(
+          VW::make_unique<VW::io::owning_ostream>(VW::make_unique<VW::io::writer_stream_buf>(socket->get_writer())));
       all.example_parser->input.add_file(socket->get_reader());
 
       set_daemon_reader(all, is_currently_json_reader(all), is_currently_dsjson_reader(all));
@@ -533,7 +536,8 @@ void enable_sources(VW::workspace& all, bool quiet, size_t passes, input_options
 
     auto socket = VW::io::wrap_socket_descriptor(f_a);
 
-    all.final_prediction_sink.push_back(socket->get_writer());
+    all.final_prediction_sink.push_back(
+        VW::make_unique<VW::io::owning_ostream>(VW::make_unique<VW::io::writer_stream_buf>(socket->get_writer())));
 
     all.example_parser->input.add_file(socket->get_reader());
     if (!all.quiet) *(all.trace_message) << "reading data from port " << port << endl;

@@ -14,6 +14,8 @@
 #include "vw.h"
 #include "memory.h"
 #include "io/io_adapter.h"
+#include "io/owning_stream.h"
+#include "io/custom_streambuf.h"
 
 // This interface now provides "wide" functions for compatibility with .NET interop
 // The default functions assume a wide (16 bit char pointer) that is converted to a utf8-string and passed to
@@ -436,7 +438,8 @@ extern "C"
   {
     auto* all = static_cast<VW::workspace*>(handle);
     all->audit_buffer = std::make_shared<std::vector<char>>();
-    all->audit_writer = VW::io::create_vector_writer(all->audit_buffer);
+    all->audit_writer = VW::make_unique<VW::io::owning_ostream>(
+        VW::make_unique<VW::io::writer_stream_buf>(VW::io::create_vector_writer(all->audit_buffer)));
   }
 
   VW_DLL_PUBLIC void VW_CALLING_CONV VW_ClearCapturedAuditData(VW_HANDLE handle)
@@ -448,6 +451,7 @@ extern "C"
   VW_DLL_PUBLIC char* VW_CALLING_CONV VW_GetAuditDataA(VW_HANDLE handle, size_t* size)
   {
     auto* all = static_cast<VW::workspace*>(handle);
+    all->audit_writer->flush();
     const auto buffer_size = all->audit_buffer->size();
     *size = buffer_size;
     char* data = new char[buffer_size];

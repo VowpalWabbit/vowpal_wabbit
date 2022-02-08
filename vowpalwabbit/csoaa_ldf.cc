@@ -435,18 +435,6 @@ void predict_csoaa_ldf_rank(ldf& data, single_learner& base, multi_ex& ec_seq_al
   }
 }
 
-void global_print_newline(VW::workspace& all)
-{
-  char temp[1];
-  temp[0] = '\n';
-  for (auto& sink : all.final_prediction_sink)
-  {
-    ssize_t t;
-    t = sink->write(temp, 1);
-    if (t != 1) all.logger.err_error("write error: {}", VW::strerror_to_string(errno));
-  }
-}
-
 void output_example(VW::workspace& all, const example& ec, bool& hit_loss, const multi_ex* ec_seq, const ldf& data)
 {
   const label& ld = ec.l.cs;
@@ -506,8 +494,9 @@ void output_example(VW::workspace& all, const example& ec, bool& hit_loss, const
   }
 
   for (auto& sink : all.final_prediction_sink)
-    all.print_by_ref(sink.get(), data.is_probabilities ? ec.pred.prob : static_cast<float>(ec.pred.multiclass), 0,
-        ec.tag, all.logger);
+  {
+    all.print_by_ref(*sink, data.is_probabilities ? ec.pred.prob : static_cast<float>(ec.pred.multiclass), 0, ec.tag);
+  }
 
   if (all.raw_prediction != nullptr)
   {
@@ -519,7 +508,7 @@ void output_example(VW::workspace& all, const example& ec, bool& hit_loss, const
       outputStringStream << costs[i].class_index << ':' << costs[i].partial_prediction;
     }
     // outputStringStream << std::endl;
-    all.print_text_by_ref(all.raw_prediction.get(), outputStringStream.str(), ec.tag, all.logger);
+    if (all.raw_prediction) { all.print_text_by_ref(*all.raw_prediction, outputStringStream.str(), ec.tag); }
   }
 
   COST_SENSITIVE::print_update(all, COST_SENSITIVE::cs_label.test_label(ec.l), ec, ec_seq, false, predicted_class);
@@ -553,8 +542,7 @@ void output_rank_example(VW::workspace& all, example& head_ec, bool& hit_loss, m
     assert(loss >= 0);
   }
 
-  for (auto& sink : all.final_prediction_sink)
-    print_action_score(sink.get(), head_ec.pred.a_s, head_ec.tag, all.logger);
+  for (auto& sink : all.final_prediction_sink) { print_action_score(*sink, head_ec.pred.a_s, head_ec.tag); }
 
   if (all.raw_prediction != nullptr)
   {
@@ -566,7 +554,7 @@ void output_rank_example(VW::workspace& all, example& head_ec, bool& hit_loss, m
       outputStringStream << costs[i].class_index << ':' << costs[i].partial_prediction;
     }
     // outputStringStream << std::endl;
-    all.print_text_by_ref(all.raw_prediction.get(), outputStringStream.str(), head_ec.tag, all.logger);
+    if (all.raw_prediction) { all.print_text_by_ref(*all.raw_prediction, outputStringStream.str(), head_ec.tag); }
   }
 
   COST_SENSITIVE::print_update(all, COST_SENSITIVE::cs_label.test_label(head_ec.l), head_ec, ec_seq, true, 0);
@@ -589,11 +577,7 @@ void output_example_seq(VW::workspace& all, ldf& data, multi_ex& ec_seq)
     else
       for (example* ec : ec_seq) output_example(all, *ec, hit_loss, &(ec_seq), data);
 
-    if (all.raw_prediction != nullptr)
-    {
-      const v_array<char> empty;
-      all.print_text_by_ref(all.raw_prediction.get(), "", empty, all.logger);
-    }
+    if (all.raw_prediction != nullptr) { *all.raw_prediction << "\n"; }
 
     if (data.is_probabilities)
     {
@@ -634,7 +618,7 @@ void finish_multiline_example(VW::workspace& all, ldf& data, multi_ex& ec_seq)
   if (!ec_seq.empty())
   {
     output_example_seq(all, data, ec_seq);
-    global_print_newline(all);
+    for (auto& sink : all.final_prediction_sink) { *sink << '\n'; }
   }
 
   VW::finish_example(all, ec_seq);

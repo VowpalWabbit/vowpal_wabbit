@@ -32,8 +32,8 @@ struct pdf_segment
 
 using probability_density_function = std::vector<pdf_segment>;
 
-std::string to_string(const probability_density_function_value& pdf_value, bool print_newline = false);
-std::string to_string(const probability_density_function& pdf, bool print_newline = false, int precision = -1);
+std::string to_string(const probability_density_function_value& pdf_value);
+std::string to_string(const probability_density_function& pdf, int precision = -1);
 bool is_valid_pdf(probability_density_function& pdf);
 
 }  // namespace continuous_actions

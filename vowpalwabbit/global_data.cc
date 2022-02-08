@@ -62,19 +62,12 @@ void get_prediction(VW::io::reader* f, float& res, float& weight)
   weight = p.weight;
 }
 
-void send_prediction(VW::io::writer* f, global_prediction p)
+void binary_print_result_by_ref(std::ostream& output, float res, float weight, const v_array<char>&)
 {
-  if (f->write(reinterpret_cast<const char*>(&p), sizeof(p)) < static_cast<int>(sizeof(p)))
-    THROWERRNO("send_prediction write(unknown socket fd)");
-}
-
-void binary_print_result_by_ref(VW::io::writer* f, float res, float weight, const v_array<char>&, VW::io::logger&)
-{
-  if (f != nullptr)
-  {
-    global_prediction ps = {res, weight};
-    send_prediction(f, ps);
-  }
+  global_prediction p = {res, weight};
+  output.write(reinterpret_cast<const char*>(&p), sizeof(p));
+  output.flush();
+  if (output.fail()) { THROWERRNO("send_prediction write(unknown socket fd)"); }
 }
 namespace VW
 {
@@ -91,33 +84,20 @@ void workspace::build_setupfn_name_dict(std::vector<std::tuple<std::string, redu
 }
 }  // namespace VW
 
-void print_result_by_ref(VW::io::writer* f, float res, float, const v_array<char>& tag, VW::io::logger& logger)
+void print_result_by_ref(std::ostream& output, float res, float, const v_array<char>& tag)
 {
-  if (f != nullptr)
-  {
-    std::stringstream ss;
-    auto saved_precision = ss.precision();
-    if (floorf(res) == res) ss << std::setprecision(0);
-    ss << std::fixed << res << std::setprecision(saved_precision);
-    if (!tag.empty()) { ss << " " << VW::string_view{tag.begin(), tag.size()}; }
-    ss << '\n';
-    ssize_t len = ss.str().size();
-    ssize_t t = f->write(ss.str().c_str(), static_cast<unsigned int>(len));
-    if (t != len) { logger.err_error("write error: {}", VW::strerror_to_string(errno)); }
-  }
+  auto saved_precision = output.precision();
+  if (floorf(res) == res) output << std::setprecision(0);
+  output << std::fixed << res << std::setprecision(saved_precision);
+  if (!tag.empty()) { output << " " << tag; }
+  output << '\n';
 }
 
-void print_raw_text_by_ref(VW::io::writer* f, const std::string& s, const v_array<char>& tag, VW::io::logger& logger)
+void print_raw_text_by_ref(std::ostream& output, const std::string& s, const v_array<char>& tag)
 {
-  if (f == nullptr) return;
-
-  std::stringstream ss;
-  ss << s;
-  if (!tag.empty()) { ss << " " << VW::string_view{tag.begin(), tag.size()}; }
-  ss << '\n';
-  ssize_t len = ss.str().size();
-  ssize_t t = f->write(ss.str().c_str(), static_cast<unsigned int>(len));
-  if (t != len) { logger.err_error("write error: {}", VW::strerror_to_string(errno)); }
+  output << s;
+  if (!tag.empty()) { output << " " << tag; }
+  output << '\n';
 }
 
 void set_mm(shared_data* sd, float label)
@@ -275,8 +255,6 @@ workspace::workspace(VW::io::logger logger) : options(nullptr, nullptr), logger(
   per_feature_regularizer_output = "";
   per_feature_regularizer_text = "";
 
-  stdout_adapter = VW::io::open_stdout();
-
   searchstr = nullptr;
 
   nonormalize = false;
@@ -301,7 +279,7 @@ workspace::workspace(VW::io::logger logger) : options(nullptr, nullptr), logger(
 
   add_constant = true;
   audit = false;
-  audit_writer = VW::io::open_stdout();
+  audit_writer = VW::make_unique<std::ostream>(std::cout.rdbuf());
 
   pass_length = std::numeric_limits<size_t>::max();
   passes_complete = 0;
