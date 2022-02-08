@@ -237,8 +237,8 @@ std::vector<float> _test_helper_save_load(const std::string& vw_arg, size_t num_
   return ctr;
 }
 
-std::vector<float> _test_helper_hook(const std::string& vw_arg, callback_map& hooks,
-                                      size_t num_iterations, int seed, const std::vector<uint64_t>& swap_after)
+std::vector<float> _test_helper_hook(const std::string& vw_arg, callback_map& hooks, size_t num_iterations, int seed,
+    const std::vector<uint64_t>& swap_after)
 {
   BOOST_CHECK(true);
   auto* vw = VW::initialize(vw_arg);
