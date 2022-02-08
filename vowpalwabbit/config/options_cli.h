@@ -17,7 +17,6 @@ namespace VW
 {
 namespace config
 {
-
 namespace details
 {
 struct cli_typed_option_handler;

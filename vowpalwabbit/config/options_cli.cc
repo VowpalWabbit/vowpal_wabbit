@@ -123,13 +123,9 @@ struct cli_typed_option_handler : typed_option_visitor
   {
     // Now that we know this is a scalar option, move all following args to the positional vector.
     if (m_options.m_tokens.find(option.m_name) != m_options.m_tokens.end())
-    {
-      move_excess_to_positional(m_options.m_tokens[option.m_name]);
-    }
+    { move_excess_to_positional(m_options.m_tokens[option.m_name]); }
     if (m_options.m_tokens.find(option.m_short_name) != m_options.m_tokens.end())
-    {
-      move_excess_to_positional(m_options.m_tokens[option.m_name]);
-    }
+    { move_excess_to_positional(m_options.m_tokens[option.m_name]); }
 
     auto all_tokens = merge_short_and_long_name_lists(option);
     // Default case
@@ -170,13 +166,9 @@ struct cli_typed_option_handler : typed_option_visitor
   void handle_typed_option(typed_option<bool>& option)
   {
     if (m_options.m_tokens.find(option.m_name) != m_options.m_tokens.end())
-    {
-      move_excess_to_positional(m_options.m_tokens[option.m_name]);
-    }
+    { move_excess_to_positional(m_options.m_tokens[option.m_name]); }
     if (m_options.m_tokens.find(option.m_short_name) != m_options.m_tokens.end())
-    {
-      move_excess_to_positional(m_options.m_tokens[option.m_name]);
-    }
+    { move_excess_to_positional(m_options.m_tokens[option.m_name]); }
 
     auto all_tokens = merge_short_and_long_name_lists(option);
     if (all_tokens.empty())
@@ -322,9 +314,7 @@ void options_cli::internal_add_and_parse(const option_group_definition& group)
       std::set<std::string> necessary_flags_set(group.m_necessary_flags.begin(), group.m_necessary_flags.end());
       m_dependent_necessary_options[opt_ptr->m_name].push_back(necessary_flags_set);
       if (!opt_ptr->m_short_name.empty())
-      {
-        m_dependent_necessary_options[opt_ptr->m_short_name].push_back(necessary_flags_set);
-      }
+      { m_dependent_necessary_options[opt_ptr->m_short_name].push_back(necessary_flags_set); }
     }
   }
 }
@@ -336,9 +326,7 @@ void options_cli::check_unregistered(VW::io::logger& logger)
   for (auto const& supplied : m_supplied_options)
   {
     if (m_defined_options.count(supplied) == 0)
-    {
-      THROW_EX(VW::vw_unrecognised_option_exception, "unrecognised option '--" << supplied << "'")
-    }
+    { THROW_EX(VW::vw_unrecognised_option_exception, "unrecognised option '--" << supplied << "'") }
   }
 
   for (auto const& supplied : m_supplied_options)
@@ -352,9 +340,7 @@ void options_cli::check_unregistered(VW::io::logger& logger)
           "combinations of options which would enable this option are:\n",
           supplied);
       for (const auto& group : dependent_necessary_options)
-      {
-        message += fmt::format("\t{}\n", fmt::join(group, ", "));
-      }
+      { message += fmt::format("\t{}\n", fmt::join(group, ", ")); }
 
       logger.err_warn(message);
     }
