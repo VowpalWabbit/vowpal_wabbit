@@ -43,10 +43,12 @@ ForwardIt swap_models(ForwardIt first, ForwardIt n_first, ForwardIt end)
 template <class ForwardIt>
 void reset_models(ForwardIt first, ForwardIt end, parameters& weights, uint64_t model_count)
 {
+  uint64_t ppw = 1;
+  while (ppw < model_count) { ppw *= 2; }
   for (; first != end; ++first)
   {
     first->reset_stats();
-    weights.dense_weights.clear_offset(first->get_model_idx(), model_count);
+    weights.dense_weights.clear_offset(first->get_model_idx(), ppw);
   }
 }
 
@@ -150,18 +152,8 @@ VW::LEARNER::base_learner* ae_setup(VW::setup_base_i& stack_builder)
   if (!options.add_parse_and_check_necessary(new_options)) { return nullptr; }
 
   // Update model count to be 2^n
-  uint64_t model_bound = 1;
-  while (true)
-  {
-    if (model_bound == model_count) { break; }
-    else if (model_bound > model_count)
-    {
-      all.logger.err_warn("Please provide model count of form 2^n");
-      model_count = model_bound;
-      break;
-    }
-    model_bound *= 2;
-  }
+  uint64_t ppw = 1;
+  while (ppw < model_count) { ppw *= 2; }
 
   auto data = VW::make_unique<ae_data>(model_count, min_scope, all.weights);
 
@@ -172,7 +164,7 @@ VW::LEARNER::base_learner* ae_setup(VW::setup_base_i& stack_builder)
   {
     auto* learner = VW::LEARNER::make_reduction_learner(std::move(data), VW::LEARNER::as_multiline(base_learner), learn,
         predict, stack_builder.get_setupfn_name(ae_setup))
-                        .set_params_per_weight(model_count)
+                        .set_params_per_weight(ppw)
                         .set_output_prediction_type(base_learner->get_output_prediction_type())
                         .set_save_load(save_load_ae)
                         .build();
