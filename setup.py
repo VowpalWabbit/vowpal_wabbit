@@ -80,7 +80,7 @@ class BuildPyLibVWBindingsModule(_build_ext):
             "-DCMAKE_BUILD_TYPE=" + config,
             "-DPY_VERSION=" + "{v[0]}.{v[1]}".format(v=version_info),
             "-DBUILD_PYTHON=On",
-            "-DBUILD_TESTS=Off",
+            "-DBUILD_TESTING=Off",
             "-DWARNINGS=Off",
         ]
 

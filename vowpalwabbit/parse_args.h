@@ -3,7 +3,7 @@
 // license as described in the file LICENSE.
 #pragma once
 #include "global_data.h"
-#include "options.h"
+#include "config/options.h"
 #include "text_utils.h"
 #include "vw_string_view.h"
 

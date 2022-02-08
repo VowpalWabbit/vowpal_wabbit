@@ -43,19 +43,19 @@ endif()
 set(vw_all_headers
   accumulate.h
   action_score.h
-  active.h
   active_cover.h
   active_multiclass_prediction.h
+  active.h
   ae.h
   allreduce.h
   api_status.h
-  array_parameters.h
   array_parameters_dense.h
+  array_parameters.h
   audit_regressor.h
   autolink.h
   automl.h
-  baseline.h
   baseline_challenger_cb.h
+  baseline.h
   beam.h
   best_constant.h
   bfgs.h
@@ -64,15 +64,13 @@ set(vw_all_headers
   bs.h
   cache.h
   cached_learner.h
-  cats.h
   cats_pdf.h
   cats_tree.h
-  cb.h
+  cats.h
   cb_adf.h
   cb_algs.h
   cb_continuous_label.h
   cb_dro.h
-  cb_explore.h
   cb_explore_adf_bag.h
   cb_explore_adf_common.h
   cb_explore_adf_cover.h
@@ -84,19 +82,30 @@ set(vw_all_headers
   cb_explore_adf_squarecb.h
   cb_explore_adf_synthcover.h
   cb_explore_pdf.h
+  cb_explore.h
   cb_label_parser.h
   cb_to_cb_adf.h
   cb_type.h
+  cb.h
   cbify.h
   cbzo.h
   ccb_label.h
   ccb_reduction_features.h
   classweight.h
-  cli_help_formatter.h
   compat.h
   conditional_contextual_bandit.h
   confidence.h
   config.h.in
+  config/cli_help_formatter.h
+  config/cli_options_serializer.h
+  config/help_formatter.h
+  config/option_group_definition.h
+  config/options_boost_po.h
+  config/options_name_extractor.h
+  config/options_serializer.h
+  config/options_types.h
+  config/options.h
+  config/option.h
   constant.h
   continuous_actions_reduction_features.h
   correctedMath.h
@@ -104,8 +113,8 @@ set(vw_all_headers
   count_label.h
   crossplat_compat.h
   cs_active.h
-  csoaa.h
   csoaa_ldf.h
+  csoaa.h
   debug_log.h
   debug_print.h
   decision_scores.h
@@ -114,18 +123,18 @@ set(vw_all_headers
   epsilon_reduction_features.h
   error_constants.h
   error_data.h
-  example.h
-  example_predict.h
   error_reporting.h
+  example_predict.h
+  example.h
   explore_eval.h
   expreplay.h
   fast_pow10.h
   feature_group.h
   freegrad.h
   ftrl.h
-  gd.h
   gd_mf.h
   gd_predict.h
+  gd.h
   gen_cs_example.h
   generate_interactions.h
   generic_range.h
@@ -134,9 +143,8 @@ set(vw_all_headers
   guard.h
   hashstring.h
   interact.h
-  interactions_predict.h
-  reduction_stack.h
   interaction_ground.h
+  interactions_predict.h
   interactions.h
   io_buf.h
   json_utils.h
@@ -152,15 +160,15 @@ set(vw_all_headers
   lrq.h
   lrqfa.h
   marginal.h
-  memory.h
   memory_tree.h
+  memory.h
   metric_sink.h
   metrics.h
   mf.h
   model_utils.h
   multiclass.h
-  multilabel.h
   multilabel_oaa.h
+  multilabel.h
   mwt.h
   named_labels.h
   network.h
@@ -172,14 +180,10 @@ set(vw_all_headers
   object_pool.h
   offset_tree.h
   oja_newton.h
-  options.h
-  options_boost_po.h
-  options_serializer_boost_po.h
-  options_types.h
   parse_args.h
   parse_dispatch_loop.h
-  parse_example.h
   parse_example_json.h
+  parse_example.h
   parse_primitives.h
   parse_regressor.h
   parse_slates_example_json.h
@@ -194,8 +198,9 @@ set(vw_all_headers
   rand48.h
   recall_tree.h
   reduction_features.h
-  reductions.h
+  reduction_stack.h
   reductions_fwd.h
+  reductions.h
   sample_pdf.h
   scope_exit.h
   scored_config.h
@@ -211,10 +216,10 @@ set(vw_all_headers
   sender.h
   shared_data.h
   shared_feature_merger.h
-  simple_label.h
   simple_label_parser.h
-  slates.h
+  simple_label.h
   slates_label.h
+  slates.h
   spanning_tree.h
   stable_unique.h
   stagewise_poly.h
@@ -225,13 +230,13 @@ set(vw_all_headers
   unique_sort.h
   v_array.h
   version.h
-  vw.h
   vw_allreduce.h
   vw_exception.h
   vw_math.h
   vw_string_view.h
   vw_validate.h
   vw_versions.h
+  vw.h
   vwdll.h
   vwvis.h
   warm_cb.h
@@ -248,30 +253,31 @@ endif()
 set(vw_all_sources
   accumulate.cc
   action_score.cc
-  active.cc
   active_cover.cc
+<<<<<<< HEAD
   ae.cc
+=======
+  active.cc
+>>>>>>> upstream/master
   api_status.cc
   audit_regressor.cc
   autolink.cc
   automl.cc
-  baseline.cc
   baseline_challenger_cb.cc
+  baseline.cc
   best_constant.cc
   bfgs.cc
   binary.cc
   boosting.cc
   bs.cc
   cache.cc
-  cats.cc
   cats_pdf.cc
   cats_tree.cc
-  cb.cc
+  cats.cc
   cb_adf.cc
   cb_algs.cc
   cb_continuous_label.cc
   cb_dro.cc
-  cb_explore.cc
   cb_explore_adf_bag.cc
   cb_explore_adf_cover.cc
   cb_explore_adf_first.cc
@@ -282,42 +288,50 @@ set(vw_all_sources
   cb_explore_adf_squarecb.cc
   cb_explore_adf_synthcover.cc
   cb_explore_pdf.cc
+  cb_explore.cc
   cb_sample.cc
-  cb_type.cc
   cb_to_cb_adf.cc
+  cb_type.cc
+  cb.cc
   cbify.cc
   cbzo.cc
   ccb_label.cc
   ccb_reduction_features.cc
   classweight.cc
-  cli_help_formatter.cc
   conditional_contextual_bandit.cc
   confidence.cc
+  config/cli_help_formatter.cc
+  config/cli_options_serializer.cc
+  config/help_formatter.cc
+  config/option_group_definition.cc
+  config/options_boost_po.cc
+  config/options_name_extractor.cc
+  config/options.cc
   cost_sensitive.cc
   count_label.cc
   crossplat_compat.cc
   cs_active.cc
-  csoaa.cc
   csoaa_ldf.cc
+  csoaa.cc
   decision_scores.cc
   distributionally_robust.cc
   ect.cc
-  example.cc
   example_predict.cc
+  example.cc
   explore_eval.cc
   feature_group.cc
   freegrad.cc
   ftrl.cc
-  gd.cc
   gd_mf.cc
+  gd.cc
   gen_cs_example.cc
   generate_interactions.cc
   get_pmf.cc
   global_data.cc
   hashstring.cc
   interact.cc
-  interactions.cc
   interaction_ground.cc
+  interactions.cc
   io_buf.cc
   kernel_svm.cc
   kskip_ngram_transformer.cc
@@ -336,8 +350,8 @@ set(vw_all_sources
   metrics.cc
   mf.cc
   multiclass.cc
-  multilabel.cc
   multilabel_oaa.cc
+  multilabel.cc
   mwt.cc
   named_labels.cc
   network.cc
@@ -347,16 +361,13 @@ set(vw_all_sources
   oaa.cc
   offset_tree.cc
   oja_newton.cc
-  options_boost_po.cc
-  options_serializer_boost_po.cc
-  options.cc
   parse_args.cc
   parse_example.cc
   parse_primitives.cc
   parse_regressor.cc
   parser.cc
-  pmf_to_pdf.cc
   plt.cc
+  pmf_to_pdf.cc
   prediction_type.cc
   print.cc
   prob_dist_cont.cc
@@ -377,10 +388,10 @@ set(vw_all_sources
   sender.cc
   shared_data.cc
   shared_feature_merger.cc
-  simple_label.cc
   simple_label_parser.cc
-  slates.cc
+  simple_label.cc
   slates_label.cc
+  slates.cc
   stagewise_poly.cc
   svrg.cc
   tag_utils.cc

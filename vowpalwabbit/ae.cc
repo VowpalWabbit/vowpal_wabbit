@@ -78,15 +78,15 @@ void learn(ae_data& data, VW::LEARNER::multi_learner& base, multi_ex& examples)
   {
     // Update the scoring of all configs
     // Only call if learn calls predict is set
-    if (!base.learn_returns_prediction) { base.predict(examples, config_iter->get_model_idx()); }
     auto& ep_fts = examples[0]->_reduction_features.template get<VW::cb_explore_adf::greedy::reduction_features>();
     ep_fts.epsilon = decayed_epsilon(config_iter->update_count);
+    if (!base.learn_returns_prediction) { base.predict(examples, config_iter->get_model_idx()); }
     base.learn(examples, config_iter->get_model_idx());
 
-    const uint32_t chosen_action = examples[0]->pred.a_s[0].action;
     const float w = logged.probability > 0 ? 1 / logged.probability : 0;
     const float r = -logged.cost;
-    config_iter->update_bounds((chosen_action == labelled_action) ? 0 : w, r);
+    const uint32_t chosen_action = examples[0]->pred.a_s[0].action;
+    config_iter->update_bounds((chosen_action == labelled_action) ? w : 0, r);
   }
 
   // If the lower bound of a model exceeds the upperbound of the champion, migrate the new model as
@@ -96,7 +96,8 @@ void learn(ae_data& data, VW::LEARNER::multi_learner& base, multi_ex& examples)
   uint64_t model_count = data.scored_configs.size();
   for (auto candidate_iter = champion_iter + 1; candidate_iter != end_iter; ++candidate_iter)
   {
-    if (candidate_iter->get_lower_bound() > champion_iter->get_upper_bound())
+    if (candidate_iter->update_count > data.min_scope &&
+        candidate_iter->get_lower_bound() > champion_iter->get_upper_bound())
     {
       auto n_iter = swap_models(candidate_iter, champion_iter, end_iter);
       reset_models(n_iter, end_iter, data.weights, model_count);
@@ -144,10 +145,25 @@ VW::LEARNER::base_learner* ae_setup(VW::setup_base_i& stack_builder)
       .add(make_option("model_count", model_count).keep().default_value(3).help("Set number of exploration models"))
       .add(make_option("min_scope", min_scope)
                .keep()
-               .default_value(10)
+               .default_value(100)
                .help("Minimum example count of model before removing"));
 
   if (!options.add_parse_and_check_necessary(new_options)) { return nullptr; }
+
+  // Update model count to be 2^n
+  uint64_t model_bound = 1;
+  while (true)
+  {
+    if (model_bound == model_count) { break; }
+    else if (model_bound > model_count)
+    {
+      all.logger.err_warn("Please provide model count of form 2^n");
+      model_count = model_bound;
+      break;
+    }
+    model_bound *= 2;
+  }
+
   auto data = VW::make_unique<ae_data>(model_count, min_scope, all.weights);
 
   // make sure we setup the rest of the stack with cleared interactions

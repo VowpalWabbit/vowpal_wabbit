@@ -200,6 +200,7 @@ public:
     }
   }
 
+  // ***** NOTE: params_per_problem must be of form 2^n *****
   void clear_offset(const size_t offset, const size_t params_per_problem)
   {
     assert(offset < params_per_problem);

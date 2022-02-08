@@ -34,7 +34,7 @@
 #include "parse_example.h"
 #include "hashstring.h"
 
-#include "options.h"
+#include "config/options.h"
 
 #include "compat.h"
 
