@@ -144,33 +144,39 @@ BOOST_AUTO_TEST_CASE(basic_tokenize_to_argv) {
   free(argv);
 }
 
-BOOST_AUTO_TEST_CASE(escaped_split_command_line_test) {
+BOOST_AUTO_TEST_CASE(escaped_split_command_line_test)
+{
   auto args = VW::split_command_line(VW::string_view(R"(--example_queue_limit 1024 -f my_model\ best.model)"));
   const auto expected = {"--example_queue_limit", "1024", "-f", "my_model best.model"};
   BOOST_TEST(args == expected, boost::test_tools::per_element());
 }
 
-BOOST_AUTO_TEST_CASE(basic_split_command_line) {
+BOOST_AUTO_TEST_CASE(basic_split_command_line)
+{
   auto args = VW::split_command_line(VW::string_view(R"(--ccb_explore_adf --json --no_stdin --quiet)"));
   const auto expected = {"--ccb_explore_adf", "--json", "--no_stdin", "--quiet"};
   BOOST_TEST(args == expected, boost::test_tools::per_element());
 }
 
-BOOST_AUTO_TEST_CASE(complex_split_command_line) {
+BOOST_AUTO_TEST_CASE(complex_split_command_line)
+{
   auto args = VW::split_command_line(VW::string_view(R"(-d "this is my file\"" 'another arg' test\ arg \\test)"));
   const auto expected = {"-d", "this is my file\"", "another arg", "test arg", R"(\test)"};
   BOOST_TEST(args == expected, boost::test_tools::per_element());
 }
 
-BOOST_AUTO_TEST_CASE(unclosed_quote_split_command_line) {
+BOOST_AUTO_TEST_CASE(unclosed_quote_split_command_line)
+{
   BOOST_CHECK_THROW(VW::split_command_line(VW::string_view(R"(my arg "with strings)")), VW::vw_exception);
 }
 
-BOOST_AUTO_TEST_CASE(escaped_end_split_command_line) {
+BOOST_AUTO_TEST_CASE(escaped_end_split_command_line)
+{
   BOOST_CHECK_THROW(VW::split_command_line(VW::string_view(R"(my arg \)")), VW::vw_exception);
 }
 
-BOOST_AUTO_TEST_CASE(mixed_quotes_split_command_line) {
+BOOST_AUTO_TEST_CASE(mixed_quotes_split_command_line)
+{
   auto args = VW::split_command_line(VW::string_view(R"("this is 'a quoted'" '"unclosed')"));
   const auto expected = {"this is 'a quoted'", "\"unclosed"};
   BOOST_TEST(args == expected, boost::test_tools::per_element());
