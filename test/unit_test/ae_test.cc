@@ -31,8 +31,18 @@ BOOST_AUTO_TEST_CASE(ae_test_champ_switch)
   std::vector<uint64_t> swap_after = {100, 200, 300, 400};
   size_t num_iterations = 3000;
   int seed = 10;
-  auto ctr = simulator::_test_helper_hook("--agedexp --model_count 5 --cb_explore_adf --quiet  -q ::",
-                                            empty_hooks, num_iterations, seed, swap_after);
+  auto ctr = simulator::_test_helper_hook(
+      "--agedexp --model_count 5 --cb_explore_adf --quiet  -q ::", empty_hooks, num_iterations, seed, swap_after);
+}
+
+BOOST_AUTO_TEST_CASE(ae_test_change_dist)
+{
+  callback_map empty_hooks;
+  std::vector<uint64_t> swap_after = {5000};
+  size_t num_iterations = 10000;
+  int seed = 10;
+  auto ctr = simulator::_test_helper_hook(
+      "--agedexp --model_count 4 --cb_explore_adf --quiet  -q ::", empty_hooks, num_iterations, seed, swap_after);
 }
 
 BOOST_AUTO_TEST_CASE(ae_save_load)
@@ -40,12 +50,12 @@ BOOST_AUTO_TEST_CASE(ae_save_load)
   callback_map empty_hooks;
   auto ctr = simulator::_test_helper_hook("--agedexp --model_count 5 --cb_explore_adf --quiet  -q ::", empty_hooks);
   float without_save = ctr.back();
-  BOOST_CHECK_GT(without_save, 0.3f);
+  BOOST_CHECK_GT(without_save, 0.8f);
 
   ctr = simulator::_test_helper_save_load("--agedexp --model_count 5 --cb_explore_adf --quiet  -q ::");
 
   float with_save = ctr.back();
-  BOOST_CHECK_GT(with_save, 0.3f);
+  BOOST_CHECK_GT(with_save, 0.8f);
 
   BOOST_CHECK_CLOSE(without_save, with_save, FLOAT_TOL);
 }

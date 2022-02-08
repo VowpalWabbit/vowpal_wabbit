@@ -61,5 +61,6 @@ private:
 
 std::vector<float> _test_helper(const std::string&, size_t = 3000, int = 10);
 std::vector<float> _test_helper_save_load(const std::string&, size_t = 3000, int = 10);
-std::vector<float> _test_helper_hook(const std::string&, callback_map&, size_t = 3000, int = 10, const std::vector<uint64_t>& = std::vector<uint64_t>());
+std::vector<float> _test_helper_hook(
+    const std::string&, callback_map&, size_t = 3000, int = 10, const std::vector<uint64_t>& = std::vector<uint64_t>());
 }  // namespace simulator

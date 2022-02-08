@@ -254,11 +254,8 @@ set(vw_all_sources
   accumulate.cc
   action_score.cc
   active_cover.cc
-<<<<<<< HEAD
-  ae.cc
-=======
   active.cc
->>>>>>> upstream/master
+  ae.cc
   api_status.cc
   audit_regressor.cc
   autolink.cc

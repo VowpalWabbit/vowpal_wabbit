@@ -2,7 +2,7 @@ Aged Exploration Options:
     --agedexp                               Use decay of exploration reduction (type: bool, keep, necessary)
     --model_count arg                       Set number of exploration models (type: uint, default: 3, keep)
     --min_scope arg                         Minimum example count of model before removing (type: uint, default:
-                                            10, keep)
+                                            100, keep)
 Diagnostic Options:
     --version                               Version information (type: bool)
     -a, --audit                             Print weights of features (type: bool)

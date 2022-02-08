@@ -22,7 +22,8 @@ cb_sim::cb_sim(uint64_t seed)
   callback_count = 0;
 }
 
-float cb_sim::get_reaction(const std::map<std::string, std::string>& context, const std::string& action, bool add_noise, bool swap_reward)
+float cb_sim::get_reaction(
+    const std::map<std::string, std::string>& context, const std::string& action, bool add_noise, bool swap_reward)
 {
   float like_reward = USER_LIKED_ARTICLE;
   float dislike_reward = USER_DISLIKED_ARTICLE;
@@ -32,14 +33,10 @@ float cb_sim::get_reaction(const std::map<std::string, std::string>& context, co
     dislike_reward += random_state.get_and_update_random();
   }
 
-
   float reward = dislike_reward;
   if (context.at("user") == "Tom")
   {
-    if (context.at("time_of_day") == "morning" && action == "politics")
-    {
-      reward = like_reward;
-    }
+    if (context.at("time_of_day") == "morning" && action == "politics") { reward = like_reward; }
     else if (context.at("time_of_day") == "afternoon" && action == "music")
     {
       reward = like_reward;
@@ -47,17 +44,14 @@ float cb_sim::get_reaction(const std::map<std::string, std::string>& context, co
   }
   else if (context.at("user") == "Anna")
   {
-    if (context.at("time_of_day") == "morning" && action == "sports")
-    { 
-      reward = like_reward;
-    }
+    if (context.at("time_of_day") == "morning" && action == "sports") { reward = like_reward; }
     else if (context.at("time_of_day") == "afternoon" && action == "politics")
     {
       reward = like_reward;
     }
   }
 
-  if (swap_reward) return (reward == like_reward) ? dislike_reward : like_reward;
+  if (swap_reward) { return (reward == like_reward) ? dislike_reward : like_reward; }
   return reward;
 }
 
@@ -148,8 +142,10 @@ std::vector<float> cb_sim::run_simulation_hook(VW::workspace* vw, size_t num_ite
 
   for (size_t i = shift; i < shift + num_iterations; ++i)
   {
-    if (swap_after_iter != swap_after.end()) {
-      if (i > *swap_after_iter) {
+    if (swap_after_iter != swap_after.end())
+    {
+      if (i > *swap_after_iter)
+      {
         ++swap_after_iter;
         swap_reward = !swap_reward;
       }

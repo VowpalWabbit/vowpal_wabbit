@@ -6,7 +6,6 @@
 #include "global_data.h"
 #include "learner.h"
 #include "memory.h"
-#include "options.h"
 #include "vw.h"
 #include "label_type.h"
 #include "prediction_type.h"
