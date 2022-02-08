@@ -85,7 +85,8 @@ BOOST_AUTO_TEST_CASE(ae_test_change_dist)
   });
 
   // we initialize the reduction pointing to position 0 as champ, that config is hard-coded to empty
-  auto ctr = simulator::_test_helper_hook("--agedexp --model_count 4 --cb_explore_adf --quiet  -q ::", test_hooks, num_iterations, seed, swap_after);
+  auto ctr = simulator::_test_helper_hook(
+      "--agedexp --model_count 4 --cb_explore_adf --quiet  -q ::", test_hooks, num_iterations, seed, swap_after);
 
   BOOST_CHECK_GT(ctr.back(), 0.4f);
 }
