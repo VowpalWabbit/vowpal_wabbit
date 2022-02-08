@@ -16,7 +16,7 @@ endif()
 
 add_library(VowpalWabbit::io ALIAS vw_io)
 
-add_library(allreduce STATIC allreduce_sockets.cc allreduce_threads.cc vw_exception.cc)
+add_library(allreduce STATIC allreduce_sockets.cc allreduce_threads.cc)
 target_include_directories(allreduce PUBLIC
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
   $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>)
@@ -394,7 +394,6 @@ set(vw_all_sources
   topk.cc
   unique_sort.cc
   version.cc
-  vw_exception.cc
   vw_validate.cc
   warm_cb.cc
 )
