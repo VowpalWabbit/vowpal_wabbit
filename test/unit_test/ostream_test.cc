@@ -14,15 +14,18 @@
 
 BOOST_AUTO_TEST_CASE(test_custom_ostream)
 {
+  std::string output_received;
   auto output_func = [](void* context, const char* buffer, size_t num_bytes) -> ssize_t {
     std::string input(buffer, num_bytes);
-    BOOST_CHECK(context == nullptr);
-    BOOST_CHECK_EQUAL(input, "This is the test input, 123\n");
+    auto* output = static_cast<std::string*>(context);
+    *output += input;
     return 0;
   };
 
   VW::io::owning_ostream stream{
-      VW::make_unique<VW::io::writer_stream_buf>(VW::io::create_custom_writer(nullptr, output_func))};
+      VW::make_unique<VW::io::writer_stream_buf>(VW::io::create_custom_writer(&output_received, output_func))};
 
   stream << "This is the test input, " << 123 << std ::endl;
+  stream.flush();
+  BOOST_CHECK_EQUAL(output_received, "This is the test input, 123\n");
 }
