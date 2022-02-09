@@ -63,11 +63,9 @@ template <typename It>
 char unescape_char(It char_to_unescape_it, It end)
 {
   if (char_to_unescape_it == end) { THROW("unescape_char: unexpected end of string while unescaping"); }
-
   char c = *char_to_unescape_it;
-
   if (c == 'n') { return '\n'; }
-
+  if (c == 't') { return '\t'; }
   return c;
 }
 
@@ -102,14 +100,10 @@ std::vector<std::string> split_impl(It begin, It end)
     }
     else if (is_quote(*begin))
     {
-      if (inside_quote && quote_char == *begin)
-      {
-        inside_quote = !inside_quote;
-        quote_char = '\0';
-      }
+      if (inside_quote && quote_char == *begin) { inside_quote = false; }
       else if (!inside_quote)
       {
-        inside_quote = !inside_quote;
+        inside_quote = true;
         quote_char = *begin;
       }
       else
