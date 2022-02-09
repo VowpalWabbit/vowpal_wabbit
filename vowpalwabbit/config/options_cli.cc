@@ -6,6 +6,7 @@
 
 #include <algorithm>
 #include <cctype>
+#include <iterator>
 #include <memory>
 #include <set>
 #include <sstream>
@@ -13,43 +14,26 @@
 #include <unordered_map>
 #include <utility>
 #include <vector>
+#include <queue>
 
 #include "config/option.h"
 #include "config/options.h"
 
 #include "vw_exception.h"
 #include "vw_string_view.h"
-#include "parse_primitives.h"
 
-namespace VW
-{
-namespace config
-{
-bool is_number(VW::string_view s)
-{
-  size_t end_idx = 0;
-  const auto f = parseFloat(s.begin(), end_idx, s.end());
-  if ((end_idx == 0 && !s.empty()) || std::isnan(f)) { return false; }
+using namespace VW::config;
 
-  return true;
+bool is_number(const std::string& str)
+{
+  if (str.empty()) { return false; }
+
+  char* ptr;
+  std::strtof(str.c_str(), &ptr);
+  return (*ptr) == '\0';
 }
 
-bool case_insensitive_equal(VW::string_view a, VW::string_view b)
-{
-  if (a.length() == b.length())
-  {
-    return std::equal(b.begin(), b.end(), a.begin(),
-        [](unsigned char left, unsigned char right) { return std::tolower(left) == std::tolower(right); });
-  }
-  return false;
-}
-
-bool to_bool(VW::string_view token)
-{
-  if (case_insensitive_equal(token, "true")) { return true; }
-  if (case_insensitive_equal(token, "false")) { return false; }
-  THROW("Expected 'true' or 'false', got '" << token << "'")
-}
+bool is_number(VW::string_view str) { return is_number(std::string{str}); }
 
 template <typename T>
 std::vector<T> flatten_vectors(const std::vector<std::vector<T>>& vec_of_vecs)
@@ -59,27 +43,180 @@ std::vector<T> flatten_vectors(const std::vector<std::vector<T>>& vec_of_vecs)
   return result;
 }
 
-void check_disagreeing_option_values(
-    const std::string& ref_value, const std::string& name, const std::vector<std::string>& final_arguments)
+void check_disagreeing_option_values(const VW::string_view& ref_value, const std::string& option_name,
+    const std::vector<VW::string_view>& final_arguments)
 {
   for (auto const& item : final_arguments)
   {
     if (item != ref_value)
     {
       std::stringstream ss;
-      ss << "Disagreeing option values for '" << name << "': '" << ref_value << "' vs '" << item << "'";
+      ss << "Disagreeing option values for '" << option_name << "': '" << ref_value << "' vs '" << item << "'";
       THROW_EX(VW::vw_argument_disagreement_exception, ss.str())
     }
   }
 }
 
+enum class option_type
+{
+  scalar,
+  boolean,
+  vector
+};
+
+option_type get_option_type(const base_option& option)
+{
+  if (option.m_type_hash == typeid(bool).hash_code()) { return option_type::boolean; }
+  if (option.m_type_hash == typeid(std::vector<std::string>).hash_code()) { return option_type::vector; }
+  return option_type::scalar;
+}
+
+bool is_long_option_like(VW::string_view token) { return token.find("--") == 0; }
+
+bool is_short_option_like(VW::string_view token) { return (token.find('-') == 0 && !is_number(token)); }
+
+bool is_option_like(VW::string_view token) { return is_long_option_like(token) || is_short_option_like(token); }
+
+void consume_until_next_option_like(std::queue<VW::string_view>& command_line, std::vector<VW::string_view>& output)
+{
+  while (!command_line.empty())
+  {
+    auto token = command_line.front();
+    if (is_option_like(token)) { break; }
+    command_line.pop();
+    output.push_back(token);
+  }
+}
+
+void consume_tokens(
+    const base_option& opt, std::queue<VW::string_view>& command_line, std::vector<VW::string_view>& current_tokens)
+{
+  const auto type = get_option_type(opt);
+
+  switch (type)
+  {
+    case option_type::scalar:
+      // If we have not already consumed the single token value from an equal sign, consume it now.
+      if (current_tokens.empty())
+      {
+        if (command_line.empty()) { THROW("Expected value for " << opt.m_name << " but found nothing") }
+        current_tokens.push_back(command_line.front());
+        command_line.pop();
+      }
+      break;
+    case option_type::boolean:
+      if (!current_tokens.empty())
+      { THROW("Expected no value for " << opt.m_name << " but found " << current_tokens.size() << " values") }
+      // Booleans do not get to consume any more tokens.
+      break;
+    case option_type::vector:
+      // If there was no equals token consume the first token unconditionally.
+      if (current_tokens.empty())
+      {
+        if (command_line.empty()) { THROW("Expected value for " << opt.m_name << " but found nothing") }
+        current_tokens.push_back(command_line.front());
+        command_line.pop();
+      }
+      consume_until_next_option_like(command_line, current_tokens);
+      break;
+  }
+}
+
+void consume_long_option(const std::map<std::string, std::shared_ptr<base_option>>& known_options,
+    /*in-out*/ std::queue<VW::string_view>& command_line,
+    /*out*/ std::map<VW::string_view, std::vector<VW::string_view>>& result)
+{
+  auto current_token = command_line.front();
+  auto current_opt = current_token.substr(2);
+  const auto equal_sign_pos = current_opt.find('=');
+  std::vector<VW::string_view> current_tokens;
+  if (equal_sign_pos != std::string::npos)
+  {
+    auto opt_value = current_opt.substr(equal_sign_pos + 1);
+    current_opt = current_opt.substr(0, equal_sign_pos);
+    if (opt_value.empty()) { THROW("Argument for " << current_opt << " should follow =") }
+    current_tokens.push_back(opt_value);
+  }
+
+  // Consume this token.
+  command_line.pop();
+
+  // See if there is a known option for this name
+  auto known_opt = known_options.find(std::string{current_opt});
+  if (known_opt == known_options.end())
+  {
+    // If there is no known option we are going to just treat it as an unknown option.
+    const auto result_name = "__POSITIONAL__";
+    result[result_name].push_back(current_token);
+    return;
+  }
+
+  const auto& option_spec = *known_opt->second;
+  consume_tokens(option_spec, command_line, current_tokens);
+
+  // Will create vector if not exists - this is intentional.
+  auto& result_tokens = result[option_spec.m_name];
+  for (auto& token : current_tokens) { result_tokens.push_back(token); }
+}
+
+void consume_short_option(const std::map<std::string, std::shared_ptr<base_option>>& known_options,
+    /*in-out*/ std::queue<VW::string_view>& command_line,
+    /*out*/ std::map<VW::string_view, std::vector<VW::string_view>>& result)
+{
+  auto current_token = command_line.front();
+  auto current_opt = current_token.substr(1);
+
+  if (current_opt.empty())
+  {
+    const auto result_name = "__POSITIONAL__";
+    result[result_name].push_back(current_token);
+    command_line.pop();
+    return;
+  }
+
+  std::vector<VW::string_view> current_tokens;
+  if (current_opt.size() > 2)
+  {
+    auto opt_value = current_opt.substr(2);
+    current_opt = current_opt.substr(1, 1);
+    current_tokens.push_back(opt_value);
+  }
+
+  // Consume this token.
+  command_line.pop();
+
+  // See if there is a known option for this name
+  auto known_opt = known_options.find(std::string{current_opt});
+  if (known_opt == known_options.end())
+  {
+    // If there is no known option we are going to just treat it as an unknown option.
+    result["__POSITIONAL__"].push_back(current_token);
+    return;
+  }
+
+  const auto& option_spec = *known_opt->second;
+  consume_tokens(option_spec, command_line, current_tokens);
+
+  // Will create vector if not exists - this is intentional.
+  auto& result_tokens = result[option_spec.m_name];
+  for (auto& token : current_tokens) { result_tokens.push_back(token); }
+}
+
+namespace VW
+{
+namespace config
+{
 namespace details
 {
 struct cli_typed_option_handler : typed_option_visitor
 {
   options_cli& m_options;
+  std::map<VW::string_view, std::vector<VW::string_view>>& m_tokens;
 
-  cli_typed_option_handler(options_cli& options) : m_options(options) {}
+  cli_typed_option_handler(options_cli& options, std::map<VW::string_view, std::vector<VW::string_view>>& tokens)
+      : m_options(options), m_tokens(tokens)
+  {
+  }
 
   void visit(typed_option<uint32_t>& option) override { handle_typed_option(option); }
   void visit(typed_option<uint64_t>& option) override { handle_typed_option(option); }
@@ -90,65 +227,30 @@ struct cli_typed_option_handler : typed_option_visitor
   void visit(typed_option<std::string>& option) override { handle_typed_option(option); }
   void visit(typed_option<std::vector<std::string>>& option) override { handle_typed_option(option); }
 
-  std::vector<std::vector<std::string>> merge_short_and_long_name_lists(const base_option& opt)
-  {
-    std::vector<std::vector<std::string>> result;
-    {
-      auto it = m_options.m_tokens.find(opt.m_name);
-      if (it != m_options.m_tokens.end()) { result.insert(result.end(), it->second.begin(), it->second.end()); }
-    }
-
-    if (!opt.m_short_name.empty())
-    {
-      auto it = m_options.m_tokens.find(opt.m_short_name);
-      if (it != m_options.m_tokens.end()) { result.insert(result.end(), it->second.begin(), it->second.end()); }
-    }
-
-    return result;
-  }
-
-  void move_excess_to_positional(std::vector<std::vector<std::string>>& token_lists)
-  {
-    for (auto& list : token_lists)
-    {
-      if (list.size() > 1)
-      {
-        for (size_t i = 1; i < list.size(); i++) { m_options.m_positional_tokens.push_back(list[i]); }
-        list.erase(list.begin() + 1, list.end());
-      }
-    }
-  }
-
   template <typename T>
   void handle_typed_option(typed_option<T>& option)
   {
-    // Now that we know this is a scalar option, move all following args to the positional vector.
-    if (m_options.m_tokens.find(option.m_name) != m_options.m_tokens.end())
-    { move_excess_to_positional(m_options.m_tokens[option.m_name]); }
-    if (m_options.m_tokens.find(option.m_short_name) != m_options.m_tokens.end())
-    { move_excess_to_positional(m_options.m_tokens[option.m_name]); }
+    auto tokens_it = m_tokens.find(option.m_name);
+    bool option_was_supplied = tokens_it != m_tokens.end();
 
-    auto all_tokens = merge_short_and_long_name_lists(option);
     // Default case
-    if (all_tokens.empty())
+    if (!option_was_supplied)
     {
       if (option.default_value_supplied()) { option.value(option.default_value(), true); }
     }
     // Handle values
     else
     {
-      for (auto& token_list : all_tokens)
-      {
-        if (token_list.empty()) { THROW("No value supplied for " << option.m_name) }
-      }
-      // At this point there are 1 or more non-empty token lists.
-      auto flattened_tokens = flatten_vectors(all_tokens);
+      const auto& all_tokens = tokens_it->second;
+
+      // This invariant should be maintianed by the tokenization code.
+      assert(all_tokens.size() == 1);
 
       // Due to the way options get added to the vector, the model options are at the end, and the
       // command-line options are at the front. To allow override from command-line over model file,
       // simply keep the first item.
-      std::string token_to_use = flattened_tokens.front();
-      if (!option.m_allow_override) { check_disagreeing_option_values(token_to_use, option.m_name, flattened_tokens); }
+      const auto& token_to_use = all_tokens.front();
+      if (!option.m_allow_override) { check_disagreeing_option_values(token_to_use, option.m_name, all_tokens); }
 
       // TODO: more robust and helpful value parsing. i.e. detect if a narrowing float conversion occurs
       T value;
@@ -166,13 +268,16 @@ struct cli_typed_option_handler : typed_option_visitor
 
   void handle_typed_option(typed_option<bool>& option)
   {
-    if (m_options.m_tokens.find(option.m_name) != m_options.m_tokens.end())
-    { move_excess_to_positional(m_options.m_tokens[option.m_name]); }
-    if (m_options.m_tokens.find(option.m_short_name) != m_options.m_tokens.end())
-    { move_excess_to_positional(m_options.m_tokens[option.m_name]); }
+    auto tokens_it = m_tokens.find(option.m_name);
+    bool option_was_supplied = tokens_it != m_tokens.end();
 
-    auto all_tokens = merge_short_and_long_name_lists(option);
-    if (all_tokens.empty())
+    if (option_was_supplied)
+    {
+      // This invariant should be maintianed by the tokenization code.
+      assert(tokens_it->second.empty());
+      option.value(true, true);
+    }
+    else
     {
       if (option.default_value_supplied()) { option.value(option.default_value(), true); }
       else
@@ -181,120 +286,69 @@ struct cli_typed_option_handler : typed_option_visitor
         option.value(false, true);
       }
     }
-    // Handle values
-    else
-    {
-      // Empty token lists for bools are implicit true
-      for (auto& token_list : all_tokens)
-      {
-        if (token_list.empty()) { token_list.emplace_back("true"); }
-      }
-      // At this point there are 1 or more non-empty token lists.
-      const auto flattened_tokens = flatten_vectors(all_tokens);
-
-      // Due to the way options get added to the vector, the model options are at the end, and the
-      // command-line options are at the front. To allow override from command-line over model file,
-      // simply keep the first item.
-      const auto& token_to_use = flattened_tokens.front();
-      if (!option.m_allow_override) { check_disagreeing_option_values(token_to_use, option.m_name, flattened_tokens); }
-
-      option.value(to_bool(token_to_use), true);
-    }
   }
 
   void handle_typed_option(typed_option<std::vector<std::string>>& option)
   {
-    const auto all_tokens = merge_short_and_long_name_lists(option);
+    auto tokens_it = m_tokens.find(option.m_name);
+    bool option_was_supplied = tokens_it != m_tokens.end();
 
-    // Default case
-    if (all_tokens.empty())
+    if (option_was_supplied)
     {
-      if (option.default_value_supplied()) { option.value(option.default_value(), true); }
+      const auto& all_tokens = tokens_it->second;
+      // This invariant should be maintianed by the tokenization code.
+      assert(!all_tokens.empty());
+      option.value(std::vector<std::string>{all_tokens.begin(), all_tokens.end()}, true);
     }
-    // Handle values
-    else
+    else if (option.default_value_supplied())
     {
-      for (const auto& token_list : all_tokens)
-      {
-        if (token_list.empty()) { THROW("No value supplied for " << option.m_name) }
-      }
-      // At this point there are 1 or more non-empty token lists.
-      const auto flattened_tokens = flatten_vectors(all_tokens);
-      option.value(flattened_tokens, true);
+      option.value(option.default_value(), true);
     }
   }
 };
 
-}  // namespace details
-
-void options_cli::process_command_line()
+// __positional__ contains everything we don't know about
+// IMPORTANT holds views into the given command line args
+std::map<VW::string_view, std::vector<VW::string_view>> parse_token_map_with_current_info(
+    const std::vector<std::string>& command_line,
+    const std::map<std::string, std::shared_ptr<base_option>>& known_options)
 {
-  std::string last_opt;
-  for (const auto& arg : m_command_line)
+  std::map<VW::string_view, std::vector<VW::string_view>> m_map;
+  std::queue<VW::string_view> tokens;
+  for (auto& arg : command_line) { tokens.push(arg); }
+
+  while (!tokens.empty())
   {
-    if (arg.find("--") == 0)
+    auto token = tokens.front();
+    if (is_long_option_like(token)) { consume_long_option(known_options, tokens, m_map); }
+    else if (is_short_option_like(token))
     {
-      auto current_opt = arg.substr(2);
-      const auto equal_sign_pos = current_opt.find('=');
-      if (equal_sign_pos == std::string::npos)
-      {
-        last_opt = current_opt;
-        m_tokens[current_opt].push_back(std::vector<std::string>{});
-        m_supplied_options.insert(current_opt);
-      }
-      else
-      {
-        auto opt_value = current_opt.substr(equal_sign_pos + 1);
-        current_opt = current_opt.substr(0, equal_sign_pos);
-        last_opt = current_opt;
-        if (opt_value.empty()) { THROW("Argument for " << current_opt << " should follow =") }
-        m_tokens[current_opt].push_back(std::vector<std::string>{});
-        m_tokens[current_opt].back().push_back(opt_value);
-        m_supplied_options.insert(current_opt);
-      }
-    }
-    else if (arg.find('-') == 0)
-    {
-      // This is actually a negative value, treat it as a value.
-      if (is_number(arg))
-      {
-        // direct value
-        if (last_opt.empty()) { m_positional_tokens.push_back(arg); }
-        else
-        {
-          m_tokens[last_opt].back().push_back(arg);
-        }
-      }
-      else
-      {
-        auto current_opt = arg.substr(1);
-        last_opt = current_opt;
-        m_tokens[current_opt].push_back(std::vector<std::string>{});
-        m_supplied_options.insert(current_opt);
-      }
+      consume_long_option(known_options, tokens, m_map);
     }
     else
     {
-      // direct value
-      if (last_opt.empty()) { m_positional_tokens.push_back(arg); }
-      else
-      {
-        m_tokens[last_opt].back().push_back(arg);
-      }
+      // This is a positional argument.
+      m_map["__POSITIONAL__"].push_back(token);
+      tokens.pop();
     }
   }
+  return m_map;
 }
 
-options_cli::options_cli(std::vector<std::string> args) : m_command_line(std::move(args)) { process_command_line(); }
+}  // namespace details
+
+}  // namespace config
+}  // namespace VW
+
+options_cli::options_cli(std::vector<std::string> args) : m_command_line(std::move(args)) {}
 
 void options_cli::internal_add_and_parse(const option_group_definition& group)
 {
+  m_prog_parsed_token_map = details::parse_token_map_with_current_info(m_command_line, m_options);
   for (const auto& opt_ptr : group.m_options)
   {
-    details::cli_typed_option_handler handler(*this);
+    details::cli_typed_option_handler handler(*this, m_prog_parsed_token_map);
     opt_ptr->accept(handler);
-    m_defined_options[opt_ptr->m_name].push_back(opt_ptr);
-    if (!opt_ptr->m_short_name.empty()) { m_defined_options[opt_ptr->m_short_name].push_back(opt_ptr); }
   }
 
   const auto contains_necessary_options = group.contains_necessary_options();
@@ -320,18 +374,27 @@ void options_cli::internal_add_and_parse(const option_group_definition& group)
   }
 }
 
-bool options_cli::was_supplied(const std::string& key) const { return m_tokens.find(key) != m_tokens.end(); }
+bool options_cli::was_supplied(const std::string& key) const
+{
+  // Best check if the token map.
+  if (m_prog_parsed_token_map.find(key) != m_prog_parsed_token_map.end()) { return true; }
+
+  // If not found there, do a fallback check on the command line itself.
+  auto keys = {std::string("--" + key), std::string("-" + key)};
+  return std::find_first_of(std::begin(m_command_line), std::end(m_command_line), std::begin(keys), std::end(keys)) !=
+      std::end(m_command_line);
+}
 
 void options_cli::check_unregistered(VW::io::logger& logger)
 {
-  for (auto const& supplied : m_supplied_options)
+  for (auto str : m_prog_parsed_token_map["__POSITIONAL__"])
   {
-    if (m_defined_options.count(supplied) == 0)
-    { THROW_EX(VW::vw_unrecognised_option_exception, "unrecognised option '--" << supplied << "'") }
+    if (is_option_like(str)) { THROW_EX(VW::vw_unrecognised_option_exception, "unrecognised option '" << str << "'") }
   }
 
-  for (auto const& supplied : m_supplied_options)
+  for (auto const& kv : m_prog_parsed_token_map)
   {
+    const auto supplied = std::string{kv.first};
     if (m_reachable_options.count(supplied) == 0)
     {
       const auto& dependent_necessary_options = m_dependent_necessary_options.at(supplied);
@@ -348,18 +411,40 @@ void options_cli::check_unregistered(VW::io::logger& logger)
   }
 }
 
-void options_cli::insert(const std::string& key, const std::string& value) { m_tokens[key].push_back({value}); }
+void options_cli::insert(const std::string& key, const std::string& value)
+{
+  m_command_line.push_back("--" + key);
+  if (!value.empty()) { m_command_line.push_back(value); }
+}
 
 // Note: does not work for vector options.
 void options_cli::replace(const std::string& key, const std::string& value)
 {
-  m_tokens.erase(key);
-  m_tokens[key].push_back({value});
+  auto full_key = "--" + key;
+  auto it = std::find(m_command_line.begin(), m_command_line.end(), full_key);
+
+  // Not found, insert instead.
+  if (it == m_command_line.end())
+  {
+    insert(key, value);
+    return;
+  }
+
+  // Check if it is the final option or the next option is not a value.
+  if (it + 1 == m_command_line.end() || (*(it + 1)).find("--") != std::string::npos)
+  { THROW(key + " option does not have a value."); }
+
+  // Actually replace the value.
+  *(it + 1) = value;
 }
 
-std::vector<std::string> options_cli::get_positional_tokens() const { return m_positional_tokens; }
-const std::set<std::string>& options_cli::get_supplied_options() const { return m_supplied_options; }
-
-const std::map<std::string, std::vector<std::vector<std::string>>>& options_cli::get_tokens() const { return m_tokens; }
-}  // namespace config
-}  // namespace VW
+std::vector<std::string> options_cli::get_positional_tokens() const
+{
+  std::vector<std::string> positional_tokens;
+  auto it = m_prog_parsed_token_map.find("__POSITIONAL__");
+  if (it != m_prog_parsed_token_map.end())
+  {
+    for (auto const& token : it->second) { positional_tokens.push_back(std::string{token}); }
+  }
+  return positional_tokens;
+}

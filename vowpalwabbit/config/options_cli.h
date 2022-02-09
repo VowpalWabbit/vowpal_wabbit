@@ -8,10 +8,12 @@
 #include <set>
 #include <string>
 #include <unordered_map>
+#include <iostream>
 
 #include "config/option.h"
 #include "config/options.h"
 #include "future_compat.h"
+#include "vw_string_view.h"
 
 namespace VW
 {
@@ -20,9 +22,14 @@ namespace config
 namespace details
 {
 struct cli_typed_option_handler;
-}
 
-struct options_cli : public options_i, typed_option_visitor
+std::map<VW::string_view, std::vector<VW::string_view>> parse_token_map_with_current_info(
+    const std::vector<std::string>& command_line,
+    const std::map<std::string, std::shared_ptr<base_option>>& known_options);
+
+}  // namespace details
+
+struct options_cli : public options_i
 {
   options_cli(std::vector<std::string> args);
 
@@ -32,25 +39,14 @@ struct options_cli : public options_i, typed_option_visitor
   void insert(const std::string& key, const std::string& value) override;
   void replace(const std::string& key, const std::string& value) override;
   VW_ATTR(nodiscard) std::vector<std::string> get_positional_tokens() const override;
-  VW_ATTR(nodiscard) const std::set<std::string>& get_supplied_options() const override;
-  VW_ATTR(nodiscard) const std::map<std::string, std::vector<std::vector<std::string>>>& get_tokens() const;
 
   friend struct details::cli_typed_option_handler;
 
 private:
-  void process_command_line();
-
   std::vector<std::string> m_command_line;
 
   // Key is either short or long name
-  std::map<std::string, std::vector<std::vector<std::string>>> m_tokens;
-  std::vector<std::string> m_positional_tokens;
-
-  // Contains long and short option names.
-  std::set<std::string> m_supplied_options;
-
-  // Key is both short and long option names;
-  std::map<std::string, std::vector<std::shared_ptr<base_option>>> m_defined_options;
+  std::map<VW::string_view, std::vector<VW::string_view>> m_prog_parsed_token_map;
 
   std::set<std::string> m_reachable_options;
   std::unordered_map<std::string, std::vector<std::set<std::string>>> m_dependent_necessary_options;

@@ -51,8 +51,7 @@ std::shared_ptr<const base_option> VW::config::options_i::get_option(const std::
 
 void options_i::add_and_parse(const option_group_definition& group)
 {
-  internal_add_and_parse(group);
-
+  // Add known options before parsing so impl can make use of them.
   m_option_group_definitions.push_back(group);
   m_option_group_dic[m_current_reduction_tint].push_back(group);
   for (const auto& option : group.m_options)
@@ -60,23 +59,28 @@ void options_i::add_and_parse(const option_group_definition& group)
     // The last definition is kept. There was a bug where using .insert at a later pointer changed the command line but
     // the previously defined option's default value was serialized into the model. This resolves that state info.
     m_options[option->m_name] = option;
+    if (!option->m_short_name.empty()) { m_options[option->m_short_name] = option; }
   }
+
+  internal_add_and_parse(group);
 
   group.check_one_of();
 }
 
 bool options_i::add_parse_and_check_necessary(const option_group_definition& group)
 {
-  internal_add_and_parse(group);
+  // Add known options before parsing so impl can make use of them.
   m_option_group_definitions.push_back(group);
-
   m_option_group_dic[m_current_reduction_tint].push_back(group);
   for (const auto& option : group.m_options)
   {
     // The last definition is kept. There was a bug where using .insert at a later pointer changed the command line but
     // the previously defined option's default value was serialized into the model. This resolves that state info.
     m_options[option->m_name] = option;
+    if (!option->m_short_name.empty()) { m_options[option->m_short_name] = option; }
   }
+
+  internal_add_and_parse(group);
 
   auto necessary_enabled = group.check_necessary_enabled(*this);
   if (necessary_enabled) { group.check_one_of(); }

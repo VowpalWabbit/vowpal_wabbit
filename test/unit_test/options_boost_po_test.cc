@@ -18,7 +18,7 @@
 
 using namespace VW::config;
 
-using option_types = boost::mpl::vector<options_boost_po, options_cli>;
+using option_types = boost::mpl::vector<options_cli>;
 
 BOOST_AUTO_TEST_CASE_TEMPLATE(typed_options_parsing, T, option_types)
 {
@@ -35,7 +35,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(typed_options_parsing, T, option_types)
   arg_group.add(make_option("bool_opt", bool_opt));
   arg_group.add(make_option("float_opt", float_opt));
 
-  BOOST_CHECK_NO_THROW(options->add_and_parse(arg_group));
+  options->add_and_parse(arg_group);
 
   BOOST_CHECK_EQUAL(str_arg, "test_str");
   BOOST_CHECK_EQUAL(int_opt, 5);
