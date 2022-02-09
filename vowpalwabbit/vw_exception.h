@@ -44,7 +44,7 @@ public:
   vw_exception& operator=(const vw_exception& other) = default;
   vw_exception(vw_exception&& ex) = default;
   vw_exception& operator=(vw_exception&& other) = default;
-  ~vw_exception() noexcept = default;
+  ~vw_exception() noexcept override = default;
 
   const char* what() const noexcept override { return _message.c_str(); }
   const char* Filename() const { return _file; }
@@ -165,26 +165,6 @@ inline std::string strerror_to_string(int error_number)
 }
 
 #  ifdef _WIN32
-void vw_trace(const char* filename, int linenumber, const char* fmt, ...);
-
-// useful when hunting down release mode bugs
-#    define VW_TRACE(fmt, ...) VW::vw_trace(__FILE__, __LINE__, fmt, __VA_ARGS__)
-
-struct StopWatchData;
-
-class StopWatch
-{
-  StopWatchData* data;
-
-public:
-  StopWatch();
-  ~StopWatch();
-
-  double MilliSeconds() const;
-};
-
-// Equivalent to System::Diagnostics::Debugger::Launch();
-bool launchDebugger();
 
 #    define THROWERRNO(args)                                         \
       {                                                              \

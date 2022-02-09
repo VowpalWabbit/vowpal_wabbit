@@ -1,0 +1,28 @@
+name: MacOS / C++
+
+on:
+  push:
+    branches:
+      - master
+      - 'releases/**'
+  pull_request:
+    branches:
+      - '*'
+
+jobs:
+  build_macos:
+    runs-on: ${{matrix.os}}
+    strategy:
+      matrix:
+        os: [macos-10.15, macos-11]
+        build_type: [Debug, Release]
+    steps:
+      - uses: actions/checkout@v2
+      - name: Install dependencies
+        run: brew install cmake boost flatbuffers ninja
+      - name: Configure
+        run: cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=${{matrix.build_type}} -DWARNINGS=Off -DDO_NOT_BUILD_VW_C_WRAPPER=On -DBUILD_TESTING=On -DBUILD_EXPERIMENTAL_BINDING=On -DVW_INSTALL=Off
+      - name: Build
+        run: cmake --build build --target all
+      - name: Test
+        run: ctest --test-dir build --extra-verbose --output-on-failure
