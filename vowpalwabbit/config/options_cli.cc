@@ -243,9 +243,6 @@ struct cli_typed_option_handler : typed_option_visitor
     {
       const auto& all_tokens = tokens_it->second;
 
-      // This invariant should be maintianed by the tokenization code.
-      assert(all_tokens.size() == 1);
-
       // Due to the way options get added to the vector, the model options are at the end, and the
       // command-line options are at the front. To allow override from command-line over model file,
       // simply keep the first item.
@@ -323,7 +320,7 @@ std::map<VW::string_view, std::vector<VW::string_view>> parse_token_map_with_cur
     if (is_long_option_like(token)) { consume_long_option(known_options, tokens, m_map); }
     else if (is_short_option_like(token))
     {
-      consume_long_option(known_options, tokens, m_map);
+      consume_short_option(known_options, tokens, m_map);
     }
     else
     {
