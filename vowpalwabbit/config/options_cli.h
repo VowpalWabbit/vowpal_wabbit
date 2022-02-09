@@ -22,11 +22,6 @@ namespace config
 namespace details
 {
 struct cli_typed_option_handler;
-
-std::map<VW::string_view, std::vector<VW::string_view>> parse_token_map_with_current_info(
-    const std::vector<std::string>& command_line,
-    const std::map<std::string, std::shared_ptr<base_option>>& known_options);
-
 }  // namespace details
 
 struct options_cli : public options_i
