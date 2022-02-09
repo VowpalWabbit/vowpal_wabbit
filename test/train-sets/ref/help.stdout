@@ -3,6 +3,9 @@ Aged Exploration Options:
     --model_count arg                       Set number of exploration models (type: uint, default: 3, keep)
     --min_scope arg                         Minimum example count of model before removing (type: uint, default:
                                             100, keep)
+    --ae_alpha arg                          Set confidence interval for champion change (type: float, default:
+                                            0.05, keep)
+    --ae_tau arg                            Time constant for count decay (type: float, default: 0.999, keep)
 Diagnostic Options:
     --version                               Version information (type: bool)
     -a, --audit                             Print weights of features (type: bool)

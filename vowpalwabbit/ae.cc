@@ -41,13 +41,14 @@ ForwardIt swap_models(ForwardIt first, ForwardIt n_first, ForwardIt end)
 }
 
 template <class ForwardIt>
-void reset_models(ForwardIt first, ForwardIt end, parameters& weights, uint64_t model_count)
+void reset_models(
+    ForwardIt first, ForwardIt end, parameters& weights, double ae_alpha, double ae_tau, uint64_t model_count)
 {
   uint64_t ppw = 1;
   while (ppw < model_count) { ppw *= 2; }
   for (; first != end; ++first)
   {
-    first->reset_stats();
+    first->reset_stats(ae_alpha, ae_tau);
     weights.dense_weights.clear_offset(first->get_model_idx(), ppw);
   }
 }
@@ -101,7 +102,7 @@ void learn(ae_data& data, VW::LEARNER::multi_learner& base, multi_ex& examples)
         candidate_iter->get_lower_bound() > champion_iter->get_upper_bound())
     {
       auto n_iter = swap_models(candidate_iter, champion_iter, end_iter);
-      reset_models(n_iter, end_iter, data.weights, model_count);
+      reset_models(n_iter, end_iter, data.weights, data.ae_alpha, data.ae_tau, model_count);
       break;
     }
   }
@@ -115,7 +116,7 @@ void learn(ae_data& data, VW::LEARNER::multi_learner& base, multi_ex& examples)
         candidate_iter->update_count > (pow(champion_iter->update_count, static_cast<float>(model_idx) / model_count)))
     {
       auto n_iter = swap_models(candidate_iter + 1, candidate_iter, end_iter);
-      reset_models(n_iter, end_iter, data.weights, model_count);
+      reset_models(n_iter, end_iter, data.weights, data.ae_alpha, data.ae_tau, model_count);
       break;
     }
   }
@@ -140,6 +141,8 @@ VW::LEARNER::base_learner* ae_setup(VW::setup_base_i& stack_builder)
   bool ae_option;
   uint64_t model_count;
   uint64_t min_scope;
+  float ae_alpha;
+  float ae_tau;
 
   option_group_definition new_options("Aged Exploration");
   new_options.add(make_option("agedexp", ae_option).necessary().keep().help("Use decay of exploration reduction"))
@@ -147,7 +150,12 @@ VW::LEARNER::base_learner* ae_setup(VW::setup_base_i& stack_builder)
       .add(make_option("min_scope", min_scope)
                .keep()
                .default_value(100)
-               .help("Minimum example count of model before removing"));
+               .help("Minimum example count of model before removing"))
+      .add(make_option("ae_alpha", ae_alpha)
+               .keep()
+               .default_value(DEFAULT_ALPHA)
+               .help("Set confidence interval for champion change"))
+      .add(make_option("ae_tau", ae_tau).keep().default_value(DEFAULT_TAU).help("Time constant for count decay"));
 
   if (!options.add_parse_and_check_necessary(new_options)) { return nullptr; }
 
@@ -155,7 +163,7 @@ VW::LEARNER::base_learner* ae_setup(VW::setup_base_i& stack_builder)
   uint64_t ppw = 1;
   while (ppw < model_count) { ppw *= 2; }
 
-  auto data = VW::make_unique<ae_data>(model_count, min_scope, all.weights);
+  auto data = VW::make_unique<ae_data>(model_count, min_scope, ae_alpha, ae_tau, all.weights);
 
   // make sure we setup the rest of the stack with cleared interactions
   // to make sure there are not subtle bugs

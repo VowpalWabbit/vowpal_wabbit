@@ -94,11 +94,12 @@ BOOST_AUTO_TEST_CASE(ae_test_change_dist)
 BOOST_AUTO_TEST_CASE(ae_save_load)
 {
   callback_map empty_hooks;
-  auto ctr = simulator::_test_helper_hook("--agedexp --model_count 5 --cb_explore_adf --quiet  -q ::", empty_hooks);
+  auto ctr = simulator::_test_helper_hook(
+      "--agedexp --model_count 5 --cb_explore_adf --ae_alpha .01 --quiet  -q ::", empty_hooks);
   float without_save = ctr.back();
   BOOST_CHECK_GT(without_save, 0.8f);
 
-  ctr = simulator::_test_helper_save_load("--agedexp --model_count 5 --cb_explore_adf --quiet  -q ::");
+  ctr = simulator::_test_helper_save_load("--agedexp --model_count 5 --cb_explore_adf --ae_alpha .01 --quiet  -q ::");
 
   float with_save = ctr.back();
   BOOST_CHECK_GT(with_save, 0.8f);
