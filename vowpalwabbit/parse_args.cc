@@ -35,11 +35,11 @@
 #include "metrics.h"
 #include "text_utils.h"
 #include "interactions.h"
-#include "cli_help_formatter.h"
+#include "config/cli_help_formatter.h"
 
-#include "options.h"
-#include "options_boost_po.h"
-#include "options_serializer_boost_po.h"
+#include "config/options.h"
+#include "config/options_boost_po.h"
+#include "config/cli_options_serializer.h"
 #include "named_labels.h"
 
 #include "io/io_adapter.h"
@@ -1878,7 +1878,7 @@ VW::workspace* initialize(
 VW::workspace* seed_vw_model(
     VW::workspace* vw_model, const std::string& extra_args, trace_message_t trace_listener, void* trace_context)
 {
-  options_serializer_boost_po serializer;
+  cli_options_serializer serializer;
   for (auto const& option : vw_model->options->get_all_options())
   {
     if (vw_model->options->was_supplied(option->m_name))

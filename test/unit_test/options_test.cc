@@ -5,7 +5,8 @@
 #include <boost/test/unit_test.hpp>
 #include <boost/test/test_tools.hpp>
 
-#include "options.h"
+#include "config/options.h"
+#include "config/options_name_extractor.h"
 
 #include <vector>
 #include <string>
@@ -151,14 +152,8 @@ BOOST_AUTO_TEST_CASE(name_extraction_should_throw)
   // should throw since these methods will never be implemented by options_name_extractor
   auto null_logger = VW::io::create_null_logger();
   BOOST_REQUIRE_THROW(name_extractor.check_unregistered(null_logger), VW::vw_exception);
-  BOOST_REQUIRE_THROW(name_extractor.get_all_options(), VW::vw_exception);
-  BOOST_REQUIRE_THROW(name_extractor.get_option("opt2"), VW::vw_exception);
   BOOST_REQUIRE_THROW(name_extractor.insert("opt2", "blah"), VW::vw_exception);
   BOOST_REQUIRE_THROW(name_extractor.replace("opt2", "blah"), VW::vw_exception);
-  BOOST_REQUIRE_THROW(name_extractor.get_positional_tokens(), VW::vw_exception);
-  BOOST_REQUIRE_THROW(name_extractor.tint("nonsense"), VW::vw_exception);
-  BOOST_REQUIRE_THROW(name_extractor.reset_tint(), VW::vw_exception);
-  BOOST_REQUIRE_THROW(name_extractor.get_collection_of_options(), VW::vw_exception);
 }
 
 BOOST_AUTO_TEST_CASE(name_extraction_recycle)

@@ -4,7 +4,9 @@
 
 #pragma once
 
-#include "options.h"
+#include <string>
+
+#include "config/help_formatter.h"
 
 namespace VW
 {
