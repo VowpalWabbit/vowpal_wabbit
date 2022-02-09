@@ -18,7 +18,7 @@
 
 using namespace VW::config;
 
-using option_types = boost::mpl::vector<options_cli>;
+using option_types = boost::mpl::vector<options_cli, options_boost_po>;
 
 BOOST_AUTO_TEST_CASE_TEMPLATE(typed_options_parsing, T, option_types)
 {
