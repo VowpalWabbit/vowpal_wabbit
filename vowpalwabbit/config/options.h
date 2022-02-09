@@ -65,6 +65,7 @@ protected:
   std::vector<option_group_definition> m_option_group_definitions;
   std::string m_current_reduction_tint = m_default_tint;
   std::map<std::string, std::shared_ptr<base_option>> m_options;
+  std::map<char, std::shared_ptr<base_option>> m_short_options;
 };
 }  // namespace config
 }  // namespace VW

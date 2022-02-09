@@ -159,14 +159,14 @@ void consume_long_option(const std::map<std::string, std::shared_ptr<base_option
   for (auto& token : current_tokens) { result_tokens.push_back(token); }
 }
 
-void consume_short_option(const std::map<std::string, std::shared_ptr<base_option>>& known_options,
+void consume_short_option(const std::map<char, std::shared_ptr<base_option>>& known_short_options,
     /*in-out*/ std::queue<VW::string_view>& command_line,
     /*out*/ std::map<VW::string_view, std::vector<VW::string_view>>& result)
 {
   auto current_token = command_line.front();
-  auto current_opt = current_token.substr(1);
 
-  if (current_opt.empty())
+  // Check if just dangling -
+  if (current_token.size() == 1)
   {
     const auto result_name = "__POSITIONAL__";
     result[result_name].push_back(current_token);
@@ -174,11 +174,12 @@ void consume_short_option(const std::map<std::string, std::shared_ptr<base_optio
     return;
   }
 
+  auto current_opt = current_token[1];
+
   std::vector<VW::string_view> current_tokens;
-  if (current_opt.size() > 2)
+  if (current_token.size() > 2)
   {
-    auto opt_value = current_opt.substr(2);
-    current_opt = current_opt.substr(1, 1);
+    auto opt_value = current_token.substr(2);
     current_tokens.push_back(opt_value);
   }
 
@@ -186,8 +187,8 @@ void consume_short_option(const std::map<std::string, std::shared_ptr<base_optio
   command_line.pop();
 
   // See if there is a known option for this name
-  auto known_opt = known_options.find(std::string{current_opt});
-  if (known_opt == known_options.end())
+  auto known_opt = known_short_options.find(current_opt);
+  if (known_opt == known_short_options.end())
   {
     // If there is no known option we are going to just treat it as an unknown option.
     result["__POSITIONAL__"].push_back(current_token);
@@ -308,7 +309,8 @@ struct cli_typed_option_handler : typed_option_visitor
 // IMPORTANT holds views into the given command line args
 std::map<VW::string_view, std::vector<VW::string_view>> parse_token_map_with_current_info(
     const std::vector<std::string>& command_line,
-    const std::map<std::string, std::shared_ptr<base_option>>& known_options)
+    const std::map<std::string, std::shared_ptr<base_option>>& known_options,
+    const std::map<char, std::shared_ptr<base_option>>& known_short_options)
 {
   std::map<VW::string_view, std::vector<VW::string_view>> m_map;
   std::queue<VW::string_view> tokens;
@@ -320,7 +322,7 @@ std::map<VW::string_view, std::vector<VW::string_view>> parse_token_map_with_cur
     if (is_long_option_like(token)) { consume_long_option(known_options, tokens, m_map); }
     else if (is_short_option_like(token))
     {
-      consume_short_option(known_options, tokens, m_map);
+      consume_short_option(known_short_options, tokens, m_map);
     }
     else
     {
@@ -341,7 +343,7 @@ options_cli::options_cli(std::vector<std::string> args) : m_command_line(std::mo
 
 void options_cli::internal_add_and_parse(const option_group_definition& group)
 {
-  m_prog_parsed_token_map = details::parse_token_map_with_current_info(m_command_line, m_options);
+  m_prog_parsed_token_map = details::parse_token_map_with_current_info(m_command_line, m_options, m_short_options);
   for (const auto& opt_ptr : group.m_options)
   {
     details::cli_typed_option_handler handler(*this, m_prog_parsed_token_map);

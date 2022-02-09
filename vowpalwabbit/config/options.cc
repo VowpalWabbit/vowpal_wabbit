@@ -59,7 +59,11 @@ void options_i::add_and_parse(const option_group_definition& group)
     // The last definition is kept. There was a bug where using .insert at a later pointer changed the command line but
     // the previously defined option's default value was serialized into the model. This resolves that state info.
     m_options[option->m_name] = option;
-    if (!option->m_short_name.empty()) { m_options[option->m_short_name] = option; }
+    if (!option->m_short_name.empty())
+    {
+      assert(option->m_short_name.size() == 1);
+      m_short_options[option->m_short_name[0]] = option;
+    }
   }
 
   internal_add_and_parse(group);
@@ -77,7 +81,11 @@ bool options_i::add_parse_and_check_necessary(const option_group_definition& gro
     // The last definition is kept. There was a bug where using .insert at a later pointer changed the command line but
     // the previously defined option's default value was serialized into the model. This resolves that state info.
     m_options[option->m_name] = option;
-    if (!option->m_short_name.empty()) { m_options[option->m_short_name] = option; }
+    if (!option->m_short_name.empty())
+    {
+      assert(option->m_short_name.size() == 1);
+      m_short_options[option->m_short_name[0]] = option;
+    }
   }
 
   internal_add_and_parse(group);
