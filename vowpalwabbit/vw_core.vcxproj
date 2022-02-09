@@ -463,7 +463,6 @@
     <ClCompile Include="topk.cc" />
     <ClCompile Include="unique_sort.cc" />
     <ClCompile Include="version.cc" />
-    <ClCompile Include="vw_exception.cc" />
     <ClCompile Include="vw_validate.cc" />
     <ClCompile Include="warm_cb.cc" />
   </ItemGroup>

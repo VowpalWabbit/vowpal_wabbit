@@ -96,7 +96,6 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="..\vowpalwabbit\spanning_tree.cc" />
-    <ClCompile Include="..\vowpalwabbit\vw_exception.cc" />
     <ClCompile Include="spanning_tree_main.cc" />
   </ItemGroup>
   <ItemGroup>
