@@ -146,4 +146,7 @@ namespace VW
 {
 std::string trim_whitespace(const std::string& s);
 VW::string_view trim_whitespace(VW::string_view str);
+
+std::vector<std::string> split_command_line(const std::string& cmd_line);
+std::vector<std::string> split_command_line(VW::string_view cmd_line);
 }  // namespace VW
