@@ -33,6 +33,7 @@
 #include "parser.h"
 #include "parse_example.h"
 #include "hashstring.h"
+#include "future_compat.h"
 
 #include "config/options.h"
 
@@ -55,7 +56,9 @@ VW::workspace* initialize(int argc, char* argv[], io_buf* model = nullptr, bool 
 
 VW::workspace* seed_vw_model(VW::workspace* vw_model, const std::string& extra_args,
     trace_message_t trace_listener = nullptr, void* trace_context = nullptr);
+
 // Allows the input command line string to have spaces escaped by '\'
+VW_DEPRECATED("Initialize handles quoted and escaped strings. Use that overload instead.")
 VW::workspace* initialize_escaped(std::string const& s, io_buf* model = nullptr, bool skip_model_load = false,
     trace_message_t trace_listener = nullptr, void* trace_context = nullptr);
 // Experimental (VW::setup_base_i):
@@ -66,8 +69,11 @@ VW::workspace* initialize_with_builder(const std::string& s, io_buf* model = nul
 void cmd_string_replace_value(std::stringstream*& ss, std::string flag_to_replace, const std::string& new_value);
 
 // The argv array from both of these functions must be freed.
+VW_DEPRECATED("Use VW::split_command_line instead")
 char** to_argv(std::string const& s, int& argc);
+VW_DEPRECATED("Use VW::split_command_line instead")
 char** to_argv_escaped(std::string const& s, int& argc);
+VW_DEPRECATED("Will be removed when to_argv and to_argv_escaped are removed.")
 void free_args(int argc, char* argv[]);
 
 const char* are_features_compatible(VW::workspace& vw1, VW::workspace& vw2);
