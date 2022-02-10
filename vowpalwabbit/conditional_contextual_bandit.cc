@@ -722,8 +722,10 @@ base_learner* ccb_explore_adf_setup(VW::setup_base_i& stack_builder)
   auto* l = VW::LEARNER::make_reduction_learner(std::move(data), base, learn_or_predict<true>, learn_or_predict<false>,
       stack_builder.get_setupfn_name(ccb_explore_adf_setup))
                 .set_learn_returns_prediction(true)
+                .set_input_prediction_type(VW::prediction_type_t::action_probs)
                 .set_output_prediction_type(VW::prediction_type_t::decision_probs)
                 .set_input_label_type(VW::label_type_t::ccb)
+                .set_output_label_type(VW::label_type_t::cb)
                 .set_finish_example(finish_multiline_example)
                 .set_save_load(save_load)
                 .build();
