@@ -104,7 +104,7 @@ option(BUILD_FLATBUFFERS "Build flatbuffers" OFF)
 option(BUILD_PRIVACY_ACTIVATION "Enable privacy activation feature" OFF)
 
 if(VW_INSTALL AND NOT VW_ZLIB_SYS_DEP)
-  message(FATAL_ERROR "To use install VW_ZLIB_SYS_DEP must be used")
+  message(FATAL_ERROR "Cannot use VW_INSTALL when using vendored zlib. Either set VW_INSTALL=Off or VW_ZLIB_SYS_DEP=On")
 endif()
 
 # The only way to tell it was used is if it was turned off, since the default is true.
