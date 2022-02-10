@@ -600,16 +600,12 @@ void persist(automl<CMType>& data, metric_sink& metrics)
 template <typename CMType>
 void finish_example(VW::workspace& all, automl<CMType>& data, multi_ex& ec)
 {
-  {
-    uint64_t champ_live_slot = data.cm->current_champ;
-    for (example* ex : ec) { data.cm->apply_config(ex, champ_live_slot); }
+  uint64_t champ_live_slot = data.cm->current_champ;
+  for (example* ex : ec) { data.cm->apply_config(ex, champ_live_slot); }
 
-    auto restore_guard = VW::scope_exit([&data, &ec] {
-      for (example* ex : ec) { data.cm->revert_config(ex); }
-    });
-
-    data.adf_learner->print_example(all, ec);
-  }
+  auto restore_guard = VW::scope_exit([&data, &ec] {
+    for (example* ex : ec) { data.cm->revert_config(ex); }
+  });
 
   VW::finish_example(all, ec);
 }
@@ -745,8 +741,6 @@ VW::LEARNER::base_learner* automl_setup(VW::setup_base_i& stack_builder)
   // only this has been tested
   if (base_learner->is_multiline())
   {
-    // fetch cb_explore_adf to call directly into the print routine twice
-    data->adf_learner = as_multiline(base_learner->get_learner_by_name_prefix("cb_explore_adf_"));
     auto ppw = max_live_configs;
     auto* persist_ptr =
         verbose_metrics ? persist<interaction_config_manager, true> : persist<interaction_config_manager, false>;
