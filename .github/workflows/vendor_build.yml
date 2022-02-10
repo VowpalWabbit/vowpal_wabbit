@@ -23,5 +23,5 @@ jobs:
           cmake --build build --target vw-bin spanning_tree vw-unit-test.out
       - name: Test with coverage C++
         run: |
-          python3 test/run_tests.py -f -j $(nproc) --include_flatbuffers --clean_dirty -E 0.001
+          python3 test/run_tests.py -f -j $(nproc) --clean_dirty -E 0.001
           ./build/test/unit_test/vw-unit-test.out
