@@ -57,6 +57,121 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(typed_option_collection_parsing, T, option_types)
   check_collections_exact(str_opt, std::vector<std::string>{"test_str", "another"});
 }
 
+BOOST_AUTO_TEST_CASE_TEMPLATE(typed_option_collection_parsing_equals_long_option, T, option_types)
+{
+  std::vector<std::string> args = {"--str_opt=value1", "value2", "--str_opt", "value3"};
+  auto options = VW::make_unique<T>(args);
+
+  std::vector<std::string> str_opt;
+  option_group_definition arg_group("group");
+  arg_group.add(make_option("str_opt", str_opt));
+
+  options->add_and_parse(arg_group);
+
+  check_collections_exact(str_opt, std::vector<std::string>{"value1", "value2", "value3"});
+}
+
+BOOST_AUTO_TEST_CASE_TEMPLATE(typed_option_collection_parsing_short_option_attached_value, T, option_types)
+{
+  std::vector<std::string> args = {"-svalue1", "value2", "--str_opt", "value3"};
+  auto options = VW::make_unique<T>(args);
+
+  std::vector<std::string> str_opt;
+  option_group_definition arg_group("group");
+  arg_group.add(make_option("str_opt", str_opt).short_name("s"));
+
+  options->add_and_parse(arg_group);
+
+  check_collections_exact(str_opt, std::vector<std::string>{"value1", "value2", "value3"});
+}
+
+BOOST_AUTO_TEST_CASE_TEMPLATE(list_consume_until_option_like, T, option_types)
+{
+  std::vector<std::string> args = {"--str_opt", "a", "b", "--unknown", "c", "--str_opt", "d", "e", "f", "--str_opt", "--option_like", "g"};
+  auto options = VW::make_unique<T>(args);
+
+  std::vector<std::string> str_opt;
+  option_group_definition arg_group("group");
+  arg_group.add(make_option("str_opt", str_opt));
+
+  options->add_and_parse(arg_group);
+
+  std::vector<std::string> expected{"a", "b", "d", "e", "f", "--option_like"};
+  BOOST_TEST(str_opt == expected, boost::test_tools::per_element() );
+  const auto positional_tokens = options->get_positional_tokens();
+  expected = {"a", "b", "d", "e", "f", "--option_like"};
+  BOOST_TEST(positional_tokens == expected, boost::test_tools::per_element() );
+}
+
+BOOST_AUTO_TEST_CASE_TEMPLATE(list_no_tokens, T, option_types)
+{
+  std::vector<std::string> args = {"--str_opt"};
+  auto options = VW::make_unique<T>(args);
+
+  std::vector<std::string> str_opt;
+  option_group_definition arg_group("group");
+  arg_group.add(make_option("str_opt", str_opt));
+
+  options->add_and_parse(arg_group);
+
+  BOOST_CHECK_THROW(options->add_and_parse(arg_group), VW::vw_exception);
+}
+
+BOOST_AUTO_TEST_CASE_TEMPLATE(type_conversion_failure, T, option_types)
+{
+  std::vector<std::string> args = {"--int_opt", "4.3", "--float_opt", "1.2a"};
+  auto options = VW::make_unique<T>(args);
+
+  float float_opt;
+  option_group_definition arg_group1("group1");
+  arg_group1.add(make_option("float_opt", float_opt));
+
+  int32_t int_opt;
+  option_group_definition arg_group2("group2");
+  arg_group2.add(make_option("int_opt", int_opt));
+
+  BOOST_CHECK_THROW(options->add_and_parse(arg_group1), VW::vw_argument_invalid_value_exception);
+  BOOST_CHECK_THROW(options->add_and_parse(arg_group2), VW::vw_argument_invalid_value_exception);
+}
+
+BOOST_AUTO_TEST_CASE_TEMPLATE(order_of_parsing, T, option_types)
+{
+  std::vector<std::string> args = {"--str_opt", "--bool_opt"};
+  {
+    auto options = VW::make_unique<T>(args);
+
+    bool bool_opt;
+    option_group_definition arg_group1("group1");
+    arg_group1.add(make_option("bool_opt", bool_opt));
+
+    std::string str_opt;
+    option_group_definition arg_group2("group2");
+    arg_group2.add(make_option("str_opt", str_opt));
+
+    options->add_and_parse(arg_group1);
+    BOOST_CHECK_EQUAL(bool_opt, true);
+    options->add_and_parse(arg_group2);
+    BOOST_CHECK_EQUAL(str_opt, "--bool_opt");
+  }
+
+  {
+    auto options = VW::make_unique<T>(args);
+
+    bool bool_opt;
+    option_group_definition arg_group1("group1");
+    arg_group1.add(make_option("bool_opt", bool_opt));
+
+    std::string str_opt;
+    option_group_definition arg_group2("group2");
+    arg_group2.add(make_option("str_opt", str_opt));
+
+    options->add_and_parse(arg_group2);
+    BOOST_CHECK_EQUAL(str_opt, "--bool_opt");
+    options->add_and_parse(arg_group1);
+    BOOST_CHECK_EQUAL(bool_opt, false);
+  }
+}
+
 BOOST_AUTO_TEST_CASE_TEMPLATE(bool_implicit_and_explicit_options, T, option_types)
 {
   std::vector<std::string> args = {"--bool_switch"};
@@ -95,7 +210,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(option_missing_required_value, T, option_types)
   BOOST_CHECK_EQUAL(exception_caught, true);
 }
 
-BOOST_AUTO_TEST_CASE_TEMPLATE(incorrect_option_type, T, option_types)
+BOOST_AUTO_TEST_CASE_TEMPLATE(incorrect_option_type_str_for_int, T, option_types)
 {
   std::vector<std::string> args = {"--int_opt", "str"};
   auto options = VW::make_unique<T>(args);
