@@ -9,7 +9,6 @@
 
 namespace VW
 {
-
 bool ends_with(VW::string_view full_string, VW::string_view ending)
 {
   return full_string.size() >= ending.size() &&
