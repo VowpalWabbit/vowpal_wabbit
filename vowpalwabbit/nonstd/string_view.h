@@ -1,3 +1,5 @@
+// clang-format off
+
 // Copyright 2017-2020 by Martin Moene
 //
 // string-view lite, a C++17-like string_view for C++98 and later.
@@ -1624,3 +1626,5 @@ nssv_RESTORE_WARNINGS()
 
 #endif // nssv_HAVE_STD_STRING_VIEW
 #endif // NONSTD_SV_LITE_H_INCLUDED
+
+// clang-format on
