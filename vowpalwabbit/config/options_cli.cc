@@ -124,7 +124,7 @@ void consume_tokens(
 
 void consume_long_option(const std::map<std::string, std::shared_ptr<base_option>>& known_options,
     /*in-out*/ std::queue<VW::string_view>& command_line,
-    /*out*/ std::map<VW::string_view, std::vector<VW::string_view>>& result)
+    /*out*/ std::unordered_map<VW::string_view, std::vector<VW::string_view>>& result)
 {
   auto current_token = command_line.front();
   auto current_opt = current_token.substr(2);
@@ -161,7 +161,7 @@ void consume_long_option(const std::map<std::string, std::shared_ptr<base_option
 
 void consume_short_option(const std::map<char, std::shared_ptr<base_option>>& known_short_options,
     /*in-out*/ std::queue<VW::string_view>& command_line,
-    /*out*/ std::map<VW::string_view, std::vector<VW::string_view>>& result)
+    /*out*/ std::unordered_map<VW::string_view, std::vector<VW::string_view>>& result)
 {
   auto current_token = command_line.front();
 
@@ -307,12 +307,12 @@ struct cli_typed_option_handler : typed_option_visitor
 
 // __positional__ contains everything we don't know about
 // IMPORTANT holds views into the given command line args
-std::map<VW::string_view, std::vector<VW::string_view>> parse_token_map_with_current_info(
+std::unordered_map<VW::string_view, std::vector<VW::string_view>> parse_token_map_with_current_info(
     const std::vector<std::string>& command_line,
     const std::map<std::string, std::shared_ptr<base_option>>& known_options,
     const std::map<char, std::shared_ptr<base_option>>& known_short_options)
 {
-  std::map<VW::string_view, std::vector<VW::string_view>> m_map;
+  std::unordered_map<VW::string_view, std::vector<VW::string_view>> m_map;
   std::queue<VW::string_view> tokens;
   for (auto& arg : command_line) { tokens.push(arg); }
 
