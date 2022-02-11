@@ -6,6 +6,7 @@ from typing import Any, Dict, Iterator, List, Optional, Tuple, Type, Union
 import pylibvw
 import warnings
 import inspect
+import shlex
 
 from enum import IntEnum
 
@@ -385,35 +386,42 @@ class Workspace(pylibvw.vw):
             >>> vw4 = Workspace(q=["ab", "ac"])
         """
 
-        def format_input_pair(key, val):
-            if type(val) is bool and not val:
-                s = ""
-            else:
-                prefix = "-" if len(key) == 1 else "--"
-                value = "" if type(val) is bool else " {}".format(val)
-                s = "{p}{k}{v}".format(p=prefix, k=key, v=value)
-            return s
 
-        def format_input(key, val):
+        def format_key(key: str) -> str:
+            prefix = "-" if len(key) == 1 else "--"
+            return f"{prefix}{key}"
+
+        def format_input(key: str, val: Union[int, float, str, bool, List[int], List[float], List[str]]) -> List[str]:
+            res = [format_key(key)]
             if isinstance(val, list):
                 # if a list is passed as a parameter value - create a key for
                 # each list element
-                return " ".join([format_input_pair(key, value) for value in val])
-            else:
-                return format_input_pair(key, val)
+                for v in val:
+                    if isinstance(v, bool):
+                        raise ValueError(f"List of bool values not supported. Argument: {key}")
+                    res.append(str(v))
+            elif isinstance(val, bool):
+                if val == False:
+                    return []
+            elif isinstance(val, (int, float, str)):
+                res.append(str(val))
+            return res
 
-        l = [format_input(k, v) for k, v in kw.items()]
+        arg_list = []
         if arg_str is not None:
-            l = [arg_str] + l
+            arg_list.extend(shlex.split(arg_str))
+
+        for key, val in kw.items():
+            arg_list.extend(format_input(key, val))
 
         if enable_logging:
             self._log_fwd = _log_forward()
             self._log_wrapper = pylibvw.vw_log(self._log_fwd)
 
         if self._log_wrapper:
-            super().__init__(" ".join(l), self._log_wrapper)
+            super().__init__(arg_list, self._log_wrapper)
         else:
-            super().__init__(" ".join(l))
+            super().__init__(arg_list)
         self.init = True
 
         # check to see if native parser needs to run
