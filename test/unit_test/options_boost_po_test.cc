@@ -96,11 +96,13 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(list_consume_until_option_like, T, option_types)
 
   options->add_and_parse(arg_group);
 
-  std::vector<std::string> expected{"a", "b", "d", "e", "f", "--option_like"};
+  std::vector<std::string> expected{"a", "b", "d", "e", "f", "--option_like", "g"};
   BOOST_TEST(str_opt == expected, boost::test_tools::per_element() );
   const auto positional_tokens = options->get_positional_tokens();
-  expected = {"a", "b", "d", "e", "f", "--option_like"};
-  BOOST_TEST(positional_tokens == expected, boost::test_tools::per_element() );
+  // There is a slight functional difference here. Boost does not consider --unknown as optional but cli does.
+  // The important thing is that "c" was found. --unknown would have resulted in a failure when checking for unregistered options.
+  auto found = std::find(positional_tokens.begin(), positional_tokens.end(), "c") != positional_tokens.end();
+  BOOST_TEST(found);
 }
 
 BOOST_AUTO_TEST_CASE_TEMPLATE(list_no_tokens, T, option_types)
@@ -112,9 +114,17 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(list_no_tokens, T, option_types)
   option_group_definition arg_group("group");
   arg_group.add(make_option("str_opt", str_opt));
 
-  options->add_and_parse(arg_group);
+  bool exception_caught = false;
+  try
+  {
+    options->add_and_parse(arg_group);
+  }
+  catch (...)
+  {
+    exception_caught = true;
+  }
 
-  BOOST_CHECK_THROW(options->add_and_parse(arg_group), VW::vw_exception);
+  BOOST_TEST(exception_caught);
 }
 
 BOOST_AUTO_TEST_CASE_TEMPLATE(type_conversion_failure, T, option_types)
@@ -134,11 +144,15 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(type_conversion_failure, T, option_types)
   BOOST_CHECK_THROW(options->add_and_parse(arg_group2), VW::vw_argument_invalid_value_exception);
 }
 
-BOOST_AUTO_TEST_CASE_TEMPLATE(order_of_parsing, T, option_types)
+// Boost PO does not follow these semantics. It is arguably a bug that is fixed with the options_cli implementation
+// Essentially boost still parses the --bool_opt when it should have technically been consumed by the --str_opt.
+// This is because boost implementation parses each option_description indepdenently whereas the options_cli impl essentially
+// continually adds to a global definition as it goes.
+BOOST_AUTO_TEST_CASE(order_of_parsing)
 {
   std::vector<std::string> args = {"--str_opt", "--bool_opt"};
   {
-    auto options = VW::make_unique<T>(args);
+    auto options = VW::make_unique<options_cli>(args);
 
     bool bool_opt;
     option_group_definition arg_group1("group1");
@@ -155,9 +169,9 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(order_of_parsing, T, option_types)
   }
 
   {
-    auto options = VW::make_unique<T>(args);
+    auto options = VW::make_unique<options_cli>(args);
 
-    bool bool_opt;
+    bool bool_opt = false;
     option_group_definition arg_group1("group1");
     arg_group1.add(make_option("bool_opt", bool_opt));
 
