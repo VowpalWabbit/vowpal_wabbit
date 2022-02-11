@@ -11,7 +11,7 @@
 #include "vw_example.h"
 #include "vw_builder.h"
 #include "clr_io.h"
-#include "lda_core.h"
+#include "reductions/lda_core.h"
 #include "parse_example.h"
 #include "parse_example_json.h"
 #include "shared_data.h"

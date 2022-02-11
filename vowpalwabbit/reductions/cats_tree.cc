@@ -361,7 +361,7 @@ base_learner* setup(setup_base_i& stack_builder)
 
   auto tree = VW::make_unique<cats_tree>();
   tree->init(num_actions, bandwidth);
-tree->set_trace_message(all.trace_message.get(), all.quiet);
+  tree->set_trace_message(all.trace_message.get(), all.quiet);
 
   base_learner* base = stack_builder.setup_base_learner();
   int32_t params_per_weight = tree->learner_count();

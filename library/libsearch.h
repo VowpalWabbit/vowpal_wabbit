@@ -9,8 +9,8 @@ license as described in the file LICENSE.
 #include "../vowpalwabbit/parser.h"
 #include "../vowpalwabbit/parse_example.h"
 #include "../vowpalwabbit/vw.h"
-#include "../vowpalwabbit/reductions/search/search.h"
-#include "../vowpalwabbit/reductions/search/search_hooktask.h"
+#  include "../vowpalwabbit/reductions/search/search.h"
+#  include "../vowpalwabbit/reductions/search/search_hooktask.h"
 
 #  include <memory>
 
