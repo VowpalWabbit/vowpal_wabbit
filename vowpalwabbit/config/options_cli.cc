@@ -258,7 +258,7 @@ struct cli_typed_option_handler : typed_option_visitor
       if (ss.fail() || ss.rdbuf()->in_avail() != 0)
       {
         THROW_EX(VW::vw_argument_invalid_value_exception,
-          token_to_use << " is an invalid value for option " << option.m_name)
+            token_to_use << " is an invalid value for option " << option.m_name)
       }
       option.value(value, true);
     }

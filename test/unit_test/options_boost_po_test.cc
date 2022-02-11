@@ -87,7 +87,8 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(typed_option_collection_parsing_short_option_attac
 
 BOOST_AUTO_TEST_CASE_TEMPLATE(list_consume_until_option_like, T, option_types)
 {
-  std::vector<std::string> args = {"--str_opt", "a", "b", "--unknown", "c", "--str_opt", "d", "e", "f", "--str_opt", "--option_like", "g"};
+  std::vector<std::string> args = {
+      "--str_opt", "a", "b", "--unknown", "c", "--str_opt", "d", "e", "f", "--str_opt", "--option_like", "g"};
   auto options = VW::make_unique<T>(args);
 
   std::vector<std::string> str_opt;
@@ -97,10 +98,11 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(list_consume_until_option_like, T, option_types)
   options->add_and_parse(arg_group);
 
   std::vector<std::string> expected{"a", "b", "d", "e", "f", "--option_like", "g"};
-  BOOST_TEST(str_opt == expected, boost::test_tools::per_element() );
+  BOOST_TEST(str_opt == expected, boost::test_tools::per_element());
   const auto positional_tokens = options->get_positional_tokens();
   // There is a slight functional difference here. Boost does not consider --unknown as optional but cli does.
-  // The important thing is that "c" was found. --unknown would have resulted in a failure when checking for unregistered options.
+  // The important thing is that "c" was found. --unknown would have resulted in a failure when checking for
+  // unregistered options.
   auto found = std::find(positional_tokens.begin(), positional_tokens.end(), "c") != positional_tokens.end();
   BOOST_TEST(found);
 }
@@ -146,8 +148,8 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(type_conversion_failure, T, option_types)
 
 // Boost PO does not follow these semantics. It is arguably a bug that is fixed with the options_cli implementation
 // Essentially boost still parses the --bool_opt when it should have technically been consumed by the --str_opt.
-// This is because boost implementation parses each option_description indepdenently whereas the options_cli impl essentially
-// continually adds to a global definition as it goes.
+// This is because boost implementation parses each option_description indepdenently whereas the options_cli impl
+// essentially continually adds to a global definition as it goes.
 BOOST_AUTO_TEST_CASE(order_of_parsing)
 {
   std::vector<std::string> args = {"--str_opt", "--bool_opt"};
