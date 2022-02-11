@@ -256,15 +256,9 @@ public:
 vw_ptr my_initialize_with_log(py::list args, py_log_wrapper_ptr py_log)
 {
   std::vector<std::string> args_vec;
-  for (size_t i = 0; i < len(args); i++)
-  {
-    args_vec.push_back(py::extract<std::string>(args[i]));
-  }
+  for (size_t i = 0; i < len(args); i++) { args_vec.push_back(py::extract<std::string>(args[i])); }
 
-  if (std::find(args_vec.begin(), args_vec.end(), "--no_stdin") == args_vec.end())
-  {
-    args_vec.push_back("--no_stdin");
-  }
+  if (std::find(args_vec.begin(), args_vec.end(), "--no_stdin") == args_vec.end()) { args_vec.push_back("--no_stdin"); }
 
   trace_message_t trace_listener = nullptr;
   void* trace_context = nullptr;
