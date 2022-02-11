@@ -479,9 +479,6 @@
     <ClCompile Include="vw_validate.cc" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="get_pmf.cc">
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</ExcludedFromBuild>
-    </ClCompile>
     <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
