@@ -118,15 +118,15 @@ if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
 endif()
 
 if(VW_INSTALL AND NOT FMT_SYS_DEP)
-  message(WARNING "Installing with a vendored version of fmt is not recommended. Use FMT_SYS_DEP to use a system dependency and silence this warning.")
+  message(WARNING "Installing with a vendored version of fmt is not recommended. Use FMT_SYS_DEP to use a system dependency or specify VW_INSTALL=OFF to silence this warning.")
 endif()
 
 if(VW_INSTALL AND NOT SPDLOG_SYS_DEP)
-  message(WARNING "Installing with a vendored version of spdlog is not recommended. Use SPDLOG_SYS_DEP to use a system dependency and silence this warning.")
+  message(WARNING "Installing with a vendored version of spdlog is not recommended. Use SPDLOG_SYS_DEP to use a system dependency or specify VW_INSTALL=OFF to silence this warning.")
 endif()
 
 if(VW_INSTALL AND NOT RAPIDJSON_SYS_DEP)
-  message(WARNING "Installing with a vendored version of rapidjson is not recommended. Use SPDLOG_SYS_DEP to use a system dependency and silence this warning.")
+  message(WARNING "Installing with a vendored version of rapidjson is not recommended. Use SPDLOG_SYS_DEP to use a system dependency or specify VW_INSTALL=OFF to silence this warning.")
 endif()
 
 string(TOUPPER "${CMAKE_BUILD_TYPE}" CONFIG)

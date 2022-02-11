@@ -600,16 +600,12 @@ void persist(automl<CMType>& data, metric_sink& metrics)
 template <typename CMType>
 void finish_example(VW::workspace& all, automl<CMType>& data, multi_ex& ec)
 {
-  {
-    uint64_t champ_live_slot = data.cm->current_champ;
-    for (example* ex : ec) { data.cm->apply_config(ex, champ_live_slot); }
+  uint64_t champ_live_slot = data.cm->current_champ;
+  for (example* ex : ec) { data.cm->apply_config(ex, champ_live_slot); }
 
-    auto restore_guard = VW::scope_exit([&data, &ec] {
-      for (example* ex : ec) { data.cm->revert_config(ex); }
-    });
-
-    data.adf_learner->print_example(all, ec);
-  }
+  auto restore_guard = VW::scope_exit([&data, &ec] {
+    for (example* ex : ec) { data.cm->revert_config(ex); }
+  });
 
   VW::finish_example(all, ec);
 }
@@ -745,8 +741,6 @@ VW::LEARNER::base_learner* automl_setup(VW::setup_base_i& stack_builder)
   // only this has been tested
   if (base_learner->is_multiline())
   {
-    // fetch cb_explore_adf to call directly into the print routine twice
-    data->adf_learner = as_multiline(base_learner->get_learner_by_name_prefix("cb_explore_adf_"));
     auto ppw = max_live_configs;
     auto* persist_ptr =
         verbose_metrics ? persist<interaction_config_manager, true> : persist<interaction_config_manager, false>;
@@ -754,6 +748,10 @@ VW::LEARNER::base_learner* automl_setup(VW::setup_base_i& stack_builder)
         learn_automl<interaction_config_manager, true>, predict_automl<interaction_config_manager, true>,
         stack_builder.get_setupfn_name(automl_setup))
                   .set_params_per_weight(ppw)  // refactor pm
+                  .set_output_prediction_type(VW::prediction_type_t::action_scores)
+                  .set_input_label_type(VW::label_type_t::cb)
+                  .set_input_prediction_type(VW::prediction_type_t::action_scores)
+                  .set_output_label_type(VW::label_type_t::cb)
                   .set_finish_example(finish_example<interaction_config_manager>)
                   .set_save_load(save_load_aml<interaction_config_manager>)
                   .set_persist_metrics(persist_ptr)

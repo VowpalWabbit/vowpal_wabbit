@@ -174,6 +174,9 @@ fi
 # or stdin are silent for more than 1 second
 DELAY_OPT="-w 1"
 
+# In case the VW command run immediately before is not yet ready to accept connections wait for a little bit
+sleep 1
+
 $NETCAT $DELAY_OPT localhost $PORT < $TRAINSET > $PREDOUT
 
 $PKILL -9 $NETCAT
