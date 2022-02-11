@@ -331,6 +331,11 @@
     <ClCompile Include="../ext_libs/fmt/src/os.cc" />
     <ClCompile Include="../ext_libs/spdlog/src/spdlog.cpp" />
     <ClCompile Include="../ext_libs/spdlog/src/stdout_sinks.cpp" />
+    <ClCompile Include="allreduce_sockets.cc" />
+    <ClCompile Include="allreduce_threads.cc" />
+    <ClCompile Include="spanning_tree.cc" />
+    <ClCompile Include="io/logger.cc" />
+    <ClCompile Include="io/io_adapter.cc" />
     <ClCompile Include="accumulate.cc" />
     <ClCompile Include="action_score.cc" />
     <ClCompile Include="api_status.cc" />
