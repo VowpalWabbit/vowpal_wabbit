@@ -4,8 +4,8 @@
 
 #include "decision_scores.h"
 
-#include "slates.h"
-#include "conditional_contextual_bandit.h"
+#include "reductions/slates.h"
+#include "reductions/conditional_contextual_bandit.h"
 #include "action_score.h"
 #include "io_buf.h"
 #include "global_data.h"

@@ -10,7 +10,7 @@
 #include "test_common.h"
 
 #include <vector>
-#include "conditional_contextual_bandit.h"
+#include "reductions/conditional_contextual_bandit.h"
 #include "parser.h"
 #include "parse_primitives.h"
 #include "vw_string_view.h"
