@@ -386,19 +386,23 @@ class Workspace(pylibvw.vw):
             >>> vw4 = Workspace(q=["ab", "ac"])
         """
 
-
         def format_key(key: str) -> str:
             prefix = "-" if len(key) == 1 else "--"
             return f"{prefix}{key}"
 
-        def format_input(key: str, val: Union[int, float, str, bool, List[int], List[float], List[str]]) -> List[str]:
+        def format_input(
+            key: str,
+            val: Union[int, float, str, bool, List[int], List[float], List[str]],
+        ) -> List[str]:
             res = [format_key(key)]
             if isinstance(val, list):
                 # if a list is passed as a parameter value - create a key for
                 # each list element
                 for v in val:
                     if isinstance(v, bool):
-                        raise ValueError(f"List of bool values not supported. Argument: {key}")
+                        raise ValueError(
+                            f"List of bool values not supported. Argument: {key}"
+                        )
                     res.append(str(v))
             elif isinstance(val, bool):
                 if val == False:
