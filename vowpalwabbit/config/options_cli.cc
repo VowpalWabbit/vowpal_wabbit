@@ -212,9 +212,10 @@ namespace details
 struct cli_typed_option_handler : typed_option_visitor
 {
   options_cli& m_options;
-  std::map<VW::string_view, std::vector<VW::string_view>>& m_tokens;
+  std::unordered_map<VW::string_view, std::vector<VW::string_view>>& m_tokens;
 
-  cli_typed_option_handler(options_cli& options, std::map<VW::string_view, std::vector<VW::string_view>>& tokens)
+  cli_typed_option_handler(
+      options_cli& options, std::unordered_map<VW::string_view, std::vector<VW::string_view>>& tokens)
       : m_options(options), m_tokens(tokens)
   {
   }
