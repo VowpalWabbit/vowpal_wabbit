@@ -327,7 +327,7 @@ jobs:
       - name: Install deps and test wheel
         shell: bash
         run: |
-          export wheel_files=(windows_amd64_${{ matrix.version }}/*)
+          export wheel_files=(built_wheel/*)
           export wheel_file="${wheel_files[0]}"
           echo Installing ${wheel_file}...
           pip install -r requirements.txt
