@@ -363,11 +363,11 @@ class _log_forward:
 class Workspace(pylibvw.vw):
     """Workspace exposes most of the library functionality. It wraps the native code. The Workspace Python class should always be used instead of the binding glue class."""
 
-    _log_wrapper = None
-    parser_ran = False
-    init = False
-    finished = False
-    _log_fwd = None
+    _log_wrapper: Optional[pylibvw.vw_log]
+    parser_ran: bool
+    init: bool
+    finished: bool
+    _log_fwd: Optional[_log_forward]
 
     def __init__(self, arg_str=None, enable_logging=False, **kw):
         """Initialize the Workspace object.
@@ -410,6 +410,12 @@ class Workspace(pylibvw.vw):
             elif isinstance(val, (int, float, str)):
                 res.append(str(val))
             return res
+
+        self._log_wrapper = None
+        self.parser_ran = False
+        self.init = False
+        self.finished = False
+        self._log_fwd = None
 
         arg_list = []
         if arg_str is not None:
