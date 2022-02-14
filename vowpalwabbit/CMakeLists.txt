@@ -572,11 +572,12 @@ if(VW_INSTALL)
     LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
     RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
 
-  # VW target headers
-  install(
-    FILES ${vw_all_headers} ${CMAKE_CURRENT_BINARY_DIR}/config.h
-    DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/vowpalwabbit)
-  install(
-    FILES io/io_adapter.h DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/vowpalwabbit/io
+  install(DIRECTORY ${CMAKE_CURRENT_LIST_DIR}/
+    DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/vowpalwabbit
+    FILES_MATCHING
+    PATTERN "*.h"
+    PATTERN ".nuget" EXCLUDE
+    PATTERN "slim" EXCLUDE
+    PATTERN "win32" EXCLUDE
   )
 endif()
