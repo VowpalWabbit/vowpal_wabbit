@@ -748,6 +748,10 @@ VW::LEARNER::base_learner* automl_setup(VW::setup_base_i& stack_builder)
         learn_automl<interaction_config_manager, true>, predict_automl<interaction_config_manager, true>,
         stack_builder.get_setupfn_name(automl_setup))
                   .set_params_per_weight(ppw)  // refactor pm
+                  .set_output_prediction_type(VW::prediction_type_t::action_scores)
+                  .set_input_label_type(VW::label_type_t::cb)
+                  .set_input_prediction_type(VW::prediction_type_t::action_scores)
+                  .set_output_label_type(VW::label_type_t::cb)
                   .set_finish_example(finish_example<interaction_config_manager>)
                   .set_save_load(save_load_aml<interaction_config_manager>)
                   .set_persist_metrics(persist_ptr)
