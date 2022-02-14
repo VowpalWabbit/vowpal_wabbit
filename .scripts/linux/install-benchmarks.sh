@@ -11,9 +11,6 @@ git clone https://github.com/google/benchmark.git
 cd benchmark
 git checkout v1.6.1
 
-# Go to the library root directory
-cd ..
-
 # Generate build system files with cmake.
 cmake -S . -B build -G Ninja -DBENCHMARK_ENABLE_GTEST_TESTS=OFF -DCMAKE_BUILD_TYPE=Release
 # Install globally
