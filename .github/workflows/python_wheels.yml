@@ -39,7 +39,7 @@ jobs:
           path: audit_output/
   linux-python-test:
     name: manylinux.amd64.py${{ matrix.version }}.build
-    needs: manylinux.amd64.py${{ matrix.version }}.test
+    needs: linux-python-build
     container:
       image: python:${{ matrix.version }}
     runs-on: ubuntu-latest
@@ -94,7 +94,7 @@ jobs:
           path: dist/*.tar.gz
   linux-python-sdist-build-test:
     name: ubuntu-latest.amd64.py3.8.sdist-build-test
-    needs: ubuntu-latest.amd64.py3.8.sdist-bundle
+    needs: linux-python-sdist-bundle
     runs-on: ubuntu-latest
     steps:
       - uses: actions/setup-python@v2
@@ -156,7 +156,7 @@ jobs:
         path: audit_output/
   linux-python-test-aarch64:
     name: manylinux.aarch64.py${{ matrix.config.version }}.test
-    needs: manylinux.aarch64.py${{ matrix.config.version }}.build
+    needs: linux-python-build-aarch64
     # Aarch builds are slow and are only run on push and not PR
     if: ${{ github.event_name == 'push' }}
     strategy:
@@ -229,7 +229,7 @@ jobs:
           path: wheel_output/
   macos-python-test:
     name: macos.amd64.py${{ matrix.config.version }}.test
-    needs: macos.amd64.py${{ matrix.config.version }}.build
+    needs: macos-python-build
     runs-on: macos-10.15
     strategy:
       matrix:
@@ -286,10 +286,6 @@ jobs:
           path: ${{github.workspace}}\\vcpkg
           key: ${{ runner.os }}-${{ matrix.config.version }}-a515872b1abf58b639bf8b15ab5fe23b62f25ac3-2
       # Downgrade CMake to mitigate crashing issue introduced in 3.21 that only affects vcpkg. See here: https://github.com/microsoft/vcpkg/issues/18718
-      - name: Setup cmake
-        uses: jwlawson/actions-setup-cmake@v1.9
-        with:
-          cmake-version: '3.20.x'
       - uses: actions/checkout@v2
         with:
           path: ${{github.workspace}}\\vowpal_wabbit
@@ -307,7 +303,7 @@ jobs:
           path: wheel_output
   windows-python-test:
     name: windows.amd64.py${{ matrix.config.version }}.test
-    needs: windows.amd64.py${{ matrix.config.version }}.build
+    needs: macos-windows-build
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
