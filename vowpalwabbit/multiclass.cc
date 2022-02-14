@@ -91,7 +91,7 @@ void print_label_pred(VW::workspace& all, example& ec, uint32_t prediction)
   VW::string_view sv_label = all.sd->ldict->get(ec.l.multi.label);
   VW::string_view sv_pred = all.sd->ldict->get(prediction);
   all.sd->print_update(*all.trace_message, all.holdout_set_off, all.current_pass,
-      sv_label.empty() ? "unknown" : sv_label.to_string(), sv_pred.empty() ? "unknown" : sv_pred.to_string(),
+      sv_label.empty() ? "unknown" : std::string{sv_label}, sv_pred.empty() ? "unknown" : std::string{sv_pred},
       ec.get_num_features(), all.progress_add, all.progress_arg);
 }
 
@@ -162,7 +162,7 @@ void finish_example(VW::workspace& all, example& ec, bool update_loss)
     else
     {
       VW::string_view sv_pred = all.sd->ldict->get(ec.pred.multiclass);
-      all.print_text_by_ref(sink.get(), sv_pred.to_string(), ec.tag, all.logger);
+      all.print_text_by_ref(sink.get(), std::string{sv_pred}, ec.tag, all.logger);
     }
 
   MULTICLASS::print_update<direct_print_update>(all, ec, ec.pred.multiclass);

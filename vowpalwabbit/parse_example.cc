@@ -221,11 +221,11 @@ public:
         {
           std::stringstream ss;
           ss << feature_name << "^" << string_feature_value;
-          fs.space_names.push_back(audit_strings(_base.to_string(), ss.str()));
+          fs.space_names.push_back(audit_strings(std::string{_base}, ss.str()));
         }
         else
         {
-          fs.space_names.push_back(audit_strings(_base.to_string(), feature_name.to_string()));
+          fs.space_names.push_back(audit_strings(std::string{_base}, std::string{feature_name}));
         }
       }
 
