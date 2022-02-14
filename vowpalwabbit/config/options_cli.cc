@@ -71,11 +71,19 @@ option_type get_option_type(const base_option& option)
   return option_type::scalar;
 }
 
-bool is_long_option_like(VW::string_view token) { return token.find("--") == 0; }
+bool is_terminator(VW::string_view token) { return token == "--"; }
 
-bool is_short_option_like(VW::string_view token) { return (token.find('-') == 0 && !is_number(token)); }
+bool is_long_option_like(VW::string_view token) { return token.find("--") == 0 && token.size() > 2; }
 
-bool is_option_like(VW::string_view token) { return is_long_option_like(token) || is_short_option_like(token); }
+bool is_short_option_like(VW::string_view token)
+{
+  return (token.find('-') == 0 && token.size() > 1 && token[1] != '-' && !is_number(token));
+}
+
+bool is_option_like(VW::string_view token)
+{
+  return is_long_option_like(token) || is_short_option_like(token) || is_terminator(token);
+}
 
 void consume_until_next_option_like(std::queue<VW::string_view>& command_line, std::vector<VW::string_view>& output)
 {
@@ -106,7 +114,10 @@ void consume_tokens(
       break;
     case option_type::boolean:
       if (!current_tokens.empty())
-      { THROW("Expected no value for " << opt.m_name << " but found " << current_tokens.size() << " values") }
+      {
+        THROW("Expected no value for " << opt.m_name << " which is a boolean switch but found " << current_tokens.size()
+                                       << " values")
+      }
       // Booleans do not get to consume any more tokens.
       break;
     case option_type::vector:
@@ -137,6 +148,8 @@ void consume_long_option(const std::map<std::string, std::shared_ptr<base_option
     if (opt_value.empty()) { THROW("Argument for " << current_opt << " should follow =") }
     current_tokens.push_back(opt_value);
   }
+
+  if (current_opt.empty()) { THROW("Expected long option name after -- but found nothing") }
 
   // Consume this token.
   command_line.pop();
@@ -272,7 +285,7 @@ struct cli_typed_option_handler : typed_option_visitor
 
     if (option_was_supplied)
     {
-      // This invariant should be maintianed by the tokenization code.
+      // This invariant should be maintained by the tokenization code.
       assert(tokens_it->second.empty());
       option.value(true, true);
     }
@@ -311,7 +324,7 @@ struct cli_typed_option_handler : typed_option_visitor
 std::unordered_map<VW::string_view, std::vector<VW::string_view>> parse_token_map_with_current_info(
     const std::vector<std::string>& command_line,
     const std::map<std::string, std::shared_ptr<base_option>>& known_options,
-    const std::map<char, std::shared_ptr<base_option>>& known_short_options)
+    const std::map<char, std::shared_ptr<base_option>>& known_short_options, bool should_handle_terminator)
 {
   std::unordered_map<VW::string_view, std::vector<VW::string_view>> m_map;
   std::queue<VW::string_view> tokens;
@@ -327,9 +340,23 @@ std::unordered_map<VW::string_view, std::vector<VW::string_view>> parse_token_ma
     }
     else
     {
-      // This is a positional argument.
-      m_map["__POSITIONAL__"].push_back(token);
-      tokens.pop();
+      // If we are to handle terminators that means if we hit it then EVERY subsequent token is positional.
+      if (should_handle_terminator && is_terminator(token))
+      {
+        // pop -- itself
+        tokens.pop();
+        while (!tokens.empty())
+        {
+          m_map["__POSITIONAL__"].push_back(tokens.front());
+          tokens.pop();
+        }
+      }
+      else
+      {
+        // This is a standard positional argument.
+        m_map["__POSITIONAL__"].push_back(token);
+        tokens.pop();
+      }
     }
   }
   return m_map;
@@ -344,7 +371,8 @@ options_cli::options_cli(std::vector<std::string> args) : m_command_line(std::mo
 
 void options_cli::internal_add_and_parse(const option_group_definition& group)
 {
-  m_prog_parsed_token_map = details::parse_token_map_with_current_info(m_command_line, m_options, m_short_options);
+  m_prog_parsed_token_map =
+      details::parse_token_map_with_current_info(m_command_line, m_options, m_short_options, false);
   for (const auto& opt_ptr : group.m_options)
   {
     details::cli_typed_option_handler handler(*this, m_prog_parsed_token_map);
@@ -387,6 +415,11 @@ bool options_cli::was_supplied(const std::string& key) const
 
 void options_cli::check_unregistered(VW::io::logger& logger)
 {
+  // Reparse but this time allowing the terminator to be handled so we don't accidentally interpret a positional
+  // argument as an unknown option.
+  m_prog_parsed_token_map =
+      details::parse_token_map_with_current_info(m_command_line, m_options, m_short_options, true);
+
   for (auto str : m_prog_parsed_token_map["__POSITIONAL__"])
   {
     if (is_option_like(str)) { THROW_EX(VW::vw_unrecognised_option_exception, "unrecognised option '" << str << "'") }
@@ -440,9 +473,12 @@ void options_cli::replace(const std::string& key, const std::string& value)
 
 std::vector<std::string> options_cli::get_positional_tokens() const
 {
+  // Reparse but this time allowing the terminator to be handled.
+  auto parsed_tokens = details::parse_token_map_with_current_info(m_command_line, m_options, m_short_options, true);
+
   std::vector<std::string> positional_tokens;
-  auto it = m_prog_parsed_token_map.find("__POSITIONAL__");
-  if (it != m_prog_parsed_token_map.end())
+  auto it = parsed_tokens.find("__POSITIONAL__");
+  if (it != parsed_tokens.end())
   {
     for (auto const& token : it->second) { positional_tokens.push_back(std::string{token}); }
   }

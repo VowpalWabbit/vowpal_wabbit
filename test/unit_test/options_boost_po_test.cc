@@ -293,6 +293,21 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(get_positional_tokens, T, option_types)
   check_collections_exact(positional_tokens, std::vector<std::string>{"d1", "d2", "d3"});
 }
 
+BOOST_AUTO_TEST_CASE_TEMPLATE(get_positional_tokens_with_terminator, T, option_types)
+{
+  std::vector<std::string> args = {"d1", "--int_opt", "1", "d2", "--int_opt", "1", "d3", "--", "ab", "--help"};
+  auto options = VW::make_unique<T>(args);
+
+  int int_opt;
+  option_group_definition arg_group("group");
+  arg_group.add(make_option("int_opt", int_opt));
+
+  BOOST_CHECK_NO_THROW(options->add_and_parse(arg_group));
+
+  const auto positional_tokens = options->get_positional_tokens();
+  check_collections_exact(positional_tokens, std::vector<std::string>{"d1", "d2", "d3", "ab", "--help"});
+}
+
 BOOST_AUTO_TEST_CASE_TEMPLATE(matching_values_duplicate_command_line, T, option_types)
 {
   std::vector<std::string> args = {"--int_opt", "3", "--int_opt", "3"};
