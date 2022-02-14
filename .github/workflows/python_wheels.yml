@@ -1,5 +1,10 @@
 name: Python
 
+# This file builds and tests Python binary wheels across major platforms. The
+# wheels that are produced are used for PyPi releases. The test step uses a
+# fresh job and installs the wheel the ensure it works in isolation. The is also
+# a job which produces the source distribution and ensures that can be built to.
+
 on:
   push:
     branches:
