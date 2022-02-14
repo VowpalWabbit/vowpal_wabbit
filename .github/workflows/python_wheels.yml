@@ -38,7 +38,7 @@ jobs:
           name: manylinux_amd64_${{ matrix.config.version }}
           path: audit_output/
   linux-python-test:
-    name: manylinux.amd64.py${{ matrix.version }}.build
+    name: manylinux.amd64.py${{ matrix.version }}.test
     needs: linux-python-build
     container:
       image: python:${{ matrix.version }}
