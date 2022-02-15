@@ -4,6 +4,7 @@
 
 #include "cb_explore_adf_synthcover.h"
 
+#include "action_score.h"
 #include "cb_explore_adf_common.h"
 #include "numeric_casts.h"
 #include "cb_adf.h"
@@ -101,7 +102,7 @@ void cb_explore_adf_synthcover::predict_or_learn_impl(VW::LEARNER::multi_learner
   for (size_t i = 0; i < num_actions; i++) { preds[i].score = VW::math::clamp(preds[i].score, _min_cost, _max_cost); }
   std::make_heap(
       preds.begin(), preds.end(), [](const ACTION_SCORE::action_score& a, const ACTION_SCORE::action_score& b) {
-        return ACTION_SCORE::score_comp(&a, &b) > 0;
+        return VW::action_score_compare(a, b);
       });
 
   _action_probs.clear();
@@ -111,7 +112,7 @@ void cb_explore_adf_synthcover::predict_or_learn_impl(VW::LEARNER::multi_learner
   {
     std::pop_heap(
         preds.begin(), preds.end(), [](const ACTION_SCORE::action_score& a, const ACTION_SCORE::action_score& b) {
-          return ACTION_SCORE::score_comp(&a, &b) > 0;
+          return VW::action_score_compare(a, b);
         });
     auto minpred = preds.back();
     preds.pop_back();
@@ -126,7 +127,7 @@ void cb_explore_adf_synthcover::predict_or_learn_impl(VW::LEARNER::multi_learner
     preds.push_back(minpred);
     std::push_heap(
         preds.begin(), preds.end(), [](const ACTION_SCORE::action_score& a, const ACTION_SCORE::action_score& b) {
-          return ACTION_SCORE::score_comp(&a, &b) > 0;
+          return VW::action_score_compare(a, b);
         });
   }
 
@@ -134,7 +135,7 @@ void cb_explore_adf_synthcover::predict_or_learn_impl(VW::LEARNER::multi_learner
 
   std::sort(_action_probs.begin(), _action_probs.end(),
       [](const ACTION_SCORE::action_score& a, const ACTION_SCORE::action_score& b) {
-        return ACTION_SCORE::score_comp(&a, &b) > 0;
+        return VW::action_score_compare(a, b);
       });
 
   for (size_t i = 0; i < num_actions; i++) preds[i] = _action_probs[i];

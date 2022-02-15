@@ -58,7 +58,7 @@ struct cb_dro_data
         const auto maxit = is_explore
             ? std::max_element(action_scores.begin(), action_scores.end(),
                   [](const ACTION_SCORE::action_score& a, const ACTION_SCORE::action_score& b) {
-                    return ACTION_SCORE::score_comp(&a, &b) < 0;
+                    return VW::action_score_compare(a, b);
                   })
             : action_scores.begin();
         const uint32_t chosen_action = maxit->action;
