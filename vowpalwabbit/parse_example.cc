@@ -519,7 +519,7 @@ void substring_to_example(VW::workspace* all, example* ae, VW::string_view examp
 
     tokenize(' ', label_space, all->example_parser->words);
     if (all->example_parser->words.size() > 0 &&
-        (all->example_parser->words.back().end() == label_space.end() ||
+        ((all->example_parser->words.back().data() + all->example_parser->words.back().size()) == (label_space.data() + label_space.size())||
             all->example_parser->words.back().front() == '\''))  // The last field is a tag, so record and strip it off
     {
       VW::string_view tag = all->example_parser->words.back();
