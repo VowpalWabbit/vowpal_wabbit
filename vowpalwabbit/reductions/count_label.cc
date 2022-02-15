@@ -79,7 +79,7 @@ VW::LEARNER::base_learner* count_label_setup(VW::setup_base_i& stack_builder)
           "--dont_output_best_constant is not relevant. best constant is only tracked if the label type is simple.");
     }
 
-    return nullptr;
+    return base;
   }
 
   // TODO use field on base when that is available. In most reductions we would
