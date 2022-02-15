@@ -15,7 +15,6 @@
 #include "feature_group.h"
 #include "action_score.h"
 #include "example_predict.h"
-#include "conditional_contextual_bandit.h"
 #include "continuous_actions_reduction_features.h"
 #include "ccb_label.h"
 #include "slates_label.h"

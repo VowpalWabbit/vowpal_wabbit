@@ -4,7 +4,7 @@
 
 #include <cfloat>
 #include <cmath>
-#include "gd.h"
+#include "reductions/gd.h"
 #include "vw.h"
 #include "vw_exception.h"
 #include "vw_string_view.h"

@@ -6,7 +6,7 @@
 #include "test_common.h"
 #include "simulator.h"
 #include "reductions_fwd.h"
-#include "ae.h"
+#include "reductions/ae.h"
 #include "metric_sink.h"
 
 #include <functional>
