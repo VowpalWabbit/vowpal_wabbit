@@ -4,7 +4,7 @@
 
 #include <boost/test/unit_test.hpp>
 #include <utility>
-#include "offset_tree.h"
+#include "reductions/offset_tree.h"
 #include "test_common.h"
 #include "cb_label_parser.h"
 

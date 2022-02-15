@@ -39,7 +39,7 @@ VW_WARNING_STATE_POP
 #endif
 
 #include "cb.h"
-#include "conditional_contextual_bandit.h"
+#include "reductions/conditional_contextual_bandit.h"
 #include "cb_continuous_label.h"
 
 #include "best_constant.h"

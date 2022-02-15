@@ -8,7 +8,7 @@
 #include "vw.h"
 #include "cb.h"
 #include "cost_sensitive.h"
-#include "conditional_contextual_bandit.h"
+#include "reductions/conditional_contextual_bandit.h"
 
 BOOST_AUTO_TEST_CASE(is_example_header_cb) {
   auto& vw = *VW::initialize("--cb_explore_adf --quiet", nullptr, false, nullptr, nullptr);

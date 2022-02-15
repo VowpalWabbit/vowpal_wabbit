@@ -4,7 +4,7 @@
 
 #include <boost/test/unit_test.hpp>
 
-#include "cats_tree.h"
+#include "reductions/cats_tree.h"
 #include "cb_label_parser.h"
 #include "test_common.h"
 
