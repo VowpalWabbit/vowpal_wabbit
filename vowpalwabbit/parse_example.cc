@@ -134,7 +134,7 @@ public:
       ++_read_idx;
       size_t end_read = 0;
       VW::string_view sv = _line.substr(_read_idx);
-      _v = float_feature_value = parseFloat(sv.begin(), end_read, sv.end());
+      _v = float_feature_value = parseFloat(sv.data(), end_read, sv.data() + sv.size());
       if (end_read == 0) { return false; }
       if (std::isnan(_v))
       {
@@ -196,14 +196,14 @@ public:
       if (!string_feature_value.empty())
       {
         // chain hash is hash(feature_value, hash(feature_name, namespace_hash)) & parse_mask
-        word_hash = (_p->hasher(string_feature_value.begin(), string_feature_value.length(),
-                         _p->hasher(feature_name.begin(), feature_name.length(), _channel_hash)) &
+        word_hash = (_p->hasher(string_feature_value.data(), string_feature_value.length(),
+                         _p->hasher(feature_name.data(), feature_name.length(), _channel_hash)) &
             _parse_mask);
       }
       // Case where string:float
       else if (!feature_name.empty())
       {
-        word_hash = (_p->hasher(feature_name.begin(), feature_name.length(), _channel_hash) & _parse_mask);
+        word_hash = (_p->hasher(feature_name.data(), feature_name.length(), _channel_hash) & _parse_mask);
       }
       // Case where :float
       else
@@ -248,7 +248,7 @@ public:
               affix_name.remove_prefix(affix_name.size() - len);
           }
 
-          word_hash = _p->hasher(affix_name.begin(), affix_name.length(), (uint64_t)_channel_hash) *
+          word_hash = _p->hasher(affix_name.data(), affix_name.length(), (uint64_t)_channel_hash) *
               (affix_constant + (affix & 0xF) * quadratic_constant);
           affix_fs.push_back(_v, word_hash, affix_namespace);
           if (audit)
@@ -288,8 +288,8 @@ public:
           _spelling.push_back(d);
         }
 
-        VW::string_view spelling_strview(_spelling.begin(), _spelling.size());
-        word_hash = hashstring(spelling_strview.begin(), spelling_strview.length(), (uint64_t)_channel_hash);
+        VW::string_view spelling_strview(_spelling.data(), _spelling.size());
+        word_hash = hashstring(spelling_strview.data(), spelling_strview.length(), (uint64_t)_channel_hash);
         spell_fs.push_back(_v, word_hash, spelling_namespace);
         if (audit)
         {
@@ -352,7 +352,7 @@ public:
       ++_read_idx;
       size_t end_read = 0;
       VW::string_view sv = _line.substr(_read_idx);
-      _cur_channel_v = parseFloat(sv.begin(), end_read, sv.end());
+      _cur_channel_v = parseFloat(sv.data(), end_read, sv.data() + sv.size());
       if (end_read + _read_idx >= _line.size())
       {
         parserWarning("malformed example! Float expected after : \"", _line.substr(0, _read_idx), "\"",
@@ -391,7 +391,7 @@ public:
       if (_ae->feature_space[_index].size() == 0) _new_index = true;
       VW::string_view name = read_name();
       if (audit) { _base = name; }
-      _channel_hash = _p->hasher(name.begin(), name.length(), this->_hash_seed);
+      _channel_hash = _p->hasher(name.data(), name.length(), this->_hash_seed);
       nameSpaceInfoValue();
     }
   }
