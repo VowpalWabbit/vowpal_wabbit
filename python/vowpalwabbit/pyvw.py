@@ -361,7 +361,7 @@ class _log_forward:
 
 
 def _build_command_line(
-    arg_str: Optional[str] = None, arg_list:Optional[List[str]]=None, **kw
+    arg_str: Optional[str] = None, arg_list: Optional[List[str]] = None, **kw
 ):
     def format_key(key: str) -> str:
         prefix = "-" if len(key) == 1 else "--"
