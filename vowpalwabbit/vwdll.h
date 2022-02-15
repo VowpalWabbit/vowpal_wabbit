@@ -48,9 +48,11 @@ extern "C"
 
 #ifdef USE_CODECVT
   VW_DLL_PUBLIC VW_HANDLE VW_CALLING_CONV VW_Initialize(const char16_t* pstrArgs);
+  // Note: this not functions the same as VW_InitializeA as the command line is interpreted with knowledge of quotes and escapes
   VW_DLL_PUBLIC VW_HANDLE VW_CALLING_CONV VW_InitializeEscaped(const char16_t* pstrArgs);
 #endif
   VW_DLL_PUBLIC VW_HANDLE VW_CALLING_CONV VW_InitializeA(const char* pstrArgs);
+  // Note: this not functions the same as VW_InitializeA as the command line is interpreted with knowledge of quotes and escapes
   VW_DLL_PUBLIC VW_HANDLE VW_CALLING_CONV VW_InitializeEscapedA(const char* pstrArgs);
   VW_DLL_PUBLIC VW_HANDLE VW_CALLING_CONV VW_InitializeWithModel(
       const char* pstrArgs, const char* modelData, size_t modelDataSize);
