@@ -360,6 +360,49 @@ class _log_forward:
             self.current_message = ""
 
 
+def _build_command_line(
+    arg_str: Optional[str] = None, arg_list:Optional[List[str]]=None, **kw
+):
+    def format_key(key: str) -> str:
+        prefix = "-" if len(key) == 1 else "--"
+        return f"{prefix}{key}"
+
+    def format_input(
+        key: str,
+        val: Union[int, float, str, bool, List[int], List[float], List[str]],
+    ) -> List[str]:
+        res = [format_key(key)]
+        if isinstance(val, list):
+            # if a list is passed as a parameter value - create a key for
+            # each list element
+            for v in val:
+                if isinstance(v, bool):
+                    raise ValueError(
+                        f"List of bool values not supported. Argument: {key}"
+                    )
+                res.append(str(v))
+        elif isinstance(val, bool):
+            if val == False:
+                return []
+        elif isinstance(val, (int, float, str)):
+            res.append(str(val))
+        return res
+
+    merged_arg_list = []
+    if arg_str is not None:
+        # Maintain old behavior of space split strings
+        arg_list.extend(arg_str.split(" "))
+
+    if arg_list is not None:
+        if len(arg_str) > 0 and not isinstance(arg_str[0], str):
+            raise TypeError("arg_list must be a list of strings")
+        merged_arg_list.extend(arg_list)
+
+    for key, val in kw.items():
+        merged_arg_list.extend(format_input(key, val))
+    return merged_arg_list
+
+
 class Workspace(pylibvw.vw):
     """Workspace exposes most of the library functionality. It wraps the native code. The Workspace Python class should always be used instead of the binding glue class."""
 
@@ -369,13 +412,19 @@ class Workspace(pylibvw.vw):
     finished: bool
     _log_fwd: Optional[_log_forward]
 
-    def __init__(self, arg_str=None, enable_logging=False, **kw):
-        """Initialize the Workspace object.
+    def __init__(
+        self,
+        arg_str: Optional[str] = None,
+        enable_logging: bool = False,
+        arg_list: Optional[List[str]] = None,
+        **kw,
+    ):
+        """Initialize the Workspace object. arg_str, arg_list and the kwargs will be merged together. Duplicates will result in duplicate values in the command line.
 
         Args:
-            arg_str (str): The command line arguments to initialize VW with,
-                for example "--audit". By default is None.
-            enable_logging (bool): Enable captured logging. By default is False. This must be True to be able to call :py:meth:`~vowpalwabbit.Workspace.get_log`
+            arg_str: The command line arguments to initialize VW with, for example "--audit". This list is naively split by spaces. To control the splitting behavior please pass a list of strings to arg_list instead.
+            enable_logging: Enable captured logging. By default is False. This must be True to be able to call :py:meth:`~vowpalwabbit.Workspace.get_log`
+            arg_list: List of tokens that comprise the command line.
             **kw : Using key/value pairs for different options available. Using this append an option to the command line in the form of "--key value", or in the case of a bool "--key" if true.
 
         Examples:
@@ -384,6 +433,7 @@ class Workspace(pylibvw.vw):
             >>> vw2 = Workspace(audit=True, b=24, k=True, c=True, l2=0.001)
             >>> vw3 = Workspace("--audit", b=26)
             >>> vw4 = Workspace(q=["ab", "ac"])
+            >>> vw4 = Workspace(arg_list=["--data", "my file.txt", "--interactions", "ab"])
         """
 
         def format_key(key: str) -> str:
@@ -417,21 +467,15 @@ class Workspace(pylibvw.vw):
         self.finished = False
         self._log_fwd = None
 
-        arg_list = []
-        if arg_str is not None:
-            arg_list.extend(shlex.split(arg_str))
-
-        for key, val in kw.items():
-            arg_list.extend(format_input(key, val))
-
         if enable_logging:
             self._log_fwd = _log_forward()
             self._log_wrapper = pylibvw.vw_log(self._log_fwd)
 
+        merged_arg_list = _build_command_line(arg_str, arg_list, **kw)
         if self._log_wrapper:
-            super().__init__(arg_list, self._log_wrapper)
+            super().__init__(merged_arg_list, self._log_wrapper)
         else:
-            super().__init__(arg_list)
+            super().__init__(merged_arg_list)
         self.init = True
 
         # check to see if native parser needs to run
