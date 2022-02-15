@@ -5,8 +5,8 @@
 #include <cfloat>
 
 #include "vw.h"
-#include "reductions.h"
-#include "cb_algs.h"
+
+#include "reductions/cb/cb_algs.h"
 #include "vw_exception.h"
 #include "scope_exit.h"
 

@@ -5,9 +5,9 @@
 #include <algorithm>
 
 #include "example.h"
-#include "gd.h"
+#include "reductions/gd.h"
 #include "simple_label_parser.h"
-#include "interactions.h"
+#include "reductions/interactions.h"
 #include "model_utils.h"
 
 float calculate_total_sum_features_squared(bool permutations, example& ec)

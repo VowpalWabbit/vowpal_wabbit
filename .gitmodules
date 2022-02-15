@@ -7,3 +7,6 @@
 [submodule "ext_libs/fmt"]
 	path = ext_libs/fmt
 	url = https://github.com/fmtlib/fmt.git
+[submodule "ext_libs/zlib"]
+	path = ext_libs/zlib
+	url = https://github.com/madler/zlib.git
