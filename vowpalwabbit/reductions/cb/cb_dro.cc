@@ -56,10 +56,7 @@ struct cb_dro_data
         // cb_adf => first action is a greedy action
 
         const auto maxit = is_explore
-            ? std::max_element(action_scores.begin(), action_scores.end(),
-                  [](const ACTION_SCORE::action_score& a, const ACTION_SCORE::action_score& b) {
-                    return VW::action_score_compare(a, b);
-                  })
+            ? std::max_element(action_scores.begin(), action_scores.end(), VW::action_score_compare)
             : action_scores.begin();
         const uint32_t chosen_action = maxit->action;
 
