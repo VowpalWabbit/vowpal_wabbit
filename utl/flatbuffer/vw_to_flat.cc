@@ -15,7 +15,7 @@
 #include "vw_exception.h"
 #include "config/options_boost_po.h"
 #include "hash.h"
-#include "cb_algs.h"
+#include "reductions/cb/cb_algs.h"
 #include "shared_data.h"
 
 void write_buffer_to_file(std::ofstream& outfile, flatbuffers::FlatBufferBuilder& builder,

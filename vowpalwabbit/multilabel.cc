@@ -3,7 +3,7 @@
 // license as described in the file LICENSE.
 
 #include <cfloat>
-#include "gd.h"
+
 #include "vw.h"
 #include "example.h"
 #include "vw_string_view_fmt.h"

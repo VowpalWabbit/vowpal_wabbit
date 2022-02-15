@@ -5,7 +5,7 @@ set(VW_SLIM_SOURCES
   vw_slim_predict.cc
   ../../feature_group.cc
   ../../example_predict.cc
-  ../../interactions.cc
+  ../../reductions/interactions.cc
   )
 
 set(VW_SLIM_HEADERS

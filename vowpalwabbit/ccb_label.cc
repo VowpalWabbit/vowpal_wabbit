@@ -2,16 +2,15 @@
 // individual contributors. All rights reserved. Released under a BSD (revised)
 // license as described in the file LICENSE.
 
-#include "conditional_contextual_bandit.h"
-#include "reductions.h"
+#include "reductions/conditional_contextual_bandit.h"
 #include "example.h"
 #include "global_data.h"
 #include "cache.h"
 #include "vw.h"
-#include "interactions.h"
+#include "reductions/interactions.h"
 #include "label_dictionary.h"
-#include "cb_adf.h"
-#include "cb_algs.h"
+#include "reductions/cb/cb_adf.h"
+#include "reductions/cb/cb_algs.h"
 #include "constant.h"
 #include "example.h"
 #include "vw_math.h"
