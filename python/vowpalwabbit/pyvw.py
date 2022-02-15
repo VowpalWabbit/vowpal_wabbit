@@ -6,7 +6,6 @@ from typing import Any, Dict, Iterator, List, Optional, Tuple, Type, Union
 import pylibvw
 import warnings
 import inspect
-import shlex
 
 from enum import IntEnum
 
