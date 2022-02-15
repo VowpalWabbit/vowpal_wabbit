@@ -5,7 +5,7 @@
 #include <cfloat>
 
 #include "vw.h"
-#include "reductions.h"
+
 #include "vw_exception.h"
 #include "gen_cs_example.h"
 
