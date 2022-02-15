@@ -434,7 +434,7 @@ class Workspace(pylibvw.vw):
             >>> vw2 = Workspace(audit=True, b=24, k=True, c=True, l2=0.001)
             >>> vw3 = Workspace("--audit", b=26)
             >>> vw4 = Workspace(q=["ab", "ac"])
-            >>> vw4 = Workspace(arg_list=["--data", "my file.txt", "--interactions", "ab"])
+            >>> vw4 = Workspace(arg_list=["--audit", "--interactions", "ab"])
         """
 
         self._log_wrapper = None
