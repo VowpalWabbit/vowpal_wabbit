@@ -389,11 +389,13 @@ def _build_command_line(
 
     merged_arg_list = []
     if arg_str is not None:
+        if not isinstance(arg_str, str):
+            raise TypeError("arg_str must be a string")
         # Maintain old behavior of space split strings
-        arg_list.extend(arg_str.split(" "))
+        merged_arg_list.extend(arg_str.split(" "))
 
     if arg_list is not None:
-        if len(arg_str) > 0 and not isinstance(arg_str[0], str):
+        if len(arg_list) > 0 and not isinstance(arg_list[0], str):
             raise TypeError("arg_list must be a list of strings")
         merged_arg_list.extend(arg_list)
 
