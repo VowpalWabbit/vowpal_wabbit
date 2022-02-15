@@ -11,7 +11,6 @@
 #include <cassert>
 
 #include "global_data.h"
-#include "gd.h"
 #include "vw_exception.h"
 #include "future_compat.h"
 #include "vw_allreduce.h"

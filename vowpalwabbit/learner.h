@@ -37,6 +37,8 @@
 #include "label_type.h"
 #include "prediction_type.h"
 
+#include "reductions/conditional_contextual_bandit.h"
+
 namespace VW
 {
 /// \brief Contains the VW::LEARNER::learner object and utilities for

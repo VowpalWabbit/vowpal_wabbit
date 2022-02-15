@@ -8,7 +8,7 @@
 #include "test_common.h"
 
 #include <vector>
-#include "conditional_contextual_bandit.h"
+#include "reductions/conditional_contextual_bandit.h"
 
 BOOST_AUTO_TEST_CASE(parse_dsjson_underscore_p)
 {

@@ -17,7 +17,7 @@
 #include "parser.h"
 #include "parse_primitives.h"
 #include "vw.h"
-#include "interactions.h"
+#include "reductions/interactions.h"
 
 #include "parse_args.h"
 #include "reduction_stack.h"
@@ -32,9 +32,9 @@
 #include "accumulate.h"
 #include "vw_validate.h"
 #include "vw_allreduce.h"
-#include "metrics.h"
+#include "reductions/metrics.h"
 #include "text_utils.h"
-#include "interactions.h"
+#include "reductions/interactions.h"
 #include "config/cli_help_formatter.h"
 
 #include "config/options.h"

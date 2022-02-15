@@ -5,7 +5,7 @@
 #include <boost/test/unit_test.hpp>
 #include <boost/test/test_tools.hpp>
 
-#include "cats.h"
+#include "reductions/cats.h"
 #include "memory.h"
 #include "vw.h"
 #include "test_common.h"

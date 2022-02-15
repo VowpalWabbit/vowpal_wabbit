@@ -2,6 +2,7 @@
 #define NOMINMAX
 
 #include <cmath>
+#include <cassert>
 
 #include "future_compat.h"
 #include "vw_exception.h"
