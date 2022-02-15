@@ -1812,11 +1812,22 @@ VW::workspace* initialize(std::unique_ptr<options_i, options_deleter_type> optio
 VW::workspace* initialize_escaped(
     std::string const& s, io_buf* model, bool skip_model_load, trace_message_t trace_listener, void* trace_context)
 {
-  auto split_command_line = VW::split_command_line(s);
-  std::unique_ptr<options_i, options_deleter_type> options(
-      new config::options_boost_po(split_command_line), [](VW::config::options_i* ptr) { delete ptr; });
+  int argc = 0;
+  char** argv = to_argv_escaped(s, argc);
+  VW::workspace* ret = nullptr;
 
-  return initialize(std::move(options), model, skip_model_load, trace_listener, trace_context);
+  try
+  {
+    ret = initialize(argc, argv, model, skip_model_load, trace_listener, trace_context);
+  }
+  catch (...)
+  {
+    free_args(argc, argv);
+    throw;
+  }
+
+  free_args(argc, argv);
+  return ret;
 }
 
 VW::workspace* initialize_with_builder(int argc, char* argv[], io_buf* model, bool skip_model_load,
@@ -1837,11 +1848,23 @@ VW::workspace* initialize(
 VW::workspace* initialize_with_builder(const std::string& s, io_buf* model, bool skip_model_load,
     trace_message_t trace_listener, void* trace_context, std::unique_ptr<VW::setup_base_i> learner_builder)
 {
-  auto split_command_line = VW::split_command_line(s);
-  std::unique_ptr<options_i, options_deleter_type> options(
-      new config::options_boost_po(split_command_line), [](VW::config::options_i* ptr) { delete ptr; });
-  return initialize_with_builder(
-      std::move(options), model, skip_model_load, trace_listener, trace_context, std::move(learner_builder));
+  int argc = 0;
+  char** argv = to_argv(s, argc);
+  VW::workspace* ret = nullptr;
+
+  try
+  {
+    ret = initialize_with_builder(
+        argc, argv, model, skip_model_load, trace_listener, trace_context, std::move(learner_builder));
+  }
+  catch (...)
+  {
+    free_args(argc, argv);
+    throw;
+  }
+
+  free_args(argc, argv);
+  return ret;
 }
 
 VW::workspace* initialize(

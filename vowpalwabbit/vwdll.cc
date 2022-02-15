@@ -54,8 +54,6 @@ extern "C"
     return VW_InitializeA(utf16_to_utf8(pstrArgs).c_str());
   }
 
-  // Note: this not functions the same as VW_InitializeA as the command line is interpreted with knowledge of quotes and
-  // escapes
   VW_DLL_PUBLIC VW_HANDLE VW_CALLING_CONV VW_InitializeEscaped(const char16_t* pstrArgs)
   {
     return VW_InitializeEscapedA(utf16_to_utf8(pstrArgs).c_str());
@@ -69,12 +67,10 @@ extern "C"
     return static_cast<VW_HANDLE>(all);
   }
 
-  // Note: this not functions the same as VW_InitializeA as the command line is interpreted with knowledge of quotes and
-  // escapes
   VW_DLL_PUBLIC VW_HANDLE VW_CALLING_CONV VW_InitializeEscapedA(const char* pstrArgs)
   {
     std::string s(pstrArgs);
-    auto all = VW::initialize(s);
+    auto all = VW::initialize_escaped(s);
     return static_cast<VW_HANDLE>(all);
   }
 
