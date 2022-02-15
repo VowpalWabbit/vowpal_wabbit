@@ -311,12 +311,13 @@ def test_command_line_with_space_and_escape_kwargs():
     assert model_file.is_file()
     model_file.unlink()
 
-def test_command_line_with_space_and_escape():
+def test_command_line_using_arg_list():
     # load and parse external data file
     test_file_dir = Path(__file__).resolve().parent
     data_file = test_file_dir / "resources" / "train file.dat"
 
-    model = Workspace(f"--oaa 3 --data \"{data_file}\" -f test\\ model2.vw")
+    args = ["--oaa", "3", "--data", str(data_file), "--final_regressor", "test model2.vw"]
+    model = Workspace(arg_list=args)
     assert model.predict("| feature1:2.5") == 1
     del model
 
