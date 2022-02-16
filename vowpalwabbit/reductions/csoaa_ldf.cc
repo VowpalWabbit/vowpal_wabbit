@@ -4,6 +4,7 @@
 #include <cfloat>
 #include <cerrno>
 
+#include "constant.h"
 #include "correctedMath.h"
 #include "label_dictionary.h"
 #include "vw.h"
@@ -50,7 +51,7 @@ struct ldf
 bool ec_is_label_definition(const example& ec)  // label defs look like "0:___" or just "label:___"
 {
   if (ec.indices.empty()) return false;
-  if (ec.indices[0] != 'l') return false;
+  if (ec.indices[0] != ldf_namespace) return false;
   const auto& costs = ec.l.cs.costs;
   for (auto const& cost : costs)
     if ((cost.class_index != 0) || (cost.x <= 0.)) return false;
