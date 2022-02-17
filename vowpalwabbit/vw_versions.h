@@ -63,7 +63,7 @@ constexpr VW::version_struct VERSION_FILE_WITH_ACTIVE_SEEN_LABELS{9, 0, 0};
 /// Moved option values from command line to model data
 constexpr VW::version_struct VERSION_FILE_WITH_L1_AND_L2_STATE_IN_MODEL_DATA{9, 0, 0};
 
-constexpr VW::version_struct VERSION_FILE_WITH_ESCAPED_COMMAND_LINE{9, 0, 0};
+constexpr VW::version_struct VERSION_FILE_WITH_ESCAPED_COMMAND_LINE{9, 1, 0};
 
 }  // namespace version_definitions
 }  // namespace VW

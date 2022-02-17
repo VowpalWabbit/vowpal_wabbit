@@ -6,8 +6,11 @@ bits:18
 lda:0
 0 ngram:
 0 skip:
-options:
-Checksum: 2899558498
+options: --cb_adf --cb_explore_adf --cb_sample "--cb_type=ips" --ccb_explore_adf "--csoaa_ldf=multiline" --csoaa_rank "--interactions=abc" "--interactions=abcd"
+Checksum: 681265584
+CCB: has_seen_multi_slot_example = false
+event_sum 0
+action_sum 0
 :1
 initial_t 0
 norm normalizer 0
@@ -25,5 +28,5 @@ total_features 0
 total_weight 0
 sd::oec.weighted_labeled_examples 0
 current_pass 1
-l1_state 89.4
-l2_state 0.003
+l1_state 0
+l2_state 1
