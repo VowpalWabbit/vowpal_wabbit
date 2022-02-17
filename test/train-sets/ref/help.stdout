@@ -311,8 +311,6 @@ Weight Options:
     --nounif                                Do not explore uniformly on zero-probability actions in cover
                                             (type: bool, keep)
     --psi arg                               Disagreement parameter for cover (type: float, default: 1, keep)
-    --indexing arg                          Choose between 0 or 1-indexing (type: int, default: 1, choices
-                                            {0, 1}, keep)
 [Reduction] Contextual Bandit Exploration with ADF (RegCB) Options:
     --cb_explore_adf                        Online explore-exploit for a contextual bandit problem with multiline
                                             action dependent features (type: bool, keep, necessary)

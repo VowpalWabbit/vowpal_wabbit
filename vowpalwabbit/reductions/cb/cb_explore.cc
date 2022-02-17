@@ -58,7 +58,6 @@ struct cb_explore
   VW::io::logger logger;
 
   size_t counter = 0;
-  int indexing = 1;
 
   cb_explore(VW::io::logger logger) : logger(std::move(logger)) {}
 };
@@ -84,7 +83,7 @@ void predict_or_learn_first(cb_explore& data, single_learner& base, example& ec)
   }
   else
   {
-    uint32_t chosen = (data.indexing == 1) ? ec.pred.multiclass - 1 : ec.pred.multiclass;
+    uint32_t chosen = ec.pred.multiclass - 1;
     for (uint32_t i = 0; i < data.cbcs.num_actions; i++) probs.push_back({i, 0.});
     probs[chosen].score = 1.0;
   }
@@ -111,7 +110,7 @@ void predict_or_learn_greedy(cb_explore& data, single_learner& base, example& ec
 
   probs.reserve(data.cbcs.num_actions);
   for (uint32_t i = 0; i < data.cbcs.num_actions; i++) probs.push_back({i, 0});
-  uint32_t chosen = (data.indexing == 1) ? ec.pred.multiclass - 1 : ec.pred.multiclass;
+  uint32_t chosen = ec.pred.multiclass - 1;
   generate_epsilon_greedy(data.epsilon, chosen, begin_scores(probs), end_scores(probs));
 }
 
@@ -132,7 +131,7 @@ void predict_or_learn_bag(cb_explore& data, single_learner& base, example& ec)
       base.learn(ec, i);
     else
       base.predict(ec, i);
-    uint32_t chosen = (data.indexing == 1) ? ec.pred.multiclass - 1 : ec.pred.multiclass;
+    uint32_t chosen = ec.pred.multiclass - 1;
     probs[chosen].score += prob;
     if (is_learn)
       for (uint32_t j = 1; j < count; j++) base.learn(ec, i);
@@ -155,7 +154,7 @@ void get_cover_probabilities(
     else
       data.cs->predict(ec, i + 1);
     uint32_t pred = ec.pred.multiclass;
-    probs[(data.indexing == 1) ? pred - 1 : pred].score += additive_probability;
+    probs[pred - 1].score += additive_probability;
     data.preds.push_back(pred);
   }
   uint32_t num_actions = data.cbcs.num_actions;
@@ -221,7 +220,7 @@ void predict_or_learn_cover(cb_explore& data, single_learner& base, example& ec)
     // 2. Update functions
     for (size_t i = 0; i < cover_size; i++)
     {
-      uint32_t pred = (data.indexing == 1) ? data.preds[i] - 1 : data.preds[i];
+      uint32_t pred = data.preds[i] - 1;
       // Create costs of each action based on online cover
       for (uint32_t j = 0; j < num_actions; j++)
       {
@@ -344,12 +343,7 @@ base_learner* cb_explore_setup(VW::setup_base_i& stack_builder)
       .add(make_option("nounif", data->nounif)
                .keep()
                .help("Do not explore uniformly on zero-probability actions in cover"))
-      .add(make_option("psi", data->psi).keep().default_value(1.0f).help("Disagreement parameter for cover"))
-      .add(make_option("indexing", data->indexing)
-               .one_of({0, 1})
-               .keep()
-               .default_value(1)
-               .help("Choose between 0 or 1-indexing"));
+      .add(make_option("psi", data->psi).keep().default_value(1.0f).help("Disagreement parameter for cover"));
 
   if (!options.add_parse_and_check_necessary(new_options)) return nullptr;
 
@@ -426,7 +420,7 @@ base_learner* cb_explore_setup(VW::setup_base_i& stack_builder)
   auto* l = make_reduction_learner(
       std::move(data), base, learn_ptr, predict_ptr, stack_builder.get_setupfn_name(cb_explore_setup) + name_addition)
                 .set_params_per_weight(params_per_weight)
-                .set_output_prediction_type(VW::prediction_type_t::multiclass)
+                .set_input_prediction_type(VW::prediction_type_t::multiclass)
                 .set_output_prediction_type(VW::prediction_type_t::action_probs)
                 .set_input_label_type(VW::label_type_t::cb)
                 .set_output_label_type(VW::label_type_t::cb)
