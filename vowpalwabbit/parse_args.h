@@ -37,7 +37,7 @@ void parse_modules(VW::config::options_i& options, VW::workspace& all);
 void parse_sources(VW::config::options_i& options, VW::workspace& all, io_buf& model, bool skip_model_load = false);
 
 void merge_options_from_header_strings(const std::vector<std::string>& strings, bool skip_interactions,
-    VW::config::options_i& options, bool& is_ccb_input_model);
+    VW::config::options_i& options, bool& is_ccb_input_model, bool use_equals_syntax);
 
 VW_DEPRECATED("Moved and renamed: use VW::decode_inline_hex instead")
 inline std::string spoof_hex_encoded_namespaces(const std::string& arg)

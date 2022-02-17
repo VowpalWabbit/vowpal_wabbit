@@ -165,6 +165,13 @@ BOOST_AUTO_TEST_CASE(complex_split_command_line)
   BOOST_TEST(args == expected, boost::test_tools::per_element());
 }
 
+BOOST_AUTO_TEST_CASE(complex_split_command_line_internal_quotes)
+{
+  auto args = VW::split_command_line(VW::string_view(R"(thisis"this is my file")"));
+  const auto expected = {"thisisthis is my file"};
+  BOOST_TEST(args == expected, boost::test_tools::per_element());
+}
+
 BOOST_AUTO_TEST_CASE(unclosed_quote_split_command_line)
 {
   BOOST_CHECK_THROW(VW::split_command_line(VW::string_view(R"(my arg "with strings)")), VW::vw_exception);

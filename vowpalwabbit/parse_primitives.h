@@ -9,6 +9,7 @@
 #include <iostream>
 #include <cstdint>
 #include <cmath>
+#include <set>
 
 #include "v_array.h"
 #include "hashstring.h"
@@ -149,4 +150,6 @@ VW::string_view trim_whitespace(VW::string_view str);
 
 std::vector<std::string> split_command_line(const std::string& cmd_line);
 std::vector<std::string> split_command_line(VW::string_view cmd_line);
+
+std::string escape_string(VW::string_view str);
 }  // namespace VW

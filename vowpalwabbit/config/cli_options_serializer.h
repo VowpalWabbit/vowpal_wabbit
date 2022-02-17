@@ -17,6 +17,7 @@ namespace config
 struct cli_options_serializer : options_serializer_i, typed_option_visitor
 {
   cli_options_serializer();
+  cli_options_serializer(bool escape);
 
   void add(base_option& option) override;
   std::string str() const override;
@@ -33,6 +34,7 @@ struct cli_options_serializer : options_serializer_i, typed_option_visitor
 
 private:
   std::stringstream m_output_stream;
+  bool m_escape;
 };
 
 }  // namespace config

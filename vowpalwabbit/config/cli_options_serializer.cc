@@ -4,35 +4,54 @@
 
 #include "config/cli_options_serializer.h"
 
+#include <sstream>
 #include <vector>
+#include "parse_primitives.h"
 
 using namespace VW::config;
 
-cli_options_serializer::cli_options_serializer() { m_output_stream.precision(15); }
+cli_options_serializer::cli_options_serializer() :cli_options_serializer(false) {}
+cli_options_serializer::cli_options_serializer(bool escape) : m_escape(escape) {}
 
 template <typename T>
-void serialize(std::stringstream& output, const typed_option<T>& typed_option)
+void serialize(std::stringstream& output, const typed_option<T>& typed_option, bool escape)
 {
-  output << " --" << typed_option.m_name << " " << typed_option.value();
+  if (escape)
+  {
+    std::stringstream ss;
+    ss.precision(15);
+    ss << typed_option.value();
+    output << " \"--" << typed_option.m_name << "=" << VW::escape_string(ss.str()) << "\"";
+  }
+  else
+  {
+    output << " --" << typed_option.m_name << "=" <<typed_option.value();
+  }
 }
 
 template <>
 void serialize<std::vector<std::string>>(
-    std::stringstream& output, const typed_option<std::vector<std::string>>& typed_option)
+    std::stringstream& output, const typed_option<std::vector<std::string>>& typed_option, bool escape)
 {
   auto vec = typed_option.value();
   if (!vec.empty())
   {
     for (auto const& value : vec)
     {
-      output << " --" << typed_option.m_name;
-      output << " " << value;
+      if (escape)
+      {
+        output << " \"--" << typed_option.m_name << "=" << VW::escape_string(value) << "\"";
+      }
+      else
+      {
+        output << " --" << typed_option.m_name << "=" << value;
+      }
     }
   }
 }
 
 template <>
-void serialize<bool>(std::stringstream& output, const typed_option<bool>& typed_option)
+void serialize<bool>(std::stringstream& output, const typed_option<bool>& typed_option, bool /*escape*/)
 {
   if (typed_option.value()) { output << " --" << typed_option.m_name; }
 }
@@ -43,14 +62,14 @@ std::string cli_options_serializer::str() const { return m_output_stream.str(); 
 
 size_t cli_options_serializer::size() const { return m_output_stream.str().size(); }
 
-void cli_options_serializer::visit(typed_option<uint32_t>& option) { serialize(m_output_stream, option); }
-void cli_options_serializer::visit(typed_option<uint64_t>& option) { serialize(m_output_stream, option); }
-void cli_options_serializer::visit(typed_option<int32_t>& option) { serialize(m_output_stream, option); }
-void cli_options_serializer::visit(typed_option<int64_t>& option) { serialize(m_output_stream, option); }
-void cli_options_serializer::visit(typed_option<float>& option) { serialize(m_output_stream, option); }
-void cli_options_serializer::visit(typed_option<std::string>& option) { serialize(m_output_stream, option); }
-void cli_options_serializer::visit(typed_option<bool>& option) { serialize(m_output_stream, option); }
+void cli_options_serializer::visit(typed_option<uint32_t>& option) { serialize(m_output_stream, option, m_escape); }
+void cli_options_serializer::visit(typed_option<uint64_t>& option) { serialize(m_output_stream, option, m_escape); }
+void cli_options_serializer::visit(typed_option<int32_t>& option) { serialize(m_output_stream, option, m_escape); }
+void cli_options_serializer::visit(typed_option<int64_t>& option) { serialize(m_output_stream, option, m_escape); }
+void cli_options_serializer::visit(typed_option<float>& option) { serialize(m_output_stream, option, m_escape); }
+void cli_options_serializer::visit(typed_option<std::string>& option) { serialize(m_output_stream, option, m_escape); }
+void cli_options_serializer::visit(typed_option<bool>& option) { serialize(m_output_stream, option, m_escape); }
 void cli_options_serializer::visit(typed_option<std::vector<std::string>>& option)
 {
-  serialize(m_output_stream, option);
+  serialize(m_output_stream, option, m_escape);
 }

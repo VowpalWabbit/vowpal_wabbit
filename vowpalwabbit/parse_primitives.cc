@@ -151,4 +151,23 @@ std::vector<std::string> split_command_line(const std::string& cmd_line)
 {
   return split_impl(cmd_line.begin(), cmd_line.end());
 }
+
+std::string escape_string(VW::string_view str)
+{
+  std::stringstream ss;
+  for (char c : str)
+  {
+    switch(c)
+    {
+      case '\n': ss << R"(\n)"; break;
+      case '\t': ss << R"(\t)"; break;
+      case '\\': ss << R"(\)"; break;
+      case '"': ss << R"(\")"; break;
+      case '\'': ss << R"(\')"; break;
+      default: ss << c; break;
+    }
+  }
+  return ss.str();
+}
+
 }  // namespace VW

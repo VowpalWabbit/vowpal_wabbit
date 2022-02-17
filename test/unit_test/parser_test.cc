@@ -61,3 +61,13 @@ BOOST_AUTO_TEST_CASE(trim_whitespace_test)
   BOOST_TEST("a\nb     \tc" == VW::trim_whitespace(std::string("     \t         a\nb     \tc        \t\t       ")));
   BOOST_TEST("" == VW::trim_whitespace(std::string("     \t                 \t\t       ")));
 }
+
+BOOST_AUTO_TEST_CASE(escape_string_tests)
+{
+  BOOST_TEST("" == VW::escape_string(""));
+  BOOST_TEST("abc" == VW::escape_string("abc"));
+  BOOST_TEST(R"(abc)" == VW::escape_string(R"(abc)"));
+  BOOST_TEST(R"(abc\")" == VW::escape_string("abc\""));
+  BOOST_TEST(R"(abc\t)" == VW::escape_string("abc\t"));
+  BOOST_TEST(R"(\'abc\')" == VW::escape_string("'abc'"));
+}

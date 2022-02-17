@@ -5,6 +5,7 @@
 #include <iostream>
 
 #include "crossplat_compat.h"
+#include "parse_primitives.h"
 
 #ifndef _WIN32
 #  include <unistd.h>
@@ -387,7 +388,8 @@ void save_load_header(VW::workspace& all, io_buf& model_file, bool read, bool te
     }
     else
     {
-      VW::config::cli_options_serializer serializer;
+      // Escape values in output.
+      VW::config::cli_options_serializer serializer(true);
 
       std::map<std::string, std::set<char>> merged_values = {{"ignore", {}}, {"ignore_linear", {}}, {"keep", {}}};
 
@@ -412,14 +414,14 @@ void save_load_header(VW::workspace& all, io_buf& model_file, bool read, bool te
       for (const auto& kv : merged_values)
       {
         if (kv.second.empty()) continue;
-        serialized_keep_options += " --" + kv.first + " " + std::string(kv.second.begin(), kv.second.end());
+        serialized_keep_options += " \"--" + kv.first + "=" + VW::escape_string(std::string(kv.second.begin(), kv.second.end())) + "\"";
       }
 
       // We need to save our current PRG state
       if (all.get_random_state()->get_current_state() != 0)
       {
-        serialized_keep_options += " --random_seed";
-        serialized_keep_options += " " + std::to_string(all.get_random_state()->get_current_state());
+        serialized_keep_options += " \"--random_seed";
+        serialized_keep_options += "=" + VW::escape_string(std::to_string(all.get_random_state()->get_current_state())) + "\"";
       }
 
       msg << "options:" << serialized_keep_options << "\n";
