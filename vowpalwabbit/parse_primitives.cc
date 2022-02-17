@@ -182,4 +182,15 @@ std::string escape_string(VW::string_view str)
   return ss.str();
 }
 
+bool contains_escapeable_chars(VW::string_view str)
+{
+  const std::set<char> escape_chars = {'\n', '\t', '\\', '"', '\''};
+  for (auto c : str)
+  {
+    if (escape_chars.find(c) != escape_chars.end()) { return true; }
+  }
+  return false;
+}
+
+
 }  // namespace VW

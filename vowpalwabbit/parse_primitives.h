@@ -152,4 +152,5 @@ std::vector<std::string> split_command_line(const std::string& cmd_line);
 std::vector<std::string> split_command_line(VW::string_view cmd_line);
 
 std::string escape_string(VW::string_view str);
+bool contains_escapeable_chars(VW::string_view str);
 }  // namespace VW
