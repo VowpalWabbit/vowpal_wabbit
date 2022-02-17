@@ -118,6 +118,36 @@ void initialize_regressor(VW::workspace& all)
 
 constexpr size_t default_buf_size = 512;
 
+template <typename T>
+std::string fmt_option_legacy(const std::string& key, const T& value)
+{
+  std::stringstream ss;
+  ss << " --" << key << " " << std::to_string(value);
+  return ss.str();
+}
+
+std::string fmt_option_legacy(const std::string& key, const std::string& value)
+{
+  std::stringstream ss;
+  ss << " --" << key << " " << value;
+  return ss.str();
+}
+
+template <typename T>
+std::string fmt_option_escaped(const std::string& key, const T& value)
+{
+  std::stringstream ss;
+  ss << " \"--" << key << "=" << VW::escape_string(std::to_string(value)) << "\"";
+  return ss.str();
+}
+
+std::string fmt_option_escaped(const std::string& key, const std::string& value)
+{
+  std::stringstream ss;
+  ss << " \"--" << key << "=" << VW::escape_string(value) << "\"";
+  return ss.str();
+}
+
 // file_options will be written to when reading
 void save_load_header(VW::workspace& all, io_buf& model_file, bool read, bool text, std::string& file_options,
     VW::config::options_i& options)
@@ -156,8 +186,14 @@ void save_load_header(VW::workspace& all, io_buf& model_file, bool read, bool te
 
       if (read && !options.was_supplied("id") && !all.id.empty())
       {
-        file_options += " --id";
-        file_options += " " + all.id;
+        if (all.model_file_ver < VW::version_definitions::VERSION_FILE_WITH_ESCAPED_COMMAND_LINE)
+        {
+          file_options += fmt_option_legacy("id", all.id);
+        }
+        else
+        {
+          file_options += fmt_option_escaped("id", all.id);
+        }
       }
     }
 
@@ -180,10 +216,14 @@ void save_load_header(VW::workspace& all, io_buf& model_file, bool read, bool te
 
     if (read && !options.was_supplied("bit_precision"))
     {
-      file_options += " --bit_precision";
-      std::stringstream temp;
-      temp << local_num_bits;
-      file_options += " " + temp.str();
+      if (all.model_file_ver < VW::version_definitions::VERSION_FILE_WITH_ESCAPED_COMMAND_LINE)
+      {
+        file_options += fmt_option_legacy("bit_precision", local_num_bits);
+      }
+      else
+      {
+        file_options += fmt_option_escaped("bit_precision", local_num_bits);
+      }
     }
 
     VW::validate_default_bits(all, local_num_bits);
@@ -285,10 +325,14 @@ void save_load_header(VW::workspace& all, io_buf& model_file, bool read, bool te
       {
         if (!options.was_supplied("rank"))
         {
-          file_options += " --rank";
-          std::stringstream temp;
-          temp << rank;
-          file_options += " " + temp.str();
+          if (all.model_file_ver < VW::version_definitions::VERSION_FILE_WITH_ESCAPED_COMMAND_LINE)
+          {
+            file_options += fmt_option_legacy("rank", rank);
+          }
+          else
+          {
+            file_options += fmt_option_escaped("rank", rank);
+          }
         }
         else
         {
@@ -326,9 +370,14 @@ void save_load_header(VW::workspace& all, io_buf& model_file, bool read, bool te
       bytes_read_write += bin_text_read_write_fixed_validated(model_file, ngram, 3, read, msg, text);
       if (read)
       {
-        std::string temp(ngram);
-        file_options += " --ngram";
-        file_options += " " + temp;
+        if (all.model_file_ver < VW::version_definitions::VERSION_FILE_WITH_ESCAPED_COMMAND_LINE)
+        {
+          file_options += fmt_option_legacy("ngram", std::string{ ngram });
+        }
+        else
+        {
+          file_options += fmt_option_escaped("ngram", std::string{ ngram });
+        }
       }
     }
 
@@ -355,9 +404,14 @@ void save_load_header(VW::workspace& all, io_buf& model_file, bool read, bool te
       bytes_read_write += bin_text_read_write_fixed_validated(model_file, skip, 3, read, msg, text);
       if (read)
       {
-        std::string temp(skip);
-        file_options += " --skips";
-        file_options += " " + temp;
+        if (all.model_file_ver < VW::version_definitions::VERSION_FILE_WITH_ESCAPED_COMMAND_LINE)
+        {
+          file_options += fmt_option_legacy("skips", std::string{ skip });
+        }
+        else
+        {
+          file_options += fmt_option_escaped("skips", std::string{ skip });
+        }
       }
     }
 
@@ -414,14 +468,13 @@ void save_load_header(VW::workspace& all, io_buf& model_file, bool read, bool te
       for (const auto& kv : merged_values)
       {
         if (kv.second.empty()) continue;
-        serialized_keep_options += " \"--" + kv.first + "=" + VW::escape_string(std::string(kv.second.begin(), kv.second.end())) + "\"";
+        serialized_keep_options += fmt_option_escaped(kv.first, std::string(kv.second.begin(), kv.second.end()));
       }
 
       // We need to save our current PRG state
       if (all.get_random_state()->get_current_state() != 0)
       {
-        serialized_keep_options += " \"--random_seed";
-        serialized_keep_options += "=" + VW::escape_string(std::to_string(all.get_random_state()->get_current_state())) + "\"";
+        serialized_keep_options += fmt_option_escaped("random_seed", all.get_random_state()->get_current_state());
       }
 
       msg << "options:" << serialized_keep_options << "\n";

@@ -297,7 +297,7 @@ BOOST_AUTO_TEST_CASE(kept_command_line)
 
   auto serialized_string = serializer.str();
 
-  BOOST_CHECK_NE(serialized_string.find("--str_opt test"), std::string::npos);
+  BOOST_CHECK_NE(serialized_string.find("--str_opt=test"), std::string::npos);
   BOOST_CHECK_NE(serialized_string.find("--other_bool_opt"), std::string::npos);
   BOOST_CHECK_EQUAL(serialized_string.find("--bool_opt"), std::string::npos);
   BOOST_CHECK_EQUAL(serialized_string.find("--int_opt"), std::string::npos);

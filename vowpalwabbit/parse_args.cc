@@ -1444,11 +1444,11 @@ bool is_long_option_like(VW::string_view token) { return token.find("--") == 0 &
 // The model file contains a command line but it has much greater constraints than the user supplied command line. These constraints greatly help us unambiguously process it.
 // The command line will ONLY consist of bool switches or options with a single value.
 // However, the tricky thing here is that there is no way to disambiguate something that looks like a switch from an option with a value.
-std::unordered_map<VW::string_view, std::vector<VW::string_view>> parse_model_command_line_using_equals(
+std::unordered_map<std::string, std::vector<std::string>> parse_model_command_line_using_equals(
     const std::vector<std::string>& command_line)
 {
-  std::unordered_map<VW::string_view, std::vector<VW::string_view>> m_map;
-  VW::string_view last_option;
+  std::unordered_map<std::string, std::vector<std::string>> m_map;
+  std::string last_option;
   for (const auto& token : command_line)
   {
     assert(is_long_option_like(token));
@@ -1456,7 +1456,7 @@ std::unordered_map<VW::string_view, std::vector<VW::string_view>> parse_model_co
     if (equal_sign_pos != std::string::npos)
     {
       auto opt_value = token.substr(equal_sign_pos + 1);
-      auto opt_name = token.substr(2, equal_sign_pos);
+      auto opt_name = token.substr(2, equal_sign_pos - 2);
       last_option = opt_name;
       m_map[opt_name].push_back(opt_value);
     }
@@ -1466,7 +1466,7 @@ std::unordered_map<VW::string_view, std::vector<VW::string_view>> parse_model_co
       last_option = opt_name;
       if (m_map.find(opt_name) == m_map.end())
       {
-        m_map[opt_name] = std::vector<VW::string_view>();
+        m_map[opt_name] = std::vector<std::string>();
       }
     }
   }
@@ -1476,11 +1476,11 @@ std::unordered_map<VW::string_view, std::vector<VW::string_view>> parse_model_co
 // The model file contains a command line but it has much greater constraints than the user supplied command line. These constraints greatly help us unambiguously process it.
 // The command line will ONLY consist of bool switches or options with a single value.
 // However, the tricky thing here is that there is no way to disambiguate something that looks like a switch from an option with a value.
-std::unordered_map<VW::string_view, std::vector<VW::string_view>> parse_model_command_line_legacy(
+std::unordered_map<std::string, std::vector<std::string>> parse_model_command_line_legacy(
     const std::vector<std::string>& command_line)
 {
-  std::unordered_map<VW::string_view, std::vector<VW::string_view>> m_map;
-  VW::string_view last_option;
+  std::unordered_map<std::string, std::vector<std::string>> m_map;
+  std::string last_option;
   for (const auto& token : command_line)
   {
     if (is_long_option_like(token))
@@ -1489,7 +1489,7 @@ std::unordered_map<VW::string_view, std::vector<VW::string_view>> parse_model_co
       last_option = opt_name;
       if (m_map.find(opt_name) == m_map.end())
       {
-        m_map[opt_name] = std::vector<VW::string_view>();
+        m_map[opt_name] = std::vector<std::string>();
       }
     }
     else
@@ -1517,13 +1517,13 @@ void merge_options_from_header_strings(const std::vector<std::string>& strings, 
   {
     if (kv.second.empty())
     {
-      options.insert(std::string{kv.first}, "");
+      options.insert(kv.first, "");
     }
     else
     {
       for (const auto& value : kv.second)
       {
-        options.insert(std::string{kv.first}, std::string{value});
+        options.insert(kv.first, value);
       }
     }
   }
