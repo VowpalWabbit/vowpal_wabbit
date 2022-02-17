@@ -5086,5 +5086,18 @@
     "input_files": [
       "train-sets/0001.dat"
     ]
+  },
+  {
+    "id": 396,
+    "desc": "Load legacy command line format in model header",
+    "vw_command": "-i model-sets/legacy_cmd_line_format_option_header.model --readable_model compare.txt --no_stdin",
+    "diff_files": {
+      "stderr": "train-sets/ref/legacy_cmd_line_format_option_header.stderr",
+      "stdout": "train-sets/ref/legacy_cmd_line_format_option_header.stdout",
+      "compare.txt": "train-sets/ref/legacy_cmd_line_format_option_header.txt"
+    },
+    "input_files": [
+      "model-sets/legacy_cmd_line_format_option_header.model"
+    ]
   }
 ]
