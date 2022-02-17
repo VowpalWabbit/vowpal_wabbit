@@ -5074,5 +5074,17 @@
     "input_files": [
       "train-sets/ccb_reuse_small.data"
     ]
+  },
+  {
+    "id": 395,
+    "desc": "Test 1 but dont track the best constant and dont use multipass",
+    "vw_command": "-l 20 --initial_t 128000 --power_t 1 -d train-sets/0001.dat -f models/0001_1.model --invariant --ngram 3 --skips 1 --holdout_off --dont_output_best_constant",
+    "diff_files": {
+      "stderr": "train-sets/ref/dont_output_best_constant.stderr",
+      "stdout": "train-sets/ref/dont_output_best_constant.stdout"
+    },
+    "input_files": [
+      "train-sets/0001.dat"
+    ]
   }
 ]
