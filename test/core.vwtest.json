@@ -5099,5 +5099,29 @@
     "input_files": [
       "model-sets/legacy_cmd_line_format_option_header.model"
     ]
+  },
+  {
+    "id": 397,
+    "desc": "Escaped values in model command line",
+    "vw_command": "-f model_with_escaped_values.model --no_stdin --interactions \"ab \\\"c\"",
+    "diff_files": {
+      "stderr": "train-sets/ref/model_with_escaped_values.stderr",
+      "stdout": "train-sets/ref/model_with_escaped_values.stdout"
+    }
+  },
+  {
+    "id": 398,
+    "desc": "Load escaped values in model command line",
+    "vw_command": "-i model_with_escaped_values.model --no_stdin --readable_model model_with_escaped_values.txt",
+    "diff_files": {
+      "stderr": "train-sets/ref/load_model_with_escaped_values.stderr",
+      "stdout": "train-sets/ref/load_model_with_escaped_values.stdout",
+      "model_with_escaped_values.txt":  "train-sets/ref/model_with_escaped_values.readable.txt"
+    }
+    ,
+    "input_files": [
+      "model_with_escaped_values.model"
+    ],
+    "depends_on": [397]
   }
 ]
