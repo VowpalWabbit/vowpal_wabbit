@@ -1441,9 +1441,10 @@ bool check_interaction_settings_collision(options_i& options, const std::string&
 
 bool is_long_option_like(VW::string_view token) { return token.find("--") == 0 && token.size() > 2; }
 
-// The model file contains a command line but it has much greater constraints than the user supplied command line. These constraints greatly help us unambiguously process it.
-// The command line will ONLY consist of bool switches or options with a single value.
-// However, the tricky thing here is that there is no way to disambiguate something that looks like a switch from an option with a value.
+// The model file contains a command line but it has much greater constraints than the user supplied command line. These
+// constraints greatly help us unambiguously process it. The command line will ONLY consist of bool switches or options
+// with a single value. However, the tricky thing here is that there is no way to disambiguate something that looks like
+// a switch from an option with a value.
 std::unordered_map<std::string, std::vector<std::string>> parse_model_command_line_using_equals(
     const std::vector<std::string>& command_line)
 {
@@ -1464,18 +1465,16 @@ std::unordered_map<std::string, std::vector<std::string>> parse_model_command_li
     {
       auto opt_name = token.substr(2);
       last_option = opt_name;
-      if (m_map.find(opt_name) == m_map.end())
-      {
-        m_map[opt_name] = std::vector<std::string>();
-      }
+      if (m_map.find(opt_name) == m_map.end()) { m_map[opt_name] = std::vector<std::string>(); }
     }
   }
   return m_map;
 }
 
-// The model file contains a command line but it has much greater constraints than the user supplied command line. These constraints greatly help us unambiguously process it.
-// The command line will ONLY consist of bool switches or options with a single value.
-// However, the tricky thing here is that there is no way to disambiguate something that looks like a switch from an option with a value.
+// The model file contains a command line but it has much greater constraints than the user supplied command line. These
+// constraints greatly help us unambiguously process it. The command line will ONLY consist of bool switches or options
+// with a single value. However, the tricky thing here is that there is no way to disambiguate something that looks like
+// a switch from an option with a value.
 std::unordered_map<std::string, std::vector<std::string>> parse_model_command_line_legacy(
     const std::vector<std::string>& command_line)
 {
@@ -1487,10 +1486,7 @@ std::unordered_map<std::string, std::vector<std::string>> parse_model_command_li
     {
       auto opt_name = token.substr(2);
       last_option = opt_name;
-      if (m_map.find(opt_name) == m_map.end())
-      {
-        m_map[opt_name] = std::vector<std::string>();
-      }
+      if (m_map.find(opt_name) == m_map.end()) { m_map[opt_name] = std::vector<std::string>(); }
     }
     else
     {
@@ -1503,28 +1499,24 @@ std::unordered_map<std::string, std::vector<std::string>> parse_model_command_li
 void merge_options_from_header_strings(const std::vector<std::string>& strings, bool skip_interactions,
     VW::config::options_i& options, bool& is_ccb_input_model, bool use_equals_syntax)
 {
-  auto parsed_model_command_line = use_equals_syntax ? parse_model_command_line_using_equals(strings) : parse_model_command_line_legacy(strings);
+  auto parsed_model_command_line =
+      use_equals_syntax ? parse_model_command_line_using_equals(strings) : parse_model_command_line_legacy(strings);
 
-  if(skip_interactions)
+  if (skip_interactions)
   {
     parsed_model_command_line.erase("quadratic");
     parsed_model_command_line.erase("cubic");
     parsed_model_command_line.erase("interactions");
   }
 
-  is_ccb_input_model = is_ccb_input_model || (parsed_model_command_line.find("ccb_explore_adf") != parsed_model_command_line.end());
+  is_ccb_input_model =
+      is_ccb_input_model || (parsed_model_command_line.find("ccb_explore_adf") != parsed_model_command_line.end());
   for (const auto& kv : parsed_model_command_line)
   {
-    if (kv.second.empty())
-    {
-      options.insert(kv.first, "");
-    }
+    if (kv.second.empty()) { options.insert(kv.first, ""); }
     else
     {
-      for (const auto& value : kv.second)
-      {
-        options.insert(kv.first, value);
-      }
+      for (const auto& value : kv.second) { options.insert(kv.first, value); }
     }
   }
 }
@@ -1537,19 +1529,18 @@ options_i& load_header_merge_options(
 
   interactions_settings_duplicated = check_interaction_settings_collision(options, file_options);
 
-  bool model_command_line_using_equals = all.model_file_ver >= VW::version_definitions::VERSION_FILE_WITH_ESCAPED_COMMAND_LINE;
+  bool model_command_line_using_equals =
+      all.model_file_ver >= VW::version_definitions::VERSION_FILE_WITH_ESCAPED_COMMAND_LINE;
   std::vector<std::string> command_line;
-  if (model_command_line_using_equals)
-  {
-    command_line = VW::split_command_line(file_options);
-  }
+  if (model_command_line_using_equals) { command_line = VW::split_command_line(file_options); }
   else
   {
     std::istringstream ss{file_options};
-    command_line = std::vector<std::string>{
-        std::istream_iterator<std::string>{ss}, std::istream_iterator<std::string>{}};
+    command_line =
+        std::vector<std::string>{std::istream_iterator<std::string>{ss}, std::istream_iterator<std::string>{}};
   }
-  merge_options_from_header_strings(command_line, interactions_settings_duplicated, options, all.is_ccb_input_model, model_command_line_using_equals);
+  merge_options_from_header_strings(
+      command_line, interactions_settings_duplicated, options, all.is_ccb_input_model, model_command_line_using_equals);
   return options;
 }
 

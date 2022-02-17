@@ -157,14 +157,26 @@ std::string escape_string(VW::string_view str)
   std::stringstream ss;
   for (char c : str)
   {
-    switch(c)
+    switch (c)
     {
-      case '\n': ss << R"(\n)"; break;
-      case '\t': ss << R"(\t)"; break;
-      case '\\': ss << R"(\)"; break;
-      case '"': ss << R"(\")"; break;
-      case '\'': ss << R"(\')"; break;
-      default: ss << c; break;
+      case '\n':
+        ss << R"(\n)";
+        break;
+      case '\t':
+        ss << R"(\t)";
+        break;
+      case '\\':
+        ss << R"(\)";
+        break;
+      case '"':
+        ss << R"(\")";
+        break;
+      case '\'':
+        ss << R"(\')";
+        break;
+      default:
+        ss << c;
+        break;
     }
   }
   return ss.str();

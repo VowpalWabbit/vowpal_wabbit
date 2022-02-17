@@ -10,7 +10,7 @@
 
 using namespace VW::config;
 
-cli_options_serializer::cli_options_serializer() :cli_options_serializer(false) {}
+cli_options_serializer::cli_options_serializer() : cli_options_serializer(false) {}
 cli_options_serializer::cli_options_serializer(bool escape) : m_escape(escape) {}
 
 template <typename T>
@@ -25,7 +25,7 @@ void serialize(std::stringstream& output, const typed_option<T>& typed_option, b
   }
   else
   {
-    output << " --" << typed_option.m_name << "=" <<typed_option.value();
+    output << " --" << typed_option.m_name << "=" << typed_option.value();
   }
 }
 
@@ -38,10 +38,7 @@ void serialize<std::vector<std::string>>(
   {
     for (auto const& value : vec)
     {
-      if (escape)
-      {
-        output << " \"--" << typed_option.m_name << "=" << VW::escape_string(value) << "\"";
-      }
+      if (escape) { output << " \"--" << typed_option.m_name << "=" << VW::escape_string(value) << "\""; }
       else
       {
         output << " --" << typed_option.m_name << "=" << value;
