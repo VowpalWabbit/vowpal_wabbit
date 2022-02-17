@@ -702,10 +702,10 @@ class DFtoVW:
     @classmethod
     def from_colnames(
         cls,
-        y: Union[Hashable, List[Hashable]],
-        x: Union[Hashable, List[Hashable]],
         df: pd.DataFrame,
-        label_type: str = "simple_label",
+        x: Union[Hashable, List[Hashable]],
+        y: Optional[Union[Hashable, List[Hashable]]] = None,
+        label_type: Optional[str] = "simple_label",
     ) -> "DFtoVW":
         """Build DFtoVW instance using column names only.
 
@@ -743,25 +743,28 @@ class DFtoVW:
             "multi_label": MultiLabel,
         }
 
-        if label_type not in dict_label_type:
-            raise ValueError(
-                "'label_type' should be either of the following string: {label_types}".format(
-                    label_types=repr(list(dict_label_type.keys()))[1:-1]
+        if label_type:
+            if label_type not in dict_label_type:
+                raise ValueError(
+                    "'label_type' should be either of the following string: {label_types}".format(
+                        label_types=repr(list(dict_label_type.keys()))[1:-1]
+                    )
                 )
-            )
 
-        y = y if isinstance(y, list) else [y]
+            y = y if isinstance(y, list) else [y]
 
-        if label_type not in ["multi_label"]:
-            if len(y) > 1:
-                raise TypeError(
-                    "When label_type is 'simple_label' or 'multiclass', argument 'y' should be a string (or any hashable type) "
-                    + "or a list of exactly one string (or any hashable type)."
-                )
-            else:
-                y = y[0]
+            if label_type not in ["multi_label"]:
+                if len(y) > 1:
+                    raise TypeError(
+                        "When label_type is 'simple_label' or 'multiclass', argument 'y' should be a string (or any hashable type) "
+                        + "or a list of exactly one string (or any hashable type)."
+                    )
+                else:
+                    y = y[0]
 
-        label = dict_label_type[label_type](y)
+            label = dict_label_type[label_type](y)
+        else:
+            label = None
 
         x = x if isinstance(x, list) else [x]
 
