@@ -718,7 +718,7 @@ VW::LEARNER::base_learner* automl_setup(VW::setup_base_i& stack_builder)
       static_cast<uint64_t>(priority_challengers), keep_configs, oracle_type, all.weights.dense_weights, calc_priority,
       automl_alpha, automl_tau);
   auto data = VW::make_unique<automl<interaction_config_manager>>(std::move(cm));
-  assert(max_live_configs <= MAX_CONFIGS);
+  if (max_live_configs > MAX_CONFIGS) { THROW("Maximum number of configs is " << MAX_CONFIGS << " and " << max_live_configs << " were specified. Please decrease the number of configs.") }
 
   // override and clear all the global interactions
   // see parser.cc line 740
