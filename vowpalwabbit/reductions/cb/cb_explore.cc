@@ -345,7 +345,11 @@ base_learner* cb_explore_setup(VW::setup_base_i& stack_builder)
                .keep()
                .help("Do not explore uniformly on zero-probability actions in cover"))
       .add(make_option("psi", data->psi).keep().default_value(1.0f).help("Disagreement parameter for cover"))
-      .add(make_option("indexing", data->indexing).one_of({0, 1}).keep().default_value(1).help("Choose between 0 or 1-indexing"));
+      .add(make_option("indexing", data->indexing)
+               .one_of({0, 1})
+               .keep()
+               .default_value(1)
+               .help("Choose between 0 or 1-indexing"));
 
   if (!options.add_parse_and_check_necessary(new_options)) return nullptr;
 
