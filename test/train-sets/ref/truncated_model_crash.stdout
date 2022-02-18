@@ -1,1 +1,1 @@
-[critical] vw (options_boost_po.cc:113): the argument ('-cb_adf') for option '--bit_precision' is invalid
+[critical] vw (options_boost_po.cc:68): the argument ('-cb_adf') for option '--bit_precision' is invalid
