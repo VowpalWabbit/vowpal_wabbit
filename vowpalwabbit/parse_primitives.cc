@@ -117,9 +117,11 @@ std::vector<std::string> split_impl(It begin, It end)
     }
   }
 
-  if (inside_quote) {
+  if (inside_quote)
+  {
     std::string input_string{begin, end};
-    THROW("unbalanced quotes in string: " << input_string); }
+    THROW("unbalanced quotes in string: " << input_string);
+  }
 
   if (!current_str.empty()) { ret.push_back(current_str); }
   return ret;
@@ -193,6 +195,5 @@ bool contains_escapeable_chars(VW::string_view str)
   }
   return false;
 }
-
 
 }  // namespace VW

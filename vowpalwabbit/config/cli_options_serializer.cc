@@ -22,9 +22,7 @@ void serialize(std::stringstream& output, const typed_option<T>& typed_option, b
   auto value = ss.str();
 
   if (escape && VW::contains_escapeable_chars(value))
-  {
-    output << " --" << typed_option.m_name << "=\"" << VW::escape_string(value) << "\"";
-  }
+  { output << " --" << typed_option.m_name << "=\"" << VW::escape_string(value) << "\""; }
   else
   {
     output << " --" << typed_option.m_name << "=" << value;
@@ -41,9 +39,7 @@ void serialize<std::vector<std::string>>(
     for (auto const& value : vec)
     {
       if (escape && VW::contains_escapeable_chars(value))
-      {
-        output << " --" << typed_option.m_name << "=\"" << VW::escape_string(value) << "\"";
-      }
+      { output << " --" << typed_option.m_name << "=\"" << VW::escape_string(value) << "\""; }
       else
       {
         output << " --" << typed_option.m_name << "=" << value;

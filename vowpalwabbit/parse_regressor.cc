@@ -138,10 +138,7 @@ std::string fmt_option_escaped(const std::string& key, const T& value)
 {
   std::stringstream ss;
   auto str_value = std::to_string(value);
-  if(VW::contains_escapeable_chars(str_value))
-  {
-    ss << " --" << key << "=\"" << VW::escape_string(str_value) << "\"";
-  }
+  if (VW::contains_escapeable_chars(str_value)) { ss << " --" << key << "=\"" << VW::escape_string(str_value) << "\""; }
   else
   {
     ss << " --" << key << "=" << str_value;
@@ -152,10 +149,7 @@ std::string fmt_option_escaped(const std::string& key, const T& value)
 std::string fmt_option_escaped(const std::string& key, const std::string& value)
 {
   std::stringstream ss;
-  if(VW::contains_escapeable_chars(value))
-  {
-    ss << " --" << key << "=\"" << VW::escape_string(value) << "\"";
-  }
+  if (VW::contains_escapeable_chars(value)) { ss << " --" << key << "=\"" << VW::escape_string(value) << "\""; }
   else
   {
     ss << " --" << key << "=" << value;
