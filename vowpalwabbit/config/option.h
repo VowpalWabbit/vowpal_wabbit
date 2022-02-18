@@ -32,6 +32,8 @@ struct typed_option_visitor
   virtual void visit(typed_option<float>& /*option*/){};
   virtual void visit(typed_option<std::string>& /*option*/){};
   virtual void visit(typed_option<std::vector<std::string>>& /*option*/){};
+
+  virtual ~typed_option_visitor() = default;
 };
 
 struct base_option
