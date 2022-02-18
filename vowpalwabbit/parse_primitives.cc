@@ -64,7 +64,7 @@ char unescape_char(It char_to_unescape_it, It end)
 {
   if (char_to_unescape_it == end) { THROW("unescape_char: unexpected end of string while unescaping"); }
   char c = *char_to_unescape_it;
-  if (c == '\\' || c == '\'' || c == '"' || ' ') { return c; }
+  if (c == '\\' || c == '\'' || c == '"' || c == ' ') { return c; }
   THROW("Invalid escape character: " << c);
 }
 
