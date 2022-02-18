@@ -11,9 +11,9 @@ namespace VW
 {
 bool ends_with(VW::string_view full_string, VW::string_view ending) { return full_string.ends_with(ending); }
 
-bool starts_with(VW::string_view full_string, VW::string_view starting) {
-  return full_string.size() >= starting.size() &&
-      0 == full_string.compare(0, starting.size(), starting);
+bool starts_with(VW::string_view full_string, VW::string_view starting)
+{
+  return full_string.size() >= starting.size() && 0 == full_string.compare(0, starting.size(), starting);
 }
 
 std::string decode_inline_hex(VW::string_view arg, VW::io::logger& logger)

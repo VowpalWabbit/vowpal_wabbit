@@ -545,7 +545,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(check_multiple_necessary_one_missing, T, option_ty
 
 BOOST_AUTO_TEST_CASE_TEMPLATE(check_was_supplied_common_prefix_before, T, option_types)
 {
-  std::vector<std::string> args = {"--int_opt_two","3"};
+  std::vector<std::string> args = {"--int_opt_two", "3"};
   auto options = VW::make_unique<T>(args);
 
   BOOST_TEST(!options->was_supplied("int_opt"));
