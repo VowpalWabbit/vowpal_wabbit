@@ -1440,7 +1440,7 @@ bool check_interaction_settings_collision(options_i& options, const std::string&
   return file_options_has_interaction;
 }
 
-bool is_long_option_like(VW::string_view token) { return token.find("--") == 0 && token.size() > 2; }
+bool is_opt_long_option_like(VW::string_view token) { return token.find("--") == 0 && token.size() > 2; }
 
 // The model file contains a command line but it has much greater constraints
 // than the user supplied command line. These constraints allow us to
@@ -1456,7 +1456,7 @@ std::unordered_map<std::string, std::vector<std::string>> parse_model_command_li
   for (const auto& token : command_line)
   {
     // If an invalid token is found, skip it.
-    if (!is_long_option_like(token)) { continue; }
+    if (!is_opt_long_option_like(token)) { continue; }
 
     const auto equal_sign_pos = token.find('=');
     if (equal_sign_pos != std::string::npos)
@@ -1487,7 +1487,7 @@ std::unordered_map<std::string, std::vector<std::string>> parse_model_command_li
   std::string last_option;
   for (const auto& token : command_line)
   {
-    if (is_long_option_like(token))
+    if (is_opt_long_option_like(token))
     {
       auto opt_name = token.substr(2);
       last_option = opt_name;
