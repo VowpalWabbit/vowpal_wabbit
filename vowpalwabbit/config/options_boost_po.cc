@@ -195,8 +195,6 @@ void options_boost_po::add_to_description_impl<typelist<>>(
   THROW(fmt::format("Option '{}' has an unsupported option type.", opt->m_name));
 }
 
-const std::set<std::string>& options_boost_po::get_supplied_options() const { return m_supplied_options; }
-
 void options_boost_po::insert(const std::string& key, const std::string& value)
 {
   m_command_line.push_back("--" + key);
