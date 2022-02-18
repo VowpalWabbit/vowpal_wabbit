@@ -232,7 +232,7 @@ void consume_short_option(const std::map<char, std::shared_ptr<base_option>>& kn
 }
 
 template <typename T>
-T convert(const VW::string_view& token)
+T convert_token_value(const VW::string_view& token)
 {
   T result;
   std::stringstream ss(std::string{token});
@@ -276,7 +276,7 @@ struct cli_typed_option_handler : typed_option_visitor
 
       std::vector<T> values;
       values.reserve(all_tokens.size());
-      for (const auto& token : all_tokens) { values.push_back(convert<T>(token)); }
+      for (const auto& token : all_tokens) { values.push_back(convert_token_value<T>(token)); }
 
       // Due to the way options get added to the vector, the model options are at the end, and the
       // command-line options are at the front. To allow override from command-line over model file,
