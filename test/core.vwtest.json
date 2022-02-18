@@ -5107,7 +5107,8 @@
     "diff_files": {
       "stderr": "train-sets/ref/model_with_escaped_values.stderr",
       "stdout": "train-sets/ref/model_with_escaped_values.stdout"
-    }
+    },
+    "input_files": []
   },
   {
     "id": 398,
