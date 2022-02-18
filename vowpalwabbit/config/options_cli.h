@@ -4,13 +4,13 @@
 
 #pragma once
 
-#include <vector>
+#include <iostream>
 #include <set>
 #include <string>
 #include <unordered_map>
-#include <iostream>
+#include <vector>
 
-#include "config/option.h"
+#include "config/option_group_definition.h"
 #include "config/options.h"
 #include "future_compat.h"
 #include "vw_string_view.h"

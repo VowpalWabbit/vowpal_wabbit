@@ -4,17 +4,23 @@
 
 #include "config/options_cli.h"
 
+#include <algorithm>
+#include <cassert>
+#include <cstdint>
+#include <cstdlib>
+#include <map>
+#include <memory>
+#include <queue>
 #include <set>
 #include <sstream>
 #include <string>
 #include <unordered_map>
+#include <utility>
 #include <vector>
-#include <queue>
-#include <cassert>
+
+#include <fmt/format.h>
 
 #include "config/option.h"
-#include "config/options.h"
-
 #include "vw_exception.h"
 #include "vw_string_view.h"
 

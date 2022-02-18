@@ -3,9 +3,15 @@
 // license as described in the file LICENSE.
 
 #include "config/options.h"
-#include "config/option_group_definition.h"
 
+#include "config/option_group_definition.h"
+#include "config/option.h"
+
+#include <algorithm>
 #include <cassert>
+#include <iterator>
+#include <stdexcept>
+#include <utility>
 
 using namespace VW::config;
 
