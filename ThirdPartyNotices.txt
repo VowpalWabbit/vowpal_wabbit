@@ -6,7 +6,7 @@ This project incorporates components from the projects listed below. The origina
 1.	RapidJSON (https://github.com/tencent/rapidjson/)
 2.	zlib (http://zlib.net/)
 3.	flatbuffers (https://google.github.io/flatbuffers/)
-4. string-view-lite (https://github.com/martinmoene/string-view-lite)
+4.  string-view-lite (https://github.com/martinmoene/string-view-lite)
 
 RapidJSON NOTICES AND INFORMATION BEGIN HERE
 =========================================
