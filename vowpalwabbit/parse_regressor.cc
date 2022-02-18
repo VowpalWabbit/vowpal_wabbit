@@ -137,14 +137,29 @@ template <typename T>
 std::string fmt_option_escaped(const std::string& key, const T& value)
 {
   std::stringstream ss;
-  ss << " \"--" << key << "=" << VW::escape_string(std::to_string(value)) << "\"";
+  auto str_value = std::to_string(value);
+  if(VW::contains_escapeable_chars(str_value))
+  {
+    ss << " --" << key << "=\"" << VW::escape_string(str_value) << "\"";
+  }
+  else
+  {
+    ss << " --" << key << "=" << str_value;
+  }
   return ss.str();
 }
 
 std::string fmt_option_escaped(const std::string& key, const std::string& value)
 {
   std::stringstream ss;
-  ss << " \"--" << key << "=" << VW::escape_string(value) << "\"";
+  if(VW::contains_escapeable_chars(value))
+  {
+    ss << " --" << key << "=\"" << VW::escape_string(value) << "\"";
+  }
+  else
+  {
+    ss << " --" << key << "=" << value;
+  }
   return ss.str();
 }
 
