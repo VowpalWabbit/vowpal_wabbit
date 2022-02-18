@@ -1758,7 +1758,10 @@ VW::workspace* initialize_with_builder(std::unique_ptr<options_i, options_delete
     // upon direct query for help -- spit it out to stdout;
     if (all.options->get_typed_option<bool>("help").value())
     {
-      const auto num_supplied = all.options->get_supplied_options().size();
+      size_t num_supplied = 0;
+      for (auto const& option : all.options->get_all_options())
+      { num_supplied += all.options->was_supplied(option->m_name) ? 1 : 0; }
+
       auto option_groups = all.options->get_all_option_group_definitions();
       std::sort(option_groups.begin(), option_groups.end(),
           [](const VW::config::option_group_definition& a, const VW::config::option_group_definition& b) {
