@@ -411,6 +411,7 @@ void options_cli::check_unregistered(VW::io::logger& logger)
 
   for (auto const& kv : m_prog_parsed_token_map)
   {
+    if(kv.first == "__POSITIONAL__") { continue; }
     const auto supplied = std::string{kv.first};
     if (m_reachable_options.count(supplied) == 0)
     {
