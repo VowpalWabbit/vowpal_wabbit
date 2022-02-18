@@ -5,8 +5,8 @@ bits:18
 lda:0
 0 ngram:
 0 skip:
-options: --cb_adf --cb_explore_adf --cb_sample --cb_type mtr --ccb_explore_adf --csoaa_ldf multiline --csoaa_rank
-Checksum: 3404196193
+options: --cb_adf --cb_explore_adf --cb_sample --cb_type=mtr --ccb_explore_adf --csoaa_ldf=multiline --csoaa_rank
+Checksum: 4173322483
 CCB: has_seen_multi_slot_example = true
 event_sum 2
 action_sum 5

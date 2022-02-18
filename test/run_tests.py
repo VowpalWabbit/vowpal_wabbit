@@ -110,7 +110,7 @@ class TestOutcome:
 
 
 def try_decode(binary_object: Optional[bytes]) -> str:
-    return binary_object.decode("utf-8") if binary_object is not None else ""
+    return binary_object.decode("utf-8", "ignore") if binary_object is not None else ""
 
 
 # Returns true if they are close enough to be considered equal.

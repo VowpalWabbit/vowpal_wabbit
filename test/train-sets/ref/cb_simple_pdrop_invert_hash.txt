@@ -5,8 +5,8 @@ bits:18
 lda:0
 0 ngram:
 0 skip:
-options: --cb_adf --cb_explore_adf --cb_type mtr --csoaa_ldf multiline --csoaa_rank
-Checksum: 3590524534
+options: --cb_adf --cb_explore_adf --cb_type=mtr --csoaa_ldf=multiline --csoaa_rank
+Checksum: 2855237748
 event_sum 1
 action_sum 2
 :0

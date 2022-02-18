@@ -6,8 +6,8 @@ bits:18
 lda:0
 0 ngram:
 0 skip:
-options: "--interactions=ab \"c"
-Checksum: 3966513901
+options: --interactions="ab \"c"
+Checksum: 963270196
 :1
 initial_t 0
 norm normalizer 0

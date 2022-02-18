@@ -6,8 +6,8 @@ bits:18
 lda:0
 0 ngram:
 0 skip:
-options: --cb_adf --cb_explore_adf --cb_sample --cb_type mtr --ccb_explore_adf --csoaa_ldf multiline --csoaa_rank --quadratic ::
-Checksum: 1827071792
+options: --cb_adf --cb_explore_adf --cb_sample --cb_type=mtr --ccb_explore_adf --csoaa_ldf=multiline --csoaa_rank --quadratic=::
+Checksum: 847913712
 CCB: has_seen_multi_slot_example = true
 event_sum 33
 action_sum 132

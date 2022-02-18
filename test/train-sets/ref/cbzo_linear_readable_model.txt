@@ -6,8 +6,8 @@ bits:18
 lda:0
 0 ngram:
 0 skip:
-options: --cbzo --policy linear
-Checksum: 1941174661
+options: --cbzo --policy=linear
+Checksum: 1142511510
 50664:-0.452471
 116060:-0.0388234
 130684:0.255139

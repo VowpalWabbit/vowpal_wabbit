@@ -5,8 +5,8 @@ bits:18
 lda:0
 0 ngram:
 0 skip:
-options: --oaa 3 --quadratic ::
-Checksum: 1543578543
+options: --oaa=3 --quadratic=::
+Checksum: 1757715266
 :0
 f^y*f^c:132:-0.0503654
 f^y*f^c[1]:133:0.0655919

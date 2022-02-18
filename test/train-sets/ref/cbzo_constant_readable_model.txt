@@ -6,6 +6,6 @@ bits:18
 lda:0
 0 ngram:
 0 skip:
-options: --cbzo --policy constant
-Checksum: 2756831268
+options: --cbzo --policy=constant
+Checksum: 4014500053
 116060:3.57507

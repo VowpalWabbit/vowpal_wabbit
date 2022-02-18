@@ -1452,7 +1452,12 @@ std::unordered_map<std::string, std::vector<std::string>> parse_model_command_li
   std::string last_option;
   for (const auto& token : command_line)
   {
-    assert(is_long_option_like(token));
+    // If an invalid token is found, skip it.
+    if(!is_long_option_like(token))
+    {
+      continue;
+    }
+
     const auto equal_sign_pos = token.find('=');
     if (equal_sign_pos != std::string::npos)
     {

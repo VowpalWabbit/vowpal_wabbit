@@ -6,8 +6,8 @@ bits:18
 lda:0
 0 ngram:
 0 skip:
-options: --interactions aa --ignore_linear a
-Checksum: 827642570
+options: --interactions=aa --ignore_linear=a
+Checksum: 4122797306
 :0
 ab^feat_2*ac^feat_3:10184:0.079418
 ac^feat_4*ac^feat_4:18898:0.079418

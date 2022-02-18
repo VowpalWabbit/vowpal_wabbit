@@ -6,8 +6,8 @@ bits:18
 lda:0
 0 ngram:
 0 skip:
-options: --coin --quadratic ::
-Checksum: 3154474596
+options: --coin --quadratic=::
+Checksum: 3065088883
 :1
 initial_t 0
 norm normalizer 3

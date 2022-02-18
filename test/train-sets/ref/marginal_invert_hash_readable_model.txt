@@ -6,8 +6,8 @@ bits:18
 lda:0
 0 ngram:
 0 skip:
-options: --marginal f
-Checksum: 1022815765
+options: --marginal=f
+Checksum: 1004729889
 marginals size = 6
 f^constant*id2:1.4995:1.999
 f^constant2*id6:1.24875:2.997
