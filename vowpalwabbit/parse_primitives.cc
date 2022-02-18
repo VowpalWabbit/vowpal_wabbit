@@ -77,49 +77,51 @@ std::vector<std::string> split_impl(It begin, It end)
 
   bool inside_quote = false;
   char quote_char = '\0';
-  std::string current;
-  for (; begin != end; ++begin)
+  std::string current_str;
+  for (It current = begin; current != end; ++current)
   {
-    if (is_escape_char(*begin))
+    if (is_escape_char(*current))
     {
-      begin++;
-      current.append(1, unescape_char(begin, end));
+      current++;
+      current_str.append(1, unescape_char(current, end));
     }
-    else if (is_delim(*begin))
+    else if (is_delim(*current))
     {
       // If we're not inside a token, this token is done. Otherwise just add the space to the token.
       if (!inside_quote)
       {
-        if (!current.empty()) { ret.push_back(current); }
-        current.clear();
+        if (!current_str.empty()) { ret.push_back(current_str); }
+        current_str.clear();
       }
       else
       {
-        current.append(1, *begin);
+        current_str.append(1, *current);
       }
     }
-    else if (is_quote(*begin))
+    else if (is_quote(*current))
     {
-      if (inside_quote && quote_char == *begin) { inside_quote = false; }
+      if (inside_quote && quote_char == *current) { inside_quote = false; }
       else if (!inside_quote)
       {
         inside_quote = true;
-        quote_char = *begin;
+        quote_char = *current;
       }
       else
       {
-        current.append(1, *begin);
+        current_str.append(1, *current);
       }
     }
     else
     {
-      current.append(1, *begin);
+      current_str.append(1, *current);
     }
   }
 
-  if (inside_quote) { THROW("unbalanced quotes in string"); }
+  if (inside_quote) {
+    std::string input_string{begin, end};
+    THROW("unbalanced quotes in string: " << input_string); }
 
-  if (!current.empty()) { ret.push_back(current); }
+  if (!current_str.empty()) { ret.push_back(current_str); }
   return ret;
 }
 
