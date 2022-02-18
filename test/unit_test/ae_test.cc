@@ -55,15 +55,15 @@ BOOST_AUTO_TEST_CASE(ae_test_change_dist)
   const size_t num_iterations = 10000;
   const std::vector<uint64_t> swap_after = {5000};
   const size_t seed = 10;
-  const size_t deterministic_champ_switch = 6710;
+  const size_t deterministic_champ_switch = 6861;
   callback_map test_hooks;
 
   test_hooks.emplace(deterministic_champ_switch - 1, [&](cb_sim&, VW::workspace& all, multi_ex&) {
     VW::ae::ae_data* ae = ae_test::get_ae_data(all);
-    BOOST_CHECK_EQUAL(ae->scored_configs[0].update_count, 29);
-    BOOST_CHECK_EQUAL(ae->scored_configs[1].update_count, 35);
-    BOOST_CHECK_EQUAL(ae->scored_configs[2].update_count, 100);
-    BOOST_CHECK_EQUAL(ae->scored_configs[3].update_count, 6709);
+    BOOST_CHECK_EQUAL(ae->scored_configs[0].update_count, 79);
+    BOOST_CHECK_EQUAL(ae->scored_configs[1].update_count, 85);
+    BOOST_CHECK_EQUAL(ae->scored_configs[2].update_count, 251);
+    BOOST_CHECK_EQUAL(ae->scored_configs[3].update_count, 6860);
     BOOST_CHECK_EQUAL(ae->scored_configs[0].get_model_idx(), 1);
     BOOST_CHECK_EQUAL(ae->scored_configs[1].get_model_idx(), 2);
     BOOST_CHECK_EQUAL(ae->scored_configs[2].get_model_idx(), 0);
@@ -74,9 +74,9 @@ BOOST_AUTO_TEST_CASE(ae_test_change_dist)
   test_hooks.emplace(deterministic_champ_switch, [&](cb_sim&, VW::workspace& all, multi_ex&) {
     VW::ae::ae_data* ae = ae_test::get_ae_data(all);
     BOOST_CHECK_EQUAL(ae->scored_configs[0].update_count, 0);
-    BOOST_CHECK_EQUAL(ae->scored_configs[1].update_count, 30);
-    BOOST_CHECK_EQUAL(ae->scored_configs[2].update_count, 36);
-    BOOST_CHECK_EQUAL(ae->scored_configs[3].update_count, 101);
+    BOOST_CHECK_EQUAL(ae->scored_configs[1].update_count, 80);
+    BOOST_CHECK_EQUAL(ae->scored_configs[2].update_count, 86);
+    BOOST_CHECK_EQUAL(ae->scored_configs[3].update_count, 252);
     BOOST_CHECK_EQUAL(ae->scored_configs[0].get_model_idx(), 3);
     BOOST_CHECK_EQUAL(ae->scored_configs[1].get_model_idx(), 1);
     BOOST_CHECK_EQUAL(ae->scored_configs[2].get_model_idx(), 2);

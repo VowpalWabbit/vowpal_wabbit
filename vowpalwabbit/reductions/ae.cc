@@ -75,6 +75,7 @@ void learn(ae_data& data, VW::LEARNER::multi_learner& base, multi_ex& examples)
     labelled_action = std::distance(examples.begin(), it);
   }
 
+  const float r = -logged.cost;
   // Process each model, then update the upper/lower bounds for each model
   for (auto config_iter = data.scored_configs.begin(); config_iter != data.scored_configs.end(); ++config_iter)
   {
@@ -84,11 +85,15 @@ void learn(ae_data& data, VW::LEARNER::multi_learner& base, multi_ex& examples)
     ep_fts.epsilon = decayed_epsilon(config_iter->update_count);
     if (!base.learn_returns_prediction) { base.predict(examples, config_iter->get_model_idx()); }
     base.learn(examples, config_iter->get_model_idx());
-
-    const float w = logged.probability > 0 ? 1 / logged.probability : 0;
-    const float r = -logged.cost;
-    const uint32_t chosen_action = examples[0]->pred.a_s[0].action;
-    config_iter->update_bounds((chosen_action == labelled_action) ? w : 0, r);
+    for (const auto& a_s : examples[0]->pred.a_s)
+    {
+      if (a_s.action == labelled_action)
+      {
+        const float w = (logged.probability > 0) ? a_s.score / logged.probability : 0;
+        config_iter->update_bounds(w, r);
+        break;
+      }
+    }
   }
 
   // If the lower bound of a model exceeds the upperbound of the champion, migrate the new model as
