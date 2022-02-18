@@ -216,20 +216,11 @@ void consume_short_option(const std::map<char, std::shared_ptr<base_option>>& kn
   for (auto& token : current_tokens) { result_tokens.push_back(token); }
 }
 
-namespace VW
-{
-namespace config
-{
-namespace details
-{
 struct cli_typed_option_handler : typed_option_visitor
 {
-  options_cli& m_options;
   std::unordered_map<VW::string_view, std::vector<VW::string_view>>& m_tokens;
 
-  cli_typed_option_handler(
-      options_cli& options, std::unordered_map<VW::string_view, std::vector<VW::string_view>>& tokens)
-      : m_options(options), m_tokens(tokens)
+  cli_typed_option_handler(std::unordered_map<VW::string_view, std::vector<VW::string_view>>& tokens) : m_tokens(tokens)
   {
   }
 
@@ -362,20 +353,14 @@ std::unordered_map<VW::string_view, std::vector<VW::string_view>> parse_token_ma
   return m_map;
 }
 
-}  // namespace details
-
-}  // namespace config
-}  // namespace VW
-
 options_cli::options_cli(std::vector<std::string> args) : m_command_line(std::move(args)) {}
 
 void options_cli::internal_add_and_parse(const option_group_definition& group)
 {
-  m_prog_parsed_token_map =
-      details::parse_token_map_with_current_info(m_command_line, m_options, m_short_options, false);
+  m_prog_parsed_token_map = parse_token_map_with_current_info(m_command_line, m_options, m_short_options, false);
   for (const auto& opt_ptr : group.m_options)
   {
-    details::cli_typed_option_handler handler(*this, m_prog_parsed_token_map);
+    cli_typed_option_handler handler(m_prog_parsed_token_map);
     opt_ptr->accept(handler);
   }
 
@@ -417,8 +402,7 @@ void options_cli::check_unregistered(VW::io::logger& logger)
 {
   // Reparse but this time allowing the terminator to be handled so we don't accidentally interpret a positional
   // argument as an unknown option.
-  m_prog_parsed_token_map =
-      details::parse_token_map_with_current_info(m_command_line, m_options, m_short_options, true);
+  m_prog_parsed_token_map = parse_token_map_with_current_info(m_command_line, m_options, m_short_options, true);
 
   for (auto str : m_prog_parsed_token_map["__POSITIONAL__"])
   {
@@ -474,7 +458,7 @@ void options_cli::replace(const std::string& key, const std::string& value)
 std::vector<std::string> options_cli::get_positional_tokens() const
 {
   // Reparse but this time allowing the terminator to be handled.
-  auto parsed_tokens = details::parse_token_map_with_current_info(m_command_line, m_options, m_short_options, true);
+  auto parsed_tokens = parse_token_map_with_current_info(m_command_line, m_options, m_short_options, true);
 
   std::vector<std::string> positional_tokens;
   auto it = parsed_tokens.find("__POSITIONAL__");

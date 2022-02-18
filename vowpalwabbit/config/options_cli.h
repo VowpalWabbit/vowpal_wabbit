@@ -19,11 +19,6 @@ namespace VW
 {
 namespace config
 {
-namespace details
-{
-struct cli_typed_option_handler;
-}  // namespace details
-
 struct options_cli : public options_i
 {
   options_cli(std::vector<std::string> args);
@@ -34,8 +29,6 @@ struct options_cli : public options_i
   void insert(const std::string& key, const std::string& value) override;
   void replace(const std::string& key, const std::string& value) override;
   VW_ATTR(nodiscard) std::vector<std::string> get_positional_tokens() const override;
-
-  friend struct details::cli_typed_option_handler;
 
 private:
   std::vector<std::string> m_command_line;
