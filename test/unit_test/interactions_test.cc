@@ -14,8 +14,8 @@
 #include "test_common.h"
 #include "vw.h"
 #include "gd_predict.h"
-#include "gd.h"
-#include "interactions.h"
+#include "reductions/gd.h"
+#include "reductions/interactions.h"
 #include "parse_args.h"
 #include "constant.h"
 #include "interactions_predict.h"
@@ -341,7 +341,7 @@ BOOST_AUTO_TEST_CASE(compile_interactions_cubic_permutations)
 
 BOOST_AUTO_TEST_CASE(parse_full_name_interactions_test)
 {
-  auto* vw = VW::initialize("");
+  auto* vw = VW::initialize("--quiet");
 
   {
     auto a = parse_full_name_interactions(*vw, "a|b");

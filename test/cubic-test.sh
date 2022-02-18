@@ -2,8 +2,8 @@
 
 NAME='cubic-test'
 
-DataSet=/tmp/${NAME}.train
-IH=/tmp/${NAME}.ih
+DataSet=./${NAME}.train
+IH=./${NAME}.ih
 
 
 VW=vw

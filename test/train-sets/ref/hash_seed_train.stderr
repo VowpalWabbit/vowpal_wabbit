@@ -1,17 +1,16 @@
-[info] Generating 2-grams for all namespaces.
-creating quadratic features for pairs: :: 
-WARNING: any duplicate namespace interactions will be removed
-You can use --leave_duplicate_interactions to disable this behaviour.
+creating quadratic features for pairs: ::
 final_regressor = hash_seed5.model
+creating cache_file = train-sets/rcv1_mini.dat.cache
+Reading datafile = train-sets/rcv1_mini.dat
+num sources = 1
 Num weight bits = 18
 learning rate = 0.5
 initial_t = 0
 power_t = 0.5
 decay_learning_rate = 1
-creating cache_file = train-sets/rcv1_mini.dat.cache
-Reading datafile = train-sets/rcv1_mini.dat
-num sources = 1
 Enabled reductions: gd, generate_interactions, scorer-identity, count_label
+Input label = simple
+Output pred = scalar
 average  since         example        example  current  current  current
 loss     last          counter         weight    label  predict features
 1.000000 1.000000            1            1.0  -1.0000   0.0000    32385

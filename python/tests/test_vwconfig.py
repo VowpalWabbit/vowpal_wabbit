@@ -1,6 +1,5 @@
 from vowpalwabbit import pyvw
-
-import pytest
+import vowpalwabbit
 
 def helper_options_to_list_strings(config):
     cmd_str_list = []
@@ -14,11 +13,18 @@ def helper_options_to_list_strings(config):
 
     return cmd_str_list
 
-def test_vw_config_manager():
-    expected_set = {'--quiet', '--loss_function logistic', '--save_resume', '--data /root/vowpal_wabbit/test/train-sets/rcv1_small.dat'}
-    expected_reductions = {'gd', 'scorer-identity', 'count_label'}
 
-    vw = pyvw.vw(arg_str="--save_resume --loss_function logistic -d /root/vowpal_wabbit/test/train-sets/rcv1_small.dat --quiet")
+def test_vw_config_manager():
+    expected_set = {
+        "--quiet",
+        "--loss_function logistic",
+        "--data test/train-sets/rcv1_small.dat",
+    }
+    expected_reductions = {"gd", "scorer-identity", "count_label"}
+
+    vw = vowpalwabbit.Workspace(
+        arg_str="--loss_function logistic -d test/train-sets/rcv1_small.dat --quiet"
+    )
     config = vw.get_config()
     enabled_reductions = vw.get_enabled_reductions()
 
@@ -31,13 +37,14 @@ def test_vw_config_manager():
     # do another iteration generating the cmd string from the output of previous
     new_args = " ".join(cmd_str_list)
 
-    other_vw = pyvw.vw(new_args)
+    other_vw = vowpalwabbit.Workspace(new_args)
     new_config = vw.get_config()
     new_cmd_str_list = helper_options_to_list_strings(new_config)
 
     assert set(new_cmd_str_list) == expected_set
 
     other_vw.finish()
+
 
 def test_vw_get_all_options():
     config = pyvw.get_all_vw_options()

@@ -6,7 +6,7 @@
 #include "vw_example.h"
 #include "vw_prediction.h"
 #include "simple_label_parser.h"
-#include "gd.h"
+#include "reductions/gd.h"
 #include <algorithm>
 #include "shared_data.h"
 
@@ -121,7 +121,7 @@ void FormatIndices(example* a, System::Text::StringBuilder^ sb)
 System::String^ FormatIndices(example* a, example *b)
 { auto sb = gcnew System::Text::StringBuilder();
 
-  sb->AppendFormat("Namespace indicies differ: {0} vs {1}. this.indices: [",
+  sb->AppendFormat("Namespace indices differ: {0} vs {1}. this.indices: [",
                    a->indices.size(),
                    b->indices.size());
 
@@ -136,7 +136,7 @@ System::String^ FormatIndices(example* a, example *b)
   return sb->ToString();
 }
 
-System::String^ FormatFeature(vw* vw, feature_value& f1, feature_index& i1)
+System::String^ FormatFeature(VW::workspace* vw, feature_value& f1, feature_index& i1)
 { uint64_t masked_weight_index1 = i1 & vw->weights.mask();
 
   return System::String::Format(
@@ -146,7 +146,7 @@ System::String^ FormatFeature(vw* vw, feature_value& f1, feature_index& i1)
            gcnew System::Single(f1));
 }
 
-System::String^ FormatFeature(vw* vw, feature_value& f1, feature_index& i1, feature_value& f2, feature_index& i2)
+System::String^ FormatFeature(VW::workspace* vw, feature_value& f1, feature_index& i1, feature_value& f2, feature_index& i2)
 { return System::String::Format(
            "Feature differ: this({0}) vs other({1})",
            FormatFeature(vw, f1, i1),
@@ -162,24 +162,24 @@ bool FloatEqual(float a, float b)
   return abs(a - b) / std::max(a, b) < 1e-6;
 }
 
-System::String^ FormatFeatures(vw* vw, features& arr)
+System::String^ FormatFeatures(VW::workspace* vw, features& arr)
 { auto sb = gcnew System::Text::StringBuilder();
   for (size_t i = 0; i < arr.values.size(); i++)
-  { sb->Append(FormatFeature(vw, arr.values[i], arr.indicies[i]))->Append(" ");
+  { sb->Append(FormatFeature(vw, arr.values[i], arr.indices[i]))->Append(" ");
   }
 
   return sb->ToString();
 }
 
-System::String^ CompareFeatures(vw* vw, features& fa, features& fb, unsigned char ns)
+System::String^ CompareFeatures(VW::workspace* vw, features& fa, features& fb, unsigned char ns)
 { std::vector<size_t> fa_missing;
   for (size_t ia = 0, ib = 0; ia < fa.values.size(); ia++)
-  { auto masked_weight_index = fa.indicies[ia] & vw->weights.mask();
-    auto other_masked_weight_index = fb.indicies[ib] & vw->weights.mask();
+  { auto masked_weight_index = fa.indices[ia] & vw->weights.mask();
+    auto other_masked_weight_index = fb.indices[ib] & vw->weights.mask();
 
     /*System::Diagnostics::Debug::WriteLine(System::String::Format("{0} -> {1} vs {2} -> {3}",
-      fa.indicies[ia], masked_weight_index,
-      fb.indicies[ib], other_masked_weight_index
+      fa.indices[ia], masked_weight_index,
+      fb.indices[ib], other_masked_weight_index
       ));*/
 
     if (masked_weight_index == other_masked_weight_index && FloatEqual(fa.values[ia], fb.values[ib]))
@@ -189,10 +189,10 @@ System::String^ CompareFeatures(vw* vw, features& fa, features& fb, unsigned cha
       size_t ib_old = ib;
       bool found = false;
       for (ib = 0; ib < fb.values.size(); ib++)
-      { auto other_masked_weight_index = fb.indicies[ib] & vw->weights.mask();
+      { auto other_masked_weight_index = fb.indices[ib] & vw->weights.mask();
         if (masked_weight_index == other_masked_weight_index)
         { if (!FloatEqual(fa.values[ia], fb.values[ib]))
-          { return FormatFeature(vw, fa.values[ia], fa.indicies[ia], fb.values[ib], fb.indicies[ib]);
+          { return FormatFeature(vw, fa.values[ia], fa.indices[ia], fb.values[ib], fb.indices[ib]);
           }
           else
           { found = true;
@@ -214,7 +214,7 @@ System::String^ CompareFeatures(vw* vw, features& fa, features& fb, unsigned cha
     diff->AppendFormat("missing features in ns '{0}'/'{1}': ", ns, gcnew Char(ns));
     for (size_t& ia : fa_missing)
     { diff->AppendFormat("this.weight_index = {0}, x = {1}, ",
-                         fa.indicies[ia] & vw->weights.mask(),
+                         fa.indices[ia] & vw->weights.mask(),
                          fa.values[ia]);
     }
 
@@ -384,7 +384,7 @@ uint64_t VowpalWabbitFeature::WeightIndex::get()
 { if (m_example == nullptr)
     throw gcnew InvalidOperationException("VowpalWabbitFeature must be initialized with example");
 
-  vw* vw = m_example->Owner->Native->m_vw;
+  VW::workspace* vw = m_example->Owner->Native->m_vw;
   return ((m_weight_index + m_example->m_example->ft_offset) >> vw->weights.stride_shift()) & vw->parse_mask;
 }
 
@@ -392,7 +392,7 @@ float VowpalWabbitFeature::Weight::get()
 { if (m_example == nullptr)
     throw gcnew InvalidOperationException("VowpalWabbitFeature must be initialized with example");
 
-  vw* vw = m_example->Owner->Native->m_vw;
+  VW::workspace* vw = m_example->Owner->Native->m_vw;
 
   uint64_t weightIndex = m_weight_index + m_example->m_example->ft_offset;
   return vw->weights[weightIndex];
@@ -400,7 +400,7 @@ float VowpalWabbitFeature::Weight::get()
 
 
 float VowpalWabbitFeature::AuditWeight::get()
-{ vw* vw = m_vw->m_vw;
+{ VW::workspace* vw = m_vw->m_vw;
 
   return GD::trunc_weight(Weight, (float)vw->sd->gravity) * (float)vw->sd->contraction;
 }

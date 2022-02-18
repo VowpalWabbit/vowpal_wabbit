@@ -7,15 +7,15 @@
 #include <vector>
 
 #include "vw_to_flat.h"
-#include "options.h"
+#include "config/options.h"
 #include "parse_args.h"
 #include "parse_regressor.h"
 #include "accumulate.h"
 #include "best_constant.h"
 #include "vw_exception.h"
-#include "options_boost_po.h"
+#include "config/options_boost_po.h"
 #include "hash.h"
-#include "cb_algs.h"
+#include "reductions/cb/cb_algs.h"
 #include "shared_data.h"
 
 void write_buffer_to_file(std::ofstream& outfile, flatbuffers::FlatBufferBuilder& builder,
@@ -412,7 +412,7 @@ void to_flat::convert_txt_to_flat(VW::workspace& all)
     {
       for (features& fs : *ae)
       {
-        for (auto& j : fs.indicies) { j /= multiplier; }
+        for (auto& j : fs.indices) { j /= multiplier; }
       }
     }
     std::vector<flatbuffers::Offset<VW::parsers::flatbuffer::Namespace>> namespaces;

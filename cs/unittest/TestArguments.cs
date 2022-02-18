@@ -88,7 +88,7 @@ namespace cs_unittest
         [TestCategory("Vowpal Wabbit")]
         public void TestArgumentDeDup()
         {
-            using (var vw = new VowpalWabbit("-l 0.3 -l 0.3 --learning_rate 0.3 -f model1 --save_resume -q ab"))
+            using (var vw = new VowpalWabbit("-l 0.3 -l 0.3 --learning_rate 0.3 -f model1 -q ab"))
             {
                 Assert.AreEqual(0.3f, vw.Native.Arguments.LearningRate);
             }
@@ -97,7 +97,7 @@ namespace cs_unittest
             {
                 using (var vw =
                     new VowpalWabbit(
-                        "--cb 2 --cb_type ips --cb_type dm --learning_rate 0.1 -f model_bad --save_resume -q ab"))
+                        "--cb 2 --cb_type ips --cb_type dm --learning_rate 0.1 -f model_bad -q ab"))
                 {
                     Assert.AreEqual(0.1f, vw.Native.Arguments.LearningRate);
                 }
@@ -107,12 +107,12 @@ namespace cs_unittest
             catch (VowpalWabbitException)
             { }
 
-            using (var vw = new VowpalWabbit("-i model1 --save_resume"))
+            using (var vw = new VowpalWabbit("-i model1"))
             {
-                Assert.AreEqual(0.5f, vw.Native.Arguments.LearningRate);
+                Assert.AreEqual(0.3f, vw.Native.Arguments.LearningRate);
             }
 
-            using (var vw = new VowpalWabbit("-i model1 --save_resume -q ab -l 0.4"))
+            using (var vw = new VowpalWabbit("-i model1 -q ab -l 0.4"))
             {
                 Assert.AreEqual(0.4f, vw.Native.Arguments.LearningRate);
             }

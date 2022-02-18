@@ -7,6 +7,7 @@
 #include <string>
 
 #include "vw_string_view.h"
+#include "io/logger.h"
 
 namespace VW
 {
@@ -23,5 +24,15 @@ bool ends_with(VW::string_view full_string, VW::string_view ending);
  * and must be in the form \x00 \param arg String to replace hex values within \return A copy of the original string
  * with hex values replaced with corresponding byte.
  */
-std::string decode_inline_hex(VW::string_view arg);
+std::string decode_inline_hex(VW::string_view arg, VW::io::logger& logger);
+
+/**
+ * @brief Wrap text by whole words with the given column width.
+ *
+ * @param text text to wrap
+ * @param width column width to wrap to
+ * @return std::string copy of string with required newlines
+ */
+std::string wrap_text(VW::string_view text, size_t width);
+
 }  // namespace VW

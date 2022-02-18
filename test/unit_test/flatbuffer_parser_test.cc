@@ -71,7 +71,7 @@ BOOST_AUTO_TEST_CASE(test_flatbuffer_standalone_example)
   all->flat_converter->parse_examples(all, unused_buffer, examples, buf);
 
   auto example = all->flat_converter->data()->example_obj_as_Example();
-  BOOST_CHECK_EQUAL(example->namespaces()->Length(), 1);
+  BOOST_CHECK_EQUAL(example->namespaces()->size(), 1);
   BOOST_CHECK_EQUAL(example->namespaces()->Get(0)->features()->size(), 1);
   BOOST_CHECK_CLOSE(example->label_as_SimpleLabel()->label(), 0.0, FLOAT_TOL);
   BOOST_CHECK_CLOSE(example->label_as_SimpleLabel()->weight(), 1.0, FLOAT_TOL);
@@ -115,8 +115,8 @@ BOOST_AUTO_TEST_CASE(test_flatbuffer_collection)
   all->flat_converter->parse_examples(all, unused_buffer, examples, buf);
 
   auto collection_examples = all->flat_converter->data()->example_obj_as_ExampleCollection()->examples();
-  BOOST_CHECK_EQUAL(collection_examples->Length(), 1);
-  BOOST_CHECK_EQUAL(collection_examples->Get(0)->namespaces()->Length(), 1);
+  BOOST_CHECK_EQUAL(collection_examples->size(), 1);
+  BOOST_CHECK_EQUAL(collection_examples->Get(0)->namespaces()->size(), 1);
   BOOST_CHECK_EQUAL(collection_examples->Get(0)->namespaces()->Get(0)->features()->size(), 1);
   BOOST_CHECK_CLOSE(collection_examples->Get(0)->label_as_SimpleLabel()->label(), 0.0, FLOAT_TOL);
   BOOST_CHECK_CLOSE(collection_examples->Get(0)->label_as_SimpleLabel()->weight(), 1.0, FLOAT_TOL);

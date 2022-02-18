@@ -4,8 +4,8 @@
 
 #include "decision_scores.h"
 
-#include "slates.h"
-#include "conditional_contextual_bandit.h"
+#include "reductions/slates.h"
+#include "reductions/conditional_contextual_bandit.h"
 #include "action_score.h"
 #include "io_buf.h"
 #include "global_data.h"
@@ -15,13 +15,11 @@
 
 #include <iostream>
 
-namespace logger = VW::io::logger;
-
 template <typename LabelPrintFunc>
 void print_update(VW::workspace& all, const std::vector<example*>& slots, const VW::decision_scores_t& decision_scores,
     size_t num_features, LabelPrintFunc label_print_func)
 {
-  if (all.sd->weighted_examples() >= all.sd->dump_interval && !all.logger.quiet && !all.bfgs)
+  if (all.sd->weighted_examples() >= all.sd->dump_interval && !all.quiet && !all.bfgs)
   {
     std::ostringstream label_buf;
     label_buf << std::setw(shared_data::col_current_label) << std::right << std::setfill(' ')
@@ -53,7 +51,7 @@ void print_update(VW::workspace& all, const std::vector<example*>& slots, const 
 
 namespace VW
 {
-void print_decision_scores(VW::io::writer* f, const VW::decision_scores_t& decision_scores)
+void print_decision_scores(VW::io::writer* f, const VW::decision_scores_t& decision_scores, VW::io::logger& logger)
 {
   if (f != nullptr)
   {
@@ -71,7 +69,7 @@ void print_decision_scores(VW::io::writer* f, const VW::decision_scores_t& decis
     const auto str = ss.str();
     ssize_t len = str.size();
     ssize_t t = f->write(str.c_str(), static_cast<unsigned int>(len));
-    if (t != len) { logger::errlog_error("write error: {}", VW::strerror_to_string(errno)); }
+    if (t != len) { logger.err_error("write error: {}", VW::strerror_to_string(errno)); }
   }
 }
 

@@ -1,12 +1,13 @@
+using no cache
+Reading datafile = train-sets/ccb_data_parse_error.json
+num sources = 1
 Num weight bits = 18
 learning rate = 0.5
 initial_t = 0
 power_t = 0.5
-using no cache
-Reading datafile = train-sets/ccb_data_parse_error.json
-WARNING: Old string feature value behavior is deprecated in JSON/DSJSON and will be removed in a future version. Use `--chain_hash` to use new behavior and silence this warning.
-num sources = 1
 Enabled reductions: gd, generate_interactions, scorer-identity, csoaa_ldf-rank, cb_adf, cb_explore_adf_greedy, cb_sample, shared_feature_merger, ccb_explore_adf, extra_metrics
+Input label = ccb
+Output pred = decision_probs
 average  since         example        example  current  current  current
 loss     last          counter         weight    label  predict features
 0.000000 0.000000            1            1.0  3:0,0:0      3,0       98
@@ -17,6 +18,7 @@ loss     last          counter         weight    label  predict features
 -0.328594 -0.123250           32           32.0  1:-0.42        1       40
 [error] JSON parser error at 43: Missing a comma or '}' after an object member.. Handler:  State: DecisionService
 -0.547531 -0.766469           64           64.0      1:0        1       40
+[error] JSON parser error at 67: Terminate parsing due to Handler error.. Handler: Unexpected token: uint (0) State: StringToStringState
 
 finished run
 number of examples = 68
@@ -24,4 +26,3 @@ weighted example sum = 68.000000
 weighted label sum = 0.000000
 average loss = -0.572868
 total feature number = 3126
-[critical] Omitted some log lines. Re-run without --limit_output N for full log. Total log lines: 3

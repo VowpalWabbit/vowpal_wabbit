@@ -13,6 +13,9 @@
 // TODO: This header can be removed once type and explicit_included_actions are removed from the label
 #include "ccb_reduction_features.h"
 #include "vw_string_view.h"
+#include "io_buf.h"
+
+#include "fmt/format.h"
 
 namespace CCB
 {
@@ -105,9 +108,31 @@ struct label
 };
 
 void default_label(CCB::label& ld);
-void parse_label(label& ld, VW::label_parser_reuse_mem& reuse_mem, const std::vector<VW::string_view>& words);
-void cache_label(const CCB::label& ld, io_buf& cache);
-size_t read_cached_label(CCB::label& ld, io_buf& cache);
+void parse_label(label& ld, VW::label_parser_reuse_mem& reuse_mem, const std::vector<VW::string_view>& words,
+    VW::io::logger& logger);
 
 extern label_parser ccb_label_parser;
 }  // namespace CCB
+
+namespace VW
+{
+namespace model_utils
+{
+size_t read_model_field(io_buf&, CCB::conditional_contextual_bandit_outcome&);
+size_t write_model_field(io_buf&, const CCB::conditional_contextual_bandit_outcome&, const std::string&, bool);
+size_t read_model_field(io_buf&, CCB::label&);
+size_t write_model_field(io_buf&, const CCB::label&, const std::string&, bool);
+}  // namespace model_utils
+}  // namespace VW
+
+namespace fmt
+{
+template <>
+struct formatter<CCB::example_type> : formatter<std::string>
+{
+  auto format(CCB::example_type c, format_context& ctx) -> decltype(ctx.out())
+  {
+    return formatter<std::string>::format(std::string{VW::to_string(c)}, ctx);
+  }
+};
+}  // namespace fmt

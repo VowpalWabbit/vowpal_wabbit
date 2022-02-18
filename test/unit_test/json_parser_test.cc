@@ -8,7 +8,7 @@
 #include "test_common.h"
 
 #include <vector>
-#include "conditional_contextual_bandit.h"
+#include "reductions/conditional_contextual_bandit.h"
 #include "vw.h"
 // TODO: Make unit test dig out and verify features.
 BOOST_AUTO_TEST_CASE(parse_json_simple)
@@ -376,7 +376,7 @@ BOOST_AUTO_TEST_CASE(parse_json_slates_dom_parser)
   BOOST_CHECK_EQUAL(examples[5]->l.slates.slot_id, 1);
 
   check_collections_exact(examples[0]->indices, std::vector<namespace_index>{'G'});
-  BOOST_CHECK_EQUAL(examples[0]->feature_space['G'].indicies.size(), 4);
+  BOOST_CHECK_EQUAL(examples[0]->feature_space['G'].indices.size(), 4);
   BOOST_CHECK_EQUAL(examples[0]->feature_space['G'].namespace_extents.size(), 1);
 
   VW::finish_example(*slates_vw, examples);

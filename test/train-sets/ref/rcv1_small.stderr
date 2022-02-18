@@ -1,17 +1,17 @@
 using l2 regularization = 1
 enabling BFGS based optimization **without** curvature calculation
+## avg. loss 	der. mag. 	d. m. cond.	 wolfe1    	wolfe2    	mix fraction	curvature 	dir. magnitude	step size
+creating cache_file = train-sets/rcv1_small.dat.cache
+Reading datafile = train-sets/rcv1_small.dat
+num sources = 1
 Num weight bits = 18
 learning rate = 0.5
 initial_t = 0
 power_t = 0.5
 decay_learning_rate = 1
-m = 7
-Allocated 18M for weights and mem
-## avg. loss 	der. mag. 	d. m. cond.	 wolfe1    	wolfe2    	mix fraction	curvature 	dir. magnitude	step size
-creating cache_file = train-sets/rcv1_small.dat.cache
-Reading datafile = train-sets/rcv1_small.dat
-num sources = 1
 Enabled reductions: bfgs, scorer-identity, count_label
+Input label = simple
+Output pred = scalar
  1 0.69315   	0.00266   	0.87764   	          	          	          	2.24708   	776.93225 	0.39057
  3 0.51357   	0.00493   	4.93046   	 0.523903  	0.088793  	          	          	76.25746  	1.00000
  4 0.65936   	0.04915   	49.15203  	 -0.910623 	-2.480117 	          	          	(revise x 0.5)	0.50000
@@ -22,8 +22,8 @@ Enabled reductions: bfgs, scorer-identity, count_label
  9 0.48978   	0.00014   	0.13750   	 0.772760  	0.546931  	          	          	2.01229   	1.00000
 10 0.48472   	0.00027   	0.27437   	 0.750340  	0.501776  	          	          	3.21400   	1.00000
 11 0.47920   	0.00017   	0.16868   	 0.671044  	0.340515  	          	          	1.40136   	1.00000
-12 0.47707   	0.00001   	0.00760   	 0.593376  	0.181238  	          	          	0.09201   	1.00000
-13 0.47691   	0.00000   	0.00168   	 0.593262  	0.185017  	          	          	0.00955   	1.00000
+12 0.47707   	0.00001   	0.00760   	 0.593376  	0.181239  	          	          	0.09201   	1.00000
+13 0.47691   	0.00000   	0.00168   	 0.593256  	0.185017  	          	          	0.00955   	1.00000
 
 finished run
 number of examples per pass = 1000

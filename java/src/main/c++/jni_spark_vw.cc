@@ -2,7 +2,7 @@
 #include "vw_exception.h"
 #include "best_constant.h"
 #include "util.h"
-#include "options_serializer_boost_po.h"
+#include "config/cli_options_serializer.h"
 #include "learner.h"
 #include "simple_label_parser.h"
 #include <algorithm>
@@ -209,7 +209,7 @@ JNIEXPORT jobject JNICALL Java_org_vowpalwabbit_spark_VowpalWabbitNative_getArgu
   auto* all = reinterpret_cast<VW::workspace*>(get_native_pointer(env, vwObj));
 
   // serialize the command line
-  VW::config::options_serializer_boost_po serializer;
+  VW::config::cli_options_serializer serializer;
   for (auto const& option : all->options->get_all_options())
   {
     if (all->options->was_supplied(option->m_name))
@@ -412,7 +412,7 @@ JNIEXPORT void JNICALL Java_org_vowpalwabbit_spark_VowpalWabbitExample_addToName
 
     // pre-allocate
     features->values.reserve(features->values.capacity() + size);
-    features->indicies.reserve(features->indicies.capacity() + size);
+    features->indices.reserve(features->indices.capacity() + size);
 
     double* values_itr = values0;
     double* values_end = values0 + size;
@@ -422,7 +422,7 @@ JNIEXPORT void JNICALL Java_org_vowpalwabbit_spark_VowpalWabbitExample_addToName
       if (x != 0)
       {
         features->values.push_back_unchecked(x);
-        features->indicies.push_back_unchecked(weight_index_base & mask);
+        features->indices.push_back_unchecked(weight_index_base & mask);
       }
     }
   }
@@ -454,7 +454,7 @@ JNIEXPORT void JNICALL Java_org_vowpalwabbit_spark_VowpalWabbitExample_addToName
 
     // pre-allocate
     features->values.reserve(features->values.capacity() + size);
-    features->indicies.reserve(features->indicies.capacity() + size);
+    features->indices.reserve(features->indices.capacity() + size);
 
     int* indices_itr = indices0;
     int* indices_end = indices0 + size;
@@ -465,7 +465,7 @@ JNIEXPORT void JNICALL Java_org_vowpalwabbit_spark_VowpalWabbitExample_addToName
       if (x != 0)
       {
         features->values.push_back_unchecked(x);
-        features->indicies.push_back_unchecked(*indices_itr & mask);
+        features->indices.push_back_unchecked(*indices_itr & mask);
       }
     }
   }

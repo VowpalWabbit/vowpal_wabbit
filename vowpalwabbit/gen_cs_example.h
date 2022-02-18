@@ -5,8 +5,8 @@
 #include <cfloat>
 
 #include "vw.h"
-#include "reductions.h"
-#include "cb_algs.h"
+
+#include "reductions/cb/cb_algs.h"
 #include "vw_exception.h"
 #include "scope_exit.h"
 
@@ -42,9 +42,10 @@ struct cb_to_cs_adf
   VW::LEARNER::single_learner* scorer = nullptr;
 };
 
-float safe_probability(float prob);
+float safe_probability(float prob, VW::io::logger& logger);
 
-void gen_cs_example_ips(cb_to_cs& c, const CB::label& ld, COST_SENSITIVE::label& cs_ld, float clip_p = 0.f);
+void gen_cs_example_ips(
+    cb_to_cs& c, const CB::label& ld, COST_SENSITIVE::label& cs_ld, VW::io::logger& logger, float clip_p = 0.f);
 
 template <bool is_learn>
 void gen_cs_example_dm(cb_to_cs& c, example& ec, const CB::label& ld, COST_SENSITIVE::label& cs_ld)
@@ -163,12 +164,12 @@ void gen_cs_example_dr(
 }
 
 template <bool is_learn>
-void gen_cs_example(cb_to_cs& c, example& ec, const CB::label& ld, COST_SENSITIVE::label& cs_ld)
+void gen_cs_example(cb_to_cs& c, example& ec, const CB::label& ld, COST_SENSITIVE::label& cs_ld, VW::io::logger& logger)
 {
   switch (c.cb_type)
   {
     case VW::cb_type_t::ips:
-      gen_cs_example_ips(c, ld, cs_ld);
+      gen_cs_example_ips(c, ld, cs_ld, logger);
       break;
     case VW::cb_type_t::dm:
       gen_cs_example_dm<is_learn>(c, ec, ld, cs_ld);
@@ -183,7 +184,8 @@ void gen_cs_example(cb_to_cs& c, example& ec, const CB::label& ld, COST_SENSITIV
 
 void gen_cs_test_example(const multi_ex& examples, COST_SENSITIVE::label& cs_labels);
 
-void gen_cs_example_ips(const multi_ex& examples, COST_SENSITIVE::label& cs_labels, float clip_p = 0.f);
+void gen_cs_example_ips(
+    const multi_ex& examples, COST_SENSITIVE::label& cs_labels, VW::io::logger& logger, float clip_p = 0.f);
 
 void gen_cs_example_dm(const multi_ex& examples, COST_SENSITIVE::label& cs_labels);
 
@@ -228,13 +230,13 @@ void gen_cs_example_dr(cb_to_cs_adf& c, multi_ex& examples, COST_SENSITIVE::labe
 }
 
 template <bool is_learn>
-void gen_cs_example(cb_to_cs_adf& c, multi_ex& ec_seq, COST_SENSITIVE::label& cs_labels)
+void gen_cs_example(cb_to_cs_adf& c, multi_ex& ec_seq, COST_SENSITIVE::label& cs_labels, VW::io::logger& logger)
 {
   VW_DBG(*ec_seq[0]) << "gen_cs_example:" << is_learn << std::endl;
   switch (c.cb_type)
   {
     case VW::cb_type_t::ips:
-      gen_cs_example_ips(ec_seq, cs_labels);
+      gen_cs_example_ips(ec_seq, cs_labels, logger);
       break;
     case VW::cb_type_t::dr:
       gen_cs_example_dr<is_learn>(c, ec_seq, cs_labels);

@@ -22,8 +22,16 @@ if(NOT WIN32)
 
   add_test(
     NAME slow_tests
-
-    COMMAND python3 run_tests.py --ignore_dirty --test_spec ${CMAKE_CURRENT_SOURCE_DIR}/slow.vwtest.json
+    COMMAND python3 run_tests.py --ignore_dirty --test_spec ${CMAKE_CURRENT_SOURCE_DIR}/slow.vwtest.json --timeout 180
     WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
   )
+
+  if(BUILD_PRIVACY_ACTIVATION)
+    add_test(
+      NAME privacy_activation_tests
+
+      COMMAND python3 run_tests.py --ignore_dirty --test_spec ${CMAKE_CURRENT_SOURCE_DIR}/privacy_activation.vwtest.json
+      WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+    )
+  endif()
 endif()

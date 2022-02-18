@@ -5,9 +5,10 @@
 #include <algorithm>
 
 #include "example.h"
-#include "gd.h"
+#include "reductions/gd.h"
 #include "simple_label_parser.h"
-#include "interactions.h"
+#include "reductions/interactions.h"
+#include "model_utils.h"
 
 float calculate_total_sum_features_squared(bool permutations, example& ec)
 {
@@ -88,6 +89,9 @@ void copy_example_metadata(example* dst, const example* src)
   dst->end_pass = src->end_pass;
   dst->is_newline = src->is_newline;
   dst->sorted = src->sorted;
+#ifdef PRIVACY_ACTIVATION
+  dst->tag_hash = src->tag_hash;
+#endif
 }
 
 void copy_example_data(example* dst, const example* src)
@@ -306,6 +310,47 @@ void return_multiple_example(VW::workspace& all, v_array<example*>& examples)
   examples.clear();
 }
 
+namespace model_utils
+{
+size_t read_model_field(io_buf& io, flat_example& fe, label_parser& lbl_parser)
+{
+  size_t bytes = 0;
+  bool tag_is_null;
+  bytes += lbl_parser.read_cached_label(fe.l, fe._reduction_features, io);
+  bytes += read_model_field(io, fe.tag_len);
+  bytes += read_model_field(io, tag_is_null);
+  if (!tag_is_null) { bytes += read_model_field(io, *fe.tag); }
+  bytes += read_model_field(io, fe.example_counter);
+  bytes += read_model_field(io, fe.ft_offset);
+  bytes += read_model_field(io, fe.global_weight);
+  bytes += read_model_field(io, fe.num_features);
+  bytes += read_model_field(io, fe.total_sum_feat_sq);
+  unsigned char index = 0;
+  char* c;
+  bytes += read_cached_index(io, index, c);
+  bool sorted = true;
+  bytes += read_cached_features(io, fe.fs, sorted, c);
+  return bytes;
+}
+size_t write_model_field(io_buf& io, const flat_example& fe, const std::string& upstream_name, bool text,
+    label_parser& lbl_parser, uint64_t parse_mask)
+{
+  size_t bytes = 0;
+  lbl_parser.cache_label(fe.l, fe._reduction_features, io, upstream_name + "_label", text);
+  bytes += write_model_field(io, fe.tag_len, upstream_name + "_tag_len", text);
+  bytes += write_model_field(io, fe.tag == nullptr, upstream_name + "_tag_is_null", text);
+  if (!(fe.tag == nullptr)) { bytes += write_model_field(io, *fe.tag, upstream_name + "_tag", text); }
+  bytes += write_model_field(io, fe.example_counter, upstream_name + "_example_counter", text);
+  bytes += write_model_field(io, fe.ft_offset, upstream_name + "_ft_offset", text);
+  bytes += write_model_field(io, fe.global_weight, upstream_name + "_global_weight", text);
+  bytes += write_model_field(io, fe.num_features, upstream_name + "_num_features", text);
+  bytes += write_model_field(io, fe.total_sum_feat_sq, upstream_name + "_total_sum_feat_sq", text);
+  char* c;
+  cache_index(io, 0, fe.fs, c);
+  cache_features(io, fe.fs, parse_mask, c);
+  return bytes;
+}
+}  // namespace model_utils
 }  // namespace VW
 
 std::string debug_depth_indent_string(const example& ec)

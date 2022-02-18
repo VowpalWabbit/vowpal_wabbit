@@ -2,14 +2,16 @@ using l2 regularization = 1
 predictions = ksvm_train.linear.predict
 Lambda = 1
 Kernel = linear
+using no cache
+Reading datafile = train-sets/rcv1_smaller.dat
+num sources = 1
 Num weight bits = 18
 learning rate = 0.5
 initial_t = 0
 power_t = 0.5
-using no cache
-Reading datafile = train-sets/rcv1_smaller.dat
-num sources = 1
 Enabled reductions: ksvm, scorer-identity, count_label
+Input label = simple
+Output pred = scalar
 average  since         example        example  current  current  current
 loss     last          counter         weight    label  predict features
 1.000000 1.000000            1            1.0   1.0000   0.0000       50
@@ -32,6 +34,3 @@ total feature number = 19870
 Num support = 246
 Number of kernel evaluations = 174784 Number of cache queries = 119191
 Total loss = 202.410751
-Done freeing model
-Done freeing kernel params
-Done with finish 

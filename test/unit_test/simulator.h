@@ -34,7 +34,7 @@ class cb_sim
   const std::vector<std::string> users;
   const std::vector<std::string> times_of_day;
   const std::vector<std::string> actions;
-  rand_state random_state;
+  VW::rand_state random_state;
   float cost_sum = 0.f;
   std::vector<float> ctr;
   size_t callback_count;
@@ -44,7 +44,7 @@ public:
   std::string action_ns;
 
   cb_sim(uint64_t = 0);
-  float get_cost(const std::map<std::string, std::string>&, const std::string&);
+  float get_reaction(const std::map<std::string, std::string>&, const std::string&, bool = false);
   std::vector<std::string> to_vw_example_format(
       const std::map<std::string, std::string>&, const std::string&, float = 0.f, float = 0.f);
   std::pair<int, float> sample_custom_pmf(std::vector<float>& pmf);
@@ -52,7 +52,8 @@ public:
   const std::string& choose_user();
   const std::string& choose_time_of_day();
   std::vector<float> run_simulation(VW::workspace*, size_t, bool = true, size_t = 1);
-  std::vector<float> run_simulation_hook(VW::workspace*, size_t, callback_map&, bool = true, size_t = 1);
+  std::vector<float> run_simulation_hook(
+      VW::workspace*, size_t, callback_map&, bool = true, size_t = 1, bool = false, uint64_t = 0);
 
 private:
   void call_if_exists(VW::workspace&, multi_ex&, const callback_map&, const size_t);

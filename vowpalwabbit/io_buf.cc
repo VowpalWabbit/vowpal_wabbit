@@ -23,7 +23,7 @@ size_t io_buf::buf_read(char*& pointer, size_t n)
     }
     if (_current < input_files.size() &&
         fill(input_files[_current].get()) > 0)  // read more bytes from _current file if present
-      return buf_read(pointer, n);             // more bytes are read.
+      return buf_read(pointer, n);              // more bytes are read.
     else if (++_current < input_files.size())
       return buf_read(pointer, n);  // No more bytes, so go to next file and try again.
     else
@@ -126,8 +126,7 @@ void io_buf::flush()
   if (!output_files.empty())
   {
     auto bytes_written = output_files[0]->write(_buffer._begin, unflushed_bytes_count());
-    if (bytes_written != static_cast<ssize_t>(unflushed_bytes_count()))
-    { VW::io::logger::errlog_error("error, failed to write example"); }
+    if (bytes_written != static_cast<ssize_t>(unflushed_bytes_count())) { THROW("Failed to write example"); }
     head = _buffer._begin;
     output_files[0]->flush();
   }

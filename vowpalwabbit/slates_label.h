@@ -8,6 +8,8 @@
 
 #include "label_parser.h"
 #include "action_score.h"
+#include "io_buf.h"
+
 namespace VW
 {
 namespace slates
@@ -55,12 +57,29 @@ struct label
 };
 
 void default_label(VW::slates::label& v);
-void parse_label(slates::label& ld, VW::label_parser_reuse_mem& reuse_mem, const std::vector<VW::string_view>& words);
-void cache_label(const VW::slates::label& ld, io_buf& cache);
-size_t read_cached_label(VW::slates::label& ld, io_buf& cache);
+void parse_label(slates::label& ld, VW::label_parser_reuse_mem& reuse_mem, const std::vector<VW::string_view>& words,
+    VW::io::logger& logger);
 
 extern label_parser slates_label_parser;
 }  // namespace slates
 
 VW::string_view to_string(VW::slates::example_type);
+
+namespace model_utils
+{
+size_t read_model_field(io_buf&, VW::slates::label&);
+size_t write_model_field(io_buf&, const VW::slates::label&, const std::string&, bool);
+}  // namespace model_utils
 }  // namespace VW
+
+namespace fmt
+{
+template <>
+struct formatter<VW::slates::example_type> : formatter<std::string>
+{
+  auto format(VW::slates::example_type c, format_context& ctx) -> decltype(ctx.out())
+  {
+    return formatter<std::string>::format(std::string{VW::to_string(c)}, ctx);
+  }
+};
+}  // namespace fmt

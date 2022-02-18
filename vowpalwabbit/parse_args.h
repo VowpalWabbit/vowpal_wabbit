@@ -3,7 +3,7 @@
 // license as described in the file LICENSE.
 #pragma once
 #include "global_data.h"
-#include "options.h"
+#include "config/options.h"
 #include "text_utils.h"
 #include "vw_string_view.h"
 
@@ -12,7 +12,7 @@ struct input_options
 {
   bool daemon;
   bool foreground;
-  size_t port;
+  uint32_t port;
   std::string pid_file;
   std::string port_file;
 
@@ -40,7 +40,11 @@ void merge_options_from_header_strings(const std::vector<std::string>& strings, 
     VW::config::options_i& options, bool& is_ccb_input_model);
 
 VW_DEPRECATED("Moved and renamed: use VW::decode_inline_hex instead")
-inline std::string spoof_hex_encoded_namespaces(const std::string& arg) { return VW::decode_inline_hex(arg); }
+inline std::string spoof_hex_encoded_namespaces(const std::string& arg)
+{
+  auto nl = VW::io::create_null_logger();
+  return VW::decode_inline_hex(arg, nl);
+}
 
 VW_DEPRECATED("Moved: use VW::ends_with instead")
 inline bool ends_with(const std::string& full_string, const std::string& ending)

@@ -11,13 +11,13 @@
 #include <cassert>
 
 #include "global_data.h"
-#include "gd.h"
 #include "vw_exception.h"
 #include "future_compat.h"
 #include "vw_allreduce.h"
 #include "named_labels.h"
 #include "shared_data.h"
 #include "reduction_stack.h"
+#include "vw_string_view.h"
 #ifdef BUILD_FLATBUFFERS
 #  include "parser/flatbuffer/parse_example_flatbuffer.h"
 #endif
@@ -26,8 +26,6 @@
 #endif
 
 #include "io/logger.h"
-namespace logger = VW::io::logger;
-
 struct global_prediction
 {
   float p;
@@ -69,7 +67,7 @@ void send_prediction(VW::io::writer* f, global_prediction p)
     THROWERRNO("send_prediction write(unknown socket fd)");
 }
 
-void binary_print_result_by_ref(VW::io::writer* f, float res, float weight, const v_array<char>&)
+void binary_print_result_by_ref(VW::io::writer* f, float res, float weight, const v_array<char>&, VW::io::logger&)
 {
   if (f != nullptr)
   {
@@ -77,17 +75,6 @@ void binary_print_result_by_ref(VW::io::writer* f, float res, float weight, cons
     send_prediction(f, ps);
   }
 }
-
-int print_tag_by_ref(std::stringstream& ss, const v_array<char>& tag)
-{
-  if (tag.begin() != tag.end())
-  {
-    ss << ' ';
-    ss.write(tag.begin(), sizeof(char) * tag.size());
-  }
-  return tag.begin() != tag.end();
-}
-
 namespace VW
 {
 std::string workspace::get_setupfn_name(reduction_setup_fn setup_fn)
@@ -103,7 +90,7 @@ void workspace::build_setupfn_name_dict(std::vector<std::tuple<std::string, redu
 }
 }  // namespace VW
 
-void print_result_by_ref(VW::io::writer* f, float res, float, const v_array<char>& tag)
+void print_result_by_ref(VW::io::writer* f, float res, float, const v_array<char>& tag, VW::io::logger& logger)
 {
   if (f != nullptr)
   {
@@ -111,25 +98,25 @@ void print_result_by_ref(VW::io::writer* f, float res, float, const v_array<char
     auto saved_precision = ss.precision();
     if (floorf(res) == res) ss << std::setprecision(0);
     ss << std::fixed << res << std::setprecision(saved_precision);
-    print_tag_by_ref(ss, tag);
+    if (!tag.empty()) { ss << " " << VW::string_view{tag.begin(), tag.size()}; }
     ss << '\n';
     ssize_t len = ss.str().size();
     ssize_t t = f->write(ss.str().c_str(), static_cast<unsigned int>(len));
-    if (t != len) { logger::errlog_error("write error: {}", VW::strerror_to_string(errno)); }
+    if (t != len) { logger.err_error("write error: {}", VW::strerror_to_string(errno)); }
   }
 }
 
-void print_raw_text_by_ref(VW::io::writer* f, const std::string& s, const v_array<char>& tag)
+void print_raw_text_by_ref(VW::io::writer* f, const std::string& s, const v_array<char>& tag, VW::io::logger& logger)
 {
   if (f == nullptr) return;
 
   std::stringstream ss;
   ss << s;
-  print_tag_by_ref(ss, tag);
+  if (!tag.empty()) { ss << " " << VW::string_view{tag.begin(), tag.size()}; }
   ss << '\n';
   ssize_t len = ss.str().size();
   ssize_t t = f->write(ss.str().c_str(), static_cast<unsigned int>(len));
-  if (t != len) { logger::errlog_error("write error: {}", VW::strerror_to_string(errno)); }
+  if (t != len) { logger.err_error("write error: {}", VW::strerror_to_string(errno)); }
 }
 
 void set_mm(shared_data* sd, float label)
@@ -212,7 +199,8 @@ void workspace::finish_example(multi_ex& ec)
 }
 }  // namespace VW
 
-void compile_limits(std::vector<std::string> limits, std::array<uint32_t, NUM_NAMESPACES>& dest, bool /*quiet*/)
+void compile_limits(
+    std::vector<std::string> limits, std::array<uint32_t, NUM_NAMESPACES>& dest, bool /*quiet*/, VW::io::logger& logger)
 {
   for (size_t i = 0; i < limits.size(); i++)
   {
@@ -220,16 +208,16 @@ void compile_limits(std::vector<std::string> limits, std::array<uint32_t, NUM_NA
     if (isdigit(limit[0]))
     {
       int n = atoi(limit.c_str());
-      logger::errlog_warn("limiting to {} features for each namespace.", n);
+      logger.err_warn("limiting to {} features for each namespace.", n);
       for (size_t j = 0; j < 256; j++) dest[j] = n;
     }
     else if (limit.size() == 1)
-      logger::log_error("You must specify the namespace index before the n");
+      logger.out_error("The namespace index must be specified before the n");
     else
     {
       int n = atoi(limit.c_str() + 1);
       dest[static_cast<uint32_t>(limit[0])] = n;
-      logger::errlog_warn("limiting to {0} for namespaces {1}", n, limit[0]);
+      logger.err_warn("limiting to {0} for namespaces {1}", n, limit[0]);
     }
   }
 }
@@ -239,11 +227,11 @@ VW_WARNING_DISABLE_DEPRECATED_USAGE
 
 namespace VW
 {
-workspace::workspace() : options(nullptr, nullptr)
+workspace::workspace(VW::io::logger logger) : options(nullptr, nullptr), logger(std::move(logger))
 {
   sd = new shared_data();
   // Default is stderr.
-  trace_message = VW::make_unique<std::ostream>(std::cerr.rdbuf());
+  trace_message = VW::make_unique<std::ostream>(std::cout.rdbuf());
 
   l = nullptr;
   scorer = nullptr;
@@ -256,13 +244,12 @@ workspace::workspace() : options(nullptr, nullptr)
 
   bfgs = false;
   no_bias = false;
-  hessian_on = false;
   active = false;
   num_bits = 18;
   default_bits = true;
   daemon = false;
   num_children = 10;
-  save_resume = false;
+  save_resume = true;
   preserve_performance_counters = false;
 
   random_positive_weights = false;
@@ -271,9 +258,9 @@ workspace::workspace() : options(nullptr, nullptr)
 
   set_minmax = set_mm;
 
-  power_t = 0.5;
-  eta = 0.5;  // default learning rate for normalized adaptive updates, this is switched to 10 by default for the other
-              // updates (see parse_args.cc)
+  power_t = 0.5f;
+  eta = 0.5f;  // default learning rate for normalized adaptive updates, this is switched to 10 by default for the other
+               // updates (see parse_args.cc)
   numpasses = 1;
 
   print_by_ref = print_result_by_ref;
@@ -313,6 +300,7 @@ workspace::workspace() : options(nullptr, nullptr)
 
   add_constant = true;
   audit = false;
+  audit_writer = VW::io::open_stdout();
 
   pass_length = std::numeric_limits<size_t>::max();
   passes_complete = 0;

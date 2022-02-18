@@ -1,12 +1,14 @@
+creating cache_file = train-sets/marginal_features.cache
+Reading datafile = train-sets/marginal_features
+num sources = 1
 Num weight bits = 18
 learning rate = 0.5
 initial_t = 0
 power_t = 0.5
 decay_learning_rate = 1
-creating cache_file = train-sets/marginal_features.cache
-Reading datafile = train-sets/marginal_features
-num sources = 1
 Enabled reductions: gd, marginal, scorer-identity, count_label
+Input label = simple
+Output pred = scalar
 average  since         example        example  current  current  current
 loss     last          counter         weight    label  predict features
 0.062500 0.062500            1            1.0   0.5000   0.2500        4

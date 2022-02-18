@@ -1,11 +1,13 @@
+using no cache
+Reading datafile = train-sets/rcv1_small.dat
+num sources = 1
 Num weight bits = 18
 learning rate = 10
 initial_t = 10
 power_t = 0.5
-using no cache
-Reading datafile = train-sets/rcv1_small.dat
-num sources = 1
 Enabled reductions: gd, active-simulation, scorer-identity, count_label
+Input label = simple
+Output pred = scalar
 average  since         example        example  current  current  current
 loss     last          counter         weight    label  predict features
 1.000000 1.000000            1            1.0  -1.0000   0.0000      128
@@ -19,8 +21,8 @@ loss     last          counter         weight    label  predict features
 
 finished run
 number of examples = 1000
-weighted example sum = 1014.004530
-weighted label sum = -68.617989
+weighted example sum = 1014.004519
+weighted label sum = -68.618036
 average loss = 0.630964
 best constant = -0.067670
 best constant's loss = 0.995421

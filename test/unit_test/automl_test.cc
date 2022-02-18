@@ -9,7 +9,7 @@
 #include "test_common.h"
 #include "simulator.h"
 #include "reductions_fwd.h"
-#include "automl.h"
+#include "reductions/automl.h"
 #include "metric_sink.h"
 
 #include <functional>
@@ -78,13 +78,14 @@ BOOST_AUTO_TEST_CASE(automl_first_champ_switch)
 {
   const size_t num_iterations = 1331;
   const size_t seed = 10;
-  const size_t deterministic_champ_switch = 150;
+  const size_t deterministic_champ_switch = 161;
   callback_map test_hooks;
 
   test_hooks.emplace(deterministic_champ_switch - 1, [&](cb_sim&, VW::workspace& all, multi_ex&) {
     VW::automl::automl<interaction_config_manager>* aml = aml_test::get_automl_data(all);
     aml_test::check_interactions_match_exclusions(aml);
     aml_test::check_config_states(aml);
+    BOOST_CHECK_EQUAL(aml->cm->total_champ_switches, 0);
     BOOST_CHECK_EQUAL(aml->cm->current_champ, 0);
     BOOST_CHECK_EQUAL(deterministic_champ_switch - 1, aml->cm->total_learn_count);
     BOOST_CHECK(aml->current_state == VW::automl::automl_state::Experimenting);
@@ -95,6 +96,7 @@ BOOST_AUTO_TEST_CASE(automl_first_champ_switch)
     VW::automl::automl<interaction_config_manager>* aml = aml_test::get_automl_data(all);
     aml_test::check_interactions_match_exclusions(aml);
     aml_test::check_config_states(aml);
+    BOOST_CHECK_GT(aml->cm->total_champ_switches, 0);
     BOOST_CHECK_EQUAL(aml->cm->current_champ, 2);
     BOOST_CHECK_EQUAL(deterministic_champ_switch, aml->cm->total_learn_count);
     BOOST_CHECK(aml->current_state == VW::automl::automl_state::Experimenting);
@@ -124,7 +126,7 @@ BOOST_AUTO_TEST_CASE(automl_save_load)
 
   ctr = simulator::_test_helper_save_load(
       "--automl 3 --priority_type least_exclusion --cb_explore_adf --quiet --epsilon 0.2 --random_seed 5 "
-      "--keep_configs --oracle_type rand --save_resume");
+      "--keep_configs --oracle_type rand");
   float with_save = ctr.back();
   BOOST_CHECK_GT(with_save, 0.7f);
 
@@ -208,6 +210,8 @@ BOOST_AUTO_TEST_CASE(assert_live_configs_and_lease)
     BOOST_CHECK(aml->current_state == VW::automl::automl_state::Experimenting);
     BOOST_CHECK_EQUAL(aml->cm->total_learn_count, 15);
     BOOST_CHECK_EQUAL(aml->cm->current_champ, 0);
+    BOOST_CHECK_CLOSE(aml->cm->automl_alpha, 0.05, FLOAT_TOL);
+    BOOST_CHECK_CLOSE(aml->cm->automl_tau, 0.999, FLOAT_TOL);
     BOOST_CHECK_EQUAL(aml->cm->scores[0].config_index, 0);
     BOOST_CHECK_EQUAL(aml->cm->scores[1].config_index, 5);
     BOOST_CHECK_EQUAL(aml->cm->scores[2].config_index, 3);
@@ -235,7 +239,7 @@ BOOST_AUTO_TEST_CASE(assert_live_configs_and_lease)
 BOOST_AUTO_TEST_CASE(cpp_simulator_automl)
 {
   auto ctr = simulator::_test_helper(
-      "--cb_explore_adf --quiet --epsilon 0.2 --random_seed 5 --extra_metrics --automl 3 --priority_type "
+      "--cb_explore_adf --quiet --epsilon 0.2 --random_seed 5 --automl 3 --priority_type "
       "least_exclusion --keep_configs --oracle_type rand");
   BOOST_CHECK_GT(ctr.back(), 0.6f);
 }
@@ -290,7 +294,7 @@ BOOST_AUTO_TEST_CASE(clear_configs)
 {
   const size_t num_iterations = 3000;
   const size_t seed = 10;
-  const size_t clear_champ_switch = 150;
+  const size_t clear_champ_switch = 161;
   callback_map test_hooks;
 
   test_hooks.emplace(clear_champ_switch - 1, [&](cb_sim&, VW::workspace& all, multi_ex&) {
@@ -333,7 +337,7 @@ BOOST_AUTO_TEST_CASE(clear_configs_one_diff)
 {
   const size_t num_iterations = 3000;
   const size_t seed = 10;
-  const size_t clear_champ_switch = 173;
+  const size_t clear_champ_switch = 161;
   callback_map test_hooks;
 
   test_hooks.emplace(clear_champ_switch - 1, [&](cb_sim&, VW::workspace& all, multi_ex&) {
@@ -353,7 +357,7 @@ BOOST_AUTO_TEST_CASE(clear_configs_one_diff)
     aml_test::check_config_states(aml);
     BOOST_CHECK_EQUAL(aml->cm->current_champ, 0);
     BOOST_CHECK_EQUAL(clear_champ_switch, aml->cm->total_learn_count);
-    BOOST_CHECK_EQUAL(aml->cm->scores.size(), 1);
+    BOOST_CHECK_EQUAL(aml->cm->scores.size(), 3);
     BOOST_CHECK_EQUAL(aml->cm->valid_config_size, 7);
     BOOST_CHECK(aml->current_state == VW::automl::automl_state::Experimenting);
     return true;

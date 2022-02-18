@@ -5,13 +5,11 @@
 #include <boost/test/unit_test.hpp>
 #include <iostream>
 #include "learner.h"
-#include "pmf_to_pdf.h"
+#include "reductions/pmf_to_pdf.h"
 #include "action_score.h"
 #include "cb_label_parser.h"
 
 using namespace VW::LEARNER;
-using std::cout;
-using std::endl;
 using std::pair;
 using std::vector;
 

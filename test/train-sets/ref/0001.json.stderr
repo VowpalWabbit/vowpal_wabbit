@@ -1,14 +1,14 @@
-[info] Generating 3-grams for all namespaces.
-[info] Generating 1-skips for all namespaces.
+creating cache_file = train-sets/0001.json.cache
+Reading datafile = train-sets/0001.json
+num sources = 1
 Num weight bits = 18
 learning rate = 2.56e+06
 initial_t = 128000
 power_t = 1
 decay_learning_rate = 1
-creating cache_file = train-sets/0001.json.cache
-Reading datafile = train-sets/0001.json
-num sources = 1
 Enabled reductions: gd, scorer-identity, count_label
+Input label = simple
+Output pred = scalar
 average  since         example        example  current  current  current
 loss     last          counter         weight    label  predict features
 1.000000 1.000000            1            1.0   1.0000   0.0000      290

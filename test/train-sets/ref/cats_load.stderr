@@ -1,20 +1,19 @@
-WARNING: model file has set of {-q, --cubic, --interactions} settings stored, but they'll be OVERRIDEN by set of {-q, --cubic, --interactions} settings from command line.
-creating quadratic features for pairs: :: 
-WARNING: any duplicate namespace interactions will be removed
-You can use --leave_duplicate_interactions to disable this behaviour.
+creating quadratic features for pairs: ::
 predictions = cats_load.predict
 Enabling FTRL based optimization
 Algorithm used: Coin Betting
 ftrl_alpha = 4
 ftrl_beta = 1
-Num weight bits = 18
-learning rate = 0.5
-initial_t = 0
-power_t = 0.5
 using no cache
 Reading datafile = train-sets/cats_train.json
 num sources = 1
+Num weight bits = 18
+learning rate = 0.5
+initial_t = 10
+power_t = 0.5
 Enabled reductions: ftrl-Coin Betting, generate_interactions, scorer-identity, binary, cats_tree, get_pmf, pmf_to_pdf, cb_explore_pdf, cats_pdf, sample_pdf, cats
+Input label = continuous
+Output pred = action_pdf_value
 average  since         example        example  current  current  current
 loss     last          counter         weight    label  predict features
 0.000000 0.000000            1            1.0 {0.00120175,0,0.00625} 25.2719,0.00625        6

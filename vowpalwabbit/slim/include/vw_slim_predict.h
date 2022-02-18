@@ -13,158 +13,8 @@
 #include "gd_predict.h"
 #include "model_parser.h"
 #include "opts.h"
-#include "interactions.h"
-
-namespace vw_slim
-{
-namespace internal
-{
-template <typename It1, typename It2>
-class location_reference;
-
-template <typename It1, typename It2>
-class location_value
-{
-public:
-  using Val1 = typename std::iterator_traits<It1>::value_type;
-  using Val2 = typename std::iterator_traits<It2>::value_type;
-
-  Val1 _val1;
-  Val2 _val2;
-
-  location_value(const location_reference<It1, It2>& rhs) : _val1(*rhs._ptr1), _val2(*rhs._ptr2) {}
-};
-
-template <typename It1, typename It2>
-class location_reference
-{
-public:
-  It1 _ptr1;
-  It2 _ptr2;
-  using Ref = location_reference<It1, It2>;
-  using Val = location_value<It1, It2>;
-
-  location_reference() = delete;
-
-  location_reference(const Ref& other) : _ptr1(other._ptr1), _ptr2(other._ptr2) {}
-
-  location_reference(It1 first, It2 second) : _ptr1(first), _ptr2(second) {}
-
-  location_reference& operator=(const Val& rhs)
-  {
-    *_ptr1 = rhs._val1;
-    *_ptr2 = rhs._val2;
-    return *this;
-  }
-
-  location_reference& operator=(const Ref& rhs)
-  {
-    *_ptr1 = *rhs._ptr1;
-    *_ptr2 = *rhs._ptr2;
-    return *this;
-  }
-
-  friend void swap(const location_reference& a, const location_reference& b)
-  {
-    std::iter_swap(a._ptr1, b._ptr1);
-    std::iter_swap(a._ptr2, b._ptr2);
-  }
-};
-
-template <typename It1, typename It2>
-class collection_pair_iterator
-    : public std::iterator<std::random_access_iterator_tag, location_value<It1, It2>,  // value type
-          size_t,                                                                      // difference type
-          location_reference<It1, It2>                                                 // reference_type
-          >
-{
-  It1 _ptr1;
-  It2 _ptr2;
-
-public:
-  using Iter = collection_pair_iterator<It1, It2>;
-  using Loc = location_value<It1, It2>;
-  using Ref = location_reference<It1, It2>;
-
-  collection_pair_iterator(It1 first, It2 second) : _ptr1(first), _ptr2(second) {}
-
-  // must support: a) default-construction, b) copy-construction, c) copy-assignment, d) destruction
-  collection_pair_iterator() = default;
-  collection_pair_iterator(const collection_pair_iterator& rhs) = default;
-  collection_pair_iterator& operator=(const collection_pair_iterator& rhs) = default;
-
-  // must support: a == b; a != b;
-  bool operator==(const Iter& rhs) const { return (_ptr1 == rhs._ptr1 && _ptr2 == rhs._ptr2); }
-  bool operator!=(const Iter& rhs) const { return !(operator==(rhs)); }
-
-  // must support: b = *a; a->m ;
-  // must support: *a = t;
-  Ref operator*() { return Ref(_ptr1, _ptr2); }  // Non-conforming - normally returns loc&
-
-  // VS library 14.25.28610 requires operator[] (since it's a random access iterator)
-  Ref operator[](size_t n) { return Ref(_ptr1 + n, _ptr2 + n); }
-
-  // must support: ++a; a++; *a++;
-  Iter& operator++()
-  {
-    ++_ptr1;
-    ++_ptr2;
-    return *this;
-  }
-
-  Iter operator++(int)
-  {
-    Iter ret(*this);
-    ++_ptr1;
-    ++_ptr2;
-    return ret;
-  }
-
-  // must support: --a; a--; *a--;
-  Iter& operator--()
-  {
-    --_ptr1;
-    --_ptr2;
-    return *this;
-  }
-
-  Iter operator--(int)
-  {
-    Iter ret(*this);
-    --_ptr1;
-    --_ptr2;
-    return ret;
-  }
-
-  // must support: a + n; n + a; a - n; a - b
-  Iter operator+(const size_t n) const { return Iter(_ptr1 + n, _ptr2 + n); }
-  // friend Iter operator+(const size_t, const Iter&);
-  Iter operator-(const size_t n) const { return Iter(_ptr1 - n, _ptr2 - n); }
-  size_t operator-(const Iter& rhs) const { return _ptr1 - rhs._ptr1; }
-
-  // must support: a > b; a < b; a <= b; a >= b;
-  bool operator<(const Iter& rhs) const { return _ptr1 < rhs._ptr1; }
-  bool operator>(const Iter& rhs) const { return _ptr1 > rhs._ptr1; }
-  bool operator<=(const Iter& rhs) const { return _ptr1 <= rhs._ptr1; }
-  bool operator>=(const Iter& rhs) const { return _ptr1 >= rhs._ptr1; }
-
-  // must support: a += n; a -= n;
-  Iter& operator+=(size_t n)
-  {
-    _ptr1 += n;
-    _ptr2 += n;
-    return *this;
-  }
-
-  Iter& operator-=(size_t n)
-  {
-    _ptr1 -= n;
-    _ptr2 -= n;
-    return *this;
-  }
-};
-}  // namespace internal
-}  // namespace vw_slim
+#include "reductions/interactions.h"
+#include "array_parameters_dense.h"
 
 namespace vw_slim
 {
@@ -237,7 +87,7 @@ class vw_predict
   float _minimum_epsilon;
   float _epsilon;
   float _lambda;
-  int _bag_size;
+  size_t _bag_size;
   uint32_t _num_bits;
 
   uint32_t _stride_shift;
@@ -275,6 +125,8 @@ public:
     RETURN_ON_FAIL(mp.skip(sizeof(float)));  // "max_label"
 
     RETURN_ON_FAIL(mp.read("num_bits", _num_bits));
+    // Cannot use more than 32 bits on a 32 bit architecture
+    if (sizeof(size_t) == 4 && _num_bits > 32) { return E_VW_PREDICT_ERR_INVALID_MODEL; }
 
     RETURN_ON_FAIL(mp.skip(sizeof(uint32_t)));  // "lda"
 
@@ -322,8 +174,12 @@ public:
     if (_command_line_arguments.find("--cb_explore_adf") != std::string::npos)
     {
       // parse exploration options
-      if (find_opt_int(_command_line_arguments, "--bag", _bag_size))
+      int bag_size;
+      if (find_opt_int(_command_line_arguments, "--bag", bag_size))
       {
+        if (bag_size < 0) { return E_VW_PREDICT_ERR_INVALID_MODEL; }
+        _bag_size = static_cast<size_t>(bag_size);
+
         _exploration = vw_predict_exploration::bag;
         num_weights = _bag_size;
 
@@ -371,7 +227,6 @@ public:
     if (gd_resume) return E_VW_PREDICT_ERR_GD_RESUME_NOT_SUPPORTED;
 
     // read sparse weights into dense
-    uint64_t weight_length = (uint64_t)1 << _num_bits;
     _stride_shift = (uint32_t)ceil_log_2(num_weights);
 
     RETURN_ON_FAIL(mp.read_weights<W>(_weights, _num_bits, _stride_shift));
@@ -583,16 +438,36 @@ public:
     // Initialize ranking with actions 0,1,2,3 ...
     std::iota(ranking_begin, ranking_last, 0);
 
-    // Pdf starts out in the same order as ranking.  Ranking and pdf should been sorted
-    // in the order specified by scores.
-    using CP = internal::collection_pair_iterator<OutputIt, PdfIt>;
-    using Iter = typename CP::Iter;
-    using Loc = typename CP::Loc;
-    const Iter begin_coll(ranking_begin, pdf_first);
-    const Iter end_coll(ranking_last, pdf_last);
-    std::sort(begin_coll, end_coll, [&scores_first](const Loc& l, const Loc& r) {
-      return scores_first[size_t(l._val1)] < scores_first[size_t(r._val1)];
-    });
+    assert(std::distance(pdf_first, pdf_last) == std::distance(scores_first, scores_last));
+    assert(std::distance(pdf_first, pdf_last) == std::distance(ranking_begin, ranking_last));
+
+    assert(pdf_first <= pdf_last);
+    const size_t size = std::distance(pdf_first, pdf_last);
+    using zipped_tuple_t =
+        std::tuple<typename PdfIt::value_type, typename InputScoreIt::value_type, typename OutputIt::value_type>;
+    std::vector<zipped_tuple_t> zipped_values;
+    zipped_values.reserve(size);
+    auto pdf_it = pdf_first;
+    auto scores_it = scores_first;
+    auto ranking_it = ranking_begin;
+    for (size_t i = 0; i < size; i++)
+    {
+      zipped_values.emplace_back(*pdf_it, *scores_it, *ranking_it);
+      ++pdf_it;
+      ++scores_it;
+      ++ranking_it;
+    }
+
+    std::sort(zipped_values.begin(), zipped_values.end(),
+        [](const zipped_tuple_t& l, const zipped_tuple_t& r) { return std::get<1>(l) < std::get<1>(r); });
+
+    for (const auto& zipped_value : zipped_values)
+    {
+      *pdf_first = std::get<0>(zipped_value);
+      *ranking_begin = std::get<2>(zipped_value);
+      pdf_first++;
+      ranking_begin++;
+    }
 
     return S_EXPLORATION_OK;
   }

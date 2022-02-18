@@ -111,39 +111,42 @@ inline FORCE_INLINE float parseFloat(const char* p, size_t& end_idx, const char*
   }
 }
 
-inline float float_of_string(VW::string_view s)
+inline float float_of_string(VW::string_view s, VW::io::logger& logger)
 {
   size_t end_idx;
   float f = parseFloat(s.begin(), end_idx, s.end());
   if ((end_idx == 0 && s.size() > 0) || std::isnan(f))
   {
-    VW::io::logger::log_warn("warning: {} is not a good float, replacing with 0", s);
+    logger.out_warn("'{}' is not a good float, replacing with 0", s);
     f = 0;
   }
   return f;
 }
 
-inline int int_of_string(VW::string_view s, char*& end)
+inline int int_of_string(VW::string_view s, char*& end, VW::io::logger& logger)
 {
   // can't use stol because that throws an exception. Use strtol instead.
   int i = strtol(s.begin(), &end, 10);
   if (end <= s.begin() && s.size() > 0)
   {
-    VW::io::logger::log_warn("warning: {} is not a good int, replacing with 0", s);
+    logger.out_warn("'{}' is not a good int, replacing with 0", s);
     i = 0;
   }
 
   return i;
 }
 
-inline int int_of_string(VW::string_view s)
+inline int int_of_string(VW::string_view s, VW::io::logger& logger)
 {
   char* end = nullptr;
-  return int_of_string(s, end);
+  return int_of_string(s, end, logger);
 }
 
 namespace VW
 {
 std::string trim_whitespace(const std::string& s);
 VW::string_view trim_whitespace(VW::string_view str);
+
+std::vector<std::string> split_command_line(const std::string& cmd_line);
+std::vector<std::string> split_command_line(VW::string_view cmd_line);
 }  // namespace VW

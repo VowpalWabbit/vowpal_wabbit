@@ -59,5 +59,9 @@ constexpr VW::version_struct VERSION_PASS_UINT64{8, 3, 3};
 
 /// Added serialized seen min and max labels in the --active reduction
 constexpr VW::version_struct VERSION_FILE_WITH_ACTIVE_SEEN_LABELS{9, 0, 0};
+
+/// Moved option values from command line to model data
+constexpr VW::version_struct VERSION_FILE_WITH_L1_AND_L2_STATE_IN_MODEL_DATA{9, 0, 0};
+
 }  // namespace version_definitions
 }  // namespace VW

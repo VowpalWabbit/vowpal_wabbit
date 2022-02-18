@@ -3,101 +3,105 @@
 #include "global_data.h"  // to get vw struct
 #include "cached_learner.h"
 #include "learner.h"
-#include "options.h"
+#include "config/options.h"
+#include "config/options_name_extractor.h"
 #include "reductions_fwd.h"
 
 // reductions / setup functions
-#include "gd.h"
-#include "sender.h"
-#include "nn.h"
-#include "cbify.h"
-#include "oaa.h"
-#include "boosting.h"
-#include "multilabel_oaa.h"
-#include "bs.h"
-#include "topk.h"
-#include "automl.h"
-#include "ect.h"
-#include "csoaa.h"
-#include "cb_algs.h"
-#include "cb_adf.h"
-#include "cb_to_cb_adf.h"
-#include "cb_dro.h"
-#include "cb_explore.h"
-#include "cb_explore_adf_bag.h"
-#include "cb_explore_adf_cover.h"
-#include "cb_explore_adf_first.h"
-#include "cb_explore_adf_greedy.h"
-#include "cb_explore_adf_regcb.h"
-#include "cb_explore_adf_squarecb.h"
-#include "cb_explore_adf_synthcover.h"
-#include "cb_explore_adf_rnd.h"
-#include "cb_explore_adf_softmax.h"
-#include "slates.h"
-#include "generate_interactions.h"
-#include "mwt.h"
-#include "confidence.h"
-#include "scorer.h"
-#include "expreplay.h"
-#include "search.h"
-#include "bfgs.h"
-#include "lda_core.h"
-#include "noop.h"
-#include "print.h"
-#include "gd_mf.h"
-#include "mf.h"
-#include "ftrl.h"
-#include "svrg.h"
-#include "binary.h"
-#include "lrq.h"
-#include "lrqfa.h"
-#include "autolink.h"
-#include "log_multi.h"
-#include "recall_tree.h"
-#include "memory_tree.h"
-#include "plt.h"
-#include "stagewise_poly.h"
-#include "active.h"
-#include "active_cover.h"
-#include "cs_active.h"
-#include "kernel_svm.h"
-#include "interact.h"
-#include "OjaNewton.h"
-#include "audit_regressor.h"
-#include "marginal.h"
-#include "metrics.h"
-#include "explore_eval.h"
-#include "baseline.h"
-#include "classweight.h"
-#include "cb_sample.h"
-#include "warm_cb.h"
-#include "shared_feature_merger.h"
-#include "cbzo.h"
-// #include "cntk.h"
-#include "cats.h"
-#include "cats_pdf.h"
-#include "cb_explore_pdf.h"
-#include "offset_tree.h"
-#include "cats_tree.h"
-#include "get_pmf.h"
-#include "pmf_to_pdf.h"
-#include "sample_pdf.h"
-#include "kskip_ngram_transformer.h"
-#include "baseline_challenger_cb.h"
-#include "count_label.h"
+#include "reductions/active_cover.h"
+#include "reductions/active.h"
+#include "reductions/audit_regressor.h"
+#include "reductions/autolink.h"
+#include "reductions/automl.h"
+#include "reductions/baseline_challenger_cb.h"
+#include "reductions/baseline.h"
+#include "reductions/bfgs.h"
+#include "reductions/binary.h"
+#include "reductions/boosting.h"
+#include "reductions/bs.h"
+#include "reductions/cats_pdf.h"
+#include "reductions/cats_tree.h"
+#include "reductions/cats.h"
+#include "reductions/cb/cb_adf.h"
+#include "reductions/cb/cb_algs.h"
+#include "reductions/cb/cb_dro.h"
+#include "reductions/cb/cb_explore_adf_bag.h"
+#include "reductions/cb/cb_explore_adf_cover.h"
+#include "reductions/cb/cb_explore_adf_first.h"
+#include "reductions/cb/cb_explore_adf_greedy.h"
+#include "reductions/cb/cb_explore_adf_regcb.h"
+#include "reductions/cb/cb_explore_adf_rnd.h"
+#include "reductions/cb/cb_explore_adf_softmax.h"
+#include "reductions/cb/cb_explore_adf_squarecb.h"
+#include "reductions/cb/cb_explore_adf_synthcover.h"
+#include "reductions/cb/cb_explore_pdf.h"
+#include "reductions/cb/cb_explore.h"
+#include "reductions/cb/cb_sample.h"
+#include "reductions/cb/cb_to_cb_adf.h"
+#include "reductions/cb/cbify.h"
+#include "reductions/cb/warm_cb.h"
+#include "reductions/cbzo.h"
+#include "reductions/classweight.h"
+#include "reductions/confidence.h"
+#include "reductions/count_label.h"
+#include "reductions/cs_active.h"
+#include "reductions/csoaa_ldf.h"
+#include "reductions/csoaa.h"
+#include "reductions/ect.h"
+#include "reductions/explore_eval.h"
+#include "reductions/expreplay.h"
+#include "reductions/freegrad.h"
+#include "reductions/ftrl.h"
+#include "reductions/gd_mf.h"
+#include "reductions/gd.h"
+#include "reductions/generate_interactions.h"
+#include "reductions/get_pmf.h"
+#include "reductions/interact.h"
+#include "reductions/interaction_ground.h"
+#include "reductions/kernel_svm.h"
+#include "reductions/lda_core.h"
+#include "reductions/log_multi.h"
+#include "reductions/lrq.h"
+#include "reductions/lrqfa.h"
+#include "reductions/marginal.h"
+#include "reductions/memory_tree.h"
+#include "reductions/metrics.h"
+#include "reductions/mf.h"
+#include "reductions/multilabel_oaa.h"
+#include "reductions/mwt.h"
+#include "reductions/nn.h"
+#include "reductions/noop.h"
+#include "reductions/oaa.h"
+#include "reductions/offset_tree.h"
+#include "reductions/oja_newton.h"
+#include "reductions/plt.h"
+#include "reductions/pmf_to_pdf.h"
+#include "reductions/print.h"
+#include "reductions/recall_tree.h"
+#include "reductions/sample_pdf.h"
+#include "reductions/scorer.h"
+#include "reductions/search/search.h"
+#include "reductions/sender.h"
+#include "reductions/shared_feature_merger.h"
+#include "reductions/slates.h"
+#include "reductions/stagewise_poly.h"
+#include "reductions/svrg.h"
+#include "reductions/topk.h"
 
 void register_reductions(std::vector<reduction_setup_fn>& reductions,
     std::vector<std::tuple<std::string, reduction_setup_fn>>& reduction_stack)
 {
   std::map<reduction_setup_fn, std::string> allowlist = {{GD::setup, "gd"}, {ftrl_setup, "ftrl"},
+      {VW::freegrad_setup, "freegrad"}, {sender_setup, "sender"}, {nn_setup, "nn"}, {oaa_setup, "oaa"},
       {scorer_setup, "scorer"}, {CSOAA::csldf_setup, "csoaa_ldf"},
       {VW::cb_explore_adf::greedy::setup, "cb_explore_adf_greedy"},
       {VW::cb_explore_adf::regcb::setup, "cb_explore_adf_regcb"},
       {VW::shared_feature_merger::shared_feature_merger_setup, "shared_feature_merger"},
-      {generate_interactions_setup, "generate_interactions"}, {VW::count_label_setup, "count_label"}};
+      {generate_interactions_setup, "generate_interactions"}, {VW::count_label_setup, "count_label"},
+      {cb_to_cb_adf_setup, "cb_to_cbadf"}};
 
   auto name_extractor = VW::config::options_name_extractor();
-  VW::workspace dummy_all;
+  VW::workspace dummy_all(VW::io::create_null_logger());
 
   VW::cached_learner null_ptr_learner(dummy_all, name_extractor, nullptr);
 
@@ -124,6 +128,7 @@ void prepare_reductions(std::vector<std::tuple<std::string, reduction_setup_fn>>
   reductions.push_back(GD::setup);
   reductions.push_back(kernel_svm_setup);
   reductions.push_back(ftrl_setup);
+  reductions.push_back(VW::freegrad_setup);
   reductions.push_back(svrg_setup);
   reductions.push_back(sender_setup);
   reductions.push_back(gd_mf_setup);
@@ -175,9 +180,11 @@ void prepare_reductions(std::vector<std::tuple<std::string, reduction_setup_fn>>
   reductions.push_back(CSOAA::csldf_setup);
   reductions.push_back(cb_algs_setup);
   reductions.push_back(cb_adf_setup);
+  reductions.push_back(VW::interaction_ground_setup);
   reductions.push_back(mwt_setup);
   reductions.push_back(VW::cats_tree::setup);
   reductions.push_back(baseline_challenger_cb_setup);
+  reductions.push_back(VW::automl::automl_setup);
   reductions.push_back(cb_explore_setup);
   reductions.push_back(VW::cb_explore_adf::greedy::setup);
   reductions.push_back(VW::cb_explore_adf::softmax::setup);
@@ -191,7 +198,6 @@ void prepare_reductions(std::vector<std::tuple<std::string, reduction_setup_fn>>
   reductions.push_back(cb_dro_setup);
   reductions.push_back(cb_sample_setup);
   reductions.push_back(explore_eval_setup);
-  reductions.push_back(VW::automl::automl_setup);
   reductions.push_back(VW::shared_feature_merger::shared_feature_merger_setup);
   reductions.push_back(CCB::ccb_explore_adf_setup);
   reductions.push_back(VW::slates::slates_setup);

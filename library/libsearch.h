@@ -9,8 +9,8 @@ license as described in the file LICENSE.
 #include "../vowpalwabbit/parser.h"
 #include "../vowpalwabbit/parse_example.h"
 #include "../vowpalwabbit/vw.h"
-#include "../vowpalwabbit/search.h"
-#include "../vowpalwabbit/search_hooktask.h"
+#  include "../vowpalwabbit/reductions/search/search.h"
+#  include "../vowpalwabbit/reductions/search/search_hooktask.h"
 
 #  include <memory>
 
@@ -35,7 +35,6 @@ public:
   virtual ~SearchTask()
   { trigger.clear(); // the individual examples get cleaned up below
     VW::dealloc_examples(bogus_example, 1);
-    free(bogus_example);
   }
 
   virtual void _run(Search::search&sch, INPUT& input_example, OUTPUT& output) {}  // YOU MUST DEFINE THIS FUNCTION!

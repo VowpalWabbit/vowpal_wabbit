@@ -1,12 +1,14 @@
 predictions = offset_tree_001.pred
+using no cache
+Reading datafile = train-sets/offset_tree_001.dat
+num sources = 1
 Num weight bits = 18
 learning rate = 0.5
 initial_t = 0
 power_t = 0.5
-using no cache
-Reading datafile = train-sets/offset_tree_001.dat
-num sources = 1
 Enabled reductions: gd, scorer-identity, csoaa, cb, cb_explore-greedy, ot
+Input label = cb
+Output pred = action_probs
 average  since         example        example  current  current  current
 loss     last          counter         weight    label  predict features
 -1.901250 -1.901250            1            1.0 1:-1:0.5 1:0.950625        2

@@ -1,7 +1,7 @@
 import pytest
 import pandas as pd
 
-from vowpalwabbit.DFtoVW import (
+from vowpalwabbit.dftovw import (
     ContextualbanditLabel,
     DFtoVW,
     Feature,
@@ -71,7 +71,9 @@ def test_multiple_lines():
 def test_mixed_type_features():
     df = pd.DataFrame({"y": [1], "x1": ["a"], "x2": [2]})
     conv = DFtoVW(
-        label=SimpleLabel("y"), features=[Feature(value=colname) for colname in ["x1", "x2"]], df=df
+        label=SimpleLabel("y"),
+        features=[Feature(value=colname) for colname in ["x1", "x2"]],
+        df=df,
     )
     first_line = conv.convert_df()[0]
     assert first_line == "1 | x1=a x2:2"
@@ -93,21 +95,22 @@ def test_dirty_colname_feature():
     df = pd.DataFrame(
         {"target :": [1], " my first feature:": ["x"], "white space at the end ": [2]}
     )
-    features = [Feature(colname) for colname in [" my first feature:", "white space at the end "]]
+    features = [
+        Feature(colname)
+        for colname in [" my first feature:", "white space at the end "]
+    ]
     conv = DFtoVW(label=SimpleLabel("target :"), features=features, df=df)
     first_line = conv.convert_df()[0]
     assert first_line == "1 | my_first_feature=x white_space_at_the_end:2"
 
 
 def test_feature_with_nan():
-    df = pd.DataFrame({
-        "y": [-1, 1, 1],
-        "x1": [1, 2, None],
-        "x2": [3, None, 2]
-    })
-    conv = DFtoVW(df=df, features=[Feature("x1"), Feature("x2")], label=SimpleLabel("y"))
+    df = pd.DataFrame({"y": [-1, 1, 1], "x1": [1, 2, None], "x2": [3, None, 2]})
+    conv = DFtoVW(
+        df=df, features=[Feature("x1"), Feature("x2")], label=SimpleLabel("y")
+    )
     lines = conv.convert_df()
-    assert lines == ['-1 | x1:1.0 x2:3.0', '1 | x1:2.0 ', '1 |  x2:2.0']
+    assert lines == ["-1 | x1:1.0 x2:3.0", "1 | x1:2.0 ", "1 |  x2:2.0"]
 
 
 def test_multiple_named_namespaces():
@@ -138,14 +141,12 @@ def test_multiple_named_namespaces_multiple_features_multiple_lines():
 
 
 def test_multiple_lines_with_weight():
-    df = pd.DataFrame({
-        "y": [1, 2, -1],
-        "w": [2.5, 1.2, 3.75],
-        "x": ["a", "b", "c"]
-    })
-    conv = DFtoVW(df=df, label=SimpleLabel(label="y", weight="w"), features=Feature("x"))
+    df = pd.DataFrame({"y": [1, 2, -1], "w": [2.5, 1.2, 3.75], "x": ["a", "b", "c"]})
+    conv = DFtoVW(
+        df=df, label=SimpleLabel(label="y", weight="w"), features=Feature("x")
+    )
     lines_list = conv.convert_df()
-    assert lines_list == ['1 2.5 | x=a', '2 1.2 | x=b', '-1 3.75 | x=c']
+    assert lines_list == ["1 2.5 | x=a", "2 1.2 | x=b", "-1 3.75 | x=c"]
 
 
 # Exception tests for SimpleLabel
@@ -195,7 +196,9 @@ def test_wrong_weight_type_error():
 # Tests for MulticlassLabel
 def test_multiclasslabel():
     df = pd.DataFrame({"a": [1], "b": [0.5], "c": [-3]})
-    conv = DFtoVW(df=df, label=MulticlassLabel(label="a", weight="b"), features=Feature("c"))
+    conv = DFtoVW(
+        df=df, label=MulticlassLabel(label="a", weight="b"), features=Feature("c")
+    )
     first_line = conv.convert_df()[0]
     assert first_line == "1 0.5 | c:-3"
 
@@ -235,7 +238,9 @@ def test_multilabel():
 
 def test_multilabel_with_listlabel_builder():
     df = pd.DataFrame({"y1": [1], "y2": [2], "x": [3]})
-    conv = DFtoVW(df=df, label=[MultiLabel("y1"), MultiLabel("y2")], features=Feature("x"))
+    conv = DFtoVW(
+        df=df, label=[MultiLabel("y1"), MultiLabel("y2")], features=Feature("x")
+    )
     first_line = conv.convert_df()[0]
     assert first_line == "1,2 | x:3"
 
@@ -263,18 +268,31 @@ def test_multilabel_non_positive_label_error():
 # Tests for ContextualbanditLabel
 def test_contextualbanditlabel_one_label():
     df = pd.DataFrame({"a": [1], "c": [-0.5], "p": [0.1], "x": [1]})
-    conv = DFtoVW(df=df, label=ContextualbanditLabel("a", "c", "p"), features=Feature("x"))
+    conv = DFtoVW(
+        df=df, label=ContextualbanditLabel("a", "c", "p"), features=Feature("x")
+    )
     first_line = conv.convert_df()[0]
     assert first_line == "1:-0.5:0.1 | x:1"
 
 
 def test_contextualbanditlabel_multiple_label():
     df = pd.DataFrame(
-        {"a1": [1], "c1": [-0.5], "p1": [0.1], "a2": [2], "c2": [-1.5], "p2": [0.6], "x": [1]}
+        {
+            "a1": [1],
+            "c1": [-0.5],
+            "p1": [0.1],
+            "a2": [2],
+            "c2": [-1.5],
+            "p2": [0.6],
+            "x": [1],
+        }
     )
     conv = DFtoVW(
         df=df,
-        label=[ContextualbanditLabel("a1", "c1", "p1"), ContextualbanditLabel("a2", "c2", "p2")],
+        label=[
+            ContextualbanditLabel("a1", "c1", "p1"),
+            ContextualbanditLabel("a2", "c2", "p2"),
+        ],
         features=Feature("x"),
     )
     first_line = conv.convert_df()[0]
@@ -290,9 +308,7 @@ def test_contextualbanditlabel_over_one_proba_error():
             label=ContextualbanditLabel("a", "c", "p"),
             features=Feature("x"),
         )
-    expected = (
-        "In argument 'probability' of 'ContextualbanditLabel', column 'p' must be >= 0 and <= 1."
-    )
+    expected = "In argument 'probability' of 'ContextualbanditLabel', column 'p' must be >= 0 and <= 1."
     assert expected == str(value_error.value)
 
 
@@ -304,9 +320,7 @@ def test_contextualbanditlabel_negative_proba_error():
             label=ContextualbanditLabel("a", "c", "p"),
             features=Feature("x"),
         )
-    expected = (
-        "In argument 'probability' of 'ContextualbanditLabel', column 'p' must be >= 0 and <= 1."
-    )
+    expected = "In argument 'probability' of 'ContextualbanditLabel', column 'p' must be >= 0 and <= 1."
     assert expected == str(value_error.value)
 
 
@@ -330,7 +344,9 @@ def test_contextualbanditlabel_non_positive_action():
             label=ContextualbanditLabel("a", "c", "p"),
             features=Feature("x"),
         )
-    expected = "In argument 'action' of 'ContextualbanditLabel', column 'a' must be >= 1."
+    expected = (
+        "In argument 'action' of 'ContextualbanditLabel', column 'a' must be >= 1."
+    )
     assert expected == str(value_error.value)
 
 
@@ -355,7 +371,5 @@ def test_listlabel_not_allowed_label_error():
             label=[SimpleLabel("a"), SimpleLabel("b")],
             features=Feature("x"),
         )
-    expected = (
-        "The only labels that can be used with list are 'ContextualbanditLabel', 'MultiLabel'."
-    )
+    expected = "The only labels that can be used with list are 'ContextualbanditLabel', 'MultiLabel'."
     assert expected == str(type_error.value)

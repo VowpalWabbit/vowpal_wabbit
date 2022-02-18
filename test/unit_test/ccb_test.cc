@@ -10,7 +10,7 @@
 #include "example.h"
 
 #include <vector>
-#include "conditional_contextual_bandit.h"
+#include "reductions/conditional_contextual_bandit.h"
 
 namespace CCB
 {
