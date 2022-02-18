@@ -20,6 +20,7 @@
 #include "config/options.h"
 
 #include "vw_exception.h"
+#include "text_utils.h"
 #include "vw_string_view.h"
 
 using namespace VW::config;
@@ -393,9 +394,22 @@ bool options_cli::was_supplied(const std::string& key) const
   if (m_prog_parsed_token_map.find(key) != m_prog_parsed_token_map.end()) { return true; }
 
   // If not found there, do a fallback check on the command line itself.
-  auto keys = {std::string("--" + key), std::string("-" + key)};
-  return std::find_first_of(std::begin(m_command_line), std::end(m_command_line), std::begin(keys), std::end(keys)) !=
-      std::end(m_command_line);
+  std::array<std::string, 2> keys = {std::string("--" + key), };
+  // Short option
+  const auto short_key = "-" + key;
+  auto short_option_found = std::any_of(m_command_line.begin(), m_command_line.end(), [&short_key](const std::string& arg) {
+    return VW::starts_with(arg, short_key);
+  });
+  if (short_option_found) { return true; }
+
+  const auto long_key = "--" + key;
+  auto long_option_found = std::any_of(m_command_line.begin(), m_command_line.end(), [&long_key](const std::string& arg) {
+    // We need to check that the option starts with --key_name, but we also need to ensure that either the whole token matches or we hit an equals sign denoting the end of the option name.
+    // If we don't do this --csoaa and --csoaa_ldf would incorrectly match.
+    return VW::starts_with(arg, long_key) && ((arg.size() == long_key.size()) || (arg[long_key.size()] == '='));
+  });
+
+  return long_option_found;
 }
 
 void options_cli::check_unregistered(VW::io::logger& logger)
