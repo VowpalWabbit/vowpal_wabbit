@@ -48,7 +48,6 @@ struct options_boost_po : public options_i
   void internal_add_and_parse(const option_group_definition& group) override;
   VW_ATTR(nodiscard) bool was_supplied(const std::string& key) const override;
   void check_unregistered(VW::io::logger& logger) override;
-  VW_ATTR(nodiscard) const std::set<std::string>& get_supplied_options() const override;
   void insert(const std::string& key, const std::string& value) override;
 
   // Note: does not work for vector options.
