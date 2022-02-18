@@ -65,6 +65,7 @@ set(vw_all_headers
   config/option_group_definition.h
   config/option.h
   config/options_boost_po.h
+  config/options_cli.h
   config/options_name_extractor.h
   config/options_serializer.h
   config/options_types.h
@@ -263,6 +264,7 @@ set(vw_all_sources
   config/help_formatter.cc
   config/option_group_definition.cc
   config/options_boost_po.cc
+  config/options_cli.cc
   config/options_name_extractor.cc
   config/options.cc
   cost_sensitive.cc
