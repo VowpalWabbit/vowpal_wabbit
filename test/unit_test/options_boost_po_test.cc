@@ -289,7 +289,7 @@ BOOST_AUTO_TEST_CASE(kept_command_line)
   BOOST_CHECK_EQUAL(bool_opt, false);
   BOOST_CHECK_EQUAL(other_bool_opt, true);
 
-  cli_options_serializer serializer;
+  cli_options_serializer serializer{false};
   for (auto& opt : options->get_all_options())
   {
     if (opt->m_keep) { serializer.add(*opt); }

@@ -10,13 +10,13 @@
 
 using namespace VW::config;
 
-cli_options_serializer::cli_options_serializer() : cli_options_serializer(false) {}
 cli_options_serializer::cli_options_serializer(bool escape) : m_escape(escape) {}
 
 template <typename T>
 void serialize(std::stringstream& output, const typed_option<T>& typed_option, bool escape)
 {
   std::stringstream ss;
+  // 15 is the maximum number of decimal digits for a double.
   ss.precision(15);
   ss << typed_option.value();
   auto value = ss.str();

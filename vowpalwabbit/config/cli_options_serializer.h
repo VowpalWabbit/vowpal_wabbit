@@ -16,8 +16,15 @@ namespace config
 {
 struct cli_options_serializer : options_serializer_i, typed_option_visitor
 {
-  cli_options_serializer();
-  cli_options_serializer(bool escape);
+  /**
+   * @brief Construct a new cli options serializer object
+   *
+   * @param escape Whether to escape option values which have special
+   * characters. ' " \ are escaped and strings with spaces are quoted. Not
+   * escaping values can result in producing a command line that is ambiguous if
+   * any of these chars are used.
+   */
+  explicit cli_options_serializer(bool escape);
 
   void add(base_option& option) override;
   std::string str() const override;

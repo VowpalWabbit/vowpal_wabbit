@@ -209,7 +209,7 @@ JNIEXPORT jobject JNICALL Java_org_vowpalwabbit_spark_VowpalWabbitNative_getArgu
   auto* all = reinterpret_cast<VW::workspace*>(get_native_pointer(env, vwObj));
 
   // serialize the command line
-  VW::config::cli_options_serializer serializer;
+  VW::config::cli_options_serializer serializer{false};
   for (auto const& option : all->options->get_all_options())
   {
     if (all->options->was_supplied(option->m_name))

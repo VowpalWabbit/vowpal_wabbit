@@ -4,6 +4,7 @@
 
 #include <cstdio>
 #include <cfloat>
+#include <iterator>
 #include <sstream>
 #include <fstream>
 #include <sys/types.h>
@@ -1441,10 +1442,12 @@ bool check_interaction_settings_collision(options_i& options, const std::string&
 
 bool is_long_option_like(VW::string_view token) { return token.find("--") == 0 && token.size() > 2; }
 
-// The model file contains a command line but it has much greater constraints than the user supplied command line. These
-// constraints greatly help us unambiguously process it. The command line will ONLY consist of bool switches or options
-// with a single value. However, the tricky thing here is that there is no way to disambiguate something that looks like
-// a switch from an option with a value.
+// The model file contains a command line but it has much greater constraints
+// than the user supplied command line. These constraints allow us to
+// unambiguously process it. The command line will ONLY consist of bool switches
+// or options with a single value that is specified with a =. If the value
+// contained things that need to be escaped then they are already processed and
+// everything after the = is the value. Spaces and all.
 std::unordered_map<std::string, std::vector<std::string>> parse_model_command_line_using_equals(
     const std::vector<std::string>& command_line)
 {
@@ -1883,7 +1886,7 @@ VW::workspace* initialize(
 VW::workspace* seed_vw_model(
     VW::workspace* vw_model, const std::string& extra_args, trace_message_t trace_listener, void* trace_context)
 {
-  cli_options_serializer serializer;
+  std::vector<std::string> args;
   for (auto const& option : vw_model->options->get_all_options())
   {
     if (vw_model->options->was_supplied(option->m_name))
@@ -1891,16 +1894,26 @@ VW::workspace* seed_vw_model(
       // ignore no_stdin since it will be added by vw::initialize, and ignore -i since we don't want to reload the
       // model.
       if (option->m_name == "no_stdin" || option->m_name == "initial_regressor") { continue; }
-
+      // We don't actually need to escape these because they will be automatically split by =
+      cli_options_serializer serializer{false};
       serializer.add(*option);
+      args.push_back(serializer.str());
     }
   }
 
-  auto serialized_options = serializer.str();
-  serialized_options = serialized_options + " " + extra_args;
+  // extra_args is tokenized by space
+  if (!extra_args.empty())
+  {
+    std::vector<std::string> extra_args_tokenized;
+    tokenize(' ', extra_args, extra_args_tokenized);
+    args.insert(args.end(), extra_args_tokenized.begin(), extra_args_tokenized.end());
+  }
+
+  std::unique_ptr<options_i, options_deleter_type> options(
+      new config::options_boost_po(args), [](VW::config::options_i* ptr) { delete ptr; });
 
   VW::workspace* new_model =
-      VW::initialize(serialized_options, nullptr, true /* skip_model_load */, trace_listener, trace_context);
+      VW::initialize(std::move(options), nullptr, true /* skip_model_load */, trace_listener, trace_context);
   free_it(new_model->sd);
 
   // reference model states stored in the specified VW instance

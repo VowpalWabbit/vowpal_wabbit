@@ -334,7 +334,7 @@ const char* get_model_id(vw_ptr all) { return all->id.c_str(); }
 
 std::string get_arguments(vw_ptr all)
 {
-  VW::config::cli_options_serializer serializer;
+  VW::config::cli_options_serializer serializer{false};
   for (auto const& option : all->options->get_all_options())
   {
     if (all->options->was_supplied(option->m_name)) serializer.add(*option);

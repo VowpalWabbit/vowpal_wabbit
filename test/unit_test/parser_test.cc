@@ -68,6 +68,6 @@ BOOST_AUTO_TEST_CASE(escape_string_tests)
   BOOST_TEST("abc" == VW::escape_string("abc"));
   BOOST_TEST(R"(abc)" == VW::escape_string(R"(abc)"));
   BOOST_TEST(R"(abc\")" == VW::escape_string("abc\""));
-  BOOST_TEST(R"(abc\t)" == VW::escape_string("abc\t"));
+  BOOST_TEST(R"(abc\ )" == VW::escape_string("abc "));
   BOOST_TEST(R"(\'abc\')" == VW::escape_string("'abc'"));
 }

@@ -47,7 +47,7 @@ private:
         m_regressors->Add(gcnew String(r.c_str()));
     }
 
-    VW::config::cli_options_serializer serializer;
+    VW::config::cli_options_serializer serializer{false};
     for (auto const& option : options->get_all_options())
     {
       if (options->was_supplied(option->m_name))

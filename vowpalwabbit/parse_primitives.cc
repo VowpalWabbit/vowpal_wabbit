@@ -64,9 +64,8 @@ char unescape_char(It char_to_unescape_it, It end)
 {
   if (char_to_unescape_it == end) { THROW("unescape_char: unexpected end of string while unescaping"); }
   char c = *char_to_unescape_it;
-  if (c == 'n') { return '\n'; }
-  if (c == 't') { return '\t'; }
-  return c;
+  if (c == '\\' || c == '\'' || c == '"' || ' ') { return c; }
+  THROW("Invalid escape character: " << c);
 }
 
 template <typename It>
@@ -163,20 +162,17 @@ std::string escape_string(VW::string_view str)
   {
     switch (c)
     {
-      case '\n':
-        ss << R"(\n)";
-        break;
-      case '\t':
-        ss << R"(\t)";
-        break;
       case '\\':
-        ss << R"(\)";
+        ss << R"(\\)";
         break;
       case '"':
         ss << R"(\")";
         break;
       case '\'':
         ss << R"(\')";
+        break;
+      case ' ':
+        ss << R"(\ )";
         break;
       default:
         ss << c;
@@ -188,7 +184,7 @@ std::string escape_string(VW::string_view str)
 
 bool contains_escapeable_chars(VW::string_view str)
 {
-  const std::set<char> escape_chars = {'\n', '\t', '\\', '"', '\''};
+  const std::set<char> escape_chars = {'\\', '"', '\'', ' '};
   for (auto c : str)
   {
     if (escape_chars.find(c) != escape_chars.end()) { return true; }
