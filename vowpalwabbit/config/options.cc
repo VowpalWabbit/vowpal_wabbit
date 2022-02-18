@@ -5,7 +5,7 @@
 #include "config/options.h"
 #include "config/option_group_definition.h"
 
-#include <algorithm>
+#include <cassert>
 
 using namespace VW::config;
 

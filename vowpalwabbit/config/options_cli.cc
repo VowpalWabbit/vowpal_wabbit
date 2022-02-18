@@ -4,17 +4,13 @@
 
 #include "config/options_cli.h"
 
-#include <algorithm>
-#include <cctype>
-#include <iterator>
-#include <memory>
 #include <set>
 #include <sstream>
 #include <string>
 #include <unordered_map>
-#include <utility>
 #include <vector>
 #include <queue>
+#include <cassert>
 
 #include "config/option.h"
 #include "config/options.h"
