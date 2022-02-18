@@ -253,9 +253,12 @@ public:
   }
 };
 
-vw_ptr my_initialize_with_log(std::string args, py_log_wrapper_ptr py_log)
+vw_ptr my_initialize_with_log(py::list args, py_log_wrapper_ptr py_log)
 {
-  if (args.find_first_of("--no_stdin") == std::string::npos) args += " --no_stdin";
+  std::vector<std::string> args_vec;
+  for (size_t i = 0; i < len(args); i++) { args_vec.push_back(py::extract<std::string>(args[i])); }
+
+  if (std::find(args_vec.begin(), args_vec.end(), "--no_stdin") == args_vec.end()) { args_vec.push_back("--no_stdin"); }
 
   trace_message_t trace_listener = nullptr;
   void* trace_context = nullptr;
@@ -266,12 +269,15 @@ vw_ptr my_initialize_with_log(std::string args, py_log_wrapper_ptr py_log)
     trace_context = py_log.get();
   }
 
-  VW::workspace* foo = VW::initialize(args, nullptr, false, trace_listener, trace_context);
+  std::unique_ptr<VW::config::options_i, options_deleter_type> options(
+      new VW::config::options_boost_po(args_vec), [](VW::config::options_i* ptr) { delete ptr; });
+
+  VW::workspace* foo = VW::initialize(std::move(options), nullptr, false, trace_listener, trace_context);
   // return boost::shared_ptr<VW::workspace>(foo, [](vw *all){VW::finish(*all);});
   return boost::shared_ptr<VW::workspace>(foo);
 }
 
-vw_ptr my_initialize(std::string args) { return my_initialize_with_log(args, nullptr); }
+vw_ptr my_initialize(py::list args) { return my_initialize_with_log(args, nullptr); }
 
 void my_run_parser(vw_ptr all)
 {
