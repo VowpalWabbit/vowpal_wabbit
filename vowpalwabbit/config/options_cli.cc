@@ -398,7 +398,7 @@ bool options_cli::was_supplied(const std::string& key) const
       std::end(m_command_line);
 }
 
-void options_cli::check_unregistered(VW::io::logger& logger)
+std::vector<std::string> options_cli::check_unregistered()
 {
   // Reparse but this time allowing the terminator to be handled so we don't accidentally interpret a positional
   // argument as an unknown option.
@@ -408,6 +408,8 @@ void options_cli::check_unregistered(VW::io::logger& logger)
   {
     if (is_option_like(str)) { THROW_EX(VW::vw_unrecognised_option_exception, "unrecognised option '" << str << "'") }
   }
+
+  std::vector<std::string> warnings;
 
   for (auto const& kv : m_prog_parsed_token_map)
   {
@@ -423,9 +425,10 @@ void options_cli::check_unregistered(VW::io::logger& logger)
       for (const auto& group : dependent_necessary_options)
       { message += fmt::format("\t{}\n", fmt::join(group, ", ")); }
 
-      logger.err_warn(message);
+      warnings.push_back(message);
     }
   }
+  return warnings;
 }
 
 void options_cli::insert(const std::string& key, const std::string& value)

@@ -25,7 +25,11 @@ struct options_cli : public options_i
 
   void internal_add_and_parse(const option_group_definition& group) override;
   VW_ATTR(nodiscard) bool was_supplied(const std::string& key) const override;
-  void check_unregistered(VW::io::logger& logger) override;
+  /**
+   * @brief Check for unregistered options and validate input. Throws if there
+   * is an error. Returns a vector of warning strings if there are warnings produced.
+   */
+  VW_ATTR(nodiscard) std::vector<std::string> check_unregistered() override;
   void insert(const std::string& key, const std::string& value) override;
   void replace(const std::string& key, const std::string& value) override;
   VW_ATTR(nodiscard) std::vector<std::string> get_positional_tokens() const override;
