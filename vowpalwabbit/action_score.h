@@ -63,14 +63,14 @@ std::ostream& operator<<(std::ostream& os, const action_score& a_s);
 
 namespace VW
 {
-inline bool action_score_compare_lt(const ACTION_SCORE::action_score& left, const ACTION_SCORE::action_score& right)
+constexpr inline bool action_score_compare_lt(
+    const ACTION_SCORE::action_score& left, const ACTION_SCORE::action_score& right)
 {
-  if (left.score == right.score) { return left.action < right.action; }
-  return left.score < right.score;
+  return (left.score == right.score) ? left.action < right.action : left.score < right.score;
 }
-inline bool action_score_compare_gt(const ACTION_SCORE::action_score& left, const ACTION_SCORE::action_score& right)
+constexpr inline bool action_score_compare_gt(
+    const ACTION_SCORE::action_score& left, const ACTION_SCORE::action_score& right)
 {
-  if (left.score == right.score) { return left.action > right.action; }
-  return left.score > right.score;
+  return (left.score == right.score) ? left.action > right.action : left.score > right.score;
 }
 }  // namespace VW
