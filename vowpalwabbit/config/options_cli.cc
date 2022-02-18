@@ -29,7 +29,8 @@ bool is_number(const std::string& str)
   if (str.empty()) { return false; }
 
   char* ptr;
-  std::strtof(str.c_str(), &ptr);
+  auto _ = std::strtof(str.c_str(), &ptr);
+  _UNUSED(_);
   return (*ptr) == '\0';
 }
 
