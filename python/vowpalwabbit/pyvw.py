@@ -455,16 +455,17 @@ class Workspace(pylibvw.vw):
         self.init = True
 
         # check to see if native parser needs to run
-        ext_file_args = ["d", "data", "passes"]
-        if any(x in kw for x in ext_file_args):
+        ext_file_args = ["-d", "--data", "--passes"]
+        run_parser = False
+        for arg in merged_arg_list:
+            for ext_file_arg in ext_file_args:
+                if arg.startswith(ext_file_arg):
+                    run_parser = True
+                    break
+
+        if run_parser:
             pylibvw.vw.run_parser(self)
             self.parser_ran = True
-        elif arg_str:
-            # space after -d to avoid matching with other substrings
-            ext_file_cmd_str = ["-d ", "--data", "--passes"]
-            if [cmd for cmd in ext_file_cmd_str if (cmd in arg_str)]:
-                pylibvw.vw.run_parser(self)
-                self.parser_ran = True
 
     def get_config(self, filtered_enabled_reductions_only=True):
         return self.get_options(VWOption, filtered_enabled_reductions_only)
