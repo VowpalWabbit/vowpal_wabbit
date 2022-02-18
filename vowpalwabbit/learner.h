@@ -628,14 +628,22 @@ struct common_learner_builder
     return *static_cast<FluentBuilderT*>(this);
   }
 
-  FluentBuilderT& set_input_prediction_type(prediction_type_t pred_type)
+  FluentBuilderT& set_input_prediction_type(prediction_type_t pred_type, prediction_type_t base_pred_type = prediction_type_t::nopred)
   {
+    if (base_pred_type != prediction_type_t::nopred && base_pred_type != pred_type)
+    {
+      THROW("Input prediction type: " << to_string(pred_type) << " does not match output prediction type: " << to_string(base_pred_type) << " of base.");
+    }
     this->_learner->_input_pred_type = pred_type;
     return *static_cast<FluentBuilderT*>(this);
   }
 
-  FluentBuilderT& set_output_label_type(label_type_t label_type)
+  FluentBuilderT& set_output_label_type(label_type_t label_type, label_type_t base_label_type = label_type_t::nolabel)
   {
+    if (base_label_type != label_type_t::nolabel && base_label_type != label_type)
+    {
+      THROW("Output label type: " << to_string(label_type) << " does not match input label type: " << to_string(base_label_type) << " of base.");
+    }
     this->_learner->_output_label_type = label_type;
     return *static_cast<FluentBuilderT*>(this);
   }
