@@ -237,7 +237,8 @@ T convert_token_value(const VW::string_view& token)
   T result;
   std::stringstream ss(std::string{token});
   ss >> result;
-  if (ss.fail()) { THROW_EX(VW::vw_argument_invalid_value_exception, "Failed to convert " << token << " to " << typeid(T).name()) }
+  if (ss.fail())
+  { THROW_EX(VW::vw_argument_invalid_value_exception, "Failed to convert " << token << " to " << typeid(T).name()) }
   return result;
 }
 
