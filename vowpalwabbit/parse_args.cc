@@ -220,7 +220,7 @@ void parse_dictionary_argument(VW::workspace& all, const std::string& str)
                          << (map->size() == 1 ? "" : "s") << endl;
 
   all.namespace_dictionaries[static_cast<size_t>(ns)].push_back(map);
-  dictionary_info info = {s.to_string(), fd_hash, map};
+  dictionary_info info = {std::string{s}, fd_hash, map};
   all.loaded_dictionaries.push_back(info);
 }
 

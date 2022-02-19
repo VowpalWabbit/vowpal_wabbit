@@ -409,7 +409,7 @@ void predict_csoaa_ldf_rank(ldf& data, single_learner& base, multi_ex& ec_seq_al
   data.stored_preds.clear();
 
   auto restore_guard = VW::scope_exit([&data, &ec_seq, K] {
-    qsort((void*)data.a_s.begin(), data.a_s.size(), sizeof(action_score), score_comp);
+    std::sort(data.a_s.begin(), data.a_s.end(), VW::action_score_compare_lt);
 
     data.stored_preds[0].clear();
     for (size_t k = 0; k < K; k++)

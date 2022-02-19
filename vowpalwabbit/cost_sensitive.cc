@@ -124,7 +124,7 @@ void parse_label(label& ld, VW::label_parser_reuse_mem& reuse_mem, const VW::nam
     {
       f.class_index = ldict
           ? ldict->get(reuse_mem.tokens[0], logger)
-          : static_cast<uint32_t>(hashstring(reuse_mem.tokens[0].begin(), reuse_mem.tokens[0].length(), 0));
+          : static_cast<uint32_t>(hashstring(reuse_mem.tokens[0].data(), reuse_mem.tokens[0].length(), 0));
       if (reuse_mem.tokens.size() == 1 && f.x >= 0)  // test examples are specified just by un-valued class #s
         f.x = FLT_MAX;
     }
@@ -246,7 +246,7 @@ void output_example(
     else
     {
       VW::string_view sv_pred = all.sd->ldict->get(multiclass_prediction);
-      all.print_text_by_ref(sink.get(), sv_pred.to_string(), ec.tag, all.logger);
+      all.print_text_by_ref(sink.get(), std::string{sv_pred}, ec.tag, all.logger);
     }
   }
 
