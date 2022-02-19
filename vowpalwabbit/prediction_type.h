@@ -5,6 +5,7 @@
 #pragma once
 
 #include "vw_string_view.h"
+#include "future_compat.h"
 
 #include <cstdint>
 

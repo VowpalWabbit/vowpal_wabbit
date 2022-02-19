@@ -25,20 +25,20 @@ std::vector<std::string> escaped_tokenize(char delim, VW::string_view s, bool al
   {
     if (s[end_pos] == '\\')
     {
-      current.append(s.begin(), end_pos);
+      current.append(s.data(), end_pos);
       s.remove_prefix(end_pos + 1);
 
       // always insert the next character after an escape if it exists
       if (!s.empty())
       {
-        current.append(s.begin(), 1);
+        current.append(s.data(), 1);
         s.remove_prefix(1);
       }
     }
     else
     {
       last_space = end_pos == 0;
-      current.append(s.begin(), end_pos);
+      current.append(s.data(), end_pos);
       s.remove_prefix(end_pos + 1);
       if (!current.empty() || allow_empty) { tokens.push_back(current); }
       current.clear();
@@ -47,7 +47,7 @@ std::vector<std::string> escaped_tokenize(char delim, VW::string_view s, bool al
   // write whatever's left into the vector
   if (!s.empty() || !current.empty() || (last_space && allow_empty))
   {
-    current.append(s.begin(), s.length());
+    current.append(s.data(), s.length());
     tokens.push_back(current);
   }
   return tokens;
