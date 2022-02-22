@@ -8,16 +8,16 @@ power_t = 0.5
 Enabled reductions: gd, generate_interactions, scorer-identity, csoaa_ldf-rank, cb_adf, cb_explore_adf_greedy, cb_sample, shared_feature_merger, ccb_explore_adf, extra_metrics
 Input label = ccb
 Output pred = decision_probs
-average  since         example        example  current  current  current
-loss     last          counter         weight    label  predict features
-0.000000 0.000000            1            1.0  3:0,0:0      3,0       98
--0.300000 -0.600000            2            2.0 1:-0.6,3:-0.4      1,3       98
--0.162500 -0.025000            4            4.0  2:0,0:0      2,0       98
--0.093875 -0.025250            8            8.0  2:-0.42        2       40
--0.533937 -0.974000           16           16.0      1:0        1       40
--0.328594 -0.123250           32           32.0  1:-0.42        1       40
+average  since         example        example  current  current  current 
+loss     last          counter         weight    label  predict features 
+0.000000 0.000000            1            1.0  3:0,0:0      3,0       98 
+-0.30000 -0.60000            2            2.0 1:-0....      1,3       98 
+-0.16250 -0.02500            4            4.0  2:0,0:0      2,0       98 
+-0.09387 -0.02525            8            8.0  2:-0.42        2       40 
+-0.53393 -0.97400           16           16.0      1:0        1       40 
+-0.32859 -0.12325           32           32.0  1:-0.42        1       40 
 [error] JSON parser error at 43: Missing a comma or '}' after an object member.. Handler:  State: DecisionService
--0.547531 -0.766469           64           64.0      1:0        1       40
+-0.54753 -0.76646           64           64.0      1:0        1       40 
 [error] JSON parser error at 67: Terminate parsing due to Handler error.. Handler: Unexpected token: uint (0) State: StringToStringState
 
 finished run
