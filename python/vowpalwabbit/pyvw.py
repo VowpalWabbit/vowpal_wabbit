@@ -392,7 +392,8 @@ def _build_command_line(
         if not isinstance(arg_str, str):
             raise TypeError("arg_str must be a string")
         # Maintain old behavior of space split strings
-        merged_arg_list.extend(arg_str.split(" "))
+        split_strs_with_spaces_removed = filter(lambda x: x != "", arg_str.split(" "))
+        merged_arg_list.extend(split_strs_with_spaces_removed)
 
     if arg_list is not None:
         if len(arg_list) > 0 and not isinstance(arg_list[0], str):
@@ -448,6 +449,7 @@ class Workspace(pylibvw.vw):
             self._log_wrapper = pylibvw.vw_log(self._log_fwd)
 
         merged_arg_list = _build_command_line(arg_str, arg_list, **kw)
+        print(merged_arg_list)
         if self._log_wrapper:
             super().__init__(merged_arg_list, self._log_wrapper)
         else:
