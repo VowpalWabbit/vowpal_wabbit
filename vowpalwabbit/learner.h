@@ -622,38 +622,37 @@ struct common_learner_builder
     return *static_cast<FluentBuilderT*>(this);
   }
 
-  FluentBuilderT& set_output_prediction_type(prediction_type_t pred_type)
+  // This is the label type of the example passed into the learn function. This
+  // label will be operated on throught the learn function.
+  FluentBuilderT& set_input_label_type(label_type_t label_type)
   {
-    this->_learner->_output_pred_type = pred_type;
+    this->_learner->_input_label_type = label_type;
     return *static_cast<FluentBuilderT*>(this);
   }
 
-  FluentBuilderT& set_input_prediction_type(
-      prediction_type_t pred_type, prediction_type_t base_pred_type = prediction_type_t::nopred)
+  // This is the label type of the example fed into the base in the learn function.
+  // This will reference the state of the label after it has been operated on throughout
+  // the learn function.
+  FluentBuilderT& set_output_label_type(label_type_t label_type)
   {
-    if (base_pred_type != prediction_type_t::nopred && base_pred_type != pred_type)
-    {
-      THROW("Input prediction type: " << to_string(pred_type) << " does not match output prediction type: "
-                                      << to_string(base_pred_type) << " of base.");
-    }
-    this->_learner->_input_pred_type = pred_type;
-    return *static_cast<FluentBuilderT*>(this);
-  }
-
-  FluentBuilderT& set_output_label_type(label_type_t label_type, label_type_t base_label_type = label_type_t::nolabel)
-  {
-    if (base_label_type != label_type_t::nolabel && base_label_type != label_type)
-    {
-      THROW("Output label type: " << to_string(label_type)
-                                  << " does not match input label type: " << to_string(base_label_type) << " of base.");
-    }
     this->_learner->_output_label_type = label_type;
     return *static_cast<FluentBuilderT*>(this);
   }
 
-  FluentBuilderT& set_input_label_type(label_type_t label_type)
+  // This is the prediction type received when calling predict from the base at
+  // the top of the predict function. Note that the prediction from the example
+  // passed directly into the predict function has no defined type.
+  FluentBuilderT& set_input_prediction_type(prediction_type_t pred_type)
   {
-    this->_learner->_input_label_type = label_type;
+    this->_learner->_input_pred_type = pred_type;
+    return *static_cast<FluentBuilderT*>(this);
+  }
+
+  // This is the prediction type of the example at the end of the predict function.
+  // This prediction will be passed when the reduction above it calls predict on its base.
+  FluentBuilderT& set_output_prediction_type(prediction_type_t pred_type)
+  {
+    this->_learner->_output_pred_type = pred_type;
     return *static_cast<FluentBuilderT*>(this);
   }
 };
@@ -684,14 +683,14 @@ struct reduction_learner_builder
     set_params_per_weight(1);
     this->set_learn_returns_prediction(false);
 
-    // By default, will produce what the base produces
-    super::set_output_prediction_type(base->get_output_prediction_type());
-    // By default, will produce what the base produces
-    super::set_input_prediction_type(base->get_output_prediction_type());
-    // By default, will produce what the base expects
-    super::set_output_label_type(base->get_input_label_type());
     // By default, will produce what the base expects
     super::set_input_label_type(base->get_input_label_type());
+    // By default, will produce what the base expects
+    super::set_output_label_type(base->get_input_label_type());
+    // By default, will produce what the base produces
+    super::set_input_prediction_type(base->get_output_prediction_type());
+    // By default, will produce what the base produces
+    super::set_output_prediction_type(base->get_output_prediction_type());
   }
 
   reduction_learner_builder<DataT, ExampleT, BaseLearnerT>& set_params_per_weight(size_t params_per_weight)
@@ -701,7 +700,25 @@ struct reduction_learner_builder
     return *this;
   }
 
-  learner<DataT, ExampleT>* build() { return this->_learner; }
+  learner<DataT, ExampleT>* build(VW::io::logger* logger = nullptr)
+  {
+    if (logger != nullptr)
+    {
+      prediction_type_t& in_pred_type = this->_learner->_input_pred_type;
+      prediction_type_t& base_out_pred_type = this->_learner->learn_fd.base->_output_pred_type;
+      label_type_t& out_label_type = this->_learner->_output_label_type;
+      label_type_t& base_in_label_type = this->_learner->learn_fd.base->_input_label_type;
+      if (in_pred_type != base_out_pred_type)
+      {
+        logger->err_warn(fmt::format("Input prediction type: {} of reduction: {} does not match output prediction type: {} of base reduction: {}.", to_string(in_pred_type).data(), this->_learner->name, to_string(base_out_pred_type).data(), this->_learner->learn_fd.base->name));
+      }
+      if (out_label_type != base_in_label_type)
+      {
+        logger->err_warn(fmt::format("Output label type: {} of reduction: {} does not match input label type: {} of base reduction: {}.", to_string(out_label_type).data(), this->_learner->name, to_string(base_in_label_type).data(), this->_learner->learn_fd.base->name));
+      }
+    }
+    return this->_learner;
+  }
 };
 
 template <class ExampleT, class BaseLearnerT>
@@ -726,14 +743,14 @@ struct reduction_no_data_learner_builder
     this->_learner->finisher_fd.func = static_cast<func_data::fn>(noop);
 
     set_params_per_weight(1);
-    // By default, will produce what the base produces
-    super::set_output_prediction_type(base->get_output_prediction_type());
-    // By default, will produce what the base produces
-    super::set_input_prediction_type(base->get_output_prediction_type());
-    // By default, will produce what the base expects
-    super::set_output_label_type(base->get_input_label_type());
     // By default, will produce what the base expects
     super::set_input_label_type(base->get_input_label_type());
+    // By default, will produce what the base expects
+    super::set_output_label_type(base->get_input_label_type());
+    // By default, will produce what the base produces
+    super::set_input_prediction_type(base->get_output_prediction_type());
+    // By default, will produce what the base produces
+    super::set_output_prediction_type(base->get_output_prediction_type());
   }
 
   reduction_no_data_learner_builder<ExampleT, BaseLearnerT>& set_params_per_weight(size_t params_per_weight)
@@ -772,10 +789,10 @@ struct base_learner_builder
 
     this->_learner->learn_fd.data = this->_learner->learner_data.get();
 
-    super::set_output_prediction_type(out_pred_type);
-    super::set_input_prediction_type(prediction_type_t::nopred);
-    super::set_output_label_type(label_type_t::nolabel);
     super::set_input_label_type(in_label_type);
+    super::set_output_label_type(label_type_t::nolabel);
+    super::set_input_prediction_type(prediction_type_t::nopred);
+    super::set_output_prediction_type(out_pred_type);
 
     set_params_per_weight(1);
   }
