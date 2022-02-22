@@ -48,7 +48,8 @@ int main(int argc, char* argv[])
                .help("Port number for spanning tree to listen on"));
 
   opts.add_and_parse(desc);
-  // opts.check_unregistered();
+  // Return value is ignored as option reachability is not relevant here.
+  opts.check_unregistered();
   auto positional = opts.get_positional_tokens();
   std::string pid_file_name;
   if (!positional.empty())
