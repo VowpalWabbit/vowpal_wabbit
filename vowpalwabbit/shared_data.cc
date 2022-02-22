@@ -205,7 +205,7 @@ void shared_data::update_dump_interval(bool progress_add, float progress_arg)
   static constexpr int col_current_features = 8;
 
 static constexpr size_t num_cols = 7;
-static constexpr std::array<VW::column_definition, num_cols> HEADER_COLUMNS = {
+static constexpr std::array<VW::column_definition, num_cols> SD_HEADER_COLUMNS = {
     VW::column_definition(col_avg_loss, VW::align_type::left, VW::wrap_type::wrap_space), // average loss
     VW::column_definition(col_since_last, VW::align_type::left, VW::wrap_type::wrap_space), // since last
     VW::column_definition(col_example_counter, VW::align_type::right, VW::wrap_type::wrap_space), // example counter
@@ -223,13 +223,13 @@ static constexpr std::array<VW::column_definition, num_cols> VALUE_COLUMNS = {
     VW::column_definition(col_current_predict, VW::align_type::right, VW::wrap_type::truncate_with_ellipsis), // current predict
     VW::column_definition(col_current_features, VW::align_type::right, VW::wrap_type::truncate), // current features
 };
-static std::array<std::string, num_cols> HEADER = {"average loss", "since last", "example counter", "example\nweight",
+static const std::array<std::string, num_cols> SD_HEADER_TITLES = {"average loss", "since last", "example counter", "example\nweight",
     "current label", "current predict", "current features"};
 
 // progressive validation header
 void shared_data::print_update_header(std::ostream& trace_message)
 {
-  format_row(HEADER, HEADER_COLUMNS, 1, trace_message);
+  format_row(SD_HEADER_TITLES, SD_HEADER_COLUMNS, 1, trace_message);
   trace_message << "\n";
 }
 
@@ -300,9 +300,6 @@ void shared_data::print_update(std::ostream& output_stream, bool holdout_set_off
 
   std::string avg_loss;
   std::string since_last;
-  std::string ex_counter;
-  std::string ex_weight;
-  std::string current_features;
   if (!holdout_set_off && current_pass >= 1)
   {
     if (holdout_sum_loss == 0. && weighted_holdout_examples == 0.) { avg_loss = "unknown"; }
@@ -345,11 +342,7 @@ void shared_data::print_update(std::ostream& output_stream, bool holdout_set_off
     }
   }
 
-  ex_counter = std::to_string(example_number);
-  ex_weight = num_to_string(weighted_examples(), prec_example_weight);
-  current_features = std::to_string(num_features);
-
-  format_row({avg_loss, since_last, ex_counter, ex_weight, label, prediction, current_features}, VALUE_COLUMNS, 1, output_stream);
+  format_row({avg_loss, since_last, std::to_string(example_number), num_to_string(weighted_examples(), prec_example_weight), label, prediction, std::to_string(num_features)}, VALUE_COLUMNS, 1, output_stream);
 
   if (holding_out) { output_stream << " h"; }
   output_stream << std::endl;
