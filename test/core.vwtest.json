@@ -774,7 +774,7 @@
   {
     "id": 59,
     "desc": "cb_adf, sharedfeatures",
-    "vw_command": "--dsjson --chain_hash --cb_adf -d train-sets/no_shared_features.json",
+    "vw_command": "--dsjson --chain_hash --cb_adf -q :: -d train-sets/no_shared_features.json",
     "diff_files": {
       "stderr": "train-sets/ref/no_shared_features.stderr",
       "stdout": "train-sets/ref/no_shared_features.stdout"
@@ -2066,7 +2066,7 @@
   {
     "id": 158,
     "desc": "test decision service json parsing",
-    "vw_command": "-d train-sets/decisionservice.json --dsjson --cb_explore_adf --epsilon 0.2 --quadratic GT -P 1 -p cbe_adf_dsjson.predict",
+    "vw_command": "-d train-sets/decisionservice.json --dsjson --cb_explore_adf -q :: --epsilon 0.2 --quadratic GT -P 1 -p cbe_adf_dsjson.predict",
     "diff_files": {
       "stderr": "train-sets/ref/cbe_adf_dsjson.stderr",
       "cbe_adf_dsjson.predict": "pred-sets/ref/cbe_adf_dsjson.predict",
@@ -2310,7 +2310,7 @@
   {
     "id": 178,
     "desc": "cb_adf, sharedfeatures",
-    "vw_command": "--dsjson --chain_hash --cb_adf -d train-sets/no_shared_features.json",
+    "vw_command": "--dsjson --chain_hash --cb_adf -q :: -d train-sets/no_shared_features.json",
     "diff_files": {
       "stderr": "train-sets/ref/no_shared_features.stderr",
       "stdout": "train-sets/ref/no_shared_features.stdout"
@@ -2443,7 +2443,7 @@
   {
     "id": 189,
     "desc": "test dsjson parser correctly processes checkpoint and dangling observation lines",
-    "vw_command": "-d train-sets/b1848_dsjson_parser_regression.txt --dsjson --chain_hash --cb_explore_adf -P 1 --extra_metrics metrics_skip.json",
+    "vw_command": "-d train-sets/b1848_dsjson_parser_regression.txt --dsjson --chain_hash --cb_explore_adf -q :: -P 1 --extra_metrics metrics_skip.json",
     "diff_files": {
       "stderr": "train-sets/ref/b1848_dsjson_parser_regression.stderr",
       "metrics_skip.json": "test-sets/ref/metrics_skip.json",
