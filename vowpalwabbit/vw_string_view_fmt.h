@@ -20,7 +20,7 @@ struct formatter<VW::string_view> : formatter<fmt::string_view>
   template <typename FormatContext>
   auto format(const VW::string_view& sv, FormatContext& ctx) -> decltype(ctx.out())
   {
-    return formatter<fmt::string_view>::format({sv.begin(), sv.size()}, ctx);
+    return formatter<fmt::string_view>::format({sv.data(), sv.size()}, ctx);
   }
 };
 }  // namespace fmt

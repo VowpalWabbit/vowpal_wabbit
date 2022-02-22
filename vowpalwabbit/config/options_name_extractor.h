@@ -19,11 +19,9 @@ struct options_name_extractor : options_i
 {
   std::string generated_name;
   std::set<std::string> m_added_help_group_names;
-  std::set<std::string> m_unused;
 
   void internal_add_and_parse(const option_group_definition& group) override;
   VW_ATTR(nodiscard) bool was_supplied(const std::string&) const override;
-  VW_ATTR(nodiscard) const std::set<std::string>& get_supplied_options() const override;
   void check_unregistered(VW::io::logger& /* logger */) override;
   void insert(const std::string&, const std::string&) override;
   void replace(const std::string&, const std::string&) override;

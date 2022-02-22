@@ -20,7 +20,7 @@ using namespace VW::config;
 bool is_number(const VW::string_view& s)
 {
   size_t endidx = 0;
-  auto f = parseFloat(s.begin(), endidx, s.end());
+  auto f = parseFloat(s.data(), endidx, s.data() + s.size());
   if ((endidx == 0 && !s.empty()) || std::isnan(f)) { return false; }
 
   return true;
@@ -194,8 +194,6 @@ void options_boost_po::add_to_description_impl<typelist<>>(
 {
   THROW(fmt::format("Option '{}' has an unsupported option type.", opt->m_name));
 }
-
-const std::set<std::string>& options_boost_po::get_supplied_options() const { return m_supplied_options; }
 
 void options_boost_po::insert(const std::string& key, const std::string& value)
 {
