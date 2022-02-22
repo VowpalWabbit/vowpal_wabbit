@@ -26,11 +26,13 @@ public:
       return example_loss;
     }
     else if (prediction < sd->min_label)
+    {
       if (label == sd->min_label)
         return 0.;
       else
         return static_cast<float>((label - sd->min_label) * (label - sd->min_label) +
             2. * (label - sd->min_label) * (sd->min_label - prediction));
+    }
     else if (label == sd->max_label)
       return 0.;
     else
@@ -56,17 +58,11 @@ public:
     return 2.f * (label - prediction) * update_scale;
   }
 
-  float getRevertingWeight(shared_data* sd, float prediction, float eta_t) override
-  {
-    float t = 0.5f * (sd->min_label + sd->max_label);
-    float alternative = (prediction > t) ? sd->min_label : sd->max_label;
-    return log((alternative - prediction) / (alternative - t)) / eta_t;
-  }
-
   float getSquareGrad(float prediction, float label) override
   {
     return 4.f * (prediction - label) * (prediction - label);
   }
+
   float first_derivative(shared_data* sd, float prediction, float label) override
   {
     if (prediction < sd->min_label)
@@ -75,6 +71,7 @@ public:
       prediction = sd->max_label;
     return 2.f * (prediction - label);
   }
+
   float second_derivative(shared_data* sd, float prediction, float) override
   {
     if (prediction <= sd->max_label && prediction >= sd->min_label)
@@ -105,19 +102,20 @@ public:
     return 2.f * (label - prediction) * update_scale;
   }
 
-  float getRevertingWeight(shared_data* sd, float prediction, float eta_t) override
-  {
-    float t = 0.5f * (sd->min_label + sd->max_label);
-    float alternative = (prediction > t) ? sd->min_label : sd->max_label;
-    return (t - prediction) / ((alternative - prediction) * eta_t);
-  }
-
   float getSquareGrad(float prediction, float label) override
   {
     return 4.f * (prediction - label) * (prediction - label);
   }
-  float first_derivative(shared_data*, float prediction, float label) override { return 2.f * (prediction - label); }
-  float second_derivative(shared_data*, float, float) override { return 2.; }
+
+  float first_derivative(shared_data*, float prediction, float label) override
+  {
+    return 2.f * (prediction - label);
+  }
+
+  float second_derivative(shared_data*, float, float) override
+  {
+    return 2.;
+  }
 };
 
 class hingeloss : public loss_function
@@ -149,8 +147,6 @@ public:
     if (label * prediction >= 1) return 0;
     return label * update_scale;
   }
-
-  float getRevertingWeight(shared_data*, float prediction, float eta_t) override { return fabs(prediction) / eta_t; }
 
   float getSquareGrad(float prediction, float label) override
   {
@@ -218,12 +214,6 @@ public:
     return static_cast<float>(w * (1. + r / t * (u - r) / (u - 2. * r)) - x);  // more magic
   }
 
-  float getRevertingWeight(shared_data*, float prediction, float eta_t) override
-  {
-    float z = -fabs(prediction);
-    return (1 - z - correctedExp(z)) / eta_t;
-  }
-
   float first_derivative(shared_data*, float prediction, float label) override
   {
     float v = -label / (1 + correctedExp(label * prediction));
@@ -286,17 +276,6 @@ public:
     return -(1 - tau) * update_scale;
   }
 
-  float getRevertingWeight(shared_data* sd, float prediction, float eta_t) override
-  {
-    float v, t;
-    t = 0.5f * (sd->min_label + sd->max_label);
-    if (prediction > t)
-      v = -(1 - tau);
-    else
-      v = tau;
-    return (t - prediction) / (eta_t * v);
-  }
-
   float first_derivative(shared_data*, float prediction, float label) override
   {
     float e = label - prediction;
@@ -352,11 +331,6 @@ public:
     return (label - exp_prediction) * update_scale;
   }
 
-  float getRevertingWeight(shared_data* /* sd */, float /* prediction */, float /* eta_t */) override
-  {
-    THROW("Active learning not supported by poisson loss");
-  }
-
   float getSquareGrad(float prediction, float label) override
   {
     float exp_prediction = expf(prediction);
@@ -379,7 +353,10 @@ public:
 std::unique_ptr<loss_function> getLossFunction(
     VW::workspace& all, const std::string& funcName, float function_parameter)
 {
-  if (funcName == "squared" || funcName == "Huber") { return VW::make_unique<squaredloss>(); }
+  if (funcName == "squared" || funcName == "Huber")
+  {
+    return VW::make_unique<squaredloss>();
+  }
   else if (funcName == "classic")
   {
     return VW::make_unique<classic_squaredloss>();
