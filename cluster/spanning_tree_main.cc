@@ -42,13 +42,16 @@ int main(int argc, char* argv[])
   VW::config::option_group_definition desc("Spanning Tree");
   desc.add(VW::config::make_option("nondaemon", nondaemon).help("Run spanning tree in foreground"));
   desc.add(VW::config::make_option("help", help).short_name('h').help("Print help message"));
-  desc.add(VW::config::make_option("port", port).short_name('p').default_value(26543).help("Port number for spanning tree to listen on"));
+  desc.add(VW::config::make_option("port", port)
+               .short_name('p')
+               .default_value(26543)
+               .help("Port number for spanning tree to listen on"));
 
   opts.add_and_parse(desc);
   // opts.check_unregistered();
   auto positional = opts.get_positional_tokens();
   std::string pid_file_name;
-  if(!positional.empty())
+  if (!positional.empty())
   {
     pid_file_name = positional.front();
     if (positional.size() > 1)
