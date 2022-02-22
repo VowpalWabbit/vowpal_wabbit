@@ -5,20 +5,22 @@
 #include "config/options_cli.h"
 
 #include <algorithm>
-#include <cctype>
-#include <iterator>
+#include <cassert>
+#include <cstdint>
+#include <cstdlib>
+#include <map>
 #include <memory>
+#include <queue>
 #include <set>
 #include <sstream>
 #include <string>
 #include <unordered_map>
 #include <utility>
 #include <vector>
-#include <queue>
+
+#include <fmt/format.h>
 
 #include "config/option.h"
-#include "config/options.h"
-
 #include "vw_exception.h"
 #include "text_utils.h"
 #include "vw_string_view.h"
@@ -434,7 +436,7 @@ bool options_cli::was_supplied(const std::string& key) const
   return long_option_found;
 }
 
-void options_cli::check_unregistered(VW::io::logger& logger)
+std::vector<std::string> options_cli::check_unregistered()
 {
   // Reparse but this time allowing the terminator to be handled so we don't accidentally interpret a positional
   // argument as an unknown option.
@@ -444,6 +446,8 @@ void options_cli::check_unregistered(VW::io::logger& logger)
   {
     if (is_option_like(str)) { THROW_EX(VW::vw_unrecognised_option_exception, "unrecognised option '" << str << "'") }
   }
+
+  std::vector<std::string> warnings;
 
   for (auto const& kv : m_prog_parsed_token_map)
   {
@@ -460,9 +464,10 @@ void options_cli::check_unregistered(VW::io::logger& logger)
       for (const auto& group : dependent_necessary_options)
       { message += fmt::format("\t{}\n", fmt::join(group, ", ")); }
 
-      logger.err_warn(message);
+      warnings.push_back(message);
     }
   }
+  return warnings;
 }
 
 void options_cli::insert(const std::string& key, const std::string& value)
