@@ -453,10 +453,10 @@ public:
     }
   }
 
-  prediction_type_t get_output_prediction_type() { return _output_pred_type; }
-  prediction_type_t get_input_prediction_type() { return _input_pred_type; }
-  label_type_t get_output_label_type() { return _output_label_type; }
-  label_type_t get_input_label_type() { return _input_label_type; }
+  prediction_type_t& get_output_prediction_type() { return _output_pred_type; }
+  prediction_type_t& get_input_prediction_type() { return _input_pred_type; }
+  label_type_t& get_output_label_type() { return _output_label_type; }
+  label_type_t& get_input_label_type() { return _input_label_type; }
   bool is_multiline() { return _is_multiline; }
   const std::string& get_name() { return name; }
 };
@@ -623,7 +623,7 @@ struct common_learner_builder
   }
 
   // This is the label type of the example passed into the learn function. This
-  // label will be operated on throught the learn function.
+  // label will be operated on throughout the learn function.
   FluentBuilderT& set_input_label_type(label_type_t label_type)
   {
     this->_learner->_input_label_type = label_type;
@@ -704,24 +704,24 @@ struct reduction_learner_builder
   {
     if (logger != nullptr)
     {
-      prediction_type_t& in_pred_type = this->_learner->_input_pred_type;
-      prediction_type_t& base_out_pred_type = this->_learner->learn_fd.base->_output_pred_type;
-      label_type_t& out_label_type = this->_learner->_output_label_type;
-      label_type_t& base_in_label_type = this->_learner->learn_fd.base->_input_label_type;
+      prediction_type_t& in_pred_type = this->_learner->get_input_prediction_type();
+      prediction_type_t& base_out_pred_type = this->_learner->learn_fd.base->get_output_prediction_type();
+      label_type_t& out_label_type = this->_learner->get_output_label_type();
+      label_type_t& base_in_label_type = this->_learner->learn_fd.base->get_input_label_type();
       if (in_pred_type != base_out_pred_type)
       {
         logger->err_warn(
             fmt::format("Input prediction type: {} of reduction: {} does not match output prediction type: {} of base "
                         "reduction: {}.",
-                to_string(in_pred_type).data(), this->_learner->name, to_string(base_out_pred_type).data(),
-                this->_learner->learn_fd.base->name));
+                to_string(in_pred_type), this->_learner->name, to_string(base_out_pred_type),
+                this->_learner->learn_fd.base->get_name()));
       }
       if (out_label_type != base_in_label_type)
       {
         logger->err_warn(fmt::format(
             "Output label type: {} of reduction: {} does not match input label type: {} of base reduction: {}.",
-            to_string(out_label_type).data(), this->_learner->name, to_string(base_in_label_type).data(),
-            this->_learner->learn_fd.base->name));
+            to_string(out_label_type), this->_learner->name, to_string(base_in_label_type),
+            this->_learner->learn_fd.base->get_name()));
       }
     }
     return this->_learner;
