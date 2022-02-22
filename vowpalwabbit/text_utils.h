@@ -20,6 +20,14 @@ namespace VW
 bool ends_with(VW::string_view full_string, VW::string_view ending);
 
 /**
+ * \brief Check if a string starts with some other string.
+ * \param full_string String to check starting of
+ * \param starting Starting value to check
+ * \return true if full_string starts with starting, otherwise false.
+ */
+bool starts_with(VW::string_view full_string, VW::string_view starting);
+
+/**
  * \brief Replace hex sequences in a string with their corresponding byte. A hex sequence must only contain two digits
  * and must be in the form \x00 \param arg String to replace hex values within \return A copy of the original string
  * with hex values replaced with corresponding byte.
