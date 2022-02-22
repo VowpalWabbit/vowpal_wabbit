@@ -190,41 +190,43 @@ void shared_data::update_dump_interval(bool progress_add, float progress_arg)
   }
 }
 
-  // Column width, precision constants:
-  static constexpr int col_avg_loss = 8;
-  static constexpr int prec_avg_loss = 6;
-  static constexpr int col_since_last = 8;
-  static constexpr int prec_since_last = 6;
-  static constexpr int col_example_counter = 12;
-  static constexpr int col_example_weight = col_example_counter + 2;
-  static constexpr int prec_example_weight = 1;
-  static constexpr int col_current_label = 8;
-  static constexpr int prec_current_label = 4;
-  static constexpr int col_current_predict = 8;
-  static constexpr int prec_current_predict = 4;
-  static constexpr int col_current_features = 8;
+// Column width, precision constants:
+static constexpr int col_avg_loss = 8;
+static constexpr int prec_avg_loss = 6;
+static constexpr int col_since_last = 8;
+static constexpr int prec_since_last = 6;
+static constexpr int col_example_counter = 12;
+static constexpr int col_example_weight = col_example_counter + 2;
+static constexpr int prec_example_weight = 1;
+static constexpr int col_current_label = 8;
+static constexpr int prec_current_label = 4;
+static constexpr int col_current_predict = 8;
+static constexpr int prec_current_predict = 4;
+static constexpr int col_current_features = 8;
 
 static constexpr size_t num_cols = 7;
 static constexpr std::array<VW::column_definition, num_cols> SD_HEADER_COLUMNS = {
-    VW::column_definition(col_avg_loss, VW::align_type::left, VW::wrap_type::wrap_space), // average loss
-    VW::column_definition(col_since_last, VW::align_type::left, VW::wrap_type::wrap_space), // since last
-    VW::column_definition(col_example_counter, VW::align_type::right, VW::wrap_type::wrap_space), // example counter
-    VW::column_definition(col_example_weight, VW::align_type::right, VW::wrap_type::wrap_space), // example weight
-    VW::column_definition(col_current_label, VW::align_type::right, VW::wrap_type::wrap_space), // current label
-    VW::column_definition(col_current_predict, VW::align_type::right, VW::wrap_type::wrap_space), // current predict
-    VW::column_definition(col_current_features, VW::align_type::right, VW::wrap_type::wrap_space), // current features
+    VW::column_definition(col_avg_loss, VW::align_type::left, VW::wrap_type::wrap_space),           // average loss
+    VW::column_definition(col_since_last, VW::align_type::left, VW::wrap_type::wrap_space),         // since last
+    VW::column_definition(col_example_counter, VW::align_type::right, VW::wrap_type::wrap_space),   // example counter
+    VW::column_definition(col_example_weight, VW::align_type::right, VW::wrap_type::wrap_space),    // example weight
+    VW::column_definition(col_current_label, VW::align_type::right, VW::wrap_type::wrap_space),     // current label
+    VW::column_definition(col_current_predict, VW::align_type::right, VW::wrap_type::wrap_space),   // current predict
+    VW::column_definition(col_current_features, VW::align_type::right, VW::wrap_type::wrap_space),  // current features
 };
 static constexpr std::array<VW::column_definition, num_cols> VALUE_COLUMNS = {
-    VW::column_definition(col_avg_loss, VW::align_type::left, VW::wrap_type::truncate), // average loss
-    VW::column_definition(col_since_last, VW::align_type::left, VW::wrap_type::truncate), // since last
-    VW::column_definition(col_example_counter, VW::align_type::right, VW::wrap_type::truncate), // example counter
-    VW::column_definition(col_example_weight, VW::align_type::right, VW::wrap_type::truncate), // example weight
-    VW::column_definition(col_current_label, VW::align_type::right, VW::wrap_type::truncate_with_ellipsis), // current label
-    VW::column_definition(col_current_predict, VW::align_type::right, VW::wrap_type::truncate_with_ellipsis), // current predict
-    VW::column_definition(col_current_features, VW::align_type::right, VW::wrap_type::truncate), // current features
+    VW::column_definition(col_avg_loss, VW::align_type::left, VW::wrap_type::truncate),          // average loss
+    VW::column_definition(col_since_last, VW::align_type::left, VW::wrap_type::truncate),        // since last
+    VW::column_definition(col_example_counter, VW::align_type::right, VW::wrap_type::truncate),  // example counter
+    VW::column_definition(col_example_weight, VW::align_type::right, VW::wrap_type::truncate),   // example weight
+    VW::column_definition(
+        col_current_label, VW::align_type::right, VW::wrap_type::truncate_with_ellipsis),  // current label
+    VW::column_definition(
+        col_current_predict, VW::align_type::right, VW::wrap_type::truncate_with_ellipsis),       // current predict
+    VW::column_definition(col_current_features, VW::align_type::right, VW::wrap_type::truncate),  // current features
 };
-static const std::array<std::string, num_cols> SD_HEADER_TITLES = {"average loss", "since last", "example counter", "example\nweight",
-    "current label", "current predict", "current features"};
+static const std::array<std::string, num_cols> SD_HEADER_TITLES = {"average loss", "since last", "example counter",
+    "example\nweight", "current label", "current predict", "current features"};
 
 // progressive validation header
 void shared_data::print_update_header(std::ostream& trace_message)
@@ -241,16 +243,12 @@ std::string num_to_string(T num, int precision)
   return ss.str();
 }
 
-
 void shared_data::print_update(std::ostream& output_stream, bool holdout_set_off, size_t current_pass, float label,
     float prediction, size_t num_features, bool progress_add, float progress_arg)
 {
   std::ostringstream label_buf, pred_buf;
 
-  if (label < FLT_MAX)
-  {
-    label_buf << num_to_string(label, prec_current_label);
-  }
+  if (label < FLT_MAX) { label_buf << num_to_string(label, prec_current_label); }
   else
   {
     label_buf << "unknown";
@@ -267,10 +265,7 @@ void shared_data::print_update(std::ostream& output_stream, bool holdout_set_off
 {
   std::ostringstream label_buf, pred_buf;
 
-  if (label < INT_MAX)
-  {
-    label_buf << label;
-  }
+  if (label < INT_MAX) { label_buf << label; }
   else
   {
     label_buf << "unknown";
@@ -309,13 +304,11 @@ void shared_data::print_update(std::ostream& output_stream, bool holdout_set_off
     }
 
     if (holdout_sum_loss_since_last_dump == 0. && weighted_holdout_examples_since_last_dump == 0.)
-    {
-      since_last = "unknown";
-    }
+    { since_last = "unknown"; }
     else
     {
-      since_last = num_to_string(
-          holdout_sum_loss_since_last_dump / weighted_holdout_examples_since_last_dump, prec_since_last);
+      since_last =
+          num_to_string(holdout_sum_loss_since_last_dump / weighted_holdout_examples_since_last_dump, prec_since_last);
     }
 
     weighted_holdout_examples_since_last_dump = 0;
@@ -326,9 +319,7 @@ void shared_data::print_update(std::ostream& output_stream, bool holdout_set_off
   else
   {
     if (weighted_labeled_examples > 0.)
-    {
-      avg_loss = num_to_string(sum_loss / weighted_labeled_examples, prec_avg_loss);
-    }
+    { avg_loss = num_to_string(sum_loss / weighted_labeled_examples, prec_avg_loss); }
     else
     {
       avg_loss = "n.a.";
@@ -337,12 +328,15 @@ void shared_data::print_update(std::ostream& output_stream, bool holdout_set_off
     if (weighted_labeled_examples == old_weighted_labeled_examples) { since_last = "n.a."; }
     else
     {
-      since_last = num_to_string(sum_loss_since_last_dump / (weighted_labeled_examples - old_weighted_labeled_examples),
-          prec_since_last);
+      since_last = num_to_string(
+          sum_loss_since_last_dump / (weighted_labeled_examples - old_weighted_labeled_examples), prec_since_last);
     }
   }
 
-  format_row({avg_loss, since_last, std::to_string(example_number), num_to_string(weighted_examples(), prec_example_weight), label, prediction, std::to_string(num_features)}, VALUE_COLUMNS, 1, output_stream);
+  format_row(
+      {avg_loss, since_last, std::to_string(example_number), num_to_string(weighted_examples(), prec_example_weight),
+          label, prediction, std::to_string(num_features)},
+      VALUE_COLUMNS, 1, output_stream);
 
   if (holding_out) { output_stream << " h"; }
   output_stream << std::endl;

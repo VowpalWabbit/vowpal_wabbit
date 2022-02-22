@@ -28,8 +28,8 @@ void print_update(VW::workspace& all, const std::vector<example*>& slots, const 
       pred_ss << delim << slot[0].action;
       delim = ",";
     }
-    all.sd->print_update(*all.trace_message, all.holdout_set_off, all.current_pass, label_print_func(slots), pred_ss.str(),
-        num_features, all.progress_add, all.progress_arg);
+    all.sd->print_update(*all.trace_message, all.holdout_set_off, all.current_pass, label_print_func(slots),
+        pred_ss.str(), num_features, all.progress_add, all.progress_arg);
   }
 }
 

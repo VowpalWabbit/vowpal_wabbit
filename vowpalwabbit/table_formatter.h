@@ -16,7 +16,6 @@
 
 namespace VW
 {
-
 enum class wrap_type
 {
   truncate,
@@ -62,10 +61,7 @@ void format_row(const std::array<std::string, num_cols>& contents,
     else if (column_definitions[i].wrapping == wrap_type::wrap_char)
     {
       for (const auto& token : split_by_limit(contents[i], column_definitions[i].column_width))
-      {
-        column_contents_split_into_lines[i].push_back(std::string{token});
-      }
-
+      { column_contents_split_into_lines[i].push_back(std::string{token}); }
     }
     else
     {
@@ -74,10 +70,9 @@ void format_row(const std::array<std::string, num_cols>& contents,
 
     for (auto& line : column_contents_split_into_lines[i])
     {
-      if (column_definitions[i].wrapping == wrap_type::truncate_with_ellipsis && line.size() > column_definitions[i].column_width)
-      {
-        line = line.substr(0, column_definitions[i].column_width - 3) + "...";
-      }
+      if (column_definitions[i].wrapping == wrap_type::truncate_with_ellipsis &&
+          line.size() > column_definitions[i].column_width)
+      { line = line.substr(0, column_definitions[i].column_width - 3) + "..."; }
       else
       {
         line = line.substr(0, column_definitions[i].column_width);
@@ -88,9 +83,7 @@ void format_row(const std::array<std::string, num_cols>& contents,
   // Find the maximum number of lines in each column
   size_t max_num_lines = 0;
   for (size_t i = 0; i < num_cols; i++)
-  {
-    max_num_lines = std::max(max_num_lines, column_contents_split_into_lines[i].size());
-  }
+  { max_num_lines = std::max(max_num_lines, column_contents_split_into_lines[i].size()); }
 
   // The final newline is NOT printed.
   std::string delim = "";
@@ -105,12 +98,12 @@ void format_row(const std::array<std::string, num_cols>& contents,
         if (column_definitions[col].alignment == align_type::left)
         {
           output << std::left << std::setw(column_definitions[col].column_width)
-             << column_contents_split_into_lines[col][line];
+                 << column_contents_split_into_lines[col][line];
         }
         else
         {
           output << std::right << std::setw(column_definitions[col].column_width)
-             << column_contents_split_into_lines[col][line];
+                 << column_contents_split_into_lines[col][line];
         }
       }
       else

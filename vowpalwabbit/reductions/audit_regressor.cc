@@ -16,11 +16,12 @@ using namespace VW::config;
 
 static constexpr size_t num_cols = 3;
 static constexpr std::array<VW::column_definition, num_cols> AUDIT_REGRESSOR_COLUMNS = {
-    VW::column_definition(8, VW::align_type::left, VW::wrap_type::wrap_space), // example counter
-    VW::column_definition(9, VW::align_type::right, VW::wrap_type::wrap_space), // values audited
-    VW::column_definition(12, VW::align_type::right, VW::wrap_type::wrap_space), // total progress
+    VW::column_definition(8, VW::align_type::left, VW::wrap_type::wrap_space),    // example counter
+    VW::column_definition(9, VW::align_type::right, VW::wrap_type::wrap_space),   // values audited
+    VW::column_definition(12, VW::align_type::right, VW::wrap_type::wrap_space),  // total progress
 };
-static const std::array<std::string, num_cols> AUDIT_REGRESSOR_HEADER = {"example\ncounter", "values\naudited", "total\nprogress"};
+static const std::array<std::string, num_cols> AUDIT_REGRESSOR_HEADER = {
+    "example\ncounter", "values\naudited", "total\nprogress"};
 
 struct audit_regressor_data
 {
@@ -172,7 +173,8 @@ void audit_regressor(audit_regressor_data& rd, VW::LEARNER::single_learner& base
 
 inline void print_ex(VW::workspace& all, size_t ex_processed, size_t vals_found, size_t progress)
 {
-  VW::format_row({std::to_string(ex_processed), std::to_string(vals_found), std::to_string(progress) + "%"}, AUDIT_REGRESSOR_COLUMNS, 1, *(all.trace_message));
+  VW::format_row({std::to_string(ex_processed), std::to_string(vals_found), std::to_string(progress) + "%"},
+      AUDIT_REGRESSOR_COLUMNS, 1, *(all.trace_message));
   *(all.trace_message) << "\n";
 }
 
