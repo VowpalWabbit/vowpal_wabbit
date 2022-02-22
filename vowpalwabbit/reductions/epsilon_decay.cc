@@ -41,8 +41,8 @@ ForwardIt swap_models(ForwardIt first, ForwardIt n_first, ForwardIt end)
 }
 
 template <class ForwardIt>
-void reset_models(
-    ForwardIt first, ForwardIt end, parameters& weights, double epsilon_decay_alpha, double epsilon_decay_tau, uint64_t model_count)
+void reset_models(ForwardIt first, ForwardIt end, parameters& weights, double epsilon_decay_alpha,
+    double epsilon_decay_tau, uint64_t model_count)
 {
   uint64_t ppw = 1;
   while (ppw < model_count) { ppw *= 2; }
@@ -149,7 +149,11 @@ VW::LEARNER::base_learner* epsilon_decay_setup(VW::setup_base_i& stack_builder)
   float epsilon_decay_tau;
 
   option_group_definition new_options("Epsilon-Decaying Exploration");
-  new_options.add(make_option("epsilon_decay", epsilon_decay_option).necessary().keep().help("Use decay of exploration reduction"))
+  new_options
+      .add(make_option("epsilon_decay", epsilon_decay_option)
+               .necessary()
+               .keep()
+               .help("Use decay of exploration reduction"))
       .add(make_option("model_count", model_count).keep().default_value(3).help("Set number of exploration models"))
       .add(make_option("min_scope", min_scope)
                .keep()
@@ -159,7 +163,10 @@ VW::LEARNER::base_learner* epsilon_decay_setup(VW::setup_base_i& stack_builder)
                .keep()
                .default_value(DEFAULT_ALPHA)
                .help("Set confidence interval for champion change"))
-      .add(make_option("epsilon_decay_tau", epsilon_decay_tau).keep().default_value(DEFAULT_TAU).help("Time constant for count decay"));
+      .add(make_option("epsilon_decay_tau", epsilon_decay_tau)
+               .keep()
+               .default_value(DEFAULT_TAU)
+               .help("Time constant for count decay"));
 
   if (!options.add_parse_and_check_necessary(new_options)) { return nullptr; }
 
@@ -167,7 +174,8 @@ VW::LEARNER::base_learner* epsilon_decay_setup(VW::setup_base_i& stack_builder)
   uint64_t ppw = 1;
   while (ppw < model_count) { ppw *= 2; }
 
-  auto data = VW::make_unique<epsilon_decay_data>(model_count, min_scope, epsilon_decay_alpha, epsilon_decay_tau, all.weights);
+  auto data =
+      VW::make_unique<epsilon_decay_data>(model_count, min_scope, epsilon_decay_alpha, epsilon_decay_tau, all.weights);
 
   // make sure we setup the rest of the stack with cleared interactions
   // to make sure there are not subtle bugs
@@ -203,7 +211,8 @@ size_t read_model_field(io_buf& io, VW::epsilon_decay::epsilon_decay_score& scor
   return bytes;
 }
 
-size_t write_model_field(io_buf& io, const VW::epsilon_decay::epsilon_decay_score& score, const std::string& upstream_name, bool text)
+size_t write_model_field(
+    io_buf& io, const VW::epsilon_decay::epsilon_decay_score& score, const std::string& upstream_name, bool text)
 {
   size_t bytes = 0;
   bytes += write_model_field(io, reinterpret_cast<const VW::scored_config&>(score), upstream_name, text);
@@ -220,7 +229,8 @@ size_t read_model_field(io_buf& io, VW::epsilon_decay::epsilon_decay_data& epsil
   return bytes;
 }
 
-size_t write_model_field(io_buf& io, const VW::epsilon_decay::epsilon_decay_data& epsilon_decay, const std::string& upstream_name, bool text)
+size_t write_model_field(
+    io_buf& io, const VW::epsilon_decay::epsilon_decay_data& epsilon_decay, const std::string& upstream_name, bool text)
 {
   size_t bytes = 0;
   bytes += write_model_field(io, epsilon_decay.scored_configs, upstream_name + "_scored_configs", text);

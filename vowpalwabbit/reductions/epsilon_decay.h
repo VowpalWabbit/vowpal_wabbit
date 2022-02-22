@@ -17,7 +17,10 @@ VW::LEARNER::base_learner* epsilon_decay_setup(VW::setup_base_i&);
 struct epsilon_decay_score : scored_config
 {
   epsilon_decay_score() : VW::scored_config() {}
-  epsilon_decay_score(double alpha, double tau, uint64_t model_idx) : VW::scored_config(alpha, tau), _model_idx(model_idx) {}
+  epsilon_decay_score(double alpha, double tau, uint64_t model_idx)
+      : VW::scored_config(alpha, tau), _model_idx(model_idx)
+  {
+  }
   float get_upper_bound() const { return this->current_ips(); }
   float get_lower_bound() const { return _lower_bound; }
   uint64_t get_model_idx() const { return _model_idx; }
@@ -29,8 +32,12 @@ struct epsilon_decay_score : scored_config
 
 struct epsilon_decay_data
 {
-  epsilon_decay_data(uint64_t num_configs, uint64_t min_scope, double epsilon_decay_alpha, double epsilon_decay_tau, parameters& weights)
-      : min_scope(min_scope), epsilon_decay_alpha(epsilon_decay_alpha), epsilon_decay_tau(epsilon_decay_tau), weights(weights)
+  epsilon_decay_data(uint64_t num_configs, uint64_t min_scope, double epsilon_decay_alpha, double epsilon_decay_tau,
+      parameters& weights)
+      : min_scope(min_scope)
+      , epsilon_decay_alpha(epsilon_decay_alpha)
+      , epsilon_decay_tau(epsilon_decay_tau)
+      , weights(weights)
   {
     for (uint64_t i = 0; i < num_configs; ++i)
     {
