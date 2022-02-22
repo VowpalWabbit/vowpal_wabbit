@@ -65,6 +65,9 @@ void options_boost_po::internal_add_and_parse(const option_group_definition& gro
     m_defined_options.insert("-" + opt_ptr->m_short_name);
   }
 
+  // Line number for these exceptions to be consistent.
+  const auto EXCEPTION_LINE = __LINE__;
+
   try
   {
     po::variables_map vm;
@@ -101,20 +104,22 @@ void options_boost_po::internal_add_and_parse(const option_group_definition& gro
     po::notify(vm);
   }
 // It seems as though boost::wrapexcept was introduced in 1.69 and it later started to be thrown out of Boost PO.
+// We have to manually throw these exceptions with an explicit line number to keep a consistent error message.
+// This file is about to be removed so this is a very temporary fix.
 #if BOOST_VERSION >= 106900
   catch (boost::wrapexcept<boost::program_options::invalid_option_value>& ex)
   {
-    THROW_EX(VW::vw_argument_invalid_value_exception, ex.what());
+    throw VW::vw_argument_invalid_value_exception(__FILENAME__, EXCEPTION_LINE, ex.what());
   }
 #endif
   catch (boost::exception_detail::clone_impl<
       boost::exception_detail::error_info_injector<boost::program_options::invalid_option_value>>& ex)
   {
-    THROW_EX(VW::vw_argument_invalid_value_exception, ex.what());
+    throw VW::vw_argument_invalid_value_exception(__FILENAME__, EXCEPTION_LINE, ex.what());
   }
   catch (boost::exception_detail::clone_impl<boost::exception_detail::error_info_injector<boost::bad_lexical_cast>>& ex)
   {
-    THROW_EX(VW::vw_argument_invalid_value_exception, ex.what());
+    throw VW::vw_argument_invalid_value_exception(__FILENAME__, EXCEPTION_LINE, ex.what());
   }
   catch (boost::exception_detail::clone_impl<
       boost::exception_detail::error_info_injector<boost::program_options::ambiguous_option>>& ex)
