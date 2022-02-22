@@ -87,12 +87,15 @@ void format_row(const std::array<std::string, num_cols>& contents,
 
   // The final newline is NOT printed.
   std::string delim = "";
+  std::string padding = "";
   for (size_t line = 0; line < max_num_lines; line++)
   {
     output << delim;
     delim = "\n";
     for (size_t col = 0; col < num_cols; col++)
     {
+      for (size_t i = 0; i < column_padding; i++) { output << " "; }
+      padding = " ";
       if (line < column_contents_split_into_lines[col].size())
       {
         if (column_definitions[col].alignment == align_type::left)
@@ -110,8 +113,8 @@ void format_row(const std::array<std::string, num_cols>& contents,
       {
         output << std::setw(column_definitions[col].column_width) << "";
       }
-      for (size_t i = 0; i < column_padding; i++) { output << " "; }
     }
+    padding = "";
   }
 
   output.width(saved_w);
