@@ -1438,7 +1438,6 @@ bool check_interaction_settings_collision(options_i& options, const std::string&
   return file_options_has_interaction;
 }
 
-
 bool is_opt_long_option_like(VW::string_view token) { return token.find("--") == 0 && token.size() > 2; }
 
 // The model file contains a command line but it has much greater constraints than the user supplied command line. These
