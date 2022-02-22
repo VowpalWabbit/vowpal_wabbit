@@ -2945,7 +2945,7 @@ std::string search::pretty_label(action a)
   if (this->priv->all->sd->ldict)
   {
     auto sv = this->priv->all->sd->ldict->get(a);
-    return sv.to_string();
+    return std::string{sv};
   }
   else
   {
