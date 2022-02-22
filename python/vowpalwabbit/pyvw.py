@@ -448,7 +448,6 @@ class Workspace(pylibvw.vw):
             self._log_wrapper = pylibvw.vw_log(self._log_fwd)
 
         merged_arg_list = _build_command_line(arg_str, arg_list, **kw)
-        print(merged_arg_list)
         if self._log_wrapper:
             super().__init__(merged_arg_list, self._log_wrapper)
         else:
