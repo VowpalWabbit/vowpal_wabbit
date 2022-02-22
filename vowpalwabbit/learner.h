@@ -710,11 +710,18 @@ struct reduction_learner_builder
       label_type_t& base_in_label_type = this->_learner->learn_fd.base->_input_label_type;
       if (in_pred_type != base_out_pred_type)
       {
-        logger->err_warn(fmt::format("Input prediction type: {} of reduction: {} does not match output prediction type: {} of base reduction: {}.", to_string(in_pred_type).data(), this->_learner->name, to_string(base_out_pred_type).data(), this->_learner->learn_fd.base->name));
+        logger->err_warn(
+            fmt::format("Input prediction type: {} of reduction: {} does not match output prediction type: {} of base "
+                        "reduction: {}.",
+                to_string(in_pred_type).data(), this->_learner->name, to_string(base_out_pred_type).data(),
+                this->_learner->learn_fd.base->name));
       }
       if (out_label_type != base_in_label_type)
       {
-        logger->err_warn(fmt::format("Output label type: {} of reduction: {} does not match input label type: {} of base reduction: {}.", to_string(out_label_type).data(), this->_learner->name, to_string(base_in_label_type).data(), this->_learner->learn_fd.base->name));
+        logger->err_warn(fmt::format(
+            "Output label type: {} of reduction: {} does not match input label type: {} of base reduction: {}.",
+            to_string(out_label_type).data(), this->_learner->name, to_string(base_in_label_type).data(),
+            this->_learner->learn_fd.base->name));
       }
     }
     return this->_learner;
