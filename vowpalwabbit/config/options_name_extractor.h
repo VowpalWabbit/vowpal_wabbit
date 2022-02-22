@@ -9,7 +9,6 @@
 
 #include "config/options.h"
 #include "future_compat.h"
-#include "io/logger.h"
 
 namespace VW
 {
@@ -22,7 +21,7 @@ struct options_name_extractor : options_i
 
   void internal_add_and_parse(const option_group_definition& group) override;
   VW_ATTR(nodiscard) bool was_supplied(const std::string&) const override;
-  void check_unregistered(VW::io::logger& /* logger */) override;
+  std::vector<std::string> check_unregistered() override;
   void insert(const std::string&, const std::string&) override;
   void replace(const std::string&, const std::string&) override;
   VW_ATTR(nodiscard) std::vector<std::string> get_positional_tokens() const override;

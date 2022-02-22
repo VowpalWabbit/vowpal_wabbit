@@ -167,7 +167,7 @@ bool options_boost_po::was_supplied(const std::string& key) const
 }
 
 // Check all supplied arguments against defined args.
-void options_boost_po::check_unregistered(VW::io::logger& logger)
+std::vector<std::string> options_boost_po::check_unregistered()
 {
   for (auto const& supplied : m_supplied_options)
   {
@@ -175,6 +175,7 @@ void options_boost_po::check_unregistered(VW::io::logger& logger)
     { THROW_EX(VW::vw_unrecognised_option_exception, "unrecognised option '--" << supplied << "'"); }
   }
 
+  std::vector<std::string> warnings;
   for (auto const& supplied : m_supplied_options)
   {
     if (m_reachable_options.count(supplied) == 0 && m_ignore_supplied.count(supplied) == 0)
@@ -188,9 +189,10 @@ void options_boost_po::check_unregistered(VW::io::logger& logger)
       for (const auto& group : dependent_necessary_options)
       { message += fmt::format("\t{}\n", fmt::join(group, ", ")); }
 
-      logger.err_warn(message);
+      warnings.push_back(message);
     }
   }
+  return warnings;
 }
 
 template <>
