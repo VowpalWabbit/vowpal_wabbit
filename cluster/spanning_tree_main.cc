@@ -40,9 +40,9 @@ int main(int argc, char* argv[])
   VW::config::options_cli opts(std::vector<std::string>(argv + 1, argv + argc));
 
   VW::config::option_group_definition desc("Spanning Tree");
-  desc.add(VW::config::make_option("nondaemon", nondaemon).help("Run spanning tree in foreground"));
-  desc.add(VW::config::make_option("help", help).short_name('h').help("Print help message"));
-  desc.add(VW::config::make_option("port", port)
+  desc.add(VW::config::make_option("nondaemon", nondaemon).help("Run spanning tree in foreground"))
+      .add(VW::config::make_option("help", help).short_name('h').help("Print help message"))
+      .add(VW::config::make_option("port", port)
                .short_name('p')
                .default_value(26543)
                .help("Port number for spanning tree to listen on"));
