@@ -5,7 +5,6 @@
 #include "config/option_group_definition.h"
 
 #include "config/options.h"
-#include "vw_exception.h"
 
 using namespace VW::config;
 

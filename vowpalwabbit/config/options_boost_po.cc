@@ -65,6 +65,9 @@ void options_boost_po::internal_add_and_parse(const option_group_definition& gro
     m_defined_options.insert("-" + opt_ptr->m_short_name);
   }
 
+  // Line number for these exceptions to be consistent.
+  const auto EXCEPTION_LINE = __LINE__;
+
   try
   {
     po::variables_map vm;
@@ -101,20 +104,22 @@ void options_boost_po::internal_add_and_parse(const option_group_definition& gro
     po::notify(vm);
   }
 // It seems as though boost::wrapexcept was introduced in 1.69 and it later started to be thrown out of Boost PO.
+// We have to manually throw these exceptions with an explicit line number to keep a consistent error message.
+// This file is about to be removed so this is a very temporary fix.
 #if BOOST_VERSION >= 106900
   catch (boost::wrapexcept<boost::program_options::invalid_option_value>& ex)
   {
-    THROW_EX(VW::vw_argument_invalid_value_exception, ex.what());
+    throw VW::vw_argument_invalid_value_exception(__FILENAME__, EXCEPTION_LINE, ex.what());
   }
 #endif
   catch (boost::exception_detail::clone_impl<
       boost::exception_detail::error_info_injector<boost::program_options::invalid_option_value>>& ex)
   {
-    THROW_EX(VW::vw_argument_invalid_value_exception, ex.what());
+    throw VW::vw_argument_invalid_value_exception(__FILENAME__, EXCEPTION_LINE, ex.what());
   }
   catch (boost::exception_detail::clone_impl<boost::exception_detail::error_info_injector<boost::bad_lexical_cast>>& ex)
   {
-    THROW_EX(VW::vw_argument_invalid_value_exception, ex.what());
+    throw VW::vw_argument_invalid_value_exception(__FILENAME__, EXCEPTION_LINE, ex.what());
   }
   catch (boost::exception_detail::clone_impl<
       boost::exception_detail::error_info_injector<boost::program_options::ambiguous_option>>& ex)
@@ -162,7 +167,7 @@ bool options_boost_po::was_supplied(const std::string& key) const
 }
 
 // Check all supplied arguments against defined args.
-void options_boost_po::check_unregistered(VW::io::logger& logger)
+std::vector<std::string> options_boost_po::check_unregistered()
 {
   for (auto const& supplied : m_supplied_options)
   {
@@ -170,6 +175,7 @@ void options_boost_po::check_unregistered(VW::io::logger& logger)
     { THROW_EX(VW::vw_unrecognised_option_exception, "unrecognised option '--" << supplied << "'"); }
   }
 
+  std::vector<std::string> warnings;
   for (auto const& supplied : m_supplied_options)
   {
     if (m_reachable_options.count(supplied) == 0 && m_ignore_supplied.count(supplied) == 0)
@@ -183,9 +189,10 @@ void options_boost_po::check_unregistered(VW::io::logger& logger)
       for (const auto& group : dependent_necessary_options)
       { message += fmt::format("\t{}\n", fmt::join(group, ", ")); }
 
-      logger.err_warn(message);
+      warnings.push_back(message);
     }
   }
+  return warnings;
 }
 
 template <>
