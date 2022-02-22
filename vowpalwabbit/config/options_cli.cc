@@ -20,6 +20,7 @@
 #include "config/options.h"
 
 #include "vw_exception.h"
+#include "text_utils.h"
 #include "vw_string_view.h"
 
 using namespace VW::config;
@@ -41,6 +42,20 @@ std::vector<T> flatten_vectors(const std::vector<std::vector<T>>& vec_of_vecs)
   std::vector<T> result;
   for (const auto& vec : vec_of_vecs) { result.insert(result.end(), vec.begin(), vec.end()); }
   return result;
+}
+
+template <typename T>
+void check_disagreeing_option_values(T value, const std::string& name, const std::vector<T>& final_arguments)
+{
+  for (auto const& item : final_arguments)
+  {
+    if (item != value)
+    {
+      std::stringstream ss;
+      ss << "Disagreeing option values for '" << name << "': '" << value << "' vs '" << item << "'";
+      THROW_EX(VW::vw_argument_disagreement_exception, ss.str());
+    }
+  }
 }
 
 void check_disagreeing_option_values(const VW::string_view& ref_value, const std::string& option_name,
@@ -216,6 +231,17 @@ void consume_short_option(const std::map<char, std::shared_ptr<base_option>>& kn
   for (auto& token : current_tokens) { result_tokens.push_back(token); }
 }
 
+template <typename T>
+T convert_token_value(const VW::string_view& token)
+{
+  T result;
+  std::stringstream ss(std::string{token});
+  ss >> result;
+  if (ss.fail() || ss.rdbuf()->in_avail() != 0)
+  { THROW_EX(VW::vw_argument_invalid_value_exception, "Failed to convert " << token << " to " << typeid(T).name()) }
+  return result;
+}
+
 struct cli_typed_option_handler : typed_option_visitor
 {
   std::unordered_map<VW::string_view, std::vector<VW::string_view>>& m_tokens;
@@ -249,23 +275,17 @@ struct cli_typed_option_handler : typed_option_visitor
     {
       const auto& all_tokens = tokens_it->second;
 
+      std::vector<T> values;
+      values.reserve(all_tokens.size());
+      for (const auto& token : all_tokens) { values.push_back(convert_token_value<T>(token)); }
+
       // Due to the way options get added to the vector, the model options are at the end, and the
       // command-line options are at the front. To allow override from command-line over model file,
       // simply keep the first item.
-      const auto& token_to_use = all_tokens.front();
-      if (!option.m_allow_override) { check_disagreeing_option_values(token_to_use, option.m_name, all_tokens); }
+      const auto& value_to_use = values.front();
+      if (!option.m_allow_override) { check_disagreeing_option_values(value_to_use, option.m_name, values); }
 
-      // TODO: more robust and helpful value parsing. i.e. detect if a narrowing float conversion occurs
-      T value;
-      std::stringstream ss;
-      ss << token_to_use;
-      ss >> value;
-      if (ss.fail() || ss.rdbuf()->in_avail() != 0)
-      {
-        THROW_EX(VW::vw_argument_invalid_value_exception,
-            token_to_use << " is an invalid value for option " << option.m_name)
-      }
-      option.value(value, true);
+      option.value(value_to_use, true);
     }
   }
 
@@ -393,9 +413,25 @@ bool options_cli::was_supplied(const std::string& key) const
   if (m_prog_parsed_token_map.find(key) != m_prog_parsed_token_map.end()) { return true; }
 
   // If not found there, do a fallback check on the command line itself.
-  auto keys = {std::string("--" + key), std::string("-" + key)};
-  return std::find_first_of(std::begin(m_command_line), std::end(m_command_line), std::begin(keys), std::end(keys)) !=
-      std::end(m_command_line);
+  std::array<std::string, 2> keys = {
+      std::string("--" + key),
+  };
+  // Short option
+  const auto short_key = "-" + key;
+  auto short_option_found = std::any_of(m_command_line.begin(), m_command_line.end(),
+      [&short_key](const std::string& arg) { return VW::starts_with(arg, short_key); });
+  if (short_option_found) { return true; }
+
+  const auto long_key = "--" + key;
+  auto long_option_found =
+      std::any_of(m_command_line.begin(), m_command_line.end(), [&long_key](const std::string& arg) {
+        // We need to check that the option starts with --key_name, but we also need to ensure that either the whole
+        // token matches or we hit an equals sign denoting the end of the option name. If we don't do this --csoaa and
+        // --csoaa_ldf would incorrectly match.
+        return VW::starts_with(arg, long_key) && ((arg.size() == long_key.size()) || (arg[long_key.size()] == '='));
+      });
+
+  return long_option_found;
 }
 
 void options_cli::check_unregistered(VW::io::logger& logger)
@@ -411,6 +447,7 @@ void options_cli::check_unregistered(VW::io::logger& logger)
 
   for (auto const& kv : m_prog_parsed_token_map)
   {
+    if (kv.first == "__POSITIONAL__") { continue; }
     const auto supplied = std::string{kv.first};
     if (m_reachable_options.count(supplied) == 0)
     {
