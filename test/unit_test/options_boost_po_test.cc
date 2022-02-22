@@ -542,3 +542,22 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(check_multiple_necessary_one_missing, T, option_ty
   BOOST_CHECK_EQUAL(bool_opt, false);
   BOOST_CHECK_EQUAL(other_bool_opt, true);
 }
+
+BOOST_AUTO_TEST_CASE_TEMPLATE(check_was_supplied_common_prefix_before, T, option_types)
+{
+  std::vector<std::string> args = {"--int_opt_two", "3"};
+  auto options = VW::make_unique<T>(args);
+
+  BOOST_TEST(!options->was_supplied("int_opt"));
+  BOOST_TEST(options->was_supplied("int_opt_two"));
+
+  int int_opt;
+  int int_opt_two;
+  option_group_definition arg_group("group1");
+  arg_group.add(make_option("int_opt", int_opt));
+  arg_group.add(make_option("int_opt_two", int_opt_two));
+
+  BOOST_CHECK_NO_THROW(options->add_and_parse(arg_group));
+  BOOST_TEST(!options->was_supplied("int_opt"));
+  BOOST_TEST(options->was_supplied("int_opt_two"));
+}
