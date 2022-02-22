@@ -130,7 +130,6 @@ set(vw_all_headers
   reductions_fwd.h
   reductions/active_cover.h
   reductions/active.h
-  reductions/ae.h
   reductions/audit_regressor.h
   reductions/autolink.h
   reductions/automl.h
@@ -170,6 +169,7 @@ set(vw_all_headers
   reductions/csoaa_ldf.h
   reductions/csoaa.h
   reductions/ect.h
+  reductions/epsilon_decay.h
   reductions/explore_eval.h
   reductions/expreplay.h
   reductions/freegrad.h
@@ -302,7 +302,6 @@ set(vw_all_sources
   reduction_stack.cc
   reductions/active_cover.cc
   reductions/active.cc
-  reductions/ae.cc
   reductions/audit_regressor.cc
   reductions/autolink.cc
   reductions/automl.cc
@@ -342,6 +341,7 @@ set(vw_all_sources
   reductions/csoaa_ldf.cc
   reductions/csoaa.cc
   reductions/ect.cc
+  reductions/epsilon_decay.cc
   reductions/explore_eval.cc
   reductions/freegrad.cc
   reductions/ftrl.cc

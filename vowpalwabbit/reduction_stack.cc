@@ -10,7 +10,7 @@
 // reductions / setup functions
 #include "reductions/active_cover.h"
 #include "reductions/active.h"
-#include "reductions/ae.h"
+#include "reductions/epsilon_decay.h"
 #include "reductions/audit_regressor.h"
 #include "reductions/autolink.h"
 #include "reductions/automl.h"
@@ -199,7 +199,7 @@ void prepare_reductions(std::vector<std::tuple<std::string, reduction_setup_fn>>
   reductions.push_back(cb_dro_setup);
   reductions.push_back(cb_sample_setup);
   reductions.push_back(explore_eval_setup);
-  reductions.push_back(VW::ae::ae_setup);
+  reductions.push_back(VW::epsilon_decay::epsilon_decay_setup);
   reductions.push_back(VW::shared_feature_merger::shared_feature_merger_setup);
   reductions.push_back(CCB::ccb_explore_adf_setup);
   reductions.push_back(VW::slates::slates_setup);

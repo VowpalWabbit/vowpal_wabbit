@@ -1,11 +1,3 @@
-Aged Exploration Options:
-    --agedexp                               Use decay of exploration reduction (type: bool, keep, necessary)
-    --model_count arg                       Set number of exploration models (type: uint, default: 3, keep)
-    --min_scope arg                         Minimum example count of model before removing (type: uint, default:
-                                            100, keep)
-    --ae_alpha arg                          Set confidence interval for champion change (type: float, default:
-                                            0.05, keep)
-    --ae_tau arg                            Time constant for count decay (type: float, default: 0.999, keep)
 Diagnostic Options:
     --version                               Version information (type: bool)
     -a, --audit                             Print weights of features (type: bool)
@@ -17,6 +9,14 @@ Diagnostic Options:
                                             (type: bool)
 Driver Options:
     --onethread                             Disable parse thread (type: bool)
+Epsilon-Decaying Exploration Options:
+    --epsilon_decay                         Use decay of exploration reduction (type: bool, keep, necessary)
+    --model_count arg                       Set number of exploration models (type: uint, default: 3, keep)
+    --min_scope arg                         Minimum example count of model before removing (type: uint, default:
+                                            100, keep)
+    --epsilon_decay_alpha arg               Set confidence interval for champion change (type: float, default:
+                                            0.05, keep)
+    --epsilon_decay_tau arg                 Time constant for count decay (type: float, default: 0.999, keep)
 Example Options:
     -t, --testonly                          Ignore label information and just test (type: bool)
     --holdout_off                           No holdout data in multiple passes (type: bool)

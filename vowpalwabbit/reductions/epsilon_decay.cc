@@ -2,7 +2,7 @@
 // individual contributors. All rights reserved. Released under a BSD (revised)
 // license as described in the file LICENSE.
 
-#include "ae.h"
+#include "epsilon_decay.h"
 #include "global_data.h"
 #include "learner.h"
 #include "memory.h"
@@ -22,9 +22,9 @@ using namespace VW::LEARNER;
 
 namespace VW
 {
-namespace ae
+namespace epsilon_decay
 {
-void ae_score::update_bounds(float w, float r)
+void epsilon_decay_score::update_bounds(float w, float r)
 {
   update(w, r);
 
@@ -42,20 +42,20 @@ ForwardIt swap_models(ForwardIt first, ForwardIt n_first, ForwardIt end)
 
 template <class ForwardIt>
 void reset_models(
-    ForwardIt first, ForwardIt end, parameters& weights, double ae_alpha, double ae_tau, uint64_t model_count)
+    ForwardIt first, ForwardIt end, parameters& weights, double epsilon_decay_alpha, double epsilon_decay_tau, uint64_t model_count)
 {
   uint64_t ppw = 1;
   while (ppw < model_count) { ppw *= 2; }
   for (; first != end; ++first)
   {
-    first->reset_stats(ae_alpha, ae_tau);
+    first->reset_stats(epsilon_decay_alpha, epsilon_decay_tau);
     weights.dense_weights.clear_offset(first->get_model_idx(), ppw);
   }
 }
 
 float decayed_epsilon(uint64_t update_count) { return static_cast<float>(pow(update_count + 1, -1.f / 3.f)); }
 
-void predict(ae_data& data, VW::LEARNER::multi_learner& base, multi_ex& examples)
+void predict(epsilon_decay_data& data, VW::LEARNER::multi_learner& base, multi_ex& examples)
 {
   auto& ep_fts = examples[0]->_reduction_features.template get<VW::cb_explore_adf::greedy::reduction_features>();
   auto active_iter = data.scored_configs.end() - 1;
@@ -63,7 +63,7 @@ void predict(ae_data& data, VW::LEARNER::multi_learner& base, multi_ex& examples
   base.predict(examples, active_iter->get_model_idx());
 }
 
-void learn(ae_data& data, VW::LEARNER::multi_learner& base, multi_ex& examples)
+void learn(epsilon_decay_data& data, VW::LEARNER::multi_learner& base, multi_ex& examples)
 {
   CB::cb_class logged{};
   uint64_t labelled_action = 0;
@@ -103,11 +103,10 @@ void learn(ae_data& data, VW::LEARNER::multi_learner& base, multi_ex& examples)
   uint64_t model_count = data.scored_configs.size();
   for (auto candidate_iter = champion_iter + 1; candidate_iter != end_iter; ++candidate_iter)
   {
-    if (candidate_iter->update_count > data.min_scope &&
-        candidate_iter->get_lower_bound() > champion_iter->get_upper_bound())
+    if (candidate_iter->get_lower_bound() > champion_iter->get_upper_bound())
     {
       auto n_iter = swap_models(candidate_iter, champion_iter, end_iter);
-      reset_models(n_iter, end_iter, data.weights, data.ae_alpha, data.ae_tau, model_count);
+      reset_models(n_iter, end_iter, data.weights, data.epsilon_decay_alpha, data.epsilon_decay_tau, model_count);
       break;
     }
   }
@@ -121,46 +120,46 @@ void learn(ae_data& data, VW::LEARNER::multi_learner& base, multi_ex& examples)
         candidate_iter->update_count > (pow(champion_iter->update_count, static_cast<float>(model_idx) / model_count)))
     {
       auto n_iter = swap_models(candidate_iter + 1, candidate_iter, end_iter);
-      reset_models(n_iter, end_iter, data.weights, data.ae_alpha, data.ae_tau, model_count);
+      reset_models(n_iter, end_iter, data.weights, data.epsilon_decay_alpha, data.epsilon_decay_tau, model_count);
       break;
     }
   }
 }
 
-void save_load_ae(ae_data& ae, io_buf& io, bool read, bool text)
+void save_load_epsilon_decay(epsilon_decay_data& epsilon_decay, io_buf& io, bool read, bool text)
 {
   if (io.num_files() == 0) { return; }
-  if (read) { VW::model_utils::read_model_field(io, ae); }
+  if (read) { VW::model_utils::read_model_field(io, epsilon_decay); }
   else
   {
-    VW::model_utils::write_model_field(io, ae, "_ae", text);
+    VW::model_utils::write_model_field(io, epsilon_decay, "_epsilon_decay", text);
   }
 }
 
-VW::LEARNER::base_learner* ae_setup(VW::setup_base_i& stack_builder)
+VW::LEARNER::base_learner* epsilon_decay_setup(VW::setup_base_i& stack_builder)
 {
   VW::config::options_i& options = *stack_builder.get_options();
   VW::workspace& all = *stack_builder.get_all_pointer();
 
   std::string arg;
-  bool ae_option;
+  bool epsilon_decay_option;
   uint64_t model_count;
   uint64_t min_scope;
-  float ae_alpha;
-  float ae_tau;
+  float epsilon_decay_alpha;
+  float epsilon_decay_tau;
 
-  option_group_definition new_options("Aged Exploration");
-  new_options.add(make_option("agedexp", ae_option).necessary().keep().help("Use decay of exploration reduction"))
+  option_group_definition new_options("Epsilon-Decaying Exploration");
+  new_options.add(make_option("epsilon_decay", epsilon_decay_option).necessary().keep().help("Use decay of exploration reduction"))
       .add(make_option("model_count", model_count).keep().default_value(3).help("Set number of exploration models"))
       .add(make_option("min_scope", min_scope)
                .keep()
                .default_value(100)
                .help("Minimum example count of model before removing"))
-      .add(make_option("ae_alpha", ae_alpha)
+      .add(make_option("epsilon_decay_alpha", epsilon_decay_alpha)
                .keep()
                .default_value(DEFAULT_ALPHA)
                .help("Set confidence interval for champion change"))
-      .add(make_option("ae_tau", ae_tau).keep().default_value(DEFAULT_TAU).help("Time constant for count decay"));
+      .add(make_option("epsilon_decay_tau", epsilon_decay_tau).keep().default_value(DEFAULT_TAU).help("Time constant for count decay"));
 
   if (!options.add_parse_and_check_necessary(new_options)) { return nullptr; }
 
@@ -168,7 +167,7 @@ VW::LEARNER::base_learner* ae_setup(VW::setup_base_i& stack_builder)
   uint64_t ppw = 1;
   while (ppw < model_count) { ppw *= 2; }
 
-  auto data = VW::make_unique<ae_data>(model_count, min_scope, ae_alpha, ae_tau, all.weights);
+  auto data = VW::make_unique<epsilon_decay_data>(model_count, min_scope, epsilon_decay_alpha, epsilon_decay_tau, all.weights);
 
   // make sure we setup the rest of the stack with cleared interactions
   // to make sure there are not subtle bugs
@@ -176,10 +175,10 @@ VW::LEARNER::base_learner* ae_setup(VW::setup_base_i& stack_builder)
   if (base_learner->is_multiline())
   {
     auto* learner = VW::LEARNER::make_reduction_learner(std::move(data), VW::LEARNER::as_multiline(base_learner), learn,
-        predict, stack_builder.get_setupfn_name(ae_setup))
+        predict, stack_builder.get_setupfn_name(epsilon_decay_setup))
                         .set_params_per_weight(ppw)
                         .set_output_prediction_type(base_learner->get_output_prediction_type())
-                        .set_save_load(save_load_ae)
+                        .set_save_load(save_load_epsilon_decay)
                         .build();
 
     return VW::LEARNER::make_base(*learner);
@@ -187,15 +186,15 @@ VW::LEARNER::base_learner* ae_setup(VW::setup_base_i& stack_builder)
   else
   {
     // not implemented yet
-    THROW("fatal: aged learner not supported for single line learners yet");
+    THROW("Epsilon decay does not supported for single line learners yet");
   }
 }
 
-}  // namespace ae
+}  // namespace epsilon_decay
 
 namespace model_utils
 {
-size_t read_model_field(io_buf& io, VW::ae::ae_score& score)
+size_t read_model_field(io_buf& io, VW::epsilon_decay::epsilon_decay_score& score)
 {
   size_t bytes = 0;
   bytes += read_model_field(io, reinterpret_cast<VW::scored_config&>(score));
@@ -204,7 +203,7 @@ size_t read_model_field(io_buf& io, VW::ae::ae_score& score)
   return bytes;
 }
 
-size_t write_model_field(io_buf& io, const VW::ae::ae_score& score, const std::string& upstream_name, bool text)
+size_t write_model_field(io_buf& io, const VW::epsilon_decay::epsilon_decay_score& score, const std::string& upstream_name, bool text)
 {
   size_t bytes = 0;
   bytes += write_model_field(io, reinterpret_cast<const VW::scored_config&>(score), upstream_name, text);
@@ -213,18 +212,18 @@ size_t write_model_field(io_buf& io, const VW::ae::ae_score& score, const std::s
   return bytes;
 }
 
-size_t read_model_field(io_buf& io, VW::ae::ae_data& ae)
+size_t read_model_field(io_buf& io, VW::epsilon_decay::epsilon_decay_data& epsilon_decay)
 {
   size_t bytes = 0;
-  ae.scored_configs.clear();
-  bytes += read_model_field(io, ae.scored_configs);
+  epsilon_decay.scored_configs.clear();
+  bytes += read_model_field(io, epsilon_decay.scored_configs);
   return bytes;
 }
 
-size_t write_model_field(io_buf& io, const VW::ae::ae_data& ae, const std::string& upstream_name, bool text)
+size_t write_model_field(io_buf& io, const VW::epsilon_decay::epsilon_decay_data& epsilon_decay, const std::string& upstream_name, bool text)
 {
   size_t bytes = 0;
-  bytes += write_model_field(io, ae.scored_configs, upstream_name + "_scored_configs", text);
+  bytes += write_model_field(io, epsilon_decay.scored_configs, upstream_name + "_scored_configs", text);
   return bytes;
 }
 }  // namespace model_utils

@@ -211,7 +211,7 @@
     <ClInclude Include="reductions_fwd.h" />
     <ClInclude Include="reductions/active_cover.h" />
     <ClInclude Include="reductions/active.h" />
-    <ClInclude Include="reductions/ae.h" />
+    <ClInclude Include="reductions/epsilon_decay.h" />
     <ClInclude Include="reductions/audit_regressor.h" />
     <ClInclude Include="reductions/autolink.h" />
     <ClInclude Include="reductions/automl.h" />
@@ -390,7 +390,7 @@
     <ClCompile Include="reduction_stack.cc" />
     <ClCompile Include="reductions/active_cover.cc" />
     <ClCompile Include="reductions/active.cc" />
-    <ClCompile Include="reductions/ae.cc" />
+    <ClCompile Include="reductions/epsilon_decay.cc" />
     <ClCompile Include="reductions/audit_regressor.cc" />
     <ClCompile Include="reductions/autolink.cc" />
     <ClCompile Include="reductions/automl.cc" />
