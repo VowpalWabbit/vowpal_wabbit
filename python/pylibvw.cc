@@ -12,6 +12,7 @@
 #include "parse_example.h"
 #include "reductions/gd.h"
 #include "config/options_cli.h"
+#include "config/options_types.h"
 #include "config/cli_options_serializer.h"
 #include "future_compat.h"
 #include "slates_label.h"
