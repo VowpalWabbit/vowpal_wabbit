@@ -328,7 +328,6 @@ void shared_data::print_update(std::ostream& output_stream, bool holdout_set_off
   }
   else
   {
-    output_stream << std::setw(col_avg_loss) << std::setprecision(prec_avg_loss) << std::right << std::fixed;
     if (weighted_labeled_examples > 0.)
     {
       avg_loss = num_to_string(sum_loss / weighted_labeled_examples, prec_avg_loss);
