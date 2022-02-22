@@ -248,7 +248,7 @@ void print_update_cb_explore(VW::workspace& all, bool is_test, example& ec, std:
   {
     std::stringstream label_string;
     if (is_test)
-      label_string << " unknown";
+      label_string << "unknown";
     else
     {
       const auto& cost = ec.l.cb.costs[0];

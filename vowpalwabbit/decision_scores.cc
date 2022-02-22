@@ -21,30 +21,14 @@ void print_update(VW::workspace& all, const std::vector<example*>& slots, const 
 {
   if (all.sd->weighted_examples() >= all.sd->dump_interval && !all.quiet && !all.bfgs)
   {
-    std::ostringstream label_buf;
-    label_buf << std::setw(shared_data::col_current_label) << std::right << std::setfill(' ')
-              << label_print_func(slots);
-
-    std::stringstream pred_ss;
+    std::ostringstream pred_ss;
     std::string delim;
-    size_t counter = 0;
     for (const auto& slot : decision_scores)
     {
-      counter++;
       pred_ss << delim << slot[0].action;
       delim = ",";
-
-      // Stop after 3...
-      if (counter > 2)
-      {
-        pred_ss << delim << "...";
-        break;
-      }
     }
-    std::ostringstream pred_buf;
-    pred_buf << std::setw(shared_data::col_current_predict) << std::right << std::setfill(' ') << pred_ss.str();
-
-    all.sd->print_update(*all.trace_message, all.holdout_set_off, all.current_pass, label_buf.str(), pred_buf.str(),
+    all.sd->print_update(*all.trace_message, all.holdout_set_off, all.current_pass, label_print_func(slots), pred_ss.str(),
         num_features, all.progress_add, all.progress_arg);
   }
 }

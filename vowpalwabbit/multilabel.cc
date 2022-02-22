@@ -72,7 +72,7 @@ void print_update(VW::workspace& all, bool is_test, const example& ec)
   {
     std::stringstream label_string;
     if (is_test)
-      label_string << " unknown";
+      label_string << "unknown";
     else
       for (uint32_t i : ec.l.multilabels.label_v) { label_string << " " << i; }
 
