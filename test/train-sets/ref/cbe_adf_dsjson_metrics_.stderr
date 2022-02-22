@@ -10,11 +10,11 @@ power_t = 0.5
 Enabled reductions: gd, scorer-identity, csoaa_ldf-rank, cb_adf, automl, cb_explore_adf_greedy, shared_feature_merger, extra_metrics
 Input label = cb
 Output pred = action_probs
-average  since         example        example  current  current  current 
-loss     last          counter         weight    label  predict features 
--0.10204 -0.10204            1            1.0 9:-1:... 0:0.0...    10463 
--0.05102 0.000000            2            2.0 9:0:0.82 7:0.8...    10399 
--0.04081 -0.02040            3            3.0 9:-1:... 7:0.8...    10399 
+average  since         example        example        current        current  current 
+loss     last          counter         weight          label        predict features 
+-0.10204 -0.10204            1            1.0      9:-1:0.82    0:0.0833333    10463 
+-0.05102 0.000000            2            2.0       9:0:0.82     7:0.816667    10399 
+-0.04081 -0.02040            3            3.0      9:-1:0.82     7:0.816667    10399 
 
 finished run
 number of examples = 3

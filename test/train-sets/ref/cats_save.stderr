@@ -15,12 +15,12 @@ power_t = 0.5
 Enabled reductions: ftrl-Coin Betting, generate_interactions, scorer-identity, binary, cats_tree, get_pmf, pmf_to_pdf, cb_explore_pdf, cats_pdf, sample_pdf, cats
 Input label = continuous
 Output pred = action_pdf_value
-average  since         example        example  current  current  current 
-loss     last          counter         weight    label  predict features 
-0.000000 0.000000            1            1.0 {0.00... 0.001...        6 
-0.000000 0.000000            2            2.0 {0.58... 0.611...        6 
-0.000000 0.000000            4            4.0 {10.3... 2.234...        6 
-0.000000 0.000000            8            8.0 {2.40... 22.59...        6 
+average  since         example        example        current        current  current 
+loss     last          counter         weight          label        predict features 
+0.000000 0.000000            1            1.0 {0.00120175... 0.00120175,...        6 
+0.000000 0.000000            2            2.0 {0.582045,0... 0.611352,0....        6 
+0.000000 0.000000            4            4.0 {10.3501,0,... 2.23432,0.4...        6 
+0.000000 0.000000            8            8.0 {2.40591,0,... 22.5925,0.0...        6 
 
 finished run
 number of examples = 10

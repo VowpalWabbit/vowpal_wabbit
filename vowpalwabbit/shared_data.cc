@@ -198,9 +198,9 @@ static constexpr int prec_since_last = 6;
 static constexpr int col_example_counter = 12;
 static constexpr int col_example_weight = col_example_counter + 2;
 static constexpr int prec_example_weight = 1;
-static constexpr int col_current_label = 8;
+static constexpr int col_current_label = 14;
 static constexpr int prec_current_label = 4;
-static constexpr int col_current_predict = 8;
+static constexpr int col_current_predict = 14;
 static constexpr int prec_current_predict = 4;
 static constexpr int col_current_features = 8;
 
@@ -226,7 +226,7 @@ static constexpr std::array<VW::column_definition, num_cols> VALUE_COLUMNS = {
     VW::column_definition(col_current_features, VW::align_type::right, VW::wrap_type::truncate),  // current features
 };
 static const std::array<std::string, num_cols> SD_HEADER_TITLES = {"average loss", "since last", "example counter",
-    "example\nweight", "current label", "current predict", "current features"};
+    "example\nweight", "current\nlabel", "current\npredict", "current features"};
 
 // progressive validation header
 void shared_data::print_update_header(std::ostream& trace_message)

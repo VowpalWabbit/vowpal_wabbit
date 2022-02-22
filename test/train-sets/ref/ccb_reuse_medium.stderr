@@ -8,11 +8,11 @@ power_t = 0.5
 Enabled reductions: gd, generate_interactions, scorer-identity, csoaa_ldf-rank, cb_adf, cb_explore_adf_greedy, cb_sample, shared_feature_merger, ccb_explore_adf
 Input label = ccb
 Output pred = decision_probs
-average  since         example        example  current  current  current 
-loss     last          counter         weight    label  predict features 
-0.000000 0.000000            1            1.0 0:0,4...    0,4,7      108 
--0.04588 -0.09176            2            2.0 0:-0....    0,6,7      108 
--0.04548 -0.04508            4            4.0 0:-0....    0,6,7      108 
+average  since         example        example        current        current  current 
+loss     last          counter         weight          label        predict features 
+0.000000 0.000000            1            1.0    0:0,4:0,...          0,4,7      108 
+-0.04588 -0.09176            2            2.0 0:-0.091764...          0,6,7      108 
+-0.04548 -0.04508            4            4.0 0:-0.023089...          0,6,7      108 
 
 finished run
 number of examples = 4
