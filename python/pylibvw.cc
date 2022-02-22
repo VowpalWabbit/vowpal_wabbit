@@ -11,7 +11,7 @@
 #include "reductions/search/search_hooktask.h"
 #include "parse_example.h"
 #include "reductions/gd.h"
-#include "config/options_boost_po.h"
+#include "config/options_cli.h"
 #include "config/cli_options_serializer.h"
 #include "future_compat.h"
 #include "slates_label.h"
@@ -90,7 +90,7 @@ public:
       , m_option_group_dic(options.get_collection_of_options())
       , m_py_opt_class(py_class)
   {
-    default_group_name = static_cast<VW::config::options_boost_po*>(&options)->m_default_tint;
+    default_group_name = options.m_default_tint;
   }
 
   py::object* value_to_pyobject(VW::config::typed_option<bool>& opt)
@@ -270,7 +270,7 @@ vw_ptr my_initialize_with_log(py::list args, py_log_wrapper_ptr py_log)
   }
 
   std::unique_ptr<VW::config::options_i, options_deleter_type> options(
-      new VW::config::options_boost_po(args_vec), [](VW::config::options_i* ptr) { delete ptr; });
+      new VW::config::options_cli(args_vec), [](VW::config::options_i* ptr) { delete ptr; });
 
   VW::workspace* foo = VW::initialize(std::move(options), nullptr, false, trace_listener, trace_context);
   // return boost::shared_ptr<VW::workspace>(foo, [](vw *all){VW::finish(*all);});
