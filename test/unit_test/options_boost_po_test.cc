@@ -10,7 +10,6 @@
 #include "test_common.h"
 
 #include "memory.h"
-#include "config/options_boost_po.h"
 #include "config/cli_options_serializer.h"
 
 #include <memory>
@@ -18,7 +17,7 @@
 
 using namespace VW::config;
 
-using option_types = boost::mpl::vector<options_cli, options_boost_po>;
+using option_types = boost::mpl::vector<options_cli>;
 
 BOOST_AUTO_TEST_CASE_TEMPLATE(typed_options_parsing, T, option_types)
 {
@@ -238,10 +237,10 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(incorrect_option_type_str_for_int, T, option_types
   BOOST_CHECK_THROW(options->add_and_parse(arg_group), VW::vw_argument_invalid_value_exception);
 }
 
-BOOST_AUTO_TEST_CASE(multiple_locations_one_option)
+BOOST_AUTO_TEST_CASE_TEMPLATE(multiple_locations_one_option, T, option_types)
 {
   std::vector<std::string> args = {"--str_opt", "value"};
-  auto options = VW::make_unique<options_boost_po>(args);
+  auto options = VW::make_unique<T>(args);
 
   std::string str_opt_1;
   std::string str_opt_2;
@@ -249,7 +248,9 @@ BOOST_AUTO_TEST_CASE(multiple_locations_one_option)
   arg_group.add(make_option("str_opt", str_opt_1));
   arg_group.add(make_option("str_opt", str_opt_2));
 
-  BOOST_CHECK_THROW(options->add_and_parse(arg_group), VW::vw_exception);
+  options->add_and_parse(arg_group);
+  BOOST_CHECK_EQUAL(str_opt_1, "value");
+  BOOST_CHECK_EQUAL(str_opt_2, "value");
 }
 
 BOOST_AUTO_TEST_CASE_TEMPLATE(duplicate_option_clash, T, option_types)
