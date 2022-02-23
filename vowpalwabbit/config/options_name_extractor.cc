@@ -35,7 +35,7 @@ void options_name_extractor::internal_add_and_parse(const option_group_definitio
 
 bool options_name_extractor::was_supplied(const std::string&) const { return false; }
 
-void options_name_extractor::check_unregistered(VW::io::logger& /* logger */)
+std::vector<std::string> options_name_extractor::check_unregistered()
 {
   THROW("options_name_extractor does not implement this method");
 }
