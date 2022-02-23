@@ -64,7 +64,7 @@
       <Optimization>Disabled</Optimization>
       <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;%(PreprocessorDefinitions);SPDLOG_COMPILED_LIB;SPDLOG_FMT_EXTERNAL</PreprocessorDefinitions>
       <AdditionalIncludeDirectories>$(SolutionDir);$(ProjectDir)\..\explore;$(ProjectDir)\..\ext_libs\fmt\include;$(ProjectDir)\..\ext_libs\spdlog\include</AdditionalIncludeDirectories>
-      <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
+      <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
       <TreatWarningAsError Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</TreatWarningAsError>
     </ClCompile>
     <Link>
@@ -82,7 +82,7 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;%(PreprocessorDefinitions);SPDLOG_COMPILED_LIB;SPDLOG_FMT_EXTERNAL</PreprocessorDefinitions>
-      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
+      <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
       <AdditionalIncludeDirectories>$(SolutionDir);$(ProjectDir)\..\explore;$(ProjectDir)\..\ext_libs\fmt\include;$(ProjectDir)\..\ext_libs\spdlog\include</AdditionalIncludeDirectories>
       <TreatWarningAsError Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</TreatWarningAsError>
     </ClCompile>

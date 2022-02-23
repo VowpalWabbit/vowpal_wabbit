@@ -99,6 +99,7 @@
       <OmitFramePointers Condition="'$(Configuration)'=='Release'">true</OmitFramePointers>
       <EnableFiberSafeOptimizations Condition="'$(Configuration)'=='Release'">false</EnableFiberSafeOptimizations>
       <RuntimeLibrary Condition="'$(Configuration)'=='Release'">MultiThreadedDLL</RuntimeLibrary>
+      <RuntimeLibrary Condition="'$(Configuration)'=='Debug'">MultiThreadedDebugDLL</RuntimeLibrary>
       <DebugInformationFormat Condition="'$(Configuration)'=='Debug'">ProgramDatabase</DebugInformationFormat>
       <EnablePREfast Condition="'$(Configuration)'=='Debug'">false</EnablePREfast>
       <MinimalRebuild Condition="'$(Configuration)'=='Debug'">false</MinimalRebuild>
