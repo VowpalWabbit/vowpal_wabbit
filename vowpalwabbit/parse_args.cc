@@ -389,6 +389,10 @@ input_options parse_source(VW::workspace& all, options_i& options)
 
   options.add_and_parse(input_options);
 
+  // We are done adding new options. Before we are allowed to get the positionals we need to check unregistered.
+  auto warnings = all.options->check_unregistered();
+  for (const auto& warning : warnings) { all.logger.err_warn(warning); }
+
   // Check if the options provider has any positional args. Only really makes sense for command line, others just return
   // an empty list.
   const auto positional_tokens = options.get_positional_tokens();
@@ -1713,9 +1717,6 @@ VW::workspace* initialize_with_builder(std::unique_ptr<options_i, options_delete
 
     // we must delay so parse_mask is fully defined.
     for (const auto& name_space : dictionary_namespaces) parse_dictionary_argument(all, name_space);
-
-    auto warnings = all.options->check_unregistered();
-    for (const auto& warning : warnings) { all.logger.err_warn(warning); }
 
     std::vector<std::string> enabled_reductions;
     if (all.l != nullptr) all.l->get_enabled_reductions(enabled_reductions);
