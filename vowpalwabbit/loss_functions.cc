@@ -336,17 +336,6 @@ public:
     return 2.f * (1.f - q) * err * update_scale;
   }
 
-  float getRevertingWeight(shared_data* sd, float prediction, float eta_t) override
-  {
-    float v, t;
-    t = 0.5f * (sd->min_label + sd->max_label);
-    if (prediction > t)
-      v = 2.f * (1.f - q) * e; // -first_der reverse
-    else
-      v = 2.f * q * e;
-    return (t - prediction) / (eta_t * v);  //check this
-  }
-
   float first_derivative(shared_data*, float prediction, float label) override
   {
     float e = label - prediction;
