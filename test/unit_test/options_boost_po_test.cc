@@ -237,6 +237,22 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(incorrect_option_type_str_for_int, T, option_types
   BOOST_CHECK_THROW(options->add_and_parse(arg_group), VW::vw_argument_invalid_value_exception);
 }
 
+BOOST_AUTO_TEST_CASE_TEMPLATE(multiple_locations_one_option, T, option_types)
+{
+  std::vector<std::string> args = {"--str_opt", "value"};
+  auto options = VW::make_unique<T>(args);
+
+  std::string str_opt_1;
+  std::string str_opt_2;
+  option_group_definition arg_group("group");
+  arg_group.add(make_option("str_opt", str_opt_1));
+  arg_group.add(make_option("str_opt", str_opt_2));
+
+  options->add_and_parse(arg_group);
+  BOOST_CHECK_EQUAL(str_opt_1, "value");
+  BOOST_CHECK_EQUAL(str_opt_2, "value");
+}
+
 BOOST_AUTO_TEST_CASE_TEMPLATE(duplicate_option_clash, T, option_types)
 {
   std::vector<std::string> args = {"--the_opt", "s"};
