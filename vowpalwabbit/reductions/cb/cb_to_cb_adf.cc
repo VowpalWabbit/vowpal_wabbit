@@ -76,14 +76,29 @@ void predict_or_learn(cb_to_cb_adf& data, multi_learner& base, example& ec)
 
   if (!base.learn_returns_prediction || !is_learn) { base.predict(data.adf_data.ecs); }
   if (is_learn) { base.learn(data.adf_data.ecs); }
-  // Actions will be 0-indexed to adhere to new cb_adf format
-  ec.pred.a_s = std::move(data.adf_data.ecs[0]->pred.a_s);
+  
+  if (data.explore_mode)
+  {
+    ec.pred.a_s = std::move(data.adf_data.ecs[0]->pred.a_s);
+  }
+  else
+  {
+    ec.pred.multiclass = data.adf_data.ecs[0]->pred.a_s[0].action + 1;
+  }
 }
 
 void finish_example(VW::workspace& all, cb_to_cb_adf& c, example& ec)
 {
-  c.adf_data.ecs[0]->pred.a_s = std::move(ec.pred.a_s);
-  c.adf_learner->print_example(all, c.adf_data.ecs);
+  if (c.explore_mode)
+  {
+    c.adf_data.ecs[0]->pred.a_s = std::move(ec.pred.a_s);
+    c.adf_learner->print_example(all, c.adf_data.ecs);
+  }
+  else
+  {
+    c.adf_data.ecs[0]->pred.multiclass = std::move(ec.pred.multiclass);
+    c.adf_learner->print_example(all, c.adf_data.ecs);
+  }
   VW::finish_example(all, ec);
 }
 
@@ -194,14 +209,17 @@ VW::LEARNER::base_learner* cb_to_cb_adf_setup(VW::setup_base_i& stack_builder)
 
   // see csoaa.cc ~ line 894 / setup for csldf_setup
   all.example_parser->emptylines_separate_examples = false;
+  VW::prediction_type_t out_pred_type;
 
   if (data->explore_mode)
   {
     data->adf_learner = as_multiline(base->get_learner_by_name_prefix("cb_explore_adf_"));
+    out_pred_type = base->get_output_prediction_type();
   }
   else
   {
     data->adf_learner = as_multiline(base->get_learner_by_name_prefix("cb_adf"));
+    out_pred_type = VW::prediction_type_t::multiclass;
   }
 
   auto* l = make_reduction_learner(
@@ -209,7 +227,7 @@ VW::LEARNER::base_learner* cb_to_cb_adf_setup(VW::setup_base_i& stack_builder)
                 .set_input_label_type(VW::label_type_t::cb)
                 .set_output_label_type(VW::label_type_t::cb)
                 .set_input_prediction_type(base->get_output_prediction_type())   // action_scores or action_probs
-                .set_output_prediction_type(base->get_output_prediction_type())  // action_scores or action_probs
+                .set_output_prediction_type(out_pred_type)  // action_scores or action_probs
                 .set_learn_returns_prediction(true)
                 .set_finish_example(finish_example)
                 .build(&all.logger);
