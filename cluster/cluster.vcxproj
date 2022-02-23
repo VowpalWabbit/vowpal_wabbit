@@ -100,7 +100,6 @@
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\vowpalwabbit\spanning_tree.cc" />
     <ClCompile Include="spanning_tree_main.cc" />
   </ItemGroup>
   <ItemGroup>
