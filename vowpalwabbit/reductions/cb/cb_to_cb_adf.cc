@@ -208,8 +208,8 @@ VW::LEARNER::base_learner* cb_to_cb_adf_setup(VW::setup_base_i& stack_builder)
       std::move(data), base, predict_or_learn<true>, predict_or_learn<false>, all.get_setupfn_name(cb_to_cb_adf_setup))
                 .set_input_label_type(VW::label_type_t::cb)
                 .set_output_label_type(VW::label_type_t::cb)
-                .set_input_prediction_type(base->get_output_prediction_type()) // action_scores or action_probs
-                .set_output_prediction_type(base->get_output_prediction_type()) // action_scores or action_probs
+                .set_input_prediction_type(base->get_output_prediction_type())   // action_scores or action_probs
+                .set_output_prediction_type(base->get_output_prediction_type())  // action_scores or action_probs
                 .set_learn_returns_prediction(true)
                 .set_finish_example(finish_example)
                 .build(&all.logger);

@@ -892,7 +892,7 @@ base_learner* cbifyldf_setup(VW::setup_base_i& stack_builder)
       stack_builder.get_setupfn_name(cbifyldf_setup))
                 .set_input_label_type(VW::label_type_t::cs)
                 .set_output_label_type(VW::label_type_t::cb)
-                .set_input_prediction_type(base->get_output_prediction_type()) // action_scores or action_probs
+                .set_input_prediction_type(base->get_output_prediction_type())  // action_scores or action_probs
                 .set_output_prediction_type(VW::prediction_type_t::multiclass)
                 .set_finish_example(finish_multiline_example)
                 .build(&all.logger);
