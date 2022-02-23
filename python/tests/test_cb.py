@@ -142,9 +142,9 @@ def helper_getting_started_example(which_cb):
         test_file = "test-sets/ref/python_test_cb.stderr"
 
     with open(path.join(helper_get_test_dir(), test_file), "r") as file:
-        actual = file.readlines()
-        for j, i in zip(actual, output):
-            assert i == j, "line mismatch should be: " + j + " output: " + i
+        expected = file.readlines()
+        for expected_line, output_line in zip(expected, output):
+            assert output_line.strip() == expected_line.strip()
 
 
 def test_getting_started_example_with():
