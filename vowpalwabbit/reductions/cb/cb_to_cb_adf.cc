@@ -76,11 +76,8 @@ void predict_or_learn(cb_to_cb_adf& data, multi_learner& base, example& ec)
 
   if (!base.learn_returns_prediction || !is_learn) { base.predict(data.adf_data.ecs); }
   if (is_learn) { base.learn(data.adf_data.ecs); }
-  
-  if (data.explore_mode)
-  {
-    ec.pred.a_s = std::move(data.adf_data.ecs[0]->pred.a_s);
-  }
+
+  if (data.explore_mode) { ec.pred.a_s = std::move(data.adf_data.ecs[0]->pred.a_s); }
   else
   {
     ec.pred.multiclass = data.adf_data.ecs[0]->pred.a_s[0].action + 1;
@@ -209,16 +206,19 @@ VW::LEARNER::base_learner* cb_to_cb_adf_setup(VW::setup_base_i& stack_builder)
 
   // see csoaa.cc ~ line 894 / setup for csldf_setup
   all.example_parser->emptylines_separate_examples = false;
+  VW::prediction_type_t in_pred_type;
   VW::prediction_type_t out_pred_type;
 
   if (data->explore_mode)
   {
     data->adf_learner = as_multiline(base->get_learner_by_name_prefix("cb_explore_adf_"));
-    out_pred_type = base->get_output_prediction_type();
+    in_pred_type = VW::prediction_type_t::action_probs;
+    out_pred_type = VW::prediction_type_t::action_probs;
   }
   else
   {
     data->adf_learner = as_multiline(base->get_learner_by_name_prefix("cb_adf"));
+    in_pred_type = VW::prediction_type_t::action_scores;
     out_pred_type = VW::prediction_type_t::multiclass;
   }
 
@@ -226,8 +226,8 @@ VW::LEARNER::base_learner* cb_to_cb_adf_setup(VW::setup_base_i& stack_builder)
       std::move(data), base, predict_or_learn<true>, predict_or_learn<false>, all.get_setupfn_name(cb_to_cb_adf_setup))
                 .set_input_label_type(VW::label_type_t::cb)
                 .set_output_label_type(VW::label_type_t::cb)
-                .set_input_prediction_type(base->get_output_prediction_type())   // action_scores or action_probs
-                .set_output_prediction_type(out_pred_type)  // action_scores or action_probs
+                .set_input_prediction_type(in_pred_type)
+                .set_output_prediction_type(out_pred_type)
                 .set_learn_returns_prediction(true)
                 .set_finish_example(finish_example)
                 .build(&all.logger);
