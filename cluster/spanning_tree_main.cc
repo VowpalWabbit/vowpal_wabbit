@@ -43,7 +43,7 @@ int main(int argc, char* argv[])
   desc.add(VW::config::make_option("nondaemon", nondaemon).help("Run spanning tree in foreground"))
       .add(VW::config::make_option("help", help).short_name('h').help("Print help message"))
       .add(VW::config::make_option("port", port)
-               .short_name('p')
+               .short_name("p")
                .default_value(26543)
                .help("Port number for spanning tree to listen on"));
 
