@@ -566,14 +566,16 @@ base_learner* cb_adf_setup(VW::setup_base_i& stack_builder)
   cb_adf* bare = ld.get();
   bool lrp = ld->learn_returns_prediction();
   auto* l = make_reduction_learner(std::move(ld), base, learn, predict, stack_builder.get_setupfn_name(cb_adf_setup))
+                .set_input_label_type(VW::label_type_t::cb)
+                .set_output_label_type(VW::label_type_t::cs)
+                .set_input_prediction_type(VW::prediction_type_t::action_scores)
+                .set_output_prediction_type(VW::prediction_type_t::action_scores)
                 .set_learn_returns_prediction(lrp)
                 .set_params_per_weight(problem_multiplier)
-                .set_output_prediction_type(VW::prediction_type_t::action_scores)
-                .set_input_label_type(VW::label_type_t::cb)
                 .set_finish_example(CB_ADF::finish_multiline_example)
                 .set_print_example(CB_ADF::update_and_output)
                 .set_save_load(CB_ADF::save_load)
-                .build();
+                .build(&all.logger);
 
   bare->set_scorer(all.scorer);
 
