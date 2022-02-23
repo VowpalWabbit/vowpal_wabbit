@@ -16,7 +16,7 @@ endif()
 
 add_library(VowpalWabbit::io ALIAS vw_io)
 
-add_library(allreduce STATIC allreduce_sockets.cc allreduce_threads.cc vw_exception.cc)
+add_library(allreduce STATIC allreduce_sockets.cc allreduce_threads.cc)
 target_include_directories(allreduce PUBLIC
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
   $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>)
@@ -43,197 +43,200 @@ endif()
 set(vw_all_headers
   accumulate.h
   action_score.h
-  active.h
-  active_cover.h
   active_multiclass_prediction.h
   allreduce.h
   api_status.h
-  array_parameters.h
   array_parameters_dense.h
-  audit_regressor.h
-  autolink.h
-  automl.h
-  baseline.h
-  baseline_challenger_cb.h
+  array_parameters.h
   beam.h
   best_constant.h
-  bfgs.h
-  binary.h
-  boosting.h
-  bs.h
   cache.h
   cached_learner.h
-  cats.h
-  cats_pdf.h
-  cats_tree.h
-  cb.h
-  cb_adf.h
-  cb_algs.h
   cb_continuous_label.h
-  cb_dro.h
-  cb_explore.h
-  cb_explore_adf_bag.h
-  cb_explore_adf_common.h
-  cb_explore_adf_cover.h
-  cb_explore_adf_first.h
-  cb_explore_adf_greedy.h
-  cb_explore_adf_regcb.h
-  cb_explore_adf_rnd.h
-  cb_explore_adf_softmax.h
-  cb_explore_adf_squarecb.h
-  cb_explore_adf_synthcover.h
-  cb_explore_pdf.h
   cb_label_parser.h
-  cb_to_cb_adf.h
   cb_type.h
-  cbify.h
-  cbzo.h
+  cb.h
   ccb_label.h
   ccb_reduction_features.h
-  classweight.h
-  cli_help_formatter.h
   compat.h
-  conditional_contextual_bandit.h
-  confidence.h
-  config.h.in
+  config/cli_help_formatter.h
+  config/cli_options_serializer.h
+  config/help_formatter.h
+  config/option_group_definition.h
+  config/option.h
+  config/options_cli.h
+  config/options_name_extractor.h
+  config/options_serializer.h
+  config/options_types.h
+  config/options.h
   constant.h
   continuous_actions_reduction_features.h
   correctedMath.h
   cost_sensitive.h
-  count_label.h
   crossplat_compat.h
-  cs_active.h
-  csoaa.h
-  csoaa_ldf.h
   debug_log.h
   debug_print.h
   decision_scores.h
   distributionally_robust.h
-  ect.h
   epsilon_reduction_features.h
   error_constants.h
   error_data.h
-  example.h
-  example_predict.h
   error_reporting.h
-  explore_eval.h
-  expreplay.h
+  example_predict.h
+  example.h
   fast_pow10.h
   feature_group.h
-  freegrad.h
-  ftrl.h
-  gd.h
-  gd_mf.h
   gd_predict.h
   gen_cs_example.h
-  generate_interactions.h
   generic_range.h
-  get_pmf.h
   global_data.h
   guard.h
   hashstring.h
-  interact.h
   interactions_predict.h
-  reduction_stack.h
-  interaction_ground.h
-  interactions.h
   io_buf.h
   json_utils.h
-  kernel_svm.h
   kskip_ngram_transformer.h
   label_dictionary.h
   label_parser.h
   label_type.h
-  lda_core.h
   learner.h
-  log_multi.h
   loss_functions.h
-  lrq.h
-  lrqfa.h
-  marginal.h
   memory.h
-  memory_tree.h
   metric_sink.h
-  metrics.h
-  mf.h
   model_utils.h
   multiclass.h
   multilabel.h
-  multilabel_oaa.h
-  mwt.h
   named_labels.h
   network.h
-  nn.h
   no_label.h
-  noop.h
   numeric_casts.h
-  oaa.h
   object_pool.h
-  offset_tree.h
-  oja_newton.h
-  options.h
-  options_boost_po.h
-  options_serializer_boost_po.h
-  options_types.h
   parse_args.h
   parse_dispatch_loop.h
-  parse_example.h
   parse_example_json.h
+  parse_example.h
   parse_primitives.h
   parse_regressor.h
   parse_slates_example_json.h
   parser.h
-  plt.h
-  pmf_to_pdf.h
   prediction_type.h
-  print.h
   prob_dist_cont.h
   queue.h
   rand_state.h
   rand48.h
-  recall_tree.h
   reduction_features.h
-  reductions.h
+  reduction_stack.h
   reductions_fwd.h
-  sample_pdf.h
+  reductions/active_cover.h
+  reductions/active.h
+  reductions/audit_regressor.h
+  reductions/autolink.h
+  reductions/automl.h
+  reductions/baseline_challenger_cb.h
+  reductions/baseline.h
+  reductions/bfgs.h
+  reductions/binary.h
+  reductions/boosting.h
+  reductions/bs.h
+  reductions/cats_pdf.h
+  reductions/cats_tree.h
+  reductions/cats.h
+  reductions/cb/cb_adf.h
+  reductions/cb/cb_algs.h
+  reductions/cb/cb_dro.h
+  reductions/cb/cb_explore_adf_bag.h
+  reductions/cb/cb_explore_adf_common.h
+  reductions/cb/cb_explore_adf_cover.h
+  reductions/cb/cb_explore_adf_first.h
+  reductions/cb/cb_explore_adf_greedy.h
+  reductions/cb/cb_explore_adf_regcb.h
+  reductions/cb/cb_explore_adf_rnd.h
+  reductions/cb/cb_explore_adf_softmax.h
+  reductions/cb/cb_explore_adf_squarecb.h
+  reductions/cb/cb_explore_adf_synthcover.h
+  reductions/cb/cb_explore_pdf.h
+  reductions/cb/cb_explore.h
+  reductions/cb/cb_to_cb_adf.h
+  reductions/cb/cbify.h
+  reductions/cb/warm_cb.h
+  reductions/cbzo.h
+  reductions/classweight.h
+  reductions/conditional_contextual_bandit.h
+  reductions/confidence.h
+  reductions/count_label.h
+  reductions/cs_active.h
+  reductions/csoaa_ldf.h
+  reductions/csoaa.h
+  reductions/ect.h
+  reductions/explore_eval.h
+  reductions/expreplay.h
+  reductions/freegrad.h
+  reductions/ftrl.h
+  reductions/gd_mf.h
+  reductions/gd.h
+  reductions/generate_interactions.h
+  reductions/get_pmf.h
+  reductions/interact.h
+  reductions/interaction_ground.h
+  reductions/interactions.h
+  reductions/kernel_svm.h
+  reductions/lda_core.h
+  reductions/log_multi.h
+  reductions/lrq.h
+  reductions/lrqfa.h
+  reductions/marginal.h
+  reductions/memory_tree.h
+  reductions/metrics.h
+  reductions/mf.h
+  reductions/multilabel_oaa.h
+  reductions/mwt.h
+  reductions/nn.h
+  reductions/noop.h
+  reductions/oaa.h
+  reductions/offset_tree.h
+  reductions/oja_newton.h
+  reductions/plt.h
+  reductions/pmf_to_pdf.h
+  reductions/print.h
+  reductions/recall_tree.h
+  reductions/sample_pdf.h
+  reductions/scorer.h
+  reductions/search/search_dep_parser.h
+  reductions/search/search_entityrelationtask.h
+  reductions/search/search_graph.h
+  reductions/search/search_hooktask.h
+  reductions/search/search_meta.h
+  reductions/search/search_multiclasstask.h
+  reductions/search/search_sequencetask.h
+  reductions/search/search.h
+  reductions/sender.h
+  reductions/shared_feature_merger.h
+  reductions/slates.h
+  reductions/stagewise_poly.h
+  reductions/svrg.h
+  reductions/topk.h
   scope_exit.h
   scored_config.h
-  scorer.h
-  search_dep_parser.h
-  search_entityrelationtask.h
-  search_graph.h
-  search_hooktask.h
-  search_meta.h
-  search_multiclasstask.h
-  search_sequencetask.h
-  search.h
-  sender.h
   shared_data.h
-  shared_feature_merger.h
-  simple_label.h
   simple_label_parser.h
-  slates.h
+  simple_label.h
   slates_label.h
   spanning_tree.h
   stable_unique.h
-  stagewise_poly.h
-  svrg.h
   tag_utils.h
   text_utils.h
-  topk.h
   unique_sort.h
   v_array.h
   version.h
-  vw.h
   vw_allreduce.h
   vw_exception.h
   vw_math.h
   vw_string_view.h
   vw_validate.h
   vw_versions.h
+  vw.h
   vwdll.h
   vwvis.h
-  warm_cb.h
 )
 
 if(BUILD_FLATBUFFERS)
@@ -247,148 +250,150 @@ endif()
 set(vw_all_sources
   accumulate.cc
   action_score.cc
-  active.cc
-  active_cover.cc
   api_status.cc
-  audit_regressor.cc
-  autolink.cc
-  automl.cc
-  baseline.cc
-  baseline_challenger_cb.cc
   best_constant.cc
-  bfgs.cc
-  binary.cc
-  boosting.cc
-  bs.cc
   cache.cc
-  cats.cc
-  cats_pdf.cc
-  cats_tree.cc
-  cb.cc
-  cb_adf.cc
-  cb_algs.cc
   cb_continuous_label.cc
-  cb_dro.cc
-  cb_explore.cc
-  cb_explore_adf_bag.cc
-  cb_explore_adf_cover.cc
-  cb_explore_adf_first.cc
-  cb_explore_adf_greedy.cc
-  cb_explore_adf_regcb.cc
-  cb_explore_adf_rnd.cc
-  cb_explore_adf_softmax.cc
-  cb_explore_adf_squarecb.cc
-  cb_explore_adf_synthcover.cc
-  cb_explore_pdf.cc
-  cb_sample.cc
   cb_type.cc
-  cb_to_cb_adf.cc
-  cbify.cc
-  cbzo.cc
+  cb.cc
   ccb_label.cc
   ccb_reduction_features.cc
-  classweight.cc
-  cli_help_formatter.cc
-  conditional_contextual_bandit.cc
-  confidence.cc
+  config/cli_help_formatter.cc
+  config/cli_options_serializer.cc
+  config/help_formatter.cc
+  config/option_group_definition.cc
+  config/options_cli.cc
+  config/options_name_extractor.cc
+  config/options.cc
   cost_sensitive.cc
-  count_label.cc
   crossplat_compat.cc
-  cs_active.cc
-  csoaa.cc
-  csoaa_ldf.cc
   decision_scores.cc
   distributionally_robust.cc
-  ect.cc
-  example.cc
   example_predict.cc
-  explore_eval.cc
+  example.cc
   feature_group.cc
-  freegrad.cc
-  ftrl.cc
-  gd.cc
-  gd_mf.cc
   gen_cs_example.cc
-  generate_interactions.cc
-  get_pmf.cc
   global_data.cc
   hashstring.cc
-  interact.cc
-  interactions.cc
-  interaction_ground.cc
   io_buf.cc
-  kernel_svm.cc
   kskip_ngram_transformer.cc
   label_dictionary.cc
   label_parser.cc
   label_type.cc
-  lda_core.cc
   learner.cc
-  log_multi.cc
   loss_functions.cc
-  lrq.cc
-  lrqfa.cc
-  marginal.cc
-  memory_tree.cc
   metric_sink.cc
-  metrics.cc
-  mf.cc
   multiclass.cc
   multilabel.cc
-  multilabel_oaa.cc
-  mwt.cc
   named_labels.cc
   network.cc
-  nn.cc
   no_label.cc
-  noop.cc
-  oaa.cc
-  offset_tree.cc
-  oja_newton.cc
-  options_boost_po.cc
-  options_serializer_boost_po.cc
-  options.cc
   parse_args.cc
   parse_example.cc
   parse_primitives.cc
   parse_regressor.cc
   parser.cc
-  pmf_to_pdf.cc
-  plt.cc
   prediction_type.cc
-  print.cc
   prob_dist_cont.cc
   rand48.cc
-  recall_tree.cc
   reduction_stack.cc
-  sample_pdf.cc
+  reductions/active_cover.cc
+  reductions/active.cc
+  reductions/audit_regressor.cc
+  reductions/autolink.cc
+  reductions/automl.cc
+  reductions/baseline_challenger_cb.cc
+  reductions/baseline.cc
+  reductions/bfgs.cc
+  reductions/binary.cc
+  reductions/boosting.cc
+  reductions/bs.cc
+  reductions/cats_pdf.cc
+  reductions/cats_tree.cc
+  reductions/cats.cc
+  reductions/cb/cb_adf.cc
+  reductions/cb/cb_algs.cc
+  reductions/cb/cb_dro.cc
+  reductions/cb/cb_explore_adf_bag.cc
+  reductions/cb/cb_explore_adf_cover.cc
+  reductions/cb/cb_explore_adf_first.cc
+  reductions/cb/cb_explore_adf_greedy.cc
+  reductions/cb/cb_explore_adf_regcb.cc
+  reductions/cb/cb_explore_adf_rnd.cc
+  reductions/cb/cb_explore_adf_softmax.cc
+  reductions/cb/cb_explore_adf_squarecb.cc
+  reductions/cb/cb_explore_adf_synthcover.cc
+  reductions/cb/cb_explore_pdf.cc
+  reductions/cb/cb_explore.cc
+  reductions/cb/cb_sample.cc
+  reductions/cb/cb_to_cb_adf.cc
+  reductions/cb/cbify.cc
+  reductions/cb/warm_cb.cc
+  reductions/cbzo.cc
+  reductions/classweight.cc
+  reductions/conditional_contextual_bandit.cc
+  reductions/confidence.cc
+  reductions/count_label.cc
+  reductions/cs_active.cc
+  reductions/csoaa_ldf.cc
+  reductions/csoaa.cc
+  reductions/ect.cc
+  reductions/explore_eval.cc
+  reductions/freegrad.cc
+  reductions/ftrl.cc
+  reductions/gd_mf.cc
+  reductions/gd.cc
+  reductions/generate_interactions.cc
+  reductions/get_pmf.cc
+  reductions/interact.cc
+  reductions/interaction_ground.cc
+  reductions/interactions.cc
+  reductions/kernel_svm.cc
+  reductions/lda_core.cc
+  reductions/log_multi.cc
+  reductions/lrq.cc
+  reductions/lrqfa.cc
+  reductions/marginal.cc
+  reductions/memory_tree.cc
+  reductions/metrics.cc
+  reductions/mf.cc
+  reductions/multilabel_oaa.cc
+  reductions/mwt.cc
+  reductions/nn.cc
+  reductions/noop.cc
+  reductions/oaa.cc
+  reductions/offset_tree.cc
+  reductions/oja_newton.cc
+  reductions/plt.cc
+  reductions/pmf_to_pdf.cc
+  reductions/print.cc
+  reductions/recall_tree.cc
+  reductions/sample_pdf.cc
+  reductions/scorer.cc
+  reductions/search/search_dep_parser.cc
+  reductions/search/search_entityrelationtask.cc
+  reductions/search/search_graph.cc
+  reductions/search/search_hooktask.cc
+  reductions/search/search_meta.cc
+  reductions/search/search_multiclasstask.cc
+  reductions/search/search_sequencetask.cc
+  reductions/search/search.cc
+  reductions/sender.cc
+  reductions/shared_feature_merger.cc
+  reductions/slates.cc
+  reductions/stagewise_poly.cc
+  reductions/svrg.cc
+  reductions/topk.cc
   scored_config.cc
-  scorer.cc
-  search_dep_parser.cc
-  search_entityrelationtask.cc
-  search_graph.cc
-  search_hooktask.cc
-  search_meta.cc
-  search_multiclasstask.cc
-  search_sequencetask.cc
-  search.cc
-  sender.cc
   shared_data.cc
-  shared_feature_merger.cc
-  simple_label.cc
   simple_label_parser.cc
-  slates.cc
+  simple_label.cc
   slates_label.cc
-  stagewise_poly.cc
-  svrg.cc
   tag_utils.cc
   text_utils.cc
-  topk.cc
   unique_sort.cc
   version.cc
-  vw_exception.cc
   vw_validate.cc
-  warm_cb.cc
 )
 
 if(BUILD_FLATBUFFERS)
@@ -411,7 +416,7 @@ target_link_libraries(vw
   PUBLIC
     VowpalWabbit::explore VowpalWabbit::allreduce ${boost_math_target} ${spdlog_target} fmt::fmt
   PRIVATE
-    Boost::program_options ${CMAKE_DL_LIBS} ${LINK_THREADS} vw_io
+    ${CMAKE_DL_LIBS} ${LINK_THREADS} vw_io
     # Workaround an issue where RapidJSON needed to be exported tom install the target. This is
     # actually a private dependency and so do not "link" when processing targets for installation.
     # https://gitlab.kitware.com/cmake/cmake/issues/15415
@@ -526,7 +531,7 @@ endif()
 
 # build main executable
 add_executable(vw-bin main.cc)
-target_link_libraries(vw-bin PRIVATE VowpalWabbit::vw Boost::program_options)
+target_link_libraries(vw-bin PRIVATE VowpalWabbit::vw)
 set_target_properties(vw-bin PROPERTIES OUTPUT_NAME vw)
 
 if(STATIC_LINK_VW)
@@ -563,11 +568,12 @@ if(VW_INSTALL)
     LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
     RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
 
-  # VW target headers
-  install(
-    FILES ${vw_all_headers} ${CMAKE_CURRENT_BINARY_DIR}/config.h
-    DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/vowpalwabbit)
-  install(
-    FILES io/io_adapter.h DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/vowpalwabbit/io
+  install(DIRECTORY ${CMAKE_CURRENT_LIST_DIR}/
+    DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/vowpalwabbit
+    FILES_MATCHING
+    PATTERN "*.h"
+    PATTERN ".nuget" EXCLUDE
+    PATTERN "slim" EXCLUDE
+    PATTERN "win32" EXCLUDE
   )
 endif()

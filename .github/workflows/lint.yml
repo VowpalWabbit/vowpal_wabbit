@@ -1,0 +1,131 @@
+name: Lint
+
+on:
+  push:
+    branches:
+      - master
+      - 'releases/**'
+  pull_request:
+    branches:
+      - '*'
+
+jobs:
+  typecheck-build:
+    name: python.typecheck-build
+    container:
+      image: vowpalwabbit/manylinux2010-build:latest
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        config:
+        - { version: "3.9", base_path: /opt/python/cp39-cp39/, include_dir_name: python3.9/ }
+    steps:
+      # v1 must be used because newer versions require a node.js version that will not run on this old image.
+      - uses: actions/checkout@v1
+      - name: Build wheel
+        shell: bash
+        run: |
+          ${{ matrix.config.base_path }}bin/pip wheel . -w wheel_output/ --global-option --cmake-options="-DSTATIC_LINK_VW_JAVA=On;-DPython_INCLUDE_DIR='${{ matrix.config.base_path }}include/${{ matrix.config.include_dir_name }}'" --verbose
+          auditwheel repair wheel_output/*whl -w audit_output/
+      - name: Upload built wheel
+        uses: actions/upload-artifact@v1
+        with:
+          name: wheel_${{ matrix.config.version }}
+          path: audit_output/
+  typecheck-check:
+    name: python.typecheck-check
+    needs: typecheck-build
+    container:
+      image: python:${{ matrix.config.version }}
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        config:
+        - { version: "3.9" }
+    steps:
+      - uses: actions/checkout@v1
+      - name: Download Wheel
+        uses: actions/download-artifact@v1
+        with:
+          name: wheel_${{ matrix.config.version }}
+      - name: Install dependencies
+        shell: bash
+        run: |
+          pip install -r requirements.txt
+          pip install pytype
+      - name: Install wheel
+        shell: bash
+        run: |
+          export wheel_files=(wheel_${{ matrix.config.version }}/*)
+          export wheel_file="${wheel_files[0]}"
+          echo Installing ${wheel_file}...
+          pip install ${wheel_file}
+      - name: Run pytype
+        shell: bash
+        run: |
+          python -m pytype ./python/vowpalwabbit/ --verbosity=2
+  python-formatting:
+    name: python.formatting
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Setup python
+        uses: actions/setup-python@v2
+        with:
+          python-version: 3.9
+      - run: pip install black
+      - shell: bash
+        run: |
+          python -m black --check python/vowpalwabbit || (echo -e "---\nTo fix, run:\n\tpython -m black python/vowpalwabbit"; exit 1)
+  cpp-formatting:
+    name: c++.formatting
+    runs-on: ubuntu-20.04
+    steps:
+      - uses: actions/checkout@v1
+      - name: Install clang-format
+        # This is only needed if the diff check runs as it installs 'clang-format-diff'
+        # 'clang-format' is available by default
+        if: github.event_name == 'pull_request'
+        shell: bash
+        run: |
+          sudo apt update
+          sudo apt install clang-format
+          clang-format --version
+      - name: Check code formatting for codebase
+        shell: bash
+        run: ./utl/clang-format check
+        env:
+          GH_WORKFLOW_LOGGING: true
+      - name: Check code formatting for diff
+        # Only run the diff check for pull requests
+        if: github.event_name == 'pull_request'
+        shell: bash
+        run: |
+          git diff origin/master...HEAD -U0 --no-color | clang-format-diff -r '^.*\.(cc|h)$' -p1 > clang_format_diff.txt
+          if [ -s clang_format_diff.txt ]; then
+            cat clang_format_diff.txt
+            echo "::error:: Formatting issues found"
+            echo "To fix:"
+            echo -e "\tEnsure there is an upstream remote that points to: https://github.com/VowpalWabbit/vowpal_wabbit.git"
+            echo -e "\tRun: \"git fetch upstream\""
+            echo -e "\tUse Docker: https://gist.github.com/jackgerrits/2736da5ffff871f7830aed6b55c0c73e"
+            echo -e "\tOr, Run: \"git diff upstream/master...HEAD -U0 --no-color | clang-format-diff -r '^.*\.(cc|h)$' -p1 -i\""
+            exit 1
+          else
+            echo "No formatting issues found in the PR diff."
+          fi
+  run-clang-tidy:
+    name: c++.clang-tidy
+    container:
+      image: vowpalwabbit/ubuntu2004-dev:latest
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Install Ninja
+        shell: bash
+        run: |
+          apt update
+          apt install ninja-build
+      - name: Run clang tidy
+        shell: bash
+        run: ./.scripts/linux/run-clang-tidy.sh

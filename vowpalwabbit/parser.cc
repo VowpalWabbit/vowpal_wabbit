@@ -61,7 +61,7 @@ int VW_getpid() { return (int)::GetCurrentProcessId(); }
 #include "unique_sort.h"
 #include "constant.h"
 #include "vw.h"
-#include "interactions.h"
+#include "reductions/interactions.h"
 #include "vw_exception.h"
 #include "parse_example_json.h"
 #include "parse_dispatch_loop.h"

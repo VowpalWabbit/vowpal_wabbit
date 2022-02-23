@@ -17,8 +17,8 @@
 #include "vw_exception.h"
 #include <fstream>
 
-#include "options.h"
-#include "options_boost_po.h"
+#include "config/options.h"
+#include "config/options_cli.h"
 #include "vw_to_flat.h"
 
 using namespace VW::config;
@@ -73,11 +73,11 @@ int main(int argc, char* argv[])
 
   std::vector<VW::workspace*> alls;
 
-  std::string q("--quiet");
-  argv[argc++] = const_cast<char*>(q.c_str());
+  std::vector<std::string> opts(argv + 1, argv + argc);
+  opts.emplace_back("--quiet");
 
-  std::unique_ptr<options_boost_po, options_deleter_type> ptr(
-      new options_boost_po(argc, argv), [](VW::config::options_i* ptr) { delete ptr; });
+  std::unique_ptr<options_cli, options_deleter_type> ptr(
+      new options_cli(opts), [](VW::config::options_i* ptr) { delete ptr; });
   ptr->add_and_parse(driver_config);
   alls.push_back(setup(std::move(ptr)));
   if (converter.collection_size > 0) { converter.collection = true; }

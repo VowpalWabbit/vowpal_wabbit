@@ -133,7 +133,7 @@
   <ItemGroup>
     <ClCompile Include="..\example_predict.cc" />
     <ClCompile Include="..\feature_group.cc" />
-    <ClCompile Include="..\interactions.cc" />
+    <ClCompile Include="..\reductions\interactions.cc" />
     <ClCompile Include="src\example_predict_builder.cc" />
     <ClCompile Include="src\model_parser.cc" />
     <ClCompile Include="src\opts.cc" />

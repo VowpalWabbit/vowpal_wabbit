@@ -13,7 +13,7 @@
 #include "gd_predict.h"
 #include "model_parser.h"
 #include "opts.h"
-#include "interactions.h"
+#include "reductions/interactions.h"
 #include "array_parameters_dense.h"
 
 namespace vw_slim

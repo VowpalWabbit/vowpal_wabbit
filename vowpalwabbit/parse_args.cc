@@ -17,7 +17,7 @@
 #include "parser.h"
 #include "parse_primitives.h"
 #include "vw.h"
-#include "interactions.h"
+#include "reductions/interactions.h"
 
 #include "parse_args.h"
 #include "reduction_stack.h"
@@ -32,14 +32,14 @@
 #include "accumulate.h"
 #include "vw_validate.h"
 #include "vw_allreduce.h"
-#include "metrics.h"
+#include "reductions/metrics.h"
 #include "text_utils.h"
-#include "interactions.h"
-#include "cli_help_formatter.h"
+#include "reductions/interactions.h"
+#include "config/cli_help_formatter.h"
 
-#include "options.h"
-#include "options_boost_po.h"
-#include "options_serializer_boost_po.h"
+#include "config/options.h"
+#include "config/options_cli.h"
+#include "config/cli_options_serializer.h"
 #include "named_labels.h"
 
 #include "io/io_adapter.h"
@@ -218,7 +218,7 @@ void parse_dictionary_argument(VW::workspace& all, const std::string& str)
                          << (map->size() == 1 ? "" : "s") << endl;
 
   all.namespace_dictionaries[static_cast<size_t>(ns)].push_back(map);
-  dictionary_info info = {s.to_string(), fd_hash, map};
+  dictionary_info info = {std::string{s}, fd_hash, map};
   all.loaded_dictionaries.push_back(info);
 }
 
@@ -388,6 +388,10 @@ input_options parse_source(VW::workspace& all, options_i& options)
 #endif
 
   options.add_and_parse(input_options);
+
+  // We are done adding new options. Before we are allowed to get the positionals we need to check unregistered.
+  auto warnings = all.options->check_unregistered();
+  for (const auto& warning : warnings) { all.logger.err_warn(warning); }
 
   // Check if the options provider has any positional args. Only really makes sense for command line, others just return
   // an empty list.
@@ -1438,93 +1442,57 @@ bool check_interaction_settings_collision(options_i& options, const std::string&
   return file_options_has_interaction;
 }
 
-void merge_options_from_header_strings(const std::vector<std::string>& strings, bool skip_interactions,
-    VW::config::options_i& options, bool& is_ccb_input_model)
+bool is_opt_long_option_like(VW::string_view token) { return token.find("--") == 0 && token.size() > 2; }
+
+// The model file contains a command line but it has much greater constraints than the user supplied command line. These
+// constraints greatly help us unambiguously process it. The command line will ONLY consist of bool switches or options
+// with a single value. However, the tricky thing here is that there is no way to disambiguate something that looks like
+// a switch from an option with a value.
+std::unordered_map<std::string, std::vector<std::string>> parse_model_command_line_legacy(
+    const std::vector<std::string>& command_line)
 {
-  po::options_description desc("");
-
-  // Get list of options in file options std::string
-  po::parsed_options pos = po::command_line_parser(strings).options(desc).allow_unregistered().run();
-
-  bool skipping = false;
-  std::string saved_key = "";
-  unsigned int count = 0;
-  bool first_seen = false;
-
-  for (auto opt : pos.options)
+  std::unordered_map<std::string, std::vector<std::string>> m_map;
+  std::string last_option;
+  for (const auto& token : command_line)
   {
-    // If we previously encountered an option we want to skip, ignore tokens without --.
-    if (skipping)
+    if (is_opt_long_option_like(token))
     {
-      for (const auto& token : opt.original_tokens)
-      {
-        auto found = token.find("--");
-        if (found != std::string::npos) { skipping = false; }
-      }
-
-      if (skipping)
-      {
-        saved_key = "";
-        continue;
-      }
-    }
-
-    bool treat_as_value = false;
-    // If the key starts with a digit, this is a mis-interpretation of a value as a key. Pull it into the previous
-    // option. This was found in the case of --lambda -1, misinterpreting -1 as an option key. The easy way to fix this
-    // requires introducing "identifier-like" semantics for options keys, e.g. "does not begin with a digit". That does
-    // not seem like an unreasonable restriction. The logical check here is: is "string_key" of the form {'-', <digit>,
-    // <etc.>}.
-    if (opt.string_key.length() > 1 && opt.string_key[0] == '-' && opt.string_key[1] >= '0' && opt.string_key[1] <= '9')
-    { treat_as_value = true; }
-
-    // File options should always use long form.
-
-    // If the key is empty this must be a value, otherwise set the key.
-    if (!treat_as_value && !opt.string_key.empty())
-    {
-      // If the new token is a new option and there were no values previously it was a bool option. Add it as a switch.
-      if (count == 0 && first_seen) { options.insert(saved_key, ""); }
-
-      count = 0;
-      first_seen = true;
-
-      // If the interaction settings are doubled, the copy in the model file is ignored.
-      if (skip_interactions &&
-          (opt.string_key == "quadratic" || opt.string_key == "cubic" || opt.string_key == "interactions"))
-      {
-        // skip this option.
-        skipping = true;
-        first_seen = false;
-        continue;
-      }
-
-      saved_key = opt.string_key;
-      is_ccb_input_model = is_ccb_input_model || (saved_key == "ccb_explore_adf");
-
-      if (!opt.value.empty())
-      {
-        for (const auto& value : opt.value)
-        {
-          options.insert(saved_key, value);
-          count++;
-        }
-      }
+      // We don't need to handle = because the current model command line is never created with that format.
+      auto opt_name = token.substr(2);
+      last_option = opt_name;
+      if (m_map.find(opt_name) == m_map.end()) { m_map[opt_name] = std::vector<std::string>(); }
     }
     else
     {
-      // If treat_as_value is set, boost incorrectly interpreted the token as containing an option key
-      // In this case, what should have happened is all original_tokens items should be in value.
-      auto source = treat_as_value ? opt.original_tokens : opt.value;
-      for (const auto& value : source)
-      {
-        options.insert(saved_key, value);
-        count++;
-      }
+      assert(!last_option.empty());
+      m_map[last_option].push_back(token);
     }
   }
+  return m_map;
+}
 
-  if (count == 0 && !saved_key.empty()) { options.insert(saved_key, ""); }
+void merge_options_from_header_strings(const std::vector<std::string>& strings, bool skip_interactions,
+    VW::config::options_i& options, bool& is_ccb_input_model)
+{
+  auto parsed_model_command_line = parse_model_command_line_legacy(strings);
+
+  if (skip_interactions)
+  {
+    parsed_model_command_line.erase("quadratic");
+    parsed_model_command_line.erase("cubic");
+    parsed_model_command_line.erase("interactions");
+  }
+
+  is_ccb_input_model =
+      is_ccb_input_model || (parsed_model_command_line.find("ccb_explore_adf") != parsed_model_command_line.end());
+  for (const auto& kv : parsed_model_command_line)
+  {
+    if (kv.second.empty()) { options.insert(kv.first, ""); }
+    else
+    {
+      for (const auto& value : kv.second) { options.insert(kv.first, value); }
+    }
+  }
 }
 
 options_i& load_header_merge_options(
@@ -1750,15 +1718,16 @@ VW::workspace* initialize_with_builder(std::unique_ptr<options_i, options_delete
     // we must delay so parse_mask is fully defined.
     for (const auto& name_space : dictionary_namespaces) parse_dictionary_argument(all, name_space);
 
-    all.options->check_unregistered(all.logger);
-
     std::vector<std::string> enabled_reductions;
     if (all.l != nullptr) all.l->get_enabled_reductions(enabled_reductions);
 
     // upon direct query for help -- spit it out to stdout;
     if (all.options->get_typed_option<bool>("help").value())
     {
-      const auto num_supplied = all.options->get_supplied_options().size();
+      size_t num_supplied = 0;
+      for (auto const& option : all.options->get_all_options())
+      { num_supplied += all.options->was_supplied(option->m_name) ? 1 : 0; }
+
       auto option_groups = all.options->get_all_option_group_definitions();
       std::sort(option_groups.begin(), option_groups.end(),
           [](const VW::config::option_group_definition& a, const VW::config::option_group_definition& b) {
@@ -1834,7 +1803,8 @@ VW::workspace* initialize_with_builder(int argc, char* argv[], io_buf* model, bo
     trace_message_t trace_listener, void* trace_context, std::unique_ptr<VW::setup_base_i> learner_builder)
 {
   std::unique_ptr<options_i, options_deleter_type> options(
-      new config::options_boost_po(argc, argv), [](VW::config::options_i* ptr) { delete ptr; });
+      new config::options_cli(std::vector<std::string>(argv + 1, argv + argc)),
+      [](VW::config::options_i* ptr) { delete ptr; });
   return initialize_with_builder(
       std::move(options), model, skip_model_load, trace_listener, trace_context, std::move(learner_builder));
 }
@@ -1878,7 +1848,7 @@ VW::workspace* initialize(
 VW::workspace* seed_vw_model(
     VW::workspace* vw_model, const std::string& extra_args, trace_message_t trace_listener, void* trace_context)
 {
-  options_serializer_boost_po serializer;
+  cli_options_serializer serializer;
   for (auto const& option : vw_model->options->get_all_options())
   {
     if (vw_model->options->was_supplied(option->m_name))

@@ -27,7 +27,7 @@
 #include "vw_exception.h"
 #include "vw_validate.h"
 #include "vw_versions.h"
-#include "options_serializer_boost_po.h"
+#include "config/cli_options_serializer.h"
 #include "shared_data.h"
 #include "io/logger.h"
 
@@ -387,7 +387,7 @@ void save_load_header(VW::workspace& all, io_buf& model_file, bool read, bool te
     }
     else
     {
-      VW::config::options_serializer_boost_po serializer;
+      VW::config::cli_options_serializer serializer;
 
       std::map<std::string, std::set<char>> merged_values = {{"ignore", {}}, {"ignore_linear", {}}, {"keep", {}}};
 

@@ -18,8 +18,9 @@
 #include <fstream>
 
 #include "vw.h"
-#include "options.h"
-#include "options_boost_po.h"
+#include "config/options.h"
+#include "config/options_cli.h"
+#include "memory.h"
 
 using namespace VW::config;
 
@@ -53,7 +54,7 @@ int main(int argc, char* argv[])
   try
   {
     // support multiple vw instances for training of the same datafile for the same instance
-    std::vector<std::unique_ptr<options_boost_po>> arguments;
+    std::vector<std::unique_ptr<options_cli>> arguments;
     std::vector<VW::workspace*> alls;
     if (argc == 3 && !std::strcmp(argv[1], "--args"))
     {
@@ -73,8 +74,8 @@ int main(int argc, char* argv[])
 
         int l_argc;
         char** l_argv = VW::to_argv(new_args, l_argc);
-
-        std::unique_ptr<options_boost_po> ptr(new options_boost_po(l_argc, l_argv));
+        std::vector<std::string> args(l_argv + 1, l_argv + l_argc);
+        auto ptr = VW::make_unique<options_cli>(args);
         ptr->add_and_parse(driver_config);
         alls.push_back(setup(*ptr));
         arguments.push_back(std::move(ptr));
@@ -82,7 +83,7 @@ int main(int argc, char* argv[])
     }
     else
     {
-      std::unique_ptr<options_boost_po> ptr(new options_boost_po(argc, argv));
+      auto ptr = VW::make_unique<options_cli>(std::vector<std::string>(argv + 1, argv + argc));
       ptr->add_and_parse(driver_config);
       alls.push_back(setup(*ptr));
       arguments.push_back(std::move(ptr));

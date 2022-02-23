@@ -4,7 +4,7 @@
 #pragma once
 #include <string>
 #include "global_data.h"
-#include "options.h"
+#include "config/options.h"
 
 void read_regressor_file(VW::workspace& all, const std::vector<std::string>& files, io_buf& io_temp);
 

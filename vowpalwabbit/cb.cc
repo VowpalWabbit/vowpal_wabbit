@@ -48,7 +48,7 @@ void parse_label(CB::label& ld, VW::label_parser_reuse_mem& reuse_mem, const std
     if (reuse_mem.tokens.empty() || reuse_mem.tokens.size() > 3) { THROW("malformed cost specification: " << word); }
 
     f.partial_prediction = 0.;
-    f.action = static_cast<uint32_t>(hashstring(reuse_mem.tokens[0].begin(), reuse_mem.tokens[0].length(), 0));
+    f.action = static_cast<uint32_t>(hashstring(reuse_mem.tokens[0].data(), reuse_mem.tokens[0].length(), 0));
     f.cost = FLT_MAX;
 
     if (reuse_mem.tokens.size() > 1) f.cost = float_of_string(reuse_mem.tokens[1], logger);
@@ -190,7 +190,7 @@ void parse_label(CB_EVAL::label& ld, VW::label_parser_reuse_mem& reuse_mem, cons
 {
   if (words.size() < 2) THROW("Evaluation can not happen without an action and an exploration");
 
-  ld.action = static_cast<uint32_t>(hashstring(words[0].begin(), words[0].length(), 0));
+  ld.action = static_cast<uint32_t>(hashstring(words[0].data(), words[0].length(), 0));
 
   // TODO - make this a span and there is no allocation
   const auto rest_of_tokens = std::vector<VW::string_view>(words.begin() + 1, words.end());

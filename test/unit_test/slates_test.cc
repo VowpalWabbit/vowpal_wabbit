@@ -11,7 +11,7 @@
 
 #include "vw.h"
 #include "example.h"
-#include "slates.h"
+#include "reductions/slates.h"
 #include "slates_label.h"
 #include "ccb_label.h"
 #include "learner.h"
