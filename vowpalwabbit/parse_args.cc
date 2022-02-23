@@ -38,7 +38,7 @@
 #include "config/cli_help_formatter.h"
 
 #include "config/options.h"
-#include "config/options_boost_po.h"
+#include "config/options_cli.h"
 #include "config/cli_options_serializer.h"
 #include "named_labels.h"
 
@@ -388,6 +388,10 @@ input_options parse_source(VW::workspace& all, options_i& options)
 #endif
 
   options.add_and_parse(input_options);
+
+  // We are done adding new options. Before we are allowed to get the positionals we need to check unregistered.
+  auto warnings = all.options->check_unregistered();
+  for (const auto& warning : warnings) { all.logger.err_warn(warning); }
 
   // Check if the options provider has any positional args. Only really makes sense for command line, others just return
   // an empty list.
@@ -1714,9 +1718,6 @@ VW::workspace* initialize_with_builder(std::unique_ptr<options_i, options_delete
     // we must delay so parse_mask is fully defined.
     for (const auto& name_space : dictionary_namespaces) parse_dictionary_argument(all, name_space);
 
-    auto warnings = all.options->check_unregistered();
-    for (const auto& warning : warnings) { all.logger.err_warn(warning); }
-
     std::vector<std::string> enabled_reductions;
     if (all.l != nullptr) all.l->get_enabled_reductions(enabled_reductions);
 
@@ -1802,7 +1803,8 @@ VW::workspace* initialize_with_builder(int argc, char* argv[], io_buf* model, bo
     trace_message_t trace_listener, void* trace_context, std::unique_ptr<VW::setup_base_i> learner_builder)
 {
   std::unique_ptr<options_i, options_deleter_type> options(
-      new config::options_boost_po(argc, argv), [](VW::config::options_i* ptr) { delete ptr; });
+      new config::options_cli(std::vector<std::string>(argv + 1, argv + argc)),
+      [](VW::config::options_i* ptr) { delete ptr; });
   return initialize_with_builder(
       std::move(options), model, skip_model_load, trace_listener, trace_context, std::move(learner_builder));
 }
