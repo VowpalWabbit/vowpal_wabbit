@@ -7,7 +7,6 @@
 #include <boost/mpl/vector.hpp>
 
 #include "parse_args.h"
-#include "config/options_boost_po.h"
 #include "config/options_cli.h"
 
 #include <vector>
@@ -15,7 +14,7 @@
 
 using namespace VW::config;
 
-using option_types = boost::mpl::vector<options_cli, options_boost_po>;
+using option_types = boost::mpl::vector<options_cli>;
 
 BOOST_AUTO_TEST_CASE_TEMPLATE(merge_from_header_strings_no_opts_skip, T, option_types)
 {

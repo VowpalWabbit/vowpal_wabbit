@@ -244,6 +244,12 @@ T convert_token_value(const VW::string_view& token)
   return result;
 }
 
+template <>
+std::string convert_token_value<std::string>(const VW::string_view& token)
+{
+  return std::string{token};
+}
+
 struct cli_typed_option_handler : typed_option_visitor
 {
   std::unordered_map<VW::string_view, std::vector<VW::string_view>>& m_tokens;
