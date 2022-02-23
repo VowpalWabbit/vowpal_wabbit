@@ -25,7 +25,6 @@ loss     last          counter         weight          label        predict feat
 0.226776 0.014000          512          512.0        unknown         0.9328        1
 0.113599 0.000422         1024         1024.0        unknown         0.9396        1
 
-
 finished run
 number of examples per pass = 12
 passes used = 100

@@ -19,7 +19,6 @@ loss     last          counter         weight          label        predict feat
 0.244875 0.238201           64           64.0         0.0000         0.3535       61
 0.243892 0.242908          128          128.0         1.0000         0.5382      106
 
-
 finished run
 number of examples = 200
 weighted example sum = 200.000000
