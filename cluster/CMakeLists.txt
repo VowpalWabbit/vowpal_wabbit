@@ -1,9 +1,9 @@
 set(vowpal_wabbit_dir "${CMAKE_CURRENT_SOURCE_DIR}/../vowpalwabbit")
 
 add_executable(spanning_tree
-spanning_tree_main.cc
-${vowpal_wabbit_dir}/spanning_tree.cc
-${vowpal_wabbit_dir}/vw_exception.cc)
+  spanning_tree_main.cc
+  ${vowpal_wabbit_dir}/spanning_tree.cc
+)
 
 # Winsock32 should be available on Windows
 if(WIN32)

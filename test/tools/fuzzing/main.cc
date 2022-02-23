@@ -1,4 +1,4 @@
-#include "options_boost_po.h"
+#include "config/options_boost_po.h"
 
 #include "vw.h"
 #include "vw_exception.h"

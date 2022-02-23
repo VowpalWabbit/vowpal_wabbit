@@ -110,7 +110,8 @@ class TestOutcome:
 
 
 def try_decode(binary_object: Optional[bytes]) -> str:
-    return binary_object.decode("utf-8") if binary_object is not None else ""
+    # ignore UTF decode errors so that we can still understand the output in this case
+    return binary_object.decode("utf-8", "ignore") if binary_object is not None else ""
 
 
 # Returns true if they are close enough to be considered equal.
@@ -289,6 +290,7 @@ def run_command_line_test(
     completed_tests: Completion,
     fuzzy_compare=False,
     valgrind=False,
+    timeout=100,
 ) -> TestOutcome:
 
     if test.skip:
@@ -337,7 +339,7 @@ def run_command_line_test(
                 stderr=subprocess.PIPE,
                 cwd=current_test_working_dir,
                 shell=test.is_shell,
-                timeout=100,
+                timeout=timeout,
             )
         except subprocess.TimeoutExpired as e:
             stdout = try_decode(e.stdout)
@@ -920,6 +922,12 @@ def main():
         help="Append extra options to VW command line tests.",
         default="",
     )
+    parser.add_argument(
+        "--timeout",
+        type=int,
+        help="How long a single test can run for in seconds.",
+        default=100,
+    )
     args = parser.parse_args()
 
     # user did not supply dir
@@ -1047,6 +1055,7 @@ def main():
                 completed_tests=completed_tests,
                 fuzzy_compare=args.fuzzy_compare,
                 valgrind=args.valgrind,
+                timeout=args.timeout,
             )
         )
 

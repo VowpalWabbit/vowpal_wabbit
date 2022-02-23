@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h> // for system
 #include "../vowpalwabbit/vw.h"
-#include "../vowpalwabbit/search_sequencetask.h"
+#include "../vowpalwabbit/reductions/search/search_sequencetask.h"
 #include "libsearch.h"
 
 using std::cerr;
