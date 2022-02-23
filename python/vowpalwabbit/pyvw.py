@@ -353,10 +353,15 @@ class _log_forward:
         self.messages = []
 
     def log(self, msg):
-        self.current_message += msg
-        if "\n" in self.current_message:
+        if "\n" in msg:
+            components = msg.split("\n")
+            self.current_message += components[0]
             self.messages.append(self.current_message)
-            self.current_message = ""
+            for component in components[1:-1]:
+                self.messages.append(component)
+            self.current_message = components[-1]
+        else:
+            self.current_message += msg
 
 
 def _build_command_line(
@@ -718,7 +723,7 @@ class Workspace(pylibvw.vw):
             A list of strings, where each item is a line in the log
         """
         if self._log_fwd:
-            return self._log_fwd.messages
+            return self._log_fwd.messages + [self._log_fwd.current_message]
         else:
             raise Exception("enable_logging set to false")
 

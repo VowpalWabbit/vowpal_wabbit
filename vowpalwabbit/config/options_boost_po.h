@@ -47,9 +47,13 @@ struct options_boost_po : public options_i
 
   void internal_add_and_parse(const option_group_definition& group) override;
   VW_ATTR(nodiscard) bool was_supplied(const std::string& key) const override;
-  void check_unregistered(VW::io::logger& logger) override;
-  void insert(const std::string& key, const std::string& value) override;
+  /**
+   * @brief Check for unregistered options and validate input. Throws if there
+   * is an error. Returns a vector of warning strings if there are warnings produced.
+   */
+  VW_ATTR(nodiscard) std::vector<std::string> check_unregistered() override;
 
+  void insert(const std::string& key, const std::string& value) override;
   // Note: does not work for vector options.
   void replace(const std::string& key, const std::string& value) override;
   VW_ATTR(nodiscard) std::vector<std::string> get_positional_tokens() const override;

@@ -111,7 +111,7 @@ struct typed_option : base_option
   T value() const
   {
     if (m_value) { return *m_value; }
-    THROW("typed_option does not contain value. use value_supplied to check if value exists.")
+    THROW("typed_option " << m_name << " does not contain value. use value_supplied to check if value exists.")
   }
 
   void set_one_of(const std::set<value_type>& one_of_set) { m_one_of = one_of_set; }
