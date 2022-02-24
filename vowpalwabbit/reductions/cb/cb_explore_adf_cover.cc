@@ -319,15 +319,17 @@ VW::LEARNER::base_learner* setup(VW::setup_base_i& stack_builder)
       all.logger);
   auto* l = make_reduction_learner(
       std::move(data), base, explore_type::learn, explore_type::predict, stack_builder.get_setupfn_name(setup))
+                .set_input_label_type(VW::label_type_t::cb)
+                .set_output_label_type(VW::label_type_t::cb)
+                .set_input_prediction_type(VW::prediction_type_t::action_scores)
+                .set_output_prediction_type(VW::prediction_type_t::action_probs)
                 .set_learn_returns_prediction(true)
                 .set_params_per_weight(problem_multiplier)
-                .set_output_prediction_type(VW::prediction_type_t::action_probs)
-                .set_input_label_type(VW::label_type_t::cb)
                 .set_finish_example(explore_type::finish_multiline_example)
                 .set_print_example(explore_type::print_multiline_example)
                 .set_save_load(explore_type::save_load)
                 .set_persist_metrics(explore_type::persist_metrics)
-                .build();
+                .build(&all.logger);
   return make_base(*l);
 }
 }  // namespace cover
