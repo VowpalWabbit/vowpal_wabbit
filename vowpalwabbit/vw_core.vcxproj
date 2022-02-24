@@ -99,6 +99,7 @@
       <OmitFramePointers Condition="'$(Configuration)'=='Release'">true</OmitFramePointers>
       <EnableFiberSafeOptimizations Condition="'$(Configuration)'=='Release'">false</EnableFiberSafeOptimizations>
       <RuntimeLibrary Condition="'$(Configuration)'=='Release'">MultiThreadedDLL</RuntimeLibrary>
+      <RuntimeLibrary Condition="'$(Configuration)'=='Debug'">MultiThreadedDebugDLL</RuntimeLibrary>
       <DebugInformationFormat Condition="'$(Configuration)'=='Debug'">ProgramDatabase</DebugInformationFormat>
       <EnablePREfast Condition="'$(Configuration)'=='Debug'">false</EnablePREfast>
       <MinimalRebuild Condition="'$(Configuration)'=='Debug'">false</MinimalRebuild>
@@ -145,7 +146,6 @@
     <ClInclude Include="config/help_formatter.h" />
     <ClInclude Include="config/option_group_definition.h" />
     <ClInclude Include="config/option.h" />
-    <ClInclude Include="config/options_boost_po.h" />
     <ClInclude Include="config/options_cli.h"/>
     <ClInclude Include="config/options_name_extractor.h" />
     <ClInclude Include="config/options_serializer.h" />
@@ -352,7 +352,6 @@
     <ClCompile Include="config/cli_options_serializer.cc" />
     <ClCompile Include="config/help_formatter.cc" />
     <ClCompile Include="config/option_group_definition.cc" />
-    <ClCompile Include="config/options_boost_po.cc" />
     <ClCompile Include="config/options_cli.cc"/>
     <ClCompile Include="config/options_name_extractor.cc" />
     <ClCompile Include="config/options.cc" />
