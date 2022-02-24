@@ -10,7 +10,7 @@ on:
       - '*'
 jobs:
   build_vendor:
-    name: core-cli.${{ matrix.os }}.amd64.${{ matrix.build_type }}.${{ matrix.compiler }}.standalone
+    name: core-cli.${{ matrix.os }}.amd64.${{ matrix.build_type }}.${{ matrix.compiler.cxx }}.standalone
     strategy:
       matrix:
         os: ["ubuntu-20.04", "ubuntu-18.04"]
@@ -18,16 +18,19 @@ jobs:
         compiler:
         - { cc: "gcc", cxx: "g++"}
         - { cc: "clang", cxx: "clang++"}
-    container:
-      image: vowpalwabbit/ubuntu1804-build:latest
-    runs-on: ubuntu-latest
+    runs-on: ${{matrix.os}}
     steps:
-      - uses: actions/checkout@v1
+      - uses: actions/checkout@v2
+        with:
+          submodules: 'recursive'
+      - name: Install Ninja
+        run: sudo install -y ninja-build
       - name: Configure
+        env:
+          CC: ${{matrix.compiler.cc}}
+          CXX: ${{matrix.compiler.cxx}}
         run: >
           cmake -S . -B build -G Ninja
-            -DCMAKE_C_COMPILER=${{matrix.compiler.cc}}
-            -DCMAKE_CXX_COMPILER=${{matrix.compiler.cxx}}
             -DCMAKE_BUILD_TYPE=${{matrix.build_type}}
             -DBUILD_FLATBUFFERS=Off
             -DRAPIDJSON_SYS_DEP=Off
@@ -39,7 +42,7 @@ jobs:
       - name: Build
         run: |
           cmake --build build --target vw-bin spanning_tree vw-unit-test.out
-      - name: Test with coverage C++
+      - name: Test
         run: |
           python3 test/run_tests.py -f -j $(nproc) --clean_dirty -E 0.001
           ./build/test/unit_test/vw-unit-test.out
