@@ -44,16 +44,16 @@ template <class ForwardIt>
 void reset_models(ForwardIt first, ForwardIt end, parameters& weights, double epsilon_decay_alpha,
     double epsilon_decay_tau, uint64_t model_count)
 {
-  uint64_t ppw = 1;
-  while (ppw < model_count) { ppw *= 2; }
+  uint64_t params_per_weight = 1;
+  while (params_per_weight < model_count) { params_per_weight *= 2; }
   for (; first != end; ++first)
   {
     first->reset_stats(epsilon_decay_alpha, epsilon_decay_tau);
-    weights.dense_weights.clear_offset(first->get_model_idx(), ppw);
+    weights.dense_weights.clear_offset(first->get_model_idx(), params_per_weight);
   }
 }
 
-float decayed_epsilon(uint64_t update_count) { return static_cast<float>(pow(update_count + 1, -1.f / 3.f)); }
+float decayed_epsilon(uint64_t update_count) { return static_cast<float>(std::pow(update_count + 1, -1.f / 3.f)); }
 
 void predict(epsilon_decay_data& data, VW::LEARNER::multi_learner& base, multi_ex& examples)
 {
@@ -117,7 +117,7 @@ void learn(epsilon_decay_data& data, VW::LEARNER::multi_learner& base, multi_ex&
   for (auto candidate_iter = champion_iter + 1; candidate_iter != end_iter; ++candidate_iter, --model_idx)
   {
     if (candidate_iter->update_count > data.min_scope &&
-        candidate_iter->update_count > (pow(champion_iter->update_count, static_cast<float>(model_idx) / model_count)))
+        candidate_iter->update_count > (std::pow(champion_iter->update_count, static_cast<float>(model_idx) / model_count)))
     {
       auto n_iter = swap_models(candidate_iter + 1, candidate_iter, end_iter);
       reset_models(n_iter, end_iter, data.weights, data.epsilon_decay_alpha, data.epsilon_decay_tau, model_count);
@@ -171,8 +171,8 @@ VW::LEARNER::base_learner* epsilon_decay_setup(VW::setup_base_i& stack_builder)
   if (!options.add_parse_and_check_necessary(new_options)) { return nullptr; }
 
   // Update model count to be 2^n
-  uint64_t ppw = 1;
-  while (ppw < model_count) { ppw *= 2; }
+  uint64_t params_per_weight = 1;
+  while (params_per_weight < model_count) { params_per_weight *= 2; }
 
   auto data =
       VW::make_unique<epsilon_decay_data>(model_count, min_scope, epsilon_decay_alpha, epsilon_decay_tau, all.weights);
@@ -184,7 +184,11 @@ VW::LEARNER::base_learner* epsilon_decay_setup(VW::setup_base_i& stack_builder)
   {
     auto* learner = VW::LEARNER::make_reduction_learner(std::move(data), VW::LEARNER::as_multiline(base_learner), learn,
         predict, stack_builder.get_setupfn_name(epsilon_decay_setup))
-                        .set_params_per_weight(ppw)
+                        .set_input_label_type(VW::label_type_t::cb)
+                        .set_output_label_type(VW::label_type_t::cb)
+                        .set_input_prediction_type(VW::prediction_type_t::action_scores)
+                        .set_output_prediction_type(VW::prediction_type_t::action_scores)
+                        .set_params_per_weight(params_per_weight)
                         .set_output_prediction_type(base_learner->get_output_prediction_type())
                         .set_save_load(save_load_epsilon_decay)
                         .build();
@@ -193,8 +197,8 @@ VW::LEARNER::base_learner* epsilon_decay_setup(VW::setup_base_i& stack_builder)
   }
   else
   {
-    // not implemented yet
-    THROW("Epsilon decay does not supported for single line learners yet");
+    // not implemented
+    THROW("--epsilon_decay does not supported for single line learners");
   }
 }
 

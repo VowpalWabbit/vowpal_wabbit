@@ -16,7 +16,7 @@ VW::LEARNER::base_learner* epsilon_decay_setup(VW::setup_base_i&);
 
 struct epsilon_decay_score : scored_config
 {
-  epsilon_decay_score() : VW::scored_config() {}
+  epsilon_decay_score() = default;
   epsilon_decay_score(double alpha, double tau, uint64_t model_idx)
       : VW::scored_config(alpha, tau), _model_idx(model_idx)
   {
