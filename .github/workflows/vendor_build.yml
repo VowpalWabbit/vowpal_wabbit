@@ -1,4 +1,4 @@
-name: Build Vendor
+name: Standalone
 
 on:
   push:
@@ -10,14 +10,31 @@ on:
       - '*'
 jobs:
   build_vendor:
+    name: core-cli.${{ matrix.os }}.amd64.${{ matrix.build_type }}.${{ matrix.compiler }}.standalone
+    matrix:
+      os: ["ubuntu-20.04", "ubuntu-18.04"]
+      build_type: ["Debug", "Release"]
+      compiler:
+      - { cc: "gcc", cxx: "g++"}
+      - { cc: "clang", cxx: "clang++"}
     container:
       image: vowpalwabbit/ubuntu1804-build:latest
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v1
       - name: Configure
-        run: |
-          cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release -DBUILD_FLATBUFFERS=Off -DRAPIDJSON_SYS_DEP=Off -DFMT_SYS_DEP=Off -DSPDLOG_SYS_DEP=Off -DVW_ZLIB_SYS_DEP=Off -DVW_INSTALL=Off
+        run: >
+          cmake -S . -B build -G Ninja
+            -DCMAKE_C_COMPILER=${{matrix.compiler.cc}}
+            -DCMAKE_CXX_COMPILER=${{matrix.compiler.cxx}}
+            -DCMAKE_BUILD_TYPE=${{matrix.build_type}}
+            -DBUILD_FLATBUFFERS=Off
+            -DRAPIDJSON_SYS_DEP=Off
+            -DFMT_SYS_DEP=Off
+            -DSPDLOG_SYS_DEP=Off
+            -DVW_ZLIB_SYS_DEP=Off
+            -DVW_BOOST_MATH_SYS_DEP=Off
+            -DVW_INSTALL=Off
       - name: Build
         run: |
           cmake --build build --target vw-bin spanning_tree vw-unit-test.out
