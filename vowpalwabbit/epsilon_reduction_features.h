@@ -16,7 +16,12 @@ struct reduction_features
 
   reduction_features() { epsilon = -1.f; }
 
-  bool is_valid_epsilon() { return epsilon >= 0.f; }
+  bool is_epsilon_supplied()
+  {
+    if (epsilon >= 0.f && epsilon <= 1.f) { return true; }
+    else if (epsilon == -1.f) { return false; }
+    THROW("Invalid epsilon value: " << epsilon << " supplied. Epsilon must be between 0 and 1 inclusive.");
+  }
   void reset_to_default() { epsilon = -1.f; }
 };
 }  // namespace greedy
