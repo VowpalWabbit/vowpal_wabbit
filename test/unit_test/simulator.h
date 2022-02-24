@@ -44,16 +44,18 @@ public:
   std::string action_ns;
 
   cb_sim(uint64_t seed = 0);
-  float get_reaction(const std::map<std::string, std::string>& context, const std::string& action, bool add_noise = false, bool swap_reward = false);
-  std::vector<std::string> to_vw_example_format(
-      const std::map<std::string, std::string>& context, const std::string& chosen_action, float cost = 0.f, float prob = 0.f);
+  float get_reaction(const std::map<std::string, std::string>& context, const std::string& action,
+      bool add_noise = false, bool swap_reward = false);
+  std::vector<std::string> to_vw_example_format(const std::map<std::string, std::string>& context,
+      const std::string& chosen_action, float cost = 0.f, float prob = 0.f);
   std::pair<int, float> sample_custom_pmf(std::vector<float>& pmf);
   std::pair<std::string, float> get_action(VW::workspace* vw, const std::map<std::string, std::string>& context);
   const std::string& choose_user();
   const std::string& choose_time_of_day();
   std::vector<float> run_simulation(VW::workspace* vw, size_t num_iterations, bool do_learn = true, size_t shift = 1);
-  std::vector<float> run_simulation_hook(VW::workspace* vw, size_t num_iterations, callback_map& callbacks, bool do_learn = true, size_t shift = 1, bool add_noise = false,
-      uint64_t num_useless_features = 0, const std::vector<uint64_t>& swap_after = std::vector<uint64_t>());
+  std::vector<float> run_simulation_hook(VW::workspace* vw, size_t num_iterations, callback_map& callbacks,
+      bool do_learn = true, size_t shift = 1, bool add_noise = false, uint64_t num_useless_features = 0,
+      const std::vector<uint64_t>& swap_after = std::vector<uint64_t>());
 
 private:
   void call_if_exists(VW::workspace& vw, multi_ex& ex, const callback_map& callbacks, const size_t event);
@@ -61,6 +63,6 @@ private:
 
 std::vector<float> _test_helper(const std::string& vw_arg, size_t num_iterations = 3000, int seed = 10);
 std::vector<float> _test_helper_save_load(const std::string& vw_arg, size_t num_iterations = 3000, int seed = 10);
-std::vector<float> _test_helper_hook(
-    const std::string& vw_arg, callback_map& hooks, size_t num_iterations = 3000, int seed = 10, const std::vector<uint64_t>& swap_after = std::vector<uint64_t>());
+std::vector<float> _test_helper_hook(const std::string& vw_arg, callback_map& hooks, size_t num_iterations = 3000,
+    int seed = 10, const std::vector<uint64_t>& swap_after = std::vector<uint64_t>());
 }  // namespace simulator

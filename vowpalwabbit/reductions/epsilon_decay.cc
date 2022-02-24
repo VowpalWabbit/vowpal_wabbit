@@ -117,7 +117,8 @@ void learn(epsilon_decay_data& data, VW::LEARNER::multi_learner& base, multi_ex&
   for (auto candidate_iter = champion_iter + 1; candidate_iter != end_iter; ++candidate_iter, --model_idx)
   {
     if (candidate_iter->update_count > data.min_scope &&
-        candidate_iter->update_count > (std::pow(champion_iter->update_count, static_cast<float>(model_idx) / model_count)))
+        candidate_iter->update_count >
+            (std::pow(champion_iter->update_count, static_cast<float>(model_idx) / model_count)))
     {
       auto n_iter = swap_models(candidate_iter + 1, candidate_iter, end_iter);
       reset_models(n_iter, end_iter, data.weights, data.epsilon_decay_alpha, data.epsilon_decay_tau, model_count);
