@@ -107,15 +107,9 @@ public:
     return 4.f * (prediction - label) * (prediction - label);
   }
 
-  float first_derivative(shared_data*, float prediction, float label) override
-  {
-    return 2.f * (prediction - label);
-  }
+  float first_derivative(shared_data*, float prediction, float label) override { return 2.f * (prediction - label); }
 
-  float second_derivative(shared_data*, float, float) override
-  {
-    return 2.;
-  }
+  float second_derivative(shared_data*, float, float) override { return 2.; }
 };
 
 class hingeloss : public loss_function
@@ -353,10 +347,7 @@ public:
 std::unique_ptr<loss_function> getLossFunction(
     VW::workspace& all, const std::string& funcName, float function_parameter)
 {
-  if (funcName == "squared" || funcName == "Huber")
-  {
-    return VW::make_unique<squaredloss>();
-  }
+  if (funcName == "squared" || funcName == "Huber") { return VW::make_unique<squaredloss>(); }
   else if (funcName == "classic")
   {
     return VW::make_unique<classic_squaredloss>();

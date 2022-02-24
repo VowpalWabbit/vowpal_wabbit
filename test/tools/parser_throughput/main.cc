@@ -21,10 +21,7 @@ enum class parser_type
 
 parser_type to_parser_type(const std::string& str)
 {
-  if (str == "text")
-  {
-    return parser_type::text;
-  }
+  if (str == "text") { return parser_type::text; }
   else if (str == "dsjson")
   {
     return parser_type::dsjson;
@@ -47,7 +44,9 @@ int main(int argc, char** argv)
   desc.add(VW::config::make_option("help", help).short_name("h").help("Produce help message"))
       .add(VW::config::make_option("data", file_name).short_name("d").help("Data file to read. (required)"))
       .add(VW::config::make_option("args", extra_args).short_name("a").help("VW args to setup parser correctly"))
-      .add(VW::config::make_option("type", type_str).short_name("t").help("Type of input format. [text, djson] (required)"));
+      .add(VW::config::make_option("type", type_str)
+               .short_name("t")
+               .help("Type of input format. [text, djson] (required)"));
 
   opts.add_and_parse(desc);
   // Return value is ignored as option reachability is not relevant here.

@@ -123,10 +123,18 @@ int main(int argc, char* argv[])
   desc.add(VW::config::make_option("help", help).short_name("h").help("Produce help message"))
       .add(VW::config::make_option("topk", topk).default_value(10).help("Number of items to recommend per user"))
       .add(VW::config::make_option("verbose", verbose).short_name("v").help("Increase verbosity (can be repeated)"))
-      .add(VW::config::make_option("bf_bits", bits).default_value(16).short_name("b").help("Number of items to recommend"))
-      .add(VW::config::make_option("blacklist", blacklistfilename).short_name("B").help("User item pairs (in vw format) that we should not recommend (have been seen before)"))
-      .add(VW::config::make_option("users", userfilename).short_name("U").help("Users portion in vw format to make recs for"))
-      .add(VW::config::make_option("items", itemfilename).short_name("I").help("Items (in vw format) to recommend from"))
+      .add(VW::config::make_option("bf_bits", bits)
+               .default_value(16)
+               .short_name("b")
+               .help("Number of items to recommend"))
+      .add(VW::config::make_option("blacklist", blacklistfilename)
+               .short_name("B")
+               .help("User item pairs (in vw format) that we should not recommend (have been seen before)"))
+      .add(VW::config::make_option("users", userfilename)
+               .short_name("U")
+               .help("Users portion in vw format to make recs for"))
+      .add(
+          VW::config::make_option("items", itemfilename).short_name("I").help("Items (in vw format) to recommend from"))
       .add(VW::config::make_option("vwparams", vwparams).help("vw parameters for model instantiation (-i model ...)"));
 
   opts.add_and_parse(desc);

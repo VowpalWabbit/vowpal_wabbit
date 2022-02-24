@@ -25,7 +25,8 @@ int main(int argc, char* argv[])
   desc.add(VW::config::make_option("help", help).short_name("h").help("Produce help message"))
       .add(VW::config::make_option("infile", infile).short_name("I").help("Input (in vw format) of weights to extract"))
       .add(VW::config::make_option("outdir", outdir).short_name("O").help("Directory to write model files to"))
-      .add(VW::config::make_option("vwparams", vwparams).help("vw parameters for model instantiation (-i model.reg -t ..."));
+      .add(VW::config::make_option("vwparams", vwparams)
+               .help("vw parameters for model instantiation (-i model.reg -t ..."));
 
   opts.add_and_parse(desc);
   // Return value is ignored as option reachability is not relevant here.

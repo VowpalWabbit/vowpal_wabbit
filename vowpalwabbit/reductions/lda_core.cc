@@ -321,7 +321,8 @@ void vexpdigammify(VW::workspace& all, float* gamma, const float underflow_thres
   extra_sum = fastdigamma(extra_sum);
   sum = v4sfl(extra_sum);
 
-  for (fp = gamma; fp < fpend && !is_aligned16(fp); ++fp) { *fp = std::fmax(underflow_threshold, fastexp(*fp - extra_sum)); }
+  for (fp = gamma; fp < fpend && !is_aligned16(fp); ++fp)
+  { *fp = std::fmax(underflow_threshold, fastexp(*fp - extra_sum)); }
 
   for (; is_aligned16(fp) && fp + 4 < fpend; fp += 4)
   {
