@@ -67,7 +67,7 @@ struct option_builder
 
   option_builder& short_name(char short_name)
   {
-    m_option_obj.m_short_name = std::string{1, short_name};
+    m_option_obj.m_short_name = std::string(1, short_name);
     return *this;
   }
 
