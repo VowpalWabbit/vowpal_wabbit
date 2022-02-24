@@ -19,7 +19,7 @@ jobs:
     steps:
       - uses: actions/checkout@v2
       - name: Install dependencies
-        run: brew install cmake flatbuffers ninja
+        run: brew install cmake boost flatbuffers ninja
       - name: Configure
         run: cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=${{matrix.build_type}} -DWARNINGS=Off -DDO_NOT_BUILD_VW_C_WRAPPER=On -DBUILD_TESTING=On -DBUILD_EXPERIMENTAL_BINDING=On -DVW_INSTALL=Off
       - name: Build
