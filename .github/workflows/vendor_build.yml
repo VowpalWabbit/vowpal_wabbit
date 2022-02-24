@@ -11,12 +11,13 @@ on:
 jobs:
   build_vendor:
     name: core-cli.${{ matrix.os }}.amd64.${{ matrix.build_type }}.${{ matrix.compiler }}.standalone
-    matrix:
-      os: ["ubuntu-20.04", "ubuntu-18.04"]
-      build_type: ["Debug", "Release"]
-      compiler:
-      - { cc: "gcc", cxx: "g++"}
-      - { cc: "clang", cxx: "clang++"}
+    strategy:
+      matrix:
+        os: ["ubuntu-20.04", "ubuntu-18.04"]
+        build_type: ["Debug", "Release"]
+        compiler:
+        - { cc: "gcc", cxx: "g++"}
+        - { cc: "clang", cxx: "clang++"}
     container:
       image: vowpalwabbit/ubuntu1804-build:latest
     runs-on: ubuntu-latest
