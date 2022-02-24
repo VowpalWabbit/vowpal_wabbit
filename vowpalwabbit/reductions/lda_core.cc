@@ -321,7 +321,7 @@ void vexpdigammify(VW::workspace& all, float* gamma, const float underflow_thres
   extra_sum = fastdigamma(extra_sum);
   sum = v4sfl(extra_sum);
 
-  for (fp = gamma; fp < fpend && !is_aligned16(fp); ++fp) { *fp = fmax(underflow_threshold, fastexp(*fp - extra_sum)); }
+  for (fp = gamma; fp < fpend && !is_aligned16(fp); ++fp) { *fp = std::fmax(underflow_threshold, fastexp(*fp - extra_sum)); }
 
   for (; is_aligned16(fp) && fp + 4 < fpend; fp += 4)
   {
@@ -332,7 +332,7 @@ void vexpdigammify(VW::workspace& all, float* gamma, const float underflow_thres
     _mm_store_ps(fp, arg);
   }
 
-  for (; fp < fpend; ++fp) { *fp = fmax(underflow_threshold, fastexp(*fp - extra_sum)); }
+  for (; fp < fpend; ++fp) { *fp = std::fmax(underflow_threshold, fastexp(*fp - extra_sum)); }
 }
 
 void vexpdigammify_2(VW::workspace& all, float* gamma, const float* norm, const float underflow_threshold)
@@ -342,7 +342,7 @@ void vexpdigammify_2(VW::workspace& all, float* gamma, const float* norm, const 
   const float* fpend = gamma + all.lda;
 
   for (np = norm; fp < fpend && !is_aligned16(fp); ++fp, ++np)
-    *fp = fmax(underflow_threshold, fastexp(fastdigamma(*fp) - *np));
+    *fp = std::fmax(underflow_threshold, fastexp(fastdigamma(*fp) - *np));
 
   for (; is_aligned16(fp) && fp + 4 < fpend; fp += 4, np += 4)
   {
@@ -355,7 +355,7 @@ void vexpdigammify_2(VW::workspace& all, float* gamma, const float* norm, const 
     _mm_store_ps(fp, arg);
   }
 
-  for (; fp < fpend; ++fp, ++np) *fp = fmax(underflow_threshold, fastexp(fastdigamma(*fp) - *np));
+  for (; fp < fpend; ++fp, ++np) *fp = std::fmax(underflow_threshold, fastexp(fastdigamma(*fp) - *np));
 }
 
 #  else
@@ -479,7 +479,7 @@ inline void expdigammify(VW::workspace& all, T* gamma, T threshold, T initial)
   T sum = digamma<T, mtype>(std::accumulate(gamma, gamma + all.lda, initial));
 
   std::transform(gamma, gamma + all.lda, gamma,
-      [sum, threshold](T g) { return fmax(threshold, exponential<T, mtype>(digamma<T, mtype>(g) - sum)); });
+      [sum, threshold](T g) { return std::fmax(threshold, exponential<T, mtype>(digamma<T, mtype>(g) - sum)); });
 }
 template <>
 inline void expdigammify<float, lda_math_mode::USE_SIMD>(VW::workspace& all, float* gamma, float threshold, float)
@@ -496,7 +496,7 @@ template <typename T, const lda_math_mode mtype>
 inline void expdigammify_2(VW::workspace& all, float* gamma, T* norm, const T threshold)
 {
   std::transform(gamma, gamma + all.lda, norm, gamma,
-      [threshold](float g, float n) { return fmax(threshold, exponential<T, mtype>(digamma<T, mtype>(g) - n)); });
+      [threshold](float g, float n) { return std::fmax(threshold, exponential<T, mtype>(digamma<T, mtype>(g) - n)); });
 }
 template <>
 inline void expdigammify_2<float, lda_math_mode::USE_SIMD>(
@@ -691,7 +691,7 @@ float lda_loop(lda& l, v_array<float>& Elogtheta, float* v, example* ec, float)
         float* u_for_w = &(weights[f.index()]) + l.topics + 1;
         float c_w = find_cw(l, u_for_w, v);
         xc_w = c_w * f.value();
-        score += -f.value() * log(c_w);
+        score += -f.value() * std::log(c_w);
         size_t max_k = l.topics;
         for (size_t k = 0; k < max_k; k++, ++u_for_w) new_gamma[k] += xc_w * *u_for_w;
         word_count++;
@@ -864,7 +864,7 @@ void learn_batch(lda& l)
   eta = l.all->eta * l.powf(static_cast<float>(l.example_t), -l.all->power_t);
   minuseta = 1.0f - eta;
   eta *= l.lda_D / batch_size;
-  l.decay_levels.push_back(l.decay_levels.back() + log(minuseta));
+  l.decay_levels.push_back(l.decay_levels.back() + std::log(minuseta));
 
   l.digammas.clear();
   float additional = static_cast<float>(l.all->length()) * l.lda_rho;
@@ -879,7 +879,7 @@ void learn_batch(lda& l)
     float* weights_for_w = &(weights[s->f.weight_index & weights.mask()]);
     float decay_component = l.decay_levels.end()[-2] -
         l.decay_levels.end()[static_cast<int>(-1 - l.example_t + *(weights_for_w + l.all->lda))];
-    float decay = fmin(1.0f, correctedExp(decay_component));
+    float decay = std::fmin(1.0f, correctedExp(decay_component));
     float* u_for_w = weights_for_w + l.all->lda + 1;
 
     *(weights_for_w + l.all->lda) = static_cast<float>(l.example_t);
@@ -1214,7 +1214,7 @@ void end_examples(lda& l, T& weights)
   {
     float decay_component =
         l.decay_levels.back() - l.decay_levels.end()[(int)(-1 - l.example_t + (&(*iter))[l.all->lda])];
-    float decay = fmin(1.f, correctedExp(decay_component));
+    float decay = std::fmin(1.f, correctedExp(decay_component));
 
     weight* wp = &(*iter);
     for (size_t i = 0; i < l.all->lda; ++i) wp[i] *= decay;
