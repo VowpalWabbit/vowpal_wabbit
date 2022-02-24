@@ -11,7 +11,7 @@ on:
 
 jobs:
   check:
-    runs-on: windows-latest
+    runs-on: windows-2019
     strategy:
       matrix:
         build_config: ["Debug", "Release"]
