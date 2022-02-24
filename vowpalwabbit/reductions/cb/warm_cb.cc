@@ -630,13 +630,15 @@ base_learner* warm_cb_setup(VW::setup_base_i& stack_builder)
 
   auto* l = make_reduction_learner(std::move(data), base, learn_pred_ptr, learn_pred_ptr,
       stack_builder.get_setupfn_name(warm_cb_setup) + name_addition)
-                .set_params_per_weight(ws)
+                .set_input_label_type(label_type)
+                .set_output_label_type(VW::label_type_t::cb)
+                .set_input_prediction_type(VW::prediction_type_t::action_probs)
                 .set_output_prediction_type(VW::prediction_type_t::multiclass)
+                .set_params_per_weight(ws)
                 .set_learn_returns_prediction(true)
                 .set_finish_example(finish_ptr)
                 .set_finish(finish)
-                .set_input_label_type(label_type)
-                .build();
+                .build(&all.logger);
 
   return make_base(*l);
 }
