@@ -31,14 +31,14 @@ jobs:
           CXX: ${{matrix.compiler.cxx}}
         run: >
           cmake -S . -B build -G Ninja
-            -DCMAKE_BUILD_TYPE=${{matrix.build_type}}
-            -DBUILD_FLATBUFFERS=Off
-            -DRAPIDJSON_SYS_DEP=Off
-            -DFMT_SYS_DEP=Off
-            -DSPDLOG_SYS_DEP=Off
-            -DVW_ZLIB_SYS_DEP=Off
-            -DVW_BOOST_MATH_SYS_DEP=Off
-            -DVW_INSTALL=Off
+          -DCMAKE_BUILD_TYPE=${{matrix.build_type}}
+          -DBUILD_FLATBUFFERS=Off
+          -DRAPIDJSON_SYS_DEP=Off
+          -DFMT_SYS_DEP=Off
+          -DSPDLOG_SYS_DEP=Off
+          -DVW_ZLIB_SYS_DEP=Off
+          -DVW_BOOST_MATH_SYS_DEP=Off
+          -DVW_INSTALL=Off
       - name: Build
         run: |
           cmake --build build --target vw-bin spanning_tree vw-unit-test.out
