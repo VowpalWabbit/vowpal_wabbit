@@ -94,7 +94,7 @@ void format_row(const std::array<std::string, num_cols>& contents,
     delim = "\n";
     for (size_t col = 0; col < num_cols; col++)
     {
-      for (size_t i = 0; i < column_padding; i++) { output << " "; }
+      for (size_t i = 0; i < column_padding; i++) { output << padding; }
       padding = " ";
       if (line < column_contents_split_into_lines[col].size())
       {
