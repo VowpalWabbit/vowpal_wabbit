@@ -24,7 +24,7 @@ jobs:
         with:
           submodules: 'recursive'
       - name: Install Ninja
-        run: sudo install -y ninja-build
+        run: sudo apt-get install -y ninja-build
       - name: Configure
         env:
           CC: ${{matrix.compiler.cc}}
