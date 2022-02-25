@@ -8,9 +8,9 @@ power_t = 0.5
 Enabled reductions: gd, scorer-identity, count_label
 Input label = simple
 Output pred = scalar
-average  since         example        example  current  current  current
-loss     last          counter         weight    label  predict features
-0.640000 0.640000            1            1.0   1.0000   0.2000        2
+average  since         example        example        current        current  current 
+loss     last          counter         weight          label        predict features 
+0.640000 0.640000            1            1.0         1.0000         0.2000        2 
 
 finished run
 number of examples = 1

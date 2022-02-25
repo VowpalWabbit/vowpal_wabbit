@@ -8,9 +8,9 @@ power_t = 0.5
 Enabled reductions: gd, scorer-identity, csoaa_ldf, shared_feature_merger
 Input label = cs
 Output pred = multiclass
-average  since         example        example  current  current  current
-loss     last          counter         weight    label  predict features
-0.000000 0.000000            1            1.0    known        1       10
+average  since         example        example        current        current  current 
+loss     last          counter         weight          label        predict features 
+0.000000 0.000000            1            1.0          known              1       10 
 
 finished run
 number of examples = 1
