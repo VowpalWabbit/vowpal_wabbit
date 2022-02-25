@@ -14,12 +14,12 @@ power_t = 0.5
 Enabled reductions: ftrl-Coin Betting, generate_interactions, scorer-identity, binary, cats_tree, get_pmf, pmf_to_pdf, cb_explore_pdf, cats_pdf, sample_pdf, cats
 Input label = continuous
 Output pred = action_pdf_value
- average  since         example        example        current        current  current
- loss     last          counter         weight          label        predict features
- 0.000000 0.000000            1            1.0     {0,0,0.01}     25.27,0.01        6
- 0.000000 0.000000            2            2.0  {0.58,0,0.41}      2.13,0.41        6
- 0.000000 0.000000            4            4.0 {10.35,0,0.01}     18.21,0.01        6
- 0.000000 0.000000            8            8.0  {2.41,0,0.41}      1.78,0.41        6
+average  since         example        example        current        current  current
+loss     last          counter         weight          label        predict features
+0.000000 0.000000            1            1.0     {0,0,0.01}     25.27,0.01        6
+0.000000 0.000000            2            2.0  {0.58,0,0.41}      2.13,0.41        6
+0.000000 0.000000            4            4.0 {10.35,0,0.01}     18.21,0.01        6
+0.000000 0.000000            8            8.0  {2.41,0,0.41}      1.78,0.41        6
 
 finished run
 number of examples = 10
@@ -27,4 +27,4 @@ weighted example sum = 10.000000
 weighted label sum = 10.000000
 average loss = 0.000000
 total feature number = 60
-Learn() count per node: id=0, #l=1; id=1, #l=0; id=2, #l=1; id=3, #l=0; id=4, #l=0; id=5, #l=0; id=6, #l=1; id=7, #l=0; id=8, #l=0; id=9, #l=0; id=10, #l=0; id=11, #l=0; id=12, #l=0; id=13, #l=0; id=14, #l=0; id=15, #l=0; 
+Learn() count per node: id=0, #l=1; id=1, #l=0; id=2, #l=1; id=3, #l=0; id=4, #l=0; id=5, #l=0; id=6, #l=1; id=7, #l=0; id=8, #l=0; id=9, #l=0; id=10, #l=0; id=11, #l=0; id=12, #l=0; id=13, #l=0; id=14, #l=0; id=15, #l=0;
