@@ -151,16 +151,15 @@ void print_update(VW::workspace& all, bool is_test, const example& ec, const mul
     }
     std::string label_buf;
     if (is_test)
-      label_buf = " unknown";
+      label_buf = "unknown";
     else
       label_buf = known_cost_to_str(known_cost);
 
     if (action_scores)
     {
       std::ostringstream pred_buf;
-      pred_buf << std::setw(shared_data::col_current_predict) << std::right << std::setfill(' ');
       if (!ec.pred.a_s.empty())
-        pred_buf << ec.pred.a_s[0].action << ":" << ec.pred.a_s[0].score << "...";
+        pred_buf << ec.pred.a_s[0].action << ":" << ec.pred.a_s[0].score;
       else
         pred_buf << "no action";
       all.sd->print_update(*all.trace_message, all.holdout_set_off, all.current_pass, label_buf, pred_buf.str(),
