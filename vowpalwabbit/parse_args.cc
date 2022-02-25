@@ -1763,15 +1763,23 @@ std::unique_ptr<VW::workspace> initialize_internal(std::unique_ptr<options_i, op
   return all;
 }
 
-std::unique_ptr<VW::workspace> initialize_experimental(std::unique_ptr<config::options_i> options, io_buf* model,
-    bool skip_model_load, driver_output_func_t driver_output_func, void* driver_output_func_context,
-    VW::io::logger_output_func_t logger_output_func, void* logger_output_func_context,
+std::unique_ptr<VW::workspace> initialize_experimental(std::unique_ptr<config::options_i> options,
+    std::unique_ptr<VW::io::reader> model_override_reader, driver_output_func_t driver_output_func,
+    void* driver_output_func_context, VW::io::logger_output_func_t logger_output_func, void* logger_output_func_context,
     std::unique_ptr<VW::setup_base_i> learner_builder)
 {
   auto* released_options = options.release();
   std::unique_ptr<options_i, options_deleter_type> options_custom_deleter(
       released_options, [](VW::config::options_i* ptr) { delete ptr; });
-  return initialize_internal(std::move(options_custom_deleter), model, skip_model_load, driver_output_func,
+
+  // Skip model load should be implemented by a caller not passing model loading args.
+  std::unique_ptr<io_buf> model(nullptr);
+  if (model_override_reader != nullptr)
+  {
+    model = VW::make_unique<io_buf>();
+    model->add_file(std::move(model_override_reader));
+  }
+  return initialize_internal(std::move(options_custom_deleter), model.get(), false /* skip model load */, driver_output_func,
       driver_output_func_context, logger_output_func, logger_output_func_context, std::move(learner_builder));
 }
 
