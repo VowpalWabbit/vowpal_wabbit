@@ -2,22 +2,24 @@ Enabling FTRL based optimization
 Algorithm used: Coin Betting
 ftrl_alpha = 4
 ftrl_beta = 1
+using no cache
+Reading datafile = train-sets/regression/cbify-reg.dat
+num sources = 1
 Num weight bits = 18
 learning rate = 0.5
 initial_t = 0
 power_t = 0.5
-using no cache
-Reading datafile = train-sets/regression/cbify-reg.dat
-num sources = 1
-Enabled reductions: ftrl-Coin Betting, scorer-identity, csoaa, cb, cb_explore-greedy, cbify-reg-discrete
-average  since         example        example  current  current  current
-loss     last          counter         weight    label  predict features
-0.155380 0.155380            1            1.0 3879.0000 185.0000       10
-0.412644 0.669908            2            2.0 16123.0000 196.6084       10
-0.386470 0.360297            4            4.0 4213.0000 185.0000       10
-0.454917 0.523363            8            8.0 7932.0000 231.4336       10
-0.469705 0.484493           16           16.0 8574.0000 254.6504       10
-0.511582 0.553460           32           32.0 15481.0000 324.3008       10
+Enabled reductions: ftrl-Coin Betting, scorer-identity, csoaa, cb, cb_explore-greedy, cbify-reg-discrete, count_label
+Input label = simple
+Output pred = scalar
+average  since         example        example        current        current  current 
+loss     last          counter         weight          label        predict features 
+0.155380 0.155380            1            1.0      3879.0000       185.0000       10 
+0.412644 0.669908            2            2.0     16123.0000       196.6084       10 
+0.386470 0.360297            4            4.0      4213.0000       185.0000       10 
+0.454917 0.523363            8            8.0      7932.0000       231.4336       10 
+0.469705 0.484493           16           16.0      8574.0000       254.6504       10 
+0.511582 0.553460           32           32.0     15481.0000       324.3008       10 
 
 finished run
 number of examples = 50

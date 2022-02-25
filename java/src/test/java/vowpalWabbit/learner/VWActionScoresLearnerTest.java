@@ -5,10 +5,12 @@ import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 import vowpalWabbit.VWTestHelper;
 import vowpalWabbit.responses.ActionScores;
+import vowpalWabbit.responses.ActionScore;
 
 import java.io.IOException;
 
 import static org.junit.Assert.assertArrayEquals;
+import static org.junit.Assert.assertEquals;
 
 /**
  * Created by jmorra on 10/2/15.
@@ -48,20 +50,30 @@ public class VWActionScoresLearnerTest extends VWTestHelper {
 
         ActionScores[] expected = new ActionScores[]{
                 actionScores(
-                        actionScore(1, -1.0573887f),
-                        actionScore(0, -0.033036415f),
-                        actionScore(2, 1.0063205f)
+                        actionScore(2, -1.0573887f),
+                        actionScore(1, -0.033036415f),
+                        actionScore(3, 1.0063205f)
                 ),
                 actionScores(
-                        actionScore(1, -1.0342788f),
-                        actionScore(0, 0.9994181f)
+                        actionScore(2, -1.0342788f),
+                        actionScore(1, 0.9994181f)
                 ),
                 actionScores(
-                        actionScore(0, 0.033397526f),
-                        actionScore(1, 1.0227613f)
+                        actionScore(1, 0.033397526f),
+                        actionScore(3, 1.0227613f)
                 )
         };
-        assertArrayEquals(expected, pred);
+
+        assertEquals(expected.length, pred.length);
+        for (int i = 0; i < expected.length; i++) {
+            ActionScore[] current_expected = expected[i].getActionScores();
+            ActionScore[] current_pred = pred[i].getActionScores();
+            assertEquals(current_expected.length, current_pred.length);
+            for (int j = 0; j < current_expected.length; j++) {
+                assertEquals(current_expected[j].getAction(), current_pred[j].getAction());
+                assertEquals(current_expected[j].getScore(), current_pred[j].getScore(), 0.001f);
+            }
+        }
     }
 
     @Test
@@ -110,7 +122,16 @@ public class VWActionScoresLearnerTest extends VWTestHelper {
             )
         };
         vw.close();
-        assertArrayEquals(expectedTrainPreds, trainPreds);
+        assertEquals(expectedTrainPreds.length, trainPreds.length);
+        for (int i = 0; i < expectedTrainPreds.length; i++) {
+            ActionScore[] current_expected = expectedTrainPreds[i].getActionScores();
+            ActionScore[] current_pred = trainPreds[i].getActionScores();
+            assertEquals(current_expected.length, current_pred.length);
+            for (int j = 0; j < current_expected.length; j++) {
+                assertEquals(current_expected[j].getAction(), current_pred[j].getAction());
+                assertEquals(current_expected[j].getScore(), current_pred[j].getScore(), 0.001f);
+            }
+        }
 
         vw = VWLearners.create("--quiet -t -i " + model);
         ActionScores[] testPreds = new ActionScores[]{vw.predict(cbADFTrain[0])};
@@ -123,6 +144,15 @@ public class VWActionScoresLearnerTest extends VWTestHelper {
         };
 
         vw.close();
-        assertArrayEquals(expectedTestPreds, testPreds);
+        assertEquals(expectedTestPreds.length, testPreds.length);
+        for (int i = 0; i < expectedTestPreds.length; i++) {
+            ActionScore[] current_expected = expectedTestPreds[i].getActionScores();
+            ActionScore[] current_pred = testPreds[i].getActionScores();
+            assertEquals(current_expected.length, current_pred.length);
+            for (int j = 0; j < current_expected.length; j++) {
+                assertEquals(current_expected[j].getAction(), current_pred[j].getAction());
+                assertEquals(current_expected[j].getScore(), current_pred[j].getScore(), 0.001f);
+            }
+        }
     }
 }

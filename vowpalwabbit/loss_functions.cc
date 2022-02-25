@@ -13,8 +13,6 @@
 
 #include "io/logger.h"
 
-namespace logger = VW::io::logger;
-
 class squaredloss : public loss_function
 {
 public:
@@ -28,11 +26,13 @@ public:
       return example_loss;
     }
     else if (prediction < sd->min_label)
+    {
       if (label == sd->min_label)
         return 0.;
       else
         return static_cast<float>((label - sd->min_label) * (label - sd->min_label) +
             2. * (label - sd->min_label) * (sd->min_label - prediction));
+    }
     else if (label == sd->max_label)
       return 0.;
     else
@@ -58,17 +58,11 @@ public:
     return 2.f * (label - prediction) * update_scale;
   }
 
-  float getRevertingWeight(shared_data* sd, float prediction, float eta_t) override
-  {
-    float t = 0.5f * (sd->min_label + sd->max_label);
-    float alternative = (prediction > t) ? sd->min_label : sd->max_label;
-    return log((alternative - prediction) / (alternative - t)) / eta_t;
-  }
-
   float getSquareGrad(float prediction, float label) override
   {
     return 4.f * (prediction - label) * (prediction - label);
   }
+
   float first_derivative(shared_data* sd, float prediction, float label) override
   {
     if (prediction < sd->min_label)
@@ -77,6 +71,7 @@ public:
       prediction = sd->max_label;
     return 2.f * (prediction - label);
   }
+
   float second_derivative(shared_data* sd, float prediction, float) override
   {
     if (prediction <= sd->max_label && prediction >= sd->min_label)
@@ -107,31 +102,29 @@ public:
     return 2.f * (label - prediction) * update_scale;
   }
 
-  float getRevertingWeight(shared_data* sd, float prediction, float eta_t) override
-  {
-    float t = 0.5f * (sd->min_label + sd->max_label);
-    float alternative = (prediction > t) ? sd->min_label : sd->max_label;
-    return (t - prediction) / ((alternative - prediction) * eta_t);
-  }
-
   float getSquareGrad(float prediction, float label) override
   {
     return 4.f * (prediction - label) * (prediction - label);
   }
+
   float first_derivative(shared_data*, float prediction, float label) override { return 2.f * (prediction - label); }
+
   float second_derivative(shared_data*, float, float) override { return 2.; }
 };
 
 class hingeloss : public loss_function
 {
+  VW::io::logger logger;
+
 public:
+  explicit hingeloss(VW::io::logger logger) : logger(std::move(logger)) {}
+
   std::string getType() override { return "hinge"; }
 
   float getLoss(shared_data*, float prediction, float label) override
   {
-    // TODO: warning or error?
     if (label != -1.f && label != 1.f)
-      logger::log_warn("You are using label {} not -1 or 1 as loss function expects!", label);
+      logger.out_warn("The label {} is not -1 or 1 or in [0,1] as the hinge loss function expects.", label);
     float e = 1 - label * prediction;
     return (e > 0) ? e : 0;
   }
@@ -149,8 +142,6 @@ public:
     return label * update_scale;
   }
 
-  float getRevertingWeight(shared_data*, float prediction, float eta_t) override { return fabs(prediction) / eta_t; }
-
   float getSquareGrad(float prediction, float label) override
   {
     float d = first_derivative(nullptr, prediction, label);
@@ -167,14 +158,17 @@ public:
 
 class logloss : public loss_function
 {
+  VW::io::logger logger;
+
 public:
+  explicit logloss(VW::io::logger logger) : logger(std::move(logger)) {}
+
   std::string getType() override { return "logistic"; }
 
   float getLoss(shared_data*, float prediction, float label) override
   {
-    // TODO: warning or error?
     if (label != -1.f && label != 1.f)
-      logger::log_warn("You are using label {} not -1 or 1 as loss function expects!", label);
+      logger.out_warn("The label {} is not -1 or 1 or in [0,1] as the logistic loss function expects.", label);
     return log(1 + correctedExp(-label * prediction));
   }
 
@@ -210,14 +204,8 @@ public:
     double w = x >= 1. ? 0.86 * x + 0.01 : correctedExp(0.8 * x - 0.65);  // initial guess
     double r = x >= 1. ? x - log(w) - w : 0.2 * x + 0.65 - w;             // residual
     double t = 1. + w;
-    double u = 2. * t * (t + 2. * r / 3.);                          // magic
+    double u = 2. * t * (t + 2. * r / 3.);                                     // magic
     return static_cast<float>(w * (1. + r / t * (u - r) / (u - 2. * r)) - x);  // more magic
-  }
-
-  float getRevertingWeight(shared_data*, float prediction, float eta_t) override
-  {
-    float z = -fabs(prediction);
-    return (1 - z - correctedExp(z)) / eta_t;
   }
 
   float first_derivative(shared_data*, float prediction, float label) override
@@ -282,17 +270,6 @@ public:
     return -(1 - tau) * update_scale;
   }
 
-  float getRevertingWeight(shared_data* sd, float prediction, float eta_t) override
-  {
-    float v, t;
-    t = 0.5f * (sd->min_label + sd->max_label);
-    if (prediction > t)
-      v = -(1 - tau);
-    else
-      v = tau;
-    return (t - prediction) / (eta_t * v);
-  }
-
   float first_derivative(shared_data*, float prediction, float label) override
   {
     float e = label - prediction;
@@ -313,14 +290,16 @@ public:
 
 class poisson_loss : public loss_function
 {
+  VW::io::logger logger;
+
 public:
+  explicit poisson_loss(VW::io::logger logger) : logger(std::move(logger)) {}
+
   std::string getType() override { return "poisson"; }
 
   float getLoss(shared_data*, float prediction, float label) override
   {
-    // TODO: warning or error?
-    if (label < 0.f)
-      logger::log_warn("You are using label {} but loss function expects label >= 0!", label);
+    if (label < 0.f) { logger.out_warn("The poisson loss function expects a label >= 0 but received '{}'.", label); }
     float exp_prediction = expf(prediction);
     // deviance is used instead of log-likelihood
     return 2 * (label * (logf(label + 1e-6f) - prediction) - (label - exp_prediction));
@@ -346,11 +325,6 @@ public:
     return (label - exp_prediction) * update_scale;
   }
 
-  float getRevertingWeight(shared_data* /* sd */, float /* prediction */, float /* eta_t */) override
-  {
-    THROW("Active learning not supported by poisson loss");
-  }
-
   float getSquareGrad(float prediction, float label) override
   {
     float exp_prediction = expf(prediction);
@@ -370,7 +344,8 @@ public:
   }
 };
 
-std::unique_ptr<loss_function> getLossFunction(vw& all, const std::string& funcName, float function_parameter)
+std::unique_ptr<loss_function> getLossFunction(
+    VW::workspace& all, const std::string& funcName, float function_parameter)
 {
   if (funcName == "squared" || funcName == "Huber") { return VW::make_unique<squaredloss>(); }
   else if (funcName == "classic")
@@ -379,7 +354,7 @@ std::unique_ptr<loss_function> getLossFunction(vw& all, const std::string& funcN
   }
   else if (funcName == "hinge")
   {
-    return VW::make_unique<hingeloss>();
+    return VW::make_unique<hingeloss>(all.logger);
   }
   else if (funcName == "logistic")
   {
@@ -388,7 +363,7 @@ std::unique_ptr<loss_function> getLossFunction(vw& all, const std::string& funcN
       all.sd->min_label = -50;
       all.sd->max_label = 50;
     }
-    return VW::make_unique<logloss>();
+    return VW::make_unique<logloss>(all.logger);
   }
   else if (funcName == "quantile" || funcName == "pinball" || funcName == "absolute")
   {
@@ -401,8 +376,8 @@ std::unique_ptr<loss_function> getLossFunction(vw& all, const std::string& funcN
       all.sd->min_label = -50;
       all.sd->max_label = 50;
     }
-    return VW::make_unique<poisson_loss>();
+    return VW::make_unique<poisson_loss>(all.logger);
   }
   else
-    THROW("Invalid loss function name: \'" << funcName << "\' Bailing!");
+    THROW("Invalid loss function name: \'" << funcName << "\'.");
 }

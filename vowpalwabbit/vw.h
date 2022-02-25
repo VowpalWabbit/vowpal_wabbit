@@ -32,8 +32,9 @@
 #include "simple_label.h"
 #include "parser.h"
 #include "parse_example.h"
+#include "hashstring.h"
 
-#include "options.h"
+#include "config/options.h"
 
 #include "compat.h"
 
@@ -43,21 +44,22 @@ namespace VW
     (1) Some commandline parameters do not make sense as a library.
     (2) The code is not yet reentrant.
    */
-vw* initialize(std::unique_ptr<config::options_i, options_deleter_type> options, io_buf* model = nullptr,
+VW::workspace* initialize(std::unique_ptr<config::options_i, options_deleter_type> options, io_buf* model = nullptr,
     bool skip_model_load = false, trace_message_t trace_listener = nullptr, void* trace_context = nullptr);
-vw* initialize(config::options_i& options, io_buf* model = nullptr, bool skip_model_load = false,
+VW::workspace* initialize(config::options_i& options, io_buf* model = nullptr, bool skip_model_load = false,
     trace_message_t trace_listener = nullptr, void* trace_context = nullptr);
-vw* initialize(const std::string& s, io_buf* model = nullptr, bool skip_model_load = false,
+VW::workspace* initialize(const std::string& s, io_buf* model = nullptr, bool skip_model_load = false,
     trace_message_t trace_listener = nullptr, void* trace_context = nullptr);
-vw* initialize(int argc, char* argv[], io_buf* model = nullptr, bool skip_model_load = false,
+VW::workspace* initialize(int argc, char* argv[], io_buf* model = nullptr, bool skip_model_load = false,
     trace_message_t trace_listener = nullptr, void* trace_context = nullptr);
-vw* seed_vw_model(vw* vw_model, const std::string& extra_args, trace_message_t trace_listener = nullptr,
-    void* trace_context = nullptr);
+
+VW::workspace* seed_vw_model(VW::workspace* vw_model, const std::string& extra_args,
+    trace_message_t trace_listener = nullptr, void* trace_context = nullptr);
 // Allows the input command line string to have spaces escaped by '\'
-vw* initialize_escaped(std::string const& s, io_buf* model = nullptr, bool skip_model_load = false,
+VW::workspace* initialize_escaped(std::string const& s, io_buf* model = nullptr, bool skip_model_load = false,
     trace_message_t trace_listener = nullptr, void* trace_context = nullptr);
 // Experimental (VW::setup_base_i):
-vw* initialize_with_builder(const std::string& s, io_buf* model = nullptr, bool skipModelLoad = false,
+VW::workspace* initialize_with_builder(const std::string& s, io_buf* model = nullptr, bool skipModelLoad = false,
     trace_message_t trace_listener = nullptr, void* trace_context = nullptr,
     std::unique_ptr<VW::setup_base_i> = nullptr);
 
@@ -68,17 +70,17 @@ char** to_argv(std::string const& s, int& argc);
 char** to_argv_escaped(std::string const& s, int& argc);
 void free_args(int argc, char* argv[]);
 
-const char* are_features_compatible(vw& vw1, vw& vw2);
+const char* are_features_compatible(VW::workspace& vw1, VW::workspace& vw2);
 
 /*
   Call finish() after you are done with the vw instance.  This cleans up memory usage.
  */
-void finish(vw& all, bool delete_all = true);
-void sync_stats(vw& all);
+void finish(VW::workspace& all, bool delete_all = true);
+void sync_stats(VW::workspace& all);
 
-void start_parser(vw& all);
-void end_parser(vw& all);
-bool is_ring_example(const vw& all, const example* ae);
+void start_parser(VW::workspace& all);
+void end_parser(VW::workspace& all);
+bool is_ring_example(const VW::workspace& all, const example* ae);
 
 struct primitive_feature_space  // just a helper definition.
 {
@@ -87,18 +89,16 @@ struct primitive_feature_space  // just a helper definition.
   size_t len;
 };
 
-// The next commands deal with creating examples.  Caution: VW does not all allow creation of many examples at once by
-// default.  You can adjust the exact number by tweaking ring_size.
-
+// The next commands deal with creating examples.
 /* The simplest of two ways to create an example.  An example_line is the literal line in a VW-format datafile.
  */
-example* read_example(vw& all, const char* example_line);
-example* read_example(vw& all, const std::string& example_line);
+example* read_example(VW::workspace& all, const char* example_line);
+example* read_example(VW::workspace& all, const std::string& example_line);
 
 // The more complex way to create an example.
 
 // after you create and fill feature_spaces, get an example with everything filled in.
-example* import_example(vw& all, const std::string& label, primitive_feature_space* features, size_t len);
+example* import_example(VW::workspace& all, const std::string& label, primitive_feature_space* features, size_t len);
 
 // callers must free memory using dealloc_examples
 // this interface must be used with care as finish_example is a no-op for these examples.
@@ -108,10 +108,10 @@ example* import_example(vw& all, const std::string& label, primitive_feature_spa
 example* alloc_examples(size_t count);
 void dealloc_examples(example* example_ptr, size_t count);
 
-void parse_example_label(vw& all, example& ec, const std::string& label);
-void setup_examples(vw& all, v_array<example*>& examples);
-void setup_example(vw& all, example* ae);
-example* new_unused_example(vw& all);
+void parse_example_label(VW::workspace& all, example& ec, const std::string& label);
+void setup_examples(VW::workspace& all, v_array<example*>& examples);
+void setup_example(VW::workspace& all, example* ae);
+example* new_unused_example(VW::workspace& all);
 example* get_example(parser* pf);
 float get_topic_prediction(example* ec, size_t i);  // i=0 to max topic -1
 float get_label(example* ec);
@@ -127,16 +127,16 @@ size_t get_tag_length(example* ec);
 const char* get_tag(example* ec);
 size_t get_feature_number(example* ec);
 float get_confidence(example* ec);
-feature* get_features(vw& all, example* ec, size_t& feature_number);
+feature* get_features(VW::workspace& all, example* ec, size_t& feature_number);
 void return_features(feature* f);
 
-void add_constant_feature(vw& all, example* ec);
+void add_constant_feature(VW::workspace& all, example* ec);
 void add_label(example* ec, float label, float weight = 1, float base = 0);
 
 // notify VW that you are done with the example.
-void finish_example(vw& all, example& ec);
-void finish_example(vw& all, multi_ex& ec);
-void empty_example(vw& all, example& ec);
+void finish_example(VW::workspace& all, example& ec);
+void finish_example(VW::workspace& all, multi_ex& ec);
+void empty_example(VW::workspace& all, example& ec);
 
 void move_feature_namespace(example* dst, example* src, namespace_index c);
 
@@ -145,16 +145,16 @@ void copy_example_data(example*, const example*);  // metadata + features, don't
 void copy_example_data_with_label(example* dst, const example* src);
 
 // after export_example, must call releaseFeatureSpace to free native memory
-primitive_feature_space* export_example(vw& all, example* e, size_t& len);
+primitive_feature_space* export_example(VW::workspace& all, example* e, size_t& len);
 void releaseFeatureSpace(primitive_feature_space* features, size_t len);
 
-void save_predictor(vw& all, const std::string& reg_name);
-void save_predictor(vw& all, io_buf& buf);
+void save_predictor(VW::workspace& all, const std::string& reg_name);
+void save_predictor(VW::workspace& all, io_buf& buf);
 
 // inlines
 
 // First create the hash of a namespace.
-inline uint64_t hash_space(vw& all, const std::string& s)
+inline uint64_t hash_space(VW::workspace& all, const std::string& s)
 {
   return all.example_parser->hasher(s.data(), s.length(), all.hash_seed);
 }
@@ -162,12 +162,12 @@ inline uint64_t hash_space_static(const std::string& s, const std::string& hash)
 {
   return getHasher(hash)(s.data(), s.length(), 0);
 }
-inline uint64_t hash_space_cstr(vw& all, const char* fstr)
+inline uint64_t hash_space_cstr(VW::workspace& all, const char* fstr)
 {
   return all.example_parser->hasher(fstr, strlen(fstr), all.hash_seed);
 }
 // Then use it as the seed for hashing features.
-inline uint64_t hash_feature(vw& all, const std::string& s, uint64_t u)
+inline uint64_t hash_feature(VW::workspace& all, const std::string& s, uint64_t u)
 {
   return all.example_parser->hasher(s.data(), s.length(), u) & all.parse_mask;
 }
@@ -177,12 +177,12 @@ inline uint64_t hash_feature_static(const std::string& s, uint64_t u, const std:
   return getHasher(h)(s.data(), s.length(), u) & parse_mark;
 }
 
-inline uint64_t hash_feature_cstr(vw& all, const char* fstr, uint64_t u)
+inline uint64_t hash_feature_cstr(VW::workspace& all, const char* fstr, uint64_t u)
 {
   return all.example_parser->hasher(fstr, strlen(fstr), u) & all.parse_mask;
 }
 
-inline uint64_t chain_hash(vw& all, const std::string& name, const std::string& value, uint64_t u)
+inline uint64_t chain_hash(VW::workspace& all, const std::string& name, const std::string& value, uint64_t u)
 {
   // chain hash is hash(feature_value, hash(feature_name, namespace_hash)) & parse_mask
   return all.example_parser->hasher(
@@ -190,19 +190,26 @@ inline uint64_t chain_hash(vw& all, const std::string& name, const std::string& 
       all.parse_mask;
 }
 
-inline float get_weight(vw& all, uint32_t index, uint32_t offset)
+inline uint64_t chain_hash_static(
+    const std::string& name, const std::string& value, uint64_t u, hash_func_t hash_func, uint64_t parse_mask)
+{
+  // chain hash is hash(feature_value, hash(feature_name, namespace_hash)) & parse_mask
+  return hash_func(value.data(), value.length(), hash_func(name.data(), name.length(), u)) & parse_mask;
+}
+
+inline float get_weight(VW::workspace& all, uint32_t index, uint32_t offset)
 {
   return (&all.weights[static_cast<uint64_t>(index) << all.weights.stride_shift()])[offset];
 }
 
-inline void set_weight(vw& all, uint32_t index, uint32_t offset, float value)
+inline void set_weight(VW::workspace& all, uint32_t index, uint32_t offset, float value)
 {
   (&all.weights[static_cast<uint64_t>(index) << all.weights.stride_shift()])[offset] = value;
 }
 
-inline uint32_t num_weights(vw& all) { return static_cast<uint32_t>(all.length()); }
+inline uint32_t num_weights(VW::workspace& all) { return static_cast<uint32_t>(all.length()); }
 
-inline uint32_t get_stride(vw& all) { return all.weights.stride(); }
+inline uint32_t get_stride(VW::workspace& all) { return all.weights.stride(); }
 
 inline void init_features(primitive_feature_space& fs, size_t features_count)
 {

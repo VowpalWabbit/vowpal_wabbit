@@ -1,19 +1,20 @@
-Num weight bits = 18
-learning rate = 0.5
-initial_t = 0
-power_t = 0.5
 using no cache
 Reading datafile = train-sets/cb_as_ccb.json
-WARNING: Old string feature value behavior is deprecated in JSON/DSJSON and will be removed in a future version. Use `--chain_hash` to use new behavior and silence this warning.
 num sources = 1
+Num weight bits = 18
+learning rate = 0.5
+initial_t = 1
+power_t = 0.5
 Enabled reductions: gd, generate_interactions, scorer-identity, csoaa_ldf-rank, cb_adf, cb_explore_adf_greedy, cb_sample, shared_feature_merger, ccb_explore_adf
-average  since         example        example  current  current  current
-loss     last          counter         weight    label  predict features
--4.875000 -4.875000            1            1.0     1:-1        1        7
+Input label = ccb
+Output pred = decision_probs
+average  since         example        example        current        current  current 
+loss     last          counter         weight          label        predict features 
+-4.87500 -4.87500            1            1.0           1:-1              1        6 
 
 finished run
 number of examples = 1
 weighted example sum = 1.000000
 weighted label sum = 0.000000
 average loss = -4.875000
-total feature number = 7
+total feature number = 6

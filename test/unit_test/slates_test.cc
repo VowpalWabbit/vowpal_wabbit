@@ -11,7 +11,7 @@
 
 #include "vw.h"
 #include "example.h"
-#include "slates.h"
+#include "reductions/slates.h"
 #include "slates_label.h"
 #include "ccb_label.h"
 #include "learner.h"
@@ -44,7 +44,7 @@ VW::LEARNER::learner<test_base<LearnFunc, PredictFunc>, multi_ex>* make_test_lea
   auto learn_fptr = &test_base<LearnFunc, PredictFunc>::invoke_learn;
   auto predict_fptr = &test_base<LearnFunc, PredictFunc>::invoke_predict;
   return VW::LEARNER::make_base_learner(std::move(test_base_data), static_cast<func>(learn_fptr),
-      static_cast<func>(predict_fptr), "mock_reduction", prediction_type_t::decision_probs, label_type_t::ccb)
+      static_cast<func>(predict_fptr), "mock_reduction", VW::prediction_type_t::decision_probs, VW::label_type_t::ccb)
       .build();
 }
 

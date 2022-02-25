@@ -6,7 +6,7 @@
 
 #include <msclr\marshal_cppstd.h>
 #include "vw.h"
-#include "options_serializer_boost_po.h"
+#include "config/cli_options_serializer.h"
 #include <algorithm>
 
 using namespace System;
@@ -32,12 +32,11 @@ private:
   float m_learning_rate;
   float m_power_t;
 
-internal:
-  VowpalWabbitArguments(vw* vw) :
-    m_data(gcnew String(vw->data_filename.c_str())),
-    m_finalRegressor(gcnew String(vw->final_regressor_name.c_str())),
-    m_testonly(!vw->training),
-    m_passes((int)vw->numpasses)
+  internal : VowpalWabbitArguments(VW::workspace* vw)
+      : m_data(gcnew String(vw->data_filename.c_str()))
+      , m_finalRegressor(gcnew String(vw->final_regressor_name.c_str()))
+      , m_testonly(!vw->training)
+      , m_passes((int)vw->numpasses)
   {
     auto options = vw->options.get();
 
@@ -48,7 +47,7 @@ internal:
         m_regressors->Add(gcnew String(r.c_str()));
     }
 
-    VW::config::options_serializer_boost_po serializer;
+    VW::config::cli_options_serializer serializer;
     for (auto const& option : options->get_all_options())
     {
       if (options->was_supplied(option->m_name))

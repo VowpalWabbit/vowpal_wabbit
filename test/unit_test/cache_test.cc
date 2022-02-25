@@ -19,16 +19,17 @@ BOOST_AUTO_TEST_CASE(write_and_read_features_from_cache)
   io_buf io_writer;
   io_writer.add_file(VW::io::create_vector_writer(backing_vector));
 
-  VW::write_example_to_cache(io_writer, &src_ex, vw.example_parser->lbl_parser, vw.parse_mask);
-
+  VW::details::cache_temp_buffer temp_buffer;
+  VW::write_example_to_cache(io_writer, &src_ex, vw.example_parser->lbl_parser, vw.parse_mask, temp_buffer);
   io_writer.flush();
 
   io_buf io_reader;
   io_reader.add_file(VW::io::create_buffer_view(backing_vector->data(), backing_vector->size()));
 
+  v_array<example*> examples;
   example dest_ex;
-  VW::read_example_from_cache(io_reader, &dest_ex, vw.example_parser->lbl_parser, vw.example_parser->sorted_cache,
-      vw.example_parser->_shared_data);
+  examples.push_back(&dest_ex);
+  VW::read_example_from_cache(&vw, io_reader, examples);
 
   BOOST_CHECK_EQUAL(dest_ex.indices.size(), 2);
   BOOST_CHECK_EQUAL(dest_ex.feature_space['n'].size(), 3);
@@ -36,10 +37,10 @@ BOOST_AUTO_TEST_CASE(write_and_read_features_from_cache)
 
   check_collections_with_float_tolerance(
       src_ex.feature_space['s'].values, dest_ex.feature_space['s'].values, FLOAT_TOL);
-  check_collections_exact(src_ex.feature_space['s'].indicies, dest_ex.feature_space['s'].indicies);
+  check_collections_exact(src_ex.feature_space['s'].indices, dest_ex.feature_space['s'].indices);
   check_collections_with_float_tolerance(
       src_ex.feature_space['n'].values, dest_ex.feature_space['n'].values, FLOAT_TOL);
-  check_collections_exact(src_ex.feature_space['n'].indicies, dest_ex.feature_space['n'].indicies);
+  check_collections_exact(src_ex.feature_space['n'].indices, dest_ex.feature_space['n'].indices);
 
   VW::finish(vw);
 }

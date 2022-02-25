@@ -4,12 +4,24 @@
 
 #include "text_utils.h"
 #include "io/logger.h"
+#include "parse_primitives.h"
+
+#include <sstream>
 
 namespace VW
 {
-bool ends_with(VW::string_view full_string, VW::string_view ending) { return full_string.ends_with(ending); }
+bool ends_with(VW::string_view full_string, VW::string_view ending)
+{
+  return full_string.size() >= ending.size() &&
+      0 == full_string.compare(full_string.size() - ending.size(), ending.size(), ending);
+}
 
-std::string decode_inline_hex(VW::string_view arg)
+bool starts_with(VW::string_view full_string, VW::string_view starting)
+{
+  return full_string.size() >= starting.size() && 0 == full_string.compare(0, starting.size(), starting);
+}
+
+std::string decode_inline_hex(VW::string_view arg, VW::io::logger& logger)
 {
   constexpr size_t NUMBER_OF_HEX_CHARS = 2;
   // "\x" + hex chars
@@ -35,7 +47,7 @@ std::string decode_inline_hex(VW::string_view arg)
       }
       else
       {
-        io::logger::errlog_warn("Possibly malformed hex representation of a namespace: '\\x{}'", substr);
+        logger.err_warn("Possibly malformed hex representation of a namespace: '\\x{}'", substr);
         res.push_back(arg[pos++]);
       }
     }
@@ -49,6 +61,28 @@ std::string decode_inline_hex(VW::string_view arg)
   while (pos < arg.size()) { res.push_back(arg[pos++]); }
 
   return res;
+}
+
+std::string wrap_text(VW::string_view text, size_t width, bool wrap_after)
+{
+  std::stringstream ss;
+  std::vector<VW::string_view> words;
+  tokenize(' ', text, words);
+  size_t current_line_size = 0;
+  std::string space = "";
+  for (const auto& word : words)
+  {
+    if ((wrap_after && current_line_size > width) || (!wrap_after && (current_line_size + word.size() > width)))
+    {
+      ss << '\n';
+      space = "";
+      current_line_size = 0;
+    }
+    ss << space << word;
+    space = " ";
+    current_line_size += word.size() + 1;
+  }
+  return ss.str();
 }
 
 }  // namespace VW

@@ -1,23 +1,25 @@
 predictions = ccb_test_nonewline.predict
+using no cache
+Reading datafile = train-sets/ccb_test_nonewline.dat
+num sources = 1
 Num weight bits = 18
 learning rate = 0.5
 initial_t = 0
 power_t = 0.5
-using no cache
-Reading datafile = train-sets/ccb_test_nonewline.dat
-num sources = 1
 Enabled reductions: gd, generate_interactions, scorer-identity, csoaa_ldf-rank, cb_adf, cb_explore_adf_greedy, cb_sample, shared_feature_merger, ccb_explore_adf
-average  since         example        example  current  current  current
-loss     last          counter         weight    label  predict features
-0.000000 0.000000            1            1.0 0:0,1:0,... 0,1,2,...       33
-0.000000 0.000000            2            2.0 3:0,4:0,... 3,4,0,...       33
-0.000000 0.000000            4            4.0 1:0,4:-1,... 1,4,2,...       33
--0.144345 -0.288690            8            8.0 4:-1,1:0,... 4,1,0,...       33
--0.076984 0.000000           16           16.0  ?,?,... 4,2,1,...       33
+Input label = ccb
+Output pred = decision_probs
+average  since         example        example        current        current  current 
+loss     last          counter         weight          label        predict features 
+0.000000 0.000000            1            1.0    0:0,1:0,...          0,1,2       96 
+0.000000 0.000000            2            2.0    3:0,4:0,...          3,4,0       96 
+0.000000 0.000000            4            4.0   1:0,4:-1,...          1,4,2       96 
+-0.14434 -0.28869            8            8.0   4:-1,1:0,...          4,1,0       96 
+-0.07698 0.000000           16           16.0        ?,?,...          4,2,1       96 
 
 finished run
 number of examples = 24
 weighted example sum = 24.000000
 weighted label sum = 0.000000
 average loss = -0.076984
-total feature number = 792
+total feature number = 2304

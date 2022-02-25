@@ -8,8 +8,9 @@
 
 #include <cstdint>
 
-namespace CCB {
-enum example_type : uint8_t
+namespace CCB
+{
+enum class example_type : uint8_t
 {
   unset = 0,
   shared = 1,
@@ -23,4 +24,9 @@ struct reduction_features
   v_array<uint32_t> explicit_included_actions;
   void clear() { explicit_included_actions.clear(); }
 };
-}
+}  // namespace CCB
+
+namespace VW
+{
+const char* to_string(CCB::example_type type);
+}  // namespace VW

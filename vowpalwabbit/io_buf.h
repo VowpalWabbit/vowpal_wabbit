@@ -220,25 +220,27 @@ public:
     while (close_file()) {}
   }
 
-  template <typename T>
-  void write_value(const T& value)
+  template <typename T,
+      typename std::enable_if<!std::is_pointer<T>::value && std::is_trivially_copyable<T>::value, bool>::type = true>
+  size_t write_value(const T& value)
   {
     char* c;
     buf_write(c, sizeof(T));
     *reinterpret_cast<T*>(c) = value;
     c += sizeof(T);
     set(c);
+    return sizeof(T);
   }
 
-  template <typename T>
-  T read_value(const char* debug_name = nullptr)
+  template <typename T,
+      typename std::enable_if<!std::is_pointer<T>::value && std::is_trivially_copyable<T>::value, bool>::type = true>
+  T read_value(VW::string_view debug_name = "")
   {
     char* c;
     T value;
     if (buf_read(c, sizeof(T)) < sizeof(T))
     {
-      if (debug_name != nullptr)
-      { THROW("Failed to read cache value: " << debug_name << ", with size: " << sizeof(T)); }
+      if (!debug_name.empty()) { THROW("Failed to read cache value: " << debug_name << ", with size: " << sizeof(T)); }
       else
       {
         THROW("Failed to read cache value with size: " << sizeof(T));
@@ -248,6 +250,14 @@ public:
     c += sizeof(T);
     set(c);
     return value;
+  }
+
+  template <typename T,
+      typename std::enable_if<!std::is_pointer<T>::value && std::is_trivially_copyable<T>::value, bool>::type = true>
+  T read_value_and_accumulate_size(VW::string_view debug_name, size_t& size)
+  {
+    size += sizeof(T);
+    return read_value<T>(debug_name);
   }
 
   void buf_write(char*& pointer, size_t n);
@@ -296,7 +306,7 @@ inline size_t bin_read(io_buf& i, char* data, size_t len)
 {
   uint32_t obj_len;
   size_t ret = i.bin_read_fixed(reinterpret_cast<char*>(&obj_len), sizeof(obj_len));
-  if (obj_len > len || ret < sizeof(uint32_t)) THROW("bad model format!");
+  if (obj_len > len || ret < sizeof(uint32_t)) THROW("Bad model format.");
 
   ret += i.bin_read_fixed(data, obj_len);
 

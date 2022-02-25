@@ -1,17 +1,17 @@
 final_regressor = models/bfgs_precon.model
 enabling BFGS based optimization **without** curvature calculation
+## avg. loss 	der. mag. 	d. m. cond.	 wolfe1    	wolfe2    	mix fraction	curvature 	dir. magnitude	step size
+creating cache_file = train-sets/rcv1_small.dat.cache
+Reading datafile = train-sets/rcv1_small.dat
+num sources = 1
 Num weight bits = 18
 learning rate = 0.5
 initial_t = 0
 power_t = 0.5
 decay_learning_rate = 1
-m = 15
-Allocated 34M for weights and mem
-## avg. loss 	der. mag. 	d. m. cond.	 wolfe1    	wolfe2    	mix fraction	curvature 	dir. magnitude	step size
-creating cache_file = train-sets/rcv1_small.dat.cache
-Reading datafile = train-sets/rcv1_small.dat
-num sources = 1
-Enabled reductions: bfgs, scorer-identity
+Enabled reductions: bfgs, scorer-identity, count_label
+Input label = simple
+Output pred = scalar
  1 1.00000   	0.03904   	26.66576  	          	          	          	600.55063 	75141.73438	0.04440
  3 h0.66988   	0.28188   	0.00000   	 0.528626  	0.173814  	          	          	228322.92188	0.00000
 

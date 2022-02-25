@@ -9,8 +9,8 @@ license as described in the file LICENSE.
 #include "../vowpalwabbit/parser.h"
 #include "../vowpalwabbit/parse_example.h"
 #include "../vowpalwabbit/vw.h"
-#include "../vowpalwabbit/search.h"
-#include "../vowpalwabbit/search_hooktask.h"
+#  include "../vowpalwabbit/reductions/search/search.h"
+#  include "../vowpalwabbit/reductions/search/search_hooktask.h"
 
 #  include <memory>
 
@@ -18,7 +18,7 @@ template <class INPUT, class OUTPUT>
 class SearchTask
 {
 public:
-  SearchTask(vw& vw_obj) : vw_obj(vw_obj), sch(*(Search::search*)vw_obj.searchstr)
+  SearchTask(VW::workspace& vw_obj) : vw_obj(vw_obj), sch(*(Search::search*)vw_obj.searchstr)
   {
     bogus_example = VW::alloc_examples(1);
     VW::read_line(vw_obj, bogus_example, (char*)"1 | x");
@@ -35,7 +35,6 @@ public:
   virtual ~SearchTask()
   { trigger.clear(); // the individual examples get cleaned up below
     VW::dealloc_examples(bogus_example, 1);
-    free(bogus_example);
   }
 
   virtual void _run(Search::search&sch, INPUT& input_example, OUTPUT& output) {}  // YOU MUST DEFINE THIS FUNCTION!
@@ -46,7 +45,7 @@ public:
   void predict(INPUT& input_example, OUTPUT& output) { bogus_example->test_only = true;  call_vw(input_example, output); }
 
 protected:
-  vw& vw_obj;
+  VW::workspace& vw_obj;
   Search::search& sch;
 
 private:
@@ -88,8 +87,8 @@ private:
 class BuiltInTask : public SearchTask< std::vector<example*>, std::vector<uint32_t> >
 {
 public:
-  BuiltInTask(vw& vw_obj, Search::search_task* task)
-    : SearchTask< std::vector<example*>, std::vector<uint32_t> >(vw_obj)
+  BuiltInTask(VW::workspace& vw_obj, Search::search_task* task)
+      : SearchTask<std::vector<example*>, std::vector<uint32_t>>(vw_obj)
   { HookTask::task_data* d = sch.get_task_data<HookTask::task_data>();
     size_t num_actions = d->num_actions;
     my_task = task;

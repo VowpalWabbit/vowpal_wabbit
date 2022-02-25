@@ -18,44 +18,44 @@
 #include <fstream>
 
 #include "vw.h"
-#include "options.h"
-#include "options_boost_po.h"
+#include "config/options.h"
+#include "config/options_cli.h"
+#include "memory.h"
 
 using namespace VW::config;
 
-vw* setup(options_i& options)
+VW::workspace* setup(options_i& options)
 {
-  vw* all = nullptr;
-  try
-  {
-    all = VW::initialize(options);
-  }
-  catch (const std::exception& ex)
-  {
-    std::cout << ex.what() << std::endl;
-    throw;
-  }
-  catch (...)
-  {
-    std::cout << "unknown exception" << std::endl;
-    throw;
-  }
+  VW::workspace* all = VW::initialize(options);
   all->vw_is_main = true;
-
   return all;
 }
 
 int main(int argc, char* argv[])
 {
   bool should_use_onethread = false;
-  option_group_definition driver_config("driver");
+  std::string log_level;
+  std::string log_output_stream;
+  option_group_definition driver_config("Driver");
   driver_config.add(make_option("onethread", should_use_onethread).help("Disable parse thread"));
+  driver_config.add(make_option("log_level", log_level)
+                        .default_value("info")
+                        .hidden()
+                        .one_of({"info", "warn", "error", "critical", "off"})
+                        .help("Log level for logging messages. Specifying this wil override --quiet for log output"));
+  driver_config.add(make_option("log_output", log_output_stream)
+                        .default_value("stdout")
+                        .hidden()
+                        .one_of({"stdout", "stderr", "compat"})
+                        .help("Specify the stream to output log messages to. In the past VW's choice of stream for "
+                              "logging messages wasn't consistent. Supplying compat will maintain that old behavior. "
+                              "Compat is now deprecated so it is recommended that stdout or stderr is chosen"));
 
   try
   {
     // support multiple vw instances for training of the same datafile for the same instance
-    std::vector<std::unique_ptr<options_boost_po>> arguments;
-    std::vector<vw*> alls;
+    std::vector<std::unique_ptr<options_cli>> arguments;
+    std::vector<VW::workspace*> alls;
     if (argc == 3 && !std::strcmp(argv[1], "--args"))
     {
       std::fstream arg_file(argv[2]);
@@ -74,8 +74,8 @@ int main(int argc, char* argv[])
 
         int l_argc;
         char** l_argv = VW::to_argv(new_args, l_argc);
-
-        std::unique_ptr<options_boost_po> ptr(new options_boost_po(l_argc, l_argv));
+        std::vector<std::string> args(l_argv + 1, l_argv + l_argc);
+        auto ptr = VW::make_unique<options_cli>(args);
         ptr->add_and_parse(driver_config);
         alls.push_back(setup(*ptr));
         arguments.push_back(std::move(ptr));
@@ -83,19 +83,19 @@ int main(int argc, char* argv[])
     }
     else
     {
-      std::unique_ptr<options_boost_po> ptr(new options_boost_po(argc, argv));
+      auto ptr = VW::make_unique<options_cli>(std::vector<std::string>(argv + 1, argv + argc));
       ptr->add_and_parse(driver_config);
       alls.push_back(setup(*ptr));
       arguments.push_back(std::move(ptr));
     }
 
-    vw& all = *alls[0];
+    VW::workspace& all = *alls[0];
 
     auto skip_driver = all.options->get_typed_option<bool>("dry_run").value();
 
     if (skip_driver)
     {
-      for (vw* v : alls) { VW::finish(*v); }
+      for (VW::workspace* v : alls) { VW::finish(*v); }
       return 0;
     }
 
@@ -116,7 +116,7 @@ int main(int argc, char* argv[])
       VW::end_parser(all);
     }
 
-    for (vw* v : alls)
+    for (VW::workspace* v : alls)
     {
       if (v->example_parser->exc_ptr) { std::rethrow_exception(v->example_parser->exc_ptr); }
 
@@ -126,8 +126,15 @@ int main(int argc, char* argv[])
   }
   catch (VW::vw_exception& e)
   {
-    // TODO: If loggers are instantiated within struct vw, this line lives outside of that. Log as critical for now
-    std::cerr << "[critical] vw (" << e.Filename() << ":" << e.LineNumber() << "): " << e.what() << std::endl;
+    if (log_level != "off")
+    {
+      if (log_output_stream == "compat" || log_output_stream == "stderr")
+      { std::cerr << "[critical] vw (" << e.Filename() << ":" << e.LineNumber() << "): " << e.what() << std::endl; }
+      else
+      {
+        std::cout << "[critical] vw (" << e.Filename() << ":" << e.LineNumber() << "): " << e.what() << std::endl;
+      }
+    }
     return 1;
   }
   catch (std::exception& e)
@@ -137,10 +144,30 @@ int main(int argc, char* argv[])
     // everything gets caught here & the error message is printed
     // sans the excess exception noise, and core dump.
     // TODO: If loggers are instantiated within struct vw, this line lives outside of that. Log as critical for now
-    std::cerr << "[critical] vw: " << e.what() << std::endl;
-    // cin.ignore();
+    if (log_level != "off")
+    {
+      if (log_output_stream == "compat" || log_output_stream == "stderr")
+      { std::cerr << "[critical] vw: " << e.what() << std::endl; }
+      else
+      {
+        std::cout << "[critical] vw: " << e.what() << std::endl;
+      }
+    }
     return 1;
   }
-  // cin.ignore();
+  catch (...)
+  {
+    if (log_level != "off")
+    {
+      if (log_output_stream == "compat" || log_output_stream == "stderr")
+      { std::cerr << "[critical] Unknown exception occurred" << std::endl; }
+      else
+      {
+        std::cout << "[critical] vw: unknown exception" << std::endl;
+      }
+    }
+    return 1;
+  }
+
   return 0;
 }

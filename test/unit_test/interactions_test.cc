@@ -14,8 +14,8 @@
 #include "test_common.h"
 #include "vw.h"
 #include "gd_predict.h"
-#include "gd.h"
-#include "interactions.h"
+#include "reductions/gd.h"
+#include "reductions/interactions.h"
 #include "parse_args.h"
 #include "constant.h"
 #include "interactions_predict.h"
@@ -47,9 +47,10 @@ void ft_cnt(eval_gen_data& dat, const float fx, const uint64_t)
 // eval_count_of_generated_ft_naive() is an alternative way of implementation of
 // eval_count_of_generated_ft() it just calls generate_interactions() with small
 // function which counts generated features and sums their squared values. We
-// use it to validate the with more fast (?) analytic solution
-template <INTERACTIONS::generate_func_t generate_func, bool leave_duplicate_interactions>
-void eval_count_of_generated_ft_naive(vw& all, example_predict& ec, size_t& new_features_cnt, float& new_features_value)
+// use it to validate the more fast (?) analytic solution
+template <INTERACTIONS::generate_func_t<namespace_index> generate_func, bool leave_duplicate_interactions>
+void eval_count_of_generated_ft_naive(
+    VW::workspace& all, example_predict& ec, size_t& new_features_cnt, float& new_features_value)
 {
   // Only makes sense to do this when not in permutations mode.
   assert(!all.permutations);
@@ -69,6 +70,34 @@ void eval_count_of_generated_ft_naive(vw& all, example_predict& ec, size_t& new_
   ec.interactions = &all.interactions;
 }
 
+template <INTERACTIONS::generate_func_t<extent_term> generate_func, bool leave_duplicate_interactions>
+void eval_count_of_generated_ft_naive(
+    VW::workspace& all, example_predict& ec, size_t& new_features_cnt, float& new_features_value)
+{
+  // Only makes sense to do this when not in permutations mode.
+  assert(!all.permutations);
+
+  new_features_cnt = 0;
+  new_features_value = 0.;
+  std::set<extent_term> seen_extents;
+  for (auto ns_index : ec.indices)
+  {
+    for (const auto& extent : ec.feature_space[ns_index].namespace_extents)
+    { seen_extents.insert({ns_index, extent.hash}); }
+  }
+
+  auto interactions = INTERACTIONS::compile_extent_interactions<generate_func, leave_duplicate_interactions>(
+      all.extent_interactions, seen_extents);
+
+  v_array<float> results;
+
+  eval_gen_data dat(new_features_cnt, new_features_value);
+  size_t ignored = 0;
+  ec.extent_interactions = &interactions;
+  INTERACTIONS::generate_interactions<eval_gen_data, uint64_t, ft_cnt, false, nullptr>(all, ec, dat, ignored);
+  ec.extent_interactions = &all.extent_interactions;
+}
+
 inline void noop_func(float& unused_dat, const float ft_weight, const uint64_t ft_idx) {}
 
 BOOST_AUTO_TEST_CASE(eval_count_of_generated_ft_test)
@@ -78,8 +107,8 @@ BOOST_AUTO_TEST_CASE(eval_count_of_generated_ft_test)
 
   size_t naive_features_count;
   float naive_features_value;
-  eval_count_of_generated_ft_naive<INTERACTIONS::generate_namespace_combinations_with_repetition, false>(
-      vw, *ex, naive_features_count, naive_features_value);
+  eval_count_of_generated_ft_naive<INTERACTIONS::generate_namespace_combinations_with_repetition<namespace_index>,
+      false>(vw, *ex, naive_features_count, naive_features_value);
 
   auto interactions =
       INTERACTIONS::compile_interactions<INTERACTIONS::generate_namespace_combinations_with_repetition, false>(
@@ -107,7 +136,7 @@ BOOST_AUTO_TEST_CASE(eval_count_of_generated_ft_extents_combinations_test)
 
   size_t naive_features_count;
   float naive_features_value;
-  eval_count_of_generated_ft_naive<INTERACTIONS::generate_namespace_combinations_with_repetition, false>(
+  eval_count_of_generated_ft_naive<INTERACTIONS::generate_namespace_combinations_with_repetition<extent_term>, false>(
       vw, *ex, naive_features_count, naive_features_value);
 
   float fast_features_value = INTERACTIONS::eval_sum_ft_squared_of_generated_ft(
@@ -132,7 +161,7 @@ BOOST_AUTO_TEST_CASE(eval_count_of_generated_ft_extents_permutations_test)
 
   size_t naive_features_count;
   float naive_features_value;
-  eval_count_of_generated_ft_naive<INTERACTIONS::generate_namespace_combinations_with_repetition, false>(
+  eval_count_of_generated_ft_naive<INTERACTIONS::generate_namespace_combinations_with_repetition<extent_term>, false>(
       vw, *ex, naive_features_count, naive_features_value);
   float fast_features_value = INTERACTIONS::eval_sum_ft_squared_of_generated_ft(
       vw.permutations, *ex->interactions, *ex->extent_interactions, ex->feature_space);
@@ -312,7 +341,7 @@ BOOST_AUTO_TEST_CASE(compile_interactions_cubic_permutations)
 
 BOOST_AUTO_TEST_CASE(parse_full_name_interactions_test)
 {
-  auto* vw = VW::initialize("");
+  auto* vw = VW::initialize("--quiet");
 
   {
     auto a = parse_full_name_interactions(*vw, "a|b");
@@ -429,4 +458,90 @@ BOOST_AUTO_TEST_CASE(extent_interaction_expansion_test)
         cache.in_process_frames, cache.frame_pool);
     BOOST_REQUIRE_EQUAL(counter, 6);
   }
+}
+
+void do_interaction_feature_count_test(bool add_quadratic, bool add_cubic, bool combinations, bool no_constant)
+{
+  std::string char_cmd_line = "--quiet";
+  std::string extent_cmd_line = "--quiet";
+  if (add_quadratic)
+  {
+    char_cmd_line += " -q :: ";
+    extent_cmd_line += " --experimental_full_name_interactions :|: ";
+  }
+  if (add_cubic)
+  {
+    char_cmd_line += " --cubic ::: ";
+    extent_cmd_line += " --experimental_full_name_interactions :|:|: ";
+  }
+  if (!combinations)
+  {
+    char_cmd_line += " --leave_duplicate_interactions ";
+    extent_cmd_line += " --leave_duplicate_interactions ";
+  }
+  if (no_constant)
+  {
+    char_cmd_line += " --noconstant";
+    extent_cmd_line += " --noconstant";
+  }
+  auto* vw_char_inter = VW::initialize(char_cmd_line);
+  auto* vw_extent_inter = VW::initialize(extent_cmd_line);
+  auto cleanup = VW::scope_exit([&]() {
+    VW::finish(*vw_char_inter);
+    VW::finish(*vw_extent_inter);
+  });
+
+  auto parse_and_return_num_fts = [&](const char* char_inter_example,
+                                      const char* extent_inter_example) -> std::pair<size_t, size_t> {
+    auto* ex_char = VW::read_example(*vw_char_inter, char_inter_example);
+    auto* ex_extent = VW::read_example(*vw_extent_inter, extent_inter_example);
+    vw_char_inter->predict(*ex_char);
+    vw_extent_inter->predict(*ex_extent);
+    vw_char_inter->finish_example(*ex_char);
+    vw_extent_inter->finish_example(*ex_extent);
+    return std::make_pair(vw_char_inter->sd->total_features, vw_extent_inter->sd->total_features);
+  };
+
+  size_t num_char_fts = 0;
+  size_t num_extent_fts = 0;
+
+  std::tie(num_char_fts, num_extent_fts) =
+      parse_and_return_num_fts("|A a b c |B a b c d", "|group1 a b c |group2 a b c d");
+  BOOST_REQUIRE_EQUAL(num_char_fts, num_extent_fts);
+
+  std::tie(num_char_fts, num_extent_fts) =
+      parse_and_return_num_fts("|A a b c |B a b c d", "|group1 c |group1 a b |group2 a b c d");
+  BOOST_REQUIRE_EQUAL(num_char_fts, num_extent_fts);
+
+  std::tie(num_char_fts, num_extent_fts) =
+      parse_and_return_num_fts("|A a b c |B a b c d", "|group2 a d |group1 c |group1 a b |group2 b c");
+  BOOST_REQUIRE_EQUAL(num_char_fts, num_extent_fts);
+}
+
+BOOST_AUTO_TEST_CASE(extent_vs_char_interactions_wildcard)
+{
+  do_interaction_feature_count_test(true, false, true, true);
+}
+BOOST_AUTO_TEST_CASE(extent_vs_char_interactions_cubic_wildcard)
+{
+  do_interaction_feature_count_test(true, true, true, true);
+}
+
+BOOST_AUTO_TEST_CASE(extent_vs_char_interactions_wildcard_permutations)
+{
+  do_interaction_feature_count_test(true, false, false, true);
+}
+BOOST_AUTO_TEST_CASE(extent_vs_char_interactions_cubic_wildcard_permutations)
+{
+  do_interaction_feature_count_test(true, true, false, true);
+}
+
+BOOST_AUTO_TEST_CASE(extent_vs_char_interactions_cubic_wildcard_permutations_constant)
+{
+  do_interaction_feature_count_test(true, true, false, false);
+}
+
+BOOST_AUTO_TEST_CASE(extent_vs_char_interactions_cubic_wildcard_permutations_combinations_constant)
+{
+  do_interaction_feature_count_test(true, true, true, false);
 }

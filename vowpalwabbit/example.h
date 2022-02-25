@@ -15,7 +15,6 @@
 #include "feature_group.h"
 #include "action_score.h"
 #include "example_predict.h"
-#include "conditional_contextual_bandit.h"
 #include "continuous_actions_reduction_features.h"
 #include "ccb_label.h"
 #include "slates_label.h"
@@ -23,21 +22,25 @@
 #include "cb_continuous_label.h"
 #include "prob_dist_cont.h"
 #include "active_multiclass_prediction.h"
+#include "cache.h"
 
 #include <cstdint>
 #include <vector>
 #include <iostream>
 
-struct vw;
+namespace VW
+{
+struct workspace;
+}
 namespace VW
 {
 void copy_example_data(example* dst, const example* src);
-void setup_example(vw& all, example* ae);
+void setup_example(VW::workspace& all, example* ae);
 }  // namespace VW
 
 struct polylabel
 {
-  no_label::no_label empty;
+  no_label::no_label empty = static_cast<char>(0);
   label_data simple;
   MULTICLASS::label_t multi;
   COST_SENSITIVE::label cs;
@@ -70,6 +73,7 @@ struct polyprediction
   VW::continuous_actions::probability_density_function pdf;  // probability density defined over an action range
   VW::continuous_actions::probability_density_function_value pdf_value;  // probability density value for a given action
   VW::active_multiclass_prediction active_multiclass;
+  char nopred = static_cast<char>(0);
 };
 
 float calculate_total_sum_features_squared(bool permutations, example& ec);
@@ -93,9 +97,12 @@ struct example : public example_predict  // core example datatype.
   float weight = 1.f;  // a relative importance weight for the example, default = 1
   v_array<char> tag;   // An identifier for the example.
   size_t example_counter = 0;
+#ifdef PRIVACY_ACTIVATION
+  uint64_t tag_hash;  // Storing the hash of the tag for privacy preservation learning
+#endif
 
   // helpers
-  size_t num_features = 0;         // precomputed, cause it's fast&easy.
+  size_t num_features = 0;  // precomputed, cause it's fast&easy.
   size_t num_features_from_interactions = 0;
   float partial_prediction = 0.f;  // shared data for prediction.
   float updated_prediction = 0.f;  // estimated post-update prediction.
@@ -134,14 +141,17 @@ struct example : public example_predict  // core example datatype.
   }
 
   friend void VW::copy_example_data(example* dst, const example* src);
-  friend void VW::setup_example(vw& all, example* ae);
+  friend void VW::setup_example(VW::workspace& all, example* ae);
 
 private:
   bool total_sum_feat_sq_calculated = false;
   bool use_permutations = false;
 };
 
-struct vw;
+namespace VW
+{
+struct workspace;
+}
 
 struct flat_example
 {
@@ -160,8 +170,8 @@ struct flat_example
   features fs;              // all the features
 };
 
-flat_example* flatten_example(vw& all, example* ec);
-flat_example* flatten_sort_example(vw& all, example* ec);
+flat_example* flatten_example(VW::workspace& all, example* ec);
+flat_example* flatten_sort_example(VW::workspace& all, example* ec);
 void free_flatten_example(flat_example* fec);
 
 inline bool example_is_newline(const example& ec) { return ec.is_newline; }
@@ -180,10 +190,16 @@ typedef std::vector<example*> multi_ex;
 
 namespace VW
 {
-void return_multiple_example(vw& all, v_array<example*>& examples);
+void return_multiple_example(VW::workspace& all, v_array<example*>& examples);
 
 using example_factory_t = example& (*)(void*);
 
+namespace model_utils
+{
+size_t read_model_field(io_buf& io, flat_example& fe, label_parser& lbl_parser);
+size_t write_model_field(io_buf& io, const flat_example& fe, const std::string& upstream_name, bool text,
+    label_parser& lbl_parser, uint64_t parse_mask);
+}  // namespace model_utils
 }  // namespace VW
 
 std::string simple_label_to_string(const example& ec);

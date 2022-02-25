@@ -92,7 +92,7 @@ int main(int argc, char* argv[])
   ret = send(s, &id, sizeof(id), 0);
   if (ret < 0)
   {
-    const char* msg = "Could not perform handshake!";
+    const char* msg = "Could not perform handshake";
     cerr << msg << endl;
     throw std::runtime_error(msg);
   }
@@ -106,14 +106,14 @@ int main(int argc, char* argv[])
     ret = send(s, sp + 1, len - (sp + 1 - cstr), 0);
     if (ret < 0)
     {
-      const char* msg = "Could not send unlabeled data!";
+      const char* msg = "Could not send unlabeled data";
       cerr << msg << endl;
       throw std::runtime_error(msg);
     }
     ret = recvall(s, buf, 256);
     if (ret < 0)
     {
-      const char* msg = "Could not receive queries!";
+      const char* msg = "Could not receive queries";
       cerr << msg << endl;
       throw std::runtime_error(msg);
     }
@@ -134,14 +134,14 @@ int main(int argc, char* argv[])
     ret = send(s, cstr, len, 0);
     if (ret < 0)
     {
-      const char* msg = "Could not send labeled data!";
+      const char* msg = "Could not send labeled data";
       cerr << msg << endl;
       throw std::runtime_error(msg);
     }
     ret = recvall(s, buf, 256);
     if (ret < 0)
     {
-      const char* msg = "Could not receive predictions!";
+      const char* msg = "Could not receive predictions";
       cerr << msg << endl;
       throw std::runtime_error(msg);
     }

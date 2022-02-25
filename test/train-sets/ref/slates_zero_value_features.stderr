@@ -1,19 +1,21 @@
+using no cache
+Reading datafile = train-sets/slates_zero_value_features.txt
+num sources = 1
 Num weight bits = 18
 learning rate = 0.5
 initial_t = 0
 power_t = 0.5
-using no cache
-Reading datafile = train-sets/slates_zero_value_features.txt
-num sources = 1
 Enabled reductions: gd, generate_interactions, scorer-identity, csoaa_ldf-rank, cb_adf, cb_explore_adf_greedy, cb_sample, shared_feature_merger, ccb_explore_adf, slates
-average  since         example        example  current  current  current
-loss     last          counter         weight    label  predict features
-0.200000 0.200000            1            1.0      1,0      1,0       38
--0.116667 -0.433333            2            2.0      1,0      1,0       21
+Input label = slates
+Output pred = decision_probs
+average  since         example        example        current        current  current 
+loss     last          counter         weight          label        predict features 
+0.200000 0.200000            1            1.0            1,0            1,0       72 
+-0.11666 -0.43333            2            2.0            1,0            1,0       43 
 
 finished run
 number of examples = 3
 weighted example sum = 3.000000
 weighted label sum = 0.000000
 average loss = -0.116667
-total feature number = 89
+total feature number = 184

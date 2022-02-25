@@ -10,6 +10,7 @@
 #include "constant.h"
 #include "vw_math.h"
 #include "parse_primitives.h"
+#include "model_utils.h"
 #include <numeric>
 
 namespace VW
@@ -18,65 +19,11 @@ namespace slates
 {
 void default_label(slates::label& v);
 
-#define READ_CACHED_VALUE(DEST, TYPE)                                      \
-  next_read_size = sizeof(TYPE);                                           \
-  if (cache.buf_read(read_ptr, next_read_size) < next_read_size) return 0; \
-  DEST = *(TYPE*)read_ptr;                                                 \
-  read_count += sizeof(TYPE);
-
-#define WRITE_CACHED_VALUE(VALUE, TYPE) \
-  *(TYPE*)c = VALUE;                    \
-  c += sizeof(TYPE);
-
-size_t read_cached_label(shared_data* /*sd*/, slates::label& ld, io_buf& cache)
-{
-  // Since read_cached_features doesn't default the label we must do it here.
-  default_label(ld);
-
-  size_t read_count = 0;
-  char* read_ptr;
-  size_t next_read_size = 0;
-
-  READ_CACHED_VALUE(ld.type, slates::example_type);
-  READ_CACHED_VALUE(ld.weight, float);
-  READ_CACHED_VALUE(ld.labeled, bool);
-  READ_CACHED_VALUE(ld.cost, float);
-  READ_CACHED_VALUE(ld.slot_id, uint32_t);
-
-  uint32_t size_probs = 0;
-  READ_CACHED_VALUE(size_probs, uint32_t);
-
-  for (uint32_t i = 0; i < size_probs; i++)
-  {
-    ACTION_SCORE::action_score a_s;
-    READ_CACHED_VALUE(a_s, ACTION_SCORE::action_score);
-    ld.probabilities.push_back(a_s);
-  }
-  return read_count;
-}
-
-void cache_label(slates::label& ld, io_buf& cache)
-{
-  char* c;
-  size_t size = sizeof(ld.type) + sizeof(ld.weight) + sizeof(ld.labeled) + sizeof(ld.cost) + sizeof(ld.slot_id) +
-      sizeof(uint32_t)  // Size of probabilities
-      + sizeof(ACTION_SCORE::action_score) * ld.probabilities.size();
-
-  cache.buf_write(c, size);
-  WRITE_CACHED_VALUE(ld.type, slates::example_type);
-  WRITE_CACHED_VALUE(ld.weight, float);
-  WRITE_CACHED_VALUE(ld.labeled, bool);
-  WRITE_CACHED_VALUE(ld.cost, float);
-  WRITE_CACHED_VALUE(VW::convert(ld.slot_id), uint32_t);
-  WRITE_CACHED_VALUE(VW::convert(ld.probabilities.size()), uint32_t);
-  for (const auto& score : ld.probabilities) { WRITE_CACHED_VALUE(score, ACTION_SCORE::action_score); }
-}
-
-float weight(slates::label& ld) { return ld.weight; }
+float weight(const slates::label& ld) { return ld.weight; }
 
 void default_label(slates::label& ld) { ld.reset_to_default(); }
 
-bool test_label(slates::label& ld) { return ld.labeled == false; }
+bool test_label(const slates::label& ld) { return ld.labeled == false; }
 
 // Slates labels come in three types, shared, action and slot with the following structure:
 // slates shared [global_cost]
@@ -85,8 +32,9 @@ bool test_label(slates::label& ld) { return ld.labeled == false; }
 //
 // For a more complete description of the grammar, including examples see:
 // https://github.com/VowpalWabbit/vowpal_wabbit/wiki/Slates
-void parse_label(
-    parser* p, shared_data* /*sd*/, slates::label& ld, std::vector<VW::string_view>& words, reduction_features&)
+
+void parse_label(slates::label& ld, VW::label_parser_reuse_mem& reuse_mem, const std::vector<VW::string_view>& words,
+    VW::io::logger& logger)
 {
   ld.weight = 1;
 
@@ -101,7 +49,7 @@ void parse_label(
     // There is a cost defined.
     if (words.size() == 3)
     {
-      ld.cost = float_of_string(words[2]);
+      ld.cost = float_of_string(words[2], logger);
       ld.labeled = true;
     }
     else if (words.size() != 2)
@@ -115,7 +63,7 @@ void parse_label(
     if (words.size() != 3) { THROW("Slates action labels must be of the form: slates action <slot_id>"); }
 
     char* char_after_int = nullptr;
-    ld.slot_id = int_of_string(words[2], char_after_int);
+    ld.slot_id = int_of_string(words[2], char_after_int, logger);
     if (char_after_int != nullptr && *char_after_int != ' ' && *char_after_int != '\0')
     { THROW("Slot id seems to be malformed"); }
 
@@ -126,17 +74,17 @@ void parse_label(
     if (words.size() == 3)
     {
       ld.labeled = true;
-      tokenize(',', words[2], p->parse_name);
+      tokenize(',', words[2], reuse_mem.tokens);
 
       std::vector<VW::string_view> split_colons;
-      for (auto& token : p->parse_name)
+      for (auto& token : reuse_mem.tokens)
       {
         tokenize(':', token, split_colons);
         if (split_colons.size() != 2) { THROW("Malformed action score token"); }
 
         // Element 0 is the action, element 1 is the probability
         ld.probabilities.push_back(
-            {static_cast<uint32_t>(int_of_string(split_colons[0])), float_of_string(split_colons[1])});
+            {static_cast<uint32_t>(int_of_string(split_colons[0], logger)), float_of_string(split_colons[1], logger)});
       }
 
       // If a full distribution has been given, check if it sums to 1, otherwise throw.
@@ -168,25 +116,83 @@ void parse_label(
   }
 }
 
-// clang-format off
 label_parser slates_label_parser = {
-  // default_label
-  [](polylabel* v) { default_label(v->slates); },
-  // parse_label
-  [](parser* p, shared_data* sd, polylabel* v, std::vector<VW::string_view>& words, reduction_features& red_features) {
-    parse_label(p, sd, v->slates, words, red_features);
-  },
-  // cache_label
-  [](polylabel* v, reduction_features&, io_buf& cache) { cache_label(v->slates, cache); },
-  // read_cached_label
-  [](shared_data* sd, polylabel* v, reduction_features&, io_buf& cache) { return read_cached_label(sd, v->slates, cache); },
-  // get_weight
-  [](polylabel* v, const reduction_features&) { return weight(v->slates); },
-  // test_label
-  [](polylabel* v) { return test_label(v->slates); },
-  label_type_t::slates
-};
-// clang-format on
+    // default_label
+    [](polylabel& label) { default_label(label.slates); },
+    // parse_label
+    [](polylabel& label, reduction_features& /* red_features */, VW::label_parser_reuse_mem& reuse_mem,
+        const VW::named_labels* /* ldict */, const std::vector<VW::string_view>& words,
+        VW::io::logger& logger) { parse_label(label.slates, reuse_mem, words, logger); },
+    // cache_label
+    [](const polylabel& label, const reduction_features& /* red_features */, io_buf& cache,
+        const std::string& upstream_name,
+        bool text) { return VW::model_utils::write_model_field(cache, label.slates, upstream_name, text); },
+    // read_cached_label
+    [](polylabel& label, reduction_features& /* red_features */, io_buf& cache) {
+      return VW::model_utils::read_model_field(cache, label.slates);
+    },
+    // get_weight
+    [](const polylabel& label, const reduction_features& /* red_features */) { return weight(label.slates); },
+    // test_label
+    [](const polylabel& label) { return test_label(label.slates); },
+    // label type
+    label_type_t::slates};
 
 }  // namespace slates
+}  // namespace VW
+
+VW::string_view VW::to_string(VW::slates::example_type ex_type)
+{
+#define CASE(type) \
+  case type:       \
+    return #type;
+
+  using namespace VW::slates;
+  switch (ex_type)
+  {
+    CASE(example_type::unset)
+    CASE(example_type::shared)
+    CASE(example_type::action)
+    CASE(example_type::slot)
+  }
+
+  // The above enum is exhaustive and will warn on a new label type being added due to the lack of `default`
+  // The following is required by the compiler, otherwise it things control can reach the end of this function without
+  // returning.
+  assert(false);
+  return "unknown example_type enum";
+
+#undef CASE
+}
+
+namespace VW
+{
+namespace model_utils
+{
+size_t read_model_field(io_buf& io, VW::slates::label& slates)
+{
+  // Since read_cached_features doesn't default the label we must do it here.
+  default_label(slates);
+  size_t bytes = 0;
+  bytes += read_model_field(io, slates.type);
+  bytes += read_model_field(io, slates.weight);
+  bytes += read_model_field(io, slates.labeled);
+  bytes += read_model_field(io, slates.cost);
+  bytes += read_model_field(io, slates.slot_id);
+  bytes += read_model_field(io, slates.probabilities);
+  return bytes;
+}
+
+size_t write_model_field(io_buf& io, const VW::slates::label& slates, const std::string& upstream_name, bool text)
+{
+  size_t bytes = 0;
+  bytes += write_model_field(io, slates.type, upstream_name + "_type", text);
+  bytes += write_model_field(io, slates.weight, upstream_name + "_weight", text);
+  bytes += write_model_field(io, slates.labeled, upstream_name + "_labeled", text);
+  bytes += write_model_field(io, slates.cost, upstream_name + "_cost", text);
+  bytes += write_model_field(io, slates.slot_id, upstream_name + "_slot_id", text);
+  bytes += write_model_field(io, slates.probabilities, upstream_name + "_probabilities", text);
+  return bytes;
+}
+}  // namespace model_utils
 }  // namespace VW

@@ -1,17 +1,19 @@
+using no cache
+Reading datafile = none
+num sources = 0
 Num weight bits = 18
 learning rate = 0.5
 initial_t = 0
 power_t = 0.5
-using no cache
-Reading datafile = 
-num sources = 1
 Enabled reductions: gd, scorer-identity, csoaa, cb
-average  since         example        example  current  current  current
-loss     last          counter         weight    label  predict features
-5.000000 5.000000            1            1.0  1:2:0.4        1        3
-2.500000 0.000000            2            2.0  3:0:0.2        2        3
-2.083333 1.666667            4            4.0  2:1:0.3        2        4
-1.952381 1.428571            8            8.0  unknown        3        3
+Input label = cb
+Output pred = multiclass
+average  since         example        example        current        current  current
+loss     last          counter         weight          label        predict features
+5.000000 5.000000            1            1.0        1:2:0.4              1        3
+2.500000 0.000000            2            2.0        3:0:0.2              2        3
+2.083333 1.666667            4            4.0        2:1:0.3              2        4
+1.952381 1.428571            8            8.0        unknown              3        3
 
 finished run
 number of examples = 9

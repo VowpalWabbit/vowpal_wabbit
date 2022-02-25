@@ -55,7 +55,7 @@ inline void call_FuncT(DataT& dat, WeightsT& weights, const float ft_value, cons
 template <class DataT, void (*FuncT)(DataT&, const float, float), class WeightsT>
 inline void call_FuncT(DataT& dat, const WeightsT& weights, const float ft_value, const uint64_t ft_idx)
 {
-  FuncT(dat, ft_value, weights[ft_idx]);
+  FuncT(dat, ft_value, weights[static_cast<size_t>(ft_idx)]);
 }
 
 template <class DataT, void (*FuncT)(DataT&, float, uint64_t), class WeightsT>
@@ -445,7 +445,6 @@ inline void generate_interactions(const std::vector<std::vector<namespace_index>
   // current list of namespaces to interact.
   for (const auto& ns : interactions)
   {
-
 #ifndef GEN_INTER_LOOP
 
     // unless GEN_INTER_LOOP is defined we use nested 'for' loops for interactions length 2 (pairs) and 3 (triples)

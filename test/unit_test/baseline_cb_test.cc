@@ -17,7 +17,7 @@
 
 namespace test_helpers
 {
-void make_example(multi_ex& examples, vw& vw, int arm, float* costs, float* probs)
+void make_example(multi_ex& examples, VW::workspace& vw, int arm, float* costs, float* probs)
 {
   examples.push_back(VW::read_example(vw, "shared | shared_f"));
   for (int i = 0; i < 4; ++i)
@@ -40,24 +40,6 @@ int sample(int size, const float* probs, float s)
   return 0;  // error
 }
 
-int get_int_metric(const VW::metric_sink& metrics, const std::string& metric_name)
-{
-  auto it = std::find_if(metrics.int_metrics_list.begin(), metrics.int_metrics_list.end(),
-      [&metric_name](const std::pair<std::string, size_t>& element) { return element.first == metric_name; });
-
-  if (it == metrics.int_metrics_list.end()) { BOOST_FAIL("could not find metric. fatal."); }
-  return it->second;
-}
-
-float get_float_metric(const VW::metric_sink& metrics, const std::string& metric_name)
-{
-  auto it = std::find_if(metrics.float_metrics_list.begin(), metrics.float_metrics_list.end(),
-      [&metric_name](const std::pair<std::string, size_t>& element) { return element.first == metric_name; });
-
-  if (it == metrics.float_metrics_list.end()) { BOOST_FAIL("could not find metric. fatal."); }
-  return it->second;
-}
-
 }  // namespace test_helpers
 
 BOOST_AUTO_TEST_CASE(baseline_cb_baseline_performs_badly)
@@ -65,8 +47,8 @@ BOOST_AUTO_TEST_CASE(baseline_cb_baseline_performs_badly)
   using namespace test_helpers;
   auto& vw = *VW::initialize(
       "--cb_explore_adf --baseline_challenger_cb --quiet --extra_metrics ut_metrics.json --random_seed 5");
-  float costs_p0[] = {-0.1, -0.3, -0.3, -1.0};
-  float probs_p0[] = {0.05, 0.05, 0.05, 0.85};
+  float costs_p0[] = {-0.1f, -0.3f, -0.3f, -1.0f};
+  float probs_p0[] = {0.05f, 0.05f, 0.05f, 0.85f};
 
   uint64_t state = 37;
   for (int i = 0; i < 50; ++i)
@@ -82,10 +64,10 @@ BOOST_AUTO_TEST_CASE(baseline_cb_baseline_performs_badly)
   VW::metric_sink metrics;
   vw.l->persist_metrics(metrics);
 
-  BOOST_CHECK_EQUAL(get_int_metric(metrics, "baseline_cb_baseline_in_use"), 0);
+  BOOST_CHECK_EQUAL(metrics.get_bool("baseline_cb_baseline_in_use"), false);
   // if baseline is not in use, it means the CI lower bound is smaller than the policy expectation
-  BOOST_CHECK_LE(get_float_metric(metrics, "baseline_cb_baseline_lowerbound"),
-      get_float_metric(metrics, "baseline_cb_policy_expectation"));
+  BOOST_CHECK_LE(
+      metrics.get_float("baseline_cb_baseline_lowerbound"), metrics.get_float("baseline_cb_policy_expectation"));
 
   multi_ex tst;
   make_example(tst, vw, -1, costs_p0, probs_p0);
@@ -105,11 +87,11 @@ BOOST_AUTO_TEST_CASE(baseline_cb_baseline_takes_over_policy)
   auto& vw = *VW::initialize(
       "--cb_explore_adf --baseline_challenger_cb --cb_c_tau 0.995 --quiet --power_t 0 -l 0.001 --extra_metrics "
       "ut_metrics.json --random_seed 5");
-  float costs_p0[] = {-0.1, -0.3, -0.3, -1.0};
-  float probs_p0[] = {0.05, 0.05, 0.05, 0.85};
+  float costs_p0[] = {-0.1f, -0.3f, -0.3f, -1.0f};
+  float probs_p0[] = {0.05f, 0.05f, 0.05f, 0.85f};
 
-  float costs_p1[] = {-1.0, -0.3, -0.3, -0.1};
-  float probs_p1[] = {0.05, 0.05, 0.05, 0.85};
+  float costs_p1[] = {-1.0f, -0.3f, -0.3f, -0.1f};
+  float probs_p1[] = {0.05f, 0.05f, 0.05f, 0.85f};
 
   uint64_t state = 37;
   for (int i = 0; i < 500; ++i)
@@ -136,10 +118,11 @@ BOOST_AUTO_TEST_CASE(baseline_cb_baseline_takes_over_policy)
   VW::metric_sink metrics;
   vw.l->persist_metrics(metrics);
 
-  BOOST_CHECK_EQUAL(get_int_metric(metrics, "baseline_cb_baseline_in_use"), 1);
+  BOOST_CHECK_EQUAL(metrics.get_bool("baseline_cb_baseline_in_use"), true);
+
   // if baseline is not in use, it means the CI lower bound is smaller than the policy expectation
-  BOOST_CHECK_GT(get_float_metric(metrics, "baseline_cb_baseline_lowerbound"),
-      get_float_metric(metrics, "baseline_cb_policy_expectation"));
+  BOOST_CHECK_GT(
+      metrics.get_float("baseline_cb_baseline_lowerbound"), metrics.get_float("baseline_cb_policy_expectation"));
 
   multi_ex tst;
   make_example(tst, vw, -1, costs_p1, probs_p1);
@@ -158,10 +141,9 @@ VW::metric_sink run_simulation(int steps, int switch_step)
 {
   using namespace test_helpers;
   auto* vw = VW::initialize(
-      "--cb_explore_adf --baseline_challenger_cb --quiet --extra_metrics ut_metrics.json --random_seed 5  "
-      "--save_resume");
-  float costs_p0[] = {-0.1, -0.3, -0.3, -1.0};
-  float probs_p0[] = {0.05, 0.05, 0.05, 0.85};
+      "--cb_explore_adf --baseline_challenger_cb --quiet --extra_metrics ut_metrics.json --random_seed 5");
+  float costs_p0[] = {-0.1f, -0.3f, -0.3f, -1.0f};
+  float probs_p0[] = {0.05f, 0.05f, 0.05f, 0.85f};
 
   uint64_t state = 37;
 
@@ -177,7 +159,7 @@ VW::metric_sink run_simulation(int steps, int switch_step)
     {
       VW::save_predictor(*vw, "model_file.vw");
       VW::finish(*vw);
-      vw = VW::initialize("--quiet --extra_metrics ut_metrics.json --save_resume -i model_file.vw");
+      vw = VW::initialize("--quiet --extra_metrics ut_metrics.json -i model_file.vw");
     }
   }
   VW::metric_sink metrics;
@@ -194,12 +176,7 @@ BOOST_AUTO_TEST_CASE(baseline_cb_save_load_test)
   auto m1 = run_simulation(50, -1);
   auto m2 = run_simulation(50, 20);
 
-  BOOST_CHECK_EQUAL(test_helpers::get_int_metric(m1, "baseline_cb_baseline_in_use"),
-      test_helpers::get_int_metric(m2, "baseline_cb_baseline_in_use"));
-
-  BOOST_CHECK_EQUAL(test_helpers::get_float_metric(m1, "baseline_cb_baseline_lowerbound"),
-      test_helpers::get_float_metric(m2, "baseline_cb_baseline_lowerbound"));
-
-  BOOST_CHECK_EQUAL(test_helpers::get_float_metric(m1, "baseline_cb_policy_expectation"),
-      test_helpers::get_float_metric(m2, "baseline_cb_policy_expectation"));
+  BOOST_CHECK_EQUAL(m1.get_bool("baseline_cb_baseline_in_use"), m2.get_bool("baseline_cb_baseline_in_use"));
+  BOOST_CHECK_EQUAL(m1.get_float("baseline_cb_baseline_lowerbound"), m2.get_float("baseline_cb_baseline_lowerbound"));
+  BOOST_CHECK_EQUAL(m1.get_float("baseline_cb_policy_expectation"), m2.get_float("baseline_cb_policy_expectation"));
 }

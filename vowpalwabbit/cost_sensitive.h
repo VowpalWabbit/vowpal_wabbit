@@ -8,9 +8,13 @@
 
 #include "label_parser.h"
 #include "v_array.h"
+#include "io_buf.h"
 
 struct example;
-struct vw;
+namespace VW
+{
+struct workspace;
+}
 
 namespace COST_SENSITIVE
 {
@@ -40,19 +44,31 @@ struct label
   std::vector<wclass> costs;
 };
 
-void output_example(vw& all, example& ec);
-void output_example(vw& all, example& ec, const COST_SENSITIVE::label& cs_label, uint32_t multiclass_prediction);
-void finish_example(vw& all, example& ec);
+void output_example(VW::workspace& all, const example& ec);
+void output_example(
+    VW::workspace& all, const example& ec, const COST_SENSITIVE::label& cs_label, uint32_t multiclass_prediction);
+void finish_example(VW::workspace& all, example& ec);
 template <class T>
-void finish_example(vw& all, T&, example& ec)
+void finish_example(VW::workspace& all, T&, example& ec)
 {
-  finish_example(all, ec);
+  COST_SENSITIVE::finish_example(all, ec);
 }
 
 void default_label(label& ld);
 extern label_parser cs_label;
 
-void print_update(
-    vw& all, bool is_test, example& ec, std::vector<example*>* ec_seq, bool multilabel, uint32_t prediction);
+void print_update(VW::workspace& all, bool is_test, const example& ec, const std::vector<example*>* ec_seq,
+    bool multilabel, uint32_t prediction);
 bool ec_is_example_header(example const& ec);  // example headers look like "0:-1" or just "shared"
 }  // namespace COST_SENSITIVE
+
+namespace VW
+{
+namespace model_utils
+{
+size_t read_model_field(io_buf&, COST_SENSITIVE::wclass&);
+size_t write_model_field(io_buf&, const COST_SENSITIVE::wclass&, const std::string&, bool);
+size_t read_model_field(io_buf&, COST_SENSITIVE::label&);
+size_t write_model_field(io_buf&, const COST_SENSITIVE::label&, const std::string&, bool);
+}  // namespace model_utils
+}  // namespace VW

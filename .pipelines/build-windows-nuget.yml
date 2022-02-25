@@ -33,6 +33,7 @@ steps:
     key: 'v2 | vcpkg | archives'
     path: $(VCPKG_ARCHIVE_DIR)
   displayName: Cache vcpkg dependencies
+  continueOnError: true
 - task: Cache@2
   inputs:
     key: 'nuget | "$(Agent.OS)" | $(Build.SourcesDirectory)\cs\**\packages.config'
@@ -41,6 +42,7 @@ steps:
        nuget
     path: $(NUGET_PACKAGES)
   displayName: Cache NuGet packages
+  continueOnError: true
 - script: CALL .scripts/restore.cmd
   displayName: 'Restore dependencies'
   env:

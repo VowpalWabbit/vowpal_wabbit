@@ -5,13 +5,11 @@
 #include <boost/test/unit_test.hpp>
 #include <iostream>
 #include "learner.h"
-#include "pmf_to_pdf.h"
+#include "reductions/pmf_to_pdf.h"
 #include "action_score.h"
 #include "cb_label_parser.h"
 
 using namespace VW::LEARNER;
-using std::cout;
-using std::endl;
 using std::pair;
 using std::vector;
 
@@ -232,7 +230,7 @@ test_learner_t* get_test_harness_reduction(const predictions_t& base_reduction_p
       std::move(test_harness),          // Data structure passed by vw_framework into test_harness predict/learn calls
       reduction_test_harness::learn,    // test_harness learn
       reduction_test_harness::predict,  // test_harness predict
-      "test_learner", prediction_type_t::action_scores, label_type_t::continuous)
+      "test_learner", VW::prediction_type_t::action_scores, VW::label_type_t::continuous)
                           .build();  // Create a learner using the base reduction.
   return test_learner;
 }

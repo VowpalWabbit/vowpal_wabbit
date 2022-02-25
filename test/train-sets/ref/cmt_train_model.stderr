@@ -1,22 +1,24 @@
 final_regressor = cmt.model
 memory_tree: max_nodes = 1204 max_leaf_examples = 102 alpha = 0.1 oas = 0 online =1 
+using no cache
+Reading datafile = train-sets/aloi_short_train.dat
+num sources = 1
 Num weight bits = 18
 learning rate = 0.5
 initial_t = 0
 power_t = 0.5
-using no cache
-Reading datafile = train-sets/aloi_short_train.dat
-num sources = 1
 Enabled reductions: gd, scorer-identity, memory_tree
-average  since         example        example  current  current  current
-loss     last          counter         weight    label  predict features
-1.000000 1.000000            1            1.0      796        0       46
-1.000000 1.000000            2            2.0      712      796       23
-1.000000 1.000000            4            4.0      590      796       20
-1.000000 1.000000            8            8.0      835      676       46
-1.000000 1.000000           16           16.0      995      608       40
-0.968750 0.937500           32           32.0      200      532       24
-0.984375 1.000000           64           64.0      697      796       41
+Input label = multiclass
+Output pred = multiclass
+average  since         example        example        current        current  current 
+loss     last          counter         weight          label        predict features 
+1.000000 1.000000            1            1.0            796              0       46 
+1.000000 1.000000            2            2.0            712            796       23 
+1.000000 1.000000            4            4.0            590            796       20 
+1.000000 1.000000            8            8.0            835            676       46 
+1.000000 1.000000           16           16.0            995            608       40 
+0.968750 0.937500           32           32.0            200            532       24 
+0.984375 1.000000           64           64.0            697            796       41 
 
 finished run
 number of examples = 100

@@ -10,7 +10,7 @@
 #include <vector>
 #include "../../explore/explore.h"
 
-#include "cb_explore_pdf.h"
+#include "reductions/cb/cb_explore_pdf.h"
 
 using namespace VW::continuous_actions;
 using std::vector;

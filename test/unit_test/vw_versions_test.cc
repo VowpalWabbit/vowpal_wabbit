@@ -5,6 +5,7 @@
 #include <boost/test/unit_test.hpp>
 #include <boost/test/test_tools.hpp>
 
+#include "io/logger.h"
 #include "version.h"
 #include "vw_versions.h"
 #include "global_data.h"
@@ -16,7 +17,8 @@ BOOST_AUTO_TEST_CASE(verify_vw_versions)
   using namespace VW::version_definitions;
 
   // check default vw version value
-  vw dummy_vw;
+  auto null_logger = VW::io::create_null_logger();
+  workspace dummy_vw(null_logger);
   BOOST_CHECK(dummy_vw.model_file_ver == EMPTY_VERSION_FILE);
   BOOST_CHECK(dummy_vw.model_file_ver < VERSION_FILE_WITH_CB_ADF_SAVE);
 

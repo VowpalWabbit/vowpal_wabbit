@@ -8,12 +8,13 @@
 #include <memory>
 #include <ostream>
 #include <string>
+#include <cfloat>
 
 #include "named_labels.h"
 
 struct shared_data
 {
-  shared_data();
+  shared_data() = default;
   ~shared_data() = default;
   shared_data(const shared_data& other);
   shared_data& operator=(const shared_data& other);
@@ -55,23 +56,9 @@ struct shared_data
   double multiclass_log_loss = 0.0;
   double holdout_multiclass_log_loss = 0.0;
 
-  std::atomic<bool> is_more_than_two_labels_observed;
-  std::atomic<float> first_observed_label;
-  std::atomic<float> second_observed_label;
-
-  // Column width, precision constants:
-  static constexpr int col_avg_loss = 8;
-  static constexpr int prec_avg_loss = 6;
-  static constexpr int col_since_last = 8;
-  static constexpr int prec_since_last = 6;
-  static constexpr int col_example_counter = 12;
-  static constexpr int col_example_weight = col_example_counter + 2;
-  static constexpr int prec_example_weight = 1;
-  static constexpr int col_current_label = 8;
-  static constexpr int prec_current_label = 4;
-  static constexpr int col_current_predict = 8;
-  static constexpr int prec_current_predict = 4;
-  static constexpr int col_current_features = 8;
+  bool is_more_than_two_labels_observed = false;
+  float first_observed_label = FLT_MAX;
+  float second_observed_label = FLT_MAX;
 
   double weighted_examples() const;
   void update(bool test_example, bool labeled_example, float loss, float weight, size_t num_features);

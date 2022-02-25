@@ -17,6 +17,7 @@
 #include <array>
 #include <memory>
 #include <atomic>
+#include "future_compat.h"
 #include "vw_string_view.h"
 
 // Thread cannot be used in managed C++, tell the compiler that this is unmanaged even if included in a managed project.
@@ -49,9 +50,11 @@
 #include "allreduce.h"
 #include "interactions_predict.h"
 
-#include "options.h"
+#include "config/options.h"
 #include "version.h"
 #include "kskip_ngram_transformer.h"
+
+#include "io/logger.h"
 
 typedef float weight;
 
@@ -62,6 +65,13 @@ using options_deleter_type = void (*)(VW::config::options_i*);
 
 struct shared_data;
 
+namespace VW
+{
+struct workspace;
+}
+
+using vw VW_DEPRECATED("Use VW::workspace instead of ::vw. ::vw will be removed in VW 10.") = VW::workspace;
+
 struct dictionary_info
 {
   std::string name;
@@ -69,24 +79,13 @@ struct dictionary_info
   std::shared_ptr<feature_dict> dict;
 };
 
-enum AllReduceType
+enum class AllReduceType
 {
   Socket,
   Thread
 };
 
 class AllReduce;
-
-struct vw_logger
-{
-  bool quiet;
-  size_t upper_limit;
-
-  vw_logger() : quiet(false) {}
-
-  vw_logger(const vw_logger& other) = delete;
-  vw_logger& operator=(const vw_logger& other) = delete;
-};
 
 #ifdef BUILD_EXTERNAL_PARSER
 // forward declarations
@@ -124,10 +123,12 @@ struct trace_message_wrapper
   ~trace_message_wrapper() = default;
 };
 
-struct vw
+namespace VW
+{
+struct workspace
 {
 private:
-  std::shared_ptr<rand_state> _random_state_sp = std::make_shared<rand_state>();  // per instance random_state
+  std::shared_ptr<VW::rand_state> _random_state_sp = std::make_shared<VW::rand_state>();  // per instance random_state
 
 public:
   shared_data* sd;
@@ -161,6 +162,13 @@ public:
 
   uint32_t hash_seed;
 
+#ifdef PRIVACY_ACTIVATION
+  bool privacy_activation = false;
+  // this is coupled with the bitset size in array_parameters which needs to be determined at compile time
+  size_t feature_bitset_size = 32;
+  size_t privacy_activation_threshold = 10;
+#endif
+
 #ifdef BUILD_FLATBUFFERS
   std::unique_ptr<VW::parsers::flatbuffer::parser> flat_converter;
 #endif
@@ -171,14 +179,13 @@ public:
   std::string data_filename;
 
   bool daemon;
-  size_t num_children;
+  uint64_t num_children;
 
   bool save_per_pass;
   float initial_weight;
   float initial_constant;
 
   bool bfgs;
-  bool hessian_on;
 
   bool save_resume;
   bool preserve_performance_counters;
@@ -245,8 +252,11 @@ public:
   std::array<std::vector<std::shared_ptr<feature_dict>>, NUM_NAMESPACES>
       namespace_dictionaries{};  // each namespace has a list of dictionaries attached to it
 
-  vw_logger logger;
-  bool audit;     // should I print lots of debugging information?
+  VW::io::logger logger;
+  bool quiet;
+  bool audit;  // should I print lots of debugging information?
+  std::shared_ptr<std::vector<char>> audit_buffer;
+  std::unique_ptr<VW::io::writer> audit_writer;
   bool training;  // Should I train if lable data is available?
   bool active;
   bool invariant_updates;  // Should we use importance aware/safe updates
@@ -280,8 +290,8 @@ public:
   std::vector<std::unique_ptr<VW::io::writer>> final_prediction_sink;  // set to send global predictions to.
   std::unique_ptr<VW::io::writer> raw_prediction;                      // file descriptors for text output.
 
-  void (*print_by_ref)(VW::io::writer*, float, float, const v_array<char>&);
-  void (*print_text_by_ref)(VW::io::writer*, const std::string&, const v_array<char>&);
+  void (*print_by_ref)(VW::io::writer*, float, float, const v_array<char>&, VW::io::logger&);
+  void (*print_text_by_ref)(VW::io::writer*, const std::string&, const v_array<char>&, VW::io::logger&);
   std::unique_ptr<loss_function> loss;
 
   bool stdin_off;
@@ -313,17 +323,17 @@ public:
   // hack to support cb model loading into ccb reduction
   bool is_ccb_input_model = false;
 
-  vw();
-  ~vw();
-  std::shared_ptr<rand_state> get_random_state() { return _random_state_sp; }
+  explicit workspace(VW::io::logger logger);
+  ~workspace();
+  std::shared_ptr<VW::rand_state> get_random_state() { return _random_state_sp; }
 
-  vw(const vw&) = delete;
-  vw& operator=(const vw&) = delete;
+  workspace(const VW::workspace&) = delete;
+  VW::workspace& operator=(const VW::workspace&) = delete;
 
   // vw object cannot be moved as many objects hold a pointer to it.
   // That pointer would be invalidated if it were to be moved.
-  vw(const vw&&) = delete;
-  vw& operator=(const vw&&) = delete;
+  workspace(const VW::workspace&&) = delete;
+  VW::workspace& operator=(const VW::workspace&&) = delete;
 
   std::string get_setupfn_name(reduction_setup_fn setup);
   void build_setupfn_name_dict(std::vector<std::tuple<std::string, reduction_setup_fn>>&);
@@ -331,14 +341,15 @@ public:
 private:
   std::unordered_map<reduction_setup_fn, std::string> _setup_name_map;
 };
+}  // namespace VW
 
-void print_result_by_ref(VW::io::writer* f, float res, float weight, const v_array<char>& tag);
-void binary_print_result_by_ref(VW::io::writer* f, float res, float weight, const v_array<char>& tag);
+void print_result_by_ref(VW::io::writer* f, float res, float weight, const v_array<char>& tag, VW::io::logger& logger);
+void binary_print_result_by_ref(
+    VW::io::writer* f, float res, float weight, const v_array<char>& tag, VW::io::logger& logger);
 
 void noop_mm(shared_data*, float label);
 void get_prediction(VW::io::reader* f, float& res, float& weight);
 void compile_gram(
     std::vector<std::string> grams, std::array<uint32_t, NUM_NAMESPACES>& dest, char* descriptor, bool quiet);
-void compile_limits(std::vector<std::string> limits, std::array<uint32_t, NUM_NAMESPACES>& dest, bool quiet);
-
-int print_tag_by_ref(std::stringstream& ss, const v_array<char>& tag);
+void compile_limits(
+    std::vector<std::string> limits, std::array<uint32_t, NUM_NAMESPACES>& dest, bool quiet, VW::io::logger& logger);

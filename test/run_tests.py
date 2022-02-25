@@ -5,36 +5,35 @@ import difflib
 from pathlib import Path
 import re
 import os
-import os.path
 import subprocess
 import sys
 import traceback
-
+import shlex
+import math
 import json
-from concurrent.futures import ThreadPoolExecutor
+from concurrent.futures import ThreadPoolExecutor, Future
 from enum import Enum
 import socket
-from typing import Any, List, Optional, Set
+from typing import Any, Callable, Dict, List, Optional, Set, Tuple, Type, Union, cast
 
-import runtests_parser
 from run_tests_common import TestData
 import runtests_flatbuffer_converter as fb_converter
 
 
-class Color():
-    LIGHT_CYAN = '\033[96m'
-    LIGHT_GREEN = '\033[92m'
-    LIGHT_PURPLE = '\033[95m'
-    LIGHT_RED = '\033[91m'
-    ENDC = '\033[0m'
+class Color:
+    LIGHT_CYAN = "\033[96m"
+    LIGHT_GREEN = "\033[92m"
+    LIGHT_PURPLE = "\033[95m"
+    LIGHT_RED = "\033[91m"
+    ENDC = "\033[0m"
 
 
-class NoColor():
-    LIGHT_CYAN = ''
-    LIGHT_GREEN = ''
-    LIGHT_PURPLE = ''
-    LIGHT_RED = ''
-    ENDC = ''
+class NoColor:
+    LIGHT_CYAN = ""
+    LIGHT_GREEN = ""
+    LIGHT_PURPLE = ""
+    LIGHT_RED = ""
+    ENDC = ""
 
 
 class Result(Enum):
@@ -43,14 +42,90 @@ class Result(Enum):
     SKIPPED = 3
 
 
-def try_decode(binary_object):
-    return binary_object.decode("utf-8") if binary_object is not None else ""
+class Completion:
+    def __init__(self):
+        self.lock = threading.Lock()
+        self.condition = threading.Condition(self.lock)
+        self.completed: Dict[int, bool] = dict()
+
+    def report_completion(self, id: int, success: bool) -> None:
+        self.lock.acquire()
+        self.completed[id] = success
+        self.condition.notify_all()
+        self.lock.release()
+
+    def wait_for_completion_get_success(self, id: int) -> bool:
+        def is_complete() -> bool:
+            return id in self.completed
+
+        self.lock.acquire()
+        if not is_complete():
+            self.condition.wait_for(is_complete)
+        success = self.completed[id]
+        self.lock.release()
+        return success
+
+
+class StatusCheck:
+    success: bool
+    message: str
+    stdout: str
+    stderr: str
+
+    def __init__(self, success: bool, message: str, stdout: str, stderr: str):
+        self.success = success
+        self.message = message
+        self.stdout = stdout
+        self.stderr = stderr
+
+
+class DiffCheck:
+    success: bool
+    message: str
+    diff: List[str]
+
+    def __init__(self, success: bool, message: str, diff: List[str]):
+        self.success = success
+        self.message = message
+        self.diff = diff
+
+
+class TestOutcome:
+    id: int
+    result: Result
+    checks: Dict[str, Union[StatusCheck, DiffCheck]]
+    skip_reason: Optional[str]
+
+    def __init__(
+        self,
+        id: int,
+        result: Result,
+        checks: Dict[str, Union[StatusCheck, DiffCheck]],
+        skip_reason: Optional[str] = None,
+    ):
+        self.id = id
+        self.result = result
+        self.checks = checks
+        self.skip_reason = skip_reason
+
+
+def try_decode(binary_object: Optional[bytes]) -> str:
+    # ignore UTF decode errors so that we can still understand the output in this case
+    return binary_object.decode("utf-8", "ignore") if binary_object is not None else ""
 
 
 # Returns true if they are close enough to be considered equal.
-def fuzzy_float_compare(float_one, float_two, epsilon):
-    float_one = float(float_one)
-    float_two = float(float_two)
+def fuzzy_float_compare(float_one_str: str, float_two_str: str, epsilon: float) -> bool:
+    float_one = float(float_one_str)
+    float_two = float(float_two_str)
+
+    # Special case handle these two as they will not be equal when checking absolute difference.
+    # But for the purposes of comparing the diff they are equal.
+    if math.isinf(float_one) and math.isinf(float_two):
+        return True
+    if math.isnan(float_one) and math.isnan(float_two):
+        return True
+
     delta = abs(float_one - float_two)
     if delta < epsilon:
         return True
@@ -69,43 +144,47 @@ def fuzzy_float_compare(float_one, float_two, epsilon):
         return False
 
     # Now we can safely divide (since abs($word2) > 0) and determine the ratio difference from 1.0
-    ratio_delta = abs(float_one/float_two - 1.0)
+    ratio_delta = abs(float_one / float_two - 1.0)
     return ratio_delta < epsilon
 
 
-def find_in_path(paths, file_matcher, debug_file_name):
+def find_in_path(
+    paths: List[Path], file_matcher: Callable[[Path], bool]
+) -> Optional[Path]:
     for path in paths:
-        absolute_path = os.path.abspath(str(path))
-        if os.path.isdir(absolute_path):
-            for file in os.listdir(absolute_path):
-                absolute_file = os.path.join(absolute_path, file)
-                if file_matcher(absolute_file):
-                    return absolute_file
-        elif os.path.isfile(absolute_path):
-            if file_matcher(absolute_path):
-                return absolute_path
+        if path.is_dir():
+            for file in path.iterdir():
+                if file_matcher(file):
+                    return file
+        elif path.is_file():
+            if file_matcher(path):
+                return path
         else:
             # path does not exist
             continue
-    raise ValueError("Couldn't find {}".format(debug_file_name))
+    return None
 
 
-def line_diff_text(text_one, file_name_one, text_two, file_name_two):
-    text_one = [line.strip() for line in text_one.strip().splitlines()]
-    text_two = [line.strip() for line in text_two.strip().splitlines()]
-
+def create_file_diff(
+    text_one: str, file_name_one: str, text_two: str, file_name_two: str
+) -> List[str]:
+    text_one_list = [line.strip() for line in text_one.strip().splitlines()]
+    text_two_list = [line.strip() for line in text_two.strip().splitlines()]
     diff = difflib.unified_diff(
-        text_two, text_one, fromfile=file_name_two, tofile=file_name_one, lineterm='')
-    output_lines = []
-    for line in diff:
-        output_lines.append(line)
+        text_two_list,
+        text_one_list,
+        fromfile=file_name_two,
+        tofile=file_name_one,
+        lineterm="",
+    )
+    return list([line for line in diff])
 
-    return len(output_lines) != 0, output_lines
 
-
-def is_line_different(output_line, ref_line, epsilon):
-    output_tokens = re.split('[ \t:,@]+', output_line)
-    ref_tokens = re.split('[ \t:,@]+', ref_line)
+def is_line_different(
+    output_line: str, ref_line: str, epsilon: float
+) -> Tuple[bool, str, bool]:
+    output_tokens = re.split("[ \t:,@]+", output_line)
+    ref_tokens = re.split("[ \t:,@]+", ref_line)
 
     if len(output_tokens) != len(ref_tokens):
         return True, "Number of tokens different", False
@@ -120,15 +199,25 @@ def is_line_different(output_line, ref_line, epsilon):
                 found_close_floats = True
                 continue
 
-            return True, "Floats don't match {} {}".format((output_token), (ref_token)), found_close_floats
+            return (
+                True,
+                f"Floats don't match {output_token} {ref_token}",
+                found_close_floats,
+            )
         else:
             if output_token != ref_token:
-                return True, "Mismatch at token {} {}".format((output_token), (ref_token)), found_close_floats
+                return (
+                    True,
+                    f"Mismatch at token {output_token} {ref_token}",
+                    found_close_floats,
+                )
 
     return False, "", found_close_floats
 
 
-def are_lines_different(output_lines, ref_lines, epsilon, fuzzy_compare=False):
+def are_lines_different(
+    output_lines: List[str], ref_lines: List[str], epsilon: float, fuzzy_compare=False
+) -> Tuple[bool, str]:
     if len(output_lines) != len(ref_lines):
         return True, "Diff mismatch"
 
@@ -139,62 +228,36 @@ def are_lines_different(output_lines, ref_lines, epsilon, fuzzy_compare=False):
             output_line = output_line.replace("...", "")
             ref_line = ref_line.replace("...", "")
             is_different, reason, found_close_floats_temp = is_line_different(
-                output_line, ref_line, epsilon)
+                output_line, ref_line, epsilon
+            )
             found_close_floats = found_close_floats or found_close_floats_temp
             if is_different:
                 return True, reason
         else:
             if output_line != ref_line:
-                return True, "Lines differ - ref vs output: '{}' vs '{}'".format((ref_line), (output_line))
+                return (
+                    True,
+                    f"Lines differ - ref vs output: '{ref_line}' vs '{output_line}'",
+                )
 
     return False, "Minor float difference ignored" if found_close_floats else ""
 
 
-def is_diff_different(output_content, output_file_name, ref_content, ref_file_name, epsilon, fuzzy_compare=False):
-    is_different, diff = line_diff_text(
-        output_content, output_file_name, ref_content, ref_file_name)
-
-    if not is_different:
-        return False, [], ""
-
-    output_lines = [line[1:] for line in diff if line.startswith(
-        '+') and not line.startswith('+++')]
-    ref_lines = [line[1:] for line in diff if line.startswith(
-        '-') and not line.startswith('---')]
-
-    # if number of lines different it is a fail
-    # if lines are the same, check if number of tokens the same
-    # if number of tokens the same, check if they pass float equality
-
-    is_different, reason = are_lines_different(
-        output_lines, ref_lines, epsilon, fuzzy_compare=fuzzy_compare)
-    diff = diff if is_different else []
-    return is_different, diff, reason
-
-
-def are_outputs_different(output_content, output_file_name, ref_content, ref_file_name, overwrite, epsilon, fuzzy_compare=False):
-    is_different, diff, reason = is_diff_different(
-        output_content, output_file_name, ref_content, ref_file_name, epsilon, fuzzy_compare=fuzzy_compare)
-
-    if is_different and overwrite:
-        with open(ref_file_name, 'w') as writer:
-            writer.write(output_content)
-
-    if not is_different:
-        return False, [], reason
-
-    # If diff difference fails, fall back to a line by line compare to double check.
-
-    output_lines = [line.strip()
-                    for line in output_content.strip().splitlines()]
+def is_output_different(
+    output_content: str,
+    ref_content: str,
+    epsilon: float,
+    fuzzy_compare=False,
+) -> Tuple[bool, str]:
+    output_lines = [line.strip() for line in output_content.strip().splitlines()]
     ref_lines = [line.strip() for line in ref_content.strip().splitlines()]
     is_different, reason = are_lines_different(
-        output_lines, ref_lines, epsilon, fuzzy_compare=fuzzy_compare)
-    diff = diff if is_different else []
-    return is_different, diff, reason
+        output_lines, ref_lines, epsilon, fuzzy_compare=fuzzy_compare
+    )
+    return is_different, reason
 
 
-def is_float(value):
+def is_float(value: str) -> bool:
     try:
         float(value)
         return True
@@ -202,106 +265,101 @@ def is_float(value):
         return False
 
 
-def print_colored_diff(diff, color_enum):
+def print_colored_diff(diff, color_enum: Type[Union[Color, NoColor]]):
     for line in diff:
-        if line.startswith('+'):
+        if line.startswith("+"):
             print(color_enum.LIGHT_GREEN + line + color_enum.ENDC)
-        elif line.startswith('-'):
+        elif line.startswith("-"):
             print(color_enum.LIGHT_RED + line + color_enum.ENDC)
-        elif line.startswith('^'):
+        elif line.startswith("^"):
             print(line)
         else:
             print(line)
 
-def is_valgrind_available():
-   return shutil.which("valgrind") is not None
 
-def run_command_line_test(test: TestData,
-                          overwrite,
-                          epsilon,
-                          base_working_dir,
-                          ref_dir,
-                          completed_tests,
-                          fuzzy_compare=False,
-                          valgrind=False):
+def is_valgrind_available() -> bool:
+    return shutil.which("valgrind") is not None
+
+
+def run_command_line_test(
+    test: TestData,
+    overwrite: bool,
+    epsilon: bool,
+    base_working_dir: Path,
+    ref_dir: Path,
+    completed_tests: Completion,
+    fuzzy_compare=False,
+    valgrind=False,
+    timeout=100,
+) -> TestOutcome:
 
     if test.skip:
         completed_tests.report_completion(test.id, False)
-        return (test.id, {
-            "result": Result.SKIPPED,
-            "skip_reason":test.skip_reason,
-            "checks": {}
-        })
+        return TestOutcome(test.id, Result.SKIPPED, {}, skip_reason=test.skip_reason)
 
     for dep in test.depends_on:
         success = completed_tests.wait_for_completion_get_success(dep)
         if not success:
             completed_tests.report_completion(test.id, False)
-            return (test.id, {
-                "result": Result.SKIPPED,
-                "skip_reason":test.skip_reason,
-                "checks": {}
-            })
+            return TestOutcome(
+                test.id,
+                Result.SKIPPED,
+                {},
+                skip_reason=f"Test {test.id} depends on test {dep} which failed.",
+            )
 
     try:
-        if test.is_shell:
-            # Because we don't really know what shell scripts do, we need to run them in the tests dir.
-            working_dir = ref_dir
-        else:
-            working_dir = str(create_test_dir(
-                test.id, test.input_files, base_working_dir, ref_dir, dependencies=test.depends_on))
+        current_test_working_dir = create_test_dir(
+            test.id,
+            test.input_files,
+            base_working_dir,
+            ref_dir,
+            dependencies=test.depends_on,
+        )
 
         command_line = test.command_line
         if valgrind:
-            valgrind_log_file_name = "test-{}.valgrind-err".format(test.id)
-            valgrind_log_file_path = os.path.join(
-                    working_dir, valgrind_log_file_name)
-            command_line = "valgrind --quiet --error-exitcode=100 --track-origins=yes --leak-check=full --log-file={} {}".format(valgrind_log_file_path, command_line)
+            valgrind_log_file_path = (
+                current_test_working_dir / f"test-{test.id}.valgrind-err"
+            )
+            command_line = f"valgrind --quiet --error-exitcode=100 --track-origins=yes --leak-check=full --log-file={valgrind_log_file_path} {command_line}"
 
+        cmd: Union[str, List[str]]
         if test.is_shell:
             cmd = command_line
         else:
-            cmd = "{}".format((command_line)).split()
+            cmd = shlex.split(command_line)
+
+        checks: Dict[str, Union[StatusCheck, DiffCheck]] = dict()
 
         try:
             result = subprocess.run(
                 cmd,
                 stdout=subprocess.PIPE,
                 stderr=subprocess.PIPE,
-                cwd=working_dir,
+                cwd=current_test_working_dir,
                 shell=test.is_shell,
-                timeout=100)
+                timeout=timeout,
+            )
         except subprocess.TimeoutExpired as e:
             stdout = try_decode(e.stdout)
             stderr = try_decode(e.stderr)
-            checks = dict()
-            checks["timeout"] = {
-                "success": False,
-                "message": "{} timed out".format((e.cmd)),
-                "stdout": stdout,
-                "stderr": stderr
-            }
 
-            return (test.id, {
-                "result": Result.FAIL,
-                "checks": checks
-            })
+            checks["timeout"] = StatusCheck(False, f"{e.cmd} timed out", stdout, stderr)
+            return TestOutcome(
+                test.id, Result.FAIL, checks, skip_reason=test.skip_reason
+            )
 
         return_code = result.returncode
         stdout = try_decode(result.stdout)
         stderr = try_decode(result.stderr)
-
-        checks = dict()
-        success = return_code == 0 or (return_code == 100 and test.is_shell and valgrind)
-        message = "Exited with {}".format((return_code))
+        success = return_code == 0 or (
+            return_code == 100 and test.is_shell and valgrind
+        )
+        message = f"Exited with {return_code}"
         if return_code == 100 and test.is_shell and valgrind:
             message += " - valgrind failure ignored in shell test"
-        checks["exit_code"] = {
-            "success": success,
-            "message": message,
-            "stdout": stdout,
-            "stderr": stderr
-        }
+        checks["exit_code"] = StatusCheck(success, message, stdout, stderr)
 
         if valgrind:
             success = True
@@ -312,234 +370,242 @@ def run_command_line_test(test: TestData,
                     message = "valgrind failure ignored for a shell based test"
                 else:
                     success = False
-                    message = "valgrind failed with command: '{}'".format(command_line)
-                    diff = open(valgrind_log_file_path, 'r', encoding='utf-8').read().split("\n")
+                    message = f"valgrind failed with command: '{command_line}'"
+                    diff = (
+                        valgrind_log_file_path.open("r", encoding="utf-8")
+                        .read()
+                        .split("\n")
+                    )
             elif return_code != 0:
                 success = False
-                message = "non-valgrind failure error code",
+                message = "non-valgrind failure error code"
 
-            checks["valgrind"] = {
-                "success": success,
-                "message": message,
-                "diff": diff
-            }
+            checks["valgrind"] = DiffCheck(success, message, diff)
 
         for output_file, ref_file in test.comparison_files.items():
-
             if output_file == "stdout":
                 output_content = stdout
             elif output_file == "stderr":
                 output_content = stderr
             else:
-                output_file_working_dir = os.path.join(
-                    working_dir, output_file)
-                if os.path.isfile(output_file_working_dir):
-                    output_content = open(output_file_working_dir, 'r', encoding='utf-8').read()
+                output_file_working_dir = current_test_working_dir / output_file
+                if output_file_working_dir.is_file():
+                    output_content = output_file_working_dir.open(
+                        "r", encoding="utf-8"
+                    ).read()
                 else:
-                    checks[output_file] = {
-                        "success": False,
-                        "message": "Failed to open output file: {}".format((output_file)),
-                        "diff": []
-                    }
+                    checks[output_file] = DiffCheck(
+                        False, f"Failed to open output file: {output_file}", []
+                    )
                     continue
 
-            ref_file_ref_dir = os.path.join(ref_dir, ref_file)
-            if os.path.isfile(ref_file_ref_dir):
-                ref_content = open(ref_file_ref_dir, 'r', encoding='utf-8').read()
+            ref_file_ref_dir = ref_dir / ref_file
+            if ref_file_ref_dir.is_file():
+                ref_content = ref_file_ref_dir.open("r", encoding="utf-8").read()
             else:
-                checks[output_file] = {
-                    "success": False,
-                    "message": "Failed to open ref file: {}".format((ref_file)),
-                    "diff": []
-                }
+                checks[output_file] = DiffCheck(
+                    False, f"Failed to open ref file: {ref_file}", []
+                )
                 continue
-            are_different, diff, reason = are_outputs_different(output_content, output_file,
-                                                                ref_content, ref_file_ref_dir, overwrite, epsilon, fuzzy_compare=fuzzy_compare)
+            is_different, reason = is_output_different(
+                output_content, ref_content, epsilon, fuzzy_compare=fuzzy_compare
+            )
+            if is_different and overwrite:
+                with ref_file_ref_dir.open("w") as writer:
+                    writer.write(output_content)
 
-            if are_different:
-                message = "Diff not OK, {}".format((reason))
+            diff = create_file_diff(output_content, output_file, ref_content, ref_file)
+            if is_different:
+                message = f"Diff not OK, {reason}"
             else:
-                message = "Diff OK, {}".format((reason))
-
-            checks[output_file] = {
-                "success": are_different == False,
-                "message": message,
-                "diff": diff
-            }
+                message = f"Diff OK, {reason}"
+            checks[output_file] = DiffCheck(is_different is False, message, diff)
     except:
         completed_tests.report_completion(test.id, False)
         raise
 
-    success = all(check["success"] == True for name, check in checks.items())
+    success = all(check.success for _, check in checks.items())
     completed_tests.report_completion(test.id, success)
 
-    return (test.id, {
-        "result": Result.SUCCESS if success else Result.FAIL,
-        "checks": checks
-    })
+    return TestOutcome(test.id, Result.SUCCESS if success else Result.FAIL, checks)
 
 
-class Completion():
-    def __init__(self):
-        self.lock = threading.Lock()
-        self.condition = threading.Condition(self.lock)
-        self.completed = dict()
-
-    def report_completion(self, id, success):
-        self.lock.acquire()
-        self.completed[id] = success
-        self.condition.notify_all()
-        self.lock.release()
-
-    def wait_for_completion_get_success(self, id):
-        def is_complete():
-            return id in self.completed
-        self.lock.acquire()
-        if not is_complete():
-            self.condition.wait_for(is_complete)
-        success = self.completed[id]
-        self.lock.release()
-        return success
-
-
-def create_test_dir(test_id, input_files, test_base_dir, test_ref_dir, dependencies:List[int]=[]):
-    test_working_dir = Path(test_base_dir).joinpath(
-        "test_{}".format((test_id)))
-    Path(test_working_dir).mkdir(parents=True, exist_ok=True)
+def create_test_dir(
+    test_id: int,
+    input_files: List[str],
+    test_base_dir: Path,
+    test_ref_dir: Path,
+    dependencies: List[int] = [],
+) -> Path:
+    test_working_dir = test_base_dir.joinpath(f"test_{test_id}")
+    test_working_dir.mkdir(parents=True, exist_ok=True)
 
     # Required as workaround until #2686 is fixed.
-    Path(test_working_dir.joinpath("models")).mkdir(
-        parents=True, exist_ok=True)
+    (test_working_dir / "models").mkdir(parents=True, exist_ok=True)
 
     for f in input_files:
         file_to_copy = None
-        search_paths = [Path(test_ref_dir).joinpath(f)]
+        search_paths = [test_ref_dir / f]
         if len(dependencies) > 0:
-            search_paths.extend([Path(test_base_dir).joinpath(
-                "test_{}".format((x)), f) for x in dependencies])
-            search_paths.extend([Path(test_base_dir).joinpath(
-                "test_{}".format((x)), os.path.basename(f)) for x in dependencies]) # for input_files with a full path
+            search_paths.extend(
+                [(test_base_dir / f"test_{x}" / f) for x in dependencies]
+            )
+            search_paths.extend(
+                [
+                    (test_base_dir / f"test_{x}" / os.path.basename(f))
+                    for x in dependencies
+                ]
+            )  # for input_files with a full path
         for search_path in search_paths:
             if search_path.exists() and not search_path.is_dir():
                 file_to_copy = search_path
                 break
 
         if file_to_copy is None:
+            str_deps = [str(dep) for dep in dependencies]
+            dependent_tests = ", ".join(str_deps)
             raise ValueError(
-                "{} couldn't be found for test {}".format((f), (test_id)))
+                f"Input file '{f}' couldn't be found for test {test_id}. Searched in '{test_ref_dir}' as well as outputs of dependent tests: [{dependent_tests}]"
+            )
 
-        test_dest_file = Path(test_working_dir).joinpath(f)
+        test_dest_file = test_working_dir / f
         if file_to_copy == test_dest_file:
             continue
-        Path(test_dest_file.parent).mkdir(parents=True, exist_ok=True)
+        test_dest_file.parent.mkdir(parents=True, exist_ok=True)
         # We always want to replace this file in case it is the output of another test
         if test_dest_file.exists():
             test_dest_file.unlink()
-        shutil.copyfile(str(file_to_copy), str(test_dest_file))
+        shutil.copy(str(file_to_copy), str(test_dest_file))
     return test_working_dir
 
 
-def find_vw_binary(test_base_ref_dir, user_supplied_bin_path):
-    vw_search_paths = [
-        Path(test_base_ref_dir).joinpath("../build/vowpalwabbit")
-    ]
+def find_vw_binary(
+    test_base_ref_dir: Path, user_supplied_bin_path_or_python_invocation: Optional[str]
+) -> Optional[Union[str, Path]]:
+    def is_python_invocation(binary_name: Optional[str]) -> bool:
+        if not binary_name:
+            return False
+        elif binary_name.startswith("python") and binary_name.endswith(
+            "-m vowpalwabbit"
+        ):
+            return True
+        else:
+            return False
 
-    def is_vw_binary(file_path):
-        file_name = os.path.basename(file_path)
-        return file_name == "vw"
+    if is_python_invocation(user_supplied_bin_path_or_python_invocation):
+        return user_supplied_bin_path_or_python_invocation
+
+    user_supplied_bin_path = (
+        Path(user_supplied_bin_path_or_python_invocation)
+        if user_supplied_bin_path_or_python_invocation is not None
+        else None
+    )
+    vw_search_paths = [test_base_ref_dir / ".." / "build" / "vowpalwabbit"]
+
+    def is_vw_binary(file: Path) -> bool:
+        return file.name == "vw"
 
     return find_or_use_user_supplied_path(
         test_base_ref_dir=test_base_ref_dir,
         user_supplied_bin_path=user_supplied_bin_path,
         search_paths=vw_search_paths,
         is_correct_bin_func=is_vw_binary,
-        debug_file_name="vw")
+    )
 
 
-def find_spanning_tree_binary(test_base_ref_dir, user_supplied_bin_path):
-    spanning_tree_search_path = [
-        Path(test_base_ref_dir).joinpath("../build/cluster")
-    ]
+def find_spanning_tree_binary(
+    test_base_ref_dir: Path, user_supplied_bin_path: Optional[str]
+) -> Optional[Path]:
+    spanning_tree_search_path = [test_base_ref_dir / ".." / "build" / "cluster"]
 
-    def is_spanning_tree_binary(file_path):
-        file_name = os.path.basename(file_path)
-        return file_name == "spanning_tree"
+    def is_spanning_tree_binary(file: Path) -> bool:
+        return file.name == "spanning_tree"
+
+    user_supplied_bin_path = (
+        Path(user_supplied_bin_path) if user_supplied_bin_path is not None else None
+    )
 
     return find_or_use_user_supplied_path(
         test_base_ref_dir=test_base_ref_dir,
         user_supplied_bin_path=user_supplied_bin_path,
         search_paths=spanning_tree_search_path,
         is_correct_bin_func=is_spanning_tree_binary,
-        debug_file_name="spanning_tree")
+    )
 
 
-def find_to_flatbuf_binary(test_base_ref_dir, user_supplied_bin_path):
+def find_to_flatbuf_binary(
+    test_base_ref_dir: Path, user_supplied_bin_path: Optional[str]
+) -> Optional[Path]:
     to_flatbuff_search_path = [
-        Path(test_base_ref_dir).joinpath("../build/utl/flatbuffer")
+        test_base_ref_dir / ".." / "build" / "utl" / "flatbuffer"
     ]
 
-    def is_to_flatbuff_binary(file_path):
-        file_name = os.path.basename(file_path)
-        return file_name == "to_flatbuff"
+    def is_to_flatbuff_binary(file: Path) -> bool:
+        return file.name == "to_flatbuff"
+
+    user_supplied_bin_path = (
+        Path(user_supplied_bin_path) if user_supplied_bin_path is not None else None
+    )
 
     return find_or_use_user_supplied_path(
         test_base_ref_dir=test_base_ref_dir,
         user_supplied_bin_path=user_supplied_bin_path,
         search_paths=to_flatbuff_search_path,
         is_correct_bin_func=is_to_flatbuff_binary,
-        debug_file_name="to_flatbuff")
+    )
 
 
-def find_or_use_user_supplied_path(test_base_ref_dir, user_supplied_bin_path, search_paths, is_correct_bin_func, debug_file_name):
+def find_or_use_user_supplied_path(
+    test_base_ref_dir: Path,
+    user_supplied_bin_path: Optional[Path],
+    search_paths: List[Path],
+    is_correct_bin_func: Callable[[Path], bool],
+) -> Optional[Path]:
     if user_supplied_bin_path is None:
-        return find_in_path(search_paths, is_correct_bin_func, debug_file_name)
-    else:
-        if not Path(user_supplied_bin_path).exists() or not Path(user_supplied_bin_path).is_file():
-            raise ValueError("Invalid {} binary path: {}".format(debug_file_name,
-                user_supplied_bin_path))
-        return user_supplied_bin_path
-
-def find_runtests_file(test_base_ref_dir):
-    def is_runtests_file(file_path):
-            file_name = os.path.basename(file_path)
-            return file_name == "RunTests"
-    possible_runtests_paths = [
-        Path(test_base_ref_dir)
-    ]
-    return find_in_path(possible_runtests_paths, is_runtests_file, "RunTests")
+        return find_in_path(search_paths, is_correct_bin_func)
+    if not user_supplied_bin_path.is_file():
+        return None
+    return user_supplied_bin_path
 
 
-def do_dirty_check(test_base_ref_dir):
+def do_dirty_check(test_base_ref_dir: Path) -> None:
     result = subprocess.run(
         "git clean --dry-run -d -x -e __pycache__".split(),
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE,
         cwd=test_base_ref_dir,
-        timeout=10)
+        timeout=10,
+    )
     return_code = result.returncode
     if return_code != 0:
         print("Failed to run 'git clean --dry-run -d -x -e __pycache__'")
     stdout = try_decode(result.stdout)
     if len(stdout) != 0:
-        print("Error: Test dir is not clean, this can result in false negatives. To ignore this and continue anyway pass --ignore_dirty or pass --clean_dirty to clean")
+        print(
+            "Error: Test dir is not clean, this can result in false negatives. To ignore this and continue anyway pass --ignore_dirty or pass --clean_dirty to clean"
+        )
         print("'git clean --dry-run -d -x -e __pycache__' output:\n---")
         print(stdout)
         sys.exit(1)
 
-def clean_dirty(test_base_ref_dir):
+
+def clean_dirty(test_base_ref_dir: Path) -> None:
     git_command = "git clean --force -d -x --exclude __pycache__"
     result = subprocess.run(
         git_command.split(),
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE,
         cwd=test_base_ref_dir,
-        timeout=10)
+        timeout=10,
+    )
 
     if result.returncode != 0:
-        print("Failed to run {}".format(git_command))
+        print(f"Failed to run {git_command}")
 
 
-def calculate_test_to_run_explicitly(explicit_tests: List[int], tests: List[TestData]):
+def calculate_test_to_run_explicitly(
+    explicit_tests: List[int], tests: List[TestData]
+) -> List[int]:
     def get_deps(test_number: int, tests: List[TestData]):
         deps: Set[int] = set()
         test_index = test_number - 1
@@ -551,52 +617,79 @@ def calculate_test_to_run_explicitly(explicit_tests: List[int], tests: List[Test
     tests_to_run_explicitly: Set[int] = set()
     for test_number in explicit_tests:
         if test_number > len(tests):
-            print("Error: Test number {} does not exist. There are {} tests in total.".format(test_number, len(tests)))
-            sys.exit(1)
-
+            raise ValueError(
+                f"Error: Test number {test_number} does not exist. There are {len(tests)} tests in total."
+            )
         tests_to_run_explicitly.add(test_number)
         tests_to_run_explicitly = set.union(
-            tests_to_run_explicitly, get_deps(test_number, tests))
+            tests_to_run_explicitly, get_deps(test_number, tests)
+        )
 
     return list(tests_to_run_explicitly)
 
-def convert_tests_for_flatbuffers(tests: List[TestData], to_flatbuff, working_dir, color_enum):
-    test_base_working_dir = str(working_dir)
-    if not Path(test_base_working_dir).exists():
-        Path(test_base_working_dir).mkdir(parents=True, exist_ok=True)
 
+def convert_tests_for_flatbuffers(
+    tests: List[TestData],
+    to_flatbuff: Path,
+    working_dir: Path,
+    color_enum: Type[Union[Color, NoColor]],
+):
+    working_dir.mkdir(parents=True, exist_ok=True)
     for test in tests:
         if test.is_shell:
             test.skip = True
             test.skip_reason = "Cannot convert bash based tests to flatbuffers"
             continue
-        if 'flatbuffer' in test.command_line:
+        if "flatbuffer" in test.command_line:
             test.skip = True
             test.skip_reason = "already a flatbuffer test"
             continue
-        if 'malformed' in test.command_line:
+        if "malformed" in test.command_line:
             test.skip = True
             test.skip_reason = "malformed input"
             continue
         if len(test.input_files) < 1:
             test.skip = True
-            test.skip_reason = "no input files for for automatic converted flatbuffer test"
+            test.skip_reason = (
+                "no input files for for automatic converted flatbuffer test"
+            )
             continue
-        if 'dictionary' in test.command_line:
+        if "dictionary" in test.command_line:
             test.skip = True
             test.skip_reason = "currently dictionaries are not supported for automatic converted flatbuffer tests"
             continue
-        if 'help' in test.command_line:
+        if "help" in test.command_line:
             test.skip = True
-            test.skip_reason = "--help test skipped for automatic converted flatbuffer tests"
+            test.skip_reason = (
+                "--help test skipped for automatic converted flatbuffer tests"
+            )
             continue
-        #todo: 300 understand why is it failing
+        # todo: 300 understand why is it failing
         # test 189, 312, 316, 318, 351 and 319 depend on dsjson parser behaviour
         # they can be enabled if we ignore diffing the --extra_metrics
         # (324-326) deals with corrupted data, so cannot be translated to fb
         # pdrop is not supported in fb, so 327-331 are excluded
         # 336, 337, 338 - the FB converter script seems to be affecting the invert_hash
-        if str(test.id) in ('300', '189', '312', '316', '318', '319', '324', '325', '326', '327', '328', '329', '330', '331', '336', '337', '338', '351'):
+        if str(test.id) in (
+            "300",
+            "189",
+            "312",
+            "316",
+            "318",
+            "319",
+            "324",
+            "325",
+            "326",
+            "327",
+            "328",
+            "329",
+            "330",
+            "331",
+            "336",
+            "337",
+            "338",
+            "351",
+        ):
             test.skip = True
             test.skip_reason = "test skipped for automatic converted flatbuffer tests for unknown reason"
             continue
@@ -606,102 +699,244 @@ def convert_tests_for_flatbuffers(tests: List[TestData], to_flatbuff, working_di
             get_test(test.depends_on[0], tests) if len(test.depends_on) > 0 else None
         )
 
-        fb_test_converter = fb_converter.FlatbufferTest(test, working_dir, depends_on_test=depends_on_test)
+        fb_test_converter = fb_converter.FlatbufferTest(
+            test, working_dir, depends_on_test=depends_on_test
+        )
         fb_test_converter.to_flatbuffer(to_flatbuff, color_enum)
 
     return tests
 
-def convert_to_test_data(tests:List[Any], vw_bin: str, spanning_tree_bin: Optional[str]) -> List[TestData]:
-    results = []
+
+def check_test_ids(tests: List[Any]) -> None:
+    seen_ids: Set[int] = set()
+    for test in tests:
+        if "id" not in test:
+            raise ValueError(f"id field missing in test: {test}")
+        if test["id"] in seen_ids:
+            raise ValueError(f"Duplicate found for id: {test['id']}")
+        seen_ids.add(test["id"])
+
+    first_id = min(seen_ids)
+    if first_id != 1:
+        raise ValueError(f"Ids must start from 1. First id was: {first_id}")
+
+    last_test_id = max(seen_ids)
+    if len(seen_ids) != (last_test_id):
+        missing_ids = []
+        for i in range(1, last_test_id + 1):
+            if i not in seen_ids:
+                missing_ids.append(i)
+        raise ValueError(
+            f"Missing test ids: [{', '.join(str(x) for x in missing_ids)}]"
+        )
+
+
+def convert_to_test_data(
+    tests: List[Any],
+    vw_bin: str,
+    spanning_tree_bin: Optional[Path],
+    skipped_ids: List[int],
+    extra_vw_options: str,
+) -> List[TestData]:
+    results: List[TestData] = []
     for test in tests:
         skip = False
         skip_reason = None
         is_shell = False
         command_line = ""
         if "bash_command" in test:
-            if sys.platform == "win32":
+            command_line = test["bash_command"].format(
+                VW=vw_bin, SPANNING_TREE=spanning_tree_bin
+            )
+            is_shell = True
+
+            if sys.platform == "darwin" and (
+                "daemon" in test["bash_command"]
+                or "spanning_tree" in test["bash_command"]
+            ):
+                skip = True
+                skip_reason = "daemon not currently supported in MacOS"
+            elif sys.platform == "win32":
                 skip = True
                 skip_reason = "bash_command is unsupported on Windows"
-            else:
-                if spanning_tree_bin is None and ("SPANNING_TREE" in test['bash_command'] or "spanning_tree" in test['bash_command']):
-                    skip = True
-                    skip_reason = "Test using spanning_tree skipped because of --skip_spanning_tree_tests argument"
-                command_line = test['bash_command'].format(
-                    VW=vw_bin, SPANNING_TREE=spanning_tree_bin)
-                is_shell = True
+
+            if spanning_tree_bin is None and (
+                "SPANNING_TREE" in test["bash_command"]
+                or "spanning_tree" in test["bash_command"]
+            ):
+                skip = True
+                skip_reason = "Test using spanning_tree skipped because of --skip_spanning_tree_tests argument"
+
         elif "vw_command" in test:
-            command_line = "{} {}".format(vw_bin, test['vw_command'])
+            command_line = f"{vw_bin} {test['vw_command']} {extra_vw_options}"
         else:
             skip = True
             skip_reason = "This test is an unknown type"
 
-        results.append(TestData(
-            id=test['id'],
-            description=test['desc'],
-            depends_on=test['depends_on'] if 'depends_on' in test else [],
-            command_line=command_line,
-            is_shell=is_shell,
-            input_files=test['input_files'] if 'input_files' in test else [],
-            comparison_files=test["diff_files"],
-            skip=skip,
-            skip_reason=skip_reason
-        ))
+        if test["id"] in skipped_ids:
+            skip = True
+            skip_reason = "Test skipped by --skip_test argument"
+
+        results.append(
+            TestData(
+                id=test["id"],
+                description=test["desc"] if "desc" in test else "",
+                depends_on=test["depends_on"] if "depends_on" in test else [],
+                command_line=command_line,
+                is_shell=is_shell,
+                input_files=test["input_files"] if "input_files" in test else [],
+                comparison_files=test["diff_files"] if "diff_files" in test else dict(),
+                skip=skip,
+                skip_reason=skip_reason,
+            )
+        )
     return results
 
-def get_test(test_number, tests):
+
+def get_test(test_number: int, tests: List[TestData]) -> Optional[TestData]:
     for test in tests:
         if test.id == test_number:
             return test
     return None
 
+
 def main():
-    working_dir = Path.home().joinpath(".vw_runtests_working_dir")
-    test_ref_dir = Path(os.path.dirname(os.path.abspath(__file__)))
+    working_dir: Path = Path.home() / ".vw_runtests_working_dir"
+    test_ref_dir: Path = Path(__file__).resolve().parent
+
+    default_test_spec_file: Path = test_ref_dir / "core.vwtest.json"
 
     parser = argparse.ArgumentParser(
-        formatter_class=argparse.ArgumentDefaultsHelpFormatter)
-    parser.add_argument('-t', "--test", type=int,
-                        action='append', nargs='+', help="Run specific tests and ignore all others")
-    parser.add_argument('-E', "--epsilon", type=float, default=1e-4,
-                        help="Tolerance used when comparing floats. Only used if --fuzzy_compare is also supplied")
-    parser.add_argument('-e', "--exit_first_fail", action='store_true',
-                        help="If supplied, will exit after the first failure")
-    parser.add_argument('-o', "--overwrite", action='store_true',
-                        help="If test output differs from the reference file, overwrite the contents")
-    parser.add_argument('-f', "--fuzzy_compare", action='store_true',
-                        help="Allow for some tolerance when comparing floats")
-    parser.add_argument("--ignore_dirty", action='store_true',
-                        help="The test ref dir is checked for dirty files which may cause false negatives. Pass this flag to skip this check.")
-    parser.add_argument("--clean_dirty", action='store_true',
-                        help="The test ref dir is checked for dirty files which may cause false negatives. Pass this flag to remove those files.")
-    parser.add_argument("--working_dir", default=working_dir,
-                        help="Directory to save test outputs to")
-    parser.add_argument("--ref_dir", default=test_ref_dir,
-                        help="Directory to read test input files from")
-    parser.add_argument('-j', "--jobs", type=int, default=4,
-                        help="Number of tests to run in parallel")
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter
+    )
     parser.add_argument(
-        '--vw_bin_path', help="Specify VW binary to use. Otherwise, binary will be searched for in build directory")
-    parser.add_argument('--spanning_tree_bin_path',
-                        help="Specify spanning tree binary to use. Otherwise, binary will be searched for in build directory")
-    parser.add_argument('--skip_spanning_tree_tests',
-                        help="Skip tests that use spanning tree", action='store_true')
-    parser.add_argument("--test_spec", type=str,
-                        help="Optional. If passed the given JSON test spec will be used, " +
-                        "otherwise a test spec will be autogenerated from the RunTests test definitions")
-    parser.add_argument('--no_color', action='store_true',
-                        help="Don't print color ANSI escape codes")
-    parser.add_argument('--for_flatbuffers', action='store_true', help='Transform all of the test inputs into flatbuffer format and run tests')
-    parser.add_argument('--to_flatbuff_path', help="Specify to_flatbuff binary to use. Otherwise, binary will be searched for in build directory")
-    parser.add_argument('--include_flatbuffers', action='store_true', help="Don't skip the explicit flatbuffer tests from default run_tests run")
-    parser.add_argument('--valgrind', action='store_true', help="Run tests with Valgrind")
+        "-t",
+        "--test",
+        type=int,
+        action="append",
+        nargs="+",
+        help="Run specific tests and ignore all others",
+    )
+    parser.add_argument(
+        "-E",
+        "--epsilon",
+        type=float,
+        default=1e-4,
+        help="Tolerance used when comparing floats. Only used if --fuzzy_compare is also supplied",
+    )
+    parser.add_argument(
+        "-e",
+        "--exit_first_fail",
+        action="store_true",
+        help="If supplied, will exit after the first failure",
+    )
+    parser.add_argument(
+        "-o",
+        "--overwrite",
+        action="store_true",
+        help="If test output differs from the reference file, overwrite the contents",
+    )
+    parser.add_argument(
+        "-f",
+        "--fuzzy_compare",
+        action="store_true",
+        help="Allow for some tolerance when comparing floats",
+    )
+    parser.add_argument(
+        "--ignore_dirty",
+        action="store_true",
+        help="The test ref dir is checked for dirty files which may cause false negatives. Pass this flag to skip this check.",
+    )
+    parser.add_argument(
+        "--clean_dirty",
+        action="store_true",
+        help="The test ref dir is checked for dirty files which may cause false negatives. Pass this flag to remove those files.",
+    )
+    parser.add_argument(
+        "--working_dir",
+        default=str(working_dir),
+        help="Directory to save test outputs to",
+    )
+    parser.add_argument(
+        "--ref_dir",
+        default=str(test_ref_dir),
+        help="Directory to read test input files from",
+    )
+    parser.add_argument(
+        "-j",
+        "--jobs",
+        type=int,
+        default=os.cpu_count(),
+        help="Number of tests to run in parallel. Default is current machine core count.",
+    )
+    parser.add_argument(
+        "--vw_bin_path",
+        help="Specify VW binary to use. Otherwise, binary will be searched for in build directory",
+    )
+    parser.add_argument(
+        "--spanning_tree_bin_path",
+        help="Specify spanning tree binary to use. Otherwise, binary will be searched for in build directory",
+    )
+    parser.add_argument(
+        "--skip_spanning_tree_tests",
+        help="Skip tests that use spanning tree",
+        action="store_true",
+    )
+    parser.add_argument(
+        "--skip_test",
+        help="Skip specific test ids",
+        nargs="+",
+        default=[],
+        type=int,
+    )
+    parser.add_argument(
+        "--test_spec",
+        type=str,
+        default=str(default_test_spec_file),
+        help="Which vwtest test specification file to run",
+    )
+    parser.add_argument(
+        "--no_color", action="store_true", help="Don't print color ANSI escape codes"
+    )
+    parser.add_argument(
+        "--for_flatbuffers",
+        action="store_true",
+        help="Transform all of the test inputs into flatbuffer format and run tests",
+    )
+    parser.add_argument(
+        "--to_flatbuff_path",
+        help="Specify to_flatbuff binary to use. Otherwise, binary will be searched for in build directory",
+    )
+    parser.add_argument(
+        "--include_flatbuffers",
+        action="store_true",
+        help="Don't skip the explicit flatbuffer tests from default run_tests run",
+    )
+    parser.add_argument(
+        "--valgrind", action="store_true", help="Run tests with Valgrind"
+    )
+    parser.add_argument(
+        "-O",
+        "--extra_options",
+        type=str,
+        help="Append extra options to VW command line tests.",
+        default="",
+    )
+    parser.add_argument(
+        "--timeout",
+        type=int,
+        help="How long a single test can run for in seconds.",
+        default=100,
+    )
     args = parser.parse_args()
 
-    if args.for_flatbuffers and args.working_dir == working_dir: # user did not supply dir
-        args.working_dir = Path.home().joinpath(".vw_fb_runtests_working_dir")
+    # user did not supply dir
+    temp_working_dir: Path = Path(args.working_dir)
+    if args.for_flatbuffers and args.working_dir == str(working_dir):
+        temp_working_dir = Path.home() / ".vw_fb_runtests_working_dir"
 
-    test_base_working_dir = str(args.working_dir)
-    test_base_ref_dir = str(args.ref_dir)
+    test_base_working_dir: Path = temp_working_dir
+    test_base_ref_dir: Path = Path(args.ref_dir)
 
     color_enum = NoColor if args.no_color else Color
 
@@ -714,15 +949,13 @@ def main():
     if args.test is not None:
         args.test = [item for sublist in args.test for item in sublist]
 
-    if Path(test_base_working_dir).is_file():
-        print("--working_dir='{}' cannot be a file".format((test_base_working_dir)))
+    if test_base_working_dir.is_file():
+        print(f"--working_dir='{test_base_working_dir}' cannot be a file")
         sys.exit(1)
+    test_base_working_dir.mkdir(parents=True, exist_ok=True)
 
-    if not Path(test_base_working_dir).exists():
-        Path(test_base_working_dir).mkdir(parents=True, exist_ok=True)
-
-    if not Path(test_base_ref_dir):
-        print("--ref_dir='{}' doesn't exist".format((test_base_ref_dir)))
+    if not test_base_ref_dir.is_dir():
+        print(f"--ref_dir='{test_base_ref_dir}' doesn't exist")
         sys.exit(1)
 
     if args.clean_dirty:
@@ -731,29 +964,46 @@ def main():
     if not args.ignore_dirty:
         do_dirty_check(test_base_ref_dir)
 
-    print("Testing on: hostname={}, OS={}, num_jobs={}".format(
-        (socket.gethostname()), (sys.platform), (args.jobs)))
+    print(
+        f"Testing on: hostname={socket.gethostname()}, OS={sys.platform}, num_jobs={args.jobs}"
+    )
 
     vw_bin = find_vw_binary(test_base_ref_dir, args.vw_bin_path)
-    print("Using VW binary: {}".format((vw_bin)))
+    if vw_bin is None:
+        print("Can't find vw binary. Did you build the 'vw-bin' target?")
+        sys.exit(1)
+    print(f"Using VW binary: {vw_bin}")
 
-    spanning_tree_bin : Optional[str] = None
+    spanning_tree_bin: Optional[Path] = None
     if not args.skip_spanning_tree_tests:
         spanning_tree_bin = find_spanning_tree_binary(
-            test_base_ref_dir, args.spanning_tree_bin_path)
-        print("Using spanning tree binary: {}".format((spanning_tree_bin)))
+            test_base_ref_dir, args.spanning_tree_bin_path
+        )
+        if spanning_tree_bin is None:
+            print(
+                "Can't find spanning tree binary. Did you build the 'spanning_tree' target?"
+            )
+            sys.exit(1)
 
-    if args.test_spec is None:
-        runtests_file = find_runtests_file(test_base_ref_dir)
-        tests = runtests_parser.file_to_obj(runtests_file)
-        tests = [x.__dict__ for x in tests]
-        print("Tests parsed from RunTests file: {}".format((runtests_file)))
-    else:
-        json_test_spec_content = open(args.test_spec).read()
-        tests = json.loads(json_test_spec_content)
-        print("Tests read from test spec file: {}".format((args.test_spec)))
+        print(f"Using spanning tree binary: {spanning_tree_bin.resolve()}")
 
-    tests = convert_to_test_data(tests, vw_bin, spanning_tree_bin)
+    test_spec_path = Path(args.test_spec)
+    if not test_spec_path.is_file():
+        print(f"--test_spec='{test_spec_path}' doesn't exist")
+        sys.exit(1)
+    json_test_spec_content = open(test_spec_path).read()
+    tests = json.loads(json_test_spec_content)
+    print(f"Tests read from file: {test_spec_path.resolve()}")
+
+    check_test_ids(tests)
+
+    tests = convert_to_test_data(
+        tests,
+        vw_bin,
+        spanning_tree_bin,
+        args.skip_test,
+        extra_vw_options=args.extra_options,
+    )
 
     print()
 
@@ -761,55 +1011,60 @@ def main():
     tests_to_run_explicitly = None
     if args.test is not None:
         tests_to_run_explicitly = calculate_test_to_run_explicitly(args.test, tests)
-        print("Running tests: {}".format((list(tests_to_run_explicitly))))
+        print(f"Running tests: {list(tests_to_run_explicitly)}")
         if len(args.test) != len(tests_to_run_explicitly):
             print(
-                "Note: due to test dependencies, more than just tests {} must be run".format((args.test)))
+                f"Note: due to test dependencies, more than just tests {args.test} must be run"
+            )
         tests = list(filter(lambda x: x.id in tests_to_run_explicitly, tests))
 
     # Filter out flatbuffer tests if not specified
     if not args.include_flatbuffers and not args.for_flatbuffers:
         for test in tests:
-            if '--flatbuffer' in test.command_line:
+            if "--flatbuffer" in test.command_line:
                 test.skip = True
                 test.skip_reason = "This is a flatbuffer test, can be run with --include_flatbuffers flag"
 
     if args.for_flatbuffers:
-        to_flatbuff = find_to_flatbuf_binary(test_base_ref_dir, args.to_flatbuff_path)
-        tests = convert_tests_for_flatbuffers(tests, to_flatbuff, args.working_dir, color_enum)
+        to_flatbuff_bin = find_to_flatbuf_binary(
+            test_base_ref_dir, args.to_flatbuff_path
+        )
+        if to_flatbuff_bin is None:
+            print(
+                "Can't find to_flatbuff binary. Did you build the 'to_flatbuff' target?"
+            )
+            sys.exit(1)
+        tests = convert_tests_for_flatbuffers(
+            tests, to_flatbuff_bin, test_base_working_dir, color_enum
+        )
 
-    # Because bash_command based tests don't specify all inputs and outputs they must operate in the test directory directly.
-    # This means that if they run in parallel they can break each other by touching the same files.
-    # Until we can move to a test spec which allows us to specify the input/output we need to add dependencies between them here.
-    prev_bash_test = None
-    for test in tests:
-        if test.is_shell:
-            if prev_bash_test is not None:
-                test.depends_on.append(prev_bash_test.id)
-            prev_bash_test = test
-
-    tasks = []
+    tasks: List[Future[TestOutcome]] = []
     completed_tests = Completion()
 
     executor = ThreadPoolExecutor(max_workers=args.jobs)
 
     for test in tests:
-        tasks.append(executor.submit(run_command_line_test,
-                                     test,
-                                     overwrite=args.overwrite,
-                                     epsilon=args.epsilon,
-                                     base_working_dir=test_base_working_dir,
-                                     ref_dir=test_base_ref_dir,
-                                     completed_tests=completed_tests,
-                                     fuzzy_compare=args.fuzzy_compare,
-                                     valgrind=args.valgrind))
+        tasks.append(
+            executor.submit(
+                run_command_line_test,
+                test,
+                overwrite=args.overwrite,
+                epsilon=args.epsilon,
+                base_working_dir=test_base_working_dir,
+                ref_dir=test_base_ref_dir,
+                completed_tests=completed_tests,
+                fuzzy_compare=args.fuzzy_compare,
+                valgrind=args.valgrind,
+                timeout=args.timeout,
+            )
+        )
 
     num_success = 0
     num_fail = 0
     num_skip = 0
     while len(tasks) > 0:
         try:
-            test_number, result = tasks[0].result()
+            outcome: TestOutcome = tasks[0].result()
         except Exception:
             print("----------------")
             traceback.print_exc()
@@ -823,55 +1078,68 @@ def main():
         finally:
             tasks.pop(0)
 
-        success_text = "{}Success{}".format(
-            (color_enum.LIGHT_GREEN), (color_enum.ENDC))
-        fail_text = "{}Fail{}".format(
-            (color_enum.LIGHT_RED), (color_enum.ENDC))
-        skipped_text = "{}Skip{}".format(
-            (color_enum.LIGHT_CYAN), (color_enum.ENDC))
-        num_success += result['result'] == Result.SUCCESS
-        num_fail += result['result'] == Result.FAIL
-        num_skip += result['result'] == Result.SKIPPED
+        success_text = f"{color_enum.LIGHT_GREEN}Success{color_enum.ENDC}"
+        fail_text = f"{color_enum.LIGHT_RED}Fail{color_enum.ENDC}"
+        skipped_text = f"{color_enum.LIGHT_CYAN}Skip{color_enum.ENDC}"
+        num_success += outcome.result == Result.SUCCESS
+        num_fail += outcome.result == Result.FAIL
+        num_skip += outcome.result == Result.SKIPPED
 
-        if result['result'] == Result.SUCCESS:
+        if outcome.result == Result.SUCCESS:
             result_text = success_text
-        elif result['result'] == Result.FAIL:
+        elif outcome.result == Result.FAIL:
             result_text = fail_text
-        elif result['result'] == Result.SKIPPED:
-            result_text = skipped_text + " ({})".format(result["skip_reason"] if result["skip_reason"] is not None else "unknown reason")
+        elif outcome.result == Result.SKIPPED:
+            skip_reason_text = (
+                outcome.skip_reason
+                if outcome.skip_reason is not None
+                else "unknown reason"
+            )
+            result_text = f"{skipped_text} ({skip_reason_text})"
 
-        print("Test {}: {}".format((test_number), (result_text)))
-        if result['result'] != Result.SUCCESS:
-            test = get_test(test_number, tests)
+        print(f"Test {outcome.id}: {result_text}")
+        if outcome.result != Result.SUCCESS:
+            test = get_test(outcome.id, tests)
             # Since this test produced a result - it must be in the tests list
             assert test is not None
-            print("\tDescription: {}".format(test.description))
-            print("\t{} _command: \"{}\"".format("bash" if test.is_shell else "vw", test.command_line))
-        for name, check in result["checks"].items():
+            print(f"\tDescription: {test.description}")
+            print(
+                '\t{} _command: "{}"'.format(
+                    "bash" if test.is_shell else "vw", test.command_line
+                )
+            )
+        for name, check in outcome.checks.items():
             # Don't print exit_code check as it is too much noise.
-            if check['success'] and name == "exit_code":
+            if check.success and name == "exit_code":
                 continue
             print(
-                "\t[{}] {}: {}".format(name, success_text if check['success'] else fail_text, check['message']))
-            if not check['success']:
+                "\t[{}] {}: {}".format(
+                    name,
+                    success_text if check.success else fail_text,
+                    check.message,
+                )
+            )
+            if not check.success:
                 if name == "exit_code":
+                    exit_code_check = cast(StatusCheck, outcome.checks["exit_code"])
                     print("---- stdout ----")
-                    print(result["checks"]["exit_code"]["stdout"])
+                    print(exit_code_check.stdout)
                     print("---- stderr ----")
-                    print(result["checks"]["exit_code"]["stderr"])
+                    print(exit_code_check.stderr)
 
-                if "diff" in check:
+                if isinstance(check, DiffCheck):
                     print()
-                    print_colored_diff(check["diff"], color_enum)
+                    print_colored_diff(check.diff, color_enum)
                     print()
+
                 if args.exit_first_fail:
                     for task in tasks:
                         task.cancel()
                     sys.exit(1)
     print("-----")
-    print("# Success: {}".format(num_success))
-    print("# Fail: {}".format(num_fail))
-    print("# Skip: {}".format(num_skip))
+    print(f"# Success: {num_success}")
+    print(f"# Fail: {num_fail}")
+    print(f"# Skip: {num_skip}")
 
     if num_fail > 0:
         sys.exit(1)

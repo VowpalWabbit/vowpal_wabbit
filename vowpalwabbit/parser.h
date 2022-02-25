@@ -28,15 +28,36 @@
 #include "hashstring.h"
 #include "simple_label_parser.h"
 
-struct vw;
+namespace VW
+{
+struct workspace;
+
+void parse_example_label(string_view label, const label_parser& lbl_parser, const named_labels* ldict,
+    label_parser_reuse_mem& reuse_mem, example& ec, VW::io::logger& logger);
+
+namespace details
+{
+struct cache_temp_buffer
+{
+  std::shared_ptr<std::vector<char>> _backing_buffer;
+  io_buf _temporary_cache_buffer;
+  cache_temp_buffer()
+  {
+    _backing_buffer = std::make_shared<std::vector<char>>();
+    _temporary_cache_buffer.add_file(VW::io::create_vector_writer(_backing_buffer));
+  }
+};
+}  // namespace details
+}  // namespace VW
+
 struct input_options;
 struct dsjson_metrics;
 struct parser
 {
-  parser(size_t ring_size, bool strict_parse_)
-      : example_pool{ring_size}
-      , ready_parsed_examples{ring_size}
-      , ring_size{ring_size}
+  parser(size_t example_queue_limit, bool strict_parse_)
+      : example_pool{example_queue_limit}
+      , ready_parsed_examples{example_queue_limit}
+      , example_queue_limit{example_queue_limit}
       , num_examples_taken_from_pool(0)
       , num_setup_examples(0)
       , num_finished_examples(0)
@@ -63,15 +84,16 @@ struct parser
   /// parsers multiple are produced which all correspond the the same overall
   /// logical example. examples must have a single empty example in it when this
   /// call is made.
-  int (*reader)(vw*, io_buf&, v_array<example*>& examples);
+  int (*reader)(VW::workspace*, io_buf&, v_array<example*>& examples);
   /// text_reader consumes the char* input and is for text based parsing
-  void (*text_reader)(vw*, const char*, size_t, v_array<example*>&);
+  void (*text_reader)(VW::workspace*, const char*, size_t, v_array<example*>&);
 
   shared_data* _shared_data = nullptr;
 
   hash_func_t hasher;
-  bool resettable;           // Whether or not the input can be reset.
-  io_buf output;             // Where to output the cache.
+  bool resettable;  // Whether or not the input can be reset.
+  io_buf output;    // Where to output the cache.
+  VW::details::cache_temp_buffer _cache_temp_buffer;
   std::string currentname;
   std::string finalname;
 
@@ -79,7 +101,7 @@ struct parser
   bool sort_features = false;
   bool sorted_cache = false;
 
-  const size_t ring_size;
+  size_t example_queue_limit;
   std::atomic<uint64_t> num_examples_taken_from_pool;
   std::atomic<uint64_t> num_setup_examples;
   std::atomic<uint64_t> num_finished_examples;
@@ -92,12 +114,9 @@ struct parser
 
   bool done = false;
 
-  v_array<size_t> ids;     // unique ids for sources
-  v_array<size_t> counts;  // partial examples received from sources
-  size_t finished_count;   // the number of finished examples;
   int bound_sock = 0;
 
-  std::vector<VW::string_view> parse_name;
+  VW::label_parser_reuse_mem parser_memory_to_reuse;
 
   label_parser lbl_parser;  // moved from vw
 
@@ -116,6 +135,7 @@ struct dsjson_metrics
   size_t LineParseError = 0;
   float DsjsonSumCostOriginal = 0.f;
   float DsjsonSumCostOriginalFirstSlot = 0.f;
+  float DsjsonSumCostOriginalBaseline = 0.f;
   size_t DsjsonNumberOfLabelEqualBaselineFirstSlot = 0;
   size_t DsjsonNumberOfLabelNotEqualBaselineFirstSlot = 0;
   float DsjsonSumCostOriginalLabelEqualBaselineFirstSlot = 0.f;
@@ -125,12 +145,12 @@ struct dsjson_metrics
   std::string LastEventTime;
 };
 
-void enable_sources(vw& all, bool quiet, size_t passes, input_options& input_options);
+void enable_sources(VW::workspace& all, bool quiet, size_t passes, input_options& input_options);
 
 // parser control
 void lock_done(parser& p);
-void set_done(vw& all);
+void set_done(VW::workspace& all);
 
 // source control functions
-void reset_source(vw& all, size_t numbits);
-void free_parser(vw& all);
+void reset_source(VW::workspace& all, size_t numbits);
+void free_parser(VW::workspace& all);

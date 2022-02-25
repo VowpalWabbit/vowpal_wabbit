@@ -4,9 +4,14 @@
 #pragma once
 
 #include "io_buf.h"
+#include "cache.h"
+#include "v_array.h"
+#include <set>
+#include <map>
+#include <queue>
+#include <string>
 
 #include <fmt/format.h>
-
 #include <type_traits>
 
 namespace VW
@@ -17,7 +22,7 @@ namespace details
 {
 inline size_t check_length_matches(size_t actual_len, size_t expected_len)
 {
-  if (expected_len > 0 && actual_len != expected_len) { THROW("Unexpected end of file encountered."); }
+  if (expected_len > 0 && actual_len != expected_len) { THROW_OR_RETURN("Unexpected end of file encountered.", 0); }
   return actual_len;
 }
 
@@ -92,6 +97,231 @@ size_t write_model_field(io_buf& io, const T& var, const std::string& name_or_re
 
   // If not text we are just writing the binary data.
   return details::check_length_matches(io.bin_write_fixed(data, len), len);
+}
+
+size_t read_model_field(io_buf&, std::string&);
+size_t write_model_field(io_buf&, const std::string&, const std::string&, bool);
+template <typename T>
+size_t read_model_field(io_buf&, std::set<T>&);
+template <typename T>
+size_t write_model_field(io_buf&, const std::set<T>&, const std::string&, bool);
+template <typename T>
+size_t read_model_field(io_buf&, std::vector<T>&);
+template <typename T>
+size_t write_model_field(io_buf&, const std::vector<T>&, const std::string&, bool);
+template <typename T>
+size_t read_model_field(io_buf&, v_array<T>&);
+template <typename T>
+size_t write_model_field(io_buf&, const v_array<T>&, const std::string&, bool);
+template <typename F, typename S>
+size_t read_model_field(io_buf&, std::pair<F, S>&);
+template <typename F, typename S>
+size_t write_model_field(io_buf&, const std::pair<F, S>&, const std::string&, bool);
+template <typename T>
+size_t read_model_field(io_buf&, std::priority_queue<T>&);
+template <typename T>
+size_t write_model_field(io_buf&, const std::priority_queue<T>&, const std::string&, bool);
+template <typename K, typename V>
+size_t read_model_field(io_buf&, std::map<K, V>&);
+template <typename K, typename V>
+size_t write_model_field(io_buf&, const std::map<K, V>&, const std::string&, bool);
+
+inline size_t read_model_field(io_buf& io, std::string& str)
+{
+  size_t bytes = 0;
+  uint32_t str_size;
+  bytes += read_model_field(io, str_size);
+  char* cs = nullptr;
+  bytes += io.buf_read(cs, str_size * sizeof(char));
+  str = std::string(cs);
+  return bytes;
+}
+
+inline size_t write_model_field(io_buf& io, const std::string& str, const std::string& upstream_name, bool text)
+{
+  if (upstream_name.find("{}") != std::string::npos) { THROW_OR_RETURN("Field template not allowed for string.", 0); }
+  size_t bytes = 0;
+  uint32_t str_size = static_cast<uint32_t>(str.size());
+  bytes += write_model_field(io, str_size, upstream_name + ".size()", text);
+  std::string message;
+  if (text) { message = fmt::format("{} = {}\n", upstream_name, str); }
+  else
+  {
+    message = str;
+  }
+  bytes += io.bin_write_fixed(message.c_str(), message.size());
+  return bytes;
+}
+
+template <typename T>
+size_t read_model_field(io_buf& io, std::set<T>& set)
+{
+  size_t bytes = 0;
+  uint32_t set_size;
+  bytes += read_model_field(io, set_size);
+  for (uint32_t i = 0; i < set_size; ++i)
+  {
+    T v;
+    bytes += read_model_field(io, v);
+    set.insert(v);
+  }
+  return bytes;
+}
+
+template <typename T>
+size_t write_model_field(io_buf& io, const std::set<T>& set, const std::string& upstream_name, bool text)
+{
+  if (upstream_name.find("{}") != std::string::npos) { THROW_OR_RETURN("Field template not allowed for set.", 0); }
+  size_t bytes = 0;
+  uint32_t set_size = static_cast<uint32_t>(set.size());
+  bytes += write_model_field(io, set_size, upstream_name + ".size()", text);
+  uint32_t i = 0;
+  for (const T& v : set)
+  {
+    bytes += write_model_field(io, v, fmt::format("{}[{}]", upstream_name, i), text);
+    ++i;
+  }
+  return bytes;
+}
+
+template <typename T>
+size_t read_model_field(io_buf& io, std::vector<T>& vec)
+{
+  size_t bytes = 0;
+  uint32_t vec_size;
+  bytes += read_model_field(io, vec_size);
+  for (uint32_t i = 0; i < vec_size; ++i)
+  {
+    T v;
+    bytes += read_model_field(io, v);
+    vec.push_back(v);
+  }
+  return bytes;
+}
+
+template <typename T>
+size_t write_model_field(io_buf& io, const std::vector<T>& vec, const std::string& upstream_name, bool text)
+{
+  if (upstream_name.find("{}") != std::string::npos) { THROW_OR_RETURN("Field template not allowed for vector.", 0); }
+  size_t bytes = 0;
+  uint32_t vec_size = static_cast<uint32_t>(vec.size());
+  bytes += write_model_field(io, vec_size, upstream_name + ".size()", text);
+  for (uint32_t i = 0; i < vec_size; ++i)
+  { bytes += write_model_field(io, vec[i], fmt::format("{}[{}]", upstream_name, i), text); }
+  return bytes;
+}
+
+template <typename T>
+size_t read_model_field(io_buf& io, v_array<T>& vec)
+{
+  size_t bytes = 0;
+  uint32_t vec_size;
+  bytes += read_model_field(io, vec_size);
+  for (uint32_t i = 0; i < vec_size; ++i)
+  {
+    T v;
+    bytes += read_model_field(io, v);
+    vec.push_back(v);
+  }
+  return bytes;
+}
+
+template <typename T>
+size_t write_model_field(io_buf& io, const v_array<T>& vec, const std::string& upstream_name, bool text)
+{
+  if (upstream_name.find("{}") != std::string::npos) { THROW_OR_RETURN("Field template not allowed for v_array.", 0); }
+  size_t bytes = 0;
+  uint32_t vec_size = static_cast<uint32_t>(vec.size());
+  bytes += write_model_field(io, vec_size, upstream_name + ".size()", text);
+  for (uint32_t i = 0; i < vec_size; ++i)
+  { bytes += write_model_field(io, vec[i], fmt::format("{}[{}]", upstream_name, i), text); }
+  return bytes;
+}
+
+template <typename F, typename S>
+size_t read_model_field(io_buf& io, std::pair<F, S>& pair)
+{
+  size_t bytes = 0;
+  bytes += read_model_field(io, pair.first);
+  bytes += read_model_field(io, pair.second);
+  return bytes;
+}
+
+template <typename F, typename S>
+size_t write_model_field(io_buf& io, const std::pair<F, S>& pair, const std::string& upstream_name, bool text)
+{
+  if (upstream_name.find("{}") != std::string::npos) { THROW_OR_RETURN("Field template not allowed for pair.", 0); }
+  size_t bytes = 0;
+  bytes += write_model_field(io, pair.first, upstream_name + ".first", text);
+  bytes += write_model_field(io, pair.second, upstream_name + ".second", text);
+  return bytes;
+}
+
+template <typename T>
+size_t read_model_field(io_buf& io, std::priority_queue<T>& pq)
+{
+  size_t bytes = 0;
+  uint32_t queue_size;
+  bytes += read_model_field(io, queue_size);
+  for (uint32_t i = 0; i < queue_size; ++i)
+  {
+    T v;
+    bytes += read_model_field(io, v);
+    pq.push(v);
+  }
+  return bytes;
+}
+
+template <typename T>
+size_t write_model_field(io_buf& io, const std::priority_queue<T>& pq, const std::string& upstream_name, bool text)
+{
+  if (upstream_name.find("{}") != std::string::npos)
+  { THROW_OR_RETURN("Field template not allowed for priority_queue.", 0); }
+  std::priority_queue<T> pq_cp = pq;
+  size_t bytes = 0;
+  uint32_t queue_size = static_cast<uint32_t>(pq_cp.size());
+  bytes += write_model_field(io, queue_size, upstream_name + ".size()", text);
+  uint32_t i = 0;
+  while (!pq_cp.empty())
+  {
+    const T& v = pq_cp.top();
+    bytes += write_model_field(io, v, fmt::format("{}[{}]", upstream_name, i), text);
+    pq_cp.pop();
+    ++i;
+  }
+  return bytes;
+}
+
+template <typename K, typename V>
+size_t read_model_field(io_buf& io, std::map<K, V>& map)
+{
+  size_t bytes = 0;
+  uint32_t map_size;
+  bytes += read_model_field(io, map_size);
+  for (uint32_t i = 0; i < map_size; ++i)
+  {
+    std::pair<K, V> pair;
+    bytes += read_model_field(io, pair);
+    map[pair.first] = pair.second;
+  }
+  return bytes;
+}
+
+template <typename K, typename V>
+size_t write_model_field(io_buf& io, const std::map<K, V>& map, const std::string& upstream_name, bool text)
+{
+  if (upstream_name.find("{}") != std::string::npos) { THROW_OR_RETURN("Field template not allowed for map.", 0); }
+  size_t bytes = 0;
+  uint32_t map_size = static_cast<uint32_t>(map.size());
+  bytes += write_model_field(io, map_size, upstream_name + ".size()", text);
+  uint32_t i = 0;
+  for (const auto& pair : map)
+  {
+    bytes += write_model_field(io, pair.first, fmt::format("{}.key{}", upstream_name, i), text);
+    bytes += write_model_field(io, pair.second, fmt::format("{}[{}]", upstream_name, pair.first), text);
+    ++i;
+  }
+  return bytes;
 }
 
 }  // namespace model_utils

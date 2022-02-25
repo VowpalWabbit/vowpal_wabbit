@@ -1,4 +1,4 @@
-# Command line tutorial
+# Command Line Basics
 
 This tutorial introduces Vowpal Wabbit command line basics with a quick introduction to training and testing your model with Vowpal Wabbit. We explore passing some data to Vowpal Wabbit to learn a model and get a prediction.
 

@@ -6,19 +6,16 @@ on:
       - master
       - 'releases/**'
 
-concurrency: 
-  group: ${{ github.head_ref }}
-  cancel-in-progress: true
-
 jobs:
   benchmark:
     container:
       image: vowpalwabbit/ubuntu1804-build:latest
-    runs-on: perf
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v1
         with:
           ref: ${{ github.base_ref }}
+          submodules: 'recursive'
       - name: Install google benchmarks
         shell: bash
         run: ./.scripts/linux/install-benchmarks.sh
@@ -40,9 +37,14 @@ jobs:
           path: benchmark/tools/
       - name: Install benchmark compare requirements
         shell: bash
-        run: python3 -m pip install -r benchmark/tools/requirements.txt
+        run: |
+          python3 -m pip install -r benchmark/tools/requirements.txt
+          # The above requirements file is missing the pandas dependency.
+          python3 -m pip install pandas
       - run: rm -rf benchmark build vowpalwabbit/parser/flatbuffer/generated/ # generated or downloaded files
       - uses: actions/checkout@v1
+        with:
+          submodules: 'recursive'
       - name: Download ${{ github.base_ref }} benchmark results
         uses: actions/download-artifact@v2
         with:
@@ -60,8 +62,3 @@ jobs:
       - name: Compare benchmarks
         shell: bash
         run: ./.scripts/linux/compare-benchmarks.sh master-benchmarks.json branch-benchmarks.json
-      - name: Cleanup runner
-        if: always()
-        # This will only clear out the contents of the workspace dir
-        run: |
-          sudo rm -rf * 

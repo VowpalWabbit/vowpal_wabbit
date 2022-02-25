@@ -12,6 +12,7 @@
 #include "../../cb.h"
 #include "../../action_score.h"
 #include "../../best_constant.h"
+#include "../../slates_label.h"
 #include "parse_example_flatbuffer.h"
 
 namespace VW
@@ -21,13 +22,12 @@ namespace parsers
 namespace flatbuffer
 {
 void parser::parse_simple_label(
-    shared_data* sd, polylabel* l, reduction_features* red_features, const SimpleLabel* label)
+    shared_data* /*sd*/, polylabel* l, reduction_features* red_features, const SimpleLabel* label)
 {
   auto& simple_red_features = red_features->template get<simple_label_reduction_features>();
   l->simple.label = label->label();
   simple_red_features.weight = label->weight();
   simple_red_features.initial = label->initial();
-  count_label(sd, label->label());
 }
 
 void parser::parse_cb_label(polylabel* l, const CBLabel* label)
@@ -105,7 +105,7 @@ void parser::parse_cs_label(polylabel* l, const CS_Label* label)
   }
 }
 
-void parser::parse_mc_label(shared_data* sd, polylabel* l, const MultiClass* label)
+void parser::parse_mc_label(shared_data* sd, polylabel* l, const MultiClass* label, VW::io::logger& logger)
 {
   std::string named_label;
   if (flatbuffers::IsFieldPresent(label, MultiClass::VT_NAMEDLABEL))
@@ -115,7 +115,7 @@ void parser::parse_mc_label(shared_data* sd, polylabel* l, const MultiClass* lab
     if (named_label.empty()) { l->multi.label = static_cast<uint32_t>(-1); }
     else
     {
-      l->multi.label = static_cast<uint32_t>(sd->ldict->get(VW::string_view(named_label)));
+      l->multi.label = static_cast<uint32_t>(sd->ldict->get(VW::string_view(named_label), logger));
     }
   }
   else
@@ -137,18 +137,18 @@ void parser::parse_slates_label(polylabel* l, const Slates_Label* label)
   {
     l->slates.labeled = label->labeled();
     l->slates.cost = label->cost();
-    l->slates.type = VW::slates::shared;
+    l->slates.type = VW::slates::example_type::shared;
   }
   else if (label->example_type() == VW::parsers::flatbuffer::CCB_Slates_example_type::CCB_Slates_example_type_action)
   {
     l->slates.slot_id = label->slot();
-    l->slates.type = VW::slates::action;
+    l->slates.type = VW::slates::example_type::action;
   }
   else if (label->example_type() == VW::parsers::flatbuffer::CCB_Slates_example_type::CCB_Slates_example_type_slot)
   {
     l->slates.labeled = label->labeled();
     l->slates.probabilities.clear();
-    l->slates.type = VW::slates::slot;
+    l->slates.type = VW::slates::example_type::slot;
 
     for (auto const& as : *(label->probabilities())) l->slates.probabilities.push_back({as->action(), as->score()});
   }

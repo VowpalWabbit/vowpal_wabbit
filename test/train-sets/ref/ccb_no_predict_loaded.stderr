@@ -1,0 +1,25 @@
+creating quadratic features for pairs: ::
+predictions = ccb_no_predict.predict
+using no cache
+Reading datafile = train-sets/ccb_test_interactions.dat
+num sources = 1
+Num weight bits = 18
+learning rate = 0.5
+initial_t = 0
+power_t = 0.5
+Enabled reductions: gd, generate_interactions, scorer-identity, csoaa_ldf-rank, cb_adf, cb_explore_adf_greedy, cb_sample, shared_feature_merger, ccb_explore_adf
+Input label = ccb
+Output pred = decision_probs
+average  since         example        example        current        current  current 
+loss     last          counter         weight          label        predict features 
+0.000000 0.000000            1            1.0    0:0,1:0,...          0,1,2      360 
+0.000000 0.000000            2            2.0    3:0,4:0,...          3,4,0      240 
+0.000000 0.000000            4            4.0   1:0,4:-1,...          1,4,2      240 
+-0.28571 -0.57142            8            8.0   4:-1,1:0,...          4,1,0      240 
+
+finished run
+number of examples = 8
+weighted example sum = 8.000000
+weighted label sum = 0.000000
+average loss = -0.285714
+total feature number = 2040

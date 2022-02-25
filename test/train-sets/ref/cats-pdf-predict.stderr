@@ -3,22 +3,24 @@ Enabling FTRL based optimization
 Algorithm used: Coin Betting
 ftrl_alpha = 4
 ftrl_beta = 1
+using no cache
+Reading datafile = train-sets/cats.acpx
+num sources = 1
 Num weight bits = 18
 learning rate = 0.5
 initial_t = 0
 power_t = 0.5
-using no cache
-Reading datafile = train-sets/cats.acpx
-num sources = 1
 Enabled reductions: ftrl-Coin Betting, scorer-identity, binary, cats_tree, get_pmf, pmf_to_pdf, cb_explore_pdf, cats_pdf
-average  since         example        example  current  current  current
-loss     last          counter         weight    label  predict features
-0.657567 0.657567            1            1.0 {185.121,0.657567,6.20426e-05} 185-18987.2:2.10314e-06,18987.2-22987.2:0.000239603,22987.2-23959:2.10314e-06       10
-0.557941 0.458316            2            2.0 {772.592,0.458316,6.20426e-05} 185-18987.2:2.10314e-06,18987.2-22987.2:0.000239603,22987.2-23959:2.10314e-06       10
-0.363443 0.168945            4            4.0 {14122,0.0199798,6.20426e-05} 185-18987.2:2.10314e-06,18987.2-22987.2:0.000239603,22987.2-23959:2.10314e-06       10
-0.299771 0.236098            8            8.0 {12715.1,0.168545,6.20426e-05} 185-18987.2:2.10314e-06,18987.2-22987.2:0.000239603,22987.2-23959:2.10314e-06       10
-0.307594 0.315418           16           16.0 {669.119,0.475519,6.20426e-05} 185-18987.2:2.10314e-06,18987.2-22987.2:0.000239603,22987.2-23959:2.10314e-06       10
-0.290863 0.274131           32           32.0 {10786.7,0.0437032,6.20426e-05} 185-18987.2:2.10314e-06,18987.2-22987.2:0.000239603,22987.2-23959:2.10314e-06       10
+Input label = continuous
+Output pred = pdf
+average  since         example        example        current        current  current 
+loss     last          counter         weight          label        predict features 
+0.657567 0.657567            1            1.0 {185.121,0.... 185-18987.2...       10 
+0.557941 0.458316            2            2.0 {772.592,0.... 185-18987.2...       10 
+0.363443 0.168945            4            4.0 {14122,0.01... 185-18987.2...       10 
+0.299771 0.236098            8            8.0 {12715.1,0.... 185-18987.2...       10 
+0.307594 0.315418           16           16.0 {669.119,0.... 185-18987.2...       10 
+0.290863 0.274131           32           32.0 {10786.7,0.... 185-18987.2...       10 
 
 finished run
 number of examples = 57

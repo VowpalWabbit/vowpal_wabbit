@@ -16,14 +16,14 @@ namespace parsers
 {
 namespace flatbuffer
 {
-int flatbuffer_to_examples(vw* all, io_buf& buf, v_array<example*>& examples);
+int flatbuffer_to_examples(VW::workspace* all, io_buf& buf, v_array<example*>& examples);
 
 class parser
 {
 public:
   parser() = default;
   const VW::parsers::flatbuffer::ExampleRoot* data();
-  bool parse_examples(vw* all, io_buf& buf, v_array<example*>& examples, uint8_t* buffer_pointer = nullptr);
+  bool parse_examples(VW::workspace* all, io_buf& buf, v_array<example*>& examples, uint8_t* buffer_pointer = nullptr);
 
 private:
   const VW::parsers::flatbuffer::ExampleRoot* _data;
@@ -38,19 +38,19 @@ private:
   uint64_t _c_hash = 0;
 
   bool parse(io_buf& buf, uint8_t* buffer_pointer = nullptr);
-  void process_collection_item(vw* all, v_array<example*>& examples);
-  void parse_example(vw* all, example* ae, const Example* eg);
-  void parse_multi_example(vw* all, example* ae, const MultiExample* eg);
-  void parse_namespaces(vw* all, example* ae, const Namespace* ns);
-  void parse_features(vw* all, features& fs, const Feature* feature, const flatbuffers::String* ns);
-  void parse_flat_label(shared_data* sd, example* ae, const Example* eg);
+  void process_collection_item(VW::workspace* all, v_array<example*>& examples);
+  void parse_example(VW::workspace* all, example* ae, const Example* eg);
+  void parse_multi_example(VW::workspace* all, example* ae, const MultiExample* eg);
+  void parse_namespaces(VW::workspace* all, example* ae, const Namespace* ns);
+  void parse_features(VW::workspace* all, features& fs, const Feature* feature, const flatbuffers::String* ns);
+  void parse_flat_label(shared_data* sd, example* ae, const Example* eg, VW::io::logger& logger);
 
   void parse_simple_label(shared_data* sd, polylabel* l, reduction_features* red_features, const SimpleLabel* label);
   void parse_cb_label(polylabel* l, const CBLabel* label);
   void parse_ccb_label(polylabel* l, const CCBLabel* label);
   void parse_cs_label(polylabel* l, const CS_Label* label);
   void parse_cb_eval_label(polylabel* l, const CB_EVAL_Label* label);
-  void parse_mc_label(shared_data* sd, polylabel* l, const MultiClass* label);
+  void parse_mc_label(shared_data* sd, polylabel* l, const MultiClass* label, VW::io::logger& logger);
   void parse_multi_label(polylabel* l, const MultiLabel* label);
   void parse_slates_label(polylabel* l, const Slates_Label* label);
   void parse_continuous_action_label(polylabel* l, const ContinuousLabel* label);

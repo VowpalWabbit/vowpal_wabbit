@@ -13,15 +13,18 @@
 #include <functional>
 #include <map>
 
+#define ARE_SAME(X, Y, Z) \
+  BOOST_CHECK_MESSAGE(VW::math::are_same_rel(X, Y, Z), "check ARE_SAME: expected: " << X << " not equal to " << Y);
+
 using simulator::callback_map;
 using simulator::cb_sim;
 
-constexpr float AUTO_ML_FLOAT_TOL = 0.0001f;
+constexpr float AUTO_ML_FLOAT_TOL = 0.001f;
 
 namespace vw_hash_helpers
 {
 // see parse_example.cc:maybeFeature(..) for other cases
-size_t get_hash_for_feature(vw& all, const std::string& ns, const std::string& feature)
+size_t get_hash_for_feature(VW::workspace& all, const std::string& ns, const std::string& feature)
 {
   std::uint64_t hash_ft = VW::hash_feature(all, feature, VW::hash_space(all, ns));
   std::uint64_t ft = hash_ft & all.parse_mask;
@@ -57,7 +60,7 @@ using namespace vw_hash_helpers;
 // n) asserts weights before/after every operation
 // NOTE: interactions are currently 0 for offset 0 since
 // config 0 is hard-coded to be empty interactions for now.
-bool weights_offset_test(cb_sim&, vw& all, multi_ex& ec)
+bool weights_offset_test(cb_sim&, VW::workspace& all, multi_ex& ec)
 {
   const size_t offset_to_clear = 1;
   auto& weights = all.weights.dense_weights;
@@ -71,9 +74,9 @@ bool weights_offset_test(cb_sim&, vw& all, multi_ex& ec)
   const size_t interaction_index = interaction_to_index(all.weights,
       get_hash_for_feature(all, "Action", "article=sports"), get_hash_for_feature(all, "Action", "article=sports"));
 
-  const float expected_w0 = 0.0102325846f;
-  const float expected_w1 = 0.0230506323f;
-  const float expected_w2 = 0.0141550414f;
+  const float expected_w0 = 0.0248609f;
+  const float expected_w1 = 0.0346472f;
+  const float expected_w2 = 0.0105546f;
   const float ZERO = 0.f;
 
   for (auto index : feature_indexes)
@@ -85,11 +88,9 @@ bool weights_offset_test(cb_sim&, vw& all, multi_ex& ec)
     BOOST_CHECK_NE(ZERO, w2);
   }
 
-  BOOST_CHECK(VW::math::are_same_rel(expected_w0, weights.strided_index(interaction_index), AUTO_ML_FLOAT_TOL));
-  BOOST_CHECK(VW::math::are_same_rel(
-      expected_w1, weights.strided_index(interaction_index + offset_to_clear), AUTO_ML_FLOAT_TOL));
-  BOOST_CHECK(VW::math::are_same_rel(
-      expected_w2, weights.strided_index(interaction_index + offset_to_clear + 1), AUTO_ML_FLOAT_TOL));
+  ARE_SAME(expected_w0, weights.strided_index(interaction_index), AUTO_ML_FLOAT_TOL);
+  ARE_SAME(expected_w1, weights.strided_index(interaction_index + offset_to_clear), AUTO_ML_FLOAT_TOL);
+  ARE_SAME(expected_w2, weights.strided_index(interaction_index + offset_to_clear + 1), AUTO_ML_FLOAT_TOL);
 
   // all weights of offset 1 will be set to zero
   weights.clear_offset(offset_to_clear, all.wpp);
@@ -104,10 +105,9 @@ bool weights_offset_test(cb_sim&, vw& all, multi_ex& ec)
     BOOST_CHECK_NE(w1, w2);
   }
 
-  BOOST_CHECK(VW::math::are_same_rel(expected_w0, weights.strided_index(interaction_index), AUTO_ML_FLOAT_TOL));
+  ARE_SAME(expected_w0, weights.strided_index(interaction_index), AUTO_ML_FLOAT_TOL);
   BOOST_CHECK_EQUAL(ZERO, weights.strided_index(interaction_index + offset_to_clear));
-  BOOST_CHECK(VW::math::are_same_rel(
-      expected_w2, weights.strided_index(interaction_index + offset_to_clear + 1), AUTO_ML_FLOAT_TOL));
+  ARE_SAME(expected_w2, weights.strided_index(interaction_index + offset_to_clear + 1), AUTO_ML_FLOAT_TOL);
 
   // copy from offset 2 to offset 1
   weights.copy_offsets(offset_to_clear + 1, offset_to_clear, all.wpp);
@@ -122,11 +122,11 @@ bool weights_offset_test(cb_sim&, vw& all, multi_ex& ec)
     BOOST_CHECK_EQUAL(w1, w2);
   }
 
-  BOOST_CHECK(VW::math::are_same_rel(expected_w0, weights.strided_index(interaction_index), AUTO_ML_FLOAT_TOL));
+  ARE_SAME(expected_w0, weights.strided_index(interaction_index), AUTO_ML_FLOAT_TOL);
   float actual_w1 = weights.strided_index(interaction_index + offset_to_clear);
   float actual_w2 = weights.strided_index(interaction_index + offset_to_clear + 1);
-  BOOST_CHECK(VW::math::are_same_rel(expected_w2, actual_w1, AUTO_ML_FLOAT_TOL));
-  BOOST_CHECK(VW::math::are_same_rel(expected_w2, actual_w2, AUTO_ML_FLOAT_TOL));
+  ARE_SAME(expected_w2, actual_w1, AUTO_ML_FLOAT_TOL);
+  ARE_SAME(expected_w2, actual_w2, AUTO_ML_FLOAT_TOL);
   BOOST_CHECK_EQUAL(actual_w1, actual_w2);
 
   // Ensure weights are non-zero for another live interaction
@@ -159,8 +159,9 @@ BOOST_AUTO_TEST_CASE(automl_weight_operations)
   test_hooks.emplace(num_iterations, weights_offset_test);
 
   auto ctr = simulator::_test_helper_hook(
-      "--automl 3 --priority_type least_exclusion --cb_explore_adf --quiet --epsilon 0.2 --random_seed 5", test_hooks,
-      num_iterations, seed);
+      "--automl 3 --priority_type least_exclusion --cb_explore_adf --quiet --epsilon 0.2 --random_seed 5 "
+      "--keep_configs --oracle_type rand",
+      test_hooks, num_iterations, seed);
 
   BOOST_CHECK_GT(ctr.back(), 0.4f);
 }

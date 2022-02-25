@@ -12,30 +12,34 @@
 #include <utility>
 
 #include "constant.h"
+#include "numeric_casts.h"
 #include "parse_regressor.h"
 #include "parser.h"
 #include "parse_primitives.h"
 #include "vw.h"
-#include "interactions.h"
+#include "reductions/interactions.h"
 
 #include "parse_args.h"
 #include "reduction_stack.h"
 
 #include "rand48.h"
 #include "learner.h"
+#include "prediction_type.h"
+#include "label_type.h"
 #include "parse_example.h"
 #include "best_constant.h"
 #include "vw_exception.h"
 #include "accumulate.h"
 #include "vw_validate.h"
 #include "vw_allreduce.h"
-#include "metrics.h"
+#include "reductions/metrics.h"
 #include "text_utils.h"
-#include "interactions.h"
+#include "reductions/interactions.h"
+#include "config/cli_help_formatter.h"
 
-#include "options.h"
-#include "options_boost_po.h"
-#include "options_serializer_boost_po.h"
+#include "config/options.h"
+#include "config/options_cli.h"
+#include "config/cli_options_serializer.h"
 #include "named_labels.h"
 
 #include "io/io_adapter.h"
@@ -47,11 +51,8 @@
 #  include "parse_example_binary.h"
 #endif
 
-using std::cout;
 using std::endl;
 using namespace VW::config;
-
-namespace logger = VW::io::logger;
 
 uint64_t hash_file_contents(VW::io::reader* f)
 {
@@ -99,7 +100,7 @@ std::string find_in_path(const std::vector<std::string>& paths, const std::strin
   return "";
 }
 
-void parse_dictionary_argument(vw& all, const std::string& str)
+void parse_dictionary_argument(VW::workspace& all, const std::string& str)
 {
   if (str.length() == 0) return;
   // expecting 'namespace:file', for instance 'w:foo.txt'
@@ -130,7 +131,7 @@ void parse_dictionary_argument(vw& all, const std::string& str)
 
   uint64_t fd_hash = hash_file_contents(file_adapter.get());
 
-  if (!all.logger.quiet)
+  if (!all.quiet)
     *(all.trace_message) << "scanned dictionary '" << s << "' from '" << file_name << "', hash=" << std::hex << fd_hash
                          << std::dec << endl;
 
@@ -212,16 +213,16 @@ void parse_dictionary_argument(vw& all, const std::string& str)
   free(buffer);
   VW::dealloc_examples(ec, 1);
 
-  if (!all.logger.quiet)
+  if (!all.quiet)
     *(all.trace_message) << "dictionary " << s << " contains " << map->size() << " item"
                          << (map->size() == 1 ? "" : "s") << endl;
 
   all.namespace_dictionaries[static_cast<size_t>(ns)].push_back(map);
-  dictionary_info info = {s.to_string(), fd_hash, map};
+  dictionary_info info = {std::string{s}, fd_hash, map};
   all.loaded_dictionaries.push_back(info);
 }
 
-void parse_affix_argument(vw& all, const std::string& str)
+void parse_affix_argument(VW::workspace& all, const std::string& str)
 {
   if (str.length() == 0) return;
   char* cstr = calloc_or_throw<char>(str.length() + 1);
@@ -272,43 +273,38 @@ void parse_affix_argument(vw& all, const std::string& str)
   free(cstr);
 }
 
-void parse_diagnostics(options_i& options, vw& all)
+void parse_diagnostics(options_i& options, VW::workspace& all)
 {
   bool version_arg = false;
   bool help = false;
   bool skip_driver = false;
   std::string progress_arg;
-  option_group_definition diagnostic_group("Diagnostic options");
+  option_group_definition diagnostic_group("Diagnostic");
   diagnostic_group.add(make_option("version", version_arg).help("Version information"))
-      .add(make_option("audit", all.audit).short_name("a").help("print weights of features"))
+      .add(make_option("audit", all.audit).short_name("a").help("Print weights of features"))
       .add(make_option("progress", progress_arg)
                .short_name("P")
                .help("Progress update frequency. int: additive, float: multiplicative"))
-      .add(make_option("quiet", all.logger.quiet).help("Don't output diagnostics and progress updates"))
-      .add(make_option("limit_output", all.logger.upper_limit).help("Avoid chatty output. Limit total printed lines."))
       .add(make_option("dry_run", skip_driver)
-               .help("Parse arguments and print corresponding metadata. Will not execute driver."))
+               .help("Parse arguments and print corresponding metadata. Will not execute driver"))
       .add(make_option("help", help)
                .short_name("h")
-               .help("More information on vowpal wabbit can be found here https://vowpalwabbit.org."));
+               .help("More information on vowpal wabbit can be found here https://vowpalwabbit.org"));
 
   options.add_and_parse(diagnostic_group);
 
-  if (help) { all.logger.quiet = true; }
-
-  if (all.logger.quiet)
+  if (help)
   {
-    logger::log_set_level(logger::log_level::off);
+    all.quiet = true;
+    all.logger.set_level(VW::io::log_level::off);
     // This is valid:
     // https://stackoverflow.com/questions/25690636/is-it-valid-to-construct-an-stdostream-from-a-null-buffer This
     // results in the ostream not outputting anything.
     all.trace_message = VW::make_unique<std::ostream>(nullptr);
   }
 
-  if (options.was_supplied("limit_output")) logger::set_max_output(all.logger.upper_limit);
-
-  // pass all.logger.quiet around
-  if (all.all_reduce) all.all_reduce->quiet = all.logger.quiet;
+  // pass all.quiet around
+  if (all.all_reduce) all.all_reduce->quiet = all.quiet;
 
   // Upon direct query for version -- spit it out directly to stdout
   if (version_arg)
@@ -317,7 +313,7 @@ void parse_diagnostics(options_i& options, vw& all)
     exit(0);
   }
 
-  if (options.was_supplied("progress") && !all.logger.quiet)
+  if (options.was_supplied("progress") && !all.quiet)
   {
     all.progress_arg = static_cast<float>(::atof(progress_arg.c_str()));
     // --progress interval is dual: either integer or floating-point
@@ -327,8 +323,7 @@ void parse_diagnostics(options_i& options, vw& all)
       all.progress_add = true;
       if (all.progress_arg < 1)
       {
-        *(all.trace_message) << "warning: additive --progress <int>"
-                             << " can't be < 1: forcing to 1" << endl;
+        all.logger.err_warn("Additive --progress <int> can't be < 1: forcing to 1");
         all.progress_arg = 1;
       }
       all.sd->dump_interval = all.progress_arg;
@@ -340,61 +335,63 @@ void parse_diagnostics(options_i& options, vw& all)
 
       if (all.progress_arg <= 1.f)
       {
-        *(all.trace_message) << "warning: multiplicative --progress <float>: " << progress_arg
-                             << " is <= 1.0: adding 1.0" << endl;
+        all.logger.err_warn("Multiplicative --progress <float> '{}' is <= 1.0: adding 1.0", progress_arg);
         all.progress_arg += 1.f;
       }
       else if (all.progress_arg > 9.f)
       {
-        *(all.trace_message) << "warning: multiplicative --progress <float>"
-                             << " is > 9.0: you probably meant to use an integer" << endl;
+        all.logger.err_warn(
+            "Multiplicative --progress <float> '' is > 9.0: Did you mean mean to use an integer?", progress_arg);
       }
       all.sd->dump_interval = 1.f;
     }
   }
 }
 
-input_options parse_source(vw& all, options_i& options)
+input_options parse_source(VW::workspace& all, options_i& options)
 {
   input_options parsed_options;
 
-  option_group_definition input_options("Input options");
+  option_group_definition input_options("Input");
   input_options.add(make_option("data", all.data_filename).short_name("d").help("Example set"))
-      .add(make_option("daemon", parsed_options.daemon).help("persistent daemon mode on port 26542"))
+      .add(make_option("daemon", parsed_options.daemon).help("Persistent daemon mode on port 26542"))
       .add(make_option("foreground", parsed_options.foreground)
-               .help("in persistent daemon mode, do not run in the background"))
-      .add(make_option("port", parsed_options.port).help("port to listen on; use 0 to pick unused port"))
-      .add(make_option("num_children", all.num_children).help("number of children for persistent daemon mode"))
+               .help("In persistent daemon mode, do not run in the background"))
+      .add(make_option("port", parsed_options.port).help("Port to listen on; use 0 to pick unused port"))
+      .add(make_option("num_children", all.num_children).help("Number of children for persistent daemon mode"))
       .add(make_option("pid_file", parsed_options.pid_file).help("Write pid file in persistent daemon mode"))
       .add(make_option("port_file", parsed_options.port_file).help("Write port used in persistent daemon mode"))
       .add(make_option("cache", parsed_options.cache).short_name("c").help("Use a cache.  The default is <data>.cache"))
-      .add(make_option("cache_file", parsed_options.cache_files).help("The location(s) of cache_file."))
-      .add(make_option("json", parsed_options.json).help("Enable JSON parsing."))
-      .add(make_option("dsjson", parsed_options.dsjson).help("Enable Decision Service JSON parsing."))
+      .add(make_option("cache_file", parsed_options.cache_files).help("The location(s) of cache_file"))
+      .add(make_option("json", parsed_options.json).help("Enable JSON parsing"))
+      .add(make_option("dsjson", parsed_options.dsjson).help("Enable Decision Service JSON parsing"))
       .add(make_option("kill_cache", parsed_options.kill_cache)
                .short_name("k")
-               .help("do not reuse existing cache: create a new one always"))
+               .help("Do not reuse existing cache: create a new one always"))
       .add(
           make_option("compressed", parsed_options.compressed)
               .help(
                   "use gzip format whenever possible. If a cache file is being created, this option creates a "
                   "compressed cache file. A mixture of raw-text & compressed inputs are supported with autodetection."))
-      .add(make_option("no_stdin", all.stdin_off).help("do not default to reading from stdin"))
+      .add(make_option("no_stdin", all.stdin_off).help("Do not default to reading from stdin"))
       .add(make_option("no_daemon", all.no_daemon)
                .help("Force a loaded daemon or active learning model to accept local input instead of starting in "
                      "daemon mode"))
       .add(make_option("chain_hash", parsed_options.chain_hash_json)
+               .keep()
                .help("Enable chain hash in JSON for feature name and string feature value. e.g. {'A': {'B': 'C'}} is "
-                     "hashed as "
-                     "A^B^C. Note: this will become the default in a future version, so enabling this option will "
-                     "migrate you to the new behavior and silence the warning."))
+                     "hashed as A^B^C."))
       .add(make_option("flatbuffer", parsed_options.flatbuffer)
-               .help("data file will be interpreted as a flatbuffer file"));
+               .help("Data file will be interpreted as a flatbuffer file"));
 #ifdef BUILD_EXTERNAL_PARSER
   VW::external::parser::set_parse_args(input_options, parsed_options);
 #endif
 
   options.add_and_parse(input_options);
+
+  // We are done adding new options. Before we are allowed to get the positionals we need to check unregistered.
+  auto warnings = all.options->check_unregistered();
+  for (const auto& warning : warnings) { all.logger.err_warn(warning); }
 
   // Check if the options provider has any positional args. Only really makes sense for command line, others just return
   // an empty list.
@@ -402,9 +399,9 @@ input_options parse_source(vw& all, options_i& options)
   if (positional_tokens.size() == 1) { all.data_filename = positional_tokens[0]; }
   else if (positional_tokens.size() > 1)
   {
-    *(all.trace_message) << "Warning: Multiple data files passed as positional parameters, only the first one will be "
-                            "read and the rest will be ignored."
-                         << endl;
+    all.logger.err_warn(
+        "Multiple data files passed as positional parameters, only the first one will be "
+        "read and the rest will be ignored.");
   }
 
   if (parsed_options.daemon || options.was_supplied("pid_file") || (options.was_supplied("port") && !all.active))
@@ -433,7 +430,7 @@ input_options parse_source(vw& all, options_i& options)
 
 namespace VW
 {
-const char* are_features_compatible(vw& vw1, vw& vw2)
+const char* are_features_compatible(VW::workspace& vw1, VW::workspace& vw2)
 {
   if (vw1.example_parser->hasher != vw2.example_parser->hasher) return "hasher";
 
@@ -499,18 +496,19 @@ const char* are_features_compatible(vw& vw1, vw& vw2)
 
 }  // namespace VW
 
-std::vector<namespace_index> parse_char_interactions(VW::string_view input)
+std::vector<namespace_index> parse_char_interactions(VW::string_view input, VW::io::logger& logger)
 {
   std::vector<namespace_index> result;
-  auto decoded = VW::decode_inline_hex(input);
+
+  auto decoded = VW::decode_inline_hex(input, logger);
   result.insert(result.begin(), decoded.begin(), decoded.end());
   return result;
 }
 
-std::vector<extent_term> parse_full_name_interactions(vw& all, VW::string_view str)
+std::vector<extent_term> parse_full_name_interactions(VW::workspace& all, VW::string_view str)
 {
   std::vector<extent_term> result;
-  auto encoded = VW::decode_inline_hex(str);
+  auto encoded = VW::decode_inline_hex(str, all.logger);
 
   std::vector<VW::string_view> tokens;
   tokenize('|', str, tokens, true);
@@ -536,10 +534,10 @@ std::vector<extent_term> parse_full_name_interactions(vw& all, VW::string_view s
   return result;
 }
 
-void parse_feature_tweaks(
-    options_i& options, vw& all, bool interactions_settings_duplicated, std::vector<std::string>& dictionary_nses)
+void parse_feature_tweaks(options_i& options, VW::workspace& all, bool interactions_settings_duplicated,
+    std::vector<std::string>& dictionary_nses)
 {
-  std::string hash_function("strings");
+  std::string hash_function;
   uint32_t new_bits;
   std::vector<std::string> spelling_ns;
   std::vector<std::string> quadratics;
@@ -559,62 +557,74 @@ void parse_feature_tweaks(
   bool noconstant;
   bool leave_duplicate_interactions;
   std::string affix;
-  std::string q_colon;
 
-  option_group_definition feature_options("Feature options");
+  option_group_definition feature_options("Feature");
   feature_options
-      .add(make_option("hash", hash_function).keep().help("how to hash the features. Available options: strings, all"))
-      .add(make_option("hash_seed", all.hash_seed).keep().default_value(0).help("seed for hash function"))
-      .add(make_option("ignore", ignores).keep().help("ignore namespaces beginning with character <arg>"))
+#ifdef PRIVACY_ACTIVATION
+      .add(make_option("privacy_activation", all.privacy_activation)
+               .help("turns on aggregated weight exporting when the unique feature tags cross "
+                     "`privacy_activation_threshold`"))
+      .add(make_option("privacy_activation_threshold", all.privacy_activation_threshold)
+               .help("takes effect when `privacy_activation` is turned on and is the number of unique tag hashes a "
+                     "weight needs to see before it is exported"))
+#endif
+      .add(make_option("hash", hash_function)
+               .default_value("strings")
+               .keep()
+               .one_of({"strings", "all"})
+               .help("How to hash the features"))
+      .add(make_option("hash_seed", all.hash_seed).keep().default_value(0).help("Seed for hash function"))
+      .add(make_option("ignore", ignores).keep().help("Ignore namespaces beginning with character <arg>"))
       .add(make_option("ignore_linear", ignore_linears)
                .keep()
-               .help("ignore namespaces beginning with character <arg> for linear terms only"))
-      .add(make_option("keep", keeps).keep().help("keep namespaces beginning with character <arg>"))
+               .help("Ignore namespaces beginning with character <arg> for linear terms only"))
+      .add(make_option("keep", keeps).keep().help("Keep namespaces beginning with character <arg>"))
       .add(make_option("redefine", redefines)
                .keep()
-               .help("redefine namespaces beginning with characters of std::string S as namespace N. <arg> shall be in "
+               .help("Redefine namespaces beginning with characters of std::string S as namespace N. <arg> shall be in "
                      "form "
                      "'N:=S' where := is operator. Empty N or S are treated as default namespace. Use ':' as a "
                      "wildcard in S.")
                .keep())
-      .add(make_option("bit_precision", new_bits).short_name("b").help("number of bits in the feature table"))
+      .add(make_option("bit_precision", new_bits).short_name("b").help("Number of bits in the feature table"))
       .add(make_option("noconstant", noconstant).help("Don't add a constant feature"))
-      .add(make_option("constant", all.initial_constant).short_name("C").help("Set initial value of constant"))
+      .add(make_option("constant", all.initial_constant)
+               .default_value(0.f)
+               .short_name("C")
+               .help("Set initial value of constant"))
       .add(make_option("ngram", ngram_strings)
-               .help("Generate N grams. To generate N grams for a single namespace 'foo', arg should be fN."))
+               .help("Generate N grams. To generate N grams for a single namespace 'foo', arg should be fN"))
       .add(make_option("skips", skip_strings)
                .help("Generate skips in N grams. This in conjunction with the ngram tag can be used to generate "
                      "generalized n-skip-k-gram. To generate n-skips for a single namespace 'foo', arg should be fN."))
       .add(
           make_option("feature_limit", all.limit_strings)
-              .help("limit to N unique features per namespace. To apply to a single namespace 'foo', arg should be fN"))
+              .help("Limit to N unique features per namespace. To apply to a single namespace 'foo', arg should be fN"))
       .add(make_option("affix", affix)
                .keep()
-               .help("generate prefixes/suffixes of features; argument '+2a,-3b,+1' means generate 2-char prefixes for "
+               .help("Generate prefixes/suffixes of features; argument '+2a,-3b,+1' means generate 2-char prefixes for "
                      "namespace a, 3-char suffixes for b and 1 char prefixes for default namespace"))
       .add(make_option("spelling", spelling_ns)
                .keep()
-               .help("compute spelling features for a give namespace (use '_' for default namespace)"))
+               .help("Compute spelling features for a give namespace (use '_' for default namespace)"))
       .add(make_option("dictionary", dictionary_nses)
                .keep()
-               .help("read a dictionary for additional features (arg either 'x:file' or just 'file')"))
+               .help("Read a dictionary for additional features (arg either 'x:file' or just 'file')"))
       .add(make_option("dictionary_path", dictionary_path)
-               .help("look in this directory for dictionaries; defaults to current directory or env{PATH}"))
+               .help("Look in this directory for dictionaries; defaults to current directory or env{PATH}"))
       .add(make_option("interactions", interactions)
                .keep()
-               .help("Create feature interactions of any level between namespaces."))
+               .help("Create feature interactions of any level between namespaces"))
       .add(make_option("experimental_full_name_interactions", full_name_interactions)
                .keep()
                .help("EXPERIMENTAL: Create feature interactions of any level between namespaces by specifying the full "
                      "name of each namespace."))
       .add(make_option("permutations", all.permutations)
-               .help("Use permutations instead of combinations for feature interactions of same namespace."))
+               .help("Use permutations instead of combinations for feature interactions of same namespace"))
       .add(make_option("leave_duplicate_interactions", leave_duplicate_interactions)
                .help("Don't remove interactions with duplicate combinations of namespaces. For ex. this is a "
                      "duplicate: '-q ab -q ba' and a lot more in '-q ::'."))
       .add(make_option("quadratic", quadratics).short_name("q").keep().help("Create and use quadratic features"))
-      // TODO this option is unused - remove?
-      .add(make_option("q:", q_colon).help("DEPRECATED ':' corresponds to a wildcard for all printable characters"))
       .add(make_option("cubic", cubics).keep().help("Create and use cubic features"));
   options.add_and_parse(feature_options);
 
@@ -625,7 +635,7 @@ void parse_feature_tweaks(
   {
     for (auto& spelling_n : spelling_ns)
     {
-      spelling_n = VW::decode_inline_hex(spelling_n);
+      spelling_n = VW::decode_inline_hex(spelling_n, all.logger);
       if (spelling_n[0] == '_')
         all.spelling_features[static_cast<unsigned char>(' ')] = true;
       else
@@ -633,18 +643,12 @@ void parse_feature_tweaks(
     }
   }
 
-  if (options.was_supplied("q:"))
-  {
-    *(all.trace_message)
-        << "WARNING: '--q:' is deprecated and not supported. You can use : as a wildcard in interactions." << endl;
-  }
-
-  if (options.was_supplied("affix")) parse_affix_argument(all, VW::decode_inline_hex(affix));
+  if (options.was_supplied("affix")) parse_affix_argument(all, VW::decode_inline_hex(affix, all.logger));
 
   // Process ngram and skips arguments
   if (options.was_supplied("skips"))
   {
-    if (!options.was_supplied("ngram")) { THROW("You can not skip unless ngram is > 1") }
+    if (!options.was_supplied("ngram")) { THROW("skip cannot be used unless ngram is > 1") }
   }
 
   if (options.was_supplied("ngram"))
@@ -654,18 +658,18 @@ void parse_feature_tweaks(
     std::vector<std::string> hex_decoded_ngram_strings;
     hex_decoded_ngram_strings.reserve(ngram_strings.size());
     std::transform(ngram_strings.begin(), ngram_strings.end(), std::back_inserter(hex_decoded_ngram_strings),
-        [](const std::string& arg) { return VW::decode_inline_hex(arg); });
+        [&](const std::string& arg) { return VW::decode_inline_hex(arg, all.logger); });
 
     std::vector<std::string> hex_decoded_skip_strings;
     hex_decoded_skip_strings.reserve(skip_strings.size());
     std::transform(skip_strings.begin(), skip_strings.end(), std::back_inserter(hex_decoded_skip_strings),
-        [](const std::string& arg) { return VW::decode_inline_hex(arg); });
+        [&](const std::string& arg) { return VW::decode_inline_hex(arg, all.logger); });
 
     all.skip_gram_transformer = VW::make_unique<VW::kskip_ngram_transformer>(
-        VW::kskip_ngram_transformer::build(hex_decoded_ngram_strings, hex_decoded_skip_strings, all.logger.quiet));
+        VW::kskip_ngram_transformer::build(hex_decoded_ngram_strings, hex_decoded_skip_strings, all.quiet, all.logger));
   }
 
-  if (options.was_supplied("feature_limit")) compile_limits(all.limit_strings, all.limit, all.logger.quiet);
+  if (options.was_supplied("feature_limit")) compile_limits(all.limit_strings, all.limit, all.quiet, all.logger);
 
   if (options.was_supplied("bit_precision"))
   {
@@ -687,11 +691,9 @@ void parse_feature_tweaks(
        ||
        interactions_settings_duplicated /*settings were restored from model file to file_options and overriden by params from command line*/)
   {
-    *(all.trace_message)
-        << "WARNING: model file has set of {-q, --cubic, --interactions} settings stored, but they'll be "
-           "OVERRIDEN by set of {-q, --cubic, --interactions} settings from command line."
-        << endl;
-
+    all.logger.err_warn(
+        "model file has set of {-q, --cubic, --interactions} settings stored, but they'll be "
+        "OVERRIDDEN by set of {-q, --cubic, --interactions} settings from command line.");
     // in case arrays were already filled in with values from old model file - reset them
     if (!all.interactions.empty()) { all.interactions.clear(); }
   }
@@ -700,12 +702,12 @@ void parse_feature_tweaks(
   {
     for (auto& i : quadratics)
     {
-      auto parsed = parse_char_interactions(i);
+      auto parsed = parse_char_interactions(i, all.logger);
       if (parsed.size() != 2) { THROW("error, quadratic features must involve two sets.)") }
       decoded_interactions.emplace_back(parsed.begin(), parsed.end());
     }
 
-    if (!all.logger.quiet)
+    if (!all.quiet)
     {
       *(all.trace_message) << fmt::format("creating quadratic features for pairs: {}\n", fmt::join(quadratics, " "));
     }
@@ -715,12 +717,12 @@ void parse_feature_tweaks(
   {
     for (const auto& i : cubics)
     {
-      auto parsed = parse_char_interactions(i);
-      if (parsed.size() != 3) { THROW("error, cubic features must involve three sets.") }
+      auto parsed = parse_char_interactions(i, all.logger);
+      if (parsed.size() != 3) { THROW("Cubic features must involve three sets.") }
       decoded_interactions.emplace_back(parsed.begin(), parsed.end());
     }
 
-    if (!all.logger.quiet)
+    if (!all.quiet)
     { *(all.trace_message) << fmt::format("creating cubic features for triples: {}\n", fmt::join(cubics, " ")); }
   }
 
@@ -728,11 +730,11 @@ void parse_feature_tweaks(
   {
     for (const auto& i : interactions)
     {
-      auto parsed = parse_char_interactions(i);
-      if (parsed.size() < 2) { THROW("error, feature interactions must involve at least two namespaces") }
+      auto parsed = parse_char_interactions(i, all.logger);
+      if (parsed.size() < 2) { THROW("Feature interactions must involve at least two namespaces.") }
       decoded_interactions.emplace_back(parsed.begin(), parsed.end());
     }
-    if (!all.logger.quiet)
+    if (!all.quiet)
     {
       *(all.trace_message) << fmt::format(
           "creating features for following interactions: {}\n", fmt::join(interactions, " "));
@@ -741,14 +743,15 @@ void parse_feature_tweaks(
 
   if (!decoded_interactions.empty())
   {
-    if (!all.logger.quiet && !options.was_supplied("leave_duplicate_interactions"))
+    if (!all.quiet && !options.was_supplied("leave_duplicate_interactions"))
     {
       auto any_contain_wildcards = std::any_of(decoded_interactions.begin(), decoded_interactions.end(),
           [](const std::vector<namespace_index>& interaction) { return INTERACTIONS::contains_wildcard(interaction); });
       if (any_contain_wildcards)
       {
-        *(all.trace_message) << "WARNING: any duplicate namespace interactions will be removed\n"
-                             << "You can use --leave_duplicate_interactions to disable this behaviour.\n";
+        all.logger.err_warn(
+            "Any duplicate namespace interactions will be removed\n"
+            "You can use --leave_duplicate_interactions to disable this behaviour.");
       }
     }
 
@@ -761,18 +764,20 @@ void parse_feature_tweaks(
     INTERACTIONS::sort_and_filter_duplicate_interactions(
         decoded_interactions, !leave_duplicate_interactions, removed_cnt, sorted_cnt);
 
-    if (removed_cnt > 0 && !all.logger.quiet)
+    if (removed_cnt > 0 && !all.quiet)
     {
-      *(all.trace_message) << "WARNING: duplicate namespace interactions were found. Removed: " << removed_cnt << '.'
-                           << endl
-                           << "You can use --leave_duplicate_interactions to disable this behaviour." << endl;
+      all.logger.err_warn(
+          "Duplicate namespace interactions were found. Removed: {}.\nYou can use --leave_duplicate_interactions to "
+          "disable this behaviour.",
+          removed_cnt);
     }
 
-    if (sorted_cnt > 0 && !all.logger.quiet)
+    if (sorted_cnt > 0 && !all.quiet)
     {
-      *(all.trace_message) << "WARNING: some interactions contain duplicate characters and their characters order has "
-                              "been changed. Interactions affected: "
-                           << sorted_cnt << '.' << endl;
+      all.logger.err_warn(
+          "Some interactions contain duplicate characters and their characters order has been changed. Interactions "
+          "affected: {}.",
+          sorted_cnt);
     }
 
     all.interactions = std::move(decoded_interactions);
@@ -783,7 +788,7 @@ void parse_feature_tweaks(
     for (const auto& i : full_name_interactions)
     {
       auto parsed = parse_full_name_interactions(all, i);
-      if (parsed.size() < 2) { THROW("error, feature interactions must involve at least two namespaces") }
+      if (parsed.size() < 2) { THROW("Feature interactions must involve at least two namespaces") }
       std::sort(parsed.begin(), parsed.end());
       all.extent_interactions.push_back(parsed);
     }
@@ -795,7 +800,7 @@ void parse_feature_tweaks(
     }
   }
 
-  for (size_t i = 0; i < 256; i++)
+  for (size_t i = 0; i < NUM_NAMESPACES; i++)
   {
     all.ignore[i] = false;
     all.ignore_linear[i] = false;
@@ -809,16 +814,17 @@ void parse_feature_tweaks(
 
     for (auto& i : ignores)
     {
-      i = VW::decode_inline_hex(i);
+      i = VW::decode_inline_hex(i, all.logger);
       for (auto j : i) all.ignore[static_cast<size_t>(static_cast<unsigned char>(j))] = true;
     }
 
-    if (!all.logger.quiet)
+    if (!all.quiet)
     {
-      *(all.trace_message) << "ignoring namespaces beginning with: ";
-      for (auto const& ignore : ignores)
-        for (auto const character : ignore) *(all.trace_message) << character << " ";
-
+      *(all.trace_message) << "ignoring namespaces beginning with:";
+      for (size_t i = 0; i < NUM_NAMESPACES; ++i)
+      {
+        if (all.ignore[i]) *(all.trace_message) << " " << static_cast<unsigned char>(i);
+      }
       *(all.trace_message) << endl;
     }
   }
@@ -829,38 +835,40 @@ void parse_feature_tweaks(
 
     for (auto& i : ignore_linears)
     {
-      i = VW::decode_inline_hex(i);
+      i = VW::decode_inline_hex(i, all.logger);
       for (auto j : i) all.ignore_linear[static_cast<size_t>(static_cast<unsigned char>(j))] = true;
     }
 
-    if (!all.logger.quiet)
+    if (!all.quiet)
     {
-      *(all.trace_message) << "ignoring linear terms for namespaces beginning with: ";
-      for (auto const& ignore : ignore_linears)
-        for (auto const character : ignore) *(all.trace_message) << character << " ";
-
+      *(all.trace_message) << "ignoring linear terms for namespaces beginning with:";
+      for (size_t i = 0; i < NUM_NAMESPACES; ++i)
+      {
+        if (all.ignore_linear[i]) *(all.trace_message) << " " << static_cast<unsigned char>(i);
+      }
       *(all.trace_message) << endl;
     }
   }
 
   if (options.was_supplied("keep"))
   {
-    for (size_t i = 0; i < 256; i++) all.ignore[i] = true;
+    for (size_t i = 0; i < NUM_NAMESPACES; i++) all.ignore[i] = true;
 
     all.ignore_some = true;
 
     for (auto& i : keeps)
     {
-      i = VW::decode_inline_hex(i);
+      i = VW::decode_inline_hex(i, all.logger);
       for (const auto& j : i) all.ignore[static_cast<size_t>(static_cast<unsigned char>(j))] = false;
     }
 
-    if (!all.logger.quiet)
+    if (!all.quiet)
     {
-      *(all.trace_message) << "using namespaces beginning with: ";
-      for (auto const& keep : keeps)
-        for (auto const character : keep) *(all.trace_message) << character << " ";
-
+      *(all.trace_message) << "using namespaces beginning with:";
+      for (size_t i = 0; i < NUM_NAMESPACES; ++i)
+      {
+        if (!all.ignore[i]) *(all.trace_message) << " " << static_cast<unsigned char>(i);
+      }
       *(all.trace_message) << endl;
     }
   }
@@ -871,14 +879,14 @@ void parse_feature_tweaks(
   if (options.was_supplied("redefine"))
   {
     // initial values: i-th namespace is redefined to i itself
-    for (size_t i = 0; i < 256; i++) all.redefine[i] = static_cast<unsigned char>(i);
+    for (size_t i = 0; i < NUM_NAMESPACES; i++) all.redefine[i] = static_cast<unsigned char>(i);
 
     // note: --redefine declaration order is matter
     // so --redefine :=L --redefine ab:=M  --ignore L  will ignore all except a and b under new M namspace
 
     for (const auto& arg : redefines)
     {
-      const std::string& argument = VW::decode_inline_hex(arg);
+      const std::string& argument = VW::decode_inline_hex(arg, all.logger);
       size_t arg_len = argument.length();
 
       size_t operator_pos = 0;  // keeps operator pos + 1 to stay unsigned type
@@ -902,10 +910,12 @@ void parse_feature_tweaks(
       if (!operator_found) THROW("argument of --redefine is malformed. Valid format is N:=S, :=S or N:=")
 
       if (++operator_pos > 3)  // seek operator end
-        *(all.trace_message)
-            << "WARNING: multiple namespaces are used in target part of --redefine argument. Only first one ('"
-            << new_namespace << "') will be used as target namespace." << endl;
-
+      {
+        all.logger.err_warn(
+            "Multiple namespaces are used in target part of --redefine argument. Only first one ('{}') will be used as "
+            "target namespace.",
+            new_namespace);
+      }
       all.redefine_some = true;
 
       // case ':=S' doesn't require any additional code as new_namespace = ' ' by default
@@ -922,7 +932,7 @@ void parse_feature_tweaks(
           else
           {
             // wildcard found: redefine all except default and break
-            for (size_t j = 0; j < 256; j++) all.redefine[j] = new_namespace;
+            for (size_t j = 0; j < NUM_NAMESPACES; j++) all.redefine[j] = new_namespace;
             break;  // break processing S
           }
         }
@@ -968,52 +978,68 @@ void parse_feature_tweaks(
   if (noconstant) all.add_constant = false;
 }
 
-void parse_example_tweaks(options_i& options, vw& all)
+void parse_example_tweaks(options_i& options, VW::workspace& all)
 {
   std::string named_labels;
   std::string loss_function;
   float loss_parameter = 0.0;
-  size_t early_terminate_passes;
+  uint64_t early_terminate_passes;
   bool test_only = false;
 
-  option_group_definition example_options("Example options");
+  uint64_t numpasses;
+  int64_t pass_length;
+  int64_t max_examples;
+
+  option_group_definition example_options("Example");
   example_options.add(make_option("testonly", test_only).short_name("t").help("Ignore label information and just test"))
-      .add(make_option("holdout_off", all.holdout_set_off).help("no holdout data in multiple passes"))
-      .add(make_option("holdout_period", all.holdout_period).default_value(10).help("holdout period for test only"))
+      .add(make_option("holdout_off", all.holdout_set_off).help("No holdout data in multiple passes"))
+      .add(make_option("holdout_period", all.holdout_period).default_value(10).help("Holdout period for test only"))
       .add(make_option("holdout_after", all.holdout_after)
-               .help("holdout after n training examples, default off (disables holdout_period)"))
+               .help("Holdout after n training examples, default off (disables holdout_period)"))
       .add(
           make_option("early_terminate", early_terminate_passes)
               .default_value(3)
               .help(
                   "Specify the number of passes tolerated when holdout loss doesn't decrease before early termination"))
-      .add(make_option("passes", all.numpasses).help("Number of Training Passes"))
-      .add(make_option("initial_pass_length", all.pass_length).help("initial number of examples per pass"))
-      .add(make_option("examples", all.max_examples).help("number of examples to parse"))
+      .add(make_option("passes", numpasses).default_value(1).help("Number of Training Passes"))
+      .add(make_option("initial_pass_length", pass_length)
+               .default_value(-1)
+               .help("Initial number of examples per pass. -1 for no limit"))
+      .add(make_option("examples", max_examples).default_value(-1).help("Number of examples to parse. -1 for no limit"))
       .add(make_option("min_prediction", all.sd->min_label).help("Smallest prediction to output"))
       .add(make_option("max_prediction", all.sd->max_label).help("Largest prediction to output"))
       .add(make_option("sort_features", all.example_parser->sort_features)
-               .help("turn this on to disregard order in which features have been defined. This will lead to smaller "
+               .help("Turn this on to disregard order in which features have been defined. This will lead to smaller "
                      "cache sizes"))
       .add(make_option("loss_function", loss_function)
                .default_value("squared")
-               .help("Specify the loss function to be used, uses squared by default. Currently available ones are "
-                     "squared, classic, hinge, logistic, quantile and poisson."))
+               .one_of({"squared", "classic", "hinge", "logistic", "quantile", "poisson"})
+               .help("Specify the loss function to be used, uses squared by default"))
       .add(make_option("quantile_tau", loss_parameter)
                .default_value(0.5f)
                .help("Parameter \\tau associated with Quantile loss. Defaults to 0.5"))
-      .add(make_option("l1", all.l1_lambda).help("l_1 lambda"))
-      .add(make_option("l2", all.l2_lambda).help("l_2 lambda"))
-      .add(make_option("no_bias_regularization", all.no_bias).help("no bias in regularization"))
+      .add(make_option("l1", all.l1_lambda).default_value(0.0f).help("L_1 lambda"))
+      .add(make_option("l2", all.l2_lambda).default_value(0.0f).help("L_2 lambda"))
+      .add(make_option("no_bias_regularization", all.no_bias).help("No bias in regularization"))
       .add(make_option("named_labels", named_labels)
                .keep()
-               .help("use names for labels (multiclass, etc.) rather than integers, argument specified all possible "
+               .help("Use names for labels (multiclass, etc.) rather than integers, argument specified all possible "
                      "labels, comma-sep, eg \"--named_labels Noun,Verb,Adj,Punc\""));
   options.add_and_parse(example_options);
 
+  all.numpasses = VW::cast_to_smaller_type<size_t>(numpasses);
+  if (pass_length < -1) { THROW("pass_length must be -1 or positive"); }
+
+  if (max_examples < -1) { THROW("--examples must be -1 or positive"); }
+
+  all.pass_length =
+      pass_length == -1 ? std::numeric_limits<size_t>::max() : VW::cast_signed_to_unsigned<size_t>(pass_length);
+  all.max_examples =
+      max_examples == -1 ? std::numeric_limits<size_t>::max() : VW::cast_signed_to_unsigned<size_t>(max_examples);
+
   if (test_only || all.eta == 0.)
   {
-    if (!all.logger.quiet) *(all.trace_message) << "only testing" << endl;
+    if (!all.quiet) *(all.trace_message) << "only testing" << endl;
     all.training = false;
     if (all.lda > 0) all.eta = 0;
   }
@@ -1031,10 +1057,16 @@ void parse_example_tweaks(options_i& options, vw& all)
   if (options.was_supplied("named_labels"))
   {
     all.sd->ldict = VW::make_unique<VW::named_labels>(named_labels);
-    if (!all.logger.quiet) *(all.trace_message) << "parsed " << all.sd->ldict->getK() << " named labels" << endl;
+    if (!all.quiet) *(all.trace_message) << "parsed " << all.sd->ldict->getK() << " named labels" << endl;
   }
 
   all.loss = getLossFunction(all, loss_function, loss_parameter);
+  if (options.was_supplied("quantile_tau") && all.loss->getType() != "quantile")
+  {
+    all.logger.err_warn(
+        "Option 'quantile_tau' was passed but the quantile loss function is not being used. 'quantile_tau' value will "
+        "be ignored.");
+  }
 
   if (all.l1_lambda < 0.f)
   {
@@ -1048,7 +1080,7 @@ void parse_example_tweaks(options_i& options, vw& all)
   }
   all.reg_mode += (all.l1_lambda > 0.) ? 1 : 0;
   all.reg_mode += (all.l2_lambda > 0.) ? 2 : 0;
-  if (!all.logger.quiet)
+  if (!all.quiet)
   {
     if (all.reg_mode % 2 && !options.was_supplied("bfgs"))
       *(all.trace_message) << "using l1 regularization = " << all.l1_lambda << endl;
@@ -1056,12 +1088,40 @@ void parse_example_tweaks(options_i& options, vw& all)
   }
 }
 
-void parse_output_preds(options_i& options, vw& all)
+void parse_update_options(options_i& options, VW::workspace& all)
+{
+  option_group_definition update_args("Update");
+  float t_arg = 0.f;
+  update_args
+      .add(make_option("learning_rate", all.eta)
+               .default_value(0.5f)
+               .keep(all.save_resume)
+               .allow_override(all.save_resume)
+               .help("Set learning rate")
+               .short_name("l"))
+      .add(make_option("power_t", all.power_t)
+               .default_value(0.5f)
+               .keep(all.save_resume)
+               .allow_override(all.save_resume)
+               .help("T power value"))
+      .add(make_option("decay_learning_rate", all.eta_decay_rate)
+               .default_value(1.f)
+               .help("Set Decay factor for learning_rate between passes"))
+      .add(make_option("initial_t", t_arg).help("Initial t value"))
+      .add(make_option("feature_mask", all.feature_mask)
+               .help("Use existing regressor to determine which parameters may be updated.  If no initial_regressor "
+                     "given, also used for initial weights."));
+  options.add_and_parse(update_args);
+  if (options.was_supplied("initial_t")) { all.sd->t = t_arg; }
+  all.initial_t = static_cast<float>(all.sd->t);
+}
+
+void parse_output_preds(options_i& options, VW::workspace& all)
 {
   std::string predictions;
   std::string raw_predictions;
 
-  option_group_definition output_options("Output options");
+  option_group_definition output_options("Prediction Output");
   output_options.add(make_option("predictions", predictions).short_name("p").help("File to output predictions to"))
       .add(make_option("raw_predictions", raw_predictions)
                .short_name("r")
@@ -1070,7 +1130,7 @@ void parse_output_preds(options_i& options, vw& all)
 
   if (options.was_supplied("predictions"))
   {
-    if (!all.logger.quiet) *(all.trace_message) << "predictions = " << predictions << endl;
+    if (!all.quiet) *(all.trace_message) << "predictions = " << predictions << endl;
 
     if (predictions == "stdout")
     {
@@ -1084,19 +1144,18 @@ void parse_output_preds(options_i& options, vw& all)
       }
       catch (...)
       {
-        *(all.trace_message) << "Error opening the predictions file: " << predictions << endl;
+        all.logger.err_error("Error opening the predictions file: {}", predictions);
       }
     }
   }
 
   if (options.was_supplied("raw_predictions"))
   {
-    if (!all.logger.quiet)
+    if (!all.quiet)
     {
       *(all.trace_message) << "raw predictions = " << raw_predictions << endl;
       if (options.was_supplied("binary"))
-        *(all.trace_message)
-            << "Warning: --raw_predictions has no defined value when --binary specified, expect no output" << endl;
+      { all.logger.err_warn("--raw_predictions has no defined value when --binary specified, expect no output"); }
     }
     if (raw_predictions == "stdout") { all.raw_prediction = VW::io::open_stdout(); }
     else
@@ -1106,19 +1165,24 @@ void parse_output_preds(options_i& options, vw& all)
   }
 }
 
-void parse_output_model(options_i& options, vw& all)
+void parse_output_model(options_i& options, VW::workspace& all)
 {
-  option_group_definition output_model_options("Output model");
+  bool predict_only_model = false;
+  bool save_resume = false;
+  option_group_definition output_model_options("Output Model");
   output_model_options
       .add(make_option("final_regressor", all.final_regressor_name).short_name("f").help("Final regressor"))
       .add(make_option("readable_model", all.text_regressor_name)
                .help("Output human-readable final regressor with numeric features"))
       .add(make_option("invert_hash", all.inv_hash_regressor_name)
-               .help("Output human-readable final regressor with feature names.  Computationally expensive."))
-      .add(make_option("save_resume", all.save_resume)
-               .help("save extra state so learning can be resumed later with new data"))
+               .help("Output human-readable final regressor with feature names.  Computationally expensive"))
+      .add(
+          make_option("predict_only_model", predict_only_model)
+              .help("Do not save extra state for learning to be resumed. Stored model can only be used for prediction"))
+      .add(make_option("save_resume", save_resume)
+               .help("This flag is now deprecated and models can continue learning by default"))
       .add(make_option("preserve_performance_counters", all.preserve_performance_counters)
-               .help("reset performance counters when warmstarting"))
+               .help("Reset performance counters when warmstarting"))
       .add(make_option("save_per_pass", all.save_per_pass).help("Save the model after every pass over data"))
       .add(make_option("output_feature_regularizer_binary", all.per_feature_regularizer_output)
                .help("Per feature regularization output file"))
@@ -1127,10 +1191,15 @@ void parse_output_model(options_i& options, vw& all)
       .add(make_option("id", all.id).help("User supplied ID embedded into the final regressor"));
   options.add_and_parse(output_model_options);
 
-  if (!all.final_regressor_name.empty() && !all.logger.quiet)
+  if (!all.final_regressor_name.empty() && !all.quiet)
     *(all.trace_message) << "final_regressor = " << all.final_regressor_name << endl;
 
-  if (options.was_supplied("invert_hash")) all.hash_inv = true;
+  if (options.was_supplied("invert_hash")) { all.hash_inv = true; }
+  if (save_resume)
+  {
+    all.logger.err_warn("--save_resume flag is deprecated -- learning can now continue on saved models by default.");
+  }
+  if (predict_only_model) { all.save_resume = false; }
 
   // Question: This doesn't seem necessary
   // if (options.was_supplied("id") && find(arg.args.begin(), arg.args.end(), "--id") == arg.args.end())
@@ -1140,7 +1209,7 @@ void parse_output_model(options_i& options, vw& all)
   // }
 }
 
-void load_input_model(vw& all, io_buf& io_temp)
+void load_input_model(VW::workspace& all, io_buf& io_temp)
 {
   // Need to see if we have to load feature mask first or second.
   // -i and -mask are from same file, load -i file first so mask can use it
@@ -1170,19 +1239,97 @@ ssize_t trace_message_wrapper_adapter(void* context, const char* buffer, size_t 
   return static_cast<ssize_t>(num_bytes);
 }
 
-vw& parse_args(
+VW::workspace& parse_args(
     std::unique_ptr<options_i, options_deleter_type> options, trace_message_t trace_listener, void* trace_context)
 {
-  vw& all = *(new vw());
-  all.options = std::move(options);
+  auto logger = trace_listener != nullptr ? VW::io::create_custom_sink_logger(trace_context, trace_listener)
+                                          : VW::io::create_default_logger();
 
-  if (trace_listener)
+  bool quiet = false;
+  bool driver_output_off = false;
+  std::string driver_output_stream;
+  std::string log_level;
+  std::string log_output_stream;
+  uint64_t upper_limit = 0;
+  option_group_definition logging_options("Logging");
+  logging_options
+      .add(make_option("quiet", quiet)
+               .help("Don't output diagnostics and progress updates. Supplying this implies --log_level off and "
+                     "--driver_output_off. Supplying this overrides an explicit log_level argument."))
+      .add(make_option("driver_output_off", driver_output_off).help("Disable output for the driver"))
+      .add(make_option("driver_output", driver_output_stream)
+               .default_value("stderr")
+               .one_of({"stdout", "stderr"})
+               .help("Specify the stream to output driver output to"))
+      .add(make_option("log_level", log_level)
+               .default_value("info")
+               .one_of({"info", "warn", "error", "critical", "off"})
+               .help("Log level for logging messages. Specifying this wil override --quiet for log output"))
+      .add(make_option("log_output", log_output_stream)
+               .default_value("stdout")
+               .one_of({"stdout", "stderr", "compat"})
+               .help("Specify the stream to output log messages to. In the past VW's choice of stream for logging "
+                     "messages wasn't consistent. Supplying compat will maintain that old behavior. Compat is now "
+                     "deprecated so it is recommended that stdout or stderr is chosen."))
+      .add(make_option("limit_output", upper_limit)
+               .default_value(0)
+               .help("Avoid chatty output. Limit total printed lines. 0 means unbounded"));
+
+  options->add_and_parse(logging_options);
+
+  if (quiet)
   {
-    // Since the trace_message_t interface uses a string and the writer interface uses a buffer we unfortunately
-    // need to adapt between them here.
-    all.trace_message_wrapper_context = std::make_shared<trace_message_wrapper>(trace_context, trace_listener);
-    all.trace_message = VW::make_unique<VW::io::owning_ostream>(VW::make_unique<VW::io::writer_stream_buf>(
-        VW::io::create_custom_writer(all.trace_message_wrapper_context.get(), trace_message_wrapper_adapter)));
+    log_level = "off";
+    driver_output_off = true;
+  }
+
+  auto level = VW::io::get_log_level(log_level);
+  logger.set_level(level);
+  auto location = VW::io::get_output_location(log_output_stream);
+  logger.set_location(location);
+
+  // Don't print warning if a custom log output trace_listener is supplied.
+  if (trace_listener == nullptr && location == VW::io::output_location::compat)
+  { logger.err_warn("'compat' mode for --log_output is deprecated and will be removed in a future release."); }
+
+  if (options->was_supplied("limit_output") && (upper_limit != 0))
+  { logger.set_max_output(VW::cast_to_smaller_type<size_t>(upper_limit)); }
+
+  VW::workspace& all = *(new VW::workspace(logger));
+  all.options = std::move(options);
+  all.quiet = quiet;
+
+  if (driver_output_off)
+  {
+    // This is valid:
+    // https://stackoverflow.com/questions/25690636/is-it-valid-to-construct-an-stdostream-from-a-null-buffer This
+    // results in the ostream not outputting anything.
+    all.trace_message = VW::make_unique<std::ostream>(nullptr);
+  }
+  else
+  {
+    if (trace_listener != nullptr)
+    {
+      if (all.options->was_supplied("log_output"))
+      {
+        all.logger.err_warn(
+            "--log_output option is unused. This is because when a custom trace_listener is being used.");
+      }
+
+      // Since the trace_message_t interface uses a string and the writer interface uses a buffer we unfortunately
+      // need to adapt between them here.
+      all.trace_message_wrapper_context = std::make_shared<trace_message_wrapper>(trace_context, trace_listener);
+      all.trace_message = VW::make_unique<VW::io::owning_ostream>(VW::make_unique<VW::io::writer_stream_buf>(
+          VW::io::create_custom_writer(all.trace_message_wrapper_context.get(), trace_message_wrapper_adapter)));
+    }
+    else if (driver_output_stream == "stdout")
+    {
+      all.trace_message = VW::make_unique<std::ostream>(std::cout.rdbuf());
+    }
+    else
+    {
+      all.trace_message = VW::make_unique<std::ostream>(std::cerr.rdbuf());
+    }
   }
 
   try
@@ -1191,54 +1338,63 @@ vw& parse_args(
 
     bool strict_parse = false;
     int ring_size_tmp;
-    option_group_definition vw_args("VW options");
-    vw_args.add(make_option("ring_size", ring_size_tmp).default_value(256).help("size of example ring"))
-        .add(make_option("strict_parse", strict_parse).help("throw on malformed examples"));
+    int64_t example_queue_limit_tmp;
+    option_group_definition vw_args("Parser");
+    vw_args.add(make_option("ring_size", ring_size_tmp).default_value(256).help("Size of example ring"))
+        .add(make_option("example_queue_limit", example_queue_limit_tmp)
+                 .default_value(256)
+                 .help("Max number of examples to store after parsing but before the learner has processed. Rarely "
+                       "needs to be changed."))
+        .add(make_option("strict_parse", strict_parse).help("Throw on malformed examples"));
     all.options->add_and_parse(vw_args);
 
     if (ring_size_tmp <= 0) { THROW("ring_size should be positive") }
+    if (example_queue_limit_tmp <= 0) { THROW("ring_size should be positive") }
     auto ring_size = static_cast<size_t>(ring_size_tmp);
+    auto example_queue_limit = static_cast<size_t>(example_queue_limit_tmp);
+    auto final_example_queue_limit = example_queue_limit;
+    if (all.options->was_supplied("ring_size"))
+    {
+      final_example_queue_limit = ring_size;
+      all.logger.err_warn("--ring_size is deprecated and has been replaced with --example_queue_limit");
+      if (all.options->was_supplied("example_queue_limit"))
+      {
+        final_example_queue_limit = example_queue_limit;
+        all.logger.err_info("--example_queue_limit overrides --ring_size");
+      }
+    }
 
-    all.example_parser = new parser{ring_size, strict_parse};
+    all.example_parser = new parser{final_example_queue_limit, strict_parse};
     all.example_parser->_shared_data = all.sd;
 
-    option_group_definition update_args("Update options");
-    update_args.add(make_option("learning_rate", all.eta).help("Set learning rate").short_name("l"))
-        .add(make_option("power_t", all.power_t).help("t power value"))
-        .add(make_option("decay_learning_rate", all.eta_decay_rate)
-                 .help("Set Decay factor for learning_rate between passes"))
-        .add(make_option("initial_t", all.sd->t).help("initial t value"))
-        .add(make_option("feature_mask", all.feature_mask)
-                 .help("Use existing regressor to determine which parameters may be updated.  If no initial_regressor "
-                       "given, also used for initial weights."));
-    all.options->add_and_parse(update_args);
-
-    option_group_definition weight_args("Weight options");
+    option_group_definition weight_args("Weight");
     weight_args
         .add(make_option("initial_regressor", all.initial_regressors).help("Initial regressor(s)").short_name("i"))
-        .add(make_option("initial_weight", all.initial_weight).help("Set all weights to an initial value of arg."))
-        .add(make_option("random_weights", all.random_weights).help("make initial weights random"))
-        .add(make_option("normal_weights", all.normal_weights).help("make initial weights normal"))
-        .add(make_option("truncated_normal_weights", all.tnormal_weights).help("make initial weights truncated normal"))
+        .add(make_option("initial_weight", all.initial_weight)
+                 .default_value(0.f)
+                 .help("Set all weights to an initial value of arg"))
+        .add(make_option("random_weights", all.random_weights).help("Make initial weights random"))
+        .add(make_option("normal_weights", all.normal_weights).help("Make initial weights normal"))
+        .add(make_option("truncated_normal_weights", all.tnormal_weights).help("Make initial weights truncated normal"))
         .add(make_option("sparse_weights", all.weights.sparse).help("Use a sparse datastructure for weights"))
         .add(make_option("input_feature_regularizer", all.per_feature_regularizer_input)
                  .help("Per feature regularization input file"));
     all.options->add_and_parse(weight_args);
 
     std::string span_server_arg;
-    int span_server_port_arg;
+    int32_t span_server_port_arg;
     // bool threads_arg;
-    size_t unique_id_arg;
-    size_t total_arg;
-    size_t node_arg;
-    option_group_definition parallelization_args("Parallelization options");
+    uint64_t unique_id_arg;
+    uint64_t total_arg;
+    uint64_t node_arg;
+    option_group_definition parallelization_args("Parallelization");
     parallelization_args
         .add(make_option("span_server", span_server_arg).help("Location of server for setting up spanning tree"))
         //(make_option("threads", threads_arg).help("Enable multi-threading")) Unused option?
-        .add(make_option("unique_id", unique_id_arg).default_value(0).help("unique id used for cluster parallel jobs"))
+        .add(make_option("unique_id", unique_id_arg).default_value(0).help("Unique id used for cluster parallel jobs"))
         .add(
-            make_option("total", total_arg).default_value(1).help("total number of nodes used in cluster parallel job"))
-        .add(make_option("node", node_arg).default_value(0).help("node number in cluster parallel job"))
+            make_option("total", total_arg).default_value(1).help("Total number of nodes used in cluster parallel job"))
+        .add(make_option("node", node_arg).default_value(0).help("Node number in cluster parallel job"))
         .add(make_option("span_server_port", span_server_port_arg)
                  .default_value(26543)
                  .help("Port of the server for setting up spanning tree"));
@@ -1249,18 +1405,18 @@ vw& parse_args(
             all.options->was_supplied("unique_id")) &&
         !(all.options->was_supplied("total") && all.options->was_supplied("node") &&
             all.options->was_supplied("unique_id")))
-    { THROW("you must specificy unique_id, total, and node if you specify any") }
+    { THROW("unique_id, total, and node must be all be specified if any are specified.") }
 
     if (all.options->was_supplied("span_server"))
     {
       all.all_reduce_type = AllReduceType::Socket;
-      all.all_reduce = new AllReduceSockets(
-          span_server_arg, span_server_port_arg, unique_id_arg, total_arg, node_arg, all.logger.quiet);
+      all.all_reduce = new AllReduceSockets(span_server_arg, VW::cast_to_smaller_type<int>(span_server_port_arg),
+          VW::cast_to_smaller_type<size_t>(unique_id_arg), VW::cast_to_smaller_type<size_t>(total_arg),
+          VW::cast_to_smaller_type<size_t>(node_arg), all.quiet);
     }
 
     parse_diagnostics(*all.options, all);
 
-    all.initial_t = static_cast<float>(all.sd->t);
     return all;
   }
   catch (...)
@@ -1286,102 +1442,68 @@ bool check_interaction_settings_collision(options_i& options, const std::string&
   return file_options_has_interaction;
 }
 
-void merge_options_from_header_strings(const std::vector<std::string>& strings, bool skip_interactions,
-    VW::config::options_i& options, bool& is_ccb_input_model)
+bool is_opt_long_option_like(VW::string_view token) { return token.find("--") == 0 && token.size() > 2; }
+
+// The model file contains a command line but it has much greater constraints than the user supplied command line. These
+// constraints greatly help us unambiguously process it. The command line will ONLY consist of bool switches or options
+// with a single value. However, the tricky thing here is that there is no way to disambiguate something that looks like
+// a switch from an option with a value.
+std::unordered_map<std::string, std::vector<std::string>> parse_model_command_line_legacy(
+    const std::vector<std::string>& command_line)
 {
-  po::options_description desc("");
-
-  // Get list of options in file options std::string
-  po::parsed_options pos = po::command_line_parser(strings).options(desc).allow_unregistered().run();
-
-  bool skipping = false;
-  std::string saved_key = "";
-  unsigned int count = 0;
-  bool first_seen = false;
-
-  for (auto opt : pos.options)
+  std::unordered_map<std::string, std::vector<std::string>> m_map;
+  std::string last_option;
+  for (const auto& token : command_line)
   {
-    // If we previously encountered an option we want to skip, ignore tokens without --.
-    if (skipping)
+    if (is_opt_long_option_like(token))
     {
-      for (const auto& token : opt.original_tokens)
-      {
-        auto found = token.find("--");
-        if (found != std::string::npos) { skipping = false; }
-      }
-
-      if (skipping)
-      {
-        saved_key = "";
-        continue;
-      }
-    }
-
-    bool treat_as_value = false;
-    // If the key starts with a digit, this is a mis-interpretation of a value as a key. Pull it into the previous
-    // option. This was found in the case of --lambda -1, misinterpreting -1 as an option key. The easy way to fix this
-    // requires introducing "identifier-like" semantics for options keys, e.g. "does not begin with a digit". That does
-    // not seem like an unreasonable restriction. The logical check here is: is "string_key" of the form {'-', <digit>,
-    // <etc.>}.
-    if (opt.string_key.length() > 1 && opt.string_key[0] == '-' && opt.string_key[1] >= '0' && opt.string_key[1] <= '9')
-    { treat_as_value = true; }
-
-    // File options should always use long form.
-
-    // If the key is empty this must be a value, otherwise set the key.
-    if (!treat_as_value && !opt.string_key.empty())
-    {
-      // If the new token is a new option and there were no values previously it was a bool option. Add it as a switch.
-      if (count == 0 && first_seen) { options.insert(saved_key, ""); }
-
-      count = 0;
-      first_seen = true;
-
-      // If the interaction settings are doubled, the copy in the model file is ignored.
-      if (skip_interactions &&
-          (opt.string_key == "quadratic" || opt.string_key == "cubic" || opt.string_key == "interactions"))
-      {
-        // skip this option.
-        skipping = true;
-        first_seen = false;
-        continue;
-      }
-      saved_key = opt.string_key;
-      is_ccb_input_model = is_ccb_input_model || (saved_key == "ccb_explore_adf");
-
-      if (!opt.value.empty())
-      {
-        for (const auto& value : opt.value)
-        {
-          options.insert(saved_key, value);
-          count++;
-        }
-      }
+      // We don't need to handle = because the current model command line is never created with that format.
+      auto opt_name = token.substr(2);
+      last_option = opt_name;
+      if (m_map.find(opt_name) == m_map.end()) { m_map[opt_name] = std::vector<std::string>(); }
     }
     else
     {
-      // If treat_as_value is set, boost incorrectly interpreted the token as containing an option key
-      // In this case, what should have happened is all original_tokens items should be in value.
-      auto source = treat_as_value ? opt.original_tokens : opt.value;
-      for (const auto& value : source)
-      {
-        options.insert(saved_key, value);
-        count++;
-      }
+      assert(!last_option.empty());
+      m_map[last_option].push_back(token);
     }
   }
-
-  if (count == 0 && !saved_key.empty()) { options.insert(saved_key, ""); }
+  return m_map;
 }
 
-options_i& load_header_merge_options(options_i& options, vw& all, io_buf& model, bool& interactions_settings_duplicated)
+void merge_options_from_header_strings(const std::vector<std::string>& strings, bool skip_interactions,
+    VW::config::options_i& options, bool& is_ccb_input_model)
+{
+  auto parsed_model_command_line = parse_model_command_line_legacy(strings);
+
+  if (skip_interactions)
+  {
+    parsed_model_command_line.erase("quadratic");
+    parsed_model_command_line.erase("cubic");
+    parsed_model_command_line.erase("interactions");
+  }
+
+  is_ccb_input_model =
+      is_ccb_input_model || (parsed_model_command_line.find("ccb_explore_adf") != parsed_model_command_line.end());
+  for (const auto& kv : parsed_model_command_line)
+  {
+    if (kv.second.empty()) { options.insert(kv.first, ""); }
+    else
+    {
+      for (const auto& value : kv.second) { options.insert(kv.first, value); }
+    }
+  }
+}
+
+options_i& load_header_merge_options(
+    options_i& options, VW::workspace& all, io_buf& model, bool& interactions_settings_duplicated)
 {
   std::string file_options;
   save_load_header(all, model, true, false, file_options, options);
 
   interactions_settings_duplicated = check_interaction_settings_collision(options, file_options);
 
-  // Convert file_options into  vector.
+  // Convert file_options into vector.
   std::istringstream ss{file_options};
   const std::vector<std::string> container{
       std::istream_iterator<std::string>{ss}, std::istream_iterator<std::string>{}};
@@ -1391,11 +1513,11 @@ options_i& load_header_merge_options(options_i& options, vw& all, io_buf& model,
   return options;
 }
 
-void parse_modules(
-    options_i& options, vw& all, bool interactions_settings_duplicated, std::vector<std::string>& dictionary_namespaces)
+void parse_modules(options_i& options, VW::workspace& all, bool interactions_settings_duplicated,
+    std::vector<std::string>& dictionary_namespaces)
 {
-  option_group_definition rand_options("Randomization options");
-  rand_options.add(make_option("random_seed", all.random_seed).help("seed random number generator"));
+  option_group_definition rand_options("Randomization");
+  rand_options.add(make_option("random_seed", all.random_seed).default_value(0).help("Seed random number generator"));
   options.add_and_parse(rand_options);
   all.get_random_state()->set_random_state(all.random_seed);
 
@@ -1405,13 +1527,15 @@ void parse_modules(
 
   parse_output_model(options, all);
 
+  parse_update_options(options, all);
+
   parse_output_preds(options, all);
 }
 
 // note: Although we have the option to override setup_base_i,
 // the most common scenario is to use the default_reduction_stack_setup.
 // Expect learner_builder to be nullptr most/all of the cases.
-void instantiate_learner(vw& all, std::unique_ptr<VW::setup_base_i> learner_builder)
+void instantiate_learner(VW::workspace& all, std::unique_ptr<VW::setup_base_i> learner_builder)
 {
   if (!learner_builder)
   { learner_builder = VW::make_unique<VW::default_reduction_stack_setup>(all, *all.options.get()); }
@@ -1427,18 +1551,9 @@ void instantiate_learner(vw& all, std::unique_ptr<VW::setup_base_i> learner_buil
   // avoids misuse of this interface:
   learner_builder.reset();
   assert(learner_builder == nullptr);
-
-  if (!all.logger.quiet)
-  {
-    *(all.trace_message) << "Num weight bits = " << all.num_bits << endl;
-    *(all.trace_message) << "learning rate = " << all.eta << endl;
-    *(all.trace_message) << "initial_t = " << all.sd->t << endl;
-    *(all.trace_message) << "power_t = " << all.power_t << endl;
-    if (all.numpasses > 1) *(all.trace_message) << "decay_learning_rate = " << all.eta_decay_rate << endl;
-  }
 }
 
-void parse_sources(options_i& options, vw& all, io_buf& model, bool skip_model_load)
+void parse_sources(options_i& options, VW::workspace& all, io_buf& model, bool skip_model_load)
 {
   if (!skip_model_load)
     load_input_model(all, model);
@@ -1446,7 +1561,7 @@ void parse_sources(options_i& options, vw& all, io_buf& model, bool skip_model_l
     model.close_file();
 
   auto parsed_source_options = parse_source(all, options);
-  enable_sources(all, all.logger.quiet, all.numpasses, parsed_source_options);
+  enable_sources(all, all.quiet, all.numpasses, parsed_source_options);
 
   // force wpp to be a power of 2 to avoid 32-bit overflow
   uint32_t i = 0;
@@ -1541,10 +1656,10 @@ void free_args(int argc, char* argv[])
   free(argv);
 }
 
-void print_enabled_reductions(vw& all, std::vector<std::string>& enabled_reductions)
+void print_enabled_reductions(VW::workspace& all, std::vector<std::string>& enabled_reductions)
 {
   // output list of enabled reductions
-  if (!all.logger.quiet && !all.options->was_supplied("audit_regressor") && !enabled_reductions.empty())
+  if (!all.quiet && !all.options->was_supplied("audit_regressor") && !enabled_reductions.empty())
   {
     const char* const delim = ", ";
     std::ostringstream imploded;
@@ -1555,21 +1670,20 @@ void print_enabled_reductions(vw& all, std::vector<std::string>& enabled_reducti
   }
 }
 
-vw* initialize(config::options_i& options, io_buf* model, bool skip_model_load, trace_message_t trace_listener,
-    void* trace_context)
+VW::workspace* initialize(config::options_i& options, io_buf* model, bool skip_model_load,
+    trace_message_t trace_listener, void* trace_context)
 {
   std::unique_ptr<options_i, options_deleter_type> opts(&options, [](VW::config::options_i*) {});
 
   return initialize(std::move(opts), model, skip_model_load, trace_listener, trace_context);
 }
 
-vw* initialize_with_builder(std::unique_ptr<options_i, options_deleter_type> options, io_buf* model,
+VW::workspace* initialize_with_builder(std::unique_ptr<options_i, options_deleter_type> options, io_buf* model,
     bool skip_model_load, trace_message_t trace_listener, void* trace_context,
     std::unique_ptr<VW::setup_base_i> learner_builder = nullptr)
 {
   // Set up logger as early as possible
-  logger::initialize_logger();
-  vw& all = parse_args(std::move(options), trace_listener, trace_context);
+  VW::workspace& all = parse_args(std::move(options), trace_listener, trace_context);
 
   try
   {
@@ -1592,11 +1706,17 @@ vw* initialize_with_builder(std::unique_ptr<options_i, options_deleter_type> opt
     parse_modules(*all.options, all, interactions_settings_duplicated, dictionary_namespaces);
     instantiate_learner(all, std::move(learner_builder));
     parse_sources(*all.options, all, *model, skip_model_load);
+    if (!all.quiet)
+    {
+      *(all.trace_message) << "Num weight bits = " << all.num_bits << endl;
+      *(all.trace_message) << "learning rate = " << all.eta << endl;
+      *(all.trace_message) << "initial_t = " << all.sd->t << endl;
+      *(all.trace_message) << "power_t = " << all.power_t << endl;
+      if (all.numpasses > 1) *(all.trace_message) << "decay_learning_rate = " << all.eta_decay_rate << endl;
+    }
 
     // we must delay so parse_mask is fully defined.
-    for (const auto& dictionary_namespace : dictionary_namespaces) parse_dictionary_argument(all, dictionary_namespace);
-
-    all.options->check_unregistered();
+    for (const auto& name_space : dictionary_namespaces) parse_dictionary_argument(all, name_space);
 
     std::vector<std::string> enabled_reductions;
     if (all.l != nullptr) all.l->get_enabled_reductions(enabled_reductions);
@@ -1604,46 +1724,66 @@ vw* initialize_with_builder(std::unique_ptr<options_i, options_deleter_type> opt
     // upon direct query for help -- spit it out to stdout;
     if (all.options->get_typed_option<bool>("help").value())
     {
-      cout << all.options->help(enabled_reductions);
-      exit(0);
+      size_t num_supplied = 0;
+      for (auto const& option : all.options->get_all_options())
+      { num_supplied += all.options->was_supplied(option->m_name) ? 1 : 0; }
+
+      auto option_groups = all.options->get_all_option_group_definitions();
+      std::sort(option_groups.begin(), option_groups.end(),
+          [](const VW::config::option_group_definition& a, const VW::config::option_group_definition& b) {
+            return a.m_name < b.m_name;
+          });
+      // Help is added as help and h. So greater than 2 means there is more command line there.
+      if (num_supplied > 2) { option_groups = remove_disabled_necessary_options(*all.options, option_groups); }
+
+      VW::config::cli_help_formatter formatter;
+      std::cout << formatter.format_help(option_groups);
+      std::exit(0);
     }
 
     print_enabled_reductions(all, enabled_reductions);
 
+    if (!all.quiet)
+    {
+      *(all.trace_message) << "Input label = " << VW::to_string(all.l->get_input_label_type()).substr(14) << std::endl;
+      *(all.trace_message) << "Output pred = " << VW::to_string(all.l->get_output_prediction_type()).substr(19)
+                           << std::endl;
+    }
+
     if (!all.options->get_typed_option<bool>("dry_run").value())
     {
-      if (!all.logger.quiet && !all.bfgs && !all.searchstr && !all.options->was_supplied("audit_regressor"))
+      if (!all.quiet && !all.bfgs && !all.searchstr && !all.options->was_supplied("audit_regressor"))
       { all.sd->print_update_header(*all.trace_message); }
       all.l->init_driver();
     }
 
     return &all;
   }
-  catch (std::exception& e)
+  catch (VW::save_load_model_exception& e)
   {
-    *(all.trace_message) << "Error: " << e.what() << endl;
-    finish(all);
-    throw;
+    auto msg = fmt::format("{}, model files = {}", e.what(), fmt::join(all.initial_regressors, ", "));
+    delete &all;
+    throw save_load_model_exception(e.Filename(), e.LineNumber(), msg);
   }
   catch (...)
   {
-    finish(all);
+    delete &all;
     throw;
   }
 }
 
-vw* initialize(std::unique_ptr<options_i, options_deleter_type> options, io_buf* model, bool skip_model_load,
+VW::workspace* initialize(std::unique_ptr<options_i, options_deleter_type> options, io_buf* model, bool skip_model_load,
     trace_message_t trace_listener, void* trace_context)
 {
   return initialize_with_builder(std::move(options), model, skip_model_load, trace_listener, trace_context, nullptr);
 }
 
-vw* initialize_escaped(
+VW::workspace* initialize_escaped(
     std::string const& s, io_buf* model, bool skip_model_load, trace_message_t trace_listener, void* trace_context)
 {
   int argc = 0;
   char** argv = to_argv_escaped(s, argc);
-  vw* ret = nullptr;
+  VW::workspace* ret = nullptr;
 
   try
   {
@@ -1659,27 +1799,28 @@ vw* initialize_escaped(
   return ret;
 }
 
-vw* initialize_with_builder(int argc, char* argv[], io_buf* model, bool skip_model_load, trace_message_t trace_listener,
-    void* trace_context, std::unique_ptr<VW::setup_base_i> learner_builder)
+VW::workspace* initialize_with_builder(int argc, char* argv[], io_buf* model, bool skip_model_load,
+    trace_message_t trace_listener, void* trace_context, std::unique_ptr<VW::setup_base_i> learner_builder)
 {
   std::unique_ptr<options_i, options_deleter_type> options(
-      new config::options_boost_po(argc, argv), [](VW::config::options_i* ptr) { delete ptr; });
+      new config::options_cli(std::vector<std::string>(argv + 1, argv + argc)),
+      [](VW::config::options_i* ptr) { delete ptr; });
   return initialize_with_builder(
       std::move(options), model, skip_model_load, trace_listener, trace_context, std::move(learner_builder));
 }
 
-vw* initialize(
+VW::workspace* initialize(
     int argc, char* argv[], io_buf* model, bool skip_model_load, trace_message_t trace_listener, void* trace_context)
 {
   return initialize_with_builder(argc, argv, model, skip_model_load, trace_listener, trace_context, nullptr);
 }
 
-vw* initialize_with_builder(const std::string& s, io_buf* model, bool skip_model_load, trace_message_t trace_listener,
-    void* trace_context, std::unique_ptr<VW::setup_base_i> learner_builder)
+VW::workspace* initialize_with_builder(const std::string& s, io_buf* model, bool skip_model_load,
+    trace_message_t trace_listener, void* trace_context, std::unique_ptr<VW::setup_base_i> learner_builder)
 {
   int argc = 0;
   char** argv = to_argv(s, argc);
-  vw* ret = nullptr;
+  VW::workspace* ret = nullptr;
 
   try
   {
@@ -1696,7 +1837,7 @@ vw* initialize_with_builder(const std::string& s, io_buf* model, bool skip_model
   return ret;
 }
 
-vw* initialize(
+VW::workspace* initialize(
     const std::string& s, io_buf* model, bool skip_model_load, trace_message_t trace_listener, void* trace_context)
 {
   return initialize_with_builder(s, model, skip_model_load, trace_listener, trace_context, nullptr);
@@ -1704,9 +1845,10 @@ vw* initialize(
 
 // Create a new VW instance while sharing the model with another instance
 // The extra arguments will be appended to those of the other VW instance
-vw* seed_vw_model(vw* vw_model, const std::string& extra_args, trace_message_t trace_listener, void* trace_context)
+VW::workspace* seed_vw_model(
+    VW::workspace* vw_model, const std::string& extra_args, trace_message_t trace_listener, void* trace_context)
 {
-  options_serializer_boost_po serializer;
+  cli_options_serializer serializer;
   for (auto const& option : vw_model->options->get_all_options())
   {
     if (vw_model->options->was_supplied(option->m_name))
@@ -1722,7 +1864,7 @@ vw* seed_vw_model(vw* vw_model, const std::string& extra_args, trace_message_t t
   auto serialized_options = serializer.str();
   serialized_options = serialized_options + " " + extra_args;
 
-  vw* new_model =
+  VW::workspace* new_model =
       VW::initialize(serialized_options, nullptr, true /* skip_model_load */, trace_listener, trace_context);
   free_it(new_model->sd);
 
@@ -1734,7 +1876,7 @@ vw* seed_vw_model(vw* vw_model, const std::string& extra_args, trace_message_t t
   return new_model;
 }
 
-void sync_stats(vw& all)
+void sync_stats(VW::workspace& all)
 {
   if (all.all_reduce != nullptr)
   {
@@ -1753,10 +1895,10 @@ void sync_stats(vw& all)
   }
 }
 
-void finish(vw& all, bool delete_all)
+void finish(VW::workspace& all, bool delete_all)
 {
   // also update VowpalWabbit::PerformanceStatistics::get() (vowpalwabbit.cpp)
-  if (!all.logger.quiet && !all.options->was_supplied("audit_regressor"))
+  if (!all.quiet && !all.options->was_supplied("audit_regressor"))
   {
     all.trace_message->precision(6);
     *(all.trace_message) << std::fixed;
@@ -1820,7 +1962,7 @@ void finish(vw& all, bool delete_all)
   }
 
   metrics::output_metrics(all);
-  logger::log_summary();
+  all.logger.log_summary();
 
   if (delete_all) delete &all;
 

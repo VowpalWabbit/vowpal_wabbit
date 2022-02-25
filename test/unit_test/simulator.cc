@@ -22,25 +22,32 @@ cb_sim::cb_sim(uint64_t seed)
   callback_count = 0;
 }
 
-float cb_sim::get_cost(const std::map<std::string, std::string>& context, const std::string& action)
+float cb_sim::get_reaction(const std::map<std::string, std::string>& context, const std::string& action, bool add_noise)
 {
+  float like_reward = USER_LIKED_ARTICLE;
+  float dislike_reward = USER_DISLIKED_ARTICLE;
+  if (add_noise)
+  {
+    like_reward += random_state.get_and_update_random();
+    dislike_reward += random_state.get_and_update_random();
+  }
   if (context.at("user") == "Tom")
   {
-    if (context.at("time_of_day") == "morning" && action == "politics") { return USER_LIKED_ARTICLE; }
+    if (context.at("time_of_day") == "morning" && action == "politics") { return like_reward; }
     else if (context.at("time_of_day") == "afternoon" && action == "music")
     {
-      return USER_LIKED_ARTICLE;
+      return like_reward;
     }
   }
   else if (context.at("user") == "Anna")
   {
-    if (context.at("time_of_day") == "morning" && action == "sports") { return USER_LIKED_ARTICLE; }
+    if (context.at("time_of_day") == "morning" && action == "sports") { return like_reward; }
     else if (context.at("time_of_day") == "afternoon" && action == "politics")
     {
-      return USER_LIKED_ARTICLE;
+      return like_reward;
     }
   }
-  return USER_DISLIKED_ARTICLE;
+  return dislike_reward;
 }
 // todo: skip text format and create vw example directly
 std::vector<std::string> cb_sim::to_vw_example_format(
@@ -74,7 +81,7 @@ std::pair<int, float> cb_sim::sample_custom_pmf(std::vector<float>& pmf)
   THROW("Error: No prob selected");
 }
 
-std::pair<std::string, float> cb_sim::get_action(vw* vw, const std::map<std::string, std::string>& context)
+std::pair<std::string, float> cb_sim::get_action(VW::workspace* vw, const std::map<std::string, std::string>& context)
 {
   std::vector<std::string> multi_ex_str = cb_sim::to_vw_example_format(context, "");
   multi_ex examples;
@@ -104,7 +111,7 @@ const std::string& cb_sim::choose_time_of_day()
   return times_of_day[rand_ind];
 }
 
-void cb_sim::call_if_exists(vw& vw, multi_ex& ex, const callback_map& callbacks, const size_t event)
+void cb_sim::call_if_exists(VW::workspace& vw, multi_ex& ex, const callback_map& callbacks, const size_t event)
 {
   auto iter = callbacks.find(event);
   if (iter != callbacks.end())
@@ -115,8 +122,8 @@ void cb_sim::call_if_exists(vw& vw, multi_ex& ex, const callback_map& callbacks,
   }
 }
 
-std::vector<float> cb_sim::run_simulation_hook(
-    vw* vw, size_t num_iterations, callback_map& callbacks, bool do_learn, size_t shift)
+std::vector<float> cb_sim::run_simulation_hook(VW::workspace* vw, size_t num_iterations, callback_map& callbacks,
+    bool do_learn, size_t shift, bool add_noise, uint64_t num_useless_features)
 {
   // check if there's a callback for the first possible element,
   // in this case most likely 0th event
@@ -133,13 +140,17 @@ std::vector<float> cb_sim::run_simulation_hook(
     auto time_of_day = choose_time_of_day();
 
     // 3. Pass context to vw to get an action
-    const std::map<std::string, std::string> context{{"user", user}, {"time_of_day", time_of_day}};
+    std::map<std::string, std::string> context{{"user", user}, {"time_of_day", time_of_day}};
+    // Add useless features if specified
+    for (uint64_t j = 0; j < num_useless_features; ++j)
+    { context.insert(std::pair<std::string, std::string>(std::to_string(j), std::to_string(j))); }
     auto action_prob = get_action(vw, context);
     auto chosen_action = action_prob.first;
     auto prob = action_prob.second;
 
     // 4. Get cost of the action we chose
-    float cost = get_cost(context, chosen_action);
+    // Check for reward swap
+    float cost = get_reaction(context, chosen_action, add_noise);
     cost_sum += cost;
 
     if (do_learn)
@@ -172,7 +183,7 @@ std::vector<float> cb_sim::run_simulation_hook(
   return ctr;
 }
 
-std::vector<float> cb_sim::run_simulation(vw* vw, size_t num_iterations, bool do_learn, size_t shift)
+std::vector<float> cb_sim::run_simulation(VW::workspace* vw, size_t num_iterations, bool do_learn, size_t shift)
 {
   callback_map callbacks;
   return cb_sim::run_simulation_hook(vw, num_iterations, callbacks, do_learn, shift);
