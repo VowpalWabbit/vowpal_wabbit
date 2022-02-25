@@ -15,7 +15,7 @@ namespace cs_unittest
         [TestCategory("Vowpal Wabbit")]
         public void TestTraceListener()
         {
-            string trace = "";
+            var trace = "";
             using (var vw = new VowpalWabbit(new VowpalWabbitSettings
             {
                 TraceListener = msg => trace += msg,
@@ -26,10 +26,11 @@ namespace cs_unittest
                 vw.Learn("2 |a x:3");
             }
 
-            var expected = 25;
+            const int expected = 24;
             var actualLines = trace.Split('\n');
-            Assert.AreEqual(expected, actualLines.Count(), $"Expected {expected} lines. Found {actualLines.Count()}. '{trace}'");
-            Assert.AreEqual("total feature number = 4", actualLines.Last());
+            Assert.AreEqual(expected, actualLines.Length, $"Expected {expected} lines. Found {actualLines.Length}. '{trace}'");
+            // Last entry is an empty line. So go back to second last.
+            Assert.AreEqual("total feature number = 4", actualLines[actualLines.Length - 2]);
         }
     }
 }
