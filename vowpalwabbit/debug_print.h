@@ -8,7 +8,10 @@
 #include <utility>
 
 #include "v_array.h"
-#include "example.h"
+
+struct example;
+struct example_predict;
+using multi_ex = std::vector<example*>;
 
 namespace std
 {
