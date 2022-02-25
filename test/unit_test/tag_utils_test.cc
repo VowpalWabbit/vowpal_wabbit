@@ -17,7 +17,8 @@
 
 BOOST_AUTO_TEST_CASE(tag_with_seed__seed_extraction)
 {
-  auto opts = VW::make_unique<VW::config::options_cli>(std::vector<std::string>{"--json","--chain_hash","--no_stdin","--quiet"});
+  auto opts = VW::make_unique<VW::config::options_cli>(
+      std::vector<std::string>{"--json", "--chain_hash", "--no_stdin", "--quiet"});
   auto vw = VW::initialize_experimental(std::move(opts));
   std::string json = R"(
   {

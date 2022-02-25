@@ -1779,8 +1779,9 @@ std::unique_ptr<VW::workspace> initialize_experimental(std::unique_ptr<config::o
     model = VW::make_unique<io_buf>();
     model->add_file(std::move(model_override_reader));
   }
-  return initialize_internal(std::move(options_custom_deleter), model.get(), false /* skip model load */, driver_output_func,
-      driver_output_func_context, logger_output_func, logger_output_func_context, std::move(learner_builder));
+  return initialize_internal(std::move(options_custom_deleter), model.get(), false /* skip model load */,
+      driver_output_func, driver_output_func_context, logger_output_func, logger_output_func_context,
+      std::move(learner_builder));
 }
 
 VW::workspace* initialize_with_builder(std::unique_ptr<options_i, options_deleter_type> options, io_buf* model,
