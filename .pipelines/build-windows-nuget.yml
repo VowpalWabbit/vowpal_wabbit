@@ -65,7 +65,7 @@ steps:
   displayName: 'Package artifacts'
   env:
     nugetPath: $(Build.SourcesDirectory)\vowpalwabbit\.nuget\nuget.exe
-    Tag: -$(Build.SourceVersion)--$(Build.BuildId)
+    Tag: -$(Build.BuildId)--$(Build.SourceVersion)
     SourceInfo: 'Built from commit id: $(Build.SourceVersion)'
   failOnStderr: true
 - task: PublishBuildArtifacts@1
