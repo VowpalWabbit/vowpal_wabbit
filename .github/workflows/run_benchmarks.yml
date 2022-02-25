@@ -15,6 +15,7 @@ jobs:
       - uses: actions/checkout@v1
         with:
           ref: ${{ github.base_ref }}
+          submodules: 'recursive'
       - name: Install google benchmarks
         shell: bash
         run: ./.scripts/linux/install-benchmarks.sh
@@ -42,6 +43,8 @@ jobs:
           python3 -m pip install pandas
       - run: rm -rf benchmark build vowpalwabbit/parser/flatbuffer/generated/ # generated or downloaded files
       - uses: actions/checkout@v1
+        with:
+          submodules: 'recursive'
       - name: Download ${{ github.base_ref }} benchmark results
         uses: actions/download-artifact@v2
         with:
