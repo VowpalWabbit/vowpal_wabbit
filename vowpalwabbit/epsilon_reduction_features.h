@@ -16,7 +16,7 @@ struct reduction_features
 
   reduction_features() { epsilon = -1.f; }
 
-  bool is_valid_epsilon() { return epsilon >= 0.f; }
+  bool valid_epsilon_supplied() { return epsilon >= 0.f && epsilon <= 1.f; }
   void reset_to_default() { epsilon = -1.f; }
 };
 }  // namespace greedy
