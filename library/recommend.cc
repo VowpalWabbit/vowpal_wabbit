@@ -106,17 +106,6 @@ int main(int argc, char* argv[])
   using std::cout;
   using std::endl;
 
-  // po::variables_map vm;
-  // po::options_description desc("Allowed options");
-  // desc.add_options()("help,h", "produce help message")(
-  //
-  //    ("bf_bits,b", po::value<int>(&bits), "number of items to recommend")(
-  //     "blacklist,B", po::value<std::string>(&blacklistfilename),
-  //     "")(
-  //     "users,U", po::value<std::string>(&userfilename), "")(
-  //     "items,I", po::value<std::string>(&itemfilename), "i)(
-  //     "vwparams", po::value<std::string>(&vwparams), "vw parameters for model instantiation (-i model ...)");
-
   bool help;
   VW::config::options_cli opts(std::vector<std::string>(argv + 1, argv + argc));
   VW::config::option_group_definition desc("Recommend");
