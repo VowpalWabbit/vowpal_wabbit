@@ -1241,8 +1241,8 @@ ssize_t trace_message_wrapper_adapter(void* context, const char* buffer, size_t 
   return static_cast<ssize_t>(num_bytes);
 }
 
-std::unique_ptr<VW::workspace> parse_args(std::unique_ptr<options_i, options_deleter_type> options, trace_message_t trace_listener,
-    void* trace_context, VW::io::logger_output_func_t logger_output_func = nullptr,
+std::unique_ptr<VW::workspace> parse_args(std::unique_ptr<options_i, options_deleter_type> options,
+    trace_message_t trace_listener, void* trace_context, VW::io::logger_output_func_t logger_output_func = nullptr,
     void* logger_output_func_context = nullptr)
 {
   auto logger = logger_output_func != nullptr
@@ -1343,9 +1343,9 @@ std::unique_ptr<VW::workspace> parse_args(std::unique_ptr<options_i, options_del
   option_group_definition vw_args("Parser");
   vw_args.add(make_option("ring_size", ring_size_tmp).default_value(256).help("Size of example ring"))
       .add(make_option("example_queue_limit", example_queue_limit_tmp)
-                .default_value(256)
-                .help("Max number of examples to store after parsing but before the learner has processed. Rarely "
-                      "needs to be changed."))
+               .default_value(256)
+               .help("Max number of examples to store after parsing but before the learner has processed. Rarely "
+                     "needs to be changed."))
       .add(make_option("strict_parse", strict_parse).help("Throw on malformed examples"));
   all->options->add_and_parse(vw_args);
 
@@ -1372,14 +1372,14 @@ std::unique_ptr<VW::workspace> parse_args(std::unique_ptr<options_i, options_del
   weight_args
       .add(make_option("initial_regressor", all->initial_regressors).help("Initial regressor(s)").short_name("i"))
       .add(make_option("initial_weight", all->initial_weight)
-                .default_value(0.f)
-                .help("Set all weights to an initial value of arg"))
+               .default_value(0.f)
+               .help("Set all weights to an initial value of arg"))
       .add(make_option("random_weights", all->random_weights).help("Make initial weights random"))
       .add(make_option("normal_weights", all->normal_weights).help("Make initial weights normal"))
       .add(make_option("truncated_normal_weights", all->tnormal_weights).help("Make initial weights truncated normal"))
       .add(make_option("sparse_weights", all->weights.sparse).help("Use a sparse datastructure for weights"))
       .add(make_option("input_feature_regularizer", all->per_feature_regularizer_input)
-                .help("Per feature regularization input file"));
+               .help("Per feature regularization input file"));
   all->options->add_and_parse(weight_args);
 
   std::string span_server_arg;
@@ -1393,12 +1393,11 @@ std::unique_ptr<VW::workspace> parse_args(std::unique_ptr<options_i, options_del
       .add(make_option("span_server", span_server_arg).help("Location of server for setting up spanning tree"))
       //(make_option("threads", threads_arg).help("Enable multi-threading")) Unused option?
       .add(make_option("unique_id", unique_id_arg).default_value(0).help("Unique id used for cluster parallel jobs"))
-      .add(
-          make_option("total", total_arg).default_value(1).help("Total number of nodes used in cluster parallel job"))
+      .add(make_option("total", total_arg).default_value(1).help("Total number of nodes used in cluster parallel job"))
       .add(make_option("node", node_arg).default_value(0).help("Node number in cluster parallel job"))
       .add(make_option("span_server_port", span_server_port_arg)
-                .default_value(26543)
-                .help("Port of the server for setting up spanning tree"));
+               .default_value(26543)
+               .help("Port of the server for setting up spanning tree"));
   all->options->add_and_parse(parallelization_args);
 
   // total, unique_id and node must be specified together.
@@ -1688,9 +1687,7 @@ std::unique_ptr<VW::workspace> initialize_internal(std::unique_ptr<options_i, op
   {
     std::vector<std::string> all_initial_regressor_files(all->initial_regressors);
     if (all->options->was_supplied("input_feature_regularizer"))
-    {
-      all_initial_regressor_files.push_back(all->per_feature_regularizer_input);
-    }
+    { all_initial_regressor_files.push_back(all->per_feature_regularizer_input); }
     read_regressor_file(*all, all_initial_regressor_files, local_model);
     model = &local_model;
   }
@@ -1732,14 +1729,13 @@ std::unique_ptr<VW::workspace> initialize_internal(std::unique_ptr<options_i, op
   {
     size_t num_supplied = 0;
     for (auto const& option : all->options->get_all_options())
-    {
-      num_supplied += all->options->was_supplied(option->m_name) ? 1 : 0;
-    }
+    { num_supplied += all->options->was_supplied(option->m_name) ? 1 : 0; }
 
     auto option_groups = all->options->get_all_option_group_definitions();
     std::sort(option_groups.begin(), option_groups.end(),
-        [](const VW::config::option_group_definition& a, const VW::config::option_group_definition& b)
-        { return a.m_name < b.m_name; });
+        [](const VW::config::option_group_definition& a, const VW::config::option_group_definition& b) {
+          return a.m_name < b.m_name;
+        });
     // Help is added as help and h. So greater than 2 means there is more command line there.
     if (num_supplied > 2) { option_groups = remove_disabled_necessary_options(*all->options, option_groups); }
 
@@ -1760,9 +1756,7 @@ std::unique_ptr<VW::workspace> initialize_internal(std::unique_ptr<options_i, op
   if (!all->options->get_typed_option<bool>("dry_run").value())
   {
     if (!all->quiet && !all->bfgs && !all->searchstr && !all->options->was_supplied("audit_regressor"))
-    {
-      all->sd->print_update_header(*all->trace_message);
-    }
+    { all->sd->print_update_header(*all->trace_message); }
     all->l->init_driver();
   }
 
@@ -1778,7 +1772,7 @@ std::unique_ptr<VW::workspace> initialize_experimental(std::unique_ptr<config::o
   std::unique_ptr<options_i, options_deleter_type> options_custom_deleter(
       released_options, [](VW::config::options_i* ptr) { delete ptr; });
   return initialize_internal(std::move(options_custom_deleter), model, skip_model_load, driver_output_func,
-          driver_output_func_context, logger_output_func, logger_output_func_context, std::move(learner_builder));
+      driver_output_func_context, logger_output_func, logger_output_func_context, std::move(learner_builder));
 }
 
 VW::workspace* initialize_with_builder(std::unique_ptr<options_i, options_deleter_type> options, io_buf* model,
@@ -1787,7 +1781,8 @@ VW::workspace* initialize_with_builder(std::unique_ptr<options_i, options_delete
     std::unique_ptr<VW::setup_base_i> learner_builder = nullptr)
 {
   return initialize_internal(std::move(options), model, skip_model_load, trace_listener, trace_context, nullptr,
-      nullptr, std::move(learner_builder)).release();
+      nullptr, std::move(learner_builder))
+      .release();
 }
 
 VW::workspace* initialize(std::unique_ptr<options_i, options_deleter_type> options, io_buf* model, bool skip_model_load,

@@ -56,7 +56,7 @@ enum class log_level
 log_level get_log_level(const std::string& level);
 
 using logger_output_func_t = void (*)(void*, VW::io::log_level, const std::string&);
-using logger_legacy_output_func_t = void (*)(void*,const std::string&);
+using logger_legacy_output_func_t = void (*)(void*, const std::string&);
 
 namespace details
 {
@@ -223,7 +223,10 @@ template <typename Mutex>
 class function_ptr_sink : public spdlog::sinks::base_sink<Mutex>
 {
 public:
-  function_ptr_sink(void* context, logger_output_func_t func) : spdlog::sinks::base_sink<Mutex>(), _func(func), _context(context) {}
+  function_ptr_sink(void* context, logger_output_func_t func)
+      : spdlog::sinks::base_sink<Mutex>(), _func(func), _context(context)
+  {
+  }
 
 protected:
   void sink_it_(const spdlog::details::log_msg& msg) override
@@ -239,13 +242,15 @@ protected:
   void* _context;
 };
 
-
 // Same as above but ignores the log level.
 template <typename Mutex>
 class function_ptr_legacy_sink : public spdlog::sinks::base_sink<Mutex>
 {
 public:
-  function_ptr_legacy_sink(void* context, logger_legacy_output_func_t func) : spdlog::sinks::base_sink<Mutex>(), _func(func), _context(context) {}
+  function_ptr_legacy_sink(void* context, logger_legacy_output_func_t func)
+      : spdlog::sinks::base_sink<Mutex>(), _func(func), _context(context)
+  {
+  }
 
 protected:
   void sink_it_(const spdlog::details::log_msg& msg) override
@@ -260,7 +265,6 @@ protected:
   logger_legacy_output_func_t _func;
   void* _context;
 };
-
 
 }  // namespace details
 

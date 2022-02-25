@@ -66,7 +66,8 @@ VW::workspace* initialize_with_builder(const std::string& s, io_buf* model = nul
 
 using driver_output_func_t = void (*)(void*, const std::string&);
 /**
- * @brief Initialize a workspace. This interface is currently experimental, but will replace the existing array of initialize functions.
+ * @brief Initialize a workspace. This interface is currently experimental, but will replace the existing array of
+ * initialize functions.
  *
  * @param options The options to initialize the workspace with. Usually an instance of VW::config::options_cli
  * @param model optional model to override cmdline option
@@ -93,8 +94,9 @@ void free_args(int argc, char* argv[]);
 const char* are_features_compatible(VW::workspace& vw1, VW::workspace& vw2);
 
 /**
- * @brief Call finish() after you are done with the vw instance. This cleans up memory usage if delete_all is true. Finish will cause final stat printouts and model serialization to occur.
- * IMPORTANT: If lifetime is managed by a unique_ptr from initialize_experimental, then you must call this with delete_all = false
+ * @brief Call finish() after you are done with the vw instance. This cleans up memory usage if delete_all is true.
+ * Finish will cause final stat printouts and model serialization to occur. IMPORTANT: If lifetime is managed by a
+ * unique_ptr from initialize_experimental, then you must call this with delete_all = false
  *
  * @param all workspace to be finished
  * @param delete_all whethere to also also call delete on this instance.
