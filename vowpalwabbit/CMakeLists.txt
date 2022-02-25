@@ -267,6 +267,7 @@ set(vw_all_sources
   config/options.cc
   cost_sensitive.cc
   crossplat_compat.cc
+  debug_print.cc
   decision_scores.cc
   distributionally_robust.cc
   example_predict.cc

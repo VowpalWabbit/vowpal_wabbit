@@ -40,7 +40,7 @@ namespace cats
 // Pass through
 int cats::predict(example& ec, experimental::api_status*)
 {
-  VW_DBG(ec) << "cats::predict(), " << features_to_string(ec) << endl;
+  VW_DBG(ec) << "cats::predict(), " << VW::debug::features_to_string(ec) << endl;
   _base->predict(ec);
   return VW::experimental::error_code::success;
 }
@@ -50,7 +50,7 @@ int cats::learn(example& ec, experimental::api_status* status = nullptr)
 {
   assert(!ec.test_only);
   predict(ec, status);
-  VW_DBG(ec) << "cats::learn(), " << to_string(ec.l.cb_cont) << features_to_string(ec) << endl;
+  VW_DBG(ec) << "cats::learn(), " << to_string(ec.l.cb_cont) << VW::debug::features_to_string(ec) << endl;
   _base->learn(ec);
   return VW::experimental::error_code::success;
 }
@@ -127,8 +127,12 @@ void reduction_output::output_predictions(std::vector<std::unique_ptr<VW::io::wr
     const continuous_actions::probability_density_function_value& prediction)
 {
   // output to the prediction to all files
-  const std::string str = to_string(prediction, true);
-  for (auto& f : predict_file_descriptors) f->write(str.c_str(), str.size());
+  const std::string str = to_string(prediction, -1);
+  for (auto& f : predict_file_descriptors)
+  {
+    f->write(str.c_str(), str.size());
+    f->write("\n", 1);
+  }
 }
 
 void reduction_output::report_progress(VW::workspace& all, const cats& data, const example& ec)
@@ -150,8 +154,8 @@ void reduction_output::print_update_cb_cont(VW::workspace& all, const example& e
   if (all.sd->weighted_examples() >= all.sd->dump_interval && !all.quiet && !all.bfgs)
   {
     all.sd->print_update(*all.trace_message, all.holdout_set_off, all.current_pass,
-        ec.test_only ? "unknown" : to_string(ec.l.cb_cont.costs[0]),  // Label
-        to_string(ec.pred.pdf_value),                                 // Prediction
+        ec.test_only ? "unknown" : to_string(ec.l.cb_cont.costs[0], 2),  // Label
+        to_string(ec.pred.pdf_value, 2),                                 // Prediction
         ec.get_num_features(), all.progress_add, all.progress_arg);
   }
 }
