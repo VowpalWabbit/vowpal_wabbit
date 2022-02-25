@@ -113,6 +113,7 @@ int main(int argc, char* argv[])
       else
       {
         std::vector<VW::workspace*> alls_ptrs;
+        alls_ptrs.reserve(alls.size());
         for (auto& v : alls) { alls_ptrs.push_back(v.get()); }
         VW::LEARNER::generic_driver(alls_ptrs);
       }
