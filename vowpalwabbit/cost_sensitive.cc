@@ -184,15 +184,13 @@ void print_update(VW::workspace& all, bool is_test, const example& ec, const mul
 
     std::string label_buf;
     if (is_test)
-      label_buf = " unknown";
+      label_buf = "unknown";
     else
-      label_buf = " known";
+      label_buf = "known";
 
     if (action_scores || all.sd->ldict)
     {
       std::ostringstream pred_buf;
-
-      pred_buf << std::setw(all.sd->col_current_predict) << std::right << std::setfill(' ');
       if (all.sd->ldict)
       {
         if (action_scores)

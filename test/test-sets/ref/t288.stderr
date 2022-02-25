@@ -9,17 +9,17 @@ power_t = 0.5
 Enabled reductions: gd, scorer-identity, interact, count_label
 Input label = simple
 Output pred = scalar
-average  since         example        example  current  current  current
-loss     last          counter         weight    label  predict features
-1.000000 1.000000            1            1.0   1.0000   0.0000       12
-0.527692 0.055384            2            2.0   0.0000   0.2353       11
-0.303797 0.079902            4            4.0   0.0000   0.1578       12
+average  since         example        example        current        current  current
+loss     last          counter         weight          label        predict features
+1.000000 1.000000            1            1.0         1.0000         0.0000       12
+0.527692 0.055384            2            2.0         0.0000         0.2353       11
+0.303797 0.079902            4            4.0         0.0000         0.1578       12
 
 finished run
 number of examples = 6
 weighted example sum = 6.000000
 weighted label sum = 2.000000
-average loss = 0.372372
+average loss = 0.372377
 best constant = 0.333333
 best constant's loss = 0.222222
 total feature number = 69

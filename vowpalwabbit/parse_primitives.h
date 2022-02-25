@@ -149,4 +149,6 @@ VW::string_view trim_whitespace(VW::string_view str);
 
 std::vector<std::string> split_command_line(const std::string& cmd_line);
 std::vector<std::string> split_command_line(VW::string_view cmd_line);
+
+std::vector<VW::string_view> split_by_limit(const VW::string_view& s, size_t limit);
 }  // namespace VW

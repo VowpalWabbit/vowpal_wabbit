@@ -151,4 +151,18 @@ std::vector<std::string> split_command_line(const std::string& cmd_line)
 {
   return split_impl(cmd_line.begin(), cmd_line.end());
 }
+
+std::vector<VW::string_view> split_by_limit(const VW::string_view& s, size_t limit)
+{
+  std::vector<VW::string_view> result;
+  size_t start = 0;
+  while (start < s.size())
+  {
+    size_t end = start + limit;
+    if (end > s.size()) { end = s.size(); }
+    result.push_back(s.substr(start, end - start));
+    start = end;
+  }
+  return result;
+}
 }  // namespace VW
