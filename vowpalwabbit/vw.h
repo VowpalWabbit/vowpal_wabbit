@@ -35,6 +35,7 @@
 #include "hashstring.h"
 
 #include "config/options.h"
+#include "io/logger.h"
 
 #include "compat.h"
 
@@ -63,6 +64,25 @@ VW::workspace* initialize_with_builder(const std::string& s, io_buf* model = nul
     trace_message_t trace_listener = nullptr, void* trace_context = nullptr,
     std::unique_ptr<VW::setup_base_i> = nullptr);
 
+using driver_output_func_t = void (*)(void*, const std::string&);
+/**
+ * @brief Initialize a workspace. This interface is currently experimental, but will replace the existing array of initialize functions.
+ *
+ * @param options The options to initialize the workspace with. Usually an instance of VW::config::options_cli
+ * @param model optional model to override cmdline option
+ * @param skip_model_load if true, no model will be loaded
+ * @param driver_output_func optional function to forward driver ouput to
+ * @param driver_output_func_context context for driver_output_func
+ * @param logger_output_func optional function to forward logger ouput to
+ * @param logger_output_func_context context for logger_output_func
+ * @param setup_base optional advanced override of reduction stack
+ * @return std::unique_ptr<VW::workspace> initialized workspace
+ */
+std::unique_ptr<VW::workspace> initialize_experimental(std::unique_ptr<config::options_i> options,
+    io_buf* model = nullptr, bool skip_model_load = false, driver_output_func_t driver_output_func = nullptr,
+    void* driver_output_func_context = nullptr, VW::io::logger_output_func_t logger_output_func = nullptr,
+    void* logger_output_func_context = nullptr, std::unique_ptr<VW::setup_base_i> setup_base = nullptr);
+
 void cmd_string_replace_value(std::stringstream*& ss, std::string flag_to_replace, const std::string& new_value);
 
 // The argv array from both of these functions must be freed.
@@ -72,8 +92,12 @@ void free_args(int argc, char* argv[]);
 
 const char* are_features_compatible(VW::workspace& vw1, VW::workspace& vw2);
 
-/*
-  Call finish() after you are done with the vw instance.  This cleans up memory usage.
+/**
+ * @brief Call finish() after you are done with the vw instance. This cleans up memory usage if delete_all is true. Finish will cause final stat printouts and model serialization to occur.
+ * IMPORTANT: If lifetime is managed by a unique_ptr from initialize_experimental, then you must call this with delete_all = false
+ *
+ * @param all workspace to be finished
+ * @param delete_all whethere to also also call delete on this instance.
  */
 void finish(VW::workspace& all, bool delete_all = true);
 void sync_stats(VW::workspace& all);

@@ -42,6 +42,22 @@ enum class output_location
 
 output_location get_output_location(const std::string& name);
 
+enum class log_level
+{
+  trace = spdlog::level::trace,
+  debug = spdlog::level::debug,
+  info = spdlog::level::info,
+  warn = spdlog::level::warn,
+  error = spdlog::level::err,
+  critical = spdlog::level::critical,
+  off = spdlog::level::off
+};
+
+log_level get_log_level(const std::string& level);
+
+using logger_output_func_t = void (*)(void*, VW::io::log_level, const std::string&);
+using logger_legacy_output_func_t = void (*)(void*,const std::string&);
+
 namespace details
 {
 const constexpr char* default_pattern = "[%l] %v";
@@ -207,8 +223,29 @@ template <typename Mutex>
 class function_ptr_sink : public spdlog::sinks::base_sink<Mutex>
 {
 public:
-  using func_t = void (*)(void*, const std::string&);
-  function_ptr_sink(void* context, func_t func) : spdlog::sinks::base_sink<Mutex>(), _func(func), _context(context) {}
+  function_ptr_sink(void* context, logger_output_func_t func) : spdlog::sinks::base_sink<Mutex>(), _func(func), _context(context) {}
+
+protected:
+  void sink_it_(const spdlog::details::log_msg& msg) override
+  {
+    spdlog::memory_buf_t formatted;
+    spdlog::sinks::base_sink<Mutex>::formatter_->format(msg, formatted);
+    _func(_context, static_cast<log_level>(msg.level), fmt::to_string(formatted));
+  }
+
+  void flush_() override {}
+
+  logger_output_func_t _func;
+  void* _context;
+};
+
+
+// Same as above but ignores the log level.
+template <typename Mutex>
+class function_ptr_legacy_sink : public spdlog::sinks::base_sink<Mutex>
+{
+public:
+  function_ptr_legacy_sink(void* context, logger_legacy_output_func_t func) : spdlog::sinks::base_sink<Mutex>(), _func(func), _context(context) {}
 
 protected:
   void sink_it_(const spdlog::details::log_msg& msg) override
@@ -220,24 +257,12 @@ protected:
 
   void flush_() override {}
 
-  func_t _func;
+  logger_legacy_output_func_t _func;
   void* _context;
 };
 
+
 }  // namespace details
-
-enum class log_level
-{
-  trace = spdlog::level::trace,
-  debug = spdlog::level::debug,
-  info = spdlog::level::info,
-  warn = spdlog::level::warn,
-  error = spdlog::level::err,
-  critical = spdlog::level::critical,
-  off = spdlog::level::off
-};
-
-log_level get_log_level(const std::string& level);
 
 struct logger
 {
@@ -248,7 +273,8 @@ private:
 
   friend logger create_default_logger();
   friend logger create_null_logger();
-  friend logger create_custom_sink_logger(void* context, void (*func)(void*, const std::string&));
+  friend logger create_custom_sink_logger(void* context, logger_output_func_t func);
+  friend logger create_custom_sink_logger_legacy(void* context, logger_legacy_output_func_t func);
 
 public:
   template <typename FormatString, typename... Args>
@@ -328,10 +354,19 @@ inline logger create_null_logger()
           ));
 }
 
-inline logger create_custom_sink_logger(void* context, void (*func)(void*, const std::string&))
+inline logger create_custom_sink_logger(void* context, logger_output_func_t func)
 {
   auto fptr_out_sink = std::make_shared<details::function_ptr_sink<std::mutex>>(context, func);
   auto fptr_err_sink = std::make_shared<details::function_ptr_sink<std::mutex>>(context, func);
+  return logger(std::make_shared<details::logger_impl>(
+      std::unique_ptr<spdlog::logger>(new spdlog::logger("vowpal-stdout", fptr_out_sink)),
+      std::unique_ptr<spdlog::logger>(new spdlog::logger("vowpal-stdout", fptr_err_sink))));
+}
+
+inline logger create_custom_sink_logger_legacy(void* context, logger_legacy_output_func_t func)
+{
+  auto fptr_out_sink = std::make_shared<details::function_ptr_legacy_sink<std::mutex>>(context, func);
+  auto fptr_err_sink = std::make_shared<details::function_ptr_legacy_sink<std::mutex>>(context, func);
   return logger(std::make_shared<details::logger_impl>(
       std::unique_ptr<spdlog::logger>(new spdlog::logger("vowpal-stdout", fptr_out_sink)),
       std::unique_ptr<spdlog::logger>(new spdlog::logger("vowpal-stdout", fptr_err_sink))));
