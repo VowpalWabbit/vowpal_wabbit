@@ -4,6 +4,8 @@
 
 #include "debug_print.h"
 
+#include "example.h"
+
 using namespace VW::debug;
 
 std::string cb_label_to_string(const example& ec)
