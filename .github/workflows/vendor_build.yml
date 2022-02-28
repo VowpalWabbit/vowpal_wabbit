@@ -57,13 +57,13 @@ jobs:
       CMAKE_BUILD_DIR: ${{ github.workspace }}/vw/build
       SOURCE_DIR: ${{ github.workspace }}/vw
       VCPKG_ROOT: ${{ github.workspace }}/vcpkg
-      # 2020.11-1
-      VCPKG_REF: ec6fe06e8da05a8157dc8581fa96b36b571c1bd5
+      # 2022.02.23 just for boost-test
+      VCPKG_REF: b86c0c35b88e2bf3557ff49dc831689c2f085090
     steps:
       - uses: actions/checkout@v2
         with:
           path: 'vw'
-          submodules: true
+          submodules: 'recursive'
       - uses: actions/checkout@v2
         with:
           path: 'vcpkg'
@@ -113,6 +113,8 @@ jobs:
         build_type: [Debug, Release]
     steps:
       - uses: actions/checkout@v2
+        with:
+          submodules: 'recursive'
       - name: Install dependencies
         run: brew install cmake boost ninja
       - name: Configure
