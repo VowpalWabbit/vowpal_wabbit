@@ -6,9 +6,7 @@
 
 #include "example.h"
 
-using namespace VW::debug;
-
-std::string cb_label_to_string(const example& ec)
+std::string VW::debug::cb_label_to_string(const example& ec)
 {
   std::stringstream strstream;
   strstream << "[l.cb={";
@@ -22,42 +20,42 @@ std::string cb_label_to_string(const example& ec)
   return strstream.str();
 }
 
-std::string simple_label_to_string(const example& ec)
+std::string VW::debug::simple_label_to_string(const example& ec)
 {
   std::stringstream strstream;
   strstream << "[l=" << ec.l.simple.label << ",w=" << ec.weight << "]";
   return strstream.str();
 }
 
-std::string scalar_pred_to_string(const example& ec)
+std::string VW::debug::scalar_pred_to_string(const example& ec)
 {
   std::stringstream strstream;
   strstream << "[p=" << ec.pred.scalar << ", pp=" << ec.partial_prediction << "]";
   return strstream.str();
 }
 
-std::string a_s_pred_to_string(const example& ec)
+std::string VW::debug::a_s_pred_to_string(const example& ec)
 {
   std::stringstream strstream;
   strstream << "ec.pred.a_s[" << VW::to_string(ec.pred.a_s) << "]";
   return strstream.str();
 }
 
-std::string multiclass_pred_to_string(const example& ec)
+std::string VW::debug::multiclass_pred_to_string(const example& ec)
 {
   std::stringstream strstream;
   strstream << "ec.pred.multiclass = " << ec.pred.multiclass;
   return strstream.str();
 }
 
-std::string prob_dist_pred_to_string(const example& ec)
+std::string VW::debug::prob_dist_pred_to_string(const example& ec)
 {
   std::stringstream strstream;
   strstream << "ec.pred.prob_dist[" << VW::to_string(ec.pred.pdf) << "]";
   return strstream.str();
 }
 
-std::string features_to_string(const example_predict& ec)
+std::string VW::debug::features_to_string(const example_predict& ec)
 {
   std::stringstream strstream;
   strstream << "[off=" << ec.ft_offset << "]";
@@ -74,14 +72,14 @@ std::string features_to_string(const example_predict& ec)
   return strstream.str();
 }
 
-std::string debug_depth_indent_string(const example& ec)
+std::string VW::debug::debug_depth_indent_string(const example& ec)
 {
   return debug_depth_indent_string(ec._debug_current_reduction_depth);
 }
 
-std::string debug_depth_indent_string(const multi_ex& ec) { return VW::debug::debug_depth_indent_string(*ec[0]); }
+std::string VW::debug::debug_depth_indent_string(const multi_ex& ec) { return VW::debug::debug_depth_indent_string(*ec[0]); }
 
-std::string debug_depth_indent_string(const int32_t depth)
+std::string VW::debug::debug_depth_indent_string(const int32_t depth)
 {
   constexpr const char* indent_str = "- ";
   constexpr const char* space_str = "  ";
