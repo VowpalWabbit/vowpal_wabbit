@@ -103,7 +103,7 @@ jobs:
       - name: Test
         run: |
           python3 ${{ env.SOURCE_DIR }}/test/run_tests.py -f --clean_dirty -E 0.001
-          ./${{ env.CMAKE_BUILD_DIR }}/test/unit_test/${{ matrix.build_type }}/vw-unit-test.out.exe
+          ${{ env.CMAKE_BUILD_DIR }}/test/unit_test/${{ matrix.build_type }}/vw-unit-test.out.exe
   build_vendor_macos:
     runs-on: ${{matrix.os}}
     name: core-cli.${{ matrix.os }}.amd64.${{ matrix.build_type }}.AppleClang.standalone
