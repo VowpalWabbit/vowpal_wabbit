@@ -65,6 +65,8 @@ VW::workspace* initialize_with_builder(const std::string& s, io_buf* model = nul
     std::unique_ptr<VW::setup_base_i> = nullptr);
 
 using driver_output_func_t = void (*)(void*, const std::string&);
+VW_WARNING_STATE_PUSH
+VW_WARNING_DISABLE_BADLY_FORMED_XML
 /**
  * @brief Initialize a workspace. This interface is currently experimental, but
  * will replace the existing array of initialize functions.
@@ -84,6 +86,7 @@ std::unique_ptr<VW::workspace> initialize_experimental(std::unique_ptr<config::o
     std::unique_ptr<VW::io::reader> model_override_reader = nullptr, driver_output_func_t driver_output_func = nullptr,
     void* driver_output_func_context = nullptr, VW::io::logger_output_func_t logger_output_func = nullptr,
     void* logger_output_func_context = nullptr, std::unique_ptr<VW::setup_base_i> setup_base = nullptr);
+VW_WARNING_STATE_POP
 
 void cmd_string_replace_value(std::stringstream*& ss, std::string flag_to_replace, const std::string& new_value);
 
@@ -94,6 +97,8 @@ void free_args(int argc, char* argv[]);
 
 const char* are_features_compatible(VW::workspace& vw1, VW::workspace& vw2);
 
+VW_WARNING_STATE_PUSH
+VW_WARNING_DISABLE_BADLY_FORMED_XML
 /**
  * @brief Call finish() after you are done with the vw instance. This cleans up memory usage if delete_all is true.
  * Finish will cause final stat printouts and model serialization to occur. IMPORTANT: If lifetime is managed by a
@@ -103,6 +108,7 @@ const char* are_features_compatible(VW::workspace& vw1, VW::workspace& vw2);
  * @param delete_all whethere to also also call delete on this instance.
  */
 void finish(VW::workspace& all, bool delete_all = true);
+VW_WARNING_STATE_POP
 void sync_stats(VW::workspace& all);
 
 void start_parser(VW::workspace& all);
