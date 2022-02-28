@@ -51,7 +51,7 @@ jobs:
     runs-on: ${{matrix.os}}
     strategy:
       matrix:
-        os: ["windows-2019"]
+        os: ["windows-2019", "windows-2022"]
         build_type: ["Debug", "Release"]
     env:
       CMAKE_BUILD_DIR: ${{ github.workspace }}/vw/build
@@ -79,7 +79,7 @@ jobs:
             !${{ env.VCPKG_ROOT }}/packages
             !${{ env.VCPKG_ROOT }}/downloads
           key: |
-            ${{ env.VCPKG_REF }}-vcpkg-cache-invalidate-0
+            ${{ env.VCPKG_REF }}-${{matrix.os}}-standalone-vcpkg-cache-invalidate-0
       - uses: ilammy/msvc-dev-cmd@v1
       - name: Bootstrap vcpkg
         run: ${{ env.VCPKG_ROOT }}/bootstrap-vcpkg.bat
