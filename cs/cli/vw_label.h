@@ -244,7 +244,7 @@ public:
       red_fts.initial = m_initial.Value;
     }
 
-    count_label(vw->sd, ld->label);
+    VW::count_label(*vw->sd, ld->label);
   }
 
   virtual String^ ToString() override
