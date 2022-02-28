@@ -18,6 +18,7 @@
 #include "parse_regressor.h"
 #include "parser.h"
 #include "parse_primitives.h"
+#include "scope_exit.h"
 #include "vw.h"
 #include "reductions/interactions.h"
 
@@ -1919,75 +1920,16 @@ void sync_stats(VW::workspace& all)
 
 void finish(VW::workspace& all, bool delete_all)
 {
+  auto deleter = VW::scope_exit([&] {
+    if (delete_all) { delete &all; }
+  });
+
   // also update VowpalWabbit::PerformanceStatistics::get() (vowpalwabbit.cpp)
   if (!all.quiet && !all.options->was_supplied("audit_regressor"))
-  {
-    all.trace_message->precision(6);
-    *(all.trace_message) << std::fixed;
-    *(all.trace_message) << endl << "finished run";
-    if (all.current_pass == 0 || all.current_pass == 1)
-      *(all.trace_message) << endl << "number of examples = " << all.sd->example_number;
-    else
-    {
-      *(all.trace_message) << endl << "number of examples per pass = " << all.sd->example_number / all.current_pass;
-      *(all.trace_message) << endl << "passes used = " << all.current_pass;
-    }
-    *(all.trace_message) << endl << "weighted example sum = " << all.sd->weighted_examples();
-    *(all.trace_message) << endl << "weighted label sum = " << all.sd->weighted_labels;
-    *(all.trace_message) << endl << "average loss = ";
-    if (all.holdout_set_off)
-      if (all.sd->weighted_labeled_examples > 0)
-        *(all.trace_message) << all.sd->sum_loss / all.sd->weighted_labeled_examples;
-      else
-        *(all.trace_message) << "n.a.";
-    else if ((all.sd->holdout_best_loss == FLT_MAX) || (all.sd->holdout_best_loss == FLT_MAX * 0.5))
-      *(all.trace_message) << "undefined (no holdout)";
-    else
-      *(all.trace_message) << all.sd->holdout_best_loss << " h";
-    if (all.sd->report_multiclass_log_loss)
-    {
-      if (all.holdout_set_off)
-        *(all.trace_message) << endl
-                             << "average multiclass log loss = "
-                             << all.sd->multiclass_log_loss / all.sd->weighted_labeled_examples;
-      else
-        *(all.trace_message) << endl
-                             << "average multiclass log loss = "
-                             << all.sd->holdout_multiclass_log_loss / all.sd->weighted_labeled_examples << " h";
-    }
+  { all.sd->print_summary(*all.trace_message, *all.sd, *all.loss, all.current_pass, all.holdout_set_off); }
 
-    float best_constant;
-    float best_constant_loss;
-    if (get_best_constant(all.loss.get(), all.sd, best_constant, best_constant_loss))
-    {
-      *(all.trace_message) << endl << "best constant = " << best_constant;
-      if (best_constant_loss != FLT_MIN)
-        *(all.trace_message) << endl << "best constant's loss = " << best_constant_loss;
-    }
-
-    *(all.trace_message) << endl << "total feature number = " << all.sd->total_features;
-    if (all.sd->queries > 0) *(all.trace_message) << endl << "total queries = " << all.sd->queries;
-    *(all.trace_message) << endl;
-  }
-
-  // implement finally.
-  // finalize_regressor can throw if it can't write the file.
-  // we still want to free up all the memory.
-  std::exception_ptr finalize_regressor_exception;
-  try
-  {
-    finalize_regressor(all, all.final_regressor_name);
-  }
-  catch (vw_exception& /* e */)
-  {
-    finalize_regressor_exception = std::current_exception();
-  }
-
+  finalize_regressor(all, all.final_regressor_name);
   metrics::output_metrics(all);
   all.logger.log_summary();
-
-  if (delete_all) delete &all;
-
-  if (finalize_regressor_exception) { std::rethrow_exception(finalize_regressor_exception); }
 }
 }  // namespace VW
