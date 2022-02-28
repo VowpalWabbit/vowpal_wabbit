@@ -154,8 +154,9 @@ void reduction_output::print_update_cb_cont(VW::workspace& all, const example& e
   if (all.sd->weighted_examples() >= all.sd->dump_interval && !all.quiet && !all.bfgs)
   {
     all.sd->print_update(*all.trace_message, all.holdout_set_off, all.current_pass,
-        ec.test_only ? "unknown" : to_string(ec.l.cb_cont.costs[0], VW::DEFAULT_FLOAT_FORMATTING_DECIMAL_PRECISION),  // Label
-        to_string(ec.pred.pdf_value, VW::DEFAULT_FLOAT_FORMATTING_DECIMAL_PRECISION),                                 // Prediction
+        ec.test_only ? "unknown"
+                     : to_string(ec.l.cb_cont.costs[0], VW::DEFAULT_FLOAT_FORMATTING_DECIMAL_PRECISION),  // Label
+        to_string(ec.pred.pdf_value, VW::DEFAULT_FLOAT_FORMATTING_DECIMAL_PRECISION),                     // Prediction
         ec.get_num_features(), all.progress_add, all.progress_arg);
   }
 }

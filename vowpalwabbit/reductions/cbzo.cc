@@ -252,7 +252,8 @@ void report_progress(VW::workspace& all, example& ec)
   if (all.sd->weighted_examples() >= all.sd->dump_interval && !all.quiet)
   {
     all.sd->print_update(*all.trace_message, all.holdout_set_off, all.current_pass,
-        ec.test_only ? "unknown" : to_string(costs[0]), VW::to_string(ec.pred.pdf, VW::DEFAULT_FLOAT_FORMATTING_DECIMAL_PRECISION), ec.get_num_features(),
+        ec.test_only ? "unknown" : to_string(costs[0]),
+        VW::to_string(ec.pred.pdf, VW::DEFAULT_FLOAT_FORMATTING_DECIMAL_PRECISION), ec.get_num_features(),
         all.progress_add, all.progress_arg);
   }
 }

@@ -55,4 +55,4 @@ namespace VW
 {
 static constexpr const int DEFAULT_FLOAT_PRECISION = 6;
 static constexpr const int DEFAULT_FLOAT_FORMATTING_DECIMAL_PRECISION = 2;
-}
+}  // namespace VW
