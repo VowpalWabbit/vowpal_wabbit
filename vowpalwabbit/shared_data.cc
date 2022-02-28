@@ -4,11 +4,13 @@
 #include <algorithm>
 #include <iomanip>
 
+#include "best_constant.h"
 #include "parse_primitives.h"
 #include "shared_data.h"
 #include "memory.h"
 #include "text_utils.h"
 #include "table_formatter.h"
+#include "loss_functions.h"
 
 #include <cfloat>
 #include <climits>
@@ -339,4 +341,63 @@ void shared_data::print_update(std::ostream& output_stream, bool holdout_set_off
   if (holding_out) { output_stream << " h"; }
   output_stream << std::endl;
   update_dump_interval(progress_add, progress_arg);
+}
+
+void shared_data::print_summary(std::ostream& output, const shared_data& sd, const loss_function& loss_func,
+    uint64_t current_pass, bool holdout_set_off) const
+{
+  auto saved_precision = output.precision();
+  output.precision(6);
+  output << std::fixed;
+  output << std::endl << "finished run";
+  if (current_pass == 0 || current_pass == 1) { output << std::endl << "number of examples = " << sd.example_number; }
+  else
+  {
+    output << std::endl << "number of examples per pass = " << sd.example_number / current_pass;
+    output << std::endl << "passes used = " << current_pass;
+  }
+  output << std::endl << "weighted example sum = " << sd.weighted_examples();
+  output << std::endl << "weighted label sum = " << sd.weighted_labels;
+  output << std::endl << "average loss = ";
+  if (holdout_set_off)
+  {
+    if (sd.weighted_labeled_examples > 0) { output << sd.sum_loss / sd.weighted_labeled_examples; }
+    else
+    {
+      output << "n.a.";
+    }
+  }
+  else if ((sd.holdout_best_loss == FLT_MAX) || (sd.holdout_best_loss == FLT_MAX * 0.5))
+  {
+    output << "undefined (no holdout)";
+  }
+  else
+  {
+    output << sd.holdout_best_loss << " h";
+  }
+  if (sd.report_multiclass_log_loss)
+  {
+    if (holdout_set_off)
+    {
+      output << std::endl << "average multiclass log loss = " << sd.multiclass_log_loss / sd.weighted_labeled_examples;
+    }
+    else
+      output << std::endl
+             << "average multiclass log loss = " << sd.holdout_multiclass_log_loss / sd.weighted_labeled_examples
+             << " h";
+  }
+
+  float best_constant;
+  float best_constant_loss;
+  if (VW::get_best_constant(loss_func, sd, best_constant, best_constant_loss))
+  {
+    output << std::endl << "best constant = " << best_constant;
+    if (best_constant_loss != FLT_MIN) output << std::endl << "best constant's loss = " << best_constant_loss;
+  }
+
+  output << std::endl << "total feature number = " << sd.total_features;
+  if (sd.queries > 0) output << std::endl << "total queries = " << sd.queries;
+  output << std::endl;
+
+  output.precision(saved_precision);
 }

@@ -12,6 +12,8 @@
 
 #include "named_labels.h"
 
+class loss_function;
+
 struct shared_data
 {
   shared_data() = default;
@@ -73,4 +75,6 @@ struct shared_data
       uint32_t prediction, size_t num_features, bool progress_add, float progress_arg);
   void print_update(std::ostream& output_stream, bool holdout_set_off, size_t current_pass, const std::string& label,
       const std::string& prediction, size_t num_features, bool progress_add, float progress_arg);
+  void print_summary(std::ostream& output, const shared_data& sd, const loss_function& loss_func, uint64_t current_pass,
+      bool holdout_set_off) const;
 };
