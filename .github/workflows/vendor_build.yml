@@ -51,7 +51,7 @@ jobs:
     runs-on: ${{matrix.os}}
     strategy:
       matrix:
-        os: ["windows-2019", "windows-2022"]
+        os: ["windows-2019"]
         build_type: ["Debug", "Release"]
     env:
       CMAKE_BUILD_DIR: ${{ github.workspace }}/vw/build
