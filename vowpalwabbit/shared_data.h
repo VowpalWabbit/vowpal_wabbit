@@ -12,7 +12,7 @@
 
 #include "named_labels.h"
 
-struct loss_function;
+class loss_function;
 
 struct shared_data
 {
