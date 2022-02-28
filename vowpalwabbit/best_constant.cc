@@ -5,18 +5,19 @@
 #include "best_constant.h"
 
 #include "loss_functions.h"
+#include "shared_data.h"
 
 #include <cmath>
 
-bool get_best_constant(loss_function* loss_func, shared_data* sd, float& best_constant, float& best_constant_loss)
+bool VW::get_best_constant(
+    const loss_function& loss_func, const shared_data& sd, float& best_constant, float& best_constant_loss)
 {
-  if (sd->first_observed_label == FLT_MAX ||  // no non-test labels observed or function was never called
-      (loss_func == nullptr) || (sd == nullptr))
+  if (sd.first_observed_label == FLT_MAX)  // no non-test labels observed or function was never called
   { return false; }
 
-  float label1 = sd->first_observed_label;  // observed labels might be inside [sd->Min_label, sd->Max_label], so
-                                            // can't use Min/Max
-  float label2 = sd->second_observed_label;
+  float label1 = sd.first_observed_label;  // observed labels might be inside [sd.Min_label, sd.Max_label], so
+                                           // can't use Min/Max
+  float label2 = sd.second_observed_label;
   if (label2 == FLT_MAX)
   {
     label2 = 0;  // if only one label observed, second might be 0
@@ -34,8 +35,8 @@ bool get_best_constant(loss_function* loss_func, shared_data* sd, float& best_co
 
   if (label1 != label2)
   {
-    label1_cnt = static_cast<float>(sd->weighted_labels - label2 * sd->weighted_labeled_examples) / (label1 - label2);
-    label2_cnt = static_cast<float>(sd->weighted_labeled_examples) - label1_cnt;
+    label1_cnt = static_cast<float>(sd.weighted_labels - label2 * sd.weighted_labeled_examples) / (label1 - label2);
+    label2_cnt = static_cast<float>(sd.weighted_labeled_examples) - label1_cnt;
   }
   else
   {
@@ -44,10 +45,10 @@ bool get_best_constant(loss_function* loss_func, shared_data* sd, float& best_co
 
   if ((label1_cnt + label2_cnt) <= 0.) { return false; }
 
-  auto funcName = loss_func->getType();
+  auto funcName = loss_func.getType();
   if (funcName == "squared" || funcName == "Huber" || funcName == "classic")
-  { best_constant = static_cast<float>(sd->weighted_labels) / static_cast<float>(sd->weighted_labeled_examples); }
-  else if (sd->is_more_than_two_labels_observed)
+  { best_constant = static_cast<float>(sd.weighted_labels) / static_cast<float>(sd.weighted_labeled_examples); }
+  else if (sd.is_more_than_two_labels_observed)
   {
     // loss functions below don't have generic formuas for constant yet.
     return false;
@@ -73,7 +74,7 @@ bool get_best_constant(loss_function* loss_func, shared_data* sd, float& best_co
   }
   else if (funcName == "quantile" || funcName == "pinball" || funcName == "absolute")
   {
-    float tau = loss_func->getParameter();
+    float tau = loss_func.getParameter();
     float q = tau * (label1_cnt + label2_cnt);
     if (q < label2_cnt) { best_constant = label2; }
     else
@@ -86,10 +87,10 @@ bool get_best_constant(loss_function* loss_func, shared_data* sd, float& best_co
     return false;
   }
 
-  if (!sd->is_more_than_two_labels_observed)
+  if (!sd.is_more_than_two_labels_observed)
   {
-    best_constant_loss = (label1_cnt > 0) ? loss_func->getLoss(sd, best_constant, label1) * label1_cnt : 0.0f;
-    best_constant_loss += (label2_cnt > 0) ? loss_func->getLoss(sd, best_constant, label2) * label2_cnt : 0.0f;
+    best_constant_loss = (label1_cnt > 0) ? loss_func.getLoss(&sd, best_constant, label1) * label1_cnt : 0.0f;
+    best_constant_loss += (label2_cnt > 0) ? loss_func.getLoss(&sd, best_constant, label2) * label2_cnt : 0.0f;
     best_constant_loss /= label1_cnt + label2_cnt;
   }
   else

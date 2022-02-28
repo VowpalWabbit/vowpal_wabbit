@@ -5,8 +5,6 @@
 #include <string>
 #include <memory>
 
-#include "io/logger.h"
-
 struct shared_data;
 namespace VW
 {
@@ -17,19 +15,19 @@ class loss_function
 {
 public:
   // Identifies the type of the implementing loss function, matches the name used in getLossFunction.
-  virtual std::string getType() = 0;
-  virtual float getParameter() { return 0.f; }
+  virtual std::string getType() const = 0;
+  virtual float getParameter() const { return 0.f; }
 
   // Returns the example loss value.
-  virtual float getLoss(shared_data*, float prediction, float label) = 0;
+  virtual float getLoss(const shared_data*, float prediction, float label) const = 0;
 
   // Returns the update scalar.
-  virtual float getUpdate(float prediction, float label, float update_scale, float pred_per_update) = 0;
-  virtual float getUnsafeUpdate(float prediction, float label, float eta_t) = 0;
+  virtual float getUpdate(float prediction, float label, float update_scale, float pred_per_update) const = 0;
+  virtual float getUnsafeUpdate(float prediction, float label, float eta_t) const = 0;
 
-  virtual float getSquareGrad(float prediction, float label) = 0;
-  virtual float first_derivative(shared_data*, float prediction, float label) = 0;
-  virtual float second_derivative(shared_data*, float prediction, float label) = 0;
+  virtual float getSquareGrad(float prediction, float label) const = 0;
+  virtual float first_derivative(const shared_data*, float prediction, float label) const = 0;
+  virtual float second_derivative(const shared_data*, float prediction, float label) const = 0;
 
   virtual ~loss_function() = default;
 };
