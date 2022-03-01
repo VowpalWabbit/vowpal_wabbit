@@ -11,12 +11,12 @@ on:
 
 jobs:
   build_vendor_windows:
-    name: nuget.${{ matrix.os }}.amd64.v${{ matrix.toolset }}
+    name: nuget.${{ matrix.os }}.amd64.${{ matrix.toolset }}
     runs-on: ${{matrix.os}}
     strategy:
       matrix:
         os: ["windows-2019"]
-        toolset: ["141", "142"]
+        toolset: ["v141", "v142"]
     steps:
       - uses: actions/checkout@v2
         with:
@@ -26,7 +26,7 @@ jobs:
         run: >
           cmake -S . -B build
           -G "Visual Studio 16 2019" -A "x64"
-          -DMSVC_TOOLSET_VERSION=${{ matrix.toolset }}
+          -T ${{ matrix.toolset }}
           -DBUILD_FLATBUFFERS=Off
           -DBUILD_TESTING=Off
           -DRAPIDJSON_SYS_DEP=Off
@@ -51,4 +51,4 @@ jobs:
         uses: actions/upload-artifact@v1
         with:
           name: win_nuget_${{ matrix.toolset }}
-          path: build/nuget/*.nupkg
+          path: build\nuget\*
