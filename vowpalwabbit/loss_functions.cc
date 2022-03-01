@@ -306,32 +306,24 @@ public:
   {
     float e = label - prediction;
     if (e > 0)
-      return q * e * e;
+      return 2.f * q * e * e;
     else
-      return (1.f - q) * e * e;
+      return 2.f * (1.f - q) * e * e;
   }
 
   float getUpdate(float prediction, float label, float update_scale, float pred_per_update) override
   {
     float err = label - prediction;
-    if (err == 0) return 0;
-    float normal = update_scale * pred_per_update;  // base update size
-    if (err > 0)
+    if (update_scale * pred_per_update < 1e-6)
     {
-      normal = 2.f * q * err * normal;
-      return (normal < err ? 2.f * q * err * update_scale : err / pred_per_update); //err / pred_per_update <-check this
+      return (err > 0 ? 2.f * q * err * update_scale : 2.f * (1.f - q) * err * update_scale);
     }
-    else
-    {
-      normal = 2.f * (1.f - q) * err * normal;
-      return (normal > err ? 2.f * (1.f - q) * err * update_scale : err / pred_per_update);
-    }
+    return err / pred_per_update * (err > 0 ? (1.f - correctedExp(-2.f * q * update_scale * pred_per_update)) : (1.f - correctedExp(-2.f * (1.f - q) * update_scale * pred_per_update));
   }
 
   float getUnsafeUpdate(float prediction, float label, float update_scale) override
   {
     float err = label - prediction;
-    if (err == 0) return 0;
     if (err > 0) return 2.f * q * err * update_scale; // -first_der * update_scale
     return 2.f * (1.f - q) * err * update_scale;
   }
@@ -339,7 +331,6 @@ public:
   float first_derivative(shared_data*, float prediction, float label) override
   {
     float e = label - prediction;
-    if (e == 0) return 0;
     return e > 0 ? -2.f * q * e : -2.f * (1.f - q) * e ;
   }
 
@@ -351,7 +342,6 @@ public:
 
   float second_derivative(shared_data*, float prediction, float label) override
     float e = label - prediction;
-    if (e == 0) return 0;
     return e > 0 ? 2.f * q : 2.f * (1.f - q);
 };
 
