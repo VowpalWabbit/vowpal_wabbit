@@ -65,7 +65,6 @@ else()
   set(CMAKE_POLICY_DEFAULT_CMP0048 NEW)
   set(CMAKE_POLICY_DEFAULT_CMP0042 NEW)
   set(SKIP_INSTALL_ALL ON CACHE BOOL "" FORCE)
-  add_subdirectory(${CMAKE_CURRENT_BINARY_DIR}/zlib_source ${CM  set(SKIP_INSTALL_ALL ON CACHE BOOL "" FORCE)
   add_subdirectory(${CMAKE_CURRENT_BINARY_DIR}/zlib_source ${CMAKE_CURRENT_BINARY_DIR}/zlib_build)
   target_include_directories(zlibstatic PUBLIC
     $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}/zlib_source>
