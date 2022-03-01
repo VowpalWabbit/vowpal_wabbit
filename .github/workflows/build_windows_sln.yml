@@ -18,6 +18,8 @@ jobs:
           submodules: true
       - uses: darenm/Setup-VSTest@v1
       - uses: ilammy/msvc-dev-cmd@v1
+      - run: Start-Process "C:\Program Files (x86)\Microsoft Visual Studio\Installer\vs_installer.exe" -ArgumentList 'modify --installPath "C:\Program Files (x86)\Microsoft Visual Studio\2019\Enterprise" --quiet --add Microsoft.Net.ComponentGroup.4.6.2.DeveloperTools' -Wait -PassThru
+      - run: Start-Process "C:\Program Files (x86)\Microsoft Visual Studio\Installer\vs_installer.exe" -ArgumentList 'modify --installPath "C:\Program Files (x86)\Microsoft Visual Studio\2019\Enterprise" --quiet --add Microsoft.VisualStudio.Component.VC.v141.CLI.Support' -Wait -PassThru
       - run: CALL .scripts/restore.cmd
         name: 'Restore dependencies'
         shell: cmd
