@@ -39,7 +39,7 @@ IF NOT DEFINED vstestPath (
 
 set
 REM setup paths and vars
-CALL "%VsInstallDir%\VC\Auxiliary\Build\vcvarsall.bat x64"
+CALL "%VsInstallDir%\VC\Auxiliary\Build\vcvarsall.bat" x64
 
 set
 
