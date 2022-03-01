@@ -304,11 +304,11 @@ public:
 
   float getLoss(shared_data*, float prediction, float label) override
   {
-    float e = label - prediction;
-    if (e > 0)
-      return 2.f * q * e * e;
+    float err = label - prediction;
+    if (err > 0)
+      return 2.f * q * err * err;
     else
-      return 2.f * (1.f - q) * e * e;
+      return 2.f * (1.f - q) * err * err;
   }
 
   float getUpdate(float prediction, float label, float update_scale, float pred_per_update) override
@@ -330,8 +330,8 @@ public:
 
   float first_derivative(shared_data*, float prediction, float label) override
   {
-    float e = label - prediction;
-    return e > 0 ? -2.f * q * e : -2.f * (1.f - q) * e ;
+    float err = label - prediction;
+    return err > 0 ? -2.f * q * err : -2.f * (1.f - q) * err;
   }
 
   float getSquareGrad(float prediction, float label) override
@@ -341,8 +341,12 @@ public:
   }
 
   float second_derivative(shared_data*, float prediction, float label) override
-    float e = label - prediction;
-    return e > 0 ? 2.f * q : 2.f * (1.f - q);
+  {
+    float err = label - prediction;
+    return err > 0 ? 2.f * q : 2.f * (1.f - q);
+  }
+  
+  float q;
 };
 
 class poisson_loss : public loss_function
