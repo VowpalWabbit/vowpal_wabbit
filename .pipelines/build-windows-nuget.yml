@@ -27,6 +27,8 @@ steps:
     #username: # Optional
     #password: # Optional
     #netShare: # Required when packageFeedSelector == NetShare
+# Install the required component for .net 4.6.2
+- powershell:  Start-Process "C:\Program Files (x86)\Microsoft Visual Studio\Installer\vs_installer.exe" -ArgumentList 'modify --installPath "C:\Program Files (x86)\Microsoft Visual Studio\2019\Enterprise" --quiet --add Microsoft.Net.Component.4.6.2.SDK' -Wait -PassThru
 - task: Cache@2
   inputs:
     key: 'v2 | vcpkg | archives'
