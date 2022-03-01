@@ -6,6 +6,7 @@
 
 #include <functional>
 
+#include "example.h"
 #include "global_data.h"
 #include "v_array.h"
 #include "parse_example.h"
@@ -58,6 +59,7 @@ void parse_dispatch(VW::workspace& all, DispatchFuncT& dispatch)
   }
   catch (VW::vw_exception& e)
   {
+    VW::return_multiple_example(all, examples);
     all.logger.err_error("vw example #{0}({1}:{2}): {3}", example_number, e.Filename(), e.LineNumber(), e.what());
 
     // Stash the exception so it can be thrown on the main thread.
@@ -65,6 +67,7 @@ void parse_dispatch(VW::workspace& all, DispatchFuncT& dispatch)
   }
   catch (std::exception& e)
   {
+    VW::return_multiple_example(all, examples);
     all.logger.err_error("vw: example #{0}{1}", example_number, e.what());
 
     // Stash the exception so it can be thrown on the main thread.
