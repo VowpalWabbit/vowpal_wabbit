@@ -51,4 +51,4 @@ jobs:
         uses: actions/upload-artifact@v1
         with:
           name: win_nuget_${{ matrix.toolset }}
-          path: build\nuget\*
+          path: build/nuget/
