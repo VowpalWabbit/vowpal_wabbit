@@ -1,0 +1,54 @@
+name: Windows Nuget
+
+on:
+  push:
+    branches:
+      - master
+      - 'releases/**'
+  pull_request:
+    branches:
+      - '*'
+
+jobs:
+  build_vendor_windows:
+    name: nuget.${{ matrix.os }}.amd64.v${{ matrix.toolset }}
+    runs-on: ${{matrix.os}}
+    strategy:
+      matrix:
+        os: ["windows-2019"]
+        toolset: ["141", "142"]
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          submodules: 'recursive'
+      - uses: ilammy/msvc-dev-cmd@v1
+      - name: Configure
+        run: >
+          cmake -S . -B build
+          -G "Visual Studio 16 2019" -A "x64"
+          -DMSVC_TOOLSET_VERSION=${{ matrix.toolset }}
+          -DBUILD_FLATBUFFERS=Off
+          -DBUILD_TESTING=Off
+          -DRAPIDJSON_SYS_DEP=Off
+          -DFMT_SYS_DEP=Off
+          -DSPDLOG_SYS_DEP=Off
+          -DVW_ZLIB_SYS_DEP=Off
+          -DVW_BOOST_MATH_SYS_DEP=Off
+          -DDO_NOT_BUILD_VW_C_WRAPPER=On
+          -DVW_INSTALL=On
+      - name: Build
+        run: |
+          cmake --build build --config Debug -t vw_io vw vw-bin allreduce spanning_tree
+          cmake --build build --config Release -t vw_io vw vw-bin allreduce spanning_tree
+      - name: Package
+        run: |
+          # Install debug first so that release overwrites the exe and nothing else
+          cmake --install build --prefix ./build/nuget --config Debug
+          cmake --install build --prefix ./build/nuget --config Release
+          cd build/nuget
+          ..\..\vowpalwabbit\.nuget\NuGet.exe pack .\vowpalwabbit.nuspec
+      - name: Upload
+        uses: actions/upload-artifact@v1
+        with:
+          name: win_nuget_${{ matrix.toolset }}
+          path: build/nuget/*.nupkg

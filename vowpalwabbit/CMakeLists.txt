@@ -551,6 +551,12 @@ if(STATIC_LINK_VW)
   target_link_libraries(vw-bin PRIVATE ${unix_static_flag})
 endif()
 
+if(WIN32)
+  set_target_properties(vw_io PROPERTIES DEBUG_POSTFIX d)
+  set_target_properties(allreduce PROPERTIES DEBUG_POSTFIX d)
+  set_target_properties(vw PROPERTIES DEBUG_POSTFIX d)
+endif()
+
 # This is used by Travis to not build vw_c_wrapper, this required <codecvt> which became available in GCC 5.1
 if(NOT DEFINED DO_NOT_BUILD_VW_C_WRAPPER)
   if(STATIC_LINK_VW)
@@ -588,5 +594,9 @@ if(VW_INSTALL)
     PATTERN ".nuget" EXCLUDE
     PATTERN "slim" EXCLUDE
     PATTERN "win32" EXCLUDE
+    PATTERN "out" EXCLUDE
+    PATTERN "packages" EXCLUDE
+    PATTERN "x64" EXCLUDE
+    PATTERN ".vs" EXCLUDE
   )
 endif()

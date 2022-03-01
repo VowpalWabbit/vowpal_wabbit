@@ -56,15 +56,29 @@ if(VW_BOOST_MATH_SYS_DEP)
 else()
   set(BOOST_MATH_STANDALONE ON CACHE BOOL "Use Boost math vendored dep in standalone mode" FORCE)
   add_subdirectory(${CMAKE_CURRENT_LIST_DIR}/boost_math EXCLUDE_FROM_ALL)
-endif()
+  endif()
 
-if(VW_ZLIB_SYS_DEP)
+  if(VW_ZLIB_SYS_DEP)
   find_package(ZLIB REQUIRED)
-else()
+  else()
   file(COPY ${CMAKE_CURRENT_LIST_DIR}/zlib/ DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/zlib_source/)
   set(CMAKE_POLICY_DEFAULT_CMP0048 NEW)
   set(CMAKE_POLICY_DEFAULT_CMP0042 NEW)
+  set(SKIP_INSTALL_ALL ON CACHE BOOL "" FORCE)
+  add_subdirectory(${CMAKE_CURRENT_BINARY_DIR}/zlib_source ${CM  set(SKIP_INSTALL_ALL ON CACHE BOOL "" FORCE)
   add_subdirectory(${CMAKE_CURRENT_BINARY_DIR}/zlib_source ${CMAKE_CURRENT_BINARY_DIR}/zlib_build)
-  target_include_directories(zlibstatic PUBLIC ${CMAKE_CURRENT_BINARY_DIR}/zlib_source ${CMAKE_CURRENT_BINARY_DIR}/zlib_build)
+  target_include_directories(zlibstatic PUBLIC
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}/zlib_source>
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}/zlib_build>
+  )
   add_library(ZLIB::ZLIB ALIAS zlibstatic)
+
+  if(VW_INSTALL)
+        install(
+          TARGETS zlibstatic
+          EXPORT VowpalWabbitConfig
+          ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+          LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+          RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
+  endif()
 endif()

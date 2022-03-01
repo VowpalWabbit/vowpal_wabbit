@@ -105,7 +105,7 @@ option(BUILD_FLATBUFFERS "Build flatbuffers" OFF)
 option(BUILD_PRIVACY_ACTIVATION "Enable privacy activation feature" OFF)
 
 if(VW_INSTALL AND NOT VW_ZLIB_SYS_DEP)
-  message(FATAL_ERROR "Cannot use VW_INSTALL when using vendored zlib. Either set VW_INSTALL=Off or VW_ZLIB_SYS_DEP=On")
+  message(WARNING "Installing with a vendored version of zlib is not recommended. Use VW_ZLIB_SYS_DEP to use a system dependency or specify VW_INSTALL=OFF to silence this warning.")
 endif()
 
 # The only way to tell it was used is if it was turned off, since the default is true.
@@ -350,6 +350,9 @@ endif()
 # Handle installation of targets, version, config and pkgconfig
 if(VW_INSTALL)
   configure_file(libvw.pc.in libvw.pc @ONLY)
+  configure_file(nuget/vowpalwabbit.nuspec.in nuget/vowpalwabbit.nuspec @ONLY)
+  configure_file(nuget/vowpalwabbit.targets nuget/vowpalwabbit.targets @ONLY)
+
   configure_file(libvw_c_wrapper.pc.in libvw_c_wrapper.pc @ONLY)
   install(
     FILES ${CMAKE_CURRENT_BINARY_DIR}/libvw.pc ${CMAKE_CURRENT_BINARY_DIR}/libvw_c_wrapper.pc
