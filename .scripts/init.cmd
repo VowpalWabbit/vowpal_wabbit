@@ -1,3 +1,5 @@
+@ECHO ON
+
 REM Integration points for toolchain customization
 IF NOT DEFINED nugetPath (
     SET nugetPath=nuget
@@ -35,6 +37,10 @@ IF NOT DEFINED vstestPath (
     )
 )
 
+REM setup paths and vars
+CALL %VsInstallDir%\VC\Auxiliary\Build\vcvarsall.bat x64
+
+set
 
 IF NOT DEFINED VCPKG_INSTALLATION_ROOT (
     ECHO ERROR: VCPKG_INSTALLATION_ROOT is not configured. Cannot find vcpkg.
