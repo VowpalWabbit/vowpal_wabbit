@@ -11,7 +11,7 @@ if(WIN32)
 
   if (vw_BUILD_NET_FRAMEWORK)
     cmake_minimum_required(VERSION 3.14)
-    set(CMAKE_DOTNET_TARGET_FRAMEWORK_VERSION  "v4.7.2" CACHE INTERNAL ".NET Framework SDK version to target.")
+    set(CMAKE_DOTNET_TARGET_FRAMEWORK_VERSION  "v4.5.2" CACHE INTERNAL ".NET Framework SDK version to target.")
 
     # The MSBuild system does not get properly enlightened to C++/CLI projects (for chaining dependencies) when
     # set up through CMake (TODO: How to fix this?). This makes it so native dependencies of the underlying VW
