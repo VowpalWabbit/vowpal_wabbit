@@ -11,7 +11,7 @@ Details of Nuget packages:
 - Static library only (VW does not currently support dynamic linkage)
 - Targeting the multi-threaded dynamically linked runtime
 - Contains artifacts for debug and release mode builds
-- Contains the necessary dependencies as static libs
+- Contains the necessary dependent static libs and headers (fmt, spdlog, zlib, rapidjson)
 
 How to use:
 1. Install the nuget to your package directory
