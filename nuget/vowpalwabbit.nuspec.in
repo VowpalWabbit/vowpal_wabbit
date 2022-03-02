@@ -15,7 +15,9 @@
   <files>
       <file src="vowpalwabbit.targets" target="build" />
       <file src="include\**\*.*" target="include" />
-      <file src="lib\*.lib" target="lib" />
-      <file src="bin\vw.exe" target="bin" />
+      <file src="lib\x64\*.lib" target="lib\x64" />
+      <file src="lib\x86\*.lib" target="lib\x86" />
+      <file src="bin\x64\vw.exe" target="bin\x64" />
+      <file src="bin\x86\vw.exe" target="bin\x86" />
   </files>
 </package>

@@ -355,9 +355,6 @@ if(VW_INSTALL)
   if(EXISTS nuget/vowpalwabbit.nuspec.in)
     configure_file(nuget/vowpalwabbit.nuspec.in nuget/vowpalwabbit.nuspec @ONLY)
   endif()
-  if(EXISTS nuget/vowpalwabbit.targets)
-    configure_file(nuget/vowpalwabbit.targets nuget/vowpalwabbit.targets @ONLY)
-  endif()
 
   configure_file(libvw_c_wrapper.pc.in libvw_c_wrapper.pc @ONLY)
   install(
