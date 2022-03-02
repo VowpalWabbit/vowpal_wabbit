@@ -2,6 +2,7 @@
 // individual contributors. All rights reserved. Released under a BSD (revised)
 // license as described in the file LICENSE.
 
+#include <string>
 #include "interactions.h"
 #include "vw.h"
 #include "shared_data.h"
@@ -9,7 +10,18 @@
 
 #include "fmt/format.h"
 
+#include "table_formatter.h"
+
 using namespace VW::config;
+
+static constexpr size_t num_cols = 3;
+static constexpr std::array<VW::column_definition, num_cols> AUDIT_REGRESSOR_COLUMNS = {
+    VW::column_definition(8, VW::align_type::left, VW::wrap_type::wrap_space),    // example counter
+    VW::column_definition(9, VW::align_type::right, VW::wrap_type::wrap_space),   // values audited
+    VW::column_definition(12, VW::align_type::right, VW::wrap_type::wrap_space),  // total progress
+};
+static const std::array<std::string, num_cols> AUDIT_REGRESSOR_HEADER = {
+    "example\ncounter", "values\naudited", "total\nprogress"};
 
 struct audit_regressor_data
 {
@@ -161,9 +173,9 @@ void audit_regressor(audit_regressor_data& rd, VW::LEARNER::single_learner& base
 
 inline void print_ex(VW::workspace& all, size_t ex_processed, size_t vals_found, size_t progress)
 {
-  *(all.trace_message) << std::left << std::setw(shared_data::col_example_counter) << ex_processed << " " << std::right
-                       << std::setw(9) << vals_found << " " << std::right << std::setw(12) << progress << '%'
-                       << std::endl;
+  VW::format_row({std::to_string(ex_processed), std::to_string(vals_found), std::to_string(progress) + "%"},
+      AUDIT_REGRESSOR_COLUMNS, 1, *(all.trace_message));
+  *(all.trace_message) << "\n";
 }
 
 void finish_example(VW::workspace& all, audit_regressor_data& rd, example& ec)
@@ -246,12 +258,8 @@ void init_driver(audit_regressor_data& dat)
   if (!dat.all->quiet)
   {
     *dat.all->trace_message << "Regressor contains " << dat.loaded_regressor_values << " values\n";
-    *dat.all->trace_message << std::left << std::setw(shared_data::col_example_counter) << "example"
-                            << " " << std::setw(shared_data::col_example_weight) << "values"
-                            << " " << std::setw(shared_data::col_current_label) << "total" << std::endl;
-    *dat.all->trace_message << std::left << std::setw(shared_data::col_example_counter) << "counter"
-                            << " " << std::setw(shared_data::col_example_weight) << "audited"
-                            << " " << std::setw(shared_data::col_current_label) << "progress" << std::endl;
+    VW::format_row(AUDIT_REGRESSOR_HEADER, AUDIT_REGRESSOR_COLUMNS, 1, *dat.all->trace_message);
+    (*dat.all->trace_message) << "\n";
   }
 }
 

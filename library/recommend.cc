@@ -12,11 +12,11 @@
 #include <iostream>
 #include <fstream>
 
-#include <boost/program_options.hpp>
-
 #include "vw.h"
-
-namespace po = boost::program_options;
+#include "config/options_cli.h"
+#include "config/option_builder.h"
+#include "config/option_group_definition.h"
+#include "config/cli_help_formatter.h"
 
 int pairs = 0;
 int users = 0;
@@ -106,37 +106,44 @@ int main(int argc, char* argv[])
   using std::cout;
   using std::endl;
 
-  po::variables_map vm;
-  po::options_description desc("Allowed options");
-  desc.add_options()("help,h", "produce help message")(
-      "topk", po::value<int>(&topk), "number of items to recommend per user")("verbose,v", po::value<int>(&verbose),
-      "increase verbosity (can be repeated)")("bf_bits,b", po::value<int>(&bits), "number of items to recommend")(
-      "blacklist,B", po::value<std::string>(&blacklistfilename),
-      "user item pairs (in vw format) that we should not recommend (have been seen before)")(
-      "users,U", po::value<std::string>(&userfilename), "users portion in vw format to make recs for")(
-      "items,I", po::value<std::string>(&itemfilename), "items (in vw format) to recommend from")(
-      "vwparams", po::value<std::string>(&vwparams), "vw parameters for model instantiation (-i model ...)");
+  bool help;
+  VW::config::options_cli opts(std::vector<std::string>(argv + 1, argv + argc));
+  VW::config::option_group_definition desc("Recommend");
+  desc.add(VW::config::make_option("help", help).short_name("h").help("Produce help message"))
+      .add(VW::config::make_option("topk", topk).default_value(10).help("Number of items to recommend per user"))
+      .add(VW::config::make_option("verbose", verbose).short_name("v").help("Increase verbosity (can be repeated)"))
+      .add(VW::config::make_option("bf_bits", bits)
+               .default_value(16)
+               .short_name("b")
+               .help("Number of items to recommend"))
+      .add(VW::config::make_option("blacklist", blacklistfilename)
+               .short_name("B")
+               .help("User item pairs (in vw format) that we should not recommend (have been seen before)"))
+      .add(VW::config::make_option("users", userfilename)
+               .short_name("U")
+               .help("Users portion in vw format to make recs for"))
+      .add(
+          VW::config::make_option("items", itemfilename).short_name("I").help("Items (in vw format) to recommend from"))
+      .add(VW::config::make_option("vwparams", vwparams).help("vw parameters for model instantiation (-i model ...)"));
 
-  try
-  {
-    po::store(po::parse_command_line(argc, argv, desc), vm);
-    po::notify(vm);
-  }
-  catch (std::exception &e)
-  {
-    cout << endl << argv[0] << ": " << e.what() << endl << endl << desc << endl;
-    exit(2);
-  }
+  opts.add_and_parse(desc);
+  // Return value is ignored as option reachability is not relevant here.
+  opts.check_unregistered();
 
-  if (vm.count("help"))
+  VW::config::cli_help_formatter help_formatter;
+  const auto help_message = help_formatter.format_help(opts.get_all_option_group_definitions());
+
+  if (help)
   {
-    cout << desc << "\n";
+    VW::config::cli_help_formatter help_formatter;
+    std::cout << help_message << std::endl;
     return 1;
   }
 
   if (blacklistfilename.empty() || userfilename.empty() || itemfilename.empty() || vwparams.empty())
   {
-    cout << desc << "\n";
+    VW::config::cli_help_formatter help_formatter;
+    std::cout << help_message << std::endl;
     exit(2);
   }
 
@@ -147,19 +154,19 @@ int main(int argc, char* argv[])
   if (VW::file_open(&fB, blacklistfilename.c_str(), "r") != 0)
   {
     fprintf(stderr, "can't open %s: %s\n", blacklistfilename.c_str(), VW::strerror_to_string(errno).c_str());
-    cerr << desc << endl;
+    cerr << help_message << endl;
     exit(2);
   }
   if (VW::file_open(&fU, userfilename.c_str(), "r") != 0)
   {
     fprintf(stderr, "can't open %s: %s\n", userfilename.c_str(), VW::strerror_to_string(errno).c_str());
-    cerr << desc << endl;
+    cerr << help_message << endl;
     exit(2);
   }
   if (VW::file_open(&fI, itemfilename.c_str(), "r") != 0)
   {
     fprintf(stderr, "can't open %s: %s\n", itemfilename.c_str(), VW::strerror_to_string(errno).c_str());
-    cerr << desc << endl;
+    cerr << help_message << endl;
     exit(2);
   }
 

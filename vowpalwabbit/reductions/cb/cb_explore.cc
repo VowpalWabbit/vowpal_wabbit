@@ -66,7 +66,6 @@ template <bool is_learn>
 void predict_or_learn_first(cb_explore& data, single_learner& base, example& ec)
 {
   // Explore tau times, then act according to optimal.
-  action_scores probs = ec.pred.a_s;
   bool learn = is_learn && ec.l.cb.costs[0].probability < 1;
   if (learn) { base.learn(ec); }
   else
@@ -74,6 +73,7 @@ void predict_or_learn_first(cb_explore& data, single_learner& base, example& ec)
     base.predict(ec);
   }
 
+  action_scores& probs = ec.pred.a_s;
   probs.clear();
   if (data.tau > 0)
   {
@@ -87,8 +87,6 @@ void predict_or_learn_first(cb_explore& data, single_learner& base, example& ec)
     for (uint32_t i = 0; i < data.cbcs.num_actions; i++) probs.push_back({i, 0.});
     probs[chosen].score = 1.0;
   }
-
-  ec.pred.a_s = probs;
 }
 
 template <bool is_learn>
@@ -97,14 +95,14 @@ void predict_or_learn_greedy(cb_explore& data, single_learner& base, example& ec
   // Explore uniform random an epsilon fraction of the time.
   // TODO: pointers are copied here. What happens if base.learn/base.predict re-allocs?
   // ec.pred.a_s = probs; will restore the than free'd memory
-  action_scores probs = ec.pred.a_s;
-  probs.clear();
-
   if (is_learn) { base.learn(ec); }
   else
   {
     base.predict(ec);
   }
+
+  action_scores& probs = ec.pred.a_s;
+  probs.clear();
 
   // pre-allocate pdf
 
@@ -112,16 +110,15 @@ void predict_or_learn_greedy(cb_explore& data, single_learner& base, example& ec
 
   probs.reserve(data.cbcs.num_actions);
   for (uint32_t i = 0; i < data.cbcs.num_actions; i++) probs.push_back({i, 0});
-  generate_epsilon_greedy(data.epsilon, ec.pred.multiclass - 1, begin_scores(probs), end_scores(probs));
-
-  ec.pred.a_s = probs;
+  uint32_t chosen = ec.pred.multiclass - 1;
+  generate_epsilon_greedy(data.epsilon, chosen, begin_scores(probs), end_scores(probs));
 }
 
 template <bool is_learn>
 void predict_or_learn_bag(cb_explore& data, single_learner& base, example& ec)
 {
   // Randomize over predictions from a base set of predictors
-  action_scores probs = ec.pred.a_s;
+  action_scores& probs = ec.pred.a_s;
   probs.clear();
 
   for (uint32_t i = 0; i < data.cbcs.num_actions; i++) probs.push_back({i, 0.});
@@ -139,8 +136,6 @@ void predict_or_learn_bag(cb_explore& data, single_learner& base, example& ec)
     if (is_learn)
       for (uint32_t j = 1; j < count; j++) base.learn(ec, i);
   }
-
-  ec.pred.a_s = probs;
 }
 
 void get_cover_probabilities(
@@ -176,15 +171,13 @@ void predict_or_learn_cover(cb_explore& data, single_learner& base, example& ec)
 
   uint32_t num_actions = data.cbcs.num_actions;
 
-  action_scores probs = ec.pred.a_s;
-  probs.clear();
+  ec.pred.a_s.clear();
   data.cs_label.costs.clear();
 
   for (uint32_t j = 0; j < num_actions; j++) data.cs_label.costs.push_back({FLT_MAX, j + 1, 0., 0.});
 
   size_t cover_size = data.cover_size;
   v_array<float>& probabilities = data.cover_probs;
-  v_array<uint32_t>& predictions = data.preds;
 
   float additive_probability = 1.f / static_cast<float>(cover_size);
 
@@ -199,7 +192,7 @@ void predict_or_learn_cover(cb_explore& data, single_learner& base, example& ec)
       ? std::min(data.epsilon / num_actions, data.epsilon / static_cast<float>(std::sqrt(data.counter * num_actions)))
       : data.epsilon / num_actions;
 
-  get_cover_probabilities(data, base, ec, probs, min_prob);
+  get_cover_probabilities(data, base, ec, ec.pred.a_s, min_prob);
 
   if (is_learn)
   {
@@ -227,6 +220,7 @@ void predict_or_learn_cover(cb_explore& data, single_learner& base, example& ec)
     // 2. Update functions
     for (size_t i = 0; i < cover_size; i++)
     {
+      uint32_t pred = data.preds[i] - 1;
       // Create costs of each action based on online cover
       for (uint32_t j = 0; j < num_actions; j++)
       {
@@ -236,17 +230,16 @@ void predict_or_learn_cover(cb_explore& data, single_learner& base, example& ec)
         ec.l.cs.costs[j].x = pseudo_cost;
       }
       if (i != 0) data.cs->learn(ec, i + 1);
-      if (probabilities[predictions[i] - 1] < min_prob)
-        norm += std::max(0.f, additive_probability - (min_prob - probabilities[predictions[i] - 1]));
+      if (probabilities[pred] < min_prob)
+        norm += std::max(0.f, additive_probability - (min_prob - probabilities[pred]));
       else
         norm += additive_probability;
-      probabilities[predictions[i] - 1] += additive_probability;
+      probabilities[pred] += additive_probability;
     }
     data.second_cs_label = std::move(ec.l.cs);
   }
 
   ec.l.cs = COST_SENSITIVE::label{};
-  ec.pred.a_s = probs;
 }
 
 void print_update_cb_explore(VW::workspace& all, bool is_test, example& ec, std::stringstream& pred_string)
@@ -255,7 +248,7 @@ void print_update_cb_explore(VW::workspace& all, bool is_test, example& ec, std:
   {
     std::stringstream label_string;
     if (is_test)
-      label_string << " unknown";
+      label_string << "unknown";
     else
     {
       const auto& cost = ec.l.cb.costs[0];
@@ -426,12 +419,14 @@ base_learner* cb_explore_setup(VW::setup_base_i& stack_builder)
   }
   auto* l = make_reduction_learner(
       std::move(data), base, learn_ptr, predict_ptr, stack_builder.get_setupfn_name(cb_explore_setup) + name_addition)
-                .set_params_per_weight(params_per_weight)
-                .set_output_prediction_type(VW::prediction_type_t::action_probs)
                 .set_input_label_type(VW::label_type_t::cb)
+                .set_output_label_type(VW::label_type_t::cb)
+                .set_input_prediction_type(VW::prediction_type_t::multiclass)
+                .set_output_prediction_type(VW::prediction_type_t::action_probs)
+                .set_params_per_weight(params_per_weight)
                 .set_finish_example(finish_example)
                 .set_save_load(save_load)
-                .build();
+                .build(&all.logger);
 
   return make_base(*l);
 }

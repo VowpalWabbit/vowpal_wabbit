@@ -18,7 +18,7 @@
 #include <fstream>
 
 #include "config/options.h"
-#include "config/options_boost_po.h"
+#include "config/options_cli.h"
 #include "vw_to_flat.h"
 
 using namespace VW::config;
@@ -43,22 +43,7 @@ VW::workspace* setup(std::unique_ptr<options_i, options_deleter_type> options)
   all->vw_is_main = true;
 
   if (!all->quiet && !all->bfgs && !all->searchstr && !all->options->was_supplied("audit_regressor"))
-  {
-    *(all->trace_message) << std::left << std::setw(shared_data::col_avg_loss) << std::left << "average"
-                          << " " << std::setw(shared_data::col_since_last) << std::left << "since"
-                          << " " << std::right << std::setw(shared_data::col_example_counter) << "example"
-                          << " " << std::setw(shared_data::col_example_weight) << "example"
-                          << " " << std::setw(shared_data::col_current_label) << "current"
-                          << " " << std::setw(shared_data::col_current_predict) << "current"
-                          << " " << std::setw(shared_data::col_current_features) << "current" << std::endl;
-    *(all->trace_message) << std::left << std::setw(shared_data::col_avg_loss) << std::left << "loss"
-                          << " " << std::setw(shared_data::col_since_last) << std::left << "last"
-                          << " " << std::right << std::setw(shared_data::col_example_counter) << "counter"
-                          << " " << std::setw(shared_data::col_example_weight) << "weight"
-                          << " " << std::setw(shared_data::col_current_label) << "label"
-                          << " " << std::setw(shared_data::col_current_predict) << "predict"
-                          << " " << std::setw(shared_data::col_current_features) << "features" << std::endl;
-  }
+  { all->sd->print_update_header(*(all->trace_message)); }
 
   return all;
 }
@@ -73,11 +58,11 @@ int main(int argc, char* argv[])
 
   std::vector<VW::workspace*> alls;
 
-  std::string q("--quiet");
-  argv[argc++] = const_cast<char*>(q.c_str());
+  std::vector<std::string> opts(argv + 1, argv + argc);
+  opts.emplace_back("--quiet");
 
-  std::unique_ptr<options_boost_po, options_deleter_type> ptr(
-      new options_boost_po(argc, argv), [](VW::config::options_i* ptr) { delete ptr; });
+  std::unique_ptr<options_cli, options_deleter_type> ptr(
+      new options_cli(opts), [](VW::config::options_i* ptr) { delete ptr; });
   ptr->add_and_parse(driver_config);
   alls.push_back(setup(std::move(ptr)));
   if (converter.collection_size > 0) { converter.collection = true; }

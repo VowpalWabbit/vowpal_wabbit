@@ -18,14 +18,16 @@
 #include <fstream>
 
 #include "vw.h"
+#include "global_data.h"
 #include "config/options.h"
-#include "config/options_boost_po.h"
+#include "config/options_cli.h"
+#include "memory.h"
 
 using namespace VW::config;
 
-VW::workspace* setup(options_i& options)
+std::unique_ptr<VW::workspace> setup(std::unique_ptr<options_i> options)
 {
-  VW::workspace* all = VW::initialize(options);
+  auto all = VW::initialize_experimental(std::move(options));
   all->vw_is_main = true;
   return all;
 }
@@ -53,8 +55,7 @@ int main(int argc, char* argv[])
   try
   {
     // support multiple vw instances for training of the same datafile for the same instance
-    std::vector<std::unique_ptr<options_boost_po>> arguments;
-    std::vector<VW::workspace*> alls;
+    std::vector<std::unique_ptr<VW::workspace>> alls;
     if (argc == 3 && !std::strcmp(argv[1], "--args"))
     {
       std::fstream arg_file(argv[2]);
@@ -73,19 +74,17 @@ int main(int argc, char* argv[])
 
         int l_argc;
         char** l_argv = VW::to_argv(new_args, l_argc);
-
-        std::unique_ptr<options_boost_po> ptr(new options_boost_po(l_argc, l_argv));
+        std::vector<std::string> args(l_argv + 1, l_argv + l_argc);
+        auto ptr = VW::make_unique<options_cli>(args);
         ptr->add_and_parse(driver_config);
-        alls.push_back(setup(*ptr));
-        arguments.push_back(std::move(ptr));
+        alls.push_back(setup(std::move(ptr)));
       }
     }
     else
     {
-      std::unique_ptr<options_boost_po> ptr(new options_boost_po(argc, argv));
+      auto ptr = VW::make_unique<options_cli>(std::vector<std::string>(argv + 1, argv + argc));
       ptr->add_and_parse(driver_config);
-      alls.push_back(setup(*ptr));
-      arguments.push_back(std::move(ptr));
+      alls.push_back(setup(std::move(ptr)));
     }
 
     VW::workspace& all = *alls[0];
@@ -94,7 +93,8 @@ int main(int argc, char* argv[])
 
     if (skip_driver)
     {
-      for (VW::workspace* v : alls) { VW::finish(*v); }
+      // Leave deletion up to the unique_ptr
+      for (auto& v : alls) { VW::finish(*v, false); }
       return 0;
     }
 
@@ -111,16 +111,22 @@ int main(int argc, char* argv[])
       if (alls.size() == 1)
         VW::LEARNER::generic_driver(all);
       else
-        VW::LEARNER::generic_driver(alls);
+      {
+        std::vector<VW::workspace*> alls_ptrs;
+        alls_ptrs.reserve(alls.size());
+        for (auto& v : alls) { alls_ptrs.push_back(v.get()); }
+        VW::LEARNER::generic_driver(alls_ptrs);
+      }
       VW::end_parser(all);
     }
 
-    for (VW::workspace* v : alls)
+    for (auto& v : alls)
     {
       if (v->example_parser->exc_ptr) { std::rethrow_exception(v->example_parser->exc_ptr); }
 
       VW::sync_stats(*v);
-      VW::finish(*v);
+      // Leave deletion up to the unique_ptr
+      VW::finish(*v, false);
     }
   }
   catch (VW::vw_exception& e)

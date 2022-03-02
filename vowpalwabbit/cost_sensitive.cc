@@ -124,7 +124,7 @@ void parse_label(label& ld, VW::label_parser_reuse_mem& reuse_mem, const VW::nam
     {
       f.class_index = ldict
           ? ldict->get(reuse_mem.tokens[0], logger)
-          : static_cast<uint32_t>(hashstring(reuse_mem.tokens[0].begin(), reuse_mem.tokens[0].length(), 0));
+          : static_cast<uint32_t>(hashstring(reuse_mem.tokens[0].data(), reuse_mem.tokens[0].length(), 0));
       if (reuse_mem.tokens.size() == 1 && f.x >= 0)  // test examples are specified just by un-valued class #s
         f.x = FLT_MAX;
     }
@@ -184,15 +184,13 @@ void print_update(VW::workspace& all, bool is_test, const example& ec, const mul
 
     std::string label_buf;
     if (is_test)
-      label_buf = " unknown";
+      label_buf = "unknown";
     else
-      label_buf = " known";
+      label_buf = "known";
 
     if (action_scores || all.sd->ldict)
     {
       std::ostringstream pred_buf;
-
-      pred_buf << std::setw(all.sd->col_current_predict) << std::right << std::setfill(' ');
       if (all.sd->ldict)
       {
         if (action_scores)
@@ -246,7 +244,7 @@ void output_example(
     else
     {
       VW::string_view sv_pred = all.sd->ldict->get(multiclass_prediction);
-      all.print_text_by_ref(sink.get(), sv_pred.to_string(), ec.tag, all.logger);
+      all.print_text_by_ref(sink.get(), std::string{sv_pred}, ec.tag, all.logger);
     }
   }
 

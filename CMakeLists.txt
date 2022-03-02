@@ -99,6 +99,7 @@ option(LTO "Enable Link Time optimization (Requires Release build, only works wi
 option(RAPIDJSON_SYS_DEP "Override using the submodule for RapidJSON dependency. Instead will use find_package" OFF)
 option(FMT_SYS_DEP "Override using the submodule for FMT dependency. Instead will use find_package" OFF)
 option(SPDLOG_SYS_DEP "Override using the submodule for spdlog dependency. Instead will use find_package" OFF)
+option(VW_BOOST_MATH_SYS_DEP "Override using the submodule for boost math dependency. Instead will use find_package" OFF)
 option(VW_ZLIB_SYS_DEP "Override using the submodule for zlib dependency. Instead will use find_package" ON)
 option(BUILD_FLATBUFFERS "Build flatbuffers" OFF)
 option(BUILD_PRIVACY_ACTIVATION "Enable privacy activation feature" OFF)
@@ -126,7 +127,7 @@ if(VW_INSTALL AND NOT SPDLOG_SYS_DEP)
 endif()
 
 if(VW_INSTALL AND NOT RAPIDJSON_SYS_DEP)
-  message(WARNING "Installing with a vendored version of rapidjson is not recommended. Use SPDLOG_SYS_DEP to use a system dependency or specify VW_INSTALL=OFF to silence this warning.")
+  message(WARNING "Installing with a vendored version of rapidjson is not recommended. Use RAPIDJSON_SYS_DEP to use a system dependency or specify VW_INSTALL=OFF to silence this warning.")
 endif()
 
 string(TOUPPER "${CMAKE_BUILD_TYPE}" CONFIG)
@@ -204,24 +205,11 @@ else()
 endif()
 
 if(STATIC_LINK_VW_JAVA)
-  set(Boost_USE_STATIC_LIBS ON)
   set(CMAKE_FIND_LIBRARY_SUFFIXES ${STATIC_LIB_SUFFIXES})
-else()
-  if(STATIC_LINK_VW)
-    set(Boost_USE_STATIC_LIBS ON)
-    set(CMAKE_FIND_LIBRARY_SUFFIXES ${STATIC_LIB_SUFFIXES})
-    SET(BUILD_SHARED_LIBS OFF)
-  else()
-    set(Boost_USE_STATIC_LIBS OFF)
-    if(WIN32)
-      # Windows links everything dynamically
-      add_definitions( -DBOOST_ALL_DYN_LINK )
-    endif()
-  endif()
+elseif(STATIC_LINK_VW)
+  set(CMAKE_FIND_LIBRARY_SUFFIXES ${STATIC_LIB_SUFFIXES})
+  SET(BUILD_SHARED_LIBS OFF)
 endif()
-
-set(Boost_USE_MULTITHREADED ON)
-set(Boost_USE_STATIC_RUNTIME OFF)
 
 set(THREADS_PREFER_PTHREAD_FLAG ON)
 find_package(Threads REQUIRED)
@@ -240,8 +228,6 @@ if(STATIC_LINK_VW)
   endif()
 endif()
 
-# Align and foreach are also required, for some reason they can't be specified as components though.
-find_package(Boost REQUIRED COMPONENTS program_options system)
 if(BUILD_FLATBUFFERS)
   find_package(flatbuffers REQUIRED)
 endif()
@@ -363,12 +349,6 @@ endif()
 
 # Handle installation of targets, version, config and pkgconfig
 if(VW_INSTALL)
-  find_package(Boost REQUIRED COMPONENTS program_options)
-
-  FOREACH(BOOST_LIBRARY ${Boost_LIBRARIES})
-    SET (BOOST_LINK_LIBRARIES "${BOOST_LINK_LIBRARIES} ${BOOST_LIBRARY}")
-  ENDFOREACH()
-
   configure_file(libvw.pc.in libvw.pc @ONLY)
   configure_file(libvw_c_wrapper.pc.in libvw_c_wrapper.pc @ONLY)
   install(

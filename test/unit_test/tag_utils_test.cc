@@ -6,8 +6,10 @@
 #include <boost/test/test_tools.hpp>
 
 #include "test_common.h"
+#include "memory.h"
 #include "vw.h"
 #include "example.h"
+#include "config/options_cli.h"
 
 #include <vector>
 #include "tag_utils.h"
@@ -15,7 +17,9 @@
 
 BOOST_AUTO_TEST_CASE(tag_with_seed__seed_extraction)
 {
-  auto vw = VW::initialize("--json --chain_hash --no_stdin --quiet", nullptr, false, nullptr, nullptr);
+  auto opts = VW::make_unique<VW::config::options_cli>(
+      std::vector<std::string>{"--json", "--chain_hash", "--no_stdin", "--quiet"});
+  auto vw = VW::initialize_experimental(std::move(opts));
   std::string json = R"(
   {
     "_label": 1,
@@ -35,9 +39,7 @@ BOOST_AUTO_TEST_CASE(tag_with_seed__seed_extraction)
   auto extracted = VW::try_extract_random_seed(*example, seed);
   BOOST_CHECK_EQUAL(true, extracted);
   BOOST_CHECK_EQUAL(expected, seed);
-
   VW::finish_example(*vw, examples);
-  VW::finish(*vw);
 }
 
 BOOST_AUTO_TEST_CASE(tag_without_seed__seed_extraction)
@@ -86,5 +88,3 @@ BOOST_AUTO_TEST_CASE(no_tag__seed_extraction)
   VW::finish_example(*vw, examples);
   VW::finish(*vw);
 }
-
-

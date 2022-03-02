@@ -1,4 +1,5 @@
 import os
+from pathlib import Path
 
 import vowpalwabbit
 from vowpalwabbit import Workspace
@@ -297,6 +298,37 @@ def test_regressor_args():
     os.remove("{}.cache".format(data_file))
     os.remove("tmp.model")
 
+def test_command_line_with_space_and_escape_kwargs():
+    # load and parse external data file
+    test_file_dir = Path(__file__).resolve().parent
+    data_file = test_file_dir / "resources" / "train file.dat"
+
+    model = Workspace(oaa=3, data=str(data_file), final_regressor="test model.vw")
+    assert model.predict("| feature1:2.5") == 1
+    del model
+
+    model_file = Path("test model.vw")
+    assert model_file.is_file()
+    model_file.unlink()
+
+def test_command_line_using_arg_list():
+    # load and parse external data file
+    test_file_dir = Path(__file__).resolve().parent
+    data_file = test_file_dir / "resources" / "train file.dat"
+
+    args = ["--oaa", "3", "--data", str(data_file), "--final_regressor", "test model2.vw"]
+    model = Workspace(arg_list=args)
+    assert model.predict("| feature1:2.5") == 1
+    del model
+
+    model_file = Path("test model2.vw")
+    assert model_file.is_file()
+    model_file.unlink()
+
+def test_command_line_with_double_space_in_str():
+    # Test regression for double space in string breaking splitting
+    model = Workspace(arg_list="--oaa 3 -q ::    ")
+    del model
 
 def test_keys_with_list_of_values():
     # No exception in creating and executing model with a key/list pair

@@ -8,8 +8,7 @@ import vowpalwabbit
 
 
 def main():
-    opts = sys.argv[1:]
-    vowpalwabbit.Workspace(" ".join(opts))
+    vowpalwabbit.Workspace(arg_list=sys.argv[1:])
 
 
 if __name__ == "__main__":

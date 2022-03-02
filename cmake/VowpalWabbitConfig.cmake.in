@@ -1,7 +1,6 @@
 @PACKAGE_INIT@
 
 include(CMakeFindDependencyMacro)
-find_dependency(Boost REQUIRED COMPONENTS program_options)
 find_dependency(ZLIB REQUIRED)
 find_dependency(Threads REQUIRED)
 

@@ -56,10 +56,7 @@ struct cb_dro_data
         // cb_adf => first action is a greedy action
 
         const auto maxit = is_explore
-            ? std::max_element(action_scores.begin(), action_scores.end(),
-                  [](const ACTION_SCORE::action_score& a, const ACTION_SCORE::action_score& b) {
-                    return ACTION_SCORE::score_comp(&a, &b) < 0;
-                  })
+            ? std::max_element(action_scores.begin(), action_scores.end(), VW::action_score_compare_lt)
             : action_scores.begin();
         const uint32_t chosen_action = maxit->action;
 
@@ -149,23 +146,28 @@ base_learner* cb_dro_setup(VW::setup_base_i& stack_builder)
   void (*learn_ptr)(cb_dro_data&, multi_learner&, multi_ex&);
   void (*pred_ptr)(cb_dro_data&, multi_learner&, multi_ex&);
   std::string name_addition;
+  VW::prediction_type_t pred_type;
   if (options.was_supplied("cb_explore_adf"))
   {
     learn_ptr = learn_or_predict<true, true>;
     pred_ptr = learn_or_predict<false, true>;
     name_addition = "-cb_explore_adf";
+    pred_type = VW::prediction_type_t::action_probs;
   }
   else
   {
     learn_ptr = learn_or_predict<true, false>;
     pred_ptr = learn_or_predict<false, false>;
     name_addition = "";
+    pred_type = VW::prediction_type_t::action_scores;
   }
 
   auto* l = make_reduction_learner(std::move(data), as_multiline(stack_builder.setup_base_learner()), learn_ptr,
       pred_ptr, stack_builder.get_setupfn_name(cb_dro_setup) + name_addition)
-                .set_output_prediction_type(VW::prediction_type_t::action_probs)
                 .set_input_label_type(VW::label_type_t::cb)
-                .build();
+                .set_output_label_type(VW::label_type_t::cb)
+                .set_input_prediction_type(pred_type)
+                .set_output_prediction_type(pred_type)
+                .build(&all.logger);
   return make_base(*l);
 }

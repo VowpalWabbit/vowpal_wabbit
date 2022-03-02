@@ -181,7 +181,7 @@ void print_update(VW::workspace& all, bool is_test, const example& ec, std::stri
   {
     std::stringstream label_string;
     if (is_test)
-      label_string << " unknown";
+      label_string << "unknown";
     else
     {
       const auto& cost = ec.l.cb.costs[0];

@@ -1870,12 +1870,6 @@ void get_training_timesteps(search_private& priv, v_array<size_t>& timesteps)
     for (size_t i = 0; i < priv.active_uncertainty.size(); i++)
       if (priv._random_state->get_and_update_random() > priv.active_uncertainty[i].first)
         timesteps.push_back(priv.active_uncertainty[i].second - 1);
-    /*
-    float k = (float)priv.total_examples_generated;
-    priv.ec_seq[t]->revert_weight = priv.all->loss->getRevertingWeight(priv.all->sd, priv.ec_seq[t].pred.scalar,
-    priv.all->eta / powf(k, priv.all->power_t)); float importance = query_decision(active_str, *priv.ec_seq[t], k); if
-    (importance > 0.) timesteps.push_back(pair<size_t,size_t>(0,t));
-    */
   }
   // if there's no subsampling to do, just return [0,T)
   else if (priv.subsample_timesteps <= 0)
@@ -2945,7 +2939,7 @@ std::string search::pretty_label(action a)
   if (this->priv->all->sd->ldict)
   {
     auto sv = this->priv->all->sd->ldict->get(a);
-    return sv.to_string();
+    return std::string{sv};
   }
   else
   {

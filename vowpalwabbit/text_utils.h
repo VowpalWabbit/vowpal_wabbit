@@ -20,6 +20,14 @@ namespace VW
 bool ends_with(VW::string_view full_string, VW::string_view ending);
 
 /**
+ * \brief Check if a string starts with some other string.
+ * \param full_string String to check starting of
+ * \param starting Starting value to check
+ * \return true if full_string starts with starting, otherwise false.
+ */
+bool starts_with(VW::string_view full_string, VW::string_view starting);
+
+/**
  * \brief Replace hex sequences in a string with their corresponding byte. A hex sequence must only contain two digits
  * and must be in the form \x00 \param arg String to replace hex values within \return A copy of the original string
  * with hex values replaced with corresponding byte.
@@ -31,8 +39,10 @@ std::string decode_inline_hex(VW::string_view arg, VW::io::logger& logger);
  *
  * @param text text to wrap
  * @param width column width to wrap to
+ * @param wrap_after if word causes line to exceed width include word on same line. If false, this word would be wrapped
+ * to the next line.
  * @return std::string copy of string with required newlines
  */
-std::string wrap_text(VW::string_view text, size_t width);
+std::string wrap_text(VW::string_view text, size_t width, bool wrap_after = true);
 
 }  // namespace VW

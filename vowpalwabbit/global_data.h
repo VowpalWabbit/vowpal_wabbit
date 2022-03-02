@@ -37,7 +37,6 @@
 #include "example.h"
 #include "config.h"
 #include "learner.h"
-#include <time.h>
 #include "hash.h"
 #include "crossplat_compat.h"
 #include "error_reporting.h"
@@ -303,7 +302,6 @@ public:
   float initial_t;
   float eta;  // learning rate control.
   float eta_decay_rate;
-  time_t init_time;
 
   std::string final_regressor_name;
 
