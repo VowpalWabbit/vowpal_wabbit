@@ -80,22 +80,23 @@ jobs:
           ..\vowpalwabbit\.nuget\NuGet.exe pack .\vowpalwabbit.nuspec
           $NugetFileName = Get-ChildItem *.nupkg -name
           echo "::set-output name=NugetFileName::$NugetFileName"
+      - name: Upload
+        uses: actions/upload-artifact@v1
+        with:
+          name: ${{ steps.generate-nuget.outputs.NugetFileName }}
+          path: nuget_staging/${{ steps.generate-nuget.outputs.NugetFileName }}
       - name: Add msbuild to PATH
         uses: microsoft/setup-msbuild@v1.1
       - name: Test nuget
         run: |
           .\vowpalwabbit\.nuget\NuGet.exe install -Source ${{ github.workspace }}\nuget_staging -OutputDirectory ${{ github.workspace }}\nuget\test\packages\ VowpalWabbitNative-${{ matrix.toolset }}
           cd nuget\test
-          msbuild test-${{ matrix.toolset }}.vcxproj -t:rebuild -verbosity:detailed "-property:Configuration=Release;Platform=x64"
-          msbuild test-${{ matrix.toolset }}.vcxproj -t:rebuild -verbosity:detailed "-property:Configuration=Debug;Platform=x64"
-          msbuild test-${{ matrix.toolset }}.vcxproj -t:rebuild -verbosity:detailed "-property:Configuration=Release;Platform=Win32"
-          msbuild test-${{ matrix.toolset }}.vcxproj -t:rebuild -verbosity:detailed "-property:Configuration=Debug;Platform=Win32"
+          msbuild test-${{ matrix.toolset }}.vcxproj -t:rebuild "-property:Configuration=Release;Platform=x64"
+          msbuild test-${{ matrix.toolset }}.vcxproj -t:rebuild "-property:Configuration=Debug;Platform=x64"
+          msbuild test-${{ matrix.toolset }}.vcxproj -t:rebuild "-property:Configuration=Release;Platform=Win32"
+          msbuild test-${{ matrix.toolset }}.vcxproj -t:rebuild "-property:Configuration=Debug;Platform=Win32"
           .\x64\Release\test-${{ matrix.toolset }}.exe
           .\x64\Debug\test-${{ matrix.toolset }}.exe
-          .\Win32\Release\test-${{ matrix.toolset }}.exe
-          .\Win32\Debug\test-${{ matrix.toolset }}.exe
-      - name: Upload
-        uses: actions/upload-artifact@v1
-        with:
-          name: ${{ steps.generate-nuget.outputs.NugetFileName }}
-          path: nuget_staging/${{ steps.generate-nuget.outputs.NugetFileName }}
+          # Yes for some reason Win32 doesn't get put in a subfolder but x64 does
+          .\Release\test-${{ matrix.toolset }}.exe
+          .\Debug\test-${{ matrix.toolset }}.exe
