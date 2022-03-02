@@ -50,7 +50,17 @@ jobs:
           cd build/nuget
           ..\..\vowpalwabbit\.nuget\NuGet.exe pack .\vowpalwabbit.nuspec
           $NugetFileName = Get-ChildItem *.nupkg -name
-          echo ""::set-output name=NugetFileName::$NugetFileName"
+          echo "::set-output name=NugetFileName::$NugetFileName"
+      - name: Add msbuild to PATH
+        uses: microsoft/setup-msbuild@v1.1
+      - name: Test nuget
+        run: |
+          .\vowpalwabbit\.nuget\NuGet.exe install -Source ${{ github.workspace }}\build\nuget -OutputDirectory ${{ github.workspace }}\nuget\test\packages\ ${{ github.workspace }}\build\nuget\${{ steps.generate-nuget.outputs.NugetFileName }}
+          cd nuget\test
+          msbuild test-${{ matrix.toolset }}.vcxproj -t:rebuild -verbosity:diag -property:Configuration=Release;Platform=x64
+          msbuild test-${{ matrix.toolset }}.vcxproj -t:rebuild -verbosity:diag -property:Configuration=Debug;Platform=x64
+          .\x64\Release\test-${{ matrix.toolset }}.exe
+          .\x64\Debug\test-${{ matrix.toolset }}.exe
       - name: Upload
         uses: actions/upload-artifact@v1
         with:
