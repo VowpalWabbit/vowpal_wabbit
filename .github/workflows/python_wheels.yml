@@ -262,7 +262,7 @@ jobs:
           twine check built_wheel/*.whl
           python -m pytest ./python/tests/
           python ./python/tests/run_doctest.py
-  macos-windows-build:
+  windows-python-build:
     name: windows.amd64.py${{ matrix.config.version }}.build
     runs-on: windows-2019
     strategy:
@@ -289,8 +289,7 @@ jobs:
         uses: actions/cache@v2
         with:
           path: ${{github.workspace}}\\vcpkg
-          key: ${{ runner.os }}-${{ matrix.config.version }}-a515872b1abf58b639bf8b15ab5fe23b62f25ac3-2
-      # Downgrade CMake to mitigate crashing issue introduced in 3.21 that only affects vcpkg. See here: https://github.com/microsoft/vcpkg/issues/18718
+          key: ${{ runner.os }}-${{ matrix.config.version }}-a515872b1abf58b639bf8b15ab5fe23b62f25ac3-3
       - uses: actions/checkout@v2
         with:
           path: ${{github.workspace}}\\vowpal_wabbit
@@ -308,7 +307,7 @@ jobs:
           path: wheel_output
   windows-python-test:
     name: windows.amd64.py${{ matrix.config.version }}.test
-    needs: macos-windows-build
+    needs: windows-python-build
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
