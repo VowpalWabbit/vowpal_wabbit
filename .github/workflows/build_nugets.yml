@@ -11,7 +11,7 @@ on:
 
 jobs:
   build_vendor_windows:
-    name: nuget.${{ matrix.os }}.amd64.${{ matrix.toolset }}
+    name: nuget.${{ matrix.toolset }}
     runs-on: ${{matrix.os}}
     strategy:
       matrix:
@@ -22,9 +22,9 @@ jobs:
         with:
           submodules: 'recursive'
       - uses: ilammy/msvc-dev-cmd@v1
-      - name: Configure
+      - name: Configure x64
         run: >
-          cmake -S . -B build
+          cmake -S . -B build_x64
           -G "Visual Studio 16 2019" -A "x64"
           -T ${{ matrix.toolset }}
           -DBUILD_FLATBUFFERS=Off
@@ -36,35 +36,66 @@ jobs:
           -DVW_BOOST_MATH_SYS_DEP=Off
           -DDO_NOT_BUILD_VW_C_WRAPPER=On
           -DVW_INSTALL=On
-      - name: Build
+          -DCMAKE_INSTALL_LIBDIR="lib\x64"
+          -DCMAKE_INSTALL_BINDIR="bin\x64"
+      - name: Build and install x64
         run: |
-          cmake --build build --config Debug -t vw_io vw vw-bin allreduce spanning_tree
-          cmake --build build --config Release -t vw_io vw vw-bin allreduce spanning_tree
+          cmake --build build_x64 --config Debug -t vw_io vw vw-bin allreduce spanning_tree
+          cmake --build build_x64 --config Release -t vw_io vw vw-bin allreduce spanning_tree
+
+          # Install debug first so that release overwrites the exe and nothing else
+          cmake --install build_x64 --prefix ./nuget_staging --config Debug
+          cmake --install build_x64 --prefix ./nuget_staging --config Release
+      - name: Configure x86
+        run: >
+          cmake -S . -B build_x86
+          -G "Visual Studio 16 2019" -A "Win32"
+          -T ${{ matrix.toolset }}
+          -DBUILD_FLATBUFFERS=Off
+          -DBUILD_TESTING=Off
+          -DRAPIDJSON_SYS_DEP=Off
+          -DFMT_SYS_DEP=Off
+          -DSPDLOG_SYS_DEP=Off
+          -DVW_ZLIB_SYS_DEP=Off
+          -DVW_BOOST_MATH_SYS_DEP=Off
+          -DDO_NOT_BUILD_VW_C_WRAPPER=On
+          -DVW_INSTALL=On
+          -DCMAKE_INSTALL_LIBDIR="lib\x86"
+          -DCMAKE_INSTALL_BINDIR="bin\x86"
+      - name: Build and install x86
+        run: |
+          cmake --build build_x86 --config Debug -t vw_io vw vw-bin allreduce spanning_tree
+          cmake --build build_x86 --config Release -t vw_io vw vw-bin allreduce spanning_tree
+
+          # Install debug first so that release overwrites the exe and nothing else
+          cmake --install build_x86 --prefix ./nuget_staging --config Debug
+          cmake --install build_x86 --prefix ./nuget_staging --config Release
       - name: Package
         shell: powershell
         id: generate-nuget
         run: |
-          # Install debug first so that release overwrites the exe and nothing else
-          cmake --install build --prefix ./build/nuget --config Debug
-          cmake --install build --prefix ./build/nuget --config Release
-          cd build/nuget
-          ..\..\vowpalwabbit\.nuget\NuGet.exe pack .\vowpalwabbit.nuspec
+          cp build_x64\nuget\vowpalwabbit.nuspec nuget_staging\vowpalwabbit.nuspec
+          cp nuget\vowpalwabbit.targets nuget_staging\vowpalwabbit.targets
+          cd nuget_staging
+          ..\vowpalwabbit\.nuget\NuGet.exe pack .\vowpalwabbit.nuspec
           $NugetFileName = Get-ChildItem *.nupkg -name
           echo "::set-output name=NugetFileName::$NugetFileName"
       - name: Add msbuild to PATH
         uses: microsoft/setup-msbuild@v1.1
       - name: Test nuget
         run: |
-          .\vowpalwabbit\.nuget\NuGet.exe install -Source ${{ github.workspace }}\build\nuget -OutputDirectory ${{ github.workspace }}\nuget\test\packages\ VowpalWabbitNative-${{ matrix.toolset }}
+          .\vowpalwabbit\.nuget\NuGet.exe install -Source ${{ github.workspace }}\nuget_staging -OutputDirectory ${{ github.workspace }}\nuget\test\packages\ VowpalWabbitNative-${{ matrix.toolset }}
           cd nuget\test
           msbuild test-${{ matrix.toolset }}.vcxproj -t:rebuild -verbosity:detailed "-property:Configuration=Release;Platform=x64"
           msbuild test-${{ matrix.toolset }}.vcxproj -t:rebuild -verbosity:detailed "-property:Configuration=Debug;Platform=x64"
+          msbuild test-${{ matrix.toolset }}.vcxproj -t:rebuild -verbosity:detailed "-property:Configuration=Release;Platform=Win32"
+          msbuild test-${{ matrix.toolset }}.vcxproj -t:rebuild -verbosity:detailed "-property:Configuration=Debug;Platform=Win32"
           .\x64\Release\test-${{ matrix.toolset }}.exe
           .\x64\Debug\test-${{ matrix.toolset }}.exe
+          .\Win32\Release\test-${{ matrix.toolset }}.exe
+          .\Win32\Debug\test-${{ matrix.toolset }}.exe
       - name: Upload
         uses: actions/upload-artifact@v1
         with:
           name: ${{ steps.generate-nuget.outputs.NugetFileName }}
-          path: build/nuget/${{ steps.generate-nuget.outputs.NugetFileName }}
-
-
+          path: nuget_staging/${{ steps.generate-nuget.outputs.NugetFileName }}
