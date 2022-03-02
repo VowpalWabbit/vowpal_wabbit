@@ -41,14 +41,20 @@ jobs:
           cmake --build build --config Debug -t vw_io vw vw-bin allreduce spanning_tree
           cmake --build build --config Release -t vw_io vw vw-bin allreduce spanning_tree
       - name: Package
+        shell: powershell
+        id: generate-nuget
         run: |
           # Install debug first so that release overwrites the exe and nothing else
           cmake --install build --prefix ./build/nuget --config Debug
           cmake --install build --prefix ./build/nuget --config Release
           cd build/nuget
           ..\..\vowpalwabbit\.nuget\NuGet.exe pack .\vowpalwabbit.nuspec
+          $NugetFileName = Get-ChildItem *.nupkg -name
+          echo ""::set-output name=NugetFileName::$NugetFileName"
       - name: Upload
         uses: actions/upload-artifact@v1
         with:
-          name: win_nuget_${{ matrix.toolset }}
-          path: build/nuget/
+          name: ${{ steps.generate-nuget.outputs.NugetFileName }}
+          path: build/nuget/${{ steps.generate-nuget.outputs.NugetFileName }}
+
+
