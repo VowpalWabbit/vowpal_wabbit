@@ -350,8 +350,14 @@ endif()
 # Handle installation of targets, version, config and pkgconfig
 if(VW_INSTALL)
   configure_file(libvw.pc.in libvw.pc @ONLY)
-  configure_file(nuget/vowpalwabbit.nuspec.in nuget/vowpalwabbit.nuspec @ONLY)
-  configure_file(nuget/vowpalwabbit.targets nuget/vowpalwabbit.targets @ONLY)
+
+  # only do this if the file exists. Some packages dont have this file and its only needed in a very specific use case
+  if(EXISTS nuget/vowpalwabbit.nuspec.in)
+    configure_file(nuget/vowpalwabbit.nuspec.in nuget/vowpalwabbit.nuspec @ONLY)
+  endif()
+  if(EXISTS nuget/vowpalwabbit.targets)
+    configure_file(nuget/vowpalwabbit.targets nuget/vowpalwabbit.targets @ONLY)
+  endif()
 
   configure_file(libvw_c_wrapper.pc.in libvw_c_wrapper.pc @ONLY)
   install(
