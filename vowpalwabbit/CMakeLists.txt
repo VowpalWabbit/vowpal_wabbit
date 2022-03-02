@@ -599,4 +599,7 @@ if(VW_INSTALL)
     PATTERN "x64" EXCLUDE
     PATTERN ".vs" EXCLUDE
   )
+  install(FILES ${CMAKE_CURRENT_BINARY_DIR}/config.h
+    DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/vowpalwabbit
+  )
 endif()
