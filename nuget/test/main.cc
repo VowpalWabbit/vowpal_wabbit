@@ -2,6 +2,6 @@
 
 int main()
 {
-    auto* workspace = VW::initialize("--quiet");
-    VW::finish(*workspace);
+  auto* workspace = VW::initialize("--quiet");
+  VW::finish(*workspace);
 }
