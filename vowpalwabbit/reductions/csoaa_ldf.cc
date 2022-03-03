@@ -48,21 +48,6 @@ struct ldf
   std::vector<action_scores> stored_preds;
 };
 
-bool ec_is_label_definition(const example& ec)  // label defs look like "0:___" or just "label:___"
-{
-  return false;
-}
-
-bool ec_seq_is_label_definition(multi_ex& ec_seq)
-{
-  return false;
-}
-
-bool ec_seq_has_label_definition(const multi_ex& ec_seq)
-{
-  return false;
-}
-
 inline bool cmp_wclass_ptr(const COST_SENSITIVE::wclass* a, const COST_SENSITIVE::wclass* b) { return a->x < b->x; }
 
 void compute_wap_values(std::vector<COST_SENSITIVE::wclass*> costs)
@@ -139,7 +124,7 @@ void make_single_prediction(ldf& data, single_learner& base, example& ec)
   base.predict(ec);  // make a prediction
 }
 
-bool test_ldf_sequence(ldf& /*data*/, multi_ex& ec_seq, VW::io::logger& logger)
+bool test_ldf_sequence(ldf& /*data*/, const multi_ex& ec_seq, VW::io::logger& logger)
 {
   bool isTest;
   if (ec_seq.empty())
@@ -300,16 +285,14 @@ void learn_csoaa_ldf(ldf& data, single_learner& base, multi_ex& ec_seq_all)
   if (ec_seq_all.empty()) return;  // nothing to do
 
   data.ft_offset = ec_seq_all[0]->ft_offset;
-  // handle label definitions
-  auto ec_seq = ec_seq_all;
 
   /////////////////////// learn
-  if (!test_ldf_sequence(data, ec_seq, data.all->logger))
+  if (!test_ldf_sequence(data, ec_seq_all, data.all->logger))
   {
     if (data.is_wap)
-      do_actual_learning_wap(data, base, ec_seq);
+      do_actual_learning_wap(data, base, ec_seq_all);
     else
-      do_actual_learning_oaa(data, base, ec_seq);
+      do_actual_learning_oaa(data, base, ec_seq_all);
   }
 }
 
@@ -342,31 +325,29 @@ void predict_csoaa_ldf(ldf& data, single_learner& base, multi_ex& ec_seq_all)
   if (ec_seq_all.empty()) return;  // nothing to do
 
   data.ft_offset = ec_seq_all[0]->ft_offset;
-  // handle label definitions
-  auto ec_seq = ec_seq_all;
 
-  uint32_t K = static_cast<uint32_t>(ec_seq.size());
+  uint32_t K = static_cast<uint32_t>(ec_seq_all.size());
   uint32_t predicted_K = 0;
 
-  auto restore_guard = VW::scope_exit([&data, &ec_seq, K, &predicted_K] {
+  auto restore_guard = VW::scope_exit([&data, &ec_seq_all, K, &predicted_K] {
     // Mark the predicted sub-example with its class_index, all other with 0
     for (size_t k = 0; k < K; k++)
     {
       if (k == predicted_K)
-        ec_seq[k]->pred.multiclass = ec_seq[k]->l.cs.costs[0].class_index;
+        ec_seq_all[k]->pred.multiclass = ec_seq_all[k]->l.cs.costs[0].class_index;
       else
-        ec_seq[k]->pred.multiclass = 0;
+        ec_seq_all[k]->pred.multiclass = 0;
     }
 
     ////////////////////// compute probabilities
-    if (data.is_probabilities) convert_to_probabilities(ec_seq);
+    if (data.is_probabilities) convert_to_probabilities(ec_seq_all);
   });
 
   /////////////////////// do prediction
   float min_score = FLT_MAX;
   for (uint32_t k = 0; k < K; k++)
   {
-    example* ec = ec_seq[k];
+    example* ec = ec_seq_all[k];
     make_single_prediction(data, base, *ec);
     if (ec->partial_prediction < min_score)
     {
@@ -384,33 +365,31 @@ void predict_csoaa_ldf(ldf& data, single_learner& base, multi_ex& ec_seq_all)
 void predict_csoaa_ldf_rank(ldf& data, single_learner& base, multi_ex& ec_seq_all)
 {
   data.ft_offset = ec_seq_all[0]->ft_offset;
-  // handle label definitions
-  auto ec_seq = ec_seq_all;
-  if (ec_seq.empty()) return;  // nothing more to do
+  if (ec_seq_all.empty()) return;  // nothing more to do
 
-  uint32_t K = static_cast<uint32_t>(ec_seq.size());
+  uint32_t K = static_cast<uint32_t>(ec_seq_all.size());
 
   /////////////////////// do prediction
   data.a_s.clear();
   data.stored_preds.clear();
 
-  auto restore_guard = VW::scope_exit([&data, &ec_seq, K] {
+  auto restore_guard = VW::scope_exit([&data, &ec_seq_all, K] {
     std::sort(data.a_s.begin(), data.a_s.end(), VW::action_score_compare_lt);
 
     data.stored_preds[0].clear();
     for (size_t k = 0; k < K; k++)
     {
-      ec_seq[k]->pred.a_s = std::move(data.stored_preds[k]);
-      ec_seq[0]->pred.a_s.push_back(data.a_s[k]);
+      ec_seq_all[k]->pred.a_s = std::move(data.stored_preds[k]);
+      ec_seq_all[0]->pred.a_s.push_back(data.a_s[k]);
     }
 
     ////////////////////// compute probabilities
-    if (data.is_probabilities) { convert_to_probabilities(ec_seq); }
+    if (data.is_probabilities) { convert_to_probabilities(ec_seq_all); }
   });
 
   for (uint32_t k = 0; k < K; k++)
   {
-    example* ec = ec_seq[k];
+    example* ec = ec_seq_all[k];
     data.stored_preds.emplace_back(std::move(ec->pred.a_s));
     make_single_prediction(data, base, *ec);
     action_score s;
