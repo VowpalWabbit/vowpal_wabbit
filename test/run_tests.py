@@ -929,7 +929,7 @@ def main():
         default=100,
     )
     args = parser.parse_args()
-
+    args.exit_first_fail = False
     # user did not supply dir
     temp_working_dir: Path = Path(args.working_dir)
     if args.for_flatbuffers and args.working_dir == str(working_dir):
