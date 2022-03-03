@@ -25,7 +25,7 @@ jobs:
         with:
           submodules: 'recursive'
       - uses: ilammy/msvc-dev-cmd@v1
-      - name: Configure x64
+      - name: Configure
         run: >
           cmake -S . -B build
           -G "Visual Studio 16 2019" -A ${{ matrix.arch_config.generator_arch }}
@@ -40,7 +40,7 @@ jobs:
           -DVW_BOOST_MATH_SYS_DEP=Off
           -DDO_NOT_BUILD_VW_C_WRAPPER=On
           -DVW_INSTALL=On
-      - name: Build and install x64
+      - name: Build and install
         run: |
           cmake --build build --config Debug -t vw_io vw vw-bin allreduce spanning_tree
           cmake --build build --config Release -t vw_io vw vw-bin allreduce spanning_tree
@@ -51,7 +51,7 @@ jobs:
       - if: ${{ matrix.arch_config.arch == 'x64' }}
         run: cp nuget\vowpalwabbit-x64.targets nuget_staging\vowpalwabbit.targets
       - if: ${{ matrix.arch_config.arch == 'x86' }}
-        run: cp nuget\vowpalwabbit-x64.targets nuget_staging\vowpalwabbit.targets
+        run: cp nuget\vowpalwabbit-x86.targets nuget_staging\vowpalwabbit.targets
       - name: Package
         shell: powershell
         id: generate-nuget
