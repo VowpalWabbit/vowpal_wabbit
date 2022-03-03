@@ -33,12 +33,9 @@ struct ldf
 {
   LabelDict::label_feature_map label_features;
 
-  size_t read_example_this_loop = 0;
   bool is_wap = false;
-  bool first_pass = false;
   bool treat_as_classifier = false;
   bool is_probabilities = false;
-  float csoaa_example_t = false;
   VW::workspace* all = nullptr;
 
   bool rank = false;
@@ -589,7 +586,7 @@ void output_example_seq(VW::workspace& all, ldf& data, multi_ex& ec_seq)
   }
 }
 
-void end_pass(ldf& data) { data.first_pass = false; }
+void end_pass(ldf&) {}
 
 void finish_multiline_example(VW::workspace& all, ldf& data, multi_ex& ec_seq)
 {
@@ -600,21 +597,6 @@ void finish_multiline_example(VW::workspace& all, ldf& data, multi_ex& ec_seq)
   }
 
   VW::finish_example(all, ec_seq);
-}
-
-/*
- * Process a single example as a label.
- * Note: example should already be confirmed as a label
- */
-void inline process_label(ldf& data, example* ec)
-{
-  // auto new_fs = ec->feature_space[ec->indices[0]];
-  auto& costs = ec->l.cs.costs;
-  for (auto const& cost : costs)
-  {
-    const auto lab = static_cast<size_t>(cost.x);
-    LabelDict::set_label_features(data.label_features, lab, ec->feature_space[ec->indices[0]]);
-  }
 }
 
 base_learner* csldf_setup(VW::setup_base_i& stack_builder)
@@ -658,7 +640,6 @@ base_learner* csldf_setup(VW::setup_base_i& stack_builder)
   if (ld->is_probabilities && options.was_supplied("link")) { options.replace("link", "identity"); }
 
   ld->all = &all;
-  ld->first_pass = true;
 
   std::string ldf_arg;
 
@@ -703,7 +684,6 @@ base_learner* csldf_setup(VW::setup_base_i& stack_builder)
   ld->label_features.max_load_factor(0.25);
   ld->label_features.reserve(256);
 
-  ld->read_example_this_loop = 0;
   single_learner* pbase = as_singleline(stack_builder.setup_base_learner());
 
   std::string name = stack_builder.get_setupfn_name(csldf_setup);
