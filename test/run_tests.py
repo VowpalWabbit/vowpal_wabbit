@@ -799,6 +799,21 @@ def get_test(test_number: int, tests: List[TestData]) -> Optional[TestData]:
             return test
     return None
 
+def interpret_test_arg(arg: str, *, num_tests:int) -> List[int]:
+    single_number_pattern = re.compile(r"^\d+$")
+    range_pattern = re.compile(r"^(\d+)?\.\.(\d+)?$")
+    if single_number_pattern.match(arg):
+        return [int(arg)]
+    elif range_pattern.match(arg):
+        start, end = range_pattern.match(arg).groups()
+        start = int(start) if start else 1
+        end = int(end) if end else num_tests
+        if start > end:
+            raise ValueError(f"Invalid range: {arg}")
+        return list(range(start, end + 1))
+    else:
+        raise ValueError(f"Invalid test argument '{arg}'. Must either be a single integer 'id' or a range in the form 'start..end'")
+
 
 def main():
     working_dir: Path = Path.home() / ".vw_runtests_working_dir"
@@ -812,10 +827,10 @@ def main():
     parser.add_argument(
         "-t",
         "--test",
-        type=int,
+        type=str,
         action="append",
         nargs="+",
-        help="Run specific tests and ignore all others",
+        help="Run specific tests and ignore all others. Can specific as a single integer 'id' or a range in the form 'start..end'",
     )
     parser.add_argument(
         "-E",
@@ -944,11 +959,6 @@ def main():
         print("Can't find valgrind")
         sys.exit(1)
 
-    # Flatten nested lists for arg.test argument.
-    # Ideally we would have used action="extend", but that was added in 3.8
-    if args.test is not None:
-        args.test = [item for sublist in args.test for item in sublist]
-
     if test_base_working_dir.is_file():
         print(f"--working_dir='{test_base_working_dir}' cannot be a file")
         sys.exit(1)
@@ -1004,6 +1014,15 @@ def main():
         args.skip_test,
         extra_vw_options=args.extra_options,
     )
+
+    # Flatten nested lists for arg.test argument and process
+    # Ideally we would have used action="extend", but that was added in 3.8
+    if args.test is not None:
+        res = []
+        for arg in args.test:
+            for value in arg:
+                res.extend(interpret_test_arg(value, num_tests=len(tests)))
+        args.test = res
 
     print()
 
