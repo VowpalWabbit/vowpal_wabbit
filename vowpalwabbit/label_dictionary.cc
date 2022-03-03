@@ -57,24 +57,4 @@ void del_example_namespaces_from_example(example& target, example& source)
   }
 }
 
-void add_example_namespace_from_memory(label_feature_map& lfm, example& ec, size_t lab)
-{
-  auto res_iter = lfm.find(lab);
-  if (res_iter == lfm.end()) return;
-  add_example_namespace(ec, static_cast<namespace_index>('l'), res_iter->second);
-}
-
-void del_example_namespace_from_memory(label_feature_map& lfm, example& ec, size_t lab)
-{
-  auto res_iter = lfm.find(lab);
-  if (res_iter == lfm.end()) return;
-  del_example_namespace(ec, static_cast<namespace_index>('l'), res_iter->second);
-}
-
-void set_label_features(label_feature_map& lfm, size_t lab, features& fs)
-{
-  if (lfm.find(lab) == lfm.end()) return;
-  lfm.emplace(lab, fs);
-}
-
 }  // namespace LabelDict
