@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <package>
   <metadata>
-    <id>VowpalWabbitNative-v@MSVC_TOOLSET_VERSION@</id>
+    <id>VowpalWabbitNative-v@MSVC_TOOLSET_VERSION@-@NATIVE_NUGET_PLATFORM_TAG@</id>
     <version>@PACKAGE_VERSION@</version>
     <title>Vowpal Wabbit Native</title>
     <authors>John Langford et al</authors>
@@ -13,11 +13,9 @@
     <tags>native</tags>
   </metadata>
   <files>
-      <file src="vowpalwabbit.targets" target="build" />
-      <file src="include\**\*.*" target="include" />
-      <file src="lib\x64\*.lib" target="lib\x64" />
-      <file src="lib\x86\*.lib" target="lib\x86" />
-      <file src="bin\x64\vw.exe" target="bin\x64" />
-      <file src="bin\x86\vw.exe" target="bin\x86" />
+    <file src="vowpalwabbit.targets" target="build" />
+    <file src="include\**\*.*" target="include" />
+    <file src="lib\*.lib" target="lib" />
+    <file src="bin\vw.exe" target="bin" />
   </files>
 </package>
