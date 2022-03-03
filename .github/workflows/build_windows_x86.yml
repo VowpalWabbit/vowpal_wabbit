@@ -8,7 +8,9 @@ on:
   push:
     branches:
       - master
-
+  pull_request:
+    branches:
+      - '*'
 jobs:
   build_windows_x86:
     name: windows_x86
