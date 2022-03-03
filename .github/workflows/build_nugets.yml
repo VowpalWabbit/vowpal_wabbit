@@ -81,7 +81,7 @@ jobs:
       - uses: ilammy/msvc-dev-cmd@v1
       - id: fetch-vw-version
         run: |
-          $version = Get-Content $filePath -Raw
+          $version = Get-Content version.txt -Raw
           $version = $version.Trim()
           echo "::set-output name=VWVersion::$version"
       - uses: actions/download-artifact@v1
