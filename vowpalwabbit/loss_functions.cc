@@ -318,7 +318,7 @@ public:
     {
       return (err > 0 ? 2.f * q * err * update_scale : 2.f * (1.f - q) * err * update_scale);
     }
-    return err / pred_per_update * (err > 0 ? (1.f - correctedExp(-2.f * q * update_scale * pred_per_update)) : (1.f - correctedExp(-2.f * (1.f - q) * update_scale * pred_per_update));
+    return err / pred_per_update * (err > 0 ? (1.f - correctedExp(-2.f * q * update_scale * pred_per_update)) : (1.f - correctedExp(-2.f * (1.f - q) * update_scale * pred_per_update)));
   }
 
   float getUnsafeUpdate(float prediction, float label, float update_scale) override
