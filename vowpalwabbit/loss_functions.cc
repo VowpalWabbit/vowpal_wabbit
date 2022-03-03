@@ -296,10 +296,10 @@ class expectileloss : public loss_function
 public:
   expectileloss(float& q_) : q(q_) {}
 
-  std::string getType() override { return "expectile"; }
-  float getParameter() override { return q; }
+  std::string getType() const override { return "expectile"; }
+  float getParameter() const override { return q; }
 
-  float getLoss(shared_data*, float prediction, float label) override
+  float getLoss(const shared_data*, float prediction, float label) const override
   {
     float err = label - prediction;
     if (err > 0)
@@ -308,7 +308,7 @@ public:
       return 2.f * (1.f - q) * err * err;
   }
 
-  float getUpdate(float prediction, float label, float update_scale, float pred_per_update) override
+  float getUpdate(float prediction, float label, float update_scale, float pred_per_update) const override
   {
     float err = label - prediction;
     if (update_scale * pred_per_update < 1e-6)
@@ -318,26 +318,26 @@ public:
     return err / pred_per_update * (err > 0 ? (1.f - correctedExp(-2.f * q * update_scale * pred_per_update)) : (1.f - correctedExp(-2.f * (1.f - q) * update_scale * pred_per_update)));
   }
 
-  float getUnsafeUpdate(float prediction, float label, float update_scale) override
+  float getUnsafeUpdate(float prediction, float label, float update_scale) const override
   {
     float err = label - prediction;
     if (err > 0) return 2.f * q * err * update_scale; // -first_der * update_scale
     return 2.f * (1.f - q) * err * update_scale;
   }
 
-  float first_derivative(shared_data*, float prediction, float label) override
+  float first_derivative(const shared_data*, float prediction, float label) const override
   {
     float err = label - prediction;
     return err > 0 ? -2.f * q * err : -2.f * (1.f - q) * err;
   }
 
-  float getSquareGrad(float prediction, float label) override
+  float getSquareGrad(float prediction, float label) const override
   {
     float fd = first_derivative(nullptr, prediction, label);
     return fd * fd;
   }
 
-  float second_derivative(shared_data*, float prediction, float label) override
+  float second_derivative(const shared_data*, float prediction, float label) const override
   {
     float err = label - prediction;
     return err > 0 ? 2.f * q : 2.f * (1.f - q);
