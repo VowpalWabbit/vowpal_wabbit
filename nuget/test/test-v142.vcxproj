@@ -150,14 +150,14 @@
   </PropertyGroup>
   <ImportGroup Label="ExtensionTargets">
     <Import Project="$(ProjectDir)packages\VowpalWabbitNative-v142-x64.$(Version)\build\vowpalwabbit.targets" Condition="Exists('$(ProjectDir)packages\VowpalWabbitNative-v142-x64.$(Version)\build\vowpalwabbit.targets')" />
-    <Import Project="$(ProjectDir)packages\VowpalWabbitNative-v142-x86.$(Version)\build\vowpalwabbit.targets" Condition="Exists('$(ProjectDir)packages\VowpalWabbitNative-v142.$(-x86Version)\build\vowpalwabbit.targets')" />
+    <Import Project="$(ProjectDir)packages\VowpalWabbitNative-v142-x86.$(Version)\build\vowpalwabbit.targets" Condition="Exists('$(ProjectDir)packages\VowpalWabbitNative-v142-x86.$(Version)\build\vowpalwabbit.targets')" />
   </ImportGroup>
   <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
     <PropertyGroup>
       <ErrorText>This project references NuGet package(s) that are missing on this computer. Enable NuGet Package Restore to download them.  For more information, see http://go.microsoft.com/fwlink/?LinkID=322105. The missing file is {0}.</ErrorText>
     </PropertyGroup>
     <Error Condition="!Exists('$(ProjectDir)packages\VowpalWabbitNative-v142-x64.$(Version)\build\vowpalwabbit.targets')" Text="$([System.String]::Format('$(ErrorText)', '$(ProjectDir)packages\VowpalWabbitNative-v142-x64.$(Version)\build\vowpalwabbit.targets'))" />
-    <Error Condition="!Exists('$(ProjectDir)packages\VowpalWabbitNative-v142-x86.$(Version)\build\vowpalwabbit.targets')" Text="$([System.String]::Format('$(ErrorText)', '$(ProjectDir)packages\VowpalWabbitNative-v142.$(Version)\build\vowpalwabbit.targets'))" />
+    <Error Condition="!Exists('$(ProjectDir)packages\VowpalWabbitNative-v142-x86.$(Version)\build\vowpalwabbit.targets')" Text="$([System.String]::Format('$(ErrorText)', '$(ProjectDir)packages\VowpalWabbitNative-v142-x86.$(Version)\build\vowpalwabbit.targets'))" />
   </Target>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
 </Project>
