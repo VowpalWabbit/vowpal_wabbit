@@ -1,6 +1,14 @@
 # Use position independent code for all external libraries
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 
+# We can only exclude from all if install is turned off.
+# If we exclude from all then we lose the ability to install
+if (VW_INSTALL)
+  set(SHOULD_EXCLUDE_FROM_ALL_TEXT)
+else()
+  set(SHOULD_EXCLUDE_FROM_ALL_TEXT EXCLUDE_FROM_ALL)
+endif()
+
 if(FMT_SYS_DEP)
   # fmt is now built against 8.1.1. Its possible earlier versions will also work, but that needs to be tested
   find_package(fmt REQUIRED)
@@ -8,7 +16,7 @@ else()
   if(VW_INSTALL)
     set(FMT_INSTALL ON CACHE BOOL "install fmt library" FORCE)
   endif()
-  add_subdirectory(${CMAKE_CURRENT_LIST_DIR}/fmt)
+  add_subdirectory(${CMAKE_CURRENT_LIST_DIR}/fmt ${SHOULD_EXCLUDE_FROM_ALL_TEXT})
 endif()
 
 if(SPDLOG_SYS_DEP)
@@ -22,7 +30,7 @@ else()
   if(VW_INSTALL)
     set(SPDLOG_INSTALL ON CACHE BOOL "install spdlog library" FORCE)
   endif()
-  add_subdirectory(${CMAKE_CURRENT_LIST_DIR}/spdlog)
+  add_subdirectory(${CMAKE_CURRENT_LIST_DIR}/spdlog ${SHOULD_EXCLUDE_FROM_ALL_TEXT})
 endif()
 
 # RapidJson has a bit of logic on which version to use based on the RAPIDJSON_SYS_DEP option
@@ -65,7 +73,7 @@ else()
   set(CMAKE_POLICY_DEFAULT_CMP0048 NEW)
   set(CMAKE_POLICY_DEFAULT_CMP0042 NEW)
   set(SKIP_INSTALL_ALL ON CACHE BOOL "" FORCE)
-  add_subdirectory(${CMAKE_CURRENT_BINARY_DIR}/zlib_source ${CMAKE_CURRENT_BINARY_DIR}/zlib_build)
+  add_subdirectory(${CMAKE_CURRENT_BINARY_DIR}/zlib_source ${CMAKE_CURRENT_BINARY_DIR}/zlib_build ${SHOULD_EXCLUDE_FROM_ALL_TEXT})
   target_include_directories(zlibstatic PUBLIC
     $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}/zlib_source>
     $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}/zlib_build>
