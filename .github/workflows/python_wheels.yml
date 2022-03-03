@@ -113,7 +113,7 @@ jobs:
         shell: bash
         run: |
           sudo apt update
-          sudo apt install libboost-dev libboost-program-options-dev libboost-system-dev libboost-math-dev libboost-thread-dev libboost-test-dev libboost-python-dev zlib1g-dev cmake g++
+          sudo apt install libboost-test-dev libboost-python-dev zlib1g-dev cmake g++
       - name: Install source dist
         shell: bash
         run: pip install python_source_distribution/*.tar.gz

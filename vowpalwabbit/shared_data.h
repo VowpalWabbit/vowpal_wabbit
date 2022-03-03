@@ -12,6 +12,8 @@
 
 #include "named_labels.h"
 
+class loss_function;
+
 struct shared_data
 {
   shared_data() = default;
@@ -60,20 +62,6 @@ struct shared_data
   float first_observed_label = FLT_MAX;
   float second_observed_label = FLT_MAX;
 
-  // Column width, precision constants:
-  static constexpr int col_avg_loss = 8;
-  static constexpr int prec_avg_loss = 6;
-  static constexpr int col_since_last = 8;
-  static constexpr int prec_since_last = 6;
-  static constexpr int col_example_counter = 12;
-  static constexpr int col_example_weight = col_example_counter + 2;
-  static constexpr int prec_example_weight = 1;
-  static constexpr int col_current_label = 8;
-  static constexpr int prec_current_label = 4;
-  static constexpr int col_current_predict = 8;
-  static constexpr int prec_current_predict = 4;
-  static constexpr int col_current_features = 8;
-
   double weighted_examples() const;
   void update(bool test_example, bool labeled_example, float loss, float weight, size_t num_features);
   void update_dump_interval(bool progress_add, float progress_arg);
@@ -87,4 +75,6 @@ struct shared_data
       uint32_t prediction, size_t num_features, bool progress_add, float progress_arg);
   void print_update(std::ostream& output_stream, bool holdout_set_off, size_t current_pass, const std::string& label,
       const std::string& prediction, size_t num_features, bool progress_add, float progress_arg);
+  void print_summary(std::ostream& output, const shared_data& sd, const loss_function& loss_func, uint64_t current_pass,
+      bool holdout_set_off) const;
 };

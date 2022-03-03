@@ -325,6 +325,11 @@ def test_command_line_using_arg_list():
     assert model_file.is_file()
     model_file.unlink()
 
+def test_command_line_with_double_space_in_str():
+    # Test regression for double space in string breaking splitting
+    model = Workspace(arg_list="--oaa 3 -q ::    ")
+    del model
+
 def test_keys_with_list_of_values():
     # No exception in creating and executing model with a key/list pair
     model = Workspace(quiet=True, q=["fa", "fb"])

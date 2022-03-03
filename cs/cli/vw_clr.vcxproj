@@ -202,7 +202,6 @@
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
     <Import Project="$(SolutionDir)packages\boost.1.70.0.0\build\boost.targets" Condition="Exists('$(SolutionDir)packages\boost.1.70.0.0\build\boost.targets')" />
-    <Import Project="$(SolutionDir)packages\boost_program_options-vc141.1.70.0.0\build\boost_program_options-vc141.targets" Condition="Exists('$(SolutionDir)packages\boost_program_options-vc141.1.70.0.0\build\boost_program_options-vc141.targets')" />
     <Import Project="$(SolutionDir)packages\zlib-msvc-x64.1.2.11.8900\build\native\zlib-msvc-x64.targets" Condition="Exists('$(SolutionDir)packages\zlib-msvc-x64.1.2.11.8900\build\native\zlib-msvc-x64.targets')" />
     <Import Project="$(SolutionDir)packages\zlib-msvc-x86.1.2.11.8900\build\native\zlib-msvc-x86.targets" Condition="Exists('$(SolutionDir)packages\zlib-msvc-x86.1.2.11.8900\build\native\zlib-msvc-x86.targets')" />
     <Import Project="$(SolutionDir)packages\MSBuildTasks.1.5.0.235\build\MSBuildTasks.targets" Condition="Exists('$(SolutionDir)packages\MSBuildTasks.1.5.0.235\build\MSBuildTasks.targets')" />
@@ -221,7 +220,6 @@
       <ErrorText>This project references NuGet package(s) that are missing on this computer. Enable NuGet Package Restore to download them.  For more information, see http://go.microsoft.com/fwlink/?LinkID=322105. The missing file is {0}.</ErrorText>
     </PropertyGroup>
     <Error Condition="!Exists('$(SolutionDir)packages\boost.1.70.0.0\build\boost.targets')" Text="$([System.String]::Format('$(ErrorText)', '$(SolutionDir)packages\boost.1.70.0.0\build\boost.targets'))" />
-    <Error Condition="!Exists('$(SolutionDir)packages\boost_program_options-vc141.1.70.0.0\build\boost_program_options-vc141.targets')" Text="$([System.String]::Format('$(ErrorText)', '$(SolutionDir)packages\boost_program_options-vc141.1.70.0.0\build\boost_program_options-vc141.targets'))" />
     <Error Condition="!Exists('$(SolutionDir)packages\zlib-msvc-x64.1.2.11.8900\build\native\zlib-msvc-x64.targets')" Text="$([System.String]::Format('$(ErrorText)', '$(SolutionDir)packages\zlib-msvc-x64.1.2.11.8900\build\native\zlib-msvc-x64.targets'))" />
     <Error Condition="!Exists('$(SolutionDir)packages\zlib-msvc-x86.1.2.11.8900\build\native\zlib-msvc-x86.targets')" Text="$([System.String]::Format('$(ErrorText)', '$(SolutionDir)packages\zlib-msvc-x86.1.2.11.8900\build\native\zlib-msvc-x86.targets'))" />
     <Error Condition="!Exists('$(SolutionDir)packages\MSBuildTasks.1.5.0.235\build\MSBuildTasks.targets')" Text="$([System.String]::Format('$(ErrorText)', '$(SolutionDir)packages\MSBuildTasks.1.5.0.235\build\MSBuildTasks.targets'))" />
