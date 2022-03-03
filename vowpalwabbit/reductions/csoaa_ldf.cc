@@ -50,26 +50,17 @@ struct ldf
 
 bool ec_is_label_definition(const example& ec)  // label defs look like "0:___" or just "label:___"
 {
-  if (ec.indices.empty()) return false;
-  if (ec.indices[0] != ldf_namespace) return false;
-  const auto& costs = ec.l.cs.costs;
-  for (auto const& cost : costs)
-    if ((cost.class_index != 0) || (cost.x <= 0.)) return false;
-  return true;
+  return false;
 }
 
 bool ec_seq_is_label_definition(multi_ex& ec_seq)
 {
-  if (ec_seq.empty()) return false;
-  bool is_lab = ec_is_label_definition(*ec_seq[0]);
-  for (size_t i = 1; i < ec_seq.size(); i++)
-    if (is_lab != ec_is_label_definition(*ec_seq[i])) THROW("Mixed label definition and examples in ldf data.");
-  return is_lab;
+  return false;
 }
 
 bool ec_seq_has_label_definition(const multi_ex& ec_seq)
 {
-  return std::any_of(ec_seq.cbegin(), ec_seq.cend(), [](example* ec) { return ec_is_label_definition(*ec); });
+  return false;
 }
 
 inline bool cmp_wclass_ptr(const COST_SENSITIVE::wclass* a, const COST_SENSITIVE::wclass* b) { return a->x < b->x; }
@@ -300,12 +291,6 @@ void do_actual_learning_oaa(ldf& data, single_learner& base, multi_ex& ec_seq)
 }
 
 /*
- * The begining of the multi_ex sequence may be labels.  Process those
- * and return the start index of the un-processed examples
- */
-multi_ex process_labels(ldf& data, const multi_ex& ec_seq_all);
-
-/*
  * 1) process all labels at first
  * 2) verify no labels in the middle of data
  * 3) learn_or_predict(data) with rest
@@ -316,7 +301,7 @@ void learn_csoaa_ldf(ldf& data, single_learner& base, multi_ex& ec_seq_all)
 
   data.ft_offset = ec_seq_all[0]->ft_offset;
   // handle label definitions
-  auto ec_seq = process_labels(data, ec_seq_all);
+  auto ec_seq = ec_seq_all;
 
   /////////////////////// learn
   if (!test_ldf_sequence(data, ec_seq, data.all->logger))
@@ -358,7 +343,7 @@ void predict_csoaa_ldf(ldf& data, single_learner& base, multi_ex& ec_seq_all)
 
   data.ft_offset = ec_seq_all[0]->ft_offset;
   // handle label definitions
-  auto ec_seq = process_labels(data, ec_seq_all);
+  auto ec_seq = ec_seq_all;
 
   uint32_t K = static_cast<uint32_t>(ec_seq.size());
   uint32_t predicted_K = 0;
@@ -400,7 +385,7 @@ void predict_csoaa_ldf_rank(ldf& data, single_learner& base, multi_ex& ec_seq_al
 {
   data.ft_offset = ec_seq_all[0]->ft_offset;
   // handle label definitions
-  auto ec_seq = process_labels(data, ec_seq_all);
+  auto ec_seq = ec_seq_all;
   if (ec_seq.empty()) return;  // nothing more to do
 
   uint32_t K = static_cast<uint32_t>(ec_seq.size());
@@ -453,7 +438,6 @@ void output_example(VW::workspace& all, const example& ec, bool& hit_loss, const
   const auto& costs = ld.costs;
 
   if (example_is_newline(ec)) return;
-  if (ec_is_label_definition(ec)) return;
 
   if (COST_SENSITIVE::ec_is_example_header(ec))
   {
@@ -530,7 +514,6 @@ void output_rank_example(VW::workspace& all, example& head_ec, bool& hit_loss, m
   const auto& costs = head_ec.l.cs.costs;
 
   if (example_is_newline(head_ec)) return;
-  if (ec_is_label_definition(head_ec)) return;
 
   all.sd->total_features += head_ec.get_num_features();
 
@@ -575,7 +558,7 @@ void output_rank_example(VW::workspace& all, example& head_ec, bool& hit_loss, m
 void output_example_seq(VW::workspace& all, ldf& data, multi_ex& ec_seq)
 {
   size_t K = ec_seq.size();
-  if ((K > 0) && !ec_seq_is_label_definition(ec_seq))
+  if (K > 0)
   {
     if (test_ldf_sequence(data, ec_seq, all.logger))
       all.sd->weighted_unlabeled_examples += ec_seq[0]->weight;
@@ -653,47 +636,6 @@ void inline process_label(ldf& data, example* ec)
     const auto lab = static_cast<size_t>(cost.x);
     LabelDict::set_label_features(data.label_features, lab, ec->feature_space[ec->indices[0]]);
   }
-}
-
-/*
- * The beginning of the multi_ex sequence may be labels.  Process those
- * and return the start index of the un-processed examples
- */
-multi_ex process_labels(ldf& data, const multi_ex& ec_seq_all)
-{
-  if (ec_seq_all.empty()) { return ec_seq_all; }  // nothing to do
-
-  example* ec = ec_seq_all[0];
-
-  // check the first element, if it's not a label, return
-  if (!ec_is_label_definition(*ec)) return ec_seq_all;
-
-  // process the first element as a label
-  process_label(data, ec);
-
-  multi_ex ret;
-  size_t i = 1;
-  // process the rest of the elements that are labels
-  for (; i < ec_seq_all.size(); i++)
-  {
-    ec = ec_seq_all[i];
-    if (!ec_is_label_definition(*ec))
-    {
-      for (size_t j = i; j < ec_seq_all.size(); j++) ret.push_back(ec_seq_all[j]);
-      // return index of the first element that is not a label
-      return ret;
-    }
-
-    process_label(data, ec);
-  }
-
-  // Ensure there are no more labels
-  // (can be done in existing loops later but as a side effect learning
-  //    will happen with bad example)
-  if (ec_seq_has_label_definition(ec_seq_all)) { THROW("label definition encountered in data block"); }
-
-  // all examples were labels return size
-  return ret;
 }
 
 base_learner* csldf_setup(VW::setup_base_i& stack_builder)

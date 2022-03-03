@@ -3,7 +3,6 @@
 // license as described in the file LICENSE.
 
 #include "label_dictionary.h"
-#include "constant.h"
 #include "example.h"
 
 namespace LabelDict
@@ -62,14 +61,14 @@ void add_example_namespace_from_memory(label_feature_map& lfm, example& ec, size
 {
   auto res_iter = lfm.find(lab);
   if (res_iter == lfm.end()) return;
-  add_example_namespace(ec, static_cast<namespace_index>(ldf_namespace), res_iter->second);
+  add_example_namespace(ec, static_cast<namespace_index>('l'), res_iter->second);
 }
 
 void del_example_namespace_from_memory(label_feature_map& lfm, example& ec, size_t lab)
 {
   auto res_iter = lfm.find(lab);
   if (res_iter == lfm.end()) return;
-  del_example_namespace(ec, static_cast<namespace_index>(ldf_namespace), res_iter->second);
+  del_example_namespace(ec, static_cast<namespace_index>('l'), res_iter->second);
 }
 
 void set_label_features(label_feature_map& lfm, size_t lab, features& fs)

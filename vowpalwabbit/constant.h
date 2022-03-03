@@ -34,7 +34,6 @@ constexpr unsigned char node_id_namespace = 136;                   // this is \x
 constexpr unsigned char baseline_enabled_message_namespace = 137;  // this is \x89
 constexpr unsigned char ccb_slot_namespace = 139;
 constexpr unsigned char ccb_id_namespace = 140;
-constexpr unsigned char ldf_namespace = 141;
 
 using weight = float;
 
