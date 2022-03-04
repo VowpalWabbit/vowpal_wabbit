@@ -19,7 +19,6 @@ jobs:
         toolset: ["v141", "v142"]
         arch_config:
         - { arch: x64, generator_arch: x64}
-        - { arch: x86, generator_arch: Win32}
     steps:
       - uses: actions/checkout@v2
         with:
@@ -50,8 +49,6 @@ jobs:
           cmake --install build --prefix ./nuget_staging --config Release
       - if: ${{ matrix.arch_config.arch == 'x64' }}
         run: cp nuget\vowpalwabbit-x64.targets nuget_staging\vowpalwabbit.targets
-      - if: ${{ matrix.arch_config.arch == 'x86' }}
-        run: cp nuget\vowpalwabbit-x86.targets nuget_staging\vowpalwabbit.targets
       - name: Package
         shell: powershell
         id: generate-nuget
@@ -98,13 +95,8 @@ jobs:
         run: |
           ls downloaded_nugets
           .\vowpalwabbit\.nuget\NuGet.exe install -Source ${{ github.workspace }}\downloaded_nugets -OutputDirectory ${{ github.workspace }}\nuget\test\packages\ VowpalWabbitNative-${{ matrix.toolset }}-x64
-          .\vowpalwabbit\.nuget\NuGet.exe install -Source ${{ github.workspace }}\downloaded_nugets -OutputDirectory ${{ github.workspace }}\nuget\test\packages\ VowpalWabbitNative-${{ matrix.toolset }}-x86
           cd nuget\test
           msbuild test-${{ matrix.toolset }}.vcxproj -t:rebuild "-property:Configuration=Release;Platform=x64"
           msbuild test-${{ matrix.toolset }}.vcxproj -t:rebuild "-property:Configuration=Debug;Platform=x64"
-          msbuild test-${{ matrix.toolset }}.vcxproj -t:rebuild "-property:Configuration=Release;Platform=Win32"
-          msbuild test-${{ matrix.toolset }}.vcxproj -t:rebuild "-property:Configuration=Debug;Platform=Win32"
           .\bin\x64\Release\test-${{ matrix.toolset }}.exe
           .\bin\x64\Debug\test-${{ matrix.toolset }}.exe
-          .\bin\x86\Release\test-${{ matrix.toolset }}.exe
-          .\bin\x86\Debug\test-${{ matrix.toolset }}.exe
