@@ -162,14 +162,11 @@ void set_minmax(shared_data* sd, float label, bool min_fixed, bool max_fixed)
   if (!max_fixed) sd->max_label = std::max(label, sd->max_label);
 }
 
-inline std::string get_pred_repr(example& ec)
-{
-  return continuous_actions::to_string(ec.pred.pdf, false, std::numeric_limits<float>::max_digits10);
-}
-
 void print_audit_features(VW::workspace& all, example& ec)
 {
-  if (all.audit) all.print_text_by_ref(all.stdout_adapter.get(), get_pred_repr(ec), ec.tag, all.logger);
+  if (all.audit)
+    all.print_text_by_ref(all.stdout_adapter.get(),
+        VW::to_string(ec.pred.pdf, std::numeric_limits<float>::max_digits10), ec.tag, all.logger);
 
   GD::print_features(all, ec);
 }
@@ -255,14 +252,15 @@ void report_progress(VW::workspace& all, example& ec)
   if (all.sd->weighted_examples() >= all.sd->dump_interval && !all.quiet)
   {
     all.sd->print_update(*all.trace_message, all.holdout_set_off, all.current_pass,
-        ec.test_only ? "unknown" : to_string(costs[0]), get_pred_repr(ec), ec.get_num_features(), all.progress_add,
-        all.progress_arg);
+        ec.test_only ? "unknown" : to_string(costs[0]),
+        VW::to_string(ec.pred.pdf, VW::DEFAULT_FLOAT_FORMATTING_DECIMAL_PRECISION), ec.get_num_features(),
+        all.progress_add, all.progress_arg);
   }
 }
 
 void output_prediction(VW::workspace& all, example& ec)
 {
-  std::string pred_repr = get_pred_repr(ec);
+  std::string pred_repr = VW::to_string(ec.pred.pdf, std::numeric_limits<float>::max_digits10);
   for (auto& sink : all.final_prediction_sink) all.print_text_by_ref(sink.get(), pred_repr, ec.tag, all.logger);
 }
 

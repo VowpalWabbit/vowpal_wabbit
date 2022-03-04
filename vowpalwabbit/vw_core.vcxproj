@@ -355,6 +355,7 @@
     <ClCompile Include="config/options.cc" />
     <ClCompile Include="cost_sensitive.cc" />
     <ClCompile Include="crossplat_compat.cc" />
+    <ClCompile Include="debug_print.cc" />
     <ClCompile Include="decision_scores.cc" />
     <ClCompile Include="distributionally_robust.cc" />
     <ClCompile Include="example_predict.cc" />

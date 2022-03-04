@@ -43,7 +43,8 @@ void predict_or_learn(binary_data& data, VW::LEARNER::single_learner& base, exam
   else
     ec.pred.scalar = -1;
 
-  VW_DBG(ec) << "binary: final-pred " << scalar_pred_to_string(ec) << features_to_string(ec) << endl;
+  VW_DBG(ec) << "binary: final-pred " << VW::debug::scalar_pred_to_string(ec) << VW::debug::features_to_string(ec)
+             << endl;
 
   if (ec.l.simple.label != FLT_MAX)
   {

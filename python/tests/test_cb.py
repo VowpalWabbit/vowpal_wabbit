@@ -206,6 +206,11 @@ def helper_getting_started_example(which_cb):
     else:
         test_file = "test-sets/ref/python_test_cb.stderr"
 
+    print("Output received:")
+    print("----------------")
+    print("\n".join(output))
+    print("----------------")
+
     with open(path.join(helper_get_test_dir(), test_file), "r") as file:
         expected = file.readlines()
         for expected_line, output_line in zip(expected, output):
