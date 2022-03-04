@@ -58,7 +58,7 @@ private:
 // Pass through
 int cats_pdf::predict(example& ec, experimental::api_status*)
 {
-  VW_DBG(ec) << "cats_pdf::predict(), " << features_to_string(ec) << endl;
+  VW_DBG(ec) << "cats_pdf::predict(), " << VW::debug::features_to_string(ec) << endl;
   _base->predict(ec);
   return VW::experimental::error_code::success;
 }
@@ -67,7 +67,7 @@ int cats_pdf::predict(example& ec, experimental::api_status*)
 int cats_pdf::learn(example& ec, experimental::api_status*)
 {
   assert(!ec.test_only);
-  VW_DBG(ec) << "cats_pdf::learn(), " << to_string(ec.l.cb_cont) << features_to_string(ec) << endl;
+  VW_DBG(ec) << "cats_pdf::learn(), " << to_string(ec.l.cb_cont) << VW::debug::features_to_string(ec) << endl;
 
   if (_always_predict) { _base->predict(ec); }
 
@@ -120,11 +120,11 @@ void reduction_output::output_predictions(std::vector<std::unique_ptr<VW::io::wr
     const continuous_actions::probability_density_function& prediction)
 {
   // output to the prediction to all files
-  const std::string str = to_string(prediction, true);
+  const std::string str = to_string(prediction, -1);
   for (auto& f : predict_file_descriptors)
   {
     f->write(str.c_str(), str.size());
-    f->write("\n", 1);
+    f->write("\n\n", 2);
   }
 }
 
@@ -149,8 +149,9 @@ void reduction_output::print_update_cb_cont(VW::workspace& all, const example& e
   if (all.sd->weighted_examples() >= all.sd->dump_interval && !all.quiet && !all.bfgs)
   {
     all.sd->print_update(*all.trace_message, all.holdout_set_off, all.current_pass,
-        ec.test_only ? "unknown" : to_string(ec.l.cb_cont.costs[0]),  // Label
-        to_string(ec.pred.pdf),                                       // Prediction
+        ec.test_only ? "unknown"
+                     : to_string(ec.l.cb_cont.costs[0], VW::DEFAULT_FLOAT_FORMATTING_DECIMAL_PRECISION),  // Label
+        to_string(ec.pred.pdf, VW::DEFAULT_FLOAT_FORMATTING_DECIMAL_PRECISION),                           // Prediction
         ec.get_num_features(), all.progress_add, all.progress_arg);
   }
 }

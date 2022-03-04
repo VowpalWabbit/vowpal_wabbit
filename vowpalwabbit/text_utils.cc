@@ -6,6 +6,8 @@
 #include "io/logger.h"
 #include "parse_primitives.h"
 
+#include <fmt/format.h>
+
 #include <sstream>
 
 namespace VW
@@ -83,6 +85,21 @@ std::string wrap_text(VW::string_view text, size_t width, bool wrap_after)
     current_line_size += word.size() + 1;
   }
   return ss.str();
+}
+
+// max_decimal_places < 0 means use as many decimal places as necessary
+std::string fmt_float(float f, int max_decimal_places)
+{
+  if (max_decimal_places >= 0)
+  {
+    auto formatted = fmt::format("{:.{}f}", f, max_decimal_places);
+    while (formatted.back() == '0') { formatted.pop_back(); }
+    if (formatted.back() == '.') { formatted.pop_back(); }
+
+    return formatted;
+  }
+
+  return fmt::format("{}", f);
 }
 
 }  // namespace VW

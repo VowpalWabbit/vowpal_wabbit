@@ -10,6 +10,7 @@
 #include "io_buf.h"
 #include "global_data.h"
 #include "shared_data.h"
+#include "text_utils.h"
 
 #include "io/logger.h"
 
@@ -40,21 +41,30 @@ void print_decision_scores(VW::io::writer* f, const VW::decision_scores_t& decis
   if (f != nullptr)
   {
     std::stringstream ss;
-    for (const auto& slot : decision_scores)
-    {
-      std::string delimiter;
-      for (const auto& action_score : slot)
-      {
-        ss << delimiter << action_score.action << ':' << action_score.score;
-        delimiter = ",";
-      }
-      ss << '\n';
-    }
+    ss << to_string(decision_scores);
     const auto str = ss.str();
     ssize_t len = str.size();
     ssize_t t = f->write(str.c_str(), static_cast<unsigned int>(len));
     if (t != len) { logger.err_error("write error: {}", VW::strerror_to_string(errno)); }
   }
+}
+
+std::string to_string(const VW::decision_scores_t& decision_scores, int decimal_precision)
+{
+  std::ostringstream ss;
+
+  for (const auto& slot : decision_scores)
+  {
+    std::string delimiter;
+    for (const auto& action_score : slot)
+    {
+      ss << delimiter
+         << fmt::format("{}:{}", action_score.action, VW::fmt_float(action_score.score, decimal_precision));
+      delimiter = ",";
+    }
+    ss << '\n';
+  }
+  return ss.str();
 }
 
 void print_update_ccb(

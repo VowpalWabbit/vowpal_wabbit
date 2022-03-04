@@ -74,13 +74,10 @@ void print_update(VW::workspace& all, bool is_test, const example& ec)
     if (is_test)
       label_string << "unknown";
     else
-      for (uint32_t i : ec.l.multilabels.label_v) { label_string << " " << i; }
-
-    std::stringstream pred_string;
-    for (uint32_t i : ec.pred.multilabels.label_v) { pred_string << " " << i; }
+      label_string << VW::to_string(ec.l.multilabels);
 
     all.sd->print_update(*all.trace_message, all.holdout_set_off, all.current_pass, label_string.str(),
-        pred_string.str(), ec.get_num_features(), all.progress_add, all.progress_arg);
+        VW::to_string(ec.pred.multilabels), ec.get_num_features(), all.progress_add, all.progress_arg);
   }
 }
 
@@ -144,6 +141,19 @@ void output_example(VW::workspace& all, const example& ec)
 
 namespace VW
 {
+std::string to_string(const MULTILABEL::labels& multilabels)
+{
+  std::ostringstream ss;
+
+  std::string delimiter;
+  for (unsigned int i : multilabels.label_v)
+  {
+    ss << delimiter << i;
+    delimiter = ",";
+  }
+  return ss.str();
+}
+
 namespace model_utils
 {
 size_t read_model_field(io_buf& io, MULTILABEL::labels& multi)
