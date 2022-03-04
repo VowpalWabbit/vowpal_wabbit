@@ -149,7 +149,6 @@
     <ClInclude Include="config/options_cli.h"/>
     <ClInclude Include="config/options_name_extractor.h" />
     <ClInclude Include="config/options_serializer.h" />
-    <ClInclude Include="config/options_types.h" />
     <ClInclude Include="config/options.h" />
     <ClInclude Include="constant.h" />
     <ClInclude Include="continuous_actions_reduction_features.h" />
