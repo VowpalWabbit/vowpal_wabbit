@@ -9,6 +9,7 @@
 #include <cfloat>
 #include <cstdint>
 #include <cstdio>
+#include <_types/_uint64_t.h>
 #include <inttypes.h>
 #include <climits>
 #include <stack>
@@ -124,6 +125,16 @@ struct trace_message_wrapper
 
 namespace VW
 {
+
+  namespace details
+  {
+    struct invert_hash_info
+    {
+      std::vector<VW::audit_strings> weight_components;
+      uint64_t offset;
+      uint64_t stride_shift;
+    };
+  }
 struct workspace
 {
 private:
@@ -151,6 +162,9 @@ public:
   void predict(multi_ex&);
   void finish_example(example&);
   void finish_example(multi_ex&);
+
+
+  std::string dump_weights_to_json_experimental();
 
   void (*set_minmax)(shared_data* sd, float label);
 
@@ -282,6 +296,7 @@ public:
 
   std::string text_regressor_name;
   std::string inv_hash_regressor_name;
+  std::string json_weights_file_name;
 
   size_t length() { return (static_cast<size_t>(1)) << num_bits; };
 
@@ -316,7 +331,7 @@ public:
   bool progress_add;   // additive (rather than multiplicative) progress dumps
   float progress_arg;  // next update progress dump multiplier
 
-  std::map<uint64_t, std::string> index_name_map;
+  std::map<uint64_t, VW::details::invert_hash_info> index_name_map;
 
   // hack to support cb model loading into ccb reduction
   bool is_ccb_input_model = false;

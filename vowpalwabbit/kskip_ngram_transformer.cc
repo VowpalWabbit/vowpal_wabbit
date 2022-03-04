@@ -23,13 +23,13 @@ void add_grams(
       fs.push_back(1., new_index);
       if (!fs.space_names.empty())
       {
-        std::string feature_name(fs.space_names[i].second);
+        std::string feature_name(fs.space_names[i].name);
         for (size_t n = 1; n < gram_mask.size(); n++)
         {
           feature_name += std::string("^");
-          feature_name += std::string(fs.space_names[i + gram_mask[n]].second);
+          feature_name += std::string(fs.space_names[i + gram_mask[n]].name);
         }
-        fs.space_names.push_back(audit_strings(fs.space_names[i].first, feature_name));
+        fs.space_names.push_back(audit_strings(fs.space_names[i].ns, feature_name));
       }
     }
   }

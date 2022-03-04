@@ -14,7 +14,7 @@
 #include <string>
 #include <stack>
 
-const static std::pair<std::string, std::string> EMPTY_AUDIT_STRINGS = std::make_pair("", "");
+const static VW::audit_strings EMPTY_AUDIT_STRINGS;
 
 namespace INTERACTIONS
 {

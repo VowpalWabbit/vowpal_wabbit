@@ -52,14 +52,14 @@ inline void audit_regressor_interaction(audit_regressor_data& dat, const audit_s
   std::string ns_pre;
   if (!dat.ns_pre.empty()) ns_pre += '*';
 
-  if (!f->first.empty() && ((f->first) != " "))
+  if (!f->ns.empty() && ((f->ns) != " "))
   {
-    ns_pre.append(f->first);
+    ns_pre.append(f->ns);
     ns_pre += '^';
   }
-  if (!f->second.empty())
+  if (!f->name.empty())
   {
-    ns_pre.append(f->second);
+    ns_pre.append(f->name);
     dat.ns_pre.push_back(ns_pre);
   }
 }
@@ -98,7 +98,7 @@ void audit_regressor_lda(audit_regressor_data& rd, VW::LEARNER::single_learner& 
     features& fs = ec.feature_space[*i];
     for (size_t j = 0; j < fs.size(); ++j)
     {
-      tempstream << '\t' << fs.space_names[j].first << '^' << fs.space_names[j].second << ':'
+      tempstream << '\t' << fs.space_names[j].ns << '^' << fs.space_names[j].name << ':'
                  << ((fs.indices[j] >> weights.stride_shift()) & all.parse_mask);
       for (size_t k = 0; k < all.lda; k++)
       {

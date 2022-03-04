@@ -172,12 +172,12 @@ public:
   }
 
   // const iterator
-  const_iterator cbegin()
+  const_iterator cbegin() const
   {
     weight_map::iterator i = _map.begin();
     return const_iterator(i, stride());
   }
-  const_iterator cend()
+  const_iterator cend() const
   {
     weight_map::iterator i = _map.begin();
     return const_iterator(i, stride());
