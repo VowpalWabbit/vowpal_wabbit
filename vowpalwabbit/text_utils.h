@@ -8,6 +8,10 @@
 
 #include "vw_string_view.h"
 #include "io/logger.h"
+#include "future_compat.h"
+
+VW_WARNING_STATE_PUSH
+VW_WARNING_DISABLE_BADLY_FORMED_XML
 
 namespace VW
 {
@@ -56,3 +60,5 @@ std::string wrap_text(VW::string_view text, size_t width, bool wrap_after = true
 std::string fmt_float(float f, int max_decimal_places);
 
 }  // namespace VW
+
+VW_WARNING_STATE_POP
