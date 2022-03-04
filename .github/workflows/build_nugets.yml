@@ -85,10 +85,6 @@ jobs:
         with:
           name: VowpalWabbitNative-${{matrix.toolset}}-x64.${{ steps.fetch-vw-version.outputs.VWVersion }}.nupkg
           path: downloaded_nugets
-      - uses: actions/download-artifact@v1
-        with:
-          name: VowpalWabbitNative-${{matrix.toolset}}-x86.${{ steps.fetch-vw-version.outputs.VWVersion }}.nupkg
-          path: downloaded_nugets
       - name: Add msbuild to PATH
         uses: microsoft/setup-msbuild@v1.1
       - name: Test nuget
