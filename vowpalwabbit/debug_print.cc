@@ -77,7 +77,10 @@ std::string VW::debug::debug_depth_indent_string(const example& ec)
   return debug_depth_indent_string(ec._debug_current_reduction_depth);
 }
 
-std::string VW::debug::debug_depth_indent_string(const multi_ex& ec) { return VW::debug::debug_depth_indent_string(*ec[0]); }
+std::string VW::debug::debug_depth_indent_string(const multi_ex& ec)
+{
+  return VW::debug::debug_depth_indent_string(*ec[0]);
+}
 
 std::string VW::debug::debug_depth_indent_string(const int32_t depth)
 {
