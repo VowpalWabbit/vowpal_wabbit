@@ -67,7 +67,6 @@ set(vw_all_headers
   config/options_cli.h
   config/options_name_extractor.h
   config/options_serializer.h
-  config/options_types.h
   config/options.h
   constant.h
   continuous_actions_reduction_features.h
