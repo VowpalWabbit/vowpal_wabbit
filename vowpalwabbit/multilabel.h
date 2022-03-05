@@ -17,6 +17,8 @@ namespace MULTILABEL
 struct labels
 {
   v_array<uint32_t> label_v;
+
+  void reset_to_default() { label_v.clear(); }
 };
 
 void output_example(VW::workspace& all, const example& ec);

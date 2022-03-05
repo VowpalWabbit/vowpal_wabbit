@@ -42,6 +42,8 @@ struct wclass
 struct label
 {
   std::vector<wclass> costs;
+
+  void reset_to_default() { costs.clear(); }
 };
 
 void output_example(VW::workspace& all, const example& ec);

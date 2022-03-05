@@ -105,6 +105,19 @@ struct label
       outcome = nullptr;
     }
   }
+
+  void reset_to_default()
+  {
+    if (outcome != nullptr)
+    {
+      delete outcome;
+      outcome = nullptr;
+    }
+
+    explicit_included_actions.clear();
+    type = example_type::unset;
+    weight = 1.0;
+  }
 };
 
 void default_label(CCB::label& ld);
