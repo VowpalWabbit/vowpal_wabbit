@@ -451,12 +451,6 @@ void learn(OjaNewton& ON, base_learner& base, example& ec)
 
   ON.update_b();
   ON.check();
-
-  if (ON.cnt == ON.epoch_size)
-  {
-    ON.cnt = 0;
-    for (int k = 0; k < ON.epoch_size; k++) { VW::finish_example(*ON.all, *ON.buffer[k]); }
-  }
 }
 
 void save_load(OjaNewton& ON, io_buf& model_file, bool read, bool text)
