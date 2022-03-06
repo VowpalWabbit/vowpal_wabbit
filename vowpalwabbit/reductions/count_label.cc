@@ -96,7 +96,6 @@ VW::LEARNER::base_learner* count_label_setup(VW::setup_base_i& stack_builder)
                         .set_learn_returns_prediction(base->learn_returns_prediction)
                         .set_output_prediction_type(base->get_output_prediction_type())
                         .set_input_label_type(label_type_t::simple)
-                        .set_finish_example(finish_example_multi)
                         .build();
     return VW::LEARNER::make_base(*learner);
   }
@@ -106,7 +105,6 @@ VW::LEARNER::base_learner* count_label_setup(VW::setup_base_i& stack_builder)
                       .set_learn_returns_prediction(base->learn_returns_prediction)
                       .set_output_prediction_type(base->get_output_prediction_type())
                       .set_input_label_type(label_type_t::simple)
-                      .set_finish_example(finish_example_single)
                       .build();
   return VW::LEARNER::make_base(*learner);
 }

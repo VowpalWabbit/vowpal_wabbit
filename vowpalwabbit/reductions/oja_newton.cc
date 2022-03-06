@@ -336,7 +336,16 @@ struct OjaNewton
   }
 };
 
-void keep_example(VW::workspace& all, OjaNewton& /* ON */, example& ec) { output_and_account_example(all, ec); }
+void keep_example(VW::workspace& all, OjaNewton& ON, example& ec)
+{
+  output_and_account_example(all, ec);
+
+  if (ON.cnt == ON.epoch_size)
+  {
+    ON.cnt = 0;
+    for (int k = 0; k < ON.epoch_size; k++) { VW::finish_example(*ON.all, *ON.buffer[k]); }
+  }
+}
 
 void make_pred(oja_n_update_data& data, float x, float& wref)
 {
