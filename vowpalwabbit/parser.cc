@@ -859,6 +859,7 @@ void empty_example(VW::workspace& /*all*/, example& ec)
   ec.l.simple.reset_to_default();
   ec.l.multi.reset_to_default();
   ec.l.cs.reset_to_default();
+  ec.l.cb.reset_to_default();
   ec.l.cb_cont.reset_to_default();
   ec.l.conditional_contextual_bandit.reset_to_default();
   ec.l.slates.reset_to_default();
