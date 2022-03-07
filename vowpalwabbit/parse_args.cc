@@ -1208,7 +1208,7 @@ void parse_output_model(options_i& options, VW::workspace& all)
   {
     all.logger.err_info(
         "VW 9.0.0 introduced a change to the default model save behavior. Please use '--predict_only_model' when using "
-        "'--invert_hash' or '--readable_model' to get the old behavior. Details: https://vowpalwabbit.org/link/1");
+        "either '--invert_hash' or '--readable_model' to get the old behavior. Details: https://vowpalwabbit.org/link/1");
   }
 }
 
