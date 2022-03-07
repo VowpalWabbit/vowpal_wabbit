@@ -7,7 +7,7 @@
 #include "vw.h"
 VW_WARNING_STATE_PUSH
 VW_WARNING_DISABLE_BADLY_FORMED_XML
-#include "parser/flatbuffer/generated/example_generated.h"
+#include "vowpalwabbit/parser/flatbuffer/generated/example_generated.h"
 VW_WARNING_STATE_POP
 #include "simple_label.h"
 #include "named_labels.h"
@@ -57,7 +57,7 @@ class to_flat
 {
 public:
   std::string output_flatbuffer_name;
-  size_t collection_size = 0;
+  uint64_t collection_size = 0;
   bool collection = false;
   void convert_txt_to_flat(VW::workspace& all);
 
