@@ -66,7 +66,7 @@ def are_dicts_equal(
         elif isinstance(expected, (int, bool, str)):
             return (
                 expected == actual,
-                f"Key '{key}' value mismatch. Expected: '{expected}', but found '{actual}'"
+                f"Key '{key}' value mismatch. Expected: '{expected}', but found: '{actual}'"
                 if expected != actual
                 else "",
             )
@@ -74,7 +74,7 @@ def are_dicts_equal(
             delta = abs(expected - actual)
             return (
                 delta < epsilon,
-                f"Key '{key}' value mismatch. Expected: '{expected}', but found '{actual}' (using epsilon: '{epsilon}')"
+                f"Key '{key}' value mismatch. Expected: '{expected}', but found: '{actual}' (using epsilon: '{epsilon}')"
                 if delta >= epsilon
                 else "",
             )
@@ -95,7 +95,7 @@ def are_dicts_equal(
             if len(expected) != len(actual):
                 return (
                     False,
-                    f"Key '{key}' length mismatch. Expected '{len(expected)}', but found: '{len(actual)}'",
+                    f"Key '{key}' length mismatch. Expected: '{len(expected)}', but found: '{len(actual)}'",
                 )
             for (a, b), i in enumerate(zip(expected, actual)):
                 are_same, reason = _are_same(expected[key], actual[key], f"{key}")
