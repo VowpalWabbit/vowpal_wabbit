@@ -4,10 +4,11 @@
 
 #pragma once
 
-#include "../../vw.h"
+#include "vowpalwabbit/vw.h"
+
 VW_WARNING_STATE_PUSH
 VW_WARNING_DISABLE_BADLY_FORMED_XML
-#include "generated/example_generated.h"
+#include "vowpalwabbit/parser/flatbuffer/generated/example_generated.h"
 VW_WARNING_STATE_POP
 
 namespace VW

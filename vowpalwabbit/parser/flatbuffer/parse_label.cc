@@ -6,14 +6,15 @@
 #include <iostream>
 #include <cfloat>
 
-#include "../../global_data.h"
-#include "../../example.h"
-#include "../../constant.h"
-#include "../../cb.h"
-#include "../../action_score.h"
-#include "../../best_constant.h"
-#include "../../slates_label.h"
 #include "parse_example_flatbuffer.h"
+
+#include "vowpalwabbit/global_data.h"
+#include "vowpalwabbit/example.h"
+#include "vowpalwabbit/constant.h"
+#include "vowpalwabbit/cb.h"
+#include "vowpalwabbit/action_score.h"
+#include "vowpalwabbit/best_constant.h"
+#include "vowpalwabbit/slates_label.h"
 
 namespace VW
 {

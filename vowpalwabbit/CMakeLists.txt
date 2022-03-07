@@ -32,14 +32,6 @@ else()
   target_compile_options(allreduce PUBLIC ${linux_flags})
 endif()
 
-
-if(BUILD_FLATBUFFERS)
-  add_subdirectory(parser/flatbuffer)
-  add_library(FlatbuffersTarget INTERFACE)
-  target_include_directories(FlatbuffersTarget INTERFACE ${FLATBUFFERS_INCLUDE_DIR})
-  add_dependencies(FlatbuffersTarget fbschemas)
-endif()
-
 set(vw_all_headers
   accumulate.h
   action_score.h
@@ -238,10 +230,6 @@ set(vw_all_headers
   vwvis.h
 )
 
-if(BUILD_FLATBUFFERS)
-  set(vw_all_headers ${vw_all_headers} parser/flatbuffer/parse_example_flatbuffer.h)
-endif()
-
 if(BUILD_EXTERNAL_PARSER)
   set(vw_all_headers ${vw_all_headers} ${external_parser_headers})
 endif()
@@ -396,12 +384,6 @@ set(vw_all_sources
   vw_validate.cc
 )
 
-if(BUILD_FLATBUFFERS)
-  set(vw_all_sources ${vw_all_sources}
-    parser/flatbuffer/parse_example_flatbuffer.cc
-    parser/flatbuffer/parse_label.cc)
-endif()
-
 if(BUILD_EXTERNAL_PARSER)
   set(vw_all_sources ${vw_all_sources} ${external_parser_sources})
 endif()
@@ -447,10 +429,8 @@ if (BUILD_PRIVACY_ACTIVATION)
 endif()
 
 if(BUILD_FLATBUFFERS)
-  target_link_libraries(vw
-      PRIVATE
-      $<BUILD_INTERFACE:FlatbuffersTarget>)
-  target_compile_definitions(vw PUBLIC BUILD_FLATBUFFERS)
+  add_subdirectory(parser/flatbuffer)
+  target_link_libraries(vw PUBLIC vw_parser_flatbuffer)
 endif()
 
 add_library(VowpalWabbit::vw ALIAS vw)
@@ -463,6 +443,13 @@ target_include_directories(vw PUBLIC
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
   $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}>
   $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>)
+
+# Support the canonical include pattern: vowpalwabbit/vw.h
+target_include_directories(vw
+  PUBLIC
+    "$<BUILD_INTERFACE:${VW_ROOT_INCLUDE_DIR}>"
+    $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
+)
 
 target_compile_definitions(vw PUBLIC _FILE_OFFSET_BITS=64 $<$<CONFIG:RELEASE>:NDEBUG>)
 # Only define if Clang is not used

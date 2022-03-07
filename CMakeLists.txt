@@ -258,6 +258,8 @@ if(GIT_FOUND AND EXISTS "${PROJECT_SOURCE_DIR}/.git")
   endif()
 endif()
 
+set(VW_ROOT_INCLUDE_DIR ${CMAKE_CURRENT_LIST_DIR})
+
 add_subdirectory(explore)
 add_subdirectory(cluster)
 add_subdirectory(library)
