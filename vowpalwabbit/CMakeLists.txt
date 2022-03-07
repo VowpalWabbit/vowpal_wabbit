@@ -67,7 +67,6 @@ set(vw_all_headers
   config/options_cli.h
   config/options_name_extractor.h
   config/options_serializer.h
-  config/options_types.h
   config/options.h
   constant.h
   continuous_actions_reduction_features.h
@@ -267,6 +266,7 @@ set(vw_all_sources
   config/options.cc
   cost_sensitive.cc
   crossplat_compat.cc
+  debug_print.cc
   decision_scores.cc
   distributionally_robust.cc
   example_predict.cc

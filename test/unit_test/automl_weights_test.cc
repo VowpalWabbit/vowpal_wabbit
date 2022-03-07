@@ -14,7 +14,7 @@
 #include <map>
 
 #define ARE_SAME(X, Y, Z) \
-  BOOST_CHECK_MESSAGE(VW::math::are_same_rel(X, Y, Z), "check ARE_SAME: expected: " << X << " not equal to " << Y);
+  BOOST_CHECK_MESSAGE(VW::math::are_same(X, Y, Z), "check ARE_SAME: expected: " << X << " not equal to " << Y);
 
 using simulator::callback_map;
 using simulator::cb_sim;
