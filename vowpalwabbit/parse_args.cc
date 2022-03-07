@@ -1207,8 +1207,8 @@ void parse_output_model(options_i& options, VW::workspace& all)
   if ((options.was_supplied("invert_hash") || options.was_supplied("readable_model")) && all.save_resume)
   {
     all.logger.err_info(
-        "Default model format changed to save_resume as of version 9.0.0. This may be surprising if depending on this "
-        "format. Pass --predict_only_model to use the old default format. More info: vowpalwabbit.org/link/1");
+        "VW 9.0.0 introduced a change to the default model save behavior. Please use '--predict_only_model' when using "
+        "'--invert_hash' or '--readable_model' to get the old behavior. Details: https://vowpalwabbit.org/link/1");
   }
 }
 
