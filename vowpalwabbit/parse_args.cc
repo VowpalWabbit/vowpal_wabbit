@@ -1204,12 +1204,12 @@ void parse_output_model(options_i& options, VW::workspace& all)
   }
   if (predict_only_model) { all.save_resume = false; }
 
-  // Question: This doesn't seem necessary
-  // if (options.was_supplied("id") && find(arg.args.begin(), arg.args.end(), "--id") == arg.args.end())
-  // {
-  //   arg.args.push_back("--id");
-  //   arg.args.push_back(arg.vm["id"].as<std::string>());
-  // }
+  if ((options.was_supplied("invert_hash") || options.was_supplied("readable_model")) && all.save_resume)
+  {
+    all.logger.err_info(
+        "Default model format changed to save_resume as of version 9.0.0. This may be surprising if depending on this "
+        "format. Pass --predict_only_model to use the old default format. More info: vowpalwabbit.org/link/1");
+  }
 }
 
 void load_input_model(VW::workspace& all, io_buf& io_temp)
