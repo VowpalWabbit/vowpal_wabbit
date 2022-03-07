@@ -3,6 +3,7 @@
 // license as described in the file LICENSE.
 
 #include <cfloat>
+#include <iomanip>
 #include "example.h"
 #include "parse_primitives.h"
 #include "vw.h"
@@ -11,6 +12,7 @@
 #include "cb_continuous_label.h"
 #include "debug_print.h"
 #include "model_utils.h"
+#include "text_utils.h"
 
 #include "io/logger.h"
 
@@ -136,22 +138,22 @@ label_parser the_label_parser = {
 // End: parse a,c,p label format
 ////////////////////////////////////////////////////
 
-std::string to_string(const continuous_label_elm& elm)
+}  // namespace cb_continuous
+
+std::string to_string(const cb_continuous::continuous_label_elm& elm, int decimal_precision)
 {
-  std::stringstream strm;
-  strm << "{" << elm.action << "," << elm.cost << "," << elm.pdf_value << "}";
-  return strm.str();
+  return fmt::format("{{{},{},{}}}", VW::fmt_float(elm.action, decimal_precision),
+      VW::fmt_float(elm.cost, decimal_precision), VW::fmt_float(elm.pdf_value, decimal_precision));
 }
 
-std::string to_string(const continuous_label& lbl)
+std::string to_string(const cb_continuous::continuous_label& lbl, int decimal_precision)
 {
-  std::stringstream strstream;
+  std::ostringstream strstream;
   strstream << "[l.cb_cont={";
-  for (const auto cost : lbl.costs) strstream << to_string(cost);
+  for (const auto cost : lbl.costs) { strstream << to_string(cost, decimal_precision); }
   strstream << "}]";
   return strstream.str();
 }
-}  // namespace cb_continuous
 
 namespace model_utils
 {

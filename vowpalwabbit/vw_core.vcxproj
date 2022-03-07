@@ -149,7 +149,6 @@
     <ClInclude Include="config/options_cli.h"/>
     <ClInclude Include="config/options_name_extractor.h" />
     <ClInclude Include="config/options_serializer.h" />
-    <ClInclude Include="config/options_types.h" />
     <ClInclude Include="config/options.h" />
     <ClInclude Include="constant.h" />
     <ClInclude Include="continuous_actions_reduction_features.h" />
@@ -356,6 +355,7 @@
     <ClCompile Include="config/options.cc" />
     <ClCompile Include="cost_sensitive.cc" />
     <ClCompile Include="crossplat_compat.cc" />
+    <ClCompile Include="debug_print.cc" />
     <ClCompile Include="decision_scores.cc" />
     <ClCompile Include="distributionally_robust.cc" />
     <ClCompile Include="example_predict.cc" />
