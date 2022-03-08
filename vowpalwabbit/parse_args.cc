@@ -1201,12 +1201,13 @@ void parse_output_model(options_i& options, VW::workspace& all)
   }
   if (predict_only_model) { all.save_resume = false; }
 
-  // Question: This doesn't seem necessary
-  // if (options.was_supplied("id") && find(arg.args.begin(), arg.args.end(), "--id") == arg.args.end())
-  // {
-  //   arg.args.push_back("--id");
-  //   arg.args.push_back(arg.vm["id"].as<std::string>());
-  // }
+  if ((options.was_supplied("invert_hash") || options.was_supplied("readable_model")) && all.save_resume)
+  {
+    all.logger.err_info(
+        "VW 9.0.0 introduced a change to the default model save behavior. Please use '--predict_only_model' when using "
+        "either '--invert_hash' or '--readable_model' to get the old behavior. Details: "
+        "https://vowpalwabbit.org/link/1");
+  }
 }
 
 void load_input_model(VW::workspace& all, io_buf& io_temp)
