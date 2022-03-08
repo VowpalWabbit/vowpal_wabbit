@@ -10,6 +10,7 @@
 #endif
 
 #include <bitset>
+#include <cassert>
 #include <unordered_map>
 
 #include "memory.h"
