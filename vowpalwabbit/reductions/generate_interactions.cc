@@ -1,22 +1,21 @@
 // Copyright (c) by respective owners including Yahoo!, Microsoft, and
 // individual contributors. All rights reserved. Released under a BSD (revised)
 // license as described in the file LICENSE.
-#include <sstream>
-#include <cfloat>
 #include "generate_interactions.h"
-#include "interactions.h"
-#include "v_array.h"
-
-#include "io/logger.h"
-#include "interactions.h"
-#include "vw_math.h"
-#include "example.h"
-#include "learner.h"
-#include "global_data.h"
-#include "config/options.h"
 
 #include <algorithm>
+#include <cfloat>
 #include <iterator>
+#include <sstream>
+
+#include "config/options.h"
+#include "example.h"
+#include "global_data.h"
+#include "interactions.h"
+#include "io/logger.h"
+#include "learner.h"
+#include "v_array.h"
+#include "vw_math.h"
 
 using namespace VW::config;
 

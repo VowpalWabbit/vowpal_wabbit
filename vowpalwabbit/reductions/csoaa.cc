@@ -1,13 +1,13 @@
 // Copyright (c) by respective owners including Yahoo!, Microsoft, and
 // individual contributors. All rights reserved. Released under a BSD (revised)
 // license as described in the file LICENSE.
-#include "vw.h"
-#include "vw_exception.h"
 #include "csoaa.h"
 
 #include <utility>
 
 #include "io/logger.h"
+#include "vw.h"
+#include "vw_exception.h"
 
 using namespace VW::LEARNER;
 using namespace COST_SENSITIVE;

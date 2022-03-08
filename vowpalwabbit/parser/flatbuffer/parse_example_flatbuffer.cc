@@ -2,16 +2,17 @@
 // individual contributors. All rights reserved. Released under a BSD (revised)
 // license as described in the file LICENSE.
 
+#include "parse_example_flatbuffer.h"
+
+#include <cfloat>
 #include <fstream>
 #include <iostream>
-#include <cfloat>
 
-#include "../../global_data.h"
-#include "../../constant.h"
-#include "../../cb.h"
 #include "../../action_score.h"
 #include "../../best_constant.h"
-#include "parse_example_flatbuffer.h"
+#include "../../cb.h"
+#include "../../constant.h"
+#include "../../global_data.h"
 
 namespace VW
 {

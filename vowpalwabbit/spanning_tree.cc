@@ -3,18 +3,20 @@
 // license as described in the file LICENSE.
 
 #include "spanning_tree.h"
-#include "vw_exception.h"
 
-#include <string.h>
 #include <errno.h>
-#include <stdlib.h>
 #include <stdio.h>
-#include <string>
-#include <iostream>
-#include <fstream>
+#include <stdlib.h>
+#include <string.h>
+
 #include <cmath>
-#include <map>
+#include <fstream>
 #include <future>
+#include <iostream>
+#include <map>
+#include <string>
+
+#include "vw_exception.h"
 
 // TODO: spanning tree exists outside the normal VW source (it should live in cluster/).
 //       If we use io/logger.h here, we need to link it to the cluster library

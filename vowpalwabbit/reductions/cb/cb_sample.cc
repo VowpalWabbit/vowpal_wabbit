@@ -3,14 +3,15 @@
 // license as described in the file LICENSE.
 
 #include "cb_sample.h"
+
+#include "config/options.h"
 #include "explore.h"
+#include "global_data.h"
 #include "label_parser.h"
 #include "learner.h"
-#include "config/options.h"
-#include "global_data.h"
 #include "rand48.h"
-#include "vw_string_view.h"
 #include "tag_utils.h"
+#include "vw_string_view.h"
 
 #undef VW_DEBUG_LOG
 #define VW_DEBUG_LOG vw_dbg::cb_sample

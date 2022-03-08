@@ -1,21 +1,21 @@
 // Copyright (c) by respective owners including Yahoo!, Microsoft, and
 // individual contributors. All rights reserved. Released under a BSD (revised)
 // license as described in the file LICENSE.
-#include <cfloat>
+#include "csoaa_ldf.h"
+
+#include <algorithm>
 #include <cerrno>
+#include <cfloat>
+#include <cmath>
 
 #include "correctedMath.h"
-#include "label_dictionary.h"
-#include "vw.h"
 #include "gd.h"  // GD::foreach_feature() needed in subtract_example()
-#include "vw_exception.h"
-#include <algorithm>
-#include <cmath>
-#include "csoaa_ldf.h"
+#include "io/logger.h"
+#include "label_dictionary.h"
 #include "scope_exit.h"
 #include "shared_data.h"
-
-#include "io/logger.h"
+#include "vw.h"
+#include "vw_exception.h"
 
 using namespace VW::LEARNER;
 using namespace COST_SENSITIVE;

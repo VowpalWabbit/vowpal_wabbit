@@ -4,9 +4,10 @@
 
 #pragma once
 #include <vector>
-#include "learner.h"
+
 #include "config/options.h"
 #include "error_reporting.h"
+#include "learner.h"
 namespace VW
 {
 namespace cats_tree

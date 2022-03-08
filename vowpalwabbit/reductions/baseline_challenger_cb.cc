@@ -4,19 +4,18 @@
 
 #include "baseline_challenger_cb.h"
 
-#include "action_score.h"
-#include "debug_log.h"
-#include "learner.h"
+#include <algorithm>
 #include <cfloat>
-
-#include "distributionally_robust.h"
-#include "vw.h"
-#include "example.h"
-#include "model_utils.h"
-
 #include <memory>
 #include <utility>
-#include <algorithm>
+
+#include "action_score.h"
+#include "debug_log.h"
+#include "distributionally_robust.h"
+#include "example.h"
+#include "learner.h"
+#include "model_utils.h"
+#include "vw.h"
 
 using namespace VW;
 using namespace VW::config;

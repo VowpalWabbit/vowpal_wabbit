@@ -6,22 +6,25 @@
 The algorithm here is generally based on Nocedal 1980, Liu and Nocedal 1989.
 Implementation by Miro Dudik.
  */
+#include <float.h>
+
 #include <cmath>
 #include <fstream>
-#include <float.h>
 #ifndef _WIN32
 #  include <netdb.h>
 #endif
-#include <string.h>
-#include <stdio.h>
 #include <assert.h>
+#include <stdio.h>
+#include <string.h>
 #include <sys/timeb.h>
+
+#include <chrono>
+#include <exception>
+
 #include "accumulate.h"
 #include "gd.h"
-#include "vw_exception.h"
-#include <exception>
-#include <chrono>
 #include "shared_data.h"
+#include "vw_exception.h"
 
 using namespace VW::LEARNER;
 using namespace VW::config;

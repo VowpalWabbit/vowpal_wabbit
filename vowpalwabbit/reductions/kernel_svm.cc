@@ -1,31 +1,30 @@
 // Copyright (c) by respective owners including Yahoo!, Microsoft, and
 // individual contributors. All rights reserved. Released under a BSD (revised)
 // license as described in the file LICENSE.
-#include <cmath>
-#include <fstream>
-#include <sstream>
-#include <cfloat>
-#include <cstring>
-#include <cstdio>
 #include <cassert>
+#include <cfloat>
+#include <cmath>
+#include <cstdio>
+#include <cstring>
+#include <fstream>
+#include <map>
 #include <memory>
+#include <sstream>
 
+#include "accumulate.h"
+#include "cache.h"
+#include "constant.h"
+#include "example.h"
+#include "gd.h"
+#include "io/logger.h"
+#include "learner.h"
+#include "memory.h"
+#include "model_utils.h"
 #include "numeric_casts.h"
 #include "parse_example.h"
-#include "constant.h"
-#include "gd.h"
-#include "cache.h"
-#include "accumulate.h"
-#include "learner.h"
-#include "vw.h"
-#include <map>
-#include "memory.h"
-#include "vw_allreduce.h"
 #include "rand48.h"
-#include "model_utils.h"
-#include "example.h"
-
-#include "io/logger.h"
+#include "vw.h"
+#include "vw_allreduce.h"
 
 #define SVM_KER_LIN 0
 #define SVM_KER_RBF 1

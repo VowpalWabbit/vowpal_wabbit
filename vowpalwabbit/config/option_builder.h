@@ -4,11 +4,11 @@
 
 #pragma once
 
+#include <memory>
+#include <set>
 #include <string>
 #include <type_traits>
-#include <set>
 #include <utility>
-#include <memory>
 
 #include "config/option.h"
 

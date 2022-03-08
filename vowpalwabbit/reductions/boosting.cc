@@ -8,24 +8,24 @@
  *    ICML-2015.
  */
 
+#include <fmt/core.h>
+
 #include <cfloat>
 #include <climits>
 #include <cmath>
-#include "correctedMath.h"
 #include <cstdio>
-#include <string>
+#include <memory>
 #include <sstream>
+#include <string>
 #include <utility>
 #include <vector>
-#include <memory>
-#include <fmt/core.h>
 
-#include "vw.h"
+#include "correctedMath.h"
+#include "io/logger.h"
 #include "rand48.h"
 #include "shared_data.h"
+#include "vw.h"
 #include "vw_math.h"
-
-#include "io/logger.h"
 
 using namespace VW::LEARNER;
 using namespace VW::config;

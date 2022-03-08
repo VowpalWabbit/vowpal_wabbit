@@ -2,18 +2,19 @@
 // individual contributors. All rights reserved. Released under a BSD (revised)
 // license as described in the file LICENSE.
 
-#include <random>
+#include "cbzo.h"
+
 #include <cfloat>
+#include <random>
 
 #include "gd.h"
 #include "io/logger.h"
 #include "io_buf.h"
 #include "parse_regressor.h"
-#include "cbzo.h"
-#include "vw.h"
-#include "vw_math.h"
 #include "prob_dist_cont.h"
 #include "shared_data.h"
+#include "vw.h"
+#include "vw_math.h"
 
 using namespace VW::LEARNER;
 using namespace VW::config;

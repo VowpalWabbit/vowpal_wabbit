@@ -1,15 +1,16 @@
 // Copyright (c) by respective owners including Yahoo!, Microsoft, and
 // individual contributors. All rights reserved. Released under a BSD (revised)
 // license as described in the file LICENSE.
-#include <cstdint>
+#include "example.h"
+
 #include <algorithm>
+#include <cstdint>
 
 #include "cb_continuous_label.h"
-#include "example.h"
-#include "reductions/gd.h"
-#include "simple_label_parser.h"
-#include "reductions/interactions.h"
 #include "model_utils.h"
+#include "reductions/gd.h"
+#include "reductions/interactions.h"
+#include "simple_label_parser.h"
 #include "text_utils.h"
 
 float calculate_total_sum_features_squared(bool permutations, example& ec)

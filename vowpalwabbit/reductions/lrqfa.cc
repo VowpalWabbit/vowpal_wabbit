@@ -2,10 +2,11 @@
 // individual contributors. All rights reserved. Released under a BSD (revised)
 // license as described in the file LICENSE.
 
-#include <string>
 #include <cfloat>
-#include "rand48.h"
+#include <string>
+
 #include "parse_args.h"  // for spoof_hex_encoded_namespaces
+#include "rand48.h"
 #include "text_utils.h"
 
 using namespace VW::LEARNER;

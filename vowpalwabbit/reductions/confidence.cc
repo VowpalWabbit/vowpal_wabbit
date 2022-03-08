@@ -2,13 +2,12 @@
 // individual contributors. All rights reserved. Released under a BSD (revised)
 // license as described in the file LICENSE.
 
-#include "vw.h"
-#include "math.h"
-#include "shared_data.h"
+#include <cfloat>
 
 #include "io/logger.h"
-
-#include <cfloat>
+#include "math.h"
+#include "shared_data.h"
+#include "vw.h"
 
 using namespace VW::LEARNER;
 using namespace VW::config;

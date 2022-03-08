@@ -3,18 +3,18 @@
 // license as described in the file LICENSE.
 
 #include "shared_feature_merger.h"
+
+#include <iterator>
+#include <string>
+#include <vector>
+
 #include "cb.h"
+#include "config/options.h"
 #include "example.h"
 #include "label_dictionary.h"
 #include "learner.h"
-#include "config/options.h"
-
-#include "vw.h"
 #include "scope_exit.h"
-
-#include <iterator>
-#include <vector>
-#include <string>
+#include "vw.h"
 
 namespace VW
 {

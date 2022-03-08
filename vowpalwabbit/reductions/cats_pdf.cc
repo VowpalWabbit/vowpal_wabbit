@@ -8,14 +8,15 @@
 // It can also parse a continuous labeled example.
 
 #include "cats_pdf.h"
-#include "global_data.h"
-#include "error_constants.h"
+
+#include <cfloat>
+
 #include "api_status.h"
 #include "cb_continuous_label.h"
 #include "debug_log.h"
+#include "error_constants.h"
+#include "global_data.h"
 #include "shared_data.h"
-
-#include <cfloat>
 // Aliases
 using std::endl;
 using VW::cb_continuous::continuous_label;

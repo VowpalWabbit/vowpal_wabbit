@@ -3,6 +3,7 @@
 // license as described in the file LICENSE.
 
 #include "label_dictionary.h"
+
 #include "example.h"
 
 namespace LabelDict

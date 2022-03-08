@@ -2,12 +2,12 @@
 // individual contributors. All rights reserved. Released under a BSD (revised)
 // license as described in the file LICENSE.
 
-#include <cfloat>
 #include <cassert>
+#include <cfloat>
 #include <cmath>
 
-#include "gd.h"
 #include "accumulate.h"
+#include "gd.h"
 #include "label_parser.h"
 #include "vw.h"
 #include "vw_allreduce.h"

@@ -4,8 +4,9 @@
 
 #pragma once
 #include <vector>
-#include "reductions_fwd.h"
+
 #include "io/logger.h"
+#include "reductions_fwd.h"
 
 namespace CB
 {

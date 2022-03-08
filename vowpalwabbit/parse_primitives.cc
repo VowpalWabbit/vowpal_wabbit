@@ -2,13 +2,14 @@
 // individual contributors. All rights reserved. Released under a BSD (revised)
 // license as described in the file LICENSE.
 
-#include <iostream>
-#include <string>
-#include <stdexcept>
-#include <sstream>
-#include <cctype>
-
 #include "parse_primitives.h"
+
+#include <cctype>
+#include <iostream>
+#include <sstream>
+#include <stdexcept>
+#include <string>
+
 #include "hash.h"
 #include "vw_exception.h"
 #include "vw_string_view.h"

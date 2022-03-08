@@ -3,10 +3,11 @@
 // license as described in the file LICENSE.
 
 #include "learner.h"
+
+#include "parse_dispatch_loop.h"
+#include "parse_regressor.h"
 #include "parser.h"
 #include "vw.h"
-#include "parse_regressor.h"
-#include "parse_dispatch_loop.h"
 
 namespace VW
 {
