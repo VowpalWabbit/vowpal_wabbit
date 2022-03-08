@@ -1,19 +1,19 @@
 // Copyright (c) by respective owners including Yahoo!, Microsoft, and
 // individual contributors. All rights reserved. Released under a BSD (revised)
 // license as described in the file LICENSE.
+#include "shared_data.h"
+
 #include <algorithm>
+#include <cfloat>
+#include <climits>
 #include <iomanip>
 
 #include "best_constant.h"
-#include "parse_primitives.h"
-#include "shared_data.h"
-#include "memory.h"
-#include "text_utils.h"
-#include "table_formatter.h"
 #include "loss_functions.h"
-
-#include <cfloat>
-#include <climits>
+#include "memory.h"
+#include "parse_primitives.h"
+#include "table_formatter.h"
+#include "text_utils.h"
 
 shared_data::shared_data(const shared_data& other)
 {
@@ -238,11 +238,9 @@ void shared_data::print_update_header(std::ostream& trace_message)
 }
 
 template <typename T>
-std::string num_to_string(T num, int precision)
+std::string num_to_fixed_string(T num, int decimal_precision)
 {
-  std::ostringstream ss;
-  ss << std::setprecision(precision) << std::fixed << num;
-  return ss.str();
+  return fmt::format("{:.{}f}", num, decimal_precision);
 }
 
 void shared_data::print_update(std::ostream& output_stream, bool holdout_set_off, size_t current_pass, float label,
@@ -250,13 +248,13 @@ void shared_data::print_update(std::ostream& output_stream, bool holdout_set_off
 {
   std::ostringstream label_buf, pred_buf;
 
-  if (label < FLT_MAX) { label_buf << num_to_string(label, prec_current_label); }
+  if (label < FLT_MAX) { label_buf << num_to_fixed_string(label, prec_current_label); }
   else
   {
     label_buf << "unknown";
   }
 
-  pred_buf << num_to_string(prediction, prec_current_predict);
+  pred_buf << num_to_fixed_string(prediction, prec_current_predict);
 
   print_update(output_stream, holdout_set_off, current_pass, label_buf.str(), pred_buf.str(), num_features,
       progress_add, progress_arg);
@@ -302,15 +300,15 @@ void shared_data::print_update(std::ostream& output_stream, bool holdout_set_off
     if (holdout_sum_loss == 0. && weighted_holdout_examples == 0.) { avg_loss = "unknown"; }
     else
     {
-      avg_loss = num_to_string(holdout_sum_loss / weighted_holdout_examples, prec_avg_loss);
+      avg_loss = num_to_fixed_string(holdout_sum_loss / weighted_holdout_examples, prec_avg_loss);
     }
 
     if (holdout_sum_loss_since_last_dump == 0. && weighted_holdout_examples_since_last_dump == 0.)
     { since_last = "unknown"; }
     else
     {
-      since_last =
-          num_to_string(holdout_sum_loss_since_last_dump / weighted_holdout_examples_since_last_dump, prec_since_last);
+      since_last = num_to_fixed_string(
+          holdout_sum_loss_since_last_dump / weighted_holdout_examples_since_last_dump, prec_since_last);
     }
 
     weighted_holdout_examples_since_last_dump = 0;
@@ -321,7 +319,7 @@ void shared_data::print_update(std::ostream& output_stream, bool holdout_set_off
   else
   {
     if (weighted_labeled_examples > 0.)
-    { avg_loss = num_to_string(sum_loss / weighted_labeled_examples, prec_avg_loss); }
+    { avg_loss = num_to_fixed_string(sum_loss / weighted_labeled_examples, prec_avg_loss); }
     else
     {
       avg_loss = "n.a.";
@@ -330,14 +328,14 @@ void shared_data::print_update(std::ostream& output_stream, bool holdout_set_off
     if (weighted_labeled_examples == old_weighted_labeled_examples) { since_last = "n.a."; }
     else
     {
-      since_last = num_to_string(
+      since_last = num_to_fixed_string(
           sum_loss_since_last_dump / (weighted_labeled_examples - old_weighted_labeled_examples), prec_since_last);
     }
   }
 
-  format_row(
-      {avg_loss, since_last, std::to_string(example_number), num_to_string(weighted_examples(), prec_example_weight),
-          label, prediction, std::to_string(num_features)},
+  format_row({avg_loss, since_last, std::to_string(example_number),
+                 num_to_fixed_string(weighted_examples(), prec_example_weight), label, prediction,
+                 std::to_string(num_features)},
       VALUE_COLUMNS, 1, output_stream);
 
   if (holding_out) { output_stream << " h"; }

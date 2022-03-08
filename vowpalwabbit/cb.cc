@@ -2,20 +2,19 @@
 // individual contributors. All rights reserved. Released under a BSD (revised)
 // license as described in the file LICENSE.
 
-#include <cfloat>
 #include <algorithm>
+#include <cfloat>
 
+#include "cb_label_parser.h"
 #include "example.h"
+#include "io/logger.h"
+#include "model_utils.h"
 #include "parse_primitives.h"
+#include "shared_data.h"
+#include "text_utils.h"
 #include "vw.h"
 #include "vw_exception.h"
-#include "example.h"
-#include "cb_label_parser.h"
 #include "vw_string_view.h"
-#include "shared_data.h"
-#include "model_utils.h"
-
-#include "io/logger.h"
 
 using namespace VW::LEARNER;
 
@@ -119,7 +118,7 @@ std::string known_cost_to_str(const CB::cb_class* known_cost)
   if (known_cost == nullptr) return " known";
 
   std::stringstream label_string;
-  label_string.precision(2);
+  label_string.precision(VW::DEFAULT_FLOAT_FORMATTING_DECIMAL_PRECISION);
   label_string << known_cost->action << ":" << known_cost->cost << ":" << known_cost->probability;
   return label_string.str();
 }
@@ -159,7 +158,10 @@ void print_update(VW::workspace& all, bool is_test, const example& ec, const mul
     {
       std::ostringstream pred_buf;
       if (!ec.pred.a_s.empty())
-        pred_buf << ec.pred.a_s[0].action << ":" << ec.pred.a_s[0].score;
+      {
+        pred_buf << fmt::format("{}:{}", ec.pred.a_s[0].action,
+            VW::fmt_float(ec.pred.a_s[0].score, VW::DEFAULT_FLOAT_FORMATTING_DECIMAL_PRECISION));
+      }
       else
         pred_buf << "no action";
       all.sd->print_update(*all.trace_message, all.holdout_set_off, all.current_pass, label_buf, pred_buf.str(),

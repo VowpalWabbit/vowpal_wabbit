@@ -2,16 +2,17 @@
 // individual contributors. All rights reserved. Released under a BSD (revised)
 // license as described in the file LICENSE.
 
-#include <cstring>
 #include <climits>
+#include <cstring>
+
+#include "example.h"
 #include "global_data.h"
+#include "model_utils.h"
+#include "parse_primitives.h"
+#include "shared_data.h"
 #include "vw.h"
 #include "vw_exception.h"
 #include "vw_string_view.h"
-#include "example.h"
-#include "parse_primitives.h"
-#include "shared_data.h"
-#include "model_utils.h"
 
 namespace MULTICLASS
 {
@@ -99,8 +100,8 @@ void print_probability(VW::workspace& all, example& ec, uint32_t prediction)
 {
   if (prediction == 0) { prediction = static_cast<uint32_t>(ec.pred.scalars.size()); }
   std::stringstream pred_ss;
-  pred_ss << prediction << "(" << std::setw(2) << std::setprecision(0) << std::fixed
-          << 100 * ec.pred.scalars[prediction - 1] << "%)";
+  pred_ss << prediction << "(" << std::setw(VW::DEFAULT_FLOAT_FORMATTING_DECIMAL_PRECISION) << std::setprecision(0)
+          << std::fixed << 100 * ec.pred.scalars[prediction - 1] << "%)";
 
   std::stringstream label_ss;
   label_ss << ec.l.multi.label;

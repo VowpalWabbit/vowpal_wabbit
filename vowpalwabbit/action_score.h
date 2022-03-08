@@ -4,9 +4,11 @@
 
 #pragma once
 
+#include <iterator>
+
+#include "constant.h"
 #include "io/io_adapter.h"
 #include "io/logger.h"
-#include <iterator>
 #include "v_array.h"
 
 namespace ACTION_SCORE
@@ -73,4 +75,7 @@ constexpr inline bool action_score_compare_gt(
 {
   return (left.score == right.score) ? left.action > right.action : left.score > right.score;
 }
+
+std::string to_string(
+    const ACTION_SCORE::action_scores& action_scores_or_probs, int decimal_precision = DEFAULT_FLOAT_PRECISION);
 }  // namespace VW

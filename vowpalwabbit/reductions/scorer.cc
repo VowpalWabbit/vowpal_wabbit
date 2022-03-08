@@ -3,11 +3,12 @@
 // license as described in the file LICENSE.
 
 #include <cfloat>
+
+#include "config/options.h"
 #include "correctedMath.h"
+#include "global_data.h"
 #include "learner.h"
 #include "vw_exception.h"
-#include "config/options.h"
-#include "global_data.h"
 
 #undef VW_DEBUG_LOG
 #define VW_DEBUG_LOG vw_dbg::scorer

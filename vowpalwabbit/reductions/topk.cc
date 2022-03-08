@@ -1,18 +1,17 @@
 // Copyright (c) by respective owners including Yahoo!, Microsoft, and
 // individual contributors. All rights reserved. Released under a BSD (revised)
 // license as described in the file LICENSE.
+#include "topk.h"
+
 #include <cfloat>
-#include <sstream>
 #include <queue>
+#include <sstream>
 #include <utility>
 
-#include "topk.h"
-#include "learner.h"
-
-#include "vw.h"
-#include "shared_data.h"
-
 #include "io/logger.h"
+#include "learner.h"
+#include "shared_data.h"
+#include "vw.h"
 
 using namespace VW::config;
 

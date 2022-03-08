@@ -3,13 +3,16 @@
 // license as described in the file LICENSE.
 
 #pragma once
-#include "v_array.h"
-#include "io_buf.h"
 #include "example.h"
+#include "feature_group.h"
 #include "io/logger.h"
+#include "io_buf.h"
+#include "label_parser.h"
+#include "v_array.h"
 
 namespace VW
 {
+struct workspace;
 namespace details
 {
 struct cache_temp_buffer;

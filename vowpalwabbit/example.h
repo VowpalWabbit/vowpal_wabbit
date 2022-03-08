@@ -4,29 +4,29 @@
 
 #pragma once
 
-#include "v_array.h"
-#include "no_label.h"
-#include "simple_label.h"
-#include "multiclass.h"
-#include "multilabel.h"
-#include "cost_sensitive.h"
-#include "cb.h"
-#include "constant.h"
-#include "feature_group.h"
+#include <cstdint>
+#include <iostream>
+#include <vector>
+
 #include "action_score.h"
-#include "example_predict.h"
-#include "continuous_actions_reduction_features.h"
-#include "ccb_label.h"
-#include "slates_label.h"
-#include "decision_scores.h"
-#include "cb_continuous_label.h"
-#include "prob_dist_cont.h"
 #include "active_multiclass_prediction.h"
 #include "cache.h"
-
-#include <cstdint>
-#include <vector>
-#include <iostream>
+#include "cb.h"
+#include "cb_continuous_label.h"
+#include "ccb_label.h"
+#include "constant.h"
+#include "continuous_actions_reduction_features.h"
+#include "cost_sensitive.h"
+#include "decision_scores.h"
+#include "example_predict.h"
+#include "feature_group.h"
+#include "multiclass.h"
+#include "multilabel.h"
+#include "no_label.h"
+#include "prob_dist_cont.h"
+#include "simple_label.h"
+#include "slates_label.h"
+#include "v_array.h"
 
 namespace VW
 {
@@ -75,6 +75,11 @@ struct polyprediction
   VW::active_multiclass_prediction active_multiclass;
   char nopred = static_cast<char>(0);
 };
+
+namespace VW
+{
+std::string to_string(const v_array<float>& scalars, int decimal_precision = DEFAULT_FLOAT_PRECISION);
+}
 
 float calculate_total_sum_features_squared(bool permutations, example& ec);
 
@@ -186,7 +191,7 @@ inline void add_passthrough_feature_magic(example& ec, uint64_t magic, uint64_t 
 #define add_passthrough_feature(ec, i, x) \
   add_passthrough_feature_magic(ec, __FILE__[0] * 483901 + __FILE__[1] * 3417 + __FILE__[2] * 8490177, i, x);
 
-typedef std::vector<example*> multi_ex;
+using multi_ex = std::vector<example*>;
 
 namespace VW
 {
@@ -201,14 +206,3 @@ size_t write_model_field(io_buf& io, const flat_example& fe, const std::string& 
     label_parser& lbl_parser, uint64_t parse_mask);
 }  // namespace model_utils
 }  // namespace VW
-
-std::string simple_label_to_string(const example& ec);
-std::string cb_label_to_string(const example& ec);
-std::string scalar_pred_to_string(const example& ec);
-std::string a_s_pred_to_string(const example& ec);
-std::string prob_dist_pred_to_string(const example& ec);
-std::string multiclass_pred_to_string(const example& ec);
-std::string debug_depth_indent_string(const multi_ex& ec);
-std::string debug_depth_indent_string(const example& ec);
-std::string debug_depth_indent_string(int32_t stack_depth);
-std::string cb_label_to_string(const example& ec);

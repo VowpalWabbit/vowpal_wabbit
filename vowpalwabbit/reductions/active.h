@@ -6,8 +6,10 @@
 
 #include <memory>
 #include <utility>
-#include "reductions_fwd.h"
+
 #include "rand_state.h"
+#include "reductions_fwd.h"
+#include "shared_data.h"
 #include "version.h"
 
 struct active

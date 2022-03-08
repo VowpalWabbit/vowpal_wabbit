@@ -4,15 +4,14 @@
 
 #pragma once
 
-#include "config/option.h"
-#include "config/option_group_definition.h"
-
-#include "future_compat.h"
-
 #include <map>
 #include <memory>
 #include <string>
 #include <vector>
+
+#include "config/option.h"
+#include "config/option_group_definition.h"
+#include "future_compat.h"
 
 namespace VW
 {

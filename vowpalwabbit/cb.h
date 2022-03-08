@@ -3,15 +3,15 @@
 // license as described in the file LICENSE.
 #pragma once
 
-#include <vector>
 #include <cfloat>
 #include <cstdint>
 #include <utility>
+#include <vector>
 
-#include "reductions_fwd.h"
-#include "label_parser.h"
-#include "v_array.h"
 #include "io_buf.h"
+#include "label_parser.h"
+#include "reductions_fwd.h"
+#include "v_array.h"
 
 struct example;
 using multi_ex = std::vector<example*>;

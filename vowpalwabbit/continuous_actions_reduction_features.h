@@ -4,11 +4,11 @@
 
 #pragma once
 
-#include "v_array.h"
-#include "prob_dist_cont.h"
-
 #include <cmath>
 #include <limits>
+
+#include "prob_dist_cont.h"
+#include "v_array.h"
 
 namespace VW
 {

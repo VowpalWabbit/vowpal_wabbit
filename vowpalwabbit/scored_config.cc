@@ -3,6 +3,7 @@
 // license as described in the file LICENSE.
 
 #include "scored_config.h"
+
 #include "model_utils.h"
 
 namespace VW

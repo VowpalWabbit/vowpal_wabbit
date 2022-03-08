@@ -4,11 +4,11 @@
 
 #include "action_score.h"
 
-#include "v_array.h"
-#include "io_buf.h"
 #include "global_data.h"
-
 #include "io/logger.h"
+#include "io_buf.h"
+#include "text_utils.h"
+#include "v_array.h"
 #include "vw_string_view.h"
 
 namespace ACTION_SCORE
@@ -19,12 +19,7 @@ void print_action_score(
   if (f == nullptr) { return; }
 
   std::stringstream ss;
-
-  for (size_t i = 0; i < a_s.size(); i++)
-  {
-    if (i > 0) ss << ',';
-    ss << a_s[i].action << ':' << a_s[i].score;
-  }
+  ss << VW::to_string(a_s);
   if (!tag.empty()) { ss << " " << VW::string_view(tag.begin(), tag.size()); }
   ss << '\n';
   const auto ss_str = ss.str();
@@ -39,3 +34,19 @@ std::ostream& operator<<(std::ostream& os, const action_score& a_s)
   return os;
 }
 }  // namespace ACTION_SCORE
+
+namespace VW
+{
+std::string to_string(const ACTION_SCORE::action_scores& action_scores_or_probs, int decimal_precision)
+{
+  std::ostringstream ss;
+  std::string delim;
+  for (const auto& item : action_scores_or_probs)
+  {
+    ss << delim << fmt::format("{},{}", item.action, VW::fmt_float(item.score, decimal_precision));
+    delim = ",";
+  }
+  return ss.str();
+}
+
+}  // namespace VW

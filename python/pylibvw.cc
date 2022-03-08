@@ -2,30 +2,29 @@
 // individual contributors. All rights reserved. Released under a BSD (revised)
 // license as described in the file LICENSE.
 
-#include "vw.h"
-
-#include "multiclass.h"
-#include "cost_sensitive.h"
 #include "cb.h"
-#include "reductions/search/search.h"
-#include "reductions/search/search_hooktask.h"
+#include "config/cli_options_serializer.h"
+#include "config/option.h"
+#include "config/options_cli.h"
+#include "cost_sensitive.h"
+#include "future_compat.h"
+#include "multiclass.h"
+#include "multilabel.h"
 #include "parse_example.h"
 #include "reductions/gd.h"
-#include "config/options_cli.h"
-#include "config/options_types.h"
-#include "config/cli_options_serializer.h"
-#include "future_compat.h"
-#include "slates_label.h"
-#include "simple_label_parser.h"
+#include "reductions/search/search.h"
+#include "reductions/search/search_hooktask.h"
 #include "shared_data.h"
-#include "multilabel.h"
+#include "simple_label_parser.h"
+#include "slates_label.h"
+#include "vw.h"
 
 // see http://www.boost.org/doc/libs/1_56_0/doc/html/bbv2/installation.html
 #define BOOST_PYTHON_USE_GCC_SYMBOL_VISIBILITY 1
 #include <boost/make_shared.hpp>
 #include <boost/python.hpp>
-#include <boost/utility.hpp>
 #include <boost/python/suite/indexing/vector_indexing_suite.hpp>
+#include <boost/utility.hpp>
 
 // Brings VW_DLL_PUBLIC to help control exports
 #define VWDLL_EXPORTS
@@ -75,7 +74,7 @@ const size_t tUNSET = 3;
 
 void dont_delete_me(void* arg) {}
 
-class OptionManager
+class OptionManager : VW::config::typed_option_visitor
 {
   std::map<std::string, std::vector<VW::config::option_group_definition>> m_option_group_dic;
   // see pyvw.py class VWOption
@@ -83,6 +82,8 @@ class OptionManager
   VW::config::options_i& m_opt;
   std::vector<std::string>& m_enabled_reductions;
   std::string default_group_name;
+
+  py::object* m_visitor_output_var;
 
 public:
   OptionManager(VW::config::options_i& options, std::vector<std::string>& enabled_reductions, py::object py_class)
@@ -92,6 +93,7 @@ public:
       , m_py_opt_class(py_class)
   {
     default_group_name = options.m_default_tint;
+    m_visitor_output_var = nullptr;
   }
 
   py::object* value_to_pyobject(VW::config::typed_option<bool>& opt)
@@ -171,18 +173,18 @@ public:
     return nullptr;
   }
 
-  template <typename TTypes>
-  py::object base_option_to_pyobject(VW::config::base_option& options)
+  py::object base_option_to_pyobject(VW::config::base_option& option)
   {
-    py::object* temp = transform_if_t<typename TTypes::head>(options);
-    if (temp != nullptr)
+    option.accept(*this);
+    if (m_visitor_output_var != nullptr)
     {
-      auto repack = py::object(*temp);
-      delete temp;
+      auto repack = py::object(*m_visitor_output_var);
+      delete m_visitor_output_var;
+      m_visitor_output_var = nullptr;
       return repack;
     }
 
-    return base_option_to_pyobject<typename TTypes::tail>(options);
+    return {};
   }
 
   py::object get_vw_option_pyobjects(bool enabled_only)
@@ -203,12 +205,12 @@ public:
 
       py::list option_groups;
 
-      for (auto options_group : it->second)
+      for (auto& options_group : it->second)
       {
         py::list options;
-        for (auto opt : options_group.m_options)
+        for (auto& opt : options_group.m_options)
         {
-          auto temp = base_option_to_pyobject<VW::config::supported_options_types>(*opt.get());
+          auto temp = base_option_to_pyobject(*opt);
           options.append(temp);
         }
 
@@ -221,15 +223,19 @@ public:
     }
     return dres;
   }
-};
 
-// specialization needed to compile, this should never be reached since we always use
-// VW::config::supported_options_types
-template <>
-py::object OptionManager::base_option_to_pyobject<VW::config::typelist<>>(VW::config::base_option& options)
-{
-  return py::object();
-}
+  void visit(VW::config::typed_option<uint32_t>& opt) override { m_visitor_output_var = value_to_pyobject(opt); };
+  void visit(VW::config::typed_option<uint64_t>& opt) override { m_visitor_output_var = value_to_pyobject(opt); };
+  void visit(VW::config::typed_option<int64_t>& opt) override { m_visitor_output_var = value_to_pyobject(opt); };
+  void visit(VW::config::typed_option<int32_t>& opt) override { m_visitor_output_var = value_to_pyobject(opt); };
+  void visit(VW::config::typed_option<bool>& opt) override { m_visitor_output_var = value_to_pyobject(opt); };
+  void visit(VW::config::typed_option<float>& opt) override { m_visitor_output_var = value_to_pyobject(opt); };
+  void visit(VW::config::typed_option<std::string>& opt) override { m_visitor_output_var = value_to_pyobject(opt); };
+  void visit(VW::config::typed_option<std::vector<std::string>>& opt) override
+  {
+    m_visitor_output_var = value_to_pyobject(opt);
+  };
+};
 
 class py_log_wrapper
 {

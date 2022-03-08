@@ -2,29 +2,30 @@
 // individual contributors. All rights reserved. Released under a BSD (revised)
 // license as described in the file LICENSE.
 #include <float.h>
-#include <string.h>
 #include <math.h>
-#include <memory>
+#include <string.h>
+
 #include <algorithm>
-#include "numeric_casts.h"
-#include "vw.h"
-#include "rand48.h"
-#include "reductions/gd.h"  // for GD::foreach_feature
-#include "parse_primitives.h"
-#include "search_sequencetask.h"
-#include "search_multiclasstask.h"
-#include "search_dep_parser.h"
-#include "search_entityrelationtask.h"
-#include "search_hooktask.h"
-#include "search_graph.h"
-#include "search_meta.h"
-#include "reductions/csoaa.h"
-#include "reductions/active.h"
-#include "label_dictionary.h"
-#include "vw_exception.h"
-#include "shared_data.h"
+#include <memory>
 
 #include "io/logger.h"
+#include "label_dictionary.h"
+#include "numeric_casts.h"
+#include "parse_primitives.h"
+#include "rand48.h"
+#include "reductions/active.h"
+#include "reductions/csoaa.h"
+#include "reductions/gd.h"  // for GD::foreach_feature
+#include "search_dep_parser.h"
+#include "search_entityrelationtask.h"
+#include "search_graph.h"
+#include "search_hooktask.h"
+#include "search_meta.h"
+#include "search_multiclasstask.h"
+#include "search_sequencetask.h"
+#include "shared_data.h"
+#include "vw.h"
+#include "vw_exception.h"
 // needed for printing ranges of objects (eg: all elements of a vector)
 #include <fmt/ranges.h>
 

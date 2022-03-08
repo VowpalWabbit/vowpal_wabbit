@@ -5,16 +5,16 @@
 
 using namespace_index = unsigned char;
 
-#include "constant.h"
-#include "future_compat.h"
-#include "reduction_features.h"
-#include "feature_group.h"
-#include "v_array.h"
-
-#include <vector>
+#include <array>
 #include <set>
 #include <unordered_set>
-#include <array>
+#include <vector>
+
+#include "constant.h"
+#include "feature_group.h"
+#include "future_compat.h"
+#include "reduction_features.h"
+#include "v_array.h"
 // Mutex cannot be used in managed C++, tell the compiler that this is unmanaged even if included in a managed
 // project.
 #ifdef _M_CEE
@@ -70,7 +70,3 @@ struct example_predict
   // Used for debugging reductions.  Keeps track of current reduction level.
   uint32_t _debug_current_reduction_depth = 0;
 };
-
-std::string features_to_string(const example_predict& ec);
-std::string depth_indent_string(const example_predict& ec);
-std::string depth_indent_string(int32_t stack_depth);

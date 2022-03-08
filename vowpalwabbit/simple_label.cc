@@ -2,21 +2,20 @@
 // individual contributors. All rights reserved. Released under a BSD (revised)
 // license as described in the file LICENSE.
 
-#include <cstring>
 #include <cfloat>
 #include <cmath>
 #include <cstdio>
+#include <cstring>
 
-#include "cache.h"
 #include "accumulate.h"
 #include "best_constant.h"
-#include "vw_string_view.h"
+#include "cache.h"
 #include "example.h"
+#include "io/logger.h"
 #include "parse_primitives.h"
 #include "vw.h"
+#include "vw_string_view.h"
 #include "vw_string_view_fmt.h"
-
-#include "io/logger.h"
 // needed for printing ranges of objects (eg: all elements of a vector)
 #include <fmt/ranges.h>
 

@@ -4,14 +4,14 @@
 
 #pragma once
 
+#include <fmt/format.h>
+
 #include <memory>
 #include <set>
 #include <string>
 #include <type_traits>
 #include <typeinfo>
 #include <vector>
-
-#include <fmt/format.h>
 
 #include "vw_exception.h"
 

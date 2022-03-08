@@ -5,13 +5,13 @@
 #include "pmf_to_pdf.h"
 
 #include <cmath>
+
+#include "cb_label_parser.h"
 #include "explore.h"
 #include "guard.h"
-#include "vw.h"
-#include "cb_label_parser.h"
-#include "shared_data.h"
-
 #include "io/logger.h"
+#include "shared_data.h"
+#include "vw.h"
 
 using namespace LEARNER;
 using namespace VW;

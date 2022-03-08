@@ -1,14 +1,17 @@
 // Copyright (c) by respective owners including Yahoo!, Microsoft, and
 // individual contributors. All rights reserved. Released under a BSD (revised)
 // license as described in the file LICENSE.
-#include <cstdint>
-#include <algorithm>
-
 #include "example.h"
-#include "reductions/gd.h"
-#include "simple_label_parser.h"
-#include "reductions/interactions.h"
+
+#include <algorithm>
+#include <cstdint>
+
+#include "cb_continuous_label.h"
 #include "model_utils.h"
+#include "reductions/gd.h"
+#include "reductions/interactions.h"
+#include "simple_label_parser.h"
+#include "text_utils.h"
 
 float calculate_total_sum_features_squared(bool permutations, example& ec)
 {
@@ -222,64 +225,6 @@ void free_flatten_example(flat_example* fec)
   }
 }
 
-std::string cb_label_to_string(const example& ec)
-{
-  std::stringstream strstream;
-  strstream << "[l.cb={";
-  auto& costs = ec.l.cb.costs;
-  for (auto c = costs.cbegin(); c != costs.cend(); ++c)
-  {
-    strstream << "{c=" << c->cost << ",a=" << c->action << ",p=" << c->probability << ",pp=" << c->partial_prediction
-              << "}";
-  }
-  strstream << "}]";
-  return strstream.str();
-}
-
-std::string simple_label_to_string(const example& ec)
-{
-  std::stringstream strstream;
-  strstream << "[l=" << ec.l.simple.label << ",w=" << ec.weight << "]";
-  return strstream.str();
-}
-
-std::string scalar_pred_to_string(const example& ec)
-{
-  std::stringstream strstream;
-  strstream << "[p=" << ec.pred.scalar << ", pp=" << ec.partial_prediction << "]";
-  return strstream.str();
-}
-
-std::string a_s_pred_to_string(const example& ec)
-{
-  std::stringstream strstream;
-  strstream << "ec.pred.a_s[";
-  for (uint32_t i = 0; i < ec.pred.a_s.size(); i++)
-  { strstream << "(" << i << " = " << ec.pred.a_s[i].action << ", " << ec.pred.a_s[i].score << ")"; }
-  strstream << "]";
-  return strstream.str();
-}
-
-std::string multiclass_pred_to_string(const example& ec)
-{
-  std::stringstream strstream;
-  strstream << "ec.pred.multiclass = " << ec.pred.multiclass;
-  return strstream.str();
-}
-
-std::string prob_dist_pred_to_string(const example& ec)
-{
-  std::stringstream strstream;
-  strstream << "ec.pred.prob_dist[";
-  for (uint32_t i = 0; i < ec.pred.pdf.size(); i++)
-  {
-    strstream << "(" << i << " = " << ec.pred.pdf[i].left << "-" << ec.pred.pdf[i].right << ", "
-              << ec.pred.pdf[i].pdf_value << ")";
-  }
-  strstream << "]";
-  return strstream.str();
-}
-
 namespace VW
 {
 example* alloc_examples(size_t count)
@@ -353,8 +298,17 @@ size_t write_model_field(io_buf& io, const flat_example& fe, const std::string& 
 }  // namespace model_utils
 }  // namespace VW
 
-std::string debug_depth_indent_string(const example& ec)
+namespace VW
 {
-  return debug_depth_indent_string(ec._debug_current_reduction_depth);
+std::string to_string(const v_array<float>& scalars, int decimal_precision)
+{
+  std::stringstream ss;
+  std::string delim;
+  for (float f : scalars)
+  {
+    ss << delim << VW::fmt_float(f, decimal_precision);
+    delim = ",";
+  }
+  return ss.str();
 }
-std::string debug_depth_indent_string(const multi_ex& ec) { return debug_depth_indent_string(*ec[0]); }
+}  // namespace VW

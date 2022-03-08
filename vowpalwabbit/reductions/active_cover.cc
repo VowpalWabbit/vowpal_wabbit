@@ -2,15 +2,16 @@
 // individual contributors. All rights reserved. Released under a BSD (revised)
 // license as described in the file LICENSE.
 
-#include <cmath>
 #include <cerrno>
 #include <cfloat>
+#include <cmath>
 #include <memory>
+
+#include "float.h"
 #include "numeric_casts.h"
 #include "rand48.h"
-#include "float.h"
-#include "vw.h"
 #include "shared_data.h"
+#include "vw.h"
 #include "vw_math.h"
 
 using namespace VW::LEARNER;

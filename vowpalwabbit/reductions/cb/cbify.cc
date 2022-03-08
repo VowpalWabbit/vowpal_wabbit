@@ -2,18 +2,20 @@
 // individual contributors. All rights reserved. Released under a BSD (revised)
 // license as described in the file LICENSE.
 
+#include "cbify.h"
+
 #include <cfloat>
 #include <vector>
+
 #include "cb_algs.h"
-#include "cbify.h"
-#include "vw.h"
-#include "hash.h"
-#include "explore.h"
-#include "prob_dist_cont.h"
-#include "debug_log.h"
 #include "cb_label_parser.h"
-#include "simple_label_parser.h"
+#include "debug_log.h"
+#include "explore.h"
+#include "hash.h"
+#include "prob_dist_cont.h"
 #include "shared_data.h"
+#include "simple_label_parser.h"
+#include "vw.h"
 
 using namespace VW::LEARNER;
 using namespace exploration;
@@ -200,8 +202,8 @@ float get_01_loss(cbify& data, float chosen_action, float label)
 template <bool is_learn>
 void predict_or_learn_regression_discrete(cbify& data, single_learner& base, example& ec)
 {
-  VW_DBG(ec) << "cbify_reg: #### is_learn = " << is_learn << simple_label_to_string(ec) << features_to_string(ec)
-             << endl;
+  VW_DBG(ec) << "cbify_reg: #### is_learn = " << is_learn << VW::debug::simple_label_to_string(ec)
+             << VW::debug::features_to_string(ec) << endl;
 
   label_data regression_label = ec.l.simple;
   data.cb_label.costs.clear();
@@ -267,8 +269,8 @@ void predict_or_learn_regression_discrete(cbify& data, single_learner& base, exa
 template <bool is_learn>
 void predict_or_learn_regression(cbify& data, single_learner& base, example& ec)
 {
-  VW_DBG(ec) << "cbify_reg: #### is_learn = " << is_learn << simple_label_to_string(ec) << features_to_string(ec)
-             << endl;
+  VW_DBG(ec) << "cbify_reg: #### is_learn = " << is_learn << VW::debug::simple_label_to_string(ec)
+             << VW::debug::features_to_string(ec) << endl;
 
   // Save simple label from the example just in case base.predict changes the label.
   // Technically it should not.
@@ -280,7 +282,8 @@ void predict_or_learn_regression(cbify& data, single_learner& base, example& ec)
   // Get the continuous action and pdf value for the current features
   base.predict(ec);
 
-  VW_DBG(ec) << "cbify-reg: base.predict() = " << simple_label_to_string(ec) << features_to_string(ec) << endl;
+  VW_DBG(ec) << "cbify-reg: base.predict() = " << VW::debug::simple_label_to_string(ec)
+             << VW::debug::features_to_string(ec) << endl;
   VW_DBG(ec) << "cbify-reg: predict before learn, chosen_action=" << ec.pred.pdf_value.action << endl;
 
   // Create a label from the prediction and a cost derived from the actual
@@ -308,9 +311,11 @@ void predict_or_learn_regression(cbify& data, single_learner& base, example& ec)
   // Use the label inside the reduction data structure
   ec.l.cb_cont = data.regression_data.cb_cont_label;
 
-  VW_DBG(ec) << "cbify-reg: before base.learn() = " << to_string(ec.l.cb_cont) << features_to_string(ec) << endl;
+  VW_DBG(ec) << "cbify-reg: before base.learn() = " << VW::to_string(ec.l.cb_cont) << VW::debug::features_to_string(ec)
+             << endl;
   if (is_learn) base.learn(ec);
-  VW_DBG(ec) << "cbify-reg: after base.learn() = " << to_string(ec.l.cb_cont) << features_to_string(ec) << endl;
+  VW_DBG(ec) << "cbify-reg: after base.learn() = " << VW::to_string(ec.l.cb_cont) << VW::debug::features_to_string(ec)
+             << endl;
 
   // Update the label inside the reduction data structure
   data.regression_data.cb_cont_label = ec.l.cb_cont;
