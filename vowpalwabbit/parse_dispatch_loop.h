@@ -8,9 +8,9 @@
 
 #include "example.h"
 #include "global_data.h"
-#include "v_array.h"
-#include "parse_example.h"
 #include "io/logger.h"
+#include "parse_example.h"
+#include "v_array.h"
 
 // DispatchFuncT should be of the form - void(VW::workspace&, const v_array<example*>&)
 template <typename DispatchFuncT>

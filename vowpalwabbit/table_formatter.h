@@ -4,15 +4,15 @@
 
 #pragma once
 
-#include <cstddef>
-#include <vector>
-#include <string>
 #include <array>
-#include <sstream>
+#include <cstddef>
 #include <iomanip>
+#include <sstream>
+#include <string>
+#include <vector>
 
-#include "text_utils.h"
 #include "parse_primitives.h"
+#include "text_utils.h"
 
 namespace VW
 {

@@ -2,19 +2,20 @@
 // individual contributors. All rights reserved. Released under a BSD (revised)
 // license as described in the file LICENSE.
 
-#include <cmath>
-#include <cctype>
 #include "parse_example.h"
-#include "parse_primitives.h"
-#include "hash.h"
-#include "unique_sort.h"
-#include "global_data.h"
-#include "constant.h"
-#include "vw_string_view.h"
-#include "future_compat.h"
-#include "shared_data.h"
 
+#include <cctype>
+#include <cmath>
+
+#include "constant.h"
+#include "future_compat.h"
+#include "global_data.h"
+#include "hash.h"
 #include "io/logger.h"
+#include "parse_primitives.h"
+#include "shared_data.h"
+#include "unique_sort.h"
+#include "vw_string_view.h"
 
 size_t read_features(io_buf& buf, char*& line, size_t& num_chars)
 {

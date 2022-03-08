@@ -7,6 +7,7 @@
 #include <algorithm>
 #include <limits>
 #include <tuple>
+
 #include "io_buf.h"
 
 constexpr float DEFAULT_TAU = 0.999f;

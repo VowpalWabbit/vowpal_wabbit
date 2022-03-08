@@ -1,11 +1,12 @@
 // Copyright (c) by respective owners including Yahoo!, Microsoft, and
 // individual contributors. All rights reserved. Released under a BSD (revised)
 // license as described in the file LICENSE.
-#include "example.h"
 #include "unique_sort.h"
-#include "feature_group.h"
 
 #include <algorithm>
+
+#include "example.h"
+#include "feature_group.h"
 
 /**
  * \brief Remove all non unique features from a feature group.

@@ -4,11 +4,11 @@
 
 #include "cb_to_cb_adf.h"
 
-#include "vw_versions.h"
+#include "cb_label_parser.h"
+#include "cbify.h"
 #include "learner.h"
 #include "vw.h"
-#include "cbify.h"
-#include "cb_label_parser.h"
+#include "vw_versions.h"
 
 using namespace VW::LEARNER;
 using namespace VW::config;

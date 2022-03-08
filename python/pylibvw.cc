@@ -2,30 +2,29 @@
 // individual contributors. All rights reserved. Released under a BSD (revised)
 // license as described in the file LICENSE.
 
-#include "config/option.h"
-#include "vw.h"
-
-#include "multiclass.h"
-#include "cost_sensitive.h"
 #include "cb.h"
-#include "reductions/search/search.h"
-#include "reductions/search/search_hooktask.h"
+#include "config/cli_options_serializer.h"
+#include "config/option.h"
+#include "config/options_cli.h"
+#include "cost_sensitive.h"
+#include "future_compat.h"
+#include "multiclass.h"
+#include "multilabel.h"
 #include "parse_example.h"
 #include "reductions/gd.h"
-#include "config/options_cli.h"
-#include "config/cli_options_serializer.h"
-#include "future_compat.h"
-#include "slates_label.h"
-#include "simple_label_parser.h"
+#include "reductions/search/search.h"
+#include "reductions/search/search_hooktask.h"
 #include "shared_data.h"
-#include "multilabel.h"
+#include "simple_label_parser.h"
+#include "slates_label.h"
+#include "vw.h"
 
 // see http://www.boost.org/doc/libs/1_56_0/doc/html/bbv2/installation.html
 #define BOOST_PYTHON_USE_GCC_SYMBOL_VISIBILITY 1
 #include <boost/make_shared.hpp>
 #include <boost/python.hpp>
-#include <boost/utility.hpp>
 #include <boost/python/suite/indexing/vector_indexing_suite.hpp>
+#include <boost/utility.hpp>
 
 // Brings VW_DLL_PUBLIC to help control exports
 #define VWDLL_EXPORTS

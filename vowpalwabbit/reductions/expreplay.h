@@ -4,14 +4,14 @@
 
 #pragma once
 #include <sys/types.h>
-#include "learner.h"
-#include "numeric_casts.h"
-#include "vw.h"
-
-#include "rand48.h"
-#include "rand_state.h"
 
 #include <memory>
+
+#include "learner.h"
+#include "numeric_casts.h"
+#include "rand48.h"
+#include "rand_state.h"
+#include "vw.h"
 
 namespace ExpReplay
 {

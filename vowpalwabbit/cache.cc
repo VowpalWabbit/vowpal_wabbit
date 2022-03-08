@@ -3,14 +3,16 @@
 // license as described in the file LICENSE.
 
 #include "cache.h"
+
 #include <cstdint>
 #include <memory>
-#include "io/io_adapter.h"
-#include "unique_sort.h"
+
 #include "global_data.h"
-#include "shared_data.h"
-#include "vw.h"
+#include "io/io_adapter.h"
 #include "io/logger.h"
+#include "shared_data.h"
+#include "unique_sort.h"
+#include "vw.h"
 
 constexpr size_t int_size = 11;
 constexpr size_t neg_1 = 1;

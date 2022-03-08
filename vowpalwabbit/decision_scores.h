@@ -4,13 +4,14 @@
 
 #pragma once
 
-#include "v_array.h"
-#include "io/io_adapter.h"
-#include "io/logger.h"
-#include "constant.h"
 #include <iomanip>
 #include <iostream>
 #include <vector>
+
+#include "constant.h"
+#include "io/io_adapter.h"
+#include "io/logger.h"
+#include "v_array.h"
 
 namespace ACTION_SCORE
 {

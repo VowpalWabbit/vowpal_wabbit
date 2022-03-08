@@ -4,9 +4,9 @@
 
 #include "freegrad.h"
 
+#include <cfloat>
 #include <cmath>
 #include <string>
-#include <cfloat>
 
 #include "gd.h"
 #include "global_data.h"

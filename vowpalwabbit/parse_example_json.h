@@ -4,13 +4,13 @@
 
 #pragma once
 
-#include "label_parser.h"
-#include "v_array.h"
-#include "future_compat.h"
-#include "parser.h"
-
-#include <cstring>
 #include <cfloat>
+#include <cstring>
+
+#include "future_compat.h"
+#include "label_parser.h"
+#include "parser.h"
+#include "v_array.h"
 
 // seems to help with skipping spaces
 //#define RAPIDJSON_SIMD
@@ -28,8 +28,8 @@
 // https://github.com/Tencent/rapidjson/issues/1700
 VW_WARNING_STATE_PUSH
 VW_WARNING_DISABLE_CLASS_MEMACCESS
-#include <rapidjson/reader.h>
 #include <rapidjson/error/en.h>
+#include <rapidjson/reader.h>
 VW_WARNING_STATE_POP
 
 #include "io/logger.h"
@@ -38,18 +38,18 @@ VW_WARNING_STATE_POP
 #  pragma managed(pop)
 #endif
 
-#include "cb.h"
-#include "reductions/conditional_contextual_bandit.h"
-#include "cb_continuous_label.h"
-
-#include "best_constant.h"
-#include "json_utils.h"
-#include "parse_slates_example_json.h"
-#include "vw_string_view.h"
 #include <algorithm>
-#include <vector>
 #include <limits>
 #include <sstream>
+#include <vector>
+
+#include "best_constant.h"
+#include "cb.h"
+#include "cb_continuous_label.h"
+#include "json_utils.h"
+#include "parse_slates_example_json.h"
+#include "reductions/conditional_contextual_bandit.h"
+#include "vw_string_view.h"
 
 // portability fun
 #ifndef _WIN32

@@ -5,28 +5,28 @@
 #include "parser.h"
 
 #include <sys/types.h>
+
 #include "io/logger.h"
 #include "numeric_casts.h"
 
 #ifndef _WIN32
+#  include <netinet/tcp.h>
 #  include <sys/mman.h>
 #  include <sys/wait.h>
 #  include <unistd.h>
-#  include <netinet/tcp.h>
 #endif
 
 #include <csignal>
-
 #include <fstream>
 
-#include "text_utils.h"
 #include "crossplat_compat.h"
+#include "text_utils.h"
 
 #ifdef _WIN32
 #  define NOMINMAX
-#  include <winsock2.h>
 #  include <Windows.h>
 #  include <io.h>
+#  include <winsock2.h>
 typedef int socklen_t;
 // windows doesn't define SOL_TCP and use an enum for the later, so can't check for its presence with a macro.
 #  define SOL_TCP IPPROTO_TCP
@@ -51,22 +51,22 @@ int VW_getpid() { return (int)::GetCurrentProcessId(); }
 #  include <netinet/in.h>
 #endif
 
+#include <cassert>
 #include <cerrno>
 #include <cstdio>
-#include <cassert>
 
-#include "parse_primitives.h"
-#include "parse_example.h"
 #include "cache.h"
-#include "unique_sort.h"
 #include "constant.h"
-#include "vw.h"
-#include "reductions/interactions.h"
-#include "vw_exception.h"
-#include "parse_example_json.h"
-#include "parse_dispatch_loop.h"
-#include "parse_args.h"
 #include "io/io_adapter.h"
+#include "parse_args.h"
+#include "parse_dispatch_loop.h"
+#include "parse_example.h"
+#include "parse_example_json.h"
+#include "parse_primitives.h"
+#include "reductions/interactions.h"
+#include "unique_sort.h"
+#include "vw.h"
+#include "vw_exception.h"
 #ifdef BUILD_FLATBUFFERS
 #  include "parser/flatbuffer/parse_example_flatbuffer.h"
 #endif

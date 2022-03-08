@@ -3,8 +3,8 @@
 // license as described in the file LICENSE.
 
 #pragma once
-#include <cstdint>
 #include <algorithm>
+#include <cstdint>
 
 // Most of these includes are required because templated functions are using the objects defined in them
 // A few options to get rid of them:
@@ -12,16 +12,16 @@
 // - Cut out the portions of code that actually use the objects and put them into new functions
 //   defined in the cc file (con: can't inline those functions)
 // - templatize all input parameters (con: no type safety)
-#include "v_array.h"         // required by action_score.h
 #include "action_score.h"    // used in sort_action_probs
 #include "cb.h"              // required for CB::label
 #include "cb_adf.h"          // used for function call in predict/learn
 #include "example.h"         // used in predict
 #include "gen_cs_example.h"  // required for GEN_CS::cb_to_cs_adf
-#include "reductions_fwd.h"
-#include "vw_math.h"
-#include "shared_data.h"
 #include "metric_sink.h"
+#include "reductions_fwd.h"
+#include "shared_data.h"
+#include "v_array.h"  // required by action_score.h
+#include "vw_math.h"
 
 namespace VW
 {

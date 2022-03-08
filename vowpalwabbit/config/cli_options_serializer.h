@@ -4,11 +4,11 @@
 
 #pragma once
 
-#include "config/options_serializer.h"
-#include "config/option.h"
-
-#include <string>
 #include <sstream>
+#include <string>
+
+#include "config/option.h"
+#include "config/options_serializer.h"
 
 namespace VW
 {

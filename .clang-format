@@ -10,7 +10,7 @@ AllowShortLoopsOnASingleLine: true
 BreakBeforeBraces: Allman
 BreakConstructorInitializersBeforeComma: true
 ColumnLimit: 120
-SortIncludes: false
+SortIncludes: true
 IndentPPDirectives: AfterHash
 PointerAlignment: Left
 DerivePointerAlignment: false

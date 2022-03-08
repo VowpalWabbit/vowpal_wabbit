@@ -3,10 +3,11 @@
 // license as described in the file LICENSE.
 
 #pragma once
-#include <cstdlib>
 #include <cstdio>
+#include <cstdlib>
 #include <iostream>
 #include <memory>
+
 #include "vw_exception.h"
 
 // unistd.h is needed for ::sysconf on linux toolchains

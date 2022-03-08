@@ -6,30 +6,31 @@
 This implements the allreduce function of MPI.  Code primarily by
 Alekh Agarwal and John Langford, with help Olivier Chapelle.
  */
+#include <errno.h>
+#include <stdlib.h>
+#include <string.h>
+
+#include <cmath>
+#include <cstdio>
+#include <ctime>
 #include <iostream>
 #include <sstream>
-#include <cstdio>
-#include <cmath>
-#include <ctime>
-#include <errno.h>
-#include <string.h>
-#include <stdlib.h>
 #ifdef _WIN32
 #  define NOMINMAX
 #  define _WINSOCK_DEPRECATED_NO_WARNINGS
+#  include <WS2tcpip.h>
 #  include <WinSock2.h>
 #  include <Windows.h>
-#  include <WS2tcpip.h>
 #  include <io.h>
 #else
-#  include <unistd.h>
 #  include <arpa/inet.h>
+#  include <unistd.h>
 #endif
 #include <sys/timeb.h>
-#include "allreduce.h"
-#include "vw_exception.h"
 
+#include "allreduce.h"
 #include "io/logger.h"
+#include "vw_exception.h"
 
 // port is already in network order
 socket_t AllReduceSockets::sock_connect(const uint32_t ip, const int port, VW::io::logger& logger)

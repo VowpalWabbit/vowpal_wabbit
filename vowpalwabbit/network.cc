@@ -7,24 +7,24 @@
 #  include <WinSock2.h>
 #  include <io.h>
 #else
-#  include <sys/types.h>
-#  include <unistd.h>
-#  include <sys/socket.h>
+#  include <netdb.h>
 #  include <netinet/in.h>
 #  include <netinet/tcp.h>
-#  include <netdb.h>
+#  include <sys/socket.h>
+#  include <sys/types.h>
+#  include <unistd.h>
 #endif
 
-#include <cstring>
 #include <cerrno>
 #include <cstdlib>
-#include <string>
+#include <cstring>
 #include <iostream>
 #include <sstream>
 #include <stdexcept>
-#include "vw_exception.h"
+#include <string>
 
 #include "io/logger.h"
+#include "vw_exception.h"
 
 int open_socket(const char* host, VW::io::logger& logger)
 {

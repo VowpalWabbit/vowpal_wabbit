@@ -6,8 +6,8 @@
 
 #include "noop.h"
 
-#include "learner.h"
 #include "config/options.h"
+#include "learner.h"
 
 using namespace VW::config;
 

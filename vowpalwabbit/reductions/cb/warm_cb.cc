@@ -3,18 +3,17 @@
 // license as described in the file LICENSE.
 
 #include <cfloat>
-#include "cb_algs.h"
-#include "vw.h"
-#include "hash.h"
-#include "explore.h"
-#include "vw_exception.h"
-#include "scope_exit.h"
-#include "cb_label_parser.h"
-
-#include "io/logger.h"
-
-#include <vector>
 #include <memory>
+#include <vector>
+
+#include "cb_algs.h"
+#include "cb_label_parser.h"
+#include "explore.h"
+#include "hash.h"
+#include "io/logger.h"
+#include "scope_exit.h"
+#include "vw.h"
+#include "vw_exception.h"
 
 using namespace VW::LEARNER;
 using namespace exploration;

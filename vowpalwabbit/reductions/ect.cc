@@ -6,17 +6,18 @@
   by John Langford.
 */
 
-#include <cfloat>
-#include <iostream>
-#include <fstream>
-#include <ctime>
-#include <numeric>
 #include <fmt/core.h>
 
-#include "learner.h"
+#include <cfloat>
+#include <ctime>
+#include <fstream>
+#include <iostream>
+#include <numeric>
+
 #include "config/options.h"
 #include "global_data.h"
 #include "io/logger.h"
+#include "learner.h"
 
 using namespace VW::LEARNER;
 using namespace VW::config;

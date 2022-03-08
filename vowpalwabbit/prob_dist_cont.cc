@@ -2,16 +2,16 @@
 // individual contributors. All rights reserved. Released under a BSD (revised)
 // license as described in the file LICENSE.
 
-#include "text_utils.h"
-#include "vw.h"
-#include "v_array.h"
 #include "prob_dist_cont.h"
+
 #include "io_buf.h"
+#include "text_utils.h"
+#include "v_array.h"
+#include "vw.h"
 
 using namespace std;
 namespace VW
 {
-
 // Convert pdf to string of form 'begin-end:pdf_value, ... '
 std::string to_string(const VW::continuous_actions::probability_density_function& pdf, int decimal_precision)
 {

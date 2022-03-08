@@ -2,23 +2,23 @@
 // individual contributors. All rights reserved. Released under a BSD (revised)
 // license as described in the file LICENSE.
 
+#include <cerrno>
+#include <cstdlib>
+#include <cstring>
 #include <iostream>
 #include <sstream>
 #include <stdexcept>
 #include <string>
-#include <cstring>
-#include <cerrno>
-#include <cstdlib>
 #ifdef _WIN32
 #  define NOMINMAX
 #  include <WinSock2.h>
 #else
-#  include <sys/types.h>
-#  include <unistd.h>
-#  include <sys/socket.h>
+#  include <netdb.h>
 #  include <netinet/in.h>
 #  include <netinet/tcp.h>
-#  include <netdb.h>
+#  include <sys/socket.h>
+#  include <sys/types.h>
+#  include <unistd.h>
 #endif
 
 using std::cerr;

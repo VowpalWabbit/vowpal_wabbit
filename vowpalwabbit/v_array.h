@@ -13,8 +13,8 @@
 #include <cstring>
 #include <ostream>
 #include <string>
-#include <utility>
 #include <type_traits>
+#include <utility>
 
 #ifndef VW_NOEXCEPT
 #  include "vw_exception.h"

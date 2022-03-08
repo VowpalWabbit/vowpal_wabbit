@@ -7,9 +7,10 @@ This implements the allreduce function of MPI.  Code primarily by
 Alekh Agarwal and John Langford, with help Olivier Chapelle.
 */
 
-#include <iostream>
 #include <cmath>
 #include <cstdint>
+#include <iostream>
+
 #include "global_data.h"
 #include "vw_allreduce.h"
 

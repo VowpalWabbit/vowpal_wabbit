@@ -3,11 +3,12 @@
 // license as described in the file LICENSE.
 
 #include "sample_pdf.h"
-#include "error_constants.h"
+
 #include "api_status.h"
 #include "debug_log.h"
-#include "global_data.h"
+#include "error_constants.h"
 #include "explore.h"
+#include "global_data.h"
 #include "guard.h"
 
 // Aliases

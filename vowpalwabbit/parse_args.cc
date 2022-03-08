@@ -2,53 +2,50 @@
 // individual contributors. All rights reserved. Released under a BSD (revised)
 // license as described in the file LICENSE.
 
-#include <cstdio>
-#include <cfloat>
-#include <sstream>
-#include <fstream>
-#include <sys/types.h>
+#include "parse_args.h"
+
 #include <sys/stat.h>
+#include <sys/types.h>
+
 #include <algorithm>
+#include <cfloat>
+#include <cstdio>
+#include <fstream>
+#include <sstream>
 #include <utility>
 
-#include "constant.h"
-#include "global_data.h"
-#include "memory.h"
-#include "numeric_casts.h"
-#include "parse_regressor.h"
-#include "parser.h"
-#include "parse_primitives.h"
-#include "scope_exit.h"
-#include "vw.h"
-#include "reductions/interactions.h"
-
-#include "parse_args.h"
-#include "reduction_stack.h"
-
-#include "rand48.h"
-#include "learner.h"
-#include "prediction_type.h"
-#include "label_type.h"
-#include "parse_example.h"
-#include "best_constant.h"
-#include "vw_exception.h"
 #include "accumulate.h"
-#include "vw_validate.h"
-#include "vw_allreduce.h"
-#include "reductions/metrics.h"
-#include "text_utils.h"
-#include "reductions/interactions.h"
+#include "best_constant.h"
 #include "config/cli_help_formatter.h"
-
+#include "config/cli_options_serializer.h"
 #include "config/options.h"
 #include "config/options_cli.h"
-#include "config/cli_options_serializer.h"
-#include "named_labels.h"
-
-#include "io/io_adapter.h"
+#include "constant.h"
+#include "global_data.h"
 #include "io/custom_streambuf.h"
-#include "io/owning_stream.h"
+#include "io/io_adapter.h"
 #include "io/logger.h"
+#include "io/owning_stream.h"
+#include "label_type.h"
+#include "learner.h"
+#include "memory.h"
+#include "named_labels.h"
+#include "numeric_casts.h"
+#include "parse_example.h"
+#include "parse_primitives.h"
+#include "parse_regressor.h"
+#include "parser.h"
+#include "prediction_type.h"
+#include "rand48.h"
+#include "reduction_stack.h"
+#include "reductions/interactions.h"
+#include "reductions/metrics.h"
+#include "scope_exit.h"
+#include "text_utils.h"
+#include "vw.h"
+#include "vw_allreduce.h"
+#include "vw_exception.h"
+#include "vw_validate.h"
 
 #ifdef BUILD_EXTERNAL_PARSER
 #  include "parse_example_binary.h"

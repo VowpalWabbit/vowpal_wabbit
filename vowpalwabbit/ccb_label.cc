@@ -2,30 +2,28 @@
 // individual contributors. All rights reserved. Released under a BSD (revised)
 // license as described in the file LICENSE.
 
-#include "reductions/conditional_contextual_bandit.h"
-#include "example.h"
-#include "global_data.h"
+#include <algorithm>
+#include <cmath>
+#include <numeric>
+#include <unordered_set>
+
 #include "cache.h"
-#include "vw.h"
-#include "reductions/interactions.h"
-#include "label_dictionary.h"
-#include "reductions/cb/cb_adf.h"
-#include "reductions/cb/cb_algs.h"
 #include "constant.h"
 #include "example.h"
-#include "vw_math.h"
-#include "vw_string_view.h"
-#include "parse_primitives.h"
-#include "reduction_features.h"
+#include "global_data.h"
+#include "io/logger.h"
+#include "label_dictionary.h"
 #include "label_parser.h"
 #include "model_utils.h"
-
-#include "io/logger.h"
-
-#include <numeric>
-#include <algorithm>
-#include <unordered_set>
-#include <cmath>
+#include "parse_primitives.h"
+#include "reduction_features.h"
+#include "reductions/cb/cb_adf.h"
+#include "reductions/cb/cb_algs.h"
+#include "reductions/conditional_contextual_bandit.h"
+#include "reductions/interactions.h"
+#include "vw.h"
+#include "vw_math.h"
+#include "vw_string_view.h"
 
 using namespace VW::LEARNER;
 using namespace VW;

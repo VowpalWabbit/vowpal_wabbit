@@ -5,8 +5,8 @@
 #pragma once
 #include "ccb_reduction_features.h"
 #include "continuous_actions_reduction_features.h"
-#include "simple_label.h"
 #include "epsilon_reduction_features.h"
+#include "simple_label.h"
 
 /*
  * class reduction_features
