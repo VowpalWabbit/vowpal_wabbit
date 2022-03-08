@@ -2,8 +2,8 @@
 // individual contributors. All rights reserved. Released under a BSD (revised)
 // license as described in the file LICENSE.
 #pragma once
-#include "global_data.h"
 #include "config/options.h"
+#include "global_data.h"
 #include "text_utils.h"
 #include "vw_string_view.h"
 

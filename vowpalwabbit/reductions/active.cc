@@ -2,20 +2,20 @@
 // individual contributors. All rights reserved. Released under a BSD (revised)
 // license as described in the file LICENSE.
 
+#include "active.h"
+
 #include <cerrno>
 #include <cfloat>
 #include <cmath>
 
-#include "vw.h"
-#include "active.h"
-#include "vw_exception.h"
+#include "io/logger.h"
+#include "model_utils.h"
 #include "shared_data.h"
+#include "vw.h"
+#include "vw_exception.h"
 #include "vw_math.h"
 #include "vw_string_view.h"
 #include "vw_versions.h"
-#include "model_utils.h"
-
-#include "io/logger.h"
 
 using namespace VW::LEARNER;
 using namespace VW::config;

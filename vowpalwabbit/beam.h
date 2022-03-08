@@ -4,9 +4,10 @@
 
 #pragma once
 
-#include <cstdio>
 #include <cfloat>
+#include <cstdio>
 #include <cstdlib>
+
 #include "v_array.h"
 
 // TODO: special case the version where beam_size == 1

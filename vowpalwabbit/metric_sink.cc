@@ -3,6 +3,7 @@
 // license as described in the file LICENSE.
 
 #include "metric_sink.h"
+
 #include "vw_exception.h"
 
 void VW::metric_sink::throw_if_not_overwrite_and_key_exists(const std::string& key, bool overwrite)

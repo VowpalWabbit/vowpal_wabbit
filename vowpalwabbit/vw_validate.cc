@@ -1,12 +1,12 @@
 // Copyright (c) by respective owners including Yahoo!, Microsoft, and
 // individual contributors. All rights reserved. Released under a BSD (revised)
 // license as described in the file LICENSE.
-#include "global_data.h"
 #include "vw_validate.h"
-#include "vw_versions.h"
-#include "shared_data.h"
 
+#include "global_data.h"
 #include "io/logger.h"
+#include "shared_data.h"
+#include "vw_versions.h"
 
 namespace VW
 {

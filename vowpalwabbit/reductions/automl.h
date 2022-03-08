@@ -3,20 +3,22 @@
 // license as described in the file LICENSE.
 #pragma once
 
-#include "rand_state.h"
-#include "reductions_fwd.h"
-#include "distributionally_robust.h"
-#include "metric_sink.h"
-#include "action_score.h"
-#include "learner.h"
-#include "array_parameters_dense.h"
-#include "scored_config.h"
-#include "vw_string_view.h"
+#include <fmt/format.h>
+
 #include <map>
 #include <memory>
-#include <set>
 #include <queue>
-#include <fmt/format.h>
+#include <set>
+
+#include "action_score.h"
+#include "array_parameters_dense.h"
+#include "distributionally_robust.h"
+#include "learner.h"
+#include "metric_sink.h"
+#include "rand_state.h"
+#include "reductions_fwd.h"
+#include "scored_config.h"
+#include "vw_string_view.h"
 
 using namespace VW::config;
 using namespace VW::LEARNER;

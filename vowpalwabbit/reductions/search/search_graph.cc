@@ -2,10 +2,11 @@
 // individual contributors. All rights reserved. Released under a BSD (revised)
 // license as described in the file LICENSE.
 #include "search_graph.h"
+
 #include "memory.h"
 #include "numeric_casts.h"
-#include "vw.h"
 #include "reductions/gd.h"
+#include "vw.h"
 #include "vw_exception.h"
 
 using namespace VW::config;

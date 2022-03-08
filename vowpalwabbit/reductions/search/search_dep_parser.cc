@@ -2,10 +2,11 @@
 // individual contributors. All rights reserved. Released under a BSD (revised)
 // license as described in the file LICENSE.
 #include "search_dep_parser.h"
-#include "reductions/gd.h"
+
 #include "cost_sensitive.h"
 #include "label_dictionary.h"  // for add_example_namespaces_from_example
 #include "numeric_casts.h"
+#include "reductions/gd.h"
 #include "vw.h"
 #include "vw_exception.h"
 

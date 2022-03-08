@@ -4,10 +4,10 @@
 
 #pragma once
 
+#include "constant.h"
+#include "io_buf.h"
 #include "label_parser.h"
 #include "v_array.h"
-#include "io_buf.h"
-#include "constant.h"
 
 struct example;
 
@@ -31,7 +31,6 @@ struct continuous_label
 };
 
 extern label_parser the_label_parser;
-
 
 }  // namespace cb_continuous
 

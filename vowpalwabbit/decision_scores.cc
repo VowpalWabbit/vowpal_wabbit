@@ -4,17 +4,16 @@
 
 #include "decision_scores.h"
 
-#include "reductions/slates.h"
-#include "reductions/conditional_contextual_bandit.h"
+#include <iostream>
+
 #include "action_score.h"
-#include "io_buf.h"
 #include "global_data.h"
+#include "io/logger.h"
+#include "io_buf.h"
+#include "reductions/conditional_contextual_bandit.h"
+#include "reductions/slates.h"
 #include "shared_data.h"
 #include "text_utils.h"
-
-#include "io/logger.h"
-
-#include <iostream>
 
 template <typename LabelPrintFunc>
 void print_update(VW::workspace& all, const std::vector<example*>& slots, const VW::decision_scores_t& decision_scores,

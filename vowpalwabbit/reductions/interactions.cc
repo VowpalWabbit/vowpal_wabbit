@@ -4,18 +4,17 @@
 
 #include "interactions.h"
 
-#include "vw_math.h"
-#include "v_array.h"
-
 #include <algorithm>
+#include <cfloat>
 #include <cstdint>
+#include <iterator>
 #include <map>
+#include <sstream>
 #include <utility>
 #include <vector>
-#include <sstream>
-#include <cfloat>
-#include <algorithm>
-#include <iterator>
+
+#include "v_array.h"
+#include "vw_math.h"
 
 using namespace VW::config;
 

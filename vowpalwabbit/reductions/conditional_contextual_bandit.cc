@@ -3,28 +3,28 @@
 // license as described in the file LICENSE.
 
 #include "conditional_contextual_bandit.h"
+
+#include <algorithm>
+#include <bitset>
+#include <numeric>
+#include <unordered_set>
+
+#include "constant.h"
+#include "debug_log.h"
+#include "decision_scores.h"
 #include "example.h"
 #include "global_data.h"
-#include "vw.h"
 #include "interactions.h"
+#include "io/logger.h"
 #include "label_dictionary.h"
+#include "model_utils.h"
 #include "reductions/cb/cb_adf.h"
 #include "reductions/cb/cb_algs.h"
-#include "constant.h"
-#include "v_array_pool.h"
-#include "decision_scores.h"
-#include "vw_versions.h"
-#include "version.h"
-#include "debug_log.h"
 #include "shared_data.h"
-#include "model_utils.h"
-
-#include "io/logger.h"
-
-#include <numeric>
-#include <algorithm>
-#include <unordered_set>
-#include <bitset>
+#include "v_array_pool.h"
+#include "version.h"
+#include "vw.h"
+#include "vw_versions.h"
 
 #undef VW_DEBUG_LOG
 #define VW_DEBUG_LOG vw_dbg::ccb

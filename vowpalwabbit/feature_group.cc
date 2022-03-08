@@ -4,12 +4,12 @@
 
 #include "feature_group.h"
 
-#include "v_array.h"
-
-#include <vector>
 #include <algorithm>
-#include <utility>
 #include <numeric>
+#include <utility>
+#include <vector>
+
+#include "v_array.h"
 
 struct feature_slice  // a helper struct for functions using the set {v,i,space_name}
 {

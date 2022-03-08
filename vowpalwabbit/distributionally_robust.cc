@@ -8,8 +8,8 @@
 #include <list>
 #include <type_traits>
 
-#include "vw_math.h"
 #include "model_utils.h"
+#include "vw_math.h"
 
 namespace VW
 {

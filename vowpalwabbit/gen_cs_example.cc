@@ -2,14 +2,13 @@
 // individual contributors. All rights reserved. Released under a BSD (revised)
 // license as described in the file LICENSE.
 
-#include <cfloat>
-
-#include "vw.h"
-
-#include "vw_exception.h"
 #include "gen_cs_example.h"
 
+#include <cfloat>
+
 #include "io/logger.h"
+#include "vw.h"
+#include "vw_exception.h"
 
 namespace GEN_CS
 {

@@ -4,9 +4,9 @@
 
 #include "kskip_ngram_transformer.h"
 
-#include "io/logger.h"
-
 #include <memory>
+
+#include "io/logger.h"
 
 void add_grams(
     size_t ngram, size_t skip_gram, features& fs, size_t initial_length, std::vector<size_t>& gram_mask, size_t skips)

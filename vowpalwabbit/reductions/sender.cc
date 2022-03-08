@@ -3,6 +3,7 @@
 // license as described in the file LICENSE.
 
 #include <vector>
+
 #include "learner.h"
 #include "reductions_fwd.h"
 #ifdef _WIN32
@@ -23,10 +24,10 @@
 #  include <netdb.h>
 #endif
 
-#include "io_buf.h"
 #include "cache.h"
-#include "network.h"
 #include "global_data.h"
+#include "io_buf.h"
+#include "network.h"
 
 using namespace VW::config;
 

@@ -2,17 +2,18 @@
 // individual contributors. All rights reserved. Released under a BSD (revised)
 // license as described in the file LICENSE.
 
-#include "label_dictionary.h"
-#include "vw.h"
+#include "cb_adf.h"
+
 #include "cb_algs.h"
-#include "vw_exception.h"
+#include "explore.h"
 #include "gen_cs_example.h"
+#include "label_dictionary.h"
+#include "label_parser.h"
+#include "shared_data.h"
+#include "vw.h"
+#include "vw_exception.h"
 #include "vw_string_view.h"
 #include "vw_versions.h"
-#include "explore.h"
-#include "cb_adf.h"
-#include "shared_data.h"
-#include "label_parser.h"
 
 #undef VW_DEBUG_LOG
 #define VW_DEBUG_LOG vw_dbg::cb_adf

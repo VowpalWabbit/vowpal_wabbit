@@ -2,31 +2,32 @@
 // individual contributors. All rights reserved. Released under a BSD (revised)
 // license as described in the file LICENSE.
 #pragma once
-#include "io_buf.h"
 #include "example.h"
 #include "future_compat.h"
+#include "io_buf.h"
 
 // Mutex and CV cannot be used in managed C++, tell the compiler that this is unmanaged even if included in a managed
 // project.
 #ifdef _M_CEE
 #  pragma managed(push, off)
 #  undef _M_CEE
-#  include <mutex>
 #  include <condition_variable>
+#  include <mutex>
 #  define _M_CEE 001
 #  pragma managed(pop)
 #else
-#  include <mutex>
 #  include <condition_variable>
+#  include <mutex>
 #endif
 
 #include <atomic>
 #include <memory>
-#include "vw_string_view.h"
-#include "queue.h"
-#include "object_pool.h"
+
 #include "hashstring.h"
+#include "object_pool.h"
+#include "queue.h"
 #include "simple_label_parser.h"
+#include "vw_string_view.h"
 
 namespace VW
 {

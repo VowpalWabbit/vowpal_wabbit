@@ -4,12 +4,12 @@
 
 #pragma once
 
-#include "vw_string_view.h"
-#include "label_type.h"
-#include "io/logger.h"
-
-#include <vector>
 #include <string>
+#include <vector>
+
+#include "io/logger.h"
+#include "label_type.h"
+#include "vw_string_view.h"
 
 struct parser;
 struct shared_data;

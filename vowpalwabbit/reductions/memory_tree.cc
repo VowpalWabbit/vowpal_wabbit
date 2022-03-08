@@ -2,23 +2,23 @@
 // individual contributors. All rights reserved. Released under a BSD (revised)
 // license as described in the file LICENSE.
 
+#include <float.h>
+#include <time.h>
+
 #include <algorithm>
 #include <cmath>
 #include <cstdio>
-#include <float.h>
-#include <time.h>
-#include <sstream>
 #include <ctime>
 #include <memory>
+#include <sstream>
 
+#include "example.h"
+#include "future_compat.h"
+#include "io/logger.h"
 #include "numeric_casts.h"
 #include "rand48.h"
-#include "vw.h"
 #include "v_array.h"
-#include "future_compat.h"
-#include "example.h"
-
-#include "io/logger.h"
+#include "vw.h"
 
 using namespace VW::LEARNER;
 using namespace VW::config;

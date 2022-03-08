@@ -2,16 +2,16 @@
 // individual contributors. All rights reserved. Released under a BSD (revised)
 // license as described in the file LICENSE.
 
+#include "log_multi.h"
+
 #include <cfloat>
 #include <cmath>
 #include <cstdio>
 #include <sstream>
 
-#include "log_multi.h"
-
-#include "learner.h"
 #include "config/options.h"
 #include "global_data.h"
+#include "learner.h"
 
 using namespace VW::LEARNER;
 using namespace VW::config;
