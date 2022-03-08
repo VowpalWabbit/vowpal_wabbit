@@ -477,7 +477,7 @@ def run_command_line_test(
                 continue
 
             if ref_file.endswith(".json"):
-                # Empty strings are falsy
+                # Empty strings are falsy. Fall back to an empty dict if the file is empty
                 output_json = json.loads(output_content) if output_content else dict()
                 ref_json = json.loads(ref_content) if ref_content else dict()
                 dicts_equal, reason = are_dicts_equal(
