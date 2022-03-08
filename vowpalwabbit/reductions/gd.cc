@@ -2,11 +2,11 @@
 // individual contributors. All rights reserved. Released under a BSD (revised)
 // license as described in the file LICENSE.
 
-#include "feature_group.h"
-#include "global_data.h"
 #include <cfloat>
 
 #include "crossplat_compat.h"
+#include "feature_group.h"
+#include "global_data.h"
 
 #if !defined(VW_NO_INLINE_SIMD)
 #  if !defined(__SSE2__) && (defined(_M_AMD64) || defined(_M_X64))
@@ -254,8 +254,8 @@ void print_lda_features(VW::workspace& all, example& ec)
   {
     for (const auto& f : fs.audit_range())
     {
-      std::cout << '\t' << VW::to_string(*f.audit()) << ':'
-                << ((f.index() >> stride_shift) & all.parse_mask) << ':' << f.value();
+      std::cout << '\t' << VW::to_string(*f.audit()) << ':' << ((f.index() >> stride_shift) & all.parse_mask) << ':'
+                << f.value();
       for (size_t k = 0; k < all.lda; k++) std::cout << ':' << (&weights[f.index()])[k];
     }
   }

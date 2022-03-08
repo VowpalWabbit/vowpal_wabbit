@@ -4,20 +4,12 @@
 
 #pragma once
 
-#include "v_array.h"
-#include "future_compat.h"
-#include "generic_range.h"
-
-#include <iterator>
-#include <sstream>
-#include <utility>
-#include <memory>
-#include <string>
 #include <algorithm>
 #include <cstddef>
 #include <iterator>
 #include <memory>
 #include <numeric>
+#include <sstream>
 #include <string>
 #include <type_traits>
 #include <utility>
@@ -30,7 +22,6 @@
 using feature_value = float;
 using feature_index = uint64_t;
 using namespace_index = unsigned char;
-
 
 namespace VW
 
@@ -45,29 +36,23 @@ struct audit_strings
 
   audit_strings() = default;
   audit_strings(std::string ns, std::string name) : ns(std::move(ns)), name(std::move(name)) {}
-  audit_strings(std::string ns, std::string name, std::string str_value) : ns(std::move(ns)), name(std::move(name)), str_value(std::move(str_value)) {}
-
-  bool is_empty() const
+  audit_strings(std::string ns, std::string name, std::string str_value)
+      : ns(std::move(ns)), name(std::move(name)), str_value(std::move(str_value))
   {
-    return ns.empty() && name.empty() && str_value.empty();
   }
+
+  bool is_empty() const { return ns.empty() && name.empty() && str_value.empty(); }
 };
 
 inline std::string to_string(const audit_strings& ai)
 {
   std::ostringstream ss;
-  if (!ai.ns.empty())
-  {
-  ss << ai.ns << '^';
-  }
+  if (!ai.ns.empty()) { ss << ai.ns << '^'; }
   ss << ai.name;
-  if (!ai.str_value.empty())
-  {
-    ss << '^' << ai.str_value;
-  }
+  if (!ai.str_value.empty()) { ss << '^' << ai.str_value; }
   return ss.str();
 }
-}
+}  // namespace VW
 
 using VW::audit_strings;
 

@@ -21,9 +21,10 @@
 #include "vw_string_view.h"
 
 #define RAPIDJSON_HAS_STDSTRING 1
-#include "rapidjson/document.h"
 #include <rapidjson/stringbuffer.h>
 #include <rapidjson/writer.h>
+
+#include "rapidjson/document.h"
 
 #ifdef BUILD_FLATBUFFERS
 #  include "parser/flatbuffer/parse_example_flatbuffer.h"
@@ -206,7 +207,8 @@ void workspace::finish_example(multi_ex& ec)
 }
 
 template <typename WeightsT>
-std::string dump_weights_to_json_weight_typed(const WeightsT& weights, const std::map<uint64_t, VW::details::invert_hash_info>& index_name_map)
+std::string dump_weights_to_json_weight_typed(
+    const WeightsT& weights, const std::map<uint64_t, VW::details::invert_hash_info>& index_name_map)
 {
   rapidjson::Document doc;
   auto& allocator = doc.GetAllocator();
@@ -238,7 +240,7 @@ std::string dump_weights_to_json_weight_typed(const WeightsT& weights, const std
           namespace_value.SetString(component.ns, allocator);
           component_object.AddMember("namespace", namespace_value, allocator);
 
-          if(!component.str_value.empty())
+          if (!component.str_value.empty())
           {
             rapidjson::Value string_value_value;
             string_value_value.SetString(component.str_value, allocator);
@@ -279,17 +281,16 @@ std::string workspace::dump_weights_to_json_experimental()
 {
   assert(l != nullptr);
   const auto* current = l;
-  while(current->get_learn_base() != nullptr) { current = current->get_learn_base(); }
+  while (current->get_learn_base() != nullptr) { current = current->get_learn_base(); }
   if (current->get_name() != "gd")
   {
-    THROW("dump_weights_to_json is only supported for GD base learners. The current base learner is " << current->get_name());
+    THROW("dump_weights_to_json is only supported for GD base learners. The current base learner is "
+        << current->get_name());
   }
-  if (!hash_inv)
-  {
-    THROW("hash_inv == true is required to dump weights to json");
-  }
+  if (!hash_inv) { THROW("hash_inv == true is required to dump weights to json"); }
 
-  return weights.sparse ? dump_weights_to_json_weight_typed(weights.sparse_weights, index_name_map) : dump_weights_to_json_weight_typed(weights.dense_weights, index_name_map);
+  return weights.sparse ? dump_weights_to_json_weight_typed(weights.sparse_weights, index_name_map)
+                        : dump_weights_to_json_weight_typed(weights.dense_weights, index_name_map);
 }
 }  // namespace VW
 

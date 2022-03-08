@@ -1930,7 +1930,7 @@ void finish(VW::workspace& all, bool delete_all)
   { all.sd->print_summary(*all.trace_message, *all.sd, *all.loss, all.current_pass, all.holdout_set_off); }
 
   finalize_regressor(all, all.final_regressor_name);
-  if(all.options->was_supplied("dump_json_weights"))
+  if (all.options->was_supplied("dump_json_weights"))
   {
     auto content = all.dump_weights_to_json_experimental();
     auto writer = VW::io::open_file_writer(all.json_weights_file_name);

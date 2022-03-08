@@ -59,13 +59,12 @@ void mf_print_offset_features(gdmf& d, example& ec, size_t offset)
         for (const auto& f1 : ec.feature_space[static_cast<unsigned char>(i[0])].audit_range())
           for (const auto& f2 : ec.feature_space[static_cast<unsigned char>(i[1])].audit_range())
           {
-            std::cout << '\t' << VW::to_string(*f1.audit()) << ':' << ((f1.index() + k) & mask)
-                      << "(" << ((f1.index() + offset + k) & mask) << ")" << ':' << f1.value();
+            std::cout << '\t' << VW::to_string(*f1.audit()) << ':' << ((f1.index() + k) & mask) << "("
+                      << ((f1.index() + offset + k) & mask) << ")" << ':' << f1.value();
             std::cout << ':' << (&weights[f1.index()])[offset + k];
 
-            std::cout << ':' << VW::to_string(*f2.audit()) << ':'
-                      << ((f2.index() + k + d.rank) & mask) << "(" << ((f2.index() + offset + k + d.rank) & mask) << ")"
-                      << ':' << f2.value();
+            std::cout << ':' << VW::to_string(*f2.audit()) << ':' << ((f2.index() + k + d.rank) & mask) << "("
+                      << ((f2.index() + offset + k + d.rank) & mask) << ")" << ':' << f2.value();
             std::cout << ':' << (&weights[f2.index()])[offset + k + d.rank];
 
             std::cout << ':' << (&weights[f1.index()])[offset + k] * (&weights[f2.index()])[offset + k + d.rank];
