@@ -1,15 +1,15 @@
 #include "cb_dro.h"
-#include "distributionally_robust.h"
-#include "explore.h"
-#include "rand48.h"
-#include "label_parser.h"
-#include "example.h"
-#include "cb.h"
-#include "learner.h"
-#include "config/options.h"
-#include "global_data.h"
 
+#include "cb.h"
+#include "config/options.h"
+#include "distributionally_robust.h"
+#include "example.h"
+#include "explore.h"
+#include "global_data.h"
 #include "io/logger.h"
+#include "label_parser.h"
+#include "learner.h"
+#include "rand48.h"
 
 using namespace VW::LEARNER;
 using namespace VW;

@@ -3,16 +3,17 @@
 // license as described in the file LICENSE.
 #pragma once
 
-#include "io_buf.h"
-#include "cache.h"
-#include "v_array.h"
-#include <set>
+#include <fmt/format.h>
+
 #include <map>
 #include <queue>
+#include <set>
 #include <string>
-
-#include <fmt/format.h>
 #include <type_traits>
+
+#include "cache.h"
+#include "io_buf.h"
+#include "v_array.h"
 
 namespace VW
 {

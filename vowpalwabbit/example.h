@@ -4,29 +4,29 @@
 
 #pragma once
 
-#include "v_array.h"
-#include "no_label.h"
-#include "simple_label.h"
-#include "multiclass.h"
-#include "multilabel.h"
-#include "cost_sensitive.h"
-#include "cb.h"
-#include "constant.h"
-#include "feature_group.h"
+#include <cstdint>
+#include <iostream>
+#include <vector>
+
 #include "action_score.h"
-#include "example_predict.h"
-#include "continuous_actions_reduction_features.h"
-#include "ccb_label.h"
-#include "slates_label.h"
-#include "decision_scores.h"
-#include "cb_continuous_label.h"
-#include "prob_dist_cont.h"
 #include "active_multiclass_prediction.h"
 #include "cache.h"
-
-#include <cstdint>
-#include <vector>
-#include <iostream>
+#include "cb.h"
+#include "cb_continuous_label.h"
+#include "ccb_label.h"
+#include "constant.h"
+#include "continuous_actions_reduction_features.h"
+#include "cost_sensitive.h"
+#include "decision_scores.h"
+#include "example_predict.h"
+#include "feature_group.h"
+#include "multiclass.h"
+#include "multilabel.h"
+#include "no_label.h"
+#include "prob_dist_cont.h"
+#include "simple_label.h"
+#include "slates_label.h"
+#include "v_array.h"
 
 namespace VW
 {

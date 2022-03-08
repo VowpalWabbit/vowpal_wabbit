@@ -4,13 +4,13 @@
 
 #pragma once
 #ifndef VW_NOEXCEPT
-#  include <stdexcept>
-#  include <sstream>
-#  include <array>
-#  include <string>
-
-#  include <cstring>
 #  include <string.h>
+
+#  include <array>
+#  include <cstring>
+#  include <sstream>
+#  include <stdexcept>
+#  include <string>
 
 #  ifndef _WIN32
 #    include <locale.h>

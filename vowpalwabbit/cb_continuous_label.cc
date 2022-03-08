@@ -2,19 +2,20 @@
 // individual contributors. All rights reserved. Released under a BSD (revised)
 // license as described in the file LICENSE.
 
+#include "cb_continuous_label.h"
+
 #include <cfloat>
 #include <iomanip>
+
+#include "cb_label_parser.h"
+#include "debug_print.h"
 #include "example.h"
+#include "io/logger.h"
+#include "model_utils.h"
 #include "parse_primitives.h"
+#include "text_utils.h"
 #include "vw.h"
 #include "vw_exception.h"
-#include "cb_label_parser.h"
-#include "cb_continuous_label.h"
-#include "debug_print.h"
-#include "model_utils.h"
-#include "text_utils.h"
-
-#include "io/logger.h"
 
 using namespace LEARNER;
 

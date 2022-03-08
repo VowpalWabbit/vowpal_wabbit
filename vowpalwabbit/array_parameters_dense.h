@@ -9,9 +9,11 @@
 #  include <sys/mman.h>
 #endif
 
-#include "memory.h"
 #include <bitset>
+#include <cassert>
 #include <unordered_map>
+
+#include "memory.h"
 
 using weight = float;
 

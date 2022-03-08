@@ -2,18 +2,20 @@
 // individual contributors. All rights reserved. Released under a BSD (revised)
 // license as described in the file LICENSE.
 
+#include "cbify.h"
+
 #include <cfloat>
 #include <vector>
+
 #include "cb_algs.h"
-#include "cbify.h"
-#include "vw.h"
-#include "hash.h"
-#include "explore.h"
-#include "prob_dist_cont.h"
-#include "debug_log.h"
 #include "cb_label_parser.h"
-#include "simple_label_parser.h"
+#include "debug_log.h"
+#include "explore.h"
+#include "hash.h"
+#include "prob_dist_cont.h"
 #include "shared_data.h"
+#include "simple_label_parser.h"
+#include "vw.h"
 
 using namespace VW::LEARNER;
 using namespace exploration;

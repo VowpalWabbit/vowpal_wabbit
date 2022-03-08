@@ -2,14 +2,14 @@
 // individual contributors. All rights reserved. Released under a BSD (revised)
 // license as described in the file LICENSE.
 
+#include "best_constant.h"
 #include "example.h"
+#include "future_compat.h"
 #include "global_data.h"
 #include "io/logger.h"
 #include "learner.h"
 #include "memory.h"
 #include "vw.h"
-#include "future_compat.h"
-#include "best_constant.h"
 
 struct reduction_data
 {

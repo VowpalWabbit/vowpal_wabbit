@@ -2,53 +2,50 @@
 // individual contributors. All rights reserved. Released under a BSD (revised)
 // license as described in the file LICENSE.
 
-#include <cstdio>
-#include <cfloat>
-#include <sstream>
-#include <fstream>
-#include <sys/types.h>
+#include "parse_args.h"
+
 #include <sys/stat.h>
+#include <sys/types.h>
+
 #include <algorithm>
+#include <cfloat>
+#include <cstdio>
+#include <fstream>
+#include <sstream>
 #include <utility>
 
-#include "constant.h"
-#include "global_data.h"
-#include "memory.h"
-#include "numeric_casts.h"
-#include "parse_regressor.h"
-#include "parser.h"
-#include "parse_primitives.h"
-#include "scope_exit.h"
-#include "vw.h"
-#include "reductions/interactions.h"
-
-#include "parse_args.h"
-#include "reduction_stack.h"
-
-#include "rand48.h"
-#include "learner.h"
-#include "prediction_type.h"
-#include "label_type.h"
-#include "parse_example.h"
-#include "best_constant.h"
-#include "vw_exception.h"
 #include "accumulate.h"
-#include "vw_validate.h"
-#include "vw_allreduce.h"
-#include "reductions/metrics.h"
-#include "text_utils.h"
-#include "reductions/interactions.h"
+#include "best_constant.h"
 #include "config/cli_help_formatter.h"
-
+#include "config/cli_options_serializer.h"
 #include "config/options.h"
 #include "config/options_cli.h"
-#include "config/cli_options_serializer.h"
-#include "named_labels.h"
-
-#include "io/io_adapter.h"
+#include "constant.h"
+#include "global_data.h"
 #include "io/custom_streambuf.h"
-#include "io/owning_stream.h"
+#include "io/io_adapter.h"
 #include "io/logger.h"
+#include "io/owning_stream.h"
+#include "label_type.h"
+#include "learner.h"
+#include "memory.h"
+#include "named_labels.h"
+#include "numeric_casts.h"
+#include "parse_example.h"
+#include "parse_primitives.h"
+#include "parse_regressor.h"
+#include "parser.h"
+#include "prediction_type.h"
+#include "rand48.h"
+#include "reduction_stack.h"
+#include "reductions/interactions.h"
+#include "reductions/metrics.h"
+#include "scope_exit.h"
+#include "text_utils.h"
+#include "vw.h"
+#include "vw_allreduce.h"
+#include "vw_exception.h"
+#include "vw_validate.h"
 
 #ifdef BUILD_EXTERNAL_PARSER
 #  include "parse_example_binary.h"
@@ -1207,12 +1204,13 @@ void parse_output_model(options_i& options, VW::workspace& all)
   }
   if (predict_only_model) { all.save_resume = false; }
 
-  // Question: This doesn't seem necessary
-  // if (options.was_supplied("id") && find(arg.args.begin(), arg.args.end(), "--id") == arg.args.end())
-  // {
-  //   arg.args.push_back("--id");
-  //   arg.args.push_back(arg.vm["id"].as<std::string>());
-  // }
+  if ((options.was_supplied("invert_hash") || options.was_supplied("readable_model")) && all.save_resume)
+  {
+    all.logger.err_info(
+        "VW 9.0.0 introduced a change to the default model save behavior. Please use '--predict_only_model' when using "
+        "either '--invert_hash' or '--readable_model' to get the old behavior. Details: "
+        "https://vowpalwabbit.org/link/1");
+  }
 }
 
 void load_input_model(VW::workspace& all, io_buf& io_temp)

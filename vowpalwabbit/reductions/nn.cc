@@ -4,16 +4,15 @@
 #include <cfloat>
 #include <cmath>
 #include <cstdio>
-#include <sstream>
 #include <memory>
+#include <sstream>
 
-#include "rand48.h"
 #include "gd.h"
-#include "vw.h"
 #include "guard.h"
-#include "shared_data.h"
-
 #include "io/logger.h"
+#include "rand48.h"
+#include "shared_data.h"
+#include "vw.h"
 
 using namespace VW::LEARNER;
 using namespace VW::config;

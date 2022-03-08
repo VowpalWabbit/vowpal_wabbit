@@ -2,18 +2,19 @@
 // individual contributors. All rights reserved. Released under a BSD (revised)
 // license as described in the file LICENSE.
 
+#include "cats_tree.h"
+
 #include <algorithm>
 #include <cassert>
 #include <limits>
 
-#include "cats_tree.h"
-#include "learner.h"
 #include "debug_log.h"
 #include "explore_internal.h"
-#include "hash.h"
-#include "guard.h"
-#include "label_parser.h"
 #include "global_data.h"
+#include "guard.h"
+#include "hash.h"
+#include "label_parser.h"
+#include "learner.h"
 
 using namespace VW::config;
 using namespace VW::LEARNER;

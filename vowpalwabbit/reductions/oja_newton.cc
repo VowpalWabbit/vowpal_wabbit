@@ -2,12 +2,12 @@
 // individual contributors. All rights reserved. Released under a BSD (revised)
 // license as described in the file LICENSE.
 #include <cmath>
-#include <string>
-#include "gd.h"
-#include "vw.h"
-#include "rand48.h"
-#include <cmath>
 #include <memory>
+#include <string>
+
+#include "gd.h"
+#include "rand48.h"
+#include "vw.h"
 
 using namespace VW::LEARNER;
 using namespace VW::config;

@@ -3,8 +3,10 @@
 // license as described in the file LICENSE.
 
 #include "config/cli_help_formatter.h"
+
 #include <sstream>
 #include <string>
+
 #include "config/options.h"
 #include "text_utils.h"
 

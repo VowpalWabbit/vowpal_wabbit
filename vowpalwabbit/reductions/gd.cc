@@ -1,11 +1,12 @@
 // Copyright (c) by respective owners including Yahoo!, Microsoft, and
 // individual contributors. All rights reserved. Released under a BSD (revised)
 // license as described in the file LICENSE.
-#include "crossplat_compat.h"
+
 #include "feature_group.h"
 #include "global_data.h"
-
 #include <cfloat>
+
+#include "crossplat_compat.h"
 
 #if !defined(VW_NO_INLINE_SIMD)
 #  if !defined(__SSE2__) && (defined(_M_AMD64) || defined(_M_X64))
@@ -22,9 +23,9 @@
 #include "accumulate.h"
 #include "debug_log.h"
 #include "gd.h"
-#include "vw.h"
-#include "shared_data.h"
 #include "label_parser.h"
+#include "shared_data.h"
+#include "vw.h"
 #include "vw_versions.h"
 
 #undef VW_DEBUG_LOG

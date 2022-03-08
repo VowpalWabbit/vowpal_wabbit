@@ -4,19 +4,20 @@
 
 #pragma once
 
-#include <cstddef>
-#include <iostream>
-#include <sstream>
-#include <vector>
-#include <memory>
-#include <cassert>
-#include <cstdlib>
-#include <algorithm>
 #include <fmt/format.h>
 
-#include "v_array.h"
+#include <algorithm>
+#include <cassert>
+#include <cstddef>
+#include <cstdlib>
+#include <iostream>
+#include <memory>
+#include <sstream>
+#include <vector>
+
 #include "hash.h"
 #include "io/io_adapter.h"
+#include "v_array.h"
 #include "vw_string_view.h"
 
 #ifndef VW_NOEXCEPT

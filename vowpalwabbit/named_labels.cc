@@ -3,9 +3,9 @@
 // license as described in the file LICENSE.
 
 #include "named_labels.h"
-#include "parse_primitives.h"
 
 #include "io/logger.h"
+#include "parse_primitives.h"
 
 void VW::named_labels::initialize_maps_from_input_string()
 {

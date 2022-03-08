@@ -1,12 +1,13 @@
 // Copyright (c) by respective owners including Yahoo!, Microsoft, and
 // individual contributors. All rights reserved. Released under a BSD (revised)
 // license as described in the file LICENSE.
-#include <cstring>
 #include <cfloat>
-#include "rand48.h"
-#include "vw_exception.h"
+#include <cstring>
+
 #include "parse_args.h"  // for spoof_hex_encoded_namespaces
+#include "rand48.h"
 #include "text_utils.h"
+#include "vw_exception.h"
 
 using namespace VW::LEARNER;
 using namespace VW::config;

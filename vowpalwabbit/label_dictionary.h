@@ -4,8 +4,9 @@
 
 #pragma once
 
-#include "example_predict.h"
 #include <unordered_map>
+
+#include "example_predict.h"
 
 namespace LabelDict
 {

@@ -2,21 +2,22 @@
 // individual contributors. All rights reserved. Released under a BSD (revised)
 // license as described in the file LICENSE.
 
-#include <cstdio>
-#include <cfloat>
+#include "global_data.h"
+
+#include <cassert>
 #include <cerrno>
+#include <cfloat>
+#include <cmath>
+#include <cstdio>
 #include <iostream>
 #include <sstream>
-#include <cmath>
-#include <cassert>
 
-#include "global_data.h"
-#include "vw_exception.h"
 #include "future_compat.h"
-#include "vw_allreduce.h"
 #include "named_labels.h"
-#include "shared_data.h"
 #include "reduction_stack.h"
+#include "shared_data.h"
+#include "vw_allreduce.h"
+#include "vw_exception.h"
 #include "vw_string_view.h"
 
 #define RAPIDJSON_HAS_STDSTRING 1

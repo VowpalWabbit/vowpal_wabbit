@@ -3,14 +3,13 @@
 // license as described in the file LICENSE.
 #include <cmath>
 
-#include "vw.h"
-#include "gd.h"
-#include "reductions/cb/cb_algs.h"
-#include "io_buf.h"
 #include "cb.h"
-#include "shared_data.h"
-
+#include "gd.h"
 #include "io/logger.h"
+#include "io_buf.h"
+#include "reductions/cb/cb_algs.h"
+#include "shared_data.h"
+#include "vw.h"
 
 using namespace VW::LEARNER;
 using namespace CB_ALGS;

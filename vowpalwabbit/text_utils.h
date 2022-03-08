@@ -6,9 +6,9 @@
 
 #include <string>
 
-#include "vw_string_view.h"
-#include "io/logger.h"
 #include "future_compat.h"
+#include "io/logger.h"
+#include "vw_string_view.h"
 
 VW_WARNING_STATE_PUSH
 VW_WARNING_DISABLE_BADLY_FORMED_XML

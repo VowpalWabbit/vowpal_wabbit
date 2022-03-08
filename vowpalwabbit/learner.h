@@ -20,24 +20,22 @@
 #  pragma warning(pop)
 #endif
 
+#include "debug_log.h"
 #include "memory.h"
 #include "multiclass.h"
-#include "simple_label.h"
 #include "parser.h"
-#include "debug_log.h"
+#include "simple_label.h"
 
 #undef VW_DEBUG_LOG
 #define VW_DEBUG_LOG vw_dbg::learner
 
-#include "future_compat.h"
 #include "example.h"
-#include "scope_exit.h"
-#include "metric_sink.h"
-
+#include "future_compat.h"
 #include "label_type.h"
+#include "metric_sink.h"
 #include "prediction_type.h"
-
 #include "reductions/conditional_contextual_bandit.h"
+#include "scope_exit.h"
 
 namespace VW
 {

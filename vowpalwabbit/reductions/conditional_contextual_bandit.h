@@ -5,12 +5,12 @@
 #pragma once
 
 #include <cstdint>
-#include <vector>
 #include <string>
+#include <vector>
 
-#include "reductions_fwd.h"
 #include "action_score.h"
 #include "example_predict.h"
+#include "reductions_fwd.h"
 
 namespace CCB
 {

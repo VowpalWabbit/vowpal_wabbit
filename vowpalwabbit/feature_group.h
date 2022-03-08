@@ -15,9 +15,17 @@
 #include <string>
 #include <algorithm>
 #include <cstddef>
+#include <iterator>
+#include <memory>
 #include <numeric>
-#include <vector>
+#include <string>
 #include <type_traits>
+#include <utility>
+#include <vector>
+
+#include "future_compat.h"
+#include "generic_range.h"
+#include "v_array.h"
 
 using feature_value = float;
 using feature_index = uint64_t;

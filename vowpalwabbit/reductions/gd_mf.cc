@@ -1,9 +1,9 @@
 // Copyright (c) by respective owners including Yahoo!, Microsoft, and
 // individual contributors. All rights reserved. Released under a BSD (revised)
 // license as described in the file LICENSE.
-#include <fstream>
 #include <cfloat>
 #include <cstdio>
+#include <fstream>
 #ifdef _WIN32
 #  define NOMINMAX
 #  include <winsock2.h>
@@ -11,11 +11,11 @@
 #  include <netdb.h>
 #endif
 
+#include "array_parameters.h"
 #include "gd.h"
 #include "rand48.h"
-#include "vw_exception.h"
-#include "array_parameters.h"
 #include "shared_data.h"
+#include "vw_exception.h"
 
 using namespace VW::LEARNER;
 using namespace VW::config;
