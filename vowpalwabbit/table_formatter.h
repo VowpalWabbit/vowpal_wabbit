@@ -47,7 +47,6 @@ void format_row(const std::array<std::string, num_cols>& contents,
     const std::array<column_definition, num_cols>& column_definitions, size_t column_padding, std::ostream& output)
 {
   std::streamsize saved_w = output.width();
-  std::streamsize saved_prec = output.precision();
   std::ostream::fmtflags saved_f = output.flags();
   std::array<std::vector<std::string>, num_cols> column_contents_split_into_lines;
   // Wrap contents into lines
@@ -118,7 +117,6 @@ void format_row(const std::array<std::string, num_cols>& contents,
   }
 
   output.width(saved_w);
-  output.precision(saved_prec);
   output.setf(saved_f);
 }
 

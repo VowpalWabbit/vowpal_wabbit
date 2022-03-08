@@ -7,6 +7,7 @@
 #include "label_parser.h"
 #include "v_array.h"
 #include "io_buf.h"
+#include "constant.h"
 
 struct example;
 
@@ -31,10 +32,11 @@ struct continuous_label
 
 extern label_parser the_label_parser;
 
-std::string to_string(const continuous_label_elm& elm);
-std::string to_string(const continuous_label& lbl);
 
 }  // namespace cb_continuous
+
+std::string to_string(const cb_continuous::continuous_label_elm& elm, int decimal_precision = DEFAULT_FLOAT_PRECISION);
+std::string to_string(const cb_continuous::continuous_label& lbl, int decimal_precision = DEFAULT_FLOAT_PRECISION);
 
 namespace model_utils
 {

@@ -28,6 +28,8 @@ void print_update(VW::workspace& all, bool is_test, const example& ec, const v_a
 
 namespace VW
 {
+std::string to_string(const MULTILABEL::labels& multilabels);
+
 namespace model_utils
 {
 size_t read_model_field(io_buf&, MULTILABEL::labels&);

@@ -362,7 +362,8 @@ void predict(gd& g, base_learner&, example& ec)
   ec.partial_prediction *= static_cast<float>(all.sd->contraction);
   ec.pred.scalar = finalize_prediction(all.sd, all.logger, ec.partial_prediction);
 
-  VW_DBG(ec) << "gd: predict() " << scalar_pred_to_string(ec) << features_to_string(ec) << std::endl;
+  VW_DBG(ec) << "gd: predict() " << VW::debug::scalar_pred_to_string(ec) << VW::debug::features_to_string(ec)
+             << std::endl;
 
   if (audit) print_audit_features(all, ec);
 }
