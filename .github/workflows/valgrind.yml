@@ -24,7 +24,7 @@ jobs:
         with:
           filters: |
             valgrind_related_changes:
-              - '.github/valgrind.yml'
+              - '.github/workflows/valgrind.yml'
               - '.scripts/**'
               - 'cluster/**'
               - 'cmake/**'
