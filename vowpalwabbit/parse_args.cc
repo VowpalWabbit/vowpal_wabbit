@@ -1180,7 +1180,7 @@ void parse_output_model(options_i& options, VW::workspace& all)
       .add(make_option("invert_hash", all.inv_hash_regressor_name)
                .help("Output human-readable final regressor with feature names.  Computationally expensive"))
       .add(make_option("dump_json_weights", all.json_weights_file_name)
-               .help("Output json representation of model parameters. Computationally expensive"))
+               .help("Experimental: Output json representation of model parameters."))
       .add(
           make_option("predict_only_model", predict_only_model)
               .help("Do not save extra state for learning to be resumed. Stored model can only be used for prediction"))

@@ -9,7 +9,6 @@
 #include <cfloat>
 #include <cstdint>
 #include <cstdio>
-#include <_types/_uint64_t.h>
 #include <inttypes.h>
 #include <climits>
 #include <stack>
@@ -125,16 +124,15 @@ struct trace_message_wrapper
 
 namespace VW
 {
-
-  namespace details
-  {
-    struct invert_hash_info
-    {
-      std::vector<VW::audit_strings> weight_components;
-      uint64_t offset;
-      uint64_t stride_shift;
-    };
-  }
+namespace details
+{
+struct invert_hash_info
+{
+  std::vector<VW::audit_strings> weight_components;
+  uint64_t offset;
+  uint64_t stride_shift;
+};
+}  // namespace details
 struct workspace
 {
 private:
@@ -163,7 +161,13 @@ public:
   void finish_example(example&);
   void finish_example(multi_ex&);
 
-
+  /**
+   * @brief Generate a JSON string with the current model state and invert hash
+   * lookup table. Base reduction in use must be gd and workspace.hash_inv must
+   * be true. This function is experimental and subject to change.
+   *
+   * @return std::string JSON formatted string
+   */
   std::string dump_weights_to_json_experimental();
 
   void (*set_minmax)(shared_data* sd, float label);

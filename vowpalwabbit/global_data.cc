@@ -197,8 +197,6 @@ void workspace::finish_example(example& ec)
   VW::LEARNER::as_singleline(l)->finish_example(*this, ec);
 }
 
-
-
 void workspace::finish_example(multi_ex& ec)
 {
   if (!l->is_multiline()) THROW("This reduction does not support multi-line example.");
@@ -215,13 +213,14 @@ std::string dump_weights_to_json_weight_typed(const WeightsT& weights, const std
   doc.SetObject();
 
   rapidjson::Value array(rapidjson::kArrayType);
-  doc.AddMember("parameters", array, allocator);
+  doc.AddMember("weights", array, allocator);
 
   for (auto v = weights.cbegin(); v != weights.cend(); ++v)
   {
     const auto idx = v.index() >> weights.stride_shift();
     if (*v != 0.f)
     {
+      rapidjson::Value parameter_object(rapidjson::kObjectType);
       const auto map_it = index_name_map.find(idx);
       if (map_it != index_name_map.end())
       {
@@ -250,17 +249,22 @@ std::string dump_weights_to_json_weight_typed(const WeightsT& weights, const std
           }
           terms_array.PushBack(component_object, allocator);
         }
-
-        rapidjson::Value parameter_object(rapidjson::kObjectType);
         parameter_object.AddMember("terms", terms_array, allocator);
         rapidjson::Value offset_value(static_cast<uint64_t>(info.offset != 0 ? info.offset >> info.stride_shift : 0));
         parameter_object.AddMember("offset", offset_value, allocator);
-        rapidjson::Value index_value(static_cast<uint64_t>(idx));
-        parameter_object.AddMember("index", index_value, allocator);
-        rapidjson::Value value_value(static_cast<float>(*v));
-        parameter_object.AddMember("value", value_value, allocator);
-        doc["parameters"].PushBack(parameter_object, allocator);
       }
+      else
+      {
+        // There is no reverse mapping. We leave nulls in place of terms and offset.
+        parameter_object.AddMember("terms", rapidjson::Value(rapidjson::Type::kNullType), allocator);
+        parameter_object.AddMember("offset", rapidjson::Value(rapidjson::Type::kNullType), allocator);
+      }
+
+      rapidjson::Value index_value(static_cast<uint64_t>(idx));
+      parameter_object.AddMember("index", index_value, allocator);
+      rapidjson::Value value_value(static_cast<float>(*v));
+      parameter_object.AddMember("value", value_value, allocator);
+      doc["weights"].PushBack(parameter_object, allocator);
     }
   }
 
@@ -270,7 +274,6 @@ std::string dump_weights_to_json_weight_typed(const WeightsT& weights, const std
   return strbuf.GetString();
 }
 
-// experimental
 std::string workspace::dump_weights_to_json_experimental()
 {
   assert(l != nullptr);
@@ -282,7 +285,7 @@ std::string workspace::dump_weights_to_json_experimental()
   }
   if (!hash_inv)
   {
-    THROW("--invert_hash is required to dump weights to json");
+    THROW("hash_inv == true is required to dump weights to json");
   }
 
   return weights.sparse ? dump_weights_to_json_weight_typed(weights.sparse_weights, index_name_map) : dump_weights_to_json_weight_typed(weights.dense_weights, index_name_map);
