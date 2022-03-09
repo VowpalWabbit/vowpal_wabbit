@@ -24,7 +24,7 @@ cmake -S "%vwRoot%" -B "%vwRoot%\build" -G "Visual Studio 16 2019" -A "x64" ^
     -DVW_ZLIB_SYS_DEP=OFF ^
     -DVW_BOOST_MATH_SYS_DEP=OFF ^
     -DDO_NOT_BUILD_VW_C_WRAPPER=On ^
-    "-DCMAKE_PROGRAM_PATH=%vwRoot%\vowpalwabbit\.nuget\;%VsInstallDir%\Common7\IDE"
+    "-DCMAKE_PROGRAM_PATH=%vwRoot%\vowpalwabbit\.nuget\;%VsInstallDir%\Common7\IDE" --debug-find
 
 cmake --build "%vwRoot%\build" --config Release
 
