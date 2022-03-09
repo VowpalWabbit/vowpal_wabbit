@@ -11,6 +11,9 @@ PUSHD %~dp0
 REM TODO: Figure out how to parametrize this script?! (is there a standard, or do we actually need parse args?)
 ECHO Building "%vwRoot%" for Release x64
 
+
+dir %VsInstallDir%\Common7\IDE
+
 REM CMAKE_PROGRAM_PATH is for nuget and texttransform
 cmake -S "%vwRoot%" -B "%vwRoot%\build" -G "Visual Studio 16 2019" -A "x64" --debug-find ^
     -DCMAKE_TOOLCHAIN_FILE="%VCPKG_INSTALLATION_ROOT%\scripts\buildsystems\vcpkg.cmake" ^
