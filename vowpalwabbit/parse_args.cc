@@ -1708,6 +1708,17 @@ std::unique_ptr<VW::workspace> initialize_internal(std::unique_ptr<options_i, op
     throw save_load_model_exception(e.Filename(), e.LineNumber(), msg);
   }
 
+  if (all->options->was_supplied("invert_hash"))
+  {
+    assert(all->l != nullptr);
+    const auto* current = all->l;
+    while (current->get_learn_base() != nullptr) { current = current->get_learn_base(); }
+    if (current->get_name() != "gd")
+    {
+      THROW("invert_hash is only supported for GD base learners. The current base learner is " << current->get_name());
+    }
+  }
+
   if (!all->quiet)
   {
     *(all->trace_message) << "Num weight bits = " << all->num_bits << endl;
