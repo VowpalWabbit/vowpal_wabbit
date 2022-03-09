@@ -9,8 +9,7 @@ resources:
 - repo: self
 
 pool:
-  name: Hosted VS2017
-  demands: Cmd
+  vmImage: windows-2019
 
 variables:
   SuppressTag: $[ eq(variables.officialbuild, 'true') ]
@@ -70,12 +69,6 @@ steps:
     Tag: -$(Build.SourceVersion)--$(Build.BuildId)
     SourceInfo: 'Built from commit id: $(Build.SourceVersion)'
   failOnStderr: true
-- task: PublishBuildArtifacts@1
-  displayName: 'Publish Artifact: target'
-  inputs:
-    PathtoPublish: $(Build.SourcesDirectory)\vowpalwabbit\out\target
-    ArtifactName: target
-  condition: succeededOrFailed()
 - task: PublishBuildArtifacts@1
   displayName: 'Publish Artifact: package'
   inputs:
