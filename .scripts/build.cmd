@@ -27,7 +27,7 @@ cmake -S "%vwRoot%" -B "%vwRoot%\build" -G "Visual Studio 16 2019" -A "x64" --de
     -DVW_ZLIB_SYS_DEP=OFF ^
     -DVW_BOOST_MATH_SYS_DEP=OFF ^
     -DDO_NOT_BUILD_VW_C_WRAPPER=On ^
-    "-DCMAKE_PROGRAM_PATH=%vwRoot%\vowpalwabbit\.nuget;%VsInstallDir%\Common7\IDE;%VCPKG_INSTALLATION_ROOT%\installed\x64-windows\tools\flatbuffers"
+    "-DCMAKE_PROGRAM_PATH=%vwRoot%\vowpalwabbit\.nuget;%VsInstallDir%\Common7\IDE;%VCPKG_INSTALLATION_ROOT%\installed\x64-windows\tools\flatbuffers;%VsInstallDir%\Common7\IDE\CommonExtensions\Microsoft\TestWindow"
 
 cmake --build "%vwRoot%\build" --config Release
 
