@@ -13,7 +13,7 @@ jobs:
   check_valgrind:
     strategy:
       matrix:
-        container: ["vowpalwabbit/ubuntu1804-build:latest", "vowpalwabbit/ubuntu2004-build:latest"]
+        container: ["vowpalwabbit/ubuntu2004-build:latest"]
     container:
       image: ${{ matrix.container }}
     runs-on: ubuntu-latest
