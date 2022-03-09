@@ -326,9 +326,7 @@ void vexpdigammify(VW::workspace& all, float* gamma, const float underflow_thres
   sum = v4sfl(extra_sum);
 
   for (fp = gamma; fp < fpend && !is_aligned16(fp); ++fp)
-  {
-    *fp = std::fmax(underflow_threshold, fastexp(*fp - extra_sum));
-  }
+  { *fp = std::fmax(underflow_threshold, fastexp(*fp - extra_sum)); }
 
   for (; is_aligned16(fp) && fp + 4 < fpend; fp += 4)
   {
@@ -680,7 +678,8 @@ float lda_loop(lda& l, v_array<float>& Elogtheta, float* v, example* ec, float)
   float xc_w = 0;
   float score = 0;
   float doc_length = 0;
-  do {
+  do
+  {
     memcpy(v, new_gamma.begin(), sizeof(float) * l.topics);
     l.expdigammify(*l.all, v);
 
@@ -747,16 +746,13 @@ void save_load(lda& l, io_buf& model_file, bool read, bool text)
     initial_weights init{all.initial_t, static_cast<float>(l.lda_D / all.lda / all.length() * 200.f),
         all.random_weights, all.lda, all.weights.stride()};
 
-    auto initial_lda_weight_initializer = [init](weight* weights, uint64_t index)
-    {
+    auto initial_lda_weight_initializer = [init](weight* weights, uint64_t index) {
       uint32_t lda = init._lda;
       weight initial_random = init._initial_random;
       if (init._random)
       {
         for (size_t i = 0; i != lda; ++i, ++index)
-        {
-          weights[i] = static_cast<float>(-std::log(merand48(index) + 1e-6) + 1.0f) * initial_random;
-        }
+        { weights[i] = static_cast<float>(-std::log(merand48(index) + 1e-6) + 1.0f) * initial_random; }
       }
       weights[lda] = init._initial;
     };
@@ -769,7 +765,8 @@ void save_load(lda& l, io_buf& model_file, bool read, bool text)
     std::stringstream msg;
     size_t brw = 1;
 
-    do {
+    do
+    {
       brw = 0;
       size_t K = all.lda;
       if (!read && text) msg << i << " ";

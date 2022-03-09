@@ -465,7 +465,6 @@ BOOST_AUTO_TEST_CASE(parse_json_dedup_cb)
   BOOST_CHECK_EQUAL(examples[2]->feature_space['T'].space_names[0].name, "a2");
   BOOST_CHECK_EQUAL(examples[2]->feature_space['T'].space_names[0].str_value, "f2");
 
-
   for (auto* example : examples) { VW::finish_example(*vw, *example); }
   for (auto& dedup : dedup_examples) { VW::finish_example(*vw, *dedup.second); }
   VW::finish(*vw);
