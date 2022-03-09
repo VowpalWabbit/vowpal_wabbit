@@ -119,7 +119,7 @@ BOOST_AUTO_TEST_CASE(parse_json_cats)
 
   auto& space_names = examples[0]->feature_space[' '].space_names;
   BOOST_CHECK_EQUAL(features.size(), space_names.size());
-  for (size_t i = 0; i < space_names.size(); i++) { BOOST_CHECK_EQUAL(space_names[i].second, features[i]); }
+  for (size_t i = 0; i < space_names.size(); i++) { BOOST_CHECK_EQUAL(space_names[i].name, features[i]); }
 
   VW::finish_example(*vw, examples);
   VW::finish(*vw);
@@ -150,7 +150,7 @@ BOOST_AUTO_TEST_CASE(parse_json_cats_no_label)
 
   auto& space_names = examples[0]->feature_space[' '].space_names;
   BOOST_CHECK_EQUAL(features.size(), space_names.size());
-  for (size_t i = 0; i < space_names.size(); i++) { BOOST_CHECK_EQUAL(space_names[i].second, features[i]); }
+  for (size_t i = 0; i < space_names.size(); i++) { BOOST_CHECK_EQUAL(space_names[i].name, features[i]); }
 
   VW::finish_example(*vw, examples);
   VW::finish(*vw);
@@ -452,16 +452,19 @@ BOOST_AUTO_TEST_CASE(parse_json_dedup_cb)
   // check namespaces
   BOOST_CHECK_EQUAL(examples[1]->indices.size(), 1);
   BOOST_CHECK_EQUAL(examples[1]->indices[0], 'T');
-  BOOST_CHECK_EQUAL(examples[1]->feature_space['T'].space_names[0].first, "TAction");
+  BOOST_CHECK_EQUAL(examples[1]->feature_space['T'].space_names[0].ns, "TAction");
   BOOST_CHECK_EQUAL(examples[2]->indices.size(), 1);
   BOOST_CHECK_EQUAL(examples[2]->indices[0], 'T');
-  BOOST_CHECK_EQUAL(examples[2]->feature_space['T'].space_names[0].first, "TAction");
+  BOOST_CHECK_EQUAL(examples[2]->feature_space['T'].space_names[0].ns, "TAction");
 
   // check features
   BOOST_CHECK_EQUAL(examples[1]->feature_space['T'].space_names.size(), 1);
-  BOOST_CHECK_EQUAL(examples[1]->feature_space['T'].space_names[0].second, "a1^f1");
+  BOOST_CHECK_EQUAL(examples[1]->feature_space['T'].space_names[0].name, "a1");
+  BOOST_CHECK_EQUAL(examples[1]->feature_space['T'].space_names[0].str_value, "f1");
   BOOST_CHECK_EQUAL(examples[2]->feature_space['T'].space_names.size(), 1);
-  BOOST_CHECK_EQUAL(examples[2]->feature_space['T'].space_names[0].second, "a2^f2");
+  BOOST_CHECK_EQUAL(examples[2]->feature_space['T'].space_names[0].name, "a2");
+  BOOST_CHECK_EQUAL(examples[2]->feature_space['T'].space_names[0].str_value, "f2");
+
 
   for (auto* example : examples) { VW::finish_example(*vw, *example); }
   for (auto& dedup : dedup_examples) { VW::finish_example(*vw, *dedup.second); }
@@ -585,16 +588,18 @@ BOOST_AUTO_TEST_CASE(parse_json_dedup_ccb)
   // check namespaces
   BOOST_CHECK_EQUAL(examples[1]->indices.size(), 1);
   BOOST_CHECK_EQUAL(examples[1]->indices[0], 'T');
-  BOOST_CHECK_EQUAL(examples[1]->feature_space['T'].space_names[0].first, "TAction");
+  BOOST_CHECK_EQUAL(examples[1]->feature_space['T'].space_names[0].ns, "TAction");
   BOOST_CHECK_EQUAL(examples[2]->indices.size(), 1);
   BOOST_CHECK_EQUAL(examples[2]->indices[0], 'T');
-  BOOST_CHECK_EQUAL(examples[2]->feature_space['T'].space_names[0].first, "TAction");
+  BOOST_CHECK_EQUAL(examples[2]->feature_space['T'].space_names[0].ns, "TAction");
 
   // check features
   BOOST_CHECK_EQUAL(examples[1]->feature_space['T'].space_names.size(), 1);
-  BOOST_CHECK_EQUAL(examples[1]->feature_space['T'].space_names[0].second, "a1^f1");
+  BOOST_CHECK_EQUAL(examples[1]->feature_space['T'].space_names[0].name, "a1");
+  BOOST_CHECK_EQUAL(examples[1]->feature_space['T'].space_names[0].str_value, "f1");
   BOOST_CHECK_EQUAL(examples[2]->feature_space['T'].space_names.size(), 1);
-  BOOST_CHECK_EQUAL(examples[2]->feature_space['T'].space_names[0].second, "a2^f2");
+  BOOST_CHECK_EQUAL(examples[2]->feature_space['T'].space_names[0].name, "a2");
+  BOOST_CHECK_EQUAL(examples[2]->feature_space['T'].space_names[0].str_value, "f2");
 
   // check ccb
 
@@ -751,16 +756,18 @@ BOOST_AUTO_TEST_CASE(parse_json_dedup_slates)
   // check namespaces
   BOOST_CHECK_EQUAL(examples[1]->indices.size(), 1);
   BOOST_CHECK_EQUAL(examples[1]->indices[0], 'T');
-  BOOST_CHECK_EQUAL(examples[1]->feature_space['T'].space_names[0].first, "TAction");
+  BOOST_CHECK_EQUAL(examples[1]->feature_space['T'].space_names[0].ns, "TAction");
   BOOST_CHECK_EQUAL(examples[2]->indices.size(), 1);
   BOOST_CHECK_EQUAL(examples[2]->indices[0], 'T');
-  BOOST_CHECK_EQUAL(examples[2]->feature_space['T'].space_names[0].first, "TAction");
+  BOOST_CHECK_EQUAL(examples[2]->feature_space['T'].space_names[0].ns, "TAction");
 
   // check features
   BOOST_CHECK_EQUAL(examples[1]->feature_space['T'].space_names.size(), 1);
-  BOOST_CHECK_EQUAL(examples[1]->feature_space['T'].space_names[0].second, "a1^f1");
+  BOOST_CHECK_EQUAL(examples[1]->feature_space['T'].space_names[0].name, "a1");
+  BOOST_CHECK_EQUAL(examples[1]->feature_space['T'].space_names[0].str_value, "f1");
   BOOST_CHECK_EQUAL(examples[2]->feature_space['T'].space_names.size(), 1);
-  BOOST_CHECK_EQUAL(examples[2]->feature_space['T'].space_names[0].second, "a2^f2");
+  BOOST_CHECK_EQUAL(examples[2]->feature_space['T'].space_names[0].name, "a2");
+  BOOST_CHECK_EQUAL(examples[2]->feature_space['T'].space_names[0].str_value, "f2");
 
   // check slates
   BOOST_CHECK_EQUAL(examples[0]->l.slates.type, VW::slates::example_type::shared);

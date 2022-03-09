@@ -47,7 +47,7 @@ struct audit_strings
 inline std::string to_string(const audit_strings& ai)
 {
   std::ostringstream ss;
-  if (!ai.ns.empty()) { ss << ai.ns << '^'; }
+  if (!ai.ns.empty() && ai.ns != " ") { ss << ai.ns << '^'; }
   ss << ai.name;
   if (!ai.str_value.empty()) { ss << '^' << ai.str_value; }
   return ss.str();
