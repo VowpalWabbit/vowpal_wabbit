@@ -18,9 +18,6 @@ jobs:
       image: ${{ matrix.container }}
     runs-on: ubuntu-latest
     steps:
-      - run: |
-          apt update
-          apt install git
       - uses: actions/checkout@v2
         with:
           submodules: 'recursive'
