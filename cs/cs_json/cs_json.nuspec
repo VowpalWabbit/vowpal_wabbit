@@ -21,6 +21,7 @@
   <files>
 	  <!-- despite warning this is still required -->
 	  <file src="$BinariesDir$\$Configuration$\VowpalWabbit.JSON.dll" target="lib\net45" />
+	  <file src="$BinariesDir$\$Configuration$\VowpalWabbit.JSON.pdb" target="lib\net45" />
 	  <file src="$BinariesDir$\$Configuration$\VowpalWabbit.JSON.xml" target="lib\net45" />
   </files>
 </package>

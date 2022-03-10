@@ -41,6 +41,11 @@ set (vw_DOTNET_FRAMEWORK_REFERENCES
     Microsoft.CSharp
 )
 
+target_compile_options(VowpalWabbit.Common PRIVATE
+  $<$<CONFIG:Release>:"/p:DebugType=pdbonly">
+  $<$<CONFIG:Debug>:"/p:DebugType=full">
+)
+
 set_target_properties(VowpalWabbit.Common PROPERTIES
     VS_DOTNET_REFERENCES "${vw_DOTNET_FRAMEWORK_REFERENCES}"
     VS_GLOBAL_ROOTNAMESPACE VW

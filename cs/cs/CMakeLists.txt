@@ -73,6 +73,11 @@ set (vw_DOTNET_FRAMEWORK_REFERENCES
   Microsoft.CSharp
 )
 
+target_compile_options(VowpalWabbit PRIVATE
+  $<$<CONFIG:Release>:"/p:DebugType=pdbonly">
+  $<$<CONFIG:Debug>:"/p:DebugType=full">
+)
+
 target_link_libraries(VowpalWabbit
   PUBLIC VowpalWabbit.Common VowpalWabbit.Core
 )
@@ -83,5 +88,3 @@ set_target_properties(VowpalWabbit PROPERTIES
   VS_GLOBAL_AllowUnsafeBlocks "True"
   VS_GLOBAL_DocumentationFile "VowpalWabbit.xml"
 )
-
-

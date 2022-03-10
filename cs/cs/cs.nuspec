@@ -15,12 +15,15 @@
   <files>
 	  <!-- despite warning this is still required -->
 	  <file src="$BinariesDir$\$Configuration$\VowpalWabbit.dll" target="lib\net45" />
+	  <file src="$BinariesDir$\$Configuration$\VowpalWabbit.pdb" target="lib\net45" />
 	  <file src="$BinariesDir$\$Configuration$\VowpalWabbit.xml" target="lib\net45" />
 
 	  <file src="$BinariesDir$\$Configuration$\VowpalWabbit.Common.dll" target="lib\net45" />
+	  <file src="$BinariesDir$\$Configuration$\VowpalWabbit.Common.pdb" target="lib\net45" />
 	  <file src="$BinariesDir$\$Configuration$\VowpalWabbit.Common.xml" target="lib\net45" />
 
 	  <file src="$BinariesDir$\$Configuration$\VowpalWabbit.Core.dll" target="lib\net45" />
+	  <file src="$BinariesDir$\$Configuration$\VowpalWabbit.Core.pdb" target="lib\net45" />
 	  <file src="$BinariesDir$\$Configuration$\VowpalWabbit.Core.xml" target="lib\net45" />
 
 	  <file src="$RepoRoot$\cs\cs\**\*.cs" target="src\cs" exclude="**\obj\**\*.cs" />

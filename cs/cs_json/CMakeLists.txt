@@ -45,6 +45,11 @@ target_link_libraries(VowpalWabbit.JSON
 
 target_add_nuget_references(VowpalWabbit.JSON "Newtonsoft.JSON@9.0.1")
 
+target_compile_options(VowpalWabbit.JSON PRIVATE
+  $<$<CONFIG:Release>:"/p:DebugType=pdbonly">
+  $<$<CONFIG:Debug>:"/p:DebugType=full">
+)
+
 set_target_properties(VowpalWabbit.JSON
     PROPERTIES VS_DOTNET_REFERENCES "${vw_DOTNET_FRAMEWORK_REFERENCES}"
                VS_GLOBAL_ROOTNAMESPACE VW

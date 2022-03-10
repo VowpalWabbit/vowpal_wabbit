@@ -21,6 +21,7 @@
   <files>
 	  <!-- despite warning this is still required -->
 	  <file src="$BinariesDir$\$Configuration$\VowpalWabbit.Parallel.dll" target="lib\net45" />
+	  <file src="$BinariesDir$\$Configuration$\VowpalWabbit.Parallel.pdb" target="lib\net45" />
 	  <file src="$BinariesDir$\$Configuration$\VowpalWabbit.Parallel.xml" target="lib\net45" />
   </files>
 </package>

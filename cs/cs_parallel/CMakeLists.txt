@@ -32,6 +32,11 @@ target_link_libraries(VowpalWabbit.Parallel
   PUBLIC VowpalWabbit.Common VowpalWabbit.Core VowpalWabbit
 )
 
+target_compile_options(VowpalWabbit.Parallel PRIVATE
+  $<$<CONFIG:Release>:"/p:DebugType=pdbonly">
+  $<$<CONFIG:Debug>:"/p:DebugType=full">
+)
+
 set_target_properties(VowpalWabbit.Parallel
     PROPERTIES VS_DOTNET_REFERENCES "${vw_DOTNET_FRAMEWORK_REFERENCES}"
                VS_GLOBAL_ROOTNAMESPACE VW
