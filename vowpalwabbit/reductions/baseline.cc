@@ -4,8 +4,8 @@
 
 #include "baseline.h"
 
-#include "vw.h"
 #include "shared_data.h"
+#include "vw.h"
 
 using namespace VW::LEARNER;
 using namespace VW::config;

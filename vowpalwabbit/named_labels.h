@@ -4,10 +4,11 @@
 #pragma once
 
 #include <string>
-#include <vector>
 #include <unordered_map>
-#include "vw_string_view.h"
+#include <vector>
+
 #include "io/logger.h"
+#include "vw_string_view.h"
 
 namespace VW
 {

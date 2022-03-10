@@ -4,14 +4,13 @@
 
 #include <cfloat>
 
-#include "vw.h"
 #include "example.h"
-#include "vw_string_view_fmt.h"
+#include "io/logger.h"
+#include "model_utils.h"
 #include "parse_primitives.h"
 #include "shared_data.h"
-#include "model_utils.h"
-
-#include "io/logger.h"
+#include "vw.h"
+#include "vw_string_view_fmt.h"
 // needed for printing ranges of objects (eg: all elements of a vector)
 #include <fmt/ranges.h>
 

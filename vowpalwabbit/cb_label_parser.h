@@ -3,14 +3,14 @@
 // license as described in the file LICENSE.
 
 #pragma once
-#include "cb.h"
+#include <cfloat>
 
-#include "future_compat.h"
 #include "cache.h"
+#include "cb.h"
+#include "cb_continuous_label.h"
+#include "future_compat.h"
 #include "io/logger.h"
 #include "io_buf.h"
-#include "cb_continuous_label.h"
-#include <cfloat>
 
 namespace CB
 {

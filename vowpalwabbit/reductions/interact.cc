@@ -1,12 +1,12 @@
 // Copyright (c) by respective owners including Yahoo!, Microsoft, and
 // individual contributors. All rights reserved. Released under a BSD (revised)
 // license as described in the file LICENSE.
-#include <sstream>
 #include <cfloat>
+#include <sstream>
 
-#include "io/logger.h"
 #include "config/options.h"
 #include "global_data.h"
+#include "io/logger.h"
 
 using namespace VW::config;
 

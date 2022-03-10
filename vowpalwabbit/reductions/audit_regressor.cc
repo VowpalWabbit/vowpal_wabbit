@@ -3,14 +3,13 @@
 // license as described in the file LICENSE.
 
 #include <string>
-#include "interactions.h"
-#include "vw.h"
-#include "shared_data.h"
-#include "gd.h"
 
 #include "fmt/format.h"
-
+#include "gd.h"
+#include "interactions.h"
+#include "shared_data.h"
 #include "table_formatter.h"
+#include "vw.h"
 
 using namespace VW::config;
 

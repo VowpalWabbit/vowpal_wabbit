@@ -7,8 +7,8 @@
 #include <sstream>
 #include <string>
 
-#include "v_array.h"
 #include "constant.h"
+#include "v_array.h"
 
 namespace VW
 {

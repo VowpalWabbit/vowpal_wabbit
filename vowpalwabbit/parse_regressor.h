@@ -3,8 +3,9 @@
 // license as described in the file LICENSE.
 #pragma once
 #include <string>
-#include "global_data.h"
+
 #include "config/options.h"
+#include "global_data.h"
 
 void read_regressor_file(VW::workspace& all, const std::vector<std::string>& files, io_buf& io_temp);
 

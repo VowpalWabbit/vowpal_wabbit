@@ -3,10 +3,10 @@
 // license as described in the file LICENSE.
 
 #pragma once
-#include "learner.h"
-#include "config/options.h"
-#include "cb.h"
 #include "action_score.h"
+#include "cb.h"
+#include "config/options.h"
+#include "learner.h"
 
 namespace VW
 {

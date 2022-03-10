@@ -4,9 +4,9 @@
 
 #pragma once
 
-#include "v_array.h"
-
 #include <cstdint>
+
+#include "v_array.h"
 
 namespace CCB
 {

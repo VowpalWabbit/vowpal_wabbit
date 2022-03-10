@@ -2,17 +2,17 @@
 // individual contributors. All rights reserved. Released under a BSD (revised)
 // license as described in the file LICENSE.
 
+#include "parse_example_flatbuffer.h"
+
+#include <cfloat>
 #include <fstream>
 #include <iostream>
-#include <cfloat>
 
-#include "vowpalwabbit/global_data.h"
-#include "vowpalwabbit/constant.h"
-#include "vowpalwabbit/cb.h"
 #include "vowpalwabbit/action_score.h"
 #include "vowpalwabbit/best_constant.h"
-
-#include "parse_example_flatbuffer.h"
+#include "vowpalwabbit/cb.h"
+#include "vowpalwabbit/constant.h"
+#include "vowpalwabbit/global_data.h"
 
 namespace VW
 {

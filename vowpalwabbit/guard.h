@@ -4,6 +4,7 @@
 #pragma once
 
 #include <utility>
+
 #include "future_compat.h"
 
 namespace VW

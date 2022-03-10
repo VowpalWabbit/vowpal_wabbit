@@ -6,6 +6,7 @@
 // Forward declaration header to declare the basic components used by VW reductions
 
 #include <vector>
+
 #include "v_array.h"
 
 // forward declarations

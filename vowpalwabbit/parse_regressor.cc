@@ -10,26 +10,25 @@
 #  include <unistd.h>
 #endif
 
-#include <cstdlib>
-#include <cstdint>
+#include <algorithm>
 #include <cmath>
 #include <cstdarg>
-
+#include <cstdint>
+#include <cstdlib>
 #include <fstream>
 #include <iostream>
-#include <algorithm>
 #include <numeric>
 #include <utility>
 
+#include "config/cli_options_serializer.h"
 #include "crossplat_compat.h"
-#include "rand48.h"
 #include "global_data.h"
+#include "io/logger.h"
+#include "rand48.h"
+#include "shared_data.h"
 #include "vw_exception.h"
 #include "vw_validate.h"
 #include "vw_versions.h"
-#include "config/cli_options_serializer.h"
-#include "shared_data.h"
-#include "io/logger.h"
 
 void initialize_weights_as_random_positive(weight* weights, uint64_t index) { weights[0] = 0.1f * merand48(index); }
 void initialize_weights_as_random(weight* weights, uint64_t index) { weights[0] = merand48(index) - 0.5f; }

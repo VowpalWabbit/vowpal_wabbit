@@ -1,19 +1,19 @@
 // Copyright (c) by respective owners including Yahoo!, Microsoft, and
 // individual contributors. All rights reserved. Released under a BSD (revised)
 // license as described in the file LICENSE.
+#include <algorithm>
 #include <cfloat>
 #include <cmath>
 #include <cstdio>
+#include <queue>
 #include <sstream>
-#include <vector>
 #include <unordered_map>
 #include <unordered_set>
-#include <algorithm>
-#include <queue>
-#include "vw.h"
+#include <vector>
 
 #include "io/logger.h"
 #include "shared_data.h"
+#include "vw.h"
 
 using namespace VW::LEARNER;
 using namespace VW::config;

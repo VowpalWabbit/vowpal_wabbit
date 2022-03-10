@@ -4,9 +4,9 @@
 #pragma once
 
 #include "debug_log.h"
+#include "example_predict.h"
 #include "interactions_predict.h"
 #include "v_array.h"
-#include "example_predict.h"
 
 #undef VW_DEBUG_LOG
 #define VW_DEBUG_LOG vw_dbg::gd_predict

@@ -4,17 +4,16 @@
 
 #pragma once
 
+#include <algorithm>
+#include <cstddef>
+#include <limits>
+#include <set>
+#include <vector>
+
+#include "constant.h"
 #include "example_predict.h"
 #include "feature_group.h"
 #include "reductions_fwd.h"
-#include "constant.h"
-
-#include <cstddef>
-
-#include <limits>
-#include <vector>
-#include <set>
-#include <algorithm>
 #include "vw_math.h"
 
 namespace INTERACTIONS

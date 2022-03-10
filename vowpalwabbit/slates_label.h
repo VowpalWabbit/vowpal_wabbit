@@ -6,9 +6,9 @@
 
 #include <cstdint>
 
-#include "label_parser.h"
 #include "action_score.h"
 #include "io_buf.h"
+#include "label_parser.h"
 
 namespace VW
 {

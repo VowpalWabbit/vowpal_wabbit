@@ -4,6 +4,7 @@
 
 #pragma once
 #include <vector>
+
 #include "reductions_fwd.h"
 
 namespace VW

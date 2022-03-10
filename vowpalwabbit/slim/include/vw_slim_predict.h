@@ -1,20 +1,20 @@
 #pragma once
 
-#include <memory>
-#include <vector>
-#include <string>
 #include <array>
+#include <memory>
+#include <string>
+#include <vector>
 
 // avoid mmap dependency
 #define DISABLE_SHARED_WEIGHTS
 
+#include "array_parameters_dense.h"
 #include "example_predict.h"
 #include "explore.h"
 #include "gd_predict.h"
 #include "model_parser.h"
 #include "opts.h"
 #include "reductions/interactions.h"
-#include "array_parameters_dense.h"
 
 namespace vw_slim
 {

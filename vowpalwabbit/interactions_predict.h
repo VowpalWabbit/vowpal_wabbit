@@ -4,15 +4,16 @@
 #pragma once
 
 #include <cstdint>
-#include "constant.h"
-#include "feature_group.h"
-#include "example_predict.h"
-#include "vw_exception.h"
-#include "object_pool.h"
+#include <stack>
+#include <string>
 #include <utility>
 #include <vector>
-#include <string>
-#include <stack>
+
+#include "constant.h"
+#include "example_predict.h"
+#include "feature_group.h"
+#include "object_pool.h"
+#include "vw_exception.h"
 
 const static std::pair<std::string, std::string> EMPTY_AUDIT_STRINGS = std::make_pair("", "");
 

@@ -3,22 +3,22 @@
 // license as described in the file LICENSE.
 
 #include "cb_explore.h"
-#include "cb_algs.h"
-#include "rand48.h"
-#include "reductions/bs.h"
-#include "gen_cs_example.h"
-#include "explore.h"
-#include "debug_log.h"
-#include "scope_exit.h"
-#include "vw_versions.h"
-#include "version.h"
-#include "cb_label_parser.h"
-#include <cfloat>
-#include "shared_data.h"
-#include "reductions/bs.h"
 
+#include <cfloat>
 #include <memory>
 #include <utility>
+
+#include "cb_algs.h"
+#include "cb_label_parser.h"
+#include "debug_log.h"
+#include "explore.h"
+#include "gen_cs_example.h"
+#include "rand48.h"
+#include "reductions/bs.h"
+#include "scope_exit.h"
+#include "shared_data.h"
+#include "version.h"
+#include "vw_versions.h"
 
 using namespace VW::LEARNER;
 using namespace ACTION_SCORE;

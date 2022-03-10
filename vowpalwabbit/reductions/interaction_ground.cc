@@ -4,14 +4,14 @@
 
 #include "interaction_ground.h"
 
-#include "prediction_type.h"
 #include "label_dictionary.h"
-#include "vw.h"
-#include "vw_exception.h"
-#include "shared_data.h"
 #include "label_parser.h"
+#include "prediction_type.h"
 #include "reductions/cb/cb_adf.h"
 #include "reductions/cb/cb_algs.h"
+#include "shared_data.h"
+#include "vw.h"
+#include "vw_exception.h"
 
 using namespace VW::LEARNER;
 using namespace VW::config;

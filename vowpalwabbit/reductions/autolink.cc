@@ -4,10 +4,10 @@
 
 #include "autolink.h"
 
-#include "learner.h"
-#include "global_data.h"
-
 #include <cstdint>
+
+#include "global_data.h"
+#include "learner.h"
 
 using namespace VW::config;
 

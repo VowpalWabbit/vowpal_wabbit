@@ -4,11 +4,11 @@
 #pragma once
 
 #include <atomic>
+#include <cfloat>
 #include <cstdint>
 #include <memory>
 #include <ostream>
 #include <string>
-#include <cfloat>
 
 #include "named_labels.h"
 
