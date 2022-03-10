@@ -51,7 +51,7 @@ steps:
   displayName: 'Build vw.sln'
   env:
     nugetPath: $(Build.SourcesDirectory)\vowpalwabbit\.nuget\nuget.exe
-  failOnStderr: true
+  failOnStderr: false
 - script: CALL .scripts/test.cmd
   displayName: 'Run tests'
   env:
