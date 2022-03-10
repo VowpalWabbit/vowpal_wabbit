@@ -52,6 +52,12 @@ steps:
   env:
     nugetPath: $(Build.SourcesDirectory)\vowpalwabbit\.nuget\nuget.exe
   failOnStderr: false
+- task: PublishBuildArtifacts@1
+  displayName: 'Publish Artifact: target'
+  inputs:
+    PathtoPublish: $(Build.SourcesDirectory)\build\binaries
+    ArtifactName: target
+  condition: succeededOrFailed()
 - script: CALL .scripts/test.cmd
   displayName: 'Run tests'
   env:
