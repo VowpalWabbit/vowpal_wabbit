@@ -1,3 +1,5 @@
+include(FlatbufferUtils)
+get_property(flatc_location TARGET flatbuffers::flatc PROPERTY LOCATION)
 add_library(vw_parser_flatbuffer
   parse_example_flatbuffer.h
   parse_example_flatbuffer.cc
@@ -14,8 +16,12 @@ target_include_directories(vw_parser_flatbuffer PUBLIC
 
 target_compile_definitions(vw_parser_flatbuffer PUBLIC BUILD_FLATBUFFERS)
 
-set(EXAMPLE_SCHEMA "${CMAKE_CURRENT_LIST_DIR}/schema/example.fbs")
-build_flatbuffers("${EXAMPLE_SCHEMA}" "" vw_parser_flatbuffer_generate_fb_headers_internal "" "${CMAKE_CURRENT_BINARY_DIR}/vowpalwabbit/parser/flatbuffer/generated" "" "")
+add_flatbuffer_schema(
+  TARGET vw_parser_flatbuffer_generate_fb_headers
+  SCHEMA ${CMAKE_CURRENT_LIST_DIR}/schema/example.fbs
+  OUTPUT_DIR ${CMAKE_CURRENT_BINARY_DIR}/vowpalwabbit/parser/flatbuffer/generated
+  FLATC_EXE ${flatc_location}
+)
 
 add_library(vw_parser_flatbuffer_generate_fb_headers INTERFACE)
 
