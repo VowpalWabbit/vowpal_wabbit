@@ -19,5 +19,5 @@ void read_lines(VW::workspace* all, const char* line, size_t len,
 
 }  // namespace VW
 
-int read_features_string(VW::workspace* all, io_buf& buf, v_array<example*>& examples);
+int read_features_string(VW::workspace* all, io_buf& buf, VW::v_array<example*>& examples);
 size_t read_features(io_buf& buf, char*& line, size_t& num_chars);

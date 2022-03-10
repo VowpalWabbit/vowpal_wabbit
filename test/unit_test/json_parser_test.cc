@@ -392,7 +392,7 @@ BOOST_AUTO_TEST_CASE(parse_json_text_does_not_change_input)
 
   auto* ccb_vw = VW::initialize("--ccb_explore_adf --dsjson --quiet", nullptr, false, nullptr, nullptr);
 
-  v_array<example*> examples;
+  VW::v_array<example*> examples;
   examples.push_back(&VW::get_unused_example(ccb_vw));
   ccb_vw->example_parser->text_reader(ccb_vw, json_text.c_str(), strlen(json_text.c_str()), examples);
 
@@ -420,7 +420,7 @@ BOOST_AUTO_TEST_CASE(parse_json_dedup_cb)
   auto vw = VW::initialize("--json --chain_hash --cb_explore_adf --no_stdin --quiet", nullptr, false, nullptr, nullptr);
 
   std::unordered_map<uint64_t, example*> dedup_examples;
-  v_array<example*> examples;
+  VW::v_array<example*> examples;
 
   // parse first dedup example and store it in dedup_examples map
   examples.push_back(&VW::get_unused_example(vw));
@@ -484,7 +484,7 @@ BOOST_AUTO_TEST_CASE(parse_json_dedup_cb_missing_dedup_id)
   auto vw = VW::initialize("--json --chain_hash --cb_explore_adf --no_stdin --quiet", nullptr, false, nullptr, nullptr);
 
   std::unordered_map<uint64_t, example*> dedup_examples;
-  v_array<example*> examples;
+  VW::v_array<example*> examples;
 
   // parse first dedup example and store it in dedup_examples map
   examples.push_back(&VW::get_unused_example(vw));
@@ -553,7 +553,7 @@ BOOST_AUTO_TEST_CASE(parse_json_dedup_ccb)
       VW::initialize("--json --chain_hash --ccb_explore_adf --no_stdin --quiet", nullptr, false, nullptr, nullptr);
 
   std::unordered_map<uint64_t, example*> dedup_examples;
-  v_array<example*> examples;
+  VW::v_array<example*> examples;
 
   // parse first dedup example and store it in dedup_examples map
   examples.push_back(&VW::get_unused_example(vw));
@@ -671,7 +671,7 @@ BOOST_AUTO_TEST_CASE(parse_json_dedup_ccb_dedup_id_missing)
       VW::initialize("--json --chain_hash --ccb_explore_adf --no_stdin --quiet", nullptr, false, nullptr, nullptr);
 
   std::unordered_map<uint64_t, example*> dedup_examples;
-  v_array<example*> examples;
+  VW::v_array<example*> examples;
 
   // parse first dedup example and store it in dedup_examples map
   examples.push_back(&VW::get_unused_example(vw));
@@ -719,7 +719,7 @@ BOOST_AUTO_TEST_CASE(parse_json_dedup_slates)
   auto vw = VW::initialize("--json --chain_hash --slates --no_stdin --quiet", nullptr, false, nullptr, nullptr);
 
   std::unordered_map<uint64_t, example*> dedup_examples;
-  v_array<example*> examples;
+  VW::v_array<example*> examples;
 
   // parse first dedup example and store it in dedup_examples map
   examples.push_back(&VW::get_unused_example(vw));
@@ -795,7 +795,7 @@ BOOST_AUTO_TEST_CASE(parse_json_dedup_slates_dedup_id_missing)
   auto vw = VW::initialize("--json --chain_hash --slates --no_stdin --quiet", nullptr, false, nullptr, nullptr);
 
   std::unordered_map<uint64_t, example*> dedup_examples;
-  v_array<example*> examples;
+  VW::v_array<example*> examples;
 
   // parse first dedup example and store it in dedup_examples map
   examples.push_back(&VW::get_unused_example(vw));

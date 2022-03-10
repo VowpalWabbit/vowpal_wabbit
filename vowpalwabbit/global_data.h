@@ -341,9 +341,10 @@ private:
 };
 }  // namespace VW
 
-void print_result_by_ref(VW::io::writer* f, float res, float weight, const v_array<char>& tag, VW::io::logger& logger);
+void print_result_by_ref(
+    VW::io::writer* f, float res, float weight, const VW::v_array<char>& tag, VW::io::logger& logger);
 void binary_print_result_by_ref(
-    VW::io::writer* f, float res, float weight, const v_array<char>& tag, VW::io::logger& logger);
+    VW::io::writer* f, float res, float weight, const VW::v_array<char>& tag, VW::io::logger& logger);
 
 void noop_mm(shared_data*, float label);
 void get_prediction(VW::io::reader* f, float& res, float& weight);

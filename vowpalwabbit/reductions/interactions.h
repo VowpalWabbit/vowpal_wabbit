@@ -369,7 +369,7 @@ public:
 
   template <generate_func_t<namespace_index> generate_func, bool leave_duplicate_interactions>
   void update_interactions_if_new_namespace_seen(const std::vector<std::vector<namespace_index>>& interactions,
-      const v_array<namespace_index>& new_example_indices)
+      const VW::v_array<namespace_index>& new_example_indices)
   {
     auto prev_count = all_seen_namespaces.size();
     all_seen_namespaces.insert(new_example_indices.begin(), new_example_indices.end());
@@ -396,7 +396,7 @@ public:
 
   template <generate_func_t<extent_term> generate_func, bool leave_duplicate_interactions>
   void update_extent_interactions_if_new_namespace_seen(const std::vector<std::vector<extent_term>>& interactions,
-      const v_array<namespace_index>& indices, const std::array<features, NUM_NAMESPACES>& feature_space)
+      const VW::v_array<namespace_index>& indices, const std::array<features, NUM_NAMESPACES>& feature_space)
   {
     auto prev_count = all_seen_extents.size();
     for (auto ns_index : indices)

@@ -26,7 +26,7 @@ BOOST_AUTO_TEST_CASE(write_and_read_features_from_cache)
   io_buf io_reader;
   io_reader.add_file(VW::io::create_buffer_view(backing_vector->data(), backing_vector->size()));
 
-  v_array<example*> examples;
+  VW::v_array<example*> examples;
   example dest_ex;
   examples.push_back(&dest_ex);
   VW::read_example_from_cache(&vw, io_reader, examples);

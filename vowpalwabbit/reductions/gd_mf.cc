@@ -23,7 +23,7 @@ using namespace VW::config;
 struct gdmf
 {
   VW::workspace* all = nullptr;  // regressor, printing
-  v_array<float> scalars;
+  VW::v_array<float> scalars;
   uint32_t rank = 0;
   size_t no_win_counter = 0;
   uint64_t early_stop_thres = 0;

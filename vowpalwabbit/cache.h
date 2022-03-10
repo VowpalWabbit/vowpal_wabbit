@@ -23,7 +23,7 @@ struct cache_temp_buffer;
 char* run_len_decode(char* p, size_t& i);
 char* run_len_encode(char* p, size_t i);
 
-void cache_tag(io_buf& cache, const v_array<char>& tag);
+void cache_tag(io_buf& cache, const VW::v_array<char>& tag);
 void output_byte(io_buf& cache, unsigned char s);
 void cache_index(io_buf& cache, unsigned char index, const features& fs, char*& c);
 void cache_features(io_buf& cache, const features& fs, uint64_t mask, char*& c);

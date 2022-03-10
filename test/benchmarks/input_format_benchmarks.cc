@@ -43,7 +43,7 @@ static void bench_cache_io_buf(benchmark::State& state, ExtraArgs&&... extra_arg
   auto* vw = VW::initialize("--cb 2 --quiet");
   io_buf io_buffer;
   io_buffer.add_file(VW::io::create_buffer_view(cache_buffer->data(), cache_buffer->size()));
-  v_array<example*> examples;
+  VW::v_array<example*> examples;
   examples.push_back(&VW::get_unused_example(vw));
 
   for (auto _ : state)
@@ -63,7 +63,7 @@ static void bench_text_io_buf(benchmark::State& state, ExtraArgs&&... extra_args
   auto example_string = res[0];
 
   auto* vw = VW::initialize("--cb 2 --quiet");
-  v_array<example*> examples;
+  VW::v_array<example*> examples;
   io_buf buffer;
   buffer.add_file(VW::io::create_buffer_view(example_string.data(), example_string.size()));
   examples.push_back(&VW::get_unused_example(vw));
@@ -87,7 +87,7 @@ static void benchmark_example_reuse(benchmark::State& state)
   auto* vw = VW::initialize("--quiet", nullptr, false, nullptr, nullptr);
   io_buf buffer;
   buffer.add_file(VW::io::create_buffer_view(example_string.data(), example_string.size()));
-  v_array<example*> examples;
+  VW::v_array<example*> examples;
 
   for (auto _ : state)
   {
