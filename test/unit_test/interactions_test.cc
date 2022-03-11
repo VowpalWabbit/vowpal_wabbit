@@ -61,7 +61,7 @@ void eval_count_of_generated_ft_naive(
   auto interactions = INTERACTIONS::compile_interactions<generate_func, leave_duplicate_interactions>(
       all.interactions, std::set<namespace_index>(ec.indices.begin(), ec.indices.end()));
 
-  v_array<float> results;
+  VW::v_array<float> results;
 
   eval_gen_data dat(new_features_cnt, new_features_value);
   size_t ignored = 0;
@@ -89,7 +89,7 @@ void eval_count_of_generated_ft_naive(
   auto interactions = INTERACTIONS::compile_extent_interactions<generate_func, leave_duplicate_interactions>(
       all.extent_interactions, seen_extents);
 
-  v_array<float> results;
+  VW::v_array<float> results;
 
   eval_gen_data dat(new_features_cnt, new_features_value);
   size_t ignored = 0;

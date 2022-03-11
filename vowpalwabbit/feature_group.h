@@ -417,8 +417,8 @@ struct features
   using const_extent_iterator =
       ns_extent_iterator<const features, const_audit_iterator, std::vector<VW::namespace_extent>::const_iterator>;
 
-  v_array<feature_value> values;           // Always needed.
-  v_array<feature_index> indices;          // Optional for sparse data.
+  VW::v_array<feature_value> values;       // Always needed.
+  VW::v_array<feature_index> indices;      // Optional for sparse data.
   std::vector<audit_strings> space_names;  // Optional for audit mode.
 
   // Each extent represents a range [begin, end) of values which exist in a

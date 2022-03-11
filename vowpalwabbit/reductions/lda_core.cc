@@ -65,14 +65,14 @@ struct lda
 
   size_t finish_example_count = 0;
 
-  v_array<float> Elogtheta;
-  v_array<float> decay_levels;
-  v_array<float> total_new;
-  v_array<example*> examples;
-  v_array<float> total_lambda;
-  v_array<int> doc_lengths;
-  v_array<float> digammas;
-  v_array<float> v;
+  VW::v_array<float> Elogtheta;
+  VW::v_array<float> decay_levels;
+  VW::v_array<float> total_new;
+  VW::v_array<example*> examples;
+  VW::v_array<float> total_lambda;
+  VW::v_array<int> doc_lengths;
+  VW::v_array<float> digammas;
+  VW::v_array<float> v;
   std::vector<index_feature> sorted_features;
 
   bool compute_coherence_metrics = false;
@@ -621,7 +621,7 @@ static inline float average_diff(VW::workspace& all, float* oldgamma, float* new
 }
 
 // Returns E_q[log p(\theta)] - E_q[log q(\theta)].
-float theta_kl(lda& l, v_array<float>& Elogtheta, float* gamma)
+float theta_kl(lda& l, VW::v_array<float>& Elogtheta, float* gamma)
 {
   float gammasum = 0;
   Elogtheta.clear();
@@ -652,8 +652,8 @@ static inline float find_cw(lda& l, float* u_for_w, float* v)
 namespace
 {
 // Effectively, these are static and not visible outside the compilation unit.
-v_array<float> new_gamma;
-v_array<float> old_gamma;
+VW::v_array<float> new_gamma;
+VW::v_array<float> old_gamma;
 }  // namespace
 
 // Returns an estimate of the part of the variational bound that
@@ -661,7 +661,7 @@ v_array<float> old_gamma;
 // setting of lambda based on the document passed in. The value is
 // divided by the total number of words in the document This can be
 // used as a (possibly very noisy) estimate of held-out likelihood.
-float lda_loop(lda& l, v_array<float>& Elogtheta, float* v, example* ec, float)
+float lda_loop(lda& l, VW::v_array<float>& Elogtheta, float* v, example* ec, float)
 {
   parameters& weights = l.all->weights;
   new_gamma.clear();

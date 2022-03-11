@@ -33,7 +33,7 @@ size_t read_features(io_buf& buf, char*& line, size_t& num_chars)
   return num_chars_initial;
 }
 
-int read_features_string(VW::workspace* all, io_buf& buf, v_array<example*>& examples)
+int read_features_string(VW::workspace* all, io_buf& buf, VW::v_array<example*>& examples)
 {
   char* line;
   size_t num_chars;
@@ -71,7 +71,7 @@ public:
   example* _ae;
   std::array<uint64_t, NUM_NAMESPACES>* _affix_features;
   std::array<bool, NUM_NAMESPACES>* _spelling_features;
-  v_array<char> _spelling;
+  VW::v_array<char> _spelling;
   uint32_t _hash_seed;
   uint64_t _parse_mask;
   std::array<std::vector<std::shared_ptr<feature_dict>>, NUM_NAMESPACES>* _namespace_dictionaries;
@@ -254,7 +254,7 @@ public:
           affix_fs.push_back(_v, word_hash, affix_namespace);
           if (audit)
           {
-            v_array<char> affix_v;
+            VW::v_array<char> affix_v;
             if (_index != ' ') affix_v.push_back(_index);
             affix_v.push_back(is_prefix ? '+' : '-');
             affix_v.push_back('0' + static_cast<char>(len));
@@ -294,7 +294,7 @@ public:
         spell_fs.push_back(_v, word_hash, spelling_namespace);
         if (audit)
         {
-          v_array<char> spelling_v;
+          VW::v_array<char> spelling_v;
           if (_index != ' ')
           {
             spelling_v.push_back(_index);
