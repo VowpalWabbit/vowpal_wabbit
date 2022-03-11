@@ -38,8 +38,8 @@ struct cb_explore
 {
   std::shared_ptr<VW::rand_state> _random_state;
   cb_to_cs cbcs;
-  v_array<uint32_t> preds;
-  v_array<float> cover_probs;
+  VW::v_array<uint32_t> preds;
+  VW::v_array<float> cover_probs;
 
   CB::label cb_label;
   COST_SENSITIVE::label cs_label;
@@ -140,7 +140,7 @@ void predict_or_learn_bag(cb_explore& data, single_learner& base, example& ec)
 }
 
 void get_cover_probabilities(
-    cb_explore& data, single_learner& /* base */, example& ec, v_array<action_score>& probs, float min_prob)
+    cb_explore& data, single_learner& /* base */, example& ec, VW::v_array<action_score>& probs, float min_prob)
 {
   float additive_probability = 1.f / static_cast<float>(data.cover_size);
   data.preds.clear();
@@ -178,7 +178,7 @@ void predict_or_learn_cover(cb_explore& data, single_learner& base, example& ec)
   for (uint32_t j = 0; j < num_actions; j++) data.cs_label.costs.push_back({FLT_MAX, j + 1, 0., 0.});
 
   size_t cover_size = data.cover_size;
-  v_array<float>& probabilities = data.cover_probs;
+  VW::v_array<float>& probabilities = data.cover_probs;
 
   float additive_probability = 1.f / static_cast<float>(cover_size);
 

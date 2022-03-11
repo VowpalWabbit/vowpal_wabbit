@@ -39,26 +39,26 @@ struct ect
   uint64_t errors = 0;
   float class_boundary = 0.f;
 
-  v_array<direction> directions;  // The nodes of the tournament datastructure
+  VW::v_array<direction> directions;  // The nodes of the tournament datastructure
 
-  std::vector<std::vector<v_array<uint32_t>>> all_levels;
+  std::vector<std::vector<VW::v_array<uint32_t>>> all_levels;
 
-  v_array<uint32_t> final_nodes;  // The final nodes of each tournament.
+  VW::v_array<uint32_t> final_nodes;  // The final nodes of each tournament.
 
-  v_array<size_t> up_directions;    // On edge e, which node n is in the up direction?
-  v_array<size_t> down_directions;  // On edge e, which node n is in the down direction?
+  VW::v_array<size_t> up_directions;    // On edge e, which node n is in the up direction?
+  VW::v_array<size_t> down_directions;  // On edge e, which node n is in the down direction?
 
   size_t tree_height = 0;  // The height of the final tournament.
 
   uint32_t last_pair = 0;
 
-  v_array<bool> tournaments_won;
+  VW::v_array<bool> tournaments_won;
   VW::io::logger logger;
 
   explicit ect(VW::io::logger logger) : logger(std::move(logger)) {}
 };
 
-bool exists(const v_array<size_t>& db)
+bool exists(const VW::v_array<size_t>& db)
 {
   for (size_t i : db)
     if (i != 0) return true;
@@ -74,10 +74,10 @@ size_t final_depth(size_t eliminations, VW::io::logger& logger)
   return 31;
 }
 
-bool not_empty(std::vector<v_array<uint32_t>> const& tournaments)
+bool not_empty(std::vector<VW::v_array<uint32_t>> const& tournaments)
 {
   auto const first_non_empty_tournament = std::find_if(tournaments.cbegin(), tournaments.cend(),
-      [](const v_array<uint32_t>& tournament) { return !tournament.empty(); });
+      [](const VW::v_array<uint32_t>& tournament) { return !tournament.empty(); });
   return first_non_empty_tournament != tournaments.cend();
 }
 
@@ -85,8 +85,8 @@ size_t create_circuit(ect& e, uint64_t max_label, uint64_t eliminations)
 {
   if (max_label == 1) return 0;
 
-  std::vector<v_array<uint32_t>> tournaments;
-  v_array<uint32_t> t;
+  std::vector<VW::v_array<uint32_t>> tournaments;
+  VW::v_array<uint32_t> t;
 
   for (uint32_t i = 0; i < max_label; i++)
   {
@@ -97,7 +97,7 @@ size_t create_circuit(ect& e, uint64_t max_label, uint64_t eliminations)
 
   tournaments.push_back(t);
 
-  for (size_t i = 0; i < eliminations - 1; i++) tournaments.push_back(v_array<uint32_t>());
+  for (size_t i = 0; i < eliminations - 1; i++) tournaments.push_back(VW::v_array<uint32_t>());
 
   e.all_levels.push_back(tournaments);
 
@@ -107,12 +107,12 @@ size_t create_circuit(ect& e, uint64_t max_label, uint64_t eliminations)
 
   while (not_empty(e.all_levels[level]))
   {
-    std::vector<v_array<uint32_t>> new_tournaments;
+    std::vector<VW::v_array<uint32_t>> new_tournaments;
     tournaments = e.all_levels[level];
 
     for (size_t i = 0; i < tournaments.size(); i++)
     {
-      v_array<uint32_t> empty;
+      VW::v_array<uint32_t> empty;
       new_tournaments.push_back(empty);
     }
 

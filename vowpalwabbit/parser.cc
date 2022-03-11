@@ -460,7 +460,7 @@ void enable_sources(VW::workspace& all, bool quiet, size_t passes, input_options
 
       // create children
       size_t num_children = VW::cast_to_smaller_type<size_t>(all.num_children);
-      v_array<int> children;
+      VW::v_array<int> children;
       children.resize_but_with_stl_behavior(num_children);
       for (size_t i = 0; i < num_children; i++)
       {
@@ -665,7 +665,7 @@ example& get_unused_example(VW::workspace* all)
   return *ex;
 }
 
-void setup_examples(VW::workspace& all, v_array<example*>& examples)
+void setup_examples(VW::workspace& all, VW::v_array<example*>& examples)
 {
   for (example* ae : examples) setup_example(all, ae);
 }
@@ -889,7 +889,7 @@ void finish_example(VW::workspace& all, example& ec)
 }
 }  // namespace VW
 
-void thread_dispatch(VW::workspace& all, const v_array<example*>& examples)
+void thread_dispatch(VW::workspace& all, const VW::v_array<example*>& examples)
 {
   for (auto example : examples) { all.example_parser->ready_parsed_examples.push(example); }
 }
@@ -916,7 +916,7 @@ float get_prediction(example* ec) { return ec->pred.scalar; }
 
 float get_cost_sensitive_prediction(example* ec) { return static_cast<float>(ec->pred.multiclass); }
 
-v_array<float>& get_cost_sensitive_prediction_confidence_scores(example* ec) { return ec->pred.scalars; }
+VW::v_array<float>& get_cost_sensitive_prediction_confidence_scores(example* ec) { return ec->pred.scalars; }
 
 uint32_t* get_multilabel_predictions(example* ec, size_t& len)
 {

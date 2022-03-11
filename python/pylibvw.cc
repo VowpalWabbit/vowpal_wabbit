@@ -558,7 +558,7 @@ void predict_or_learn(vw_ptr& all, py::list& ec)
 
 py::list my_parse(vw_ptr& all, char* str)
 {
-  v_array<example*> examples;
+  VW::v_array<example*> examples;
   examples.push_back(&VW::get_unused_example(all.get()));
   all->example_parser->text_reader(all.get(), str, strlen(str), examples);
 
@@ -577,7 +577,7 @@ void my_learn_multi_ex(vw_ptr& all, py::list& ec) { predict_or_learn<true>(all, 
 
 void my_predict_multi_ex(vw_ptr& all, py::list& ec) { predict_or_learn<false>(all, ec); }
 
-std::string varray_char_to_string(v_array<char>& a)
+std::string varray_char_to_string(VW::v_array<char>& a)
 {
   std::string ret = "";
   for (auto c : a) ret += c;
@@ -585,7 +585,7 @@ std::string varray_char_to_string(v_array<char>& a)
 }
 
 template <class T>
-py::list varray_to_pylist(const v_array<T>& a)
+py::list varray_to_pylist(const VW::v_array<T>& a)
 {
   py::list list;
   for (const auto& elem : a) { list.append(elem); }

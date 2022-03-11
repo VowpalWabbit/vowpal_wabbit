@@ -34,8 +34,8 @@ struct task_data
   float skip_cost;
   bool constraints;
   bool allow_skip;
-  v_array<uint32_t> y_allowed_entity;
-  v_array<uint32_t> y_allowed_relation;
+  VW::v_array<uint32_t> y_allowed_entity;
+  VW::v_array<uint32_t> y_allowed_relation;
   size_t search_order;
   std::array<example, NUM_LDF_ENTITY_EXAMPLES> ldf_entity;
   example* ldf_relation;
@@ -104,7 +104,7 @@ bool check_constraints(size_t ent1_id, size_t ent2_id, size_t rel_id)
   return false;
 }
 
-void decode_tag(const v_array<char>& tag, char& type, int& id1, int& id2)
+void decode_tag(const VW::v_array<char>& tag, char& type, int& id1, int& id2)
 {
   std::string s1;
   std::string s2;
@@ -127,13 +127,13 @@ void decode_tag(const v_array<char>& tag, char& type, int& id1, int& id2)
 }
 
 size_t predict_entity(
-    Search::search& sch, example* ex, v_array<size_t>& /*predictions*/, ptag my_tag, bool isLdf = false)
+    Search::search& sch, example* ex, VW::v_array<size_t>& /*predictions*/, ptag my_tag, bool isLdf = false)
 {
   task_data* my_task_data = sch.get_task_data<task_data>();
   size_t prediction;
   if (my_task_data->allow_skip)
   {
-    v_array<uint32_t> star_labels;
+    VW::v_array<uint32_t> star_labels;
     star_labels.push_back(ex->l.multi.label);
     star_labels.push_back(LABEL_SKIP);
     my_task_data->y_allowed_entity.push_back(LABEL_SKIP);
@@ -185,14 +185,15 @@ size_t predict_entity(
   sch.loss(loss);
   return prediction;
 }
-size_t predict_relation(Search::search& sch, example* ex, v_array<size_t>& predictions, ptag my_tag, bool isLdf = false)
+size_t predict_relation(
+    Search::search& sch, example* ex, VW::v_array<size_t>& predictions, ptag my_tag, bool isLdf = false)
 {
   char type;
   int id1, id2;
   task_data* my_task_data = sch.get_task_data<task_data>();
   size_t hist[2];
   decode_tag(ex->tag, type, id1, id2);
-  v_array<uint32_t> constrained_relation_labels;
+  VW::v_array<uint32_t> constrained_relation_labels;
   if (my_task_data->constraints && predictions[id1] != 0 && predictions[id2] != 0)
   {
     hist[0] = predictions[id1];
@@ -213,7 +214,7 @@ size_t predict_relation(Search::search& sch, example* ex, v_array<size_t>& predi
   size_t prediction;
   if (my_task_data->allow_skip)
   {
-    v_array<uint32_t> star_labels;
+    VW::v_array<uint32_t> star_labels;
     star_labels.push_back(ex->l.multi.label);
     star_labels.push_back(LABEL_SKIP);
     constrained_relation_labels.push_back(LABEL_SKIP);
@@ -276,7 +277,7 @@ size_t predict_relation(Search::search& sch, example* ex, v_array<size_t>& predi
   return prediction;
 }
 
-void entity_first_decoding(Search::search& sch, multi_ex& ec, v_array<size_t>& predictions, bool isLdf = false)
+void entity_first_decoding(Search::search& sch, multi_ex& ec, VW::v_array<size_t>& predictions, bool isLdf = false)
 {
   // ec.size = #entity + #entity*(#entity-1)/2
   size_t n_ent = static_cast<size_t>(std::sqrt(ec.size() * 8 + 1) - 1) / 2;
@@ -290,7 +291,7 @@ void entity_first_decoding(Search::search& sch, multi_ex& ec, v_array<size_t>& p
   }
 }
 
-void er_mixed_decoding(Search::search& sch, multi_ex& ec, v_array<size_t>& predictions)
+void er_mixed_decoding(Search::search& sch, multi_ex& ec, VW::v_array<size_t>& predictions)
 {
   // ec.size = #entity + #entity*(#entity-1)/2
   uint32_t n_ent = static_cast<uint32_t>((std::sqrt(ec.size() * 8 + 1) - 1) / 2);
@@ -320,7 +321,7 @@ void er_mixed_decoding(Search::search& sch, multi_ex& ec, v_array<size_t>& predi
   }
 }
 
-void er_allow_skip_decoding(Search::search& sch, multi_ex& ec, v_array<size_t>& predictions)
+void er_allow_skip_decoding(Search::search& sch, multi_ex& ec, VW::v_array<size_t>& predictions)
 {
   task_data* my_task_data = sch.get_task_data<task_data>();
   // ec.size = #entity + #entity*(#entity-1)/2
@@ -373,7 +374,7 @@ void run(Search::search& sch, multi_ex& ec)
 {
   task_data* my_task_data = sch.get_task_data<task_data>();
 
-  v_array<size_t> predictions;
+  VW::v_array<size_t> predictions;
   for (size_t i = 0; i < ec.size(); i++) { predictions.push_back(0); }
 
   switch (my_task_data->search_order)

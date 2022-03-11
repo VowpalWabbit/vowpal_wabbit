@@ -165,8 +165,8 @@ struct memory_tree
   std::shared_ptr<VW::rand_state> _random_state;
 
   std::vector<node> nodes;  // array of nodes.
-  // v_array<node> nodes;         // array of nodes.
-  v_array<example*> examples;  // array of example points
+  // VW::v_array<node> nodes;         // array of nodes.
+  VW::v_array<example*> examples;  // array of example points
 
   size_t max_leaf_examples = 0;
   size_t max_nodes = 0;
@@ -504,7 +504,7 @@ void split_leaf(memory_tree& b, single_learner& base, const uint64_t cn)
 
 int compare_label(const void* a, const void* b) { return *(uint32_t*)a - *(uint32_t*)b; }
 
-inline uint32_t over_lap(v_array<uint32_t>& array_1, v_array<uint32_t>& array_2)
+inline uint32_t over_lap(VW::v_array<uint32_t>& array_1, VW::v_array<uint32_t>& array_2)
 {
   uint32_t num_overlap = 0;
 
@@ -532,13 +532,13 @@ inline uint32_t over_lap(v_array<uint32_t>& array_1, v_array<uint32_t>& array_2)
 }
 
 // template<typename T>
-inline uint32_t hamming_loss(v_array<uint32_t>& array_1, v_array<uint32_t>& array_2)
+inline uint32_t hamming_loss(VW::v_array<uint32_t>& array_1, VW::v_array<uint32_t>& array_2)
 {
   uint32_t overlap = over_lap(array_1, array_2);
   return static_cast<uint32_t>(array_1.size() + array_2.size() - 2 * overlap);
 }
 
-void collect_labels_from_leaf(memory_tree& b, const uint64_t cn, v_array<uint32_t>& leaf_labs)
+void collect_labels_from_leaf(memory_tree& b, const uint64_t cn, VW::v_array<uint32_t>& leaf_labs)
 {
   if (b.nodes[cn].internal != -1) b.all->logger.out_error("something is wrong, it should be a leaf node");
 
@@ -555,7 +555,7 @@ void collect_labels_from_leaf(memory_tree& b, const uint64_t cn, v_array<uint32_
 
 inline void train_one_against_some_at_leaf(memory_tree& b, single_learner& base, const uint64_t cn, example& ec)
 {
-  v_array<uint32_t> leaf_labs;
+  VW::v_array<uint32_t> leaf_labs;
   collect_labels_from_leaf(b, cn, leaf_labs);  // unique labels from the leaf.
   MULTILABEL::labels multilabels = ec.l.multilabels;
   MULTILABEL::labels preds = ec.pred.multilabels;
@@ -573,10 +573,10 @@ inline void train_one_against_some_at_leaf(memory_tree& b, single_learner& base,
 }
 
 inline uint32_t compute_hamming_loss_via_oas(
-    memory_tree& b, single_learner& base, const uint64_t cn, example& ec, v_array<uint32_t>& selected_labs)
+    memory_tree& b, single_learner& base, const uint64_t cn, example& ec, VW::v_array<uint32_t>& selected_labs)
 {
   selected_labs.clear();
-  v_array<uint32_t> leaf_labs;
+  VW::v_array<uint32_t> leaf_labs;
   collect_labels_from_leaf(b, cn, leaf_labs);  // unique labels stored in the leaf.
   MULTILABEL::labels multilabels = ec.l.multilabels;
   MULTILABEL::labels preds = ec.pred.multilabels;
@@ -713,7 +713,7 @@ void predict(memory_tree& b, single_learner& base, example& ec)
       reward = F1_score_for_two_examples(ec, *b.examples[closest_ec]);
       b.F1_score += reward;
     }
-    v_array<uint32_t> selected_labs;
+    VW::v_array<uint32_t> selected_labs;
     ec.loss = static_cast<float>(compute_hamming_loss_via_oas(b, base, cn, ec, selected_labs));
     b.hamming_loss += ec.loss;
   }
@@ -812,7 +812,7 @@ void learn_at_leaf_random(
 }
 
 void route_to_leaf(memory_tree& b, single_learner& base, const uint32_t& ec_array_index, uint64_t cn,
-    v_array<uint64_t>& path, bool insertion)
+    VW::v_array<uint64_t>& path, bool insertion)
 {
   example& ec = *b.examples[ec_array_index];
 
@@ -868,7 +868,7 @@ void route_to_leaf(memory_tree& b, single_learner& base, const uint32_t& ec_arra
 // we roll in, then stop at a random step, do exploration. //no real insertion happens in the function.
 void single_query_and_learn(memory_tree& b, single_learner& base, const uint32_t& ec_array_index, example& ec)
 {
-  v_array<uint64_t> path_to_leaf;
+  VW::v_array<uint64_t> path_to_leaf;
   route_to_leaf(b, base, ec_array_index, 0, path_to_leaf, false);  // no insertion happens here.
 
   if (path_to_leaf.size() > 1)
@@ -988,7 +988,7 @@ void experience_replay(memory_tree& b, single_learner& base)
     {
       if (b.dream_at_update == false)
       {
-        v_array<uint64_t> tmp_path;
+        VW::v_array<uint64_t> tmp_path;
         route_to_leaf(b, base, ec_id, 0, tmp_path, true);
       }
       else

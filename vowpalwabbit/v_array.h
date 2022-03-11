@@ -3,6 +3,7 @@
 // license as described in the file LICENSE.
 
 #pragma once
+#include "future_compat.h"
 #ifndef NOMINMAX
 #  define NOMINMAX
 #endif
@@ -22,6 +23,8 @@
 
 #include "memory.h"
 
+namespace VW
+{
 /**
  * \brief This is a diagnostic overload used to prevent v_array from being used with types that are not trivially
  * copyable.
@@ -375,22 +378,19 @@ public:
     if (_end == _end_array) reserve_nocheck(2 * capacity() + 3);
     new (_end++) T(std::forward<Args>(args)...);
   }
+
+  // Why use hidden friend? https://jacquesheunis.com/post/hidden-friend-compilation/
+  friend std::ostream& operator<<(std::ostream& os, const v_array<T>& v)
+  {
+    os << '[';
+    for (auto i = v.cbegin(); i != v.cend(); ++i) os << ' ' << *i;
+    os << " ]";
+    return os;
+  }
 };
 
-template <class T>
-std::ostream& operator<<(std::ostream& os, const v_array<T>& v)
-{
-  os << '[';
-  for (auto i = v.cbegin(); i != v.cend(); ++i) os << ' ' << *i;
-  os << " ]";
-  return os;
-}
+}  // namespace VW
 
-template <class T, class U>
-std::ostream& operator<<(std::ostream& os, const v_array<std::pair<T, U> >& v)
-{
-  os << '[';
-  for (auto i = v.cbegin(); i != v.cend(); ++i) os << ' ' << i->first << ':' << i->second;
-  os << " ]";
-  return os;
-}
+// This is deprecated. Cannot mark templates as deprecated though so a message must suffice.
+template <typename T>
+using v_array = VW::v_array<T>;

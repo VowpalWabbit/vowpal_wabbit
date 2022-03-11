@@ -75,7 +75,7 @@ void send_prediction(VW::io::writer* f, global_prediction p)
     THROWERRNO("send_prediction write(unknown socket fd)");
 }
 
-void binary_print_result_by_ref(VW::io::writer* f, float res, float weight, const v_array<char>&, VW::io::logger&)
+void binary_print_result_by_ref(VW::io::writer* f, float res, float weight, const VW::v_array<char>&, VW::io::logger&)
 {
   if (f != nullptr)
   {
@@ -98,7 +98,7 @@ void workspace::build_setupfn_name_dict(std::vector<std::tuple<std::string, redu
 }
 }  // namespace VW
 
-void print_result_by_ref(VW::io::writer* f, float res, float, const v_array<char>& tag, VW::io::logger& logger)
+void print_result_by_ref(VW::io::writer* f, float res, float, const VW::v_array<char>& tag, VW::io::logger& logger)
 {
   if (f != nullptr)
   {
@@ -114,7 +114,8 @@ void print_result_by_ref(VW::io::writer* f, float res, float, const v_array<char
   }
 }
 
-void print_raw_text_by_ref(VW::io::writer* f, const std::string& s, const v_array<char>& tag, VW::io::logger& logger)
+void print_raw_text_by_ref(
+    VW::io::writer* f, const std::string& s, const VW::v_array<char>& tag, VW::io::logger& logger)
 {
   if (f == nullptr) return;
 
