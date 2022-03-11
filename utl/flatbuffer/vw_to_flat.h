@@ -57,7 +57,7 @@ class to_flat
 {
 public:
   std::string output_flatbuffer_name;
-  size_t collection_size = 0;
+  uint64_t collection_size = 0;
   bool collection = false;
   void convert_txt_to_flat(VW::workspace& all);
 
@@ -70,21 +70,21 @@ private:
   uint32_t _multi_ex_index = 0;
   int _examples = 0;
 
-  void create_simple_label(example* v, ExampleBuilder& ex_builder);
-  void create_cb_label(example* v, ExampleBuilder& ex_builder);
-  void create_ccb_label(example* v, ExampleBuilder& ex_builder);
-  void create_cb_eval_label(example* v, ExampleBuilder& ex_builder);
-  void create_mc_label(VW::named_labels* ldict, example* v, ExampleBuilder& ex_builder);
-  void create_multi_label(example* v, ExampleBuilder& ex_builder);
-  void create_slates_label(example* v, ExampleBuilder& ex_builder);
-  void create_cs_label(example* v, ExampleBuilder& ex_builder);
-  void create_no_label(example* v, ExampleBuilder& ex_builder);
-  void create_continuous_action_label(example* v, ExampleBuilder& ex_builder);
+  void create_simple_label(VW::example* v, ExampleBuilder& ex_builder);
+  void create_cb_label(VW::example* v, ExampleBuilder& ex_builder);
+  void create_ccb_label(VW::example* v, ExampleBuilder& ex_builder);
+  void create_cb_eval_label(VW::example* v, ExampleBuilder& ex_builder);
+  void create_mc_label(VW::named_labels* ldict, VW::example* v, ExampleBuilder& ex_builder);
+  void create_multi_label(VW::example* v, ExampleBuilder& ex_builder);
+  void create_slates_label(VW::example* v, ExampleBuilder& ex_builder);
+  void create_cs_label(VW::example* v, ExampleBuilder& ex_builder);
+  void create_no_label(VW::example* v, ExampleBuilder& ex_builder);
+  void create_continuous_action_label(VW::example* v, ExampleBuilder& ex_builder);
   // helpers
   void write_collection_to_file(bool is_multiline, std::ofstream& outfile);
   void write_to_file(bool collection, bool is_multiline, MultiExampleBuilder& multi_ex_builder,
       ExampleBuilder& ex_builder, std::ofstream& outfile);
 
   flatbuffers::Offset<VW::parsers::flatbuffer::Namespace> create_namespace(
-      features::audit_iterator begin, features::audit_iterator end, namespace_index index, uint64_t hash, bool audit);
+      features::audit_iterator begin, features::audit_iterator end, VW::namespace_index index, uint64_t hash, bool audit);
 };
