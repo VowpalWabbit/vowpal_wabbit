@@ -879,8 +879,6 @@ void save_load_online_state(VW::workspace& all, io_buf& model_file, bool read, b
         }
       }
 
-      std::cout << ftrl_size << std::endl;
-
       if (ftrl_size == 3)
       {
         if (*v != 0. || (&(*v))[1] != 0. || (&(*v))[2] != 0.)
