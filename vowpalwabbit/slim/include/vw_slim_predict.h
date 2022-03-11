@@ -295,7 +295,8 @@ public:
   }
 
   // multiclass classification
-  int predict(VW::example_predict& shared, VW::example_predict* actions, size_t num_actions, std::vector<float>& out_scores)
+  int predict(
+      VW::example_predict& shared, VW::example_predict* actions, size_t num_actions, std::vector<float>& out_scores)
   {
     if (!_model_loaded) return E_VW_PREDICT_ERR_NO_MODEL_LOADED;
 

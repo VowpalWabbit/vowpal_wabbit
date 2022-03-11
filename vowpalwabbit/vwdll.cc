@@ -176,7 +176,10 @@ extern "C"
     return VW::get_importance(static_cast<VW::example*>(e));
   }
 
-  VW_DLL_PUBLIC float VW_CALLING_CONV VW_GetInitial(VW_EXAMPLE e) { return VW::get_initial(static_cast<VW::example*>(e)); }
+  VW_DLL_PUBLIC float VW_CALLING_CONV VW_GetInitial(VW_EXAMPLE e)
+  {
+    return VW::get_initial(static_cast<VW::example*>(e));
+  }
 
   VW_DLL_PUBLIC float VW_CALLING_CONV VW_GetPrediction(VW_EXAMPLE e)
   {
@@ -198,7 +201,10 @@ extern "C"
     return VW::get_tag_length(static_cast<VW::example*>(e));
   }
 
-  VW_DLL_PUBLIC const char* VW_CALLING_CONV VW_GetTag(VW_EXAMPLE e) { return VW::get_tag(static_cast<VW::example*>(e)); }
+  VW_DLL_PUBLIC const char* VW_CALLING_CONV VW_GetTag(VW_EXAMPLE e)
+  {
+    return VW::get_tag(static_cast<VW::example*>(e));
+  }
 
   VW_DLL_PUBLIC size_t VW_CALLING_CONV VW_GetFeatureNumber(VW_EXAMPLE e)
   {

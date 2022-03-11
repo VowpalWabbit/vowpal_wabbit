@@ -191,8 +191,8 @@ public:
 
   size_t t = 0;                                     // current search step
   size_t T = 0;                                     // length of root trajectory
-  std::vector<VW::example> learn_ec_copy;               // copy of example(s) at learn_t
-  VW::example* learn_ec_ref = nullptr;                  // reference to example at learn_t, when there's no example munging
+  std::vector<VW::example> learn_ec_copy;           // copy of example(s) at learn_t
+  VW::example* learn_ec_ref = nullptr;              // reference to example at learn_t, when there's no example munging
   size_t learn_ec_ref_cnt = 0;                      // how many are there (for LDF mode only; otherwise 1)
   v_array<ptag> learn_condition_on;                 // a copy of the tags used for conditioning at the training position
   std::vector<action_repr> learn_condition_on_act;  // the actions taken

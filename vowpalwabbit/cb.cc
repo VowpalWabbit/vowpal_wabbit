@@ -123,8 +123,8 @@ std::string known_cost_to_str(const CB::cb_class* known_cost)
   return label_string.str();
 }
 
-void print_update(VW::workspace& all, bool is_test, const VW::example& ec, const VW::multi_ex* ec_seq, bool action_scores,
-    const CB::cb_class* known_cost)
+void print_update(VW::workspace& all, bool is_test, const VW::example& ec, const VW::multi_ex* ec_seq,
+    bool action_scores, const CB::cb_class* known_cost)
 {
   if (all.sd->weighted_examples() >= all.sd->dump_interval && !all.quiet && !all.bfgs)
   {

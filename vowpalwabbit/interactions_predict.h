@@ -88,15 +88,15 @@ inline bool term_is_empty(VW::namespace_index term, const std::array<features, N
   return feature_groups[term].empty();
 }
 
-inline bool has_empty_interaction_quadratic(
-    const std::array<features, NUM_NAMESPACES>& feature_groups, const std::vector<VW::namespace_index>& namespace_indexes)
+inline bool has_empty_interaction_quadratic(const std::array<features, NUM_NAMESPACES>& feature_groups,
+    const std::vector<VW::namespace_index>& namespace_indexes)
 {
   assert(namespace_indexes.size() == 2);
   return term_is_empty(namespace_indexes[0], feature_groups) || term_is_empty(namespace_indexes[1], feature_groups);
 }
 
-inline bool has_empty_interaction_cubic(
-    const std::array<features, NUM_NAMESPACES>& feature_groups, const std::vector<VW::namespace_index>& namespace_indexes)
+inline bool has_empty_interaction_cubic(const std::array<features, NUM_NAMESPACES>& feature_groups,
+    const std::vector<VW::namespace_index>& namespace_indexes)
 {
   assert(namespace_indexes.size() == 3);
   return term_is_empty(namespace_indexes[0], feature_groups) || term_is_empty(namespace_indexes[1], feature_groups) ||
@@ -104,8 +104,8 @@ inline bool has_empty_interaction_cubic(
   ;
 }
 
-inline bool has_empty_interaction(
-    const std::array<features, NUM_NAMESPACES>& feature_groups, const std::vector<VW::namespace_index>& namespace_indexes)
+inline bool has_empty_interaction(const std::array<features, NUM_NAMESPACES>& feature_groups,
+    const std::vector<VW::namespace_index>& namespace_indexes)
 {
   return std::any_of(namespace_indexes.begin(), namespace_indexes.end(),
       [&](VW::namespace_index idx) { return term_is_empty(idx, feature_groups); });
@@ -133,7 +133,8 @@ inline float INTERACTION_VALUE(float value1, float value2) { return value1 * val
 // #define GEN_INTER_LOOP
 
 std::tuple<features_range_t, features_range_t> inline generate_quadratic_char_combination(
-    const std::array<features, NUM_NAMESPACES>& feature_groups, VW::namespace_index ns_idx1, VW::namespace_index ns_idx2)
+    const std::array<features, NUM_NAMESPACES>& feature_groups, VW::namespace_index ns_idx1,
+    VW::namespace_index ns_idx2)
 {
   return {std::make_tuple(std::make_pair(feature_groups[ns_idx1].audit_begin(), feature_groups[ns_idx1].audit_end()),
       std::make_pair(feature_groups[ns_idx2].audit_begin(), feature_groups[ns_idx2].audit_end()))};
@@ -210,8 +211,8 @@ void generate_generic_extent_combination_iterative(const std::array<features, NU
 }
 
 std::tuple<features_range_t, features_range_t, features_range_t> inline generate_cubic_char_combination(
-    const std::array<features, NUM_NAMESPACES>& feature_groups, VW::namespace_index ns_idx1, VW::namespace_index ns_idx2,
-    VW::namespace_index ns_idx3)
+    const std::array<features, NUM_NAMESPACES>& feature_groups, VW::namespace_index ns_idx1,
+    VW::namespace_index ns_idx2, VW::namespace_index ns_idx3)
 {
   return {std::make_tuple(std::make_pair(feature_groups[ns_idx1].audit_begin(), feature_groups[ns_idx1].audit_end()),
       std::make_pair(feature_groups[ns_idx2].audit_begin(), feature_groups[ns_idx2].audit_end()),

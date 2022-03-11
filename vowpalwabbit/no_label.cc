@@ -35,9 +35,9 @@ VW::label_parser no_label_parser = {
     // default_label
     [](VW::polylabel& /* label */) {},
     // parse_label
-    [](VW::polylabel& /* label */, VW::reduction_features& /* red_features */, VW::label_parser_reuse_mem& /* reuse_mem */,
-        const VW::named_labels* /* ldict */, const std::vector<VW::string_view>& words,
-        VW::io::logger& logger) { parse_no_label(words, logger); },
+    [](VW::polylabel& /* label */, VW::reduction_features& /* red_features */,
+        VW::label_parser_reuse_mem& /* reuse_mem */, const VW::named_labels* /* ldict */,
+        const std::vector<VW::string_view>& words, VW::io::logger& logger) { parse_no_label(words, logger); },
     // cache_label
     [](const VW::polylabel& /* label */, const VW::reduction_features& /* red_features */, io_buf& /* cache */,
         const std::string&, bool) -> size_t { return 1; },

@@ -157,8 +157,8 @@ VW::label_parser cs_label = {
     // label type
     VW::label_type_t::cs};
 
-void print_update(VW::workspace& all, bool is_test, const VW::example& ec, const VW::multi_ex* ec_seq, bool action_scores,
-    uint32_t prediction)
+void print_update(VW::workspace& all, bool is_test, const VW::example& ec, const VW::multi_ex* ec_seq,
+    bool action_scores, uint32_t prediction)
 {
   if (all.sd->weighted_examples() >= all.sd->dump_interval && !all.quiet && !all.bfgs)
   {

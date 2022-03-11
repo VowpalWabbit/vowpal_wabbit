@@ -261,10 +261,11 @@ public:
   // tell the predictor what to use as input. a single example input
   // means non-LDF mode; an array of inputs means LDF mode
   predictor& set_input(VW::example& input_example);
-  predictor& set_input(VW::example* input_example, size_t input_length);  // if you're lucky and have an array of examples
+  predictor& set_input(
+      VW::example* input_example, size_t input_length);  // if you're lucky and have an array of examples
 
   // the following is mostly to make life manageable for the Python interface
-  void set_input_length(size_t input_length);              // declare that we have an input_length-long LDF example
+  void set_input_length(size_t input_length);                  // declare that we have an input_length-long LDF example
   void set_input_at(size_t posn, VW::example& input_example);  // set the corresponding input (*after* set_input_length)
 
   // different ways of adding to the list of oracle actions. you can

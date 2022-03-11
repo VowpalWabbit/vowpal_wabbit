@@ -23,7 +23,8 @@ namespace INTERACTIONS
 namespace
 {
 template <typename FuncT>
-void for_each_value(const std::array<features, NUM_NAMESPACES>& feature_spaces, VW::namespace_index term, const FuncT& func)
+void for_each_value(
+    const std::array<features, NUM_NAMESPACES>& feature_spaces, VW::namespace_index term, const FuncT& func)
 {
   for (auto value : feature_spaces[term].values) { func(value); }
 }

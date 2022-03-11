@@ -84,8 +84,8 @@ void predict(ftrl& b, base_learner&, VW::example& ec)
 }
 
 template <bool audit>
-void multipredict(
-    ftrl& b, base_learner&, VW::example& ec, size_t count, size_t step, VW::polyprediction* pred, bool finalize_predictions)
+void multipredict(ftrl& b, base_learner&, VW::example& ec, size_t count, size_t step, VW::polyprediction* pred,
+    bool finalize_predictions)
 {
   VW::workspace& all = *b.all;
   for (size_t c = 0; c < count; c++)

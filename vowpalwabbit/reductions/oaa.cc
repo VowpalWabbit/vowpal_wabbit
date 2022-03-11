@@ -21,7 +21,7 @@ struct oaa
 {
   uint64_t k = 0;
   VW::workspace* all = nullptr;         // for raw
-  VW::polyprediction* pred = nullptr;       // for multipredict
+  VW::polyprediction* pred = nullptr;   // for multipredict
   uint64_t num_subsample = 0;           // for randomized subsampling, how many negatives to draw?
   uint32_t* subsample_order = nullptr;  // for randomized subsampling, in what order should we touch classes
   size_t subsample_id = 0;              // for randomized subsampling, where do we live in the list

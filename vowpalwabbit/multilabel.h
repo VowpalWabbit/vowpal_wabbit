@@ -10,7 +10,7 @@ namespace VW
 {
 struct workspace;
 struct example;
-}
+}  // namespace VW
 
 namespace MULTILABEL
 {

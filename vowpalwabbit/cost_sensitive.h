@@ -14,7 +14,7 @@ namespace VW
 {
 struct example;
 struct workspace;
-}
+}  // namespace VW
 
 namespace COST_SENSITIVE
 {

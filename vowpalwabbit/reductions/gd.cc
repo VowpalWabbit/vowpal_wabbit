@@ -387,8 +387,8 @@ inline void vec_add_trunc_multipredict(multipredict_info<T>& mp, const float fx,
 }
 
 template <bool l1, bool audit>
-void multipredict(
-    gd& g, base_learner&, VW::example& ec, size_t count, size_t step, VW::polyprediction* pred, bool finalize_predictions)
+void multipredict(gd& g, base_learner&, VW::example& ec, size_t count, size_t step, VW::polyprediction* pred,
+    bool finalize_predictions)
 {
   VW::workspace& all = *g.all;
   for (size_t c = 0; c < count; c++)
@@ -1350,14 +1350,14 @@ base_learner* setup(VW::setup_base_i& stack_builder)
   gd* bare = g.get();
   learner<gd, VW::example>* l = make_base_learner(std::move(g), g->learn, bare->predict,
       stack_builder.get_setupfn_name(setup), VW::prediction_type_t::scalar, VW::label_type_t::simple)
-                                .set_learn_returns_prediction(true)
-                                .set_params_per_weight(UINT64_ONE << all.weights.stride_shift())
-                                .set_sensitivity(bare->sensitivity)
-                                .set_multipredict(bare->multipredict)
-                                .set_update(bare->update)
-                                .set_save_load(save_load)
-                                .set_end_pass(end_pass)
-                                .build();
+                                    .set_learn_returns_prediction(true)
+                                    .set_params_per_weight(UINT64_ONE << all.weights.stride_shift())
+                                    .set_sensitivity(bare->sensitivity)
+                                    .set_multipredict(bare->multipredict)
+                                    .set_update(bare->update)
+                                    .set_save_load(save_load)
+                                    .set_end_pass(end_pass)
+                                    .build();
   return make_base(*l);
 }
 

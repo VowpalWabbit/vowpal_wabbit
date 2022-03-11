@@ -446,7 +446,8 @@ void global_print_newline(VW::workspace& all)
   }
 }
 
-void output_example(VW::workspace& all, const VW::example& ec, bool& hit_loss, const VW::multi_ex* ec_seq, const ldf& data)
+void output_example(
+    VW::workspace& all, const VW::example& ec, bool& hit_loss, const VW::multi_ex* ec_seq, const ldf& data)
 {
   const label& ld = ec.l.cs;
   const auto& costs = ld.costs;

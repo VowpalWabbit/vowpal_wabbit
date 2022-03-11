@@ -9,7 +9,7 @@ namespace VW
 {
 struct example;
 struct workspace;
-}
+}  // namespace VW
 
 namespace MULTICLASS
 {

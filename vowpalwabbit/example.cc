@@ -13,7 +13,6 @@
 #include "simple_label_parser.h"
 #include "text_utils.h"
 
-
 float calculate_total_sum_features_squared(bool permutations, VW::example& ec)
 {
   float sum_features_squared = 0.f;
@@ -34,16 +33,15 @@ VW::example::~example()
   }
 }
 
-
 float VW::example::get_total_sum_feat_sq()
+{
+  if (!total_sum_feat_sq_calculated)
   {
-    if (!total_sum_feat_sq_calculated)
-    {
-      total_sum_feat_sq = calculate_total_sum_features_squared(use_permutations, *this);
-      total_sum_feat_sq_calculated = true;
-    }
-    return total_sum_feat_sq;
+    total_sum_feat_sq = calculate_total_sum_features_squared(use_permutations, *this);
+    total_sum_feat_sq_calculated = true;
   }
+  return total_sum_feat_sq;
+}
 
 float collision_cleanup(features& fs)
 {
@@ -237,7 +235,6 @@ void free_flatten_example(flat_example* fec)
     free(fec);
   }
 }
-
 
 example* alloc_examples(size_t count)
 {

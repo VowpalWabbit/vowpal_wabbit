@@ -172,8 +172,8 @@ VW::LEARNER::base_learner* generate_interactions_setup(VW::setup_base_i& stack_b
   { return nullptr; }
 
   using learn_pred_func_t = void (*)(INTERACTIONS::interactions_generator&, VW::LEARNER::single_learner&, VW::example&);
-  using multipredict_func_t = void (*)(INTERACTIONS::interactions_generator&, VW::LEARNER::single_learner&, VW::example&,
-      size_t, size_t, VW::polyprediction*, bool);
+  using multipredict_func_t = void (*)(INTERACTIONS::interactions_generator&, VW::LEARNER::single_learner&,
+      VW::example&, size_t, size_t, VW::polyprediction*, bool);
   learn_pred_func_t learn_func;
   learn_pred_func_t pred_func;
   learn_pred_func_t update_func;
@@ -185,22 +185,22 @@ VW::LEARNER::base_learner* generate_interactions_setup(VW::setup_base_i& stack_b
     {
       learn_func = transform_single_ex<true,  // is_learn
           INTERACTIONS::generate_namespace_permutations_with_repetition<
-              VW::namespace_index>,                                                        // generate_fn<VW::namespace_index>
+              VW::namespace_index>,  // generate_fn<VW::namespace_index>
           INTERACTIONS::generate_namespace_permutations_with_repetition<extent_term>,  // generate_fn<extent_term>
           true                                                                         // leave_duplicate_interactions
           >;
       pred_func = transform_single_ex<false,  // is_learn
           INTERACTIONS::generate_namespace_permutations_with_repetition<
-              VW::namespace_index>,                                                        // generate_fn<VW::namespace_index>
+              VW::namespace_index>,  // generate_fn<VW::namespace_index>
           INTERACTIONS::generate_namespace_permutations_with_repetition<extent_term>,  // generate_fn<extent_term>
           true                                                                         // leave_duplicate_interactions
           >;
       update_func = update<INTERACTIONS::generate_namespace_permutations_with_repetition<
-                               VW::namespace_index>,                                       // generate_fn<VW::namespace_index>
+                               VW::namespace_index>,  // generate_fn<VW::namespace_index>
           INTERACTIONS::generate_namespace_permutations_with_repetition<extent_term>,  // generate_fn<extent_term>
           true>;
       multipredict_func = multipredict<INTERACTIONS::generate_namespace_permutations_with_repetition<
-                                           VW::namespace_index>,                           // generate_fn<VW::namespace_index>
+                                           VW::namespace_index>,  // generate_fn<VW::namespace_index>
           INTERACTIONS::generate_namespace_permutations_with_repetition<extent_term>,  // generate_fn<extent_term>
           true>;
     }
@@ -209,20 +209,20 @@ VW::LEARNER::base_learner* generate_interactions_setup(VW::setup_base_i& stack_b
       learn_func = transform_single_ex<true,  // is_learn
           INTERACTIONS::generate_namespace_permutations_with_repetition<
               VW::namespace_index>,  // generate_fn<VW::namespace_index>
-          true                   // leave_duplicate_interactions
+          true                       // leave_duplicate_interactions
           >;
       pred_func = transform_single_ex<false,  // is_learn
           INTERACTIONS::generate_namespace_permutations_with_repetition<
               VW::namespace_index>,  // generate_fn<VW::namespace_index>
-          true                   // leave_duplicate_interactions
+          true                       // leave_duplicate_interactions
           >;
       update_func = update<INTERACTIONS::generate_namespace_permutations_with_repetition<
                                VW::namespace_index>,  // generate_fn<VW::namespace_index>
-          true                                    // leave_duplicate_interactions
+          true                                        // leave_duplicate_interactions
           >;
       multipredict_func = multipredict<INTERACTIONS::generate_namespace_permutations_with_repetition<
                                            VW::namespace_index>,  // generate_fn<VW::namespace_index>
-          true                                                // leave_duplicate_interactions
+          true                                                    // leave_duplicate_interactions
           >;
     }
   }
@@ -232,23 +232,23 @@ VW::LEARNER::base_learner* generate_interactions_setup(VW::setup_base_i& stack_b
     {
       learn_func = transform_single_ex<true,  // is_learn
           INTERACTIONS::generate_namespace_combinations_with_repetition<
-              VW::namespace_index>,                                                        // generate_fn<VW::namespace_index>
+              VW::namespace_index>,  // generate_fn<VW::namespace_index>
           INTERACTIONS::generate_namespace_combinations_with_repetition<extent_term>,  // generate_fn<extent_term>
           false                                                                        // leave_duplicate_interactions
           >;
       pred_func = transform_single_ex<false,  // is_learn
           INTERACTIONS::generate_namespace_combinations_with_repetition<
-              VW::namespace_index>,                                                        // generate_fn<VW::namespace_index>
+              VW::namespace_index>,  // generate_fn<VW::namespace_index>
           INTERACTIONS::generate_namespace_combinations_with_repetition<extent_term>,  // generate_fn<extent_term>
           false                                                                        // leave_duplicate_interactions
           >;
       update_func = update<INTERACTIONS::generate_namespace_combinations_with_repetition<
-                               VW::namespace_index>,                                       // generate_fn<VW::namespace_index>
+                               VW::namespace_index>,  // generate_fn<VW::namespace_index>
           INTERACTIONS::generate_namespace_combinations_with_repetition<extent_term>,  // generate_fn<extent_term>
           false                                                                        // leave_duplicate_interactions
           >;
       multipredict_func = multipredict<INTERACTIONS::generate_namespace_combinations_with_repetition<
-                                           VW::namespace_index>,                           // generate_fn<VW::namespace_index>
+                                           VW::namespace_index>,  // generate_fn<VW::namespace_index>
           INTERACTIONS::generate_namespace_combinations_with_repetition<extent_term>,  // generate_fn<extent_term>
           false                                                                        // leave_duplicate_interactions
           >;
@@ -258,20 +258,20 @@ VW::LEARNER::base_learner* generate_interactions_setup(VW::setup_base_i& stack_b
       learn_func = transform_single_ex<true,  // is_learn
           INTERACTIONS::generate_namespace_combinations_with_repetition<
               VW::namespace_index>,  // generate_fn<VW::namespace_index>
-          false                  // leave_duplicate_interactions
+          false                      // leave_duplicate_interactions
           >;
       pred_func = transform_single_ex<false,  // is_learn
           INTERACTIONS::generate_namespace_combinations_with_repetition<
               VW::namespace_index>,  // generate_fn<VW::namespace_index>
-          false                  // leave_duplicate_interactions
+          false                      // leave_duplicate_interactions
           >;
       update_func = update<INTERACTIONS::generate_namespace_combinations_with_repetition<
                                VW::namespace_index>,  // generate_fn<VW::namespace_index>
-          false                                   // leave_duplicate_interactions
+          false                                       // leave_duplicate_interactions
           >;
       multipredict_func = multipredict<INTERACTIONS::generate_namespace_combinations_with_repetition<
                                            VW::namespace_index>,  // generate_fn<VW::namespace_index>
-          false                                               // leave_duplicate_interactions
+          false                                                   // leave_duplicate_interactions
           >;
     }
   }

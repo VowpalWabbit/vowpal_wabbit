@@ -746,7 +746,9 @@ void parse_feature_tweaks(options_i& options, VW::workspace& all, bool interacti
     if (!all.quiet && !options.was_supplied("leave_duplicate_interactions"))
     {
       auto any_contain_wildcards = std::any_of(decoded_interactions.begin(), decoded_interactions.end(),
-          [](const std::vector<VW::namespace_index>& interaction) { return INTERACTIONS::contains_wildcard(interaction); });
+          [](const std::vector<VW::namespace_index>& interaction) {
+            return INTERACTIONS::contains_wildcard(interaction);
+          });
       if (any_contain_wildcards)
       {
         all.logger.err_warn(

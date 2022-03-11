@@ -185,7 +185,8 @@ size_t predict_entity(
   sch.loss(loss);
   return prediction;
 }
-size_t predict_relation(Search::search& sch, VW::example* ex, v_array<size_t>& predictions, ptag my_tag, bool isLdf = false)
+size_t predict_relation(
+    Search::search& sch, VW::example* ex, v_array<size_t>& predictions, ptag my_tag, bool isLdf = false)
 {
   char type;
   int id1, id2;

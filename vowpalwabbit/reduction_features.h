@@ -6,8 +6,8 @@
 #include "ccb_reduction_features.h"
 #include "continuous_actions_reduction_features.h"
 #include "epsilon_reduction_features.h"
-#include "simple_label.h"
 #include "future_compat.h"
+#include "simple_label.h"
 
 /*
  * class reduction_features
@@ -31,7 +31,6 @@
 
 namespace VW
 {
-
 class reduction_features
 {
 private:

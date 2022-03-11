@@ -94,8 +94,8 @@ float binarySearch(float fhat, float delta, float sens, float tol)
 }
 
 template <bool is_learn, bool is_simulation>
-inline void inner_loop(cs_active& cs_a, single_learner& base, VW::example& ec, uint32_t i, float cost, uint32_t& prediction,
-    float& score, float& partial_prediction, bool query_this_label, bool& query_needed)
+inline void inner_loop(cs_active& cs_a, single_learner& base, VW::example& ec, uint32_t i, float cost,
+    uint32_t& prediction, float& score, float& partial_prediction, bool query_this_label, bool& query_needed)
 {
   base.predict(ec, i - 1);
   if (is_learn)

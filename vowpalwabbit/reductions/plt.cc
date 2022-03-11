@@ -47,7 +47,7 @@ struct plt
   float threshold = 0.f;
   uint32_t top_k = 0;
   std::vector<VW::polyprediction> node_preds;  // for storing results of base.multipredict
-  std::vector<node> node_queue;            // container for queue used for both types of predictions
+  std::vector<node> node_queue;                // container for queue used for both types of predictions
 
   // for measuring predictive performance
   std::unordered_set<uint32_t> true_labels;

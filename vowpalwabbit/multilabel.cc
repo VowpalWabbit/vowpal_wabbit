@@ -59,7 +59,9 @@ VW::label_parser multilabel = {
       return VW::model_utils::read_model_field(cache, label.multilabels);
     },
     // get_weight
-    [](const VW::polylabel& label, const VW::reduction_features& /* red_features */) { return weight(label.multilabels); },
+    [](const VW::polylabel& label, const VW::reduction_features& /* red_features */) {
+      return weight(label.multilabels);
+    },
     // test_label
     [](const VW::polylabel& label) { return test_label(label.multilabels); },
     // label type

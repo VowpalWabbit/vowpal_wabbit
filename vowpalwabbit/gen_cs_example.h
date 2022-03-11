@@ -163,7 +163,8 @@ void gen_cs_example_dr(
 }
 
 template <bool is_learn>
-void gen_cs_example(cb_to_cs& c, VW::example& ec, const CB::label& ld, COST_SENSITIVE::label& cs_ld, VW::io::logger& logger)
+void gen_cs_example(
+    cb_to_cs& c, VW::example& ec, const CB::label& ld, COST_SENSITIVE::label& cs_ld, VW::io::logger& logger)
 {
   switch (c.cb_type)
   {
@@ -252,9 +253,9 @@ void cs_prep_labels(VW::multi_ex& examples, std::vector<CB::label>& cb_labels, C
     std::vector<COST_SENSITIVE::label>& prepped_cs_labels, uint64_t offset);
 
 template <bool is_learn>
-void cs_ldf_learn_or_predict(VW::LEARNER::multi_learner& base, VW::multi_ex& examples, std::vector<CB::label>& cb_labels,
-    COST_SENSITIVE::label& cs_labels, std::vector<COST_SENSITIVE::label>& prepped_cs_labels, bool predict_first,
-    uint64_t offset, size_t id = 0)
+void cs_ldf_learn_or_predict(VW::LEARNER::multi_learner& base, VW::multi_ex& examples,
+    std::vector<CB::label>& cb_labels, COST_SENSITIVE::label& cs_labels,
+    std::vector<COST_SENSITIVE::label>& prepped_cs_labels, bool predict_first, uint64_t offset, size_t id = 0)
 {
   VW_DBG(*examples[0]) << "cs_ldf_" << (is_learn ? "<learn>" : "<predict>") << ": ex=" << examples[0]->example_counter
                        << ", offset=" << offset << ", id=" << id << std::endl;

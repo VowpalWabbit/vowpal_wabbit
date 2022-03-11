@@ -182,8 +182,8 @@ void delete_cb_labels(ccb& data)
   }
 }
 
-void attach_label_to_example(
-    uint32_t action_index_one_based, VW::example* example, const conditional_contextual_bandit_outcome* outcome, ccb& data)
+void attach_label_to_example(uint32_t action_index_one_based, VW::example* example,
+    const conditional_contextual_bandit_outcome* outcome, ccb& data)
 {
   // save the cb label
   // Action is unused in cb
@@ -731,6 +731,12 @@ base_learner* ccb_explore_adf_setup(VW::setup_base_i& stack_builder)
   return make_base(*l);
 }
 
-bool ec_is_example_header(VW::example const& ec) { return ec.l.conditional_contextual_bandit.type == example_type::shared; }
-bool ec_is_example_unset(VW::example const& ec) { return ec.l.conditional_contextual_bandit.type == example_type::unset; }
+bool ec_is_example_header(VW::example const& ec)
+{
+  return ec.l.conditional_contextual_bandit.type == example_type::shared;
+}
+bool ec_is_example_unset(VW::example const& ec)
+{
+  return ec.l.conditional_contextual_bandit.type == example_type::unset;
+}
 }  // namespace CCB

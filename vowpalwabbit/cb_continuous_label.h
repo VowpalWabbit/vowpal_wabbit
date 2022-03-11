@@ -9,7 +9,6 @@
 #include "label_parser.h"
 #include "v_array.h"
 
-
 namespace VW
 {
 struct example;

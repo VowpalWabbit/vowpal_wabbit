@@ -20,11 +20,11 @@ struct expreplay
 {
   VW::workspace* all = nullptr;
   std::shared_ptr<VW::rand_state> _random_state;
-  size_t N = 0;             // how big is the buffer?
-  VW::example* buf = nullptr;   // the deep copies of examples (N of them)
-  bool* filled = nullptr;   // which of buf[] is filled
-  size_t replay_count = 0;  // each time er.learn() is called, how many times do we call base.learn()? default=1 (in
-                            // which case we're just permuting)
+  size_t N = 0;                // how big is the buffer?
+  VW::example* buf = nullptr;  // the deep copies of examples (N of them)
+  bool* filled = nullptr;      // which of buf[] is filled
+  size_t replay_count = 0;     // each time er.learn() is called, how many times do we call base.learn()? default=1 (in
+                               // which case we're just permuting)
   VW::LEARNER::single_learner* base = nullptr;
 
   ~expreplay()
