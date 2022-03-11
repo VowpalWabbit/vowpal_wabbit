@@ -221,12 +221,12 @@ public:
         if (!string_feature_value.empty())
         {
           std::stringstream ss;
-          ss << feature_name << "^" << string_feature_value;
-          fs.space_names.push_back(audit_strings(std::string{_base}, ss.str()));
+          fs.space_names.push_back(
+              VW::audit_strings(std::string{_base}, std::string{feature_name}, std::string{string_feature_value}));
         }
         else
         {
-          fs.space_names.push_back(audit_strings(std::string{_base}, std::string{feature_name}));
+          fs.space_names.push_back(VW::audit_strings(std::string{_base}, std::string{feature_name}));
         }
       }
 
