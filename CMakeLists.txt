@@ -345,7 +345,6 @@ if(vw_BUILD_NET_FRAMEWORK)
   add_subdirectory(cs)
 endif()
 
-# TODO convert c_test directory to cmake
 
 # Handle installation of targets, version, config and pkgconfig
 if(VW_INSTALL)
