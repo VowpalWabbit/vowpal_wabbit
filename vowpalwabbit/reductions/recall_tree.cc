@@ -30,7 +30,7 @@ struct node_pred
   node_pred(uint32_t a) : label(a), label_count(0) {}
 };
 
-static_assert(std::is_trivial<node_pred>::value, "To be used in v_array node_pred must be trivial");
+static_assert(std::is_trivial<node_pred>::value, "To be used in VW::v_array node_pred must be trivial");
 
 struct node
 {
@@ -47,7 +47,7 @@ struct node
   double entropy;
   double passes;
 
-  v_array<node_pred> preds;
+  VW::v_array<node_pred> preds;
 
   node()
       : parent(0)

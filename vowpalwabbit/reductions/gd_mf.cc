@@ -23,7 +23,7 @@ using namespace VW::config;
 struct gdmf
 {
   VW::workspace* all = nullptr;  // regressor, printing
-  v_array<float> scalars;
+  VW::v_array<float> scalars;
   uint32_t rank = 0;
   size_t no_win_counter = 0;
   uint64_t early_stop_thres = 0;
@@ -41,7 +41,7 @@ void mf_print_offset_features(gdmf& d, example& ec, size_t offset)
     for (const auto& f : fs.audit_range())
     {
       std::cout << '\t';
-      if (audit) std::cout << f.audit()->first << '^' << f.audit()->second << ':';
+      if (audit) std::cout << VW::to_string(*f.audit()) << ':';
       std::cout << f.index() << "(" << ((f.index() + offset) & mask) << ")" << ':' << f.value();
       std::cout << ':' << (&weights[f.index()])[offset];
     }
@@ -59,13 +59,12 @@ void mf_print_offset_features(gdmf& d, example& ec, size_t offset)
         for (const auto& f1 : ec.feature_space[static_cast<unsigned char>(i[0])].audit_range())
           for (const auto& f2 : ec.feature_space[static_cast<unsigned char>(i[1])].audit_range())
           {
-            std::cout << '\t' << f1.audit()->first << k << '^' << f1.audit()->second << ':' << ((f1.index() + k) & mask)
-                      << "(" << ((f1.index() + offset + k) & mask) << ")" << ':' << f1.value();
+            std::cout << '\t' << VW::to_string(*f1.audit()) << ':' << ((f1.index() + k) & mask) << "("
+                      << ((f1.index() + offset + k) & mask) << ")" << ':' << f1.value();
             std::cout << ':' << (&weights[f1.index()])[offset + k];
 
-            std::cout << ':' << f2.audit()->first << k << '^' << f2.audit()->second << ':'
-                      << ((f2.index() + k + d.rank) & mask) << "(" << ((f2.index() + offset + k + d.rank) & mask) << ")"
-                      << ':' << f2.value();
+            std::cout << ':' << VW::to_string(*f2.audit()) << ':' << ((f2.index() + k + d.rank) & mask) << "("
+                      << ((f2.index() + offset + k + d.rank) & mask) << ")" << ':' << f2.value();
             std::cout << ':' << (&weights[f2.index()])[offset + k + d.rank];
 
             std::cout << ':' << (&weights[f1.index()])[offset + k] * (&weights[f2.index()])[offset + k + d.rank];

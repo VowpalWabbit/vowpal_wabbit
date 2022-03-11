@@ -126,7 +126,8 @@ void bs_predict_vote(example& ec, std::vector<double>& pred_vec)
   ec.loss = ((ec.pred.scalar == ec.l.simple.label) ? 0.f : 1.f) * ec.weight;
 }
 
-void print_result(VW::io::writer* f, float res, const v_array<char>& tag, float lb, float ub, VW::io::logger& logger)
+void print_result(
+    VW::io::writer* f, float res, const VW::v_array<char>& tag, float lb, float ub, VW::io::logger& logger)
 {
   if (f == nullptr) { return; }
 

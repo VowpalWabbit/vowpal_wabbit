@@ -34,11 +34,11 @@ using namespace VW;
 using namespace VW::config;
 
 template <typename T>
-void return_collection(v_array<T>& array, VW::v_array_pool<T>& pool)
+void return_collection(VW::v_array<T>& array, VW::v_array_pool<T>& pool)
 {
   array.clear();
   pool.reclaim_object(std::move(array));
-  array = v_array<T>{};
+  array = VW::v_array<T>{};
 }
 
 template <typename T>
