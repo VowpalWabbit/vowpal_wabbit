@@ -16,7 +16,7 @@
 namespace ACTION_SCORE
 {
 struct action_score;
-using action_scores = v_array<action_score>;
+using action_scores = VW::v_array<action_score>;
 }  // namespace ACTION_SCORE
 
 namespace VW

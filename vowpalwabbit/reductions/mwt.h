@@ -10,5 +10,5 @@ VW::LEARNER::base_learner* mwt_setup(VW::setup_base_i& stack_builder);
 
 namespace MWT
 {
-void print_scalars(VW::io::writer* f, v_array<float>& scalars, v_array<char>& tag, VW::io::logger& logger);
+void print_scalars(VW::io::writer* f, VW::v_array<float>& scalars, VW::v_array<char>& tag, VW::io::logger& logger);
 }  // namespace MWT

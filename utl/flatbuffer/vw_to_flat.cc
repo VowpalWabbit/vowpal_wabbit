@@ -312,9 +312,9 @@ flatbuffers::Offset<VW::parsers::flatbuffer::Namespace> to_flat::create_namespac
       std::string ns_name;
       for (auto it = begin; it != end; ++it)
       {
-        ns_name = it.audit()->first;
+        ns_name = it.audit()->ns;
         fts.push_back(
-            VW::parsers::flatbuffer::CreateFeatureDirect(_builder, it.audit()->second.c_str(), it.value(), it.index()));
+            VW::parsers::flatbuffer::CreateFeatureDirect(_builder, it.audit()->name.c_str(), it.value(), it.index()));
       }
       namespace_offset = VW::parsers::flatbuffer::CreateNamespaceDirect(_builder, ns_name.c_str(), index, &fts, hash);
     }

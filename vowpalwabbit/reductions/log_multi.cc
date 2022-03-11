@@ -50,8 +50,8 @@ static_assert(std::is_trivial<node_pred>::value, "To be used in v_array node_pre
 struct node
 {
   // everyone has
-  uint32_t parent;           // the parent node
-  v_array<node_pred> preds;  // per-class state
+  uint32_t parent;               // the parent node
+  VW::v_array<node_pred> preds;  // per-class state
   uint32_t
       min_count;  // the number of examples reaching this node (if it's a leaf) or the minimum reaching any grandchild.
 

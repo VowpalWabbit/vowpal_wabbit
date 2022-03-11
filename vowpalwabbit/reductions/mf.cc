@@ -24,13 +24,13 @@ struct mf
 
   // array to cache w*x, (l^k * x_l) and (r^k * x_r)
   // [ w*(1,x_l,x_r) , l^1*x_l, r^1*x_r, l^2*x_l, r^2*x_2, ... ]
-  v_array<float> sub_predictions;
+  VW::v_array<float> sub_predictions;
 
   // array for temp storage of indices during prediction
-  v_array<unsigned char> predict_indices;
+  VW::v_array<unsigned char> predict_indices;
 
   // array for temp storage of indices
-  v_array<unsigned char> indices;
+  VW::v_array<unsigned char> indices;
 
   // array for temp storage of features
   features temp_features;

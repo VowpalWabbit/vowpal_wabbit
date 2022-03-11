@@ -35,7 +35,7 @@ struct label
   example_type type = CCB::example_type::unset;
   // Outcome may be unset.
   conditional_contextual_bandit_outcome* outcome = nullptr;
-  v_array<uint32_t> explicit_included_actions;
+  VW::v_array<uint32_t> explicit_included_actions;
   float weight = 0.f;
 
   label() = default;

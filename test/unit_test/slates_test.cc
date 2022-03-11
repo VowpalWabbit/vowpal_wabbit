@@ -81,9 +81,9 @@ BOOST_AUTO_TEST_CASE(slates_reduction_mock_test)
         examples[5]->l.conditional_contextual_bandit.explicit_included_actions, std::vector<uint32_t>{1,2});
 
     // Prepare and return the prediction
-    v_array<ACTION_SCORE::action_score> slot_zero;
+    VW::v_array<ACTION_SCORE::action_score> slot_zero;
     slot_zero.push_back({0, 1.0});
-    v_array<ACTION_SCORE::action_score> slot_one;
+    VW::v_array<ACTION_SCORE::action_score> slot_one;
     slot_one.push_back({1, 0.5});
     slot_one.push_back({2, 0.5});
     examples[0]->pred.decision_scores.push_back(slot_zero);

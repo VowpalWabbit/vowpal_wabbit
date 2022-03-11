@@ -56,10 +56,7 @@ struct Namespace
   {
     ftrs->push_back(1., VW::chain_hash_static(key, value, namespace_hash, hash_func, parse_mask));
     feature_count++;
-
-    std::stringstream ss;
-    ss << key << "^" << value;
-    if (audit) ftrs->space_names.push_back(audit_strings(name, ss.str()));
+    if (audit) ftrs->space_names.push_back(audit_strings(name, key, value));
   }
 };
 
