@@ -14,7 +14,7 @@ struct task_data
 {
   size_t max_label;
   size_t num_level;
-  v_array<uint32_t> y_allowed;
+  VW::v_array<uint32_t> y_allowed;
 };
 
 void initialize(Search::search& sch, size_t& num_actions, VW::config::options_i& /*vm*/)

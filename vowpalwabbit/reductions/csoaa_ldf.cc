@@ -535,7 +535,7 @@ void output_rank_example(VW::workspace& all, VW::example& head_ec, bool& hit_los
   all.sd->total_features += head_ec.get_num_features();
 
   float loss = 0.;
-  v_array<action_score>& preds = head_ec.pred.a_s;
+  VW::v_array<action_score>& preds = head_ec.pred.a_s;
 
   if (!COST_SENSITIVE::cs_label.test_label(head_ec.l))
   {
@@ -591,7 +591,7 @@ void output_example_seq(VW::workspace& all, ldf& data, VW::multi_ex& ec_seq)
 
     if (all.raw_prediction != nullptr)
     {
-      const v_array<char> empty;
+      const VW::v_array<char> empty;
       all.print_text_by_ref(all.raw_prediction.get(), "", empty, all.logger);
     }
 

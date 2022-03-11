@@ -22,7 +22,7 @@ struct example_predict
   class iterator
   {
     features* _feature_space;
-    v_array<namespace_index>::iterator _index;
+    VW::v_array<namespace_index>::iterator _index;
 
   public:
     iterator(features* feature_space, namespace_index* index);
@@ -45,7 +45,7 @@ struct example_predict
   /// If indices is modified this iterator is invalidated.
   iterator end();
 
-  v_array<namespace_index> indices;
+  VW::v_array<namespace_index> indices;
   std::array<features, NUM_NAMESPACES> feature_space;  // Groups of feature values.
   uint64_t ft_offset = 0;                              // An offset for all feature values.
 

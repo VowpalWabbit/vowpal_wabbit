@@ -14,7 +14,7 @@ static void benchmark_sum_ft_squared_char(benchmark::State& state)
 
   auto vw = VW::initialize("--quiet -q MS --cubic MOS", nullptr, false, nullptr, nullptr);
 
-  v_array<example*> examples;
+  VW::v_array<example*> examples;
   io_buf buffer;
   buffer.add_file(VW::io::create_buffer_view(example_string.data(), example_string.size()));
   examples.push_back(&VW::get_unused_example(vw));
@@ -42,7 +42,7 @@ static void benchmark_sum_ft_squared_extent(benchmark::State& state)
       "MetricFeatures|OtherFeatures|Says",
       nullptr, false, nullptr, nullptr);
 
-  v_array<example*> examples;
+  VW::v_array<example*> examples;
   io_buf buffer;
   buffer.add_file(VW::io::create_buffer_view(example_string.data(), example_string.size()));
   examples.push_back(&VW::get_unused_example(vw));

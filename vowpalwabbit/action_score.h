@@ -19,7 +19,7 @@ struct action_score
   float score;
 };
 
-using action_scores = v_array<action_score>;
+using action_scores = VW::v_array<action_score>;
 
 class score_iterator
 {
@@ -58,7 +58,7 @@ inline score_iterator begin_scores(action_scores& a_s) { return {a_s.begin()}; }
 inline score_iterator end_scores(action_scores& a_s) { return {a_s.end()}; }
 
 void print_action_score(
-    VW::io::writer* f, const v_array<action_score>& a_s, const v_array<char>&, VW::io::logger& logger);
+    VW::io::writer* f, const VW::v_array<action_score>& a_s, const VW::v_array<char>&, VW::io::logger& logger);
 
 std::ostream& operator<<(std::ostream& os, const action_score& a_s);
 }  // namespace ACTION_SCORE

@@ -61,11 +61,11 @@ struct cs_active
   VW::workspace* all = nullptr;  // statistics, loss
   VW::LEARNER::base_learner* l = nullptr;
 
-  v_array<lq_data> query_data;
+  VW::v_array<lq_data> query_data;
 
   size_t num_any_queries = 0;  // examples where at least one label is queried
   size_t overlapped_and_range_small = 0;
-  v_array<size_t> examples_by_queries;
+  VW::v_array<size_t> examples_by_queries;
   size_t labels_outside_range = 0;
   float distance_to_range = 0.f;
   float range = 0.f;

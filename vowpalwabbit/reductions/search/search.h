@@ -281,11 +281,11 @@ public:
 
   predictor& add_oracle(action a);
   predictor& add_oracle(action* a, size_t action_count);
-  predictor& add_oracle(v_array<action>& a);
+  predictor& add_oracle(VW::v_array<action>& a);
 
   predictor& set_oracle(action a);
   predictor& set_oracle(action* a, size_t action_count);
-  predictor& set_oracle(v_array<action>& a);
+  predictor& set_oracle(VW::v_array<action>& a);
 
   predictor& set_weight(float w);
 
@@ -294,11 +294,11 @@ public:
 
   predictor& add_allowed(action a);
   predictor& add_allowed(action* a, size_t action_count);
-  predictor& add_allowed(v_array<action>& a);
+  predictor& add_allowed(VW::v_array<action>& a);
 
   predictor& set_allowed(action a);
   predictor& set_allowed(action* a, size_t action_count);
-  predictor& set_allowed(v_array<action>& a);
+  predictor& set_allowed(VW::v_array<action>& a);
 
   // set/add allowed but with per-actions costs specified
   predictor& add_allowed(action a, float cost);
@@ -334,11 +334,11 @@ private:
   size_t ec_cnt;
   std::vector<VW::example> allocated_examples;
   float weight;
-  v_array<action> oracle_actions;
-  v_array<ptag> condition_on_tags;
-  v_array<char> condition_on_names;
-  v_array<action> allowed_actions;
-  v_array<float> allowed_actions_cost;
+  VW::v_array<action> oracle_actions;
+  VW::v_array<ptag> condition_on_tags;
+  VW::v_array<char> condition_on_names;
+  VW::v_array<action> allowed_actions;
+  VW::v_array<float> allowed_actions_cost;
   size_t learner_id;
   search& sch;
 

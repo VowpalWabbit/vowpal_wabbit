@@ -6,7 +6,7 @@
 
 multi_ex parse_json(VW::workspace& all, const std::string& line)
 {
-  v_array<example*> examples;
+  VW::v_array<example*> examples;
   examples.push_back(&VW::get_unused_example(&all));
   VW::read_line_json_s<true>(
       all, examples, (char*)line.c_str(), line.length(), (VW::example_factory_t)&VW::get_unused_example, (void*)&all);
@@ -21,7 +21,7 @@ multi_ex parse_json(VW::workspace& all, const std::string& line)
 
 multi_ex parse_dsjson(VW::workspace& all, std::string line, DecisionServiceInteraction* interaction)
 {
-  v_array<example*> examples;
+  VW::v_array<example*> examples;
   examples.push_back(&VW::get_unused_example(&all));
 
   DecisionServiceInteraction local_interaction;

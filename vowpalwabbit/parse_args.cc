@@ -1178,6 +1178,8 @@ void parse_output_model(options_i& options, VW::workspace& all)
                .help("Output human-readable final regressor with numeric features"))
       .add(make_option("invert_hash", all.inv_hash_regressor_name)
                .help("Output human-readable final regressor with feature names.  Computationally expensive"))
+      .add(make_option("dump_json_weights", all.json_weights_file_name)
+               .help("Experimental: Output json representation of model parameters."))
       .add(
           make_option("predict_only_model", predict_only_model)
               .help("Do not save extra state for learning to be resumed. Stored model can only be used for prediction"))
@@ -1197,6 +1199,7 @@ void parse_output_model(options_i& options, VW::workspace& all)
     *(all.trace_message) << "final_regressor = " << all.final_regressor_name << endl;
 
   if (options.was_supplied("invert_hash")) { all.hash_inv = true; }
+  if (options.was_supplied("dump_json_weights")) { all.hash_inv = true; }
   if (save_resume)
   {
     all.logger.err_warn("--save_resume flag is deprecated -- learning can now continue on saved models by default.");
@@ -1929,6 +1932,12 @@ void finish(VW::workspace& all, bool delete_all)
   { all.sd->print_summary(*all.trace_message, *all.sd, *all.loss, all.current_pass, all.holdout_set_off); }
 
   finalize_regressor(all, all.final_regressor_name);
+  if (all.options->was_supplied("dump_json_weights"))
+  {
+    auto content = all.dump_weights_to_json_experimental();
+    auto writer = VW::io::open_file_writer(all.json_weights_file_name);
+    writer->write(content.c_str(), content.length());
+  }
   metrics::output_metrics(all);
   all.logger.log_summary();
 }

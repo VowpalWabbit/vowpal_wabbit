@@ -124,8 +124,8 @@ void convert_bio_to_bilou(VW::multi_ex& ec)
 struct task_data
 {
   EncodingType encoding;
-  v_array<action> allowed_actions;
-  v_array<action> only_two_allowed;  // used for BILOU encoding
+  VW::v_array<action> allowed_actions;
+  VW::v_array<action> only_two_allowed;  // used for BILOU encoding
   size_t multipass;
 };
 
@@ -203,7 +203,7 @@ void takedown(Search::search& sch, VW::multi_ex& ec)
 void run(Search::search& sch, VW::multi_ex& ec)
 {
   task_data& D = *sch.get_task_data<task_data>();
-  v_array<action>* y_allowed = &(D.allowed_actions);
+  VW::v_array<action>* y_allowed = &(D.allowed_actions);
   Search::predictor P(sch, static_cast<ptag>(0));
   for (size_t pass = 1; pass <= D.multipass; pass++)
   {

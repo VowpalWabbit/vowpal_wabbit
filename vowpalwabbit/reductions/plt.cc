@@ -39,7 +39,7 @@ struct plt
   uint32_t kary = 0;  // kary tree
 
   // for training
-  v_array<float> nodes_time;                    // in case of sgd, this stores individual t for each node
+  VW::v_array<float> nodes_time;                // in case of sgd, this stores individual t for each node
   std::unordered_set<uint32_t> positive_nodes;  // container for positive nodes
   std::unordered_set<uint32_t> negative_nodes;  // container for negative nodes
 
@@ -51,7 +51,7 @@ struct plt
 
   // for measuring predictive performance
   std::unordered_set<uint32_t> true_labels;
-  v_array<uint32_t> tp_at;  // true positives at (for precision and recall at)
+  VW::v_array<uint32_t> tp_at;  // true positives at (for precision and recall at)
   uint32_t tp = 0;
   uint32_t fp = 0;
   uint32_t fn = 0;
@@ -361,7 +361,7 @@ base_learner* plt_setup(VW::setup_base_i& stack_builder)
     }
   }
 
-  // resize v_arrays
+  // resize VW::v_arrays
   tree->nodes_time.resize_but_with_stl_behavior(tree->t);
   std::fill(tree->nodes_time.begin(), tree->nodes_time.end(), all.initial_t);
   tree->node_preds.resize(tree->kary);

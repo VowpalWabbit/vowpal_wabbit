@@ -42,7 +42,7 @@ static size_t num_cache_evals = 0;
 
 struct svm_example
 {
-  v_array<float> krow;
+  VW::v_array<float> krow;
   VW::flat_example ex;
 
   ~svm_example();
@@ -54,9 +54,9 @@ struct svm_example
 struct svm_model
 {
   size_t num_support;
-  v_array<svm_example*> support_vec;
-  v_array<float> alpha;
-  v_array<float> delta;
+  VW::v_array<svm_example*> support_vec;
+  VW::v_array<float> alpha;
+  VW::v_array<float> delta;
 };
 
 void free_svm_model(svm_model* model)
@@ -329,7 +329,7 @@ float kernel_function(const VW::flat_example* fec1, const VW::flat_example* fec2
   return 0;
 }
 
-float dense_dot(float* v1, const v_array<float>& v2, size_t n)
+float dense_dot(float* v1, const VW::v_array<float>& v2, size_t n)
 {
   float dot_prod = 0.;
   for (size_t i = 0; i < n; i++) dot_prod += v1[i] * v2[i];

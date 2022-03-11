@@ -46,7 +46,7 @@ void predict_or_learn_with_confidence(confidence& /* c */, single_learner& base,
 }
 
 void confidence_print_result(
-    VW::io::writer* f, float res, float confidence, const v_array<char>& tag, VW::io::logger& logger)
+    VW::io::writer* f, float res, float confidence, const VW::v_array<char>& tag, VW::io::logger& logger)
 {
   if (f != nullptr)
   {

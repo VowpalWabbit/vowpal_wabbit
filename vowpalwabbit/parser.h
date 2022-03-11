@@ -85,9 +85,9 @@ struct parser
   /// parsers multiple are produced which all correspond the the same overall
   /// logical example. examples must have a single empty example in it when this
   /// call is made.
-  int (*reader)(VW::workspace*, io_buf&, v_array<VW::example*>& examples);
+  int (*reader)(VW::workspace*, io_buf&, VW::v_array<VW::example*>& examples);
   /// text_reader consumes the char* input and is for text based parsing
-  void (*text_reader)(VW::workspace*, const char*, size_t, v_array<VW::example*>&);
+  void (*text_reader)(VW::workspace*, const char*, size_t, VW::v_array<VW::example*>&);
 
   shared_data* _shared_data = nullptr;
 

@@ -102,7 +102,8 @@ void predict_or_learn_active(active& a, single_learner& base, VW::example& ec)
   }
 }
 
-void active_print_result(VW::io::writer* f, float res, float weight, const v_array<char>& tag, VW::io::logger& logger)
+void active_print_result(
+    VW::io::writer* f, float res, float weight, const VW::v_array<char>& tag, VW::io::logger& logger)
 {
   if (f == nullptr) { return; }
 

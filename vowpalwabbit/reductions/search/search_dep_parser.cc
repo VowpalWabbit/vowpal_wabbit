@@ -27,22 +27,22 @@ struct task_data
   VW::example ex;
   size_t root_label;
   uint32_t num_label;
-  v_array<uint32_t> valid_actions;
-  v_array<uint32_t> action_loss;
-  v_array<uint32_t> gold_heads;
-  v_array<uint32_t> gold_tags;
-  v_array<uint32_t> stack;
-  v_array<uint32_t> heads;
-  v_array<uint32_t> tags;
-  v_array<uint32_t> temp;
-  v_array<uint32_t> valid_action_temp;
-  v_array<action> gold_actions;
-  v_array<action> gold_action_temp;
+  VW::v_array<uint32_t> valid_actions;
+  VW::v_array<uint32_t> action_loss;
+  VW::v_array<uint32_t> gold_heads;
+  VW::v_array<uint32_t> gold_tags;
+  VW::v_array<uint32_t> stack;
+  VW::v_array<uint32_t> heads;
+  VW::v_array<uint32_t> tags;
+  VW::v_array<uint32_t> temp;
+  VW::v_array<uint32_t> valid_action_temp;
+  VW::v_array<action> gold_actions;
+  VW::v_array<action> gold_action_temp;
   std::vector<std::pair<action, float>> gold_action_losses;
 
   // [0]:num_left_arcs, [1]:num_right_arcs; [2]: leftmost_arc, [3]: second_leftmost_arc,
   // [4]:rightmost_arc, [5]: second_rightmost_arc
-  std::array<v_array<uint32_t>, 6> children;
+  std::array<VW::v_array<uint32_t>, 6> children;
 
   std::array<VW::example*, 13> ec_buf;
   bool old_style_labels;
@@ -147,12 +147,12 @@ void inline reset_ex(VW::example& ex)
 size_t transition_hybrid(Search::search& sch, uint64_t a_id, uint32_t idx, uint32_t t_id, uint32_t /* n */)
 {
   task_data* data = sch.get_task_data<task_data>();
-  v_array<uint32_t>& heads = data->heads;
-  v_array<uint32_t>& stack = data->stack;
-  v_array<uint32_t>& gold_heads = data->gold_heads;
-  v_array<uint32_t>& gold_tags = data->gold_tags;
-  v_array<uint32_t>& tags = data->tags;
-  v_array<uint32_t>* children = data->children.data();
+  VW::v_array<uint32_t>& heads = data->heads;
+  VW::v_array<uint32_t>& stack = data->stack;
+  VW::v_array<uint32_t>& gold_heads = data->gold_heads;
+  VW::v_array<uint32_t>& gold_tags = data->gold_tags;
+  VW::v_array<uint32_t>& tags = data->tags;
+  VW::v_array<uint32_t>* children = data->children.data();
   if (a_id == SHIFT)
   {
     stack.push_back(idx);
@@ -193,12 +193,12 @@ size_t transition_hybrid(Search::search& sch, uint64_t a_id, uint32_t idx, uint3
 size_t transition_eager(Search::search& sch, uint64_t a_id, uint32_t idx, uint32_t t_id, uint32_t n)
 {
   task_data* data = sch.get_task_data<task_data>();
-  v_array<uint32_t>& heads = data->heads;
-  v_array<uint32_t>& stack = data->stack;
-  v_array<uint32_t>& gold_heads = data->gold_heads;
-  v_array<uint32_t>& gold_tags = data->gold_tags;
-  v_array<uint32_t>& tags = data->tags;
-  v_array<uint32_t>* children = data->children.data();
+  VW::v_array<uint32_t>& heads = data->heads;
+  VW::v_array<uint32_t>& stack = data->stack;
+  VW::v_array<uint32_t>& gold_heads = data->gold_heads;
+  VW::v_array<uint32_t>& gold_tags = data->gold_tags;
+  VW::v_array<uint32_t>& tags = data->tags;
+  VW::v_array<uint32_t>* children = data->children.data();
   if (a_id == SHIFT)
   {
     stack.push_back(idx);
@@ -317,12 +317,12 @@ void extract_features(Search::search& sch, uint32_t idx, VW::multi_ex& ec)
   data->ex.num_features = count;
 }
 
-void get_valid_actions(Search::search& sch, v_array<uint32_t>& valid_action, uint64_t idx, uint64_t n,
+void get_valid_actions(Search::search& sch, VW::v_array<uint32_t>& valid_action, uint64_t idx, uint64_t n,
     uint64_t stack_depth, uint64_t state)
 {
   task_data* data = sch.get_task_data<task_data>();
   uint32_t& sys = data->transition_system;
-  v_array<uint32_t>&stack = data->stack, &heads = data->heads, &temp = data->temp;
+  VW::v_array<uint32_t>&stack = data->stack, &heads = data->heads, &temp = data->temp;
   valid_action.clear();
   if (sys == arc_hybrid)
   {
@@ -365,7 +365,7 @@ void get_valid_actions(Search::search& sch, v_array<uint32_t>& valid_action, uin
   }
 }
 
-bool is_valid(uint64_t action, const v_array<uint32_t>& valid_actions)
+bool is_valid(uint64_t action, const VW::v_array<uint32_t>& valid_actions)
 {
   for (size_t i = 0; i < valid_actions.size(); i++)
     if (valid_actions[i] == action) return true;
@@ -414,7 +414,7 @@ void get_eager_action_cost(Search::search& sch, uint32_t idx, uint64_t n)
 void get_hybrid_action_cost(Search::search& sch, size_t idx, uint64_t n)
 {
   task_data* data = sch.get_task_data<task_data>();
-  v_array<uint32_t>&action_loss = data->action_loss, &stack = data->stack, &gold_heads = data->gold_heads;
+  VW::v_array<uint32_t>&action_loss = data->action_loss, &stack = data->stack, &gold_heads = data->gold_heads;
   size_t size = stack.size();
   size_t last = (size == 0) ? 0 : stack.back();
 
@@ -472,7 +472,7 @@ void get_cost_to_go_losses(Search::search& sch, std::vector<std::pair<action, fl
   }
 }
 
-void get_gold_actions(Search::search& sch, uint32_t idx, uint64_t /* n */, v_array<action>& gold_actions)
+void get_gold_actions(Search::search& sch, uint32_t idx, uint64_t /* n */, VW::v_array<action>& gold_actions)
 {
   task_data* data = sch.get_task_data<task_data>();
   auto& action_loss = data->action_loss;
@@ -515,8 +515,8 @@ void get_gold_actions(Search::search& sch, uint32_t idx, uint64_t /* n */, v_arr
   }
 }
 
-void convert_to_onelearner_actions(Search::search& sch, v_array<action>& actions, v_array<action>& actions_onelearner,
-    uint32_t left_label, uint32_t right_label)
+void convert_to_onelearner_actions(Search::search& sch, VW::v_array<action>& actions,
+    VW::v_array<action>& actions_onelearner, uint32_t left_label, uint32_t right_label)
 {
   task_data* data = sch.get_task_data<task_data>();
   uint32_t& sys = data->transition_system;
@@ -577,11 +577,11 @@ void setup(Search::search& sch, VW::multi_ex& ec)
 void run(Search::search& sch, VW::multi_ex& ec)
 {
   task_data* data = sch.get_task_data<task_data>();
-  v_array<uint32_t>&stack = data->stack, &gold_heads = data->gold_heads, &valid_actions = data->valid_actions,
+  VW::v_array<uint32_t>&stack = data->stack, &gold_heads = data->gold_heads, &valid_actions = data->valid_actions,
   &heads = data->heads, &gold_tags = data->gold_tags, &tags = data->tags, &valid_action_temp = data->valid_action_temp;
-  v_array<uint32_t>& gold_action_temp = data->gold_action_temp;
+  VW::v_array<uint32_t>& gold_action_temp = data->gold_action_temp;
   std::vector<std::pair<action, float>>& gold_action_losses = data->gold_action_losses;
-  v_array<action>& gold_actions = data->gold_actions;
+  VW::v_array<action>& gold_actions = data->gold_actions;
   bool &cost_to_go = data->cost_to_go, &one_learner = data->one_learner;
   uint32_t& num_label = data->num_label;
   uint32_t& sys = data->transition_system;

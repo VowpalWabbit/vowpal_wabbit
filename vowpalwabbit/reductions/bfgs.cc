@@ -77,7 +77,7 @@ struct bfgs
   std::chrono::time_point<std::chrono::system_clock> t_end_global;
   double net_time = 0.0;
 
-  v_array<float> predictions;
+  VW::v_array<float> predictions;
   size_t example_number = 0;
   size_t current_pass = 0;
   size_t no_win_counter = 0;

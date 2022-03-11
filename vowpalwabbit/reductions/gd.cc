@@ -1,9 +1,12 @@
 // Copyright (c) by respective owners including Yahoo!, Microsoft, and
 // individual contributors. All rights reserved. Released under a BSD (revised)
 // license as described in the file LICENSE.
+
 #include <cfloat>
 
 #include "crossplat_compat.h"
+#include "feature_group.h"
+#include "global_data.h"
 
 #if !defined(VW_NO_INLINE_SIMD)
 #  if !defined(__SSE2__) && (defined(_M_AMD64) || defined(_M_X64))
@@ -184,7 +187,7 @@ struct audit_results
 {
   VW::workspace& all;
   const uint64_t offset;
-  std::vector<std::string> ns_pre;
+  std::vector<audit_strings> components;
   std::vector<string_value> results;
   audit_results(VW::workspace& p_all, const size_t p_offset) : all(p_all), offset(p_offset) {}
 };
@@ -193,23 +196,11 @@ inline void audit_interaction(audit_results& dat, const audit_strings* f)
 {
   if (f == nullptr)
   {
-    if (!dat.ns_pre.empty()) { dat.ns_pre.pop_back(); }
+    if (!dat.components.empty()) { dat.components.pop_back(); }
 
     return;
   }
-
-  std::string ns_pre;
-  if (!dat.ns_pre.empty()) ns_pre += '*';
-
-  if (f->first != "" && ((f->first) != " "))
-  {
-    ns_pre.append(f->first);
-    ns_pre += '^';
-  }
-
-  if (f->second != "") { ns_pre.append(f->second); }
-
-  if (!ns_pre.empty()) { dat.ns_pre.push_back(ns_pre); }
+  if (!f->is_empty()) { dat.components.push_back(*f); }
 }
 
 inline void audit_feature(audit_results& dat, const float ft_weight, const uint64_t ft_idx)
@@ -218,12 +209,15 @@ inline void audit_feature(audit_results& dat, const float ft_weight, const uint6
   uint64_t index = ft_idx & weights.mask();
   size_t stride_shift = weights.stride_shift();
 
-  std::string ns_pre;
-  for (std::string& s : dat.ns_pre) ns_pre += s;
+  std::ostringstream tempstream;
+  for (size_t i = 0; i < dat.components.size(); i++)
+  {
+    if (i > 0) { tempstream << "*"; }
+    tempstream << VW::to_string(dat.components[i]);
+  }
 
   if (dat.all.audit)
   {
-    std::ostringstream tempstream;
     tempstream << ':' << (index >> stride_shift) << ':' << ft_weight << ':'
                << trunc_weight(weights[index], static_cast<float>(dat.all.sd->gravity)) *
             static_cast<float>(dat.all.sd->contraction);
@@ -231,24 +225,21 @@ inline void audit_feature(audit_results& dat, const float ft_weight, const uint6
     if (weights.adaptive)  // adaptive
       tempstream << '@' << (&weights[index])[1];
 
-    string_value sv = {weights[index] * ft_weight, ns_pre + tempstream.str()};
+    string_value sv = {weights[index] * ft_weight, tempstream.str()};
     dat.results.push_back(sv);
   }
 
   if ((dat.all.current_pass == 0 || dat.all.training == false) && dat.all.hash_inv)
   {
-    // for invert_hash
-
-    if (dat.offset != 0)
-    {
-      // otherwise --oaa output no features for class > 0.
-      std::ostringstream tempstream;
-      tempstream << '[' << (dat.offset >> stride_shift) << ']';
-      ns_pre += tempstream.str();
-    }
     const auto strided_index = index >> stride_shift;
-    if (!dat.all.index_name_map.count(strided_index))
-      dat.all.index_name_map.insert(std::make_pair(strided_index, ns_pre));
+    if (dat.all.index_name_map.count(strided_index) == 0)
+    {
+      VW::details::invert_hash_info info;
+      info.weight_components = dat.components;
+      info.offset = dat.offset;
+      info.stride_shift = stride_shift;
+      dat.all.index_name_map.insert(std::make_pair(strided_index, info));
+    }
   }
 }
 
@@ -263,8 +254,8 @@ void print_lda_features(VW::workspace& all, VW::example& ec)
   {
     for (const auto& f : fs.audit_range())
     {
-      std::cout << '\t' << f.audit()->first << '^' << f.audit()->second << ':'
-                << ((f.index() >> stride_shift) & all.parse_mask) << ':' << f.value();
+      std::cout << '\t' << VW::to_string(*f.audit()) << ':' << ((f.index() >> stride_shift) & all.parse_mask) << ':'
+                << f.value();
       for (size_t k = 0; k < all.lda; k++) std::cout << ':' << (&weights[f.index()])[k];
     }
   }
@@ -736,6 +727,22 @@ size_t write_index(io_buf& model_file, std::stringstream& msg, bool text, uint32
   return brw;
 }
 
+std::string to_string(const VW::details::invert_hash_info& info)
+{
+  std::ostringstream ss;
+  for (size_t i = 0; i < info.weight_components.size(); i++)
+  {
+    if (i > 0) { ss << "*"; }
+    ss << VW::to_string(info.weight_components[i]);
+  }
+  if (info.offset != 0)
+  {
+    // otherwise --oaa output no features for class > 0.
+    ss << '[' << (info.offset >> info.stride_shift) << ']';
+  }
+  return ss.str();
+}
+
 template <class T>
 void save_load_regressor(VW::workspace& all, io_buf& model_file, bool read, bool text, T& weights)
 {
@@ -759,7 +766,7 @@ void save_load_regressor(VW::workspace& all, io_buf& model_file, bool read, bool
         const auto map_it = all.index_name_map.find(weight_index);
         if (map_it != all.index_name_map.end())
         {
-          msg << map_it->second;
+          msg << to_string(map_it->second);
           bin_text_write_fixed(model_file, nullptr /*unused*/, 0 /*unused*/, msg, true);
         }
 
@@ -873,7 +880,7 @@ void save_load_online_state(VW::workspace& all, io_buf& model_file, bool read, b
           const auto map_it = all.index_name_map.find(i);
           if (map_it != all.index_name_map.end())
           {
-            msg << map_it->second << ":";
+            msg << to_string(map_it->second) << ":";
             bin_text_write_fixed(model_file, nullptr /*unused*/, 0 /*unused*/, msg, true);
           }
         }

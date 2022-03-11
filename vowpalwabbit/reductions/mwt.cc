@@ -29,12 +29,12 @@ struct mwt
   bool namespaces[256];            // the set of namespaces to evaluate.
   std::vector<policy_data> evals;  // accrued losses of features.
   std::pair<bool, CB::cb_class> optional_observation;
-  v_array<uint64_t> policies;
+  VW::v_array<uint64_t> policies;
   double total = 0.;
   uint32_t num_classes = 0;
   bool learn = false;
 
-  v_array<VW::namespace_index> indices;  // excluded namespaces
+  VW::v_array<VW::namespace_index> indices;  // excluded namespaces
   features feature_space[256];
   VW::workspace* all = nullptr;
 
@@ -102,7 +102,7 @@ void predict_or_learn(mwt& c, single_learner& base, VW::example& ec)
   VW_WARNING_STATE_POP
 
   // modify the predictions to use a vector with a score for each evaluated feature.
-  v_array<float> preds = ec.pred.scalars;
+  VW::v_array<float> preds = ec.pred.scalars;
 
   if (learn)
   {
@@ -132,7 +132,7 @@ void predict_or_learn(mwt& c, single_learner& base, VW::example& ec)
   ec.pred.scalars = preds;
 }
 
-void print_scalars(VW::io::writer* f, v_array<float>& scalars, v_array<char>& tag, VW::io::logger& logger)
+void print_scalars(VW::io::writer* f, VW::v_array<float>& scalars, VW::v_array<char>& tag, VW::io::logger& logger)
 {
   if (f != nullptr)
   {
@@ -167,7 +167,7 @@ void finish_example(VW::workspace& all, mwt& c, VW::example& ec)
 
   if (c.learn)
   {
-    v_array<float> temp = ec.pred.scalars;
+    VW::v_array<float> temp = ec.pred.scalars;
     ec.pred.multiclass = static_cast<uint32_t>(temp[0]);
     CB::print_update(all, c.optional_observation.first, ec, nullptr, false, nullptr);
     ec.pred.scalars = temp;

@@ -152,7 +152,7 @@ void handle_features_value(const char* key_namespace, const Value& value, VW::ex
 
 template <bool audit>
 void parse_context(const Value& context, const VW::label_parser& lbl_parser, hash_func_t hash_func, uint64_t hash_seed,
-    uint64_t parse_mask, bool chain_hash, v_array<VW::example*>& examples, VW::example_factory_t example_factory,
+    uint64_t parse_mask, bool chain_hash, VW::v_array<VW::example*>& examples, VW::example_factory_t example_factory,
     void* ex_factory_context, std::vector<VW::example*>& slot_examples,
     std::unordered_map<uint64_t, VW::example*>* dedup_examples = nullptr)
 {
@@ -222,7 +222,7 @@ void parse_context(const Value& context, const VW::label_parser& lbl_parser, has
 
 template <bool audit>
 void parse_slates_example_json(const VW::label_parser& lbl_parser, hash_func_t hash_func, uint64_t hash_seed,
-    uint64_t parse_mask, bool chain_hash, v_array<VW::example*>& examples, char* line, size_t /*length*/,
+    uint64_t parse_mask, bool chain_hash, VW::v_array<VW::example*>& examples, char* line, size_t /*length*/,
     VW::example_factory_t example_factory, void* ex_factory_context,
     std::unordered_map<uint64_t, VW::example*>* dedup_examples = nullptr)
 {
@@ -237,7 +237,7 @@ void parse_slates_example_json(const VW::label_parser& lbl_parser, hash_func_t h
 }
 
 template <bool audit>
-void parse_slates_example_json(const VW::workspace& all, v_array<VW::example*>& examples, char* line, size_t /*length*/,
+void parse_slates_example_json(const VW::workspace& all, VW::v_array<VW::example*>& examples, char* line, size_t /*length*/,
     VW::example_factory_t example_factory, void* ex_factory_context,
     std::unordered_map<uint64_t, VW::example*>* dedup_examples = nullptr)
 {
@@ -246,7 +246,7 @@ void parse_slates_example_json(const VW::workspace& all, v_array<VW::example*>& 
 }
 
 template <bool audit>
-void parse_slates_example_dsjson(VW::workspace& all, v_array<VW::example*>& examples, char* line, size_t /*length*/,
+void parse_slates_example_dsjson(VW::workspace& all, VW::v_array<VW::example*>& examples, char* line, size_t /*length*/,
     VW::example_factory_t example_factory, void* ex_factory_context, DecisionServiceInteraction* data,
     std::unordered_map<uint64_t, VW::example*>* dedup_examples = nullptr)
 {

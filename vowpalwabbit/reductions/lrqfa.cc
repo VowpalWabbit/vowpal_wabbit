@@ -95,15 +95,8 @@ void predict_or_learn(LRQFAstate& lrq, single_learner& base, VW::example& ec)
               if (all.audit || all.hash_inv)
               {
                 std::stringstream new_feature_buffer;
-                new_feature_buffer << right << '^' << rfs.space_names[rfn].second << '^' << n;
-#ifdef _WIN32
-                char* new_space = _strdup("lrqfa");
-                char* new_feature = _strdup(new_feature_buffer.str().c_str());
-#else
-                char* new_space = strdup("lrqfa");
-                char* new_feature = strdup(new_feature_buffer.str().c_str());
-#endif
-                rfs.space_names.push_back(audit_strings(new_space, new_feature));
+                new_feature_buffer << right << '^' << rfs.space_names[rfn].name << '^' << n;
+                rfs.space_names.push_back(audit_strings("lrqfa", new_feature_buffer.str()));
               }
             }
           }

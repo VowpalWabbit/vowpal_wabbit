@@ -157,7 +157,7 @@ void predict(oaa& o, LEARNER::single_learner& base, VW::example& ec)
   // In the case we return scores, we need to save a copy of
   // the pre-allocated scores array since ec.pred will be
   // used for other predictions.
-  v_array<float> scores_array;
+  VW::v_array<float> scores_array;
   if (scores) scores_array = ec.pred.scalars;
 
   // oaa.pred - Predictions will get stored in this array

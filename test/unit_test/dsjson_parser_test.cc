@@ -249,7 +249,7 @@ BOOST_AUTO_TEST_CASE(parse_dsjson_cats)
 
   auto& space_names = examples[0]->feature_space[' '].space_names;
   BOOST_CHECK_EQUAL(features.size(), space_names.size());
-  for (size_t i = 0; i < space_names.size(); i++) { BOOST_CHECK_EQUAL(space_names[i].second, features[i]); }
+  for (size_t i = 0; i < space_names.size(); i++) { BOOST_CHECK_EQUAL(space_names[i].name, features[i]); }
 
   VW::finish_example(*vw, examples);
   VW::finish(*vw);
@@ -287,7 +287,7 @@ BOOST_AUTO_TEST_CASE(parse_dsjson_cats_no_label)
 
   auto& space_names = examples[0]->feature_space[' '].space_names;
   BOOST_CHECK_EQUAL(features.size(), space_names.size());
-  for (size_t i = 0; i < space_names.size(); i++) { BOOST_CHECK_EQUAL(space_names[i].second, features[i]); }
+  for (size_t i = 0; i < space_names.size(); i++) { BOOST_CHECK_EQUAL(space_names[i].name, features[i]); }
 
   VW::finish_example(*vw, examples);
   VW::finish(*vw);
@@ -340,7 +340,7 @@ BOOST_AUTO_TEST_CASE(parse_dsjson_cats_w_valid_pdf)
 
   auto& space_names = examples[0]->feature_space[' '].space_names;
   BOOST_CHECK_EQUAL(features.size(), space_names.size());
-  for (size_t i = 0; i < space_names.size(); i++) { BOOST_CHECK_EQUAL(space_names[i].second, features[i]); }
+  for (size_t i = 0; i < space_names.size(); i++) { BOOST_CHECK_EQUAL(space_names[i].name, features[i]); }
 
   VW::finish_example(*vw, examples);
   VW::finish(*vw);
@@ -386,7 +386,7 @@ BOOST_AUTO_TEST_CASE(parse_dsjson_cats_w_invalid_pdf)
 
   auto& space_names = examples[0]->feature_space[' '].space_names;
   BOOST_CHECK_EQUAL(features.size(), space_names.size());
-  for (size_t i = 0; i < space_names.size(); i++) { BOOST_CHECK_EQUAL(space_names[i].second, features[i]); }
+  for (size_t i = 0; i < space_names.size(); i++) { BOOST_CHECK_EQUAL(space_names[i].name, features[i]); }
 
   VW::finish_example(*vw, examples);
   VW::finish(*vw);
@@ -432,7 +432,7 @@ BOOST_AUTO_TEST_CASE(parse_dsjson_cats_chosen_action)
 
   auto& space_names = examples[0]->feature_space[' '].space_names;
   BOOST_CHECK_EQUAL(features.size(), space_names.size());
-  for (size_t i = 0; i < space_names.size(); i++) { BOOST_CHECK_EQUAL(space_names[i].second, features[i]); }
+  for (size_t i = 0; i < space_names.size(); i++) { BOOST_CHECK_EQUAL(space_names[i].name, features[i]); }
 
   VW::finish_example(*vw, examples);
   VW::finish(*vw);

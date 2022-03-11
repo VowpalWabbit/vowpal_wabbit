@@ -63,7 +63,7 @@ struct polyprediction
   polyprediction& operator=(const polyprediction&) = delete;
 
   float scalar = 0.f;
-  v_array<float> scalars;           // a sequence of scalar predictions
+  VW::v_array<float> scalars;       // a sequence of scalar predictions
   ACTION_SCORE::action_scores a_s;  // a sequence of classes with scores.  Also used for probabilities.
   VW::decision_scores_t decision_scores;
   uint32_t multiclass = 0;
@@ -93,8 +93,8 @@ struct example : public example_predict  // core example datatype.
   // output prediction
   polyprediction pred;
 
-  float weight = 1.f;  // a relative importance weight for the example, default = 1
-  v_array<char> tag;   // An identifier for the example.
+  float weight = 1.f;     // a relative importance weight for the example, default = 1
+  VW::v_array<char> tag;  // An identifier for the example.
   size_t example_counter = 0;
 #ifdef PRIVACY_ACTIVATION
   uint64_t tag_hash;  // Storing the hash of the tag for privacy preservation learning

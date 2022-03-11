@@ -16,14 +16,14 @@ namespace MULTILABEL
 {
 struct labels
 {
-  v_array<uint32_t> label_v;
+  VW::v_array<uint32_t> label_v;
 };
 
 void output_example(VW::workspace& all, const VW::example& ec);
 
 extern VW::label_parser multilabel;
 
-void print_update(VW::workspace& all, bool is_test, const VW::example& ec, const v_array<VW::example*>* ec_seq);
+void print_update(VW::workspace& all, bool is_test, const VW::example& ec, const VW::v_array<VW::example*>* ec_seq);
 }  // namespace MULTILABEL
 
 namespace VW

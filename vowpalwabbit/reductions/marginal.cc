@@ -141,7 +141,7 @@ void make_marginal(data& sm, VW::example& ec)
           {
             std::ostringstream ss;
             std::vector<audit_strings>& sn = sm.temp[n].space_names;
-            ss << sn[inv_hash_idx].first << "^" << sn[inv_hash_idx].second << "*" << sn[inv_hash_idx + 1].second;
+            ss << sn[inv_hash_idx].ns << "^" << sn[inv_hash_idx].name << "*" << sn[inv_hash_idx + 1].name;
             sm.inverse_hashes.insert(std::make_pair(key, ss.str()));
             inv_hash_idx += 2;
           }

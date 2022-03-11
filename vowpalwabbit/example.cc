@@ -148,7 +148,7 @@ void move_feature_namespace(example* dst, example* src, namespace_index c)
 
 struct features_and_source
 {
-  v_array<feature> feature_map;  // map to store sparse feature vectors
+  VW::v_array<feature> feature_map;  // map to store sparse feature vectors
   uint32_t stride_shift;
   uint64_t mask;
 };

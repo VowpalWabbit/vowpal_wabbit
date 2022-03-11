@@ -171,9 +171,9 @@ public:
   bool is_ldf = false;                   // user declared ldf
   bool use_action_costs = false;         // task promises to define per-action rollout-by-ref costs
 
-  v_array<int32_t> neighbor_features;  // ugly encoding of neighbor feature requirements
-  auto_condition_settings acset;       // settings for auto-conditioning
-  size_t history_length = 0;           // value of --search_history_length, used by some tasks, default 1
+  VW::v_array<int32_t> neighbor_features;  // ugly encoding of neighbor feature requirements
+  auto_condition_settings acset;           // settings for auto-conditioning
+  size_t history_length = 0;               // value of --search_history_length, used by some tasks, default 1
 
   size_t A = 0;             // total number of actions, [1..A]; 0 means ldf
   size_t num_learners = 0;  // total number of learners;
@@ -194,10 +194,10 @@ public:
   std::vector<VW::example> learn_ec_copy;           // copy of example(s) at learn_t
   VW::example* learn_ec_ref = nullptr;              // reference to example at learn_t, when there's no example munging
   size_t learn_ec_ref_cnt = 0;                      // how many are there (for LDF mode only; otherwise 1)
-  v_array<ptag> learn_condition_on;                 // a copy of the tags used for conditioning at the training position
+  VW::v_array<ptag> learn_condition_on;             // a copy of the tags used for conditioning at the training position
   std::vector<action_repr> learn_condition_on_act;  // the actions taken
-  v_array<char> learn_condition_on_names;           // the names of the actions
-  v_array<action> learn_allowed_actions;            // which actions were allowed at training time?
+  VW::v_array<char> learn_condition_on_names;       // the names of the actions
+  VW::v_array<action> learn_allowed_actions;        // which actions were allowed at training time?
   std::vector<action_repr> ptag_to_action;          // tag to action mapping for conditioning
   std::vector<action> test_action_sequence;  // if test-mode was run, what was the corresponding action sequence; it's a
                                              // vector cuz we might expose it to the library
@@ -206,11 +206,11 @@ public:
 
   VW::polylabel allowed_actions_cache;
 
-  size_t loss_declared_cnt = 0;             // how many times did run declare any loss (implicitly or explicitly)?
-  v_array<scored_action> train_trajectory;  // the training trajectory
-  size_t learn_t = 0;                       // what time step are we learning on?
-  size_t learn_a_idx = 0;                   // what action index are we trying?
-  bool done_with_all_actions = false;       // set to true when there are no more learn_a_idx to go
+  size_t loss_declared_cnt = 0;                 // how many times did run declare any loss (implicitly or explicitly)?
+  VW::v_array<scored_action> train_trajectory;  // the training trajectory
+  size_t learn_t = 0;                           // what time step are we learning on?
+  size_t learn_a_idx = 0;                       // what action index are we trying?
+  bool done_with_all_actions = false;           // set to true when there are no more learn_a_idx to go
 
   float test_loss = 0.f;   // loss incurred when run INIT_TEST
   float learn_loss = 0.f;  // loss incurred when run LEARN
@@ -275,7 +275,7 @@ public:
   std::unique_ptr<std::stringstream> rawOutputStringStream;
   CS::label ldf_test_label;
   std::vector<action_repr> condition_on_actions;
-  v_array<size_t> timesteps;
+  VW::v_array<size_t> timesteps;
   VW::polylabel learn_losses;
   VW::polylabel gte_label;
   std::vector<std::pair<float, size_t>> active_uncertainty;
@@ -294,7 +294,7 @@ public:
   BaseTask* metaoverride = nullptr;
   size_t meta_t = 0;  // the metatask has it's own notion of time. meta_t+t, during a single run, is the way to think
                       // about the "real" decision step but this really only matters for caching purposes
-  v_array<v_array<action_cache>*>
+  VW::v_array<VW::v_array<action_cache>*>
       memo_foreach_action;  // when foreach_action is on, we need to cache TRAIN trajectory actions for LEARN
 
   ~search_private()
@@ -699,7 +699,7 @@ void search_declare_loss(search_private& priv, float loss)
 }
 
 template <class T>
-void cdbg_print_array(const std::string& str, v_array<T>& A)
+void cdbg_print_array(const std::string& str, VW::v_array<T>& A)
 {
   cdbg << str << " = [";
   for (size_t i = 0; i < A.size(); i++) cdbg << " " << A[i];
@@ -990,7 +990,7 @@ void allowed_actions_to_label(search_private& priv, size_t ec_cnt, const action*
 }
 
 template <class T>
-void ensure_size(v_array<T>& A, size_t sz)
+void ensure_size(VW::v_array<T>& A, size_t sz)
 {
   A.resize_but_with_stl_behavior(sz);
 }
@@ -1002,7 +1002,7 @@ void ensure_size(std::vector<T>& A, size_t sz)
 }
 
 template <class T>
-void set_at(v_array<T>& v, T item, size_t pos)
+void set_at(VW::v_array<T>& v, T item, size_t pos)
 {
   if (pos >= v.size()) { v.resize_but_with_stl_behavior(pos + 1); }
   v[pos] = item;
@@ -1063,7 +1063,7 @@ action choose_oracle_action(search_private& priv, size_t ec_cnt, const action* o
   cdbg << " ], ret=" << a << endl;
   if (need_memo_foreach_action(priv) && (priv.state == SearchState::INIT_TRAIN))
   {
-    v_array<action_cache>* this_cache = new v_array<action_cache>();
+    VW::v_array<action_cache>* this_cache = new VW::v_array<action_cache>();
     // TODO we don't really need to construct this VW::polylabel
     VW::polylabel l = allowed_actions_to_ld(priv, 1, allowed_actions, allowed_actions_cnt, allowed_actions_cost);
     size_t K = cs_get_costs_size(priv.cb_learner, l);
@@ -1123,9 +1123,9 @@ action single_prediction_notLDF(search_private& priv, VW::example& ec, int polic
       float cost = cs_get_cost_partial_prediction(priv.cb_learner, ec.l, k);
       if (cost < min_cost) min_cost = cost;
     }
-    v_array<action_cache>* this_cache = nullptr;
+    VW::v_array<action_cache>* this_cache = nullptr;
     if (need_memo_foreach_action(priv) && (override_action == static_cast<action>(-1)))
-    { this_cache = new v_array<action_cache>(); }
+    { this_cache = new VW::v_array<action_cache>(); }
     for (size_t k = 0; k < K; k++)
     {
       action cl = cs_get_cost_index(priv.cb_learner, ec.l, k);
@@ -1236,8 +1236,8 @@ action single_prediction_LDF(search_private& priv, VW::example* ecs, size_t ec_c
 
   size_t start_K = (priv.is_ldf && COST_SENSITIVE::ec_is_example_header(ecs[0])) ? 1 : 0;
 
-  v_array<action_cache>* this_cache = nullptr;
-  if (need_partial_predictions) { this_cache = new v_array<action_cache>(); }
+  VW::v_array<action_cache>* this_cache = nullptr;
+  if (need_partial_predictions) { this_cache = new VW::v_array<action_cache>(); }
 
   for (action a = static_cast<uint32_t>(start_K); a < ec_cnt; a++)
   {
@@ -1530,7 +1530,7 @@ void foreach_action_from_cache(search_private& priv, size_t t, action override_a
   cdbg << "foreach_action_from_cache: t=" << t << ", memo_foreach_action.size()=" << priv.memo_foreach_action.size()
        << ", override_a=" << override_a << endl;
   assert(t < priv.memo_foreach_action.size());
-  v_array<action_cache>* cached = priv.memo_foreach_action[t];
+  VW::v_array<action_cache>* cached = priv.memo_foreach_action[t];
   if (!cached) return;  // the only way this can happen is if the metatask overrode this action
   cdbg << "memo_foreach_action size = " << cached->size() << endl;
   for (size_t id = 0; id < cached->size(); id++)
@@ -1861,7 +1861,7 @@ void hoopla_permute(size_t* B, size_t* end)
   free(A);
 }
 
-void get_training_timesteps(search_private& priv, v_array<size_t>& timesteps)
+void get_training_timesteps(search_private& priv, VW::v_array<size_t>& timesteps)
 {
   timesteps.clear();
 
@@ -2450,7 +2450,8 @@ std::vector<CS::label> read_allowed_transitions(action A, const char* filename, 
   return allowed;
 }
 
-void parse_neighbor_features(VW::string_view nf_strview, v_array<int32_t>& neighbor_features, VW::io::logger& logger)
+void parse_neighbor_features(
+    VW::string_view nf_strview, VW::v_array<int32_t>& neighbor_features, VW::io::logger& logger)
 {
   neighbor_features.clear();
   if (nf_strview.empty()) return;
@@ -3021,7 +3022,7 @@ predictor& predictor::add_oracle(action* a, size_t action_count)
   return *this;
 }
 
-predictor& predictor::add_oracle(v_array<action>& a)
+predictor& predictor::add_oracle(VW::v_array<action>& a)
 {
   for (const auto& item : a) { oracle_actions.push_back(item); }
   return *this;
@@ -3039,7 +3040,7 @@ predictor& predictor::set_oracle(action* a, size_t action_count)
   return add_oracle(a, action_count);
 }
 
-predictor& predictor::set_oracle(v_array<action>& a)
+predictor& predictor::set_oracle(VW::v_array<action>& a)
 {
   oracle_actions.clear();
   return add_oracle(a);
@@ -3068,7 +3069,7 @@ predictor& predictor::add_allowed(action* a, size_t action_count)
   for (size_t i = 0; i < action_count; i++) { allowed_actions.push_back(*(a + i)); }
   return *this;
 }
-predictor& predictor::add_allowed(v_array<action>& a)
+predictor& predictor::add_allowed(VW::v_array<action>& a)
 {
   for (const auto& item : a) { allowed_actions.push_back(item); }
   return *this;
@@ -3086,7 +3087,7 @@ predictor& predictor::set_allowed(action* a, size_t action_count)
   return add_allowed(a, action_count);
 }
 
-predictor& predictor::set_allowed(v_array<action>& a)
+predictor& predictor::set_allowed(VW::v_array<action>& a)
 {
   allowed_actions.clear();
   return add_allowed(a);
