@@ -10,7 +10,7 @@
     <license type="expression">BSD-3-Clause</license>
     <requireLicenseAcceptance>false</requireLicenseAcceptance>
     <description>Official Vowpal Wabbit library including C# interface.  $SourceInfo$</description>
-    <copyright>Copyright (C) Microsoft Corp 2012-2019, Yahoo! Inc. 2007-2012, and many individual contributors. All rights reserved.</copyright>
+    <copyright>Copyright (C) Microsoft Corp 2012-2022, Yahoo! Inc. 2007-2012, and many individual contributors. All rights reserved.</copyright>
     <dependencies>
       <group>
         <dependency id="VowpalWabbit" version="$version$$Tag$" />
