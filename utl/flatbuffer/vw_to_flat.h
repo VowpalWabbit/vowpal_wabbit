@@ -57,7 +57,7 @@ class to_flat
 {
 public:
   std::string output_flatbuffer_name;
-  size_t collection_size = 0;
+  uint64_t collection_size = 0;
   bool collection = false;
   void convert_txt_to_flat(VW::workspace& all);
 

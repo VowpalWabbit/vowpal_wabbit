@@ -9,6 +9,7 @@
 #include <iterator>
 #include <memory>
 #include <numeric>
+#include <sstream>
 #include <string>
 #include <type_traits>
 #include <utility>
@@ -20,8 +21,40 @@
 
 using feature_value = float;
 using feature_index = uint64_t;
-using audit_strings = std::pair<std::string, std::string>;
 using namespace_index = unsigned char;
+
+namespace VW
+
+{
+struct audit_strings
+{
+  std::string ns;
+  std::string name;
+
+  // This is only set if chain hashing is in use.
+  std::string str_value;
+
+  audit_strings() = default;
+  audit_strings(std::string ns, std::string name) : ns(std::move(ns)), name(std::move(name)) {}
+  audit_strings(std::string ns, std::string name, std::string str_value)
+      : ns(std::move(ns)), name(std::move(name)), str_value(std::move(str_value))
+  {
+  }
+
+  bool is_empty() const { return ns.empty() && name.empty() && str_value.empty(); }
+};
+
+inline std::string to_string(const audit_strings& ai)
+{
+  std::ostringstream ss;
+  if (!ai.ns.empty() && ai.ns != " ") { ss << ai.ns << '^'; }
+  ss << ai.name;
+  if (!ai.str_value.empty()) { ss << '^' << ai.str_value; }
+  return ss.str();
+}
+}  // namespace VW
+
+using VW::audit_strings;
 
 // First: character based feature group, second: hash of extent
 using extent_term = std::pair<namespace_index, uint64_t>;
