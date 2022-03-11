@@ -4,7 +4,7 @@ include(NetFxStrongName)
 
 # TODO: Make AssemblyInfo a configure()ed file
 add_library(VowpalWabbit.Parallel SHARED
-  Properties/AssemblyInfo.cs 
+  Properties/AssemblyInfo.cs
   VowpalWabbitAsync.cs
   VowpalWabbitThreadedLearning.cs
 )
@@ -28,11 +28,17 @@ set (vw_DOTNET_FRAMEWORK_REFERENCES
 
 target_add_nuget_references(VowpalWabbit.Parallel "Microsoft.Tpl.Dataflow@4.5.24@System.Threading.Tasks.Dataflow")
 
-target_link_libraries(VowpalWabbit.Parallel 
-  PUBLIC VowpalWabbit.Common VowpalWabbit.Core VowpalWabbit 
+target_link_libraries(VowpalWabbit.Parallel
+  PUBLIC VowpalWabbit.Common VowpalWabbit.Core VowpalWabbit
 )
 
-set_target_properties(VowpalWabbit.Parallel 
+target_compile_options(VowpalWabbit.Parallel PRIVATE
+  $<$<CONFIG:Release>:/debug:pdbonly>
+  $<$<CONFIG:Debug>:/debug:full>
+)
+
+set_target_properties(VowpalWabbit.Parallel
     PROPERTIES VS_DOTNET_REFERENCES "${vw_DOTNET_FRAMEWORK_REFERENCES}"
                VS_GLOBAL_ROOTNAMESPACE VW
+               VS_GLOBAL_DocumentationFile "VowpalWabbit.Parallel.xml"
 )
