@@ -72,7 +72,16 @@ target_link_libraries(VowpalWabbit.Core
     $<BUILD_INTERFACE:RapidJSON>
 )
 
-target_compile_options(VowpalWabbit.Core PRIVATE /doc)
+target_compile_options(VowpalWabbit.Core PRIVATE
+  /doc
+  $<$<CONFIG:Release>:/FdVowpalWabbit.Core.pdb>
+  $<$<CONFIG:Debug>:/FdVowpalWabbit.Core.pdb>
+)
+
+target_link_options(VowpalWabbit.Core PRIVATE
+  $<$<CONFIG:Release>:/DEBUG>
+  $<$<CONFIG:Debug>:/DEBUG>
+)
 
 set_target_properties(VowpalWabbit.Core PROPERTIES
     VS_DOTNET_REFERENCES "${vw_DOTNET_FRAMEWORK_REFERENCES}"

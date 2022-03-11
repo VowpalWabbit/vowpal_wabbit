@@ -33,8 +33,8 @@ target_link_libraries(VowpalWabbit.Parallel
 )
 
 target_compile_options(VowpalWabbit.Parallel PRIVATE
-  $<$<CONFIG:Release>:"/p:DebugType=pdbonly">
-  $<$<CONFIG:Debug>:"/p:DebugType=full">
+  $<$<CONFIG:Release>:/debug:pdbonly>
+  $<$<CONFIG:Debug>:/debug:full>
 )
 
 set_target_properties(VowpalWabbit.Parallel

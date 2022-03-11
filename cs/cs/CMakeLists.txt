@@ -74,8 +74,8 @@ set (vw_DOTNET_FRAMEWORK_REFERENCES
 )
 
 target_compile_options(VowpalWabbit PRIVATE
-  $<$<CONFIG:Release>:"/p:DebugType=pdbonly">
-  $<$<CONFIG:Debug>:"/p:DebugType=full">
+  $<$<CONFIG:Release>:/debug:pdbonly>
+  $<$<CONFIG:Debug>:/debug:full>
 )
 
 target_link_libraries(VowpalWabbit

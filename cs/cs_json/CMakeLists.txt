@@ -46,8 +46,8 @@ target_link_libraries(VowpalWabbit.JSON
 target_add_nuget_references(VowpalWabbit.JSON "Newtonsoft.JSON@9.0.1")
 
 target_compile_options(VowpalWabbit.JSON PRIVATE
-  $<$<CONFIG:Release>:"/p:DebugType=pdbonly">
-  $<$<CONFIG:Debug>:"/p:DebugType=full">
+$<$<CONFIG:Release>:/debug:pdbonly>
+$<$<CONFIG:Debug>:/debug:full>
 )
 
 set_target_properties(VowpalWabbit.JSON
