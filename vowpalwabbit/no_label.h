@@ -6,12 +6,7 @@
 
 namespace VW
 {
-struct workspace;
-}
-
 struct example;
-namespace VW
-{
 struct workspace;
 }
 
@@ -19,10 +14,10 @@ namespace no_label
 {
 using no_label = char;
 
-void return_no_label_example(VW::workspace& all, void*, example& ec);
+void return_no_label_example(VW::workspace& all, void*, VW::example& ec);
 
-extern label_parser no_label_parser;
+extern VW::label_parser no_label_parser;
 
-void print_no_label_update(VW::workspace& all, example& ec);
-void output_and_account_no_label_example(VW::workspace& all, example& ec);
+void print_no_label_update(VW::workspace& all, VW::example& ec);
+void output_and_account_no_label_example(VW::workspace& all, VW::example& ec);
 }  // namespace no_label

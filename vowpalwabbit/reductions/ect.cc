@@ -166,7 +166,7 @@ size_t create_circuit(ect& e, uint64_t max_label, uint64_t eliminations)
   return e.last_pair + (eliminations - 1);
 }
 
-uint32_t ect_predict(ect& e, single_learner& base, example& ec)
+uint32_t ect_predict(ect& e, single_learner& base, VW::example& ec)
 {
   if (e.k == static_cast<size_t>(1)) return 1;
 
@@ -203,7 +203,7 @@ uint32_t ect_predict(ect& e, single_learner& base, example& ec)
   return id + 1;
 }
 
-void ect_train(ect& e, single_learner& base, example& ec)
+void ect_train(ect& e, single_learner& base, VW::example& ec)
 {
   if (e.k == 1)  // nothing to do
     return;
@@ -291,7 +291,7 @@ void ect_train(ect& e, single_learner& base, example& ec)
   }
 }
 
-void predict(ect& e, single_learner& base, example& ec)
+void predict(ect& e, single_learner& base, VW::example& ec)
 {
   MULTICLASS::label_t mc = ec.l.multi;
   if (mc.label == 0 || (mc.label > e.k && mc.label != static_cast<uint32_t>(-1)))
@@ -304,7 +304,7 @@ void predict(ect& e, single_learner& base, example& ec)
   ec.l.multi = mc;
 }
 
-void learn(ect& e, single_learner& base, example& ec)
+void learn(ect& e, single_learner& base, VW::example& ec)
 {
   MULTICLASS::label_t mc = ec.l.multi;
   uint32_t pred = ec.pred.multiclass;

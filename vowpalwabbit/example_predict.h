@@ -3,8 +3,6 @@
 // license as described in the file LICENSE.
 #pragma once
 
-using namespace_index = unsigned char;
-
 #include <array>
 #include <set>
 #include <unordered_set>
@@ -15,18 +13,10 @@ using namespace_index = unsigned char;
 #include "future_compat.h"
 #include "reduction_features.h"
 #include "v_array.h"
-// Mutex cannot be used in managed C++, tell the compiler that this is unmanaged even if included in a managed
-// project.
-#ifdef _M_CEE
-#  pragma managed(push, off)
-#  undef _M_CEE
-#  include <mutex>
-#  define _M_CEE 001
-#  pragma managed(pop)
-#else
-#  include <mutex>
-#endif
 
+namespace VW
+{
+using namespace_index = unsigned char;
 struct example_predict
 {
   class iterator
@@ -70,3 +60,7 @@ struct example_predict
   // Used for debugging reductions.  Keeps track of current reduction level.
   uint32_t _debug_current_reduction_depth = 0;
 };
+}  // namespace VW
+
+using namespace_index VW_DEPRECATED("namespace_index moved into VW namespace") = VW::namespace_index;
+using example_predict VW_DEPRECATED("example_predict moved into VW namespace") = VW::example_predict;

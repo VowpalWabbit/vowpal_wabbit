@@ -33,7 +33,7 @@ namespace VW
 {
 struct workspace;
 
-void parse_example_label(string_view label, const label_parser& lbl_parser, const named_labels* ldict,
+void parse_example_label(string_view label, const VW::label_parser& lbl_parser, const named_labels* ldict,
     label_parser_reuse_mem& reuse_mem, example& ec, VW::io::logger& logger);
 
 namespace details
@@ -74,8 +74,8 @@ struct parser
   // helper(s) for text parsing
   std::vector<VW::string_view> words;
 
-  VW::object_pool<example> example_pool;
-  VW::ptr_queue<example> ready_parsed_examples;
+  VW::object_pool<VW::example> example_pool;
+  VW::ptr_queue<VW::example> ready_parsed_examples;
 
   io_buf input;  // Input source(s)
 
@@ -85,9 +85,9 @@ struct parser
   /// parsers multiple are produced which all correspond the the same overall
   /// logical example. examples must have a single empty example in it when this
   /// call is made.
-  int (*reader)(VW::workspace*, io_buf&, v_array<example*>& examples);
+  int (*reader)(VW::workspace*, io_buf&, v_array<VW::example*>& examples);
   /// text_reader consumes the char* input and is for text based parsing
-  void (*text_reader)(VW::workspace*, const char*, size_t, v_array<example*>&);
+  void (*text_reader)(VW::workspace*, const char*, size_t, v_array<VW::example*>&);
 
   shared_data* _shared_data = nullptr;
 
@@ -119,7 +119,7 @@ struct parser
 
   VW::label_parser_reuse_mem parser_memory_to_reuse;
 
-  label_parser lbl_parser;  // moved from vw
+  VW::label_parser lbl_parser;  // moved from vw
 
   bool audit = false;
   bool decision_service_json = false;

@@ -23,7 +23,7 @@ namespace INTERACTIONS
 namespace
 {
 template <typename FuncT>
-void for_each_value(const std::array<features, NUM_NAMESPACES>& feature_spaces, namespace_index term, const FuncT& func)
+void for_each_value(const std::array<features, NUM_NAMESPACES>& feature_spaces, VW::namespace_index term, const FuncT& func)
 {
   for (auto value : feature_spaces[term].values) { func(value); }
 }
@@ -43,7 +43,7 @@ float calc_sum_ft_squared_for_term(const std::array<features, NUM_NAMESPACES>& f
   return sum_feat_sq_in_inter;
 }
 
-float calc_sum_ft_squared_for_term(const std::array<features, NUM_NAMESPACES>& feature_spaces, namespace_index term)
+float calc_sum_ft_squared_for_term(const std::array<features, NUM_NAMESPACES>& feature_spaces, VW::namespace_index term)
 {
   return feature_spaces[term].sum_feat_sq;
 }
@@ -120,7 +120,7 @@ float calculate_count_and_sum_ft_sq_for_combinations(const std::array<features, 
 
 // returns number of new features that will be generated for example and sum of their squared values
 float eval_sum_ft_squared_of_generated_ft(bool permutations,
-    const std::vector<std::vector<namespace_index>>& interactions,
+    const std::vector<std::vector<VW::namespace_index>>& interactions,
     const std::vector<std::vector<extent_term>>& extent_interactions,
     const std::array<features, NUM_NAMESPACES>& feature_spaces)
 {
@@ -139,16 +139,16 @@ float eval_sum_ft_squared_of_generated_ft(bool permutations,
   return sum_ft_sq;
 }
 
-bool sort_interactions_comparator(const std::vector<namespace_index>& a, const std::vector<namespace_index>& b)
+bool sort_interactions_comparator(const std::vector<VW::namespace_index>& a, const std::vector<VW::namespace_index>& b)
 {
   if (a.size() != b.size()) { return a.size() < b.size(); }
   return a < b;
 }
 
-std::vector<std::vector<namespace_index>> expand_quadratics_wildcard_interactions(
-    bool leave_duplicate_interactions, const std::set<namespace_index>& new_example_indices)
+std::vector<std::vector<VW::namespace_index>> expand_quadratics_wildcard_interactions(
+    bool leave_duplicate_interactions, const std::set<VW::namespace_index>& new_example_indices)
 {
-  std::set<std::vector<namespace_index>> interactions;
+  std::set<std::vector<VW::namespace_index>> interactions;
 
   for (auto it = new_example_indices.begin(); it != new_example_indices.end(); ++it)
   {
@@ -163,7 +163,7 @@ std::vector<std::vector<namespace_index>> expand_quadratics_wildcard_interaction
       if (leave_duplicate_interactions) { interactions.insert({idx2, idx1}); }
     }
   }
-  return std::vector<std::vector<namespace_index>>(interactions.begin(), interactions.end());
+  return std::vector<std::vector<VW::namespace_index>>(interactions.begin(), interactions.end());
 }
 
 }  // namespace INTERACTIONS

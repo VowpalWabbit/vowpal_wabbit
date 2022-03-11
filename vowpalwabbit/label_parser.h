@@ -13,12 +13,12 @@
 
 struct parser;
 struct shared_data;
-struct polylabel;
 class io_buf;
-class reduction_features;
-struct example;
 namespace VW
 {
+class reduction_features;
+struct example;
+struct polylabel;
 class named_labels;
 
 // To avoid allocating memory for each parse call each label parser has access to this struct as a helper.
@@ -26,7 +26,6 @@ struct label_parser_reuse_mem
 {
   std::vector<VW::string_view> tokens;
 };
-}  // namespace VW
 
 struct label_parser
 {
@@ -41,7 +40,7 @@ struct label_parser
   VW::label_type_t label_type;
 };
 
-namespace VW
-{
 label_parser get_label_parser(VW::label_type_t label_type);
 }  // namespace VW
+
+using label_parser VW_DEPRECATED("label_parser moved into VW namespace") = VW::label_parser;

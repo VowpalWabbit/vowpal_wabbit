@@ -65,7 +65,7 @@ struct Namespace
 
 template <bool audit>
 void push_ns(
-    example* ex, const char* ns, std::vector<Namespace<audit>>& namespaces, hash_func_t hash_func, uint64_t hash_seed)
+    VW::example* ex, const char* ns, std::vector<Namespace<audit>>& namespaces, hash_func_t hash_func, uint64_t hash_seed)
 {
   Namespace<audit> n;
   n.feature_group = ns[0];
@@ -88,7 +88,7 @@ void push_ns(
 }
 
 template <bool audit>
-void pop_ns(example* ex, std::vector<Namespace<audit>>& namespaces)
+void pop_ns(VW::example* ex, std::vector<Namespace<audit>>& namespaces)
 {
   auto& ns = namespaces.back();
   if (ns.feature_count > 0)

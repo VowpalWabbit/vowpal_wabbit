@@ -33,7 +33,7 @@ size_t read_features(io_buf& buf, char*& line, size_t& num_chars)
   return num_chars_initial;
 }
 
-int read_features_string(VW::workspace* all, io_buf& buf, v_array<example*>& examples)
+int read_features_string(VW::workspace* all, io_buf& buf, v_array<VW::example*>& examples)
 {
   char* line;
   size_t num_chars;
@@ -68,7 +68,7 @@ public:
   bool _redefine_some;
   std::array<unsigned char, NUM_NAMESPACES>* _redefine;
   parser* _p;
-  example* _ae;
+  VW::example* _ae;
   std::array<uint64_t, NUM_NAMESPACES>* _affix_features;
   std::array<bool, NUM_NAMESPACES>* _spelling_features;
   v_array<char> _spelling;
@@ -473,7 +473,7 @@ public:
     }
   }
 
-  TC_parser(VW::string_view line, VW::workspace& all, example* ae) : _line(line)
+  TC_parser(VW::string_view line, VW::workspace& all, VW::example* ae) : _line(line)
   {
     if (!_line.empty())
     {
@@ -497,7 +497,7 @@ public:
   }
 };
 
-void substring_to_example(VW::workspace* all, example* ae, VW::string_view example)
+void substring_to_example(VW::workspace* all, VW::example* ae, VW::string_view example)
 {
   if (example.empty()) { ae->is_newline = true; }
 

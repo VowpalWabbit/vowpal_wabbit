@@ -21,9 +21,9 @@ using action_scores = v_array<action_score>;
 
 namespace VW
 {
+struct example;
 struct workspace;
 }
-struct example;
 
 namespace VW
 {

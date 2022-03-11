@@ -25,7 +25,7 @@ label_data::label_data(float label) : label(label) {}
 
 void label_data::reset_to_default() { label = FLT_MAX; }
 
-void print_update(VW::workspace& all, const example& ec)
+void print_update(VW::workspace& all, const VW::example& ec)
 {
   if (all.sd->weighted_labeled_examples + all.sd->weighted_unlabeled_examples >= all.sd->dump_interval && !all.quiet &&
       !all.bfgs)
@@ -35,7 +35,7 @@ void print_update(VW::workspace& all, const example& ec)
   }
 }
 
-void output_and_account_example(VW::workspace& all, const example& ec)
+void output_and_account_example(VW::workspace& all, const VW::example& ec)
 {
   const label_data& ld = ec.l.simple;
 
@@ -48,7 +48,7 @@ void output_and_account_example(VW::workspace& all, const example& ec)
   print_update(all, ec);
 }
 
-void return_simple_example(VW::workspace& all, void*, example& ec)
+void return_simple_example(VW::workspace& all, void*, VW::example& ec)
 {
   output_and_account_example(all, ec);
   VW::finish_example(all, ec);

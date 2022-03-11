@@ -85,14 +85,14 @@ struct task_data
   std::vector<std::vector<size_t>> adj;     // adj[n] is a vector of *edge example ids* that contain n
   std::vector<uint32_t> bfs;                // order of nodes to process
   std::vector<size_t> pred;                 // predictions
-  example* cur_node;                        // pointer to the current node for add_edge_features_fn
+  VW::example* cur_node;                        // pointer to the current node for add_edge_features_fn
   std::vector<float> neighbor_predictions;  // prediction on this neighbor for add_edge_features_fn
   std::vector<uint32_t> confusion_matrix;
   std::vector<float> true_counts;
   float true_counts_total;
 };
 
-inline bool example_is_test(const polylabel& l) { return l.cs.costs.empty(); }
+inline bool example_is_test(const VW::polylabel& l) { return l.cs.costs.empty(); }
 
 void initialize(Search::search& sch, size_t& num_actions, options_i& options)
 {
@@ -135,9 +135,9 @@ void initialize(Search::search& sch, size_t& num_actions, options_i& options)
   sch.set_label_parser(COST_SENSITIVE::cs_label, example_is_test);
 }
 
-inline bool example_is_edge(example* e) { return e->l.cs.costs.size() > 1; }
+inline bool example_is_edge(VW::example* e) { return e->l.cs.costs.size() > 1; }
 
-void run_bfs(task_data& D, multi_ex& ec)
+void run_bfs(task_data& D, VW::multi_ex& ec)
 {
   D.bfs.clear();
   std::vector<bool> touched;
@@ -177,7 +177,7 @@ void run_bfs(task_data& D, multi_ex& ec)
   }
 }
 
-void setup(Search::search& sch, multi_ex& ec)
+void setup(Search::search& sch, VW::multi_ex& ec)
 {
   task_data& D = *sch.get_task_data<task_data>();
   D.multiplier = D.wpp << D.ss;
@@ -228,7 +228,7 @@ void setup(Search::search& sch, multi_ex& ec)
   for (size_t n = 0; n < D.N; n++) D.pred.push_back(D.K + 1);
 }
 
-void takedown(Search::search& sch, multi_ex& /*ec*/)
+void takedown(Search::search& sch, VW::multi_ex& /*ec*/)
 {
   task_data& D = *sch.get_task_data<task_data>();
   D.bfs.clear();
@@ -239,7 +239,7 @@ void takedown(Search::search& sch, multi_ex& /*ec*/)
 
 void add_edge_features_group_fn(task_data& D, float fv, uint64_t fx)
 {
-  example* node = D.cur_node;
+  VW::example* node = D.cur_node;
   uint64_t fx2 = fx / D.multiplier;
   for (size_t k = 0; k < D.numN; k++)
   {
@@ -251,14 +251,14 @@ void add_edge_features_group_fn(task_data& D, float fv, uint64_t fx)
 
 void add_edge_features_single_fn(task_data& D, float fv, uint64_t fx)
 {
-  example* node = D.cur_node;
+  VW::example* node = D.cur_node;
   features& fs = node->feature_space[neighbor_namespace];
   uint64_t fx2 = fx / D.multiplier;
   size_t k = static_cast<size_t>(D.neighbor_predictions[0]);
   fs.push_back(fv, static_cast<uint32_t>((fx2 + 348919043 * k) * D.multiplier) & D.mask);
 }
 
-void add_edge_features(Search::search& sch, task_data& D, size_t n, multi_ex& ec)
+void add_edge_features(Search::search& sch, task_data& D, size_t n, VW::multi_ex& ec)
 {
   D.cur_node = ec[n];
 
@@ -310,7 +310,7 @@ void add_edge_features(Search::search& sch, task_data& D, size_t n, multi_ex& ec
 
     if (pred_total == 0.) continue;
     for (size_t k = 0; k < D.numN; k++) D.neighbor_predictions[k] /= pred_total;
-    example& edge = *ec[i];
+    VW::example& edge = *ec[i];
 
     if (pred_total <= 1.)  // single edge
     {
@@ -335,7 +335,7 @@ void add_edge_features(Search::search& sch, task_data& D, size_t n, multi_ex& ec
   }
 }
 
-void del_edge_features(task_data& /*D*/, uint32_t n, multi_ex& ec)
+void del_edge_features(task_data& /*D*/, uint32_t n, VW::multi_ex& ec)
 {
   ec[n]->indices.pop_back();
   features& fs = ec[n]->feature_space[neighbor_namespace];
@@ -371,7 +371,7 @@ float macro_f(task_data& D)
   return total_f1 / count_f1;
 }
 
-void run(Search::search& sch, multi_ex& ec)
+void run(Search::search& sch, VW::multi_ex& ec)
 {
   task_data& D = *sch.get_task_data<task_data>();
   float loss_val = 0.5f / static_cast<float>(D.num_loops);

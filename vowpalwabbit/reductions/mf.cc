@@ -39,7 +39,7 @@ struct mf
 };
 
 template <bool cache_sub_predictions>
-void predict(mf& data, single_learner& base, example& ec)
+void predict(mf& data, single_learner& base, VW::example& ec)
 {
   float prediction = 0;
   if (cache_sub_predictions) { data.sub_predictions.resize_but_with_stl_behavior(2 * data.rank + 1); }
@@ -61,7 +61,7 @@ void predict(mf& data, single_learner& base, example& ec)
   auto* saved_interactions = ec.interactions;
   auto restore_guard = VW::scope_exit([saved_interactions, &ec] { ec.interactions = saved_interactions; });
 
-  std::vector<std::vector<namespace_index>> empty_interactions;
+  std::vector<std::vector<VW::namespace_index>> empty_interactions;
   ec.interactions = &empty_interactions;
 
   // add interaction terms to prediction
@@ -74,7 +74,7 @@ void predict(mf& data, single_learner& base, example& ec)
     {
       for (size_t k = 1; k <= data.rank; k++)
       {
-        ec.indices[0] = static_cast<namespace_index>(left_ns);
+        ec.indices[0] = static_cast<VW::namespace_index>(left_ns);
 
         // compute l^k * x_l using base learner
         base.predict(ec, k);
@@ -82,7 +82,7 @@ void predict(mf& data, single_learner& base, example& ec)
         if (cache_sub_predictions) data.sub_predictions[2 * k - 1] = x_dot_l;
 
         // set example to right namespace only
-        ec.indices[0] = static_cast<namespace_index>(right_ns);
+        ec.indices[0] = static_cast<VW::namespace_index>(right_ns);
 
         // compute r^k * x_r using base learner
         base.predict(ec, k + data.rank);
@@ -102,7 +102,7 @@ void predict(mf& data, single_learner& base, example& ec)
   ec.pred.scalar = GD::finalize_prediction(data.all->sd, data.all->logger, ec.partial_prediction);
 }
 
-void learn(mf& data, single_learner& base, example& ec)
+void learn(mf& data, single_learner& base, VW::example& ec)
 {
   // predict with current weights
   predict<true>(data, base, ec);
@@ -120,7 +120,7 @@ void learn(mf& data, single_learner& base, example& ec)
   ec.indices.push_back(0);
 
   auto* saved_interactions = ec.interactions;
-  std::vector<std::vector<namespace_index>> empty_interactions;
+  std::vector<std::vector<VW::namespace_index>> empty_interactions;
   ec.interactions = &empty_interactions;
 
   // update interaction terms
@@ -133,7 +133,7 @@ void learn(mf& data, single_learner& base, example& ec)
     if (ec.feature_space[left_ns].size() > 0 && ec.feature_space[right_ns].size() > 0)
     {
       // set example to left namespace only
-      ec.indices[0] = static_cast<namespace_index>(left_ns);
+      ec.indices[0] = static_cast<VW::namespace_index>(left_ns);
 
       // store feature values in left namespace
       data.temp_features = ec.feature_space[left_ns];
@@ -157,7 +157,7 @@ void learn(mf& data, single_learner& base, example& ec)
       }
 
       // set example to right namespace only
-      ec.indices[0] = static_cast<namespace_index>(right_ns);
+      ec.indices[0] = static_cast<VW::namespace_index>(right_ns);
 
       // store feature values for right namespace
       data.temp_features = ec.feature_space[right_ns];

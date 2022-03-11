@@ -5,9 +5,9 @@
 #include "io_buf.h"
 #include "label_parser.h"
 
-struct example;
 namespace VW
 {
+struct example;
 struct workspace;
 }
 
@@ -23,23 +23,23 @@ struct label_t
   void reset_to_default();
 };
 
-extern label_parser mc_label;
+extern VW::label_parser mc_label;
 
-void print_update_with_probability(VW::workspace& all, example& ec, uint32_t prediction);
-void print_update_with_score(VW::workspace& all, example& ec, uint32_t prediction);
+void print_update_with_probability(VW::workspace& all, VW::example& ec, uint32_t prediction);
+void print_update_with_score(VW::workspace& all, VW::example& ec, uint32_t prediction);
 
-void finish_example(VW::workspace& all, example& ec, bool update_loss);
+void finish_example(VW::workspace& all, VW::example& ec, bool update_loss);
 
 bool test_label(const label_t& ld);
 
 template <class T>
-void finish_example(VW::workspace& all, T&, example& ec)
+void finish_example(VW::workspace& all, T&, VW::example& ec)
 {
   finish_example(all, ec, true);
 }
 
 template <class T>
-void finish_example_without_loss(VW::workspace& all, T&, example& ec)
+void finish_example_without_loss(VW::workspace& all, T&, VW::example& ec)
 {
   finish_example(all, ec, false);
 }

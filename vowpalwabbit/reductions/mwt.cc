@@ -34,7 +34,7 @@ struct mwt
   uint32_t num_classes = 0;
   bool learn = false;
 
-  v_array<namespace_index> indices;  // excluded namespaces
+  v_array<VW::namespace_index> indices;  // excluded namespaces
   features feature_space[256];
   VW::workspace* all = nullptr;
 
@@ -58,7 +58,7 @@ void value_policy(mwt& c, float val, uint64_t index)  // estimate the value of a
 }
 
 template <bool learn, bool exclude, bool is_learn>
-void predict_or_learn(mwt& c, single_learner& base, example& ec)
+void predict_or_learn(mwt& c, single_learner& base, VW::example& ec)
 {
   c.optional_observation = get_observed_cost_cb(ec.l.cb);
 
@@ -155,7 +155,7 @@ void print_scalars(VW::io::writer* f, v_array<float>& scalars, v_array<char>& ta
   }
 }
 
-void finish_example(VW::workspace& all, mwt& c, example& ec)
+void finish_example(VW::workspace& all, mwt& c, VW::example& ec)
 {
   float loss = 0.;
   if (c.learn)
@@ -256,8 +256,8 @@ base_learner* mwt_setup(VW::setup_base_i& stack_builder)
   }
 
   std::string name_addition;
-  void (*learn_ptr)(mwt&, single_learner&, example&);
-  void (*pred_ptr)(mwt&, single_learner&, example&);
+  void (*learn_ptr)(mwt&, single_learner&, VW::example&);
+  void (*pred_ptr)(mwt&, single_learner&, VW::example&);
 
   if (c->learn)
   {

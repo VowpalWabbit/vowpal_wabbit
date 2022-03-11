@@ -20,7 +20,7 @@ struct reduction_data
 };
 
 template <bool is_learn>
-void count_label_single(reduction_data& data, VW::LEARNER::single_learner& base, example& ec)
+void count_label_single(reduction_data& data, VW::LEARNER::single_learner& base, VW::example& ec)
 {
   VW::count_label(*data._sd, ec.l.simple.label);
 
@@ -32,7 +32,7 @@ void count_label_single(reduction_data& data, VW::LEARNER::single_learner& base,
 }
 
 template <bool is_learn>
-void count_label_multi(reduction_data& data, VW::LEARNER::multi_learner& base, multi_ex& ec_seq)
+void count_label_multi(reduction_data& data, VW::LEARNER::multi_learner& base, VW::multi_ex& ec_seq)
 {
   for (const auto* ex : ec_seq) { VW::count_label(*data._sd, ex->l.simple.label); }
 
@@ -44,11 +44,11 @@ void count_label_multi(reduction_data& data, VW::LEARNER::multi_learner& base, m
 }
 
 // This reduction must delegate finish to the one it is above as this is just a utility counter.
-void finish_example_multi(VW::workspace& all, reduction_data& data, multi_ex& ec)
+void finish_example_multi(VW::workspace& all, reduction_data& data, VW::multi_ex& ec)
 {
   VW::LEARNER::as_multiline(data._base)->finish_example(all, ec);
 }
-void finish_example_single(VW::workspace& all, reduction_data& data, example& ec)
+void finish_example_single(VW::workspace& all, reduction_data& data, VW::example& ec)
 {
   VW::LEARNER::as_singleline(data._base)->finish_example(all, ec);
 }

@@ -43,7 +43,7 @@ inline char* run_len_encode(char* p, uint64_t i)
 
 inline int64_t ZigZagDecode(uint64_t n) { return (n >> 1) ^ -static_cast<int64_t>(n & 1); }
 
-size_t read_cached_tag(io_buf& cache, example* ae)
+size_t read_cached_tag(io_buf& cache, VW::example* ae)
 {
   char* c;
   size_t tag_size;
@@ -67,7 +67,7 @@ __attribute__((packed))
 #endif
 ;
 
-void VW::write_example_to_cache(io_buf& output, example* ae, label_parser& lbl_parser, uint64_t parse_mask,
+void VW::write_example_to_cache(io_buf& output, example* ae, VW::label_parser& lbl_parser, uint64_t parse_mask,
     VW::details::cache_temp_buffer& temp_buffer)
 {
   temp_buffer._backing_buffer->clear();

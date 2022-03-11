@@ -7,9 +7,9 @@
 namespace HookTask
 {
 void initialize(Search::search&, size_t&, VW::config::options_i&);
-void run(Search::search&, multi_ex&);
-void run_setup(Search::search&, multi_ex&);
-void run_takedown(Search::search&, multi_ex&);
+void run(Search::search&, VW::multi_ex&);
+void run_setup(Search::search&, VW::multi_ex&);
+void run_takedown(Search::search&, VW::multi_ex&);
 extern Search::search_task task;
 
 struct task_data

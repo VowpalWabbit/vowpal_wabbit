@@ -28,7 +28,7 @@ inline constexpr bool is_interaction_ns(const unsigned char ns)
   return (ns >= interaction_ns_start && ns <= interaction_ns_end) || (ns == ccb_slot_namespace);
 }
 
-inline bool contains_wildcard(const std::vector<namespace_index>& interaction)
+inline bool contains_wildcard(const std::vector<VW::namespace_index>& interaction)
 {
   return std::find(interaction.begin(), interaction.end(), wildcard_namespace) != interaction.end();
 }
@@ -41,7 +41,7 @@ inline bool contains_wildcard(const std::vector<extent_term>& interaction)
 
 // function estimates how many new features will be generated for example and their sum(value^2).
 float eval_sum_ft_squared_of_generated_ft(bool permutations,
-    const std::vector<std::vector<namespace_index>>& interactions,
+    const std::vector<std::vector<VW::namespace_index>>& interactions,
     const std::vector<std::vector<extent_term>>& extent_interactions,
     const std::array<features, NUM_NAMESPACES>& feature_spaces);
 
@@ -242,17 +242,17 @@ std::vector<std::vector<T>> generate_namespace_permutations_with_repetition(
 template <typename T>
 using generate_func_t = std::vector<std::vector<T>>(const std::set<T>& namespaces, size_t num_to_pick);
 
-std::vector<std::vector<namespace_index>> expand_quadratics_wildcard_interactions(
-    bool leave_duplicate_interactions, const std::set<namespace_index>& new_example_indices);
+std::vector<std::vector<VW::namespace_index>> expand_quadratics_wildcard_interactions(
+    bool leave_duplicate_interactions, const std::set<VW::namespace_index>& new_example_indices);
 
-bool sort_interactions_comparator(const std::vector<namespace_index>& a, const std::vector<namespace_index>& b);
+bool sort_interactions_comparator(const std::vector<VW::namespace_index>& a, const std::vector<VW::namespace_index>& b);
 
-template <generate_func_t<namespace_index> generate_func, bool leave_duplicate_interactions>
-std::vector<std::vector<namespace_index>> compile_interaction(
-    const std::vector<namespace_index>& interaction, const std::set<namespace_index>& indices)
+template <generate_func_t<VW::namespace_index> generate_func, bool leave_duplicate_interactions>
+std::vector<std::vector<VW::namespace_index>> compile_interaction(
+    const std::vector<VW::namespace_index>& interaction, const std::set<VW::namespace_index>& indices)
 {
   std::vector<size_t> insertion_indices;
-  std::vector<namespace_index> insertion_ns;
+  std::vector<VW::namespace_index> insertion_ns;
   size_t num_wildcards = 0;
   for (size_t i = 0; i < interaction.size(); i++)
   {
@@ -306,11 +306,11 @@ std::vector<std::vector<extent_term>> compile_extent_interaction(
 }
 
 // Compiling an interaction means to expand out wildcards (:) for each index present
-template <generate_func_t<namespace_index> generate_func, bool leave_duplicate_interactions>
-std::vector<std::vector<namespace_index>> compile_interactions(
-    const std::vector<std::vector<namespace_index>>& interactions, const std::set<namespace_index>& indices)
+template <generate_func_t<VW::namespace_index> generate_func, bool leave_duplicate_interactions>
+std::vector<std::vector<VW::namespace_index>> compile_interactions(
+    const std::vector<std::vector<VW::namespace_index>>& interactions, const std::set<VW::namespace_index>& indices)
 {
-  std::vector<std::vector<namespace_index>> final_interactions;
+  std::vector<std::vector<VW::namespace_index>> final_interactions;
 
   for (const auto& inter : interactions)
   {
@@ -360,16 +360,16 @@ std::vector<std::vector<extent_term>> compile_extent_interactions(
 struct interactions_generator
 {
 private:
-  std::set<namespace_index> all_seen_namespaces;
+  std::set<VW::namespace_index> all_seen_namespaces;
   std::set<extent_term> all_seen_extents;
 
 public:
-  std::vector<std::vector<namespace_index>> generated_interactions;
+  std::vector<std::vector<VW::namespace_index>> generated_interactions;
   std::vector<std::vector<extent_term>> generated_extent_interactions;
 
-  template <generate_func_t<namespace_index> generate_func, bool leave_duplicate_interactions>
-  void update_interactions_if_new_namespace_seen(const std::vector<std::vector<namespace_index>>& interactions,
-      const v_array<namespace_index>& new_example_indices)
+  template <generate_func_t<VW::namespace_index> generate_func, bool leave_duplicate_interactions>
+  void update_interactions_if_new_namespace_seen(const std::vector<std::vector<VW::namespace_index>>& interactions,
+      const v_array<VW::namespace_index>& new_example_indices)
   {
     auto prev_count = all_seen_namespaces.size();
     all_seen_namespaces.insert(new_example_indices.begin(), new_example_indices.end());
@@ -380,7 +380,7 @@ public:
       // generally they are used for implementation details and special behavior
       // and not user inputted features. The two exceptions are default_namespace
       // and ccb_slot_namespace (the default namespace for CCB slots)
-      std::set<namespace_index> indices_to_interact;
+      std::set<VW::namespace_index> indices_to_interact;
       for (auto ns_index : all_seen_namespaces)
       {
         if (is_interaction_ns(ns_index)) { indices_to_interact.insert(ns_index); }
@@ -396,7 +396,7 @@ public:
 
   template <generate_func_t<extent_term> generate_func, bool leave_duplicate_interactions>
   void update_extent_interactions_if_new_namespace_seen(const std::vector<std::vector<extent_term>>& interactions,
-      const v_array<namespace_index>& indices, const std::array<features, NUM_NAMESPACES>& feature_space)
+      const v_array<VW::namespace_index>& indices, const std::array<features, NUM_NAMESPACES>& feature_space)
   {
     auto prev_count = all_seen_extents.size();
     for (auto ns_index : indices)

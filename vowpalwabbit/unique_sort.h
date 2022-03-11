@@ -5,6 +5,6 @@
 #include "example.h"
 #include "parser.h"
 
-void unique_sort_features(uint64_t parse_mask, example* ae);
+void unique_sort_features(uint64_t parse_mask, VW::example* ae);
 
 void unique_features(features& fs, int max = -1);
