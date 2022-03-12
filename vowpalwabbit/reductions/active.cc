@@ -50,7 +50,7 @@ float query_decision(active& a, float ec_revert_weight, float k)
 }
 
 template <bool is_learn>
-void predict_or_learn_simulation(active& a, single_learner& base, example& ec)
+void predict_or_learn_simulation(active& a, single_learner& base, VW::example& ec)
 {
   base.predict(ec);
 
@@ -77,7 +77,7 @@ void predict_or_learn_simulation(active& a, single_learner& base, example& ec)
 }
 
 template <bool is_learn>
-void predict_or_learn_active(active& a, single_learner& base, example& ec)
+void predict_or_learn_active(active& a, single_learner& base, VW::example& ec)
 {
   if (is_learn)
     base.learn(ec);
@@ -119,7 +119,7 @@ void active_print_result(
   if (t != len) { logger.err_error("write error: {}", VW::strerror_to_string(errno)); }
 }
 
-void output_and_account_example(VW::workspace& all, active& a, example& ec)
+void output_and_account_example(VW::workspace& all, active& a, VW::example& ec)
 {
   const label_data& ld = ec.l.simple;
 
@@ -138,7 +138,7 @@ void output_and_account_example(VW::workspace& all, active& a, example& ec)
 }
 
 template <bool simulation>
-void return_active_example(VW::workspace& all, active& a, example& ec)
+void return_active_example(VW::workspace& all, active& a, VW::example& ec)
 {
   if (simulation) { output_and_account_example(all, ec); }
   else
@@ -188,10 +188,10 @@ base_learner* active_setup(VW::setup_base_i& stack_builder)
   auto data = VW::make_unique<active>(active_c0, all.sd, all.get_random_state(), all.model_file_ver);
   auto base = as_singleline(stack_builder.setup_base_learner());
 
-  using learn_pred_func_t = void (*)(active&, VW::LEARNER::single_learner&, example&);
+  using learn_pred_func_t = void (*)(active&, VW::LEARNER::single_learner&, VW::example&);
   learn_pred_func_t learn_func;
   learn_pred_func_t pred_func;
-  void (*finish_ptr)(VW::workspace&, active&, example&);
+  void (*finish_ptr)(VW::workspace&, active&, VW::example&);
   bool learn_returns_prediction = true;
   std::string reduction_name = stack_builder.get_setupfn_name(active_setup);
   if (simulation)

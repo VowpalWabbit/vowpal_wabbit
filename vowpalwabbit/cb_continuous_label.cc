@@ -28,7 +28,7 @@ void default_label_additional_fields<VW::cb_continuous::continuous_label>(VW::cb
 }  // namespace CB
 
 void parse_pdf(const std::vector<VW::string_view>& words, size_t words_index, VW::label_parser_reuse_mem& reuse_mem,
-    reduction_features& red_features, VW::io::logger& logger)
+    VW::reduction_features& red_features, VW::io::logger& logger)
 {
   auto& cats_reduction_features = red_features.template get<VW::continuous_actions::reduction_features>();
   for (size_t i = words_index; i < words.size(); i++)
@@ -46,7 +46,7 @@ void parse_pdf(const std::vector<VW::string_view>& words, size_t words_index, VW
 }
 
 void parse_chosen_action(const std::vector<VW::string_view>& words, size_t words_index,
-    VW::label_parser_reuse_mem& reuse_mem, reduction_features& red_features, VW::io::logger& logger)
+    VW::label_parser_reuse_mem& reuse_mem, VW::reduction_features& red_features, VW::io::logger& logger)
 {
   auto& cats_reduction_features = red_features.template get<VW::continuous_actions::reduction_features>();
   for (size_t i = words_index; i < words.size(); i++)

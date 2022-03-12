@@ -31,7 +31,7 @@ float safe_probability(float prob, VW::io::logger& logger)
 
 // Multiline version
 void gen_cs_example_ips(
-    const multi_ex& examples, COST_SENSITIVE::label& cs_labels, VW::io::logger& logger, float clip_p)
+    const VW::multi_ex& examples, COST_SENSITIVE::label& cs_labels, VW::io::logger& logger, float clip_p)
 {
   cs_labels.costs.clear();
   for (uint32_t i = 0; i < examples.size(); i++)
@@ -46,7 +46,7 @@ void gen_cs_example_ips(
 }
 
 // Multiline version
-void gen_cs_example_dm(const multi_ex& examples, COST_SENSITIVE::label& cs_labels)
+void gen_cs_example_dm(const VW::multi_ex& examples, COST_SENSITIVE::label& cs_labels)
 {
   cs_labels.costs.clear();
   for (uint32_t i = 0; i < examples.size(); i++)
@@ -60,7 +60,7 @@ void gen_cs_example_dm(const multi_ex& examples, COST_SENSITIVE::label& cs_label
 }
 
 // Multiline version
-void gen_cs_test_example(const multi_ex& examples, COST_SENSITIVE::label& cs_labels)
+void gen_cs_test_example(const VW::multi_ex& examples, COST_SENSITIVE::label& cs_labels)
 {
   cs_labels.costs.clear();
   for (uint32_t i = 0; i < examples.size(); i++)
@@ -126,7 +126,7 @@ void gen_cs_example_ips(
   }
 }
 
-void gen_cs_example_mtr(cb_to_cs_adf& c, multi_ex& ec_seq, COST_SENSITIVE::label& cs_labels)
+void gen_cs_example_mtr(cb_to_cs_adf& c, VW::multi_ex& ec_seq, COST_SENSITIVE::label& cs_labels)
 {
   c.action_sum += ec_seq.size();
   c.event_sum++;
@@ -150,7 +150,7 @@ void gen_cs_example_mtr(cb_to_cs_adf& c, multi_ex& ec_seq, COST_SENSITIVE::label
   }
 }
 
-void gen_cs_example_sm(multi_ex&, uint32_t chosen_action, float sign_offset,
+void gen_cs_example_sm(VW::multi_ex&, uint32_t chosen_action, float sign_offset,
     const ACTION_SCORE::action_scores& action_vals, COST_SENSITIVE::label& cs_labels)
 {
   cs_labels.costs.clear();
@@ -173,7 +173,7 @@ void gen_cs_example_sm(multi_ex&, uint32_t chosen_action, float sign_offset,
   }
 }
 
-void cs_prep_labels(multi_ex& examples, std::vector<CB::label>& cb_labels, COST_SENSITIVE::label& cs_labels,
+void cs_prep_labels(VW::multi_ex& examples, std::vector<CB::label>& cb_labels, COST_SENSITIVE::label& cs_labels,
     std::vector<COST_SENSITIVE::label>& prepped_cs_labels, uint64_t offset)
 {
   cb_labels.clear();

@@ -31,14 +31,14 @@ struct bs
   std::shared_ptr<VW::rand_state> _random_state;
 };
 
-void bs_predict_mean(VW::workspace& all, example& ec, std::vector<double>& pred_vec)
+void bs_predict_mean(VW::workspace& all, VW::example& ec, std::vector<double>& pred_vec)
 {
   ec.pred.scalar = static_cast<float>(accumulate(pred_vec.cbegin(), pred_vec.cend(), 0.0)) / pred_vec.size();
   if (ec.weight > 0 && ec.l.simple.label != FLT_MAX)
     ec.loss = all.loss->getLoss(all.sd, ec.pred.scalar, ec.l.simple.label) * ec.weight;
 }
 
-void bs_predict_vote(example& ec, std::vector<double>& pred_vec)
+void bs_predict_vote(VW::example& ec, std::vector<double>& pred_vec)
 {
   // majority vote in linear time
   unsigned int counter = 0;
@@ -141,7 +141,7 @@ void print_result(
   if (t != len) { logger.err_error("write error: {}", VW::strerror_to_string(errno)); }
 }
 
-void output_example(VW::workspace& all, bs& d, const example& ec)
+void output_example(VW::workspace& all, bs& d, const VW::example& ec)
 {
   const label_data& ld = ec.l.simple;
 
@@ -165,7 +165,7 @@ void output_example(VW::workspace& all, bs& d, const example& ec)
 }
 
 template <bool is_learn>
-void predict_or_learn(bs& d, single_learner& base, example& ec)
+void predict_or_learn(bs& d, single_learner& base, VW::example& ec)
 {
   VW::workspace& all = *d.all;
   bool shouldOutput = all.raw_prediction != nullptr;
@@ -210,7 +210,7 @@ void predict_or_learn(bs& d, single_learner& base, example& ec)
   if (shouldOutput) all.print_text_by_ref(all.raw_prediction.get(), outputStringStream.str(), ec.tag, all.logger);
 }
 
-void finish_example(VW::workspace& all, bs& d, example& ec)
+void finish_example(VW::workspace& all, bs& d, VW::example& ec)
 {
   output_example(all, d, ec);
   VW::finish_example(all, ec);

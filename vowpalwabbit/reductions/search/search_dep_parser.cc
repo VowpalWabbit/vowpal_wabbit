@@ -24,7 +24,7 @@ Search::search_task task = {"dep_parser", run, initialize, nullptr, setup, nullp
 
 struct task_data
 {
-  example ex;
+  VW::example ex;
   size_t root_label;
   uint32_t num_label;
   VW::v_array<uint32_t> valid_actions;
@@ -44,7 +44,7 @@ struct task_data
   // [4]:rightmost_arc, [5]: second_rightmost_arc
   std::array<VW::v_array<uint32_t>, 6> children;
 
-  std::array<example*, 13> ec_buf;
+  std::array<VW::example*, 13> ec_buf;
   bool old_style_labels;
   bool cost_to_go;
   bool one_learner;
@@ -101,10 +101,10 @@ void initialize(Search::search& sch, size_t& /*num_actions*/, options_i& options
   else
     sch.set_num_learners(3);
 
-  std::vector<std::vector<namespace_index>> newpairs{{'B', 'C'}, {'B', 'E'}, {'B', 'B'}, {'C', 'C'}, {'D', 'D'},
+  std::vector<std::vector<VW::namespace_index>> newpairs{{'B', 'C'}, {'B', 'E'}, {'B', 'B'}, {'C', 'C'}, {'D', 'D'},
       {'E', 'E'}, {'F', 'F'}, {'G', 'G'}, {'E', 'F'}, {'B', 'H'}, {'B', 'J'}, {'E', 'L'}, {'d', 'B'}, {'d', 'C'},
       {'d', 'D'}, {'d', 'E'}, {'d', 'F'}, {'d', 'G'}, {'d', 'd'}};
-  std::vector<std::vector<namespace_index>> newtriples{{'E', 'F', 'G'}, {'B', 'E', 'F'}, {'B', 'C', 'E'},
+  std::vector<std::vector<VW::namespace_index>> newtriples{{'E', 'F', 'G'}, {'B', 'E', 'F'}, {'B', 'C', 'E'},
       {'B', 'C', 'D'}, {'B', 'E', 'L'}, {'E', 'L', 'M'}, {'B', 'H', 'I'}, {'B', 'C', 'C'}, {'B', 'E', 'J'},
       {'B', 'E', 'H'}, {'B', 'J', 'K'}, {'B', 'E', 'N'}};
 
@@ -117,26 +117,26 @@ void initialize(Search::search& sch, size_t& /*num_actions*/, options_i& options
   else
     sch.set_options(AUTO_CONDITION_FEATURES | NO_CACHING);
 
-  sch.set_label_parser(COST_SENSITIVE::cs_label, [](const polylabel& l) -> bool { return l.cs.costs.empty(); });
+  sch.set_label_parser(COST_SENSITIVE::cs_label, [](const VW::polylabel& l) -> bool { return l.cs.costs.empty(); });
 }
 
 void inline add_feature(
-    example& ex, uint64_t idx, unsigned char ns, uint64_t mask, uint64_t multiplier, bool /* audit */ = false)
+    VW::example& ex, uint64_t idx, unsigned char ns, uint64_t mask, uint64_t multiplier, bool /* audit */ = false)
 {
   ex.feature_space[static_cast<int>(ns)].push_back(1.0f, (idx * multiplier) & mask);
 }
 
-void add_all_features(example& ex, example& src, unsigned char tgt_ns, uint64_t mask, uint64_t multiplier,
+void add_all_features(VW::example& ex, VW::example& src, unsigned char tgt_ns, uint64_t mask, uint64_t multiplier,
     uint64_t offset, bool /* audit */ = false)
 {
   features& tgt_fs = ex.feature_space[tgt_ns];
-  for (namespace_index ns : src.indices)
+  for (VW::namespace_index ns : src.indices)
     if (ns != constant_namespace)  // ignore constant_namespace
       for (feature_index i : src.feature_space[ns].indices)
         tgt_fs.push_back(1.0f, ((i / multiplier + offset) * multiplier) & mask);
 }
 
-void inline reset_ex(example& ex)
+void inline reset_ex(VW::example& ex)
 {
   ex.num_features = 0;
   ex.reset_total_sum_feat_sq();
@@ -240,7 +240,7 @@ size_t transition_eager(Search::search& sch, uint64_t a_id, uint32_t idx, uint32
   THROW("transition_eager failed");
 }
 
-void extract_features(Search::search& sch, uint32_t idx, multi_ex& ec)
+void extract_features(Search::search& sch, uint32_t idx, VW::multi_ex& ec)
 {
   VW::workspace& all = sch.get_vw_pointer_unsafe();
   task_data* data = sch.get_task_data<task_data>();
@@ -252,8 +252,8 @@ void extract_features(Search::search& sch, uint32_t idx, multi_ex& ec)
   auto& tags = data->tags;
   auto& children = data->children;
   auto& temp = data->temp;
-  example** ec_buf = data->ec_buf.data();
-  example& ex = data->ex;
+  VW::example** ec_buf = data->ec_buf.data();
+  VW::example& ex = data->ex;
 
   size_t n = ec.size();
   bool empty = stack.empty();
@@ -535,7 +535,7 @@ void convert_to_onelearner_actions(Search::search& sch, VW::v_array<action>& act
         actions_onelearner.push_back(static_cast<uint32_t>(i + 2 + num_label));
 }
 
-void setup(Search::search& sch, multi_ex& ec)
+void setup(Search::search& sch, VW::multi_ex& ec)
 {
   task_data* data = sch.get_task_data<task_data>();
   auto& gold_heads = data->gold_heads;
@@ -574,7 +574,7 @@ void setup(Search::search& sch, multi_ex& ec)
   for (size_t i = 0; i < 6; i++) data->children[i].resize_but_with_stl_behavior(n + static_cast<size_t>(1));
 }
 
-void run(Search::search& sch, multi_ex& ec)
+void run(Search::search& sch, VW::multi_ex& ec)
 {
   task_data* data = sch.get_task_data<task_data>();
   VW::v_array<uint32_t>&stack = data->stack, &gold_heads = data->gold_heads, &valid_actions = data->valid_actions,

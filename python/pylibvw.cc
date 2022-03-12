@@ -372,7 +372,7 @@ predictor_ptr get_predictor(search_ptr sch, ptag my_tag)
   return boost::shared_ptr<Search::predictor>(P);
 }
 
-label_parser* get_label_parser(VW::workspace* all, size_t labelType)
+VW::label_parser* get_label_parser(VW::workspace* all, size_t labelType)
 {
   switch (labelType)
   {
@@ -403,7 +403,7 @@ label_parser* get_label_parser(VW::workspace* all, size_t labelType)
 
 size_t my_get_label_type(VW::workspace* all)
 {
-  label_parser* lp = &all->example_parser->lbl_parser;
+  VW::label_parser* lp = &all->example_parser->lbl_parser;
   if (lp->parse_label == simple_label_parser.parse_label) { return lSIMPLE; }
   else if (lp->parse_label == MULTICLASS::mc_label.parse_label)
   {
@@ -480,14 +480,14 @@ size_t my_get_prediction_type(vw_ptr all)
 
 void my_delete_example(void* voidec)
 {
-  example* ec = (example*)voidec;
+  VW::example* ec = (VW::example*)voidec;
   VW::dealloc_examples(ec, 1);
 }
 
-example* my_empty_example0(vw_ptr vw, size_t labelType)
+VW::example* my_empty_example0(vw_ptr vw, size_t labelType)
 {
-  label_parser* lp = get_label_parser(&*vw, labelType);
-  example* ec = VW::alloc_examples(1);
+  VW::label_parser* lp = get_label_parser(&*vw, labelType);
+  VW::example* ec = VW::alloc_examples(1);
   lp->default_label(ec->l);
   ec->interactions = &vw->interactions;
   ec->extent_interactions = &vw->extent_interactions;
@@ -496,22 +496,22 @@ example* my_empty_example0(vw_ptr vw, size_t labelType)
 
 example_ptr my_empty_example(vw_ptr vw, size_t labelType)
 {
-  example* ec = my_empty_example0(vw, labelType);
-  return boost::shared_ptr<example>(ec, my_delete_example);
+  VW::example* ec = my_empty_example0(vw, labelType);
+  return boost::shared_ptr<VW::example>(ec, my_delete_example);
 }
 
 example_ptr my_read_example(vw_ptr all, size_t labelType, char* str)
 {
-  example* ec = my_empty_example0(all, labelType);
+  VW::example* ec = my_empty_example0(all, labelType);
   VW::read_line(*all, ec, str);
   VW::setup_example(*all, ec);
-  return boost::shared_ptr<example>(ec, my_delete_example);
+  return boost::shared_ptr<VW::example>(ec, my_delete_example);
 }
 
 example_ptr my_existing_example(vw_ptr all, size_t labelType, example_ptr existing_example)
 {
   return existing_example;
-  // return boost::shared_ptr<example>(existing_example);
+  // return boost::shared_ptr<VW::example>(existing_example);
 }
 
 multi_ex unwrap_example_list(py::list& ec)
@@ -558,7 +558,7 @@ void predict_or_learn(vw_ptr& all, py::list& ec)
 
 py::list my_parse(vw_ptr& all, char* str)
 {
-  VW::v_array<example*> examples;
+  VW::v_array<VW::example*> examples;
   examples.push_back(&VW::get_unused_example(all.get()));
   all->example_parser->text_reader(all.get(), str, strlen(str), examples);
 
@@ -568,7 +568,7 @@ py::list my_parse(vw_ptr& all, char* str)
     VW::setup_example(*all, ex);
     // Examples created from parsed text should not be deleted normally. Instead they need to be
     // returned to the pool using finish_example.
-    example_collection.append(boost::shared_ptr<example>(ex, dont_delete_me));
+    example_collection.append(boost::shared_ptr<VW::example>(ex, dont_delete_me));
   }
   return example_collection;
 }
@@ -787,7 +787,7 @@ void unsetup_example(vw_ptr vwP, example_ptr ae)
 
 void ex_set_label_string(example_ptr ec, vw_ptr vw, std::string label, size_t labelType)
 {  // SPEEDUP: if it's already set properly, don't modify
-  label_parser& old_lp = vw->example_parser->lbl_parser;
+  VW::label_parser& old_lp = vw->example_parser->lbl_parser;
   vw->example_parser->lbl_parser = *get_label_parser(&*vw, labelType);
   VW::parse_example_label(*vw, *ec, label);
   vw->example_parser->lbl_parser = old_lp;

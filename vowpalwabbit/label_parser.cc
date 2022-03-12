@@ -15,7 +15,7 @@
 #include "slates_label.h"
 #include "vw_exception.h"
 
-label_parser VW::get_label_parser(VW::label_type_t label_type)
+VW::label_parser VW::get_label_parser(VW::label_type_t label_type)
 {
   switch (label_type)
   {

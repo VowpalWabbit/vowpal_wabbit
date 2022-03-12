@@ -11,7 +11,7 @@
 
 using namespace VW::config;
 
-void learn(char&, VW::LEARNER::base_learner&, example&) {}
+void learn(char&, VW::LEARNER::base_learner&, VW::example&) {}
 
 VW::LEARNER::base_learner* noop_setup(VW::setup_base_i& stack_builder)
 {

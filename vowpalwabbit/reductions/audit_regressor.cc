@@ -86,7 +86,7 @@ inline void audit_regressor_feature(audit_regressor_data& dat, const float, cons
   weights[ft_idx] = 0.;  // mark value audited
 }
 
-void audit_regressor_lda(audit_regressor_data& rd, VW::LEARNER::single_learner& /* base */, example& ec)
+void audit_regressor_lda(audit_regressor_data& rd, VW::LEARNER::single_learner& /* base */, VW::example& ec)
 {
   VW::workspace& all = *rd.all;
 
@@ -115,7 +115,7 @@ void audit_regressor_lda(audit_regressor_data& rd, VW::LEARNER::single_learner& 
 // This is a learner which does nothing with examples.
 // void learn(audit_regressor_data&, VW::LEARNER::base_learner&, example&) {}
 
-void audit_regressor(audit_regressor_data& rd, VW::LEARNER::single_learner& base, example& ec)
+void audit_regressor(audit_regressor_data& rd, VW::LEARNER::single_learner& base, VW::example& ec)
 {
   VW::workspace& all = *rd.all;
 
@@ -177,7 +177,7 @@ inline void print_ex(VW::workspace& all, size_t ex_processed, size_t vals_found,
   *(all.trace_message) << "\n";
 }
 
-void finish_example(VW::workspace& all, audit_regressor_data& rd, example& ec)
+void finish_example(VW::workspace& all, audit_regressor_data& rd, VW::example& ec)
 {
   bool printed = false;
   if (static_cast<float>(ec.example_counter + std::size_t{1}) >= all.sd->dump_interval && !all.quiet)

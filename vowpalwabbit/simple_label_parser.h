@@ -6,7 +6,7 @@
 #include "label_parser.h"
 #include "simple_label.h"
 
-extern label_parser simple_label_parser;
+extern VW::label_parser simple_label_parser;
 
 namespace VW
 {

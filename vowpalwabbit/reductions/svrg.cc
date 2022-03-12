@@ -45,7 +45,7 @@ inline void vec_add(float& p, const float x, float& w)
 }
 
 template <int offset>
-inline float inline_predict(VW::workspace& all, example& ec)
+inline float inline_predict(VW::workspace& all, VW::example& ec)
 {
   const auto& simple_red_features = ec._reduction_features.template get<simple_label_reduction_features>();
   float acc = simple_red_features.initial;
@@ -55,18 +55,18 @@ inline float inline_predict(VW::workspace& all, example& ec)
 
 // -- Prediction, using inner vs. stable weights --
 
-float predict_stable(const svrg& s, example& ec)
+float predict_stable(const svrg& s, VW::example& ec)
 {
   return GD::finalize_prediction(s.all->sd, s.all->logger, inline_predict<W_STABLE>(*s.all, ec));
 }
 
-void predict(svrg& s, base_learner&, example& ec)
+void predict(svrg& s, base_learner&, VW::example& ec)
 {
   ec.partial_prediction = inline_predict<W_INNER>(*s.all, ec);
   ec.pred.scalar = GD::finalize_prediction(s.all->sd, s.all->logger, ec.partial_prediction);
 }
 
-float gradient_scalar(const svrg& s, const example& ec, float pred)
+float gradient_scalar(const svrg& s, const VW::example& ec, float pred)
 {
   return s.all->loss->first_derivative(s.all->sd, pred, ec.l.simple.label) * ec.weight;
 }
@@ -93,7 +93,7 @@ inline void update_stable_feature(float& g_scalar, float x, float& w)
   ws[W_STABLEGRAD] += g_scalar * x;
 }
 
-void update_inner(const svrg& s, example& ec)
+void update_inner(const svrg& s, VW::example& ec)
 {
   update u;
   // |ec| already has prediction according to inner weights.
@@ -104,13 +104,13 @@ void update_inner(const svrg& s, example& ec)
   GD::foreach_feature<update, update_inner_feature>(*s.all, ec, u);
 }
 
-void update_stable(const svrg& s, example& ec)
+void update_stable(const svrg& s, VW::example& ec)
 {
   float g = gradient_scalar(s, ec, predict_stable(s, ec));
   GD::foreach_feature<float, update_stable_feature>(*s.all, ec, g);
 }
 
-void learn(svrg& s, base_learner& base, example& ec)
+void learn(svrg& s, base_learner& base, VW::example& ec)
 {
   predict(s, base, ec);
 

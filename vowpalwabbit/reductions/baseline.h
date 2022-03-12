@@ -11,7 +11,7 @@ VW::LEARNER::base_learner* baseline_setup(VW::setup_base_i& stack_builder);
 namespace BASELINE
 {
 // utility functions for disabling baseline on a given example
-void set_baseline_enabled(example* ec);
-void reset_baseline_disabled(example* ec);
-bool baseline_enabled(const example* ec);
+void set_baseline_enabled(VW::example* ec);
+void reset_baseline_disabled(VW::example* ec);
+bool baseline_enabled(const VW::example* ec);
 }  // namespace BASELINE

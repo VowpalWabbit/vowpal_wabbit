@@ -24,7 +24,7 @@ struct cb_dro_data
   bool isValid() { return chisq.isValid(); }
 
   template <bool is_learn, bool is_explore>
-  inline void learn_or_predict(multi_learner& base, multi_ex& examples)
+  inline void learn_or_predict(multi_learner& base, VW::multi_ex& examples)
   {
     // Some explanation required.
     //
@@ -95,7 +95,7 @@ private:
 }  // namespace VW
 
 template <bool is_learn, bool is_explore>
-void learn_or_predict(cb_dro_data& data, multi_learner& base, multi_ex& examples)
+void learn_or_predict(cb_dro_data& data, multi_learner& base, VW::multi_ex& examples)
 {
   data.learn_or_predict<is_learn, is_explore>(base, examples);
 }
@@ -143,8 +143,8 @@ base_learner* cb_dro_setup(VW::setup_base_i& stack_builder)
 
   if (!data->isValid()) { THROW("invalid cb_dro parameter values supplied"); }
 
-  void (*learn_ptr)(cb_dro_data&, multi_learner&, multi_ex&);
-  void (*pred_ptr)(cb_dro_data&, multi_learner&, multi_ex&);
+  void (*learn_ptr)(cb_dro_data&, multi_learner&, VW::multi_ex&);
+  void (*pred_ptr)(cb_dro_data&, multi_learner&, VW::multi_ex&);
   std::string name_addition;
   VW::prediction_type_t pred_type;
   if (options.was_supplied("cb_explore_adf"))

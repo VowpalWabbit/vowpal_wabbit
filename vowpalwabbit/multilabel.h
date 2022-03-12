@@ -6,11 +6,11 @@
 #include "label_parser.h"
 #include "v_array.h"
 
-struct example;
 namespace VW
 {
 struct workspace;
-}
+struct example;
+}  // namespace VW
 
 namespace MULTILABEL
 {
@@ -19,11 +19,11 @@ struct labels
   VW::v_array<uint32_t> label_v;
 };
 
-void output_example(VW::workspace& all, const example& ec);
+void output_example(VW::workspace& all, const VW::example& ec);
 
-extern label_parser multilabel;
+extern VW::label_parser multilabel;
 
-void print_update(VW::workspace& all, bool is_test, const example& ec, const VW::v_array<example*>* ec_seq);
+void print_update(VW::workspace& all, bool is_test, const VW::example& ec, const VW::v_array<VW::example*>* ec_seq);
 }  // namespace MULTILABEL
 
 namespace VW

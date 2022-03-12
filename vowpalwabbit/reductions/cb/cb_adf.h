@@ -27,6 +27,6 @@ namespace CB_ADF
 {
 void global_print_newline(
     const std::vector<std::unique_ptr<VW::io::writer>>& final_prediction_sink, VW::io::logger& logger);
-example* test_adf_sequence(const multi_ex& ec_seq);
-CB::cb_class get_observed_cost_or_default_cb_adf(const multi_ex& examples);
+VW::example* test_adf_sequence(const VW::multi_ex& ec_seq);
+CB::cb_class get_observed_cost_or_default_cb_adf(const VW::multi_ex& examples);
 }  // namespace CB_ADF

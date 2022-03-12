@@ -43,10 +43,10 @@ static size_t num_cache_evals = 0;
 struct svm_example
 {
   VW::v_array<float> krow;
-  flat_example ex;
+  VW::flat_example ex;
 
   ~svm_example();
-  void init_svm_example(flat_example* fec);
+  void init_svm_example(VW::flat_example* fec);
   int compute_kernels(svm_params& params);
   int clear_kernels();
 };
@@ -121,7 +121,7 @@ struct svm_params
   }
 };
 
-void svm_example::init_svm_example(flat_example* fec)
+void svm_example::init_svm_example(VW::flat_example* fec)
 {
   ex = std::move(*fec);
   free(fec);
@@ -130,13 +130,13 @@ void svm_example::init_svm_example(flat_example* fec)
 svm_example::~svm_example()
 {
   // free flatten example contents
-  // flat_example* fec = &calloc_or_throw<flat_example>();
+  // VW::flat_example* fec = &calloc_or_throw<VW::flat_example>();
   //*fec = ex;
   // free_flatten_example(fec);  // free contents of flat example and frees fec.
   if (ex.tag_len > 0) free(ex.tag);
 }
 
-float kernel_function(const flat_example* fec1, const flat_example* fec2, void* params, size_t kernel_type);
+float kernel_function(const VW::flat_example* fec1, const VW::flat_example* fec2, void* params, size_t kernel_type);
 
 int svm_example::compute_kernels(svm_params& params)
 {
@@ -243,7 +243,7 @@ void save_load_svm_model(svm_params& params, io_buf& model_file, bool read, bool
   {
     if (read)
     {
-      auto fec = VW::make_unique<flat_example>();
+      auto fec = VW::make_unique<VW::flat_example>();
       auto* tmp = &calloc_or_throw<svm_example>();
       VW::model_utils::read_model_field(model_file, *fec, params.all->example_parser->lbl_parser);
       tmp->ex = *fec;
@@ -275,7 +275,7 @@ void save_load(svm_params& params, io_buf& model_file, bool read, bool text)
   save_load_svm_model(params, model_file, read, text);
 }
 
-float linear_kernel(const flat_example* fec1, const flat_example* fec2)
+float linear_kernel(const VW::flat_example* fec1, const VW::flat_example* fec2)
 {
   float dotprod = 0;
 
@@ -303,19 +303,19 @@ float linear_kernel(const flat_example* fec1, const flat_example* fec2)
   return dotprod;
 }
 
-float poly_kernel(const flat_example* fec1, const flat_example* fec2, int power)
+float poly_kernel(const VW::flat_example* fec1, const VW::flat_example* fec2, int power)
 {
   float dotprod = linear_kernel(fec1, fec2);
   return static_cast<float>(std::pow(1 + dotprod, power));
 }
 
-float rbf_kernel(const flat_example* fec1, const flat_example* fec2, float bandwidth)
+float rbf_kernel(const VW::flat_example* fec1, const VW::flat_example* fec2, float bandwidth)
 {
   float dotprod = linear_kernel(fec1, fec2);
   return expf(-(fec1->total_sum_feat_sq + fec2->total_sum_feat_sq - 2 * dotprod) * bandwidth);
 }
 
-float kernel_function(const flat_example* fec1, const flat_example* fec2, void* params, size_t kernel_type)
+float kernel_function(const VW::flat_example* fec1, const VW::flat_example* fec2, void* params, size_t kernel_type)
 {
   switch (kernel_type)
   {
@@ -350,9 +350,9 @@ void predict(svm_params& params, svm_example** ec_arr, float* scores, size_t n)
   }
 }
 
-void predict(svm_params& params, base_learner&, example& ec)
+void predict(svm_params& params, base_learner&, VW::example& ec)
 {
-  flat_example* fec = flatten_sort_example(*(params.all), &ec);
+  VW::flat_example* fec = VW::flatten_sort_example(*(params.all), &ec);
   if (fec)
   {
     svm_example* sec = &calloc_or_throw<svm_example>();
@@ -494,7 +494,7 @@ void sync_queries(VW::workspace& all, svm_params& params, bool* train_pool)
   io_buf* b = new io_buf();
 
   char* queries;
-  flat_example* fec = nullptr;
+  VW::flat_example* fec = nullptr;
 
   for (size_t i = 0; i < params.pool_pos; i++)
   {
@@ -656,9 +656,9 @@ void train(svm_params& params)
   free(train_pool);
 }
 
-void learn(svm_params& params, base_learner&, example& ec)
+void learn(svm_params& params, base_learner&, VW::example& ec)
 {
-  flat_example* fec = flatten_sort_example(*(params.all), &ec);
+  VW::flat_example* fec = VW::flatten_sort_example(*(params.all), &ec);
   if (fec)
   {
     svm_example* sec = &calloc_or_throw<svm_example>();

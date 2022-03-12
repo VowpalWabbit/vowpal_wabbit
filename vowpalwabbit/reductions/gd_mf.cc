@@ -29,7 +29,7 @@ struct gdmf
   uint64_t early_stop_thres = 0;
 };
 
-void mf_print_offset_features(gdmf& d, example& ec, size_t offset)
+void mf_print_offset_features(gdmf& d, VW::example& ec, size_t offset)
 {
   // TODO: Where should audit stuff output to?
   VW::workspace& all = *d.all;
@@ -75,7 +75,7 @@ void mf_print_offset_features(gdmf& d, example& ec, size_t offset)
   std::cout << std::endl;
 }
 
-void mf_print_audit_features(gdmf& d, example& ec, size_t offset)
+void mf_print_audit_features(gdmf& d, VW::example& ec, size_t offset)
 {
   print_result_by_ref(d.all->stdout_adapter.get(), ec.pred.scalar, -1, ec.tag, d.all->logger);
   mf_print_offset_features(d, ec, offset);
@@ -90,7 +90,7 @@ struct pred_offset
 void offset_add(pred_offset& res, const float fx, float& fw) { res.p += (&fw)[res.offset] * fx; }
 
 template <class T>
-float mf_predict(gdmf& d, example& ec, T& weights)
+float mf_predict(gdmf& d, VW::example& ec, T& weights)
 {
   VW::workspace& all = *d.all;
   const auto& simple_red_features = ec._reduction_features.template get<simple_label_reduction_features>();
@@ -166,7 +166,7 @@ float mf_predict(gdmf& d, example& ec, T& weights)
   return ec.pred.scalar;
 }
 
-float mf_predict(gdmf& d, example& ec)
+float mf_predict(gdmf& d, VW::example& ec)
 {
   VW::workspace& all = *d.all;
   if (all.weights.sparse)
@@ -183,7 +183,7 @@ void sd_offset_update(T& weights, features& fs, uint64_t offset, float update, f
 }
 
 template <class T>
-void mf_train(gdmf& d, example& ec, T& weights)
+void mf_train(gdmf& d, VW::example& ec, T& weights)
 {
   VW::workspace& all = *d.all;
   label_data& ld = ec.l.simple;
@@ -226,7 +226,7 @@ void mf_train(gdmf& d, example& ec, T& weights)
   }
 }
 
-void mf_train(gdmf& d, example& ec)
+void mf_train(gdmf& d, VW::example& ec)
 {
   if (d.all->weights.sparse)
     mf_train(d, ec, d.all->weights.sparse_weights);
@@ -310,9 +310,9 @@ void end_pass(gdmf& d)
   }
 }
 
-void predict(gdmf& d, base_learner&, example& ec) { mf_predict(d, ec); }
+void predict(gdmf& d, base_learner&, VW::example& ec) { mf_predict(d, ec); }
 
-void learn(gdmf& d, base_learner&, example& ec)
+void learn(gdmf& d, base_learner&, VW::example& ec)
 {
   VW::workspace& all = *d.all;
 

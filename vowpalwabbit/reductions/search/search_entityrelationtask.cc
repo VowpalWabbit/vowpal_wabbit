@@ -24,7 +24,7 @@ namespace EntityRelationTask
 using namespace Search;
 namespace CS = COST_SENSITIVE;
 
-void update_example_indices(bool audit, example* ec, uint64_t mult_amount, uint64_t plus_amount);
+void update_example_indices(bool audit, VW::example* ec, uint64_t mult_amount, uint64_t plus_amount);
 
 struct task_data
 {
@@ -37,8 +37,8 @@ struct task_data
   VW::v_array<uint32_t> y_allowed_entity;
   VW::v_array<uint32_t> y_allowed_relation;
   size_t search_order;
-  std::array<example, NUM_LDF_ENTITY_EXAMPLES> ldf_entity;
-  example* ldf_relation;
+  std::array<VW::example, NUM_LDF_ENTITY_EXAMPLES> ldf_entity;
+  VW::example* ldf_relation;
 };
 
 void initialize(Search::search& sch, size_t& /*num_actions*/, options_i& options)
@@ -127,7 +127,7 @@ void decode_tag(const VW::v_array<char>& tag, char& type, int& id1, int& id2)
 }
 
 size_t predict_entity(
-    Search::search& sch, example* ex, VW::v_array<size_t>& /*predictions*/, ptag my_tag, bool isLdf = false)
+    Search::search& sch, VW::example* ex, VW::v_array<size_t>& /*predictions*/, ptag my_tag, bool isLdf = false)
 {
   task_data* my_task_data = sch.get_task_data<task_data>();
   size_t prediction;
@@ -186,7 +186,7 @@ size_t predict_entity(
   return prediction;
 }
 size_t predict_relation(
-    Search::search& sch, example* ex, VW::v_array<size_t>& predictions, ptag my_tag, bool isLdf = false)
+    Search::search& sch, VW::example* ex, VW::v_array<size_t>& predictions, ptag my_tag, bool isLdf = false)
 {
   char type;
   int id1, id2;
@@ -277,7 +277,7 @@ size_t predict_relation(
   return prediction;
 }
 
-void entity_first_decoding(Search::search& sch, multi_ex& ec, VW::v_array<size_t>& predictions, bool isLdf = false)
+void entity_first_decoding(Search::search& sch, VW::multi_ex& ec, VW::v_array<size_t>& predictions, bool isLdf = false)
 {
   // ec.size = #entity + #entity*(#entity-1)/2
   size_t n_ent = static_cast<size_t>(std::sqrt(ec.size() * 8 + 1) - 1) / 2;
@@ -291,7 +291,7 @@ void entity_first_decoding(Search::search& sch, multi_ex& ec, VW::v_array<size_t
   }
 }
 
-void er_mixed_decoding(Search::search& sch, multi_ex& ec, VW::v_array<size_t>& predictions)
+void er_mixed_decoding(Search::search& sch, VW::multi_ex& ec, VW::v_array<size_t>& predictions)
 {
   // ec.size = #entity + #entity*(#entity-1)/2
   uint32_t n_ent = static_cast<uint32_t>((std::sqrt(ec.size() * 8 + 1) - 1) / 2);
@@ -321,7 +321,7 @@ void er_mixed_decoding(Search::search& sch, multi_ex& ec, VW::v_array<size_t>& p
   }
 }
 
-void er_allow_skip_decoding(Search::search& sch, multi_ex& ec, VW::v_array<size_t>& predictions)
+void er_allow_skip_decoding(Search::search& sch, VW::multi_ex& ec, VW::v_array<size_t>& predictions)
 {
   task_data* my_task_data = sch.get_task_data<task_data>();
   // ec.size = #entity + #entity*(#entity-1)/2
@@ -370,7 +370,7 @@ void er_allow_skip_decoding(Search::search& sch, multi_ex& ec, VW::v_array<size_
   }
 }
 
-void run(Search::search& sch, multi_ex& ec)
+void run(Search::search& sch, VW::multi_ex& ec)
 {
   task_data* my_task_data = sch.get_task_data<task_data>();
 
@@ -401,7 +401,7 @@ void run(Search::search& sch, multi_ex& ec)
   }
 }
 // this is totally bogus for the example -- you'd never actually do this!
-void update_example_indices(bool /* audit */, example* ec, uint64_t mult_amount, uint64_t plus_amount)
+void update_example_indices(bool /* audit */, VW::example* ec, uint64_t mult_amount, uint64_t plus_amount)
 {
   for (features& fs : *ec)
     for (feature_index& idx : fs.indices) idx = ((idx * mult_amount) + plus_amount);

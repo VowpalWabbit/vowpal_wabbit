@@ -37,7 +37,7 @@ struct sender
   std::unique_ptr<VW::io::socket> _socket;
   std::unique_ptr<VW::io::reader> _socket_reader;
   VW::workspace* all = nullptr;  // loss example_queue_limit others
-  example** delay_ring = nullptr;
+  VW::example** delay_ring = nullptr;
   size_t sent_index = 0;
   size_t received_index = 0;
 
@@ -56,12 +56,12 @@ void open_sockets(sender& s, const std::string& host)
   s.buf->add_file(s._socket->get_writer());
 }
 
-void send_features(io_buf* b, example& ec, uint32_t mask)
+void send_features(io_buf* b, VW::example& ec, uint32_t mask)
 {
   // note: subtracting 1 b/c not sending constant
   output_byte(*b, static_cast<unsigned char>(ec.indices.size() - 1));
 
-  for (namespace_index ns : ec.indices)
+  for (VW::namespace_index ns : ec.indices)
   {
     if (ns == constant_namespace) { continue; }
     char* c;
@@ -77,7 +77,7 @@ void receive_result(sender& s)
   float weight;
 
   get_prediction(s._socket_reader.get(), res, weight);
-  example& ec = *s.delay_ring[s.received_index++ % s.all->example_parser->example_queue_limit];
+  VW::example& ec = *s.delay_ring[s.received_index++ % s.all->example_parser->example_queue_limit];
   ec.pred.scalar = res;
 
   label_data& ld = ec.l.simple;
@@ -86,7 +86,7 @@ void receive_result(sender& s)
   return_simple_example(*(s.all), nullptr, ec);
 }
 
-void learn(sender& s, VW::LEARNER::base_learner& /*unused*/, example& ec)
+void learn(sender& s, VW::LEARNER::base_learner& /*unused*/, VW::example& ec)
 {
   if (s.received_index + s.all->example_parser->example_queue_limit / 2 - 1 == s.sent_index) { receive_result(s); }
 
@@ -98,7 +98,7 @@ void learn(sender& s, VW::LEARNER::base_learner& /*unused*/, example& ec)
   s.delay_ring[s.sent_index++ % s.all->example_parser->example_queue_limit] = &ec;
 }
 
-void finish_example(VW::workspace& /*unused*/, sender& /*unused*/, example& /*unused*/) {}
+void finish_example(VW::workspace& /*unused*/, sender& /*unused*/, VW::example& /*unused*/) {}
 
 void end_examples(sender& s)
 {
@@ -122,7 +122,7 @@ VW::LEARNER::base_learner* sender_setup(VW::setup_base_i& stack_builder)
   open_sockets(*s, host);
 
   s->all = &all;
-  s->delay_ring = calloc_or_throw<example*>(all.example_parser->example_queue_limit);
+  s->delay_ring = calloc_or_throw<VW::example*>(all.example_parser->example_queue_limit);
 
   auto* l = VW::LEARNER::make_base_learner(std::move(s), learn, learn, stack_builder.get_setupfn_name(sender_setup),
       VW::prediction_type_t::scalar, VW::label_type_t::simple)

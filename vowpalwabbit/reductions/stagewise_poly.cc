@@ -52,10 +52,10 @@ struct stagewise_poly
   uint64_t sum_input_sparsity_sync = 0;
   uint64_t num_examples_sync = 0;
 
-  example synth_ec;
+  VW::example synth_ec;
   // following is bookkeeping in synth_ec creation (dfs)
   feature synth_rec_f{0.f, 0};
-  example* original_ec = nullptr;
+  VW::example* original_ec = nullptr;
   uint32_t cur_depth = 0;
   bool training = false;
   uint64_t last_example_counter = 0;
@@ -363,7 +363,7 @@ void sort_data_update_support(stagewise_poly& poly)
   poly.synth_ec.ft_offset = pop_ft_offset;
 }
 
-void synthetic_reset(stagewise_poly& poly, example& ec)
+void synthetic_reset(stagewise_poly& poly, VW::example& ec)
 {
   poly.synth_ec.l = ec.l;
   poly.synth_ec.weight = ec.weight;
@@ -468,7 +468,7 @@ void synthetic_create_rec(stagewise_poly& poly, float v, uint64_t findex)
   }
 }
 
-void synthetic_create(stagewise_poly& poly, example& ec, bool training)
+void synthetic_create(stagewise_poly& poly, VW::example& ec, bool training)
 {
   synthetic_reset(poly, ec);
 
@@ -493,7 +493,7 @@ void synthetic_create(stagewise_poly& poly, example& ec, bool training)
   }
 }
 
-void predict(stagewise_poly& poly, single_learner& base, example& ec)
+void predict(stagewise_poly& poly, single_learner& base, VW::example& ec)
 {
   poly.original_ec = &ec;
   synthetic_create(poly, ec, false);
@@ -503,7 +503,7 @@ void predict(stagewise_poly& poly, single_learner& base, example& ec)
   ec.pred.scalar = poly.synth_ec.pred.scalar;
 }
 
-void learn(stagewise_poly& poly, single_learner& base, example& ec)
+void learn(stagewise_poly& poly, single_learner& base, VW::example& ec)
 {
   bool training = poly.all->training && ec.l.simple.label != FLT_MAX;
   poly.original_ec = &ec;
@@ -626,7 +626,7 @@ void end_pass(stagewise_poly& poly)
   }
 }
 
-void finish_example(VW::workspace& all, stagewise_poly& poly, example& ec)
+void finish_example(VW::workspace& all, stagewise_poly& poly, VW::example& ec)
 {
   size_t temp_num_features = ec.num_features;
   ec.num_features = poly.synth_ec.get_num_features();
