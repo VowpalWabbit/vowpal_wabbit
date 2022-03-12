@@ -1742,7 +1742,8 @@ void read_line_json_s(VW::workspace& all, VW::v_array<VW::example*>& examples, c
       line, length, example_factory, ex_factory_context, all.logger, dedup_examples);
 }
 
-inline bool apply_pdrop(label_type_t label_type, float pdrop, VW::v_array<VW::example*>& examples, VW::io::logger& logger)
+inline bool apply_pdrop(
+    label_type_t label_type, float pdrop, VW::v_array<VW::example*>& examples, VW::io::logger& logger)
 {
   if (pdrop == 1.)
   {

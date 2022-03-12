@@ -237,8 +237,8 @@ void parse_slates_example_json(const VW::label_parser& lbl_parser, hash_func_t h
 }
 
 template <bool audit>
-void parse_slates_example_json(const VW::workspace& all, VW::v_array<VW::example*>& examples, char* line, size_t /*length*/,
-    VW::example_factory_t example_factory, void* ex_factory_context,
+void parse_slates_example_json(const VW::workspace& all, VW::v_array<VW::example*>& examples, char* line,
+    size_t /*length*/, VW::example_factory_t example_factory, void* ex_factory_context,
     std::unordered_map<uint64_t, VW::example*>* dedup_examples = nullptr)
 {
   parse_slates_example_json<audit>(all.chain_hash_json, all.example_parser->lbl_parser, all.example_parser->hasher,
