@@ -49,7 +49,8 @@ int main(int argc, char* argv[])
 
   opts.add_and_parse(desc);
   // Return value is ignored as option reachability is not relevant here.
-  opts.check_unregistered();
+  auto warnings = opts.check_unregistered();
+  _UNUSED(warnings);
   auto positional = opts.get_positional_tokens();
   std::string pid_file_name;
   if (!positional.empty())
@@ -73,7 +74,10 @@ int main(int argc, char* argv[])
   {
     if (!nondaemon)
     {
+      VW_WARNING_STATE_PUSH
+      VW_WARNING_DISABLE_DEPRECATED_USAGE
       if (daemon(1, 1)) { THROWERRNO("daemon: "); }
+      VW_WARNING_STATE_POP
     }
 
     SpanningTree spanningTree(port);

@@ -824,7 +824,7 @@ BOOST_AUTO_TEST_CASE(parse_dsjson_slates_dom_parser)
 
   BOOST_CHECK_EQUAL(slates_examples.size(), 1);
   const auto& slates_ex = *slates_examples[0];
-  check_collections_exact(slates_ex.indices, std::vector<namespace_index>{'a', 'd', 'c', 'b', 32});
+  check_collections_exact(slates_ex.indices, std::vector<VW::namespace_index>{'a', 'd', 'c', 'b', 32});
   BOOST_CHECK_EQUAL(slates_ex.feature_space[' '].indices.size(), 2);
   BOOST_CHECK_EQUAL(slates_ex.feature_space['a'].indices.size(), 1);
   BOOST_CHECK_EQUAL(slates_ex.feature_space['b'].indices.size(), 1);

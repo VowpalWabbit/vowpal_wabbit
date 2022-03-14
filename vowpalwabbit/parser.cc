@@ -428,7 +428,10 @@ void enable_sources(VW::workspace& all, bool quiet, size_t passes, input_options
     if (!input_options.foreground)
     {
       // FIXME switch to posix_spawn
+      VW_WARNING_STATE_PUSH
+      VW_WARNING_DISABLE_DEPRECATED_USAGE
       if (!all.active && daemon(1, 1)) THROWERRNO("daemon");
+      VW_WARNING_STATE_POP
     }
 
     // write pid file

@@ -24,23 +24,23 @@ struct test_base
 
   test_base(LearnFunc learn, PredictFunc predict) : test_learn_func(learn), test_predict_func(predict) {}
   static void invoke_learn(
-      test_base<LearnFunc, PredictFunc>& data, VW::LEARNER::base_learner& /*base*/, multi_ex& examples)
+      test_base<LearnFunc, PredictFunc>& data, VW::LEARNER::base_learner& /*base*/, VW::multi_ex& examples)
   {
       data.test_learn_func(examples);
   }
   static void invoke_predict(
-      test_base<LearnFunc, PredictFunc>& data, VW::LEARNER::base_learner& /*base*/, multi_ex& examples)
+      test_base<LearnFunc, PredictFunc>& data, VW::LEARNER::base_learner& /*base*/, VW::multi_ex& examples)
   {
       data.test_predict_func(examples);
   }
 };
 
 template <typename LearnFunc, typename PredictFunc>
-VW::LEARNER::learner<test_base<LearnFunc, PredictFunc>, multi_ex>* make_test_learner(
+VW::LEARNER::learner<test_base<LearnFunc, PredictFunc>, VW::multi_ex>* make_test_learner(
     const LearnFunc& learn, const PredictFunc& predict)
 {
   auto test_base_data = VW::make_unique<test_base<LearnFunc, PredictFunc>>(learn, predict);
-  using func = void (*)(test_base<LearnFunc, PredictFunc>&, VW::LEARNER::base_learner&, multi_ex&);
+  using func = void (*)(test_base<LearnFunc, PredictFunc>&, VW::LEARNER::base_learner&, VW::multi_ex&);
   auto learn_fptr = &test_base<LearnFunc, PredictFunc>::invoke_learn;
   auto predict_fptr = &test_base<LearnFunc, PredictFunc>::invoke_predict;
   return VW::LEARNER::make_base_learner(std::move(test_base_data), static_cast<func>(learn_fptr),
@@ -51,7 +51,7 @@ VW::LEARNER::learner<test_base<LearnFunc, PredictFunc>, multi_ex>* make_test_lea
 BOOST_AUTO_TEST_CASE(slates_reduction_mock_test)
 {
   auto& vw = *VW::initialize("--slates --quiet");
-  multi_ex examples;
+  VW::multi_ex examples;
   examples.push_back(VW::read_example(vw, "slates shared 0.8 | ignore_me"));
   examples.push_back(VW::read_example(vw, "slates action 0 | ignore_me"));
   examples.push_back(VW::read_example(vw, "slates action 1 | ignore_me"));
@@ -59,7 +59,7 @@ BOOST_AUTO_TEST_CASE(slates_reduction_mock_test)
   examples.push_back(VW::read_example(vw, "slates slot 0:0.8 | ignore_me"));
   examples.push_back(VW::read_example(vw, "slates slot 1:0.6 | ignore_me"));
 
-  auto mock_learn_or_pred = [](multi_ex& examples)
+  auto mock_learn_or_pred = [](VW::multi_ex& examples)
   {
     BOOST_CHECK_EQUAL(examples.size(), 6);
     BOOST_CHECK_EQUAL(examples[0]->l.conditional_contextual_bandit.type, CCB::example_type::shared);
