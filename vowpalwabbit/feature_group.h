@@ -54,7 +54,7 @@ inline std::string to_string(const audit_strings& ai)
 }
 }  // namespace VW
 
-using VW::audit_strings;
+using audit_strings VW_DEPRECATED("Moved into VW namespace") = VW::audit_strings;
 
 // First: character based feature group, second: hash of extent
 using extent_term = std::pair<namespace_index, uint64_t>;
@@ -411,15 +411,16 @@ struct features
 {
   using iterator = features_iterator<feature_value, feature_index>;
   using const_iterator = features_iterator<const feature_value, const feature_index>;
-  using audit_iterator = audit_features_iterator<feature_value, feature_index, audit_strings>;
-  using const_audit_iterator = audit_features_iterator<const feature_value, const feature_index, const audit_strings>;
+  using audit_iterator = audit_features_iterator<feature_value, feature_index, VW::audit_strings>;
+  using const_audit_iterator =
+      audit_features_iterator<const feature_value, const feature_index, const VW::audit_strings>;
   using extent_iterator = ns_extent_iterator<features, audit_iterator, std::vector<VW::namespace_extent>::iterator>;
   using const_extent_iterator =
       ns_extent_iterator<const features, const_audit_iterator, std::vector<VW::namespace_extent>::const_iterator>;
 
-  VW::v_array<feature_value> values;       // Always needed.
-  VW::v_array<feature_index> indices;      // Optional for sparse data.
-  std::vector<audit_strings> space_names;  // Optional for audit mode.
+  VW::v_array<feature_value> values;           // Always needed.
+  VW::v_array<feature_index> indices;          // Optional for sparse data.
+  std::vector<VW::audit_strings> space_names;  // Optional for audit mode.
 
   // Each extent represents a range [begin, end) of values which exist in a
   // given namespace. These extents must not overlap and the indices must not go
