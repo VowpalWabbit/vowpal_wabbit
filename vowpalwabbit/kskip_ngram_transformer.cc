@@ -29,7 +29,7 @@ void add_grams(
           feature_name += std::string("^");
           feature_name += std::string(fs.space_names[i + gram_mask[n]].name);
         }
-        fs.space_names.push_back(audit_strings(fs.space_names[i].ns, feature_name));
+        fs.space_names.emplace_back(fs.space_names[i].ns, feature_name);
       }
     }
   }

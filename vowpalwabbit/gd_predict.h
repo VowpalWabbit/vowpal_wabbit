@@ -40,7 +40,7 @@ inline void foreach_feature(
 }
 
 template <class DataT>
-inline void dummy_func(DataT&, const audit_strings*)
+inline void dummy_func(DataT&, const VW::audit_strings*)
 {
 }  // should never be called due to call_audit overload
 

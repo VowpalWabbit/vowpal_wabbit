@@ -39,7 +39,7 @@ struct audit_regressor_data
   size_t values_audited = 0;
 };
 
-inline void audit_regressor_interaction(audit_regressor_data& dat, const audit_strings* f)
+inline void audit_regressor_interaction(audit_regressor_data& dat, const VW::audit_strings* f)
 {
   // same as audit_interaction in gd.cc
   if (f == nullptr)

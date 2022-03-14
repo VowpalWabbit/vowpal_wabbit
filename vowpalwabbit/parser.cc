@@ -779,8 +779,7 @@ void add_constant_feature(VW::workspace& vw, VW::example* ec)
   ec->indices.push_back(constant_namespace);
   ec->feature_space[constant_namespace].push_back(1, constant, constant_namespace);
   ec->num_features++;
-  if (vw.audit || vw.hash_inv)
-    ec->feature_space[constant_namespace].space_names.push_back(audit_strings("", "Constant"));
+  if (vw.audit || vw.hash_inv) ec->feature_space[constant_namespace].space_names.emplace_back("", "Constant");
 }
 
 void add_label(VW::example* ec, float label, float weight, float base)

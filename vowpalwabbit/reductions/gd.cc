@@ -187,12 +187,12 @@ struct audit_results
 {
   VW::workspace& all;
   const uint64_t offset;
-  std::vector<audit_strings> components;
+  std::vector<VW::audit_strings> components;
   std::vector<string_value> results;
   audit_results(VW::workspace& p_all, const size_t p_offset) : all(p_all), offset(p_offset) {}
 };
 
-inline void audit_interaction(audit_results& dat, const audit_strings* f)
+inline void audit_interaction(audit_results& dat, const VW::audit_strings* f)
 {
   if (f == nullptr)
   {
