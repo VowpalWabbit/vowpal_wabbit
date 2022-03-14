@@ -47,7 +47,7 @@ struct OjaNewton
   float* vv = nullptr;
   float* tmp = nullptr;
 
-  example** buffer = nullptr;
+  VW::example** buffer = nullptr;
   float* weight_buffer = nullptr;
   struct oja_n_update_data data;
 
@@ -336,7 +336,7 @@ struct OjaNewton
   }
 };
 
-void keep_example(VW::workspace& all, OjaNewton& /* ON */, example& ec) { output_and_account_example(all, ec); }
+void keep_example(VW::workspace& all, OjaNewton& /* ON */, VW::example& ec) { output_and_account_example(all, ec); }
 
 void make_pred(oja_n_update_data& data, float x, float& wref)
 {
@@ -349,7 +349,7 @@ void make_pred(oja_n_update_data& data, float x, float& wref)
   for (int i = 1; i <= m; i++) { data.prediction += w[i] * x * data.ON->D[i] * data.ON->b[i]; }
 }
 
-void predict(OjaNewton& ON, base_learner&, example& ec)
+void predict(OjaNewton& ON, base_learner&, VW::example& ec)
 {
   ON.data.prediction = 0;
   GD::foreach_feature<oja_n_update_data, make_pred>(*ON.all, ec, ON.data);
@@ -398,7 +398,7 @@ void update_normalization(oja_n_update_data& data, float x, float& wref)
   w[NORM2] += x * x * data.g * data.g;
 }
 
-void learn(OjaNewton& ON, base_learner& base, example& ec)
+void learn(OjaNewton& ON, base_learner& base, VW::example& ec)
 {
   // predict
   predict(ON, base, ec);
@@ -416,7 +416,7 @@ void learn(OjaNewton& ON, base_learner& base, example& ec)
   {
     for (int k = 0; k < ON.epoch_size; k++, ON.t++)
     {
-      example& ex = *(ON.buffer[k]);
+      VW::example& ex = *(ON.buffer[k]);
       data.sketch_cnt = ON.weight_buffer[k];
 
       data.norm2_x = 0;
@@ -528,7 +528,7 @@ base_learner* OjaNewton_setup(VW::setup_base_i& stack_builder)
     ON->D[i] = 1;
   }
 
-  ON->buffer = calloc_or_throw<example*>(ON->epoch_size);
+  ON->buffer = calloc_or_throw<VW::example*>(ON->epoch_size);
   ON->weight_buffer = calloc_or_throw<float>(ON->epoch_size);
 
   ON->zv = calloc_or_throw<float>(ON->m + 1);

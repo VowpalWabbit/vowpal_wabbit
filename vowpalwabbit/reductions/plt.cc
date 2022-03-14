@@ -46,8 +46,8 @@ struct plt
   // for prediction
   float threshold = 0.f;
   uint32_t top_k = 0;
-  std::vector<polyprediction> node_preds;  // for storing results of base.multipredict
-  std::vector<node> node_queue;            // container for queue used for both types of predictions
+  std::vector<VW::polyprediction> node_preds;  // for storing results of base.multipredict
+  std::vector<node> node_queue;                // container for queue used for both types of predictions
 
   // for measuring predictive performance
   std::unordered_set<uint32_t> true_labels;
@@ -68,7 +68,7 @@ struct plt
   }
 };
 
-inline void learn_node(plt& p, uint32_t n, single_learner& base, example& ec)
+inline void learn_node(plt& p, uint32_t n, single_learner& base, VW::example& ec)
 {
   if (!p.all->weights.adaptive)
   {
@@ -78,7 +78,7 @@ inline void learn_node(plt& p, uint32_t n, single_learner& base, example& ec)
   base.learn(ec, n);
 }
 
-void learn(plt& p, single_learner& base, example& ec)
+void learn(plt& p, single_learner& base, VW::example& ec)
 {
   MULTILABEL::labels multilabels = std::move(ec.l.multilabels);
   MULTILABEL::labels preds = std::move(ec.pred.multilabels);
@@ -139,7 +139,7 @@ void learn(plt& p, single_learner& base, example& ec)
   ec.l.multilabels = std::move(multilabels);
 }
 
-inline float predict_node(uint32_t n, single_learner& base, example& ec)
+inline float predict_node(uint32_t n, single_learner& base, VW::example& ec)
 {
   ec.l.simple = {FLT_MAX};
   ec._reduction_features.template get<simple_label_reduction_features>().reset_to_default();
@@ -148,7 +148,7 @@ inline float predict_node(uint32_t n, single_learner& base, example& ec)
 }
 
 template <bool threshold>
-void predict(plt& p, single_learner& base, example& ec)
+void predict(plt& p, single_learner& base, VW::example& ec)
 {
   MULTILABEL::labels multilabels = std::move(ec.l.multilabels);
   MULTILABEL::labels preds = std::move(ec.pred.multilabels);
@@ -265,7 +265,7 @@ void predict(plt& p, single_learner& base, example& ec)
   ec.l.multilabels = std::move(multilabels);
 }
 
-void finish_example(VW::workspace& all, plt& /*p*/, example& ec)
+void finish_example(VW::workspace& all, plt& /*p*/, VW::example& ec)
 {
   MULTILABEL::output_example(all, ec);
   VW::finish_example(all, ec);
@@ -369,7 +369,7 @@ base_learner* plt_setup(VW::setup_base_i& stack_builder)
 
   size_t ws = tree->t;
   std::string name_addition;
-  void (*pred_ptr)(plt&, single_learner&, example&);
+  void (*pred_ptr)(plt&, single_learner&, VW::example&);
 
   if (tree->top_k > 0)
   {

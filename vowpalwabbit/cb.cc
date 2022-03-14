@@ -83,29 +83,29 @@ void parse_label(CB::label& ld, VW::label_parser_reuse_mem& reuse_mem, const std
   }
 }
 
-label_parser cb_label = {
+VW::label_parser cb_label = {
     // default_label
-    [](polylabel& label) { CB::default_label(label.cb); },
+    [](VW::polylabel& label) { CB::default_label(label.cb); },
     // parse_label
-    [](polylabel& label, reduction_features& /*red_features*/, VW::label_parser_reuse_mem& reuse_mem,
+    [](VW::polylabel& label, VW::reduction_features& /*red_features*/, VW::label_parser_reuse_mem& reuse_mem,
         const VW::named_labels* /*ldict*/, const std::vector<VW::string_view>& words,
         VW::io::logger& logger) { CB::parse_label(label.cb, reuse_mem, words, logger); },
     // cache_label
-    [](const polylabel& label, const reduction_features& /*red_features*/, io_buf& cache,
+    [](const VW::polylabel& label, const VW::reduction_features& /*red_features*/, io_buf& cache,
         const std::string& upstream_name,
         bool text) { return VW::model_utils::write_model_field(cache, label.cb, upstream_name, text); },
     // read_cached_label
-    [](polylabel& label, reduction_features& /*red_features*/, io_buf& cache) {
+    [](VW::polylabel& label, VW::reduction_features& /*red_features*/, io_buf& cache) {
       return VW::model_utils::read_model_field(cache, label.cb);
     },
     // get_weight
-    [](const polylabel& label, const reduction_features& /*red_features*/) { return label.cb.weight; },
+    [](const VW::polylabel& label, const VW::reduction_features& /*red_features*/) { return label.cb.weight; },
     // test_label
-    [](const polylabel& label) { return CB::is_test_label(label.cb); },
+    [](const VW::polylabel& label) { return CB::is_test_label(label.cb); },
     // Label type
     VW::label_type_t::cb};
 
-bool ec_is_example_header(example const& ec)  // example headers just have "shared"
+bool ec_is_example_header(VW::example const& ec)  // example headers just have "shared"
 {
   const auto& costs = ec.l.cb.costs;
   if (costs.size() != 1) return false;
@@ -123,8 +123,8 @@ std::string known_cost_to_str(const CB::cb_class* known_cost)
   return label_string.str();
 }
 
-void print_update(VW::workspace& all, bool is_test, const example& ec, const multi_ex* ec_seq, bool action_scores,
-    const CB::cb_class* known_cost)
+void print_update(VW::workspace& all, bool is_test, const VW::example& ec, const VW::multi_ex* ec_seq,
+    bool action_scores, const CB::cb_class* known_cost)
 {
   if (all.sd->weighted_examples() >= all.sd->dump_interval && !all.quiet && !all.bfgs)
   {
@@ -198,25 +198,25 @@ void parse_label(CB_EVAL::label& ld, VW::label_parser_reuse_mem& reuse_mem, cons
   CB::parse_label(ld.event, reuse_mem, rest_of_tokens, logger);
 }
 
-label_parser cb_eval = {
+VW::label_parser cb_eval = {
     // default_label
-    [](polylabel& label) { CB_EVAL::default_label(label.cb_eval); },
+    [](VW::polylabel& label) { CB_EVAL::default_label(label.cb_eval); },
     // parse_label
-    [](polylabel& label, reduction_features& /*red_features*/, VW::label_parser_reuse_mem& reuse_mem,
+    [](VW::polylabel& label, VW::reduction_features& /*red_features*/, VW::label_parser_reuse_mem& reuse_mem,
         const VW::named_labels* /*ldict*/, const std::vector<VW::string_view>& words,
         VW::io::logger& logger) { CB_EVAL::parse_label(label.cb_eval, reuse_mem, words, logger); },
     // cache_label
-    [](const polylabel& label, const reduction_features& /*red_features*/, io_buf& cache,
+    [](const VW::polylabel& label, const VW::reduction_features& /*red_features*/, io_buf& cache,
         const std::string& upstream_name,
         bool text) { return VW::model_utils::write_model_field(cache, label.cb_eval, upstream_name, text); },
     // read_cached_label
-    [](polylabel& label, reduction_features& /*red_features*/, io_buf& cache) {
+    [](VW::polylabel& label, VW::reduction_features& /*red_features*/, io_buf& cache) {
       return VW::model_utils::read_model_field(cache, label.cb_eval);
     },
     // get_weight
-    [](const polylabel& /*label*/, const reduction_features& /*red_features*/) { return 1.f; },
+    [](const VW::polylabel& /*label*/, const VW::reduction_features& /*red_features*/) { return 1.f; },
     // test_label
-    [](const polylabel& label) { return CB_EVAL::test_label(label.cb_eval); },
+    [](const VW::polylabel& label) { return CB_EVAL::test_label(label.cb_eval); },
     // Label type
     VW::label_type_t::cb_eval};
 

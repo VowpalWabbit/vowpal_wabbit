@@ -8,7 +8,7 @@
 #include "vw.h"
 #include "vw_string_view.h"
 
-void substring_to_example(VW::workspace* all, example* ae, VW::string_view example);
+void substring_to_example(VW::workspace* all, VW::example* ae, VW::string_view example);
 
 namespace VW
 {
@@ -19,5 +19,5 @@ void read_lines(VW::workspace* all, const char* line, size_t len,
 
 }  // namespace VW
 
-int read_features_string(VW::workspace* all, io_buf& buf, VW::v_array<example*>& examples);
+int read_features_string(VW::workspace* all, io_buf& buf, VW::v_array<VW::example*>& examples);
 size_t read_features(io_buf& buf, char*& line, size_t& num_chars);

@@ -13,11 +13,11 @@ using namespace VW::config;
 
 namespace DebugMT
 {
-void run(Search::search& sch, multi_ex& ec);
+void run(Search::search& sch, VW::multi_ex& ec);
 Search::search_metatask metatask = {"debug", run, nullptr, nullptr, nullptr, nullptr};
 
 // TODO: which logger should this be using?
-void run(Search::search& sch, multi_ex& ec)
+void run(Search::search& sch, VW::multi_ex& ec)
 {
   // Can't do a lambda capture of the output since it changes the signature of the lambda function
   sch.base_task(ec)
@@ -46,7 +46,7 @@ void run(Search::search& sch, multi_ex& ec)
 
 namespace SelectiveBranchingMT
 {
-void run(Search::search& sch, multi_ex& ec);
+void run(Search::search& sch, VW::multi_ex& ec);
 void initialize(Search::search& sch, size_t& num_actions, options_i& options);
 Search::search_metatask metatask = {"selective_branching", run, initialize, nullptr, nullptr, nullptr};
 
@@ -100,7 +100,7 @@ void initialize(Search::search& sch, size_t& /*num_actions*/, options_i& options
   sch.set_metatask_data(d);
 }
 
-void run(Search::search& sch, multi_ex& ec)
+void run(Search::search& sch, VW::multi_ex& ec)
 {
   task_data& d = *sch.get_metatask_data<task_data>();
 

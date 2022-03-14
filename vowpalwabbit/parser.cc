@@ -89,8 +89,8 @@ void handle_sigterm(int) { got_sigterm = true; }
 
 namespace VW
 {
-void parse_example_label(string_view label, const label_parser& lbl_parser, const named_labels* ldict,
-    label_parser_reuse_mem& reuse_mem, example& ec, VW::io::logger& logger)
+void parse_example_label(string_view label, const VW::label_parser& lbl_parser, const named_labels* ldict,
+    label_parser_reuse_mem& reuse_mem, VW::example& ec, VW::io::logger& logger)
 {
   std::vector<string_view> words;
   tokenize(' ', label, words);
@@ -637,16 +637,16 @@ void set_done(VW::workspace& all)
   lock_done(*all.example_parser);
 }
 
-void end_pass_example(VW::workspace& all, example* ae)
+void end_pass_example(VW::workspace& all, VW::example* ae)
 {
   all.example_parser->lbl_parser.default_label(ae->l);
   ae->end_pass = true;
   all.example_parser->in_pass_counter = 0;
 }
 
-void feature_limit(VW::workspace& all, example* ex)
+void feature_limit(VW::workspace& all, VW::example* ex)
 {
-  for (namespace_index index : ex->indices)
+  for (VW::namespace_index index : ex->indices)
     if (all.limit[index] < ex->feature_space[index].size())
     {
       features& fs = ex->feature_space[index];
@@ -657,7 +657,7 @@ void feature_limit(VW::workspace& all, example* ex)
 
 namespace VW
 {
-example& get_unused_example(VW::workspace* all)
+VW::example& get_unused_example(VW::workspace* all)
 {
   parser* p = all->example_parser;
   auto* ex = p->example_pool.get_object();
@@ -665,12 +665,12 @@ example& get_unused_example(VW::workspace* all)
   return *ex;
 }
 
-void setup_examples(VW::workspace& all, VW::v_array<example*>& examples)
+void setup_examples(VW::workspace& all, VW::v_array<VW::example*>& examples)
 {
-  for (example* ae : examples) setup_example(all, ae);
+  for (VW::example* ae : examples) setup_example(all, ae);
 }
 
-void setup_example(VW::workspace& all, example* ae)
+void setup_example(VW::workspace& all, VW::example* ae)
 {
   if (all.example_parser->sort_features && ae->sorted == false) unique_sort_features(all.parse_mask, ae);
 
@@ -680,7 +680,7 @@ void setup_example(VW::workspace& all, example* ae)
         all.example_parser->_cache_temp_buffer);
   }
 
-  // Require all extents to be complete in an example.
+  // Require all extents to be complete in an VW::example.
 #ifndef NDEBUG
   for (auto& fg : *ae) { assert(fg.validate_extents()); }
 #endif
@@ -752,16 +752,16 @@ void setup_example(VW::workspace& all, example* ae)
 
 namespace VW
 {
-example* new_unused_example(VW::workspace& all)
+VW::example* new_unused_example(VW::workspace& all)
 {
-  example* ec = &get_unused_example(&all);
+  VW::example* ec = &get_unused_example(&all);
   all.example_parser->lbl_parser.default_label(ec->l);
   return ec;
 }
 
-example* read_example(VW::workspace& all, const char* example_line)
+VW::example* read_example(VW::workspace& all, const char* example_line)
 {
-  example* ret = &get_unused_example(&all);
+  VW::example* ret = &get_unused_example(&all);
 
   VW::read_line(all, ret, example_line);
   setup_example(all, ret);
@@ -769,12 +769,12 @@ example* read_example(VW::workspace& all, const char* example_line)
   return ret;
 }
 
-example* read_example(VW::workspace& all, const std::string& example_line)
+VW::example* read_example(VW::workspace& all, const std::string& example_line)
 {
   return read_example(all, example_line.c_str());
 }
 
-void add_constant_feature(VW::workspace& vw, example* ec)
+void add_constant_feature(VW::workspace& vw, VW::example* ec)
 {
   ec->indices.push_back(constant_namespace);
   ec->feature_space[constant_namespace].push_back(1, constant, constant_namespace);
@@ -783,7 +783,7 @@ void add_constant_feature(VW::workspace& vw, example* ec)
     ec->feature_space[constant_namespace].space_names.push_back(audit_strings("", "Constant"));
 }
 
-void add_label(example* ec, float label, float weight, float base)
+void add_label(VW::example* ec, float label, float weight, float base)
 {
   ec->l.simple.label = label;
   auto& simple_red_features = ec->_reduction_features.template get<simple_label_reduction_features>();
@@ -791,9 +791,9 @@ void add_label(example* ec, float label, float weight, float base)
   ec->weight = weight;
 }
 
-example* import_example(VW::workspace& all, const std::string& label, primitive_feature_space* features, size_t len)
+VW::example* import_example(VW::workspace& all, const std::string& label, primitive_feature_space* features, size_t len)
 {
-  example* ret = &get_unused_example(&all);
+  VW::example* ret = &get_unused_example(&all);
   all.example_parser->lbl_parser.default_label(ret->l);
 
   if (label.length() > 0) parse_example_label(all, *ret, label);
@@ -810,7 +810,7 @@ example* import_example(VW::workspace& all, const std::string& label, primitive_
   return ret;
 }
 
-primitive_feature_space* export_example(VW::workspace& all, example* ec, size_t& len)
+primitive_feature_space* export_example(VW::workspace& all, VW::example* ec, size_t& len)
 {
   len = ec->indices.size();
   primitive_feature_space* fs_ptr = new primitive_feature_space[len];
@@ -889,7 +889,7 @@ void finish_example(VW::workspace& all, example& ec)
 }
 }  // namespace VW
 
-void thread_dispatch(VW::workspace& all, const VW::v_array<example*>& examples)
+void thread_dispatch(VW::workspace& all, const VW::v_array<VW::example*>& examples)
 {
   for (auto example : examples) { all.example_parser->ready_parsed_examples.push(example); }
 }

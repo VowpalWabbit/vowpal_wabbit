@@ -27,7 +27,7 @@ struct interaction_ground
   double total_uniform_cost = 0.;
 };
 
-void negate_cost(multi_ex& ec_seq)
+void negate_cost(VW::multi_ex& ec_seq)
 {
   for (auto* example_ptr : ec_seq)
   {
@@ -38,7 +38,7 @@ void negate_cost(multi_ex& ec_seq)
   }
 }
 
-void learn(interaction_ground& ig, multi_learner& base, multi_ex& ec_seq)
+void learn(interaction_ground& ig, multi_learner& base, VW::multi_ex& ec_seq)
 {
   // find reward of sequence
   CB::cb_class label = CB_ADF::get_observed_cost_or_default_cb_adf(ec_seq);
@@ -61,7 +61,7 @@ void learn(interaction_ground& ig, multi_learner& base, multi_ex& ec_seq)
   negate_cost(ec_seq);
 }
 
-void predict(interaction_ground& ig, multi_learner& base, multi_ex& ec_seq)
+void predict(interaction_ground& ig, multi_learner& base, VW::multi_ex& ec_seq)
 {
   // figure out which is better by our current estimate.
   if (ig.total_uniform_cost - ig.total_importance_weighted_cost >

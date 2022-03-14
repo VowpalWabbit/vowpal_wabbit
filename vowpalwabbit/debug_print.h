@@ -9,9 +9,12 @@
 
 #include "v_array.h"
 
+namespace VW
+{
 struct example;
 struct example_predict;
 using multi_ex = std::vector<example*>;
+}  // namespace VW
 
 namespace std
 {

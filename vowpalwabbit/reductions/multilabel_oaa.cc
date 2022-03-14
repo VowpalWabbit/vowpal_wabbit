@@ -22,7 +22,7 @@ struct multi_oaa
 };
 
 template <bool is_learn>
-void predict_or_learn(multi_oaa& o, VW::LEARNER::single_learner& base, example& ec)
+void predict_or_learn(multi_oaa& o, VW::LEARNER::single_learner& base, VW::example& ec)
 {
   MULTILABEL::labels multilabels = ec.l.multilabels;
   MULTILABEL::labels preds = ec.pred.multilabels;
@@ -64,7 +64,7 @@ void predict_or_learn(multi_oaa& o, VW::LEARNER::single_learner& base, example& 
   }
 }
 
-void finish_example(VW::workspace& all, multi_oaa& o, example& ec)
+void finish_example(VW::workspace& all, multi_oaa& o, VW::example& ec)
 {
   if (o.probabilities)
   {

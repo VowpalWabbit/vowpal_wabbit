@@ -34,15 +34,15 @@ inline float cheesyrand(uint64_t x)
   return merand48(seed);
 }
 
-constexpr inline bool example_is_test(example& ec) { return ec.l.simple.label == FLT_MAX; }
+constexpr inline bool example_is_test(VW::example& ec) { return ec.l.simple.label == FLT_MAX; }
 
 template <bool is_learn>
-void predict_or_learn(LRQFAstate& lrq, single_learner& base, example& ec)
+void predict_or_learn(LRQFAstate& lrq, single_learner& base, VW::example& ec)
 {
   VW::workspace& all = *lrq.all;
 
   memset(lrq.orig_size, 0, sizeof(lrq.orig_size));
-  for (namespace_index i : ec.indices) lrq.orig_size[i] = ec.feature_space[i].size();
+  for (VW::namespace_index i : ec.indices) lrq.orig_size[i] = ec.feature_space[i].size();
 
   size_t which = ec.example_counter;
   float first_prediction = 0;
@@ -123,7 +123,7 @@ void predict_or_learn(LRQFAstate& lrq, single_learner& base, example& ec)
 
     for (char i : lrq.field_name)
     {
-      namespace_index right = i;
+      VW::namespace_index right = i;
       features& rfs = ec.feature_space[right];
       rfs.values.resize_but_with_stl_behavior(lrq.orig_size[right]);
       if (all.audit || all.hash_inv) { rfs.space_names.resize(lrq.orig_size[right]); }

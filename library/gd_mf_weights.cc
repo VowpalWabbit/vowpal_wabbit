@@ -91,7 +91,7 @@ int main(int argc, char* argv[])
   std::ofstream right_linear((outdir + string("/") + string(1, right_ns) + string(".linear")).c_str());
   std::ofstream right_quadratic((outdir + string("/") + string(1, right_ns) + string(".quadratic")).c_str());
 
-  example* ec = nullptr;
+  VW::example* ec = nullptr;
   while ((read = getline(&line, &len, file)) != -1)
   {
     line[strlen(line) - 1] = 0;  // chop

@@ -50,7 +50,7 @@ struct classweights
 };
 
 template <VW::prediction_type_t pred_type>
-void update_example_weight(classweights& cweights, example& ec)
+void update_example_weight(classweights& cweights, VW::example& ec)
 {
   switch (pred_type)
   {
@@ -67,7 +67,7 @@ void update_example_weight(classweights& cweights, example& ec)
 }
 
 template <bool is_learn, VW::prediction_type_t pred_type>
-void predict_or_learn(classweights& cweights, VW::LEARNER::single_learner& base, example& ec)
+void predict_or_learn(classweights& cweights, VW::LEARNER::single_learner& base, VW::example& ec)
 {
   if (is_learn)
   {
@@ -101,8 +101,8 @@ VW::LEARNER::base_learner* classweight_setup(VW::setup_base_i& stack_builder)
   VW::LEARNER::single_learner* base = as_singleline(stack_builder.setup_base_learner());
 
   std::string name_addition;
-  void (*learn_ptr)(classweights&, VW::LEARNER::single_learner&, example&);
-  void (*pred_ptr)(classweights&, VW::LEARNER::single_learner&, example&);
+  void (*learn_ptr)(classweights&, VW::LEARNER::single_learner&, VW::example&);
+  void (*pred_ptr)(classweights&, VW::LEARNER::single_learner&, VW::example&);
   VW::prediction_type_t pred_type;
 
   if (base->get_output_prediction_type() == VW::prediction_type_t::scalar)

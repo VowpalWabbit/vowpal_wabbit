@@ -53,11 +53,11 @@ struct gd
   float neg_power_t = 0.f;
   float sparse_l2 = 0.f;
   float update_multiplier = 0.f;
-  void (*predict)(gd&, base_learner&, example&) = nullptr;
-  void (*learn)(gd&, base_learner&, example&) = nullptr;
-  void (*update)(gd&, base_learner&, example&) = nullptr;
-  float (*sensitivity)(gd&, base_learner&, example&) = nullptr;
-  void (*multipredict)(gd&, base_learner&, example&, size_t, size_t, polyprediction*, bool) = nullptr;
+  void (*predict)(gd&, base_learner&, VW::example&) = nullptr;
+  void (*learn)(gd&, base_learner&, VW::example&) = nullptr;
+  void (*update)(gd&, base_learner&, VW::example&) = nullptr;
+  float (*sensitivity)(gd&, base_learner&, VW::example&) = nullptr;
+  void (*multipredict)(gd&, base_learner&, VW::example&, size_t, size_t, VW::polyprediction*, bool) = nullptr;
   bool adaptive_input = false;
   bool normalized_input = false;
   bool adax = false;
@@ -140,7 +140,7 @@ float average_update(float total_weight, float normalized_sum_norm_x, float neg_
 }
 
 template <bool sqrt_rate, bool feature_mask_off, size_t adaptive, size_t normalized, size_t spare>
-void train(gd& g, example& ec, float update)
+void train(gd& g, VW::example& ec, float update)
 {
   if VW_STD17_CONSTEXPR (normalized != 0) { update *= g.update_multiplier; }
   VW_DBG(ec) << "gd: train() spare=" << spare << std::endl;
@@ -243,7 +243,7 @@ inline void audit_feature(audit_results& dat, const float ft_weight, const uint6
   }
 }
 
-void print_lda_features(VW::workspace& all, example& ec)
+void print_lda_features(VW::workspace& all, VW::example& ec)
 {
   parameters& weights = all.weights;
   uint32_t stride_shift = weights.stride_shift();
@@ -262,7 +262,7 @@ void print_lda_features(VW::workspace& all, example& ec)
   std::cout << " total of " << count << " features." << std::endl;
 }
 
-void print_features(VW::workspace& all, example& ec)
+void print_features(VW::workspace& all, VW::example& ec)
 {
   if (all.lda > 0)
     print_lda_features(all, ec);
@@ -301,7 +301,7 @@ void print_features(VW::workspace& all, example& ec)
   }
 }
 
-void print_audit_features(VW::workspace& all, example& ec)
+void print_audit_features(VW::workspace& all, VW::example& ec)
 {
   if (all.audit) print_result_by_ref(all.audit_writer.get(), ec.pred.scalar, -1, ec.tag, all.logger);
   fflush(stdout);
@@ -332,7 +332,7 @@ inline void vec_add_trunc(trunc_data& p, const float fx, float& fw)
   p.prediction += trunc_weight(fw, p.gravity) * fx;
 }
 
-inline float trunc_predict(VW::workspace& all, example& ec, double gravity, size_t& num_interacted_features)
+inline float trunc_predict(VW::workspace& all, VW::example& ec, double gravity, size_t& num_interacted_features)
 {
   const auto& simple_red_features = ec._reduction_features.template get<simple_label_reduction_features>();
   trunc_data temp = {simple_red_features.initial, static_cast<float>(gravity)};
@@ -348,7 +348,7 @@ inline void vec_add_print(float& p, const float fx, float& fw)
 }
 
 template <bool l1, bool audit>
-void predict(gd& g, base_learner&, example& ec)
+void predict(gd& g, base_learner&, VW::example& ec)
 {
   VW_DBG(ec) << "gd.predict(): ex#=" << ec.example_counter << ", offset=" << ec.ft_offset << std::endl;
 
@@ -378,8 +378,8 @@ inline void vec_add_trunc_multipredict(multipredict_info<T>& mp, const float fx,
 }
 
 template <bool l1, bool audit>
-void multipredict(
-    gd& g, base_learner&, example& ec, size_t count, size_t step, polyprediction* pred, bool finalize_predictions)
+void multipredict(gd& g, base_learner&, VW::example& ec, size_t count, size_t step, VW::polyprediction* pred,
+    bool finalize_predictions)
 {
   VW::workspace& all = *g.all;
   for (size_t c = 0; c < count; c++)
@@ -536,7 +536,7 @@ inline void pred_per_update_feature(norm_data& nd, float x, float& fw)
 bool global_print_features = false;
 template <bool sqrt_rate, bool feature_mask_off, bool adax, size_t adaptive, size_t normalized, size_t spare,
     bool stateless>
-float get_pred_per_update(gd& g, example& ec)
+float get_pred_per_update(gd& g, VW::example& ec)
 {
   // We must traverse the features in _precisely_ the same order as during training.
   label_data& ld = ec.l.simple;
@@ -572,7 +572,7 @@ float get_pred_per_update(gd& g, example& ec)
 
 template <bool sqrt_rate, bool feature_mask_off, bool adax, size_t adaptive, size_t normalized, size_t spare,
     bool stateless>
-float sensitivity(gd& g, example& ec)
+float sensitivity(gd& g, VW::example& ec)
 {
   if VW_STD17_CONSTEXPR (adaptive || normalized)
     return get_pred_per_update<sqrt_rate, feature_mask_off, adax, adaptive, normalized, spare, stateless>(g, ec);
@@ -585,7 +585,7 @@ float sensitivity(gd& g, example& ec)
 VW_WARNING_STATE_POP
 
 template <size_t adaptive>
-float get_scale(gd& g, example& /* ec */, float weight)
+float get_scale(gd& g, VW::example& /* ec */, float weight)
 {
   float update_scale = g.all->eta * weight;
   if (!adaptive)
@@ -598,7 +598,7 @@ float get_scale(gd& g, example& /* ec */, float weight)
 }
 
 template <bool sqrt_rate, bool feature_mask_off, bool adax, size_t adaptive, size_t normalized, size_t spare>
-float sensitivity(gd& g, base_learner& /* base */, example& ec)
+float sensitivity(gd& g, base_learner& /* base */, VW::example& ec)
 {
   return get_scale<adaptive>(g, ec, 1.) *
       sensitivity<sqrt_rate, feature_mask_off, adax, adaptive, normalized, spare, true>(g, ec);
@@ -606,7 +606,7 @@ float sensitivity(gd& g, base_learner& /* base */, example& ec)
 
 template <bool sparse_l2, bool invariant, bool sqrt_rate, bool feature_mask_off, bool adax, size_t adaptive,
     size_t normalized, size_t spare>
-float compute_update(gd& g, example& ec)
+float compute_update(gd& g, VW::example& ec)
 {
   // invariant: not a test label, importance weight > 0
   const label_data& ld = ec.l.simple;
@@ -648,7 +648,7 @@ float compute_update(gd& g, example& ec)
 
 template <bool sparse_l2, bool invariant, bool sqrt_rate, bool feature_mask_off, bool adax, size_t adaptive,
     size_t normalized, size_t spare>
-void update(gd& g, base_learner&, example& ec)
+void update(gd& g, base_learner&, VW::example& ec)
 {
   // invariant: not a test label, importance weight > 0
   float update;
@@ -683,7 +683,7 @@ void update(gd& g, base_learner&, example& ec)
 
 template <bool sparse_l2, bool invariant, bool sqrt_rate, bool feature_mask_off, bool adax, size_t adaptive,
     size_t normalized, size_t spare>
-void learn(gd& g, base_learner& base, example& ec)
+void learn(gd& g, base_learner& base, VW::example& ec)
 {
   // invariant: not a test label, importance weight > 0
   assert(ec.l.simple.label != FLT_MAX);
@@ -1355,16 +1355,16 @@ base_learner* setup(VW::setup_base_i& stack_builder)
   all.weights.stride_shift(static_cast<uint32_t>(ceil_log_2(stride - 1)));
 
   gd* bare = g.get();
-  learner<gd, example>* l = make_base_learner(std::move(g), g->learn, bare->predict,
+  learner<gd, VW::example>* l = make_base_learner(std::move(g), g->learn, bare->predict,
       stack_builder.get_setupfn_name(setup), VW::prediction_type_t::scalar, VW::label_type_t::simple)
-                                .set_learn_returns_prediction(true)
-                                .set_params_per_weight(UINT64_ONE << all.weights.stride_shift())
-                                .set_sensitivity(bare->sensitivity)
-                                .set_multipredict(bare->multipredict)
-                                .set_update(bare->update)
-                                .set_save_load(save_load)
-                                .set_end_pass(end_pass)
-                                .build();
+                                    .set_learn_returns_prediction(true)
+                                    .set_params_per_weight(UINT64_ONE << all.weights.stride_shift())
+                                    .set_sensitivity(bare->sensitivity)
+                                    .set_multipredict(bare->multipredict)
+                                    .set_update(bare->update)
+                                    .set_save_load(save_load)
+                                    .set_end_pass(end_pass)
+                                    .build();
   return make_base(*l);
 }
 

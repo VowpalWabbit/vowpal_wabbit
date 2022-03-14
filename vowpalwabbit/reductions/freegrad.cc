@@ -53,7 +53,7 @@ struct freegrad
 };
 
 template <bool audit>
-void predict(freegrad& b, base_learner& /* base */, example& ec)
+void predict(freegrad& b, base_learner& /* base */, VW::example& ec)
 {
   size_t num_features_from_interactions = 0;
   ec.partial_prediction = GD::inline_predict(*b.all, ec, num_features_from_interactions);
@@ -86,7 +86,7 @@ void inner_freegrad_predict(freegrad_update_data& d, float x, float& wref)
   d.predict += w_pred * x;
 }
 
-void freegrad_predict(freegrad& fg, example& ec)
+void freegrad_predict(freegrad& fg, VW::example& ec)
 {
   fg.update_data.predict = 0.;
   fg.update_data.squared_norm_prediction = 0.;
@@ -222,7 +222,7 @@ void inner_freegrad_update_after_prediction(freegrad_update_data& d, float x, fl
   if (ht > 0) { w[S] += std::fabs(clipped_gradient) / ht + (d.ec_weight - 1) * std::fabs(tilde_gradient) / w[HT]; }
 }
 
-void freegrad_update_after_prediction(freegrad& fg, example& ec)
+void freegrad_update_after_prediction(freegrad& fg, VW::example& ec)
 {
   float clipped_grad_norm;
   fg.update_data.grad_dot_w = 0.;
@@ -252,7 +252,7 @@ void freegrad_update_after_prediction(freegrad& fg, example& ec)
 }
 
 template <bool audit>
-void learn_freegrad(freegrad& a, base_learner& /* base */, example& ec)
+void learn_freegrad(freegrad& a, base_learner& /* base */, VW::example& ec)
 {
   // update state based on the example and predict
   freegrad_predict(a, ec);

@@ -68,7 +68,7 @@ struct lda
   VW::v_array<float> Elogtheta;
   VW::v_array<float> decay_levels;
   VW::v_array<float> total_new;
-  VW::v_array<example*> examples;
+  VW::v_array<VW::example*> examples;
   VW::v_array<float> total_lambda;
   VW::v_array<int> doc_lengths;
   VW::v_array<float> digammas;
@@ -661,7 +661,7 @@ VW::v_array<float> old_gamma;
 // setting of lambda based on the document passed in. The value is
 // divided by the total number of words in the document This can be
 // used as a (possibly very noisy) estimate of held-out likelihood.
-float lda_loop(lda& l, VW::v_array<float>& Elogtheta, float* v, example* ec, float)
+float lda_loop(lda& l, VW::v_array<float>& Elogtheta, float* v, VW::example* ec, float)
 {
   parameters& weights = l.all->weights;
   new_gamma.clear();
@@ -672,8 +672,6 @@ float lda_loop(lda& l, VW::v_array<float>& Elogtheta, float* v, example* ec, flo
     new_gamma.push_back(1.f);
     old_gamma.push_back(0.f);
   }
-  size_t num_words = 0;
-  for (features& fs : *ec) num_words += fs.size();
 
   float xc_w = 0;
   float score = 0;
@@ -801,7 +799,7 @@ void save_load(lda& l, io_buf& model_file, bool read, bool text)
   }
 }
 
-void return_example(VW::workspace& all, example& ec)
+void return_example(VW::workspace& all, VW::example& ec)
 {
   all.sd->update(ec.test_only, true, ec.loss, ec.weight, ec.get_num_features());
   for (auto& sink : all.final_prediction_sink) { MWT::print_scalars(sink.get(), ec.pred.scalars, ec.tag, all.logger); }
@@ -957,7 +955,7 @@ void learn_batch(lda& l)
   l.doc_lengths.clear();
 }
 
-void learn(lda& l, base_learner&, example& ec)
+void learn(lda& l, base_learner&, VW::example& ec)
 {
   uint32_t num_ex = static_cast<uint32_t>(l.examples.size());
   l.examples.push_back(&ec);
@@ -974,7 +972,7 @@ void learn(lda& l, base_learner&, example& ec)
   if (++num_ex == l.minibatch) learn_batch(l);
 }
 
-void learn_with_metrics(lda& l, base_learner& base, example& ec)
+void learn_with_metrics(lda& l, base_learner& base, VW::example& ec)
 {
   if (l.all->passes_complete == 0)
   {
@@ -997,8 +995,8 @@ void learn_with_metrics(lda& l, base_learner& base, example& ec)
 }
 
 // placeholder
-void predict(lda& l, base_learner& base, example& ec) { learn(l, base, ec); }
-void predict_with_metrics(lda& l, base_learner& base, example& ec) { learn_with_metrics(l, base, ec); }
+void predict(lda& l, base_learner& base, VW::example& ec) { learn(l, base, ec); }
+void predict_with_metrics(lda& l, base_learner& base, VW::example& ec) { learn_with_metrics(l, base, ec); }
 
 struct word_doc_frequency
 {
@@ -1234,7 +1232,7 @@ void end_examples(lda& l)
     end_examples(l, l.all->weights.dense_weights);
 }
 
-void finish_example(VW::workspace& all, lda& l, example& e)
+void finish_example(VW::workspace& all, lda& l, VW::example& e)
 {
   if (l.minibatch <= 1) { return return_example(all, e); }
 

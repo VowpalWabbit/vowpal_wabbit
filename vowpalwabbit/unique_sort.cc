@@ -55,7 +55,7 @@ void unique_features(features& fs, int max)
   fs.truncate_to(last_index);
 }
 
-void unique_sort_features(uint64_t parse_mask, example* ae)
+void unique_sort_features(uint64_t parse_mask, VW::example* ae)
 {
   for (features& fs : *ae)
   {
