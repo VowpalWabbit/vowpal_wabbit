@@ -280,7 +280,7 @@ jobs:
           python-version: ${{ matrix.config.version }}
       - uses: actions/checkout@v2
         with:
-          path: ${{github.workspace}}\\vowpal_wabbit\\${{github.workspace}}\\vowpal_wabbit
+          path: ${{github.workspace}}\\vowpal_wabbit\\
       - name: Restore cache or fetch vcpkg
         uses: lukka/run-vcpkg@v10
         with:
