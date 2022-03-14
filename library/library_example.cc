@@ -12,7 +12,7 @@ int main(int argc, char *argv[])
 {
   VW::workspace* model = VW::initialize("--hash all -q st --noconstant -f train2.vw --no_stdin");
 
-  VW::example *vec2 = VW::read_example(*model, (char*)"|s p^the_man w^the w^man |t p^un_homme w^un w^homme");
+  VW::example* vec2 = VW::read_example(*model, (char*)"|s p^the_man w^the w^man |t p^un_homme w^un w^homme");
   model->learn(*vec2);
   std::cerr << "p2 = " << vec2->pred.scalar << std::endl;
   VW::finish_example(*model, *vec2);

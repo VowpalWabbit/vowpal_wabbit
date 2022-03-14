@@ -59,8 +59,7 @@ BOOST_AUTO_TEST_CASE(slates_reduction_mock_test)
   examples.push_back(VW::read_example(vw, "slates slot 0:0.8 | ignore_me"));
   examples.push_back(VW::read_example(vw, "slates slot 1:0.6 | ignore_me"));
 
-  auto mock_learn_or_pred = [](VW::multi_ex& examples)
-  {
+  auto mock_learn_or_pred = [](VW::multi_ex& examples) {
     BOOST_CHECK_EQUAL(examples.size(), 6);
     BOOST_CHECK_EQUAL(examples[0]->l.conditional_contextual_bandit.type, CCB::example_type::shared);
     BOOST_CHECK_EQUAL(examples[1]->l.conditional_contextual_bandit.type, CCB::example_type::action);

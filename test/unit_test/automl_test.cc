@@ -92,16 +92,17 @@ BOOST_AUTO_TEST_CASE(automl_first_champ_switch)
     return true;
   });
 
-  test_hooks.emplace(deterministic_champ_switch, [&deterministic_champ_switch](cb_sim&, VW::workspace& all, VW::multi_ex&) {
-    VW::automl::automl<interaction_config_manager>* aml = aml_test::get_automl_data(all);
-    aml_test::check_interactions_match_exclusions(aml);
-    aml_test::check_config_states(aml);
-    BOOST_CHECK_GT(aml->cm->total_champ_switches, 0);
-    BOOST_CHECK_EQUAL(aml->cm->current_champ, 2);
-    BOOST_CHECK_EQUAL(deterministic_champ_switch, aml->cm->total_learn_count);
-    BOOST_CHECK(aml->current_state == VW::automl::automl_state::Experimenting);
-    return true;
-  });
+  test_hooks.emplace(
+      deterministic_champ_switch, [&deterministic_champ_switch](cb_sim&, VW::workspace& all, VW::multi_ex&) {
+        VW::automl::automl<interaction_config_manager>* aml = aml_test::get_automl_data(all);
+        aml_test::check_interactions_match_exclusions(aml);
+        aml_test::check_config_states(aml);
+        BOOST_CHECK_GT(aml->cm->total_champ_switches, 0);
+        BOOST_CHECK_EQUAL(aml->cm->current_champ, 2);
+        BOOST_CHECK_EQUAL(deterministic_champ_switch, aml->cm->total_learn_count);
+        BOOST_CHECK(aml->current_state == VW::automl::automl_state::Experimenting);
+        return true;
+      });
 
   // we initialize the reduction pointing to position 0 as champ, that config is hard-coded to empty
   auto ctr = simulator::_test_helper_hook(

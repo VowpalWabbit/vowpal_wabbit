@@ -249,8 +249,8 @@ BOOST_AUTO_TEST_CASE(compile_interactions_quadratic_combinations)
       INTERACTIONS::compile_interactions<INTERACTIONS::generate_namespace_combinations_with_repetition, false>(
           interactions, indices);
 
-  std::vector<std::vector<VW::namespace_index>> compare_set = {{'a', 'a'}, {'a', 'b'}, {'a', 'c'}, {'a', 'd'}, {'b', 'b'},
-      {'b', 'c'}, {'b', 'd'}, {'c', 'c'}, {'c', 'd'}, {'d', 'd'}};
+  std::vector<std::vector<VW::namespace_index>> compare_set = {{'a', 'a'}, {'a', 'b'}, {'a', 'c'}, {'a', 'd'},
+      {'b', 'b'}, {'b', 'c'}, {'b', 'd'}, {'c', 'c'}, {'c', 'd'}, {'d', 'd'}};
 
   sort_all(compare_set);
   sort_all(result);
@@ -265,9 +265,9 @@ BOOST_AUTO_TEST_CASE(compile_interactions_quadratic_permutations)
   auto result = INTERACTIONS::compile_interactions<INTERACTIONS::generate_namespace_permutations_with_repetition, true>(
       interactions, indices);
 
-  std::vector<std::vector<VW::namespace_index>> compare_set = {{'a', 'a'}, {'a', 'b'}, {'a', 'c'}, {'a', 'd'}, {'b', 'a'},
-      {'b', 'b'}, {'b', 'c'}, {'b', 'd'}, {'c', 'a'}, {'c', 'b'}, {'c', 'c'}, {'c', 'd'}, {'d', 'a'}, {'d', 'b'},
-      {'d', 'c'}, {'d', 'd'}};
+  std::vector<std::vector<VW::namespace_index>> compare_set = {{'a', 'a'}, {'a', 'b'}, {'a', 'c'}, {'a', 'd'},
+      {'b', 'a'}, {'b', 'b'}, {'b', 'c'}, {'b', 'd'}, {'c', 'a'}, {'c', 'b'}, {'c', 'c'}, {'c', 'd'}, {'d', 'a'},
+      {'d', 'b'}, {'d', 'c'}, {'d', 'd'}};
 
   sort_all(compare_set);
   sort_all(result);
