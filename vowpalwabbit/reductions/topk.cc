@@ -25,8 +25,8 @@ public:
   using const_iterator_t = container_t::const_iterator;
   topk(uint32_t k_num);
 
-  void predict(VW::LEARNER::single_learner& base, multi_ex& ec_seq);
-  void learn(VW::LEARNER::single_learner& base, multi_ex& ec_seq);
+  void predict(VW::LEARNER::single_learner& base, VW::multi_ex& ec_seq);
+  void learn(VW::LEARNER::single_learner& base, VW::multi_ex& ec_seq);
   std::pair<const_iterator_t, const_iterator_t> get_container_view();
   void clear_container();
 
@@ -40,7 +40,7 @@ private:
 
 VW::topk::topk(uint32_t k_num) : _k_num(k_num) {}
 
-void VW::topk::predict(VW::LEARNER::single_learner& base, multi_ex& ec_seq)
+void VW::topk::predict(VW::LEARNER::single_learner& base, VW::multi_ex& ec_seq)
 {
   for (auto ec : ec_seq)
   {
@@ -49,7 +49,7 @@ void VW::topk::predict(VW::LEARNER::single_learner& base, multi_ex& ec_seq)
   }
 }
 
-void VW::topk::learn(VW::LEARNER::single_learner& base, multi_ex& ec_seq)
+void VW::topk::learn(VW::LEARNER::single_learner& base, VW::multi_ex& ec_seq)
 {
   for (auto ec : ec_seq)
   {
@@ -94,7 +94,7 @@ void print_result(VW::io::writer* file_descriptor,
   }
 }
 
-void output_example(VW::workspace& all, const example& ec)
+void output_example(VW::workspace& all, const VW::example& ec)
 {
   const label_data& ld = ec.l.simple;
 
@@ -105,7 +105,7 @@ void output_example(VW::workspace& all, const example& ec)
 }
 
 template <bool is_learn>
-void predict_or_learn(VW::topk& d, VW::LEARNER::single_learner& base, multi_ex& ec_seq)
+void predict_or_learn(VW::topk& d, VW::LEARNER::single_learner& base, VW::multi_ex& ec_seq)
 {
   if (is_learn)
     d.learn(base, ec_seq);
@@ -113,7 +113,7 @@ void predict_or_learn(VW::topk& d, VW::LEARNER::single_learner& base, multi_ex& 
     d.predict(base, ec_seq);
 }
 
-void finish_example(VW::workspace& all, VW::topk& d, multi_ex& ec_seq)
+void finish_example(VW::workspace& all, VW::topk& d, VW::multi_ex& ec_seq)
 {
   for (auto ec : ec_seq) output_example(all, *ec);
   for (auto& sink : all.final_prediction_sink) print_result(sink.get(), d.get_container_view(), all.logger);

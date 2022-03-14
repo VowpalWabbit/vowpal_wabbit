@@ -158,7 +158,7 @@ void parse_dictionary_argument(VW::workspace& all, const std::string& str)
   // mimicking old v_hashmap behavior for load factor.
   // A smaller factor will generally use more memory but have faster access
   map->max_load_factor(0.25);
-  example* ec = VW::alloc_examples(1);
+  VW::example* ec = VW::alloc_examples(1);
 
   auto def = static_cast<size_t>(' ');
 
@@ -249,7 +249,7 @@ void parse_affix_argument(VW::workspace& all, const std::string& str)
       auto ns = static_cast<uint16_t>(' ');  // default namespace
       if (q[1] != 0)
       {
-        if (valid_ns(q[1]))
+        if (VW::valid_ns(q[1]))
           ns = static_cast<uint16_t>(q[1]);
         else
           THROW("malformed affix argument (invalid namespace): " << p)
@@ -496,9 +496,9 @@ const char* are_features_compatible(VW::workspace& vw1, VW::workspace& vw2)
 
 }  // namespace VW
 
-std::vector<namespace_index> parse_char_interactions(VW::string_view input, VW::io::logger& logger)
+std::vector<VW::namespace_index> parse_char_interactions(VW::string_view input, VW::io::logger& logger)
 {
-  std::vector<namespace_index> result;
+  std::vector<VW::namespace_index> result;
 
   auto decoded = VW::decode_inline_hex(input, logger);
   result.insert(result.begin(), decoded.begin(), decoded.end());
@@ -528,7 +528,7 @@ std::vector<extent_term> parse_full_name_interactions(VW::workspace& all, VW::st
     else
     {
       const auto ns_hash = VW::hash_space(all, std::string{token});
-      result.emplace_back(static_cast<namespace_index>(token[0]), ns_hash);
+      result.emplace_back(static_cast<VW::namespace_index>(token[0]), ns_hash);
     }
   }
   return result;
@@ -684,7 +684,7 @@ void parse_feature_tweaks(options_i& options, VW::workspace& all, bool interacti
   }
 
   // prepare namespace interactions
-  std::vector<std::vector<namespace_index>> decoded_interactions;
+  std::vector<std::vector<VW::namespace_index>> decoded_interactions;
 
   if ( ( (!all.interactions.empty() && /*data was restored from old model file directly to v_array and will be overriden automatically*/
           (options.was_supplied("quadratic") || options.was_supplied("cubic") || options.was_supplied("interactions")) ) )
@@ -746,7 +746,9 @@ void parse_feature_tweaks(options_i& options, VW::workspace& all, bool interacti
     if (!all.quiet && !options.was_supplied("leave_duplicate_interactions"))
     {
       auto any_contain_wildcards = std::any_of(decoded_interactions.begin(), decoded_interactions.end(),
-          [](const std::vector<namespace_index>& interaction) { return INTERACTIONS::contains_wildcard(interaction); });
+          [](const std::vector<VW::namespace_index>& interaction) {
+            return INTERACTIONS::contains_wildcard(interaction);
+          });
       if (any_contain_wildcards)
       {
         all.logger.err_warn(
@@ -1176,6 +1178,8 @@ void parse_output_model(options_i& options, VW::workspace& all)
                .help("Output human-readable final regressor with numeric features"))
       .add(make_option("invert_hash", all.inv_hash_regressor_name)
                .help("Output human-readable final regressor with feature names.  Computationally expensive"))
+      .add(make_option("dump_json_weights", all.json_weights_file_name)
+               .help("Experimental: Output json representation of model parameters."))
       .add(
           make_option("predict_only_model", predict_only_model)
               .help("Do not save extra state for learning to be resumed. Stored model can only be used for prediction"))
@@ -1195,6 +1199,7 @@ void parse_output_model(options_i& options, VW::workspace& all)
     *(all.trace_message) << "final_regressor = " << all.final_regressor_name << endl;
 
   if (options.was_supplied("invert_hash")) { all.hash_inv = true; }
+  if (options.was_supplied("dump_json_weights")) { all.hash_inv = true; }
   if (save_resume)
   {
     all.logger.err_warn("--save_resume flag is deprecated -- learning can now continue on saved models by default.");
@@ -1927,6 +1932,12 @@ void finish(VW::workspace& all, bool delete_all)
   { all.sd->print_summary(*all.trace_message, *all.sd, *all.loss, all.current_pass, all.holdout_set_off); }
 
   finalize_regressor(all, all.final_regressor_name);
+  if (all.options->was_supplied("dump_json_weights"))
+  {
+    auto content = all.dump_weights_to_json_experimental();
+    auto writer = VW::io::open_file_writer(all.json_weights_file_name);
+    writer->write(content.c_str(), content.length());
+  }
   metrics::output_metrics(all);
   all.logger.log_summary();
 }

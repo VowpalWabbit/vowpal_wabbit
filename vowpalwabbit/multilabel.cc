@@ -43,29 +43,31 @@ void parse_label(MULTILABEL::labels& ld, VW::label_parser_reuse_mem& reuse_mem,
   }
 }
 
-label_parser multilabel = {
+VW::label_parser multilabel = {
     // default_label
-    [](polylabel& label) { default_label(label.multilabels); },
+    [](VW::polylabel& label) { default_label(label.multilabels); },
     // parse_label
-    [](polylabel& label, reduction_features& /* red_features */, VW::label_parser_reuse_mem& reuse_mem,
+    [](VW::polylabel& label, VW::reduction_features& /* red_features */, VW::label_parser_reuse_mem& reuse_mem,
         const VW::named_labels* /* ldict */, const std::vector<VW::string_view>& words,
         VW::io::logger& logger) { parse_label(label.multilabels, reuse_mem, words, logger); },
     // cache_label
-    [](const polylabel& label, const reduction_features& /* red_features */, io_buf& cache,
+    [](const VW::polylabel& label, const VW::reduction_features& /* red_features */, io_buf& cache,
         const std::string& upstream_name,
         bool text) { return VW::model_utils::write_model_field(cache, label.multilabels, upstream_name, text); },
     // read_cached_label
-    [](polylabel& label, reduction_features& /* red_features */, io_buf& cache) {
+    [](VW::polylabel& label, VW::reduction_features& /* red_features */, io_buf& cache) {
       return VW::model_utils::read_model_field(cache, label.multilabels);
     },
     // get_weight
-    [](const polylabel& label, const reduction_features& /* red_features */) { return weight(label.multilabels); },
+    [](const VW::polylabel& label, const VW::reduction_features& /* red_features */) {
+      return weight(label.multilabels);
+    },
     // test_label
-    [](const polylabel& label) { return test_label(label.multilabels); },
+    [](const VW::polylabel& label) { return test_label(label.multilabels); },
     // label type
     VW::label_type_t::multilabel};
 
-void print_update(VW::workspace& all, bool is_test, const example& ec)
+void print_update(VW::workspace& all, bool is_test, const VW::example& ec)
 {
   if (all.sd->weighted_examples() >= all.sd->dump_interval && !all.quiet && !all.bfgs)
   {
@@ -80,7 +82,7 @@ void print_update(VW::workspace& all, bool is_test, const example& ec)
   }
 }
 
-void output_example(VW::workspace& all, const example& ec)
+void output_example(VW::workspace& all, const VW::example& ec)
 {
   const auto& ld = ec.l.multilabels;
 

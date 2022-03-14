@@ -15,16 +15,16 @@
 
 namespace ExpReplay
 {
-template <label_parser& lp>
+template <VW::label_parser& lp>
 struct expreplay
 {
   VW::workspace* all = nullptr;
   std::shared_ptr<VW::rand_state> _random_state;
-  size_t N = 0;             // how big is the buffer?
-  example* buf = nullptr;   // the deep copies of examples (N of them)
-  bool* filled = nullptr;   // which of buf[] is filled
-  size_t replay_count = 0;  // each time er.learn() is called, how many times do we call base.learn()? default=1 (in
-                            // which case we're just permuting)
+  size_t N = 0;                // how big is the buffer?
+  VW::example* buf = nullptr;  // the deep copies of examples (N of them)
+  bool* filled = nullptr;      // which of buf[] is filled
+  size_t replay_count = 0;     // each time er.learn() is called, how many times do we call base.learn()? default=1 (in
+                               // which case we're just permuting)
   VW::LEARNER::single_learner* base = nullptr;
 
   ~expreplay()
@@ -34,8 +34,8 @@ struct expreplay
   }
 };
 
-template <label_parser& lp>
-void learn(expreplay<lp>& er, LEARNER::single_learner& base, example& ec)
+template <VW::label_parser& lp>
+void learn(expreplay<lp>& er, LEARNER::single_learner& base, VW::example& ec)
 {
   // Cannot learn if the example weight is 0.
   if (lp.get_weight(ec.l, ec._reduction_features) == 0.) return;
@@ -53,20 +53,20 @@ void learn(expreplay<lp>& er, LEARNER::single_learner& base, example& ec)
   VW::copy_example_data_with_label(&er.buf[n], &ec);
 }
 
-template <label_parser& lp>
-void predict(expreplay<lp>&, LEARNER::single_learner& base, example& ec)
+template <VW::label_parser& lp>
+void predict(expreplay<lp>&, LEARNER::single_learner& base, VW::example& ec)
 {
   base.predict(ec);
 }
 
-template <label_parser& lp>
-void multipredict(expreplay<lp>&, LEARNER::single_learner& base, example& ec, size_t count, size_t step,
-    polyprediction* pred, bool finalize_predictions)
+template <VW::label_parser& lp>
+void multipredict(expreplay<lp>&, LEARNER::single_learner& base, VW::example& ec, size_t count, size_t step,
+    VW::polyprediction* pred, bool finalize_predictions)
 {
   base.multipredict(ec, count, step, pred, finalize_predictions);
 }
 
-template <label_parser& lp>
+template <VW::label_parser& lp>
 void end_pass(expreplay<lp>& er)
 {  // we need to go through and learn on everyone who remains
   // also need to clean up remaining examples
@@ -78,7 +78,7 @@ void end_pass(expreplay<lp>& er)
     }
 }
 
-template <char er_level, label_parser& lp>
+template <char er_level, VW::label_parser& lp>
 VW::LEARNER::base_learner* expreplay_setup(VW::setup_base_i& stack_builder)
 {
   VW::config::options_i& options = *stack_builder.get_options();

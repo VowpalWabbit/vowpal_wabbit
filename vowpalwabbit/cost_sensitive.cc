@@ -135,30 +135,30 @@ void parse_label(label& ld, VW::label_parser_reuse_mem& reuse_mem, const VW::nam
   }
 }
 
-label_parser cs_label = {
+VW::label_parser cs_label = {
     // default_label
-    [](polylabel& label) { default_label(label.cs); },
+    [](VW::polylabel& label) { default_label(label.cs); },
     // parse_label
-    [](polylabel& label, reduction_features& /* red_features */, VW::label_parser_reuse_mem& reuse_mem,
+    [](VW::polylabel& label, VW::reduction_features& /* red_features */, VW::label_parser_reuse_mem& reuse_mem,
         const VW::named_labels* ldict, const std::vector<VW::string_view>& words,
         VW::io::logger& logger) { parse_label(label.cs, reuse_mem, ldict, words, logger); },
     // cache_label
-    [](const polylabel& label, const reduction_features& /* red_features */, io_buf& cache,
+    [](const VW::polylabel& label, const VW::reduction_features& /* red_features */, io_buf& cache,
         const std::string& upstream_name,
         bool text) { return VW::model_utils::write_model_field(cache, label.cs, upstream_name, text); },
     // read_cached_label
-    [](polylabel& label, reduction_features& /* red_features */, io_buf& cache) {
+    [](VW::polylabel& label, VW::reduction_features& /* red_features */, io_buf& cache) {
       return VW::model_utils::read_model_field(cache, label.cs);
     },
     // get_weight
-    [](const polylabel& label, const reduction_features& /* red_features */) { return weight(label.cs); },
+    [](const VW::polylabel& label, const VW::reduction_features& /* red_features */) { return weight(label.cs); },
     // test_label
-    [](const polylabel& label) { return test_label(label.cs); },
+    [](const VW::polylabel& label) { return test_label(label.cs); },
     // label type
     VW::label_type_t::cs};
 
-void print_update(VW::workspace& all, bool is_test, const example& ec, const multi_ex* ec_seq, bool action_scores,
-    uint32_t prediction)
+void print_update(VW::workspace& all, bool is_test, const VW::example& ec, const VW::multi_ex* ec_seq,
+    bool action_scores, uint32_t prediction)
 {
   if (all.sd->weighted_examples() >= all.sd->dump_interval && !all.quiet && !all.bfgs)
   {
@@ -212,7 +212,7 @@ void print_update(VW::workspace& all, bool is_test, const example& ec, const mul
 }
 
 void output_example(
-    VW::workspace& all, const example& ec, const COST_SENSITIVE::label& label, uint32_t multiclass_prediction)
+    VW::workspace& all, const VW::example& ec, const COST_SENSITIVE::label& label, uint32_t multiclass_prediction)
 {
   float loss = 0.;
   if (!test_label(label))
@@ -263,15 +263,15 @@ void output_example(
   print_update(all, test_label(label), ec, nullptr, false, multiclass_prediction);
 }
 
-void output_example(VW::workspace& all, const example& ec) { output_example(all, ec, ec.l.cs, ec.pred.multiclass); }
+void output_example(VW::workspace& all, const VW::example& ec) { output_example(all, ec, ec.l.cs, ec.pred.multiclass); }
 
-void finish_example(VW::workspace& all, example& ec)
+void finish_example(VW::workspace& all, VW::example& ec)
 {
   output_example(all, ec, ec.l.cs, ec.pred.multiclass);
   VW::finish_example(all, ec);
 }
 
-bool example_is_test(const example& ec)
+bool example_is_test(const VW::example& ec)
 {
   const auto& costs = ec.l.cs.costs;
   if (costs.size() == 0) return true;
@@ -280,7 +280,7 @@ bool example_is_test(const example& ec)
   return true;
 }
 
-bool ec_is_example_header(const example& ec)  // example headers look like "shared"
+bool ec_is_example_header(const VW::example& ec)  // example headers look like "shared"
 {
   const auto& costs = ec.l.cs.costs;
   if (costs.size() != 1) return false;

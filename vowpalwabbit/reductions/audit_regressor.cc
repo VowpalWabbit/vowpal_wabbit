@@ -51,14 +51,14 @@ inline void audit_regressor_interaction(audit_regressor_data& dat, const audit_s
   std::string ns_pre;
   if (!dat.ns_pre.empty()) ns_pre += '*';
 
-  if (!f->first.empty() && ((f->first) != " "))
+  if (!f->ns.empty() && ((f->ns) != " "))
   {
-    ns_pre.append(f->first);
+    ns_pre.append(f->ns);
     ns_pre += '^';
   }
-  if (!f->second.empty())
+  if (!f->name.empty())
   {
-    ns_pre.append(f->second);
+    ns_pre.append(f->name);
     dat.ns_pre.push_back(ns_pre);
   }
 }
@@ -86,7 +86,7 @@ inline void audit_regressor_feature(audit_regressor_data& dat, const float, cons
   weights[ft_idx] = 0.;  // mark value audited
 }
 
-void audit_regressor_lda(audit_regressor_data& rd, VW::LEARNER::single_learner& /* base */, example& ec)
+void audit_regressor_lda(audit_regressor_data& rd, VW::LEARNER::single_learner& /* base */, VW::example& ec)
 {
   VW::workspace& all = *rd.all;
 
@@ -97,7 +97,7 @@ void audit_regressor_lda(audit_regressor_data& rd, VW::LEARNER::single_learner& 
     features& fs = ec.feature_space[*i];
     for (size_t j = 0; j < fs.size(); ++j)
     {
-      tempstream << '\t' << fs.space_names[j].first << '^' << fs.space_names[j].second << ':'
+      tempstream << '\t' << fs.space_names[j].ns << '^' << fs.space_names[j].name << ':'
                  << ((fs.indices[j] >> weights.stride_shift()) & all.parse_mask);
       for (size_t k = 0; k < all.lda; k++)
       {
@@ -115,7 +115,7 @@ void audit_regressor_lda(audit_regressor_data& rd, VW::LEARNER::single_learner& 
 // This is a learner which does nothing with examples.
 // void learn(audit_regressor_data&, VW::LEARNER::base_learner&, example&) {}
 
-void audit_regressor(audit_regressor_data& rd, VW::LEARNER::single_learner& base, example& ec)
+void audit_regressor(audit_regressor_data& rd, VW::LEARNER::single_learner& base, VW::example& ec)
 {
   VW::workspace& all = *rd.all;
 
@@ -177,7 +177,7 @@ inline void print_ex(VW::workspace& all, size_t ex_processed, size_t vals_found,
   *(all.trace_message) << "\n";
 }
 
-void finish_example(VW::workspace& all, audit_regressor_data& rd, example& ec)
+void finish_example(VW::workspace& all, audit_regressor_data& rd, VW::example& ec)
 {
   bool printed = false;
   if (static_cast<float>(ec.example_counter + std::size_t{1}) >= all.sd->dump_interval && !all.quiet)

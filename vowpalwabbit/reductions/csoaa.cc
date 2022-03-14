@@ -23,15 +23,15 @@ struct csoaa
   uint32_t num_classes = 0;
   int indexing = -1;
   bool search = false;
-  polyprediction* pred = nullptr;
+  VW::polyprediction* pred = nullptr;
   VW::io::logger logger;
   csoaa(VW::io::logger logger) : logger(std::move(logger)) {}
   ~csoaa() { free(pred); }
 };
 
 template <bool is_learn>
-inline void inner_loop(single_learner& base, example& ec, uint32_t i, float cost, uint32_t& prediction, float& score,
-    float& partial_prediction, int indexing)
+inline void inner_loop(single_learner& base, VW::example& ec, uint32_t i, float cost, uint32_t& prediction,
+    float& score, float& partial_prediction, int indexing)
 {
   if (is_learn)
   {
@@ -64,7 +64,7 @@ inline void inner_loop(single_learner& base, example& ec, uint32_t i, float cost
 #define DO_MULTIPREDICT true
 
 template <bool is_learn>
-void predict_or_learn(csoaa& c, single_learner& base, example& ec)
+void predict_or_learn(csoaa& c, single_learner& base, VW::example& ec)
 {
   if (!c.search)
   {
@@ -100,7 +100,7 @@ void predict_or_learn(csoaa& c, single_learner& base, example& ec)
 
   COST_SENSITIVE::label ld = std::move(ec.l.cs);
 
-  // Guard example state restore against throws
+  // Guard VW::example state restore against throws
   auto restore_guard = VW::scope_exit([&ld, &ec] { ec.l.cs = std::move(ld); });
 
   uint32_t prediction = (c.indexing == 0) ? 0 : 1;
@@ -175,7 +175,7 @@ void predict_or_learn(csoaa& c, single_learner& base, example& ec)
   ec.pred.multiclass = prediction;
 }
 
-void finish_example(VW::workspace& all, csoaa&, example& ec) { COST_SENSITIVE::finish_example(all, ec); }
+void finish_example(VW::workspace& all, csoaa&, VW::example& ec) { COST_SENSITIVE::finish_example(all, ec); }
 
 base_learner* csoaa_setup(VW::setup_base_i& stack_builder)
 {
@@ -193,7 +193,7 @@ base_learner* csoaa_setup(VW::setup_base_i& stack_builder)
   { THROW("csoaa does not support probabilities flag, please use oaa or multilabel_oaa"); }
   c->search = options.was_supplied("search");
 
-  c->pred = calloc_or_throw<polyprediction>(c->num_classes);
+  c->pred = calloc_or_throw<VW::polyprediction>(c->num_classes);
   size_t ws = c->num_classes;
   auto* l = make_reduction_learner(std::move(c), as_singleline(stack_builder.setup_base_learner()),
       predict_or_learn<true>, predict_or_learn<false>, stack_builder.get_setupfn_name(csoaa_setup))

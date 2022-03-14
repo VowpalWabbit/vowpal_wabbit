@@ -30,7 +30,7 @@ using namespace exploration;
 
 namespace CB_ADF
 {
-cb_class get_observed_cost_or_default_cb_adf(const multi_ex& examples)
+cb_class get_observed_cost_or_default_cb_adf(const VW::multi_ex& examples)
 {
   bool found = false;
   uint32_t found_index = 0;
@@ -73,11 +73,11 @@ private:
   COST_SENSITIVE::label _cs_labels;
   std::vector<COST_SENSITIVE::label> _prepped_cs_labels;
 
-  action_scores _a_s;              // temporary storage for mtr and sm
-  action_scores _a_s_mtr_cs;       // temporary storage for mtr cost sensitive example
-  action_scores _prob_s;           // temporary storage for sm; stores softmax values
-  v_array<uint32_t> _backup_nf;    // temporary storage for sm; backup for numFeatures in examples
-  v_array<float> _backup_weights;  // temporary storage for sm; backup for weights in examples
+  action_scores _a_s;                  // temporary storage for mtr and sm
+  action_scores _a_s_mtr_cs;           // temporary storage for mtr cost sensitive example
+  action_scores _prob_s;               // temporary storage for sm; stores softmax values
+  VW::v_array<uint32_t> _backup_nf;    // temporary storage for sm; backup for numFeatures in examples
+  VW::v_array<float> _backup_weights;  // temporary storage for sm; backup for weights in examples
 
   uint64_t _offset;
   const bool _no_predict;
@@ -87,9 +87,9 @@ private:
   VW::io::logger logger;
 
 public:
-  void learn(VW::LEARNER::multi_learner& base, multi_ex& ec_seq);
-  void predict(VW::LEARNER::multi_learner& base, multi_ex& ec_seq);
-  bool update_statistics(const example& ec, const multi_ex& ec_seq);
+  void learn(VW::LEARNER::multi_learner& base, VW::multi_ex& ec_seq);
+  void predict(VW::LEARNER::multi_learner& base, VW::multi_ex& ec_seq);
+  bool update_statistics(const VW::example& ec, const VW::multi_ex& ec_seq);
 
   cb_adf(shared_data* sd, VW::cb_type_t cb_type, VW::version_struct* model_file_ver, bool rank_all, float clip_p,
       bool no_predict, VW::io::logger logger)
@@ -121,21 +121,21 @@ public:
   CB::cb_class* known_cost() { return &_gen_cs.known_cost; }
 
 private:
-  void learn_IPS(multi_learner& base, multi_ex& examples);
-  void learn_DR(multi_learner& base, multi_ex& examples);
-  void learn_DM(multi_learner& base, multi_ex& examples);
-  void learn_SM(multi_learner& base, multi_ex& examples);
+  void learn_IPS(multi_learner& base, VW::multi_ex& examples);
+  void learn_DR(multi_learner& base, VW::multi_ex& examples);
+  void learn_DM(multi_learner& base, VW::multi_ex& examples);
+  void learn_SM(multi_learner& base, VW::multi_ex& examples);
   template <bool predict>
-  void learn_MTR(multi_learner& base, multi_ex& examples);
+  void learn_MTR(multi_learner& base, VW::multi_ex& examples);
 };
 
-void cb_adf::learn_IPS(multi_learner& base, multi_ex& examples)
+void cb_adf::learn_IPS(multi_learner& base, VW::multi_ex& examples)
 {
   gen_cs_example_ips(examples, _cs_labels, logger, _clip_p);
   cs_ldf_learn_or_predict<true>(base, examples, _cb_labels, _cs_labels, _prepped_cs_labels, true, _offset);
 }
 
-void cb_adf::learn_SM(multi_learner& base, multi_ex& examples)
+void cb_adf::learn_SM(multi_learner& base, VW::multi_ex& examples)
 {
   gen_cs_test_example(examples, _cs_labels);  // create test labels.
   cs_ldf_learn_or_predict<false>(base, examples, _cb_labels, _cs_labels, _prepped_cs_labels, false, _offset);
@@ -224,20 +224,20 @@ void cb_adf::learn_SM(multi_learner& base, multi_ex& examples)
   }
 }
 
-void cb_adf::learn_DR(multi_learner& base, multi_ex& examples)
+void cb_adf::learn_DR(multi_learner& base, VW::multi_ex& examples)
 {
   gen_cs_example_dr<true>(_gen_cs, examples, _cs_labels, _clip_p);
   cs_ldf_learn_or_predict<true>(base, examples, _cb_labels, _cs_labels, _prepped_cs_labels, true, _offset);
 }
 
-void cb_adf::learn_DM(multi_learner& base, multi_ex& examples)
+void cb_adf::learn_DM(multi_learner& base, VW::multi_ex& examples)
 {
   gen_cs_example_dm(examples, _cs_labels);
   cs_ldf_learn_or_predict<true>(base, examples, _cb_labels, _cs_labels, _prepped_cs_labels, true, _offset);
 }
 
 template <bool PREDICT>
-void cb_adf::learn_MTR(multi_learner& base, multi_ex& examples)
+void cb_adf::learn_MTR(multi_learner& base, VW::multi_ex& examples)
 {
   if (PREDICT)  // first get the prediction to return
   {
@@ -269,12 +269,12 @@ void cb_adf::learn_MTR(multi_learner& base, multi_ex& examples)
 }
 
 // Validates a multiline example collection as a valid sequence for action dependent features format.
-example* test_adf_sequence(const multi_ex& ec_seq)
+VW::example* test_adf_sequence(const VW::multi_ex& ec_seq)
 {
   if (ec_seq.empty()) THROW("cb_adf: At least one action must be provided for an example to be valid.");
 
   uint32_t count = 0;
-  example* ret = nullptr;
+  VW::example* ret = nullptr;
   for (auto* ec : ec_seq)
   {
     // Check if there is more than one cost for this example.
@@ -298,7 +298,7 @@ example* test_adf_sequence(const multi_ex& ec_seq)
   return ret;
 }
 
-void cb_adf::learn(multi_learner& base, multi_ex& ec_seq)
+void cb_adf::learn(multi_learner& base, VW::multi_ex& ec_seq)
 {
   if (test_adf_sequence(ec_seq) != nullptr)
   {
@@ -332,7 +332,7 @@ void cb_adf::learn(multi_learner& base, multi_ex& ec_seq)
   }
 }
 
-void cb_adf::predict(multi_learner& base, multi_ex& ec_seq)
+void cb_adf::predict(multi_learner& base, VW::multi_ex& ec_seq)
 {
   _offset = ec_seq[0]->ft_offset;
   _gen_cs.known_cost = get_observed_cost_or_default_cb_adf(ec_seq);  // need to set for test case
@@ -354,7 +354,7 @@ void global_print_newline(
 
 // how to
 
-bool cb_adf::update_statistics(const example& ec, const multi_ex& ec_seq)
+bool cb_adf::update_statistics(const VW::example& ec, const VW::multi_ex& ec_seq)
 {
   size_t num_features = 0;
 
@@ -375,7 +375,7 @@ bool cb_adf::update_statistics(const example& ec, const multi_ex& ec_seq)
   return labeled_example;
 }
 
-void output_example(VW::workspace& all, cb_adf& c, const example& ec, const multi_ex& ec_seq)
+void output_example(VW::workspace& all, cb_adf& c, const VW::example& ec, const VW::multi_ex& ec_seq)
 {
   if (example_is_newline_not_header(ec)) return;
 
@@ -405,7 +405,7 @@ void output_example(VW::workspace& all, cb_adf& c, const example& ec, const mult
     CB::print_update(all, !labeled_example, ec, &ec_seq, true, nullptr);
 }
 
-void output_rank_example(VW::workspace& all, cb_adf& c, const example& ec, const multi_ex& ec_seq)
+void output_rank_example(VW::workspace& all, cb_adf& c, const VW::example& ec, const VW::multi_ex& ec_seq)
 {
   const auto& costs = ec.l.cb.costs;
 
@@ -433,7 +433,7 @@ void output_rank_example(VW::workspace& all, cb_adf& c, const example& ec, const
     CB::print_update(all, !labeled_example, ec, &ec_seq, true, nullptr);
 }
 
-void output_example_seq(VW::workspace& all, cb_adf& data, const multi_ex& ec_seq)
+void output_example_seq(VW::workspace& all, cb_adf& data, const VW::multi_ex& ec_seq)
 {
   if (!ec_seq.empty())
   {
@@ -448,7 +448,7 @@ void output_example_seq(VW::workspace& all, cb_adf& data, const multi_ex& ec_seq
   }
 }
 
-void update_and_output(VW::workspace& all, cb_adf& data, const multi_ex& ec_seq)
+void update_and_output(VW::workspace& all, cb_adf& data, const VW::multi_ex& ec_seq)
 {
   if (!ec_seq.empty())
   {
@@ -457,7 +457,7 @@ void update_and_output(VW::workspace& all, cb_adf& data, const multi_ex& ec_seq)
   }
 }
 
-void finish_multiline_example(VW::workspace& all, cb_adf& data, multi_ex& ec_seq)
+void finish_multiline_example(VW::workspace& all, cb_adf& data, VW::multi_ex& ec_seq)
 {
   update_and_output(all, data, ec_seq);
   VW::finish_example(all, ec_seq);
@@ -478,9 +478,9 @@ void save_load(cb_adf& c, io_buf& model_file, bool read, bool text)
       model_file, (char*)&c.get_gen_cs().action_sum, sizeof(c.get_gen_cs().action_sum), read, msg, text);
 }
 
-void learn(cb_adf& c, multi_learner& base, multi_ex& ec_seq) { c.learn(base, ec_seq); }
+void learn(cb_adf& c, multi_learner& base, VW::multi_ex& ec_seq) { c.learn(base, ec_seq); }
 
-void predict(cb_adf& c, multi_learner& base, multi_ex& ec_seq) { c.predict(base, ec_seq); }
+void predict(cb_adf& c, multi_learner& base, VW::multi_ex& ec_seq) { c.predict(base, ec_seq); }
 
 }  // namespace CB_ADF
 using namespace CB_ADF;

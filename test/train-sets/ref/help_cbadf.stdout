@@ -93,7 +93,7 @@ Input Options:
     --num_children arg                      Number of children for persistent daemon mode (type: uint)
     --pid_file arg                          Write pid file in persistent daemon mode (type: str)
     --port_file arg                         Write port used in persistent daemon mode (type: str)
-    -c, --cache                             Use a cache.  The default is <data>.cache (type: bool)
+    -c, --cache                             Use a cache. The default is <data>.cache (type: bool)
     --cache_file args...                    The location(s) of cache_file (type: list[str])
     --json                                  Enable JSON parsing (type: bool)
     --dsjson                                Enable Decision Service JSON parsing (type: bool)
@@ -130,8 +130,10 @@ Output Model Options:
     -f, --final_regressor arg               Final regressor (type: str)
     --readable_model arg                    Output human-readable final regressor with numeric features (type:
                                             str)
-    --invert_hash arg                       Output human-readable final regressor with feature names.  Computationally
+    --invert_hash arg                       Output human-readable final regressor with feature names. Computationally
                                             expensive (type: str)
+    --dump_json_weights arg                 Experimental: Output json representation of model parameters.
+                                            (type: str)
     --predict_only_model                    Do not save extra state for learning to be resumed. Stored model
                                             can only be used for prediction (type: bool)
     --save_resume                           This flag is now deprecated and models can continue learning
@@ -168,7 +170,7 @@ Update Options:
                                             default: 1)
     --initial_t arg                         Initial t value (type: float)
     --feature_mask arg                      Use existing regressor to determine which parameters may be updated.
-                                             If no initial_regressor given, also used for initial weights.
+                                            If no initial_regressor given, also used for initial weights.
                                             (type: str)
 Weight Options:
     -i, --initial_regressor args...         Initial regressor(s) (type: list[str])

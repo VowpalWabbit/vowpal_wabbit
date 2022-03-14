@@ -41,7 +41,7 @@ void remove_at_index(std::vector<T>& array, uint32_t index)
   array.erase(array.begin() + index);
 }
 
-void copy_example_data(example* dst, example* src, bool oas = false)  // copy example data.
+void copy_example_data(VW::example* dst, VW::example* src, bool oas = false)  // copy example data.
 {
   if (oas == false)
   {
@@ -91,23 +91,23 @@ void diag_kronecker_prod_fs_test(
 
 int cmpfunc(const void* a, const void* b) { return *(char*)a - *(char*)b; }
 
-void diag_kronecker_product_test(example& ec1, example& ec2, example& ec, bool oas = false)
+void diag_kronecker_product_test(VW::example& ec1, VW::example& ec2, VW::example& ec, bool oas = false)
 {
   // copy_example_data(&ec, &ec1, oas); //no_feat false, oas: true
   copy_example_data(&ec, &ec1, oas);
 
   ec.total_sum_feat_sq = 0.0;  // sort namespaces.  pass indices array into sort...template (leave this to the end)
 
-  qsort(ec1.indices.begin(), ec1.indices.size(), sizeof(namespace_index), cmpfunc);
-  qsort(ec2.indices.begin(), ec2.indices.size(), sizeof(namespace_index), cmpfunc);
+  qsort(ec1.indices.begin(), ec1.indices.size(), sizeof(VW::namespace_index), cmpfunc);
+  qsort(ec2.indices.begin(), ec2.indices.size(), sizeof(VW::namespace_index), cmpfunc);
 
   size_t idx1 = 0;
   size_t idx2 = 0;
   while (idx1 < ec1.indices.size() && idx2 < ec2.indices.size())
   // for (size_t idx1 = 0, idx2 = 0; idx1 < ec1.indices.size() && idx2 < ec2.indices.size(); idx1++)
   {
-    namespace_index c1 = ec1.indices[idx1];
-    namespace_index c2 = ec2.indices[idx2];
+    VW::namespace_index c1 = ec1.indices[idx1];
+    VW::namespace_index c2 = ec2.indices[idx2];
     if (c1 < c2)
       idx1++;
     else if (c1 > c2)
@@ -166,7 +166,7 @@ struct memory_tree
 
   std::vector<node> nodes;  // array of nodes.
   // v_array<node> nodes;         // array of nodes.
-  v_array<example*> examples;  // array of example points
+  VW::v_array<VW::example*> examples;  // array of example points
 
   size_t max_leaf_examples = 0;
   size_t max_nodes = 0;
@@ -203,7 +203,7 @@ struct memory_tree
   float F1_score = 0.f;
   float hamming_loss = 0.f;
 
-  example* kprod_ec = nullptr;
+  VW::example* kprod_ec = nullptr;
 
   memory_tree()
   {
@@ -226,7 +226,7 @@ struct memory_tree
   }
 };
 
-float linear_kernel(const flat_example* fec1, const flat_example* fec2)
+float linear_kernel(const VW::flat_example* fec1, const VW::flat_example* fec2)
 {
   float dotprod = 0;
 
@@ -251,14 +251,14 @@ float linear_kernel(const flat_example* fec1, const flat_example* fec2)
   return dotprod;
 }
 
-float normalized_linear_prod(memory_tree& b, example* ec1, example* ec2)
+float normalized_linear_prod(memory_tree& b, VW::example* ec1, VW::example* ec2)
 {
-  flat_example* fec1 = flatten_sort_example(*b.all, ec1);
-  flat_example* fec2 = flatten_sort_example(*b.all, ec2);
+  VW::flat_example* fec1 = VW::flatten_sort_example(*b.all, ec1);
+  VW::flat_example* fec2 = VW::flatten_sort_example(*b.all, ec2);
   float norm_sqrt = std::pow(fec1->total_sum_feat_sq * fec2->total_sum_feat_sq, 0.5f);
   float linear_prod = linear_kernel(fec1, fec2);
-  free_flatten_example(fec1);
-  free_flatten_example(fec2);
+  VW::free_flatten_example(fec1);
+  VW::free_flatten_example(fec2);
   return linear_prod / norm_sqrt;
 }
 
@@ -358,7 +358,7 @@ inline int random_sample_example_pop(memory_tree& b, uint64_t& cn)
 
 // train the node with id cn, using the statistics stored in the node to
 // formulate a binary classificaiton example.
-float train_node(memory_tree& b, single_learner& base, example& ec, const uint64_t cn)
+float train_node(memory_tree& b, single_learner& base, VW::example& ec, const uint64_t cn)
 {
   // predict, learn and predict
   // note: here we first train the router and then predict.
@@ -504,7 +504,7 @@ void split_leaf(memory_tree& b, single_learner& base, const uint64_t cn)
 
 int compare_label(const void* a, const void* b) { return *(uint32_t*)a - *(uint32_t*)b; }
 
-inline uint32_t over_lap(v_array<uint32_t>& array_1, v_array<uint32_t>& array_2)
+inline uint32_t over_lap(VW::v_array<uint32_t>& array_1, VW::v_array<uint32_t>& array_2)
 {
   uint32_t num_overlap = 0;
 
@@ -532,13 +532,13 @@ inline uint32_t over_lap(v_array<uint32_t>& array_1, v_array<uint32_t>& array_2)
 }
 
 // template<typename T>
-inline uint32_t hamming_loss(v_array<uint32_t>& array_1, v_array<uint32_t>& array_2)
+inline uint32_t hamming_loss(VW::v_array<uint32_t>& array_1, VW::v_array<uint32_t>& array_2)
 {
   uint32_t overlap = over_lap(array_1, array_2);
   return static_cast<uint32_t>(array_1.size() + array_2.size() - 2 * overlap);
 }
 
-void collect_labels_from_leaf(memory_tree& b, const uint64_t cn, v_array<uint32_t>& leaf_labs)
+void collect_labels_from_leaf(memory_tree& b, const uint64_t cn, VW::v_array<uint32_t>& leaf_labs)
 {
   if (b.nodes[cn].internal != -1) b.all->logger.out_error("something is wrong, it should be a leaf node");
 
@@ -553,9 +553,9 @@ void collect_labels_from_leaf(memory_tree& b, const uint64_t cn, v_array<uint32_
   }
 }
 
-inline void train_one_against_some_at_leaf(memory_tree& b, single_learner& base, const uint64_t cn, example& ec)
+inline void train_one_against_some_at_leaf(memory_tree& b, single_learner& base, const uint64_t cn, VW::example& ec)
 {
-  v_array<uint32_t> leaf_labs;
+  VW::v_array<uint32_t> leaf_labs;
   collect_labels_from_leaf(b, cn, leaf_labs);  // unique labels from the leaf.
   MULTILABEL::labels multilabels = ec.l.multilabels;
   MULTILABEL::labels preds = ec.pred.multilabels;
@@ -573,10 +573,10 @@ inline void train_one_against_some_at_leaf(memory_tree& b, single_learner& base,
 }
 
 inline uint32_t compute_hamming_loss_via_oas(
-    memory_tree& b, single_learner& base, const uint64_t cn, example& ec, v_array<uint32_t>& selected_labs)
+    memory_tree& b, single_learner& base, const uint64_t cn, VW::example& ec, VW::v_array<uint32_t>& selected_labs)
 {
   selected_labs.clear();
-  v_array<uint32_t> leaf_labs;
+  VW::v_array<uint32_t> leaf_labs;
   collect_labels_from_leaf(b, cn, leaf_labs);  // unique labels stored in the leaf.
   MULTILABEL::labels multilabels = ec.l.multilabels;
   MULTILABEL::labels preds = ec.pred.multilabels;
@@ -595,7 +595,7 @@ inline uint32_t compute_hamming_loss_via_oas(
 }
 
 // pick up the "closest" example in the leaf using the score function.
-int64_t pick_nearest(memory_tree& b, single_learner& base, const uint64_t cn, example& ec)
+int64_t pick_nearest(memory_tree& b, single_learner& base, const uint64_t cn, VW::example& ec)
 {
   if (b.nodes[cn].examples_index.size() > 0)
   {
@@ -634,13 +634,13 @@ int64_t pick_nearest(memory_tree& b, single_learner& base, const uint64_t cn, ex
 }
 
 // for any two examples, use number of overlap labels to indicate the similarity between these two examples.
-float get_overlap_from_two_examples(example& ec1, example& ec2)
+float get_overlap_from_two_examples(VW::example& ec1, VW::example& ec2)
 {
   return static_cast<float>(over_lap(ec1.l.multilabels.label_v, ec2.l.multilabels.label_v));
 }
 
 // we use F1 score as the reward signal
-float F1_score_for_two_examples(example& ec1, example& ec2)
+float F1_score_for_two_examples(VW::example& ec1, VW::example& ec2)
 {
   float num_overlaps = get_overlap_from_two_examples(ec1, ec2);
   float v1 = static_cast<float>(num_overlaps / (1e-7 + ec1.l.multilabels.label_v.size() * 1.));
@@ -651,7 +651,7 @@ float F1_score_for_two_examples(example& ec1, example& ec2)
     // return v2; //only precision
     return 2.f * (v1 * v2 / (v1 + v2));
 }
-void predict(memory_tree& b, single_learner& base, example& ec)
+void predict(memory_tree& b, single_learner& base, VW::example& ec)
 {
   MULTICLASS::label_t mc{0, 0};
   uint32_t save_multi_pred = 0;
@@ -713,13 +713,13 @@ void predict(memory_tree& b, single_learner& base, example& ec)
       reward = F1_score_for_two_examples(ec, *b.examples[closest_ec]);
       b.F1_score += reward;
     }
-    v_array<uint32_t> selected_labs;
+    VW::v_array<uint32_t> selected_labs;
     ec.loss = static_cast<float>(compute_hamming_loss_via_oas(b, base, cn, ec, selected_labs));
     b.hamming_loss += ec.loss;
   }
 }
 
-float return_reward_from_node(memory_tree& b, single_learner& base, uint64_t cn, example& ec, float weight = 1.f)
+float return_reward_from_node(memory_tree& b, single_learner& base, uint64_t cn, VW::example& ec, float weight = 1.f)
 {
   MULTICLASS::label_t mc{0, 0};
   uint32_t save_multi_pred = 0;
@@ -786,7 +786,7 @@ float return_reward_from_node(memory_tree& b, single_learner& base, uint64_t cn,
 }
 
 void learn_at_leaf_random(
-    memory_tree& b, single_learner& base, const uint64_t& leaf_id, example& ec, const float& weight)
+    memory_tree& b, single_learner& base, const uint64_t& leaf_id, VW::example& ec, const float& weight)
 {
   b.total_num_queries++;
   int32_t ec_id = -1;
@@ -812,9 +812,9 @@ void learn_at_leaf_random(
 }
 
 void route_to_leaf(memory_tree& b, single_learner& base, const uint32_t& ec_array_index, uint64_t cn,
-    v_array<uint64_t>& path, bool insertion)
+    VW::v_array<uint64_t>& path, bool insertion)
 {
-  example& ec = *b.examples[ec_array_index];
+  VW::example& ec = *b.examples[ec_array_index];
 
   MULTICLASS::label_t mc{0, 0};
   uint32_t save_multi_pred = 0;
@@ -866,9 +866,9 @@ void route_to_leaf(memory_tree& b, single_learner& base, const uint32_t& ec_arra
 }
 
 // we roll in, then stop at a random step, do exploration. //no real insertion happens in the function.
-void single_query_and_learn(memory_tree& b, single_learner& base, const uint32_t& ec_array_index, example& ec)
+void single_query_and_learn(memory_tree& b, single_learner& base, const uint32_t& ec_array_index, VW::example& ec)
 {
-  v_array<uint64_t> path_to_leaf;
+  VW::v_array<uint64_t> path_to_leaf;
   route_to_leaf(b, base, ec_array_index, 0, path_to_leaf, false);  // no insertion happens here.
 
   if (path_to_leaf.size() > 1)
@@ -941,7 +941,7 @@ void single_query_and_learn(memory_tree& b, single_learner& base, const uint32_t
 }
 
 // using reward signals
-void update_rew(memory_tree& b, single_learner& base, const uint32_t& ec_array_index, example& ec)
+void update_rew(memory_tree& b, single_learner& base, const uint32_t& ec_array_index, VW::example& ec)
 {
   single_query_and_learn(b, base, ec_array_index, ec);
 }
@@ -988,7 +988,7 @@ void experience_replay(memory_tree& b, single_learner& base)
     {
       if (b.dream_at_update == false)
       {
-        v_array<uint64_t> tmp_path;
+        VW::v_array<uint64_t> tmp_path;
         route_to_leaf(b, base, ec_id, 0, tmp_path, true);
       }
       else
@@ -1001,7 +1001,7 @@ void experience_replay(memory_tree& b, single_learner& base)
 
 // learn: descent the example from the root while generating binary training
 // example for each node, including the leaf, and store the example at the leaf.
-void learn(memory_tree& b, single_learner& base, example& ec)
+void learn(memory_tree& b, single_learner& base, VW::example& ec)
 {
   // Assume predict is called before learn is called
   if (b.test_mode == false)
@@ -1022,7 +1022,7 @@ void learn(memory_tree& b, single_learner& base, example& ec)
 
     if (b.current_pass < 1)
     {  // in the first pass, we need to store the memory:
-      example* new_ec = VW::alloc_examples(1);
+      VW::example* new_ec = VW::alloc_examples(1);
       copy_example_data(new_ec, &ec, b.oas);
       b.examples.push_back(new_ec);
       if (b.online == true)
@@ -1063,7 +1063,7 @@ void end_pass(memory_tree& b)
 ///////////////////Save & Load//////////////////////////////////////
 ////////////////////////////////////////////////////////////////////
 
-void save_load_example(example* ec, io_buf& model_file, bool& read, bool& text, std::stringstream& msg, bool& oas)
+void save_load_example(VW::example* ec, io_buf& model_file, bool& read, bool& text, std::stringstream& msg, bool& oas)
 {  // deal with tag
    // deal with labels:
   writeit(ec->num_features, "num_features");
@@ -1102,10 +1102,10 @@ void save_load_example(example* ec, io_buf& model_file, bool& read, bool& text, 
     ec->indices.clear();
     for (uint32_t i = 0; i < namespace_size; i++) { ec->indices.push_back('\0'); }
   }
-  for (uint32_t i = 0; i < namespace_size; i++) writeit(ec->indices[i], "namespace_index");
+  for (uint32_t i = 0; i < namespace_size; i++) writeit(ec->indices[i], "VW::namespace_index");
 
   // deal with features
-  for (namespace_index nc : ec->indices)
+  for (VW::namespace_index nc : ec->indices)
   {
     features* fs = &ec->feature_space[nc];
     writeitvar(fs->size(), "features_", feat_size);
@@ -1181,7 +1181,7 @@ void save_load_memory_tree(memory_tree& b, io_buf& model_file, bool read, bool t
       b.examples.clear();
       for (uint32_t i = 0; i < n_examples; i++)
       {
-        example* new_ec = VW::alloc_examples(1);
+        VW::example* new_ec = VW::alloc_examples(1);
         b.examples.push_back(new_ec);
       }
     }

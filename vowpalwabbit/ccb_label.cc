@@ -31,8 +31,6 @@ using namespace VW::config;
 
 namespace CCB
 {
-void default_label(label& ld);
-
 float ccb_weight(const CCB::label& ld) { return ld.weight; }
 
 void default_label(label& ld)
@@ -171,28 +169,28 @@ void parse_label(
   }
 }
 
-label_parser ccb_label_parser = {
+VW::label_parser ccb_label_parser = {
     // default_label
-    [](polylabel& label) { default_label(label.conditional_contextual_bandit); },
+    [](VW::polylabel& label) { default_label(label.conditional_contextual_bandit); },
     // parse_label
-    [](polylabel& label, ::reduction_features& /*red_features*/, VW::label_parser_reuse_mem& reuse_mem,
+    [](VW::polylabel& label, ::VW::reduction_features& /*red_features*/, VW::label_parser_reuse_mem& reuse_mem,
         const VW::named_labels* /*ldict*/, const std::vector<VW::string_view>& words,
         VW::io::logger& logger) { parse_label(label.conditional_contextual_bandit, reuse_mem, words, logger); },
     // cache_label
-    [](const polylabel& label, const ::reduction_features& /*red_features*/, io_buf& cache,
+    [](const VW::polylabel& label, const ::VW::reduction_features& /*red_features*/, io_buf& cache,
         const std::string& upstream_name, bool text) {
       return VW::model_utils::write_model_field(cache, label.conditional_contextual_bandit, upstream_name, text);
     },
     // read_cached_label
-    [](polylabel& label, ::reduction_features& /*red_features*/, io_buf& cache) {
+    [](VW::polylabel& label, ::VW::reduction_features& /*red_features*/, io_buf& cache) {
       return VW::model_utils::read_model_field(cache, label.conditional_contextual_bandit);
     },
     // get_weight
-    [](const polylabel& label, const ::reduction_features& /*red_features*/) {
+    [](const VW::polylabel& label, const ::VW::reduction_features& /*red_features*/) {
       return ccb_weight(label.conditional_contextual_bandit);
     },
     // test_label
-    [](const polylabel& label) { return test_label(label.conditional_contextual_bandit); },
+    [](const VW::polylabel& label) { return test_label(label.conditional_contextual_bandit); },
     // label type
     VW::label_type_t::ccb};
 }  // namespace CCB

@@ -92,7 +92,7 @@ void multiply(features& f_dest, features& f_src2, interact& in)
 }
 
 template <bool is_learn, bool print_all>
-void predict_or_learn(interact& in, VW::LEARNER::single_learner& base, example& ec)
+void predict_or_learn(interact& in, VW::LEARNER::single_learner& base, VW::example& ec)
 {
   features& f1 = ec.feature_space[in.n1];
   features& f2 = ec.feature_space[in.n2];

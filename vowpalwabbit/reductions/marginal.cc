@@ -93,7 +93,7 @@ float get_adanormalhedge_weights(float r, float c)
 }
 
 template <bool is_learn>
-void make_marginal(data& sm, example& ec)
+void make_marginal(data& sm, VW::example& ec)
 {
   const uint64_t mask = sm.m_weights->mask();
   const float label = ec.l.simple.label;
@@ -104,7 +104,7 @@ void make_marginal(data& sm, example& ec)
 
   for (auto i = ec.begin(); i != ec.end(); ++i)
   {
-    const namespace_index n = i.index();
+    const VW::namespace_index n = i.index();
     if (sm.id_features[n])
     {
       std::swap(sm.temp[n], *i);
@@ -141,7 +141,7 @@ void make_marginal(data& sm, example& ec)
           {
             std::ostringstream ss;
             std::vector<audit_strings>& sn = sm.temp[n].space_names;
-            ss << sn[inv_hash_idx].first << "^" << sn[inv_hash_idx].second << "*" << sn[inv_hash_idx + 1].second;
+            ss << sn[inv_hash_idx].ns << "^" << sn[inv_hash_idx].name << "*" << sn[inv_hash_idx + 1].name;
             sm.inverse_hashes.insert(std::make_pair(key, ss.str()));
             inv_hash_idx += 2;
           }
@@ -164,17 +164,17 @@ void make_marginal(data& sm, example& ec)
   }
 }
 
-void undo_marginal(data& sm, example& ec)
+void undo_marginal(data& sm, VW::example& ec)
 {
   for (auto i = ec.begin(); i != ec.end(); ++i)
   {
-    const namespace_index n = i.index();
+    const VW::namespace_index n = i.index();
     if (sm.id_features[n]) { std::swap(sm.temp[n], *i); }
   }
 }
 
 template <bool is_learn>
-void compute_expert_loss(data& sm, example& ec)
+void compute_expert_loss(data& sm, VW::example& ec)
 {
   // add in the feature-based expert and normalize,
   const float label = ec.l.simple.label;
@@ -197,16 +197,16 @@ void compute_expert_loss(data& sm, example& ec)
   }
 }
 
-void update_marginal(data& sm, example& ec)
+void update_marginal(data& sm, VW::example& ec)
 {
   const uint64_t mask = sm.m_weights->mask();
   const float label = ec.l.simple.label;
   float weight = ec.weight;
   if (sm.unweighted_marginals) { weight = 1.; }
 
-  for (example::iterator i = ec.begin(); i != ec.end(); ++i)
+  for (VW::example::iterator i = ec.begin(); i != ec.end(); ++i)
   {
-    const namespace_index n = i.index();
+    const VW::namespace_index n = i.index();
     if (sm.id_features[n])
     {
       for (auto j = sm.temp[n].begin(); j != sm.temp[n].end(); ++j)
@@ -240,7 +240,7 @@ void update_marginal(data& sm, example& ec)
 }
 
 template <bool is_learn>
-void predict_or_learn(data& sm, VW::LEARNER::single_learner& base, example& ec)
+void predict_or_learn(data& sm, VW::LEARNER::single_learner& base, VW::example& ec)
 {
   make_marginal<is_learn>(sm, ec);
   if VW_STD17_CONSTEXPR (is_learn)

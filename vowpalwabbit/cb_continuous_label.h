@@ -9,10 +9,9 @@
 #include "label_parser.h"
 #include "v_array.h"
 
-struct example;
-
 namespace VW
 {
+struct example;
 namespace cb_continuous
 {
 struct continuous_label_elm
@@ -30,7 +29,7 @@ struct continuous_label
   v_array<continuous_label_elm> costs;
 };
 
-extern label_parser the_label_parser;
+extern VW::label_parser the_label_parser;
 
 }  // namespace cb_continuous
 

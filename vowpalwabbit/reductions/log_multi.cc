@@ -50,8 +50,8 @@ static_assert(std::is_trivial<node_pred>::value, "To be used in v_array node_pre
 struct node
 {
   // everyone has
-  uint32_t parent;           // the parent node
-  v_array<node_pred> preds;  // per-class state
+  uint32_t parent;               // the parent node
+  VW::v_array<node_pred> preds;  // per-class state
   uint32_t
       min_count;  // the number of examples reaching this node (if it's a leaf) or the minimum reaching any grandchild.
 
@@ -251,7 +251,7 @@ bool children(log_multi& b, uint32_t& current, uint32_t& class_index, uint32_t l
 }
 
 void train_node(
-    log_multi& b, single_learner& base, example& ec, uint32_t& current, uint32_t& class_index, uint32_t /* depth */)
+    log_multi& b, single_learner& base, VW::example& ec, uint32_t& current, uint32_t& class_index, uint32_t /* depth */)
 {
   if (b.nodes[current].norm_Eh > b.nodes[current].preds[class_index].norm_Ehk)
     ec.l.simple.label = -1.f;
@@ -304,7 +304,7 @@ inline uint32_t descend(node& n, float prediction)
     return n.right;
 }
 
-void predict(log_multi& b, single_learner& base, example& ec)
+void predict(log_multi& b, single_learner& base, VW::example& ec)
 {
   MULTICLASS::label_t mc = ec.l.multi;
 
@@ -323,7 +323,7 @@ void predict(log_multi& b, single_learner& base, example& ec)
   ec.l.multi = mc;
 }
 
-void learn(log_multi& b, single_learner& base, example& ec)
+void learn(log_multi& b, single_learner& base, VW::example& ec)
 {
   if (ec.l.multi.label != static_cast<uint32_t>(-1))  // if training the tree
   {

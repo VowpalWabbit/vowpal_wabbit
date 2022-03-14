@@ -47,7 +47,7 @@ struct ldf
   std::vector<action_scores> stored_preds;
 };
 
-bool ec_is_label_definition(const example& ec)  // label defs look like "0:___" or just "label:___"
+bool ec_is_label_definition(const VW::example& ec)  // label defs look like "0:___" or just "label:___"
 {
   if (ec.indices.empty()) return false;
   if (ec.indices[0] != 'l') return false;
@@ -57,7 +57,7 @@ bool ec_is_label_definition(const example& ec)  // label defs look like "0:___" 
   return true;
 }
 
-bool ec_seq_is_label_definition(multi_ex& ec_seq)
+bool ec_seq_is_label_definition(VW::multi_ex& ec_seq)
 {
   if (ec_seq.empty()) return false;
   bool is_lab = ec_is_label_definition(*ec_seq[0]);
@@ -66,9 +66,9 @@ bool ec_seq_is_label_definition(multi_ex& ec_seq)
   return is_lab;
 }
 
-bool ec_seq_has_label_definition(const multi_ex& ec_seq)
+bool ec_seq_has_label_definition(const VW::multi_ex& ec_seq)
 {
-  return std::any_of(ec_seq.cbegin(), ec_seq.cend(), [](example* ec) { return ec_is_label_definition(*ec); });
+  return std::any_of(ec_seq.cbegin(), ec_seq.cend(), [](VW::example* ec) { return ec_is_label_definition(*ec); });
 }
 
 inline bool cmp_wclass_ptr(const COST_SENSITIVE::wclass* a, const COST_SENSITIVE::wclass* b) { return a->x < b->x; }
@@ -85,23 +85,23 @@ void compute_wap_values(std::vector<COST_SENSITIVE::wclass*> costs)
 // Rather than finding the corresponding namespace and feature in ec,
 // add a new feature with opposite value (but same index) to ec to a special wap_ldf_namespace.
 // This is faster and allows fast undo in unsubtract_example().
-void subtract_feature(example& ec, float feature_value_x, uint64_t weight_index)
+void subtract_feature(VW::example& ec, float feature_value_x, uint64_t weight_index)
 {
   ec.feature_space[wap_ldf_namespace].push_back(-feature_value_x, weight_index, wap_ldf_namespace);
 }
 
 // Iterate over all features of ecsub including quadratic and cubic features and subtract them from ec.
-void subtract_example(VW::workspace& all, example* ec, example* ecsub)
+void subtract_example(VW::workspace& all, VW::example* ec, VW::example* ecsub)
 {
   features& wap_fs = ec->feature_space[wap_ldf_namespace];
   wap_fs.sum_feat_sq = 0;
-  GD::foreach_feature<example&, uint64_t, subtract_feature>(all, *ecsub, *ec);
+  GD::foreach_feature<VW::example&, uint64_t, subtract_feature>(all, *ecsub, *ec);
   ec->indices.push_back(wap_ldf_namespace);
   ec->num_features += wap_fs.size();
   ec->reset_total_sum_feat_sq();
 }
 
-void unsubtract_example(example* ec, VW::io::logger& logger)
+void unsubtract_example(VW::example* ec, VW::io::logger& logger)
 {
   if (ec->indices.empty())
   {
@@ -124,7 +124,7 @@ void unsubtract_example(example* ec, VW::io::logger& logger)
   ec->indices.pop_back();
 }
 
-void make_single_prediction(ldf& data, single_learner& base, example& ec)
+void make_single_prediction(ldf& data, single_learner& base, VW::example& ec)
 {
   uint64_t old_offset = ec.ft_offset;
 
@@ -147,7 +147,7 @@ void make_single_prediction(ldf& data, single_learner& base, example& ec)
   base.predict(ec);  // make a prediction
 }
 
-bool test_ldf_sequence(ldf& /*data*/, multi_ex& ec_seq, VW::io::logger& logger)
+bool test_ldf_sequence(ldf& /*data*/, VW::multi_ex& ec_seq, VW::io::logger& logger)
 {
   bool isTest;
   if (ec_seq.empty())
@@ -168,7 +168,7 @@ bool test_ldf_sequence(ldf& /*data*/, multi_ex& ec_seq, VW::io::logger& logger)
   return isTest;
 }
 
-void do_actual_learning_wap(ldf& data, single_learner& base, multi_ex& ec_seq)
+void do_actual_learning_wap(ldf& data, single_learner& base, VW::multi_ex& ec_seq)
 {
   VW_DBG(ec_seq) << "do_actual_learning_wap()" << std::endl;
 
@@ -179,7 +179,7 @@ void do_actual_learning_wap(ldf& data, single_learner& base, multi_ex& ec_seq)
 
   for (size_t k1 = 0; k1 < K; k1++)
   {
-    example* ec1 = ec_seq[k1];
+    VW::example* ec1 = ec_seq[k1];
 
     // save original variables
     COST_SENSITIVE::label save_cs_label = ec1->l.cs;
@@ -201,7 +201,7 @@ void do_actual_learning_wap(ldf& data, single_learner& base, multi_ex& ec_seq)
 
     for (size_t k2 = k1 + 1; k2 < K; k2++)
     {
-      example* ec2 = ec_seq[k2];
+      VW::example* ec2 = ec_seq[k2];
       auto costs2 = ec2->l.cs.costs;
 
       if (costs2[0].class_index == static_cast<uint32_t>(-1)) continue;
@@ -236,7 +236,7 @@ void do_actual_learning_wap(ldf& data, single_learner& base, multi_ex& ec_seq)
   }
 }
 
-void do_actual_learning_oaa(ldf& data, single_learner& base, multi_ex& ec_seq)
+void do_actual_learning_oaa(ldf& data, single_learner& base, VW::multi_ex& ec_seq)
 {
   VW_DBG(ec_seq) << "do_actual_learning_oaa()" << std::endl;
 
@@ -299,17 +299,17 @@ void do_actual_learning_oaa(ldf& data, single_learner& base, multi_ex& ec_seq)
 }
 
 /*
- * The begining of the multi_ex sequence may be labels.  Process those
+ * The begining of the VW::multi_ex sequence may be labels.  Process those
  * and return the start index of the un-processed examples
  */
-multi_ex process_labels(ldf& data, const multi_ex& ec_seq_all);
+VW::multi_ex process_labels(ldf& data, const VW::multi_ex& ec_seq_all);
 
 /*
  * 1) process all labels at first
  * 2) verify no labels in the middle of data
  * 3) learn_or_predict(data) with rest
  */
-void learn_csoaa_ldf(ldf& data, single_learner& base, multi_ex& ec_seq_all)
+void learn_csoaa_ldf(ldf& data, single_learner& base, VW::multi_ex& ec_seq_all)
 {
   if (ec_seq_all.empty()) return;  // nothing to do
 
@@ -327,7 +327,7 @@ void learn_csoaa_ldf(ldf& data, single_learner& base, multi_ex& ec_seq_all)
   }
 }
 
-void convert_to_probabilities(multi_ex& ec_seq)
+void convert_to_probabilities(VW::multi_ex& ec_seq)
 {
   float sum_prob = 0;
   for (const auto& example : ec_seq)
@@ -351,7 +351,7 @@ void convert_to_probabilities(multi_ex& ec_seq)
  * 2) verify no labels in the middle of data
  * 3) learn_or_predict(data) with rest
  */
-void predict_csoaa_ldf(ldf& data, single_learner& base, multi_ex& ec_seq_all)
+void predict_csoaa_ldf(ldf& data, single_learner& base, VW::multi_ex& ec_seq_all)
 {
   if (ec_seq_all.empty()) return;  // nothing to do
 
@@ -380,7 +380,7 @@ void predict_csoaa_ldf(ldf& data, single_learner& base, multi_ex& ec_seq_all)
   float min_score = FLT_MAX;
   for (uint32_t k = 0; k < K; k++)
   {
-    example* ec = ec_seq[k];
+    VW::example* ec = ec_seq[k];
     make_single_prediction(data, base, *ec);
     if (ec->partial_prediction < min_score)
     {
@@ -395,7 +395,7 @@ void predict_csoaa_ldf(ldf& data, single_learner& base, multi_ex& ec_seq_all)
  * 2) verify no labels in the middle of data
  * 3) learn_or_predict(data) with rest
  */
-void predict_csoaa_ldf_rank(ldf& data, single_learner& base, multi_ex& ec_seq_all)
+void predict_csoaa_ldf_rank(ldf& data, single_learner& base, VW::multi_ex& ec_seq_all)
 {
   data.ft_offset = ec_seq_all[0]->ft_offset;
   // handle label definitions
@@ -424,7 +424,7 @@ void predict_csoaa_ldf_rank(ldf& data, single_learner& base, multi_ex& ec_seq_al
 
   for (uint32_t k = 0; k < K; k++)
   {
-    example* ec = ec_seq[k];
+    VW::example* ec = ec_seq[k];
     data.stored_preds.emplace_back(std::move(ec->pred.a_s));
     make_single_prediction(data, base, *ec);
     action_score s;
@@ -446,12 +446,13 @@ void global_print_newline(VW::workspace& all)
   }
 }
 
-void output_example(VW::workspace& all, const example& ec, bool& hit_loss, const multi_ex* ec_seq, const ldf& data)
+void output_example(
+    VW::workspace& all, const VW::example& ec, bool& hit_loss, const VW::multi_ex* ec_seq, const ldf& data)
 {
   const label& ld = ec.l.cs;
   const auto& costs = ld.costs;
 
-  if (example_is_newline(ec)) return;
+  if (VW::example_is_newline(ec)) return;
   if (ec_is_label_definition(ec)) return;
 
   if (COST_SENSITIVE::ec_is_example_header(ec))
@@ -476,7 +477,7 @@ void output_example(VW::workspace& all, const example& ec, bool& hit_loss, const
     float min_score = FLT_MAX;
     for (size_t k = 0; k < ec_seq->size(); k++)
     {
-      example* ec_k = (*ec_seq)[k];
+      VW::example* ec_k = (*ec_seq)[k];
       if (ec_k->partial_prediction < min_score)
       {
         min_score = ec_k->partial_prediction;
@@ -524,21 +525,21 @@ void output_example(VW::workspace& all, const example& ec, bool& hit_loss, const
   COST_SENSITIVE::print_update(all, COST_SENSITIVE::cs_label.test_label(ec.l), ec, ec_seq, false, predicted_class);
 }
 
-void output_rank_example(VW::workspace& all, example& head_ec, bool& hit_loss, multi_ex* ec_seq)
+void output_rank_example(VW::workspace& all, VW::example& head_ec, bool& hit_loss, VW::multi_ex* ec_seq)
 {
   const auto& costs = head_ec.l.cs.costs;
 
-  if (example_is_newline(head_ec)) return;
+  if (VW::example_is_newline(head_ec)) return;
   if (ec_is_label_definition(head_ec)) return;
 
   all.sd->total_features += head_ec.get_num_features();
 
   float loss = 0.;
-  v_array<action_score>& preds = head_ec.pred.a_s;
+  VW::v_array<action_score>& preds = head_ec.pred.a_s;
 
   if (!COST_SENSITIVE::cs_label.test_label(head_ec.l))
   {
-    for (example* ex : *ec_seq)
+    for (VW::example* ex : *ec_seq)
     {
       if (hit_loss) break;
       if (preds[0].action == ex->l.cs.costs[0].class_index)
@@ -571,7 +572,7 @@ void output_rank_example(VW::workspace& all, example& head_ec, bool& hit_loss, m
   COST_SENSITIVE::print_update(all, COST_SENSITIVE::cs_label.test_label(head_ec.l), head_ec, ec_seq, true, 0);
 }
 
-void output_example_seq(VW::workspace& all, ldf& data, multi_ex& ec_seq)
+void output_example_seq(VW::workspace& all, ldf& data, VW::multi_ex& ec_seq)
 {
   size_t K = ec_seq.size();
   if ((K > 0) && !ec_seq_is_label_definition(ec_seq))
@@ -586,11 +587,11 @@ void output_example_seq(VW::workspace& all, ldf& data, multi_ex& ec_seq)
     if (data.rank)
       output_rank_example(all, **(ec_seq.begin()), hit_loss, &(ec_seq));
     else
-      for (example* ec : ec_seq) output_example(all, *ec, hit_loss, &(ec_seq), data);
+      for (VW::example* ec : ec_seq) output_example(all, *ec, hit_loss, &(ec_seq), data);
 
     if (all.raw_prediction != nullptr)
     {
-      const v_array<char> empty;
+      const VW::v_array<char> empty;
       all.print_text_by_ref(all.raw_prediction.get(), "", empty, all.logger);
     }
 
@@ -628,7 +629,7 @@ void output_example_seq(VW::workspace& all, ldf& data, multi_ex& ec_seq)
 
 void end_pass(ldf& data) { data.first_pass = false; }
 
-void finish_multiline_example(VW::workspace& all, ldf& data, multi_ex& ec_seq)
+void finish_multiline_example(VW::workspace& all, ldf& data, VW::multi_ex& ec_seq)
 {
   if (!ec_seq.empty())
   {
@@ -643,7 +644,7 @@ void finish_multiline_example(VW::workspace& all, ldf& data, multi_ex& ec_seq)
  * Process a single example as a label.
  * Note: example should already be confirmed as a label
  */
-void inline process_label(ldf& data, example* ec)
+void inline process_label(ldf& data, VW::example* ec)
 {
   // auto new_fs = ec->feature_space[ec->indices[0]];
   auto& costs = ec->l.cs.costs;
@@ -655,14 +656,14 @@ void inline process_label(ldf& data, example* ec)
 }
 
 /*
- * The beginning of the multi_ex sequence may be labels.  Process those
+ * The beginning of the VW::multi_ex sequence may be labels.  Process those
  * and return the start index of the un-processed examples
  */
-multi_ex process_labels(ldf& data, const multi_ex& ec_seq_all)
+VW::multi_ex process_labels(ldf& data, const VW::multi_ex& ec_seq_all)
 {
   if (ec_seq_all.empty()) { return ec_seq_all; }  // nothing to do
 
-  example* ec = ec_seq_all[0];
+  VW::example* ec = ec_seq_all[0];
 
   // check the first element, if it's not a label, return
   if (!ec_is_label_definition(*ec)) return ec_seq_all;
@@ -670,7 +671,7 @@ multi_ex process_labels(ldf& data, const multi_ex& ec_seq_all)
   // process the first element as a label
   process_label(data, ec);
 
-  multi_ex ret;
+  VW::multi_ex ret;
   size_t i = 1;
   // process the rest of the elements that are labels
   for (; i < ec_seq_all.size(); i++)
@@ -787,7 +788,7 @@ base_learner* csldf_setup(VW::setup_base_i& stack_builder)
   std::string name = stack_builder.get_setupfn_name(csldf_setup);
   std::string name_addition;
   VW::prediction_type_t pred_type;
-  void (*pred_ptr)(ldf&, single_learner&, multi_ex&);
+  void (*pred_ptr)(ldf&, single_learner&, VW::multi_ex&);
   if (ld->rank)
   {
     name_addition = "-rank";

@@ -34,12 +34,12 @@ uint64_t ceil_log_2(uint64_t v);
 // the complete feature_space of the added namespace is cleared afterwards
 class namespace_copy_guard
 {
-  example_predict& _ex;
+  VW::example_predict& _ex;
   unsigned char _ns;
   bool _remove_ns;
 
 public:
-  namespace_copy_guard(example_predict& ex, unsigned char ns);
+  namespace_copy_guard(VW::example_predict& ex, unsigned char ns);
   ~namespace_copy_guard();
 
   void feature_push_back(feature_value v, feature_index idx);
@@ -47,21 +47,21 @@ public:
 
 class feature_offset_guard
 {
-  example_predict& _ex;
+  VW::example_predict& _ex;
   uint64_t _old_ft_offset;
 
 public:
-  feature_offset_guard(example_predict& ex, uint64_t ft_offset);
+  feature_offset_guard(VW::example_predict& ex, uint64_t ft_offset);
   ~feature_offset_guard();
 };
 
 class stride_shift_guard
 {
-  example_predict& _ex;
+  VW::example_predict& _ex;
   uint64_t _shift;
 
 public:
-  stride_shift_guard(example_predict& ex, uint64_t shift);
+  stride_shift_guard(VW::example_predict& ex, uint64_t shift);
   ~stride_shift_guard();
 };
 
@@ -75,7 +75,7 @@ class vw_predict
   std::string _id;
   std::string _version;
   std::string _command_line_arguments;
-  std::vector<std::vector<namespace_index>> _interactions;
+  std::vector<std::vector<VW::namespace_index>> _interactions;
   std::vector<std::vector<extent_term>> _unused_extent_interactions;
   INTERACTIONS::generate_interactions_object_cache _generate_interactions_object_cache;
   INTERACTIONS::interactions_generator _generate_interactions;
@@ -156,7 +156,7 @@ public:
 
     // VW performs the following transformation as a side-effect of looking for duplicates.
     // This affects how interaction hashes are generated.
-    std::vector<std::vector<namespace_index>> vec_sorted;
+    std::vector<std::vector<VW::namespace_index>> vec_sorted;
     for (auto& interaction : _interactions) { std::sort(std::begin(interaction), std::end(interaction)); }
 
     for (const auto& inter : _interactions)
@@ -264,7 +264,7 @@ public:
    * @param score The output score produced by the model.
    * @return int Returns 0 (S_VW_PREDICT_OK) if succesful, otherwise one of the error codes (see E_VW_PREDICT_ERR_*).
    */
-  int predict(example_predict& ex, float& score)
+  int predict(VW::example_predict& ex, float& score)
   {
     if (!_model_loaded) return E_VW_PREDICT_ERR_NO_MODEL_LOADED;
 
@@ -295,7 +295,8 @@ public:
   }
 
   // multiclass classification
-  int predict(example_predict& shared, example_predict* actions, size_t num_actions, std::vector<float>& out_scores)
+  int predict(
+      VW::example_predict& shared, VW::example_predict* actions, size_t num_actions, std::vector<float>& out_scores)
   {
     if (!_model_loaded) return E_VW_PREDICT_ERR_NO_MODEL_LOADED;
 
@@ -303,7 +304,7 @@ public:
 
     out_scores.resize(num_actions);
 
-    example_predict* action = actions;
+    VW::example_predict* action = actions;
     for (size_t i = 0; i < num_actions; i++, action++)
     {
       std::vector<std::unique_ptr<namespace_copy_guard>> ns_copy_guards;
@@ -327,7 +328,7 @@ public:
     return S_VW_PREDICT_OK;
   }
 
-  int predict(const char* event_id, example_predict& shared, example_predict* actions, size_t num_actions,
+  int predict(const char* event_id, VW::example_predict& shared, VW::example_predict* actions, size_t num_actions,
       std::vector<float>& pdf, std::vector<int>& ranking)
   {
     if (!_model_loaded) return E_VW_PREDICT_ERR_NO_MODEL_LOADED;
@@ -374,15 +375,15 @@ public:
         std::vector<std::unique_ptr<stride_shift_guard>> stride_shift_guards;
         stride_shift_guards.push_back(
             std::unique_ptr<stride_shift_guard>(new stride_shift_guard(shared, _stride_shift)));
-        example_predict* actions_end = actions + num_actions;
-        for (example_predict* action = actions; action != actions_end; ++action)
+        VW::example_predict* actions_end = actions + num_actions;
+        for (VW::example_predict* action = actions; action != actions_end; ++action)
           stride_shift_guards.push_back(
               std::unique_ptr<stride_shift_guard>(new stride_shift_guard(*action, _stride_shift)));
 
         for (size_t i = 0; i < _bag_size; i++)
         {
           std::vector<std::unique_ptr<feature_offset_guard>> feature_offset_guards;
-          for (example_predict* action = actions; action != actions_end; ++action)
+          for (VW::example_predict* action = actions; action != actions_end; ++action)
             feature_offset_guards.push_back(
                 std::unique_ptr<feature_offset_guard>(new feature_offset_guard(*action, i)));
 

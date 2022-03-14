@@ -53,7 +53,7 @@ void finish(explore_eval& data)
 // are specified. We print the first action and probability, based on
 // ordering by scores in the final output.
 
-void output_example(VW::workspace& all, const explore_eval& c, const example& ec, const multi_ex* ec_seq)
+void output_example(VW::workspace& all, const explore_eval& c, const VW::example& ec, const VW::multi_ex* ec_seq)
 {
   if (example_is_newline_not_header(ec)) return;
 
@@ -102,7 +102,7 @@ void output_example(VW::workspace& all, const explore_eval& c, const example& ec
   CB::print_update(all, !labeled_example, ec, ec_seq, true, nullptr);
 }
 
-void output_example_seq(VW::workspace& all, const explore_eval& data, const multi_ex& ec_seq)
+void output_example_seq(VW::workspace& all, const explore_eval& data, const VW::multi_ex& ec_seq)
 {
   if (ec_seq.size() > 0)
   {
@@ -111,7 +111,7 @@ void output_example_seq(VW::workspace& all, const explore_eval& data, const mult
   }
 }
 
-void finish_multiline_example(VW::workspace& all, explore_eval& data, multi_ex& ec_seq)
+void finish_multiline_example(VW::workspace& all, explore_eval& data, VW::multi_ex& ec_seq)
 {
   if (ec_seq.size() > 0)
   {
@@ -122,9 +122,9 @@ void finish_multiline_example(VW::workspace& all, explore_eval& data, multi_ex& 
 }
 
 template <bool is_learn>
-void do_actual_learning(explore_eval& data, multi_learner& base, multi_ex& ec_seq)
+void do_actual_learning(explore_eval& data, multi_learner& base, VW::multi_ex& ec_seq)
 {
-  example* label_example = CB_ADF::test_adf_sequence(ec_seq);
+  VW::example* label_example = CB_ADF::test_adf_sequence(ec_seq);
 
   if (label_example != nullptr)  // extract label
   {
@@ -160,8 +160,8 @@ void do_actual_learning(explore_eval& data, multi_learner& base, multi_ex& ec_se
 
     if (data._random_state->get_and_update_random() < threshold)
     {
-      example* ec_found = nullptr;
-      for (example*& ec : ec_seq)
+      VW::example* ec_found = nullptr;
+      for (VW::example*& ec : ec_seq)
       {
         if (ec->l.cb.costs.size() == 1 && ec->l.cb.costs[0].cost != FLT_MAX && ec->l.cb.costs[0].probability > 0)
           ec_found = ec;

@@ -160,7 +160,7 @@ size_t write_model_field(
 }  // namespace VW
 
 template <bool is_learn>
-void learn_or_predict(baseline_challenger_data& data, multi_learner& base, multi_ex& examples)
+void learn_or_predict(baseline_challenger_data& data, multi_learner& base, VW::multi_ex& examples)
 {
   data.learn_or_predict<is_learn>(base, examples);
 }

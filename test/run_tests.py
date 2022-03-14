@@ -63,6 +63,8 @@ def are_dicts_equal(
                 False,
                 f"Key '{key}' type mismatch. Expected: '{type(expected)}', but found: '{type(actual)}'",
             )
+        elif type(expected) == type(None):
+            return True, ""
         elif isinstance(expected, (int, bool, str)):
             return (
                 expected == actual,
@@ -97,9 +99,9 @@ def are_dicts_equal(
                     False,
                     f"Key '{key}' length mismatch. Expected: '{len(expected)}', but found: '{len(actual)}'",
                 )
-            for (a, b), i in enumerate(zip(expected, actual)):
-                are_same, reason = _are_same(expected[key], actual[key], f"{key}")
-                if not _are_same(a, b, f"{key}[{i}]"):
+            for i in range(len(expected)):
+                are_same, reason = _are_same(expected[i], actual[i], f"{key}[{i}]")
+                if not are_same:
                     return False, reason
             return True, ""
         else:
@@ -475,8 +477,9 @@ def run_command_line_test(
                 continue
 
             if ref_file.endswith(".json"):
-                output_json = json.loads(output_content)
-                ref_json = json.loads(ref_content)
+                # Empty strings are falsy
+                output_json = json.loads(output_content) if output_content else dict()
+                ref_json = json.loads(ref_content) if ref_content else dict()
                 dicts_equal, reason = are_dicts_equal(
                     output_json, ref_json, epsilon=epsilon
                 )

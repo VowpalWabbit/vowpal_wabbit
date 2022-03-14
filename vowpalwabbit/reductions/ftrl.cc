@@ -66,7 +66,7 @@ inline void predict_with_confidence(uncertainty& d, const float fx, float& fw)
   float uncertain = ((d.b.data.ftrl_beta + sqrtf_ng2) / d.b.data.ftrl_alpha + d.b.data.l2_lambda);
   d.score += (1 / uncertain) * sign(fx);
 }
-float sensitivity(ftrl& b, base_learner& /* base */, example& ec)
+float sensitivity(ftrl& b, base_learner& /* base */, VW::example& ec)
 {
   uncertainty uncetain(b);
   GD::foreach_feature<uncertainty, predict_with_confidence>(*(b.all), ec, uncetain);
@@ -74,7 +74,7 @@ float sensitivity(ftrl& b, base_learner& /* base */, example& ec)
 }
 
 template <bool audit>
-void predict(ftrl& b, base_learner&, example& ec)
+void predict(ftrl& b, base_learner&, VW::example& ec)
 {
   size_t num_features_from_interactions = 0;
   ec.partial_prediction = GD::inline_predict(*b.all, ec, num_features_from_interactions);
@@ -84,8 +84,8 @@ void predict(ftrl& b, base_learner&, example& ec)
 }
 
 template <bool audit>
-void multipredict(
-    ftrl& b, base_learner&, example& ec, size_t count, size_t step, polyprediction* pred, bool finalize_predictions)
+void multipredict(ftrl& b, base_learner&, VW::example& ec, size_t count, size_t step, VW::polyprediction* pred,
+    bool finalize_predictions)
 {
   VW::workspace& all = *b.all;
   for (size_t c = 0; c < count; c++)
@@ -223,7 +223,7 @@ void inner_coin_betting_update_after_prediction(ftrl_update_data& d, float x, fl
   w[W_XT] /= d.average_squared_norm_x;
 }
 
-void coin_betting_predict(ftrl& b, base_learner&, example& ec)
+void coin_betting_predict(ftrl& b, base_learner&, VW::example& ec)
 {
   b.data.predict = 0;
   b.data.normalized_squared_norm_x = 0;
@@ -241,7 +241,7 @@ void coin_betting_predict(ftrl& b, base_learner&, example& ec)
   ec.pred.scalar = GD::finalize_prediction(b.all->sd, b.all->logger, ec.partial_prediction);
 }
 
-void update_state_and_predict_pistol(ftrl& b, base_learner&, example& ec)
+void update_state_and_predict_pistol(ftrl& b, base_learner&, VW::example& ec)
 {
   b.data.predict = 0;
 
@@ -254,7 +254,7 @@ void update_state_and_predict_pistol(ftrl& b, base_learner&, example& ec)
   ec.pred.scalar = GD::finalize_prediction(b.all->sd, b.all->logger, ec.partial_prediction);
 }
 
-void update_after_prediction_proximal(ftrl& b, example& ec)
+void update_after_prediction_proximal(ftrl& b, VW::example& ec)
 {
   b.data.update = b.all->loss->first_derivative(b.all->sd, ec.pred.scalar, ec.l.simple.label) * ec.weight;
 #ifdef PRIVACY_ACTIVATION
@@ -281,7 +281,7 @@ void update_after_prediction_proximal(ftrl& b, example& ec)
 #endif
 }
 
-void update_after_prediction_pistol(ftrl& b, example& ec)
+void update_after_prediction_pistol(ftrl& b, VW::example& ec)
 {
   b.data.update = b.all->loss->first_derivative(b.all->sd, ec.pred.scalar, ec.l.simple.label) * ec.weight;
 #ifdef PRIVACY_ACTIVATION
@@ -308,7 +308,7 @@ void update_after_prediction_pistol(ftrl& b, example& ec)
 #endif
 }
 
-void coin_betting_update_after_prediction(ftrl& b, example& ec)
+void coin_betting_update_after_prediction(ftrl& b, VW::example& ec)
 {
   b.data.update = b.all->loss->first_derivative(b.all->sd, ec.pred.scalar, ec.l.simple.label) * ec.weight;
 #ifdef PRIVACY_ACTIVATION
@@ -336,7 +336,7 @@ void coin_betting_update_after_prediction(ftrl& b, example& ec)
 }
 
 template <bool audit>
-void learn_proximal(ftrl& a, base_learner& base, example& ec)
+void learn_proximal(ftrl& a, base_learner& base, VW::example& ec)
 {
   // predict with confidence
   predict<audit>(a, base, ec);
@@ -346,7 +346,7 @@ void learn_proximal(ftrl& a, base_learner& base, example& ec)
 }
 
 template <bool audit>
-void learn_pistol(ftrl& a, base_learner& base, example& ec)
+void learn_pistol(ftrl& a, base_learner& base, VW::example& ec)
 {
   // update state based on the example and predict
   update_state_and_predict_pistol(a, base, ec);
@@ -356,7 +356,7 @@ void learn_pistol(ftrl& a, base_learner& base, example& ec)
 }
 
 template <bool audit>
-void learn_coin_betting(ftrl& a, base_learner& base, example& ec)
+void learn_coin_betting(ftrl& a, base_learner& base, VW::example& ec)
 {
   // update state based on the example and predict
   coin_betting_predict(a, base, ec);
@@ -448,7 +448,7 @@ base_learner* ftrl_setup(VW::setup_base_i& stack_builder)
   b->total_weight = 0;
 
   std::string algorithm_name;
-  void (*learn_ptr)(ftrl&, base_learner&, example&) = nullptr;
+  void (*learn_ptr)(ftrl&, base_learner&, VW::example&) = nullptr;
   bool learn_returns_prediction = false;
 
   // Defaults that are specific to the mode that was chosen.
