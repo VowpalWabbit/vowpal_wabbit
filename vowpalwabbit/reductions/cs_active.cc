@@ -2,18 +2,19 @@
 // individual contributors. All rights reserved. Released under a BSD (revised)
 // license as described in the file LICENSE.
 
-#include <cmath>
-#include <cfloat>
 #include <errno.h>
-#include "rand48.h"
+
 #include <cfloat>
+#include <cmath>
 #include <limits>
-#include "vw.h"
-#include "vw_exception.h"
+
 #include "csoaa.h"
 #include "debug_log.h"
 #include "io/logger.h"
+#include "rand48.h"
 #include "shared_data.h"
+#include "vw.h"
+#include "vw_exception.h"
 
 //#define B_SEARCH_MAX_ITER 50
 #define B_SEARCH_MAX_ITER 20
@@ -60,11 +61,11 @@ struct cs_active
   VW::workspace* all = nullptr;  // statistics, loss
   VW::LEARNER::base_learner* l = nullptr;
 
-  v_array<lq_data> query_data;
+  VW::v_array<lq_data> query_data;
 
   size_t num_any_queries = 0;  // examples where at least one label is queried
   size_t overlapped_and_range_small = 0;
-  v_array<size_t> examples_by_queries;
+  VW::v_array<size_t> examples_by_queries;
   size_t labels_outside_range = 0;
   float distance_to_range = 0.f;
   float range = 0.f;
@@ -93,8 +94,8 @@ float binarySearch(float fhat, float delta, float sens, float tol)
 }
 
 template <bool is_learn, bool is_simulation>
-inline void inner_loop(cs_active& cs_a, single_learner& base, example& ec, uint32_t i, float cost, uint32_t& prediction,
-    float& score, float& partial_prediction, bool query_this_label, bool& query_needed)
+inline void inner_loop(cs_active& cs_a, single_learner& base, VW::example& ec, uint32_t i, float cost,
+    uint32_t& prediction, float& score, float& partial_prediction, bool query_this_label, bool& query_needed)
 {
   base.predict(ec, i - 1);
   if (is_learn)
@@ -143,7 +144,7 @@ inline void inner_loop(cs_active& cs_a, single_learner& base, example& ec, uint3
   add_passthrough_feature(ec, i, ec.partial_prediction);
 }
 
-inline void find_cost_range(cs_active& cs_a, single_learner& base, example& ec, uint32_t i, float delta, float eta,
+inline void find_cost_range(cs_active& cs_a, single_learner& base, VW::example& ec, uint32_t i, float delta, float eta,
     float& min_pred, float& max_pred, bool& is_range_large)
 {
   float tol = 1e-6f;
@@ -175,7 +176,7 @@ inline void find_cost_range(cs_active& cs_a, single_learner& base, example& ec, 
 }
 
 template <bool is_learn, bool is_simulation>
-void predict_or_learn(cs_active& cs_a, single_learner& base, example& ec)
+void predict_or_learn(cs_active& cs_a, single_learner& base, VW::example& ec)
 {
   COST_SENSITIVE::label ld = ec.l.cs;
 
@@ -286,7 +287,7 @@ void predict_or_learn(cs_active& cs_a, single_learner& base, example& ec)
   ec.l.cs = ld;
 }
 
-void finish_example(VW::workspace& all, cs_active&, example& ec)
+void finish_example(VW::workspace& all, cs_active&, VW::example& ec)
 {
   COST_SENSITIVE::output_example(all, ec, ec.l.cs, ec.pred.active_multiclass.predicted_class);
   VW::finish_example(all, ec);
@@ -354,8 +355,8 @@ base_learner* cs_active_setup(VW::setup_base_i& stack_builder)
   all.set_minmax(all.sd, data->cost_min);
   for (uint32_t i = 0; i < data->num_classes + 1; i++) data->examples_by_queries.push_back(0);
 
-  void (*learn_ptr)(cs_active & cs_a, single_learner & base, example & ec);
-  void (*predict_ptr)(cs_active & cs_a, single_learner & base, example & ec);
+  void (*learn_ptr)(cs_active & cs_a, single_learner & base, VW::example & ec);
+  void (*predict_ptr)(cs_active & cs_a, single_learner & base, VW::example & ec);
   std::string name_addition;
 
   if (simulation)

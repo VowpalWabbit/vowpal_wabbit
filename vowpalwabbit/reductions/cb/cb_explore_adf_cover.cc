@@ -3,22 +3,22 @@
 // license as described in the file LICENSE.
 
 #include "cb_explore_adf_cover.h"
-#include "numeric_casts.h"
-#include "reductions/cb/cb_adf.h"
-#include "rand48.h"
-#include "reductions/bs.h"
-#include "gen_cs_example.h"
-#include "cb_explore.h"
-#include "explore.h"
-#include "vw_versions.h"
-#include "version.h"
-#include "label_parser.h"
 
-#include <vector>
 #include <algorithm>
 #include <cmath>
+#include <vector>
 
+#include "cb_explore.h"
+#include "explore.h"
+#include "gen_cs_example.h"
 #include "io/logger.h"
+#include "label_parser.h"
+#include "numeric_casts.h"
+#include "rand48.h"
+#include "reductions/bs.h"
+#include "reductions/cb/cb_adf.h"
+#include "version.h"
+#include "vw_versions.h"
 
 // All exploration algorithms return a vector of id, probability tuples, sorted in order of scores. The probabilities
 // are the probability with which each action should be replaced to the top of the list.

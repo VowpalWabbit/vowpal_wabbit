@@ -5,8 +5,9 @@
 #pragma once
 #include "ccb_reduction_features.h"
 #include "continuous_actions_reduction_features.h"
-#include "simple_label.h"
 #include "epsilon_reduction_features.h"
+#include "future_compat.h"
+#include "simple_label.h"
 
 /*
  * class reduction_features
@@ -28,6 +29,8 @@
  *     auto& data = fd.get<data_type>();
  */
 
+namespace VW
+{
 class reduction_features
 {
 private:
@@ -102,3 +105,7 @@ reduction_features::get<VW::cb_explore_adf::greedy::reduction_features>() const
 {
   return _epsilon_reduction_features;
 }
+
+}  // namespace VW
+
+using reduction_features VW_DEPRECATED("reduction_features moved into VW namespace") = VW::reduction_features;

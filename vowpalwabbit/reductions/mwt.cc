@@ -3,14 +3,13 @@
 // license as described in the file LICENSE.
 #include <cmath>
 
-#include "vw.h"
-#include "gd.h"
-#include "reductions/cb/cb_algs.h"
-#include "io_buf.h"
 #include "cb.h"
-#include "shared_data.h"
-
+#include "gd.h"
 #include "io/logger.h"
+#include "io_buf.h"
+#include "reductions/cb/cb_algs.h"
+#include "shared_data.h"
+#include "vw.h"
 
 using namespace VW::LEARNER;
 using namespace CB_ALGS;
@@ -30,12 +29,12 @@ struct mwt
   bool namespaces[256];            // the set of namespaces to evaluate.
   std::vector<policy_data> evals;  // accrued losses of features.
   std::pair<bool, CB::cb_class> optional_observation;
-  v_array<uint64_t> policies;
+  VW::v_array<uint64_t> policies;
   double total = 0.;
   uint32_t num_classes = 0;
   bool learn = false;
 
-  v_array<namespace_index> indices;  // excluded namespaces
+  VW::v_array<VW::namespace_index> indices;  // excluded namespaces
   features feature_space[256];
   VW::workspace* all = nullptr;
 
@@ -59,7 +58,7 @@ void value_policy(mwt& c, float val, uint64_t index)  // estimate the value of a
 }
 
 template <bool learn, bool exclude, bool is_learn>
-void predict_or_learn(mwt& c, single_learner& base, example& ec)
+void predict_or_learn(mwt& c, single_learner& base, VW::example& ec)
 {
   c.optional_observation = get_observed_cost_cb(ec.l.cb);
 
@@ -103,7 +102,7 @@ void predict_or_learn(mwt& c, single_learner& base, example& ec)
   VW_WARNING_STATE_POP
 
   // modify the predictions to use a vector with a score for each evaluated feature.
-  v_array<float> preds = ec.pred.scalars;
+  VW::v_array<float> preds = ec.pred.scalars;
 
   if (learn)
   {
@@ -133,7 +132,7 @@ void predict_or_learn(mwt& c, single_learner& base, example& ec)
   ec.pred.scalars = preds;
 }
 
-void print_scalars(VW::io::writer* f, v_array<float>& scalars, v_array<char>& tag, VW::io::logger& logger)
+void print_scalars(VW::io::writer* f, VW::v_array<float>& scalars, VW::v_array<char>& tag, VW::io::logger& logger)
 {
   if (f != nullptr)
   {
@@ -156,7 +155,7 @@ void print_scalars(VW::io::writer* f, v_array<float>& scalars, v_array<char>& ta
   }
 }
 
-void finish_example(VW::workspace& all, mwt& c, example& ec)
+void finish_example(VW::workspace& all, mwt& c, VW::example& ec)
 {
   float loss = 0.;
   if (c.learn)
@@ -168,7 +167,7 @@ void finish_example(VW::workspace& all, mwt& c, example& ec)
 
   if (c.learn)
   {
-    v_array<float> temp = ec.pred.scalars;
+    VW::v_array<float> temp = ec.pred.scalars;
     ec.pred.multiclass = static_cast<uint32_t>(temp[0]);
     CB::print_update(all, c.optional_observation.first, ec, nullptr, false, nullptr);
     ec.pred.scalars = temp;
@@ -257,8 +256,8 @@ base_learner* mwt_setup(VW::setup_base_i& stack_builder)
   }
 
   std::string name_addition;
-  void (*learn_ptr)(mwt&, single_learner&, example&);
-  void (*pred_ptr)(mwt&, single_learner&, example&);
+  void (*learn_ptr)(mwt&, single_learner&, VW::example&);
+  void (*pred_ptr)(mwt&, single_learner&, VW::example&);
 
   if (c->learn)
   {

@@ -1,16 +1,15 @@
 // Copyright (c) by respective owners including Yahoo!, Microsoft, and
 // individual contributors. All rights reserved. Released under a BSD (revised)
 // license as described in the file LICENSE.
-#include <cmath>
-#include <sstream>
 #include <cfloat>
 #include <cmath>
-#include "correctedMath.h"
-#include "vw_exception.h"
-#include "vw.h"
-#include "shared_data.h"
+#include <sstream>
 
+#include "correctedMath.h"
 #include "io/logger.h"
+#include "shared_data.h"
+#include "vw.h"
+#include "vw_exception.h"
 
 using namespace VW::config;
 
@@ -22,7 +21,7 @@ struct oaa
 {
   uint64_t k = 0;
   VW::workspace* all = nullptr;         // for raw
-  polyprediction* pred = nullptr;       // for multipredict
+  VW::polyprediction* pred = nullptr;   // for multipredict
   uint64_t num_subsample = 0;           // for randomized subsampling, how many negatives to draw?
   uint32_t* subsample_order = nullptr;  // for randomized subsampling, in what order should we touch classes
   size_t subsample_id = 0;              // for randomized subsampling, where do we live in the list
@@ -38,7 +37,7 @@ struct oaa
   }
 };
 
-void learn_randomized(oaa& o, VW::LEARNER::single_learner& base, example& ec)
+void learn_randomized(oaa& o, VW::LEARNER::single_learner& base, VW::example& ec)
 {
   // Update indexing
   if (o.indexing == -1 && ec.l.multi.label == 0)
@@ -101,7 +100,7 @@ void learn_randomized(oaa& o, VW::LEARNER::single_learner& base, example& ec)
 }
 
 template <bool print_all, bool scores, bool probabilities>
-void learn(oaa& o, VW::LEARNER::single_learner& base, example& ec)
+void learn(oaa& o, VW::LEARNER::single_learner& base, VW::example& ec)
 {
   // Update indexing
   if (o.indexing == -1 && ec.l.multi.label == 0)
@@ -150,7 +149,7 @@ void learn(oaa& o, VW::LEARNER::single_learner& base, example& ec)
 }
 
 template <bool print_all, bool scores, bool probabilities>
-void predict(oaa& o, LEARNER::single_learner& base, example& ec)
+void predict(oaa& o, LEARNER::single_learner& base, VW::example& ec)
 {
   // The predictions are either an array of scores or a single
   // class id of a multiclass label
@@ -158,7 +157,7 @@ void predict(oaa& o, LEARNER::single_learner& base, example& ec)
   // In the case we return scores, we need to save a copy of
   // the pre-allocated scores array since ec.pred will be
   // used for other predictions.
-  v_array<float> scores_array;
+  VW::v_array<float> scores_array;
   if (scores) scores_array = ec.pred.scalars;
 
   // oaa.pred - Predictions will get stored in this array
@@ -229,7 +228,7 @@ void predict(oaa& o, LEARNER::single_learner& base, example& ec)
 
 // TODO: partial code duplication with multiclass.cc:finish_example
 template <bool probabilities>
-void finish_example_scores(VW::workspace& all, oaa& o, example& ec)
+void finish_example_scores(VW::workspace& all, oaa& o, VW::example& ec)
 {
   // === Compute multiclass_log_loss
   // TODO:
@@ -318,7 +317,7 @@ VW::LEARNER::base_learner* oaa_setup(VW::setup_base_i& stack_builder)
     THROW("There are " << all.sd->ldict->getK() << " named labels. Use that as the argument to oaa.")
 
   data->all = &all;
-  data->pred = calloc_or_throw<polyprediction>(data->k);
+  data->pred = calloc_or_throw<VW::polyprediction>(data->k);
   data->subsample_order = nullptr;
   data->subsample_id = 0;
   if (data->num_subsample > 0)
@@ -346,11 +345,11 @@ VW::LEARNER::base_learner* oaa_setup(VW::setup_base_i& stack_builder)
   oaa* data_ptr = data.get();
   uint64_t k_value = data->k;
   auto base = as_singleline(stack_builder.setup_base_learner());
-  void (*learn_ptr)(oaa&, VW::LEARNER::single_learner&, example&);
-  void (*pred_ptr)(oaa&, LEARNER::single_learner&, example&);
+  void (*learn_ptr)(oaa&, VW::LEARNER::single_learner&, VW::example&);
+  void (*pred_ptr)(oaa&, LEARNER::single_learner&, VW::example&);
   std::string name_addition;
   VW::prediction_type_t pred_type;
-  void (*finish_ptr)(VW::workspace&, oaa&, example&);
+  void (*finish_ptr)(VW::workspace&, oaa&, VW::example&);
   if (probabilities || scores)
   {
     pred_type = VW::prediction_type_t::scalars;

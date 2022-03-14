@@ -1,7 +1,7 @@
 #include "opts.h"
 
-#include <cstdlib>
 #include <cctype>
+#include <cstdlib>
 
 namespace vw_slim
 {

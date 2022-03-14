@@ -2,29 +2,30 @@
 // individual contributors. All rights reserved. Released under a BSD (revised)
 // license as described in the file LICENSE.
 #include <float.h>
-#include <string.h>
 #include <math.h>
-#include <memory>
+#include <string.h>
+
 #include <algorithm>
-#include "numeric_casts.h"
-#include "vw.h"
-#include "rand48.h"
-#include "reductions/gd.h"  // for GD::foreach_feature
-#include "parse_primitives.h"
-#include "search_sequencetask.h"
-#include "search_multiclasstask.h"
-#include "search_dep_parser.h"
-#include "search_entityrelationtask.h"
-#include "search_hooktask.h"
-#include "search_graph.h"
-#include "search_meta.h"
-#include "reductions/csoaa.h"
-#include "reductions/active.h"
-#include "label_dictionary.h"
-#include "vw_exception.h"
-#include "shared_data.h"
+#include <memory>
 
 #include "io/logger.h"
+#include "label_dictionary.h"
+#include "numeric_casts.h"
+#include "parse_primitives.h"
+#include "rand48.h"
+#include "reductions/active.h"
+#include "reductions/csoaa.h"
+#include "reductions/gd.h"  // for GD::foreach_feature
+#include "search_dep_parser.h"
+#include "search_entityrelationtask.h"
+#include "search_graph.h"
+#include "search_hooktask.h"
+#include "search_meta.h"
+#include "search_multiclasstask.h"
+#include "search_sequencetask.h"
+#include "shared_data.h"
+#include "vw.h"
+#include "vw_exception.h"
 // needed for printing ranges of objects (eg: all elements of a vector)
 #include <fmt/ranges.h>
 
@@ -170,9 +171,9 @@ public:
   bool is_ldf = false;                   // user declared ldf
   bool use_action_costs = false;         // task promises to define per-action rollout-by-ref costs
 
-  v_array<int32_t> neighbor_features;  // ugly encoding of neighbor feature requirements
-  auto_condition_settings acset;       // settings for auto-conditioning
-  size_t history_length = 0;           // value of --search_history_length, used by some tasks, default 1
+  VW::v_array<int32_t> neighbor_features;  // ugly encoding of neighbor feature requirements
+  auto_condition_settings acset;           // settings for auto-conditioning
+  size_t history_length = 0;               // value of --search_history_length, used by some tasks, default 1
 
   size_t A = 0;             // total number of actions, [1..A]; 0 means ldf
   size_t num_learners = 0;  // total number of learners;
@@ -186,30 +187,30 @@ public:
                                  // oracle (0 means "infinite")
   bool linear_ordering = false;  // insist that examples are generated in linear order (rather that the default hoopla
                                  // permutation)
-  bool (*label_is_test)(const polylabel&) = nullptr;  // tell me if the label data from an example is test
+  bool (*label_is_test)(const VW::polylabel&) = nullptr;  // tell me if the label data from an example is test
 
   size_t t = 0;                                     // current search step
   size_t T = 0;                                     // length of root trajectory
-  std::vector<example> learn_ec_copy;               // copy of example(s) at learn_t
-  example* learn_ec_ref = nullptr;                  // reference to example at learn_t, when there's no example munging
+  std::vector<VW::example> learn_ec_copy;           // copy of example(s) at learn_t
+  VW::example* learn_ec_ref = nullptr;              // reference to example at learn_t, when there's no example munging
   size_t learn_ec_ref_cnt = 0;                      // how many are there (for LDF mode only; otherwise 1)
-  v_array<ptag> learn_condition_on;                 // a copy of the tags used for conditioning at the training position
+  VW::v_array<ptag> learn_condition_on;             // a copy of the tags used for conditioning at the training position
   std::vector<action_repr> learn_condition_on_act;  // the actions taken
-  v_array<char> learn_condition_on_names;           // the names of the actions
-  v_array<action> learn_allowed_actions;            // which actions were allowed at training time?
+  VW::v_array<char> learn_condition_on_names;       // the names of the actions
+  VW::v_array<action> learn_allowed_actions;        // which actions were allowed at training time?
   std::vector<action_repr> ptag_to_action;          // tag to action mapping for conditioning
   std::vector<action> test_action_sequence;  // if test-mode was run, what was the corresponding action sequence; it's a
                                              // vector cuz we might expose it to the library
   action learn_oracle_action = 0;            // store an oracle action for debugging purposes
   features last_action_repr;
 
-  polylabel allowed_actions_cache;
+  VW::polylabel allowed_actions_cache;
 
-  size_t loss_declared_cnt = 0;             // how many times did run declare any loss (implicitly or explicitly)?
-  v_array<scored_action> train_trajectory;  // the training trajectory
-  size_t learn_t = 0;                       // what time step are we learning on?
-  size_t learn_a_idx = 0;                   // what action index are we trying?
-  bool done_with_all_actions = false;       // set to true when there are no more learn_a_idx to go
+  size_t loss_declared_cnt = 0;                 // how many times did run declare any loss (implicitly or explicitly)?
+  VW::v_array<scored_action> train_trajectory;  // the training trajectory
+  size_t learn_t = 0;                           // what time step are we learning on?
+  size_t learn_a_idx = 0;                       // what action index are we trying?
+  bool done_with_all_actions = false;           // set to true when there are no more learn_a_idx to go
 
   float test_loss = 0.f;   // loss incurred when run INIT_TEST
   float learn_loss = 0.f;  // loss incurred when run LEARN
@@ -264,7 +265,7 @@ public:
 
   // for foreach_feature temporary storage for conditioning
   uint64_t dat_new_feature_idx = 0;
-  example* dat_new_feature_ec = nullptr;
+  VW::example* dat_new_feature_ec = nullptr;
   std::stringstream dat_new_feature_audit_ss;
   size_t dat_new_feature_namespace = 0;
   std::string* dat_new_feature_feature_space = nullptr;
@@ -274,9 +275,9 @@ public:
   std::unique_ptr<std::stringstream> rawOutputStringStream;
   CS::label ldf_test_label;
   std::vector<action_repr> condition_on_actions;
-  v_array<size_t> timesteps;
-  polylabel learn_losses;
-  polylabel gte_label;
+  VW::v_array<size_t> timesteps;
+  VW::polylabel learn_losses;
+  VW::polylabel gte_label;
   std::vector<std::pair<float, size_t>> active_uncertainty;
   std::vector<std::vector<std::pair<CS::wclass&, bool>>> active_known;
   bool force_setup_ec_ref = false;
@@ -293,7 +294,7 @@ public:
   BaseTask* metaoverride = nullptr;
   size_t meta_t = 0;  // the metatask has it's own notion of time. meta_t+t, during a single run, is the way to think
                       // about the "real" decision step but this really only matters for caching purposes
-  v_array<v_array<action_cache>*>
+  VW::v_array<VW::v_array<action_cache>*>
       memo_foreach_action;  // when foreach_action is on, we need to cache TRAIN trajectory actions for LEARN
 
   ~search_private()
@@ -425,7 +426,7 @@ bool might_print_update(VW::workspace& all)
   return (all.sd->weighted_examples() + 1. >= all.sd->dump_interval) && !all.quiet && !all.bfgs;
 }
 
-bool must_run_test(VW::workspace& all, multi_ex& ec, bool is_test_ex)
+bool must_run_test(VW::workspace& all, VW::multi_ex& ec, bool is_test_ex)
 {
   return (all.final_prediction_sink.size() > 0) ||  // if we have to produce output, we need to run this
       might_print_update(all) ||                    // if we have to print and update to stderr
@@ -567,7 +568,7 @@ void add_new_feature(search_private& priv, float val, uint64_t idx)
   }
 }
 
-void del_features_in_top_namespace(search_private& /* priv */, example& ec, size_t ns)
+void del_features_in_top_namespace(search_private& /* priv */, VW::example& ec, size_t ns)
 {
   if ((ec.indices.size() == 0) || (ec.indices.back() != ns))
   {
@@ -585,14 +586,14 @@ void del_features_in_top_namespace(search_private& /* priv */, example& ec, size
   fs.clear();
 }
 
-void add_neighbor_features(search_private& priv, multi_ex& ec_seq)
+void add_neighbor_features(search_private& priv, VW::multi_ex& ec_seq)
 {
   if (priv.neighbor_features.size() == 0) return;
 
   uint32_t stride_shift = priv.all->weights.stride_shift();
   for (size_t n = 0; n < ec_seq.size(); n++)  // iterate over every example in the sequence
   {
-    example& me = *ec_seq[n];
+    VW::example& me = *ec_seq[n];
     for (size_t n_id = 0; n_id < priv.neighbor_features.size(); n_id++)
     {
       int32_t offset = priv.neighbor_features[n_id] >> 24;
@@ -616,7 +617,7 @@ void add_neighbor_features(search_private& priv, multi_ex& ec_seq)
         add_new_feature(priv, 1., static_cast<uint64_t>(3824917) << stride_shift);
       else  // this is actually a neighbor
       {
-        example& other = *ec_seq[n + offset];
+        VW::example& other = *ec_seq[n + offset];
         GD::foreach_feature<search_private, add_new_feature>(priv.all, other.feature_space[ns], priv, me.ft_offset);
       }
     }
@@ -634,7 +635,7 @@ void add_neighbor_features(search_private& priv, multi_ex& ec_seq)
   }
 }
 
-void del_neighbor_features(search_private& priv, multi_ex& ec_seq)
+void del_neighbor_features(search_private& priv, VW::multi_ex& ec_seq)
 {
   if (priv.neighbor_features.size() == 0) return;
   for (size_t n = 0; n < ec_seq.size(); n++) del_features_in_top_namespace(priv, *ec_seq[n], neighbor_namespace);
@@ -698,7 +699,7 @@ void search_declare_loss(search_private& priv, float loss)
 }
 
 template <class T>
-void cdbg_print_array(const std::string& str, v_array<T>& A)
+void cdbg_print_array(const std::string& str, VW::v_array<T>& A)
 {
   cdbg << str << " = [";
   for (size_t i = 0; i < A.size(); i++) cdbg << " " << A[i];
@@ -719,7 +720,7 @@ bool array_contains(T target, const T* A, size_t n)
 }
 
 // priv.learn_condition_on_act or priv.condition_on_actions
-void add_example_conditioning(search_private& priv, example& ec, size_t condition_on_cnt,
+void add_example_conditioning(search_private& priv, VW::example& ec, size_t condition_on_cnt,
     const char* condition_on_names, action_repr* condition_on_actions)
 {
   if (condition_on_cnt == 0) return;
@@ -811,25 +812,25 @@ void add_example_conditioning(search_private& priv, example& ec, size_t conditio
     con_fs.clear();
 }
 
-void del_example_conditioning(search_private& priv, example& ec)
+void del_example_conditioning(search_private& priv, VW::example& ec)
 {
   if ((ec.indices.size() > 0) && (ec.indices.back() == conditioning_namespace))
     del_features_in_top_namespace(priv, ec, conditioning_namespace);
 }
 
-inline size_t cs_get_costs_size(bool isCB, polylabel& ld) { return isCB ? ld.cb.costs.size() : ld.cs.costs.size(); }
+inline size_t cs_get_costs_size(bool isCB, VW::polylabel& ld) { return isCB ? ld.cb.costs.size() : ld.cs.costs.size(); }
 
-inline uint32_t cs_get_cost_index(bool isCB, polylabel& ld, size_t k)
+inline uint32_t cs_get_cost_index(bool isCB, VW::polylabel& ld, size_t k)
 {
   return isCB ? ld.cb.costs[k].action : ld.cs.costs[k].class_index;
 }
 
-inline float cs_get_cost_partial_prediction(bool isCB, polylabel& ld, size_t k)
+inline float cs_get_cost_partial_prediction(bool isCB, VW::polylabel& ld, size_t k)
 {
   return isCB ? ld.cb.costs[k].partial_prediction : ld.cs.costs[k].partial_prediction;
 }
 
-inline void cs_set_cost_loss(bool isCB, polylabel& ld, size_t k, float val)
+inline void cs_set_cost_loss(bool isCB, VW::polylabel& ld, size_t k, float val)
 {
   if (isCB)
     ld.cb.costs[k].cost = val;
@@ -837,7 +838,7 @@ inline void cs_set_cost_loss(bool isCB, polylabel& ld, size_t k, float val)
     ld.cs.costs[k].x = val;
 }
 
-inline void cs_costs_erase(bool isCB, polylabel& ld)
+inline void cs_costs_erase(bool isCB, VW::polylabel& ld)
 {
   if (isCB)
     ld.cb.costs.clear();
@@ -845,7 +846,7 @@ inline void cs_costs_erase(bool isCB, polylabel& ld)
     ld.cs.costs.clear();
 }
 
-inline void cs_costs_reserve(bool isCB, polylabel& ld, size_t new_size)
+inline void cs_costs_reserve(bool isCB, VW::polylabel& ld, size_t new_size)
 {
   if (isCB)
     ld.cb.costs.reserve(new_size);
@@ -853,7 +854,7 @@ inline void cs_costs_reserve(bool isCB, polylabel& ld, size_t new_size)
     ld.cs.costs.reserve(new_size);
 }
 
-inline void cs_cost_push_back(bool isCB, polylabel& ld, uint32_t index, float value)
+inline void cs_cost_push_back(bool isCB, VW::polylabel& ld, uint32_t index, float value)
 {
   if (isCB)
   {
@@ -867,11 +868,11 @@ inline void cs_cost_push_back(bool isCB, polylabel& ld, uint32_t index, float va
   }
 }
 
-polylabel& allowed_actions_to_ld(search_private& priv, size_t ec_cnt, const action* allowed_actions,
+VW::polylabel& allowed_actions_to_ld(search_private& priv, size_t ec_cnt, const action* allowed_actions,
     size_t allowed_actions_cnt, const float* allowed_actions_cost)
 {
   bool isCB = priv.cb_learner;
-  polylabel& ld = priv.allowed_actions_cache;
+  VW::polylabel& ld = priv.allowed_actions_cache;
   uint32_t num_costs = static_cast<uint32_t>(cs_get_costs_size(isCB, ld));
 
   if (priv.is_ldf)  // LDF version easier
@@ -923,7 +924,7 @@ polylabel& allowed_actions_to_ld(search_private& priv, size_t ec_cnt, const acti
 
 void allowed_actions_to_label(search_private& priv, size_t ec_cnt, const action* allowed_actions,
     size_t allowed_actions_cnt, const float* allowed_actions_cost, const action* oracle_actions,
-    size_t oracle_actions_cnt, polylabel& lab)
+    size_t oracle_actions_cnt, VW::polylabel& lab)
 {
   bool isCB = priv.cb_learner;
   if (priv.is_ldf)  // LDF version easier
@@ -989,7 +990,7 @@ void allowed_actions_to_label(search_private& priv, size_t ec_cnt, const action*
 }
 
 template <class T>
-void ensure_size(v_array<T>& A, size_t sz)
+void ensure_size(VW::v_array<T>& A, size_t sz)
 {
   A.resize_but_with_stl_behavior(sz);
 }
@@ -1001,7 +1002,7 @@ void ensure_size(std::vector<T>& A, size_t sz)
 }
 
 template <class T>
-void set_at(v_array<T>& v, T item, size_t pos)
+void set_at(VW::v_array<T>& v, T item, size_t pos)
 {
   if (pos >= v.size()) { v.resize_but_with_stl_behavior(pos + 1); }
   v[pos] = item;
@@ -1062,9 +1063,9 @@ action choose_oracle_action(search_private& priv, size_t ec_cnt, const action* o
   cdbg << " ], ret=" << a << endl;
   if (need_memo_foreach_action(priv) && (priv.state == SearchState::INIT_TRAIN))
   {
-    v_array<action_cache>* this_cache = new v_array<action_cache>();
-    // TODO we don't really need to construct this polylabel
-    polylabel l = allowed_actions_to_ld(priv, 1, allowed_actions, allowed_actions_cnt, allowed_actions_cost);
+    VW::v_array<action_cache>* this_cache = new VW::v_array<action_cache>();
+    // TODO we don't really need to construct this VW::polylabel
+    VW::polylabel l = allowed_actions_to_ld(priv, 1, allowed_actions, allowed_actions_cnt, allowed_actions_cost);
     size_t K = cs_get_costs_size(priv.cb_learner, l);
     for (size_t k = 0; k < K; k++)
     {
@@ -1079,13 +1080,13 @@ action choose_oracle_action(search_private& priv, size_t ec_cnt, const action* o
   return a;
 }
 
-action single_prediction_notLDF(search_private& priv, example& ec, int policy, const action* allowed_actions,
+action single_prediction_notLDF(search_private& priv, VW::example& ec, int policy, const action* allowed_actions,
     size_t allowed_actions_cnt, const float* allowed_actions_cost, float& a_cost,
     action override_action)  // if override_action != -1, then we return it as the action and a_cost is set to the
                              // appropriate cost for that action
 {
   VW::workspace& all = *priv.all;
-  polylabel old_label = ec.l;
+  VW::polylabel old_label = ec.l;
   bool need_partial_predictions = need_memo_foreach_action(priv) ||
       (priv.metaoverride && priv.metaoverride->_foreach_action) || (override_action != static_cast<action>(-1)) ||
       priv.active_csoaa;
@@ -1122,9 +1123,9 @@ action single_prediction_notLDF(search_private& priv, example& ec, int policy, c
       float cost = cs_get_cost_partial_prediction(priv.cb_learner, ec.l, k);
       if (cost < min_cost) min_cost = cost;
     }
-    v_array<action_cache>* this_cache = nullptr;
+    VW::v_array<action_cache>* this_cache = nullptr;
     if (need_memo_foreach_action(priv) && (override_action == static_cast<action>(-1)))
-    { this_cache = new v_array<action_cache>(); }
+    { this_cache = new VW::v_array<action_cache>(); }
     for (size_t k = 0; k < K; k++)
     {
       action cl = cs_get_cost_index(priv.cb_learner, ec.l, k);
@@ -1218,7 +1219,7 @@ action single_prediction_notLDF(search_private& priv, example& ec, int policy, c
   return act;
 }
 
-action single_prediction_LDF(search_private& priv, example* ecs, size_t ec_cnt, int policy, float& a_cost,
+action single_prediction_LDF(search_private& priv, VW::example* ecs, size_t ec_cnt, int policy, float& a_cost,
     action override_action)  // if override_action != -1, then we return it as the action and a_cost is set to the
                              // appropriate cost for that action
 {
@@ -1235,18 +1236,18 @@ action single_prediction_LDF(search_private& priv, example* ecs, size_t ec_cnt, 
 
   size_t start_K = (priv.is_ldf && COST_SENSITIVE::ec_is_example_header(ecs[0])) ? 1 : 0;
 
-  v_array<action_cache>* this_cache = nullptr;
-  if (need_partial_predictions) { this_cache = new v_array<action_cache>(); }
+  VW::v_array<action_cache>* this_cache = nullptr;
+  if (need_partial_predictions) { this_cache = new VW::v_array<action_cache>(); }
 
   for (action a = static_cast<uint32_t>(start_K); a < ec_cnt; a++)
   {
     cdbg << "== single_prediction_LDF a=" << a << "==" << endl;
     if (start_K > 0) LabelDict::add_example_namespaces_from_example(ecs[a], ecs[0]);
 
-    polylabel old_label = ecs[a].l;
+    VW::polylabel old_label = ecs[a].l;
     ecs[a].l.cs = priv.ldf_test_label;
 
-    multi_ex tmp;
+    VW::multi_ex tmp;
     uint64_t old_offset = ecs[a].ft_offset;
     ecs[a].ft_offset = priv.offset;
     tmp.push_back(&ecs[a]);
@@ -1389,7 +1390,7 @@ bool cached_action_store_or_find(search_private& priv, ptag mytag, const ptag* c
   }
 }
 
-void generate_training_example(search_private& priv, polylabel& losses, float weight, bool add_conditioning = true,
+void generate_training_example(search_private& priv, VW::polylabel& losses, float weight, bool add_conditioning = true,
     float min_loss = FLT_MAX)  // min_loss = FLT_MAX means "please compute it for me as the actual min"; any other value
                                // means to use this
 {
@@ -1416,8 +1417,8 @@ void generate_training_example(search_private& priv, polylabel& losses, float we
     assert(priv.learn_ec_ref_cnt == 1);
     assert(priv.learn_ec_ref != nullptr);
 
-    example& ec = priv.learn_ec_ref[0];
-    polylabel old_label = ec.l;
+    VW::example& ec = priv.learn_ec_ref[0];
+    VW::polylabel old_label = ec.l;
     ec.l = losses;  // labels;
     if (add_conditioning)
       add_example_conditioning(priv, ec, priv.learn_condition_on.size(), priv.learn_condition_on_names.begin(),
@@ -1442,7 +1443,7 @@ void generate_training_example(search_private& priv, polylabel& losses, float we
     if (add_conditioning)
       for (action a = static_cast<uint32_t>(start_K); a < priv.learn_ec_ref_cnt; a++)
       {
-        example& ec = priv.learn_ec_ref[a];
+        VW::example& ec = priv.learn_ec_ref[a];
         add_example_conditioning(priv, ec, priv.learn_condition_on.size(), priv.learn_condition_on_names.begin(),
             priv.learn_condition_on_act.data());
       }
@@ -1453,12 +1454,12 @@ void generate_training_example(search_private& priv, polylabel& losses, float we
 
       // create an example collection for
 
-      multi_ex tmp;
+      VW::multi_ex tmp;
       uint64_t tmp_offset = 0;
       if (priv.learn_ec_ref_cnt > start_K) tmp_offset = priv.learn_ec_ref[start_K].ft_offset;
       for (action a = static_cast<uint32_t>(start_K); a < priv.learn_ec_ref_cnt; a++)
       {
-        example& ec = priv.learn_ec_ref[a];
+        VW::example& ec = priv.learn_ec_ref[a];
         CS::label& lab = ec.l.cs;
         if (lab.costs.size() == 0)
         {
@@ -1487,7 +1488,7 @@ void generate_training_example(search_private& priv, polylabel& losses, float we
     if (add_conditioning)
       for (action a = static_cast<uint32_t>(start_K); a < priv.learn_ec_ref_cnt; a++)
       {
-        example& ec = priv.learn_ec_ref[a];
+        VW::example& ec = priv.learn_ec_ref[a];
         del_example_conditioning(priv, ec);
       }
   }
@@ -1529,7 +1530,7 @@ void foreach_action_from_cache(search_private& priv, size_t t, action override_a
   cdbg << "foreach_action_from_cache: t=" << t << ", memo_foreach_action.size()=" << priv.memo_foreach_action.size()
        << ", override_a=" << override_a << endl;
   assert(t < priv.memo_foreach_action.size());
-  v_array<action_cache>* cached = priv.memo_foreach_action[t];
+  VW::v_array<action_cache>* cached = priv.memo_foreach_action[t];
   if (!cached) return;  // the only way this can happen is if the metatask overrode this action
   cdbg << "memo_foreach_action size = " << cached->size() << endl;
   for (size_t id = 0; id < cached->size(); id++)
@@ -1541,7 +1542,7 @@ void foreach_action_from_cache(search_private& priv, size_t t, action override_a
 }
 
 // note: ec_cnt should be 1 if we are not LDF
-action search_predict(search_private& priv, example* ecs, size_t ec_cnt, ptag mytag, const action* oracle_actions,
+action search_predict(search_private& priv, VW::example* ecs, size_t ec_cnt, ptag mytag, const action* oracle_actions,
     size_t oracle_actions_cnt, const ptag* condition_on, const char* condition_on_names, const action* allowed_actions,
     size_t allowed_actions_cnt, const float* allowed_actions_cost, size_t learner_id, float& a_cost, float /* weight */)
 {
@@ -1860,7 +1861,7 @@ void hoopla_permute(size_t* B, size_t* end)
   free(A);
 }
 
-void get_training_timesteps(search_private& priv, v_array<size_t>& timesteps)
+void get_training_timesteps(search_private& priv, VW::v_array<size_t>& timesteps)
 {
   timesteps.clear();
 
@@ -1946,7 +1947,7 @@ void BaseTask::Run()
   }
 }
 
-void run_task(search& sch, multi_ex& ec)
+void run_task(search& sch, VW::multi_ex& ec)
 {
   search_private& priv = *sch.priv;
   priv.num_calls_to_run++;
@@ -2015,7 +2016,7 @@ void advance_from_known_actions(search_private& priv)
 }
 
 template <bool is_learn>
-void train_single_example(search& sch, bool is_test_ex, bool is_holdout_ex, multi_ex& ec_seq)
+void train_single_example(search& sch, bool is_test_ex, bool is_holdout_ex, VW::multi_ex& ec_seq)
 {
   search_private& priv = *sch.priv;
   VW::workspace& all = *priv.all;
@@ -2180,8 +2181,8 @@ void train_single_example(search& sch, bool is_test_ex, bool is_holdout_ex, mult
     {
       for (auto& ex : priv.learn_ec_copy)
       {
-        // Reset the state of the polylabel
-        ex.l = polylabel{};
+        // Reset the state of the VW::polylabel
+        ex.l = VW::polylabel{};
       }
     }
     if (priv.cb_learner)
@@ -2213,7 +2214,7 @@ void inline adjust_auto_condition(search_private& priv)
 }
 
 template <bool is_learn>
-void do_actual_learning(search& sch, base_learner& base, multi_ex& ec_seq)
+void do_actual_learning(search& sch, base_learner& base, VW::multi_ex& ec_seq)
 {
   if (ec_seq.size() == 0) return;  // nothing to do :)
 
@@ -2228,7 +2229,7 @@ void do_actual_learning(search& sch, base_learner& base, multi_ex& ec_seq)
   priv.read_example_last_id = ec_seq[ec_seq.size() - 1]->example_counter;
 
   // hit_new_pass true would have already triggered a printout
-  // finish_example(multi_ex).  so we can reset hit_new_pass here
+  // finish_example(VW::multi_ex).  so we can reset hit_new_pass here
   priv.hit_new_pass = false;
 
   for (size_t i = 0; i < ec_seq.size(); i++)
@@ -2288,7 +2289,7 @@ void end_pass(search& sch)
   }
 }
 
-void finish_multiline_example(VW::workspace& all, search& sch, multi_ex& ec_seq)
+void finish_multiline_example(VW::workspace& all, search& sch, VW::multi_ex& ec_seq)
 {
   print_update(*sch.priv);
   VW::finish_example(all, ec_seq);
@@ -2314,7 +2315,7 @@ void end_examples(search& sch)
   }
 }
 
-bool mc_label_is_test(const polylabel& lab) { return MC::test_label(lab.multi); }
+bool mc_label_is_test(const VW::polylabel& lab) { return MC::test_label(lab.multi); }
 
 void search_initialize(VW::workspace* all, search& sch)
 {
@@ -2449,7 +2450,8 @@ std::vector<CS::label> read_allowed_transitions(action A, const char* filename, 
   return allowed;
 }
 
-void parse_neighbor_features(VW::string_view nf_strview, v_array<int32_t>& neighbor_features, VW::io::logger& logger)
+void parse_neighbor_features(
+    VW::string_view nf_strview, VW::v_array<int32_t>& neighbor_features, VW::io::logger& logger)
 {
   neighbor_features.clear();
   if (nf_strview.empty()) return;
@@ -2773,7 +2775,7 @@ base_learner* setup(VW::setup_base_i& stack_builder)
   // though. TODO: either let search return a prediction or add a NO_PRED type.
 
   // base is multiline
-  learner<search, multi_ex>* l =
+  learner<search, VW::multi_ex>* l =
       VW::LEARNER::make_reduction_learner(std::move(sch), base, do_actual_learning<true>, do_actual_learning<false>,
           stack_builder.get_setupfn_name(setup))
           .set_learn_returns_prediction(true)
@@ -2809,7 +2811,7 @@ float action_cost_loss(action a, const action* act, const float* costs, size_t s
 // the interface:
 bool search::is_ldf() { return priv->is_ldf; }
 
-action search::predict(example& ec, ptag mytag, const action* oracle_actions, size_t oracle_actions_cnt,
+action search::predict(VW::example& ec, ptag mytag, const action* oracle_actions, size_t oracle_actions_cnt,
     const ptag* condition_on, const char* condition_on_names, const action* allowed_actions, size_t allowed_actions_cnt,
     const float* allowed_actions_cost, size_t learner_id, float weight)
 {
@@ -2844,7 +2846,7 @@ action search::predict(example& ec, ptag mytag, const action* oracle_actions, si
   return a;
 }
 
-action search::predictLDF(example* ecs, size_t ec_cnt, ptag mytag, const action* oracle_actions,
+action search::predictLDF(VW::example* ecs, size_t ec_cnt, ptag mytag, const action* oracle_actions,
     size_t oracle_actions_cnt, const ptag* condition_on, const char* condition_on_names, size_t learner_id,
     float weight)
 {
@@ -2913,7 +2915,7 @@ void search::set_options(uint32_t opts)
   }
 }
 
-void search::set_label_parser(label_parser& lp, bool (*is_test)(const polylabel&))
+void search::set_label_parser(VW::label_parser& lp, bool (*is_test)(const VW::polylabel&))
 {
   if (this->priv->all->vw_is_main && (this->priv->state != SearchState::INITIALIZE))
   { priv->all->logger.err_warn("Task should not set label parser except in initialize function."); }
@@ -2968,7 +2970,7 @@ predictor& predictor::reset()
   return *this;
 }
 
-predictor& predictor::set_input(example& input_example)
+predictor& predictor::set_input(VW::example& input_example)
 {
   assert(sch.is_ldf() == false);
   is_ldf = false;
@@ -2977,7 +2979,7 @@ predictor& predictor::set_input(example& input_example)
   return *this;
 }
 
-predictor& predictor::set_input(example* input_example, size_t input_length)
+predictor& predictor::set_input(VW::example* input_example, size_t input_length)
 {
   assert(sch.is_ldf() == true);
   is_ldf = true;
@@ -2994,7 +2996,7 @@ void predictor::set_input_length(size_t input_length)
   ec = allocated_examples.data();
   ec_cnt = input_length;
 }
-void predictor::set_input_at(size_t posn, example& ex)
+void predictor::set_input_at(size_t posn, VW::example& ex)
 {
   if (posn >= ec_cnt)
     THROW("call to set_input_at with too large a position: posn (" << posn << ") >= ec_cnt(" << ec_cnt << ")");
@@ -3020,7 +3022,7 @@ predictor& predictor::add_oracle(action* a, size_t action_count)
   return *this;
 }
 
-predictor& predictor::add_oracle(v_array<action>& a)
+predictor& predictor::add_oracle(VW::v_array<action>& a)
 {
   for (const auto& item : a) { oracle_actions.push_back(item); }
   return *this;
@@ -3038,7 +3040,7 @@ predictor& predictor::set_oracle(action* a, size_t action_count)
   return add_oracle(a, action_count);
 }
 
-predictor& predictor::set_oracle(v_array<action>& a)
+predictor& predictor::set_oracle(VW::v_array<action>& a)
 {
   oracle_actions.clear();
   return add_oracle(a);
@@ -3067,7 +3069,7 @@ predictor& predictor::add_allowed(action* a, size_t action_count)
   for (size_t i = 0; i < action_count; i++) { allowed_actions.push_back(*(a + i)); }
   return *this;
 }
-predictor& predictor::add_allowed(v_array<action>& a)
+predictor& predictor::add_allowed(VW::v_array<action>& a)
 {
   for (const auto& item : a) { allowed_actions.push_back(item); }
   return *this;
@@ -3085,7 +3087,7 @@ predictor& predictor::set_allowed(action* a, size_t action_count)
   return add_allowed(a, action_count);
 }
 
-predictor& predictor::set_allowed(v_array<action>& a)
+predictor& predictor::set_allowed(VW::v_array<action>& a)
 {
   allowed_actions.clear();
   return add_allowed(a);

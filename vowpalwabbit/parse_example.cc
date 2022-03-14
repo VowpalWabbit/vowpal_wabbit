@@ -2,19 +2,20 @@
 // individual contributors. All rights reserved. Released under a BSD (revised)
 // license as described in the file LICENSE.
 
-#include <cmath>
-#include <cctype>
 #include "parse_example.h"
-#include "parse_primitives.h"
-#include "hash.h"
-#include "unique_sort.h"
-#include "global_data.h"
-#include "constant.h"
-#include "vw_string_view.h"
-#include "future_compat.h"
-#include "shared_data.h"
 
+#include <cctype>
+#include <cmath>
+
+#include "constant.h"
+#include "future_compat.h"
+#include "global_data.h"
+#include "hash.h"
 #include "io/logger.h"
+#include "parse_primitives.h"
+#include "shared_data.h"
+#include "unique_sort.h"
+#include "vw_string_view.h"
 
 size_t read_features(io_buf& buf, char*& line, size_t& num_chars)
 {
@@ -32,7 +33,7 @@ size_t read_features(io_buf& buf, char*& line, size_t& num_chars)
   return num_chars_initial;
 }
 
-int read_features_string(VW::workspace* all, io_buf& buf, v_array<example*>& examples)
+int read_features_string(VW::workspace* all, io_buf& buf, VW::v_array<VW::example*>& examples)
 {
   char* line;
   size_t num_chars;
@@ -67,10 +68,10 @@ public:
   bool _redefine_some;
   std::array<unsigned char, NUM_NAMESPACES>* _redefine;
   parser* _p;
-  example* _ae;
+  VW::example* _ae;
   std::array<uint64_t, NUM_NAMESPACES>* _affix_features;
   std::array<bool, NUM_NAMESPACES>* _spelling_features;
-  v_array<char> _spelling;
+  VW::v_array<char> _spelling;
   uint32_t _hash_seed;
   uint64_t _parse_mask;
   std::array<std::vector<std::shared_ptr<feature_dict>>, NUM_NAMESPACES>* _namespace_dictionaries;
@@ -220,12 +221,12 @@ public:
         if (!string_feature_value.empty())
         {
           std::stringstream ss;
-          ss << feature_name << "^" << string_feature_value;
-          fs.space_names.push_back(audit_strings(std::string{_base}, ss.str()));
+          fs.space_names.push_back(
+              VW::audit_strings(std::string{_base}, std::string{feature_name}, std::string{string_feature_value}));
         }
         else
         {
-          fs.space_names.push_back(audit_strings(std::string{_base}, std::string{feature_name}));
+          fs.space_names.push_back(VW::audit_strings(std::string{_base}, std::string{feature_name}));
         }
       }
 
@@ -253,7 +254,7 @@ public:
           affix_fs.push_back(_v, word_hash, affix_namespace);
           if (audit)
           {
-            v_array<char> affix_v;
+            VW::v_array<char> affix_v;
             if (_index != ' ') affix_v.push_back(_index);
             affix_v.push_back(is_prefix ? '+' : '-');
             affix_v.push_back('0' + static_cast<char>(len));
@@ -293,7 +294,7 @@ public:
         spell_fs.push_back(_v, word_hash, spelling_namespace);
         if (audit)
         {
-          v_array<char> spelling_v;
+          VW::v_array<char> spelling_v;
           if (_index != ' ')
           {
             spelling_v.push_back(_index);
@@ -472,7 +473,7 @@ public:
     }
   }
 
-  TC_parser(VW::string_view line, VW::workspace& all, example* ae) : _line(line)
+  TC_parser(VW::string_view line, VW::workspace& all, VW::example* ae) : _line(line)
   {
     if (!_line.empty())
     {
@@ -496,7 +497,7 @@ public:
   }
 };
 
-void substring_to_example(VW::workspace* all, example* ae, VW::string_view example)
+void substring_to_example(VW::workspace* all, VW::example* ae, VW::string_view example)
 {
   if (example.empty()) { ae->is_newline = true; }
 

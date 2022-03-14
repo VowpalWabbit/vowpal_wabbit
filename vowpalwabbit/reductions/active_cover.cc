@@ -2,15 +2,16 @@
 // individual contributors. All rights reserved. Released under a BSD (revised)
 // license as described in the file LICENSE.
 
-#include <cmath>
 #include <cerrno>
 #include <cfloat>
+#include <cmath>
 #include <memory>
+
+#include "float.h"
 #include "numeric_casts.h"
 #include "rand48.h"
-#include "float.h"
-#include "vw.h"
 #include "shared_data.h"
+#include "vw.h"
 #include "vw_math.h"
 
 using namespace VW::LEARNER;
@@ -38,7 +39,7 @@ struct active_cover
   }
 };
 
-bool dis_test(VW::workspace& all, example& ec, single_learner& base, float /* prediction */, float threshold)
+bool dis_test(VW::workspace& all, VW::example& ec, single_learner& base, float /* prediction */, float threshold)
 {
   if (all.sd->t + ec.weight <= 3) { return true; }
 
@@ -75,7 +76,7 @@ float get_pmin(float sum_loss, float t)
   return pmin;  // treating n*eps_n = 1
 }
 
-float query_decision(active_cover& a, single_learner& l, example& ec, float prediction, float pmin, bool in_dis)
+float query_decision(active_cover& a, single_learner& l, VW::example& ec, float prediction, float pmin, bool in_dis)
 {
   if (a.all->sd->t + ec.weight <= 3) { return 1.f; }
 
@@ -104,7 +105,7 @@ float query_decision(active_cover& a, single_learner& l, example& ec, float pred
 }
 
 template <bool is_learn>
-void predict_or_learn_active_cover(active_cover& a, single_learner& base, example& ec)
+void predict_or_learn_active_cover(active_cover& a, single_learner& base, VW::example& ec)
 {
   base.predict(ec, 0);
 

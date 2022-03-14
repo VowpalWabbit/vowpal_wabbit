@@ -1,19 +1,20 @@
 // Copyright (c) by respective owners including Yahoo!, Microsoft, and
 // individual contributors. All rights reserved. Released under a BSD (revised)
 // license as described in the file LICENSE.
+#include <float.h>
+
 #include <algorithm>
 #include <cmath>
 #include <cstdio>
-#include <float.h>
-#include <sstream>
 #include <memory>
+#include <sstream>
 
+#include "config/options.h"
+#include "global_data.h"
+#include "learner.h"
 #include "numeric_casts.h"
 #include "rand48.h"
 #include "vw_math.h"
-#include "learner.h"
-#include "global_data.h"
-#include "config/options.h"
 
 using namespace VW::LEARNER;
 using namespace VW::config;
@@ -29,7 +30,7 @@ struct node_pred
   node_pred(uint32_t a) : label(a), label_count(0) {}
 };
 
-static_assert(std::is_trivial<node_pred>::value, "To be used in v_array node_pred must be trivial");
+static_assert(std::is_trivial<node_pred>::value, "To be used in VW::v_array node_pred must be trivial");
 
 struct node
 {
@@ -46,7 +47,7 @@ struct node
   double entropy;
   double passes;
 
-  v_array<node_pred> preds;
+  VW::v_array<node_pred> preds;
 
   node()
       : parent(0)
@@ -120,7 +121,7 @@ void init_tree(recall_tree& b)
   b.max_routers = routers_used;
 }
 
-node_pred* find(recall_tree& b, uint32_t cn, example& ec)
+node_pred* find(recall_tree& b, uint32_t cn, VW::example& ec)
 {
   node_pred* ls;
 
@@ -130,7 +131,7 @@ node_pred* find(recall_tree& b, uint32_t cn, example& ec)
   return ls;
 }
 
-node_pred* find_or_create(recall_tree& b, uint32_t cn, example& ec)
+node_pred* find_or_create(recall_tree& b, uint32_t cn, VW::example& ec)
 {
   node_pred* ls = find(b, cn, ec);
 
@@ -162,7 +163,7 @@ void compute_recall_lbest(recall_tree& b, node* n)
 
 double plogp(double c, double n) { return (c == 0) ? 0 : (c / n) * log(c / n); }
 
-double updated_entropy(recall_tree& b, uint32_t cn, example& ec)
+double updated_entropy(recall_tree& b, uint32_t cn, VW::example& ec)
 {
   node_pred* ls = find(b, cn, ec);
 
@@ -191,7 +192,7 @@ double updated_entropy(recall_tree& b, uint32_t cn, example& ec)
   return newentropy;
 }
 
-void insert_example_at_node(recall_tree& b, uint32_t cn, example& ec)
+void insert_example_at_node(recall_tree& b, uint32_t cn, VW::example& ec)
 {
   node_pred* ls = find_or_create(b, cn, ec);
 
@@ -212,7 +213,7 @@ void insert_example_at_node(recall_tree& b, uint32_t cn, example& ec)
 
 // TODO: handle if features already in this namespace
 
-void add_node_id_feature(recall_tree& b, uint32_t cn, example& ec)
+void add_node_id_feature(recall_tree& b, uint32_t cn, VW::example& ec)
 {
   VW::workspace* all = b.all;
   uint64_t mask = all->weights.mask();
@@ -235,14 +236,14 @@ void add_node_id_feature(recall_tree& b, uint32_t cn, example& ec)
   // TODO: if namespace already exists ?
 }
 
-void remove_node_id_feature(recall_tree& /* b */, uint32_t /* cn */, example& ec)
+void remove_node_id_feature(recall_tree& /* b */, uint32_t /* cn */, VW::example& ec)
 {
   features& fs = ec.feature_space[node_id_namespace];
   fs.clear();
   ec.indices.pop_back();
 }
 
-uint32_t oas_predict(recall_tree& b, single_learner& base, uint32_t cn, example& ec)
+uint32_t oas_predict(recall_tree& b, single_learner& base, uint32_t cn, VW::example& ec)
 {
   MULTICLASS::label_t mc = ec.l.multi;
   uint32_t save_pred = ec.pred.multiclass;
@@ -272,7 +273,7 @@ uint32_t oas_predict(recall_tree& b, single_learner& base, uint32_t cn, example&
   return amaxscore;
 }
 
-bool is_candidate(recall_tree& b, uint32_t cn, example& ec)
+bool is_candidate(recall_tree& b, uint32_t cn, VW::example& ec)
 {
   for (node_pred* ls = b.nodes[cn].preds.begin();
        ls != b.nodes[cn].preds.end() && ls < b.nodes[cn].preds.begin() + b.max_candidates; ++ls)
@@ -298,7 +299,7 @@ bool stop_recurse_check(recall_tree& b, uint32_t parent, uint32_t child)
   return b.bern_hyper > 0 && b.nodes[parent].recall_lbest >= b.nodes[child].recall_lbest;
 }
 
-predict_type predict_from(recall_tree& b, single_learner& base, example& ec, uint32_t cn)
+predict_type predict_from(recall_tree& b, single_learner& base, VW::example& ec, uint32_t cn)
 {
   MULTICLASS::label_t mc = ec.l.multi;
   uint32_t save_pred = ec.pred.multiclass;
@@ -322,14 +323,14 @@ predict_type predict_from(recall_tree& b, single_learner& base, example& ec, uin
   return predict_type(cn, oas_predict(b, base, cn, ec));
 }
 
-void predict(recall_tree& b, single_learner& base, example& ec)
+void predict(recall_tree& b, single_learner& base, VW::example& ec)
 {
   predict_type pred = predict_from(b, base, ec, 0);
 
   ec.pred.multiclass = pred.class_prediction;
 }
 
-float train_node(recall_tree& b, single_learner& base, example& ec, uint32_t cn)
+float train_node(recall_tree& b, single_learner& base, VW::example& ec, uint32_t cn)
 {
   MULTICLASS::label_t mc = ec.l.multi;
   uint32_t save_pred = ec.pred.multiclass;
@@ -376,7 +377,7 @@ float train_node(recall_tree& b, single_learner& base, example& ec, uint32_t cn)
   return save_scalar;
 }
 
-void learn(recall_tree& b, single_learner& base, example& ec)
+void learn(recall_tree& b, single_learner& base, VW::example& ec)
 {
   if (b.all->training && ec.l.multi.label != static_cast<uint32_t>(-1))  // if training the tree
   {

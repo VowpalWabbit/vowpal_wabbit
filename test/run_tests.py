@@ -14,7 +14,19 @@ import json
 from concurrent.futures import ThreadPoolExecutor, Future
 from enum import Enum
 import socket
-from typing import Any, Callable, Dict, List, Optional, Set, Tuple, Type, Union, cast
+from typing import (
+    Any,
+    Callable,
+    Dict,
+    List,
+    Mapping,
+    Optional,
+    Set,
+    Tuple,
+    Type,
+    Union,
+    cast,
+)
 
 from run_tests_common import TestData
 import runtests_flatbuffer_converter as fb_converter
@@ -40,6 +52,62 @@ class Result(Enum):
     SUCCESS = 1
     FAIL = 2
     SKIPPED = 3
+
+
+def are_dicts_equal(
+    expected_dict: Mapping[Any, Any], actual_dict: Mapping[Any, Any], epsilon: float
+) -> Tuple[bool, str]:
+    def _are_same(expected: Any, actual: Any, key: str) -> Tuple[bool, str]:
+        if type(expected) != type(actual):
+            return (
+                False,
+                f"Key '{key}' type mismatch. Expected: '{type(expected)}', but found: '{type(actual)}'",
+            )
+        elif type(expected) == type(None):
+            return True, ""
+        elif isinstance(expected, (int, bool, str)):
+            return (
+                expected == actual,
+                f"Key '{key}' value mismatch. Expected: '{expected}', but found: '{actual}'"
+                if expected != actual
+                else "",
+            )
+        elif isinstance(expected, (float)):
+            delta = abs(expected - actual)
+            return (
+                delta < epsilon,
+                f"Key '{key}' value mismatch. Expected: '{expected}', but found: '{actual}' (using epsilon: '{epsilon}')"
+                if delta >= epsilon
+                else "",
+            )
+        elif isinstance(expected, dict):
+            expected_keys = set(expected.keys())
+            actual_keys = set(actual.keys())
+            if expected_keys != actual_keys:
+                return (
+                    False,
+                    f"Key '{key}' keys mismatch. Expected: {expected_keys.difference(actual_keys)}. Found but not expected: {actual_keys.difference(expected_keys)}",
+                )
+            for key in expected_keys:
+                are_same, reason = _are_same(expected[key], actual[key], f"{key}")
+                if not are_same:
+                    return False, reason
+            return True, ""
+        elif isinstance(expected, list):
+            if len(expected) != len(actual):
+                return (
+                    False,
+                    f"Key '{key}' length mismatch. Expected: '{len(expected)}', but found: '{len(actual)}'",
+                )
+            for i in range(len(expected)):
+                are_same, reason = _are_same(expected[i], actual[i], f"{key}[{i}]")
+                if not are_same:
+                    return False, reason
+            return True, ""
+        else:
+            raise TypeError(f"Type {type(expected)} not supported in are_dicts_equal")
+
+    return _are_same(expected_dict, actual_dict, "root")
 
 
 class Completion:
@@ -407,9 +475,20 @@ def run_command_line_test(
                     False, f"Failed to open ref file: {ref_file}", []
                 )
                 continue
-            is_different, reason = is_output_different(
-                output_content, ref_content, epsilon, fuzzy_compare=fuzzy_compare
-            )
+
+            if ref_file.endswith(".json"):
+                # Empty strings are falsy
+                output_json = json.loads(output_content) if output_content else dict()
+                ref_json = json.loads(ref_content) if ref_content else dict()
+                dicts_equal, reason = are_dicts_equal(
+                    output_json, ref_json, epsilon=epsilon
+                )
+                is_different = not dicts_equal
+            else:
+                is_different, reason = is_output_different(
+                    output_content, ref_content, epsilon, fuzzy_compare=fuzzy_compare
+                )
+
             if is_different and overwrite:
                 with ref_file_ref_dir.open("w") as writer:
                     writer.write(output_content)

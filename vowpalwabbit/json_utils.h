@@ -56,16 +56,13 @@ struct Namespace
   {
     ftrs->push_back(1., VW::chain_hash_static(key, value, namespace_hash, hash_func, parse_mask));
     feature_count++;
-
-    std::stringstream ss;
-    ss << key << "^" << value;
-    if (audit) ftrs->space_names.push_back(audit_strings(name, ss.str()));
+    if (audit) ftrs->space_names.push_back(audit_strings(name, key, value));
   }
 };
 
 template <bool audit>
-void push_ns(
-    example* ex, const char* ns, std::vector<Namespace<audit>>& namespaces, hash_func_t hash_func, uint64_t hash_seed)
+void push_ns(VW::example* ex, const char* ns, std::vector<Namespace<audit>>& namespaces, hash_func_t hash_func,
+    uint64_t hash_seed)
 {
   Namespace<audit> n;
   n.feature_group = ns[0];
@@ -88,7 +85,7 @@ void push_ns(
 }
 
 template <bool audit>
-void pop_ns(example* ex, std::vector<Namespace<audit>>& namespaces)
+void pop_ns(VW::example* ex, std::vector<Namespace<audit>>& namespaces)
 {
   auto& ns = namespaces.back();
   if (ns.feature_count > 0)

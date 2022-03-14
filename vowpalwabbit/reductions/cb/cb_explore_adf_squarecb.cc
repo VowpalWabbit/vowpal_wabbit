@@ -3,22 +3,22 @@
 // license as described in the file LICENSE.
 
 #include "cb_explore_adf_squarecb.h"
-#include "cb_adf.h"
-#include "rand48.h"
-#include "gen_cs_example.h"
-#include "cb_explore.h"
-#include "explore.h"
-#include "action_score.h"
-#include "cb.h"
-#include "vw_versions.h"
-#include "version.h"
-#include "label_parser.h"
 
+#include <algorithm>
+#include <cfloat>
 #include <cmath>
 #include <vector>
-#include <algorithm>
-#include <cmath>
-#include <cfloat>
+
+#include "action_score.h"
+#include "cb.h"
+#include "cb_adf.h"
+#include "cb_explore.h"
+#include "explore.h"
+#include "gen_cs_example.h"
+#include "label_parser.h"
+#include "rand48.h"
+#include "version.h"
+#include "vw_versions.h"
 
 /*
 This file implements the SquareCB algorithm/reduction (Foster and Rakhlin (2020), https://arxiv.org/abs/2002.04926),

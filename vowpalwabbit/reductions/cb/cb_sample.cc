@@ -3,14 +3,15 @@
 // license as described in the file LICENSE.
 
 #include "cb_sample.h"
+
+#include "config/options.h"
 #include "explore.h"
+#include "global_data.h"
 #include "label_parser.h"
 #include "learner.h"
-#include "config/options.h"
-#include "global_data.h"
 #include "rand48.h"
-#include "vw_string_view.h"
 #include "tag_utils.h"
+#include "vw_string_view.h"
 
 #undef VW_DEBUG_LOG
 #define VW_DEBUG_LOG vw_dbg::cb_sample
@@ -107,7 +108,7 @@ private:
 }  // namespace VW
 
 template <bool is_learn>
-void learn_or_predict(cb_sample_data& data, multi_learner& base, multi_ex& examples)
+void learn_or_predict(cb_sample_data& data, multi_learner& base, VW::multi_ex& examples)
 {
   data.learn_or_predict<is_learn>(base, examples);
 }

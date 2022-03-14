@@ -4,8 +4,9 @@
 
 #include "version.h"
 
-#include <cstdio>
 #include <fmt/format.h>
+
+#include <cstdio>
 
 namespace VW
 {

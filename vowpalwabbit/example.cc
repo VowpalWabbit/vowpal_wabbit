@@ -1,16 +1,19 @@
 // Copyright (c) by respective owners including Yahoo!, Microsoft, and
 // individual contributors. All rights reserved. Released under a BSD (revised)
 // license as described in the file LICENSE.
-#include <cstdint>
-#include <algorithm>
-
 #include "example.h"
-#include "reductions/gd.h"
-#include "simple_label_parser.h"
-#include "reductions/interactions.h"
-#include "model_utils.h"
 
-float calculate_total_sum_features_squared(bool permutations, example& ec)
+#include <algorithm>
+#include <cstdint>
+
+#include "cb_continuous_label.h"
+#include "model_utils.h"
+#include "reductions/gd.h"
+#include "reductions/interactions.h"
+#include "simple_label_parser.h"
+#include "text_utils.h"
+
+float calculate_total_sum_features_squared(bool permutations, VW::example& ec)
 {
   float sum_features_squared = 0.f;
   for (const features& fs : ec) { sum_features_squared += fs.sum_feat_sq; }
@@ -21,13 +24,23 @@ float calculate_total_sum_features_squared(bool permutations, example& ec)
   return sum_features_squared;
 }
 
-example::~example()
+VW::example::~example()
 {
   if (passthrough)
   {
     delete passthrough;
     passthrough = nullptr;
   }
+}
+
+float VW::example::get_total_sum_feat_sq()
+{
+  if (!total_sum_feat_sq_calculated)
+  {
+    total_sum_feat_sq = calculate_total_sum_features_squared(use_permutations, *this);
+    total_sum_feat_sq_calculated = true;
+  }
+  return total_sum_feat_sq;
 }
 
 float collision_cleanup(features& fs)
@@ -135,7 +148,7 @@ void move_feature_namespace(example* dst, example* src, namespace_index c)
 
 struct features_and_source
 {
-  v_array<feature> feature_map;  // map to store sparse feature vectors
+  VW::v_array<feature> feature_map;  // map to store sparse feature vectors
   uint32_t stride_shift;
   uint64_t mask;
 };
@@ -172,7 +185,8 @@ void vec_ffs_store(full_features_and_source& p, float fx, uint64_t fi)
 {
   p.fs.push_back(fx, (fi >> p.stride_shift) & p.mask);
 }
-
+namespace VW
+{
 flat_example* flatten_example(VW::workspace& all, example* ec)
 {
   flat_example& fec = calloc_or_throw<flat_example>();
@@ -222,66 +236,6 @@ void free_flatten_example(flat_example* fec)
   }
 }
 
-std::string cb_label_to_string(const example& ec)
-{
-  std::stringstream strstream;
-  strstream << "[l.cb={";
-  auto& costs = ec.l.cb.costs;
-  for (auto c = costs.cbegin(); c != costs.cend(); ++c)
-  {
-    strstream << "{c=" << c->cost << ",a=" << c->action << ",p=" << c->probability << ",pp=" << c->partial_prediction
-              << "}";
-  }
-  strstream << "}]";
-  return strstream.str();
-}
-
-std::string simple_label_to_string(const example& ec)
-{
-  std::stringstream strstream;
-  strstream << "[l=" << ec.l.simple.label << ",w=" << ec.weight << "]";
-  return strstream.str();
-}
-
-std::string scalar_pred_to_string(const example& ec)
-{
-  std::stringstream strstream;
-  strstream << "[p=" << ec.pred.scalar << ", pp=" << ec.partial_prediction << "]";
-  return strstream.str();
-}
-
-std::string a_s_pred_to_string(const example& ec)
-{
-  std::stringstream strstream;
-  strstream << "ec.pred.a_s[";
-  for (uint32_t i = 0; i < ec.pred.a_s.size(); i++)
-  { strstream << "(" << i << " = " << ec.pred.a_s[i].action << ", " << ec.pred.a_s[i].score << ")"; }
-  strstream << "]";
-  return strstream.str();
-}
-
-std::string multiclass_pred_to_string(const example& ec)
-{
-  std::stringstream strstream;
-  strstream << "ec.pred.multiclass = " << ec.pred.multiclass;
-  return strstream.str();
-}
-
-std::string prob_dist_pred_to_string(const example& ec)
-{
-  std::stringstream strstream;
-  strstream << "ec.pred.prob_dist[";
-  for (uint32_t i = 0; i < ec.pred.pdf.size(); i++)
-  {
-    strstream << "(" << i << " = " << ec.pred.pdf[i].left << "-" << ec.pred.pdf[i].right << ", "
-              << ec.pred.pdf[i].pdf_value << ")";
-  }
-  strstream << "]";
-  return strstream.str();
-}
-
-namespace VW
-{
 example* alloc_examples(size_t count)
 {
   example* ec = calloc_or_throw<example>(count);
@@ -312,7 +266,7 @@ void return_multiple_example(VW::workspace& all, v_array<example*>& examples)
 
 namespace model_utils
 {
-size_t read_model_field(io_buf& io, flat_example& fe, label_parser& lbl_parser)
+size_t read_model_field(io_buf& io, flat_example& fe, VW::label_parser& lbl_parser)
 {
   size_t bytes = 0;
   bool tag_is_null;
@@ -333,7 +287,7 @@ size_t read_model_field(io_buf& io, flat_example& fe, label_parser& lbl_parser)
   return bytes;
 }
 size_t write_model_field(io_buf& io, const flat_example& fe, const std::string& upstream_name, bool text,
-    label_parser& lbl_parser, uint64_t parse_mask)
+    VW::label_parser& lbl_parser, uint64_t parse_mask)
 {
   size_t bytes = 0;
   lbl_parser.cache_label(fe.l, fe._reduction_features, io, upstream_name + "_label", text);
@@ -353,8 +307,17 @@ size_t write_model_field(io_buf& io, const flat_example& fe, const std::string& 
 }  // namespace model_utils
 }  // namespace VW
 
-std::string debug_depth_indent_string(const example& ec)
+namespace VW
 {
-  return debug_depth_indent_string(ec._debug_current_reduction_depth);
+std::string to_string(const v_array<float>& scalars, int decimal_precision)
+{
+  std::stringstream ss;
+  std::string delim;
+  for (float f : scalars)
+  {
+    ss << delim << VW::fmt_float(f, decimal_precision);
+    delim = ",";
+  }
+  return ss.str();
 }
-std::string debug_depth_indent_string(const multi_ex& ec) { return debug_depth_indent_string(*ec[0]); }
+}  // namespace VW

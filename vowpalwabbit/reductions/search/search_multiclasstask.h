@@ -7,6 +7,6 @@
 namespace MulticlassTask
 {
 void initialize(Search::search&, size_t&, VW::config::options_i&);
-void run(Search::search&, multi_ex&);
+void run(Search::search&, VW::multi_ex&);
 extern Search::search_task task;
 }  // namespace MulticlassTask

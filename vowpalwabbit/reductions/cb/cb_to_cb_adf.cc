@@ -4,11 +4,11 @@
 
 #include "cb_to_cb_adf.h"
 
-#include "vw_versions.h"
+#include "cb_label_parser.h"
+#include "cbify.h"
 #include "learner.h"
 #include "vw.h"
-#include "cbify.h"
-#include "cb_label_parser.h"
+#include "vw_versions.h"
 
 using namespace VW::LEARNER;
 using namespace VW::config;
@@ -22,7 +22,7 @@ struct cb_to_cb_adf
 };
 
 template <bool is_learn>
-void predict_or_learn(cb_to_cb_adf& data, multi_learner& base, example& ec)
+void predict_or_learn(cb_to_cb_adf& data, multi_learner& base, VW::example& ec)
 {
   data.adf_data.copy_example_to_adf(*data.weights, ec);
 
@@ -84,7 +84,7 @@ void predict_or_learn(cb_to_cb_adf& data, multi_learner& base, example& ec)
   }
 }
 
-void finish_example(VW::workspace& all, cb_to_cb_adf& c, example& ec)
+void finish_example(VW::workspace& all, cb_to_cb_adf& c, VW::example& ec)
 {
   if (c.explore_mode)
   {

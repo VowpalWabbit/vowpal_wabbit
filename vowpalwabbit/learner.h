@@ -20,24 +20,22 @@
 #  pragma warning(pop)
 #endif
 
+#include "debug_log.h"
 #include "memory.h"
 #include "multiclass.h"
-#include "simple_label.h"
 #include "parser.h"
-#include "debug_log.h"
+#include "simple_label.h"
 
 #undef VW_DEBUG_LOG
 #define VW_DEBUG_LOG vw_dbg::learner
 
-#include "future_compat.h"
 #include "example.h"
-#include "scope_exit.h"
-#include "metric_sink.h"
-
+#include "future_compat.h"
 #include "label_type.h"
+#include "metric_sink.h"
 #include "prediction_type.h"
-
 #include "reductions/conditional_contextual_bandit.h"
+#include "scope_exit.h"
 
 namespace VW
 {
@@ -453,12 +451,13 @@ public:
     }
   }
 
-  prediction_type_t& get_output_prediction_type() { return _output_pred_type; }
-  prediction_type_t& get_input_prediction_type() { return _input_pred_type; }
-  label_type_t& get_output_label_type() { return _output_label_type; }
-  label_type_t& get_input_label_type() { return _input_label_type; }
-  bool is_multiline() { return _is_multiline; }
-  const std::string& get_name() { return name; }
+  prediction_type_t get_output_prediction_type() const { return _output_pred_type; }
+  prediction_type_t get_input_prediction_type() const { return _input_pred_type; }
+  label_type_t get_output_label_type() const { return _output_label_type; }
+  label_type_t get_input_label_type() const { return _input_label_type; }
+  bool is_multiline() const { return _is_multiline; }
+  const std::string& get_name() const { return name; }
+  const base_learner* get_learn_base() const { return learn_fd.base; }
 };
 
 template <class T, class E>
@@ -704,10 +703,10 @@ struct reduction_learner_builder
   {
     if (logger != nullptr)
     {
-      prediction_type_t& in_pred_type = this->_learner->get_input_prediction_type();
-      prediction_type_t& base_out_pred_type = this->_learner->learn_fd.base->get_output_prediction_type();
-      label_type_t& out_label_type = this->_learner->get_output_label_type();
-      label_type_t& base_in_label_type = this->_learner->learn_fd.base->get_input_label_type();
+      prediction_type_t in_pred_type = this->_learner->get_input_prediction_type();
+      prediction_type_t base_out_pred_type = this->_learner->learn_fd.base->get_output_prediction_type();
+      label_type_t out_label_type = this->_learner->get_output_label_type();
+      label_type_t base_in_label_type = this->_learner->learn_fd.base->get_input_label_type();
       if (in_pred_type != base_out_pred_type)
       {
         logger->err_warn(

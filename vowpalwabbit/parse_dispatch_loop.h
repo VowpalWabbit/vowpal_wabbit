@@ -8,15 +8,15 @@
 
 #include "example.h"
 #include "global_data.h"
-#include "v_array.h"
-#include "parse_example.h"
 #include "io/logger.h"
+#include "parse_example.h"
+#include "v_array.h"
 
 // DispatchFuncT should be of the form - void(VW::workspace&, const v_array<example*>&)
 template <typename DispatchFuncT>
 void parse_dispatch(VW::workspace& all, DispatchFuncT& dispatch)
 {
-  v_array<example*> examples;
+  VW::v_array<VW::example*> examples;
   size_t example_number = 0;  // for variable-size batch learning algorithms
 
   try

@@ -4,16 +4,15 @@
 #include <cfloat>
 #include <cmath>
 #include <cstdio>
-#include <sstream>
 #include <memory>
+#include <sstream>
 
-#include "rand48.h"
 #include "gd.h"
-#include "vw.h"
 #include "guard.h"
-#include "shared_data.h"
-
 #include "io/logger.h"
+#include "rand48.h"
+#include "shared_data.h"
+#include "vw.h"
 
 using namespace VW::LEARNER;
 using namespace VW::config;
@@ -26,9 +25,9 @@ struct nn
 {
   uint32_t k = 0;
   std::unique_ptr<loss_function> squared_loss;
-  example output_layer;
-  example hiddenbias;
-  example outputweight;
+  VW::example output_layer;
+  VW::example hiddenbias;
+  VW::example outputweight;
   float prediction = 0.f;
   size_t increment = 0;
   bool dropout = false;
@@ -41,8 +40,8 @@ struct nn
   float* hidden_units = nullptr;
   bool* dropped_out = nullptr;
 
-  polyprediction* hidden_units_pred = nullptr;
-  polyprediction* hiddenbias_pred = nullptr;
+  VW::polyprediction* hidden_units_pred = nullptr;
+  VW::polyprediction* hiddenbias_pred = nullptr;
 
   VW::workspace* all = nullptr;  // many things
   std::shared_ptr<VW::rand_state> _random_state;
@@ -138,7 +137,7 @@ void end_pass(nn& n)
 }
 
 template <bool is_learn, bool recompute_hidden>
-void predict_or_learn_multi(nn& n, single_learner& base, example& ec)
+void predict_or_learn_multi(nn& n, single_learner& base, VW::example& ec)
 {
   bool shouldOutput = n.all->raw_prediction != nullptr;
   if (!n.finished_setup) finish_setup(n, *(n.all));
@@ -155,8 +154,8 @@ void predict_or_learn_multi(nn& n, single_learner& base, example& ec)
     float dropscale = n.dropout ? 2.0f : 1.0f;
     auto loss_function_swap_guard = VW::swap_guard(n.all->loss, n.squared_loss);
 
-    polyprediction* hidden_units = n.hidden_units_pred;
-    polyprediction* hiddenbias_pred = n.hiddenbias_pred;
+    VW::polyprediction* hidden_units = n.hidden_units_pred;
+    VW::polyprediction* hiddenbias_pred = n.hiddenbias_pred;
     bool* dropped_out = n.dropped_out;
 
     std::ostringstream outputStringStream;
@@ -378,7 +377,7 @@ void predict_or_learn_multi(nn& n, single_learner& base, example& ec)
   n.all->set_minmax(n.all->sd, sd.max_label);
 }
 
-void multipredict(nn& n, single_learner& base, example& ec, size_t count, size_t step, polyprediction* pred,
+void multipredict(nn& n, single_learner& base, VW::example& ec, size_t count, size_t step, VW::polyprediction* pred,
     bool finalize_predictions)
 {
   for (size_t c = 0; c < count; c++)
@@ -397,7 +396,7 @@ void multipredict(nn& n, single_learner& base, example& ec, size_t count, size_t
   ec.ft_offset -= static_cast<uint64_t>(step * count);
 }
 
-void finish_example(VW::workspace& all, nn&, example& ec)
+void finish_example(VW::workspace& all, nn&, VW::example& ec)
 {
   std::unique_ptr<VW::io::writer> temp(nullptr);
   auto raw_prediction_guard = VW::swap_guard(all.raw_prediction, temp);
@@ -449,8 +448,8 @@ base_learner* nn_setup(VW::setup_base_i& stack_builder)
 
   n->hidden_units = calloc_or_throw<float>(n->k);
   n->dropped_out = calloc_or_throw<bool>(n->k);
-  n->hidden_units_pred = calloc_or_throw<polyprediction>(n->k);
-  n->hiddenbias_pred = calloc_or_throw<polyprediction>(n->k);
+  n->hidden_units_pred = calloc_or_throw<VW::polyprediction>(n->k);
+  n->hiddenbias_pred = calloc_or_throw<VW::polyprediction>(n->k);
 
   auto base = as_singleline(stack_builder.setup_base_learner());
   n->increment = base->increment;  // Indexing of output layer is odd.
