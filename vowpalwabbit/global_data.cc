@@ -4,6 +4,11 @@
 
 #include "global_data.h"
 
+#define RAPIDJSON_HAS_STDSTRING 1
+
+#include <rapidjson/stringbuffer.h>
+#include <rapidjson/writer.h>
+
 #include <cassert>
 #include <cerrno>
 #include <cfloat>
@@ -12,19 +17,16 @@
 #include <iostream>
 #include <sstream>
 
+#include "array_parameters.h"
 #include "future_compat.h"
 #include "named_labels.h"
+#include "rapidjson/document.h"
+#include "rapidjson/rapidjson.h"
 #include "reduction_stack.h"
 #include "shared_data.h"
 #include "vw_allreduce.h"
 #include "vw_exception.h"
 #include "vw_string_view.h"
-
-#define RAPIDJSON_HAS_STDSTRING 1
-#include <rapidjson/stringbuffer.h>
-#include <rapidjson/writer.h>
-
-#include "rapidjson/document.h"
 
 #ifdef BUILD_FLATBUFFERS
 #  include "parser/flatbuffer/parse_example_flatbuffer.h"
@@ -208,8 +210,9 @@ void workspace::finish_example(multi_ex& ec)
 }
 
 template <typename WeightsT>
-std::string dump_weights_to_json_weight_typed(
-    const WeightsT& weights, const std::map<uint64_t, VW::details::invert_hash_info>& index_name_map)
+std::string dump_weights_to_json_weight_typed(const WeightsT& weights,
+    const std::map<uint64_t, VW::details::invert_hash_info>& index_name_map, const parameters& parameter_holder,
+    bool include_feature_names, bool include_online_state)
 {
   rapidjson::Document doc;
   auto& allocator = doc.GetAllocator();
@@ -226,7 +229,7 @@ std::string dump_weights_to_json_weight_typed(
     {
       rapidjson::Value parameter_object(rapidjson::kObjectType);
       const auto map_it = index_name_map.find(idx);
-      if (map_it != index_name_map.end())
+      if (include_feature_names && map_it != index_name_map.end())
       {
         const VW::details::invert_hash_info& info = map_it->second;
         rapidjson::Value terms_array(rapidjson::kArrayType);
@@ -257,17 +260,47 @@ std::string dump_weights_to_json_weight_typed(
         rapidjson::Value offset_value(static_cast<uint64_t>(info.offset != 0 ? info.offset >> info.stride_shift : 0));
         parameter_object.AddMember("offset", offset_value, allocator);
       }
-      else
+      else if (include_feature_names)
       {
         // There is no reverse mapping. We leave nulls in place of terms and offset.
         parameter_object.AddMember("terms", rapidjson::Value(rapidjson::Type::kNullType), allocator);
         parameter_object.AddMember("offset", rapidjson::Value(rapidjson::Type::kNullType), allocator);
       }
 
+      // If include_feature_names is false, we don't add terms or offset
+
       rapidjson::Value index_value(static_cast<uint64_t>(idx));
       parameter_object.AddMember("index", index_value, allocator);
       rapidjson::Value value_value(static_cast<float>(*v));
       parameter_object.AddMember("value", value_value, allocator);
+
+      const float* current_weight_state = &(*v);
+      if (include_online_state)
+      {
+        rapidjson::Value extra_state_value(rapidjson::kObjectType);
+        rapidjson::Value adaptive_value(rapidjson::kNumberType);
+        rapidjson::Value normalized_value(rapidjson::kNumberType);
+
+        if (parameter_holder.adaptive && !parameter_holder.normalized)
+        {
+          adaptive_value = current_weight_state[1];
+          normalized_value = rapidjson::kNullType;
+        }
+        if (!parameter_holder.adaptive && parameter_holder.normalized)
+        {
+          adaptive_value = rapidjson::kNullType;
+          normalized_value = current_weight_state[1];
+        }
+        if (parameter_holder.adaptive && parameter_holder.normalized)
+        {
+          adaptive_value = current_weight_state[1];
+          normalized_value = current_weight_state[2];
+        }
+
+        extra_state_value.AddMember("adaptive", adaptive_value, allocator);
+        extra_state_value.AddMember("normalized", normalized_value, allocator);
+        parameter_object.AddMember("gd_extra_online_state", extra_state_value, allocator);
+      }
       doc["weights"].PushBack(parameter_object, allocator);
     }
   }
@@ -282,16 +315,24 @@ std::string workspace::dump_weights_to_json_experimental()
 {
   assert(l != nullptr);
   const auto* current = l;
+
+  // This could be extended to other base learners reasonably. Since this is new and experimental though keep the scope
+  // small.
   while (current->get_learn_base() != nullptr) { current = current->get_learn_base(); }
   if (current->get_name() != "gd")
   {
-    THROW("dump_weights_to_json is only supported for GD base learners. The current base learner is "
+    THROW("dump_weights_to_json is currently only supported for GD base learners. The current base learner is "
         << current->get_name());
   }
-  if (!hash_inv) { THROW("hash_inv == true is required to dump weights to json"); }
+  if (dump_json_weights_include_feature_names && !hash_inv)
+  { THROW("hash_inv == true is required to dump weights to json including feature names"); }
+  if (dump_json_weights_include_extra_online_state && !save_resume)
+  { THROW("save_resume == true is required to dump weights to json including feature names"); }
 
-  return weights.sparse ? dump_weights_to_json_weight_typed(weights.sparse_weights, index_name_map)
-                        : dump_weights_to_json_weight_typed(weights.dense_weights, index_name_map);
+  return weights.sparse ? dump_weights_to_json_weight_typed(weights.sparse_weights, index_name_map, weights,
+                              dump_json_weights_include_feature_names, dump_json_weights_include_extra_online_state)
+                        : dump_weights_to_json_weight_typed(weights.dense_weights, index_name_map, weights,
+                              dump_json_weights_include_feature_names, dump_json_weights_include_extra_online_state);
 }
 }  // namespace VW
 

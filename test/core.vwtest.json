@@ -5086,5 +5086,31 @@
     "input_files": [
       "train-sets/0001.dat"
     ]
+  },
+  {
+    "id": 396,
+    "desc": "Export json weights",
+    "vw_command": "-d train-sets/dsjson_cb.json --cb_explore_adf --dsjson --dump_json_weights_experimental cb_weights.json",
+    "diff_files": {
+      "stderr": "train-sets/ref/cb_weights.stderr",
+      "stdout": "train-sets/ref/cb_weights.stdout",
+      "cb_weights.json": "train-sets/ref/cb_weights.json"
+    },
+    "input_files": [
+      "train-sets/dsjson_cb.json"
+    ]
+  },
+  {
+    "id": 397,
+    "desc": "Export json weights with all information",
+    "vw_command": "-d train-sets/dsjson_cb.json --cb_explore_adf -q :: --dsjson --dump_json_weights_experimental cb_weights_extra.json --dump_json_weights_include_feature_names_experimental --dump_json_weights_include_extra_online_state_experimental",
+    "diff_files": {
+      "stderr": "train-sets/ref/cb_weights_extra.stderr",
+      "stdout": "train-sets/ref/cb_weights_extra.stdout",
+      "cb_weights_extra.json": "train-sets/ref/cb_weights_extra.json"
+    },
+    "input_files": [
+      "train-sets/dsjson_cb.json"
+    ]
   }
 ]
