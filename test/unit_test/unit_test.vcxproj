@@ -46,6 +46,7 @@
     <ClCompile Include="interactions_test.cc" />
     <ClCompile Include="io_adapter_test.cc" />
     <ClCompile Include="json_parser_test.cc" />
+    <ClCompile Include="loss_functions_test.cc" />
     <ClCompile Include="main.cc" />
     <ClCompile Include="math_test.cc" />
     <ClCompile Include="minimal_custom_reduction.cc" />
