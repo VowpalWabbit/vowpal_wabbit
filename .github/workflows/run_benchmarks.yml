@@ -72,6 +72,11 @@ jobs:
         with:
           name: branch-benchmark-bin
           path: branch-benchmark-bin/
+      - name: Update permissions
+        run: |
+          ls -alh
+          ls -alh branch-benchmark-bin/
+          ls -alh master-benchmark-bin/
       - name: Run master benchmark
         run: >
           ./master-benchmark-bin/vw-benchmarks.out
