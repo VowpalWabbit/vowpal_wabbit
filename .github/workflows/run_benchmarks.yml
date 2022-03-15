@@ -7,7 +7,7 @@ on:
       - 'releases/**'
 
 jobs:
-  benchmark:
+  build-benchmark-master:
     container:
       image: vowpalwabbit/ubuntu1804-build:latest
     runs-on: ubuntu-latest
@@ -19,46 +19,73 @@ jobs:
       - name: Install google benchmarks
         shell: bash
         run: ./.scripts/linux/install-benchmarks.sh
-      - name: Build ${{ github.base_ref }}
-        shell: bash
-        run: ./.scripts/linux/build-with-benchmarks.sh
-      - name: Benchmark ${{ github.base_ref }}
-        shell: bash
-        run: ./.scripts/linux/run-benchmarks.sh master-benchmarks.json
-      - name: Upload ${{ github.base_ref }} benchmark results
-        uses: actions/upload-artifact@v2
-        with:
-          name: master-benchmarks
-          path: master-benchmarks.json
       - name: Upload benchmark compare
         uses: actions/upload-artifact@v2
         with:
           name: benchmark-compare
           path: benchmark/tools/
-      - name: Install benchmark compare requirements
+      - name: Build ${{ github.base_ref }}
         shell: bash
-        run: |
-          python3 -m pip install -r benchmark/tools/requirements.txt
-          # The above requirements file is missing the pandas dependency.
-          python3 -m pip install pandas
-      - run: rm -rf benchmark build vowpalwabbit/parser/flatbuffer/generated/ # generated or downloaded files
+        run: ./.scripts/linux/build-with-benchmarks.sh
+      - name: Upload benchmark binary
+        uses: actions/upload-artifact@v2
+        with:
+          name: master-benchmark-bin
+          path: build/test/benchmarks/vw-benchmarks.out
+  build-benchmark-branch:
+    container:
+      image: vowpalwabbit/ubuntu1804-build:latest
+    runs-on: ubuntu-latest
+    steps:
       - uses: actions/checkout@v1
         with:
           submodules: 'recursive'
-      - name: Download ${{ github.base_ref }} benchmark results
-        uses: actions/download-artifact@v2
+      - name: Install google benchmarks
+        shell: bash
+        run: ./.scripts/linux/install-benchmarks.sh
+      - name: Build ${{ github.base_ref }}
+        shell: bash
+        run: ./.scripts/linux/build-with-benchmarks.sh
+      - name: Upload benchmark binary
+        uses: actions/upload-artifact@v2
         with:
-          name: master-benchmarks
+          name: branch-benchmark-bin
+          path: build/test/benchmarks/vw-benchmarks.out
+  run-benchmarks:
+    container:
+      image: vowpalwabbit/ubuntu1804-build:latest
+    runs-on: ubuntu-latest
+    steps:
       - name: Download benchmark compare
         uses: actions/download-artifact@v2
         with:
           name: benchmark-compare
-      - name: Build branch
-        shell: bash
-        run: ./.scripts/linux/build-with-benchmarks.sh
-      - name: Benchmark branch
-        shell: bash
-        run: ./.scripts/linux/run-benchmarks.sh branch-benchmarks.json
+      - name: Download master bin
+        uses: actions/download-artifact@v2
+        with:
+          name: master-benchmark-bin
+      - name: branch benchmark bin
+        uses: actions/download-artifact@v2
+        with:
+          name: branch-benchmark-bin
+      - name: Run master benchmark
+        run: >
+          ./build/test/benchmarks/vw-benchmarks.out
+          --benchmark_repetitions=10
+          --benchmark_min_time=2
+          --benchmark_report_aggregates_only=true
+          --benchmark_format=console
+          --benchmark_out_format=json
+          --benchmark_out=master-benchmarks.json
+      - name: Run branch benchmark
+        run: >
+          ./build/test/benchmarks/vw-benchmarks.out
+          --benchmark_repetitions=10
+          --benchmark_min_time=2
+          --benchmark_report_aggregates_only=true
+          --benchmark_format=console
+          --benchmark_out_format=json
+          --benchmark_out=branch-benchmarks.json
       - name: Compare benchmarks
         shell: bash
-        run: ./.scripts/linux/compare-benchmarks.sh master-benchmarks.json branch-benchmarks.json
+        run: python3 benchmark/tools/compare.py benchmarks "$1" "$2"
