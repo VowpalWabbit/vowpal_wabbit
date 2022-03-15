@@ -11,19 +11,19 @@ power_t = 0.5
 Enabled reductions: gd, scorer-identity, csoaa_ldf-rank, cb_adf, cb_explore_adf_squarecb, shared_feature_merger
 Input label = cb
 Output pred = action_probs
-average  since         example        example  current  current  current
-loss     last          counter         weight    label  predict features
-0.000000 0.000000            1            1.0 4:0:0.14        0:0.142857...       42
-0.000000 0.000000            2            2.0 0:0:0.14        0:0.142857...       42
-0.000000 0.000000            4            4.0 1:0:0.14        0:0.142857...       42
-0.000000 0.000000            8            8.0 3:0:0.14        0:0.142857...       42
-0.000000 0.000000           16           16.0 3:0:0.14        0:0.142857...       42
-0.000000 0.000000           32           32.0 3:0:0.14        0:0.142857...       42
--0.250000 -0.500000           64           64.0 0:0:0.77        0:0.765981...       42
+average  since         example        example        current        current  current
+loss     last          counter         weight          label        predict features
+0.000000 0.000000            1            1.0       4:0:0.14         0:0.14       42
+0.000000 0.000000            2            2.0       0:0:0.14         0:0.14       42
+0.000000 0.000000            4            4.0       1:0:0.14         0:0.14       42
+0.000000 0.000000            8            8.0       3:0:0.14         0:0.14       42
+0.000000 0.000000           16           16.0       3:0:0.14         0:0.14       42
+0.000000 0.000000           32           32.0       3:0:0.14         0:0.14       42
+-0.25000 -0.50000           64           64.0       0:0:0.77         0:0.77       42
 
 finished run
 number of examples = 113
 weighted example sum = 113.000000
 weighted label sum = 0.000000
-average loss = -0.362832
+average loss = -0.362833
 total feature number = 4746

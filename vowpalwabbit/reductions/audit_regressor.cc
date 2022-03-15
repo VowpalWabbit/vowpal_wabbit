@@ -2,14 +2,25 @@
 // individual contributors. All rights reserved. Released under a BSD (revised)
 // license as described in the file LICENSE.
 
-#include "interactions.h"
-#include "vw.h"
-#include "shared_data.h"
-#include "gd.h"
+#include <string>
 
 #include "fmt/format.h"
+#include "gd.h"
+#include "interactions.h"
+#include "shared_data.h"
+#include "table_formatter.h"
+#include "vw.h"
 
 using namespace VW::config;
+
+static constexpr size_t num_cols = 3;
+static constexpr std::array<VW::column_definition, num_cols> AUDIT_REGRESSOR_COLUMNS = {
+    VW::column_definition(8, VW::align_type::left, VW::wrap_type::wrap_space),    // example counter
+    VW::column_definition(9, VW::align_type::right, VW::wrap_type::wrap_space),   // values audited
+    VW::column_definition(12, VW::align_type::right, VW::wrap_type::wrap_space),  // total progress
+};
+static const std::array<std::string, num_cols> AUDIT_REGRESSOR_HEADER = {
+    "example\ncounter", "values\naudited", "total\nprogress"};
 
 struct audit_regressor_data
 {
@@ -28,7 +39,7 @@ struct audit_regressor_data
   size_t values_audited = 0;
 };
 
-inline void audit_regressor_interaction(audit_regressor_data& dat, const audit_strings* f)
+inline void audit_regressor_interaction(audit_regressor_data& dat, const VW::audit_strings* f)
 {
   // same as audit_interaction in gd.cc
   if (f == nullptr)
@@ -40,14 +51,14 @@ inline void audit_regressor_interaction(audit_regressor_data& dat, const audit_s
   std::string ns_pre;
   if (!dat.ns_pre.empty()) ns_pre += '*';
 
-  if (!f->first.empty() && ((f->first) != " "))
+  if (!f->ns.empty() && ((f->ns) != " "))
   {
-    ns_pre.append(f->first);
+    ns_pre.append(f->ns);
     ns_pre += '^';
   }
-  if (!f->second.empty())
+  if (!f->name.empty())
   {
-    ns_pre.append(f->second);
+    ns_pre.append(f->name);
     dat.ns_pre.push_back(ns_pre);
   }
 }
@@ -75,7 +86,7 @@ inline void audit_regressor_feature(audit_regressor_data& dat, const float, cons
   weights[ft_idx] = 0.;  // mark value audited
 }
 
-void audit_regressor_lda(audit_regressor_data& rd, VW::LEARNER::single_learner& /* base */, example& ec)
+void audit_regressor_lda(audit_regressor_data& rd, VW::LEARNER::single_learner& /* base */, VW::example& ec)
 {
   VW::workspace& all = *rd.all;
 
@@ -86,7 +97,7 @@ void audit_regressor_lda(audit_regressor_data& rd, VW::LEARNER::single_learner& 
     features& fs = ec.feature_space[*i];
     for (size_t j = 0; j < fs.size(); ++j)
     {
-      tempstream << '\t' << fs.space_names[j].first << '^' << fs.space_names[j].second << ':'
+      tempstream << '\t' << fs.space_names[j].ns << '^' << fs.space_names[j].name << ':'
                  << ((fs.indices[j] >> weights.stride_shift()) & all.parse_mask);
       for (size_t k = 0; k < all.lda; k++)
       {
@@ -104,7 +115,7 @@ void audit_regressor_lda(audit_regressor_data& rd, VW::LEARNER::single_learner& 
 // This is a learner which does nothing with examples.
 // void learn(audit_regressor_data&, VW::LEARNER::base_learner&, example&) {}
 
-void audit_regressor(audit_regressor_data& rd, VW::LEARNER::single_learner& base, example& ec)
+void audit_regressor(audit_regressor_data& rd, VW::LEARNER::single_learner& base, VW::example& ec)
 {
   VW::workspace& all = *rd.all;
 
@@ -161,12 +172,12 @@ void audit_regressor(audit_regressor_data& rd, VW::LEARNER::single_learner& base
 
 inline void print_ex(VW::workspace& all, size_t ex_processed, size_t vals_found, size_t progress)
 {
-  *(all.trace_message) << std::left << std::setw(shared_data::col_example_counter) << ex_processed << " " << std::right
-                       << std::setw(9) << vals_found << " " << std::right << std::setw(12) << progress << '%'
-                       << std::endl;
+  VW::format_row({std::to_string(ex_processed), std::to_string(vals_found), std::to_string(progress) + "%"},
+      AUDIT_REGRESSOR_COLUMNS, 1, *(all.trace_message));
+  *(all.trace_message) << "\n";
 }
 
-void finish_example(VW::workspace& all, audit_regressor_data& rd, example& ec)
+void finish_example(VW::workspace& all, audit_regressor_data& rd, VW::example& ec)
 {
   bool printed = false;
   if (static_cast<float>(ec.example_counter + std::size_t{1}) >= all.sd->dump_interval && !all.quiet)
@@ -246,12 +257,8 @@ void init_driver(audit_regressor_data& dat)
   if (!dat.all->quiet)
   {
     *dat.all->trace_message << "Regressor contains " << dat.loaded_regressor_values << " values\n";
-    *dat.all->trace_message << std::left << std::setw(shared_data::col_example_counter) << "example"
-                            << " " << std::setw(shared_data::col_example_weight) << "values"
-                            << " " << std::setw(shared_data::col_current_label) << "total" << std::endl;
-    *dat.all->trace_message << std::left << std::setw(shared_data::col_example_counter) << "counter"
-                            << " " << std::setw(shared_data::col_example_weight) << "audited"
-                            << " " << std::setw(shared_data::col_current_label) << "progress" << std::endl;
+    VW::format_row(AUDIT_REGRESSOR_HEADER, AUDIT_REGRESSOR_COLUMNS, 1, *dat.all->trace_message);
+    (*dat.all->trace_message) << "\n";
   }
 }
 

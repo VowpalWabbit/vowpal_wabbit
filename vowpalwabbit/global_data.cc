@@ -2,22 +2,32 @@
 // individual contributors. All rights reserved. Released under a BSD (revised)
 // license as described in the file LICENSE.
 
-#include <cstdio>
-#include <cfloat>
+#include "global_data.h"
+
+#define RAPIDJSON_HAS_STDSTRING 1
+
+#include <rapidjson/stringbuffer.h>
+#include <rapidjson/writer.h>
+
+#include <cassert>
 #include <cerrno>
+#include <cfloat>
+#include <cmath>
+#include <cstdio>
 #include <iostream>
 #include <sstream>
-#include <cmath>
-#include <cassert>
 
-#include "global_data.h"
-#include "vw_exception.h"
+#include "array_parameters.h"
 #include "future_compat.h"
-#include "vw_allreduce.h"
 #include "named_labels.h"
-#include "shared_data.h"
+#include "rapidjson/document.h"
+#include "rapidjson/rapidjson.h"
 #include "reduction_stack.h"
+#include "shared_data.h"
+#include "vw_allreduce.h"
+#include "vw_exception.h"
 #include "vw_string_view.h"
+
 #ifdef BUILD_FLATBUFFERS
 #  include "parser/flatbuffer/parse_example_flatbuffer.h"
 #endif
@@ -67,7 +77,7 @@ void send_prediction(VW::io::writer* f, global_prediction p)
     THROWERRNO("send_prediction write(unknown socket fd)");
 }
 
-void binary_print_result_by_ref(VW::io::writer* f, float res, float weight, const v_array<char>&, VW::io::logger&)
+void binary_print_result_by_ref(VW::io::writer* f, float res, float weight, const VW::v_array<char>&, VW::io::logger&)
 {
   if (f != nullptr)
   {
@@ -90,7 +100,7 @@ void workspace::build_setupfn_name_dict(std::vector<std::tuple<std::string, redu
 }
 }  // namespace VW
 
-void print_result_by_ref(VW::io::writer* f, float res, float, const v_array<char>& tag, VW::io::logger& logger)
+void print_result_by_ref(VW::io::writer* f, float res, float, const VW::v_array<char>& tag, VW::io::logger& logger)
 {
   if (f != nullptr)
   {
@@ -106,7 +116,8 @@ void print_result_by_ref(VW::io::writer* f, float res, float, const v_array<char
   }
 }
 
-void print_raw_text_by_ref(VW::io::writer* f, const std::string& s, const v_array<char>& tag, VW::io::logger& logger)
+void print_raw_text_by_ref(
+    VW::io::writer* f, const std::string& s, const VW::v_array<char>& tag, VW::io::logger& logger)
 {
   if (f == nullptr) return;
 
@@ -196,6 +207,132 @@ void workspace::finish_example(multi_ex& ec)
   if (!l->is_multiline()) THROW("This reduction does not support multi-line example.");
 
   VW::LEARNER::as_multiline(l)->finish_example(*this, ec);
+}
+
+template <typename WeightsT>
+std::string dump_weights_to_json_weight_typed(const WeightsT& weights,
+    const std::map<uint64_t, VW::details::invert_hash_info>& index_name_map, const parameters& parameter_holder,
+    bool include_feature_names, bool include_online_state)
+{
+  rapidjson::Document doc;
+  auto& allocator = doc.GetAllocator();
+  // define the _document as an object rather than an array
+  doc.SetObject();
+
+  rapidjson::Value array(rapidjson::kArrayType);
+  doc.AddMember("weights", array, allocator);
+
+  for (auto v = weights.cbegin(); v != weights.cend(); ++v)
+  {
+    const auto idx = v.index() >> weights.stride_shift();
+    if (*v != 0.f)
+    {
+      rapidjson::Value parameter_object(rapidjson::kObjectType);
+      const auto map_it = index_name_map.find(idx);
+      if (include_feature_names && map_it != index_name_map.end())
+      {
+        const VW::details::invert_hash_info& info = map_it->second;
+        rapidjson::Value terms_array(rapidjson::kArrayType);
+        for (const auto& component : info.weight_components)
+        {
+          rapidjson::Value component_object(rapidjson::kObjectType);
+          rapidjson::Value name_value;
+          name_value.SetString(component.name, allocator);
+          component_object.AddMember("name", name_value, allocator);
+
+          rapidjson::Value namespace_value;
+          namespace_value.SetString(component.ns, allocator);
+          component_object.AddMember("namespace", namespace_value, allocator);
+
+          if (!component.str_value.empty())
+          {
+            rapidjson::Value string_value_value;
+            string_value_value.SetString(component.str_value, allocator);
+            component_object.AddMember("string_value", string_value_value, allocator);
+          }
+          else
+          {
+            component_object.AddMember("string_value", rapidjson::Value(rapidjson::Type::kNullType), allocator);
+          }
+          terms_array.PushBack(component_object, allocator);
+        }
+        parameter_object.AddMember("terms", terms_array, allocator);
+        rapidjson::Value offset_value(static_cast<uint64_t>(info.offset != 0 ? info.offset >> info.stride_shift : 0));
+        parameter_object.AddMember("offset", offset_value, allocator);
+      }
+      else if (include_feature_names)
+      {
+        // There is no reverse mapping. We leave nulls in place of terms and offset.
+        parameter_object.AddMember("terms", rapidjson::Value(rapidjson::Type::kNullType), allocator);
+        parameter_object.AddMember("offset", rapidjson::Value(rapidjson::Type::kNullType), allocator);
+      }
+
+      // If include_feature_names is false, we don't add terms or offset
+
+      rapidjson::Value index_value(static_cast<uint64_t>(idx));
+      parameter_object.AddMember("index", index_value, allocator);
+      rapidjson::Value value_value(static_cast<float>(*v));
+      parameter_object.AddMember("value", value_value, allocator);
+
+      const float* current_weight_state = &(*v);
+      if (include_online_state)
+      {
+        rapidjson::Value extra_state_value(rapidjson::kObjectType);
+        rapidjson::Value adaptive_value(rapidjson::kNumberType);
+        rapidjson::Value normalized_value(rapidjson::kNumberType);
+
+        if (parameter_holder.adaptive && !parameter_holder.normalized)
+        {
+          adaptive_value = current_weight_state[1];
+          normalized_value = rapidjson::kNullType;
+        }
+        if (!parameter_holder.adaptive && parameter_holder.normalized)
+        {
+          adaptive_value = rapidjson::kNullType;
+          normalized_value = current_weight_state[1];
+        }
+        if (parameter_holder.adaptive && parameter_holder.normalized)
+        {
+          adaptive_value = current_weight_state[1];
+          normalized_value = current_weight_state[2];
+        }
+
+        extra_state_value.AddMember("adaptive", adaptive_value, allocator);
+        extra_state_value.AddMember("normalized", normalized_value, allocator);
+        parameter_object.AddMember("gd_extra_online_state", extra_state_value, allocator);
+      }
+      doc["weights"].PushBack(parameter_object, allocator);
+    }
+  }
+
+  rapidjson::StringBuffer strbuf;
+  rapidjson::Writer<rapidjson::StringBuffer> writer(strbuf);
+  doc.Accept(writer);
+  return strbuf.GetString();
+}
+
+std::string workspace::dump_weights_to_json_experimental()
+{
+  assert(l != nullptr);
+  const auto* current = l;
+
+  // This could be extended to other base learners reasonably. Since this is new and experimental though keep the scope
+  // small.
+  while (current->get_learn_base() != nullptr) { current = current->get_learn_base(); }
+  if (current->get_name() != "gd")
+  {
+    THROW("dump_weights_to_json is currently only supported for GD base learners. The current base learner is "
+        << current->get_name());
+  }
+  if (dump_json_weights_include_feature_names && !hash_inv)
+  { THROW("hash_inv == true is required to dump weights to json including feature names"); }
+  if (dump_json_weights_include_extra_online_state && !save_resume)
+  { THROW("save_resume == true is required to dump weights to json including feature names"); }
+
+  return weights.sparse ? dump_weights_to_json_weight_typed(weights.sparse_weights, index_name_map, weights,
+                              dump_json_weights_include_feature_names, dump_json_weights_include_extra_online_state)
+                        : dump_weights_to_json_weight_typed(weights.dense_weights, index_name_map, weights,
+                              dump_json_weights_include_feature_names, dump_json_weights_include_extra_online_state);
 }
 }  // namespace VW
 

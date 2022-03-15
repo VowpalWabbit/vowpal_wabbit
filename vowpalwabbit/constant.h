@@ -2,8 +2,8 @@
 // individual contributors. All rights reserved. Released under a BSD (revised)
 // license as described in the file LICENSE.
 #pragma once
-#include <cstdint>
 #include <cstddef>
+#include <cstdint>
 
 constexpr int quadratic_constant = 27942141;
 constexpr int cubic_constant = 21791;
@@ -50,3 +50,9 @@ constexpr const char* CHOSEN_ACTION = "chosen_action";
 
 static constexpr uint32_t SHARED_EX_INDEX = 0;
 static constexpr uint32_t TOP_ACTION_INDEX = 0;
+
+namespace VW
+{
+static constexpr const int DEFAULT_FLOAT_PRECISION = 6;
+static constexpr const int DEFAULT_FLOAT_FORMATTING_DECIMAL_PRECISION = 2;
+}  // namespace VW

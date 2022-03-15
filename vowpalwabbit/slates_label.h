@@ -6,9 +6,9 @@
 
 #include <cstdint>
 
-#include "label_parser.h"
 #include "action_score.h"
 #include "io_buf.h"
+#include "label_parser.h"
 
 namespace VW
 {
@@ -60,7 +60,7 @@ void default_label(VW::slates::label& v);
 void parse_label(slates::label& ld, VW::label_parser_reuse_mem& reuse_mem, const std::vector<VW::string_view>& words,
     VW::io::logger& logger);
 
-extern label_parser slates_label_parser;
+extern VW::label_parser slates_label_parser;
 }  // namespace slates
 
 VW::string_view to_string(VW::slates::example_type);

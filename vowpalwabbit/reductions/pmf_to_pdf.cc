@@ -5,13 +5,13 @@
 #include "pmf_to_pdf.h"
 
 #include <cmath>
+
+#include "cb_label_parser.h"
 #include "explore.h"
 #include "guard.h"
-#include "vw.h"
-#include "cb_label_parser.h"
-#include "shared_data.h"
-
 #include "io/logger.h"
+#include "shared_data.h"
+#include "vw.h"
 
 using namespace LEARNER;
 using namespace VW;
@@ -181,7 +181,7 @@ void print_update(VW::workspace& all, bool is_test, const example& ec, std::stri
   {
     std::stringstream label_string;
     if (is_test)
-      label_string << " unknown";
+      label_string << "unknown";
     else
     {
       const auto& cost = ec.l.cb.costs[0];

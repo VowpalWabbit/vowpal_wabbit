@@ -1,12 +1,12 @@
 // Copyright (c) by respective owners including Yahoo!, Microsoft, and
 // individual contributors. All rights reserved. Released under a BSD (revised)
 // license as described in the file LICENSE.
-#include <sstream>
 #include <cfloat>
+#include <sstream>
 
-#include "io/logger.h"
 #include "config/options.h"
 #include "global_data.h"
+#include "io/logger.h"
 
 using namespace VW::config;
 
@@ -92,7 +92,7 @@ void multiply(features& f_dest, features& f_src2, interact& in)
 }
 
 template <bool is_learn, bool print_all>
-void predict_or_learn(interact& in, VW::LEARNER::single_learner& base, example& ec)
+void predict_or_learn(interact& in, VW::LEARNER::single_learner& base, VW::example& ec)
 {
   features& f1 = ec.feature_space[in.n1];
   features& f2 = ec.feature_space[in.n2];

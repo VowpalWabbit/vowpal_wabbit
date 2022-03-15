@@ -2,9 +2,9 @@
 // individual contributors. All rights reserved. Released under a BSD (revised)
 // license as described in the file LICENSE.
 
-#include <streambuf>
-#include <memory>
 #include <cassert>
+#include <memory>
+#include <streambuf>
 
 #include "io_adapter.h"
 

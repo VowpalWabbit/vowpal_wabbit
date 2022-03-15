@@ -36,7 +36,7 @@ inline float get_number(const rapidjson::Value& value)
 }
 
 template <bool audit>
-void handle_features_value(const char* key_namespace, const Value& value, example* current_example,
+void handle_features_value(const char* key_namespace, const Value& value, VW::example* current_example,
     std::vector<Namespace<audit>>& namespaces, hash_func_t hash_func, uint64_t hash_seed, uint64_t parse_mask,
     bool chain_hash)
 {
@@ -151,10 +151,10 @@ void handle_features_value(const char* key_namespace, const Value& value, exampl
 }
 
 template <bool audit>
-void parse_context(const Value& context, const label_parser& lbl_parser, hash_func_t hash_func, uint64_t hash_seed,
-    uint64_t parse_mask, bool chain_hash, v_array<example*>& examples, VW::example_factory_t example_factory,
-    void* ex_factory_context, std::vector<example*>& slot_examples,
-    std::unordered_map<uint64_t, example*>* dedup_examples = nullptr)
+void parse_context(const Value& context, const VW::label_parser& lbl_parser, hash_func_t hash_func, uint64_t hash_seed,
+    uint64_t parse_mask, bool chain_hash, VW::v_array<VW::example*>& examples, VW::example_factory_t example_factory,
+    void* ex_factory_context, std::vector<VW::example*>& slot_examples,
+    std::unordered_map<uint64_t, VW::example*>* dedup_examples = nullptr)
 {
   std::vector<Namespace<audit>> namespaces;
   handle_features_value(" ", context, examples[0], namespaces, hash_func, hash_seed, parse_mask, chain_hash);
@@ -221,40 +221,40 @@ void parse_context(const Value& context, const label_parser& lbl_parser, hash_fu
 }
 
 template <bool audit>
-void parse_slates_example_json(const label_parser& lbl_parser, hash_func_t hash_func, uint64_t hash_seed,
-    uint64_t parse_mask, bool chain_hash, v_array<example*>& examples, char* line, size_t /*length*/,
+void parse_slates_example_json(const VW::label_parser& lbl_parser, hash_func_t hash_func, uint64_t hash_seed,
+    uint64_t parse_mask, bool chain_hash, VW::v_array<VW::example*>& examples, char* line, size_t /*length*/,
     VW::example_factory_t example_factory, void* ex_factory_context,
-    std::unordered_map<uint64_t, example*>* dedup_examples = nullptr)
+    std::unordered_map<uint64_t, VW::example*>* dedup_examples = nullptr)
 {
   Document document;
   document.ParseInsitu(line);
 
   // Build shared example
   const Value& context = document.GetObject();
-  std::vector<example*> slot_examples;
+  std::vector<VW::example*> slot_examples;
   parse_context<audit>(context, lbl_parser, hash_func, hash_seed, parse_mask, chain_hash, examples, example_factory,
       ex_factory_context, slot_examples, dedup_examples);
 }
 
 template <bool audit>
-void parse_slates_example_json(const VW::workspace& all, v_array<example*>& examples, char* line, size_t /*length*/,
-    VW::example_factory_t example_factory, void* ex_factory_context,
-    std::unordered_map<uint64_t, example*>* dedup_examples = nullptr)
+void parse_slates_example_json(const VW::workspace& all, VW::v_array<VW::example*>& examples, char* line,
+    size_t /*length*/, VW::example_factory_t example_factory, void* ex_factory_context,
+    std::unordered_map<uint64_t, VW::example*>* dedup_examples = nullptr)
 {
   parse_slates_example_json<audit>(all.chain_hash_json, all.example_parser->lbl_parser, all.example_parser->hasher,
       all.hash_seed, all.parse_mask, examples, line, example_factory, ex_factory_context, dedup_examples);
 }
 
 template <bool audit>
-void parse_slates_example_dsjson(VW::workspace& all, v_array<example*>& examples, char* line, size_t /*length*/,
+void parse_slates_example_dsjson(VW::workspace& all, VW::v_array<VW::example*>& examples, char* line, size_t /*length*/,
     VW::example_factory_t example_factory, void* ex_factory_context, DecisionServiceInteraction* data,
-    std::unordered_map<uint64_t, example*>* dedup_examples = nullptr)
+    std::unordered_map<uint64_t, VW::example*>* dedup_examples = nullptr)
 {
   Document document;
   document.ParseInsitu(line);
   // Build shared example
   const Value& context = document["c"].GetObject();
-  std::vector<example*> slot_examples;
+  std::vector<VW::example*> slot_examples;
   parse_context<audit>(context, all.example_parser->lbl_parser, all.example_parser->hasher, all.hash_seed,
       all.parse_mask, all.chain_hash_json, examples, example_factory, ex_factory_context, slot_examples,
       dedup_examples);

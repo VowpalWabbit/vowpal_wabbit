@@ -3,9 +3,10 @@
 // license as described in the file LICENSE.
 
 #include "offset_tree.h"
+
+#include "action_score.h"
 #include "global_data.h"
 #include "learner.h"
-#include "action_score.h"
 
 using namespace VW::config;
 using namespace VW::LEARNER;

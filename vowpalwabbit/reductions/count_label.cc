@@ -2,14 +2,14 @@
 // individual contributors. All rights reserved. Released under a BSD (revised)
 // license as described in the file LICENSE.
 
+#include "best_constant.h"
 #include "example.h"
+#include "future_compat.h"
 #include "global_data.h"
 #include "io/logger.h"
 #include "learner.h"
 #include "memory.h"
 #include "vw.h"
-#include "future_compat.h"
-#include "best_constant.h"
 
 struct reduction_data
 {
@@ -20,9 +20,9 @@ struct reduction_data
 };
 
 template <bool is_learn>
-void count_label_single(reduction_data& data, VW::LEARNER::single_learner& base, example& ec)
+void count_label_single(reduction_data& data, VW::LEARNER::single_learner& base, VW::example& ec)
 {
-  count_label(data._sd, ec.l.simple.label);
+  VW::count_label(*data._sd, ec.l.simple.label);
 
   if VW_STD17_CONSTEXPR (is_learn) { base.learn(ec); }
   else
@@ -32,9 +32,9 @@ void count_label_single(reduction_data& data, VW::LEARNER::single_learner& base,
 }
 
 template <bool is_learn>
-void count_label_multi(reduction_data& data, VW::LEARNER::multi_learner& base, multi_ex& ec_seq)
+void count_label_multi(reduction_data& data, VW::LEARNER::multi_learner& base, VW::multi_ex& ec_seq)
 {
-  for (const auto* ex : ec_seq) { count_label(data._sd, ex->l.simple.label); }
+  for (const auto* ex : ec_seq) { VW::count_label(*data._sd, ex->l.simple.label); }
 
   if VW_STD17_CONSTEXPR (is_learn) { base.learn(ec_seq); }
   else
@@ -44,11 +44,11 @@ void count_label_multi(reduction_data& data, VW::LEARNER::multi_learner& base, m
 }
 
 // This reduction must delegate finish to the one it is above as this is just a utility counter.
-void finish_example_multi(VW::workspace& all, reduction_data& data, multi_ex& ec)
+void finish_example_multi(VW::workspace& all, reduction_data& data, VW::multi_ex& ec)
 {
   VW::LEARNER::as_multiline(data._base)->finish_example(all, ec);
 }
-void finish_example_single(VW::workspace& all, reduction_data& data, example& ec)
+void finish_example_single(VW::workspace& all, reduction_data& data, VW::example& ec)
 {
   VW::LEARNER::as_singleline(data._base)->finish_example(all, ec);
 }

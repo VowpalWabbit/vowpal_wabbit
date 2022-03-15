@@ -4,14 +4,15 @@
 
 #include "slates_label.h"
 
-#include "cache.h"
-#include "parser.h"
-#include "vw_string_view.h"
-#include "constant.h"
-#include "vw_math.h"
-#include "parse_primitives.h"
-#include "model_utils.h"
 #include <numeric>
+
+#include "cache.h"
+#include "constant.h"
+#include "model_utils.h"
+#include "parse_primitives.h"
+#include "parser.h"
+#include "vw_math.h"
+#include "vw_string_view.h"
 
 namespace VW
 {

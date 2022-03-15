@@ -9,9 +9,11 @@
 #  include <sys/mman.h>
 #endif
 
-#include "memory.h"
 #include <bitset>
+#include <cassert>
 #include <unordered_map>
+
+#include "memory.h"
 
 using weight = float;
 
@@ -108,8 +110,8 @@ public:
   iterator end() { return iterator(_begin + _weight_mask + 1, _begin, stride()); }
 
   // const iterator
-  const_iterator cbegin() { return const_iterator(_begin, _begin, stride()); }
-  const_iterator cend() { return const_iterator(_begin + _weight_mask + 1, _begin, stride()); }
+  const_iterator cbegin() const { return const_iterator(_begin, _begin, stride()); }
+  const_iterator cend() const { return const_iterator(_begin + _weight_mask + 1, _begin, stride()); }
 
   inline const weight& operator[](size_t i) const { return _begin[i & _weight_mask]; }
   inline weight& operator[](size_t i)

@@ -3,19 +3,20 @@
 // license as described in the file LICENSE.
 
 #include "slates.h"
-#include "example.h"
-#include "slates_label.h"
-#include "global_data.h"
 
-#include "vw.h"
 #include <algorithm>
-#include "reductions/cb/cb_algs.h"
-#include "reductions/cb/cb_adf.h"
-#include "conditional_contextual_bandit.h"
-#include "decision_scores.h"
+
 #include "action_score.h"
 #include "ccb_label.h"
+#include "conditional_contextual_bandit.h"
+#include "decision_scores.h"
+#include "example.h"
+#include "global_data.h"
+#include "reductions/cb/cb_adf.h"
+#include "reductions/cb/cb_algs.h"
 #include "shared_data.h"
+#include "slates_label.h"
+#include "vw.h"
 
 using namespace VW::config;
 

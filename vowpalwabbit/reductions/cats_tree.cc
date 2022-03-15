@@ -2,18 +2,19 @@
 // individual contributors. All rights reserved. Released under a BSD (revised)
 // license as described in the file LICENSE.
 
+#include "cats_tree.h"
+
 #include <algorithm>
 #include <cassert>
 #include <limits>
 
-#include "cats_tree.h"
-#include "learner.h"
 #include "debug_log.h"
 #include "explore_internal.h"
-#include "hash.h"
-#include "guard.h"
-#include "label_parser.h"
 #include "global_data.h"
+#include "guard.h"
+#include "hash.h"
+#include "label_parser.h"
+#include "learner.h"
 
 using namespace VW::config;
 using namespace VW::LEARNER;
@@ -172,7 +173,7 @@ uint32_t cats_tree::predict(LEARNER::single_learner& base, example& ec)
       ec.partial_prediction = 0.f;
       ec.pred.scalar = 0.f;
       base.predict(ec, cur_node.id);
-      VW_DBG(ec) << "tree_c: predict() after base.predict() " << scalar_pred_to_string(ec)
+      VW_DBG(ec) << "tree_c: predict() after base.predict() " << VW::debug::scalar_pred_to_string(ec)
                  << ", nodeid = " << cur_node.id << std::endl;
       if (ec.pred.scalar < 0) { cur_node = nodes[cur_node.left_id]; }
       else
@@ -277,7 +278,7 @@ void cats_tree::learn(LEARNER::single_learner& base, example& ec)
           base.learn(ec, v.parent_id);
           _binary_tree.nodes[v.parent_id].learn_count++;
           base.predict(ec, v.parent_id);
-          VW_DBG(ec) << "tree_c: learn() after binary predict:" << scalar_pred_to_string(ec)
+          VW_DBG(ec) << "tree_c: learn() after binary predict:" << VW::debug::scalar_pred_to_string(ec)
                      << ", local_action = " << (local_action) << std::endl;
           float trained_action = (ec.pred.scalar < 0) ? LEFT : RIGHT;
 
@@ -322,17 +323,20 @@ std::string cats_tree::tree_stats_to_string() { return _binary_tree.tree_stats_t
 
 void predict(cats_tree& ot, single_learner& base, example& ec)
 {
-  VW_DBG(ec) << "tree_c: before tree.predict() " << multiclass_pred_to_string(ec) << features_to_string(ec)
-             << std::endl;
+  VW_DBG(ec) << "tree_c: before tree.predict() " << VW::debug::multiclass_pred_to_string(ec)
+             << VW::debug::features_to_string(ec) << std::endl;
   ec.pred.multiclass = ot.predict(base, ec);
-  VW_DBG(ec) << "tree_c: after tree.predict() " << multiclass_pred_to_string(ec) << features_to_string(ec) << std::endl;
+  VW_DBG(ec) << "tree_c: after tree.predict() " << VW::debug::multiclass_pred_to_string(ec)
+             << VW::debug::features_to_string(ec) << std::endl;
 }
 
 void learn(cats_tree& tree, single_learner& base, example& ec)
 {
-  VW_DBG(ec) << "tree_c: before tree.learn() " << cb_label_to_string(ec) << features_to_string(ec) << std::endl;
+  VW_DBG(ec) << "tree_c: before tree.learn() " << VW::debug::cb_label_to_string(ec) << VW::debug::features_to_string(ec)
+             << std::endl;
   tree.learn(base, ec);
-  VW_DBG(ec) << "tree_c: after tree.learn() " << cb_label_to_string(ec) << features_to_string(ec) << std::endl;
+  VW_DBG(ec) << "tree_c: after tree.learn() " << VW::debug::cb_label_to_string(ec) << VW::debug::features_to_string(ec)
+             << std::endl;
 }
 
 base_learner* setup(setup_base_i& stack_builder)

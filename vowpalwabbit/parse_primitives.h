@@ -4,19 +4,17 @@
 #pragma once
 
 #include <cmath>
+#include <cstdint>
+#include <iostream>
 #include <string>
 #include <vector>
-#include <iostream>
-#include <cstdint>
-#include <cmath>
 
-#include "v_array.h"
-#include "hashstring.h"
-#include "vw_string_view.h"
 #include "fast_pow10.h"
 #include "future_compat.h"
-
+#include "hashstring.h"
 #include "io/logger.h"
+#include "v_array.h"
+#include "vw_string_view.h"
 
 // chop up the string into a v_array or any compatible container of VW::string_view.
 template <typename ContainerT>
@@ -149,4 +147,6 @@ VW::string_view trim_whitespace(VW::string_view str);
 
 std::vector<std::string> split_command_line(const std::string& cmd_line);
 std::vector<std::string> split_command_line(VW::string_view cmd_line);
+
+std::vector<VW::string_view> split_by_limit(const VW::string_view& s, size_t limit);
 }  // namespace VW

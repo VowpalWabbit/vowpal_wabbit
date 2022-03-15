@@ -43,16 +43,11 @@ jobs:
             !${{ env.VCPKG_ROOT }}/downloads
           key: |
             ${{ env.VCPKG_REF }}-vcpkg-cache-invalidate-0
-      # Downgrade CMake to mitigate crashing issue introduced in 3.21 that only affects vcpkg. See here: https://github.com/microsoft/vcpkg/issues/18718
-      - name: Setup cmake
-        uses: jwlawson/actions-setup-cmake@v1.9
-        with:
-          cmake-version: '3.20.x'
       - uses: ilammy/msvc-dev-cmd@v1
       - name: Bootstrap vcpkg
         run: ${{ env.VCPKG_ROOT }}/bootstrap-vcpkg.bat
       - name: Install vcpkg dependencies
-        run: ${{ env.VCPKG_ROOT }}/vcpkg.exe --triplet x64-windows install zlib boost-system boost-program-options boost-test boost-align boost-foreach boost-math flatbuffers
+        run: ${{ env.VCPKG_ROOT }}/vcpkg.exe --triplet x64-windows install zlib boost-test flatbuffers
       - name: Generate project files
         run: |
           cmake -S "${{ env.SOURCE_DIR }}" -B "${{ env.CMAKE_BUILD_DIR }}" -G "Visual Studio 16 2019" -A "x64" -DCMAKE_TOOLCHAIN_FILE="${{ env.VCPKG_ROOT }}/scripts/buildsystems/vcpkg.cmake" -DUSE_LATEST_STD=On -DBUILD_FLATBUFFERS=On -Dvw_BUILD_NET_FRAMEWORK=On

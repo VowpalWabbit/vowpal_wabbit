@@ -2,14 +2,14 @@
 // individual contributors. All rights reserved. Released under a BSD (revised)
 // license as described in the file LICENSE.
 
-#include "debug_log.h"
-#include "learner.h"
-#include "global_data.h"
 #include <cfloat>
 #include <cmath>
 #include <utility>
 
 #include "config/options.h"
+#include "debug_log.h"
+#include "global_data.h"
+#include "learner.h"
 
 #undef VW_DEBUG_LOG
 #define VW_DEBUG_LOG vw_dbg::binary
@@ -43,7 +43,8 @@ void predict_or_learn(binary_data& data, VW::LEARNER::single_learner& base, exam
   else
     ec.pred.scalar = -1;
 
-  VW_DBG(ec) << "binary: final-pred " << scalar_pred_to_string(ec) << features_to_string(ec) << endl;
+  VW_DBG(ec) << "binary: final-pred " << VW::debug::scalar_pred_to_string(ec) << VW::debug::features_to_string(ec)
+             << endl;
 
   if (ec.l.simple.label != FLT_MAX)
   {

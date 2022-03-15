@@ -5,15 +5,15 @@
 // This implements the allreduce function of MPI.
 #pragma once
 
-#include <string>
 #include <algorithm>
+#include <string>
 #include <utility>
 
 #ifdef _WIN32
 #  define NOMINMAX
+#  include <WS2tcpip.h>
 #  include <WinSock2.h>
 #  include <Windows.h>
-#  include <WS2tcpip.h>
 #  include <io.h>
 typedef unsigned int uint32_t;
 typedef unsigned short uint16_t;
@@ -28,23 +28,23 @@ class promise;
 
 }  // namespace std
 #else
-#  include <sys/socket.h>
-#  include <sys/socket.h>
+#  include <netdb.h>
 #  include <netinet/in.h>
 #  include <netinet/tcp.h>
-#  include <netdb.h>
-#  include <stdlib.h>
 #  include <stdio.h>
-#  include <unistd.h>
+#  include <stdlib.h>
 #  include <string.h>
+#  include <sys/socket.h>
+#  include <unistd.h>
 using socket_t = int;
 #  define CLOSESOCK close
 #  include <future>
 #endif
+#include <cassert>
+
+#include "io/logger.h"
 #include "vw_exception.h"
 #include "vwvis.h"
-#include "io/logger.h"
-#include <cassert>
 
 #ifdef _M_CEE
 #  pragma managed(push, off)

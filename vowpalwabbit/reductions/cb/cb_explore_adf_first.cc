@@ -4,21 +4,21 @@
 
 #include "cb_explore_adf_first.h"
 
-#include "numeric_casts.h"
-#include "cb_adf.h"
-#include "rand48.h"
-#include "reductions/bs.h"
-#include "gen_cs_example.h"
-#include "cb_explore.h"
-#include "explore.h"
-#include "cb_explore_adf_common.h"
-#include "vw_versions.h"
-#include "version.h"
-#include "label_parser.h"
-
-#include <vector>
 #include <algorithm>
 #include <cmath>
+#include <vector>
+
+#include "cb_adf.h"
+#include "cb_explore.h"
+#include "cb_explore_adf_common.h"
+#include "explore.h"
+#include "gen_cs_example.h"
+#include "label_parser.h"
+#include "numeric_casts.h"
+#include "rand48.h"
+#include "reductions/bs.h"
+#include "version.h"
+#include "vw_versions.h"
 
 using namespace VW::LEARNER;
 

@@ -26,6 +26,7 @@ add_executable(vw-unit-test.out
   interactions_test.cc
   io_adapter_test.cc
   json_parser_test.cc
+  loss_functions_test.cc
   main.cc
   math_test.cc
   minimal_custom_reduction.cc

@@ -2,13 +2,14 @@
 // individual contributors. All rights reserved. Released under a BSD (revised)
 // license as described in the file LICENSE.
 
-#include <iostream>
-#include <string>
-#include <stdexcept>
-#include <sstream>
-#include <cctype>
-
 #include "parse_primitives.h"
+
+#include <cctype>
+#include <iostream>
+#include <sstream>
+#include <stdexcept>
+#include <string>
+
 #include "hash.h"
 #include "vw_exception.h"
 #include "vw_string_view.h"
@@ -150,5 +151,19 @@ std::vector<std::string> split_command_line(VW::string_view cmd_line)
 std::vector<std::string> split_command_line(const std::string& cmd_line)
 {
   return split_impl(cmd_line.begin(), cmd_line.end());
+}
+
+std::vector<VW::string_view> split_by_limit(const VW::string_view& s, size_t limit)
+{
+  std::vector<VW::string_view> result;
+  size_t start = 0;
+  while (start < s.size())
+  {
+    size_t end = start + limit;
+    if (end > s.size()) { end = s.size(); }
+    result.push_back(s.substr(start, end - start));
+    start = end;
+  }
+  return result;
 }
 }  // namespace VW

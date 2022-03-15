@@ -4,8 +4,8 @@
 
 #pragma once
 
-#include <set>
 #include <queue>
+#include <set>
 #include <stack>
 
 // Mutex and CV cannot be used in managed C++, tell the compiler that this is unmanaged even if included in a managed
@@ -13,13 +13,13 @@
 #ifdef _M_CEE
 #  pragma managed(push, off)
 #  undef _M_CEE
-#  include <mutex>
 #  include <condition_variable>
+#  include <mutex>
 #  define _M_CEE 001
 #  pragma managed(pop)
 #else
-#  include <mutex>
 #  include <condition_variable>
+#  include <mutex>
 #endif
 
 namespace VW

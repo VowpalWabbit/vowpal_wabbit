@@ -4,8 +4,8 @@
 #pragma once
 
 #include <cstdint>
-#include <cstring>
 #include <cstdio>
+#include <cstring>
 
 #ifndef _WIN32
 #  define sprintf_s snprintf

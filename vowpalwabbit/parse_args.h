@@ -2,8 +2,8 @@
 // individual contributors. All rights reserved. Released under a BSD (revised)
 // license as described in the file LICENSE.
 #pragma once
-#include "global_data.h"
 #include "config/options.h"
+#include "global_data.h"
 #include "text_utils.h"
 #include "vw_string_view.h"
 
@@ -30,9 +30,6 @@ struct input_options
 #endif
 };
 
-// trace listener + context need to be passed at initialization to capture all messages.
-VW::workspace& parse_args(
-    VW::config::options_i& options, trace_message_t trace_listener = nullptr, void* trace_context = nullptr);
 void parse_modules(VW::config::options_i& options, VW::workspace& all);
 void parse_sources(VW::config::options_i& options, VW::workspace& all, io_buf& model, bool skip_model_load = false);
 

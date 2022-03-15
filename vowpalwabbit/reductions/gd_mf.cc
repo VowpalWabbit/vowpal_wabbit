@@ -1,9 +1,9 @@
 // Copyright (c) by respective owners including Yahoo!, Microsoft, and
 // individual contributors. All rights reserved. Released under a BSD (revised)
 // license as described in the file LICENSE.
-#include <fstream>
 #include <cfloat>
 #include <cstdio>
+#include <fstream>
 #ifdef _WIN32
 #  define NOMINMAX
 #  include <winsock2.h>
@@ -11,11 +11,11 @@
 #  include <netdb.h>
 #endif
 
+#include "array_parameters.h"
 #include "gd.h"
 #include "rand48.h"
-#include "vw_exception.h"
-#include "array_parameters.h"
 #include "shared_data.h"
+#include "vw_exception.h"
 
 using namespace VW::LEARNER;
 using namespace VW::config;
@@ -23,13 +23,13 @@ using namespace VW::config;
 struct gdmf
 {
   VW::workspace* all = nullptr;  // regressor, printing
-  v_array<float> scalars;
+  VW::v_array<float> scalars;
   uint32_t rank = 0;
   size_t no_win_counter = 0;
   uint64_t early_stop_thres = 0;
 };
 
-void mf_print_offset_features(gdmf& d, example& ec, size_t offset)
+void mf_print_offset_features(gdmf& d, VW::example& ec, size_t offset)
 {
   // TODO: Where should audit stuff output to?
   VW::workspace& all = *d.all;
@@ -41,7 +41,7 @@ void mf_print_offset_features(gdmf& d, example& ec, size_t offset)
     for (const auto& f : fs.audit_range())
     {
       std::cout << '\t';
-      if (audit) std::cout << f.audit()->first << '^' << f.audit()->second << ':';
+      if (audit) std::cout << VW::to_string(*f.audit()) << ':';
       std::cout << f.index() << "(" << ((f.index() + offset) & mask) << ")" << ':' << f.value();
       std::cout << ':' << (&weights[f.index()])[offset];
     }
@@ -59,13 +59,12 @@ void mf_print_offset_features(gdmf& d, example& ec, size_t offset)
         for (const auto& f1 : ec.feature_space[static_cast<unsigned char>(i[0])].audit_range())
           for (const auto& f2 : ec.feature_space[static_cast<unsigned char>(i[1])].audit_range())
           {
-            std::cout << '\t' << f1.audit()->first << k << '^' << f1.audit()->second << ':' << ((f1.index() + k) & mask)
-                      << "(" << ((f1.index() + offset + k) & mask) << ")" << ':' << f1.value();
+            std::cout << '\t' << VW::to_string(*f1.audit()) << ':' << ((f1.index() + k) & mask) << "("
+                      << ((f1.index() + offset + k) & mask) << ")" << ':' << f1.value();
             std::cout << ':' << (&weights[f1.index()])[offset + k];
 
-            std::cout << ':' << f2.audit()->first << k << '^' << f2.audit()->second << ':'
-                      << ((f2.index() + k + d.rank) & mask) << "(" << ((f2.index() + offset + k + d.rank) & mask) << ")"
-                      << ':' << f2.value();
+            std::cout << ':' << VW::to_string(*f2.audit()) << ':' << ((f2.index() + k + d.rank) & mask) << "("
+                      << ((f2.index() + offset + k + d.rank) & mask) << ")" << ':' << f2.value();
             std::cout << ':' << (&weights[f2.index()])[offset + k + d.rank];
 
             std::cout << ':' << (&weights[f1.index()])[offset + k] * (&weights[f2.index()])[offset + k + d.rank];
@@ -76,7 +75,7 @@ void mf_print_offset_features(gdmf& d, example& ec, size_t offset)
   std::cout << std::endl;
 }
 
-void mf_print_audit_features(gdmf& d, example& ec, size_t offset)
+void mf_print_audit_features(gdmf& d, VW::example& ec, size_t offset)
 {
   print_result_by_ref(d.all->stdout_adapter.get(), ec.pred.scalar, -1, ec.tag, d.all->logger);
   mf_print_offset_features(d, ec, offset);
@@ -91,7 +90,7 @@ struct pred_offset
 void offset_add(pred_offset& res, const float fx, float& fw) { res.p += (&fw)[res.offset] * fx; }
 
 template <class T>
-float mf_predict(gdmf& d, example& ec, T& weights)
+float mf_predict(gdmf& d, VW::example& ec, T& weights)
 {
   VW::workspace& all = *d.all;
   const auto& simple_red_features = ec._reduction_features.template get<simple_label_reduction_features>();
@@ -167,7 +166,7 @@ float mf_predict(gdmf& d, example& ec, T& weights)
   return ec.pred.scalar;
 }
 
-float mf_predict(gdmf& d, example& ec)
+float mf_predict(gdmf& d, VW::example& ec)
 {
   VW::workspace& all = *d.all;
   if (all.weights.sparse)
@@ -184,7 +183,7 @@ void sd_offset_update(T& weights, features& fs, uint64_t offset, float update, f
 }
 
 template <class T>
-void mf_train(gdmf& d, example& ec, T& weights)
+void mf_train(gdmf& d, VW::example& ec, T& weights)
 {
   VW::workspace& all = *d.all;
   label_data& ld = ec.l.simple;
@@ -227,7 +226,7 @@ void mf_train(gdmf& d, example& ec, T& weights)
   }
 }
 
-void mf_train(gdmf& d, example& ec)
+void mf_train(gdmf& d, VW::example& ec)
 {
   if (d.all->weights.sparse)
     mf_train(d, ec, d.all->weights.sparse_weights);
@@ -311,9 +310,9 @@ void end_pass(gdmf& d)
   }
 }
 
-void predict(gdmf& d, base_learner&, example& ec) { mf_predict(d, ec); }
+void predict(gdmf& d, base_learner&, VW::example& ec) { mf_predict(d, ec); }
 
-void learn(gdmf& d, base_learner&, example& ec)
+void learn(gdmf& d, base_learner&, VW::example& ec)
 {
   VW::workspace& all = *d.all;
 

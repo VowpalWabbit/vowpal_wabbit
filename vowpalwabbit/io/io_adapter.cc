@@ -7,26 +7,25 @@
 #ifdef _WIN32
 #  define NOMINMAX
 #  define ssize_t int64_t
-#  include <winsock2.h>
 #  include <io.h>
+#  include <winsock2.h>
 #else
 #  include <sys/socket.h>
 #  include <unistd.h>
 #endif
 
+#include <fcntl.h>
 #include <sys/stat.h>
 #include <sys/types.h>
-#include <fcntl.h>
-
-#include <cstdio>
-#include <cassert>
-#include <cstring>
-#include <iostream>
-#include <fstream>
-#include <vector>
-#include <algorithm>
-
 #include <zlib.h>
+
+#include <algorithm>
+#include <cassert>
+#include <cstdio>
+#include <cstring>
+#include <fstream>
+#include <iostream>
+#include <vector>
 #if (ZLIB_VERNUM < 0x1252)
 typedef void* gzFile;
 #else

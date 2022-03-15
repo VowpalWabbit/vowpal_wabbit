@@ -387,7 +387,7 @@ class Feature(object):
         else:
             self.as_type = as_type
 
-    def process(self, df: pd.DataFrame) -> pd.Series:
+    def process(self, df: pd.DataFrame, ensure_valid_values=True) -> pd.Series:
         """Returns the Feature string representation.
 
         Args:
@@ -401,6 +401,9 @@ class Feature(object):
             sep = ":" if self.as_type == "numerical" else "="
         else:
             sep = ":" if self.value.is_number(df) else "="
+
+        if ensure_valid_values:
+            value_col = value_col.apply(_Col.make_valid_name)
 
         out = value_col.where(value_col == "", self.name + sep + value_col)
         return out
