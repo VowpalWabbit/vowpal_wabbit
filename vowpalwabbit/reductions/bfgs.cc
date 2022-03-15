@@ -6,22 +6,25 @@
 The algorithm here is generally based on Nocedal 1980, Liu and Nocedal 1989.
 Implementation by Miro Dudik.
  */
+#include <float.h>
+
 #include <cmath>
 #include <fstream>
-#include <float.h>
 #ifndef _WIN32
 #  include <netdb.h>
 #endif
-#include <string.h>
-#include <stdio.h>
 #include <assert.h>
+#include <stdio.h>
+#include <string.h>
 #include <sys/timeb.h>
+
+#include <chrono>
+#include <exception>
+
 #include "accumulate.h"
 #include "gd.h"
-#include "vw_exception.h"
-#include <exception>
-#include <chrono>
 #include "shared_data.h"
+#include "vw_exception.h"
 
 using namespace VW::LEARNER;
 using namespace VW::config;
@@ -74,7 +77,7 @@ struct bfgs
   std::chrono::time_point<std::chrono::system_clock> t_end_global;
   double net_time = 0.0;
 
-  v_array<float> predictions;
+  VW::v_array<float> predictions;
   size_t example_number = 0;
   size_t current_pass = 0;
   size_t no_win_counter = 0;
@@ -145,9 +148,9 @@ void reset_state(VW::workspace& all, bfgs& b, bool zero)
 // w[2] = step direction
 // w[3] = preconditioner
 
-constexpr bool test_example(example& ec) noexcept { return ec.l.simple.label == FLT_MAX; }
+constexpr bool test_example(VW::example& ec) noexcept { return ec.l.simple.label == FLT_MAX; }
 
-float bfgs_predict(VW::workspace& all, example& ec)
+float bfgs_predict(VW::workspace& all, VW::example& ec)
 {
   ec.partial_prediction = GD::inline_predict(all, ec);
   return GD::finalize_prediction(all.sd, all.logger, ec.partial_prediction);
@@ -155,7 +158,7 @@ float bfgs_predict(VW::workspace& all, example& ec)
 
 inline void add_grad(float& d, float f, float& fw) { (&fw)[W_GT] += d * f; }
 
-float predict_and_gradient(VW::workspace& all, example& ec)
+float predict_and_gradient(VW::workspace& all, VW::example& ec)
 {
   float fp = bfgs_predict(all, ec);
   label_data& ld = ec.l.simple;
@@ -169,7 +172,7 @@ float predict_and_gradient(VW::workspace& all, example& ec)
 
 inline void add_precond(float& d, float f, float& fw) { (&fw)[W_COND] += d * f * f; }
 
-void update_preconditioner(VW::workspace& all, example& ec)
+void update_preconditioner(VW::workspace& all, VW::example& ec)
 {
   float curvature = all.loss->second_derivative(all.sd, ec.pred.scalar, ec.l.simple.label) * ec.weight;
   GD::foreach_feature<float, add_precond>(all, ec, curvature);
@@ -177,7 +180,7 @@ void update_preconditioner(VW::workspace& all, example& ec)
 
 inline void add_DIR(float& p, const float fx, float& fw) { p += (&fw)[W_DIR] * fx; }
 
-float dot_with_direction(VW::workspace& all, example& ec)
+float dot_with_direction(VW::workspace& all, VW::example& ec)
 {
   const auto& simple_red_features = ec._reduction_features.template get<simple_label_reduction_features>();
   float temp = simple_red_features.initial;
@@ -840,7 +843,7 @@ int process_pass(VW::workspace& all, bfgs& b)
   return status;
 }
 
-void process_example(VW::workspace& all, bfgs& b, example& ec)
+void process_example(VW::workspace& all, bfgs& b, VW::example& ec)
 {
   label_data& ld = ec.l.simple;
   if (b.first_pass) b.importance_weight_sum += ec.weight;
@@ -928,7 +931,7 @@ void end_pass(bfgs& b)
 
 // placeholder
 template <bool audit>
-void predict(bfgs& b, base_learner&, example& ec)
+void predict(bfgs& b, base_learner&, VW::example& ec)
 {
   VW::workspace* all = b.all;
   ec.pred.scalar = bfgs_predict(*all, ec);
@@ -936,7 +939,7 @@ void predict(bfgs& b, base_learner&, example& ec)
 }
 
 template <bool audit>
-void learn(bfgs& b, base_learner& base, example& ec)
+void learn(bfgs& b, base_learner& base, VW::example& ec)
 {
   VW::workspace* all = b.all;
 
@@ -1137,8 +1140,8 @@ base_learner* bfgs_setup(VW::setup_base_i& stack_builder)
   all.bfgs = true;
   all.weights.stride_shift(2);
 
-  void (*learn_ptr)(bfgs&, base_learner&, example&) = nullptr;
-  void (*predict_ptr)(bfgs&, base_learner&, example&) = nullptr;
+  void (*learn_ptr)(bfgs&, base_learner&, VW::example&) = nullptr;
+  void (*predict_ptr)(bfgs&, base_learner&, VW::example&) = nullptr;
   std::string learner_name;
   if (all.audit || all.hash_inv)
   {

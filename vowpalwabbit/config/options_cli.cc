@@ -4,6 +4,8 @@
 
 #include "config/options_cli.h"
 
+#include <fmt/format.h>
+
 #include <algorithm>
 #include <cassert>
 #include <cstdint>
@@ -18,11 +20,9 @@
 #include <utility>
 #include <vector>
 
-#include <fmt/format.h>
-
 #include "config/option.h"
-#include "vw_exception.h"
 #include "text_utils.h"
+#include "vw_exception.h"
 #include "vw_string_view.h"
 
 using namespace VW::config;

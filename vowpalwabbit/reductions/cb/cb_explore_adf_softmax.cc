@@ -3,15 +3,17 @@
 // license as described in the file LICENSE.
 
 #include "cb_explore_adf_softmax.h"
-#include "cb_adf.h"
-#include "rand48.h"
-#include "gen_cs_example.h"
-#include "cb_explore.h"
-#include "explore.h"
-#include "label_parser.h"
-#include <vector>
+
 #include <algorithm>
 #include <cmath>
+#include <vector>
+
+#include "cb_adf.h"
+#include "cb_explore.h"
+#include "explore.h"
+#include "gen_cs_example.h"
+#include "label_parser.h"
+#include "rand48.h"
 
 namespace VW
 {

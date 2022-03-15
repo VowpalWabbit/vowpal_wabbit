@@ -1,9 +1,10 @@
-#include "gtest/gtest.h"
-#include "gmock/gmock.h"
-#include "ut_util.h"
-#include <vector>
 #include <sstream>
+#include <vector>
+
 #include "explore.h"
+#include "gmock/gmock.h"
+#include "gtest/gtest.h"
+#include "ut_util.h"
 #include "vw_slim_predict.h"
 using namespace ::testing;
 

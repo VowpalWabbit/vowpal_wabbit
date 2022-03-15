@@ -7,8 +7,7 @@ REPO_DIR=$SCRIPT_DIR/../../
 cd $REPO_DIR
 
 cd test
-python3 run_tests.py -f -j $(nproc) --include_flatbuffers
+python3 run_tests.py -f --epsilon 1e-3 --include_flatbuffers
 
 cd ../build
 ctest --verbose --output-on-failure
-

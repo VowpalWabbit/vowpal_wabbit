@@ -14,7 +14,7 @@ struct task_data
 {
   size_t max_label;
   size_t num_level;
-  v_array<uint32_t> y_allowed;
+  VW::v_array<uint32_t> y_allowed;
 };
 
 void initialize(Search::search& sch, size_t& num_actions, VW::config::options_i& /*vm*/)
@@ -29,7 +29,7 @@ void initialize(Search::search& sch, size_t& num_actions, VW::config::options_i&
   sch.set_task_data(my_task_data);
 }
 
-void run(Search::search& sch, multi_ex& ec)
+void run(Search::search& sch, VW::multi_ex& ec)
 {
   task_data* my_task_data = sch.get_task_data<task_data>();
   size_t gold_label = ec[0]->l.multi.label;

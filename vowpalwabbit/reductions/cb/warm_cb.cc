@@ -3,18 +3,17 @@
 // license as described in the file LICENSE.
 
 #include <cfloat>
-#include "cb_algs.h"
-#include "vw.h"
-#include "hash.h"
-#include "explore.h"
-#include "vw_exception.h"
-#include "scope_exit.h"
-#include "cb_label_parser.h"
-
-#include "io/logger.h"
-
-#include <vector>
 #include <memory>
+#include <vector>
+
+#include "cb_algs.h"
+#include "cb_label_parser.h"
+#include "explore.h"
+#include "hash.h"
+#include "io/logger.h"
+#include "scope_exit.h"
+#include "vw.h"
+#include "vw_exception.h"
 
 using namespace VW::LEARNER;
 using namespace exploration;
@@ -46,7 +45,7 @@ struct warm_cb
   size_t example_counter = 0;
   VW::workspace* all = nullptr;
   std::shared_ptr<VW::rand_state> _random_state;
-  multi_ex ecs;
+  VW::multi_ex ecs;
   float loss0 = 0.f;
   float loss1 = 0.f;
 
@@ -74,7 +73,7 @@ struct warm_cb
   CB::cb_class cl_adf;
   uint32_t ws_train_size = 0;
   uint32_t ws_vali_size = 0;
-  std::vector<example*> ws_vali;
+  std::vector<VW::example*> ws_vali;
   float cumu_var = 0.f;
   uint32_t ws_iter = 0;
   uint32_t inter_iter = 0;
@@ -142,7 +141,7 @@ void finish(warm_cb& data)
   }
 }
 
-void copy_example_to_adf(warm_cb& data, example& ec)
+void copy_example_to_adf(warm_cb& data, VW::example& ec)
 {
   const uint64_t ss = data.all->weights.stride_shift();
   const uint64_t mask = data.all->weights.mask();
@@ -274,14 +273,14 @@ float compute_weight_multiplier(warm_cb& data, size_t i, int ec_type)
   return weight_multiplier;
 }
 
-uint32_t predict_sublearner_adf(warm_cb& data, multi_learner& base, example& ec, uint32_t i)
+uint32_t predict_sublearner_adf(warm_cb& data, multi_learner& base, VW::example& ec, uint32_t i)
 {
   copy_example_to_adf(data, ec);
   base.predict(data.ecs, i);
   return data.ecs[0]->pred.a_s[0].action + 1;
 }
 
-void accumu_costs_iv_adf(warm_cb& data, multi_learner& base, example& ec)
+void accumu_costs_iv_adf(warm_cb& data, multi_learner& base, VW::example& ec)
 {
   CB::cb_class& cl = data.cl_adf;
   // IPS for approximating the cumulative costs for all lambdas
@@ -294,22 +293,22 @@ void accumu_costs_iv_adf(warm_cb& data, multi_learner& base, example& ec)
 }
 
 template <bool use_cs>
-void add_to_vali(warm_cb& data, example& ec)
+void add_to_vali(warm_cb& data, VW::example& ec)
 {
   // TODO: set the first parameter properly
-  example* ec_copy = VW::alloc_examples(1);
+  VW::example* ec_copy = VW::alloc_examples(1);
   VW::copy_example_data_with_label(ec_copy, &ec);
   data.ws_vali.push_back(ec_copy);
 }
 
-uint32_t predict_sup_adf(warm_cb& data, multi_learner& base, example& ec)
+uint32_t predict_sup_adf(warm_cb& data, multi_learner& base, VW::example& ec)
 {
   uint32_t argmin = find_min(data.cumulative_costs);
   return predict_sublearner_adf(data, base, ec, argmin);
 }
 
 template <bool use_cs>
-void learn_sup_adf(warm_cb& data, example& ec, int ec_type)
+void learn_sup_adf(warm_cb& data, VW::example& ec, int ec_type)
 {
   copy_example_to_adf(data, ec);
   // generate cost-sensitive label (for cost-sensitive learner's temporary use)
@@ -346,7 +345,7 @@ void learn_sup_adf(warm_cb& data, example& ec, int ec_type)
 }
 
 template <bool use_cs>
-void predict_or_learn_sup_adf(warm_cb& data, multi_learner& base, example& ec, int ec_type)
+void predict_or_learn_sup_adf(warm_cb& data, multi_learner& base, VW::example& ec, int ec_type)
 {
   uint32_t action = predict_sup_adf(data, base, ec);
 
@@ -355,7 +354,7 @@ void predict_or_learn_sup_adf(warm_cb& data, multi_learner& base, example& ec, i
   ec.pred.multiclass = action;
 }
 
-uint32_t predict_bandit_adf(warm_cb& data, multi_learner& base, example& ec)
+uint32_t predict_bandit_adf(warm_cb& data, multi_learner& base, VW::example& ec)
 {
   uint32_t argmin = find_min(data.cumulative_costs);
 
@@ -374,7 +373,7 @@ uint32_t predict_bandit_adf(warm_cb& data, multi_learner& base, example& ec)
   return chosen_action;
 }
 
-void learn_bandit_adf(warm_cb& data, multi_learner& base, example& ec, int ec_type)
+void learn_bandit_adf(warm_cb& data, multi_learner& base, VW::example& ec, int ec_type)
 {
   copy_example_to_adf(data, ec);
 
@@ -400,7 +399,7 @@ void learn_bandit_adf(warm_cb& data, multi_learner& base, example& ec, int ec_ty
 }
 
 template <bool use_cs>
-void predict_or_learn_bandit_adf(warm_cb& data, multi_learner& base, example& ec, int ec_type)
+void predict_or_learn_bandit_adf(warm_cb& data, multi_learner& base, VW::example& ec, int ec_type)
 {
   uint32_t chosen_action = predict_bandit_adf(data, base, ec);
 
@@ -423,7 +422,7 @@ void predict_or_learn_bandit_adf(warm_cb& data, multi_learner& base, example& ec
   ec.pred.multiclass = cl.action;
 }
 
-void accumu_var_adf(warm_cb& data, multi_learner& base, example& ec)
+void accumu_var_adf(warm_cb& data, multi_learner& base, VW::example& ec)
 {
   size_t pred_best_approx = predict_sup_adf(data, base, ec);
   float temp_var = 0.f;
@@ -435,7 +434,7 @@ void accumu_var_adf(warm_cb& data, multi_learner& base, example& ec)
 }
 
 template <bool use_cs>
-void predict_and_learn_adf(warm_cb& data, multi_learner& base, example& ec)
+void predict_and_learn_adf(warm_cb& data, multi_learner& base, VW::example& ec)
 {
   // Corrupt labels (only corrupting multiclass labels as of now)
   if (use_cs)
@@ -605,10 +604,10 @@ base_learner* warm_cb_setup(VW::setup_base_i& stack_builder)
     data->epsilon = 0.05f;
   }
 
-  void (*learn_pred_ptr)(warm_cb&, multi_learner&, example&);
+  void (*learn_pred_ptr)(warm_cb&, multi_learner&, VW::example&);
   size_t ws = data->choices_lambda;
   std::string name_addition;
-  void (*finish_ptr)(VW::workspace&, warm_cb&, example&);
+  void (*finish_ptr)(VW::workspace&, warm_cb&, VW::example&);
   VW::label_type_t label_type;
 
   if (use_cs)

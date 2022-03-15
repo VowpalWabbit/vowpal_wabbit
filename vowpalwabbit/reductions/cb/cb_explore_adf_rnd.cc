@@ -3,20 +3,21 @@
 // license as described in the file LICENSE.
 
 #include "cb_explore_adf_rnd.h"
-#include "reductions/bs.h"
+
+#include <algorithm>
+#include <cfloat>
+#include <cmath>
+
 #include "cb_adf.h"
 #include "cb_explore.h"
 #include "debug_print.h"
 #include "explore.h"
 #include "gd_predict.h"
 #include "gen_cs_example.h"
-#include "rand48.h"
-#include "scope_exit.h"
-#include <algorithm>
-#include <cmath>
-#include <cfloat>
-#include "scope_exit.h"
 #include "label_parser.h"
+#include "rand48.h"
+#include "reductions/bs.h"
+#include "scope_exit.h"
 
 // Random Network Distillation style exploration.  Basically predicts
 // something whose true expectation is zero and uses the MSE(prediction

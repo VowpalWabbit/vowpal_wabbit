@@ -1,8 +1,9 @@
 // Copyright (c) by respective owners including Yahoo!, Microsoft, and
 // individual contributors. All rights reserved. Released under a BSD (revised)
 // license as described in the file LICENSE.
-#include "gd.h"
 #include <cfloat>
+
+#include "gd.h"
 
 using namespace VW::config;
 
@@ -20,7 +21,7 @@ void print_feature(VW::workspace& all, float value, uint64_t index)
   (*all.trace_message) << " ";
 }
 
-void learn(print& p, VW::LEARNER::base_learner&, example& ec)
+void learn(print& p, VW::LEARNER::base_learner&, VW::example& ec)
 {
   assert(p.all != nullptr);
   auto& all = *p.all;

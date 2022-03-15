@@ -2,16 +2,16 @@
 // individual contributors. All rights reserved. Released under a BSD (revised)
 // license as described in the file LICENSE.
 
+#include "cb_algs.h"
+
 #include <cfloat>
 
-#include "vw.h"
-#include "cb_algs.h"
-#include "vw_exception.h"
-#include "gen_cs_example.h"
 #include "cb_label_parser.h"
-#include "shared_data.h"
-
+#include "gen_cs_example.h"
 #include "io/logger.h"
+#include "shared_data.h"
+#include "vw.h"
+#include "vw_exception.h"
 
 using namespace VW::LEARNER;
 using namespace VW::config;
@@ -44,7 +44,7 @@ bool know_all_cost_example(CB::label& ld)
 }
 
 template <bool is_learn>
-void predict_or_learn(cb& data, single_learner& base, example& ec)
+void predict_or_learn(cb& data, single_learner& base, VW::example& ec)
 {
   cb_to_cs& c = data.cbcs;
   auto optional_cost = get_observed_cost_cb(ec.l.cb);
@@ -74,9 +74,9 @@ void predict_or_learn(cb& data, single_learner& base, example& ec)
   }
 }
 
-void predict_eval(cb&, single_learner&, example&) { THROW("can not use a test label for evaluation"); }
+void predict_eval(cb&, single_learner&, VW::example&) { THROW("can not use a test label for evaluation"); }
 
-void learn_eval(cb& data, single_learner&, example& ec)
+void learn_eval(cb& data, single_learner&, VW::example& ec)
 {
   cb_to_cs& c = data.cbcs;
   auto optional_cost = get_observed_cost_cb(ec.l.cb_eval.event);
@@ -94,7 +94,7 @@ void learn_eval(cb& data, single_learner&, example& ec)
   ec.pred.multiclass = ec.l.cb_eval.action;
 }
 
-void output_example(VW::workspace& all, cb& data, const example& ec, const CB::label& ld)
+void output_example(VW::workspace& all, cb& data, const VW::example& ec, const CB::label& ld)
 {
   float loss = 0.;
 
@@ -105,7 +105,7 @@ void output_example(VW::workspace& all, cb& data, const example& ec, const CB::l
 }
 
 void generic_output_example(
-    VW::workspace& all, float loss, const example& ec, const CB::label& ld, const CB::cb_class* known_cost)
+    VW::workspace& all, float loss, const VW::example& ec, const CB::label& ld, const CB::cb_class* known_cost)
 {
   all.sd->update(ec.test_only, !CB::is_test_label(ld), loss, 1.f, ec.get_num_features());
 
@@ -132,13 +132,13 @@ void generic_output_example(
   }
 }
 
-void finish_example(VW::workspace& all, cb& c, example& ec)
+void finish_example(VW::workspace& all, cb& c, VW::example& ec)
 {
   output_example(all, c, ec, ec.l.cb);
   VW::finish_example(all, ec);
 }
 
-void eval_finish_example(VW::workspace& all, cb& c, example& ec)
+void eval_finish_example(VW::workspace& all, cb& c, VW::example& ec)
 {
   output_example(all, c, ec, ec.l.cb_eval.event);
   VW::finish_example(all, ec);

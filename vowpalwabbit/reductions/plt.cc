@@ -1,19 +1,19 @@
 // Copyright (c) by respective owners including Yahoo!, Microsoft, and
 // individual contributors. All rights reserved. Released under a BSD (revised)
 // license as described in the file LICENSE.
+#include <algorithm>
 #include <cfloat>
 #include <cmath>
 #include <cstdio>
+#include <queue>
 #include <sstream>
-#include <vector>
 #include <unordered_map>
 #include <unordered_set>
-#include <algorithm>
-#include <queue>
-#include "vw.h"
+#include <vector>
 
 #include "io/logger.h"
 #include "shared_data.h"
+#include "vw.h"
 
 using namespace VW::LEARNER;
 using namespace VW::config;
@@ -39,19 +39,19 @@ struct plt
   uint32_t kary = 0;  // kary tree
 
   // for training
-  v_array<float> nodes_time;                    // in case of sgd, this stores individual t for each node
+  VW::v_array<float> nodes_time;                // in case of sgd, this stores individual t for each node
   std::unordered_set<uint32_t> positive_nodes;  // container for positive nodes
   std::unordered_set<uint32_t> negative_nodes;  // container for negative nodes
 
   // for prediction
   float threshold = 0.f;
   uint32_t top_k = 0;
-  std::vector<polyprediction> node_preds;  // for storing results of base.multipredict
-  std::vector<node> node_queue;            // container for queue used for both types of predictions
+  std::vector<VW::polyprediction> node_preds;  // for storing results of base.multipredict
+  std::vector<node> node_queue;                // container for queue used for both types of predictions
 
   // for measuring predictive performance
   std::unordered_set<uint32_t> true_labels;
-  v_array<uint32_t> tp_at;  // true positives at (for precision and recall at)
+  VW::v_array<uint32_t> tp_at;  // true positives at (for precision and recall at)
   uint32_t tp = 0;
   uint32_t fp = 0;
   uint32_t fn = 0;
@@ -68,7 +68,7 @@ struct plt
   }
 };
 
-inline void learn_node(plt& p, uint32_t n, single_learner& base, example& ec)
+inline void learn_node(plt& p, uint32_t n, single_learner& base, VW::example& ec)
 {
   if (!p.all->weights.adaptive)
   {
@@ -78,7 +78,7 @@ inline void learn_node(plt& p, uint32_t n, single_learner& base, example& ec)
   base.learn(ec, n);
 }
 
-void learn(plt& p, single_learner& base, example& ec)
+void learn(plt& p, single_learner& base, VW::example& ec)
 {
   MULTILABEL::labels multilabels = std::move(ec.l.multilabels);
   MULTILABEL::labels preds = std::move(ec.pred.multilabels);
@@ -139,7 +139,7 @@ void learn(plt& p, single_learner& base, example& ec)
   ec.l.multilabels = std::move(multilabels);
 }
 
-inline float predict_node(uint32_t n, single_learner& base, example& ec)
+inline float predict_node(uint32_t n, single_learner& base, VW::example& ec)
 {
   ec.l.simple = {FLT_MAX};
   ec._reduction_features.template get<simple_label_reduction_features>().reset_to_default();
@@ -148,7 +148,7 @@ inline float predict_node(uint32_t n, single_learner& base, example& ec)
 }
 
 template <bool threshold>
-void predict(plt& p, single_learner& base, example& ec)
+void predict(plt& p, single_learner& base, VW::example& ec)
 {
   MULTILABEL::labels multilabels = std::move(ec.l.multilabels);
   MULTILABEL::labels preds = std::move(ec.pred.multilabels);
@@ -265,7 +265,7 @@ void predict(plt& p, single_learner& base, example& ec)
   ec.l.multilabels = std::move(multilabels);
 }
 
-void finish_example(VW::workspace& all, plt& /*p*/, example& ec)
+void finish_example(VW::workspace& all, plt& /*p*/, VW::example& ec)
 {
   MULTILABEL::output_example(all, ec);
   VW::finish_example(all, ec);
@@ -361,7 +361,7 @@ base_learner* plt_setup(VW::setup_base_i& stack_builder)
     }
   }
 
-  // resize v_arrays
+  // resize VW::v_arrays
   tree->nodes_time.resize_but_with_stl_behavior(tree->t);
   std::fill(tree->nodes_time.begin(), tree->nodes_time.end(), all.initial_t);
   tree->node_preds.resize(tree->kary);
@@ -369,7 +369,7 @@ base_learner* plt_setup(VW::setup_base_i& stack_builder)
 
   size_t ws = tree->t;
   std::string name_addition;
-  void (*pred_ptr)(plt&, single_learner&, example&);
+  void (*pred_ptr)(plt&, single_learner&, VW::example&);
 
   if (tree->top_k > 0)
   {

@@ -1,17 +1,17 @@
 // Copyright (c) by respective owners including Yahoo!, Microsoft, and
 // individual contributors. All rights reserved. Released under a BSD (revised)
 // license as described in the file LICENSE.
-#include <math.h>
-#include "correctedMath.h"
-#include <iostream>
-#include <stdlib.h>
 #include <float.h>
+#include <math.h>
+#include <stdlib.h>
 
+#include <iostream>
+
+#include "correctedMath.h"
 #include "global_data.h"
-#include "vw_exception.h"
-#include "shared_data.h"
-
 #include "io/logger.h"
+#include "shared_data.h"
+#include "vw_exception.h"
 
 class squaredloss : public loss_function
 {

@@ -1,0 +1,25 @@
+creating quadratic features for pairs: ::
+using no cache
+Reading datafile = train-sets/dsjson_cb.json
+num sources = 1
+Num weight bits = 18
+learning rate = 0.5
+initial_t = 0
+power_t = 0.5
+Enabled reductions: gd, generate_interactions, scorer-identity, csoaa_ldf-rank, cb_adf, cb_explore_adf_greedy, shared_feature_merger
+Input label = cb
+Output pred = action_probs
+average  since         example        example        current        current  current
+loss     last          counter         weight          label        predict features
+0.000000 0.000000            1            1.0      3:-0:0.05         0:0.25      220
+-0.14705 -0.29411            2            2.0      0:-1:0.85         0:0.25      220
+-0.35661 -0.56617            4            4.0      0:-1:0.85         0:0.96      220
+-0.18014 -0.00367            8            8.0      2:-1:0.85         0:0.96      220
+-0.16360 -0.14705           16           16.0      0:-0:0.85         0:0.96      220
+
+finished run
+number of examples = 23
+weighted example sum = 23.000000
+weighted label sum = 0.000000
+average loss = -0.165601
+total feature number = 5060

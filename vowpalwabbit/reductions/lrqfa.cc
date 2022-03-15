@@ -2,10 +2,11 @@
 // individual contributors. All rights reserved. Released under a BSD (revised)
 // license as described in the file LICENSE.
 
-#include <string>
 #include <cfloat>
-#include "rand48.h"
+#include <string>
+
 #include "parse_args.h"  // for spoof_hex_encoded_namespaces
+#include "rand48.h"
 #include "text_utils.h"
 
 using namespace VW::LEARNER;
@@ -33,15 +34,15 @@ inline float cheesyrand(uint64_t x)
   return merand48(seed);
 }
 
-constexpr inline bool example_is_test(example& ec) { return ec.l.simple.label == FLT_MAX; }
+constexpr inline bool example_is_test(VW::example& ec) { return ec.l.simple.label == FLT_MAX; }
 
 template <bool is_learn>
-void predict_or_learn(LRQFAstate& lrq, single_learner& base, example& ec)
+void predict_or_learn(LRQFAstate& lrq, single_learner& base, VW::example& ec)
 {
   VW::workspace& all = *lrq.all;
 
   memset(lrq.orig_size, 0, sizeof(lrq.orig_size));
-  for (namespace_index i : ec.indices) lrq.orig_size[i] = ec.feature_space[i].size();
+  for (VW::namespace_index i : ec.indices) lrq.orig_size[i] = ec.feature_space[i].size();
 
   size_t which = ec.example_counter;
   float first_prediction = 0;
@@ -94,15 +95,8 @@ void predict_or_learn(LRQFAstate& lrq, single_learner& base, example& ec)
               if (all.audit || all.hash_inv)
               {
                 std::stringstream new_feature_buffer;
-                new_feature_buffer << right << '^' << rfs.space_names[rfn].second << '^' << n;
-#ifdef _WIN32
-                char* new_space = _strdup("lrqfa");
-                char* new_feature = _strdup(new_feature_buffer.str().c_str());
-#else
-                char* new_space = strdup("lrqfa");
-                char* new_feature = strdup(new_feature_buffer.str().c_str());
-#endif
-                rfs.space_names.push_back(audit_strings(new_space, new_feature));
+                new_feature_buffer << right << '^' << rfs.space_names[rfn].name << '^' << n;
+                rfs.space_names.emplace_back("lrqfa", new_feature_buffer.str());
               }
             }
           }
@@ -129,7 +123,7 @@ void predict_or_learn(LRQFAstate& lrq, single_learner& base, example& ec)
 
     for (char i : lrq.field_name)
     {
-      namespace_index right = i;
+      VW::namespace_index right = i;
       features& rfs = ec.feature_space[right];
       rfs.values.resize_but_with_stl_behavior(lrq.orig_size[right]);
       if (all.audit || all.hash_inv) { rfs.space_names.resize(lrq.orig_size[right]); }

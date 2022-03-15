@@ -9,5 +9,5 @@ namespace CSOAA
 VW::LEARNER::base_learner* csoaa_setup(VW::setup_base_i& stack_builder);
 
 struct csoaa;
-void finish_example(VW::workspace& all, csoaa&, example& ec);
+void finish_example(VW::workspace& all, csoaa&, VW::example& ec);
 }  // namespace CSOAA

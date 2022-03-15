@@ -4,29 +4,29 @@
 
 #pragma once
 
-#include "v_array.h"
-#include "no_label.h"
-#include "simple_label.h"
-#include "multiclass.h"
-#include "multilabel.h"
-#include "cost_sensitive.h"
-#include "cb.h"
-#include "constant.h"
-#include "feature_group.h"
+#include <cstdint>
+#include <iostream>
+#include <vector>
+
 #include "action_score.h"
-#include "example_predict.h"
-#include "continuous_actions_reduction_features.h"
-#include "ccb_label.h"
-#include "slates_label.h"
-#include "decision_scores.h"
-#include "cb_continuous_label.h"
-#include "prob_dist_cont.h"
 #include "active_multiclass_prediction.h"
 #include "cache.h"
-
-#include <cstdint>
-#include <vector>
-#include <iostream>
+#include "cb.h"
+#include "cb_continuous_label.h"
+#include "ccb_label.h"
+#include "constant.h"
+#include "continuous_actions_reduction_features.h"
+#include "cost_sensitive.h"
+#include "decision_scores.h"
+#include "example_predict.h"
+#include "feature_group.h"
+#include "multiclass.h"
+#include "multilabel.h"
+#include "no_label.h"
+#include "prob_dist_cont.h"
+#include "simple_label.h"
+#include "slates_label.h"
+#include "v_array.h"
 
 namespace VW
 {
@@ -36,7 +36,6 @@ namespace VW
 {
 void copy_example_data(example* dst, const example* src);
 void setup_example(VW::workspace& all, example* ae);
-}  // namespace VW
 
 struct polylabel
 {
@@ -64,7 +63,7 @@ struct polyprediction
   polyprediction& operator=(const polyprediction&) = delete;
 
   float scalar = 0.f;
-  v_array<float> scalars;           // a sequence of scalar predictions
+  VW::v_array<float> scalars;       // a sequence of scalar predictions
   ACTION_SCORE::action_scores a_s;  // a sequence of classes with scores.  Also used for probabilities.
   VW::decision_scores_t decision_scores;
   uint32_t multiclass = 0;
@@ -76,7 +75,7 @@ struct polyprediction
   char nopred = static_cast<char>(0);
 };
 
-float calculate_total_sum_features_squared(bool permutations, example& ec);
+std::string to_string(const v_array<float>& scalars, int decimal_precision = DEFAULT_FLOAT_PRECISION);
 
 struct example : public example_predict  // core example datatype.
 {
@@ -94,8 +93,8 @@ struct example : public example_predict  // core example datatype.
   // output prediction
   polyprediction pred;
 
-  float weight = 1.f;  // a relative importance weight for the example, default = 1
-  v_array<char> tag;   // An identifier for the example.
+  float weight = 1.f;     // a relative importance weight for the example, default = 1
+  VW::v_array<char> tag;  // An identifier for the example.
   size_t example_counter = 0;
 #ifdef PRIVACY_ACTIVATION
   uint64_t tag_hash;  // Storing the hash of the tag for privacy preservation learning
@@ -124,15 +123,7 @@ struct example : public example_predict  // core example datatype.
 
   size_t get_num_features() const noexcept { return num_features + num_features_from_interactions; }
 
-  float get_total_sum_feat_sq()
-  {
-    if (!total_sum_feat_sq_calculated)
-    {
-      total_sum_feat_sq = calculate_total_sum_features_squared(use_permutations, *this);
-      total_sum_feat_sq_calculated = true;
-    }
-    return total_sum_feat_sq;
-  }
+  float get_total_sum_feat_sq();
 
   void reset_total_sum_feat_sq()
   {
@@ -148,10 +139,7 @@ private:
   bool use_permutations = false;
 };
 
-namespace VW
-{
 struct workspace;
-}
 
 struct flat_example
 {
@@ -184,31 +172,49 @@ inline void add_passthrough_feature_magic(example& ec, uint64_t magic, uint64_t 
 }
 
 #define add_passthrough_feature(ec, i, x) \
-  add_passthrough_feature_magic(ec, __FILE__[0] * 483901 + __FILE__[1] * 3417 + __FILE__[2] * 8490177, i, x);
+  VW::add_passthrough_feature_magic(ec, __FILE__[0] * 483901 + __FILE__[1] * 3417 + __FILE__[2] * 8490177, i, x);
 
-typedef std::vector<example*> multi_ex;
+using multi_ex = std::vector<example*>;
 
-namespace VW
-{
 void return_multiple_example(VW::workspace& all, v_array<example*>& examples);
 
 using example_factory_t = example& (*)(void*);
 
 namespace model_utils
 {
-size_t read_model_field(io_buf& io, flat_example& fe, label_parser& lbl_parser);
+size_t read_model_field(io_buf& io, flat_example& fe, VW::label_parser& lbl_parser);
 size_t write_model_field(io_buf& io, const flat_example& fe, const std::string& upstream_name, bool text,
-    label_parser& lbl_parser, uint64_t parse_mask);
+    VW::label_parser& lbl_parser, uint64_t parse_mask);
 }  // namespace model_utils
 }  // namespace VW
 
-std::string simple_label_to_string(const example& ec);
-std::string cb_label_to_string(const example& ec);
-std::string scalar_pred_to_string(const example& ec);
-std::string a_s_pred_to_string(const example& ec);
-std::string prob_dist_pred_to_string(const example& ec);
-std::string multiclass_pred_to_string(const example& ec);
-std::string debug_depth_indent_string(const multi_ex& ec);
-std::string debug_depth_indent_string(const example& ec);
-std::string debug_depth_indent_string(int32_t stack_depth);
-std::string cb_label_to_string(const example& ec);
+// Deprecated compat definitions
+
+using polylabel VW_DEPRECATED("polylabel moved into VW namespace") = VW::polylabel;
+using polyprediction VW_DEPRECATED("polyprediction moved into VW namespace") = VW::polyprediction;
+using example VW_DEPRECATED("example moved into VW namespace") = VW::example;
+using multi_ex VW_DEPRECATED("multi_ex moved into VW namespace") = VW::multi_ex;
+using flat_example VW_DEPRECATED("flat_example moved into VW namespace") = VW::flat_example;
+
+VW_DEPRECATED("flatten_example moved into VW namespace")
+inline VW::flat_example* flatten_example(VW::workspace& all, VW::example* ec) { return VW::flatten_example(all, ec); }
+
+VW_DEPRECATED("flatten_sort_example moved into VW namespace")
+inline VW::flat_example* flatten_sort_example(VW::workspace& all, VW::example* ec)
+{
+  return VW::flatten_sort_example(all, ec);
+}
+VW_DEPRECATED("free_flatten_example moved into VW namespace")
+inline void free_flatten_example(VW::flat_example* fec) { return VW::free_flatten_example(fec); }
+
+VW_DEPRECATED("example_is_newline moved into VW namespace")
+inline bool example_is_newline(const VW::example& ec) { return VW::example_is_newline(ec); }
+
+VW_DEPRECATED("valid_ns moved into VW namespace")
+inline bool valid_ns(char c) { return VW::valid_ns(c); }
+
+VW_DEPRECATED("add_passthrough_feature_magic moved into VW namespace")
+inline void add_passthrough_feature_magic(VW::example& ec, uint64_t magic, uint64_t i, float x)
+{
+  return VW::add_passthrough_feature_magic(ec, magic, i, x);
+}

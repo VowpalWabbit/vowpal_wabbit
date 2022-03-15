@@ -1,13 +1,13 @@
 // Copyright (c) by respective owners including Yahoo!, Microsoft, and
 // individual contributors. All rights reserved. Released under a BSD (revised)
 // license as described in the file LICENSE.
-#include <sstream>
 #include <cfloat>
-#include "numeric_casts.h"
-#include "vw.h"
-#include "shared_data.h"
+#include <sstream>
 
 #include "io/logger.h"
+#include "numeric_casts.h"
+#include "shared_data.h"
+#include "vw.h"
 
 using namespace VW::config;
 
@@ -22,7 +22,7 @@ struct multi_oaa
 };
 
 template <bool is_learn>
-void predict_or_learn(multi_oaa& o, VW::LEARNER::single_learner& base, example& ec)
+void predict_or_learn(multi_oaa& o, VW::LEARNER::single_learner& base, VW::example& ec)
 {
   MULTILABEL::labels multilabels = ec.l.multilabels;
   MULTILABEL::labels preds = ec.pred.multilabels;
@@ -64,7 +64,7 @@ void predict_or_learn(multi_oaa& o, VW::LEARNER::single_learner& base, example& 
   }
 }
 
-void finish_example(VW::workspace& all, multi_oaa& o, example& ec)
+void finish_example(VW::workspace& all, multi_oaa& o, VW::example& ec)
 {
   if (o.probabilities)
   {

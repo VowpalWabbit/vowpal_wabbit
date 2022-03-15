@@ -9,11 +9,11 @@
 #endif
 #include <rapidjson/filewritestream.h>
 #include <rapidjson/writer.h>
+
 #include <cfloat>
 
 #include "config/options.h"
 #include "global_data.h"
-
 #include "io/logger.h"
 #include "scope_exit.h"
 

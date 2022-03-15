@@ -2,21 +2,23 @@
 // individual contributors. All rights reserved. Released under a BSD (revised)
 // license as described in the file LICENSE.
 #pragma once
-#include <iostream>
-#include <utility>
-#include <vector>
-#include <map>
+#include <inttypes.h>
+
+#include <array>
+#include <atomic>
 #include <cfloat>
+#include <climits>
 #include <cstdint>
 #include <cstdio>
-#include <inttypes.h>
-#include <climits>
-#include <stack>
-#include <unordered_map>
-#include <string>
-#include <array>
+#include <iostream>
+#include <map>
 #include <memory>
-#include <atomic>
+#include <stack>
+#include <string>
+#include <unordered_map>
+#include <utility>
+#include <vector>
+
 #include "future_compat.h"
 #include "vw_string_view.h"
 
@@ -31,29 +33,27 @@
 #  include <thread>
 #endif
 
-#include "v_array.h"
-#include "array_parameters.h"
-#include "loss_functions.h"
-#include "example.h"
-#include "config.h"
-#include "learner.h"
-#include "hash.h"
-#include "crossplat_compat.h"
-#include "error_reporting.h"
-#include "constant.h"
-#include "rand48.h"
-#include "hashstring.h"
-#include "decision_scores.h"
-#include "feature_group.h"
-#include "rand_state.h"
 #include "allreduce.h"
-#include "interactions_predict.h"
-
+#include "array_parameters.h"
+#include "config.h"
 #include "config/options.h"
-#include "version.h"
-#include "kskip_ngram_transformer.h"
-
+#include "constant.h"
+#include "crossplat_compat.h"
+#include "decision_scores.h"
+#include "error_reporting.h"
+#include "example.h"
+#include "feature_group.h"
+#include "hash.h"
+#include "hashstring.h"
+#include "interactions_predict.h"
 #include "io/logger.h"
+#include "kskip_ngram_transformer.h"
+#include "learner.h"
+#include "loss_functions.h"
+#include "rand48.h"
+#include "rand_state.h"
+#include "v_array.h"
+#include "version.h"
 
 typedef float weight;
 
@@ -124,6 +124,15 @@ struct trace_message_wrapper
 
 namespace VW
 {
+namespace details
+{
+struct invert_hash_info
+{
+  std::vector<VW::audit_strings> weight_components;
+  uint64_t offset;
+  uint64_t stride_shift;
+};
+}  // namespace details
 struct workspace
 {
 private:
@@ -151,6 +160,15 @@ public:
   void predict(multi_ex&);
   void finish_example(example&);
   void finish_example(multi_ex&);
+
+  /**
+   * @brief Generate a JSON string with the current model state and invert hash
+   * lookup table. Base reduction in use must be gd and workspace.hash_inv must
+   * be true. This function is experimental and subject to change.
+   *
+   * @return std::string JSON formatted string
+   */
+  std::string dump_weights_to_json_experimental();
 
   void (*set_minmax)(shared_data* sd, float label);
 
@@ -282,6 +300,9 @@ public:
 
   std::string text_regressor_name;
   std::string inv_hash_regressor_name;
+  std::string json_weights_file_name;
+  bool dump_json_weights_include_feature_names = false;
+  bool dump_json_weights_include_extra_online_state = false;
 
   size_t length() { return (static_cast<size_t>(1)) << num_bits; };
 
@@ -316,7 +337,7 @@ public:
   bool progress_add;   // additive (rather than multiplicative) progress dumps
   float progress_arg;  // next update progress dump multiplier
 
-  std::map<uint64_t, std::string> index_name_map;
+  std::map<uint64_t, VW::details::invert_hash_info> index_name_map;
 
   // hack to support cb model loading into ccb reduction
   bool is_ccb_input_model = false;
@@ -341,9 +362,10 @@ private:
 };
 }  // namespace VW
 
-void print_result_by_ref(VW::io::writer* f, float res, float weight, const v_array<char>& tag, VW::io::logger& logger);
+void print_result_by_ref(
+    VW::io::writer* f, float res, float weight, const VW::v_array<char>& tag, VW::io::logger& logger);
 void binary_print_result_by_ref(
-    VW::io::writer* f, float res, float weight, const v_array<char>& tag, VW::io::logger& logger);
+    VW::io::writer* f, float res, float weight, const VW::v_array<char>& tag, VW::io::logger& logger);
 
 void noop_mm(shared_data*, float label);
 void get_prediction(VW::io::reader* f, float& res, float& weight);

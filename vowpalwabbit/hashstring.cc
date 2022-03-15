@@ -3,9 +3,10 @@
 // license as described in the file LICENSE.
 
 #include "hashstring.h"
-#include "vw_exception.h"
 
 #include <string>
+
+#include "vw_exception.h"
 
 hash_func_t getHasher(const std::string& s)
 {
