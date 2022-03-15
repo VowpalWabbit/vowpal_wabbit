@@ -74,8 +74,8 @@ jobs:
           path: branch-benchmark-bin.out
       - name: Update permissions
         run: |
-          chmod +x ./master-benchmark-bin.out
-          chmod +x ./branch-benchmark-bin.out
+          chmod 777 ./master-benchmark-bin.out
+          chmod 77 ./branch-benchmark-bin.out
       - name: Run master benchmark
         run: >
           ./master-benchmark-bin.out
