@@ -14,6 +14,7 @@ struct workspace;
 class loss_function
 {
 public:
+  // Information on how to implement a custom loss function in [Loss functions · VowpalWabbit/vowpal_wabbit Wiki (github.com)](https://github.com/VowpalWabbit/vowpal_wabbit/wiki/Loss-functions#how-to-write-my-own-loss-function)
   // Identifies the type of the implementing loss function, matches the name used in getLossFunction.
   virtual std::string getType() const = 0;
   virtual float getParameter() const { return 0.f; }
