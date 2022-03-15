@@ -55,6 +55,7 @@ jobs:
     container:
       image: vowpalwabbit/ubuntu1804-build:latest
     runs-on: ubuntu-latest
+    needs: [build-benchmark-master, build-benchmark-branch]
     steps:
       - name: Download benchmark compare
         uses: actions/download-artifact@v2
