@@ -303,9 +303,9 @@ public:
   {
     float err = label - prediction;
     if (err > 0)
-      return 2.f * q * err * err;
+      return q * err * err;
     else
-      return 2.f * (1.f - q) * err * err;
+      return (1.f - q) * err * err;
   }
 
   float getUpdate(float prediction, float label, float update_scale, float pred_per_update) const override
