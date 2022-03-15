@@ -43,7 +43,7 @@ jobs:
       - name: Install google benchmarks
         shell: bash
         run: ./.scripts/linux/install-benchmarks.sh
-      - name: Build ${{ github.base_ref }}
+      - name: Build branch
         shell: bash
         run: ./.scripts/linux/build-with-benchmarks.sh
       - name: Upload benchmark binary
@@ -61,17 +61,20 @@ jobs:
         uses: actions/download-artifact@v2
         with:
           name: benchmark-compare
+          path: tools/
       - name: Download master bin
         uses: actions/download-artifact@v2
         with:
           name: master-benchmark-bin
-      - name: branch benchmark bin
+          path: master-benchmark-bin.out
+      - name: Download branch bin
         uses: actions/download-artifact@v2
         with:
           name: branch-benchmark-bin
+          path: branch-benchmark-bin.out
       - name: Run master benchmark
         run: >
-          ./build/test/benchmarks/vw-benchmarks.out
+          ./master-benchmark-bin.out
           --benchmark_repetitions=10
           --benchmark_min_time=2
           --benchmark_report_aggregates_only=true
@@ -80,13 +83,19 @@ jobs:
           --benchmark_out=master-benchmarks.json
       - name: Run branch benchmark
         run: >
-          ./build/test/benchmarks/vw-benchmarks.out
+          ./branch-benchmark-bin.out
           --benchmark_repetitions=10
           --benchmark_min_time=2
           --benchmark_report_aggregates_only=true
           --benchmark_format=console
           --benchmark_out_format=json
           --benchmark_out=branch-benchmarks.json
+      - name: Install benchmark compare requirements
+        shell: bash
+        run: |
+          python3 -m pip install -r tools/requirements.txt
+          # The above requirements file is missing the pandas dependency.
+          python3 -m pip install pandas
       - name: Compare benchmarks
         shell: bash
-        run: python3 benchmark/tools/compare.py benchmarks "$1" "$2"
+        run: python3 tools/compare.py benchmarks "$1" "$2"
