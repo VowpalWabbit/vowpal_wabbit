@@ -15,7 +15,7 @@ struct feature_slice  // a helper struct for functions using the set {v,i,space_
 {
   feature_value x;
   feature_index weight_index;
-  audit_strings space_name;
+  VW::audit_strings space_name;
 };
 
 void features::clear()

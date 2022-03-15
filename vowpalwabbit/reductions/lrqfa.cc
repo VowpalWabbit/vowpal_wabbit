@@ -96,7 +96,7 @@ void predict_or_learn(LRQFAstate& lrq, single_learner& base, VW::example& ec)
               {
                 std::stringstream new_feature_buffer;
                 new_feature_buffer << right << '^' << rfs.space_names[rfn].name << '^' << n;
-                rfs.space_names.push_back(audit_strings("lrqfa", new_feature_buffer.str()));
+                rfs.space_names.emplace_back("lrqfa", new_feature_buffer.str());
               }
             }
           }

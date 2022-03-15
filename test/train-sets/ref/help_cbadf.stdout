@@ -132,8 +132,14 @@ Output Model Options:
                                             str)
     --invert_hash arg                       Output human-readable final regressor with feature names. Computationally
                                             expensive (type: str)
-    --dump_json_weights arg                 Experimental: Output json representation of model parameters.
+    --dump_json_weights_experimental arg    Experimental: Output json representation of model parameters.
                                             (type: str)
+    --dump_json_weights_include_feature_names_experimental
+                                            Experimental: Whether to include feature names in json output
+                                            (type: bool)
+    --dump_json_weights_include_extra_online_state_experimental
+                                            Experimental: Whether to include extra online state in json output
+                                            (type: bool)
     --predict_only_model                    Do not save extra state for learning to be resumed. Stored model
                                             can only be used for prediction (type: bool)
     --save_resume                           This flag is now deprecated and models can continue learning
