@@ -8,6 +8,7 @@
 #include <cfloat>
 #include <cmath>
 
+#include "constant.h"
 #include "correctedMath.h"
 #include "gd.h"  // GD::foreach_feature() needed in subtract_example()
 #include "io/logger.h"
@@ -32,12 +33,9 @@ struct ldf
 {
   LabelDict::label_feature_map label_features;
 
-  size_t read_example_this_loop = 0;
   bool is_wap = false;
-  bool first_pass = false;
   bool treat_as_classifier = false;
   bool is_probabilities = false;
-  float csoaa_example_t = false;
   VW::workspace* all = nullptr;
 
   bool rank = false;
@@ -46,30 +44,6 @@ struct ldf
 
   std::vector<action_scores> stored_preds;
 };
-
-bool ec_is_label_definition(const VW::example& ec)  // label defs look like "0:___" or just "label:___"
-{
-  if (ec.indices.empty()) return false;
-  if (ec.indices[0] != 'l') return false;
-  const auto& costs = ec.l.cs.costs;
-  for (auto const& cost : costs)
-    if ((cost.class_index != 0) || (cost.x <= 0.)) return false;
-  return true;
-}
-
-bool ec_seq_is_label_definition(VW::multi_ex& ec_seq)
-{
-  if (ec_seq.empty()) return false;
-  bool is_lab = ec_is_label_definition(*ec_seq[0]);
-  for (size_t i = 1; i < ec_seq.size(); i++)
-    if (is_lab != ec_is_label_definition(*ec_seq[i])) THROW("Mixed label definition and examples in ldf data.");
-  return is_lab;
-}
-
-bool ec_seq_has_label_definition(const VW::multi_ex& ec_seq)
-{
-  return std::any_of(ec_seq.cbegin(), ec_seq.cend(), [](VW::example* ec) { return ec_is_label_definition(*ec); });
-}
 
 inline bool cmp_wclass_ptr(const COST_SENSITIVE::wclass* a, const COST_SENSITIVE::wclass* b) { return a->x < b->x; }
 
@@ -147,7 +121,7 @@ void make_single_prediction(ldf& data, single_learner& base, VW::example& ec)
   base.predict(ec);  // make a prediction
 }
 
-bool test_ldf_sequence(ldf& /*data*/, VW::multi_ex& ec_seq, VW::io::logger& logger)
+bool test_ldf_sequence(ldf& /*data*/, const VW::multi_ex& ec_seq, VW::io::logger& logger)
 {
   bool isTest;
   if (ec_seq.empty())
@@ -299,12 +273,6 @@ void do_actual_learning_oaa(ldf& data, single_learner& base, VW::multi_ex& ec_se
 }
 
 /*
- * The begining of the VW::multi_ex sequence may be labels.  Process those
- * and return the start index of the un-processed examples
- */
-VW::multi_ex process_labels(ldf& data, const VW::multi_ex& ec_seq_all);
-
-/*
  * 1) process all labels at first
  * 2) verify no labels in the middle of data
  * 3) learn_or_predict(data) with rest
@@ -314,16 +282,14 @@ void learn_csoaa_ldf(ldf& data, single_learner& base, VW::multi_ex& ec_seq_all)
   if (ec_seq_all.empty()) return;  // nothing to do
 
   data.ft_offset = ec_seq_all[0]->ft_offset;
-  // handle label definitions
-  auto ec_seq = process_labels(data, ec_seq_all);
 
   /////////////////////// learn
-  if (!test_ldf_sequence(data, ec_seq, data.all->logger))
+  if (!test_ldf_sequence(data, ec_seq_all, data.all->logger))
   {
     if (data.is_wap)
-      do_actual_learning_wap(data, base, ec_seq);
+      do_actual_learning_wap(data, base, ec_seq_all);
     else
-      do_actual_learning_oaa(data, base, ec_seq);
+      do_actual_learning_oaa(data, base, ec_seq_all);
   }
 }
 
@@ -356,31 +322,29 @@ void predict_csoaa_ldf(ldf& data, single_learner& base, VW::multi_ex& ec_seq_all
   if (ec_seq_all.empty()) return;  // nothing to do
 
   data.ft_offset = ec_seq_all[0]->ft_offset;
-  // handle label definitions
-  auto ec_seq = process_labels(data, ec_seq_all);
 
-  uint32_t K = static_cast<uint32_t>(ec_seq.size());
+  uint32_t K = static_cast<uint32_t>(ec_seq_all.size());
   uint32_t predicted_K = 0;
 
-  auto restore_guard = VW::scope_exit([&data, &ec_seq, K, &predicted_K] {
+  auto restore_guard = VW::scope_exit([&data, &ec_seq_all, K, &predicted_K] {
     // Mark the predicted sub-example with its class_index, all other with 0
     for (size_t k = 0; k < K; k++)
     {
       if (k == predicted_K)
-        ec_seq[k]->pred.multiclass = ec_seq[k]->l.cs.costs[0].class_index;
+        ec_seq_all[k]->pred.multiclass = ec_seq_all[k]->l.cs.costs[0].class_index;
       else
-        ec_seq[k]->pred.multiclass = 0;
+        ec_seq_all[k]->pred.multiclass = 0;
     }
 
     ////////////////////// compute probabilities
-    if (data.is_probabilities) convert_to_probabilities(ec_seq);
+    if (data.is_probabilities) convert_to_probabilities(ec_seq_all);
   });
 
   /////////////////////// do prediction
   float min_score = FLT_MAX;
   for (uint32_t k = 0; k < K; k++)
   {
-    VW::example* ec = ec_seq[k];
+    VW::example* ec = ec_seq_all[k];
     make_single_prediction(data, base, *ec);
     if (ec->partial_prediction < min_score)
     {
@@ -398,33 +362,31 @@ void predict_csoaa_ldf(ldf& data, single_learner& base, VW::multi_ex& ec_seq_all
 void predict_csoaa_ldf_rank(ldf& data, single_learner& base, VW::multi_ex& ec_seq_all)
 {
   data.ft_offset = ec_seq_all[0]->ft_offset;
-  // handle label definitions
-  auto ec_seq = process_labels(data, ec_seq_all);
-  if (ec_seq.empty()) return;  // nothing more to do
+  if (ec_seq_all.empty()) return;  // nothing more to do
 
-  uint32_t K = static_cast<uint32_t>(ec_seq.size());
+  uint32_t K = static_cast<uint32_t>(ec_seq_all.size());
 
   /////////////////////// do prediction
   data.a_s.clear();
   data.stored_preds.clear();
 
-  auto restore_guard = VW::scope_exit([&data, &ec_seq, K] {
+  auto restore_guard = VW::scope_exit([&data, &ec_seq_all, K] {
     std::sort(data.a_s.begin(), data.a_s.end(), VW::action_score_compare_lt);
 
     data.stored_preds[0].clear();
     for (size_t k = 0; k < K; k++)
     {
-      ec_seq[k]->pred.a_s = std::move(data.stored_preds[k]);
-      ec_seq[0]->pred.a_s.push_back(data.a_s[k]);
+      ec_seq_all[k]->pred.a_s = std::move(data.stored_preds[k]);
+      ec_seq_all[0]->pred.a_s.push_back(data.a_s[k]);
     }
 
     ////////////////////// compute probabilities
-    if (data.is_probabilities) { convert_to_probabilities(ec_seq); }
+    if (data.is_probabilities) { convert_to_probabilities(ec_seq_all); }
   });
 
   for (uint32_t k = 0; k < K; k++)
   {
-    VW::example* ec = ec_seq[k];
+    VW::example* ec = ec_seq_all[k];
     data.stored_preds.emplace_back(std::move(ec->pred.a_s));
     make_single_prediction(data, base, *ec);
     action_score s;
@@ -453,7 +415,6 @@ void output_example(
   const auto& costs = ld.costs;
 
   if (VW::example_is_newline(ec)) return;
-  if (ec_is_label_definition(ec)) return;
 
   if (COST_SENSITIVE::ec_is_example_header(ec))
   {
@@ -530,7 +491,6 @@ void output_rank_example(VW::workspace& all, VW::example& head_ec, bool& hit_los
   const auto& costs = head_ec.l.cs.costs;
 
   if (VW::example_is_newline(head_ec)) return;
-  if (ec_is_label_definition(head_ec)) return;
 
   all.sd->total_features += head_ec.get_num_features();
 
@@ -575,7 +535,7 @@ void output_rank_example(VW::workspace& all, VW::example& head_ec, bool& hit_los
 void output_example_seq(VW::workspace& all, ldf& data, VW::multi_ex& ec_seq)
 {
   size_t K = ec_seq.size();
-  if ((K > 0) && !ec_seq_is_label_definition(ec_seq))
+  if (K > 0)
   {
     if (test_ldf_sequence(data, ec_seq, all.logger))
       all.sd->weighted_unlabeled_examples += ec_seq[0]->weight;
@@ -627,7 +587,7 @@ void output_example_seq(VW::workspace& all, ldf& data, VW::multi_ex& ec_seq)
   }
 }
 
-void end_pass(ldf& data) { data.first_pass = false; }
+void end_pass(ldf&) {}
 
 void finish_multiline_example(VW::workspace& all, ldf& data, VW::multi_ex& ec_seq)
 {
@@ -638,62 +598,6 @@ void finish_multiline_example(VW::workspace& all, ldf& data, VW::multi_ex& ec_se
   }
 
   VW::finish_example(all, ec_seq);
-}
-
-/*
- * Process a single example as a label.
- * Note: example should already be confirmed as a label
- */
-void inline process_label(ldf& data, VW::example* ec)
-{
-  // auto new_fs = ec->feature_space[ec->indices[0]];
-  auto& costs = ec->l.cs.costs;
-  for (auto const& cost : costs)
-  {
-    const auto lab = static_cast<size_t>(cost.x);
-    LabelDict::set_label_features(data.label_features, lab, ec->feature_space[ec->indices[0]]);
-  }
-}
-
-/*
- * The beginning of the VW::multi_ex sequence may be labels.  Process those
- * and return the start index of the un-processed examples
- */
-VW::multi_ex process_labels(ldf& data, const VW::multi_ex& ec_seq_all)
-{
-  if (ec_seq_all.empty()) { return ec_seq_all; }  // nothing to do
-
-  VW::example* ec = ec_seq_all[0];
-
-  // check the first element, if it's not a label, return
-  if (!ec_is_label_definition(*ec)) return ec_seq_all;
-
-  // process the first element as a label
-  process_label(data, ec);
-
-  VW::multi_ex ret;
-  size_t i = 1;
-  // process the rest of the elements that are labels
-  for (; i < ec_seq_all.size(); i++)
-  {
-    ec = ec_seq_all[i];
-    if (!ec_is_label_definition(*ec))
-    {
-      for (size_t j = i; j < ec_seq_all.size(); j++) ret.push_back(ec_seq_all[j]);
-      // return index of the first element that is not a label
-      return ret;
-    }
-
-    process_label(data, ec);
-  }
-
-  // Ensure there are no more labels
-  // (can be done in existing loops later but as a side effect learning
-  //    will happen with bad example)
-  if (ec_seq_has_label_definition(ec_seq_all)) { THROW("label definition encountered in data block"); }
-
-  // all examples were labels return size
-  return ret;
 }
 
 base_learner* csldf_setup(VW::setup_base_i& stack_builder)
@@ -737,7 +641,6 @@ base_learner* csldf_setup(VW::setup_base_i& stack_builder)
   if (ld->is_probabilities && options.was_supplied("link")) { options.replace("link", "identity"); }
 
   ld->all = &all;
-  ld->first_pass = true;
 
   std::string ldf_arg;
 
@@ -782,7 +685,6 @@ base_learner* csldf_setup(VW::setup_base_i& stack_builder)
   ld->label_features.max_load_factor(0.25);
   ld->label_features.reserve(256);
 
-  ld->read_example_this_loop = 0;
   single_learner* pbase = as_singleline(stack_builder.setup_base_learner());
 
   std::string name = stack_builder.get_setupfn_name(csldf_setup);
