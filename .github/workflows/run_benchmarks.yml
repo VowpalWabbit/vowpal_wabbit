@@ -72,11 +72,15 @@ jobs:
         with:
           name: branch-benchmark-bin
           path: branch-benchmark-bin.out
+      - name: Update permissions
+        run: |
+          chmod +x ./master-benchmark-bin.out
+          chmod +x ./branch-benchmark-bin.out
       - name: Run master benchmark
         run: >
           ./master-benchmark-bin.out
           --benchmark_repetitions=10
-          --benchmark_min_time=2
+          --benchmark_min_time=1
           --benchmark_report_aggregates_only=true
           --benchmark_format=console
           --benchmark_out_format=json
@@ -85,7 +89,7 @@ jobs:
         run: >
           ./branch-benchmark-bin.out
           --benchmark_repetitions=10
-          --benchmark_min_time=2
+          --benchmark_min_time=1
           --benchmark_report_aggregates_only=true
           --benchmark_format=console
           --benchmark_out_format=json
@@ -98,4 +102,4 @@ jobs:
           python3 -m pip install pandas
       - name: Compare benchmarks
         shell: bash
-        run: python3 tools/compare.py benchmarks "$1" "$2"
+        run: python3 tools/compare.py benchmarks master-benchmarks.json branch-benchmarks.json
