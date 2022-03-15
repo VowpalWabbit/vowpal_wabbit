@@ -53,6 +53,8 @@ jobs:
         run: |
           pip install -r requirements.txt
           pip install pytype
+          # required for utl directory typecheck
+          pip install hyperopt
       - name: Install wheel
         shell: bash
         run: |
@@ -64,6 +66,8 @@ jobs:
         shell: bash
         run: |
           python -m pytype ./python/vowpalwabbit/ --verbosity=2
+          python -m pytype ./test/ --verbosity=2
+          python -m pytype ./utl/ --verbosity=2
   python-formatting:
     name: python.formatting
     runs-on: ubuntu-latest
@@ -76,7 +80,7 @@ jobs:
       - run: pip install black
       - shell: bash
         run: |
-          python -m black --check python/vowpalwabbit || (echo -e "---\nTo fix, run:\n\tpython -m black python/vowpalwabbit"; exit 1)
+          python -m black --check . --exclude ext_libs/ || (echo -e "---\nTo fix, run:\n\tpython -m black . --exclude ext_libs"; exit 1)
   cpp-formatting:
     name: c++.formatting
     runs-on: ubuntu-20.04
