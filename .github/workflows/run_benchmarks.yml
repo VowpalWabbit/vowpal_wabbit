@@ -66,20 +66,15 @@ jobs:
         uses: actions/download-artifact@v2
         with:
           name: master-benchmark-bin
-          path: master-benchmark-bin.out
+          path: master-benchmark-bin/
       - name: Download branch bin
         uses: actions/download-artifact@v2
         with:
           name: branch-benchmark-bin
-          path: branch-benchmark-bin.out
-      - name: Update permissions
-        run: |
-          chmod 777 ./master-benchmark-bin.out
-          chmod 77 ./branch-benchmark-bin.out
-          ls -alh
+          path: branch-benchmark-bin/
       - name: Run master benchmark
         run: >
-          ./master-benchmark-bin.out
+          ./master-benchmark-bin/vw-benchmarks.out
           --benchmark_repetitions=10
           --benchmark_min_time=1
           --benchmark_report_aggregates_only=true
@@ -88,7 +83,7 @@ jobs:
           --benchmark_out=master-benchmarks.json
       - name: Run branch benchmark
         run: >
-          ./branch-benchmark-bin.out
+          ./branch-benchmark-bin/vw-benchmarks.out
           --benchmark_repetitions=10
           --benchmark_min_time=1
           --benchmark_report_aggregates_only=true
