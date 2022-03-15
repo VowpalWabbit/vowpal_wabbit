@@ -4,16 +4,14 @@
 
 #pragma once
 
-#include "config/option.h"
-#include "config/option_group_definition.h"
-
-#include "future_compat.h"
-#include "io/logger.h"
-
 #include <map>
 #include <memory>
 #include <string>
 #include <vector>
+
+#include "config/option.h"
+#include "config/option_group_definition.h"
+#include "future_compat.h"
 
 namespace VW
 {
@@ -52,9 +50,11 @@ struct options_i
   virtual void insert(const std::string& key, const std::string& value) = 0;
   virtual void replace(const std::string& key, const std::string& value) = 0;
   VW_ATTR(nodiscard) virtual std::vector<std::string> get_positional_tokens() const { return {}; }
-  VW_ATTR(nodiscard) virtual const std::set<std::string>& get_supplied_options() const = 0;
-  // Will throw if any options were supplied that do not having a matching argument specification.
-  virtual void check_unregistered(VW::io::logger& logger) = 0;
+  /**
+   * @brief Check for unregistered options and validate input. Throws if there
+   * is an error. Returns a vector of warning strings if there are warnings produced.
+   */
+  VW_ATTR(nodiscard) virtual std::vector<std::string> check_unregistered() = 0;
   virtual ~options_i() = default;
 
   static constexpr const char* m_default_tint = "general";
@@ -66,6 +66,7 @@ protected:
   std::vector<option_group_definition> m_option_group_definitions;
   std::string m_current_reduction_tint = m_default_tint;
   std::map<std::string, std::shared_ptr<base_option>> m_options;
+  std::map<char, std::shared_ptr<base_option>> m_short_options;
 };
 }  // namespace config
 }  // namespace VW

@@ -4,16 +4,16 @@
 
 #include <cfloat>
 #include <cmath>
+
+#include "example.h"
+#include "io/logger.h"
+#include "model_utils.h"
+#include "parse_primitives.h"
 #include "reductions/gd.h"
+#include "shared_data.h"
 #include "vw.h"
 #include "vw_exception.h"
 #include "vw_string_view.h"
-#include "example.h"
-#include "parse_primitives.h"
-#include "shared_data.h"
-#include "model_utils.h"
-
-#include "io/logger.h"
 
 namespace COST_SENSITIVE
 {
@@ -124,7 +124,7 @@ void parse_label(label& ld, VW::label_parser_reuse_mem& reuse_mem, const VW::nam
     {
       f.class_index = ldict
           ? ldict->get(reuse_mem.tokens[0], logger)
-          : static_cast<uint32_t>(hashstring(reuse_mem.tokens[0].begin(), reuse_mem.tokens[0].length(), 0));
+          : static_cast<uint32_t>(hashstring(reuse_mem.tokens[0].data(), reuse_mem.tokens[0].length(), 0));
       if (reuse_mem.tokens.size() == 1 && f.x >= 0)  // test examples are specified just by un-valued class #s
         f.x = FLT_MAX;
     }
@@ -135,30 +135,30 @@ void parse_label(label& ld, VW::label_parser_reuse_mem& reuse_mem, const VW::nam
   }
 }
 
-label_parser cs_label = {
+VW::label_parser cs_label = {
     // default_label
-    [](polylabel& label) { default_label(label.cs); },
+    [](VW::polylabel& label) { default_label(label.cs); },
     // parse_label
-    [](polylabel& label, reduction_features& /* red_features */, VW::label_parser_reuse_mem& reuse_mem,
+    [](VW::polylabel& label, VW::reduction_features& /* red_features */, VW::label_parser_reuse_mem& reuse_mem,
         const VW::named_labels* ldict, const std::vector<VW::string_view>& words,
         VW::io::logger& logger) { parse_label(label.cs, reuse_mem, ldict, words, logger); },
     // cache_label
-    [](const polylabel& label, const reduction_features& /* red_features */, io_buf& cache,
+    [](const VW::polylabel& label, const VW::reduction_features& /* red_features */, io_buf& cache,
         const std::string& upstream_name,
         bool text) { return VW::model_utils::write_model_field(cache, label.cs, upstream_name, text); },
     // read_cached_label
-    [](polylabel& label, reduction_features& /* red_features */, io_buf& cache) {
+    [](VW::polylabel& label, VW::reduction_features& /* red_features */, io_buf& cache) {
       return VW::model_utils::read_model_field(cache, label.cs);
     },
     // get_weight
-    [](const polylabel& label, const reduction_features& /* red_features */) { return weight(label.cs); },
+    [](const VW::polylabel& label, const VW::reduction_features& /* red_features */) { return weight(label.cs); },
     // test_label
-    [](const polylabel& label) { return test_label(label.cs); },
+    [](const VW::polylabel& label) { return test_label(label.cs); },
     // label type
     VW::label_type_t::cs};
 
-void print_update(VW::workspace& all, bool is_test, const example& ec, const multi_ex* ec_seq, bool action_scores,
-    uint32_t prediction)
+void print_update(VW::workspace& all, bool is_test, const VW::example& ec, const VW::multi_ex* ec_seq,
+    bool action_scores, uint32_t prediction)
 {
   if (all.sd->weighted_examples() >= all.sd->dump_interval && !all.quiet && !all.bfgs)
   {
@@ -184,15 +184,13 @@ void print_update(VW::workspace& all, bool is_test, const example& ec, const mul
 
     std::string label_buf;
     if (is_test)
-      label_buf = " unknown";
+      label_buf = "unknown";
     else
-      label_buf = " known";
+      label_buf = "known";
 
     if (action_scores || all.sd->ldict)
     {
       std::ostringstream pred_buf;
-
-      pred_buf << std::setw(all.sd->col_current_predict) << std::right << std::setfill(' ');
       if (all.sd->ldict)
       {
         if (action_scores)
@@ -214,7 +212,7 @@ void print_update(VW::workspace& all, bool is_test, const example& ec, const mul
 }
 
 void output_example(
-    VW::workspace& all, const example& ec, const COST_SENSITIVE::label& label, uint32_t multiclass_prediction)
+    VW::workspace& all, const VW::example& ec, const COST_SENSITIVE::label& label, uint32_t multiclass_prediction)
 {
   float loss = 0.;
   if (!test_label(label))
@@ -246,7 +244,7 @@ void output_example(
     else
     {
       VW::string_view sv_pred = all.sd->ldict->get(multiclass_prediction);
-      all.print_text_by_ref(sink.get(), sv_pred.to_string(), ec.tag, all.logger);
+      all.print_text_by_ref(sink.get(), std::string{sv_pred}, ec.tag, all.logger);
     }
   }
 
@@ -265,15 +263,15 @@ void output_example(
   print_update(all, test_label(label), ec, nullptr, false, multiclass_prediction);
 }
 
-void output_example(VW::workspace& all, const example& ec) { output_example(all, ec, ec.l.cs, ec.pred.multiclass); }
+void output_example(VW::workspace& all, const VW::example& ec) { output_example(all, ec, ec.l.cs, ec.pred.multiclass); }
 
-void finish_example(VW::workspace& all, example& ec)
+void finish_example(VW::workspace& all, VW::example& ec)
 {
   output_example(all, ec, ec.l.cs, ec.pred.multiclass);
   VW::finish_example(all, ec);
 }
 
-bool example_is_test(const example& ec)
+bool example_is_test(const VW::example& ec)
 {
   const auto& costs = ec.l.cs.costs;
   if (costs.size() == 0) return true;
@@ -282,7 +280,7 @@ bool example_is_test(const example& ec)
   return true;
 }
 
-bool ec_is_example_header(const example& ec)  // example headers look like "shared"
+bool ec_is_example_header(const VW::example& ec)  // example headers look like "shared"
 {
   const auto& costs = ec.l.cs.costs;
   if (costs.size() != 1) return false;

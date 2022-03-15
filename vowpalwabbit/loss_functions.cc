@@ -1,24 +1,24 @@
 // Copyright (c) by respective owners including Yahoo!, Microsoft, and
 // individual contributors. All rights reserved. Released under a BSD (revised)
 // license as described in the file LICENSE.
-#include <math.h>
-#include "correctedMath.h"
-#include <iostream>
-#include <stdlib.h>
 #include <float.h>
+#include <math.h>
+#include <stdlib.h>
 
+#include <iostream>
+
+#include "correctedMath.h"
 #include "global_data.h"
-#include "vw_exception.h"
-#include "shared_data.h"
-
 #include "io/logger.h"
+#include "shared_data.h"
+#include "vw_exception.h"
 
 class squaredloss : public loss_function
 {
 public:
-  std::string getType() override { return "squared"; }
+  std::string getType() const override { return "squared"; }
 
-  float getLoss(shared_data* sd, float prediction, float label) override
+  float getLoss(const shared_data* sd, float prediction, float label) const override
   {
     if (prediction <= sd->max_label && prediction >= sd->min_label)
     {
@@ -26,11 +26,13 @@ public:
       return example_loss;
     }
     else if (prediction < sd->min_label)
+    {
       if (label == sd->min_label)
         return 0.;
       else
         return static_cast<float>((label - sd->min_label) * (label - sd->min_label) +
             2. * (label - sd->min_label) * (sd->min_label - prediction));
+    }
     else if (label == sd->max_label)
       return 0.;
     else
@@ -38,7 +40,7 @@ public:
           2. * (sd->max_label - label) * (prediction - sd->max_label));
   }
 
-  float getUpdate(float prediction, float label, float update_scale, float pred_per_update) override
+  float getUpdate(float prediction, float label, float update_scale, float pred_per_update) const override
   {
     if (update_scale * pred_per_update < 1e-6)
     {
@@ -51,23 +53,17 @@ public:
     return (label - prediction) * (1.f - correctedExp(-2.f * update_scale * pred_per_update)) / pred_per_update;
   }
 
-  float getUnsafeUpdate(float prediction, float label, float update_scale) override
+  float getUnsafeUpdate(float prediction, float label, float update_scale) const override
   {
     return 2.f * (label - prediction) * update_scale;
   }
 
-  float getRevertingWeight(shared_data* sd, float prediction, float eta_t) override
-  {
-    float t = 0.5f * (sd->min_label + sd->max_label);
-    float alternative = (prediction > t) ? sd->min_label : sd->max_label;
-    return log((alternative - prediction) / (alternative - t)) / eta_t;
-  }
-
-  float getSquareGrad(float prediction, float label) override
+  float getSquareGrad(float prediction, float label) const override
   {
     return 4.f * (prediction - label) * (prediction - label);
   }
-  float first_derivative(shared_data* sd, float prediction, float label) override
+
+  float first_derivative(const shared_data* sd, float prediction, float label) const override
   {
     if (prediction < sd->min_label)
       prediction = sd->min_label;
@@ -75,7 +71,8 @@ public:
       prediction = sd->max_label;
     return 2.f * (prediction - label);
   }
-  float second_derivative(shared_data* sd, float prediction, float) override
+
+  float second_derivative(const shared_data* sd, float prediction, float) const override
   {
     if (prediction <= sd->max_label && prediction >= sd->min_label)
       return 2.;
@@ -87,49 +84,47 @@ public:
 class classic_squaredloss : public loss_function
 {
 public:
-  std::string getType() override { return "classic"; }
+  std::string getType() const override { return "classic"; }
 
-  float getLoss(shared_data*, float prediction, float label) override
+  float getLoss(const shared_data*, float prediction, float label) const override
   {
     float example_loss = (prediction - label) * (prediction - label);
     return example_loss;
   }
 
-  float getUpdate(float prediction, float label, float update_scale, float /* pred_per_update */) override
+  float getUpdate(float prediction, float label, float update_scale, float /* pred_per_update */) const override
   {
     return 2.f * (label - prediction) * update_scale;
   }
 
-  float getUnsafeUpdate(float prediction, float label, float update_scale) override
+  float getUnsafeUpdate(float prediction, float label, float update_scale) const override
   {
     return 2.f * (label - prediction) * update_scale;
   }
 
-  float getRevertingWeight(shared_data* sd, float prediction, float eta_t) override
-  {
-    float t = 0.5f * (sd->min_label + sd->max_label);
-    float alternative = (prediction > t) ? sd->min_label : sd->max_label;
-    return (t - prediction) / ((alternative - prediction) * eta_t);
-  }
-
-  float getSquareGrad(float prediction, float label) override
+  float getSquareGrad(float prediction, float label) const override
   {
     return 4.f * (prediction - label) * (prediction - label);
   }
-  float first_derivative(shared_data*, float prediction, float label) override { return 2.f * (prediction - label); }
-  float second_derivative(shared_data*, float, float) override { return 2.; }
+
+  float first_derivative(const shared_data*, float prediction, float label) const override
+  {
+    return 2.f * (prediction - label);
+  }
+
+  float second_derivative(const shared_data*, float, float) const override { return 2.; }
 };
 
 class hingeloss : public loss_function
 {
-  VW::io::logger logger;
+  mutable VW::io::logger logger;
 
 public:
   explicit hingeloss(VW::io::logger logger) : logger(std::move(logger)) {}
 
-  std::string getType() override { return "hinge"; }
+  std::string getType() const override { return "hinge"; }
 
-  float getLoss(shared_data*, float prediction, float label) override
+  float getLoss(const shared_data*, float prediction, float label) const override
   {
     if (label != -1.f && label != 1.f)
       logger.out_warn("The label {} is not -1 or 1 or in [0,1] as the hinge loss function expects.", label);
@@ -137,52 +132,50 @@ public:
     return (e > 0) ? e : 0;
   }
 
-  float getUpdate(float prediction, float label, float update_scale, float pred_per_update) override
+  float getUpdate(float prediction, float label, float update_scale, float pred_per_update) const override
   {
     if (label * prediction >= 1) return 0;
     float err = 1 - label * prediction;
     return label * (update_scale * pred_per_update < err ? update_scale : err / pred_per_update);
   }
 
-  float getUnsafeUpdate(float prediction, float label, float update_scale) override
+  float getUnsafeUpdate(float prediction, float label, float update_scale) const override
   {
     if (label * prediction >= 1) return 0;
     return label * update_scale;
   }
 
-  float getRevertingWeight(shared_data*, float prediction, float eta_t) override { return fabs(prediction) / eta_t; }
-
-  float getSquareGrad(float prediction, float label) override
+  float getSquareGrad(float prediction, float label) const override
   {
     float d = first_derivative(nullptr, prediction, label);
     return d * d;
   }
 
-  float first_derivative(shared_data*, float prediction, float label) override
+  float first_derivative(const shared_data*, float prediction, float label) const override
   {
     return (label * prediction >= 1) ? 0 : -label;
   }
 
-  float second_derivative(shared_data*, float, float) override { return 0.; }
+  float second_derivative(const shared_data*, float, float) const override { return 0.; }
 };
 
 class logloss : public loss_function
 {
-  VW::io::logger logger;
+  mutable VW::io::logger logger;
 
 public:
   explicit logloss(VW::io::logger logger) : logger(std::move(logger)) {}
 
-  std::string getType() override { return "logistic"; }
+  std::string getType() const override { return "logistic"; }
 
-  float getLoss(shared_data*, float prediction, float label) override
+  float getLoss(const shared_data*, float prediction, float label) const override
   {
     if (label != -1.f && label != 1.f)
       logger.out_warn("The label {} is not -1 or 1 or in [0,1] as the logistic loss function expects.", label);
     return log(1 + correctedExp(-label * prediction));
   }
 
-  float getUpdate(float prediction, float label, float update_scale, float pred_per_update) override
+  float getUpdate(float prediction, float label, float update_scale, float pred_per_update) const override
   {
     float w, x;
     float d = correctedExp(label * prediction);
@@ -198,7 +191,7 @@ public:
     return -(label * w + prediction) / pred_per_update;
   }
 
-  float getUnsafeUpdate(float prediction, float label, float update_scale) override
+  float getUnsafeUpdate(float prediction, float label, float update_scale) const override
   {
     float d = correctedExp(label * prediction);
     return label * update_scale / (1 + d);
@@ -218,25 +211,19 @@ public:
     return static_cast<float>(w * (1. + r / t * (u - r) / (u - 2. * r)) - x);  // more magic
   }
 
-  float getRevertingWeight(shared_data*, float prediction, float eta_t) override
-  {
-    float z = -fabs(prediction);
-    return (1 - z - correctedExp(z)) / eta_t;
-  }
-
-  float first_derivative(shared_data*, float prediction, float label) override
+  float first_derivative(const shared_data*, float prediction, float label) const override
   {
     float v = -label / (1 + correctedExp(label * prediction));
     return v;
   }
 
-  float getSquareGrad(float prediction, float label) override
+  float getSquareGrad(float prediction, float label) const override
   {
     float d = first_derivative(nullptr, prediction, label);
     return d * d;
   }
 
-  float second_derivative(shared_data*, float prediction, float label) override
+  float second_derivative(const shared_data*, float prediction, float label) const override
   {
     float p = 1 / (1 + correctedExp(label * prediction));
 
@@ -249,10 +236,10 @@ class quantileloss : public loss_function
 public:
   quantileloss(float& tau_) : tau(tau_) {}
 
-  std::string getType() override { return "quantile"; }
-  float getParameter() override { return tau; }
+  std::string getType() const override { return "quantile"; }
+  float getParameter() const override { return tau; }
 
-  float getLoss(shared_data*, float prediction, float label) override
+  float getLoss(const shared_data*, float prediction, float label) const override
   {
     float e = label - prediction;
     if (e > 0)
@@ -261,7 +248,7 @@ public:
       return -(1 - tau) * e;
   }
 
-  float getUpdate(float prediction, float label, float update_scale, float pred_per_update) override
+  float getUpdate(float prediction, float label, float update_scale, float pred_per_update) const override
   {
     float err = label - prediction;
     if (err == 0) return 0;
@@ -278,7 +265,7 @@ public:
     }
   }
 
-  float getUnsafeUpdate(float prediction, float label, float update_scale) override
+  float getUnsafeUpdate(float prediction, float label, float update_scale) const override
   {
     float err = label - prediction;
     if (err == 0) return 0;
@@ -286,45 +273,34 @@ public:
     return -(1 - tau) * update_scale;
   }
 
-  float getRevertingWeight(shared_data* sd, float prediction, float eta_t) override
-  {
-    float v, t;
-    t = 0.5f * (sd->min_label + sd->max_label);
-    if (prediction > t)
-      v = -(1 - tau);
-    else
-      v = tau;
-    return (t - prediction) / (eta_t * v);
-  }
-
-  float first_derivative(shared_data*, float prediction, float label) override
+  float first_derivative(const shared_data*, float prediction, float label) const override
   {
     float e = label - prediction;
     if (e == 0) return 0;
     return e > 0 ? -tau : (1 - tau);
   }
 
-  float getSquareGrad(float prediction, float label) override
+  float getSquareGrad(float prediction, float label) const override
   {
     float fd = first_derivative(nullptr, prediction, label);
     return fd * fd;
   }
 
-  float second_derivative(shared_data*, float, float) override { return 0.; }
+  float second_derivative(const shared_data*, float, float) const override { return 0.; }
 
   float tau;
 };
 
 class poisson_loss : public loss_function
 {
-  VW::io::logger logger;
+  mutable VW::io::logger logger;
 
 public:
   explicit poisson_loss(VW::io::logger logger) : logger(std::move(logger)) {}
 
-  std::string getType() override { return "poisson"; }
+  std::string getType() const override { return "poisson"; }
 
-  float getLoss(shared_data*, float prediction, float label) override
+  float getLoss(const shared_data*, float prediction, float label) const override
   {
     if (label < 0.f) { logger.out_warn("The poisson loss function expects a label >= 0 but received '{}'.", label); }
     float exp_prediction = expf(prediction);
@@ -332,7 +308,7 @@ public:
     return 2 * (label * (logf(label + 1e-6f) - prediction) - (label - exp_prediction));
   }
 
-  float getUpdate(float prediction, float label, float update_scale, float pred_per_update) override
+  float getUpdate(float prediction, float label, float update_scale, float pred_per_update) const override
   {
     float exp_prediction = expf(prediction);
     if (label > 0)
@@ -346,30 +322,25 @@ public:
     }
   }
 
-  float getUnsafeUpdate(float prediction, float label, float update_scale) override
+  float getUnsafeUpdate(float prediction, float label, float update_scale) const override
   {
     float exp_prediction = expf(prediction);
     return (label - exp_prediction) * update_scale;
   }
 
-  float getRevertingWeight(shared_data* /* sd */, float /* prediction */, float /* eta_t */) override
-  {
-    THROW("Active learning not supported by poisson loss");
-  }
-
-  float getSquareGrad(float prediction, float label) override
+  float getSquareGrad(float prediction, float label) const override
   {
     float exp_prediction = expf(prediction);
     return (exp_prediction - label) * (exp_prediction - label);
   }
 
-  float first_derivative(shared_data*, float prediction, float label) override
+  float first_derivative(const shared_data*, float prediction, float label) const override
   {
     float exp_prediction = expf(prediction);
     return (exp_prediction - label);
   }
 
-  float second_derivative(shared_data*, float prediction, float /* label */) override
+  float second_derivative(const shared_data*, float prediction, float /* label */) const override
   {
     float exp_prediction = expf(prediction);
     return exp_prediction;

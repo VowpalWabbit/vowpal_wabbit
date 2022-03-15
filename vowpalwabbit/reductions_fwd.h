@@ -6,15 +6,17 @@
 // Forward declaration header to declare the basic components used by VW reductions
 
 #include <vector>
+
 #include "v_array.h"
 
 // forward declarations
-struct example;
-using multi_ex = std::vector<example*>;
 struct random_state;
 
 namespace VW
 {
+struct example;
+using multi_ex = std::vector<example*>;
+using namespace_index = unsigned char;
 struct workspace;
 namespace LEARNER
 {

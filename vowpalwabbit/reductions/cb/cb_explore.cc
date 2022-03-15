@@ -3,22 +3,22 @@
 // license as described in the file LICENSE.
 
 #include "cb_explore.h"
-#include "cb_algs.h"
-#include "rand48.h"
-#include "reductions/bs.h"
-#include "gen_cs_example.h"
-#include "explore.h"
-#include "debug_log.h"
-#include "scope_exit.h"
-#include "vw_versions.h"
-#include "version.h"
-#include "cb_label_parser.h"
-#include <cfloat>
-#include "shared_data.h"
-#include "reductions/bs.h"
 
+#include <cfloat>
 #include <memory>
 #include <utility>
+
+#include "cb_algs.h"
+#include "cb_label_parser.h"
+#include "debug_log.h"
+#include "explore.h"
+#include "gen_cs_example.h"
+#include "rand48.h"
+#include "reductions/bs.h"
+#include "scope_exit.h"
+#include "shared_data.h"
+#include "version.h"
+#include "vw_versions.h"
 
 using namespace VW::LEARNER;
 using namespace ACTION_SCORE;
@@ -38,14 +38,14 @@ struct cb_explore
 {
   std::shared_ptr<VW::rand_state> _random_state;
   cb_to_cs cbcs;
-  v_array<uint32_t> preds;
-  v_array<float> cover_probs;
+  VW::v_array<uint32_t> preds;
+  VW::v_array<float> cover_probs;
 
   CB::label cb_label;
   COST_SENSITIVE::label cs_label;
   COST_SENSITIVE::label second_cs_label;
 
-  learner<cb_explore, example>* cs = nullptr;
+  learner<cb_explore, VW::example>* cs = nullptr;
 
   uint64_t tau = 0;
   float epsilon = 0.f;
@@ -63,7 +63,7 @@ struct cb_explore
 };
 
 template <bool is_learn>
-void predict_or_learn_first(cb_explore& data, single_learner& base, example& ec)
+void predict_or_learn_first(cb_explore& data, single_learner& base, VW::example& ec)
 {
   // Explore tau times, then act according to optimal.
   bool learn = is_learn && ec.l.cb.costs[0].probability < 1;
@@ -90,7 +90,7 @@ void predict_or_learn_first(cb_explore& data, single_learner& base, example& ec)
 }
 
 template <bool is_learn>
-void predict_or_learn_greedy(cb_explore& data, single_learner& base, example& ec)
+void predict_or_learn_greedy(cb_explore& data, single_learner& base, VW::example& ec)
 {
   // Explore uniform random an epsilon fraction of the time.
   // TODO: pointers are copied here. What happens if base.learn/base.predict re-allocs?
@@ -106,7 +106,8 @@ void predict_or_learn_greedy(cb_explore& data, single_learner& base, example& ec
 
   // pre-allocate pdf
 
-  VW_DBG(ec) << "cb_explore: " << (is_learn ? "learn() " : "predict() ") << multiclass_pred_to_string(ec) << endl;
+  VW_DBG(ec) << "cb_explore: " << (is_learn ? "learn() " : "predict() ") << VW::debug::multiclass_pred_to_string(ec)
+             << endl;
 
   probs.reserve(data.cbcs.num_actions);
   for (uint32_t i = 0; i < data.cbcs.num_actions; i++) probs.push_back({i, 0});
@@ -115,7 +116,7 @@ void predict_or_learn_greedy(cb_explore& data, single_learner& base, example& ec
 }
 
 template <bool is_learn>
-void predict_or_learn_bag(cb_explore& data, single_learner& base, example& ec)
+void predict_or_learn_bag(cb_explore& data, single_learner& base, VW::example& ec)
 {
   // Randomize over predictions from a base set of predictors
   action_scores& probs = ec.pred.a_s;
@@ -139,7 +140,7 @@ void predict_or_learn_bag(cb_explore& data, single_learner& base, example& ec)
 }
 
 void get_cover_probabilities(
-    cb_explore& data, single_learner& /* base */, example& ec, v_array<action_score>& probs, float min_prob)
+    cb_explore& data, single_learner& /* base */, VW::example& ec, VW::v_array<action_score>& probs, float min_prob)
 {
   float additive_probability = 1.f / static_cast<float>(data.cover_size);
   data.preds.clear();
@@ -163,7 +164,7 @@ void get_cover_probabilities(
 }
 
 template <bool is_learn>
-void predict_or_learn_cover(cb_explore& data, single_learner& base, example& ec)
+void predict_or_learn_cover(cb_explore& data, single_learner& base, VW::example& ec)
 {
   VW_DBG(ec) << "predict_or_learn_cover:" << is_learn << " start" << endl;
   // Randomize over predictions from a base set of predictors
@@ -177,13 +178,13 @@ void predict_or_learn_cover(cb_explore& data, single_learner& base, example& ec)
   for (uint32_t j = 0; j < num_actions; j++) data.cs_label.costs.push_back({FLT_MAX, j + 1, 0., 0.});
 
   size_t cover_size = data.cover_size;
-  v_array<float>& probabilities = data.cover_probs;
+  VW::v_array<float>& probabilities = data.cover_probs;
 
   float additive_probability = 1.f / static_cast<float>(cover_size);
 
   data.cb_label = ec.l.cb;
 
-  // Guard example state restore against throws
+  // Guard VW::example state restore against throws
   auto restore_guard = VW::scope_exit([&data, &ec] { ec.l.cb = data.cb_label; });
 
   ec.l.cs = data.cs_label;
@@ -242,13 +243,13 @@ void predict_or_learn_cover(cb_explore& data, single_learner& base, example& ec)
   ec.l.cs = COST_SENSITIVE::label{};
 }
 
-void print_update_cb_explore(VW::workspace& all, bool is_test, example& ec, std::stringstream& pred_string)
+void print_update_cb_explore(VW::workspace& all, bool is_test, VW::example& ec, std::stringstream& pred_string)
 {
   if (all.sd->weighted_examples() >= all.sd->dump_interval && !all.quiet && !all.bfgs)
   {
     std::stringstream label_string;
     if (is_test)
-      label_string << " unknown";
+      label_string << "unknown";
     else
     {
       const auto& cost = ec.l.cb.costs[0];
@@ -259,7 +260,7 @@ void print_update_cb_explore(VW::workspace& all, bool is_test, example& ec, std:
   }
 }
 
-float calc_loss(cb_explore& data, example& ec, const CB::label& ld)
+float calc_loss(cb_explore& data, VW::example& ec, const CB::label& ld)
 {
   float loss = 0.f;
 
@@ -276,7 +277,7 @@ float calc_loss(cb_explore& data, example& ec, const CB::label& ld)
   return loss;
 }
 
-void generic_output_example(VW::workspace& all, float loss, example& ec, CB::label& ld)
+void generic_output_example(VW::workspace& all, float loss, VW::example& ec, CB::label& ld)
 {
   all.sd->update(ec.test_only, !CB::is_test_label(ld), loss, 1.f, ec.get_num_features());
 
@@ -299,7 +300,7 @@ void generic_output_example(VW::workspace& all, float loss, example& ec, CB::lab
   print_update_cb_explore(all, CB::is_test_label(ld), ec, sso);
 }
 
-void finish_example(VW::workspace& all, cb_explore& data, example& ec)
+void finish_example(VW::workspace& all, cb_explore& data, VW::example& ec)
 {
   float loss = calc_loss(data, ec, ec.l.cb);
 
@@ -314,7 +315,7 @@ void save_load(cb_explore& cb, io_buf& io, bool read, bool text)
   if (!read || cb.model_file_version >= VW::version_definitions::VERSION_FILE_WITH_CCB_MULTI_SLOTS_SEEN_FLAG)
   {
     std::stringstream msg;
-    if (!read) { msg << "cb cover storing example counter:  = " << cb.counter << "\n"; }
+    if (!read) { msg << "cb cover storing VW::example counter:  = " << cb.counter << "\n"; }
     bin_text_read_write_fixed_validated(io, reinterpret_cast<char*>(&cb.counter), sizeof(cb.counter), read, msg, text);
   }
 }
@@ -370,8 +371,8 @@ base_learner* cb_explore_setup(VW::setup_base_i& stack_builder)
   single_learner* base = as_singleline(stack_builder.setup_base_learner());
   data->cbcs.scorer = all.scorer;
 
-  void (*learn_ptr)(cb_explore&, single_learner&, example&);
-  void (*predict_ptr)(cb_explore&, single_learner&, example&);
+  void (*learn_ptr)(cb_explore&, single_learner&, VW::example&);
+  void (*predict_ptr)(cb_explore&, single_learner&, VW::example&);
   size_t params_per_weight;
   std::string name_addition;
 
@@ -387,7 +388,7 @@ base_learner* cb_explore_setup(VW::setup_base_i& stack_builder)
       data->epsilon = 1.f;
       data->epsilon_decay = true;
     }
-    data->cs = reinterpret_cast<learner<cb_explore, example>*>(as_singleline(all.cost_sensitive));
+    data->cs = reinterpret_cast<learner<cb_explore, VW::example>*>(as_singleline(all.cost_sensitive));
     for (uint32_t j = 0; j < num_actions; j++) { data->second_cs_label.costs.push_back(COST_SENSITIVE::wclass{}); }
     data->cover_probs.resize_but_with_stl_behavior(num_actions);
     data->preds.reserve(data->cover_size);
@@ -419,14 +420,14 @@ base_learner* cb_explore_setup(VW::setup_base_i& stack_builder)
   }
   auto* l = make_reduction_learner(
       std::move(data), base, learn_ptr, predict_ptr, stack_builder.get_setupfn_name(cb_explore_setup) + name_addition)
-                .set_params_per_weight(params_per_weight)
-                .set_input_prediction_type(VW::prediction_type_t::multiclass)
-                .set_output_prediction_type(VW::prediction_type_t::action_probs)
                 .set_input_label_type(VW::label_type_t::cb)
                 .set_output_label_type(VW::label_type_t::cb)
+                .set_input_prediction_type(VW::prediction_type_t::multiclass)
+                .set_output_prediction_type(VW::prediction_type_t::action_probs)
+                .set_params_per_weight(params_per_weight)
                 .set_finish_example(finish_example)
                 .set_save_load(save_load)
-                .build();
+                .build(&all.logger);
 
   return make_base(*l);
 }

@@ -4,6 +4,8 @@ import vowpalwabbit
 
 import unittest
 import platform
+import math
+import re
 
 
 def helper_get_test_dir():
@@ -84,6 +86,69 @@ def test_getting_started_example_legacy_cb():
     return helper_getting_started_example("--cb_force_legacy --cb")
 
 
+# Returns true if they are close enough to be considered equal.
+def are_floats_equal(float_one_str: str, float_two_str: str, epsilon: float) -> bool:
+    float_one = float(float_one_str)
+    float_two = float(float_two_str)
+
+    # Special case handle these two as they will not be equal when checking absolute difference.
+    # But for the purposes of comparing the diff they are equal.
+    if math.isinf(float_one) and math.isinf(float_two):
+        return True
+    if math.isnan(float_one) and math.isnan(float_two):
+        return True
+
+    delta = abs(float_one - float_two)
+    if delta < epsilon:
+        return True
+
+    # Large number comparison code migrated from Perl RunTests
+
+    # We have a 'big enough' difference, but this difference
+    # may still not be meaningful in all contexts. Big numbers should be compared by ratio rather than
+    # by difference
+
+    # Must ensure we can divide (avoid div-by-0)
+    # If numbers are so small (close to zero),
+    # ($delta > $Epsilon) suffices for deciding that
+    # the numbers are meaningfully different
+    if abs(float_two) <= 1.0:
+        return False
+
+    # Now we can safely divide (since abs($word2) > 0) and determine the ratio difference from 1.0
+    ratio_delta = abs(float_one / float_two - 1.0)
+    return ratio_delta < epsilon
+
+
+def is_float(value: str) -> bool:
+    try:
+        float(value)
+        return True
+    except ValueError:
+        return False
+
+
+def is_line_different(output_line: str, ref_line: str, epsilon: float) -> bool:
+    output_tokens = re.split("[ \t:,@]+", output_line)
+    ref_tokens = re.split("[ \t:,@]+", ref_line)
+
+    if len(output_tokens) != len(ref_tokens):
+        return True
+
+    for output_token, ref_token in zip(output_tokens, ref_tokens):
+        output_is_float = is_float(output_token)
+        ref_is_float = is_float(ref_token)
+        if output_is_float and ref_is_float:
+            are_equal = are_floats_equal(output_token, ref_token, epsilon)
+            if not are_equal:
+                return True
+        else:
+            if output_token != ref_token:
+                return True
+
+    return False
+
+
 @unittest.skipIf(
     platform.machine() == "aarch64", "skipping due to floating-point error on aarch64"
 )
@@ -141,10 +206,17 @@ def helper_getting_started_example(which_cb):
     else:
         test_file = "test-sets/ref/python_test_cb.stderr"
 
+    print("Output received:")
+    print("----------------")
+    print("\n".join(output))
+    print("----------------")
+
     with open(path.join(helper_get_test_dir(), test_file), "r") as file:
-        actual = file.readlines()
-        for j, i in zip(actual, output):
-            assert i == j, "line mismatch should be: " + j + " output: " + i
+        expected = file.readlines()
+        for expected_line, output_line in zip(expected, output):
+            output_line = output_line.replace("...", "").strip()
+            expected_line = expected_line.replace("...", "").strip()
+            assert not is_line_different(output_line, expected_line, 0.001)
 
 
 def test_getting_started_example_with():

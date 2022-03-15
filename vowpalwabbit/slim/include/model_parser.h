@@ -1,18 +1,18 @@
 #pragma once
 
-#include <memory>
 #include <cctype>
+#include <memory>
 #include <string>
 
-#include "vw_slim_return_codes.h"
 #include "hash.h"
+#include "vw_slim_return_codes.h"
 
 // #define MODEL_PARSER_DEBUG
 
 #ifdef MODEL_PARSER_DEBUG
-#  include <iostream>
-#  include <iomanip>
 #  include <fstream>
+#  include <iomanip>
+#  include <iostream>
 #endif
 
 namespace vw_slim

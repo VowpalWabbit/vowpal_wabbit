@@ -119,7 +119,7 @@ BOOST_AUTO_TEST_CASE(parse_json_cats)
 
   auto& space_names = examples[0]->feature_space[' '].space_names;
   BOOST_CHECK_EQUAL(features.size(), space_names.size());
-  for (size_t i = 0; i < space_names.size(); i++) { BOOST_CHECK_EQUAL(space_names[i].second, features[i]); }
+  for (size_t i = 0; i < space_names.size(); i++) { BOOST_CHECK_EQUAL(space_names[i].name, features[i]); }
 
   VW::finish_example(*vw, examples);
   VW::finish(*vw);
@@ -150,7 +150,7 @@ BOOST_AUTO_TEST_CASE(parse_json_cats_no_label)
 
   auto& space_names = examples[0]->feature_space[' '].space_names;
   BOOST_CHECK_EQUAL(features.size(), space_names.size());
-  for (size_t i = 0; i < space_names.size(); i++) { BOOST_CHECK_EQUAL(space_names[i].second, features[i]); }
+  for (size_t i = 0; i < space_names.size(); i++) { BOOST_CHECK_EQUAL(space_names[i].name, features[i]); }
 
   VW::finish_example(*vw, examples);
   VW::finish(*vw);
@@ -392,7 +392,7 @@ BOOST_AUTO_TEST_CASE(parse_json_text_does_not_change_input)
 
   auto* ccb_vw = VW::initialize("--ccb_explore_adf --dsjson --quiet", nullptr, false, nullptr, nullptr);
 
-  v_array<example*> examples;
+  VW::v_array<example*> examples;
   examples.push_back(&VW::get_unused_example(ccb_vw));
   ccb_vw->example_parser->text_reader(ccb_vw, json_text.c_str(), strlen(json_text.c_str()), examples);
 
@@ -420,7 +420,7 @@ BOOST_AUTO_TEST_CASE(parse_json_dedup_cb)
   auto vw = VW::initialize("--json --chain_hash --cb_explore_adf --no_stdin --quiet", nullptr, false, nullptr, nullptr);
 
   std::unordered_map<uint64_t, example*> dedup_examples;
-  v_array<example*> examples;
+  VW::v_array<example*> examples;
 
   // parse first dedup example and store it in dedup_examples map
   examples.push_back(&VW::get_unused_example(vw));
@@ -452,16 +452,18 @@ BOOST_AUTO_TEST_CASE(parse_json_dedup_cb)
   // check namespaces
   BOOST_CHECK_EQUAL(examples[1]->indices.size(), 1);
   BOOST_CHECK_EQUAL(examples[1]->indices[0], 'T');
-  BOOST_CHECK_EQUAL(examples[1]->feature_space['T'].space_names[0].first, "TAction");
+  BOOST_CHECK_EQUAL(examples[1]->feature_space['T'].space_names[0].ns, "TAction");
   BOOST_CHECK_EQUAL(examples[2]->indices.size(), 1);
   BOOST_CHECK_EQUAL(examples[2]->indices[0], 'T');
-  BOOST_CHECK_EQUAL(examples[2]->feature_space['T'].space_names[0].first, "TAction");
+  BOOST_CHECK_EQUAL(examples[2]->feature_space['T'].space_names[0].ns, "TAction");
 
   // check features
   BOOST_CHECK_EQUAL(examples[1]->feature_space['T'].space_names.size(), 1);
-  BOOST_CHECK_EQUAL(examples[1]->feature_space['T'].space_names[0].second, "a1^f1");
+  BOOST_CHECK_EQUAL(examples[1]->feature_space['T'].space_names[0].name, "a1");
+  BOOST_CHECK_EQUAL(examples[1]->feature_space['T'].space_names[0].str_value, "f1");
   BOOST_CHECK_EQUAL(examples[2]->feature_space['T'].space_names.size(), 1);
-  BOOST_CHECK_EQUAL(examples[2]->feature_space['T'].space_names[0].second, "a2^f2");
+  BOOST_CHECK_EQUAL(examples[2]->feature_space['T'].space_names[0].name, "a2");
+  BOOST_CHECK_EQUAL(examples[2]->feature_space['T'].space_names[0].str_value, "f2");
 
   for (auto* example : examples) { VW::finish_example(*vw, *example); }
   for (auto& dedup : dedup_examples) { VW::finish_example(*vw, *dedup.second); }
@@ -484,7 +486,7 @@ BOOST_AUTO_TEST_CASE(parse_json_dedup_cb_missing_dedup_id)
   auto vw = VW::initialize("--json --chain_hash --cb_explore_adf --no_stdin --quiet", nullptr, false, nullptr, nullptr);
 
   std::unordered_map<uint64_t, example*> dedup_examples;
-  v_array<example*> examples;
+  VW::v_array<example*> examples;
 
   // parse first dedup example and store it in dedup_examples map
   examples.push_back(&VW::get_unused_example(vw));
@@ -553,7 +555,7 @@ BOOST_AUTO_TEST_CASE(parse_json_dedup_ccb)
       VW::initialize("--json --chain_hash --ccb_explore_adf --no_stdin --quiet", nullptr, false, nullptr, nullptr);
 
   std::unordered_map<uint64_t, example*> dedup_examples;
-  v_array<example*> examples;
+  VW::v_array<example*> examples;
 
   // parse first dedup example and store it in dedup_examples map
   examples.push_back(&VW::get_unused_example(vw));
@@ -585,16 +587,18 @@ BOOST_AUTO_TEST_CASE(parse_json_dedup_ccb)
   // check namespaces
   BOOST_CHECK_EQUAL(examples[1]->indices.size(), 1);
   BOOST_CHECK_EQUAL(examples[1]->indices[0], 'T');
-  BOOST_CHECK_EQUAL(examples[1]->feature_space['T'].space_names[0].first, "TAction");
+  BOOST_CHECK_EQUAL(examples[1]->feature_space['T'].space_names[0].ns, "TAction");
   BOOST_CHECK_EQUAL(examples[2]->indices.size(), 1);
   BOOST_CHECK_EQUAL(examples[2]->indices[0], 'T');
-  BOOST_CHECK_EQUAL(examples[2]->feature_space['T'].space_names[0].first, "TAction");
+  BOOST_CHECK_EQUAL(examples[2]->feature_space['T'].space_names[0].ns, "TAction");
 
   // check features
   BOOST_CHECK_EQUAL(examples[1]->feature_space['T'].space_names.size(), 1);
-  BOOST_CHECK_EQUAL(examples[1]->feature_space['T'].space_names[0].second, "a1^f1");
+  BOOST_CHECK_EQUAL(examples[1]->feature_space['T'].space_names[0].name, "a1");
+  BOOST_CHECK_EQUAL(examples[1]->feature_space['T'].space_names[0].str_value, "f1");
   BOOST_CHECK_EQUAL(examples[2]->feature_space['T'].space_names.size(), 1);
-  BOOST_CHECK_EQUAL(examples[2]->feature_space['T'].space_names[0].second, "a2^f2");
+  BOOST_CHECK_EQUAL(examples[2]->feature_space['T'].space_names[0].name, "a2");
+  BOOST_CHECK_EQUAL(examples[2]->feature_space['T'].space_names[0].str_value, "f2");
 
   // check ccb
 
@@ -671,7 +675,7 @@ BOOST_AUTO_TEST_CASE(parse_json_dedup_ccb_dedup_id_missing)
       VW::initialize("--json --chain_hash --ccb_explore_adf --no_stdin --quiet", nullptr, false, nullptr, nullptr);
 
   std::unordered_map<uint64_t, example*> dedup_examples;
-  v_array<example*> examples;
+  VW::v_array<example*> examples;
 
   // parse first dedup example and store it in dedup_examples map
   examples.push_back(&VW::get_unused_example(vw));
@@ -719,7 +723,7 @@ BOOST_AUTO_TEST_CASE(parse_json_dedup_slates)
   auto vw = VW::initialize("--json --chain_hash --slates --no_stdin --quiet", nullptr, false, nullptr, nullptr);
 
   std::unordered_map<uint64_t, example*> dedup_examples;
-  v_array<example*> examples;
+  VW::v_array<example*> examples;
 
   // parse first dedup example and store it in dedup_examples map
   examples.push_back(&VW::get_unused_example(vw));
@@ -751,16 +755,18 @@ BOOST_AUTO_TEST_CASE(parse_json_dedup_slates)
   // check namespaces
   BOOST_CHECK_EQUAL(examples[1]->indices.size(), 1);
   BOOST_CHECK_EQUAL(examples[1]->indices[0], 'T');
-  BOOST_CHECK_EQUAL(examples[1]->feature_space['T'].space_names[0].first, "TAction");
+  BOOST_CHECK_EQUAL(examples[1]->feature_space['T'].space_names[0].ns, "TAction");
   BOOST_CHECK_EQUAL(examples[2]->indices.size(), 1);
   BOOST_CHECK_EQUAL(examples[2]->indices[0], 'T');
-  BOOST_CHECK_EQUAL(examples[2]->feature_space['T'].space_names[0].first, "TAction");
+  BOOST_CHECK_EQUAL(examples[2]->feature_space['T'].space_names[0].ns, "TAction");
 
   // check features
   BOOST_CHECK_EQUAL(examples[1]->feature_space['T'].space_names.size(), 1);
-  BOOST_CHECK_EQUAL(examples[1]->feature_space['T'].space_names[0].second, "a1^f1");
+  BOOST_CHECK_EQUAL(examples[1]->feature_space['T'].space_names[0].name, "a1");
+  BOOST_CHECK_EQUAL(examples[1]->feature_space['T'].space_names[0].str_value, "f1");
   BOOST_CHECK_EQUAL(examples[2]->feature_space['T'].space_names.size(), 1);
-  BOOST_CHECK_EQUAL(examples[2]->feature_space['T'].space_names[0].second, "a2^f2");
+  BOOST_CHECK_EQUAL(examples[2]->feature_space['T'].space_names[0].name, "a2");
+  BOOST_CHECK_EQUAL(examples[2]->feature_space['T'].space_names[0].str_value, "f2");
 
   // check slates
   BOOST_CHECK_EQUAL(examples[0]->l.slates.type, VW::slates::example_type::shared);
@@ -795,7 +801,7 @@ BOOST_AUTO_TEST_CASE(parse_json_dedup_slates_dedup_id_missing)
   auto vw = VW::initialize("--json --chain_hash --slates --no_stdin --quiet", nullptr, false, nullptr, nullptr);
 
   std::unordered_map<uint64_t, example*> dedup_examples;
-  v_array<example*> examples;
+  VW::v_array<example*> examples;
 
   // parse first dedup example and store it in dedup_examples map
   examples.push_back(&VW::get_unused_example(vw));

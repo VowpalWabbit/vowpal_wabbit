@@ -14,7 +14,19 @@ import json
 from concurrent.futures import ThreadPoolExecutor, Future
 from enum import Enum
 import socket
-from typing import Any, Callable, Dict, List, Optional, Set, Tuple, Type, Union, cast
+from typing import (
+    Any,
+    Callable,
+    Dict,
+    List,
+    Mapping,
+    Optional,
+    Set,
+    Tuple,
+    Type,
+    Union,
+    cast,
+)
 
 from run_tests_common import TestData
 import runtests_flatbuffer_converter as fb_converter
@@ -40,6 +52,62 @@ class Result(Enum):
     SUCCESS = 1
     FAIL = 2
     SKIPPED = 3
+
+
+def are_dicts_equal(
+    expected_dict: Mapping[Any, Any], actual_dict: Mapping[Any, Any], epsilon: float
+) -> Tuple[bool, str]:
+    def _are_same(expected: Any, actual: Any, key: str) -> Tuple[bool, str]:
+        if type(expected) != type(actual):
+            return (
+                False,
+                f"Key '{key}' type mismatch. Expected: '{type(expected)}', but found: '{type(actual)}'",
+            )
+        elif type(expected) == type(None):
+            return True, ""
+        elif isinstance(expected, (int, bool, str)):
+            return (
+                expected == actual,
+                f"Key '{key}' value mismatch. Expected: '{expected}', but found: '{actual}'"
+                if expected != actual
+                else "",
+            )
+        elif isinstance(expected, (float)):
+            delta = abs(expected - actual)
+            return (
+                delta < epsilon,
+                f"Key '{key}' value mismatch. Expected: '{expected}', but found: '{actual}' (using epsilon: '{epsilon}')"
+                if delta >= epsilon
+                else "",
+            )
+        elif isinstance(expected, dict):
+            expected_keys = set(expected.keys())
+            actual_keys = set(actual.keys())
+            if expected_keys != actual_keys:
+                return (
+                    False,
+                    f"Key '{key}' keys mismatch. Expected: {expected_keys.difference(actual_keys)}. Found but not expected: {actual_keys.difference(expected_keys)}",
+                )
+            for key in expected_keys:
+                are_same, reason = _are_same(expected[key], actual[key], f"{key}")
+                if not are_same:
+                    return False, reason
+            return True, ""
+        elif isinstance(expected, list):
+            if len(expected) != len(actual):
+                return (
+                    False,
+                    f"Key '{key}' length mismatch. Expected: '{len(expected)}', but found: '{len(actual)}'",
+                )
+            for i in range(len(expected)):
+                are_same, reason = _are_same(expected[i], actual[i], f"{key}[{i}]")
+                if not are_same:
+                    return False, reason
+            return True, ""
+        else:
+            raise TypeError(f"Type {type(expected)} not supported in are_dicts_equal")
+
+    return _are_same(expected_dict, actual_dict, "root")
 
 
 class Completion:
@@ -110,7 +178,8 @@ class TestOutcome:
 
 
 def try_decode(binary_object: Optional[bytes]) -> str:
-    return binary_object.decode("utf-8") if binary_object is not None else ""
+    # ignore UTF decode errors so that we can still understand the output in this case
+    return binary_object.decode("utf-8", "ignore") if binary_object is not None else ""
 
 
 # Returns true if they are close enough to be considered equal.
@@ -406,9 +475,20 @@ def run_command_line_test(
                     False, f"Failed to open ref file: {ref_file}", []
                 )
                 continue
-            is_different, reason = is_output_different(
-                output_content, ref_content, epsilon, fuzzy_compare=fuzzy_compare
-            )
+
+            if ref_file.endswith(".json"):
+                # Empty strings are falsy
+                output_json = json.loads(output_content) if output_content else dict()
+                ref_json = json.loads(ref_content) if ref_content else dict()
+                dicts_equal, reason = are_dicts_equal(
+                    output_json, ref_json, epsilon=epsilon
+                )
+                is_different = not dicts_equal
+            else:
+                is_different, reason = is_output_different(
+                    output_content, ref_content, epsilon, fuzzy_compare=fuzzy_compare
+                )
+
             if is_different and overwrite:
                 with ref_file_ref_dir.open("w") as writer:
                     writer.write(output_content)
@@ -798,6 +878,21 @@ def get_test(test_number: int, tests: List[TestData]) -> Optional[TestData]:
             return test
     return None
 
+def interpret_test_arg(arg: str, *, num_tests:int) -> List[int]:
+    single_number_pattern = re.compile(r"^\d+$")
+    range_pattern = re.compile(r"^(\d+)?\.\.(\d+)?$")
+    if single_number_pattern.match(arg):
+        return [int(arg)]
+    elif range_pattern.match(arg):
+        start, end = range_pattern.match(arg).groups()
+        start = int(start) if start else 1
+        end = int(end) if end else num_tests
+        if start > end:
+            raise ValueError(f"Invalid range: {arg}")
+        return list(range(start, end + 1))
+    else:
+        raise ValueError(f"Invalid test argument '{arg}'. Must either be a single integer 'id' or a range in the form 'start..end'")
+
 
 def main():
     working_dir: Path = Path.home() / ".vw_runtests_working_dir"
@@ -811,10 +906,10 @@ def main():
     parser.add_argument(
         "-t",
         "--test",
-        type=int,
+        type=str,
         action="append",
         nargs="+",
-        help="Run specific tests and ignore all others",
+        help="Run specific tests and ignore all others. Can specific as a single integer 'id' or a range in the form 'start..end'",
     )
     parser.add_argument(
         "-E",
@@ -943,11 +1038,6 @@ def main():
         print("Can't find valgrind")
         sys.exit(1)
 
-    # Flatten nested lists for arg.test argument.
-    # Ideally we would have used action="extend", but that was added in 3.8
-    if args.test is not None:
-        args.test = [item for sublist in args.test for item in sublist]
-
     if test_base_working_dir.is_file():
         print(f"--working_dir='{test_base_working_dir}' cannot be a file")
         sys.exit(1)
@@ -1003,6 +1093,15 @@ def main():
         args.skip_test,
         extra_vw_options=args.extra_options,
     )
+
+    # Flatten nested lists for arg.test argument and process
+    # Ideally we would have used action="extend", but that was added in 3.8
+    if args.test is not None:
+        res = []
+        for arg in args.test:
+            for value in arg:
+                res.extend(interpret_test_arg(value, num_tests=len(tests)))
+        args.test = res
 
     print()
 

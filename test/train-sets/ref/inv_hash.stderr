@@ -9,10 +9,10 @@ power_t = 0.5
 Enabled reductions: gd, generate_interactions, scorer-identity, oaa
 Input label = multiclass
 Output pred = multiclass
-average  since         example        example  current  current  current
-loss     last          counter         weight    label  predict features
-1.000000 1.000000            1            1.0        3        1       28
-1.000000 1.000000            2            2.0        2        3       15
+average  since         example        example        current        current  current 
+loss     last          counter         weight          label        predict features 
+1.000000 1.000000            1            1.0              3              1       28 
+1.000000 1.000000            2            2.0              2              3       15 
 
 finished run
 number of examples = 2

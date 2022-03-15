@@ -1,1 +1,1 @@
-[critical] vw (option_group_definition.cc:31): Error: 'bad_type' is not a valid choice for option --cb_type. Please select from {dm, dr, ips, mtr, sm}
+[critical] vw (option_group_definition.cc:30): Error: 'bad_type' is not a valid choice for option --cb_type. Please select from {dm, dr, ips, mtr, sm}

@@ -4,6 +4,7 @@
 #pragma once
 
 #include <utility>
+
 #include "future_compat.h"
 
 // While it is a general concept this specific implementation of scope based cleanup was inspired by

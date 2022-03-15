@@ -2,6 +2,7 @@
 // individual contributors. All rights reserved. Released under a BSD (revised)
 // license as described in the file LICENSE.
 #include "search_sequencetask.h"
+
 #include "memory.h"
 #include "numeric_casts.h"
 #include "vw.h"
@@ -39,7 +40,7 @@ void initialize(Search::search& sch, size_t& /*num_actions*/, options_i& /*optio
       0);
 }
 
-void run(Search::search& sch, multi_ex& ec)
+void run(Search::search& sch, VW::multi_ex& ec)
 {
   Search::predictor P(sch, static_cast<ptag>(0));
   for (size_t i = 0; i < ec.size(); i++)
@@ -93,7 +94,7 @@ inline action bilou_to_bio(action y)
   return y / 2 + 1;  // out -> out, {unit,begin} -> begin; {in,last} -> in
 }
 
-void convert_bio_to_bilou(multi_ex& ec)
+void convert_bio_to_bilou(VW::multi_ex& ec)
 {
   for (size_t n = 0; n < ec.size(); n++)
   {
@@ -123,8 +124,8 @@ void convert_bio_to_bilou(multi_ex& ec)
 struct task_data
 {
   EncodingType encoding;
-  v_array<action> allowed_actions;
-  v_array<action> only_two_allowed;  // used for BILOU encoding
+  VW::v_array<action> allowed_actions;
+  VW::v_array<action> only_two_allowed;  // used for BILOU encoding
   size_t multipass;
 };
 
@@ -181,13 +182,13 @@ void initialize(Search::search& sch, size_t& num_actions, options_i& options)
   sch.set_task_data<task_data>(D.release());
 }
 
-void setup(Search::search& sch, multi_ex& ec)
+void setup(Search::search& sch, VW::multi_ex& ec)
 {
   task_data& D = *sch.get_task_data<task_data>();
   if (D.encoding == EncodingType::BILOU) convert_bio_to_bilou(ec);
 }
 
-void takedown(Search::search& sch, multi_ex& ec)
+void takedown(Search::search& sch, VW::multi_ex& ec)
 {
   task_data& D = *sch.get_task_data<task_data>();
 
@@ -199,10 +200,10 @@ void takedown(Search::search& sch, multi_ex& ec)
     }
 }
 
-void run(Search::search& sch, multi_ex& ec)
+void run(Search::search& sch, VW::multi_ex& ec)
 {
   task_data& D = *sch.get_task_data<task_data>();
-  v_array<action>* y_allowed = &(D.allowed_actions);
+  VW::v_array<action>* y_allowed = &(D.allowed_actions);
   Search::predictor P(sch, static_cast<ptag>(0));
   for (size_t pass = 1; pass <= D.multipass; pass++)
   {
@@ -273,7 +274,7 @@ void initialize(Search::search& sch, size_t& num_actions, options_i& /*options*/
   sch.set_task_data<size_t>(new size_t{num_actions});
 }
 
-void run(Search::search& sch, multi_ex& ec)
+void run(Search::search& sch, VW::multi_ex& ec)
 {
   size_t K = *sch.get_task_data<size_t>();
   float* costs = calloc_or_throw<float>(K);
@@ -324,7 +325,7 @@ void initialize(Search::search& sch, size_t& /*num_actions*/, options_i& options
         Search::EXAMPLES_DONT_CHANGE);                 // we don't do any internal example munging
 }
 
-void run(Search::search& sch, multi_ex& ec)
+void run(Search::search& sch, VW::multi_ex& ec)
 {
   task_data& D = *sch.get_task_data<task_data>();
   uint32_t max_prediction = 1;
@@ -356,7 +357,7 @@ namespace SequenceTask_DemoLDF  // this is just to debug/show off how to do LDF
 namespace CS = COST_SENSITIVE;
 struct task_data
 {
-  std::vector<example> ldf_examples;
+  std::vector<VW::example> ldf_examples;
   size_t num_actions;
 };
 
@@ -384,14 +385,14 @@ void initialize(Search::search& sch, size_t& num_actions, options_i& /*options*/
 
 // this is totally bogus for the example -- you'd never actually do this!
 void my_update_example_indices(
-    Search::search& sch, bool /* audit */, example* ec, uint64_t mult_amount, uint64_t plus_amount)
+    Search::search& sch, bool /* audit */, VW::example* ec, uint64_t mult_amount, uint64_t plus_amount)
 {
   size_t ss = sch.get_stride_shift();
   for (features& fs : *ec)
     for (feature_index& idx : fs.indices) idx = (((idx >> ss) * mult_amount) + plus_amount) << ss;
 }
 
-void run(Search::search& sch, multi_ex& ec)
+void run(Search::search& sch, VW::multi_ex& ec)
 {
   task_data* data = sch.get_task_data<task_data>();
   Search::predictor P(sch, static_cast<ptag>(0));

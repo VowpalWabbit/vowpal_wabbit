@@ -10,26 +10,25 @@
 #  include <unistd.h>
 #endif
 
-#include <cstdlib>
-#include <cstdint>
+#include <algorithm>
 #include <cmath>
 #include <cstdarg>
-
+#include <cstdint>
+#include <cstdlib>
 #include <fstream>
 #include <iostream>
-#include <algorithm>
 #include <numeric>
 #include <utility>
 
+#include "config/cli_options_serializer.h"
 #include "crossplat_compat.h"
-#include "rand48.h"
 #include "global_data.h"
+#include "io/logger.h"
+#include "rand48.h"
+#include "shared_data.h"
 #include "vw_exception.h"
 #include "vw_validate.h"
 #include "vw_versions.h"
-#include "config/cli_options_serializer.h"
-#include "shared_data.h"
-#include "io/logger.h"
 
 void initialize_weights_as_random_positive(weight* weights, uint64_t index) { weights[0] = 0.1f * merand48(index); }
 void initialize_weights_as_random(weight* weights, uint64_t index) { weights[0] = merand48(index) - 0.5f; }
@@ -209,7 +208,7 @@ void save_load_header(VW::workspace& all, io_buf& model_file, bool read, bool te
 
         // Only the read path is implemented since this is for old version read support.
         bytes_read_write += bin_text_read_write_fixed_validated(model_file, pair, 2, read, msg, text);
-        std::vector<namespace_index> temp(pair, *(&pair + 1));
+        std::vector<VW::namespace_index> temp(pair, *(&pair + 1));
         if (std::count(all.interactions.begin(), all.interactions.end(), temp) == 0)
         { all.interactions.emplace_back(temp.begin(), temp.end()); }
       }
@@ -231,7 +230,7 @@ void save_load_header(VW::workspace& all, io_buf& model_file, bool read, bool te
         // Only the read path is implemented since this is for old version read support.
         bytes_read_write += bin_text_read_write_fixed_validated(model_file, triple, 3, read, msg, text);
 
-        std::vector<namespace_index> temp(triple, *(&triple + 1));
+        std::vector<VW::namespace_index> temp(triple, *(&triple + 1));
         if (count(all.interactions.begin(), all.interactions.end(), temp) == 0)
         { all.interactions.emplace_back(temp.begin(), temp.end()); }
       }
@@ -263,7 +262,7 @@ void save_load_header(VW::workspace& all, io_buf& model_file, bool read, bool te
           bytes_read_write += size;
           if (size != inter_len) { THROW("Failed to read interaction from model file."); }
 
-          std::vector<namespace_index> temp(buff2.data(), buff2.data() + size);
+          std::vector<VW::namespace_index> temp(buff2.data(), buff2.data() + size);
           if (count(all.interactions.begin(), all.interactions.end(), temp) == 0)
           { all.interactions.emplace_back(buff2.data(), buff2.data() + inter_len); }
         }

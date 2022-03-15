@@ -1,6 +1,6 @@
 using no cache
-Reading datafile = stdin
-num sources = 1
+Reading datafile = none
+num sources = 0
 Num weight bits = 18
 learning rate = 0.5
 initial_t = 0
@@ -8,12 +8,12 @@ power_t = 0.5
 Enabled reductions: gd, scorer-identity, csoaa_ldf-rank, cb_adf, shared_feature_merger, cb_to_cbadf
 Input label = cb
 Output pred = multiclass
-average  since         example        example  current  current  current
-loss     last          counter         weight    label  predict features
-5.000000 5.000000            1            1.0  0:2:0.4        0:0...       12
-2.500000 0.000000            2            2.0  2:0:0.2        1:0...       12
-2.083333 1.666667            4            4.0  1:1:0.3        1:0...       16
-1.952381 1.428571            8            8.0  unknown        2:0.128945...       12
+average  since         example        example        current        current  current
+loss     last          counter         weight          label        predict features
+5.000000 5.000000            1            1.0        0:2:0.4            0:0       12
+2.500000 0.000000            2            2.0        2:0:0.2            1:0       12
+2.083333 1.666667            4            4.0        1:1:0.3            1:0       16
+1.952381 1.428571            8            8.0        unknown         2:0.13       12
 
 finished run
 number of examples = 9

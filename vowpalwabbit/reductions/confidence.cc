@@ -2,13 +2,12 @@
 // individual contributors. All rights reserved. Released under a BSD (revised)
 // license as described in the file LICENSE.
 
-#include "vw.h"
-#include "math.h"
-#include "shared_data.h"
+#include <cfloat>
 
 #include "io/logger.h"
-
-#include <cfloat>
+#include "math.h"
+#include "shared_data.h"
+#include "vw.h"
 
 using namespace VW::LEARNER;
 using namespace VW::config;
@@ -19,7 +18,7 @@ struct confidence
 };
 
 template <bool is_learn, bool is_confidence_after_training>
-void predict_or_learn_with_confidence(confidence& /* c */, single_learner& base, example& ec)
+void predict_or_learn_with_confidence(confidence& /* c */, single_learner& base, VW::example& ec)
 {
   float threshold = 0.f;
   float sensitivity = 0.f;
@@ -47,7 +46,7 @@ void predict_or_learn_with_confidence(confidence& /* c */, single_learner& base,
 }
 
 void confidence_print_result(
-    VW::io::writer* f, float res, float confidence, const v_array<char>& tag, VW::io::logger& logger)
+    VW::io::writer* f, float res, float confidence, const VW::v_array<char>& tag, VW::io::logger& logger)
 {
   if (f != nullptr)
   {
@@ -64,7 +63,7 @@ void confidence_print_result(
   }
 }
 
-void output_and_account_confidence_example(VW::workspace& all, example& ec)
+void output_and_account_confidence_example(VW::workspace& all, VW::example& ec)
 {
   label_data& ld = ec.l.simple;
 
@@ -79,7 +78,7 @@ void output_and_account_confidence_example(VW::workspace& all, example& ec)
   print_update(all, ec);
 }
 
-void return_confidence_example(VW::workspace& all, confidence& /* c */, example& ec)
+void return_confidence_example(VW::workspace& all, confidence& /* c */, VW::example& ec)
 {
   output_and_account_confidence_example(all, ec);
   VW::finish_example(all, ec);
@@ -111,8 +110,8 @@ base_learner* confidence_setup(VW::setup_base_i& stack_builder)
   auto data = VW::make_unique<confidence>();
   data->all = &all;
 
-  void (*learn_with_confidence_ptr)(confidence&, single_learner&, example&) = nullptr;
-  void (*predict_with_confidence_ptr)(confidence&, single_learner&, example&) = nullptr;
+  void (*learn_with_confidence_ptr)(confidence&, single_learner&, VW::example&) = nullptr;
+  void (*predict_with_confidence_ptr)(confidence&, single_learner&, VW::example&) = nullptr;
 
   if (confidence_after_training)
   {

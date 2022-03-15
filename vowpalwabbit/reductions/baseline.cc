@@ -4,8 +4,8 @@
 
 #include "baseline.h"
 
-#include "vw.h"
 #include "shared_data.h"
+#include "vw.h"
 
 using namespace VW::LEARNER;
 using namespace VW::config;
@@ -17,18 +17,18 @@ constexpr float max_multiplier = 1000.f;
 
 namespace BASELINE
 {
-void set_baseline_enabled(example* ec)
+void set_baseline_enabled(VW::example* ec)
 {
   if (!baseline_enabled(ec)) { ec->indices.push_back(baseline_enabled_message_namespace); }
 }
 
-void reset_baseline_disabled(example* ec)
+void reset_baseline_disabled(VW::example* ec)
 {
   const auto it = std::find(ec->indices.begin(), ec->indices.end(), baseline_enabled_message_namespace);
   if (it != ec->indices.end()) { ec->indices.erase(it); }
 }
 
-bool baseline_enabled(const example* ec)
+bool baseline_enabled(const VW::example* ec)
 {
   const auto it = std::find(ec->indices.begin(), ec->indices.end(), baseline_enabled_message_namespace);
   return it != ec->indices.end();
@@ -37,7 +37,7 @@ bool baseline_enabled(const example* ec)
 
 struct baseline
 {
-  example ec;
+  VW::example ec;
   VW::workspace* all = nullptr;
   bool lr_scaling = false;  // whether to scale baseline learning rate based on max label
   float lr_multiplier = 1.f;
@@ -59,7 +59,7 @@ void init_global(baseline& data)
 }
 
 template <bool is_learn>
-void predict_or_learn(baseline& data, single_learner& base, example& ec)
+void predict_or_learn(baseline& data, single_learner& base, VW::example& ec)
 {
   // no baseline if check_enabled is true and example contains flag
   if (data.check_enabled && !BASELINE::baseline_enabled(&ec))
@@ -133,7 +133,7 @@ void predict_or_learn(baseline& data, single_learner& base, example& ec)
   }
 }
 
-float sensitivity(baseline& data, base_learner& base, example& ec)
+float sensitivity(baseline& data, base_learner& base, VW::example& ec)
 {
   // no baseline if check_enabled is true and example contains flag
   if (data.check_enabled && !BASELINE::baseline_enabled(&ec)) return base.sensitivity(ec);

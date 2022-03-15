@@ -1,12 +1,13 @@
 // Copyright (c) by respective owners including Yahoo!, Microsoft, and
 // individual contributors. All rights reserved. Released under a BSD (revised)
 // license as described in the file LICENSE.
-#include <cstring>
 #include <cfloat>
-#include "rand48.h"
-#include "vw_exception.h"
+#include <cstring>
+
 #include "parse_args.h"  // for spoof_hex_encoded_namespaces
+#include "rand48.h"
 #include "text_utils.h"
+#include "vw_exception.h"
 
 using namespace VW::LEARNER;
 using namespace VW::config;
@@ -47,7 +48,7 @@ inline float cheesyrand(uint64_t x)
   return merand48(seed);
 }
 
-constexpr inline bool example_is_test(example& ec) { return ec.l.simple.label == FLT_MAX; }
+constexpr inline bool example_is_test(VW::example& ec) { return ec.l.simple.label == FLT_MAX; }
 
 void reset_seed(LRQstate& lrq)
 {
@@ -55,14 +56,14 @@ void reset_seed(LRQstate& lrq)
 }
 
 template <bool is_learn>
-void predict_or_learn(LRQstate& lrq, single_learner& base, example& ec)
+void predict_or_learn(LRQstate& lrq, single_learner& base, VW::example& ec)
 {
   VW::workspace& all = *lrq.all;
 
   // Remember original features
 
   memset(lrq.orig_size, 0, sizeof(lrq.orig_size));
-  for (namespace_index i : ec.indices)
+  for (VW::namespace_index i : ec.indices)
   {
     if (lrq.lrindices[i]) lrq.orig_size[i] = ec.feature_space[i].size();
   }
@@ -124,16 +125,8 @@ void predict_or_learn(LRQstate& lrq, single_learner& base, example& ec)
               if (all.audit || all.hash_inv)
               {
                 std::stringstream new_feature_buffer;
-                new_feature_buffer << right << '^' << right_fs.space_names[rfn].second << '^' << n;
-
-#ifdef _WIN32
-                char* new_space = _strdup("lrq");
-                char* new_feature = _strdup(new_feature_buffer.str().c_str());
-#else
-                char* new_space = strdup("lrq");
-                char* new_feature = strdup(new_feature_buffer.str().c_str());
-#endif
-                right_fs.space_names.push_back(audit_strings(new_space, new_feature));
+                new_feature_buffer << right << '^' << right_fs.space_names[rfn].name << '^' << n;
+                right_fs.space_names.emplace_back("lrq", new_feature_buffer.str());
               }
             }
           }

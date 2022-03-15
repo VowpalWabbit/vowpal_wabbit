@@ -64,10 +64,9 @@ set(vw_all_headers
   config/help_formatter.h
   config/option_group_definition.h
   config/option.h
-  config/options_boost_po.h
+  config/options_cli.h
   config/options_name_extractor.h
   config/options_serializer.h
-  config/options_types.h
   config/options.h
   constant.h
   continuous_actions_reduction_features.h
@@ -262,11 +261,12 @@ set(vw_all_sources
   config/cli_options_serializer.cc
   config/help_formatter.cc
   config/option_group_definition.cc
-  config/options_boost_po.cc
+  config/options_cli.cc
   config/options_name_extractor.cc
   config/options.cc
   cost_sensitive.cc
   crossplat_compat.cc
+  debug_print.cc
   decision_scores.cc
   distributionally_robust.cc
   example_predict.cc
@@ -414,13 +414,27 @@ add_library(vw STATIC ${vw_all_sources} ${vw_all_headers})
 
 target_link_libraries(vw
   PUBLIC
-    VowpalWabbit::explore VowpalWabbit::allreduce Boost::boost ${spdlog_target} fmt::fmt
+    VowpalWabbit::explore VowpalWabbit::allreduce ${spdlog_target} fmt::fmt
   PRIVATE
-    Boost::program_options ${CMAKE_DL_LIBS} ${LINK_THREADS} vw_io
+    ${CMAKE_DL_LIBS} ${LINK_THREADS} vw_io
     # Workaround an issue where RapidJSON needed to be exported tom install the target. This is
     # actually a private dependency and so do not "link" when processing targets for installation.
     # https://gitlab.kitware.com/cmake/cmake/issues/15415
     $<BUILD_INTERFACE:RapidJSON>)
+
+# If we are using a sys dep then we can link as normal as it is imported.
+if(VW_BOOST_MATH_SYS_DEP)
+  target_link_libraries(vw PRIVATE Boost::math)
+else()
+  # If using the vendored version we need to treat it differently.
+  # CMake must propagate interface libs even if private in case they link
+  # libraries. Since we know Boost::math does not link any further libs we
+  # have to supply the build requirements piecewise and leave off link libraries.
+  # https://gitlab.kitware.com/cmake/cmake/-/issues/15415
+  target_include_directories(vw PRIVATE $<TARGET_PROPERTY:Boost::math,INTERFACE_INCLUDE_DIRECTORIES>)
+  target_compile_options(vw PRIVATE $<TARGET_PROPERTY:Boost::math,INTERFACE_COMPILE_OPTIONS>)
+  target_compile_definitions(vw PRIVATE $<TARGET_PROPERTY:Boost::math,INTERFACE_COMPILE_DEFINITIONS>)
+endif()
 
 if (BUILD_EXTERNAL_PARSER)
   target_compile_definitions(vw PUBLIC BUILD_EXTERNAL_PARSER)
@@ -438,7 +452,6 @@ if(BUILD_FLATBUFFERS)
       $<BUILD_INTERFACE:FlatbuffersTarget>)
   target_compile_definitions(vw PUBLIC BUILD_FLATBUFFERS)
 endif()
-
 
 add_library(VowpalWabbit::vw ALIAS vw)
 
@@ -531,11 +544,17 @@ endif()
 
 # build main executable
 add_executable(vw-bin main.cc)
-target_link_libraries(vw-bin PRIVATE VowpalWabbit::vw Boost::program_options)
+target_link_libraries(vw-bin PRIVATE VowpalWabbit::vw)
 set_target_properties(vw-bin PROPERTIES OUTPUT_NAME vw)
 
 if(STATIC_LINK_VW)
   target_link_libraries(vw-bin PRIVATE ${unix_static_flag})
+endif()
+
+if(WIN32)
+  set_target_properties(vw_io PROPERTIES DEBUG_POSTFIX d)
+  set_target_properties(allreduce PROPERTIES DEBUG_POSTFIX d)
+  set_target_properties(vw PROPERTIES DEBUG_POSTFIX d)
 endif()
 
 # This is used by Travis to not build vw_c_wrapper, this required <codecvt> which became available in GCC 5.1
@@ -575,5 +594,12 @@ if(VW_INSTALL)
     PATTERN ".nuget" EXCLUDE
     PATTERN "slim" EXCLUDE
     PATTERN "win32" EXCLUDE
+    PATTERN "out" EXCLUDE
+    PATTERN "packages" EXCLUDE
+    PATTERN "x64" EXCLUDE
+    PATTERN ".vs" EXCLUDE
+  )
+  install(FILES ${CMAKE_CURRENT_BINARY_DIR}/config.h
+    DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/vowpalwabbit
   )
 endif()

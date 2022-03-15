@@ -4,15 +4,14 @@
 
 #pragma once
 
-#include "reductions/baseline.h"
-#include "guard.h"
+#include <cfloat>
 
 #include "cb.h"
-#include "example.h"
-#include "learner.h"
 #include "cb_type.h"
-
-#include <cfloat>
+#include "example.h"
+#include "guard.h"
+#include "learner.h"
+#include "reductions/baseline.h"
 
 // TODO: extend to handle CSOAA_LDF and WAP_LDF
 VW::LEARNER::base_learner* cb_algs_setup(VW::setup_base_i& stack_builder);
@@ -21,7 +20,7 @@ namespace CB_ALGS
 {
 template <bool is_learn>
 float get_cost_pred(
-    VW::LEARNER::single_learner* scorer, const CB::cb_class& known_cost, example& ec, uint32_t index, uint32_t base)
+    VW::LEARNER::single_learner* scorer, const CB::cb_class& known_cost, VW::example& ec, uint32_t index, uint32_t base)
 {
   VW_DBG(ec) << "get_cost_pred:" << is_learn << std::endl;
 
@@ -82,12 +81,12 @@ inline float get_cost_estimate(const ACTION_SCORE::action_score& a_s, float cost
   return 0.;
 }
 
-inline bool example_is_newline_not_header(example const& ec)
+inline bool example_is_newline_not_header(VW::example const& ec)
 {
-  return (example_is_newline(ec) && !CB::ec_is_example_header(ec));
+  return (VW::example_is_newline(ec) && !CB::ec_is_example_header(ec));
 }
 
 void generic_output_example(
-    VW::workspace& all, float loss, const example& ec, const CB::label& ld, const CB::cb_class* known_cost);
+    VW::workspace& all, float loss, const VW::example& ec, const CB::label& ld, const CB::cb_class* known_cost);
 
 }  // namespace CB_ALGS

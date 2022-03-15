@@ -2,29 +2,29 @@
 // individual contributors. All rights reserved. Released under a BSD (revised)
 // license as described in the file LICENSE.
 
-#include "vw.h"
-
-#include "multiclass.h"
-#include "cost_sensitive.h"
 #include "cb.h"
-#include "reductions/search/search.h"
-#include "reductions/search/search_hooktask.h"
+#include "config/cli_options_serializer.h"
+#include "config/option.h"
+#include "config/options_cli.h"
+#include "cost_sensitive.h"
+#include "future_compat.h"
+#include "multiclass.h"
+#include "multilabel.h"
 #include "parse_example.h"
 #include "reductions/gd.h"
-#include "config/options_boost_po.h"
-#include "config/cli_options_serializer.h"
-#include "future_compat.h"
-#include "slates_label.h"
-#include "simple_label_parser.h"
+#include "reductions/search/search.h"
+#include "reductions/search/search_hooktask.h"
 #include "shared_data.h"
-#include "multilabel.h"
+#include "simple_label_parser.h"
+#include "slates_label.h"
+#include "vw.h"
 
 // see http://www.boost.org/doc/libs/1_56_0/doc/html/bbv2/installation.html
 #define BOOST_PYTHON_USE_GCC_SYMBOL_VISIBILITY 1
 #include <boost/make_shared.hpp>
 #include <boost/python.hpp>
-#include <boost/utility.hpp>
 #include <boost/python/suite/indexing/vector_indexing_suite.hpp>
+#include <boost/utility.hpp>
 
 // Brings VW_DLL_PUBLIC to help control exports
 #define VWDLL_EXPORTS
@@ -74,7 +74,7 @@ const size_t tUNSET = 3;
 
 void dont_delete_me(void* arg) {}
 
-class OptionManager
+class OptionManager : VW::config::typed_option_visitor
 {
   std::map<std::string, std::vector<VW::config::option_group_definition>> m_option_group_dic;
   // see pyvw.py class VWOption
@@ -83,6 +83,8 @@ class OptionManager
   std::vector<std::string>& m_enabled_reductions;
   std::string default_group_name;
 
+  py::object* m_visitor_output_var;
+
 public:
   OptionManager(VW::config::options_i& options, std::vector<std::string>& enabled_reductions, py::object py_class)
       : m_opt(options)
@@ -90,7 +92,8 @@ public:
       , m_option_group_dic(options.get_collection_of_options())
       , m_py_opt_class(py_class)
   {
-    default_group_name = static_cast<VW::config::options_boost_po*>(&options)->m_default_tint;
+    default_group_name = options.m_default_tint;
+    m_visitor_output_var = nullptr;
   }
 
   py::object* value_to_pyobject(VW::config::typed_option<bool>& opt)
@@ -170,18 +173,18 @@ public:
     return nullptr;
   }
 
-  template <typename TTypes>
-  py::object base_option_to_pyobject(VW::config::base_option& options)
+  py::object base_option_to_pyobject(VW::config::base_option& option)
   {
-    py::object* temp = transform_if_t<typename TTypes::head>(options);
-    if (temp != nullptr)
+    option.accept(*this);
+    if (m_visitor_output_var != nullptr)
     {
-      auto repack = py::object(*temp);
-      delete temp;
+      auto repack = py::object(*m_visitor_output_var);
+      delete m_visitor_output_var;
+      m_visitor_output_var = nullptr;
       return repack;
     }
 
-    return base_option_to_pyobject<typename TTypes::tail>(options);
+    return {};
   }
 
   py::object get_vw_option_pyobjects(bool enabled_only)
@@ -202,12 +205,12 @@ public:
 
       py::list option_groups;
 
-      for (auto options_group : it->second)
+      for (auto& options_group : it->second)
       {
         py::list options;
-        for (auto opt : options_group.m_options)
+        for (auto& opt : options_group.m_options)
         {
-          auto temp = base_option_to_pyobject<VW::config::supported_options_types>(*opt.get());
+          auto temp = base_option_to_pyobject(*opt);
           options.append(temp);
         }
 
@@ -220,15 +223,19 @@ public:
     }
     return dres;
   }
-};
 
-// specialization needed to compile, this should never be reached since we always use
-// VW::config::supported_options_types
-template <>
-py::object OptionManager::base_option_to_pyobject<VW::config::typelist<>>(VW::config::base_option& options)
-{
-  return py::object();
-}
+  void visit(VW::config::typed_option<uint32_t>& opt) override { m_visitor_output_var = value_to_pyobject(opt); };
+  void visit(VW::config::typed_option<uint64_t>& opt) override { m_visitor_output_var = value_to_pyobject(opt); };
+  void visit(VW::config::typed_option<int64_t>& opt) override { m_visitor_output_var = value_to_pyobject(opt); };
+  void visit(VW::config::typed_option<int32_t>& opt) override { m_visitor_output_var = value_to_pyobject(opt); };
+  void visit(VW::config::typed_option<bool>& opt) override { m_visitor_output_var = value_to_pyobject(opt); };
+  void visit(VW::config::typed_option<float>& opt) override { m_visitor_output_var = value_to_pyobject(opt); };
+  void visit(VW::config::typed_option<std::string>& opt) override { m_visitor_output_var = value_to_pyobject(opt); };
+  void visit(VW::config::typed_option<std::vector<std::string>>& opt) override
+  {
+    m_visitor_output_var = value_to_pyobject(opt);
+  };
+};
 
 class py_log_wrapper
 {
@@ -253,9 +260,12 @@ public:
   }
 };
 
-vw_ptr my_initialize_with_log(std::string args, py_log_wrapper_ptr py_log)
+vw_ptr my_initialize_with_log(py::list args, py_log_wrapper_ptr py_log)
 {
-  if (args.find_first_of("--no_stdin") == std::string::npos) args += " --no_stdin";
+  std::vector<std::string> args_vec;
+  for (size_t i = 0; i < len(args); i++) { args_vec.push_back(py::extract<std::string>(args[i])); }
+
+  if (std::find(args_vec.begin(), args_vec.end(), "--no_stdin") == args_vec.end()) { args_vec.push_back("--no_stdin"); }
 
   trace_message_t trace_listener = nullptr;
   void* trace_context = nullptr;
@@ -266,12 +276,15 @@ vw_ptr my_initialize_with_log(std::string args, py_log_wrapper_ptr py_log)
     trace_context = py_log.get();
   }
 
-  VW::workspace* foo = VW::initialize(args, nullptr, false, trace_listener, trace_context);
+  std::unique_ptr<VW::config::options_i, options_deleter_type> options(
+      new VW::config::options_cli(args_vec), [](VW::config::options_i* ptr) { delete ptr; });
+
+  VW::workspace* foo = VW::initialize(std::move(options), nullptr, false, trace_listener, trace_context);
   // return boost::shared_ptr<VW::workspace>(foo, [](vw *all){VW::finish(*all);});
   return boost::shared_ptr<VW::workspace>(foo);
 }
 
-vw_ptr my_initialize(std::string args) { return my_initialize_with_log(args, nullptr); }
+vw_ptr my_initialize(py::list args) { return my_initialize_with_log(args, nullptr); }
 
 void my_run_parser(vw_ptr all)
 {
@@ -359,7 +372,7 @@ predictor_ptr get_predictor(search_ptr sch, ptag my_tag)
   return boost::shared_ptr<Search::predictor>(P);
 }
 
-label_parser* get_label_parser(VW::workspace* all, size_t labelType)
+VW::label_parser* get_label_parser(VW::workspace* all, size_t labelType)
 {
   switch (labelType)
   {
@@ -390,7 +403,7 @@ label_parser* get_label_parser(VW::workspace* all, size_t labelType)
 
 size_t my_get_label_type(VW::workspace* all)
 {
-  label_parser* lp = &all->example_parser->lbl_parser;
+  VW::label_parser* lp = &all->example_parser->lbl_parser;
   if (lp->parse_label == simple_label_parser.parse_label) { return lSIMPLE; }
   else if (lp->parse_label == MULTICLASS::mc_label.parse_label)
   {
@@ -467,14 +480,14 @@ size_t my_get_prediction_type(vw_ptr all)
 
 void my_delete_example(void* voidec)
 {
-  example* ec = (example*)voidec;
+  VW::example* ec = (VW::example*)voidec;
   VW::dealloc_examples(ec, 1);
 }
 
-example* my_empty_example0(vw_ptr vw, size_t labelType)
+VW::example* my_empty_example0(vw_ptr vw, size_t labelType)
 {
-  label_parser* lp = get_label_parser(&*vw, labelType);
-  example* ec = VW::alloc_examples(1);
+  VW::label_parser* lp = get_label_parser(&*vw, labelType);
+  VW::example* ec = VW::alloc_examples(1);
   lp->default_label(ec->l);
   ec->interactions = &vw->interactions;
   ec->extent_interactions = &vw->extent_interactions;
@@ -483,22 +496,22 @@ example* my_empty_example0(vw_ptr vw, size_t labelType)
 
 example_ptr my_empty_example(vw_ptr vw, size_t labelType)
 {
-  example* ec = my_empty_example0(vw, labelType);
-  return boost::shared_ptr<example>(ec, my_delete_example);
+  VW::example* ec = my_empty_example0(vw, labelType);
+  return boost::shared_ptr<VW::example>(ec, my_delete_example);
 }
 
 example_ptr my_read_example(vw_ptr all, size_t labelType, char* str)
 {
-  example* ec = my_empty_example0(all, labelType);
+  VW::example* ec = my_empty_example0(all, labelType);
   VW::read_line(*all, ec, str);
   VW::setup_example(*all, ec);
-  return boost::shared_ptr<example>(ec, my_delete_example);
+  return boost::shared_ptr<VW::example>(ec, my_delete_example);
 }
 
 example_ptr my_existing_example(vw_ptr all, size_t labelType, example_ptr existing_example)
 {
   return existing_example;
-  // return boost::shared_ptr<example>(existing_example);
+  // return boost::shared_ptr<VW::example>(existing_example);
 }
 
 multi_ex unwrap_example_list(py::list& ec)
@@ -545,7 +558,7 @@ void predict_or_learn(vw_ptr& all, py::list& ec)
 
 py::list my_parse(vw_ptr& all, char* str)
 {
-  v_array<example*> examples;
+  VW::v_array<VW::example*> examples;
   examples.push_back(&VW::get_unused_example(all.get()));
   all->example_parser->text_reader(all.get(), str, strlen(str), examples);
 
@@ -555,7 +568,7 @@ py::list my_parse(vw_ptr& all, char* str)
     VW::setup_example(*all, ex);
     // Examples created from parsed text should not be deleted normally. Instead they need to be
     // returned to the pool using finish_example.
-    example_collection.append(boost::shared_ptr<example>(ex, dont_delete_me));
+    example_collection.append(boost::shared_ptr<VW::example>(ex, dont_delete_me));
   }
   return example_collection;
 }
@@ -564,7 +577,7 @@ void my_learn_multi_ex(vw_ptr& all, py::list& ec) { predict_or_learn<true>(all, 
 
 void my_predict_multi_ex(vw_ptr& all, py::list& ec) { predict_or_learn<false>(all, ec); }
 
-std::string varray_char_to_string(v_array<char>& a)
+std::string varray_char_to_string(VW::v_array<char>& a)
 {
   std::string ret = "";
   for (auto c : a) ret += c;
@@ -572,7 +585,7 @@ std::string varray_char_to_string(v_array<char>& a)
 }
 
 template <class T>
-py::list varray_to_pylist(const v_array<T>& a)
+py::list varray_to_pylist(const VW::v_array<T>& a)
 {
   py::list list;
   for (const auto& elem : a) { list.append(elem); }
@@ -774,7 +787,7 @@ void unsetup_example(vw_ptr vwP, example_ptr ae)
 
 void ex_set_label_string(example_ptr ec, vw_ptr vw, std::string label, size_t labelType)
 {  // SPEEDUP: if it's already set properly, don't modify
-  label_parser& old_lp = vw->example_parser->lbl_parser;
+  VW::label_parser& old_lp = vw->example_parser->lbl_parser;
   vw->example_parser->lbl_parser = *get_label_parser(&*vw, labelType);
   VW::parse_example_label(*vw, *ec, label);
   vw->example_parser->lbl_parser = old_lp;

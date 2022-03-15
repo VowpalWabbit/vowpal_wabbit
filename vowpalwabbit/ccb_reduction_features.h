@@ -4,9 +4,9 @@
 
 #pragma once
 
-#include "v_array.h"
-
 #include <cstdint>
+
+#include "v_array.h"
 
 namespace CCB
 {
@@ -21,7 +21,7 @@ enum class example_type : uint8_t
 struct reduction_features
 {
   example_type type;
-  v_array<uint32_t> explicit_included_actions;
+  VW::v_array<uint32_t> explicit_included_actions;
   void clear() { explicit_included_actions.clear(); }
 };
 }  // namespace CCB

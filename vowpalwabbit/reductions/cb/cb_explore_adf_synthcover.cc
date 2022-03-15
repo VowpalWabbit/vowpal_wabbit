@@ -4,21 +4,22 @@
 
 #include "cb_explore_adf_synthcover.h"
 
-#include "cb_explore_adf_common.h"
-#include "numeric_casts.h"
-#include "cb_adf.h"
-#include "rand48.h"
-#include "gen_cs_example.h"
-#include "cb_explore.h"
-#include "explore.h"
-#include "vw_versions.h"
-#include "version.h"
-#include "label_parser.h"
-
-#include <utility>
-#include <vector>
 #include <algorithm>
 #include <cmath>
+#include <utility>
+#include <vector>
+
+#include "action_score.h"
+#include "cb_adf.h"
+#include "cb_explore.h"
+#include "cb_explore_adf_common.h"
+#include "explore.h"
+#include "gen_cs_example.h"
+#include "label_parser.h"
+#include "numeric_casts.h"
+#include "rand48.h"
+#include "version.h"
+#include "vw_versions.h"
 
 // All exploration algorithms return a vector of id, probability tuples, sorted in order of scores. The probabilities
 // are the probability with which each action should be replaced to the top of the list.
@@ -99,20 +100,14 @@ void cb_explore_adf_synthcover::predict_or_learn_impl(VW::LEARNER::multi_learner
   }
 
   for (size_t i = 0; i < num_actions; i++) { preds[i].score = VW::math::clamp(preds[i].score, _min_cost, _max_cost); }
-  std::make_heap(
-      preds.begin(), preds.end(), [](const ACTION_SCORE::action_score& a, const ACTION_SCORE::action_score& b) {
-        return ACTION_SCORE::score_comp(&a, &b) > 0;
-      });
+  std::make_heap(preds.begin(), preds.end(), VW::action_score_compare_gt);
 
   _action_probs.clear();
   for (uint32_t i = 0; i < num_actions; i++) _action_probs.push_back({i, 0.});
 
   for (uint32_t i = 0; i < _synthcoversize;)
   {
-    std::pop_heap(
-        preds.begin(), preds.end(), [](const ACTION_SCORE::action_score& a, const ACTION_SCORE::action_score& b) {
-          return ACTION_SCORE::score_comp(&a, &b) > 0;
-        });
+    std::pop_heap(preds.begin(), preds.end(), VW::action_score_compare_gt);
     auto minpred = preds.back();
     preds.pop_back();
 
@@ -124,18 +119,12 @@ void cb_explore_adf_synthcover::predict_or_learn_impl(VW::LEARNER::multi_learner
     }
 
     preds.push_back(minpred);
-    std::push_heap(
-        preds.begin(), preds.end(), [](const ACTION_SCORE::action_score& a, const ACTION_SCORE::action_score& b) {
-          return ACTION_SCORE::score_comp(&a, &b) > 0;
-        });
+    std::push_heap(preds.begin(), preds.end(), VW::action_score_compare_gt);
   }
 
   exploration::enforce_minimum_probability(_epsilon, true, begin_scores(_action_probs), end_scores(_action_probs));
 
-  std::sort(_action_probs.begin(), _action_probs.end(),
-      [](const ACTION_SCORE::action_score& a, const ACTION_SCORE::action_score& b) {
-        return ACTION_SCORE::score_comp(&a, &b) > 0;
-      });
+  std::sort(_action_probs.begin(), _action_probs.end(), VW::action_score_compare_gt);
 
   for (size_t i = 0; i < num_actions; i++) preds[i] = _action_probs[i];
 }
@@ -212,14 +201,16 @@ VW::LEARNER::base_learner* setup(VW::setup_base_i& stack_builder)
       VW::cast_to_smaller_type<size_t>(synthcoversize), all.get_random_state(), all.model_file_ver);
   auto* l = make_reduction_learner(
       std::move(data), base, explore_type::learn, explore_type::predict, stack_builder.get_setupfn_name(setup))
-                .set_params_per_weight(problem_multiplier)
-                .set_output_prediction_type(VW::prediction_type_t::action_probs)
                 .set_input_label_type(VW::label_type_t::cb)
+                .set_output_label_type(VW::label_type_t::cb)
+                .set_input_prediction_type(VW::prediction_type_t::action_scores)
+                .set_output_prediction_type(VW::prediction_type_t::action_probs)
+                .set_params_per_weight(problem_multiplier)
                 .set_finish_example(explore_type::finish_multiline_example)
                 .set_print_example(explore_type::print_multiline_example)
                 .set_save_load(explore_type::save_load)
                 .set_persist_metrics(explore_type::persist_metrics)
-                .build();
+                .build(&all.logger);
   return make_base(*l);
 }
 

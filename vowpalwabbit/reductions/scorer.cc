@@ -3,11 +3,12 @@
 // license as described in the file LICENSE.
 
 #include <cfloat>
+
+#include "config/options.h"
 #include "correctedMath.h"
+#include "global_data.h"
 #include "learner.h"
 #include "vw_exception.h"
-#include "config/options.h"
-#include "global_data.h"
 
 #undef VW_DEBUG_LOG
 #define VW_DEBUG_LOG vw_dbg::scorer
@@ -21,7 +22,7 @@ struct scorer
 };  // for set_minmax, loss
 
 template <bool is_learn, float (*link)(float in)>
-void predict_or_learn(scorer& s, VW::LEARNER::single_learner& base, example& ec)
+void predict_or_learn(scorer& s, VW::LEARNER::single_learner& base, VW::example& ec)
 {
   // Predict does not need set_minmax
   if (is_learn) { s.all->set_minmax(s.all->sd, ec.l.simple.label); }
@@ -43,14 +44,14 @@ void predict_or_learn(scorer& s, VW::LEARNER::single_learner& base, example& ec)
 }
 
 template <float (*link)(float in)>
-inline void multipredict(scorer& /*unused*/, VW::LEARNER::single_learner& base, example& ec, size_t count,
-    size_t /*unused*/, polyprediction* pred, bool finalize_predictions)
+inline void multipredict(scorer& /*unused*/, VW::LEARNER::single_learner& base, VW::example& ec, size_t count,
+    size_t /*unused*/, VW::polyprediction* pred, bool finalize_predictions)
 {
   base.multipredict(ec, 0, count, pred, finalize_predictions);  // TODO: need to thread step through???
   for (size_t c = 0; c < count; c++) { pred[c].scalar = link(pred[c].scalar); }
 }
 
-void update(scorer& s, VW::LEARNER::single_learner& base, example& ec)
+void update(scorer& s, VW::LEARNER::single_learner& base, VW::example& ec)
 {
   s.all->set_minmax(s.all->sd, ec.l.simple.label);
   base.update(ec);
@@ -83,9 +84,9 @@ VW::LEARNER::base_learner* scorer_setup(VW::setup_base_i& stack_builder)
                       .help("Specify the link function"));
   options.add_and_parse(new_options);
 
-  using predict_or_learn_fn_t = void (*)(scorer&, VW::LEARNER::single_learner&, example&);
+  using predict_or_learn_fn_t = void (*)(scorer&, VW::LEARNER::single_learner&, VW::example&);
   using multipredict_fn_t =
-      void (*)(scorer&, VW::LEARNER::single_learner&, example&, size_t, size_t, polyprediction*, bool);
+      void (*)(scorer&, VW::LEARNER::single_learner&, VW::example&, size_t, size_t, VW::polyprediction*, bool);
   multipredict_fn_t multipredict_f = multipredict<id>;
   predict_or_learn_fn_t learn_fn;
   predict_or_learn_fn_t predict_fn;

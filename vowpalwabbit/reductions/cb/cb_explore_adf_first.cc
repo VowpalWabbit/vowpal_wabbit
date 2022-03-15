@@ -4,21 +4,21 @@
 
 #include "cb_explore_adf_first.h"
 
-#include "numeric_casts.h"
-#include "cb_adf.h"
-#include "rand48.h"
-#include "reductions/bs.h"
-#include "gen_cs_example.h"
-#include "cb_explore.h"
-#include "explore.h"
-#include "cb_explore_adf_common.h"
-#include "vw_versions.h"
-#include "version.h"
-#include "label_parser.h"
-
-#include <vector>
 #include <algorithm>
 #include <cmath>
+#include <vector>
+
+#include "cb_adf.h"
+#include "cb_explore.h"
+#include "cb_explore_adf_common.h"
+#include "explore.h"
+#include "gen_cs_example.h"
+#include "label_parser.h"
+#include "numeric_casts.h"
+#include "rand48.h"
+#include "reductions/bs.h"
+#include "version.h"
+#include "vw_versions.h"
 
 using namespace VW::LEARNER;
 
@@ -133,14 +133,16 @@ base_learner* setup(VW::setup_base_i& stack_builder)
   if (epsilon < 0.0 || epsilon > 1.0) { THROW("The value of epsilon must be in [0,1]"); }
   auto* l = make_reduction_learner(
       std::move(data), base, explore_type::learn, explore_type::predict, stack_builder.get_setupfn_name(setup))
-                .set_params_per_weight(problem_multiplier)
-                .set_output_prediction_type(VW::prediction_type_t::action_probs)
                 .set_input_label_type(VW::label_type_t::cb)
+                .set_output_label_type(VW::label_type_t::cb)
+                .set_input_prediction_type(VW::prediction_type_t::action_scores)
+                .set_output_prediction_type(VW::prediction_type_t::action_probs)
+                .set_params_per_weight(problem_multiplier)
                 .set_finish_example(explore_type::finish_multiline_example)
                 .set_print_example(explore_type::print_multiline_example)
                 .set_persist_metrics(explore_type::persist_metrics)
                 .set_save_load(explore_type::save_load)
-                .build();
+                .build(&all.logger);
   return make_base(*l);
 }
 

@@ -8,24 +8,24 @@
  *    ICML-2015.
  */
 
+#include <fmt/core.h>
+
 #include <cfloat>
 #include <climits>
 #include <cmath>
-#include "correctedMath.h"
 #include <cstdio>
-#include <string>
+#include <memory>
 #include <sstream>
+#include <string>
 #include <utility>
 #include <vector>
-#include <memory>
-#include <fmt/core.h>
 
-#include "vw.h"
+#include "correctedMath.h"
+#include "io/logger.h"
 #include "rand48.h"
 #include "shared_data.h"
+#include "vw.h"
 #include "vw_math.h"
-
-#include "io/logger.h"
 
 using namespace VW::LEARNER;
 using namespace VW::config;
@@ -52,7 +52,7 @@ struct boosting
 // Online Boost-by-Majority (BBM)
 // --------------------------------------------------
 template <bool is_learn>
-void predict_or_learn(boosting& o, VW::LEARNER::single_learner& base, example& ec)
+void predict_or_learn(boosting& o, VW::LEARNER::single_learner& base, VW::example& ec)
 {
   label_data& ld = ec.l.simple;
 
@@ -119,7 +119,7 @@ void predict_or_learn(boosting& o, VW::LEARNER::single_learner& base, example& e
 // Logistic boost
 //-----------------------------------------------------------------
 template <bool is_learn>
-void predict_or_learn_logistic(boosting& o, VW::LEARNER::single_learner& base, example& ec)
+void predict_or_learn_logistic(boosting& o, VW::LEARNER::single_learner& base, VW::example& ec)
 {
   label_data& ld = ec.l.simple;
 
@@ -174,7 +174,7 @@ void predict_or_learn_logistic(boosting& o, VW::LEARNER::single_learner& base, e
 }
 
 template <bool is_learn>
-void predict_or_learn_adaptive(boosting& o, VW::LEARNER::single_learner& base, example& ec)
+void predict_or_learn_adaptive(boosting& o, VW::LEARNER::single_learner& base, VW::example& ec)
 {
   label_data& ld = ec.l.simple;
 
@@ -307,7 +307,7 @@ void save_load_sampling(boosting& o, io_buf& model_file, bool read, bool text)
   o.logger.err_info("{}", fmt::to_string(buffer));
 }
 
-void return_example(VW::workspace& all, boosting& /* a */, example& ec)
+void return_example(VW::workspace& all, boosting& /* a */, VW::example& ec)
 {
   output_and_account_example(all, ec);
   VW::finish_example(all, ec);
@@ -392,8 +392,8 @@ VW::LEARNER::base_learner* boosting_setup(VW::setup_base_i& stack_builder)
 
   size_t ws = data->N;
   std::string name_addition;
-  void (*learn_ptr)(boosting&, VW::LEARNER::single_learner&, example&);
-  void (*pred_ptr)(boosting&, VW::LEARNER::single_learner&, example&);
+  void (*learn_ptr)(boosting&, VW::LEARNER::single_learner&, VW::example&);
+  void (*pred_ptr)(boosting&, VW::LEARNER::single_learner&, VW::example&);
   void (*save_load_fn)(boosting&, io_buf&, bool, bool);
 
   if (data->alg == "BBM")

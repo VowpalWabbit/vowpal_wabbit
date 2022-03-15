@@ -14,6 +14,9 @@ EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "vw_core", "vw_core.vcxproj", "{1E205806-7F80-47DD-A38D-FC08083F3593}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "spanning_tree", "..\cluster\cluster.vcxproj", "{2720BCD9-6731-4A11-BA24-1F74E35BA97F}"
+	ProjectSection(ProjectDependencies) = postProject
+		{1E205806-7F80-47DD-A38D-FC08083F3593} = {1E205806-7F80-47DD-A38D-FC08083F3593}
+	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "libvw", "libvw.vcxproj", "{EA52DE0D-A5BE-4FB9-8C84-3A57BDFEBED9}"
 	ProjectSection(ProjectDependencies) = postProject
@@ -23,11 +26,6 @@ EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "vw", "vw.vcxproj", "{1055A78F-1E3A-4E6C-BBF5-0B63299C4ADF}"
 	ProjectSection(ProjectDependencies) = postProject
 		{1E205806-7F80-47DD-A38D-FC08083F3593} = {1E205806-7F80-47DD-A38D-FC08083F3593}
-	EndProjectSection
-EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "c_test", "..\c_test\c_test.vcxproj", "{1DABBC22-E914-4FCA-8C14-50E8AAA1D5C6}"
-	ProjectSection(ProjectDependencies) = postProject
-		{EA52DE0D-A5BE-4FB9-8C84-3A57BDFEBED9} = {EA52DE0D-A5BE-4FB9-8C84-3A57BDFEBED9}
 	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "vw_unit_test", "..\test\unit_test\unit_test.vcxproj", "{E02E3869-D9AD-4513-B352-93F90B7D6FE3}"
@@ -118,6 +116,9 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "vw_slim_test", "slim\test\v
 	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "to_flatbuff", "..\utl\flatbuffer\to_flatbuff.vcxproj", "{0E6F1518-B32E-450A-B3B2-4B7C4DC2B1D4}"
+	ProjectSection(ProjectDependencies) = postProject
+		{1E205806-7F80-47DD-A38D-FC08083F3593} = {1E205806-7F80-47DD-A38D-FC08083F3593}
+	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -141,10 +142,6 @@ Global
 		{1055A78F-1E3A-4E6C-BBF5-0B63299C4ADF}.Debug|x64.Build.0 = Debug|x64
 		{1055A78F-1E3A-4E6C-BBF5-0B63299C4ADF}.Release|x64.ActiveCfg = Release|x64
 		{1055A78F-1E3A-4E6C-BBF5-0B63299C4ADF}.Release|x64.Build.0 = Release|x64
-		{1DABBC22-E914-4FCA-8C14-50E8AAA1D5C6}.Debug|x64.ActiveCfg = Debug|x64
-		{1DABBC22-E914-4FCA-8C14-50E8AAA1D5C6}.Debug|x64.Build.0 = Debug|x64
-		{1DABBC22-E914-4FCA-8C14-50E8AAA1D5C6}.Release|x64.ActiveCfg = Release|x64
-		{1DABBC22-E914-4FCA-8C14-50E8AAA1D5C6}.Release|x64.Build.0 = Release|x64
 		{E02E3869-D9AD-4513-B352-93F90B7D6FE3}.Debug|x64.ActiveCfg = Debug|x64
 		{E02E3869-D9AD-4513-B352-93F90B7D6FE3}.Debug|x64.Build.0 = Debug|x64
 		{E02E3869-D9AD-4513-B352-93F90B7D6FE3}.Release|x64.ActiveCfg = Release|x64

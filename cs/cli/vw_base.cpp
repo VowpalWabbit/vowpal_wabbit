@@ -27,7 +27,7 @@ void trace_listener_cli(void* context, const std::string& message)
 {
 	auto listener = (Action<String^>^)GCHandle::FromIntPtr(IntPtr(context)).Target;
 	auto str = gcnew String(message.c_str());
-	listener(str->TrimEnd());
+	listener(str);
 }
 
 VowpalWabbitBase::VowpalWabbitBase(VowpalWabbitSettings^ settings)

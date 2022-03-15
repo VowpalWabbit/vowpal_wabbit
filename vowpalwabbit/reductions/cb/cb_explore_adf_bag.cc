@@ -4,19 +4,20 @@
 
 #include "cb_explore_adf_bag.h"
 
-#include "cb_explore_adf_common.h"
-#include "numeric_casts.h"
-#include "cb_adf.h"
-#include "rand48.h"
-#include "reductions/bs.h"
-#include "gen_cs_example.h"
-#include "cb_explore.h"
-#include "explore.h"
-#include "label_parser.h"
-#include <utility>
-#include <vector>
 #include <algorithm>
 #include <cmath>
+#include <utility>
+#include <vector>
+
+#include "cb_adf.h"
+#include "cb_explore.h"
+#include "cb_explore_adf_common.h"
+#include "explore.h"
+#include "gen_cs_example.h"
+#include "label_parser.h"
+#include "numeric_casts.h"
+#include "rand48.h"
+#include "reductions/bs.h"
 
 // All exploration algorithms return a vector of id, probability tuples, sorted in order of scores. The probabilities
 // are the probability with which each action should be replaced to the top of the list.
@@ -191,13 +192,15 @@ VW::LEARNER::base_learner* setup(VW::setup_base_i& stack_builder)
       with_metrics, epsilon, VW::cast_to_smaller_type<size_t>(bag_size), greedify, first_only, all.get_random_state());
   auto* l = make_reduction_learner(
       std::move(data), base, explore_type::learn, explore_type::predict, stack_builder.get_setupfn_name(setup))
-                .set_params_per_weight(problem_multiplier)
-                .set_output_prediction_type(VW::prediction_type_t::action_probs)
                 .set_input_label_type(VW::label_type_t::cb)
+                .set_output_label_type(VW::label_type_t::cb)
+                .set_input_prediction_type(VW::prediction_type_t::action_scores)
+                .set_output_prediction_type(VW::prediction_type_t::action_probs)
+                .set_params_per_weight(problem_multiplier)
                 .set_finish_example(finish_bag_example)
                 .set_print_example(print_bag_example)
                 .set_persist_metrics(explore_type::persist_metrics)
-                .build();
+                .build(&all.logger);
   return make_base(*l);
 }
 

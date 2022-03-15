@@ -4,11 +4,11 @@
 
 #pragma once
 
+#include <memory>
+#include <set>
 #include <string>
 #include <type_traits>
-#include <set>
 #include <utility>
-#include <memory>
 
 #include "config/option.h"
 
@@ -60,7 +60,14 @@ struct option_builder
 
   option_builder& short_name(const std::string& short_name)
   {
+    if (short_name.size() != 1) { THROW("short_name must be a single character but got: " << short_name); }
     m_option_obj.m_short_name = short_name;
+    return *this;
+  }
+
+  option_builder& short_name(char short_name)
+  {
+    m_option_obj.m_short_name = std::string(1, short_name);
     return *this;
   }
 

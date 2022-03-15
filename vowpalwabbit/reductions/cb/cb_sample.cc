@@ -3,14 +3,15 @@
 // license as described in the file LICENSE.
 
 #include "cb_sample.h"
+
+#include "config/options.h"
 #include "explore.h"
+#include "global_data.h"
 #include "label_parser.h"
 #include "learner.h"
-#include "config/options.h"
-#include "global_data.h"
 #include "rand48.h"
-#include "vw_string_view.h"
 #include "tag_utils.h"
+#include "vw_string_view.h"
 
 #undef VW_DEBUG_LOG
 #define VW_DEBUG_LOG vw_dbg::cb_sample
@@ -72,7 +73,7 @@ struct cb_sample_data
 
       VW::string_view tag_seed;
       const bool tag_provided_seed = try_extract_random_seed(*examples[0], tag_seed);
-      if (tag_provided_seed) { seed = uniform_hash(tag_seed.begin(), tag_seed.size(), 0); }
+      if (tag_provided_seed) { seed = uniform_hash(tag_seed.data(), tag_seed.size(), 0); }
 
       // Sampling is done after the base learner has generated a pdf.
       auto result = exploration::sample_after_normalizing(
@@ -107,7 +108,7 @@ private:
 }  // namespace VW
 
 template <bool is_learn>
-void learn_or_predict(cb_sample_data& data, multi_learner& base, multi_ex& examples)
+void learn_or_predict(cb_sample_data& data, multi_learner& base, VW::multi_ex& examples)
 {
   data.learn_or_predict<is_learn>(base, examples);
 }
@@ -128,9 +129,11 @@ base_learner* cb_sample_setup(VW::setup_base_i& stack_builder)
 
   auto* l = make_reduction_learner(std::move(data), as_multiline(stack_builder.setup_base_learner()),
       learn_or_predict<true>, learn_or_predict<false>, stack_builder.get_setupfn_name(cb_sample_setup))
-                .set_learn_returns_prediction(true)
-                .set_output_prediction_type(VW::prediction_type_t::action_probs)
                 .set_input_label_type(VW::label_type_t::cb)
-                .build();
+                .set_output_label_type(VW::label_type_t::cb)
+                .set_input_prediction_type(VW::prediction_type_t::action_probs)
+                .set_output_prediction_type(VW::prediction_type_t::action_probs)
+                .set_learn_returns_prediction(true)
+                .build(&all.logger);
   return make_base(*l);
 }
