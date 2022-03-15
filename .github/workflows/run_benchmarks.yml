@@ -77,6 +77,8 @@ jobs:
           ls -alh
           ls -alh branch-benchmark-bin/
           ls -alh master-benchmark-bin/
+          chmod +x ./master-benchmark-bin/vw-benchmarks.out
+          chmod +x ./branch-benchmark-bin/vw-benchmarks.out
       - name: Run master benchmark
         run: >
           ./master-benchmark-bin/vw-benchmarks.out
