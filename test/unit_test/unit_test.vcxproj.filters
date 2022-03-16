@@ -96,6 +96,9 @@
     <ClCompile Include="json_parser_test.cc">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="loss_functions_test.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
     <ClCompile Include="main.cc">
       <Filter>Source Files</Filter>
     </ClCompile>

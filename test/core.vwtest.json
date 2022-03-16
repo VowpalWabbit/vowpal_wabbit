@@ -5112,5 +5112,16 @@
     "input_files": [
       "train-sets/dsjson_cb.json"
     ]
+  },
+  {
+    "id": 398,
+    "desc": "Proper handling of l namespace in cb stack",
+    "vw_command": "--cb_explore_adf --dsjson -t -d train-sets/cb_l_namespace.txt -p cb_l_namespace.pred",
+    "diff_files": {
+      "cb_l_namespace.pred": "train-sets/ref/cb_l_namespace.pred"
+    },
+    "input_files": [
+      "train-sets/cb_l_namespace.txt"
+    ]
   }
 ]
