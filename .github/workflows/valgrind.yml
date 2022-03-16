@@ -53,6 +53,7 @@ jobs:
         if: steps.filter.outputs.valgrind_related_changes == 'true'
         run: ./.scripts/linux/test-valgrind-run_tests.sh
   run_valgrind_tests:
+    needs: check_valgrind
     strategy:
       matrix:
         test-segment: ["..200", "201.."]
