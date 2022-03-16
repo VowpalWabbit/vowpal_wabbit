@@ -23,7 +23,7 @@ public:
 
   // Returns the update scalar.
   virtual float getUpdate(float prediction, float label, float update_scale, float pred_per_update) const = 0;
-  virtual float getUnsafeUpdate(float prediction, float label, float eta_t) const = 0;
+  virtual float getUnsafeUpdate(float prediction, float label, float update_scale) const = 0;
 
   virtual float getSquareGrad(float prediction, float label) const = 0;
   virtual float first_derivative(const shared_data*, float prediction, float label) const = 0;
