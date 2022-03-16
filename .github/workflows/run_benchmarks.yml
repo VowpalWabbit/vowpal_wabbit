@@ -79,14 +79,14 @@ jobs:
       - name: Run master benchmark
         run: >
           ./master-benchmark-bin/vw-benchmarks.out
-          --benchmark_min_time=4
+          --benchmark_min_time=3
           --benchmark_format=console
           --benchmark_out_format=json
           --benchmark_out=master-benchmarks.json
       - name: Run branch benchmark
         run: >
           ./branch-benchmark-bin/vw-benchmarks.out
-          --benchmark_min_time=4
+          --benchmark_min_time=3
           --benchmark_format=console
           --benchmark_out_format=json
           --benchmark_out=branch-benchmarks.json
