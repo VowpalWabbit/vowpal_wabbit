@@ -12,6 +12,7 @@
 #include "label_dictionary.h"
 #include "numeric_casts.h"
 #include "parse_primitives.h"
+#include "parse_regressor.h"
 #include "rand48.h"
 #include "reductions/active.h"
 #include "reductions/csoaa.h"

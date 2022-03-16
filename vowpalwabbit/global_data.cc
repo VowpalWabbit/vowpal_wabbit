@@ -14,12 +14,14 @@
 #include <cfloat>
 #include <cmath>
 #include <cstdio>
+#include <iomanip>
 #include <iostream>
 #include <sstream>
 
 #include "array_parameters.h"
 #include "future_compat.h"
 #include "named_labels.h"
+#include "parser.h"
 #include "rapidjson/document.h"
 #include "rapidjson/rapidjson.h"
 #include "reduction_stack.h"

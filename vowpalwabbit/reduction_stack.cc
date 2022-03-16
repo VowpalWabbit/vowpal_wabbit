@@ -42,6 +42,7 @@
 #include "reductions/cb/warm_cb.h"
 #include "reductions/cbzo.h"
 #include "reductions/classweight.h"
+#include "reductions/conditional_contextual_bandit.h"
 #include "reductions/confidence.h"
 #include "reductions/count_label.h"
 #include "reductions/cs_active.h"

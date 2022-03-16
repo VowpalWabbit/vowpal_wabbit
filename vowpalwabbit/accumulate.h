@@ -4,7 +4,14 @@
 
 // This implements various accumulate functions building on top of allreduce.
 #pragma once
-#include "global_data.h"
+
+#include <cstddef>
+
+class parameters;
+namespace VW
+{
+struct workspace;
+}
 
 void accumulate(VW::workspace& all, parameters& weights, size_t o);
 float accumulate_scalar(VW::workspace& all, float local_sum);

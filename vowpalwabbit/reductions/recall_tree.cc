@@ -13,6 +13,7 @@
 #include "global_data.h"
 #include "learner.h"
 #include "numeric_casts.h"
+#include "parser.h"
 #include "rand48.h"
 #include "vw_math.h"
 

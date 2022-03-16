@@ -16,7 +16,9 @@
 #include "debug_log.h"
 #include "error_constants.h"
 #include "global_data.h"
+#include "parser.h"
 #include "shared_data.h"
+
 // Aliases
 using std::endl;
 using VW::cb_continuous::continuous_label;

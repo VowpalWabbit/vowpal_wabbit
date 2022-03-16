@@ -23,6 +23,8 @@ Implementation by Miro Dudik.
 
 #include "accumulate.h"
 #include "gd.h"
+#include "parse_regressor.h"
+#include "parser.h"
 #include "shared_data.h"
 #include "vw_exception.h"
 

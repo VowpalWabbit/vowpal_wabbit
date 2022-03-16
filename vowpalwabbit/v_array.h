@@ -3,25 +3,15 @@
 // license as described in the file LICENSE.
 
 #pragma once
-#include "future_compat.h"
-#ifndef NOMINMAX
-#  define NOMINMAX
-#endif
 
-#include <algorithm>
 #include <cassert>
-#include <cstdlib>
-#include <cstring>
 #include <ostream>
-#include <string>
 #include <type_traits>
 #include <utility>
 
-#ifndef VW_NOEXCEPT
-#  include "vw_exception.h"
-#endif
-
+#include "future_compat.h"
 #include "memory.h"
+#include "vw_exception.h"
 
 namespace VW
 {

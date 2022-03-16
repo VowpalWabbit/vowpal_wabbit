@@ -23,7 +23,10 @@
 #include "text_utils.h"
 
 #ifdef _WIN32
-#  define NOMINMAX
+#  ifndef NOMINMAX
+#    define NOMINMAX
+#  endif
+
 #  include <Windows.h>
 #  include <io.h>
 #  include <winsock2.h>

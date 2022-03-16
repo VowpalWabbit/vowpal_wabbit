@@ -1950,3 +1950,9 @@ void finish(VW::workspace& all, bool delete_all)
   all.logger.log_summary();
 }
 }  // namespace VW
+
+std::string spoof_hex_encoded_namespaces(const std::string& arg)
+{
+  auto nl = VW::io::create_null_logger();
+  return VW::decode_inline_hex(arg, nl);
+}

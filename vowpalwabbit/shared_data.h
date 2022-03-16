@@ -3,11 +3,10 @@
 // license as described in the file LICENSE.
 #pragma once
 
-#include <atomic>
 #include <cfloat>
 #include <cstdint>
+#include <iosfwd>
 #include <memory>
-#include <ostream>
 #include <string>
 
 #include "named_labels.h"
