@@ -7,11 +7,8 @@ on:
 
 jobs:
   check_valgrind:
-    strategy:
-      matrix:
-        container: vowpalwabbit/ubuntu2004-build:latest
     container:
-      image: ${{ matrix.container }}
+      image: vowpalwabbit/ubuntu2004-build:latest
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v1
@@ -58,10 +55,9 @@ jobs:
   run_valgrind_tests:
     strategy:
       matrix:
-        container: vowpalwabbit/ubuntu2004-build:latest
         test-segment: ["..200", "201.."]
     container:
-      image: ${{ matrix.container }}
+      image: vowpalwabbit/ubuntu2004-build:latest
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v1
