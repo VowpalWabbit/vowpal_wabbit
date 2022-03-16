@@ -53,8 +53,8 @@ jobs:
         run: |
           pip install -r requirements.txt
           pip install pytype
-          # required for utl directory typecheck
-          pip install hyperopt
+          # required for test and utl directory typecheck
+          pip install hyperopt matplotlib
       - name: Install wheel
         shell: bash
         run: |
