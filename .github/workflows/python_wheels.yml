@@ -280,20 +280,13 @@ jobs:
           python-version: ${{ matrix.config.version }}
       - uses: actions/checkout@v2
         with:
-          repository: microsoft/vcpkg
-          ref: a515872b1abf58b639bf8b15ab5fe23b62f25ac3
-          fetch-depth: 0
-          path: ${{github.workspace}}\\vcpkg
-      - name: Cache vcpkg
-        id: vcpkg-cache
-        uses: actions/cache@v2
+          path: ${{github.workspace}}\\vowpal_wabbit\\
+      - name: Restore cache or fetch vcpkg
+        uses: lukka/run-vcpkg@v10
         with:
-          path: ${{github.workspace}}\\vcpkg
-          key: ${{ runner.os }}-${{ matrix.config.version }}-a515872b1abf58b639bf8b15ab5fe23b62f25ac3-2
-      # Downgrade CMake to mitigate crashing issue introduced in 3.21 that only affects vcpkg. See here: https://github.com/microsoft/vcpkg/issues/18718
-      - uses: actions/checkout@v2
-        with:
-          path: ${{github.workspace}}\\vowpal_wabbit
+          vcpkgDirectory: ${{github.workspace}}\\vcpkg
+          vcpkgGitCommitId: a515872b1abf58b639bf8b15ab5fe23b62f25ac3
+          vcpkgJsonGlob: ${{ matrix.config.vcpkg_manifest }}
       - name: Build wheel
         shell: powershell
         run: |
