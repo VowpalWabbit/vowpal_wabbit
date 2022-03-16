@@ -301,6 +301,8 @@ public:
   std::string text_regressor_name;
   std::string inv_hash_regressor_name;
   std::string json_weights_file_name;
+  bool dump_json_weights_include_feature_names = false;
+  bool dump_json_weights_include_extra_online_state = false;
 
   size_t length() { return (static_cast<size_t>(1)) << num_bits; };
 

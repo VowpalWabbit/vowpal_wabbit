@@ -230,7 +230,7 @@ std::vector<features_range_t> inline generate_generic_char_combination(
 }
 
 template <class DataT, class WeightOrIndexT, void (*FuncT)(DataT&, float, WeightOrIndexT), bool audit,
-    void (*audit_func)(DataT&, const audit_strings*), class WeightsT>
+    void (*audit_func)(DataT&, const VW::audit_strings*), class WeightsT>
 void inner_kernel(DataT& dat, features::const_audit_iterator& begin, features::const_audit_iterator& end,
     const uint64_t offset, WeightsT& weights, feature_value ft_value, feature_index halfhash)
 {
@@ -428,7 +428,7 @@ size_t process_generic_interaction(const std::vector<features_range_t>& range, b
 // and passes each of them to given function FuncT()
 // it must be in header file to avoid compilation problems
 template <class DataT, class WeightOrIndexT, void (*FuncT)(DataT&, float, WeightOrIndexT), bool audit,
-    void (*audit_func)(DataT&, const audit_strings*),
+    void (*audit_func)(DataT&, const VW::audit_strings*),
     class WeightsT>  // nullptr func can't be used as template param in old compilers
 inline void generate_interactions(const std::vector<std::vector<VW::namespace_index>>& interactions,
     const std::vector<std::vector<extent_term>>& extent_interactions, bool permutations, VW::example_predict& ec,
@@ -442,7 +442,7 @@ inline void generate_interactions(const std::vector<std::vector<VW::namespace_in
     inner_kernel<DataT, WeightOrIndexT, FuncT, audit, audit_func>(dat, begin, end, ec.ft_offset, weights, value, index);
   };
 
-  const auto depth_audit_func = [&](const audit_strings* audit_str) { audit_func(dat, audit_str); };
+  const auto depth_audit_func = [&](const VW::audit_strings* audit_str) { audit_func(dat, audit_str); };
 
   // current list of namespaces to interact.
   for (const auto& ns : interactions)

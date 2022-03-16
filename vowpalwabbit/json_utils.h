@@ -40,7 +40,7 @@ struct Namespace
     ftrs->push_back(v, i);
     feature_count++;
 
-    if (audit) ftrs->space_names.push_back(audit_strings(name, feature_name));
+    if (audit) ftrs->space_names.emplace_back(name, feature_name);
   }
 
   void AddFeature(const char* str, hash_func_t hash_func, uint64_t parse_mask)
@@ -49,14 +49,14 @@ struct Namespace
     ftrs->push_back(1., hashed_feature);
     feature_count++;
 
-    if (audit) ftrs->space_names.push_back(audit_strings(name, str));
+    if (audit) ftrs->space_names.emplace_back(name, str);
   }
 
   void AddFeature(const char* key, const char* value, hash_func_t hash_func, uint64_t parse_mask)
   {
     ftrs->push_back(1., VW::chain_hash_static(key, value, namespace_hash, hash_func, parse_mask));
     feature_count++;
-    if (audit) ftrs->space_names.push_back(audit_strings(name, key, value));
+    if (audit) ftrs->space_names.emplace_back(name, key, value);
   }
 };
 
