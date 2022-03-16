@@ -255,22 +255,32 @@ BENCHMARK_CAPTURE(benchmark_cb_adf_learn_privacy_preserving, many_features, 120)
 #endif
 
 BENCHMARK_CAPTURE(benchmark_multi, cb_adf_no_namespaces, gen_cb_examples(100, 7, 3, 6, 1, 4, 14, 2, false),
-    "--cb_explore_adf --quiet")->MinTime(15.0);
+    "--cb_explore_adf --quiet")
+    ->MinTime(15.0);
 BENCHMARK_CAPTURE(benchmark_multi, cb_adf_diff_char_no_interactions, gen_cb_examples(100, 7, 3, 6, 3, 4, 14, 2, false),
-    "--cb_explore_adf --quiet")->MinTime(15.0);
+    "--cb_explore_adf --quiet")
+    ->MinTime(15.0);
 BENCHMARK_CAPTURE(benchmark_multi, cb_adf_diff_char_interactions, gen_cb_examples(100, 7, 3, 6, 3, 4, 14, 2, false),
-    "--cb_explore_adf --quiet -q ::")->MinTime(15.0);
+    "--cb_explore_adf --quiet -q ::")
+    ->MinTime(15.0);
 BENCHMARK_CAPTURE(benchmark_multi, cb_adf_same_char_no_interactions, gen_cb_examples(100, 7, 3, 6, 3, 4, 14, 2, true),
-    "--cb_explore_adf --quiet")->MinTime(15.0);
+    "--cb_explore_adf --quiet")
+    ->MinTime(15.0);
 BENCHMARK_CAPTURE(benchmark_multi, cb_adf_same_char_interactions, gen_cb_examples(100, 7, 3, 6, 3, 4, 14, 2, true),
-    "--cb_explore_adf --quiet -q ::")->MinTime(15.0);
+    "--cb_explore_adf --quiet -q ::")
+    ->MinTime(15.0);
 BENCHMARK_CAPTURE(benchmark_multi, ccb_adf_no_namespaces, gen_ccb_examples(50, 7, 3, 6, 1, 4, 14, 2, false, 3),
-    "--ccb_explore_adf --quiet")->MinTime(15.0);
+    "--ccb_explore_adf --quiet")
+    ->MinTime(15.0);
 BENCHMARK_CAPTURE(benchmark_multi, ccb_adf_diff_char_no_interactions,
-    gen_ccb_examples(50, 7, 3, 6, 3, 4, 14, 2, false, 3), "--ccb_explore_adf --quiet")->MinTime(15.0);
+    gen_ccb_examples(50, 7, 3, 6, 3, 4, 14, 2, false, 3), "--ccb_explore_adf --quiet")
+    ->MinTime(15.0);
 BENCHMARK_CAPTURE(benchmark_multi, ccb_adf_diff_char_interactions, gen_ccb_examples(50, 7, 3, 6, 3, 4, 14, 2, false, 3),
-    "--ccb_explore_adf --quiet -q ::")->MinTime(15.0);
+    "--ccb_explore_adf --quiet -q ::")
+    ->MinTime(15.0);
 BENCHMARK_CAPTURE(benchmark_multi, ccb_adf_same_char_no_interactions,
-    gen_ccb_examples(50, 7, 3, 6, 3, 4, 14, 2, true, 3), "--ccb_explore_adf --quiet")->MinTime(15.0);
+    gen_ccb_examples(50, 7, 3, 6, 3, 4, 14, 2, true, 3), "--ccb_explore_adf --quiet")
+    ->MinTime(15.0);
 BENCHMARK_CAPTURE(benchmark_multi, ccb_adf_same_char_interactions, gen_ccb_examples(50, 7, 3, 6, 3, 4, 14, 2, true, 3),
-    "--ccb_explore_adf --quiet -q ::")->MinTime(15.0);
+    "--ccb_explore_adf --quiet -q ::")
+    ->MinTime(15.0);
