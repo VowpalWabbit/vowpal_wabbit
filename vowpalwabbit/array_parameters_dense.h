@@ -9,9 +9,12 @@
 #  include <sys/mman.h>
 #endif
 
-#include <bitset>
+#ifdef PRIVACY_ACTIVATION
+#  include <bitset>
+#  include <unordered_map>
+#endif
+
 #include <cassert>
-#include <unordered_map>
 
 #include "memory.h"
 

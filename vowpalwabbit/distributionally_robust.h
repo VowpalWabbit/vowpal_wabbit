@@ -6,13 +6,13 @@
 
 #include <algorithm>
 #include <limits>
+#include <string>
 #include <tuple>
-
-#include "io_buf.h"
 
 constexpr float DEFAULT_TAU = 0.999f;
 constexpr float DEFAULT_ALPHA = 0.05f;
 
+class io_buf;
 namespace VW
 {
 namespace distributionally_robust

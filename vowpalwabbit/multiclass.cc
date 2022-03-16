@@ -4,6 +4,7 @@
 
 #include <climits>
 #include <cstring>
+#include <iomanip>
 
 #include "example.h"
 #include "global_data.h"

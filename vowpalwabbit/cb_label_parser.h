@@ -9,7 +9,6 @@
 #include "cb.h"
 #include "cb_continuous_label.h"
 #include "future_compat.h"
-#include "io/logger.h"
 #include "io_buf.h"
 
 namespace CB

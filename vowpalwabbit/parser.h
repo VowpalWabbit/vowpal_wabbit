@@ -35,7 +35,7 @@ struct workspace;
 
 void parse_example_label(string_view label, const VW::label_parser& lbl_parser, const named_labels* ldict,
     label_parser_reuse_mem& reuse_mem, example& ec, VW::io::logger& logger);
-
+void setup_examples(VW::workspace& all, v_array<example*>& examples);
 namespace details
 {
 struct cache_temp_buffer

@@ -22,9 +22,6 @@
 
 #include "debug_log.h"
 #include "memory.h"
-#include "multiclass.h"
-#include "parser.h"
-#include "simple_label.h"
 
 #undef VW_DEBUG_LOG
 #define VW_DEBUG_LOG vw_dbg::learner
@@ -34,7 +31,6 @@
 #include "label_type.h"
 #include "metric_sink.h"
 #include "prediction_type.h"
-#include "reductions/conditional_contextual_bandit.h"
 #include "scope_exit.h"
 
 namespace VW
@@ -186,19 +182,7 @@ inline void decrement_offset(multi_ex& ec_seq, const size_t increment, const siz
   debug_decrement_depth(ec_seq);
 }
 
-inline bool ec_is_example_header(example const& ec, label_type_t label_type)
-{
-  if (label_type == VW::label_type_t::cb) { return CB::ec_is_example_header(ec); }
-  else if (label_type == VW::label_type_t::ccb)
-  {
-    return CCB::ec_is_example_header(ec);
-  }
-  else if (label_type == VW::label_type_t::cs)
-  {
-    return COST_SENSITIVE::ec_is_example_header(ec);
-  }
-  return false;
-}
+bool ec_is_example_header(example const& ec, label_type_t label_type);
 
 /// \brief Defines the interface for a learning algorithm.
 ///

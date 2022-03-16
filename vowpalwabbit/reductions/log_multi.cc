@@ -12,6 +12,7 @@
 #include "config/options.h"
 #include "global_data.h"
 #include "learner.h"
+#include "parser.h"
 
 using namespace VW::LEARNER;
 using namespace VW::config;
