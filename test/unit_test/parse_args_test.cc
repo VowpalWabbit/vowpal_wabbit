@@ -8,6 +8,7 @@
 
 #include "parse_args.h"
 #include "config/options_cli.h"
+#include "memory.h"
 
 #include <vector>
 #include <string>
