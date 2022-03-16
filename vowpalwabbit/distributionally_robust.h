@@ -6,8 +6,8 @@
 
 #include <algorithm>
 #include <limits>
-#include <tuple>
 #include <string>
+#include <tuple>
 
 constexpr float DEFAULT_TAU = 0.999f;
 constexpr float DEFAULT_ALPHA = 0.05f;
