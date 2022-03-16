@@ -54,7 +54,7 @@ jobs:
           pip install -r requirements.txt
           pip install pytype
           # required for test and utl directory typecheck
-          pip install hyperopt matplotlib
+          pip install hyperopt matplotlib seaborn
       - name: Install wheel
         shell: bash
         run: |
