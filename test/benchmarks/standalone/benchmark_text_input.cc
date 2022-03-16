@@ -247,7 +247,7 @@ BENCHMARK_CAPTURE(benchmark_ccb_adf_learn, many_features_no_predic,
     "a b c d e f g h i j k l m n o p q r s t u v w x y z", " --no_predict");
 
 BENCHMARK_CAPTURE(benchmark_cb_adf_learn, few_features, 2);
-BENCHMARK_CAPTURE(benchmark_cb_adf_learn, many_features, 120);
+BENCHMARK_CAPTURE(benchmark_cb_adf_learn, many_features, 120)->MinTime(15.0);
 
 #ifdef PRIVACY_ACTIVATION
 BENCHMARK_CAPTURE(benchmark_cb_adf_learn_privacy_preserving, few_features, 2);
@@ -255,22 +255,32 @@ BENCHMARK_CAPTURE(benchmark_cb_adf_learn_privacy_preserving, many_features, 120)
 #endif
 
 BENCHMARK_CAPTURE(benchmark_multi, cb_adf_no_namespaces, gen_cb_examples(100, 7, 3, 6, 1, 4, 14, 2, false),
-    "--cb_explore_adf --quiet");
+    "--cb_explore_adf --quiet")
+    ->MinTime(15.0);
 BENCHMARK_CAPTURE(benchmark_multi, cb_adf_diff_char_no_interactions, gen_cb_examples(100, 7, 3, 6, 3, 4, 14, 2, false),
-    "--cb_explore_adf --quiet");
+    "--cb_explore_adf --quiet")
+    ->MinTime(15.0);
 BENCHMARK_CAPTURE(benchmark_multi, cb_adf_diff_char_interactions, gen_cb_examples(100, 7, 3, 6, 3, 4, 14, 2, false),
-    "--cb_explore_adf --quiet -q ::");
+    "--cb_explore_adf --quiet -q ::")
+    ->MinTime(15.0);
 BENCHMARK_CAPTURE(benchmark_multi, cb_adf_same_char_no_interactions, gen_cb_examples(100, 7, 3, 6, 3, 4, 14, 2, true),
-    "--cb_explore_adf --quiet");
+    "--cb_explore_adf --quiet")
+    ->MinTime(15.0);
 BENCHMARK_CAPTURE(benchmark_multi, cb_adf_same_char_interactions, gen_cb_examples(100, 7, 3, 6, 3, 4, 14, 2, true),
-    "--cb_explore_adf --quiet -q ::");
+    "--cb_explore_adf --quiet -q ::")
+    ->MinTime(15.0);
 BENCHMARK_CAPTURE(benchmark_multi, ccb_adf_no_namespaces, gen_ccb_examples(50, 7, 3, 6, 1, 4, 14, 2, false, 3),
-    "--ccb_explore_adf --quiet");
+    "--ccb_explore_adf --quiet")
+    ->MinTime(15.0);
 BENCHMARK_CAPTURE(benchmark_multi, ccb_adf_diff_char_no_interactions,
-    gen_ccb_examples(50, 7, 3, 6, 3, 4, 14, 2, false, 3), "--ccb_explore_adf --quiet");
+    gen_ccb_examples(50, 7, 3, 6, 3, 4, 14, 2, false, 3), "--ccb_explore_adf --quiet")
+    ->MinTime(15.0);
 BENCHMARK_CAPTURE(benchmark_multi, ccb_adf_diff_char_interactions, gen_ccb_examples(50, 7, 3, 6, 3, 4, 14, 2, false, 3),
-    "--ccb_explore_adf --quiet -q ::");
+    "--ccb_explore_adf --quiet -q ::")
+    ->MinTime(15.0);
 BENCHMARK_CAPTURE(benchmark_multi, ccb_adf_same_char_no_interactions,
-    gen_ccb_examples(50, 7, 3, 6, 3, 4, 14, 2, true, 3), "--ccb_explore_adf --quiet");
+    gen_ccb_examples(50, 7, 3, 6, 3, 4, 14, 2, true, 3), "--ccb_explore_adf --quiet")
+    ->MinTime(15.0);
 BENCHMARK_CAPTURE(benchmark_multi, ccb_adf_same_char_interactions, gen_ccb_examples(50, 7, 3, 6, 3, 4, 14, 2, true, 3),
-    "--ccb_explore_adf --quiet -q ::");
+    "--ccb_explore_adf --quiet -q ::")
+    ->MinTime(15.0);
