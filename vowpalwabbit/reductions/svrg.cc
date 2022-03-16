@@ -8,6 +8,7 @@
 
 #include "gd.h"
 #include "memory.h"
+#include "parse_regressor.h"
 #include "reductions_fwd.h"
 #include "vw.h"
 

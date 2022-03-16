@@ -13,6 +13,7 @@
 #include "hash.h"
 #include "io/logger.h"
 #include "parse_primitives.h"
+#include "parser.h"
 #include "shared_data.h"
 #include "unique_sort.h"
 #include "vw_string_view.h"

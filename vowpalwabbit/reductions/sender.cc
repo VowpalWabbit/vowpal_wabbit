@@ -28,6 +28,7 @@
 #include "global_data.h"
 #include "io_buf.h"
 #include "network.h"
+#include "parser.h"
 
 using namespace VW::config;
 

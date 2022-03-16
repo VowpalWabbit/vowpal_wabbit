@@ -7,9 +7,9 @@
 #include <cstdint>
 
 #include "action_score.h"
-#include "io_buf.h"
 #include "label_parser.h"
 
+class io_buf;
 namespace VW
 {
 namespace slates

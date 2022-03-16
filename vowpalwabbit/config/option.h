@@ -4,10 +4,9 @@
 
 #pragma once
 
-#include <fmt/format.h>
-
 #include <memory>
 #include <set>
+#include <sstream>
 #include <string>
 #include <type_traits>
 #include <typeinfo>
@@ -90,9 +89,18 @@ struct typed_option : base_option
   }
   std::string invalid_choice_error(const std::string& value)
   {
-    return fmt::format("Error: '{}' is not a valid choice for option --{}. Please select from {{{}}}", value, m_name,
-        fmt::join(m_one_of, ", "));
+    std::ostringstream ss;
+    ss << "Error: '" << value << "' is not a valid choice for option --" << m_name << ". Please select from {";
+    std::string delim = "";
+    for (const auto& choice : m_one_of)
+    {
+      ss << delim << choice;
+      delim = ", ";
+    }
+    ss << "}";
+    return ss.str();
   }
+
   std::string invalid_choice_error(const int32_t& value) { return invalid_choice_error(std::to_string(value)); }
   std::string invalid_choice_error(const int64_t& value) { return invalid_choice_error(std::to_string(value)); }
   std::string invalid_choice_error(const uint32_t& value) { return invalid_choice_error(std::to_string(value)); }

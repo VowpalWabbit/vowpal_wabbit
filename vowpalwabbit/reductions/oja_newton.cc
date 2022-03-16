@@ -6,6 +6,7 @@
 #include <string>
 
 #include "gd.h"
+#include "parse_regressor.h"
 #include "rand48.h"
 #include "vw.h"
 

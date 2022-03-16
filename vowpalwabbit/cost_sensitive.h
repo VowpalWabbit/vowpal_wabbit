@@ -6,10 +6,10 @@
 #include <cstdint>
 #include <vector>
 
-#include "io_buf.h"
 #include "label_parser.h"
 #include "v_array.h"
 
+class io_buf;
 namespace VW
 {
 struct example;

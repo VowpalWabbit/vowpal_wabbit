@@ -11,6 +11,8 @@
 #include "gd.h"
 #include "global_data.h"
 #include "memory.h"
+#include "parse_regressor.h"
+#include "parser.h"
 #include "shared_data.h"
 
 using namespace VW::LEARNER;

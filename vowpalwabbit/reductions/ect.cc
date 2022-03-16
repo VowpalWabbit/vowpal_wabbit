@@ -18,6 +18,7 @@
 #include "global_data.h"
 #include "io/logger.h"
 #include "learner.h"
+#include "parser.h"
 
 using namespace VW::LEARNER;
 using namespace VW::config;

@@ -4,16 +4,16 @@
 
 #pragma once
 
-#include "feature_group.h"
-#include "io/logger.h"
-#include "io_buf.h"
-#include "label_parser.h"
 #include "v_array.h"
+
+class io_buf;
+struct features;
 
 namespace VW
 {
 struct workspace;
 struct example;
+struct label_parser;
 namespace details
 {
 struct cache_temp_buffer;
