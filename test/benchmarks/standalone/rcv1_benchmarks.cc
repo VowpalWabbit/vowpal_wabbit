@@ -5332,5 +5332,5 @@ static void benchmark_rcv1_dataset(benchmark::State& state, std::string command_
   VW::finish(*vw);
 }
 
-BENCHMARK_CAPTURE(benchmark_rcv1_dataset, simple, "--quiet")->MinTime(15.0);
-BENCHMARK_CAPTURE(benchmark_rcv1_dataset, quadratic, "--quiet -q ::")->MinTime(15.0);
+BENCHMARK_CAPTURE(benchmark_rcv1_dataset, simple, "--quiet")->MinTime(20.0);
+BENCHMARK_CAPTURE(benchmark_rcv1_dataset, quadratic, "--quiet -q ::")->MinTime(20.0);
