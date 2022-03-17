@@ -12,66 +12,35 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v1
-      - uses: dorny/paths-filter@v2
-        id: filter
-        with:
-          filters: |
-            valgrind_related_changes:
-              - '.github/workflows/valgrind.yml'
-              - '.scripts/**'
-              - 'cluster/**'
-              - 'cmake/**'
-              - 'explore/**'
-              - 'ext_libs/**'
-              - 'test/**'
-              - 'vowpalwabbit/**'
       - name: Build C++ VW binary
-        if: steps.filter.outputs.valgrind_related_changes == 'true'
         run: ./.scripts/linux/build-minimal.sh Release
       - name: Upload vw binary
-        if: steps.filter.outputs.valgrind_related_changes == 'true'
         uses: actions/upload-artifact@v2
         with:
           name: vw
           path: build/vowpalwabbit/vw
       - name: Upload spanning_tree binary
-        if: steps.filter.outputs.valgrind_related_changes == 'true'
         uses: actions/upload-artifact@v2
         with:
           name: spanning_tree
           path: build/cluster/spanning_tree
       - name: Upload to_flatbuff binary
-        if: steps.filter.outputs.valgrind_related_changes == 'true'
         uses: actions/upload-artifact@v2
         with:
           name: to_flatbuff
           path: build/utl/flatbuffer/to_flatbuff
       - name: Run unit tests with Valgrind
-        if: steps.filter.outputs.valgrind_related_changes == 'true'
         run: ./.scripts/linux/unit-tests-valgrind.sh
   run_valgrind_tests:
     needs: check_valgrind
     strategy:
       matrix:
-        test-segment: ["..200", "201.."]
+        test-segment: ["..100", "101..200", "201..300", "301.."]
     container:
       image: vowpalwabbit/ubuntu2004-build:latest
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v1
-      - uses: dorny/paths-filter@v2
-        id: filter
-        with:
-          filters: |
-            valgrind_related_changes:
-              - '.github/workflows/valgrind.yml'
-              - '.scripts/**'
-              - 'cluster/**'
-              - 'cmake/**'
-              - 'explore/**'
-              - 'ext_libs/**'
-              - 'test/**'
-              - 'vowpalwabbit/**'
       - uses: actions/download-artifact@v2
         with:
           name: vw
@@ -81,16 +50,9 @@ jobs:
       - uses: actions/download-artifact@v2
         with:
           name: to_flatbuff
-      - if: steps.filter.outputs.valgrind_related_changes == 'true'
         run: |
-          ls -alh
-          ls -alh vw
-          ls -alh spanning_tree
-          ls -alh to_flatbuff
           chmod +x vw
           chmod +x spanning_tree
           chmod +x to_flatbuff
-          
-      - if: steps.filter.outputs.valgrind_related_changes == 'true'
         run: |
           python3 test/run_tests.py -f --epsilon 1e-3 --include_flatbuffers --valgrind -t "${{ matrix.test-segment }}" --vw_bin_path=./vw --spanning_tree_bin_path=./spanning_tree --to_flatbuff_path=./to_flatbuff
