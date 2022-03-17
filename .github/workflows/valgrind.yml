@@ -87,6 +87,9 @@ jobs:
           ls -alh vw
           ls -alh spanning_tree
           ls -alh to_flatbuff
+          chmod +x vw
+          chmod +x spanning_tree
+          chmod +x to_flatbuff
       - if: steps.filter.outputs.valgrind_related_changes == 'true'
         run: |
           python3 test/run_tests.py -f --epsilon 1e-3 --include_flatbuffers --valgrind -t "${{ matrix.test-segment }}" --vw_bin_path=./vw --spanning_tree_bin_path=./spanning_tree --to_flatbuff_path=./to_flatbuff
