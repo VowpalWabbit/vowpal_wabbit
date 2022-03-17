@@ -5,9 +5,7 @@
 #pragma once
 
 #include <cstdint>
-#include <vector>
-#include <string>
-#include <utility>
+#include <iosfwd>
 #include <type_traits>
 
 // forward declarations
