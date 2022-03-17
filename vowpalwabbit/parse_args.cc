@@ -1728,6 +1728,10 @@ std::unique_ptr<VW::workspace> initialize_internal(std::unique_ptr<options_i, op
     *(all->trace_message) << "initial_t = " << all->sd->t << endl;
     *(all->trace_message) << "power_t = " << all->power_t << endl;
     if (all->numpasses > 1) *(all->trace_message) << "decay_learning_rate = " << all->eta_decay_rate << endl;
+    if (all->options->was_supplied("cb_type"))
+    {
+      *(all->trace_message) << "cb_type = " << all->options->get_typed_option<std::string>("cb_type").value() << endl;
+    }
   }
 
   // we must delay so parse_mask is fully defined.
