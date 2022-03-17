@@ -1079,6 +1079,8 @@ def main():
                 "Can't find spanning tree binary. Did you build the 'spanning_tree' target?"
             )
             sys.exit(1)
+        else:
+            spanning_tree_bin = spanning_tree_bin.resolve()
 
         print(f"Using spanning tree binary: {spanning_tree_bin.resolve()}")
 
