@@ -40,7 +40,7 @@ class TestVW:
         assert ex.get_tag() == "baz"
 
     def test_num_weights(self):
-        assert self.model.num_weights() == 2**BIT_SIZE
+        assert self.model.num_weights() == 2 ** BIT_SIZE
 
     def test_get_weight(self):
         assert self.model.get_weight(0, 0) == 0

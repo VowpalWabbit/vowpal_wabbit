@@ -29,7 +29,7 @@ class OnlineDRO:
                 uncgstar = 1 + 1 / n
             else:
                 unca = (uncwfake + sumw) / (1 + n)
-                uncb = (uncwfake**2 + sumwsq) / (1 + n)
+                uncb = (uncwfake ** 2 + sumwsq) / (1 + n)
                 uncgstar = (n + 1) * (unca - 1) ** 2 / (uncb - unca * unca)
             Delta = chi2.isf(q=alpha, df=1)
             phi = (-uncgstar - Delta) / (2 * (n + 1))
@@ -41,7 +41,7 @@ class OnlineDRO:
                     if wfake == inf:
                         x = sign * (r + (sumwr - sumw * r) / n)
                         y = (r * sumw - sumwr) ** 2 / (n * (1 + n)) - (
-                            r**2 * sumwsq - 2 * r * sumwsqr + sumwsqrsq
+                            r ** 2 * sumwsq - 2 * r * sumwsqr + sumwsqrsq
                         ) / (1 + n)
                         z = phi + 1 / (2 * n)
                         if isclose(y * z, 0, abs_tol=1e-9):
@@ -79,16 +79,16 @@ class OnlineDRO:
                         barwsqr = sign * (wfake * wfake * r + sumwsqr) / (1 + n)
                         barwsqrsq = (wfake * wfake * r * r + sumwsqrsq) / (1 + n)
 
-                        if barwsq > barw**2:
+                        if barwsq > barw ** 2:
                             x = barwr + (
                                 (1 - barw)
                                 * (barwsqr - barw * barwr)
-                                / (barwsq - barw**2)
+                                / (barwsq - barw ** 2)
                             )
-                            y = (barwsqr - barw * barwr) ** 2 / (barwsq - barw**2) - (
-                                barwsqrsq - barwr**2
+                            y = (barwsqr - barw * barwr) ** 2 / (barwsq - barw ** 2) - (
+                                barwsqrsq - barwr ** 2
                             )
-                            z = phi + (1 / 2) * (1 - barw) ** 2 / (barwsq - barw**2)
+                            z = phi + (1 / 2) * (1 - barw) ** 2 / (barwsq - barw ** 2)
 
                             if isclose(y * z, 0, abs_tol=1e-9):
                                 y = 0
@@ -150,13 +150,13 @@ class OnlineDRO:
                 ), "w = {} < {} < {}".format(self.wmin, w, self.wmax)
                 assert r >= 0 and r <= 1, "r = {}".format(r)
 
-                decay = self.tau**c
+                decay = self.tau ** c
                 self.n = decay * self.n + c
                 self.sumw = decay * self.sumw + c * w
-                self.sumwsq = decay * self.sumwsq + c * w**2
+                self.sumwsq = decay * self.sumwsq + c * w ** 2
                 self.sumwr = decay * self.sumwr + c * w * r
-                self.sumwsqr = decay * self.sumwsqr + c * (w**2) * r
-                self.sumwsqrsq = decay * self.sumwsqrsq + c * (w**2) * (r**2)
+                self.sumwsqr = decay * self.sumwsqr + c * (w ** 2) * r
+                self.sumwsqrsq = decay * self.sumwsqrsq + c * (w ** 2) * (r ** 2)
 
                 self.duals = None
                 self.mleduals = None

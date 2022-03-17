@@ -50,7 +50,7 @@ def train_test_oneday(day):
                     label = 1  # Positive label iff conversion and the conversion occured before the test period
 
             out = "%d | %s" % (label, get_features(line))
-            print >> vw.stdin, out
+            print >>vw.stdin, out
             line = f.readline()
 
         vw.stdin.close()
@@ -69,7 +69,7 @@ def train_test_oneday(day):
         while int(line.split()[0]) < ts_beginning_test + 86400:
             line = line[:-1].split("\t")
 
-            print >> vw.stdin, "| " + get_features(line)
+            print >>vw.stdin, "| " + get_features(line)
             dotproduct = float(vw.stdout.readline())
 
             # Test log likelihood
