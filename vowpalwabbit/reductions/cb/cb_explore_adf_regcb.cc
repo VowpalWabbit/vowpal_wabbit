@@ -276,7 +276,7 @@ base_learner* setup(VW::setup_base_i& stack_builder)
                .help("Contextual bandit method to use. RegCB only supports supervised regression (mtr)"));
 
   auto enabled = options.add_parse_and_check_necessary(new_options);
-  
+
   if (regcbopt && !regcb)
   {
     all.logger.err_warn(

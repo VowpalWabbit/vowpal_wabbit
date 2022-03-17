@@ -355,7 +355,7 @@ base_learner* setup(VW::setup_base_i& stack_builder)
   {
     options.insert("cb_type", type_string);
     options.add_and_parse(new_options);
-  }  
+  }
 
   // Ensure serialization of cb_adf in all cases.
   if (!options.was_supplied("cb_adf")) { options.insert("cb_adf", ""); }
