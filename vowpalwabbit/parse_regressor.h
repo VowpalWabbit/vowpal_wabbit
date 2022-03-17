@@ -5,12 +5,7 @@
 #include <string>
 
 #include "config/options.h"
-
-class io_buf;
-namespace VW
-{
-struct workspace;
-}
+#include "vw_fwd.h"
 
 void read_regressor_file(VW::workspace& all, const std::vector<std::string>& files, io_buf& io_temp);
 

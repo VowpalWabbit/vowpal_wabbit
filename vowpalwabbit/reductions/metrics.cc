@@ -2,6 +2,7 @@
 // individual contributors. All rights reserved. Released under a BSD (revised)
 // license as described in the file LICENSE.
 
+#include "crossplat_compat.h"
 #include "debug_log.h"
 #include "learner.h"
 #ifdef BUILD_EXTERNAL_PARSER

@@ -5,8 +5,10 @@
 #include <cfloat>
 #include <memory>
 
+#include "config/options.h"
 #include "gen_cs_example.h"
 #include "rand48.h"
+#include "rand_state.h"
 #include "reductions/cb/cb_adf.h"
 #include "reductions/cb/cb_algs.h"
 #include "shared_data.h"

@@ -9,6 +9,7 @@
 #include "reductions/gd.h"
 #include <algorithm>
 #include "shared_data.h"
+#include "parse_example.h"
 
 namespace VW
 {

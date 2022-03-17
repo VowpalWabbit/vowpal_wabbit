@@ -3,13 +3,14 @@
 // license as described in the file LICENSE.
 
 #include "best_constant.h"
+#include "config/options.h"
 #include "example.h"
 #include "future_compat.h"
 #include "global_data.h"
 #include "io/logger.h"
 #include "learner.h"
 #include "memory.h"
-#include "vw.h"
+#include "parser.h"
 
 struct reduction_data
 {
