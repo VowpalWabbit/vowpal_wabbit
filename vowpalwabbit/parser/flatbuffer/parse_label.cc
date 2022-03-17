@@ -13,6 +13,7 @@
 #include "../../example.h"
 #include "../../global_data.h"
 #include "../../slates_label.h"
+#include "../../named_labels.h"
 #include "parse_example_flatbuffer.h"
 
 namespace VW
