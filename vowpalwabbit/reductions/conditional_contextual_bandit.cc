@@ -684,6 +684,14 @@ base_learner* ccb_explore_adf_setup(VW::setup_base_i& stack_builder)
                .help("Contextual bandit method to use"));
 
   if (!options.add_parse_and_check_necessary(new_options)) { return nullptr; }
+
+  // Ensure serialization of this option in all cases.
+  if (!options.was_supplied("cb_type"))
+  {
+    options.insert("cb_type", type_string);
+    options.add_and_parse(new_options);
+  }
+
   data->all_slots_loss_report = all_slots_loss_report;
   if (!options.was_supplied("cb_explore_adf"))
   {
