@@ -6,6 +6,7 @@
 
 #include <msclr\marshal_cppstd.h>
 #include "vw.h"
+#include "config/options.h"
 #include "config/cli_options_serializer.h"
 #include <algorithm>
 
