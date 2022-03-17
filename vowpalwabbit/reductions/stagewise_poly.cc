@@ -7,6 +7,7 @@
 #include <cmath>
 
 #include "accumulate.h"
+#include "config/options.h"
 #include "gd.h"
 #include "label_parser.h"
 #include "vw.h"

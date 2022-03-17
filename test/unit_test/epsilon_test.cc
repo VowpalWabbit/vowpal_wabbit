@@ -13,7 +13,7 @@
 BOOST_AUTO_TEST_CASE(set_epsilon_test)
 {
   auto vw = VW::initialize("--quiet --cb_explore_adf");
-  multi_ex examples;
+  VW::multi_ex examples;
   examples.push_back(VW::read_example(*vw, std::string("")));
   auto& ep_fts = examples[0]->_reduction_features.template get<VW::cb_explore_adf::greedy::reduction_features>();
   BOOST_CHECK_EQUAL(ep_fts.epsilon, -1.f);

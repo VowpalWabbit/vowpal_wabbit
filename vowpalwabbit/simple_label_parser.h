@@ -2,12 +2,13 @@
 // individual contributors. All rights reserved. Released under a BSD (revised)
 // license as described in the file LICENSE.
 #pragma once
-#include "io_buf.h"
+
 #include "label_parser.h"
 #include "simple_label.h"
 
 extern VW::label_parser simple_label_parser;
 
+class io_buf;
 namespace VW
 {
 namespace model_utils

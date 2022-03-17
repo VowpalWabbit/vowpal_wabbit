@@ -4,6 +4,7 @@
 
 #include "parse_primitives.h"
 
+#include <algorithm>
 #include <cctype>
 #include <iostream>
 #include <sstream>

@@ -72,7 +72,7 @@ BOOST_AUTO_TEST_CASE(offset_tree_learn_basic)
 
   VW::offset_tree::offset_tree tree(3);
   tree.init();
-  example ec;
+  VW::example ec;
   ec.l.cb.costs.push_back(CB::cb_class{-1.0f, 1, 0.5f});
 
   tree.learn(*as_singleline(test_harness), ec);

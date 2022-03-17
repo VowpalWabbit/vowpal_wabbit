@@ -10,19 +10,25 @@ Implementation by Miro Dudik.
 
 #include <cmath>
 #include <fstream>
+
+#include "learner.h"
 #ifndef _WIN32
 #  include <netdb.h>
 #endif
-#include <assert.h>
-#include <stdio.h>
-#include <string.h>
 #include <sys/timeb.h>
 
+#include <cassert>
 #include <chrono>
+#include <cstdio>
+#include <cstring>
 #include <exception>
 
 #include "accumulate.h"
 #include "gd.h"
+#include "loss_functions.h"
+#include "parse_regressor.h"
+#include "parser.h"
+#include "prediction_type.h"
 #include "shared_data.h"
 #include "vw_exception.h"
 

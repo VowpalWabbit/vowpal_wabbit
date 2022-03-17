@@ -115,7 +115,7 @@ BOOST_AUTO_TEST_CASE(otc_algo_learn_1_action_till_root)
   cats_tree tree;
   tree.init(4, 0);
 
-  example ec;
+  VW::example ec;
   ec.ft_offset = 0;
   ec._debug_current_reduction_depth = 0;
   ec.l.cb = CB::label();
@@ -149,7 +149,7 @@ BOOST_AUTO_TEST_CASE(otc_algo_learn_1_action)
   cats_tree tree;
   tree.init(4, 0);
 
-  example ec;
+  VW::example ec;
   ec.ft_offset = 0;
   ec._debug_current_reduction_depth = 0;
   ec.l.cb = CB::label();
@@ -176,7 +176,7 @@ BOOST_AUTO_TEST_CASE(otc_algo_learn_1_action)
 
 BOOST_AUTO_TEST_CASE(otc_algo_learn_2_action_siblings)
 {
-  example ec;
+  VW::example ec;
   ec.ft_offset = 0;
   ec._debug_current_reduction_depth = 0;
   ec.l.cb = CB::label();
@@ -211,7 +211,7 @@ BOOST_AUTO_TEST_CASE(otc_algo_learn_2_action_siblings)
 
 BOOST_AUTO_TEST_CASE(otc_algo_learn_2_action_notSiblings)
 {
-  example ec;
+  VW::example ec;
   ec.ft_offset = 0;
   ec._debug_current_reduction_depth = 0;
   ec.l.cb = CB::label();
@@ -246,7 +246,7 @@ BOOST_AUTO_TEST_CASE(otc_algo_learn_2_action_notSiblings)
 
 BOOST_AUTO_TEST_CASE(otc_algo_learn_2_action_notSiblings_bandwidth_1)
 {
-  example ec;
+  VW::example ec;
   ec.ft_offset = 0;
   ec._debug_current_reduction_depth = 0;
   ec.l.cb = CB::label();
@@ -285,7 +285,7 @@ BOOST_AUTO_TEST_CASE(otc_algo_learn_2_action_notSiblings_bandwidth_1)
 
 BOOST_AUTO_TEST_CASE(otc_algo_learn_2_action_separate)
 {
-  example ec;
+  VW::example ec;
   ec.ft_offset = 0;
   ec._debug_current_reduction_depth = 0;
   ec.l.cb = CB::label();
@@ -320,7 +320,7 @@ BOOST_AUTO_TEST_CASE(otc_algo_learn_2_action_separate)
 
 BOOST_AUTO_TEST_CASE(otc_algo_learn_2_action_separate_2)
 {
-  example ec;
+  VW::example ec;
   ec.ft_offset = 0;
   ec._debug_current_reduction_depth = 0;
   ec.l.cb = CB::label();
@@ -355,7 +355,7 @@ BOOST_AUTO_TEST_CASE(otc_algo_learn_2_action_separate_2)
 
 BOOST_AUTO_TEST_CASE(otc_algo_learn_2_action_separate_bandwidth_2)
 {
-  example ec;
+  VW::example ec;
   ec.ft_offset = 0;
   ec._debug_current_reduction_depth = 0;
   ec.l.cb = CB::label();
@@ -390,7 +390,7 @@ BOOST_AUTO_TEST_CASE(otc_algo_learn_2_action_separate_bandwidth_2)
 
 BOOST_AUTO_TEST_CASE(otc_algo_learn_2_action_separate_2_bandwidth_2)
 {
-  example ec;
+  VW::example ec;
   ec.ft_offset = 0;
   ec._debug_current_reduction_depth = 0;
   ec.l.cb = CB::label();
@@ -425,7 +425,7 @@ BOOST_AUTO_TEST_CASE(otc_algo_learn_2_action_separate_2_bandwidth_2)
 
 BOOST_AUTO_TEST_CASE(otc_algo_learn_2_action_separate_bandwidth_1_asym)
 {
-  example ec;
+  VW::example ec;
   ec.ft_offset = 0;
   ec._debug_current_reduction_depth = 0;
   ec.l.cb = CB::label();

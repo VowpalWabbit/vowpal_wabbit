@@ -5,7 +5,7 @@
 #include <string>
 
 #include "config/options.h"
-#include "global_data.h"
+#include "vw_fwd.h"
 
 void read_regressor_file(VW::workspace& all, const std::vector<std::string>& files, io_buf& io_temp);
 

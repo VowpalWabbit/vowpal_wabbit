@@ -20,9 +20,11 @@
 #include <utility>
 #include <vector>
 
+#include "config/options.h"
 #include "correctedMath.h"
 #include "io/logger.h"
 #include "rand48.h"
+#include "rand_state.h"
 #include "shared_data.h"
 #include "vw.h"
 #include "vw_math.h"

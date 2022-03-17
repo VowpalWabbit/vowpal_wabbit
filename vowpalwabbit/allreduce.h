@@ -10,7 +10,10 @@
 #include <utility>
 
 #ifdef _WIN32
-#  define NOMINMAX
+#  ifndef NOMINMAX
+#    define NOMINMAX
+#  endif
+
 #  include <WS2tcpip.h>
 #  include <WinSock2.h>
 #  include <Windows.h>
@@ -59,6 +62,12 @@ using socket_t = int;
 #endif
 
 constexpr size_t ar_buf_size = 1 << 16;
+
+enum class AllReduceType
+{
+  Socket,
+  Thread
+};
 
 struct node_socks
 {

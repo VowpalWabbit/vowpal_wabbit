@@ -6,7 +6,10 @@
 #include <string>
 
 #include "gd.h"
+#include "loss_functions.h"
+#include "parse_regressor.h"
 #include "rand48.h"
+#include "rand_state.h"
 #include "vw.h"
 
 using namespace VW::LEARNER;

@@ -246,7 +246,7 @@ public:
    std::vector<nextstr> next;
     for (int m=1; m<=N*2; m++)     // at most |in|*2 outputs
     {
-      example ex;
+      VW::example ex;
 
       // length info
       auto ns_hash_l = VW::hash_space(vw_obj, "l");

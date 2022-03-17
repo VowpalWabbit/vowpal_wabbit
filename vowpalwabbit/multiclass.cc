@@ -4,10 +4,12 @@
 
 #include <climits>
 #include <cstring>
+#include <iomanip>
 
 #include "example.h"
 #include "global_data.h"
 #include "model_utils.h"
+#include "named_labels.h"
 #include "parse_primitives.h"
 #include "shared_data.h"
 #include "vw.h"

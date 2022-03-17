@@ -3,8 +3,10 @@
 // license as described in the file LICENSE.
 #include "search_dep_parser.h"
 
+#include "config/options.h"
 #include "cost_sensitive.h"
 #include "label_dictionary.h"  // for add_example_namespaces_from_example
+#include "label_parser.h"
 #include "numeric_casts.h"
 #include "reductions/gd.h"
 #include "vw.h"

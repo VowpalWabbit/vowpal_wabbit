@@ -16,7 +16,10 @@ Alekh Agarwal and John Langford, with help Olivier Chapelle.
 #include <iostream>
 #include <sstream>
 #ifdef _WIN32
-#  define NOMINMAX
+#  ifndef NOMINMAX
+#    define NOMINMAX
+#  endif
+
 #  define _WINSOCK_DEPRECATED_NO_WARNINGS
 #  include <WS2tcpip.h>
 #  include <WinSock2.h>

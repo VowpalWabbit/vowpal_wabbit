@@ -2,6 +2,7 @@
 // individual contributors. All rights reserved. Released under a BSD (revised)
 // license as described in the file LICENSE.
 
+#include "crossplat_compat.h"
 #include "future_compat.h"
 
 VW_WARNING_DISABLE_DEPRECATED_USAGE
@@ -29,6 +30,7 @@ VW_WARNING_STATE_POP
 #include "mwt.h"
 #include "no_label.h"
 #include "numeric_casts.h"
+#include "parse_regressor.h"
 #include "rand48.h"
 #include "shared_data.h"
 #include "vw.h"

@@ -24,7 +24,7 @@ BOOST_AUTO_TEST_CASE(chain_hashing_between_formats)
 
   auto vw = VW::initialize("--quiet --chain_hash", nullptr, false, nullptr, nullptr);
   {
-    multi_ex examples;
+    VW::multi_ex examples;
     examples.push_back(&VW::get_unused_example(vw));
     auto example = examples[0];
     VW::read_line(*vw, example, text.c_str());

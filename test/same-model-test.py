@@ -71,8 +71,10 @@ if __name__ == "__main__":
         print("VW succeeded")
         if return_code != 0:
             print("VW failed:")
-            print("STDOUT: \n" + proc.stdout.read().decode("utf-8"))
-            print("STDERR: \n" + proc.stderr.read().decode("utf-8"))
+            if proc.stdout:
+                print("STDOUT: \n" + proc.stdout.read().decode("utf-8"))
+            if proc.stderr:
+                print("STDERR: \n" + proc.stderr.read().decode("utf-8"))
             spanning_tree_proc.kill()
             sys.exit(1)
 

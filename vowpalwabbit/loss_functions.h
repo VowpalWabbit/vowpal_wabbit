@@ -2,15 +2,11 @@
 // individual contributors. All rights reserved. Released under a BSD (revised)
 // license as described in the file LICENSE.
 #pragma once
+
 #include <memory>
 #include <string>
 
-struct shared_data;
-namespace VW
-{
-struct workspace;
-}
-
+#include "vw_fwd.h"
 class loss_function
 {
 public:
@@ -23,7 +19,7 @@ public:
 
   // Returns the update scalar.
   virtual float getUpdate(float prediction, float label, float update_scale, float pred_per_update) const = 0;
-  virtual float getUnsafeUpdate(float prediction, float label, float eta_t) const = 0;
+  virtual float getUnsafeUpdate(float prediction, float label, float update_scale) const = 0;
 
   virtual float getSquareGrad(float prediction, float label) const = 0;
   virtual float first_derivative(const shared_data*, float prediction, float label) const = 0;

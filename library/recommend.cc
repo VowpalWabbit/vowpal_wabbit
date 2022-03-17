@@ -12,6 +12,7 @@
 #include <iostream>
 #include <fstream>
 
+#include "crossplat_compat.h"
 #include "vw.h"
 #include "config/options_cli.h"
 #include "config/option_builder.h"
@@ -128,7 +129,8 @@ int main(int argc, char* argv[])
 
   opts.add_and_parse(desc);
   // Return value is ignored as option reachability is not relevant here.
-  opts.check_unregistered();
+  auto warnings = opts.check_unregistered();
+  _UNUSED(warnings);
 
   VW::config::cli_help_formatter help_formatter;
   const auto help_message = help_formatter.format_help(opts.get_all_option_group_definitions());
@@ -230,7 +232,7 @@ int main(int argc, char* argv[])
 
       if (!bf_hit(bf, estr))
       {
-        example* ex = VW::read_example(*model, estr);
+        VW::example* ex = VW::read_example(*model, estr);
         model->learn(*ex);
 
         const std::string str(estr);

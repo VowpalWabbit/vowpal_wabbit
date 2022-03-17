@@ -1,3 +1,4 @@
+#include "crossplat_compat.h"
 #include "vw.h"
 #include "parser.h"
 #include "config/options_cli.h"
@@ -30,7 +31,8 @@ int main(int argc, char* argv[])
 
   opts.add_and_parse(desc);
   // Return value is ignored as option reachability is not relevant here.
-  opts.check_unregistered();
+  auto warnings = opts.check_unregistered();
+  _UNUSED(warnings);
 
   if (help || infile.empty() || vwparams.empty())
   {
