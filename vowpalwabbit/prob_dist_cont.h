@@ -3,11 +3,10 @@
 // license as described in the file LICENSE.
 #pragma once
 
-#include <string>
+#include <iosfwd>
 #include <vector>
 
 #include "constant.h"
-#include "v_array.h"
 
 namespace VW
 {

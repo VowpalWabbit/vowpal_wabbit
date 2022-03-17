@@ -7,6 +7,7 @@
 #include "crossplat_compat.h"
 #include "feature_group.h"
 #include "global_data.h"
+#include "loss_functions.h"
 
 #if !defined(VW_NO_INLINE_SIMD)
 #  if !defined(__SSE2__) && (defined(_M_AMD64) || defined(_M_X64))

@@ -4,7 +4,10 @@
 #include <fstream>
 #include <iostream>
 
+#include "config/options.h"
 #include "crossplat_compat.h"
+#include "io_buf.h"
+#include "rand_state.h"
 
 #ifndef _WIN32
 #  include <unistd.h>
@@ -24,6 +27,8 @@
 #include "crossplat_compat.h"
 #include "global_data.h"
 #include "io/logger.h"
+#include "kskip_ngram_transformer.h"
+#include "learner.h"
 #include "rand48.h"
 #include "shared_data.h"
 #include "vw_exception.h"

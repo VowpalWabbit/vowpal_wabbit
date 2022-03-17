@@ -7,6 +7,7 @@
 #include <cfloat>
 
 #include "cb_label_parser.h"
+#include "config/options.h"
 #include "gen_cs_example.h"
 #include "io/logger.h"
 #include "shared_data.h"

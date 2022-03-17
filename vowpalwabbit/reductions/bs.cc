@@ -11,7 +11,9 @@
 #include <sstream>
 #include <vector>
 
+#include "config/options.h"
 #include "io/logger.h"
+#include "loss_functions.h"
 #include "rand48.h"
 #include "shared_data.h"
 #include "vw.h"
