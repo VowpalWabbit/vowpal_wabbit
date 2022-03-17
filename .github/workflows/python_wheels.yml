@@ -298,7 +298,7 @@ jobs:
           path: wheel_output
   windows-python-test:
     name: windows.amd64.py${{ matrix.version }}.test
-    needs: macos-windows-build
+    needs: windows-python-build
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
