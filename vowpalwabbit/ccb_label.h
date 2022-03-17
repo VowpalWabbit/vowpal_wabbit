@@ -14,8 +14,10 @@
 #include "v_array.h"
 #include "vw_string_view.h"
 
-// TODO: This header can be removed once type and explicit_included_actions are removed from the label
 #include <fmt/format.h>
+
+// TODO: The ccb_reduction_features.h header can be removed once type and
+// explicit_included_actions are removed from the label
 
 namespace CCB
 {
