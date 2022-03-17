@@ -7,10 +7,14 @@
 #include <memory>
 #include <sstream>
 
+#include "config/options.h"
 #include "gd.h"
 #include "guard.h"
 #include "io/logger.h"
+#include "loss_functions.h"
+#include "named_labels.h"
 #include "rand48.h"
+#include "rand_state.h"
 #include "shared_data.h"
 #include "vw.h"
 

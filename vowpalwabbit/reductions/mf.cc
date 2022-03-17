@@ -10,7 +10,9 @@
 #  include <netdb.h>
 #endif
 
+#include "config/options.h"
 #include "gd.h"
+#include "learner.h"
 #include "scope_exit.h"
 
 using namespace VW::LEARNER;

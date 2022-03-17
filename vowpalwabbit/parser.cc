@@ -7,6 +7,7 @@
 #include <sys/types.h>
 
 #include "io/logger.h"
+#include "kskip_ngram_transformer.h"
 #include "numeric_casts.h"
 
 #ifndef _WIN32
@@ -20,6 +21,7 @@
 #include <fstream>
 
 #include "crossplat_compat.h"
+#include "simple_label_parser.h"
 #include "text_utils.h"
 
 #ifdef _WIN32
@@ -89,6 +91,18 @@ using std::endl;
 bool got_sigterm;
 
 void handle_sigterm(int) { got_sigterm = true; }
+
+parser::parser(size_t example_queue_limit, bool strict_parse_)
+    : example_pool{example_queue_limit}
+    , ready_parsed_examples{example_queue_limit}
+    , example_queue_limit{example_queue_limit}
+    , num_examples_taken_from_pool(0)
+    , num_setup_examples(0)
+    , num_finished_examples(0)
+    , strict_parse{strict_parse_}
+{
+  this->lbl_parser = simple_label_parser;
+}
 
 namespace VW
 {

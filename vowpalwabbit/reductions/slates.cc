@@ -9,6 +9,7 @@
 #include "action_score.h"
 #include "ccb_label.h"
 #include "conditional_contextual_bandit.h"
+#include "config/options.h"
 #include "decision_scores.h"
 #include "example.h"
 #include "global_data.h"

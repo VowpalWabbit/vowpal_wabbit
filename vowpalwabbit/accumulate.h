@@ -7,11 +7,7 @@
 
 #include <cstddef>
 
-class parameters;
-namespace VW
-{
-struct workspace;
-}
+#include "vw_fwd.h"
 
 void accumulate(VW::workspace& all, parameters& weights, size_t o);
 float accumulate_scalar(VW::workspace& all, float local_sum);

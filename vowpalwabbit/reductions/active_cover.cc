@@ -7,9 +7,11 @@
 #include <cmath>
 #include <memory>
 
+#include "config/options.h"
 #include "float.h"
 #include "numeric_casts.h"
 #include "rand48.h"
+#include "rand_state.h"
 #include "shared_data.h"
 #include "vw.h"
 #include "vw_math.h"

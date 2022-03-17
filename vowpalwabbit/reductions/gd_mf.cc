@@ -4,6 +4,8 @@
 #include <cfloat>
 #include <cstdio>
 #include <fstream>
+
+#include "crossplat_compat.h"
 #ifdef _WIN32
 #  define NOMINMAX
 #  include <winsock2.h>
@@ -13,8 +15,11 @@
 
 #include "array_parameters.h"
 #include "gd.h"
+#include "learner.h"
+#include "loss_functions.h"
 #include "parse_regressor.h"
 #include "parser.h"
+#include "prediction_type.h"
 #include "rand48.h"
 #include "shared_data.h"
 #include "vw_exception.h"

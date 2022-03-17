@@ -20,8 +20,13 @@
 
 #include "array_parameters.h"
 #include "future_compat.h"
+#include "io/logger.h"
+#include "kskip_ngram_transformer.h"
+#include "learner.h"
+#include "loss_functions.h"
 #include "named_labels.h"
 #include "parser.h"
+#include "rand_state.h"
 #include "rapidjson/document.h"
 #include "rapidjson/rapidjson.h"
 #include "reduction_stack.h"
@@ -37,7 +42,6 @@
 #  include "parse_example_external.h"
 #endif
 
-#include "io/logger.h"
 struct global_prediction
 {
   float p;
@@ -368,6 +372,7 @@ namespace VW
 {
 workspace::workspace(VW::io::logger logger) : options(nullptr, nullptr), logger(std::move(logger))
 {
+  _random_state_sp = std::make_shared<VW::rand_state>();
   sd = new shared_data();
   // Default is stderr.
   trace_message = VW::make_unique<std::ostream>(std::cout.rdbuf());

@@ -7,14 +7,11 @@
 #include <unordered_map>
 #include <vector>
 
+#include "vw_fwd.h"
 #include "vw_string_view.h"
 
 namespace VW
 {
-namespace io
-{
-struct logger;
-}
 class named_labels
 {
 private:

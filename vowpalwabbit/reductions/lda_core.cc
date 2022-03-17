@@ -2,6 +2,7 @@
 // individual contributors. All rights reserved. Released under a BSD (revised)
 // license as described in the file LICENSE.
 
+#include "crossplat_compat.h"
 #include "future_compat.h"
 
 VW_WARNING_DISABLE_DEPRECATED_USAGE

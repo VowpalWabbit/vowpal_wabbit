@@ -12,6 +12,7 @@
 #include "interactions.h"
 #include "io/logger.h"
 #include "learner.h"
+#include "loss_functions.h"
 #include "text_utils.h"
 
 using namespace VW::config;
