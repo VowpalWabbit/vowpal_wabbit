@@ -4,6 +4,8 @@
 
 #pragma once
 
+#include <fmt/format.h>
+
 #include <cstdint>
 #include <string>
 #include <vector>
@@ -13,8 +15,6 @@
 #include "label_parser.h"
 #include "v_array.h"
 #include "vw_string_view.h"
-
-#include <fmt/format.h>
 
 // TODO: The ccb_reduction_features.h header can be removed once type and
 // explicit_included_actions are removed from the label
