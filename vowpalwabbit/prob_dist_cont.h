@@ -3,8 +3,8 @@
 // license as described in the file LICENSE.
 #pragma once
 
-#include <iosfwd>
 #include <vector>
+#include <string>
 
 #include "constant.h"
 

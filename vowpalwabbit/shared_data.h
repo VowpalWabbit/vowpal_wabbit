@@ -5,7 +5,7 @@
 
 #include <cfloat>
 #include <cstdint>
-#include <iosfwd>
+#include <string>
 #include <memory>
 
 #include "vw_fwd.h"

@@ -5,7 +5,8 @@
 #pragma once
 
 #include <cstdint>
-#include <iosfwd>
+#include <vector>
+#include <string>
 
 #include "action_score.h"
 #include "ccb_reduction_features.h"

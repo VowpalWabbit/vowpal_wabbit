@@ -4,7 +4,7 @@
 
 #pragma once
 
-#include <iosfwd>
+#include <string>
 
 #include "vw_fwd.h"
 
