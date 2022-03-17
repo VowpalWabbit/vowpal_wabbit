@@ -2747,7 +2747,7 @@ def main():
 
     try:
         power = "kmg".find(args.bytes[-1].lower()) + 1
-        file_size = int(args.bytes[:-1]) * 1024 ** power
+        file_size = int(args.bytes[:-1]) * 1024**power
         if file_size < minFileSize:
             raise ValueError()
     except ValueError:

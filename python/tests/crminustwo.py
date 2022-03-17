@@ -63,7 +63,7 @@ class CrMinusTwo:
             gstar = 1 + 1 / n
         else:
             a = (wfake + sumw) / (1 + n)
-            b = (wfake ** 2 + sumwsq) / (1 + n)
+            b = (wfake**2 + sumwsq) / (1 + n)
             assert a * a < b
             gammastar = (b - a) / (a * a - b)
             betastar = (1 - a) / (a * a - b)
@@ -148,8 +148,8 @@ class CrMinusTwo:
             sumu += c * u
             sumw += c * w
             sumuw += c * u * w
-            sumusq += c * u ** 2
-            sumwsq += c * w ** 2
+            sumusq += c * u**2
+            sumwsq += c * w**2
             sumuMwr += c * (u - w) * r
             sumuuMwr += c * u * (u - w) * r
             sumwuMwr += c * w * (u - w) * r
@@ -160,10 +160,10 @@ class CrMinusTwo:
         wfake = wmax if sumw < n else wmin
 
         ubar = (sumu + ufake) / (n + 1)
-        usqbar = (sumusq + ufake ** 2) / (n + 1)
+        usqbar = (sumusq + ufake**2) / (n + 1)
         uwbar = (sumuw + ufake * wfake) / (n + 1)
         wbar = (sumw + wfake) / (n + 1)
-        wsqbar = (sumwsq + wfake ** 2) / (n + 1)
+        wsqbar = (sumwsq + wfake**2) / (n + 1)
 
         A = np.array(
             [[-1, -ubar, -wbar], [-ubar, -usqbar, -uwbar], [-wbar, -uwbar, -wsqbar]],
@@ -177,8 +177,8 @@ class CrMinusTwo:
         deltavhat = (-beta * sumuMwr - gamma * sumuuMwr - tau * sumwuMwr) / n
         missing = (
             -beta * (ufake - wfake)
-            - gamma * (ufake ** 2 - ufake * wfake)
-            - tau * (ufake * wfake - wfake ** 2)
+            - gamma * (ufake**2 - ufake * wfake)
+            - tau * (ufake * wfake - wfake**2)
         ) / (n + 1)
 
         deltavmin = deltavhat + min(rmin * missing, rmax * missing)
@@ -219,10 +219,10 @@ class CrMinusTwo:
         for c, w, r in datagen():
             n += c
             sumw += c * w
-            sumwsq += c * w ** 2
+            sumwsq += c * w**2
             sumwr += c * w * r
-            sumwsqr += c * w ** 2 * r
-            sumwsqrsq += c * w ** 2 * r ** 2
+            sumwsqr += c * w**2 * r
+            sumwsqrsq += c * w**2 * r**2
         assert n > 0
 
         return CrMinusTwo.intervalimpl(
@@ -267,7 +267,7 @@ class CrMinusTwo:
             uncgstar = 1 + 1 / n
         else:
             unca = (uncwfake + sumw) / (1 + n)
-            uncb = (uncwfake ** 2 + sumwsq) / (1 + n)
+            uncb = (uncwfake**2 + sumwsq) / (1 + n)
             uncgstar = (n + 1) * (unca - 1) ** 2 / (uncb - unca * unca)
         Delta = f.isf(q=alpha, dfn=1, dfd=n)
         phi = (-uncgstar - Delta) / (2 * (n + 1))
@@ -279,7 +279,7 @@ class CrMinusTwo:
                 if wfake == inf:
                     x = sign * (r + (sumwr - sumw * r) / n)
                     y = (r * sumw - sumwr) ** 2 / (n * (1 + n)) - (
-                        r ** 2 * sumwsq - 2 * r * sumwsqr + sumwsqrsq
+                        r**2 * sumwsq - 2 * r * sumwsqr + sumwsqrsq
                     ) / (1 + n)
                     z = phi + 1 / (2 * n)
                     if isclose(y * z, 0, abs_tol=1e-9):
@@ -315,14 +315,14 @@ class CrMinusTwo:
                     barwsqr = sign * (wfake * wfake * r + sumwsqr) / (1 + n)
                     barwsqrsq = (wfake * wfake * r * r + sumwsqrsq) / (1 + n)
 
-                    if barwsq > barw ** 2:
+                    if barwsq > barw**2:
                         x = barwr + (
-                            (1 - barw) * (barwsqr - barw * barwr) / (barwsq - barw ** 2)
+                            (1 - barw) * (barwsqr - barw * barwr) / (barwsq - barw**2)
                         )
-                        y = (barwsqr - barw * barwr) ** 2 / (barwsq - barw ** 2) - (
-                            barwsqrsq - barwr ** 2
+                        y = (barwsqr - barw * barwr) ** 2 / (barwsq - barw**2) - (
+                            barwsqrsq - barwr**2
                         )
-                        z = phi + (1 / 2) * (1 - barw) ** 2 / (barwsq - barw ** 2)
+                        z = phi + (1 / 2) * (1 - barw) ** 2 / (barwsq - barw**2)
                         if isclose(y * z, 0, abs_tol=1e-9):
                             y = 0
 
@@ -388,12 +388,12 @@ class CrMinusTwo:
             sumu += c * u
             sumw += c * w
             sumuw += c * u * w
-            sumusq += c * u ** 2
-            sumwsq += c * w ** 2
+            sumusq += c * u**2
+            sumwsq += c * w**2
             sumuMwr += c * (u - w) * r
             sumuuMwr += c * u * (u - w) * r
             sumwuMwr += c * w * (u - w) * r
-            sumuMwsqrsq += c * (u - w) ** 2 * r ** 2
+            sumuMwsqrsq += c * (u - w) ** 2 * r**2
 
         assert n > 0
 
@@ -405,13 +405,13 @@ class CrMinusTwo:
 
                 baru = (sumu + ufake) / (n + 1)
                 barw = (sumw + wfake) / (n + 1)
-                barusq = (sumusq + ufake ** 2) / (n + 1)
-                barwsq = (sumwsq + wfake ** 2) / (n + 1)
+                barusq = (sumusq + ufake**2) / (n + 1)
+                barwsq = (sumwsq + wfake**2) / (n + 1)
                 baruw = (sumuw + ufake * wfake) / (n + 1)
                 baruMwr = sign * (sumuMwr + (ufake - wfake) * rex) / (n + 1)
                 baruuMwr = sign * (sumuuMwr + ufake * (ufake - wfake) * rex) / (n + 1)
                 barwuMwr = sign * (sumwuMwr + wfake * (ufake - wfake) * rex) / (n + 1)
-                baruMwsqrsq = (sumuMwsqrsq + (ufake - wfake) ** 2 * rex ** 2) / (n + 1)
+                baruMwsqrsq = (sumuMwsqrsq + (ufake - wfake) ** 2 * rex**2) / (n + 1)
 
                 C = np.array(
                     [
