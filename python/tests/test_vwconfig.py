@@ -1,6 +1,7 @@
 from vowpalwabbit import pyvw
 import vowpalwabbit
 
+
 def helper_options_to_list_strings(config):
     cmd_str_list = []
 
