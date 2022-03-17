@@ -4,10 +4,7 @@
 
 #pragma once
 
-#ifdef PRIVACY_ACTIVATION
-#  include <bitset>
-#endif
-
+#include <bitset>
 #include <cstddef>
 #include <functional>
 #include <unordered_map>

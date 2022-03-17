@@ -4,7 +4,8 @@
 #pragma once
 #include <cstdint>
 
-#include "vw_fwd.h"
+#include "example.h"
+// #include "vw.h"
 #include "vw_string_view.h"
 
 void substring_to_example(VW::workspace* all, VW::example* ae, VW::string_view example);

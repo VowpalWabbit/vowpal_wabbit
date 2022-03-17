@@ -4,7 +4,6 @@
 #include <errno.h>
 #include <float.h>
 
-#include "config/options.h"
 #include "debug_print.h"
 #include "numeric_casts.h"
 #include "search.h"

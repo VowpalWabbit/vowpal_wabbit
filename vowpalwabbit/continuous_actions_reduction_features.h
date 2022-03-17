@@ -8,6 +8,7 @@
 #include <limits>
 
 #include "prob_dist_cont.h"
+#include "v_array.h"
 
 namespace VW
 {

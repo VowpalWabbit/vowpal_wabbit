@@ -9,7 +9,6 @@
 
 #include "cb_algs.h"
 #include "cb_label_parser.h"
-#include "config/options.h"
 #include "debug_log.h"
 #include "explore.h"
 #include "hash.h"

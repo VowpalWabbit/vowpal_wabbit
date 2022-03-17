@@ -12,7 +12,6 @@
 #include <iostream>
 #include <fstream>
 
-#include "crossplat_compat.h"
 #include "vw.h"
 #include "config/options_cli.h"
 #include "config/option_builder.h"

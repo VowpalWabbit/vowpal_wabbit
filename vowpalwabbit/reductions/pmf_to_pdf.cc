@@ -7,7 +7,6 @@
 #include <cmath>
 
 #include "cb_label_parser.h"
-#include "crossplat_compat.h"
 #include "explore.h"
 #include "guard.h"
 #include "io/logger.h"

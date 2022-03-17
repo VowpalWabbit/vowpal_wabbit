@@ -9,7 +9,15 @@
 
 #include "constant.h"
 #include "v_array.h"
-#include "vw_fwd.h"
+
+namespace VW
+{
+namespace io
+{
+struct logger;
+struct writer;
+}  // namespace io
+}  // namespace VW
 
 namespace ACTION_SCORE
 {

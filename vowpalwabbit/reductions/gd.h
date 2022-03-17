@@ -6,7 +6,6 @@
 
 #include "array_parameters.h"
 #include "constant.h"
-#include "example.h"
 #include "gd_predict.h"
 #include "global_data.h"
 #include "interactions.h"

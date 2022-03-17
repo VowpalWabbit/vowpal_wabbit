@@ -5,9 +5,9 @@
 #pragma once
 
 #include "constant.h"
+#include "io_buf.h"
 #include "label_parser.h"
 #include "v_array.h"
-#include "vw_fwd.h"
 
 namespace VW
 {

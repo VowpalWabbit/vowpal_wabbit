@@ -4,7 +4,6 @@
 #include <cmath>
 
 #include "cb.h"
-#include "config/options.h"
 #include "gd.h"
 #include "io/logger.h"
 #include "io_buf.h"

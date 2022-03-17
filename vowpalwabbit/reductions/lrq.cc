@@ -4,10 +4,7 @@
 #include <cfloat>
 #include <cstring>
 
-#include "config/options.h"
-#include "example.h"
 #include "global_data.h"
-#include "learner.h"
 #include "memory.h"
 #include "parse_args.h"  // for spoof_hex_encoded_namespaces
 #include "rand48.h"

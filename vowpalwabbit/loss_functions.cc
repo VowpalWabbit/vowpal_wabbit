@@ -1,12 +1,11 @@
 // Copyright (c) by respective owners including Yahoo!, Microsoft, and
 // individual contributors. All rights reserved. Released under a BSD (revised)
 // license as described in the file LICENSE.
+#include <float.h>
+#include <math.h>
+#include <stdlib.h>
 
-#include "loss_functions.h"
-
-#include <cfloat>
-#include <cmath>
-#include <cstdlib>
+#include <iostream>
 
 #include "correctedMath.h"
 #include "global_data.h"

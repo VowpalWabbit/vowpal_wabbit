@@ -2,7 +2,6 @@
 // individual contributors. All rights reserved. Released under a BSD (revised)
 // license as described in the file LICENSE.
 #pragma once
-#include "example.h"
 #include "global_data.h"
 
 // TODO: Search is using some macro-enabled logging logic for cdbg

@@ -6,7 +6,6 @@
 
 #include "cb_label_parser.h"
 #include "cbify.h"
-#include "config/options.h"
 #include "learner.h"
 #include "vw.h"
 #include "vw_versions.h"

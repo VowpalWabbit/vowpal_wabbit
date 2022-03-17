@@ -3,9 +3,7 @@
 // license as described in the file LICENSE.
 #include <cfloat>
 
-#include "config/options.h"
 #include "gd.h"
-#include "learner.h"
 
 using namespace VW::config;
 

@@ -1,9 +1,11 @@
 #pragma once
 
-#include <tuple>
-#include <vector>
-
 #include "reductions_fwd.h"
+
+namespace VW
+{
+struct workspace;
+}
 
 using reduction_setup_fn = VW::LEARNER::base_learner* (*)(VW::setup_base_i&);
 

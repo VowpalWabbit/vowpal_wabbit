@@ -3,8 +3,6 @@
 // license as described in the file LICENSE.
 #include "search_multiclasstask.h"
 
-#include "crossplat_compat.h"
-
 namespace MulticlassTask
 {
 Search::search_task task = {"multiclasstask", run, initialize, nullptr, nullptr, nullptr};

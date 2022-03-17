@@ -8,7 +8,6 @@
 #include "correctedMath.h"
 #include "global_data.h"
 #include "learner.h"
-#include "loss_functions.h"
 #include "vw_exception.h"
 
 #undef VW_DEBUG_LOG

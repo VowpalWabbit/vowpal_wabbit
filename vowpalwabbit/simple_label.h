@@ -5,7 +5,11 @@
 
 #include <cstddef>
 
-#include "vw_fwd.h"
+namespace VW
+{
+struct example;
+struct workspace;
+}  // namespace VW
 
 struct label_data
 {

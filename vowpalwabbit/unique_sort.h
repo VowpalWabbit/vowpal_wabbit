@@ -5,7 +5,11 @@
 
 #include <cstdint>
 
-#include "vw_fwd.h"
+struct features;
+namespace VW
+{
+struct example;
+}
 
 void unique_sort_features(uint64_t parse_mask, VW::example* ae);
 

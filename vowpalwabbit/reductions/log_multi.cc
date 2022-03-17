@@ -10,10 +10,8 @@
 #include <sstream>
 
 #include "config/options.h"
-#include "crossplat_compat.h"
 #include "global_data.h"
 #include "learner.h"
-#include "loss_functions.h"
 #include "parser.h"
 
 using namespace VW::LEARNER;

@@ -8,7 +8,6 @@
 #include "example.h"
 #include "io/logger.h"
 #include "model_utils.h"
-#include "named_labels.h"
 #include "parse_primitives.h"
 #include "reductions/gd.h"
 #include "shared_data.h"

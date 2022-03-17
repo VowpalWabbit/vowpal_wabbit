@@ -7,7 +7,6 @@
 #include <string>
 
 #include "future_compat.h"
-#include "vw_fwd.h"
 #include "vw_string_view.h"
 
 VW_WARNING_STATE_PUSH
@@ -15,6 +14,10 @@ VW_WARNING_DISABLE_BADLY_FORMED_XML
 
 namespace VW
 {
+namespace io
+{
+struct logger;
+}
 /**
  * \brief Check if a string ends with some other string.
  * \param full_string String to check ending of

@@ -6,7 +6,12 @@
 #include <memory>
 #include <string>
 
-#include "vw_fwd.h"
+struct shared_data;
+namespace VW
+{
+struct workspace;
+}
+
 class loss_function
 {
 public:

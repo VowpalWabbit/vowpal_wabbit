@@ -6,7 +6,6 @@
 #include <boost/test/test_tools.hpp>
 
 #include "loss_functions.h"
-#include "named_labels.h"
 #include "test_common.h"
 
 BOOST_AUTO_TEST_CASE(squared_loss_test)

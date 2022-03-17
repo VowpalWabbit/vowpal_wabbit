@@ -10,7 +10,6 @@
 
 #include "cb_adf.h"
 #include "cb_explore.h"
-#include "config/options.h"
 #include "explore.h"
 #include "gen_cs_example.h"
 #include "label_parser.h"

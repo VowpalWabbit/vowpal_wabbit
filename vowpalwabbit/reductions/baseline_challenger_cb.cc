@@ -10,7 +10,6 @@
 #include <utility>
 
 #include "action_score.h"
-#include "config/options.h"
 #include "debug_log.h"
 #include "distributionally_robust.h"
 #include "example.h"

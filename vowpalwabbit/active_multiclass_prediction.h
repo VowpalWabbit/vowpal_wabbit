@@ -8,7 +8,7 @@
 #include <string>
 
 #include "constant.h"
-#include "vw_fwd.h"
+#include "v_array.h"
 
 namespace VW
 {

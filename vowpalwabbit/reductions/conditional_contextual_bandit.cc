@@ -9,7 +9,6 @@
 #include <numeric>
 #include <unordered_set>
 
-#include "config/options.h"
 #include "constant.h"
 #include "debug_log.h"
 #include "decision_scores.h"

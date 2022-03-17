@@ -11,9 +11,7 @@
 #include <unordered_set>
 #include <vector>
 
-#include "config/options.h"
 #include "io/logger.h"
-#include "loss_functions.h"
 #include "shared_data.h"
 #include "vw.h"
 

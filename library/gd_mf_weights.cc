@@ -1,4 +1,3 @@
-#include "crossplat_compat.h"
 #include "vw.h"
 #include "parser.h"
 #include "config/options_cli.h"

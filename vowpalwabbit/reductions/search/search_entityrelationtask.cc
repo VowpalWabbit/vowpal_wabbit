@@ -3,7 +3,6 @@
 // license as described in the file LICENSE.
 #include "search_entityrelationtask.h"
 
-#include "config/options.h"
 #include "io/logger.h"
 #include "numeric_casts.h"
 #include "vw.h"

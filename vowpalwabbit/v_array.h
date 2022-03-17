@@ -13,9 +13,6 @@
 #include "memory.h"
 #include "vw_exception.h"
 
-// Required to bring in the Enable = void default template argument
-#include "vw_fwd.h"
-
 namespace VW
 {
 /**
@@ -26,7 +23,7 @@ namespace VW
  * \note If you get an error message saying that x uses undefined struct 'v_array<...,void>' that means the type is
  * not trivially copyable and cannot be used with v_array.
  */
-template <typename T, typename Enable>
+template <typename T, typename Enable = void>
 struct v_array;
 
 /**

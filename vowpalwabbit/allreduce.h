@@ -63,12 +63,6 @@ using socket_t = int;
 
 constexpr size_t ar_buf_size = 1 << 16;
 
-enum class AllReduceType
-{
-  Socket,
-  Thread
-};
-
 struct node_socks
 {
   std::string current_master;

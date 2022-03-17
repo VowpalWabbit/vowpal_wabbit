@@ -5,16 +5,16 @@
 #pragma once
 
 #include <cstdint>
-#include <iosfwd>
+#include <vector>
 
 #include "action_score.h"
-#include "ccb_reduction_features.h"
 #include "label_parser.h"
 #include "v_array.h"
-#include "vw_string_view.h"
-
 // TODO: This header can be removed once type and explicit_included_actions are removed from the label
-#include <fmt/format.h>
+#include "ccb_reduction_features.h"
+#include "fmt/format.h"
+#include "io_buf.h"
+#include "vw_string_view.h"
 
 namespace CCB
 {

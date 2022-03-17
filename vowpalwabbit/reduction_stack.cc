@@ -6,7 +6,6 @@
 #include "global_data.h"  // to get vw struct
 #include "learner.h"
 #include "reductions_fwd.h"
-#include "simple_label_parser.h"
 
 // reductions / setup functions
 #include "reductions/active.h"

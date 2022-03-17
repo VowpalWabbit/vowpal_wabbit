@@ -4,8 +4,6 @@
 
 #include "baseline.h"
 
-#include "config/options.h"
-#include "loss_functions.h"
 #include "shared_data.h"
 #include "vw.h"
 

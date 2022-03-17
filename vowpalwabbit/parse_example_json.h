@@ -9,7 +9,6 @@
 
 #include "future_compat.h"
 #include "label_parser.h"
-#include "parse_example.h"
 #include "parser.h"
 #include "v_array.h"
 

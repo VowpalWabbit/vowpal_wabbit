@@ -3,7 +3,6 @@
 // license as described in the file LICENSE.
 #include "search_sequencetask.h"
 
-#include "config/options.h"
 #include "memory.h"
 #include "numeric_casts.h"
 #include "vw.h"

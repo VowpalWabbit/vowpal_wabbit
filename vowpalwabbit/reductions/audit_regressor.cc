@@ -4,7 +4,6 @@
 
 #include <string>
 
-#include "config/options.h"
 #include "fmt/format.h"
 #include "gd.h"
 #include "interactions.h"

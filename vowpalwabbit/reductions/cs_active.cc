@@ -2,15 +2,15 @@
 // individual contributors. All rights reserved. Released under a BSD (revised)
 // license as described in the file LICENSE.
 
+#include <errno.h>
+
 #include <cfloat>
 #include <cmath>
 #include <limits>
 
-#include "config/options.h"
 #include "csoaa.h"
 #include "debug_log.h"
 #include "io/logger.h"
-#include "loss_functions.h"
 #include "rand48.h"
 #include "shared_data.h"
 #include "vw.h"

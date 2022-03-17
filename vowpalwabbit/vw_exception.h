@@ -168,7 +168,7 @@ inline std::string strerror_to_string(int error_number)
 
 #    define THROWERRNO(args)                                         \
       {                                                              \
-        std::ostringstream __msg;                                    \
+        std::stringstream __msg;                                     \
         __msg << args;                                               \
         __msg << ", errno = " << VW::strerror_to_string(errno);      \
         throw VW::vw_exception(__FILENAME__, __LINE__, __msg.str()); \
@@ -176,7 +176,7 @@ inline std::string strerror_to_string(int error_number)
 #  else
 #    define THROWERRNO(args)                                         \
       {                                                              \
-        std::ostringstream __msg;                                    \
+        std::stringstream __msg;                                     \
         __msg << args;                                               \
         __msg << ", errno = " << VW::strerror_to_string(errno);      \
         throw VW::vw_exception(__FILENAME__, __LINE__, __msg.str()); \
@@ -186,14 +186,14 @@ inline std::string strerror_to_string(int error_number)
 // ease error handling and also log filename and line number
 #  define THROW(args)                                              \
     {                                                              \
-      std::ostringstream __msg;                                    \
+      std::stringstream __msg;                                     \
       __msg << args;                                               \
       throw VW::vw_exception(__FILENAME__, __LINE__, __msg.str()); \
     }
 
 #  define THROW_EX(ex, args)                         \
     {                                                \
-      std::ostringstream __msg;                      \
+      std::stringstream __msg;                       \
       __msg << args;                                 \
       throw ex(__FILENAME__, __LINE__, __msg.str()); \
     }
@@ -230,7 +230,7 @@ inline std::string strerror_to_string(int error_number)
 #  define THROW_OR_RETURN_NORMAL(args, retval)                  \
     do                                                          \
     {                                                           \
-      std::ostringstream __msgA;                                \
+      std::stringstream __msgA;                                 \
       __msgA << args;                                           \
       throw VW::vw_exception(__FILE__, __LINE__, __msgA.str()); \
     } while (0)
@@ -238,7 +238,7 @@ inline std::string strerror_to_string(int error_number)
 #  define THROW_OR_RETURN_VOID(args)                            \
     do                                                          \
     {                                                           \
-      std::ostringstream __msgB;                                \
+      std::stringstream __msgB;                                 \
       __msgB << args;                                           \
       throw VW::vw_exception(__FILE__, __LINE__, __msgB.str()); \
     } while (0)

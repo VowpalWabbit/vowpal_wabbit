@@ -7,8 +7,11 @@
 #include <cstdint>
 #include <iosfwd>
 #include <memory>
+#include <string>
 
-#include "vw_fwd.h"
+#include "named_labels.h"
+
+class loss_function;
 
 struct shared_data
 {

@@ -5,8 +5,20 @@
 
 #include "config/options.h"
 #include "text_utils.h"
-#include "vw_fwd.h"
 #include "vw_string_view.h"
+
+namespace VW
+{
+using namespace_index = unsigned char;
+
+}
+using extent_term = std::pair<VW::namespace_index, uint64_t>;
+
+class io_buf;
+namespace VW
+{
+struct workspace;
+}
 
 // Used in parse_source
 struct input_options

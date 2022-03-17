@@ -25,10 +25,8 @@
 #endif
 
 #include "cache.h"
-#include "config/options.h"
 #include "global_data.h"
 #include "io_buf.h"
-#include "loss_functions.h"
 #include "network.h"
 #include "parser.h"
 

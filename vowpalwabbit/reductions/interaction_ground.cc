@@ -4,7 +4,6 @@
 
 #include "interaction_ground.h"
 
-#include "config/options.h"
 #include "label_dictionary.h"
 #include "label_parser.h"
 #include "prediction_type.h"

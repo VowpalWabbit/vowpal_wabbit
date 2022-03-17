@@ -6,7 +6,6 @@
 
 #include <cstdint>
 
-#include "config/options.h"
 #include "global_data.h"
 #include "learner.h"
 
