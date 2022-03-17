@@ -5,6 +5,7 @@
 
 #include <algorithm>
 #include <cstdint>
+#include <climits>
 
 #include "cb_continuous_label.h"
 #include "model_utils.h"
