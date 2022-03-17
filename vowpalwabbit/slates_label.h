@@ -8,8 +8,8 @@
 
 #include "action_score.h"
 #include "label_parser.h"
+#include "vw_fwd.h"
 
-class io_buf;
 namespace VW
 {
 namespace slates

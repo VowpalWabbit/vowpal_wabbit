@@ -1,22 +1,23 @@
+#include <unistd.h>
+
+#include <algorithm>
+#include <cassert>
+#include <cerrno>
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
-#include <cerrno>
-#include <unistd.h>
-#include <cassert>
-
-#include <vector>
+#include <fstream>
+#include <iostream>
 #include <queue>
 #include <utility>
-#include <algorithm>
-#include <iostream>
-#include <fstream>
+#include <vector>
 
-#include "vw.h"
-#include "config/options_cli.h"
+#include "config/cli_help_formatter.h"
 #include "config/option_builder.h"
 #include "config/option_group_definition.h"
-#include "config/cli_help_formatter.h"
+#include "config/options_cli.h"
+#include "crossplat_compat.h"
+#include "vw.h"
 
 int pairs = 0;
 int users = 0;

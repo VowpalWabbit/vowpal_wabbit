@@ -11,6 +11,7 @@ Alekh Agarwal and John Langford, with help Olivier Chapelle.
 #include <cstdint>
 #include <iostream>
 
+#include "crossplat_compat.h"
 #include "global_data.h"
 #include "vw_allreduce.h"
 

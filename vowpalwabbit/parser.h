@@ -2,9 +2,6 @@
 // individual contributors. All rights reserved. Released under a BSD (revised)
 // license as described in the file LICENSE.
 #pragma once
-#include "example.h"
-#include "future_compat.h"
-#include "io_buf.h"
 
 // Mutex and CV cannot be used in managed C++, tell the compiler that this is unmanaged even if included in a managed
 // project.
@@ -23,16 +20,17 @@
 #include <atomic>
 #include <memory>
 
+#include "example.h"
+#include "future_compat.h"
 #include "hashstring.h"
+#include "io_buf.h"
 #include "object_pool.h"
 #include "queue.h"
-#include "simple_label_parser.h"
+#include "vw_fwd.h"
 #include "vw_string_view.h"
 
 namespace VW
 {
-struct workspace;
-
 void parse_example_label(string_view label, const VW::label_parser& lbl_parser, const named_labels* ldict,
     label_parser_reuse_mem& reuse_mem, example& ec, VW::io::logger& logger);
 void setup_examples(VW::workspace& all, v_array<example*>& examples);
@@ -53,19 +51,10 @@ struct cache_temp_buffer
 
 struct input_options;
 struct dsjson_metrics;
+
 struct parser
 {
-  parser(size_t example_queue_limit, bool strict_parse_)
-      : example_pool{example_queue_limit}
-      , ready_parsed_examples{example_queue_limit}
-      , example_queue_limit{example_queue_limit}
-      , num_examples_taken_from_pool(0)
-      , num_setup_examples(0)
-      , num_finished_examples(0)
-      , strict_parse{strict_parse_}
-  {
-    this->lbl_parser = simple_label_parser;
-  }
+  parser(size_t example_queue_limit, bool strict_parse_);
 
   // delete copy constructor
   parser(const parser&) = delete;

@@ -15,6 +15,7 @@
 #include "numeric_casts.h"
 #include "parser.h"
 #include "rand48.h"
+#include "rand_state.h"
 #include "vw_math.h"
 
 using namespace VW::LEARNER;

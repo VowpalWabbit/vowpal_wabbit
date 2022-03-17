@@ -8,8 +8,11 @@
 #include <cmath>
 #include <string>
 
+#include "crossplat_compat.h"
 #include "gd.h"
 #include "global_data.h"
+#include "learner.h"
+#include "loss_functions.h"
 #include "memory.h"
 #include "parse_regressor.h"
 #include "parser.h"

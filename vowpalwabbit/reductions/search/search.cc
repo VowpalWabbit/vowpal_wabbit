@@ -8,8 +8,10 @@
 #include <algorithm>
 #include <memory>
 
+#include "crossplat_compat.h"
 #include "io/logger.h"
 #include "label_dictionary.h"
+#include "named_labels.h"
 #include "numeric_casts.h"
 #include "parse_primitives.h"
 #include "parse_regressor.h"

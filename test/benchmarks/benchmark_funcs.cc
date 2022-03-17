@@ -2,8 +2,9 @@
 
 #include <string>
 
-#include "parser.h"
 #include "io/io_adapter.h"
+#include "parse_example.h"
+#include "parser.h"
 #include "vw.h"
 
 static void benchmark_sum_ft_squared_char(benchmark::State& state)
