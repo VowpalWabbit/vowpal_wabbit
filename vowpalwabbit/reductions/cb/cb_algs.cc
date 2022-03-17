@@ -151,7 +151,7 @@ base_learner* cb_algs_setup(VW::setup_base_i& stack_builder)
   options_i& options = *stack_builder.get_options();
   VW::workspace& all = *stack_builder.get_all_pointer();
   auto data = VW::make_unique<cb>(all.logger);
-  std::string type_string = "dr";
+  std::string type_string = "mtr";
   bool eval = false;
   bool force_legacy = true;
 
@@ -163,7 +163,7 @@ base_learner* cb_algs_setup(VW::setup_base_i& stack_builder)
                .help("Use contextual bandit learning with <k> costs"))
       .add(make_option("cb_type", type_string)
                .keep()
-               .default_value("dr")
+               .default_value("mtr")
                .one_of({"ips", "dm", "dr", "mtr", "sm"})
                .help("Contextual bandit method to use"))
       .add(make_option("eval", eval).help("Evaluate a policy rather than optimizing"))

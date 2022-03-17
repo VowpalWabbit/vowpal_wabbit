@@ -1,3 +1,4 @@
 [info] Generating 2-grams for all namespaces.
 [info] Generating 4-skips for all namespaces.
+[warning] cb_type must be in {'ips','dm','dr'}; resetting to dr. Input received: cb_type_t::mtr
 [info] label 2 found -- labels are now considered 1-indexed.

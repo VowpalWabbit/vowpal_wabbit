@@ -1,1 +1,2 @@
+[warning] cb_type must be in {'ips','dm','dr'}; resetting to dr. Input received: cb_type_t::mtr
 [info] label 2048 found -- labels are now considered 1-indexed.
