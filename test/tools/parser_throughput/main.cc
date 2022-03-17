@@ -50,7 +50,8 @@ int main(int argc, char** argv)
 
   opts.add_and_parse(desc);
   // Return value is ignored as option reachability is not relevant here.
-  opts.check_unregistered();
+  auto result = opts.check_unregistered();
+  _UNUSED(result);
 
   // clang-format on
 
@@ -120,7 +121,7 @@ int main(int argc, char** argv)
   {
     if (is_multiline)
     {
-      multi_ex exs;
+      VW::multi_ex exs;
       for (const auto& line : lines)
       {
         if (line.empty() && !exs.empty())
@@ -145,7 +146,7 @@ int main(int argc, char** argv)
     {
       for (const auto& line : lines)
       {
-        example& ae = VW::get_unused_example(vw);
+        VW::example& ae = VW::get_unused_example(vw);
         VW::string_view example(line.c_str(), line.size());
         substring_to_example(vw, &ae, example);
         VW::finish_example(*vw, ae);
@@ -157,11 +158,11 @@ int main(int argc, char** argv)
     DecisionServiceInteraction interaction;
     for (const auto& line : lines)
     {
-      VW::v_array<example*> examples;
+      VW::v_array<VW::example*> examples;
       examples.push_back(&VW::get_unused_example(vw));
       VW::read_line_decision_service_json<false>(*vw, examples, const_cast<char*>(line.data()), line.length(), false,
           (VW::example_factory_t)&VW::get_unused_example, (void*)vw, &interaction);
-      multi_ex result;
+      VW::multi_ex result;
       result.reserve(examples.size());
       for (size_t i = 0; i < examples.size(); ++i)
       {

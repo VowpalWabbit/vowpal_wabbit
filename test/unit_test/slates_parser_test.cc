@@ -19,7 +19,7 @@ void parse_slates_label(VW::string_view label, VW::slates::label& l)
   std::vector<VW::string_view> words;
   tokenize(' ', label, words);
   VW::slates::default_label(l);
-  reduction_features red_fts;
+  VW::reduction_features red_fts;
   VW::label_parser_reuse_mem mem;
   auto null_logger = VW::io::create_null_logger();
   VW::slates::parse_label(l, mem, words, null_logger);

@@ -26,7 +26,7 @@ bool called_learn_predict = false;
 
 // minimal predict/learn fn for test_reduction_setup
 template <bool is_learn>
-void predict_or_learn(char&, VW::LEARNER::single_learner& base, example& ec)
+void predict_or_learn(char&, VW::LEARNER::single_learner& base, VW::example& ec)
 {
   BOOST_CHECK(added_to_learner);
   called_learn_predict = true;

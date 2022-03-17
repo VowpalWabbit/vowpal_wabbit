@@ -60,7 +60,7 @@ using namespace vw_hash_helpers;
 // n) asserts weights before/after every operation
 // NOTE: interactions are currently 0 for offset 0 since
 // config 0 is hard-coded to be empty interactions for now.
-bool weights_offset_test(cb_sim&, VW::workspace& all, multi_ex& ec)
+bool weights_offset_test(cb_sim&, VW::workspace& all, VW::multi_ex& ec)
 {
   const size_t offset_to_clear = 1;
   auto& weights = all.weights.dense_weights;

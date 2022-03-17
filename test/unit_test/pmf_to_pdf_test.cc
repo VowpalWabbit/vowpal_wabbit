@@ -17,8 +17,8 @@ namespace VW
 {
 namespace pmf_to_pdf
 {
-void learn(VW::pmf_to_pdf::reduction& data, single_learner& base, example& ec);
-void predict(VW::pmf_to_pdf::reduction& data, single_learner& base, example& ec);
+void learn(VW::pmf_to_pdf::reduction& data, single_learner& base, VW::example& ec);
+void predict(VW::pmf_to_pdf::reduction& data, single_learner& base, VW::example& ec);
 
 struct reduction_test_harness
 {
@@ -26,7 +26,7 @@ struct reduction_test_harness
 
   void set_predict_response(const vector<pair<uint32_t, float>>& predictions) { _predictions = predictions; }
 
-  void test_predict(base_learner& base, example& ec)
+  void test_predict(base_learner& base, VW::example& ec)
   {
     ec.pred.a_s.clear();
     for (uint32_t i = 0; i < _predictions.size(); i++)
@@ -119,7 +119,7 @@ BOOST_AUTO_TEST_CASE(pmf_to_pdf_basic)
 
   const auto test_harness = VW::pmf_to_pdf::get_test_harness_reduction(prediction_scores);
 
-  example ec;
+  VW::example ec;
 
   auto data = scoped_calloc_or_throw<VW::pmf_to_pdf::reduction>();
   data->num_actions = k;
@@ -150,7 +150,7 @@ BOOST_AUTO_TEST_CASE(pmf_to_pdf_basic)
 
 BOOST_AUTO_TEST_CASE(pmf_to_pdf_w_large_bandwidth)
 {
-  example ec;
+  VW::example ec;
   auto data = scoped_calloc_or_throw<VW::pmf_to_pdf::reduction>();
   uint32_t k = 4;   // num_actions
   float h = 300.f;  // // h (bandwidth) property of continuous range (max_val - min_val)
@@ -184,7 +184,7 @@ BOOST_AUTO_TEST_CASE(pmf_to_pdf_w_large_bandwidth)
 
 BOOST_AUTO_TEST_CASE(pmf_to_pdf_w_large_discretization)
 {
-  example ec;
+  VW::example ec;
   auto data = scoped_calloc_or_throw<VW::pmf_to_pdf::reduction>();
 
   uint32_t k = 16;  // num_actions
