@@ -262,7 +262,7 @@ jobs:
           twine check built_wheel/*.whl
           python -m pytest ./python/tests/
           python ./python/tests/run_doctest.py
-  macos-windows-build:
+  windows-python-build:
     name: windows.amd64.py${{ matrix.config.version }}.build
     runs-on: windows-2019
     strategy:
@@ -300,7 +300,7 @@ jobs:
           name: windows_amd64_${{ matrix.config.version }}
           path: wheel_output
   windows-python-test:
-    name: windows.amd64.py${{ matrix.config.version }}.test
+    name: windows.amd64.py${{ matrix.version }}.test
     needs: macos-windows-build
     runs-on: ${{ matrix.os }}
     strategy:
