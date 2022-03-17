@@ -5,8 +5,8 @@
 #pragma once
 
 #include <cstdint>
-#include <vector>
 #include <string>
+#include <vector>
 
 #include "action_score.h"
 #include "ccb_reduction_features.h"

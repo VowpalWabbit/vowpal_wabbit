@@ -13,7 +13,6 @@
 #include "util.h"
 #include "vw_exception.h"
 
-
 jobject getJavaPrediction(JNIEnv* env, VW::workspace* all, example* ex);
 
 // Guards

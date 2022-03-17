@@ -5,8 +5,8 @@
 
 #include <cfloat>
 #include <cstdint>
-#include <string>
 #include <memory>
+#include <string>
 
 #include "vw_fwd.h"
 

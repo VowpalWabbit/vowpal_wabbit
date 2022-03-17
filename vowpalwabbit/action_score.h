@@ -4,8 +4,8 @@
 
 #pragma once
 
-#include <string>
 #include <iterator>
+#include <string>
 
 #include "constant.h"
 #include "v_array.h"
