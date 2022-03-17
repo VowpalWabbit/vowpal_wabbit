@@ -306,7 +306,7 @@ public:
     if (label < 0.f) { logger.out_warn("The poisson loss function expects a label >= 0 but received '{}'.", label); }
     float exp_prediction = std::exp(prediction);
     // deviance is used instead of log-likelihood
-    return 2 * (label * (std::logf(label + 1e-6f) - prediction) - (label - exp_prediction));
+    return 2 * (label * (std::log(label + 1e-6f) - prediction) - (label - exp_prediction));
   }
 
   float getUpdate(float prediction, float label, float update_scale, float pred_per_update) const override
