@@ -304,14 +304,14 @@ public:
   float getLoss(const shared_data*, float prediction, float label) const override
   {
     if (label < 0.f) { logger.out_warn("The poisson loss function expects a label >= 0 but received '{}'.", label); }
-    float exp_prediction = std::expf(prediction);
+    float exp_prediction = std::exp(prediction);
     // deviance is used instead of log-likelihood
     return 2 * (label * (std::logf(label + 1e-6f) - prediction) - (label - exp_prediction));
   }
 
   float getUpdate(float prediction, float label, float update_scale, float pred_per_update) const override
   {
-    float exp_prediction = std::expf(prediction);
+    float exp_prediction = std::exp(prediction);
     if (label > 0)
     {
       return label * update_scale -
@@ -325,25 +325,25 @@ public:
 
   float getUnsafeUpdate(float prediction, float label, float update_scale) const override
   {
-    float exp_prediction = std::expf(prediction);
+    float exp_prediction = std::exp(prediction);
     return (label - exp_prediction) * update_scale;
   }
 
   float getSquareGrad(float prediction, float label) const override
   {
-    float exp_prediction = std::expf(prediction);
+    float exp_prediction = std::exp(prediction);
     return (exp_prediction - label) * (exp_prediction - label);
   }
 
   float first_derivative(const shared_data*, float prediction, float label) const override
   {
-    float exp_prediction = std::expf(prediction);
+    float exp_prediction = std::exp(prediction);
     return (exp_prediction - label);
   }
 
   float second_derivative(const shared_data*, float prediction, float /* label */) const override
   {
-    float exp_prediction = std::expf(prediction);
+    float exp_prediction = std::exp(prediction);
     return exp_prediction;
   }
 };
