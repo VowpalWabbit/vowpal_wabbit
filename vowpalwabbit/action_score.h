@@ -4,12 +4,20 @@
 
 #pragma once
 
+#include <iosfwd>
 #include <iterator>
 
 #include "constant.h"
-#include "io/io_adapter.h"
-#include "io/logger.h"
 #include "v_array.h"
+
+namespace VW
+{
+namespace io
+{
+struct logger;
+struct writer;
+}  // namespace io
+}  // namespace VW
 
 namespace ACTION_SCORE
 {

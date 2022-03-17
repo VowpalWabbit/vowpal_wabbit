@@ -7,8 +7,8 @@
 #include "array_parameters.h"
 #include "constant.h"
 #include "gd_predict.h"
+#include "global_data.h"
 #include "interactions.h"
-#include "parse_regressor.h"
 #include "vw_math.h"
 
 namespace GD

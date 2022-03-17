@@ -6,6 +6,7 @@
 
 #include <set>
 #include <string>
+#include <vector>
 
 #include "config/options.h"
 #include "future_compat.h"

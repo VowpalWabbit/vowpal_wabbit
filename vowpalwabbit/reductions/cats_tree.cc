@@ -15,6 +15,7 @@
 #include "hash.h"
 #include "label_parser.h"
 #include "learner.h"
+#include "parser.h"
 
 using namespace VW::config;
 using namespace VW::LEARNER;

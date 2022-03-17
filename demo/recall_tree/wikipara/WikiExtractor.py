@@ -2123,7 +2123,7 @@ def clean(extractor, text):
             text = text.replace(match.group(), "%s_%d" % (placeholder, index))
             index += 1
 
-    text = text.replace("<<", u"«").replace(">>", u"»")
+    text = text.replace("<<", "«").replace(">>", "»")
 
     #############################################
 
@@ -2131,8 +2131,8 @@ def clean(extractor, text):
     text = text.replace("\t", " ")
     text = spaces.sub(" ", text)
     text = dots.sub("...", text)
-    text = re.sub(u" (,:\.\)\]»)", r"\1", text)
-    text = re.sub(u"(\[\(«) ", r"\1", text)
+    text = re.sub(" (,:\.\)\]»)", r"\1", text)
+    text = re.sub("(\[\(«) ", r"\1", text)
     text = re.sub(r"\n\W+?\n", "\n", text, flags=re.U)  # lines with only punctuations
     text = text.replace(",,", ",").replace(",.", ".")
 
@@ -2747,7 +2747,7 @@ def main():
 
     try:
         power = "kmg".find(args.bytes[-1].lower()) + 1
-        file_size = int(args.bytes[:-1]) * 1024 ** power
+        file_size = int(args.bytes[:-1]) * 1024**power
         if file_size < minFileSize:
             raise ValueError()
     except ValueError:

@@ -29,6 +29,7 @@ VW_WARNING_STATE_POP
 #include "mwt.h"
 #include "no_label.h"
 #include "numeric_casts.h"
+#include "parse_regressor.h"
 #include "rand48.h"
 #include "shared_data.h"
 #include "vw.h"

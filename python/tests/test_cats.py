@@ -1,5 +1,6 @@
 import vowpalwabbit
 
+
 def test_cats():
     min_value = 10
     max_value = 20

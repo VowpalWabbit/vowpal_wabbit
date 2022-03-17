@@ -5,6 +5,7 @@
 #include <cfloat>
 #include <string>
 
+#include "global_data.h"
 #include "parse_args.h"  // for spoof_hex_encoded_namespaces
 #include "rand48.h"
 #include "text_utils.h"

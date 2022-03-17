@@ -88,13 +88,19 @@ class BuildPyLibVWBindingsModule(_build_ext):
         # See bug: https://bugs.python.org/issue39825
         if system == "Windows" and sys.version_info.minor < 8:
             from distutils import sysconfig as distutils_sysconfig
-            required_shared_lib_suffix = distutils_sysconfig.get_config_var('EXT_SUFFIX')
+
+            required_shared_lib_suffix = distutils_sysconfig.get_config_var(
+                "EXT_SUFFIX"
+            )
         else:
             import sysconfig
+
             required_shared_lib_suffix = sysconfig.get_config_var("EXT_SUFFIX")
 
         if required_shared_lib_suffix is not None:
-            cmake_args += ["-DVW_PYTHON_SHARED_LIB_SUFFIX={}".format(required_shared_lib_suffix)]
+            cmake_args += [
+                "-DVW_PYTHON_SHARED_LIB_SUFFIX={}".format(required_shared_lib_suffix)
+            ]
 
         if self.distribution.enable_boost_cmake is None:
             # Add this flag as default since testing indicates its safe.

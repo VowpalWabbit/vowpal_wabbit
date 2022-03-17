@@ -6,7 +6,6 @@
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>  // memset
-#include <iostream>
 #include <memory>
 
 #include "vw_exception.h"
