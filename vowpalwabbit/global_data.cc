@@ -332,13 +332,9 @@ std::string workspace::dump_weights_to_json_experimental()
         << current->get_name());
   }
   if (dump_json_weights_include_feature_names && !hash_inv)
-  {
-    THROW("hash_inv == true is required to dump weights to json including feature names");
-  }
+  { THROW("hash_inv == true is required to dump weights to json including feature names"); }
   if (dump_json_weights_include_extra_online_state && !save_resume)
-  {
-    THROW("save_resume == true is required to dump weights to json including feature names");
-  }
+  { THROW("save_resume == true is required to dump weights to json including feature names"); }
 
   return weights.sparse ? dump_weights_to_json_weight_typed(weights.sparse_weights, index_name_map, weights,
                               dump_json_weights_include_feature_names, dump_json_weights_include_extra_online_state)

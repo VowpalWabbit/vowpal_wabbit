@@ -2,10 +2,11 @@
 // individual contributors. All rights reserved. Released under a BSD (revised)
 // license as described in the file LICENSE.
 
-#include <boost/test/unit_test.hpp>
-#include <boost/test/test_tools.hpp>
-
 #include "loss_functions.h"
+
+#include <boost/test/test_tools.hpp>
+#include <boost/test/unit_test.hpp>
+
 #include "named_labels.h"
 #include "test_common.h"
 
