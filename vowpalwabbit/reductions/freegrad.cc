@@ -4,10 +4,6 @@
 
 #include "freegrad.h"
 
-#include <cfloat>
-#include <cmath>
-#include <string>
-
 #include "crossplat_compat.h"
 #include "gd.h"
 #include "global_data.h"
@@ -17,6 +13,10 @@
 #include "parse_regressor.h"
 #include "parser.h"
 #include "shared_data.h"
+
+#include <cfloat>
+#include <cmath>
+#include <string>
 
 using namespace VW::LEARNER;
 using namespace VW::config;

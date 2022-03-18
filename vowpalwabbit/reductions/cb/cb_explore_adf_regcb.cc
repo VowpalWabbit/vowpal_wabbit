@@ -4,11 +4,6 @@
 
 #include "cb_explore_adf_regcb.h"
 
-#include <algorithm>
-#include <cfloat>
-#include <cmath>
-#include <vector>
-
 #include "action_score.h"
 #include "cb.h"
 #include "cb_adf.h"
@@ -21,6 +16,11 @@
 #include "rand48.h"
 #include "version.h"
 #include "vw_versions.h"
+
+#include <algorithm>
+#include <cfloat>
+#include <cmath>
+#include <vector>
 
 // All exploration algorithms return a vector of id, probability tuples, sorted in order of scores. The probabilities
 // are the probability with which each action should be replaced to the top of the list.
@@ -277,6 +277,7 @@ base_learner* setup(VW::setup_base_i& stack_builder)
                .help("Contextual bandit method to use. RegCB only supports supervised regression (mtr)"));
 
   auto enabled = options.add_parse_and_check_necessary(new_options);
+
   if (regcbopt && !regcb)
   {
     all.logger.err_warn(
@@ -285,6 +286,13 @@ base_learner* setup(VW::setup_base_i& stack_builder)
     enabled = true;
   }
   if (!enabled) { return nullptr; }
+
+  // Ensure serialization of cb_type in all cases.
+  if (!options.was_supplied("cb_type"))
+  {
+    options.insert("cb_type", type_string);
+    options.add_and_parse(new_options);
+  }
 
   // Ensure serialization of cb_adf in all cases.
   if (!options.was_supplied("cb_adf")) { options.insert("cb_adf", ""); }

@@ -3,10 +3,10 @@
 // license as described in the file LICENSE.
 
 #pragma once
-#include <vector>
-
 #include "io/logger.h"
 #include "reductions_fwd.h"
+
+#include <vector>
 
 namespace CB
 {

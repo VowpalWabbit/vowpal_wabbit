@@ -4,14 +4,14 @@
 
 #pragma once
 
-#include <cfloat>
-
 #include "cb.h"
 #include "cb_type.h"
 #include "example.h"
 #include "guard.h"
 #include "learner.h"
 #include "reductions/baseline.h"
+
+#include <cfloat>
 
 // TODO: extend to handle CSOAA_LDF and WAP_LDF
 VW::LEARNER::base_learner* cb_algs_setup(VW::setup_base_i& stack_builder);

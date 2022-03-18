@@ -4,11 +4,6 @@
 
 #include "simple_label_parser.h"
 
-#include <cfloat>
-#include <cmath>
-#include <cstdio>
-#include <cstring>
-
 #include "best_constant.h"
 #include "cache.h"
 #include "example.h"
@@ -17,6 +12,11 @@
 #include "parse_primitives.h"
 #include "vw_string_view.h"
 #include "vw_string_view_fmt.h"
+
+#include <cfloat>
+#include <cmath>
+#include <cstdio>
+#include <cstring>
 // needed for printing ranges of objects (eg: all elements of a vector)
 #include <fmt/ranges.h>
 

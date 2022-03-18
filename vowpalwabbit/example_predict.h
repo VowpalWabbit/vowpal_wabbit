@@ -3,16 +3,16 @@
 // license as described in the file LICENSE.
 #pragma once
 
-#include <array>
-#include <set>
-#include <unordered_set>
-#include <vector>
-
 #include "constant.h"
 #include "feature_group.h"
 #include "future_compat.h"
 #include "reduction_features.h"
 #include "v_array.h"
+
+#include <array>
+#include <set>
+#include <unordered_set>
+#include <vector>
 
 namespace VW
 {

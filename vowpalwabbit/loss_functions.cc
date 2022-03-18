@@ -4,15 +4,15 @@
 
 #include "loss_functions.h"
 
-#include <cfloat>
-#include <cmath>
-#include <cstdlib>
-
 #include "correctedMath.h"
 #include "global_data.h"
 #include "io/logger.h"
 #include "shared_data.h"
 #include "vw_exception.h"
+
+#include <cfloat>
+#include <cmath>
+#include <cstdlib>
 
 namespace squared_loss_impl
 {

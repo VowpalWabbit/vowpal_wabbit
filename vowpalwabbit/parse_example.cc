@@ -4,9 +4,6 @@
 
 #include "parse_example.h"
 
-#include <cctype>
-#include <cmath>
-
 #include "constant.h"
 #include "future_compat.h"
 #include "global_data.h"
@@ -17,6 +14,9 @@
 #include "shared_data.h"
 #include "unique_sort.h"
 #include "vw_string_view.h"
+
+#include <cctype>
+#include <cmath>
 
 size_t read_features(io_buf& buf, char*& line, size_t& num_chars)
 {

@@ -3,9 +3,9 @@
 // license as described in the file LICENSE.
 #pragma once
 
-#include <cstdint>
-
 #include "vw_fwd.h"
+
+#include <cstdint>
 
 void unique_sort_features(uint64_t parse_mask, VW::example* ae);
 

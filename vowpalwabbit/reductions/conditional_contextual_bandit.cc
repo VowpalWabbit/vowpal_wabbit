@@ -4,11 +4,6 @@
 
 #include "conditional_contextual_bandit.h"
 
-#include <algorithm>
-#include <bitset>
-#include <numeric>
-#include <unordered_set>
-
 #include "config/options.h"
 #include "constant.h"
 #include "debug_log.h"
@@ -26,6 +21,11 @@
 #include "version.h"
 #include "vw.h"
 #include "vw_versions.h"
+
+#include <algorithm>
+#include <bitset>
+#include <numeric>
+#include <unordered_set>
 
 #undef VW_DEBUG_LOG
 #define VW_DEBUG_LOG vw_dbg::ccb
@@ -685,6 +685,14 @@ base_learner* ccb_explore_adf_setup(VW::setup_base_i& stack_builder)
                .help("Contextual bandit method to use"));
 
   if (!options.add_parse_and_check_necessary(new_options)) { return nullptr; }
+
+  // Ensure serialization of this option in all cases.
+  if (!options.was_supplied("cb_type"))
+  {
+    options.insert("cb_type", type_string);
+    options.add_and_parse(new_options);
+  }
+
   data->all_slots_loss_report = all_slots_loss_report;
   if (!options.was_supplied("cb_explore_adf"))
   {

@@ -4,9 +4,9 @@
 
 #include "cb_type.h"
 
-#include <cassert>
-
 #include "vw_exception.h"
+
+#include <cassert>
 
 #define CASE(type) \
   case type:       \

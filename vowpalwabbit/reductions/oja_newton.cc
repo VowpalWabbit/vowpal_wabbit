@@ -1,16 +1,16 @@
 // Copyright (c) by respective owners including Yahoo!, Microsoft, and
 // individual contributors. All rights reserved. Released under a BSD (revised)
 // license as described in the file LICENSE.
-#include <cmath>
-#include <memory>
-#include <string>
-
 #include "gd.h"
 #include "loss_functions.h"
 #include "parse_regressor.h"
 #include "rand48.h"
 #include "rand_state.h"
 #include "vw.h"
+
+#include <cmath>
+#include <memory>
+#include <string>
 
 using namespace VW::LEARNER;
 using namespace VW::config;

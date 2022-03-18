@@ -9,10 +9,6 @@
 #  include <arpa/inet.h>
 #  include <sys/socket.h>
 #endif
-#include <sys/timeb.h>
-
-#include <fstream>
-
 #include "accumulate.h"
 #include "best_constant.h"
 #include "config/options.h"
@@ -23,6 +19,10 @@
 #include "parse_regressor.h"
 #include "vw.h"
 #include "vw_exception.h"
+
+#include <sys/timeb.h>
+
+#include <fstream>
 
 using namespace VW::config;
 

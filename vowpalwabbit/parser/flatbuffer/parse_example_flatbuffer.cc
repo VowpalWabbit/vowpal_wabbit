@@ -4,15 +4,15 @@
 
 #include "parse_example_flatbuffer.h"
 
-#include <cfloat>
-#include <fstream>
-#include <iostream>
-
 #include "../../action_score.h"
 #include "../../best_constant.h"
 #include "../../cb.h"
 #include "../../constant.h"
 #include "../../global_data.h"
+
+#include <cfloat>
+#include <fstream>
+#include <iostream>
 
 namespace VW
 {

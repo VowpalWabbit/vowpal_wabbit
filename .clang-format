@@ -14,3 +14,16 @@ SortIncludes: true
 IndentPPDirectives: AfterHash
 PointerAlignment: Left
 DerivePointerAlignment: false
+IncludeCategories:
+  # First block is local directory includes
+  - Regex:           '"[[:alnum:]._\/]+"'
+    Priority:        1
+  # Second block is system includes with .h suffix. Usually dependencies.
+  - Regex:           '<[[:alnum:]._\/]+\.h>'
+    Priority:        2
+  # STL system deps
+  - Regex:           '<[[:alnum:]._\/]+>'
+    Priority:        3
+  # Catch all
+  - Regex:           '.*'
+    Priority:        4

@@ -4,11 +4,6 @@
 
 #include "baseline_challenger_cb.h"
 
-#include <algorithm>
-#include <cfloat>
-#include <memory>
-#include <utility>
-
 #include "action_score.h"
 #include "config/options.h"
 #include "debug_log.h"
@@ -17,6 +12,11 @@
 #include "learner.h"
 #include "model_utils.h"
 #include "vw.h"
+
+#include <algorithm>
+#include <cfloat>
+#include <memory>
+#include <utility>
 
 using namespace VW;
 using namespace VW::config;

@@ -3,10 +3,10 @@
 // license as described in the file LICENSE.
 #pragma once
 
+#include "vw_fwd.h"
+
 #include <memory>
 #include <string>
-
-#include "vw_fwd.h"
 class loss_function
 {
 public:

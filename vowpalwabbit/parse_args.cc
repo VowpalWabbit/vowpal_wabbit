@@ -4,16 +4,6 @@
 
 #include "parse_args.h"
 
-#include <sys/stat.h>
-#include <sys/types.h>
-
-#include <algorithm>
-#include <cfloat>
-#include <cstdio>
-#include <fstream>
-#include <sstream>
-#include <utility>
-
 #include "accumulate.h"
 #include "best_constant.h"
 #include "config/cli_help_formatter.h"
@@ -50,6 +40,16 @@
 #include "vw_allreduce.h"
 #include "vw_exception.h"
 #include "vw_validate.h"
+
+#include <sys/stat.h>
+#include <sys/types.h>
+
+#include <algorithm>
+#include <cfloat>
+#include <cstdio>
+#include <fstream>
+#include <sstream>
+#include <utility>
 
 #ifdef BUILD_EXTERNAL_PARSER
 #  include "parse_example_binary.h"
@@ -1732,6 +1732,10 @@ std::unique_ptr<VW::workspace> initialize_internal(std::unique_ptr<options_i, op
     *(all->trace_message) << "initial_t = " << all->sd->t << endl;
     *(all->trace_message) << "power_t = " << all->power_t << endl;
     if (all->numpasses > 1) *(all->trace_message) << "decay_learning_rate = " << all->eta_decay_rate << endl;
+    if (all->options->was_supplied("cb_type"))
+    {
+      *(all->trace_message) << "cb_type = " << all->options->get_typed_option<std::string>("cb_type").value() << endl;
+    }
   }
 
   // we must delay so parse_mask is fully defined.

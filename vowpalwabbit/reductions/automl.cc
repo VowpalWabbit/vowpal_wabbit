@@ -4,14 +4,14 @@
 
 #include "automl.h"
 
-#include <cfloat>
-
 #include "config/options.h"
 #include "constant.h"  // NUM_NAMESPACES
 #include "debug_log.h"
 #include "model_utils.h"
 #include "rand_state.h"
 #include "vw.h"
+
+#include <cfloat>
 
 using namespace VW::config;
 using namespace VW::LEARNER;

@@ -1,11 +1,11 @@
-#include <sstream>
-#include <vector>
-
 #include "explore.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
 #include "ut_util.h"
 #include "vw_slim_predict.h"
+
+#include <sstream>
+#include <vector>
 using namespace ::testing;
 
 TEST(ExploreTestSuite, EpsilonGreedy)
