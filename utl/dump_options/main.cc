@@ -4,16 +4,16 @@
 
 #define RAPIDJSON_HAS_STDSTRING 1
 
-#include "config/help_formatter.h"
-#include "config/option_group_definition.h"
-#include "vw.h"
-#include "version.h"
-
-#include <memory>
-
 #include <rapidjson/document.h>
 #include <rapidjson/stringbuffer.h>
 #include <rapidjson/writer.h>
+
+#include <memory>
+
+#include "config/help_formatter.h"
+#include "config/options.h"
+#include "version.h"
+#include "vw.h"
 
 using namespace VW::config;
 

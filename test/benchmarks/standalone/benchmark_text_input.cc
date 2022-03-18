@@ -1,17 +1,18 @@
 #include <benchmark/benchmark.h>
 
-#include <vector>
-#include <sstream>
-#include <string>
-#include <fstream>
-#include <memory>
 #include <array>
 #include <cstdio>
+#include <fstream>
+#include <memory>
 #include <random>
+#include <sstream>
+#include <string>
 #include <unordered_map>
+#include <vector>
 
-#include "vw.h"
 #include "../benchmarks_common.h"
+#include "parse_example.h"
+#include "vw.h"
 
 template <class... ExtraArgs>
 static void bench_text(benchmark::State& state, ExtraArgs&&... extra_args)

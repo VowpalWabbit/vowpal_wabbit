@@ -8,6 +8,7 @@
 #include <cfloat>
 #include <cmath>
 
+#include "config/options.h"
 #include "io/logger.h"
 #include "model_utils.h"
 #include "shared_data.h"

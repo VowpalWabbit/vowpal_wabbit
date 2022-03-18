@@ -6,7 +6,9 @@
 #include <cassert>
 #include <iostream>
 
+#include "crossplat_compat.h"
 #include "gd.h"
+#include "loss_functions.h"
 #include "memory.h"
 #include "parse_regressor.h"
 #include "reductions_fwd.h"
