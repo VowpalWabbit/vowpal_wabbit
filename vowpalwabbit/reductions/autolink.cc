@@ -87,7 +87,7 @@ VW::LEARNER::base_learner* VW::reductions::autolink_setup(VW::setup_base_i& stac
 {
   options_i& options = *stack_builder.get_options();
   VW::workspace& all = *stack_builder.get_all_pointer();
-  std::uint32_t d;
+  uint32_t d;
   option_group_definition new_options("[Reduction] Autolink");
   new_options.add(make_option("autolink", d).keep().necessary().help("Create link function with polynomial d"));
 
