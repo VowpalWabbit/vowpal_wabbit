@@ -1064,6 +1064,9 @@ def main():
     if vw_bin is None:
         print("Can't find vw binary. Did you build the 'vw-bin' target?")
         sys.exit(1)
+    # test if vw_bin is a Path object
+    elif isinstance(vw_bin, Path):
+        vw_bin = str(vw_bin.resolve())
     print(f"Using VW binary: {vw_bin}")
 
     spanning_tree_bin: Optional[Path] = None
@@ -1076,6 +1079,8 @@ def main():
                 "Can't find spanning tree binary. Did you build the 'spanning_tree' target?"
             )
             sys.exit(1)
+        else:
+            spanning_tree_bin = spanning_tree_bin.resolve()
 
         print(f"Using spanning tree binary: {spanning_tree_bin.resolve()}")
 
