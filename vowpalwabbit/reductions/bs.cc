@@ -3,14 +3,6 @@
 // license as described in the file LICENSE.
 #include "bs.h"
 
-#include <cerrno>
-#include <cfloat>
-#include <cmath>
-#include <memory>
-#include <numeric>
-#include <sstream>
-#include <vector>
-
 #include "config/options.h"
 #include "io/logger.h"
 #include "loss_functions.h"
@@ -18,6 +10,14 @@
 #include "shared_data.h"
 #include "vw.h"
 #include "vw_exception.h"
+
+#include <cerrno>
+#include <cfloat>
+#include <cmath>
+#include <memory>
+#include <numeric>
+#include <sstream>
+#include <vector>
 
 using namespace VW::LEARNER;
 using namespace VW::config;

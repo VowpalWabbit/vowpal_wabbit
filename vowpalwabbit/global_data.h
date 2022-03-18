@@ -3,6 +3,16 @@
 // license as described in the file LICENSE.
 #pragma once
 
+#include "array_parameters.h"
+#include "constant.h"
+#include "error_reporting.h"
+#include "future_compat.h"
+#include "interactions_predict.h"
+#include "io/logger.h"
+#include "version.h"
+#include "vw_fwd.h"
+#include "vw_string_view.h"
+
 #include <array>
 #include <cfloat>
 #include <cinttypes>
@@ -12,16 +22,6 @@
 #include <string>
 #include <unordered_map>
 #include <vector>
-
-#include "allreduce.h"
-#include "array_parameters.h"
-#include "constant.h"
-#include "error_reporting.h"
-#include "future_compat.h"
-#include "interactions_predict.h"
-#include "version.h"
-#include "vw_fwd.h"
-#include "vw_string_view.h"
 
 // Thread cannot be used in managed C++, tell the compiler that this is unmanaged even if included in a managed project.
 #ifdef _M_CEE
@@ -58,6 +58,7 @@ struct dictionary_info
 };
 
 class AllReduce;
+enum class AllReduceType;
 
 #ifdef BUILD_EXTERNAL_PARSER
 // forward declarations

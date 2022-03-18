@@ -4,10 +4,6 @@
 
 #include "cb_explore.h"
 
-#include <cfloat>
-#include <memory>
-#include <utility>
-
 #include "cb_algs.h"
 #include "cb_label_parser.h"
 #include "config/options.h"
@@ -20,6 +16,10 @@
 #include "shared_data.h"
 #include "version.h"
 #include "vw_versions.h"
+
+#include <cfloat>
+#include <memory>
+#include <utility>
 
 using namespace VW::LEARNER;
 using namespace ACTION_SCORE;

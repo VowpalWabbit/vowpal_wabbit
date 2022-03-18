@@ -1,3 +1,10 @@
+#include "array_parameters.h"
+#include "data.h"
+#include "example_predict_builder.h"
+#include "gmock/gmock.h"
+#include "gtest/gtest.h"
+#include "ut_util.h"
+
 #include <stdlib.h>
 
 #include <array>
@@ -5,13 +12,6 @@
 #include <set>
 #include <streambuf>
 #include <vector>
-
-#include "array_parameters.h"
-#include "data.h"
-#include "example_predict_builder.h"
-#include "gmock/gmock.h"
-#include "gtest/gtest.h"
-#include "ut_util.h"
 
 using namespace ::testing;
 using namespace vw_slim;

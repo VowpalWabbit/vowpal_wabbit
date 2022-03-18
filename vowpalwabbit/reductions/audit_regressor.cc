@@ -2,8 +2,6 @@
 // individual contributors. All rights reserved. Released under a BSD (revised)
 // license as described in the file LICENSE.
 
-#include <string>
-
 #include "config/options.h"
 #include "fmt/format.h"
 #include "gd.h"
@@ -11,6 +9,8 @@
 #include "shared_data.h"
 #include "table_formatter.h"
 #include "vw.h"
+
+#include <string>
 
 using namespace VW::config;
 

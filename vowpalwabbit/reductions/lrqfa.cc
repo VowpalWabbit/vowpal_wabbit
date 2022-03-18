@@ -2,9 +2,6 @@
 // individual contributors. All rights reserved. Released under a BSD (revised)
 // license as described in the file LICENSE.
 
-#include <cfloat>
-#include <string>
-
 #include "config/options.h"
 #include "example.h"
 #include "global_data.h"
@@ -12,6 +9,9 @@
 #include "parse_args.h"  // for spoof_hex_encoded_namespaces
 #include "rand48.h"
 #include "text_utils.h"
+
+#include <cfloat>
+#include <string>
 
 using namespace VW::LEARNER;
 using namespace VW::config;

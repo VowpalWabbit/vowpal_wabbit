@@ -6,6 +6,12 @@
   by John Langford.
 */
 
+#include "config/options.h"
+#include "global_data.h"
+#include "io/logger.h"
+#include "learner.h"
+#include "parser.h"
+
 #include <fmt/core.h>
 
 #include <cfloat>
@@ -13,12 +19,6 @@
 #include <fstream>
 #include <iostream>
 #include <numeric>
-
-#include "config/options.h"
-#include "global_data.h"
-#include "io/logger.h"
-#include "learner.h"
-#include "parser.h"
 
 using namespace VW::LEARNER;
 using namespace VW::config;

@@ -4,17 +4,17 @@
 
 #include "log_multi.h"
 
-#include <cfloat>
-#include <cmath>
-#include <cstdio>
-#include <sstream>
-
 #include "config/options.h"
 #include "crossplat_compat.h"
 #include "global_data.h"
 #include "learner.h"
 #include "loss_functions.h"
 #include "parser.h"
+
+#include <cfloat>
+#include <cmath>
+#include <cstdio>
+#include <sstream>
 
 using namespace VW::LEARNER;
 using namespace VW::config;

@@ -3,11 +3,6 @@
 // license as described in the file LICENSE.
 #include "csoaa_ldf.h"
 
-#include <algorithm>
-#include <cerrno>
-#include <cfloat>
-#include <cmath>
-
 #include "config/options.h"
 #include "constant.h"
 #include "correctedMath.h"
@@ -19,6 +14,11 @@
 #include "shared_data.h"
 #include "vw.h"
 #include "vw_exception.h"
+
+#include <algorithm>
+#include <cerrno>
+#include <cfloat>
+#include <cmath>
 
 using namespace VW::LEARNER;
 using namespace COST_SENSITIVE;

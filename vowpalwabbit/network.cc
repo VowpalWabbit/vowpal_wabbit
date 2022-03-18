@@ -15,6 +15,9 @@
 #  include <unistd.h>
 #endif
 
+#include "io/logger.h"
+#include "vw_exception.h"
+
 #include <cerrno>
 #include <cstdlib>
 #include <cstring>
@@ -22,9 +25,6 @@
 #include <sstream>
 #include <stdexcept>
 #include <string>
-
-#include "io/logger.h"
-#include "vw_exception.h"
 
 int open_socket(const char* host, VW::io::logger& logger)
 {

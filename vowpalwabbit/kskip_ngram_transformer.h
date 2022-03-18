@@ -4,11 +4,11 @@
 
 #pragma once
 
-#include <string>
-#include <vector>
-
 #include "constant.h"
 #include "example.h"
+
+#include <string>
+#include <vector>
 
 namespace VW
 {

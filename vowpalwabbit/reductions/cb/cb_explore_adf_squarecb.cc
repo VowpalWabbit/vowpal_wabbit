@@ -4,11 +4,6 @@
 
 #include "cb_explore_adf_squarecb.h"
 
-#include <algorithm>
-#include <cfloat>
-#include <cmath>
-#include <vector>
-
 #include "action_score.h"
 #include "cb.h"
 #include "cb_adf.h"
@@ -20,6 +15,11 @@
 #include "rand48.h"
 #include "version.h"
 #include "vw_versions.h"
+
+#include <algorithm>
+#include <cfloat>
+#include <cmath>
+#include <vector>
 
 /*
 This file implements the SquareCB algorithm/reduction (Foster and Rakhlin (2020), https://arxiv.org/abs/2002.04926),

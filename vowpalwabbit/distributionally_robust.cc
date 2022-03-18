@@ -4,12 +4,12 @@
 
 #include "distributionally_robust.h"
 
+#include "model_utils.h"
+#include "vw_math.h"
+
 #include <cmath>
 #include <list>
 #include <type_traits>
-
-#include "model_utils.h"
-#include "vw_math.h"
 
 namespace VW
 {

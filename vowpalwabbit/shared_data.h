@@ -3,12 +3,12 @@
 // license as described in the file LICENSE.
 #pragma once
 
+#include "vw_fwd.h"
+
 #include <cfloat>
 #include <cstdint>
 #include <memory>
 #include <string>
-
-#include "vw_fwd.h"
 
 struct shared_data
 {

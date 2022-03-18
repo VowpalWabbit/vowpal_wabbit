@@ -17,9 +17,6 @@
 #  include <mutex>
 #endif
 
-#include <atomic>
-#include <memory>
-
 #include "example.h"
 #include "future_compat.h"
 #include "hashstring.h"
@@ -28,6 +25,9 @@
 #include "queue.h"
 #include "vw_fwd.h"
 #include "vw_string_view.h"
+
+#include <atomic>
+#include <memory>
 
 namespace VW
 {

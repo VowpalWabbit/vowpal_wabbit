@@ -4,8 +4,6 @@
 
 #include "pmf_to_pdf.h"
 
-#include <cmath>
-
 #include "cb_label_parser.h"
 #include "crossplat_compat.h"
 #include "explore.h"
@@ -13,6 +11,8 @@
 #include "io/logger.h"
 #include "shared_data.h"
 #include "vw.h"
+
+#include <cmath>
 
 using namespace LEARNER;
 using namespace VW;

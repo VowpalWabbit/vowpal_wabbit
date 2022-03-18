@@ -6,19 +6,6 @@
 
 #define RAPIDJSON_HAS_STDSTRING 1
 
-#include <rapidjson/stringbuffer.h>
-#include <rapidjson/writer.h>
-
-#include <cassert>
-#include <cerrno>
-#include <cfloat>
-#include <climits>
-#include <cmath>
-#include <cstdio>
-#include <iomanip>
-#include <iostream>
-#include <sstream>
-
 #include "array_parameters.h"
 #include "future_compat.h"
 #include "io/logger.h"
@@ -35,6 +22,19 @@
 #include "vw_allreduce.h"
 #include "vw_exception.h"
 #include "vw_string_view.h"
+
+#include <rapidjson/stringbuffer.h>
+#include <rapidjson/writer.h>
+
+#include <cassert>
+#include <cerrno>
+#include <cfloat>
+#include <climits>
+#include <cmath>
+#include <cstdio>
+#include <iomanip>
+#include <iostream>
+#include <sstream>
 
 #ifdef BUILD_FLATBUFFERS
 #  include "parser/flatbuffer/parse_example_flatbuffer.h"

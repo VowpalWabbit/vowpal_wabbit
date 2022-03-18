@@ -4,14 +4,14 @@
 
 #pragma once
 
+#include "future_compat.h"
+#include "memory.h"
+#include "vw_exception.h"
+
 #include <cassert>
 #include <ostream>
 #include <type_traits>
 #include <utility>
-
-#include "future_compat.h"
-#include "memory.h"
-#include "vw_exception.h"
 
 // Required to bring in the Enable = void default template argument
 #include "vw_fwd.h"

@@ -4,14 +4,14 @@
 
 #pragma once
 
+#include "config/option.h"
+#include "config/option_builder.h"
+#include "future_compat.h"
+
 #include <memory>
 #include <string>
 #include <unordered_set>
 #include <vector>
-
-#include "config/option.h"
-#include "config/option_builder.h"
-#include "future_compat.h"
 
 namespace VW
 {

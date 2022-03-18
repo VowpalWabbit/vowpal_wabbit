@@ -2,8 +2,6 @@
 // individual contributors. All rights reserved. Released under a BSD (revised)
 // license as described in the file LICENSE.
 
-#include <cfloat>
-
 #include "example.h"
 #include "io/logger.h"
 #include "model_utils.h"
@@ -11,6 +9,8 @@
 #include "shared_data.h"
 #include "vw.h"
 #include "vw_string_view_fmt.h"
+
+#include <cfloat>
 // needed for printing ranges of objects (eg: all elements of a vector)
 #include <fmt/ranges.h>
 

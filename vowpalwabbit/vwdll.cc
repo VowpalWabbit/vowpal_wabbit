@@ -4,17 +4,17 @@
 
 #include "vwdll.h"
 
-#include <codecvt>
-#include <locale>
-#include <memory>
-#include <string>
-
 #include "io/io_adapter.h"
 #include "memory.h"
 #include "parse_args.h"
 #include "parser.h"
 #include "simple_label.h"
 #include "vw.h"
+
+#include <codecvt>
+#include <locale>
+#include <memory>
+#include <string>
 
 // This interface now provides "wide" functions for compatibility with .NET interop
 // The default functions assume a wide (16 bit char pointer) that is converted to a utf8-string and passed to

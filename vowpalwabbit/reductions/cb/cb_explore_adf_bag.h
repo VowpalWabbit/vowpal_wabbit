@@ -4,10 +4,10 @@
 
 #pragma once
 
+#include "reductions_fwd.h"
+
 #include <memory>
 #include <vector>
-
-#include "reductions_fwd.h"
 
 namespace VW
 {
