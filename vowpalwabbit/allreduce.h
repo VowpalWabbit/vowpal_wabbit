@@ -46,7 +46,6 @@ using socket_t = int;
 #include "io/logger.h"
 #include "vw_exception.h"
 #include "vwvis.h"
-#include "global_data.h"
 
 #include <cassert>
 
@@ -63,6 +62,12 @@ using socket_t = int;
 #endif
 
 constexpr size_t ar_buf_size = 1 << 16;
+
+enum class AllReduceType
+{
+  Socket,
+  Thread
+};
 
 struct node_socks
 {

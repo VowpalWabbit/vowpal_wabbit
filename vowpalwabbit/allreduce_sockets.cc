@@ -91,17 +91,13 @@ socket_t AllReduceSockets::getsock(VW::io::logger& logger)
 #ifndef _WIN32
   int on = 1;
   if (setsockopt(sock, SOL_SOCKET, SO_REUSEADDR, reinterpret_cast<char*>(&on), sizeof(on)) < 0)
-  {
-    logger.err_error("setsockopt SO_REUSEADDR: {}", VW::strerror_to_string(errno));
-  }
+  { logger.err_error("setsockopt SO_REUSEADDR: {}", VW::strerror_to_string(errno)); }
 #endif
 
   // Enable TCP Keep Alive to prevent socket leaks
   int enableTKA = 1;
   if (setsockopt(sock, SOL_SOCKET, SO_KEEPALIVE, reinterpret_cast<char*>(&enableTKA), sizeof(enableTKA)) < 0)
-  {
-    logger.err_error("setsockopt SO_KEEPALIVE: {}", VW::strerror_to_string(errno));
-  }
+  { logger.err_error("setsockopt SO_KEEPALIVE: {}", VW::strerror_to_string(errno)); }
 
   return sock;
 }
@@ -125,34 +121,26 @@ void AllReduceSockets::all_reduce_init(VW::io::logger& logger)
   socket_t master_sock = sock_connect(master_ip, htons(static_cast<u_short>(port)), logger);
   if (send(master_sock, reinterpret_cast<const char*>(&unique_id), sizeof(unique_id), 0) <
       static_cast<int>(sizeof(unique_id)))
-  {
-    THROW("Write unique_id=" << unique_id << " to span server failed");
-  }
+  { THROW("Write unique_id=" << unique_id << " to span server failed"); }
   else
   {
     logger.err_info("wrote unique_id={}", unique_id);
   }
   if (send(master_sock, reinterpret_cast<const char*>(&total), sizeof(total), 0) < static_cast<int>(sizeof(total)))
-  {
-    THROW("Write total=" << total << " to span server failed");
-  }
+  { THROW("Write total=" << total << " to span server failed"); }
   else
   {
     logger.err_info("wrote total={}", total);
   }
   if (send(master_sock, (char*)&node, sizeof(node), 0) < static_cast<int>(sizeof(node)))
-  {
-    THROW("Write node=" << node << " to span server failed");
-  }
+  { THROW("Write node=" << node << " to span server failed"); }
   else
   {
     logger.err_info("wrote node={}", node);
   }
   int ok;
   if (recv(master_sock, reinterpret_cast<char*>(&ok), sizeof(ok), 0) < static_cast<int>(sizeof(ok)))
-  {
-    THROW("Read ok from span server failed");
-  }
+  { THROW("Read ok from span server failed"); }
   else
   {
     logger.err_info("Read ok={}", ok);
@@ -165,9 +153,7 @@ void AllReduceSockets::all_reduce_init(VW::io::logger& logger)
 
   if (recv(master_sock, reinterpret_cast<char*>(&kid_count), sizeof(kid_count), 0) <
       static_cast<int>(sizeof(kid_count)))
-  {
-    THROW("Read kid_count from span server failed");
-  }
+  { THROW("Read kid_count from span server failed"); }
   else
   {
     logger.err_info("Read kid_count={}", kid_count);
@@ -222,16 +208,12 @@ void AllReduceSockets::all_reduce_init(VW::io::logger& logger)
 
   if (recv(master_sock, reinterpret_cast<char*>(&parent_ip), sizeof(parent_ip), 0) <
       static_cast<int>(sizeof(parent_ip)))
-  {
-    THROW("Read parent_ip failed");
-  }
+  { THROW("Read parent_ip failed"); }
   else
   {
     char dotted_quad[INET_ADDRSTRLEN];
     if (nullptr == inet_ntop(AF_INET, reinterpret_cast<char*>(&parent_ip), dotted_quad, INET_ADDRSTRLEN))
-    {
-      logger.err_error("Read parent_ip={0}(inet_ntop: {1})", parent_ip, VW::strerror_to_string(errno));
-    }
+    { logger.err_error("Read parent_ip={0}(inet_ntop: {1})", parent_ip, VW::strerror_to_string(errno)); }
     else
     {
       logger.err_info("Read parent_ip={}", dotted_quad);
@@ -239,9 +221,7 @@ void AllReduceSockets::all_reduce_init(VW::io::logger& logger)
   }
   if (recv(master_sock, reinterpret_cast<char*>(&parent_port), sizeof(parent_port), 0) <
       static_cast<int>(sizeof(parent_port)))
-  {
-    THROW("Read parent_port failed");
-  }
+  { THROW("Read parent_port failed"); }
   else
   {
     logger.err_info("Read parent_port={}", parent_port);
@@ -287,15 +267,11 @@ void AllReduceSockets::pass_down(char* buffer, const size_t parent_read_pos, siz
     if (socks.children[0] != -1 &&
         send(socks.children[0], buffer + children_sent_pos, static_cast<int>(my_bufsize), 0) <
             static_cast<int>(my_bufsize))
-    {
-      THROW("Write to left child failed");
-    }
+    { THROW("Write to left child failed"); }
     if (socks.children[1] != -1 &&
         send(socks.children[1], buffer + children_sent_pos, static_cast<int>(my_bufsize), 0) <
             static_cast<int>(my_bufsize))
-    {
-      THROW("Write to right child failed");
-    }
+    { THROW("Write to right child failed"); }
 
     children_sent_pos += my_bufsize;
   }

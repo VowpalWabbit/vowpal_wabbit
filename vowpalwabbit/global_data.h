@@ -8,6 +8,7 @@
 #include "error_reporting.h"
 #include "future_compat.h"
 #include "interactions_predict.h"
+#include "io/logger.h"
 #include "version.h"
 #include "vw_fwd.h"
 #include "vw_string_view.h"
@@ -42,12 +43,6 @@ using options_deleter_type = void (*)(VW::config::options_i*);
 
 struct shared_data;
 
-enum class AllReduceType
-{
-  Socket,
-  Thread
-};
-
 namespace VW
 {
 struct workspace;
@@ -63,6 +58,7 @@ struct dictionary_info
 };
 
 class AllReduce;
+enum class AllReduceType;
 
 #ifdef BUILD_EXTERNAL_PARSER
 // forward declarations
