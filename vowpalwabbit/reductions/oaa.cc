@@ -1,10 +1,6 @@
 // Copyright (c) by respective owners including Yahoo!, Microsoft, and
 // individual contributors. All rights reserved. Released under a BSD (revised)
 // license as described in the file LICENSE.
-#include <cfloat>
-#include <cmath>
-#include <sstream>
-
 #include "config/options.h"
 #include "correctedMath.h"
 #include "io/logger.h"
@@ -14,6 +10,10 @@
 #include "shared_data.h"
 #include "vw.h"
 #include "vw_exception.h"
+
+#include <cfloat>
+#include <cmath>
+#include <sstream>
 
 using namespace VW::config;
 

@@ -4,16 +4,6 @@
 
 #include "parse_args.h"
 
-#include <sys/stat.h>
-#include <sys/types.h>
-
-#include <algorithm>
-#include <cfloat>
-#include <cstdio>
-#include <fstream>
-#include <sstream>
-#include <utility>
-
 #include "accumulate.h"
 #include "best_constant.h"
 #include "config/cli_help_formatter.h"
@@ -50,6 +40,16 @@
 #include "vw_allreduce.h"
 #include "vw_exception.h"
 #include "vw_validate.h"
+
+#include <sys/stat.h>
+#include <sys/types.h>
+
+#include <algorithm>
+#include <cfloat>
+#include <cstdio>
+#include <fstream>
+#include <sstream>
+#include <utility>
 
 #ifdef BUILD_EXTERNAL_PARSER
 #  include "parse_example_binary.h"

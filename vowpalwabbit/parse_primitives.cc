@@ -4,16 +4,16 @@
 
 #include "parse_primitives.h"
 
+#include "hash.h"
+#include "vw_exception.h"
+#include "vw_string_view.h"
+
 #include <algorithm>
 #include <cctype>
 #include <iostream>
 #include <sstream>
 #include <stdexcept>
 #include <string>
-
-#include "hash.h"
-#include "vw_exception.h"
-#include "vw_string_view.h"
 
 std::vector<std::string> escaped_tokenize(char delim, VW::string_view s, bool allow_empty)
 {

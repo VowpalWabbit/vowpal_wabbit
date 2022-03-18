@@ -4,12 +4,12 @@
 
 #pragma once
 
-#include <string>
-#include <vector>
-
 #include "learner.h"
 #include "reductions_fwd.h"
 #include "slates_label.h"
+
+#include <string>
+#include <vector>
 
 namespace VW
 {

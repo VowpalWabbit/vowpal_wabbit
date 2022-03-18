@@ -4,9 +4,9 @@
 
 #pragma once
 
-#include <cstdint>
-
 #include "vw_fwd.h"
+
+#include <cstdint>
 
 char* run_len_decode(char* p, size_t& i);
 char* run_len_encode(char* p, size_t i);

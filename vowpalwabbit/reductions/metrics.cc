@@ -8,16 +8,16 @@
 #ifdef BUILD_EXTERNAL_PARSER
 #  include "parse_example_external.h"
 #endif
-#include <rapidjson/filewritestream.h>
-#include <rapidjson/writer.h>
-
-#include <cfloat>
-
 #include "config/options.h"
 #include "global_data.h"
 #include "io/logger.h"
 #include "parser.h"
 #include "scope_exit.h"
+
+#include <rapidjson/filewritestream.h>
+#include <rapidjson/writer.h>
+
+#include <cfloat>
 
 using namespace VW::config;
 using namespace VW::LEARNER;

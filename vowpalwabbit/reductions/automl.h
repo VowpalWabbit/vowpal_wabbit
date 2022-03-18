@@ -3,13 +3,6 @@
 // license as described in the file LICENSE.
 #pragma once
 
-#include <fmt/format.h>
-
-#include <map>
-#include <memory>
-#include <queue>
-#include <set>
-
 #include "action_score.h"
 #include "array_parameters_dense.h"
 #include "distributionally_robust.h"
@@ -19,6 +12,13 @@
 #include "reductions_fwd.h"
 #include "scored_config.h"
 #include "vw_string_view.h"
+
+#include <fmt/format.h>
+
+#include <map>
+#include <memory>
+#include <queue>
+#include <set>
 
 using namespace VW::config;
 using namespace VW::LEARNER;

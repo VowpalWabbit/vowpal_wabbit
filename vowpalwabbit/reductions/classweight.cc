@@ -4,11 +4,11 @@
 
 #include "classweight.h"
 
-#include <unordered_map>
-
 #include "config/options.h"
 #include "global_data.h"
 #include "learner.h"
+
+#include <unordered_map>
 
 using namespace VW::config;
 

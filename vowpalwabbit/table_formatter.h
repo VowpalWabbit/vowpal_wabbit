@@ -4,15 +4,15 @@
 
 #pragma once
 
+#include "parse_primitives.h"
+#include "text_utils.h"
+
 #include <array>
 #include <cstddef>
 #include <iomanip>
 #include <sstream>
 #include <string>
 #include <vector>
-
-#include "parse_primitives.h"
-#include "text_utils.h"
 
 namespace VW
 {

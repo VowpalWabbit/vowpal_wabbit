@@ -4,6 +4,8 @@
 
 #pragma once
 
+#include "vw_exception.h"
+
 #include <memory>
 #include <set>
 #include <sstream>
@@ -11,8 +13,6 @@
 #include <type_traits>
 #include <typeinfo>
 #include <vector>
-
-#include "vw_exception.h"
 
 namespace VW
 {

@@ -3,15 +3,15 @@
 // license as described in the file LICENSE.
 #pragma once
 
-#include <cfloat>
-#include <cstdint>
-#include <utility>
-#include <vector>
-
 #include "io_buf.h"
 #include "label_parser.h"
 #include "reductions_fwd.h"
 #include "v_array.h"
+
+#include <cfloat>
+#include <cstdint>
+#include <utility>
+#include <vector>
 
 namespace VW
 {

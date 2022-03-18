@@ -1,11 +1,11 @@
 #pragma once
 
+#include "hash.h"
+#include "vw_slim_return_codes.h"
+
 #include <cctype>
 #include <memory>
 #include <string>
-
-#include "hash.h"
-#include "vw_slim_return_codes.h"
 
 // #define MODEL_PARSER_DEBUG
 

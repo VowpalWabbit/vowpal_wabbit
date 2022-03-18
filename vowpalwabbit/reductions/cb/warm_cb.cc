@@ -2,10 +2,6 @@
 // individual contributors. All rights reserved. Released under a BSD (revised)
 // license as described in the file LICENSE.
 
-#include <cfloat>
-#include <memory>
-#include <vector>
-
 #include "cb_algs.h"
 #include "cb_label_parser.h"
 #include "config/options.h"
@@ -16,6 +12,10 @@
 #include "scope_exit.h"
 #include "vw.h"
 #include "vw_exception.h"
+
+#include <cfloat>
+#include <memory>
+#include <vector>
 
 using namespace VW::LEARNER;
 using namespace exploration;

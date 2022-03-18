@@ -2,19 +2,18 @@
 // individual contributors. All rights reserved. Released under a BSD (revised)
 // license as described in the file LICENSE.
 
-#include <cerrno>
-#include <cfloat>
-#include <cmath>
-#include <memory>
-
 #include "config/options.h"
-#include "float.h"
 #include "numeric_casts.h"
 #include "rand48.h"
 #include "rand_state.h"
 #include "shared_data.h"
 #include "vw.h"
 #include "vw_math.h"
+
+#include <cerrno>
+#include <cfloat>
+#include <cmath>
+#include <memory>
 
 using namespace VW::LEARNER;
 using namespace VW::config;

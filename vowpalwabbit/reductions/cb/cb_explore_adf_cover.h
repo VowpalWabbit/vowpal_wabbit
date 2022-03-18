@@ -3,9 +3,6 @@
 // license as described in the file LICENSE.
 #pragma once
 
-#include <cstdint>
-#include <vector>
-
 #include "action_score.h"
 #include "cb.h"
 #include "cb_explore_adf_common.h"
@@ -13,6 +10,9 @@
 #include "gen_cs_example.h"
 #include "reductions_fwd.h"
 #include "v_array.h"
+
+#include <cstdint>
+#include <vector>
 
 namespace VW
 {

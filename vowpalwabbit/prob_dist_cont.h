@@ -3,10 +3,10 @@
 // license as described in the file LICENSE.
 #pragma once
 
+#include "constant.h"
+
 #include <string>
 #include <vector>
-
-#include "constant.h"
 
 namespace VW
 {

@@ -3,15 +3,15 @@
 // license as described in the file LICENSE.
 
 #pragma once
-#include <sys/types.h>
-
-#include <memory>
-
 #include "learner.h"
 #include "numeric_casts.h"
 #include "rand48.h"
 #include "rand_state.h"
 #include "vw.h"
+
+#include <sys/types.h>
+
+#include <memory>
 
 namespace ExpReplay
 {

@@ -2,9 +2,6 @@
 // individual contributors. All rights reserved. Released under a BSD (revised)
 // license as described in the file LICENSE.
 
-#include <cfloat>
-#include <memory>
-
 #include "config/options.h"
 #include "gen_cs_example.h"
 #include "rand48.h"
@@ -13,6 +10,9 @@
 #include "reductions/cb/cb_algs.h"
 #include "shared_data.h"
 #include "vw.h"
+
+#include <cfloat>
+#include <memory>
 
 // Do evaluation of nonstationary policies.
 // input = contextual bandit label

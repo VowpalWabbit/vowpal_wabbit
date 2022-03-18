@@ -4,14 +4,14 @@
 
 #include "cats.h"
 
-#include <cfloat>
-#include <cmath>
-
 #include "config/options.h"
 #include "debug_log.h"
 #include "error_constants.h"
 #include "global_data.h"
 #include "shared_data.h"
+
+#include <cfloat>
+#include <cmath>
 
 // Aliases
 using std::endl;

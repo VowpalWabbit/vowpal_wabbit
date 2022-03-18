@@ -2,19 +2,21 @@
 // individual contributors. All rights reserved. Released under a BSD (revised)
 // license as described in the file LICENSE.
 
-#include <sys/timeb.h>
-#include <fstream>
-#include <vector>
-
 #include "vw_to_flat.h"
-#include "parse_args.h"
-#include "parse_regressor.h"
+
 #include "accumulate.h"
 #include "best_constant.h"
-#include "vw_exception.h"
 #include "hash.h"
+#include "parse_args.h"
+#include "parse_regressor.h"
 #include "reductions/cb/cb_algs.h"
 #include "shared_data.h"
+#include "vw_exception.h"
+
+#include <sys/timeb.h>
+
+#include <fstream>
+#include <vector>
 
 void write_buffer_to_file(std::ofstream& outfile, flatbuffers::FlatBufferBuilder& builder,
     flatbuffers::Offset<VW::parsers::flatbuffer::ExampleRoot>& root)

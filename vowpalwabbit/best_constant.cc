@@ -4,10 +4,10 @@
 
 #include "best_constant.h"
 
-#include <cmath>
-
 #include "loss_functions.h"
 #include "shared_data.h"
+
+#include <cmath>
 
 bool VW::get_best_constant(
     const loss_function& loss_func, const shared_data& sd, float& best_constant, float& best_constant_loss)

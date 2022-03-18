@@ -2,10 +2,10 @@
 // individual contributors. All rights reserved. Released under a BSD (revised)
 // license as described in the file LICENSE.
 #pragma once
-#include <string>
-
 #include "config/options.h"
 #include "vw_fwd.h"
+
+#include <string>
 
 void read_regressor_file(VW::workspace& all, const std::vector<std::string>& files, io_buf& io_temp);
 

@@ -9,8 +9,6 @@
 
 #include "cats_pdf.h"
 
-#include <cfloat>
-
 #include "api_status.h"
 #include "cb_continuous_label.h"
 #include "config/options.h"
@@ -19,6 +17,8 @@
 #include "global_data.h"
 #include "parser.h"
 #include "shared_data.h"
+
+#include <cfloat>
 
 // Aliases
 using std::endl;

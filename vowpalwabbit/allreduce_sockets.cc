@@ -6,12 +6,11 @@
 This implements the allreduce function of MPI.  Code primarily by
 Alekh Agarwal and John Langford, with help Olivier Chapelle.
  */
-#include <errno.h>
-#include <stdlib.h>
-#include <string.h>
-
+#include <cerrno>
 #include <cmath>
 #include <cstdio>
+#include <cstdlib>
+#include <cstring>
 #include <ctime>
 #include <iostream>
 #include <sstream>
@@ -29,11 +28,11 @@ Alekh Agarwal and John Langford, with help Olivier Chapelle.
 #  include <arpa/inet.h>
 #  include <unistd.h>
 #endif
-#include <sys/timeb.h>
-
 #include "allreduce.h"
 #include "io/logger.h"
 #include "vw_exception.h"
+
+#include <sys/timeb.h>
 
 // port is already in network order
 socket_t AllReduceSockets::sock_connect(const uint32_t ip, const int port, VW::io::logger& logger)

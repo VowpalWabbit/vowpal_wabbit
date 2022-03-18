@@ -2,10 +2,10 @@
 // individual contributors. All rights reserved. Released under a BSD (revised)
 // license as described in the file LICENSE.
 #pragma once
-#include <memory>
-
 #include "rand_state.h"
 #include "reductions_fwd.h"
+
+#include <memory>
 
 #define BS_TYPE_MEAN 0
 #define BS_TYPE_VOTE 1

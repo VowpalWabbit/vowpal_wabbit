@@ -4,8 +4,6 @@
 
 #include "decision_scores.h"
 
-#include <iostream>
-
 #include "action_score.h"
 #include "global_data.h"
 #include "io/logger.h"
@@ -14,6 +12,8 @@
 #include "reductions/slates.h"
 #include "shared_data.h"
 #include "text_utils.h"
+
+#include <iostream>
 
 template <typename LabelPrintFunc>
 void print_update(VW::workspace& all, const std::vector<VW::example*>& slots,
