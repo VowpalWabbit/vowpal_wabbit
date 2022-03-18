@@ -2,14 +2,14 @@
 // individual contributors. All rights reserved. Released under a BSD (revised)
 // license as described in the file LICENSE.
 
-#include <cfloat>
-#include <cmath>
-#include <utility>
-
 #include "config/options.h"
 #include "debug_log.h"
 #include "global_data.h"
 #include "learner.h"
+
+#include <cfloat>
+#include <cmath>
+#include <utility>
 
 #undef VW_DEBUG_LOG
 #define VW_DEBUG_LOG vw_dbg::binary

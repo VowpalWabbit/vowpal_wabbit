@@ -4,10 +4,6 @@
 
 #include "cb_explore_adf_cover.h"
 
-#include <algorithm>
-#include <cmath>
-#include <vector>
-
 #include "cb_explore.h"
 #include "config/options.h"
 #include "explore.h"
@@ -20,6 +16,10 @@
 #include "reductions/cb/cb_adf.h"
 #include "version.h"
 #include "vw_versions.h"
+
+#include <algorithm>
+#include <cmath>
+#include <vector>
 
 // All exploration algorithms return a vector of id, probability tuples, sorted in order of scores. The probabilities
 // are the probability with which each action should be replaced to the top of the list.

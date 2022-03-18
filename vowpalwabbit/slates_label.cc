@@ -4,8 +4,6 @@
 
 #include "slates_label.h"
 
-#include <numeric>
-
 #include "cache.h"
 #include "constant.h"
 #include "model_utils.h"
@@ -13,6 +11,8 @@
 #include "parser.h"
 #include "vw_math.h"
 #include "vw_string_view.h"
+
+#include <numeric>
 
 namespace VW
 {

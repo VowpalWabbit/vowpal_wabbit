@@ -2,10 +2,6 @@
 // individual contributors. All rights reserved. Released under a BSD (revised)
 // license as described in the file LICENSE.
 
-#include <cfloat>
-#include <fstream>
-#include <iostream>
-
 #include "../../action_score.h"
 #include "../../best_constant.h"
 #include "../../cb.h"
@@ -15,6 +11,10 @@
 #include "../../named_labels.h"
 #include "../../slates_label.h"
 #include "parse_example_flatbuffer.h"
+
+#include <cfloat>
+#include <fstream>
+#include <iostream>
 
 namespace VW
 {

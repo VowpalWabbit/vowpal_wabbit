@@ -4,6 +4,8 @@
 
 #include "spanning_tree.h"
 
+#include "vw_exception.h"
+
 #include <errno.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -15,8 +17,6 @@
 #include <iostream>
 #include <map>
 #include <string>
-
-#include "vw_exception.h"
 
 // TODO: spanning tree exists outside the normal VW source (it should live in cluster/).
 //       If we use io/logger.h here, we need to link it to the cluster library

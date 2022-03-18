@@ -25,9 +25,9 @@
 #endif
 
 // needed for custom types (like string_view)
-#include <fmt/ostream.h>
-
 #include "../vw_exception.h"
+
+#include <fmt/ostream.h>
 
 namespace VW
 {

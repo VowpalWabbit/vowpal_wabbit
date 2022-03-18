@@ -4,10 +4,6 @@
 
 #include "shared_feature_merger.h"
 
-#include <iterator>
-#include <string>
-#include <vector>
-
 #include "cb.h"
 #include "config/options.h"
 #include "example.h"
@@ -15,6 +11,10 @@
 #include "learner.h"
 #include "scope_exit.h"
 #include "vw.h"
+
+#include <iterator>
+#include <string>
+#include <vector>
 
 namespace VW
 {

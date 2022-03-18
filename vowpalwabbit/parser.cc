@@ -4,11 +4,11 @@
 
 #include "parser.h"
 
-#include <sys/types.h>
-
 #include "io/logger.h"
 #include "kskip_ngram_transformer.h"
 #include "numeric_casts.h"
+
+#include <sys/types.h>
 
 #ifndef _WIN32
 #  include <netinet/tcp.h>
@@ -17,12 +17,12 @@
 #  include <unistd.h>
 #endif
 
-#include <csignal>
-#include <fstream>
-
 #include "crossplat_compat.h"
 #include "simple_label_parser.h"
 #include "text_utils.h"
+
+#include <csignal>
+#include <fstream>
 
 #ifdef _WIN32
 #  ifndef NOMINMAX
@@ -56,10 +56,6 @@ int VW_getpid() { return (int)::GetCurrentProcessId(); }
 #  include <netinet/in.h>
 #endif
 
-#include <cassert>
-#include <cerrno>
-#include <cstdio>
-
 #include "cache.h"
 #include "constant.h"
 #include "io/io_adapter.h"
@@ -72,6 +68,10 @@ int VW_getpid() { return (int)::GetCurrentProcessId(); }
 #include "unique_sort.h"
 #include "vw.h"
 #include "vw_exception.h"
+
+#include <cassert>
+#include <cerrno>
+#include <cstdio>
 #ifdef BUILD_FLATBUFFERS
 #  include "parser/flatbuffer/parse_example_flatbuffer.h"
 #endif

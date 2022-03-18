@@ -4,10 +4,10 @@
 
 #pragma once
 
+#include "config/help_formatter.h"
+
 #include <string>
 #include <vector>
-
-#include "config/help_formatter.h"
 
 namespace VW
 {

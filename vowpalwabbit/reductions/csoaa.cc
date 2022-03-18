@@ -3,12 +3,12 @@
 // license as described in the file LICENSE.
 #include "csoaa.h"
 
-#include <utility>
-
 #include "config/options.h"
 #include "io/logger.h"
 #include "vw.h"
 #include "vw_exception.h"
+
+#include <utility>
 
 using namespace VW::LEARNER;
 using namespace COST_SENSITIVE;

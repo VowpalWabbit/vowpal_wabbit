@@ -4,11 +4,11 @@
 
 #pragma once
 
+#include "../vw_exception.h"
+
 #include <memory>
 #include <string>
 #include <vector>
-
-#include "../vw_exception.h"
 
 // ssize_t
 #ifdef _WIN32

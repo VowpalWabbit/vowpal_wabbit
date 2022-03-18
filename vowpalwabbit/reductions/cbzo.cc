@@ -4,9 +4,6 @@
 
 #include "cbzo.h"
 
-#include <cfloat>
-#include <random>
-
 #include "gd.h"
 #include "io/logger.h"
 #include "io_buf.h"
@@ -15,6 +12,9 @@
 #include "shared_data.h"
 #include "vw.h"
 #include "vw_math.h"
+
+#include <cfloat>
+#include <random>
 
 using namespace VW::LEARNER;
 using namespace VW::config;

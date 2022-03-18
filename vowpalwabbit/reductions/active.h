@@ -4,13 +4,13 @@
 
 #pragma once
 
-#include <memory>
-#include <utility>
-
 #include "rand_state.h"
 #include "reductions_fwd.h"
 #include "shared_data.h"
 #include "version.h"
+
+#include <memory>
+#include <utility>
 
 struct active
 {

@@ -4,9 +4,9 @@
 
 #pragma once
 
-#include <cstdint>
-
 #include "vw_string_view.h"
+
+#include <cstdint>
 
 namespace VW
 {

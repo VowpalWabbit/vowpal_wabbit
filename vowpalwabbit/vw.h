@@ -26,14 +26,14 @@
 #  endif
 #endif
 
-#include <memory>
-
 #include "compat.h"
 #include "global_data.h"
 #include "hash.h"
 #include "hashstring.h"
 #include "parser.h"
 #include "vw_fwd.h"
+
+#include <memory>
 
 namespace VW
 {

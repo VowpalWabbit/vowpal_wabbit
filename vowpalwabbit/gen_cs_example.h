@@ -2,12 +2,12 @@
 // individual contributors. All rights reserved. Released under a BSD (revised)
 // license as described in the file LICENSE.
 #pragma once
-#include <cfloat>
-
 #include "reductions/cb/cb_algs.h"
 #include "scope_exit.h"
 #include "vw.h"
 #include "vw_exception.h"
+
+#include <cfloat>
 
 namespace GEN_CS
 {

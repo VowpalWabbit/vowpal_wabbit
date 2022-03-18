@@ -4,8 +4,6 @@
 
 #include "slates.h"
 
-#include <algorithm>
-
 #include "action_score.h"
 #include "ccb_label.h"
 #include "conditional_contextual_bandit.h"
@@ -18,6 +16,8 @@
 #include "shared_data.h"
 #include "slates_label.h"
 #include "vw.h"
+
+#include <algorithm>
 
 using namespace VW::config;
 

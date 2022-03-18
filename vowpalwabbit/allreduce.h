@@ -43,11 +43,11 @@ using socket_t = int;
 #  define CLOSESOCK close
 #  include <future>
 #endif
-#include <cassert>
-
 #include "io/logger.h"
 #include "vw_exception.h"
 #include "vwvis.h"
+
+#include <cassert>
 
 #ifdef _M_CEE
 #  pragma managed(push, off)

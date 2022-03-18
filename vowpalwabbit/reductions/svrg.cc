@@ -3,9 +3,6 @@
 // individual contributors. All rights reserved. Released under a BSD (revised)
 // license as described in the file LICENSE.
 
-#include <cassert>
-#include <iostream>
-
 #include "crossplat_compat.h"
 #include "gd.h"
 #include "loss_functions.h"
@@ -13,6 +10,9 @@
 #include "parse_regressor.h"
 #include "reductions_fwd.h"
 #include "vw.h"
+
+#include <cassert>
+#include <iostream>
 
 using namespace VW::LEARNER;
 using namespace VW::config;
