@@ -6,7 +6,8 @@ on:
       - '*'
 
 jobs:
-  check_valgrind:
+  build-valgrind:
+    name: ubuntu2004.amd64.valgrind-build
     container:
       image: vowpalwabbit/ubuntu2004-build:latest
     runs-on: ubuntu-latest
@@ -31,8 +32,9 @@ jobs:
           path: build/utl/flatbuffer/to_flatbuff
       - name: Run unit tests with Valgrind
         run: ./.scripts/linux/unit-tests-valgrind.sh
-  run_valgrind_tests:
-    needs: check_valgrind
+  run-valgrind-tests:
+    name: ubuntu2004.amd64.valgrind-test.[${{ matrix.test-segment }}]
+    needs: build-valgrind
     strategy:
       matrix:
         test-segment: ["..100", "101..200", "201..300", "301.."]
