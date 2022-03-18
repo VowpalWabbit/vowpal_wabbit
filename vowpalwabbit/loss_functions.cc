@@ -341,27 +341,25 @@ public:
   float getUpdate(float prediction, float label, float update_scale, float pred_per_update) const override
   {
     float err = label - prediction;
-    if (err > 0) return squared_loss_impl::getUpdate(prediction, label, q * update_scale, pred_per_update);
-    return squared_loss_impl::getUpdate(prediction, label, (1.f - q) * update_scale, pred_per_update);
+    return err > 0 ? squared_loss_impl::getUpdate(prediction, label, q * update_scale, pred_per_update) : squared_loss_impl::getUpdate(prediction, label, (1.f - q) * update_scale, pred_per_update);
   }
 
   float getUnsafeUpdate(float prediction, float label, float update_scale) const override
   {
     float err = label - prediction;
-    if (err > 0) return squared_loss_impl::getUnsafeUpdate(prediction, label, q * update_scale);
-    return squared_loss_impl::getUnsafeUpdate(prediction, label, (1.f - q) * update_scale);
-  }
-
-  float first_derivative(const shared_data* sd, float prediction, float label) const override
-  {
-    float err = label - prediction;
-    return squared_loss_impl::first_derivative(sd, prediction, label) * (err > 0 ? q : (1.f - q));
+    return err > 0 ? squared_loss_impl::getUnsafeUpdate(prediction, label, q * update_scale) : squared_loss_impl::getUnsafeUpdate(prediction, label, (1.f - q) * update_scale);
   }
 
   float getSquareGrad(float prediction, float label) const override
   {
     float err = label - prediction;
     return squared_loss_impl::getSquareGrad(prediction, label) * (err > 0 ? q * q : (1.f - q) * (1.f - q));
+  }
+
+  float first_derivative(const shared_data* sd, float prediction, float label) const override
+  {
+    float err = label - prediction;
+    return squared_loss_impl::first_derivative(sd, prediction, label) * (err > 0 ? q : (1.f - q));
   }
 
   float second_derivative(const shared_data* sd, float prediction, float label) const override
