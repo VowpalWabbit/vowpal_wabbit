@@ -37,5 +37,5 @@ struct active
 };
 
 VW::LEARNER::base_learner* active_setup(VW::setup_base_i& stack_builder);
-}
+}  // namespace reductions
 }  // namespace VW

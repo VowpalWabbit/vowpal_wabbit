@@ -19,7 +19,6 @@ namespace
 constexpr float max_multiplier = 1000.f;
 }  // namespace
 
-
 void VW::reductions::baseline::set_baseline_enabled(VW::example* ec)
 {
   if (!baseline_enabled(ec)) { ec->indices.push_back(baseline_enabled_message_namespace); }

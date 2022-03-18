@@ -255,9 +255,7 @@ void inject_slot_features(VW::example* shared, VW::example* slot)
     if (index == constant_namespace) { continue; }
 
     if (index == default_namespace)  // slot default namespace has a special namespace in shared
-    {
-      LabelDict::add_example_namespace(*shared, ccb_slot_namespace, slot->feature_space[default_namespace]);
-    }
+    { LabelDict::add_example_namespace(*shared, ccb_slot_namespace, slot->feature_space[default_namespace]); }
     else
     {
       LabelDict::add_example_namespace(*shared, index, slot->feature_space[index]);
@@ -313,9 +311,7 @@ void remove_slot_features(VW::example* shared, VW::example* slot)
     if (index == constant_namespace) { continue; }
 
     if (index == default_namespace)  // slot default namespace has a special namespace in shared
-    {
-      LabelDict::del_example_namespace(*shared, ccb_slot_namespace, slot->feature_space[default_namespace]);
-    }
+    { LabelDict::del_example_namespace(*shared, ccb_slot_namespace, slot->feature_space[default_namespace]); }
     else
     {
       LabelDict::del_example_namespace(*shared, index, slot->feature_space[index]);
@@ -408,15 +404,11 @@ void learn_or_predict(ccb_data& data, multi_learner& base, VW::multi_ex& example
   clear_all(data);
   // split shared, actions and slots
   if (!split_multi_example_and_stash_labels(examples, data)) { return; }
-  auto restore_labels_guard = VW::scope_exit(
-      [&data, &examples]
-      {
-        // Restore ccb labels to the example objects.
-        for (size_t i = 0; i < examples.size(); i++)
-        {
-          examples[i]->l.conditional_contextual_bandit = std::move(data.stored_labels[i]);
-        }
-      });
+  auto restore_labels_guard = VW::scope_exit([&data, &examples] {
+    // Restore ccb labels to the example objects.
+    for (size_t i = 0; i < examples.size(); i++)
+    { examples[i]->l.conditional_contextual_bandit = std::move(data.stored_labels[i]); }
+  });
 
   if (data.slots.size() > data.actions.size())
   {
@@ -432,9 +424,7 @@ void learn_or_predict(ccb_data& data, multi_learner& base, VW::multi_ex& example
     {
       if (slot->l.conditional_contextual_bandit.outcome != nullptr &&
           slot->l.conditional_contextual_bandit.outcome->probabilities.empty())
-      {
-        THROW("ccb_adf_explore: badly formatted example - missing label probability")
-      }
+      { THROW("ccb_adf_explore: badly formatted example - missing label probability") }
     }
   }
 
@@ -457,9 +447,7 @@ void learn_or_predict(ccb_data& data, multi_learner& base, VW::multi_ex& example
   // mode a new namespace is added (ccb_id_namespace) and so we can be confident
   // that the cache will be invalidated.
   if (!previously_should_augment_with_slot_info && should_augment_with_slot_info)
-  {
-    insert_ccb_interactions(data.all->interactions, data.all->extent_interactions);
-  }
+  { insert_ccb_interactions(data.all->interactions, data.all->extent_interactions); }
 
   // This will overwrite the labels with CB.
   create_cb_labels(data);
@@ -565,7 +553,6 @@ void learn_or_predict(ccb_data& data, multi_learner& base, VW::multi_ex& example
   }
 }
 
-
 void output_example(VW::workspace& all, ccb_data& c, const VW::multi_ex& ec_seq)
 {
   if (ec_seq.empty()) { return; }
@@ -594,9 +581,7 @@ void output_example(VW::workspace& all, ccb_data& c, const VW::multi_ex& ec_seq)
   }
 
   if (num_labeled > 0 && num_labeled < c.slots.size())
-  {
-    all.logger.err_warn("Unlabeled example in train set, was this intentional?");
-  }
+  { all.logger.err_warn("Unlabeled example in train set, was this intentional?"); }
 
   bool holdout_example = num_labeled > 0;
   for (const auto& example : ec_seq) { holdout_example &= example->test_only; }
@@ -605,9 +590,7 @@ void output_example(VW::workspace& all, ccb_data& c, const VW::multi_ex& ec_seq)
   all.sd->update(holdout_example, num_labeled > 0, loss, ec_seq[SHARED_EX_INDEX]->weight, num_features);
 
   for (auto& sink : all.final_prediction_sink)
-  {
-    VW::print_decision_scores(sink.get(), ec_seq[SHARED_EX_INDEX]->pred.decision_scores, all.logger);
-  }
+  { VW::print_decision_scores(sink.get(), ec_seq[SHARED_EX_INDEX]->pred.decision_scores, all.logger); }
 
   VW::print_update_ccb(all, c.slots, preds, num_features);
 }
@@ -637,18 +620,14 @@ void save_load(ccb_data& sm, io_buf& io, bool read, bool text)
   if (read &&
       (sm.model_file_version >= VW::version_definitions::VERSION_FILE_WITH_CCB_MULTI_SLOTS_SEEN_FLAG &&
           sm.is_ccb_input_model))
-  {
-    VW::model_utils::read_model_field(io, sm.has_seen_multi_slot_example);
-  }
+  { VW::model_utils::read_model_field(io, sm.has_seen_multi_slot_example); }
   else if (!read)
   {
     VW::model_utils::write_model_field(io, sm.has_seen_multi_slot_example, "CCB: has_seen_multi_slot_example", text);
   }
 
   if (read && sm.has_seen_multi_slot_example)
-  {
-    insert_ccb_interactions(sm.all->interactions, sm.all->extent_interactions);
-  }
+  { insert_ccb_interactions(sm.all->interactions, sm.all->extent_interactions); }
 }
 }  // namespace
 base_learner* VW::reductions::ccb_explore_adf_setup(VW::setup_base_i& stack_builder)
@@ -685,14 +664,10 @@ base_learner* VW::reductions::ccb_explore_adf_setup(VW::setup_base_i& stack_buil
   }
 
   if (options.was_supplied("no_predict") && options.was_supplied("p"))
-  {
-    THROW("Error: Cannot use flags --no_predict and -p simultaneously");
-  }
+  { THROW("Error: Cannot use flags --no_predict and -p simultaneously"); }
 
   if (options.was_supplied("no_predict") && type_string != "mtr")
-  {
-    THROW("Error: --no_predict flag can only be used with default cb_type mtr");
-  }
+  { THROW("Error: --no_predict flag can only be used with default cb_type mtr"); }
 
   if (!options.was_supplied("cb_sample") && !data->no_pred)
   {

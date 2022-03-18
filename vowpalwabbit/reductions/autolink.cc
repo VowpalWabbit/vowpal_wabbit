@@ -29,8 +29,7 @@ private:
   static constexpr int AUTOCONSTANT = 524267083;
 };
 
-autolink::autolink(uint32_t poly_degree, uint32_t stride_shift)
-    : _poly_degree(poly_degree), _stride_shift(stride_shift)
+autolink::autolink(uint32_t poly_degree, uint32_t stride_shift) : _poly_degree(poly_degree), _stride_shift(stride_shift)
 {
 }
 
@@ -83,7 +82,6 @@ void predict_or_learn(autolink& b, VW::LEARNER::single_learner& base, VW::exampl
   else
     b.predict(base, ec);
 }
-
 
 VW::LEARNER::base_learner* VW::reductions::autolink_setup(VW::setup_base_i& stack_builder)
 {

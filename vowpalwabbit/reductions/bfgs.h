@@ -5,7 +5,6 @@
 #pragma once
 #include "vw_fwd.h"
 
-
 namespace VW
 {
 namespace reductions
