@@ -322,6 +322,8 @@ public:
   float tau;
 };
 
+// Expectile loss is closely related to the squared loss, but it's an asymmetric function with a quantile parameter
+// Its methods can be derived from the corresponding methods from the squared loss multiplied by the quantile value
 class expectileloss : public loss_function
 {
 public:
@@ -330,8 +332,6 @@ public:
   std::string getType() const override { return "expectile"; }
   float getParameter() const override { return q; }
 
-  // Expectile loss is closely related to the squared loss, but it's an assymetric function with a quantile parameter
-  // Its methods can be derived from the corresponding methods from the squared loss multiplied by the quantile value
   float getLoss(const shared_data* sd, float prediction, float label) const override
   {
     float err = label - prediction;
@@ -340,7 +340,6 @@ public:
 
   float getUpdate(float prediction, float label, float update_scale, float pred_per_update) const override
   {
-    // Based on the invariant update calculation from the [Online Importance Weight Aware Updates paper](https://arxiv.org/abs/1011.1576)
     float err = label - prediction;
     if (err > 0) return squared_loss_impl::getUpdate(prediction, label, q * update_scale, pred_per_update);
     return squared_loss_impl::getUpdate(prediction, label, (1.f - q) * update_scale, pred_per_update);
