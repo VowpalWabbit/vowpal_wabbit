@@ -4,6 +4,7 @@
 #include "example.h"
 
 #include <algorithm>
+#include <climits>
 #include <cstdint>
 
 #include "cb_continuous_label.h"

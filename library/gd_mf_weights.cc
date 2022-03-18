@@ -1,14 +1,15 @@
-#include "vw.h"
-#include "parser.h"
-#include "config/options_cli.h"
-#include "config/option_builder.h"
-#include "config/option_group_definition.h"
-#include "config/cli_help_formatter.h"
-
 #include <cstdio>
 #include <fstream>
 #include <iostream>
 #include <string>
+
+#include "config/cli_help_formatter.h"
+#include "config/option_builder.h"
+#include "config/option_group_definition.h"
+#include "config/options_cli.h"
+#include "crossplat_compat.h"
+#include "parser.h"
+#include "vw.h"
 
 int main(int argc, char* argv[])
 {

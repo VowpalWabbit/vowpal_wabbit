@@ -214,6 +214,7 @@ jobs:
         - { version: 3.7, include_dir_name: python3.7m/}
         - { version: 3.8, include_dir_name: python3.8/}
         - { version: 3.9, include_dir_name: python3.9/}
+        - { version: "3.10", include_dir_name: python3.10/}
       fail-fast: false
     steps:
       - uses: actions/checkout@v2
@@ -233,25 +234,21 @@ jobs:
           name: macos_amd64_${{ matrix.config.version }}
           path: wheel_output/
   macos-python-test:
-    name: macos.amd64.py${{ matrix.config.version }}.test
+    name: macos.amd64.py${{ matrix.version }}.test
     needs: macos-python-build
     runs-on: macos-10.15
     strategy:
       matrix:
-        config:
-        - { version: 3.6, include_dir_name: python3.6m/}
-        - { version: 3.7, include_dir_name: python3.7m/}
-        - { version: 3.8, include_dir_name: python3.8/}
-        - { version: 3.9, include_dir_name: python3.9/}
+        version: [3.6, 3.7, 3.8, 3.9, "3.10"]
       fail-fast: false
     steps:
       - uses: actions/checkout@v2
       - uses: actions/setup-python@v2
         with:
-          python-version: ${{ matrix.config.version }}
+          python-version: ${{ matrix.version }}
       - uses: actions/download-artifact@v1
         with:
-          name: macos_amd64_${{ matrix.config.version }}
+          name: macos_amd64_${{ matrix.version }}
           path: built_wheel
       - name: Test wheel
         shell: bash
@@ -262,7 +259,7 @@ jobs:
           twine check built_wheel/*.whl
           python -m pytest ./python/tests/
           python ./python/tests/run_doctest.py
-  macos-windows-build:
+  windows-python-build:
     name: windows.amd64.py${{ matrix.config.version }}.build
     runs-on: windows-2019
     strategy:
@@ -300,8 +297,8 @@ jobs:
           name: windows_amd64_${{ matrix.config.version }}
           path: wheel_output
   windows-python-test:
-    name: windows.amd64.py${{ matrix.config.version }}.test
-    needs: macos-windows-build
+    name: windows.amd64.py${{ matrix.version }}.test
+    needs: windows-python-build
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:

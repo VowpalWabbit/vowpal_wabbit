@@ -12,6 +12,7 @@
 #include "../../constant.h"
 #include "../../example.h"
 #include "../../global_data.h"
+#include "../../named_labels.h"
 #include "../../slates_label.h"
 #include "parse_example_flatbuffer.h"
 

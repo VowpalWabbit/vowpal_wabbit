@@ -5,13 +5,10 @@
 
 #include <cfloat>
 #include <cstdint>
-#include <iosfwd>
 #include <memory>
 #include <string>
 
-#include "named_labels.h"
-
-class loss_function;
+#include "vw_fwd.h"
 
 struct shared_data
 {
