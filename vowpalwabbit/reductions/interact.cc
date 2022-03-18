@@ -7,6 +7,8 @@
 #include "config/options.h"
 #include "global_data.h"
 #include "io/logger.h"
+#include "learner.h"
+#include "setup_base.h"
 
 using namespace VW::config;
 

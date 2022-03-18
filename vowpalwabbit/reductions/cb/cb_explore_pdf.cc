@@ -5,6 +5,7 @@
 #include "cb_explore_pdf.h"
 
 #include "api_status.h"
+#include "config/options.h"
 #include "debug_log.h"
 #include "error_constants.h"
 #include "global_data.h"

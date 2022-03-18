@@ -10,6 +10,7 @@
 #include "global_data.h"
 #include "io/logger.h"
 #include "parse_example.h"
+#include "parser.h"
 #include "v_array.h"
 
 // DispatchFuncT should be of the form - void(VW::workspace&, const v_array<example*>&)

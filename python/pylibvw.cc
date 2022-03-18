@@ -8,6 +8,7 @@
 #include "config/options_cli.h"
 #include "cost_sensitive.h"
 #include "future_compat.h"
+#include "kskip_ngram_transformer.h"
 #include "multiclass.h"
 #include "multilabel.h"
 #include "parse_example.h"

@@ -7,7 +7,7 @@
 #include <unordered_map>
 #include <vector>
 
-#include "io/logger.h"
+#include "vw_fwd.h"
 #include "vw_string_view.h"
 
 namespace VW

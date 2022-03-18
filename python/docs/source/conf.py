@@ -127,7 +127,7 @@ html_sidebars = {"**": ["search-field.html", "nav-toc-override.html"]}
 # Example configuration for intersphinx: refer to the Python standard library.
 intersphinx_mapping = {
     "https://docs.python.org/3/": None,
-    "http://pandas.pydata.org/pandas-docs/dev": None
+    "http://pandas.pydata.org/pandas-docs/dev": None,
 }
 
 html_favicon = "favicon.png"

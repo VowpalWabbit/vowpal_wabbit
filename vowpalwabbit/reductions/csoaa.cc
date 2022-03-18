@@ -5,6 +5,7 @@
 
 #include <utility>
 
+#include "config/options.h"
 #include "io/logger.h"
 #include "vw.h"
 #include "vw_exception.h"

@@ -1,14 +1,15 @@
-#include "vw.h"
-#include "parser.h"
-#include "config/options_cli.h"
-#include "config/option_builder.h"
-#include "config/option_group_definition.h"
-#include "config/cli_help_formatter.h"
-
 #include <cstdio>
 #include <fstream>
 #include <iostream>
 #include <string>
+
+#include "config/cli_help_formatter.h"
+#include "config/option_builder.h"
+#include "config/option_group_definition.h"
+#include "config/options_cli.h"
+#include "crossplat_compat.h"
+#include "parser.h"
+#include "vw.h"
 
 int main(int argc, char* argv[])
 {
@@ -30,7 +31,8 @@ int main(int argc, char* argv[])
 
   opts.add_and_parse(desc);
   // Return value is ignored as option reachability is not relevant here.
-  opts.check_unregistered();
+  auto warnings = opts.check_unregistered();
+  _UNUSED(warnings);
 
   if (help || infile.empty() || vwparams.empty())
   {

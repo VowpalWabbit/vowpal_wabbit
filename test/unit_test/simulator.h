@@ -25,7 +25,7 @@ namespace simulator
 class cb_sim;
 // maps an int: # learned examples
 // with a function to 'test' at that point in time in the simulator
-using callback_map = typename std::map<size_t, std::function<bool(cb_sim&, VW::workspace&, multi_ex&)>>;
+using callback_map = typename std::map<size_t, std::function<bool(cb_sim&, VW::workspace&, VW::multi_ex&)>>;
 
 class cb_sim
 {
@@ -56,7 +56,7 @@ public:
       VW::workspace*, size_t, callback_map&, bool = true, size_t = 1, bool = false, uint64_t = 0);
 
 private:
-  void call_if_exists(VW::workspace&, multi_ex&, const callback_map&, const size_t);
+  void call_if_exists(VW::workspace&, VW::multi_ex&, const callback_map&, const size_t);
 };
 
 std::vector<float> _test_helper(const std::string&, size_t = 3000, int = 10);

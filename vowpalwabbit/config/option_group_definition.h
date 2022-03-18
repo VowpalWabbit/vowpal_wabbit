@@ -4,9 +4,9 @@
 
 #pragma once
 
+#include <memory>
 #include <string>
 #include <unordered_set>
-#include <utility>
 #include <vector>
 
 #include "config/option.h"

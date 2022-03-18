@@ -11,6 +11,7 @@
 #include "best_constant.h"
 #include "loss_functions.h"
 #include "memory.h"
+#include "named_labels.h"
 #include "parse_primitives.h"
 #include "table_formatter.h"
 #include "text_utils.h"

@@ -2,15 +2,16 @@
 // individual contributors. All rights reserved. Released under a BSD (revised)
 // license as described in the file LICENSE.
 
-#include <boost/test/unit_test.hpp>
-#include <boost/test/test_tools.hpp>
-#include <boost/mpl/vector.hpp>
-
 #include "parse_args.h"
-#include "config/options_cli.h"
 
-#include <vector>
+#include <boost/mpl/vector.hpp>
+#include <boost/test/test_tools.hpp>
+#include <boost/test/unit_test.hpp>
 #include <string>
+#include <vector>
+
+#include "config/options_cli.h"
+#include "memory.h"
 
 using namespace VW::config;
 

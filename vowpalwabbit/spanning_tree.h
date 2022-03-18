@@ -5,7 +5,10 @@
 #pragma once
 
 #ifdef _WIN32
-#  define NOMINMAX
+#  ifndef NOMINMAX
+#    define NOMINMAX
+#  endif
+
 #  include <WS2tcpip.h>
 #  include <WinSock2.h>
 #  include <Windows.h>

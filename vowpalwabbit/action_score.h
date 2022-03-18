@@ -5,11 +5,11 @@
 #pragma once
 
 #include <iterator>
+#include <string>
 
 #include "constant.h"
-#include "io/io_adapter.h"
-#include "io/logger.h"
 #include "v_array.h"
+#include "vw_fwd.h"
 
 namespace ACTION_SCORE
 {

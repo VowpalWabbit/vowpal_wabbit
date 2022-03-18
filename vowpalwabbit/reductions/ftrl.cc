@@ -6,9 +6,14 @@
 #include <string>
 
 #include "correctedMath.h"
+#include "crossplat_compat.h"
 #include "gd.h"
 #include "io/logger.h"
 #include "label_parser.h"
+#include "learner.h"
+#include "loss_functions.h"
+#include "parse_regressor.h"
+#include "parser.h"
 #include "shared_data.h"
 
 using namespace VW::LEARNER;

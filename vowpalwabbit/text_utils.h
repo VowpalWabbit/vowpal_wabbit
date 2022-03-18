@@ -7,7 +7,7 @@
 #include <string>
 
 #include "future_compat.h"
-#include "io/logger.h"
+#include "vw_fwd.h"
 #include "vw_string_view.h"
 
 VW_WARNING_STATE_PUSH

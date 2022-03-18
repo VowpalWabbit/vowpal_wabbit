@@ -40,7 +40,7 @@ class TestVW:
         assert ex.get_tag() == "baz"
 
     def test_num_weights(self):
-        assert self.model.num_weights() == 2 ** BIT_SIZE
+        assert self.model.num_weights() == 2**BIT_SIZE
 
     def test_get_weight(self):
         assert self.model.get_weight(0, 0) == 0
@@ -168,7 +168,9 @@ def test_CBContinuousLabel():
     model = Workspace(
         cats=4, min_value=185, max_value=23959, bandwidth=3000, quiet=True
     )
-    cb_contl = vowpalwabbit.CBContinuousLabel.from_example(model.example("ca 1:10:0.5 |"))
+    cb_contl = vowpalwabbit.CBContinuousLabel.from_example(
+        model.example("ca 1:10:0.5 |")
+    )
     assert cb_contl.costs[0].action == 1
     assert cb_contl.costs[0].pdf_value == 0.5
     assert cb_contl.costs[0].cost == 10.0
@@ -189,7 +191,9 @@ def test_CostSensitiveLabel():
 
 def test_MulticlassProbabilitiesLabel():
     n = 4
-    model = vowpalwabbit.Workspace(loss_function="logistic", oaa=n, probabilities=True, quiet=True)
+    model = vowpalwabbit.Workspace(
+        loss_function="logistic", oaa=n, probabilities=True, quiet=True
+    )
     ex = model.example("1 | a b c d", 2)
     model.learn(ex)
     mpl = vowpalwabbit.MulticlassProbabilitiesLabel.from_example(ex)
@@ -209,7 +213,9 @@ def test_ccb_label():
     ccb_slot_label = vowpalwabbit.CCBLabel.from_example(
         model.example("ccb slot 0:0.8:1.0 0 | slot_0")
     )
-    ccb_slot_pred_label = vowpalwabbit.CCBLabel.from_example(model.example("ccb slot |"))
+    ccb_slot_pred_label = vowpalwabbit.CCBLabel.from_example(
+        model.example("ccb slot |")
+    )
     assert ccb_shared_label.type == vowpalwabbit.CCBLabelType.SHARED
     assert len(ccb_shared_label.explicit_included_actions) == 0
     assert ccb_shared_label.outcome is None
@@ -263,6 +269,7 @@ def test_slates_label():
     assert str(slates_slot_label) == "slates slot 1:0.8,0:0.1,2:0.1"
     del model
 
+
 def test_multilabel_label():
     model = Workspace(multilabel_oaa=5, quiet=True)
     multil = vowpalwabbit.MultilabelLabel.from_example(model.example("1,2,3 |"))
@@ -271,6 +278,7 @@ def test_multilabel_label():
     assert multil.labels[1] == 2
     assert multil.labels[2] == 3
     assert str(multil) == "1,2,3"
+
 
 def test_regressor_args():
     # load and parse external data file
@@ -298,6 +306,7 @@ def test_regressor_args():
     os.remove("{}.cache".format(data_file))
     os.remove("tmp.model")
 
+
 def test_command_line_with_space_and_escape_kwargs():
     # load and parse external data file
     test_file_dir = Path(__file__).resolve().parent
@@ -311,12 +320,20 @@ def test_command_line_with_space_and_escape_kwargs():
     assert model_file.is_file()
     model_file.unlink()
 
+
 def test_command_line_using_arg_list():
     # load and parse external data file
     test_file_dir = Path(__file__).resolve().parent
     data_file = test_file_dir / "resources" / "train file.dat"
 
-    args = ["--oaa", "3", "--data", str(data_file), "--final_regressor", "test model2.vw"]
+    args = [
+        "--oaa",
+        "3",
+        "--data",
+        str(data_file),
+        "--final_regressor",
+        "test model2.vw",
+    ]
     model = Workspace(arg_list=args)
     assert model.predict("| feature1:2.5") == 1
     del model
@@ -325,10 +342,12 @@ def test_command_line_using_arg_list():
     assert model_file.is_file()
     model_file.unlink()
 
+
 def test_command_line_with_double_space_in_str():
     # Test regression for double space in string breaking splitting
     model = Workspace(arg_list="--oaa 3 -q ::    ")
     del model
+
 
 def test_keys_with_list_of_values():
     # No exception in creating and executing model with a key/list pair

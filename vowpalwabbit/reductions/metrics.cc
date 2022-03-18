@@ -2,6 +2,7 @@
 // individual contributors. All rights reserved. Released under a BSD (revised)
 // license as described in the file LICENSE.
 
+#include "crossplat_compat.h"
 #include "debug_log.h"
 #include "learner.h"
 #ifdef BUILD_EXTERNAL_PARSER
@@ -15,6 +16,7 @@
 #include "config/options.h"
 #include "global_data.h"
 #include "io/logger.h"
+#include "parser.h"
 #include "scope_exit.h"
 
 using namespace VW::config;

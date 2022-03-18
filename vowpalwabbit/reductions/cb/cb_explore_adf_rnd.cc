@@ -10,6 +10,7 @@
 
 #include "cb_adf.h"
 #include "cb_explore.h"
+#include "config/options.h"
 #include "debug_print.h"
 #include "explore.h"
 #include "gd_predict.h"
