@@ -14,9 +14,9 @@
 #  include <unordered_map>
 #endif
 
-#include <cassert>
-
 #include "memory.h"
+
+#include <cassert>
 
 using weight = float;
 

@@ -4,13 +4,13 @@
 
 #include "config/cli_help_formatter.h"
 
+#include "config/options.h"
+#include "text_utils.h"
+
 #include <fmt/format.h>
 
 #include <sstream>
 #include <string>
-
-#include "config/options.h"
-#include "text_utils.h"
 
 using namespace VW::config;
 

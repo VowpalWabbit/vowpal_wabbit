@@ -1,9 +1,9 @@
 #pragma once
 
-#include <string>
-
 #include "setup_base.h"
 #include "vw_fwd.h"
+
+#include <string>
 
 namespace VW
 {

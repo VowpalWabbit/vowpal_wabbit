@@ -4,13 +4,13 @@
 
 #pragma once
 
-#include <cstdint>
-#include <string>
-#include <vector>
-
 #include "action_score.h"
 #include "example_predict.h"
 #include "reductions_fwd.h"
+
+#include <cstdint>
+#include <string>
+#include <vector>
 
 namespace CCB
 {

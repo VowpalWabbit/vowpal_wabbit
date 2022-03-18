@@ -4,9 +4,6 @@
 
 #include "cb_continuous_label.h"
 
-#include <cfloat>
-#include <iomanip>
-
 #include "cb_label_parser.h"
 #include "debug_print.h"
 #include "example.h"
@@ -16,6 +13,9 @@
 #include "text_utils.h"
 #include "vw.h"
 #include "vw_exception.h"
+
+#include <cfloat>
+#include <iomanip>
 
 using namespace LEARNER;
 

@@ -2,11 +2,6 @@
 // individual contributors. All rights reserved. Released under a BSD (revised)
 // license as described in the file LICENSE.
 
-#include <algorithm>
-#include <cmath>
-#include <numeric>
-#include <unordered_set>
-
 #include "cache.h"
 #include "constant.h"
 #include "example.h"
@@ -24,6 +19,11 @@
 #include "vw.h"
 #include "vw_math.h"
 #include "vw_string_view.h"
+
+#include <algorithm>
+#include <cmath>
+#include <numeric>
+#include <unordered_set>
 
 using namespace VW::LEARNER;
 using namespace VW;

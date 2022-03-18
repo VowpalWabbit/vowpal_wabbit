@@ -1,9 +1,9 @@
 #pragma once
 
+#include "vw_exception.h"
+
 #include <limits>
 #include <sstream>
-
-#include "vw_exception.h"
 
 namespace VW
 {

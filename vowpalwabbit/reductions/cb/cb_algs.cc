@@ -4,8 +4,6 @@
 
 #include "cb_algs.h"
 
-#include <cfloat>
-
 #include "cb_label_parser.h"
 #include "config/options.h"
 #include "gen_cs_example.h"
@@ -13,6 +11,8 @@
 #include "shared_data.h"
 #include "vw.h"
 #include "vw_exception.h"
+
+#include <cfloat>
 
 using namespace VW::LEARNER;
 using namespace VW::config;

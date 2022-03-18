@@ -4,10 +4,10 @@
 
 #pragma once
 
-#include <vector>
-
 #include "constant.h"
 #include "v_array.h"
+
+#include <vector>
 
 namespace ACTION_SCORE
 {

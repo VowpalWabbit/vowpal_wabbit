@@ -3,10 +3,10 @@
 // license as described in the file LICENSE.
 #include "unique_sort.h"
 
-#include <algorithm>
-
 #include "example.h"
 #include "feature_group.h"
+
+#include <algorithm>
 
 /**
  * \brief Remove all non unique features from a feature group.

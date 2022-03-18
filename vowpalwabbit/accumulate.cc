@@ -7,13 +7,13 @@ This implements the allreduce function of MPI.  Code primarily by
 Alekh Agarwal and John Langford, with help Olivier Chapelle.
 */
 
-#include <cmath>
-#include <cstdint>
-#include <iostream>
-
 #include "crossplat_compat.h"
 #include "global_data.h"
 #include "vw_allreduce.h"
+
+#include <cmath>
+#include <cstdint>
+#include <iostream>
 
 void add_float(float& c1, const float& c2) { c1 += c2; }
 

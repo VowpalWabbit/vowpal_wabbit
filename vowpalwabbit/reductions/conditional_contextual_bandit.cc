@@ -4,11 +4,6 @@
 
 #include "conditional_contextual_bandit.h"
 
-#include <algorithm>
-#include <bitset>
-#include <numeric>
-#include <unordered_set>
-
 #include "config/options.h"
 #include "constant.h"
 #include "debug_log.h"
@@ -26,6 +21,11 @@
 #include "version.h"
 #include "vw.h"
 #include "vw_versions.h"
+
+#include <algorithm>
+#include <bitset>
+#include <numeric>
+#include <unordered_set>
 
 #undef VW_DEBUG_LOG
 #define VW_DEBUG_LOG vw_dbg::ccb

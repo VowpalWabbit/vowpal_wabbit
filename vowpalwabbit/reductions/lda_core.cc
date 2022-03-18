@@ -13,16 +13,6 @@ VW_WARNING_DISABLE_UNUSED_PARAM
 #include <boost/math/special_functions/gamma.hpp>
 VW_WARNING_STATE_POP
 
-#include <algorithm>
-#include <cassert>
-#include <cmath>
-#include <cstdio>
-#include <cstring>
-#include <fstream>
-#include <numeric>
-#include <queue>
-#include <vector>
-
 #include "array_parameters.h"
 #include "correctedMath.h"
 #include "gd.h"
@@ -36,6 +26,16 @@ VW_WARNING_STATE_POP
 #include "vw.h"
 #include "vw_exception.h"
 #include "vw_versions.h"
+
+#include <algorithm>
+#include <cassert>
+#include <cmath>
+#include <cstdio>
+#include <cstring>
+#include <fstream>
+#include <numeric>
+#include <queue>
+#include <vector>
 
 using namespace VW::config;
 using namespace VW::LEARNER;

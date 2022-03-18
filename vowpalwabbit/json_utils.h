@@ -1,13 +1,13 @@
 #pragma once
 
-#include <cstdint>
-#include <string>
-#include <vector>
-
 #include "feature_group.h"
 #include "global_data.h"
 #include "hash.h"
 #include "vw.h"
+
+#include <cstdint>
+#include <string>
+#include <vector>
 
 // Decision Service JSON header information - required to construct final label
 struct DecisionServiceInteraction

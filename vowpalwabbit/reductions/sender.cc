@@ -2,10 +2,10 @@
 // individual contributors. All rights reserved. Released under a BSD (revised)
 // license as described in the file LICENSE.
 
-#include <vector>
-
 #include "learner.h"
 #include "reductions_fwd.h"
+
+#include <vector>
 #ifdef _WIN32
 #  define NOMINMAX
 #  include <WinSock2.h>

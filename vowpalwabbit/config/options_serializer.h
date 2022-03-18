@@ -4,10 +4,10 @@
 
 #pragma once
 
-#include <string>
-
 #include "config/option.h"
 #include "future_compat.h"
+
+#include <string>
 
 namespace VW
 {
