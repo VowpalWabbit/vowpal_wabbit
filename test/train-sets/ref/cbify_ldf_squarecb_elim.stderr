@@ -5,13 +5,14 @@ Num weight bits = 18
 learning rate = 0.5
 initial_t = 0
 power_t = 0.5
+cb_type = mtr
 Enabled reductions: gd, scorer-identity, csoaa_ldf-rank, cb_adf, cb_explore_adf_squarecb, shared_feature_merger, cbify_ldf
 Input label = cs
 Output pred = multiclass
-average  since         example        example        current        current  current 
-loss     last          counter         weight          label        predict features 
-0.000000 0.000000            1            1.0          known              0       12 
-0.000000 0.000000            2            2.0          known              0        8 
+average  since         example        example        current        current  current
+loss     last          counter         weight          label        predict features
+0.000000 0.000000            1            1.0          known              0       12
+0.000000 0.000000            2            2.0          known              0        8
 
 finished run
 number of examples = 3
