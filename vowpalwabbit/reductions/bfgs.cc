@@ -6,7 +6,10 @@
 The algorithm here is generally based on Nocedal 1980, Liu and Nocedal 1989.
 Implementation by Miro Dudik.
  */
+#include "reductions/bfgs.h"
+
 #include "learner.h"
+#include "setup_base.h"
 
 #include <float.h>
 
@@ -1072,7 +1075,7 @@ void save_load(bfgs& b, io_buf& model_file, bool read, bool text)
 
 void init_driver(bfgs& b) { b.backstep_on = true; }
 
-base_learner* bfgs_setup(VW::setup_base_i& stack_builder)
+base_learner* VW::reductions::bfgs_setup(VW::setup_base_i& stack_builder)
 {
   options_i& options = *stack_builder.get_options();
   VW::workspace& all = *stack_builder.get_all_pointer();

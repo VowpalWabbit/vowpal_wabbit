@@ -8,11 +8,14 @@
  *    ICML-2015.
  */
 
+#include "reductions/boosting.h"
+
 #include "config/options.h"
 #include "correctedMath.h"
 #include "io/logger.h"
 #include "rand48.h"
 #include "rand_state.h"
+#include "setup_base.h"
 #include "shared_data.h"
 #include "vw.h"
 #include "vw_math.h"
@@ -31,6 +34,7 @@
 
 using namespace VW::LEARNER;
 using namespace VW::config;
+using namespace VW::reductions;
 
 using std::endl;
 
@@ -356,7 +360,7 @@ void save_load(boosting& o, io_buf& model_file, bool read, bool text)
 
 void save_load_boosting_noop(boosting&, io_buf&, bool, bool) {}
 
-VW::LEARNER::base_learner* boosting_setup(VW::setup_base_i& stack_builder)
+VW::LEARNER::base_learner* VW::reductions::boosting_setup(VW::setup_base_i& stack_builder)
 {
   options_i& options = *stack_builder.get_options();
   VW::workspace& all = *stack_builder.get_all_pointer();

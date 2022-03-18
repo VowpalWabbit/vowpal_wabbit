@@ -8,6 +8,7 @@
 #include "parser.h"
 #include "rand48.h"
 #include "rand_state.h"
+#include "setup_base.h"
 #include "vw_math.h"
 
 #include <float.h>

@@ -10,7 +10,7 @@
 
 #include "config/options.h"
 #include "reduction_stack.h"
-#include "reductions_fwd.h"
+#include "vw_fwd.h"
 #include "vw.h"
 
 // this file would live in toy_reduction.cc

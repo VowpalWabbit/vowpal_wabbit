@@ -30,8 +30,8 @@ float get_cost_pred(
   else
     simple_temp.label = FLT_MAX;
 
-  const bool baseline_enabled_old = BASELINE::baseline_enabled(&ec);
-  BASELINE::set_baseline_enabled(&ec);
+  const bool baseline_enabled_old = VW::reductions::baseline::baseline_enabled(&ec);
+  VW::reductions::baseline::set_baseline_enabled(&ec);
   ec.l.simple = simple_temp;
   bool learn = is_learn && index == known_cost.action;
 
@@ -45,7 +45,7 @@ float get_cost_pred(
   else
     scorer->predict(ec, index - 1 + base);
 
-  if (!baseline_enabled_old) BASELINE::reset_baseline_disabled(&ec);
+  if (!baseline_enabled_old) VW::reductions::baseline::reset_baseline_disabled(&ec);
   float pred = ec.pred.scalar;
   return pred;
 }

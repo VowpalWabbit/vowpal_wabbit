@@ -12,6 +12,7 @@
 #include "global_data.h"
 #include "guard.h"
 #include "rand_state.h"
+#include "setup_base.h"
 
 // Aliases
 using std::endl;

@@ -11,6 +11,7 @@
 #include "example.h"
 #include "learner.h"
 #include "model_utils.h"
+#include "setup_base.h"
 #include "vw.h"
 
 #include <algorithm>
@@ -21,6 +22,7 @@
 using namespace VW;
 using namespace VW::config;
 using namespace VW::LEARNER;
+using namespace VW::reductions;
 
 namespace VW
 {
@@ -187,7 +189,7 @@ void persist_metrics(baseline_challenger_data& data, metric_sink& metrics)
   metrics.set_bool("baseline_cb_baseline_in_use", ci > exp);
 }
 
-VW::LEARNER::base_learner* baseline_challenger_cb_setup(VW::setup_base_i& stack_builder)
+VW::LEARNER::base_learner* VW::reductions::baseline_challenger_cb_setup(VW::setup_base_i& stack_builder)
 {
   options_i& options = *stack_builder.get_options();
   float alpha;

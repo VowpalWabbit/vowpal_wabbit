@@ -8,6 +8,7 @@
 #include "rand_state.h"
 #include "reductions/cb/cb_adf.h"
 #include "reductions/cb/cb_algs.h"
+#include "setup_base.h"
 #include "shared_data.h"
 #include "vw.h"
 

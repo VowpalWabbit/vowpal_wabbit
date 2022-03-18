@@ -6,49 +6,49 @@
 
 #include "config/options.h"
 #include "loss_functions.h"
+#include "setup_base.h"
 #include "shared_data.h"
 #include "vw.h"
 
 using namespace VW::LEARNER;
 using namespace VW::config;
+using namespace VW::reductions;
 
 namespace
 {
 constexpr float max_multiplier = 1000.f;
 }  // namespace
 
-namespace BASELINE
-{
-void set_baseline_enabled(VW::example* ec)
+
+void VW::reductions::baseline::set_baseline_enabled(VW::example* ec)
 {
   if (!baseline_enabled(ec)) { ec->indices.push_back(baseline_enabled_message_namespace); }
 }
 
-void reset_baseline_disabled(VW::example* ec)
+void VW::reductions::baseline::reset_baseline_disabled(VW::example* ec)
 {
   const auto it = std::find(ec->indices.begin(), ec->indices.end(), baseline_enabled_message_namespace);
   if (it != ec->indices.end()) { ec->indices.erase(it); }
 }
 
-bool baseline_enabled(const VW::example* ec)
+bool VW::reductions::baseline::baseline_enabled(const VW::example* ec)
 {
   const auto it = std::find(ec->indices.begin(), ec->indices.end(), baseline_enabled_message_namespace);
   return it != ec->indices.end();
 }
-}  // namespace BASELINE
 
-struct baseline
+struct baseline_data
 {
   VW::example ec;
   VW::workspace* all = nullptr;
-  bool lr_scaling = false;  // whether to scale baseline learning rate based on max label
+  bool lr_scaling = false;  // whether to scale baseline_data learning rate based on max label
   float lr_multiplier = 1.f;
   bool global_only = false;  // only use a global constant for the baseline
   bool global_initialized = false;
   bool check_enabled = false;  // only use baseline when the example contains enabled flag
 };
 
-void init_global(baseline& data)
+void init_global(baseline_data& data)
 {
   if (!data.global_only) return;
   // use a separate global constant
@@ -61,10 +61,10 @@ void init_global(baseline& data)
 }
 
 template <bool is_learn>
-void predict_or_learn(baseline& data, single_learner& base, VW::example& ec)
+void predict_or_learn(baseline_data& data, single_learner& base, VW::example& ec)
 {
   // no baseline if check_enabled is true and example contains flag
-  if (data.check_enabled && !BASELINE::baseline_enabled(&ec))
+  if (data.check_enabled && !VW::reductions::baseline::baseline_enabled(&ec))
   {
     if (is_learn)
       base.learn(ec);
@@ -135,10 +135,10 @@ void predict_or_learn(baseline& data, single_learner& base, VW::example& ec)
   }
 }
 
-float sensitivity(baseline& data, base_learner& base, VW::example& ec)
+float sensitivity(baseline_data& data, base_learner& base, VW::example& ec)
 {
   // no baseline if check_enabled is true and example contains flag
-  if (data.check_enabled && !BASELINE::baseline_enabled(&ec)) return base.sensitivity(ec);
+  if (data.check_enabled && !VW::reductions::baseline::baseline_enabled(&ec)) return base.sensitivity(ec);
 
   if (!data.global_only) { THROW("sensitivity for baseline without --global_only not implemented") }
 
@@ -156,11 +156,11 @@ float sensitivity(baseline& data, base_learner& base, VW::example& ec)
   return baseline_sens + sens;
 }
 
-base_learner* baseline_setup(VW::setup_base_i& stack_builder)
+base_learner* VW::reductions::baseline_setup(VW::setup_base_i& stack_builder)
 {
   options_i& options = *stack_builder.get_options();
   VW::workspace& all = *stack_builder.get_all_pointer();
-  auto data = VW::make_unique<baseline>();
+  auto data = VW::make_unique<baseline_data>();
   bool baseline_option = false;
   std::string loss_function;
 
@@ -192,7 +192,7 @@ base_learner* baseline_setup(VW::setup_base_i& stack_builder)
 
   auto base = as_singleline(stack_builder.setup_base_learner());
   auto* l = VW::LEARNER::make_reduction_learner(std::move(data), base, predict_or_learn<true>, predict_or_learn<false>,
-      stack_builder.get_setupfn_name(baseline_setup))
+      stack_builder.get_setupfn_name(VW::reductions::baseline_setup))
                 .set_output_prediction_type(VW::prediction_type_t::scalar)
                 .set_input_label_type(VW::label_type_t::simple)
                 .set_sensitivity(sensitivity)

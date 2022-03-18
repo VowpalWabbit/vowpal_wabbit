@@ -2,10 +2,13 @@
 // individual contributors. All rights reserved. Released under a BSD (revised)
 // license as described in the file LICENSE.
 
+#include "reductions/active_cover.h"
+
 #include "config/options.h"
 #include "numeric_casts.h"
 #include "rand48.h"
 #include "rand_state.h"
+#include "setup_base.h"
 #include "shared_data.h"
 #include "vw.h"
 #include "vw_math.h"
@@ -208,7 +211,7 @@ void predict_or_learn_active_cover(active_cover& a, single_learner& base, VW::ex
   }
 }
 
-base_learner* active_cover_setup(VW::setup_base_i& stack_builder)
+base_learner* VW::reductions::active_cover_setup(VW::setup_base_i& stack_builder)
 {
   options_i& options = *stack_builder.get_options();
   VW::workspace& all = *stack_builder.get_all_pointer();

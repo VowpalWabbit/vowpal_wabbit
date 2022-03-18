@@ -9,7 +9,7 @@
 // it adds a noop reduction on top
 
 #include "vw.h"
-#include "reductions_fwd.h"
+#include "vw_fwd.h"
 #include "reduction_stack.h"
 
 // this file would live in minimal_reduction.cc

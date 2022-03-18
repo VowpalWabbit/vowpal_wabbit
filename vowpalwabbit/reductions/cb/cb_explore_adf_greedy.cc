@@ -11,6 +11,7 @@
 #include "gen_cs_example.h"
 #include "label_parser.h"
 #include "rand48.h"
+#include "setup_base.h"
 
 #include <algorithm>
 #include <cmath>

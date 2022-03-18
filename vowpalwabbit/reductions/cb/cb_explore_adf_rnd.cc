@@ -15,6 +15,7 @@
 #include "rand48.h"
 #include "reductions/bs.h"
 #include "scope_exit.h"
+#include "setup_base.h"
 
 #include <algorithm>
 #include <cfloat>

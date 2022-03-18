@@ -36,6 +36,7 @@ struct setup_base_i;
 struct kskip_ngram_transformer;
 struct rand_state;
 class named_labels;
+struct setup_base_i;
 
 namespace LEARNER
 {

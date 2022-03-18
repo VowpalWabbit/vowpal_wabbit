@@ -19,6 +19,7 @@
 #include "search_meta.h"
 #include "search_multiclasstask.h"
 #include "search_sequencetask.h"
+#include "setup_base.h"
 #include "shared_data.h"
 #include "vw.h"
 #include "vw_exception.h"

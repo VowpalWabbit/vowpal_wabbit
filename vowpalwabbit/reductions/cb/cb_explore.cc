@@ -13,6 +13,7 @@
 #include "rand48.h"
 #include "reductions/bs.h"
 #include "scope_exit.h"
+#include "setup_base.h"
 #include "shared_data.h"
 #include "version.h"
 #include "vw_versions.h"
@@ -127,7 +128,7 @@ void predict_or_learn_bag(cb_explore& data, single_learner& base, VW::example& e
   float prob = 1.f / static_cast<float>(data.bag_size);
   for (size_t i = 0; i < data.bag_size; i++)
   {
-    uint32_t count = BS::weight_gen(data._random_state);
+    uint32_t count = VW::reductions::bs::weight_gen(data._random_state);
     bool learn = is_learn && count > 0;
     if (learn)
       base.learn(ec, i);
