@@ -1,14 +1,14 @@
 
+#include "reductions/epsilon_decay.h"
+
+#include "metric_sink.h"
+#include "reductions_fwd.h"
+#include "simulator.h"
+#include "test_common.h"
+
+#include <boost/test/test_tools.hpp>
 #include <boost/test/tools/old/interface.hpp>
 #include <boost/test/unit_test.hpp>
-#include <boost/test/test_tools.hpp>
-
-#include "test_common.h"
-#include "simulator.h"
-#include "reductions_fwd.h"
-#include "reductions/epsilon_decay.h"
-#include "metric_sink.h"
-
 #include <functional>
 #include <map>
 #include <utility>

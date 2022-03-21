@@ -3,18 +3,19 @@
 // license as described in the file LICENSE.
 
 #include "epsilon_decay.h"
+
+#include "config/options.h"
 #include "global_data.h"
+#include "label_type.h"
 #include "learner.h"
 #include "memory.h"
-#include "vw.h"
-#include "label_type.h"
-#include "prediction_type.h"
 #include "model_utils.h"
-#include "config/options.h"
+#include "prediction_type.h"
+#include "vw.h"
 
-#include <string>
 #include <algorithm>
 #include <cmath>
+#include <string>
 
 using namespace VW::config;
 using namespace VW::LEARNER;

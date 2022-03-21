@@ -3,10 +3,10 @@
 // license as described in the file LICENSE.
 #pragma once
 
-#include "reductions_fwd.h"
-#include "distributionally_robust.h"
-#include "scored_config.h"
 #include "array_parameters.h"
+#include "distributionally_robust.h"
+#include "reductions_fwd.h"
+#include "scored_config.h"
 
 namespace VW
 {

@@ -10,7 +10,6 @@
 
 // reductions / setup functions
 #include "reductions/active.h"
-#include "reductions/epsilon_decay.h"
 #include "reductions/active_cover.h"
 #include "reductions/audit_regressor.h"
 #include "reductions/autolink.h"
@@ -51,6 +50,7 @@
 #include "reductions/csoaa.h"
 #include "reductions/csoaa_ldf.h"
 #include "reductions/ect.h"
+#include "reductions/epsilon_decay.h"
 #include "reductions/explore_eval.h"
 #include "reductions/expreplay.h"
 #include "reductions/freegrad.h"
