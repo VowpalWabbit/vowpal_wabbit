@@ -10,6 +10,7 @@
 #include "label_type.h"
 #include "prediction_type.h"
 #include "model_utils.h"
+#include "config/options.h"
 
 #include <string>
 #include <algorithm>
