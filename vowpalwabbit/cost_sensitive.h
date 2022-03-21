@@ -3,13 +3,13 @@
 // license as described in the file LICENSE.
 #pragma once
 
-#include <cstdint>
-#include <vector>
-
-#include "io_buf.h"
 #include "label_parser.h"
 #include "v_array.h"
 
+#include <cstdint>
+#include <vector>
+
+class io_buf;
 namespace VW
 {
 struct example;

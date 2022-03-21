@@ -1,18 +1,22 @@
 // Copyright (c) by respective owners including Yahoo!, Microsoft, and
 // individual contributors. All rights reserved. Released under a BSD (revised)
 // license as described in the file LICENSE.
+#include "config/options.h"
+#include "gd.h"
+#include "guard.h"
+#include "io/logger.h"
+#include "loss_functions.h"
+#include "named_labels.h"
+#include "rand48.h"
+#include "rand_state.h"
+#include "shared_data.h"
+#include "vw.h"
+
 #include <cfloat>
 #include <cmath>
 #include <cstdio>
 #include <memory>
 #include <sstream>
-
-#include "gd.h"
-#include "guard.h"
-#include "io/logger.h"
-#include "rand48.h"
-#include "shared_data.h"
-#include "vw.h"
 
 using namespace VW::LEARNER;
 using namespace VW::config;

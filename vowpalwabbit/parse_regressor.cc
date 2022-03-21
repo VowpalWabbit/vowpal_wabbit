@@ -1,14 +1,29 @@
 // Copyright (c) by respective owners including Yahoo!, Microsoft, and
 // individual contributors. All rights reserved. Released under a BSD (revised)
 // license as described in the file LICENSE.
+#include "config/options.h"
+#include "crossplat_compat.h"
+#include "io_buf.h"
+#include "rand_state.h"
+
 #include <fstream>
 #include <iostream>
-
-#include "crossplat_compat.h"
 
 #ifndef _WIN32
 #  include <unistd.h>
 #endif
+
+#include "config/cli_options_serializer.h"
+#include "crossplat_compat.h"
+#include "global_data.h"
+#include "io/logger.h"
+#include "kskip_ngram_transformer.h"
+#include "learner.h"
+#include "rand48.h"
+#include "shared_data.h"
+#include "vw_exception.h"
+#include "vw_validate.h"
+#include "vw_versions.h"
 
 #include <algorithm>
 #include <cmath>
@@ -19,16 +34,6 @@
 #include <iostream>
 #include <numeric>
 #include <utility>
-
-#include "config/cli_options_serializer.h"
-#include "crossplat_compat.h"
-#include "global_data.h"
-#include "io/logger.h"
-#include "rand48.h"
-#include "shared_data.h"
-#include "vw_exception.h"
-#include "vw_validate.h"
-#include "vw_versions.h"
 
 void initialize_weights_as_random_positive(weight* weights, uint64_t index) { weights[0] = 0.1f * merand48(index); }
 void initialize_weights_as_random(weight* weights, uint64_t index) { weights[0] = merand48(index) - 0.5f; }

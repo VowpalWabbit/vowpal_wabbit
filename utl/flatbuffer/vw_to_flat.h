@@ -9,8 +9,8 @@ VW_WARNING_STATE_PUSH
 VW_WARNING_DISABLE_BADLY_FORMED_XML
 #include "parser/flatbuffer/generated/example_generated.h"
 VW_WARNING_STATE_POP
-#include "simple_label.h"
 #include "named_labels.h"
+#include "simple_label.h"
 
 struct ExampleBuilder
 {

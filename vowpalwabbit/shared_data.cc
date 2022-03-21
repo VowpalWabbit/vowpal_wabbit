@@ -3,17 +3,18 @@
 // license as described in the file LICENSE.
 #include "shared_data.h"
 
+#include "best_constant.h"
+#include "loss_functions.h"
+#include "memory.h"
+#include "named_labels.h"
+#include "parse_primitives.h"
+#include "table_formatter.h"
+#include "text_utils.h"
+
 #include <algorithm>
 #include <cfloat>
 #include <climits>
 #include <iomanip>
-
-#include "best_constant.h"
-#include "loss_functions.h"
-#include "memory.h"
-#include "parse_primitives.h"
-#include "table_formatter.h"
-#include "text_utils.h"
 
 shared_data::shared_data(const shared_data& other)
 {

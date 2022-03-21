@@ -3,11 +3,11 @@
 // license as described in the file LICENSE.
 
 #pragma once
-#include <vector>
-
 #include "config/options.h"
 #include "error_reporting.h"
 #include "learner.h"
+
+#include <vector>
 namespace VW
 {
 namespace cats_tree

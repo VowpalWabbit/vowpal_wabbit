@@ -4,13 +4,10 @@
 
 #include "cb_explore_adf_first.h"
 
-#include <algorithm>
-#include <cmath>
-#include <vector>
-
 #include "cb_adf.h"
 #include "cb_explore.h"
 #include "cb_explore_adf_common.h"
+#include "config/options.h"
 #include "explore.h"
 #include "gen_cs_example.h"
 #include "label_parser.h"
@@ -19,6 +16,10 @@
 #include "reductions/bs.h"
 #include "version.h"
 #include "vw_versions.h"
+
+#include <algorithm>
+#include <cmath>
+#include <vector>
 
 using namespace VW::LEARNER;
 

@@ -7,6 +7,7 @@
 #include "parse_dispatch_loop.h"
 #include "parse_regressor.h"
 #include "parser.h"
+#include "reductions/conditional_contextual_bandit.h"
 #include "vw.h"
 
 namespace VW
@@ -304,6 +305,19 @@ void generic_driver_onethread(VW::workspace& all)
 }
 
 float recur_sensitivity(void*, base_learner& base, example& ec) { return base.sensitivity(ec); }
+bool ec_is_example_header(const example& ec, label_type_t label_type)
+{
+  if (label_type == VW::label_type_t::cb) { return CB::ec_is_example_header(ec); }
+  else if (label_type == VW::label_type_t::ccb)
+  {
+    return CCB::ec_is_example_header(ec);
+  }
+  else if (label_type == VW::label_type_t::cs)
+  {
+    return COST_SENSITIVE::ec_is_example_header(ec);
+  }
+  return false;
+}
 
 }  // namespace LEARNER
 }  // namespace VW

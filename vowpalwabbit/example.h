@@ -4,10 +4,6 @@
 
 #pragma once
 
-#include <cstdint>
-#include <iostream>
-#include <vector>
-
 #include "action_score.h"
 #include "active_multiclass_prediction.h"
 #include "cache.h"
@@ -15,7 +11,6 @@
 #include "cb_continuous_label.h"
 #include "ccb_label.h"
 #include "constant.h"
-#include "continuous_actions_reduction_features.h"
 #include "cost_sensitive.h"
 #include "decision_scores.h"
 #include "example_predict.h"
@@ -27,6 +22,9 @@
 #include "simple_label.h"
 #include "slates_label.h"
 #include "v_array.h"
+
+#include <cstdint>
+#include <vector>
 
 namespace VW
 {

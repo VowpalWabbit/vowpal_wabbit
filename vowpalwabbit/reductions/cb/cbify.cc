@@ -4,11 +4,9 @@
 
 #include "cbify.h"
 
-#include <cfloat>
-#include <vector>
-
 #include "cb_algs.h"
 #include "cb_label_parser.h"
+#include "config/options.h"
 #include "debug_log.h"
 #include "explore.h"
 #include "hash.h"
@@ -16,6 +14,9 @@
 #include "shared_data.h"
 #include "simple_label_parser.h"
 #include "vw.h"
+
+#include <cfloat>
+#include <vector>
 
 using namespace VW::LEARNER;
 using namespace exploration;

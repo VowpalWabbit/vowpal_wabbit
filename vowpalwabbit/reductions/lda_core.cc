@@ -2,6 +2,7 @@
 // individual contributors. All rights reserved. Released under a BSD (revised)
 // license as described in the file LICENSE.
 
+#include "crossplat_compat.h"
 #include "future_compat.h"
 
 VW_WARNING_DISABLE_DEPRECATED_USAGE
@@ -12,6 +13,20 @@ VW_WARNING_DISABLE_UNUSED_PARAM
 #include <boost/math/special_functions/gamma.hpp>
 VW_WARNING_STATE_POP
 
+#include "array_parameters.h"
+#include "correctedMath.h"
+#include "gd.h"
+#include "io/logger.h"
+#include "mwt.h"
+#include "no_label.h"
+#include "numeric_casts.h"
+#include "parse_regressor.h"
+#include "rand48.h"
+#include "shared_data.h"
+#include "vw.h"
+#include "vw_exception.h"
+#include "vw_versions.h"
+
 #include <algorithm>
 #include <cassert>
 #include <cmath>
@@ -21,19 +36,6 @@ VW_WARNING_STATE_POP
 #include <numeric>
 #include <queue>
 #include <vector>
-
-#include "array_parameters.h"
-#include "correctedMath.h"
-#include "gd.h"
-#include "io/logger.h"
-#include "mwt.h"
-#include "no_label.h"
-#include "numeric_casts.h"
-#include "rand48.h"
-#include "shared_data.h"
-#include "vw.h"
-#include "vw_exception.h"
-#include "vw_versions.h"
 
 using namespace VW::config;
 using namespace VW::LEARNER;

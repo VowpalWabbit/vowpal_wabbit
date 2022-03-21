@@ -4,10 +4,6 @@
 
 #include "cats_tree.h"
 
-#include <algorithm>
-#include <cassert>
-#include <limits>
-
 #include "debug_log.h"
 #include "explore_internal.h"
 #include "global_data.h"
@@ -15,6 +11,11 @@
 #include "hash.h"
 #include "label_parser.h"
 #include "learner.h"
+#include "parser.h"
+
+#include <algorithm>
+#include <cassert>
+#include <limits>
 
 using namespace VW::config;
 using namespace VW::LEARNER;

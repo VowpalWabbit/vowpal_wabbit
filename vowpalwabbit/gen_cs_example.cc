@@ -4,11 +4,11 @@
 
 #include "gen_cs_example.h"
 
-#include <cfloat>
-
 #include "io/logger.h"
 #include "vw.h"
 #include "vw_exception.h"
+
+#include <cfloat>
 
 namespace GEN_CS
 {

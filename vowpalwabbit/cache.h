@@ -4,22 +4,9 @@
 
 #pragma once
 
-#include "feature_group.h"
-#include "io/logger.h"
-#include "io_buf.h"
-#include "label_parser.h"
-#include "v_array.h"
+#include "vw_fwd.h"
 
-namespace VW
-{
-struct workspace;
-struct example;
-namespace details
-{
-struct cache_temp_buffer;
-
-}
-}  // namespace VW
+#include <cstdint>
 
 char* run_len_decode(char* p, size_t& i);
 char* run_len_encode(char* p, size_t i);

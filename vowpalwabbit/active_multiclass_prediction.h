@@ -3,12 +3,12 @@
 // license as described in the file LICENSE.
 #pragma once
 
+#include "constant.h"
+#include "vw_fwd.h"
+
 #include <cstdint>
 #include <sstream>
 #include <string>
-
-#include "constant.h"
-#include "v_array.h"
 
 namespace VW
 {

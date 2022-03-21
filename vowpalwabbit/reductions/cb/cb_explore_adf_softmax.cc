@@ -4,16 +4,17 @@
 
 #include "cb_explore_adf_softmax.h"
 
-#include <algorithm>
-#include <cmath>
-#include <vector>
-
 #include "cb_adf.h"
 #include "cb_explore.h"
+#include "config/options.h"
 #include "explore.h"
 #include "gen_cs_example.h"
 #include "label_parser.h"
 #include "rand48.h"
+
+#include <algorithm>
+#include <cmath>
+#include <vector>
 
 namespace VW
 {

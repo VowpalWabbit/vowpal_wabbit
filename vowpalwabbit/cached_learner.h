@@ -1,7 +1,9 @@
 #pragma once
 
-#include "config/options.h"  // to get options_i
-#include "global_data.h"     // to get vw struct
+#include "setup_base.h"
+#include "vw_fwd.h"
+
+#include <string>
 
 namespace VW
 {

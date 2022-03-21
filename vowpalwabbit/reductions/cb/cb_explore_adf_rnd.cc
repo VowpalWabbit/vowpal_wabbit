@@ -4,12 +4,9 @@
 
 #include "cb_explore_adf_rnd.h"
 
-#include <algorithm>
-#include <cfloat>
-#include <cmath>
-
 #include "cb_adf.h"
 #include "cb_explore.h"
+#include "config/options.h"
 #include "debug_print.h"
 #include "explore.h"
 #include "gd_predict.h"
@@ -18,6 +15,10 @@
 #include "rand48.h"
 #include "reductions/bs.h"
 #include "scope_exit.h"
+
+#include <algorithm>
+#include <cfloat>
+#include <cmath>
 
 // Random Network Distillation style exploration.  Basically predicts
 // something whose true expectation is zero and uses the MSE(prediction

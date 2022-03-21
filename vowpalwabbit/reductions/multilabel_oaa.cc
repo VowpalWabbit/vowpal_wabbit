@@ -1,13 +1,16 @@
 // Copyright (c) by respective owners including Yahoo!, Microsoft, and
 // individual contributors. All rights reserved. Released under a BSD (revised)
 // license as described in the file LICENSE.
-#include <cfloat>
-#include <sstream>
-
+#include "config/options.h"
 #include "io/logger.h"
+#include "loss_functions.h"
+#include "named_labels.h"
 #include "numeric_casts.h"
 #include "shared_data.h"
 #include "vw.h"
+
+#include <cfloat>
+#include <sstream>
 
 using namespace VW::config;
 

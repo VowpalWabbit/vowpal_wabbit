@@ -4,9 +4,9 @@
 
 #pragma once
 
-#include <cfloat>
-
 #include "shared_data.h"
+
+#include <cfloat>
 class loss_function;
 
 namespace VW

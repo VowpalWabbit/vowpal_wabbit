@@ -1,6 +1,24 @@
 // Copyright (c) by respective owners including Yahoo!, Microsoft, and
 // individual contributors. All rights reserved. Released under a BSD (revised)
 // license as described in the file LICENSE.
+#include "accumulate.h"
+#include "cache.h"
+#include "config/options.h"
+#include "constant.h"
+#include "example.h"
+#include "gd.h"
+#include "io/logger.h"
+#include "learner.h"
+#include "loss_functions.h"
+#include "memory.h"
+#include "model_utils.h"
+#include "numeric_casts.h"
+#include "parse_example.h"
+#include "rand48.h"
+#include "rand_state.h"
+#include "vw.h"
+#include "vw_allreduce.h"
+
 #include <cassert>
 #include <cfloat>
 #include <cmath>
@@ -10,21 +28,6 @@
 #include <map>
 #include <memory>
 #include <sstream>
-
-#include "accumulate.h"
-#include "cache.h"
-#include "constant.h"
-#include "example.h"
-#include "gd.h"
-#include "io/logger.h"
-#include "learner.h"
-#include "memory.h"
-#include "model_utils.h"
-#include "numeric_casts.h"
-#include "parse_example.h"
-#include "rand48.h"
-#include "vw.h"
-#include "vw_allreduce.h"
 
 #define SVM_KER_LIN 0
 #define SVM_KER_RBF 1

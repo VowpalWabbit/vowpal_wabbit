@@ -4,11 +4,12 @@
 
 #pragma once
 
-#include <set>
-#include <string>
-
 #include "config/options.h"
 #include "future_compat.h"
+
+#include <set>
+#include <string>
+#include <vector>
 
 namespace VW
 {

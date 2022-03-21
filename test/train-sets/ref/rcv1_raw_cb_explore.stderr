@@ -6,6 +6,7 @@ Num weight bits = 24
 learning rate = 0.25
 initial_t = 0
 power_t = 0.5
+cb_type = mtr
 Enabled reductions: gd, scorer-identity, csoaa_ldf-rank, cb_adf, cb_explore_adf_greedy, shared_feature_merger, cb_to_cbadf
 Input label = cb
 Output pred = action_probs

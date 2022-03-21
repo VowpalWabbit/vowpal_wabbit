@@ -9,11 +9,14 @@
 #  include <sys/mman.h>
 #endif
 
-#include <bitset>
-#include <cassert>
-#include <unordered_map>
+#ifdef PRIVACY_ACTIVATION
+#  include <bitset>
+#  include <unordered_map>
+#endif
 
 #include "memory.h"
+
+#include <cassert>
 
 using weight = float;
 

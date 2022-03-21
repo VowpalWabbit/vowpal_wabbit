@@ -2,13 +2,14 @@
 // individual contributors. All rights reserved. Released under a BSD (revised)
 // license as described in the file LICENSE.
 
-#include <cfloat>
-
 #include "config/options.h"
 #include "correctedMath.h"
 #include "global_data.h"
 #include "learner.h"
+#include "loss_functions.h"
 #include "vw_exception.h"
+
+#include <cfloat>
 
 #undef VW_DEBUG_LOG
 #define VW_DEBUG_LOG vw_dbg::scorer

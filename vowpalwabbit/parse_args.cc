@@ -4,16 +4,6 @@
 
 #include "parse_args.h"
 
-#include <sys/stat.h>
-#include <sys/types.h>
-
-#include <algorithm>
-#include <cfloat>
-#include <cstdio>
-#include <fstream>
-#include <sstream>
-#include <utility>
-
 #include "accumulate.h"
 #include "best_constant.h"
 #include "config/cli_help_formatter.h"
@@ -21,13 +11,16 @@
 #include "config/options.h"
 #include "config/options_cli.h"
 #include "constant.h"
+#include "crossplat_compat.h"
 #include "global_data.h"
 #include "io/custom_streambuf.h"
 #include "io/io_adapter.h"
 #include "io/logger.h"
 #include "io/owning_stream.h"
+#include "kskip_ngram_transformer.h"
 #include "label_type.h"
 #include "learner.h"
+#include "loss_functions.h"
 #include "memory.h"
 #include "named_labels.h"
 #include "numeric_casts.h"
@@ -37,6 +30,7 @@
 #include "parser.h"
 #include "prediction_type.h"
 #include "rand48.h"
+#include "rand_state.h"
 #include "reduction_stack.h"
 #include "reductions/interactions.h"
 #include "reductions/metrics.h"
@@ -46,6 +40,16 @@
 #include "vw_allreduce.h"
 #include "vw_exception.h"
 #include "vw_validate.h"
+
+#include <sys/stat.h>
+#include <sys/types.h>
+
+#include <algorithm>
+#include <cfloat>
+#include <cstdio>
+#include <fstream>
+#include <sstream>
+#include <utility>
 
 #ifdef BUILD_EXTERNAL_PARSER
 #  include "parse_example_binary.h"
@@ -1728,6 +1732,10 @@ std::unique_ptr<VW::workspace> initialize_internal(std::unique_ptr<options_i, op
     *(all->trace_message) << "initial_t = " << all->sd->t << endl;
     *(all->trace_message) << "power_t = " << all->power_t << endl;
     if (all->numpasses > 1) *(all->trace_message) << "decay_learning_rate = " << all->eta_decay_rate << endl;
+    if (all->options->was_supplied("cb_type"))
+    {
+      *(all->trace_message) << "cb_type = " << all->options->get_typed_option<std::string>("cb_type").value() << endl;
+    }
   }
 
   // we must delay so parse_mask is fully defined.
@@ -1950,3 +1958,9 @@ void finish(VW::workspace& all, bool delete_all)
   all.logger.log_summary();
 }
 }  // namespace VW
+
+std::string spoof_hex_encoded_namespaces(const std::string& arg)
+{
+  auto nl = VW::io::create_null_logger();
+  return VW::decode_inline_hex(arg, nl);
+}

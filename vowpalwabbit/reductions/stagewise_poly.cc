@@ -2,15 +2,16 @@
 // individual contributors. All rights reserved. Released under a BSD (revised)
 // license as described in the file LICENSE.
 
-#include <cassert>
-#include <cfloat>
-#include <cmath>
-
 #include "accumulate.h"
+#include "config/options.h"
 #include "gd.h"
 #include "label_parser.h"
 #include "vw.h"
 #include "vw_allreduce.h"
+
+#include <cassert>
+#include <cfloat>
+#include <cmath>
 
 //#define MAGIC_ARGUMENT //MAY IT NEVER DIE //LIVE LONG AND PROSPER
 // TODO: This file makes extensive use of #ifdef DEBUG for printing

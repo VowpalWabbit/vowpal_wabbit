@@ -4,7 +4,10 @@
 
 #pragma once
 
-#include <fmt/format.h>
+#include "hash.h"
+#include "io/io_adapter.h"
+#include "v_array.h"
+#include "vw_string_view.h"
 
 #include <algorithm>
 #include <cassert>
@@ -14,11 +17,6 @@
 #include <memory>
 #include <sstream>
 #include <vector>
-
-#include "hash.h"
-#include "io/io_adapter.h"
-#include "v_array.h"
-#include "vw_string_view.h"
 
 #ifndef VW_NOEXCEPT
 #  include "vw_exception.h"

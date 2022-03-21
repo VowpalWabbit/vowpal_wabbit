@@ -4,10 +4,11 @@
 
 #include "parser.h"
 
-#include <sys/types.h>
-
 #include "io/logger.h"
+#include "kskip_ngram_transformer.h"
 #include "numeric_casts.h"
+
+#include <sys/types.h>
 
 #ifndef _WIN32
 #  include <netinet/tcp.h>
@@ -16,14 +17,18 @@
 #  include <unistd.h>
 #endif
 
+#include "crossplat_compat.h"
+#include "simple_label_parser.h"
+#include "text_utils.h"
+
 #include <csignal>
 #include <fstream>
 
-#include "crossplat_compat.h"
-#include "text_utils.h"
-
 #ifdef _WIN32
-#  define NOMINMAX
+#  ifndef NOMINMAX
+#    define NOMINMAX
+#  endif
+
 #  include <Windows.h>
 #  include <io.h>
 #  include <winsock2.h>
@@ -51,10 +56,6 @@ int VW_getpid() { return (int)::GetCurrentProcessId(); }
 #  include <netinet/in.h>
 #endif
 
-#include <cassert>
-#include <cerrno>
-#include <cstdio>
-
 #include "cache.h"
 #include "constant.h"
 #include "io/io_adapter.h"
@@ -67,6 +68,10 @@ int VW_getpid() { return (int)::GetCurrentProcessId(); }
 #include "unique_sort.h"
 #include "vw.h"
 #include "vw_exception.h"
+
+#include <cassert>
+#include <cerrno>
+#include <cstdio>
 #ifdef BUILD_FLATBUFFERS
 #  include "parser/flatbuffer/parse_example_flatbuffer.h"
 #endif
@@ -86,6 +91,18 @@ using std::endl;
 bool got_sigterm;
 
 void handle_sigterm(int) { got_sigterm = true; }
+
+parser::parser(size_t example_queue_limit, bool strict_parse_)
+    : example_pool{example_queue_limit}
+    , ready_parsed_examples{example_queue_limit}
+    , example_queue_limit{example_queue_limit}
+    , num_examples_taken_from_pool(0)
+    , num_setup_examples(0)
+    , num_finished_examples(0)
+    , strict_parse{strict_parse_}
+{
+  this->lbl_parser = simple_label_parser;
+}
 
 namespace VW
 {
@@ -428,7 +445,10 @@ void enable_sources(VW::workspace& all, bool quiet, size_t passes, input_options
     if (!input_options.foreground)
     {
       // FIXME switch to posix_spawn
+      VW_WARNING_STATE_PUSH
+      VW_WARNING_DISABLE_DEPRECATED_USAGE
       if (!all.active && daemon(1, 1)) THROWERRNO("daemon");
+      VW_WARNING_STATE_POP
     }
 
     // write pid file

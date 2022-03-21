@@ -6,6 +6,7 @@
 #include "global_data.h"  // to get vw struct
 #include "learner.h"
 #include "reductions_fwd.h"
+#include "simple_label_parser.h"
 
 // reductions / setup functions
 #include "reductions/active.h"
@@ -43,6 +44,7 @@
 #include "reductions/cb/warm_cb.h"
 #include "reductions/cbzo.h"
 #include "reductions/classweight.h"
+#include "reductions/conditional_contextual_bandit.h"
 #include "reductions/confidence.h"
 #include "reductions/count_label.h"
 #include "reductions/cs_active.h"

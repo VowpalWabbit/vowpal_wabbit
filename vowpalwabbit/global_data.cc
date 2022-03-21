@@ -6,20 +6,15 @@
 
 #define RAPIDJSON_HAS_STDSTRING 1
 
-#include <rapidjson/stringbuffer.h>
-#include <rapidjson/writer.h>
-
-#include <cassert>
-#include <cerrno>
-#include <cfloat>
-#include <cmath>
-#include <cstdio>
-#include <iostream>
-#include <sstream>
-
 #include "array_parameters.h"
 #include "future_compat.h"
+#include "io/logger.h"
+#include "kskip_ngram_transformer.h"
+#include "learner.h"
+#include "loss_functions.h"
 #include "named_labels.h"
+#include "parser.h"
+#include "rand_state.h"
 #include "rapidjson/document.h"
 #include "rapidjson/rapidjson.h"
 #include "reduction_stack.h"
@@ -28,6 +23,19 @@
 #include "vw_exception.h"
 #include "vw_string_view.h"
 
+#include <rapidjson/stringbuffer.h>
+#include <rapidjson/writer.h>
+
+#include <cassert>
+#include <cerrno>
+#include <cfloat>
+#include <climits>
+#include <cmath>
+#include <cstdio>
+#include <iomanip>
+#include <iostream>
+#include <sstream>
+
 #ifdef BUILD_FLATBUFFERS
 #  include "parser/flatbuffer/parse_example_flatbuffer.h"
 #endif
@@ -35,7 +43,6 @@
 #  include "parse_example_external.h"
 #endif
 
-#include "io/logger.h"
 struct global_prediction
 {
   float p;
@@ -366,6 +373,7 @@ namespace VW
 {
 workspace::workspace(VW::io::logger logger) : options(nullptr, nullptr), logger(std::move(logger))
 {
+  _random_state_sp = std::make_shared<VW::rand_state>();
   sd = new shared_data();
   // Default is stderr.
   trace_message = VW::make_unique<std::ostream>(std::cout.rdbuf());

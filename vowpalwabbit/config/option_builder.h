@@ -4,13 +4,13 @@
 
 #pragma once
 
+#include "config/option.h"
+
 #include <memory>
 #include <set>
 #include <string>
 #include <type_traits>
 #include <utility>
-
-#include "config/option.h"
 
 namespace VW
 {

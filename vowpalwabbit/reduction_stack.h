@@ -2,10 +2,8 @@
 
 #include "reductions_fwd.h"
 
-namespace VW
-{
-struct workspace;
-}
+#include <tuple>
+#include <vector>
 
 using reduction_setup_fn = VW::LEARNER::base_learner* (*)(VW::setup_base_i&);
 

@@ -4,11 +4,11 @@
 
 #pragma once
 
-#include <string>
-
 #include "future_compat.h"
-#include "io/logger.h"
+#include "vw_fwd.h"
 #include "vw_string_view.h"
+
+#include <string>
 
 VW_WARNING_STATE_PUSH
 VW_WARNING_DISABLE_BADLY_FORMED_XML

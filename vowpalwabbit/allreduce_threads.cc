@@ -5,9 +5,9 @@
 /*
 This implements the allreduce function using threads.
 */
-#include <future>
-
 #include "allreduce.h"
+
+#include <future>
 
 AllReduceSync::AllReduceSync(const size_t total) : m_total(total), m_count(0), m_run(true)
 {

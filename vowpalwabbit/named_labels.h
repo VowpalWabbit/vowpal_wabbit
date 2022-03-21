@@ -3,12 +3,12 @@
 // license as described in the file LICENSE.
 #pragma once
 
+#include "vw_fwd.h"
+#include "vw_string_view.h"
+
 #include <string>
 #include <unordered_map>
 #include <vector>
-
-#include "io/logger.h"
-#include "vw_string_view.h"
 
 namespace VW
 {

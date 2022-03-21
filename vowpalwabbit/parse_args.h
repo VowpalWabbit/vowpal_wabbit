@@ -2,9 +2,10 @@
 // individual contributors. All rights reserved. Released under a BSD (revised)
 // license as described in the file LICENSE.
 #pragma once
+
 #include "config/options.h"
-#include "global_data.h"
 #include "text_utils.h"
+#include "vw_fwd.h"
 #include "vw_string_view.h"
 
 // Used in parse_source
@@ -37,11 +38,7 @@ void merge_options_from_header_strings(const std::vector<std::string>& strings, 
     VW::config::options_i& options, bool& is_ccb_input_model);
 
 VW_DEPRECATED("Moved and renamed: use VW::decode_inline_hex instead")
-inline std::string spoof_hex_encoded_namespaces(const std::string& arg)
-{
-  auto nl = VW::io::create_null_logger();
-  return VW::decode_inline_hex(arg, nl);
-}
+std::string spoof_hex_encoded_namespaces(const std::string& arg);
 
 VW_DEPRECATED("Moved: use VW::ends_with instead")
 inline bool ends_with(const std::string& full_string, const std::string& ending)

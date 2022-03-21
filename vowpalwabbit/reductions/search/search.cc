@@ -1,17 +1,13 @@
 // Copyright (c) by respective owners including Yahoo!, Microsoft, and
 // individual contributors. All rights reserved. Released under a BSD (revised)
 // license as described in the file LICENSE.
-#include <float.h>
-#include <math.h>
-#include <string.h>
-
-#include <algorithm>
-#include <memory>
-
+#include "crossplat_compat.h"
 #include "io/logger.h"
 #include "label_dictionary.h"
+#include "named_labels.h"
 #include "numeric_casts.h"
 #include "parse_primitives.h"
+#include "parse_regressor.h"
 #include "rand48.h"
 #include "reductions/active.h"
 #include "reductions/csoaa.h"
@@ -26,6 +22,13 @@
 #include "shared_data.h"
 #include "vw.h"
 #include "vw_exception.h"
+
+#include <float.h>
+#include <math.h>
+#include <string.h>
+
+#include <algorithm>
+#include <memory>
 // needed for printing ranges of objects (eg: all elements of a vector)
 #include <fmt/ranges.h>
 

@@ -6,6 +6,8 @@
 The algorithm here is generally based on Nocedal 1980, Liu and Nocedal 1989.
 Implementation by Miro Dudik.
  */
+#include "learner.h"
+
 #include <float.h>
 
 #include <cmath>
@@ -13,18 +15,22 @@ Implementation by Miro Dudik.
 #ifndef _WIN32
 #  include <netdb.h>
 #endif
-#include <assert.h>
-#include <stdio.h>
-#include <string.h>
-#include <sys/timeb.h>
-
-#include <chrono>
-#include <exception>
-
 #include "accumulate.h"
 #include "gd.h"
+#include "loss_functions.h"
+#include "parse_regressor.h"
+#include "parser.h"
+#include "prediction_type.h"
 #include "shared_data.h"
 #include "vw_exception.h"
+
+#include <sys/timeb.h>
+
+#include <cassert>
+#include <chrono>
+#include <cstdio>
+#include <cstring>
+#include <exception>
 
 using namespace VW::LEARNER;
 using namespace VW::config;

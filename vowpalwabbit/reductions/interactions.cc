@@ -4,6 +4,9 @@
 
 #include "interactions.h"
 
+#include "v_array.h"
+#include "vw_math.h"
+
 #include <algorithm>
 #include <cfloat>
 #include <cstdint>
@@ -12,9 +15,6 @@
 #include <sstream>
 #include <utility>
 #include <vector>
-
-#include "v_array.h"
-#include "vw_math.h"
 
 using namespace VW::config;
 

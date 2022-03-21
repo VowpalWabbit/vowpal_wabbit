@@ -5,4 +5,12 @@
 
 #include "io/logger.h"
 
+namespace VW
+{
+namespace io
+{
+struct logger;
+}
+}  // namespace VW
+
 int open_socket(const char* host, VW::io::logger& logger);

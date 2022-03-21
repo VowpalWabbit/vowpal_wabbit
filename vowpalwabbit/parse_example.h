@@ -2,11 +2,10 @@
 // individual contributors. All rights reserved. Released under a BSD (revised)
 // license as described in the file LICENSE.
 #pragma once
-#include <cstdint>
-
-#include "example.h"
-#include "vw.h"
+#include "vw_fwd.h"
 #include "vw_string_view.h"
+
+#include <cstdint>
 
 void substring_to_example(VW::workspace* all, VW::example* ae, VW::string_view example);
 

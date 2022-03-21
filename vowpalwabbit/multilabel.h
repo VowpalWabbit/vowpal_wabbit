@@ -2,10 +2,11 @@
 // individual contributors. All rights reserved. Released under a BSD (revised)
 // license as described in the file LICENSE.
 #pragma once
-#include "io_buf.h"
+
 #include "label_parser.h"
 #include "v_array.h"
 
+class io_buf;
 namespace VW
 {
 struct workspace;

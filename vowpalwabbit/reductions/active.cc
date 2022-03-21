@@ -4,10 +4,7 @@
 
 #include "active.h"
 
-#include <cerrno>
-#include <cfloat>
-#include <cmath>
-
+#include "config/options.h"
 #include "io/logger.h"
 #include "model_utils.h"
 #include "shared_data.h"
@@ -16,6 +13,10 @@
 #include "vw_math.h"
 #include "vw_string_view.h"
 #include "vw_versions.h"
+
+#include <cerrno>
+#include <cfloat>
+#include <cmath>
 
 using namespace VW::LEARNER;
 using namespace VW::config;

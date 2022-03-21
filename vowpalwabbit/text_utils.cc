@@ -4,12 +4,12 @@
 
 #include "text_utils.h"
 
+#include "io/logger.h"
+#include "parse_primitives.h"
+
 #include <fmt/format.h>
 
 #include <sstream>
-
-#include "io/logger.h"
-#include "parse_primitives.h"
 
 namespace VW
 {

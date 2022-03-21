@@ -4,11 +4,11 @@
 
 #pragma once
 
-#include <cstdint>
-
 #include "action_score.h"
-#include "io_buf.h"
 #include "label_parser.h"
+#include "vw_fwd.h"
+
+#include <cstdint>
 
 namespace VW
 {

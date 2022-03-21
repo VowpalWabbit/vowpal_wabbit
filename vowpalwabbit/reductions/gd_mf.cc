@@ -1,6 +1,8 @@
 // Copyright (c) by respective owners including Yahoo!, Microsoft, and
 // individual contributors. All rights reserved. Released under a BSD (revised)
 // license as described in the file LICENSE.
+#include "crossplat_compat.h"
+
 #include <cfloat>
 #include <cstdio>
 #include <fstream>
@@ -13,6 +15,11 @@
 
 #include "array_parameters.h"
 #include "gd.h"
+#include "learner.h"
+#include "loss_functions.h"
+#include "parse_regressor.h"
+#include "parser.h"
+#include "prediction_type.h"
 #include "rand48.h"
 #include "shared_data.h"
 #include "vw_exception.h"

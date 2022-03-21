@@ -4,13 +4,14 @@
 
 #pragma once
 
-#include <cfloat>
-#include <cstring>
-
 #include "future_compat.h"
 #include "label_parser.h"
+#include "parse_example.h"
 #include "parser.h"
 #include "v_array.h"
+
+#include <cfloat>
+#include <cstring>
 
 // seems to help with skipping spaces
 //#define RAPIDJSON_SIMD
@@ -38,11 +39,6 @@ VW_WARNING_STATE_POP
 #  pragma managed(pop)
 #endif
 
-#include <algorithm>
-#include <limits>
-#include <sstream>
-#include <vector>
-
 #include "best_constant.h"
 #include "cb.h"
 #include "cb_continuous_label.h"
@@ -50,6 +46,11 @@ VW_WARNING_STATE_POP
 #include "parse_slates_example_json.h"
 #include "reductions/conditional_contextual_bandit.h"
 #include "vw_string_view.h"
+
+#include <algorithm>
+#include <limits>
+#include <sstream>
+#include <vector>
 
 // portability fun
 #ifndef _WIN32

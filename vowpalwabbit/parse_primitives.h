@@ -3,18 +3,17 @@
 // license as described in the file LICENSE.
 #pragma once
 
-#include <cmath>
-#include <cstdint>
-#include <iostream>
-#include <string>
-#include <vector>
-
 #include "fast_pow10.h"
 #include "future_compat.h"
 #include "hashstring.h"
 #include "io/logger.h"
 #include "v_array.h"
 #include "vw_string_view.h"
+
+#include <cmath>
+#include <cstdint>
+#include <string>
+#include <vector>
 
 // chop up the string into a v_array or any compatible container of VW::string_view.
 template <typename ContainerT>

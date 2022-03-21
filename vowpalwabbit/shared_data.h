@@ -3,16 +3,12 @@
 // license as described in the file LICENSE.
 #pragma once
 
-#include <atomic>
+#include "vw_fwd.h"
+
 #include <cfloat>
 #include <cstdint>
 #include <memory>
-#include <ostream>
 #include <string>
-
-#include "named_labels.h"
-
-class loss_function;
 
 struct shared_data
 {

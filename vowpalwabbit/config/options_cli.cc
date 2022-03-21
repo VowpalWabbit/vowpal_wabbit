@@ -4,6 +4,11 @@
 
 #include "config/options_cli.h"
 
+#include "config/option.h"
+#include "text_utils.h"
+#include "vw_exception.h"
+#include "vw_string_view.h"
+
 #include <fmt/format.h>
 
 #include <algorithm>
@@ -19,11 +24,6 @@
 #include <unordered_map>
 #include <utility>
 #include <vector>
-
-#include "config/option.h"
-#include "text_utils.h"
-#include "vw_exception.h"
-#include "vw_string_view.h"
 
 using namespace VW::config;
 

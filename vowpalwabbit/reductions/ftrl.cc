@@ -1,15 +1,20 @@
 // Copyright (c) by respective owners including Yahoo!, Microsoft, and
 // individual contributors. All rights reserved. Released under a BSD (revised)
 // license as described in the file LICENSE.
-#include <cfloat>
-#include <cmath>
-#include <string>
-
 #include "correctedMath.h"
+#include "crossplat_compat.h"
 #include "gd.h"
 #include "io/logger.h"
 #include "label_parser.h"
+#include "learner.h"
+#include "loss_functions.h"
+#include "parse_regressor.h"
+#include "parser.h"
 #include "shared_data.h"
+
+#include <cfloat>
+#include <cmath>
+#include <string>
 
 using namespace VW::LEARNER;
 using namespace VW::config;

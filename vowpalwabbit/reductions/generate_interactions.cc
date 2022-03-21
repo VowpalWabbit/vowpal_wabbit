@@ -3,11 +3,6 @@
 // license as described in the file LICENSE.
 #include "generate_interactions.h"
 
-#include <algorithm>
-#include <cfloat>
-#include <iterator>
-#include <sstream>
-
 #include "config/options.h"
 #include "example.h"
 #include "global_data.h"
@@ -16,6 +11,11 @@
 #include "learner.h"
 #include "v_array.h"
 #include "vw_math.h"
+
+#include <algorithm>
+#include <cfloat>
+#include <iterator>
+#include <sstream>
 
 using namespace VW::config;
 

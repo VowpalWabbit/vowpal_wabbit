@@ -3,11 +3,9 @@
 // license as described in the file LICENSE.
 #pragma once
 
-#include <iostream>
+#include <ostream>
 #include <utility>
 #include <vector>
-
-#include "v_array.h"
 
 namespace VW
 {

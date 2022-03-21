@@ -1,6 +1,15 @@
 // Copyright (c) by respective owners including Yahoo!, Microsoft, and
 // individual contributors. All rights reserved. Released under a BSD (revised)
 // license as described in the file LICENSE.
+#include "config/options.h"
+#include "global_data.h"
+#include "learner.h"
+#include "numeric_casts.h"
+#include "parser.h"
+#include "rand48.h"
+#include "rand_state.h"
+#include "vw_math.h"
+
 #include <float.h>
 
 #include <algorithm>
@@ -8,13 +17,6 @@
 #include <cstdio>
 #include <memory>
 #include <sstream>
-
-#include "config/options.h"
-#include "global_data.h"
-#include "learner.h"
-#include "numeric_casts.h"
-#include "rand48.h"
-#include "vw_math.h"
 
 using namespace VW::LEARNER;
 using namespace VW::config;

@@ -1,17 +1,18 @@
 // Copyright (c) by respective owners including Yahoo!, Microsoft, and
 // individual contributors. All rights reserved. Released under a BSD (revised)
 // license as described in the file LICENSE.
-#include <float.h>
-#include <math.h>
-#include <stdlib.h>
 
-#include <iostream>
+#include "loss_functions.h"
 
 #include "correctedMath.h"
 #include "global_data.h"
 #include "io/logger.h"
 #include "shared_data.h"
 #include "vw_exception.h"
+
+#include <cfloat>
+#include <cmath>
+#include <cstdlib>
 
 class squaredloss : public loss_function
 {
@@ -172,7 +173,7 @@ public:
   {
     if (label != -1.f && label != 1.f)
       logger.out_warn("The label {} is not -1 or 1 or in [0,1] as the logistic loss function expects.", label);
-    return log(1 + correctedExp(-label * prediction));
+    return std::log(1 + correctedExp(-label * prediction));
   }
 
   float getUpdate(float prediction, float label, float update_scale, float pred_per_update) const override
@@ -303,46 +304,46 @@ public:
   float getLoss(const shared_data*, float prediction, float label) const override
   {
     if (label < 0.f) { logger.out_warn("The poisson loss function expects a label >= 0 but received '{}'.", label); }
-    float exp_prediction = expf(prediction);
+    float exp_prediction = std::exp(prediction);
     // deviance is used instead of log-likelihood
-    return 2 * (label * (logf(label + 1e-6f) - prediction) - (label - exp_prediction));
+    return 2 * (label * (std::log(label + 1e-6f) - prediction) - (label - exp_prediction));
   }
 
   float getUpdate(float prediction, float label, float update_scale, float pred_per_update) const override
   {
-    float exp_prediction = expf(prediction);
+    float exp_prediction = std::exp(prediction);
     if (label > 0)
     {
       return label * update_scale -
-          log1p(exp_prediction * expm1(label * update_scale * pred_per_update) / label) / pred_per_update;
+          std::log1p(exp_prediction * std::expm1(label * update_scale * pred_per_update) / label) / pred_per_update;
     }
     else
     {
-      return -log1p(exp_prediction * update_scale * pred_per_update) / pred_per_update;
+      return -std::log1p(exp_prediction * update_scale * pred_per_update) / pred_per_update;
     }
   }
 
   float getUnsafeUpdate(float prediction, float label, float update_scale) const override
   {
-    float exp_prediction = expf(prediction);
+    float exp_prediction = std::exp(prediction);
     return (label - exp_prediction) * update_scale;
   }
 
   float getSquareGrad(float prediction, float label) const override
   {
-    float exp_prediction = expf(prediction);
+    float exp_prediction = std::exp(prediction);
     return (exp_prediction - label) * (exp_prediction - label);
   }
 
   float first_derivative(const shared_data*, float prediction, float label) const override
   {
-    float exp_prediction = expf(prediction);
+    float exp_prediction = std::exp(prediction);
     return (exp_prediction - label);
   }
 
   float second_derivative(const shared_data*, float prediction, float /* label */) const override
   {
-    float exp_prediction = expf(prediction);
+    float exp_prediction = std::exp(prediction);
     return exp_prediction;
   }
 };

@@ -2,9 +2,6 @@
 // individual contributors. All rights reserved. Released under a BSD (revised)
 // license as described in the file LICENSE.
 
-#include <map>
-#include <unordered_map>
-
 #include "config/options.h"
 #include "correctedMath.h"
 #include "example.h"
@@ -12,7 +9,11 @@
 #include "interactions.h"
 #include "io/logger.h"
 #include "learner.h"
+#include "loss_functions.h"
 #include "text_utils.h"
+
+#include <map>
+#include <unordered_map>
 
 using namespace VW::config;
 namespace MARGINAL

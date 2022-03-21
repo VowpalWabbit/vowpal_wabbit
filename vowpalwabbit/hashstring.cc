@@ -4,9 +4,9 @@
 
 #include "hashstring.h"
 
-#include <string>
-
 #include "vw_exception.h"
+
+#include <string>
 
 hash_func_t getHasher(const std::string& s)
 {

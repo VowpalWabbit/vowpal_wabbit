@@ -878,7 +878,8 @@ def get_test(test_number: int, tests: List[TestData]) -> Optional[TestData]:
             return test
     return None
 
-def interpret_test_arg(arg: str, *, num_tests:int) -> List[int]:
+
+def interpret_test_arg(arg: str, *, num_tests: int) -> List[int]:
     single_number_pattern = re.compile(r"^\d+$")
     range_pattern = re.compile(r"^(\d+)?\.\.(\d+)?$")
     if single_number_pattern.match(arg):
@@ -891,7 +892,9 @@ def interpret_test_arg(arg: str, *, num_tests:int) -> List[int]:
             raise ValueError(f"Invalid range: {arg}")
         return list(range(start, end + 1))
     else:
-        raise ValueError(f"Invalid test argument '{arg}'. Must either be a single integer 'id' or a range in the form 'start..end'")
+        raise ValueError(
+            f"Invalid test argument '{arg}'. Must either be a single integer 'id' or a range in the form 'start..end'"
+        )
 
 
 def main():
@@ -1061,6 +1064,9 @@ def main():
     if vw_bin is None:
         print("Can't find vw binary. Did you build the 'vw-bin' target?")
         sys.exit(1)
+    # test if vw_bin is a Path object
+    elif isinstance(vw_bin, Path):
+        vw_bin = str(vw_bin.resolve())
     print(f"Using VW binary: {vw_bin}")
 
     spanning_tree_bin: Optional[Path] = None
@@ -1073,6 +1079,8 @@ def main():
                 "Can't find spanning tree binary. Did you build the 'spanning_tree' target?"
             )
             sys.exit(1)
+        else:
+            spanning_tree_bin = spanning_tree_bin.resolve()
 
         print(f"Using spanning tree binary: {spanning_tree_bin.resolve()}")
 
@@ -1096,23 +1104,27 @@ def main():
 
     # Flatten nested lists for arg.test argument and process
     # Ideally we would have used action="extend", but that was added in 3.8
+    interpreted_test_arg: Optional[List[int]] = None
     if args.test is not None:
-        res = []
+        interpreted_test_arg = []
         for arg in args.test:
             for value in arg:
-                res.extend(interpret_test_arg(value, num_tests=len(tests)))
-        args.test = res
+                interpreted_test_arg.extend(
+                    interpret_test_arg(value, num_tests=len(tests))
+                )
 
     print()
 
     # Filter the test list if the requested tests were explicitly specified
     tests_to_run_explicitly = None
-    if args.test is not None:
-        tests_to_run_explicitly = calculate_test_to_run_explicitly(args.test, tests)
+    if interpreted_test_arg is not None:
+        tests_to_run_explicitly = calculate_test_to_run_explicitly(
+            interpreted_test_arg, tests
+        )
         print(f"Running tests: {list(tests_to_run_explicitly)}")
-        if len(args.test) != len(tests_to_run_explicitly):
+        if len(interpreted_test_arg) != len(tests_to_run_explicitly):
             print(
-                f"Note: due to test dependencies, more than just tests {args.test} must be run"
+                f"Note: due to test dependencies, more than just tests {interpreted_test_arg} must be run"
             )
         tests = list(filter(lambda x: x.id in tests_to_run_explicitly, tests))
 

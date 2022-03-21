@@ -12,6 +12,6 @@ cd benchmark
 git checkout v1.6.1
 
 # Generate build system files with cmake.
-cmake -S . -B build -G Ninja -DBENCHMARK_ENABLE_GTEST_TESTS=OFF -DCMAKE_BUILD_TYPE=Release
+cmake -S . -B build -G Ninja -DBENCHMARK_ENABLE_GTEST_TESTS=OFF -DBENCHMARK_ENABLE_TESTING=Off -DCMAKE_BUILD_TYPE=Release
 # Install globally
 sudo cmake --build "build" --config Release --target install

@@ -4,14 +4,10 @@
 
 #pragma once
 
-#include <iomanip>
-#include <iostream>
-#include <vector>
-
 #include "constant.h"
-#include "io/io_adapter.h"
-#include "io/logger.h"
 #include "v_array.h"
+
+#include <vector>
 
 namespace ACTION_SCORE
 {
@@ -23,6 +19,11 @@ namespace VW
 {
 struct example;
 struct workspace;
+namespace io
+{
+struct logger;
+struct writer;
+}  // namespace io
 }  // namespace VW
 
 namespace VW

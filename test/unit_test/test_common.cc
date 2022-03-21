@@ -4,14 +4,14 @@
 
 #include "test_common.h"
 
-multi_ex parse_json(VW::workspace& all, const std::string& line)
+VW::multi_ex parse_json(VW::workspace& all, const std::string& line)
 {
-  VW::v_array<example*> examples;
+  VW::v_array<VW::example*> examples;
   examples.push_back(&VW::get_unused_example(&all));
   VW::read_line_json_s<true>(
       all, examples, (char*)line.c_str(), line.length(), (VW::example_factory_t)&VW::get_unused_example, (void*)&all);
 
-  multi_ex result;
+  VW::multi_ex result;
   for (size_t i = 0; i < examples.size(); ++i)
   {
     result.push_back(examples[i]);
@@ -19,9 +19,9 @@ multi_ex parse_json(VW::workspace& all, const std::string& line)
   return result;
 }
 
-multi_ex parse_dsjson(VW::workspace& all, std::string line, DecisionServiceInteraction* interaction)
+VW::multi_ex parse_dsjson(VW::workspace& all, std::string line, DecisionServiceInteraction* interaction)
 {
-  VW::v_array<example*> examples;
+  VW::v_array<VW::example*> examples;
   examples.push_back(&VW::get_unused_example(&all));
 
   DecisionServiceInteraction local_interaction;
@@ -30,7 +30,7 @@ multi_ex parse_dsjson(VW::workspace& all, std::string line, DecisionServiceInter
   VW::read_line_decision_service_json<true>(all, examples, (char*)line.c_str(), line.size(), false,
       (VW::example_factory_t)&VW::get_unused_example, (void*)&all, interaction);
 
-  multi_ex result;
+  VW::multi_ex result;
   for (const auto& ex : examples) { result.push_back(ex); }
   return result;
 }

@@ -3,13 +3,9 @@
 // license as described in the file LICENSE.
 #pragma once
 
-#include <cstddef>
+#include "vw_fwd.h"
 
-namespace VW
-{
-struct example;
-struct workspace;
-}  // namespace VW
+#include <cstddef>
 
 struct label_data
 {

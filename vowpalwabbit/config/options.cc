@@ -4,14 +4,14 @@
 
 #include "config/options.h"
 
+#include "config/option.h"
+#include "config/option_group_definition.h"
+
 #include <algorithm>
 #include <cassert>
 #include <iterator>
 #include <stdexcept>
 #include <utility>
-
-#include "config/option.h"
-#include "config/option_group_definition.h"
 
 using namespace VW::config;
 

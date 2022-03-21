@@ -2,17 +2,19 @@
 // individual contributors. All rights reserved. Released under a BSD (revised)
 // license as described in the file LICENSE.
 
-#include <climits>
-#include <cstring>
-
 #include "example.h"
 #include "global_data.h"
 #include "model_utils.h"
+#include "named_labels.h"
 #include "parse_primitives.h"
 #include "shared_data.h"
 #include "vw.h"
 #include "vw_exception.h"
 #include "vw_string_view.h"
+
+#include <climits>
+#include <cstring>
+#include <iomanip>
 
 namespace MULTICLASS
 {

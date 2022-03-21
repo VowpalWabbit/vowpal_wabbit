@@ -2,25 +2,26 @@
 // individual contributors. All rights reserved. Released under a BSD (revised)
 // license as described in the file LICENSE.
 #pragma once
-#include <inttypes.h>
+
+#include "array_parameters.h"
+#include "constant.h"
+#include "error_reporting.h"
+#include "future_compat.h"
+#include "interactions_predict.h"
+#include "io/logger.h"
+#include "version.h"
+#include "vw_fwd.h"
+#include "vw_string_view.h"
 
 #include <array>
-#include <atomic>
 #include <cfloat>
-#include <climits>
+#include <cinttypes>
 #include <cstdint>
-#include <cstdio>
-#include <iostream>
 #include <map>
 #include <memory>
-#include <stack>
 #include <string>
 #include <unordered_map>
-#include <utility>
 #include <vector>
-
-#include "future_compat.h"
-#include "vw_string_view.h"
 
 // Thread cannot be used in managed C++, tell the compiler that this is unmanaged even if included in a managed project.
 #ifdef _M_CEE
@@ -32,28 +33,6 @@
 #else
 #  include <thread>
 #endif
-
-#include "allreduce.h"
-#include "array_parameters.h"
-#include "config.h"
-#include "config/options.h"
-#include "constant.h"
-#include "crossplat_compat.h"
-#include "decision_scores.h"
-#include "error_reporting.h"
-#include "example.h"
-#include "feature_group.h"
-#include "hash.h"
-#include "hashstring.h"
-#include "interactions_predict.h"
-#include "io/logger.h"
-#include "kskip_ngram_transformer.h"
-#include "learner.h"
-#include "loss_functions.h"
-#include "rand48.h"
-#include "rand_state.h"
-#include "v_array.h"
-#include "version.h"
 
 typedef float weight;
 
@@ -78,13 +57,8 @@ struct dictionary_info
   std::shared_ptr<feature_dict> dict;
 };
 
-enum class AllReduceType
-{
-  Socket,
-  Thread
-};
-
 class AllReduce;
+enum class AllReduceType;
 
 #ifdef BUILD_EXTERNAL_PARSER
 // forward declarations
@@ -136,7 +110,7 @@ struct invert_hash_info
 struct workspace
 {
 private:
-  std::shared_ptr<VW::rand_state> _random_state_sp = std::make_shared<VW::rand_state>();  // per instance random_state
+  std::shared_ptr<VW::rand_state> _random_state_sp;  // per instance random_state
 
 public:
   shared_data* sd;
