@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/python3
 # 2013 Eric Whyne 
 # http://www.datamungeblog.com
 import re
@@ -12,7 +12,7 @@ category_index = 0
 delimeter = ','
 
 def printhelp():
-    print "\n" + sys.argv[0] + """ converts csv data into vw binary classifier training data.
+    print("\n" + sys.argv[0] + """ converts csv data into vw binary classifier training data.
     
 Options: 
     -h                 Print this help.
@@ -30,7 +30,7 @@ Options:
 Examples:
     cat data.csv | ./vw-csv2bin -c 14 -p '>' -n '<' > training.vw
     ./vw-csv2bin -i data.csv -o training.vw -d '\\t' -c 14 -p '>' -n '<'
-"""
+""")
 
 try:
    opts, args = getopt.getopt(sys.argv[1:],"hi:o:p:n:c:d:")
@@ -86,40 +86,3 @@ for line in infile:
     outfile.write(outline)
   else:
     sys.stdout.write(outline)
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-     
