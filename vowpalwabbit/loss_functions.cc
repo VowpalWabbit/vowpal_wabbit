@@ -16,65 +16,65 @@
 
 namespace squared_loss_impl
 {
-  inline float getLoss(const shared_data* sd, float prediction, float label)
+inline float getLoss(const shared_data* sd, float prediction, float label)
+{
+  if (prediction <= sd->max_label && prediction >= sd->min_label)
   {
-    if (prediction <= sd->max_label && prediction >= sd->min_label)
-    {
-      float example_loss = (prediction - label) * (prediction - label);
-      return example_loss;
-    }
-    else if (prediction < sd->min_label)
-    {
-      if (label == sd->min_label)
-        return 0.;
-      else
-        return static_cast<float>((label - sd->min_label) * (label - sd->min_label) +
-            2. * (label - sd->min_label) * (sd->min_label - prediction));
-    }
-    else if (label == sd->max_label)
+    float example_loss = (prediction - label) * (prediction - label);
+    return example_loss;
+  }
+  else if (prediction < sd->min_label)
+  {
+    if (label == sd->min_label)
       return 0.;
     else
-      return static_cast<float>((sd->max_label - label) * (sd->max_label - label) +
-          2. * (sd->max_label - label) * (prediction - sd->max_label));
+      return static_cast<float>((label - sd->min_label) * (label - sd->min_label) +
+          2. * (label - sd->min_label) * (sd->min_label - prediction));
   }
+  else if (label == sd->max_label)
+    return 0.;
+  else
+    return static_cast<float>((sd->max_label - label) * (sd->max_label - label) +
+        2. * (sd->max_label - label) * (prediction - sd->max_label));
+}
 
-  inline float getUpdate(float prediction, float label, float update_scale, float pred_per_update)
+inline float getUpdate(float prediction, float label, float update_scale, float pred_per_update)
+{
+  if (update_scale * pred_per_update < 1e-6)
   {
-    if (update_scale * pred_per_update < 1e-6)
-    {
-      /* When exp(-eta_t)~= 1 we replace 1-exp(-eta_t)
-       * with its first order Taylor expansion around 0
-       * to avoid catastrophic cancellation.
-       */
-      return 2.f * (label - prediction) * update_scale;
-    }
-    return (label - prediction) * (1.f - correctedExp(-2.f * update_scale * pred_per_update)) / pred_per_update;
-  }
-
-  inline float getUnsafeUpdate(float prediction, float label, float update_scale)
-  {
+    /* When exp(-eta_t)~= 1 we replace 1-exp(-eta_t)
+     * with its first order Taylor expansion around 0
+     * to avoid catastrophic cancellation.
+     */
     return 2.f * (label - prediction) * update_scale;
   }
-
-  inline float getSquareGrad(float prediction, float label) { return 4.f * (prediction - label) * (prediction - label); }
-
-  inline float first_derivative(const shared_data* sd, float prediction, float label)
-  {
-    if (prediction < sd->min_label)
-      prediction = sd->min_label;
-    else if (prediction > sd->max_label)
-      prediction = sd->max_label;
-    return 2.f * (prediction - label);
-  }
-
-  inline float second_derivative(const shared_data* sd, float prediction)
-  {
-    if (prediction <= sd->max_label && prediction >= sd->min_label)
-      return 2.;
-    else
-      return 0.;
-  }
+  return (label - prediction) * (1.f - correctedExp(-2.f * update_scale * pred_per_update)) / pred_per_update;
 }
+
+inline float getUnsafeUpdate(float prediction, float label, float update_scale)
+{
+  return 2.f * (label - prediction) * update_scale;
+}
+
+inline float getSquareGrad(float prediction, float label) { return 4.f * (prediction - label) * (prediction - label); }
+
+inline float first_derivative(const shared_data* sd, float prediction, float label)
+{
+  if (prediction < sd->min_label)
+    prediction = sd->min_label;
+  else if (prediction > sd->max_label)
+    prediction = sd->max_label;
+  return 2.f * (prediction - label);
+}
+
+inline float second_derivative(const shared_data* sd, float prediction)
+{
+  if (prediction <= sd->max_label && prediction >= sd->min_label)
+    return 2.;
+  else
+    return 0.;
+}
+}  // namespace squared_loss_impl
 
 class squaredloss : public loss_function
 {
@@ -341,13 +341,15 @@ public:
   float getUpdate(float prediction, float label, float update_scale, float pred_per_update) const override
   {
     float err = label - prediction;
-    return err > 0 ? squared_loss_impl::getUpdate(prediction, label, q * update_scale, pred_per_update) : squared_loss_impl::getUpdate(prediction, label, (1.f - q) * update_scale, pred_per_update);
+    return err > 0 ? squared_loss_impl::getUpdate(prediction, label, q * update_scale, pred_per_update)
+                   : squared_loss_impl::getUpdate(prediction, label, (1.f - q) * update_scale, pred_per_update);
   }
 
   float getUnsafeUpdate(float prediction, float label, float update_scale) const override
   {
     float err = label - prediction;
-    return err > 0 ? squared_loss_impl::getUnsafeUpdate(prediction, label, q * update_scale) : squared_loss_impl::getUnsafeUpdate(prediction, label, (1.f - q) * update_scale);
+    return err > 0 ? squared_loss_impl::getUnsafeUpdate(prediction, label, q * update_scale)
+                   : squared_loss_impl::getUnsafeUpdate(prediction, label, (1.f - q) * update_scale);
   }
 
   float getSquareGrad(float prediction, float label) const override

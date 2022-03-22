@@ -189,13 +189,19 @@ BOOST_AUTO_TEST_CASE(compare_expectile_loss_with_squared_loss_test)
   constexpr float update_scale = eta * weight;
   constexpr float pred_per_update = 1.0f;  // Use dummy value here, see gd.cc for details.
 
-  BOOST_CHECK_CLOSE(loss_expectile->getLoss(&sd, prediction, label), loss_squared->getLoss(&sd, prediction, label) * parameter, FLOAT_TOL);
-  BOOST_CHECK_CLOSE(loss_expectile->getUpdate(prediction, label, update_scale, pred_per_update), loss_squared->getUpdate(prediction, label, update_scale * parameter, pred_per_update), FLOAT_TOL);
-  BOOST_CHECK_CLOSE(loss_expectile->getUnsafeUpdate(prediction, label, update_scale), loss_squared->getUnsafeUpdate(prediction, label, update_scale * parameter), FLOAT_TOL);
+  BOOST_CHECK_CLOSE(loss_expectile->getLoss(&sd, prediction, label),
+      loss_squared->getLoss(&sd, prediction, label) * parameter, FLOAT_TOL);
+  BOOST_CHECK_CLOSE(loss_expectile->getUpdate(prediction, label, update_scale, pred_per_update),
+      loss_squared->getUpdate(prediction, label, update_scale * parameter, pred_per_update), FLOAT_TOL);
+  BOOST_CHECK_CLOSE(loss_expectile->getUnsafeUpdate(prediction, label, update_scale),
+      loss_squared->getUnsafeUpdate(prediction, label, update_scale * parameter), FLOAT_TOL);
 
-  BOOST_CHECK_CLOSE(loss_expectile->getSquareGrad(prediction, label), loss_squared->getSquareGrad(prediction, label) * parameter * parameter, FLOAT_TOL);
-  BOOST_CHECK_CLOSE(loss_expectile->first_derivative(&sd, prediction, label), loss_squared->first_derivative(&sd, prediction, label) * parameter, FLOAT_TOL);
-  BOOST_CHECK_CLOSE(loss_expectile->second_derivative(&sd, prediction, label), loss_squared->second_derivative(&sd, prediction, label) * parameter, FLOAT_TOL);
+  BOOST_CHECK_CLOSE(loss_expectile->getSquareGrad(prediction, label),
+      loss_squared->getSquareGrad(prediction, label) * parameter * parameter, FLOAT_TOL);
+  BOOST_CHECK_CLOSE(loss_expectile->first_derivative(&sd, prediction, label),
+      loss_squared->first_derivative(&sd, prediction, label) * parameter, FLOAT_TOL);
+  BOOST_CHECK_CLOSE(loss_expectile->second_derivative(&sd, prediction, label),
+      loss_squared->second_derivative(&sd, prediction, label) * parameter, FLOAT_TOL);
 
   VW::finish(vw);
 }
