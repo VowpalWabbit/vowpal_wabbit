@@ -5,7 +5,7 @@
 #pragma once
 #include "example_predict.h"
 #include "interactions.h"
-#include "reductions_fwd.h"
+#include "vw_fwd.h"
 
 #include <set>
 #include <vector>

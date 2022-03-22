@@ -10,6 +10,7 @@
 #include "loss_functions.h"
 #include "parse_regressor.h"
 #include "parser.h"
+#include "setup_base.h"
 #include "shared_data.h"
 
 #include <cfloat>

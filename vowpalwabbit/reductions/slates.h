@@ -5,8 +5,8 @@
 #pragma once
 
 #include "learner.h"
-#include "reductions_fwd.h"
 #include "slates_label.h"
+#include "vw_fwd.h"
 
 #include <string>
 #include <vector>

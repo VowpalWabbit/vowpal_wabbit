@@ -7,12 +7,13 @@
 #include "config/options.h"
 #include "global_data.h"
 #include "learner.h"
+#include "setup_base.h"
 
 #include <unordered_map>
 
 using namespace VW::config;
 
-namespace CLASSWEIGHTS
+namespace
 {
 struct classweights
 {
@@ -79,11 +80,9 @@ void predict_or_learn(classweights& cweights, VW::LEARNER::single_learner& base,
     base.predict(ec);
   }
 }
-}  // namespace CLASSWEIGHTS
+}  // namespace
 
-using namespace CLASSWEIGHTS;
-
-VW::LEARNER::base_learner* classweight_setup(VW::setup_base_i& stack_builder)
+VW::LEARNER::base_learner* VW::reductions::classweight_setup(VW::setup_base_i& stack_builder)
 {
   options_i& options = *stack_builder.get_options();
   VW::workspace& all = *stack_builder.get_all_pointer();

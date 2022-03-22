@@ -4,13 +4,13 @@
 
 #pragma once
 
-#include "reductions_fwd.h"
+#include "vw_fwd.h"
 
 namespace VW
 {
-namespace cbzo
+namespace reductions
 {
-VW::LEARNER::base_learner* setup(VW::setup_base_i& stack_builder);
+VW::LEARNER::base_learner* cbzo_setup(VW::setup_base_i& stack_builder);
 
 }  // namespace cbzo
 }  // namespace VW

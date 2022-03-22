@@ -4,7 +4,7 @@
 #pragma once
 #include "io/io_adapter.h"
 #include "io/logger.h"
-#include "reductions_fwd.h"
+#include "vw_fwd.h"
 
 VW::LEARNER::base_learner* mwt_setup(VW::setup_base_i& stack_builder);
 

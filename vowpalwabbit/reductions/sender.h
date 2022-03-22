@@ -3,6 +3,6 @@
 // license as described in the file LICENSE.
 
 #pragma once
-#include "reductions_fwd.h"
+#include "vw_fwd.h"
 
 VW::LEARNER::base_learner* sender_setup(VW::setup_base_i& stack_builder);

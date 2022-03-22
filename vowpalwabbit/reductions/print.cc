@@ -4,6 +4,7 @@
 #include "config/options.h"
 #include "gd.h"
 #include "learner.h"
+#include "setup_base.h"
 
 #include <cfloat>
 

@@ -2,6 +2,7 @@
 // individual contributors. All rights reserved. Released under a BSD (revised)
 // license as described in the file LICENSE.
 #include "crossplat_compat.h"
+#include "setup_base.h"
 
 #include <cfloat>
 #include <cstdio>

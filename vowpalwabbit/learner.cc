@@ -310,7 +310,7 @@ bool ec_is_example_header(const example& ec, label_type_t label_type)
   if (label_type == VW::label_type_t::cb) { return CB::ec_is_example_header(ec); }
   else if (label_type == VW::label_type_t::ccb)
   {
-    return CCB::ec_is_example_header(ec);
+    return reductions::ccb::ec_is_example_header(ec);
   }
   else if (label_type == VW::label_type_t::cs)
   {
