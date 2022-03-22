@@ -260,7 +260,7 @@ jobs:
           python -m pytest ./python/tests/
           python ./python/tests/run_doctest.py
   windows-python-build:
-    name: windows.amd64.py${{ matrix.config.version }}.build
+    name: windows-2019.amd64.py${{ matrix.config.version }}.build
     runs-on: windows-2019
     strategy:
       matrix:
@@ -297,7 +297,7 @@ jobs:
           name: windows_amd64_${{ matrix.config.version }}
           path: wheel_output
   windows-python-test:
-    name: windows.amd64.py${{ matrix.version }}.test
+    name: ${{ matrix.os }}.amd64.py${{ matrix.version }}.test
     needs: windows-python-build
     runs-on: ${{ matrix.os }}
     strategy:

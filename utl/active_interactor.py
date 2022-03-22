@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 import socket
 import argparse
 from typing import Callable, ContextManager, Optional, TextIO
