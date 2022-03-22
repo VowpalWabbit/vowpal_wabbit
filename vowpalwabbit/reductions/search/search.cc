@@ -9,9 +9,9 @@
 #include "parse_primitives.h"
 #include "parse_regressor.h"
 #include "rand48.h"
-#include "reductions/active.h"
-#include "reductions/csoaa.h"
-#include "reductions/gd.h"  // for GD::foreach_feature
+#include "active.h"
+#include "csoaa.h"
+#include "gd.h"  // for GD::foreach_feature
 #include "search_dep_parser.h"
 #include "search_entityrelationtask.h"
 #include "search_graph.h"

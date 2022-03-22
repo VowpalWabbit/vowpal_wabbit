@@ -8,7 +8,7 @@
 #include "label_dictionary.h"  // for add_example_namespaces_from_example
 #include "label_parser.h"
 #include "numeric_casts.h"
-#include "reductions/gd.h"
+#include "gd.h"
 #include "vw.h"
 #include "vw_exception.h"
 

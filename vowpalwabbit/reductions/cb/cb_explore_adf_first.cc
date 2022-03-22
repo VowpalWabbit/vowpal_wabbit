@@ -13,7 +13,7 @@
 #include "label_parser.h"
 #include "numeric_casts.h"
 #include "rand48.h"
-#include "reductions/bs.h"
+#include "bs.h"
 #include "setup_base.h"
 #include "version.h"
 #include "vw_versions.h"

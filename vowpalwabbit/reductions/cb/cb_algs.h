@@ -9,7 +9,7 @@
 #include "example.h"
 #include "guard.h"
 #include "learner.h"
-#include "reductions/baseline.h"
+#include "baseline.h"
 
 #include <cfloat>
 

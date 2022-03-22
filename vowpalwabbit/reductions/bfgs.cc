@@ -6,7 +6,7 @@
 The algorithm here is generally based on Nocedal 1980, Liu and Nocedal 1989.
 Implementation by Miro Dudik.
  */
-#include "reductions/bfgs.h"
+#include "bfgs.h"
 
 #include "learner.h"
 #include "setup_base.h"

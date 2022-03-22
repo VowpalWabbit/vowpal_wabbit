@@ -2,7 +2,7 @@
 // individual contributors. All rights reserved. Released under a BSD (revised)
 // license as described in the file LICENSE.
 
-#include "reductions/audit_regressor.h"
+#include "audit_regressor.h"
 
 #include "config/options.h"
 #include "fmt/format.h"

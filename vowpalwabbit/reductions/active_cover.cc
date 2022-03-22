@@ -2,7 +2,7 @@
 // individual contributors. All rights reserved. Released under a BSD (revised)
 // license as described in the file LICENSE.
 
-#include "reductions/active_cover.h"
+#include "active_cover.h"
 
 #include "config/options.h"
 #include "numeric_casts.h"

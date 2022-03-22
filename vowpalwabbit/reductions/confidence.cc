@@ -2,7 +2,7 @@
 // individual contributors. All rights reserved. Released under a BSD (revised)
 // license as described in the file LICENSE.
 
-#include "reductions/confidence.h"
+#include "confidence.h"
 
 #include "config/options.h"
 #include "example.h"

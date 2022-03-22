@@ -8,7 +8,7 @@
  *    ICML-2015.
  */
 
-#include "reductions/boosting.h"
+#include "boosting.h"
 
 #include "config/options.h"
 #include "correctedMath.h"

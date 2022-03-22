@@ -6,7 +6,7 @@
 #include "config/options.h"
 #include "memory.h"
 #include "numeric_casts.h"
-#include "reductions/gd.h"
+#include "gd.h"
 #include "vw.h"
 #include "vw_exception.h"
 

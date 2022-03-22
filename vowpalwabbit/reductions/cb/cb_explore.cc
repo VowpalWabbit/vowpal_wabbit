@@ -11,7 +11,7 @@
 #include "explore.h"
 #include "gen_cs_example.h"
 #include "rand48.h"
-#include "reductions/bs.h"
+#include "bs.h"
 #include "scope_exit.h"
 #include "setup_base.h"
 #include "shared_data.h"
