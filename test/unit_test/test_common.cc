@@ -14,6 +14,7 @@ VW::multi_ex parse_json(VW::workspace& all, const std::string& line)
   VW::multi_ex result;
   for (size_t i = 0; i < examples.size(); ++i)
   {
+    examples[i]->weight = all.example_parser->lbl_parser.get_weight(examples[i]->l, examples[i]->_reduction_features);
     result.push_back(examples[i]);
   }
   return result;

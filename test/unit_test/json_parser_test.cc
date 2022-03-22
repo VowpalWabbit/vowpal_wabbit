@@ -33,6 +33,32 @@ BOOST_AUTO_TEST_CASE(parse_json_simple)
   VW::finish(*vw);
 }
 
+BOOST_AUTO_TEST_CASE(parse_json_simple_with_weight)
+{
+  auto vw = VW::initialize("--json --chain_hash --no_stdin --quiet", nullptr, false, nullptr, nullptr);
+
+  std::string json_text = R"(
+    {
+      "_label": {
+        "Label": -1,
+        "Weight": 0.85
+      },
+      "features": {
+        "13": 3.9656971e-02,
+        "24303": 2.2660980e-01,
+        "const": 0.01
+      }
+    })";
+
+  auto examples = parse_json(*vw, json_text);
+
+  BOOST_CHECK_EQUAL(examples.size(), 1);
+  BOOST_CHECK_CLOSE(examples[0]->l.simple.label, -1.f, FLOAT_TOL);
+  BOOST_CHECK_CLOSE(examples[0]->weight, 0.85, FLOAT_TOL);
+  VW::finish_example(*vw, examples);
+  VW::finish(*vw);
+}
+
 // TODO: Make unit test dig out and verify features.
 BOOST_AUTO_TEST_CASE(parse_json_cb)
 {
