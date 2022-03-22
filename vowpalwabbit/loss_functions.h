@@ -8,7 +8,8 @@
 #include <memory>
 #include <string>
 
-// Information on how to implement a custom loss function in Loss functions · VowpalWabbit/vowpal_wabbit Wiki https://github.com/VowpalWabbit/vowpal_wabbit/wiki/Loss-functions#how-to-write-my-own-loss-function
+// Information on how to implement a custom loss function in Loss functions · VowpalWabbit/vowpal_wabbit Wiki
+// https://github.com/VowpalWabbit/vowpal_wabbit/wiki/Loss-functions#how-to-write-my-own-loss-function
 class loss_function
 {
 public:
@@ -20,7 +21,8 @@ public:
   virtual float getLoss(const shared_data*, float prediction, float label) const = 0;
 
   // Returns the update scalar.
-  // Based on the invariant update calculation from the Online Importance Weight Aware Updates paper https://arxiv.org/abs/1011.1576
+  // Based on the invariant update calculation from the Online Importance Weight Aware Updates paper
+  // https://arxiv.org/abs/1011.1576
   virtual float getUpdate(float prediction, float label, float update_scale, float pred_per_update) const = 0;
   virtual float getUnsafeUpdate(float prediction, float label, float update_scale) const = 0;
 
