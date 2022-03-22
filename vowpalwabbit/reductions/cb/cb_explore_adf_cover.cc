@@ -4,6 +4,8 @@
 
 #include "cb_explore_adf_cover.h"
 
+#include "../bs.h"
+#include "cb_adf.h"
 #include "cb_explore.h"
 #include "config/options.h"
 #include "explore.h"
@@ -12,8 +14,7 @@
 #include "label_parser.h"
 #include "numeric_casts.h"
 #include "rand48.h"
-#include "reductions/bs.h"
-#include "reductions/cb/cb_adf.h"
+#include "setup_base.h"
 #include "version.h"
 #include "vw_versions.h"
 

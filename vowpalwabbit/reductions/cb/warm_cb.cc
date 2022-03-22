@@ -10,6 +10,7 @@
 #include "io/logger.h"
 #include "rand_state.h"
 #include "scope_exit.h"
+#include "setup_base.h"
 #include "vw.h"
 #include "vw_exception.h"
 

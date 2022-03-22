@@ -10,6 +10,7 @@
 #include "gen_cs_example.h"
 #include "label_dictionary.h"
 #include "label_parser.h"
+#include "setup_base.h"
 #include "shared_data.h"
 #include "vw.h"
 #include "vw_exception.h"

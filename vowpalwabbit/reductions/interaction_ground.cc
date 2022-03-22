@@ -4,12 +4,13 @@
 
 #include "interaction_ground.h"
 
+#include "cb/cb_adf.h"
+#include "cb/cb_algs.h"
 #include "config/options.h"
 #include "label_dictionary.h"
 #include "label_parser.h"
 #include "prediction_type.h"
-#include "reductions/cb/cb_adf.h"
-#include "reductions/cb/cb_algs.h"
+#include "setup_base.h"
 #include "shared_data.h"
 #include "vw.h"
 #include "vw_exception.h"

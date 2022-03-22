@@ -8,6 +8,7 @@
 #include "memory.h"
 #include "parse_args.h"  // for spoof_hex_encoded_namespaces
 #include "rand48.h"
+#include "setup_base.h"
 #include "text_utils.h"
 #include "vw_exception.h"
 

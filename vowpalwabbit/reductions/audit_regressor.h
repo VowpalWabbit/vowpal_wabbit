@@ -4,6 +4,12 @@
 
 #pragma once
 
-#include "reductions_fwd.h"
+#include "vw_fwd.h"
 
+namespace VW
+{
+namespace reductions
+{
 VW::LEARNER::base_learner* audit_regressor_setup(VW::setup_base_i& stack_builder);
+}
+}  // namespace VW

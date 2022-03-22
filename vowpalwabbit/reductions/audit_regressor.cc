@@ -2,10 +2,13 @@
 // individual contributors. All rights reserved. Released under a BSD (revised)
 // license as described in the file LICENSE.
 
+#include "audit_regressor.h"
+
 #include "config/options.h"
 #include "fmt/format.h"
 #include "gd.h"
 #include "interactions.h"
+#include "setup_base.h"
 #include "shared_data.h"
 #include "table_formatter.h"
 #include "vw.h"
@@ -263,7 +266,7 @@ void init_driver(audit_regressor_data& dat)
   }
 }
 
-VW::LEARNER::base_learner* audit_regressor_setup(VW::setup_base_i& stack_builder)
+VW::LEARNER::base_learner* VW::reductions::audit_regressor_setup(VW::setup_base_i& stack_builder)
 {
   options_i& options = *stack_builder.get_options();
   VW::workspace& all = *stack_builder.get_all_pointer();
@@ -289,8 +292,8 @@ VW::LEARNER::base_learner* audit_regressor_setup(VW::setup_base_i& stack_builder
       audit_regressor, audit_regressor, stack_builder.get_setupfn_name(audit_regressor_setup))
                  // learn does not predict or learn. nothing to be gained by calling predict() before learn()
                  .set_learn_returns_prediction(true)
-                 .set_finish_example(finish_example)
-                 .set_finish(finish)
+                 .set_finish_example(::finish_example)
+                 .set_finish(::finish)
                  .set_init_driver(init_driver)
                  .build();
 

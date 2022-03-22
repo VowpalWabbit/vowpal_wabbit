@@ -3,7 +3,7 @@
 // license as described in the file LICENSE.
 #pragma once
 #include "cb.h"
-#include "reductions_fwd.h"
+#include "vw_fwd.h"
 
 VW::LEARNER::base_learner* cb_explore_setup(VW::setup_base_i& stack_builder);
 

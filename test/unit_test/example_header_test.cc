@@ -35,8 +35,8 @@ BOOST_AUTO_TEST_CASE(is_example_header_ccb) {
   examples.push_back(VW::read_example(vw, "ccb shared |User f"));
   examples.push_back(VW::read_example(vw, "ccb action |Action f"));
 
-  BOOST_CHECK_EQUAL(CCB::ec_is_example_header(*examples[0]), true);
-  BOOST_CHECK_EQUAL(CCB::ec_is_example_header(*examples[1]), false);
+  BOOST_CHECK_EQUAL(VW::reductions::ccb::ec_is_example_header(*examples[0]), true);
+  BOOST_CHECK_EQUAL(VW::reductions::ccb::ec_is_example_header(*examples[1]), false);
   VW::finish_example(vw, examples);
   VW::finish(vw);
 }

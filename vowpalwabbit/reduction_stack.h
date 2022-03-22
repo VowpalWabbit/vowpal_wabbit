@@ -1,6 +1,7 @@
 #pragma once
 
-#include "reductions_fwd.h"
+#include "setup_base.h"
+#include "vw_fwd.h"
 
 #include <tuple>
 #include <vector>

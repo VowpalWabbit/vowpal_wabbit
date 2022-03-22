@@ -7,7 +7,7 @@
 #include "constant.h"
 #include "example_predict.h"
 #include "feature_group.h"
-#include "reductions_fwd.h"
+#include "vw_fwd.h"
 #include "vw_math.h"
 
 #include <algorithm>

@@ -4,7 +4,7 @@
 
 #pragma once
 #include "global_data.h"
-#include "reductions_fwd.h"
+#include "vw_fwd.h"
 
 namespace VW
 {

@@ -7,6 +7,7 @@
 #include "io/logger.h"
 #include "loss_functions.h"
 #include "rand48.h"
+#include "setup_base.h"
 #include "shared_data.h"
 #include "vw.h"
 #include "vw_exception.h"
@@ -21,8 +22,12 @@
 
 using namespace VW::LEARNER;
 using namespace VW::config;
+using namespace VW::reductions;
 
-struct bs
+#define BS_TYPE_MEAN 0
+#define BS_TYPE_VOTE 1
+
+struct bs_data
 {
   uint32_t B = 0;  // number of bootstrap rounds
   size_t bs_type = 0;
@@ -143,7 +148,7 @@ void print_result(
   if (t != len) { logger.err_error("write error: {}", VW::strerror_to_string(errno)); }
 }
 
-void output_example(VW::workspace& all, bs& d, const VW::example& ec)
+void output_example(VW::workspace& all, bs_data& d, const VW::example& ec)
 {
   const label_data& ld = ec.l.simple;
 
@@ -167,7 +172,7 @@ void output_example(VW::workspace& all, bs& d, const VW::example& ec)
 }
 
 template <bool is_learn>
-void predict_or_learn(bs& d, single_learner& base, VW::example& ec)
+void predict_or_learn(bs_data& d, single_learner& base, VW::example& ec)
 {
   VW::workspace& all = *d.all;
   bool shouldOutput = all.raw_prediction != nullptr;
@@ -179,7 +184,7 @@ void predict_or_learn(bs& d, single_learner& base, VW::example& ec)
 
   for (size_t i = 1; i <= d.B; i++)
   {
-    ec.weight = weight_temp * static_cast<float>(BS::weight_gen(d._random_state));
+    ec.weight = weight_temp * static_cast<float>(bs::weight_gen(d._random_state));
 
     if (is_learn)
       base.learn(ec, i - 1);
@@ -212,17 +217,17 @@ void predict_or_learn(bs& d, single_learner& base, VW::example& ec)
   if (shouldOutput) all.print_text_by_ref(all.raw_prediction.get(), outputStringStream.str(), ec.tag, all.logger);
 }
 
-void finish_example(VW::workspace& all, bs& d, VW::example& ec)
+void finish_example(VW::workspace& all, bs_data& d, VW::example& ec)
 {
   output_example(all, d, ec);
   VW::finish_example(all, ec);
 }
 
-base_learner* bs_setup(VW::setup_base_i& stack_builder)
+base_learner* VW::reductions::bs_setup(VW::setup_base_i& stack_builder)
 {
   options_i& options = *stack_builder.get_options();
   VW::workspace& all = *stack_builder.get_all_pointer();
-  auto data = VW::make_unique<bs>();
+  auto data = VW::make_unique<bs_data>();
   std::string type_string;
   option_group_definition new_options("[Reduction] Bootstrap");
   new_options
@@ -261,7 +266,7 @@ base_learner* bs_setup(VW::setup_base_i& stack_builder)
       predict_or_learn<true>, predict_or_learn<false>, stack_builder.get_setupfn_name(bs_setup))
                 .set_params_per_weight(ws)
                 .set_learn_returns_prediction(true)
-                .set_finish_example(finish_example)
+                .set_finish_example(::finish_example)
                 .set_input_label_type(VW::label_type_t::simple)
                 .set_output_prediction_type(VW::prediction_type_t::scalar)
                 .build();

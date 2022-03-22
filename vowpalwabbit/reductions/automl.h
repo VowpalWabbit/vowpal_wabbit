@@ -9,8 +9,8 @@
 #include "learner.h"
 #include "metric_sink.h"
 #include "rand_state.h"
-#include "reductions_fwd.h"
 #include "scored_config.h"
+#include "vw_fwd.h"
 #include "vw_string_view.h"
 
 #include <fmt/format.h>
