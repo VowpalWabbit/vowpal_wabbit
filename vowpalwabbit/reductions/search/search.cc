@@ -1,6 +1,9 @@
 // Copyright (c) by respective owners including Yahoo!, Microsoft, and
 // individual contributors. All rights reserved. Released under a BSD (revised)
 // license as described in the file LICENSE.
+#include "../active.h"
+#include "../csoaa.h"
+#include "../gd.h"  // for GD::foreach_feature
 #include "crossplat_compat.h"
 #include "io/logger.h"
 #include "label_dictionary.h"
@@ -9,9 +12,6 @@
 #include "parse_primitives.h"
 #include "parse_regressor.h"
 #include "rand48.h"
-#include "active.h"
-#include "csoaa.h"
-#include "gd.h"  // for GD::foreach_feature
 #include "search_dep_parser.h"
 #include "search_entityrelationtask.h"
 #include "search_graph.h"

@@ -4,12 +4,12 @@
 
 #pragma once
 
+#include "../baseline.h"
 #include "cb.h"
 #include "cb_type.h"
 #include "example.h"
 #include "guard.h"
 #include "learner.h"
-#include "baseline.h"
 
 #include <cfloat>
 

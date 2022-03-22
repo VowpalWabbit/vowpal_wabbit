@@ -3,10 +3,10 @@
 // license as described in the file LICENSE.
 #include "search_graph.h"
 
+#include "../gd.h"
 #include "config/options.h"
 #include "memory.h"
 #include "numeric_casts.h"
-#include "gd.h"
 #include "vw.h"
 #include "vw_exception.h"
 

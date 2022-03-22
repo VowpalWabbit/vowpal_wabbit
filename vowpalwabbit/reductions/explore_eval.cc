@@ -2,12 +2,12 @@
 // individual contributors. All rights reserved. Released under a BSD (revised)
 // license as described in the file LICENSE.
 
+#include "cb/cb_adf.h"
+#include "cb/cb_algs.h"
 #include "config/options.h"
 #include "gen_cs_example.h"
 #include "rand48.h"
 #include "rand_state.h"
-#include "cb/cb_adf.h"
-#include "cb/cb_algs.h"
 #include "setup_base.h"
 #include "shared_data.h"
 #include "vw.h"

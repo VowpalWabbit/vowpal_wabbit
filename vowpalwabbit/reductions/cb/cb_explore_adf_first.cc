@@ -4,6 +4,7 @@
 
 #include "cb_explore_adf_first.h"
 
+#include "../bs.h"
 #include "cb_adf.h"
 #include "cb_explore.h"
 #include "cb_explore_adf_common.h"
@@ -13,7 +14,6 @@
 #include "label_parser.h"
 #include "numeric_casts.h"
 #include "rand48.h"
-#include "bs.h"
 #include "setup_base.h"
 #include "version.h"
 #include "vw_versions.h"

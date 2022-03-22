@@ -4,6 +4,8 @@
 
 #include "conditional_contextual_bandit.h"
 
+#include "cb/cb_adf.h"
+#include "cb/cb_algs.h"
 #include "config/options.h"
 #include "constant.h"
 #include "debug_log.h"
@@ -14,8 +16,6 @@
 #include "io/logger.h"
 #include "label_dictionary.h"
 #include "model_utils.h"
-#include "cb/cb_adf.h"
-#include "cb/cb_algs.h"
 #include "setup_base.h"
 #include "shared_data.h"
 #include "v_array_pool.h"
