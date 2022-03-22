@@ -3,7 +3,8 @@
 // license as described in the file LICENSE.
 
 #include "learner.h"
-#include "reductions_fwd.h"
+#include "setup_base.h"
+#include "vw_fwd.h"
 
 #include <vector>
 #ifdef _WIN32

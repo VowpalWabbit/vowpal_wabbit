@@ -3,7 +3,7 @@
 // license as described in the file LICENSE.
 #pragma once
 
-#include "reductions_fwd.h"
+#include "vw_fwd.h"
 
 namespace VW
 {

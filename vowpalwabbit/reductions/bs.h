@@ -3,16 +3,16 @@
 // license as described in the file LICENSE.
 #pragma once
 #include "rand_state.h"
-#include "reductions_fwd.h"
+#include "vw_fwd.h"
 
 #include <memory>
 
-#define BS_TYPE_MEAN 0
-#define BS_TYPE_VOTE 1
-
+namespace VW
+{
+namespace reductions
+{
 VW::LEARNER::base_learner* bs_setup(VW::setup_base_i& stack_builder);
-
-namespace BS
+namespace bs
 {
 inline uint32_t weight_gen(std::shared_ptr<VW::rand_state>& state)  // sampling from Poisson with rate 1
 {
@@ -39,4 +39,7 @@ inline uint32_t weight_gen(std::shared_ptr<VW::rand_state>& state)  // sampling 
   if (temp <= 0.9999999999999999998412) return 19;
   return 20;
 }
-}  // namespace BS
+
+}  // namespace bs
+}  // namespace reductions
+}  // namespace VW

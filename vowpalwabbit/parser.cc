@@ -728,7 +728,8 @@ void setup_example(VW::workspace& all, VW::example* ae)
 
   if (all.example_parser->emptylines_separate_examples &&
       (example_is_newline(*ae) &&
-          (all.example_parser->lbl_parser.label_type != label_type_t::ccb || CCB::ec_is_example_unset(*ae))))
+          (all.example_parser->lbl_parser.label_type != label_type_t::ccb ||
+              VW::reductions::ccb::ec_is_example_unset(*ae))))
     all.example_parser->in_pass_counter++;
 
   ae->weight = all.example_parser->lbl_parser.get_weight(ae->l, ae->_reduction_features);

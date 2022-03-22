@@ -10,6 +10,7 @@
 #include "label_dictionary.h"
 #include "learner.h"
 #include "scope_exit.h"
+#include "setup_base.h"
 #include "vw.h"
 
 #include <iterator>

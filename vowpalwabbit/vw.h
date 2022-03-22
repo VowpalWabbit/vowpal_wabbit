@@ -31,6 +31,7 @@
 #include "hash.h"
 #include "hashstring.h"
 #include "parser.h"
+#include "setup_base.h"
 #include "vw_fwd.h"
 
 #include <memory>

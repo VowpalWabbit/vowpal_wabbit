@@ -18,9 +18,9 @@
 #include "example.h"         // used in predict
 #include "gen_cs_example.h"  // required for GEN_CS::cb_to_cs_adf
 #include "metric_sink.h"
-#include "reductions_fwd.h"
 #include "shared_data.h"
 #include "v_array.h"  // required by action_score.h
+#include "vw_fwd.h"
 #include "vw_math.h"
 
 namespace VW

@@ -5,13 +5,17 @@
 #pragma once
 
 #include "rand_state.h"
-#include "reductions_fwd.h"
 #include "shared_data.h"
 #include "version.h"
+#include "vw_fwd.h"
 
 #include <memory>
 #include <utility>
 
+namespace VW
+{
+namespace reductions
+{
 struct active
 {
   active(float active_c0, shared_data* shared_data, std::shared_ptr<VW::rand_state> random_state,
@@ -33,3 +37,5 @@ struct active
 };
 
 VW::LEARNER::base_learner* active_setup(VW::setup_base_i& stack_builder);
+}  // namespace reductions
+}  // namespace VW

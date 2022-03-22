@@ -4,7 +4,7 @@
 #pragma once
 
 #include "cb_explore_adf_common.h"
-#include "reductions_fwd.h"
+#include "vw_fwd.h"
 
 #include <vector>
 

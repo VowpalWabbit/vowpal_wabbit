@@ -8,6 +8,7 @@
 #include "io/logger.h"
 #include "loss_functions.h"
 #include "rand48.h"
+#include "setup_base.h"
 #include "shared_data.h"
 #include "vw.h"
 #include "vw_exception.h"

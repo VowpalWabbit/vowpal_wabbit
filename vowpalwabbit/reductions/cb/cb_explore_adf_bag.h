@@ -4,7 +4,7 @@
 
 #pragma once
 
-#include "reductions_fwd.h"
+#include "vw_fwd.h"
 
 #include <memory>
 #include <vector>

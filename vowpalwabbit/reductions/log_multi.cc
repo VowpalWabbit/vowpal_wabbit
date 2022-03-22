@@ -10,6 +10,7 @@
 #include "learner.h"
 #include "loss_functions.h"
 #include "parser.h"
+#include "setup_base.h"
 
 #include <cfloat>
 #include <cmath>

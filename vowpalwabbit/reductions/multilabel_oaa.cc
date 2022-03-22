@@ -6,6 +6,7 @@
 #include "loss_functions.h"
 #include "named_labels.h"
 #include "numeric_casts.h"
+#include "setup_base.h"
 #include "shared_data.h"
 #include "vw.h"
 

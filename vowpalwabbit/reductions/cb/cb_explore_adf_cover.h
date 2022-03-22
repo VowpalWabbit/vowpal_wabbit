@@ -8,8 +8,8 @@
 #include "cb_explore_adf_common.h"
 #include "cost_sensitive.h"
 #include "gen_cs_example.h"
-#include "reductions_fwd.h"
 #include "v_array.h"
+#include "vw_fwd.h"
 
 #include <cstdint>
 #include <vector>

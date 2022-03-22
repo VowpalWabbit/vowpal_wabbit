@@ -9,6 +9,7 @@
 #include "io_buf.h"
 #include "parse_regressor.h"
 #include "prob_dist_cont.h"
+#include "setup_base.h"
 #include "shared_data.h"
 #include "vw.h"
 #include "vw_math.h"
@@ -20,10 +21,6 @@ using namespace VW::LEARNER;
 using namespace VW::config;
 using VW::continuous_actions::probability_density_function;
 
-namespace VW
-{
-namespace cbzo
-{
 constexpr uint8_t constant_policy = 0;
 constexpr uint8_t linear_policy = 1;
 
@@ -253,7 +250,7 @@ void report_progress(VW::workspace& all, example& ec)
   if (all.sd->weighted_examples() >= all.sd->dump_interval && !all.quiet)
   {
     all.sd->print_update(*all.trace_message, all.holdout_set_off, all.current_pass,
-        ec.test_only ? "unknown" : to_string(costs[0]),
+        ec.test_only ? "unknown" : VW::to_string(costs[0]),
         VW::to_string(ec.pred.pdf, VW::DEFAULT_FLOAT_FORMATTING_DECIMAL_PRECISION), ec.get_num_features(),
         all.progress_add, all.progress_arg);
   }
@@ -320,7 +317,7 @@ void (*get_predict(VW::workspace& all, uint8_t policy))(cbzo&, base_learner&, ex
     THROW("Unknown policy encountered: " << policy)
 }
 
-base_learner* setup(VW::setup_base_i& stack_builder)
+base_learner* VW::reductions::cbzo_setup(VW::setup_base_i& stack_builder)
 {
   options_i& options = *stack_builder.get_options();
   VW::workspace& all = *stack_builder.get_all_pointer();
@@ -367,14 +364,11 @@ base_learner* setup(VW::setup_base_i& stack_builder)
   data->max_prediction_supplied = options.was_supplied("max_prediction");
 
   auto* l = make_base_learner(std::move(data), get_learn(all, policy, feature_mask_off), get_predict(all, policy),
-      stack_builder.get_setupfn_name(setup), prediction_type_t::pdf, label_type_t::continuous)
+      stack_builder.get_setupfn_name(cbzo_setup), prediction_type_t::pdf, label_type_t::continuous)
                 .set_params_per_weight(0)
                 .set_save_load(save_load)
-                .set_finish_example(finish_example)
+                .set_finish_example(::finish_example)
                 .build();
 
   return make_base(*l);
 }
-
-}  // namespace cbzo
-}  // namespace VW

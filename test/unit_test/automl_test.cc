@@ -2,16 +2,16 @@
 // individual contributors. All rights reserved. Released under a BSD (revised)
 // license as described in the file LICENSE.
 
+#include "reductions/automl.h"
+
+#include "metric_sink.h"
+#include "simulator.h"
+#include "test_common.h"
+#include "vw_fwd.h"
+
+#include <boost/test/test_tools.hpp>
 #include <boost/test/tools/old/interface.hpp>
 #include <boost/test/unit_test.hpp>
-#include <boost/test/test_tools.hpp>
-
-#include "test_common.h"
-#include "simulator.h"
-#include "reductions_fwd.h"
-#include "reductions/automl.h"
-#include "metric_sink.h"
-
 #include <functional>
 #include <map>
 #include <utility>

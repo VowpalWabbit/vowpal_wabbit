@@ -7,6 +7,7 @@
 #include "action_score.h"
 #include "global_data.h"
 #include "learner.h"
+#include "setup_base.h"
 
 using namespace VW::config;
 using namespace VW::LEARNER;

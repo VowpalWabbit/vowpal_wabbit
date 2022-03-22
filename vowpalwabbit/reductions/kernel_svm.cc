@@ -16,6 +16,7 @@
 #include "parse_example.h"
 #include "rand48.h"
 #include "rand_state.h"
+#include "setup_base.h"
 #include "vw.h"
 #include "vw_allreduce.h"
 
