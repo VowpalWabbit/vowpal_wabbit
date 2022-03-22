@@ -11,6 +11,7 @@
 #include "learner.h"
 #include "memory.h"
 #include "parser.h"
+#include "setup_base.h"
 
 struct reduction_data
 {

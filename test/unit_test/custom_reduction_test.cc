@@ -10,8 +10,8 @@
 
 #include "config/options.h"
 #include "reduction_stack.h"
-#include "reductions_fwd.h"
 #include "vw.h"
+#include "vw_fwd.h"
 
 // this file would live in toy_reduction.cc
 // toy_reduction.h would define test_reduction_setup(..) fn

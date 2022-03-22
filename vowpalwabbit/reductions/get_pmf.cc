@@ -10,6 +10,7 @@
 #include "error_constants.h"
 #include "global_data.h"
 #include "guard.h"
+#include "setup_base.h"
 
 // Aliases
 using std::endl;

@@ -9,6 +9,7 @@
 #include "explore.h"
 #include "guard.h"
 #include "io/logger.h"
+#include "setup_base.h"
 #include "shared_data.h"
 #include "vw.h"
 

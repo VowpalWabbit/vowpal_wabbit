@@ -2,10 +2,13 @@
 // individual contributors. All rights reserved. Released under a BSD (revised)
 // license as described in the file LICENSE.
 
+#include "binary.h"
+
 #include "config/options.h"
 #include "debug_log.h"
 #include "global_data.h"
 #include "learner.h"
+#include "setup_base.h"
 
 #include <cfloat>
 #include <cmath>
@@ -17,12 +20,9 @@
 #include "io/logger.h"
 
 using namespace VW::config;
+using namespace VW::reductions;
 using std::endl;
 
-namespace VW
-{
-namespace binary
-{
 struct binary_data
 {
   VW::io::logger logger;
@@ -57,7 +57,7 @@ void predict_or_learn(binary_data& data, VW::LEARNER::single_learner& base, exam
   }
 }
 
-VW::LEARNER::base_learner* binary_setup(setup_base_i& stack_builder)
+VW::LEARNER::base_learner* VW::reductions::binary_setup(setup_base_i& stack_builder)
 {
   options_i& options = *stack_builder.get_options();
 
@@ -80,6 +80,3 @@ VW::LEARNER::base_learner* binary_setup(setup_base_i& stack_builder)
 
   return make_base(*ret);
 }
-
-}  // namespace binary
-}  // namespace VW

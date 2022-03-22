@@ -9,6 +9,7 @@
 #include "numeric_casts.h"
 #include "rand48.h"
 #include "rand_state.h"
+#include "setup_base.h"
 #include "v_array.h"
 #include "vw.h"
 

@@ -6,6 +6,7 @@
 #include "feature_group.h"
 #include "global_data.h"
 #include "loss_functions.h"
+#include "setup_base.h"
 
 #include <cfloat>
 

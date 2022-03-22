@@ -5,8 +5,8 @@
 
 #include "io_buf.h"
 #include "label_parser.h"
-#include "reductions_fwd.h"
 #include "v_array.h"
+#include "vw_fwd.h"
 
 #include <cfloat>
 #include <cstdint>

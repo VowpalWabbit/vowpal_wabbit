@@ -5,6 +5,7 @@
 #include "crossplat_compat.h"
 #include "debug_log.h"
 #include "learner.h"
+#include "setup_base.h"
 #ifdef BUILD_EXTERNAL_PARSER
 #  include "parse_example_external.h"
 #endif

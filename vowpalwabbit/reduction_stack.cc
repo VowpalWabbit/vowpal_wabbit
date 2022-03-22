@@ -5,8 +5,8 @@
 #include "config/options_name_extractor.h"
 #include "global_data.h"  // to get vw struct
 #include "learner.h"
-#include "reductions_fwd.h"
 #include "simple_label_parser.h"
+#include "vw_fwd.h"
 
 // reductions / setup functions
 #include "reductions/active.h"
@@ -136,7 +136,7 @@ void prepare_reductions(std::vector<std::tuple<std::string, reduction_setup_fn>>
   reductions.push_back(gd_mf_setup);
   reductions.push_back(print_setup);
   reductions.push_back(noop_setup);
-  reductions.push_back(bfgs_setup);
+  reductions.push_back(VW::reductions::bfgs_setup);
   reductions.push_back(OjaNewton_setup);
   // reductions.push_back(VW_CNTK::setup);
 
@@ -145,34 +145,34 @@ void prepare_reductions(std::vector<std::tuple<std::string, reduction_setup_fn>>
   reductions.push_back(generate_interactions_setup);
 
   // Score Users
-  reductions.push_back(baseline_setup);
+  reductions.push_back(VW::reductions::baseline_setup);
   reductions.push_back(ExpReplay::expreplay_setup<'b', simple_label_parser>);
-  reductions.push_back(active_setup);
-  reductions.push_back(active_cover_setup);
-  reductions.push_back(confidence_setup);
+  reductions.push_back(VW::reductions::active_setup);
+  reductions.push_back(VW::reductions::active_cover_setup);
+  reductions.push_back(VW::reductions::confidence_setup);
   reductions.push_back(nn_setup);
   reductions.push_back(marginal_setup);
-  reductions.push_back(autolink_setup);
+  reductions.push_back(VW::reductions::autolink_setup);
   reductions.push_back(lrq_setup);
   reductions.push_back(lrqfa_setup);
   reductions.push_back(stagewise_poly_setup);
   reductions.push_back(scorer_setup);
   reductions.push_back(lda_setup);
-  reductions.push_back(VW::cbzo::setup);
+  reductions.push_back(VW::reductions::cbzo_setup);
 
   // Reductions
-  reductions.push_back(bs_setup);
-  reductions.push_back(VW::binary::binary_setup);
+  reductions.push_back(VW::reductions::bs_setup);
+  reductions.push_back(VW::reductions::binary_setup);
 
   reductions.push_back(ExpReplay::expreplay_setup<'m', MULTICLASS::mc_label>);
   reductions.push_back(topk_setup);
   reductions.push_back(oaa_setup);
-  reductions.push_back(boosting_setup);
+  reductions.push_back(VW::reductions::boosting_setup);
   reductions.push_back(ect_setup);
   reductions.push_back(log_multi_setup);
   reductions.push_back(recall_tree_setup);
   reductions.push_back(memory_tree_setup);
-  reductions.push_back(classweight_setup);
+  reductions.push_back(VW::reductions::classweight_setup);
   reductions.push_back(multilabel_oaa_setup);
   reductions.push_back(plt_setup);
 
@@ -185,7 +185,7 @@ void prepare_reductions(std::vector<std::tuple<std::string, reduction_setup_fn>>
   reductions.push_back(VW::interaction_ground_setup);
   reductions.push_back(mwt_setup);
   reductions.push_back(VW::cats_tree::setup);
-  reductions.push_back(baseline_challenger_cb_setup);
+  reductions.push_back(VW::reductions::baseline_challenger_cb_setup);
   reductions.push_back(VW::automl::automl_setup);
   reductions.push_back(cb_explore_setup);
   reductions.push_back(VW::cb_explore_adf::greedy::setup);
@@ -201,7 +201,7 @@ void prepare_reductions(std::vector<std::tuple<std::string, reduction_setup_fn>>
   reductions.push_back(cb_sample_setup);
   reductions.push_back(explore_eval_setup);
   reductions.push_back(VW::shared_feature_merger::shared_feature_merger_setup);
-  reductions.push_back(CCB::ccb_explore_adf_setup);
+  reductions.push_back(VW::reductions::ccb_explore_adf_setup);
   reductions.push_back(VW::slates::slates_setup);
   // cbify/warm_cb can generate multi-examples. Merge shared features after them
   reductions.push_back(warm_cb_setup);
@@ -217,7 +217,7 @@ void prepare_reductions(std::vector<std::tuple<std::string, reduction_setup_fn>>
   reductions.push_back(VW::offset_tree::setup);
   reductions.push_back(ExpReplay::expreplay_setup<'c', COST_SENSITIVE::cs_label>);
   reductions.push_back(Search::setup);
-  reductions.push_back(audit_regressor_setup);
+  reductions.push_back(VW::reductions::audit_regressor_setup);
   reductions.push_back(VW::metrics::metrics_setup);
   reductions.push_back(VW::count_label_setup);
 

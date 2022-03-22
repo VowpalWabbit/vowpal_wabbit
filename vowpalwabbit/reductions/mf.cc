@@ -3,6 +3,7 @@
 // license as described in the file LICENSE.
 
 #include "numeric_casts.h"
+#include "setup_base.h"
 #ifdef _WIN32
 #  define NOMINMAX
 #  include <winsock2.h>

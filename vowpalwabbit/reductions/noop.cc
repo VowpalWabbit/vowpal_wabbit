@@ -8,6 +8,7 @@
 
 #include "config/options.h"
 #include "learner.h"
+#include "setup_base.h"
 
 using namespace VW::config;
 

@@ -8,9 +8,9 @@
 // this test is a copy from unit_test/prediction_test.cc
 // it adds a noop reduction on top
 
-#include "vw.h"
-#include "reductions_fwd.h"
 #include "reduction_stack.h"
+#include "vw.h"
+#include "vw_fwd.h"
 
 // this file would live in minimal_reduction.cc
 // minimal_reduction.h would define test_reduction_setup(..) fn

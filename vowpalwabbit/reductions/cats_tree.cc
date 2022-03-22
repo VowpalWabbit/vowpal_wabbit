@@ -12,6 +12,7 @@
 #include "label_parser.h"
 #include "learner.h"
 #include "parser.h"
+#include "setup_base.h"
 
 #include <algorithm>
 #include <cassert>

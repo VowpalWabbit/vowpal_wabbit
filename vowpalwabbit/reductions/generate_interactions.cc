@@ -9,6 +9,7 @@
 #include "interactions.h"
 #include "io/logger.h"
 #include "learner.h"
+#include "setup_base.h"
 #include "v_array.h"
 #include "vw_math.h"
 

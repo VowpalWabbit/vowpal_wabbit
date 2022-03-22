@@ -69,7 +69,7 @@ std::string to_string(const VW::decision_scores_t& decision_scores, int decimal_
 void print_update_ccb(
     VW::workspace& all, std::vector<example*>& slots, const VW::decision_scores_t& decision_scores, size_t num_features)
 {
-  print_update(all, slots, decision_scores, num_features, CCB::generate_ccb_label_printout);
+  print_update(all, slots, decision_scores, num_features, reductions::ccb::generate_ccb_label_printout);
 }
 
 void print_update_slates(

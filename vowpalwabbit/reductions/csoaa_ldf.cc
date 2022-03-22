@@ -11,6 +11,7 @@
 #include "label_dictionary.h"
 #include "loss_functions.h"
 #include "scope_exit.h"
+#include "setup_base.h"
 #include "shared_data.h"
 #include "vw.h"
 #include "vw_exception.h"
