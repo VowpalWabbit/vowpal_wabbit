@@ -380,7 +380,7 @@ BOOST_AUTO_TEST_CASE(parse_json_slates_dom_parser)
 
   // Assert parsed values against what they should be
   auto slates_vw =
-      VW::initialize("--slates --dsjson --chain_hash --no_stdin --quiet", nullptr, false, nullptr, nullptr);
+      VW::initialize("--slates --dsjson --chain_hash --no_stdin --noconstant --quiet", nullptr, false, nullptr, nullptr);
   auto examples = parse_json(*slates_vw, json_text);
 
   BOOST_CHECK_EQUAL(examples.size(), 8);
