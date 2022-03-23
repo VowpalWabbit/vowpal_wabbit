@@ -327,7 +327,7 @@ public:
 class expectileloss : public loss_function
 {
 public:
-  expectileloss(float& q_) : _q(q_) {}
+  expectileloss(float& q) : _q(q) {}
 
   std::string getType() const override { return "expectile"; }
   float getParameter() const override { return _q; }
@@ -370,8 +370,8 @@ public:
     return squared_loss_impl::second_derivative(sd, prediction) * (err > 0 ? _q : (1.f - _q));
   }
 
-  // Expectile parameter that transforms the squared loss into an asymmetric loss function if _q != 0.5
 private:
+  // Expectile parameter that transforms the squared loss into an asymmetric loss function if _q != 0.5
   float _q;
 };
 
