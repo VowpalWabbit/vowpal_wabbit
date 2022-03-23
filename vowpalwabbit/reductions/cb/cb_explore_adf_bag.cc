@@ -4,6 +4,7 @@
 
 #include "cb_explore_adf_bag.h"
 
+#include "../bs.h"
 #include "cb_adf.h"
 #include "cb_explore.h"
 #include "cb_explore_adf_common.h"
@@ -13,7 +14,7 @@
 #include "label_parser.h"
 #include "numeric_casts.h"
 #include "rand48.h"
-#include "reductions/bs.h"
+#include "setup_base.h"
 
 #include <algorithm>
 #include <cmath>
@@ -75,7 +76,7 @@ uint32_t cb_explore_adf_bag::get_bag_learner_update_count(uint32_t learner_index
   if (_greedify && learner_index == 0)
     return 1;
   else
-    return BS::weight_gen(_random_state);
+    return reductions::bs::weight_gen(_random_state);
 }
 
 void cb_explore_adf_bag::predict(VW::LEARNER::multi_learner& base, multi_ex& examples)

@@ -4,6 +4,7 @@
 
 #include "crossplat_compat.h"
 #include "future_compat.h"
+#include "setup_base.h"
 
 VW_WARNING_DISABLE_DEPRECATED_USAGE
 

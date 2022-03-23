@@ -8,6 +8,7 @@
 #include "cbify.h"
 #include "config/options.h"
 #include "learner.h"
+#include "setup_base.h"
 #include "vw.h"
 #include "vw_versions.h"
 

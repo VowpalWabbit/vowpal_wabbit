@@ -10,6 +10,7 @@
 #include "label_parser.h"
 #include "learner.h"
 #include "rand48.h"
+#include "setup_base.h"
 
 using namespace VW::LEARNER;
 using namespace VW;

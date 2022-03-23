@@ -8,8 +8,9 @@
 #include "loss_functions.h"
 #include "memory.h"
 #include "parse_regressor.h"
-#include "reductions_fwd.h"
+#include "setup_base.h"
 #include "vw.h"
+#include "vw_fwd.h"
 
 #include <cassert>
 #include <iostream>

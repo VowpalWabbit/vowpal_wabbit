@@ -4,7 +4,7 @@
 
 #pragma once
 #include "feature_group.h"
-#include "reductions_fwd.h"
+#include "vw_fwd.h"
 
 class parameters;
 struct namespace_interactions;

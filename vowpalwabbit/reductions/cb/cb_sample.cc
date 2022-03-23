@@ -11,6 +11,7 @@
 #include "learner.h"
 #include "rand48.h"
 #include "rand_state.h"
+#include "setup_base.h"
 #include "tag_utils.h"
 #include "vw_string_view.h"
 

@@ -10,6 +10,7 @@
 #include "io/logger.h"
 #include "learner.h"
 #include "loss_functions.h"
+#include "setup_base.h"
 #include "text_utils.h"
 
 #include <map>
