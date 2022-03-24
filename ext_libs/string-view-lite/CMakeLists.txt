@@ -1,7 +1,4 @@
-add_library(string_view INTERFACE
-    vowpalwabbit/vw_string_view.h
-    vowpalwabbit/nonstd/string_view.h
-)
+add_library(string_view INTERFACE)
 
 add_library(VowpalWabbit::string_view ALIAS string_view)
 
