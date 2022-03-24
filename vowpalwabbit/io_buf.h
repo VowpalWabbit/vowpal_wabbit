@@ -7,7 +7,7 @@
 #include "hash.h"
 #include "io/io_adapter.h"
 #include "v_array.h"
-#include "vw_string_view.h"
+#include "vowpalwabbit/vw_string_view.h"
 
 #include <algorithm>
 #include <cassert>

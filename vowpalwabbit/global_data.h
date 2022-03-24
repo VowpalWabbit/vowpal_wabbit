@@ -11,7 +11,7 @@
 #include "io/logger.h"
 #include "version.h"
 #include "vw_fwd.h"
-#include "vw_string_view.h"
+#include "vowpalwabbit/vw_string_view.h"
 
 #include <array>
 #include <cfloat>

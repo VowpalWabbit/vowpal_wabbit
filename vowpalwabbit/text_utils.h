@@ -6,7 +6,7 @@
 
 #include "future_compat.h"
 #include "vw_fwd.h"
-#include "vw_string_view.h"
+#include "vowpalwabbit/vw_string_view.h"
 
 #include <string>
 

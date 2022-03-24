@@ -12,7 +12,7 @@
 #include "vw.h"
 #include "vw_exception.h"
 #include "vw_math.h"
-#include "vw_string_view.h"
+#include "vowpalwabbit/vw_string_view.h"
 #include "vw_versions.h"
 
 #include <cerrno>

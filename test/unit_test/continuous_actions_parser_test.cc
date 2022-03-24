@@ -12,7 +12,7 @@
 #include "cb_continuous_label.h"
 #include "parser.h"
 #include "parse_primitives.h"
-#include "vw_string_view.h"
+#include "vowpalwabbit/vw_string_view.h"
 #include <memory>
 
 void parse_label(VW::label_parser& lp, VW::string_view label, VW::polylabel& l, VW::reduction_features& red_fts)

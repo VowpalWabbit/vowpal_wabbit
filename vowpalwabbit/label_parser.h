@@ -6,7 +6,7 @@
 
 #include "io/logger.h"
 #include "label_type.h"
-#include "vw_string_view.h"
+#include "vowpalwabbit/vw_string_view.h"
 
 #include <string>
 #include <vector>

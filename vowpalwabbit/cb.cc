@@ -11,7 +11,7 @@
 #include "text_utils.h"
 #include "vw.h"
 #include "vw_exception.h"
-#include "vw_string_view.h"
+#include "vowpalwabbit/vw_string_view.h"
 
 #include <algorithm>
 #include <cfloat>

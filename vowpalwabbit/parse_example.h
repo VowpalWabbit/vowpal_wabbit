@@ -3,7 +3,7 @@
 // license as described in the file LICENSE.
 #pragma once
 #include "vw_fwd.h"
-#include "vw_string_view.h"
+#include "vowpalwabbit/vw_string_view.h"
 
 #include <cstdint>
 

@@ -13,7 +13,7 @@
 #include "parser.h"
 #include "shared_data.h"
 #include "unique_sort.h"
-#include "vw_string_view.h"
+#include "vowpalwabbit/vw_string_view.h"
 
 #include <cctype>
 #include <cmath>

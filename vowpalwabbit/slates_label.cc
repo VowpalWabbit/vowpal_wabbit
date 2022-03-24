@@ -10,7 +10,7 @@
 #include "parse_primitives.h"
 #include "parser.h"
 #include "vw_math.h"
-#include "vw_string_view.h"
+#include "vowpalwabbit/vw_string_view.h"
 
 #include <numeric>
 

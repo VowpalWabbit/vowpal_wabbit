@@ -7,7 +7,7 @@
 #include "vwdll.h"
 #include "vw.h"
 #include "test_common.h"
-#include "vw_string_view.h"
+#include "vowpalwabbit/vw_string_view.h"
 
 using namespace boost::unit_test;
 

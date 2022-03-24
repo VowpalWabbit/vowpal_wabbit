@@ -12,7 +12,7 @@
 #include "slates_label.h"
 #include "parser.h"
 #include "parse_primitives.h"
-#include "vw_string_view.h"
+#include "vowpalwabbit/vw_string_view.h"
 
 void parse_slates_label(VW::string_view label, VW::slates::label& l)
 {

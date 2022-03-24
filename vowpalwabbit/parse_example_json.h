@@ -45,7 +45,7 @@ VW_WARNING_STATE_POP
 #include "json_utils.h"
 #include "parse_slates_example_json.h"
 #include "reductions/conditional_contextual_bandit.h"
-#include "vw_string_view.h"
+#include "vowpalwabbit/vw_string_view.h"
 
 #include <algorithm>
 #include <limits>

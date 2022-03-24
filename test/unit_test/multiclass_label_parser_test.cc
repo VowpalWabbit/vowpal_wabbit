@@ -10,7 +10,7 @@
 #include "parser.h"
 #include "global_data.h"
 #include "shared_data.h"
-#include "vw_string_view.h"
+#include "vowpalwabbit/vw_string_view.h"
 
 void parse_label(VW::label_parser& lp, VW::string_view label, VW::polylabel& l)
 {

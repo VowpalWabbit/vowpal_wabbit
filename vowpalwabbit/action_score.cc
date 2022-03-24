@@ -9,7 +9,7 @@
 #include "io_buf.h"
 #include "text_utils.h"
 #include "v_array.h"
-#include "vw_string_view.h"
+#include "vowpalwabbit/vw_string_view.h"
 
 namespace ACTION_SCORE
 {

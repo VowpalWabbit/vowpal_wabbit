@@ -13,7 +13,7 @@
 #include "reductions/conditional_contextual_bandit.h"
 #include "parser.h"
 #include "parse_primitives.h"
-#include "vw_string_view.h"
+#include "vowpalwabbit/vw_string_view.h"
 #include <memory>
 
 void parse_ccb_label(VW::string_view label, CCB::label& l)

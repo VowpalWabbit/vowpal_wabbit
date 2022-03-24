@@ -230,7 +230,6 @@ set(vw_all_headers
   vw_allreduce.h
   vw_exception.h
   vw_math.h
-  vw_string_view.h
   vw_validate.h
   vw_versions.h
   vw.h
@@ -414,7 +413,7 @@ add_library(vw STATIC ${vw_all_sources} ${vw_all_headers})
 
 target_link_libraries(vw
   PUBLIC
-    VowpalWabbit::explore VowpalWabbit::allreduce ${spdlog_target} fmt::fmt
+    VowpalWabbit::explore VowpalWabbit::allreduce ${spdlog_target} fmt::fmt VowpalWabbit::string_view
   PRIVATE
     ${CMAKE_DL_LIBS} ${LINK_THREADS} vw_io
     # Workaround an issue where RapidJSON needed to be exported tom install the target. This is

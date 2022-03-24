@@ -89,3 +89,5 @@ else()
           RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
   endif()
 endif()
+
+add_subdirectory(${CMAKE_CURRENT_LIST_DIR}/string-view-lite)

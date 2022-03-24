@@ -8,7 +8,7 @@
 #include "hashstring.h"
 #include "io/logger.h"
 #include "v_array.h"
-#include "vw_string_view.h"
+#include "vowpalwabbit/vw_string_view.h"
 
 #include <cmath>
 #include <cstdint>
