@@ -1019,7 +1019,7 @@ void parse_example_tweaks(options_i& options, VW::workspace& all)
                      "cache sizes"))
       .add(make_option("loss_function", loss_function)
                .default_value("squared")
-               .one_of({"squared", "classic", "hinge", "logistic", "quantile", "poisson"})
+               .one_of({"squared", "classic", "hinge", "logistic", "quantile", "expectile", "poisson"})
                .help("Specify the loss function to be used, uses squared by default"))
       .add(make_option("quantile_tau", loss_parameter)
                .default_value(0.5f)
@@ -1067,7 +1067,7 @@ void parse_example_tweaks(options_i& options, VW::workspace& all)
   }
 
   all.loss = getLossFunction(all, loss_function, loss_parameter);
-  if (options.was_supplied("quantile_tau") && all.loss->getType() != "quantile")
+  if (options.was_supplied("quantile_tau") && all.loss->getType() != "quantile" && all.loss->getType() != "expectile")
   {
     all.logger.err_warn(
         "Option 'quantile_tau' was passed but the quantile loss function is not being used. 'quantile_tau' value will "

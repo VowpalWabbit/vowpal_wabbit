@@ -14,6 +14,68 @@
 #include <cmath>
 #include <cstdlib>
 
+namespace squared_loss_impl
+{
+inline float getLoss(const shared_data* sd, float prediction, float label)
+{
+  if (prediction <= sd->max_label && prediction >= sd->min_label)
+  {
+    float example_loss = (prediction - label) * (prediction - label);
+    return example_loss;
+  }
+  else if (prediction < sd->min_label)
+  {
+    if (label == sd->min_label)
+      return 0.;
+    else
+      return static_cast<float>((label - sd->min_label) * (label - sd->min_label) +
+          2. * (label - sd->min_label) * (sd->min_label - prediction));
+  }
+  else if (label == sd->max_label)
+    return 0.;
+  else
+    return static_cast<float>((sd->max_label - label) * (sd->max_label - label) +
+        2. * (sd->max_label - label) * (prediction - sd->max_label));
+}
+
+inline float getUpdate(float prediction, float label, float update_scale, float pred_per_update)
+{
+  if (update_scale * pred_per_update < 1e-6)
+  {
+    /* When exp(-eta_t)~= 1 we replace 1-exp(-eta_t)
+     * with its first order Taylor expansion around 0
+     * to avoid catastrophic cancellation.
+     */
+    return 2.f * (label - prediction) * update_scale;
+  }
+  return (label - prediction) * (1.f - correctedExp(-2.f * update_scale * pred_per_update)) / pred_per_update;
+}
+
+inline float getUnsafeUpdate(float prediction, float label, float update_scale)
+{
+  return 2.f * (label - prediction) * update_scale;
+}
+
+inline float getSquareGrad(float prediction, float label) { return 4.f * (prediction - label) * (prediction - label); }
+
+inline float first_derivative(const shared_data* sd, float prediction, float label)
+{
+  if (prediction < sd->min_label)
+    prediction = sd->min_label;
+  else if (prediction > sd->max_label)
+    prediction = sd->max_label;
+  return 2.f * (prediction - label);
+}
+
+inline float second_derivative(const shared_data* sd, float prediction)
+{
+  if (prediction <= sd->max_label && prediction >= sd->min_label)
+    return 2.;
+  else
+    return 0.;
+}
+}  // namespace squared_loss_impl
+
 class squaredloss : public loss_function
 {
 public:
@@ -21,64 +83,32 @@ public:
 
   float getLoss(const shared_data* sd, float prediction, float label) const override
   {
-    if (prediction <= sd->max_label && prediction >= sd->min_label)
-    {
-      float example_loss = (prediction - label) * (prediction - label);
-      return example_loss;
-    }
-    else if (prediction < sd->min_label)
-    {
-      if (label == sd->min_label)
-        return 0.;
-      else
-        return static_cast<float>((label - sd->min_label) * (label - sd->min_label) +
-            2. * (label - sd->min_label) * (sd->min_label - prediction));
-    }
-    else if (label == sd->max_label)
-      return 0.;
-    else
-      return static_cast<float>((sd->max_label - label) * (sd->max_label - label) +
-          2. * (sd->max_label - label) * (prediction - sd->max_label));
+    return squared_loss_impl::getLoss(sd, prediction, label);
   }
 
   float getUpdate(float prediction, float label, float update_scale, float pred_per_update) const override
   {
-    if (update_scale * pred_per_update < 1e-6)
-    {
-      /* When exp(-eta_t)~= 1 we replace 1-exp(-eta_t)
-       * with its first order Taylor expansion around 0
-       * to avoid catastrophic cancellation.
-       */
-      return 2.f * (label - prediction) * update_scale;
-    }
-    return (label - prediction) * (1.f - correctedExp(-2.f * update_scale * pred_per_update)) / pred_per_update;
+    return squared_loss_impl::getUpdate(prediction, label, update_scale, pred_per_update);
   }
 
   float getUnsafeUpdate(float prediction, float label, float update_scale) const override
   {
-    return 2.f * (label - prediction) * update_scale;
+    return squared_loss_impl::getUnsafeUpdate(prediction, label, update_scale);
   }
 
   float getSquareGrad(float prediction, float label) const override
   {
-    return 4.f * (prediction - label) * (prediction - label);
+    return squared_loss_impl::getSquareGrad(prediction, label);
   }
 
   float first_derivative(const shared_data* sd, float prediction, float label) const override
   {
-    if (prediction < sd->min_label)
-      prediction = sd->min_label;
-    else if (prediction > sd->max_label)
-      prediction = sd->max_label;
-    return 2.f * (prediction - label);
+    return squared_loss_impl::first_derivative(sd, prediction, label);
   }
 
   float second_derivative(const shared_data* sd, float prediction, float) const override
   {
-    if (prediction <= sd->max_label && prediction >= sd->min_label)
-      return 2.;
-    else
-      return 0.;
+    return squared_loss_impl::second_derivative(sd, prediction);
   }
 };
 
@@ -292,6 +322,59 @@ public:
   float tau;
 };
 
+// Expectile loss is closely related to the squared loss, but it's an asymmetric function with an expectile parameter
+// Its methods can be derived from the corresponding methods from the squared loss multiplied by the expectile value
+class expectileloss : public loss_function
+{
+public:
+  expectileloss(float& q) : _q(q) {}
+
+  std::string getType() const override { return "expectile"; }
+  float getParameter() const override { return _q; }
+
+  float getLoss(const shared_data* sd, float prediction, float label) const override
+  {
+    float err = label - prediction;
+    return squared_loss_impl::getLoss(sd, prediction, label) * (err > 0 ? _q : (1.f - _q));
+  }
+
+  float getUpdate(float prediction, float label, float update_scale, float pred_per_update) const override
+  {
+    float err = label - prediction;
+    return err > 0 ? squared_loss_impl::getUpdate(prediction, label, _q * update_scale, pred_per_update)
+                   : squared_loss_impl::getUpdate(prediction, label, (1.f - _q) * update_scale, pred_per_update);
+  }
+
+  float getUnsafeUpdate(float prediction, float label, float update_scale) const override
+  {
+    float err = label - prediction;
+    return err > 0 ? squared_loss_impl::getUnsafeUpdate(prediction, label, _q * update_scale)
+                   : squared_loss_impl::getUnsafeUpdate(prediction, label, (1.f - _q) * update_scale);
+  }
+
+  float getSquareGrad(float prediction, float label) const override
+  {
+    float err = label - prediction;
+    return squared_loss_impl::getSquareGrad(prediction, label) * (err > 0 ? _q * _q : (1.f - _q) * (1.f - _q));
+  }
+
+  float first_derivative(const shared_data* sd, float prediction, float label) const override
+  {
+    float err = label - prediction;
+    return squared_loss_impl::first_derivative(sd, prediction, label) * (err > 0 ? _q : (1.f - _q));
+  }
+
+  float second_derivative(const shared_data* sd, float prediction, float label) const override
+  {
+    float err = label - prediction;
+    return squared_loss_impl::second_derivative(sd, prediction) * (err > 0 ? _q : (1.f - _q));
+  }
+
+private:
+  // Expectile parameter that transforms the squared loss into an asymmetric loss function if _q != 0.5
+  float _q;
+};
+
 class poisson_loss : public loss_function
 {
   mutable VW::io::logger logger;
@@ -372,6 +455,10 @@ std::unique_ptr<loss_function> getLossFunction(
   else if (funcName == "quantile" || funcName == "pinball" || funcName == "absolute")
   {
     return VW::make_unique<quantileloss>(function_parameter);
+  }
+  else if (funcName == "expectile")
+  {
+    return VW::make_unique<expectileloss>(function_parameter);
   }
   else if (funcName == "poisson")
   {
