@@ -9,6 +9,7 @@
 #include "debug_log.h"
 #include "model_utils.h"
 #include "rand_state.h"
+#include "setup_base.h"
 #include "vw.h"
 
 #include <cfloat>

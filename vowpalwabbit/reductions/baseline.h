@@ -4,14 +4,20 @@
 
 #pragma once
 
-#include "reductions_fwd.h"
+#include "vw_fwd.h"
 
-VW::LEARNER::base_learner* baseline_setup(VW::setup_base_i& stack_builder);
-
-namespace BASELINE
+namespace VW
+{
+namespace reductions
+{
+namespace baseline
 {
 // utility functions for disabling baseline on a given example
 void set_baseline_enabled(VW::example* ec);
 void reset_baseline_disabled(VW::example* ec);
 bool baseline_enabled(const VW::example* ec);
-}  // namespace BASELINE
+
+}  // namespace baseline
+VW::LEARNER::base_learner* baseline_setup(VW::setup_base_i& stack_builder);
+}  // namespace reductions
+}  // namespace VW

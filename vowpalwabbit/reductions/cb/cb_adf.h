@@ -4,7 +4,7 @@
 
 #pragma once
 #include "io/logger.h"
-#include "reductions_fwd.h"
+#include "vw_fwd.h"
 
 #include <vector>
 

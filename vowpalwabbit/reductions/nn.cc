@@ -9,6 +9,7 @@
 #include "named_labels.h"
 #include "rand48.h"
 #include "rand_state.h"
+#include "setup_base.h"
 #include "shared_data.h"
 #include "vw.h"
 

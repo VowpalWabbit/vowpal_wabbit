@@ -6,6 +6,7 @@
 #include "config/options.h"
 #include "gd.h"
 #include "label_parser.h"
+#include "setup_base.h"
 #include "vw.h"
 #include "vw_allreduce.h"
 
