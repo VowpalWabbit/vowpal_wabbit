@@ -18,7 +18,7 @@
  */
 void unique_features(features& fs, int max)
 {
-  if (fs.indices.empty()) return;
+  if (fs.indices.empty()) { return; }
   if (max == 0)
   {
     fs.clear();

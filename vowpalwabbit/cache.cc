@@ -24,7 +24,7 @@ inline char* run_len_decode(char* p, uint64_t& i)
 {
   // read an int 7 bits at a time.
   size_t count = 0;
-  while (*p & 128) i = i | (static_cast<uint64_t>(*(p++) & 127) << 7 * count++);
+  while (*p & 128) { i = i | (static_cast<uint64_t>(*(p++) & 127) << 7 * count++); }
   i = i | (static_cast<uint64_t>(*(p++)) << 7 * count);
   return p;
 }
@@ -47,11 +47,11 @@ size_t read_cached_tag(io_buf& cache, VW::example* ae)
 {
   char* c;
   size_t tag_size;
-  if (cache.buf_read(c, sizeof(tag_size)) < sizeof(tag_size)) return 0;
+  if (cache.buf_read(c, sizeof(tag_size)) < sizeof(tag_size)) { return 0; }
   tag_size = *reinterpret_cast<size_t*>(c);
   c += sizeof(tag_size);
   cache.set(c);
-  if (cache.buf_read(c, tag_size) < tag_size) return 0;
+  if (cache.buf_read(c, tag_size) < tag_size) { return 0; }
 
   ae->tag.clear();
   ae->tag.insert(ae->tag.end(), c, c + tag_size);
@@ -117,8 +117,7 @@ size_t read_cached_features(io_buf& input, features& ours, bool& sorted, char*& 
     feature_index i = 0;
     c = run_len_decode(c, i);
     feature_value v = 1.f;
-    if (i & neg_1)
-      v = -1.;
+    if (i & neg_1) { v = -1.; }
     else if (i & general)
     {
       v = (reinterpret_cast<one_float*>(c))->f;
@@ -184,7 +183,9 @@ void cache_index(io_buf& cache, unsigned char index, const features& fs, char*& 
 {
   size_t storage = fs.size() * int_size;
   for (feature_value f : fs.values)
-    if (f != 1. && f != -1.) storage += sizeof(feature_value);
+  {
+    if (f != 1. && f != -1.) { storage += sizeof(feature_value); }
+  }
 
   cache.buf_write(c, sizeof(index) + storage + sizeof(size_t));
   *reinterpret_cast<unsigned char*>(c) = index;
@@ -204,10 +205,11 @@ void cache_features(io_buf& cache, const features& fs, uint64_t mask, char*& c)
     uint64_t diff = ZigZagEncode(s_diff) << 2;
     last = fi;
 
-    if (f.value() == 1.)
-      c = run_len_encode(c, diff);
+    if (f.value() == 1.) { c = run_len_encode(c, diff); }
     else if (f.value() == -1.)
+    {
       c = run_len_encode(c, diff | neg_1);
+    }
     else
     {
       c = run_len_encode(c, diff | general);

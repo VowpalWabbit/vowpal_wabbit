@@ -22,15 +22,15 @@ size_t read_features(io_buf& buf, char*& line, size_t& num_chars)
 {
   line = nullptr;
   size_t num_chars_initial = buf.readto(line, '\n');
-  if (num_chars_initial < 1) return num_chars_initial;
+  if (num_chars_initial < 1) { return num_chars_initial; }
   num_chars = num_chars_initial;
   if (line[0] == '\xef' && num_chars >= 3 && line[1] == '\xbb' && line[2] == '\xbf')
   {
     line += 3;
     num_chars -= 3;
   }
-  if (num_chars > 0 && line[num_chars - 1] == '\n') num_chars--;
-  if (num_chars > 0 && line[num_chars - 1] == '\r') num_chars--;
+  if (num_chars > 0 && line[num_chars - 1] == '\n') { num_chars--; }
+  if (num_chars > 0 && line[num_chars - 1] == '\r') { num_chars--; }
   return num_chars_initial;
 }
 
@@ -162,7 +162,9 @@ public:
     size_t name_start = _read_idx;
     while (!(_read_idx >= _line.size() || _line[_read_idx] == ' ' || _line[_read_idx] == ':' ||
         _line[_read_idx] == '\t' || _line[_read_idx] == '|' || _line[_read_idx] == '\r'))
+    {
       ++_read_idx;
+    }
 
     return _line.substr(name_start, _read_idx - name_start);
   }
@@ -213,7 +215,10 @@ public:
         word_hash = _channel_hash + _anon++;
       }
 
-      if (_v == 0) return;  // dont add 0 valued features to list of features
+      if (_v == 0)
+      {
+        return;  // dont add 0 valued features to list of features
+      }
       features& fs = _ae->feature_space[_index];
       fs.push_back(_v, word_hash);
 
@@ -234,7 +239,7 @@ public:
       if (((*_affix_features)[_index] > 0) && (!feature_name.empty()))
       {
         features& affix_fs = _ae->feature_space[affix_namespace];
-        if (affix_fs.size() == 0) _ae->indices.push_back(affix_namespace);
+        if (affix_fs.size() == 0) { _ae->indices.push_back(affix_namespace); }
         uint64_t affix = (*_affix_features)[_index];
 
         while (affix > 0)
@@ -244,10 +249,11 @@ public:
           VW::string_view affix_name(feature_name);
           if (affix_name.size() > len)
           {
-            if (is_prefix)
-              affix_name.remove_suffix(affix_name.size() - len);
+            if (is_prefix) { affix_name.remove_suffix(affix_name.size() - len); }
             else
+            {
               affix_name.remove_prefix(affix_name.size() - len);
+            }
           }
 
           word_hash = _p->hasher(affix_name.data(), affix_name.length(), (uint64_t)_channel_hash) *
@@ -256,7 +262,7 @@ public:
           if (audit)
           {
             VW::v_array<char> affix_v;
-            if (_index != ' ') affix_v.push_back(_index);
+            if (_index != ' ') { affix_v.push_back(_index); }
             affix_v.push_back(is_prefix ? '+' : '-');
             affix_v.push_back('0' + static_cast<char>(len));
             affix_v.push_back('=');
@@ -276,16 +282,23 @@ public:
         for (char c : feature_name)
         {
           char d = 0;
-          if ((c >= '0') && (c <= '9'))
-            d = '0';
+          if ((c >= '0') && (c <= '9')) { d = '0'; }
           else if ((c >= 'a') && (c <= 'z'))
+          {
             d = 'a';
+          }
           else if ((c >= 'A') && (c <= 'Z'))
+          {
             d = 'A';
+          }
           else if (c == '.')
+          {
             d = '.';
+          }
           else
+          {
             d = '#';
+          }
           // if ((spelling.size() == 0) || (spelling.last() != d))
           _spelling.push_back(d);
         }
@@ -389,8 +402,11 @@ public:
     {
       // NameSpaceInfo --> 'String' NameSpaceInfoValue
       _index = (unsigned char)(_line[_read_idx]);
-      if (_redefine_some) _index = (*_redefine)[_index];  // redefine _index
-      if (_ae->feature_space[_index].size() == 0) _new_index = true;
+      if (_redefine_some)
+      {
+        _index = (*_redefine)[_index];  // redefine _index
+      }
+      if (_ae->feature_space[_index].size() == 0) { _new_index = true; }
       VW::string_view name = read_name();
       if (audit) { _base = name; }
       _channel_hash = _p->hasher(name.data(), name.length(), this->_hash_seed);
@@ -426,7 +442,7 @@ public:
     {
       // NameSpace --> ListFeatures
       _index = static_cast<unsigned char>(' ');
-      if (_ae->feature_space[_index].size() == 0) _new_index = true;
+      if (_ae->feature_space[_index].size() == 0) { _new_index = true; }
       if (audit)
       {
         // TODO: c++17 allows VW::string_view literals, eg: " "sv
@@ -453,7 +469,7 @@ public:
           _ae->example_counter, *logger);
     }
 
-    if (_new_index && _ae->feature_space[_index].size() > 0) _ae->indices.push_back(_index);
+    if (_new_index && _ae->feature_space[_index].size() > 0) { _ae->indices.push_back(_index); }
 
     // If the namespace was empty this will handle it internally.
     if (did_start_extent) { _ae->feature_space[_index].end_ns_extent(); }
@@ -540,10 +556,11 @@ void substring_to_example(VW::workspace* all, VW::example* ae, VW::string_view e
 
   if (bar_idx != VW::string_view::npos)
   {
-    if (all->audit || all->hash_inv)
-      TC_parser<true> parser_line(example.substr(bar_idx), *all, ae);
+    if (all->audit || all->hash_inv) { TC_parser<true> parser_line(example.substr(bar_idx), *all, ae); }
     else
+    {
       TC_parser<false> parser_line(example.substr(bar_idx), *all, ae);
+    }
   }
 }
 
@@ -551,7 +568,7 @@ namespace VW
 {
 void read_line(VW::workspace& all, example* ex, VW::string_view line)
 {
-  while (line.size() > 0 && line.back() == '\n') line.remove_suffix(1);
+  while (line.size() > 0 && line.back() == '\n') { line.remove_suffix(1); }
   substring_to_example(&all, ex, line);
 }
 

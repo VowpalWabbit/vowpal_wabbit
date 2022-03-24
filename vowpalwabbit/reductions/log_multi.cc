@@ -134,10 +134,13 @@ inline uint32_t find_switch_node(log_multi& b)
 {
   uint32_t node = 0;
   while (b.nodes[node].internal)
-    if (b.nodes[b.nodes[node].left].min_count < b.nodes[b.nodes[node].right].min_count)
-      node = b.nodes[node].left;
+  {
+    if (b.nodes[b.nodes[node].left].min_count < b.nodes[b.nodes[node].right].min_count) { node = b.nodes[node].left; }
     else
+    {
       node = b.nodes[node].right;
+    }
+  }
   return node;
 }
 
@@ -149,10 +152,11 @@ inline void update_min_count(log_multi& b, uint32_t node)
     uint32_t prev = node;
     node = b.nodes[node].parent;
 
-    if (b.nodes[node].min_count == b.nodes[prev].min_count)
-      break;
+    if (b.nodes[node].min_count == b.nodes[prev].min_count) { break; }
     else
+    {
       b.nodes[node].min_count = min_left_right(b, b.nodes[node]);
+    }
   }
 }
 
@@ -160,11 +164,13 @@ void display_tree_dfs(log_multi& b, const node& node, uint32_t depth)
 {
   // TODO: its likely possible to replicate this output with the logger, but will
   //       require some research
-  for (uint32_t i = 0; i < depth; i++) std::cout << "\t";
+  for (uint32_t i = 0; i < depth; i++) { std::cout << "\t"; }
   std::cout << node.min_count << " " << node.left << " " << node.right;
   std::cout << " label = " << node.max_count_label << " labels = ";
   for (size_t i = 0; i < node.preds.size(); i++)
+  {
     std::cout << node.preds[i].label << ":" << node.preds[i].label_count << "\t";
+  }
   std::cout << std::endl;
 
   if (node.internal)
@@ -192,8 +198,7 @@ bool children(log_multi& b, uint32_t& current, uint32_t& class_index, uint32_t l
     b.nodes[current].max_count_label = b.nodes[current].preds[class_index].label;
   }
 
-  if (b.nodes[current].internal)
-    return true;
+  if (b.nodes[current].internal) { return true; }
   else if (b.nodes[current].preds.size() > 1 &&
       (b.predictors_used < b.max_predictors ||
           b.nodes[current].min_count - b.nodes[current].max_count > b.swap_resist * (b.nodes[0].min_count + 1)))
@@ -215,19 +220,23 @@ bool children(log_multi& b, uint32_t& current, uint32_t& class_index, uint32_t l
       uint32_t swap_parent = b.nodes[swap_child].parent;
       uint32_t swap_grandparent = b.nodes[swap_parent].parent;
       if (b.nodes[swap_child].min_count != b.nodes[0].min_count)
+      {
         std::cout << "glargh " << b.nodes[swap_child].min_count << " != " << b.nodes[0].min_count << std::endl;
+      }
       b.nbofswaps++;
 
       uint32_t nonswap_child;
-      if (swap_child == b.nodes[swap_parent].right)
-        nonswap_child = b.nodes[swap_parent].left;
+      if (swap_child == b.nodes[swap_parent].right) { nonswap_child = b.nodes[swap_parent].left; }
       else
+      {
         nonswap_child = b.nodes[swap_parent].right;
+      }
 
-      if (swap_parent == b.nodes[swap_grandparent].left)
-        b.nodes[swap_grandparent].left = nonswap_child;
+      if (swap_parent == b.nodes[swap_grandparent].left) { b.nodes[swap_grandparent].left = nonswap_child; }
       else
+      {
         b.nodes[swap_grandparent].right = nonswap_child;
+      }
       b.nodes[nonswap_child].parent = swap_grandparent;
       update_min_count(b, nonswap_child);
 
@@ -257,10 +266,11 @@ bool children(log_multi& b, uint32_t& current, uint32_t& class_index, uint32_t l
 void train_node(
     log_multi& b, single_learner& base, VW::example& ec, uint32_t& current, uint32_t& class_index, uint32_t /* depth */)
 {
-  if (b.nodes[current].norm_Eh > b.nodes[current].preds[class_index].norm_Ehk)
-    ec.l.simple.label = -1.f;
+  if (b.nodes[current].norm_Eh > b.nodes[current].preds[class_index].norm_Ehk) { ec.l.simple.label = -1.f; }
   else
+  {
     ec.l.simple.label = 1.f;
+  }
 
   base.learn(ec, b.nodes[current].base_predictor);  // depth
 
@@ -294,18 +304,20 @@ void verify_min_dfs(log_multi& b, const node& node)
 
 size_t sum_count_dfs(log_multi& b, const node& node)
 {
-  if (node.internal)
-    return sum_count_dfs(b, b.nodes[node.left]) + sum_count_dfs(b, b.nodes[node.right]);
+  if (node.internal) { return sum_count_dfs(b, b.nodes[node.left]) + sum_count_dfs(b, b.nodes[node.right]); }
   else
+  {
     return node.min_count;
+  }
 }
 
 inline uint32_t descend(node& n, float prediction)
 {
-  if (prediction < 0)
-    return n.left;
+  if (prediction < 0) { return n.left; }
   else
+  {
     return n.right;
+  }
 }
 
 void predict(log_multi& b, single_learner& base, VW::example& ec)
@@ -408,7 +420,9 @@ void save_load_tree(log_multi& b, io_buf& model_file, bool read, bool text)
     uint32_t temp = static_cast<uint32_t>(b.nodes.size());
     bin_text_read_write_fixed(model_file, reinterpret_cast<char*>(&temp), sizeof(temp), read, msg, text);
     if (read)
-      for (uint32_t j = 1; j < temp; j++) b.nodes.push_back(init_node());
+    {
+      for (uint32_t j = 1; j < temp; j++) { b.nodes.push_back(init_node()); }
+    }
 
     msg << "max predictors = " << b.max_predictors << " ";
     bin_text_read_write_fixed(
@@ -438,7 +452,9 @@ void save_load_tree(log_multi& b, io_buf& model_file, bool read, bool text)
       msg << " preds = " << temp;
       bin_text_read_write_fixed(model_file, reinterpret_cast<char*>(&temp), sizeof(temp), read, msg, text);
       if (read)
-        for (uint32_t k = 0; k < temp; k++) n.preds.push_back(node_pred(1));
+      {
+        for (uint32_t k = 0; k < temp; k++) { n.preds.push_back(node_pred(1)); }
+      }
 
       msg << " min_count = " << n.min_count;
       bin_text_read_write_fixed(
@@ -516,7 +532,7 @@ base_learner* log_multi_setup(VW::setup_base_i& stack_builder)  // learner setup
                .default_value(4)
                .help("Higher = more resistance to swap, default=4"));
 
-  if (!options.add_parse_and_check_necessary(new_options)) return nullptr;
+  if (!options.add_parse_and_check_necessary(new_options)) { return nullptr; }
 
   data->progress = !data->progress;
 

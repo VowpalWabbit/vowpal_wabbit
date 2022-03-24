@@ -171,10 +171,11 @@ void shared_data::update(bool test_example, bool labeled_example, float loss, fl
   }
   else
   {
-    if (labeled_example)
-      weighted_labeled_examples += weight;
+    if (labeled_example) { weighted_labeled_examples += weight; }
     else
+    {
       weighted_unlabeled_examples += weight;
+    }
     sum_loss += loss;
     sum_loss_since_last_dump += loss;
     total_features += num_features;
@@ -383,9 +384,11 @@ void shared_data::print_summary(std::ostream& output, const shared_data& sd, con
       output << std::endl << "average multiclass log loss = " << sd.multiclass_log_loss / sd.weighted_labeled_examples;
     }
     else
+    {
       output << std::endl
              << "average multiclass log loss = " << sd.holdout_multiclass_log_loss / sd.weighted_labeled_examples
              << " h";
+    }
   }
 
   float best_constant;
@@ -393,11 +396,11 @@ void shared_data::print_summary(std::ostream& output, const shared_data& sd, con
   if (VW::get_best_constant(loss_func, sd, best_constant, best_constant_loss))
   {
     output << std::endl << "best constant = " << best_constant;
-    if (best_constant_loss != FLT_MIN) output << std::endl << "best constant's loss = " << best_constant_loss;
+    if (best_constant_loss != FLT_MIN) { output << std::endl << "best constant's loss = " << best_constant_loss; }
   }
 
   output << std::endl << "total feature number = " << sd.total_features;
-  if (sd.queries > 0) output << std::endl << "total queries = " << sd.queries;
+  if (sd.queries > 0) { output << std::endl << "total queries = " << sd.queries; }
   output << std::endl;
 
   output.precision(saved_precision);

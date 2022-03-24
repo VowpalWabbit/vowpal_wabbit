@@ -60,9 +60,11 @@ void default_label(label& ld) { ld.costs.clear(); }
 
 bool test_label_internal(const label& ld)
 {
-  if (ld.costs.size() == 0) return true;
+  if (ld.costs.size() == 0) { return true; }
   for (unsigned int i = 0; i < ld.costs.size(); i++)
-    if (FLT_MAX != ld.costs[i].x) return false;
+  {
+    if (FLT_MAX != ld.costs[i].x) { return false; }
+  }
   return true;
 }
 
@@ -92,7 +94,9 @@ void parse_label(label& ld, VW::label_parser_reuse_mem& reuse_mem, const VW::nam
       if (eq_shared)
       {
         if (reuse_mem.tokens.size() != 1)
+        {
           logger.err_error("shared feature vectors should not have costs on: {}", words[0]);
+        }
         else
         {
           wclass f = {-FLT_MAX, 0, 0., 0.};
@@ -102,7 +106,9 @@ void parse_label(label& ld, VW::label_parser_reuse_mem& reuse_mem, const VW::nam
       if (eq_label)
       {
         if (reuse_mem.tokens.size() != 2)
+        {
           logger.err_error("label feature vectors should have exactly one cost on: {}", words[0]);
+        }
         else
         {
           wclass f = {float_of_string(reuse_mem.tokens[1], logger), 0, 0., 0.};
@@ -126,8 +132,10 @@ void parse_label(label& ld, VW::label_parser_reuse_mem& reuse_mem, const VW::nam
       f.class_index = ldict
           ? ldict->get(reuse_mem.tokens[0], logger)
           : static_cast<uint32_t>(hashstring(reuse_mem.tokens[0].data(), reuse_mem.tokens[0].length(), 0));
-      if (reuse_mem.tokens.size() == 1 && f.x >= 0)  // test examples are specified just by un-valued class #s
+      if (reuse_mem.tokens.size() == 1 && f.x >= 0)
+      {  // test examples are specified just by un-valued class #s
         f.x = FLT_MAX;
+      }
     }
     else
       THROW("malformed cost specification on '" << (reuse_mem.tokens[0]) << "'");
@@ -184,31 +192,37 @@ void print_update(VW::workspace& all, bool is_test, const VW::example& ec, const
     }
 
     std::string label_buf;
-    if (is_test)
-      label_buf = "unknown";
+    if (is_test) { label_buf = "unknown"; }
     else
+    {
       label_buf = "known";
+    }
 
     if (action_scores || all.sd->ldict)
     {
       std::ostringstream pred_buf;
       if (all.sd->ldict)
       {
-        if (action_scores)
-          pred_buf << all.sd->ldict->get(ec.pred.a_s[0].action);
+        if (action_scores) { pred_buf << all.sd->ldict->get(ec.pred.a_s[0].action); }
         else
+        {
           pred_buf << all.sd->ldict->get(prediction);
+        }
       }
       else
+      {
         pred_buf << ec.pred.a_s[0].action;
-      if (action_scores) pred_buf << ".....";
+      }
+      if (action_scores) { pred_buf << "....."; }
       all.sd->print_update(*all.trace_message, all.holdout_set_off, all.current_pass, label_buf, pred_buf.str(),
           num_current_features, all.progress_add, all.progress_arg);
       ;
     }
     else
+    {
       all.sd->print_update(*all.trace_message, all.holdout_set_off, all.current_pass, label_buf, prediction,
           num_current_features, all.progress_add, all.progress_arg);
+    }
   }
 }
 
@@ -225,11 +239,13 @@ void output_example(
     float min = FLT_MAX;
     for (const auto& cl : label.costs)
     {
-      if (cl.class_index == pred) chosen_loss = cl.x;
-      if (cl.x < min) min = cl.x;
+      if (cl.class_index == pred) { chosen_loss = cl.x; }
+      if (cl.x < min) { min = cl.x; }
     }
     if (chosen_loss == FLT_MAX)
+    {
       all.logger.err_warn("csoaa predicted an invalid class. Are all multi-class labels in the {1..k} range?");
+    }
 
     loss = (chosen_loss - min) * ec.weight;
     // TODO(alberto): add option somewhere to allow using absolute loss instead?
@@ -255,7 +271,7 @@ void output_example(
     for (unsigned int i = 0; i < label.costs.size(); i++)
     {
       wclass cl = label.costs[i];
-      if (i > 0) outputStringStream << ' ';
+      if (i > 0) { outputStringStream << ' '; }
       outputStringStream << cl.class_index << ':' << cl.partial_prediction;
     }
     all.print_text_by_ref(all.raw_prediction.get(), outputStringStream.str(), ec.tag, all.logger);
@@ -275,18 +291,20 @@ void finish_example(VW::workspace& all, VW::example& ec)
 bool example_is_test(const VW::example& ec)
 {
   const auto& costs = ec.l.cs.costs;
-  if (costs.size() == 0) return true;
+  if (costs.size() == 0) { return true; }
   for (size_t j = 0; j < costs.size(); j++)
-    if (costs[j].x != FLT_MAX) return false;
+  {
+    if (costs[j].x != FLT_MAX) { return false; }
+  }
   return true;
 }
 
 bool ec_is_example_header(const VW::example& ec)  // example headers look like "shared"
 {
   const auto& costs = ec.l.cs.costs;
-  if (costs.size() != 1) return false;
-  if (costs[0].class_index != 0) return false;
-  if (costs[0].x != -FLT_MAX) return false;
+  if (costs.size() != 1) { return false; }
+  if (costs[0].class_index != 0) { return false; }
+  if (costs[0].x != -FLT_MAX) { return false; }
   return true;
 }
 }  // namespace COST_SENSITIVE

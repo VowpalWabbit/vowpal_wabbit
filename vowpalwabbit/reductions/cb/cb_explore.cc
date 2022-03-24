@@ -80,13 +80,13 @@ void predict_or_learn_first(cb_explore& data, single_learner& base, VW::example&
   if (data.tau > 0)
   {
     float prob = 1.f / static_cast<float>(data.cbcs.num_actions);
-    for (uint32_t i = 0; i < data.cbcs.num_actions; i++) probs.push_back({i, prob});
+    for (uint32_t i = 0; i < data.cbcs.num_actions; i++) { probs.push_back({i, prob}); }
     data.tau--;
   }
   else
   {
     uint32_t chosen = ec.pred.multiclass - 1;
-    for (uint32_t i = 0; i < data.cbcs.num_actions; i++) probs.push_back({i, 0.});
+    for (uint32_t i = 0; i < data.cbcs.num_actions; i++) { probs.push_back({i, 0.}); }
     probs[chosen].score = 1.0;
   }
 }
@@ -112,7 +112,7 @@ void predict_or_learn_greedy(cb_explore& data, single_learner& base, VW::example
              << endl;
 
   probs.reserve(data.cbcs.num_actions);
-  for (uint32_t i = 0; i < data.cbcs.num_actions; i++) probs.push_back({i, 0});
+  for (uint32_t i = 0; i < data.cbcs.num_actions; i++) { probs.push_back({i, 0}); }
   uint32_t chosen = ec.pred.multiclass - 1;
   generate_epsilon_greedy(data.epsilon, chosen, begin_scores(probs), end_scores(probs));
 }
@@ -124,20 +124,23 @@ void predict_or_learn_bag(cb_explore& data, single_learner& base, VW::example& e
   action_scores& probs = ec.pred.a_s;
   probs.clear();
 
-  for (uint32_t i = 0; i < data.cbcs.num_actions; i++) probs.push_back({i, 0.});
+  for (uint32_t i = 0; i < data.cbcs.num_actions; i++) { probs.push_back({i, 0.}); }
   float prob = 1.f / static_cast<float>(data.bag_size);
   for (size_t i = 0; i < data.bag_size; i++)
   {
     uint32_t count = VW::reductions::bs::weight_gen(data._random_state);
     bool learn = is_learn && count > 0;
-    if (learn)
-      base.learn(ec, i);
+    if (learn) { base.learn(ec, i); }
     else
+    {
       base.predict(ec, i);
+    }
     uint32_t chosen = ec.pred.multiclass - 1;
     probs[chosen].score += prob;
     if (is_learn)
-      for (uint32_t j = 1; j < count; j++) base.learn(ec, i);
+    {
+      for (uint32_t j = 1; j < count; j++) { base.learn(ec, i); }
+    }
   }
 }
 
@@ -147,15 +150,16 @@ void get_cover_probabilities(
   float additive_probability = 1.f / static_cast<float>(data.cover_size);
   data.preds.clear();
 
-  for (uint32_t i = 0; i < data.cbcs.num_actions; i++) probs.push_back({i, 0.});
+  for (uint32_t i = 0; i < data.cbcs.num_actions; i++) { probs.push_back({i, 0.}); }
 
   for (size_t i = 0; i < data.cover_size; i++)
   {
     // get predicted cost-sensitive predictions
-    if (i == 0)
-      data.cs->predict(ec, i);
+    if (i == 0) { data.cs->predict(ec, i); }
     else
+    {
       data.cs->predict(ec, i + 1);
+    }
     uint32_t pred = ec.pred.multiclass;
     probs[pred - 1].score += additive_probability;
     data.preds.push_back(pred);
@@ -177,7 +181,7 @@ void predict_or_learn_cover(cb_explore& data, single_learner& base, VW::example&
   ec.pred.a_s.clear();
   data.cs_label.costs.clear();
 
-  for (uint32_t j = 0; j < num_actions; j++) data.cs_label.costs.push_back({FLT_MAX, j + 1, 0., 0.});
+  for (uint32_t j = 0; j < num_actions; j++) { data.cs_label.costs.push_back({FLT_MAX, j + 1, 0., 0.}); }
 
   size_t cover_size = data.cover_size;
   VW::v_array<float>& probabilities = data.cover_probs;
@@ -217,7 +221,7 @@ void predict_or_learn_cover(cb_explore& data, single_learner& base, VW::example&
       data.cbcs.known_cost = CB::cb_class{};
     }
     gen_cs_example<false>(data.cbcs, ec, data.cb_label, data.cs_label, data.logger);
-    for (uint32_t i = 0; i < num_actions; i++) probabilities[i] = 0.f;
+    for (uint32_t i = 0; i < num_actions; i++) { probabilities[i] = 0.f; }
 
     ec.l.cs = std::move(data.second_cs_label);
     // 2. Update functions
@@ -232,11 +236,15 @@ void predict_or_learn_cover(cb_explore& data, single_learner& base, VW::example&
         ec.l.cs.costs[j].class_index = j + 1;
         ec.l.cs.costs[j].x = pseudo_cost;
       }
-      if (i != 0) data.cs->learn(ec, i + 1);
+      if (i != 0) { data.cs->learn(ec, i + 1); }
       if (probabilities[pred] < min_prob)
+      {
         norm += std::max(0.f, additive_probability - (min_prob - probabilities[pred]));
+      }
       else
+      {
         norm += additive_probability;
+      }
       probabilities[pred] += additive_probability;
     }
     data.second_cs_label = std::move(ec.l.cs);
@@ -250,8 +258,7 @@ void print_update_cb_explore(VW::workspace& all, bool is_test, VW::example& ec, 
   if (all.sd->weighted_examples() >= all.sd->dump_interval && !all.quiet && !all.bfgs)
   {
     std::stringstream label_string;
-    if (is_test)
-      label_string << "unknown";
+    if (is_test) { label_string << "unknown"; }
     else
     {
       const auto& cost = ec.l.cb.costs[0];
@@ -273,7 +280,9 @@ float calc_loss(cb_explore& data, VW::example& ec, const CB::label& ld)
   if (optional_cost.first == true)
   {
     for (uint32_t i = 0; i < ec.pred.a_s.size(); i++)
+    {
       loss += get_cost_estimate(optional_cost.second, c.pred_scores, i + 1) * ec.pred.a_s[i].score;
+    }
   }
 
   return loss;
@@ -295,7 +304,7 @@ void generic_output_example(VW::workspace& all, float loss, VW::example& ec, CB:
       maxid = ec.pred.a_s[i].action + 1;
     }
   }
-  for (auto& sink : all.final_prediction_sink) all.print_text_by_ref(sink.get(), ss.str(), ec.tag, all.logger);
+  for (auto& sink : all.final_prediction_sink) { all.print_text_by_ref(sink.get(), ss.str(), ec.tag, all.logger); }
 
   std::stringstream sso;
   sso << maxid << ":" << std::fixed << maxprob;
@@ -348,9 +357,9 @@ base_learner* cb_explore_setup(VW::setup_base_i& stack_builder)
                .help("Do not explore uniformly on zero-probability actions in cover"))
       .add(make_option("psi", data->psi).keep().default_value(1.0f).help("Disagreement parameter for cover"));
 
-  if (!options.add_parse_and_check_necessary(new_options)) return nullptr;
+  if (!options.add_parse_and_check_necessary(new_options)) { return nullptr; }
 
-  if (!options.was_supplied("cb_force_legacy")) return nullptr;
+  if (!options.was_supplied("cb_force_legacy")) { return nullptr; }
 
   data->_random_state = all.get_random_state();
   uint32_t num_actions = data->cbcs.num_actions;

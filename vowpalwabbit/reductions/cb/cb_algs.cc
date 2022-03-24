@@ -33,14 +33,18 @@ struct cb
 
 bool know_all_cost_example(CB::label& ld)
 {
-  if (ld.costs.size() <= 1)  // this means we specified an example where all actions are possible but only specified the
-                             // cost for the observed action
+  if (ld.costs.size() <= 1)
+  {  // this means we specified an example where all actions are possible but only specified the
+     // cost for the observed action
     return false;
+  }
 
   // if we specified more than 1 action for this example, i.e. either we have a limited set of possible actions, or all
   // actions are specified than check if all actions have a specified cost
   for (auto& cl : ld.costs)
-    if (cl.cost == FLT_MAX) return false;
+  {
+    if (cl.cost == FLT_MAX) { return false; }
+  }
 
   return true;
 }
@@ -59,20 +63,25 @@ void predict_or_learn(cb& data, single_learner& base, VW::example& ec)
 
   // cost observed, not default
   if (optional_cost.first && (c.known_cost.action < 1 || c.known_cost.action > c.num_actions))
+  {
     data.logger.err_error("invalid action: {}", c.known_cost.action);
+  }
 
   // generate a cost-sensitive example to update classifiers
   gen_cs_example<is_learn>(c, ec, ec.l.cb, ec.l.cs, data.logger);
 
   if (c.cb_type != VW::cb_type_t::dm)
   {
-    if (is_learn)
-      base.learn(ec);
+    if (is_learn) { base.learn(ec); }
     else
+    {
       base.predict(ec);
+    }
 
     for (size_t i = 0; i < ec.l.cb.costs.size(); i++)
+    {
       ec.l.cb.costs[i].partial_prediction = ec.l.cs.costs[i].partial_prediction;
+    }
   }
 }
 
@@ -91,7 +100,9 @@ void learn_eval(cb& data, single_learner&, VW::example& ec)
   gen_cs_example<true>(c, ec, ec.l.cb_eval.event, ec.l.cs, data.logger);
 
   for (size_t i = 0; i < ec.l.cb_eval.event.costs.size(); i++)
+  {
     ec.l.cb_eval.event.costs[i].partial_prediction = ec.l.cs.costs[i].partial_prediction;
+  }
 
   ec.pred.multiclass = ec.l.cb_eval.action;
 }
@@ -101,7 +112,7 @@ void output_example(VW::workspace& all, cb& data, const VW::example& ec, const C
   float loss = 0.;
 
   cb_to_cs& c = data.cbcs;
-  if (!CB::is_test_label(ld)) loss = get_cost_estimate(c.known_cost, c.pred_scores, ec.pred.multiclass);
+  if (!CB::is_test_label(ld)) { loss = get_cost_estimate(c.known_cost, c.pred_scores, ec.pred.multiclass); }
 
   generic_output_example(all, loss, ec, ld, &c.known_cost);
 }
@@ -112,7 +123,9 @@ void generic_output_example(
   all.sd->update(ec.test_only, !CB::is_test_label(ld), loss, 1.f, ec.get_num_features());
 
   for (auto& sink : all.final_prediction_sink)
+  {
     all.print_by_ref(sink.get(), static_cast<float>(ec.pred.multiclass), 0, ec.tag, all.logger);
+  }
 
   if (all.raw_prediction != nullptr)
   {
@@ -120,7 +133,7 @@ void generic_output_example(
     for (unsigned int i = 0; i < ld.costs.size(); i++)
     {
       cb_class cl = ld.costs[i];
-      if (i > 0) outputStringStream << ' ';
+      if (i > 0) { outputStringStream << ' '; }
       outputStringStream << cl.action << ':' << cl.partial_prediction;
     }
     all.print_text_by_ref(all.raw_prediction.get(), outputStringStream.str(), ec.tag, all.logger);
@@ -172,9 +185,9 @@ base_learner* cb_algs_setup(VW::setup_base_i& stack_builder)
                .keep()
                .help("Default to non-adf cb implementation (cb_to_cb_adf)"));
 
-  if (!options.add_parse_and_check_necessary(new_options)) return nullptr;
+  if (!options.add_parse_and_check_necessary(new_options)) { return nullptr; }
 
-  if (!eval && !force_legacy) return nullptr;
+  if (!eval && !force_legacy) { return nullptr; }
 
   // Ensure serialization of this option in all cases.
   if (!options.was_supplied("cb_type"))

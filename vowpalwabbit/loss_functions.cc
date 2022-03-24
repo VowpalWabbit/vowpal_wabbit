@@ -25,17 +25,22 @@ inline float getLoss(const shared_data* sd, float prediction, float label)
   }
   else if (prediction < sd->min_label)
   {
-    if (label == sd->min_label)
-      return 0.;
+    if (label == sd->min_label) { return 0.; }
     else
+    {
       return static_cast<float>((label - sd->min_label) * (label - sd->min_label) +
           2. * (label - sd->min_label) * (sd->min_label - prediction));
+    }
   }
   else if (label == sd->max_label)
+  {
     return 0.;
+  }
   else
+  {
     return static_cast<float>((sd->max_label - label) * (sd->max_label - label) +
         2. * (sd->max_label - label) * (prediction - sd->max_label));
+  }
 }
 
 inline float getUpdate(float prediction, float label, float update_scale, float pred_per_update)
@@ -60,19 +65,21 @@ inline float getSquareGrad(float prediction, float label) { return 4.f * (predic
 
 inline float first_derivative(const shared_data* sd, float prediction, float label)
 {
-  if (prediction < sd->min_label)
-    prediction = sd->min_label;
+  if (prediction < sd->min_label) { prediction = sd->min_label; }
   else if (prediction > sd->max_label)
+  {
     prediction = sd->max_label;
+  }
   return 2.f * (prediction - label);
 }
 
 inline float second_derivative(const shared_data* sd, float prediction)
 {
-  if (prediction <= sd->max_label && prediction >= sd->min_label)
-    return 2.;
+  if (prediction <= sd->max_label && prediction >= sd->min_label) { return 2.; }
   else
+  {
     return 0.;
+  }
 }
 }  // namespace squared_loss_impl
 
@@ -158,21 +165,23 @@ public:
   float getLoss(const shared_data*, float prediction, float label) const override
   {
     if (label != -1.f && label != 1.f)
+    {
       logger.out_warn("The label {} is not -1 or 1 or in [0,1] as the hinge loss function expects.", label);
+    }
     float e = 1 - label * prediction;
     return (e > 0) ? e : 0;
   }
 
   float getUpdate(float prediction, float label, float update_scale, float pred_per_update) const override
   {
-    if (label * prediction >= 1) return 0;
+    if (label * prediction >= 1) { return 0; }
     float err = 1 - label * prediction;
     return label * (update_scale * pred_per_update < err ? update_scale : err / pred_per_update);
   }
 
   float getUnsafeUpdate(float prediction, float label, float update_scale) const override
   {
-    if (label * prediction >= 1) return 0;
+    if (label * prediction >= 1) { return 0; }
     return label * update_scale;
   }
 
@@ -202,7 +211,9 @@ public:
   float getLoss(const shared_data*, float prediction, float label) const override
   {
     if (label != -1.f && label != 1.f)
+    {
       logger.out_warn("The label {} is not -1 or 1 or in [0,1] as the logistic loss function expects.", label);
+    }
     return std::log(1 + correctedExp(-label * prediction));
   }
 
@@ -273,16 +284,17 @@ public:
   float getLoss(const shared_data*, float prediction, float label) const override
   {
     float e = label - prediction;
-    if (e > 0)
-      return tau * e;
+    if (e > 0) { return tau * e; }
     else
+    {
       return -(1 - tau) * e;
+    }
   }
 
   float getUpdate(float prediction, float label, float update_scale, float pred_per_update) const override
   {
     float err = label - prediction;
-    if (err == 0) return 0;
+    if (err == 0) { return 0; }
     float normal = update_scale * pred_per_update;  // base update size
     if (err > 0)
     {
@@ -299,15 +311,15 @@ public:
   float getUnsafeUpdate(float prediction, float label, float update_scale) const override
   {
     float err = label - prediction;
-    if (err == 0) return 0;
-    if (err > 0) return tau * update_scale;
+    if (err == 0) { return 0; }
+    if (err > 0) { return tau * update_scale; }
     return -(1 - tau) * update_scale;
   }
 
   float first_derivative(const shared_data*, float prediction, float label) const override
   {
     float e = label - prediction;
-    if (e == 0) return 0;
+    if (e == 0) { return 0; }
     return e > 0 ? -tau : (1 - tau);
   }
 

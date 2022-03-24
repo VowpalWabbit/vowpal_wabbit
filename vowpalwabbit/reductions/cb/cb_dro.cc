@@ -119,7 +119,7 @@ base_learner* cb_dro_setup(VW::setup_base_i& stack_builder)
                .keep()
                .help("Maximum importance weight for cb_dro"));
 
-  if (!options.add_parse_and_check_necessary(new_options)) return nullptr;
+  if (!options.add_parse_and_check_necessary(new_options)) { return nullptr; }
 
   if (options.was_supplied("no_predict")) { THROW("cb_dro cannot be used with no_predict"); }
 

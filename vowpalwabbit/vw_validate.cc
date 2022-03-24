@@ -15,7 +15,9 @@ void validate_version(VW::workspace& all)
   if (all.model_file_ver < VW::version_definitions::LAST_COMPATIBLE_VERSION)
     THROW("Model has possibly incompatible version! " << all.model_file_ver.to_string());
   if (all.model_file_ver > VW::version)
+  {
     all.logger.err_warn("Model version is more recent than VW version. This may not work.");
+  }
 }
 
 void validate_min_max_label(VW::workspace& all)

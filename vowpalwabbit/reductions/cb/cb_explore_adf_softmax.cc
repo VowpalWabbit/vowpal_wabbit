@@ -76,10 +76,12 @@ VW::LEARNER::base_learner* setup(VW::setup_base_i& stack_builder)
       .add(make_option("softmax", softmax).keep().necessary().help("Softmax exploration"))
       .add(make_option("lambda", lambda).keep().allow_override().default_value(1.f).help("Parameter for softmax"));
 
-  if (!options.add_parse_and_check_necessary(new_options)) return nullptr;
+  if (!options.add_parse_and_check_necessary(new_options)) { return nullptr; }
 
-  if (lambda < 0)  // Lambda should always be positive because we are using a cost basis.
+  if (lambda < 0)
+  {  // Lambda should always be positive because we are using a cost basis.
     lambda = -lambda;
+  }
 
   // Ensure serialization of cb_adf in all cases.
   if (!options.was_supplied("cb_adf")) { options.insert("cb_adf", ""); }

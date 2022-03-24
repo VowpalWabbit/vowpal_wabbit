@@ -73,10 +73,11 @@ uint32_t cb_explore_adf_bag::get_bag_learner_update_count(uint32_t learner_index
 {
   // If _greedify then always update the first policy once
   // for others the update count depends on drawing from a poisson
-  if (_greedify && learner_index == 0)
-    return 1;
+  if (_greedify && learner_index == 0) { return 1; }
   else
+  {
     return reductions::bs::weight_gen(_random_state);
+  }
 }
 
 void cb_explore_adf_bag::predict(VW::LEARNER::multi_learner& base, multi_ex& examples)
@@ -98,19 +99,21 @@ void cb_explore_adf_bag::predict(VW::LEARNER::multi_learner& base, multi_ex& exa
     VW::LEARNER::multiline_learn_or_predict<false>(base, examples, examples[0]->ft_offset, i);
 
     assert(preds.size() == num_actions);
-    for (auto e : preds) _scores[e.action] += e.score;
+    for (auto e : preds) { _scores[e.action] += e.score; }
 
     if (!_first_only)
     {
       size_t tied_actions = fill_tied(preds);
-      for (size_t j = 0; j < tied_actions; ++j) _top_actions[preds[j].action] += 1.f / tied_actions;
+      for (size_t j = 0; j < tied_actions; ++j) { _top_actions[preds[j].action] += 1.f / tied_actions; }
     }
     else
+    {
       _top_actions[preds[0].action] += 1.f;
+    }
   }
 
   _action_probs.clear();
-  for (uint32_t i = 0; i < _scores.size(); i++) _action_probs.push_back({i, 0.});
+  for (uint32_t i = 0; i < _scores.size(); i++) { _action_probs.push_back({i, 0.}); }
 
   // generate distribution over actions
   exploration::generate_bag(
@@ -133,7 +136,9 @@ void cb_explore_adf_bag::learn(VW::LEARNER::multi_learner& base, multi_ex& examp
                      << std::endl;
 
     for (uint32_t j = 0; j < learn_count; j++)
+    {
       VW::LEARNER::multiline_learn_or_predict<true>(base, examples, examples[0]->ft_offset, i);
+    }
   }
 }
 
@@ -173,7 +178,7 @@ VW::LEARNER::base_learner* setup(VW::setup_base_i& stack_builder)
       .add(make_option("greedify", greedify).keep().help("Always update first policy once in bagging"))
       .add(make_option("first_only", first_only).keep().help("Only explore the first action in a tie-breaking event"));
 
-  if (!options.add_parse_and_check_necessary(new_options)) return nullptr;
+  if (!options.add_parse_and_check_necessary(new_options)) { return nullptr; }
 
   // Ensure serialization of cb_adf in all cases.
   if (!options.was_supplied("cb_adf")) { options.insert("cb_adf", ""); }

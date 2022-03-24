@@ -46,10 +46,10 @@ void run(Search::search& sch, VW::multi_ex& ec)
     size_t prediction = sch.predict(*ec[0], 0, &oracle, 1, nullptr, nullptr, my_task_data->y_allowed.begin(),
         y_allowed_size, nullptr, learner_id);  // TODO: do we really need y_allowed?
     learner_id = (learner_id << 1) + prediction;
-    if (prediction == 2) label += mask;
+    if (prediction == 2) { label += mask; }
   }
   label += 1;
   sch.loss(!(label == gold_label));
-  if (sch.output().good()) sch.output() << label << ' ';
+  if (sch.output().good()) { sch.output() << label << ' '; }
 }
 }  // namespace MulticlassTask

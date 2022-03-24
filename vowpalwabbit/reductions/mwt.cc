@@ -45,7 +45,7 @@ struct mwt
 
 void value_policy(mwt& c, float val, uint64_t index)  // estimate the value of a single feature.
 {
-  if (val < 0 || std::floor(val) != val) c.all->logger.out_error("error {} is not a valid action", val);
+  if (val < 0 || std::floor(val) != val) { c.all->logger.out_error("error {} is not a valid action", val); }
 
   uint32_t value = static_cast<uint32_t>(val);
   uint64_t new_index = (index & c.all->weights.mask()) >> c.all->weights.stride_shift();
@@ -69,7 +69,9 @@ void predict_or_learn(mwt& c, single_learner& base, VW::example& ec)
     c.total++;
     // For each nonzero feature in observed namespaces, check it's value.
     for (unsigned char ns : ec.indices)
-      if (c.namespaces[ns]) GD::foreach_feature<mwt, value_policy>(c.all, ec.feature_space[ns], c);
+    {
+      if (c.namespaces[ns]) { GD::foreach_feature<mwt, value_policy>(c.all, ec.feature_space[ns], c); }
+    }
     for (uint64_t policy : c.policies)
     {
       c.evals[policy].cost += get_cost_estimate(c.optional_observation.second, c.evals[policy].action);
@@ -85,6 +87,7 @@ void predict_or_learn(mwt& c, single_learner& base, VW::example& ec)
     uint32_t stride_shift = c.all->weights.stride_shift();
     uint64_t weight_mask = c.all->weights.mask();
     for (unsigned char ns : ec.indices)
+    {
       if (c.namespaces[ns])
       {
         c.indices.push_back(ns);
@@ -100,6 +103,7 @@ void predict_or_learn(mwt& c, single_learner& base, VW::example& ec)
         }
         std::swap(c.feature_space[ns], ec.feature_space[ns]);
       }
+    }
   }
   VW_WARNING_STATE_POP
 
@@ -108,28 +112,33 @@ void predict_or_learn(mwt& c, single_learner& base, VW::example& ec)
 
   if (learn)
   {
-    if (is_learn)
-      base.learn(ec);
+    if (is_learn) { base.learn(ec); }
     else
+    {
       base.predict(ec);
+    }
   }
 
   VW_WARNING_STATE_PUSH
   VW_WARNING_DISABLE_COND_CONST_EXPR
   if VW_STD17_CONSTEXPR (exclude || learn)
+  {
     while (!c.indices.empty())
     {
       unsigned char ns = c.indices.back();
       c.indices.pop_back();
       std::swap(c.feature_space[ns], ec.feature_space[ns]);
     }
+  }
   VW_WARNING_STATE_POP
 
   // modify the predictions to use a vector with a score for each evaluated feature.
   preds.clear();
-  if (learn) preds.push_back(static_cast<float>(ec.pred.multiclass));
+  if (learn) { preds.push_back(static_cast<float>(ec.pred.multiclass)); }
   for (uint64_t index : c.policies)
+  {
     preds.push_back(static_cast<float>(c.evals[index].cost) / static_cast<float>(c.total));
+  }
 
   ec.pred.scalars = preds;
 }
@@ -142,18 +151,18 @@ void print_scalars(VW::io::writer* f, VW::v_array<float>& scalars, VW::v_array<c
 
     for (size_t i = 0; i < scalars.size(); i++)
     {
-      if (i > 0) ss << ' ';
+      if (i > 0) { ss << ' '; }
       ss << scalars[i];
     }
     for (size_t i = 0; i < tag.size(); i++)
     {
-      if (i == 0) ss << ' ';
+      if (i == 0) { ss << ' '; }
       ss << tag[i];
     }
     ss << '\n';
     ssize_t len = ss.str().size();
     ssize_t t = f->write(ss.str().c_str(), static_cast<unsigned int>(len));
-    if (t != len) logger.err_error("write error: {}", VW::strerror_to_string(errno));
+    if (t != len) { logger.err_error("write error: {}", VW::strerror_to_string(errno)); }
   }
 }
 
@@ -161,11 +170,15 @@ void finish_example(VW::workspace& all, mwt& c, VW::example& ec)
 {
   float loss = 0.;
   if (c.learn)
+  {
     if (c.optional_observation.first)
+    {
       loss = get_cost_estimate(c.optional_observation.second, static_cast<uint32_t>(ec.pred.scalars[0]));
+    }
+  }
   all.sd->update(ec.test_only, c.optional_observation.first, loss, 1.f, ec.get_num_features());
 
-  for (auto& sink : all.final_prediction_sink) print_scalars(sink.get(), ec.pred.scalars, ec.tag, all.logger);
+  for (auto& sink : all.final_prediction_sink) { print_scalars(sink.get(), ec.pred.scalars, ec.tag, all.logger); }
 
   if (c.learn)
   {
@@ -179,7 +192,7 @@ void finish_example(VW::workspace& all, mwt& c, VW::example& ec)
 
 void save_load(mwt& c, io_buf& model_file, bool read, bool text)
 {
-  if (model_file.num_files() == 0) return;
+  if (model_file.num_files() == 0) { return; }
 
   std::stringstream msg;
 
@@ -196,7 +209,7 @@ void save_load(mwt& c, io_buf& model_file, bool read, bool text)
   else
   {
     msg << "policies: ";
-    for (feature_index& policy : c.policies) msg << policy << " ";
+    for (feature_index& policy : c.policies) { msg << policy << " "; }
   }
 
   bin_text_read_write_fixed_validated(
@@ -206,7 +219,7 @@ void save_load(mwt& c, io_buf& model_file, bool read, bool text)
   for (feature_index& policy : c.policies)
   {
     policy_data& pd = c.evals[policy];
-    if (read) msg << "evals: " << policy << ":" << pd.action << ":" << pd.cost << " ";
+    if (read) { msg << "evals: " << policy << ":" << pd.action << ":" << pd.cost << " "; }
     bin_text_read_write_fixed_validated(
         model_file, reinterpret_cast<char*>(&c.evals[policy].cost), sizeof(double), read, msg, text);
     bin_text_read_write_fixed_validated(
@@ -230,9 +243,9 @@ base_learner* mwt_setup(VW::setup_base_i& stack_builder)
       .add(make_option("learn", c->num_classes).help("Do Contextual Bandit learning on <n> classes"))
       .add(make_option("exclude_eval", exclude_eval).help("Discard mwt policy features before learning"));
 
-  if (!options.add_parse_and_check_necessary(new_options)) return nullptr;
+  if (!options.add_parse_and_check_necessary(new_options)) { return nullptr; }
 
-  for (char i : s) c->namespaces[static_cast<unsigned char>(i)] = true;
+  for (char i : s) { c->namespaces[static_cast<unsigned char>(i)] = true; }
   c->all = &all;
 
   c->evals.resize(all.length(), policy_data{});

@@ -47,8 +47,8 @@ void finish(explore_eval& data)
   if (!data.all->quiet)
   {
     *(data.all->trace_message) << "update count = " << data.update_count << std::endl;
-    if (data.violations > 0) *(data.all->trace_message) << "violation count = " << data.violations << std::endl;
-    if (!data.fixed_multiplier) *(data.all->trace_message) << "final multiplier = " << data.multiplier << std::endl;
+    if (data.violations > 0) { *(data.all->trace_message) << "violation count = " << data.violations << std::endl; }
+    if (!data.fixed_multiplier) { *(data.all->trace_message) << "final multiplier = " << data.multiplier << std::endl; }
   }
 }
 
@@ -58,7 +58,7 @@ void finish(explore_eval& data)
 
 void output_example(VW::workspace& all, const explore_eval& c, const VW::example& ec, const VW::multi_ex* ec_seq)
 {
-  if (example_is_newline_not_header(ec)) return;
+  if (example_is_newline_not_header(ec)) { return; }
 
   size_t num_features = 0;
 
@@ -67,7 +67,12 @@ void output_example(VW::workspace& all, const explore_eval& c, const VW::example
   VW::label_type_t label_type = all.example_parser->lbl_parser.label_type;
 
   for (size_t i = 0; i < (*ec_seq).size(); i++)
-    if (!VW::LEARNER::ec_is_example_header(*(*ec_seq)[i], label_type)) num_features += (*ec_seq)[i]->get_num_features();
+  {
+    if (!VW::LEARNER::ec_is_example_header(*(*ec_seq)[i], label_type))
+    {
+      num_features += (*ec_seq)[i]->get_num_features();
+    }
+  }
 
   bool labeled_example = true;
   if (c.known_cost.probability > 0)
@@ -79,14 +84,16 @@ void output_example(VW::workspace& all, const explore_eval& c, const VW::example
     }
   }
   else
+  {
     labeled_example = false;
+  }
 
   bool holdout_example = labeled_example;
-  for (size_t i = 0; i < ec_seq->size(); i++) holdout_example &= (*ec_seq)[i]->test_only;
+  for (size_t i = 0; i < ec_seq->size(); i++) { holdout_example &= (*ec_seq)[i]->test_only; }
 
   all.sd->update(holdout_example, labeled_example, loss, ec.weight, num_features);
 
-  for (auto& sink : all.final_prediction_sink) print_action_score(sink.get(), ec.pred.a_s, ec.tag, all.logger);
+  for (auto& sink : all.final_prediction_sink) { print_action_score(sink.get(), ec.pred.a_s, ec.tag, all.logger); }
 
   if (all.raw_prediction != nullptr)
   {
@@ -96,7 +103,7 @@ void output_example(VW::workspace& all, const explore_eval& c, const VW::example
 
     for (size_t i = 0; i < costs.size(); i++)
     {
-      if (i > 0) outputStringStream << ' ';
+      if (i > 0) { outputStringStream << ' '; }
       outputStringStream << costs[i].action << ':' << costs[i].partial_prediction;
     }
     all.print_text_by_ref(all.raw_prediction.get(), outputStringStream.str(), ec.tag, all.logger);
@@ -110,7 +117,10 @@ void output_example_seq(VW::workspace& all, const explore_eval& data, const VW::
   if (ec_seq.size() > 0)
   {
     output_example(all, data, **(ec_seq.begin()), &(ec_seq));
-    if (all.raw_prediction != nullptr) all.print_text_by_ref(all.raw_prediction.get(), "", ec_seq[0]->tag, all.logger);
+    if (all.raw_prediction != nullptr)
+    {
+      all.print_text_by_ref(all.raw_prediction.get(), "", ec_seq[0]->tag, all.logger);
+    }
   }
 }
 
@@ -150,16 +160,19 @@ void do_actual_learning(explore_eval& data, multi_learner& base, VW::multi_ex& e
 
     float action_probability = 0;
     for (size_t i = 0; i < a_s.size(); i++)
-      if (data.known_cost.action == a_s[i].action) action_probability = a_s[i].score;
+    {
+      if (data.known_cost.action == a_s[i].action) { action_probability = a_s[i].score; }
+    }
 
     float threshold = action_probability / data.known_cost.probability;
 
-    if (!data.fixed_multiplier)
-      data.multiplier = std::min(data.multiplier, 1 / threshold);
+    if (!data.fixed_multiplier) { data.multiplier = std::min(data.multiplier, 1 / threshold); }
     else
+    {
       threshold *= data.multiplier;
+    }
 
-    if (threshold > 1. + 1e-6) data.violations++;
+    if (threshold > 1. + 1e-6) { data.violations++; }
 
     if (data._random_state->get_and_update_random() < threshold)
     {
@@ -167,8 +180,10 @@ void do_actual_learning(explore_eval& data, multi_learner& base, VW::multi_ex& e
       for (VW::example*& ec : ec_seq)
       {
         if (ec->l.cb.costs.size() == 1 && ec->l.cb.costs[0].cost != FLT_MAX && ec->l.cb.costs[0].probability > 0)
+        {
           ec_found = ec;
-        if (threshold > 1) ec->weight *= threshold;
+        }
+        if (threshold > 1) { ec->weight *= threshold; }
       }
       ec_found->l.cb.costs[0].probability = action_probability;
 
@@ -177,7 +192,7 @@ void do_actual_learning(explore_eval& data, multi_learner& base, VW::multi_ex& e
       if (threshold > 1)
       {
         float inv_threshold = 1.f / threshold;
-        for (auto& ec : ec_seq) ec->weight *= inv_threshold;
+        for (auto& ec : ec_seq) { ec->weight *= inv_threshold; }
       }
       ec_found->l.cb.costs[0].probability = data.known_cost.probability;
       data.update_count++;
@@ -203,17 +218,18 @@ base_learner* explore_eval_setup(VW::setup_base_i& stack_builder)
       .add(make_option("multiplier", data->multiplier)
                .help("Multiplier used to make all rejection sample probabilities <= 1"));
 
-  if (!options.add_parse_and_check_necessary(new_options)) return nullptr;
+  if (!options.add_parse_and_check_necessary(new_options)) { return nullptr; }
 
   data->all = &all;
   data->_random_state = all.get_random_state();
 
-  if (options.was_supplied("multiplier"))
-    data->fixed_multiplier = true;
+  if (options.was_supplied("multiplier")) { data->fixed_multiplier = true; }
   else
+  {
     data->multiplier = 1;
+  }
 
-  if (!options.was_supplied("cb_explore_adf")) options.insert("cb_explore_adf", "");
+  if (!options.was_supplied("cb_explore_adf")) { options.insert("cb_explore_adf", ""); }
 
   multi_learner* base = as_multiline(stack_builder.setup_base_learner());
   all.example_parser->lbl_parser = CB::cb_label;

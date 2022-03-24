@@ -72,10 +72,11 @@ struct cbify
 float loss(const cbify& data, uint32_t label, uint32_t final_prediction)
 {
   float mult = data.flip_loss_sign ? -1.f : 1.f;
-  if (label != final_prediction)
-    return mult * data.loss1;
+  if (label != final_prediction) { return mult * data.loss1; }
   else
+  {
     return mult * data.loss0;
+  }
 }
 
 float loss_cs(const cbify& data, const std::vector<COST_SENSITIVE::wclass>& costs, uint32_t final_prediction)
@@ -109,7 +110,7 @@ float loss_csldf(
 
 void finish_cbify_reg(cbify_reg& data, std::ostream* trace_stream)
 {
-  if (trace_stream != nullptr) (*trace_stream) << "Max Cost=" << data.max_cost << std::endl;
+  if (trace_stream != nullptr) { (*trace_stream) << "Max Cost=" << data.max_cost << std::endl; }
 }
 
 void cbify_adf_data::init_adf_data(const std::size_t num_actions_, std::size_t increment_,
@@ -196,7 +197,7 @@ float get_01_loss(cbify& data, float chosen_action, float label)
 {
   float diff = label - chosen_action;
   float range = data.regression_data.max_value - data.regression_data.min_value;
-  if (std::abs(diff) <= (data.regression_data.loss_01_ratio * range)) return 0.0f;
+  if (std::abs(diff) <= (data.regression_data.loss_01_ratio * range)) { return 0.0f; }
   return 1.0f;
 }
 
@@ -245,7 +246,7 @@ void predict_or_learn_regression_discrete(cbify& data, single_learner& base, VW:
   data.cb_label.costs.push_back(cb);
   ec.l.cb = data.cb_label;
 
-  if (is_learn) base.learn(ec);
+  if (is_learn) { base.learn(ec); }
 
   if (data.regression_data.loss_report == 1)
   {
@@ -316,7 +317,7 @@ void predict_or_learn_regression(cbify& data, single_learner& base, VW::example&
 
   VW_DBG(ec) << "cbify-reg: before base.learn() = " << VW::to_string(ec.l.cb_cont) << VW::debug::features_to_string(ec)
              << endl;
-  if (is_learn) base.learn(ec);
+  if (is_learn) { base.learn(ec); }
   VW_DBG(ec) << "cbify-reg: after base.learn() = " << VW::to_string(ec.l.cb_cont) << VW::debug::features_to_string(ec)
              << endl;
 
@@ -350,10 +351,11 @@ void predict_or_learn(cbify& data, single_learner& base, VW::example& ec)
   // Store the multiclass or cost-sensitive input label
   MULTICLASS::label_t ld;
   COST_SENSITIVE::label csl;
-  if (use_cs)
-    csl = std::move(ec.l.cs);
+  if (use_cs) { csl = std::move(ec.l.cs); }
   else
+  {
     ld = std::move(ec.l.multi);
+  }
 
   ec.l.cb.costs.clear();
   ec.pred.a_s.clear();
@@ -377,10 +379,11 @@ void predict_or_learn(cbify& data, single_learner& base, VW::example& ec)
 
   if (is_learn) { base.learn(ec); }
 
-  if (use_cs)
-    ec.l.cs = std::move(csl);
+  if (use_cs) { ec.l.cs = std::move(csl); }
   else
+  {
     ec.l.multi = std::move(ld);
+  }
 
   ec.pred.multiclass = action;
   ec.l.cb.costs.clear();
@@ -411,10 +414,11 @@ void learn_adf(cbify& data, multi_learner& base, VW::example& ec)
   MULTICLASS::label_t ld;
   COST_SENSITIVE::label csl;
 
-  if (use_cs)
-    csl = ec.l.cs;
+  if (use_cs) { csl = ec.l.cs; }
   else
+  {
     ld = ec.l.multi;
+  }
 
   CB::cb_class cl;
   cl.action = out_ec.pred.a_s[data.chosen_action].action + 1;
@@ -422,10 +426,11 @@ void learn_adf(cbify& data, multi_learner& base, VW::example& ec)
 
   if (!cl.action) THROW("No action with non-zero probability found.");
 
-  if (use_cs)
-    cl.cost = loss_cs(data, csl.costs, cl.action);
+  if (use_cs) { cl.cost = loss_cs(data, csl.costs, cl.action); }
   else
+  {
     cl.cost = loss(data, ld.label, cl.action);
+  }
 
   // add cb label to chosen action
   auto& lab = data.adf_data.ecs[cl.action - 1]->l.cb;
@@ -438,9 +443,9 @@ void learn_adf(cbify& data, multi_learner& base, VW::example& ec)
 void do_actual_predict_ldf(cbify& data, multi_learner& base, VW::multi_ex& ec_seq)
 {
   // change label and pred data for cb
-  if (data.cs_costs.size() < ec_seq.size()) data.cs_costs.resize(ec_seq.size());
-  if (data.cb_costs.size() < ec_seq.size()) data.cb_costs.resize(ec_seq.size());
-  if (data.cb_as.size() < ec_seq.size()) data.cb_as.resize(ec_seq.size());
+  if (data.cs_costs.size() < ec_seq.size()) { data.cs_costs.resize(ec_seq.size()); }
+  if (data.cb_costs.size() < ec_seq.size()) { data.cb_costs.resize(ec_seq.size()); }
+  if (data.cb_as.size() < ec_seq.size()) { data.cb_as.resize(ec_seq.size()); }
   for (size_t i = 0; i < ec_seq.size(); ++i)
   {
     auto& ec = *ec_seq[i];
@@ -467,10 +472,11 @@ void do_actual_predict_ldf(cbify& data, multi_learner& base, VW::multi_ex& ec_se
   {
     auto& ec = *ec_seq[i];
     data.cb_as[i] = ec.pred.a_s;  // store action_score vector for later reuse.
-    if (i == predicted_action - 1)
-      ec.pred.multiclass = predicted_action;
+    if (i == predicted_action - 1) { ec.pred.multiclass = predicted_action; }
     else
+    {
       ec.pred.multiclass = 0;
+    }
   }
 }
 
@@ -503,15 +509,17 @@ void do_actual_learning_ldf(cbify& data, multi_learner& base, VW::multi_ex& ec_s
   {
     auto& ec = *ec_seq[i];
     data.cb_as[i] = std::move(ec.pred.a_s);  // store action_score vector for later reuse.
-    if (i == cl.action - 1)
-      data.cb_label = ec.l.cb;
+    if (i == cl.action - 1) { data.cb_label = ec.l.cb; }
     else
+    {
       data.cb_costs[i] = ec.l.cb.costs;
+    }
     ec.l.cs.costs = data.cs_costs[i];
-    if (i == cl.action - 1)
-      ec.pred.multiclass = cl.action;
+    if (i == cl.action - 1) { ec.pred.multiclass = cl.action; }
     else
+    {
       ec.pred.multiclass = 0;
+    }
     ec.l.cb.costs.clear();
   }
 }
@@ -520,8 +528,8 @@ void output_example(VW::workspace& all, const VW::example& ec, bool& hit_loss, c
 {
   const auto& costs = ec.l.cs.costs;
 
-  if (VW::example_is_newline(ec)) return;
-  if (COST_SENSITIVE::ec_is_example_header(ec)) return;
+  if (VW::example_is_newline(ec)) { return; }
+  if (COST_SENSITIVE::ec_is_example_header(ec)) { return; }
 
   all.sd->total_features += ec.get_num_features();
 
@@ -533,7 +541,7 @@ void output_example(VW::workspace& all, const VW::example& ec, bool& hit_loss, c
   {
     for (auto const& cost : costs)
     {
-      if (hit_loss) break;
+      if (hit_loss) { break; }
       if (predicted_class == cost.class_index)
       {
         loss = cost.x;
@@ -546,7 +554,9 @@ void output_example(VW::workspace& all, const VW::example& ec, bool& hit_loss, c
   }
 
   for (const auto& sink : all.final_prediction_sink)
+  {
     all.print_by_ref(sink.get(), static_cast<float>(ec.pred.multiclass), 0, ec.tag, all.logger);
+  }
 
   if (all.raw_prediction != nullptr)
   {
@@ -554,7 +564,7 @@ void output_example(VW::workspace& all, const VW::example& ec, bool& hit_loss, c
     std::stringstream outputStringStream(outputString);
     for (size_t i = 0; i < costs.size(); i++)
     {
-      if (i > 0) outputStringStream << ' ';
+      if (i > 0) { outputStringStream << ' '; }
       outputStringStream << costs[i].class_index << ':' << costs[i].partial_prediction;
     }
     // outputStringStream << std::endl;
@@ -566,12 +576,12 @@ void output_example(VW::workspace& all, const VW::example& ec, bool& hit_loss, c
 
 void output_example_seq(VW::workspace& all, const VW::multi_ex& ec_seq)
 {
-  if (ec_seq.empty()) return;
+  if (ec_seq.empty()) { return; }
   all.sd->weighted_labeled_examples += ec_seq[0]->weight;
   all.sd->example_number++;
 
   bool hit_loss = false;
-  for (VW::example* ec : ec_seq) output_example(all, *ec, hit_loss, &(ec_seq));
+  for (VW::example* ec : ec_seq) { output_example(all, *ec, hit_loss, &(ec_seq)); }
 
   if (all.raw_prediction != nullptr)
   {
@@ -588,13 +598,15 @@ void output_example_regression_discrete(VW::workspace& all, cbify& data, VW::exa
   const auto& cb_costs = data.cb_label.costs;
 
   // Track the max cost and report it at the end
-  if (cb_costs[0].cost > data.regression_data.max_cost) data.regression_data.max_cost = cb_costs[0].cost;
+  if (cb_costs[0].cost > data.regression_data.max_cost) { data.regression_data.max_cost = cb_costs[0].cost; }
 
   if (cb_costs.size() > 0)
+  {
     all.sd->update(
         ec.test_only, true /*cb_costs[0].action != FLT_MAX*/, cb_costs[0].cost, ec.weight, ec.get_num_features());
+  }
 
-  if (ld.label != FLT_MAX) all.sd->weighted_labels += static_cast<double>(cb_costs[0].action) * ec.weight;
+  if (ld.label != FLT_MAX) { all.sd->weighted_labels += static_cast<double>(cb_costs[0].action) * ec.weight; }
 
   print_update(all, ec);
 }
@@ -607,13 +619,15 @@ void output_example_regression(VW::workspace& all, cbify& data, VW::example& ec)
   const auto& cb_cont_costs = data.regression_data.cb_cont_label.costs;
 
   // Track the max cost and report it at the end
-  if (cb_cont_costs[0].cost > data.regression_data.max_cost) data.regression_data.max_cost = cb_cont_costs[0].cost;
+  if (cb_cont_costs[0].cost > data.regression_data.max_cost) { data.regression_data.max_cost = cb_cont_costs[0].cost; }
 
   if (cb_cont_costs.size() > 0)
+  {
     all.sd->update(
         ec.test_only, cb_cont_costs[0].action != FLT_MAX, cb_cont_costs[0].cost, ec.weight, ec.get_num_features());
+  }
 
-  if (ld.label != FLT_MAX) all.sd->weighted_labels += static_cast<double>(cb_cont_costs[0].action) * ec.weight;
+  if (ld.label != FLT_MAX) { all.sd->weighted_labels += static_cast<double>(cb_cont_costs[0].action) * ec.weight; }
 
   print_update(all, ec);
 }
@@ -708,7 +722,7 @@ base_learner* cbify_setup(VW::setup_base_i& stack_builder)
                .keep()
                .help("Flip sign of loss (use reward instead of loss)"));
 
-  if (!options.add_parse_and_check_necessary(new_options)) return nullptr;
+  if (!options.add_parse_and_check_necessary(new_options)) { return nullptr; }
 
   data->regression_data.num_actions = num_actions;
   data->use_adf = options.was_supplied("cb_explore_adf");
@@ -895,7 +909,7 @@ base_learner* cbifyldf_setup(VW::setup_base_i& stack_builder)
       .add(make_option("loss0", data->loss0).default_value(0.f).help("Loss for correct label"))
       .add(make_option("loss1", data->loss1).default_value(1.f).help("Loss for incorrect label"));
 
-  if (!options.add_parse_and_check_necessary(new_options)) return nullptr;
+  if (!options.add_parse_and_check_necessary(new_options)) { return nullptr; }
 
   data->app_seed = uniform_hash("vw", 2, 0);
   data->all = &all;

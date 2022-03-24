@@ -99,10 +99,14 @@ void cb_explore_adf_cover::predict_or_learn_impl(VW::LEARNER::multi_learner& bas
   const bool is_mtr = _gen_cs.cb_type == VW::cb_type_t::mtr;
   if (is_learn)
   {
-    if (is_mtr)  // use DR estimates for non-ERM policies in MTR
+    if (is_mtr)
+    {  // use DR estimates for non-ERM policies in MTR
       GEN_CS::gen_cs_example_dr<true>(_gen_cs, examples, _cs_labels);
+    }
     else
+    {
       GEN_CS::gen_cs_example<false>(_gen_cs, examples, _cs_labels, _logger);
+    }
 
     if (base.learn_returns_prediction)
     {
@@ -132,18 +136,22 @@ void cb_explore_adf_cover::predict_or_learn_impl(VW::LEARNER::multi_learner& bas
       : _epsilon / num_actions;
 
   _action_probs.clear();
-  for (uint32_t i = 0; i < num_actions; i++) _action_probs.push_back({i, 0.});
+  for (uint32_t i = 0; i < num_actions; i++) { _action_probs.push_back({i, 0.}); }
   _scores.clear();
-  for (uint32_t i = 0; i < num_actions; i++) _scores.push_back(preds[i].score);
+  for (uint32_t i = 0; i < num_actions; i++) { _scores.push_back(preds[i].score); }
 
   if (!_first_only)
   {
     size_t tied_actions = fill_tied(preds);
     for (size_t i = 0; i < tied_actions; ++i)
+    {
       _action_probs[preds[i].action].score += additive_probability / tied_actions;
+    }
   }
   else
+  {
     _action_probs[preds[0].action].score += additive_probability;
+  }
 
   float norm = min_prob * num_actions + (additive_probability - min_prob);
   for (size_t i = 1; i < _cover_size; i++)
@@ -168,10 +176,12 @@ void cb_explore_adf_cover::predict_or_learn_impl(VW::LEARNER::multi_learner& bas
           true, examples[0]->ft_offset, i + 1);
     }
     else
+    {
       GEN_CS::cs_ldf_learn_or_predict<false>(*(_cs_ldf_learner), examples, _cb_labels, _cs_labels, _prepped_cs_labels,
           false, examples[0]->ft_offset, i + 1);
+    }
 
-    for (uint32_t j = 0; j < num_actions; j++) _scores[j] += preds[j].score;
+    for (uint32_t j = 0; j < num_actions; j++) { _scores[j] += preds[j].score; }
     if (!_first_only)
     {
       size_t tied_actions = fill_tied(preds);
@@ -179,9 +189,13 @@ void cb_explore_adf_cover::predict_or_learn_impl(VW::LEARNER::multi_learner& bas
       for (size_t j = 0; j < tied_actions; ++j)
       {
         if (_action_probs[preds[j].action].score < min_prob)
+        {
           norm += (std::max)(0.f, add_prob - (min_prob - _action_probs[preds[j].action].score));
+        }
         else
+        {
           norm += add_prob;
+        }
         _action_probs[preds[j].action].score += add_prob;
       }
     }
@@ -189,9 +203,13 @@ void cb_explore_adf_cover::predict_or_learn_impl(VW::LEARNER::multi_learner& bas
     {
       uint32_t action = preds[0].action;
       if (_action_probs[action].score < min_prob)
+      {
         norm += (std::max)(0.f, additive_probability - (min_prob - _action_probs[action].score));
+      }
       else
+      {
         norm += additive_probability;
+      }
       _action_probs[action].score += additive_probability;
     }
   }
@@ -200,20 +218,20 @@ void cb_explore_adf_cover::predict_or_learn_impl(VW::LEARNER::multi_learner& bas
       min_prob * num_actions, !_nounif, begin_scores(_action_probs), end_scores(_action_probs));
 
   sort_action_probs(_action_probs, _scores);
-  for (size_t i = 0; i < num_actions; i++) preds[i] = _action_probs[i];
+  for (size_t i = 0; i < num_actions; i++) { preds[i] = _action_probs[i]; }
 
   if (VW_DEBUG_LOG)
   {
     VW_DBG(examples) << "a_p[]=";
-    for (auto const& ap : _action_probs) VW_DBG_0 << ap.action << "::" << ap.score << ",";
+    for (auto const& ap : _action_probs) { VW_DBG_0 << ap.action << "::" << ap.score << ","; }
     VW_DBG_0 << std::endl;
 
     VW_DBG(examples) << "scores[]=";
-    for (auto const& s : _scores) VW_DBG_0 << s << ",";
+    for (auto const& s : _scores) { VW_DBG_0 << s << ","; }
     VW_DBG_0 << std::endl;
   }
 
-  if (is_learn) ++_counter;
+  if (is_learn) { ++_counter; }
 }
 
 void cb_explore_adf_cover::save_load(io_buf& io, bool read, bool text)
@@ -262,7 +280,7 @@ VW::LEARNER::base_learner* setup(VW::setup_base_i& stack_builder)
                .default_value(0.05f)
                .help("Epsilon-greedy exploration"));
 
-  if (!options.add_parse_and_check_necessary(new_options)) return nullptr;
+  if (!options.add_parse_and_check_necessary(new_options)) { return nullptr; }
 
   // Ensure serialization of cb_type in all cases.
   if (!options.was_supplied("cb_type"))

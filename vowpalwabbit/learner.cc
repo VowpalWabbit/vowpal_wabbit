@@ -40,9 +40,11 @@ void save(example& ec, VW::workspace& all)
   std::string final_regressor_name = all.final_regressor_name;
 
   if ((ec.tag).size() >= 6 && (ec.tag)[4] == '_')
+  {
     final_regressor_name = std::string(ec.tag.begin() + 5, (ec.tag).size() - 5);
+  }
 
-  if (!all.quiet) *(all.trace_message) << "saving regressor to " << final_regressor_name << std::endl;
+  if (!all.quiet) { *(all.trace_message) << "saving regressor to " << final_regressor_name << std::endl; }
   ::save_predictor(all, final_regressor_name, 0);
 
   VW::finish_example(all, ec);
@@ -66,7 +68,7 @@ void drain_examples(VW::workspace& all)
   if (all.early_terminate)
   {  // drain any extra examples from parser.
     example* ec = nullptr;
-    while ((ec = VW::get_example(all.example_parser)) != nullptr) VW::finish_example(all, *ec);
+    while ((ec = VW::get_example(all.example_parser)) != nullptr) { VW::finish_example(all, *ec); }
   }
   all.l->end_examples();
 }
@@ -102,7 +104,7 @@ public:
   void process(T& ec)
   {
     // start with last as the first instance will free the example as it is the owner
-    for (auto it = _all.rbegin(); it != _all.rend(); ++it) process_impl(ec, **it);
+    for (auto it = _all.rbegin(); it != _all.rend(); ++it) { process_impl(ec, **it); }
   }
 
 private:
@@ -119,14 +121,22 @@ public:
 
   void on_example(example* ec)
   {
-    if (ec->indices.size() > 1)  // 1+ nonconstant feature. (most common case first)
+    if (ec->indices.size() > 1)
+    {  // 1+ nonconstant feature. (most common case first)
       _context.template process<example, learn_ex>(*ec);
+    }
     else if (ec->end_pass)
+    {
       _context.template process<example, end_pass>(*ec);
+    }
     else if (is_save_cmd(ec))
+    {
       _context.template process<example, save>(*ec);
+    }
     else
+    {
       _context.template process<example, learn_ex>(*ec);
+    }
   }
 
   void process_remaining() {}
@@ -153,14 +163,20 @@ private:
 
   bool try_complete_multi_ex(example* ec)
   {
-    if (ec->indices.size() > 1)  // 1+ nonconstant feature. (most common case first)
+    if (ec->indices.size() > 1)
+    {  // 1+ nonconstant feature. (most common case first)
       return complete_multi_ex(ec);
     // Explicitly do not process the end-of-pass examples here: It needs to be done
     // after learning on the collected multi_ex
+    }
     else if (is_save_cmd(ec))
+    {
       _context.template process<example, save>(*ec);
+    }
     else
+    {
       return complete_multi_ex(ec);
+    }
     return false;
   }
 
@@ -298,10 +314,11 @@ void generic_driver_onethread(VW::workspace& all)
 
 void generic_driver_onethread(VW::workspace& all)
 {
-  if (all.l->is_multiline())
-    generic_driver_onethread<multi_example_handler<single_instance_context>>(all);
+  if (all.l->is_multiline()) { generic_driver_onethread<multi_example_handler<single_instance_context>>(all); }
   else
+  {
     generic_driver_onethread<single_example_handler<single_instance_context>>(all);
+  }
 }
 
 float recur_sensitivity(void*, base_learner& base, example& ec) { return base.sensitivity(ec); }

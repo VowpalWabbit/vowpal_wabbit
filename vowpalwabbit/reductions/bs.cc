@@ -42,7 +42,9 @@ void bs_predict_mean(VW::workspace& all, VW::example& ec, std::vector<double>& p
 {
   ec.pred.scalar = static_cast<float>(accumulate(pred_vec.cbegin(), pred_vec.cend(), 0.0)) / pred_vec.size();
   if (ec.weight > 0 && ec.l.simple.label != FLT_MAX)
+  {
     ec.loss = all.loss->getLoss(all.sd, ec.pred.scalar, ec.l.simple.label) * ec.weight;
+  }
 }
 
 void bs_predict_vote(VW::example& ec, std::vector<double>& pred_vec)
@@ -68,7 +70,9 @@ void bs_predict_vote(VW::example& ec, std::vector<double>& pred_vec)
         current_label = pred_vec_int[i];
       }
       else if (init_label != current_label && pred_vec_int[i] != current_label && pred_vec_int[i] != init_label)
+      {
         multivote_detected = true;  // more than 2 distinct votes detected
+      }
     }
 
     if (counter == 0)
@@ -78,8 +82,7 @@ void bs_predict_vote(VW::example& ec, std::vector<double>& pred_vec)
     }
     else
     {
-      if (pred_vec_int[i] == current_label)
-        counter++;
+      if (pred_vec_int[i] == current_label) { counter++; }
       else
       {
         counter--;
@@ -91,12 +94,14 @@ void bs_predict_vote(VW::example& ec, std::vector<double>& pred_vec)
   {
     counter = 0;
     for (unsigned int i = 0; i < pred_vec.size(); i++)
+    {
       if (pred_vec_int[i] == current_label)
       {
         counter++;
         // sum_labels += pred_vec[i]; // uncomment for: "avg on votes" and getLoss()
       }
-    if (counter * 2 > pred_vec.size()) majority_found = true;
+    }
+    if (counter * 2 > pred_vec.size()) { majority_found = true; }
   }
 
   if (multivote_detected && !majority_found)  // then find most frequent element - if tie: smallest tie label
@@ -106,8 +111,7 @@ void bs_predict_vote(VW::example& ec, std::vector<double>& pred_vec)
     counter = 1;
     for (unsigned int i = 1, temp_count = 1; i < pred_vec.size(); i++)
     {
-      if (tmp_label == pred_vec_int[i])
-        temp_count++;
+      if (tmp_label == pred_vec_int[i]) { temp_count++; }
       else
       {
         if (temp_count > counter)
@@ -153,7 +157,7 @@ void output_example(VW::workspace& all, bs_data& d, const VW::example& ec)
   const label_data& ld = ec.l.simple;
 
   all.sd->update(ec.test_only, ld.label != FLT_MAX, ec.loss, ec.weight, ec.get_num_features());
-  if (ld.label != FLT_MAX && !ec.test_only) all.sd->weighted_labels += (static_cast<double>(ld.label)) * ec.weight;
+  if (ld.label != FLT_MAX && !ec.test_only) { all.sd->weighted_labels += (static_cast<double>(ld.label)) * ec.weight; }
 
   if (!all.final_prediction_sink.empty())  // get confidence interval only when printing out predictions
   {
@@ -161,12 +165,15 @@ void output_example(VW::workspace& all, bs_data& d, const VW::example& ec)
     d.ub = -FLT_MAX;
     for (double v : d.pred_vec)
     {
-      if (v > d.ub) d.ub = static_cast<float>(v);
-      if (v < d.lb) d.lb = static_cast<float>(v);
+      if (v > d.ub) { d.ub = static_cast<float>(v); }
+      if (v < d.lb) { d.lb = static_cast<float>(v); }
     }
   }
 
-  for (auto& sink : all.final_prediction_sink) print_result(sink.get(), ec.pred.scalar, ec.tag, d.lb, d.ub, all.logger);
+  for (auto& sink : all.final_prediction_sink)
+  {
+    print_result(sink.get(), ec.pred.scalar, ec.tag, d.lb, d.ub, all.logger);
+  }
 
   print_update(all, ec);
 }
@@ -186,16 +193,17 @@ void predict_or_learn(bs_data& d, single_learner& base, VW::example& ec)
   {
     ec.weight = weight_temp * static_cast<float>(bs::weight_gen(d._random_state));
 
-    if (is_learn)
-      base.learn(ec, i - 1);
+    if (is_learn) { base.learn(ec, i - 1); }
     else
+    {
       base.predict(ec, i - 1);
+    }
 
     d.pred_vec.push_back(ec.pred.scalar);
 
     if (shouldOutput)
     {
-      if (i > 1) outputStringStream << ' ';
+      if (i > 1) { outputStringStream << ' '; }
       outputStringStream << i << ':' << ec.partial_prediction;
     }
   }
@@ -214,7 +222,7 @@ void predict_or_learn(bs_data& d, single_learner& base, VW::example& ec)
       THROW("Unknown bs_type specified: " << d.bs_type);
   }
 
-  if (shouldOutput) all.print_text_by_ref(all.raw_prediction.get(), outputStringStream.str(), ec.tag, all.logger);
+  if (shouldOutput) { all.print_text_by_ref(all.raw_prediction.get(), outputStringStream.str(), ec.tag, all.logger); }
 }
 
 void finish_example(VW::workspace& all, bs_data& d, VW::example& ec)
@@ -238,25 +246,28 @@ base_learner* VW::reductions::bs_setup(VW::setup_base_i& stack_builder)
                .one_of({"mean", "vote"})
                .help("Prediction type"));
 
-  if (!options.add_parse_and_check_necessary(new_options)) return nullptr;
+  if (!options.add_parse_and_check_necessary(new_options)) { return nullptr; }
   size_t ws = data->B;
   data->ub = FLT_MAX;
   data->lb = -FLT_MAX;
 
   if (options.was_supplied("bs_type"))
   {
-    if (type_string == "mean")
-      data->bs_type = BS_TYPE_MEAN;
+    if (type_string == "mean") { data->bs_type = BS_TYPE_MEAN; }
     else if (type_string == "vote")
+    {
       data->bs_type = BS_TYPE_VOTE;
+    }
     else
     {
       all.logger.err_warn("bs_type must be in {'mean','vote'}; resetting to mean.");
       data->bs_type = BS_TYPE_MEAN;
     }
   }
-  else  // by default use mean
+  else
+  {  // by default use mean
     data->bs_type = BS_TYPE_MEAN;
+  }
 
   data->pred_vec.reserve(data->B);
   data->all = &all;

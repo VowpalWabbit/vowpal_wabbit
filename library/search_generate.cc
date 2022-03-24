@@ -13,16 +13,18 @@ using std::endl;
 size_t sed(const std::string &s1, const std::string &s2, size_t subst_cost=1, size_t ins_cost=1, size_t del_cost=1);
 
 action char2action(char c)    // 1=EOS, 2=' ', 3..28=a..z, 29=other
-{ if (c == '$') return 1;
-  if (c == ' ') return 2;
-  if (c >= 'a' && c <= 'z') return (action)(c - 'a' + 3);
+{
+  if (c == '$') { return 1; }
+  if (c == ' ') { return 2; }
+  if (c >= 'a' && c <= 'z') { return (action)(c - 'a' + 3); }
   return 29;
 }
 
 char action2char(action a)
-{ if (a == 1) return '$';
-  if (a == 2) return ' ';
-  if (a >= 3 && a <= 28) return (char)(a - 3 + 'a');
+{
+  if (a == 1) { return '$'; }
+  if (a == 2) { return ' '; }
+  if (a >= 3 && a <= 28) { return (char)(a - 3 + 'a'); }
   return '_';
 }
 
@@ -42,13 +44,13 @@ public:
   Trie() : terminus(false), count(0), max_count(0), max_string("") {}
 
   ~Trie()
-  { for (Trie* t : children)
-      delete t;
+  {
+    for (Trie* t : children) { delete t; }
   }
 
   Trie* step(const char c)
   { size_t id = char2action(c) - 1;
-    if (children.size() <= id) return nullptr;
+    if (children.size() <= id) { return nullptr; }
     return children[id];
   }
 
@@ -60,20 +62,18 @@ public:
     else
     { count += c;
       size_t id = char2action(*str) - 1;
-      while (children.size() <= id)
-        children.push_back(nullptr);
-      if (children[id] == nullptr)
-        children[id] = new Trie();
+      while (children.size() <= id) { children.push_back(nullptr); }
+      if (children[id] == nullptr) { children[id] = new Trie(); }
       children[id]->insert(str+1, c);
     }
   }
 
   size_t contains(const char*str)
-  { if (str == nullptr || *str == 0)
-      return terminus;
+  {
+    if (str == nullptr || *str == 0) { return terminus; }
     size_t id = char2action(*str) - 1;
-    if (children.size() <= id) return 0;
-    if (children[id] == nullptr) return 0;
+    if (children.size() <= id) { return 0; }
+    if (children[id] == nullptr) { return 0; }
     return children[id]->contains(str+1);
   }
 
@@ -82,14 +82,19 @@ public:
     { next.clear();
       float c = 1.0f / (float)count;
       next.push_back( nextstr('$', log(1.0f + c * (float)terminus), max_string, log(1.0f + (float)max_count)) );
-      for (size_t id=0; id<children.size(); id++)
+      for (size_t id = 0; id < children.size(); id++)
+      {
         if (children[id])
-          next.push_back( nextstr(action2char((action)(id+1)), c*(float)children[id]->count, children[id]->max_string, log(1.0f+ (float)children[id]->max_count)) );
+        {
+          next.push_back(nextstr(action2char((action)(id + 1)), c * (float)children[id]->count,
+              children[id]->max_string, log(1.0f + (float)children[id]->max_count)));
+        }
+      }
     }
     else
     { size_t id = char2action(*prefix) - 1;
-      if (children.size() <= id) return;
-      if (children[id] == nullptr) return;
+      if (children.size() <= id) { return; }
+      if (children[id] == nullptr) { return; }
       children[id]->get_next(prefix+1, next);
     }
   }
@@ -97,7 +102,8 @@ public:
   void build_max(std::string prefix="")
   { max_count = terminus;
     max_string = prefix;
-    for (size_t id=0; id<children.size(); id++)
+    for (size_t id = 0; id < children.size(); id++)
+    {
       if (children[id])
       { char c = action2char((action)(id + 1));
         children[id]->build_max(prefix + c);
@@ -106,14 +112,16 @@ public:
           max_string = children[id]->max_string;
         }
       }
+    }
   }
 
   void print(char c='^', size_t indent=0)
   { cerr << std::string(indent*2, ' ');
     cerr << '\'' << c << "' " << count << " [max_string=" << max_string << " max_count=" << max_count << "]" << endl;
-    for (size_t i=0; i<children.size(); i++)
-      if (children[i])
-        children[i]->print(action2char((action)(i+1)), indent+1);
+    for (size_t i = 0; i < children.size(); i++)
+    {
+      if (children[i]) { children[i]->print(action2char((action)(i + 1)), indent + 1); }
+    }
   }
 
 private:
@@ -132,8 +140,7 @@ public:
   { prev_row = new size_t[N+1];
     cur_row  = new size_t[N+1];
 
-    for (size_t n=0; n<=N; n++)
-      prev_row[n] = del_cost * n;
+    for (size_t n = 0; n <= N; n++) { prev_row[n] = del_cost * n; }
 
     prev_row_min = 0;
   }
@@ -154,13 +161,15 @@ public:
     prev_row = tmp;
   }
 
-  void append(std::string s) { for (char c : s) append(c); }
+  void append(std::string s) {
+    for (char c : s) { append(c); }
+  }
 
   std::vector<char>& next()
   { A.clear();
     for (size_t n=0; n<=N; n++)
-    { if (prev_row[n] == prev_row_min)
-        A.push_back( (n < N) ? target[n] : '$' );
+    {
+      if (prev_row[n] == prev_row_min) { A.push_back((n < N) ? target[n] : '$'); }
     }
     return A;
   }
@@ -168,12 +177,14 @@ public:
   std::vector<std::pair<action,float>> all_next()
   {
     std::vector<std::pair<action, float>> B;
-    for (action a = 1; a <= 29; a++) B.push_back(std::make_pair(a, 1.f));
+    for (action a = 1; a <= 29; a++) { B.push_back(std::make_pair(a, 1.f)); }
 
     B[char2action('$') - 1].second = min_float(100.f, (float)(prev_row[N] - prev_row_min));
 
     for (action n = 0; n < N; n++)
-      if (prev_row[n] == prev_row_min) B[char2action(target[n]) - 1].second = 0.f;
+    {
+      if (prev_row[n] == prev_row_min) { B[char2action(target[n]) - 1].second = 0.f; }
+    }
     return B;
   }
 
@@ -182,7 +193,7 @@ public:
   size_t finish_distance()
   {  // find last occurrence of prev_row_min
     int n = (int)N;
-    while (n >= 0 && prev_row[n] > prev_row_min) n--;
+    while (n >= 0 && prev_row[n] > prev_row_min) { n--; }
     return (N-n) * ins_cost + prev_row_min;
   }
 
@@ -216,7 +227,9 @@ float max_cost = 100.;
 float get_or_one(std::vector<std::pair<char,size_t> >& v, char c)
 { // TODO: could binary search
   for (auto& p : v)
-    if (p.first == c) return min_float(max_cost, (float)p.second);
+  {
+    if (p.first == c) { return min_float(max_cost, (float)p.second); }
+  }
   return 1.;
 }
 
@@ -280,13 +293,17 @@ public:
       ex.indices.push_back('w');
       tmp = "";
       for (char c : out)
-      { if (c == '^') continue;
+      {
+        if (c == '^') { continue; }
         if (c == ' ')
         {
           fs_w.push_back(1.f, VW::hash_feature(vw_obj, "w=" + tmp + "$", ns_hash_w));
           tmp = "";
         }
-        else tmp += c;
+        else
+        {
+          tmp += c;
+        }
       }
       fs_w.push_back(1.f, VW::hash_feature(vw_obj, "w=" + tmp, ns_hash_w));
 
@@ -332,7 +349,10 @@ public:
           fs_i.push_back(1.f, VW::hash_feature(vw_obj, "w=" + tmp, ns_hash_i));
           tmp = "";
         }
-        else tmp += c;
+        else
+        {
+          tmp += c;
+        }
       }
       fs_i.push_back(1.f, VW::hash_feature(vw_obj, "w=" + tmp, ns_hash_i));
 
@@ -353,10 +373,10 @@ public:
 
       VW::finish_example(vw_obj, ex);
 
-      if (c == '$') break;
+      if (c == '$') { break; }
       out += c;
       ied.append(c);
-      if (dict) dict = dict->step(c);
+      if (dict) { dict = dict->step(c); }
     }
 
     dist = ied.finish_distance();
@@ -394,9 +414,8 @@ void run_easy()
   };
   for (size_t i=0; i<100; i++)
   { //if (i == 9999) max_cost = 1.;
-    if (i % 10 == 0) cerr << '.';
-    for (auto x : training_data)
-      task.learn(x, out);
+    if (i % 10 == 0) { cerr << '.'; }
+    for (auto x : training_data) { task.learn(x, out); }
   }
   cerr << endl;
 
@@ -423,7 +442,9 @@ Trie load_dictionary(const char* fname)
       t.insert(space, atoi(str));
     }
     else
+    {
       t.insert(str);
+    }
   }
   return t;
 }
@@ -441,7 +462,7 @@ void run_istream(Generator& gen, const char* fname, bool is_learn=true, size_t p
   float weight = 0.;
   while (getline(h, line))
   { n++;
-    if (n % 500 == 0) cerr << '.';
+    if (n % 500 == 0) { cerr << '.'; }
     size_t i = line.find(" ||| ");
     size_t j = line.find(" ||| ", i+1);
     if (i == std::string::npos || j == std::string::npos)
@@ -450,18 +471,18 @@ void run_istream(Generator& gen, const char* fname, bool is_learn=true, size_t p
     }
     input dat(line.substr(j+5), line.substr(i+5,j-i-5), (float)(atof(line.substr(0,i).c_str())/10.));
     weight += dat.weight;
-    if (is_learn)
-      gen.learn(dat, out);
+    if (is_learn) { gen.learn(dat, out); }
     else
     { gen.predict(dat, out);
-      if (print_every>0 && (n % print_every == 0))
-       std::cout << gen.get_dist() << "\t" << out << "\t\t\t" << dat.in << " ||| " << dat.out << endl;
+      if (print_every > 0 && (n % print_every == 0))
+      {
+        std::cout << gen.get_dist() << "\t" << out << "\t\t\t" << dat.in << " ||| " << dat.out << endl;
+      }
       dist += dat.weight * (float)gen.get_dist();
     }
   }
-  if (n > 500) cerr << endl;
-  if (!is_learn)
-    std::cout << "AVERAGE DISTANCE: " << (dist / weight) << endl;
+  if (n > 500) { cerr << endl; }
+  if (!is_learn) { std::cout << "AVERAGE DISTANCE: " << (dist / weight) << endl; }
 }
 
 void train()

@@ -289,7 +289,7 @@ base_learner* setup(VW::setup_base_i& stack_builder)
                .default_value(0.1f)
                .help("Covariance regularization strength rnd (bigger => more exploration on new features)"));
 
-  if (!options.add_parse_and_check_necessary(new_options)) return nullptr;
+  if (!options.add_parse_and_check_necessary(new_options)) { return nullptr; }
 
   if (alpha <= 0) { THROW("The value of rnd_alpha must be positive.") }
 

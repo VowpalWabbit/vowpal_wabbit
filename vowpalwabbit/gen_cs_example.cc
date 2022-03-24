@@ -26,7 +26,9 @@ float safe_probability(float prob, VW::io::logger& logger)
     return 1e-3f;
   }
   else
+  {
     return prob;
+  }
 }
 
 // Multiline version
@@ -40,7 +42,9 @@ void gen_cs_example_ips(
 
     COST_SENSITIVE::wclass wc = {0., i, 0., 0.};
     if (ld.costs.size() == 1 && ld.costs[0].cost != FLT_MAX)
+    {
       wc.x = ld.costs[0].cost / safe_probability(std::max(ld.costs[0].probability, clip_p), logger);
+    }
     cs_labels.costs.push_back(wc);
   }
 }
@@ -54,7 +58,7 @@ void gen_cs_example_dm(const VW::multi_ex& examples, COST_SENSITIVE::label& cs_l
     const CB::label& ld = examples[i]->l.cb;
 
     COST_SENSITIVE::wclass wc = {0., i, 0., 0.};
-    if (ld.costs.size() == 1 && ld.costs[0].cost != FLT_MAX) wc.x = ld.costs[0].cost;
+    if (ld.costs.size() == 1 && ld.costs[0].cost != FLT_MAX) { wc.x = ld.costs[0].cost; }
     cs_labels.costs.push_back(wc);
   }
 }
@@ -159,15 +163,16 @@ void gen_cs_example_sm(VW::multi_ex&, uint32_t chosen_action, float sign_offset,
     uint32_t current_action = action_vals[i].action;
     COST_SENSITIVE::wclass wc = {0., current_action, 0., 0.};
 
-    if (current_action == chosen_action)
-      wc.x = action_vals[i].score + sign_offset;
+    if (current_action == chosen_action) { wc.x = action_vals[i].score + sign_offset; }
     else
+    {
       wc.x = action_vals[i].score - sign_offset;
+    }
 
     // TODO: This clipping is conceptually unnecessary because the example weight for this instance should be close to
     // 0.
-    if (wc.x > 100.) wc.x = 100.0;
-    if (wc.x < -100.) wc.x = -100.0;
+    if (wc.x > 100.) { wc.x = 100.0; }
+    if (wc.x < -100.) { wc.x = -100.0; }
 
     cs_labels.costs.push_back(wc);
   }

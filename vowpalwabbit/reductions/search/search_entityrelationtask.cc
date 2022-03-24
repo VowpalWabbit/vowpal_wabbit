@@ -72,9 +72,9 @@ void initialize(Search::search& sch, size_t& /*num_actions*/, options_i& options
   // setup entity and relation labels
   // Entity label 1:E_Other 2:E_Peop 3:E_Org 4:E_Loc
   // Relation label 5:R_Live_in 6:R_OrgBased_in 7:R_Located_in 8:R_Work_For 9:R_Kill 10:R_None
-  for (int i = 1; i < 5; i++) my_task_data->y_allowed_entity.push_back(i);
+  for (int i = 1; i < 5; i++) { my_task_data->y_allowed_entity.push_back(i); }
 
-  for (int i = 5; i < 11; i++) my_task_data->y_allowed_relation.push_back(i);
+  for (int i = 5; i < 11; i++) { my_task_data->y_allowed_relation.push_back(i); }
 
   my_task_data->allow_skip = false;
 
@@ -93,15 +93,15 @@ void initialize(Search::search& sch, size_t& /*num_actions*/, options_i& options
   }
 
   sch.set_num_learners(2);
-  if (my_task_data->search_order == 4) sch.set_num_learners(3);
+  if (my_task_data->search_order == 4) { sch.set_num_learners(3); }
 }
 
 bool check_constraints(size_t ent1_id, size_t ent2_id, size_t rel_id)
 {
   size_t valid_ent1_id[] = {2, 3, 4, 2, 2};  // encode the valid entity-relation combinations
   size_t valid_ent2_id[] = {4, 4, 4, 3, 2};
-  if (rel_id - 5 == 5) return true;
-  if (valid_ent1_id[rel_id - 5] == ent1_id && valid_ent2_id[rel_id - 5] == ent2_id) return true;
+  if (rel_id - 5 == 5) { return true; }
+  if (valid_ent1_id[rel_id - 5] == ent1_id && valid_ent2_id[rel_id - 5] == ent2_id) { return true; }
   return false;
 }
 
@@ -182,7 +182,9 @@ size_t predict_entity(
   float loss = 0.0;
   if (prediction == LABEL_SKIP) { loss = my_task_data->skip_cost; }
   else if (prediction != ex->l.multi.label)
+  {
     loss = my_task_data->entity_cost;
+  }
   sch.loss(loss);
   return prediction;
 }
@@ -209,7 +211,9 @@ size_t predict_relation(
   {
     if (!my_task_data->constraints || hist[0] == static_cast<size_t>(0) ||
         check_constraints(hist[0], hist[1], my_task_data->y_allowed_relation[j]))
+    {
       constrained_relation_labels.push_back(my_task_data->y_allowed_relation[j]);
+    }
   }
 
   size_t prediction;
@@ -285,10 +289,11 @@ void entity_first_decoding(Search::search& sch, VW::multi_ex& ec, VW::v_array<si
   // Do entity recognition first
   for (size_t i = 0; i < ec.size(); i++)
   {
-    if (i < n_ent)
-      predictions[i] = predict_entity(sch, ec[i], predictions, static_cast<ptag>(i), isLdf);
+    if (i < n_ent) { predictions[i] = predict_entity(sch, ec[i], predictions, static_cast<ptag>(i), isLdf); }
     else
+    {
       predictions[i] = predict_relation(sch, ec[i], predictions, static_cast<ptag>(i), isLdf);
+    }
   }
 }
 
@@ -337,7 +342,7 @@ void er_allow_skip_decoding(Search::search& sch, VW::multi_ex& ec, VW::v_array<s
   for (ptag t = 0;; t++)
   {
     ptag i = t % static_cast<uint32_t>(ec.size());
-    if (n_predicts == ec.size()) break;
+    if (n_predicts == ec.size()) { break; }
 
     if (predictions[i] == 0)
     {
@@ -398,13 +403,15 @@ void run(Search::search& sch, VW::multi_ex& ec)
 
   for (size_t i = 0; i < ec.size(); i++)
   {
-    if (sch.output().good()) sch.output() << predictions[i] << ' ';
+    if (sch.output().good()) { sch.output() << predictions[i] << ' '; }
   }
 }
 // this is totally bogus for the example -- you'd never actually do this!
 void update_example_indices(bool /* audit */, VW::example* ec, uint64_t mult_amount, uint64_t plus_amount)
 {
   for (features& fs : *ec)
-    for (feature_index& idx : fs.indices) idx = ((idx * mult_amount) + plus_amount);
+  {
+    for (feature_index& idx : fs.indices) { idx = ((idx * mult_amount) + plus_amount); }
+  }
 }
 }  // namespace EntityRelationTask
