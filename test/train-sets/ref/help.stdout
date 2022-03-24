@@ -27,8 +27,8 @@ Example Options:
     --sort_features                         Turn this on to disregard order in which features have been defined.
                                             This will lead to smaller cache sizes (type: bool)
     --loss_function arg                     Specify the loss function to be used, uses squared by default
-                                            (type: str, default: squared, choices {classic, hinge, logistic,
-                                            poisson, quantile, squared})
+                                            (type: str, default: squared, choices {classic, expectile, hinge,
+                                            logistic, poisson, quantile, squared})
     --quantile_tau arg                      Parameter \tau associated with Quantile loss. Defaults to 0.5
                                             (type: float, default: 0.5)
     --l1 arg                                L_1 lambda (type: float, default: 0)
