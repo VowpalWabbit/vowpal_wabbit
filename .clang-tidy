@@ -1,2 +1,11 @@
-Checks: '-*,readability-*,modernize-*,performance-*,-modernize-use-trailing-return-type,-readability-uppercase-literal-suffix'
-FormatStyle: file
+{
+  "Checks": "-*,readability-*,modernize-*,performance-*,-modernize-use-trailing-return-type,-readability-uppercase-literal-suffix",
+  "FormatStyle": "file",
+  "WarningsAsErrors": "-*,performance-*,modernize-use-using",
+  "CheckOptions": [
+    {
+      "key": "performance-move-const-arg.CheckTriviallyCopyableMove",
+      "value": "0"
+    }
+  ]
+}
