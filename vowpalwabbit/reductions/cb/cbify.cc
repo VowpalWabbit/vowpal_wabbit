@@ -554,9 +554,7 @@ void output_example(VW::workspace& all, const VW::example& ec, bool& hit_loss, c
   }
 
   for (const auto& sink : all.final_prediction_sink)
-  {
-    all.print_by_ref(sink.get(), static_cast<float>(ec.pred.multiclass), 0, ec.tag, all.logger);
-  }
+  { all.print_by_ref(sink.get(), static_cast<float>(ec.pred.multiclass), 0, ec.tag, all.logger); }
 
   if (all.raw_prediction != nullptr)
   {

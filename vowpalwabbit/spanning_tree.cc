@@ -197,9 +197,7 @@ void SpanningTree::Run()
     else
     {
       if (!m_quiet)
-      {
-        std::cerr << dotted_quad << "(" << hostname << ':' << ntohs(m_port) << "): nonce=" << nonce << std::endl;
-      }
+      { std::cerr << dotted_quad << "(" << hostname << ':' << ntohs(m_port) << "): nonce=" << nonce << std::endl; }
     }
     size_t total = 0;
     if (recv(f, reinterpret_cast<char*>(&total), sizeof(total), 0) != sizeof(total))
@@ -207,9 +205,7 @@ void SpanningTree::Run()
     else
     {
       if (!m_quiet)
-      {
-        std::cerr << dotted_quad << "(" << hostname << ':' << ntohs(m_port) << "): total=" << total << std::endl;
-      }
+      { std::cerr << dotted_quad << "(" << hostname << ':' << ntohs(m_port) << "): total=" << total << std::endl; }
     }
     size_t id = 0;
     if (recv(f, reinterpret_cast<char*>(&id), sizeof(id), 0) != sizeof(id))
@@ -217,9 +213,7 @@ void SpanningTree::Run()
     else
     {
       if (!m_quiet)
-      {
-        std::cerr << dotted_quad << "(" << hostname << ':' << ntohs(m_port) << "): node id=" << id << std::endl;
-      }
+      { std::cerr << dotted_quad << "(" << hostname << ':' << ntohs(m_port) << "): node id=" << id << std::endl; }
     }
 
     int ok = true;

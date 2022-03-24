@@ -175,9 +175,7 @@ void end_pass(gd& g)
     if (summarize_holdout_set(all, g.no_win_counter)) { finalize_regressor(all, all.final_regressor_name); }
     if ((g.early_stop_thres == g.no_win_counter) &&
         ((all.check_holdout_every_n_passes <= 1) || ((all.current_pass % all.check_holdout_every_n_passes) == 0)))
-    {
-      set_done(all);
-    }
+    { set_done(all); }
   }
 }
 
@@ -387,9 +385,7 @@ inline void vec_add_trunc_multipredict(multipredict_info<T>& mp, const float fx,
 {
   size_t index = fi;
   for (size_t c = 0; c < mp.count; c++, index += mp.step)
-  {
-    mp.pred[c].scalar += fx * trunc_weight(mp.weights[index], mp.gravity);
-  }
+  { mp.pred[c].scalar += fx * trunc_weight(mp.weights[index], mp.gravity); }
 }
 
 template <bool l1, bool audit>
@@ -606,9 +602,7 @@ template <bool sqrt_rate, bool feature_mask_off, bool adax, size_t adaptive, siz
 float sensitivity(gd& g, VW::example& ec)
 {
   if VW_STD17_CONSTEXPR (adaptive || normalized)
-  {
-    return get_pred_per_update<sqrt_rate, feature_mask_off, adax, adaptive, normalized, spare, stateless>(g, ec);
-  }
+  { return get_pred_per_update<sqrt_rate, feature_mask_off, adax, adaptive, normalized, spare, stateless>(g, ec); }
   else
   {
     _UNUSED(g);
@@ -739,16 +733,12 @@ void sync_weights(VW::workspace& all)
   if (all.weights.sparse)
   {
     for (weight& w : all.weights.sparse_weights)
-    {
-      w = trunc_weight(w, static_cast<float>(all.sd->gravity)) * static_cast<float>(all.sd->contraction);
-    }
+    { w = trunc_weight(w, static_cast<float>(all.sd->gravity)) * static_cast<float>(all.sd->contraction); }
   }
   else
   {
     for (weight& w : all.weights.dense_weights)
-    {
-      w = trunc_weight(w, static_cast<float>(all.sd->gravity)) * static_cast<float>(all.sd->contraction);
-    }
+    { w = trunc_weight(w, static_cast<float>(all.sd->gravity)) * static_cast<float>(all.sd->contraction); }
   }
 
   all.sd->gravity = 0.;
@@ -830,7 +820,8 @@ void save_load_regressor(VW::workspace& all, io_buf& model_file, bool read, bool
   uint64_t length = static_cast<uint64_t>(1) << all.num_bits;
   if (read)
   {
-    do {
+    do
+    {
       brw = 1;
       if (all.num_bits < 31)  // backwards compatible
       {
@@ -892,7 +883,8 @@ void save_load_online_state(VW::workspace& all, io_buf& model_file, bool read, b
 
   if (read)
   {
-    do {
+    do
+    {
       brw = 1;
       if (all.num_bits < 31)  // backwards compatible
       {
@@ -910,9 +902,7 @@ void save_load_online_state(VW::workspace& all, io_buf& model_file, bool read, b
                                                                    << length);
         weight buff[8] = {0, 0, 0, 0, 0, 0, 0, 0};
         if (ftrl_size > 0)
-        {
-          brw += model_file.bin_read_fixed(reinterpret_cast<char*>(buff), sizeof(buff[0]) * ftrl_size);
-        }
+        { brw += model_file.bin_read_fixed(reinterpret_cast<char*>(buff), sizeof(buff[0]) * ftrl_size); }
         else if (g == nullptr || (!g->adaptive_input && !g->normalized_input))
         {
           brw += model_file.bin_read_fixed(reinterpret_cast<char*>(buff), sizeof(buff[0]));
@@ -1150,9 +1140,7 @@ void save_load_online_state(
     all.current_pass = 0;
   }
   if (all.weights.sparse)
-  {
-    save_load_online_state(all, model_file, read, text, g, msg, ftrl_size, all.weights.sparse_weights);
-  }
+  { save_load_online_state(all, model_file, read, text, g, msg, ftrl_size, all.weights.sparse_weights); }
   else
   {
     save_load_online_state(all, model_file, read, text, g, msg, ftrl_size, all.weights.dense_weights);
@@ -1243,9 +1231,7 @@ uint64_t set_learn(VW::workspace& all, bool feature_mask_off, gd& g)
 {
   all.normalized_idx = normalized;
   if (feature_mask_off)
-  {
-    return set_learn<sparse_l2, invariant, sqrt_rate, true, adaptive, normalized, spare, next>(all, g);
-  }
+  { return set_learn<sparse_l2, invariant, sqrt_rate, true, adaptive, normalized, spare, next>(all, g); }
   else
   {
     return set_learn<sparse_l2, invariant, sqrt_rate, false, adaptive, normalized, spare, next>(all, g);
@@ -1256,9 +1242,7 @@ template <bool invariant, bool sqrt_rate, uint64_t adaptive, uint64_t normalized
 uint64_t set_learn(VW::workspace& all, bool feature_mask_off, gd& g)
 {
   if (g.sparse_l2 > 0.f)
-  {
-    return set_learn<true, invariant, sqrt_rate, adaptive, normalized, spare, next>(all, feature_mask_off, g);
-  }
+  { return set_learn<true, invariant, sqrt_rate, adaptive, normalized, spare, next>(all, feature_mask_off, g); }
   else
   {
     return set_learn<false, invariant, sqrt_rate, adaptive, normalized, spare, next>(all, feature_mask_off, g);
@@ -1269,9 +1253,7 @@ template <bool sqrt_rate, uint64_t adaptive, uint64_t normalized, uint64_t spare
 uint64_t set_learn(VW::workspace& all, bool feature_mask_off, gd& g)
 {
   if (all.invariant_updates)
-  {
-    return set_learn<true, sqrt_rate, adaptive, normalized, spare, next>(all, feature_mask_off, g);
-  }
+  { return set_learn<true, sqrt_rate, adaptive, normalized, spare, next>(all, feature_mask_off, g); }
   else
   {
     return set_learn<false, sqrt_rate, adaptive, normalized, spare, next>(all, feature_mask_off, g);
@@ -1283,9 +1265,7 @@ uint64_t set_learn(VW::workspace& all, bool feature_mask_off, gd& g)
 {
   // select the appropriate learn function based on adaptive, normalization, and feature mask
   if (all.weights.normalized)
-  {
-    return set_learn<sqrt_rate, adaptive, adaptive + 1, adaptive + 2, adaptive + 3>(all, feature_mask_off, g);
-  }
+  { return set_learn<sqrt_rate, adaptive, adaptive + 1, adaptive + 2, adaptive + 3>(all, feature_mask_off, g); }
   else
   {
     return set_learn<sqrt_rate, adaptive, 0, spare, spare + 1>(all, feature_mask_off, g);

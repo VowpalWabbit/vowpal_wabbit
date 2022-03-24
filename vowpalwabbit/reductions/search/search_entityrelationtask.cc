@@ -211,9 +211,7 @@ size_t predict_relation(
   {
     if (!my_task_data->constraints || hist[0] == static_cast<size_t>(0) ||
         check_constraints(hist[0], hist[1], my_task_data->y_allowed_relation[j]))
-    {
-      constrained_relation_labels.push_back(my_task_data->y_allowed_relation[j]);
-    }
+    { constrained_relation_labels.push_back(my_task_data->y_allowed_relation[j]); }
   }
 
   size_t prediction;

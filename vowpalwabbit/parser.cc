@@ -412,17 +412,13 @@ void enable_sources(VW::workspace& all, bool quiet, size_t passes, input_options
     int on = 1;
     if (setsockopt(all.example_parser->bound_sock, SOL_SOCKET, SO_REUSEADDR, reinterpret_cast<char*>(&on), sizeof(on)) <
         0)
-    {
-      *(all.trace_message) << "setsockopt SO_REUSEADDR: " << VW::strerror_to_string(errno) << endl;
-    }
+    { *(all.trace_message) << "setsockopt SO_REUSEADDR: " << VW::strerror_to_string(errno) << endl; }
 
     // Enable TCP Keep Alive to prevent socket leaks
     int enableTKA = 1;
     if (setsockopt(all.example_parser->bound_sock, SOL_SOCKET, SO_KEEPALIVE, reinterpret_cast<char*>(&enableTKA),
             sizeof(enableTKA)) < 0)
-    {
-      *(all.trace_message) << "setsockopt SO_KEEPALIVE: " << VW::strerror_to_string(errno) << endl;
-    }
+    { *(all.trace_message) << "setsockopt SO_KEEPALIVE: " << VW::strerror_to_string(errno) << endl; }
 
     sockaddr_in address;
     address.sin_family = AF_INET;
@@ -655,9 +651,7 @@ void enable_sources(VW::workspace& all, bool quiet, size_t passes, input_options
     THROW("need a cache file for multiple passes : try using  --cache or --cache_file <name>");
 
   if (!quiet && !all.daemon)
-  {
-    *(all.trace_message) << "num sources = " << all.example_parser->input.num_files() << endl;
-  }
+  { *(all.trace_message) << "num sources = " << all.example_parser->input.num_files() << endl; }
 }
 
 void lock_done(parser& p)
@@ -748,9 +742,7 @@ void setup_example(VW::workspace& all, VW::example* ae)
       (example_is_newline(*ae) &&
           (all.example_parser->lbl_parser.label_type != label_type_t::ccb ||
               VW::reductions::ccb::ec_is_example_unset(*ae))))
-  {
-    all.example_parser->in_pass_counter++;
-  }
+  { all.example_parser->in_pass_counter++; }
 
   ae->weight = all.example_parser->lbl_parser.get_weight(ae->l, ae->_reduction_features);
 
@@ -849,9 +841,7 @@ VW::example* import_example(VW::workspace& all, const std::string& label, primit
     unsigned char index = features[i].name;
     ret->indices.push_back(index);
     for (size_t j = 0; j < features[i].len; j++)
-    {
-      ret->feature_space[index].push_back(features[i].fs[j].x, features[i].fs[j].weight_index);
-    }
+    { ret->feature_space[index].push_back(features[i].fs[j].x, features[i].fs[j].weight_index); }
   }
 
   setup_example(all, ret);

@@ -162,9 +162,7 @@ public:
     size_t name_start = _read_idx;
     while (!(_read_idx >= _line.size() || _line[_read_idx] == ' ' || _line[_read_idx] == ':' ||
         _line[_read_idx] == '\t' || _line[_read_idx] == '|' || _line[_read_idx] == '\r'))
-    {
-      ++_read_idx;
-    }
+    { ++_read_idx; }
 
     return _line.substr(name_start, _read_idx - name_start);
   }

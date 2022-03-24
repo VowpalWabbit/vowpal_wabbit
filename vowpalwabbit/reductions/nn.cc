@@ -117,9 +117,7 @@ void finish_setup(nn& n, VW::workspace& all)
   n.hiddenbias.indices.push_back(constant_namespace);
   n.hiddenbias.feature_space[constant_namespace].push_back(1, constant);
   if (all.audit || all.hash_inv)
-  {
-    n.hiddenbias.feature_space[constant_namespace].space_names.emplace_back("", "HiddenBias");
-  }
+  { n.hiddenbias.feature_space[constant_namespace].space_names.emplace_back("", "HiddenBias"); }
   n.hiddenbias.l.simple.label = FLT_MAX;
   n.hiddenbias.weight = 1;
 
@@ -129,9 +127,7 @@ void finish_setup(nn& n, VW::workspace& all)
   features& outfs = n.output_layer.feature_space[nn_output_namespace];
   n.outputweight.feature_space[nn_output_namespace].push_back(outfs.values[0], outfs.indices[0]);
   if (all.audit || all.hash_inv)
-  {
-    n.outputweight.feature_space[nn_output_namespace].space_names.emplace_back("", "OutputWeight");
-  }
+  { n.outputweight.feature_space[nn_output_namespace].space_names.emplace_back("", "OutputWeight"); }
   n.outputweight.feature_space[nn_output_namespace].values[0] = 1;
   n.outputweight.l.simple.label = FLT_MAX;
   n.outputweight.weight = 1;
@@ -447,9 +443,7 @@ base_learner* nn_setup(VW::setup_base_i& stack_builder)
   n->_random_state = all.get_random_state();
 
   if (n->multitask && !all.quiet)
-  {
-    all.logger.err_info("using multitask sharing for neural network {}", (all.training ? "training" : "testing"));
-  }
+  { all.logger.err_info("using multitask sharing for neural network {}", (all.training ? "training" : "testing")); }
 
   if (options.was_supplied("meanfield"))
   {
@@ -458,14 +452,10 @@ base_learner* nn_setup(VW::setup_base_i& stack_builder)
   }
 
   if (n->dropout && !all.quiet)
-  {
-    all.logger.err_info("using dropout for neural network {}", (all.training ? "training" : "testing"));
-  }
+  { all.logger.err_info("using dropout for neural network {}", (all.training ? "training" : "testing")); }
 
   if (n->inpass && !all.quiet)
-  {
-    all.logger.err_info("using input passthrough for neural network {}", (all.training ? "training" : "testing"));
-  }
+  { all.logger.err_info("using input passthrough for neural network {}", (all.training ? "training" : "testing")); }
 
   n->finished_setup = false;
   n->squared_loss = getLossFunction(all, "squared", 0);

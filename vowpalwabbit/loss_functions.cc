@@ -165,9 +165,7 @@ public:
   float getLoss(const shared_data*, float prediction, float label) const override
   {
     if (label != -1.f && label != 1.f)
-    {
-      logger.out_warn("The label {} is not -1 or 1 or in [0,1] as the hinge loss function expects.", label);
-    }
+    { logger.out_warn("The label {} is not -1 or 1 or in [0,1] as the hinge loss function expects.", label); }
     float e = 1 - label * prediction;
     return (e > 0) ? e : 0;
   }
@@ -211,9 +209,7 @@ public:
   float getLoss(const shared_data*, float prediction, float label) const override
   {
     if (label != -1.f && label != 1.f)
-    {
-      logger.out_warn("The label {} is not -1 or 1 or in [0,1] as the logistic loss function expects.", label);
-    }
+    { logger.out_warn("The label {} is not -1 or 1 or in [0,1] as the logistic loss function expects.", label); }
     return std::log(1 + correctedExp(-label * prediction));
   }
 

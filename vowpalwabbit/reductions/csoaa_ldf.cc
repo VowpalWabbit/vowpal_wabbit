@@ -55,9 +55,7 @@ void compute_wap_values(std::vector<COST_SENSITIVE::wclass*> costs)
   std::sort(costs.begin(), costs.end(), cmp_wclass_ptr);
   costs[0]->wap_value = 0.;
   for (size_t i = 1; i < costs.size(); i++)
-  {
-    costs[i]->wap_value = costs[i - 1]->wap_value + (costs[i]->x - costs[i - 1]->x) / static_cast<float>(i);
-  }
+  { costs[i]->wap_value = costs[i - 1]->wap_value + (costs[i]->x - costs[i - 1]->x) / static_cast<float>(i); }
 }
 
 // Substract a given feature from example ec.
@@ -537,9 +535,7 @@ void output_rank_example(VW::workspace& all, VW::example& head_ec, bool& hit_los
   }
 
   for (auto& sink : all.final_prediction_sink)
-  {
-    print_action_score(sink.get(), head_ec.pred.a_s, head_ec.tag, all.logger);
-  }
+  { print_action_score(sink.get(), head_ec.pred.a_s, head_ec.tag, all.logger); }
 
   if (all.raw_prediction != nullptr)
   {

@@ -63,9 +63,7 @@ void predict_or_learn(cb& data, single_learner& base, VW::example& ec)
 
   // cost observed, not default
   if (optional_cost.first && (c.known_cost.action < 1 || c.known_cost.action > c.num_actions))
-  {
-    data.logger.err_error("invalid action: {}", c.known_cost.action);
-  }
+  { data.logger.err_error("invalid action: {}", c.known_cost.action); }
 
   // generate a cost-sensitive example to update classifiers
   gen_cs_example<is_learn>(c, ec, ec.l.cb, ec.l.cs, data.logger);
@@ -79,9 +77,7 @@ void predict_or_learn(cb& data, single_learner& base, VW::example& ec)
     }
 
     for (size_t i = 0; i < ec.l.cb.costs.size(); i++)
-    {
-      ec.l.cb.costs[i].partial_prediction = ec.l.cs.costs[i].partial_prediction;
-    }
+    { ec.l.cb.costs[i].partial_prediction = ec.l.cs.costs[i].partial_prediction; }
   }
 }
 
@@ -100,9 +96,7 @@ void learn_eval(cb& data, single_learner&, VW::example& ec)
   gen_cs_example<true>(c, ec, ec.l.cb_eval.event, ec.l.cs, data.logger);
 
   for (size_t i = 0; i < ec.l.cb_eval.event.costs.size(); i++)
-  {
-    ec.l.cb_eval.event.costs[i].partial_prediction = ec.l.cs.costs[i].partial_prediction;
-  }
+  { ec.l.cb_eval.event.costs[i].partial_prediction = ec.l.cs.costs[i].partial_prediction; }
 
   ec.pred.multiclass = ec.l.cb_eval.action;
 }
@@ -123,9 +117,7 @@ void generic_output_example(
   all.sd->update(ec.test_only, !CB::is_test_label(ld), loss, 1.f, ec.get_num_features());
 
   for (auto& sink : all.final_prediction_sink)
-  {
-    all.print_by_ref(sink.get(), static_cast<float>(ec.pred.multiclass), 0, ec.tag, all.logger);
-  }
+  { all.print_by_ref(sink.get(), static_cast<float>(ec.pred.multiclass), 0, ec.tag, all.logger); }
 
   if (all.raw_prediction != nullptr)
   {

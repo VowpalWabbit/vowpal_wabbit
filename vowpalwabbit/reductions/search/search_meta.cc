@@ -201,9 +201,7 @@ void run(Search::search& sch, VW::multi_ex& ec)
   {
     d.kbest_out = new std::stringstream();
     for (size_t i = 0; i < std::min(d.final.size(), d.kbest); i++)
-    {
-      (*d.kbest_out) << *d.final[i].second << "\t" << d.final[i].first.first << std::endl;
-    }
+    { (*d.kbest_out) << *d.final[i].second << "\t" << d.final[i].first.first << std::endl; }
   }
 
   // run the final selected trajectory

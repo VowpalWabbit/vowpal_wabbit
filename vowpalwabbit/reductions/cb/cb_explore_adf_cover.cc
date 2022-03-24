@@ -144,9 +144,7 @@ void cb_explore_adf_cover::predict_or_learn_impl(VW::LEARNER::multi_learner& bas
   {
     size_t tied_actions = fill_tied(preds);
     for (size_t i = 0; i < tied_actions; ++i)
-    {
-      _action_probs[preds[i].action].score += additive_probability / tied_actions;
-    }
+    { _action_probs[preds[i].action].score += additive_probability / tied_actions; }
   }
   else
   {
@@ -189,9 +187,7 @@ void cb_explore_adf_cover::predict_or_learn_impl(VW::LEARNER::multi_learner& bas
       for (size_t j = 0; j < tied_actions; ++j)
       {
         if (_action_probs[preds[j].action].score < min_prob)
-        {
-          norm += (std::max)(0.f, add_prob - (min_prob - _action_probs[preds[j].action].score));
-        }
+        { norm += (std::max)(0.f, add_prob - (min_prob - _action_probs[preds[j].action].score)); }
         else
         {
           norm += add_prob;
@@ -203,9 +199,7 @@ void cb_explore_adf_cover::predict_or_learn_impl(VW::LEARNER::multi_learner& bas
     {
       uint32_t action = preds[0].action;
       if (_action_probs[action].score < min_prob)
-      {
-        norm += (std::max)(0.f, additive_probability - (min_prob - _action_probs[action].score));
-      }
+      { norm += (std::max)(0.f, additive_probability - (min_prob - _action_probs[action].score)); }
       else
       {
         norm += additive_probability;

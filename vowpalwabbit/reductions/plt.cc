@@ -122,9 +122,7 @@ void learn(plt& p, single_learner& base, VW::example& ec)
         {
           uint32_t n_child = p.kary * n + i;
           if (n_child < p.t && p.positive_nodes.find(n_child) == p.positive_nodes.end())
-          {
-            p.negative_nodes.insert(n_child);
-          }
+          { p.negative_nodes.insert(n_child); }
         }
       }
     }

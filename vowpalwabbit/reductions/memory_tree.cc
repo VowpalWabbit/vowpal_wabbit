@@ -883,9 +883,7 @@ void route_to_leaf(memory_tree& b, single_learner& base, const uint32_t& ec_arra
   {
     b.nodes[cn].examples_index.push_back(ec_array_index);
     if ((b.nodes[cn].examples_index.size() >= b.max_leaf_examples) && (b.nodes.size() + 2 < b.max_nodes))
-    {
-      split_leaf(b, base, cn);
-    }
+    { split_leaf(b, base, cn); }
   }
 }
 
@@ -1084,9 +1082,7 @@ void learn(memory_tree& b, single_learner& base, VW::example& ec)
     if (b.iter % 5000 == 0)
     {
       if (b.oas == false)
-      {
-        std::cout << "at iter " << b.iter << ", pred error: " << b.num_mistakes * 1. / b.iter << std::endl;
-      }
+      { std::cout << "at iter " << b.iter << ", pred error: " << b.num_mistakes * 1. / b.iter << std::endl; }
       else
       {
         std::cout << "at iter " << b.iter << ", avg hamming loss: " << b.hamming_loss * 1. / b.iter << std::endl;

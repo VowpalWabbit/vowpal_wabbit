@@ -69,9 +69,7 @@ void output_example(VW::workspace& all, const explore_eval& c, const VW::example
   for (size_t i = 0; i < (*ec_seq).size(); i++)
   {
     if (!VW::LEARNER::ec_is_example_header(*(*ec_seq)[i], label_type))
-    {
-      num_features += (*ec_seq)[i]->get_num_features();
-    }
+    { num_features += (*ec_seq)[i]->get_num_features(); }
   }
 
   bool labeled_example = true;
@@ -118,9 +116,7 @@ void output_example_seq(VW::workspace& all, const explore_eval& data, const VW::
   {
     output_example(all, data, **(ec_seq.begin()), &(ec_seq));
     if (all.raw_prediction != nullptr)
-    {
-      all.print_text_by_ref(all.raw_prediction.get(), "", ec_seq[0]->tag, all.logger);
-    }
+    { all.print_text_by_ref(all.raw_prediction.get(), "", ec_seq[0]->tag, all.logger); }
   }
 }
 
@@ -180,9 +176,7 @@ void do_actual_learning(explore_eval& data, multi_learner& base, VW::multi_ex& e
       for (VW::example*& ec : ec_seq)
       {
         if (ec->l.cb.costs.size() == 1 && ec->l.cb.costs[0].cost != FLT_MAX && ec->l.cb.costs[0].probability > 0)
-        {
-          ec_found = ec;
-        }
+        { ec_found = ec; }
         if (threshold > 1) { ec->weight *= threshold; }
       }
       ec_found->l.cb.costs[0].probability = action_probability;

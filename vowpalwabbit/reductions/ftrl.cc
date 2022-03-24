@@ -197,9 +197,7 @@ void inner_coin_betting_predict(ftrl_update_data& d, float x, float& wref)
 
   // COCOB update without sigmoid
   if (w[W_MG] * w_mx > 0)
-  {
-    w_xt = ((d.ftrl_alpha + w[W_WE]) / (w[W_MG] * w_mx * (w[W_MG] * w_mx + w[W_G2]))) * w[W_ZT];
-  }
+  { w_xt = ((d.ftrl_alpha + w[W_WE]) / (w[W_MG] * w_mx * (w[W_MG] * w_mx + w[W_G2]))) * w[W_ZT]; }
 
   d.predict += w_xt * x;
   if (w_mx > 0)
@@ -224,9 +222,7 @@ void inner_coin_betting_update_after_prediction(ftrl_update_data& d, float x, fl
   // If a new Lipschitz constant and/or magnitude of x is found, the w is
   // recalculated and used in the update of the wealth below.
   if (w[W_MG] * w[W_MX] > 0)
-  {
-    w[W_XT] = ((d.ftrl_alpha + w[W_WE]) / (w[W_MG] * w[W_MX] * (w[W_MG] * w[W_MX] + w[W_G2]))) * w[W_ZT];
-  }
+  { w[W_XT] = ((d.ftrl_alpha + w[W_WE]) / (w[W_MG] * w[W_MX] * (w[W_MG] * w[W_MX] + w[W_G2]))) * w[W_ZT]; }
   else
   {
     w[W_XT] = 0;
@@ -410,9 +406,7 @@ void end_pass(ftrl& g)
     if (summarize_holdout_set(all, g.no_win_counter)) { finalize_regressor(all, all.final_regressor_name); }
     if ((g.early_stop_thres == g.no_win_counter) &&
         ((all.check_holdout_every_n_passes <= 1) || ((all.current_pass % all.check_holdout_every_n_passes) == 0)))
-    {
-      set_done(all);
-    }
+    { set_done(all); }
   }
 }
 

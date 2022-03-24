@@ -139,9 +139,7 @@ void add_all_features(VW::example& ex, VW::example& src, unsigned char tgt_ns, u
     if (ns != constant_namespace)
     {  // ignore constant_namespace
       for (feature_index i : src.feature_space[ns].indices)
-      {
-        tgt_fs.push_back(1.0f, ((i / multiplier + offset) * multiplier) & mask);
-      }
+      { tgt_fs.push_back(1.0f, ((i / multiplier + offset) * multiplier) & mask); }
     }
   }
 }
@@ -273,9 +271,7 @@ void extract_features(Search::search& sch, uint32_t idx, VW::multi_ex& ec)
 
   // feature based on the top three examples in stack ec_buf[0]: s1, ec_buf[1]: s2, ec_buf[2]: s3
   for (size_t i = 0; i < 3; i++)
-  {
-    ec_buf[i] = (stack.size() > i && *(stack.end() - (i + 1)) != 0) ? ec[*(stack.end() - (i + 1)) - 1] : nullptr;
-  }
+  { ec_buf[i] = (stack.size() > i && *(stack.end() - (i + 1)) != 0) ? ec[*(stack.end() - (i + 1)) - 1] : nullptr; }
 
   // features based on examples in string buffer ec_buf[3]: b1, ec_buf[4]: b2, ec_buf[5]: b3
   for (size_t i = 3; i < 6; i++) { ec_buf[i] = (idx + (i - 3) - 1 < n) ? ec[idx + i - 3 - 1] : nullptr; }
@@ -289,9 +285,7 @@ void extract_features(Search::search& sch, uint32_t idx, VW::multi_ex& ec)
 
   // features based on leftmost children of the top element in bufer ec_buf[10]: bl1, ec_buf[11]: bl2
   for (size_t i = 10; i < 12; i++)
-  {
-    ec_buf[i] = (idx <= n && children[i - 8][idx] != 0) ? ec[children[i - 8][idx] - 1] : nullptr;
-  }
+  { ec_buf[i] = (idx <= n && children[i - 8][idx] != 0) ? ec[children[i - 8][idx] - 1] : nullptr; }
   ec_buf[12] = (stack.size() > 1 && *(stack.end() - 2) != 0 && children[2][*(stack.end() - 2)] != 0)
       ? ec[children[2][*(stack.end() - 2)] - 1]
       : nullptr;
@@ -319,13 +313,9 @@ void extract_features(Search::search& sch, uint32_t idx, VW::multi_ex& ec)
   temp[2] = empty ? 1 : 1 + std::min(static_cast<uint32_t>(5), children[1][last]);
   temp[3] = idx > n ? 1 : 1 + std::min(static_cast<uint32_t>(5), children[0][idx]);
   for (size_t i = 4; i < 8; i++)
-  {
-    temp[i] = (!empty && children[i - 2][last] != 0) ? tags[children[i - 2][last]] : 15;
-  }
+  { temp[i] = (!empty && children[i - 2][last] != 0) ? tags[children[i - 2][last]] : 15; }
   for (size_t i = 8; i < 10; i++)
-  {
-    temp[i] = (idx <= n && children[i - 6][idx] != 0) ? tags[children[i - 6][idx]] : 15;
-  }
+  { temp[i] = (idx <= n && children[i - 6][idx] != 0) ? tags[children[i - 6][idx]] : 15; }
 
   uint64_t additional_offset = val_namespace * offset_const;
   for (size_t j = 0; j < 10; j++)
@@ -495,9 +485,7 @@ void get_cost_to_go_losses(Search::search& sch, std::vector<std::pair<action, fl
   if (one_learner)
   {
     if (is_valid(SHIFT, valid_actions))
-    {
-      gold_action_losses.push_back(std::make_pair(SHIFT, static_cast<float>(action_loss[SHIFT])));
-    }
+    { gold_action_losses.push_back(std::make_pair(SHIFT, static_cast<float>(action_loss[SHIFT]))); }
     for (uint32_t i = 2; i <= 3; i++)
     {
       if (is_valid(i, valid_actions))
@@ -513,23 +501,17 @@ void get_cost_to_go_losses(Search::search& sch, std::vector<std::pair<action, fl
       }
     }
     if (sys == arc_eager && is_valid(REDUCE, valid_actions))
-    {
-      gold_action_losses.push_back(std::make_pair(2 + num_label * 2, static_cast<float>(action_loss[REDUCE])));
-    }
+    { gold_action_losses.push_back(std::make_pair(2 + num_label * 2, static_cast<float>(action_loss[REDUCE]))); }
   }
   else
   {
     for (action i = 1; i <= 3; i++)
     {
       if (is_valid(i, valid_actions))
-      {
-        gold_action_losses.push_back(std::make_pair(i, static_cast<float>(action_loss[i])));
-      }
+      { gold_action_losses.push_back(std::make_pair(i, static_cast<float>(action_loss[i]))); }
     }
     if (sys == arc_eager && is_valid(REDUCE, valid_actions))
-    {
-      gold_action_losses.push_back(std::make_pair(REDUCE, static_cast<float>(action_loss[REDUCE])));
-    }
+    { gold_action_losses.push_back(std::make_pair(REDUCE, static_cast<float>(action_loss[REDUCE]))); }
   }
 }
 
@@ -587,9 +569,7 @@ void convert_to_onelearner_actions(Search::search& sch, VW::v_array<action>& act
   if (sys == arc_eager && is_valid(REDUCE, actions)) { actions_onelearner.push_back(2 + 2 * num_label); }
   if (left_label != my_null && is_valid(REDUCE_RIGHT, actions)) { actions_onelearner.push_back(1 + right_label); }
   if (left_label != my_null && is_valid(REDUCE_LEFT, actions))
-  {
-    actions_onelearner.push_back(1 + left_label + num_label);
-  }
+  { actions_onelearner.push_back(1 + left_label + num_label); }
   if (left_label == my_null && is_valid(REDUCE_RIGHT, actions))
   {
     for (uint32_t i = 0; i < num_label; i++)
@@ -602,9 +582,7 @@ void convert_to_onelearner_actions(Search::search& sch, VW::v_array<action>& act
     for (uint32_t i = 0; i < num_label; i++)
     {
       if (sys == arc_eager || i != data->root_label - 1)
-      {
-        actions_onelearner.push_back(static_cast<uint32_t>(i + 2 + num_label));
-      }
+      { actions_onelearner.push_back(static_cast<uint32_t>(i + 2 + num_label)); }
     }
   }
 }

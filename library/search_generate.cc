@@ -161,7 +161,8 @@ public:
     prev_row = tmp;
   }
 
-  void append(std::string s) {
+  void append(std::string s)
+  {
     for (char c : s) { append(c); }
   }
 
@@ -475,9 +476,7 @@ void run_istream(Generator& gen, const char* fname, bool is_learn=true, size_t p
     else
     { gen.predict(dat, out);
       if (print_every > 0 && (n % print_every == 0))
-      {
-        std::cout << gen.get_dist() << "\t" << out << "\t\t\t" << dat.in << " ||| " << dat.out << endl;
-      }
+      { std::cout << gen.get_dist() << "\t" << out << "\t\t\t" << dat.in << " ||| " << dat.out << endl; }
       dist += dat.weight * (float)gen.get_dist();
     }
   }

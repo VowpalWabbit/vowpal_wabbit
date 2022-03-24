@@ -136,9 +136,7 @@ void cb_explore_adf_bag::learn(VW::LEARNER::multi_learner& base, multi_ex& examp
                      << std::endl;
 
     for (uint32_t j = 0; j < learn_count; j++)
-    {
-      VW::LEARNER::multiline_learn_or_predict<true>(base, examples, examples[0]->ft_offset, i);
-    }
+    { VW::LEARNER::multiline_learn_or_predict<true>(base, examples, examples[0]->ft_offset, i); }
   }
 }
 

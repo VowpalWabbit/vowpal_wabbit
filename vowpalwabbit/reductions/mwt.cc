@@ -136,9 +136,7 @@ void predict_or_learn(mwt& c, single_learner& base, VW::example& ec)
   preds.clear();
   if (learn) { preds.push_back(static_cast<float>(ec.pred.multiclass)); }
   for (uint64_t index : c.policies)
-  {
-    preds.push_back(static_cast<float>(c.evals[index].cost) / static_cast<float>(c.total));
-  }
+  { preds.push_back(static_cast<float>(c.evals[index].cost) / static_cast<float>(c.total)); }
 
   ec.pred.scalars = preds;
 }
@@ -172,9 +170,7 @@ void finish_example(VW::workspace& all, mwt& c, VW::example& ec)
   if (c.learn)
   {
     if (c.optional_observation.first)
-    {
-      loss = get_cost_estimate(c.optional_observation.second, static_cast<uint32_t>(ec.pred.scalars[0]));
-    }
+    { loss = get_cost_estimate(c.optional_observation.second, static_cast<uint32_t>(ec.pred.scalars[0])); }
   }
   all.sd->update(ec.test_only, c.optional_observation.first, loss, 1.f, ec.get_num_features());
 

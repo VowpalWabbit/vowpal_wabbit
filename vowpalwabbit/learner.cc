@@ -40,9 +40,7 @@ void save(example& ec, VW::workspace& all)
   std::string final_regressor_name = all.final_regressor_name;
 
   if ((ec.tag).size() >= 6 && (ec.tag)[4] == '_')
-  {
-    final_regressor_name = std::string(ec.tag.begin() + 5, (ec.tag).size() - 5);
-  }
+  { final_regressor_name = std::string(ec.tag.begin() + 5, (ec.tag).size() - 5); }
 
   if (!all.quiet) { *(all.trace_message) << "saving regressor to " << final_regressor_name << std::endl; }
   ::save_predictor(all, final_regressor_name, 0);

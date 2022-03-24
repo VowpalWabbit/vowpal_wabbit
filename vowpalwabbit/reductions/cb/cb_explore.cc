@@ -238,9 +238,7 @@ void predict_or_learn_cover(cb_explore& data, single_learner& base, VW::example&
       }
       if (i != 0) { data.cs->learn(ec, i + 1); }
       if (probabilities[pred] < min_prob)
-      {
-        norm += std::max(0.f, additive_probability - (min_prob - probabilities[pred]));
-      }
+      { norm += std::max(0.f, additive_probability - (min_prob - probabilities[pred])); }
       else
       {
         norm += additive_probability;
@@ -280,9 +278,7 @@ float calc_loss(cb_explore& data, VW::example& ec, const CB::label& ld)
   if (optional_cost.first == true)
   {
     for (uint32_t i = 0; i < ec.pred.a_s.size(); i++)
-    {
-      loss += get_cost_estimate(optional_cost.second, c.pred_scores, i + 1) * ec.pred.a_s[i].score;
-    }
+    { loss += get_cost_estimate(optional_cost.second, c.pred_scores, i + 1) * ec.pred.a_s[i].score; }
   }
 
   return loss;

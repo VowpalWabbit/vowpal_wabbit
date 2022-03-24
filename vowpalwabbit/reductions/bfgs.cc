@@ -204,9 +204,7 @@ double regularizer_direction_magnitude(VW::workspace& /* all */, bfgs& b, double
   if (b.regularizers == nullptr)
   {
     for (typename T::iterator iter = weights.begin(); iter != weights.end(); ++iter)
-    {
-      ret += regularizer * (&(*iter))[W_DIR] * (&(*iter))[W_DIR];
-    }
+    { ret += regularizer * (&(*iter))[W_DIR] * (&(*iter))[W_DIR]; }
   }
   else
   {
@@ -239,9 +237,7 @@ float direction_magnitude(VW::workspace& /* all */, T& weights)
   // compute direction magnitude
   double ret = 0.;
   for (typename T::iterator iter = weights.begin(); iter != weights.end(); ++iter)
-  {
-    ret += ((double)(&(*iter))[W_DIR]) * (&(*iter))[W_DIR];
-  }
+  { ret += ((double)(&(*iter))[W_DIR]) * (&(*iter))[W_DIR]; }
 
   return static_cast<float>(ret);
 }
@@ -285,9 +281,7 @@ void bfgs_iter_start(
 void bfgs_iter_start(VW::workspace& all, bfgs& b, float* mem, int& lastj, double importance_weight_sum, int& origin)
 {
   if (all.weights.sparse)
-  {
-    bfgs_iter_start(all, b, mem, lastj, importance_weight_sum, origin, all.weights.sparse_weights);
-  }
+  { bfgs_iter_start(all, b, mem, lastj, importance_weight_sum, origin, all.weights.sparse_weights); }
   else
   {
     bfgs_iter_start(all, b, mem, lastj, importance_weight_sum, origin, all.weights.dense_weights);
@@ -596,9 +590,7 @@ void preconditioner_to_regularizer(VW::workspace& all, bfgs& b, float regulariza
   }
 
   for (typename T::iterator w = weights.begin(); w != weights.end(); ++w)
-  {
-    b.regularizers[2 * (w.index() >> weights.stride_shift()) + 1] = *w;
-  }
+  { b.regularizers[2 * (w.index() >> weights.stride_shift()) + 1] = *w; }
 }
 void preconditioner_to_regularizer(VW::workspace& all, bfgs& b, float regularization)
 {
@@ -664,9 +656,7 @@ template <class T>
 void update_weight(VW::workspace& /* all */, float step_size, T& w)
 {
   for (typename T::iterator iter = w.begin(); iter != w.end(); ++iter)
-  {
-    (&(*iter))[W_XT] += step_size * (&(*iter))[W_DIR];
-  }
+  { (&(*iter))[W_XT] += step_size * (&(*iter))[W_DIR]; }
 }
 
 void update_weight(VW::workspace& all, float step_size)
@@ -882,9 +872,7 @@ int process_pass(VW::workspace& all, bfgs& b)
         std::chrono::duration_cast<std::chrono::milliseconds>(b.t_end_global - b.t_start_global).count());
 
     if (!all.quiet)
-    {
-      fprintf(stderr, "%-10.5f\t%-10.5f\t%-.5f\n", b.curvature / b.importance_weight_sum, d_mag, b.step_size);
-    }
+    { fprintf(stderr, "%-10.5f\t%-10.5f\t%-.5f\n", b.curvature / b.importance_weight_sum, d_mag, b.step_size); }
     b.gradient_pass = true;
   }  // now start computing derivatives.
   b.current_pass++;
@@ -961,9 +949,7 @@ void end_pass(bfgs& b)
       {
         *(b.all->trace_message) << "Maximum number of passes reached. ";
         if (!b.output_regularizer)
-        {
-          *(b.all->trace_message) << "To optimize further, increase the number of passes\n";
-        }
+        { *(b.all->trace_message) << "To optimize further, increase the number of passes\n"; }
         if (b.output_regularizer)
         {
           *(b.all->trace_message) << "\nRegular model file has been created. ";

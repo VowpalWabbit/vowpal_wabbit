@@ -42,9 +42,7 @@ void bs_predict_mean(VW::workspace& all, VW::example& ec, std::vector<double>& p
 {
   ec.pred.scalar = static_cast<float>(accumulate(pred_vec.cbegin(), pred_vec.cend(), 0.0)) / pred_vec.size();
   if (ec.weight > 0 && ec.l.simple.label != FLT_MAX)
-  {
-    ec.loss = all.loss->getLoss(all.sd, ec.pred.scalar, ec.l.simple.label) * ec.weight;
-  }
+  { ec.loss = all.loss->getLoss(all.sd, ec.pred.scalar, ec.l.simple.label) * ec.weight; }
 }
 
 void bs_predict_vote(VW::example& ec, std::vector<double>& pred_vec)
@@ -171,9 +169,7 @@ void output_example(VW::workspace& all, bs_data& d, const VW::example& ec)
   }
 
   for (auto& sink : all.final_prediction_sink)
-  {
-    print_result(sink.get(), ec.pred.scalar, ec.tag, d.lb, d.ub, all.logger);
-  }
+  { print_result(sink.get(), ec.pred.scalar, ec.tag, d.lb, d.ub, all.logger); }
 
   print_update(all, ec);
 }

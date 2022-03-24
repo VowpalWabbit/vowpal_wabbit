@@ -116,9 +116,7 @@ void predict_or_learn(csoaa& c, single_learner& base, VW::example& ec)
   if (!ld.costs.empty())
   {
     for (auto& cl : ld.costs)
-    {
-      inner_loop<is_learn>(base, ec, cl.class_index, cl.x, prediction, score, cl.partial_prediction, c.indexing);
-    }
+    { inner_loop<is_learn>(base, ec, cl.class_index, cl.x, prediction, score, cl.partial_prediction, c.indexing); }
     ec.partial_prediction = score;
   }
   else if (dont_learn)
@@ -150,9 +148,7 @@ void predict_or_learn(csoaa& c, single_learner& base, VW::example& ec)
   {
     float temp;
     for (uint32_t i = 1; i <= c.num_classes; i++)
-    {
-      inner_loop<false>(base, ec, i, FLT_MAX, prediction, score, temp, c.indexing);
-    }
+    { inner_loop<false>(base, ec, i, FLT_MAX, prediction, score, temp, c.indexing); }
   }
 
   if (ec.passthrough)

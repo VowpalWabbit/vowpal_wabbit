@@ -773,9 +773,7 @@ void save_load(lda& l, io_buf& model_file, bool read, bool text)
       if (!read && text) { msg << i << " "; }
 
       if (!read || all.model_file_ver >= VW::version_definitions::VERSION_FILE_WITH_HEADER_ID)
-      {
-        brw += bin_text_read_write_fixed(model_file, reinterpret_cast<char*>(&i), sizeof(i), read, msg, text);
-      }
+      { brw += bin_text_read_write_fixed(model_file, reinterpret_cast<char*>(&i), sizeof(i), read, msg, text); }
       else
       {
         // support 32bit build models
@@ -1035,9 +1033,7 @@ void get_top_weights(VW::workspace* all, int top_words_count, int topic, std::ve
   typename T::iterator iter = weights.begin();
 
   for (uint64_t i = 0; i < std::min(static_cast<uint64_t>(top_words_count), length); i++, ++iter)
-  {
-    top_features.push({(&(*iter))[topic], iter.index()});
-  }
+  { top_features.push({(&(*iter))[topic], iter.index()}); }
 
   for (uint64_t i = top_words_count; i < length; i++, ++iter)
   {
@@ -1084,9 +1080,7 @@ void compute_coherence_metrics(lda& l, T& weights)
     std::priority_queue<feature, std::vector<feature>, decltype(cmp)> top_features(cmp);
     typename T::iterator iter = weights.begin();
     for (uint64_t i = 0; i < std::min(static_cast<uint64_t>(top_words_count), length); i++, ++iter)
-    {
-      top_features.push(feature((&(*iter))[topic], iter.index()));
-    }
+    { top_features.push(feature((&(*iter))[topic], iter.index())); }
 
     for (typename T::iterator v = weights.begin(); v != weights.end(); ++v)
     {
@@ -1110,9 +1104,7 @@ void compute_coherence_metrics(lda& l, T& weights)
     for (size_t i = 0; i < top_features_idx.size(); i++)
     {
       for (size_t j = i + 1; j < top_features_idx.size(); j++)
-      {
-        word_pairs.emplace_back(top_features_idx[i], top_features_idx[j]);
-      }
+      { word_pairs.emplace_back(top_features_idx[i], top_features_idx[j]); }
     }
   }
 

@@ -457,14 +457,10 @@ const char* are_features_compatible(VW::workspace& vw1, VW::workspace& vw2)
   if (vw1.example_parser->hasher != vw2.example_parser->hasher) { return "hasher"; }
 
   if (!std::equal(vw1.spelling_features.begin(), vw1.spelling_features.end(), vw2.spelling_features.begin()))
-  {
-    return "spelling_features";
-  }
+  { return "spelling_features"; }
 
   if (!std::equal(vw1.affix_features.begin(), vw1.affix_features.end(), vw2.affix_features.begin()))
-  {
-    return "affix_features";
-  }
+  { return "affix_features"; }
 
   if (vw1.skip_gram_transformer != nullptr && vw2.skip_gram_transformer != nullptr)
   {
@@ -499,25 +495,19 @@ const char* are_features_compatible(VW::workspace& vw1, VW::workspace& vw2)
 
   if (vw1.ignore_some_linear &&
       !std::equal(vw1.ignore_linear.begin(), vw1.ignore_linear.end(), vw2.ignore_linear.begin()))
-  {
-    return "ignore_linear";
-  }
+  { return "ignore_linear"; }
 
   if (vw1.redefine_some != vw2.redefine_some) { return "redefine_some"; }
 
   if (vw1.redefine_some && !std::equal(vw1.redefine.begin(), vw1.redefine.end(), vw2.redefine.begin()))
-  {
-    return "redefine";
-  }
+  { return "redefine"; }
 
   if (vw1.add_constant != vw2.add_constant) { return "add_constant"; }
 
   if (vw1.dictionary_path.size() != vw2.dictionary_path.size()) { return "dictionary_path size"; }
 
   if (!std::equal(vw1.dictionary_path.begin(), vw1.dictionary_path.end(), vw2.dictionary_path.begin()))
-  {
-    return "dictionary_path";
-  }
+  { return "dictionary_path"; }
 
   for (auto i = std::begin(vw1.interactions), j = std::begin(vw2.interactions); i != std::end(vw1.interactions);
        ++i, ++j)
@@ -1106,9 +1096,7 @@ void parse_example_tweaks(options_i& options, VW::workspace& all)
   }
 
   if (options.was_supplied("min_prediction") || options.was_supplied("max_prediction") || test_only)
-  {
-    all.set_minmax = noop_mm;
-  }
+  { all.set_minmax = noop_mm; }
 
   if (options.was_supplied("named_labels"))
   {
@@ -1139,9 +1127,7 @@ void parse_example_tweaks(options_i& options, VW::workspace& all)
   if (!all.quiet)
   {
     if (all.reg_mode % 2 && !options.was_supplied("bfgs"))
-    {
-      *(all.trace_message) << "using l1 regularization = " << all.l1_lambda << endl;
-    }
+    { *(all.trace_message) << "using l1 regularization = " << all.l1_lambda << endl; }
     if (all.reg_mode > 1) { *(all.trace_message) << "using l2 regularization = " << all.l2_lambda << endl; }
   }
 }
@@ -1259,9 +1245,7 @@ void parse_output_model(options_i& options, VW::workspace& all)
   options.add_and_parse(output_model_options);
 
   if (!all.final_regressor_name.empty() && !all.quiet)
-  {
-    *(all.trace_message) << "final_regressor = " << all.final_regressor_name << endl;
-  }
+  { *(all.trace_message) << "final_regressor = " << all.final_regressor_name << endl; }
 
   if (options.was_supplied("invert_hash")) { all.hash_inv = true; }
   if (options.was_supplied("dump_json_weights_experimental") && all.dump_json_weights_include_feature_names)

@@ -104,19 +104,13 @@ struct OjaNewton
         double temp = 0;
 
         for (uint32_t i = 0; i < length; i++)
-        {
-          temp += (static_cast<double>((&(weights.strided_index(i)))[j])) * (&(weights.strided_index(i)))[k];
-        }
+        { temp += (static_cast<double>((&(weights.strided_index(i)))[j])) * (&(weights.strided_index(i)))[k]; }
         for (uint32_t i = 0; i < length; i++)
-        {
-          (&(weights.strided_index(i)))[j] -= static_cast<float>(temp) * (&(weights.strided_index(i)))[k];
-        }
+        { (&(weights.strided_index(i)))[j] -= static_cast<float>(temp) * (&(weights.strided_index(i)))[k]; }
       }
       double norm = 0;
       for (uint32_t i = 0; i < length; i++)
-      {
-        norm += (static_cast<double>((&(weights.strided_index(i)))[j])) * (&(weights.strided_index(i)))[j];
-      }
+      { norm += (static_cast<double>((&(weights.strided_index(i)))[j])) * (&(weights.strided_index(i)))[j]; }
       norm = std::sqrt(norm);
       for (uint32_t i = 0; i < length; i++) { (&(weights.strided_index(i)))[j] /= static_cast<float>(norm); }
     }

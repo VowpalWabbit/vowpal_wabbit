@@ -42,9 +42,7 @@ void gen_cs_example_ips(
 
     COST_SENSITIVE::wclass wc = {0., i, 0., 0.};
     if (ld.costs.size() == 1 && ld.costs[0].cost != FLT_MAX)
-    {
-      wc.x = ld.costs[0].cost / safe_probability(std::max(ld.costs[0].probability, clip_p), logger);
-    }
+    { wc.x = ld.costs[0].cost / safe_probability(std::max(ld.costs[0].probability, clip_p), logger); }
     cs_labels.costs.push_back(wc);
   }
 }

@@ -50,9 +50,7 @@ void predict_or_learn(binary_data& data, VW::LEARNER::single_learner& base, exam
   if (ec.l.simple.label != FLT_MAX)
   {
     if (std::fabs(ec.l.simple.label) != 1.f)
-    {
-      data.logger.out_error("The label '{}' is not -1 or 1 as loss function expects.", ec.l.simple.label);
-    }
+    { data.logger.out_error("The label '{}' is not -1 or 1 as loss function expects.", ec.l.simple.label); }
     else if (ec.l.simple.label == ec.pred.scalar)
     {
       ec.loss = 0.;

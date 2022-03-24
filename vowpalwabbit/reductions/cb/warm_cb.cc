@@ -277,9 +277,7 @@ float compute_weight_multiplier(warm_cb& data, size_t i, int ec_type)
   float total_weight = (1 - data.lambdas[i]) * ws_train_size + data.lambdas[i] * inter_train_size;
 
   if (ec_type == WARM_START)
-  {
-    weight_multiplier = (1 - data.lambdas[i]) * total_train_size / (total_weight + FLT_MIN);
-  }
+  { weight_multiplier = (1 - data.lambdas[i]) * total_train_size / (total_weight + FLT_MIN); }
   else
   {
     weight_multiplier = data.lambdas[i] * total_train_size / (total_weight + FLT_MIN);

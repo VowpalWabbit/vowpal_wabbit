@@ -350,9 +350,7 @@ void predict(svm_params& params, svm_example** ec_arr, float* scores, size_t n)
     ec_arr[i]->compute_kernels(params);
     // std::cout<<"size of krow = "<<ec_arr[i]->krow.size()<< endl;
     if (ec_arr[i]->krow.size() > 0)
-    {
-      scores[i] = dense_dot(ec_arr[i]->krow.begin(), model->alpha, model->num_support) / params.lambda;
-    }
+    { scores[i] = dense_dot(ec_arr[i]->krow.begin(), model->alpha, model->num_support) / params.lambda; }
     else
     {
       scores[i] = 0;
@@ -385,9 +383,7 @@ size_t suboptimality(svm_model* model, double* subopt)
     const auto& simple_red_features =
         model->support_vec[i]->ex._reduction_features.template get<simple_label_reduction_features>();
     if ((tmp < simple_red_features.weight && model->delta[i] < 0) || (tmp > 0 && model->delta[i] > 0))
-    {
-      subopt[i] = fabs(model->delta[i]);
-    }
+    { subopt[i] = fabs(model->delta[i]); }
     else
     {
       subopt[i] = 0;
@@ -583,9 +579,7 @@ void train(svm_params& params)
     {
       std::multimap<double, size_t> scoremap;
       for (size_t i = 0; i < params.pool_pos; i++)
-      {
-        scoremap.insert(std::pair<const double, const size_t>(std::fabs(scores[i]), i));
-      }
+      { scoremap.insert(std::pair<const double, const size_t>(std::fabs(scores[i]), i)); }
 
       std::multimap<double, size_t>::iterator iter = scoremap.begin();
       iter = scoremap.begin();
@@ -657,9 +651,7 @@ void train(svm_params& params)
             if (subopt[max_pos] > 0)
             {
               if (!overshoot && max_pos == static_cast<size_t>(model_pos) && max_pos > 0 && j == 0)
-              {
-                *params.all->trace_message << "Shouldn't reprocess right after process." << endl;
-              }
+              { *params.all->trace_message << "Shouldn't reprocess right after process." << endl; }
               if (max_pos * model->num_support <= params.maxcache) { make_hot_sv(params, max_pos); }
               update(params, max_pos);
             }
@@ -785,9 +777,7 @@ VW::LEARNER::base_learner* kernel_svm_setup(VW::setup_base_i& stack_builder)
   params->pool_pos = 0;
 
   if (!options.was_supplied("subsample") && params->para_active)
-  {
-    params->subsample = static_cast<size_t>(ceil(params->pool_size / all.all_reduce->total));
-  }
+  { params->subsample = static_cast<size_t>(ceil(params->pool_size / all.all_reduce->total)); }
 
   params->lambda = all.l2_lambda;
   if (params->lambda == 0.) { params->lambda = 1.; }

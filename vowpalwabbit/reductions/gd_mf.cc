@@ -170,9 +170,7 @@ float mf_predict(gdmf& d, VW::example& ec, T& weights)
   ec.pred.scalar = GD::finalize_prediction(all.sd, all.logger, ec.partial_prediction);
 
   if (ec.l.simple.label != FLT_MAX)
-  {
-    ec.loss = all.loss->getLoss(all.sd, ec.pred.scalar, ec.l.simple.label) * ec.weight;
-  }
+  { ec.loss = all.loss->getLoss(all.sd, ec.pred.scalar, ec.l.simple.label) * ec.weight; }
 
   if (all.audit) { mf_print_audit_features(d, ec, 0); }
 
@@ -193,9 +191,7 @@ template <class T>
 void sd_offset_update(T& weights, features& fs, uint64_t offset, float update, float regularization)
 {
   for (size_t i = 0; i < fs.size(); i++)
-  {
-    (&weights[fs.indices[i]])[offset] += update * fs.values[i] - regularization * (&weights[fs.indices[i]])[offset];
-  }
+  { (&weights[fs.indices[i]])[offset] += update * fs.values[i] - regularization * (&weights[fs.indices[i]])[offset]; }
 }
 
 template <class T>
@@ -323,9 +319,7 @@ void end_pass(gdmf& d)
     if (summarize_holdout_set(*all, d.no_win_counter)) { finalize_regressor(*all, all->final_regressor_name); }
     if ((d.early_stop_thres == d.no_win_counter) &&
         ((all->check_holdout_every_n_passes <= 1) || ((all->current_pass % all->check_holdout_every_n_passes) == 0)))
-    {
-      set_done(*all);
-    }
+    { set_done(*all); }
   }
 }
 

@@ -146,9 +146,7 @@ void save_load_header(VW::workspace& all, io_buf& model_file, bool read, bool te
     VW::validate_version(all);
 
     if (all.model_file_ver >= VW::version_definitions::VERSION_FILE_WITH_HEADER_CHAINED_HASH)
-    {
-      model_file.verify_hash(true);
-    }
+    { model_file.verify_hash(true); }
 
     if (all.model_file_ver >= VW::version_definitions::VERSION_FILE_WITH_HEADER_ID)
     {
@@ -499,9 +497,7 @@ void finalize_regressor(VW::workspace& all, const std::string& reg_name)
   if (!all.early_terminate)
   {
     if (all.per_feature_regularizer_output.length() > 0)
-    {
-      dump_regressor(all, all.per_feature_regularizer_output, false);
-    }
+    { dump_regressor(all, all.per_feature_regularizer_output, false); }
     else
     {
       dump_regressor(all, reg_name, false);

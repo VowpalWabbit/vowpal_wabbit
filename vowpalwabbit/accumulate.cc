@@ -25,16 +25,12 @@ void accumulate(VW::workspace& all, parameters& weights, size_t offset)
   if (weights.sparse)
   {
     for (uint64_t i = 0; i < length; i++)
-    {
-      local_grad[i] = (&(weights.sparse_weights[i << weights.sparse_weights.stride_shift()]))[offset];
-    }
+    { local_grad[i] = (&(weights.sparse_weights[i << weights.sparse_weights.stride_shift()]))[offset]; }
   }
   else
   {
     for (uint64_t i = 0; i < length; i++)
-    {
-      local_grad[i] = (&(weights.dense_weights[i << weights.dense_weights.stride_shift()]))[offset];
-    }
+    { local_grad[i] = (&(weights.dense_weights[i << weights.dense_weights.stride_shift()]))[offset]; }
   }
 
   all_reduce<float, add_float>(all, local_grad, length);  // TODO: modify to not use first()
@@ -42,16 +38,12 @@ void accumulate(VW::workspace& all, parameters& weights, size_t offset)
   if (weights.sparse)
   {
     for (uint64_t i = 0; i < length; i++)
-    {
-      (&(weights.sparse_weights[i << weights.sparse_weights.stride_shift()]))[offset] = local_grad[i];
-    }
+    { (&(weights.sparse_weights[i << weights.sparse_weights.stride_shift()]))[offset] = local_grad[i]; }
   }
   else
   {
     for (uint64_t i = 0; i < length; i++)
-    {
-      (&(weights.dense_weights[i << weights.dense_weights.stride_shift()]))[offset] = local_grad[i];
-    }
+    { (&(weights.dense_weights[i << weights.dense_weights.stride_shift()]))[offset] = local_grad[i]; }
   }
 
   delete[] local_grad;
@@ -73,16 +65,12 @@ void accumulate_avg(VW::workspace& all, parameters& weights, size_t offset)
   if (weights.sparse)
   {
     for (uint64_t i = 0; i < length; i++)
-    {
-      local_grad[i] = (&(weights.sparse_weights[i << weights.sparse_weights.stride_shift()]))[offset];
-    }
+    { local_grad[i] = (&(weights.sparse_weights[i << weights.sparse_weights.stride_shift()]))[offset]; }
   }
   else
   {
     for (uint64_t i = 0; i < length; i++)
-    {
-      local_grad[i] = (&(weights.dense_weights[i << weights.dense_weights.stride_shift()]))[offset];
-    }
+    { local_grad[i] = (&(weights.dense_weights[i << weights.dense_weights.stride_shift()]))[offset]; }
   }
 
   all_reduce<float, add_float>(all, local_grad, length);  // TODO: modify to not use first()
@@ -90,16 +78,12 @@ void accumulate_avg(VW::workspace& all, parameters& weights, size_t offset)
   if (weights.sparse)
   {
     for (uint64_t i = 0; i < length; i++)
-    {
-      (&(weights.sparse_weights[i << weights.sparse_weights.stride_shift()]))[offset] = local_grad[i] / numnodes;
-    }
+    { (&(weights.sparse_weights[i << weights.sparse_weights.stride_shift()]))[offset] = local_grad[i] / numnodes; }
   }
   else
   {
     for (uint64_t i = 0; i < length; i++)
-    {
-      (&(weights.dense_weights[i << weights.dense_weights.stride_shift()]))[offset] = local_grad[i] / numnodes;
-    }
+    { (&(weights.dense_weights[i << weights.dense_weights.stride_shift()]))[offset] = local_grad[i] / numnodes; }
   }
 
   delete[] local_grad;
@@ -164,16 +148,12 @@ void accumulate_weighted_avg(VW::workspace& all, parameters& weights)
   if (weights.sparse)
   {
     for (uint64_t i = 0; i < length; i++)
-    {
-      local_weights[i] = (&(weights.sparse_weights[i << weights.sparse_weights.stride_shift()]))[1];
-    }
+    { local_weights[i] = (&(weights.sparse_weights[i << weights.sparse_weights.stride_shift()]))[1]; }
   }
   else
   {
     for (uint64_t i = 0; i < length; i++)
-    {
-      local_weights[i] = (&(weights.dense_weights[i << weights.dense_weights.stride_shift()]))[1];
-    }
+    { local_weights[i] = (&(weights.dense_weights[i << weights.dense_weights.stride_shift()]))[1]; }
   }
 
   // First compute weights for averaging

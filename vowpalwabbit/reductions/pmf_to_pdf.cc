@@ -203,9 +203,7 @@ void output_example(VW::workspace& all, reduction&, const example& ec, const CB:
     for (const auto& cbc : ec.l.cb.costs)
     {
       for (uint32_t i = 0; i < ec.pred.pdf.size(); i++)
-      {
-        loss += (cbc.cost / cbc.probability) * ec.pred.pdf[i].pdf_value;
-      }
+      { loss += (cbc.cost / cbc.probability) * ec.pred.pdf[i].pdf_value; }
     }
   }
 

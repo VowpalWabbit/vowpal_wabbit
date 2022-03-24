@@ -207,9 +207,7 @@ void cb_adf::learn_SM(multi_learner& base, VW::multi_ex& examples)
     _backup_nf.push_back(static_cast<uint32_t>(examples[current_action]->num_features));
 
     if (current_action == chosen_action)
-    {
-      examples[current_action]->weight *= example_weight * (1.0f - action_score.score);
-    }
+    { examples[current_action]->weight *= example_weight * (1.0f - action_score.score); }
     else
     {
       examples[current_action]->weight *= example_weight * action_score.score;
@@ -456,9 +454,7 @@ void output_example_seq(VW::workspace& all, cb_adf& data, const VW::multi_ex& ec
       output_example(all, data, *ec_seq.front(), ec_seq);
 
       if (all.raw_prediction != nullptr)
-      {
-        all.print_text_by_ref(all.raw_prediction.get(), "", ec_seq[0]->tag, all.logger);
-      }
+      { all.print_text_by_ref(all.raw_prediction.get(), "", ec_seq[0]->tag, all.logger); }
     }
   }
 }
