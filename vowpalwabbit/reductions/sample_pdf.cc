@@ -72,7 +72,7 @@ int sample_pdf::predict(example& ec, experimental::api_status*)
       &seed, std::begin(_pred_pdf), std::end(_pred_pdf), ec.pred.pdf_value.action, ec.pred.pdf_value.pdf_value);
   _p_random_state->get_and_update_random();
 
-  if (ret_code != S_EXPLORATION_OK) return VW::experimental::error_code::sample_pdf_failed;
+  if (ret_code != S_EXPLORATION_OK) { return VW::experimental::error_code::sample_pdf_failed; }
 
   return VW::experimental::error_code::success;
 }
@@ -89,8 +89,7 @@ template <bool is_learn>
 void predict_or_learn(sample_pdf& reduction, single_learner&, example& ec)
 {
   experimental::api_status status;
-  if (is_learn)
-    reduction.learn(ec, &status);
+  if (is_learn) { reduction.learn(ec, &status); }
   else
   {
     if (VW::experimental::error_code::success != reduction.predict(ec, &status))
@@ -115,7 +114,7 @@ LEARNER::base_learner* sample_pdf_setup(VW::setup_base_i& stack_builder)
 
   // If sample_pdf reduction was not invoked, don't add anything
   // to the reduction stack;
-  if (!options.add_parse_and_check_necessary(new_options)) return nullptr;
+  if (!options.add_parse_and_check_necessary(new_options)) { return nullptr; }
 
   LEARNER::base_learner* p_base = stack_builder.setup_base_learner();
   auto p_reduction = VW::make_unique<sample_pdf>();

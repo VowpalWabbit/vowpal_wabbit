@@ -38,7 +38,7 @@ struct cb_sample_data
     VW_WARNING_STATE_PUSH
     VW_WARNING_DISABLE_COND_CONST_EXPR
     if (is_learn && !base.learn_returns_prediction)
-      multiline_learn_or_predict<false>(base, examples, examples[0]->ft_offset);
+    { multiline_learn_or_predict<false>(base, examples, examples[0]->ft_offset); }
     VW_WARNING_STATE_POP
 
     multiline_learn_or_predict<is_learn>(base, examples, examples[0]->ft_offset);
@@ -99,7 +99,7 @@ struct cb_sample_data
   std::string cb_decision_to_string(const ACTION_SCORE::action_scores& action_scores)
   {
     std::ostringstream ostrm;
-    if (action_scores.empty()) return "";
+    if (action_scores.empty()) { return ""; }
     ostrm << "chosen" << action_scores[0] << action_scores;
     return ostrm.str();
   }
@@ -125,7 +125,7 @@ base_learner* cb_sample_setup(VW::setup_base_i& stack_builder)
   new_options.add(
       make_option("cb_sample", cb_sample_option).keep().necessary().help("Sample from CB pdf and swap top action"));
 
-  if (!options.add_parse_and_check_necessary(new_options)) return nullptr;
+  if (!options.add_parse_and_check_necessary(new_options)) { return nullptr; }
 
   auto data = VW::make_unique<cb_sample_data>(all.get_random_state());
 

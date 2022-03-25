@@ -42,7 +42,9 @@ int open_socket(const char* host, VW::io::logger& logger)
     he = gethostbyname(hostname.c_str());
   }
   else
+  {
     he = gethostbyname(host);
+  }
 
   if (he == nullptr) THROWERRNO("gethostbyname(" << host << ")");
 

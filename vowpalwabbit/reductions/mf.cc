@@ -51,7 +51,7 @@ void predict(mf& data, single_learner& base, VW::example& ec)
   base.predict(ec);
 
   // store linear prediction
-  if (cache_sub_predictions) data.sub_predictions[0] = ec.partial_prediction;
+  if (cache_sub_predictions) { data.sub_predictions[0] = ec.partial_prediction; }
   prediction += ec.partial_prediction;
 
   // store namespace indices
@@ -82,7 +82,7 @@ void predict(mf& data, single_learner& base, VW::example& ec)
         // compute l^k * x_l using base learner
         base.predict(ec, k);
         float x_dot_l = ec.partial_prediction;
-        if (cache_sub_predictions) data.sub_predictions[2 * k - 1] = x_dot_l;
+        if (cache_sub_predictions) { data.sub_predictions[2 * k - 1] = x_dot_l; }
 
         // set example to right namespace only
         ec.indices[0] = static_cast<VW::namespace_index>(right_ns);
@@ -90,7 +90,7 @@ void predict(mf& data, single_learner& base, VW::example& ec)
         // compute r^k * x_r using base learner
         base.predict(ec, k + data.rank);
         float x_dot_r = ec.partial_prediction;
-        if (cache_sub_predictions) data.sub_predictions[2 * k] = x_dot_r;
+        if (cache_sub_predictions) { data.sub_predictions[2 * k] = x_dot_r; }
 
         // accumulate prediction
         prediction += (x_dot_l * x_dot_r);
@@ -145,7 +145,7 @@ void learn(mf& data, single_learner& base, VW::example& ec)
       {
         features& fs = ec.feature_space[left_ns];
         // multiply features in left namespace by r^k * x_r
-        for (size_t j = 0; j < fs.size(); ++j) fs.values[j] *= data.sub_predictions[2 * k];
+        for (size_t j = 0; j < fs.size(); ++j) { fs.values[j] *= data.sub_predictions[2 * k]; }
 
         // update l^k using base learner
         base.update(ec, k);
@@ -169,7 +169,7 @@ void learn(mf& data, single_learner& base, VW::example& ec)
       {
         features& fs = ec.feature_space[right_ns];
         // multiply features in right namespace by l^k * x_l
-        for (size_t j = 0; j < fs.size(); ++j) fs.values[j] *= data.sub_predictions[2 * k - 1];
+        for (size_t j = 0; j < fs.size(); ++j) { fs.values[j] *= data.sub_predictions[2 * k - 1]; }
 
         // update r^k using base learner
         base.update(ec, k + data.rank);
@@ -197,7 +197,7 @@ base_learner* mf_setup(VW::setup_base_i& stack_builder)
   option_group_definition new_options("[Reduction] Matrix Factorization Reduction");
   new_options.add(make_option("new_mf", rank).keep().necessary().help("Rank for reduction-based matrix factorization"));
 
-  if (!options.add_parse_and_check_necessary(new_options)) return nullptr;
+  if (!options.add_parse_and_check_necessary(new_options)) { return nullptr; }
 
   data->rank = VW::cast_to_smaller_type<size_t>(rank);
   data->all = &all;

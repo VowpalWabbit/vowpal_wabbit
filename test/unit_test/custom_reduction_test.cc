@@ -55,7 +55,7 @@ VW::LEARNER::base_learner* test_reduction_setup(VW::setup_base_i& stack_builder)
 
   // do not add when ksvm is present
   // see custom_reduction_builder_check_throw
-  if (options.was_supplied("ksvm")) return nullptr;
+  if (options.was_supplied("ksvm")) { return nullptr; }
 
   auto base = stack_builder.setup_base_learner();
   BOOST_CHECK(base->is_multiline() == false);

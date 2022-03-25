@@ -39,7 +39,7 @@ void reduction::transform_prediction(example& ec)
   auto b = !bandwidth ? unit_range / 2.0f : bandwidth;
 
   pdf_lim.clear();
-  if (centre - b != min_value) pdf_lim.push_back(min_value);
+  if (centre - b != min_value) { pdf_lim.push_back(min_value); }
 
   uint32_t l = 0;
   uint32_t r = 0;
@@ -78,7 +78,7 @@ void reduction::transform_prediction(example& ec)
     }
   }
 
-  if (pdf_lim.back() != max_value) pdf_lim.push_back(max_value);
+  if (pdf_lim.back() != max_value) { pdf_lim.push_back(max_value); }
 
   auto& p_dist = ec.pred.pdf;
   p_dist.clear();
@@ -148,8 +148,8 @@ void reduction::learn(example& ec)
 
   if (!cond1 || !cond2)
   {
-    if (!cond1) action_segment_index--;
-    if (!cond2) action_segment_index++;
+    if (!cond1) { action_segment_index--; }
+    if (!cond2) { action_segment_index++; }
   }
 
   // going to pass label into tree, so need to used discretized version of bandwidth i.e. tree_bandwidth
@@ -182,8 +182,7 @@ void print_update(VW::workspace& all, bool is_test, const example& ec, std::stri
   if (all.sd->weighted_examples() >= all.sd->dump_interval && !all.quiet && !all.bfgs)
   {
     std::stringstream label_string;
-    if (is_test)
-      label_string << "unknown";
+    if (is_test) { label_string << "unknown"; }
     else
     {
       const auto& cost = ec.l.cb.costs[0];
@@ -200,8 +199,13 @@ void output_example(VW::workspace& all, reduction&, const example& ec, const CB:
   auto optional_cost = get_observed_cost_cb(ec.l.cb);
   // cost observed, not default
   if (optional_cost.first)
+  {
     for (const auto& cbc : ec.l.cb.costs)
-      for (uint32_t i = 0; i < ec.pred.pdf.size(); i++) loss += (cbc.cost / cbc.probability) * ec.pred.pdf[i].pdf_value;
+    {
+      for (uint32_t i = 0; i < ec.pred.pdf.size(); i++)
+      { loss += (cbc.cost / cbc.probability) * ec.pred.pdf[i].pdf_value; }
+    }
+  }
 
   all.sd->update(ec.test_only, optional_cost.first, loss, 1.f, ec.get_num_features());
 
@@ -224,7 +228,7 @@ void output_example(VW::workspace& all, reduction&, const example& ec, const CB:
   sprintf_s(temp_str, buffsz, "%d:%f", maxid, maxprob);
   sso << temp_str;
 
-  for (auto& sink : all.final_prediction_sink) all.print_text_by_ref(sink.get(), ss.str(), ec.tag, all.logger);
+  for (auto& sink : all.final_prediction_sink) { all.print_text_by_ref(sink.get(), ss.str(), ec.tag, all.logger); }
 
   print_update(all, CB::is_test_label(ld), ec, sso);
 }
@@ -260,9 +264,9 @@ base_learner* setup(VW::setup_base_i& stack_builder)
                .keep()
                .help("Use user provided first action or user provided pdf or uniform random"));
 
-  if (!options.add_parse_and_check_necessary(new_options)) return nullptr;
+  if (!options.add_parse_and_check_necessary(new_options)) { return nullptr; }
 
-  if (data->num_actions == 0) return nullptr;
+  if (data->num_actions == 0) { return nullptr; }
   if (!options.was_supplied("min_value") || !options.was_supplied("max_value"))
   { THROW("Min and max values must be supplied with cb_continuous"); }
 
