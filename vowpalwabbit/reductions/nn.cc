@@ -107,7 +107,7 @@ void finish_setup(nn& n, VW::workspace& all)
   if (!n.inpass)
   {
     fs.push_back(1., nn_index);
-    if (all.audit || all.hash_inv) fs.space_names.emplace_back("", "OutputLayerConst");
+    if (all.audit || all.hash_inv) { fs.space_names.emplace_back("", "OutputLayerConst"); }
     ++n.output_layer.num_features;
   }
 
@@ -117,7 +117,7 @@ void finish_setup(nn& n, VW::workspace& all)
   n.hiddenbias.indices.push_back(constant_namespace);
   n.hiddenbias.feature_space[constant_namespace].push_back(1, constant);
   if (all.audit || all.hash_inv)
-    n.hiddenbias.feature_space[constant_namespace].space_names.emplace_back("", "HiddenBias");
+  { n.hiddenbias.feature_space[constant_namespace].space_names.emplace_back("", "HiddenBias"); }
   n.hiddenbias.l.simple.label = FLT_MAX;
   n.hiddenbias.weight = 1;
 
@@ -127,7 +127,7 @@ void finish_setup(nn& n, VW::workspace& all)
   features& outfs = n.output_layer.feature_space[nn_output_namespace];
   n.outputweight.feature_space[nn_output_namespace].push_back(outfs.values[0], outfs.indices[0]);
   if (all.audit || all.hash_inv)
-    n.outputweight.feature_space[nn_output_namespace].space_names.emplace_back("", "OutputWeight");
+  { n.outputweight.feature_space[nn_output_namespace].space_names.emplace_back("", "OutputWeight"); }
   n.outputweight.feature_space[nn_output_namespace].values[0] = 1;
   n.outputweight.l.simple.label = FLT_MAX;
   n.outputweight.weight = 1;
@@ -138,14 +138,14 @@ void finish_setup(nn& n, VW::workspace& all)
 
 void end_pass(nn& n)
 {
-  if (n.all->bfgs) n.xsubi = n.save_xsubi;
+  if (n.all->bfgs) { n.xsubi = n.save_xsubi; }
 }
 
 template <bool is_learn, bool recompute_hidden>
 void predict_or_learn_multi(nn& n, single_learner& base, VW::example& ec)
 {
   bool shouldOutput = n.all->raw_prediction != nullptr;
-  if (!n.finished_setup) finish_setup(n, *(n.all));
+  if (!n.finished_setup) { finish_setup(n, *(n.all)); }
   // Yes, copy all of shared data.
   shared_data sd{*n.all->sd};
   {
@@ -173,7 +173,7 @@ void predict_or_learn_multi(nn& n, single_learner& base, VW::example& ec)
 
     uint64_t save_ft_offset = ec.ft_offset;
 
-    if (n.multitask) ec.ft_offset = 0;
+    if (n.multitask) { ec.ft_offset = 0; }
 
     n.hiddenbias.ft_offset = ec.ft_offset;
 
@@ -182,6 +182,7 @@ void predict_or_learn_multi(nn& n, single_learner& base, VW::example& ec)
       base.multipredict(n.hiddenbias, 0, n.k, hiddenbias_pred, true);
 
       for (unsigned int i = 0; i < n.k; ++i)
+      {
         // avoid saddle point at 0
         if (hiddenbias_pred[i].scalar == 0)
         {
@@ -189,26 +190,31 @@ void predict_or_learn_multi(nn& n, single_learner& base, VW::example& ec)
           base.learn(n.hiddenbias, i);
           n.hiddenbias.l.simple.label = FLT_MAX;
         }
+      }
 
       base.multipredict(ec, 0, n.k, hidden_units, true);
 
-      for (unsigned int i = 0; i < n.k; ++i) dropped_out[i] = (n.dropout && merand48(n.xsubi) < 0.5);
+      for (unsigned int i = 0; i < n.k; ++i) { dropped_out[i] = (n.dropout && merand48(n.xsubi) < 0.5); }
 
       if (ec.passthrough)
+      {
         for (unsigned int i = 0; i < n.k; ++i)
         {
           add_passthrough_feature(ec, i * 2, hiddenbias_pred[i].scalar);
           add_passthrough_feature(ec, i * 2 + 1, hidden_units[i].scalar);
         }
+      }
     }
 
     if (shouldOutput)
+    {
       for (unsigned int i = 0; i < n.k; ++i)
       {
-        if (i > 0) outputStringStream << ' ';
+        if (i > 0) { outputStringStream << ' '; }
         outputStringStream << i << ':' << hidden_units[i].scalar << ','
                            << fasttanh(hidden_units[i].scalar);  // TODO: huh, what was going on here?
       }
+    }
 
     loss_function_swap_guard.do_swap();
     n.all->set_minmax = save_set_minmax;
@@ -280,10 +286,11 @@ void predict_or_learn_multi(nn& n, single_learner& base, VW::example& ec)
       features save_nn_output_namespace = std::move(ec.feature_space[nn_output_namespace]);
       ec.feature_space[nn_output_namespace] = n.output_layer.feature_space[nn_output_namespace];
 
-      if (is_learn)
-        base.learn(ec, n.k);
+      if (is_learn) { base.learn(ec, n.k); }
       else
+      {
         base.predict(ec, n.k);
+      }
       n.output_layer.partial_prediction = ec.partial_prediction;
       n.output_layer.loss = ec.loss;
       ec.feature_space[nn_output_namespace].sum_feat_sq = 0;
@@ -298,10 +305,11 @@ void predict_or_learn_multi(nn& n, single_learner& base, VW::example& ec)
           ec._reduction_features.template get<simple_label_reduction_features>().initial;
       n.output_layer.weight = ec.weight;
       n.output_layer.partial_prediction = 0;
-      if (is_learn)
-        base.learn(n.output_layer, n.k);
+      if (is_learn) { base.learn(n.output_layer, n.k); }
       else
+      {
         base.predict(n.output_layer, n.k);
+      }
     }
 
     n.prediction = GD::finalize_prediction(n.all->sd, n.all->logger, n.output_layer.partial_prediction);
@@ -328,7 +336,7 @@ void predict_or_learn_multi(nn& n, single_learner& base, VW::example& ec)
           n.all->sd->max_label = hidden_max_activation;
           save_ft_offset = ec.ft_offset;
 
-          if (n.multitask) ec.ft_offset = 0;
+          if (n.multitask) { ec.ft_offset = 0; }
 
           for (unsigned int i = 0; i < n.k; ++i)
           {
@@ -344,7 +352,7 @@ void predict_or_learn_multi(nn& n, single_learner& base, VW::example& ec)
 
               ec.l.simple.label = GD::finalize_prediction(n.all->sd, n.all->logger, hidden_units[i].scalar - gradhw);
               ec.pred.scalar = hidden_units[i].scalar;
-              if (ec.l.simple.label != hidden_units[i].scalar) base.update(ec, i);
+              if (ec.l.simple.label != hidden_units[i].scalar) { base.update(ec, i); }
             }
           }
 
@@ -387,15 +395,20 @@ void multipredict(nn& n, single_learner& base, VW::example& ec, size_t count, si
 {
   for (size_t c = 0; c < count; c++)
   {
-    if (c == 0)
-      predict_or_learn_multi<false, true>(n, base, ec);
+    if (c == 0) { predict_or_learn_multi<false, true>(n, base, ec); }
     else
+    {
       predict_or_learn_multi<false, false>(n, base, ec);
+    }
     if (finalize_predictions)
+    {
       pred[c] = std::move(ec.pred);  // TODO: this breaks for complex labels because = doesn't do deep copy! (XXX we
                                      // "fix" this by moving)
+    }
     else
+    {
       pred[c].scalar = ec.partial_prediction;
+    }
     ec.ft_offset += static_cast<uint64_t>(step);
   }
   ec.ft_offset -= static_cast<uint64_t>(step * count);
@@ -424,13 +437,13 @@ base_learner* nn_setup(VW::setup_base_i& stack_builder)
       .add(make_option("dropout", n->dropout).keep().help("Train or test sigmoidal feedforward network using dropout"))
       .add(make_option("meanfield", meanfield).help("Train or test sigmoidal feedforward network using mean field"));
 
-  if (!options.add_parse_and_check_necessary(new_options)) return nullptr;
+  if (!options.add_parse_and_check_necessary(new_options)) { return nullptr; }
 
   n->all = &all;
   n->_random_state = all.get_random_state();
 
   if (n->multitask && !all.quiet)
-    all.logger.err_info("using multitask sharing for neural network {}", (all.training ? "training" : "testing"));
+  { all.logger.err_info("using multitask sharing for neural network {}", (all.training ? "training" : "testing")); }
 
   if (options.was_supplied("meanfield"))
   {
@@ -439,10 +452,10 @@ base_learner* nn_setup(VW::setup_base_i& stack_builder)
   }
 
   if (n->dropout && !all.quiet)
-    all.logger.err_info("using dropout for neural network {}", (all.training ? "training" : "testing"));
+  { all.logger.err_info("using dropout for neural network {}", (all.training ? "training" : "testing")); }
 
   if (n->inpass && !all.quiet)
-    all.logger.err_info("using input passthrough for neural network {}", (all.training ? "training" : "testing"));
+  { all.logger.err_info("using input passthrough for neural network {}", (all.training ? "training" : "testing")); }
 
   n->finished_setup = false;
   n->squared_loss = getLossFunction(all, "squared", 0);

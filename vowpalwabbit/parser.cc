@@ -119,11 +119,15 @@ bool is_test_only(uint32_t counter, uint32_t period, uint32_t after, bool holdou
     uint32_t target_modulus)  // target should be 0 in the normal case, or period-1 in the case that emptylines separate
                               // examples
 {
-  if (holdout_off) return false;
-  if (after == 0)  // hold out by period
+  if (holdout_off) { return false; }
+  if (after == 0)
+  {  // hold out by period
     return (counter % period == target_modulus);
-  else  // hold out by position
+  }
+  else
+  {  // hold out by position
     return (counter > after);
+  }
 }
 
 uint32_t cache_numbits(VW::io::reader& cache_reader)
@@ -329,7 +333,7 @@ void make_write_cache(VW::workspace& all, std::string& newname, bool quiet)
 
   all.example_parser->finalname = newname;
   all.example_parser->write_cache = true;
-  if (!quiet) *(all.trace_message) << "creating cache_file = " << newname << endl;
+  if (!quiet) { *(all.trace_message) << "creating cache_file = " << newname << endl; }
 }
 
 void parse_cache(VW::workspace& all, std::vector<std::string> cache_files, bool kill_cache, bool quiet)
@@ -339,7 +343,9 @@ void parse_cache(VW::workspace& all, std::vector<std::string> cache_files, bool 
   for (auto& file : cache_files)
   {
     bool cache_file_opened = false;
-    if (!kill_cache) try
+    if (!kill_cache)
+    {
+      try
       {
         all.example_parser->input.add_file(VW::io::open_file_reader(file));
         cache_file_opened = true;
@@ -348,8 +354,8 @@ void parse_cache(VW::workspace& all, std::vector<std::string> cache_files, bool 
       {
         cache_file_opened = false;
       }
-    if (cache_file_opened == false)
-      make_write_cache(all, file, quiet);
+    }
+    if (cache_file_opened == false) { make_write_cache(all, file, quiet); }
     else
     {
       uint64_t c = cache_numbits(*all.example_parser->input.get_input_files().back());
@@ -362,12 +368,13 @@ void parse_cache(VW::workspace& all, std::vector<std::string> cache_files, bool 
       }
       else
       {
-        if (!quiet) *(all.trace_message) << "using cache_file = " << file.c_str() << endl;
+        if (!quiet) { *(all.trace_message) << "using cache_file = " << file.c_str() << endl; }
         set_cache_reader(all);
-        if (c == all.num_bits)
-          all.example_parser->sorted_cache = true;
+        if (c == all.num_bits) { all.example_parser->sorted_cache = true; }
         else
+        {
           all.example_parser->sorted_cache = false;
+        }
         all.example_parser->resettable = true;
       }
     }
@@ -376,7 +383,7 @@ void parse_cache(VW::workspace& all, std::vector<std::string> cache_files, bool 
   all.parse_mask = (static_cast<uint64_t>(1) << all.num_bits) - 1;
   if (cache_files.size() == 0)
   {
-    if (!quiet) *(all.trace_message) << "using no cache" << endl;
+    if (!quiet) { *(all.trace_message) << "using no cache" << endl; }
   }
 }
 
@@ -405,19 +412,19 @@ void enable_sources(VW::workspace& all, bool quiet, size_t passes, input_options
     int on = 1;
     if (setsockopt(all.example_parser->bound_sock, SOL_SOCKET, SO_REUSEADDR, reinterpret_cast<char*>(&on), sizeof(on)) <
         0)
-      *(all.trace_message) << "setsockopt SO_REUSEADDR: " << VW::strerror_to_string(errno) << endl;
+    { *(all.trace_message) << "setsockopt SO_REUSEADDR: " << VW::strerror_to_string(errno) << endl; }
 
     // Enable TCP Keep Alive to prevent socket leaks
     int enableTKA = 1;
     if (setsockopt(all.example_parser->bound_sock, SOL_SOCKET, SO_KEEPALIVE, reinterpret_cast<char*>(&enableTKA),
             sizeof(enableTKA)) < 0)
-      *(all.trace_message) << "setsockopt SO_KEEPALIVE: " << VW::strerror_to_string(errno) << endl;
+    { *(all.trace_message) << "setsockopt SO_KEEPALIVE: " << VW::strerror_to_string(errno) << endl; }
 
     sockaddr_in address;
     address.sin_family = AF_INET;
     address.sin_addr.s_addr = htonl(INADDR_ANY);
     short unsigned int port = 26542;
-    if (all.options->was_supplied("port")) port = static_cast<uint16_t>(input_options.port);
+    if (all.options->was_supplied("port")) { port = static_cast<uint16_t>(input_options.port); }
     address.sin_port = htons(port);
 
     // attempt to bind to socket
@@ -517,12 +524,13 @@ void enable_sources(VW::workspace& all, bool quiet, size_t passes, input_options
 
         if (got_sigterm)
         {
-          for (size_t i = 0; i < num_children; i++) kill(children[i], SIGTERM);
+          for (size_t i = 0; i < num_children; i++) { kill(children[i], SIGTERM); }
           VW::finish(all);
           exit(0);
         }
-        if (pid < 0) continue;
+        if (pid < 0) { continue; }
         for (size_t i = 0; i < num_children; i++)
+        {
           if (pid == children[i])
           {
             if ((children[i] = fork()) == 0)
@@ -532,6 +540,7 @@ void enable_sources(VW::workspace& all, bool quiet, size_t passes, input_options
             }
             break;
           }
+        }
       }
 
 #endif
@@ -542,7 +551,7 @@ void enable_sources(VW::workspace& all, bool quiet, size_t passes, input_options
 #endif
     sockaddr_in client_address;
     socklen_t size = sizeof(client_address);
-    if (!all.quiet) *(all.trace_message) << "calling accept" << endl;
+    if (!all.quiet) { *(all.trace_message) << "calling accept" << endl; }
     auto f_a =
         static_cast<int>(accept(all.example_parser->bound_sock, reinterpret_cast<sockaddr*>(&client_address), &size));
     if (f_a < 0) THROWERRNO("accept");
@@ -556,7 +565,7 @@ void enable_sources(VW::workspace& all, bool quiet, size_t passes, input_options
     all.final_prediction_sink.push_back(socket->get_writer());
 
     all.example_parser->input.add_file(socket->get_reader());
-    if (!all.quiet) *(all.trace_message) << "reading data from port " << port << endl;
+    if (!all.quiet) { *(all.trace_message) << "reading data from port " << port << endl; }
 
     if (all.active) { set_string_reader(all); }
     else
@@ -571,7 +580,7 @@ void enable_sources(VW::workspace& all, bool quiet, size_t passes, input_options
   {
     if (all.example_parser->input.num_files() != 0)
     {
-      if (!quiet) *(all.trace_message) << "ignoring text input in favor of cache input" << endl;
+      if (!quiet) { *(all.trace_message) << "ignoring text input in favor of cache input" << endl; }
     }
     else
     {
@@ -641,7 +650,8 @@ void enable_sources(VW::workspace& all, bool quiet, size_t passes, input_options
   if (passes > 1 && !all.example_parser->resettable)
     THROW("need a cache file for multiple passes : try using  --cache or --cache_file <name>");
 
-  if (!quiet && !all.daemon) *(all.trace_message) << "num sources = " << all.example_parser->input.num_files() << endl;
+  if (!quiet && !all.daemon)
+  { *(all.trace_message) << "num sources = " << all.example_parser->input.num_files() << endl; }
 }
 
 void lock_done(parser& p)
@@ -667,12 +677,14 @@ void end_pass_example(VW::workspace& all, VW::example* ae)
 void feature_limit(VW::workspace& all, VW::example* ex)
 {
   for (VW::namespace_index index : ex->indices)
+  {
     if (all.limit[index] < ex->feature_space[index].size())
     {
       features& fs = ex->feature_space[index];
       fs.sort(all.parse_mask);
       unique_features(fs, all.limit[index]);
     }
+  }
 }
 
 namespace VW
@@ -687,12 +699,12 @@ VW::example& get_unused_example(VW::workspace* all)
 
 void setup_examples(VW::workspace& all, VW::v_array<VW::example*>& examples)
 {
-  for (VW::example* ae : examples) setup_example(all, ae);
+  for (VW::example* ae : examples) { setup_example(all, ae); }
 }
 
 void setup_example(VW::workspace& all, VW::example* ae)
 {
-  if (all.example_parser->sort_features && ae->sorted == false) unique_sort_features(all.parse_mask, ae);
+  if (all.example_parser->sort_features && ae->sorted == false) { unique_sort_features(all.parse_mask, ae); }
 
   if (all.example_parser->write_cache)
   {
@@ -713,7 +725,7 @@ void setup_example(VW::workspace& all, VW::example* ae)
   ae->use_permutations = all.permutations;
 
   all.example_parser->num_setup_examples++;
-  if (!all.example_parser->emptylines_separate_examples) all.example_parser->in_pass_counter++;
+  if (!all.example_parser->emptylines_separate_examples) { all.example_parser->in_pass_counter++; }
 
   // Determine if this example is part of the holdout set.
   ae->test_only = is_test_only(all.example_parser->in_pass_counter, all.holdout_period, all.holdout_after,
@@ -730,7 +742,7 @@ void setup_example(VW::workspace& all, VW::example* ae)
       (example_is_newline(*ae) &&
           (all.example_parser->lbl_parser.label_type != label_type_t::ccb ||
               VW::reductions::ccb::ec_is_example_unset(*ae))))
-    all.example_parser->in_pass_counter++;
+  { all.example_parser->in_pass_counter++; }
 
   ae->weight = all.example_parser->lbl_parser.get_weight(ae->l, ae->_reduction_features);
 
@@ -752,16 +764,22 @@ void setup_example(VW::workspace& all, VW::example* ae)
 
   if (all.skip_gram_transformer != nullptr) { all.skip_gram_transformer->generate_grams(ae); }
 
-  if (all.add_constant)  // add constant feature
+  if (all.add_constant)
+  {  // add constant feature
     VW::add_constant_feature(all, ae);
+  }
 
-  if (!all.limit_strings.empty()) feature_limit(all, ae);
+  if (!all.limit_strings.empty()) { feature_limit(all, ae); }
 
   uint64_t multiplier = static_cast<uint64_t>(all.wpp) << all.weights.stride_shift();
 
-  if (multiplier != 1)  // make room for per-feature information.
+  if (multiplier != 1)
+  {  // make room for per-feature information.
     for (features& fs : *ae)
-      for (auto& j : fs.indices) j *= multiplier;
+    {
+      for (auto& j : fs.indices) { j *= multiplier; }
+    }
+  }
   ae->num_features = 0;
   for (const features& fs : *ae) { ae->num_features += fs.size(); }
 
@@ -800,7 +818,7 @@ void add_constant_feature(VW::workspace& vw, VW::example* ec)
   ec->indices.push_back(constant_namespace);
   ec->feature_space[constant_namespace].push_back(1, constant, constant_namespace);
   ec->num_features++;
-  if (vw.audit || vw.hash_inv) ec->feature_space[constant_namespace].space_names.emplace_back("", "Constant");
+  if (vw.audit || vw.hash_inv) { ec->feature_space[constant_namespace].space_names.emplace_back("", "Constant"); }
 }
 
 void add_label(VW::example* ec, float label, float weight, float base)
@@ -816,14 +834,14 @@ VW::example* import_example(VW::workspace& all, const std::string& label, primit
   VW::example* ret = &get_unused_example(&all);
   all.example_parser->lbl_parser.default_label(ret->l);
 
-  if (label.length() > 0) parse_example_label(all, *ret, label);
+  if (label.length() > 0) { parse_example_label(all, *ret, label); }
 
   for (size_t i = 0; i < len; i++)
   {
     unsigned char index = features[i].name;
     ret->indices.push_back(index);
     for (size_t j = 0; j < features[i].len; j++)
-      ret->feature_space[index].push_back(features[i].fs[j].x, features[i].fs[j].weight_index);
+    { ret->feature_space[index].push_back(features[i].fs[j].x, features[i].fs[j].weight_index); }
   }
 
   setup_example(all, ret);
@@ -860,7 +878,7 @@ primitive_feature_space* export_example(VW::workspace& all, VW::example* ec, siz
 
 void releaseFeatureSpace(primitive_feature_space* features, size_t len)
 {
-  for (size_t i = 0; i < len; i++) delete[] features[i].fs;
+  for (size_t i = 0; i < len; i++) { delete[] features[i].fs; }
   delete (features);
 }
 
@@ -874,7 +892,7 @@ void parse_example_label(VW::workspace& all, example& ec, const std::string& lab
 
 void empty_example(VW::workspace& /*all*/, example& ec)
 {
-  for (features& fs : ec) fs.clear();
+  for (features& fs : ec) { fs.clear(); }
 
   ec.indices.clear();
   ec.tag.clear();
@@ -897,7 +915,7 @@ void clean_example(VW::workspace& all, example& ec)
 void finish_example(VW::workspace& all, example& ec)
 {
   // only return examples to the pool that are from the pool and not externally allocated
-  if (!is_ring_example(all, &ec)) return;
+  if (!is_ring_example(all, &ec)) { return; }
 
   clean_example(all, ec);
 

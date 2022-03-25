@@ -150,7 +150,7 @@ void make_marginal(data& sm, VW::example& ec)
         }
         const auto marginal_pred = static_cast<float>(sm.marginals[key].first / sm.marginals[key].second);
         f.push_back(marginal_pred, first_index);
-        if (!sm.temp[n].space_names.empty()) f.space_names.push_back(sm.temp[n].space_names[2 * (f.size() - 1)]);
+        if (!sm.temp[n].space_names.empty()) { f.space_names.push_back(sm.temp[n].space_names[2 * (f.size() - 1)]); }
 
         if (sm.compete)  // compute the prediction from the marginals using the weights
         {
@@ -213,7 +213,7 @@ void update_marginal(data& sm, VW::example& ec)
     {
       for (auto j = sm.temp[n].begin(); j != sm.temp[n].end(); ++j)
       {
-        if (++j == sm.temp[n].end()) break;
+        if (++j == sm.temp[n].end()) { break; }
 
         const uint64_t second_index = j.index() & mask;
         uint64_t key = second_index + ec.ft_offset;
@@ -292,7 +292,7 @@ void save_load(data& sm, io_buf& io, bool read, bool text)
 {
   const uint64_t stride_shift = sm.m_weights->stride_shift();
 
-  if (io.num_files() == 0) return;
+  if (io.num_files() == 0) { return; }
   std::stringstream msg;
   uint64_t total_size;
   if (!read)
@@ -331,10 +331,11 @@ void save_load(data& sm, io_buf& io, bool read, bool text)
       msg << denominator << "\n";
     }
     bin_text_read_write_fixed(io, reinterpret_cast<char*>(&denominator), sizeof(denominator), read, msg, text);
-    if (read)
-      sm.marginals.insert(std::make_pair(index << stride_shift, std::make_pair(numerator, denominator)));
+    if (read) { sm.marginals.insert(std::make_pair(index << stride_shift, std::make_pair(numerator, denominator))); }
     else
+    {
       ++iter;
+    }
   }
 
   if (sm.compete)
@@ -373,15 +374,15 @@ void save_load(data& sm, io_buf& io, bool read, bool text)
         msg << r1 << ":";
       }
       bin_text_read_write_fixed(io, reinterpret_cast<char*>(&r1), sizeof(r1), read, msg, text);
-      if (!read) msg << c1 << ":";
+      if (!read) { msg << c1 << ":"; }
       bin_text_read_write_fixed(io, reinterpret_cast<char*>(&c1), sizeof(c1), read, msg, text);
-      if (!read) msg << w1 << ":";
+      if (!read) { msg << w1 << ":"; }
       bin_text_read_write_fixed(io, reinterpret_cast<char*>(&w1), sizeof(w1), read, msg, text);
-      if (!read) msg << r2 << ":";
+      if (!read) { msg << r2 << ":"; }
       bin_text_read_write_fixed(io, reinterpret_cast<char*>(&r2), sizeof(r2), read, msg, text);
-      if (!read) msg << c2 << ":";
+      if (!read) { msg << c2 << ":"; }
       bin_text_read_write_fixed(io, reinterpret_cast<char*>(&c2), sizeof(c2), read, msg, text);
-      if (!read) msg << w2 << ":";
+      if (!read) { msg << w2 << ":"; }
       bin_text_read_write_fixed(io, reinterpret_cast<char*>(&w2), sizeof(w2), read, msg, text);
 
       if (read)

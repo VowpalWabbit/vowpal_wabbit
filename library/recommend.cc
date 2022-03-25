@@ -66,15 +66,16 @@ void bf_add(char* bf, char* line)
 {
   unsigned i, hashv[NUM_HASHES];
   get_hashv(line, strlen(line), hashv);
-  for (i = 0; i < NUM_HASHES; i++) BIT_SET(bf, hashv[i]);
+  for (i = 0; i < NUM_HASHES; i++) { BIT_SET(bf, hashv[i]); }
 }
 
 void bf_info(char* bf, FILE* f)
 {
   unsigned i, on = 0;
   for (i = 0; i < num_bits(bits); i++)
-    if (BIT_TEST(bf, i))
-      on++;
+  {
+    if (BIT_TEST(bf, i)) { on++; }
+  }
 
   fprintf(f, "%.2f%% saturation\n%lu bf bit size\n", on * 100.0 / num_bits(bits), num_bits(bits));
 }
@@ -85,8 +86,7 @@ int bf_hit(char* bf, char* line)
   get_hashv(line, strlen(line), hashv);
   for (i = 0; i < NUM_HASHES; i++)
   {
-    if (BIT_TEST(bf, hashv[i]) == 0)
-      return 0;
+    if (BIT_TEST(bf, hashv[i]) == 0) { return 0; }
   }
   return 1;
 }
@@ -179,8 +179,7 @@ int main(int argc, char* argv[])
   ssize_t read;
 
   /* make the bloom filter */
-  if (verbose > 0)
-    fprintf(stderr, "loading blacklist into bloom filter...\n");
+  if (verbose > 0) { fprintf(stderr, "loading blacklist into bloom filter...\n"); }
   char* bf = bf_new(bits);
 
   /* loop over the source file */
@@ -198,8 +197,7 @@ int main(int argc, char* argv[])
   }
 
   // INITIALIZE WITH WHATEVER YOU WOULD PUT ON THE VW COMMAND LINE
-  if (verbose > 0)
-    fprintf(stderr, "initializing vw...\n");
+  if (verbose > 0) { fprintf(stderr, "initializing vw...\n"); }
   VW::workspace* model = VW::initialize(vwparams);
 
   char* estr = NULL;
@@ -252,8 +250,7 @@ int main(int argc, char* argv[])
       else
       {
         skipped++;
-        if (verbose >= 2)
-          fprintf(stderr, "skipping:#%s#\n", estr);
+        if (verbose >= 2) { fprintf(stderr, "skipping:#%s#\n", estr); }
       }
     }
 

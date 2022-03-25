@@ -66,7 +66,7 @@ int recvall(int s, char* buf, int n)
   while (ret > 0 && total < n)
   {
     total += ret;
-    if (buf[total - 1] == '\n') break;
+    if (buf[total - 1] == '\n') { break; }
     ret = recv(s, buf + total, n, 0);
   }
   return total;

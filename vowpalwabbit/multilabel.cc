@@ -72,10 +72,11 @@ void print_update(VW::workspace& all, bool is_test, const VW::example& ec)
   if (all.sd->weighted_examples() >= all.sd->dump_interval && !all.quiet && !all.bfgs)
   {
     std::stringstream label_string;
-    if (is_test)
-      label_string << "unknown";
+    if (is_test) { label_string << "unknown"; }
     else
+    {
       label_string << VW::to_string(ec.l.multilabels);
+    }
 
     all.sd->print_update(*all.trace_message, all.holdout_set_off, all.current_pass, label_string.str(),
         VW::to_string(ec.pred.multilabels), ec.get_num_features(), all.progress_add, all.progress_arg);
@@ -128,7 +129,7 @@ void output_example(VW::workspace& all, const VW::example& ec)
 
       for (size_t i = 0; i < ec.pred.multilabels.label_v.size(); i++)
       {
-        if (i > 0) ss << ',';
+        if (i > 0) { ss << ','; }
         ss << ec.pred.multilabels.label_v[i];
       }
       ss << ' ';

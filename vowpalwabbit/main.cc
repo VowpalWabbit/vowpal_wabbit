@@ -101,16 +101,14 @@ int main(int argc, char* argv[])
 
     if (should_use_onethread)
     {
-      if (alls.size() == 1)
-        VW::LEARNER::generic_driver_onethread(all);
+      if (alls.size() == 1) { VW::LEARNER::generic_driver_onethread(all); }
       else
         THROW("--onethread doesn't make sense with multiple learners");
     }
     else
     {
       VW::start_parser(all);
-      if (alls.size() == 1)
-        VW::LEARNER::generic_driver(all);
+      if (alls.size() == 1) { VW::LEARNER::generic_driver(all); }
       else
       {
         std::vector<VW::workspace*> alls_ptrs;
