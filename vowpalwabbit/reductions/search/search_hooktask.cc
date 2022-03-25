@@ -30,21 +30,22 @@ void initialize(Search::search& sch, size_t& num_actions, options_i& arg)
 void run(Search::search& sch, VW::multi_ex& /*ec*/)
 {
   task_data* td = sch.get_task_data<task_data>();
-  if (td->run_f)
-    td->run_f(sch);
+  if (td->run_f) { td->run_f(sch); }
   else
+  {
     sch.get_vw_pointer_unsafe().logger.err_warn("HookTask::structured_predict called before hook is set");
+  }
 }
 
 void run_setup(Search::search& sch, VW::multi_ex& /*ec*/)
 {
   task_data* td = sch.get_task_data<task_data>();
-  if (td->run_setup_f) td->run_setup_f(sch);
+  if (td->run_setup_f) { td->run_setup_f(sch); }
 }
 
 void run_takedown(Search::search& sch, VW::multi_ex& /*ec*/)
 {
   task_data* td = sch.get_task_data<task_data>();
-  if (td->run_takedown_f) td->run_takedown_f(sch);
+  if (td->run_takedown_f) { td->run_takedown_f(sch); }
 }
 }  // namespace HookTask

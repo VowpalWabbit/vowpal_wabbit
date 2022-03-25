@@ -87,10 +87,11 @@ template <bool is_learn>
 void predict_or_learn(cats_pdf& reduction, single_learner&, example& ec)
 {
   experimental::api_status status;
-  if (is_learn)
-    reduction.learn(ec, &status);
+  if (is_learn) { reduction.learn(ec, &status); }
   else
+  {
     reduction.predict(ec, &status);
+  }
 
   if (status.get_error_code() != VW::experimental::error_code::success)
   { VW_DBG(ec) << status.get_error_msg() << endl; }
@@ -177,15 +178,15 @@ LEARNER::base_learner* setup(setup_base_i& stack_builder)
 
   // If cats reduction was not invoked, don't add anything
   // to the reduction stack;
-  if (!options.add_parse_and_check_necessary(new_options)) return nullptr;
+  if (!options.add_parse_and_check_necessary(new_options)) { return nullptr; }
 
   if (num_actions <= 0) THROW(VW::experimental::error_code::num_actions_gt_zero_s);
 
   // cats stack = [cats_pdf -> cb_explore_pdf -> pmf_to_pdf -> get_pmf -> cats_tree]
-  if (!options.was_supplied("cb_explore_pdf")) options.insert("cb_explore_pdf", "");
+  if (!options.was_supplied("cb_explore_pdf")) { options.insert("cb_explore_pdf", ""); }
   options.insert("pmf_to_pdf", std::to_string(num_actions));
 
-  if (!options.was_supplied("get_pmf")) options.insert("get_pmf", "");
+  if (!options.was_supplied("get_pmf")) { options.insert("get_pmf", ""); }
   options.insert("cats_tree", std::to_string(num_actions));
 
   LEARNER::base_learner* p_base = stack_builder.setup_base_learner();

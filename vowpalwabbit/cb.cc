@@ -24,7 +24,9 @@ namespace CB
 std::pair<bool, cb_class> get_observed_cost_cb(const label& ld)
 {
   for (const auto& cl : ld.costs)
-    if (cl.has_observed_cost()) return std::make_pair(true, cl);
+  {
+    if (cl.has_observed_cost()) { return std::make_pair(true, cl); }
+  }
 
   // Default value for cb_class does not have an observed cost.
   return std::make_pair(false, CB::cb_class{});
@@ -50,12 +52,12 @@ void parse_label(CB::label& ld, VW::label_parser_reuse_mem& reuse_mem, const std
     f.action = static_cast<uint32_t>(hashstring(reuse_mem.tokens[0].data(), reuse_mem.tokens[0].length(), 0));
     f.cost = FLT_MAX;
 
-    if (reuse_mem.tokens.size() > 1) f.cost = float_of_string(reuse_mem.tokens[1], logger);
+    if (reuse_mem.tokens.size() > 1) { f.cost = float_of_string(reuse_mem.tokens[1], logger); }
 
     if (std::isnan(f.cost)) THROW("error NaN cost (" << reuse_mem.tokens[1] << " for action: " << reuse_mem.tokens[0]);
 
     f.probability = .0;
-    if (reuse_mem.tokens.size() > 2) f.probability = float_of_string(reuse_mem.tokens[2], logger);
+    if (reuse_mem.tokens.size() > 2) { f.probability = float_of_string(reuse_mem.tokens[2], logger); }
 
     if (std::isnan(f.probability))
       THROW("error NaN probability (" << reuse_mem.tokens[2] << " for action: " << reuse_mem.tokens[0]);
@@ -108,14 +110,14 @@ VW::label_parser cb_label = {
 bool ec_is_example_header(VW::example const& ec)  // example headers just have "shared"
 {
   const auto& costs = ec.l.cb.costs;
-  if (costs.size() != 1) return false;
-  if (costs[0].probability == -1.f) return true;
+  if (costs.size() != 1) { return false; }
+  if (costs[0].probability == -1.f) { return true; }
   return false;
 }
 
 std::string known_cost_to_str(const CB::cb_class* known_cost)
 {
-  if (known_cost == nullptr) return " known";
+  if (known_cost == nullptr) { return " known"; }
 
   std::stringstream label_string;
   label_string.precision(VW::DEFAULT_FLOAT_FORMATTING_DECIMAL_PRECISION);
@@ -149,10 +151,11 @@ void print_update(VW::workspace& all, bool is_test, const VW::example& ec, const
       }
     }
     std::string label_buf;
-    if (is_test)
-      label_buf = "unknown";
+    if (is_test) { label_buf = "unknown"; }
     else
+    {
       label_buf = known_cost_to_str(known_cost);
+    }
 
     if (action_scores)
     {
@@ -163,13 +166,17 @@ void print_update(VW::workspace& all, bool is_test, const VW::example& ec, const
             VW::fmt_float(ec.pred.a_s[0].score, VW::DEFAULT_FLOAT_FORMATTING_DECIMAL_PRECISION));
       }
       else
+      {
         pred_buf << "no action";
+      }
       all.sd->print_update(*all.trace_message, all.holdout_set_off, all.current_pass, label_buf, pred_buf.str(),
           num_features, all.progress_add, all.progress_arg);
     }
     else
+    {
       all.sd->print_update(*all.trace_message, all.holdout_set_off, all.current_pass, label_buf,
           static_cast<uint32_t>(pred), num_features, all.progress_add, all.progress_arg);
+    }
   }
 }
 }  // namespace CB

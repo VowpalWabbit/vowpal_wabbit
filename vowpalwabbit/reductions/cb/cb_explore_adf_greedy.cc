@@ -60,23 +60,26 @@ void cb_explore_adf_greedy::update_example_prediction(multi_ex& examples)
   size_t tied_actions = fill_tied(preds);
 
   const float prob = actual_ep / num_actions;
-  for (size_t i = 0; i < num_actions; i++) preds[i].score = prob;
+  for (size_t i = 0; i < num_actions; i++) { preds[i].score = prob; }
   if (!_first_only)
   {
-    for (size_t i = 0; i < tied_actions; ++i) preds[i].score += (1.f - actual_ep) / tied_actions;
+    for (size_t i = 0; i < tied_actions; ++i) { preds[i].score += (1.f - actual_ep) / tied_actions; }
   }
   else
+  {
     preds[0].score += 1.f - actual_ep;
+  }
 }
 
 template <bool is_learn>
 void cb_explore_adf_greedy::predict_or_learn_impl(VW::LEARNER::multi_learner& base, multi_ex& examples)
 {
   // Explore uniform random an epsilon fraction of the time.
-  if (is_learn)
-    base.learn(examples);
+  if (is_learn) { base.learn(examples); }
   else
+  {
     base.predict(examples);
+  }
 
   update_example_prediction(examples);
 }
@@ -114,7 +117,7 @@ VW::LEARNER::base_learner* setup(VW::setup_base_i& stack_builder)
       options.was_supplied("regcb") || options.was_supplied("regcbopt") || options.was_supplied("squarecb") ||
       options.was_supplied("rnd") || options.was_supplied("softmax") || options.was_supplied("synthcover"));
 
-  if (!cb_explore_adf_option || !use_greedy) return nullptr;
+  if (!cb_explore_adf_option || !use_greedy) { return nullptr; }
 
   // Ensure serialization of cb_adf in all cases.
   if (!options.was_supplied("cb_adf"))

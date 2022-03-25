@@ -91,13 +91,13 @@ void parse_label(continuous_label& ld, reduction_features& red_features, VW::lab
 
       f.action = float_of_string(reuse_mem.tokens[0], logger);
 
-      if (reuse_mem.tokens.size() > 1) f.cost = float_of_string(reuse_mem.tokens[1], logger);
+      if (reuse_mem.tokens.size() > 1) { f.cost = float_of_string(reuse_mem.tokens[1], logger); }
 
       if (std::isnan(f.cost))
         THROW("error NaN cost (" << reuse_mem.tokens[1] << " for action: " << reuse_mem.tokens[0]);
 
       f.pdf_value = .0;
-      if (reuse_mem.tokens.size() > 2) f.pdf_value = float_of_string(reuse_mem.tokens[2], logger);
+      if (reuse_mem.tokens.size() > 2) { f.pdf_value = float_of_string(reuse_mem.tokens[2], logger); }
 
       if (std::isnan(f.pdf_value))
         THROW("error NaN pdf_value (" << reuse_mem.tokens[2] << " for action: " << reuse_mem.tokens[0]);

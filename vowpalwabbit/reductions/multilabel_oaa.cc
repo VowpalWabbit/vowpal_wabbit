@@ -48,7 +48,9 @@ void predict_or_learn(multi_oaa& o, VW::LEARNER::single_learner& base, VW::examp
       base.learn(ec, i);
     }
     else
+    {
       base.predict(ec, i);
+    }
     if ((o.link == "logistic" && ec.pred.scalar > 0.5) || (o.link != "logistic" && ec.pred.scalar > 0.0))
     { preds.label_v.push_back(i); }
     if (o.probabilities) { ec.pred.scalars.push_back(std::move(ec.pred.scalar)); }
@@ -76,14 +78,16 @@ void finish_example(VW::workspace& all, multi_oaa& o, VW::example& ec)
     std::ostringstream outputStringStream;
     for (uint32_t i = 0; i < o.k; i++)
     {
-      if (i > 0) outputStringStream << ' ';
+      if (i > 0) { outputStringStream << ' '; }
       if (all.sd->ldict) { outputStringStream << all.sd->ldict->get(i); }
       else
+      {
         outputStringStream << i;
+      }
       outputStringStream << ':' << ec.pred.scalars[i];
     }
     const auto ss_str = outputStringStream.str();
-    for (auto& sink : all.final_prediction_sink) all.print_text_by_ref(sink.get(), ss_str, ec.tag, all.logger);
+    for (auto& sink : all.final_prediction_sink) { all.print_text_by_ref(sink.get(), ss_str, ec.tag, all.logger); }
   }
   MULTILABEL::output_example(all, ec);
   VW::finish_example(all, ec);
@@ -105,7 +109,7 @@ VW::LEARNER::base_learner* multilabel_oaa_setup(VW::setup_base_i& stack_builder)
                .one_of({"identity", "logistic", "glf1", "poisson"})
                .help("Specify the link function"));
 
-  if (!options.add_parse_and_check_necessary(new_options)) return nullptr;
+  if (!options.add_parse_and_check_necessary(new_options)) { return nullptr; }
 
   data->k = VW::cast_to_smaller_type<size_t>(k);
   std::string name_addition;
@@ -124,8 +128,10 @@ VW::LEARNER::base_learner* multilabel_oaa_setup(VW::setup_base_i& stack_builder)
     pred_type = VW::prediction_type_t::scalars;
     auto loss_function_type = all.loss->getType();
     if (loss_function_type != "logistic")
+    {
       all.logger.out_warn(
           "--probabilities should be used only with --loss_function=logistic, currently using: {}", loss_function_type);
+    }
     // the three boolean template parameters are: is_learn, print_all and scores
     name_addition = "-prob";
   }

@@ -77,10 +77,11 @@ template <bool is_learn>
 void predict_or_learn(get_pmf& reduction, single_learner&, example& ec)
 {
   experimental::api_status status;
-  if (is_learn)
-    reduction.learn(ec, &status);
+  if (is_learn) { reduction.learn(ec, &status); }
   else
+  {
     reduction.predict(ec, &status);
+  }
 
   if (status.get_error_code() != VW::experimental::error_code::success)
   { VW_DBG(ec) << status.get_error_msg() << endl; }
@@ -101,7 +102,7 @@ LEARNER::base_learner* get_pmf_setup(VW::setup_base_i& stack_builder)
 
   // If reduction was not invoked, don't add anything
   // to the reduction stack;
-  if (!options.add_parse_and_check_necessary(new_options)) return nullptr;
+  if (!options.add_parse_and_check_necessary(new_options)) { return nullptr; }
 
   LEARNER::base_learner* p_base = stack_builder.setup_base_learner();
   auto p_reduction = VW::make_unique<get_pmf>();

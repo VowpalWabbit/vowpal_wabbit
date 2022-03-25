@@ -135,10 +135,11 @@ void print_update(VW::workspace& all, VW::example& ec, uint32_t prediction)
 {
   if (all.sd->weighted_examples() >= all.sd->dump_interval && !all.quiet && !all.bfgs)
   {
-    if (!all.sd->ldict)
-      T(all, ec, prediction);
+    if (!all.sd->ldict) { T(all, ec, prediction); }
     else
+    {
       print_label_pred(all, ec, ec.pred.multiclass);
+    }
   }
 }
 
@@ -154,19 +155,20 @@ void print_update_with_score(VW::workspace& all, VW::example& ec, uint32_t pred)
 void finish_example(VW::workspace& all, VW::example& ec, bool update_loss)
 {
   float loss = 0;
-  if (ec.l.multi.label != ec.pred.multiclass && ec.l.multi.label != static_cast<uint32_t>(-1)) loss = ec.weight;
+  if (ec.l.multi.label != ec.pred.multiclass && ec.l.multi.label != static_cast<uint32_t>(-1)) { loss = ec.weight; }
 
   all.sd->update(ec.test_only, update_loss && (ec.l.multi.label != static_cast<uint32_t>(-1)), loss, ec.weight,
       ec.get_num_features());
 
   for (auto& sink : all.final_prediction_sink)
-    if (!all.sd->ldict)
-      all.print_by_ref(sink.get(), static_cast<float>(ec.pred.multiclass), 0, ec.tag, all.logger);
+  {
+    if (!all.sd->ldict) { all.print_by_ref(sink.get(), static_cast<float>(ec.pred.multiclass), 0, ec.tag, all.logger); }
     else
     {
       VW::string_view sv_pred = all.sd->ldict->get(ec.pred.multiclass);
       all.print_text_by_ref(sink.get(), std::string{sv_pred}, ec.tag, all.logger);
     }
+  }
 
   MULTICLASS::print_update<direct_print_update>(all, ec, ec.pred.multiclass);
   VW::finish_example(all, ec);

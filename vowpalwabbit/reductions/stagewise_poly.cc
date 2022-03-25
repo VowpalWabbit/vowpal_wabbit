@@ -104,8 +104,7 @@ inline uint64_t do_ft_offset(const stagewise_poly& poly, uint64_t idx)
 inline uint64_t un_ft_offset(const stagewise_poly& poly, uint64_t idx)
 {
   assert(!poly.original_ec || poly.synth_ec.ft_offset == poly.original_ec->ft_offset);
-  if (poly.synth_ec.ft_offset == 0)
-    return idx;
+  if (poly.synth_ec.ft_offset == 0) { return idx; }
   else
   {
     while (idx < poly.synth_ec.ft_offset) { idx += poly.all->length() << poly.all->weights.stride_shift(); }
@@ -154,10 +153,11 @@ inline bool cycle_get(const stagewise_poly& poly, uint64_t wid)
 {
   // note: intentionally leaving out ft_offset.
   assert(wid % stride_shift(poly, 1) == 0);
-  if ((poly.depthsbits[wid_mask_un_shifted(poly, wid) * 2 + 1] & cycle_bit) > 0)
-    return true;
+  if ((poly.depthsbits[wid_mask_un_shifted(poly, wid) * 2 + 1] & cycle_bit) > 0) { return true; }
   else
+  {
     return false;
+  }
 }
 
 inline void cycle_toggle(stagewise_poly& poly, uint64_t wid)
@@ -212,10 +212,11 @@ inline uint64_t child_wid(const stagewise_poly& poly, uint64_t wi_atomic, uint64
   assert((wi_atomic & (stride_shift(poly, 1) - 1)) == 0);
   assert((wi_general & (stride_shift(poly, 1) - 1)) == 0);
 
-  if (wi_atomic == constant_feat_masked(poly))
-    return wi_general;
+  if (wi_atomic == constant_feat_masked(poly)) { return wi_general; }
   else if (wi_general == constant_feat_masked(poly))
+  {
     return wi_atomic;
+  }
   else
   {
     // This is basically the "Fowler–Noll–Vo" hash.  Ideally, the hash would be invariant
@@ -402,7 +403,7 @@ void synthetic_reset(stagewise_poly& poly, VW::example& ec)
   poly.synth_ec.feature_space[tree_atomics].clear();
   poly.synth_ec.num_features = 0;
 
-  if (poly.synth_ec.indices.size() == 0) poly.synth_ec.indices.push_back(tree_atomics);
+  if (poly.synth_ec.indices.size() == 0) { poly.synth_ec.indices.push_back(tree_atomics); }
 }
 
 void synthetic_decycle(stagewise_poly& poly)
@@ -538,29 +539,34 @@ void learn(stagewise_poly& poly, single_learner& base, VW::example& ec)
     poly.last_example_counter = ec.example_counter;
   }
   else
+  {
     predict(poly, base, ec);
+  }
 }
 
 void reduce_min(uint8_t& v1, const uint8_t& v2)
 {
-  if (v1 == default_depth)
-    v1 = v2;
+  if (v1 == default_depth) { v1 = v2; }
   else if (v2 != default_depth)
+  {
     v1 = (v1 <= v2) ? v1 : v2;
+  }
 }
 
 void reduce_min_max(uint8_t& v1, const uint8_t& v2)
 {
   bool parent_or_depth;
-  if (v1 & indicator_bit)
-    parent_or_depth = true;
+  if (v1 & indicator_bit) { parent_or_depth = true; }
   else
+  {
     parent_or_depth = false;
+  }
   bool p_or_d2;
-  if (v2 & indicator_bit)
-    p_or_d2 = true;
+  if (v2 & indicator_bit) { p_or_d2 = true; }
   else
+  {
     p_or_d2 = false;
+  }
   if (parent_or_depth != p_or_d2)
   {
 #ifdef DEBUG
@@ -569,20 +575,20 @@ void reduce_min_max(uint8_t& v1, const uint8_t& v2)
     return;
   }
 
-  if (parent_or_depth)
-    v1 = (v1 >= v2) ? v1 : v2;
+  if (parent_or_depth) { v1 = (v1 >= v2) ? v1 : v2; }
   else
   {
-    if (v1 == default_depth)
-      v1 = v2;
+    if (v1 == default_depth) { v1 = v2; }
     else if (v2 != default_depth)
+    {
       v1 = (v1 <= v2) ? v1 : v2;
+    }
   }
 }
 
 void end_pass(stagewise_poly& poly)
 {
-  if (!!poly.batch_sz || (poly.all->all_reduce != nullptr && poly.numpasses > 1)) return;
+  if (!!poly.batch_sz || (poly.all->all_reduce != nullptr && poly.numpasses > 1)) { return; }
 
   uint64_t sum_sparsity_inc = poly.sum_sparsity - poly.sum_sparsity_sync;
   uint64_t sum_input_sparsity_inc = poly.sum_input_sparsity - poly.sum_input_sparsity_sync;
@@ -675,7 +681,7 @@ base_learner* stagewise_poly_setup(VW::setup_base_i& stack_builder)
       make_typed_option("magic_argument", poly->magic_argument).default_value(0.).help("Magical feature flag"));
 #endif  // MAGIC_ARGUMENT
 
-  if (!options.add_parse_and_check_necessary(new_options)) return nullptr;
+  if (!options.add_parse_and_check_necessary(new_options)) { return nullptr; }
 
   poly->all = &all;
   depthsbits_create(*poly);

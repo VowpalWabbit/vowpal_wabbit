@@ -114,8 +114,7 @@ void register_reductions(std::vector<reduction_setup_fn>& reductions,
     {
       auto base = setup_fn(null_ptr_learner);
 
-      if (base == nullptr)
-        reduction_stack.push_back(std::make_tuple(name_extractor.generated_name, setup_fn));
+      if (base == nullptr) { reduction_stack.push_back(std::make_tuple(name_extractor.generated_name, setup_fn)); }
       else
         THROW("fatal: under register_reduction() all setup functions must return nullptr");
     }

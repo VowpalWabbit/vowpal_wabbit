@@ -131,13 +131,16 @@ float average_update(float total_weight, float normalized_sum_norm_x, float neg_
     if (sqrt_rate)
     {
       float avg_norm = (total_weight / normalized_sum_norm_x);
-      if (adaptive)
-        return std::sqrt(avg_norm);
+      if (adaptive) { return std::sqrt(avg_norm); }
       else
+      {
         return avg_norm;
+      }
     }
     else
+    {
       return powf((normalized_sum_norm_x / total_weight), neg_norm_power);
+    }
   }
   return 1.f;
 }
@@ -158,20 +161,21 @@ void end_pass(gd& g)
 
   if (all.all_reduce != nullptr)
   {
-    if (all.weights.adaptive)
-      accumulate_weighted_avg(all, all.weights);
+    if (all.weights.adaptive) { accumulate_weighted_avg(all, all.weights); }
     else
+    {
       accumulate_avg(all, all.weights, 0);
+    }
   }
   all.eta *= all.eta_decay_rate;
-  if (all.save_per_pass) save_predictor(all, all.final_regressor_name, all.current_pass);
+  if (all.save_per_pass) { save_predictor(all, all.final_regressor_name, all.current_pass); }
 
   if (!all.holdout_set_off)
   {
-    if (summarize_holdout_set(all, g.no_win_counter)) finalize_regressor(all, all.final_regressor_name);
+    if (summarize_holdout_set(all, g.no_win_counter)) { finalize_regressor(all, all.final_regressor_name); }
     if ((g.early_stop_thres == g.no_win_counter) &&
         ((all.check_holdout_every_n_passes <= 1) || ((all.current_pass % all.check_holdout_every_n_passes) == 0)))
-      set_done(all);
+    { set_done(all); }
   }
 }
 
@@ -225,8 +229,10 @@ inline void audit_feature(audit_results& dat, const float ft_weight, const uint6
                << trunc_weight(weights[index], static_cast<float>(dat.all.sd->gravity)) *
             static_cast<float>(dat.all.sd->contraction);
 
-    if (weights.adaptive)  // adaptive
+    if (weights.adaptive)
+    {  // adaptive
       tempstream << '@' << (&weights[index])[1];
+    }
 
     string_value sv = {weights[index] * ft_weight, tempstream.str()};
     dat.results.push_back(sv);
@@ -251,7 +257,7 @@ void print_lda_features(VW::workspace& all, VW::example& ec)
   parameters& weights = all.weights;
   uint32_t stride_shift = weights.stride_shift();
   size_t count = 0;
-  for (features& fs : ec) count += fs.size();
+  for (features& fs : ec) { count += fs.size(); }
   // TODO: Where should audit stuff output to?
   for (features& fs : ec)
   {
@@ -259,7 +265,7 @@ void print_lda_features(VW::workspace& all, VW::example& ec)
     {
       std::cout << '\t' << VW::to_string(*f.audit()) << ':' << ((f.index() >> stride_shift) & all.parse_mask) << ':'
                 << f.value();
-      for (size_t k = 0; k < all.lda; k++) std::cout << ':' << (&weights[f.index()])[k];
+      for (size_t k = 0; k < all.lda; k++) { std::cout << ':' << (&weights[f.index()])[k]; }
     }
   }
   std::cout << " total of " << count << " features." << std::endl;
@@ -267,8 +273,7 @@ void print_lda_features(VW::workspace& all, VW::example& ec)
 
 void print_features(VW::workspace& all, VW::example& ec)
 {
-  if (all.lda > 0)
-    print_lda_features(all, ec);
+  if (all.lda > 0) { print_lda_features(all, ec); }
   else
   {
     audit_results dat(all, ec.ft_offset);
@@ -276,12 +281,14 @@ void print_features(VW::workspace& all, VW::example& ec)
     for (features& fs : ec)
     {
       if (fs.space_names.size() > 0)
+      {
         for (const auto& f : fs.audit_range())
         {
           audit_interaction(dat, f.audit());
           audit_feature(dat, f.value(), f.index() + ec.ft_offset);
           audit_interaction(dat, nullptr);
         }
+      }
       else
       {
         for (const auto& f : fs) { audit_feature(dat, f.value(), f.index() + ec.ft_offset); }
@@ -306,7 +313,7 @@ void print_features(VW::workspace& all, VW::example& ec)
 
 void print_audit_features(VW::workspace& all, VW::example& ec)
 {
-  if (all.audit) print_result_by_ref(all.audit_writer.get(), ec.pred.scalar, -1, ec.tag, all.logger);
+  if (all.audit) { print_result_by_ref(all.audit_writer.get(), ec.pred.scalar, -1, ec.tag, all.logger); }
   fflush(stdout);
   print_features(all, ec);
 }
@@ -319,8 +326,8 @@ float finalize_prediction(shared_data* sd, VW::io::logger& logger, float ret)
     logger.err_warn("NAN prediction in example {0}, forcing {1}", sd->example_number + 1, ret);
     return ret;
   }
-  if (ret > sd->max_label) return sd->max_label;
-  if (ret < sd->min_label) return sd->min_label;
+  if (ret > sd->max_label) { return sd->max_label; }
+  if (ret < sd->min_label) { return sd->min_label; }
   return ret;
 }
 
@@ -357,10 +364,11 @@ void predict(gd& g, base_learner&, VW::example& ec)
 
   VW::workspace& all = *g.all;
   size_t num_interacted_features = 0;
-  if (l1)
-    ec.partial_prediction = trunc_predict(all, ec, all.sd->gravity, num_interacted_features);
+  if (l1) { ec.partial_prediction = trunc_predict(all, ec, all.sd->gravity, num_interacted_features); }
   else
+  {
     ec.partial_prediction = inline_predict(all, ec, num_interacted_features);
+  }
 
   ec.num_features_from_interactions = num_interacted_features;
   ec.partial_prediction *= static_cast<float>(all.sd->contraction);
@@ -369,7 +377,7 @@ void predict(gd& g, base_learner&, VW::example& ec)
   VW_DBG(ec) << "gd: predict() " << VW::debug::scalar_pred_to_string(ec) << VW::debug::features_to_string(ec)
              << std::endl;
 
-  if (audit) print_audit_features(all, ec);
+  if (audit) { print_audit_features(all, ec); }
 }
 
 template <class T>
@@ -377,7 +385,7 @@ inline void vec_add_trunc_multipredict(multipredict_info<T>& mp, const float fx,
 {
   size_t index = fi;
   for (size_t c = 0; c < mp.count; c++, index += mp.step)
-    mp.pred[c].scalar += fx * trunc_weight(mp.weights[index], mp.gravity);
+  { mp.pred[c].scalar += fx * trunc_weight(mp.weights[index], mp.gravity); }
 }
 
 template <bool l1, bool audit>
@@ -397,29 +405,41 @@ void multipredict(gd& g, base_learner&, VW::example& ec, size_t count, size_t st
     multipredict_info<sparse_parameters> mp = {
         count, step, pred, g.all->weights.sparse_weights, static_cast<float>(all.sd->gravity)};
     if (l1)
+    {
       foreach_feature<multipredict_info<sparse_parameters>, uint64_t, vec_add_trunc_multipredict>(
           all, ec, mp, num_features_from_interactions);
+    }
     else
+    {
       foreach_feature<multipredict_info<sparse_parameters>, uint64_t, vec_add_multipredict>(
           all, ec, mp, num_features_from_interactions);
+    }
   }
   else
   {
     multipredict_info<dense_parameters> mp = {
         count, step, pred, g.all->weights.dense_weights, static_cast<float>(all.sd->gravity)};
     if (l1)
+    {
       foreach_feature<multipredict_info<dense_parameters>, uint64_t, vec_add_trunc_multipredict>(
           all, ec, mp, num_features_from_interactions);
+    }
     else
+    {
       foreach_feature<multipredict_info<dense_parameters>, uint64_t, vec_add_multipredict>(
           all, ec, mp, num_features_from_interactions);
+    }
   }
   ec.num_features_from_interactions = num_features_from_interactions;
 
   if (all.sd->contraction != 1.)
-    for (size_t c = 0; c < count; c++) pred[c].scalar *= static_cast<float>(all.sd->contraction);
+  {
+    for (size_t c = 0; c < count; c++) { pred[c].scalar *= static_cast<float>(all.sd->contraction); }
+  }
   if (finalize_predictions)
-    for (size_t c = 0; c < count; c++) pred[c].scalar = finalize_prediction(all.sd, all.logger, pred[c].scalar);
+  {
+    for (size_t c = 0; c < count; c++) { pred[c].scalar = finalize_prediction(all.sd, all.logger, pred[c].scalar); }
+  }
   if (audit)
   {
     for (size_t c = 0; c < count; c++)
@@ -445,23 +465,27 @@ inline float compute_rate_decay(power_data& s, float& fw)
   float rate_decay = 1.f;
   if (adaptive)
   {
-    if (sqrt_rate)
-      rate_decay = InvSqrt(w[adaptive]);
+    if (sqrt_rate) { rate_decay = InvSqrt(w[adaptive]); }
     else
+    {
       rate_decay = powf(w[adaptive], s.minus_power_t);
+    }
   }
   if VW_STD17_CONSTEXPR (normalized != 0)
   {
     if (sqrt_rate)
     {
       float inv_norm = 1.f / w[normalized];
-      if (adaptive)
-        rate_decay *= inv_norm;
+      if (adaptive) { rate_decay *= inv_norm; }
       else
+      {
         rate_decay *= inv_norm * inv_norm;
+      }
     }
     else
+    {
       rate_decay *= powf(w[normalized] * w[normalized], s.neg_norm_power);
+    }
   }
   return rate_decay;
 }
@@ -500,7 +524,7 @@ inline void pred_per_update_feature(norm_data& nd, float x, float& fw)
       nd.extra_state[normalized] = w[normalized];
       w = nd.extra_state;
     }
-    if (adaptive) w[adaptive] += nd.grad_squared * x2;
+    if (adaptive) { w[adaptive] += nd.grad_squared * x2; }
     if VW_STD17_CONSTEXPR (normalized != 0)
     {
       float x_abs = fabsf(x);
@@ -546,9 +570,9 @@ float get_pred_per_update(gd& g, VW::example& ec)
   VW::workspace& all = *g.all;
 
   float grad_squared = ec.weight;
-  if (!adax) grad_squared *= all.loss->getSquareGrad(ec.pred.scalar, ld.label);
+  if (!adax) { grad_squared *= all.loss->getSquareGrad(ec.pred.scalar, ld.label); }
 
-  if (grad_squared == 0 && !stateless) return 1.;
+  if (grad_squared == 0 && !stateless) { return 1.; }
 
   norm_data nd = {grad_squared, 0., 0., {g.neg_power_t, g.neg_norm_power}, {0}, &g.all->logger};
   foreach_feature<norm_data,
@@ -578,7 +602,7 @@ template <bool sqrt_rate, bool feature_mask_off, bool adax, size_t adaptive, siz
 float sensitivity(gd& g, VW::example& ec)
 {
   if VW_STD17_CONSTEXPR (adaptive || normalized)
-    return get_pred_per_update<sqrt_rate, feature_mask_off, adax, adaptive, normalized, spare, stateless>(g, ec);
+  { return get_pred_per_update<sqrt_rate, feature_mask_off, adax, adaptive, normalized, spare, stateless>(g, ec); }
   else
   {
     _UNUSED(g);
@@ -621,10 +645,11 @@ float compute_update(gd& g, VW::example& ec)
   {
     float pred_per_update = sensitivity<sqrt_rate, feature_mask_off, adax, adaptive, normalized, spare, false>(g, ec);
     float update_scale = get_scale<adaptive>(g, ec, ec.weight);
-    if (invariant)
-      update = all.loss->getUpdate(ec.pred.scalar, ld.label, update_scale, pred_per_update);
+    if (invariant) { update = all.loss->getUpdate(ec.pred.scalar, ld.label, update_scale, pred_per_update); }
     else
+    {
       update = all.loss->getUnsafeUpdate(ec.pred.scalar, ld.label, update_scale);
+    }
     // changed from ec.partial_prediction to ld.prediction
     ec.updated_prediction += pred_per_update * update;
 
@@ -632,13 +657,13 @@ float compute_update(gd& g, VW::example& ec)
     {
       double dev1 = all.loss->first_derivative(all.sd, ec.pred.scalar, ld.label);
       double eta_bar = (fabs(dev1) > 1e-8) ? (-update / dev1) : 0.0;
-      if (fabs(dev1) > 1e-8) all.sd->contraction *= (1. - all.l2_lambda * eta_bar);
+      if (fabs(dev1) > 1e-8) { all.sd->contraction *= (1. - all.l2_lambda * eta_bar); }
       update /= static_cast<float>(all.sd->contraction);
       all.sd->gravity += eta_bar * all.l1_lambda;
     }
   }
 
-  if (sparse_l2) update -= g.sparse_l2 * ec.pred.scalar;
+  if (sparse_l2) { update -= g.sparse_l2 * ec.pred.scalar; }
 
   if (std::isnan(update))
   {
@@ -680,8 +705,10 @@ void update(gd& g, base_learner&, VW::example& ec)
 #endif
   }
 
-  if (g.all->sd->contraction < 1e-9 || g.all->sd->gravity > 1e3)  // updating weights now to avoid numerical instability
+  if (g.all->sd->contraction < 1e-9 || g.all->sd->gravity > 1e3)
+  {  // updating weights now to avoid numerical instability
     sync_weights(*g.all);
+  }
 }  // namespace GD
 
 template <bool sparse_l2, bool invariant, bool sqrt_rate, bool feature_mask_off, bool adax, size_t adaptive,
@@ -698,15 +725,21 @@ void learn(gd& g, base_learner& base, VW::example& ec)
 void sync_weights(VW::workspace& all)
 {
   // todo, fix length dependence
-  if (all.sd->gravity == 0. && all.sd->contraction == 1.)  // to avoid unnecessary weight synchronization
+  if (all.sd->gravity == 0. && all.sd->contraction == 1.)
+  {  // to avoid unnecessary weight synchronization
     return;
+  }
 
   if (all.weights.sparse)
+  {
     for (weight& w : all.weights.sparse_weights)
-      w = trunc_weight(w, static_cast<float>(all.sd->gravity)) * static_cast<float>(all.sd->contraction);
+    { w = trunc_weight(w, static_cast<float>(all.sd->gravity)) * static_cast<float>(all.sd->contraction); }
+  }
   else
+  {
     for (weight& w : all.weights.dense_weights)
-      w = trunc_weight(w, static_cast<float>(all.sd->gravity)) * static_cast<float>(all.sd->contraction);
+    { w = trunc_weight(w, static_cast<float>(all.sd->gravity)) * static_cast<float>(all.sd->contraction); }
+  }
 
   all.sd->gravity = 0.;
   all.sd->contraction = 1.;
@@ -725,7 +758,9 @@ size_t write_index(io_buf& model_file, std::stringstream& msg, bool text, uint32
     brw = bin_text_write_fixed(model_file, reinterpret_cast<char*>(&old_i), sizeof(old_i), msg, text);
   }
   else
+  {
     brw = bin_text_write_fixed(model_file, reinterpret_cast<char*>(&i), sizeof(i), msg, text);
+  }
 
   return brw;
 }
@@ -783,7 +818,9 @@ void save_load_regressor(VW::workspace& all, io_buf& model_file, bool read, bool
   uint64_t i = 0;
   uint32_t old_i = 0;
   uint64_t length = static_cast<uint64_t>(1) << all.num_bits;
-  if (read) do
+  if (read)
+  {
+    do
     {
       brw = 1;
       if (all.num_bits < 31)  // backwards compatible
@@ -792,7 +829,9 @@ void save_load_regressor(VW::workspace& all, io_buf& model_file, bool read, bool
         i = old_i;
       }
       else
+      {
         brw = model_file.bin_read_fixed(reinterpret_cast<char*>(&i), sizeof(i));
+      }
       if (brw > 0)
       {
         if (i >= length)
@@ -802,9 +841,11 @@ void save_load_regressor(VW::workspace& all, io_buf& model_file, bool read, bool
         brw += model_file.bin_read_fixed(reinterpret_cast<char*>(&(*v)), sizeof(*v));
       }
     } while (brw > 0);
+  }
   else  // write
   {
     for (typename T::iterator v = weights.begin(); v != weights.end(); ++v)
+    {
 #ifdef PRIVACY_ACTIVATION
       if (*v != 0. && (!all.privacy_activation || (weights.is_activated(v.index()) && all.privacy_activation)))
 #else
@@ -817,15 +858,17 @@ void save_load_regressor(VW::workspace& all, io_buf& model_file, bool read, bool
         msg << ":" << *v << "\n";
         brw += bin_text_write_fixed(model_file, (char*)&(*v), sizeof(*v), msg, text);
       }
+    }
   }
 }
 
 void save_load_regressor(VW::workspace& all, io_buf& model_file, bool read, bool text)
 {
-  if (all.weights.sparse)
-    save_load_regressor(all, model_file, read, text, all.weights.sparse_weights);
+  if (all.weights.sparse) { save_load_regressor(all, model_file, read, text, all.weights.sparse_weights); }
   else
+  {
     save_load_regressor(all, model_file, read, text, all.weights.dense_weights);
+  }
 }
 
 template <class T>
@@ -838,7 +881,9 @@ void save_load_online_state(VW::workspace& all, io_buf& model_file, bool read, b
   uint32_t old_i = 0;
   size_t brw = 1;
 
-  if (read) do
+  if (read)
+  {
+    do
     {
       brw = 1;
       if (all.num_bits < 31)  // backwards compatible
@@ -847,7 +892,9 @@ void save_load_online_state(VW::workspace& all, io_buf& model_file, bool read, b
         i = old_i;
       }
       else
+      {
         brw = model_file.bin_read_fixed(reinterpret_cast<char*>(&i), sizeof(i));
+      }
       if (brw > 0)
       {
         if (i >= length)
@@ -855,19 +902,27 @@ void save_load_online_state(VW::workspace& all, io_buf& model_file, bool read, b
                                                                    << length);
         weight buff[8] = {0, 0, 0, 0, 0, 0, 0, 0};
         if (ftrl_size > 0)
-          brw += model_file.bin_read_fixed(reinterpret_cast<char*>(buff), sizeof(buff[0]) * ftrl_size);
+        { brw += model_file.bin_read_fixed(reinterpret_cast<char*>(buff), sizeof(buff[0]) * ftrl_size); }
         else if (g == nullptr || (!g->adaptive_input && !g->normalized_input))
+        {
           brw += model_file.bin_read_fixed(reinterpret_cast<char*>(buff), sizeof(buff[0]));
+        }
         else if ((g->adaptive_input && !g->normalized_input) || (!g->adaptive_input && g->normalized_input))
+        {
           brw += model_file.bin_read_fixed(reinterpret_cast<char*>(buff), sizeof(buff[0]) * 2);
-        else  // adaptive and normalized
+        }
+        else
+        {  // adaptive and normalized
           brw += model_file.bin_read_fixed(reinterpret_cast<char*>(buff), sizeof(buff[0]) * 3);
+        }
         uint32_t stride = 1 << weights.stride_shift();
         weight* v = &weights.strided_index(i);
-        for (size_t j = 0; j < stride; j++) v[j] = buff[j];
+        for (size_t j = 0; j < stride; j++) { v[j] = buff[j]; }
       }
     } while (brw > 0);
-  else  // write binary or text
+  }
+  else
+  {  // write binary or text
     for (typename T::iterator v = weights.begin(); v != weights.end(); ++v)
     {
       i = v.index() >> weights.stride_shift();
@@ -948,6 +1003,7 @@ void save_load_online_state(VW::workspace& all, io_buf& model_file, bool read, b
         }
       }
     }
+  }
 }
 
 void save_load_online_state(
@@ -978,8 +1034,10 @@ void save_load_online_state(
   msg << "dump_interval " << dump_interval << "\n";
   bin_text_read_write_fixed(
       model_file, reinterpret_cast<char*>(&dump_interval), sizeof(dump_interval), read, msg, text);
-  if (!read || (all.training && all.preserve_performance_counters))  // update dump_interval from input model
+  if (!read || (all.training && all.preserve_performance_counters))
+  {  // update dump_interval from input model
     all.sd->dump_interval = dump_interval;
+  }
 
   msg << "min_label " << all.sd->min_label << "\n";
   bin_text_read_write_fixed(
@@ -1026,8 +1084,10 @@ void save_load_online_state(
     // fix "number of examples per pass"
     msg << "current_pass " << all.current_pass << "\n";
     if (all.model_file_ver >= VW::version_definitions::VERSION_PASS_UINT64)
+    {
       bin_text_read_write_fixed(
           model_file, reinterpret_cast<char*>(&all.current_pass), sizeof(all.current_pass), read, msg, text);
+    }
     else  // backwards compatiblity.
     {
       size_t temp_pass = static_cast<size_t>(all.current_pass);
@@ -1080,9 +1140,11 @@ void save_load_online_state(
     all.current_pass = 0;
   }
   if (all.weights.sparse)
-    save_load_online_state(all, model_file, read, text, g, msg, ftrl_size, all.weights.sparse_weights);
+  { save_load_online_state(all, model_file, read, text, g, msg, ftrl_size, all.weights.sparse_weights); }
   else
+  {
     save_load_online_state(all, model_file, read, text, g, msg, ftrl_size, all.weights.dense_weights);
+  }
 }
 
 void save_load(gd& g, io_buf& model_file, bool read, bool text)
@@ -1110,7 +1172,7 @@ void save_load(gd& g, io_buf& model_file, bool read, bool text)
       // stored in memory at each update, and always start sum of gradients to 0, at the price of additional additions
       // and multiplications during the update...
     }
-    if (g.initial_constant != 0.0) VW::set_weight(all, constant, 0, g.initial_constant);
+    if (g.initial_constant != 0.0) { VW::set_weight(all, constant, 0, g.initial_constant); }
   }
 
   if (model_file.num_files() > 0)
@@ -1135,9 +1197,11 @@ void save_load(gd& g, io_buf& model_file, bool read, bool text)
       save_load_regressor(all, model_file, read, text);
     }
   }
-  if (!all.training)  // If the regressor was saved without --predict_only_model, then when testing we want to
-                      // materialize the weights.
+  if (!all.training)
+  {  // If the regressor was saved without --predict_only_model, then when testing we want to
+     // materialize the weights.
     sync_weights(all);
+  }
 }
 
 template <bool sparse_l2, bool invariant, bool sqrt_rate, bool feature_mask_off, uint64_t adaptive, uint64_t normalized,
@@ -1167,27 +1231,33 @@ uint64_t set_learn(VW::workspace& all, bool feature_mask_off, gd& g)
 {
   all.normalized_idx = normalized;
   if (feature_mask_off)
-    return set_learn<sparse_l2, invariant, sqrt_rate, true, adaptive, normalized, spare, next>(all, g);
+  { return set_learn<sparse_l2, invariant, sqrt_rate, true, adaptive, normalized, spare, next>(all, g); }
   else
+  {
     return set_learn<sparse_l2, invariant, sqrt_rate, false, adaptive, normalized, spare, next>(all, g);
+  }
 }
 
 template <bool invariant, bool sqrt_rate, uint64_t adaptive, uint64_t normalized, uint64_t spare, uint64_t next>
 uint64_t set_learn(VW::workspace& all, bool feature_mask_off, gd& g)
 {
   if (g.sparse_l2 > 0.f)
-    return set_learn<true, invariant, sqrt_rate, adaptive, normalized, spare, next>(all, feature_mask_off, g);
+  { return set_learn<true, invariant, sqrt_rate, adaptive, normalized, spare, next>(all, feature_mask_off, g); }
   else
+  {
     return set_learn<false, invariant, sqrt_rate, adaptive, normalized, spare, next>(all, feature_mask_off, g);
+  }
 }
 
 template <bool sqrt_rate, uint64_t adaptive, uint64_t normalized, uint64_t spare, uint64_t next>
 uint64_t set_learn(VW::workspace& all, bool feature_mask_off, gd& g)
 {
   if (all.invariant_updates)
-    return set_learn<true, sqrt_rate, adaptive, normalized, spare, next>(all, feature_mask_off, g);
+  { return set_learn<true, sqrt_rate, adaptive, normalized, spare, next>(all, feature_mask_off, g); }
   else
+  {
     return set_learn<false, sqrt_rate, adaptive, normalized, spare, next>(all, feature_mask_off, g);
+  }
 }
 
 template <bool sqrt_rate, uint64_t adaptive, uint64_t spare>
@@ -1195,26 +1265,30 @@ uint64_t set_learn(VW::workspace& all, bool feature_mask_off, gd& g)
 {
   // select the appropriate learn function based on adaptive, normalization, and feature mask
   if (all.weights.normalized)
-    return set_learn<sqrt_rate, adaptive, adaptive + 1, adaptive + 2, adaptive + 3>(all, feature_mask_off, g);
+  { return set_learn<sqrt_rate, adaptive, adaptive + 1, adaptive + 2, adaptive + 3>(all, feature_mask_off, g); }
   else
+  {
     return set_learn<sqrt_rate, adaptive, 0, spare, spare + 1>(all, feature_mask_off, g);
+  }
 }
 
 template <bool sqrt_rate>
 uint64_t set_learn(VW::workspace& all, bool feature_mask_off, gd& g)
 {
-  if (all.weights.adaptive)
-    return set_learn<sqrt_rate, 1, 2>(all, feature_mask_off, g);
+  if (all.weights.adaptive) { return set_learn<sqrt_rate, 1, 2>(all, feature_mask_off, g); }
   else
+  {
     return set_learn<sqrt_rate, 0, 0>(all, feature_mask_off, g);
+  }
 }
 
 uint64_t ceil_log_2(uint64_t v)
 {
-  if (v == 0)
-    return 0;
+  if (v == 0) { return 0; }
   else
+  {
     return 1 + ceil_log_2(v >> 1);
+  }
 }
 
 base_learner* setup(VW::setup_base_i& stack_builder)
@@ -1274,7 +1348,7 @@ base_learner* setup(VW::setup_base_i& stack_builder)
   }
 
   bool feature_mask_off = true;
-  if (options.was_supplied("feature_mask")) feature_mask_off = false;
+  if (options.was_supplied("feature_mask")) { feature_mask_off = false; }
 
   if (!all.holdout_set_off)
   {
@@ -1293,7 +1367,9 @@ base_learner* setup(VW::setup_base_i& stack_builder)
 
     if (!options.was_supplied("learning_rate") && !options.was_supplied("l") &&
         !(all.weights.adaptive && all.weights.normalized))
+    {
       all.eta = 10;  // default learning rate to 10 for non default update rule
+    }
 
     // if not using normalized or adaptive, default initial_t to 1 instead of 0
     if (!all.weights.adaptive && !all.weights.normalized)
@@ -1316,7 +1392,7 @@ base_learner* setup(VW::setup_base_i& stack_builder)
   all.weights.adaptive = all.weights.adaptive && all.training;
   all.weights.normalized = all.weights.normalized && all.training;
 
-  if (adax) g->adax = all.training && adax;
+  if (adax) { g->adax = all.training && adax; }
 
   if (g->adax && !all.weights.adaptive) THROW("Cannot use adax without adaptive");
 
@@ -1328,6 +1404,7 @@ base_learner* setup(VW::setup_base_i& stack_builder)
   }
 
   if (all.reg_mode % 2)
+  {
     if (all.audit || all.hash_inv)
     {
       g->predict = predict<true, true>;
@@ -1338,6 +1415,7 @@ base_learner* setup(VW::setup_base_i& stack_builder)
       g->predict = predict<true, false>;
       g->multipredict = multipredict<true, false>;
     }
+  }
   else if (all.audit || all.hash_inv)
   {
     g->predict = predict<false, true>;
@@ -1350,10 +1428,11 @@ base_learner* setup(VW::setup_base_i& stack_builder)
   }
 
   uint64_t stride;
-  if (all.power_t == 0.5)
-    stride = set_learn<true>(all, feature_mask_off, *g.get());
+  if (all.power_t == 0.5) { stride = set_learn<true>(all, feature_mask_off, *g.get()); }
   else
+  {
     stride = set_learn<false>(all, feature_mask_off, *g.get());
+  }
 
   all.weights.stride_shift(static_cast<uint32_t>(ceil_log_2(stride - 1)));
 

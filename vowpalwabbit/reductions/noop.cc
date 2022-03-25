@@ -22,7 +22,7 @@ VW::LEARNER::base_learner* noop_setup(VW::setup_base_i& stack_builder)
   option_group_definition new_options("[Reduction] Noop Base Learner");
   new_options.add(make_option("noop", noop).keep().necessary().help("Do no learning"));
 
-  if (!options.add_parse_and_check_necessary(new_options)) return nullptr;
+  if (!options.add_parse_and_check_necessary(new_options)) { return nullptr; }
 
   // While the learn function doesnt use anything, the implicit finish function expects scalar and simple.
   // This can change if we change the finish function.

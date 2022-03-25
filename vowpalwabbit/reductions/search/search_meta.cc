@@ -117,7 +117,10 @@ void run(Search::search& sch, VW::multi_ex& ec)
       .foreach_action([](Search::search& sch, size_t t, float min_cost, action a, bool taken, float a_cost) -> void {
         cdbg << "==DebugMT== foreach_action(t=" << t << ", min_cost=" << min_cost << ", a=" << a << ", taken=" << taken
              << ", a_cost=" << a_cost << ")" << std::endl;
-        if (taken) return;  // ignore the taken action
+        if (taken)
+        {
+          return;  // ignore the taken action
+        }
         task_data& d = *sch.get_metatask_data<task_data>();
         float delta = a_cost - min_cost;
         std::vector<act_score> branch;
@@ -165,7 +168,7 @@ void run(Search::search& sch, VW::multi_ex& ec)
         .maybe_override_prediction([](Search::search& sch, size_t t, action& a, float& a_cost) -> bool {
           task_data& d = *sch.get_metatask_data<task_data>();
           path& path = d.branches[d.cur_branch].second;
-          if (t >= path.size()) return false;
+          if (t >= path.size()) { return false; }
           a = path[t].first;
           a_cost = path[t].second;
           return true;
@@ -198,7 +201,7 @@ void run(Search::search& sch, VW::multi_ex& ec)
   {
     d.kbest_out = new std::stringstream();
     for (size_t i = 0; i < std::min(d.final.size(), d.kbest); i++)
-      (*d.kbest_out) << *d.final[i].second << "\t" << d.final[i].first.first << std::endl;
+    { (*d.kbest_out) << *d.final[i].second << "\t" << d.final[i].first.first << std::endl; }
   }
 
   // run the final selected trajectory
@@ -211,7 +214,7 @@ void run(Search::search& sch, VW::multi_ex& ec)
       .maybe_override_prediction([](Search::search& sch, size_t t, action& a, float& a_cost) -> bool {
         task_data& d = *sch.get_metatask_data<task_data>();
         path& path = d.final[d.cur_branch].first.second;
-        if ((t >= path.size()) || (path[t].first == static_cast<action>(-1))) return false;
+        if ((t >= path.size()) || (path[t].first == static_cast<action>(-1))) { return false; }
         a = path[t].first;
         a_cost = path[t].second;
         return true;

@@ -169,7 +169,7 @@ VW::LEARNER::base_learner* metrics_setup(VW::setup_base_i& stack_builder)
                       .necessary()
                       .help("Specify filename to write metrics to. Note: There is no fixed schema"));
 
-  if (!options.add_parse_and_check_necessary(new_options)) return nullptr;
+  if (!options.add_parse_and_check_necessary(new_options)) { return nullptr; }
 
   if (data->out_file.empty()) THROW("extra_metrics argument (output filename) is missing.");
 

@@ -82,7 +82,7 @@ void run(VW::workspace& vw_obj)
   task.learn(data, output);
   task.predict(data, output);
   cerr << "output = [";
-  for (size_t i=0; i<output.size(); i++) cerr << " " << output[i];
+  for (size_t i = 0; i < output.size(); i++) { cerr << " " << output[i]; }
   cerr << " ]" << endl;
   cerr << "should have printed: 1 2 3 1 4 2" << endl;
 }
@@ -113,7 +113,7 @@ void test_buildin_task()
       "../vowpalwabbit/vw -c -k --holdout_off --passes 20 --search 4 --search_task sequence -d "
       "../../test/train-sets/sequence_data -f "
       "sequence.model");
-  if (ret != 0) cerr << "../vowpalwabbit/vw failed" << endl;
+  if (ret != 0) { cerr << "../vowpalwabbit/vw failed" << endl; }
 
   // now, load that model using the BuiltInTask library
   cerr << endl << endl << "##### test BuiltInTask #####" << endl << endl;
@@ -129,11 +129,9 @@ void test_buildin_task()
     std::vector<action> out;
     task.predict(V, out);
     cerr << "out (should be 1 2 3 4 3) =";
-    for (size_t i=0; i<out.size(); i++)
-      cerr << " " << out[i];
+    for (size_t i = 0; i < out.size(); i++) { cerr << " " << out[i]; }
     cerr << endl;
-    for (size_t i=0; i<V.size(); i++)
-      VW::finish_example(vw_obj, *V[i]);
+    for (size_t i = 0; i < V.size(); i++) { VW::finish_example(vw_obj, *V[i]); }
   }
 
   VW::finish(vw_obj, false);

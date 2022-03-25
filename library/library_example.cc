@@ -54,7 +54,10 @@ int main(int argc, char *argv[])
   for (size_t i = 0; i < len; i++)
   { std::cout << "namespace = " << pfs[i].name;
     for (size_t j = 0; j < pfs[i].len; j++)
-      std::cout << " " << pfs[i].fs[j].weight_index << ":" << pfs[i].fs[j].x << ":" << VW::get_weight(*model2, static_cast<uint32_t>(pfs[i].fs[j].weight_index), 0);
+    {
+      std::cout << " " << pfs[i].fs[j].weight_index << ":" << pfs[i].fs[j].x << ":"
+                << VW::get_weight(*model2, static_cast<uint32_t>(pfs[i].fs[j].weight_index), 0);
+    }
     std::cout << std::endl;
   }
 

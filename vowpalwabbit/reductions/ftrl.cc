@@ -86,7 +86,7 @@ void predict(ftrl& b, base_learner&, VW::example& ec)
   ec.partial_prediction = GD::inline_predict(*b.all, ec, num_features_from_interactions);
   ec.num_features_from_interactions = num_features_from_interactions;
   ec.pred.scalar = GD::finalize_prediction(b.all->sd, b.all->logger, ec.partial_prediction);
-  if (audit) GD::print_audit_features(*(b.all), ec);
+  if (audit) { GD::print_audit_features(*(b.all), ec); }
 }
 
 template <bool audit>
@@ -116,9 +116,13 @@ void multipredict(ftrl& b, base_learner&, VW::example& ec, size_t count, size_t 
   }
   ec.num_features_from_interactions = num_features_from_interactions;
   if (all.sd->contraction != 1.)
-    for (size_t c = 0; c < count; c++) pred[c].scalar *= static_cast<float>(all.sd->contraction);
+  {
+    for (size_t c = 0; c < count; c++) { pred[c].scalar *= static_cast<float>(all.sd->contraction); }
+  }
   if (finalize_predictions)
-    for (size_t c = 0; c < count; c++) pred[c].scalar = GD::finalize_prediction(all.sd, all.logger, pred[c].scalar);
+  {
+    for (size_t c = 0; c < count; c++) { pred[c].scalar = GD::finalize_prediction(all.sd, all.logger, pred[c].scalar); }
+  }
   if (audit)
   {
     for (size_t c = 0; c < count; c++)
@@ -144,8 +148,7 @@ void inner_update_proximal(ftrl_update_data& d, float x, float& wref)
   sqrt_wW_G2 = sqrt_ng2;
   float flag = sign(w[W_ZT]);
   float fabs_zt = w[W_ZT] * flag;
-  if (fabs_zt <= d.l1_lambda)
-    w[W_XT] = 0.;
+  if (fabs_zt <= d.l1_lambda) { w[W_XT] = 0.; }
   else
   {
     float step = 1 / (d.l2_lambda + (d.ftrl_beta + sqrt_wW_G2) / d.ftrl_alpha);
@@ -158,7 +161,7 @@ void inner_update_pistol_state_and_predict(ftrl_update_data& d, float x, float& 
   float* w = &wref;
 
   float fabs_x = std::fabs(x);
-  if (fabs_x > w[W_MX]) w[W_MX] = fabs_x;
+  if (fabs_x > w[W_MX]) { w[W_MX] = fabs_x; }
 
   float squared_theta = w[W_ZT] * w[W_ZT];
   float tmp = 1.f / (d.ftrl_alpha * w[W_MX] * (w[W_G2] + w[W_MX]));
@@ -193,7 +196,8 @@ void inner_coin_betting_predict(ftrl_update_data& d, float x, float& wref)
   if (fabs_x > w_mx) { w_mx = fabs_x; }
 
   // COCOB update without sigmoid
-  if (w[W_MG] * w_mx > 0) w_xt = ((d.ftrl_alpha + w[W_WE]) / (w[W_MG] * w_mx * (w[W_MG] * w_mx + w[W_G2]))) * w[W_ZT];
+  if (w[W_MG] * w_mx > 0)
+  { w_xt = ((d.ftrl_alpha + w[W_WE]) / (w[W_MG] * w_mx * (w[W_MG] * w_mx + w[W_G2]))) * w[W_ZT]; }
 
   d.predict += w_xt * x;
   if (w_mx > 0)
@@ -212,15 +216,17 @@ void inner_coin_betting_update_after_prediction(ftrl_update_data& d, float x, fl
   if (fabs_x > w[W_MX]) { w[W_MX] = fabs_x; }
 
   float fabs_gradient = std::fabs(d.update);
-  if (fabs_gradient > w[W_MG]) w[W_MG] = fabs_gradient > d.ftrl_beta ? fabs_gradient : d.ftrl_beta;
+  if (fabs_gradient > w[W_MG]) { w[W_MG] = fabs_gradient > d.ftrl_beta ? fabs_gradient : d.ftrl_beta; }
 
   // COCOB update without sigmoid.
   // If a new Lipschitz constant and/or magnitude of x is found, the w is
   // recalculated and used in the update of the wealth below.
   if (w[W_MG] * w[W_MX] > 0)
-    w[W_XT] = ((d.ftrl_alpha + w[W_WE]) / (w[W_MG] * w[W_MX] * (w[W_MG] * w[W_MX] + w[W_G2]))) * w[W_ZT];
+  { w[W_XT] = ((d.ftrl_alpha + w[W_WE]) / (w[W_MG] * w[W_MX] * (w[W_MG] * w[W_MX] + w[W_G2]))) * w[W_ZT]; }
   else
+  {
     w[W_XT] = 0;
+  }
 
   w[W_ZT] += -gradient;
   w[W_G2] += std::fabs(gradient);
@@ -356,7 +362,7 @@ void learn_pistol(ftrl& a, base_learner& base, VW::example& ec)
 {
   // update state based on the example and predict
   update_state_and_predict_pistol(a, base, ec);
-  if (audit) GD::print_audit_features(*(a.all), ec);
+  if (audit) { GD::print_audit_features(*(a.all), ec); }
   // update state based on the prediction
   update_after_prediction_pistol(a, ec);
 }
@@ -366,7 +372,7 @@ void learn_coin_betting(ftrl& a, base_learner& base, VW::example& ec)
 {
   // update state based on the example and predict
   coin_betting_predict(a, base, ec);
-  if (audit) GD::print_audit_features(*(a.all), ec);
+  if (audit) { GD::print_audit_features(*(a.all), ec); }
   // update state based on the prediction
   coin_betting_update_after_prediction(a, ec);
 }
@@ -374,7 +380,7 @@ void learn_coin_betting(ftrl& a, base_learner& base, VW::example& ec)
 void save_load(ftrl& b, io_buf& model_file, bool read, bool text)
 {
   VW::workspace* all = b.all;
-  if (read) initialize_regressor(*all);
+  if (read) { initialize_regressor(*all); }
 
   if (model_file.num_files() != 0)
   {
@@ -383,10 +389,11 @@ void save_load(ftrl& b, io_buf& model_file, bool read, bool text)
     msg << ":" << resume << "\n";
     bin_text_read_write_fixed(model_file, reinterpret_cast<char*>(&resume), sizeof(resume), read, msg, text);
 
-    if (resume)
-      GD::save_load_online_state(*all, model_file, read, text, b.total_weight, nullptr, b.ftrl_size);
+    if (resume) { GD::save_load_online_state(*all, model_file, read, text, b.total_weight, nullptr, b.ftrl_size); }
     else
+    {
       GD::save_load_regressor(*all, model_file, read, text);
+    }
   }
 }
 
@@ -396,10 +403,10 @@ void end_pass(ftrl& g)
 
   if (!all.holdout_set_off)
   {
-    if (summarize_holdout_set(all, g.no_win_counter)) finalize_regressor(all, all.final_regressor_name);
+    if (summarize_holdout_set(all, g.no_win_counter)) { finalize_regressor(all, all.final_regressor_name); }
     if ((g.early_stop_thres == g.no_win_counter) &&
         ((all.check_holdout_every_n_passes <= 1) || ((all.current_pass % all.check_holdout_every_n_passes) == 0)))
-      set_done(all);
+    { set_done(all); }
   }
 }
 
