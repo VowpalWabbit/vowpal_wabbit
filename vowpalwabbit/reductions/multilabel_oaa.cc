@@ -126,7 +126,7 @@ VW::LEARNER::base_learner* multilabel_oaa_setup(VW::setup_base_i& stack_builder)
       data->link = "logistic";
     }
     pred_type = VW::prediction_type_t::scalars;
-    auto loss_function_type = all.loss->getType();
+    auto loss_function_type = all.loss->get_type();
     if (loss_function_type != "logistic")
     {
       all.logger.out_warn(

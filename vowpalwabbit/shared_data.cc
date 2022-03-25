@@ -345,7 +345,7 @@ void shared_data::print_update(std::ostream& output_stream, bool holdout_set_off
   update_dump_interval(progress_add, progress_arg);
 }
 
-void shared_data::print_summary(std::ostream& output, const shared_data& sd, const loss_function& loss_func,
+void shared_data::print_summary(std::ostream& output, const shared_data& sd, const VW::loss_function& loss_func,
     uint64_t current_pass, bool holdout_set_off) const
 {
   auto saved_precision = output.precision();
