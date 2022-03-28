@@ -42,7 +42,7 @@ void bs_predict_mean(VW::workspace& all, VW::example& ec, std::vector<double>& p
 {
   ec.pred.scalar = static_cast<float>(accumulate(pred_vec.cbegin(), pred_vec.cend(), 0.0)) / pred_vec.size();
   if (ec.weight > 0 && ec.l.simple.label != FLT_MAX)
-  { ec.loss = all.loss->getLoss(all.sd, ec.pred.scalar, ec.l.simple.label) * ec.weight; }
+  { ec.loss = all.loss->get_loss(all.sd, ec.pred.scalar, ec.l.simple.label) * ec.weight; }
 }
 
 void bs_predict_vote(VW::example& ec, std::vector<double>& pred_vec)
@@ -50,7 +50,7 @@ void bs_predict_vote(VW::example& ec, std::vector<double>& pred_vec)
   // majority vote in linear time
   unsigned int counter = 0;
   int current_label = 1, init_label = 1;
-  // float sum_labels = 0; // uncomment for: "avg on votes" and getLoss()
+  // float sum_labels = 0; // uncomment for: "avg on votes" and get_loss()
   bool majority_found = false;
   bool multivote_detected = false;  // distinct(votes)>2: used to skip part of the algorithm
   std::vector<int> pred_vec_int(pred_vec.size(), 0);
@@ -88,7 +88,7 @@ void bs_predict_vote(VW::example& ec, std::vector<double>& pred_vec)
     }
   }
 
-  if (counter > 0 && multivote_detected)  // remove this condition for: "avg on votes" and getLoss()
+  if (counter > 0 && multivote_detected)  // remove this condition for: "avg on votes" and get_loss()
   {
     counter = 0;
     for (unsigned int i = 0; i < pred_vec.size(); i++)
@@ -96,7 +96,7 @@ void bs_predict_vote(VW::example& ec, std::vector<double>& pred_vec)
       if (pred_vec_int[i] == current_label)
       {
         counter++;
-        // sum_labels += pred_vec[i]; // uncomment for: "avg on votes" and getLoss()
+        // sum_labels += pred_vec[i]; // uncomment for: "avg on votes" and get_loss()
       }
     }
     if (counter * 2 > pred_vec.size()) { majority_found = true; }
@@ -121,17 +121,17 @@ void bs_predict_vote(VW::example& ec, std::vector<double>& pred_vec)
         temp_count = 1;
       }
     }
-    /* uncomment for: "avg on votes" and getLoss()
+    /* uncomment for: "avg on votes" and get_loss()
     sum_labels = 0;
     for(unsigned int i=0; i<pred_vec.size(); i++)
       if(pred_vec_int[i] == current_label)
         sum_labels += pred_vec[i]; */
   }
-  // ld.prediction = sum_labels/(float)counter; //replace line below for: "avg on votes" and getLoss()
+  // ld.prediction = sum_labels/(float)counter; //replace line below for: "avg on votes" and get_loss()
   ec.pred.scalar = static_cast<float>(current_label);
 
-  // ec.loss = all.loss->getLoss(all.sd, ld.prediction, ld.label) * ec.weight; //replace line below for: "avg on votes"
-  // and getLoss()
+  // ec.loss = all.loss->get_loss(all.sd, ld.prediction, ld.label) * ec.weight; //replace line below for: "avg on votes"
+  // and get_loss()
   ec.loss = ((ec.pred.scalar == ec.l.simple.label) ? 0.f : 1.f) * ec.weight;
 }
 

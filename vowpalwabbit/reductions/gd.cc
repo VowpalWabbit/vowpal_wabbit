@@ -570,7 +570,7 @@ float get_pred_per_update(gd& g, VW::example& ec)
   VW::workspace& all = *g.all;
 
   float grad_squared = ec.weight;
-  if (!adax) { grad_squared *= all.loss->getSquareGrad(ec.pred.scalar, ld.label); }
+  if (!adax) { grad_squared *= all.loss->get_square_grad(ec.pred.scalar, ld.label); }
 
   if (grad_squared == 0 && !stateless) { return 1.; }
 
@@ -641,14 +641,14 @@ float compute_update(gd& g, VW::example& ec)
 
   float update = 0.;
   ec.updated_prediction = ec.pred.scalar;
-  if (all.loss->getLoss(all.sd, ec.pred.scalar, ld.label) > 0.)
+  if (all.loss->get_loss(all.sd, ec.pred.scalar, ld.label) > 0.)
   {
     float pred_per_update = sensitivity<sqrt_rate, feature_mask_off, adax, adaptive, normalized, spare, false>(g, ec);
     float update_scale = get_scale<adaptive>(g, ec, ec.weight);
-    if (invariant) { update = all.loss->getUpdate(ec.pred.scalar, ld.label, update_scale, pred_per_update); }
+    if (invariant) { update = all.loss->get_update(ec.pred.scalar, ld.label, update_scale, pred_per_update); }
     else
     {
-      update = all.loss->getUnsafeUpdate(ec.pred.scalar, ld.label, update_scale);
+      update = all.loss->get_unsafe_update(ec.pred.scalar, ld.label, update_scale);
     }
     // changed from ec.partial_prediction to ld.prediction
     ec.updated_prediction += pred_per_update * update;

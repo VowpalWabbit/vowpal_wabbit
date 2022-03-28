@@ -352,7 +352,7 @@ base_learner* cs_active_setup(VW::setup_base_i& stack_builder)
   data->all = &all;
   data->t = 1;
 
-  auto loss_function_type = all.loss->getType();
+  auto loss_function_type = all.loss->get_type();
   if (loss_function_type != "squared") THROW("non-squared loss can't be used with --cs_active");
 
   if (options.was_supplied("lda")) THROW("lda can't be combined with active learning");
