@@ -2,6 +2,8 @@
 // individual contributors. All rights reserved. Released under a BSD (revised)
 // license as described in the file LICENSE.
 
+#include "reductions/sender.h"
+
 #include "learner.h"
 #include "setup_base.h"
 #include "vw_fwd.h"
@@ -35,6 +37,8 @@
 
 using namespace VW::config;
 
+namespace
+{
 struct sender
 {
   io_buf* buf = nullptr;
@@ -85,7 +89,7 @@ void receive_result(sender& s)
   ec.pred.scalar = res;
 
   label_data& ld = ec.l.simple;
-  ec.loss = s.all->loss->getLoss(s.all->sd, ec.pred.scalar, ld.label) * ec.weight;
+  ec.loss = s.all->loss->get_loss(s.all->sd, ec.pred.scalar, ld.label) * ec.weight;
 
   return_simple_example(*(s.all), nullptr, ec);
 }
@@ -110,8 +114,9 @@ void end_examples(sender& s)
   while (s.received_index != s.sent_index) { receive_result(s); }
   s.buf->close_files();
 }
+}  // namespace
 
-VW::LEARNER::base_learner* sender_setup(VW::setup_base_i& stack_builder)
+VW::LEARNER::base_learner* VW::reductions::sender_setup(VW::setup_base_i& stack_builder)
 {
   VW::config::options_i& options = *stack_builder.get_options();
   VW::workspace& all = *stack_builder.get_all_pointer();

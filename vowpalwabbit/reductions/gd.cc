@@ -570,7 +570,7 @@ float get_pred_per_update(gd& g, VW::example& ec)
   VW::workspace& all = *g.all;
 
   float grad_squared = ec.weight;
-  if (!adax) { grad_squared *= all.loss->getSquareGrad(ec.pred.scalar, ld.label); }
+  if (!adax) { grad_squared *= all.loss->get_square_grad(ec.pred.scalar, ld.label); }
 
   if (grad_squared == 0 && !stateless) { return 1.; }
 
@@ -641,14 +641,14 @@ float compute_update(gd& g, VW::example& ec)
 
   float update = 0.;
   ec.updated_prediction = ec.pred.scalar;
-  if (all.loss->getLoss(all.sd, ec.pred.scalar, ld.label) > 0.)
+  if (all.loss->get_loss(all.sd, ec.pred.scalar, ld.label) > 0.)
   {
     float pred_per_update = sensitivity<sqrt_rate, feature_mask_off, adax, adaptive, normalized, spare, false>(g, ec);
     float update_scale = get_scale<adaptive>(g, ec, ec.weight);
-    if (invariant) { update = all.loss->getUpdate(ec.pred.scalar, ld.label, update_scale, pred_per_update); }
+    if (invariant) { update = all.loss->get_update(ec.pred.scalar, ld.label, update_scale, pred_per_update); }
     else
     {
-      update = all.loss->getUnsafeUpdate(ec.pred.scalar, ld.label, update_scale);
+      update = all.loss->get_unsafe_update(ec.pred.scalar, ld.label, update_scale);
     }
     // changed from ec.partial_prediction to ld.prediction
     ec.updated_prediction += pred_per_update * update;
@@ -1291,12 +1291,14 @@ uint64_t ceil_log_2(uint64_t v)
   }
 }
 
-base_learner* setup(VW::setup_base_i& stack_builder)
+}  // namespace GD
+
+base_learner* VW::reductions::gd_setup(VW::setup_base_i& stack_builder)
 {
   options_i& options = *stack_builder.get_options();
   VW::workspace& all = *stack_builder.get_all_pointer();
 
-  auto g = VW::make_unique<gd>();
+  auto g = VW::make_unique<GD::gd>();
 
   bool sgd = false;
   bool adaptive = false;
@@ -1407,47 +1409,45 @@ base_learner* setup(VW::setup_base_i& stack_builder)
   {
     if (all.audit || all.hash_inv)
     {
-      g->predict = predict<true, true>;
-      g->multipredict = multipredict<true, true>;
+      g->predict = GD::predict<true, true>;
+      g->multipredict = GD::multipredict<true, true>;
     }
     else
     {
-      g->predict = predict<true, false>;
-      g->multipredict = multipredict<true, false>;
+      g->predict = GD::predict<true, false>;
+      g->multipredict = GD::multipredict<true, false>;
     }
   }
   else if (all.audit || all.hash_inv)
   {
-    g->predict = predict<false, true>;
-    g->multipredict = multipredict<false, true>;
+    g->predict = GD::predict<false, true>;
+    g->multipredict = GD::multipredict<false, true>;
   }
   else
   {
-    g->predict = predict<false, false>;
-    g->multipredict = multipredict<false, false>;
+    g->predict = GD::predict<false, false>;
+    g->multipredict = GD::multipredict<false, false>;
   }
 
   uint64_t stride;
-  if (all.power_t == 0.5) { stride = set_learn<true>(all, feature_mask_off, *g.get()); }
+  if (all.power_t == 0.5) { stride = GD::set_learn<true>(all, feature_mask_off, *g.get()); }
   else
   {
-    stride = set_learn<false>(all, feature_mask_off, *g.get());
+    stride = GD::set_learn<false>(all, feature_mask_off, *g.get());
   }
 
-  all.weights.stride_shift(static_cast<uint32_t>(ceil_log_2(stride - 1)));
+  all.weights.stride_shift(static_cast<uint32_t>(GD::ceil_log_2(stride - 1)));
 
-  gd* bare = g.get();
-  learner<gd, VW::example>* l = make_base_learner(std::move(g), g->learn, bare->predict,
-      stack_builder.get_setupfn_name(setup), VW::prediction_type_t::scalar, VW::label_type_t::simple)
-                                    .set_learn_returns_prediction(true)
-                                    .set_params_per_weight(UINT64_ONE << all.weights.stride_shift())
-                                    .set_sensitivity(bare->sensitivity)
-                                    .set_multipredict(bare->multipredict)
-                                    .set_update(bare->update)
-                                    .set_save_load(save_load)
-                                    .set_end_pass(end_pass)
-                                    .build();
+  auto* bare = g.get();
+  learner<GD::gd, VW::example>* l = make_base_learner(std::move(g), g->learn, bare->predict,
+      stack_builder.get_setupfn_name(gd_setup), VW::prediction_type_t::scalar, VW::label_type_t::simple)
+                                        .set_learn_returns_prediction(true)
+                                        .set_params_per_weight(UINT64_ONE << all.weights.stride_shift())
+                                        .set_sensitivity(bare->sensitivity)
+                                        .set_multipredict(bare->multipredict)
+                                        .set_update(bare->update)
+                                        .set_save_load(GD::save_load)
+                                        .set_end_pass(GD::end_pass)
+                                        .build();
   return make_base(*l);
 }
-
-}  // namespace GD
