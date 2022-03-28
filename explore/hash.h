@@ -39,7 +39,6 @@ namespace VW
 {
 namespace details
 {
-
 // All modern compilers will optimize this to the rotate intrinsic.
 constexpr inline uint32_t rotl32(uint32_t x, int8_t r) noexcept { return (x << r) | (x >> (32 - r)); }
 
