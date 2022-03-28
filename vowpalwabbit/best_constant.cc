@@ -45,7 +45,7 @@ bool VW::get_best_constant(
 
   if ((label1_cnt + label2_cnt) <= 0.) { return false; }
 
-  auto funcName = loss_func.getType();
+  auto funcName = loss_func.get_type();
   if (funcName == "squared" || funcName == "Huber" || funcName == "classic")
   { best_constant = static_cast<float>(sd.weighted_labels) / static_cast<float>(sd.weighted_labeled_examples); }
   else if (sd.is_more_than_two_labels_observed)
@@ -74,7 +74,7 @@ bool VW::get_best_constant(
   }
   else if (funcName == "quantile" || funcName == "pinball" || funcName == "absolute")
   {
-    float tau = loss_func.getParameter();
+    float tau = loss_func.get_parameter();
     float q = tau * (label1_cnt + label2_cnt);
     if (q < label2_cnt) { best_constant = label2; }
     else
@@ -89,8 +89,8 @@ bool VW::get_best_constant(
 
   if (!sd.is_more_than_two_labels_observed)
   {
-    best_constant_loss = (label1_cnt > 0) ? loss_func.getLoss(&sd, best_constant, label1) * label1_cnt : 0.0f;
-    best_constant_loss += (label2_cnt > 0) ? loss_func.getLoss(&sd, best_constant, label2) * label2_cnt : 0.0f;
+    best_constant_loss = (label1_cnt > 0) ? loss_func.get_loss(&sd, best_constant, label1) * label1_cnt : 0.0f;
+    best_constant_loss += (label2_cnt > 0) ? loss_func.get_loss(&sd, best_constant, label2) * label2_cnt : 0.0f;
     best_constant_loss /= label1_cnt + label2_cnt;
   }
   else
