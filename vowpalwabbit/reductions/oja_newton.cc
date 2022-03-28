@@ -1,6 +1,8 @@
 // Copyright (c) by respective owners including Yahoo!, Microsoft, and
 // individual contributors. All rights reserved. Released under a BSD (revised)
 // license as described in the file LICENSE.
+#include "oja_newton.h"
+
 #include "gd.h"
 #include "loss_functions.h"
 #include "parse_regressor.h"
@@ -18,6 +20,8 @@ using namespace VW::config;
 
 #define NORM2 (m + 1)
 
+namespace
+{
 struct oja_n_update_data
 {
   struct OjaNewton* ON = nullptr;
@@ -482,8 +486,9 @@ void save_load(OjaNewton& ON, io_buf& model_file, bool read, bool text)
     }
   }
 }
+}  // namespace
 
-base_learner* OjaNewton_setup(VW::setup_base_i& stack_builder)
+base_learner* VW::reductions::oja_newton_setup(VW::setup_base_i& stack_builder)
 {
   options_i& options = *stack_builder.get_options();
   VW::workspace& all = *stack_builder.get_all_pointer();
@@ -551,7 +556,7 @@ base_learner* OjaNewton_setup(VW::setup_base_i& stack_builder)
 
   all.weights.stride_shift(static_cast<uint32_t>(ceil(log2(ON->m + 2))));
 
-  auto* l = make_base_learner(std::move(ON), learn, predict, stack_builder.get_setupfn_name(OjaNewton_setup),
+  auto* l = make_base_learner(std::move(ON), learn, predict, stack_builder.get_setupfn_name(oja_newton_setup),
       VW::prediction_type_t::scalar, VW::label_type_t::simple)
                 .set_params_per_weight(all.weights.stride())
                 .set_save_load(save_load)

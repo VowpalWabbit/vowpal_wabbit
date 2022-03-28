@@ -5,4 +5,10 @@
 #pragma once
 #include "vw_fwd.h"
 
-VW::LEARNER::base_learner* OjaNewton_setup(VW::setup_base_i& stack_builder);
+namespace VW
+{
+namespace reductions
+{
+VW::LEARNER::base_learner* oja_newton_setup(VW::setup_base_i& stack_builder);
+}
+}  // namespace VW

@@ -1,20 +1,10 @@
 // Copyright (c) by respective owners including Yahoo!, Microsoft, and
 // individual contributors. All rights reserved. Released under a BSD (revised)
 // license as described in the file LICENSE.
-#include "crossplat_compat.h"
-#include "setup_base.h"
-
-#include <cfloat>
-#include <cstdio>
-#include <fstream>
-#ifdef _WIN32
-#  define NOMINMAX
-#  include <winsock2.h>
-#else
-#  include <netdb.h>
-#endif
+#include "gd_mf.h"
 
 #include "array_parameters.h"
+#include "crossplat_compat.h"
 #include "gd.h"
 #include "learner.h"
 #include "loss_functions.h"
@@ -22,12 +12,19 @@
 #include "parser.h"
 #include "prediction_type.h"
 #include "rand48.h"
+#include "setup_base.h"
 #include "shared_data.h"
 #include "vw_exception.h"
+
+#include <cfloat>
+#include <cstdio>
+#include <fstream>
 
 using namespace VW::LEARNER;
 using namespace VW::config;
 
+namespace
+{
 struct gdmf
 {
   VW::workspace* all = nullptr;  // regressor, printing
@@ -333,7 +330,8 @@ void learn(gdmf& d, base_learner&, VW::example& ec)
   if (all.training && ec.l.simple.label != FLT_MAX) { mf_train(d, ec); }
 }
 
-base_learner* gd_mf_setup(VW::setup_base_i& stack_builder)
+}  // namespace
+base_learner* VW::reductions::gd_mf_setup(VW::setup_base_i& stack_builder)
 {
   options_i& options = *stack_builder.get_options();
   VW::workspace& all = *stack_builder.get_all_pointer();
