@@ -15,7 +15,6 @@ class io_buf;
 class loss_function;
 class parameters;
 struct features;
-struct random_state;
 struct shared_data;
 struct parser;
 
