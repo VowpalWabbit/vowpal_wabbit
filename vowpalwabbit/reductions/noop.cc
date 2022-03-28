@@ -11,10 +11,13 @@
 #include "setup_base.h"
 
 using namespace VW::config;
-
+namespace
+{
 void learn(char&, VW::LEARNER::base_learner&, VW::example&) {}
 
-VW::LEARNER::base_learner* noop_setup(VW::setup_base_i& stack_builder)
+}  // namespace
+
+VW::LEARNER::base_learner* VW::reductions::noop_setup(VW::setup_base_i& stack_builder)
 {
   options_i& options = *stack_builder.get_options();
 

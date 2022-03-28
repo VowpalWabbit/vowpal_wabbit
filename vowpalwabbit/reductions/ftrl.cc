@@ -1,6 +1,9 @@
 // Copyright (c) by respective owners including Yahoo!, Microsoft, and
 // individual contributors. All rights reserved. Released under a BSD (revised)
 // license as described in the file LICENSE.
+
+#include "ftrl.h"
+
 #include "correctedMath.h"
 #include "crossplat_compat.h"
 #include "gd.h"
@@ -28,6 +31,8 @@ using namespace VW::math;
 #define W_WE 4  // Wealth
 #define W_MG 5  // maximum gradient
 
+namespace
+{
 struct ftrl_update_data
 {
   float update = 0.f;
@@ -409,8 +414,9 @@ void end_pass(ftrl& g)
     { set_done(all); }
   }
 }
+}  // namespace
 
-base_learner* ftrl_setup(VW::setup_base_i& stack_builder)
+base_learner* VW::reductions::ftrl_setup(VW::setup_base_i& stack_builder)
 {
   options_i& options = *stack_builder.get_options();
   VW::workspace& all = *stack_builder.get_all_pointer();

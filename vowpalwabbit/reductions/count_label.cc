@@ -2,6 +2,8 @@
 // individual contributors. All rights reserved. Released under a BSD (revised)
 // license as described in the file LICENSE.
 
+#include "reductions/count_label.h"
+
 #include "best_constant.h"
 #include "config/options.h"
 #include "example.h"
@@ -13,6 +15,8 @@
 #include "parser.h"
 #include "setup_base.h"
 
+namespace
+{
 struct reduction_data
 {
   shared_data* _sd;
@@ -54,10 +58,9 @@ void finish_example_single(VW::workspace& all, reduction_data& data, VW::example
 {
   VW::LEARNER::as_singleline(data._base)->finish_example(all, ec);
 }
+}  // namespace
 
-namespace VW
-{
-VW::LEARNER::base_learner* count_label_setup(VW::setup_base_i& stack_builder)
+VW::LEARNER::base_learner* VW::reductions::count_label_setup(VW::setup_base_i& stack_builder)
 {
   bool dont_output_best_constant = false;
   VW::config::option_group_definition reduction_options("[Reduction] Count label");
@@ -112,4 +115,3 @@ VW::LEARNER::base_learner* count_label_setup(VW::setup_base_i& stack_builder)
                       .build();
   return VW::LEARNER::make_base(*learner);
 }
-}  // namespace VW
