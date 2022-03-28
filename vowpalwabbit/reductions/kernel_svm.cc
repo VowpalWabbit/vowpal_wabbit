@@ -763,7 +763,7 @@ VW::LEARNER::base_learner* VW::reductions::kernel_svm_setup(VW::setup_base_i& st
 
   std::string loss_function = "hinge";
   float loss_parameter = 0.0;
-  all.loss = getLossFunction(all, loss_function, loss_parameter);
+  all.loss = get_loss_function(all, loss_function, loss_parameter);
 
   params->model = &calloc_or_throw<svm_model>();
   new (params->model) svm_model();

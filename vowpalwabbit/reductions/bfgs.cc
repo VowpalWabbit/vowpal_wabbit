@@ -906,7 +906,7 @@ void process_example(VW::workspace& all, bfgs& b, VW::example& ec)
   if (b.gradient_pass)
   {
     ec.pred.scalar = predict_and_gradient(all, ec);  // w[0] & w[1]
-    ec.loss = all.loss->getLoss(all.sd, ec.pred.scalar, ld.label) * ec.weight;
+    ec.loss = all.loss->get_loss(all.sd, ec.pred.scalar, ld.label) * ec.weight;
     b.loss_sum += ec.loss;
     b.predictions.push_back(ec.pred.scalar);
   }
@@ -922,7 +922,7 @@ void process_example(VW::workspace& all, bfgs& b, VW::example& ec)
     }
     ec.pred.scalar = b.predictions[b.example_number];
     ec.partial_prediction = b.predictions[b.example_number];
-    ec.loss = all.loss->getLoss(all.sd, ec.pred.scalar, ld.label) * ec.weight;
+    ec.loss = all.loss->get_loss(all.sd, ec.pred.scalar, ld.label) * ec.weight;
     float sd = all.loss->second_derivative(all.sd, b.predictions[b.example_number++], ld.label);
     b.curvature += (static_cast<double>(d_dot_x)) * d_dot_x * sd * ec.weight;
   }
