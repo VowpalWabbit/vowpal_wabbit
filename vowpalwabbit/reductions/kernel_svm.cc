@@ -1,6 +1,9 @@
 // Copyright (c) by respective owners including Yahoo!, Microsoft, and
 // individual contributors. All rights reserved. Released under a BSD (revised)
 // license as described in the file LICENSE.
+
+#include "kernel_svm.h"
+
 #include "accumulate.h"
 #include "cache.h"
 #include "config/options.h"
@@ -39,6 +42,8 @@ using namespace VW::config;
 
 using std::endl;
 
+namespace
+{
 struct svm_params;
 
 static size_t num_kernel_evals = 0;
@@ -718,8 +723,9 @@ void finish_kernel_svm(svm_params& params)
     *(params.all->trace_message) << "Total loss = " << params.loss_sum << endl;
   }
 }
+}  // namespace
 
-VW::LEARNER::base_learner* kernel_svm_setup(VW::setup_base_i& stack_builder)
+VW::LEARNER::base_learner* VW::reductions::kernel_svm_setup(VW::setup_base_i& stack_builder)
 {
   options_i& options = *stack_builder.get_options();
   VW::workspace& all = *stack_builder.get_all_pointer();

@@ -10,4 +10,10 @@
 #include <set>
 #include <vector>
 
+namespace VW
+{
+namespace reductions
+{
 VW::LEARNER::base_learner* generate_interactions_setup(VW::setup_base_i& stack_builder);
+}
+}  // namespace VW
