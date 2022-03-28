@@ -302,7 +302,7 @@ flatbuffers::Offset<VW::parsers::flatbuffer::Namespace> to_flat::create_namespac
   ss << ":" << hash;
 
   std::string s = ss.str();
-  uint64_t refid = uniform_hash(s.c_str(), s.size(), 0);
+  uint64_t refid = VW::uniform_hash(s.c_str(), s.size(), 0);
   const auto find_ns_offset = _share_examples.find(refid);
 
   if (find_ns_offset == _share_examples.end())

@@ -272,7 +272,7 @@ public:
       len = buf_read(p, len);
 
       // compute hash for check-sum
-      if (_verify_hash) { _hash = static_cast<uint32_t>(uniform_hash(p, len, _hash)); }
+      if (_verify_hash) { _hash = static_cast<uint32_t>(VW::uniform_hash(p, len, _hash)); }
       memcpy(data, p, len);
       return len;
     }
@@ -289,7 +289,7 @@ public:
       memcpy(p, data, len);
 
       // compute hash for check-sum
-      if (_verify_hash) { _hash = static_cast<uint32_t>(uniform_hash(p, len, _hash)); }
+      if (_verify_hash) { _hash = static_cast<uint32_t>(VW::uniform_hash(p, len, _hash)); }
     }
     return len;
   }
