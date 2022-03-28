@@ -504,8 +504,6 @@ void copy_char(char& c1, const char& c2) noexcept
 
 void add_size_t(size_t& t1, const size_t& t2) noexcept { t1 += t2; }
 
-void add_double(double& t1, const double& t2) noexcept { t1 += t2; }
-
 void sync_queries(VW::workspace& all, svm_params& params, bool* train_pool)
 {
   io_buf* b = new io_buf();
