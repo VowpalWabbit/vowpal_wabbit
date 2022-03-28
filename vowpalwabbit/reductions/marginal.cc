@@ -29,13 +29,13 @@ struct expert
   float weight = 1.f;
 };
 
-typedef std::pair<double, double> marginal;
+using marginal = std::pair<double, double>;
 using expert_pair = std::pair<expert, expert>;
 
 struct data
 {
   data(float initial_numerator, float initial_denominator, float decay, bool update_before_learn,
-      bool unweighted_marginals, bool compete, parameters* m_weights, loss_function* m_loss_function,
+      bool unweighted_marginals, bool compete, parameters* m_weights, VW::loss_function* m_loss_function,
       shared_data* m_shared_data, bool m_hash_inv, VW::io::logger logger)
       : initial_numerator(initial_numerator)
       , initial_denominator(initial_denominator)
@@ -80,7 +80,7 @@ struct data
       expert_state;  // pair of weights on marginal and feature based predictors, one per marginal feature
 
   parameters* m_weights;
-  loss_function* m_loss_function;
+  VW::loss_function* m_loss_function;
   shared_data* m_shared_data;
   bool m_hash_inv;
   std::unordered_map<uint64_t, std::string> inverse_hashes;
@@ -159,7 +159,7 @@ void make_marginal(data& sm, VW::example& ec)
           sm.net_weight += weight;
           sm.net_feature_weight += sm.expert_state[key].second.weight;
           if VW_STD17_CONSTEXPR (is_learn)
-          { sm.alg_loss += weight * sm.m_loss_function->getLoss(sm.m_shared_data, marginal_pred, label); }
+          { sm.alg_loss += weight * sm.m_loss_function->get_loss(sm.m_shared_data, marginal_pred, label); }
         }
       }
     }
@@ -194,7 +194,7 @@ void compute_expert_loss(data& sm, VW::example& ec)
 
   if VW_STD17_CONSTEXPR (is_learn)
   {
-    sm.alg_loss += sm.net_feature_weight * sm.m_loss_function->getLoss(sm.m_shared_data, sm.feature_pred, label);
+    sm.alg_loss += sm.net_feature_weight * sm.m_loss_function->get_loss(sm.m_shared_data, sm.feature_pred, label);
     sm.alg_loss *= inv_weight;
   }
 }
@@ -223,8 +223,8 @@ void update_marginal(data& sm, VW::example& ec)
         {
           expert_pair& e = sm.expert_state[key];
           const float regret1 = sm.alg_loss -
-              sm.m_loss_function->getLoss(sm.m_shared_data, static_cast<float>(m.first / m.second), label);
-          const float regret2 = sm.alg_loss - sm.m_loss_function->getLoss(sm.m_shared_data, sm.feature_pred, label);
+              sm.m_loss_function->get_loss(sm.m_shared_data, static_cast<float>(m.first / m.second), label);
+          const float regret2 = sm.alg_loss - sm.m_loss_function->get_loss(sm.m_shared_data, sm.feature_pred, label);
 
           e.first.regret += regret1 * weight;
           e.first.abs_regret += regret1 * regret1 * weight;  // fabs(regret1);

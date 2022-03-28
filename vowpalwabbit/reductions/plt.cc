@@ -408,7 +408,7 @@ base_learner* plt_setup(VW::setup_base_i& stack_builder)
   all.example_parser->lbl_parser = MULTILABEL::multilabel;
 
   // force logistic loss for base classifiers
-  all.loss = getLossFunction(all, "logistic");
+  all.loss = get_loss_function(all, "logistic");
 
   return make_base(*l);
 }

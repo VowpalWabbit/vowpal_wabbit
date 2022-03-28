@@ -29,7 +29,7 @@ constexpr uint64_t nn_constant = 533357803;
 struct nn
 {
   uint32_t k = 0;
-  std::unique_ptr<loss_function> squared_loss;
+  std::unique_ptr<VW::loss_function> squared_loss;
   VW::example output_layer;
   VW::example hiddenbias;
   VW::example outputweight;
@@ -458,7 +458,7 @@ base_learner* nn_setup(VW::setup_base_i& stack_builder)
   { all.logger.err_info("using input passthrough for neural network {}", (all.training ? "training" : "testing")); }
 
   n->finished_setup = false;
-  n->squared_loss = getLossFunction(all, "squared", 0);
+  n->squared_loss = get_loss_function(all, "squared", 0);
 
   n->xsubi = all.random_seed;
 

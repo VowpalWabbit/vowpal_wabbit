@@ -12,7 +12,6 @@
 
 // forward declarations
 class io_buf;
-class loss_function;
 class parameters;
 struct features;
 struct shared_data;
@@ -36,6 +35,7 @@ struct kskip_ngram_transformer;
 struct rand_state;
 class named_labels;
 struct setup_base_i;
+class loss_function;
 
 namespace LEARNER
 {
