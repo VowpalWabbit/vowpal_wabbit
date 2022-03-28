@@ -534,7 +534,7 @@ base_learner* log_multi_setup(VW::setup_base_i& stack_builder)  // learner setup
 
   std::string loss_function = "quantile";
   float loss_parameter = 0.5;
-  all.loss = getLossFunction(all, loss_function, loss_parameter);
+  all.loss = get_loss_function(all, loss_function, loss_parameter);
 
   data->max_predictors = data->k - 1;
   init_tree(*data.get());
