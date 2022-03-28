@@ -30,7 +30,7 @@ struct binary_data
 };
 
 template <bool is_learn>
-void predict_or_learn(binary_data& data, VW::LEARNER::single_learner& base, example& ec)
+void predict_or_learn(binary_data& data, VW::LEARNER::single_learner& base, VW::example& ec)
 {
   if (is_learn) { base.learn(ec); }
   else

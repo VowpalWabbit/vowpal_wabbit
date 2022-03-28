@@ -191,7 +191,7 @@ base_learner* VW::reductions::baseline_setup(VW::setup_base_i& stack_builder)
   data->ec.extent_interactions = &all.extent_interactions;
   data->all = &all;
 
-  const auto loss_function_type = all.loss->getType();
+  const auto loss_function_type = all.loss->get_type();
   if (loss_function_type != "logistic") { data->lr_scaling = true; }
 
   auto base = as_singleline(stack_builder.setup_base_learner());
