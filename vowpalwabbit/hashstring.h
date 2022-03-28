@@ -10,7 +10,10 @@
 #include <cstdint>
 #include <string>
 
-VW_STD14_CONSTEXPR inline uint64_t hashall(const char* s, size_t len, uint64_t h) { return VW::uniform_hash(s, len, h); }
+VW_STD14_CONSTEXPR inline uint64_t hashall(const char* s, size_t len, uint64_t h)
+{
+  return VW::uniform_hash(s, len, h);
+}
 
 VW_STD14_CONSTEXPR inline uint64_t hashstring(const char* s, size_t len, uint64_t h)
 {
