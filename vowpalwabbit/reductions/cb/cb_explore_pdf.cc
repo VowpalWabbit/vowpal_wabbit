@@ -82,10 +82,11 @@ template <bool is_learn>
 void predict_or_learn(cb_explore_pdf& reduction, single_learner&, example& ec)
 {
   experimental::api_status status;
-  if (is_learn)
-    reduction.learn(ec, &status);
+  if (is_learn) { reduction.learn(ec, &status); }
   else
+  {
     reduction.predict(ec, &status);
+  }
 
   if (status.get_error_code() != VW::experimental::error_code::success)
   { VW_DBG(ec) << status.get_error_msg() << endl; }
@@ -123,7 +124,7 @@ LEARNER::base_learner* cb_explore_pdf_setup(VW::setup_base_i& stack_builder)
 
   // If reduction was not invoked, don't add anything
   // to the reduction stack;
-  if (!options.add_parse_and_check_necessary(new_options)) return nullptr;
+  if (!options.add_parse_and_check_necessary(new_options)) { return nullptr; }
 
   if (!options.was_supplied("min_value") || !options.was_supplied("max_value"))
     THROW("Min and max values must be supplied with cb_explore_pdf");

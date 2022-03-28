@@ -39,8 +39,7 @@ float get_active_coin_bias(float k, float avg_loss, float g, float c0)
 float query_decision(active& a, float ec_revert_weight, float k)
 {
   float bias;
-  if (k <= 1.f)
-    bias = 1.f;
+  if (k <= 1.f) { bias = 1.f; }
   else
   {
     const auto weighted_queries = static_cast<float>(a._shared_data->weighted_labeled_examples);
@@ -82,10 +81,11 @@ void predict_or_learn_simulation(active& a, single_learner& base, VW::example& e
 template <bool is_learn>
 void predict_or_learn_active(active& a, single_learner& base, VW::example& ec)
 {
-  if (is_learn)
-    base.learn(ec);
+  if (is_learn) { base.learn(ec); }
   else
+  {
     base.predict(ec);
+  }
 
   if (ec.l.simple.label == FLT_MAX)
   {
@@ -185,7 +185,7 @@ base_learner* VW::reductions::active_setup(VW::setup_base_i& stack_builder)
                .default_value(8.f)
                .help("Active learning mellowness parameter c_0. Default 8"));
 
-  if (!options.add_parse_and_check_necessary(new_options)) return nullptr;
+  if (!options.add_parse_and_check_necessary(new_options)) { return nullptr; }
 
   if (options.was_supplied("lda")) { THROW("lda cannot be combined with active learning") }
   auto data = VW::make_unique<active>(active_c0, all.sd, all.get_random_state(), all.model_file_ver);

@@ -67,7 +67,7 @@ template <class T>
 void initialize_regressor(VW::workspace& all, T& weights)
 {
   // Regressor is already initialized.
-  if (weights.not_null()) return;
+  if (weights.not_null()) { return; }
 
   size_t length = (static_cast<size_t>(1)) << all.num_bits;
   try
@@ -113,10 +113,11 @@ void initialize_regressor(VW::workspace& all, T& weights)
 
 void initialize_regressor(VW::workspace& all)
 {
-  if (all.weights.sparse)
-    initialize_regressor(all, all.weights.sparse_weights);
+  if (all.weights.sparse) { initialize_regressor(all, all.weights.sparse_weights); }
   else
+  {
     initialize_regressor(all, all.weights.dense_weights);
+  }
 }
 
 constexpr size_t default_buf_size = 512;
@@ -145,7 +146,7 @@ void save_load_header(VW::workspace& all, io_buf& model_file, bool read, bool te
     VW::validate_version(all);
 
     if (all.model_file_ver >= VW::version_definitions::VERSION_FILE_WITH_HEADER_CHAINED_HASH)
-      model_file.verify_hash(true);
+    { model_file.verify_hash(true); }
 
     if (all.model_file_ver >= VW::version_definitions::VERSION_FILE_WITH_HEADER_ID)
     {
@@ -415,7 +416,7 @@ void save_load_header(VW::workspace& all, io_buf& model_file, bool read, bool te
       // Save deduplicated values for ignore, ignore_linear, or keep.
       for (const auto& kv : merged_values)
       {
-        if (kv.second.empty()) continue;
+        if (kv.second.empty()) { continue; }
         serialized_keep_options += " --" + kv.first + " " + std::string(kv.second.begin(), kv.second.end());
       }
 
@@ -461,7 +462,7 @@ void dump_regressor(VW::workspace& all, io_buf& buf, bool as_text)
   if (buf.num_output_files() == 0) { THROW("Cannot dump regressor with an io buffer that has no output files."); }
   std::string unused;
   save_load_header(all, buf, false, as_text, unused, *all.options);
-  if (all.l != nullptr) all.l->save_load(buf, false, as_text);
+  if (all.l != nullptr) { all.l->save_load(buf, false, as_text); }
 
   buf.flush();  // close_file() should do this for me ...
   buf.close_file();
@@ -469,7 +470,7 @@ void dump_regressor(VW::workspace& all, io_buf& buf, bool as_text)
 
 void dump_regressor(VW::workspace& all, const std::string& reg_name, bool as_text)
 {
-  if (reg_name == std::string("")) return;
+  if (reg_name == std::string("")) { return; }
   std::string start_name = reg_name + std::string(".writing");
   io_buf io_temp;
   io_temp.add_file(VW::io::open_file_writer(start_name));
@@ -487,7 +488,7 @@ void save_predictor(VW::workspace& all, const std::string& reg_name, size_t curr
 {
   std::stringstream filename;
   filename << reg_name;
-  if (all.save_per_pass) filename << "." << current_pass;
+  if (all.save_per_pass) { filename << "." << current_pass; }
   dump_regressor(all, filename.str(), false);
 }
 
@@ -496,11 +497,12 @@ void finalize_regressor(VW::workspace& all, const std::string& reg_name)
   if (!all.early_terminate)
   {
     if (all.per_feature_regularizer_output.length() > 0)
-      dump_regressor(all, all.per_feature_regularizer_output, false);
+    { dump_regressor(all, all.per_feature_regularizer_output, false); }
     else
+    {
       dump_regressor(all, reg_name, false);
-    if (all.per_feature_regularizer_text.length() > 0)
-      dump_regressor(all, all.per_feature_regularizer_text, true);
+    }
+    if (all.per_feature_regularizer_text.length() > 0) { dump_regressor(all, all.per_feature_regularizer_text, true); }
     else
     {
       dump_regressor(all, all.text_regressor_name, true);

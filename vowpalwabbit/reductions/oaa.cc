@@ -87,7 +87,7 @@ void learn_randomized(oaa& o, VW::LEARNER::single_learner& base, VW::example& ec
   {
     uint32_t l = o.subsample_order[p];
     p = (p + 1) % o.k;
-    if (l == (ld.label + o.k - 1) % o.k) continue;
+    if (l == (ld.label + o.k - 1) % o.k) { continue; }
     base.learn(ec, l);
     if (ec.partial_prediction > best_partial_prediction)
     {
@@ -163,7 +163,7 @@ void predict(oaa& o, LEARNER::single_learner& base, VW::example& ec)
   // the pre-allocated scores array since ec.pred will be
   // used for other predictions.
   VW::v_array<float> scores_array;
-  if (scores) scores_array = ec.pred.scalars;
+  if (scores) { scores_array = ec.pred.scalars; }
 
   // oaa.pred - Predictions will get stored in this array
   // oaa.k    - Number of learners to call predict() on
@@ -172,7 +172,9 @@ void predict(oaa& o, LEARNER::single_learner& base, VW::example& ec)
   // Find the class with the largest score (index +1)
   uint32_t prediction = 1;
   for (uint32_t i = 2; i <= o.k; i++)
-    if (o.pred[i - 1].scalar > o.pred[prediction - 1].scalar) prediction = i;
+  {
+    if (o.pred[i - 1].scalar > o.pred[prediction - 1].scalar) { prediction = i; }
+  }
   if (prediction == o.k && o.indexing == 0) { prediction = 0; }
 
   if (ec.passthrough)
@@ -195,11 +197,11 @@ void predict(oaa& o, LEARNER::single_learner& base, VW::example& ec)
     if (o.indexing == 0)
     {
       output_string_stream << ' ' << 0 << ':' << o.pred[o.k - 1].scalar;
-      for (uint32_t i = 0; i < o.k - 1; i++) output_string_stream << ' ' << (i + 1) << ':' << o.pred[i].scalar;
+      for (uint32_t i = 0; i < o.k - 1; i++) { output_string_stream << ' ' << (i + 1) << ':' << o.pred[i].scalar; }
     }
     else
     {
-      for (uint32_t i = 1; i <= o.k; i++) output_string_stream << ' ' << i << ':' << o.pred[i - 1].scalar;
+      for (uint32_t i = 1; i <= o.k; i++) { output_string_stream << ' ' << i << ':' << o.pred[i - 1].scalar; }
     }
     o.all->print_text_by_ref(o.all->raw_prediction.get(), output_string_stream.str(), ec.tag, o.all->logger);
   }
@@ -209,7 +211,7 @@ void predict(oaa& o, LEARNER::single_learner& base, VW::example& ec)
   if (scores)
   {
     scores_array.clear();
-    for (uint32_t i = 0; i < o.k; i++) scores_array.push_back(o.pred[i].scalar);
+    for (uint32_t i = 0; i < o.k; i++) { scores_array.push_back(o.pred[i].scalar); }
     ec.pred.scalars = scores_array;
 
     // The scores should be converted to probabilities
@@ -222,7 +224,7 @@ void predict(oaa& o, LEARNER::single_learner& base, VW::example& ec)
         sum_prob += ec.pred.scalars[i];
       }
       const float inv_sum_prob = 1.f / sum_prob;
-      for (uint32_t i = 0; i < o.k; i++) ec.pred.scalars[i] *= inv_sum_prob;
+      for (uint32_t i = 0; i < o.k; i++) { ec.pred.scalars[i] *= inv_sum_prob; }
     }
   }
   else
@@ -247,22 +249,25 @@ void finish_example_scores(VW::workspace& all, oaa& o, VW::example& ec)
   if (probabilities)
   {
     correct_class_prob = ec.pred.scalars[(ec.l.multi.label - 1 + o.k) % o.k];
-    if (correct_class_prob > 0) multiclass_log_loss = -std::log(correct_class_prob) * ec.weight;
-    if (ec.test_only)
-      all.sd->holdout_multiclass_log_loss += multiclass_log_loss;
+    if (correct_class_prob > 0) { multiclass_log_loss = -std::log(correct_class_prob) * ec.weight; }
+    if (ec.test_only) { all.sd->holdout_multiclass_log_loss += multiclass_log_loss; }
     else
+    {
       all.sd->multiclass_log_loss += multiclass_log_loss;
+    }
   }
   // === Compute `prediction` and zero_one_loss
   // We have already computed `prediction` in predict_or_learn,
   // but we cannot store it in ec.pred union because we store ec.pred.probs there.
   uint32_t prediction = 1;
   for (uint32_t i = 2; i <= o.k; i++)
-    if (o.pred[i - 1].scalar > o.pred[prediction - 1].scalar) prediction = i;
+  {
+    if (o.pred[i - 1].scalar > o.pred[prediction - 1].scalar) { prediction = i; }
+  }
   if (prediction == o.k && o.indexing == 0) { prediction = 0; }
 
   float zero_one_loss = 0;
-  if (ec.l.multi.label != prediction) zero_one_loss = ec.weight;
+  if (ec.l.multi.label != prediction) { zero_one_loss = ec.weight; }
 
   // === Print probabilities for all classes
   std::ostringstream outputStringStream;
@@ -270,14 +275,16 @@ void finish_example_scores(VW::workspace& all, oaa& o, VW::example& ec)
   {
     uint32_t corrected_label = (o.indexing == 0) ? i : i + 1;
     uint32_t corrected_ind = (o.indexing == 0) ? (i + static_cast<uint32_t>(o.k) - 1) % o.k : i;
-    if (i > 0) outputStringStream << ' ';
+    if (i > 0) { outputStringStream << ' '; }
     if (all.sd->ldict) { outputStringStream << all.sd->ldict->get(corrected_label); }
     else
+    {
       outputStringStream << corrected_label;
+    }
     outputStringStream << ':' << ec.pred.scalars[corrected_ind];
   }
   const auto ss_str = outputStringStream.str();
-  for (auto& sink : all.final_prediction_sink) all.print_text_by_ref(sink.get(), ss_str, ec.tag, all.logger);
+  for (auto& sink : all.final_prediction_sink) { all.print_text_by_ref(sink.get(), ss_str, ec.tag, all.logger); }
 
   // === Report updates using zero-one loss
   all.sd->update(
@@ -289,10 +296,11 @@ void finish_example_scores(VW::workspace& all, oaa& o, VW::example& ec)
   // So let's report (average) multiclass_log_loss only in the final resume.
 
   // === Print progress report
-  if (probabilities)
-    MULTICLASS::print_update_with_probability(all, ec, prediction);
+  if (probabilities) { MULTICLASS::print_update_with_probability(all, ec, prediction); }
   else
+  {
     MULTICLASS::print_update_with_score(all, ec, prediction);
+  }
   VW::finish_example(all, ec);
 }
 
@@ -311,7 +319,7 @@ VW::LEARNER::base_learner* oaa_setup(VW::setup_base_i& stack_builder)
       .add(make_option("scores", scores).help("Output raw scores per class"))
       .add(make_option("indexing", data->indexing).one_of({0, 1}).keep().help("Choose between 0 or 1-indexing"));
 
-  if (!options.add_parse_and_check_necessary(new_options)) return nullptr;
+  if (!options.add_parse_and_check_necessary(new_options)) { return nullptr; }
 
   // oaa does logistic link manually for probabilities because the unlinked values are required
   // in base.update(). This implemenation will provide correct probabilities regardless
@@ -335,7 +343,7 @@ VW::LEARNER::base_learner* oaa_setup(VW::setup_base_i& stack_builder)
     else
     {
       data->subsample_order = calloc_or_throw<uint32_t>(data->k);
-      for (size_t i = 0; i < data->k; i++) data->subsample_order[i] = static_cast<uint32_t>(i);
+      for (size_t i = 0; i < data->k; i++) { data->subsample_order[i] = static_cast<uint32_t>(i); }
       for (size_t i = 0; i < data->k; i++)
       {
         size_t j =
@@ -360,7 +368,7 @@ VW::LEARNER::base_learner* oaa_setup(VW::setup_base_i& stack_builder)
     pred_type = VW::prediction_type_t::scalars;
     if (probabilities)
     {
-      auto loss_function_type = all.loss->getType();
+      auto loss_function_type = all.loss->get_type();
       if (loss_function_type != "logistic")
       {
         all.logger.out_warn("--probabilities should be used only with --loss_function=logistic, currently using: {}",

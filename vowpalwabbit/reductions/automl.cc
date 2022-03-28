@@ -71,7 +71,7 @@ namespace details
 void fail_if_enabled(VW::workspace& all, const std::set<std::string>& not_compat)
 {
   std::vector<std::string> enabled_reductions;
-  if (all.l != nullptr) all.l->get_enabled_reductions(enabled_reductions);
+  if (all.l != nullptr) { all.l->get_enabled_reductions(enabled_reductions); }
 
   for (const auto& reduction : enabled_reductions)
   {
@@ -700,7 +700,7 @@ VW::LEARNER::base_learner* automl_setup(VW::setup_base_i& stack_builder)
                .default_value(DEFAULT_TAU)
                .help("Time constant for count decay"));
 
-  if (!options.add_parse_and_check_necessary(new_options)) return nullptr;
+  if (!options.add_parse_and_check_necessary(new_options)) { return nullptr; }
 
   priority_func* calc_priority;
 

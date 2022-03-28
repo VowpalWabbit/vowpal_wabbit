@@ -103,7 +103,7 @@ float cb_explore_adf_squarecb::binary_search(float fhat, float delta, float sens
   const float maxw = (std::min)(fhat / sens, FLT_MAX);
 
   // If the objective value for maxw satisfies the delta constraint, we can just take this and skip the binary search.
-  if (maxw * fhat * fhat <= delta) return maxw;
+  if (maxw * fhat * fhat <= delta) { return maxw; }
 
   // Upper and lower bounds on w for binary search.
   float l = 0;
@@ -118,11 +118,12 @@ float cb_explore_adf_squarecb::binary_search(float fhat, float delta, float sens
   {
     w = (u + l) / 2.f;
     v = w * (fhat * fhat - (fhat - sens * w) * (fhat - sens * w)) - delta;
-    if (v > 0)
-      u = w;
+    if (v > 0) { u = w; }
     else
+    {
       l = w;
-    if (std::fabs(v) <= tol || u - l <= tol) break;
+    }
+    if (std::fabs(v) <= tol || u - l <= tol) { break; }
   }
 
   return l;
@@ -158,13 +159,12 @@ void cb_explore_adf_squarecb::get_cost_ranges(float delta, multi_learner& base, 
     float sens = base.sensitivity(*ec);
     float w = 0;  // importance weight
 
-    if (ec->pred.scalar < cmin || std::isnan(sens) || std::isinf(sens))
-      _min_costs[a] = cmin;
+    if (ec->pred.scalar < cmin || std::isnan(sens) || std::isinf(sens)) { _min_costs[a] = cmin; }
     else
     {
       w = binary_search(ec->pred.scalar - cmin + 1, delta, sens);
       _min_costs[a] = (std::max)(ec->pred.scalar - sens * w, cmin);
-      if (_min_costs[a] > cmax) _min_costs[a] = cmax;
+      if (_min_costs[a] > cmax) { _min_costs[a] = cmax; }
     }
 
     if (!min_only)
@@ -176,7 +176,7 @@ void cb_explore_adf_squarecb::get_cost_ranges(float delta, multi_learner& base, 
       {
         w = binary_search(cmax + 1 - ec->pred.scalar, delta, sens);
         _max_costs[a] = (std::min)(ec->pred.scalar + sens * w, cmax);
-        if (_max_costs[a] < cmin) _max_costs[a] = cmin;
+        if (_max_costs[a] < cmin) { _max_costs[a] = cmin; }
       }
     }
   }
@@ -224,7 +224,7 @@ void cb_explore_adf_squarecb::predict(multi_learner& base, multi_ex& examples)
     float pa = 0;
     for (size_t a = 0; a < num_actions; ++a)
     {
-      if (a == a_min) continue;
+      if (a == a_min) { continue; }
       pa = 1.f / (num_actions + gamma * (preds[a].score - min_cost));
       preds[a].score = pa;
       total_weight += pa;
@@ -237,7 +237,9 @@ void cb_explore_adf_squarecb::predict(multi_learner& base, multi_ex& examples)
 
     float min_max_cost = FLT_MAX;
     for (size_t a = 0; a < num_actions; ++a)
-      if (_max_costs[a] < min_max_cost) min_max_cost = _max_costs[a];
+    {
+      if (_max_costs[a] < min_max_cost) { min_max_cost = _max_costs[a]; }
+    }
 
     size_t a_min = 0;
     size_t num_surviving_actions = 0;
@@ -260,7 +262,7 @@ void cb_explore_adf_squarecb::predict(multi_learner& base, multi_ex& examples)
       if (_min_costs[preds[a].action] > min_max_cost) { preds[a].score = 0; }
       else
       {
-        if (a == a_min) continue;
+        if (a == a_min) { continue; }
         pa = 1.f / (num_surviving_actions + gamma * (preds[a].score - min_cost));
         preds[a].score = pa;
         total_weight += pa;
@@ -276,7 +278,10 @@ void cb_explore_adf_squarecb::learn(multi_learner& base, multi_ex& examples)
   for (size_t i = 0; i < examples.size() - 1; ++i)
   {
     CB::label& ld = examples[i]->l.cb;
-    if (ld.costs.size() == 1) ld.costs[0].probability = 1.f;  // no importance weighting
+    if (ld.costs.size() == 1)
+    {
+      ld.costs[0].probability = 1.f;  // no importance weighting
+    }
   }
 
   multiline_learn_or_predict<true>(base, examples, examples[0]->ft_offset);
@@ -350,7 +355,7 @@ base_learner* setup(VW::setup_base_i& stack_builder)
                .one_of({"mtr"})
                .help("Contextual bandit method to use. SquareCB only supports supervised regression (mtr)"));
 
-  if (!options.add_parse_and_check_necessary(new_options)) return nullptr;
+  if (!options.add_parse_and_check_necessary(new_options)) { return nullptr; }
 
   // Ensure serialization of this option in all cases.
   if (!options.was_supplied("cb_type"))

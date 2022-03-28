@@ -43,10 +43,11 @@ struct classweights
   float get_class_weight(uint32_t klass)
   {
     auto got = weights.find(klass);
-    if (got == weights.end())
-      return 1.0f;
+    if (got == weights.end()) { return 1.0f; }
     else
+    {
       return got->second;
+    }
   }
 };
 
@@ -92,9 +93,9 @@ VW::LEARNER::base_learner* VW::reductions::classweight_setup(VW::setup_base_i& s
   new_options.add(
       make_option("classweight", classweight_array).necessary().help("Importance weight multiplier for class"));
 
-  if (!options.add_parse_and_check_necessary(new_options)) return nullptr;
+  if (!options.add_parse_and_check_necessary(new_options)) { return nullptr; }
 
-  for (auto& s : classweight_array) cweights->load_string(s);
+  for (auto& s : classweight_array) { cweights->load_string(s); }
   all.logger.err_info("parsed {} class weights", cweights->weights.size());
 
   VW::LEARNER::single_learner* base = as_singleline(stack_builder.setup_base_learner());

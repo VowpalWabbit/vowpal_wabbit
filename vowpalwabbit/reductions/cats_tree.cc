@@ -47,7 +47,7 @@ tree_node::tree_node(uint32_t node_id, uint32_t left_node_id, uint32_t right_nod
 
 bool tree_node::operator==(const tree_node& rhs) const
 {
-  if (this == &rhs) return true;
+  if (this == &rhs) { return true; }
   return (id == rhs.id && left_id == rhs.left_id && right_id == rhs.right_id && parent_id == rhs.parent_id &&
       depth == rhs.depth && left_only == rhs.left_only && right_only == rhs.right_only && is_leaf == rhs.is_leaf);
 }
@@ -142,7 +142,7 @@ std::string min_depth_binary_tree::tree_stats_to_string()
   treestats << "Learn() count per node: ";
   for (const tree_node& n : nodes)
   {
-    if (n.is_leaf || n.id >= 16) break;
+    if (n.is_leaf || n.id >= 16) { break; }
 
     treestats << "id=" << n.id << ", #l=" << n.learn_count << "; ";
   }
@@ -158,7 +158,7 @@ uint32_t cats_tree::predict(LEARNER::single_learner& base, example& ec)
   const vector<tree_node>& nodes = _binary_tree.nodes;
 
   // Handle degenerate cases of zero node trees
-  if (_binary_tree.leaf_node_count() == 0) return 0;
+  if (_binary_tree.leaf_node_count() == 0) { return 0; }
   CB::label saved_label = std::move(ec.l.cb);
   ec.l.simple.label = std::numeric_limits<float>::max();  // says it is a test example
   auto cur_node = nodes[0];
@@ -211,16 +211,23 @@ constexpr float LEFT = -1.0f;
 
 float cats_tree::return_cost(const tree_node& w)
 {
-  if (w.id < _a.node_id)
-    return 0;
+  if (w.id < _a.node_id) { return 0; }
   else if (w.id == _a.node_id)
+  {
     return _a.cost;
+  }
   else if (w.id < _b.node_id)
+  {
     return _cost_star;
+  }
   else if (w.id == _b.node_id)
+  {
     return _b.cost;
+  }
   else
+  {
     return 0;
+  }
 }
 
 void cats_tree::learn(LEARNER::single_learner& base, example& ec)
@@ -248,7 +255,7 @@ void cats_tree::learn(LEARNER::single_learner& base, example& ec)
       const float cost_v = n_c.cost;
       const tree_node& v_parent = nodes[v.parent_id];
       float cost_parent = cost_v;
-      if (v_parent.right_only || v_parent.left_only) continue;
+      if (v_parent.right_only || v_parent.left_only) { continue; }
       const tree_node& w = _binary_tree.get_sibling(v);  // w is sibling of v
       float cost_w = return_cost(w);
       if (cost_v != cost_w)
@@ -298,10 +305,11 @@ void cats_tree::learn(LEARNER::single_learner& base, example& ec)
           }
         }
       }
-      if (i == 0)
-        a_parent_cost = cost_parent;
+      if (i == 0) { a_parent_cost = cost_parent; }
       else
+      {
         b_parent_cost = cost_parent;
+      }
     }
     _a = {nodes[_a.node_id].parent_id, a_parent_cost};
     _b = {nodes[_b.node_id].parent_id, b_parent_cost};
@@ -318,7 +326,7 @@ void cats_tree::set_trace_message(std::ostream* vw_ostream, bool quiet)
 
 cats_tree::~cats_tree()
 {
-  if (_trace_stream != nullptr && !_quiet) (*_trace_stream) << tree_stats_to_string() << std::endl;
+  if (_trace_stream != nullptr && !_quiet) { (*_trace_stream) << tree_stats_to_string() << std::endl; }
 }
 
 std::string cats_tree::tree_stats_to_string() { return _binary_tree.tree_stats_to_string(); }
@@ -360,7 +368,7 @@ base_learner* setup(setup_base_i& stack_builder)
                .one_of({"glf1"})
                .help("The learner in each node must return a prediction in range [-1,1], so only glf1 is allowed"));
 
-  if (!options.add_parse_and_check_necessary(new_options)) return nullptr;
+  if (!options.add_parse_and_check_necessary(new_options)) { return nullptr; }
 
   // default behaviour uses binary
   if (!options.was_supplied("link")) { options.insert("binary", ""); }

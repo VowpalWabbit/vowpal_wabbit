@@ -35,7 +35,7 @@ void learn(print& p, VW::LEARNER::base_learner&, VW::example& ec)
     if (ec.weight != 1 || simple_red_features.initial != 0)
     {
       (*all.trace_message) << ec.weight << " ";
-      if (simple_red_features.initial != 0) (*all.trace_message) << simple_red_features.initial << " ";
+      if (simple_red_features.initial != 0) { (*all.trace_message) << simple_red_features.initial << " "; }
     }
   }
   if (!ec.tag.empty())
@@ -56,7 +56,7 @@ VW::LEARNER::base_learner* print_setup(VW::setup_base_i& stack_builder)
   option_group_definition new_options("[Reduction] Print Psuedolearner");
   new_options.add(make_option("print", print_option).keep().necessary().help("Print examples"));
 
-  if (!options.add_parse_and_check_necessary(new_options)) return nullptr;
+  if (!options.add_parse_and_check_necessary(new_options)) { return nullptr; }
 
   all.weights.stride_shift(0);
   auto* learner = VW::LEARNER::make_base_learner(VW::make_unique<print>(&all), learn, learn,
