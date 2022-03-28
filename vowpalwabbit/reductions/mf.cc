@@ -2,23 +2,20 @@
 // individual contributors. All rights reserved. Released under a BSD (revised)
 // license as described in the file LICENSE.
 
-#include "numeric_casts.h"
-#include "setup_base.h"
-#ifdef _WIN32
-#  define NOMINMAX
-#  include <winsock2.h>
-#else
-#  include <netdb.h>
-#endif
+#include "mf.h"
 
 #include "config/options.h"
 #include "gd.h"
 #include "learner.h"
+#include "numeric_casts.h"
 #include "scope_exit.h"
+#include "setup_base.h"
 
 using namespace VW::LEARNER;
 using namespace VW::config;
 
+namespace
+{
 struct mf
 {
   size_t rank = 0;
@@ -187,8 +184,9 @@ void learn(mf& data, single_learner& base, VW::example& ec)
   ec.pred.scalar = predicted;
   ec.interactions = saved_interactions;
 }
+}  // namespace
 
-base_learner* mf_setup(VW::setup_base_i& stack_builder)
+base_learner* VW::reductions::mf_setup(VW::setup_base_i& stack_builder)
 {
   options_i& options = *stack_builder.get_options();
   VW::workspace& all = *stack_builder.get_all_pointer();

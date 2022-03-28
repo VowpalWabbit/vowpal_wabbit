@@ -18,8 +18,6 @@
 
 namespace INTERACTIONS
 {
-VW::LEARNER::base_learner* generate_interactions_setup(VW::config::options_i& options, VW::workspace& all);
-
 constexpr unsigned char interaction_ns_start = ' ';
 constexpr unsigned char interaction_ns_end = '~';
 

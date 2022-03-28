@@ -20,6 +20,8 @@
 
 using namespace VW::config;
 
+namespace
+{
 template <bool is_learn, INTERACTIONS::generate_func_t<VW::namespace_index> generate_func,
     bool leave_duplicate_interactions>
 void transform_single_ex(INTERACTIONS::interactions_generator& data, VW::LEARNER::single_learner& base, VW::example& ec)
@@ -134,8 +136,9 @@ inline void multipredict(INTERACTIONS::interactions_generator& data, VW::LEARNER
   ec.interactions = saved_interactions;
   ec.extent_interactions = saved_extent_interactions;
 }
+}  // namespace
 
-VW::LEARNER::base_learner* generate_interactions_setup(VW::setup_base_i& stack_builder)
+VW::LEARNER::base_learner* VW::reductions::generate_interactions_setup(VW::setup_base_i& stack_builder)
 {
   options_i& options = *stack_builder.get_options();
   VW::workspace& all = *stack_builder.get_all_pointer();
