@@ -125,7 +125,7 @@ BOOST_AUTO_TEST_CASE(tokenize_to_argv_with_space) {
   BOOST_CHECK_EQUAL(argv[3], "-f");
   BOOST_CHECK_EQUAL(argv[4], "my_model best.model");
 
-  for (int i = 0; i < argc; i++) free(argv[i]);
+  for (int i = 0; i < argc; i++) { free(argv[i]); }
   free(argv);
 }
 
@@ -140,7 +140,7 @@ BOOST_AUTO_TEST_CASE(basic_tokenize_to_argv) {
   BOOST_CHECK_EQUAL(argv[3], "--no_stdin");
   BOOST_CHECK_EQUAL(argv[4], "--quiet");
 
-  for (int i = 0; i < argc; i++) free(argv[i]);
+  for (int i = 0; i < argc; i++) { free(argv[i]); }
   free(argv);
 }
 

@@ -55,7 +55,7 @@ void compute_wap_values(std::vector<COST_SENSITIVE::wclass*> costs)
   std::sort(costs.begin(), costs.end(), cmp_wclass_ptr);
   costs[0]->wap_value = 0.;
   for (size_t i = 1; i < costs.size(); i++)
-    costs[i]->wap_value = costs[i - 1]->wap_value + (costs[i]->x - costs[i - 1]->x) / static_cast<float>(i);
+  { costs[i]->wap_value = costs[i - 1]->wap_value + (costs[i]->x - costs[i - 1]->x) / static_cast<float>(i); }
 }
 
 // Substract a given feature from example ec.
@@ -127,10 +127,11 @@ void make_single_prediction(ldf& data, single_learner& base, VW::example& ec)
 bool test_ldf_sequence(ldf& /*data*/, const VW::multi_ex& ec_seq, VW::io::logger& logger)
 {
   bool isTest;
-  if (ec_seq.empty())
-    isTest = true;
+  if (ec_seq.empty()) { isTest = true; }
   else
+  {
     isTest = COST_SENSITIVE::cs_label.test_label(ec_seq[0]->l);
+  }
   for (const auto& ec : ec_seq)
   {
     // Each sub-example must have just one cost
@@ -151,7 +152,7 @@ void do_actual_learning_wap(ldf& data, single_learner& base, VW::multi_ex& ec_se
 
   size_t K = ec_seq.size();
   std::vector<COST_SENSITIVE::wclass*> all_costs;
-  for (const auto& example : ec_seq) all_costs.push_back(&example->l.cs.costs[0]);
+  for (const auto& example : ec_seq) { all_costs.push_back(&example->l.cs.costs[0]); }
   compute_wap_values(all_costs);
 
   for (size_t k1 = 0; k1 < K; k1++)
@@ -164,7 +165,7 @@ void do_actual_learning_wap(ldf& data, single_learner& base, VW::multi_ex& ec_se
     auto& simple_red_features = ec1->_reduction_features.template get<simple_label_reduction_features>();
 
     auto costs1 = save_cs_label.costs;
-    if (costs1[0].class_index == static_cast<uint32_t>(-1)) continue;
+    if (costs1[0].class_index == static_cast<uint32_t>(-1)) { continue; }
 
     LabelDict::add_example_namespace_from_memory(data.label_features, *ec1, costs1[0].class_index);
 
@@ -181,10 +182,10 @@ void do_actual_learning_wap(ldf& data, single_learner& base, VW::multi_ex& ec_se
       VW::example* ec2 = ec_seq[k2];
       auto costs2 = ec2->l.cs.costs;
 
-      if (costs2[0].class_index == static_cast<uint32_t>(-1)) continue;
+      if (costs2[0].class_index == static_cast<uint32_t>(-1)) { continue; }
       float value_diff = std::fabs(costs2[0].wap_value - costs1[0].wap_value);
       // float value_diff = fabs(costs2[0].x - costs1[0].x);
-      if (value_diff < 1e-6) continue;
+      if (value_diff < 1e-6) { continue; }
 
       // Prepare example for learning
       LabelDict::add_example_namespace_from_memory(data.label_features, *ec2, costs2[0].class_index);
@@ -223,8 +224,8 @@ void do_actual_learning_oaa(ldf& data, single_learner& base, VW::multi_ex& ec_se
   for (const auto& example : ec_seq)
   {
     float ec_cost = example->l.cs.costs[0].x;
-    if (ec_cost < min_cost) min_cost = ec_cost;
-    if (ec_cost > max_cost) max_cost = ec_cost;
+    if (ec_cost < min_cost) { min_cost = ec_cost; }
+    if (ec_cost > max_cost) { max_cost = ec_cost; }
   }
 
   for (const auto& ec : ec_seq)
@@ -237,8 +238,10 @@ void do_actual_learning_oaa(ldf& data, single_learner& base, VW::multi_ex& ec_se
     label_data simple_lbl;
 
     float old_weight = ec->weight;
-    if (!data.treat_as_classifier)  // treat like regression
+    if (!data.treat_as_classifier)
+    {  // treat like regression
       simple_lbl.label = costs[0].x;
+    }
     else  // treat like classification
     {
       if (costs[0].x <= min_cost)
@@ -282,17 +285,21 @@ void do_actual_learning_oaa(ldf& data, single_learner& base, VW::multi_ex& ec_se
  */
 void learn_csoaa_ldf(ldf& data, single_learner& base, VW::multi_ex& ec_seq_all)
 {
-  if (ec_seq_all.empty()) return;  // nothing to do
+  if (ec_seq_all.empty())
+  {
+    return;  // nothing to do
+  }
 
   data.ft_offset = ec_seq_all[0]->ft_offset;
 
   /////////////////////// learn
   if (!test_ldf_sequence(data, ec_seq_all, data.all->logger))
   {
-    if (data.is_wap)
-      do_actual_learning_wap(data, base, ec_seq_all);
+    if (data.is_wap) { do_actual_learning_wap(data, base, ec_seq_all); }
     else
+    {
       do_actual_learning_oaa(data, base, ec_seq_all);
+    }
   }
 }
 
@@ -322,7 +329,10 @@ void convert_to_probabilities(VW::multi_ex& ec_seq)
  */
 void predict_csoaa_ldf(ldf& data, single_learner& base, VW::multi_ex& ec_seq_all)
 {
-  if (ec_seq_all.empty()) return;  // nothing to do
+  if (ec_seq_all.empty())
+  {
+    return;  // nothing to do
+  }
 
   data.ft_offset = ec_seq_all[0]->ft_offset;
 
@@ -333,14 +343,15 @@ void predict_csoaa_ldf(ldf& data, single_learner& base, VW::multi_ex& ec_seq_all
     // Mark the predicted sub-example with its class_index, all other with 0
     for (size_t k = 0; k < K; k++)
     {
-      if (k == predicted_K)
-        ec_seq_all[k]->pred.multiclass = ec_seq_all[k]->l.cs.costs[0].class_index;
+      if (k == predicted_K) { ec_seq_all[k]->pred.multiclass = ec_seq_all[k]->l.cs.costs[0].class_index; }
       else
+      {
         ec_seq_all[k]->pred.multiclass = 0;
+      }
     }
 
     ////////////////////// compute probabilities
-    if (data.is_probabilities) convert_to_probabilities(ec_seq_all);
+    if (data.is_probabilities) { convert_to_probabilities(ec_seq_all); }
   });
 
   /////////////////////// do prediction
@@ -365,7 +376,10 @@ void predict_csoaa_ldf(ldf& data, single_learner& base, VW::multi_ex& ec_seq_all
 void predict_csoaa_ldf_rank(ldf& data, single_learner& base, VW::multi_ex& ec_seq_all)
 {
   data.ft_offset = ec_seq_all[0]->ft_offset;
-  if (ec_seq_all.empty()) return;  // nothing more to do
+  if (ec_seq_all.empty())
+  {
+    return;  // nothing more to do
+  }
 
   uint32_t K = static_cast<uint32_t>(ec_seq_all.size());
 
@@ -407,7 +421,7 @@ void global_print_newline(VW::workspace& all)
   {
     ssize_t t;
     t = sink->write(temp, 1);
-    if (t != 1) all.logger.err_error("write error: {}", VW::strerror_to_string(errno));
+    if (t != 1) { all.logger.err_error("write error: {}", VW::strerror_to_string(errno)); }
   }
 }
 
@@ -417,7 +431,7 @@ void output_example(
   const label& ld = ec.l.cs;
   const auto& costs = ld.costs;
 
-  if (VW::example_is_newline(ec)) return;
+  if (VW::example_is_newline(ec)) { return; }
 
   if (COST_SENSITIVE::ec_is_example_header(ec))
   {
@@ -451,13 +465,15 @@ void output_example(
     predicted_class = (*ec_seq)[predicted_K]->l.cs.costs[0].class_index;
   }
   else
+  {
     predicted_class = ec.pred.multiclass;
+  }
 
   if (!COST_SENSITIVE::cs_label.test_label(ec.l))
   {
     for (auto const& cost : costs)
     {
-      if (hit_loss) break;
+      if (hit_loss) { break; }
       if (predicted_class == cost.class_index)
       {
         loss = cost.x;
@@ -470,8 +486,10 @@ void output_example(
   }
 
   for (auto& sink : all.final_prediction_sink)
+  {
     all.print_by_ref(sink.get(), data.is_probabilities ? ec.pred.prob : static_cast<float>(ec.pred.multiclass), 0,
         ec.tag, all.logger);
+  }
 
   if (all.raw_prediction != nullptr)
   {
@@ -479,7 +497,7 @@ void output_example(
     std::stringstream outputStringStream(outputString);
     for (size_t i = 0; i < costs.size(); i++)
     {
-      if (i > 0) outputStringStream << ' ';
+      if (i > 0) { outputStringStream << ' '; }
       outputStringStream << costs[i].class_index << ':' << costs[i].partial_prediction;
     }
     // outputStringStream << std::endl;
@@ -493,7 +511,7 @@ void output_rank_example(VW::workspace& all, VW::example& head_ec, bool& hit_los
 {
   const auto& costs = head_ec.l.cs.costs;
 
-  if (VW::example_is_newline(head_ec)) return;
+  if (VW::example_is_newline(head_ec)) { return; }
 
   all.sd->total_features += head_ec.get_num_features();
 
@@ -504,7 +522,7 @@ void output_rank_example(VW::workspace& all, VW::example& head_ec, bool& hit_los
   {
     for (VW::example* ex : *ec_seq)
     {
-      if (hit_loss) break;
+      if (hit_loss) { break; }
       if (preds[0].action == ex->l.cs.costs[0].class_index)
       {
         loss = ex->l.cs.costs[0].x;
@@ -517,7 +535,7 @@ void output_rank_example(VW::workspace& all, VW::example& head_ec, bool& hit_los
   }
 
   for (auto& sink : all.final_prediction_sink)
-    print_action_score(sink.get(), head_ec.pred.a_s, head_ec.tag, all.logger);
+  { print_action_score(sink.get(), head_ec.pred.a_s, head_ec.tag, all.logger); }
 
   if (all.raw_prediction != nullptr)
   {
@@ -525,7 +543,7 @@ void output_rank_example(VW::workspace& all, VW::example& head_ec, bool& hit_los
     std::stringstream outputStringStream(outputString);
     for (size_t i = 0; i < costs.size(); i++)
     {
-      if (i > 0) outputStringStream << ' ';
+      if (i > 0) { outputStringStream << ' '; }
       outputStringStream << costs[i].class_index << ':' << costs[i].partial_prediction;
     }
     // outputStringStream << std::endl;
@@ -540,17 +558,19 @@ void output_example_seq(VW::workspace& all, ldf& data, VW::multi_ex& ec_seq)
   size_t K = ec_seq.size();
   if (K > 0)
   {
-    if (test_ldf_sequence(data, ec_seq, all.logger))
-      all.sd->weighted_unlabeled_examples += ec_seq[0]->weight;
+    if (test_ldf_sequence(data, ec_seq, all.logger)) { all.sd->weighted_unlabeled_examples += ec_seq[0]->weight; }
     else
+    {
       all.sd->weighted_labeled_examples += ec_seq[0]->weight;
+    }
     all.sd->example_number++;
 
     bool hit_loss = false;
-    if (data.rank)
-      output_rank_example(all, **(ec_seq.begin()), hit_loss, &(ec_seq));
+    if (data.rank) { output_rank_example(all, **(ec_seq.begin()), hit_loss, &(ec_seq)); }
     else
-      for (VW::example* ec : ec_seq) output_example(all, *ec, hit_loss, &(ec_seq), data);
+    {
+      for (VW::example* ec : ec_seq) { output_example(all, *ec, hit_loss, &(ec_seq), data); }
+    }
 
     if (all.raw_prediction != nullptr)
     {
@@ -575,17 +595,18 @@ void output_example_seq(VW::workspace& all, ldf& data, VW::multi_ex& ec_seq)
 
       float multiclass_log_loss = 999;  // -log(0) = plus infinity
       float correct_class_prob = ec_seq[correct_class_k]->pred.prob;
-      if (correct_class_prob > 0) multiclass_log_loss = -std::log(correct_class_prob);
+      if (correct_class_prob > 0) { multiclass_log_loss = -std::log(correct_class_prob); }
 
       // TODO: How to detect if we should update holdout or normal loss?
       // (ec.test_only) OR (COST_SENSITIVE::example_is_test(ec))
       // What should be the "ec"? data.ec_seq[0]?
       // Based on parse_args.cc (where "average multiclass log loss") is printed,
       // I decided to try yet another way: (!all.holdout_set_off).
-      if (!all.holdout_set_off)
-        all.sd->holdout_multiclass_log_loss += multiclass_log_loss;
+      if (!all.holdout_set_off) { all.sd->holdout_multiclass_log_loss += multiclass_log_loss; }
       else
+      {
         all.sd->multiclass_log_loss += multiclass_log_loss;
+      }
     }
   }
 }
@@ -647,20 +668,20 @@ base_learner* csldf_setup(VW::setup_base_i& stack_builder)
 
   std::string ldf_arg;
 
-  if (options.was_supplied("csoaa_ldf"))
-    ldf_arg = csoaa_ldf;
+  if (options.was_supplied("csoaa_ldf")) { ldf_arg = csoaa_ldf; }
   else
   {
     ldf_arg = wap_ldf;
     ld->is_wap = true;
   }
-  if (options.was_supplied("ldf_override")) ldf_arg = ldf_override;
+  if (options.was_supplied("ldf_override")) { ldf_arg = ldf_override; }
 
   ld->treat_as_classifier = false;
-  if (ldf_arg == "multiline" || ldf_arg == "m")
-    ld->treat_as_classifier = false;
+  if (ldf_arg == "multiline" || ldf_arg == "m") { ld->treat_as_classifier = false; }
   else if (ldf_arg == "multiline-classifier" || ldf_arg == "mc")
+  {
     ld->treat_as_classifier = true;
+  }
   else
   {
     if (all.training) THROW("ldf requires either m/multiline or mc/multiline-classifier");
@@ -673,7 +694,7 @@ base_learner* csldf_setup(VW::setup_base_i& stack_builder)
   if (ld->is_probabilities)
   {
     all.sd->report_multiclass_log_loss = true;
-    auto loss_function_type = all.loss->getType();
+    auto loss_function_type = all.loss->get_type();
     if (loss_function_type != "logistic")
     {
       all.logger.out_warn(

@@ -454,7 +454,7 @@ buffer_view::buffer_view(const char* data, size_t len) : reader(true), _data(dat
 ssize_t buffer_view::read(char* buffer, size_t num_bytes)
 {
   num_bytes = std::min((_data + _len) - _read_head, static_cast<std::ptrdiff_t>(num_bytes));
-  if (num_bytes == 0) return 0;
+  if (num_bytes == 0) { return 0; }
 
   std::memcpy(buffer, _read_head, num_bytes);
   _read_head += num_bytes;

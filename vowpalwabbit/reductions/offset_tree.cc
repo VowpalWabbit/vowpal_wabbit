@@ -23,7 +23,7 @@ tree_node::tree_node(uint32_t node_id, uint32_t left_node_id, uint32_t right_nod
 
 bool tree_node::operator==(const tree_node& rhs) const
 {
-  if (this == &rhs) return true;
+  if (this == &rhs) { return true; }
   return (id == rhs.id && left_id == rhs.left_id && right_id == rhs.right_id && is_leaf == rhs.is_leaf &&
       parent_id == rhs.parent_id);
 }
@@ -79,7 +79,7 @@ void min_depth_binary_tree::build_tree(uint32_t num_nodes)
         nodes[right].parent_id = id;
         nodes.emplace_back(id++, left, right, 0, false);
       }
-      if (num_tournaments % 2 == 1) new_tournaments.emplace_back(tournaments.back());
+      if (num_tournaments % 2 == 1) { new_tournaments.emplace_back(tournaments.back()); }
       tournaments = std::move(new_tournaments);
     }
     root_idx = tournaments[0];
@@ -139,7 +139,7 @@ const offset_tree::scores_t& offset_tree::predict(LEARNER::single_learner& base,
   _scores.resize(t.leaf_node_count());
 
   // Handle degenerate cases of zero and one node trees
-  if (t.leaf_node_count() == 0) return _scores;
+  if (t.leaf_node_count() == 0) { return _scores; }
   if (t.leaf_node_count() == 1)
   {
     _scores[0] = 1.0f;
@@ -166,7 +166,7 @@ const offset_tree::scores_t& offset_tree::predict(LEARNER::single_learner& base,
   for (auto rit = t.nodes.rbegin(); rit != t.nodes.rend(); ++rit)
   {
     // done processing all internal nodes
-    if (rit->is_leaf) break;
+    if (rit->is_leaf) { break; }
 
     // update probabilities for left node
     const float left_p = buffer_helper[rit->id].first;
@@ -210,7 +210,7 @@ void offset_tree::learn(LEARNER::single_learner& base, example& ec)
 
     // learn
     uint32_t local_action = 2;
-    if (node.left_id == previous_id) local_action = 1;
+    if (node.left_id == previous_id) { local_action = 1; }
     ec.l.cb.costs[0].action = local_action;
     base.learn(ec, node.id - binary_tree.leaf_node_count());
 
@@ -258,7 +258,7 @@ base_learner* setup(VW::setup_base_i& stack_builder)
   uint32_t num_actions;
   new_options.add(make_option("ot", num_actions).keep().necessary().help("Offset tree with <k> labels"));
 
-  if (!options.add_parse_and_check_necessary(new_options)) return nullptr;
+  if (!options.add_parse_and_check_necessary(new_options)) { return nullptr; }
 
   // Ensure that cb_explore will be the base reduction
   if (!options.was_supplied("cb_explore")) { options.insert("cb_explore", "2"); }

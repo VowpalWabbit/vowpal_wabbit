@@ -37,7 +37,7 @@ void predict_or_learn(scorer& s, VW::LEARNER::single_learner& base, VW::example&
   }
 
   if (ec.weight > 0 && ec.l.simple.label != FLT_MAX)
-  { ec.loss = s.all->loss->getLoss(s.all->sd, ec.pred.scalar, ec.l.simple.label) * ec.weight; }
+  { ec.loss = s.all->loss->get_loss(s.all->sd, ec.pred.scalar, ec.l.simple.label) * ec.weight; }
 
   ec.pred.scalar = link(ec.pred.scalar);
   VW_DBG(ec) << "ex#= " << ec.example_counter << ", offset=" << ec.ft_offset << ", lbl=" << ec.l.simple.label

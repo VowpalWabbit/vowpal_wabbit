@@ -105,7 +105,7 @@ void cb_explore_adf_synthcover::predict_or_learn_impl(VW::LEARNER::multi_learner
   std::make_heap(preds.begin(), preds.end(), VW::action_score_compare_gt);
 
   _action_probs.clear();
-  for (uint32_t i = 0; i < num_actions; i++) _action_probs.push_back({i, 0.});
+  for (uint32_t i = 0; i < num_actions; i++) { _action_probs.push_back({i, 0.}); }
 
   for (uint32_t i = 0; i < _synthcoversize;)
   {
@@ -128,7 +128,7 @@ void cb_explore_adf_synthcover::predict_or_learn_impl(VW::LEARNER::multi_learner
 
   std::sort(_action_probs.begin(), _action_probs.end(), VW::action_score_compare_gt);
 
-  for (size_t i = 0; i < num_actions; i++) preds[i] = _action_probs[i];
+  for (size_t i = 0; i < num_actions; i++) { preds[i] = _action_probs[i]; }
 }
 
 void cb_explore_adf_synthcover::save_load(io_buf& model_file, bool read, bool text)
@@ -137,10 +137,10 @@ void cb_explore_adf_synthcover::save_load(io_buf& model_file, bool read, bool te
   if (!read || _model_file_version >= VW::version_definitions::VERSION_FILE_WITH_CCB_MULTI_SLOTS_SEEN_FLAG)
   {
     std::stringstream msg;
-    if (!read) msg << "_min_cost " << _min_cost << "\n";
+    if (!read) { msg << "_min_cost " << _min_cost << "\n"; }
     bin_text_read_write_fixed(model_file, reinterpret_cast<char*>(&_min_cost), sizeof(_min_cost), read, msg, text);
 
-    if (!read) msg << "_max_cost " << _max_cost << "\n";
+    if (!read) { msg << "_max_cost " << _max_cost << "\n"; }
     bin_text_read_write_fixed(model_file, reinterpret_cast<char*>(&_max_cost), sizeof(_max_cost), read, msg, text);
   }
 }
@@ -175,7 +175,7 @@ VW::LEARNER::base_learner* setup(VW::setup_base_i& stack_builder)
                .allow_override()
                .help("Number of policies in cover"));
 
-  if (!options.add_parse_and_check_necessary(new_options)) return nullptr;
+  if (!options.add_parse_and_check_necessary(new_options)) { return nullptr; }
 
   // Ensure serialization of cb_adf in all cases.
   if (!options.was_supplied("cb_adf")) { options.insert("cb_adf", ""); }
@@ -188,7 +188,7 @@ VW::LEARNER::base_learner* setup(VW::setup_base_i& stack_builder)
   {
     *(all.trace_message) << "Using synthcover for CB exploration" << std::endl;
     *(all.trace_message) << "synthcoversize = " << synthcoversize << std::endl;
-    if (epsilon > 0) *(all.trace_message) << "epsilon = " << epsilon << std::endl;
+    if (epsilon > 0) { *(all.trace_message) << "epsilon = " << epsilon << std::endl; }
     *(all.trace_message) << "synthcoverpsi = " << psi << std::endl;
   }
 

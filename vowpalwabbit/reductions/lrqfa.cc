@@ -47,7 +47,7 @@ void predict_or_learn(LRQFAstate& lrq, single_learner& base, VW::example& ec)
   VW::workspace& all = *lrq.all;
 
   memset(lrq.orig_size, 0, sizeof(lrq.orig_size));
-  for (VW::namespace_index i : ec.indices) lrq.orig_size[i] = ec.feature_space[i].size();
+  for (VW::namespace_index i : ec.indices) { lrq.orig_size[i] = ec.feature_space[i].size(); }
 
   size_t which = ec.example_counter;
   float first_prediction = 0;
@@ -109,10 +109,11 @@ void predict_or_learn(LRQFAstate& lrq, single_learner& base, VW::example& ec)
       }
     }
 
-    if (is_learn)
-      base.learn(ec);
+    if (is_learn) { base.learn(ec); }
     else
+    {
       base.predict(ec);
+    }
 
     // Restore example
     if (iter == 0)
@@ -145,7 +146,7 @@ VW::LEARNER::base_learner* lrqfa_setup(VW::setup_base_i& stack_builder)
   new_options.add(
       make_option("lrqfa", lrqfa).keep().necessary().help("Use low rank quadratic features with field aware weights"));
 
-  if (!options.add_parse_and_check_necessary(new_options)) return nullptr;
+  if (!options.add_parse_and_check_necessary(new_options)) { return nullptr; }
 
   auto lrq = VW::make_unique<LRQFAstate>();
   lrq->all = &all;
@@ -158,7 +159,7 @@ VW::LEARNER::base_learner* lrqfa_setup(VW::setup_base_i& stack_builder)
   lrq->k = atoi(lrqopt.substr(last_index + 1).c_str());
 
   int fd_id = 0;
-  for (char i : lrq->field_name) lrq->field_id[static_cast<int>(i)] = fd_id++;
+  for (char i : lrq->field_name) { lrq->field_id[static_cast<int>(i)] = fd_id++; }
 
   all.wpp = all.wpp * static_cast<uint64_t>(1 + lrq->k);
   auto base = stack_builder.setup_base_learner();

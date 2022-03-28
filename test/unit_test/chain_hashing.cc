@@ -27,7 +27,10 @@ BOOST_AUTO_TEST_CASE(chain_hashing_between_formats)
     VW::multi_ex examples;
     examples.push_back(&VW::get_unused_example(vw));
     auto example = examples[0];
+
     VW::read_line(*vw, example, text.c_str());
+    setup_example(*vw, example);
+
     auto& indices = example->feature_space['f'].indices;
     txt_idx = indices[0];
     VW::finish_example(*vw, examples);

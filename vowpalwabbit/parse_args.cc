@@ -65,7 +65,7 @@ uint64_t hash_file_contents(VW::io::reader* f)
   while (true)
   {
     ssize_t n = f->read(buf, 1024);
-    if (n <= 0) break;
+    if (n <= 0) { break; }
     for (ssize_t i = 0; i < n; i++)
     {
       v *= 341789041;
@@ -78,10 +78,11 @@ uint64_t hash_file_contents(VW::io::reader* f)
 bool directory_exists(const std::string& path)
 {
   struct stat info;
-  if (stat(path.c_str(), &info) != 0)
-    return false;
+  if (stat(path.c_str(), &info) != 0) { return false; }
   else
+  {
     return (info.st_mode & S_IFDIR) > 0;
+  }
   //  boost::filesystem::path p(path);
   //  return boost::filesystem::exists(p) && boost::filesystem::is_directory(p);
 }
@@ -99,14 +100,14 @@ std::string find_in_path(const std::vector<std::string>& paths, const std::strin
     if (!VW::ends_with(path, delimiter)) { full += delimiter; }
     full += fname;
     std::ifstream f(full.c_str());
-    if (f.good()) return full;
+    if (f.good()) { return full; }
   }
   return "";
 }
 
 void parse_dictionary_argument(VW::workspace& all, const std::string& str)
 {
-  if (str.length() == 0) return;
+  if (str.length() == 0) { return; }
   // expecting 'namespace:file', for instance 'w:foo.txt'
   // in the case of just 'foo.txt' it's applied to the default namespace
 
@@ -136,8 +137,10 @@ void parse_dictionary_argument(VW::workspace& all, const std::string& str)
   uint64_t fd_hash = hash_file_contents(file_adapter.get());
 
   if (!all.quiet)
+  {
     *(all.trace_message) << "scanned dictionary '" << s << "' from '" << file_name << "', hash=" << std::hex << fd_hash
                          << std::dec << endl;
+  }
 
   // see if we've already read this dictionary
   for (size_t id = 0; id < all.loaded_dictionaries.size(); id++)
@@ -175,7 +178,7 @@ void parse_dictionary_argument(VW::workspace& all, const std::string& str)
     do
     {
       num_read = fd->read(&rc, 1);
-      if ((rc != EOF) && (num_read > 0)) buffer[pos++] = rc;
+      if ((rc != EOF) && (num_read > 0)) { buffer[pos++] = rc; }
       if (pos >= size - 1)
       {
         size *= 2;
@@ -187,18 +190,32 @@ void parse_dictionary_argument(VW::workspace& all, const std::string& str)
           THROW("error: memory allocation failed in reading dictionary")
         }
         else
+        {
           buffer = new_buffer;
+        }
       }
     } while ((rc != EOF) && (rc != '\n') && (num_read > 0));
     buffer[pos] = 0;
 
     // we now have a line in buffer
     char* c = buffer;
-    while (*c == ' ' || *c == '\t') ++c;  // skip initial whitespace
+    while (*c == ' ' || *c == '\t')
+    {
+      ++c;  // skip initial whitespace
+    }
     char* d = c;
-    while (*d != ' ' && *d != '\t' && *d != '\n' && *d != '\0') ++d;  // gobble up initial word
-    if (d == c) continue;                                             // no word
-    if (*d != ' ' && *d != '\t') continue;                            // reached end of line
+    while (*d != ' ' && *d != '\t' && *d != '\n' && *d != '\0')
+    {
+      ++d;  // gobble up initial word
+    }
+    if (d == c)
+    {
+      continue;  // no word
+    }
+    if (*d != ' ' && *d != '\t')
+    {
+      continue;  // reached end of line
+    }
     std::string word(c, d - c);
     if (map->find(word) != map->end())  // don't overwrite old values!
     { continue; }
@@ -218,8 +235,10 @@ void parse_dictionary_argument(VW::workspace& all, const std::string& str)
   VW::dealloc_examples(ec, 1);
 
   if (!all.quiet)
+  {
     *(all.trace_message) << "dictionary " << s << " contains " << map->size() << " item"
                          << (map->size() == 1 ? "" : "s") << endl;
+  }
 
   all.namespace_dictionaries[static_cast<size_t>(ns)].push_back(map);
   dictionary_info info = {std::string{s}, fd_hash, map};
@@ -228,7 +247,7 @@ void parse_dictionary_argument(VW::workspace& all, const std::string& str)
 
 void parse_affix_argument(VW::workspace& all, const std::string& str)
 {
-  if (str.length() == 0) return;
+  if (str.length() == 0) { return; }
   char* cstr = calloc_or_throw<char>(str.length() + 1);
   VW::string_cpy(cstr, (str.length() + 1), str.c_str());
 
@@ -253,8 +272,7 @@ void parse_affix_argument(VW::workspace& all, const std::string& str)
       auto ns = static_cast<uint16_t>(' ');  // default namespace
       if (q[1] != 0)
       {
-        if (VW::valid_ns(q[1]))
-          ns = static_cast<uint16_t>(q[1]);
+        if (VW::valid_ns(q[1])) { ns = static_cast<uint16_t>(q[1]); }
         else
           THROW("malformed affix argument (invalid namespace): " << p)
 
@@ -308,7 +326,7 @@ void parse_diagnostics(options_i& options, VW::workspace& all)
   }
 
   // pass all.quiet around
-  if (all.all_reduce) all.all_reduce->quiet = all.quiet;
+  if (all.all_reduce) { all.all_reduce->quiet = all.quiet; }
 
   // Upon direct query for version -- spit it out directly to stdout
   if (version_arg)
@@ -436,13 +454,13 @@ namespace VW
 {
 const char* are_features_compatible(VW::workspace& vw1, VW::workspace& vw2)
 {
-  if (vw1.example_parser->hasher != vw2.example_parser->hasher) return "hasher";
+  if (vw1.example_parser->hasher != vw2.example_parser->hasher) { return "hasher"; }
 
   if (!std::equal(vw1.spelling_features.begin(), vw1.spelling_features.end(), vw2.spelling_features.begin()))
-    return "spelling_features";
+  { return "spelling_features"; }
 
   if (!std::equal(vw1.affix_features.begin(), vw1.affix_features.end(), vw2.affix_features.begin()))
-    return "affix_features";
+  { return "affix_features"; }
 
   if (vw1.skip_gram_transformer != nullptr && vw2.skip_gram_transformer != nullptr)
   {
@@ -451,9 +469,9 @@ const char* are_features_compatible(VW::workspace& vw1, VW::workspace& vw2)
     const auto& vw1_skips_strings = vw1.skip_gram_transformer->get_initial_skip_definitions();
     const auto& vw2_skips_strings = vw2.skip_gram_transformer->get_initial_skip_definitions();
 
-    if (!std::equal(vw1_ngram_strings.begin(), vw1_ngram_strings.end(), vw2_ngram_strings.begin())) return "ngram";
+    if (!std::equal(vw1_ngram_strings.begin(), vw1_ngram_strings.end(), vw2_ngram_strings.begin())) { return "ngram"; }
 
-    if (!std::equal(vw1_skips_strings.begin(), vw1_skips_strings.end(), vw2_skips_strings.begin())) return "skips";
+    if (!std::equal(vw1_skips_strings.begin(), vw1_skips_strings.end(), vw2_skips_strings.begin())) { return "skips"; }
   }
   else if (vw1.skip_gram_transformer != nullptr || vw2.skip_gram_transformer != nullptr)
   {
@@ -461,39 +479,41 @@ const char* are_features_compatible(VW::workspace& vw1, VW::workspace& vw2)
     return "ngram";
   }
 
-  if (!std::equal(vw1.limit.begin(), vw1.limit.end(), vw2.limit.begin())) return "limit";
+  if (!std::equal(vw1.limit.begin(), vw1.limit.end(), vw2.limit.begin())) { return "limit"; }
 
-  if (vw1.num_bits != vw2.num_bits) return "num_bits";
+  if (vw1.num_bits != vw2.num_bits) { return "num_bits"; }
 
-  if (vw1.permutations != vw2.permutations) return "permutations";
+  if (vw1.permutations != vw2.permutations) { return "permutations"; }
 
-  if (vw1.interactions.size() != vw2.interactions.size()) return "interactions size";
+  if (vw1.interactions.size() != vw2.interactions.size()) { return "interactions size"; }
 
-  if (vw1.ignore_some != vw2.ignore_some) return "ignore_some";
+  if (vw1.ignore_some != vw2.ignore_some) { return "ignore_some"; }
 
-  if (vw1.ignore_some && !std::equal(vw1.ignore.begin(), vw1.ignore.end(), vw2.ignore.begin())) return "ignore";
+  if (vw1.ignore_some && !std::equal(vw1.ignore.begin(), vw1.ignore.end(), vw2.ignore.begin())) { return "ignore"; }
 
-  if (vw1.ignore_some_linear != vw2.ignore_some_linear) return "ignore_some_linear";
+  if (vw1.ignore_some_linear != vw2.ignore_some_linear) { return "ignore_some_linear"; }
 
   if (vw1.ignore_some_linear &&
       !std::equal(vw1.ignore_linear.begin(), vw1.ignore_linear.end(), vw2.ignore_linear.begin()))
-    return "ignore_linear";
+  { return "ignore_linear"; }
 
-  if (vw1.redefine_some != vw2.redefine_some) return "redefine_some";
+  if (vw1.redefine_some != vw2.redefine_some) { return "redefine_some"; }
 
   if (vw1.redefine_some && !std::equal(vw1.redefine.begin(), vw1.redefine.end(), vw2.redefine.begin()))
-    return "redefine";
+  { return "redefine"; }
 
-  if (vw1.add_constant != vw2.add_constant) return "add_constant";
+  if (vw1.add_constant != vw2.add_constant) { return "add_constant"; }
 
-  if (vw1.dictionary_path.size() != vw2.dictionary_path.size()) return "dictionary_path size";
+  if (vw1.dictionary_path.size() != vw2.dictionary_path.size()) { return "dictionary_path size"; }
 
   if (!std::equal(vw1.dictionary_path.begin(), vw1.dictionary_path.end(), vw2.dictionary_path.begin()))
-    return "dictionary_path";
+  { return "dictionary_path"; }
 
   for (auto i = std::begin(vw1.interactions), j = std::begin(vw2.interactions); i != std::end(vw1.interactions);
        ++i, ++j)
-    if (*i != *j) return "interaction mismatch";
+  {
+    if (*i != *j) { return "interaction mismatch"; }
+  }
 
   return nullptr;
 }
@@ -640,14 +660,15 @@ void parse_feature_tweaks(options_i& options, VW::workspace& all, bool interacti
     for (auto& spelling_n : spelling_ns)
     {
       spelling_n = VW::decode_inline_hex(spelling_n, all.logger);
-      if (spelling_n[0] == '_')
-        all.spelling_features[static_cast<unsigned char>(' ')] = true;
+      if (spelling_n[0] == '_') { all.spelling_features[static_cast<unsigned char>(' ')] = true; }
       else
+      {
         all.spelling_features[static_cast<size_t>(spelling_n[0])] = true;
+      }
     }
   }
 
-  if (options.was_supplied("affix")) parse_affix_argument(all, VW::decode_inline_hex(affix, all.logger));
+  if (options.was_supplied("affix")) { parse_affix_argument(all, VW::decode_inline_hex(affix, all.logger)); }
 
   // Process ngram and skips arguments
   if (options.was_supplied("skips"))
@@ -673,7 +694,7 @@ void parse_feature_tweaks(options_i& options, VW::workspace& all, bool interacti
         VW::kskip_ngram_transformer::build(hex_decoded_ngram_strings, hex_decoded_skip_strings, all.quiet, all.logger));
   }
 
-  if (options.was_supplied("feature_limit")) compile_limits(all.limit_strings, all.limit, all.quiet, all.logger);
+  if (options.was_supplied("feature_limit")) { compile_limits(all.limit_strings, all.limit, all.quiet, all.logger); }
 
   if (options.was_supplied("bit_precision"))
   {
@@ -821,7 +842,7 @@ void parse_feature_tweaks(options_i& options, VW::workspace& all, bool interacti
     for (auto& i : ignores)
     {
       i = VW::decode_inline_hex(i, all.logger);
-      for (auto j : i) all.ignore[static_cast<size_t>(static_cast<unsigned char>(j))] = true;
+      for (auto j : i) { all.ignore[static_cast<size_t>(static_cast<unsigned char>(j))] = true; }
     }
 
     if (!all.quiet)
@@ -829,7 +850,7 @@ void parse_feature_tweaks(options_i& options, VW::workspace& all, bool interacti
       *(all.trace_message) << "ignoring namespaces beginning with:";
       for (size_t i = 0; i < NUM_NAMESPACES; ++i)
       {
-        if (all.ignore[i]) *(all.trace_message) << " " << static_cast<unsigned char>(i);
+        if (all.ignore[i]) { *(all.trace_message) << " " << static_cast<unsigned char>(i); }
       }
       *(all.trace_message) << endl;
     }
@@ -842,7 +863,7 @@ void parse_feature_tweaks(options_i& options, VW::workspace& all, bool interacti
     for (auto& i : ignore_linears)
     {
       i = VW::decode_inline_hex(i, all.logger);
-      for (auto j : i) all.ignore_linear[static_cast<size_t>(static_cast<unsigned char>(j))] = true;
+      for (auto j : i) { all.ignore_linear[static_cast<size_t>(static_cast<unsigned char>(j))] = true; }
     }
 
     if (!all.quiet)
@@ -850,7 +871,7 @@ void parse_feature_tweaks(options_i& options, VW::workspace& all, bool interacti
       *(all.trace_message) << "ignoring linear terms for namespaces beginning with:";
       for (size_t i = 0; i < NUM_NAMESPACES; ++i)
       {
-        if (all.ignore_linear[i]) *(all.trace_message) << " " << static_cast<unsigned char>(i);
+        if (all.ignore_linear[i]) { *(all.trace_message) << " " << static_cast<unsigned char>(i); }
       }
       *(all.trace_message) << endl;
     }
@@ -858,14 +879,14 @@ void parse_feature_tweaks(options_i& options, VW::workspace& all, bool interacti
 
   if (options.was_supplied("keep"))
   {
-    for (size_t i = 0; i < NUM_NAMESPACES; i++) all.ignore[i] = true;
+    for (size_t i = 0; i < NUM_NAMESPACES; i++) { all.ignore[i] = true; }
 
     all.ignore_some = true;
 
     for (auto& i : keeps)
     {
       i = VW::decode_inline_hex(i, all.logger);
-      for (const auto& j : i) all.ignore[static_cast<size_t>(static_cast<unsigned char>(j))] = false;
+      for (const auto& j : i) { all.ignore[static_cast<size_t>(static_cast<unsigned char>(j))] = false; }
     }
 
     if (!all.quiet)
@@ -873,7 +894,7 @@ void parse_feature_tweaks(options_i& options, VW::workspace& all, bool interacti
       *(all.trace_message) << "using namespaces beginning with:";
       for (size_t i = 0; i < NUM_NAMESPACES; ++i)
       {
-        if (!all.ignore[i]) *(all.trace_message) << " " << static_cast<unsigned char>(i);
+        if (!all.ignore[i]) { *(all.trace_message) << " " << static_cast<unsigned char>(i); }
       }
       *(all.trace_message) << endl;
     }
@@ -885,7 +906,7 @@ void parse_feature_tweaks(options_i& options, VW::workspace& all, bool interacti
   if (options.was_supplied("redefine"))
   {
     // initial values: i-th namespace is redefined to i itself
-    for (size_t i = 0; i < NUM_NAMESPACES; i++) all.redefine[i] = static_cast<unsigned char>(i);
+    for (size_t i = 0; i < NUM_NAMESPACES; i++) { all.redefine[i] = static_cast<unsigned char>(i); }
 
     // note: --redefine declaration order is matter
     // so --redefine :=L --redefine ab:=M  --ignore L  will ignore all except a and b under new M namspace
@@ -908,9 +929,13 @@ void parse_feature_tweaks(options_i& options, VW::workspace& all, bool interacti
           break;
         }
         else if (argument[i] == ':')
+        {
           operator_pos = i + 1;
+        }
         else if ((argument[i] == '=') && (operator_pos == i))
+        {
           operator_found = true;
+        }
       }
 
       if (!operator_found) THROW("argument of --redefine is malformed. Valid format is N:=S, :=S or N:=")
@@ -926,31 +951,38 @@ void parse_feature_tweaks(options_i& options, VW::workspace& all, bool interacti
 
       // case ':=S' doesn't require any additional code as new_namespace = ' ' by default
 
-      if (operator_pos == arg_len)  // S is empty, default namespace shall be used
+      if (operator_pos == arg_len)
+      {  // S is empty, default namespace shall be used
         all.redefine[static_cast<int>(' ')] = new_namespace;
+      }
       else
+      {
         for (size_t i = operator_pos; i < arg_len; i++)
         {
           // all namespaces from S are redefined to N
           unsigned char c = argument[i];
-          if (c != ':')
-            all.redefine[c] = new_namespace;
+          if (c != ':') { all.redefine[c] = new_namespace; }
           else
           {
             // wildcard found: redefine all except default and break
-            for (size_t j = 0; j < NUM_NAMESPACES; j++) all.redefine[j] = new_namespace;
+            for (size_t j = 0; j < NUM_NAMESPACES; j++) { all.redefine[j] = new_namespace; }
             break;  // break processing S
           }
         }
+      }
     }
   }
 
   if (options.was_supplied("dictionary"))
   {
     if (options.was_supplied("dictionary_path"))
+    {
       for (const std::string& path : dictionary_path)
-        if (directory_exists(path)) all.dictionary_path.push_back(path);
-    if (directory_exists(".")) all.dictionary_path.emplace_back(".");
+      {
+        if (directory_exists(path)) { all.dictionary_path.push_back(path); }
+      }
+    }
+    if (directory_exists(".")) { all.dictionary_path.emplace_back("."); }
 
 #if _WIN32
     std::string PATH;
@@ -981,7 +1013,7 @@ void parse_feature_tweaks(options_i& options, VW::workspace& all, bool interacti
     }
   }
 
-  if (noconstant) all.add_constant = false;
+  if (noconstant) { all.add_constant = false; }
 }
 
 void parse_example_tweaks(options_i& options, VW::workspace& all)
@@ -1045,29 +1077,35 @@ void parse_example_tweaks(options_i& options, VW::workspace& all)
 
   if (test_only || all.eta == 0.)
   {
-    if (!all.quiet) *(all.trace_message) << "only testing" << endl;
+    if (!all.quiet) { *(all.trace_message) << "only testing" << endl; }
     all.training = false;
-    if (all.lda > 0) all.eta = 0;
+    if (all.lda > 0) { all.eta = 0; }
   }
   else
+  {
     all.training = true;
+  }
 
   if ((all.numpasses > 1 || all.holdout_after > 0) && !all.holdout_set_off)
+  {
     all.holdout_set_off = false;  // holdout is on unless explicitly off
+  }
   else
+  {
     all.holdout_set_off = true;
+  }
 
   if (options.was_supplied("min_prediction") || options.was_supplied("max_prediction") || test_only)
-    all.set_minmax = noop_mm;
+  { all.set_minmax = noop_mm; }
 
   if (options.was_supplied("named_labels"))
   {
     all.sd->ldict = VW::make_unique<VW::named_labels>(named_labels);
-    if (!all.quiet) *(all.trace_message) << "parsed " << all.sd->ldict->getK() << " named labels" << endl;
+    if (!all.quiet) { *(all.trace_message) << "parsed " << all.sd->ldict->getK() << " named labels" << endl; }
   }
 
-  all.loss = getLossFunction(all, loss_function, loss_parameter);
-  if (options.was_supplied("quantile_tau") && all.loss->getType() != "quantile" && all.loss->getType() != "expectile")
+  all.loss = get_loss_function(all, loss_function, loss_parameter);
+  if (options.was_supplied("quantile_tau") && all.loss->get_type() != "quantile" && all.loss->get_type() != "expectile")
   {
     all.logger.err_warn(
         "Option 'quantile_tau' was passed but the quantile loss function is not being used. 'quantile_tau' value will "
@@ -1089,8 +1127,8 @@ void parse_example_tweaks(options_i& options, VW::workspace& all)
   if (!all.quiet)
   {
     if (all.reg_mode % 2 && !options.was_supplied("bfgs"))
-      *(all.trace_message) << "using l1 regularization = " << all.l1_lambda << endl;
-    if (all.reg_mode > 1) *(all.trace_message) << "using l2 regularization = " << all.l2_lambda << endl;
+    { *(all.trace_message) << "using l1 regularization = " << all.l1_lambda << endl; }
+    if (all.reg_mode > 1) { *(all.trace_message) << "using l2 regularization = " << all.l2_lambda << endl; }
   }
 }
 
@@ -1136,7 +1174,7 @@ void parse_output_preds(options_i& options, VW::workspace& all)
 
   if (options.was_supplied("predictions"))
   {
-    if (!all.quiet) *(all.trace_message) << "predictions = " << predictions << endl;
+    if (!all.quiet) { *(all.trace_message) << "predictions = " << predictions << endl; }
 
     if (predictions == "stdout")
     {
@@ -1207,7 +1245,7 @@ void parse_output_model(options_i& options, VW::workspace& all)
   options.add_and_parse(output_model_options);
 
   if (!all.final_regressor_name.empty() && !all.quiet)
-    *(all.trace_message) << "final_regressor = " << all.final_regressor_name << endl;
+  { *(all.trace_message) << "final_regressor = " << all.final_regressor_name << endl; }
 
   if (options.was_supplied("invert_hash")) { all.hash_inv = true; }
   if (options.was_supplied("dump_json_weights_experimental") && all.dump_json_weights_include_feature_names)
@@ -1441,7 +1479,7 @@ bool check_interaction_settings_collision(options_i& options, const std::string&
   const bool command_line_has_interaction = options.was_supplied("q") || options.was_supplied("quadratic") ||
       options.was_supplied("cubic") || options.was_supplied("interactions");
 
-  if (!command_line_has_interaction) return false;
+  if (!command_line_has_interaction) { return false; }
 
   // we don't use -q to save pairs in all.file_options, so only 3 options checked
   bool file_options_has_interaction = file_options.find("--quadratic") != std::string::npos;
@@ -1565,10 +1603,11 @@ void instantiate_learner(VW::workspace& all, std::unique_ptr<VW::setup_base_i> l
 
 void parse_sources(options_i& options, VW::workspace& all, io_buf& model, bool skip_model_load)
 {
-  if (!skip_model_load)
-    load_input_model(all, model);
+  if (!skip_model_load) { load_input_model(all, model); }
   else
+  {
     model.close_file();
+  }
 
   auto parsed_source_options = parse_source(all, options);
   enable_sources(all, all.quiet, all.numpasses, parsed_source_options);
@@ -1576,7 +1615,7 @@ void parse_sources(options_i& options, VW::workspace& all, io_buf& model, bool s
   // force wpp to be a power of 2 to avoid 32-bit overflow
   uint32_t i = 0;
   const size_t params_per_problem = all.l->increment;
-  while (params_per_problem > (static_cast<uint64_t>(1) << i)) i++;
+  while (params_per_problem > (static_cast<uint64_t>(1) << i)) { i++; }
   all.wpp = (1 << i) >> all.weights.stride_shift();
 }
 
@@ -1589,8 +1628,10 @@ void cmd_string_replace_value(std::stringstream*& ss, std::string flag_to_replac
   std::string cmd = ss->str();
   size_t pos = cmd.find(flag_to_replace);
   if (pos == std::string::npos)
+  {
     // flag currently not present in command string, so just append it to command string
     *ss << " " << flag_to_replace << new_value;
+  }
   else
   {
     // flag is present, need to replace old value with new value
@@ -1662,7 +1703,7 @@ char** to_argv(std::string const& s, int& argc)
 
 void free_args(int argc, char* argv[])
 {
-  for (int i = 0; i < argc; i++) free(argv[i]);
+  for (int i = 0; i < argc; i++) { free(argv[i]); }
   free(argv);
 }
 
@@ -1731,7 +1772,7 @@ std::unique_ptr<VW::workspace> initialize_internal(std::unique_ptr<options_i, op
     *(all->trace_message) << "learning rate = " << all->eta << endl;
     *(all->trace_message) << "initial_t = " << all->sd->t << endl;
     *(all->trace_message) << "power_t = " << all->power_t << endl;
-    if (all->numpasses > 1) *(all->trace_message) << "decay_learning_rate = " << all->eta_decay_rate << endl;
+    if (all->numpasses > 1) { *(all->trace_message) << "decay_learning_rate = " << all->eta_decay_rate << endl; }
     if (all->options->was_supplied("cb_type"))
     {
       *(all->trace_message) << "cb_type = " << all->options->get_typed_option<std::string>("cb_type").value() << endl;
@@ -1739,10 +1780,10 @@ std::unique_ptr<VW::workspace> initialize_internal(std::unique_ptr<options_i, op
   }
 
   // we must delay so parse_mask is fully defined.
-  for (const auto& name_space : dictionary_namespaces) parse_dictionary_argument(*all, name_space);
+  for (const auto& name_space : dictionary_namespaces) { parse_dictionary_argument(*all, name_space); }
 
   std::vector<std::string> enabled_reductions;
-  if (all->l != nullptr) all->l->get_enabled_reductions(enabled_reductions);
+  if (all->l != nullptr) { all->l->get_enabled_reductions(enabled_reductions); }
 
   // upon direct query for help -- spit it out to stdout;
   if (all->options->get_typed_option<bool>("help").value())

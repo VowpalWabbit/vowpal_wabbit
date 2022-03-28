@@ -53,7 +53,7 @@ inline void audit_regressor_interaction(audit_regressor_data& dat, const VW::aud
   }
 
   std::string ns_pre;
-  if (!dat.ns_pre.empty()) ns_pre += '*';
+  if (!dat.ns_pre.empty()) { ns_pre += '*'; }
 
   if (!f->ns.empty() && ((f->ns) != " "))
   {
@@ -70,10 +70,11 @@ inline void audit_regressor_interaction(audit_regressor_data& dat, const VW::aud
 inline void audit_regressor_feature(audit_regressor_data& dat, const float, const uint64_t ft_idx)
 {
   parameters& weights = dat.all->weights;
-  if (weights[ft_idx] != 0)
-    ++dat.values_audited;
+  if (weights[ft_idx] != 0) { ++dat.values_audited; }
   else
+  {
     return;
+  }
 
   std::string ns_pre;
   for (const auto& s : dat.ns_pre) { ns_pre += s; }
@@ -82,8 +83,10 @@ inline void audit_regressor_feature(audit_regressor_data& dat, const float, cons
   tempstream << ':' << ((ft_idx & weights.mask()) >> weights.stride_shift()) << ':' << weights[ft_idx];
 
   std::string temp = ns_pre + tempstream.str() + '\n';
-  if (dat.total_class_cnt > 1)  // add class prefix for multiclass problems
+  if (dat.total_class_cnt > 1)
+  {  // add class prefix for multiclass problems
     temp = std::to_string(dat.cur_class) + ':' + temp;
+  }
 
   dat.out_file.bin_write_fixed(temp.c_str(), static_cast<uint32_t>(temp.size()));
 
@@ -195,7 +198,7 @@ void finish_example(VW::workspace& all, audit_regressor_data& rd, VW::example& e
   if (rd.values_audited == rd.loaded_regressor_values)
   {
     // all regressor values were audited
-    if (!printed) print_ex(all, ec.example_counter + 1, rd.values_audited, 100);
+    if (!printed) { print_ex(all, ec.example_counter + 1, rd.values_audited, 100); }
     set_done(all);
   }
 
@@ -279,7 +282,7 @@ VW::LEARNER::base_learner* VW::reductions::audit_regressor_setup(VW::setup_base_
                       .help("Stores feature names and their regressor values. Same dataset must be used for both "
                             "regressor training and this mode."));
 
-  if (!options.add_parse_and_check_necessary(new_options)) return nullptr;
+  if (!options.add_parse_and_check_necessary(new_options)) { return nullptr; }
 
   if (out_file.empty()) { THROW("audit_regressor argument (output filename) is missing.") }
 
