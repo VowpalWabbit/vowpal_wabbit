@@ -294,6 +294,7 @@ jobs:
             ${{ env.VCPKG_ROOT }}/installed/
           key: |
             {{ env.VCPKG_REF }}-${{ matrix.config.version }}-python-win-cache-invalidate-0
+      - run: ${{ env.VCPKG_ROOT }}/bootstrap-vcpkg.bat
       - name: Build wheel
         shell: powershell
         run: |
