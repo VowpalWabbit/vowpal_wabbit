@@ -308,7 +308,7 @@ jobs:
         if: always()
         with:
           name: logs${{ matrix.config.version }}
-          path: ${{ env.VCPKG_ROOT }}\buildtrees\python3\
+          path: ${{ env.VCPKG_ROOT }}\buildtrees\python3\*.log
       - name: Upload built wheel
         uses: actions/upload-artifact@v1
         with:
