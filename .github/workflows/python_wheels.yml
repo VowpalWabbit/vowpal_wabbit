@@ -303,6 +303,12 @@ jobs:
           cp ${{ matrix.config.vcpkg_manifest }} vcpkg.json
           pip install wheel
           pip wheel . -w ${{github.workspace}}\\wheel_output --global-option --vcpkg-root="${{ env.VCPKG_ROOT }}" --global-option --cmake-generator="Visual Studio 16 2019" --global-option --cmake-options="-DVCPKG_OVERLAY_PORTS=${{github.workspace}}\\vowpal_wabbit\\${{ matrix.config.overlay_ports }}"  --verbose
+      - name: Upload logs
+        uses: actions/upload-artifact@v1
+        if: always()
+        with:
+          name: logs${{ matrix.config.version }}
+          path: ${{ env.VCPKG_ROOT }}\buildtrees\python3\
       - name: Upload built wheel
         uses: actions/upload-artifact@v1
         with:
