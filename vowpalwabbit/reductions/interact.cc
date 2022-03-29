@@ -1,11 +1,12 @@
 // Copyright (c) by respective owners including Yahoo!, Microsoft, and
 // individual contributors. All rights reserved. Released under a BSD (revised)
 // license as described in the file LICENSE.
+#include "reductions/interact.h"
+
 #include "config/options.h"
 #include "global_data.h"
 #include "io/logger.h"
 #include "learner.h"
-#include "reductions/interact.h"
 #include "setup_base.h"
 
 #include <cfloat>
@@ -13,8 +14,8 @@
 
 using namespace VW::config;
 
-namespace {
-
+namespace
+{
 struct interact
 {
   // namespaces to interact
@@ -148,7 +149,7 @@ void predict_or_learn(interact& in, VW::LEARNER::single_learner& base, VW::examp
   f1 = in.feat_store;
   ec.num_features = in.num_features;
 }
-}
+}  // namespace
 
 VW::LEARNER::base_learner* VW::reductions::interact_setup(VW::setup_base_i& stack_builder)
 {

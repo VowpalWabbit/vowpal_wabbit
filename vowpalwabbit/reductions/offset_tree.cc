@@ -205,7 +205,8 @@ void offset_tree::learn(LEARNER::single_learner& base, example& ec)
   auto& nodes = binary_tree.nodes;
 
   tree_node node = nodes[global_action - 1];
-  do {  // ascend
+  do
+  {  // ascend
     const auto previous_id = node.id;
     node = nodes[node.parent_id];
 
@@ -229,8 +230,8 @@ void offset_tree::learn(LEARNER::single_learner& base, example& ec)
 
 namespace
 {
-
-inline void copy_to_action_scores(const VW::reductions::offset_tree::offset_tree::scores_t& scores, ACTION_SCORE::action_scores& a_s)
+inline void copy_to_action_scores(
+    const VW::reductions::offset_tree::offset_tree::scores_t& scores, ACTION_SCORE::action_scores& a_s)
 {
   a_s.clear();
   for (uint32_t idx = 0; idx < scores.size(); ++idx) { a_s.push_back({idx, scores[idx]}); }
@@ -257,7 +258,7 @@ void learn(VW::reductions::offset_tree::offset_tree& tree, single_learner& base,
   // restore predictions
   copy_to_action_scores(saved_scores, ec.pred.a_s);
 }
-}
+}  // namespace
 
 base_learner* VW::reductions::offset_tree_setup(VW::setup_base_i& stack_builder)
 {

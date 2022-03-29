@@ -123,7 +123,7 @@ void finish_example(VW::workspace& all, topk& d, VW::multi_ex& ec_seq)
   VW::finish_example(all, ec_seq);
 }
 
-}
+}  // namespace
 
 VW::LEARNER::base_learner* VW::reductions::topk_setup(VW::setup_base_i& stack_builder)
 {

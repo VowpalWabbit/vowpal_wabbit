@@ -23,8 +23,8 @@
 using namespace VW::LEARNER;
 using namespace VW::config;
 
-namespace {
-
+namespace
+{
 static constexpr uint32_t parent_bit = 1;
 static constexpr uint32_t cycle_bit = 2;
 static constexpr uint32_t tree_atomics = 134;
@@ -663,7 +663,7 @@ void save_load(stagewise_poly& poly, io_buf& model_file, bool read, bool text)
   //      std::cout << "done" << std::endl;
   //#endif //DEBUG
 }
-}
+}  // namespace
 
 base_learner* VW::reductions::stagewise_poly_setup(VW::setup_base_i& stack_builder)
 {

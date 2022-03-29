@@ -19,8 +19,8 @@ using namespace VW::LEARNER;
 using namespace VW::config;
 using namespace CB_ALGS;
 
-namespace {
-
+namespace
+{
 struct interaction_ground
 {
   // the accumulated importance weighted reward of a policy which optimizes the given value
@@ -76,7 +76,7 @@ void predict(interaction_ground& ig, multi_learner& base, VW::multi_ex& ec_seq)
     base.predict(ec_seq, 1);
   }
 }
-}
+}  // namespace
 
 base_learner* VW::reductions::interaction_ground_setup(VW::setup_base_i& stack_builder)
 {

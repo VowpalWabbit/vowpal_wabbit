@@ -18,7 +18,8 @@
 
 using namespace VW::config;
 
-namespace {
+namespace
+{
 struct multi_oaa
 {
   size_t k = 0;
@@ -96,7 +97,7 @@ void finish_example(VW::workspace& all, multi_oaa& o, VW::example& ec)
   MULTILABEL::output_example(all, ec);
   VW::finish_example(all, ec);
 }
-}
+}  // namespace
 
 VW::LEARNER::base_learner* VW::reductions::multilabel_oaa_setup(VW::setup_base_i& stack_builder)
 {

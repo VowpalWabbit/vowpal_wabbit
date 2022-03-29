@@ -22,7 +22,6 @@
 
 using namespace VW::config;
 
-
 template <bool is_learn>
 void VW::reductions::slates_data::learn_or_predict(VW::LEARNER::multi_learner& base, multi_ex& examples)
 {
@@ -141,7 +140,6 @@ std::string VW::reductions::generate_slates_label_printout(const std::vector<exa
 }
 namespace
 {
-
 // PseudoInverse estimator for slate recommendation. The following implements
 // the case for a Cartesian product when the logging policy is a product
 // distribution. This can be seen in example 4 of the paper.
@@ -229,7 +227,7 @@ void learn_or_predict(VW::reductions::slates_data& data, VW::LEARNER::multi_lear
     data.predict(base, examples);
   }
 }
-}
+}  // namespace
 
 VW::LEARNER::base_learner* VW::reductions::slates_setup(VW::setup_base_i& stack_builder)
 {

@@ -2,12 +2,13 @@
 // individual contributors. All rights reserved. Released under a BSD (revised)
 // license as described in the file LICENSE.
 
+#include "reductions/scorer.h"
+
 #include "config/options.h"
 #include "correctedMath.h"
 #include "global_data.h"
 #include "learner.h"
 #include "loss_functions.h"
-#include "reductions/scorer.h"
 #include "setup_base.h"
 #include "vw_exception.h"
 
@@ -18,7 +19,8 @@
 
 using namespace VW::config;
 
-namespace{
+namespace
+{
 struct scorer
 {
   scorer(VW::workspace* all) : all(all) {}
@@ -74,7 +76,7 @@ inline float logistic(float in) { return 1.f / (1.f + correctedExp(-in)); }
 inline float glf1(float in) { return 2.f / (1.f + correctedExp(-in)) - 1.f; }
 
 inline float id(float in) { return in; }
-}
+}  // namespace
 
 VW::LEARNER::base_learner* VW::reductions::scorer_setup(VW::setup_base_i& stack_builder)
 {

@@ -1,6 +1,8 @@
 // Copyright (c) by respective owners including Yahoo!, Microsoft, and
 // individual contributors. All rights reserved. Released under a BSD (revised)
 // license as described in the file LICENSE.
+#include "reductions/lrq.h"
+
 #include "config/options.h"
 #include "example.h"
 #include "global_data.h"
@@ -8,7 +10,6 @@
 #include "memory.h"
 #include "parse_args.h"  // for spoof_hex_encoded_namespaces
 #include "rand48.h"
-#include "reductions/lrq.h"
 #include "setup_base.h"
 #include "text_utils.h"
 #include "vw_exception.h"

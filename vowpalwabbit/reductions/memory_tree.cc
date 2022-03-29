@@ -2,6 +2,8 @@
 // individual contributors. All rights reserved. Released under a BSD (revised)
 // license as described in the file LICENSE.
 
+#include "reductions/memory_tree.h"
+
 #include "config/options.h"
 #include "example.h"
 #include "future_compat.h"
@@ -9,7 +11,6 @@
 #include "numeric_casts.h"
 #include "rand48.h"
 #include "rand_state.h"
-#include "reductions/memory_tree.h"
 #include "setup_base.h"
 #include "v_array.h"
 #include "vw.h"

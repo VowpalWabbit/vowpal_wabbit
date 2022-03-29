@@ -11,4 +11,4 @@ namespace reductions
 {
 VW::LEARNER::base_learner* recall_tree_setup(VW::setup_base_i& stack_builder);
 }
-}
+}  // namespace VW

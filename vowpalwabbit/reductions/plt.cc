@@ -1,10 +1,11 @@
 // Copyright (c) by respective owners including Yahoo!, Microsoft, and
 // individual contributors. All rights reserved. Released under a BSD (revised)
 // license as described in the file LICENSE.
+#include "reductions/plt.h"
+
 #include "config/options.h"
 #include "io/logger.h"
 #include "loss_functions.h"
-#include "reductions/plt.h"
 #include "setup_base.h"
 #include "shared_data.h"
 #include "vw.h"
@@ -330,7 +331,6 @@ void save_load_tree(plt& p, io_buf& model_file, bool read, bool text)
   }
 }
 }  // namespace plt_ns
-
 
 base_learner* VW::reductions::plt_setup(VW::setup_base_i& stack_builder)
 {

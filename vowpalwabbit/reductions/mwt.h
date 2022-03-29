@@ -11,7 +11,8 @@ namespace VW
 namespace reductions
 {
 VW::LEARNER::base_learner* mwt_setup(VW::setup_base_i& stack_builder);
-}}
+}
+}  // namespace VW
 
 // TODO: move this somewhere else
 namespace MWT

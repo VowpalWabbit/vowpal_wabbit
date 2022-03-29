@@ -1,6 +1,8 @@
 // Copyright (c) by respective owners including Yahoo!, Microsoft, and
 // individual contributors. All rights reserved. Released under a BSD (revised)
 // license as described in the file LICENSE.
+#include "reductions/recall_tree.h"
+
 #include "config/options.h"
 #include "global_data.h"
 #include "learner.h"
@@ -8,7 +10,6 @@
 #include "parser.h"
 #include "rand48.h"
 #include "rand_state.h"
-#include "reductions/recall_tree.h"
 #include "setup_base.h"
 #include "vw_math.h"
 
@@ -489,7 +490,7 @@ void save_load_tree(recall_tree& b, io_buf& model_file, bool read, bool text)
   }
 }
 
-}
+}  // namespace
 
 base_learner* VW::reductions::recall_tree_setup(VW::setup_base_i& stack_builder)
 {

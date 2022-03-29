@@ -227,7 +227,7 @@ void save_load(mwt& c, io_buf& model_file, bool read, bool text)
         model_file, reinterpret_cast<char*>(&c.evals[policy].seen), sizeof(bool), read, msg, text);
   }
 }
-}
+}  // namespace
 
 base_learner* VW::reductions::mwt_setup(VW::setup_base_i& stack_builder)
 {
