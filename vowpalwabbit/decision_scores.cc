@@ -75,6 +75,6 @@ void print_update_ccb(
 void print_update_slates(
     VW::workspace& all, std::vector<example*>& slots, const VW::decision_scores_t& decision_scores, size_t num_features)
 {
-  print_update(all, slots, decision_scores, num_features, slates::generate_slates_label_printout);
+  print_update(all, slots, decision_scores, num_features, VW::reductions::generate_slates_label_printout);
 }
 }  // namespace VW

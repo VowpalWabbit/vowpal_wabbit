@@ -259,7 +259,7 @@
     <ClInclude Include="reductions/get_pmf.h" />
     <ClInclude Include="reductions/interact.h" />
     <ClInclude Include="reductions/interaction_ground.h" />
-    <ClInclude Include="reductions/interactions.h" />
+    <ClInclude Include="interactions.h" />
     <ClInclude Include="reductions/kernel_svm.h" />
     <ClInclude Include="reductions/lda_core.h" />
     <ClInclude Include="reductions/log_multi.h" />
@@ -436,7 +436,7 @@
     <ClCompile Include="reductions/get_pmf.cc" />
     <ClCompile Include="reductions/interact.cc" />
     <ClCompile Include="reductions/interaction_ground.cc" />
-    <ClCompile Include="reductions/interactions.cc" />
+    <ClCompile Include="interactions.cc" />
     <ClCompile Include="reductions/kernel_svm.cc" />
     <ClCompile Include="reductions/lda_core.cc" />
     <ClCompile Include="reductions/log_multi.cc" />

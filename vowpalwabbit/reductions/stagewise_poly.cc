@@ -2,6 +2,8 @@
 // individual contributors. All rights reserved. Released under a BSD (revised)
 // license as described in the file LICENSE.
 
+#include "stagewise_poly.h"
+
 #include "accumulate.h"
 #include "config/options.h"
 #include "gd.h"
@@ -20,6 +22,8 @@
 
 using namespace VW::LEARNER;
 using namespace VW::config;
+
+namespace {
 
 static constexpr uint32_t parent_bit = 1;
 static constexpr uint32_t cycle_bit = 2;
@@ -659,8 +663,9 @@ void save_load(stagewise_poly& poly, io_buf& model_file, bool read, bool text)
   //      std::cout << "done" << std::endl;
   //#endif //DEBUG
 }
+}
 
-base_learner* stagewise_poly_setup(VW::setup_base_i& stack_builder)
+base_learner* VW::reductions::stagewise_poly_setup(VW::setup_base_i& stack_builder)
 {
   options_i& options = *stack_builder.get_options();
   VW::workspace& all = *stack_builder.get_all_pointer();
@@ -706,7 +711,7 @@ base_learner* stagewise_poly_setup(VW::setup_base_i& stack_builder)
                 .set_input_label_type(VW::label_type_t::simple)
                 .set_output_prediction_type(VW::prediction_type_t::scalar)
                 .set_save_load(save_load)
-                .set_finish_example(finish_example)
+                .set_finish_example(::finish_example)
                 .set_end_pass(end_pass)
                 .build();
 

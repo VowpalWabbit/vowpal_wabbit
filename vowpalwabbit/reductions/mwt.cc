@@ -1,6 +1,9 @@
 // Copyright (c) by respective owners including Yahoo!, Microsoft, and
 // individual contributors. All rights reserved. Released under a BSD (revised)
 // license as described in the file LICENSE.
+
+#include "mwt.h"
+
 #include "cb.h"
 #include "cb/cb_algs.h"
 #include "config/options.h"
@@ -17,7 +20,30 @@ using namespace VW::LEARNER;
 using namespace CB_ALGS;
 using namespace VW::config;
 
-namespace MWT
+void MWT::print_scalars(VW::io::writer* f, VW::v_array<float>& scalars, VW::v_array<char>& tag, VW::io::logger& logger)
+{
+  if (f != nullptr)
+  {
+    std::stringstream ss;
+
+    for (size_t i = 0; i < scalars.size(); i++)
+    {
+      if (i > 0) { ss << ' '; }
+      ss << scalars[i];
+    }
+    for (size_t i = 0; i < tag.size(); i++)
+    {
+      if (i == 0) { ss << ' '; }
+      ss << tag[i];
+    }
+    ss << '\n';
+    ssize_t len = ss.str().size();
+    ssize_t t = f->write(ss.str().c_str(), static_cast<unsigned int>(len));
+    if (t != len) { logger.err_error("write error: {}", VW::strerror_to_string(errno)); }
+  }
+}
+
+namespace
 {
 struct policy_data
 {
@@ -141,29 +167,6 @@ void predict_or_learn(mwt& c, single_learner& base, VW::example& ec)
   ec.pred.scalars = preds;
 }
 
-void print_scalars(VW::io::writer* f, VW::v_array<float>& scalars, VW::v_array<char>& tag, VW::io::logger& logger)
-{
-  if (f != nullptr)
-  {
-    std::stringstream ss;
-
-    for (size_t i = 0; i < scalars.size(); i++)
-    {
-      if (i > 0) { ss << ' '; }
-      ss << scalars[i];
-    }
-    for (size_t i = 0; i < tag.size(); i++)
-    {
-      if (i == 0) { ss << ' '; }
-      ss << tag[i];
-    }
-    ss << '\n';
-    ssize_t len = ss.str().size();
-    ssize_t t = f->write(ss.str().c_str(), static_cast<unsigned int>(len));
-    if (t != len) { logger.err_error("write error: {}", VW::strerror_to_string(errno)); }
-  }
-}
-
 void finish_example(VW::workspace& all, mwt& c, VW::example& ec)
 {
   float loss = 0.;
@@ -174,7 +177,7 @@ void finish_example(VW::workspace& all, mwt& c, VW::example& ec)
   }
   all.sd->update(ec.test_only, c.optional_observation.first, loss, 1.f, ec.get_num_features());
 
-  for (auto& sink : all.final_prediction_sink) { print_scalars(sink.get(), ec.pred.scalars, ec.tag, all.logger); }
+  for (auto& sink : all.final_prediction_sink) { MWT::print_scalars(sink.get(), ec.pred.scalars, ec.tag, all.logger); }
 
   if (c.learn)
   {
@@ -224,10 +227,9 @@ void save_load(mwt& c, io_buf& model_file, bool read, bool text)
         model_file, reinterpret_cast<char*>(&c.evals[policy].seen), sizeof(bool), read, msg, text);
   }
 }
-}  // namespace MWT
-using namespace MWT;
+}
 
-base_learner* mwt_setup(VW::setup_base_i& stack_builder)
+base_learner* VW::reductions::mwt_setup(VW::setup_base_i& stack_builder)
 {
   options_i& options = *stack_builder.get_options();
   VW::workspace& all = *stack_builder.get_all_pointer();
@@ -298,7 +300,7 @@ base_learner* mwt_setup(VW::setup_base_i& stack_builder)
                 .set_output_prediction_type(VW::prediction_type_t::scalars)
                 .set_input_label_type(VW::label_type_t::cb)
                 .set_save_load(save_load)
-                .set_finish_example(finish_example)
+                .set_finish_example(::finish_example)
                 .build();
 
   all.example_parser->lbl_parser = CB::cb_label;

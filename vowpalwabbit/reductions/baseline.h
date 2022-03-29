@@ -10,14 +10,14 @@ namespace VW
 {
 namespace reductions
 {
+VW::LEARNER::base_learner* baseline_setup(VW::setup_base_i& stack_builder);
+
 namespace baseline
 {
 // utility functions for disabling baseline on a given example
 void set_baseline_enabled(VW::example* ec);
 void reset_baseline_disabled(VW::example* ec);
 bool baseline_enabled(const VW::example* ec);
-
 }  // namespace baseline
-VW::LEARNER::base_learner* baseline_setup(VW::setup_base_i& stack_builder);
 }  // namespace reductions
 }  // namespace VW

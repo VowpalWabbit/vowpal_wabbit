@@ -177,7 +177,7 @@ set(vw_all_headers
   reductions/get_pmf.h
   reductions/interact.h
   reductions/interaction_ground.h
-  reductions/interactions.h
+  interactions.h
   reductions/kernel_svm.h
   reductions/lda_core.h
   reductions/log_multi.h
@@ -347,7 +347,7 @@ set(vw_all_sources
   reductions/get_pmf.cc
   reductions/interact.cc
   reductions/interaction_ground.cc
-  reductions/interactions.cc
+  interactions.cc
   reductions/kernel_svm.cc
   reductions/lda_core.cc
   reductions/log_multi.cc

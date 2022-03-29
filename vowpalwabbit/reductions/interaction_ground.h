@@ -9,6 +9,7 @@
 
 namespace VW
 {
+    namespace reductions {
 /**
  * Setup interaction grounded learning reduction. Wiki page:
  * https://github.com/VowpalWabbit/vowpal_wabbit/wiki/Interaction-Grounded-Learning
@@ -18,3 +19,4 @@ namespace VW
  */
 VW::LEARNER::base_learner* interaction_ground_setup(VW::setup_base_i& stack_builder);
 }  // namespace VW
+}

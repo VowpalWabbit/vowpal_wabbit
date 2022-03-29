@@ -2,23 +2,23 @@
 // individual contributors. All rights reserved. Released under a BSD (revised)
 // license as described in the file LICENSE.
 
-#include <boost/test/unit_test.hpp>
-#include <boost/test/test_tools.hpp>
+#include "interactions.h"
 
+#include "constant.h"
+#include "gd_predict.h"
+#include "interactions_predict.h"
+#include "parse_args.h"
+#include "reductions/gd.h"
+#include "test_common.h"
+#include "vw.h"
+
+#include <array>
+#include <boost/test/test_tools.hpp>
+#include <boost/test/unit_test.hpp>
 #include <cstddef>
 #include <cstdint>
 #include <memory>
-#include <array>
 #include <vector>
-
-#include "test_common.h"
-#include "vw.h"
-#include "gd_predict.h"
-#include "reductions/gd.h"
-#include "reductions/interactions.h"
-#include "parse_args.h"
-#include "constant.h"
-#include "interactions_predict.h"
 
 namespace std
 {

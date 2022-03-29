@@ -8,9 +8,12 @@
 
 namespace VW
 {
+namespace reductions
+{
+LEARNER::base_learner* offset_tree_setup(VW::setup_base_i& stack_builder);
+
 namespace offset_tree
 {
-LEARNER::base_learner* setup(VW::setup_base_i& stack_builder);
 
 struct tree_node
 {
@@ -58,4 +61,5 @@ private:
   std::vector<float> _scores{};
 };
 }  // namespace offset_tree
+}  // namespace reductions
 }  // namespace VW

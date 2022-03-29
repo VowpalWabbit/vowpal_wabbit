@@ -8,6 +8,7 @@
 #include "parser.h"
 #include "rand48.h"
 #include "rand_state.h"
+#include "reductions/recall_tree.h"
 #include "setup_base.h"
 #include "vw_math.h"
 
@@ -22,7 +23,7 @@
 using namespace VW::LEARNER;
 using namespace VW::config;
 
-namespace recall_tree_ns
+namespace
 {
 struct node_pred
 {
@@ -488,11 +489,9 @@ void save_load_tree(recall_tree& b, io_buf& model_file, bool read, bool text)
   }
 }
 
-}  // namespace recall_tree_ns
+}
 
-using namespace recall_tree_ns;
-
-base_learner* recall_tree_setup(VW::setup_base_i& stack_builder)
+base_learner* VW::reductions::recall_tree_setup(VW::setup_base_i& stack_builder)
 {
   options_i& options = *stack_builder.get_options();
   VW::workspace& all = *stack_builder.get_all_pointer();

@@ -1,6 +1,9 @@
 // Copyright (c) by respective owners including Yahoo!, Microsoft, and
 // individual contributors. All rights reserved. Released under a BSD (revised)
 // license as described in the file LICENSE.
+
+#include "multilabel_oaa.h"
+
 #include "config/options.h"
 #include "io/logger.h"
 #include "loss_functions.h"
@@ -15,6 +18,7 @@
 
 using namespace VW::config;
 
+namespace {
 struct multi_oaa
 {
   size_t k = 0;
@@ -92,8 +96,9 @@ void finish_example(VW::workspace& all, multi_oaa& o, VW::example& ec)
   MULTILABEL::output_example(all, ec);
   VW::finish_example(all, ec);
 }
+}
 
-VW::LEARNER::base_learner* multilabel_oaa_setup(VW::setup_base_i& stack_builder)
+VW::LEARNER::base_learner* VW::reductions::multilabel_oaa_setup(VW::setup_base_i& stack_builder)
 {
   options_i& options = *stack_builder.get_options();
   VW::workspace& all = *stack_builder.get_all_pointer();
@@ -148,7 +153,7 @@ VW::LEARNER::base_learner* multilabel_oaa_setup(VW::setup_base_i& stack_builder)
           .set_learn_returns_prediction(true)
           .set_input_label_type(VW::label_type_t::multilabel)
           .set_output_prediction_type(pred_type)
-          .set_finish_example(finish_example)
+          .set_finish_example(::finish_example)
           .build();
 
   all.example_parser->lbl_parser = MULTILABEL::multilabel;

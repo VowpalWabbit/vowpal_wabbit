@@ -2,6 +2,8 @@
 // individual contributors. All rights reserved. Released under a BSD (revised)
 // license as described in the file LICENSE.
 
+#include "lda_core.h"
+
 #include "crossplat_compat.h"
 #include "future_compat.h"
 #include "setup_base.h"
@@ -41,6 +43,8 @@ VW_WARNING_STATE_POP
 using namespace VW::config;
 using namespace VW::LEARNER;
 
+namespace
+{
 enum class lda_math_mode : int
 {
   USE_SIMD = 0,
@@ -1054,15 +1058,6 @@ void get_top_weights(VW::workspace* all, int top_words_count, int topic, std::ve
   }
 }
 
-void get_top_weights(VW::workspace* all, int top_words_count, int topic, std::vector<feature>& output)
-{
-  if (all->weights.sparse) { get_top_weights(all, top_words_count, topic, output, all->weights.sparse_weights); }
-  else
-  {
-    get_top_weights(all, top_words_count, topic, output, all->weights.dense_weights);
-  }
-}
-
 template <class T>
 void compute_coherence_metrics(lda& l, T& weights)
 {
@@ -1265,26 +1260,9 @@ void finish_example(VW::workspace& all, lda& l, VW::example& e)
 
   assert(l.finish_example_count <= l.minibatch);
 }
+}  // namespace
 
-std::istream& operator>>(std::istream& in, lda_math_mode& mmode)
-{
-  std::string token;
-  in >> token;
-  if (token == "simd") { mmode = lda_math_mode::USE_SIMD; }
-  else if (token == "accuracy" || token == "precise")
-  {
-    mmode = lda_math_mode::USE_PRECISE;
-  }
-  else if (token == "fast-approx" || token == "approx")
-  {
-    mmode = lda_math_mode::USE_FAST_APPROX;
-  }
-  else
-    THROW_EX(VW::vw_unrecognised_option_exception, token);
-  return in;
-}
-
-base_learner* lda_setup(VW::setup_base_i& stack_builder)
+base_learner* VW::reductions::lda_setup(VW::setup_base_i& stack_builder)
 {
   options_i& options = *stack_builder.get_options();
   VW::workspace& all = *stack_builder.get_all_pointer();
@@ -1365,7 +1343,7 @@ base_learner* lda_setup(VW::setup_base_i& stack_builder)
                 .set_params_per_weight(UINT64_ONE << all.weights.stride_shift())
                 .set_learn_returns_prediction(true)
                 .set_save_load(save_load)
-                .set_finish_example(finish_example)
+                .set_finish_example(::finish_example)
                 .set_end_examples(end_examples)
                 .set_end_pass(end_pass)
                 .build();

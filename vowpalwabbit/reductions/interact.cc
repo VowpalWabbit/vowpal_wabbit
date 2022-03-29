@@ -5,12 +5,15 @@
 #include "global_data.h"
 #include "io/logger.h"
 #include "learner.h"
+#include "reductions/interact.h"
 #include "setup_base.h"
 
 #include <cfloat>
 #include <sstream>
 
 using namespace VW::config;
+
+namespace {
 
 struct interact
 {
@@ -145,8 +148,9 @@ void predict_or_learn(interact& in, VW::LEARNER::single_learner& base, VW::examp
   f1 = in.feat_store;
   ec.num_features = in.num_features;
 }
+}
 
-VW::LEARNER::base_learner* interact_setup(VW::setup_base_i& stack_builder)
+VW::LEARNER::base_learner* VW::reductions::interact_setup(VW::setup_base_i& stack_builder)
 {
   options_i& options = *stack_builder.get_options();
   VW::workspace& all = *stack_builder.get_all_pointer();

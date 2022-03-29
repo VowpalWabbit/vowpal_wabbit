@@ -9,6 +9,7 @@
 #include "numeric_casts.h"
 #include "rand48.h"
 #include "rand_state.h"
+#include "reductions/memory_tree.h"
 #include "setup_base.h"
 #include "v_array.h"
 #include "vw.h"
@@ -26,7 +27,7 @@ using namespace VW::config;
 
 // TODO: This file has several cout print statements. It looks like
 //       they should be using trace_message, but its difficult to tell
-namespace memory_tree_ns
+namespace
 {
 ///////////////////////Helper//////////////////////////////
 //////////////////////////////////////////////////////////
@@ -1233,13 +1234,13 @@ void save_load_memory_tree(memory_tree& b, io_buf& model_file, bool read, bool t
   }
 }
 //////////////////////////////End of Save & Load///////////////////////////////
-}  // namespace memory_tree_ns
+}  // namespace
 
-base_learner* memory_tree_setup(VW::setup_base_i& stack_builder)
+base_learner* VW::reductions::memory_tree_setup(VW::setup_base_i& stack_builder)
 {
   options_i& options = *stack_builder.get_options();
   VW::workspace& all = *stack_builder.get_all_pointer();
-  using namespace memory_tree_ns;
+
   auto tree = VW::make_unique<memory_tree>();
   uint64_t max_nodes;
   uint64_t max_num_labels;
