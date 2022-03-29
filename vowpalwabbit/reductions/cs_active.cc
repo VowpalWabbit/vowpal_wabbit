@@ -2,6 +2,8 @@
 // individual contributors. All rights reserved. Released under a BSD (revised)
 // license as described in the file LICENSE.
 
+#include "cs_active.h"
+
 #include "config/options.h"
 #include "csoaa.h"
 #include "debug_log.h"
@@ -29,6 +31,8 @@ using std::endl;
 #undef VW_DEBUG_LOG
 #define VW_DEBUG_LOG vw_dbg::cs_active
 
+namespace
+{
 struct lq_data
 {
   // The following are used by cost-sensitive active learning
@@ -307,7 +311,9 @@ void finish_example(VW::workspace& all, cs_active&, VW::example& ec)
   VW::finish_example(all, ec);
 }
 
-base_learner* cs_active_setup(VW::setup_base_i& stack_builder)
+}  // namespace
+
+base_learner* VW::reductions::cs_active_setup(VW::setup_base_i& stack_builder)
 {
   options_i& options = *stack_builder.get_options();
   VW::workspace& all = *stack_builder.get_all_pointer();
@@ -393,7 +399,7 @@ base_learner* cs_active_setup(VW::setup_base_i& stack_builder)
                 .set_learn_returns_prediction(true)
                 .set_output_prediction_type(VW::prediction_type_t::active_multiclass)
                 .set_input_label_type(VW::label_type_t::cs)
-                .set_finish_example(finish_example)
+                .set_finish_example(::finish_example)
                 .build();
 
   // Label parser set to cost sensitive label parser

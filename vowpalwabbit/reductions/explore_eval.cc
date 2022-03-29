@@ -2,6 +2,8 @@
 // individual contributors. All rights reserved. Released under a BSD (revised)
 // license as described in the file LICENSE.
 
+#include "explore_eval.h"
+
 #include "cb/cb_adf.h"
 #include "cb/cb_algs.h"
 #include "config/options.h"
@@ -23,7 +25,7 @@ using namespace VW::LEARNER;
 using namespace CB_ALGS;
 using namespace VW::config;
 
-namespace EXPLORE_EVAL
+namespace
 {
 struct explore_eval
 {
@@ -193,11 +195,9 @@ void do_actual_learning(explore_eval& data, multi_learner& base, VW::multi_ex& e
     }
   }
 }
-}  // namespace EXPLORE_EVAL
+}  // namespace
 
-using namespace EXPLORE_EVAL;
-
-base_learner* explore_eval_setup(VW::setup_base_i& stack_builder)
+base_learner* VW::reductions::explore_eval_setup(VW::setup_base_i& stack_builder)
 {
   options_i& options = *stack_builder.get_options();
   VW::workspace& all = *stack_builder.get_all_pointer();
@@ -234,7 +234,7 @@ base_learner* explore_eval_setup(VW::setup_base_i& stack_builder)
                 .set_output_prediction_type(VW::prediction_type_t::action_probs)
                 .set_input_label_type(VW::label_type_t::cb)
                 .set_finish_example(finish_multiline_example)
-                .set_finish(finish)
+                .set_finish(::finish)
                 .build();
 
   return make_base(*l);

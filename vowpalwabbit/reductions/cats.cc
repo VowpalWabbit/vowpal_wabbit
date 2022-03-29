@@ -10,6 +10,7 @@
 #include "global_data.h"
 #include "setup_base.h"
 #include "shared_data.h"
+#include "vw.h"
 
 #include <cfloat>
 #include <cmath>
@@ -27,15 +28,9 @@ using VW::LEARNER::single_learner;
 #undef VW_DEBUG_LOG
 #define VW_DEBUG_LOG vw_dbg::cats
 
-// Forward declarations
 namespace VW
 {
-void finish_example(VW::workspace& all, example& ec);
-}
-
-namespace VW
-{
-namespace continuous_action
+namespace reductions
 {
 namespace cats
 {
@@ -86,12 +81,17 @@ float cats::get_loss(const VW::cb_continuous::continuous_label& cb_cont_costs, f
 }
 
 cats::cats(single_learner* p_base) : _base(p_base) {}
+}  // namespace cats
+}  // namespace reductions
+}  // namespace VW
 
+namespace
+{
 // Free function to tie function pointers to reduction class methods
 template <bool is_learn>
-void predict_or_learn(cats& reduction, single_learner&, example& ec)
+void predict_or_learn(VW::reductions::cats::cats& reduction, single_learner&, VW::example& ec)
 {
-  experimental::api_status status;
+  VW::experimental::api_status status;
   if (is_learn) { reduction.learn(ec, &status); }
   else
   {
@@ -110,17 +110,17 @@ void predict_or_learn(cats& reduction, single_learner&, example& ec)
 class reduction_output
 {
 public:
-  static void report_progress(VW::workspace& all, const cats&, const example& ec);
+  static void report_progress(VW::workspace& all, const VW::reductions::cats::cats&, const VW::example& ec);
   static void output_predictions(std::vector<std::unique_ptr<VW::io::writer>>& predict_file_descriptors,
-      const continuous_actions::probability_density_function_value& prediction);
+      const VW::continuous_actions::probability_density_function_value& prediction);
 
 private:
-  static inline bool does_example_have_label(const example& ec);
-  static void print_update_cb_cont(VW::workspace& all, const example& ec);
+  static inline bool does_example_have_label(const VW::example& ec);
+  static void print_update_cb_cont(VW::workspace& all, const VW::example& ec);
 };
 
 // Free function to tie function pointers to output class methods
-void finish_example(VW::workspace& all, cats& data, example& ec)
+void finish_example(VW::workspace& all, VW::reductions::cats::cats& data, VW::example& ec)
 {
   // add output example
   reduction_output::report_progress(all, data, ec);
@@ -129,10 +129,10 @@ void finish_example(VW::workspace& all, cats& data, example& ec)
 }
 
 void reduction_output::output_predictions(std::vector<std::unique_ptr<VW::io::writer>>& predict_file_descriptors,
-    const continuous_actions::probability_density_function_value& prediction)
+    const VW::continuous_actions::probability_density_function_value& prediction)
 {
   // output to the prediction to all files
-  const std::string str = to_string(prediction, -1);
+  const std::string str = VW::to_string(prediction, -1);
   for (auto& f : predict_file_descriptors)
   {
     f->write(str.c_str(), str.size());
@@ -140,7 +140,8 @@ void reduction_output::output_predictions(std::vector<std::unique_ptr<VW::io::wr
   }
 }
 
-void reduction_output::report_progress(VW::workspace& all, const cats& data, const example& ec)
+void reduction_output::report_progress(
+    VW::workspace& all, const VW::reductions::cats::cats& data, const VW::example& ec)
 {
   auto loss = data.get_loss(ec.l.cb_cont, ec.pred.pdf_value.action);
 
@@ -149,28 +150,29 @@ void reduction_output::report_progress(VW::workspace& all, const cats& data, con
   print_update_cb_cont(all, ec);
 }
 
-inline bool reduction_output::does_example_have_label(const example& ec)
+inline bool reduction_output::does_example_have_label(const VW::example& ec)
 {
   return (!ec.l.cb_cont.costs.empty() && ec.l.cb_cont.costs[0].action != FLT_MAX);
 }
 
-void reduction_output::print_update_cb_cont(VW::workspace& all, const example& ec)
+void reduction_output::print_update_cb_cont(VW::workspace& all, const VW::example& ec)
 {
   if (all.sd->weighted_examples() >= all.sd->dump_interval && !all.quiet && !all.bfgs)
   {
     all.sd->print_update(*all.trace_message, all.holdout_set_off, all.current_pass,
         ec.test_only ? "unknown"
-                     : to_string(ec.l.cb_cont.costs[0], VW::DEFAULT_FLOAT_FORMATTING_DECIMAL_PRECISION),  // Label
-        to_string(ec.pred.pdf_value, VW::DEFAULT_FLOAT_FORMATTING_DECIMAL_PRECISION),                     // Prediction
+                     : VW::to_string(ec.l.cb_cont.costs[0], VW::DEFAULT_FLOAT_FORMATTING_DECIMAL_PRECISION),  // Label
+        VW::to_string(ec.pred.pdf_value, VW::DEFAULT_FLOAT_FORMATTING_DECIMAL_PRECISION),  // Prediction
         ec.get_num_features(), all.progress_add, all.progress_arg);
   }
 }
+}  // namespace
 
 // END: functions to output progress
 ////////////////////////////////////////////////////
 
 // Setup reduction in stack
-LEARNER::base_learner* setup(setup_base_i& stack_builder)
+LEARNER::base_learner* VW::reductions::cats_setup(setup_base_i& stack_builder)
 {
   options_i& options = *stack_builder.get_options();
   VW::workspace& all = *stack_builder.get_all_pointer();
@@ -210,23 +212,19 @@ LEARNER::base_learner* setup(setup_base_i& stack_builder)
   }
 
   LEARNER::base_learner* p_base = stack_builder.setup_base_learner();
-  auto p_reduction = VW::make_unique<cats>(as_singleline(p_base));
+  auto p_reduction = VW::make_unique<VW::reductions::cats::cats>(as_singleline(p_base));
   p_reduction->num_actions = num_actions;
   p_reduction->bandwidth = bandwidth;
   p_reduction->max_value = max_value;
   p_reduction->min_value = min_value;
 
   auto* l = make_reduction_learner(std::move(p_reduction), as_singleline(p_base), predict_or_learn<true>,
-      predict_or_learn<false>, stack_builder.get_setupfn_name(setup))
+      predict_or_learn<false>, stack_builder.get_setupfn_name(cats_setup))
                 .set_learn_returns_prediction(true)
                 .set_output_prediction_type(VW::prediction_type_t::action_pdf_value)
-                .set_finish_example(finish_example)
+                .set_finish_example(::finish_example)
                 .set_input_label_type(VW::label_type_t::continuous)
                 .build();
 
   return make_base(*l);
 }
-
-}  // namespace cats
-}  // namespace continuous_action
-}  // namespace VW

@@ -4,10 +4,10 @@
 #pragma once
 #include "vw_fwd.h"
 
-namespace CSOAA
+namespace VW
+{
+namespace reductions
 {
 VW::LEARNER::base_learner* csoaa_setup(VW::setup_base_i& stack_builder);
-
-struct csoaa;
-void finish_example(VW::workspace& all, csoaa&, VW::example& ec);
-}  // namespace CSOAA
+}
+}  // namespace VW
