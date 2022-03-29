@@ -1,6 +1,9 @@
 // Copyright (c) by respective owners including Yahoo!, Microsoft, and
 // individual contributors. All rights reserved. Released under a BSD (revised)
 // license as described in the file LICENSE.
+
+#include "nn.h"
+
 #include "config/options.h"
 #include "gd.h"
 #include "guard.h"
@@ -22,6 +25,8 @@
 using namespace VW::LEARNER;
 using namespace VW::config;
 
+namespace
+{
 constexpr float hidden_min_activation = -3;
 constexpr float hidden_max_activation = 3;
 constexpr uint64_t nn_constant = 533357803;
@@ -420,8 +425,9 @@ void finish_example(VW::workspace& all, nn&, VW::example& ec)
   auto raw_prediction_guard = VW::swap_guard(all.raw_prediction, temp);
   return_simple_example(all, nullptr, ec);
 }
+}  // namespace
 
-base_learner* nn_setup(VW::setup_base_i& stack_builder)
+base_learner* VW::reductions::nn_setup(VW::setup_base_i& stack_builder)
 {
   options_i& options = *stack_builder.get_options();
   VW::workspace& all = *stack_builder.get_all_pointer();
@@ -483,7 +489,7 @@ base_learner* nn_setup(VW::setup_base_i& stack_builder)
                 .set_multipredict(multipredict_f)
                 .set_output_prediction_type(VW::prediction_type_t::scalar)
                 .set_input_label_type(VW::label_type_t::simple)
-                .set_finish_example(finish_example)
+                .set_finish_example(::finish_example)
                 .set_end_pass(end_pass)
                 .build();
 

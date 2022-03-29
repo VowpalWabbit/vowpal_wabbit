@@ -1,6 +1,8 @@
 // Copyright (c) by respective owners including Yahoo!, Microsoft, and
 // individual contributors. All rights reserved. Released under a BSD (revised)
 // license as described in the file LICENSE.
+#include "reductions/plt.h"
+
 #include "config/options.h"
 #include "io/logger.h"
 #include "loss_functions.h"
@@ -21,7 +23,7 @@
 using namespace VW::LEARNER;
 using namespace VW::config;
 
-namespace plt_ns
+namespace
 {
 struct node
 {
@@ -330,9 +332,7 @@ void save_load_tree(plt& p, io_buf& model_file, bool read, bool text)
 }
 }  // namespace plt_ns
 
-using namespace plt_ns;
-
-base_learner* plt_setup(VW::setup_base_i& stack_builder)
+base_learner* VW::reductions::plt_setup(VW::setup_base_i& stack_builder)
 {
   options_i& options = *stack_builder.get_options();
   VW::workspace& all = *stack_builder.get_all_pointer();
@@ -400,8 +400,8 @@ base_learner* plt_setup(VW::setup_base_i& stack_builder)
                 .set_output_prediction_type(VW::prediction_type_t::multilabels)
                 .set_input_label_type(VW::label_type_t::multilabel)
                 .set_learn_returns_prediction(true)
-                .set_finish_example(finish_example)
-                .set_finish(finish)
+                .set_finish_example(::finish_example)
+                .set_finish(::finish)
                 .set_save_load(save_load_tree)
                 .build();
 

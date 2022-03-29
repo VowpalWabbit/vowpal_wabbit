@@ -17,7 +17,7 @@
 
 using namespace VW::config;
 
-namespace VW
+namespace
 {
 class topk
 {
@@ -38,11 +38,10 @@ private:
   const uint32_t _k_num;
   container_t _pr_queue;
 };
-}  // namespace VW
 
-VW::topk::topk(uint32_t k_num) : _k_num(k_num) {}
+topk::topk(uint32_t k_num) : _k_num(k_num) {}
 
-void VW::topk::predict(VW::LEARNER::single_learner& base, VW::multi_ex& ec_seq)
+void topk::predict(VW::LEARNER::single_learner& base, VW::multi_ex& ec_seq)
 {
   for (auto ec : ec_seq)
   {
@@ -51,7 +50,7 @@ void VW::topk::predict(VW::LEARNER::single_learner& base, VW::multi_ex& ec_seq)
   }
 }
 
-void VW::topk::learn(VW::LEARNER::single_learner& base, VW::multi_ex& ec_seq)
+void topk::learn(VW::LEARNER::single_learner& base, VW::multi_ex& ec_seq)
 {
   for (auto ec : ec_seq)
   {
@@ -60,7 +59,7 @@ void VW::topk::learn(VW::LEARNER::single_learner& base, VW::multi_ex& ec_seq)
   }
 }
 
-void VW::topk::update_priority_queue(float pred, v_array<char>& tag)
+void topk::update_priority_queue(float pred, v_array<char>& tag)
 {
   if (_pr_queue.size() < _k_num) { _pr_queue.insert({pred, tag}); }
   else if (_pr_queue.begin()->first < pred)
@@ -70,15 +69,15 @@ void VW::topk::update_priority_queue(float pred, v_array<char>& tag)
   }
 }
 
-std::pair<VW::topk::const_iterator_t, VW::topk::const_iterator_t> VW::topk::get_container_view()
+std::pair<topk::const_iterator_t, topk::const_iterator_t> topk::get_container_view()
 {
   return {_pr_queue.cbegin(), _pr_queue.cend()};
 }
 
-void VW::topk::clear_container() { _pr_queue.clear(); }
+void topk::clear_container() { _pr_queue.clear(); }
 
 void print_result(VW::io::writer* file_descriptor,
-    std::pair<VW::topk::const_iterator_t, VW::topk::const_iterator_t> const& view, VW::io::logger& logger)
+    std::pair<topk::const_iterator_t, topk::const_iterator_t> const& view, VW::io::logger& logger)
 {
   if (file_descriptor != nullptr)
   {
@@ -107,7 +106,7 @@ void output_example(VW::workspace& all, const VW::example& ec)
 }
 
 template <bool is_learn>
-void predict_or_learn(VW::topk& d, VW::LEARNER::single_learner& base, VW::multi_ex& ec_seq)
+void predict_or_learn(topk& d, VW::LEARNER::single_learner& base, VW::multi_ex& ec_seq)
 {
   if (is_learn) { d.learn(base, ec_seq); }
   else
@@ -116,7 +115,7 @@ void predict_or_learn(VW::topk& d, VW::LEARNER::single_learner& base, VW::multi_
   }
 }
 
-void finish_example(VW::workspace& all, VW::topk& d, VW::multi_ex& ec_seq)
+void finish_example(VW::workspace& all, topk& d, VW::multi_ex& ec_seq)
 {
   for (auto ec : ec_seq) { output_example(all, *ec); }
   for (auto& sink : all.final_prediction_sink) { print_result(sink.get(), d.get_container_view(), all.logger); }
@@ -124,7 +123,9 @@ void finish_example(VW::workspace& all, VW::topk& d, VW::multi_ex& ec_seq)
   VW::finish_example(all, ec_seq);
 }
 
-VW::LEARNER::base_learner* topk_setup(VW::setup_base_i& stack_builder)
+}  // namespace
+
+VW::LEARNER::base_learner* VW::reductions::topk_setup(VW::setup_base_i& stack_builder)
 {
   options_i& options = *stack_builder.get_options();
   uint32_t K;
@@ -133,12 +134,12 @@ VW::LEARNER::base_learner* topk_setup(VW::setup_base_i& stack_builder)
 
   if (!options.add_parse_and_check_necessary(new_options)) { return nullptr; }
 
-  auto data = VW::make_unique<VW::topk>(K);
+  auto data = VW::make_unique<topk>(K);
   auto* l = VW::LEARNER::make_reduction_learner(std::move(data), as_singleline(stack_builder.setup_base_learner()),
       predict_or_learn<true>, predict_or_learn<false>, stack_builder.get_setupfn_name(topk_setup))
                 .set_learn_returns_prediction(true)
                 .set_output_prediction_type(VW::prediction_type_t::scalar)
-                .set_finish_example(finish_example)
+                .set_finish_example(::finish_example)
                 .build();
   return make_base(*l);
 }

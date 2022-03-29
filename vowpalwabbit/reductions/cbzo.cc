@@ -21,6 +21,8 @@ using namespace VW::LEARNER;
 using namespace VW::config;
 using VW::continuous_actions::probability_density_function;
 
+namespace
+{
 constexpr uint8_t constant_policy = 0;
 constexpr uint8_t linear_policy = 1;
 
@@ -334,6 +336,8 @@ void (*get_predict(VW::workspace& all, uint8_t policy))(cbzo&, base_learner&, VW
   else
     THROW("Unknown policy encountered: " << policy)
 }
+
+}  // namespace
 
 base_learner* VW::reductions::cbzo_setup(VW::setup_base_i& stack_builder)
 {

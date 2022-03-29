@@ -13,6 +13,7 @@
 #include "constant.h"
 #include "crossplat_compat.h"
 #include "global_data.h"
+#include "interactions.h"
 #include "io/custom_streambuf.h"
 #include "io/io_adapter.h"
 #include "io/logger.h"
@@ -32,7 +33,6 @@
 #include "rand48.h"
 #include "rand_state.h"
 #include "reduction_stack.h"
-#include "reductions/interactions.h"
 #include "reductions/metrics.h"
 #include "scope_exit.h"
 #include "text_utils.h"
@@ -1995,7 +1995,7 @@ void finish(VW::workspace& all, bool delete_all)
     auto writer = VW::io::open_file_writer(all.json_weights_file_name);
     writer->write(content.c_str(), content.length());
   }
-  metrics::output_metrics(all);
+  VW::reductions::output_metrics(all);
   all.logger.log_summary();
 }
 }  // namespace VW

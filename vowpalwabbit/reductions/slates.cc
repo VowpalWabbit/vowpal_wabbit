@@ -22,12 +22,8 @@
 
 using namespace VW::config;
 
-namespace VW
-{
-namespace slates
-{
 template <bool is_learn>
-void slates_data::learn_or_predict(VW::LEARNER::multi_learner& base, multi_ex& examples)
+void VW::reductions::slates_data::learn_or_predict(VW::LEARNER::multi_learner& base, multi_ex& examples)
 {
   _stashed_labels.clear();
   _stashed_labels.reserve(examples.size());
@@ -104,18 +100,18 @@ void slates_data::learn_or_predict(VW::LEARNER::multi_learner& base, multi_ex& e
   _stashed_labels.clear();
 }
 
-void slates_data::learn(VW::LEARNER::multi_learner& base, multi_ex& examples)
+void VW::reductions::slates_data::learn(VW::LEARNER::multi_learner& base, multi_ex& examples)
 {
   learn_or_predict<true>(base, examples);
 }
 
-void slates_data::predict(VW::LEARNER::multi_learner& base, multi_ex& examples)
+void VW::reductions::slates_data::predict(VW::LEARNER::multi_learner& base, multi_ex& examples)
 {
   learn_or_predict<false>(base, examples);
 }
 
 // TODO this abstraction may not really work as this function now doesn't have access to the global cost...
-std::string generate_slates_label_printout(const std::vector<example*>& slots)
+std::string VW::reductions::generate_slates_label_printout(const std::vector<example*>& slots)
 {
   size_t counter = 0;
   std::stringstream label_ss;
@@ -142,7 +138,8 @@ std::string generate_slates_label_printout(const std::vector<example*>& slots)
 
   return label_ss.str();
 }
-
+namespace
+{
 // PseudoInverse estimator for slate recommendation. The following implements
 // the case for a Cartesian product when the logging policy is a product
 // distribution. This can be seen in example 4 of the paper.
@@ -163,7 +160,7 @@ float get_estimate(
   return cost * p_over_ps;
 }
 
-void output_example(VW::workspace& all, const slates_data& /*c*/, const multi_ex& ec_seq)
+void output_example(VW::workspace& all, const VW::reductions::slates_data& /*c*/, const multi_ex& ec_seq)
 {
   std::vector<example*> slots;
   size_t num_features = 0;
@@ -176,7 +173,7 @@ void output_example(VW::workspace& all, const slates_data& /*c*/, const multi_ex
   {
     num_features += ec->get_num_features();
 
-    if (ec->l.slates.type == slates::example_type::slot)
+    if (ec->l.slates.type == VW::slates::example_type::slot)
     {
       slots.push_back(ec);
       if (is_labelled)
@@ -208,7 +205,7 @@ void output_example(VW::workspace& all, const slates_data& /*c*/, const multi_ex
   VW::print_update_slates(all, slots, predictions, num_features);
 }
 
-void finish_multiline_example(VW::workspace& all, slates_data& data, multi_ex& ec_seq)
+void finish_multiline_example(VW::workspace& all, VW::reductions::slates_data& data, multi_ex& ec_seq)
 {
   if (!ec_seq.empty())
   {
@@ -222,7 +219,7 @@ void finish_multiline_example(VW::workspace& all, slates_data& data, multi_ex& e
 }
 
 template <bool is_learn>
-void learn_or_predict(slates_data& data, VW::LEARNER::multi_learner& base, multi_ex& examples)
+void learn_or_predict(VW::reductions::slates_data& data, VW::LEARNER::multi_learner& base, multi_ex& examples)
 {
   if (is_learn) { data.learn(base, examples); }
   else
@@ -230,8 +227,9 @@ void learn_or_predict(slates_data& data, VW::LEARNER::multi_learner& base, multi
     data.predict(base, examples);
   }
 }
+}  // namespace
 
-VW::LEARNER::base_learner* slates_setup(VW::setup_base_i& stack_builder)
+VW::LEARNER::base_learner* VW::reductions::slates_setup(VW::setup_base_i& stack_builder)
 {
   options_i& options = *stack_builder.get_options();
   VW::workspace& all = *stack_builder.get_all_pointer();
@@ -249,7 +247,7 @@ VW::LEARNER::base_learner* slates_setup(VW::setup_base_i& stack_builder)
   }
 
   auto* base = as_multiline(stack_builder.setup_base_learner());
-  all.example_parser->lbl_parser = slates_label_parser;
+  all.example_parser->lbl_parser = VW::slates::slates_label_parser;
   auto* l = VW::LEARNER::make_reduction_learner(std::move(data), base, learn_or_predict<true>, learn_or_predict<false>,
       stack_builder.get_setupfn_name(slates_setup))
                 .set_learn_returns_prediction(base->learn_returns_prediction)
@@ -261,5 +259,3 @@ VW::LEARNER::base_learner* slates_setup(VW::setup_base_i& stack_builder)
                 .build();
   return VW::LEARNER::make_base(*l);
 }
-}  // namespace slates
-}  // namespace VW

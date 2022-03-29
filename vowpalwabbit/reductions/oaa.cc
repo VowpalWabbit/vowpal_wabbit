@@ -1,6 +1,8 @@
 // Copyright (c) by respective owners including Yahoo!, Microsoft, and
 // individual contributors. All rights reserved. Released under a BSD (revised)
 // license as described in the file LICENSE.
+#include "reductions/oaa.h"
+
 #include "config/options.h"
 #include "correctedMath.h"
 #include "io/logger.h"
@@ -18,6 +20,8 @@
 
 using namespace VW::config;
 
+namespace
+{
 static constexpr bool PRINT_ALL = true;
 static constexpr bool SCORES = true;
 static constexpr bool PROBABILITIES = true;
@@ -303,8 +307,8 @@ void finish_example_scores(VW::workspace& all, oaa& o, VW::example& ec)
   }
   VW::finish_example(all, ec);
 }
-
-VW::LEARNER::base_learner* oaa_setup(VW::setup_base_i& stack_builder)
+}  // namespace
+VW::LEARNER::base_learner* VW::reductions::oaa_setup(VW::setup_base_i& stack_builder)
 {
   options_i& options = *stack_builder.get_options();
   VW::workspace& all = *stack_builder.get_all_pointer();

@@ -7,13 +7,9 @@
 
 namespace VW
 {
-namespace continuous_action
+namespace reductions
 {
-namespace cats_pdf
-{
-// Setup reduction in stack
-LEARNER::base_learner* setup(setup_base_i& stack_builder);
+LEARNER::base_learner* cats_pdf_setup(setup_base_i& stack_builder);
 
-}  // namespace cats_pdf
-}  // namespace continuous_action
+}
 }  // namespace VW

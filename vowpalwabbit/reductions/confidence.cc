@@ -19,6 +19,8 @@
 using namespace VW::LEARNER;
 using namespace VW::config;
 
+namespace
+{
 struct confidence
 {
   VW::workspace* all = nullptr;
@@ -91,6 +93,8 @@ void return_confidence_example(VW::workspace& all, confidence& /* c */, VW::exam
   output_and_account_confidence_example(all, ec);
   VW::finish_example(all, ec);
 }
+
+}  // namespace
 
 base_learner* VW::reductions::confidence_setup(VW::setup_base_i& stack_builder)
 {

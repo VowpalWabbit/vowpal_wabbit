@@ -840,7 +840,8 @@ cli::array<List<VowpalWabbitFeature^>^>^ VowpalWabbit::GetTopicAllocation(int to
   std::vector<feature> top_weights;
   // over topics
   for (int topic = 0; topic < K; topic++)
-  { get_top_weights(m_vw, top, topic, top_weights);
+  {
+    VW::reductions::lda::get_top_weights(m_vw, top, topic, top_weights);
 
     auto clr_weights = gcnew List<VowpalWabbitFeature^>(top);
     allocation[topic] = clr_weights;

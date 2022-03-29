@@ -1,6 +1,8 @@
 // Copyright (c) by respective owners including Yahoo!, Microsoft, and
 // individual contributors. All rights reserved. Released under a BSD (revised)
 // license as described in the file LICENSE.
+#include "reductions/recall_tree.h"
+
 #include "config/options.h"
 #include "global_data.h"
 #include "learner.h"
@@ -22,7 +24,7 @@
 using namespace VW::LEARNER;
 using namespace VW::config;
 
-namespace recall_tree_ns
+namespace
 {
 struct node_pred
 {
@@ -488,11 +490,9 @@ void save_load_tree(recall_tree& b, io_buf& model_file, bool read, bool text)
   }
 }
 
-}  // namespace recall_tree_ns
+}  // namespace
 
-using namespace recall_tree_ns;
-
-base_learner* recall_tree_setup(VW::setup_base_i& stack_builder)
+base_learner* VW::reductions::recall_tree_setup(VW::setup_base_i& stack_builder)
 {
   options_i& options = *stack_builder.get_options();
   VW::workspace& all = *stack_builder.get_all_pointer();
