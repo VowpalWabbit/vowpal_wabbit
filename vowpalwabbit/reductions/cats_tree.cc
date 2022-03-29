@@ -29,7 +29,9 @@ using std::vector;
 
 namespace VW
 {
-namespace cats_tree
+namespace reductions
+{
+namespace cats
 {
 tree_node::tree_node(uint32_t node_id, uint32_t left_node_id, uint32_t right_node_id, uint32_t p_id, uint32_t depth,
     bool left_only, bool right_only, bool is_leaf)
@@ -330,8 +332,12 @@ cats_tree::~cats_tree()
 }
 
 std::string cats_tree::tree_stats_to_string() { return _binary_tree.tree_stats_to_string(); }
-
-void predict(cats_tree& ot, single_learner& base, example& ec)
+}  // namespace cats
+}  // namespace reductions
+}  // namespace VW
+namespace
+{
+void predict(VW::reductions::cats::cats_tree& ot, single_learner& base, VW::example& ec)
 {
   VW_DBG(ec) << "tree_c: before tree.predict() " << VW::debug::multiclass_pred_to_string(ec)
              << VW::debug::features_to_string(ec) << std::endl;
@@ -340,7 +346,7 @@ void predict(cats_tree& ot, single_learner& base, example& ec)
              << VW::debug::features_to_string(ec) << std::endl;
 }
 
-void learn(cats_tree& tree, single_learner& base, example& ec)
+void learn(VW::reductions::cats::cats_tree& tree, single_learner& base, VW::example& ec)
 {
   VW_DBG(ec) << "tree_c: before tree.learn() " << VW::debug::cb_label_to_string(ec) << VW::debug::features_to_string(ec)
              << std::endl;
@@ -348,8 +354,9 @@ void learn(cats_tree& tree, single_learner& base, example& ec)
   VW_DBG(ec) << "tree_c: after tree.learn() " << VW::debug::cb_label_to_string(ec) << VW::debug::features_to_string(ec)
              << std::endl;
 }
+}  // namespace
 
-base_learner* setup(setup_base_i& stack_builder)
+base_learner* VW::reductions::cats_tree_setup(VW::setup_base_i& stack_builder)
 {
   options_i& options = *stack_builder.get_options();
   VW::workspace& all = *stack_builder.get_all_pointer();
@@ -373,14 +380,14 @@ base_learner* setup(setup_base_i& stack_builder)
   // default behaviour uses binary
   if (!options.was_supplied("link")) { options.insert("binary", ""); }
 
-  auto tree = VW::make_unique<cats_tree>();
+  auto tree = VW::make_unique<VW::reductions::cats::cats_tree>();
   tree->init(num_actions, bandwidth);
   tree->set_trace_message(all.trace_message.get(), all.quiet);
 
   base_learner* base = stack_builder.setup_base_learner();
   int32_t params_per_weight = tree->learner_count();
   auto* l = make_reduction_learner(
-      std::move(tree), as_singleline(base), learn, predict, stack_builder.get_setupfn_name(setup))
+      std::move(tree), as_singleline(base), learn, predict, stack_builder.get_setupfn_name(cats_tree_setup))
                 .set_params_per_weight(params_per_weight)
                 .set_output_prediction_type(VW::prediction_type_t::multiclass)
                 .set_input_label_type(VW::label_type_t::cb)
@@ -388,6 +395,3 @@ base_learner* setup(setup_base_i& stack_builder)
   all.example_parser->lbl_parser = CB::cb_label;
   return make_base(*l);
 }
-
-}  // namespace cats_tree
-}  // namespace VW

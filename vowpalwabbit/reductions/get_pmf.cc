@@ -25,16 +25,14 @@ using VW::LEARNER::single_learner;
 #undef VW_DEBUG_LOG
 #define VW_DEBUG_LOG vw_dbg::cb_explore_get_pmf
 
-namespace VW
-{
-namespace continuous_action
+namespace
 {
 ////////////////////////////////////////////////////
 // BEGIN sample_pdf reduction and reduction methods
 struct get_pmf
 {
-  int learn(example& ec, experimental::api_status* status);
-  int predict(example& ec, experimental::api_status* status);
+  int learn(example& ec, VW::experimental::api_status* status);
+  int predict(example& ec, VW::experimental::api_status* status);
 
   void init(single_learner* p_base, float epsilon);
 
@@ -43,13 +41,13 @@ private:
   float _epsilon = 0.f;
 };
 
-int get_pmf::learn(example& ec, experimental::api_status*)
+int get_pmf::learn(example& ec, VW::experimental::api_status*)
 {
   _base->learn(ec);
   return VW::experimental::error_code::success;
 }
 
-int get_pmf::predict(example& ec, experimental::api_status*)
+int get_pmf::predict(example& ec, VW::experimental::api_status*)
 {
   uint32_t base_prediction;
 
@@ -76,7 +74,7 @@ void get_pmf::init(single_learner* p_base, float epsilon)
 template <bool is_learn>
 void predict_or_learn(get_pmf& reduction, single_learner&, example& ec)
 {
-  experimental::api_status status;
+  VW::experimental::api_status status;
   if (is_learn) { reduction.learn(ec, &status); }
   else
   {
@@ -86,12 +84,13 @@ void predict_or_learn(get_pmf& reduction, single_learner&, example& ec)
   if (status.get_error_code() != VW::experimental::error_code::success)
   { VW_DBG(ec) << status.get_error_msg() << endl; }
 }
+}  // namespace
 
 // END sample_pdf reduction and reduction methods
 ////////////////////////////////////////////////////
 
 // Setup reduction in stack
-LEARNER::base_learner* get_pmf_setup(VW::setup_base_i& stack_builder)
+VW::LEARNER::base_learner* VW::reductions::get_pmf_setup(VW::setup_base_i& stack_builder)
 {
   options_i& options = *stack_builder.get_options();
   option_group_definition new_options("[Reduction] Continuous Actions: Convert to Pmf");
@@ -115,5 +114,3 @@ LEARNER::base_learner* get_pmf_setup(VW::setup_base_i& stack_builder)
 
   return make_base(*l);
 }
-}  // namespace continuous_action
-}  // namespace VW

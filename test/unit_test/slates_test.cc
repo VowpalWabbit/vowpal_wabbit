@@ -89,7 +89,7 @@ BOOST_AUTO_TEST_CASE(slates_reduction_mock_test)
     examples[0]->pred.decision_scores.push_back(slot_one);
   };
   auto* test_base_learner = make_test_learner(mock_learn_or_pred, mock_learn_or_pred);
-  VW::slates::slates_data slate_reduction;
+  VW::reductions::slates_data slate_reduction;
   slate_reduction.learn(*VW::LEARNER::as_multiline(test_base_learner), examples);
 
   // This confirms that the reductions converted the CCB space decision scores back to slates action index space.

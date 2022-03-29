@@ -6,6 +6,8 @@
   by John Langford.
 */
 
+#include "reductions/ect.h"
+
 #include "config/options.h"
 #include "global_data.h"
 #include "io/logger.h"
@@ -24,6 +26,8 @@
 using namespace VW::LEARNER;
 using namespace VW::config;
 
+namespace
+{
 struct direction
 {
   size_t id;          // unique id for node
@@ -59,15 +63,6 @@ struct ect
 
   explicit ect(VW::io::logger logger) : logger(std::move(logger)) {}
 };
-
-bool exists(const VW::v_array<size_t>& db)
-{
-  for (size_t i : db)
-  {
-    if (i != 0) { return true; }
-  }
-  return false;
-}
 
 size_t final_depth(size_t eliminations, VW::io::logger& logger)
 {
@@ -336,8 +331,9 @@ void learn(ect& e, single_learner& base, VW::example& ec)
   ec.l.multi = mc;
   ec.pred.multiclass = pred;
 }
+}  // namespace
 
-base_learner* ect_setup(VW::setup_base_i& stack_builder)
+base_learner* VW::reductions::ect_setup(VW::setup_base_i& stack_builder)
 {
   options_i& options = *stack_builder.get_options();
   VW::workspace& all = *stack_builder.get_all_pointer();

@@ -315,7 +315,7 @@ jobs:
     strategy:
       matrix:
         version: ["3.6", "3.7", "3.8", "3.9", "3.10"]
-        os: ["windows-2016", "windows-2019"]
+        os: ["windows-2019"]
       fail-fast: false
     steps:
       - uses: actions/checkout@v2
