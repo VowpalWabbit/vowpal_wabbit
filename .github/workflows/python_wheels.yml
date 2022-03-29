@@ -264,7 +264,7 @@ jobs:
     runs-on: windows-2019
     env:
       VCPKG_ROOT: ${{ github.workspace }}\\vcpkg
-      VCPKG_REF: a515872b1abf58b639bf8b15ab5fe23b62f25ac3
+      VCPKG_REF: 773516ecf6014d89cc69b11bb54605ad4be56694
     strategy:
       matrix:
         config:
