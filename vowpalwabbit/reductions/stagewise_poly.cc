@@ -185,7 +185,7 @@ inline void min_depths_set(stagewise_poly& poly, uint64_t wid, uint8_t depth)
   poly.depthsbits[stride_un_shift(poly, do_ft_offset(poly, wid)) * 2] = depth;
 }
 
-#ifdef NDEBUG
+#ifdef DEBUG
 void sanity_check_state(stagewise_poly& poly)
 {
   for (uint64_t i = 0; i != poly.all->length(); ++i)
