@@ -9,11 +9,12 @@
 
 namespace VW
 {
-namespace continuous_action
+namespace reductions
 {
+LEARNER::base_learner* cats_setup(setup_base_i& stack_builder);
+
 namespace cats
 {
-LEARNER::base_learner* setup(setup_base_i& stack_builder);
 struct cats
 {
   uint32_t num_actions = 0;
@@ -31,5 +32,5 @@ private:
   LEARNER::single_learner* _base = nullptr;
 };
 }  // namespace cats
-}  // namespace continuous_action
+}  // namespace reductions
 }  // namespace VW

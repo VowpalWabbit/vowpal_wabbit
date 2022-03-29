@@ -4,9 +4,9 @@
 #include "example.h"
 
 #include "cb_continuous_label.h"
+#include "interactions.h"
 #include "model_utils.h"
 #include "reductions/gd.h"
-#include "reductions/interactions.h"
 #include "simple_label_parser.h"
 #include "text_utils.h"
 

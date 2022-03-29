@@ -7,7 +7,7 @@
 
 namespace VW
 {
-namespace metrics
+namespace reductions
 {
 VW::LEARNER::base_learner* metrics_setup(VW::setup_base_i& stack_builder);
 void output_metrics(VW::workspace& all);

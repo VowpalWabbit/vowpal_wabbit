@@ -29,7 +29,7 @@ using namespace ACTION_SCORE;
 #undef VW_DEBUG_LOG
 #define VW_DEBUG_LOG vw_dbg::csoaa_ldf
 
-namespace CSOAA
+namespace
 {
 // TODO: passthrough for ldf
 struct ldf
@@ -623,8 +623,9 @@ void finish_multiline_example(VW::workspace& all, ldf& data, VW::multi_ex& ec_se
 
   VW::finish_example(all, ec_seq);
 }
+}  // namespace
 
-base_learner* csldf_setup(VW::setup_base_i& stack_builder)
+base_learner* VW::reductions::csldf_setup(VW::setup_base_i& stack_builder)
 {
   options_i& options = *stack_builder.get_options();
   VW::workspace& all = *stack_builder.get_all_pointer();
@@ -745,4 +746,3 @@ base_learner* csldf_setup(VW::setup_base_i& stack_builder)
   all.cost_sensitive = make_base(*l);
   return all.cost_sensitive;
 }
-}  // namespace CSOAA

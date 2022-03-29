@@ -10,7 +10,7 @@
 #include "vw.h"
 #include "test_common.h"
 
-using namespace VW::continuous_action::cats;
+using namespace VW::reductions::cats;
 
 BOOST_AUTO_TEST_CASE(cats_test_get_loss_zero_for_bad_prediction)
 {
