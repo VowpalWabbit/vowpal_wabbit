@@ -43,7 +43,7 @@ VW_WARNING_STATE_POP
 using namespace VW::config;
 using namespace VW::LEARNER;
 
-namespace
+namespace LDA_ANON
 {
 enum class lda_math_mode : int
 {
@@ -403,14 +403,14 @@ inline T digamma(T /* x */)
 }
 
 // Exponential
-template <typename T, lda_math_mode mtype>
+template <typename T, const lda_math_mode mtype>
 inline T exponential(T /* x */)
 {
   static_assert(true, "ldamath::exponential is not defined for this type and math mode.");
 }
 
 // Powf
-template <typename T, lda_math_mode mtype>
+template <typename T, const lda_math_mode mtype>
 inline T powf(T /* x */, T /* p */)
 {
   static_assert(true, "ldamath::powf is not defined for this type and math mode.");
@@ -1260,14 +1260,26 @@ void finish_example(VW::workspace& all, lda& l, VW::example& e)
 
   assert(l.finish_example_count <= l.minibatch);
 }
-}  // namespace
+}  // namespace LDA_ANON
+
+using namespace LDA_ANON;
+
+void VW::reductions::lda::get_top_weights(
+    VW::workspace* all, int top_words_count, int topic, std::vector<feature>& output)
+{
+  if (all->weights.sparse) { ::get_top_weights(all, top_words_count, topic, output, all->weights.sparse_weights); }
+  else
+  {
+    ::get_top_weights(all, top_words_count, topic, output, all->weights.dense_weights);
+  }
+}
 
 base_learner* VW::reductions::lda_setup(VW::setup_base_i& stack_builder)
 {
   options_i& options = *stack_builder.get_options();
   VW::workspace& all = *stack_builder.get_all_pointer();
 
-  auto ld = VW::make_unique<lda>();
+  auto ld = VW::make_unique<::lda>();
   option_group_definition new_options("[Reduction] Latent Dirichlet Allocation");
   int64_t math_mode;
   uint64_t topics;

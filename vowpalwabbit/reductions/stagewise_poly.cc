@@ -185,7 +185,7 @@ inline void min_depths_set(stagewise_poly& poly, uint64_t wid, uint8_t depth)
   poly.depthsbits[stride_un_shift(poly, do_ft_offset(poly, wid)) * 2] = depth;
 }
 
-#ifndef NDEBUG
+#ifdef NDEBUG
 void sanity_check_state(stagewise_poly& poly)
 {
   for (uint64_t i = 0; i != poly.all->length(); ++i)
@@ -545,15 +545,6 @@ void learn(stagewise_poly& poly, single_learner& base, VW::example& ec)
   else
   {
     predict(poly, base, ec);
-  }
-}
-
-void reduce_min(uint8_t& v1, const uint8_t& v2)
-{
-  if (v1 == default_depth) { v1 = v2; }
-  else if (v2 != default_depth)
-  {
-    v1 = (v1 <= v2) ? v1 : v2;
   }
 }
 
