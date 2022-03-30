@@ -301,9 +301,12 @@ jobs:
         run: |
           # Ensure binary cache dir exists.
           mkdir -p ${{ env.VCPKG_DEFAULT_BINARY_CACHE }}
+          ls ${{ env.VCPKG_DEFAULT_BINARY_CACHE }}
       - name: Build wheel
         shell: powershell
         run: |
+          ls ${{ github.workspace }}
+          ls ${{ env.VCPKG_DEFAULT_BINARY_CACHE }}
           cd ${{github.workspace}}\\vowpal_wabbit
           cp ${{ matrix.config.vcpkg_manifest }} vcpkg.json
           pip install wheel
