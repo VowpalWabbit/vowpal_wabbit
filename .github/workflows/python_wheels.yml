@@ -281,7 +281,7 @@ jobs:
           python-version: ${{ matrix.config.version }}
       - uses: actions/checkout@v2
         with:
-          path: ${{github.workspace}}\\vowpal_wabbit\\
+          path: ${{github.workspace}}\vowpal_wabbit
       - uses: actions/checkout@v2
         with:
           path: ${{ env.VCPKG_ROOT }}
