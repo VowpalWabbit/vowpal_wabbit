@@ -295,13 +295,14 @@ jobs:
             ${{ env.VCPKG_ROOT }}\\installed\\
             ${{github.workspace}}\\vowpal_wabbit\\vcpkg_installed\\
           key: |
-            ${{ env.VCPKG_REF }}-${{ matrix.config.version }}-python-win-cache-invalidate-3
+            ${{ env.VCPKG_REF }}-${{ matrix.config.version }}-python-win-cache-invalidate-4
       - run: ${{ env.VCPKG_ROOT }}/bootstrap-vcpkg.bat
       - name: Setup deps
         shell: powershell
         run: |
           cd ${{github.workspace}}\\vowpal_wabbit
           cp ${{ matrix.config.vcpkg_manifest }} vcpkg.json
+          ${{ env.VCPKG_ROOT }}\\vcpkg.exe install --overlay-ports="${{github.workspace}}\\vowpal_wabbit\\${{ matrix.config.overlay_ports }}"
           pip install wheel
       - name: Build wheel
         shell: powershell
