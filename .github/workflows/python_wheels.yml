@@ -300,7 +300,10 @@ jobs:
       - name: Build wheel
         shell: powershell
         run: |
-          mkdir -p ${{ env.VCPKG_DEFAULT_BINARY_CACHE }}
+          if (![System.IO.Directory]::Exists("${{ env.VCPKG_DEFAULT_BINARY_CACHE }}"))
+          {
+              New-Item -ItemType Directory -Force -Path "${{ env.VCPKG_DEFAULT_BINARY_CACHE }}"
+          }
           ls ${{ github.workspace }}
           ls ${{ env.VCPKG_DEFAULT_BINARY_CACHE }}
           cd ${{github.workspace}}\\vowpal_wabbit
