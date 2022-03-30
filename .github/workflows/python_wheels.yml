@@ -265,7 +265,7 @@ jobs:
     env:
       VCPKG_ROOT: ${{ github.workspace }}\\vcpkg
       VCPKG_REF: 773516ecf6014d89cc69b11bb54605ad4be56694
-      VCPKG_DEFAULT_BINARY_CACHE: ${{ github.workspace }}\\vcpkg_binary_cache
+      VCPKG_DEFAULT_BINARY_CACHE: ${{ github.workspace }}\\vcpkg_binary_cache\\
     strategy:
       matrix:
         config:
@@ -293,10 +293,14 @@ jobs:
         uses: actions/cache@v2
         with:
           path: |
-            ${{ github.workspace }}\\vcpkg_binary_cache\\
+            ${{ env.VCPKG_DEFAULT_BINARY_CACHE }}
           key: |
             ${{ env.VCPKG_REF }}-${{ matrix.config.version }}-python-win-cache-invalidate-5
       - run: ${{ env.VCPKG_ROOT }}/bootstrap-vcpkg.bat
+      - shell: bash
+        run: |
+          # Ensure binary cache dir exists.
+          mkdir -p ${{ env.VCPKG_DEFAULT_BINARY_CACHE }}
       - name: Build wheel
         shell: powershell
         run: |
