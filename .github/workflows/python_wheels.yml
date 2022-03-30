@@ -292,9 +292,9 @@ jobs:
         uses: actions/cache@v2
         with:
           path: |
-            ${{ env.VCPKG_ROOT }}/installed/
+            ${{ env.VCPKG_ROOT }}\\installed\\
           key: |
-            ${{ env.VCPKG_REF }}-${{ matrix.config.version }}-python-win-cache-invalidate-0
+            ${{ env.VCPKG_REF }}-${{ matrix.config.version }}-python-win-cache-invalidate-1
       - run: ${{ env.VCPKG_ROOT }}/bootstrap-vcpkg.bat
       - name: Build wheel
         shell: powershell
