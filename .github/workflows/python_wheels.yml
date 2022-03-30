@@ -265,6 +265,7 @@ jobs:
     env:
       VCPKG_ROOT: ${{ github.workspace }}\\vcpkg
       VCPKG_REF: 773516ecf6014d89cc69b11bb54605ad4be56694
+      VCPKG_DEFAULT_BINARY_CACHE: ${{ github.workspace }}\\vcpkg_binary_cache
     strategy:
       matrix:
         config:
@@ -292,22 +293,16 @@ jobs:
         uses: actions/cache@v2
         with:
           path: |
-            ${{ env.VCPKG_ROOT }}\\installed\\
-            ${{github.workspace}}\\vowpal_wabbit\\vcpkg_installed\\
+            ${{ github.workspace }}\\vcpkg_binary_cache\\
           key: |
-            ${{ env.VCPKG_REF }}-${{ matrix.config.version }}-python-win-cache-invalidate-4
+            ${{ env.VCPKG_REF }}-${{ matrix.config.version }}-python-win-cache-invalidate-5
       - run: ${{ env.VCPKG_ROOT }}/bootstrap-vcpkg.bat
-      - name: Setup deps
-        shell: powershell
-        run: |
-          cd ${{github.workspace}}\\vowpal_wabbit
-          cp ${{ matrix.config.vcpkg_manifest }} vcpkg.json
-          ${{ env.VCPKG_ROOT }}\\vcpkg.exe install --overlay-ports="${{github.workspace}}\\vowpal_wabbit\\${{ matrix.config.overlay_ports }}"
-          pip install wheel
       - name: Build wheel
         shell: powershell
         run: |
           cd ${{github.workspace}}\\vowpal_wabbit
+          cp ${{ matrix.config.vcpkg_manifest }} vcpkg.json
+          pip install wheel
           pip wheel . -w ${{github.workspace}}\\wheel_output --global-option --vcpkg-root="${{ env.VCPKG_ROOT }}" --global-option --cmake-generator="Visual Studio 16 2019" --global-option --cmake-options="-DVCPKG_OVERLAY_PORTS=${{github.workspace}}\\vowpal_wabbit\\${{ matrix.config.overlay_ports }}"  --verbose
       - name: Upload built wheel
         uses: actions/upload-artifact@v1
