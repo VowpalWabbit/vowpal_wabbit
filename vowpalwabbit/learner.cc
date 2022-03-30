@@ -3,10 +3,12 @@
 // license as described in the file LICENSE.
 
 #include "learner.h"
-#include "parser.h"
-#include "vw.h"
-#include "parse_regressor.h"
+
 #include "parse_dispatch_loop.h"
+#include "parse_regressor.h"
+#include "parser.h"
+#include "reductions/conditional_contextual_bandit.h"
+#include "vw.h"
 
 namespace VW
 {
@@ -38,9 +40,9 @@ void save(example& ec, VW::workspace& all)
   std::string final_regressor_name = all.final_regressor_name;
 
   if ((ec.tag).size() >= 6 && (ec.tag)[4] == '_')
-    final_regressor_name = std::string(ec.tag.begin() + 5, (ec.tag).size() - 5);
+  { final_regressor_name = std::string(ec.tag.begin() + 5, (ec.tag).size() - 5); }
 
-  if (!all.logger.quiet) *(all.trace_message) << "saving regressor to " << final_regressor_name << std::endl;
+  if (!all.quiet) { *(all.trace_message) << "saving regressor to " << final_regressor_name << std::endl; }
   ::save_predictor(all, final_regressor_name, 0);
 
   VW::finish_example(all, ec);
@@ -64,7 +66,7 @@ void drain_examples(VW::workspace& all)
   if (all.early_terminate)
   {  // drain any extra examples from parser.
     example* ec = nullptr;
-    while ((ec = VW::get_example(all.example_parser)) != nullptr) VW::finish_example(all, *ec);
+    while ((ec = VW::get_example(all.example_parser)) != nullptr) { VW::finish_example(all, *ec); }
   }
   all.l->end_examples();
 }
@@ -100,7 +102,7 @@ public:
   void process(T& ec)
   {
     // start with last as the first instance will free the example as it is the owner
-    for (auto it = _all.rbegin(); it != _all.rend(); ++it) process_impl(ec, **it);
+    for (auto it = _all.rbegin(); it != _all.rend(); ++it) { process_impl(ec, **it); }
   }
 
 private:
@@ -117,15 +119,25 @@ public:
 
   void on_example(example* ec)
   {
-    if (ec->indices.size() > 1)  // 1+ nonconstant feature. (most common case first)
+    if (ec->indices.size() > 1)
+    {  // 1+ nonconstant feature. (most common case first)
       _context.template process<example, learn_ex>(*ec);
+    }
     else if (ec->end_pass)
+    {
       _context.template process<example, end_pass>(*ec);
+    }
     else if (is_save_cmd(ec))
+    {
       _context.template process<example, save>(*ec);
+    }
     else
+    {
       _context.template process<example, learn_ex>(*ec);
+    }
   }
+
+  void process_remaining() {}
 
 private:
   context_type _context;
@@ -141,16 +153,7 @@ private:
     const bool is_test_ec = master.example_parser->lbl_parser.test_label(ec->l);
     const bool is_newline = (example_is_newline_not_header(*ec, master) && is_test_ec);
 
-    // In the case of end-of-pass example, we need to treat it as an indicator of
-    // multi_ex completion, but we should not call finish_example on it, until after
-    // doing learning on the multi_ex, otherwise we lose track of it being an end-
-    // of-pass example, and cannot chain to end_pass()
     if (!is_newline && !ec->end_pass) { ec_seq.push_back(ec); }
-    else if (!ec->end_pass)
-    {
-      VW::finish_example(master, *ec);
-    }
-
     // A terminating example can occur when there have been no featureful examples
     // collected. In this case, do not trigger a learn.
     return (is_newline || ec->end_pass) && !ec_seq.empty();
@@ -158,26 +161,26 @@ private:
 
   bool try_complete_multi_ex(example* ec)
   {
-    if (ec->indices.size() > 1)  // 1+ nonconstant feature. (most common case first)
+    if (ec->indices.size() > 1)
+    {  // 1+ nonconstant feature. (most common case first)
       return complete_multi_ex(ec);
     // Explicitly do not process the end-of-pass examples here: It needs to be done
     // after learning on the collected multi_ex
-    // else if (ec->end_pass)
-    //   _context.template process<example, end_pass>(*ec);
+    }
     else if (is_save_cmd(ec))
+    {
       _context.template process<example, save>(*ec);
+    }
     else
+    {
       return complete_multi_ex(ec);
+    }
     return false;
   }
 
 public:
   multi_example_handler(const context_type context) : _context(context) {}
-
-  ~multi_example_handler()
-  {
-    if (!ec_seq.empty()) { _context.template process<multi_ex, learn_multi_ex>(ec_seq); }
-  }
+  ~multi_example_handler() = default;
 
   void on_example(example* ec)
   {
@@ -186,14 +189,29 @@ public:
       _context.template process<multi_ex, learn_multi_ex>(ec_seq);
       ec_seq.clear();
     }
-
-    // Send out the end-of-pass notification after doing learning
+    // after we learn, cleanup is_newline or end_pass example
     if (ec->end_pass)
     {
       // Because the end_pass example is used to complete the in-flight multi_ex prior
       // to this call we should have no more in-flight multi_ex here.
       assert(ec_seq.empty());
       _context.template process<example, end_pass>(*ec);
+    }
+    else if (ec->is_newline)
+    {
+      // Because the is_newline example is used to complete the in-flight multi_ex prior
+      // to this call we should have no more in-flight multi_ex here.
+      assert(ec_seq.empty());
+      VW::finish_example(_context.get_master(), *ec);
+    }
+  }
+
+  void process_remaining()
+  {
+    if (!ec_seq.empty())
+    {
+      _context.template process<multi_ex, learn_multi_ex>(ec_seq);
+      ec_seq.clear();
     }
   }
 
@@ -240,8 +258,7 @@ template <typename queue_type, typename handler_type>
 void process_examples(queue_type& examples, handler_type& handler)
 {
   example* ec;
-
-  while ((ec = examples.pop()) != nullptr) handler.on_example(ec);
+  while ((ec = examples.pop()) != nullptr) { handler.on_example(ec); }
 }
 
 template <typename context_type>
@@ -252,12 +269,14 @@ void generic_driver(ready_examples_queue& examples, context_type& context)
     using handler_type = multi_example_handler<context_type>;
     handler_type handler(context);
     process_examples(examples, handler);
+    handler.process_remaining();
   }
   else
   {
     using handler_type = single_example_handler<context_type>;
     handler_type handler(context);
     process_examples(examples, handler);
+    handler.process_remaining();
   }
   drain_examples(context.get_master());
 }
@@ -287,18 +306,33 @@ void generic_driver_onethread(VW::workspace& all)
     process_examples(examples_queue, handler);
   };
   parse_dispatch(all, multi_ex_fptr);
+  handler.process_remaining();
   all.l->end_examples();
 }
 
 void generic_driver_onethread(VW::workspace& all)
 {
-  if (all.l->is_multiline())
-    generic_driver_onethread<multi_example_handler<single_instance_context>>(all);
+  if (all.l->is_multiline()) { generic_driver_onethread<multi_example_handler<single_instance_context>>(all); }
   else
+  {
     generic_driver_onethread<single_example_handler<single_instance_context>>(all);
+  }
 }
 
 float recur_sensitivity(void*, base_learner& base, example& ec) { return base.sensitivity(ec); }
+bool ec_is_example_header(const example& ec, label_type_t label_type)
+{
+  if (label_type == VW::label_type_t::cb) { return CB::ec_is_example_header(ec); }
+  else if (label_type == VW::label_type_t::ccb)
+  {
+    return reductions::ccb::ec_is_example_header(ec);
+  }
+  else if (label_type == VW::label_type_t::cs)
+  {
+    return COST_SENSITIVE::ec_is_example_header(ec);
+  }
+  return false;
+}
 
 }  // namespace LEARNER
 }  // namespace VW

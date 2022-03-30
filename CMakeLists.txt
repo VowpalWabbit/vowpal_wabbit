@@ -4,11 +4,14 @@ set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_CURRENT_LIST_DIR}/cmake/")
 if(POLICY CMP0076)
   cmake_policy(SET CMP0076 NEW)
 endif()
-
 # Do not add /W3 to MSVC flags by default. We set this to /W4.
 if(POLICY CMP0092)
   cmake_policy(SET CMP0092 NEW)
 endif()
+
+# Allow vcpkg to use versions feature if it is enabled with a manifest.
+# Right now this is done for the Python CIs.
+list(APPEND VCPKG_FEATURE_FLAGS "versions")
 
 # Read version into variable
 file(READ version.txt PACKAGE_VERSION)
@@ -84,8 +87,7 @@ option(WARNINGS "Turn on warning flags. ON by default." ON)
 option(WARNING_AS_ERROR "Turn on warning as error. OFF by default." OFF)
 option(STATIC_LINK_VW "Link VW executable statically. Off by default." OFF)
 option(STATIC_LINK_VW_JAVA "Link VW-JNI shared library statically. Off by default." OFF)
-
-option(VW_INSTALL "Add install targets." ON)
+option(VW_INSTALL "Add install targets." OFF)
 option(BUILD_TESTS "Build and enable tests." ON)
 option(BUILD_BENCHMARKS "Build benchmarks" OFF)
 option(BUILD_ONLY_STANDALONE_BENCHMARKS "Build only the benchmarks that can run standalone (and do not use vw internals)" OFF)
@@ -94,11 +96,39 @@ option(BUILD_PYTHON "Add Python targets." Off)
 option(BUILD_DOCS "Add documentation targets." Off)
 option(BUILD_EXPERIMENTAL_BINDING "Add targets for experimental bindings" OFF)
 option(LTO "Enable Link Time optimization (Requires Release build, only works with clang and linux/mac for now)." Off)
-option(BUILD_SLIM_VW "Add targets for slim version of VW which implements only predict() for a subset of VW reductions." OFF)
 option(RAPIDJSON_SYS_DEP "Override using the submodule for RapidJSON dependency. Instead will use find_package" OFF)
 option(FMT_SYS_DEP "Override using the submodule for FMT dependency. Instead will use find_package" OFF)
 option(SPDLOG_SYS_DEP "Override using the submodule for spdlog dependency. Instead will use find_package" OFF)
+option(VW_BOOST_MATH_SYS_DEP "Override using the submodule for boost math dependency. Instead will use find_package" OFF)
+option(VW_ZLIB_SYS_DEP "Override using the submodule for zlib dependency. Instead will use find_package" ON)
 option(BUILD_FLATBUFFERS "Build flatbuffers" OFF)
+option(BUILD_PRIVACY_ACTIVATION "Enable privacy activation feature" OFF)
+
+if(VW_INSTALL AND NOT VW_ZLIB_SYS_DEP)
+  message(WARNING "Installing with a vendored version of zlib is not recommended. Use VW_ZLIB_SYS_DEP to use a system dependency or specify VW_INSTALL=OFF to silence this warning.")
+endif()
+
+# The only way to tell it was used is if it was turned off, since the default is true.
+if(NOT BUILD_TESTS)
+  message(WARNING "Use standard option BUILD_TESTING instead of BUILD_TESTS. BUILD_TESTS will be removed in the future.")
+  SET(BUILD_TESTING ${BUILD_TESTS} CACHE BOOL "Set value to BUILD_TESTING")
+endif()
+
+if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
+    include(CTest)
+endif()
+
+if(VW_INSTALL AND NOT FMT_SYS_DEP)
+  message(WARNING "Installing with a vendored version of fmt is not recommended. Use FMT_SYS_DEP to use a system dependency or specify VW_INSTALL=OFF to silence this warning.")
+endif()
+
+if(VW_INSTALL AND NOT SPDLOG_SYS_DEP)
+  message(WARNING "Installing with a vendored version of spdlog is not recommended. Use SPDLOG_SYS_DEP to use a system dependency or specify VW_INSTALL=OFF to silence this warning.")
+endif()
+
+if(VW_INSTALL AND NOT RAPIDJSON_SYS_DEP)
+  message(WARNING "Installing with a vendored version of rapidjson is not recommended. Use RAPIDJSON_SYS_DEP to use a system dependency or specify VW_INSTALL=OFF to silence this warning.")
+endif()
 
 string(TOUPPER "${CMAKE_BUILD_TYPE}" CONFIG)
 
@@ -175,24 +205,11 @@ else()
 endif()
 
 if(STATIC_LINK_VW_JAVA)
-  set(Boost_USE_STATIC_LIBS ON)
   set(CMAKE_FIND_LIBRARY_SUFFIXES ${STATIC_LIB_SUFFIXES})
-else()
-  if(STATIC_LINK_VW)
-    set(Boost_USE_STATIC_LIBS ON)
-    set(CMAKE_FIND_LIBRARY_SUFFIXES ${STATIC_LIB_SUFFIXES})
-    SET(BUILD_SHARED_LIBS OFF)
-  else()
-    set(Boost_USE_STATIC_LIBS OFF)
-    if(WIN32)
-      # Windows links everything dynamically
-      add_definitions( -DBOOST_ALL_DYN_LINK )
-    endif()
-  endif()
+elseif(STATIC_LINK_VW)
+  set(CMAKE_FIND_LIBRARY_SUFFIXES ${STATIC_LIB_SUFFIXES})
+  SET(BUILD_SHARED_LIBS OFF)
 endif()
-
-set(Boost_USE_MULTITHREADED ON)
-set(Boost_USE_STATIC_RUNTIME OFF)
 
 set(THREADS_PREFER_PTHREAD_FLAG ON)
 find_package(Threads REQUIRED)
@@ -211,9 +228,6 @@ if(STATIC_LINK_VW)
   endif()
 endif()
 
-# Align and foreach are also required, for some reason they can't be specified as components though.
-find_package(Boost REQUIRED COMPONENTS program_options system)
-find_package(ZLIB REQUIRED)
 if(BUILD_FLATBUFFERS)
   find_package(flatbuffers REQUIRED)
 endif()
@@ -267,19 +281,13 @@ if(BUILD_PYTHON)
   add_subdirectory(python)
 endif()
 
-if(BUILD_SLIM_VW)
-  add_subdirectory(vowpalwabbit/slim)
-endif()
-
 if(BUILD_BENCHMARKS)
   add_subdirectory(test/benchmarks)
 endif()
 
-if(BUILD_TESTS)
+if(BUILD_TESTING)
   # Boost test is only required if we are building tests
   find_package(Boost REQUIRED COMPONENTS unit_test_framework)
-
-  enable_testing()
   add_subdirectory(test)
 
   set(vw_c_api_unit_test_target "")
@@ -337,17 +345,16 @@ if(vw_BUILD_NET_FRAMEWORK)
   add_subdirectory(cs)
 endif()
 
-# TODO convert c_test directory to cmake
 
 # Handle installation of targets, version, config and pkgconfig
 if(VW_INSTALL)
-  find_package(Boost REQUIRED COMPONENTS program_options)
-
-  FOREACH(BOOST_LIBRARY ${Boost_LIBRARIES})
-    SET (BOOST_LINK_LIBRARIES "${BOOST_LINK_LIBRARIES} ${BOOST_LIBRARY}")
-  ENDFOREACH()
-
   configure_file(libvw.pc.in libvw.pc @ONLY)
+
+  # only do this if the file exists. Some packages dont have this file and its only needed in a very specific use case
+  if(EXISTS nuget/vowpalwabbit.nuspec.in)
+    configure_file(nuget/vowpalwabbit.nuspec.in nuget/vowpalwabbit.nuspec @ONLY)
+  endif()
+
   configure_file(libvw_c_wrapper.pc.in libvw_c_wrapper.pc @ONLY)
   install(
     FILES ${CMAKE_CURRENT_BINARY_DIR}/libvw.pc ${CMAKE_CURRENT_BINARY_DIR}/libvw_c_wrapper.pc

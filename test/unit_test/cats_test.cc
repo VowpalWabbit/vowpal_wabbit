@@ -5,12 +5,12 @@
 #include <boost/test/unit_test.hpp>
 #include <boost/test/test_tools.hpp>
 
-#include "cats.h"
+#include "reductions/cats.h"
 #include "memory.h"
 #include "vw.h"
 #include "test_common.h"
 
-using namespace VW::continuous_action::cats;
+using namespace VW::reductions::cats;
 
 BOOST_AUTO_TEST_CASE(cats_test_get_loss_zero_for_bad_prediction)
 {

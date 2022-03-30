@@ -1,31 +1,31 @@
+creating cache_file = train-sets/lda-2pass-hang.dat.cache
+Reading datafile = train-sets/lda-2pass-hang.dat
+num sources = 1
 Num weight bits = 18
 learning rate = 0.5
 initial_t = 0
 power_t = 0.5
 decay_learning_rate = 1
-creating cache_file = train-sets/lda-2pass-hang.dat.cache
-Reading datafile = train-sets/lda-2pass-hang.dat
-num sources = 1
 Enabled reductions: lda
 Input label = nolabel
 Output pred = scalars
-average  since         example        example  current  current  current
-loss     last          counter         weight    label  predict features
-12.813779 12.813779            1            1.0     none        0      201
-12.946868 13.079958            2            2.0     none        0      220
-13.718172 14.489475            4            4.0     none        0      136
-14.787530 15.856889            8            8.0     none        0      371
-15.934849 17.082168           16           16.0     none        0      138
-17.209259 18.483669           32           32.0     none        0      276
-17.163312 17.117366           64           64.0     none        0       55
-16.494668 15.826024          128          128.0     none        0      131
-15.918044 15.341420          256          256.0     none        0      433
-15.281662 14.645279          512          512.0     none        0       61
+average  since         example        example        current        current  current 
+loss     last          counter         weight          label        predict features 
+12.81371 12.81371            1            1.0           none              0      201 
+12.94682 13.07993            2            2.0           none              0      220 
+13.71767 14.48851            4            4.0           none              0      136 
+14.78730 15.85694            8            8.0           none              0      371 
+15.93477 17.08223           16           16.0           none              0      138 
+17.20918 18.48360           32           32.0           none              0      276 
+17.16330 17.11742           64           64.0           none              0       55 
+16.49471 15.82611          128          128.0           none              0      131 
+15.91807 15.34144          256          256.0           none              0      433 
+15.28181 14.64554          512          512.0           none              0       61 
 
 finished run
 number of examples per pass = 500
 passes used = 2
 weighted example sum = 1000.000000
 weighted label sum = 0.000000
-average loss = 14.297977
+average loss = 14.298476
 total feature number = 193156

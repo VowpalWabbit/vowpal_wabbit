@@ -2,23 +2,26 @@
 // individual contributors. All rights reserved. Released under a BSD (revised)
 // license as described in the file LICENSE.
 #pragma once
-#include <iostream>
-#include <utility>
-#include <vector>
-#include <map>
-#include <cfloat>
-#include <cstdint>
-#include <cstdio>
-#include <inttypes.h>
-#include <climits>
-#include <stack>
-#include <unordered_map>
-#include <string>
-#include <array>
-#include <memory>
-#include <atomic>
+
+#include "array_parameters.h"
+#include "constant.h"
+#include "error_reporting.h"
 #include "future_compat.h"
+#include "interactions_predict.h"
+#include "io/logger.h"
+#include "version.h"
+#include "vw_fwd.h"
 #include "vw_string_view.h"
+
+#include <array>
+#include <cfloat>
+#include <cinttypes>
+#include <cstdint>
+#include <map>
+#include <memory>
+#include <string>
+#include <unordered_map>
+#include <vector>
 
 // Thread cannot be used in managed C++, tell the compiler that this is unmanaged even if included in a managed project.
 #ifdef _M_CEE
@@ -30,29 +33,6 @@
 #else
 #  include <thread>
 #endif
-
-#include "v_array.h"
-#include "array_parameters.h"
-#include "loss_functions.h"
-#include "example.h"
-#include "config.h"
-#include "learner.h"
-#include <time.h>
-#include "hash.h"
-#include "crossplat_compat.h"
-#include "error_reporting.h"
-#include "constant.h"
-#include "rand48.h"
-#include "hashstring.h"
-#include "decision_scores.h"
-#include "feature_group.h"
-#include "rand_state.h"
-#include "allreduce.h"
-#include "interactions_predict.h"
-
-#include "options.h"
-#include "version.h"
-#include "kskip_ngram_transformer.h"
 
 typedef float weight;
 
@@ -77,24 +57,8 @@ struct dictionary_info
   std::shared_ptr<feature_dict> dict;
 };
 
-enum class AllReduceType
-{
-  Socket,
-  Thread
-};
-
 class AllReduce;
-
-struct vw_logger
-{
-  bool quiet;
-  size_t upper_limit;
-
-  vw_logger() : quiet(false) {}
-
-  vw_logger(const vw_logger& other) = delete;
-  vw_logger& operator=(const vw_logger& other) = delete;
-};
+enum class AllReduceType;
 
 #ifdef BUILD_EXTERNAL_PARSER
 // forward declarations
@@ -134,10 +98,19 @@ struct trace_message_wrapper
 
 namespace VW
 {
+namespace details
+{
+struct invert_hash_info
+{
+  std::vector<VW::audit_strings> weight_components;
+  uint64_t offset;
+  uint64_t stride_shift;
+};
+}  // namespace details
 struct workspace
 {
 private:
-  std::shared_ptr<rand_state> _random_state_sp = std::make_shared<rand_state>();  // per instance random_state
+  std::shared_ptr<VW::rand_state> _random_state_sp;  // per instance random_state
 
 public:
   shared_data* sd;
@@ -162,6 +135,15 @@ public:
   void finish_example(example&);
   void finish_example(multi_ex&);
 
+  /**
+   * @brief Generate a JSON string with the current model state and invert hash
+   * lookup table. Base reduction in use must be gd and workspace.hash_inv must
+   * be true. This function is experimental and subject to change.
+   *
+   * @return std::string JSON formatted string
+   */
+  std::string dump_weights_to_json_experimental();
+
   void (*set_minmax)(shared_data* sd, float label);
 
   uint64_t current_pass;
@@ -170,6 +152,13 @@ public:
   bool default_bits;
 
   uint32_t hash_seed;
+
+#ifdef PRIVACY_ACTIVATION
+  bool privacy_activation = false;
+  // this is coupled with the bitset size in array_parameters which needs to be determined at compile time
+  size_t feature_bitset_size = 32;
+  size_t privacy_activation_threshold = 10;
+#endif
 
 #ifdef BUILD_FLATBUFFERS
   std::unique_ptr<VW::parsers::flatbuffer::parser> flat_converter;
@@ -181,14 +170,13 @@ public:
   std::string data_filename;
 
   bool daemon;
-  size_t num_children;
+  uint64_t num_children;
 
   bool save_per_pass;
   float initial_weight;
   float initial_constant;
 
   bool bfgs;
-  bool hessian_on;
 
   bool save_resume;
   bool preserve_performance_counters;
@@ -255,8 +243,11 @@ public:
   std::array<std::vector<std::shared_ptr<feature_dict>>, NUM_NAMESPACES>
       namespace_dictionaries{};  // each namespace has a list of dictionaries attached to it
 
-  vw_logger logger;
-  bool audit;     // should I print lots of debugging information?
+  VW::io::logger logger;
+  bool quiet;
+  bool audit;  // should I print lots of debugging information?
+  std::shared_ptr<std::vector<char>> audit_buffer;
+  std::unique_ptr<VW::io::writer> audit_writer;
   bool training;  // Should I train if lable data is available?
   bool active;
   bool invariant_updates;  // Should we use importance aware/safe updates
@@ -283,6 +274,9 @@ public:
 
   std::string text_regressor_name;
   std::string inv_hash_regressor_name;
+  std::string json_weights_file_name;
+  bool dump_json_weights_include_feature_names = false;
+  bool dump_json_weights_include_extra_online_state = false;
 
   size_t length() { return (static_cast<size_t>(1)) << num_bits; };
 
@@ -290,8 +284,8 @@ public:
   std::vector<std::unique_ptr<VW::io::writer>> final_prediction_sink;  // set to send global predictions to.
   std::unique_ptr<VW::io::writer> raw_prediction;                      // file descriptors for text output.
 
-  void (*print_by_ref)(VW::io::writer*, float, float, const v_array<char>&);
-  void (*print_text_by_ref)(VW::io::writer*, const std::string&, const v_array<char>&);
+  void (*print_by_ref)(VW::io::writer*, float, float, const v_array<char>&, VW::io::logger&);
+  void (*print_text_by_ref)(VW::io::writer*, const std::string&, const v_array<char>&, VW::io::logger&);
   std::unique_ptr<loss_function> loss;
 
   bool stdin_off;
@@ -303,7 +297,6 @@ public:
   float initial_t;
   float eta;  // learning rate control.
   float eta_decay_rate;
-  time_t init_time;
 
   std::string final_regressor_name;
 
@@ -318,14 +311,14 @@ public:
   bool progress_add;   // additive (rather than multiplicative) progress dumps
   float progress_arg;  // next update progress dump multiplier
 
-  std::map<uint64_t, std::string> index_name_map;
+  std::map<uint64_t, VW::details::invert_hash_info> index_name_map;
 
   // hack to support cb model loading into ccb reduction
   bool is_ccb_input_model = false;
 
-  workspace();
+  explicit workspace(VW::io::logger logger);
   ~workspace();
-  std::shared_ptr<rand_state> get_random_state() { return _random_state_sp; }
+  std::shared_ptr<VW::rand_state> get_random_state() { return _random_state_sp; }
 
   workspace(const VW::workspace&) = delete;
   VW::workspace& operator=(const VW::workspace&) = delete;
@@ -343,13 +336,14 @@ private:
 };
 }  // namespace VW
 
-void print_result_by_ref(VW::io::writer* f, float res, float weight, const v_array<char>& tag);
-void binary_print_result_by_ref(VW::io::writer* f, float res, float weight, const v_array<char>& tag);
+void print_result_by_ref(
+    VW::io::writer* f, float res, float weight, const VW::v_array<char>& tag, VW::io::logger& logger);
+void binary_print_result_by_ref(
+    VW::io::writer* f, float res, float weight, const VW::v_array<char>& tag, VW::io::logger& logger);
 
 void noop_mm(shared_data*, float label);
 void get_prediction(VW::io::reader* f, float& res, float& weight);
 void compile_gram(
     std::vector<std::string> grams, std::array<uint32_t, NUM_NAMESPACES>& dest, char* descriptor, bool quiet);
-void compile_limits(std::vector<std::string> limits, std::array<uint32_t, NUM_NAMESPACES>& dest, bool quiet);
-
-int print_tag_by_ref(std::stringstream& ss, const v_array<char>& tag);
+void compile_limits(
+    std::vector<std::string> limits, std::array<uint32_t, NUM_NAMESPACES>& dest, bool quiet, VW::io::logger& logger);

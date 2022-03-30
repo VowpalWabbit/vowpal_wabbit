@@ -4,24 +4,57 @@
 
 #pragma once
 
-#include "v_array.h"
 #include "future_compat.h"
 #include "generic_range.h"
+#include "v_array.h"
 
-#include <iterator>
-#include <utility>
-#include <memory>
-#include <string>
 #include <algorithm>
 #include <cstddef>
+#include <iterator>
+#include <memory>
 #include <numeric>
-#include <vector>
+#include <sstream>
+#include <string>
 #include <type_traits>
+#include <utility>
+#include <vector>
 
 using feature_value = float;
 using feature_index = uint64_t;
-using audit_strings = std::pair<std::string, std::string>;
 using namespace_index = unsigned char;
+
+namespace VW
+
+{
+struct audit_strings
+{
+  std::string ns;
+  std::string name;
+
+  // This is only set if chain hashing is in use.
+  std::string str_value;
+
+  audit_strings() = default;
+  audit_strings(std::string ns, std::string name) : ns(std::move(ns)), name(std::move(name)) {}
+  audit_strings(std::string ns, std::string name, std::string str_value)
+      : ns(std::move(ns)), name(std::move(name)), str_value(std::move(str_value))
+  {
+  }
+
+  bool is_empty() const { return ns.empty() && name.empty() && str_value.empty(); }
+};
+
+inline std::string to_string(const audit_strings& ai)
+{
+  std::ostringstream ss;
+  if (!ai.ns.empty() && ai.ns != " ") { ss << ai.ns << '^'; }
+  ss << ai.name;
+  if (!ai.str_value.empty()) { ss << '^' << ai.str_value; }
+  return ss.str();
+}
+}  // namespace VW
+
+using audit_strings VW_DEPRECATED("Moved into VW namespace") = VW::audit_strings;
 
 // First: character based feature group, second: hash of extent
 using extent_term = std::pair<namespace_index, uint64_t>;
@@ -378,15 +411,16 @@ struct features
 {
   using iterator = features_iterator<feature_value, feature_index>;
   using const_iterator = features_iterator<const feature_value, const feature_index>;
-  using audit_iterator = audit_features_iterator<feature_value, feature_index, audit_strings>;
-  using const_audit_iterator = audit_features_iterator<const feature_value, const feature_index, const audit_strings>;
+  using audit_iterator = audit_features_iterator<feature_value, feature_index, VW::audit_strings>;
+  using const_audit_iterator =
+      audit_features_iterator<const feature_value, const feature_index, const VW::audit_strings>;
   using extent_iterator = ns_extent_iterator<features, audit_iterator, std::vector<VW::namespace_extent>::iterator>;
   using const_extent_iterator =
       ns_extent_iterator<const features, const_audit_iterator, std::vector<VW::namespace_extent>::const_iterator>;
 
-  v_array<feature_value> values;           // Always needed.
-  v_array<feature_index> indicies;         // Optional for sparse data.
-  std::vector<audit_strings> space_names;  // Optional for audit mode.
+  VW::v_array<feature_value> values;           // Always needed.
+  VW::v_array<feature_index> indices;          // Optional for sparse data.
+  std::vector<VW::audit_strings> space_names;  // Optional for audit mode.
 
   // Each extent represents a range [begin, end) of values which exist in a
   // given namespace. These extents must not overlap and the indices must not go
@@ -411,29 +445,29 @@ struct features
   inline bool nonempty() const { return !empty(); }
 
   // default iterator for values & features
-  inline iterator begin() { return {values.begin(), indicies.begin()}; }
-  inline const_iterator begin() const { return {values.begin(), indicies.begin()}; }
-  inline iterator end() { return {values.end(), indicies.end()}; }
-  inline const_iterator end() const { return {values.end(), indicies.end()}; }
+  inline iterator begin() { return {values.begin(), indices.begin()}; }
+  inline const_iterator begin() const { return {values.begin(), indices.begin()}; }
+  inline iterator end() { return {values.end(), indices.end()}; }
+  inline const_iterator end() const { return {values.end(), indices.end()}; }
 
-  inline const_iterator cbegin() const { return {values.cbegin(), indicies.cbegin()}; }
-  inline const_iterator cend() const { return {values.cend(), indicies.cend()}; }
+  inline const_iterator cbegin() const { return {values.cbegin(), indices.cbegin()}; }
+  inline const_iterator cend() const { return {values.cend(), indices.cend()}; }
 
   inline VW::generic_range<audit_iterator> audit_range() { return {audit_begin(), audit_end()}; }
   inline VW::generic_range<const_audit_iterator> audit_range() const { return {audit_cbegin(), audit_cend()}; }
 
-  inline audit_iterator audit_begin() { return {values.begin(), indicies.begin(), space_names.data()}; }
-  inline const_audit_iterator audit_begin() const { return {values.begin(), indicies.begin(), space_names.data()}; }
-  inline audit_iterator audit_end() { return {values.end(), indicies.end(), space_names.data() + space_names.size()}; }
+  inline audit_iterator audit_begin() { return {values.begin(), indices.begin(), space_names.data()}; }
+  inline const_audit_iterator audit_begin() const { return {values.begin(), indices.begin(), space_names.data()}; }
+  inline audit_iterator audit_end() { return {values.end(), indices.end(), space_names.data() + space_names.size()}; }
   inline const_audit_iterator audit_end() const
   {
-    return {values.end(), indicies.end(), space_names.data() + space_names.size()};
+    return {values.end(), indices.end(), space_names.data() + space_names.size()};
   }
 
-  inline const_audit_iterator audit_cbegin() const { return {values.begin(), indicies.begin(), space_names.data()}; }
+  inline const_audit_iterator audit_cbegin() const { return {values.begin(), indices.begin(), space_names.data()}; }
   inline const_audit_iterator audit_cend() const
   {
-    return {values.end(), indicies.end(), space_names.data() + space_names.size()};
+    return {values.end(), indices.end(), space_names.data() + space_names.size()};
   }
 
   extent_iterator hash_extents_begin(uint64_t hash) { return {this, hash, namespace_extents.begin()}; }

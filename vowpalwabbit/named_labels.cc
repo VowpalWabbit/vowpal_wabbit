@@ -3,11 +3,9 @@
 // license as described in the file LICENSE.
 
 #include "named_labels.h"
-#include "parse_primitives.h"
 
 #include "io/logger.h"
-
-namespace logger = VW::io::logger;
+#include "parse_primitives.h"
 
 void VW::named_labels::initialize_maps_from_input_string()
 {
@@ -47,12 +45,12 @@ VW::named_labels& VW::named_labels::operator=(const VW::named_labels& other)
   return *this;
 }
 
-uint32_t VW::named_labels::get(VW::string_view s) const
+uint32_t VW::named_labels::get(VW::string_view s, VW::io::logger& logger) const
 {
   auto iter = m_name2id.find(s);
   if (iter == m_name2id.end())
   {
-    logger::errlog_warn("warning: missing named label '{}'", s);
+    logger.err_warn("Missing named label '{}'", s);
     return 0;
   }
   return iter->second;

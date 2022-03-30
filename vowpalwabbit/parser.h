@@ -2,39 +2,38 @@
 // individual contributors. All rights reserved. Released under a BSD (revised)
 // license as described in the file LICENSE.
 #pragma once
-#include "io_buf.h"
-#include "example.h"
-#include "future_compat.h"
 
 // Mutex and CV cannot be used in managed C++, tell the compiler that this is unmanaged even if included in a managed
 // project.
 #ifdef _M_CEE
 #  pragma managed(push, off)
 #  undef _M_CEE
-#  include <mutex>
 #  include <condition_variable>
+#  include <mutex>
 #  define _M_CEE 001
 #  pragma managed(pop)
 #else
-#  include <mutex>
 #  include <condition_variable>
+#  include <mutex>
 #endif
+
+#include "example.h"
+#include "future_compat.h"
+#include "hashstring.h"
+#include "io_buf.h"
+#include "object_pool.h"
+#include "queue.h"
+#include "vw_fwd.h"
+#include "vw_string_view.h"
 
 #include <atomic>
 #include <memory>
-#include "vw_string_view.h"
-#include "queue.h"
-#include "object_pool.h"
-#include "hashstring.h"
-#include "simple_label_parser.h"
 
 namespace VW
 {
-struct workspace;
-
-void parse_example_label(string_view label, const label_parser& lbl_parser, const named_labels* ldict,
-    label_parser_reuse_mem& reuse_mem, example& ec);
-
+void parse_example_label(string_view label, const VW::label_parser& lbl_parser, const named_labels* ldict,
+    label_parser_reuse_mem& reuse_mem, example& ec, VW::io::logger& logger);
+void setup_examples(VW::workspace& all, v_array<example*>& examples);
 namespace details
 {
 struct cache_temp_buffer
@@ -52,19 +51,10 @@ struct cache_temp_buffer
 
 struct input_options;
 struct dsjson_metrics;
+
 struct parser
 {
-  parser(size_t ring_size, bool strict_parse_)
-      : example_pool{ring_size}
-      , ready_parsed_examples{ring_size}
-      , ring_size{ring_size}
-      , num_examples_taken_from_pool(0)
-      , num_setup_examples(0)
-      , num_finished_examples(0)
-      , strict_parse{strict_parse_}
-  {
-    this->lbl_parser = simple_label_parser;
-  }
+  parser(size_t example_queue_limit, bool strict_parse_);
 
   // delete copy constructor
   parser(const parser&) = delete;
@@ -73,8 +63,8 @@ struct parser
   // helper(s) for text parsing
   std::vector<VW::string_view> words;
 
-  VW::object_pool<example> example_pool;
-  VW::ptr_queue<example> ready_parsed_examples;
+  VW::object_pool<VW::example> example_pool;
+  VW::ptr_queue<VW::example> ready_parsed_examples;
 
   io_buf input;  // Input source(s)
 
@@ -84,15 +74,15 @@ struct parser
   /// parsers multiple are produced which all correspond the the same overall
   /// logical example. examples must have a single empty example in it when this
   /// call is made.
-  int (*reader)(VW::workspace*, io_buf&, v_array<example*>& examples);
+  int (*reader)(VW::workspace*, io_buf&, VW::v_array<VW::example*>& examples);
   /// text_reader consumes the char* input and is for text based parsing
-  void (*text_reader)(VW::workspace*, const char*, size_t, v_array<example*>&);
+  void (*text_reader)(VW::workspace*, const char*, size_t, VW::v_array<VW::example*>&);
 
   shared_data* _shared_data = nullptr;
 
   hash_func_t hasher;
-  bool resettable;           // Whether or not the input can be reset.
-  io_buf output;             // Where to output the cache.
+  bool resettable;  // Whether or not the input can be reset.
+  io_buf output;    // Where to output the cache.
   VW::details::cache_temp_buffer _cache_temp_buffer;
   std::string currentname;
   std::string finalname;
@@ -101,7 +91,7 @@ struct parser
   bool sort_features = false;
   bool sorted_cache = false;
 
-  const size_t ring_size;
+  size_t example_queue_limit;
   std::atomic<uint64_t> num_examples_taken_from_pool;
   std::atomic<uint64_t> num_setup_examples;
   std::atomic<uint64_t> num_finished_examples;
@@ -118,7 +108,7 @@ struct parser
 
   VW::label_parser_reuse_mem parser_memory_to_reuse;
 
-  label_parser lbl_parser;  // moved from vw
+  VW::label_parser lbl_parser;  // moved from vw
 
   bool audit = false;
   bool decision_service_json = false;

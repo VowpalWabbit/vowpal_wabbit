@@ -3,10 +3,12 @@
 // license as described in the file LICENSE.
 #pragma once
 
-#include <string>
-#include <vector>
-#include <unordered_map>
+#include "vw_fwd.h"
 #include "vw_string_view.h"
+
+#include <string>
+#include <unordered_map>
+#include <vector>
 
 namespace VW
 {
@@ -33,7 +35,7 @@ public:
   named_labels& operator=(named_labels&& other) noexcept = delete;
 
   uint32_t getK() const;
-  uint32_t get(string_view s) const;
+  uint32_t get(string_view s, VW::io::logger& logger) const;
   string_view get(uint32_t v) const;
 };
 }  // namespace VW

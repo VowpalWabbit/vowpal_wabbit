@@ -6,23 +6,23 @@
 
 #include "v_array.h"
 
-#include <vector>
 #include <algorithm>
-#include <utility>
 #include <numeric>
+#include <utility>
+#include <vector>
 
 struct feature_slice  // a helper struct for functions using the set {v,i,space_name}
 {
   feature_value x;
   feature_index weight_index;
-  audit_strings space_name;
+  VW::audit_strings space_name;
 };
 
 void features::clear()
 {
   sum_feat_sq = 0.f;
   values.clear();
-  indicies.clear();
+  indices.clear();
   space_names.clear();
   namespace_extents.clear();
 }
@@ -44,7 +44,7 @@ void features::truncate_to(size_t i, float sum_feat_sq_of_removed_section)
   sum_feat_sq -= sum_feat_sq_of_removed_section;
 
   values.resize_but_with_stl_behavior(i);
-  if (indicies.end() != indicies.begin()) { indicies.resize_but_with_stl_behavior(i); }
+  if (indices.end() != indices.begin()) { indices.resize_but_with_stl_behavior(i); }
 
   if (space_names.size() > i) { space_names.erase(space_names.begin() + i, space_names.end()); }
 
@@ -69,8 +69,8 @@ void features::truncate_to(size_t i)
 
 void features::concat(const features& other)
 {
-  assert(values.size() == indicies.size());
-  assert(other.values.size() == other.indicies.size());
+  assert(values.size() == indices.size());
+  assert(other.values.size() == other.indices.size());
   // Conditions to check:
   //  - !empty() && audit && other.audit -> push val, idx, audit
   //  - !empty() && audit && !other.audit -> fail
@@ -83,11 +83,11 @@ void features::concat(const features& other)
   assert(!(!empty() && (space_names.empty() != other.space_names.empty())));
   sum_feat_sq += other.sum_feat_sq;
 
-  const auto extent_offset = indicies.size();
+  const auto extent_offset = indices.size();
   for (size_t i = 0; i < other.size(); ++i)
   {
     values.push_back(other.values[i]);
-    indicies.push_back(other.indicies[i]);
+    indices.push_back(other.indices[i]);
   }
 
   if (!other.space_names.empty())
@@ -114,7 +114,7 @@ void features::concat(const features& other)
 void features::push_back(feature_value v, feature_index i)
 {
   values.push_back(v);
-  indicies.push_back(i);
+  indices.push_back(i);
   sum_feat_sq += v * v;
 }
 
@@ -134,11 +134,11 @@ void features::push_back(feature_value v, feature_index i, uint64_t hash)
   if (should_extend_existing) { namespace_extents.back().end_index++; }
   else if (should_create_new)
   {
-    namespace_extents.emplace_back(indicies.size(), indicies.size() + 1, hash);
+    namespace_extents.emplace_back(indices.size(), indices.size() + 1, hash);
   }
 
   values.push_back(v);
-  indicies.push_back(i);
+  indices.push_back(i);
   sum_feat_sq += v * v;
 }
 
@@ -254,7 +254,7 @@ std::vector<namespace_extent> unflatten_namespace_extents(const std::vector<std:
 
 bool features::sort(uint64_t parse_mask)
 {
-  if (indicies.empty()) { return false; }
+  if (indices.empty()) { return false; }
   // Compared indices are masked even though the saved values are not necessarilly masked.
   const auto comparator = [parse_mask](feature_index index_first, feature_index index_second, feature_value value_first,
                               feature_value value_second) {
@@ -263,12 +263,12 @@ bool features::sort(uint64_t parse_mask)
     return (masked_index_first < masked_index_second) ||
         ((masked_index_first == masked_index_second) && (value_first < value_second));
   };
-  auto flat_extents = VW::details::flatten_namespace_extents(namespace_extents, indicies.size());
-  const auto dest_index_vec = sort_permutation(indicies, values, comparator);
-  if (!space_names.empty()) { apply_permutation_in_place(dest_index_vec, values, indicies, flat_extents, space_names); }
+  auto flat_extents = VW::details::flatten_namespace_extents(namespace_extents, indices.size());
+  const auto dest_index_vec = sort_permutation(indices, values, comparator);
+  if (!space_names.empty()) { apply_permutation_in_place(dest_index_vec, values, indices, flat_extents, space_names); }
   else
   {
-    apply_permutation_in_place(dest_index_vec, values, indicies, flat_extents);
+    apply_permutation_in_place(dest_index_vec, values, indices, flat_extents);
   }
   namespace_extents = VW::details::unflatten_namespace_extents(flat_extents);
   return true;
@@ -278,7 +278,7 @@ void features::start_ns_extent(uint64_t hash)
 {
   // Either the list should be empty or the last one should have a valid end index.
   assert(namespace_extents.empty() || (!namespace_extents.empty() && namespace_extents.back().end_index != 0));
-  namespace_extents.emplace_back(indicies.size(), hash);
+  namespace_extents.emplace_back(indices.size(), hash);
 }
 
 void features::end_ns_extent()
@@ -288,7 +288,7 @@ void features::end_ns_extent()
   // If the last extent has already been ended this is an error.
   assert(namespace_extents.back().end_index == 0);
 
-  const auto end_index = indicies.size();
+  const auto end_index = indices.size();
   namespace_extents.back().end_index = end_index;
 
   // If the size of the extent is empty then just remove it.

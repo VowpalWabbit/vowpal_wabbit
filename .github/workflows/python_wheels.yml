@@ -1,0 +1,347 @@
+name: Python
+
+# This file builds and tests Python binary wheels across major platforms. The
+# wheels that are produced are used for PyPi releases. The test step uses a
+# fresh job and installs the wheel the ensure it works in isolation. The is also
+# a job which produces the source distribution and ensures that can be built to.
+
+on:
+  push:
+    branches:
+      - master
+      - 'releases/**'
+  pull_request:
+    branches:
+      - '*'
+
+jobs:
+  linux-python-build:
+    name: manylinux.amd64.py${{ matrix.config.version}}.build
+    container:
+      image: vowpalwabbit/manylinux2010-build:latest
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        config:
+        - { version: "3.6", base_path: /opt/python/cp36-cp36m/, include_dir_name: python3.6m/ }
+        - { version: "3.7", base_path: /opt/python/cp37-cp37m/, include_dir_name: python3.7m/ }
+        - { version: "3.8", base_path: /opt/python/cp38-cp38/, include_dir_name: python3.8/ }
+        - { version: "3.9", base_path: /opt/python/cp39-cp39/, include_dir_name: python3.9/ }
+        - { version: "3.10", base_path: /opt/python/cp310-cp310/, include_dir_name: python3.10/ }
+      fail-fast: false
+    steps:
+      # v1 must be used because newer versions require a node.js version that will not run on this old image.
+      - uses: actions/checkout@v1
+      - name: Build wheel
+        shell: bash
+        run: |
+          ${{ matrix.config.base_path }}bin/pip wheel . -w wheel_output/ --global-option --cmake-options="-DSTATIC_LINK_VW_JAVA=On;-DPython_INCLUDE_DIR='${{ matrix.config.base_path }}include/${{ matrix.config.include_dir_name }}'" --verbose
+          auditwheel repair wheel_output/*whl -w audit_output/
+      - name: Upload built wheel
+        uses: actions/upload-artifact@v1
+        with:
+          name: manylinux_amd64_${{ matrix.config.version }}
+          path: audit_output/
+  linux-python-test:
+    name: manylinux.amd64.py${{ matrix.version }}.test
+    needs: linux-python-build
+    container:
+      image: python:${{ matrix.version }}
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        version: ["3.6", "3.7", "3.8", "3.9", "3.10"]
+      fail-fast: false
+    steps:
+      - uses: actions/checkout@v1
+      - uses: actions/download-artifact@v1
+        with:
+          name: manylinux_amd64_${{ matrix.version }}
+          path: built_wheel
+      - name: Test wheel
+        shell: bash
+        run: |
+          pip install -r requirements.txt
+          pip install pytest twine
+          pip install built_wheel/*.whl
+          twine check built_wheel/*.whl
+          python -m pytest ./python/tests/
+          python ./python/tests/run_doctest.py
+      - name: Run vw tests as Python module
+        shell: bash
+        # Onethread is not supported in the Python wrapper so those tests must be skipped
+        # Stdin is not supported
+        # Help output tests assume --onthread is in the output
+        # Fail tests are not included because the python stack trace causes the output to differ
+        # Daemon tests are skipped
+        # Tests without datafiles are skipped
+        run: |
+          cd test
+          python run_tests.py -E 0.001 -f --skip_spanning_tree_tests --vw_bin_path "python3 -m vowpalwabbit" --skip_test 60 61 92 96 149 152 177 193 194 195 220 275 276 324 325 326 349 350 356 357 358 385 389 390 391 392 393
+  linux-python-sdist-bundle:
+    name: ubuntu-latest.amd64.py3.8.sdist-bundle
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          submodules: "recursive"
+      - uses: actions/setup-python@v2
+        with:
+          python-version: '3.8'
+          architecture: 'x64'
+      - name: Install dependencies
+        shell: bash
+        run: python setup.py sdist
+      - name: Upload built wheel
+        uses: actions/upload-artifact@v2
+        with:
+          name: python_source_distribution
+          path: dist/*.tar.gz
+  linux-python-sdist-build-test:
+    name: ubuntu-latest.amd64.py3.8.sdist-build-test
+    needs: linux-python-sdist-bundle
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/setup-python@v2
+        with:
+          python-version: '3.8'
+          architecture: 'x64'
+      - uses: actions/download-artifact@v1
+        with:
+          name: python_source_distribution
+      - name: Install dependencies
+        shell: bash
+        run: |
+          sudo apt update
+          sudo apt install libboost-test-dev libboost-python-dev zlib1g-dev cmake g++
+      - name: Install source dist
+        shell: bash
+        run: pip install python_source_distribution/*.tar.gz
+      - uses: actions/checkout@v2
+      - name: Install dependencies
+        shell: bash
+        run: |
+          pip install -r requirements.txt
+          pip install pytest
+      - name: Run unit tests
+        shell: bash
+        run: |
+          python -m pytest ./python/tests/
+  linux-python-build-aarch64:
+    name: manylinux.aarch64.py${{ matrix.config.version }}.build
+    # Aarch builds are slow and are only run on push and not PR
+    if: ${{ github.event_name == 'push' }}
+    strategy:
+      matrix:
+        config:
+        - { version: "3.6", base_path: /opt/python/cp36-cp36m/, include_dir_name: python3.6m/ }
+        - { version: "3.7", base_path: /opt/python/cp37-cp37m/, include_dir_name: python3.7m/ }
+        - { version: "3.8", base_path: /opt/python/cp38-cp38/, include_dir_name: python3.8/ }
+        - { version: "3.9", base_path: /opt/python/cp39-cp39/, include_dir_name: python3.9/ }
+        - { version: "3.10", base_path: /opt/python/cp310-cp310/, include_dir_name: python3.10/ }
+      fail-fast: false
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+    - name: Set up QEMU
+      id: qemu
+      uses: docker/setup-qemu-action@v1
+    - name: Pull image
+      run: docker pull vowpalwabbit/manylinux2014_aarch64-build
+    - name: Build Wheel
+      run: |
+            docker run --rm -v ${{ github.workspace }}:/ws:rw --workdir=/ws \
+            vowpalwabbit/manylinux2014_aarch64-build \
+            bash -exc '${{ matrix.config.base_path }}bin/pip wheel . -w wheel_output/ --global-option --cmake-options="-DSTATIC_LINK_VW_JAVA=On;-DPython_INCLUDE_DIR='${{ matrix.config.base_path }}include/${{ matrix.config.include_dir_name }}'" --verbose && \
+            auditwheel repair wheel_output/*whl -w audit_output/'
+    - name: Upload built wheel
+      uses: actions/upload-artifact@v1
+      with:
+        name: manylinux_aarch64_${{ matrix.config.version }}
+        path: audit_output/
+  linux-python-test-aarch64:
+    name: manylinux.aarch64.py${{ matrix.config.version }}.test
+    needs: linux-python-build-aarch64
+    # Aarch builds are slow and are only run on push and not PR
+    if: ${{ github.event_name == 'push' }}
+    strategy:
+      matrix:
+        config:
+        - { version: "3.6" }
+        - { version: "3.7" }
+        - { version: "3.8" }
+        - { version: "3.9" }
+        - { version: "3.10" }
+      fail-fast: false
+    env:
+      py: python${{ matrix.config.version }}
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+    - name: Set up QEMU
+      id: qemu
+      uses: docker/setup-qemu-action@v1
+    - uses: actions/download-artifact@v1
+      with:
+        name: manylinux_aarch64_${{ matrix.config.version }}
+        path: built_wheel
+    - name: Test Wheel
+      run: |
+            docker run --rm -v ${{ github.workspace }}:/io:rw --workdir=/io \
+            arm64v8/ubuntu \
+            bash -exc 'apt-get update && \
+            apt install software-properties-common -y && \
+            add-apt-repository ppa:deadsnakes/ppa -y && \
+            apt install -y ${{ env.py }} && \
+            apt install -y ${{ env.py }}-venv && \
+            ${{ env.py }} -m venv .env && \
+            source .env/bin/activate && \
+            pip install --upgrade pip && \
+            pip install -r requirements.txt && \
+            pip install pytest twine && \
+            pip install built_wheel/*.whl && \
+            twine check built_wheel/*.whl && \
+            python --version && \
+            python -m pytest ./python/tests/ && \
+            deactivate'
+  macos-python-build:
+    name: macos.amd64.py${{ matrix.config.version }}.build
+    runs-on: macos-10.15
+    strategy:
+      matrix:
+        config:
+        - { version: 3.6, include_dir_name: python3.6m/}
+        - { version: 3.7, include_dir_name: python3.7m/}
+        - { version: 3.8, include_dir_name: python3.8/}
+        - { version: 3.9, include_dir_name: python3.9/}
+        - { version: "3.10", include_dir_name: python3.10/}
+      fail-fast: false
+    steps:
+      - uses: actions/checkout@v2
+      - uses: conda-incubator/setup-miniconda@v2
+        with:
+          auto-update-conda: true
+          python-version: ${{ matrix.config.version }}
+      - name: Build wheel
+        shell: bash -l {0}
+        run: |
+          conda info
+          conda install python=${{ matrix.config.version }} wheel zlib boost py-boost flatbuffers
+          pip wheel . -w wheel_output/ --global-option --cmake-options="-DSTATIC_LINK_VW_JAVA=On;-DPython_INCLUDE_DIR=\"$CONDA_PREFIX/include/${{ matrix.config.include_dir_name }}\"" --verbose
+      - name: Upload built wheel
+        uses: actions/upload-artifact@v1
+        with:
+          name: macos_amd64_${{ matrix.config.version }}
+          path: wheel_output/
+  macos-python-test:
+    name: macos.amd64.py${{ matrix.version }}.test
+    needs: macos-python-build
+    runs-on: macos-10.15
+    strategy:
+      matrix:
+        version: [3.6, 3.7, 3.8, 3.9, "3.10"]
+      fail-fast: false
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-python@v2
+        with:
+          python-version: ${{ matrix.version }}
+      - uses: actions/download-artifact@v1
+        with:
+          name: macos_amd64_${{ matrix.version }}
+          path: built_wheel
+      - name: Test wheel
+        shell: bash
+        run: |
+          pip install -r requirements.txt
+          pip install pytest twine
+          pip install built_wheel/*.whl
+          twine check built_wheel/*.whl
+          python -m pytest ./python/tests/
+          python ./python/tests/run_doctest.py
+  windows-python-build:
+    name: windows-2019.amd64.py${{ matrix.config.version }}.build
+    runs-on: windows-2019
+    env:
+      VCPKG_ROOT: ${{ github.workspace }}\\vcpkg
+      VCPKG_REF: 773516ecf6014d89cc69b11bb54605ad4be56694
+      VCPKG_DEFAULT_BINARY_CACHE: ${{ github.workspace }}\vcpkg_binary_cache
+    strategy:
+      matrix:
+        config:
+        - { version: "3.6", vcpkg_manifest: "python\\vcpkg_default.json", overlay_ports: "python\\vcpkg_python_override_ports\\python36\\"}
+        - { version: "3.7", vcpkg_manifest: "python\\vcpkg_default.json", overlay_ports: "python\\vcpkg_python_override_ports\\python37\\"}
+        - { version: "3.8", vcpkg_manifest: "python\\vcpkg_default.json", overlay_ports: "python\\vcpkg_python_override_ports\\python38\\" }
+        - { version: "3.9", vcpkg_manifest: "python\\vcpkg_default.json", overlay_ports: "python\\vcpkg_python_override_ports\\python39\\" }
+        - { version: "3.10", vcpkg_manifest: "python\\vcpkg_python310.json", overlay_ports: "" }
+      fail-fast: false
+    steps:
+      - uses: actions/setup-python@v2
+        with:
+          python-version: ${{ matrix.config.version }}
+      - uses: actions/checkout@v2
+        with:
+          path: ${{github.workspace}}\vowpal_wabbit
+      - uses: actions/checkout@v2
+        with:
+          path: ${{ env.VCPKG_ROOT }}
+          repository: 'microsoft/vcpkg'
+          ref: ${{ env.VCPKG_REF }}
+          # We need a deep clone so that we can go back in history for version selection.
+          fetch-depth: '0'
+      - name: Restore vcpkg and build artifacts
+        uses: actions/cache@v2
+        with:
+          path: |
+            ${{ env.VCPKG_DEFAULT_BINARY_CACHE }}
+          key: |
+            ${{ env.VCPKG_REF }}-${{ matrix.config.version }}-python-win-cache-invalidate-5
+      - run: ${{ env.VCPKG_ROOT }}/bootstrap-vcpkg.bat
+      - name: Build wheel
+        shell: powershell
+        run: |
+          if (![System.IO.Directory]::Exists("${{ env.VCPKG_DEFAULT_BINARY_CACHE }}"))
+          {
+              New-Item -ItemType Directory -Force -Path "${{ env.VCPKG_DEFAULT_BINARY_CACHE }}"
+          }
+          ls ${{ github.workspace }}
+          ls ${{ env.VCPKG_DEFAULT_BINARY_CACHE }}
+          cd ${{github.workspace}}\\vowpal_wabbit
+          cp ${{ matrix.config.vcpkg_manifest }} vcpkg.json
+          pip install wheel
+          pip wheel . -w ${{github.workspace}}\\wheel_output --global-option --vcpkg-root="${{ env.VCPKG_ROOT }}" --global-option --cmake-generator="Visual Studio 16 2019" --global-option --cmake-options="-DVCPKG_OVERLAY_PORTS=${{github.workspace}}\\vowpal_wabbit\\${{ matrix.config.overlay_ports }}"  --verbose
+      - name: Upload built wheel
+        uses: actions/upload-artifact@v1
+        with:
+          name: windows_amd64_${{ matrix.config.version }}
+          path: wheel_output
+  windows-python-test:
+    name: ${{ matrix.os }}.amd64.py${{ matrix.version }}.test
+    needs: windows-python-build
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        version: ["3.6", "3.7", "3.8", "3.9", "3.10"]
+        os: ["windows-2019"]
+      fail-fast: false
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-python@v2
+        with:
+          python-version: ${{ matrix.version }}
+      - uses: actions/download-artifact@v1
+        with:
+          name: windows_amd64_${{ matrix.version }}
+          path: built_wheel
+      - name: Install deps and test wheel
+        shell: bash
+        run: |
+          export wheel_files=(built_wheel/*)
+          export wheel_file="${wheel_files[0]}"
+          echo Installing ${wheel_file}...
+          pip install -r requirements.txt
+          pip install pytest twine
+          pip install ${wheel_file}
+          twine check ${wheel_file}
+          python -m pytest .\\python\\tests\\
+          python .\\python\\tests\\run_doctest.py

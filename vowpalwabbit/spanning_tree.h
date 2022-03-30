@@ -5,10 +5,13 @@
 #pragma once
 
 #ifdef _WIN32
-#  define NOMINMAX
+#  ifndef NOMINMAX
+#    define NOMINMAX
+#  endif
+
+#  include <WS2tcpip.h>
 #  include <WinSock2.h>
 #  include <Windows.h>
-#  include <WS2tcpip.h>
 #  include <io.h>
 
 #  define CLOSESOCK closesocket
@@ -26,13 +29,13 @@ template <typename T>
 class future;
 }  // namespace std
 #else
-#  include <unistd.h>
-#  include <sys/socket.h>
+#  include <arpa/inet.h>
+#  include <netdb.h>
 #  include <netinet/in.h>
 #  include <netinet/tcp.h>
-#  include <netdb.h>
 #  include <strings.h>
-#  include <arpa/inet.h>
+#  include <sys/socket.h>
+#  include <unistd.h>
 
 #  define CLOSESOCK close
 

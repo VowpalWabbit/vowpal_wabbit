@@ -2,39 +2,39 @@
 // individual contributors. All rights reserved. Released under a BSD (revised)
 // license as described in the file LICENSE.
 
-#include <cmath>
-#include <cctype>
 #include "parse_example.h"
-#include "parse_primitives.h"
-#include "hash.h"
-#include "unique_sort.h"
-#include "global_data.h"
+
 #include "constant.h"
-#include "vw_string_view.h"
 #include "future_compat.h"
-#include "shared_data.h"
-
+#include "global_data.h"
+#include "hash.h"
 #include "io/logger.h"
+#include "parse_primitives.h"
+#include "parser.h"
+#include "shared_data.h"
+#include "unique_sort.h"
+#include "vw_string_view.h"
 
-namespace logger = VW::io::logger;
+#include <cctype>
+#include <cmath>
 
 size_t read_features(io_buf& buf, char*& line, size_t& num_chars)
 {
   line = nullptr;
   size_t num_chars_initial = buf.readto(line, '\n');
-  if (num_chars_initial < 1) return num_chars_initial;
+  if (num_chars_initial < 1) { return num_chars_initial; }
   num_chars = num_chars_initial;
   if (line[0] == '\xef' && num_chars >= 3 && line[1] == '\xbb' && line[2] == '\xbf')
   {
     line += 3;
     num_chars -= 3;
   }
-  if (num_chars > 0 && line[num_chars - 1] == '\n') num_chars--;
-  if (num_chars > 0 && line[num_chars - 1] == '\r') num_chars--;
+  if (num_chars > 0 && line[num_chars - 1] == '\n') { num_chars--; }
+  if (num_chars > 0 && line[num_chars - 1] == '\r') { num_chars--; }
   return num_chars_initial;
 }
 
-int read_features_string(VW::workspace* all, io_buf& buf, v_array<example*>& examples)
+int read_features_string(VW::workspace* all, io_buf& buf, VW::v_array<VW::example*>& examples)
 {
   char* line;
   size_t num_chars;
@@ -69,20 +69,21 @@ public:
   bool _redefine_some;
   std::array<unsigned char, NUM_NAMESPACES>* _redefine;
   parser* _p;
-  example* _ae;
+  VW::example* _ae;
   std::array<uint64_t, NUM_NAMESPACES>* _affix_features;
   std::array<bool, NUM_NAMESPACES>* _spelling_features;
-  v_array<char> _spelling;
+  VW::v_array<char> _spelling;
   uint32_t _hash_seed;
   uint64_t _parse_mask;
   std::array<std::vector<std::shared_ptr<feature_dict>>, NUM_NAMESPACES>* _namespace_dictionaries;
+  VW::io::logger* logger;
 
   ~TC_parser() {}
 
   // TODO: Currently this function is called by both warning and error conditions. We only log
   //      to warning here though.
-  inline FORCE_INLINE void parserWarning(
-      const char* message, VW::string_view var_msg, const char* message2, size_t example_number)
+  inline FORCE_INLINE void parserWarning(const char* message, VW::string_view var_msg, const char* message2,
+      size_t example_number, VW::io::logger& warn_logger)
   {
     // VW::string_view will output the entire view into the output stream.
     // That means if there is a null character somewhere in the range, it will terminate
@@ -101,7 +102,7 @@ public:
     }
     else
     {
-      logger::errlog_warn(ss.str());
+      warn_logger.err_warn(ss.str());
     }
   }
 
@@ -135,13 +136,13 @@ public:
       ++_read_idx;
       size_t end_read = 0;
       VW::string_view sv = _line.substr(_read_idx);
-      _v = float_feature_value = parseFloat(sv.begin(), end_read, sv.end());
+      _v = float_feature_value = parseFloat(sv.data(), end_read, sv.data() + sv.size());
       if (end_read == 0) { return false; }
       if (std::isnan(_v))
       {
         _v = float_feature_value = 0.f;
-        parserWarning("warning: invalid feature value:\"", _line.substr(_read_idx), "\" read as NaN. Replacing with 0.",
-            _ae->example_counter);
+        parserWarning("Invalid feature value:\"", _line.substr(_read_idx), "\" read as NaN. Replacing with 0.",
+            _ae->example_counter, *logger);
       }
       _read_idx += end_read;
       return true;
@@ -151,7 +152,7 @@ public:
       _v = float_feature_value = 0.f;
       // syntax error
       parserWarning("malformed example! '|', ':', space, or EOL expected after : \"", _line.substr(0, _read_idx), "\"",
-          _ae->example_counter);
+          _ae->example_counter, *logger);
       return true;
     }
   }
@@ -161,7 +162,7 @@ public:
     size_t name_start = _read_idx;
     while (!(_read_idx >= _line.size() || _line[_read_idx] == ' ' || _line[_read_idx] == ':' ||
         _line[_read_idx] == '\t' || _line[_read_idx] == '|' || _line[_read_idx] == '\r'))
-      ++_read_idx;
+    { ++_read_idx; }
 
     return _line.substr(name_start, _read_idx - name_start);
   }
@@ -197,14 +198,14 @@ public:
       if (!string_feature_value.empty())
       {
         // chain hash is hash(feature_value, hash(feature_name, namespace_hash)) & parse_mask
-        word_hash = (_p->hasher(string_feature_value.begin(), string_feature_value.length(),
-                         _p->hasher(feature_name.begin(), feature_name.length(), _channel_hash)) &
+        word_hash = (_p->hasher(string_feature_value.data(), string_feature_value.length(),
+                         _p->hasher(feature_name.data(), feature_name.length(), _channel_hash)) &
             _parse_mask);
       }
       // Case where string:float
       else if (!feature_name.empty())
       {
-        word_hash = (_p->hasher(feature_name.begin(), feature_name.length(), _channel_hash) & _parse_mask);
+        word_hash = (_p->hasher(feature_name.data(), feature_name.length(), _channel_hash) & _parse_mask);
       }
       // Case where :float
       else
@@ -212,7 +213,10 @@ public:
         word_hash = _channel_hash + _anon++;
       }
 
-      if (_v == 0) return;  // dont add 0 valued features to list of features
+      if (_v == 0)
+      {
+        return;  // dont add 0 valued features to list of features
+      }
       features& fs = _ae->feature_space[_index];
       fs.push_back(_v, word_hash);
 
@@ -221,19 +225,19 @@ public:
         if (!string_feature_value.empty())
         {
           std::stringstream ss;
-          ss << feature_name << "^" << string_feature_value;
-          fs.space_names.push_back(audit_strings(_base.to_string(), ss.str()));
+          fs.space_names.push_back(
+              VW::audit_strings(std::string{_base}, std::string{feature_name}, std::string{string_feature_value}));
         }
         else
         {
-          fs.space_names.push_back(audit_strings(_base.to_string(), feature_name.to_string()));
+          fs.space_names.push_back(VW::audit_strings(std::string{_base}, std::string{feature_name}));
         }
       }
 
       if (((*_affix_features)[_index] > 0) && (!feature_name.empty()))
       {
         features& affix_fs = _ae->feature_space[affix_namespace];
-        if (affix_fs.size() == 0) _ae->indices.push_back(affix_namespace);
+        if (affix_fs.size() == 0) { _ae->indices.push_back(affix_namespace); }
         uint64_t affix = (*_affix_features)[_index];
 
         while (affix > 0)
@@ -243,25 +247,26 @@ public:
           VW::string_view affix_name(feature_name);
           if (affix_name.size() > len)
           {
-            if (is_prefix)
-              affix_name.remove_suffix(affix_name.size() - len);
+            if (is_prefix) { affix_name.remove_suffix(affix_name.size() - len); }
             else
+            {
               affix_name.remove_prefix(affix_name.size() - len);
+            }
           }
 
-          word_hash = _p->hasher(affix_name.begin(), affix_name.length(), (uint64_t)_channel_hash) *
+          word_hash = _p->hasher(affix_name.data(), affix_name.length(), (uint64_t)_channel_hash) *
               (affix_constant + (affix & 0xF) * quadratic_constant);
           affix_fs.push_back(_v, word_hash, affix_namespace);
           if (audit)
           {
-            v_array<char> affix_v;
-            if (_index != ' ') affix_v.push_back(_index);
+            VW::v_array<char> affix_v;
+            if (_index != ' ') { affix_v.push_back(_index); }
             affix_v.push_back(is_prefix ? '+' : '-');
             affix_v.push_back('0' + static_cast<char>(len));
             affix_v.push_back('=');
             affix_v.insert(affix_v.end(), affix_name.begin(), affix_name.end());
             affix_v.push_back('\0');
-            affix_fs.space_names.push_back(audit_strings("affix", affix_v.begin()));
+            affix_fs.space_names.emplace_back("affix", affix_v.begin());
           }
           affix >>= 4;
         }
@@ -275,26 +280,33 @@ public:
         for (char c : feature_name)
         {
           char d = 0;
-          if ((c >= '0') && (c <= '9'))
-            d = '0';
+          if ((c >= '0') && (c <= '9')) { d = '0'; }
           else if ((c >= 'a') && (c <= 'z'))
+          {
             d = 'a';
+          }
           else if ((c >= 'A') && (c <= 'Z'))
+          {
             d = 'A';
+          }
           else if (c == '.')
+          {
             d = '.';
+          }
           else
+          {
             d = '#';
+          }
           // if ((spelling.size() == 0) || (spelling.last() != d))
           _spelling.push_back(d);
         }
 
-        VW::string_view spelling_strview(_spelling.begin(), _spelling.size());
-        word_hash = hashstring(spelling_strview.begin(), spelling_strview.length(), (uint64_t)_channel_hash);
+        VW::string_view spelling_strview(_spelling.data(), _spelling.size());
+        word_hash = hashstring(spelling_strview.data(), spelling_strview.length(), (uint64_t)_channel_hash);
         spell_fs.push_back(_v, word_hash, spelling_namespace);
         if (audit)
         {
-          v_array<char> spelling_v;
+          VW::v_array<char> spelling_v;
           if (_index != ' ')
           {
             spelling_v.push_back(_index);
@@ -302,7 +314,7 @@ public:
           }
           spelling_v.insert(spelling_v.end(), spelling_strview.begin(), spelling_strview.end());
           spelling_v.push_back('\0');
-          spell_fs.space_names.push_back(audit_strings("spelling", spelling_v.begin()));
+          spell_fs.space_names.emplace_back("spelling", spelling_v.begin());
         }
       }
       if ((*_namespace_dictionaries)[_index].size() > 0)
@@ -320,17 +332,17 @@ public:
             if (dict_fs.empty()) { _ae->indices.push_back(dictionary_namespace); }
             dict_fs.start_ns_extent(dictionary_namespace);
             dict_fs.values.insert(dict_fs.values.end(), feats->values.begin(), feats->values.end());
-            dict_fs.indicies.insert(dict_fs.indicies.end(), feats->indicies.begin(), feats->indicies.end());
+            dict_fs.indices.insert(dict_fs.indices.end(), feats->indices.begin(), feats->indices.end());
             dict_fs.sum_feat_sq += feats->sum_feat_sq;
             if (audit)
             {
-              for (const auto& id : feats->indicies)
+              for (const auto& id : feats->indices)
               {
                 std::stringstream ss;
                 ss << _index << '_';
                 ss << feature_name;
                 ss << '=' << id;
-                dict_fs.space_names.push_back(audit_strings("dictionary", ss.str()));
+                dict_fs.space_names.emplace_back("dictionary", ss.str());
               }
             }
             dict_fs.end_ns_extent();
@@ -353,17 +365,17 @@ public:
       ++_read_idx;
       size_t end_read = 0;
       VW::string_view sv = _line.substr(_read_idx);
-      _cur_channel_v = parseFloat(sv.begin(), end_read, sv.end());
+      _cur_channel_v = parseFloat(sv.data(), end_read, sv.data() + sv.size());
       if (end_read + _read_idx >= _line.size())
       {
-        parserWarning(
-            "malformed example! Float expected after : \"", _line.substr(0, _read_idx), "\"", _ae->example_counter);
+        parserWarning("malformed example! Float expected after : \"", _line.substr(0, _read_idx), "\"",
+            _ae->example_counter, *logger);
       }
       if (std::isnan(_cur_channel_v))
       {
         _cur_channel_v = 1.f;
-        parserWarning("warning: invalid namespace value:\"", _line.substr(_read_idx),
-            "\" read as NaN. Replacing with 1.", _ae->example_counter);
+        parserWarning("Invalid namespace value:\"", _line.substr(_read_idx), "\" read as NaN. Replacing with 1.",
+            _ae->example_counter, *logger);
       }
       _read_idx += end_read;
     }
@@ -371,7 +383,7 @@ public:
     {
       // syntax error
       parserWarning("malformed example! '|',':', space, or EOL expected after : \"", _line.substr(0, _read_idx), "\"",
-          _ae->example_counter);
+          _ae->example_counter, *logger);
     }
   }
 
@@ -381,18 +393,21 @@ public:
         _line[_read_idx] == ':' || _line[_read_idx] == '\r')
     {
       // syntax error
-      parserWarning(
-          "malformed example! String expected after : \"", _line.substr(0, _read_idx), "\"", _ae->example_counter);
+      parserWarning("malformed example! String expected after : \"", _line.substr(0, _read_idx), "\"",
+          _ae->example_counter, *logger);
     }
     else
     {
       // NameSpaceInfo --> 'String' NameSpaceInfoValue
       _index = (unsigned char)(_line[_read_idx]);
-      if (_redefine_some) _index = (*_redefine)[_index];  // redefine _index
-      if (_ae->feature_space[_index].size() == 0) _new_index = true;
+      if (_redefine_some)
+      {
+        _index = (*_redefine)[_index];  // redefine _index
+      }
+      if (_ae->feature_space[_index].size() == 0) { _new_index = true; }
       VW::string_view name = read_name();
       if (audit) { _base = name; }
-      _channel_hash = _p->hasher(name.begin(), name.length(), this->_hash_seed);
+      _channel_hash = _p->hasher(name.data(), name.length(), this->_hash_seed);
       nameSpaceInfoValue();
     }
   }
@@ -409,7 +424,7 @@ public:
     {
       // syntax error
       parserWarning("malformed example! '|',space, or EOL expected after : \"", _line.substr(0, _read_idx), "\"",
-          _ae->example_counter);
+          _ae->example_counter, *logger);
     }
   }
 
@@ -425,7 +440,7 @@ public:
     {
       // NameSpace --> ListFeatures
       _index = static_cast<unsigned char>(' ');
-      if (_ae->feature_space[_index].size() == 0) _new_index = true;
+      if (_ae->feature_space[_index].size() == 0) { _new_index = true; }
       if (audit)
       {
         // TODO: c++17 allows VW::string_view literals, eg: " "sv
@@ -449,10 +464,10 @@ public:
     {
       // syntax error
       parserWarning("malformed example! '|',String,space, or EOL expected after : \"", _line.substr(0, _read_idx), "\"",
-          _ae->example_counter);
+          _ae->example_counter, *logger);
     }
 
-    if (_new_index && _ae->feature_space[_index].size() > 0) _ae->indices.push_back(_index);
+    if (_new_index && _ae->feature_space[_index].size() > 0) { _ae->indices.push_back(_index); }
 
     // If the namespace was empty this will handle it internally.
     if (did_start_extent) { _ae->feature_space[_index].end_ns_extent(); }
@@ -468,12 +483,12 @@ public:
     if (_read_idx < _line.size() && _line[_read_idx] != '\r')
     {
       // syntax error
-      parserWarning(
-          "malformed example! '|' or EOL expected after : \"", _line.substr(0, _read_idx), "\"", _ae->example_counter);
+      parserWarning("malformed example! '|' or EOL expected after : \"", _line.substr(0, _read_idx), "\"",
+          _ae->example_counter, *logger);
     }
   }
 
-  TC_parser(VW::string_view line, VW::workspace& all, example* ae) : _line(line)
+  TC_parser(VW::string_view line, VW::workspace& all, VW::example* ae) : _line(line)
   {
     if (!_line.empty())
     {
@@ -487,6 +502,7 @@ public:
       this->_namespace_dictionaries = &all.namespace_dictionaries;
       this->_hash_seed = all.hash_seed;
       this->_parse_mask = all.parse_mask;
+      this->logger = &all.logger;
       listNameSpace();
     }
     else
@@ -496,7 +512,7 @@ public:
   }
 };
 
-void substring_to_example(VW::workspace* all, example* ae, VW::string_view example)
+void substring_to_example(VW::workspace* all, VW::example* ae, VW::string_view example)
 {
   if (example.empty()) { ae->is_newline = true; }
 
@@ -519,7 +535,8 @@ void substring_to_example(VW::workspace* all, example* ae, VW::string_view examp
 
     tokenize(' ', label_space, all->example_parser->words);
     if (all->example_parser->words.size() > 0 &&
-        (all->example_parser->words.back().end() == label_space.end() ||
+        ((all->example_parser->words.back().data() + all->example_parser->words.back().size()) ==
+                (label_space.data() + label_space.size()) ||
             all->example_parser->words.back().front() == '\''))  // The last field is a tag, so record and strip it off
     {
       VW::string_view tag = all->example_parser->words.back();
@@ -532,15 +549,16 @@ void substring_to_example(VW::workspace* all, example* ae, VW::string_view examp
   if (!all->example_parser->words.empty())
   {
     all->example_parser->lbl_parser.parse_label(ae->l, ae->_reduction_features,
-        all->example_parser->parser_memory_to_reuse, all->sd->ldict.get(), all->example_parser->words);
+        all->example_parser->parser_memory_to_reuse, all->sd->ldict.get(), all->example_parser->words, all->logger);
   }
 
   if (bar_idx != VW::string_view::npos)
   {
-    if (all->audit || all->hash_inv)
-      TC_parser<true> parser_line(example.substr(bar_idx), *all, ae);
+    if (all->audit || all->hash_inv) { TC_parser<true> parser_line(example.substr(bar_idx), *all, ae); }
     else
+    {
       TC_parser<false> parser_line(example.substr(bar_idx), *all, ae);
+    }
   }
 }
 
@@ -548,7 +566,7 @@ namespace VW
 {
 void read_line(VW::workspace& all, example* ex, VW::string_view line)
 {
-  while (line.size() > 0 && line.back() == '\n') line.remove_suffix(1);
+  while (line.size() > 0 && line.back() == '\n') { line.remove_suffix(1); }
   substring_to_example(&all, ex, line);
 }
 

@@ -3,18 +3,19 @@
 // license as described in the file LICENSE.
 #pragma once
 
-#include <cstdint>
 #include "constant.h"
-#include "feature_group.h"
 #include "example_predict.h"
-#include "vw_exception.h"
+#include "feature_group.h"
 #include "object_pool.h"
+#include "vw_exception.h"
+
+#include <cstdint>
+#include <stack>
+#include <string>
 #include <utility>
 #include <vector>
-#include <string>
-#include <stack>
 
-const static std::pair<std::string, std::string> EMPTY_AUDIT_STRINGS = std::make_pair("", "");
+const static VW::audit_strings EMPTY_AUDIT_STRINGS;
 
 namespace INTERACTIONS
 {
@@ -114,20 +115,20 @@ struct feature_gen_data
   }
 };
 
-inline bool term_is_empty(namespace_index term, const std::array<features, NUM_NAMESPACES>& feature_groups)
+inline bool term_is_empty(VW::namespace_index term, const std::array<features, NUM_NAMESPACES>& feature_groups)
 {
   return feature_groups[term].empty();
 }
 
-inline bool has_empty_interaction_quadratic(
-    const std::array<features, NUM_NAMESPACES>& feature_groups, const std::vector<namespace_index>& namespace_indexes)
+inline bool has_empty_interaction_quadratic(const std::array<features, NUM_NAMESPACES>& feature_groups,
+    const std::vector<VW::namespace_index>& namespace_indexes)
 {
   assert(namespace_indexes.size() == 2);
   return term_is_empty(namespace_indexes[0], feature_groups) || term_is_empty(namespace_indexes[1], feature_groups);
 }
 
-inline bool has_empty_interaction_cubic(
-    const std::array<features, NUM_NAMESPACES>& feature_groups, const std::vector<namespace_index>& namespace_indexes)
+inline bool has_empty_interaction_cubic(const std::array<features, NUM_NAMESPACES>& feature_groups,
+    const std::vector<VW::namespace_index>& namespace_indexes)
 {
   assert(namespace_indexes.size() == 3);
   return term_is_empty(namespace_indexes[0], feature_groups) || term_is_empty(namespace_indexes[1], feature_groups) ||
@@ -135,11 +136,11 @@ inline bool has_empty_interaction_cubic(
   ;
 }
 
-inline bool has_empty_interaction(
-    const std::array<features, NUM_NAMESPACES>& feature_groups, const std::vector<namespace_index>& namespace_indexes)
+inline bool has_empty_interaction(const std::array<features, NUM_NAMESPACES>& feature_groups,
+    const std::vector<VW::namespace_index>& namespace_indexes)
 {
   return std::any_of(namespace_indexes.begin(), namespace_indexes.end(),
-      [&](namespace_index idx) { return term_is_empty(idx, feature_groups); });
+      [&](VW::namespace_index idx) { return term_is_empty(idx, feature_groups); });
 }
 inline bool has_empty_interaction(
     const std::array<features, NUM_NAMESPACES>& feature_groups, const std::vector<extent_term>& namespace_indexes)
@@ -164,7 +165,8 @@ inline float INTERACTION_VALUE(float value1, float value2) { return value1 * val
 // #define GEN_INTER_LOOP
 
 std::tuple<features_range_t, features_range_t> inline generate_quadratic_char_combination(
-    const std::array<features, NUM_NAMESPACES>& feature_groups, namespace_index ns_idx1, namespace_index ns_idx2)
+    const std::array<features, NUM_NAMESPACES>& feature_groups, VW::namespace_index ns_idx1,
+    VW::namespace_index ns_idx2)
 {
   return {std::make_tuple(std::make_pair(feature_groups[ns_idx1].audit_begin(), feature_groups[ns_idx1].audit_end()),
       std::make_pair(feature_groups[ns_idx2].audit_begin(), feature_groups[ns_idx2].audit_end()))};
@@ -241,8 +243,8 @@ void generate_generic_extent_combination_iterative(const std::array<features, NU
 }
 
 std::tuple<features_range_t, features_range_t, features_range_t> inline generate_cubic_char_combination(
-    const std::array<features, NUM_NAMESPACES>& feature_groups, namespace_index ns_idx1, namespace_index ns_idx2,
-    namespace_index ns_idx3)
+    const std::array<features, NUM_NAMESPACES>& feature_groups, VW::namespace_index ns_idx1,
+    VW::namespace_index ns_idx2, VW::namespace_index ns_idx3)
 {
   return {std::make_tuple(std::make_pair(feature_groups[ns_idx1].audit_begin(), feature_groups[ns_idx1].audit_end()),
       std::make_pair(feature_groups[ns_idx2].audit_begin(), feature_groups[ns_idx2].audit_end()),
@@ -250,7 +252,7 @@ std::tuple<features_range_t, features_range_t, features_range_t> inline generate
 }
 
 std::vector<features_range_t> inline generate_generic_char_combination(
-    const std::array<features, NUM_NAMESPACES>& feature_groups, const std::vector<namespace_index>& terms)
+    const std::array<features, NUM_NAMESPACES>& feature_groups, const std::vector<VW::namespace_index>& terms)
 {
   std::vector<features_range_t> inter;
   inter.reserve(terms.size());
@@ -260,7 +262,7 @@ std::vector<features_range_t> inline generate_generic_char_combination(
 }
 
 template <class DataT, class WeightOrIndexT, void (*FuncT)(DataT&, float, WeightOrIndexT), bool audit,
-    void (*audit_func)(DataT&, const audit_strings*), class WeightsT>
+    void (*audit_func)(DataT&, const VW::audit_strings*), class WeightsT>
 void inner_kernel(DataT& dat, features::const_audit_iterator& begin, features::const_audit_iterator& end,
     const uint64_t offset, WeightsT& weights, feature_value ft_value, feature_index halfhash)
 {
@@ -458,10 +460,10 @@ size_t process_generic_interaction(const std::vector<features_range_t>& range, b
 // and passes each of them to given function FuncT()
 // it must be in header file to avoid compilation problems
 template <class DataT, class WeightOrIndexT, void (*FuncT)(DataT&, float, WeightOrIndexT), bool audit,
-    void (*audit_func)(DataT&, const audit_strings*),
+    void (*audit_func)(DataT&, const VW::audit_strings*),
     class WeightsT>  // nullptr func can't be used as template param in old compilers
-inline void generate_interactions(const std::vector<std::vector<namespace_index>>& interactions,
-    const std::vector<std::vector<extent_term>>& extent_interactions, bool permutations, example_predict& ec,
+inline void generate_interactions(const std::vector<std::vector<VW::namespace_index>>& interactions,
+    const std::vector<std::vector<extent_term>>& extent_interactions, bool permutations, VW::example_predict& ec,
     DataT& dat, WeightsT& weights, size_t& num_features,
     generate_interactions_object_cache& cache)  // default value removed to eliminate ambiguity in old complers
 {
@@ -472,12 +474,11 @@ inline void generate_interactions(const std::vector<std::vector<namespace_index>
     inner_kernel<DataT, WeightOrIndexT, FuncT, audit, audit_func>(dat, begin, end, ec.ft_offset, weights, value, index);
   };
 
-  const auto depth_audit_func = [&](const audit_strings* audit_str) { audit_func(dat, audit_str); };
+  const auto depth_audit_func = [&](const VW::audit_strings* audit_str) { audit_func(dat, audit_str); };
 
   // current list of namespaces to interact.
   for (const auto& ns : interactions)
   {
-
 #ifndef GEN_INTER_LOOP
 
     // unless GEN_INTER_LOOP is defined we use nested 'for' loops for interactions length 2 (pairs) and 3 (triples)

@@ -1,0 +1,35 @@
+name: Windows x86
+
+# There are currently a number of warnings when building in 32 bit mode. This CI
+# serves as a signal of progress in this regard. Running on each PR will be too
+# noisy but it will run for each commit as it gets merged.
+
+on:
+  push:
+    branches:
+      - master
+
+jobs:
+  build_windows_x86:
+    name: windows_x86
+    runs-on: windows-2019
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          submodules: 'recursive'
+      - uses: ilammy/msvc-dev-cmd@v1
+      - name: Configure
+        run: >
+          cmake -S . -B build -A Win32
+          -DBUILD_FLATBUFFERS=Off
+          -DBUILD_TESTING=Off
+          -DRAPIDJSON_SYS_DEP=Off
+          -DFMT_SYS_DEP=Off
+          -DSPDLOG_SYS_DEP=Off
+          -DVW_ZLIB_SYS_DEP=Off
+          -DVW_BOOST_MATH_SYS_DEP=Off
+          -DDO_NOT_BUILD_VW_C_WRAPPER=On
+          -DWARNINGS=On
+          -DWARNING_AS_ERROR=On
+      - name: Build
+        run: cmake --build build --config Debug

@@ -2,11 +2,11 @@
 // individual contributors. All rights reserved. Released under a BSD (revised)
 // license as described in the file LICENSE.
 
-#include <streambuf>
-#include <memory>
-#include <cassert>
-
 #include "io_adapter.h"
+
+#include <cassert>
+#include <memory>
+#include <streambuf>
 
 namespace VW
 {

@@ -7,26 +7,25 @@
 #ifdef _WIN32
 #  define NOMINMAX
 #  define ssize_t int64_t
-#  include <winsock2.h>
 #  include <io.h>
+#  include <winsock2.h>
 #else
 #  include <sys/socket.h>
 #  include <unistd.h>
 #endif
 
+#include <fcntl.h>
 #include <sys/stat.h>
 #include <sys/types.h>
-#include <fcntl.h>
-
-#include <cstdio>
-#include <cassert>
-#include <cstring>
-#include <iostream>
-#include <fstream>
-#include <vector>
-#include <algorithm>
-
 #include <zlib.h>
+
+#include <algorithm>
+#include <cassert>
+#include <cstdio>
+#include <cstring>
+#include <fstream>
+#include <iostream>
+#include <vector>
 #if (ZLIB_VERNUM < 0x1252)
 typedef void* gzFile;
 #else
@@ -455,7 +454,7 @@ buffer_view::buffer_view(const char* data, size_t len) : reader(true), _data(dat
 ssize_t buffer_view::read(char* buffer, size_t num_bytes)
 {
   num_bytes = std::min((_data + _len) - _read_head, static_cast<std::ptrdiff_t>(num_bytes));
-  if (num_bytes == 0) return 0;
+  if (num_bytes == 0) { return 0; }
 
   std::memcpy(buffer, _read_head, num_bytes);
   _read_head += num_bytes;

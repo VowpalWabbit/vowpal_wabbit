@@ -12,9 +12,8 @@ set_target_properties(search_generate PROPERTIES FOLDER Examples)
 
 if(NOT WIN32)
   add_executable(recommend recommend.cc)
-  target_link_libraries(recommend PRIVATE VowpalWabbit::vw Boost::program_options)
+  target_link_libraries(recommend PRIVATE VowpalWabbit::vw)
 
   add_executable(gd_mf_weights gd_mf_weights.cc)
-  target_link_libraries(gd_mf_weights PRIVATE VowpalWabbit::vw Boost::program_options)
+  target_link_libraries(gd_mf_weights PRIVATE VowpalWabbit::vw)
 endif()
-

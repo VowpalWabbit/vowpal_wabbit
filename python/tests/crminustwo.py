@@ -6,22 +6,48 @@ class CrMinusTwo:
         n, sumw, sumwsq, sumwr, sumwsqr, sumwany, sumwsqany = 0, 0, 0, 0, 0, 0, 0
         for c, w, r in datagen():
             n += c
-            sumw += c*w
-            sumwsq += c*w*w
+            sumw += c * w
+            sumwsq += c * w * w
             if r is not None:
-                sumwany += c*w
-                sumwsqany += c*w*w
-                sumwr += c*w*r
-                sumwsqr += c*w*w*r
+                sumwany += c * w
+                sumwsqany += c * w * w
+                sumwr += c * w * r
+                sumwsqr += c * w * w * r
 
         assert n > 0
 
         return CrMinusTwo.estimateimpl(
-                n, sumw, sumwsq, sumwr, sumwsqr, sumwany, sumwsqany,
-                wmin, wmax, rmin, rmax, raiseonerr, censored)
+            n,
+            sumw,
+            sumwsq,
+            sumwr,
+            sumwsqr,
+            sumwany,
+            sumwsqany,
+            wmin,
+            wmax,
+            rmin,
+            rmax,
+            raiseonerr,
+            censored,
+        )
 
-    def estimateimpl(n, sumw, sumwsq, sumwr, sumwsqr, sumwany, sumwsqany,
-                     wmin, wmax, rmin=0, rmax=1, raiseonerr=False, censored=False):
+    @staticmethod
+    def estimateimpl(
+        n,
+        sumw,
+        sumwsq,
+        sumwr,
+        sumwsqr,
+        sumwany,
+        sumwsqany,
+        wmin,
+        wmax,
+        rmin=0,
+        rmax=1,
+        raiseonerr=False,
+        censored=False,
+    ):
         from math import inf
 
         assert wmin >= 0
@@ -38,10 +64,10 @@ class CrMinusTwo:
         else:
             a = (wfake + sumw) / (1 + n)
             b = (wfake**2 + sumwsq) / (1 + n)
-            assert a*a < b
-            gammastar = (b - a) / (a*a - b)
-            betastar = (1 - a) / (a*a - b)
-            gstar = (n + 1) * (a - 1)**2 / (b - a*a)
+            assert a * a < b
+            gammastar = (b - a) / (a * a - b)
+            betastar = (1 - a) / (a * a - b)
+            gstar = (n + 1) * (a - 1) ** 2 / (b - a * a)
 
         vhat = (-gammastar * sumwr - betastar * sumwsqr) / (1 + n)
         missing = max(0, 1 - (-gammastar * sumw - betastar * sumwsq) / (1 + n))
@@ -63,8 +89,12 @@ class CrMinusTwo:
                 vmaxcandidates.append(vnumhat / vdenomhat)
 
             if vdenomhat + missing > 0:
-                vmincandidates.append((vnumhat + missing * rmin) / (vdenomhat + missing))
-                vmaxcandidates.append((vnumhat + missing * rmax) / (vdenomhat + missing))
+                vmincandidates.append(
+                    (vnumhat + missing * rmin) / (vdenomhat + missing)
+                )
+                vmaxcandidates.append(
+                    (vnumhat + missing * rmax) / (vdenomhat + missing)
+                )
 
             vmin = min(vmincandidates, default=None)
             vmax = max(vmaxcandidates, default=None)
@@ -74,21 +104,32 @@ class CrMinusTwo:
             vmax = vhat + missing * rmax
             vhat += missing * (rmin + rmax) / 2
 
-        vmin, vmax, vhat = (None if x is None else min(rmax, max(rmin, x))
-                            for x in (vmin, vmax, vhat))
+        vmin, vmax, vhat = (
+            None if x is None else min(rmax, max(rmin, x)) for x in (vmin, vmax, vhat)
+        )
 
         return vhat, {
-            'primal': gstar,
-            'gammastar': gammastar,
-            'betastar': betastar,
-            'vmin': vmin,
-            'vmax': vmax,
-            'num': n,
-            'qfunc': lambda c, w, r: (c/(1 + n)) * (-gammastar - betastar * w),
+            "primal": gstar,
+            "gammastar": gammastar,
+            "betastar": betastar,
+            "vmin": vmin,
+            "vmax": vmax,
+            "num": n,
+            "qfunc": lambda c, w, r: (c / (1 + n)) * (-gammastar - betastar * w),
         }
 
     @staticmethod
-    def estimatediff(datagen, umin, umax, wmin, wmax, rmin=0, rmax=1, raiseonerr=False, censored=False):
+    def estimatediff(
+        datagen,
+        umin,
+        umax,
+        wmin,
+        wmax,
+        rmin=0,
+        rmax=1,
+        raiseonerr=False,
+        censored=False,
+    ):
         import numpy as np
 
         assert umin >= 0
@@ -124,47 +165,48 @@ class CrMinusTwo:
         wbar = (sumw + wfake) / (n + 1)
         wsqbar = (sumwsq + wfake**2) / (n + 1)
 
-        A = np.array([ [ -1, -ubar, -wbar ],
-                       [ -ubar, -usqbar, -uwbar  ],
-                       [ -wbar, -uwbar, -wsqbar ] ],
-                     dtype='float64')
-        b = np.ones(3, dtype='float64')
+        A = np.array(
+            [[-1, -ubar, -wbar], [-ubar, -usqbar, -uwbar], [-wbar, -uwbar, -wsqbar]],
+            dtype="float64",
+        )
+        b = np.ones(3, dtype="float64")
 
         xstar = np.linalg.lstsq(A, b, rcond=-1)[0]
         beta, gamma, tau = xstar
 
-        deltavhat = (- beta * sumuMwr - gamma * sumuuMwr - tau * sumwuMwr) / n
+        deltavhat = (-beta * sumuMwr - gamma * sumuuMwr - tau * sumwuMwr) / n
         missing = (
-                    - beta * (ufake - wfake)
-                    - gamma * (ufake**2 - ufake * wfake)
-                    - tau * (ufake * wfake - wfake**2)
-                  ) / (n + 1)
+            -beta * (ufake - wfake)
+            - gamma * (ufake**2 - ufake * wfake)
+            - tau * (ufake * wfake - wfake**2)
+        ) / (n + 1)
 
         deltavmin = deltavhat + min(rmin * missing, rmax * missing)
         deltavmax = deltavhat + max(rmin * missing, rmax * missing)
         deltavhat = (deltavmin + deltavmax) / 2
 
-        deltavmin, deltavmax, deltavhat = (min(rmax - rmin, max(rmin - rmax, x))
-                                           for x in (deltavmin,
-                                                     deltavmax,
-                                                     deltavhat))
+        deltavmin, deltavmax, deltavhat = (
+            min(rmax - rmin, max(rmin - rmax, x))
+            for x in (deltavmin, deltavmax, deltavhat)
+        )
 
-        qfunc = lambda c, u, w, r, n=n, b=beta, g=gamma, t=tau: (c/(n+1))*(-b -g*u -t*w)
+        qfunc = lambda c, u, w, r, n=n, b=beta, g=gamma, t=tau: (c / (n + 1)) * (
+            -b - g * u - t * w
+        )
 
         return deltavhat, {
-                'deltavmin': deltavmin,
-                'deltavmax': deltavmax,
-                'num': n,
-                'betastar': beta,
-                'gammastar': gamma,
-                'taustar': tau,
-                'primal': -(n+1)*(1 + beta + gamma + tau),
-                'qfunc': qfunc,
+            "deltavmin": deltavmin,
+            "deltavmax": deltavmax,
+            "num": n,
+            "betastar": beta,
+            "gammastar": gamma,
+            "taustar": tau,
+            "primal": -(n + 1) * (1 + beta + gamma + tau),
+            "qfunc": qfunc,
         }
 
     @staticmethod
-    def interval(datagen, wmin, wmax, alpha=0.05,
-                 rmin=0, rmax=1, raiseonerr=False):
+    def interval(datagen, wmin, wmax, alpha=0.05, rmin=0, rmax=1, raiseonerr=False):
         from math import inf, isclose, sqrt
         from scipy.stats import f
 
@@ -183,12 +225,36 @@ class CrMinusTwo:
             sumwsqrsq += c * w**2 * r**2
         assert n > 0
 
-        return CrMinusTwo.intervalimpl(n, sumw, sumwsq, sumwr, sumwsqr, sumwsqrsq, wmin, wmax, alpha, rmin, rmax, raiseonerr)
+        return CrMinusTwo.intervalimpl(
+            n,
+            sumw,
+            sumwsq,
+            sumwr,
+            sumwsqr,
+            sumwsqrsq,
+            wmin,
+            wmax,
+            alpha,
+            rmin,
+            rmax,
+            raiseonerr,
+        )
 
     @staticmethod
-    def intervalimpl(n, sumw, sumwsq, sumwr, sumwsqr, sumwsqrsq,
-                     wmin, wmax, alpha=0.05,
-                     rmin=0, rmax=1, raiseonerr=False):
+    def intervalimpl(
+        n,
+        sumw,
+        sumwsq,
+        sumwr,
+        sumwsqr,
+        sumwsqrsq,
+        wmin,
+        wmax,
+        alpha=0.05,
+        rmin=0,
+        rmax=1,
+        raiseonerr=False,
+    ):
         from math import inf, isclose, sqrt
         from scipy.stats import f
 
@@ -202,7 +268,7 @@ class CrMinusTwo:
         else:
             unca = (uncwfake + sumw) / (1 + n)
             uncb = (uncwfake**2 + sumwsq) / (1 + n)
-            uncgstar = (n + 1) * (unca - 1)**2 / (uncb - unca*unca)
+            uncgstar = (n + 1) * (unca - 1) ** 2 / (uncb - unca * unca)
         Delta = f.isf(q=alpha, dfn=1, dfd=n)
         phi = (-uncgstar - Delta) / (2 * (n + 1))
 
@@ -212,11 +278,11 @@ class CrMinusTwo:
             for wfake in (wmin, wmax):
                 if wfake == inf:
                     x = sign * (r + (sumwr - sumw * r) / n)
-                    y = (  (r * sumw - sumwr)**2 / (n * (1 + n))
-                         - (r**2 * sumwsq - 2 * r * sumwsqr + sumwsqrsq) / (1 + n)
-                        )
+                    y = (r * sumw - sumwr) ** 2 / (n * (1 + n)) - (
+                        r**2 * sumwsq - 2 * r * sumwsqr + sumwsqrsq
+                    ) / (1 + n)
                     z = phi + 1 / (2 * n)
-                    if isclose(y*z, 0, abs_tol=1e-9):
+                    if isclose(y * z, 0, abs_tol=1e-9):
                         y = 0
 
                     if z <= 0 and y * z >= 0:
@@ -225,29 +291,39 @@ class CrMinusTwo:
                             candidates.append((sign * r, None))
                         else:
                             gstar = x - sqrt(2 * y * z)
-                            gamma = ( -kappa * (1 + n) / n
-                                     + sign * (r * sumw - sumwr) / n )
+                            gamma = -kappa * (1 + n) / n + sign * (r * sumw - sumwr) / n
                             beta = -sign * r
-                            candidates.append((gstar, {
-                                'kappastar': kappa,
-                                'betastar': beta,
-                                'gammastar': gamma,
-                                'wfake': wfake,
-                            # Q_{w,r} &= -\frac{\gamma + \beta w + w r}{(N+1) \kappa} \\
-                                'qfunc': lambda c, w, r, k=kappa, g=gamma, b=beta, s=sign, num=n: -c * (g + (b + s * r) * w) / ((num + 1) * k),
-                            }))
+                            candidates.append(
+                                (
+                                    gstar,
+                                    {
+                                        "kappastar": kappa,
+                                        "betastar": beta,
+                                        "gammastar": gamma,
+                                        "wfake": wfake,
+                                        # Q_{w,r} &= -\frac{\gamma + \beta w + w r}{(N+1) \kappa} \\
+                                        "qfunc": lambda c, w, r, k=kappa, g=gamma, b=beta, s=sign, num=n: -c
+                                        * (g + (b + s * r) * w)
+                                        / ((num + 1) * k),
+                                    },
+                                )
+                            )
                 else:
                     barw = (wfake + sumw) / (1 + n)
-                    barwsq = (wfake*wfake + sumwsq) / (1 + n)
+                    barwsq = (wfake * wfake + sumwsq) / (1 + n)
                     barwr = sign * (wfake * r + sumwr) / (1 + n)
                     barwsqr = sign * (wfake * wfake * r + sumwsqr) / (1 + n)
                     barwsqrsq = (wfake * wfake * r * r + sumwsqrsq) / (1 + n)
 
                     if barwsq > barw**2:
-                        x = barwr + ((1 - barw) * (barwsqr - barw * barwr) / (barwsq - barw**2))
-                        y = (barwsqr - barw * barwr)**2 / (barwsq - barw**2) - (barwsqrsq - barwr**2)
-                        z = phi + (1/2) * (1 - barw)**2 / (barwsq - barw**2)
-                        if isclose(y*z, 0, abs_tol=1e-9):
+                        x = barwr + (
+                            (1 - barw) * (barwsqr - barw * barwr) / (barwsq - barw**2)
+                        )
+                        y = (barwsqr - barw * barwr) ** 2 / (barwsq - barw**2) - (
+                            barwsqrsq - barwr**2
+                        )
+                        z = phi + (1 / 2) * (1 - barw) ** 2 / (barwsq - barw**2)
+                        if isclose(y * z, 0, abs_tol=1e-9):
                             y = 0
 
                         if z <= 0 and y * z >= 0:
@@ -256,26 +332,36 @@ class CrMinusTwo:
                                 candidates.append((sign * r, None))
                             else:
                                 gstar = x - sqrt(2 * y * z)
-                                beta = (-kappa * (1 - barw) - (barwsqr - barw * barwr)) / (barwsq - barw*barw)
+                                beta = (
+                                    -kappa * (1 - barw) - (barwsqr - barw * barwr)
+                                ) / (barwsq - barw * barw)
                                 gamma = -kappa - beta * barw - barwr
-                                candidates.append((gstar, {
-                                    'kappastar': kappa,
-                                    'betastar': beta,
-                                    'gammastar': gamma,
-                                    'wfake': wfake,
-                                # Q_{w,r} &= -\frac{\gamma + \beta w + w r}{(N+1) \kappa} \\
-                                    'qfunc': lambda c, w, r, k=kappa, g=gamma, b=beta, s=sign, num=n: -c * (g + (b + s * r) * w) / ((num + 1) * k),
-                                }))
+                                candidates.append(
+                                    (
+                                        gstar,
+                                        {
+                                            "kappastar": kappa,
+                                            "betastar": beta,
+                                            "gammastar": gamma,
+                                            "wfake": wfake,
+                                            # Q_{w,r} &= -\frac{\gamma + \beta w + w r}{(N+1) \kappa} \\
+                                            "qfunc": lambda c, w, r, k=kappa, g=gamma, b=beta, s=sign, num=n: -c
+                                            * (g + (b + s * r) * w)
+                                            / ((num + 1) * k),
+                                        },
+                                    )
+                                )
 
             best = min(candidates, key=lambda x: x[0])
-            vbound = min(rmax, max(rmin, sign*best[0]))
+            vbound = min(rmax, max(rmin, sign * best[0]))
             bounds.append((vbound, best[1]))
 
         return (bounds[0][0], bounds[1][0]), (bounds[0][1], bounds[1][1])
 
     @staticmethod
-    def intervaldiff(datagen, umin, umax, wmin, wmax, alpha=0.05,
-                     rmin=0, rmax=1, raiseonerr=False):
+    def intervaldiff(
+        datagen, umin, umax, wmin, wmax, alpha=0.05, rmin=0, rmax=1, raiseonerr=False
+    ):
         import numpy as np
         from math import isclose, sqrt
         from scipy.stats import f
@@ -288,10 +374,12 @@ class CrMinusTwo:
         assert wmax > 1
         assert rmax >= rmin
 
-        _, mle = CrMinusTwo.estimatediff(datagen, umin, umax, wmin, wmax, rmin, rmax, raiseonerr=raiseonerr)
+        _, mle = CrMinusTwo.estimatediff(
+            datagen, umin, umax, wmin, wmax, rmin, rmax, raiseonerr=raiseonerr
+        )
 
-        Delta = f.isf(q=alpha, dfn=1, dfd=mle['num']-1)
-        phi = (-Delta - mle['primal']) / (2 * (mle['num'] + 1))
+        Delta = f.isf(q=alpha, dfn=1, dfd=mle["num"] - 1)
+        phi = (-Delta - mle["primal"]) / (2 * (mle["num"] + 1))
 
         n, sumu, sumw, sumuw, sumusq, sumwsq = 0, 0, 0, 0, 0, 0
         sumuMwr, sumuuMwr, sumwuMwr, sumuMwsqrsq = 0, 0, 0, 0
@@ -305,15 +393,14 @@ class CrMinusTwo:
             sumuMwr += c * (u - w) * r
             sumuuMwr += c * u * (u - w) * r
             sumwuMwr += c * w * (u - w) * r
-            sumuMwsqrsq += c * (u - w)**2 * r**2
+            sumuMwsqrsq += c * (u - w) ** 2 * r**2
 
         assert n > 0
 
         bounds = []
         for sign in (1, -1):
             candidates = []
-            for ufake, wfake in ((u, w) for u in (umin, umax)
-                                        for w in (wmin, wmax)):
+            for ufake, wfake in ((u, w) for u in (umin, umax) for w in (wmin, wmax)):
                 rex = rmin if sign * ufake >= sign * wfake else rmax
 
                 baru = (sumu + ufake) / (n + 1)
@@ -324,14 +411,17 @@ class CrMinusTwo:
                 baruMwr = sign * (sumuMwr + (ufake - wfake) * rex) / (n + 1)
                 baruuMwr = sign * (sumuuMwr + ufake * (ufake - wfake) * rex) / (n + 1)
                 barwuMwr = sign * (sumwuMwr + wfake * (ufake - wfake) * rex) / (n + 1)
-                baruMwsqrsq = (sumuMwsqrsq + (ufake - wfake)**2 * rex**2) / (n + 1)
+                baruMwsqrsq = (sumuMwsqrsq + (ufake - wfake) ** 2 * rex**2) / (n + 1)
 
-                C = np.array([ [ 1.0, baru, barw ],
-                               [ baru, barusq, baruw ],
-                               [ barw, baruw, barwsq ],
-                             ], dtype='float64')
-                d = np.array([ baruMwr, baruuMwr, barwuMwr ],
-                             dtype='float64')
+                C = np.array(
+                    [
+                        [1.0, baru, barw],
+                        [baru, barusq, baruw],
+                        [barw, baruw, barwsq],
+                    ],
+                    dtype="float64",
+                )
+                d = np.array([baruMwr, baruuMwr, barwuMwr], dtype="float64")
 
                 a = np.linalg.lstsq(C, np.ones(3), rcond=-1)[0]
                 b = np.linalg.lstsq(C, d, rcond=-1)[0]
@@ -339,7 +429,7 @@ class CrMinusTwo:
                 y = np.dot(d, b) - baruMwsqrsq
                 z = phi - 0.5 + 0.5 * np.sum(a)
 
-                if isclose(y*z, 0, abs_tol=1e-9):
+                if isclose(y * z, 0, abs_tol=1e-9):
                     y = 0
 
                 if z <= 0 and y * z >= 0:
@@ -347,20 +437,29 @@ class CrMinusTwo:
                     kappa = sqrt(y / (2 * z)) if y * z > 0 else 0
                     beta, gamma, tau = -kappa * a - b
 
-                    candidates.append((gstar, None if isclose(kappa, 0) else {
-                            'kappastar': kappa,
-                            'betastar': beta,
-                            'gammastar': gamma,
-                            'taustar': tau,
-                            'ufake': ufake,
-                            'wfake': wfake,
-                            'rfake': rex,
-                            'qfunc': lambda c, u, w, r, k=kappa, g=gamma, b=beta, t=tau, s=sign, num=n: -c * (b + g * u + t * w + s * (u - w) * r) / ((num + 1) * k),
-                            'mle': mle,
-                        }))
+                    candidates.append(
+                        (
+                            gstar,
+                            None
+                            if isclose(kappa, 0)
+                            else {
+                                "kappastar": kappa,
+                                "betastar": beta,
+                                "gammastar": gamma,
+                                "taustar": tau,
+                                "ufake": ufake,
+                                "wfake": wfake,
+                                "rfake": rex,
+                                "qfunc": lambda c, u, w, r, k=kappa, g=gamma, b=beta, t=tau, s=sign, num=n: -c
+                                * (b + g * u + t * w + s * (u - w) * r)
+                                / ((num + 1) * k),
+                                "mle": mle,
+                            },
+                        )
+                    )
 
             best = min(candidates, key=lambda x: x[0])
-            vbound = min(rmax - rmin, max(rmin - rmax, sign*best[0]))
+            vbound = min(rmax - rmin, max(rmin - rmax, sign * best[0]))
             bounds.append((vbound, best[1]))
 
         return (bounds[0][0], bounds[1][0]), (bounds[0][1], bounds[1][1]), candidates

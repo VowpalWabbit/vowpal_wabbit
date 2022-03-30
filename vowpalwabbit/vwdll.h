@@ -14,9 +14,8 @@
 #  define USE_CODECVT
 #endif
 
-#include "stdint.h"
 #include "stddef.h"
-
+#include "stdint.h"
 #include "vwvis.h"
 
 #ifdef MS_CONV
@@ -130,6 +129,11 @@ extern "C"
   VW_DLL_PUBLIC void VW_CALLING_CONV VW_CopyModelData(
       VW_HANDLE handle, VW_IOBUF* bufferHandle, char** outputData, size_t* outputSize);
   VW_DLL_PUBLIC void VW_CALLING_CONV VW_FreeIOBuf(VW_IOBUF bufferHandle);
+
+  VW_DLL_PUBLIC void VW_CALLING_CONV VW_CaptureAuditData(VW_HANDLE handle);
+  VW_DLL_PUBLIC void VW_CALLING_CONV VW_ClearCapturedAuditData(VW_HANDLE handle);
+  VW_DLL_PUBLIC char* VW_CALLING_CONV VW_GetAuditDataA(VW_HANDLE handle, size_t* size);
+  VW_DLL_PUBLIC void VW_CALLING_CONV VW_FreeAuditDataA(VW_HANDLE handle, char* data);
 
 #ifdef __cplusplus
 }

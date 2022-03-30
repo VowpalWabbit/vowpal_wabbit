@@ -3,7 +3,7 @@ include(T4Template)
 include(NetFxStrongName)
 
 set (VowpalWabbit_SOURCES
-  Properties/AssemblyInfo.cs 
+  Properties/AssemblyInfo.cs
   Properties/AssemblyInfoInternal.cs # Things seem to work without this, but going to keep it here to be 1:1 with previous
   Serializer/Attributes/CacheableAttribute.cs
   Serializer/Attributes/FeatureAttribute.cs
@@ -73,7 +73,12 @@ set (vw_DOTNET_FRAMEWORK_REFERENCES
   Microsoft.CSharp
 )
 
-target_link_libraries(VowpalWabbit 
+target_compile_options(VowpalWabbit PRIVATE
+  $<$<CONFIG:Release>:/debug:pdbonly>
+  $<$<CONFIG:Debug>:/debug:full>
+)
+
+target_link_libraries(VowpalWabbit
   PUBLIC VowpalWabbit.Common VowpalWabbit.Core
 )
 
@@ -81,6 +86,5 @@ set_target_properties(VowpalWabbit PROPERTIES
   VS_DOTNET_REFERENCES "${vw_DOTNET_FRAMEWORK_REFERENCES}"
   VS_GLOBAL_ROOTNAMESPACE VW
   VS_GLOBAL_AllowUnsafeBlocks "True"
+  VS_GLOBAL_DocumentationFile "VowpalWabbit.xml"
 )
-
-

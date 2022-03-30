@@ -4,12 +4,12 @@
 
 #pragma once
 
+#include "future_compat.h"
+
 #include <array>
 #include <cfloat>
 #include <cstdint>
 #include <limits>
-
-#include "future_compat.h"
 
 // The reason for this implementation is that for specific scenarios using a
 // lookup table can drastically improve performance over the generic std::pow

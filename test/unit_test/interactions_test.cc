@@ -2,27 +2,27 @@
 // individual contributors. All rights reserved. Released under a BSD (revised)
 // license as described in the file LICENSE.
 
-#include <boost/test/unit_test.hpp>
-#include <boost/test/test_tools.hpp>
+#include "interactions.h"
 
+#include "constant.h"
+#include "gd_predict.h"
+#include "interactions_predict.h"
+#include "parse_args.h"
+#include "reductions/gd.h"
+#include "test_common.h"
+#include "vw.h"
+
+#include <array>
+#include <boost/test/test_tools.hpp>
+#include <boost/test/unit_test.hpp>
 #include <cstddef>
 #include <cstdint>
 #include <memory>
-#include <array>
 #include <vector>
-
-#include "test_common.h"
-#include "vw.h"
-#include "gd_predict.h"
-#include "gd.h"
-#include "interactions.h"
-#include "parse_args.h"
-#include "constant.h"
-#include "interactions_predict.h"
 
 namespace std
 {
-std::ostream& operator<<(std::ostream& os, const std::pair<namespace_index, uint64_t>& obj)
+std::ostream& operator<<(std::ostream& os, const std::pair<VW::namespace_index, uint64_t>& obj)
 {
   return os << "_ns_char: " << obj.first << " _ns_hash: " << obj.second;
 }
@@ -48,9 +48,9 @@ void ft_cnt(eval_gen_data& dat, const float fx, const uint64_t)
 // eval_count_of_generated_ft() it just calls generate_interactions() with small
 // function which counts generated features and sums their squared values. We
 // use it to validate the more fast (?) analytic solution
-template <INTERACTIONS::generate_func_t<namespace_index> generate_func, bool leave_duplicate_interactions>
+template <INTERACTIONS::generate_func_t<VW::namespace_index> generate_func, bool leave_duplicate_interactions>
 void eval_count_of_generated_ft_naive(
-    VW::workspace& all, example_predict& ec, size_t& new_features_cnt, float& new_features_value)
+    VW::workspace& all, VW::example_predict& ec, size_t& new_features_cnt, float& new_features_value)
 {
   // Only makes sense to do this when not in permutations mode.
   assert(!all.permutations);
@@ -59,9 +59,9 @@ void eval_count_of_generated_ft_naive(
   new_features_value = 0.;
 
   auto interactions = INTERACTIONS::compile_interactions<generate_func, leave_duplicate_interactions>(
-      all.interactions, std::set<namespace_index>(ec.indices.begin(), ec.indices.end()));
+      all.interactions, std::set<VW::namespace_index>(ec.indices.begin(), ec.indices.end()));
 
-  v_array<float> results;
+  VW::v_array<float> results;
 
   eval_gen_data dat(new_features_cnt, new_features_value);
   size_t ignored = 0;
@@ -72,7 +72,7 @@ void eval_count_of_generated_ft_naive(
 
 template <INTERACTIONS::generate_func_t<extent_term> generate_func, bool leave_duplicate_interactions>
 void eval_count_of_generated_ft_naive(
-    VW::workspace& all, example_predict& ec, size_t& new_features_cnt, float& new_features_value)
+    VW::workspace& all, VW::example_predict& ec, size_t& new_features_cnt, float& new_features_value)
 {
   // Only makes sense to do this when not in permutations mode.
   assert(!all.permutations);
@@ -89,7 +89,7 @@ void eval_count_of_generated_ft_naive(
   auto interactions = INTERACTIONS::compile_extent_interactions<generate_func, leave_duplicate_interactions>(
       all.extent_interactions, seen_extents);
 
-  v_array<float> results;
+  VW::v_array<float> results;
 
   eval_gen_data dat(new_features_cnt, new_features_value);
   size_t ignored = 0;
@@ -107,12 +107,12 @@ BOOST_AUTO_TEST_CASE(eval_count_of_generated_ft_test)
 
   size_t naive_features_count;
   float naive_features_value;
-  eval_count_of_generated_ft_naive<INTERACTIONS::generate_namespace_combinations_with_repetition<namespace_index>,
+  eval_count_of_generated_ft_naive<INTERACTIONS::generate_namespace_combinations_with_repetition<VW::namespace_index>,
       false>(vw, *ex, naive_features_count, naive_features_value);
 
   auto interactions =
       INTERACTIONS::compile_interactions<INTERACTIONS::generate_namespace_combinations_with_repetition, false>(
-          vw.interactions, std::set<namespace_index>(ex->indices.begin(), ex->indices.end()));
+          vw.interactions, std::set<VW::namespace_index>(ex->indices.begin(), ex->indices.end()));
   ex->interactions = &interactions;
   ex->extent_interactions = &vw.extent_interactions;
   float fast_features_value = INTERACTIONS::eval_sum_ft_squared_of_generated_ft(
@@ -177,10 +177,10 @@ BOOST_AUTO_TEST_CASE(eval_count_of_generated_ft_extents_permutations_test)
 
 BOOST_AUTO_TEST_CASE(interaction_generic_expand_wildcard_only)
 {
-  std::set<namespace_index> namespaces = {'a', 'b'};
+  std::set<VW::namespace_index> namespaces = {'a', 'b'};
   auto result = INTERACTIONS::generate_namespace_combinations_with_repetition(namespaces, 2);
 
-  std::vector<std::vector<namespace_index>> compare_set = {{'b', 'a'}, {'a', 'a'}, {'b', 'b'}};
+  std::vector<std::vector<VW::namespace_index>> compare_set = {{'b', 'a'}, {'a', 'a'}, {'b', 'b'}};
 
   std::sort(compare_set.begin(), compare_set.end());
   std::sort(result.begin(), result.end());
@@ -189,10 +189,10 @@ BOOST_AUTO_TEST_CASE(interaction_generic_expand_wildcard_only)
 
 BOOST_AUTO_TEST_CASE(interaction_generic_with_duplicates_expand_wildcard_only)
 {
-  std::set<namespace_index> namespaces = {'a', 'b'};
+  std::set<VW::namespace_index> namespaces = {'a', 'b'};
   auto result = INTERACTIONS::generate_namespace_permutations_with_repetition(namespaces, 2);
 
-  std::vector<std::vector<namespace_index>> compare_set = {{'b', 'a'}, {'a', 'b'}, {'a', 'a'}, {'b', 'b'}};
+  std::vector<std::vector<VW::namespace_index>> compare_set = {{'b', 'a'}, {'a', 'b'}, {'a', 'a'}, {'b', 'b'}};
 
   std::sort(compare_set.begin(), compare_set.end());
   std::sort(result.begin(), result.end());
@@ -201,13 +201,13 @@ BOOST_AUTO_TEST_CASE(interaction_generic_with_duplicates_expand_wildcard_only)
 
 BOOST_AUTO_TEST_CASE(sort_and_filter_interactions)
 {
-  std::vector<std::vector<namespace_index>> input = {{'b', 'a'}, {'a', 'b', 'a'}, {'a', 'a'}, {'b', 'b'}};
+  std::vector<std::vector<VW::namespace_index>> input = {{'b', 'a'}, {'a', 'b', 'a'}, {'a', 'a'}, {'b', 'b'}};
 
   size_t removed_count = 0;
   size_t sorted_count = 0;
   INTERACTIONS::sort_and_filter_duplicate_interactions(input, false, removed_count, sorted_count);
 
-  std::vector<std::vector<namespace_index>> compare_set = {{'b', 'a'}, {'a', 'a', 'b'}, {'a', 'a'}, {'b', 'b'}};
+  std::vector<std::vector<VW::namespace_index>> compare_set = {{'b', 'a'}, {'a', 'a', 'b'}, {'a', 'a'}, {'b', 'b'}};
   check_vector_of_vectors_exact(input, compare_set);
 }
 
@@ -220,8 +220,8 @@ void sort_all(std::vector<std::vector<T>>& interactions)
 
 BOOST_AUTO_TEST_CASE(compile_interactions_quadratic_permutations_and_combinations_same)
 {
-  std::set<namespace_index> indices = {'a', 'b', 'c', 'd'};
-  std::vector<std::vector<namespace_index>> interactions = {{':', 'a'}};
+  std::set<VW::namespace_index> indices = {'a', 'b', 'c', 'd'};
+  std::vector<std::vector<VW::namespace_index>> interactions = {{':', 'a'}};
 
   // Permutations implies leave duplicate interactions (second template arg)
   auto result_perms =
@@ -231,7 +231,7 @@ BOOST_AUTO_TEST_CASE(compile_interactions_quadratic_permutations_and_combination
       INTERACTIONS::compile_interactions<INTERACTIONS::generate_namespace_combinations_with_repetition, false>(
           interactions, indices);
 
-  std::vector<std::vector<namespace_index>> compare_set = {{'a', 'a'}, {'b', 'a'}, {'c', 'a'}, {'d', 'a'}};
+  std::vector<std::vector<VW::namespace_index>> compare_set = {{'a', 'a'}, {'b', 'a'}, {'c', 'a'}, {'d', 'a'}};
 
   sort_all(compare_set);
   sort_all(result_perms);
@@ -242,15 +242,15 @@ BOOST_AUTO_TEST_CASE(compile_interactions_quadratic_permutations_and_combination
 
 BOOST_AUTO_TEST_CASE(compile_interactions_quadratic_combinations)
 {
-  std::set<namespace_index> indices = {'a', 'b', 'c', 'd'};
-  std::vector<std::vector<namespace_index>> interactions = {{':', ':'}};
+  std::set<VW::namespace_index> indices = {'a', 'b', 'c', 'd'};
+  std::vector<std::vector<VW::namespace_index>> interactions = {{':', ':'}};
 
   auto result =
       INTERACTIONS::compile_interactions<INTERACTIONS::generate_namespace_combinations_with_repetition, false>(
           interactions, indices);
 
-  std::vector<std::vector<namespace_index>> compare_set = {{'a', 'a'}, {'a', 'b'}, {'a', 'c'}, {'a', 'd'}, {'b', 'b'},
-      {'b', 'c'}, {'b', 'd'}, {'c', 'c'}, {'c', 'd'}, {'d', 'd'}};
+  std::vector<std::vector<VW::namespace_index>> compare_set = {{'a', 'a'}, {'a', 'b'}, {'a', 'c'}, {'a', 'd'},
+      {'b', 'b'}, {'b', 'c'}, {'b', 'd'}, {'c', 'c'}, {'c', 'd'}, {'d', 'd'}};
 
   sort_all(compare_set);
   sort_all(result);
@@ -259,15 +259,15 @@ BOOST_AUTO_TEST_CASE(compile_interactions_quadratic_combinations)
 
 BOOST_AUTO_TEST_CASE(compile_interactions_quadratic_permutations)
 {
-  std::set<namespace_index> indices = {'a', 'b', 'c', 'd'};
-  std::vector<std::vector<namespace_index>> interactions = {{':', ':'}};
+  std::set<VW::namespace_index> indices = {'a', 'b', 'c', 'd'};
+  std::vector<std::vector<VW::namespace_index>> interactions = {{':', ':'}};
 
   auto result = INTERACTIONS::compile_interactions<INTERACTIONS::generate_namespace_permutations_with_repetition, true>(
       interactions, indices);
 
-  std::vector<std::vector<namespace_index>> compare_set = {{'a', 'a'}, {'a', 'b'}, {'a', 'c'}, {'a', 'd'}, {'b', 'a'},
-      {'b', 'b'}, {'b', 'c'}, {'b', 'd'}, {'c', 'a'}, {'c', 'b'}, {'c', 'c'}, {'c', 'd'}, {'d', 'a'}, {'d', 'b'},
-      {'d', 'c'}, {'d', 'd'}};
+  std::vector<std::vector<VW::namespace_index>> compare_set = {{'a', 'a'}, {'a', 'b'}, {'a', 'c'}, {'a', 'd'},
+      {'b', 'a'}, {'b', 'b'}, {'b', 'c'}, {'b', 'd'}, {'c', 'a'}, {'c', 'b'}, {'c', 'c'}, {'c', 'd'}, {'d', 'a'},
+      {'d', 'b'}, {'d', 'c'}, {'d', 'd'}};
 
   sort_all(compare_set);
   sort_all(result);
@@ -276,14 +276,14 @@ BOOST_AUTO_TEST_CASE(compile_interactions_quadratic_permutations)
 
 BOOST_AUTO_TEST_CASE(compile_interactions_cubic_combinations)
 {
-  std::set<namespace_index> indices = {'a', 'b', 'c', 'd'};
-  std::vector<std::vector<namespace_index>> interactions = {{':', ':', ':'}};
+  std::set<VW::namespace_index> indices = {'a', 'b', 'c', 'd'};
+  std::vector<std::vector<VW::namespace_index>> interactions = {{':', ':', ':'}};
 
   auto result =
       INTERACTIONS::compile_interactions<INTERACTIONS::generate_namespace_combinations_with_repetition, false>(
           interactions, indices);
 
-  std::vector<std::vector<namespace_index>> compare_set = {
+  std::vector<std::vector<VW::namespace_index>> compare_set = {
       {'a', 'a', 'a'},
       {'a', 'a', 'b'},
       {'a', 'a', 'c'},
@@ -313,13 +313,13 @@ BOOST_AUTO_TEST_CASE(compile_interactions_cubic_combinations)
 
 BOOST_AUTO_TEST_CASE(compile_interactions_cubic_permutations)
 {
-  std::set<namespace_index> indices = {'a', 'b', 'c', 'd'};
-  std::vector<std::vector<namespace_index>> interactions = {{':', ':', ':'}};
+  std::set<VW::namespace_index> indices = {'a', 'b', 'c', 'd'};
+  std::vector<std::vector<VW::namespace_index>> interactions = {{':', ':', ':'}};
 
   auto result = INTERACTIONS::compile_interactions<INTERACTIONS::generate_namespace_permutations_with_repetition, true>(
       interactions, indices);
 
-  std::vector<std::vector<namespace_index>> compare_set = {
+  std::vector<std::vector<VW::namespace_index>> compare_set = {
       {'a', 'a', 'a'}, {'a', 'a', 'b'}, {'a', 'a', 'c'}, {'a', 'a', 'd'}, {'a', 'b', 'a'}, {'a', 'b', 'b'},
       {'a', 'b', 'c'}, {'a', 'b', 'd'}, {'a', 'c', 'a'}, {'a', 'c', 'b'}, {'a', 'c', 'c'}, {'a', 'c', 'd'},
       {'a', 'd', 'a'}, {'a', 'd', 'b'}, {'a', 'd', 'c'}, {'a', 'd', 'd'}, {'b', 'a', 'a'}, {'b', 'a', 'b'},
@@ -341,7 +341,7 @@ BOOST_AUTO_TEST_CASE(compile_interactions_cubic_permutations)
 
 BOOST_AUTO_TEST_CASE(parse_full_name_interactions_test)
 {
-  auto* vw = VW::initialize("");
+  auto* vw = VW::initialize("--quiet");
 
   {
     auto a = parse_full_name_interactions(*vw, "a|b");

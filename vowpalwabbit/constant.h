@@ -2,8 +2,8 @@
 // individual contributors. All rights reserved. Released under a BSD (revised)
 // license as described in the file LICENSE.
 #pragma once
-#include <cstdint>
 #include <cstddef>
+#include <cstdint>
 
 constexpr int quadratic_constant = 27942141;
 constexpr int cubic_constant = 21791;
@@ -26,11 +26,11 @@ constexpr unsigned char nn_output_namespace = 129;
 constexpr unsigned char autolink_namespace = 130;
 constexpr unsigned char neighbor_namespace =
     131;  // this is \x83 -- to do quadratic, say "-q a`printf "\x83"` on the command line
-constexpr unsigned char affix_namespace = 132;         // this is \x84
-constexpr unsigned char spelling_namespace = 133;      // this is \x85
-constexpr unsigned char conditioning_namespace = 134;  // this is \x86
-constexpr unsigned char dictionary_namespace = 135;    // this is \x87
-constexpr unsigned char node_id_namespace = 136;       // this is \x88
+constexpr unsigned char affix_namespace = 132;                     // this is \x84
+constexpr unsigned char spelling_namespace = 133;                  // this is \x85
+constexpr unsigned char conditioning_namespace = 134;              // this is \x86
+constexpr unsigned char dictionary_namespace = 135;                // this is \x87
+constexpr unsigned char node_id_namespace = 136;                   // this is \x88
 constexpr unsigned char baseline_enabled_message_namespace = 137;  // this is \x89
 constexpr unsigned char ccb_slot_namespace = 139;
 constexpr unsigned char ccb_id_namespace = 140;
@@ -50,3 +50,9 @@ constexpr const char* CHOSEN_ACTION = "chosen_action";
 
 static constexpr uint32_t SHARED_EX_INDEX = 0;
 static constexpr uint32_t TOP_ACTION_INDEX = 0;
+
+namespace VW
+{
+static constexpr const int DEFAULT_FLOAT_PRECISION = 6;
+static constexpr const int DEFAULT_FLOAT_FORMATTING_DECIMAL_PRECISION = 2;
+}  // namespace VW

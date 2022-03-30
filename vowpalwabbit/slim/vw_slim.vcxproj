@@ -40,7 +40,7 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
     <ConfigurationType>StaticLibrary</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
-    <PlatformToolset>v141</PlatformToolset>
+    <PlatformToolset>v140</PlatformToolset>
     <CharacterSet>MultiByte</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
@@ -133,7 +133,7 @@
   <ItemGroup>
     <ClCompile Include="..\example_predict.cc" />
     <ClCompile Include="..\feature_group.cc" />
-    <ClCompile Include="..\interactions.cc" />
+    <ClCompile Include="..\reductions\interactions.cc" />
     <ClCompile Include="src\example_predict_builder.cc" />
     <ClCompile Include="src\model_parser.cc" />
     <ClCompile Include="src\opts.cc" />

@@ -1,34 +1,39 @@
 // Copyright (c) by respective owners including Yahoo!, Microsoft, and
 // individual contributors. All rights reserved. Released under a BSD (revised)
 // license as described in the file LICENSE.
+#include "config/options.h"
+#include "crossplat_compat.h"
+#include "io_buf.h"
+#include "rand_state.h"
+
 #include <fstream>
 #include <iostream>
-
-#include "crossplat_compat.h"
 
 #ifndef _WIN32
 #  include <unistd.h>
 #endif
 
-#include <cstdlib>
-#include <cstdint>
-#include <cmath>
-#include <cstdarg>
-
-#include <fstream>
-#include <iostream>
-#include <algorithm>
-#include <numeric>
-#include <utility>
-
+#include "config/cli_options_serializer.h"
 #include "crossplat_compat.h"
-#include "rand48.h"
 #include "global_data.h"
+#include "io/logger.h"
+#include "kskip_ngram_transformer.h"
+#include "learner.h"
+#include "rand48.h"
+#include "shared_data.h"
 #include "vw_exception.h"
 #include "vw_validate.h"
 #include "vw_versions.h"
-#include "options_serializer_boost_po.h"
-#include "shared_data.h"
+
+#include <algorithm>
+#include <cmath>
+#include <cstdarg>
+#include <cstdint>
+#include <cstdlib>
+#include <fstream>
+#include <iostream>
+#include <numeric>
+#include <utility>
 
 void initialize_weights_as_random_positive(weight* weights, uint64_t index) { weights[0] = 0.1f * merand48(index); }
 void initialize_weights_as_random(weight* weights, uint64_t index) { weights[0] = merand48(index) - 0.5f; }
@@ -62,7 +67,7 @@ template <class T>
 void initialize_regressor(VW::workspace& all, T& weights)
 {
   // Regressor is already initialized.
-  if (weights.not_null()) return;
+  if (weights.not_null()) { return; }
 
   size_t length = (static_cast<size_t>(1)) << all.num_bits;
   try
@@ -70,6 +75,9 @@ void initialize_regressor(VW::workspace& all, T& weights)
     uint32_t ss = weights.stride_shift();
     weights.~T();  // dealloc so that we can realloc, now with a known size
     new (&weights) T(length, ss);
+#ifdef PRIVACY_ACTIVATION
+    if (all.privacy_activation) { weights.privacy_activation_threshold(all.privacy_activation_threshold); }
+#endif
   }
   catch (const VW::vw_exception&)
   {
@@ -105,10 +113,11 @@ void initialize_regressor(VW::workspace& all, T& weights)
 
 void initialize_regressor(VW::workspace& all)
 {
-  if (all.weights.sparse)
-    initialize_regressor(all, all.weights.sparse_weights);
+  if (all.weights.sparse) { initialize_regressor(all, all.weights.sparse_weights); }
   else
+  {
     initialize_regressor(all, all.weights.dense_weights);
+  }
 }
 
 constexpr size_t default_buf_size = 512;
@@ -137,7 +146,7 @@ void save_load_header(VW::workspace& all, io_buf& model_file, bool read, bool te
     VW::validate_version(all);
 
     if (all.model_file_ver >= VW::version_definitions::VERSION_FILE_WITH_HEADER_CHAINED_HASH)
-      model_file.verify_hash(true);
+    { model_file.verify_hash(true); }
 
     if (all.model_file_ver >= VW::version_definitions::VERSION_FILE_WITH_HEADER_ID)
     {
@@ -205,7 +214,7 @@ void save_load_header(VW::workspace& all, io_buf& model_file, bool read, bool te
 
         // Only the read path is implemented since this is for old version read support.
         bytes_read_write += bin_text_read_write_fixed_validated(model_file, pair, 2, read, msg, text);
-        std::vector<namespace_index> temp(pair, *(&pair + 1));
+        std::vector<VW::namespace_index> temp(pair, *(&pair + 1));
         if (std::count(all.interactions.begin(), all.interactions.end(), temp) == 0)
         { all.interactions.emplace_back(temp.begin(), temp.end()); }
       }
@@ -227,7 +236,7 @@ void save_load_header(VW::workspace& all, io_buf& model_file, bool read, bool te
         // Only the read path is implemented since this is for old version read support.
         bytes_read_write += bin_text_read_write_fixed_validated(model_file, triple, 3, read, msg, text);
 
-        std::vector<namespace_index> temp(triple, *(&triple + 1));
+        std::vector<VW::namespace_index> temp(triple, *(&triple + 1));
         if (count(all.interactions.begin(), all.interactions.end(), temp) == 0)
         { all.interactions.emplace_back(temp.begin(), temp.end()); }
       }
@@ -259,7 +268,7 @@ void save_load_header(VW::workspace& all, io_buf& model_file, bool read, bool te
           bytes_read_write += size;
           if (size != inter_len) { THROW("Failed to read interaction from model file."); }
 
-          std::vector<namespace_index> temp(buff2.data(), buff2.data() + size);
+          std::vector<VW::namespace_index> temp(buff2.data(), buff2.data() + size);
           if (count(all.interactions.begin(), all.interactions.end(), temp) == 0)
           { all.interactions.emplace_back(buff2.data(), buff2.data() + inter_len); }
         }
@@ -287,9 +296,10 @@ void save_load_header(VW::workspace& all, io_buf& model_file, bool read, bool te
         }
         else
         {
-          *(all.trace_message) << "WARNING: this model file contains 'rank: " << rank
-                               << "' value but it will be ignored as another value specified via the command line."
-                               << std::endl;
+          all.logger.err_warn(
+              "This model file contains 'rank: {}' value but it will be ignored as another value specified via the "
+              "command line.",
+              rank);
         }
       }
     }
@@ -362,7 +372,7 @@ void save_load_header(VW::workspace& all, io_buf& model_file, bool read, bool te
     {
       uint32_t len;
       size_t ret = model_file.bin_read_fixed(reinterpret_cast<char*>(&len), sizeof(len));
-      if (len > 104857600 /*sanity check: 100 Mb*/ || ret < sizeof(uint32_t)) THROW("bad model format!");
+      if (len > 104857600 /*sanity check: 100 Mb*/ || ret < sizeof(uint32_t)) THROW("Bad model format.");
       if (buff2.size() < len) { buff2.resize(len); }
       bytes_read_write += model_file.bin_read_fixed(buff2.data(), len) + ret;
 
@@ -382,13 +392,33 @@ void save_load_header(VW::workspace& all, io_buf& model_file, bool read, bool te
     }
     else
     {
-      VW::config::options_serializer_boost_po serializer;
+      VW::config::cli_options_serializer serializer;
+
+      std::map<std::string, std::set<char>> merged_values = {{"ignore", {}}, {"ignore_linear", {}}, {"keep", {}}};
+
       for (auto const& option : options.get_all_options())
       {
-        if (option->m_keep && options.was_supplied(option->m_name)) { serializer.add(*option); }
+        if (option->m_keep && options.was_supplied(option->m_name))
+        {
+          if (merged_values.find(option->m_name) != merged_values.end())
+          {
+            // Merge and deduplicate the namespaces before serializing into the model file.
+            const auto& typed = dynamic_cast<const VW::config::typed_option<std::vector<std::string>>&>(*option);
+            for (const auto& v : typed.value()) { merged_values[option->m_name].insert(v.begin(), v.end()); }
+            continue;
+          }
+          serializer.add(*option);
+        }
       }
 
       auto serialized_keep_options = serializer.str();
+
+      // Save deduplicated values for ignore, ignore_linear, or keep.
+      for (const auto& kv : merged_values)
+      {
+        if (kv.second.empty()) { continue; }
+        serialized_keep_options += " --" + kv.first + " " + std::string(kv.second.begin(), kv.second.end());
+      }
 
       // We need to save our current PRG state
       if (all.get_random_state()->get_current_state() != 0)
@@ -432,7 +462,7 @@ void dump_regressor(VW::workspace& all, io_buf& buf, bool as_text)
   if (buf.num_output_files() == 0) { THROW("Cannot dump regressor with an io buffer that has no output files."); }
   std::string unused;
   save_load_header(all, buf, false, as_text, unused, *all.options);
-  if (all.l != nullptr) all.l->save_load(buf, false, as_text);
+  if (all.l != nullptr) { all.l->save_load(buf, false, as_text); }
 
   buf.flush();  // close_file() should do this for me ...
   buf.close_file();
@@ -440,7 +470,7 @@ void dump_regressor(VW::workspace& all, io_buf& buf, bool as_text)
 
 void dump_regressor(VW::workspace& all, const std::string& reg_name, bool as_text)
 {
-  if (reg_name == std::string("")) return;
+  if (reg_name == std::string("")) { return; }
   std::string start_name = reg_name + std::string(".writing");
   io_buf io_temp;
   io_temp.add_file(VW::io::open_file_writer(start_name));
@@ -458,7 +488,7 @@ void save_predictor(VW::workspace& all, const std::string& reg_name, size_t curr
 {
   std::stringstream filename;
   filename << reg_name;
-  if (all.save_per_pass) filename << "." << current_pass;
+  if (all.save_per_pass) { filename << "." << current_pass; }
   dump_regressor(all, filename.str(), false);
 }
 
@@ -467,11 +497,12 @@ void finalize_regressor(VW::workspace& all, const std::string& reg_name)
   if (!all.early_terminate)
   {
     if (all.per_feature_regularizer_output.length() > 0)
-      dump_regressor(all, all.per_feature_regularizer_output, false);
+    { dump_regressor(all, all.per_feature_regularizer_output, false); }
     else
+    {
       dump_regressor(all, reg_name, false);
-    if (all.per_feature_regularizer_text.length() > 0)
-      dump_regressor(all, all.per_feature_regularizer_text, true);
+    }
+    if (all.per_feature_regularizer_text.length() > 0) { dump_regressor(all, all.per_feature_regularizer_text, true); }
     else
     {
       dump_regressor(all, all.text_regressor_name, true);
@@ -488,14 +519,11 @@ void read_regressor_file(VW::workspace& all, const std::vector<std::string>& all
   {
     io_temp.add_file(VW::io::open_file_reader(all_intial[0]));
 
-    if (!all.logger.quiet)
+    if (!all.quiet)
     {
       // *(all.trace_message) << "initial_regressor = " << regs[0] << std::endl;
       if (all_intial.size() > 1)
-      {
-        *(all.trace_message) << "warning: ignoring remaining " << (all_intial.size() - 1) << " initial regressors"
-                             << std::endl;
-      }
+      { all.logger.err_warn("Ignoring remaining {} initial regressors", (all_intial.size() - 1)); }
     }
   }
 }

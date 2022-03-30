@@ -11,7 +11,7 @@
 #include "vw_example.h"
 #include "vw_builder.h"
 #include "clr_io.h"
-#include "lda_core.h"
+#include "reductions/lda_core.h"
 #include "parse_example.h"
 #include "parse_example_json.h"
 #include "shared_data.h"
@@ -97,7 +97,7 @@ VowpalWabbitPerformanceStatistics^ VowpalWabbit::PerformanceStatistics::get()
 	  stats->AverageLoss = m_vw->sd->holdout_best_loss;
 
   float best_constant; float best_constant_loss;
-  if (get_best_constant(m_vw->loss.get(), m_vw->sd, best_constant, best_constant_loss))
+  if (get_best_constant(*m_vw->loss, *m_vw->sd, best_constant, best_constant_loss))
   { stats->BestConstant = best_constant;
     if (best_constant_loss != FLT_MIN)
     { stats->BestConstantLoss = best_constant_loss;
@@ -840,7 +840,8 @@ cli::array<List<VowpalWabbitFeature^>^>^ VowpalWabbit::GetTopicAllocation(int to
   std::vector<feature> top_weights;
   // over topics
   for (int topic = 0; topic < K; topic++)
-  { get_top_weights(m_vw, top, topic, top_weights);
+  {
+    VW::reductions::lda::get_top_weights(m_vw, top, topic, top_weights);
 
     auto clr_weights = gcnew List<VowpalWabbitFeature^>(top);
     allocation[topic] = clr_weights;

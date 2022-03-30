@@ -3,12 +3,12 @@
 // license as described in the file LICENSE.
 
 #pragma once
-#include <cstdint>
-#include <cstddef>  // defines size_t
-#include <string>
-
 #include "future_compat.h"
 #include "hash.h"
+
+#include <cstddef>  // defines size_t
+#include <cstdint>
+#include <string>
 
 VW_STD14_CONSTEXPR inline uint64_t hashall(const char* s, size_t len, uint64_t h) { return uniform_hash(s, len, h); }
 

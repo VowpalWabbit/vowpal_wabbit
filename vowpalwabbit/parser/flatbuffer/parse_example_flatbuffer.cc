@@ -2,16 +2,17 @@
 // individual contributors. All rights reserved. Released under a BSD (revised)
 // license as described in the file LICENSE.
 
-#include <fstream>
-#include <iostream>
-#include <cfloat>
+#include "parse_example_flatbuffer.h"
 
-#include "../../global_data.h"
-#include "../../constant.h"
-#include "../../cb.h"
 #include "../../action_score.h"
 #include "../../best_constant.h"
-#include "parse_example_flatbuffer.h"
+#include "../../cb.h"
+#include "../../constant.h"
+#include "../../global_data.h"
+
+#include <cfloat>
+#include <fstream>
+#include <iostream>
 
 namespace VW
 {
@@ -134,7 +135,7 @@ void parser::parse_example(VW::workspace* all, example* ae, const Example* eg)
 {
   all->example_parser->lbl_parser.default_label(ae->l);
   ae->is_newline = eg->is_newline();
-  parse_flat_label(all->sd, ae, eg);
+  parse_flat_label(all->sd, ae, eg, all->logger);
 
   if (flatbuffers::IsFieldPresent(eg, Example::VT_TAG))
   {
@@ -219,7 +220,7 @@ void parser::parse_features(VW::workspace* all, features& fs, const Feature* fea
   }
 }
 
-void parser::parse_flat_label(shared_data* sd, example* ae, const Example* eg)
+void parser::parse_flat_label(shared_data* sd, example* ae, const Example* eg, VW::io::logger& logger)
 {
   switch (eg->label_type())
   {
@@ -256,7 +257,7 @@ void parser::parse_flat_label(shared_data* sd, example* ae, const Example* eg)
     case Label_MultiClass:
     {
       auto mc_label = static_cast<const MultiClass*>(eg->label());
-      parse_mc_label(sd, &(ae->l), mc_label);
+      parse_mc_label(sd, &(ae->l), mc_label, logger);
       break;
     }
     case Label_MultiLabel:

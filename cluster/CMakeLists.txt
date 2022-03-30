@@ -1,9 +1,9 @@
 set(vowpal_wabbit_dir "${CMAKE_CURRENT_SOURCE_DIR}/../vowpalwabbit")
 
 add_executable(spanning_tree
-spanning_tree_main.cc
-${vowpal_wabbit_dir}/spanning_tree.cc
-${vowpal_wabbit_dir}/vw_exception.cc)
+  spanning_tree_main.cc
+  ${vowpal_wabbit_dir}/spanning_tree.cc
+)
 
 # Winsock32 should be available on Windows
 if(WIN32)
@@ -15,7 +15,7 @@ if(STATIC_LINK_VW)
 endif()
 
 target_include_directories(spanning_tree PRIVATE ${vowpal_wabbit_dir})
-target_link_libraries(spanning_tree PRIVATE Boost::program_options ${LINK_THREADS})
+target_link_libraries(spanning_tree PRIVATE VowpalWabbit::vw)
 
 if(VW_INSTALL)
   install(

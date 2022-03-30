@@ -1,0 +1,1 @@
+[critical] vw (option_group_definition.cc:30): Error: '5' is not a valid choice for option --math-mode. Please select from {0, 1, 2}

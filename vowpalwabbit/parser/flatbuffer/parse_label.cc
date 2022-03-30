@@ -2,18 +2,19 @@
 // individual contributors. All rights reserved. Released under a BSD (revised)
 // license as described in the file LICENSE.
 
-#include <fstream>
-#include <iostream>
-#include <cfloat>
-
-#include "../../global_data.h"
-#include "../../example.h"
-#include "../../constant.h"
-#include "../../cb.h"
 #include "../../action_score.h"
 #include "../../best_constant.h"
+#include "../../cb.h"
+#include "../../constant.h"
+#include "../../example.h"
+#include "../../global_data.h"
+#include "../../named_labels.h"
 #include "../../slates_label.h"
 #include "parse_example_flatbuffer.h"
+
+#include <cfloat>
+#include <fstream>
+#include <iostream>
 
 namespace VW
 {
@@ -105,7 +106,7 @@ void parser::parse_cs_label(polylabel* l, const CS_Label* label)
   }
 }
 
-void parser::parse_mc_label(shared_data* sd, polylabel* l, const MultiClass* label)
+void parser::parse_mc_label(shared_data* sd, polylabel* l, const MultiClass* label, VW::io::logger& logger)
 {
   std::string named_label;
   if (flatbuffers::IsFieldPresent(label, MultiClass::VT_NAMEDLABEL))
@@ -115,7 +116,7 @@ void parser::parse_mc_label(shared_data* sd, polylabel* l, const MultiClass* lab
     if (named_label.empty()) { l->multi.label = static_cast<uint32_t>(-1); }
     else
     {
-      l->multi.label = static_cast<uint32_t>(sd->ldict->get(VW::string_view(named_label)));
+      l->multi.label = static_cast<uint32_t>(sd->ldict->get(VW::string_view(named_label), logger));
     }
   }
   else

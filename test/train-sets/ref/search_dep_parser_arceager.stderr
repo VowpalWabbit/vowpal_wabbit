@@ -1,20 +1,20 @@
+creating cache_file = train-sets/wsj_small.dparser.vw.gz.cache
+Reading datafile = train-sets/wsj_small.dparser.vw.gz
+num sources = 1
 Num weight bits = 20
 learning rate = 0.5
 initial_t = 0
 power_t = 0.5
 decay_learning_rate = 1
-creating cache_file = train-sets/wsj_small.dparser.vw.gz.cache
-Reading datafile = train-sets/wsj_small.dparser.vw.gz
-num sources = 1
 Enabled reductions: gd, scorer-identity, csoaa, search_task
 Input label = cs
 Output pred = multiclass
 average    since      instance            current true      current predicted   cur   cur   predic    cache  examples          
 loss       last        counter           output prefix          output prefix  pass   pol     made     hits    gener  beta    
-97.000000  97.000000         1  [43:1 5:2 5:2 5:2 1..] [0:1 0:1 0:1 0:1 0:..]     0     0       97        0       97  0.000960
-52.500000  8.000000          2  [2:2 3:5 0:8 3:7 3:4 ] [2:2 0:8 4:2 2:3 2:4 ]     0     0      106        0      106  0.001049
-26.250000  0.000000          4  [2:2 3:5 0:8 3:7 3:4 ] [2:2 3:5 0:8 3:7 3:4 ]     1     0      115        0      212  0.002108
-13.125000  0.000000          8  [2:2 3:5 0:8 3:7 3:4 ] [2:2 3:5 0:8 3:7 3:4 ]     3     0      124        0      424  0.004221
+96.000000  96.000000         1  [43:1 5:2 5:2 5:2 1..] [49:1 49:1 49:1 49:..]     0     0       95        0       95  0.000940
+51.000000  6.000000          2  [2:2 3:5 5:8 3:7 99..] [2:2 4:2 4:2 5:2 99..]     0     0      102        0      102  0.001009
+26.000000  1.000000          4  [2:2 3:5 5:8 3:7 99..] [2:2 3:5 5:1 3:7 99..]     1     0      109        0      204  0.002028
+13.250000  0.500000          8  [2:2 3:5 5:8 3:7 99..] [2:2 3:5 5:1 3:7 99..]     3     0      116        0      408  0.004062
 
 finished run
 number of examples per pass = 2
@@ -22,4 +22,4 @@ passes used = 4
 weighted example sum = 8.000000
 weighted label sum = 0.000000
 average loss = undefined (no holdout)
-total feature number = 32302
+total feature number = 32707

@@ -3,13 +3,9 @@
 // license as described in the file LICENSE.
 #pragma once
 
-#include <cstddef>
+#include "vw_fwd.h"
 
-struct example;
-namespace VW
-{
-struct workspace;
-}
+#include <cstddef>
 
 struct label_data
 {
@@ -34,7 +30,7 @@ struct simple_label_reduction_features
   }
 };
 
-void return_simple_example(VW::workspace& all, void*, example& ec);
+void return_simple_example(VW::workspace& all, void*, VW::example& ec);
 bool summarize_holdout_set(VW::workspace& all, size_t& no_win_counter);
-void print_update(VW::workspace& all, example& ec);
-void output_and_account_example(VW::workspace& all, example& ec);
+void print_update(VW::workspace& all, const VW::example& ec);
+void output_and_account_example(VW::workspace& all, const VW::example& ec);

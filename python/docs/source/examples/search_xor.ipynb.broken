@@ -71,7 +71,7 @@
     "               (2, (+1, -1)) ]\n",
     "\n",
     "\n",
-    "vw = pyvw.vw(\"--search 2 --search_task hook --ring_size 1024 --search_alpha 1e-2\")\n",
+    "vw = pyvw.Workspace(\"--search 2 --search_task hook --ring_size 1024 --search_alpha 1e-2\")\n",
     "lv = vw.init_search_task(LatentVariableClassifier)\n",
     "\n",
     "print('training')\n",

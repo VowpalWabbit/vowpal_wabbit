@@ -4,13 +4,14 @@
 
 #pragma once
 
-#include "label_parser.h"
-#include "v_array.h"
 #include "future_compat.h"
+#include "label_parser.h"
+#include "parse_example.h"
 #include "parser.h"
+#include "v_array.h"
 
-#include <cstring>
 #include <cfloat>
+#include <cstring>
 
 // seems to help with skipping spaces
 //#define RAPIDJSON_SIMD
@@ -28,8 +29,8 @@
 // https://github.com/Tencent/rapidjson/issues/1700
 VW_WARNING_STATE_PUSH
 VW_WARNING_DISABLE_CLASS_MEMACCESS
-#include <rapidjson/reader.h>
 #include <rapidjson/error/en.h>
+#include <rapidjson/reader.h>
 VW_WARNING_STATE_POP
 
 #include "io/logger.h"
@@ -38,25 +39,23 @@ VW_WARNING_STATE_POP
 #  pragma managed(pop)
 #endif
 
-#include "cb.h"
-#include "conditional_contextual_bandit.h"
-#include "cb_continuous_label.h"
-
 #include "best_constant.h"
+#include "cb.h"
+#include "cb_continuous_label.h"
 #include "json_utils.h"
 #include "parse_slates_example_json.h"
+#include "reductions/conditional_contextual_bandit.h"
 #include "vw_string_view.h"
+
 #include <algorithm>
-#include <vector>
 #include <limits>
 #include <sstream>
+#include <vector>
 
 // portability fun
 #ifndef _WIN32
 #  define _stricmp strcasecmp
 #endif
-
-namespace logger = VW::io::logger;
 
 using namespace rapidjson;
 
@@ -338,7 +337,8 @@ public:
     }
     else if (!_stricmp(ctx.key, "Weight"))
     {
-      ctx.ex->weight = v;
+      auto& simple_red_features = ctx.ex->_reduction_features.template get<simple_label_reduction_features>();
+      simple_red_features.weight = v;
       found = true;
     }
     // CB/CA
@@ -511,7 +511,8 @@ struct LabelState : BaseState<audit>
 
   BaseState<audit>* String(Context<audit>& ctx, const char* str, rapidjson::SizeType /* len */, bool) override
   {
-    VW::parse_example_label(str, ctx._label_parser, ctx._ldict, *ctx._reuse_mem, *ctx.ex);
+    auto null_logger = VW::io::create_null_logger();
+    VW::parse_example_label(str, ctx._label_parser, ctx._ldict, *ctx._reuse_mem, *ctx.ex, null_logger);
     return ctx.previous_state;
   }
 
@@ -924,16 +925,15 @@ public:
       else if (length == 8 && !strncmp(str, "_slot_id", 8))
       {
         if (ctx._label_parser.label_type != VW::label_type_t::slates)
-        { THROW("Can only use _slot_id with slates examples"); } ctx.uint_state.output_uint = &ctx.ex->l.slates.slot_id;
+        { THROW("Can only use _slot_id with slates examples"); }
+        ctx.uint_state.output_uint = &ctx.ex->l.slates.slot_id;
         ctx.array_float_state.return_state = this;
         return &ctx.array_float_state;
       }
 
       else if (ctx.key_length == 20 && !strncmp(str, "_original_label_cost", 20))
       {
-        if(!ctx.decision_service_data) {
-          THROW("_original_label_cost is only valid in DSJson");
-        }
+        if (!ctx.decision_service_data) { THROW("_original_label_cost is only valid in DSJson"); }
         ctx.original_label_cost_state.aggr_float = &ctx.decision_service_data->originalLabelCost;
         ctx.original_label_cost_state.first_slot_float = &ctx.decision_service_data->originalLabelCostFirstSlot;
         ctx.original_label_cost_state.return_state = this;
@@ -1027,7 +1027,7 @@ public:
       if (ctx._label_parser.label_type == VW::label_type_t::ccb)
       {
         auto num_slots = std::count_if(ctx.examples->begin(), ctx.examples->end(),
-            [](example* ex) { return ex->l.conditional_contextual_bandit.type == CCB::example_type::slot; });
+            [](VW::example* ex) { return ex->l.conditional_contextual_bandit.type == CCB::example_type::slot; });
         if (num_slots == 0 && ctx.label_object_state.found_cb)
         {
           ctx.ex = &(*ctx.example_factory)(ctx.example_factory_context);
@@ -1172,14 +1172,11 @@ public:
 
 // AggrFunc prototype is void (*)(float *input_output, float f);
 // Basic Aggregation Types
-namespace float_aggregation {
-inline void set(float* output, float f) {
-  *output = f;
-}
-inline void add(float* output, float f) {
-  *output += f;
-}
-}
+namespace float_aggregation
+{
+inline void set(float* output, float f) { *output = f; }
+inline void add(float* output, float f) { *output += f; }
+}  // namespace float_aggregation
 
 template <bool audit, void (*func)(float*, float)>
 class FloatToFloatState : public BaseState<audit>
@@ -1196,10 +1193,7 @@ public:
     return return_state;
   }
 
-  BaseState<audit>* Uint(Context<audit>& ctx, unsigned i) override
-  {
-    return Float(ctx, static_cast<float>(i));
-  }
+  BaseState<audit>* Uint(Context<audit>& ctx, unsigned i) override { return Float(ctx, static_cast<float>(i)); }
 
   BaseState<audit>* Null(Context<audit>& /*ctx*/) override
   {
@@ -1225,17 +1219,15 @@ public:
   BaseState<audit>* Float(Context<audit>& /*ctx*/, float f) override
   {
     *aggr_float += f;
-    if(!seen_first) {
+    if (!seen_first)
+    {
       seen_first = true;
       *first_slot_float = f;
     }
     return return_state;
   }
 
-  BaseState<audit>* Uint(Context<audit>& ctx, unsigned i) override
-  {
-    return Float(ctx, static_cast<float>(i));
-  }
+  BaseState<audit>* Uint(Context<audit>& ctx, unsigned i) override { return Float(ctx, static_cast<float>(i)); }
 
   BaseState<audit>* Null(Context<audit>& /*ctx*/) override
   {
@@ -1243,7 +1235,6 @@ public:
     return return_state;
   }
 };
-
 
 template <bool audit>
 class UIntDedupState : public BaseState<audit>
@@ -1509,7 +1500,7 @@ private:
   std::unique_ptr<std::stringstream> error_ptr;
 
 public:
-  label_parser _label_parser;
+  VW::label_parser _label_parser;
   hash_func_t _hash_func;
   uint64_t _hash_seed;
   uint64_t _parse_mask;
@@ -1517,6 +1508,7 @@ public:
 
   VW::label_parser_reuse_mem* _reuse_mem;
   const VW::named_labels* _ldict;
+  VW::io::logger* _logger;
 
   // last "<key>": encountered
   const char* key;
@@ -1529,10 +1521,10 @@ public:
   std::vector<Namespace<audit>> namespace_path;
   std::vector<BaseState<audit>*> return_path;
 
-  std::unordered_map<uint64_t, example*>* dedup_examples = nullptr;
+  std::unordered_map<uint64_t, VW::example*>* dedup_examples = nullptr;
 
-  v_array<example*>* examples;
-  example* ex;
+  VW::v_array<VW::example*>* examples;
+  VW::example* ex;
   rapidjson::InsituStringStream* stream;
   const char* stream_end;
 
@@ -1578,10 +1570,11 @@ public:
     root_state = &default_state;
   }
 
-  void init(const label_parser& lbl_parser, hash_func_t hash_func, uint64_t hash_seed, uint64_t parse_mask,
-      bool chain_hash, VW::label_parser_reuse_mem* reuse_mem, const VW::named_labels* ldict)
+  void init(const VW::label_parser& lbl_parser, hash_func_t hash_func, uint64_t hash_seed, uint64_t parse_mask,
+      bool chain_hash, VW::label_parser_reuse_mem* reuse_mem, const VW::named_labels* ldict, VW::io::logger* logger)
   {
     assert(reuse_mem != nullptr);
+    assert(logger != nullptr);
     _label_parser = lbl_parser;
     _hash_func = hash_func;
     _hash_seed = hash_seed;
@@ -1589,6 +1582,7 @@ public:
     _chain_hash = chain_hash;
     _reuse_mem = reuse_mem;
     _ldict = ldict;
+    _logger = logger;
 
     key = " ";
     key_length = 1;
@@ -1640,13 +1634,13 @@ struct VWReaderHandler : public rapidjson::BaseReaderHandler<rapidjson::UTF8<>, 
 {
   Context<audit> ctx;
 
-  void init(const label_parser& lbl_parser, hash_func_t hash_func, uint64_t hash_seed, uint64_t parse_mask,
-      bool chain_hash, VW::label_parser_reuse_mem* reuse_mem, const VW::named_labels* ldict,
-      v_array<example*>* examples, rapidjson::InsituStringStream* stream, const char* stream_end,
+  void init(const VW::label_parser& lbl_parser, hash_func_t hash_func, uint64_t hash_seed, uint64_t parse_mask,
+      bool chain_hash, VW::label_parser_reuse_mem* reuse_mem, const VW::named_labels* ldict, VW::io::logger* logger,
+      VW::v_array<VW::example*>* examples, rapidjson::InsituStringStream* stream, const char* stream_end,
       VW::example_factory_t example_factory, void* example_factory_context,
-      std::unordered_map<uint64_t, example*>* dedup_examples = nullptr)
+      std::unordered_map<uint64_t, VW::example*>* dedup_examples = nullptr)
   {
-    ctx.init(lbl_parser, hash_func, hash_seed, parse_mask, chain_hash, reuse_mem, ldict);
+    ctx.init(lbl_parser, hash_func, hash_seed, parse_mask, chain_hash, reuse_mem, ldict, logger);
     ctx.examples = examples;
     ctx.ex = (*examples)[0];
     lbl_parser.default_label(ctx.ex->l);
@@ -1700,10 +1694,11 @@ struct json_parser
 namespace VW
 {
 template <bool audit>
-void read_line_json_s(const label_parser& lbl_parser, hash_func_t hash_func, uint64_t hash_seed, uint64_t parse_mask,
-    bool chain_hash, VW::label_parser_reuse_mem* reuse_mem, const VW::named_labels* ldict, v_array<example*>& examples,
-    char* line, size_t length, example_factory_t example_factory, void* ex_factory_context,
-    std::unordered_map<uint64_t, example*>* dedup_examples = nullptr)
+void read_line_json_s(const VW::label_parser& lbl_parser, hash_func_t hash_func, uint64_t hash_seed,
+    uint64_t parse_mask, bool chain_hash, VW::label_parser_reuse_mem* reuse_mem, const VW::named_labels* ldict,
+    VW::v_array<VW::example*>& examples, char* line, size_t length, example_factory_t example_factory,
+    void* ex_factory_context, VW::io::logger& logger,
+    std::unordered_map<uint64_t, VW::example*>* dedup_examples = nullptr)
 {
   if (lbl_parser.label_type == VW::label_type_t::slates)
   {
@@ -1719,7 +1714,7 @@ void read_line_json_s(const label_parser& lbl_parser, hash_func_t hash_func, uin
 
   VWReaderHandler<audit>& handler = parser.handler;
 
-  handler.init(lbl_parser, hash_func, hash_seed, parse_mask, chain_hash, reuse_mem, ldict, &examples, &ss,
+  handler.init(lbl_parser, hash_func, hash_seed, parse_mask, chain_hash, reuse_mem, ldict, &logger, &examples, &ss,
       line + length, example_factory, ex_factory_context, dedup_examples);
 
   ParseResult result =
@@ -1740,20 +1735,21 @@ void read_line_json_s(const label_parser& lbl_parser, hash_func_t hash_func, uin
 }
 
 template <bool audit>
-void read_line_json_s(VW::workspace& all, v_array<example*>& examples, char* line, size_t length,
+void read_line_json_s(VW::workspace& all, VW::v_array<VW::example*>& examples, char* line, size_t length,
     example_factory_t example_factory, void* ex_factory_context,
-    std::unordered_map<uint64_t, example*>* dedup_examples = nullptr)
+    std::unordered_map<uint64_t, VW::example*>* dedup_examples = nullptr)
 {
   return read_line_json_s<audit>(all.example_parser->lbl_parser, all.example_parser->hasher, all.hash_seed,
       all.parse_mask, all.chain_hash_json, &all.example_parser->parser_memory_to_reuse, all.sd->ldict.get(), examples,
-      line, length, example_factory, ex_factory_context, dedup_examples);
+      line, length, example_factory, ex_factory_context, all.logger, dedup_examples);
 }
 
-inline bool apply_pdrop(label_type_t label_type, float pdrop, v_array<example*>& examples)
+inline bool apply_pdrop(
+    label_type_t label_type, float pdrop, VW::v_array<VW::example*>& examples, VW::io::logger& logger)
 {
   if (pdrop == 1.)
   {
-    logger::errlog_error("JSON parser error: examples with pdrop==1 are not supported");
+    logger.err_error("JSON parser error: examples with pdrop==1 are not supported");
     return false;
   }
   // Event with certain pdrop had (1-pdrop) as probability to survive,
@@ -1775,13 +1771,13 @@ inline bool apply_pdrop(label_type_t label_type, float pdrop, v_array<example*>&
 
 // returns true if succesfully parsed, returns false if not and logs warning
 template <bool audit>
-bool read_line_decision_service_json(VW::workspace& all, v_array<example*>& examples, char* line, size_t length,
+bool read_line_decision_service_json(VW::workspace& all, VW::v_array<VW::example*>& examples, char* line, size_t length,
     bool copy_line, example_factory_t example_factory, void* ex_factory_context, DecisionServiceInteraction* data)
 {
   if (all.example_parser->lbl_parser.label_type == VW::label_type_t::slates)
   {
     parse_slates_example_dsjson<audit>(all, examples, line, length, example_factory, ex_factory_context, data);
-    return apply_pdrop(all.example_parser->lbl_parser.label_type, data->probabilityOfDrop, examples);
+    return apply_pdrop(all.example_parser->lbl_parser.label_type, data->probabilityOfDrop, examples, all.logger);
   }
 
   std::vector<char> line_vec;
@@ -1796,8 +1792,8 @@ bool read_line_decision_service_json(VW::workspace& all, v_array<example*>& exam
 
   VWReaderHandler<audit>& handler = parser.handler;
   handler.init(all.example_parser->lbl_parser, all.example_parser->hasher, all.hash_seed, all.parse_mask,
-      all.chain_hash_json, &all.example_parser->parser_memory_to_reuse, all.sd->ldict.get(), &examples, &ss,
-      line + length, example_factory, ex_factory_context);
+      all.chain_hash_json, &all.example_parser->parser_memory_to_reuse, all.sd->ldict.get(), &all.logger, &examples,
+      &ss, line + length, example_factory, ex_factory_context);
 
   handler.ctx.SetStartStateToDecisionService(data);
   handler.ctx.decision_service_data = data;
@@ -1822,18 +1818,18 @@ bool read_line_decision_service_json(VW::workspace& all, v_array<example*>& exam
     }
     else
     {
-      logger::errlog_error("JSON parser error at {0}: {1}. Handler: {2} State: {3}", result.Offset(),
+      all.logger.err_error("JSON parser error at {0}: {1}. Handler: {2} State: {3}", result.Offset(),
           GetParseError_En(result.Code()), handler.error().str(), (current_state ? current_state->name : "null"));
       return false;
     }
   }
 
-  return apply_pdrop(all.example_parser->lbl_parser.label_type, data->probabilityOfDrop, examples);
+  return apply_pdrop(all.example_parser->lbl_parser.label_type, data->probabilityOfDrop, examples, all.logger);
 }  // namespace VW
 }  // namespace VW
 
 template <bool audit>
-bool parse_line_json(VW::workspace* all, char* line, size_t num_chars, v_array<example*>& examples)
+bool parse_line_json(VW::workspace* all, char* line, size_t num_chars, VW::v_array<VW::example*>& examples)
 {
   if (all->example_parser->decision_service_json)
   {
@@ -1925,7 +1921,7 @@ bool parse_line_json(VW::workspace* all, char* line, size_t num_chars, v_array<e
   return true;
 }
 
-inline void append_empty_newline_example_for_driver(VW::workspace* all, v_array<example*>& examples)
+inline void append_empty_newline_example_for_driver(VW::workspace* all, VW::v_array<VW::example*>& examples)
 {
   // note: the json parser does single pass parsing and cannot determine if a shared example is needed.
   // since the communication between the parsing thread the main learner expects examples to be requested in order (as
@@ -1935,7 +1931,7 @@ inline void append_empty_newline_example_for_driver(VW::workspace* all, v_array<
   // insert new line example at the end
   if (examples.size() > 1)
   {
-    example& ae = VW::get_unused_example(all);
+    VW::example& ae = VW::get_unused_example(all);
     static const char empty[] = "";
     VW::string_view example(empty);
     substring_to_example(all, &ae, example);
@@ -1947,7 +1943,7 @@ inline void append_empty_newline_example_for_driver(VW::workspace* all, v_array<
 
 // This is used by the python parser
 template <bool audit>
-void line_to_examples_json(VW::workspace* all, const char* line, size_t num_chars, v_array<example*>& examples)
+void line_to_examples_json(VW::workspace* all, const char* line, size_t num_chars, VW::v_array<VW::example*>& examples)
 {
   // The JSON reader does insitu parsing and therefore modifies the input
   // string, so we make a copy since this function cannot modify the input
@@ -1967,7 +1963,7 @@ void line_to_examples_json(VW::workspace* all, const char* line, size_t num_char
 }
 
 template <bool audit>
-int read_features_json(VW::workspace* all, io_buf& buf, v_array<example*>& examples)
+int read_features_json(VW::workspace* all, io_buf& buf, VW::v_array<VW::example*>& examples)
 {
   // Keep reading lines until a valid set of examples is produced.
   bool reread;

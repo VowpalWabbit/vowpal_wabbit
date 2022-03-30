@@ -4,8 +4,8 @@
 
 #pragma once
 
-#include "v_array.h"
 #include "object_pool.h"
+#include "v_array.h"
 
 namespace VW
 {

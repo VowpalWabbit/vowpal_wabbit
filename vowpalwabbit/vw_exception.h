@@ -4,13 +4,13 @@
 
 #pragma once
 #ifndef VW_NOEXCEPT
-#  include <stdexcept>
-#  include <sstream>
-#  include <array>
-#  include <string>
-
-#  include <cstring>
 #  include <string.h>
+
+#  include <array>
+#  include <cstring>
+#  include <sstream>
+#  include <stdexcept>
+#  include <string>
 
 #  ifndef _WIN32
 #    include <locale.h>
@@ -44,7 +44,7 @@ public:
   vw_exception& operator=(const vw_exception& other) = default;
   vw_exception(vw_exception&& ex) = default;
   vw_exception& operator=(vw_exception&& other) = default;
-  ~vw_exception() noexcept = default;
+  ~vw_exception() noexcept override = default;
 
   const char* what() const noexcept override { return _message.c_str(); }
   const char* Filename() const { return _file; }
@@ -165,30 +165,10 @@ inline std::string strerror_to_string(int error_number)
 }
 
 #  ifdef _WIN32
-void vw_trace(const char* filename, int linenumber, const char* fmt, ...);
-
-// useful when hunting down release mode bugs
-#    define VW_TRACE(fmt, ...) VW::vw_trace(__FILE__, __LINE__, fmt, __VA_ARGS__)
-
-struct StopWatchData;
-
-class StopWatch
-{
-  StopWatchData* data;
-
-public:
-  StopWatch();
-  ~StopWatch();
-
-  double MilliSeconds() const;
-};
-
-// Equivalent to System::Diagnostics::Debugger::Launch();
-bool launchDebugger();
 
 #    define THROWERRNO(args)                                         \
       {                                                              \
-        std::stringstream __msg;                                     \
+        std::ostringstream __msg;                                    \
         __msg << args;                                               \
         __msg << ", errno = " << VW::strerror_to_string(errno);      \
         throw VW::vw_exception(__FILENAME__, __LINE__, __msg.str()); \
@@ -196,7 +176,7 @@ bool launchDebugger();
 #  else
 #    define THROWERRNO(args)                                         \
       {                                                              \
-        std::stringstream __msg;                                     \
+        std::ostringstream __msg;                                    \
         __msg << args;                                               \
         __msg << ", errno = " << VW::strerror_to_string(errno);      \
         throw VW::vw_exception(__FILENAME__, __LINE__, __msg.str()); \
@@ -206,14 +186,14 @@ bool launchDebugger();
 // ease error handling and also log filename and line number
 #  define THROW(args)                                              \
     {                                                              \
-      std::stringstream __msg;                                     \
+      std::ostringstream __msg;                                    \
       __msg << args;                                               \
       throw VW::vw_exception(__FILENAME__, __LINE__, __msg.str()); \
     }
 
 #  define THROW_EX(ex, args)                         \
     {                                                \
-      std::stringstream __msg;                       \
+      std::ostringstream __msg;                      \
       __msg << args;                                 \
       throw ex(__FILENAME__, __LINE__, __msg.str()); \
     }
@@ -250,7 +230,7 @@ bool launchDebugger();
 #  define THROW_OR_RETURN_NORMAL(args, retval)                  \
     do                                                          \
     {                                                           \
-      std::stringstream __msgA;                                 \
+      std::ostringstream __msgA;                                \
       __msgA << args;                                           \
       throw VW::vw_exception(__FILE__, __LINE__, __msgA.str()); \
     } while (0)
@@ -258,7 +238,7 @@ bool launchDebugger();
 #  define THROW_OR_RETURN_VOID(args)                            \
     do                                                          \
     {                                                           \
-      std::stringstream __msgB;                                 \
+      std::ostringstream __msgB;                                \
       __msgB << args;                                           \
       throw VW::vw_exception(__FILE__, __LINE__, __msgB.str()); \
     } while (0)

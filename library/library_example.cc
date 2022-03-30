@@ -10,9 +10,9 @@ inline feature vw_feature_from_string(VW::workspace& v, std::string fstr, unsign
 
 int main(int argc, char *argv[])
 {
-  VW::workspace* model = VW::initialize("--hash all -q st --noconstant -i train.w -f train2.vw --no_stdin");
+  VW::workspace* model = VW::initialize("--hash all -q st --noconstant -f train2.vw --no_stdin");
 
-  example *vec2 = VW::read_example(*model, (char*)"|s p^the_man w^the w^man |t p^un_homme w^un w^homme");
+  VW::example* vec2 = VW::read_example(*model, (char*)"|s p^the_man w^the w^man |t p^un_homme w^un w^homme");
   model->learn(*vec2);
   std::cerr << "p2 = " << vec2->pred.scalar << std::endl;
   VW::finish_example(*model, *vec2);
@@ -35,7 +35,7 @@ int main(int argc, char *argv[])
   t->fs[0] = vw_feature_from_string(*model, "p^le_homme", t_hash, 1.0);
   t->fs[1] = vw_feature_from_string(*model, "w^le", t_hash, 1.0);
   t->fs[2] = vw_feature_from_string(*model, "w^homme", t_hash, 1.0);
-  example* vec3 = VW::import_example(*model, "", features, 2);
+  VW::example* vec3 = VW::import_example(*model, "", features, 2);
 
   model->learn(*vec3);
   std::cerr << "p3 = " << vec3->pred.scalar << std::endl;
@@ -54,7 +54,10 @@ int main(int argc, char *argv[])
   for (size_t i = 0; i < len; i++)
   { std::cout << "namespace = " << pfs[i].name;
     for (size_t j = 0; j < pfs[i].len; j++)
-      std::cout << " " << pfs[i].fs[j].weight_index << ":" << pfs[i].fs[j].x << ":" << VW::get_weight(*model2, static_cast<uint32_t>(pfs[i].fs[j].weight_index), 0);
+    {
+      std::cout << " " << pfs[i].fs[j].weight_index << ":" << pfs[i].fs[j].x << ":"
+                << VW::get_weight(*model2, static_cast<uint32_t>(pfs[i].fs[j].weight_index), 0);
+    }
     std::cout << std::endl;
   }
 

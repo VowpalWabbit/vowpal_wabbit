@@ -6,8 +6,8 @@
 
 #include "../vw_exception.h"
 
-#include <string>
 #include <memory>
+#include <string>
 #include <vector>
 
 // ssize_t

@@ -27,7 +27,7 @@ void trace_listener_cli(void* context, const std::string& message)
 {
 	auto listener = (Action<String^>^)GCHandle::FromIntPtr(IntPtr(context)).Target;
 	auto str = gcnew String(message.c_str());
-	listener(str->TrimEnd());
+	listener(str);
 }
 
 VowpalWabbitBase::VowpalWabbitBase(VowpalWabbitSettings^ settings)
@@ -237,9 +237,12 @@ void VowpalWabbitBase::SaveModel(String^ filename)
     throw gcnew ArgumentException("Filename must not be null or empty");
 
   String^ directoryName = System::IO::Path::GetDirectoryName(filename);
-
   if (!String::IsNullOrEmpty(directoryName))
-  { System::IO::Directory::CreateDirectory(directoryName);
+  {
+    auto dir = msclr::interop::marshal_as<std::string>(directoryName);
+    // CreateDirectoryA requires a LPCSTR (long, pointer to c-string) so .c_str() should work.
+    // The second argument, lpSecurityAttributes, is optional.
+    CreateDirectoryA(dir.c_str(), nullptr);
   }
 
   auto name = msclr::interop::marshal_as<std::string>(filename);

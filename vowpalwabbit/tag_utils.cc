@@ -1,4 +1,5 @@
 #include "tag_utils.h"
+
 #include "example.h"
 
 namespace VW
