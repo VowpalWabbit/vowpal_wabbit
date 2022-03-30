@@ -262,13 +262,17 @@ jobs:
   windows-python-build:
     name: windows-2019.amd64.py${{ matrix.config.version }}.build
     runs-on: windows-2019
+    env:
+      VCPKG_ROOT: ${{ github.workspace }}\\vcpkg
+      VCPKG_REF: 773516ecf6014d89cc69b11bb54605ad4be56694
+      VCPKG_DEFAULT_BINARY_CACHE: ${{ github.workspace }}\vcpkg_binary_cache
     strategy:
       matrix:
         config:
         - { version: "3.6", vcpkg_manifest: "python\\vcpkg_default.json", overlay_ports: "python\\vcpkg_python_override_ports\\python36\\"}
         - { version: "3.7", vcpkg_manifest: "python\\vcpkg_default.json", overlay_ports: "python\\vcpkg_python_override_ports\\python37\\"}
         - { version: "3.8", vcpkg_manifest: "python\\vcpkg_default.json", overlay_ports: "python\\vcpkg_python_override_ports\\python38\\" }
-        - { version: "3.9", vcpkg_manifest: "python\\vcpkg_python39.json", overlay_ports: "" }
+        - { version: "3.9", vcpkg_manifest: "python\\vcpkg_default.json", overlay_ports: "python\\vcpkg_python_override_ports\\python39\\" }
         - { version: "3.10", vcpkg_manifest: "python\\vcpkg_python310.json", overlay_ports: "" }
       fail-fast: false
     steps:
@@ -277,20 +281,35 @@ jobs:
           python-version: ${{ matrix.config.version }}
       - uses: actions/checkout@v2
         with:
-          path: ${{github.workspace}}\\vowpal_wabbit\\
-      - name: Restore cache or fetch vcpkg
-        uses: lukka/run-vcpkg@v10
+          path: ${{github.workspace}}\vowpal_wabbit
+      - uses: actions/checkout@v2
         with:
-          vcpkgDirectory: ${{github.workspace}}\\vcpkg
-          vcpkgGitCommitId: a515872b1abf58b639bf8b15ab5fe23b62f25ac3
-          vcpkgJsonGlob: ${{ matrix.config.vcpkg_manifest }}
+          path: ${{ env.VCPKG_ROOT }}
+          repository: 'microsoft/vcpkg'
+          ref: ${{ env.VCPKG_REF }}
+          # We need a deep clone so that we can go back in history for version selection.
+          fetch-depth: '0'
+      - name: Restore vcpkg and build artifacts
+        uses: actions/cache@v2
+        with:
+          path: |
+            ${{ env.VCPKG_DEFAULT_BINARY_CACHE }}
+          key: |
+            ${{ env.VCPKG_REF }}-${{ matrix.config.version }}-python-win-cache-invalidate-5
+      - run: ${{ env.VCPKG_ROOT }}/bootstrap-vcpkg.bat
       - name: Build wheel
         shell: powershell
         run: |
+          if (![System.IO.Directory]::Exists("${{ env.VCPKG_DEFAULT_BINARY_CACHE }}"))
+          {
+              New-Item -ItemType Directory -Force -Path "${{ env.VCPKG_DEFAULT_BINARY_CACHE }}"
+          }
+          ls ${{ github.workspace }}
+          ls ${{ env.VCPKG_DEFAULT_BINARY_CACHE }}
           cd ${{github.workspace}}\\vowpal_wabbit
           cp ${{ matrix.config.vcpkg_manifest }} vcpkg.json
           pip install wheel
-          pip wheel . -w ${{github.workspace}}\\wheel_output --global-option --vcpkg-root="${{github.workspace}}\\vcpkg" --global-option --cmake-generator="Visual Studio 16 2019" --global-option --cmake-options="-DVCPKG_OVERLAY_PORTS=${{github.workspace}}\\vowpal_wabbit\\${{ matrix.config.overlay_ports }}"  --verbose
+          pip wheel . -w ${{github.workspace}}\\wheel_output --global-option --vcpkg-root="${{ env.VCPKG_ROOT }}" --global-option --cmake-generator="Visual Studio 16 2019" --global-option --cmake-options="-DVCPKG_OVERLAY_PORTS=${{github.workspace}}\\vowpal_wabbit\\${{ matrix.config.overlay_ports }}"  --verbose
       - name: Upload built wheel
         uses: actions/upload-artifact@v1
         with:
@@ -303,7 +322,7 @@ jobs:
     strategy:
       matrix:
         version: ["3.6", "3.7", "3.8", "3.9", "3.10"]
-        os: ["windows-2016", "windows-2019"]
+        os: ["windows-2019"]
       fail-fast: false
     steps:
       - uses: actions/checkout@v2

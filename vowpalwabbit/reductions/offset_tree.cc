@@ -14,6 +14,8 @@ using namespace VW::LEARNER;
 
 namespace VW
 {
+namespace reductions
+{
 namespace offset_tree
 {
 tree_node::tree_node(uint32_t node_id, uint32_t left_node_id, uint32_t right_node_id, uint32_t p_id, bool is_leaf)
@@ -222,14 +224,20 @@ void offset_tree::learn(LEARNER::single_learner& base, example& ec)
   ec.l.cb.costs[0].action = global_action;
   ec.weight = global_weight;
 }
+}  // namespace offset_tree
+}  // namespace reductions
+}  // namespace VW
 
-inline void copy_to_action_scores(const offset_tree::scores_t& scores, ACTION_SCORE::action_scores& a_s)
+namespace
+{
+inline void copy_to_action_scores(
+    const VW::reductions::offset_tree::offset_tree::scores_t& scores, ACTION_SCORE::action_scores& a_s)
 {
   a_s.clear();
   for (uint32_t idx = 0; idx < scores.size(); ++idx) { a_s.push_back({idx, scores[idx]}); }
 }
 
-void predict(offset_tree& tree, single_learner& base, example& ec)
+void predict(VW::reductions::offset_tree::offset_tree& tree, single_learner& base, example& ec)
 {
   // get predictions for all internal nodes in binary tree.
   ec.pred.a_s.clear();
@@ -237,12 +245,12 @@ void predict(offset_tree& tree, single_learner& base, example& ec)
   copy_to_action_scores(scores, ec.pred.a_s);
 }
 
-void learn(offset_tree& tree, single_learner& base, example& ec)
+void learn(VW::reductions::offset_tree::offset_tree& tree, single_learner& base, example& ec)
 {
   ec.pred.a_s.clear();
 
   // store predictions before learning
-  const offset_tree::scores_t& saved_scores = tree.predict(base, ec);
+  const auto& saved_scores = tree.predict(base, ec);
 
   // learn
   tree.learn(base, ec);
@@ -250,8 +258,9 @@ void learn(offset_tree& tree, single_learner& base, example& ec)
   // restore predictions
   copy_to_action_scores(saved_scores, ec.pred.a_s);
 }
+}  // namespace
 
-base_learner* setup(VW::setup_base_i& stack_builder)
+base_learner* VW::reductions::offset_tree_setup(VW::setup_base_i& stack_builder)
 {
   options_i& options = *stack_builder.get_options();
   option_group_definition new_options("[Reduction] Offset Tree");
@@ -266,14 +275,14 @@ base_learner* setup(VW::setup_base_i& stack_builder)
   // default to legacy cb implementation
   options.insert("cb_force_legacy", "");
 
-  auto otree = VW::make_unique<offset_tree>(num_actions);
+  auto otree = VW::make_unique<VW::reductions::offset_tree::offset_tree>(num_actions);
   otree->init();
 
   base_learner* base = stack_builder.setup_base_learner();
   size_t ws = otree->learner_count();
 
   auto* l = make_reduction_learner(
-      std::move(otree), as_singleline(base), learn, predict, stack_builder.get_setupfn_name(setup))
+      std::move(otree), as_singleline(base), learn, predict, stack_builder.get_setupfn_name(offset_tree_setup))
                 .set_params_per_weight(ws)
                 .set_output_prediction_type(prediction_type_t::action_probs)
                 .set_input_label_type(label_type_t::cb)
@@ -281,5 +290,3 @@ base_learner* setup(VW::setup_base_i& stack_builder)
 
   return make_base(*l);
 }
-}  // namespace offset_tree
-}  // namespace VW

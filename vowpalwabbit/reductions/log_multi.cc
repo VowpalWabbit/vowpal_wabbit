@@ -23,6 +23,8 @@ using namespace VW::config;
 // TODO: This file makes extensive use of cout and partial line logging.
 //       Will require some investigation on how to proceed
 
+namespace
+{
 class node_pred
 {
 public:
@@ -160,27 +162,6 @@ inline void update_min_count(log_multi& b, uint32_t node)
   }
 }
 
-void display_tree_dfs(log_multi& b, const node& node, uint32_t depth)
-{
-  // TODO: its likely possible to replicate this output with the logger, but will
-  //       require some research
-  for (uint32_t i = 0; i < depth; i++) { std::cout << "\t"; }
-  std::cout << node.min_count << " " << node.left << " " << node.right;
-  std::cout << " label = " << node.max_count_label << " labels = ";
-  for (size_t i = 0; i < node.preds.size(); i++)
-  { std::cout << node.preds[i].label << ":" << node.preds[i].label_count << "\t"; }
-  std::cout << std::endl;
-
-  if (node.internal)
-  {
-    std::cout << "Left";
-    display_tree_dfs(b, b.nodes[node.left], depth + 1);
-
-    std::cout << "Right";
-    display_tree_dfs(b, b.nodes[node.right], depth + 1);
-  }
-}
-
 bool children(log_multi& b, uint32_t& current, uint32_t& class_index, uint32_t label)
 {
   auto& preds = b.nodes[current].preds;
@@ -283,30 +264,6 @@ void train_node(
       static_cast<float>(b.nodes[current].preds[class_index].Ehk) / b.nodes[current].preds[class_index].nk;
 }
 
-// TODO: currently unused. Is this useful to keep around?
-void verify_min_dfs(log_multi& b, const node& node)
-{
-  if (node.internal)
-  {
-    if (node.min_count != min_left_right(b, node))
-    {
-      std::cout << "badness! " << std::endl;
-      display_tree_dfs(b, b.nodes[0], 0);
-    }
-    verify_min_dfs(b, b.nodes[node.left]);
-    verify_min_dfs(b, b.nodes[node.right]);
-  }
-}
-
-size_t sum_count_dfs(log_multi& b, const node& node)
-{
-  if (node.internal) { return sum_count_dfs(b, b.nodes[node.left]) + sum_count_dfs(b, b.nodes[node.right]); }
-  else
-  {
-    return node.min_count;
-  }
-}
-
 inline uint32_t descend(node& n, float prediction)
 {
   if (prediction < 0) { return n.left; }
@@ -359,49 +316,6 @@ void learn(log_multi& b, single_learner& base, VW::example& ec)
     ec.pred.multiclass = start_pred;
     ec.l.multi = mc;
   }
-}
-
-void save_node_stats(log_multi& d)
-{
-  FILE* fp;
-  uint32_t i, j;
-  uint32_t total;
-  log_multi* b = &d;
-
-  VW::file_open(&fp, "atxm_debug.csv", "wt");
-
-  for (i = 0; i < b->nodes.size(); i++)
-  {
-    fprintf(fp, "Node: %4d, Internal: %1d, Eh: %7.4f, n: %6d, \n", static_cast<int>(i),
-        static_cast<int>(b->nodes[i].internal), b->nodes[i].Eh / b->nodes[i].n, b->nodes[i].n);
-
-    fprintf(fp, "Label:, ");
-    for (j = 0; j < b->nodes[i].preds.size(); j++)
-    { fprintf(fp, "%6d,", static_cast<int>(b->nodes[i].preds[j].label)); }
-    fprintf(fp, "\n");
-
-    fprintf(fp, "Ehk:, ");
-    for (j = 0; j < b->nodes[i].preds.size(); j++)
-    { fprintf(fp, "%7.4f,", b->nodes[i].preds[j].Ehk / b->nodes[i].preds[j].nk); }
-    fprintf(fp, "\n");
-
-    total = 0;
-
-    fprintf(fp, "nk:, ");
-    for (j = 0; j < b->nodes[i].preds.size(); j++)
-    {
-      fprintf(fp, "%6d,", static_cast<int>(b->nodes[i].preds[j].nk));
-      total += b->nodes[i].preds[j].nk;
-    }
-    fprintf(fp, "\n");
-
-    fprintf(fp, "max(lab:cnt:tot):, %3d,%6d,%7d,\n", static_cast<int>(b->nodes[i].max_count_label),
-        static_cast<int>(b->nodes[i].max_count), static_cast<int>(total));
-    fprintf(fp, "left: %4d, right: %4d", static_cast<int>(b->nodes[i].left), static_cast<int>(b->nodes[i].right));
-    fprintf(fp, "\n\n");
-  }
-
-  fclose(fp);
 }
 
 void save_load_tree(log_multi& b, io_buf& model_file, bool read, bool text)
@@ -514,8 +428,9 @@ void save_load_tree(log_multi& b, io_buf& model_file, bool read, bool text)
     }
   }
 }
+}  // namespace
 
-base_learner* log_multi_setup(VW::setup_base_i& stack_builder)  // learner setup
+base_learner* VW::reductions::log_multi_setup(VW::setup_base_i& stack_builder)  // learner setup
 {
   options_i& options = *stack_builder.get_options();
   VW::workspace& all = *stack_builder.get_all_pointer();

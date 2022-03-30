@@ -2008,7 +2008,7 @@ void get_training_timesteps(search_private& priv, VW::v_array<size_t>& timesteps
       if (count > 1) { timesteps.push_back(t); }
     }
 
-  // if subsample in (0,1) then pick steps with that probability, but ensuring there's at least one!
+    // if subsample in (0,1) then pick steps with that probability, but ensuring there's at least one!
   }
   else if (priv.subsample_timesteps < 1)
   {
@@ -2627,322 +2627,6 @@ void parse_neighbor_features(
   }
 }
 
-base_learner* setup(VW::setup_base_i& stack_builder)
-{
-  options_i& options = *stack_builder.get_options();
-  VW::workspace& all = *stack_builder.get_all_pointer();
-  auto sch = VW::make_unique<search>();
-  search_private& priv = *sch->priv;
-  std::string task_string;
-  std::string metatask_string;
-  std::string interpolation_string = "data";
-  std::string neighbor_features_string;
-  std::string rollout_string = "mix_per_state";
-  std::string rollin_string = "mix_per_state";
-  uint64_t A;
-  uint64_t passes_per_policy;
-  uint64_t history_length;
-  uint64_t rollout_num_steps;
-  uint64_t save_every_k_runs;
-
-  uint32_t search_trained_nb_policies;
-  std::string search_allowed_transitions;
-
-  option_group_definition new_options("[Reduction] Search");
-  new_options
-      .add(make_option("search", A)
-               .keep()
-               .default_value(1)
-               .help("Use learning to search, argument=maximum action id or 0 for LDF"))
-      .add(make_option("search_task", task_string)
-               .keep()
-               .necessary()
-               .one_of({"sequence", "sequencespan", "sequence_ctg", "argmax", "sequence_demoldf", "multiclasstask",
-                   "dep_parser", "entity_relation", "hook", "graph", "list"})
-               .help("The search task (use \"--search_task list\" to get a list of available tasks)"))
-      .add(make_option("search_metatask", metatask_string)
-               .keep()
-               .help("The search metatask (use \"--search_metatask list\" to get a list of available metatasks"
-                     " Note: a valid search_task needs to be supplied in addition for this to output.)"))
-      .add(make_option("search_interpolation", interpolation_string)
-               .keep()
-               .help("At what level should interpolation happen? [*data|policy]"))
-      .add(make_option("search_rollout", rollout_string)
-               .one_of({"policy", "learn", "oracle", "ref", "mix_per_state", "mix_per_roll", "mix", "none"})
-               .help("How should rollouts be executed"))
-      .add(make_option("search_rollin", rollin_string)
-               .one_of({"policy", "learn", "oracle", "ref", "mix_per_state", "mix_per_roll", "mix"})
-               .help("How should past trajectories be generated"))
-      .add(make_option("search_passes_per_policy", passes_per_policy)
-               .default_value(1)
-               .help("Number of passes per policy (only valid for search_interpolation=policy)"))
-      .add(make_option("search_beta", priv.beta)
-               .default_value(0.5f)
-               .help("Interpolation rate for policies (only valid for search_interpolation=policy)"))
-      .add(make_option("search_alpha", priv.alpha)
-               .default_value(1e-10f)
-               .help("Annealed beta = 1-(1-alpha)^t (only valid for search_interpolation=data)"))
-      .add(make_option("search_total_nb_policies", priv.total_number_of_policies)
-               .help("If we are going to train the policies through multiple separate calls to vw, we need to "
-                     "specify this parameter and tell vw how many policies are eventually going to be trained"))
-      .add(make_option("search_trained_nb_policies", search_trained_nb_policies)
-               .help("The number of trained policies in a file"))
-      .add(make_option("search_allowed_transitions", search_allowed_transitions)
-               .help("Read file of allowed transitions [def: all transitions are allowed]"))
-      .add(make_option("search_subsample_time", priv.subsample_timesteps)
-               .help("Instead of training at all timesteps, use a subset. if value in (0,1), train on a random "
-                     "v%. if v>=1, train on precisely v steps per example, if v<=-1, use active learning"))
-      .add(make_option("search_neighbor_features", neighbor_features_string)
-               .keep()
-               .help("Copy features from neighboring lines. argument looks like: '-1:a,+2' meaning copy previous line "
-                     "namespace a and next next line from namespace _unnamed_, where ',' separates them"))
-      .add(make_option("search_rollout_num_steps", rollout_num_steps)
-               .default_value(0)
-               .help("How many calls of \"loss\" before we stop really predicting on rollouts and switch to "
-                     "oracle (default means \"infinite\")"))
-      .add(make_option("search_history_length", history_length)
-               .keep()
-               .default_value(1)
-               .help("Some tasks allow you to specify how much history their depend on; specify that here"))
-      .add(make_option("search_no_caching", priv.no_caching)
-               .help("Turn off the built-in caching ability (makes things slower, but technically more safe)"))
-      .add(make_option("search_xv", priv.xv).help("Train two separate policies, alternating prediction/learning"))
-      .add(make_option("search_perturb_oracle", priv.perturb_oracle)
-               .default_value(0.f)
-               .help("Perturb the oracle on rollin with this probability"))
-      .add(make_option("search_linear_ordering", priv.linear_ordering)
-               .help("Insist on generating examples in linear order (def: hoopla permutation)"))
-      .add(make_option("search_active_verify", priv.active_csoaa_verify)
-               .help("Verify that active learning is doing the right thing (arg = multiplier, should be = "
-                     "cost_range * range_c)"))
-      .add(make_option("search_save_every_k_runs", save_every_k_runs).default_value(0).help("Save model every k runs"));
-
-  if (!options.add_parse_and_check_necessary(new_options)) { return nullptr; }
-
-  priv.A = VW::cast_to_smaller_type<size_t>(A);
-  priv.passes_per_policy = VW::cast_to_smaller_type<size_t>(passes_per_policy);
-  priv.rollout_num_steps = VW::cast_to_smaller_type<size_t>(rollout_num_steps);
-  priv.history_length = VW::cast_to_smaller_type<size_t>(history_length);
-  priv.save_every_k_runs = VW::cast_to_smaller_type<size_t>(save_every_k_runs);
-
-  search_initialize(&all, *sch.get());
-
-  parse_neighbor_features(neighbor_features_string, sch->priv->neighbor_features, all.logger);
-
-  if (interpolation_string == "data")  // run as dagger
-  {
-    priv.adaptive_beta = true;
-    priv.allow_current_policy = true;
-    priv.passes_per_policy = all.numpasses;
-    if (priv.current_policy > 1) { priv.current_policy = 1; }
-  }
-  else if (interpolation_string == "policy")
-  {
-    ;
-  }
-  else
-    THROW("error: --search_interpolation must be 'data' or 'policy'");
-
-  if ((rollout_string == "policy") || (rollout_string == "learn")) { priv.rollout_method = RollMethod::POLICY; }
-  else if ((rollout_string == "oracle") || (rollout_string == "ref"))
-  {
-    priv.rollout_method = RollMethod::ORACLE;
-  }
-  else if ((rollout_string == "mix_per_state"))
-  {
-    priv.rollout_method = RollMethod::MIX_PER_STATE;
-  }
-  else if ((rollout_string == "mix_per_roll") || (rollout_string == "mix"))
-  {
-    priv.rollout_method = RollMethod::MIX_PER_ROLL;
-  }
-  else if ((rollout_string == "none"))
-  {
-    priv.rollout_method = RollMethod::NO_ROLLOUT;
-    priv.no_caching = true;
-  }
-
-  if ((rollin_string == "policy") || (rollin_string == "learn")) { priv.rollin_method = RollMethod::POLICY; }
-  else if ((rollin_string == "oracle") || (rollin_string == "ref"))
-  {
-    priv.rollin_method = RollMethod::ORACLE;
-  }
-  else if ((rollin_string == "mix_per_state"))
-  {
-    priv.rollin_method = RollMethod::MIX_PER_STATE;
-  }
-  else if ((rollin_string == "mix_per_roll") || (rollin_string == "mix"))
-  {
-    priv.rollin_method = RollMethod::MIX_PER_ROLL;
-  }
-
-  // check if the base learner is contextual bandit, in which case, we dont rollout all actions.
-  // TODO consume this when learner understand base label type
-  if (options.was_supplied("cb"))
-  {
-    priv.cb_learner = true;
-    CB::cb_label.default_label(priv.allowed_actions_cache);
-    priv.learn_losses.cb.costs.clear();
-    priv.gte_label.cb.costs.clear();
-  }
-  else
-  {
-    priv.cb_learner = false;
-    CS::cs_label.default_label(priv.allowed_actions_cache);
-    priv.learn_losses.cs.costs.clear();
-    priv.gte_label.cs.costs.clear();
-  }
-
-  ensure_param(priv.beta, 0.0, 1.0, 0.5, "Search_beta must be in (0,1); resetting to 0.5", all.logger);
-  ensure_param(priv.alpha, 0.0, 1.0, 1e-10f, "Search_alpha must be in (0,1); resetting to 1e-10", all.logger);
-
-  priv.num_calls_to_run = 0;
-
-  // compute total number of policies we will have at end of training
-  // we add current_policy for cases where we start from an initial set of policies loaded through -i option
-  uint32_t tmp_number_of_policies = priv.current_policy;
-  if (all.training)
-  {
-    tmp_number_of_policies +=
-        static_cast<int>(ceil((static_cast<float>(all.numpasses)) / (static_cast<float>(priv.passes_per_policy))));
-  }
-
-  // the user might have specified the number of policies that will eventually be trained through multiple vw calls,
-  // so only set total_number_of_policies to computed value if it is larger
-  cdbg << "current_policy=" << priv.current_policy << " tmp_number_of_policies=" << tmp_number_of_policies
-       << " total_number_of_policies=" << priv.total_number_of_policies << endl;
-  if (tmp_number_of_policies > priv.total_number_of_policies)
-  {
-    priv.total_number_of_policies = tmp_number_of_policies;
-    if (priv.current_policy > 0)
-    {  // we loaded a file but total number of policies didn't match what is needed for training
-      all.logger.err_warn(
-          "You're attempting to train more classifiers than was allocated initially. "
-          "Likely to cause bad performance.");
-    }
-  }
-
-  // current policy currently points to a new policy we would train
-  // if we are not training and loaded a bunch of policies for testing, we need to subtract 1 from current policy
-  // so that we only use those loaded when testing (as run_prediction is called with allow_current to true)
-  if (!all.training && priv.current_policy > 0) { priv.current_policy--; }
-
-  all.options->replace("search_trained_nb_policies", std::to_string(priv.current_policy));
-  all.options->get_typed_option<uint32_t>("search_trained_nb_policies").value(priv.current_policy);
-
-  all.options->replace("search_total_nb_policies", std::to_string(priv.total_number_of_policies));
-  all.options->get_typed_option<uint32_t>("search_total_nb_policies").value(priv.total_number_of_policies);
-
-  cdbg << "search current_policy = " << priv.current_policy
-       << " total_number_of_policies = " << priv.total_number_of_policies << endl;
-
-  if (task_string == "list")
-  {
-    // command line action, output directly to cerr
-    std::vector<const char*> names;
-    std::transform(all_tasks.begin(), all_tasks.end(), std::back_inserter(names),
-        [](const search_task* task) { return task->task_name; });
-    fmt::print(stderr, "available search tasks:\n  - {}\n", fmt::join(names, "\n  - "));
-    exit(0);
-  }
-  if (metatask_string == "list")
-  {
-    // command line action, output directly to cerr
-    std::vector<const char*> names;
-    std::transform(all_metatasks.begin(), all_metatasks.end(), std::back_inserter(names),
-        [](const search_metatask* task) { return task->metatask_name; });
-    fmt::print(stderr, "available search metatasks:\n  - {}\n", fmt::join(names, "\n  - "));
-    exit(0);
-  }
-  for (auto* task : all_tasks)
-  {
-    if (task_string == task->task_name)
-    {
-      priv.task = task;
-      sch->task_name = task->task_name;
-      break;
-    }
-  }
-
-  if (priv.task == nullptr)
-  {
-    if (!options.was_supplied("help"))
-    { THROW("fail: unknown task for --search_task '" << task_string << "'; use --search_task list to get a list"); }
-  }
-  priv.metatask = nullptr;
-  for (auto* task : all_metatasks)
-  {
-    if (metatask_string == task->metatask_name)
-    {
-      priv.metatask = task;
-      sch->metatask_name = task->metatask_name;
-      break;
-    }
-  }
-  all.example_parser->emptylines_separate_examples = true;
-
-  if (!options.was_supplied("csoaa") && !options.was_supplied("cs_active") && !options.was_supplied("csoaa_ldf") &&
-      !options.was_supplied("wap_ldf") && !options.was_supplied("cb"))
-  { options.insert("csoaa", std::to_string(priv.A)); }
-
-  priv.active_csoaa = options.was_supplied("cs_active");
-  priv.active_csoaa_verify = -1.;
-  if (options.was_supplied("search_active_verify"))
-    if (!priv.active_csoaa) THROW("cannot use --search_active_verify without using --cs_active");
-
-  cdbg << "active_csoaa = " << priv.active_csoaa << ", active_csoaa_verify = " << priv.active_csoaa_verify << endl;
-
-  auto* base = stack_builder.setup_base_learner();
-
-  // default to OAA labels unless the task wants to override this (which they can do in initialize)
-  all.example_parser->lbl_parser = MC::mc_label;
-
-  if (priv.task && priv.task->initialize) { priv.task->initialize(*sch.get(), priv.A, options); }
-  if (priv.metatask && priv.metatask->initialize) { priv.metatask->initialize(*sch.get(), priv.A, options); }
-  priv.meta_t = 0;
-
-  VW::label_type_t expected_label_type = all.example_parser->lbl_parser.label_type;
-
-  if (options.was_supplied("search_allowed_transitions"))
-  { read_allowed_transitions(static_cast<action>(priv.A), search_allowed_transitions.c_str(), all.logger); }
-
-  // set up auto-history (used to only do this if AUTO_CONDITION_FEATURES was on, but that doesn't work for hooktask)
-  handle_condition_options(all, priv.acset);
-
-  if (!priv.allow_current_policy)
-  {  // if we're not dagger
-    all.check_holdout_every_n_passes = priv.passes_per_policy;
-  }
-
-  all.searchstr = sch.get();
-
-  priv.start_clock_time = clock();
-
-  if (priv.xv) { priv.num_learners *= 3; }
-
-  cdbg << "num_learners = " << priv.num_learners << endl;
-
-  // No normal prediction is produced so the base prediction type is used. That type is unlikely to be accessible
-  // though. TODO: either let search return a prediction or add a NO_PRED type.
-
-  // base is multiline
-  learner<search, VW::multi_ex>* l =
-      VW::LEARNER::make_reduction_learner(std::move(sch), base, do_actual_learning<true>, do_actual_learning<false>,
-          stack_builder.get_setupfn_name(setup))
-          .set_learn_returns_prediction(true)
-          .set_params_per_weight(priv.total_number_of_policies * priv.num_learners)
-          .set_finish_example(finish_multiline_example)
-          .set_end_examples(end_examples)
-          .set_finish(search_finish)
-          .set_end_pass(end_pass)
-          .set_input_label_type(expected_label_type)
-          // .set_output_label(priv.cb_learner ? label_type_t::cb : label_type_t::cs)
-          // .set_input_prediction(priv.active_csoaa ? ec.pred.active_multiclass.predicted_class : ec.pred.multiclass)
-          .build();
-
-  return make_base(*l);
-}
-
 float action_hamming_loss(action a, const action* A, size_t sz)
 {
   if (sz == 0)
@@ -3383,3 +3067,320 @@ action predictor::predict()
 
 // TODO: valgrind --leak-check=full ./vw --search 2 -k -c --passes 1 --search_task sequence -d test_beam --holdout_off
 // --search_rollin policy --search_metatask selective_branching 2>&1 | less
+base_learner* VW::reductions::search_setup(VW::setup_base_i& stack_builder)
+{
+  using namespace Search;
+
+  options_i& options = *stack_builder.get_options();
+  VW::workspace& all = *stack_builder.get_all_pointer();
+  auto sch = VW::make_unique<search>();
+  search_private& priv = *sch->priv;
+  std::string task_string;
+  std::string metatask_string;
+  std::string interpolation_string = "data";
+  std::string neighbor_features_string;
+  std::string rollout_string = "mix_per_state";
+  std::string rollin_string = "mix_per_state";
+  uint64_t A;
+  uint64_t passes_per_policy;
+  uint64_t history_length;
+  uint64_t rollout_num_steps;
+  uint64_t save_every_k_runs;
+
+  uint32_t search_trained_nb_policies;
+  std::string search_allowed_transitions;
+
+  option_group_definition new_options("[Reduction] Search");
+  new_options
+      .add(make_option("search", A)
+               .keep()
+               .default_value(1)
+               .help("Use learning to search, argument=maximum action id or 0 for LDF"))
+      .add(make_option("search_task", task_string)
+               .keep()
+               .necessary()
+               .one_of({"sequence", "sequencespan", "sequence_ctg", "argmax", "sequence_demoldf", "multiclasstask",
+                   "dep_parser", "entity_relation", "hook", "graph", "list"})
+               .help("The search task (use \"--search_task list\" to get a list of available tasks)"))
+      .add(make_option("search_metatask", metatask_string)
+               .keep()
+               .help("The search metatask (use \"--search_metatask list\" to get a list of available metatasks"
+                     " Note: a valid search_task needs to be supplied in addition for this to output.)"))
+      .add(make_option("search_interpolation", interpolation_string)
+               .keep()
+               .help("At what level should interpolation happen? [*data|policy]"))
+      .add(make_option("search_rollout", rollout_string)
+               .one_of({"policy", "learn", "oracle", "ref", "mix_per_state", "mix_per_roll", "mix", "none"})
+               .help("How should rollouts be executed"))
+      .add(make_option("search_rollin", rollin_string)
+               .one_of({"policy", "learn", "oracle", "ref", "mix_per_state", "mix_per_roll", "mix"})
+               .help("How should past trajectories be generated"))
+      .add(make_option("search_passes_per_policy", passes_per_policy)
+               .default_value(1)
+               .help("Number of passes per policy (only valid for search_interpolation=policy)"))
+      .add(make_option("search_beta", priv.beta)
+               .default_value(0.5f)
+               .help("Interpolation rate for policies (only valid for search_interpolation=policy)"))
+      .add(make_option("search_alpha", priv.alpha)
+               .default_value(1e-10f)
+               .help("Annealed beta = 1-(1-alpha)^t (only valid for search_interpolation=data)"))
+      .add(make_option("search_total_nb_policies", priv.total_number_of_policies)
+               .help("If we are going to train the policies through multiple separate calls to vw, we need to "
+                     "specify this parameter and tell vw how many policies are eventually going to be trained"))
+      .add(make_option("search_trained_nb_policies", search_trained_nb_policies)
+               .help("The number of trained policies in a file"))
+      .add(make_option("search_allowed_transitions", search_allowed_transitions)
+               .help("Read file of allowed transitions [def: all transitions are allowed]"))
+      .add(make_option("search_subsample_time", priv.subsample_timesteps)
+               .help("Instead of training at all timesteps, use a subset. if value in (0,1), train on a random "
+                     "v%. if v>=1, train on precisely v steps per example, if v<=-1, use active learning"))
+      .add(make_option("search_neighbor_features", neighbor_features_string)
+               .keep()
+               .help("Copy features from neighboring lines. argument looks like: '-1:a,+2' meaning copy previous line "
+                     "namespace a and next next line from namespace _unnamed_, where ',' separates them"))
+      .add(make_option("search_rollout_num_steps", rollout_num_steps)
+               .default_value(0)
+               .help("How many calls of \"loss\" before we stop really predicting on rollouts and switch to "
+                     "oracle (default means \"infinite\")"))
+      .add(make_option("search_history_length", history_length)
+               .keep()
+               .default_value(1)
+               .help("Some tasks allow you to specify how much history their depend on; specify that here"))
+      .add(make_option("search_no_caching", priv.no_caching)
+               .help("Turn off the built-in caching ability (makes things slower, but technically more safe)"))
+      .add(make_option("search_xv", priv.xv).help("Train two separate policies, alternating prediction/learning"))
+      .add(make_option("search_perturb_oracle", priv.perturb_oracle)
+               .default_value(0.f)
+               .help("Perturb the oracle on rollin with this probability"))
+      .add(make_option("search_linear_ordering", priv.linear_ordering)
+               .help("Insist on generating examples in linear order (def: hoopla permutation)"))
+      .add(make_option("search_active_verify", priv.active_csoaa_verify)
+               .help("Verify that active learning is doing the right thing (arg = multiplier, should be = "
+                     "cost_range * range_c)"))
+      .add(make_option("search_save_every_k_runs", save_every_k_runs).default_value(0).help("Save model every k runs"));
+
+  if (!options.add_parse_and_check_necessary(new_options)) { return nullptr; }
+
+  priv.A = VW::cast_to_smaller_type<size_t>(A);
+  priv.passes_per_policy = VW::cast_to_smaller_type<size_t>(passes_per_policy);
+  priv.rollout_num_steps = VW::cast_to_smaller_type<size_t>(rollout_num_steps);
+  priv.history_length = VW::cast_to_smaller_type<size_t>(history_length);
+  priv.save_every_k_runs = VW::cast_to_smaller_type<size_t>(save_every_k_runs);
+
+  search_initialize(&all, *sch.get());
+
+  parse_neighbor_features(neighbor_features_string, sch->priv->neighbor_features, all.logger);
+
+  if (interpolation_string == "data")  // run as dagger
+  {
+    priv.adaptive_beta = true;
+    priv.allow_current_policy = true;
+    priv.passes_per_policy = all.numpasses;
+    if (priv.current_policy > 1) { priv.current_policy = 1; }
+  }
+  else if (interpolation_string == "policy")
+  {
+    ;
+  }
+  else
+    THROW("error: --search_interpolation must be 'data' or 'policy'");
+
+  if ((rollout_string == "policy") || (rollout_string == "learn")) { priv.rollout_method = RollMethod::POLICY; }
+  else if ((rollout_string == "oracle") || (rollout_string == "ref"))
+  {
+    priv.rollout_method = RollMethod::ORACLE;
+  }
+  else if ((rollout_string == "mix_per_state"))
+  {
+    priv.rollout_method = RollMethod::MIX_PER_STATE;
+  }
+  else if ((rollout_string == "mix_per_roll") || (rollout_string == "mix"))
+  {
+    priv.rollout_method = RollMethod::MIX_PER_ROLL;
+  }
+  else if ((rollout_string == "none"))
+  {
+    priv.rollout_method = RollMethod::NO_ROLLOUT;
+    priv.no_caching = true;
+  }
+
+  if ((rollin_string == "policy") || (rollin_string == "learn")) { priv.rollin_method = RollMethod::POLICY; }
+  else if ((rollin_string == "oracle") || (rollin_string == "ref"))
+  {
+    priv.rollin_method = RollMethod::ORACLE;
+  }
+  else if ((rollin_string == "mix_per_state"))
+  {
+    priv.rollin_method = RollMethod::MIX_PER_STATE;
+  }
+  else if ((rollin_string == "mix_per_roll") || (rollin_string == "mix"))
+  {
+    priv.rollin_method = RollMethod::MIX_PER_ROLL;
+  }
+
+  // check if the base learner is contextual bandit, in which case, we dont rollout all actions.
+  // TODO consume this when learner understand base label type
+  if (options.was_supplied("cb"))
+  {
+    priv.cb_learner = true;
+    CB::cb_label.default_label(priv.allowed_actions_cache);
+    priv.learn_losses.cb.costs.clear();
+    priv.gte_label.cb.costs.clear();
+  }
+  else
+  {
+    priv.cb_learner = false;
+    CS::cs_label.default_label(priv.allowed_actions_cache);
+    priv.learn_losses.cs.costs.clear();
+    priv.gte_label.cs.costs.clear();
+  }
+
+  ensure_param(priv.beta, 0.0, 1.0, 0.5, "Search_beta must be in (0,1); resetting to 0.5", all.logger);
+  ensure_param(priv.alpha, 0.0, 1.0, 1e-10f, "Search_alpha must be in (0,1); resetting to 1e-10", all.logger);
+
+  priv.num_calls_to_run = 0;
+
+  // compute total number of policies we will have at end of training
+  // we add current_policy for cases where we start from an initial set of policies loaded through -i option
+  uint32_t tmp_number_of_policies = priv.current_policy;
+  if (all.training)
+  {
+    tmp_number_of_policies +=
+        static_cast<int>(ceil((static_cast<float>(all.numpasses)) / (static_cast<float>(priv.passes_per_policy))));
+  }
+
+  // the user might have specified the number of policies that will eventually be trained through multiple vw calls,
+  // so only set total_number_of_policies to computed value if it is larger
+  cdbg << "current_policy=" << priv.current_policy << " tmp_number_of_policies=" << tmp_number_of_policies
+       << " total_number_of_policies=" << priv.total_number_of_policies << endl;
+  if (tmp_number_of_policies > priv.total_number_of_policies)
+  {
+    priv.total_number_of_policies = tmp_number_of_policies;
+    if (priv.current_policy > 0)
+    {  // we loaded a file but total number of policies didn't match what is needed for training
+      all.logger.err_warn(
+          "You're attempting to train more classifiers than was allocated initially. "
+          "Likely to cause bad performance.");
+    }
+  }
+
+  // current policy currently points to a new policy we would train
+  // if we are not training and loaded a bunch of policies for testing, we need to subtract 1 from current policy
+  // so that we only use those loaded when testing (as run_prediction is called with allow_current to true)
+  if (!all.training && priv.current_policy > 0) { priv.current_policy--; }
+
+  all.options->replace("search_trained_nb_policies", std::to_string(priv.current_policy));
+  all.options->get_typed_option<uint32_t>("search_trained_nb_policies").value(priv.current_policy);
+
+  all.options->replace("search_total_nb_policies", std::to_string(priv.total_number_of_policies));
+  all.options->get_typed_option<uint32_t>("search_total_nb_policies").value(priv.total_number_of_policies);
+
+  cdbg << "search current_policy = " << priv.current_policy
+       << " total_number_of_policies = " << priv.total_number_of_policies << endl;
+
+  if (task_string == "list")
+  {
+    // command line action, output directly to cerr
+    std::vector<const char*> names;
+    std::transform(all_tasks.begin(), all_tasks.end(), std::back_inserter(names),
+        [](const search_task* task) { return task->task_name; });
+    fmt::print(stderr, "available search tasks:\n  - {}\n", fmt::join(names, "\n  - "));
+    exit(0);
+  }
+  if (metatask_string == "list")
+  {
+    // command line action, output directly to cerr
+    std::vector<const char*> names;
+    std::transform(all_metatasks.begin(), all_metatasks.end(), std::back_inserter(names),
+        [](const search_metatask* task) { return task->metatask_name; });
+    fmt::print(stderr, "available search metatasks:\n  - {}\n", fmt::join(names, "\n  - "));
+    exit(0);
+  }
+  for (auto* task : all_tasks)
+  {
+    if (task_string == task->task_name)
+    {
+      priv.task = task;
+      sch->task_name = task->task_name;
+      break;
+    }
+  }
+
+  if (priv.task == nullptr)
+  {
+    if (!options.was_supplied("help"))
+    { THROW("fail: unknown task for --search_task '" << task_string << "'; use --search_task list to get a list"); }
+  }
+  priv.metatask = nullptr;
+  for (auto* task : all_metatasks)
+  {
+    if (metatask_string == task->metatask_name)
+    {
+      priv.metatask = task;
+      sch->metatask_name = task->metatask_name;
+      break;
+    }
+  }
+  all.example_parser->emptylines_separate_examples = true;
+
+  if (!options.was_supplied("csoaa") && !options.was_supplied("cs_active") && !options.was_supplied("csoaa_ldf") &&
+      !options.was_supplied("wap_ldf") && !options.was_supplied("cb"))
+  { options.insert("csoaa", std::to_string(priv.A)); }
+
+  priv.active_csoaa = options.was_supplied("cs_active");
+  priv.active_csoaa_verify = -1.;
+  if (options.was_supplied("search_active_verify"))
+    if (!priv.active_csoaa) THROW("cannot use --search_active_verify without using --cs_active");
+
+  cdbg << "active_csoaa = " << priv.active_csoaa << ", active_csoaa_verify = " << priv.active_csoaa_verify << endl;
+
+  auto* base = stack_builder.setup_base_learner();
+
+  // default to OAA labels unless the task wants to override this (which they can do in initialize)
+  all.example_parser->lbl_parser = MC::mc_label;
+
+  if (priv.task && priv.task->initialize) { priv.task->initialize(*sch.get(), priv.A, options); }
+  if (priv.metatask && priv.metatask->initialize) { priv.metatask->initialize(*sch.get(), priv.A, options); }
+  priv.meta_t = 0;
+
+  VW::label_type_t expected_label_type = all.example_parser->lbl_parser.label_type;
+
+  if (options.was_supplied("search_allowed_transitions"))
+  { read_allowed_transitions(static_cast<action>(priv.A), search_allowed_transitions.c_str(), all.logger); }
+
+  // set up auto-history (used to only do this if AUTO_CONDITION_FEATURES was on, but that doesn't work for hooktask)
+  handle_condition_options(all, priv.acset);
+
+  if (!priv.allow_current_policy)
+  {  // if we're not dagger
+    all.check_holdout_every_n_passes = priv.passes_per_policy;
+  }
+
+  all.searchstr = sch.get();
+
+  priv.start_clock_time = clock();
+
+  if (priv.xv) { priv.num_learners *= 3; }
+
+  cdbg << "num_learners = " << priv.num_learners << endl;
+
+  // No normal prediction is produced so the base prediction type is used. That type is unlikely to be accessible
+  // though. TODO: either let search return a prediction or add a NO_PRED type.
+
+  // base is multiline
+  learner<search, VW::multi_ex>* l =
+      VW::LEARNER::make_reduction_learner(std::move(sch), base, do_actual_learning<true>, do_actual_learning<false>,
+          stack_builder.get_setupfn_name(search_setup))
+          .set_learn_returns_prediction(true)
+          .set_params_per_weight(priv.total_number_of_policies * priv.num_learners)
+          .set_finish_example(finish_multiline_example)
+          .set_end_examples(end_examples)
+          .set_finish(search_finish)
+          .set_end_pass(end_pass)
+          .set_input_label_type(expected_label_type)
+          // .set_output_label(priv.cb_learner ? label_type_t::cb : label_type_t::cs)
+          // .set_input_prediction(priv.active_csoaa ? ec.pred.active_multiclass.predicted_class : ec.pred.multiclass)
+          .build();
+
+  return make_base(*l);
+}

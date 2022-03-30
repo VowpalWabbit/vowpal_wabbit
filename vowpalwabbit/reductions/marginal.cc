@@ -2,6 +2,8 @@
 // individual contributors. All rights reserved. Released under a BSD (revised)
 // license as described in the file LICENSE.
 
+#include "reductions/marginal.h"
+
 #include "config/options.h"
 #include "correctedMath.h"
 #include "example.h"
@@ -17,7 +19,7 @@
 #include <unordered_map>
 
 using namespace VW::config;
-namespace MARGINAL
+namespace
 {
 struct expert
 {
@@ -398,11 +400,9 @@ void save_load(data& sm, io_buf& io, bool read, bool text)
     }
   }
 }
-}  // namespace MARGINAL
+}  // namespace
 
-using namespace MARGINAL;
-
-VW::LEARNER::base_learner* marginal_setup(VW::setup_base_i& stack_builder)
+VW::LEARNER::base_learner* VW::reductions::marginal_setup(VW::setup_base_i& stack_builder)
 {
   options_i& options = *stack_builder.get_options();
   VW::workspace* all = stack_builder.get_all_pointer();
@@ -427,7 +427,7 @@ VW::LEARNER::base_learner* marginal_setup(VW::setup_base_i& stack_builder)
 
   if (!options.add_parse_and_check_necessary(marginal_options)) { return nullptr; }
 
-  auto d = VW::make_unique<MARGINAL::data>(
+  auto d = VW::make_unique<::data>(
       initial_numerator, initial_denominator, decay, update_before_learn, unweighted_marginals, compete, *all);
 
   marginal = VW::decode_inline_hex(marginal, all->logger);
