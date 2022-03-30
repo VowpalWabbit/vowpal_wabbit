@@ -293,15 +293,20 @@ jobs:
         with:
           path: |
             ${{ env.VCPKG_ROOT }}\\installed\\
+            ${{github.workspace}}\\vowpal_wabbit\\vcpkg_installed\\
           key: |
-            ${{ env.VCPKG_REF }}-${{ matrix.config.version }}-python-win-cache-invalidate-1
+            ${{ env.VCPKG_REF }}-${{ matrix.config.version }}-python-win-cache-invalidate-2
       - run: ${{ env.VCPKG_ROOT }}/bootstrap-vcpkg.bat
-      - name: Build wheel
+      - name: Setup deps
         shell: powershell
         run: |
           cd ${{github.workspace}}\\vowpal_wabbit
           cp ${{ matrix.config.vcpkg_manifest }} vcpkg.json
+          ${{ env.VCPKG_ROOT }}\\vcpkg.exe install
           pip install wheel
+      - name: Build wheel
+        shell: powershell
+        run: |
           pip wheel . -w ${{github.workspace}}\\wheel_output --global-option --vcpkg-root="${{ env.VCPKG_ROOT }}" --global-option --cmake-generator="Visual Studio 16 2019" --global-option --cmake-options="-DVCPKG_OVERLAY_PORTS=${{github.workspace}}\\vowpal_wabbit\\${{ matrix.config.overlay_ports }}"  --verbose
       - name: Upload built wheel
         uses: actions/upload-artifact@v1
