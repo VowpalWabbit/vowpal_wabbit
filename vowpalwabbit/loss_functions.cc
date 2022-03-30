@@ -345,39 +345,39 @@ public:
   float get_loss(const shared_data* sd, float prediction, float label) const override
   {
     float err = label - prediction;
-    return squared_loss_impl_get_loss(sd, prediction, label) * (err > 0 ? _q : (1.f - _q));
+    return squared_loss_impl_get_loss(sd, prediction, label) * (err < 0 ? _q : (1.f - _q));
   }
 
   float get_update(float prediction, float label, float update_scale, float pred_per_update) const override
   {
     float err = label - prediction;
-    return err > 0 ? squared_loss_impl_get_update(prediction, label, _q * update_scale, pred_per_update)
+    return err < 0 ? squared_loss_impl_get_update(prediction, label, _q * update_scale, pred_per_update)
                    : squared_loss_impl_get_update(prediction, label, (1.f - _q) * update_scale, pred_per_update);
   }
 
   float get_unsafe_update(float prediction, float label, float update_scale) const override
   {
     float err = label - prediction;
-    return err > 0 ? squared_loss_impl_get_unsafe_update(prediction, label, _q * update_scale)
+    return err < 0 ? squared_loss_impl_get_unsafe_update(prediction, label, _q * update_scale)
                    : squared_loss_impl_get_unsafe_update(prediction, label, (1.f - _q) * update_scale);
   }
 
   float get_square_grad(float prediction, float label) const override
   {
     float err = label - prediction;
-    return squared_loss_impl_get_square_grad(prediction, label) * (err > 0 ? _q * _q : (1.f - _q) * (1.f - _q));
+    return squared_loss_impl_get_square_grad(prediction, label) * (err < 0 ? _q * _q : (1.f - _q) * (1.f - _q));
   }
 
   float first_derivative(const shared_data* sd, float prediction, float label) const override
   {
     float err = label - prediction;
-    return squared_loss_impl_first_derivative(sd, prediction, label) * (err > 0 ? _q : (1.f - _q));
+    return squared_loss_impl_first_derivative(sd, prediction, label) * (err < 0 ? _q : (1.f - _q));
   }
 
   float second_derivative(const shared_data* sd, float prediction, float label) const override
   {
     float err = label - prediction;
-    return squared_loss_impl_second_derivative(sd, prediction) * (err > 0 ? _q : (1.f - _q));
+    return squared_loss_impl_second_derivative(sd, prediction) * (err < 0 ? _q : (1.f - _q));
   }
 
 private:

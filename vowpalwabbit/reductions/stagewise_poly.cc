@@ -2,6 +2,8 @@
 // individual contributors. All rights reserved. Released under a BSD (revised)
 // license as described in the file LICENSE.
 
+#include "stagewise_poly.h"
+
 #include "accumulate.h"
 #include "config/options.h"
 #include "gd.h"
@@ -21,6 +23,8 @@
 using namespace VW::LEARNER;
 using namespace VW::config;
 
+namespace
+{
 static constexpr uint32_t parent_bit = 1;
 static constexpr uint32_t cycle_bit = 2;
 static constexpr uint32_t tree_atomics = 134;
@@ -181,7 +185,7 @@ inline void min_depths_set(stagewise_poly& poly, uint64_t wid, uint8_t depth)
   poly.depthsbits[stride_un_shift(poly, do_ft_offset(poly, wid)) * 2] = depth;
 }
 
-#ifndef NDEBUG
+#ifdef DEBUG
 void sanity_check_state(stagewise_poly& poly)
 {
   for (uint64_t i = 0; i != poly.all->length(); ++i)
@@ -544,15 +548,6 @@ void learn(stagewise_poly& poly, single_learner& base, VW::example& ec)
   }
 }
 
-void reduce_min(uint8_t& v1, const uint8_t& v2)
-{
-  if (v1 == default_depth) { v1 = v2; }
-  else if (v2 != default_depth)
-  {
-    v1 = (v1 <= v2) ? v1 : v2;
-  }
-}
-
 void reduce_min_max(uint8_t& v1, const uint8_t& v2)
 {
   bool parent_or_depth;
@@ -659,8 +654,9 @@ void save_load(stagewise_poly& poly, io_buf& model_file, bool read, bool text)
   //      std::cout << "done" << std::endl;
   //#endif //DEBUG
 }
+}  // namespace
 
-base_learner* stagewise_poly_setup(VW::setup_base_i& stack_builder)
+base_learner* VW::reductions::stagewise_poly_setup(VW::setup_base_i& stack_builder)
 {
   options_i& options = *stack_builder.get_options();
   VW::workspace& all = *stack_builder.get_all_pointer();
@@ -706,7 +702,7 @@ base_learner* stagewise_poly_setup(VW::setup_base_i& stack_builder)
                 .set_input_label_type(VW::label_type_t::simple)
                 .set_output_prediction_type(VW::prediction_type_t::scalar)
                 .set_save_load(save_load)
-                .set_finish_example(finish_example)
+                .set_finish_example(::finish_example)
                 .set_end_pass(end_pass)
                 .build();
 

@@ -22,6 +22,8 @@
 using namespace VW::LEARNER;
 using namespace VW::config;
 
+namespace
+{
 constexpr size_t W = 0;      // current parameter
 constexpr size_t G_SUM = 1;  // sum of gradients
 constexpr size_t V_SUM = 2;  // sum of squared gradients
@@ -301,8 +303,9 @@ void end_pass(freegrad& fg)
     { set_done(all); }
   }
 }
+}  // namespace
 
-base_learner* VW::freegrad_setup(VW::setup_base_i& stack_builder)
+base_learner* VW::reductions::freegrad_setup(VW::setup_base_i& stack_builder)
 {
   auto& options = *stack_builder.get_options();
   bool freegrad_enabled;
@@ -364,7 +367,7 @@ base_learner* VW::freegrad_setup(VW::setup_base_i& stack_builder)
   auto predict_ptr = (fg_ptr->all->audit || fg_ptr->all->hash_inv) ? predict<true> : predict<false>;
   auto learn_ptr = (fg_ptr->all->audit || fg_ptr->all->hash_inv) ? learn_freegrad<true> : learn_freegrad<false>;
   auto* l = VW::LEARNER::make_base_learner(std::move(fg_ptr), learn_ptr, predict_ptr,
-      stack_builder.get_setupfn_name(VW::freegrad_setup), VW::prediction_type_t::scalar, VW::label_type_t::simple)
+      stack_builder.get_setupfn_name(freegrad_setup), VW::prediction_type_t::scalar, VW::label_type_t::simple)
                 .set_learn_returns_prediction(true)
                 .set_params_per_weight(UINT64_ONE << stack_builder.get_all_pointer()->weights.stride_shift())
                 .set_save_load(save_load)

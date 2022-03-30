@@ -1,6 +1,8 @@
 // Copyright (c) by respective owners including Yahoo!, Microsoft, and
 // individual contributors. All rights reserved. Released under a BSD (revised)
 // license as described in the file LICENSE.
+#include "print.h"
+
 #include "config/options.h"
 #include "gd.h"
 #include "learner.h"
@@ -10,6 +12,8 @@
 
 using namespace VW::config;
 
+namespace
+{
 // TODO: This file should probably(?) use trace_message
 struct print
 {
@@ -47,8 +51,9 @@ void learn(print& p, VW::LEARNER::base_learner&, VW::example& ec)
   GD::foreach_feature<VW::workspace, uint64_t, print_feature>(*(p.all), ec, *p.all);
   (*all.trace_message) << std::endl;
 }
+}  // namespace
 
-VW::LEARNER::base_learner* print_setup(VW::setup_base_i& stack_builder)
+VW::LEARNER::base_learner* VW::reductions::print_setup(VW::setup_base_i& stack_builder)
 {
   VW::config::options_i& options = *stack_builder.get_options();
   VW::workspace& all = *stack_builder.get_all_pointer();

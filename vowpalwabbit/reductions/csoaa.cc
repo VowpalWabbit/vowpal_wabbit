@@ -18,7 +18,7 @@ using namespace VW::config;
 #undef VW_DEBUG_LOG
 #define VW_DEBUG_LOG vw_dbg::csoaa
 
-namespace CSOAA
+namespace
 {
 struct csoaa
 {
@@ -178,8 +178,9 @@ void predict_or_learn(csoaa& c, single_learner& base, VW::example& ec)
 }
 
 void finish_example(VW::workspace& all, csoaa&, VW::example& ec) { COST_SENSITIVE::finish_example(all, ec); }
+}  // namespace
 
-base_learner* csoaa_setup(VW::setup_base_i& stack_builder)
+base_learner* VW::reductions::csoaa_setup(VW::setup_base_i& stack_builder)
 {
   options_i& options = *stack_builder.get_options();
   VW::workspace& all = *stack_builder.get_all_pointer();
@@ -204,11 +205,10 @@ base_learner* csoaa_setup(VW::setup_base_i& stack_builder)
                 .set_params_per_weight(ws)
                 .set_output_prediction_type(VW::prediction_type_t::multiclass)
                 .set_input_label_type(VW::label_type_t::cs)
-                .set_finish_example(finish_example)
+                .set_finish_example(::finish_example)
                 .build();
 
   all.example_parser->lbl_parser = cs_label;
   all.cost_sensitive = make_base(*l);
   return all.cost_sensitive;
 }
-}  // namespace CSOAA

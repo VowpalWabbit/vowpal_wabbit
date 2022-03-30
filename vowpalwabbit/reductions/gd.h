@@ -12,9 +12,15 @@
 #include "interactions.h"
 #include "vw_math.h"
 
+namespace VW
+{
+namespace reductions
+{
+VW::LEARNER::base_learner* gd_setup(VW::setup_base_i& stack_builder);
+}
+}  // namespace VW
 namespace GD
 {
-VW::LEARNER::base_learner* setup(VW::setup_base_i& stack_builder);
 
 struct gd;
 

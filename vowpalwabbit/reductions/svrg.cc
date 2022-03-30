@@ -3,6 +3,8 @@
 // individual contributors. All rights reserved. Released under a BSD (revised)
 // license as described in the file LICENSE.
 
+#include "svrg.h"
+
 #include "crossplat_compat.h"
 #include "gd.h"
 #include "loss_functions.h"
@@ -18,7 +20,7 @@
 using namespace VW::LEARNER;
 using namespace VW::config;
 
-namespace SVRG
+namespace
 {
 #define W_INNER 0       // working "inner-loop" weights, updated per example
 #define W_STABLE 1      // stable weights, updated per stage
@@ -166,12 +168,9 @@ void save_load(svrg& s, io_buf& model_file, bool read, bool text)
     }
   }
 }
+}  // namespace
 
-}  // namespace SVRG
-
-using namespace SVRG;
-
-base_learner* svrg_setup(VW::setup_base_i& stack_builder)
+base_learner* VW::reductions::svrg_setup(VW::setup_base_i& stack_builder)
 {
   VW::config::options_i& options = *stack_builder.get_options();
   VW::workspace& all = *stack_builder.get_all_pointer();
