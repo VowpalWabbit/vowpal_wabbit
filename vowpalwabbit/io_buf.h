@@ -74,13 +74,16 @@ class io_buf
 
     void shift_to_front(char* head_ptr)
     {
+      assert(pointer_is_in_buffer(head_ptr));
       const size_t space_left = _end - head_ptr;
-      memmove(_begin, head_ptr, space_left);
+      std::memmove(_begin, head_ptr, space_left);
       _end = _begin + space_left;
     }
 
     size_t capacity() const { return _end_array - _begin; }
     size_t size() const { return _end - _begin; }
+
+    bool pointer_is_in_buffer(const char* ptr) const { return ptr >= _begin && ptr < _end_array; }
   };
 
   // used to check-sum i/o files for corruption detection
@@ -155,7 +158,11 @@ public:
    */
   bool is_resettable() const;
 
-  void set(char* p) { head = p; }
+  void set(char* p)
+  {
+    assert(_buffer.pointer_is_in_buffer(p));
+    head = p;
+  }
 
   /// This function will return the number of input files AS WELL AS the number of output files. (because of legacy)
   size_t num_files() const { return input_files.size() + output_files.size(); }

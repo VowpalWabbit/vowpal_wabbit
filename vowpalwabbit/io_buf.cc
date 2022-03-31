@@ -60,16 +60,19 @@ size_t io_buf::readto(char*& pointer, char terminal)
   while (pointer < _buffer._end && *pointer != terminal) { pointer++; }
   if (pointer != _buffer._end)
   {
+    assert(_buffer.pointer_is_in_buffer(head));
     size_t n = pointer - head;
     head = pointer + 1;
     pointer -= n;
+    assert(_buffer.pointer_is_in_buffer(pointer));
     return n + 1;
   }
   else
   {
     if (_buffer._end == _buffer._end_array)
     {
-      _buffer.shift_to_front(head);
+      // _buffer._end is outside of the buffer. There is nothing to shift down.
+      if (head != _buffer._end) { _buffer.shift_to_front(head); }
       head = _buffer._begin;
     }
     if (_current < input_files.size() && fill(input_files[_current].get()) > 0)
@@ -85,6 +88,7 @@ size_t io_buf::readto(char*& pointer, char terminal)
       size_t n = pointer - head;
       head = pointer;
       pointer -= n;
+      assert(n == 0 || _buffer.pointer_is_in_buffer(pointer));
       return n;
     }
   }
