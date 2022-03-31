@@ -59,15 +59,59 @@ void reset_models(ForwardIt first, ForwardIt end, parameters& _weights, double _
 
 float decayed_epsilon(uint64_t update_count) { return static_cast<float>(std::pow(update_count + 1, -1.f / 3.f)); }
 
-void predict(epsilon_decay_data& data, VW::LEARNER::multi_learner& base, multi_ex& examples)
+}  // namespace epsilon_decay
+}  // namespace reductions
+
+namespace model_utils
+{
+size_t read_model_field(io_buf& io, VW::reductions::epsilon_decay::epsilon_decay_score& score)
+{
+  size_t bytes = 0;
+  bytes += read_model_field(io, reinterpret_cast<VW::scored_config&>(score));
+  bytes += read_model_field(io, score._lower_bound);
+  bytes += read_model_field(io, score._model_idx);
+  return bytes;
+}
+
+size_t write_model_field(io_buf& io, const VW::reductions::epsilon_decay::epsilon_decay_score& score,
+    const std::string& upstream_name, bool text)
+{
+  size_t bytes = 0;
+  bytes += write_model_field(io, reinterpret_cast<const VW::scored_config&>(score), upstream_name, text);
+  bytes += write_model_field(io, score._lower_bound, upstream_name + "_lower_bound", text);
+  bytes += write_model_field(io, score._model_idx, upstream_name + "_model_idx", text);
+  return bytes;
+}
+
+size_t read_model_field(io_buf& io, VW::reductions::epsilon_decay::epsilon_decay_data& epsilon_decay)
+{
+  size_t bytes = 0;
+  epsilon_decay._scored_configs.clear();
+  bytes += read_model_field(io, epsilon_decay._scored_configs);
+  return bytes;
+}
+
+size_t write_model_field(io_buf& io, const VW::reductions::epsilon_decay::epsilon_decay_data& epsilon_decay,
+    const std::string& upstream_name, bool text)
+{
+  size_t bytes = 0;
+  bytes += write_model_field(io, epsilon_decay._scored_configs, upstream_name + "_scored_configs", text);
+  return bytes;
+}
+}  // namespace model_utils
+}  // namespace VW
+
+void predict(
+    VW::reductions::epsilon_decay::epsilon_decay_data& data, VW::LEARNER::multi_learner& base, multi_ex& examples)
 {
   auto& ep_fts = examples[0]->_reduction_features.template get<VW::cb_explore_adf::greedy::reduction_features>();
   auto active_iter = data._scored_configs.end() - 1;
-  ep_fts.epsilon = decayed_epsilon(active_iter->update_count);
+  ep_fts.epsilon = VW::reductions::epsilon_decay::decayed_epsilon(active_iter->update_count);
   base.predict(examples, active_iter->get_model_idx());
 }
 
-void learn(epsilon_decay_data& data, VW::LEARNER::multi_learner& base, multi_ex& examples)
+void learn(
+    VW::reductions::epsilon_decay::epsilon_decay_data& data, VW::LEARNER::multi_learner& base, multi_ex& examples)
 {
   CB::cb_class logged{};
   uint64_t labelled_action = 0;
@@ -86,7 +130,7 @@ void learn(epsilon_decay_data& data, VW::LEARNER::multi_learner& base, multi_ex&
     // Update the scoring of all configs
     // Only call if learn calls predict is set
     auto& ep_fts = examples[0]->_reduction_features.template get<VW::cb_explore_adf::greedy::reduction_features>();
-    ep_fts.epsilon = decayed_epsilon(config_iter->update_count);
+    ep_fts.epsilon = VW::reductions::epsilon_decay::decayed_epsilon(config_iter->update_count);
     if (!base.learn_returns_prediction) { base.predict(examples, config_iter->get_model_idx()); }
     base.learn(examples, config_iter->get_model_idx());
     for (const auto& a_s : examples[0]->pred.a_s)
@@ -131,7 +175,8 @@ void learn(epsilon_decay_data& data, VW::LEARNER::multi_learner& base, multi_ex&
   }
 }
 
-void save_load_epsilon_decay(epsilon_decay_data& epsilon_decay, io_buf& io, bool read, bool text)
+void save_load_epsilon_decay(
+    VW::reductions::epsilon_decay::epsilon_decay_data& epsilon_decay, io_buf& io, bool read, bool text)
 {
   if (io.num_files() == 0) { return; }
   if (read) { VW::model_utils::read_model_field(io, epsilon_decay); }
@@ -140,48 +185,6 @@ void save_load_epsilon_decay(epsilon_decay_data& epsilon_decay, io_buf& io, bool
     VW::model_utils::write_model_field(io, epsilon_decay, "_epsilon_decay", text);
   }
 }
-
-}  // namespace epsilon_decay
-}  // namespace reductions
-
-namespace model_utils
-{
-size_t read_model_field(io_buf& io, VW::reductions::epsilon_decay::epsilon_decay_score& score)
-{
-  size_t bytes = 0;
-  bytes += read_model_field(io, reinterpret_cast<VW::scored_config&>(score));
-  bytes += read_model_field(io, score._lower_bound);
-  bytes += read_model_field(io, score._model_idx);
-  return bytes;
-}
-
-size_t write_model_field(io_buf& io, const VW::reductions::epsilon_decay::epsilon_decay_score& score,
-    const std::string& upstream_name, bool text)
-{
-  size_t bytes = 0;
-  bytes += write_model_field(io, reinterpret_cast<const VW::scored_config&>(score), upstream_name, text);
-  bytes += write_model_field(io, score._lower_bound, upstream_name + "_lower_bound", text);
-  bytes += write_model_field(io, score._model_idx, upstream_name + "_model_idx", text);
-  return bytes;
-}
-
-size_t read_model_field(io_buf& io, VW::reductions::epsilon_decay::epsilon_decay_data& epsilon_decay)
-{
-  size_t bytes = 0;
-  epsilon_decay._scored_configs.clear();
-  bytes += read_model_field(io, epsilon_decay._scored_configs);
-  return bytes;
-}
-
-size_t write_model_field(io_buf& io, const VW::reductions::epsilon_decay::epsilon_decay_data& epsilon_decay,
-    const std::string& upstream_name, bool text)
-{
-  size_t bytes = 0;
-  bytes += write_model_field(io, epsilon_decay._scored_configs, upstream_name + "_scored_configs", text);
-  return bytes;
-}
-}  // namespace model_utils
-}  // namespace VW
 
 VW::LEARNER::base_learner* VW::reductions::epsilon_decay_setup(VW::setup_base_i& stack_builder)
 {
@@ -232,16 +235,15 @@ VW::LEARNER::base_learner* VW::reductions::epsilon_decay_setup(VW::setup_base_i&
   auto* base_learner = stack_builder.setup_base_learner();
   if (base_learner->is_multiline())
   {
-    auto* learner = VW::LEARNER::make_reduction_learner(std::move(data), VW::LEARNER::as_multiline(base_learner),
-        VW::reductions::epsilon_decay::learn, VW::reductions::epsilon_decay::predict,
-        stack_builder.get_setupfn_name(epsilon_decay_setup))
+    auto* learner = VW::LEARNER::make_reduction_learner(std::move(data), VW::LEARNER::as_multiline(base_learner), learn,
+        predict, stack_builder.get_setupfn_name(epsilon_decay_setup))
                         .set_input_label_type(VW::label_type_t::cb)
                         .set_output_label_type(VW::label_type_t::cb)
                         .set_input_prediction_type(VW::prediction_type_t::action_scores)
                         .set_output_prediction_type(VW::prediction_type_t::action_scores)
                         .set_params_per_weight(params_per_weight)
                         .set_output_prediction_type(base_learner->get_output_prediction_type())
-                        .set_save_load(VW::reductions::epsilon_decay::save_load_epsilon_decay)
+                        .set_save_load(save_load_epsilon_decay)
                         .build();
 
     return VW::LEARNER::make_base(*learner);
