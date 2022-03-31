@@ -10,7 +10,7 @@
 BOOST_AUTO_TEST_CASE(reproduce_max_boundary_issue)
 {
   uint64_t seed = 58587211;
-  const uint64_t new_random_seed = uniform_hash(&seed, sizeof(seed), seed);
+  const uint64_t new_random_seed = VW::uniform_hash(&seed, sizeof(seed), seed);
   BOOST_CHECK_EQUAL(new_random_seed, 2244123448);
 
   float random_draw = exploration::uniform_random_merand48(new_random_seed);

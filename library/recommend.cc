@@ -47,8 +47,8 @@ void progress()
 void get_hashv(char* in, size_t len, unsigned* out)
 {
   assert(NUM_HASHES == 2);
-  out[0] = MASK(uniform_hash(in, len, 1), bits);
-  out[1] = MASK(uniform_hash(in, len, 2), bits);
+  out[0] = MASK(VW::uniform_hash(in, len, 1), bits);
+  out[1] = MASK(VW::uniform_hash(in, len, 2), bits);
 }
 
 #define BIT_TEST(c, i) (c[i / 8] & (1 << (i % 8)))
