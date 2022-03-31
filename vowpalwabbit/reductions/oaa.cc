@@ -158,7 +158,7 @@ void learn(oaa& o, VW::LEARNER::single_learner& base, VW::example& ec)
 }
 
 template <bool print_all, bool scores, bool probabilities>
-void predict(oaa& o, LEARNER::single_learner& base, VW::example& ec)
+void predict(oaa& o, VW::LEARNER::single_learner& base, VW::example& ec)
 {
   // The predictions are either an array of scores or a single
   // class id of a multiclass label
@@ -363,7 +363,7 @@ VW::LEARNER::base_learner* VW::reductions::oaa_setup(VW::setup_base_i& stack_bui
   uint64_t k_value = data->k;
   auto base = as_singleline(stack_builder.setup_base_learner());
   void (*learn_ptr)(oaa&, VW::LEARNER::single_learner&, VW::example&);
-  void (*pred_ptr)(oaa&, LEARNER::single_learner&, VW::example&);
+  void (*pred_ptr)(oaa&, VW::LEARNER::single_learner&, VW::example&);
   std::string name_addition;
   VW::prediction_type_t pred_type;
   void (*finish_ptr)(VW::workspace&, oaa&, VW::example&);
