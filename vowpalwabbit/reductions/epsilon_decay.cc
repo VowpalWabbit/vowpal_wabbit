@@ -155,8 +155,8 @@ size_t read_model_field(io_buf& io, VW::reductions::epsilon_decay::epsilon_decay
   return bytes;
 }
 
-size_t write_model_field(
-    io_buf& io, const VW::reductions::epsilon_decay::epsilon_decay_score& score, const std::string& upstream_name, bool text)
+size_t write_model_field(io_buf& io, const VW::reductions::epsilon_decay::epsilon_decay_score& score,
+    const std::string& upstream_name, bool text)
 {
   size_t bytes = 0;
   bytes += write_model_field(io, reinterpret_cast<const VW::scored_config&>(score), upstream_name, text);
@@ -173,8 +173,8 @@ size_t read_model_field(io_buf& io, VW::reductions::epsilon_decay::epsilon_decay
   return bytes;
 }
 
-size_t write_model_field(
-    io_buf& io, const VW::reductions::epsilon_decay::epsilon_decay_data& epsilon_decay, const std::string& upstream_name, bool text)
+size_t write_model_field(io_buf& io, const VW::reductions::epsilon_decay::epsilon_decay_data& epsilon_decay,
+    const std::string& upstream_name, bool text)
 {
   size_t bytes = 0;
   bytes += write_model_field(io, epsilon_decay._scored_configs, upstream_name + "_scored_configs", text);
@@ -224,16 +224,17 @@ VW::LEARNER::base_learner* VW::reductions::epsilon_decay_setup(VW::setup_base_i&
   // Scale confidence interval by number of examples
   float scaled_alpha = _epsilon_decay_alpha / model_count;
 
-  auto data =
-      VW::make_unique<VW::reductions::epsilon_decay::epsilon_decay_data>(model_count, _min_scope, scaled_alpha, _epsilon_decay_tau, all.weights);
+  auto data = VW::make_unique<VW::reductions::epsilon_decay::epsilon_decay_data>(
+      model_count, _min_scope, scaled_alpha, _epsilon_decay_tau, all.weights);
 
   // make sure we setup the rest of the stack with cleared interactions
   // to make sure there are not subtle bugs
   auto* base_learner = stack_builder.setup_base_learner();
   if (base_learner->is_multiline())
   {
-    auto* learner = VW::LEARNER::make_reduction_learner(std::move(data), VW::LEARNER::as_multiline(base_learner), VW::reductions::epsilon_decay::learn,
-        VW::reductions::epsilon_decay::predict, stack_builder.get_setupfn_name(epsilon_decay_setup))
+    auto* learner = VW::LEARNER::make_reduction_learner(std::move(data), VW::LEARNER::as_multiline(base_learner),
+        VW::reductions::epsilon_decay::learn, VW::reductions::epsilon_decay::predict,
+        stack_builder.get_setupfn_name(epsilon_decay_setup))
                         .set_input_label_type(VW::label_type_t::cb)
                         .set_output_label_type(VW::label_type_t::cb)
                         .set_input_prediction_type(VW::prediction_type_t::action_scores)
