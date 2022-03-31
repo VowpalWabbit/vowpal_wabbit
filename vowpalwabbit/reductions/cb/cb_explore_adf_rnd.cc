@@ -175,9 +175,9 @@ void cb_explore_adf_rnd::get_initial_predictions(multi_ex& examples, uint32_t id
   {
     auto* ec = examples[i];
 
-    increment_offset(*ec, increment, id);
+    LEARNER::details::increment_offset(*ec, increment, id);
     initials.push_back(get_initial_prediction(ec));
-    decrement_offset(*ec, increment, id);
+    LEARNER::details::decrement_offset(*ec, increment, id);
   }
 }
 
