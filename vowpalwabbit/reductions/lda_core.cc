@@ -2,6 +2,8 @@
 // individual contributors. All rights reserved. Released under a BSD (revised)
 // license as described in the file LICENSE.
 
+#include "lda_core.h"
+
 #include "crossplat_compat.h"
 #include "future_compat.h"
 #include "setup_base.h"
@@ -41,6 +43,8 @@ VW_WARNING_STATE_POP
 using namespace VW::config;
 using namespace VW::LEARNER;
 
+namespace LDA_ANON
+{
 enum class lda_math_mode : int
 {
   USE_SIMD = 0,
@@ -399,14 +403,14 @@ inline T digamma(T /* x */)
 }
 
 // Exponential
-template <typename T, lda_math_mode mtype>
+template <typename T, const lda_math_mode mtype>
 inline T exponential(T /* x */)
 {
   static_assert(true, "ldamath::exponential is not defined for this type and math mode.");
 }
 
 // Powf
-template <typename T, lda_math_mode mtype>
+template <typename T, const lda_math_mode mtype>
 inline T powf(T /* x */, T /* p */)
 {
   static_assert(true, "ldamath::powf is not defined for this type and math mode.");
@@ -699,12 +703,12 @@ float lda_loop(lda& l, VW::v_array<float>& Elogtheta, float* v, VW::example* ec,
         xc_w = c_w * f.value();
         score += -f.value() * std::log(c_w);
         size_t max_k = l.topics;
-        for (size_t k = 0; k < max_k; k++, ++u_for_w) new_gamma[k] += xc_w * *u_for_w;
+        for (size_t k = 0; k < max_k; k++, ++u_for_w) { new_gamma[k] += xc_w * *u_for_w; }
         word_count++;
         doc_length += f.value();
       }
     }
-    for (size_t k = 0; k < l.topics; k++) new_gamma[k] = new_gamma[k] * v[k] + l.lda_alpha;
+    for (size_t k = 0; k < l.topics; k++) { new_gamma[k] = new_gamma[k] * v[k] + l.lda_alpha; }
   } while (average_diff(*l.all, old_gamma.begin(), new_gamma.begin()) > l.lda_epsilon);
 
   ec->pred.scalars.clear();
@@ -770,10 +774,10 @@ void save_load(lda& l, io_buf& model_file, bool read, bool text)
     {
       brw = 0;
       size_t K = all.lda;
-      if (!read && text) msg << i << " ";
+      if (!read && text) { msg << i << " "; }
 
       if (!read || all.model_file_ver >= VW::version_definitions::VERSION_FILE_WITH_HEADER_ID)
-        brw += bin_text_read_write_fixed(model_file, reinterpret_cast<char*>(&i), sizeof(i), read, msg, text);
+      { brw += bin_text_read_write_fixed(model_file, reinterpret_cast<char*>(&i), sizeof(i), read, msg, text); }
       else
       {
         // support 32bit build models
@@ -788,16 +792,16 @@ void save_load(lda& l, io_buf& model_file, bool read, bool text)
         for (uint64_t k = 0; k < K; k++)
         {
           weight* v = w + k;
-          if (!read && text) msg << *v + l.lda_rho << " ";
+          if (!read && text) { msg << *v + l.lda_rho << " "; }
           brw += bin_text_read_write_fixed(model_file, reinterpret_cast<char*>(v), sizeof(*v), read, msg, text);
         }
       }
       if (text)
       {
-        if (!read) msg << "\n";
+        if (!read) { msg << "\n"; }
         brw += bin_text_read_write_fixed(model_file, nullptr, 0, read, msg, text);
       }
-      if (!read) ++i;
+      if (!read) { ++i; }
     } while ((!read && i < length) || (read && brw > 0));
   }
 }
@@ -808,8 +812,10 @@ void return_example(VW::workspace& all, VW::example& ec)
   for (auto& sink : all.final_prediction_sink) { MWT::print_scalars(sink.get(), ec.pred.scalars, ec.tag, all.logger); }
 
   if (all.sd->weighted_examples() >= all.sd->dump_interval && !all.quiet)
+  {
     all.sd->print_update(*all.trace_message, all.holdout_set_off, all.current_pass, "none", 0, ec.get_num_features(),
         all.progress_add, all.progress_arg);
+  }
   VW::finish_example(all, ec);
 }
 
@@ -849,19 +855,19 @@ void learn_batch(lda& l)
 
   if (l.total_lambda.empty())
   {
-    for (size_t k = 0; k < l.all->lda; k++) l.total_lambda.push_back(0.f);
+    for (size_t k = 0; k < l.all->lda; k++) { l.total_lambda.push_back(0.f); }
     // This part does not work with sparse parameters
     size_t stride = weights.stride();
     for (size_t i = 0; i <= weights.mask(); i += stride)
     {
       weight* w = &(weights[i]);
-      for (size_t k = 0; k < l.all->lda; k++) l.total_lambda[k] += w[k];
+      for (size_t k = 0; k < l.all->lda; k++) { l.total_lambda[k] += w[k]; }
     }
   }
 
   l.example_t++;
   l.total_new.clear();
-  for (size_t k = 0; k < l.all->lda; k++) l.total_new.push_back(0.f);
+  for (size_t k = 0; k < l.all->lda; k++) { l.total_new.push_back(0.f); }
 
   size_t batch_size = l.examples.size();
 
@@ -874,12 +880,12 @@ void learn_batch(lda& l)
 
   l.digammas.clear();
   float additional = static_cast<float>(l.all->length()) * l.lda_rho;
-  for (size_t i = 0; i < l.all->lda; i++) l.digammas.push_back(l.digamma(l.total_lambda[i] + additional));
+  for (size_t i = 0; i < l.all->lda; i++) { l.digammas.push_back(l.digamma(l.total_lambda[i] + additional)); }
 
   auto last_weight_index = std::numeric_limits<uint64_t>::max();
   for (index_feature* s = &l.sorted_features[0]; s <= &l.sorted_features.back(); s++)
   {
-    if (last_weight_index == s->f.weight_index) continue;
+    if (last_weight_index == s->f.weight_index) { continue; }
     last_weight_index = s->f.weight_index;
     // float *weights_for_w = &(weights[s->f.weight_index]);
     float* weights_for_w = &(weights[s->f.weight_index & weights.mask()]);
@@ -901,7 +907,7 @@ void learn_batch(lda& l)
   for (size_t d = 0; d < batch_size; d++)
   {
     float score = lda_loop(l, l.Elogtheta, &(l.v[d * l.all->lda]), l.examples[d], l.all->power_t);
-    if (l.all->audit) GD::print_audit_features(*l.all, *l.examples[d]);
+    if (l.all->audit) { GD::print_audit_features(*l.all, *l.examples[d]); }
     // If the doc is empty, give it loss of 0.
     if (l.doc_lengths[d] > 0)
     {
@@ -922,7 +928,7 @@ void learn_batch(lda& l)
     for (index_feature* s = &l.sorted_features[0]; s <= &l.sorted_features.back();)
     {
       index_feature* next = s + 1;
-      while (next <= &l.sorted_features.back() && next->f.weight_index == s->f.weight_index) next++;
+      while (next <= &l.sorted_features.back() && next->f.weight_index == s->f.weight_index) { next++; }
 
       float* word_weights = &(weights[s->f.weight_index]);
       for (size_t k = 0; k < l.all->lda; k++, ++word_weights)
@@ -972,7 +978,7 @@ void learn(lda& l, base_learner&, VW::example& ec)
       l.doc_lengths[num_ex] += static_cast<int>(f.value());
     }
   }
-  if (++num_ex == l.minibatch) learn_batch(l);
+  if (++num_ex == l.minibatch) { learn_batch(l); }
 }
 
 void learn_with_metrics(lda& l, base_learner& base, VW::example& ec)
@@ -1031,7 +1037,7 @@ void get_top_weights(VW::workspace* all, int top_words_count, int topic, std::ve
   typename T::iterator iter = weights.begin();
 
   for (uint64_t i = 0; i < std::min(static_cast<uint64_t>(top_words_count), length); i++, ++iter)
-    top_features.push({(&(*iter))[topic], iter.index()});
+  { top_features.push({(&(*iter))[topic], iter.index()}); }
 
   for (uint64_t i = top_words_count; i < length; i++, ++iter)
   {
@@ -1052,14 +1058,6 @@ void get_top_weights(VW::workspace* all, int top_words_count, int topic, std::ve
   }
 }
 
-void get_top_weights(VW::workspace* all, int top_words_count, int topic, std::vector<feature>& output)
-{
-  if (all->weights.sparse)
-    get_top_weights(all, top_words_count, topic, output, all->weights.sparse_weights);
-  else
-    get_top_weights(all, top_words_count, topic, output, all->weights.dense_weights);
-}
-
 template <class T>
 void compute_coherence_metrics(lda& l, T& weights)
 {
@@ -1077,14 +1075,16 @@ void compute_coherence_metrics(lda& l, T& weights)
     std::priority_queue<feature, std::vector<feature>, decltype(cmp)> top_features(cmp);
     typename T::iterator iter = weights.begin();
     for (uint64_t i = 0; i < std::min(static_cast<uint64_t>(top_words_count), length); i++, ++iter)
-      top_features.push(feature((&(*iter))[topic], iter.index()));
+    { top_features.push(feature((&(*iter))[topic], iter.index())); }
 
     for (typename T::iterator v = weights.begin(); v != weights.end(); ++v)
+    {
       if ((&(*v))[topic] > top_features.top().x)
       {
         top_features.pop();
         top_features.push(feature((&(*v))[topic], v.index()));
       }
+    }
 
     // extract idx and sort descending
     std::vector<uint64_t> top_features_idx;
@@ -1097,8 +1097,10 @@ void compute_coherence_metrics(lda& l, T& weights)
 
     auto& word_pairs = topics_word_pairs[topic];
     for (size_t i = 0; i < top_features_idx.size(); i++)
+    {
       for (size_t j = i + 1; j < top_features_idx.size(); j++)
-        word_pairs.emplace_back(top_features_idx[i], top_features_idx[j]);
+      { word_pairs.emplace_back(top_features_idx[i], top_features_idx[j]); }
+    }
   }
 
   // compress word pairs and create record for storing frequency
@@ -1151,9 +1153,13 @@ void compute_coherence_metrics(lda& l, T& weights)
           j++;
         }
         else if (examples_for_f2[j] < examples_for_f1[i])
+        {
           j++;
+        }
         else
+        {
           i++;
+        }
       }
     }
   }
@@ -1167,7 +1173,7 @@ void compute_coherence_metrics(lda& l, T& weights)
     for (auto& pairs : topics_word_pairs[topic])
     {
       auto f1 = pairs.f1;
-      if (l.feature_counts[f1] == 0) continue;
+      if (l.feature_counts[f1] == 0) { continue; }
 
       auto f2 = pairs.f2;
       auto& co_feature = coWordsDFSet[f1];
@@ -1196,15 +1202,16 @@ void compute_coherence_metrics(lda& l, T& weights)
 
 void compute_coherence_metrics(lda& l)
 {
-  if (l.all->weights.sparse)
-    compute_coherence_metrics(l, l.all->weights.sparse_weights);
+  if (l.all->weights.sparse) { compute_coherence_metrics(l, l.all->weights.sparse_weights); }
   else
+  {
     compute_coherence_metrics(l, l.all->weights.dense_weights);
+  }
 }
 
 void end_pass(lda& l)
 {
-  if (!l.examples.empty()) learn_batch(l);
+  if (!l.examples.empty()) { learn_batch(l); }
 
   if (l.compute_coherence_metrics && l.all->passes_complete == l.all->numpasses)
   {
@@ -1223,16 +1230,17 @@ void end_examples(lda& l, T& weights)
     float decay = std::fmin(1.f, correctedExp(decay_component));
 
     weight* wp = &(*iter);
-    for (size_t i = 0; i < l.all->lda; ++i) wp[i] *= decay;
+    for (size_t i = 0; i < l.all->lda; ++i) { wp[i] *= decay; }
   }
 }
 
 void end_examples(lda& l)
 {
-  if (l.all->weights.sparse)
-    end_examples(l, l.all->weights.sparse_weights);
+  if (l.all->weights.sparse) { end_examples(l, l.all->weights.sparse_weights); }
   else
+  {
     end_examples(l, l.all->weights.dense_weights);
+  }
 }
 
 void finish_example(VW::workspace& all, lda& l, VW::example& e)
@@ -1252,28 +1260,26 @@ void finish_example(VW::workspace& all, lda& l, VW::example& e)
 
   assert(l.finish_example_count <= l.minibatch);
 }
+}  // namespace LDA_ANON
 
-std::istream& operator>>(std::istream& in, lda_math_mode& mmode)
+using namespace LDA_ANON;
+
+void VW::reductions::lda::get_top_weights(
+    VW::workspace* all, int top_words_count, int topic, std::vector<feature>& output)
 {
-  std::string token;
-  in >> token;
-  if (token == "simd")
-    mmode = lda_math_mode::USE_SIMD;
-  else if (token == "accuracy" || token == "precise")
-    mmode = lda_math_mode::USE_PRECISE;
-  else if (token == "fast-approx" || token == "approx")
-    mmode = lda_math_mode::USE_FAST_APPROX;
+  if (all->weights.sparse) { ::get_top_weights(all, top_words_count, topic, output, all->weights.sparse_weights); }
   else
-    THROW_EX(VW::vw_unrecognised_option_exception, token);
-  return in;
+  {
+    ::get_top_weights(all, top_words_count, topic, output, all->weights.dense_weights);
+  }
 }
 
-base_learner* lda_setup(VW::setup_base_i& stack_builder)
+base_learner* VW::reductions::lda_setup(VW::setup_base_i& stack_builder)
 {
   options_i& options = *stack_builder.get_options();
   VW::workspace& all = *stack_builder.get_all_pointer();
 
-  auto ld = VW::make_unique<lda>();
+  auto ld = VW::make_unique<::lda>();
   option_group_definition new_options("[Reduction] Latent Dirichlet Allocation");
   int64_t math_mode;
   uint64_t topics;
@@ -1296,7 +1302,7 @@ base_learner* lda_setup(VW::setup_base_i& stack_builder)
                .help("Math mode: 0=simd, 1=accuracy, 2=fast-approx"))
       .add(make_option("metrics", ld->compute_coherence_metrics).help("Compute metrics"));
 
-  if (!options.add_parse_and_check_necessary(new_options)) return nullptr;
+  if (!options.add_parse_and_check_necessary(new_options)) { return nullptr; }
 
   // Convert from int to corresponding enum value.
   ld->mmode = static_cast<lda_math_mode>(math_mode);
@@ -1349,7 +1355,7 @@ base_learner* lda_setup(VW::setup_base_i& stack_builder)
                 .set_params_per_weight(UINT64_ONE << all.weights.stride_shift())
                 .set_learn_returns_prediction(true)
                 .set_save_load(save_load)
-                .set_finish_example(finish_example)
+                .set_finish_example(::finish_example)
                 .set_end_examples(end_examples)
                 .set_end_pass(end_pass)
                 .build();

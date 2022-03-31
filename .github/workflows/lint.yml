@@ -11,7 +11,7 @@ on:
 
 jobs:
   typecheck-build:
-    name: python.typecheck-build
+    name: lint.python.typecheck-build
     container:
       image: vowpalwabbit/manylinux2010-build:latest
     runs-on: ubuntu-latest
@@ -33,7 +33,7 @@ jobs:
           name: wheel_${{ matrix.config.version }}
           path: audit_output/
   typecheck-check:
-    name: python.typecheck-check
+    name: lint.python.typecheck-check
     needs: typecheck-build
     container:
       image: python:${{ matrix.config.version }}
@@ -69,7 +69,7 @@ jobs:
           python -m pytype ./test/ --verbosity=2
           python -m pytype ./utl/ --verbosity=2
   python-formatting:
-    name: python.formatting
+    name: lint.python.formatting
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
@@ -82,7 +82,7 @@ jobs:
         run: |
           python -m black --check . --exclude ext_libs/ || (echo -e "---\nTo fix, run:\n\tpython -m black . --exclude ext_libs"; exit 1)
   cpp-formatting:
-    name: c++.formatting
+    name: lint.c++.formatting
     runs-on: ubuntu-20.04
     steps:
       - uses: actions/checkout@v1
@@ -119,7 +119,7 @@ jobs:
             echo "No formatting issues found in the PR diff."
           fi
   run-clang-tidy:
-    name: c++.clang-tidy
+    name: lint.c++.clang-tidy
     container:
       image: vowpalwabbit/ubuntu2004-dev:latest
     runs-on: ubuntu-latest
@@ -129,7 +129,7 @@ jobs:
         shell: bash
         run: |
           apt update
-          apt install ninja-build
+          apt install -y ninja-build libspdlog-dev libfmt-dev
       - name: Run clang tidy
         shell: bash
         run: ./.scripts/linux/run-clang-tidy.sh

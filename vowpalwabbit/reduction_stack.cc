@@ -94,14 +94,14 @@
 void register_reductions(std::vector<reduction_setup_fn>& reductions,
     std::vector<std::tuple<std::string, reduction_setup_fn>>& reduction_stack)
 {
-  std::map<reduction_setup_fn, std::string> allowlist = {{GD::setup, "gd"}, {ftrl_setup, "ftrl"},
-      {VW::freegrad_setup, "freegrad"}, {sender_setup, "sender"}, {nn_setup, "nn"}, {oaa_setup, "oaa"},
-      {scorer_setup, "scorer"}, {CSOAA::csldf_setup, "csoaa_ldf"},
-      {VW::cb_explore_adf::greedy::setup, "cb_explore_adf_greedy"},
+  std::map<reduction_setup_fn, std::string> allowlist = {{VW::reductions::gd_setup, "gd"},
+      {VW::reductions::ftrl_setup, "ftrl"}, {VW::reductions::sender_setup, "sender"}, {VW::reductions::nn_setup, "nn"},
+      {VW::reductions::oaa_setup, "oaa"}, {VW::reductions::scorer_setup, "scorer"},
+      {VW::reductions::csldf_setup, "csoaa_ldf"}, {VW::cb_explore_adf::greedy::setup, "cb_explore_adf_greedy"},
       {VW::cb_explore_adf::regcb::setup, "cb_explore_adf_regcb"},
-      {VW::shared_feature_merger::shared_feature_merger_setup, "shared_feature_merger"},
-      {generate_interactions_setup, "generate_interactions"}, {VW::count_label_setup, "count_label"},
-      {cb_to_cb_adf_setup, "cb_to_cbadf"}};
+      {VW::reductions::shared_feature_merger_setup, "shared_feature_merger"},
+      {VW::reductions::generate_interactions_setup, "generate_interactions"},
+      {VW::reductions::count_label_setup, "count_label"}, {cb_to_cb_adf_setup, "cb_to_cbadf"}};
 
   auto name_extractor = VW::config::options_name_extractor();
   VW::workspace dummy_all(VW::io::create_null_logger());
@@ -115,8 +115,7 @@ void register_reductions(std::vector<reduction_setup_fn>& reductions,
     {
       auto base = setup_fn(null_ptr_learner);
 
-      if (base == nullptr)
-        reduction_stack.push_back(std::make_tuple(name_extractor.generated_name, setup_fn));
+      if (base == nullptr) { reduction_stack.push_back(std::make_tuple(name_extractor.generated_name, setup_fn)); }
       else
         THROW("fatal: under register_reduction() all setup functions must return nullptr");
     }
@@ -128,64 +127,63 @@ void prepare_reductions(std::vector<std::tuple<std::string, reduction_setup_fn>>
   std::vector<reduction_setup_fn> reductions;
 
   // Base algorithms
-  reductions.push_back(GD::setup);
-  reductions.push_back(kernel_svm_setup);
-  reductions.push_back(ftrl_setup);
-  reductions.push_back(VW::freegrad_setup);
-  reductions.push_back(svrg_setup);
-  reductions.push_back(sender_setup);
-  reductions.push_back(gd_mf_setup);
-  reductions.push_back(print_setup);
-  reductions.push_back(noop_setup);
+  reductions.push_back(VW::reductions::gd_setup);
+  reductions.push_back(VW::reductions::kernel_svm_setup);
+  reductions.push_back(VW::reductions::ftrl_setup);
+  reductions.push_back(VW::reductions::freegrad_setup);
+  reductions.push_back(VW::reductions::svrg_setup);
+  reductions.push_back(VW::reductions::sender_setup);
+  reductions.push_back(VW::reductions::gd_mf_setup);
+  reductions.push_back(VW::reductions::print_setup);
+  reductions.push_back(VW::reductions::noop_setup);
   reductions.push_back(VW::reductions::bfgs_setup);
-  reductions.push_back(OjaNewton_setup);
-  // reductions.push_back(VW_CNTK::setup);
+  reductions.push_back(VW::reductions::oja_newton_setup);
 
-  reductions.push_back(mf_setup);
+  reductions.push_back(VW::reductions::mf_setup);
 
-  reductions.push_back(generate_interactions_setup);
+  reductions.push_back(VW::reductions::generate_interactions_setup);
 
   // Score Users
   reductions.push_back(VW::reductions::baseline_setup);
-  reductions.push_back(ExpReplay::expreplay_setup<'b', simple_label_parser>);
+  reductions.push_back(VW::reductions::expreplay_setup<'b', simple_label_parser>);
   reductions.push_back(VW::reductions::active_setup);
   reductions.push_back(VW::reductions::active_cover_setup);
   reductions.push_back(VW::reductions::confidence_setup);
-  reductions.push_back(nn_setup);
-  reductions.push_back(marginal_setup);
+  reductions.push_back(VW::reductions::nn_setup);
+  reductions.push_back(VW::reductions::marginal_setup);
   reductions.push_back(VW::reductions::autolink_setup);
-  reductions.push_back(lrq_setup);
-  reductions.push_back(lrqfa_setup);
-  reductions.push_back(stagewise_poly_setup);
-  reductions.push_back(scorer_setup);
-  reductions.push_back(lda_setup);
+  reductions.push_back(VW::reductions::lrq_setup);
+  reductions.push_back(VW::reductions::lrqfa_setup);
+  reductions.push_back(VW::reductions::stagewise_poly_setup);
+  reductions.push_back(VW::reductions::scorer_setup);
+  reductions.push_back(VW::reductions::lda_setup);
   reductions.push_back(VW::reductions::cbzo_setup);
 
   // Reductions
   reductions.push_back(VW::reductions::bs_setup);
   reductions.push_back(VW::reductions::binary_setup);
 
-  reductions.push_back(ExpReplay::expreplay_setup<'m', MULTICLASS::mc_label>);
-  reductions.push_back(topk_setup);
-  reductions.push_back(oaa_setup);
+  reductions.push_back(VW::reductions::expreplay_setup<'m', MULTICLASS::mc_label>);
+  reductions.push_back(VW::reductions::topk_setup);
+  reductions.push_back(VW::reductions::oaa_setup);
   reductions.push_back(VW::reductions::boosting_setup);
-  reductions.push_back(ect_setup);
-  reductions.push_back(log_multi_setup);
-  reductions.push_back(recall_tree_setup);
-  reductions.push_back(memory_tree_setup);
+  reductions.push_back(VW::reductions::ect_setup);
+  reductions.push_back(VW::reductions::log_multi_setup);
+  reductions.push_back(VW::reductions::recall_tree_setup);
+  reductions.push_back(VW::reductions::memory_tree_setup);
   reductions.push_back(VW::reductions::classweight_setup);
-  reductions.push_back(multilabel_oaa_setup);
-  reductions.push_back(plt_setup);
+  reductions.push_back(VW::reductions::multilabel_oaa_setup);
+  reductions.push_back(VW::reductions::plt_setup);
 
-  reductions.push_back(cs_active_setup);
-  reductions.push_back(CSOAA::csoaa_setup);
-  reductions.push_back(interact_setup);
-  reductions.push_back(CSOAA::csldf_setup);
+  reductions.push_back(VW::reductions::cs_active_setup);
+  reductions.push_back(VW::reductions::csoaa_setup);
+  reductions.push_back(VW::reductions::interact_setup);
+  reductions.push_back(VW::reductions::csldf_setup);
   reductions.push_back(cb_algs_setup);
   reductions.push_back(cb_adf_setup);
-  reductions.push_back(VW::interaction_ground_setup);
-  reductions.push_back(mwt_setup);
-  reductions.push_back(VW::cats_tree::setup);
+  reductions.push_back(VW::reductions::interaction_ground_setup);
+  reductions.push_back(VW::reductions::mwt_setup);
+  reductions.push_back(VW::reductions::cats_tree_setup);
   reductions.push_back(VW::reductions::baseline_challenger_cb_setup);
   reductions.push_back(VW::automl::automl_setup);
   reductions.push_back(cb_explore_setup);
@@ -200,28 +198,28 @@ void prepare_reductions(std::vector<std::tuple<std::string, reduction_setup_fn>>
   reductions.push_back(VW::cb_explore_adf::bag::setup);
   reductions.push_back(cb_dro_setup);
   reductions.push_back(cb_sample_setup);
-  reductions.push_back(explore_eval_setup);
-  reductions.push_back(VW::epsilon_decay::epsilon_decay_setup);
-  reductions.push_back(VW::shared_feature_merger::shared_feature_merger_setup);
+  reductions.push_back(VW::reductions::explore_eval_setup);
+  reductions.push_back(VW::reductions::epsilon_decay_setup);
+  reductions.push_back(VW::reductions::shared_feature_merger_setup);
   reductions.push_back(VW::reductions::ccb_explore_adf_setup);
-  reductions.push_back(VW::slates::slates_setup);
+  reductions.push_back(VW::reductions::slates_setup);
   // cbify/warm_cb can generate multi-examples. Merge shared features after them
   reductions.push_back(warm_cb_setup);
-  reductions.push_back(VW::continuous_action::get_pmf_setup);
+  reductions.push_back(VW::reductions::get_pmf_setup);
   reductions.push_back(VW::pmf_to_pdf::setup);
   reductions.push_back(VW::continuous_action::cb_explore_pdf_setup);
-  reductions.push_back(VW::continuous_action::cats_pdf::setup);
+  reductions.push_back(VW::reductions::cats_pdf_setup);
   reductions.push_back(VW::continuous_action::sample_pdf_setup);
-  reductions.push_back(VW::continuous_action::cats::setup);
+  reductions.push_back(VW::reductions::cats_setup);
   reductions.push_back(cbify_setup);
   reductions.push_back(cbifyldf_setup);
   reductions.push_back(cb_to_cb_adf_setup);
-  reductions.push_back(VW::offset_tree::setup);
-  reductions.push_back(ExpReplay::expreplay_setup<'c', COST_SENSITIVE::cs_label>);
-  reductions.push_back(Search::setup);
+  reductions.push_back(VW::reductions::offset_tree_setup);
+  reductions.push_back(VW::reductions::expreplay_setup<'c', COST_SENSITIVE::cs_label>);
+  reductions.push_back(VW::reductions::search_setup);
   reductions.push_back(VW::reductions::audit_regressor_setup);
-  reductions.push_back(VW::metrics::metrics_setup);
-  reductions.push_back(VW::count_label_setup);
+  reductions.push_back(VW::reductions::metrics_setup);
+  reductions.push_back(VW::reductions::count_label_setup);
 
   register_reductions(reductions, reduction_stack);
 }

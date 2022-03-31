@@ -3,6 +3,8 @@
 // license as described in the file LICENSE.
 
 #pragma once
+#include "config/option_group_definition.h"
+#include "config/options.h"
 #include "learner.h"
 #include "numeric_casts.h"
 #include "rand48.h"
@@ -13,7 +15,11 @@
 
 #include <memory>
 
-namespace ExpReplay
+namespace VW
+{
+namespace reductions
+{
+namespace expreplay
 {
 template <VW::label_parser& lp>
 struct expreplay
@@ -35,7 +41,7 @@ struct expreplay
 };
 
 template <VW::label_parser& lp>
-void learn(expreplay<lp>& er, LEARNER::single_learner& base, VW::example& ec)
+void learn(expreplay<lp>& er, VW::LEARNER::single_learner& base, VW::example& ec)
 {
   // Cannot learn if the example weight is 0.
   if (lp.get_weight(ec.l, ec._reduction_features) == 0.) return;
@@ -54,13 +60,13 @@ void learn(expreplay<lp>& er, LEARNER::single_learner& base, VW::example& ec)
 }
 
 template <VW::label_parser& lp>
-void predict(expreplay<lp>&, LEARNER::single_learner& base, VW::example& ec)
+void predict(expreplay<lp>&, VW::LEARNER::single_learner& base, VW::example& ec)
 {
   base.predict(ec);
 }
 
 template <VW::label_parser& lp>
-void multipredict(expreplay<lp>&, LEARNER::single_learner& base, VW::example& ec, size_t count, size_t step,
+void multipredict(expreplay<lp>&, VW::LEARNER::single_learner& base, VW::example& ec, size_t count, size_t step,
     VW::polyprediction* pred, bool finalize_predictions)
 {
   base.multipredict(ec, count, step, pred, finalize_predictions);
@@ -77,6 +83,7 @@ void end_pass(expreplay<lp>& er)
       er.filled[n] = false;
     }
 }
+}  // namespace expreplay
 
 template <char er_level, VW::label_parser& lp>
 VW::LEARNER::base_learner* expreplay_setup(VW::setup_base_i& stack_builder)
@@ -90,7 +97,7 @@ VW::LEARNER::base_learner* expreplay_setup(VW::setup_base_i& stack_builder)
   uint64_t N;
   uint64_t replay_count;
 
-  auto er = VW::make_unique<expreplay<lp>>();
+  auto er = VW::make_unique<expreplay::expreplay<lp>>();
   VW::config::option_group_definition new_options("[Reduction] Experience Replay / " + replay_string);
   new_options
       .add(VW::config::make_option(replay_string, N)
@@ -118,10 +125,12 @@ VW::LEARNER::base_learner* expreplay_setup(VW::setup_base_i& stack_builder)
                          << ", replay count=" << er->replay_count << std::endl;
 
   er->base = VW::LEARNER::as_singleline(stack_builder.setup_base_learner());
-  auto* l = VW::LEARNER::make_reduction_learner(std::move(er), er->base, learn<lp>, predict<lp>, replay_string)
-                .set_end_pass(end_pass<lp>)
+  auto* l = VW::LEARNER::make_reduction_learner(
+      std::move(er), er->base, expreplay::learn<lp>, expreplay::predict<lp>, replay_string)
+                .set_end_pass(expreplay::end_pass<lp>)
                 .build();
 
   return VW::LEARNER::make_base(*l);
 }
-}  // namespace ExpReplay
+}  // namespace reductions
+}  // namespace VW

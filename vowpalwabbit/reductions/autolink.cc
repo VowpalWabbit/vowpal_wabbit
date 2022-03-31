@@ -77,10 +77,11 @@ void autolink::reset_example(VW::example& ec)
 template <bool is_learn>
 void predict_or_learn(autolink& b, VW::LEARNER::single_learner& base, VW::example& ec)
 {
-  if (is_learn)
-    b.learn(base, ec);
+  if (is_learn) { b.learn(base, ec); }
   else
+  {
     b.predict(base, ec);
+  }
 }
 
 VW::LEARNER::base_learner* VW::reductions::autolink_setup(VW::setup_base_i& stack_builder)
@@ -91,7 +92,7 @@ VW::LEARNER::base_learner* VW::reductions::autolink_setup(VW::setup_base_i& stac
   option_group_definition new_options("[Reduction] Autolink");
   new_options.add(make_option("autolink", d).keep().necessary().help("Create link function with polynomial d"));
 
-  if (!options.add_parse_and_check_necessary(new_options)) return nullptr;
+  if (!options.add_parse_and_check_necessary(new_options)) { return nullptr; }
 
   auto autolink_reduction = VW::make_unique<autolink>(d, all.weights.stride_shift());
   auto* base = VW::LEARNER::as_singleline(stack_builder.setup_base_learner());

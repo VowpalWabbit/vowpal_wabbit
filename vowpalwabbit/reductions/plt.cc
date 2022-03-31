@@ -1,6 +1,8 @@
 // Copyright (c) by respective owners including Yahoo!, Microsoft, and
 // individual contributors. All rights reserved. Released under a BSD (revised)
 // license as described in the file LICENSE.
+#include "reductions/plt.h"
+
 #include "config/options.h"
 #include "io/logger.h"
 #include "loss_functions.h"
@@ -21,7 +23,7 @@
 using namespace VW::LEARNER;
 using namespace VW::config;
 
-namespace plt_ns
+namespace
 {
 struct node
 {
@@ -109,8 +111,10 @@ void learn(plt& p, single_learner& base, VW::example& ec)
       }
     }
     if (multilabels.label_v.back() >= p.k)
+    {
       p.all->logger.out_error(
           "label {0} is not in {{0,{1}}} This won't work right.", multilabels.label_v.back(), p.k - 1);
+    }
 
     for (auto& n : p.positive_nodes)
     {
@@ -120,20 +124,22 @@ void learn(plt& p, single_learner& base, VW::example& ec)
         {
           uint32_t n_child = p.kary * n + i;
           if (n_child < p.t && p.positive_nodes.find(n_child) == p.positive_nodes.end())
-            p.negative_nodes.insert(n_child);
+          { p.negative_nodes.insert(n_child); }
         }
       }
     }
   }
   else
+  {
     p.negative_nodes.insert(0);
+  }
 
   ec.l.simple = {1.f};
   ec._reduction_features.template get<simple_label_reduction_features>().reset_to_default();
-  for (auto& n : p.positive_nodes) learn_node(p, n, base, ec);
+  for (auto& n : p.positive_nodes) { learn_node(p, n, base, ec); }
 
   ec.l.simple.label = -1.f;
-  for (auto& n : p.negative_nodes) learn_node(p, n, base, ec);
+  for (auto& n : p.negative_nodes) { learn_node(p, n, base, ec); }
 
   p.all->sd->t = t;
   p.all->sd->weighted_holdout_examples = weighted_holdout_examples;
@@ -161,10 +167,11 @@ void predict(plt& p, single_learner& base, VW::example& ec)
   p.true_labels.clear();
   for (auto label : multilabels.label_v)
   {
-    if (label < p.k)
-      p.true_labels.insert(label);
+    if (label < p.k) { p.true_labels.insert(label); }
     else
+    {
       p.all->logger.out_error("label {0} is not in {{0,{1}}} This won't work right.", label, p.k - 1);
+    }
   }
 
   p.node_queue.clear();  // clear node queue
@@ -173,7 +180,10 @@ void predict(plt& p, single_learner& base, VW::example& ec)
   if (threshold)
   {
     float cp_root = predict_node(0, base, ec);
-    if (cp_root > p.threshold) p.node_queue.push_back({0, cp_root});  // here queue is used for dfs search
+    if (cp_root > p.threshold)
+    {
+      p.node_queue.push_back({0, cp_root});  // here queue is used for dfs search
+    }
 
     while (!p.node_queue.empty())
     {
@@ -190,8 +200,7 @@ void predict(plt& p, single_learner& base, VW::example& ec)
         float cp_child = node.p * (1.f / (1.f + std::exp(-p.node_preds[i].scalar)));
         if (cp_child > p.threshold)
         {
-          if (n_child < p.ti)
-            p.node_queue.push_back({n_child, cp_child});
+          if (n_child < p.ti) { p.node_queue.push_back({n_child, cp_child}); }
           else
           {
             uint32_t l = n_child - p.ti;
@@ -206,7 +215,7 @@ void predict(plt& p, single_learner& base, VW::example& ec)
       uint32_t tp = 0;
       for (auto pred_label : preds.label_v)
       {
-        if (p.true_labels.count(pred_label)) ++tp;
+        if (p.true_labels.count(pred_label)) { ++tp; }
       }
       p.tp += tp;
       p.fp += static_cast<uint32_t>(preds.label_v.size()) - tp;
@@ -246,7 +255,7 @@ void predict(plt& p, single_learner& base, VW::example& ec)
       {
         uint32_t l = node.n - p.ti;
         preds.label_v.push_back(l);
-        if (preds.label_v.size() >= p.top_k) break;
+        if (preds.label_v.size() >= p.top_k) { break; }
       }
     }
 
@@ -255,7 +264,7 @@ void predict(plt& p, single_learner& base, VW::example& ec)
     {
       for (size_t i = 0; i < p.top_k; ++i)
       {
-        if (p.true_labels.count(preds.label_v[i])) ++p.tp_at[i];
+        if (p.true_labels.count(preds.label_v[i])) { ++p.tp_at[i]; }
       }
       ++p.ec_count;
       p.true_count += static_cast<uint32_t>(p.true_labels.size());
@@ -314,16 +323,16 @@ void save_load_tree(plt& p, io_buf& model_file, bool read, bool text)
     if (resume && !p.all->weights.adaptive)
     {
       for (size_t i = 0; i < p.t; ++i)
+      {
         bin_text_read_write_fixed(
             model_file, reinterpret_cast<char*>(&p.nodes_time[i]), sizeof(p.nodes_time[0]), read, msg, text);
+      }
     }
   }
 }
 }  // namespace plt_ns
 
-using namespace plt_ns;
-
-base_learner* plt_setup(VW::setup_base_i& stack_builder)
+base_learner* VW::reductions::plt_setup(VW::setup_base_i& stack_builder)
 {
   options_i& options = *stack_builder.get_options();
   VW::workspace& all = *stack_builder.get_all_pointer();
@@ -338,7 +347,7 @@ base_learner* plt_setup(VW::setup_base_i& stack_builder)
                .default_value(0)
                .help("Predict top-<k> labels instead of labels above threshold"));
 
-  if (!options.add_parse_and_check_necessary(new_options)) return nullptr;
+  if (!options.add_parse_and_check_necessary(new_options)) { return nullptr; }
 
   tree->all = &all;
 
@@ -368,7 +377,7 @@ base_learner* plt_setup(VW::setup_base_i& stack_builder)
   tree->nodes_time.resize_but_with_stl_behavior(tree->t);
   std::fill(tree->nodes_time.begin(), tree->nodes_time.end(), all.initial_t);
   tree->node_preds.resize(tree->kary);
-  if (tree->top_k > 0) tree->tp_at.resize_but_with_stl_behavior(tree->top_k);
+  if (tree->top_k > 0) { tree->tp_at.resize_but_with_stl_behavior(tree->top_k); }
 
   size_t ws = tree->t;
   std::string name_addition;
@@ -391,15 +400,15 @@ base_learner* plt_setup(VW::setup_base_i& stack_builder)
                 .set_output_prediction_type(VW::prediction_type_t::multilabels)
                 .set_input_label_type(VW::label_type_t::multilabel)
                 .set_learn_returns_prediction(true)
-                .set_finish_example(finish_example)
-                .set_finish(finish)
+                .set_finish_example(::finish_example)
+                .set_finish(::finish)
                 .set_save_load(save_load_tree)
                 .build();
 
   all.example_parser->lbl_parser = MULTILABEL::multilabel;
 
   // force logistic loss for base classifiers
-  all.loss = getLossFunction(all, "logistic");
+  all.loss = get_loss_function(all, "logistic");
 
   return make_base(*l);
 }

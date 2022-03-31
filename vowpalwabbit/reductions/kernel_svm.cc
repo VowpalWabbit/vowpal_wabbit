@@ -1,6 +1,9 @@
 // Copyright (c) by respective owners including Yahoo!, Microsoft, and
 // individual contributors. All rights reserved. Released under a BSD (revised)
 // license as described in the file LICENSE.
+
+#include "kernel_svm.h"
+
 #include "accumulate.h"
 #include "cache.h"
 #include "config/options.h"
@@ -39,6 +42,8 @@ using namespace VW::config;
 
 using std::endl;
 
+namespace
+{
 struct svm_params;
 
 static size_t num_kernel_evals = 0;
@@ -137,7 +142,7 @@ svm_example::~svm_example()
   // VW::flat_example* fec = &calloc_or_throw<VW::flat_example>();
   //*fec = ex;
   // free_flatten_example(fec);  // free contents of flat example and frees fec.
-  if (ex.tag_len > 0) free(ex.tag);
+  if (ex.tag_len > 0) { free(ex.tag); }
 }
 
 float kernel_function(const VW::flat_example* fec1, const VW::flat_example* fec2, void* params, size_t kernel_type);
@@ -163,7 +168,9 @@ int svm_example::compute_kernels(svm_params& params)
     }
   }
   else
+  {
     num_cache_evals += n;
+  }
   return alloc;
 }
 
@@ -201,7 +208,7 @@ static int make_hot_sv(svm_params& params, size_t svi)
     if (svi < rowsize)
     {
       float kv = e->krow[svi];
-      for (size_t i = svi; i > 0; --i) e->krow[i] = e->krow[i - 1];
+      for (size_t i = svi; i > 0; --i) { e->krow[i] = e->krow[i - 1]; }
       e->krow[0] = kv;
     }
     else
@@ -209,7 +216,7 @@ static int make_hot_sv(svm_params& params, size_t svi)
       float kv = svi_e->krow[j];
       e->krow.push_back(0);
       alloc += 1;
-      for (size_t i = e->krow.size() - 1; i > 0; --i) e->krow[i] = e->krow[i - 1];
+      for (size_t i = e->krow.size() - 1; i > 0; --i) { e->krow[i] = e->krow[i - 1]; }
       e->krow[0] = kv;
     }
   }
@@ -226,7 +233,7 @@ static int trim_cache(svm_params& params)
   {
     svm_example* e = model->support_vec[i];
     sz -= static_cast<int>(e->krow.size());
-    if (sz < 0) alloc += e->clear_kernels();
+    if (sz < 0) { alloc += e->clear_kernels(); }
   }
   return alloc;
 }
@@ -236,7 +243,7 @@ void save_load_svm_model(svm_params& params, io_buf& model_file, bool read, bool
   svm_model* model = params.model;
   // TODO: check about initialization
 
-  if (model_file.num_files() == 0) return;
+  if (model_file.num_files() == 0) { return; }
   std::stringstream msg;
   bin_text_read_write_fixed(
       model_file, reinterpret_cast<char*>(&(model->num_support)), sizeof(model->num_support), read, msg, text);
@@ -285,7 +292,7 @@ float linear_kernel(const VW::flat_example* fec1, const VW::flat_example* fec2)
 
   features& fs_1 = const_cast<features&>(fec1->fs);
   features& fs_2 = const_cast<features&>(fec2->fs);
-  if (fs_2.indices.size() == 0) return 0.f;
+  if (fs_2.indices.size() == 0) { return 0.f; }
 
   int numint = 0;
   for (size_t idx1 = 0, idx2 = 0; idx1 < fs_1.size() && idx2 < fs_2.size(); idx1++)
@@ -293,9 +300,9 @@ float linear_kernel(const VW::flat_example* fec1, const VW::flat_example* fec2)
     uint64_t ec1pos = fs_1.indices[idx1];
     uint64_t ec2pos = fs_2.indices[idx2];
     // params.all->opts_n_args.trace_message<<ec1pos<<" "<<ec2pos<<" "<<idx1<<" "<<idx2<<" "<<f->x<<" "<<ec2f->x<< endl;
-    if (ec1pos < ec2pos) continue;
+    if (ec1pos < ec2pos) { continue; }
 
-    while (ec1pos > ec2pos && ++idx2 < fs_2.size()) ec2pos = fs_2.indices[idx2];
+    while (ec1pos > ec2pos && ++idx2 < fs_2.size()) { ec2pos = fs_2.indices[idx2]; }
 
     if (ec1pos == ec2pos)
     {
@@ -336,7 +343,7 @@ float kernel_function(const VW::flat_example* fec1, const VW::flat_example* fec2
 float dense_dot(float* v1, const VW::v_array<float>& v2, size_t n)
 {
   float dot_prod = 0.;
-  for (size_t i = 0; i < n; i++) dot_prod += v1[i] * v2[i];
+  for (size_t i = 0; i < n; i++) { dot_prod += v1[i] * v2[i]; }
   return dot_prod;
 }
 
@@ -348,9 +355,11 @@ void predict(svm_params& params, svm_example** ec_arr, float* scores, size_t n)
     ec_arr[i]->compute_kernels(params);
     // std::cout<<"size of krow = "<<ec_arr[i]->krow.size()<< endl;
     if (ec_arr[i]->krow.size() > 0)
-      scores[i] = dense_dot(ec_arr[i]->krow.begin(), model->alpha, model->num_support) / params.lambda;
+    { scores[i] = dense_dot(ec_arr[i]->krow.begin(), model->alpha, model->num_support) / params.lambda; }
     else
+    {
       scores[i] = 0;
+    }
   }
 }
 
@@ -379,9 +388,11 @@ size_t suboptimality(svm_model* model, double* subopt)
     const auto& simple_red_features =
         model->support_vec[i]->ex._reduction_features.template get<simple_label_reduction_features>();
     if ((tmp < simple_red_features.weight && model->delta[i] < 0) || (tmp > 0 && model->delta[i] > 0))
-      subopt[i] = fabs(model->delta[i]);
+    { subopt[i] = fabs(model->delta[i]); }
     else
+    {
       subopt[i] = 0;
+    }
 
     if (subopt[i] > max_val)
     {
@@ -418,7 +429,7 @@ int remove(svm_params& params, size_t svi)
     size_t rowsize = e->krow.size();
     if (svi < rowsize)
     {
-      for (size_t i = svi; i < rowsize - 1; i++) e->krow[i] = e->krow[i + 1];
+      for (size_t i = svi; i < rowsize - 1; i++) { e->krow[i] = e->krow[i + 1]; }
       e->krow.pop_back();
       alloc -= 1;
     }
@@ -454,15 +465,16 @@ bool update(svm_params& params, size_t pos)
   float ai = (params.lambda - proj) / inprods[pos];
 
   const auto& simple_red_features = fec->ex._reduction_features.template get<simple_label_reduction_features>();
-  if (ai > simple_red_features.weight)
-    ai = simple_red_features.weight;
+  if (ai > simple_red_features.weight) { ai = simple_red_features.weight; }
   else if (ai < 0)
+  {
     ai = 0;
+  }
 
   ai *= ld.label;
   float diff = ai - alpha_old;
 
-  if (std::fabs(diff) > 1.0e-06) overshoot = true;
+  if (std::fabs(diff) > 1.0e-06) { overshoot = true; }
 
   if (std::fabs(diff) > 1.)
   {
@@ -476,22 +488,21 @@ bool update(svm_params& params, size_t pos)
     model->delta[i] += diff * inprods[i] * ldi.label / params.lambda;
   }
 
-  if (std::fabs(ai) <= 1.0e-10)
-    remove(params, pos);
+  if (std::fabs(ai) <= 1.0e-10) { remove(params, pos); }
   else
+  {
     model->alpha[pos] = ai;
+  }
 
   return overshoot;
 }
 
 void copy_char(char& c1, const char& c2) noexcept
 {
-  if (c2 != '\0') c1 = c2;
+  if (c2 != '\0') { c1 = c2; }
 }
 
 void add_size_t(size_t& t1, const size_t& t2) noexcept { t1 += t2; }
-
-void add_double(double& t1, const double& t2) noexcept { t1 += t2; }
 
 void sync_queries(VW::workspace& all, svm_params& params, bool* train_pool)
 {
@@ -502,7 +513,7 @@ void sync_queries(VW::workspace& all, svm_params& params, bool* train_pool)
 
   for (size_t i = 0; i < params.pool_pos; i++)
   {
-    if (!train_pool[i]) continue;
+    if (!train_pool[i]) { continue; }
 
     fec = &(params.pool[i]->ex);
     VW::model_utils::write_model_field(
@@ -517,7 +528,7 @@ void sync_queries(VW::workspace& all, svm_params& params, bool* train_pool)
   size_t prev_sum = 0, total_sum = 0;
   for (size_t i = 0; i < all.all_reduce->total; i++)
   {
-    if (i <= (all.all_reduce->node - 1)) prev_sum += sizes[i];
+    if (i <= (all.all_reduce->node - 1)) { prev_sum += sizes[i]; }
     total_sum += sizes[i];
   }
 
@@ -543,14 +554,16 @@ void sync_queries(VW::workspace& all, svm_params& params, bool* train_pool)
         params.pool_pos++;
       }
       else
+      {
         break;
+      }
 
       num_read += b->unflushed_bytes_count();
-      if (num_read == prev_sum) params.local_begin = i + 1;
-      if (num_read == prev_sum + sizes[all.all_reduce->node]) params.local_end = i;
+      if (num_read == prev_sum) { params.local_begin = i + 1; }
+      if (num_read == prev_sum + sizes[all.all_reduce->node]) { params.local_end = i; }
     }
   }
-  if (fec) free(fec);
+  if (fec) { free(fec); }
   free(sizes);
   delete b;
 }
@@ -558,7 +571,7 @@ void sync_queries(VW::workspace& all, svm_params& params, bool* train_pool)
 void train(svm_params& params)
 {
   bool* train_pool = calloc_or_throw<bool>(params.pool_size);
-  for (size_t i = 0; i < params.pool_size; i++) train_pool[i] = false;
+  for (size_t i = 0; i < params.pool_size; i++) { train_pool[i] = false; }
 
   float* scores = calloc_or_throw<float>(params.pool_pos);
   predict(params, params.pool, scores, params.pool_pos);
@@ -569,7 +582,7 @@ void train(svm_params& params)
     {
       std::multimap<double, size_t> scoremap;
       for (size_t i = 0; i < params.pool_pos; i++)
-        scoremap.insert(std::pair<const double, const size_t>(std::fabs(scores[i]), i));
+      { scoremap.insert(std::pair<const double, const size_t>(std::fabs(scores[i]), i)); }
 
       std::multimap<double, size_t>::iterator iter = scoremap.begin();
       iter = scoremap.begin();
@@ -603,7 +616,9 @@ void train(svm_params& params)
   if (params.para_active)
   {
     for (size_t i = 0; i < params.pool_pos; i++)
-      if (!train_pool[i]) delete params.pool[i];
+    {
+      if (!train_pool[i]) { delete params.pool[i]; }
+    }
     sync_queries(*(params.all), params, train_pool);
   }
 
@@ -619,7 +634,9 @@ void train(svm_params& params)
         if (train_pool[i]) { model_pos = add(params, params.pool[i]); }
       }
       else
+      {
         model_pos = add(params, params.pool[i]);
+      }
 
       if (model_pos >= 0)
       {
@@ -628,17 +645,17 @@ void train(svm_params& params)
         double* subopt = calloc_or_throw<double>(model->num_support);
         for (size_t j = 0; j < params.reprocess; j++)
         {
-          if (model->num_support == 0) break;
+          if (model->num_support == 0) { break; }
           int randi = 1;
-          if (params._random_state->get_and_update_random() < 0.5) randi = 0;
+          if (params._random_state->get_and_update_random() < 0.5) { randi = 0; }
           if (randi)
           {
             size_t max_pos = suboptimality(model, subopt);
             if (subopt[max_pos] > 0)
             {
               if (!overshoot && max_pos == static_cast<size_t>(model_pos) && max_pos > 0 && j == 0)
-                *params.all->trace_message << "Shouldn't reprocess right after process." << endl;
-              if (max_pos * model->num_support <= params.maxcache) make_hot_sv(params, max_pos);
+              { *params.all->trace_message << "Shouldn't reprocess right after process." << endl; }
+              if (max_pos * model->num_support <= params.maxcache) { make_hot_sv(params, max_pos); }
               update(params, max_pos);
             }
           }
@@ -654,7 +671,9 @@ void train(svm_params& params)
     }
   }
   else
-    for (size_t i = 0; i < params.pool_pos; i++) delete params.pool[i];
+  {
+    for (size_t i = 0; i < params.pool_pos; i++) { delete params.pool[i]; }
+  }
 
   free(scores);
   free(train_pool);
@@ -672,7 +691,7 @@ void learn(svm_params& params, base_learner&, VW::example& ec)
     ec.pred.scalar = score;
     ec.loss = std::max(0.f, 1.f - score * ec.l.simple.label);
     params.loss_sum += ec.loss;
-    if (params.all->training && ec.example_counter % 100 == 0) trim_cache(params);
+    if (params.all->training && ec.example_counter % 100 == 0) { trim_cache(params); }
     if (params.all->training && ec.example_counter % 1000 == 0 && ec.example_counter >= 2)
     {
       *params.all->trace_message << "Number of support vectors = " << params.model->num_support << endl;
@@ -702,8 +721,9 @@ void finish_kernel_svm(svm_params& params)
     *(params.all->trace_message) << "Total loss = " << params.loss_sum << endl;
   }
 }
+}  // namespace
 
-VW::LEARNER::base_learner* kernel_svm_setup(VW::setup_base_i& stack_builder)
+VW::LEARNER::base_learner* VW::reductions::kernel_svm_setup(VW::setup_base_i& stack_builder)
 {
   options_i& options = *stack_builder.get_options();
   VW::workspace& all = *stack_builder.get_all_pointer();
@@ -741,7 +761,7 @@ VW::LEARNER::base_learner* kernel_svm_setup(VW::setup_base_i& stack_builder)
 
   std::string loss_function = "hinge";
   float loss_parameter = 0.0;
-  all.loss = getLossFunction(all, loss_function, loss_parameter);
+  all.loss = get_loss_function(all, loss_function, loss_parameter);
 
   params->model = &calloc_or_throw<svm_model>();
   new (params->model) svm_model();
@@ -754,17 +774,17 @@ VW::LEARNER::base_learner* kernel_svm_setup(VW::setup_base_i& stack_builder)
   // This param comes from the active reduction.
   // During options refactor: this changes the semantics a bit - now this will only be true if --active was supplied and
   // NOT --simulation
-  if (all.active) params->active = true;
-  if (params->active) params->active_c = 1.;
+  if (all.active) { params->active = true; }
+  if (params->active) { params->active_c = 1.; }
 
   params->pool = calloc_or_throw<svm_example*>(params->pool_size);
   params->pool_pos = 0;
 
   if (!options.was_supplied("subsample") && params->para_active)
-    params->subsample = static_cast<size_t>(ceil(params->pool_size / all.all_reduce->total));
+  { params->subsample = static_cast<size_t>(ceil(params->pool_size / all.all_reduce->total)); }
 
   params->lambda = all.l2_lambda;
-  if (params->lambda == 0.) params->lambda = 1.;
+  if (params->lambda == 0.) { params->lambda = 1.; }
   *params->all->trace_message << "Lambda = " << params->lambda << endl;
   *params->all->trace_message << "Kernel = " << kernel_type << endl;
 
@@ -783,7 +803,9 @@ VW::LEARNER::base_learner* kernel_svm_setup(VW::setup_base_i& stack_builder)
     *(static_cast<int*>(params->kernel_params)) = degree;
   }
   else
+  {
     params->kernel_type = SVM_KER_LIN;
+  }
 
   params->all->weights.stride_shift(0);
 

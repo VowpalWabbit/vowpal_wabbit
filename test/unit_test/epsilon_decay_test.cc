@@ -15,11 +15,11 @@
 
 using simulator::callback_map;
 using simulator::cb_sim;
-using namespace VW::epsilon_decay;
+using namespace VW::reductions::epsilon_decay;
 
 namespace epsilon_decay_test
 {
-VW::epsilon_decay::epsilon_decay_data* get_epsilon_decay_data(VW::workspace& all)
+epsilon_decay_data* get_epsilon_decay_data(VW::workspace& all)
 {
   std::vector<std::string> e_r;
   all.l->get_enabled_reductions(e_r);
@@ -28,7 +28,7 @@ VW::epsilon_decay::epsilon_decay_data* get_epsilon_decay_data(VW::workspace& all
 
   VW::LEARNER::multi_learner* epsilon_decay_learner = as_multiline(all.l->get_learner_by_name_prefix("epsilon_decay"));
 
-  return (VW::epsilon_decay::epsilon_decay_data*)
+  return (epsilon_decay_data*)
       epsilon_decay_learner->get_internal_type_erased_data_pointer_test_use_only();
 }
 }  // namespace epsilon_decay_test
@@ -46,32 +46,32 @@ BOOST_AUTO_TEST_CASE(epsilon_decay_test_change_dist)
   const size_t num_iterations = 10000;
   const std::vector<uint64_t> swap_after = {5000};
   const size_t seed = 10;
-  const size_t deterministic_champ_switch = 6861;
+  const size_t deterministic_champ_switch = 6895;
   callback_map test_hooks;
 
   test_hooks.emplace(deterministic_champ_switch - 1, [&](cb_sim&, VW::workspace& all, multi_ex&) {
-    VW::epsilon_decay::epsilon_decay_data* epsilon_decay = epsilon_decay_test::get_epsilon_decay_data(all);
-    BOOST_CHECK_EQUAL(epsilon_decay->scored_configs[0].update_count, 79);
-    BOOST_CHECK_EQUAL(epsilon_decay->scored_configs[1].update_count, 85);
-    BOOST_CHECK_EQUAL(epsilon_decay->scored_configs[2].update_count, 251);
-    BOOST_CHECK_EQUAL(epsilon_decay->scored_configs[3].update_count, 6860);
-    BOOST_CHECK_EQUAL(epsilon_decay->scored_configs[0].get_model_idx(), 1);
-    BOOST_CHECK_EQUAL(epsilon_decay->scored_configs[1].get_model_idx(), 2);
-    BOOST_CHECK_EQUAL(epsilon_decay->scored_configs[2].get_model_idx(), 0);
-    BOOST_CHECK_EQUAL(epsilon_decay->scored_configs[3].get_model_idx(), 3);
+    epsilon_decay_data* epsilon_decay = epsilon_decay_test::get_epsilon_decay_data(all);
+    BOOST_CHECK_EQUAL(epsilon_decay->_scored_configs[0].update_count, 12);
+    BOOST_CHECK_EQUAL(epsilon_decay->_scored_configs[1].update_count, 18);
+    BOOST_CHECK_EQUAL(epsilon_decay->_scored_configs[2].update_count, 285);
+    BOOST_CHECK_EQUAL(epsilon_decay->_scored_configs[3].update_count, 6894);
+    BOOST_CHECK_EQUAL(epsilon_decay->_scored_configs[0].get_model_idx(), 1);
+    BOOST_CHECK_EQUAL(epsilon_decay->_scored_configs[1].get_model_idx(), 2);
+    BOOST_CHECK_EQUAL(epsilon_decay->_scored_configs[2].get_model_idx(), 0);
+    BOOST_CHECK_EQUAL(epsilon_decay->_scored_configs[3].get_model_idx(), 3);
     return true;
   });
 
   test_hooks.emplace(deterministic_champ_switch, [&](cb_sim&, VW::workspace& all, multi_ex&) {
-    VW::epsilon_decay::epsilon_decay_data* epsilon_decay = epsilon_decay_test::get_epsilon_decay_data(all);
-    BOOST_CHECK_EQUAL(epsilon_decay->scored_configs[0].update_count, 0);
-    BOOST_CHECK_EQUAL(epsilon_decay->scored_configs[1].update_count, 80);
-    BOOST_CHECK_EQUAL(epsilon_decay->scored_configs[2].update_count, 86);
-    BOOST_CHECK_EQUAL(epsilon_decay->scored_configs[3].update_count, 252);
-    BOOST_CHECK_EQUAL(epsilon_decay->scored_configs[0].get_model_idx(), 3);
-    BOOST_CHECK_EQUAL(epsilon_decay->scored_configs[1].get_model_idx(), 1);
-    BOOST_CHECK_EQUAL(epsilon_decay->scored_configs[2].get_model_idx(), 2);
-    BOOST_CHECK_EQUAL(epsilon_decay->scored_configs[3].get_model_idx(), 0);
+    epsilon_decay_data* epsilon_decay = epsilon_decay_test::get_epsilon_decay_data(all);
+    BOOST_CHECK_EQUAL(epsilon_decay->_scored_configs[0].update_count, 0);
+    BOOST_CHECK_EQUAL(epsilon_decay->_scored_configs[1].update_count, 13);
+    BOOST_CHECK_EQUAL(epsilon_decay->_scored_configs[2].update_count, 19);
+    BOOST_CHECK_EQUAL(epsilon_decay->_scored_configs[3].update_count, 286);
+    BOOST_CHECK_EQUAL(epsilon_decay->_scored_configs[0].get_model_idx(), 3);
+    BOOST_CHECK_EQUAL(epsilon_decay->_scored_configs[1].get_model_idx(), 1);
+    BOOST_CHECK_EQUAL(epsilon_decay->_scored_configs[2].get_model_idx(), 2);
+    BOOST_CHECK_EQUAL(epsilon_decay->_scored_configs[3].get_model_idx(), 0);
     return true;
   });
 

@@ -18,7 +18,7 @@ using namespace VW::config;
 #undef VW_DEBUG_LOG
 #define VW_DEBUG_LOG vw_dbg::csoaa
 
-namespace CSOAA
+namespace
 {
 struct csoaa
 {
@@ -116,7 +116,7 @@ void predict_or_learn(csoaa& c, single_learner& base, VW::example& ec)
   if (!ld.costs.empty())
   {
     for (auto& cl : ld.costs)
-      inner_loop<is_learn>(base, ec, cl.class_index, cl.x, prediction, score, cl.partial_prediction, c.indexing);
+    { inner_loop<is_learn>(base, ec, cl.class_index, cl.x, prediction, score, cl.partial_prediction, c.indexing); }
     ec.partial_prediction = score;
   }
   else if (dont_learn)
@@ -130,7 +130,7 @@ void predict_or_learn(csoaa& c, single_learner& base, VW::example& ec)
       for (uint32_t i = 0; i <= c.num_classes; i++)
       {
         add_passthrough_feature(ec, i, c.pred[i].scalar);
-        if (c.pred[i].scalar < c.pred[prediction].scalar) prediction = i;
+        if (c.pred[i].scalar < c.pred[prediction].scalar) { prediction = i; }
       }
       ec.partial_prediction = c.pred[prediction].scalar;
     }
@@ -139,7 +139,7 @@ void predict_or_learn(csoaa& c, single_learner& base, VW::example& ec)
       for (uint32_t i = 1; i <= c.num_classes; i++)
       {
         add_passthrough_feature(ec, i, c.pred[i - 1].scalar);
-        if (c.pred[i - 1].scalar < c.pred[prediction - 1].scalar) prediction = i;
+        if (c.pred[i - 1].scalar < c.pred[prediction - 1].scalar) { prediction = i; }
       }
       ec.partial_prediction = c.pred[prediction - 1].scalar;
     }
@@ -148,7 +148,7 @@ void predict_or_learn(csoaa& c, single_learner& base, VW::example& ec)
   {
     float temp;
     for (uint32_t i = 1; i <= c.num_classes; i++)
-      inner_loop<false>(base, ec, i, FLT_MAX, prediction, score, temp, c.indexing);
+    { inner_loop<false>(base, ec, i, FLT_MAX, prediction, score, temp, c.indexing); }
   }
 
   if (ec.passthrough)
@@ -178,8 +178,9 @@ void predict_or_learn(csoaa& c, single_learner& base, VW::example& ec)
 }
 
 void finish_example(VW::workspace& all, csoaa&, VW::example& ec) { COST_SENSITIVE::finish_example(all, ec); }
+}  // namespace
 
-base_learner* csoaa_setup(VW::setup_base_i& stack_builder)
+base_learner* VW::reductions::csoaa_setup(VW::setup_base_i& stack_builder)
 {
   options_i& options = *stack_builder.get_options();
   VW::workspace& all = *stack_builder.get_all_pointer();
@@ -189,7 +190,7 @@ base_learner* csoaa_setup(VW::setup_base_i& stack_builder)
       .add(make_option("csoaa", c->num_classes).keep().necessary().help("One-against-all multiclass with <k> costs"))
       .add(make_option("indexing", c->indexing).one_of({0, 1}).keep().help("Choose between 0 or 1-indexing"));
 
-  if (!options.add_parse_and_check_necessary(new_options)) return nullptr;
+  if (!options.add_parse_and_check_necessary(new_options)) { return nullptr; }
 
   if (options.was_supplied("probabilities"))
   { THROW("csoaa does not support probabilities flag, please use oaa or multilabel_oaa"); }
@@ -204,11 +205,10 @@ base_learner* csoaa_setup(VW::setup_base_i& stack_builder)
                 .set_params_per_weight(ws)
                 .set_output_prediction_type(VW::prediction_type_t::multiclass)
                 .set_input_label_type(VW::label_type_t::cs)
-                .set_finish_example(finish_example)
+                .set_finish_example(::finish_example)
                 .build();
 
   all.example_parser->lbl_parser = cs_label;
   all.cost_sensitive = make_base(*l);
   return all.cost_sensitive;
 }
-}  // namespace CSOAA

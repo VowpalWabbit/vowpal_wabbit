@@ -8,5 +8,8 @@
 
 namespace VW
 {
+namespace reductions
+{
 VW::LEARNER::base_learner* count_label_setup(VW::setup_base_i& stack_builder);
+}
 }  // namespace VW

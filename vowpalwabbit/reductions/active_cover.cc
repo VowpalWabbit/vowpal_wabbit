@@ -237,14 +237,14 @@ base_learner* VW::reductions::active_cover_setup(VW::setup_base_i& stack_builder
       .add(make_option("cover", cover_size).keep().default_value(12).help("Cover size"))
       .add(make_option("oracular", data->oracular).help("Use Oracular-CAL style query or not"));
 
-  if (!options.add_parse_and_check_necessary(new_options)) return nullptr;
+  if (!options.add_parse_and_check_necessary(new_options)) { return nullptr; }
 
   data->all = &all;
   data->_random_state = all.get_random_state();
   data->beta_scale *= data->beta_scale;
   data->cover_size = VW::cast_to_smaller_type<size_t>(cover_size);
 
-  if (data->oracular) data->cover_size = 0;
+  if (data->oracular) { data->cover_size = 0; }
 
   if (options.was_supplied("lda")) THROW("lda canot be combined with active learning");
 

@@ -2,6 +2,8 @@
 // individual contributors. All rights reserved. Released under a BSD (revised)
 // license as described in the file LICENSE.
 
+#include "reductions/metrics.h"
+
 #include "crossplat_compat.h"
 #include "debug_log.h"
 #include "learner.h"
@@ -23,7 +25,8 @@
 using namespace VW::config;
 using namespace VW::LEARNER;
 using namespace rapidjson;
-
+namespace
+{
 void insert_dsjson_metrics(
     const dsjson_metrics* ds_metrics, VW::metric_sink& metrics, const std::vector<std::string>& enabled_reductions)
 {
@@ -55,10 +58,6 @@ void insert_dsjson_metrics(
   }
 }
 
-namespace VW
-{
-namespace metrics
-{
 struct metrics_data
 {
   std::string out_file;
@@ -66,7 +65,7 @@ struct metrics_data
   size_t predict_count = 0;
 };
 
-struct json_metrics_writer : metric_sink_visitor
+struct json_metrics_writer : VW::metric_sink_visitor
 {
   json_metrics_writer(Writer<FileWriteStream>& writer) : _writer(writer) { _writer.StartObject(); }
   ~json_metrics_writer() override { _writer.EndObject(); }
@@ -96,7 +95,7 @@ private:
   Writer<FileWriteStream>& _writer;
 };
 
-void list_to_json_file(const std::string& filename, const metric_sink& metrics, VW::io::logger& logger)
+void list_to_json_file(const std::string& filename, const VW::metric_sink& metrics, VW::io::logger& logger)
 {
   FILE* fp;
   if (VW::file_open(&fp, filename.c_str(), "wt") == 0)
@@ -114,13 +113,34 @@ void list_to_json_file(const std::string& filename, const metric_sink& metrics, 
     logger.err_warn("skipping metrics. could not open file for metrics: {}", filename);
   }
 }
+void persist(metrics_data& data, VW::metric_sink& metrics)
+{
+  metrics.set_uint("total_predict_calls", data.predict_count);
+  metrics.set_uint("total_learn_calls", data.learn_count);
+}
 
-void output_metrics(VW::workspace& all)
+template <bool is_learn, typename T, typename E>
+void predict_or_learn(metrics_data& data, T& base, E& ec)
+{
+  if (is_learn)
+  {
+    data.learn_count++;
+    base.learn(ec);
+  }
+  else
+  {
+    data.predict_count++;
+    base.predict(ec);
+  }
+}
+}  // namespace
+
+void VW::reductions::output_metrics(VW::workspace& all)
 {
   if (all.options->was_supplied("extra_metrics"))
   {
     std::string filename = all.options->get_typed_option<std::string>("extra_metrics").value();
-    metric_sink list_metrics;
+    VW::metric_sink list_metrics;
 
     all.l->persist_metrics(list_metrics);
 
@@ -138,28 +158,7 @@ void output_metrics(VW::workspace& all)
   }
 }
 
-template <bool is_learn, typename T, typename E>
-void predict_or_learn(metrics_data& data, T& base, E& ec)
-{
-  if (is_learn)
-  {
-    data.learn_count++;
-    base.learn(ec);
-  }
-  else
-  {
-    data.predict_count++;
-    base.predict(ec);
-  }
-}
-
-void persist(metrics_data& data, metric_sink& metrics)
-{
-  metrics.set_uint("total_predict_calls", data.predict_count);
-  metrics.set_uint("total_learn_calls", data.learn_count);
-}
-
-VW::LEARNER::base_learner* metrics_setup(VW::setup_base_i& stack_builder)
+VW::LEARNER::base_learner* VW::reductions::metrics_setup(VW::setup_base_i& stack_builder)
 {
   options_i& options = *stack_builder.get_options();
   auto data = VW::make_unique<metrics_data>();
@@ -169,7 +168,7 @@ VW::LEARNER::base_learner* metrics_setup(VW::setup_base_i& stack_builder)
                       .necessary()
                       .help("Specify filename to write metrics to. Note: There is no fixed schema"));
 
-  if (!options.add_parse_and_check_necessary(new_options)) return nullptr;
+  if (!options.add_parse_and_check_necessary(new_options)) { return nullptr; }
 
   if (data->out_file.empty()) THROW("extra_metrics argument (output filename) is missing.");
 
@@ -198,6 +197,3 @@ VW::LEARNER::base_learner* metrics_setup(VW::setup_base_i& stack_builder)
     return make_base(*l);
   }
 }
-
-}  // namespace metrics
-}  // namespace VW

@@ -386,11 +386,11 @@ std::string ccb_decision_to_string(const ccb_data& data)
   // correct indices: we want index relative to the original ccb multi-example,
   // with no actions filtered
   out_stream << "a_s [";
-  for (const auto& action_score : pred) out_stream << action_score.action << ":" << action_score.score << ", ";
+  for (const auto& action_score : pred) { out_stream << action_score.action << ":" << action_score.score << ", "; }
   out_stream << "] ";
 
   out_stream << "excl [";
-  for (auto excl : data.exclude_list) out_stream << excl << ",";
+  for (auto excl : data.exclude_list) { out_stream << excl << ","; }
   out_stream << "] ";
 
   return out_stream.str();

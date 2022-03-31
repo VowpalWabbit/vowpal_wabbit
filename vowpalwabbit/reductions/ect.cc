@@ -6,6 +6,8 @@
   by John Langford.
 */
 
+#include "reductions/ect.h"
+
 #include "config/options.h"
 #include "global_data.h"
 #include "io/logger.h"
@@ -24,6 +26,8 @@
 using namespace VW::LEARNER;
 using namespace VW::config;
 
+namespace
+{
 struct direction
 {
   size_t id;          // unique id for node
@@ -60,18 +64,13 @@ struct ect
   explicit ect(VW::io::logger logger) : logger(std::move(logger)) {}
 };
 
-bool exists(const VW::v_array<size_t>& db)
-{
-  for (size_t i : db)
-    if (i != 0) return true;
-  return false;
-}
-
 size_t final_depth(size_t eliminations, VW::io::logger& logger)
 {
   eliminations--;
   for (size_t i = 0; i < 32; i++)
-    if (eliminations >> i == 0) return i;
+  {
+    if (eliminations >> i == 0) { return i; }
+  }
   logger.err_error("too many eliminations");
   return 31;
 }
@@ -85,7 +84,7 @@ bool not_empty(std::vector<VW::v_array<uint32_t>> const& tournaments)
 
 size_t create_circuit(ect& e, uint64_t max_label, uint64_t eliminations)
 {
-  if (max_label == 1) return 0;
+  if (max_label == 1) { return 0; }
 
   std::vector<VW::v_array<uint32_t>> tournaments;
   VW::v_array<uint32_t> t;
@@ -99,7 +98,7 @@ size_t create_circuit(ect& e, uint64_t max_label, uint64_t eliminations)
 
   tournaments.push_back(t);
 
-  for (size_t i = 0; i < eliminations - 1; i++) tournaments.push_back(VW::v_array<uint32_t>());
+  for (size_t i = 0; i < eliminations - 1; i++) { tournaments.push_back(VW::v_array<uint32_t>()); }
 
   e.all_levels.push_back(tournaments);
 
@@ -129,33 +128,39 @@ size_t create_circuit(ect& e, uint64_t max_label, uint64_t eliminations)
         direction d = {id, i, 0, 0, left, right, false};
         e.directions.push_back(d);
         uint32_t direction_index = static_cast<uint32_t>(e.directions.size()) - 1;
-        if (e.directions[left].tournament == i)
-          e.directions[left].winner = direction_index;
+        if (e.directions[left].tournament == i) { e.directions[left].winner = direction_index; }
         else
+        {
           e.directions[left].loser = direction_index;
-        if (e.directions[right].tournament == i)
-          e.directions[right].winner = direction_index;
+        }
+        if (e.directions[right].tournament == i) { e.directions[right].winner = direction_index; }
         else
+        {
           e.directions[right].loser = direction_index;
-        if (e.directions[left].last) e.directions[left].winner = direction_index;
+        }
+        if (e.directions[left].last) { e.directions[left].winner = direction_index; }
 
         if (tournaments[i].size() == 2 && (i == 0 || tournaments[i - 1].empty()))
         {
           e.directions[direction_index].last = true;
-          if (i + 1 < tournaments.size())
-            new_tournaments[i + 1].push_back(id);
-          else  // winner eliminated.
+          if (i + 1 < tournaments.size()) { new_tournaments[i + 1].push_back(id); }
+          else
+          {  // winner eliminated.
             e.directions[direction_index].winner = 0;
+          }
           e.final_nodes.push_back(static_cast<uint32_t>(e.directions.size() - 1));
         }
         else
+        {
           new_tournaments[i].push_back(id);
-        if (i + 1 < tournaments.size())
-          new_tournaments[i + 1].push_back(id);
-        else  // loser eliminated.
+        }
+        if (i + 1 < tournaments.size()) { new_tournaments[i + 1].push_back(id); }
+        else
+        {  // loser eliminated.
           e.directions[direction_index].loser = 0;
+        }
       }
-      if (tournaments[i].size() % 2 == 1) new_tournaments[i].push_back(tournaments[i].back());
+      if (tournaments[i].size() % 2 == 1) { new_tournaments[i].push_back(tournaments[i].back()); }
     }
     e.all_levels.push_back(new_tournaments);
     level++;
@@ -163,14 +168,14 @@ size_t create_circuit(ect& e, uint64_t max_label, uint64_t eliminations)
 
   e.last_pair = static_cast<uint32_t>((max_label - 1) * eliminations);
 
-  if (max_label > 1) e.tree_height = final_depth(eliminations, e.logger);
+  if (max_label > 1) { e.tree_height = final_depth(eliminations, e.logger); }
 
   return e.last_pair + (eliminations - 1);
 }
 
 uint32_t ect_predict(ect& e, single_learner& base, VW::example& ec)
 {
-  if (e.k == static_cast<size_t>(1)) return 1;
+  if (e.k == static_cast<size_t>(1)) { return 1; }
 
   uint32_t finals_winner = 0;
 
@@ -188,7 +193,7 @@ uint32_t ect_predict(ect& e, single_learner& base, VW::example& ec)
 
       base.learn(ec, problem_number);
 
-      if (ec.pred.scalar > e.class_boundary) finals_winner = finals_winner | ((static_cast<size_t>(1)) << i);
+      if (ec.pred.scalar > e.class_boundary) { finals_winner = finals_winner | ((static_cast<size_t>(1)) << i); }
     }
   }
 
@@ -197,18 +202,21 @@ uint32_t ect_predict(ect& e, single_learner& base, VW::example& ec)
   {
     base.learn(ec, id - e.k);
 
-    if (ec.pred.scalar > e.class_boundary)
-      id = e.directions[id].right;
+    if (ec.pred.scalar > e.class_boundary) { id = e.directions[id].right; }
     else
+    {
       id = e.directions[id].left;
+    }
   }
   return id + 1;
 }
 
 void ect_train(ect& e, single_learner& base, VW::example& ec)
 {
-  if (e.k == 1)  // nothing to do
+  if (e.k == 1)
+  {  // nothing to do
     return;
+  }
   MULTICLASS::label_t mc = ec.l.multi;
 
   label_data simple_temp;
@@ -219,10 +227,11 @@ void ect_train(ect& e, single_learner& base, VW::example& ec)
   bool left = e.directions[id].left == mc.label - 1;
   do
   {
-    if (left)
-      simple_temp.label = -1;
+    if (left) { simple_temp.label = -1; }
     else
+    {
       simple_temp.label = 1;
+    }
 
     ec.l.simple = simple_temp;
     base.learn(ec, id - e.k);
@@ -235,10 +244,11 @@ void ect_train(ect& e, single_learner& base, VW::example& ec)
 
     if (won)
     {
-      if (!e.directions[id].last)
-        left = e.directions[e.directions[id].winner].left == id;
+      if (!e.directions[id].last) { left = e.directions[e.directions[id].winner].left == id; }
       else
+      {
         e.tournaments_won.push_back(true);
+      }
       id = e.directions[id].winner;
     }
     else
@@ -246,17 +256,19 @@ void ect_train(ect& e, single_learner& base, VW::example& ec)
       if (!e.directions[id].last)
       {
         left = e.directions[e.directions[id].loser].left == id;
-        if (e.directions[id].loser == 0) e.tournaments_won.push_back(false);
+        if (e.directions[id].loser == 0) { e.tournaments_won.push_back(false); }
       }
       else
+      {
         e.tournaments_won.push_back(false);
+      }
       id = e.directions[id].loser;
     }
   } while (id != 0);
 
   // TODO: error? warn? info? what level is this supposed to be?
   if (e.tournaments_won.empty())
-    e.logger.out_error("Internal error occurred. tournaments_won was empty which should not be possible.");
+  { e.logger.out_error("Internal error occurred. tournaments_won was empty which should not be possible."); }
 
   // tournaments_won is a bit vector determining which tournaments the label won.
   for (size_t i = 0; i < e.tree_height; i++)
@@ -265,14 +277,17 @@ void ect_train(ect& e, single_learner& base, VW::example& ec)
     {
       left = e.tournaments_won[j * 2];
       bool right = e.tournaments_won[j * 2 + 1];
-      if (left == right)  // no query to do
+      if (left == right)
+      {  // no query to do
         e.tournaments_won[j] = left;
+      }
       else  // query to do
       {
-        if (left)
-          simple_temp.label = -1;
+        if (left) { simple_temp.label = -1; }
         else
+        {
           simple_temp.label = 1;
+        }
         ec.l.simple = simple_temp;
         ec.weight = static_cast<float>(1 << (e.tree_height - i - 1));
 
@@ -280,10 +295,11 @@ void ect_train(ect& e, single_learner& base, VW::example& ec)
 
         base.learn(ec, problem_number);
 
-        if (ec.pred.scalar > e.class_boundary)
-          e.tournaments_won[j] = right;
+        if (ec.pred.scalar > e.class_boundary) { e.tournaments_won[j] = right; }
         else
+        {
           e.tournaments_won[j] = left;
+        }
       }
 
       if (e.tournaments_won.size() % 2 == 1)
@@ -311,12 +327,13 @@ void learn(ect& e, single_learner& base, VW::example& ec)
   MULTICLASS::label_t mc = ec.l.multi;
   uint32_t pred = ec.pred.multiclass;
 
-  if (mc.label != static_cast<uint32_t>(-1)) ect_train(e, base, ec);
+  if (mc.label != static_cast<uint32_t>(-1)) { ect_train(e, base, ec); }
   ec.l.multi = mc;
   ec.pred.multiclass = pred;
 }
+}  // namespace
 
-base_learner* ect_setup(VW::setup_base_i& stack_builder)
+base_learner* VW::reductions::ect_setup(VW::setup_base_i& stack_builder)
 {
   options_i& options = *stack_builder.get_options();
   VW::workspace& all = *stack_builder.get_all_pointer();
@@ -332,12 +349,15 @@ base_learner* ect_setup(VW::setup_base_i& stack_builder)
                .one_of({"identity", "logistic", "glf1", "poisson"})
                .help("Specify the link function"));
 
-  if (!options.add_parse_and_check_necessary(new_options)) return nullptr;
+  if (!options.add_parse_and_check_necessary(new_options)) { return nullptr; }
 
   size_t wpp = create_circuit(*data.get(), data->k, data->errors + 1);
 
   base_learner* base = stack_builder.setup_base_learner();
-  if (link == "logistic") data->class_boundary = 0.5;  // as --link=logistic maps predictions in [0;1]
+  if (link == "logistic")
+  {
+    data->class_boundary = 0.5;  // as --link=logistic maps predictions in [0;1]
+  }
 
   auto* l = make_reduction_learner(
       std::move(data), as_singleline(base), learn, predict, stack_builder.get_setupfn_name(ect_setup))

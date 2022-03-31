@@ -1,6 +1,8 @@
 // Copyright (c) by respective owners including Yahoo!, Microsoft, and
 // individual contributors. All rights reserved. Released under a BSD (revised)
 // license as described in the file LICENSE.
+#include "oja_newton.h"
+
 #include "gd.h"
 #include "loss_functions.h"
 #include "parse_regressor.h"
@@ -18,6 +20,8 @@ using namespace VW::config;
 
 #define NORM2 (m + 1)
 
+namespace
+{
 struct oja_n_update_data
 {
   struct OjaNewton* ON = nullptr;
@@ -64,12 +68,12 @@ struct OjaNewton
     uint32_t length = 1 << all->num_bits;
     if (normalize)  // initialize normalization part
     {
-      for (uint32_t i = 0; i < length; i++) (&(weights.strided_index(i)))[NORM2] = 0.1f;
+      for (uint32_t i = 0; i < length; i++) { (&(weights.strided_index(i)))[NORM2] = 0.1f; }
     }
     if (!random_init)
     {
       // simple initialization
-      for (int i = 1; i <= m; i++) (&(weights.strided_index(i)))[i] = 1.f;
+      for (int i = 1; i <= m; i++) { (&(weights.strided_index(i)))[i] = 1.f; }
     }
     else
     {
@@ -104,15 +108,15 @@ struct OjaNewton
         double temp = 0;
 
         for (uint32_t i = 0; i < length; i++)
-          temp += (static_cast<double>((&(weights.strided_index(i)))[j])) * (&(weights.strided_index(i)))[k];
+        { temp += (static_cast<double>((&(weights.strided_index(i)))[j])) * (&(weights.strided_index(i)))[k]; }
         for (uint32_t i = 0; i < length; i++)
-          (&(weights.strided_index(i)))[j] -= static_cast<float>(temp) * (&(weights.strided_index(i)))[k];
+        { (&(weights.strided_index(i)))[j] -= static_cast<float>(temp) * (&(weights.strided_index(i)))[k]; }
       }
       double norm = 0;
       for (uint32_t i = 0; i < length; i++)
-        norm += (static_cast<double>((&(weights.strided_index(i)))[j])) * (&(weights.strided_index(i)))[j];
+      { norm += (static_cast<double>((&(weights.strided_index(i)))[j])) * (&(weights.strided_index(i)))[j]; }
       norm = std::sqrt(norm);
-      for (uint32_t i = 0; i < length; i++) (&(weights.strided_index(i)))[j] /= static_cast<float>(norm);
+      for (uint32_t i = 0; i < length; i++) { (&(weights.strided_index(i)))[j] /= static_cast<float>(norm); }
     }
   }
 
@@ -224,8 +228,8 @@ struct OjaNewton
     for (int j = 1; j <= m; j++)
     {
       float scale = std::fabs(A[j][j]);
-      for (int i = j + 1; i <= m; i++) scale = std::fmin(std::fabs(A[i][j]), scale);
-      if (scale < 1e-10) continue;
+      for (int i = j + 1; i <= m; i++) { scale = std::fmin(std::fabs(A[i][j]), scale); }
+      if (scale < 1e-10) { continue; }
       for (int i = 1; i <= m; i++)
       {
         A[i][j] /= scale;
@@ -242,9 +246,11 @@ struct OjaNewton
   {
     double max_norm = 0;
     for (int i = 1; i <= m; i++)
-      for (int j = i; j <= m; j++) max_norm = fmax(max_norm, std::fabs(K[i][j]));
+    {
+      for (int j = i; j <= m; j++) { max_norm = fmax(max_norm, std::fabs(K[i][j])); }
+    }
     // printf("|K| = %f\n", max_norm);
-    if (max_norm < 1e7) return;
+    if (max_norm < 1e7) { return; }
 
     // implicit -> explicit representation
     // printf("begin conversion: t = %d, norm(K) = %f\n", t, max_norm);
@@ -261,7 +267,7 @@ struct OjaNewton
         for (int h = 1; h <= m; h++) { tmp[i] += A[i][h] * K[h][j]; }
       }
 
-      for (int i = 1; i <= m; i++) K[i][j] = tmp[i];
+      for (int i = 1; i <= m; i++) { K[i][j] = tmp[i]; }
     }
     // K <- KA'
     for (int i = 1; i <= m; i++)
@@ -269,7 +275,9 @@ struct OjaNewton
       memset(tmp, 0, sizeof(double) * (m + 1));
 
       for (int j = 1; j <= m; j++)
-        for (int h = 1; h <= m; h++) tmp[j] += K[i][h] * A[j][h];
+      {
+        for (int h = 1; h <= m; h++) { tmp[j] += K[i][h] * A[j][h]; }
+      }
 
       for (int j = 1; j <= m; j++) { K[i][j] = tmp[j]; }
     }
@@ -280,7 +288,7 @@ struct OjaNewton
     for (uint32_t i = 0; i < length; i++)
     {
       weight& w = all->weights.strided_index(i);
-      for (int j = 1; j <= m; j++) w += (&w)[j] * b[j] * D[j];
+      for (int j = 1; j <= m; j++) { w += (&w)[j] * b[j] * D[j]; }
     }
 
     memset(b, 0, sizeof(double) * (m + 1));
@@ -294,7 +302,7 @@ struct OjaNewton
       weight& w = all->weights.strided_index(i);
       for (int j = 1; j <= m; j++)
       {
-        for (int h = 1; h <= m; ++h) tmp[j] += A[j][h] * D[h] * (&w)[h];
+        for (int h = 1; h <= m; ++h) { tmp[j] += A[j][h] * D[h] * (&w)[h]; }
       }
       for (int j = 1; j <= m; ++j)
       {
@@ -365,7 +373,7 @@ void update_Z_and_wbar(oja_n_update_data& data, float x, float& wref)
 {
   float* w = &wref;
   int m = data.ON->m;
-  if (data.ON->normalize) x /= std::sqrt(w[NORM2]);
+  if (data.ON->normalize) { x /= std::sqrt(w[NORM2]); }
   float s = data.sketch_cnt * x;
 
   for (int i = 1; i <= m; i++) { w[i] += data.delta[i] * s / data.ON->D[i]; }
@@ -376,7 +384,7 @@ void compute_Zx_and_norm(oja_n_update_data& data, float x, float& wref)
 {
   float* w = &wref;
   int m = data.ON->m;
-  if (data.ON->normalize) x /= std::sqrt(w[NORM2]);
+  if (data.ON->normalize) { x /= std::sqrt(w[NORM2]); }
 
   for (int i = 1; i <= m; i++) { data.Zx[i] += w[i] * x * data.ON->D[i]; }
   data.norm2_x += x * x;
@@ -386,7 +394,7 @@ void update_wbar_and_Zx(oja_n_update_data& data, float x, float& wref)
 {
   float* w = &wref;
   int m = data.ON->m;
-  if (data.ON->normalize) x /= std::sqrt(w[NORM2]);
+  if (data.ON->normalize) { x /= std::sqrt(w[NORM2]); }
 
   float g = data.g * x;
 
@@ -411,7 +419,7 @@ void learn(OjaNewton& ON, base_learner& base, VW::example& ec)
   data.g = ON.all->loss->first_derivative(ON.all->sd, ec.pred.scalar, ec.l.simple.label) * ec.weight;
   data.g /= 2;  // for half square loss
 
-  if (ON.normalize) GD::foreach_feature<oja_n_update_data, update_normalization>(*ON.all, ec, data);
+  if (ON.normalize) { GD::foreach_feature<oja_n_update_data, update_normalization>(*ON.all, ec, data); }
 
   ON.buffer[ON.cnt] = &ec;
   ON.weight_buffer[ON.cnt++] = data.g / 2;
@@ -471,14 +479,16 @@ void save_load(OjaNewton& ON, io_buf& model_file, bool read, bool text)
     bin_text_read_write_fixed(model_file, reinterpret_cast<char*>(&resume), sizeof(resume), read, msg, text);
 
     double temp = 0.;
-    if (resume)
-      GD::save_load_online_state(all, model_file, read, text, temp);
+    if (resume) { GD::save_load_online_state(all, model_file, read, text, temp); }
     else
+    {
       GD::save_load_regressor(all, model_file, read, text);
+    }
   }
 }
+}  // namespace
 
-base_learner* OjaNewton_setup(VW::setup_base_i& stack_builder)
+base_learner* VW::reductions::oja_newton_setup(VW::setup_base_i& stack_builder)
 {
   options_i& options = *stack_builder.get_options();
   VW::workspace& all = *stack_builder.get_all_pointer();
@@ -506,7 +516,7 @@ base_learner* OjaNewton_setup(VW::setup_base_i& stack_builder)
       .add(make_option("normalize", normalize).help("Normalize the features or not"))
       .add(make_option("random_init", random_init).help("Randomize initialization of Oja or not"));
 
-  if (!options.add_parse_and_check_necessary(new_options)) return nullptr;
+  if (!options.add_parse_and_check_necessary(new_options)) { return nullptr; }
 
   ON->all = &all;
   ON->_random_state = all.get_random_state();
@@ -514,7 +524,7 @@ base_learner* OjaNewton_setup(VW::setup_base_i& stack_builder)
   ON->normalize = normalize == "true";
   ON->random_init = random_init == "true";
 
-  if (options.was_supplied("alpha_inverse")) ON->alpha = 1.f / alpha_inverse;
+  if (options.was_supplied("alpha_inverse")) { ON->alpha = 1.f / alpha_inverse; }
 
   ON->cnt = 0;
   ON->t = 1;
@@ -546,7 +556,7 @@ base_learner* OjaNewton_setup(VW::setup_base_i& stack_builder)
 
   all.weights.stride_shift(static_cast<uint32_t>(ceil(log2(ON->m + 2))));
 
-  auto* l = make_base_learner(std::move(ON), learn, predict, stack_builder.get_setupfn_name(OjaNewton_setup),
+  auto* l = make_base_learner(std::move(ON), learn, predict, stack_builder.get_setupfn_name(oja_newton_setup),
       VW::prediction_type_t::scalar, VW::label_type_t::simple)
                 .set_params_per_weight(all.weights.stride())
                 .set_save_load(save_load)

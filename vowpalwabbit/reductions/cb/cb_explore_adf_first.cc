@@ -61,10 +61,11 @@ template <bool is_learn>
 void cb_explore_adf_first::predict_or_learn_impl(multi_learner& base, multi_ex& examples)
 {
   // Explore tau times, then act according to optimal.
-  if (is_learn)
-    multiline_learn_or_predict<true>(base, examples, examples[0]->ft_offset);
+  if (is_learn) { multiline_learn_or_predict<true>(base, examples, examples[0]->ft_offset); }
   else
+  {
     multiline_learn_or_predict<false>(base, examples, examples[0]->ft_offset);
+  }
 
   v_array<ACTION_SCORE::action_score>& preds = examples[0]->pred.a_s;
   uint32_t num_actions = static_cast<uint32_t>(preds.size());
@@ -72,12 +73,12 @@ void cb_explore_adf_first::predict_or_learn_impl(multi_learner& base, multi_ex& 
   if (_tau)
   {
     float prob = 1.f / static_cast<float>(num_actions);
-    for (size_t i = 0; i < num_actions; i++) preds[i].score = prob;
-    if (is_learn) _tau--;
+    for (size_t i = 0; i < num_actions; i++) { preds[i].score = prob; }
+    if (is_learn) { _tau--; }
   }
   else
   {
-    for (size_t i = 1; i < num_actions; i++) preds[i].score = 0.;
+    for (size_t i = 1; i < num_actions; i++) { preds[i].score = 0.; }
     preds[0].score = 1.0;
   }
 
@@ -116,7 +117,7 @@ base_learner* setup(VW::setup_base_i& stack_builder)
                .allow_override()
                .help("Epsilon-greedy exploration"));
 
-  if (!options.add_parse_and_check_necessary(new_options)) return nullptr;
+  if (!options.add_parse_and_check_necessary(new_options)) { return nullptr; }
 
   // Ensure serialization of cb_adf in all cases.
   if (!options.was_supplied("cb_adf")) { options.insert("cb_adf", ""); }

@@ -1,20 +1,10 @@
 // Copyright (c) by respective owners including Yahoo!, Microsoft, and
 // individual contributors. All rights reserved. Released under a BSD (revised)
 // license as described in the file LICENSE.
-#include "crossplat_compat.h"
-#include "setup_base.h"
-
-#include <cfloat>
-#include <cstdio>
-#include <fstream>
-#ifdef _WIN32
-#  define NOMINMAX
-#  include <winsock2.h>
-#else
-#  include <netdb.h>
-#endif
+#include "gd_mf.h"
 
 #include "array_parameters.h"
+#include "crossplat_compat.h"
 #include "gd.h"
 #include "learner.h"
 #include "loss_functions.h"
@@ -22,12 +12,19 @@
 #include "parser.h"
 #include "prediction_type.h"
 #include "rand48.h"
+#include "setup_base.h"
 #include "shared_data.h"
 #include "vw_exception.h"
+
+#include <cfloat>
+#include <cstdio>
+#include <fstream>
 
 using namespace VW::LEARNER;
 using namespace VW::config;
 
+namespace
+{
 struct gdmf
 {
   VW::workspace* all = nullptr;  // regressor, printing
@@ -49,7 +46,7 @@ void mf_print_offset_features(gdmf& d, VW::example& ec, size_t offset)
     for (const auto& f : fs.audit_range())
     {
       std::cout << '\t';
-      if (audit) std::cout << VW::to_string(*f.audit()) << ':';
+      if (audit) { std::cout << VW::to_string(*f.audit()) << ':'; }
       std::cout << f.index() << "(" << ((f.index() + offset) & mask) << ")" << ':' << f.value();
       std::cout << ':' << (&weights[f.index()])[offset];
     }
@@ -65,6 +62,7 @@ void mf_print_offset_features(gdmf& d, VW::example& ec, size_t offset)
       for (size_t k = 1; k <= d.rank; k++)
       {
         for (const auto& f1 : ec.feature_space[static_cast<unsigned char>(i[0])].audit_range())
+        {
           for (const auto& f2 : ec.feature_space[static_cast<unsigned char>(i[1])].audit_range())
           {
             std::cout << '\t' << VW::to_string(*f1.audit()) << ':' << ((f1.index() + k) & mask) << "("
@@ -77,6 +75,7 @@ void mf_print_offset_features(gdmf& d, VW::example& ec, size_t offset)
 
             std::cout << ':' << (&weights[f1.index()])[offset + k] * (&weights[f2.index()])[offset + k + d.rank];
           }
+        }
       }
     }
   }
@@ -122,7 +121,7 @@ float mf_predict(gdmf& d, VW::example& ec, T& weights)
   float linear_prediction = 0.;
   // linear terms
 
-  for (features& fs : ec) GD::foreach_feature<float, GD::vec_add, T>(weights, fs, linear_prediction);
+  for (features& fs : ec) { GD::foreach_feature<float, GD::vec_add, T>(weights, fs, linear_prediction); }
 
   // store constant + linear prediction
   // note: constant is now automatically added
@@ -167,9 +166,10 @@ float mf_predict(gdmf& d, VW::example& ec, T& weights)
 
   ec.pred.scalar = GD::finalize_prediction(all.sd, all.logger, ec.partial_prediction);
 
-  if (ec.l.simple.label != FLT_MAX) ec.loss = all.loss->getLoss(all.sd, ec.pred.scalar, ec.l.simple.label) * ec.weight;
+  if (ec.l.simple.label != FLT_MAX)
+  { ec.loss = all.loss->get_loss(all.sd, ec.pred.scalar, ec.l.simple.label) * ec.weight; }
 
-  if (all.audit) mf_print_audit_features(d, ec, 0);
+  if (all.audit) { mf_print_audit_features(d, ec, 0); }
 
   return ec.pred.scalar;
 }
@@ -177,17 +177,18 @@ float mf_predict(gdmf& d, VW::example& ec, T& weights)
 float mf_predict(gdmf& d, VW::example& ec)
 {
   VW::workspace& all = *d.all;
-  if (all.weights.sparse)
-    return mf_predict(d, ec, all.weights.sparse_weights);
+  if (all.weights.sparse) { return mf_predict(d, ec, all.weights.sparse_weights); }
   else
+  {
     return mf_predict(d, ec, all.weights.dense_weights);
+  }
 }
 
 template <class T>
 void sd_offset_update(T& weights, features& fs, uint64_t offset, float update, float regularization)
 {
   for (size_t i = 0; i < fs.size(); i++)
-    (&weights[fs.indices[i]])[offset] += update * fs.values[i] - regularization * (&weights[fs.indices[i]])[offset];
+  { (&weights[fs.indices[i]])[offset] += update * fs.values[i] - regularization * (&weights[fs.indices[i]])[offset]; }
 }
 
 template <class T>
@@ -199,12 +200,12 @@ void mf_train(gdmf& d, VW::example& ec, T& weights)
   // use final prediction to get update size
   // update = eta_t*(y-y_hat) where eta_t = eta/(3*t^p) * importance weight
   float eta_t = all.eta / powf(static_cast<float>(all.sd->t) + ec.weight, all.power_t) / 3.f * ec.weight;
-  float update = all.loss->getUpdate(ec.pred.scalar, ld.label, eta_t, 1.);  // ec.total_sum_feat_sq);
+  float update = all.loss->get_update(ec.pred.scalar, ld.label, eta_t, 1.);  // ec.total_sum_feat_sq);
 
   float regularization = eta_t * all.l2_lambda;
 
   // linear update
-  for (features& fs : ec) sd_offset_update<T>(weights, fs, 0, update, regularization);
+  for (features& fs : ec) { sd_offset_update<T>(weights, fs, 0, update, regularization); }
 
   // quadratic update
   for (const auto& i : all.interactions)
@@ -236,10 +237,11 @@ void mf_train(gdmf& d, VW::example& ec, T& weights)
 
 void mf_train(gdmf& d, VW::example& ec)
 {
-  if (d.all->weights.sparse)
-    mf_train(d, ec, d.all->weights.sparse_weights);
+  if (d.all->weights.sparse) { mf_train(d, ec, d.all->weights.sparse_weights); }
   else
+  {
     mf_train(d, ec, d.all->weights.dense_weights);
+  }
 }
 
 void initialize_weights(weight* weights, uint64_t index, uint32_t stride)
@@ -297,7 +299,7 @@ void save_load(gdmf& d, io_buf& model_file, bool read, bool text)
         brw += bin_text_read_write_fixed(model_file, nullptr, 0, read, msg, text);
       }
 
-      if (!read) ++i;
+      if (!read) { ++i; }
     } while ((!read && i < length) || (read && brw > 0));
   }
 }
@@ -307,14 +309,14 @@ void end_pass(gdmf& d)
   VW::workspace* all = d.all;
 
   all->eta *= all->eta_decay_rate;
-  if (all->save_per_pass) save_predictor(*all, all->final_regressor_name, all->current_pass);
+  if (all->save_per_pass) { save_predictor(*all, all->final_regressor_name, all->current_pass); }
 
   if (!all->holdout_set_off)
   {
-    if (summarize_holdout_set(*all, d.no_win_counter)) finalize_regressor(*all, all->final_regressor_name);
+    if (summarize_holdout_set(*all, d.no_win_counter)) { finalize_regressor(*all, all->final_regressor_name); }
     if ((d.early_stop_thres == d.no_win_counter) &&
         ((all->check_holdout_every_n_passes <= 1) || ((all->current_pass % all->check_holdout_every_n_passes) == 0)))
-      set_done(*all);
+    { set_done(*all); }
   }
 }
 
@@ -325,10 +327,11 @@ void learn(gdmf& d, base_learner&, VW::example& ec)
   VW::workspace& all = *d.all;
 
   mf_predict(d, ec);
-  if (all.training && ec.l.simple.label != FLT_MAX) mf_train(d, ec);
+  if (all.training && ec.l.simple.label != FLT_MAX) { mf_train(d, ec); }
 }
 
-base_learner* gd_mf_setup(VW::setup_base_i& stack_builder)
+}  // namespace
+base_learner* VW::reductions::gd_mf_setup(VW::setup_base_i& stack_builder)
 {
   options_i& options = *stack_builder.get_options();
   VW::workspace& all = *stack_builder.get_all_pointer();
@@ -343,7 +346,7 @@ base_learner* gd_mf_setup(VW::setup_base_i& stack_builder)
                .help("Option not supported by this reduction"))  // Not supported, need to be checked to be false.
       .add(make_option("conjugate_gradient", conjugate_gradient).help("Option not supported by this reduction"));
 
-  if (!options.add_parse_and_check_necessary(gf_md_options)) return nullptr;
+  if (!options.add_parse_and_check_necessary(gf_md_options)) { return nullptr; }
 
   if (options.was_supplied("adaptive")) THROW("adaptive is not implemented for matrix factorization");
   if (options.was_supplied("normalized")) THROW("normalized is not implemented for matrix factorization");
@@ -367,7 +370,9 @@ base_learner* gd_mf_setup(VW::setup_base_i& stack_builder)
   }
 
   if (!options.was_supplied("learning_rate") && !options.was_supplied("l"))
+  {
     all.eta = 10;  // default learning rate to 10 for non default update rule
+  }
 
   // default initial_t to 1 instead of 0
   if (!options.was_supplied("initial_t"))

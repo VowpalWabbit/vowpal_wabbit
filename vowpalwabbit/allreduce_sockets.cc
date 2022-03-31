@@ -231,7 +231,9 @@ void AllReduceSockets::all_reduce_init(VW::io::logger& logger)
 
   if (parent_ip != static_cast<uint32_t>(-1)) { socks.parent = sock_connect(parent_ip, parent_port, logger); }
   else
+  {
     socks.parent = static_cast<socket_t>(-1);
+  }
 
   socks.children[0] = static_cast<socket_t>(-1);
   socks.children[1] = static_cast<socket_t>(-1);
@@ -254,7 +256,7 @@ void AllReduceSockets::all_reduce_init(VW::io::logger& logger)
     socks.children[i] = f;
   }
 
-  if (kid_count > 0) CLOSESOCK(sock);
+  if (kid_count > 0) { CLOSESOCK(sock); }
 }
 
 void AllReduceSockets::pass_down(char* buffer, const size_t parent_read_pos, size_t& children_sent_pos)
@@ -285,12 +287,12 @@ void AllReduceSockets::broadcast(char* buffer, const size_t n)
   // parent_sent_pos <= right_read_pos
 
   if (socks.parent == -1) { parent_read_pos = n; }
-  if (socks.children[0] == -1 && socks.children[1] == -1) children_sent_pos = n;
+  if (socks.children[0] == -1 && socks.children[1] == -1) { children_sent_pos = n; }
 
   while (parent_read_pos < n || children_sent_pos < n)
   {
     pass_down(buffer, parent_read_pos, children_sent_pos);
-    if (parent_read_pos >= n && children_sent_pos >= n) break;
+    if (parent_read_pos >= n && children_sent_pos >= n) { break; }
 
     if (socks.parent != -1)
     {

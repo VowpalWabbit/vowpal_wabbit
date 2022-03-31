@@ -90,7 +90,7 @@ float cb_explore_adf_regcb::binary_search(float fhat, float delta, float sens, f
 {
   const float maxw = (std::min)(fhat / sens, FLT_MAX);
 
-  if (maxw * fhat * fhat <= delta) return maxw;
+  if (maxw * fhat * fhat <= delta) { return maxw; }
 
   float l = 0;
   float u = maxw;
@@ -100,11 +100,12 @@ float cb_explore_adf_regcb::binary_search(float fhat, float delta, float sens, f
   {
     w = (u + l) / 2.f;
     v = w * (fhat * fhat - (fhat - sens * w) * (fhat - sens * w)) - delta;
-    if (v > 0)
-      u = w;
+    if (v > 0) { u = w; }
     else
+    {
       l = w;
-    if (std::fabs(v) <= tol || u - l <= tol) break;
+    }
+    if (std::fabs(v) <= tol || u - l <= tol) { break; }
   }
 
   return l;
@@ -139,13 +140,12 @@ void cb_explore_adf_regcb::get_cost_ranges(float delta, multi_learner& base, mul
     float sens = base.sensitivity(*ec);
     float w = 0;  // importance weight
 
-    if (ec->pred.scalar < cmin || std::isnan(sens) || std::isinf(sens))
-      _min_costs[a] = cmin;
+    if (ec->pred.scalar < cmin || std::isnan(sens) || std::isinf(sens)) { _min_costs[a] = cmin; }
     else
     {
       w = binary_search(ec->pred.scalar - cmin + 1, delta, sens);
       _min_costs[a] = (std::max)(ec->pred.scalar - sens * w, cmin);
-      if (_min_costs[a] > cmax) _min_costs[a] = cmax;
+      if (_min_costs[a] > cmax) { _min_costs[a] = cmax; }
     }
 
     if (!min_only)
@@ -157,7 +157,7 @@ void cb_explore_adf_regcb::get_cost_ranges(float delta, multi_learner& base, mul
       {
         w = binary_search(cmax + 1 - ec->pred.scalar, delta, sens);
         _max_costs[a] = (std::min)(ec->pred.scalar + sens * w, cmax);
-        if (_max_costs[a] < cmin) _max_costs[a] = cmin;
+        if (_max_costs[a] < cmin) { _max_costs[a] = cmin; }
       }
     }
   }
@@ -196,23 +196,27 @@ void cb_explore_adf_regcb::predict_impl(multi_learner& base, multi_ex& examples)
     }
     for (size_t i = 0; i < preds.size(); ++i)
     {
-      if (preds[i].action == a_opt || (!_first_only && _min_costs[preds[i].action] == min_cost))
-        preds[i].score = 1;
+      if (preds[i].action == a_opt || (!_first_only && _min_costs[preds[i].action] == min_cost)) { preds[i].score = 1; }
       else
+      {
         preds[i].score = 0;
+      }
     }
   }
   else  // elimination variant
   {
     float min_max_cost = FLT_MAX;
     for (size_t a = 0; a < num_actions; ++a)
-      if (_max_costs[a] < min_max_cost) min_max_cost = _max_costs[a];
+    {
+      if (_max_costs[a] < min_max_cost) { min_max_cost = _max_costs[a]; }
+    }
     for (size_t i = 0; i < preds.size(); ++i)
     {
-      if (_min_costs[preds[i].action] <= min_max_cost)
-        preds[i].score = 1;
+      if (_min_costs[preds[i].action] <= min_max_cost) { preds[i].score = 1; }
       else
+      {
         preds[i].score = 0;
+      }
       // explore uniformly on support
       exploration::enforce_minimum_probability(
           1.0, /*update_zero_elements=*/false, begin_scores(preds), end_scores(preds));
@@ -226,7 +230,10 @@ void cb_explore_adf_regcb::learn_impl(multi_learner& base, multi_ex& examples)
   for (size_t i = 0; i < examples.size() - 1; ++i)
   {
     CB::label& ld = examples[i]->l.cb;
-    if (ld.costs.size() == 1) ld.costs[0].probability = 1.f;  // no importance weighting
+    if (ld.costs.size() == 1)
+    {
+      ld.costs[0].probability = 1.f;  // no importance weighting
+    }
   }
 
   multiline_learn_or_predict<true>(base, examples, examples[0]->ft_offset);

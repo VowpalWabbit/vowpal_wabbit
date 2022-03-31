@@ -12,9 +12,9 @@
 #include "example_predict.h"
 #include "explore.h"
 #include "gd_predict.h"
+#include "interactions.h"
 #include "model_parser.h"
 #include "opts.h"
-#include "reductions/interactions.h"
 
 namespace vw_slim
 {

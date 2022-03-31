@@ -1,6 +1,8 @@
 // Copyright (c) by respective owners including Yahoo!, Microsoft, and
 // individual contributors. All rights reserved. Released under a BSD (revised)
 // license as described in the file LICENSE.
+#include "reductions/interact.h"
+
 #include "config/options.h"
 #include "global_data.h"
 #include "io/logger.h"
@@ -12,6 +14,8 @@
 
 using namespace VW::config;
 
+namespace
+{
 struct interact
 {
   // namespaces to interact
@@ -26,7 +30,7 @@ struct interact
 bool contains_valid_namespaces(features& f_src1, features& f_src2, interact& in, VW::io::logger& logger)
 {
   // first feature must be 1 so we're sure that the anchor feature is present
-  if (f_src1.size() == 0 || f_src2.size() == 0) return false;
+  if (f_src1.size() == 0 || f_src2.size() == 0) { return false; }
 
   if (f_src1.values[0] != 1)
   {
@@ -85,9 +89,13 @@ void multiply(features& f_dest, features& f_src2, interact& in)
       i2++;
     }
     else if (cur_id1 < cur_id2)
+    {
       i1++;
+    }
     else
+    {
       i2++;
+    }
     prev_id1 = cur_id1;
     prev_id2 = cur_id2;
   }
@@ -101,10 +109,11 @@ void predict_or_learn(interact& in, VW::LEARNER::single_learner& base, VW::examp
 
   if (!contains_valid_namespaces(f1, f2, in, in.all->logger))
   {
-    if (is_learn)
-      base.learn(ec);
+    if (is_learn) { base.learn(ec); }
     else
+    {
       base.predict(ec);
+    }
 
     return;
   }
@@ -132,7 +141,7 @@ void predict_or_learn(interact& in, VW::LEARNER::single_learner& base, VW::examp
   }
 
   base.predict(ec);
-  if (is_learn) base.learn(ec);
+  if (is_learn) { base.learn(ec); }
 
   // re-insert namespace into the right position
   if (n2_i < indices_original_size) { ec.indices.insert(ec.indices.begin() + n2_i, in.n2); }
@@ -140,8 +149,9 @@ void predict_or_learn(interact& in, VW::LEARNER::single_learner& base, VW::examp
   f1 = in.feat_store;
   ec.num_features = in.num_features;
 }
+}  // namespace
 
-VW::LEARNER::base_learner* interact_setup(VW::setup_base_i& stack_builder)
+VW::LEARNER::base_learner* VW::reductions::interact_setup(VW::setup_base_i& stack_builder)
 {
   options_i& options = *stack_builder.get_options();
   VW::workspace& all = *stack_builder.get_all_pointer();
@@ -152,7 +162,7 @@ VW::LEARNER::base_learner* interact_setup(VW::setup_base_i& stack_builder)
                       .necessary()
                       .help("Put weights on feature products from namespaces <n1> and <n2>"));
 
-  if (!options.add_parse_and_check_necessary(new_options)) return nullptr;
+  if (!options.add_parse_and_check_necessary(new_options)) { return nullptr; }
 
   if (s.length() != 2)
   {

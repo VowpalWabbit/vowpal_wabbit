@@ -4,9 +4,9 @@
 #include "example.h"
 
 #include "cb_continuous_label.h"
+#include "interactions.h"
 #include "model_utils.h"
 #include "reductions/gd.h"
-#include "reductions/interactions.h"
 #include "simple_label_parser.h"
 #include "text_utils.h"
 
@@ -51,8 +51,7 @@ float collision_cleanup(features& fs)
   features::iterator pos = fs.begin();
   for (features::iterator& f : fs)
   {
-    if (last_index == f.index())
-      pos.value() += f.value();
+    if (last_index == f.index()) { pos.value() += f.value(); }
     else
     {
       sum_sq += pos.value() * pos.value();
@@ -90,8 +89,7 @@ void copy_example_metadata(example* dst, const example* src)
   dst->ft_offset = src->ft_offset;
 
   dst->partial_prediction = src->partial_prediction;
-  if (src->passthrough == nullptr)
-    dst->passthrough = nullptr;
+  if (src->passthrough == nullptr) { dst->passthrough = nullptr; }
   else
   {
     dst->passthrough = new features(*src->passthrough);
@@ -114,7 +112,7 @@ void copy_example_data(example* dst, const example* src)
 
   // copy feature data
   dst->indices = src->indices;
-  for (namespace_index c : src->indices) dst->feature_space[c] = src->feature_space[c];
+  for (namespace_index c : src->indices) { dst->feature_space[c] = src->feature_space[c]; }
   dst->num_features = src->num_features;
   dst->total_sum_feat_sq = src->total_sum_feat_sq;
   dst->total_sum_feat_sq_calculated = src->total_sum_feat_sq_calculated;
@@ -132,8 +130,11 @@ void copy_example_data_with_label(example* dst, const example* src)
 
 void move_feature_namespace(example* dst, example* src, namespace_index c)
 {
-  if (std::find(src->indices.begin(), src->indices.end(), c) == src->indices.end()) return;  // index not present in src
-  if (std::find(dst->indices.begin(), dst->indices.end(), c) == dst->indices.end()) dst->indices.push_back(c);
+  if (std::find(src->indices.begin(), src->indices.end(), c) == src->indices.end())
+  {
+    return;  // index not present in src
+  }
+  if (std::find(dst->indices.begin(), dst->indices.end(), c) == dst->indices.end()) { dst->indices.push_back(c); }
 
   auto& fdst = dst->feature_space[c];
   auto& fsrc = src->feature_space[c];
@@ -207,10 +208,14 @@ flat_example* flatten_example(VW::workspace& all, example* ec)
 
   full_features_and_source ffs;
   ffs.stride_shift = all.weights.stride_shift();
-  if (all.weights.not_null())  // TODO:temporary fix. all.weights is not initialized at this point in some cases.
+  if (all.weights.not_null())
+  {  // TODO:temporary fix. all.weights is not initialized at this point in some cases.
     ffs.mask = all.weights.mask() >> all.weights.stride_shift();
+  }
   else
+  {
     ffs.mask = static_cast<uint64_t>(LONG_MAX) >> all.weights.stride_shift();
+  }
   GD::foreach_feature<full_features_and_source, uint64_t, vec_ffs_store>(all, *ec, ffs);
 
   std::swap(fec.fs, ffs.fs);
@@ -232,7 +237,7 @@ void free_flatten_example(flat_example* fec)
   if (fec)
   {
     fec->fs.~features();
-    if (fec->tag_len > 0) free(fec->tag);
+    if (fec->tag_len > 0) { free(fec->tag); }
     free(fec);
   }
 }
@@ -256,7 +261,7 @@ void clean_example(VW::workspace&, example&);
 
 void finish_example(VW::workspace& all, multi_ex& ec_seq)
 {
-  for (example* ecc : ec_seq) VW::finish_example(all, *ecc);
+  for (example* ecc : ec_seq) { VW::finish_example(all, *ecc); }
 }
 
 void return_multiple_example(VW::workspace& all, v_array<example*>& examples)

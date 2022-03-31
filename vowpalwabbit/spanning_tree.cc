@@ -37,10 +37,11 @@ static int socket_sort(const void* s1, const void* s2)
 {
   client* socket1 = (client*)s1;
   client* socket2 = (client*)s2;
-  if (socket1->client_ip != socket2->client_ip)
-    return socket1->client_ip - socket2->client_ip;
+  if (socket1->client_ip != socket2->client_ip) { return socket1->client_ip - socket2->client_ip; }
   else
+  {
     return (static_cast<int>(socket1->socket) - static_cast<int>(socket2->socket));
+  }
 }
 
 int build_tree(int* parent, uint16_t* kid_count, size_t source_count, int offset)
@@ -69,7 +70,9 @@ int build_tree(int* parent, uint16_t* kid_count, size_t source_count, int offset
     kid_count[oroot] = 2;
   }
   else
+  {
     kid_count[oroot] = 1;
+  }
 
   return oroot;
 }
@@ -183,8 +186,10 @@ void SpanningTree::Run()
       THROWERRNO("getnameinfo: ");
 
     if (!m_quiet)
+    {
       std::cerr << "inbound connection from " << dotted_quad << "(" << hostname << ':' << ntohs(m_port)
                 << ") serv=" << servInfo << std::endl;
+    }
 
     size_t nonce = 0;
     if (recv(f, reinterpret_cast<char*>(&nonce), sizeof(nonce), 0) != sizeof(nonce))
@@ -192,7 +197,7 @@ void SpanningTree::Run()
     else
     {
       if (!m_quiet)
-        std::cerr << dotted_quad << "(" << hostname << ':' << ntohs(m_port) << "): nonce=" << nonce << std::endl;
+      { std::cerr << dotted_quad << "(" << hostname << ':' << ntohs(m_port) << "): nonce=" << nonce << std::endl; }
     }
     size_t total = 0;
     if (recv(f, reinterpret_cast<char*>(&total), sizeof(total), 0) != sizeof(total))
@@ -200,7 +205,7 @@ void SpanningTree::Run()
     else
     {
       if (!m_quiet)
-        std::cerr << dotted_quad << "(" << hostname << ':' << ntohs(m_port) << "): total=" << total << std::endl;
+      { std::cerr << dotted_quad << "(" << hostname << ':' << ntohs(m_port) << "): total=" << total << std::endl; }
     }
     size_t id = 0;
     if (recv(f, reinterpret_cast<char*>(&id), sizeof(id), 0) != sizeof(id))
@@ -208,15 +213,17 @@ void SpanningTree::Run()
     else
     {
       if (!m_quiet)
-        std::cerr << dotted_quad << "(" << hostname << ':' << ntohs(m_port) << "): node id=" << id << std::endl;
+      { std::cerr << dotted_quad << "(" << hostname << ':' << ntohs(m_port) << "): node id=" << id << std::endl; }
     }
 
     int ok = true;
     if (id >= total)
     {
       if (!m_quiet)
+      {
         std::cout << dotted_quad << "(" << hostname << ':' << ntohs(m_port) << "): invalid id=" << id
                   << " >=  " << total << std::endl;
+      }
       ok = false;
     }
     partial partial_nodeset;
@@ -224,7 +231,7 @@ void SpanningTree::Run()
     if (partial_nodesets.find(nonce) == partial_nodesets.end())
     {
       partial_nodeset.nodes = static_cast<client*>(calloc(total, sizeof(client)));
-      for (size_t i = 0; i < total; i++) partial_nodeset.nodes[i].client_ip = static_cast<uint32_t>(-1);
+      for (size_t i = 0; i < total; i++) { partial_nodeset.nodes[i].client_ip = static_cast<uint32_t>(-1); }
       partial_nodeset.filled = 0;
     }
     else
@@ -233,7 +240,7 @@ void SpanningTree::Run()
       partial_nodesets.erase(nonce);
     }
 
-    if (ok && partial_nodeset.nodes[id].client_ip != static_cast<uint32_t>(-1)) ok = false;
+    if (ok && partial_nodeset.nodes[id].client_ip != static_cast<uint32_t>(-1)) { ok = false; }
     fail_send(f, &ok, sizeof(ok));
 
     if (ok)
@@ -250,8 +257,10 @@ void SpanningTree::Run()
         if (partial_nodeset.nodes[i].client_ip == static_cast<uint32_t>(-1))
         {
           if (!m_quiet)
+          {
             std::cout << "nonce " << nonce << " still waiting for " << (total - partial_nodeset.filled)
                       << " nodes out of " << total << " for example node " << i << std::endl;
+          }
           break;
         }
       }
@@ -277,8 +286,9 @@ void SpanningTree::Run()
         int done = 0;
         if (recv(partial_nodeset.nodes[i].socket, reinterpret_cast<char*>(&(client_ports[i])), sizeof(client_ports[i]),
                 0) < static_cast<int>(sizeof(client_ports[i])))
-
-          if (!m_quiet) std::cerr << " Port read failed for node " << i << " read " << done << std::endl;
+        {
+          if (!m_quiet) { std::cerr << " Port read failed for node " << i << " read " << done << std::endl; }
+        }
       }  // all clients have bound to their ports.
 
       for (size_t i = 0; i < total; i++)

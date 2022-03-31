@@ -29,7 +29,9 @@ using std::vector;
 
 namespace VW
 {
-namespace cats_tree
+namespace reductions
+{
+namespace cats
 {
 tree_node::tree_node(uint32_t node_id, uint32_t left_node_id, uint32_t right_node_id, uint32_t p_id, uint32_t depth,
     bool left_only, bool right_only, bool is_leaf)
@@ -47,7 +49,7 @@ tree_node::tree_node(uint32_t node_id, uint32_t left_node_id, uint32_t right_nod
 
 bool tree_node::operator==(const tree_node& rhs) const
 {
-  if (this == &rhs) return true;
+  if (this == &rhs) { return true; }
   return (id == rhs.id && left_id == rhs.left_id && right_id == rhs.right_id && parent_id == rhs.parent_id &&
       depth == rhs.depth && left_only == rhs.left_only && right_only == rhs.right_only && is_leaf == rhs.is_leaf);
 }
@@ -142,7 +144,7 @@ std::string min_depth_binary_tree::tree_stats_to_string()
   treestats << "Learn() count per node: ";
   for (const tree_node& n : nodes)
   {
-    if (n.is_leaf || n.id >= 16) break;
+    if (n.is_leaf || n.id >= 16) { break; }
 
     treestats << "id=" << n.id << ", #l=" << n.learn_count << "; ";
   }
@@ -158,7 +160,7 @@ uint32_t cats_tree::predict(LEARNER::single_learner& base, example& ec)
   const vector<tree_node>& nodes = _binary_tree.nodes;
 
   // Handle degenerate cases of zero node trees
-  if (_binary_tree.leaf_node_count() == 0) return 0;
+  if (_binary_tree.leaf_node_count() == 0) { return 0; }
   CB::label saved_label = std::move(ec.l.cb);
   ec.l.simple.label = std::numeric_limits<float>::max();  // says it is a test example
   auto cur_node = nodes[0];
@@ -211,16 +213,23 @@ constexpr float LEFT = -1.0f;
 
 float cats_tree::return_cost(const tree_node& w)
 {
-  if (w.id < _a.node_id)
-    return 0;
+  if (w.id < _a.node_id) { return 0; }
   else if (w.id == _a.node_id)
+  {
     return _a.cost;
+  }
   else if (w.id < _b.node_id)
+  {
     return _cost_star;
+  }
   else if (w.id == _b.node_id)
+  {
     return _b.cost;
+  }
   else
+  {
     return 0;
+  }
 }
 
 void cats_tree::learn(LEARNER::single_learner& base, example& ec)
@@ -248,7 +257,7 @@ void cats_tree::learn(LEARNER::single_learner& base, example& ec)
       const float cost_v = n_c.cost;
       const tree_node& v_parent = nodes[v.parent_id];
       float cost_parent = cost_v;
-      if (v_parent.right_only || v_parent.left_only) continue;
+      if (v_parent.right_only || v_parent.left_only) { continue; }
       const tree_node& w = _binary_tree.get_sibling(v);  // w is sibling of v
       float cost_w = return_cost(w);
       if (cost_v != cost_w)
@@ -298,10 +307,11 @@ void cats_tree::learn(LEARNER::single_learner& base, example& ec)
           }
         }
       }
-      if (i == 0)
-        a_parent_cost = cost_parent;
+      if (i == 0) { a_parent_cost = cost_parent; }
       else
+      {
         b_parent_cost = cost_parent;
+      }
     }
     _a = {nodes[_a.node_id].parent_id, a_parent_cost};
     _b = {nodes[_b.node_id].parent_id, b_parent_cost};
@@ -318,12 +328,16 @@ void cats_tree::set_trace_message(std::ostream* vw_ostream, bool quiet)
 
 cats_tree::~cats_tree()
 {
-  if (_trace_stream != nullptr && !_quiet) (*_trace_stream) << tree_stats_to_string() << std::endl;
+  if (_trace_stream != nullptr && !_quiet) { (*_trace_stream) << tree_stats_to_string() << std::endl; }
 }
 
 std::string cats_tree::tree_stats_to_string() { return _binary_tree.tree_stats_to_string(); }
-
-void predict(cats_tree& ot, single_learner& base, example& ec)
+}  // namespace cats
+}  // namespace reductions
+}  // namespace VW
+namespace
+{
+void predict(VW::reductions::cats::cats_tree& ot, single_learner& base, VW::example& ec)
 {
   VW_DBG(ec) << "tree_c: before tree.predict() " << VW::debug::multiclass_pred_to_string(ec)
              << VW::debug::features_to_string(ec) << std::endl;
@@ -332,7 +346,7 @@ void predict(cats_tree& ot, single_learner& base, example& ec)
              << VW::debug::features_to_string(ec) << std::endl;
 }
 
-void learn(cats_tree& tree, single_learner& base, example& ec)
+void learn(VW::reductions::cats::cats_tree& tree, single_learner& base, VW::example& ec)
 {
   VW_DBG(ec) << "tree_c: before tree.learn() " << VW::debug::cb_label_to_string(ec) << VW::debug::features_to_string(ec)
              << std::endl;
@@ -340,8 +354,9 @@ void learn(cats_tree& tree, single_learner& base, example& ec)
   VW_DBG(ec) << "tree_c: after tree.learn() " << VW::debug::cb_label_to_string(ec) << VW::debug::features_to_string(ec)
              << std::endl;
 }
+}  // namespace
 
-base_learner* setup(setup_base_i& stack_builder)
+base_learner* VW::reductions::cats_tree_setup(VW::setup_base_i& stack_builder)
 {
   options_i& options = *stack_builder.get_options();
   VW::workspace& all = *stack_builder.get_all_pointer();
@@ -360,19 +375,19 @@ base_learner* setup(setup_base_i& stack_builder)
                .one_of({"glf1"})
                .help("The learner in each node must return a prediction in range [-1,1], so only glf1 is allowed"));
 
-  if (!options.add_parse_and_check_necessary(new_options)) return nullptr;
+  if (!options.add_parse_and_check_necessary(new_options)) { return nullptr; }
 
   // default behaviour uses binary
   if (!options.was_supplied("link")) { options.insert("binary", ""); }
 
-  auto tree = VW::make_unique<cats_tree>();
+  auto tree = VW::make_unique<VW::reductions::cats::cats_tree>();
   tree->init(num_actions, bandwidth);
   tree->set_trace_message(all.trace_message.get(), all.quiet);
 
   base_learner* base = stack_builder.setup_base_learner();
   int32_t params_per_weight = tree->learner_count();
   auto* l = make_reduction_learner(
-      std::move(tree), as_singleline(base), learn, predict, stack_builder.get_setupfn_name(setup))
+      std::move(tree), as_singleline(base), learn, predict, stack_builder.get_setupfn_name(cats_tree_setup))
                 .set_params_per_weight(params_per_weight)
                 .set_output_prediction_type(VW::prediction_type_t::multiclass)
                 .set_input_label_type(VW::label_type_t::cb)
@@ -380,6 +395,3 @@ base_learner* setup(setup_base_i& stack_builder)
   all.example_parser->lbl_parser = CB::cb_label;
   return make_base(*l);
 }
-
-}  // namespace cats_tree
-}  // namespace VW

@@ -97,7 +97,7 @@ namespace VW
 std::string workspace::get_setupfn_name(reduction_setup_fn setup_fn)
 {
   const auto loc = _setup_name_map.find(setup_fn);
-  if (loc != _setup_name_map.end()) return loc->second;
+  if (loc != _setup_name_map.end()) { return loc->second; }
   return "NA";
 }
 
@@ -113,7 +113,7 @@ void print_result_by_ref(VW::io::writer* f, float res, float, const VW::v_array<
   {
     std::stringstream ss;
     auto saved_precision = ss.precision();
-    if (floorf(res) == res) ss << std::setprecision(0);
+    if (floorf(res) == res) { ss << std::setprecision(0); }
     ss << std::fixed << res << std::setprecision(saved_precision);
     if (!tag.empty()) { ss << " " << VW::string_view{tag.begin(), tag.size()}; }
     ss << '\n';
@@ -126,7 +126,7 @@ void print_result_by_ref(VW::io::writer* f, float res, float, const VW::v_array<
 void print_raw_text_by_ref(
     VW::io::writer* f, const std::string& s, const VW::v_array<char>& tag, VW::io::logger& logger)
 {
-  if (f == nullptr) return;
+  if (f == nullptr) { return; }
 
   std::stringstream ss;
   ss << s;
@@ -140,7 +140,7 @@ void print_raw_text_by_ref(
 void set_mm(shared_data* sd, float label)
 {
   sd->min_label = std::min(sd->min_label, label);
-  if (label != FLT_MAX) sd->max_label = std::max(sd->max_label, label);
+  if (label != FLT_MAX) { sd->max_label = std::max(sd->max_label, label); }
 }
 
 void noop_mm(shared_data*, float) {}
@@ -151,8 +151,7 @@ void workspace::learn(example& ec)
 {
   if (l->is_multiline()) THROW("This reduction does not support single-line examples.");
 
-  if (ec.test_only || !training)
-    VW::LEARNER::as_singleline(l)->predict(ec);
+  if (ec.test_only || !training) { VW::LEARNER::as_singleline(l)->predict(ec); }
   else
   {
     if (l->learn_returns_prediction) { VW::LEARNER::as_singleline(l)->learn(ec); }
@@ -168,8 +167,7 @@ void workspace::learn(multi_ex& ec)
 {
   if (!l->is_multiline()) THROW("This reduction does not support multi-line example.");
 
-  if (!training)
-    VW::LEARNER::as_multiline(l)->predict(ec);
+  if (!training) { VW::LEARNER::as_multiline(l)->predict(ec); }
   else
   {
     if (l->learn_returns_prediction) { VW::LEARNER::as_multiline(l)->learn(ec); }
@@ -353,10 +351,12 @@ void compile_limits(
     {
       int n = atoi(limit.c_str());
       logger.err_warn("limiting to {} features for each namespace.", n);
-      for (size_t j = 0; j < 256; j++) dest[j] = n;
+      for (size_t j = 0; j < 256; j++) { dest[j] = n; }
     }
     else if (limit.size() == 1)
+    {
       logger.out_error("The namespace index must be specified before the n");
+    }
     else
     {
       int n = atoi(limit.c_str() + 1);

@@ -337,7 +337,8 @@ public:
     }
     else if (!_stricmp(ctx.key, "Weight"))
     {
-      ctx.ex->weight = v;
+      auto& simple_red_features = ctx.ex->_reduction_features.template get<simple_label_reduction_features>();
+      simple_red_features.weight = v;
       found = true;
     }
     // CB/CA

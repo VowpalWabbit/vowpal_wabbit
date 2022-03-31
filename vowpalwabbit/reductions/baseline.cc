@@ -49,7 +49,7 @@ struct baseline_data
 
 void init_global(baseline_data& data)
 {
-  if (!data.global_only) return;
+  if (!data.global_only) { return; }
   // use a separate global constant
   data.ec.indices.push_back(constant_namespace);
   // different index from constant to avoid conflicts
@@ -65,10 +65,11 @@ void predict_or_learn(baseline_data& data, single_learner& base, VW::example& ec
   // no baseline if check_enabled is true and example contains flag
   if (data.check_enabled && !VW::reductions::baseline::baseline_enabled(&ec))
   {
-    if (is_learn)
-      base.learn(ec);
+    if (is_learn) { base.learn(ec); }
     else
+    {
       base.predict(ec);
+    }
     return;
   }
 
@@ -87,7 +88,9 @@ void predict_or_learn(baseline_data& data, single_learner& base, VW::example& ec
     base.predict(ec);
   }
   else
+  {
     base.predict(ec);
+  }
 
   if (is_learn)
   {
@@ -109,14 +112,16 @@ void predict_or_learn(baseline_data& data, single_learner& base, VW::example& ec
       if (multiplier == 0)
       {
         multiplier = std::max(0.0001f, std::max(std::abs(data.all->sd->min_label), std::abs(data.all->sd->max_label)));
-        if (multiplier > max_multiplier) multiplier = max_multiplier;
+        if (multiplier > max_multiplier) { multiplier = max_multiplier; }
       }
       data.all->eta *= multiplier;
       base.learn(data.ec);
       data.all->eta /= multiplier;
     }
     else
+    {
       base.learn(data.ec);
+    }
 
     // regress residual
     auto& simple_red_features = ec._reduction_features.template get<simple_label_reduction_features>();
@@ -137,7 +142,7 @@ void predict_or_learn(baseline_data& data, single_learner& base, VW::example& ec
 float sensitivity(baseline_data& data, base_learner& base, VW::example& ec)
 {
   // no baseline if check_enabled is true and example contains flag
-  if (data.check_enabled && !VW::reductions::baseline::baseline_enabled(&ec)) return base.sensitivity(ec);
+  if (data.check_enabled && !VW::reductions::baseline::baseline_enabled(&ec)) { return base.sensitivity(ec); }
 
   if (!data.global_only) { THROW("sensitivity for baseline without --global_only not implemented") }
 
@@ -179,14 +184,14 @@ base_learner* VW::reductions::baseline_setup(VW::setup_base_i& stack_builder)
                .keep()
                .help("Only use baseline when the example contains enabled flag"));
 
-  if (!options.add_parse_and_check_necessary(new_options)) return nullptr;
+  if (!options.add_parse_and_check_necessary(new_options)) { return nullptr; }
 
   // initialize baseline example's interactions.
   data->ec.interactions = &all.interactions;
   data->ec.extent_interactions = &all.extent_interactions;
   data->all = &all;
 
-  const auto loss_function_type = all.loss->getType();
+  const auto loss_function_type = all.loss->get_type();
   if (loss_function_type != "logistic") { data->lr_scaling = true; }
 
   auto base = as_singleline(stack_builder.setup_base_learner());

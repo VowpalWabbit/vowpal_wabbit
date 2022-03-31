@@ -67,7 +67,7 @@ void predict_or_learn(boosting& o, VW::LEARNER::single_learner& base, VW::exampl
   float s = 0;
   float u = ec.weight;
 
-  if (is_learn) o.t++;
+  if (is_learn) { o.t++; }
 
   for (int i = 0; i < o.N; i++)
   {
@@ -75,14 +75,19 @@ void predict_or_learn(boosting& o, VW::LEARNER::single_learner& base, VW::exampl
     {
       float k = floorf((o.N - i - s) / 2);
       int64_t c;
-      if (o.N - (i + 1) < 0)
-        c = 0;
+      if (o.N - (i + 1) < 0) { c = 0; }
       else if (k > o.N - (i + 1))
+      {
         c = 0;
+      }
       else if (k < 0)
+      {
         c = 0;
+      }
       else if (o.C[o.N - (i + 1)][static_cast<int64_t>(k)] != -1)
+      {
         c = o.C[o.N - (i + 1)][static_cast<int64_t>(k)];
+      }
       else
       {
         c = VW::math::choose(o.N - (i + 1), static_cast<int64_t>(k));
@@ -115,10 +120,11 @@ void predict_or_learn(boosting& o, VW::LEARNER::single_learner& base, VW::exampl
   ec.partial_prediction = final_prediction;
   ec.pred.scalar = VW::math::sign(final_prediction);
 
-  if (ld.label == ec.pred.scalar)
-    ec.loss = 0.;
+  if (ld.label == ec.pred.scalar) { ec.loss = 0.; }
   else
+  {
     ec.loss = ec.weight;
+  }
 }
 
 //-----------------------------------------------------------------
@@ -134,7 +140,7 @@ void predict_or_learn_logistic(boosting& o, VW::LEARNER::single_learner& base, V
   float s = 0;
   float u = ec.weight;
 
-  if (is_learn) o.t++;
+  if (is_learn) { o.t++; }
   float eta = 4.f / sqrtf(static_cast<float>(o.t));
 
   for (int i = 0; i < o.N; i++)
@@ -157,8 +163,8 @@ void predict_or_learn_logistic(boosting& o, VW::LEARNER::single_learner& base, V
 
       // update alpha
       o.alpha[i] += eta * z / (1 + correctedExp(s));
-      if (o.alpha[i] > 2.) o.alpha[i] = 2;
-      if (o.alpha[i] < -2.) o.alpha[i] = -2;
+      if (o.alpha[i] > 2.) { o.alpha[i] = 2; }
+      if (o.alpha[i] < -2.) { o.alpha[i] = -2; }
 
       base.learn(ec, i);
     }
@@ -173,10 +179,11 @@ void predict_or_learn_logistic(boosting& o, VW::LEARNER::single_learner& base, V
   ec.partial_prediction = final_prediction;
   ec.pred.scalar = VW::math::sign(final_prediction);
 
-  if (ld.label == ec.pred.scalar)
-    ec.loss = 0.;
+  if (ld.label == ec.pred.scalar) { ec.loss = 0.; }
   else
+  {
     ec.loss = ec.weight;
+  }
 }
 
 template <bool is_learn>
@@ -190,7 +197,7 @@ void predict_or_learn_adaptive(boosting& o, VW::LEARNER::single_learner& base, V
   float v_normalization = 0, v_partial_sum = 0;
   float u = ec.weight;
 
-  if (is_learn) o.t++;
+  if (is_learn) { o.t++; }
   float eta = 4.f / sqrtf(static_cast<float>(o.t));
 
   float stopping_point = o._random_state->get_and_update_random();
@@ -222,8 +229,8 @@ void predict_or_learn_adaptive(boosting& o, VW::LEARNER::single_learner& base, V
 
       // update alpha
       o.alpha[i] += eta * z / (1 + correctedExp(s));
-      if (o.alpha[i] > 2.) o.alpha[i] = 2;
-      if (o.alpha[i] < -2.) o.alpha[i] = -2;
+      if (o.alpha[i] > 2.) { o.alpha[i] = 2; }
+      if (o.alpha[i] < -2.) { o.alpha[i] = -2; }
 
       base.learn(ec, i);
     }
@@ -245,7 +252,7 @@ void predict_or_learn_adaptive(boosting& o, VW::LEARNER::single_learner& base, V
   {
     for (int i = 0; i < o.N; i++)
     {
-      if (v_normalization) o.v[i] /= v_normalization;
+      if (v_normalization) { o.v[i] /= v_normalization; }
     }
   }
 
@@ -253,15 +260,16 @@ void predict_or_learn_adaptive(boosting& o, VW::LEARNER::single_learner& base, V
   ec.partial_prediction = final_prediction;
   ec.pred.scalar = VW::math::sign(final_prediction);
 
-  if (ld.label == ec.pred.scalar)
-    ec.loss = 0.;
+  if (ld.label == ec.pred.scalar) { ec.loss = 0.; }
   else
+  {
     ec.loss = ec.weight;
+  }
 }
 
 void save_load_sampling(boosting& o, io_buf& model_file, bool read, bool text)
 {
-  if (model_file.num_files() == 0) return;
+  if (model_file.num_files() == 0) { return; }
   std::stringstream os;
   os << "boosts " << o.N << endl;
   bin_text_read_write_fixed(model_file, reinterpret_cast<char*>(&(o.N)), sizeof(o.N), read, os, text);
@@ -273,6 +281,7 @@ void save_load_sampling(boosting& o, io_buf& model_file, bool read, bool text)
   }
 
   for (int i = 0; i < o.N; i++)
+  {
     if (read)
     {
       float f;
@@ -285,8 +294,10 @@ void save_load_sampling(boosting& o, io_buf& model_file, bool read, bool text)
       os2 << "alpha " << o.alpha[i] << endl;
       bin_text_write_fixed(model_file, reinterpret_cast<char*>(&(o.alpha[i])), sizeof(o.alpha[i]), os2, text);
     }
+  }
 
   for (int i = 0; i < o.N; i++)
+  {
     if (read)
     {
       float f;
@@ -299,6 +310,7 @@ void save_load_sampling(boosting& o, io_buf& model_file, bool read, bool text)
       os2 << "v " << o.v[i] << endl;
       bin_text_write_fixed(model_file, reinterpret_cast<char*>(&(o.v[i])), sizeof(o.v[i]), os2, text);
     }
+  }
 
   // avoid making syscalls multiple times
   fmt::memory_buffer buffer;
@@ -321,14 +333,15 @@ void return_example(VW::workspace& all, boosting& /* a */, VW::example& ec)
 
 void save_load(boosting& o, io_buf& model_file, bool read, bool text)
 {
-  if (model_file.num_files() == 0) return;
+  if (model_file.num_files() == 0) { return; }
   std::stringstream os;
   os << "boosts " << o.N << endl;
   bin_text_read_write_fixed(model_file, reinterpret_cast<char*>(&(o.N)), sizeof(o.N), read, os, text);
 
-  if (read) o.alpha.resize(o.N);
+  if (read) { o.alpha.resize(o.N); }
 
   for (int i = 0; i < o.N; i++)
+  {
     if (read)
     {
       float f;
@@ -341,6 +354,7 @@ void save_load(boosting& o, io_buf& model_file, bool read, bool text)
       os2 << "alpha " << o.alpha[i] << endl;
       bin_text_write_fixed(model_file, reinterpret_cast<char*>(&(o.alpha[i])), sizeof(o.alpha[i]), os2, text);
     }
+  }
 
   if (!o.all->quiet)
   {
@@ -377,7 +391,7 @@ VW::LEARNER::base_learner* VW::reductions::boosting_setup(VW::setup_base_i& stac
               .one_of({"BBM", "logistic", "adaptive"})
               .help("Specify the boosting algorithm: BBM (default), logistic (AdaBoost.OL.W), adaptive (AdaBoost.OL)"));
 
-  if (!options.add_parse_and_check_necessary(new_options)) return nullptr;
+  if (!options.add_parse_and_check_necessary(new_options)) { return nullptr; }
 
   // Description of options:
   // "BBM" implements online BBM (Algorithm 1 in BLK'15)

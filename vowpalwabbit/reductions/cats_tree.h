@@ -10,10 +10,12 @@
 #include <vector>
 namespace VW
 {
-namespace cats_tree
+namespace reductions
 {
-LEARNER::base_learner* setup(setup_base_i& stack_builder);
+LEARNER::base_learner* cats_tree_setup(setup_base_i& stack_builder);
 
+namespace cats
+{
 struct tree_node
 {
   tree_node(uint32_t node_id, uint32_t left_node_id, uint32_t right_node_id, uint32_t parent_id, uint32_t depth,
@@ -83,5 +85,6 @@ private:
   bool _quiet = false;
 };
 
-}  // namespace cats_tree
+}  // namespace cats
+}  // namespace reductions
 }  // namespace VW

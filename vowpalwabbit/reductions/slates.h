@@ -13,12 +13,12 @@
 
 namespace VW
 {
-namespace slates
+namespace reductions
 {
 struct slates_data
 {
 private:
-  std::vector<label> _stashed_labels;
+  std::vector<slates::label> _stashed_labels;
 
   /*
   The primary job of this reduction is to convert slate labels to a form CCB can process.
