@@ -17,7 +17,7 @@
 #include <cfloat>
 #include <iomanip>
 
-using namespace LEARNER;
+using namespace VW::LEARNER;
 
 namespace CB
 {

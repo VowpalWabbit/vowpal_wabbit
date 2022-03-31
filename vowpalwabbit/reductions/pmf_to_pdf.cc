@@ -15,9 +15,9 @@
 
 #include <cmath>
 
-using namespace LEARNER;
 using namespace VW;
 using namespace VW::config;
+using namespace VW::LEARNER;
 
 namespace VW
 {

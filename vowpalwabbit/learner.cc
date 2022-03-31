@@ -319,7 +319,7 @@ void generic_driver_onethread(VW::workspace& all)
   }
 }
 
-float recur_sensitivity(void*, base_learner& base, example& ec) { return base.sensitivity(ec); }
+float VW::LEARNER::details::recur_sensitivity(void*, base_learner& base, example& ec) { return base.sensitivity(ec); }
 bool ec_is_example_header(const example& ec, label_type_t label_type)
 {
   if (label_type == VW::label_type_t::cb) { return CB::ec_is_example_header(ec); }
