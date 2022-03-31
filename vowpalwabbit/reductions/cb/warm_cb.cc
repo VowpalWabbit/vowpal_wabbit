@@ -590,7 +590,7 @@ base_learner* warm_cb_setup(VW::setup_base_i& stack_builder)
   if (use_cs && (options.was_supplied("corrupt_type_warm_start") || options.was_supplied("corrupt_prob_warm_start")))
   { THROW("label corruption on cost-sensitive examples not currently supported"); }
 
-  data->app_seed = uniform_hash("vw", 2, 0);
+  data->app_seed = VW::uniform_hash("vw", 2, 0);
   data->all = &all;
   data->_random_state = all.get_random_state();
   data->use_cs = use_cs;
