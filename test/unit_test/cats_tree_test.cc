@@ -27,21 +27,21 @@ struct reduction_test_harness
 
   void set_predict_response(const vector<float>& predictions) { _predictions = predictions; }
 
-  void test_predict(base_learner& base, example& ec) { ec.pred.scalar = _predictions[_curr_idx++]; }
+  void test_predict(base_learner& base, VW::example& ec) { ec.pred.scalar = _predictions[_curr_idx++]; }
 
-  void test_learn(base_learner& base, example& ec)
+  void test_learn(base_learner& base, VW::example& ec)
   {
     _labels.emplace_back(ec.l.simple);
     _weights.emplace_back(ec.weight);
     _learner_offset.emplace_back(ec.ft_offset);
   }
 
-  static void predict(reduction_test_harness& test_reduction, base_learner& base, example& ec)
+  static void predict(reduction_test_harness& test_reduction, base_learner& base, VW::example& ec)
   {
     test_reduction.test_predict(base, ec);
   }
 
-  static void learn(reduction_test_harness& test_reduction, base_learner& base, example& ec)
+  static void learn(reduction_test_harness& test_reduction, base_learner& base, VW::example& ec)
   {
     test_reduction.test_learn(base, ec);
   };
@@ -53,19 +53,19 @@ struct reduction_test_harness
   int _curr_idx;
 };
 
-using test_learner_t = learner<reduction_test_harness, example>;
+using test_learner_t = learner<reduction_test_harness, VW::example>;
 using predictions_t = vector<float>;
 using scores_t = int;
 
 template <typename T = reduction_test_harness>
-learner<T, example>* get_test_harness_reduction(const predictions_t& base_reduction_predictions)
+learner<T, VW::example>* get_test_harness_reduction(const predictions_t& base_reduction_predictions)
 {
   T* pharness = nullptr;
   return get_test_harness_reduction(base_reduction_predictions, pharness);
 }
 
 template <typename T = reduction_test_harness>
-learner<T, example>* get_test_harness_reduction(const predictions_t& base_reduction_predictions, T*& pharness)
+learner<T, VW::example>* get_test_harness_reduction(const predictions_t& base_reduction_predictions, T*& pharness)
 {
   // Setup a test harness base reduction
   auto test_harness = VW::make_unique<T>();
@@ -86,7 +86,7 @@ void predict_test_helper(const predictions_t& base_reduction_predictions, const 
   const auto test_base = get_test_harness_reduction(base_reduction_predictions);
   VW::reductions::cats::cats_tree tree;
   tree.init(num_leaves, bandwidth);
-  example ec;
+  VW::example ec;
   auto ret_val = tree.predict(*as_singleline(test_base), ec);
   BOOST_CHECK_EQUAL(ret_val, expected_action);
   delete test_base;

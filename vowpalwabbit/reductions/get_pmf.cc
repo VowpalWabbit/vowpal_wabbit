@@ -31,8 +31,8 @@ namespace
 // BEGIN sample_pdf reduction and reduction methods
 struct get_pmf
 {
-  int learn(example& ec, VW::experimental::api_status* status);
-  int predict(example& ec, VW::experimental::api_status* status);
+  int learn(VW::example& ec, VW::experimental::api_status* status);
+  int predict(VW::example& ec, VW::experimental::api_status* status);
 
   void init(single_learner* p_base, float epsilon);
 
@@ -41,13 +41,13 @@ private:
   float _epsilon = 0.f;
 };
 
-int get_pmf::learn(example& ec, VW::experimental::api_status*)
+int get_pmf::learn(VW::example& ec, VW::experimental::api_status* /*unused*/)
 {
   _base->learn(ec);
   return VW::experimental::error_code::success;
 }
 
-int get_pmf::predict(example& ec, VW::experimental::api_status*)
+int get_pmf::predict(VW::example& ec, VW::experimental::api_status* /*unused*/)
 {
   uint32_t base_prediction;
 
@@ -72,7 +72,7 @@ void get_pmf::init(single_learner* p_base, float epsilon)
 
 // Free function to tie function pointers to reduction class methods
 template <bool is_learn>
-void predict_or_learn(get_pmf& reduction, single_learner&, example& ec)
+void predict_or_learn(get_pmf& reduction, single_learner& /*unused*/, VW::example& ec)
 {
   VW::experimental::api_status status;
   if (is_learn) { reduction.learn(ec, &status); }

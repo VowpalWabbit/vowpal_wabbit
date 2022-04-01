@@ -379,6 +379,8 @@ void build_cb_example(VW::multi_ex& cb_ex, VW::example* slot, const CCB::label& 
   std::swap(data.shared->tag, slot->tag);
 }
 
+VW_WARNING_STATE_PUSH
+VW_WARNING_DISABLE_UNUSED_INTERNAL_DECLARATION
 std::string ccb_decision_to_string(const ccb_data& data)
 {
   std::ostringstream out_stream;
@@ -395,6 +397,7 @@ std::string ccb_decision_to_string(const ccb_data& data)
 
   return out_stream.str();
 }
+VW_WARNING_STATE_POP
 
 // iterate over slots contained in the multi-example, and for each slot, build a cb example and perform a
 // cb_explore_adf call.

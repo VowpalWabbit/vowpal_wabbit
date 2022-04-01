@@ -31,7 +31,7 @@ struct reduction_test_harness
 
   void set_predict_response(const vector<pair<float, float>>& predictions) { _predictions = predictions; }
 
-  void test_predict(base_learner& base, example& ec)
+  void test_predict(base_learner& base, VW::example& ec)
   {
     ec.pred.a_s.clear();
     const auto curr_pred = _predictions[_curr_idx++];
@@ -39,17 +39,17 @@ struct reduction_test_harness
     ec.pred.a_s.push_back(ACTION_SCORE::action_score{1, curr_pred.second});
   }
 
-  void test_learn(base_learner& base, example& ec)
+  void test_learn(base_learner& base, VW::example& ec)
   {
     // do nothing
   }
 
-  static void predict(reduction_test_harness& test_reduction, base_learner& base, example& ec)
+  static void predict(reduction_test_harness& test_reduction, base_learner& base, VW::example& ec)
   {
     test_reduction.test_predict(base, ec);
   }
 
-  static void learn(reduction_test_harness& test_reduction, base_learner& base, example& ec)
+  static void learn(reduction_test_harness& test_reduction, base_learner& base, VW::example& ec)
   {
     test_reduction.test_learn(base, ec);
   };
@@ -59,7 +59,7 @@ private:
   int _curr_idx;
 };
 
-using test_learner_t = learner<reduction_test_harness, example>;
+using test_learner_t = learner<reduction_test_harness, VW::example>;
 using predictions_t = vector<pair<float, float>>;
 using scores_t = std::vector<float>;
 
@@ -82,7 +82,7 @@ void predict_test_helper(const predictions_t& base_reduction_predictions, const 
   const auto test_base = get_test_harness_reduction(base_reduction_predictions);
   VW::reductions::offset_tree::offset_tree tree(static_cast<uint32_t>(expected_scores.size()));
   tree.init();
-  example ec;
+  VW::example ec;
   auto& ret_val = tree.predict(*as_singleline(test_base), ec);
   BOOST_CHECK_EQUAL_COLLECTIONS(ret_val.begin(), ret_val.end(), expected_scores.begin(), expected_scores.end());
   delete test_base;
