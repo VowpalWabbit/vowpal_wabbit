@@ -6,14 +6,14 @@
 
 #include "vw_fwd.h"
 
-#include <vector>
 #include <memory>
+#include <vector>
 
 namespace VW
 {
-    namespace details
-    {
-        void global_print_newline(
-            const std::vector<std::unique_ptr<VW::io::writer>>& final_prediction_sink, VW::io::logger& logger);
-    }
+namespace details
+{
+void global_print_newline(
+    const std::vector<std::unique_ptr<VW::io::writer>>& final_prediction_sink, VW::io::logger& logger);
 }
+}  // namespace VW
