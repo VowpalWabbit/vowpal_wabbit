@@ -6,6 +6,9 @@
 
 #include "vw_fwd.h"
 
+#include <vector>
+#include <memory>
+
 namespace VW
 {
     namespace details
