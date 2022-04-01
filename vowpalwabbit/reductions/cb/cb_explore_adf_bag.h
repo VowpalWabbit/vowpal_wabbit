@@ -6,16 +6,10 @@
 
 #include "vw_fwd.h"
 
-#include <memory>
-#include <vector>
-
 namespace VW
 {
-namespace cb_explore_adf
+namespace reductions
 {
-namespace bag
-{
-VW::LEARNER::base_learner* setup(VW::setup_base_i& stack_builder);
-}  // namespace bag
+VW::LEARNER::base_learner* cb_explore_adf_bag_setup(VW::setup_base_i& stack_builder);
+}  // namespace reductions
 }  // namespace cb_explore_adf
-}  // namespace VW

@@ -34,7 +34,7 @@ using std::endl;
 #undef VW_DEBUG_LOG
 #define VW_DEBUG_LOG vw_dbg::cb_explore
 
-namespace CB_EXPLORE
+namespace
 {
 struct cb_explore
 {
@@ -284,6 +284,29 @@ float calc_loss(cb_explore& data, VW::example& ec, const CB::label& ld)
   return loss;
 }
 
+void finish_example(VW::workspace& all, cb_explore& data, VW::example& ec)
+{
+  float loss = calc_loss(data, ec, ec.l.cb);
+
+  CB_EXPLORE::generic_output_example(all, loss, ec, ec.l.cb);
+  VW::finish_example(all, ec);
+}
+
+void save_load(cb_explore& cb, io_buf& io, bool read, bool text)
+{
+  if (io.num_files() == 0) { return; }
+
+  if (!read || cb.model_file_version >= VW::version_definitions::VERSION_FILE_WITH_CCB_MULTI_SLOTS_SEEN_FLAG)
+  {
+    std::stringstream msg;
+    if (!read) { msg << "cb cover storing VW::example counter:  = " << cb.counter << "\n"; }
+    bin_text_read_write_fixed_validated(io, reinterpret_cast<char*>(&cb.counter), sizeof(cb.counter), read, msg, text);
+  }
+}
+}  // namespace
+
+namespace CB_EXPLORE
+{
 void generic_output_example(VW::workspace& all, float loss, VW::example& ec, CB::label& ld)
 {
   all.sd->update(ec.test_only, !CB::is_test_label(ld), loss, 1.f, ec.get_num_features());
@@ -307,29 +330,9 @@ void generic_output_example(VW::workspace& all, float loss, VW::example& ec, CB:
   print_update_cb_explore(all, CB::is_test_label(ld), ec, sso);
 }
 
-void finish_example(VW::workspace& all, cb_explore& data, VW::example& ec)
-{
-  float loss = calc_loss(data, ec, ec.l.cb);
-
-  CB_EXPLORE::generic_output_example(all, loss, ec, ec.l.cb);
-  VW::finish_example(all, ec);
-}
-
-void save_load(cb_explore& cb, io_buf& io, bool read, bool text)
-{
-  if (io.num_files() == 0) { return; }
-
-  if (!read || cb.model_file_version >= VW::version_definitions::VERSION_FILE_WITH_CCB_MULTI_SLOTS_SEEN_FLAG)
-  {
-    std::stringstream msg;
-    if (!read) { msg << "cb cover storing VW::example counter:  = " << cb.counter << "\n"; }
-    bin_text_read_write_fixed_validated(io, reinterpret_cast<char*>(&cb.counter), sizeof(cb.counter), read, msg, text);
-  }
-}
 }  // namespace CB_EXPLORE
-using namespace CB_EXPLORE;
 
-base_learner* cb_explore_setup(VW::setup_base_i& stack_builder)
+base_learner* VW::reductions::cb_explore_setup(VW::setup_base_i& stack_builder)
 {
   options_i& options = *stack_builder.get_options();
   VW::workspace& all = *stack_builder.get_all_pointer();
@@ -432,7 +435,7 @@ base_learner* cb_explore_setup(VW::setup_base_i& stack_builder)
                 .set_input_prediction_type(VW::prediction_type_t::multiclass)
                 .set_output_prediction_type(VW::prediction_type_t::action_probs)
                 .set_params_per_weight(params_per_weight)
-                .set_finish_example(finish_example)
+                .set_finish_example(::finish_example)
                 .set_save_load(save_load)
                 .build(&all.logger);
 

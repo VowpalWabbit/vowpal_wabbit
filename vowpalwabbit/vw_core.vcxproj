@@ -201,6 +201,7 @@
     <ClInclude Include="parse_slates_example_json.h" />
     <ClInclude Include="parser.h" />
     <ClInclude Include="prediction_type.h" />
+    <ClInclude Include="print_utils.h" />
     <ClInclude Include="prob_dist_cont.h" />
     <ClInclude Include="queue.h" />
     <ClInclude Include="rand_state.h" />
@@ -383,6 +384,7 @@
     <ClCompile Include="parse_regressor.cc" />
     <ClCompile Include="parser.cc" />
     <ClCompile Include="prediction_type.cc" />
+    <ClCompile Include="print_utils.cc" />
     <ClCompile Include="prob_dist_cont.cc" />
     <ClCompile Include="rand48.cc" />
     <ClCompile Include="reduction_stack.cc" />

@@ -260,7 +260,7 @@ void learn(VW::reductions::offset_tree::offset_tree& tree, single_learner& base,
 }
 }  // namespace
 
-base_learner* VW::reductions::offset_tree_setup(VW::setup_base_i& stack_builder)
+VW::LEARNER::base_learner* VW::reductions::offset_tree_setup(VW::setup_base_i& stack_builder)
 {
   options_i& options = *stack_builder.get_options();
   option_group_definition new_options("[Reduction] Offset Tree");

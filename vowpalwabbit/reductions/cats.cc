@@ -172,7 +172,7 @@ void reduction_output::print_update_cb_cont(VW::workspace& all, const VW::exampl
 ////////////////////////////////////////////////////
 
 // Setup reduction in stack
-LEARNER::base_learner* VW::reductions::cats_setup(setup_base_i& stack_builder)
+VW::LEARNER::base_learner* VW::reductions::cats_setup(setup_base_i& stack_builder)
 {
   options_i& options = *stack_builder.get_options();
   VW::workspace& all = *stack_builder.get_all_pointer();

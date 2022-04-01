@@ -2,6 +2,8 @@
 // individual contributors. All rights reserved. Released under a BSD (revised)
 // license as described in the file LICENSE.
 
+#include "warm_cb.h"
+
 #include "cb_algs.h"
 #include "cb_label_parser.h"
 #include "config/options.h"
@@ -39,6 +41,8 @@ using namespace VW::config;
 #define MINIMAX_CENTRAL 3
 #define MINIMAX_CENTRAL_ZEROONE 4
 
+namespace
+{
 struct warm_cb
 {
   CB::label cb_label;
@@ -531,8 +535,9 @@ void init_adf_data(warm_cb& data, const uint32_t num_actions)
   for (uint32_t i = 0; i < data.choices_lambda; i++) { data.cumulative_costs.push_back(0.f); }
   data.cumu_var = 0.f;
 }
+}  // namespace
 
-base_learner* warm_cb_setup(VW::setup_base_i& stack_builder)
+VW::LEARNER::base_learner* VW::reductions::warm_cb_setup(VW::setup_base_i& stack_builder)
 {
   options_i& options = *stack_builder.get_options();
   VW::workspace& all = *stack_builder.get_all_pointer();
@@ -655,7 +660,7 @@ base_learner* warm_cb_setup(VW::setup_base_i& stack_builder)
                 .set_params_per_weight(ws)
                 .set_learn_returns_prediction(true)
                 .set_finish_example(finish_ptr)
-                .set_finish(finish)
+                .set_finish(::finish)
                 .build(&all.logger);
 
   return make_base(*l);

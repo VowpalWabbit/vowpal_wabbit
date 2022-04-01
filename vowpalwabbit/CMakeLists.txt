@@ -119,6 +119,7 @@ set(vw_all_headers
   parse_slates_example_json.h
   parser.h
   prediction_type.h
+  print_utils.h
   prob_dist_cont.h
   queue.h
   rand_state.h
@@ -294,6 +295,7 @@ set(vw_all_sources
   parse_regressor.cc
   parser.cc
   prediction_type.cc
+  print_utils.cc
   prob_dist_cont.cc
   rand48.cc
   reduction_stack.cc

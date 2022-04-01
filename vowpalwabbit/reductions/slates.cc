@@ -13,6 +13,7 @@
 #include "decision_scores.h"
 #include "example.h"
 #include "global_data.h"
+#include "print_utils.h"
 #include "setup_base.h"
 #include "shared_data.h"
 #include "slates_label.h"
@@ -210,7 +211,7 @@ void finish_multiline_example(VW::workspace& all, VW::reductions::slates_data& d
   if (!ec_seq.empty())
   {
     output_example(all, data, ec_seq);
-    CB_ADF::global_print_newline(all.final_prediction_sink, all.logger);
+    VW::details::global_print_newline(all.final_prediction_sink, all.logger);
     for (auto& action_scores : ec_seq[0]->pred.decision_scores) { action_scores.clear(); }
     ec_seq[0]->pred.decision_scores.clear();
   }

@@ -18,6 +18,7 @@
 #include "example.h"         // used in predict
 #include "gen_cs_example.h"  // required for GEN_CS::cb_to_cs_adf
 #include "metric_sink.h"
+#include "print_utils.h"
 #include "shared_data.h"
 #include "v_array.h"  // required by action_score.h
 #include "vw_fwd.h"
@@ -279,7 +280,7 @@ void cb_explore_adf_base<ExploreType>::print_multiline_example(
   if (ec_seq.size() > 0)
   {
     data.output_example_seq(all, ec_seq);
-    CB_ADF::global_print_newline(all.final_prediction_sink, all.logger);
+    VW::details::global_print_newline(all.final_prediction_sink, all.logger);
   }
 }
 

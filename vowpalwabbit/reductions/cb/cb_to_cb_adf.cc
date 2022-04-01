@@ -15,10 +15,12 @@
 using namespace VW::LEARNER;
 using namespace VW::config;
 
+namespace
+{
 struct cb_to_cb_adf
 {
   parameters* weights = nullptr;
-  cbify_adf_data adf_data;
+  VW::reductions::cbify_adf_data adf_data;
   bool explore_mode = false;
   multi_learner* adf_learner = nullptr;
 };
@@ -100,6 +102,7 @@ void finish_example(VW::workspace& all, cb_to_cb_adf& c, VW::example& ec)
   }
   VW::finish_example(all, ec);
 }
+}  // namespace
 
 /*
     Purpose: run before cb, cb_explore, cbify and cb_adf related reductions
@@ -110,7 +113,7 @@ void finish_example(VW::workspace& all, cb_to_cb_adf& c, VW::example& ec)
 
     Related files: cb_algs.cc, cb_explore.cc, cbify.cc
 */
-VW::LEARNER::base_learner* cb_to_cb_adf_setup(VW::setup_base_i& stack_builder)
+VW::LEARNER::base_learner* VW::reductions::cb_to_cb_adf_setup(VW::setup_base_i& stack_builder)
 {
   options_i& options = *stack_builder.get_options();
   VW::workspace& all = *stack_builder.get_all_pointer();
@@ -231,7 +234,7 @@ VW::LEARNER::base_learner* cb_to_cb_adf_setup(VW::setup_base_i& stack_builder)
                 .set_input_prediction_type(in_pred_type)
                 .set_output_prediction_type(out_pred_type)
                 .set_learn_returns_prediction(true)
-                .set_finish_example(finish_example)
+                .set_finish_example(::finish_example)
                 .build(&all.logger);
 
   return make_base(*l);

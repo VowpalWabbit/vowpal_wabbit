@@ -13,7 +13,6 @@
 #include "setup_base.h"
 
 // Aliases
-using std::endl;
 using VW::cb_continuous::continuous_label;
 using VW::cb_continuous::continuous_label_elm;
 using VW::config::make_option;
@@ -82,7 +81,7 @@ void predict_or_learn(get_pmf& reduction, single_learner& /*unused*/, VW::exampl
   }
 
   if (status.get_error_code() != VW::experimental::error_code::success)
-  { VW_DBG(ec) << status.get_error_msg() << endl; }
+  { VW_DBG(ec) << status.get_error_msg() << std::endl; }
 }
 }  // namespace
 

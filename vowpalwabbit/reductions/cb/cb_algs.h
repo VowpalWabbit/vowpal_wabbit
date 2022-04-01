@@ -13,9 +13,16 @@
 
 #include <cfloat>
 
+namespace VW
+{
+namespace reductions
+{
 // TODO: extend to handle CSOAA_LDF and WAP_LDF
 VW::LEARNER::base_learner* cb_algs_setup(VW::setup_base_i& stack_builder);
+}  // namespace reductions
+}  // namespace VW
 
+// TODO: Move these functions either into a CB-related lib in VW:: or under VW::reductions::
 namespace CB_ALGS
 {
 template <bool is_learn>

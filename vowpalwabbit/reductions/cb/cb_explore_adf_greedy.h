@@ -7,14 +7,10 @@
 #include "vw_fwd.h"
 
 #include <vector>
-
 namespace VW
 {
-namespace cb_explore_adf
+namespace reductions
 {
-namespace greedy
-{
-VW::LEARNER::base_learner* setup(VW::setup_base_i& stack_builder);
+VW::LEARNER::base_learner* cb_explore_adf_greedy_setup(VW::setup_base_i& stack_builder);
 }  // namespace greedy
 }  // namespace cb_explore_adf
-}  // namespace VW
