@@ -74,9 +74,12 @@ class io_buf
 
     void shift_to_front(char* head_ptr)
     {
-      assert(pointer_is_in_buffer(head_ptr));
+      assert(_end >= head_ptr);
       const size_t space_left = _end - head_ptr;
-      std::memmove(_begin, head_ptr, space_left);
+      // Only call memmove if we are within the bounds of the loaded buffer.
+      // Also, this ensures we don't memmove when head_ptr == _end_array which
+      // would be undefined behavior.
+      if (head_ptr >= _begin && head_ptr < _end) { std::memmove(_begin, head_ptr, space_left); }
       _end = _begin + space_left;
     }
 
@@ -158,11 +161,7 @@ public:
    */
   bool is_resettable() const;
 
-  void set(char* p)
-  {
-    assert(_buffer.pointer_is_in_buffer(p));
-    head = p;
-  }
+  void set(char* p) { head = p; }
 
   /// This function will return the number of input files AS WELL AS the number of output files. (because of legacy)
   size_t num_files() const { return input_files.size() + output_files.size(); }

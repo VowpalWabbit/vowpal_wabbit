@@ -60,21 +60,20 @@ size_t io_buf::readto(char*& pointer, char terminal)
   while (pointer < _buffer._end && *pointer != terminal) { pointer++; }
   if (pointer != _buffer._end)
   {
-    assert(_buffer.pointer_is_in_buffer(head));
     size_t n = pointer - head;
     head = pointer + 1;
     pointer -= n;
-    assert(_buffer.pointer_is_in_buffer(pointer));
     return n + 1;
   }
-  else
+  else  // Else means we didn't find 'terminal' in the available buffer.
   {
-    if (_buffer._end == _buffer._end_array)
+    // Shift down if there is space at the beginning.
+    if (head != _buffer._begin)
     {
-      // _buffer._end is outside of the buffer. There is nothing to shift down.
-      if (head != _buffer._end) { _buffer.shift_to_front(head); }
+      _buffer.shift_to_front(head);
       head = _buffer._begin;
     }
+
     if (_current < input_files.size() && fill(input_files[_current].get()) > 0)
     {  // more bytes are read.
       return readto(pointer, terminal);
@@ -85,11 +84,9 @@ size_t io_buf::readto(char*& pointer, char terminal)
     }
     else  // no more bytes to read, return everything we have.
     {
-      size_t n = pointer - head;
-      head = pointer;
-      pointer -= n;
-      assert(n == 0 || _buffer.pointer_is_in_buffer(pointer));
-      return n;
+      pointer = head;
+      head = _buffer._end;
+      return _buffer._end - pointer;
     }
   }
 }
