@@ -72,7 +72,13 @@
 #  define VW_WARNING_DISABLE_BADLY_FORMED_XML
 #  define VW_WARNING_DISABLE_COND_CONST_EXPR
 #  define VW_WARNING_DISABLE_UNUSED_PARAM VW_WARNING_DISABLE("-Wunused-parameter")
-#  define VW_WARNING_DISABLE_UNUSED_INTERNAL_DECLARATION VW_WARNING_DISABLE("-Wunneeded-internal-declaration")
+
+// Clang only warnings
+#  if defined(__clang__)
+#    define VW_WARNING_DISABLE_UNUSED_INTERNAL_DECLARATION VW_WARNING_DISABLE("-Wunneeded-internal-declaration")
+#  else
+#    define VW_WARNING_DISABLE_UNUSED_INTERNAL_DECLARATION
+#  endif
 
 // This warning was added in GCC 8
 #  if __GNUC__ >= 8
