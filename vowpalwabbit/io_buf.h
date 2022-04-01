@@ -85,8 +85,6 @@ class io_buf
 
     size_t capacity() const { return _end_array - _begin; }
     size_t size() const { return _end - _begin; }
-
-    bool pointer_is_in_buffer(const char* ptr) const { return ptr >= _begin && ptr < _end_array; }
   };
 
   // used to check-sum i/o files for corruption detection
