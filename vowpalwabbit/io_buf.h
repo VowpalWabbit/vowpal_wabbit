@@ -74,8 +74,12 @@ class io_buf
 
     void shift_to_front(char* head_ptr)
     {
+      assert(_end >= head_ptr);
       const size_t space_left = _end - head_ptr;
-      memmove(_begin, head_ptr, space_left);
+      // Only call memmove if we are within the bounds of the loaded buffer.
+      // Also, this ensures we don't memmove when head_ptr == _end_array which
+      // would be undefined behavior.
+      if (head_ptr >= _begin && head_ptr < _end) { std::memmove(_begin, head_ptr, space_left); }
       _end = _begin + space_left;
     }
 
