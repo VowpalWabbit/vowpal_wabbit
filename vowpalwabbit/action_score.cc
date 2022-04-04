@@ -43,7 +43,7 @@ std::string to_string(const ACTION_SCORE::action_scores& action_scores_or_probs,
   std::string delim;
   for (const auto& item : action_scores_or_probs)
   {
-    ss << delim << fmt::format("{},{}", item.action, VW::fmt_float(item.score, decimal_precision));
+    ss << delim << fmt::format("{}:{}", item.action, VW::fmt_float(item.score, decimal_precision));
     delim = ",";
   }
   return ss.str();
