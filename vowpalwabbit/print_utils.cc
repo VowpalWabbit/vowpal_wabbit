@@ -14,7 +14,7 @@ namespace details
 void global_print_newline(
     const std::vector<std::unique_ptr<VW::io::writer>>& final_prediction_sink, VW::io::logger& logger)
 {
-  char temp = '\n';
+  const char temp = '\n';
   for (auto& sink : final_prediction_sink)
   {
     ssize_t t = sink->write(&temp, 1);
