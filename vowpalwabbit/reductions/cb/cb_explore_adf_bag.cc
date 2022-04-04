@@ -24,11 +24,9 @@
 // All exploration algorithms return a vector of id, probability tuples, sorted in order of scores. The probabilities
 // are the probability with which each action should be replaced to the top of the list.
 
-namespace VW
-{
-namespace cb_explore_adf
-{
-namespace bag
+using namespace VW::cb_explore_adf;
+
+namespace
 {
 struct cb_explore_adf_bag
 {
@@ -76,7 +74,7 @@ uint32_t cb_explore_adf_bag::get_bag_learner_update_count(uint32_t learner_index
   if (_greedify && learner_index == 0) { return 1; }
   else
   {
-    return reductions::bs::weight_gen(_random_state);
+    return VW::reductions::bs::weight_gen(_random_state);
   }
 }
 
@@ -153,8 +151,9 @@ void print_bag_example(VW::workspace& all, cb_explore_adf_base<cb_explore_adf_ba
   ec_seq[0]->pred.a_s = data.explore.get_cached_prediction();
   cb_explore_adf_base<cb_explore_adf_bag>::print_multiline_example(all, data, ec_seq);
 }
+}  // namespace
 
-VW::LEARNER::base_learner* setup(VW::setup_base_i& stack_builder)
+VW::LEARNER::base_learner* VW::reductions::cb_explore_adf_bag_setup(VW::setup_base_i& stack_builder)
 {
   VW::config::options_i& options = *stack_builder.get_options();
   VW::workspace& all = *stack_builder.get_all_pointer();
@@ -195,8 +194,8 @@ VW::LEARNER::base_learner* setup(VW::setup_base_i& stack_builder)
   using explore_type = cb_explore_adf_base<cb_explore_adf_bag>;
   auto data = VW::make_unique<explore_type>(
       with_metrics, epsilon, VW::cast_to_smaller_type<size_t>(bag_size), greedify, first_only, all.get_random_state());
-  auto* l = make_reduction_learner(
-      std::move(data), base, explore_type::learn, explore_type::predict, stack_builder.get_setupfn_name(setup))
+  auto* l = make_reduction_learner(std::move(data), base, explore_type::learn, explore_type::predict,
+      stack_builder.get_setupfn_name(cb_explore_adf_bag_setup))
                 .set_input_label_type(VW::label_type_t::cb)
                 .set_output_label_type(VW::label_type_t::cb)
                 .set_input_prediction_type(VW::prediction_type_t::action_scores)
@@ -208,7 +207,3 @@ VW::LEARNER::base_learner* setup(VW::setup_base_i& stack_builder)
                 .build(&all.logger);
   return make_base(*l);
 }
-
-}  // namespace bag
-}  // namespace cb_explore_adf
-}  // namespace VW

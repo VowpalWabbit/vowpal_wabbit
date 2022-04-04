@@ -21,9 +21,9 @@ using namespace VW::LEARNER;
 
 namespace VW
 {
-namespace pmf_to_pdf
+namespace reductions
 {
-void reduction::transform_prediction(example& ec)
+void pmf_to_pdf_reduction::transform_prediction(example& ec)
 {
   const float continuous_range = max_value - min_value;
   const float unit_range = continuous_range / num_actions;
@@ -105,7 +105,7 @@ void reduction::transform_prediction(example& ec)
   }
 }
 
-void reduction::predict(example& ec)
+void pmf_to_pdf_reduction::predict(example& ec)
 {
   auto swap_label = VW::swap_guard(ec.l.cb, temp_lbl_cb);
 
@@ -132,7 +132,7 @@ void reduction::predict(example& ec)
   transform_prediction(ec);
 }
 
-void reduction::learn(example& ec)
+void pmf_to_pdf_reduction::learn(example& ec)
 {
   const float cost = ec.l.cb_cont.costs[0].cost;
   const float pdf_value = ec.l.cb_cont.costs[0].pdf_value;
@@ -173,77 +173,20 @@ void reduction::learn(example& ec)
   _p_base->learn(ec);
 }
 
-void predict(pmf_to_pdf::reduction& data, single_learner&, example& ec) { data.predict(ec); }
+}  // namespace reductions
+}  // namespace VW
 
-void learn(pmf_to_pdf::reduction& data, single_learner&, example& ec) { data.learn(ec); }
-
-void print_update(VW::workspace& all, bool is_test, const example& ec, std::stringstream& pred_string)
+namespace
 {
-  if (all.sd->weighted_examples() >= all.sd->dump_interval && !all.quiet && !all.bfgs)
-  {
-    std::stringstream label_string;
-    if (is_test) { label_string << "unknown"; }
-    else
-    {
-      const auto& cost = ec.l.cb.costs[0];
-      label_string << cost.action << ":" << cost.cost << ":" << cost.probability;
-    }
-    all.sd->print_update(*all.trace_message, all.holdout_set_off, all.current_pass, label_string.str(),
-        pred_string.str(), ec.get_num_features(), all.progress_add, all.progress_arg);
-  }
-}
+void predict(VW::reductions::pmf_to_pdf_reduction& data, single_learner&, example& ec) { data.predict(ec); }
+void learn(VW::reductions::pmf_to_pdf_reduction& data, single_learner&, example& ec) { data.learn(ec); }
+}  // namespace
 
-void output_example(VW::workspace& all, reduction&, const example& ec, const CB::label& ld)
-{
-  float loss = 0.;
-  auto optional_cost = get_observed_cost_cb(ec.l.cb);
-  // cost observed, not default
-  if (optional_cost.first)
-  {
-    for (const auto& cbc : ec.l.cb.costs)
-    {
-      for (uint32_t i = 0; i < ec.pred.pdf.size(); i++)
-      { loss += (cbc.cost / cbc.probability) * ec.pred.pdf[i].pdf_value; }
-    }
-  }
-
-  all.sd->update(ec.test_only, optional_cost.first, loss, 1.f, ec.get_num_features());
-
-  constexpr size_t buffsz = 20;
-  char temp_str[buffsz];
-  std::stringstream ss, sso;
-  float maxprob = 0.;
-  uint32_t maxid = 0;
-  for (uint32_t i = 0; i < ec.pred.pdf.size(); i++)
-  {
-    sprintf_s(temp_str, buffsz, "%f ", ec.pred.pdf[i].pdf_value);
-    ss << temp_str;
-    if (ec.pred.pdf[i].pdf_value > maxprob)
-    {
-      maxprob = ec.pred.pdf[i].pdf_value;
-      maxid = i + 1;
-    }
-  }
-
-  sprintf_s(temp_str, buffsz, "%d:%f", maxid, maxprob);
-  sso << temp_str;
-
-  for (auto& sink : all.final_prediction_sink) { all.print_text_by_ref(sink.get(), ss.str(), ec.tag, all.logger); }
-
-  print_update(all, CB::is_test_label(ld), ec, sso);
-}
-
-void finish_example(VW::workspace& all, reduction& c, example& ec)
-{
-  output_example(all, c, ec, ec.l.cb);
-  VW::finish_example(all, ec);
-}
-
-base_learner* setup(VW::setup_base_i& stack_builder)
+base_learner* VW::reductions::pmf_to_pdf_setup(VW::setup_base_i& stack_builder)
 {
   options_i& options = *stack_builder.get_options();
   VW::workspace& all = *stack_builder.get_all_pointer();
-  auto data = VW::make_unique<pmf_to_pdf::reduction>();
+  auto data = VW::make_unique<VW::reductions::pmf_to_pdf_reduction>();
 
   option_group_definition new_options("[Reduction] Convert Discrete PMF into Continuous PDF");
   new_options
@@ -303,7 +246,7 @@ base_learner* setup(VW::setup_base_i& stack_builder)
   data->_p_base = p_base;
 
   auto* l = VW::LEARNER::make_reduction_learner(
-      std::move(data), p_base, learn, predict, stack_builder.get_setupfn_name(setup))
+      std::move(data), p_base, learn, predict, stack_builder.get_setupfn_name(pmf_to_pdf_setup))
                 .set_output_prediction_type(VW::prediction_type_t::pdf)
                 .set_input_label_type(VW::label_type_t::continuous)
                 // .set_output_label_type(label_type_t::cb)
@@ -311,6 +254,3 @@ base_learner* setup(VW::setup_base_i& stack_builder)
                 .build();
   return make_base(*l);
 }
-
-}  // namespace pmf_to_pdf
-}  // namespace VW

@@ -16,6 +16,7 @@
 #include "io/logger.h"
 #include "label_dictionary.h"
 #include "model_utils.h"
+#include "print_utils.h"
 #include "setup_base.h"
 #include "shared_data.h"
 #include "v_array_pool.h"
@@ -603,7 +604,7 @@ void finish_multiline_example(VW::workspace& all, ccb_data& data, VW::multi_ex& 
   if (!ec_seq.empty() && !data.no_pred)
   {
     output_example(all, data, ec_seq);
-    CB_ADF::global_print_newline(all.final_prediction_sink, all.logger);
+    VW::details::global_print_newline(all.final_prediction_sink, all.logger);
   }
 
   if (!data.no_pred)

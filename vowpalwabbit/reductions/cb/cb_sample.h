@@ -6,4 +6,10 @@
 
 #include "vw_fwd.h"
 
+namespace VW
+{
+namespace reductions
+{
 VW::LEARNER::base_learner* cb_sample_setup(VW::setup_base_i& stack_builder);
+}
+}  // namespace VW

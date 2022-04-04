@@ -15,7 +15,6 @@
 #include "setup_base.h"
 
 // Aliases
-using std::endl;
 using VW::cb_continuous::continuous_label;
 using VW::cb_continuous::continuous_label_elm;
 using VW::config::make_option;
@@ -27,26 +26,24 @@ using VW::LEARNER::single_learner;
 #undef VW_DEBUG_LOG
 #define VW_DEBUG_LOG vw_dbg::cb_sample_pdf
 
-namespace VW
-{
-namespace continuous_action
+namespace
 {
 ////////////////////////////////////////////////////
 // BEGIN sample_pdf reduction and reduction methods
 struct sample_pdf
 {
-  int learn(example& ec, experimental::api_status* status);
-  int predict(example& ec, experimental::api_status* status);
+  int learn(example& ec, VW::experimental::api_status* status);
+  int predict(example& ec, VW::experimental::api_status* status);
 
   void init(single_learner* p_base, std::shared_ptr<VW::rand_state> random_state);
 
 private:
   std::shared_ptr<VW::rand_state> _p_random_state;
-  continuous_actions::probability_density_function _pred_pdf;
+  VW::continuous_actions::probability_density_function _pred_pdf;
   single_learner* _base = nullptr;
 };
 
-int sample_pdf::learn(example& ec, experimental::api_status*)
+int sample_pdf::learn(example& ec, VW::experimental::api_status*)
 {
   // one of the base reductions will call predict so we need a valid
   // predict buffer
@@ -58,7 +55,7 @@ int sample_pdf::learn(example& ec, experimental::api_status*)
   return VW::experimental::error_code::success;
 }
 
-int sample_pdf::predict(example& ec, experimental::api_status*)
+int sample_pdf::predict(example& ec, VW::experimental::api_status*)
 {
   _pred_pdf.clear();
 
@@ -88,7 +85,7 @@ void sample_pdf::init(single_learner* p_base, std::shared_ptr<VW::rand_state> ra
 template <bool is_learn>
 void predict_or_learn(sample_pdf& reduction, single_learner&, example& ec)
 {
-  experimental::api_status status;
+  VW::experimental::api_status status;
   if (is_learn) { reduction.learn(ec, &status); }
   else
   {
@@ -97,13 +94,14 @@ void predict_or_learn(sample_pdf& reduction, single_learner&, example& ec)
   }
 
   if (status.get_error_code() != VW::experimental::error_code::success)
-  { VW_DBG(ec) << status.get_error_msg() << endl; }
+  { VW_DBG(ec) << status.get_error_msg() << std::endl; }
 }
+}  // namespace
 
 // END sample_pdf reduction and reduction methods
 ////////////////////////////////////////////////////
 
-LEARNER::base_learner* sample_pdf_setup(VW::setup_base_i& stack_builder)
+VW::LEARNER::base_learner* VW::reductions::sample_pdf_setup(VW::setup_base_i& stack_builder)
 {
   options_i& options = *stack_builder.get_options();
   VW::workspace& all = *stack_builder.get_all_pointer();
@@ -128,5 +126,3 @@ LEARNER::base_learner* sample_pdf_setup(VW::setup_base_i& stack_builder)
 
   return VW::LEARNER::make_base(*l);
 }
-}  // namespace continuous_action
-}  // namespace VW

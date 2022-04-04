@@ -9,6 +9,10 @@
 class parameters;
 struct namespace_interactions;
 
+namespace VW
+{
+namespace reductions
+{
 struct cbify_adf_data
 {
   VW::multi_ex ecs;
@@ -16,7 +20,7 @@ struct cbify_adf_data
   size_t increment = 0;
   uint64_t custom_index_mask = 0;
 
-  void init_adf_data(const std::size_t num_actions, size_t increment,
+  void init_adf_data(std::size_t num_actions, size_t increment,
       std::vector<std::vector<VW::namespace_index>>& interactions,
       std::vector<std::vector<extent_term>>& extent_interactions);
   void copy_example_to_adf(parameters& weights, VW::example& ec);
@@ -26,3 +30,5 @@ struct cbify_adf_data
 
 VW::LEARNER::base_learner* cbify_setup(VW::setup_base_i& stack_builder);
 VW::LEARNER::base_learner* cbifyldf_setup(VW::setup_base_i& stack_builder);
+}  // namespace reductions
+}  // namespace VW

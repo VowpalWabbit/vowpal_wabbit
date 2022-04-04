@@ -23,6 +23,36 @@ using namespace GEN_CS;
 
 namespace CB_ALGS
 {
+void generic_output_example(
+    VW::workspace& all, float loss, const VW::example& ec, const CB::label& ld, const CB::cb_class* known_cost)
+{
+  all.sd->update(ec.test_only, !CB::is_test_label(ld), loss, 1.f, ec.get_num_features());
+
+  for (auto& sink : all.final_prediction_sink)
+  { all.print_by_ref(sink.get(), static_cast<float>(ec.pred.multiclass), 0, ec.tag, all.logger); }
+
+  if (all.raw_prediction != nullptr)
+  {
+    std::stringstream outputStringStream;
+    for (unsigned int i = 0; i < ld.costs.size(); i++)
+    {
+      cb_class cl = ld.costs[i];
+      if (i > 0) { outputStringStream << ' '; }
+      outputStringStream << cl.action << ':' << cl.partial_prediction;
+    }
+    all.print_text_by_ref(all.raw_prediction.get(), outputStringStream.str(), ec.tag, all.logger);
+  }
+
+  bool is_ld_test_label = CB::is_test_label(ld);
+  if (!is_ld_test_label) { print_update(all, is_ld_test_label, ec, nullptr, false, known_cost); }
+  else
+  {
+    print_update(all, is_ld_test_label, ec, nullptr, false, nullptr);
+  }
+}
+}  // namespace CB_ALGS
+namespace
+{
 struct cb
 {
   cb_to_cs cbcs;
@@ -30,24 +60,6 @@ struct cb
 
   cb(VW::io::logger logger) : logger(std::move(logger)) {}
 };
-
-bool know_all_cost_example(CB::label& ld)
-{
-  if (ld.costs.size() <= 1)
-  {  // this means we specified an example where all actions are possible but only specified the
-     // cost for the observed action
-    return false;
-  }
-
-  // if we specified more than 1 action for this example, i.e. either we have a limited set of possible actions, or all
-  // actions are specified than check if all actions have a specified cost
-  for (auto& cl : ld.costs)
-  {
-    if (cl.cost == FLT_MAX) { return false; }
-  }
-
-  return true;
-}
 
 template <bool is_learn>
 void predict_or_learn(cb& data, single_learner& base, VW::example& ec)
@@ -106,37 +118,9 @@ void output_example(VW::workspace& all, cb& data, const VW::example& ec, const C
   float loss = 0.;
 
   cb_to_cs& c = data.cbcs;
-  if (!CB::is_test_label(ld)) { loss = get_cost_estimate(c.known_cost, c.pred_scores, ec.pred.multiclass); }
+  if (!CB::is_test_label(ld)) { loss = CB_ALGS::get_cost_estimate(c.known_cost, c.pred_scores, ec.pred.multiclass); }
 
-  generic_output_example(all, loss, ec, ld, &c.known_cost);
-}
-
-void generic_output_example(
-    VW::workspace& all, float loss, const VW::example& ec, const CB::label& ld, const CB::cb_class* known_cost)
-{
-  all.sd->update(ec.test_only, !CB::is_test_label(ld), loss, 1.f, ec.get_num_features());
-
-  for (auto& sink : all.final_prediction_sink)
-  { all.print_by_ref(sink.get(), static_cast<float>(ec.pred.multiclass), 0, ec.tag, all.logger); }
-
-  if (all.raw_prediction != nullptr)
-  {
-    std::stringstream outputStringStream;
-    for (unsigned int i = 0; i < ld.costs.size(); i++)
-    {
-      cb_class cl = ld.costs[i];
-      if (i > 0) { outputStringStream << ' '; }
-      outputStringStream << cl.action << ':' << cl.partial_prediction;
-    }
-    all.print_text_by_ref(all.raw_prediction.get(), outputStringStream.str(), ec.tag, all.logger);
-  }
-
-  bool is_ld_test_label = CB::is_test_label(ld);
-  if (!is_ld_test_label) { print_update(all, is_ld_test_label, ec, nullptr, false, known_cost); }
-  else
-  {
-    print_update(all, is_ld_test_label, ec, nullptr, false, nullptr);
-  }
+  CB_ALGS::generic_output_example(all, loss, ec, ld, &c.known_cost);
 }
 
 void finish_example(VW::workspace& all, cb& c, VW::example& ec)
@@ -150,9 +134,9 @@ void eval_finish_example(VW::workspace& all, cb& c, VW::example& ec)
   output_example(all, c, ec, ec.l.cb_eval.event);
   VW::finish_example(all, ec);
 }
-}  // namespace CB_ALGS
-using namespace CB_ALGS;
-base_learner* cb_algs_setup(VW::setup_base_i& stack_builder)
+}  // namespace
+
+base_learner* VW::reductions::cb_algs_setup(VW::setup_base_i& stack_builder)
 {
   options_i& options = *stack_builder.get_options();
   VW::workspace& all = *stack_builder.get_all_pointer();
@@ -230,7 +214,7 @@ base_learner* cb_algs_setup(VW::setup_base_i& stack_builder)
   auto learn_ptr = eval ? learn_eval : predict_or_learn<true>;
   auto predict_ptr = eval ? predict_eval : predict_or_learn<false>;
   auto label_type = eval ? VW::label_type_t::cb_eval : VW::label_type_t::cb;
-  auto finish_ex = eval ? eval_finish_example : finish_example;
+  auto finish_ex = eval ? eval_finish_example : ::finish_example;
 
   auto* l = make_reduction_learner(
       std::move(data), base, learn_ptr, predict_ptr, stack_builder.get_setupfn_name(cb_algs_setup) + name_addition)

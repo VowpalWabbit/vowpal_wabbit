@@ -8,6 +8,7 @@
 #include "cb/cb_algs.h"
 #include "config/options.h"
 #include "gen_cs_example.h"
+#include "print_utils.h"
 #include "rand48.h"
 #include "rand_state.h"
 #include "setup_base.h"
@@ -127,7 +128,7 @@ void finish_multiline_example(VW::workspace& all, explore_eval& data, VW::multi_
   if (ec_seq.size() > 0)
   {
     output_example_seq(all, data, ec_seq);
-    CB_ADF::global_print_newline(all.final_prediction_sink, all.logger);
+    VW::details::global_print_newline(all.final_prediction_sink, all.logger);
   }
   VW::finish_example(all, ec_seq);
 }

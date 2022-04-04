@@ -1,15 +1,19 @@
 // Copyright (c) by respective owners including Yahoo!, Microsoft, and
 // individual contributors. All rights reserved. Released under a BSD (revised)
 // license as described in the file LICENSE.
+
 #pragma once
 
-#include "cb_explore_adf_common.h"
 #include "vw_fwd.h"
+
+#include <memory>
+#include <vector>
 
 namespace VW
 {
-namespace reductions
+namespace details
 {
-VW::LEARNER::base_learner* cb_explore_adf_squarecb_setup(VW::setup_base_i& stack_builder);
-}  // namespace squarecb
-}  // namespace cb_explore_adf
+void global_print_newline(
+    const std::vector<std::unique_ptr<VW::io::writer>>& final_prediction_sink, VW::io::logger& logger);
+}
+}  // namespace VW
