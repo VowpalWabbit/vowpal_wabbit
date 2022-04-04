@@ -396,10 +396,10 @@ def run_command_line_test(
         if test.is_shell:
             cmd = command_line
         else:
-            cmd = shlex.split(command_line)
+            posix = sys.platform != "win32"
+            cmd = shlex.split(command_line, posix=posix)
 
         checks: Dict[str, Union[StatusCheck, DiffCheck]] = dict()
-
         try:
             result = subprocess.run(
                 cmd,
