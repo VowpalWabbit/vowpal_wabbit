@@ -280,6 +280,21 @@ def is_line_different(
                     found_close_floats,
                 )
 
+    # ignore whitespace when considering delimiting tokens
+    output_delimiters = re.findall("[:,@]+", output_line)
+    ref_delimiters = re.findall("[:,@]+", ref_line)
+
+    if len(output_delimiters) != len(ref_delimiters):
+        return True, "Number of tokens different", found_close_floats
+
+    for output_token, ref_token in zip(output_delimiters, ref_delimiters):
+        if output_token != ref_token:
+            return (
+                True,
+                f"Mismatch at token {output_token} {ref_token}",
+                found_close_floats,
+            )
+
     return False, "", found_close_floats
 
 
