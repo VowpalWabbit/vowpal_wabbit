@@ -14,9 +14,28 @@
 #include "shared_data.h"
 #include "unique_sort.h"
 #include "vw_string_view.h"
+#include <map>
 
 #include <cctype>
 #include <cmath>
+
+struct {             
+  VW::string_view current_namespace;         
+  std::map<VW::string_view, int> feature_num;
+  std::map<VW::string_view, int> namespace_num;
+} parse_stats; 
+
+void print_example_stats() {
+  printf("---------------------------------------------\n Example => ");
+  for(const auto& elem : parse_stats.feature_num) std::cout << elem.first <<": "<< elem.second<<", ";
+  printf("\n");
+}
+
+void print_final_stats() {
+  printf("---------------------------------------------\n Total Counts => ");
+  for(const auto& elem : parse_stats.namespace_num) std::cout << elem.first <<": "<< elem.second<<", ";
+  printf("\n---------------------------------------------\n");
+}
 
 size_t read_features(io_buf& buf, char*& line, size_t& num_chars)
 {
@@ -43,12 +62,16 @@ int read_features_string(VW::workspace* all, io_buf& buf, VW::v_array<VW::exampl
   if (num_bytes_consumed < 1)
   {
     // This branch will get hit once we have reached EOF of the input device.
+    print_final_stats();
     return static_cast<int>(num_bytes_consumed);
   }
 
   VW::string_view example(line, num_chars);
   // If this example is empty substring_to_example will mark it as a newline example.
   substring_to_example(all, examples[0], example);
+
+  print_example_stats();
+  parse_stats.feature_num.clear();  
 
   return static_cast<int>(num_bytes_consumed);
 }
@@ -178,6 +201,9 @@ public:
     {
       // maybeFeature --> 'String' FeatureValue
       VW::string_view feature_name = read_name();
+
+      parse_stats.feature_num[parse_stats.current_namespace] ++;
+
       VW::string_view string_feature_value;
 
       float float_feature_value = 0.f;
@@ -406,6 +432,10 @@ public:
       }
       if (_ae->feature_space[_index].size() == 0) { _new_index = true; }
       VW::string_view name = read_name();
+
+      parse_stats.current_namespace = name;
+      parse_stats.namespace_num[name] ++;
+
       if (audit) { _base = name; }
       _channel_hash = _p->hasher(name.data(), name.length(), this->_hash_seed);
       nameSpaceInfoValue();
