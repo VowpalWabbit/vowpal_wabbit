@@ -8,6 +8,9 @@ if(BUILD_TESTS)
   SET(BUILD_TESTING ${BUILD_TESTS} CACHE BOOL "Set value to BUILD_TESTING")
 endif()
 
+set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_CURRENT_LIST_DIR}/../../cmake/")
+include(VowpalWabbitUtils)
+
 if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
     include(CTest)
 endif()
