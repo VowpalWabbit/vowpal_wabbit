@@ -1,4 +1,5 @@
 include(CMakeParseArguments)
+include(GNUInstallDirs)
 
 # Given a lib name writes to OUTPUT what the correspinding target name will be
 function(vw_get_lib_target OUTPUT LIB_NAME)
@@ -138,8 +139,8 @@ function(vw_add_library)
       LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
       RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
 
-    install(DIRECTORY ${CMAKE_CURRENT_LIST_DIR}/include
-            DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/)
+    install(DIRECTORY ${CMAKE_CURRENT_LIST_DIR}/include/
+            DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
   endif()
 endfunction()
 
