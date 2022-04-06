@@ -23,6 +23,15 @@ function(internal_turn_into_build_interface_list LIST_TO_TRANSFORM)
     set(${LIST_TO_TRANSFORM} "${TEMP_LIST}" PARENT_SCOPE)
 endfunction()
 
+function(internal_prefix_to_list LIST_TO_TRANSFORM PREFIX)
+    set(TEMP_LIST "")
+    foreach(item IN LISTS ${LIST_TO_TRANSFORM})
+        list(APPEND TEMP_LIST "${PREFIX}${item}")
+    endforeach()
+    set(${LIST_TO_TRANSFORM} "${TEMP_LIST}" PARENT_SCOPE)
+endfunction()
+
+
 # All libs by default are static only.
 # TYPE: STATIC_ONLY, SHARED_ONLY, HEADER_ONLY or STATIC_OR_SHARED
 function(vw_add_library)
@@ -57,11 +66,13 @@ function(vw_add_library)
   # TODO this can be removed when we target a minimum of CMake 3.13
   # https://stackoverflow.com/questions/49996260/how-to-use-target-sources-command-with-interface-library
   foreach(SOURCE IN LISTS VW_LIB_SOURCES)
-    if(NOT IS_ABSOLUTE ${SOURCE})
-      message(FATAL_ERROR "SOURCES must contain absolute paths. Found ${SOURCE}")
+    if(IS_ABSOLUTE ${SOURCE})
+      message(FATAL_ERROR "SOURCES must contain relative paths. Found ${SOURCE}")
     endif()
   endforeach()
 
+  # TODO this can also be removed at 3.13
+  internal_prefix_to_list(VW_LIB_SOURCES ${CMAKE_CURRENT_LIST_DIR}/)
   # We must transform after checking the list as IS_ABSOLUTE will not work with generator expression
   internal_turn_into_build_interface_list(VW_LIB_SOURCES)
 
