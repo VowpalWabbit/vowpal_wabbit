@@ -100,6 +100,14 @@ function(vw_add_library)
   add_library(${FULL_LIB_NAME} ${CONCRETE_CMAKE_LIB_TYPE})
   add_library(VowpalWabbit::${VW_LIB_NAME} ALIAS ${FULL_LIB_NAME})
 
+  # Append d suffix if we are on Windows and are building a sttic libraru
+  if(WIN32)
+    if((${VW_LIB_TYPE} STREQUAL "STATIC_ONLY") OR
+      ((${VW_LIB_TYPE} STREQUAL "STATIC_OR_SHARED") AND NOT BUILD_SHARED_LIBS))
+      set_target_properties(${FULL_LIB_NAME} PROPERTIES DEBUG_POSTFIX d)
+    endif()
+  endif()
+
   set(SOURCES_TYPE "PRIVATE")
   if(${VW_LIB_TYPE} STREQUAL "HEADER_ONLY")
     set(SOURCES_TYPE "INTERFACE")
