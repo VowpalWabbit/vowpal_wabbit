@@ -15,6 +15,14 @@ function(vw_get_bin_target OUTPUT BIN_NAME)
   set(${OUTPUT} vw_${BIN_NAME}_bin PARENT_SCOPE)
 endfunction()
 
+function(internal_turn_into_build_interface_list LIST_TO_TRANSFORM)
+    set(TEMP_LIST "")
+    foreach(item IN LISTS ${LIST_TO_TRANSFORM})
+        list(APPEND TEMP_LIST "$<BUILD_INTERFACE:${item}>")
+    endforeach()
+    set(${LIST_TO_TRANSFORM} "${TEMP_LIST}" PARENT_SCOPE)
+endfunction()
+
 # All libs by default are static only.
 # TYPE: STATIC_ONLY, SHARED_ONLY, HEADER_ONLY or STATIC_OR_SHARED
 function(vw_add_library)
@@ -53,6 +61,9 @@ function(vw_add_library)
       message(FATAL_ERROR "SOURCES must contain absolute paths. Found ${SOURCE}")
     endif()
   endforeach()
+
+  # We must transform after checking the list as IS_ABSOLUTE will not work with generator expression
+  internal_turn_into_build_interface_list(VW_LIB_SOURCES)
 
   if(NOT VW_LIB_TYPE)
     message(FATAL_ERROR "TYPE must be defined as one of: STATIC_ONLY, SHARED_ONLY, STATIC_OR_SHARED, HEADER_ONLY")
