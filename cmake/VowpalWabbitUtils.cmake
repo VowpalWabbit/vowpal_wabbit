@@ -46,6 +46,14 @@ function(vw_add_library)
     message(FATAL_ERROR "No sources specified")
   endif()
 
+  # TODO this can be removed when we target a minimum of CMake 3.13
+  # https://stackoverflow.com/questions/49996260/how-to-use-target-sources-command-with-interface-library
+  foreach(SOURCE IN LISTS VW_LIB_SOURCES)
+    if(NOT IS_ABSOLUTE ${SOURCE})
+      message(FATAL_ERROR "SOURCES must contain absolute paths. Found ${SOURCE}")
+    endif()
+  endforeach()
+
   if(NOT VW_LIB_TYPE)
     message(FATAL_ERROR "TYPE must be defined as one of: STATIC_ONLY, SHARED_ONLY, STATIC_OR_SHARED, HEADER_ONLY")
   endif()
@@ -68,7 +76,12 @@ function(vw_add_library)
   vw_get_lib_target(FULL_LIB_NAME ${VW_LIB_NAME})
   add_library(${FULL_LIB_NAME} ${CONCRETE_CMAKE_LIB_TYPE})
   add_library(VowpalWabbit::${VW_LIB_NAME} ALIAS ${FULL_LIB_NAME})
-  target_sources(${FULL_LIB_NAME} PRIVATE ${VW_LIB_SOURCES})
+
+  set(SOURCES_TYPE "PRIVATE")
+  if(${VW_LIB_TYPE} STREQUAL "HEADER_ONLY")
+    set(SOURCES_TYPE "INTERFACE")
+  endif()
+  target_sources(${FULL_LIB_NAME} ${SOURCES_TYPE} ${VW_LIB_SOURCES})
 
   set(PUBLIC_LINK_TYPE "PUBLIC")
   if(${VW_LIB_TYPE} STREQUAL "HEADER_ONLY")

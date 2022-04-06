@@ -1,6 +1,6 @@
 set(vw_common_sources
-    include/vw/common/hash.h
-    include/vw/common/future_compat.h
+    ${CMAKE_CURRENT_LIST_DIR}/include/vw/common/hash.h
+    ${CMAKE_CURRENT_LIST_DIR}/include/vw/common/future_compat.h
 )
 
 vw_add_library(
