@@ -1,4 +1,3 @@
-# CMake 3.13 will allow a relative path here
 set(vw_common_sources
     include/vw/common/hash.h
     include/vw/common/future_compat.h
