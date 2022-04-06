@@ -100,9 +100,13 @@ function(vw_add_library)
     $<BUILD_INTERFACE:${CMAKE_CURRENT_LIST_DIR}/include>
     $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>)
 
-  set_property(TARGET ${FULL_LIB_NAME} PROPERTY CXX_STANDARD 11)
-  set_property(TARGET ${FULL_LIB_NAME} PROPERTY CXX_STANDARD_REQUIRED ON)
-  set_property(TARGET ${FULL_LIB_NAME} PROPERTY POSITION_INDEPENDENT_CODE ON)
+  # Older CMake versions seem to not like properties on interface libraries.
+  # When the miniumum is upgraded, try removing this.
+  if(NOT (${VW_LIB_TYPE} STREQUAL "HEADER_ONLY"))
+    set_property(TARGET ${FULL_LIB_NAME} PROPERTY CXX_STANDARD 11)
+    set_property(TARGET ${FULL_LIB_NAME} PROPERTY CXX_STANDARD_REQUIRED ON)
+    set_property(TARGET ${FULL_LIB_NAME} PROPERTY POSITION_INDEPENDENT_CODE ON)
+  endif()
 
   if(VW_INSTALL AND VW_LIB_ENABLE_INSTALL)
     install(
