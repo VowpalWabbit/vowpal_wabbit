@@ -13,6 +13,7 @@ if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
 endif()
 
 add_subdirectory(../../explore ${CMAKE_CURRENT_BINARY_DIR}/explore)
+add_subdirectory(../common ${CMAKE_CURRENT_BINARY_DIR}/common)
 add_subdirectory(src)
 
 if (BUILD_TESTING)

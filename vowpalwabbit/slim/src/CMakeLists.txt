@@ -21,7 +21,7 @@ target_include_directories(vwslim PUBLIC
   ${CMAKE_CURRENT_LIST_DIR}/../include
   ${CMAKE_CURRENT_LIST_DIR}/../../)
 target_compile_definitions(vwslim PUBLIC EXPLORE_NOEXCEPT VW_NOEXCEPT)
-target_link_libraries(vwslim PUBLIC VowpalWabbit::explore)
+target_link_libraries(vwslim PUBLIC VowpalWabbit::common VowpalWabbit::explore)
 
 include(GNUInstallDirs)
 
