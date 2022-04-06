@@ -4,7 +4,7 @@
 
 #pragma once
 
-#include "hash.h"
+#include "vw/common/hash.h"
 #include "io/io_adapter.h"
 #include "v_array.h"
 #include "vw_string_view.h"

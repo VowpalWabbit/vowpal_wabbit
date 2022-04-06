@@ -1,6 +1,6 @@
 #include "example_predict_builder.h"
 
-#include "hash.h"
+#include "vw/common/hash.h"
 #include "hashstring.h"
 
 namespace vw_slim

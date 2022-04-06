@@ -29,7 +29,7 @@ license as described in the file LICENSE.
 //----
 #pragma once
 
-#include "future_compat.h"
+#include "vw/common/future_compat.h"
 
 #include <sys/types.h>
 

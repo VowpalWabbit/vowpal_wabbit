@@ -1,6 +1,6 @@
 #pragma once
 
-#include "hash.h"
+#include "vw/common/hash.h"
 
 // get the error code defined in master
 #include "explore.h"

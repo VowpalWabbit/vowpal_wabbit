@@ -6,7 +6,7 @@
 
 #include "config/options.h"
 #include "example.h"
-#include "future_compat.h"
+#include "vw/common/future_compat.h"
 #include "io/logger.h"
 #include "numeric_casts.h"
 #include "rand48.h"

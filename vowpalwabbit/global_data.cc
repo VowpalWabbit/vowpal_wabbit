@@ -7,7 +7,7 @@
 #define RAPIDJSON_HAS_STDSTRING 1
 
 #include "array_parameters.h"
-#include "future_compat.h"
+#include "vw/common/future_compat.h"
 #include "io/logger.h"
 #include "kskip_ngram_transformer.h"
 #include "learner.h"

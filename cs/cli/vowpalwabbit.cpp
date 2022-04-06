@@ -7,7 +7,7 @@
 #include "vowpalwabbit.h"
 #include "best_constant.h"
 #include "parser.h"
-#include "hash.h"
+#include "vw/common/hash.h"
 #include "vw_example.h"
 #include "vw_builder.h"
 #include "clr_io.h"

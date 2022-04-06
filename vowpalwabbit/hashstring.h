@@ -3,8 +3,8 @@
 // license as described in the file LICENSE.
 
 #pragma once
-#include "future_compat.h"
-#include "hash.h"
+#include "vw/common/future_compat.h"
+#include "vw/common/hash.h"
 
 #include <cstddef>  // defines size_t
 #include <cstdint>

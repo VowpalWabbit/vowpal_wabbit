@@ -7,7 +7,7 @@
 #include "best_constant.h"
 #include "config/options.h"
 #include "example.h"
-#include "future_compat.h"
+#include "vw/common/future_compat.h"
 #include "global_data.h"
 #include "io/logger.h"
 #include "learner.h"

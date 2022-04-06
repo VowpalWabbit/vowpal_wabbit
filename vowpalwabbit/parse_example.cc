@@ -5,9 +5,9 @@
 #include "parse_example.h"
 
 #include "constant.h"
-#include "future_compat.h"
+#include "vw/common/future_compat.h"
 #include "global_data.h"
-#include "hash.h"
+#include "vw/common/hash.h"
 #include "io/logger.h"
 #include "parse_primitives.h"
 #include "parser.h"

@@ -5,7 +5,7 @@
 #pragma once
 
 #include "debug_print.h"
-#include "future_compat.h"
+#include "vw/common/future_compat.h"
 
 struct vw_dbg
 {

@@ -6,7 +6,7 @@
 #include "ccb_reduction_features.h"
 #include "continuous_actions_reduction_features.h"
 #include "epsilon_reduction_features.h"
-#include "future_compat.h"
+#include "vw/common/future_compat.h"
 #include "simple_label.h"
 
 /*

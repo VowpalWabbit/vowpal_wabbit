@@ -4,7 +4,7 @@
 
 #pragma once
 
-#include "future_compat.h"
+#include "vw/common/future_compat.h"
 #include "generic_range.h"
 #include "v_array.h"
 

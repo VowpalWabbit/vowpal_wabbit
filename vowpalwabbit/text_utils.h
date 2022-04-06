@@ -4,7 +4,7 @@
 
 #pragma once
 
-#include "future_compat.h"
+#include "vw/common/future_compat.h"
 #include "vw_fwd.h"
 #include "vw_string_view.h"
 

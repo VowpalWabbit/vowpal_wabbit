@@ -28,7 +28,7 @@
 
 #include "compat.h"
 #include "global_data.h"
-#include "hash.h"
+#include "vw/common/hash.h"
 #include "hashstring.h"
 #include "parser.h"
 #include "setup_base.h"

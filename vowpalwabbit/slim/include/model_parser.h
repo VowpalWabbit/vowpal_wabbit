@@ -1,6 +1,6 @@
 #pragma once
 
-#include "hash.h"
+#include "vw/common/hash.h"
 #include "vw_slim_return_codes.h"
 
 #include <cctype>

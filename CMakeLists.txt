@@ -48,6 +48,7 @@ set(VW_PROJECT_URL "https://vowpalwabbit.org")
 
 option(USE_LATEST_STD "Override using C++11 with the latest standard the compiler offers. Default is C++11. " OFF)
 include(DetectCXXStandard)
+include(VowpalWabbitUtils)
 
 if(MSVC)
   # Do nothing as the default compile flags for MSVC are okay.
@@ -115,7 +116,17 @@ if(NOT BUILD_TESTS)
 endif()
 
 if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
-    include(CTest)
+  include(CTest)
+  if(BUILD_TESTING)
+    include(FetchContent)
+    FetchContent_Declare(
+      googletest
+      URL https://github.com/google/googletest/archive/refs/tags/release-1.11.0.zip
+    )
+    # For Windows: Prevent overriding the parent project's compiler/linker settings
+    set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
+    FetchContent_MakeAvailable(googletest)
+  endif()
 endif()
 
 if(VW_INSTALL AND NOT FMT_SYS_DEP)
@@ -196,8 +207,6 @@ endif()
 # Use folders in VS solution
 set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 
-set(explore_INCLUDE_DIRS "${CMAKE_CURRENT_SOURCE_DIR}/explore/")
-
 if(WIN32)
   set(STATIC_LIB_SUFFIXES ".lib" ".a")
 else()
@@ -229,7 +238,7 @@ if(STATIC_LINK_VW)
 endif()
 
 if(BUILD_FLATBUFFERS)
-  find_package(flatbuffers REQUIRED)
+find_package(flatbuffers REQUIRED)
 endif()
 
 # This provides the variables such as CMAKE_INSTALL_LIBDIR for installation paths.
@@ -285,7 +294,7 @@ if(BUILD_BENCHMARKS)
   add_subdirectory(test/benchmarks)
 endif()
 
-if(BUILD_TESTING)
+if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME AND BUILD_TESTING)
   # Boost test is only required if we are building tests
   find_package(Boost REQUIRED COMPONENTS unit_test_framework)
   add_subdirectory(test)

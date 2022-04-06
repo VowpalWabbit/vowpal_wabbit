@@ -8,7 +8,7 @@
 #include "explore_internal.h"
 #include "global_data.h"
 #include "guard.h"
-#include "hash.h"
+#include "vw/common/hash.h"
 #include "label_parser.h"
 #include "learner.h"
 #include "parser.h"

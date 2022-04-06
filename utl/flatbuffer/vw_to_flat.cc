@@ -6,7 +6,7 @@
 
 #include "accumulate.h"
 #include "best_constant.h"
-#include "hash.h"
+#include "vw/common/hash.h"
 #include "parse_args.h"
 #include "parse_regressor.h"
 #include "reductions/cb/cb_algs.h"

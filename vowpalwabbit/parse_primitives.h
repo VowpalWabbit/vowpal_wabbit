@@ -4,7 +4,7 @@
 #pragma once
 
 #include "fast_pow10.h"
-#include "future_compat.h"
+#include "vw/common/future_compat.h"
 #include "hashstring.h"
 #include "io/logger.h"
 #include "v_array.h"
