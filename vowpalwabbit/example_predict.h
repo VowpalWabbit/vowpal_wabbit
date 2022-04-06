@@ -5,9 +5,9 @@
 
 #include "constant.h"
 #include "feature_group.h"
-#include "vw/common/future_compat.h"
 #include "reduction_features.h"
 #include "v_array.h"
+#include "vw/common/future_compat.h"
 
 #include <array>
 #include <set>

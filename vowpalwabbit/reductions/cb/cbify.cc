@@ -9,12 +9,12 @@
 #include "config/options.h"
 #include "debug_log.h"
 #include "explore.h"
-#include "vw/common/hash.h"
 #include "prob_dist_cont.h"
 #include "setup_base.h"
 #include "shared_data.h"
 #include "simple_label_parser.h"
 #include "vw.h"
+#include "vw/common/hash.h"
 
 #include <cfloat>
 #include <vector>

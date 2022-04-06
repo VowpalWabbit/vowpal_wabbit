@@ -7,7 +7,6 @@
 #include "config/option.h"
 #include "config/options_cli.h"
 #include "cost_sensitive.h"
-#include "vw/common/future_compat.h"
 #include "kskip_ngram_transformer.h"
 #include "multiclass.h"
 #include "multilabel.h"
@@ -19,6 +18,7 @@
 #include "simple_label_parser.h"
 #include "slates_label.h"
 #include "vw.h"
+#include "vw/common/future_compat.h"
 
 // see http://www.boost.org/doc/libs/1_56_0/doc/html/bbv2/installation.html
 #define BOOST_PYTHON_USE_GCC_SYMBOL_VISIBILITY 1

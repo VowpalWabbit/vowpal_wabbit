@@ -6,7 +6,6 @@
 
 #include "config/options.h"
 #include "example.h"
-#include "vw/common/future_compat.h"
 #include "io/logger.h"
 #include "numeric_casts.h"
 #include "rand48.h"
@@ -14,6 +13,7 @@
 #include "setup_base.h"
 #include "v_array.h"
 #include "vw.h"
+#include "vw/common/future_compat.h"
 
 #include <algorithm>
 #include <cfloat>

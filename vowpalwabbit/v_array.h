@@ -4,8 +4,8 @@
 
 #pragma once
 
-#include "vw/common/future_compat.h"
 #include "memory.h"
+#include "vw/common/future_compat.h"
 #include "vw_exception.h"
 
 #include <cassert>

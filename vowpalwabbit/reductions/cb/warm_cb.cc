@@ -8,12 +8,12 @@
 #include "cb_label_parser.h"
 #include "config/options.h"
 #include "explore.h"
-#include "vw/common/hash.h"
 #include "io/logger.h"
 #include "rand_state.h"
 #include "scope_exit.h"
 #include "setup_base.h"
 #include "vw.h"
+#include "vw/common/hash.h"
 #include "vw_exception.h"
 
 #include <cfloat>

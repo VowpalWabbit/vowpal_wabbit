@@ -8,11 +8,11 @@
 #include "explore_internal.h"
 #include "global_data.h"
 #include "guard.h"
-#include "vw/common/hash.h"
 #include "label_parser.h"
 #include "learner.h"
 #include "parser.h"
 #include "setup_base.h"
+#include "vw/common/hash.h"
 
 #include <algorithm>
 #include <cassert>

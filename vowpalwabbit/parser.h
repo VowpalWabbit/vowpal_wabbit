@@ -18,11 +18,11 @@
 #endif
 
 #include "example.h"
-#include "vw/common/future_compat.h"
 #include "hashstring.h"
 #include "io_buf.h"
 #include "object_pool.h"
 #include "queue.h"
+#include "vw/common/future_compat.h"
 #include "vw_fwd.h"
 #include "vw_string_view.h"
 

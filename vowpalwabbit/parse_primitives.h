@@ -4,10 +4,10 @@
 #pragma once
 
 #include "fast_pow10.h"
-#include "vw/common/future_compat.h"
 #include "hashstring.h"
 #include "io/logger.h"
 #include "v_array.h"
+#include "vw/common/future_compat.h"
 #include "vw_string_view.h"
 
 #include <cmath>

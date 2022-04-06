@@ -5,14 +5,14 @@
 #include "parse_example.h"
 
 #include "constant.h"
-#include "vw/common/future_compat.h"
 #include "global_data.h"
-#include "vw/common/hash.h"
 #include "io/logger.h"
 #include "parse_primitives.h"
 #include "parser.h"
 #include "shared_data.h"
 #include "unique_sort.h"
+#include "vw/common/future_compat.h"
+#include "vw/common/hash.h"
 #include "vw_string_view.h"
 
 #include <cctype>
