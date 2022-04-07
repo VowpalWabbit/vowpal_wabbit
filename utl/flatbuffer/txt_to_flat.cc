@@ -15,7 +15,7 @@
 #include "config/options_cli.h"
 #include "parse_args.h"
 #include "parse_regressor.h"
-#include "vw_exception.h"
+#include "vw/common/exception.h"
 #include "vw_to_flat.h"
 
 #include <sys/timeb.h>

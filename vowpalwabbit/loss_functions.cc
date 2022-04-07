@@ -8,7 +8,7 @@
 #include "global_data.h"
 #include "io/logger.h"
 #include "shared_data.h"
-#include "vw_exception.h"
+#include "vw/common/exception.h"
 
 #include <cfloat>
 #include <cmath>

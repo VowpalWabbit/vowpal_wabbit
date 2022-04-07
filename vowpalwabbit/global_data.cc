@@ -18,10 +18,10 @@
 #include "rapidjson/rapidjson.h"
 #include "reduction_stack.h"
 #include "shared_data.h"
+#include "vw/common/exception.h"
 #include "vw/common/future_compat.h"
+#include "vw/common/string_view.h"
 #include "vw_allreduce.h"
-#include "vw_exception.h"
-#include "vw_string_view.h"
 
 #include <rapidjson/stringbuffer.h>
 #include <rapidjson/writer.h>

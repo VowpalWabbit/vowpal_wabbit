@@ -6,7 +6,7 @@
 
 #include "io/logger.h"
 #include "vw.h"
-#include "vw_exception.h"
+#include "vw/common/exception.h"
 
 #include <cfloat>
 

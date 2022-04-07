@@ -10,7 +10,7 @@
 #include "label_parser.h"
 #include "numeric_casts.h"
 #include "vw.h"
-#include "vw_exception.h"
+#include "vw/common/exception.h"
 
 using namespace VW::config;
 

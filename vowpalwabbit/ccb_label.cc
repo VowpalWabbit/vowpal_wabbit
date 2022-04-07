@@ -17,8 +17,8 @@
 #include "reductions/cb/cb_algs.h"
 #include "reductions/conditional_contextual_bandit.h"
 #include "vw.h"
+#include "vw/common/string_view.h"
 #include "vw_math.h"
-#include "vw_string_view.h"
 
 #include <algorithm>
 #include <cmath>

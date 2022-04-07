@@ -8,7 +8,7 @@
 #include "ccb_reduction_features.h"
 #include "label_parser.h"
 #include "v_array.h"
-#include "vw_string_view.h"
+#include "vw/common/string_view.h"
 
 #include <fmt/format.h>
 

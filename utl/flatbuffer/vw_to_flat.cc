@@ -10,8 +10,8 @@
 #include "parse_regressor.h"
 #include "reductions/cb/cb_algs.h"
 #include "shared_data.h"
+#include "vw/common/exception.h"
 #include "vw/common/hash.h"
-#include "vw_exception.h"
 
 #include <sys/timeb.h>
 

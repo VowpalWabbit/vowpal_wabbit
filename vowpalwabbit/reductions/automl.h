@@ -10,8 +10,8 @@
 #include "metric_sink.h"
 #include "rand_state.h"
 #include "scored_config.h"
+#include "vw/common/string_view.h"
 #include "vw_fwd.h"
-#include "vw_string_view.h"
 
 #include <fmt/format.h>
 

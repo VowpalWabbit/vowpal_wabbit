@@ -13,8 +13,8 @@
 #include "scope_exit.h"
 #include "setup_base.h"
 #include "vw.h"
+#include "vw/common/exception.h"
 #include "vw/common/hash.h"
-#include "vw_exception.h"
 
 #include <cfloat>
 #include <memory>

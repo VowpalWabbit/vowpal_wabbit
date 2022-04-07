@@ -13,7 +13,7 @@
 #include "rand_state.h"
 #include "setup_base.h"
 #include "tag_utils.h"
-#include "vw_string_view.h"
+#include "vw/common/string_view.h"
 
 #undef VW_DEBUG_LOG
 #define VW_DEBUG_LOG vw_dbg::cb_sample

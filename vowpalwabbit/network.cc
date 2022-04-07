@@ -16,7 +16,7 @@
 #endif
 
 #include "io/logger.h"
-#include "vw_exception.h"
+#include "vw/common/exception.h"
 
 #include <cerrno>
 #include <cstdlib>

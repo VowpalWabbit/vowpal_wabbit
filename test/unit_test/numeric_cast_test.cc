@@ -2,13 +2,12 @@
 // individual contributors. All rights reserved. Released under a BSD (revised)
 // license as described in the file LICENSE.
 
-#include <boost/test/unit_test.hpp>
-#include <boost/test/test_tools.hpp>
-
-#include "test_common.h"
-
 #include "numeric_casts.h"
-#include "vw_exception.h"
+#include "test_common.h"
+#include "vw/common/exception.h"
+
+#include <boost/test/test_tools.hpp>
+#include <boost/test/unit_test.hpp>
 
 BOOST_AUTO_TEST_CASE(numeric_cast_tests)
 {

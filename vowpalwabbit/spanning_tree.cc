@@ -4,7 +4,7 @@
 
 #include "spanning_tree.h"
 
-#include "vw_exception.h"
+#include "vw/common/exception.h"
 
 #include <errno.h>
 #include <stdio.h>

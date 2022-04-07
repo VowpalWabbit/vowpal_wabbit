@@ -10,9 +10,9 @@
 #include "setup_base.h"
 #include "shared_data.h"
 #include "vw.h"
-#include "vw_exception.h"
+#include "vw/common/exception.h"
+#include "vw/common/string_view.h"
 #include "vw_math.h"
-#include "vw_string_view.h"
 #include "vw_versions.h"
 
 #include <cerrno>

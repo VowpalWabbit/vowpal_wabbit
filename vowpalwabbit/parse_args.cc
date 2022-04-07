@@ -37,8 +37,8 @@
 #include "scope_exit.h"
 #include "text_utils.h"
 #include "vw.h"
+#include "vw/common/exception.h"
 #include "vw_allreduce.h"
-#include "vw_exception.h"
 #include "vw_validate.h"
 
 #include <sys/stat.h>

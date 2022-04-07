@@ -2,12 +2,13 @@
 // individual contributors. All rights reserved. Released under a BSD (revised)
 // license as described in the file LICENSE.
 
-#include <boost/test/unit_test.hpp>
-
 #include "vwdll.h"
-#include "vw.h"
+
 #include "test_common.h"
-#include "vw_string_view.h"
+#include "vw.h"
+#include "vw/common/string_view.h"
+
+#include <boost/test/unit_test.hpp>
 
 using namespace boost::unit_test;
 
