@@ -8,7 +8,7 @@
 #include "memory.h"
 #include "numeric_casts.h"
 #include "vw.h"
-#include "vw/common/exception.h"
+#include "vw/common/vw_exception.h"
 
 using namespace VW::config;
 

@@ -25,7 +25,7 @@ Implementation by Miro Dudik.
 #include "parser.h"
 #include "prediction_type.h"
 #include "shared_data.h"
-#include "vw/common/exception.h"
+#include "vw/common/vw_exception.h"
 
 #include <sys/timeb.h>
 

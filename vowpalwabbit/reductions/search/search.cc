@@ -22,7 +22,7 @@
 #include "setup_base.h"
 #include "shared_data.h"
 #include "vw.h"
-#include "vw/common/exception.h"
+#include "vw/common/vw_exception.h"
 
 #include <float.h>
 #include <math.h>

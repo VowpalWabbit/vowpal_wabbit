@@ -12,7 +12,7 @@ This creates a binary tree topology over a set of n nodes that connect.
 #include "config/option_group_definition.h"
 #include "config/options_cli.h"
 #include "spanning_tree.h"
-#include "vw/common/exception.h"
+#include "vw/common/vw_exception.h"
 
 #ifdef _WIN32
 int daemon(int a, int b) { return 0; }

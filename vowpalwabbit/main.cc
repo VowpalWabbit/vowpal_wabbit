@@ -18,7 +18,7 @@
 #include "parse_args.h"
 #include "parse_regressor.h"
 #include "vw.h"
-#include "vw/common/exception.h"
+#include "vw/common/vw_exception.h"
 
 #include <sys/timeb.h>
 

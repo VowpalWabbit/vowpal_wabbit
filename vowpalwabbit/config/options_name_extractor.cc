@@ -4,7 +4,7 @@
 
 #include "config/options_name_extractor.h"
 
-#include "vw/common/exception.h"
+#include "vw/common/vw_exception.h"
 
 using namespace VW::config;
 

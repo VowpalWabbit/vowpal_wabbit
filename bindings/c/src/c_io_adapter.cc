@@ -4,7 +4,7 @@
 
 #include "c_io_adapter.h"
 
-#include "vw/common/exception.h"
+#include "vw/common/vw_exception.h"
 #include "vw/experimental/types.h"
 
 c_reader::c_reader(void* context, VWReadFunc* read)

@@ -10,8 +10,8 @@
 #include "reductions/gd.h"
 #include "shared_data.h"
 #include "vw.h"
-#include "vw/common/exception.h"
 #include "vw/common/string_view.h"
+#include "vw/common/vw_exception.h"
 
 #include <cfloat>
 #include <cmath>

@@ -1,5 +1,5 @@
 set(vw_common_sources
-include/vw/common/exception.h
+    include/vw/common/vw_exception.h
     include/vw/common/future_compat.h
     include/vw/common/hash.h
     include/vw/common/string_view.h

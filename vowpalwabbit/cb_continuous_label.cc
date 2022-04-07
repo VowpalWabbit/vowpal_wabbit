@@ -12,7 +12,7 @@
 #include "parse_primitives.h"
 #include "text_utils.h"
 #include "vw.h"
-#include "vw/common/exception.h"
+#include "vw/common/vw_exception.h"
 
 #include <cfloat>
 #include <iomanip>

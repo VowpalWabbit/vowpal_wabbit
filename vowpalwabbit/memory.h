@@ -3,7 +3,7 @@
 // license as described in the file LICENSE.
 
 #pragma once
-#include "vw/common/exception.h"
+#include "vw/common/vw_exception.h"
 
 #include <cstdio>
 #include <cstdlib>

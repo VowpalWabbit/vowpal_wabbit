@@ -19,7 +19,7 @@
 #include <vector>
 
 #ifndef VW_NOEXCEPT
-#  include "vw/common/exception.h"
+#  include "vw/common/vw_exception.h"
 #endif
 
 /* The i/o buffer can be conceptualized as an array below:

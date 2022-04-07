@@ -7,7 +7,7 @@
 #include "example_predict.h"
 #include "feature_group.h"
 #include "object_pool.h"
-#include "vw/common/exception.h"
+#include "vw/common/vw_exception.h"
 
 #include <cstdint>
 #include <stack>

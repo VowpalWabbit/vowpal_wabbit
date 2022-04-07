@@ -4,7 +4,7 @@
 
 #include "numeric_casts.h"
 #include "test_common.h"
-#include "vw/common/exception.h"
+#include "vw/common/vw_exception.h"
 
 #include <boost/test/test_tools.hpp>
 #include <boost/test/unit_test.hpp>

@@ -14,7 +14,7 @@
 #include "rand48.h"
 #include "setup_base.h"
 #include "shared_data.h"
-#include "vw/common/exception.h"
+#include "vw/common/vw_exception.h"
 
 #include <cfloat>
 #include <cstdio>

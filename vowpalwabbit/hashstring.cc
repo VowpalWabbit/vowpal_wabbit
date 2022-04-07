@@ -4,7 +4,7 @@
 
 #include "hashstring.h"
 
-#include "vw/common/exception.h"
+#include "vw/common/vw_exception.h"
 
 #include <string>
 

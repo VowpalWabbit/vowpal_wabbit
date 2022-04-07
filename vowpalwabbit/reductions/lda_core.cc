@@ -27,7 +27,7 @@ VW_WARNING_STATE_POP
 #include "rand48.h"
 #include "shared_data.h"
 #include "vw.h"
-#include "vw/common/exception.h"
+#include "vw/common/vw_exception.h"
 #include "vw_versions.h"
 
 #include <algorithm>

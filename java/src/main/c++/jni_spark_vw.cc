@@ -8,7 +8,7 @@
 #include "shared_data.h"
 #include "simple_label_parser.h"
 #include "util.h"
-#include "vw/common/exception.h"
+#include "vw/common/vw_exception.h"
 
 #include <algorithm>
 #include <exception>
