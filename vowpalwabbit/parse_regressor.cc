@@ -442,7 +442,7 @@ void save_load_header(VW::workspace& all, io_buf& model_file, bool read, bool te
     {
       uint32_t check_sum = (all.model_file_ver >= VW::version_definitions::VERSION_FILE_WITH_HEADER_CHAINED_HASH)
           ? model_file.hash()
-          : static_cast<uint32_t>(VW::uniform_hash(model_file.buffer_start(), bytes_read_write, 0));
+          : static_cast<uint32_t>(VW::common::uniform_hash(model_file.buffer_start(), bytes_read_write, 0));
 
       uint32_t check_sum_saved = check_sum;
 
