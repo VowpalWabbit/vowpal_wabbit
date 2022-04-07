@@ -75,7 +75,7 @@ struct cats_tree
   ~cats_tree();
 
 private:
-  uint64_t app_seed = VW::uniform_hash("vw", 2, 0);
+  uint64_t app_seed = VW::common::uniform_hash("vw", 2, 0);
   std::string tree_stats_to_string();
   min_depth_binary_tree _binary_tree;
   float _cost_star = 0.f;

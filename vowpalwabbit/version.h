@@ -4,7 +4,7 @@
 #pragma once
 
 #include "config.h"
-#include "future_compat.h"
+#include "vw/common/future_compat.h"
 
 #include <cinttypes>
 #include <string>

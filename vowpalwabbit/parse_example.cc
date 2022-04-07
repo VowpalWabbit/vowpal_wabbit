@@ -5,14 +5,14 @@
 #include "parse_example.h"
 
 #include "constant.h"
-#include "future_compat.h"
 #include "global_data.h"
-#include "hash.h"
 #include "io/logger.h"
 #include "parse_primitives.h"
 #include "parser.h"
 #include "shared_data.h"
 #include "unique_sort.h"
+#include "vw/common/future_compat.h"
+#include "vw/common/hash.h"
 #include "vw_string_view.h"
 
 #include <cctype>
@@ -447,7 +447,7 @@ public:
         static const char* space = " ";
         _base = space;
       }
-      _channel_hash = this->_hash_seed == 0 ? 0 : VW::uniform_hash("", 0, this->_hash_seed);
+      _channel_hash = this->_hash_seed == 0 ? 0 : VW::common::uniform_hash("", 0, this->_hash_seed);
       _ae->feature_space[_index].start_ns_extent(_channel_hash);
       did_start_extent = true;
       listFeatures();

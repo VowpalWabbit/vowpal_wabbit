@@ -8,11 +8,15 @@ if(BUILD_TESTS)
   SET(BUILD_TESTING ${BUILD_TESTS} CACHE BOOL "Set value to BUILD_TESTING")
 endif()
 
+set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_CURRENT_LIST_DIR}/../../cmake/")
+include(VowpalWabbitUtils)
+
 if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
     include(CTest)
 endif()
 
 add_subdirectory(../../explore ${CMAKE_CURRENT_BINARY_DIR}/explore)
+add_subdirectory(../common ${CMAKE_CURRENT_BINARY_DIR}/common)
 add_subdirectory(src)
 
 if (BUILD_TESTING)

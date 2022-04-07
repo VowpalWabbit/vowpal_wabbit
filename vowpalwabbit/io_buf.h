@@ -4,9 +4,9 @@
 
 #pragma once
 
-#include "hash.h"
 #include "io/io_adapter.h"
 #include "v_array.h"
+#include "vw/common/hash.h"
 #include "vw_string_view.h"
 
 #include <algorithm>
@@ -276,7 +276,7 @@ public:
       len = buf_read(p, len);
 
       // compute hash for check-sum
-      if (_verify_hash) { _hash = static_cast<uint32_t>(VW::uniform_hash(p, len, _hash)); }
+      if (_verify_hash) { _hash = static_cast<uint32_t>(VW::common::uniform_hash(p, len, _hash)); }
       memcpy(data, p, len);
       return len;
     }
@@ -293,7 +293,7 @@ public:
       memcpy(p, data, len);
 
       // compute hash for check-sum
-      if (_verify_hash) { _hash = static_cast<uint32_t>(VW::uniform_hash(p, len, _hash)); }
+      if (_verify_hash) { _hash = static_cast<uint32_t>(VW::common::uniform_hash(p, len, _hash)); }
     }
     return len;
   }

@@ -42,7 +42,7 @@ int model_parser::skip(size_t bytes)
   const char* new_model = _model + bytes;
   if (new_model > _model_end) return E_VW_PREDICT_ERR_INVALID_MODEL;
 
-  if (bytes > 0) _checksum = (uint32_t)VW::uniform_hash(_model, bytes, _checksum);
+  if (bytes > 0) _checksum = (uint32_t)VW::common::uniform_hash(_model, bytes, _checksum);
 
   _model = new_model;
 

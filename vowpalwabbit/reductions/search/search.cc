@@ -158,7 +158,7 @@ private:
     size_t operator()(const byte_array& key) const
     {
       size_t sz = *key.get();
-      return VW::uniform_hash(key.get(), sz, SEARCH_HASH_SEED);
+      return VW::common::uniform_hash(key.get(), sz, SEARCH_HASH_SEED);
     }
   };
 
