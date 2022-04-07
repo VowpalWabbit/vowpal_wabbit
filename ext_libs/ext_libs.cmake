@@ -41,7 +41,7 @@ if(RAPIDJSON_SYS_DEP)
   target_include_directories(RapidJSON INTERFACE ${RapidJSON_INCLUDE_DIRS})
 else()
   add_library(RapidJSON INTERFACE)
-  target_include_directories(RapidJSON INTERFACE SYSTEM
+  target_include_directories(RapidJSON SYSTEM INTERFACE
     $<BUILD_INTERFACE:${CMAKE_CURRENT_LIST_DIR}/rapidjson/include>
     $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
   )
@@ -90,18 +90,4 @@ else()
   endif()
 endif()
 
-add_library(string_view_lite INTERFACE)
-target_include_directories(string_view_lite INTERFACE SYSTEM
-  $<BUILD_INTERFACE:${CMAKE_CURRENT_LIST_DIR}/string-view-lite/>
-  $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
-)
-if(VW_INSTALL)
-  install(
-    TARGETS string_view_lite
-    EXPORT VowpalWabbitConfig)
-
-  install(
-    DIRECTORY ${CMAKE_CURRENT_LIST_DIR}/string-view-lite/
-    DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
-  )
-endif()
+add_subdirectory(${CMAKE_CURRENT_LIST_DIR}/string-view-lite)
