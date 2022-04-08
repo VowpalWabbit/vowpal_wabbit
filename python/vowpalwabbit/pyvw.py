@@ -628,6 +628,8 @@ class Workspace(pylibvw.vw):
             if isinstance(ec[0], str):
                 ec = self.parse(ec)
                 new_example = True
+            if not isinstance(ec[0], Example):
+                raise TypeError("List must contain examples or strings")
 
         if isinstance(ec, Example):
             if not getattr(ec, "setup_done", None):
@@ -680,6 +682,8 @@ class Workspace(pylibvw.vw):
             if isinstance(ec[0], str):
                 ec = self.parse(ec)
                 new_example = True
+            if not isinstance(ec[0], Example):
+                raise TypeError("List must contain examples or strings")
 
         if not isinstance(ec, Example) and not isinstance(ec, list):
             raise TypeError(
