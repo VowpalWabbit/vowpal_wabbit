@@ -2,7 +2,7 @@
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
 #include "ut_util.h"
-#include "vw_slim_predict.h"
+#include "vw/slim/vw_slim_predict.h"
 
 #include <sstream>
 #include <vector>

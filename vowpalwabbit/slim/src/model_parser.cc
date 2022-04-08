@@ -1,4 +1,4 @@
-#include "model_parser.h"
+#include "vw/slim/model_parser.h"
 
 namespace vw_slim
 {

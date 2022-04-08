@@ -1,4 +1,4 @@
-#include "example_predict_builder.h"
+#include "vw/slim/example_predict_builder.h"
 
 #include "hashstring.h"
 #include "vw/common/hash.h"

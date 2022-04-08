@@ -1,10 +1,10 @@
 #include "array_parameters.h"
 #include "data.h"
-#include "example_predict_builder.h"
+#include "vw/slim/example_predict_builder.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
 #include "ut_util.h"
-
+#include <filesystem>
 #include <stdlib.h>
 
 #include <array>
@@ -16,6 +16,17 @@
 using namespace ::testing;
 using namespace vw_slim;
 using namespace exploration;
+
+namespace {
+  std::string remove_leaf(const std::string& full_path)
+{
+  size_t pos = full_path.find_last_of("/\\");
+  if (pos != std::string::npos) {
+    return full_path.substr(0, pos + 1);
+}
+  throw std::runtime_error(__FILE__ " does not contain a slash");
+}
+}
 
 // #define VW_SLIM_TEST_DEBUG "vwslim-debug.log"
 
@@ -470,7 +481,7 @@ void cb_data_epsilon_0_skype_jb_test_runner(int call_type, int modality, int net
 
 TEST(VowpalWabbitSlim, interaction_num_bits_bug)
 {
-  std::ifstream input("data/Delay_Margin_AudioNetworkPCR_all_cb_FF8.model", std::ios::in | std::ios::binary);
+  std::ifstream input(remove_leaf(__FILE__) + "data/Delay_Margin_AudioNetworkPCR_all_cb_FF8.model", std::ios::in | std::ios::binary);
   input.seekg(0, std::ios::end);
   auto length = input.tellg();
   input.seekg(0, std::ios::beg);
@@ -767,7 +778,7 @@ INSTANTIATE_TYPED_TEST_SUITE_P(VowpalWabbitSlim, VwSlimTest, WeightParameters);
 
 TEST(ColdStartModel, action_set_not_reordered)
 {
-  std::ifstream input("data/cold_start.model", std::ios::in | std::ios::binary);
+  std::ifstream input(remove_leaf(__FILE__) + "data/cold_start.model", std::ios::in | std::ios::binary);
   input.seekg(0, std::ios::end);
   auto length = input.tellg();
   input.seekg(0, std::ios::beg);

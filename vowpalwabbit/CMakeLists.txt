@@ -1,4 +1,5 @@
 add_subdirectory(common)
+add_subdirectory(slim)
 
 configure_file(config.h.in config.h)
 # Use position independent code for all targets in this directory
