@@ -21,15 +21,13 @@ vw_add_library(
   TYPE "STATIC_ONLY"
   SOURCES ${VW_SLIM_SOURCES} ${VW_SLIM_HEADERS}
   PUBLIC_DEPS VowpalWabbit::common VowpalWabbit::explore
-  ENABLE_INSTALL
 )
 target_compile_definitions(vw_slim PUBLIC EXPLORE_NOEXCEPT VW_NOEXCEPT)
 
 # TODO - remove this break of component boundaries at some point
 # At least update when the vowpalwabbit include dir is not used anymore
 target_include_directories(vw_slim PUBLIC
-  $<BUILD_INTERFACE:${CMAKE_CURRENT_LIST_DIR}/../>
-  $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/vowpalwabbit/>
+  BUILD_INTERFACE:${CMAKE_CURRENT_LIST_DIR}/../
 )
 
 set(vw_slim_test_sources
