@@ -4,6 +4,7 @@
 #include <jni.h>
 #include <functional>
 #include "util.h"
+#include "vw.h"
 
 example* read_example(JNIEnv* env, jstring example_string, VW::workspace* vwInstance);
 example* read_example(const char* example_string, VW::workspace* vwInstance);
