@@ -1,5 +1,3 @@
-cmake_minimum_required(VERSION 3.5)
-
 include(CheckCXXCompilerFlag)
 
 if(NOT MSVC)
@@ -43,4 +41,4 @@ endif()
 message(STATUS "Using C++ standard: " ${VW_CXX_STANDARD})
 set(CMAKE_CXX_STANDARD ${VW_CXX_STANDARD})
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
-set(CMAKE_CXX_EXTENSIONS OFF) 
+set(CMAKE_CXX_EXTENSIONS OFF)
