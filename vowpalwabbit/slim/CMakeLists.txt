@@ -43,6 +43,5 @@ set(vw_slim_test_sources
 vw_add_test_executable(
   FOR_LIB "slim"
   SOURCES ${vw_slim_test_sources}
+  COMPILE_DEFS VW_SLIM_TEST_DIR="${CMAKE_CURRENT_LIST_DIR}/test/"
 )
-
-target_compile_definitions(vw_slim_test PRIVATE VW_SLIM_TEST_DIR="${CMAKE_CURRENT_LIST_DIR}/test/")

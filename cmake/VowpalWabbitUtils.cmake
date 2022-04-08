@@ -198,7 +198,7 @@ function(vw_add_test_executable)
   cmake_parse_arguments(VW_TEST
   ""
   "FOR_LIB"
-  "SOURCES;EXTRA_DEPS"
+  "SOURCES;EXTRA_DEPS;COMPILE_DEFS"
   ${ARGN})
 
   if(NOT TARGET VowpalWabbit::${VW_TEST_FOR_LIB})
@@ -223,6 +223,7 @@ function(vw_add_test_executable)
       gtest_main
       gmock
     )
+    target_compile_definitions(${FULL_TEST_NAME} PRIVATE ${VW_TEST_COMPILE_DEFS})
     add_test(NAME ${FULL_TEST_NAME} COMMAND ${FULL_TEST_NAME})
   endif()
 endfunction()
