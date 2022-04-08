@@ -9,7 +9,7 @@
 #include "memory.h"
 #include "vw.h"
 #include "example.h"
-#include "config/options_cli.h"
+#include "vw/config/options_cli.h"
 
 #include <vector>
 #include "tag_utils.h"

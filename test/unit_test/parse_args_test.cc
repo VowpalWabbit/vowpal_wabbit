@@ -10,7 +10,7 @@
 #include <string>
 #include <vector>
 
-#include "config/options_cli.h"
+#include "vw/config/options_cli.h"
 #include "memory.h"
 
 using namespace VW::config;

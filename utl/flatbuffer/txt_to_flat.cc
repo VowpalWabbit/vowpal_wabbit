@@ -11,7 +11,7 @@
 #endif
 #include "accumulate.h"
 #include "best_constant.h"
-#include "config/options_cli.h"
+#include "vw/config/options_cli.h"
 #include "parse_args.h"
 #include "parse_regressor.h"
 #include "vw/common/vw_exception.h"

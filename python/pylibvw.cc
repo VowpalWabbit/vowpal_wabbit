@@ -3,9 +3,9 @@
 // license as described in the file LICENSE.
 
 #include "cb.h"
-#include "config/cli_options_serializer.h"
-#include "config/option.h"
-#include "config/options_cli.h"
+#include "vw/config/cli_options_serializer.h"
+#include "vw/config/option.h"
+#include "vw/config/options_cli.h"
 #include "cost_sensitive.h"
 #include "kskip_ngram_transformer.h"
 #include "multiclass.h"
