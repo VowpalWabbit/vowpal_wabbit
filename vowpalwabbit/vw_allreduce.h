@@ -6,7 +6,7 @@
 
 #include "allreduce.h"
 #include "global_data.h"
-#include "vw_exception.h"
+#include "vw/common/vw_exception.h"
 
 #include <cstddef>
 

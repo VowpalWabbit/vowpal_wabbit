@@ -7,7 +7,7 @@
 #include "config/option_group_definition.h"
 #include "config/options.h"
 #include "vw/common/future_compat.h"
-#include "vw_string_view.h"
+#include "vw/common/string_view.h"
 
 #include <set>
 #include <string>

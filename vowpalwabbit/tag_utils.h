@@ -1,7 +1,7 @@
 #pragma once
 
+#include "vw/common/string_view.h"
 #include "vw_fwd.h"
-#include "vw_string_view.h"
 
 namespace VW
 {

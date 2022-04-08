@@ -13,7 +13,7 @@
 #include "setup_base.h"
 #include "shared_data.h"
 #include "vw.h"
-#include "vw_exception.h"
+#include "vw/common/vw_exception.h"
 
 using namespace VW::LEARNER;
 using namespace VW::config;

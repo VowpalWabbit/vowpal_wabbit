@@ -67,7 +67,7 @@ int VW_getpid() { return (int)::GetCurrentProcessId(); }
 #include "parse_primitives.h"
 #include "unique_sort.h"
 #include "vw.h"
-#include "vw_exception.h"
+#include "vw/common/vw_exception.h"
 
 #include <cassert>
 #include <cerrno>
