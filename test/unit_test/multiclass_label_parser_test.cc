@@ -2,15 +2,15 @@
 // individual contributors. All rights reserved. Released under a BSD (revised)
 // license as described in the file LICENSE.
 
-#include <boost/test/unit_test.hpp>
-#include <boost/test/test_tools.hpp>
-
-#include "parse_primitives.h"
-#include "multiclass.h"
-#include "parser.h"
 #include "global_data.h"
+#include "multiclass.h"
+#include "parse_primitives.h"
+#include "parser.h"
 #include "shared_data.h"
-#include "vw_string_view.h"
+#include "vw/common/string_view.h"
+
+#include <boost/test/test_tools.hpp>
+#include <boost/test/unit_test.hpp>
 
 void parse_label(VW::label_parser& lp, VW::string_view label, VW::polylabel& l)
 {

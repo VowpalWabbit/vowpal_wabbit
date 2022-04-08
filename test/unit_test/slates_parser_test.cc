@@ -2,17 +2,16 @@
 // individual contributors. All rights reserved. Released under a BSD (revised)
 // license as described in the file LICENSE.
 
-#include <boost/test/unit_test.hpp>
-#include <boost/test/test_tools.hpp>
-
 #include "io/logger.h"
-#include "test_common.h"
-
-#include <vector>
-#include "slates_label.h"
-#include "parser.h"
 #include "parse_primitives.h"
-#include "vw_string_view.h"
+#include "parser.h"
+#include "slates_label.h"
+#include "test_common.h"
+#include "vw/common/string_view.h"
+
+#include <boost/test/test_tools.hpp>
+#include <boost/test/unit_test.hpp>
+#include <vector>
 
 void parse_slates_label(VW::string_view label, VW::slates::label& l)
 {

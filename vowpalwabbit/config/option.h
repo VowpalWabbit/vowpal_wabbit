@@ -4,7 +4,7 @@
 
 #pragma once
 
-#include "vw_exception.h"
+#include "vw/common/vw_exception.h"
 
 #include <memory>
 #include <set>

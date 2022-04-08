@@ -9,8 +9,8 @@
 #include "model_utils.h"
 #include "parse_primitives.h"
 #include "parser.h"
+#include "vw/common/string_view.h"
 #include "vw_math.h"
-#include "vw_string_view.h"
 
 #include <numeric>
 

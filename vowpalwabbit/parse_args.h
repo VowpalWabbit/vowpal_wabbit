@@ -5,8 +5,8 @@
 
 #include "config/options.h"
 #include "text_utils.h"
+#include "vw/common/string_view.h"
 #include "vw_fwd.h"
-#include "vw_string_view.h"
 
 // Used in parse_source
 struct input_options
