@@ -6,7 +6,6 @@
 
 #include "constant.h"
 #include "global_data.h"
-#include "vw/io/logger.h"
 #include "parse_primitives.h"
 #include "parser.h"
 #include "shared_data.h"
@@ -14,6 +13,7 @@
 #include "vw/common/future_compat.h"
 #include "vw/common/hash.h"
 #include "vw/common/string_view.h"
+#include "vw/io/logger.h"
 
 #include <cctype>
 #include <cmath>

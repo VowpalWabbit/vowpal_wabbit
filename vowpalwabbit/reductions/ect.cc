@@ -8,12 +8,12 @@
 
 #include "reductions/ect.h"
 
-#include "config/options.h"
 #include "global_data.h"
-#include "vw/io/logger.h"
 #include "learner.h"
 #include "parser.h"
 #include "setup_base.h"
+#include "vw/config/options.h"
+#include "vw/io/logger.h"
 
 #include <fmt/core.h>
 

@@ -4,8 +4,8 @@
 
 #include "named_labels.h"
 
-#include "vw/io/logger.h"
 #include "parse_primitives.h"
+#include "vw/io/logger.h"
 
 void VW::named_labels::initialize_maps_from_input_string()
 {

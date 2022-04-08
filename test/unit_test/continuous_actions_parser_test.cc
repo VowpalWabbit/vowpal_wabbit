@@ -3,11 +3,11 @@
 // license as described in the file LICENSE.
 
 #include "cb_continuous_label.h"
-#include "vw/io/logger.h"
 #include "parse_primitives.h"
 #include "parser.h"
 #include "test_common.h"
 #include "vw/common/string_view.h"
+#include "vw/io/logger.h"
 
 #include <boost/test/test_tools.hpp>
 #include <boost/test/unit_test.hpp>

@@ -5,15 +5,15 @@
 #include "reductions/count_label.h"
 
 #include "best_constant.h"
-#include "config/options.h"
 #include "example.h"
 #include "global_data.h"
-#include "vw/io/logger.h"
 #include "learner.h"
 #include "memory.h"
 #include "parser.h"
 #include "setup_base.h"
 #include "vw/common/future_compat.h"
+#include "vw/config/options.h"
+#include "vw/io/logger.h"
 
 namespace
 {

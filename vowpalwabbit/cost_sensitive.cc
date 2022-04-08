@@ -3,7 +3,6 @@
 // license as described in the file LICENSE.
 
 #include "example.h"
-#include "vw/io/logger.h"
 #include "model_utils.h"
 #include "named_labels.h"
 #include "parse_primitives.h"
@@ -12,6 +11,7 @@
 #include "vw.h"
 #include "vw/common/string_view.h"
 #include "vw/common/vw_exception.h"
+#include "vw/io/logger.h"
 
 #include <cfloat>
 #include <cmath>

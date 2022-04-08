@@ -2,6 +2,7 @@ add_subdirectory(common)
 add_subdirectory(io)
 add_subdirectory(allreduce)
 add_subdirectory(active_interactor)
+add_subdirectory(config)
 
 configure_file(config.h.in config.h)
 # Use position independent code for all targets in this directory
@@ -32,15 +33,6 @@ set(vw_all_headers
   ccb_label.h
   ccb_reduction_features.h
   compat.h
-  config/cli_help_formatter.h
-  config/cli_options_serializer.h
-  config/help_formatter.h
-  config/option_group_definition.h
-  config/option.h
-  config/options_cli.h
-  config/options_name_extractor.h
-  config/options_serializer.h
-  config/options.h
   constant.h
   continuous_actions_reduction_features.h
   correctedMath.h
@@ -229,13 +221,6 @@ set(vw_all_sources
   cb.cc
   ccb_label.cc
   ccb_reduction_features.cc
-  config/cli_help_formatter.cc
-  config/cli_options_serializer.cc
-  config/help_formatter.cc
-  config/option_group_definition.cc
-  config/options_cli.cc
-  config/options_name_extractor.cc
-  config/options.cc
   cost_sensitive.cc
   crossplat_compat.cc
   debug_print.cc
@@ -387,7 +372,7 @@ add_library(vw STATIC ${vw_all_sources} ${vw_all_headers})
 
 target_link_libraries(vw
   PUBLIC
-    VowpalWabbit::common VowpalWabbit::explore VowpalWabbit::allreduce ${spdlog_target} fmt::fmt
+    VowpalWabbit::common VowpalWabbit::explore VowpalWabbit::allreduce VowpalWabbit::config ${spdlog_target} fmt::fmt
   PRIVATE
     ${CMAKE_DL_LIBS} ${LINK_THREADS} vw_io
     # Workaround an issue where RapidJSON needed to be exported tom install the target. This is
@@ -508,7 +493,6 @@ if(STATIC_LINK_VW)
 endif()
 
 if(WIN32)
-  set_target_properties(vw_io PROPERTIES DEBUG_POSTFIX d)
   set_target_properties(vw PROPERTIES DEBUG_POSTFIX d)
 endif()
 

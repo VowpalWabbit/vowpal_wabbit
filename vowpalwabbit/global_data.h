@@ -7,10 +7,10 @@
 #include "constant.h"
 #include "error_reporting.h"
 #include "interactions_predict.h"
-#include "vw/io/logger.h"
 #include "version.h"
 #include "vw/common/future_compat.h"
 #include "vw/common/string_view.h"
+#include "vw/io/logger.h"
 #include "vw_fwd.h"
 
 #include <array>

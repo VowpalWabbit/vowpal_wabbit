@@ -3,14 +3,14 @@
 // license as described in the file LICENSE.
 #include "generate_interactions.h"
 
-#include "config/options.h"
 #include "example.h"
 #include "global_data.h"
 #include "interactions.h"
-#include "vw/io/logger.h"
 #include "learner.h"
 #include "setup_base.h"
 #include "v_array.h"
+#include "vw/config/options.h"
+#include "vw/io/logger.h"
 #include "vw_math.h"
 
 #include <algorithm>

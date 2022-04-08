@@ -5,7 +5,6 @@
 #include "../csoaa.h"
 #include "../gd.h"  // for GD::foreach_feature
 #include "crossplat_compat.h"
-#include "vw/io/logger.h"
 #include "label_dictionary.h"
 #include "named_labels.h"
 #include "numeric_casts.h"
@@ -23,6 +22,7 @@
 #include "shared_data.h"
 #include "vw.h"
 #include "vw/common/vw_exception.h"
+#include "vw/io/logger.h"
 
 #include <float.h>
 #include <math.h>

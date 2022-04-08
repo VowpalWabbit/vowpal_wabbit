@@ -4,8 +4,8 @@
 
 #include "text_utils.h"
 
-#include "vw/io/logger.h"
 #include "parse_primitives.h"
+#include "vw/io/logger.h"
 
 #include <fmt/format.h>
 

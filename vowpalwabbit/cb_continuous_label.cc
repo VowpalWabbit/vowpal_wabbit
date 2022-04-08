@@ -7,12 +7,12 @@
 #include "cb_label_parser.h"
 #include "debug_print.h"
 #include "example.h"
-#include "vw/io/logger.h"
 #include "model_utils.h"
 #include "parse_primitives.h"
 #include "text_utils.h"
 #include "vw.h"
 #include "vw/common/vw_exception.h"
+#include "vw/io/logger.h"
 
 #include <cfloat>
 #include <iomanip>

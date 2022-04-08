@@ -1,3 +1,10 @@
+#include "benchmarks_common.h"
+#include "cache.h"
+#include "parse_example.h"
+#include "parser.h"
+#include "vw.h"
+#include "vw/io/io_adapter.h"
+
 #include <benchmark/benchmark.h>
 
 #include <array>
@@ -9,13 +16,6 @@
 #include <string>
 #include <unordered_map>
 #include <vector>
-
-#include "benchmarks_common.h"
-#include "cache.h"
-#include "vw/io/io_adapter.h"
-#include "parse_example.h"
-#include "parser.h"
-#include "vw.h"
 
 std::shared_ptr<std::vector<char>> get_cache_buffer(const std::string& es)
 {

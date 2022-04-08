@@ -7,7 +7,6 @@
 #include "example.h"
 #include "global_data.h"
 #include "interactions.h"
-#include "vw/io/logger.h"
 #include "label_dictionary.h"
 #include "label_parser.h"
 #include "model_utils.h"
@@ -18,6 +17,7 @@
 #include "reductions/conditional_contextual_bandit.h"
 #include "vw.h"
 #include "vw/common/string_view.h"
+#include "vw/io/logger.h"
 #include "vw_math.h"
 
 #include <algorithm>

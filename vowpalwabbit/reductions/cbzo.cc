@@ -5,13 +5,13 @@
 #include "cbzo.h"
 
 #include "gd.h"
-#include "vw/io/logger.h"
 #include "io_buf.h"
 #include "parse_regressor.h"
 #include "prob_dist_cont.h"
 #include "setup_base.h"
 #include "shared_data.h"
 #include "vw.h"
+#include "vw/io/logger.h"
 #include "vw_math.h"
 
 #include <cfloat>

@@ -8,9 +8,9 @@
 // this test is a copy from unit_test/prediction_test.cc
 // it adds a noop reduction on top
 
-#include "config/options.h"
 #include "reduction_stack.h"
 #include "vw.h"
+#include "vw/config/options.h"
 #include "vw_fwd.h"
 
 // this file would live in toy_reduction.cc

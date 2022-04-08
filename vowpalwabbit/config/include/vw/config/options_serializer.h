@@ -4,7 +4,7 @@
 
 #pragma once
 
-#include "config/option.h"
+#include "option.h"
 #include "vw/common/future_compat.h"
 
 #include <string>

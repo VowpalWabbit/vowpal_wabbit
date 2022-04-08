@@ -2,7 +2,7 @@
 // individual contributors. All rights reserved. Released under a BSD (revised)
 // license as described in the file LICENSE.
 
-#include "config/options_name_extractor.h"
+#include "vw/config/options_name_extractor.h"
 
 #include "vw/common/vw_exception.h"
 

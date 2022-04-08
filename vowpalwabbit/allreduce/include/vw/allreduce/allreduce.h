@@ -43,8 +43,8 @@ using socket_t = int;
 #  define CLOSESOCK close
 #  include <future>
 #endif
-#include "vw/io/logger.h"
 #include "vw/common/vw_exception.h"
+#include "vw/io/logger.h"
 
 #include <cassert>
 

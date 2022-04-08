@@ -19,7 +19,6 @@ VW_WARNING_STATE_POP
 #include "array_parameters.h"
 #include "correctedMath.h"
 #include "gd.h"
-#include "vw/io/logger.h"
 #include "mwt.h"
 #include "no_label.h"
 #include "numeric_casts.h"
@@ -28,6 +27,7 @@ VW_WARNING_STATE_POP
 #include "shared_data.h"
 #include "vw.h"
 #include "vw/common/vw_exception.h"
+#include "vw/io/logger.h"
 #include "vw_versions.h"
 
 #include <algorithm>

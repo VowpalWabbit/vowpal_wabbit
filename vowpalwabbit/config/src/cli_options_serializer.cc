@@ -2,7 +2,7 @@
 // individual contributors. All rights reserved. Released under a BSD (revised)
 // license as described in the file LICENSE.
 
-#include "config/cli_options_serializer.h"
+#include "vw/config/cli_options_serializer.h"
 
 #include <vector>
 

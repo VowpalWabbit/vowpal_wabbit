@@ -4,16 +4,16 @@
 
 #include "reductions/marginal.h"
 
-#include "config/options.h"
 #include "correctedMath.h"
 #include "example.h"
 #include "global_data.h"
 #include "interactions.h"
-#include "vw/io/logger.h"
 #include "learner.h"
 #include "loss_functions.h"
 #include "setup_base.h"
 #include "text_utils.h"
+#include "vw/config/options.h"
+#include "vw/io/logger.h"
 
 #include <map>
 #include <unordered_map>

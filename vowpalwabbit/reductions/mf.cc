@@ -4,12 +4,12 @@
 
 #include "mf.h"
 
-#include "config/options.h"
 #include "gd.h"
 #include "learner.h"
 #include "numeric_casts.h"
 #include "scope_exit.h"
 #include "setup_base.h"
+#include "vw/config/options.h"
 
 using namespace VW::LEARNER;
 using namespace VW::config;

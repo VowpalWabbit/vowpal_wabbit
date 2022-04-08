@@ -3,11 +3,9 @@
 // license as described in the file LICENSE.
 #include "csoaa_ldf.h"
 
-#include "config/options.h"
 #include "constant.h"
 #include "correctedMath.h"
 #include "gd.h"  // GD::foreach_feature() needed in subtract_example()
-#include "vw/io/logger.h"
 #include "label_dictionary.h"
 #include "loss_functions.h"
 #include "print_utils.h"
@@ -16,6 +14,8 @@
 #include "shared_data.h"
 #include "vw.h"
 #include "vw/common/vw_exception.h"
+#include "vw/config/options.h"
+#include "vw/io/logger.h"
 
 #include <algorithm>
 #include <cerrno>

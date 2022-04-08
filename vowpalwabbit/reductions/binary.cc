@@ -4,11 +4,11 @@
 
 #include "binary.h"
 
-#include "config/options.h"
 #include "debug_log.h"
 #include "global_data.h"
 #include "learner.h"
 #include "setup_base.h"
+#include "vw/config/options.h"
 
 #include <cfloat>
 #include <cmath>

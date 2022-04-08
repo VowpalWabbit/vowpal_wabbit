@@ -4,8 +4,8 @@
 
 #pragma once
 
-#include "config/option.h"
-#include "config/option_builder.h"
+#include "option.h"
+#include "option_builder.h"
 #include "vw/common/future_compat.h"
 
 #include <memory>

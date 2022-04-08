@@ -11,11 +11,11 @@
 #endif
 #include "accumulate.h"
 #include "best_constant.h"
-#include "config/options.h"
 #include "config/options_cli.h"
 #include "parse_args.h"
 #include "parse_regressor.h"
 #include "vw/common/vw_exception.h"
+#include "vw/config/options.h"
 #include "vw_to_flat.h"
 
 #include <sys/timeb.h>

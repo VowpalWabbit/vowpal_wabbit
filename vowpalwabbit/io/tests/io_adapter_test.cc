@@ -2,13 +2,13 @@
 // individual contributors. All rights reserved. Released under a BSD (revised)
 // license as described in the file LICENSE.
 
+#include "vw/io/io_adapter.h"
+
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
-#include <memory>
 #include <array>
-
-#include "vw/io/io_adapter.h"
+#include <memory>
 
 TEST(io_adapter_tests, io_adapter_vector_writer)
 {

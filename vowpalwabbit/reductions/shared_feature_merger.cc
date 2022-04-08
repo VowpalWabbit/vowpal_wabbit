@@ -5,13 +5,13 @@
 #include "shared_feature_merger.h"
 
 #include "cb.h"
-#include "config/options.h"
 #include "example.h"
 #include "label_dictionary.h"
 #include "learner.h"
 #include "scope_exit.h"
 #include "setup_base.h"
 #include "vw.h"
+#include "vw/config/options.h"
 
 #include <iterator>
 #include <string>

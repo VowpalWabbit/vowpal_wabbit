@@ -5,11 +5,11 @@
 #include "cache.h"
 
 #include "global_data.h"
-#include "vw/io/io_adapter.h"
-#include "vw/io/logger.h"
 #include "shared_data.h"
 #include "unique_sort.h"
 #include "vw.h"
+#include "vw/io/io_adapter.h"
+#include "vw/io/logger.h"
 
 #include <cstdint>
 #include <memory>

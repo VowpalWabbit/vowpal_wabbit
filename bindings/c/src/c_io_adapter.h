@@ -5,7 +5,6 @@
 #pragma once
 
 #include "vw/experimental/types.h"
-
 #include "vw/io/io_adapter.h"
 
 struct c_reader : public VW::io::reader

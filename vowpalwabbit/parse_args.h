@@ -3,9 +3,9 @@
 // license as described in the file LICENSE.
 #pragma once
 
-#include "config/options.h"
 #include "text_utils.h"
 #include "vw/common/string_view.h"
+#include "vw/config/options.h"
 #include "vw_fwd.h"
 
 // Used in parse_source

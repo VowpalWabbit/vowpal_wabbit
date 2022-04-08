@@ -4,8 +4,8 @@
 
 #pragma once
 
-#include "config/option.h"
-#include "config/option_group_definition.h"
+#include "option.h"
+#include "option_group_definition.h"
 #include "vw/common/future_compat.h"
 
 #include <map>

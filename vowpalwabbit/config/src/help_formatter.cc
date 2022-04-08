@@ -2,10 +2,10 @@
 // individual contributors. All rights reserved. Released under a BSD (revised)
 // license as described in the file LICENSE.
 
-#include "config/help_formatter.h"
+#include "vw/config/help_formatter.h"
 
-#include "config/option_group_definition.h"
-#include "config/options.h"
+#include "vw/config/option_group_definition.h"
+#include "vw/config/options.h"
 
 std::vector<VW::config::option_group_definition> VW::config::remove_disabled_necessary_options(
     options_i& options, const std::vector<option_group_definition>& groups)

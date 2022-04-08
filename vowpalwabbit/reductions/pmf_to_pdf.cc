@@ -8,10 +8,10 @@
 #include "crossplat_compat.h"
 #include "explore.h"
 #include "guard.h"
-#include "vw/io/logger.h"
 #include "setup_base.h"
 #include "shared_data.h"
 #include "vw.h"
+#include "vw/io/logger.h"
 
 #include <cmath>
 

@@ -2,14 +2,14 @@
 // individual contributors. All rights reserved. Released under a BSD (revised)
 // license as described in the file LICENSE.
 
+#include "vw/io/custom_streambuf.h"
+#include "vw/io/io_adapter.h"
+#include "vw/io/owning_stream.h"
+
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
 #include <string>
-
-#include "vw/io/owning_stream.h"
-#include "vw/io/custom_streambuf.h"
-#include "vw/io/io_adapter.h"
 
 TEST(custom_ostream_tests, test_custom_ostream)
 {
@@ -20,7 +20,8 @@ TEST(custom_ostream_tests, test_custom_ostream)
     return 0;
   };
 
-  auto ptr = std::unique_ptr<std::streambuf>(new VW::io::writer_stream_buf(VW::io::create_custom_writer(nullptr, output_func)));
+  auto ptr = std::unique_ptr<std::streambuf>(
+      new VW::io::writer_stream_buf(VW::io::create_custom_writer(nullptr, output_func)));
   VW::io::owning_ostream stream{std::move(ptr)};
 
   stream << "This is the test input, " << 123 << std ::endl;

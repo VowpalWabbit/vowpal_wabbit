@@ -2,9 +2,9 @@
 // individual contributors. All rights reserved. Released under a BSD (revised)
 // license as described in the file LICENSE.
 
-#include "config/cli_help_formatter.h"
+#include "vw/config/cli_help_formatter.h"
+#include "vw/config/options.h"
 
-#include "config/options.h"
 #include "text_utils.h"
 
 #include <fmt/format.h>

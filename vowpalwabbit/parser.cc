@@ -4,9 +4,9 @@
 
 #include "parser.h"
 
-#include "vw/io/logger.h"
 #include "kskip_ngram_transformer.h"
 #include "numeric_casts.h"
+#include "vw/io/logger.h"
 
 #include <sys/types.h>
 
@@ -59,7 +59,6 @@ int VW_getpid() { return (int)::GetCurrentProcessId(); }
 #include "cache.h"
 #include "constant.h"
 #include "interactions.h"
-#include "vw/io/io_adapter.h"
 #include "parse_args.h"
 #include "parse_dispatch_loop.h"
 #include "parse_example.h"
@@ -68,6 +67,7 @@ int VW_getpid() { return (int)::GetCurrentProcessId(); }
 #include "unique_sort.h"
 #include "vw.h"
 #include "vw/common/vw_exception.h"
+#include "vw/io/io_adapter.h"
 
 #include <cassert>
 #include <cerrno>

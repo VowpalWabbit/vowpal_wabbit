@@ -4,7 +4,7 @@
 
 #pragma once
 
-#include "config/option.h"
+#include "option.h"
 
 #include <memory>
 #include <set>

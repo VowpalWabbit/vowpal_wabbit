@@ -4,8 +4,8 @@
 #include "vw_validate.h"
 
 #include "global_data.h"
-#include "vw/io/logger.h"
 #include "shared_data.h"
+#include "vw/io/logger.h"
 #include "vw_versions.h"
 
 namespace VW

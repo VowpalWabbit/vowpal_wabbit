@@ -7,7 +7,6 @@
 #define RAPIDJSON_HAS_STDSTRING 1
 
 #include "array_parameters.h"
-#include "vw/io/logger.h"
 #include "kskip_ngram_transformer.h"
 #include "learner.h"
 #include "loss_functions.h"
@@ -21,6 +20,7 @@
 #include "vw/common/future_compat.h"
 #include "vw/common/string_view.h"
 #include "vw/common/vw_exception.h"
+#include "vw/io/logger.h"
 #include "vw_allreduce.h"
 
 #include <rapidjson/stringbuffer.h>

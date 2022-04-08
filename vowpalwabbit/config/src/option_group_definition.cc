@@ -2,9 +2,9 @@
 // individual contributors. All rights reserved. Released under a BSD (revised)
 // license as described in the file LICENSE.
 
-#include "config/option_group_definition.h"
+#include "vw/config/option_group_definition.h"
 
-#include "config/options.h"
+#include "vw/config/options.h"
 
 using namespace VW::config;
 

@@ -5,9 +5,9 @@
 #define RAPIDJSON_HAS_STDSTRING 1
 
 #include "config/help_formatter.h"
-#include "config/options.h"
 #include "version.h"
 #include "vw.h"
+#include "vw/config/options.h"
 
 #include <rapidjson/document.h>
 #include <rapidjson/stringbuffer.h>

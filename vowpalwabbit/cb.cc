@@ -4,7 +4,6 @@
 
 #include "cb_label_parser.h"
 #include "example.h"
-#include "vw/io/logger.h"
 #include "model_utils.h"
 #include "parse_primitives.h"
 #include "shared_data.h"
@@ -12,6 +11,7 @@
 #include "vw.h"
 #include "vw/common/string_view.h"
 #include "vw/common/vw_exception.h"
+#include "vw/io/logger.h"
 
 #include <algorithm>
 #include <cfloat>

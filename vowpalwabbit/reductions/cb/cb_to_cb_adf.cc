@@ -6,10 +6,10 @@
 
 #include "cb_label_parser.h"
 #include "cbify.h"
-#include "config/options.h"
 #include "learner.h"
 #include "setup_base.h"
 #include "vw.h"
+#include "vw/config/options.h"
 #include "vw_versions.h"
 
 using namespace VW::LEARNER;
