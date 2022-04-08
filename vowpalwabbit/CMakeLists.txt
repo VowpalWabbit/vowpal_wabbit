@@ -1,5 +1,6 @@
-configure_file(config.h.in config.h)
+add_subdirectory(common)
 
+configure_file(config.h.in config.h)
 # Use position independent code for all targets in this directory
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 

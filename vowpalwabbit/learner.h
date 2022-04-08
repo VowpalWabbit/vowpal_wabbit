@@ -27,11 +27,11 @@
 #define VW_DEBUG_LOG vw_dbg::learner
 
 #include "example.h"
-#include "future_compat.h"
 #include "label_type.h"
 #include "metric_sink.h"
 #include "prediction_type.h"
 #include "scope_exit.h"
+#include "vw/common/future_compat.h"
 
 namespace VW
 {

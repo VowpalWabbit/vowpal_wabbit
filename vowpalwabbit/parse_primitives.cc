@@ -4,7 +4,7 @@
 
 #include "parse_primitives.h"
 
-#include "hash.h"
+#include "vw/common/hash.h"
 #include "vw_exception.h"
 #include "vw_string_view.h"
 

@@ -3,10 +3,7 @@ set(explore_all_headers
   $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/vowpalwabbit/explore.h>
   $<BUILD_INTERFACE:${CMAKE_CURRENT_LIST_DIR}/explore_internal.h>
   $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/vowpalwabbit/explore_internal.h>
-  $<BUILD_INTERFACE:${CMAKE_CURRENT_LIST_DIR}/hash.h>
-  $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/vowpalwabbit/hash.h>
-  $<BUILD_INTERFACE:${CMAKE_CURRENT_LIST_DIR}/future_compat.h>
-  $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/vowpalwabbit/future_compat.h>)
+)
 
 add_library(explore INTERFACE)
 add_library(VowpalWabbit::explore ALIAS explore)
@@ -14,6 +11,8 @@ add_library(VowpalWabbit::explore ALIAS explore)
 target_include_directories(explore INTERFACE
   $<BUILD_INTERFACE:${CMAKE_CURRENT_LIST_DIR}>
   $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/vowpalwabbit/>)
+
+target_link_libraries(explore INTERFACE VowpalWabbit::common)
 
 target_sources(explore INTERFACE ${explore_all_headers})
 

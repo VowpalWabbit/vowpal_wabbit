@@ -146,7 +146,7 @@ public ref class SharedLabel sealed : ILabel
 private:
   uint32_t m_action;
 
-  SharedLabel() : m_action((uint32_t)VW::uniform_hash("shared", 6, 0)) {}
+  SharedLabel() : m_action((uint32_t)VW::common::uniform_hash("shared", 6, 0)) {}
 
 public:
   static SharedLabel^ Instance = gcnew SharedLabel;

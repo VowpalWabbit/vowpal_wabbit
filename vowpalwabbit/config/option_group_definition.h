@@ -6,7 +6,7 @@
 
 #include "config/option.h"
 #include "config/option_builder.h"
-#include "future_compat.h"
+#include "vw/common/future_compat.h"
 
 #include <memory>
 #include <string>

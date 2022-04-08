@@ -1,6 +1,6 @@
 #pragma once
 
-#include "future_compat.h"
+#include "vw/common/future_compat.h"
 
 // RapidJson triggers this warning by memcpying non-trivially copyable type. Ignore it so that our warnings are not
 // polluted by it.

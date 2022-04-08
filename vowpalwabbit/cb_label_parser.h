@@ -6,8 +6,8 @@
 #include "cache.h"
 #include "cb.h"
 #include "cb_continuous_label.h"
-#include "future_compat.h"
 #include "io_buf.h"
+#include "vw/common/future_compat.h"
 
 #include <cfloat>
 

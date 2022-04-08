@@ -6,7 +6,7 @@
 
 #include "config/option.h"
 #include "config/option_group_definition.h"
-#include "future_compat.h"
+#include "vw/common/future_compat.h"
 
 #include <map>
 #include <memory>
