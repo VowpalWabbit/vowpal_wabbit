@@ -27,7 +27,7 @@ target_compile_definitions(vw_slim PUBLIC EXPLORE_NOEXCEPT VW_NOEXCEPT)
 # TODO - remove this break of component boundaries at some point
 # At least update when the vowpalwabbit include dir is not used anymore
 target_include_directories(vw_slim PUBLIC
-  BUILD_INTERFACE:${CMAKE_CURRENT_LIST_DIR}/../
+  ${CMAKE_CURRENT_LIST_DIR}/../
 )
 
 set(vw_slim_test_sources
