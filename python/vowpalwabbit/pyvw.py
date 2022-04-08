@@ -623,8 +623,11 @@ class Workspace(pylibvw.vw):
         elif isinstance(ec, list):
             if not self._is_multiline():
                 raise TypeError("Expecting a mutiline Learner.")
-            ec = self.parse(ec)
-            new_example = True
+            if len(ec) == 0:
+                raise ValueError("An empty list of examples is invalid")
+            if isinstance(ec[0], str):
+                ec = self.parse(ec)
+                new_example = True
 
         if isinstance(ec, Example):
             if not getattr(ec, "setup_done", None):
@@ -672,8 +675,11 @@ class Workspace(pylibvw.vw):
         elif isinstance(ec, list):
             if not self._is_multiline():
                 raise TypeError("Expecting a multiline Learner.")
-            ec = self.parse(ec)
-            new_example = True
+            if len(ec) == 0:
+                raise ValueError("An empty list of examples is invalid")
+            if isinstance(ec[0], str):
+                ec = self.parse(ec)
+                new_example = True
 
         if not isinstance(ec, Example) and not isinstance(ec, list):
             raise TypeError(
