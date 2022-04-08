@@ -624,7 +624,7 @@ class Workspace(pylibvw.vw):
             if not self._is_multiline():
                 raise TypeError("Expecting a mutiline Learner.")
             if len(ec) == 0:
-                raise ValueError("An empty list of examples is invalid")
+                raise ValueError("An empty list is invalid")
             if isinstance(ec[0], str):
                 ec = self.parse(ec)
                 new_example = True
@@ -632,7 +632,7 @@ class Workspace(pylibvw.vw):
         if not isinstance(ec, Example) and not (isinstance(ec, list) and isinstance(ec[0], Example)):
             raise TypeError(
                 "expecting string, example object, or list of example objects"
-                " as ec argument for predict, got %s" % type(ec)
+                " as ec argument for learn, got %s" % type(ec)
             )
 
         if isinstance(ec, Example):
@@ -682,7 +682,7 @@ class Workspace(pylibvw.vw):
             if not self._is_multiline():
                 raise TypeError("Expecting a multiline Learner.")
             if len(ec) == 0:
-                raise ValueError("An empty list of examples is invalid")
+                raise ValueError("An empty list is invalid")
             if isinstance(ec[0], str):
                 ec = self.parse(ec)
                 new_example = True
