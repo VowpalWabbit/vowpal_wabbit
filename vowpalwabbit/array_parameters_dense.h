@@ -18,6 +18,12 @@
 
 #include <cassert>
 
+// It appears that on OSX MAP_ANONYMOUS is mapped to MAP_ANON
+// https://github.com/leftmike/foment/issues/4
+#ifdef __APPLE__
+#  define MAP_ANONYMOUS MAP_ANON
+#endif
+
 using weight = float;
 
 template <typename T>
