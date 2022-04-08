@@ -1,10 +1,12 @@
 #ifndef VW_BASE_LEARNER_H
 #define VW_BASE_LEARNER_H
 
-#include <jni.h>
-#include <functional>
 #include "util.h"
 #include "vw.h"
+
+#include <jni.h>
+
+#include <functional>
 
 example* read_example(JNIEnv* env, jstring example_string, VW::workspace* vwInstance);
 example* read_example(const char* example_string, VW::workspace* vwInstance);
