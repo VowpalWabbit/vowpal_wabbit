@@ -480,6 +480,7 @@ void cb_data_epsilon_0_skype_jb_test_runner(int call_type, int modality, int net
 
 TEST(VowpalWabbitSlim, interaction_num_bits_bug)
 {
+  std::cout <<remove_leaf(__FILE__) + "data/Delay_Margin_AudioNetworkPCR_all_cb_FF8.model"<<std::endl;
   std::ifstream input(remove_leaf(__FILE__) + "data/Delay_Margin_AudioNetworkPCR_all_cb_FF8.model", std::ios::in | std::ios::binary);
   input.seekg(0, std::ios::end);
   auto length = input.tellg();
@@ -777,6 +778,7 @@ INSTANTIATE_TYPED_TEST_SUITE_P(VowpalWabbitSlim, VwSlimTest, WeightParameters);
 
 TEST(ColdStartModel, action_set_not_reordered)
 {
+  std::cout <<remove_leaf(__FILE__) + "data/cold_start.model"<<std::endl;
   std::ifstream input(remove_leaf(__FILE__) + "data/cold_start.model", std::ios::in | std::ios::binary);
   input.seekg(0, std::ios::end);
   auto length = input.tellg();
