@@ -213,7 +213,7 @@ public:
     if (label >= 0.f && label < 1.f)
     { return label * get_loss(nullptr, prediction, 1.f) + (1 - label) * get_loss(nullptr, prediction, -1.f); }
     if (label != -1.f && label != 1.f)
-    { logger.out_warn("The label {} is not -1 or 1 or in [0,1] as the logistic loss function expects", label); }
+    { logger.out_warn("The label {} is not -1 or 1 or in [0,1] as the logistic loss function expects.", label); }
     return std::log(1 + correctedExp(-label * prediction));
   }
 
