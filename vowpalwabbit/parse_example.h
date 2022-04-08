@@ -2,8 +2,8 @@
 // individual contributors. All rights reserved. Released under a BSD (revised)
 // license as described in the file LICENSE.
 #pragma once
+#include "vw/common/string_view.h"
 #include "vw_fwd.h"
-#include "vw_string_view.h"
 
 #include <cstdint>
 

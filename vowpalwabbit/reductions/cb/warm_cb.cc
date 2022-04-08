@@ -14,7 +14,7 @@
 #include "setup_base.h"
 #include "vw.h"
 #include "vw/common/hash.h"
-#include "vw_exception.h"
+#include "vw/common/vw_exception.h"
 
 #include <cfloat>
 #include <memory>

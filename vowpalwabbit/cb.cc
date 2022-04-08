@@ -10,8 +10,8 @@
 #include "shared_data.h"
 #include "text_utils.h"
 #include "vw.h"
-#include "vw_exception.h"
-#include "vw_string_view.h"
+#include "vw/common/string_view.h"
+#include "vw/common/vw_exception.h"
 
 #include <algorithm>
 #include <cfloat>

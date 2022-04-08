@@ -41,7 +41,7 @@ if(RAPIDJSON_SYS_DEP)
   target_include_directories(RapidJSON INTERFACE ${RapidJSON_INCLUDE_DIRS})
 else()
   add_library(RapidJSON INTERFACE)
-  target_include_directories(RapidJSON INTERFACE
+  target_include_directories(RapidJSON SYSTEM INTERFACE
     $<BUILD_INTERFACE:${CMAKE_CURRENT_LIST_DIR}/rapidjson/include>
     $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
   )
@@ -89,3 +89,5 @@ else()
           RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
   endif()
 endif()
+
+add_subdirectory(${CMAKE_CURRENT_LIST_DIR}/string-view-lite)

@@ -24,9 +24,9 @@
 #  include <spdlog/spdlog.h>
 #endif
 
-// needed for custom types (like string_view)
-#include "../vw_exception.h"
+#include "vw/common/vw_exception.h"
 
+// needed for custom types (like string_view)
 #include <fmt/ostream.h>
 
 namespace VW

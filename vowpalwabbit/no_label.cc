@@ -8,7 +8,7 @@
 #include "example.h"
 #include "io/logger.h"
 #include "vw.h"
-#include "vw_string_view.h"
+#include "vw/common/string_view.h"
 #include "vw_string_view_fmt.h"
 
 #include <cfloat>

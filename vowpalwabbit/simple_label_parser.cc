@@ -10,7 +10,7 @@
 #include "io/logger.h"
 #include "model_utils.h"
 #include "parse_primitives.h"
-#include "vw_string_view.h"
+#include "vw/common/string_view.h"
 #include "vw_string_view_fmt.h"
 
 #include <cfloat>
