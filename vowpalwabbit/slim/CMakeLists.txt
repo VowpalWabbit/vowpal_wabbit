@@ -16,6 +16,7 @@ set(VW_SLIM_HEADERS
   include/vw/slim/vw_slim_return_codes.h
 )
 
+# If we want slim to be installable it probably needs to be via a component so it can be separate to the main installation
 vw_add_library(
   NAME "slim"
   TYPE "STATIC_ONLY"
