@@ -26,7 +26,11 @@ vw_add_library(
 target_compile_definitions(vw_slim PUBLIC EXPLORE_NOEXCEPT VW_NOEXCEPT)
 
 # TODO - remove this break of component boundaries at some point
-target_include_directories(vw_slim PUBLIC ${CMAKE_CURRENT_LIST_DIR}/../)
+# At least update when the vowpalwabbit include dir is not used anymore
+target_include_directories(vw_slim PUBLIC
+  $<BUILD_INTERFACE:${CMAKE_CURRENT_LIST_DIR}/../>
+  $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/vowpalwabbit/>
+)
 
 set(vw_slim_test_sources
   test/data.h
