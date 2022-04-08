@@ -29,13 +29,15 @@ license as described in the file LICENSE.
 //----
 #pragma once
 
-#include "future_compat.h"
+#include "vw/common/future_compat.h"
 
 #include <sys/types.h>
 
 #include <cstdint>
 
 namespace VW
+{
+namespace common
 {
 namespace details
 {
@@ -119,10 +121,11 @@ VW_STD14_CONSTEXPR inline uint64_t uniform_hash(const void* key, size_t len, uin
 
   return details::fmix(h1);
 }
+}  // namespace common
 }  // namespace VW
 
 VW_DEPRECATED("uniform_hash has been moved into VW namespace")
 VW_STD14_CONSTEXPR inline uint64_t uniform_hash(const void* key, size_t len, uint64_t seed)
 {
-  return VW::uniform_hash(key, len, seed);
+  return VW::common::uniform_hash(key, len, seed);
 }

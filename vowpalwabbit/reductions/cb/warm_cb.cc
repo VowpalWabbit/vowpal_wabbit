@@ -8,12 +8,12 @@
 #include "cb_label_parser.h"
 #include "config/options.h"
 #include "explore.h"
-#include "hash.h"
 #include "io/logger.h"
 #include "rand_state.h"
 #include "scope_exit.h"
 #include "setup_base.h"
 #include "vw.h"
+#include "vw/common/hash.h"
 #include "vw_exception.h"
 
 #include <cfloat>
@@ -595,7 +595,7 @@ VW::LEARNER::base_learner* VW::reductions::warm_cb_setup(VW::setup_base_i& stack
   if (use_cs && (options.was_supplied("corrupt_type_warm_start") || options.was_supplied("corrupt_prob_warm_start")))
   { THROW("label corruption on cost-sensitive examples not currently supported"); }
 
-  data->app_seed = VW::uniform_hash("vw", 2, 0);
+  data->app_seed = VW::common::uniform_hash("vw", 2, 0);
   data->all = &all;
   data->_random_state = all.get_random_state();
   data->use_cs = use_cs;

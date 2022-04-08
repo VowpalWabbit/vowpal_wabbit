@@ -3,8 +3,8 @@
 // license as described in the file LICENSE.
 
 #pragma once
-#include "future_compat.h"
-#include "hash.h"
+#include "vw/common/future_compat.h"
+#include "vw/common/hash.h"
 
 #include <cstddef>  // defines size_t
 #include <cstdint>
@@ -12,7 +12,7 @@
 
 VW_STD14_CONSTEXPR inline uint64_t hashall(const char* s, size_t len, uint64_t h)
 {
-  return VW::uniform_hash(s, len, h);
+  return VW::common::uniform_hash(s, len, h);
 }
 
 VW_STD14_CONSTEXPR inline uint64_t hashstring(const char* s, size_t len, uint64_t h)
@@ -31,7 +31,7 @@ VW_STD14_CONSTEXPR inline uint64_t hashstring(const char* s, size_t len, uint64_
     if (*p >= '0' && *p <= '9')
       ret = 10 * ret + *(p++) - '0';
     else
-      return VW::uniform_hash(front, len, h);
+      return VW::common::uniform_hash(front, len, h);
 
   return ret + h;
 }
