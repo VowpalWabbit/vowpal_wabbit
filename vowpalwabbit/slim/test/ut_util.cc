@@ -1,9 +1,11 @@
+#include "ut_util.h"
+
 #include "array_parameters.h"
 #include "data.h"
-#include "vw/slim/example_predict_builder.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
-#include "ut_util.h"
+#include "vw/slim/example_predict_builder.h"
+
 #include <stdlib.h>
 
 #include <array>
@@ -15,7 +17,6 @@
 using namespace ::testing;
 using namespace vw_slim;
 using namespace exploration;
-
 
 // #define VW_SLIM_TEST_DEBUG "vwslim-debug.log"
 
@@ -470,7 +471,8 @@ void cb_data_epsilon_0_skype_jb_test_runner(int call_type, int modality, int net
 
 TEST(VowpalWabbitSlim, interaction_num_bits_bug)
 {
-  std::ifstream input(VW_SLIM_TEST_DIR "data/Delay_Margin_AudioNetworkPCR_all_cb_FF8.model", std::ios::in | std::ios::binary);
+  std::ifstream input(
+      VW_SLIM_TEST_DIR "data/Delay_Margin_AudioNetworkPCR_all_cb_FF8.model", std::ios::in | std::ios::binary);
   input.seekg(0, std::ios::end);
   auto length = input.tellg();
   input.seekg(0, std::ios::beg);
