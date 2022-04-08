@@ -25,7 +25,6 @@
 #include <utility>
 #include <vector>
 
-
 using namespace VW::config;
 
 bool is_number(const std::string& str)
@@ -241,9 +240,7 @@ T convert_token_value(const VW::string_view& token)
   std::stringstream ss(std::string{token});
   ss >> result;
   if (ss.fail() || ss.rdbuf()->in_avail() != 0)
-  {
-    THROW_EX(VW::vw_argument_invalid_value_exception, "Failed to convert " << token << " to " << typeid(T).name())
-  }
+  { THROW_EX(VW::vw_argument_invalid_value_exception, "Failed to convert " << token << " to " << typeid(T).name()) }
   return result;
 }
 
@@ -334,7 +331,10 @@ struct cli_typed_option_handler : typed_option_visitor
       assert(!all_tokens.empty());
       option.value(std::vector<std::string>{all_tokens.begin(), all_tokens.end()}, true);
     }
-    else if (option.default_value_supplied()) { option.value(option.default_value(), true); }
+    else if (option.default_value_supplied())
+    {
+      option.value(option.default_value(), true);
+    }
   }
 };
 
@@ -353,7 +353,10 @@ std::unordered_map<VW::string_view, std::vector<VW::string_view>> parse_token_ma
   {
     auto token = tokens.front();
     if (is_long_option_like(token)) { consume_long_option(known_options, tokens, m_map); }
-    else if (is_short_option_like(token)) { consume_short_option(known_short_options, tokens, m_map); }
+    else if (is_short_option_like(token))
+    {
+      consume_short_option(known_short_options, tokens, m_map);
+    }
     else
     {
       // If we are to handle terminators that means if we hit it then EVERY subsequent token is positional.
@@ -407,9 +410,7 @@ void options_cli::internal_add_and_parse(const option_group_definition& group)
       std::set<std::string> necessary_flags_set(group.m_necessary_flags.begin(), group.m_necessary_flags.end());
       m_dependent_necessary_options[opt_ptr->m_name].push_back(necessary_flags_set);
       if (!opt_ptr->m_short_name.empty())
-      {
-        m_dependent_necessary_options[opt_ptr->m_short_name].push_back(necessary_flags_set);
-      }
+      { m_dependent_necessary_options[opt_ptr->m_short_name].push_back(necessary_flags_set); }
     }
   }
 }
@@ -430,9 +431,8 @@ bool options_cli::was_supplied(const std::string& key) const
   if (short_option_found) { return true; }
 
   const auto long_key = "--" + key;
-  auto long_option_found = std::any_of(m_command_line.begin(), m_command_line.end(),
-      [&long_key](const std::string& arg)
-      {
+  auto long_option_found =
+      std::any_of(m_command_line.begin(), m_command_line.end(), [&long_key](const std::string& arg) {
         // We need to check that the option starts with --key_name, but we also need to ensure that either the whole
         // token matches or we hit an equals sign denoting the end of the option name. If we don't do this --csoaa and
         // --csoaa_ldf would incorrectly match.
@@ -468,9 +468,7 @@ std::vector<std::string> options_cli::check_unregistered()
           "combinations of options which would enable this option are:\n",
           supplied);
       for (const auto& group : dependent_necessary_options)
-      {
-        message += fmt::format("\t{}\n", fmt::join(group, ", "));
-      }
+      { message += fmt::format("\t{}\n", fmt::join(group, ", ")); }
 
       warnings.push_back(message);
     }
@@ -499,9 +497,7 @@ void options_cli::replace(const std::string& key, const std::string& value)
 
   // Check if it is the final option or the next option is not a value.
   if (it + 1 == m_command_line.end() || (*(it + 1)).find("--") != std::string::npos)
-  {
-    THROW(key + " option does not have a value.");
-  }
+  { THROW(key + " option does not have a value."); }
 
   // Actually replace the value.
   *(it + 1) = value;

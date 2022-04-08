@@ -2,15 +2,16 @@
 // individual contributors. All rights reserved. Released under a BSD (revised)
 // license as described in the file LICENSE.
 
+#include "vw/config/options.h"
+
+#include "vw/config/options_name_extractor.h"
+
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
-#include "vw/config/options.h"
-#include "vw/config/options_name_extractor.h"
-
-#include <vector>
-#include <string>
 #include <memory>
+#include <string>
+#include <vector>
 
 using namespace VW::config;
 
@@ -26,7 +27,8 @@ std::shared_ptr<T> to_opt_ptr(option_builder<T>& builder)
   return to_opt_ptr(std::move(builder));
 }
 
-TEST(options_test, make_option_and_customize) {
+TEST(options_test, make_option_and_customize)
+{
   int loc = 0;
   auto opt = to_opt_ptr(make_option("opt", loc).default_value(4).help("Help text").keep().short_name("t"));
 
@@ -41,7 +43,8 @@ TEST(options_test, make_option_and_customize) {
   EXPECT_EQ(loc, 5);
 }
 
-TEST(options_test, typed_argument_equality) {
+TEST(options_test, typed_argument_equality)
+{
   int int_loc;
   int int_loc_other;
   float float_loc;
@@ -61,7 +64,8 @@ TEST(options_test, typed_argument_equality) {
   EXPECT_TRUE(*b1 != *b3);
 }
 
-TEST(options_test, create_argument_group) {
+TEST(options_test, create_argument_group)
+{
   std::string loc;
   std::vector<std::string> loc2;
   option_group_definition ag("g1");

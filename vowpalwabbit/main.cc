@@ -11,7 +11,6 @@
 #endif
 #include "accumulate.h"
 #include "best_constant.h"
-#include "vw/config/options_cli.h"
 #include "global_data.h"
 #include "memory.h"
 #include "parse_args.h"
@@ -19,6 +18,7 @@
 #include "vw.h"
 #include "vw/common/vw_exception.h"
 #include "vw/config/options.h"
+#include "vw/config/options_cli.h"
 
 #include <sys/timeb.h>
 

@@ -1,13 +1,13 @@
 #include "jni_spark_vw.h"
 
 #include "best_constant.h"
-#include "vw/config/cli_options_serializer.h"
 #include "learner.h"
 #include "parse_example.h"
 #include "shared_data.h"
 #include "simple_label_parser.h"
 #include "util.h"
 #include "vw/common/vw_exception.h"
+#include "vw/config/cli_options_serializer.h"
 #include "vw/config/options.h"
 
 #include <algorithm>

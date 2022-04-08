@@ -1,17 +1,16 @@
-#include <iostream>
-#include <exception>
-#include <fstream>
-#include <chrono>
-#include <stdexcept>
-#include <string>
-
+#include "parse_example_json.h"
+#include "vw.h"
 #include "vw/config/cli_help_formatter.h"
 #include "vw/config/option_builder.h"
-#include "vw/config/options_cli.h"
 #include "vw/config/option_group_definition.h"
+#include "vw/config/options_cli.h"
 
-#include "vw.h"
-#include "parse_example_json.h"
+#include <chrono>
+#include <exception>
+#include <fstream>
+#include <iostream>
+#include <stdexcept>
+#include <string>
 
 enum class parser_type
 {

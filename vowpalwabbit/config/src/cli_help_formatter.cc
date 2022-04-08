@@ -3,9 +3,9 @@
 // license as described in the file LICENSE.
 
 #include "vw/config/cli_help_formatter.h"
-#include "vw/config/options.h"
 
 #include "text_utils.h"
+#include "vw/config/options.h"
 
 #include <fmt/format.h>
 

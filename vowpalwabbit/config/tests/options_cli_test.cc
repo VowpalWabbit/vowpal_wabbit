@@ -2,11 +2,12 @@
 // individual contributors. All rights reserved. Released under a BSD (revised)
 // license as described in the file LICENSE.
 
+#include "vw/config/options_cli.h"
+
+#include "vw/config/cli_options_serializer.h"
+
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
-
-#include "vw/config/options_cli.h"
-#include "vw/config/cli_options_serializer.h"
 
 #include <memory>
 #include <vector>

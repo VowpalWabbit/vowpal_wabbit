@@ -1,6 +1,6 @@
-#include "vw/config/options_cli.h"
 #include "vw.h"
 #include "vw/common/vw_exception.h"
+#include "vw/config/options_cli.h"
 
 #include <memory>
 

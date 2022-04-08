@@ -4,8 +4,8 @@
 
 #pragma once
 
-#include "vw/config/cli_options_serializer.h"
 #include "vw.h"
+#include "vw/config/cli_options_serializer.h"
 #include "vw/config/options.h"
 
 #include <msclr\marshal_cppstd.h>
