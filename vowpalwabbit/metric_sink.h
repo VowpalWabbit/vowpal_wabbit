@@ -3,12 +3,12 @@
 // individual contributors. All rights reserved. Released under a BSD (revised)
 // license as described in the file LICENSE.=
 
+#include "vw/common/string_view.h"
+
 #include <cstdint>
 #include <map>
 #include <set>
 #include <string>
-
-#include "vw_string_view.h"
 
 namespace VW
 {

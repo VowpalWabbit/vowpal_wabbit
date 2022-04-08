@@ -21,50 +21,60 @@
   <ItemGroup>
     <ClCompile Include="automl_test.cc" />
     <ClCompile Include="automl_weights_test.cc" />
+    <ClCompile Include="baseline_cb_test.cc" />
+    <ClCompile Include="cache_test.cc" />
     <ClCompile Include="cats_test.cc" />
-    <ClCompile Include="cats_tree_tests.cc" />
+    <ClCompile Include="cats_tree_test.cc" />
     <ClCompile Include="cats_user_provided_pdf.cc" />
     <ClCompile Include="cb_explore_adf_test.cc" />
-    <ClCompile Include="ccb_test.cc" />
     <ClCompile Include="ccb_parser_test.cc" />
+    <ClCompile Include="ccb_test.cc" />
+    <ClCompile Include="chain_hashing.cc" />
     <ClCompile Include="continuous_actions_parser_test.cc" />
-    <ClCompile Include="feature_group_test.cc" />
-    <ClCompile Include="object_pool_test.cc" />
-    <ClCompile Include="offset_tree_tests.cc" />
-    <ClCompile Include="ostream_test.cc" />
-    <ClCompile Include="options_boost_po_test.cc" />
-    <ClCompile Include="options_test.cc" />
-    <ClCompile Include="pmf_to_pdf_test.cc" />
+    <ClCompile Include="custom_reduction_test.cc" />
     <ClCompile Include="distributionally_robust_test.cc" />
     <ClCompile Include="dsjson_parser_test.cc" />
+    <ClCompile Include="epsilon_test.cc" />
     <ClCompile Include="error_test.cc" />
     <ClCompile Include="example_header_test.cc" />
+    <ClCompile Include="example_test.cc" />
     <ClCompile Include="explore_test.cc" />
+    <ClCompile Include="feature_group_test.cc" />
     <ClCompile Condition="'$(BuildFlatbuffers)'=='ON'" Include="flatbuffer_parser_test.cc" />
     <ClCompile Include="guard_test.cc" />
     <ClCompile Include="initialize_test.cc" />
     <ClCompile Include="interactions_test.cc" />
     <ClCompile Include="io_adapter_test.cc" />
     <ClCompile Include="json_parser_test.cc" />
+    <ClCompile Include="loss_functions_test.cc" />
     <ClCompile Include="main.cc" />
     <ClCompile Include="math_test.cc" />
-    <ClCompile Include="numeric_cast_tests.cc" />
-    <ClCompile Include="random_test.cc" />
+    <ClCompile Include="minimal_custom_reduction.cc" />
+    <ClCompile Include="multiclass_label_parser_test.cc" />
+    <ClCompile Include="numeric_cast_test.cc" />
+    <ClCompile Include="object_pool_test.cc" />
+    <ClCompile Include="offset_tree_test.cc" />
+    <ClCompile Include="options_boost_po_test.cc" />
+    <ClCompile Include="options_test.cc" />
+    <ClCompile Include="ostream_test.cc" />
     <ClCompile Include="parse_args_test.cc" />
-    <ClCompile Include="vw_versions_test.cc" />
+    <ClCompile Include="parser_test.cc" />
+    <ClCompile Include="pmf_to_pdf_test.cc" />
     <ClCompile Include="power_test.cc" />
     <ClCompile Include="prediction_test.cc" />
-    <ClCompile Include="custom_reduction_test.cc" />
-    <ClCompile Include="minimal_custom_reduction.cc" />
+    <ClCompile Include="random_test.cc" />
     <ClCompile Include="scope_exit_test.cc" />
     <ClCompile Include="simulator.cc" />
     <ClCompile Include="slates_parser_test.cc" />
     <ClCompile Include="slates_test.cc" />
-    <ClCompile Include="stable_unique_tests.cc" />
+    <ClCompile Include="stable_unique_test.cc" />
     <ClCompile Include="tag_utils_test.cc" />
     <ClCompile Include="test_common.cc" />
+    <ClCompile Include="text_utils_test.cc" />
+    <ClCompile Include="tokenize_test.cc" />
     <ClCompile Include="tutorial_test.cc" />
     <ClCompile Include="v_array_test.cc" />
+    <ClCompile Include="vw_versions_test.cc" />
     <ClCompile Include="vwdll_test.cc" />
     <ClCompile Include="weights_test.cc" />
   </ItemGroup>
@@ -193,7 +203,6 @@
   </ItemDefinitionGroup>
   <ImportGroup Label="ExtensionTargets">
     <Import Project="$(SolutionDir)packages\boost.1.70.0.0\build\boost.targets" Condition="Exists('$(SolutionDir)packages\boost.1.70.0.0\build\boost.targets')" />
-    <Import Project="$(SolutionDir)packages\boost_program_options-vc141.1.70.0.0\build\boost_program_options-vc141.targets" Condition="Exists('$(SolutionDir)packages\boost_program_options-vc141.1.70.0.0\build\boost_program_options-vc141.targets')" />
     <Import Project="$(SolutionDir)packages\boost_unit_test_framework-vc141.1.70.0.0\build\boost_unit_test_framework-vc141.targets" Condition="Exists('$(SolutionDir)packages\boost_unit_test_framework-vc141.1.70.0.0\build\boost_unit_test_framework-vc141.targets')" />
     <Import Project="$(SolutionDir)packages\zlib-msvc-x64.1.2.11.8900\build\native\zlib-msvc-x64.targets" Condition="Exists('$(SolutionDir)packages\zlib-msvc-x64.1.2.11.8900\build\native\zlib-msvc-x64.targets')" />
     <Import Project="$(SolutionDir)packages\zlib-msvc-x86.1.2.11.8900\build\native\zlib-msvc-x86.targets" Condition="Exists('$(SolutionDir)packages\zlib-msvc-x86.1.2.11.8900\build\native\zlib-msvc-x86.targets')" />
@@ -203,7 +212,6 @@
       <ErrorText>This project references NuGet package(s) that are missing on this computer. Enable NuGet Package Restore to download them.  For more information, see http://go.microsoft.com/fwlink/?LinkID=322105. The missing file is {0}.</ErrorText>
     </PropertyGroup>
     <Error Condition="!Exists('$(SolutionDir)packages\boost.1.70.0.0\build\boost.targets')" Text="$([System.String]::Format('$(ErrorText)', '$(SolutionDir)packages\boost.1.70.0.0\build\boost.targets'))" />
-    <Error Condition="!Exists('$(SolutionDir)packages\boost_program_options-vc141.1.70.0.0\build\boost_program_options-vc141.targets')" Text="$([System.String]::Format('$(ErrorText)', '$(SolutionDir)packages\boost_program_options-vc141.1.70.0.0\build\boost_program_options-vc141.targets'))" />
     <Error Condition="!Exists('$(SolutionDir)packages\boost_unit_test_framework-vc141.1.70.0.0\build\boost_unit_test_framework-vc141.targets')" Text="$([System.String]::Format('$(ErrorText)', '$(SolutionDir)packages\boost_unit_test_framework-vc141.1.70.0.0\build\boost_unit_test_framework-vc141.targets'))" />
     <Error Condition="!Exists('$(SolutionDir)packages\zlib-msvc-x64.1.2.11.8900\build\native\zlib-msvc-x64.targets')" Text="$([System.String]::Format('$(ErrorText)', '$(SolutionDir)packages\zlib-msvc-x64.1.2.11.8900\build\native\zlib-msvc-x64.targets'))" />
     <Error Condition="!Exists('$(SolutionDir)packages\zlib-msvc-x86.1.2.11.8900\build\native\zlib-msvc-x86.targets')" Text="$([System.String]::Format('$(ErrorText)', '$(SolutionDir)packages\zlib-msvc-x86.1.2.11.8900\build\native\zlib-msvc-x86.targets'))" />

@@ -2,8 +2,10 @@
 // individual contributors. All rights reserved. Released under a BSD (revised)
 // license as described in the file LICENSE.
 
-#include "future_compat.h"
 #pragma once
+
+#include "debug_print.h"
+#include "vw/common/future_compat.h"
 
 struct vw_dbg
 {
@@ -17,6 +19,7 @@ struct vw_dbg
   static constexpr bool binary =              false;
   static constexpr bool cb_adf =              false;
   static constexpr bool csoaa =               false;
+  static constexpr bool csoaa_ldf =           false;
   static constexpr bool cs_active =           false;
   static constexpr bool cats_tree =           false;
   static constexpr bool cats_pdf =            false;
@@ -34,7 +37,7 @@ struct vw_dbg
 
   static constexpr bool track_stack = default_log | learner | search | gd | gd_predict | binary | cb_adf | csoaa |
       cs_active | cats_tree | cats_pdf | cats | cb_explore_pdf | cb_explore | cbify | get_pmf | sample_pdf |
-      cb_explore_get_pmf | cb_sample_pdf | ccb | scorer | cb_sample;
+      cb_explore_get_pmf | cb_sample_pdf | ccb | scorer | cb_sample | csoaa_ldf;
 };
 
 #define VW_DEBUG_LOG vw_dbg::default_log
@@ -44,7 +47,7 @@ struct vw_dbg
 // TODO: Should this be moved to the io library and made to use the logger?
 //       we'll need to break the dependency on depth_indent_string() though
 #define VW_DBG(e) \
-  if VW_STD17_CONSTEXPR (VW_DEBUG_LOG) VW_LOG_SINK << debug_depth_indent_string(e)
+  if VW_STD17_CONSTEXPR (VW_DEBUG_LOG) VW_LOG_SINK << ::VW::debug::debug_depth_indent_string(e)
 
 #define VW_DBG_0 \
   if VW_STD17_CONSTEXPR (VW_DEBUG_LOG) VW_LOG_SINK

@@ -3,25 +3,21 @@
 // license as described in the file LICENSE.
 
 #pragma once
-#ifndef NOMINMAX
-#  define NOMINMAX
-#endif
-
-#include <algorithm>
-#include <cassert>
-#include <cstdlib>
-#include <cstring>
-#include <ostream>
-#include <string>
-#include <utility>
-#include <type_traits>
-
-#ifndef VW_NOEXCEPT
-#  include "vw_exception.h"
-#endif
 
 #include "memory.h"
+#include "vw/common/future_compat.h"
+#include "vw/common/vw_exception.h"
 
+#include <cassert>
+#include <ostream>
+#include <type_traits>
+#include <utility>
+
+// Required to bring in the Enable = void default template argument
+#include "vw_fwd.h"
+
+namespace VW
+{
 /**
  * \brief This is a diagnostic overload used to prevent v_array from being used with types that are not trivially
  * copyable.
@@ -30,7 +26,7 @@
  * \note If you get an error message saying that x uses undefined struct 'v_array<...,void>' that means the type is
  * not trivially copyable and cannot be used with v_array.
  */
-template <typename T, typename Enable = void>
+template <typename T, typename Enable>
 struct v_array;
 
 /**
@@ -375,22 +371,19 @@ public:
     if (_end == _end_array) reserve_nocheck(2 * capacity() + 3);
     new (_end++) T(std::forward<Args>(args)...);
   }
+
+  // Why use hidden friend? https://jacquesheunis.com/post/hidden-friend-compilation/
+  friend std::ostream& operator<<(std::ostream& os, const v_array<T>& v)
+  {
+    os << '[';
+    for (auto i = v.cbegin(); i != v.cend(); ++i) os << ' ' << *i;
+    os << " ]";
+    return os;
+  }
 };
 
-template <class T>
-std::ostream& operator<<(std::ostream& os, const v_array<T>& v)
-{
-  os << '[';
-  for (auto i = v.cbegin(); i != v.cend(); ++i) os << ' ' << *i;
-  os << " ]";
-  return os;
-}
+}  // namespace VW
 
-template <class T, class U>
-std::ostream& operator<<(std::ostream& os, const v_array<std::pair<T, U> >& v)
-{
-  os << '[';
-  for (auto i = v.cbegin(); i != v.cend(); ++i) os << ' ' << i->first << ':' << i->second;
-  os << " ]";
-  return os;
-}
+// This is deprecated. Cannot mark templates as deprecated though so a message must suffice.
+template <typename T>
+using v_array = VW::v_array<T>;

@@ -2,12 +2,13 @@
 // individual contributors. All rights reserved. Released under a BSD (revised)
 // license as described in the file LICENSE.
 
-#include <boost/test/unit_test.hpp>
-
 #include "vwdll.h"
-#include "vw.h"
+
 #include "test_common.h"
-#include "vw_string_view.h"
+#include "vw.h"
+#include "vw/common/string_view.h"
+
+#include <boost/test/unit_test.hpp>
 
 using namespace boost::unit_test;
 
@@ -105,11 +106,8 @@ BOOST_AUTO_TEST_CASE(vw_dll_get_audit_output)
 #ifndef __APPLE__
 BOOST_AUTO_TEST_CASE(vw_dll_parse_escaped)
 {
-  // This call doesn't escape and so sees --nonexistent_option as a standalone invalid argument.
-  BOOST_CHECK_THROW(VW_InitializeA("-d test\\ --nonexistent_option --quiet"), VW::vw_unrecognised_option_exception);
-
   // The space is escaped and so the data argument becomes "test --nonexistent_option"
-  VW_HANDLE handle1 = VW_InitializeEscapedA("-d test\\ --nonexistent_option --quiet");
+  VW_HANDLE handle1 = VW_InitializeEscapedA("--id test\\ --nonexistent_option --quiet");
   BOOST_CHECK(handle1 != nullptr);
   VW_Finish(handle1);
 }

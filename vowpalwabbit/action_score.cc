@@ -4,33 +4,28 @@
 
 #include "action_score.h"
 
-#include "v_array.h"
-#include "io_buf.h"
 #include "global_data.h"
-
 #include "io/logger.h"
-
-namespace logger = VW::io::logger;
+#include "io_buf.h"
+#include "text_utils.h"
+#include "v_array.h"
+#include "vw/common/string_view.h"
 
 namespace ACTION_SCORE
 {
-void print_action_score(VW::io::writer* f, const v_array<action_score>& a_s, const v_array<char>& tag)
+void print_action_score(
+    VW::io::writer* f, const VW::v_array<action_score>& a_s, const VW::v_array<char>& tag, VW::io::logger& logger)
 {
   if (f == nullptr) { return; }
 
   std::stringstream ss;
-
-  for (size_t i = 0; i < a_s.size(); i++)
-  {
-    if (i > 0) ss << ',';
-    ss << a_s[i].action << ':' << a_s[i].score;
-  }
-  print_tag_by_ref(ss, tag);
+  ss << VW::to_string(a_s);
+  if (!tag.empty()) { ss << " " << VW::string_view(tag.begin(), tag.size()); }
   ss << '\n';
   const auto ss_str = ss.str();
   ssize_t len = ss_str.size();
   ssize_t t = f->write(ss_str.c_str(), static_cast<unsigned int>(len));
-  if (t != len) logger::errlog_error("write error: {}", VW::strerror_to_string(errno));
+  if (t != len) { logger.err_error("write error: {}", VW::strerror_to_string(errno)); }
 }
 
 std::ostream& operator<<(std::ostream& os, const action_score& a_s)
@@ -39,3 +34,19 @@ std::ostream& operator<<(std::ostream& os, const action_score& a_s)
   return os;
 }
 }  // namespace ACTION_SCORE
+
+namespace VW
+{
+std::string to_string(const ACTION_SCORE::action_scores& action_scores_or_probs, int decimal_precision)
+{
+  std::ostringstream ss;
+  std::string delim;
+  for (const auto& item : action_scores_or_probs)
+  {
+    ss << delim << fmt::format("{}:{}", item.action, VW::fmt_float(item.score, decimal_precision));
+    delim = ",";
+  }
+  return ss.str();
+}
+
+}  // namespace VW

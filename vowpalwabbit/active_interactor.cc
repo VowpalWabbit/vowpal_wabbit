@@ -2,23 +2,23 @@
 // individual contributors. All rights reserved. Released under a BSD (revised)
 // license as described in the file LICENSE.
 
+#include <cerrno>
+#include <cstdlib>
+#include <cstring>
 #include <iostream>
 #include <sstream>
 #include <stdexcept>
 #include <string>
-#include <cstring>
-#include <cerrno>
-#include <cstdlib>
 #ifdef _WIN32
 #  define NOMINMAX
 #  include <WinSock2.h>
 #else
-#  include <sys/types.h>
-#  include <unistd.h>
-#  include <sys/socket.h>
+#  include <netdb.h>
 #  include <netinet/in.h>
 #  include <netinet/tcp.h>
-#  include <netdb.h>
+#  include <sys/socket.h>
+#  include <sys/types.h>
+#  include <unistd.h>
 #endif
 
 using std::cerr;
@@ -66,7 +66,7 @@ int recvall(int s, char* buf, int n)
   while (ret > 0 && total < n)
   {
     total += ret;
-    if (buf[total - 1] == '\n') break;
+    if (buf[total - 1] == '\n') { break; }
     ret = recv(s, buf + total, n, 0);
   }
   return total;
@@ -92,7 +92,7 @@ int main(int argc, char* argv[])
   ret = send(s, &id, sizeof(id), 0);
   if (ret < 0)
   {
-    const char* msg = "Could not perform handshake!";
+    const char* msg = "Could not perform handshake";
     cerr << msg << endl;
     throw std::runtime_error(msg);
   }
@@ -106,14 +106,14 @@ int main(int argc, char* argv[])
     ret = send(s, sp + 1, len - (sp + 1 - cstr), 0);
     if (ret < 0)
     {
-      const char* msg = "Could not send unlabeled data!";
+      const char* msg = "Could not send unlabeled data";
       cerr << msg << endl;
       throw std::runtime_error(msg);
     }
     ret = recvall(s, buf, 256);
     if (ret < 0)
     {
-      const char* msg = "Could not receive queries!";
+      const char* msg = "Could not receive queries";
       cerr << msg << endl;
       throw std::runtime_error(msg);
     }
@@ -134,14 +134,14 @@ int main(int argc, char* argv[])
     ret = send(s, cstr, len, 0);
     if (ret < 0)
     {
-      const char* msg = "Could not send labeled data!";
+      const char* msg = "Could not send labeled data";
       cerr << msg << endl;
       throw std::runtime_error(msg);
     }
     ret = recvall(s, buf, 256);
     if (ret < 0)
     {
-      const char* msg = "Could not receive predictions!";
+      const char* msg = "Could not receive predictions";
       cerr << msg << endl;
       throw std::runtime_error(msg);
     }

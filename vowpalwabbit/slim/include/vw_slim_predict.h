@@ -1,170 +1,20 @@
 #pragma once
 
-#include <memory>
-#include <vector>
-#include <string>
 #include <array>
+#include <memory>
+#include <string>
+#include <vector>
 
 // avoid mmap dependency
 #define DISABLE_SHARED_WEIGHTS
 
+#include "array_parameters_dense.h"
 #include "example_predict.h"
 #include "explore.h"
 #include "gd_predict.h"
+#include "interactions.h"
 #include "model_parser.h"
 #include "opts.h"
-#include "interactions.h"
-
-namespace vw_slim
-{
-namespace internal
-{
-template <typename It1, typename It2>
-class location_reference;
-
-template <typename It1, typename It2>
-class location_value
-{
-public:
-  using Val1 = typename std::iterator_traits<It1>::value_type;
-  using Val2 = typename std::iterator_traits<It2>::value_type;
-
-  Val1 _val1;
-  Val2 _val2;
-
-  location_value(const location_reference<It1, It2>& rhs) : _val1(*rhs._ptr1), _val2(*rhs._ptr2) {}
-};
-
-template <typename It1, typename It2>
-class location_reference
-{
-public:
-  It1 _ptr1;
-  It2 _ptr2;
-  using Ref = location_reference<It1, It2>;
-  using Val = location_value<It1, It2>;
-
-  location_reference() = delete;
-
-  location_reference(const Ref& other) : _ptr1(other._ptr1), _ptr2(other._ptr2) {}
-
-  location_reference(It1 first, It2 second) : _ptr1(first), _ptr2(second) {}
-
-  location_reference& operator=(const Val& rhs)
-  {
-    *_ptr1 = rhs._val1;
-    *_ptr2 = rhs._val2;
-    return *this;
-  }
-
-  location_reference& operator=(const Ref& rhs)
-  {
-    *_ptr1 = *rhs._ptr1;
-    *_ptr2 = *rhs._ptr2;
-    return *this;
-  }
-
-  friend void swap(const location_reference& a, const location_reference& b)
-  {
-    std::iter_swap(a._ptr1, b._ptr1);
-    std::iter_swap(a._ptr2, b._ptr2);
-  }
-};
-
-template <typename It1, typename It2>
-class collection_pair_iterator
-    : public std::iterator<std::random_access_iterator_tag, location_value<It1, It2>,  // value type
-          size_t,                                                                      // difference type
-          location_reference<It1, It2>                                                 // reference_type
-          >
-{
-  It1 _ptr1;
-  It2 _ptr2;
-
-public:
-  using Iter = collection_pair_iterator<It1, It2>;
-  using Loc = location_value<It1, It2>;
-  using Ref = location_reference<It1, It2>;
-
-  collection_pair_iterator(It1 first, It2 second) : _ptr1(first), _ptr2(second) {}
-
-  // must support: a) default-construction, b) copy-construction, c) copy-assignment, d) destruction
-  collection_pair_iterator() = default;
-  collection_pair_iterator(const collection_pair_iterator& rhs) = default;
-  collection_pair_iterator& operator=(const collection_pair_iterator& rhs) = default;
-
-  // must support: a == b; a != b;
-  bool operator==(const Iter& rhs) const { return (_ptr1 == rhs._ptr1 && _ptr2 == rhs._ptr2); }
-  bool operator!=(const Iter& rhs) const { return !(operator==(rhs)); }
-
-  // must support: b = *a; a->m ;
-  // must support: *a = t;
-  Ref operator*() { return Ref(_ptr1, _ptr2); }  // Non-conforming - normally returns loc&
-
-  // VS library 14.25.28610 requires operator[] (since it's a random access iterator)
-  Ref operator[](size_t n) { return Ref(_ptr1 + n, _ptr2 + n); }
-
-  // must support: ++a; a++; *a++;
-  Iter& operator++()
-  {
-    ++_ptr1;
-    ++_ptr2;
-    return *this;
-  }
-
-  Iter operator++(int)
-  {
-    Iter ret(*this);
-    ++_ptr1;
-    ++_ptr2;
-    return ret;
-  }
-
-  // must support: --a; a--; *a--;
-  Iter& operator--()
-  {
-    --_ptr1;
-    --_ptr2;
-    return *this;
-  }
-
-  Iter operator--(int)
-  {
-    Iter ret(*this);
-    --_ptr1;
-    --_ptr2;
-    return ret;
-  }
-
-  // must support: a + n; n + a; a - n; a - b
-  Iter operator+(const size_t n) const { return Iter(_ptr1 + n, _ptr2 + n); }
-  // friend Iter operator+(const size_t, const Iter&);
-  Iter operator-(const size_t n) const { return Iter(_ptr1 - n, _ptr2 - n); }
-  size_t operator-(const Iter& rhs) const { return _ptr1 - rhs._ptr1; }
-
-  // must support: a > b; a < b; a <= b; a >= b;
-  bool operator<(const Iter& rhs) const { return _ptr1 < rhs._ptr1; }
-  bool operator>(const Iter& rhs) const { return _ptr1 > rhs._ptr1; }
-  bool operator<=(const Iter& rhs) const { return _ptr1 <= rhs._ptr1; }
-  bool operator>=(const Iter& rhs) const { return _ptr1 >= rhs._ptr1; }
-
-  // must support: a += n; a -= n;
-  Iter& operator+=(size_t n)
-  {
-    _ptr1 += n;
-    _ptr2 += n;
-    return *this;
-  }
-
-  Iter& operator-=(size_t n)
-  {
-    _ptr1 -= n;
-    _ptr2 -= n;
-    return *this;
-  }
-};
-}  // namespace internal
-}  // namespace vw_slim
 
 namespace vw_slim
 {
@@ -184,12 +34,12 @@ uint64_t ceil_log_2(uint64_t v);
 // the complete feature_space of the added namespace is cleared afterwards
 class namespace_copy_guard
 {
-  example_predict& _ex;
+  VW::example_predict& _ex;
   unsigned char _ns;
   bool _remove_ns;
 
 public:
-  namespace_copy_guard(example_predict& ex, unsigned char ns);
+  namespace_copy_guard(VW::example_predict& ex, unsigned char ns);
   ~namespace_copy_guard();
 
   void feature_push_back(feature_value v, feature_index idx);
@@ -197,21 +47,21 @@ public:
 
 class feature_offset_guard
 {
-  example_predict& _ex;
+  VW::example_predict& _ex;
   uint64_t _old_ft_offset;
 
 public:
-  feature_offset_guard(example_predict& ex, uint64_t ft_offset);
+  feature_offset_guard(VW::example_predict& ex, uint64_t ft_offset);
   ~feature_offset_guard();
 };
 
 class stride_shift_guard
 {
-  example_predict& _ex;
+  VW::example_predict& _ex;
   uint64_t _shift;
 
 public:
-  stride_shift_guard(example_predict& ex, uint64_t shift);
+  stride_shift_guard(VW::example_predict& ex, uint64_t shift);
   ~stride_shift_guard();
 };
 
@@ -225,7 +75,7 @@ class vw_predict
   std::string _id;
   std::string _version;
   std::string _command_line_arguments;
-  std::vector<std::vector<namespace_index>> _interactions;
+  std::vector<std::vector<VW::namespace_index>> _interactions;
   std::vector<std::vector<extent_term>> _unused_extent_interactions;
   INTERACTIONS::generate_interactions_object_cache _generate_interactions_object_cache;
   INTERACTIONS::interactions_generator _generate_interactions;
@@ -237,7 +87,7 @@ class vw_predict
   float _minimum_epsilon;
   float _epsilon;
   float _lambda;
-  int _bag_size;
+  size_t _bag_size;
   uint32_t _num_bits;
 
   uint32_t _stride_shift;
@@ -275,6 +125,8 @@ public:
     RETURN_ON_FAIL(mp.skip(sizeof(float)));  // "max_label"
 
     RETURN_ON_FAIL(mp.read("num_bits", _num_bits));
+    // Cannot use more than 32 bits on a 32 bit architecture
+    if (sizeof(size_t) == 4 && _num_bits > 32) { return E_VW_PREDICT_ERR_INVALID_MODEL; }
 
     RETURN_ON_FAIL(mp.skip(sizeof(uint32_t)));  // "lda"
 
@@ -304,7 +156,7 @@ public:
 
     // VW performs the following transformation as a side-effect of looking for duplicates.
     // This affects how interaction hashes are generated.
-    std::vector<std::vector<namespace_index>> vec_sorted;
+    std::vector<std::vector<VW::namespace_index>> vec_sorted;
     for (auto& interaction : _interactions) { std::sort(std::begin(interaction), std::end(interaction)); }
 
     for (const auto& inter : _interactions)
@@ -322,8 +174,12 @@ public:
     if (_command_line_arguments.find("--cb_explore_adf") != std::string::npos)
     {
       // parse exploration options
-      if (find_opt_int(_command_line_arguments, "--bag", _bag_size))
+      int bag_size;
+      if (find_opt_int(_command_line_arguments, "--bag", bag_size))
       {
+        if (bag_size < 0) { return E_VW_PREDICT_ERR_INVALID_MODEL; }
+        _bag_size = static_cast<size_t>(bag_size);
+
         _exploration = vw_predict_exploration::bag;
         num_weights = _bag_size;
 
@@ -371,7 +227,6 @@ public:
     if (gd_resume) return E_VW_PREDICT_ERR_GD_RESUME_NOT_SUPPORTED;
 
     // read sparse weights into dense
-    uint64_t weight_length = (uint64_t)1 << _num_bits;
     _stride_shift = (uint32_t)ceil_log_2(num_weights);
 
     RETURN_ON_FAIL(mp.read_weights<W>(_weights, _num_bits, _stride_shift));
@@ -409,7 +264,7 @@ public:
    * @param score The output score produced by the model.
    * @return int Returns 0 (S_VW_PREDICT_OK) if succesful, otherwise one of the error codes (see E_VW_PREDICT_ERR_*).
    */
-  int predict(example_predict& ex, float& score)
+  int predict(VW::example_predict& ex, float& score)
   {
     if (!_model_loaded) return E_VW_PREDICT_ERR_NO_MODEL_LOADED;
 
@@ -440,7 +295,8 @@ public:
   }
 
   // multiclass classification
-  int predict(example_predict& shared, example_predict* actions, size_t num_actions, std::vector<float>& out_scores)
+  int predict(
+      VW::example_predict& shared, VW::example_predict* actions, size_t num_actions, std::vector<float>& out_scores)
   {
     if (!_model_loaded) return E_VW_PREDICT_ERR_NO_MODEL_LOADED;
 
@@ -448,7 +304,7 @@ public:
 
     out_scores.resize(num_actions);
 
-    example_predict* action = actions;
+    VW::example_predict* action = actions;
     for (size_t i = 0; i < num_actions; i++, action++)
     {
       std::vector<std::unique_ptr<namespace_copy_guard>> ns_copy_guards;
@@ -472,7 +328,7 @@ public:
     return S_VW_PREDICT_OK;
   }
 
-  int predict(const char* event_id, example_predict& shared, example_predict* actions, size_t num_actions,
+  int predict(const char* event_id, VW::example_predict& shared, VW::example_predict* actions, size_t num_actions,
       std::vector<float>& pdf, std::vector<int>& ranking)
   {
     if (!_model_loaded) return E_VW_PREDICT_ERR_NO_MODEL_LOADED;
@@ -519,15 +375,15 @@ public:
         std::vector<std::unique_ptr<stride_shift_guard>> stride_shift_guards;
         stride_shift_guards.push_back(
             std::unique_ptr<stride_shift_guard>(new stride_shift_guard(shared, _stride_shift)));
-        example_predict* actions_end = actions + num_actions;
-        for (example_predict* action = actions; action != actions_end; ++action)
+        VW::example_predict* actions_end = actions + num_actions;
+        for (VW::example_predict* action = actions; action != actions_end; ++action)
           stride_shift_guards.push_back(
               std::unique_ptr<stride_shift_guard>(new stride_shift_guard(*action, _stride_shift)));
 
         for (size_t i = 0; i < _bag_size; i++)
         {
           std::vector<std::unique_ptr<feature_offset_guard>> feature_offset_guards;
-          for (example_predict* action = actions; action != actions_end; ++action)
+          for (VW::example_predict* action = actions; action != actions_end; ++action)
             feature_offset_guards.push_back(
                 std::unique_ptr<feature_offset_guard>(new feature_offset_guard(*action, i)));
 
@@ -583,16 +439,36 @@ public:
     // Initialize ranking with actions 0,1,2,3 ...
     std::iota(ranking_begin, ranking_last, 0);
 
-    // Pdf starts out in the same order as ranking.  Ranking and pdf should been sorted
-    // in the order specified by scores.
-    using CP = internal::collection_pair_iterator<OutputIt, PdfIt>;
-    using Iter = typename CP::Iter;
-    using Loc = typename CP::Loc;
-    const Iter begin_coll(ranking_begin, pdf_first);
-    const Iter end_coll(ranking_last, pdf_last);
-    std::sort(begin_coll, end_coll, [&scores_first](const Loc& l, const Loc& r) {
-      return scores_first[size_t(l._val1)] < scores_first[size_t(r._val1)];
-    });
+    assert(std::distance(pdf_first, pdf_last) == std::distance(scores_first, scores_last));
+    assert(std::distance(pdf_first, pdf_last) == std::distance(ranking_begin, ranking_last));
+
+    assert(pdf_first <= pdf_last);
+    const size_t size = std::distance(pdf_first, pdf_last);
+    using zipped_tuple_t =
+        std::tuple<typename PdfIt::value_type, typename InputScoreIt::value_type, typename OutputIt::value_type>;
+    std::vector<zipped_tuple_t> zipped_values;
+    zipped_values.reserve(size);
+    auto pdf_it = pdf_first;
+    auto scores_it = scores_first;
+    auto ranking_it = ranking_begin;
+    for (size_t i = 0; i < size; i++)
+    {
+      zipped_values.emplace_back(*pdf_it, *scores_it, *ranking_it);
+      ++pdf_it;
+      ++scores_it;
+      ++ranking_it;
+    }
+
+    std::sort(zipped_values.begin(), zipped_values.end(),
+        [](const zipped_tuple_t& l, const zipped_tuple_t& r) { return std::get<1>(l) < std::get<1>(r); });
+
+    for (const auto& zipped_value : zipped_values)
+    {
+      *pdf_first = std::get<0>(zipped_value);
+      *ranking_begin = std::get<2>(zipped_value);
+      pdf_first++;
+      ranking_begin++;
+    }
 
     return S_EXPLORATION_OK;
   }

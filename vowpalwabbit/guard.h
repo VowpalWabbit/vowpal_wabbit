@@ -3,8 +3,9 @@
 // license as described in the file LICENSE.
 #pragma once
 
+#include "vw/common/future_compat.h"
+
 #include <utility>
-#include "future_compat.h"
 
 namespace VW
 {

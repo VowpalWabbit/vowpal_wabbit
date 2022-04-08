@@ -4,11 +4,11 @@
 
 #pragma once
 
-#include <cstddef>
-
 #include "allreduce.h"
 #include "global_data.h"
-#include "vw_exception.h"
+#include "vw/common/vw_exception.h"
+
+#include <cstddef>
 
 template <class T, void (*f)(T&, const T&)>
 void all_reduce(VW::workspace& all, T* buffer, const size_t n)
@@ -19,7 +19,7 @@ void all_reduce(VW::workspace& all, T* buffer, const size_t n)
     {
       auto* all_reduce_sockets_ptr = dynamic_cast<AllReduceSockets*>(all.all_reduce);
       if (all_reduce_sockets_ptr == nullptr) { THROW("all_reduce was not a AllReduceSockets* object") }
-      all_reduce_sockets_ptr->all_reduce<T, f>(buffer, n);
+      all_reduce_sockets_ptr->all_reduce<T, f>(buffer, n, all.logger);
       break;
     }
     case AllReduceType::Thread:

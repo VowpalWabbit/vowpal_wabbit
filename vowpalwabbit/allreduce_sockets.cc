@@ -6,35 +6,36 @@
 This implements the allreduce function of MPI.  Code primarily by
 Alekh Agarwal and John Langford, with help Olivier Chapelle.
  */
+#include <cerrno>
+#include <cmath>
+#include <cstdio>
+#include <cstdlib>
+#include <cstring>
+#include <ctime>
 #include <iostream>
 #include <sstream>
-#include <cstdio>
-#include <cmath>
-#include <ctime>
-#include <errno.h>
-#include <string.h>
-#include <stdlib.h>
 #ifdef _WIN32
-#  define NOMINMAX
+#  ifndef NOMINMAX
+#    define NOMINMAX
+#  endif
+
 #  define _WINSOCK_DEPRECATED_NO_WARNINGS
+#  include <WS2tcpip.h>
 #  include <WinSock2.h>
 #  include <Windows.h>
-#  include <WS2tcpip.h>
 #  include <io.h>
 #else
-#  include <unistd.h>
 #  include <arpa/inet.h>
+#  include <unistd.h>
 #endif
-#include <sys/timeb.h>
 #include "allreduce.h"
-#include "vw_exception.h"
-
 #include "io/logger.h"
+#include "vw/common/vw_exception.h"
 
-namespace logger = VW::io::logger;
+#include <sys/timeb.h>
 
 // port is already in network order
-socket_t AllReduceSockets::sock_connect(const uint32_t ip, const int port)
+socket_t AllReduceSockets::sock_connect(const uint32_t ip, const int port, VW::io::logger& logger)
 {
   socket_t sock = socket(PF_INET, SOCK_STREAM, 0);
   if (sock == -1) THROWERRNO("socket");
@@ -56,7 +57,7 @@ socket_t AllReduceSockets::sock_connect(const uint32_t ip, const int port)
             NI_NUMERICSERV))
       THROWERRNO("getnameinfo(" << dotted_quad << ")");
 
-    logger::errlog_info("connecting to {0} = {1}:{2}", dotted_quad, hostname, ntohs(static_cast<u_short>(port)));
+    logger.err_info("connecting to {0} = {1}:{2}", dotted_quad, hostname, ntohs(static_cast<u_short>(port)));
   }
 
   size_t count = 0;
@@ -64,7 +65,7 @@ socket_t AllReduceSockets::sock_connect(const uint32_t ip, const int port)
   while ((ret = connect(sock, reinterpret_cast<sockaddr*>(&far_end), sizeof(far_end))) == -1 && count < 100)
   {
     count++;
-    logger::errlog_error("connection attempt {0} failed: {1}", count, VW::strerror_to_string(errno));
+    logger.err_error("connection attempt {0} failed: {1}", count, VW::strerror_to_string(errno));
 #ifdef _WIN32
     Sleep(1);
 #else
@@ -75,7 +76,7 @@ socket_t AllReduceSockets::sock_connect(const uint32_t ip, const int port)
   return sock;
 }
 
-socket_t AllReduceSockets::getsock()
+socket_t AllReduceSockets::getsock(VW::io::logger& logger)
 {
   socket_t sock = socket(PF_INET, SOCK_STREAM, 0);
 #ifdef _WIN32
@@ -90,22 +91,18 @@ socket_t AllReduceSockets::getsock()
 #ifndef _WIN32
   int on = 1;
   if (setsockopt(sock, SOL_SOCKET, SO_REUSEADDR, reinterpret_cast<char*>(&on), sizeof(on)) < 0)
-  {
-    logger::errlog_error("setsockopt SO_REUSEADDR: {}", VW::strerror_to_string(errno));
-  }
+  { logger.err_error("setsockopt SO_REUSEADDR: {}", VW::strerror_to_string(errno)); }
 #endif
 
   // Enable TCP Keep Alive to prevent socket leaks
   int enableTKA = 1;
   if (setsockopt(sock, SOL_SOCKET, SO_KEEPALIVE, reinterpret_cast<char*>(&enableTKA), sizeof(enableTKA)) < 0)
-  {
-    logger::errlog_error("setsockopt SO_KEEPALIVE: {}", VW::strerror_to_string(errno));
-  }
+  { logger.err_error("setsockopt SO_KEEPALIVE: {}", VW::strerror_to_string(errno)); }
 
   return sock;
 }
 
-void AllReduceSockets::all_reduce_init()
+void AllReduceSockets::all_reduce_init(VW::io::logger& logger)
 {
 #ifdef _WIN32
   WSAData wsaData;
@@ -121,34 +118,34 @@ void AllReduceSockets::all_reduce_init()
 
   uint32_t master_ip = *(reinterpret_cast<uint32_t*>(master->h_addr));
 
-  socket_t master_sock = sock_connect(master_ip, htons(static_cast<u_short>(port)));
+  socket_t master_sock = sock_connect(master_ip, htons(static_cast<u_short>(port)), logger);
   if (send(master_sock, reinterpret_cast<const char*>(&unique_id), sizeof(unique_id), 0) <
       static_cast<int>(sizeof(unique_id)))
-  { THROW("write unique_id=" << unique_id << " to span server failed"); }
+  { THROW("Write unique_id=" << unique_id << " to span server failed"); }
   else
   {
-    logger::errlog_info("wrote unique_id={}", unique_id);
+    logger.err_info("wrote unique_id={}", unique_id);
   }
   if (send(master_sock, reinterpret_cast<const char*>(&total), sizeof(total), 0) < static_cast<int>(sizeof(total)))
-  { THROW("write total=" << total << " to span server failed"); }
+  { THROW("Write total=" << total << " to span server failed"); }
   else
   {
-    logger::errlog_info("wrote total={}", total);
+    logger.err_info("wrote total={}", total);
   }
   if (send(master_sock, (char*)&node, sizeof(node), 0) < static_cast<int>(sizeof(node)))
-  { THROW("write node=" << node << " to span server failed"); }
+  { THROW("Write node=" << node << " to span server failed"); }
   else
   {
-    logger::errlog_info("wrote node={}", node);
+    logger.err_info("wrote node={}", node);
   }
   int ok;
   if (recv(master_sock, reinterpret_cast<char*>(&ok), sizeof(ok), 0) < static_cast<int>(sizeof(ok)))
-  { THROW("read ok from span server failed"); }
+  { THROW("Read ok from span server failed"); }
   else
   {
-    logger::errlog_info("read ok={}", ok);
+    logger.err_info("Read ok={}", ok);
   }
-  if (!ok) THROW("mapper already connected");
+  if (!ok) THROW("Mapper already connected");
 
   uint16_t kid_count;
   uint16_t parent_port;
@@ -156,17 +153,17 @@ void AllReduceSockets::all_reduce_init()
 
   if (recv(master_sock, reinterpret_cast<char*>(&kid_count), sizeof(kid_count), 0) <
       static_cast<int>(sizeof(kid_count)))
-  { THROW("read kid_count from span server failed"); }
+  { THROW("Read kid_count from span server failed"); }
   else
   {
-    logger::errlog_info("read kid_count={}", kid_count);
+    logger.err_info("Read kid_count={}", kid_count);
   }
 
   auto sock = static_cast<socket_t>(-1);
   short unsigned int netport = htons(26544);
   if (kid_count > 0)
   {
-    sock = getsock();
+    sock = getsock(logger);
     sockaddr_in address;
     address.sin_family = AF_INET;
     address.sin_addr.s_addr = htonl(INADDR_ANY);
@@ -193,9 +190,9 @@ void AllReduceSockets::all_reduce_init()
       {
         if (listen(sock, kid_count) < 0)
         {
-	  logger::errlog_error("listen: {}", VW::strerror_to_string(errno));
+          logger.err_error("Listen: {}", VW::strerror_to_string(errno));
           CLOSESOCK(sock);
-          sock = getsock();
+          sock = getsock(logger);
         }
         else
         {
@@ -207,36 +204,36 @@ void AllReduceSockets::all_reduce_init()
 
   if (send(master_sock, reinterpret_cast<const char*>(&netport), sizeof(netport), 0) <
       static_cast<int>(sizeof(netport)))
-    THROW("write netport failed!");
+    THROW("Write netport failed");
 
   if (recv(master_sock, reinterpret_cast<char*>(&parent_ip), sizeof(parent_ip), 0) <
       static_cast<int>(sizeof(parent_ip)))
-  { THROW("read parent_ip failed!"); }
+  { THROW("Read parent_ip failed"); }
   else
   {
     char dotted_quad[INET_ADDRSTRLEN];
     if (nullptr == inet_ntop(AF_INET, reinterpret_cast<char*>(&parent_ip), dotted_quad, INET_ADDRSTRLEN))
-    {
-      logger::errlog_error("read parent_ip={0}(inet_ntop: {1})", parent_ip, VW::strerror_to_string(errno));
-    }
+    { logger.err_error("Read parent_ip={0}(inet_ntop: {1})", parent_ip, VW::strerror_to_string(errno)); }
     else
     {
-      logger::errlog_info("read parent_ip={}", dotted_quad);
+      logger.err_info("Read parent_ip={}", dotted_quad);
     }
   }
   if (recv(master_sock, reinterpret_cast<char*>(&parent_port), sizeof(parent_port), 0) <
       static_cast<int>(sizeof(parent_port)))
-  { THROW("read parent_port failed!"); }
+  { THROW("Read parent_port failed"); }
   else
   {
-    logger::errlog_info("read parent_port={}", parent_port);
+    logger.err_info("Read parent_port={}", parent_port);
   }
 
   CLOSESOCK(master_sock);
 
-  if (parent_ip != static_cast<uint32_t>(-1)) { socks.parent = sock_connect(parent_ip, parent_port); }
+  if (parent_ip != static_cast<uint32_t>(-1)) { socks.parent = sock_connect(parent_ip, parent_port, logger); }
   else
+  {
     socks.parent = static_cast<socket_t>(-1);
+  }
 
   socks.children[0] = static_cast<socket_t>(-1);
   socks.children[1] = static_cast<socket_t>(-1);
@@ -259,7 +256,7 @@ void AllReduceSockets::all_reduce_init()
     socks.children[i] = f;
   }
 
-  if (kid_count > 0) CLOSESOCK(sock);
+  if (kid_count > 0) { CLOSESOCK(sock); }
 }
 
 void AllReduceSockets::pass_down(char* buffer, const size_t parent_read_pos, size_t& children_sent_pos)
@@ -290,17 +287,17 @@ void AllReduceSockets::broadcast(char* buffer, const size_t n)
   // parent_sent_pos <= right_read_pos
 
   if (socks.parent == -1) { parent_read_pos = n; }
-  if (socks.children[0] == -1 && socks.children[1] == -1) children_sent_pos = n;
+  if (socks.children[0] == -1 && socks.children[1] == -1) { children_sent_pos = n; }
 
   while (parent_read_pos < n || children_sent_pos < n)
   {
     pass_down(buffer, parent_read_pos, children_sent_pos);
-    if (parent_read_pos >= n && children_sent_pos >= n) break;
+    if (parent_read_pos >= n && children_sent_pos >= n) { break; }
 
     if (socks.parent != -1)
     {
       // there is data to be read from the parent
-      if (parent_read_pos == n) THROW("I think parent has no data to send but he thinks he has");
+      if (parent_read_pos == n) THROW("There is no data to be read from the parent");
 
       size_t count = std::min(ar_buf_size, n - parent_read_pos);
       int read_size = recv(socks.parent, buffer + parent_read_pos, static_cast<int>(count), 0);

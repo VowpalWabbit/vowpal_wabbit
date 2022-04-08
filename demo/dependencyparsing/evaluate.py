@@ -5,22 +5,26 @@ import os
 import sys
 from collections import defaultdict
 
+
 def pc(num, den):
-    return (num / float(den+1e-100)) * 100
+    return (num / float(den + 1e-100)) * 100
+
 
 def fmt_acc(label, n, l_corr, u_corr, total_errs):
     l_pc = pc(l_corr, n)
     u_pc = pc(u_corr, n)
     err_pc = pc(n - l_corr, total_errs)
-    return '%s\t%d\t%.3f\t%.3f\t%.3f' % (label, n, l_pc, u_pc, err_pc)
+    return "%s\t%d\t%.3f\t%.3f\t%.3f" % (label, n, l_pc, u_pc, err_pc)
 
 
 def gen_toks(loc):
-    sent_strs = open(str(loc)).read().strip().split('\n\n')
+    sent_strs = open(str(loc)).read().strip().split("\n\n")
     token = None
     i = 0
     for sent_str in sent_strs:
-        tokens = [Token(i, tok_str.split()) for i, tok_str in enumerate(sent_str.split('\n'))]
+        tokens = [
+            Token(i, tok_str.split()) for i, tok_str in enumerate(sent_str.split("\n"))
+        ]
         for token in tokens:
             yield sent_str, token
 
@@ -37,24 +41,24 @@ class Token(object):
             new_attrs.append(attrs[-3])
             attrs = new_attrs
         self.label = attrs[-1]
-        if self.label.lower() == 'root':
-            self.label = 'ROOT'
+        if self.label.lower() == "root":
+            self.label = "ROOT"
         try:
             head = int(attrs[-2])
         except:
             try:
-                self.label = 'P'
+                self.label = "P"
                 head = int(attrs[-1])
             except:
-                print attrs
+                print(attrs)
                 raise
         attrs.pop()
         attrs.pop()
         self.head = head
         self.pos = attrs.pop()
         self.word = attrs.pop()
-        self.dir = 'R' if head >= 0 and head < self.id else 'L'
-    
+        self.dir = "R" if head >= 0 and head < self.id else "L"
+
 
 def mymain(test_loc, gold_loc, eval_punct=False):
     if not os.path.exists(test_loc):
@@ -67,7 +71,7 @@ def mymain(test_loc, gold_loc, eval_punct=False):
     l_nc = 0
     for (sst, t), (ss, g) in zip(gen_toks(test_loc), gen_toks(gold_loc)):
         if not eval_punct and g.word in ",.-;:'\"!?`{}()[]":
-			continue
+            continue
         prev_g = g
         prev_t = t
         u_c = g.head == t.head
@@ -79,7 +83,7 @@ def mymain(test_loc, gold_loc, eval_punct=False):
         u_by_label[g.dir][g.label] += u_c
         l_by_label[g.dir][g.label] += l_c
     n_l_err = N - l_nc
-    for D in ['L', 'R']:
+    for D in ["L", "R"]:
         n_other = 0
         l_other = 0
         u_other = 0
@@ -93,12 +97,13 @@ def mymain(test_loc, gold_loc, eval_punct=False):
             else:
                 l_corr = l_by_label[D][label]
                 u_corr = u_by_label[D][label]
-    yield 'U: %.3f' % pc(u_nc, N)
-    yield 'L: %.3f' % pc(l_nc, N)
+    yield "U: %.3f" % pc(u_nc, N)
+    yield "L: %.3f" % pc(l_nc, N)
 
-if __name__ == '__main__':
-	if(sys.argv < 3):
-		print 'Usage: parsed_pred_file gold_test_conll_file'
-		sys.exit(0)
-	for line in  mymain(sys.argv[1], sys.argv[2], eval_punct=False):
-		print line
+
+if __name__ == "__main__":
+    if sys.argv < 3:
+        print("Usage: parsed_pred_file gold_test_conll_file")
+        sys.exit(0)
+    for line in mymain(sys.argv[1], sys.argv[2], eval_punct=False):
+        print(line)

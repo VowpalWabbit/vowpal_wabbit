@@ -3,8 +3,9 @@
 // license as described in the file LICENSE.
 #pragma once
 
+#include "vw/common/future_compat.h"
+
 #include <utility>
-#include "future_compat.h"
 
 // While it is a general concept this specific implementation of scope based cleanup was inspired by
 // https://github.com/microsoft/wil/blob/cd51fa9d3c24e9e9f5d4cdf1a9768d68f441fc48/include/wil/resource.h#L543

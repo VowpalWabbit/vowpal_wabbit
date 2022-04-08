@@ -3,11 +3,11 @@
 // license as described in the file LICENSE.
 #pragma once
 
+#include "config.h"
+#include "vw/common/future_compat.h"
+
 #include <cinttypes>
 #include <string>
-
-#include "config.h"
-#include "future_compat.h"
 
 namespace VW
 {

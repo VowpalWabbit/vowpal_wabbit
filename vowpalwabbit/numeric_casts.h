@@ -1,9 +1,9 @@
 #pragma once
 
+#include "vw/common/vw_exception.h"
+
 #include <limits>
 #include <sstream>
-
-#include "vw_exception.h"
 
 namespace VW
 {
@@ -25,14 +25,14 @@ RetType cast_to_smaller_type(InputType input)
   {
     std::stringstream ss;
     ss << "In cast_to_smaller_type '" << input << "' cannot be cast to smaller type as it is too large.";
-    THROW(ss.str());
+    THROW_OR_RETURN(ss.str(), RetType{});
   }
 
   if (input < static_cast<InputType>(std::numeric_limits<RetType>::min()))
   {
     std::stringstream ss;
     ss << "In cast_to_smaller_type '" << input << "' cannot be cast to smaller type as it is too small.";
-    THROW(ss.str());
+    THROW_OR_RETURN(ss.str(), RetType{});
   }
 
   return static_cast<RetType>(input);
@@ -48,7 +48,7 @@ RetType cast_signed_to_unsigned(InputType input)
   {
     std::stringstream ss;
     ss << "In cast_signed_to_unsigned '" << input << "' cannot be cast to unsigned type as it is negative.";
-    THROW(ss.str());
+    THROW_OR_RETURN(ss.str(), RetType{});
   }
 
   auto unsigned_input = static_cast<typename std::make_unsigned<InputType>::type>(input);

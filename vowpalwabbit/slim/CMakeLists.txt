@@ -3,10 +3,23 @@ project(vwslim LANGUAGES CXX)
 
 option(BUILD_TESTS "Build and enable tests." ON)
 
+if(BUILD_TESTS)
+  message(WARNING "Use standard option BUILD_TESTING instead of BUILD_TESTS. BUILD_TESTS will be removed in the future.")
+  SET(BUILD_TESTING ${BUILD_TESTS} CACHE BOOL "Set value to BUILD_TESTING")
+endif()
+
+set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_CURRENT_LIST_DIR}/../../cmake/")
+include(VowpalWabbitUtils)
+
+if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
+    include(CTest)
+endif()
+
+add_subdirectory(../../ext_libs/string-view-lite ${CMAKE_CURRENT_BINARY_DIR}/string-view-lite)
 add_subdirectory(../../explore ${CMAKE_CURRENT_BINARY_DIR}/explore)
+add_subdirectory(../common ${CMAKE_CURRENT_BINARY_DIR}/common)
 add_subdirectory(src)
 
-if (BUILD_TESTS)
-  enable_testing()
+if (BUILD_TESTING)
   add_subdirectory(test)
 endif ()

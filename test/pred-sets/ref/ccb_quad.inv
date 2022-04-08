@@ -1,5 +1,5 @@
-Version 8.11.0
-Id 
+Version 9.1.0
+Id
 Min label:-1
 Max label:0
 bits:18
@@ -28,6 +28,8 @@ total_features 2040
 total_weight 15.2712
 sd::oec.weighted_labeled_examples 8
 current_pass 1
+l1_state 0
+l2_state 1
 Action^fff*User^a:431:-0.0420591 3.99279 1
 Action^fff*_id^index1:1661:-0.0545174 4.26212 1
 Slot^h*User^c:2034:-0.0509719 1.3541 1

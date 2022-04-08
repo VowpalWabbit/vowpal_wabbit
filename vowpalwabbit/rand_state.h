@@ -3,9 +3,9 @@
 // license as described in the file LICENSE.
 #pragma once
 
-#include <cstdint>
-
 #include "rand48.h"
+
+#include <cstdint>
 
 namespace VW
 {

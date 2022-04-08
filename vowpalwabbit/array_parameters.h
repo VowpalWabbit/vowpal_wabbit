@@ -4,10 +4,13 @@
 
 #pragma once
 
-#include <unordered_map>
+#ifdef PRIVACY_ACTIVATION
+#  include <bitset>
+#endif
+
 #include <cstddef>
 #include <functional>
-#include <bitset>
+#include <unordered_map>
 
 #ifndef _WIN32
 #  define NOMINMAX
@@ -21,7 +24,7 @@
 #endif
 
 #include "array_parameters_dense.h"
-#include "vw_exception.h"
+#include "vw/common/vw_exception.h"
 
 class sparse_parameters;
 using weight_map = std::unordered_map<uint64_t, weight*>;
@@ -172,12 +175,12 @@ public:
   }
 
   // const iterator
-  const_iterator cbegin()
+  const_iterator cbegin() const
   {
     weight_map::iterator i = _map.begin();
     return const_iterator(i, stride());
   }
-  const_iterator cend()
+  const_iterator cend() const
   {
     weight_map::iterator i = _map.begin();
     return const_iterator(i, stride());

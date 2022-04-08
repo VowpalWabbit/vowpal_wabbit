@@ -3,18 +3,21 @@
 // license as described in the file LICENSE.
 #pragma once
 
-#include <vector>
+#include "io_buf.h"
+#include "label_parser.h"
+#include "v_array.h"
+#include "vw_fwd.h"
+
 #include <cfloat>
 #include <cstdint>
 #include <utility>
+#include <vector>
 
-#include "reductions_fwd.h"
-#include "label_parser.h"
-#include "v_array.h"
-
+namespace VW
+{
 struct example;
 using multi_ex = std::vector<example*>;
-
+}  // namespace VW
 namespace CB
 {
 // By default a cb class does not contain an observed cost.
@@ -43,13 +46,13 @@ struct label
   float weight = 1.f;
 };
 
-extern label_parser cb_label;                  // for learning
-bool ec_is_example_header(example const& ec);  // example headers look like "shared"
+extern VW::label_parser cb_label;                  // for learning
+bool ec_is_example_header(VW::example const& ec);  // example headers look like "shared"
 
 std::pair<bool, cb_class> get_observed_cost_cb(const label& ld);
 
-void print_update(VW::workspace& all, bool is_test, const example& ec, const multi_ex* ec_seq, bool action_scores,
-    const CB::cb_class* known_cost);
+void print_update(VW::workspace& all, bool is_test, const VW::example& ec, const VW::multi_ex* ec_seq,
+    bool action_scores, const CB::cb_class* known_cost);
 }  // namespace CB
 
 namespace CB_EVAL
@@ -60,5 +63,18 @@ struct label
   CB::label event;
 };
 
-extern label_parser cb_eval;  // for evaluation of an arbitrary policy.
+extern VW::label_parser cb_eval;  // for evaluation of an arbitrary policy.
 }  // namespace CB_EVAL
+
+namespace VW
+{
+namespace model_utils
+{
+size_t read_model_field(io_buf&, CB::cb_class&);
+size_t write_model_field(io_buf&, const CB::cb_class&, const std::string&, bool);
+size_t read_model_field(io_buf&, CB::label&);
+size_t write_model_field(io_buf&, const CB::label&, const std::string&, bool);
+size_t read_model_field(io_buf&, CB_EVAL::label&);
+size_t write_model_field(io_buf&, const CB_EVAL::label&, const std::string&, bool);
+}  // namespace model_utils
+}  // namespace VW

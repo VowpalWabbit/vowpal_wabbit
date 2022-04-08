@@ -1,29 +1,29 @@
-WARNING: model file has set of {-q, --cubic, --interactions} settings stored, but they'll be OVERRIDEN by set of {-q, --cubic, --interactions} settings from command line.
 creating quadratic features for pairs: UA
 only testing
-Num weight bits = 18
-learning rate = 0.5
-initial_t = 0
-power_t = 0.5
 using no cache
 Reading datafile = train-sets/cb_load.dat
 num sources = 1
+Num weight bits = 18
+learning rate = 0.5
+initial_t = 113
+power_t = 0.5
+cb_type = mtr
 Enabled reductions: gd, scorer-identity, csoaa_ldf-rank, cb_adf, cb_explore_adf_first, shared_feature_merger
 Input label = cb
 Output pred = action_probs
-average  since         example        example  current  current  current
-loss     last          counter         weight    label  predict features
-0.000000 0.000000            1            1.0 4:0:0.14        0:0.142857...       49
-0.000000 0.000000            2            2.0 0:0:0.14        0:0.142857...       49
-0.000000 0.000000            4            4.0 1:0:0.14        2:0.142857...       49
-0.000000 0.000000            8            8.0 3:0:0.14        4:0.142857...       49
-0.000000 0.000000           16           16.0 3:0:0.14        4:0.142857...       49
-0.000000 0.000000           32           32.0 3:0:0.14        2:0.142857...       49
--0.156021 -0.312042           64           64.0 0:0:0.77        0:0.142857...       49
+average  since         example        example        current        current  current
+loss     last          counter         weight          label        predict features
+0.000000 0.000000            1            1.0       4:0:0.14         0:0.14       42
+0.000000 0.000000            2            2.0       0:0:0.14         0:0.14       42
+0.000000 0.000000            4            4.0       1:0:0.14         2:0.14       42
+0.000000 0.000000            8            8.0       3:0:0.14         4:0.14       42
+0.000000 0.000000           16           16.0       3:0:0.14         4:0.14       42
+0.000000 0.000000           32           32.0       3:0:0.14         2:0.14       42
+-0.15602 -0.31204           64           64.0       0:0:0.77         0:0.14       42
 
 finished run
 number of examples = 113
 weighted example sum = 113.000000
 weighted label sum = 0.000000
 average loss = -0.124290
-total feature number = 5537
+total feature number = 4746

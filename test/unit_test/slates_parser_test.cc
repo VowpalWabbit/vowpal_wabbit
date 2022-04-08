@@ -2,25 +2,26 @@
 // individual contributors. All rights reserved. Released under a BSD (revised)
 // license as described in the file LICENSE.
 
-#include <boost/test/unit_test.hpp>
-#include <boost/test/test_tools.hpp>
-
-#include "test_common.h"
-
-#include <vector>
-#include "slates_label.h"
-#include "parser.h"
+#include "io/logger.h"
 #include "parse_primitives.h"
-#include "vw_string_view.h"
+#include "parser.h"
+#include "slates_label.h"
+#include "test_common.h"
+#include "vw/common/string_view.h"
+
+#include <boost/test/test_tools.hpp>
+#include <boost/test/unit_test.hpp>
+#include <vector>
 
 void parse_slates_label(VW::string_view label, VW::slates::label& l)
 {
   std::vector<VW::string_view> words;
   tokenize(' ', label, words);
   VW::slates::default_label(l);
-  reduction_features red_fts;
+  VW::reduction_features red_fts;
   VW::label_parser_reuse_mem mem;
-  VW::slates::parse_label(l, mem, words);
+  auto null_logger = VW::io::create_null_logger();
+  VW::slates::parse_label(l, mem, words, null_logger);
 }
 
 BOOST_AUTO_TEST_CASE(slates_parse_label)
@@ -112,7 +113,7 @@ BOOST_AUTO_TEST_CASE(slates_cache_shared_label)
 
   VW::slates::label label;
   parse_slates_label("slates shared 0.5", label);
-  VW::slates::cache_label(label, io_writer);
+  VW::model_utils::write_model_field(io_writer, label, "", false);
   io_writer.flush();
 
   io_buf io_reader;
@@ -120,7 +121,7 @@ BOOST_AUTO_TEST_CASE(slates_cache_shared_label)
 
   VW::slates::label uncached_label;
   VW::slates::default_label(uncached_label);
-  VW::slates::read_cached_label(uncached_label, io_reader);
+  VW::model_utils::read_model_field(io_reader, uncached_label);
 
   BOOST_CHECK_EQUAL(uncached_label.type, VW::slates::example_type::shared);
   BOOST_CHECK_EQUAL(uncached_label.labeled, true);
@@ -135,7 +136,7 @@ BOOST_AUTO_TEST_CASE(slates_cache_action_label)
 
   VW::slates::label label;
   parse_slates_label("slates action 5", label);
-  VW::slates::cache_label(label, io_writer);
+  VW::model_utils::write_model_field(io_writer, label, "", false);
   io_writer.flush();
 
   io_buf io_reader;
@@ -143,7 +144,7 @@ BOOST_AUTO_TEST_CASE(slates_cache_action_label)
 
   VW::slates::label uncached_label;
   VW::slates::default_label(uncached_label);
-  VW::slates::read_cached_label(uncached_label, io_reader);
+  VW::model_utils::read_model_field(io_reader, uncached_label);
 
   BOOST_CHECK_EQUAL(uncached_label.type, VW::slates::example_type::action);
   BOOST_CHECK_EQUAL(uncached_label.labeled, false);
@@ -158,7 +159,7 @@ BOOST_AUTO_TEST_CASE(slates_cache_slot_label)
 
   VW::slates::label label;
   parse_slates_label("slates slot 0:0.5,1:0.25,2:0.25", label);
-  VW::slates::cache_label(label, io_writer);
+  VW::model_utils::write_model_field(io_writer, label, "", false);
   io_writer.flush();
 
   io_buf io_reader;
@@ -166,7 +167,7 @@ BOOST_AUTO_TEST_CASE(slates_cache_slot_label)
 
   VW::slates::label uncached_label;
   VW::slates::default_label(uncached_label);
-  VW::slates::read_cached_label(uncached_label, io_reader);
+  VW::model_utils::read_model_field(io_reader, uncached_label);
 
   BOOST_CHECK_EQUAL(uncached_label.type, VW::slates::example_type::slot);
   BOOST_CHECK_EQUAL(uncached_label.labeled, true);

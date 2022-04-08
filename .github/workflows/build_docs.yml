@@ -13,7 +13,8 @@ on:
       - '*'
   release:
     types:
-      - created
+      - published
+  workflow_dispatch:
 
 jobs:
   cpp:
@@ -93,13 +94,13 @@ jobs:
     needs: [cpp, python-doc]
     runs-on: ubuntu-latest
     # The upload step should only be run on the main repository and only for pushes or releases (not pull requests).
-    if: ${{ github.repository == 'VowpalWabbit/vowpal_wabbit' && (github.event_name == 'push' || github.event_name == 'release') }}
+    if: ${{ github.repository == 'VowpalWabbit/vowpal_wabbit' && (github.event_name == 'push' || github.event_name == 'release' || github.event_name == 'workflow_dispatch') }}
     steps:
       - name: Set folder name to latest if push
         if: ${{ github.event_name == 'push' }}
         run: echo "FOLDER_NAME=latest" >> $GITHUB_ENV
       - name: Set folder name to version if release
-        if: ${{ github.event_name == 'release' }}
+        if: ${{ github.event_name == 'release' || github.event_name == 'workflow_dispatch' }}
         run: echo "FOLDER_NAME=$(echo ${GITHUB_REF:10})" >> $GITHUB_ENV
       - name: Download c++ Docs
         uses: actions/download-artifact@v1

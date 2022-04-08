@@ -1,15 +1,20 @@
 // Copyright (c) by respective owners including Yahoo!, Microsoft, and
 // individual contributors. All rights reserved. Released under a BSD (revised)
 // license as described in the file LICENSE.
-#include <cstdint>
-#include <algorithm>
-
 #include "example.h"
-#include "gd.h"
-#include "simple_label_parser.h"
-#include "interactions.h"
 
-float calculate_total_sum_features_squared(bool permutations, example& ec)
+#include "cb_continuous_label.h"
+#include "interactions.h"
+#include "model_utils.h"
+#include "reductions/gd.h"
+#include "simple_label_parser.h"
+#include "text_utils.h"
+
+#include <algorithm>
+#include <climits>
+#include <cstdint>
+
+float calculate_total_sum_features_squared(bool permutations, VW::example& ec)
 {
   float sum_features_squared = 0.f;
   for (const features& fs : ec) { sum_features_squared += fs.sum_feat_sq; }
@@ -20,13 +25,23 @@ float calculate_total_sum_features_squared(bool permutations, example& ec)
   return sum_features_squared;
 }
 
-example::~example()
+VW::example::~example()
 {
   if (passthrough)
   {
     delete passthrough;
     passthrough = nullptr;
   }
+}
+
+float VW::example::get_total_sum_feat_sq()
+{
+  if (!total_sum_feat_sq_calculated)
+  {
+    total_sum_feat_sq = calculate_total_sum_features_squared(use_permutations, *this);
+    total_sum_feat_sq_calculated = true;
+  }
+  return total_sum_feat_sq;
 }
 
 float collision_cleanup(features& fs)
@@ -36,8 +51,7 @@ float collision_cleanup(features& fs)
   features::iterator pos = fs.begin();
   for (features::iterator& f : fs)
   {
-    if (last_index == f.index())
-      pos.value() += f.value();
+    if (last_index == f.index()) { pos.value() += f.value(); }
     else
     {
       sum_sq += pos.value() * pos.value();
@@ -75,8 +89,7 @@ void copy_example_metadata(example* dst, const example* src)
   dst->ft_offset = src->ft_offset;
 
   dst->partial_prediction = src->partial_prediction;
-  if (src->passthrough == nullptr)
-    dst->passthrough = nullptr;
+  if (src->passthrough == nullptr) { dst->passthrough = nullptr; }
   else
   {
     dst->passthrough = new features(*src->passthrough);
@@ -99,7 +112,7 @@ void copy_example_data(example* dst, const example* src)
 
   // copy feature data
   dst->indices = src->indices;
-  for (namespace_index c : src->indices) dst->feature_space[c] = src->feature_space[c];
+  for (namespace_index c : src->indices) { dst->feature_space[c] = src->feature_space[c]; }
   dst->num_features = src->num_features;
   dst->total_sum_feat_sq = src->total_sum_feat_sq;
   dst->total_sum_feat_sq_calculated = src->total_sum_feat_sq_calculated;
@@ -117,8 +130,11 @@ void copy_example_data_with_label(example* dst, const example* src)
 
 void move_feature_namespace(example* dst, example* src, namespace_index c)
 {
-  if (std::find(src->indices.begin(), src->indices.end(), c) == src->indices.end()) return;  // index not present in src
-  if (std::find(dst->indices.begin(), dst->indices.end(), c) == dst->indices.end()) dst->indices.push_back(c);
+  if (std::find(src->indices.begin(), src->indices.end(), c) == src->indices.end())
+  {
+    return;  // index not present in src
+  }
+  if (std::find(dst->indices.begin(), dst->indices.end(), c) == dst->indices.end()) { dst->indices.push_back(c); }
 
   auto& fdst = dst->feature_space[c];
   auto& fsrc = src->feature_space[c];
@@ -134,7 +150,7 @@ void move_feature_namespace(example* dst, example* src, namespace_index c)
 
 struct features_and_source
 {
-  v_array<feature> feature_map;  // map to store sparse feature vectors
+  VW::v_array<feature> feature_map;  // map to store sparse feature vectors
   uint32_t stride_shift;
   uint64_t mask;
 };
@@ -171,7 +187,8 @@ void vec_ffs_store(full_features_and_source& p, float fx, uint64_t fi)
 {
   p.fs.push_back(fx, (fi >> p.stride_shift) & p.mask);
 }
-
+namespace VW
+{
 flat_example* flatten_example(VW::workspace& all, example* ec)
 {
   flat_example& fec = calloc_or_throw<flat_example>();
@@ -191,10 +208,14 @@ flat_example* flatten_example(VW::workspace& all, example* ec)
 
   full_features_and_source ffs;
   ffs.stride_shift = all.weights.stride_shift();
-  if (all.weights.not_null())  // TODO:temporary fix. all.weights is not initialized at this point in some cases.
+  if (all.weights.not_null())
+  {  // TODO:temporary fix. all.weights is not initialized at this point in some cases.
     ffs.mask = all.weights.mask() >> all.weights.stride_shift();
+  }
   else
+  {
     ffs.mask = static_cast<uint64_t>(LONG_MAX) >> all.weights.stride_shift();
+  }
   GD::foreach_feature<full_features_and_source, uint64_t, vec_ffs_store>(all, *ec, ffs);
 
   std::swap(fec.fs, ffs.fs);
@@ -216,71 +237,11 @@ void free_flatten_example(flat_example* fec)
   if (fec)
   {
     fec->fs.~features();
-    if (fec->tag_len > 0) free(fec->tag);
+    if (fec->tag_len > 0) { free(fec->tag); }
     free(fec);
   }
 }
 
-std::string cb_label_to_string(const example& ec)
-{
-  std::stringstream strstream;
-  strstream << "[l.cb={";
-  auto& costs = ec.l.cb.costs;
-  for (auto c = costs.cbegin(); c != costs.cend(); ++c)
-  {
-    strstream << "{c=" << c->cost << ",a=" << c->action << ",p=" << c->probability << ",pp=" << c->partial_prediction
-              << "}";
-  }
-  strstream << "}]";
-  return strstream.str();
-}
-
-std::string simple_label_to_string(const example& ec)
-{
-  std::stringstream strstream;
-  strstream << "[l=" << ec.l.simple.label << ",w=" << ec.weight << "]";
-  return strstream.str();
-}
-
-std::string scalar_pred_to_string(const example& ec)
-{
-  std::stringstream strstream;
-  strstream << "[p=" << ec.pred.scalar << ", pp=" << ec.partial_prediction << "]";
-  return strstream.str();
-}
-
-std::string a_s_pred_to_string(const example& ec)
-{
-  std::stringstream strstream;
-  strstream << "ec.pred.a_s[";
-  for (uint32_t i = 0; i < ec.pred.a_s.size(); i++)
-  { strstream << "(" << i << " = " << ec.pred.a_s[i].action << ", " << ec.pred.a_s[i].score << ")"; }
-  strstream << "]";
-  return strstream.str();
-}
-
-std::string multiclass_pred_to_string(const example& ec)
-{
-  std::stringstream strstream;
-  strstream << "ec.pred.multiclass = " << ec.pred.multiclass;
-  return strstream.str();
-}
-
-std::string prob_dist_pred_to_string(const example& ec)
-{
-  std::stringstream strstream;
-  strstream << "ec.pred.prob_dist[";
-  for (uint32_t i = 0; i < ec.pred.pdf.size(); i++)
-  {
-    strstream << "(" << i << " = " << ec.pred.pdf[i].left << "-" << ec.pred.pdf[i].right << ", "
-              << ec.pred.pdf[i].pdf_value << ")";
-  }
-  strstream << "]";
-  return strstream.str();
-}
-
-namespace VW
-{
 example* alloc_examples(size_t count)
 {
   example* ec = calloc_or_throw<example>(count);
@@ -300,7 +261,7 @@ void clean_example(VW::workspace&, example&);
 
 void finish_example(VW::workspace& all, multi_ex& ec_seq)
 {
-  for (example* ecc : ec_seq) VW::finish_example(all, *ecc);
+  for (example* ecc : ec_seq) { VW::finish_example(all, *ecc); }
 }
 
 void return_multiple_example(VW::workspace& all, v_array<example*>& examples)
@@ -309,10 +270,60 @@ void return_multiple_example(VW::workspace& all, v_array<example*>& examples)
   examples.clear();
 }
 
+namespace model_utils
+{
+size_t read_model_field(io_buf& io, flat_example& fe, VW::label_parser& lbl_parser)
+{
+  size_t bytes = 0;
+  bool tag_is_null;
+  bytes += lbl_parser.read_cached_label(fe.l, fe._reduction_features, io);
+  bytes += read_model_field(io, fe.tag_len);
+  bytes += read_model_field(io, tag_is_null);
+  if (!tag_is_null) { bytes += read_model_field(io, *fe.tag); }
+  bytes += read_model_field(io, fe.example_counter);
+  bytes += read_model_field(io, fe.ft_offset);
+  bytes += read_model_field(io, fe.global_weight);
+  bytes += read_model_field(io, fe.num_features);
+  bytes += read_model_field(io, fe.total_sum_feat_sq);
+  unsigned char index = 0;
+  char* c;
+  bytes += read_cached_index(io, index, c);
+  bool sorted = true;
+  bytes += read_cached_features(io, fe.fs, sorted, c);
+  return bytes;
+}
+size_t write_model_field(io_buf& io, const flat_example& fe, const std::string& upstream_name, bool text,
+    VW::label_parser& lbl_parser, uint64_t parse_mask)
+{
+  size_t bytes = 0;
+  lbl_parser.cache_label(fe.l, fe._reduction_features, io, upstream_name + "_label", text);
+  bytes += write_model_field(io, fe.tag_len, upstream_name + "_tag_len", text);
+  bytes += write_model_field(io, fe.tag == nullptr, upstream_name + "_tag_is_null", text);
+  if (!(fe.tag == nullptr)) { bytes += write_model_field(io, *fe.tag, upstream_name + "_tag", text); }
+  bytes += write_model_field(io, fe.example_counter, upstream_name + "_example_counter", text);
+  bytes += write_model_field(io, fe.ft_offset, upstream_name + "_ft_offset", text);
+  bytes += write_model_field(io, fe.global_weight, upstream_name + "_global_weight", text);
+  bytes += write_model_field(io, fe.num_features, upstream_name + "_num_features", text);
+  bytes += write_model_field(io, fe.total_sum_feat_sq, upstream_name + "_total_sum_feat_sq", text);
+  char* c;
+  cache_index(io, 0, fe.fs, c);
+  cache_features(io, fe.fs, parse_mask, c);
+  return bytes;
+}
+}  // namespace model_utils
 }  // namespace VW
 
-std::string debug_depth_indent_string(const example& ec)
+namespace VW
 {
-  return debug_depth_indent_string(ec._debug_current_reduction_depth);
+std::string to_string(const v_array<float>& scalars, int decimal_precision)
+{
+  std::stringstream ss;
+  std::string delim;
+  for (float f : scalars)
+  {
+    ss << delim << VW::fmt_float(f, decimal_precision);
+    delim = ",";
+  }
+  return ss.str();
 }
-std::string debug_depth_indent_string(const multi_ex& ec) { return debug_depth_indent_string(*ec[0]); }
+}  // namespace VW

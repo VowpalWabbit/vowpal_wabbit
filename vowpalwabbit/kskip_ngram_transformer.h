@@ -4,18 +4,18 @@
 
 #pragma once
 
-#include <string>
-#include <vector>
-
 #include "constant.h"
 #include "example.h"
+
+#include <string>
+#include <vector>
 
 namespace VW
 {
 struct kskip_ngram_transformer
 {
   static kskip_ngram_transformer build(
-      const std::vector<std::string>& grams, const std::vector<std::string>& skips, bool quiet);
+      const std::vector<std::string>& grams, const std::vector<std::string>& skips, bool quiet, VW::io::logger& logger);
 
   /**
    * This function adds k-skip-n-grams to the feature vector.

@@ -1,27 +1,26 @@
-[info] Generating 2-grams for all namespaces.
-[info] Generating 4-skips for all namespaces.
+using no cache
+Reading datafile = train-sets/rcv1_raw_cb_small.vw
+num sources = 1
 Num weight bits = 24
 learning rate = 0.25
 initial_t = 0
 power_t = 0.5
-using no cache
-Reading datafile = train-sets/rcv1_raw_cb_small.vw
-num sources = 1
+cb_type = dr
 Enabled reductions: gd, scorer-identity, csoaa, cb
 Input label = cb
 Output pred = multiclass
-average  since         example        example  current  current  current
-loss     last          counter         weight    label  predict features
-2.000000 2.000000            1            1.0  1:1:0.5        1      280
-1.000000 0.000000            2            2.0  1:0:0.5        2      598
-0.500000 0.000000            4            4.0  1:0:0.5        2      784
-0.250000 0.000000            8            8.0  1:0:0.5        2      850
-0.620249 0.990498           16           16.0  1:1:0.5        2      118
-0.325949 0.031648           32           32.0  1:0:0.5        1      166
-0.336503 0.347057           64           64.0  2:1:0.5        1      340
-0.262159 0.187815          128          128.0  1:1:0.5        2      610
-0.216081 0.170003          256          256.0  2:0:0.5        2      712
-0.190306 0.164531          512          512.0  2:1:0.5        1      424
+average  since         example        example        current        current  current
+loss     last          counter         weight          label        predict features
+2.000000 2.000000            1            1.0        1:1:0.5              1      280
+1.000000 0.000000            2            2.0        1:0:0.5              2      598
+0.500000 0.000000            4            4.0        1:0:0.5              2      784
+0.250000 0.000000            8            8.0        1:0:0.5              2      850
+0.620249 0.990498           16           16.0        1:1:0.5              2      118
+0.325949 0.031648           32           32.0        1:0:0.5              1      166
+0.336503 0.347057           64           64.0        2:1:0.5              1      340
+0.262159 0.187815          128          128.0        1:1:0.5              2      610
+0.216081 0.170003          256          256.0        2:0:0.5              2      712
+0.190306 0.164531          512          512.0        2:1:0.5              1      424
 
 finished run
 number of examples = 1000

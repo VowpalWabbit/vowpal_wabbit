@@ -1,6 +1,6 @@
 #pragma once
 
-#include "hash.h"
+#include "vw/common/hash.h"
 
 // get the error code defined in master
 #include "explore.h"
@@ -294,7 +294,7 @@ namespace exploration
   int sample_after_normalizing(
       const char* seed, It pmf_first, It pmf_last, uint32_t& chosen_index, std::random_access_iterator_tag pmf_category)
   {
-    uint64_t seed_hash = uniform_hash(seed, strlen(seed), 0);
+    uint64_t seed_hash = VW::common::uniform_hash(seed, strlen(seed), 0);
     return sample_after_normalizing(seed_hash, pmf_first, pmf_last, chosen_index, pmf_category);
   }
 

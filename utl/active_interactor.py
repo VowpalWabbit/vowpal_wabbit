@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 import socket
 import argparse
 from typing import Callable, ContextManager, Optional, TextIO
@@ -30,12 +31,13 @@ def _get_getch_impl_unix() -> Optional[Callable[[], str]]:
     def _getch():
         fd = sys.stdin.fileno()
         old_settings = termios.tcgetattr(fd)
+        ch = None
         try:
             tty.setraw(fd)
             ch = sys.stdin.read(1)
         finally:
             termios.tcsetattr(fd, termios.TCSADRAIN, old_settings)
-            if ord(ch) == 3:
+            if ch is not None and ord(ch) == 3:
                 raise KeyboardInterrupt
             return ch
 
@@ -108,7 +110,12 @@ def check_file_exists(file_path: str, file_mode: str) -> None:
 
 
 def get_label(
-    example: str, minus1: bool, i: int, tag: str, pred: float, input_fn: Callable[[str], str]
+    example: str,
+    minus1: bool,
+    i: int,
+    tag: str,
+    pred: float,
+    input_fn: Callable[[str], str],
 ) -> Optional[str]:
     print(
         'Request for example {}: tag="{}", prediction={}: {}'.format(

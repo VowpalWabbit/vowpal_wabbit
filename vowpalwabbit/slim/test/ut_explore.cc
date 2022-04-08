@@ -1,10 +1,11 @@
-#include "gtest/gtest.h"
-#include "gmock/gmock.h"
-#include "ut_util.h"
-#include <vector>
-#include <sstream>
 #include "explore.h"
+#include "gmock/gmock.h"
+#include "gtest/gtest.h"
+#include "ut_util.h"
 #include "vw_slim_predict.h"
+
+#include <sstream>
+#include <vector>
 using namespace ::testing;
 
 TEST(ExploreTestSuite, EpsilonGreedy)
@@ -153,36 +154,6 @@ TEST(ExploreTestSuite, sampling)
   for (auto& d : histogram) d /= rep;
 
   EXPECT_THAT(pdf, Pointwise(FloatNearPointwise(1e-2f), histogram));
-}
-
-TEST(PairIteratorTestSuite, simple_test)
-{
-  using ActionType = size_t;
-  // Verify sort of actions using scores
-  const int num_actions = 3;
-  ActionType actions[num_actions];
-  float pdf[num_actions];
-  float n = 0.f;
-  std::generate(std::begin(pdf), std::end(pdf), [&n]() { return n++; });
-  std::iota(std::begin(actions), std::end(actions), 0);
-  float scores[] = {.4f, .1f, .2f};
-
-  // Sort two vectors using scores
-  using FirstVal = ActionType;
-  using SecondVal = float;
-  using FirstIt = FirstVal*;
-  using SecondIt = SecondVal*;
-  using iter = vw_slim::internal::collection_pair_iterator<FirstIt, SecondIt>;
-  using loc = vw_slim::internal::location_value<FirstIt, SecondIt>;
-  using loc_ref = vw_slim::internal::location_reference<FirstIt, SecondIt>;
-
-  const iter begin_coll(std::begin(actions), std::begin(pdf));
-  const iter end_coll(std::end(actions), std::end(pdf));
-  size_t diff = end_coll - begin_coll;
-  std::sort(begin_coll, end_coll, [&scores](const loc& l, const loc& r) { return scores[l._val1] < scores[r._val1]; });
-
-  EXPECT_THAT(actions, ElementsAre(1, 2, 0));
-  EXPECT_THAT(pdf, ElementsAre(1.0f, 2.0f, 0.0f));
 }
 
 TEST(ExploreTestSuite, sampling_rank)

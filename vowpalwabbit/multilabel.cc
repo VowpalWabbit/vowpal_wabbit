@@ -2,77 +2,28 @@
 // individual contributors. All rights reserved. Released under a BSD (revised)
 // license as described in the file LICENSE.
 
-#include <cfloat>
-#include "gd.h"
-#include "vw.h"
 #include "example.h"
-#include "vw_string_view_fmt.h"
+#include "io/logger.h"
+#include "model_utils.h"
 #include "parse_primitives.h"
 #include "shared_data.h"
+#include "vw.h"
+#include "vw_string_view_fmt.h"
 
-#include "io/logger.h"
+#include <cfloat>
 // needed for printing ranges of objects (eg: all elements of a vector)
 #include <fmt/ranges.h>
 
-namespace logger = VW::io::logger;
-
 namespace MULTILABEL
 {
-char* bufread_label(labels& ld, char* c, io_buf& cache)
-{
-  size_t num = *reinterpret_cast<size_t*>(c);
-  ld.label_v.clear();
-  c += sizeof(size_t);
-  size_t total = sizeof(uint32_t) * num;
-  if (cache.buf_read(c, static_cast<int>(total)) < total) { THROW("error in demarshal of cost data"); }
-  for (size_t i = 0; i < num; i++)
-  {
-    uint32_t temp = *reinterpret_cast<uint32_t*>(c);
-    c += sizeof(uint32_t);
-    ld.label_v.push_back(temp);
-  }
-
-  return c;
-}
-
-size_t read_cached_label(MULTILABEL::labels& ld, io_buf& cache)
-{
-  ld.label_v.clear();
-  char* c;
-  size_t total = sizeof(size_t);
-  if (cache.buf_read(c, static_cast<int>(total)) < total) return 0;
-  bufread_label(ld, c, cache);
-
-  return total;
-}
-
 float weight(const MULTILABEL::labels&) { return 1.; }
-
-char* bufcache_label(const labels& ld, char* c)
-{
-  *reinterpret_cast<size_t*>(c) = ld.label_v.size();
-  c += sizeof(size_t);
-  for (unsigned int i = 0; i < ld.label_v.size(); i++)
-  {
-    *reinterpret_cast<uint32_t*>(c) = ld.label_v[i];
-    c += sizeof(uint32_t);
-  }
-  return c;
-}
-
-void cache_label(const MULTILABEL::labels& ld, io_buf& cache)
-{
-  char* c;
-  cache.buf_write(c, sizeof(size_t) + sizeof(uint32_t) * ld.label_v.size());
-  bufcache_label(ld, c);
-}
 
 void default_label(MULTILABEL::labels& ld) { ld.label_v.clear(); }
 
 bool test_label(const MULTILABEL::labels& ld) { return ld.label_v.size() == 0; }
 
-void parse_label(
-    MULTILABEL::labels& ld, VW::label_parser_reuse_mem& reuse_mem, const std::vector<VW::string_view>& words)
+void parse_label(MULTILABEL::labels& ld, VW::label_parser_reuse_mem& reuse_mem,
+    const std::vector<VW::string_view>& words, VW::io::logger& logger)
 {
   switch (words.size())
   {
@@ -83,56 +34,56 @@ void parse_label(
 
       for (const auto& parse_name : reuse_mem.tokens)
       {
-        uint32_t n = int_of_string(parse_name);
+        uint32_t n = int_of_string(parse_name, logger);
         ld.label_v.push_back(n);
       }
       break;
     default:
-      logger::errlog_error("example with an odd label, what is {}", fmt::join(words, " "));
+      logger.err_error("example with an odd label, what is {}", fmt::join(words, " "));
   }
 }
 
-label_parser multilabel = {
+VW::label_parser multilabel = {
     // default_label
-    [](polylabel& label) { default_label(label.multilabels); },
+    [](VW::polylabel& label) { default_label(label.multilabels); },
     // parse_label
-    [](polylabel& label, reduction_features& /* red_features */, VW::label_parser_reuse_mem& reuse_mem,
-        const VW::named_labels* /* ldict */,
-        const std::vector<VW::string_view>& words) { parse_label(label.multilabels, reuse_mem, words); },
+    [](VW::polylabel& label, VW::reduction_features& /* red_features */, VW::label_parser_reuse_mem& reuse_mem,
+        const VW::named_labels* /* ldict */, const std::vector<VW::string_view>& words,
+        VW::io::logger& logger) { parse_label(label.multilabels, reuse_mem, words, logger); },
     // cache_label
-    [](const polylabel& label, const reduction_features& /* red_features */, io_buf& cache) {
-      cache_label(label.multilabels, cache);
-    },
+    [](const VW::polylabel& label, const VW::reduction_features& /* red_features */, io_buf& cache,
+        const std::string& upstream_name,
+        bool text) { return VW::model_utils::write_model_field(cache, label.multilabels, upstream_name, text); },
     // read_cached_label
-    [](polylabel& label, reduction_features& /* red_features */, io_buf& cache) {
-      return read_cached_label(label.multilabels, cache);
+    [](VW::polylabel& label, VW::reduction_features& /* red_features */, io_buf& cache) {
+      return VW::model_utils::read_model_field(cache, label.multilabels);
     },
     // get_weight
-    [](const polylabel& label, const reduction_features& /* red_features */) { return weight(label.multilabels); },
+    [](const VW::polylabel& label, const VW::reduction_features& /* red_features */) {
+      return weight(label.multilabels);
+    },
     // test_label
-    [](const polylabel& label) { return test_label(label.multilabels); },
+    [](const VW::polylabel& label) { return test_label(label.multilabels); },
     // label type
     VW::label_type_t::multilabel};
 
-void print_update(VW::workspace& all, bool is_test, const example& ec)
+void print_update(VW::workspace& all, bool is_test, const VW::example& ec)
 {
-  if (all.sd->weighted_examples() >= all.sd->dump_interval && !all.logger.quiet && !all.bfgs)
+  if (all.sd->weighted_examples() >= all.sd->dump_interval && !all.quiet && !all.bfgs)
   {
     std::stringstream label_string;
-    if (is_test)
-      label_string << " unknown";
+    if (is_test) { label_string << "unknown"; }
     else
-      for (uint32_t i : ec.l.multilabels.label_v) { label_string << " " << i; }
-
-    std::stringstream pred_string;
-    for (uint32_t i : ec.pred.multilabels.label_v) { pred_string << " " << i; }
+    {
+      label_string << VW::to_string(ec.l.multilabels);
+    }
 
     all.sd->print_update(*all.trace_message, all.holdout_set_off, all.current_pass, label_string.str(),
-        pred_string.str(), ec.get_num_features(), all.progress_add, all.progress_arg);
+        VW::to_string(ec.pred.multilabels), ec.get_num_features(), all.progress_add, all.progress_arg);
   }
 }
 
-void output_example(VW::workspace& all, const example& ec)
+void output_example(VW::workspace& all, const VW::example& ec)
 {
   const auto& ld = ec.l.multilabels;
 
@@ -178,14 +129,47 @@ void output_example(VW::workspace& all, const example& ec)
 
       for (size_t i = 0; i < ec.pred.multilabels.label_v.size(); i++)
       {
-        if (i > 0) ss << ',';
+        if (i > 0) { ss << ','; }
         ss << ec.pred.multilabels.label_v[i];
       }
       ss << ' ';
-      all.print_text_by_ref(sink.get(), ss.str(), ec.tag);
+      all.print_text_by_ref(sink.get(), ss.str(), ec.tag, all.logger);
     }
   }
 
   print_update(all, test_label(ld), ec);
 }
 }  // namespace MULTILABEL
+
+namespace VW
+{
+std::string to_string(const MULTILABEL::labels& multilabels)
+{
+  std::ostringstream ss;
+
+  std::string delimiter;
+  for (unsigned int i : multilabels.label_v)
+  {
+    ss << delimiter << i;
+    delimiter = ",";
+  }
+  return ss.str();
+}
+
+namespace model_utils
+{
+size_t read_model_field(io_buf& io, MULTILABEL::labels& multi)
+{
+  size_t bytes = 0;
+  bytes += read_model_field(io, multi.label_v);
+  return bytes;
+}
+
+size_t write_model_field(io_buf& io, const MULTILABEL::labels& multi, const std::string& upstream_name, bool text)
+{
+  size_t bytes = 0;
+  bytes += write_model_field(io, multi.label_v, upstream_name + "_label_v", text);
+  return bytes;
+}
+}  // namespace model_utils
+}  // namespace VW

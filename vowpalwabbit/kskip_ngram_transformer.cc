@@ -8,8 +8,6 @@
 
 #include <memory>
 
-namespace logger = VW::io::logger;
-
 void add_grams(
     size_t ngram, size_t skip_gram, features& fs, size_t initial_length, std::vector<size_t>& gram_mask, size_t skips)
 {
@@ -18,20 +16,20 @@ void add_grams(
     size_t last = initial_length - gram_mask.back();
     for (size_t i = 0; i < last; i++)
     {
-      uint64_t new_index = fs.indicies[i];
+      uint64_t new_index = fs.indices[i];
       for (size_t n = 1; n < gram_mask.size(); n++)
-      { new_index = new_index * quadratic_constant + fs.indicies[i + gram_mask[n]]; }
+      { new_index = new_index * quadratic_constant + fs.indices[i + gram_mask[n]]; }
 
       fs.push_back(1., new_index);
       if (!fs.space_names.empty())
       {
-        std::string feature_name(fs.space_names[i].second);
+        std::string feature_name(fs.space_names[i].name);
         for (size_t n = 1; n < gram_mask.size(); n++)
         {
           feature_name += std::string("^");
-          feature_name += std::string(fs.space_names[i + gram_mask[n]].second);
+          feature_name += std::string(fs.space_names[i + gram_mask[n]].name);
         }
-        fs.space_names.push_back(audit_strings(fs.space_names[i].first, feature_name));
+        fs.space_names.emplace_back(fs.space_names[i].ns, feature_name);
       }
     }
   }
@@ -45,25 +43,25 @@ void add_grams(
 }
 
 void compile_gram(const std::vector<std::string>& grams, std::array<uint32_t, NUM_NAMESPACES>& dest,
-		  const std::string& descriptor, bool /*quiet*/)
+    const std::string& descriptor, bool /*quiet*/, VW::io::logger& logger)
 {
   for (const auto& gram : grams)
   {
     if (isdigit(gram[0]) != 0)
     {
       int n = atoi(gram.c_str());
-      logger::errlog_info("Generating {0}-{1} for all namespaces.", n, descriptor);
+      logger.err_info("Generating {0}-{1} for all namespaces.", n, descriptor);
       for (size_t j = 0; j < NUM_NAMESPACES; j++) { dest[j] = n; }
     }
     else if (gram.size() == 1)
     {
-      logger::log_error("You must specify the namespace index before the n");
+      logger.out_error("The namespace index must be specified before the n");
     }
     else
     {
       int n = atoi(gram.c_str() + 1);
       dest[static_cast<uint32_t>(static_cast<unsigned char>(*gram.c_str()))] = n;
-      logger::errlog_info("Generating {0}-{1} for {2} namespaces.", n, descriptor, gram[0]);
+      logger.err_info("Generating {0}-{1} for {2} namespaces.", n, descriptor, gram[0]);
     }
   }
 }
@@ -83,12 +81,12 @@ void VW::kskip_ngram_transformer::generate_grams(example* ex)
 }
 
 VW::kskip_ngram_transformer VW::kskip_ngram_transformer::build(
-    const std::vector<std::string>& grams, const std::vector<std::string>& skips, bool quiet)
+    const std::vector<std::string>& grams, const std::vector<std::string>& skips, bool quiet, VW::io::logger& logger)
 {
   kskip_ngram_transformer transformer(grams, skips);
 
-  compile_gram(grams, transformer.ngram_definition, "grams", quiet);
-  compile_gram(skips, transformer.skip_definition, "skips", quiet);
+  compile_gram(grams, transformer.ngram_definition, "grams", quiet, logger);
+  compile_gram(skips, transformer.skip_definition, "skips", quiet, logger);
   return transformer;
 }
 

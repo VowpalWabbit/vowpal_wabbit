@@ -1,18 +1,17 @@
-#include "gtest/gtest.h"
-#include "gmock/gmock.h"
-
-#include "ut_util.h"
-
-#include <vector>
-#include <set>
-#include <stdlib.h>
-#include <streambuf>
-#include <array>
-
-#include <fstream>
-#include "example_predict_builder.h"
 #include "array_parameters.h"
 #include "data.h"
+#include "example_predict_builder.h"
+#include "gmock/gmock.h"
+#include "gtest/gtest.h"
+#include "ut_util.h"
+
+#include <stdlib.h>
+
+#include <array>
+#include <fstream>
+#include <set>
+#include <streambuf>
+#include <vector>
 
 using namespace ::testing;
 using namespace vw_slim;

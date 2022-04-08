@@ -1,0 +1,137 @@
+name: Standalone
+
+on:
+  push:
+    branches:
+      - master
+      - 'releases/**'
+  pull_request:
+    branches:
+      - '*'
+jobs:
+  build_vendor_linux:
+    name: core-cli.${{ matrix.os }}.amd64.${{ matrix.build_type }}.${{ matrix.compiler.cxx }}.standalone
+    strategy:
+      matrix:
+        os: ["ubuntu-20.04", "ubuntu-18.04"]
+        build_type: ["Debug", "Release"]
+        compiler:
+        - { cc: "gcc", cxx: "g++"}
+        - { cc: "clang", cxx: "clang++"}
+    runs-on: ${{matrix.os}}
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          submodules: 'recursive'
+      - name: Install requirements
+        run: sudo apt-get install -y ninja-build libboost-test-dev
+      - name: Configure
+        env:
+          CC: ${{matrix.compiler.cc}}
+          CXX: ${{matrix.compiler.cxx}}
+        run: >
+          cmake -S . -B build -G Ninja
+          -DCMAKE_BUILD_TYPE=${{matrix.build_type}}
+          -DBUILD_FLATBUFFERS=Off
+          -DRAPIDJSON_SYS_DEP=Off
+          -DFMT_SYS_DEP=Off
+          -DSPDLOG_SYS_DEP=Off
+          -DVW_ZLIB_SYS_DEP=Off
+          -DVW_BOOST_MATH_SYS_DEP=Off
+          -DVW_INSTALL=Off
+      - name: Build
+        run: |
+          cmake --build build
+      - name: Test
+        run: |
+          python3 test/run_tests.py -f --clean_dirty -E 0.001
+          ./build/test/unit_test/vw-unit-test.out
+  build_vendor_windows:
+    name: core-cli.${{ matrix.os }}.amd64.${{ matrix.build_type }}.msvc.standalone
+    runs-on: ${{matrix.os}}
+    strategy:
+      matrix:
+        os: ["windows-2019"]
+        build_type: ["Debug", "Release"]
+    env:
+      CMAKE_BUILD_DIR: ${{ github.workspace }}/vw/build
+      SOURCE_DIR: ${{ github.workspace }}/vw
+      VCPKG_ROOT: ${{ github.workspace }}/vcpkg
+      # 2022.02.23 just for boost-test
+      VCPKG_REF: b86c0c35b88e2bf3557ff49dc831689c2f085090
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          path: 'vw'
+          submodules: 'recursive'
+      - uses: actions/checkout@v2
+        with:
+          path: 'vcpkg'
+          repository: 'microsoft/vcpkg'
+          ref: ${{ env.VCPKG_REF }}
+      - name: Restore vcpkg and build artifacts
+        uses: actions/cache@v2
+        with:
+          path: |
+            ${{ env.VCPKG_ROOT }}/installed/
+            ${{ env.VCPKG_ROOT }}
+            !${{ env.VCPKG_ROOT }}/buildtrees
+            !${{ env.VCPKG_ROOT }}/packages
+            !${{ env.VCPKG_ROOT }}/downloads
+          key: |
+            ${{ env.VCPKG_REF }}-${{matrix.os}}-standalone-vcpkg-cache-invalidate-0
+      - uses: ilammy/msvc-dev-cmd@v1
+      - name: Bootstrap vcpkg
+        run: ${{ env.VCPKG_ROOT }}/bootstrap-vcpkg.bat
+      - name: Install vcpkg dependencies
+        run: ${{ env.VCPKG_ROOT }}/vcpkg.exe --triplet x64-windows install boost-test
+      - name: Configure
+        run: >
+          cmake -S "${{ env.SOURCE_DIR }}" -B "${{ env.CMAKE_BUILD_DIR }}"
+          -G "Visual Studio 16 2019" -A "x64"
+          -DCMAKE_TOOLCHAIN_FILE="${{ env.VCPKG_ROOT }}/scripts/buildsystems/vcpkg.cmake"
+          -DBUILD_FLATBUFFERS=Off
+          -DRAPIDJSON_SYS_DEP=Off
+          -DFMT_SYS_DEP=Off
+          -DSPDLOG_SYS_DEP=Off
+          -DVW_ZLIB_SYS_DEP=Off
+          -DVW_BOOST_MATH_SYS_DEP=Off
+          -DVW_INSTALL=Off
+      - name: Build
+        run: |
+          cmake --build "${{ env.CMAKE_BUILD_DIR }}" --config ${{ matrix.build_type }}
+      - name: Test run_tests.py
+        # TODO: Look into test 67 failure
+        run: python3 ${{ env.SOURCE_DIR }}/test/run_tests.py -f --clean_dirty -E 0.01 --skip_spanning_tree_tests --vw_bin_path ${{ env.CMAKE_BUILD_DIR }}/vowpalwabbit/${{ matrix.build_type }}/vw.exe --skip_test 67
+      - name: Test unit tests
+        run: ${{ env.CMAKE_BUILD_DIR }}/test/unit_test/${{ matrix.build_type }}/vw-unit-test.out.exe
+  build_vendor_macos:
+    runs-on: ${{matrix.os}}
+    name: core-cli.${{ matrix.os }}.amd64.${{ matrix.build_type }}.AppleClang.standalone
+    strategy:
+      matrix:
+        os: [macos-10.15, macos-11]
+        build_type: [Debug, Release]
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          submodules: 'recursive'
+      - name: Install dependencies
+        run: brew install cmake boost ninja
+      - name: Configure
+        run: >
+          cmake -S . -B build -G Ninja
+          -DCMAKE_BUILD_TYPE=${{matrix.build_type}}
+          -DBUILD_FLATBUFFERS=Off
+          -DRAPIDJSON_SYS_DEP=Off
+          -DFMT_SYS_DEP=Off
+          -DSPDLOG_SYS_DEP=Off
+          -DVW_ZLIB_SYS_DEP=Off
+          -DVW_BOOST_MATH_SYS_DEP=Off
+          -DVW_INSTALL=Off
+      - name: Build
+        run: cmake --build build
+      - name: Test
+        run: |
+          python3 test/run_tests.py -f --clean_dirty -E 0.001
+          ./build/test/unit_test/vw-unit-test.out

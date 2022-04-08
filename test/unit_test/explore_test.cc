@@ -10,7 +10,7 @@
 #include <vector>
 #include "../../explore/explore.h"
 
-#include "cb_explore_pdf.h"
+#include "reductions/cb/cb_explore_pdf.h"
 
 using namespace VW::continuous_actions;
 using std::vector;
@@ -49,7 +49,7 @@ BOOST_AUTO_TEST_CASE(new_sample_pdf)
   the_pdf.push_back({2.f, 3.5f, 0.1f / 1.5f});
   the_pdf.push_back({3.5f, 4.5f, 0.8f / 1.0f});
   the_pdf.push_back({4.5f, 6.2f, 0.1f / 1.7f});
-  const auto str_pdf = to_string(the_pdf);  // 2-3.5:0.0666667,3.5-4.5:0.8,4.5-6.2:0.0588235
+  const auto str_pdf = VW::to_string(the_pdf);  // 2-3.5:0.0666667,3.5-4.5:0.8,4.5-6.2:0.0588235
   // avoid float precision compare
   BOOST_CHECK_EQUAL(str_pdf.find("2-3.5:"), 0);
   BOOST_CHECK(str_pdf.find(",3.5-4.5:0.8,4.5-6.2:") > 0);

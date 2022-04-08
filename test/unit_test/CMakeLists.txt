@@ -4,16 +4,17 @@ add_executable(vw-unit-test.out
   baseline_cb_test.cc
   cache_test.cc
   cats_test.cc
-  cats_tree_tests.cc
+  cats_tree_test.cc
   cats_user_provided_pdf.cc
   cb_explore_adf_test.cc
   ccb_parser_test.cc
   ccb_test.cc
   chain_hashing.cc
-  chain_hashing.cc
   continuous_actions_parser_test.cc
+  custom_reduction_test.cc
   distributionally_robust_test.cc
   dsjson_parser_test.cc
+  epsilon_test.cc
   error_test.cc
   example_header_test.cc
   example_test.cc
@@ -24,13 +25,14 @@ add_executable(vw-unit-test.out
   interactions_test.cc
   io_adapter_test.cc
   json_parser_test.cc
+  loss_functions_test.cc
   main.cc
   math_test.cc
+  minimal_custom_reduction.cc
   multiclass_label_parser_test.cc
-  numeric_cast_tests.cc
+  numeric_cast_test.cc
   object_pool_test.cc
-  offset_tree_tests.cc
-  offset_tree_tests.cc
+  offset_tree_test.cc
   options_boost_po_test.cc
   options_test.cc
   ostream_test.cc
@@ -39,20 +41,18 @@ add_executable(vw-unit-test.out
   pmf_to_pdf_test.cc
   power_test.cc
   prediction_test.cc
-  custom_reduction_test.cc
-  minimal_custom_reduction.cc
-  random_test.cc
   random_test.cc
   scope_exit_test.cc
   simulator.cc
   simulator.h
   slates_parser_test.cc
   slates_test.cc
-  stable_unique_tests.cc
+  stable_unique_test.cc
   tag_utils_test.cc
   test_common.cc
   test_common.h
-  tokenize_tests.cc
+  tokenize_test.cc
+  text_utils_test.cc
   tutorial_test.cc
   v_array_test.cc
   vw_versions_test.cc

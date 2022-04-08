@@ -7,28 +7,26 @@
 #  include <WinSock2.h>
 #  include <io.h>
 #else
-#  include <sys/types.h>
-#  include <unistd.h>
-#  include <sys/socket.h>
+#  include <netdb.h>
 #  include <netinet/in.h>
 #  include <netinet/tcp.h>
-#  include <netdb.h>
+#  include <sys/socket.h>
+#  include <sys/types.h>
+#  include <unistd.h>
 #endif
 
-#include <cstring>
+#include "io/logger.h"
+#include "vw/common/vw_exception.h"
+
 #include <cerrno>
 #include <cstdlib>
-#include <string>
+#include <cstring>
 #include <iostream>
 #include <sstream>
 #include <stdexcept>
-#include "vw_exception.h"
+#include <string>
 
-#include "io/logger.h"
-
-namespace logger = VW::io::logger;
-
-int open_socket(const char* host)
+int open_socket(const char* host, VW::io::logger& logger)
 {
 #ifdef _WIN32
   const char* colon = strchr(host, ':');
@@ -44,7 +42,9 @@ int open_socket(const char* host)
     he = gethostbyname(hostname.c_str());
   }
   else
+  {
     he = gethostbyname(host);
+  }
 
   if (he == nullptr) THROWERRNO("gethostbyname(" << host << ")");
 
@@ -67,6 +67,6 @@ int open_socket(const char* host)
       write(sd, &id, sizeof(id)) < static_cast<int>(sizeof(id))
 #endif
   )
-    logger::errlog_error("write failed!");
+    logger.err_error("Write failed");
   return sd;
 }

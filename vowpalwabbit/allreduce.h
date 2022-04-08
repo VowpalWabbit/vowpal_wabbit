@@ -5,15 +5,18 @@
 // This implements the allreduce function of MPI.
 #pragma once
 
-#include <string>
 #include <algorithm>
+#include <string>
 #include <utility>
 
 #ifdef _WIN32
-#  define NOMINMAX
+#  ifndef NOMINMAX
+#    define NOMINMAX
+#  endif
+
+#  include <WS2tcpip.h>
 #  include <WinSock2.h>
 #  include <Windows.h>
-#  include <WS2tcpip.h>
 #  include <io.h>
 typedef unsigned int uint32_t;
 typedef unsigned short uint16_t;
@@ -28,21 +31,22 @@ class promise;
 
 }  // namespace std
 #else
-#  include <sys/socket.h>
-#  include <sys/socket.h>
+#  include <netdb.h>
 #  include <netinet/in.h>
 #  include <netinet/tcp.h>
-#  include <netdb.h>
-#  include <stdlib.h>
 #  include <stdio.h>
-#  include <unistd.h>
+#  include <stdlib.h>
 #  include <string.h>
+#  include <sys/socket.h>
+#  include <unistd.h>
 using socket_t = int;
 #  define CLOSESOCK close
 #  include <future>
 #endif
-#include "vw_exception.h"
+#include "io/logger.h"
+#include "vw/common/vw_exception.h"
 #include "vwvis.h"
+
 #include <cassert>
 
 #ifdef _M_CEE
@@ -58,6 +62,12 @@ using socket_t = int;
 #endif
 
 constexpr size_t ar_buf_size = 1 << 16;
+
+enum class AllReduceType
+{
+  Socket,
+  Thread
+};
 
 struct node_socks
 {
@@ -192,7 +202,7 @@ private:
   int port;
   size_t unique_id;  // unique id for each node in the network, id == 0 means extra io.
 
-  void all_reduce_init();
+  void all_reduce_init(VW::io::logger& logger);
 
   template <class T>
   void pass_up(char* buffer, size_t left_read_pos, size_t right_read_pos, size_t& parent_sent_pos)
@@ -279,8 +289,8 @@ private:
   void pass_down(char* buffer, const size_t parent_read_pos, size_t& children_sent_pos);
   void broadcast(char* buffer, const size_t n);
 
-  socket_t sock_connect(const uint32_t ip, const int port);
-  socket_t getsock();
+  socket_t sock_connect(const uint32_t ip, const int port, VW::io::logger& logger);
+  socket_t getsock(VW::io::logger& logger);
 
 public:
   AllReduceSockets(std::string pspan_server, const int pport, const size_t punique_id, size_t ptotal,
@@ -292,9 +302,9 @@ public:
   virtual ~AllReduceSockets() = default;
 
   template <class T, void (*f)(T&, const T&)>
-  void all_reduce(T* buffer, const size_t n)
+  void all_reduce(T* buffer, const size_t n, VW::io::logger& logger)
   {
-    if (span_server != socks.current_master) all_reduce_init();
+    if (span_server != socks.current_master) all_reduce_init(logger);
     reduce<T, f>((char*)buffer, n * sizeof(T));
     broadcast((char*)buffer, n * sizeof(T));
   }

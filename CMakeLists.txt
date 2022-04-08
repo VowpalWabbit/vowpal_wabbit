@@ -48,6 +48,7 @@ set(VW_PROJECT_URL "https://vowpalwabbit.org")
 
 option(USE_LATEST_STD "Override using C++11 with the latest standard the compiler offers. Default is C++11. " OFF)
 include(DetectCXXStandard)
+include(VowpalWabbitUtils)
 
 if(MSVC)
   # Do nothing as the default compile flags for MSVC are okay.
@@ -87,8 +88,7 @@ option(WARNINGS "Turn on warning flags. ON by default." ON)
 option(WARNING_AS_ERROR "Turn on warning as error. OFF by default." OFF)
 option(STATIC_LINK_VW "Link VW executable statically. Off by default." OFF)
 option(STATIC_LINK_VW_JAVA "Link VW-JNI shared library statically. Off by default." OFF)
-
-option(VW_INSTALL "Add install targets." ON)
+option(VW_INSTALL "Add install targets." OFF)
 option(BUILD_TESTS "Build and enable tests." ON)
 option(BUILD_BENCHMARKS "Build benchmarks" OFF)
 option(BUILD_ONLY_STANDALONE_BENCHMARKS "Build only the benchmarks that can run standalone (and do not use vw internals)" OFF)
@@ -100,8 +100,47 @@ option(LTO "Enable Link Time optimization (Requires Release build, only works wi
 option(RAPIDJSON_SYS_DEP "Override using the submodule for RapidJSON dependency. Instead will use find_package" OFF)
 option(FMT_SYS_DEP "Override using the submodule for FMT dependency. Instead will use find_package" OFF)
 option(SPDLOG_SYS_DEP "Override using the submodule for spdlog dependency. Instead will use find_package" OFF)
+option(VW_BOOST_MATH_SYS_DEP "Override using the submodule for boost math dependency. Instead will use find_package" OFF)
+option(VW_ZLIB_SYS_DEP "Override using the submodule for zlib dependency. Instead will use find_package" ON)
 option(BUILD_FLATBUFFERS "Build flatbuffers" OFF)
 option(BUILD_PRIVACY_ACTIVATION "Enable privacy activation feature" OFF)
+
+if(VW_INSTALL AND NOT VW_ZLIB_SYS_DEP)
+  message(WARNING "Installing with a vendored version of zlib is not recommended. Use VW_ZLIB_SYS_DEP to use a system dependency or specify VW_INSTALL=OFF to silence this warning.")
+endif()
+
+# The only way to tell it was used is if it was turned off, since the default is true.
+if(NOT BUILD_TESTS)
+  message(WARNING "Use standard option BUILD_TESTING instead of BUILD_TESTS. BUILD_TESTS will be removed in the future.")
+  SET(BUILD_TESTING ${BUILD_TESTS} CACHE BOOL "Set value to BUILD_TESTING")
+endif()
+
+if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
+  include(CTest)
+  if(BUILD_TESTING)
+    include(FetchContent)
+    FetchContent_Declare(
+      googletest
+      URL https://github.com/google/googletest/archive/refs/tags/release-1.11.0.zip
+    )
+    # For Windows: Prevent overriding the parent project's compiler/linker settings
+    set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
+    set(INSTALL_GTEST OFF CACHE BOOL "" FORCE)
+    FetchContent_MakeAvailable(googletest)
+  endif()
+endif()
+
+if(VW_INSTALL AND NOT FMT_SYS_DEP)
+  message(WARNING "Installing with a vendored version of fmt is not recommended. Use FMT_SYS_DEP to use a system dependency or specify VW_INSTALL=OFF to silence this warning.")
+endif()
+
+if(VW_INSTALL AND NOT SPDLOG_SYS_DEP)
+  message(WARNING "Installing with a vendored version of spdlog is not recommended. Use SPDLOG_SYS_DEP to use a system dependency or specify VW_INSTALL=OFF to silence this warning.")
+endif()
+
+if(VW_INSTALL AND NOT RAPIDJSON_SYS_DEP)
+  message(WARNING "Installing with a vendored version of rapidjson is not recommended. Use RAPIDJSON_SYS_DEP to use a system dependency or specify VW_INSTALL=OFF to silence this warning.")
+endif()
 
 string(TOUPPER "${CMAKE_BUILD_TYPE}" CONFIG)
 
@@ -169,8 +208,6 @@ endif()
 # Use folders in VS solution
 set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 
-set(explore_INCLUDE_DIRS "${CMAKE_CURRENT_SOURCE_DIR}/explore/")
-
 if(WIN32)
   set(STATIC_LIB_SUFFIXES ".lib" ".a")
 else()
@@ -178,24 +215,11 @@ else()
 endif()
 
 if(STATIC_LINK_VW_JAVA)
-  set(Boost_USE_STATIC_LIBS ON)
   set(CMAKE_FIND_LIBRARY_SUFFIXES ${STATIC_LIB_SUFFIXES})
-else()
-  if(STATIC_LINK_VW)
-    set(Boost_USE_STATIC_LIBS ON)
-    set(CMAKE_FIND_LIBRARY_SUFFIXES ${STATIC_LIB_SUFFIXES})
-    SET(BUILD_SHARED_LIBS OFF)
-  else()
-    set(Boost_USE_STATIC_LIBS OFF)
-    if(WIN32)
-      # Windows links everything dynamically
-      add_definitions( -DBOOST_ALL_DYN_LINK )
-    endif()
-  endif()
+elseif(STATIC_LINK_VW)
+  set(CMAKE_FIND_LIBRARY_SUFFIXES ${STATIC_LIB_SUFFIXES})
+  SET(BUILD_SHARED_LIBS OFF)
 endif()
-
-set(Boost_USE_MULTITHREADED ON)
-set(Boost_USE_STATIC_RUNTIME OFF)
 
 set(THREADS_PREFER_PTHREAD_FLAG ON)
 find_package(Threads REQUIRED)
@@ -214,11 +238,8 @@ if(STATIC_LINK_VW)
   endif()
 endif()
 
-# Align and foreach are also required, for some reason they can't be specified as components though.
-find_package(Boost REQUIRED COMPONENTS program_options system)
-find_package(ZLIB REQUIRED)
 if(BUILD_FLATBUFFERS)
-  find_package(flatbuffers REQUIRED)
+find_package(flatbuffers REQUIRED)
 endif()
 
 # This provides the variables such as CMAKE_INSTALL_LIBDIR for installation paths.
@@ -274,11 +295,9 @@ if(BUILD_BENCHMARKS)
   add_subdirectory(test/benchmarks)
 endif()
 
-if(BUILD_TESTS)
+if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME AND BUILD_TESTING)
   # Boost test is only required if we are building tests
   find_package(Boost REQUIRED COMPONENTS unit_test_framework)
-
-  enable_testing()
   add_subdirectory(test)
 
   set(vw_c_api_unit_test_target "")
@@ -336,17 +355,16 @@ if(vw_BUILD_NET_FRAMEWORK)
   add_subdirectory(cs)
 endif()
 
-# TODO convert c_test directory to cmake
 
 # Handle installation of targets, version, config and pkgconfig
 if(VW_INSTALL)
-  find_package(Boost REQUIRED COMPONENTS program_options)
-
-  FOREACH(BOOST_LIBRARY ${Boost_LIBRARIES})
-    SET (BOOST_LINK_LIBRARIES "${BOOST_LINK_LIBRARIES} ${BOOST_LIBRARY}")
-  ENDFOREACH()
-
   configure_file(libvw.pc.in libvw.pc @ONLY)
+
+  # only do this if the file exists. Some packages dont have this file and its only needed in a very specific use case
+  if(EXISTS nuget/vowpalwabbit.nuspec.in)
+    configure_file(nuget/vowpalwabbit.nuspec.in nuget/vowpalwabbit.nuspec @ONLY)
+  endif()
+
   configure_file(libvw_c_wrapper.pc.in libvw_c_wrapper.pc @ONLY)
   install(
     FILES ${CMAKE_CURRENT_BINARY_DIR}/libvw.pc ${CMAKE_CURRENT_BINARY_DIR}/libvw_c_wrapper.pc

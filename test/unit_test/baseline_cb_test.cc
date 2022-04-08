@@ -2,22 +2,19 @@
 // individual contributors. All rights reserved. Released under a BSD (revised)
 // license as described in the file LICENSE.
 
-#include <boost/test/unit_test.hpp>
 #include <boost/test/test_tools.hpp>
-
+#include <boost/test/unit_test.hpp>
 #include <ios>
 #include <sstream>
-#include "reductions_fwd.h"
-
-#include "test_common.h"
-
 #include <vector>
 
+#include "rand48.h"
+#include "test_common.h"
 #include "vw.h"
 
 namespace test_helpers
 {
-void make_example(multi_ex& examples, VW::workspace& vw, int arm, float* costs, float* probs)
+void make_example(VW::multi_ex& examples, VW::workspace& vw, int arm, float* costs, float* probs)
 {
   examples.push_back(VW::read_example(vw, "shared | shared_f"));
   for (int i = 0; i < 4; ++i)
@@ -47,14 +44,14 @@ BOOST_AUTO_TEST_CASE(baseline_cb_baseline_performs_badly)
   using namespace test_helpers;
   auto& vw = *VW::initialize(
       "--cb_explore_adf --baseline_challenger_cb --quiet --extra_metrics ut_metrics.json --random_seed 5");
-  float costs_p0[] = {-0.1, -0.3, -0.3, -1.0};
-  float probs_p0[] = {0.05, 0.05, 0.05, 0.85};
+  float costs_p0[] = {-0.1f, -0.3f, -0.3f, -1.0f};
+  float probs_p0[] = {0.05f, 0.05f, 0.05f, 0.85f};
 
   uint64_t state = 37;
   for (int i = 0; i < 50; ++i)
   {
     float s = merand48(state);
-    multi_ex ex;
+    VW::multi_ex ex;
 
     make_example(ex, vw, sample(4, probs_p0, s), costs_p0, probs_p0);
     vw.learn(ex);
@@ -69,7 +66,7 @@ BOOST_AUTO_TEST_CASE(baseline_cb_baseline_performs_badly)
   BOOST_CHECK_LE(
       metrics.get_float("baseline_cb_baseline_lowerbound"), metrics.get_float("baseline_cb_policy_expectation"));
 
-  multi_ex tst;
+  VW::multi_ex tst;
   make_example(tst, vw, -1, costs_p0, probs_p0);
   vw.predict(tst);
   BOOST_CHECK_EQUAL(tst[0]->pred.a_s.size(), 4);
@@ -87,17 +84,17 @@ BOOST_AUTO_TEST_CASE(baseline_cb_baseline_takes_over_policy)
   auto& vw = *VW::initialize(
       "--cb_explore_adf --baseline_challenger_cb --cb_c_tau 0.995 --quiet --power_t 0 -l 0.001 --extra_metrics "
       "ut_metrics.json --random_seed 5");
-  float costs_p0[] = {-0.1, -0.3, -0.3, -1.0};
-  float probs_p0[] = {0.05, 0.05, 0.05, 0.85};
+  float costs_p0[] = {-0.1f, -0.3f, -0.3f, -1.0f};
+  float probs_p0[] = {0.05f, 0.05f, 0.05f, 0.85f};
 
-  float costs_p1[] = {-1.0, -0.3, -0.3, -0.1};
-  float probs_p1[] = {0.05, 0.05, 0.05, 0.85};
+  float costs_p1[] = {-1.0f, -0.3f, -0.3f, -0.1f};
+  float probs_p1[] = {0.05f, 0.05f, 0.05f, 0.85f};
 
   uint64_t state = 37;
   for (int i = 0; i < 500; ++i)
   {
     float s = merand48(state);
-    multi_ex ex;
+    VW::multi_ex ex;
 
     make_example(ex, vw, sample(4, probs_p0, s), costs_p0, probs_p0);
     vw.learn(ex);
@@ -107,7 +104,7 @@ BOOST_AUTO_TEST_CASE(baseline_cb_baseline_takes_over_policy)
   for (int i = 0; i < 400; ++i)
   {
     float s = merand48(state);
-    multi_ex ex;
+    VW::multi_ex ex;
 
     make_example(ex, vw, sample(4, probs_p1, s), costs_p1, probs_p1);
     vw.learn(ex);
@@ -124,7 +121,7 @@ BOOST_AUTO_TEST_CASE(baseline_cb_baseline_takes_over_policy)
   BOOST_CHECK_GT(
       metrics.get_float("baseline_cb_baseline_lowerbound"), metrics.get_float("baseline_cb_policy_expectation"));
 
-  multi_ex tst;
+  VW::multi_ex tst;
   make_example(tst, vw, -1, costs_p1, probs_p1);
   vw.predict(tst);
 
@@ -142,15 +139,15 @@ VW::metric_sink run_simulation(int steps, int switch_step)
   using namespace test_helpers;
   auto* vw = VW::initialize(
       "--cb_explore_adf --baseline_challenger_cb --quiet --extra_metrics ut_metrics.json --random_seed 5");
-  float costs_p0[] = {-0.1, -0.3, -0.3, -1.0};
-  float probs_p0[] = {0.05, 0.05, 0.05, 0.85};
+  float costs_p0[] = {-0.1f, -0.3f, -0.3f, -1.0f};
+  float probs_p0[] = {0.05f, 0.05f, 0.05f, 0.85f};
 
   uint64_t state = 37;
 
   for (int i = 0; i < steps; ++i)
   {
     float s = merand48(state);
-    multi_ex ex;
+    VW::multi_ex ex;
 
     make_example(ex, *vw, sample(4, probs_p0, s), costs_p0, probs_p0);
     vw->learn(ex);

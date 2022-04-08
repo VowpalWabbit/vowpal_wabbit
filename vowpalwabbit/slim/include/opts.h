@@ -1,9 +1,9 @@
 #pragma once
 
-#include <vector>
-#include <string>
-
 #include "example_predict.h"
+
+#include <string>
+#include <vector>
 
 // command line option parsing
 namespace vw_slim

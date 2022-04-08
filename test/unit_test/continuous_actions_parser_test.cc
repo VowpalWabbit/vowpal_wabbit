@@ -2,33 +2,34 @@
 // individual contributors. All rights reserved. Released under a BSD (revised)
 // license as described in the file LICENSE.
 
-#include <boost/test/unit_test.hpp>
-#include <boost/test/test_tools.hpp>
-
-#include "test_common.h"
-
-#include <vector>
 #include "cb_continuous_label.h"
-#include "parser.h"
+#include "io/logger.h"
 #include "parse_primitives.h"
-#include "vw_string_view.h"
-#include <memory>
+#include "parser.h"
+#include "test_common.h"
+#include "vw/common/string_view.h"
 
-void parse_label(label_parser& lp, VW::string_view label, polylabel& l, reduction_features& red_fts)
+#include <boost/test/test_tools.hpp>
+#include <boost/test/unit_test.hpp>
+#include <memory>
+#include <vector>
+
+void parse_label(VW::label_parser& lp, VW::string_view label, VW::polylabel& l, VW::reduction_features& red_fts)
 {
   std::vector<VW::string_view> words;
   tokenize(' ', label, words);
   lp.default_label(l);
   VW::label_parser_reuse_mem mem;
-  lp.parse_label(l, red_fts, mem, nullptr, words);
+  auto null_logger = VW::io::create_null_logger();
+  lp.parse_label(l, red_fts, mem, nullptr, words, null_logger);
 }
 
 BOOST_AUTO_TEST_CASE(continuous_actions_parse_label)
 {
   auto lp = VW::cb_continuous::the_label_parser;
   {
-    auto plabel = scoped_calloc_or_throw<polylabel>();
-    reduction_features red_features;
+    auto plabel = scoped_calloc_or_throw<VW::polylabel>();
+    VW::reduction_features red_features;
     parse_label(lp, "ca 185.121:0.657567:6.20426e-05", *plabel, red_features);
     BOOST_CHECK_CLOSE(plabel->cb_cont.costs[0].pdf_value, 6.20426e-05, FLOAT_TOL);
     BOOST_CHECK_CLOSE(plabel->cb_cont.costs[0].cost, 0.657567, FLOAT_TOL);
@@ -44,8 +45,8 @@ BOOST_AUTO_TEST_CASE(continuous_actions_parse_label_and_pdf)
 {
   auto lp = VW::cb_continuous::the_label_parser;
   {
-    auto plabel = scoped_calloc_or_throw<polylabel>();
-    reduction_features red_features;
+    auto plabel = scoped_calloc_or_throw<VW::polylabel>();
+    VW::reduction_features red_features;
 
     parse_label(lp, "ca 185.121:0.657567:6.20426e-05 pdf 185:8109.67:2.10314e-06 8109.67:23959:6.20426e-05", *plabel,
         red_features);
@@ -71,8 +72,8 @@ BOOST_AUTO_TEST_CASE(continuous_actions_parse_only_pdf_no_label)
 {
   auto lp = VW::cb_continuous::the_label_parser;
   {
-    auto plabel = scoped_calloc_or_throw<polylabel>();
-    reduction_features red_features;
+    auto plabel = scoped_calloc_or_throw<VW::polylabel>();
+    VW::reduction_features red_features;
     parse_label(lp, "ca pdf 185:8109.67:2.10314e-06 8109.67:23959:6.20426e-05", *plabel, red_features);
     BOOST_CHECK_EQUAL(plabel->cb_cont.costs.size(), 0);
 
@@ -92,8 +93,8 @@ BOOST_AUTO_TEST_CASE(continuous_actions_parse_malformed_pdf)
 {
   auto lp = VW::cb_continuous::the_label_parser;
   {
-    auto plabel = scoped_calloc_or_throw<polylabel>();
-    reduction_features red_features;
+    auto plabel = scoped_calloc_or_throw<VW::polylabel>();
+    VW::reduction_features red_features;
 
     parse_label(lp, "ca pdf 185:8109.67 8109.67:23959:6.20426e-05", *plabel, red_features);
 
@@ -109,8 +110,8 @@ BOOST_AUTO_TEST_CASE(continuous_actions_parse_label_and_chosen_action)
 {
   auto lp = VW::cb_continuous::the_label_parser;
   {
-    auto plabel = scoped_calloc_or_throw<polylabel>();
-    reduction_features red_features;
+    auto plabel = scoped_calloc_or_throw<VW::polylabel>();
+    VW::reduction_features red_features;
     parse_label(lp, "ca 185.121:0.657567:6.20426e-05 chosen_action 8110.121", *plabel, red_features);
 
     // check label
@@ -130,8 +131,8 @@ BOOST_AUTO_TEST_CASE(continuous_actions_chosen_action_only_no_label)
 {
   auto lp = VW::cb_continuous::the_label_parser;
   {
-    auto plabel = scoped_calloc_or_throw<polylabel>();
-    reduction_features red_features;
+    auto plabel = scoped_calloc_or_throw<VW::polylabel>();
+    VW::reduction_features red_features;
     parse_label(lp, "ca chosen_action 8110.121", *plabel, red_features);
 
     BOOST_CHECK_EQUAL(plabel->cb_cont.costs.size(), 0);
@@ -147,8 +148,8 @@ BOOST_AUTO_TEST_CASE(continuous_actions_parse_label_pdf_and_chosen_action)
 {
   auto lp = VW::cb_continuous::the_label_parser;
   {
-    auto plabel = scoped_calloc_or_throw<polylabel>();
-    reduction_features red_features;
+    auto plabel = scoped_calloc_or_throw<VW::polylabel>();
+    VW::reduction_features red_features;
     parse_label(lp,
         "ca 185.121:0.657567:6.20426e-05 pdf 185:8109.67:2.10314e-06 8109.67:23959:6.20426e-05 chosen_action 8110.121",
         *plabel, red_features);
@@ -179,8 +180,8 @@ BOOST_AUTO_TEST_CASE(continuous_actions_parse_no_label)
 {
   auto lp = VW::cb_continuous::the_label_parser;
   {
-    auto plabel = scoped_calloc_or_throw<polylabel>();
-    reduction_features red_features;
+    auto plabel = scoped_calloc_or_throw<VW::polylabel>();
+    VW::reduction_features red_features;
     parse_label(lp, "", *plabel, red_features);
 
     BOOST_CHECK_EQUAL(plabel->cb_cont.costs.size(), 0);
@@ -194,8 +195,8 @@ BOOST_AUTO_TEST_CASE(continuous_actions_parse_no_label_w_prefix)
 {
   auto lp = VW::cb_continuous::the_label_parser;
   {
-    auto plabel = scoped_calloc_or_throw<polylabel>();
-    reduction_features red_features;
+    auto plabel = scoped_calloc_or_throw<VW::polylabel>();
+    VW::reduction_features red_features;
     parse_label(lp, "ca", *plabel, red_features);
 
     BOOST_CHECK_EQUAL(plabel->cb_cont.costs.size(), 0);
@@ -209,8 +210,8 @@ BOOST_AUTO_TEST_CASE(continus_actions_check_label_for_prefix)
 {
   auto lp = VW::cb_continuous::the_label_parser;
   {
-    auto plabel = scoped_calloc_or_throw<polylabel>();
-    reduction_features red_features;
+    auto plabel = scoped_calloc_or_throw<VW::polylabel>();
+    VW::reduction_features red_features;
     BOOST_REQUIRE_THROW(parse_label(lp, "185.121:0.657567:6.20426e-05", *plabel, red_features), VW::vw_exception);
   }
 }

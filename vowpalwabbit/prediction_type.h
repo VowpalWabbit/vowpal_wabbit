@@ -4,7 +4,8 @@
 
 #pragma once
 
-#include "vw_string_view.h"
+#include "vw/common/future_compat.h"
+#include "vw/common/string_view.h"
 
 #include <cstdint>
 

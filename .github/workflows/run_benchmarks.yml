@@ -6,65 +6,96 @@ on:
       - master
       - 'releases/**'
 
-concurrency: 
-  group: ${{ github.head_ref }}
-  cancel-in-progress: true
-
 jobs:
-  benchmark:
+  build-benchmark-master:
     container:
       image: vowpalwabbit/ubuntu1804-build:latest
-    runs-on: perf
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v1
         with:
           ref: ${{ github.base_ref }}
+          submodules: 'recursive'
       - name: Install google benchmarks
         shell: bash
         run: ./.scripts/linux/install-benchmarks.sh
-      - name: Build ${{ github.base_ref }}
-        shell: bash
-        run: ./.scripts/linux/build-with-benchmarks.sh
-      - name: Benchmark ${{ github.base_ref }}
-        shell: bash
-        run: ./.scripts/linux/run-benchmarks.sh master-benchmarks.json
-      - name: Upload ${{ github.base_ref }} benchmark results
-        uses: actions/upload-artifact@v2
-        with:
-          name: master-benchmarks
-          path: master-benchmarks.json
       - name: Upload benchmark compare
         uses: actions/upload-artifact@v2
         with:
           name: benchmark-compare
           path: benchmark/tools/
-      - name: Install benchmark compare requirements
+      - name: Build ${{ github.base_ref }}
         shell: bash
-        run: |
-          python3 -m pip install -r benchmark/tools/requirements.txt
-          # The above requirements file is missing the pandas dependency.
-          python3 -m pip install pandas
-      - run: rm -rf benchmark build vowpalwabbit/parser/flatbuffer/generated/ # generated or downloaded files
-      - uses: actions/checkout@v1
-      - name: Download ${{ github.base_ref }} benchmark results
-        uses: actions/download-artifact@v2
+        run: ./.scripts/linux/build-with-benchmarks.sh
+      - name: Upload benchmark binary
+        uses: actions/upload-artifact@v2
         with:
-          name: master-benchmarks
+          name: master-benchmark-bin
+          path: build/test/benchmarks/vw-benchmarks.out
+  build-benchmark-branch:
+    container:
+      image: vowpalwabbit/ubuntu1804-build:latest
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v1
+        with:
+          submodules: 'recursive'
+      - name: Install google benchmarks
+        shell: bash
+        run: ./.scripts/linux/install-benchmarks.sh
+      - name: Build branch
+        shell: bash
+        run: ./.scripts/linux/build-with-benchmarks.sh
+      - name: Upload benchmark binary
+        uses: actions/upload-artifact@v2
+        with:
+          name: branch-benchmark-bin
+          path: build/test/benchmarks/vw-benchmarks.out
+  run-benchmarks:
+    container:
+      image: vowpalwabbit/ubuntu1804-build:latest
+    runs-on: ubuntu-latest
+    needs: [build-benchmark-master, build-benchmark-branch]
+    steps:
       - name: Download benchmark compare
         uses: actions/download-artifact@v2
         with:
           name: benchmark-compare
-      - name: Build branch
+          path: tools/
+      - name: Download master bin
+        uses: actions/download-artifact@v2
+        with:
+          name: master-benchmark-bin
+          path: master-benchmark-bin/
+      - name: Download branch bin
+        uses: actions/download-artifact@v2
+        with:
+          name: branch-benchmark-bin
+          path: branch-benchmark-bin/
+      - name: Update permissions
+        run: |
+          chmod +x ./master-benchmark-bin/vw-benchmarks.out
+          chmod +x ./branch-benchmark-bin/vw-benchmarks.out
+      - name: Run master benchmark
+        run: >
+          ./master-benchmark-bin/vw-benchmarks.out
+          --benchmark_min_time=3
+          --benchmark_format=console
+          --benchmark_out_format=json
+          --benchmark_out=master-benchmarks.json
+      - name: Run branch benchmark
+        run: >
+          ./branch-benchmark-bin/vw-benchmarks.out
+          --benchmark_min_time=3
+          --benchmark_format=console
+          --benchmark_out_format=json
+          --benchmark_out=branch-benchmarks.json
+      - name: Install benchmark compare requirements
         shell: bash
-        run: ./.scripts/linux/build-with-benchmarks.sh
-      - name: Benchmark branch
-        shell: bash
-        run: ./.scripts/linux/run-benchmarks.sh branch-benchmarks.json
+        run: |
+          python3 -m pip install -r tools/requirements.txt
+          # The above requirements file is missing the pandas dependency.
+          python3 -m pip install pandas
       - name: Compare benchmarks
         shell: bash
-        run: ./.scripts/linux/compare-benchmarks.sh master-benchmarks.json branch-benchmarks.json
-      - name: Cleanup runner
-        if: always()
-        # This will only clear out the contents of the workspace dir
-        run: |
-          sudo rm -rf * 
+        run: python3 tools/compare.py benchmarks master-benchmarks.json branch-benchmarks.json

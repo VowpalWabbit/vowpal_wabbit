@@ -1,14 +1,12 @@
 // Copyright (c) by respective owners including Yahoo!, Microsoft, and
 // individual contributors. All rights reserved. Released under a BSD (revised)
 // license as described in the file LICENSE.
-#include "global_data.h"
 #include "vw_validate.h"
-#include "vw_versions.h"
-#include "shared_data.h"
 
+#include "global_data.h"
 #include "io/logger.h"
-
-namespace logger = VW::io::logger;
+#include "shared_data.h"
+#include "vw_versions.h"
 
 namespace VW
 {
@@ -17,7 +15,7 @@ void validate_version(VW::workspace& all)
   if (all.model_file_ver < VW::version_definitions::LAST_COMPATIBLE_VERSION)
     THROW("Model has possibly incompatible version! " << all.model_file_ver.to_string());
   if (all.model_file_ver > VW::version)
-    logger::errlog_warn("Warning: model version is more recent than VW version.  This may not work.");
+  { all.logger.err_warn("Model version is more recent than VW version. This may not work."); }
 }
 
 void validate_min_max_label(VW::workspace& all)

@@ -3,20 +3,17 @@
 // license as described in the file LICENSE.
 #pragma once
 
+#include "fast_pow10.h"
+#include "hashstring.h"
+#include "io/logger.h"
+#include "v_array.h"
+#include "vw/common/future_compat.h"
+#include "vw/common/string_view.h"
+
 #include <cmath>
+#include <cstdint>
 #include <string>
 #include <vector>
-#include <iostream>
-#include <cstdint>
-#include <cmath>
-
-#include "v_array.h"
-#include "hashstring.h"
-#include "vw_string_view.h"
-#include "fast_pow10.h"
-#include "future_compat.h"
-
-#include "io/logger.h"
 
 // chop up the string into a v_array or any compatible container of VW::string_view.
 template <typename ContainerT>
@@ -111,39 +108,44 @@ inline FORCE_INLINE float parseFloat(const char* p, size_t& end_idx, const char*
   }
 }
 
-inline float float_of_string(VW::string_view s)
+inline float float_of_string(VW::string_view s, VW::io::logger& logger)
 {
   size_t end_idx;
-  float f = parseFloat(s.begin(), end_idx, s.end());
+  float f = parseFloat(s.data(), end_idx, s.data() + s.size());
   if ((end_idx == 0 && s.size() > 0) || std::isnan(f))
   {
-    VW::io::logger::log_warn("warning: {} is not a good float, replacing with 0", s);
+    logger.out_warn("'{}' is not a good float, replacing with 0", s);
     f = 0;
   }
   return f;
 }
 
-inline int int_of_string(VW::string_view s, char*& end)
+inline int int_of_string(VW::string_view s, char*& end, VW::io::logger& logger)
 {
   // can't use stol because that throws an exception. Use strtol instead.
-  int i = strtol(s.begin(), &end, 10);
-  if (end <= s.begin() && s.size() > 0)
+  int i = strtol(s.data(), &end, 10);
+  if (end <= s.data() && s.size() > 0)
   {
-    VW::io::logger::log_warn("warning: {} is not a good int, replacing with 0", s);
+    logger.out_warn("'{}' is not a good int, replacing with 0", s);
     i = 0;
   }
 
   return i;
 }
 
-inline int int_of_string(VW::string_view s)
+inline int int_of_string(VW::string_view s, VW::io::logger& logger)
 {
   char* end = nullptr;
-  return int_of_string(s, end);
+  return int_of_string(s, end, logger);
 }
 
 namespace VW
 {
 std::string trim_whitespace(const std::string& s);
 VW::string_view trim_whitespace(VW::string_view str);
+
+std::vector<std::string> split_command_line(const std::string& cmd_line);
+std::vector<std::string> split_command_line(VW::string_view cmd_line);
+
+std::vector<VW::string_view> split_by_limit(const VW::string_view& s, size_t limit);
 }  // namespace VW
