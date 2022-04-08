@@ -30,7 +30,7 @@ Alekh Agarwal and John Langford, with help Olivier Chapelle.
 #endif
 #include "allreduce.h"
 #include "io/logger.h"
-#include "vw_exception.h"
+#include "vw/common/vw_exception.h"
 
 #include <sys/timeb.h>
 

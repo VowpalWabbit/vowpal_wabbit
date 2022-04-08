@@ -21,7 +21,7 @@
 #include "learner.h"
 #include "rand48.h"
 #include "shared_data.h"
-#include "vw_exception.h"
+#include "vw/common/vw_exception.h"
 #include "vw_validate.h"
 #include "vw_versions.h"
 

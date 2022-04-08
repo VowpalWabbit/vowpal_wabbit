@@ -7,7 +7,7 @@
 #include "io/io_adapter.h"
 #include "v_array.h"
 #include "vw/common/hash.h"
-#include "vw_string_view.h"
+#include "vw/common/string_view.h"
 
 #include <algorithm>
 #include <cassert>
@@ -19,7 +19,7 @@
 #include <vector>
 
 #ifndef VW_NOEXCEPT
-#  include "vw_exception.h"
+#  include "vw/common/vw_exception.h"
 #endif
 
 /* The i/o buffer can be conceptualized as an array below:

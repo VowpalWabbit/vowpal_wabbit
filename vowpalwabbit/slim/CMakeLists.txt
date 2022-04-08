@@ -15,6 +15,7 @@ if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
     include(CTest)
 endif()
 
+add_subdirectory(../../ext_libs/string-view-lite ${CMAKE_CURRENT_BINARY_DIR}/string-view-lite)
 add_subdirectory(../../explore ${CMAKE_CURRENT_BINARY_DIR}/explore)
 add_subdirectory(../common ${CMAKE_CURRENT_BINARY_DIR}/common)
 add_subdirectory(src)

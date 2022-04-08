@@ -4,7 +4,7 @@
 
 #include "cb_type.h"
 
-#include "vw_exception.h"
+#include "vw/common/vw_exception.h"
 
 #include <cassert>
 

@@ -10,7 +10,7 @@
 #include "learner.h"
 #include "loss_functions.h"
 #include "setup_base.h"
-#include "vw_exception.h"
+#include "vw/common/vw_exception.h"
 
 #include <cfloat>
 

@@ -8,7 +8,7 @@
 #include "io/logger.h"
 #include "v_array.h"
 #include "vw/common/future_compat.h"
-#include "vw_string_view.h"
+#include "vw/common/string_view.h"
 
 #include <cmath>
 #include <cstdint>
