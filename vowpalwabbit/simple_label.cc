@@ -6,7 +6,7 @@
 #include "best_constant.h"
 #include "cache.h"
 #include "example.h"
-#include "io/logger.h"
+#include "vw/io/logger.h"
 #include "parse_primitives.h"
 #include "vw.h"
 #include "vw/common/string_view.h"

@@ -5,7 +5,7 @@
 #include "multilabel_oaa.h"
 
 #include "config/options.h"
-#include "io/logger.h"
+#include "vw/io/logger.h"
 #include "loss_functions.h"
 #include "named_labels.h"
 #include "numeric_casts.h"

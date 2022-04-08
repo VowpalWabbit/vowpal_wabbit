@@ -7,7 +7,7 @@
 #include "example.h"
 #include "global_data.h"
 #include "interactions.h"
-#include "io/logger.h"
+#include "vw/io/logger.h"
 #include "learner.h"
 #include "setup_base.h"
 #include "v_array.h"

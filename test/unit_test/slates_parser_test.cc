@@ -2,7 +2,7 @@
 // individual contributors. All rights reserved. Released under a BSD (revised)
 // license as described in the file LICENSE.
 
-#include "io/logger.h"
+#include "vw/io/logger.h"
 #include "parse_primitives.h"
 #include "parser.h"
 #include "slates_label.h"

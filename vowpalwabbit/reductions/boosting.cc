@@ -12,7 +12,7 @@
 
 #include "config/options.h"
 #include "correctedMath.h"
-#include "io/logger.h"
+#include "vw/io/logger.h"
 #include "rand48.h"
 #include "rand_state.h"
 #include "setup_base.h"

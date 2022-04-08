@@ -5,7 +5,7 @@
 
 #include "fast_pow10.h"
 #include "hashstring.h"
-#include "io/logger.h"
+#include "vw/io/logger.h"
 #include "v_array.h"
 #include "vw/common/future_compat.h"
 #include "vw/common/string_view.h"

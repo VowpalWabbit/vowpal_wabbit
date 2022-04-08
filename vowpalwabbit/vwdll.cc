@@ -4,7 +4,7 @@
 
 #include "vwdll.h"
 
-#include "io/io_adapter.h"
+#include "vw/io/io_adapter.h"
 #include "memory.h"
 #include "parse_args.h"
 #include "parser.h"

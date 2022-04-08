@@ -8,7 +8,7 @@
 #include "cb/cb_algs.h"
 #include "config/options.h"
 #include "gd.h"
-#include "io/logger.h"
+#include "vw/io/logger.h"
 #include "io_buf.h"
 #include "setup_base.h"
 #include "shared_data.h"

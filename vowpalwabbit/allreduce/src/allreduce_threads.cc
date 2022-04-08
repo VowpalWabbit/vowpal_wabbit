@@ -5,7 +5,7 @@
 /*
 This implements the allreduce function using threads.
 */
-#include "allreduce.h"
+#include "vw/allreduce/allreduce.h"
 
 #include <future>
 

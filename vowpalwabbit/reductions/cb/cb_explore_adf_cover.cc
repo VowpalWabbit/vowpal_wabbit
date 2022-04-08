@@ -10,7 +10,7 @@
 #include "config/options.h"
 #include "explore.h"
 #include "gen_cs_example.h"
-#include "io/logger.h"
+#include "vw/io/logger.h"
 #include "label_parser.h"
 #include "numeric_casts.h"
 #include "rand48.h"

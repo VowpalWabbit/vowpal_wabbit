@@ -2,7 +2,7 @@
 
 #include <string>
 
-#include "io/io_adapter.h"
+#include "vw/io/io_adapter.h"
 #include "parse_example.h"
 #include "parser.h"
 #include "vw.h"

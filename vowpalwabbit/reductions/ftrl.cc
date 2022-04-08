@@ -7,7 +7,7 @@
 #include "correctedMath.h"
 #include "crossplat_compat.h"
 #include "gd.h"
-#include "io/logger.h"
+#include "vw/io/logger.h"
 #include "label_parser.h"
 #include "learner.h"
 #include "loss_functions.h"

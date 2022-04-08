@@ -5,7 +5,7 @@
 #include <boost/test/unit_test.hpp>
 #include <boost/test/test_tools.hpp>
 
-#include "io/logger.h"
+#include "vw/io/logger.h"
 #include "version.h"
 #include "vw_versions.h"
 #include "global_data.h"

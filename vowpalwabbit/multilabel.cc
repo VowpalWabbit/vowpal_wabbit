@@ -3,7 +3,7 @@
 // license as described in the file LICENSE.
 
 #include "example.h"
-#include "io/logger.h"
+#include "vw/io/logger.h"
 #include "model_utils.h"
 #include "parse_primitives.h"
 #include "shared_data.h"

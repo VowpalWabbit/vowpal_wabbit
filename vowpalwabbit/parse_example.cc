@@ -6,7 +6,7 @@
 
 #include "constant.h"
 #include "global_data.h"
-#include "io/logger.h"
+#include "vw/io/logger.h"
 #include "parse_primitives.h"
 #include "parser.h"
 #include "shared_data.h"

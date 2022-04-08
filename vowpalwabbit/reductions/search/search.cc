@@ -5,7 +5,7 @@
 #include "../csoaa.h"
 #include "../gd.h"  // for GD::foreach_feature
 #include "crossplat_compat.h"
-#include "io/logger.h"
+#include "vw/io/logger.h"
 #include "label_dictionary.h"
 #include "named_labels.h"
 #include "numeric_casts.h"

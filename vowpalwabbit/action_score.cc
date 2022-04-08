@@ -5,7 +5,7 @@
 #include "action_score.h"
 
 #include "global_data.h"
-#include "io/logger.h"
+#include "vw/io/logger.h"
 #include "io_buf.h"
 #include "text_utils.h"
 #include "v_array.h"

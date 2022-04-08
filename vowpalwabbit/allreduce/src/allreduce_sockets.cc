@@ -28,8 +28,8 @@ Alekh Agarwal and John Langford, with help Olivier Chapelle.
 #  include <arpa/inet.h>
 #  include <unistd.h>
 #endif
-#include "allreduce.h"
-#include "io/logger.h"
+#include "vw/allreduce/allreduce.h"
+#include "vw/io/logger.h"
 #include "vw/common/vw_exception.h"
 
 #include <sys/timeb.h>

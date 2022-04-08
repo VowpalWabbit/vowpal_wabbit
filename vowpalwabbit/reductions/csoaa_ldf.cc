@@ -7,7 +7,7 @@
 #include "constant.h"
 #include "correctedMath.h"
 #include "gd.h"  // GD::foreach_feature() needed in subtract_example()
-#include "io/logger.h"
+#include "vw/io/logger.h"
 #include "label_dictionary.h"
 #include "loss_functions.h"
 #include "print_utils.h"

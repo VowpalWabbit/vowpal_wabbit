@@ -4,7 +4,7 @@
 
 #include "gen_cs_example.h"
 
-#include "io/logger.h"
+#include "vw/io/logger.h"
 #include "vw.h"
 #include "vw/common/vw_exception.h"
 

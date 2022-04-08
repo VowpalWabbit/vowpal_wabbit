@@ -7,7 +7,7 @@
 #include "cb_label_parser.h"
 #include "config/options.h"
 #include "gen_cs_example.h"
-#include "io/logger.h"
+#include "vw/io/logger.h"
 #include "setup_base.h"
 #include "shared_data.h"
 #include "vw.h"

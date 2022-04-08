@@ -7,7 +7,7 @@
 #include "config/options.h"
 #include "csoaa.h"
 #include "debug_log.h"
-#include "io/logger.h"
+#include "vw/io/logger.h"
 #include "loss_functions.h"
 #include "rand48.h"
 #include "setup_base.h"

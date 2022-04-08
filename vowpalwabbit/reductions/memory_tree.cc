@@ -6,7 +6,7 @@
 
 #include "config/options.h"
 #include "example.h"
-#include "io/logger.h"
+#include "vw/io/logger.h"
 #include "numeric_casts.h"
 #include "rand48.h"
 #include "rand_state.h"

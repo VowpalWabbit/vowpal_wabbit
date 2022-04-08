@@ -5,7 +5,7 @@
 #include "cbzo.h"
 
 #include "gd.h"
-#include "io/logger.h"
+#include "vw/io/logger.h"
 #include "io_buf.h"
 #include "parse_regressor.h"
 #include "prob_dist_cont.h"

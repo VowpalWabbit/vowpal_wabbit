@@ -2,7 +2,7 @@
 // individual contributors. All rights reserved. Released under a BSD (revised)
 // license as described in the file LICENSE.
 
-#include "logger.h"
+#include "vw/io/logger.h"
 
 namespace VW
 {

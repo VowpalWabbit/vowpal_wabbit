@@ -7,7 +7,7 @@
 #define RAPIDJSON_HAS_STDSTRING 1
 
 #include "array_parameters.h"
-#include "io/logger.h"
+#include "vw/io/logger.h"
 #include "kskip_ngram_transformer.h"
 #include "learner.h"
 #include "loss_functions.h"

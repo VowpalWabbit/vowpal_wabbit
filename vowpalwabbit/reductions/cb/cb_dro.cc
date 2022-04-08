@@ -6,7 +6,7 @@
 #include "example.h"
 #include "explore.h"
 #include "global_data.h"
-#include "io/logger.h"
+#include "vw/io/logger.h"
 #include "label_parser.h"
 #include "learner.h"
 #include "rand48.h"

@@ -21,7 +21,7 @@
 #undef VW_DEBUG_LOG
 #define VW_DEBUG_LOG vw_dbg::cb_adf
 
-#include "io/logger.h"
+#include "vw/io/logger.h"
 
 using namespace VW::LEARNER;
 using namespace CB;

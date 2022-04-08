@@ -3,7 +3,7 @@
 // license as described in the file LICENSE.
 
 #include "cb_continuous_label.h"
-#include "io/logger.h"
+#include "vw/io/logger.h"
 #include "parse_primitives.h"
 #include "parser.h"
 #include "test_common.h"

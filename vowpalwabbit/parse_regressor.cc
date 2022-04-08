@@ -16,7 +16,7 @@
 #include "config/cli_options_serializer.h"
 #include "crossplat_compat.h"
 #include "global_data.h"
-#include "io/logger.h"
+#include "vw/io/logger.h"
 #include "kskip_ngram_transformer.h"
 #include "learner.h"
 #include "rand48.h"

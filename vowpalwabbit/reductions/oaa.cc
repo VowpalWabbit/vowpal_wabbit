@@ -5,7 +5,7 @@
 
 #include "config/options.h"
 #include "correctedMath.h"
-#include "io/logger.h"
+#include "vw/io/logger.h"
 #include "loss_functions.h"
 #include "named_labels.h"
 #include "rand_state.h"

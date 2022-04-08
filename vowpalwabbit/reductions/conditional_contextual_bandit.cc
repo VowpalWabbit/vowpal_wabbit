@@ -13,7 +13,7 @@
 #include "example.h"
 #include "global_data.h"
 #include "interactions.h"
-#include "io/logger.h"
+#include "vw/io/logger.h"
 #include "label_dictionary.h"
 #include "model_utils.h"
 #include "print_utils.h"

@@ -6,7 +6,7 @@
 
 #include "example.h"
 #include "global_data.h"
-#include "io/logger.h"
+#include "vw/io/logger.h"
 #include "parse_example.h"
 #include "parser.h"
 #include "v_array.h"

@@ -4,7 +4,7 @@
 
 #pragma once
 
-#include "io/logger.h"
+#include "vw/io/logger.h"
 #include "label_type.h"
 #include "vw/common/string_view.h"
 

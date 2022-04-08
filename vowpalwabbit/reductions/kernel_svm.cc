@@ -10,7 +10,7 @@
 #include "constant.h"
 #include "example.h"
 #include "gd.h"
-#include "io/logger.h"
+#include "vw/io/logger.h"
 #include "learner.h"
 #include "loss_functions.h"
 #include "memory.h"

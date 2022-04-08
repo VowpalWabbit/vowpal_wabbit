@@ -13,7 +13,7 @@
 #endif
 #include "config/options.h"
 #include "global_data.h"
-#include "io/logger.h"
+#include "vw/io/logger.h"
 #include "parser.h"
 #include "scope_exit.h"
 

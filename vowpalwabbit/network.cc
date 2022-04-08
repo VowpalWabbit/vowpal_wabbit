@@ -15,7 +15,7 @@
 #  include <unistd.h>
 #endif
 
-#include "io/logger.h"
+#include "vw/io/logger.h"
 #include "vw/common/vw_exception.h"
 
 #include <cerrno>

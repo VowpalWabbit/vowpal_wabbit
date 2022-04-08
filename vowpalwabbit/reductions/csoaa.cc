@@ -4,7 +4,7 @@
 #include "csoaa.h"
 
 #include "config/options.h"
-#include "io/logger.h"
+#include "vw/io/logger.h"
 #include "setup_base.h"
 #include "vw.h"
 #include "vw/common/vw_exception.h"

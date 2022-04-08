@@ -7,7 +7,7 @@
 #include "config/options.h"
 #include "gd.h"
 #include "guard.h"
-#include "io/logger.h"
+#include "vw/io/logger.h"
 #include "loss_functions.h"
 #include "named_labels.h"
 #include "rand48.h"

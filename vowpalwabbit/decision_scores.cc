@@ -6,7 +6,7 @@
 
 #include "action_score.h"
 #include "global_data.h"
-#include "io/logger.h"
+#include "vw/io/logger.h"
 #include "io_buf.h"
 #include "reductions/conditional_contextual_bandit.h"
 #include "reductions/slates.h"

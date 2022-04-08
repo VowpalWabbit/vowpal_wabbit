@@ -4,7 +4,7 @@
 #include "vw_validate.h"
 
 #include "global_data.h"
-#include "io/logger.h"
+#include "vw/io/logger.h"
 #include "shared_data.h"
 #include "vw_versions.h"
 
