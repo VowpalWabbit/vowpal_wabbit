@@ -629,7 +629,9 @@ class Workspace(pylibvw.vw):
                 ec = self.parse(ec)
                 new_example = True
 
-        if not isinstance(ec, Example) and not (isinstance(ec, list) and isinstance(ec[0], Example)):
+        if not isinstance(ec, Example) and not (
+            isinstance(ec, list) and isinstance(ec[0], Example)
+        ):
             raise TypeError(
                 "expecting string, example object, or list of example objects"
                 " as ec argument for learn, got %s" % type(ec)
@@ -687,7 +689,9 @@ class Workspace(pylibvw.vw):
                 ec = self.parse(ec)
                 new_example = True
 
-        if not isinstance(ec, Example) and not (isinstance(ec, list) and isinstance(ec[0], Example)):
+        if not isinstance(ec, Example) and not (
+            isinstance(ec, list) and isinstance(ec[0], Example)
+        ):
             raise TypeError(
                 "expecting string, example object, or list of example objects"
                 " as ec argument for predict, got %s" % type(ec)
@@ -707,7 +711,7 @@ class Workspace(pylibvw.vw):
         if isinstance(ec, Example):
             prediction = ec.get_prediction(prediction_type)
         else:
-            prediction = ec[0].get_prediction(prediction_type) # type: ignore
+            prediction = ec[0].get_prediction(prediction_type)  # type: ignore
 
         if new_example:
             self.finish_example(ec)
