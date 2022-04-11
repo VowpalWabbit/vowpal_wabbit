@@ -16,7 +16,9 @@ vw_add_library(
     ENABLE_INSTALL
 )
 
-target_link_libraries(vw_io PRIVATE wsock32 ws2_32)
+if(WIN32)
+  target_link_libraries(vw_io PRIVATE wsock32 ws2_32)
+endif()
 
 if(SPDLOG_SYS_DEP)
   # this doesn't get defined when using a system-installed spdlog
