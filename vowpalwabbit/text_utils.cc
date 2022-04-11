@@ -22,7 +22,7 @@ bool VW::starts_with(VW::string_view full_string, VW::string_view starting)
   return full_string.size() >= starting.size() && 0 == full_string.compare(0, starting.size(), starting);
 }
 
-std::string decode_inline_hex(VW::string_view arg, VW::io::logger& logger)
+std::string VW::decode_inline_hex(VW::string_view arg, VW::io::logger& logger)
 {
   constexpr size_t NUMBER_OF_HEX_CHARS = 2;
   // "\x" + hex chars
@@ -87,7 +87,7 @@ std::string VW::wrap_text(VW::string_view text, size_t width, bool wrap_after)
 }
 
 // max_decimal_places < 0 means use as many decimal places as necessary
-std::string fmt_float(float f, int max_decimal_places)
+std::string VW::fmt_float(float f, int max_decimal_places)
 {
   if (max_decimal_places >= 0)
   {
