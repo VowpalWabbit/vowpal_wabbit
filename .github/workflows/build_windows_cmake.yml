@@ -55,7 +55,7 @@ jobs:
           cmake -S "${{ env.SOURCE_DIR }}" -B "${{ env.CMAKE_BUILD_DIR }}" -A "x64" -DCMAKE_TOOLCHAIN_FILE="${{ env.VCPKG_ROOT }}/scripts/buildsystems/vcpkg.cmake" -DUSE_LATEST_STD=On -DBUILD_FLATBUFFERS=On -Dvw_BUILD_NET_FRAMEWORK=On
       - name: Build project
         run: |
-          cmake --build "${{ env.CMAKE_BUILD_DIR }}" --config ${{ matrix.build_config }}
+          cmake --build "${{ env.CMAKE_BUILD_DIR }}" --config ${{ matrix.build_config }} --verbose
       - name: Run tests
         run: |
           cmake --build "${{ env.CMAKE_BUILD_DIR }}" --config ${{ matrix.build_config }} --target test_with_output
