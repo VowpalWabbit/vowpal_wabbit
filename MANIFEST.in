@@ -12,4 +12,3 @@ recursive-include explore *
 recursive-include python/bin python/*.dll
 global-exclude *.o *.exe *.pyc
 recursive-exclude vowpalwabbit/.nuget *
-recursive-exclude vowpalwabbit/slim *
