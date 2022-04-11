@@ -372,9 +372,9 @@ add_library(vw STATIC ${vw_all_sources} ${vw_all_headers})
 
 target_link_libraries(vw
   PUBLIC
-    VowpalWabbit::common VowpalWabbit::explore VowpalWabbit::allreduce VowpalWabbit::config ${spdlog_target} fmt::fmt
+    VowpalWabbit::vw_common VowpalWabbit::explore VowpalWabbit::vw_allreduce VowpalWabbit::vw_config ${spdlog_target} fmt::fmt
   PRIVATE
-    ${CMAKE_DL_LIBS} ${LINK_THREADS} vw_io
+    ${CMAKE_DL_LIBS} ${LINK_THREADS} VowpalWabbit::vw_io
     # Workaround an issue where RapidJSON needed to be exported tom install the target. This is
     # actually a private dependency and so do not "link" when processing targets for installation.
     # https://gitlab.kitware.com/cmake/cmake/issues/15415

@@ -12,7 +12,7 @@ target_include_directories(explore INTERFACE
   $<BUILD_INTERFACE:${CMAKE_CURRENT_LIST_DIR}>
   $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/vowpalwabbit/>)
 
-target_link_libraries(explore INTERFACE VowpalWabbit::common)
+target_link_libraries(explore INTERFACE VowpalWabbit::vw_common)
 
 target_sources(explore INTERFACE ${explore_all_headers})
 

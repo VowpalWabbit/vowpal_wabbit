@@ -8,7 +8,7 @@ vw_add_library(
     NAME "allreduce"
     TYPE "STATIC_ONLY"
     SOURCES ${vw_allreduce_sources}
-    PUBLIC_DEPS VowpalWabbit::common VowpalWabbit::io
+    PUBLIC_DEPS vw_common vw_io
     ENABLE_INSTALL
 )
 

@@ -21,7 +21,7 @@ vw_add_library(
     NAME "config"
     TYPE "STATIC_ONLY"
     SOURCES ${vw_config_sources}
-    PUBLIC_DEPS VowpalWabbit::common
+    PUBLIC_DEPS VowpalWabbit::vw_common
     PRIVATE_DEPS fmt::fmt
     ENABLE_INSTALL
 )

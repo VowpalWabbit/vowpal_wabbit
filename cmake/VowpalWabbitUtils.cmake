@@ -98,7 +98,7 @@ function(vw_add_library)
 
   vw_get_lib_target(FULL_LIB_NAME ${VW_LIB_NAME})
   add_library(${FULL_LIB_NAME} ${CONCRETE_CMAKE_LIB_TYPE})
-  add_library(VowpalWabbit::${VW_LIB_NAME} ALIAS ${FULL_LIB_NAME})
+  add_library(VowpalWabbit::${FULL_LIB_NAME} ALIAS ${FULL_LIB_NAME})
 
   # Append d suffix if we are on Windows and are building a sttic libraru
   if(WIN32)
@@ -201,7 +201,8 @@ function(vw_add_test_executable)
   "SOURCES;EXTRA_DEPS;COMPILE_DEFS"
   ${ARGN})
 
-  if(NOT TARGET VowpalWabbit::${VW_TEST_FOR_LIB})
+  vw_get_lib_target(FULL_FOR_LIB_NAME ${VW_TEST_FOR_LIB})
+  if(NOT TARGET ${FULL_FOR_LIB_NAME})
     message(FATAL_ERROR "Target ${VW_TEST_FOR_LIB} does not exist")
   endif()
 
@@ -218,7 +219,7 @@ function(vw_add_test_executable)
     add_executable(${FULL_TEST_NAME})
     target_sources(${FULL_TEST_NAME} PRIVATE ${VW_TEST_SOURCES})
     target_link_libraries(${FULL_TEST_NAME} PUBLIC
-      VowpalWabbit::${VW_TEST_FOR_LIB}
+      ${FULL_FOR_LIB_NAME}
       ${VW_TEST_EXTRA_DEPS}
       gtest_main
       gmock
