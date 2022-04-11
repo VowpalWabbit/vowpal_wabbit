@@ -3,6 +3,7 @@ add_subdirectory(io)
 add_subdirectory(allreduce)
 add_subdirectory(active_interactor)
 add_subdirectory(config)
+add_subdirectory(slim)
 
 configure_file(config.h.in config.h)
 # Use position independent code for all targets in this directory
