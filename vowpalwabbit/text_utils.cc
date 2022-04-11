@@ -11,15 +11,13 @@
 
 #include <sstream>
 
-namespace VW
-{
-bool ends_with(VW::string_view full_string, VW::string_view ending)
+bool VW::ends_with(VW::string_view full_string, VW::string_view ending)
 {
   return full_string.size() >= ending.size() &&
       0 == full_string.compare(full_string.size() - ending.size(), ending.size(), ending);
 }
 
-bool starts_with(VW::string_view full_string, VW::string_view starting)
+bool VW::starts_with(VW::string_view full_string, VW::string_view starting)
 {
   return full_string.size() >= starting.size() && 0 == full_string.compare(0, starting.size(), starting);
 }
@@ -66,7 +64,7 @@ std::string decode_inline_hex(VW::string_view arg, VW::io::logger& logger)
   return res;
 }
 
-std::string wrap_text(VW::string_view text, size_t width, bool wrap_after)
+std::string VW::wrap_text(VW::string_view text, size_t width, bool wrap_after)
 {
   std::stringstream ss;
   std::vector<VW::string_view> words;
@@ -102,5 +100,3 @@ std::string fmt_float(float f, int max_decimal_places)
 
   return fmt::format("{}", f);
 }
-
-}  // namespace VW
