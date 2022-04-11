@@ -211,7 +211,7 @@ demo_session() {
                         cut -d' ' -f1 > Ys/r.train.nonoise
                     ;;
             esac
- 
+
             demo_cmd -p "Generate plot of clean vs NOISY Ys (labels)" \
                 'x-vs-y.r Ys/r.train.nonoise  Ys/r.train  X-vs-Y.png'
 
@@ -243,7 +243,7 @@ demo_session() {
             msg2='Train: look at the model weights'
             ;;
     esac
-    demo_cmd "$msg1"  "vw -k $vw_args r.train -f r.model"
+    demo_cmd "$msg1"  "vw -k $vw_args -d r.train -f r.model"
     echo '+------------------------------------------------------------------+'
     echo '# Notice how fast training took to complete (about 0.1 sec).'
     echo '# vw is faster processing data than all other programs in this demo.'
@@ -252,7 +252,7 @@ demo_session() {
     echo '# vw training speed is limited only by the time to read the data.'
     echo '+------------------------------------------------------------------+'
 
-    demo_cmd "$msg2"  "vw-varinfo -k $vw_args r.train"
+    demo_cmd "$msg2"  "vw-varinfo -k $vw_args -d r.train"
 
     echo '+------------------------------------------------------------------+'
     echo '# Notice how accurate the model is: model weights are exactly,'
@@ -280,7 +280,7 @@ demo_session() {
 
     # --- prediction of test-set Ys using trained-model
     demo_cmd "Predict: VW uses the model to predict the test-set Ys (labels)" \
-        'vw -t -i r.model r.test -p r.predict'
+        'vw -t -i r.model -d r.test -p r.predict'
     echo '+-----------------------------------------------------------+'
     echo '# Since Ys (labels) have been zeroed - the reported error'
     echo '# is large even though predictions are, in fact, accurate.'
@@ -310,7 +310,7 @@ demo_session() {
 
 #
 # -- main
-# 
+#
 check_prereqs
 
 case "$@" in
