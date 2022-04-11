@@ -10,6 +10,7 @@
 
 #include "reduction_stack.h"
 #include "vw.h"
+#include "vw/common/vw_exception.h"
 #include "vw/config/options.h"
 #include "vw_fwd.h"
 
