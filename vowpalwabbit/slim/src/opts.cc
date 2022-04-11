@@ -1,4 +1,4 @@
-#include "opts.h"
+#include "vw/slim/opts.h"
 
 #include <cctype>
 #include <cstdlib>
