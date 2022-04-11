@@ -7,4 +7,4 @@ REPO_DIR=$SCRIPT_DIR/../../
 cd $REPO_DIR
 
 cd build
-ctest --extra-verbose --output-on-failure
+ctest -R vw_slim_test --extra-verbose  --output-on-failure
