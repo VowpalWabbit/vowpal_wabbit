@@ -7,6 +7,7 @@
 #include "parse_primitives.h"
 #include "shared_data.h"
 #include "vw.h"
+#include "vw/common/text_utils.h"
 #include "vw/io/logger.h"
 #include "vw_string_view_fmt.h"
 
@@ -30,7 +31,7 @@ void parse_label(MULTILABEL::labels& ld, VW::label_parser_reuse_mem& reuse_mem,
     case 0:
       break;
     case 1:
-      tokenize(',', words[0], reuse_mem.tokens);
+      VW::common::tokenize(',', words[0], reuse_mem.tokens);
 
       for (const auto& parse_name : reuse_mem.tokens)
       {

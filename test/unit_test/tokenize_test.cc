@@ -7,6 +7,7 @@
 
 #include "parse_primitives.h"
 #include "vw.h"
+#include "vw/common/text_utils.h"
 
 #include <vector>
 #include <string>
@@ -15,7 +16,7 @@
 BOOST_AUTO_TEST_CASE(tokenize_basic_string) {
   std::vector<VW::string_view> container;
   std::string str = "this is   a string  ";
-  tokenize(' ', str, container);
+  VW::common::tokenize(' ', str, container);
 
   auto const expected_values = {"this", "is", "a", "string"};
   BOOST_CHECK_EQUAL_COLLECTIONS(
@@ -26,7 +27,7 @@ BOOST_AUTO_TEST_CASE(tokenize_basic_string) {
 BOOST_AUTO_TEST_CASE(tokenize_basic_string_allow_empty) {
   std::vector<VW::string_view> container;
   std::string str = "this is   a string  ";
-  tokenize(' ', str, container, true);
+  VW::common::tokenize(' ', str, container, true);
 
   auto const expected_values = {"this", "is","", "", "a", "string", "", ""};
   BOOST_CHECK_EQUAL_COLLECTIONS(
@@ -37,7 +38,7 @@ BOOST_AUTO_TEST_CASE(tokenize_basic_string_allow_empty) {
 BOOST_AUTO_TEST_CASE(tokenize_basic_string_allow_empty_no_end_space) {
   std::vector<VW::string_view> container;
   std::string str = "this is   a string";
-  tokenize(' ', str, container, true);
+  VW::common::tokenize(' ', str, container, true);
 
   auto const expected_values = {"this", "is","", "", "a", "string"};
   BOOST_CHECK_EQUAL_COLLECTIONS(

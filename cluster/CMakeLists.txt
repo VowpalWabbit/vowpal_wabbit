@@ -15,7 +15,7 @@ if(STATIC_LINK_VW)
 endif()
 
 target_include_directories(spanning_tree PRIVATE ${vowpal_wabbit_dir})
-target_link_libraries(spanning_tree PRIVATE  VowpalWabbit::config VowpalWabbit::vw)
+target_link_libraries(spanning_tree PRIVATE VowpalWabbit::vw)
 
 if(VW_INSTALL)
   install(

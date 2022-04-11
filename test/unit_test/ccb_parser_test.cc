@@ -8,6 +8,7 @@
 #include "reductions/conditional_contextual_bandit.h"
 #include "test_common.h"
 #include "vw/common/string_view.h"
+#include "vw/common/text_utils.h"
 #include "vw/io/logger.h"
 
 #include <boost/test/test_tools.hpp>
@@ -18,7 +19,7 @@
 void parse_ccb_label(VW::string_view label, CCB::label& l)
 {
   std::vector<VW::string_view> words;
-  tokenize(' ', label, words);
+  VW::common::tokenize(' ', label, words);
   CCB::default_label(l);
   VW::label_parser_reuse_mem mem;
   auto null_logger = VW::io::create_null_logger();

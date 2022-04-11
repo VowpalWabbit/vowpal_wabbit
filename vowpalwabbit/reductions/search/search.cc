@@ -21,6 +21,7 @@
 #include "setup_base.h"
 #include "shared_data.h"
 #include "vw.h"
+#include "vw/common/text_utils.h"
 #include "vw/common/vw_exception.h"
 #include "vw/io/logger.h"
 
@@ -2605,7 +2606,7 @@ void parse_neighbor_features(
     }
 
     cmd.clear();
-    tokenize(':', strview, cmd, true);
+    VW::common::tokenize(':', strview, cmd, true);
     int32_t posn = 0;
     char ns = ' ';
     if (cmd.size() == 1)

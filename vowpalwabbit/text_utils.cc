@@ -11,17 +11,6 @@
 
 #include <sstream>
 
-bool VW::ends_with(VW::string_view full_string, VW::string_view ending)
-{
-  return full_string.size() >= ending.size() &&
-      0 == full_string.compare(full_string.size() - ending.size(), ending.size(), ending);
-}
-
-bool VW::starts_with(VW::string_view full_string, VW::string_view starting)
-{
-  return full_string.size() >= starting.size() && 0 == full_string.compare(0, starting.size(), starting);
-}
-
 std::string VW::decode_inline_hex(VW::string_view arg, VW::io::logger& logger)
 {
   constexpr size_t NUMBER_OF_HEX_CHARS = 2;
@@ -62,28 +51,6 @@ std::string VW::decode_inline_hex(VW::string_view arg, VW::io::logger& logger)
   while (pos < arg.size()) { res.push_back(arg[pos++]); }
 
   return res;
-}
-
-std::string VW::wrap_text(VW::string_view text, size_t width, bool wrap_after)
-{
-  std::stringstream ss;
-  std::vector<VW::string_view> words;
-  tokenize(' ', text, words);
-  size_t current_line_size = 0;
-  std::string space = "";
-  for (const auto& word : words)
-  {
-    if ((wrap_after && current_line_size > width) || (!wrap_after && (current_line_size + word.size() > width)))
-    {
-      ss << '\n';
-      space = "";
-      current_line_size = 0;
-    }
-    ss << space << word;
-    space = " ";
-    current_line_size += word.size() + 1;
-  }
-  return ss.str();
 }
 
 // max_decimal_places < 0 means use as many decimal places as necessary

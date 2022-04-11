@@ -4,22 +4,22 @@
 
 #include <boost/test/unit_test.hpp>
 
-#include "text_utils.h"
+#include "vw/common/text_utils.h"
 
 BOOST_AUTO_TEST_CASE(wrap_text_tests)
 {
-  auto result = VW::wrap_text("test", 10);
+  auto result = VW::common::wrap_text("test", 10);
   auto expected = R"(test)";
   BOOST_CHECK_EQUAL(expected, result);
 
-  result = VW::wrap_text("test another word with", 1);
+  result = VW::common::wrap_text("test another word with", 1);
   expected = R"(test
 another
 word
 with)";
   BOOST_CHECK_EQUAL(expected, result);
 
-  result = VW::wrap_text(
+  result = VW::common::wrap_text(
       "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Integer non neque massa. In placerat ligula placerat "
       "ullamcorper egestas.",
       25);

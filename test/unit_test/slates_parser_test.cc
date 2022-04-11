@@ -7,6 +7,7 @@
 #include "slates_label.h"
 #include "test_common.h"
 #include "vw/common/string_view.h"
+#include "vw/common/text_utils.h"
 #include "vw/io/logger.h"
 
 #include <boost/test/test_tools.hpp>
@@ -16,7 +17,7 @@
 void parse_slates_label(VW::string_view label, VW::slates::label& l)
 {
   std::vector<VW::string_view> words;
-  tokenize(' ', label, words);
+  VW::common::tokenize(' ', label, words);
   VW::slates::default_label(l);
   VW::reduction_features red_fts;
   VW::label_parser_reuse_mem mem;

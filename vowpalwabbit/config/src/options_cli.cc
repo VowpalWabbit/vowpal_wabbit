@@ -4,7 +4,7 @@
 
 #include "vw/config/options_cli.h"
 
-#include "text_utils.h"
+#include "vw/common/text_utils.h"
 #include "vw/common/string_view.h"
 #include "vw/common/vw_exception.h"
 #include "vw/config/option.h"
@@ -427,7 +427,7 @@ bool options_cli::was_supplied(const std::string& key) const
   // Short option
   const auto short_key = "-" + key;
   auto short_option_found = std::any_of(m_command_line.begin(), m_command_line.end(),
-      [&short_key](const std::string& arg) { return VW::starts_with(arg, short_key); });
+      [&short_key](const std::string& arg) { return VW::common::starts_with(arg, short_key); });
   if (short_option_found) { return true; }
 
   const auto long_key = "--" + key;
@@ -436,7 +436,7 @@ bool options_cli::was_supplied(const std::string& key) const
         // We need to check that the option starts with --key_name, but we also need to ensure that either the whole
         // token matches or we hit an equals sign denoting the end of the option name. If we don't do this --csoaa and
         // --csoaa_ldf would incorrectly match.
-        return VW::starts_with(arg, long_key) && ((arg.size() == long_key.size()) || (arg[long_key.size()] == '='));
+        return VW::common::starts_with(arg, long_key) && ((arg.size() == long_key.size()) || (arg[long_key.size()] == '='));
       });
 
   return long_option_found;
