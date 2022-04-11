@@ -2,16 +2,15 @@
 // individual contributors. All rights reserved. Released under a BSD (revised)
 // license as described in the file LICENSE.
 
-#include <boost/test/unit_test.hpp>
-#include <boost/test/test_tools.hpp>
-
 #include "parse_primitives.h"
 #include "vw.h"
 #include "vw/common/text_utils.h"
 
-#include <vector>
-#include <string>
+#include <boost/test/test_tools.hpp>
+#include <boost/test/unit_test.hpp>
 #include <cstring>
+#include <string>
+#include <vector>
 
 BOOST_AUTO_TEST_CASE(tokenize_basic_string) {
   std::vector<VW::string_view> container;
