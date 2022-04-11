@@ -16,6 +16,8 @@ vw_add_library(
     ENABLE_INSTALL
 )
 
+target_link_libraries(vw_io PRIVATE wsock32 ws2_32)
+
 if(SPDLOG_SYS_DEP)
   # this doesn't get defined when using a system-installed spdlog
   target_compile_definitions(vw_io PUBLIC SPDLOG_FMT_EXTERNAL)
