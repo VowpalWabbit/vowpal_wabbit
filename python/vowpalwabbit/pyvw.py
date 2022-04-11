@@ -623,8 +623,19 @@ class Workspace(pylibvw.vw):
         elif isinstance(ec, list):
             if not self._is_multiline():
                 raise TypeError("Expecting a mutiline Learner.")
-            ec = self.parse(ec)
-            new_example = True
+            if len(ec) == 0:
+                raise ValueError("An empty list is invalid")
+            if isinstance(ec[0], str):
+                ec = self.parse(ec)
+                new_example = True
+
+        if not isinstance(ec, Example) and not (
+            isinstance(ec, list) and isinstance(ec[0], Example)
+        ):
+            raise TypeError(
+                "expecting string, example object, or list of example objects"
+                " as ec argument for learn, got %s" % type(ec)
+            )
 
         if isinstance(ec, Example):
             if not getattr(ec, "setup_done", None):
@@ -672,10 +683,15 @@ class Workspace(pylibvw.vw):
         elif isinstance(ec, list):
             if not self._is_multiline():
                 raise TypeError("Expecting a multiline Learner.")
-            ec = self.parse(ec)
-            new_example = True
+            if len(ec) == 0:
+                raise ValueError("An empty list is invalid")
+            if isinstance(ec[0], str):
+                ec = self.parse(ec)
+                new_example = True
 
-        if not isinstance(ec, Example) and not isinstance(ec, list):
+        if not isinstance(ec, Example) and not (
+            isinstance(ec, list) and isinstance(ec[0], Example)
+        ):
             raise TypeError(
                 "expecting string, example object, or list of example objects"
                 " as ec argument for predict, got %s" % type(ec)
@@ -695,7 +711,7 @@ class Workspace(pylibvw.vw):
         if isinstance(ec, Example):
             prediction = ec.get_prediction(prediction_type)
         else:
-            prediction = ec[0].get_prediction(prediction_type)
+            prediction = ec[0].get_prediction(prediction_type)  # type: ignore
 
         if new_example:
             self.finish_example(ec)
