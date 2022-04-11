@@ -65,7 +65,6 @@ target_add_nuget_references(VowpalWabbit.Core "${VowpalWabbit.Core_NUGET_REFEREN
 # Define dependencies.
 target_link_libraries(VowpalWabbit.Core
     PUBLIC VowpalWabbit.Common
-    # Due to config needing symbols from vw we must place it first
     PRIVATE vw
     # Workaround an issue where RapidJSON needed to be exported to install the target. This is
     # actually a private dependency and so do not "link" when processing targets for installation.
