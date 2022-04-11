@@ -200,7 +200,6 @@ set(vw_all_headers
   vw_versions.h
   vw.h
   vwdll.h
-  vwvis.h
 )
 
 if(BUILD_FLATBUFFERS)
