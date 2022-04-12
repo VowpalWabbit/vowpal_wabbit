@@ -1,5 +1,10 @@
 include(CMakeParseArguments)
 include(GNUInstallDirs)
+include(DetectCXXStandard)
+set(VW_CXX_STANDARD 11)
+if(USE_LATEST_STD)
+  DetectCXXStandard(VW_CXX_STANDARD)
+endif()
 
 # Given a lib name writes to OUTPUT what the correspinding target name will be
 function(vw_get_lib_target OUTPUT LIB_NAME)
@@ -134,8 +139,9 @@ function(vw_add_library)
   # Older CMake versions seem to not like properties on interface libraries.
   # When the miniumum is upgraded, try removing this.
   if(NOT (${VW_LIB_TYPE} STREQUAL "HEADER_ONLY"))
-    set_property(TARGET ${FULL_LIB_NAME} PROPERTY CXX_STANDARD 11)
+    set_property(TARGET ${FULL_LIB_NAME} PROPERTY CXX_STANDARD ${VW_CXX_STANDARD})
     set_property(TARGET ${FULL_LIB_NAME} PROPERTY CXX_STANDARD_REQUIRED ON)
+    set_property(TARGET ${FULL_LIB_NAME} PROPERTY CMAKE_CXX_EXTENSIONS OFF)
     set_property(TARGET ${FULL_LIB_NAME} PROPERTY POSITION_INDEPENDENT_CODE ON)
   endif()
 
@@ -180,8 +186,10 @@ function(vw_add_executable)
     target_link_libraries(${FULL_BIN_NAME} PRIVATE ${VW_EXE_DEPS})
   endif()
 
-  set_property(TARGET ${FULL_BIN_NAME} PROPERTY CXX_STANDARD 11)
+  set_property(TARGET ${FULL_BIN_NAME} PROPERTY CXX_STANDARD ${VW_CXX_STANDARD})
   set_property(TARGET ${FULL_BIN_NAME} PROPERTY CXX_STANDARD_REQUIRED ON)
+  set_property(TARGET ${FULL_BIN_NAME} PROPERTY CMAKE_CXX_EXTENSIONS OFF)
+
 
   if(VW_INSTALL AND VW_EXE_ENABLE_INSTALL)
     install(
@@ -224,6 +232,9 @@ function(vw_add_test_executable)
       gmock
     )
     target_compile_definitions(${FULL_TEST_NAME} PRIVATE ${VW_TEST_COMPILE_DEFS})
+    set_property(TARGET ${FULL_TEST_NAME} PROPERTY CXX_STANDARD ${VW_CXX_STANDARD})
+    set_property(TARGET ${FULL_TEST_NAME} PROPERTY CXX_STANDARD_REQUIRED ON)
+    set_property(TARGET ${FULL_TEST_NAME} PROPERTY CMAKE_CXX_EXTENSIONS OFF)
     add_test(NAME ${FULL_TEST_NAME} COMMAND ${FULL_TEST_NAME})
   endif()
 endfunction()
