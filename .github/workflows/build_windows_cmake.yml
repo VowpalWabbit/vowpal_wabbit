@@ -58,5 +58,5 @@ jobs:
           cmake --build "${{ env.CMAKE_BUILD_DIR }}" --config ${{ matrix.build_config }}
       - name: Run tests
         run: |
-          cd build
+          cd ${{ env.CMAKE_BUILD_DIR }}
           ctest --verbose --output-on-failure --config --config ${{ matrix.build_config }}
