@@ -4,6 +4,8 @@
 
 #pragma once
 
+#include "fmt/core.h"
+#include <iostream>
 #include <memory>
 #include <string>
 #include <utility>
@@ -79,7 +81,7 @@ struct logger_impl
   }
 
   template <typename... Args>
-  void err_info(const fmt::format_string<Args...>& fmt, Args&&... args)
+  void err_info(fmt::format_string<Args...> fmt, Args&&... args)
   {
     _log_count++;
     if (_log_count <= _max_limit)
@@ -97,7 +99,7 @@ struct logger_impl
   }
 
   template <typename... Args>
-  void err_warn(const fmt::format_string<Args...>& fmt, Args&&... args)
+  void err_warn(fmt::format_string<Args...> fmt, Args&&... args)
   {
     _log_count++;
     if (_log_count <= _max_limit)
@@ -115,7 +117,7 @@ struct logger_impl
   }
 
   template <typename... Args>
-  void err_error(const fmt::format_string<Args...>& fmt, Args&&... args)
+  void err_error(fmt::format_string<Args...> fmt, Args&&... args)
   {
     _log_count++;
     if (_log_count <= _max_limit)
@@ -133,7 +135,7 @@ struct logger_impl
   }
 
   template <typename... Args>
-  void err_critical(const fmt::format_string<Args...>& fmt, Args&&... args)
+  void err_critical(fmt::format_string<Args...> fmt, Args&&... args)
   {
     _log_count++;
     // we ignore max_limit with critical log
@@ -149,7 +151,7 @@ struct logger_impl
   }
 
   template <typename... Args>
-  void out_info(const fmt::format_string<Args...>& fmt, Args&&... args)
+  void out_info(fmt::format_string<Args...> fmt, Args&&... args)
   {
     _log_count++;
     if (_log_count <= _max_limit)
@@ -167,7 +169,7 @@ struct logger_impl
   }
 
   template <typename... Args>
-  void out_warn(const fmt::format_string<Args...>& fmt, Args&&... args)
+  void out_warn(fmt::format_string<Args...> fmt, Args&&... args)
   {
     _log_count++;
     if (_log_count <= _max_limit)
@@ -185,7 +187,7 @@ struct logger_impl
   }
 
   template <typename... Args>
-  void out_error(const fmt::format_string<Args...>& fmt, Args&&... args)
+  void out_error(fmt::format_string<Args...> fmt, Args&&... args)
   {
     _log_count++;
     if (_log_count <= _max_limit)
@@ -203,7 +205,7 @@ struct logger_impl
   }
 
   template <typename... Args>
-  void out_critical(const fmt::format_string<Args...>& fmt, Args&&... args)
+  void out_critical(fmt::format_string<Args...> fmt, Args&&... args)
   {
     _log_count++;
     // we ignore max_limit with critical log
@@ -282,49 +284,49 @@ private:
 
 public:
   template <typename... Args>
-  void err_info(const fmt::format_string<Args...>& fmt, Args&&... args)
+  void err_info(fmt::format_string<Args...> fmt, Args&&... args)
   {
     _logger_impl->err_info(fmt, std::forward<Args>(args)...);
   }
 
   template <typename... Args>
-  void err_warn(const fmt::format_string<Args...>& fmt, Args&&... args)
+  void err_warn(fmt::format_string<Args...> fmt, Args&&... args)
   {
     _logger_impl->err_warn(fmt, std::forward<Args>(args)...);
   }
 
   template <typename... Args>
-  void err_error(const fmt::format_string<Args...>& fmt, Args&&... args)
+  void err_error(fmt::format_string<Args...> fmt, Args&&... args)
   {
     _logger_impl->err_error(fmt, std::forward<Args>(args)...);
   }
 
   template <typename... Args>
-  void err_critical(const fmt::format_string<Args...>& fmt, Args&&... args)
+  void err_critical(fmt::format_string<Args...> fmt, Args&&... args)
   {
     _logger_impl->err_critical(fmt, std::forward<Args>(args)...);
   }
 
   template <typename... Args>
-  void out_info(const fmt::format_string<Args...>& fmt, Args&&... args)
+  void out_info(fmt::format_string<Args...> fmt, Args&&... args)
   {
     _logger_impl->out_info(fmt, std::forward<Args>(args)...);
   }
 
   template <typename... Args>
-  void out_warn(const fmt::format_string<Args...>& fmt, Args&&... args)
+  void out_warn(fmt::format_string<Args...> fmt, Args&&... args)
   {
     _logger_impl->out_warn(fmt, std::forward<Args>(args)...);
   }
 
   template <typename... Args>
-  void out_error(const fmt::format_string<Args...>& fmt, Args&&... args)
+  void out_error(fmt::format_string<Args...> fmt, Args&&... args)
   {
     _logger_impl->out_error(fmt, std::forward<Args>(args)...);
   }
 
   template <typename... Args>
-  void out_critical(const fmt::format_string<Args...>& fmt, Args&&... args)
+  void out_critical(fmt::format_string<Args...> fmt, Args&&... args)
   {
     _logger_impl->out_critical(fmt, std::forward<Args>(args)...);
   }
