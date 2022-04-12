@@ -539,6 +539,8 @@ void my_learn(vw_ptr all, example_ptr ec)
   }
 }
 
+std::string my_json_weights(vw_ptr all) { return all->dump_weights_to_json_experimental(); }
+
 float my_predict(vw_ptr all, example_ptr ec)
 {
   as_singleline(all->l)->predict(*ec);
@@ -1328,6 +1330,7 @@ BOOST_PYTHON_MODULE(pylibvw)
       .def("finish", &my_finish, "stop VW by calling finish (and, eg, write weights to disk)")
       .def("save", &my_save, "save model to filename")
       .def("learn", &my_learn, "given a pyvw example, learn (and predict) on that example")
+      .def("json_weights", &my_json_weights, "get json string of current weights")
       .def("predict", &my_predict, "given a pyvw example, predict on that example")
       .def("hash_space", &VW::hash_space, "given a namespace (as a string), compute the hash of that namespace")
       .def("hash_feature", &VW::hash_feature,
