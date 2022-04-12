@@ -1,6 +1,11 @@
 include(CMakeParseArguments)
 include(GNUInstallDirs)
 
+option(VW_UNIT_TEST_WITH_VALGRIND_INTERNAL "Internal flag." OFF)
+if(VW_UNIT_TEST_WITH_VALGRIND_INTERNAL)
+  find_program(VALGRIND "valgrind" REQUIRED)
+endif()
+
 # Given a lib name writes to OUTPUT what the correspinding target name will be
 function(vw_get_lib_target OUTPUT LIB_NAME)
   set(${OUTPUT} vw_${LIB_NAME} PARENT_SCOPE)
@@ -224,6 +229,10 @@ function(vw_add_test_executable)
       gmock
     )
     target_compile_definitions(${FULL_TEST_NAME} PRIVATE ${VW_TEST_COMPILE_DEFS})
-    add_test(NAME ${FULL_TEST_NAME} COMMAND ${FULL_TEST_NAME})
+    if(VW_UNIT_TEST_WITH_VALGRIND_INTERNAL)
+      add_test(NAME ${FULL_TEST_NAME} COMMAND ${VALGRIND} $<TARGET_FILE:${FULL_TEST_NAME}>)
+    else()
+      add_test(NAME ${FULL_TEST_NAME} COMMAND ${FULL_TEST_NAME})
+    endif()
   endif()
 endfunction()
