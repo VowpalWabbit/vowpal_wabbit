@@ -2,13 +2,16 @@
 // individual contributors. All rights reserved. Released under a BSD (revised)
 // license as described in the file LICENSE.
 
-#include <boost/test/unit_test.hpp>
-#include <boost/test/test_tools.hpp>
+#include "parse_example.h"
+#include "vw/fb_parser/parse_example_flatbuffer.h"
 
-#include "test_common.h"
+#include <gmock/gmock.h>
+#include <gtest/gtest.h>
 
+#include <string>
 #include <vector>
-#include "parser/flatbuffer/parse_example_flatbuffer.h"
+
+#include "vw.h"
 #include "constant.h"
 #include "feature_group.h"
 
@@ -53,7 +56,7 @@ flatbuffers::Offset<VW::parsers::flatbuffer::ExampleRoot> sample_flatbuffer(
   return CreateExampleRoot(builder, VW::parsers::flatbuffer::ExampleType_Example, example.Union());
 }
 
-BOOST_AUTO_TEST_CASE(test_flatbuffer_standalone_example)
+TEST(flatbuffer_parser_tests, test_flatbuffer_standalone_example)
 {
   auto all = VW::initialize("--no_stdin --quiet --flatbuffer", nullptr, false, nullptr, nullptr);
 
@@ -71,33 +74,33 @@ BOOST_AUTO_TEST_CASE(test_flatbuffer_standalone_example)
   all->flat_converter->parse_examples(all, unused_buffer, examples, buf);
 
   auto example = all->flat_converter->data()->example_obj_as_Example();
-  BOOST_CHECK_EQUAL(example->namespaces()->size(), 1);
-  BOOST_CHECK_EQUAL(example->namespaces()->Get(0)->features()->size(), 1);
-  BOOST_CHECK_CLOSE(example->label_as_SimpleLabel()->label(), 0.0, FLOAT_TOL);
-  BOOST_CHECK_CLOSE(example->label_as_SimpleLabel()->weight(), 1.0, FLOAT_TOL);
-  BOOST_CHECK_EQUAL(example->namespaces()->Get(0)->hash(), constant_namespace);
-  BOOST_CHECK_EQUAL(example->namespaces()->Get(0)->full_hash(), constant_namespace);
-  BOOST_CHECK_EQUAL(example->namespaces()->Get(0)->features()->Get(0)->name()->c_str(), "hello");
-  BOOST_CHECK_EQUAL(example->namespaces()->Get(0)->features()->Get(0)->hash(), constant);
-  BOOST_CHECK_CLOSE(example->namespaces()->Get(0)->features()->Get(0)->value(), 2.23, FLOAT_TOL);
+  EXPECT_EQ(example->namespaces()->size(), 1);
+  EXPECT_EQ(example->namespaces()->Get(0)->features()->size(), 1);
+  EXPECT_FLOAT_EQ(example->label_as_SimpleLabel()->label(), 0.0);
+  EXPECT_FLOAT_EQ(example->label_as_SimpleLabel()->weight(), 1.0);
+  EXPECT_EQ(example->namespaces()->Get(0)->hash(), constant_namespace);
+  EXPECT_EQ(example->namespaces()->Get(0)->full_hash(), constant_namespace);
+  EXPECT_STREQ(example->namespaces()->Get(0)->features()->Get(0)->name()->c_str(), "hello");
+  EXPECT_EQ(example->namespaces()->Get(0)->features()->Get(0)->hash(), constant);
+  EXPECT_FLOAT_EQ(example->namespaces()->Get(0)->features()->Get(0)->value(), 2.23);
 
   // Check vw example
-  BOOST_CHECK_EQUAL(examples.size(), 1);
-  BOOST_CHECK_CLOSE(examples[0]->l.simple.label, 0.f, FLOAT_TOL);
+  EXPECT_EQ(examples.size(), 1);
+  EXPECT_FLOAT_EQ(examples[0]->l.simple.label, 0.f);
   const auto& red_features = examples[0]->_reduction_features.template get<simple_label_reduction_features>();
-  BOOST_CHECK_CLOSE(red_features.weight, 1.f, FLOAT_TOL);
+  EXPECT_FLOAT_EQ(red_features.weight, 1.f);
 
-  BOOST_CHECK_EQUAL(examples[0]->indices[0], constant_namespace);
-  BOOST_CHECK_CLOSE(examples[0]->feature_space[examples[0]->indices[0]].values[0], 2.23f, FLOAT_TOL);
-  BOOST_CHECK_EQUAL(examples[0]->feature_space[examples[0]->indices[0]].namespace_extents.size(), 1);
-  BOOST_CHECK_EQUAL(examples[0]->feature_space[examples[0]->indices[0]].namespace_extents[0],
+  EXPECT_EQ(examples[0]->indices[0], constant_namespace);
+  EXPECT_FLOAT_EQ(examples[0]->feature_space[examples[0]->indices[0]].values[0], 2.23f);
+  EXPECT_EQ(examples[0]->feature_space[examples[0]->indices[0]].namespace_extents.size(), 1);
+  EXPECT_EQ(examples[0]->feature_space[examples[0]->indices[0]].namespace_extents[0],
       (VW::namespace_extent{0, 1, constant_namespace}));
 
   VW::finish_example(*all, *examples[0]);
   VW::finish(*all);
 }
 
-BOOST_AUTO_TEST_CASE(test_flatbuffer_collection)
+TEST(flatbuffer_parser_tests, test_flatbuffer_collection)
 {
   auto all = VW::initialize("--no_stdin --quiet --flatbuffer", nullptr, false, nullptr, nullptr);
 
@@ -115,27 +118,27 @@ BOOST_AUTO_TEST_CASE(test_flatbuffer_collection)
   all->flat_converter->parse_examples(all, unused_buffer, examples, buf);
 
   auto collection_examples = all->flat_converter->data()->example_obj_as_ExampleCollection()->examples();
-  BOOST_CHECK_EQUAL(collection_examples->size(), 1);
-  BOOST_CHECK_EQUAL(collection_examples->Get(0)->namespaces()->size(), 1);
-  BOOST_CHECK_EQUAL(collection_examples->Get(0)->namespaces()->Get(0)->features()->size(), 1);
-  BOOST_CHECK_CLOSE(collection_examples->Get(0)->label_as_SimpleLabel()->label(), 0.0, FLOAT_TOL);
-  BOOST_CHECK_CLOSE(collection_examples->Get(0)->label_as_SimpleLabel()->weight(), 1.0, FLOAT_TOL);
-  BOOST_CHECK_EQUAL(collection_examples->Get(0)->namespaces()->Get(0)->hash(), constant_namespace);
-  BOOST_CHECK_EQUAL(collection_examples->Get(0)->namespaces()->Get(0)->full_hash(), constant_namespace);
-  BOOST_CHECK_EQUAL(collection_examples->Get(0)->namespaces()->Get(0)->features()->Get(0)->name()->c_str(), "hello");
-  BOOST_CHECK_EQUAL(collection_examples->Get(0)->namespaces()->Get(0)->features()->Get(0)->hash(), constant);
-  BOOST_CHECK_CLOSE(collection_examples->Get(0)->namespaces()->Get(0)->features()->Get(0)->value(), 2.23, FLOAT_TOL);
+  EXPECT_EQ(collection_examples->size(), 1);
+  EXPECT_EQ(collection_examples->Get(0)->namespaces()->size(), 1);
+  EXPECT_EQ(collection_examples->Get(0)->namespaces()->Get(0)->features()->size(), 1);
+  EXPECT_FLOAT_EQ(collection_examples->Get(0)->label_as_SimpleLabel()->label(), 0.0);
+  EXPECT_FLOAT_EQ(collection_examples->Get(0)->label_as_SimpleLabel()->weight(), 1.0);
+  EXPECT_EQ(collection_examples->Get(0)->namespaces()->Get(0)->hash(), constant_namespace);
+  EXPECT_EQ(collection_examples->Get(0)->namespaces()->Get(0)->full_hash(), constant_namespace);
+  EXPECT_STREQ(collection_examples->Get(0)->namespaces()->Get(0)->features()->Get(0)->name()->c_str(), "hello");
+  EXPECT_EQ(collection_examples->Get(0)->namespaces()->Get(0)->features()->Get(0)->hash(), constant);
+  EXPECT_FLOAT_EQ(collection_examples->Get(0)->namespaces()->Get(0)->features()->Get(0)->value(), 2.23);
 
   // check vw example
-  BOOST_CHECK_EQUAL(examples.size(), 1);
-  BOOST_CHECK_CLOSE(examples[0]->l.simple.label, 0.f, FLOAT_TOL);
+  EXPECT_EQ(examples.size(), 1);
+  EXPECT_FLOAT_EQ(examples[0]->l.simple.label, 0.f);
   const auto& red_features = examples[0]->_reduction_features.template get<simple_label_reduction_features>();
-  BOOST_CHECK_CLOSE(red_features.weight, 1.f, FLOAT_TOL);
+  EXPECT_FLOAT_EQ(red_features.weight, 1.f);
 
-  BOOST_CHECK_EQUAL(examples[0]->indices[0], constant_namespace);
-  BOOST_CHECK_CLOSE(examples[0]->feature_space[examples[0]->indices[0]].values[0], 2.23f, FLOAT_TOL);
-  BOOST_CHECK_EQUAL(examples[0]->feature_space[examples[0]->indices[0]].namespace_extents.size(), 1);
-  BOOST_CHECK_EQUAL(examples[0]->feature_space[examples[0]->indices[0]].namespace_extents[0],
+  EXPECT_EQ(examples[0]->indices[0], constant_namespace);
+  EXPECT_FLOAT_EQ(examples[0]->feature_space[examples[0]->indices[0]].values[0], 2.23f);
+  EXPECT_EQ(examples[0]->feature_space[examples[0]->indices[0]].namespace_extents.size(), 1);
+  EXPECT_EQ(examples[0]->feature_space[examples[0]->indices[0]].namespace_extents[0],
       (VW::namespace_extent{0, 1, constant_namespace}));
 
   VW::finish_example(*all, *examples[0]);

@@ -28,3 +28,9 @@ target_include_directories(vw_fb_parser PUBLIC ${FLATBUFFERS_INCLUDE_DIR})
 #   install(DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/include/
 #     DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
 # endif()
+
+vw_add_test_executable(
+  FOR_LIB "fb_parser"
+  SOURCES "tests/flatbuffer_parser_test.cc"
+  EXTRA_DEPS VowpalWabbit::vw
+)
