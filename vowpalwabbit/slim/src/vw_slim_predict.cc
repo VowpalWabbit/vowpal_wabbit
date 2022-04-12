@@ -1,4 +1,4 @@
-#include "vw_slim_predict.h"
+#include "vw/slim/vw_slim_predict.h"
 
 #include <algorithm>
 #include <cctype>
