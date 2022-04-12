@@ -717,8 +717,8 @@ void parse_feature_tweaks(options_i& options, VW::workspace& all, bool interacti
        interactions_settings_duplicated /*settings were restored from model file to file_options and overriden by params from command line*/)
   {
     all.logger.err_warn(
-        "model file has set of {-q, --cubic, --interactions} settings stored, but they'll be "
-        "OVERRIDDEN by set of {-q, --cubic, --interactions} settings from command line.");
+        "model file has set of {{-q, --cubic, --interactions}} settings stored, but they'll be "
+        "OVERRIDDEN by set of {{-q, --cubic, --interactions}} settings from command line.");
     // in case arrays were already filled in with values from old model file - reset them
     if (!all.interactions.empty()) { all.interactions.clear(); }
   }
