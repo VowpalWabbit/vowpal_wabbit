@@ -358,8 +358,6 @@ endif()
 
 # Handle installation of targets, version, config and pkgconfig
 if(VW_INSTALL)
-  configure_file(libvw.pc.in libvw.pc @ONLY)
-
   # only do this if the file exists. Some packages dont have this file and its only needed in a very specific use case
   if(EXISTS nuget/vowpalwabbit.nuspec.in)
     configure_file(nuget/vowpalwabbit.nuspec.in nuget/vowpalwabbit.nuspec @ONLY)
@@ -367,7 +365,7 @@ if(VW_INSTALL)
 
   configure_file(libvw_c_wrapper.pc.in libvw_c_wrapper.pc @ONLY)
   install(
-    FILES ${CMAKE_CURRENT_BINARY_DIR}/libvw.pc ${CMAKE_CURRENT_BINARY_DIR}/libvw_c_wrapper.pc
+    FILES ${CMAKE_CURRENT_BINARY_DIR}/libvw_c_wrapper.pc
     DESTINATION ${CMAKE_INSTALL_LIBDIR}/pkgconfig)
 
   install(EXPORT VowpalWabbitConfig
