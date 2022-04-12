@@ -22,6 +22,7 @@ vw_add_library(
     PUBLIC_DEPS VowpalWabbit::vw $<BUILD_INTERFACE:fb_generate_headers>
 )
 target_include_directories(vw_fb_parser PUBLIC ${FLATBUFFERS_INCLUDE_DIR})
+set_target_properties(vw_fb_parser PROPERTIES LINK_INTERFACE_MULTIPLICITY 3)
 
 # Install the generated header
 # if(VW_INSTALL)
