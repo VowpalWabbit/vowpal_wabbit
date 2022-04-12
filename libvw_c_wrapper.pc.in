@@ -7,6 +7,5 @@ Name: Vowpal Wabbit (C wrapper)
 Description: @VW_PROJECT_DESCRIPTION@ (C wrapper)
 URL: @VW_PROJECT_URL@
 Version: @PACKAGE_VERSION@
-Requires: libvw
 Libs: -L${libdir} -lvw_c_wrapper
 Cflags: -I${includedir}
