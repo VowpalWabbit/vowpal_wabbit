@@ -5,6 +5,7 @@
 #pragma once
 
 #include "fmt/core.h"
+
 #include <iostream>
 #include <memory>
 #include <string>
@@ -80,8 +81,8 @@ struct logger_impl
     _spdlog_stderr_logger->set_level(spdlog::level::info);
   }
 
-  template <typename... Args>
-  void err_info(fmt::format_string<Args...> fmt, Args&&... args)
+  template <typename FormatString, typename... Args>
+  void err_info(const FormatString& fmt, Args&&... args)
   {
     _log_count++;
     if (_log_count <= _max_limit)
@@ -98,8 +99,8 @@ struct logger_impl
     }
   }
 
-  template <typename... Args>
-  void err_warn(fmt::format_string<Args...> fmt, Args&&... args)
+  template <typename FormatString, typename... Args>
+  void err_warn(const FormatString& fmt, Args&&... args)
   {
     _log_count++;
     if (_log_count <= _max_limit)
@@ -116,8 +117,8 @@ struct logger_impl
     }
   }
 
-  template <typename... Args>
-  void err_error(fmt::format_string<Args...> fmt, Args&&... args)
+  template <typename FormatString, typename... Args>
+  void err_error(const FormatString& fmt, Args&&... args)
   {
     _log_count++;
     if (_log_count <= _max_limit)
@@ -134,8 +135,8 @@ struct logger_impl
     }
   }
 
-  template <typename... Args>
-  void err_critical(fmt::format_string<Args...> fmt, Args&&... args)
+  template <typename FormatString, typename... Args>
+  void err_critical(const FormatString& fmt, Args&&... args)
   {
     _log_count++;
     // we ignore max_limit with critical log
@@ -150,8 +151,8 @@ struct logger_impl
     }
   }
 
-  template <typename... Args>
-  void out_info(fmt::format_string<Args...> fmt, Args&&... args)
+  template <typename FormatString, typename... Args>
+  void out_info(const FormatString& fmt, Args&&... args)
   {
     _log_count++;
     if (_log_count <= _max_limit)
@@ -168,8 +169,8 @@ struct logger_impl
     }
   }
 
-  template <typename... Args>
-  void out_warn(fmt::format_string<Args...> fmt, Args&&... args)
+  template <typename FormatString, typename... Args>
+  void out_warn(const FormatString& fmt, Args&&... args)
   {
     _log_count++;
     if (_log_count <= _max_limit)
@@ -186,8 +187,8 @@ struct logger_impl
     }
   }
 
-  template <typename... Args>
-  void out_error(fmt::format_string<Args...> fmt, Args&&... args)
+  template <typename FormatString, typename... Args>
+  void out_error(const FormatString& fmt, Args&&... args)
   {
     _log_count++;
     if (_log_count <= _max_limit)
@@ -204,8 +205,8 @@ struct logger_impl
     }
   }
 
-  template <typename... Args>
-  void out_critical(fmt::format_string<Args...> fmt, Args&&... args)
+  template <typename FormatString, typename... Args>
+  void out_critical(const FormatString& fmt, Args&&... args)
   {
     _log_count++;
     // we ignore max_limit with critical log
@@ -283,50 +284,86 @@ private:
   friend logger create_custom_sink_logger_legacy(void* context, logger_legacy_output_func_t func);
 
 public:
+#if FMT_VERSION >= 80000
   template <typename... Args>
   void err_info(fmt::format_string<Args...> fmt, Args&&... args)
+#else
+  template <typename FormatString, typename... Args>
+  void err_info(const FormatString& fmt, Args&&... args)
+#endif
   {
     _logger_impl->err_info(fmt, std::forward<Args>(args)...);
   }
-
+#if FMT_VERSION >= 80000
   template <typename... Args>
   void err_warn(fmt::format_string<Args...> fmt, Args&&... args)
+#else
+  template <typename FormatString, typename... Args>
+  void err_warn(const FormatString& fmt, Args&&... args)
+#endif
   {
     _logger_impl->err_warn(fmt, std::forward<Args>(args)...);
   }
-
+#if FMT_VERSION >= 80000
   template <typename... Args>
   void err_error(fmt::format_string<Args...> fmt, Args&&... args)
+#else
+  template <typename FormatString, typename... Args>
+  void err_error(const FormatString& fmt, Args&&... args)
+#endif
   {
     _logger_impl->err_error(fmt, std::forward<Args>(args)...);
   }
-
+#if FMT_VERSION >= 80000
   template <typename... Args>
   void err_critical(fmt::format_string<Args...> fmt, Args&&... args)
+#else
+  template <typename FormatString, typename... Args>
+  void err_critical(const FormatString& fmt, Args&&... args)
+#endif
   {
     _logger_impl->err_critical(fmt, std::forward<Args>(args)...);
   }
-
+#if FMT_VERSION >= 80000
   template <typename... Args>
   void out_info(fmt::format_string<Args...> fmt, Args&&... args)
+#else
+  template <typename FormatString, typename... Args>
+  void out_info(const FormatString& fmt, Args&&... args)
+#endif
   {
     _logger_impl->out_info(fmt, std::forward<Args>(args)...);
   }
 
+#if FMT_VERSION >= 80000
   template <typename... Args>
   void out_warn(fmt::format_string<Args...> fmt, Args&&... args)
+#else
+  template <typename FormatString, typename... Args>
+  void out_warn(const FormatString& fmt, Args&&... args)
+#endif
   {
     _logger_impl->out_warn(fmt, std::forward<Args>(args)...);
   }
 
+#if FMT_VERSION >= 80000
   template <typename... Args>
   void out_error(fmt::format_string<Args...> fmt, Args&&... args)
+#else
+  template <typename FormatString, typename... Args>
+  void out_error(const FormatString& fmt, Args&&... args)
+#endif
   {
     _logger_impl->out_error(fmt, std::forward<Args>(args)...);
   }
 
+#if FMT_VERSION >= 80000
   template <typename... Args>
   void out_critical(fmt::format_string<Args...> fmt, Args&&... args)
+#else
+  template <typename FormatString, typename... Args>
+  void out_critical(const FormatString& fmt, Args&&... args)
+#endif
   {
     _logger_impl->out_critical(fmt, std::forward<Args>(args)...);
   }
