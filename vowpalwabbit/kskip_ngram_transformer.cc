@@ -4,7 +4,7 @@
 
 #include "kskip_ngram_transformer.h"
 
-#include "io/logger.h"
+#include "vw/io/logger.h"
 
 #include <memory>
 

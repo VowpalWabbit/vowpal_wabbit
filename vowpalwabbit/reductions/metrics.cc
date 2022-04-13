@@ -11,11 +11,11 @@
 #ifdef BUILD_EXTERNAL_PARSER
 #  include "parse_example_external.h"
 #endif
-#include "config/options.h"
 #include "global_data.h"
-#include "io/logger.h"
 #include "parser.h"
 #include "scope_exit.h"
+#include "vw/config/options.h"
+#include "vw/io/logger.h"
 
 #include <rapidjson/filewritestream.h>
 #include <rapidjson/writer.h>

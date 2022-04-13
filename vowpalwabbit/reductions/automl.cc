@@ -4,13 +4,13 @@
 
 #include "automl.h"
 
-#include "config/options.h"
 #include "constant.h"  // NUM_NAMESPACES
 #include "debug_log.h"
 #include "model_utils.h"
 #include "rand_state.h"
 #include "setup_base.h"
 #include "vw.h"
+#include "vw/config/options.h"
 
 #include <cfloat>
 
