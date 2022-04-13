@@ -5,7 +5,7 @@
 #pragma once
 
 #include "parse_primitives.h"
-#include "text_utils.h"
+#include "vw/common/text_utils.h"
 
 #include <array>
 #include <cstddef>
@@ -54,7 +54,7 @@ void format_row(const std::array<std::string, num_cols>& contents,
   {
     if (column_definitions[i].wrapping == wrap_type::wrap_space)
     {
-      tokenize('\n', VW::wrap_text(contents[i], column_definitions[i].column_width, false),
+      VW::common::tokenize('\n', VW::common::wrap_text(contents[i], column_definitions[i].column_width, false),
           column_contents_split_into_lines[i]);
     }
     else if (column_definitions[i].wrapping == wrap_type::wrap_char)

@@ -3,7 +3,6 @@
 // license as described in the file LICENSE.
 #include "reductions/recall_tree.h"
 
-#include "config/options.h"
 #include "global_data.h"
 #include "learner.h"
 #include "numeric_casts.h"
@@ -11,6 +10,7 @@
 #include "rand48.h"
 #include "rand_state.h"
 #include "setup_base.h"
+#include "vw/config/options.h"
 #include "vw_math.h"
 
 #include <float.h>

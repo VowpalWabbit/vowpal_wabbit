@@ -4,10 +4,8 @@
 
 #include "nn.h"
 
-#include "config/options.h"
 #include "gd.h"
 #include "guard.h"
-#include "io/logger.h"
 #include "loss_functions.h"
 #include "named_labels.h"
 #include "rand48.h"
@@ -15,6 +13,8 @@
 #include "setup_base.h"
 #include "shared_data.h"
 #include "vw.h"
+#include "vw/config/options.h"
+#include "vw/io/logger.h"
 
 #include <cfloat>
 #include <cmath>

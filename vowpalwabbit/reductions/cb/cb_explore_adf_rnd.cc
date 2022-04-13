@@ -7,7 +7,6 @@
 #include "../bs.h"
 #include "cb_adf.h"
 #include "cb_explore.h"
-#include "config/options.h"
 #include "debug_print.h"
 #include "explore.h"
 #include "gd_predict.h"
@@ -16,6 +15,7 @@
 #include "rand48.h"
 #include "scope_exit.h"
 #include "setup_base.h"
+#include "vw/config/options.h"
 
 #include <algorithm>
 #include <cfloat>

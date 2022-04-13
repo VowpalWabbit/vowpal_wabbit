@@ -3,13 +3,13 @@
 // license as described in the file LICENSE.
 
 #pragma once
-#include "config/option_group_definition.h"
-#include "config/options.h"
 #include "learner.h"
 #include "numeric_casts.h"
 #include "rand48.h"
 #include "rand_state.h"
 #include "vw.h"
+#include "vw/config/option_group_definition.h"
+#include "vw/config/options.h"
 
 #include <sys/types.h>
 

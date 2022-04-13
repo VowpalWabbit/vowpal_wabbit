@@ -4,11 +4,11 @@
 
 #include "binary.h"
 
-#include "config/options.h"
 #include "debug_log.h"
 #include "global_data.h"
 #include "learner.h"
 #include "setup_base.h"
+#include "vw/config/options.h"
 
 #include <cfloat>
 #include <cmath>
@@ -17,7 +17,7 @@
 #undef VW_DEBUG_LOG
 #define VW_DEBUG_LOG vw_dbg::binary
 
-#include "io/logger.h"
+#include "vw/io/logger.h"
 
 using namespace VW::config;
 using namespace VW::reductions;

@@ -5,8 +5,8 @@
 #pragma once
 #include "action_score.h"
 #include "cb.h"
-#include "config/options.h"
 #include "learner.h"
+#include "vw/config/options.h"
 
 namespace VW
 {

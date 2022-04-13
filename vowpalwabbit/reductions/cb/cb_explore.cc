@@ -7,7 +7,6 @@
 #include "../bs.h"
 #include "cb_algs.h"
 #include "cb_label_parser.h"
-#include "config/options.h"
 #include "debug_log.h"
 #include "explore.h"
 #include "gen_cs_example.h"
@@ -16,6 +15,7 @@
 #include "setup_base.h"
 #include "shared_data.h"
 #include "version.h"
+#include "vw/config/options.h"
 #include "vw_versions.h"
 
 #include <cfloat>

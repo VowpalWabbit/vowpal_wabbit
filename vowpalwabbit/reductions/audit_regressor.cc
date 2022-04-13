@@ -4,7 +4,6 @@
 
 #include "audit_regressor.h"
 
-#include "config/options.h"
 #include "fmt/format.h"
 #include "gd.h"
 #include "interactions.h"
@@ -12,6 +11,7 @@
 #include "shared_data.h"
 #include "table_formatter.h"
 #include "vw.h"
+#include "vw/config/options.h"
 
 #include <string>
 

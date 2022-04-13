@@ -4,8 +4,8 @@
 
 #include "print_utils.h"
 
-#include "io/io_adapter.h"
-#include "io/logger.h"
+#include "vw/io/io_adapter.h"
+#include "vw/io/logger.h"
 
 namespace VW
 {

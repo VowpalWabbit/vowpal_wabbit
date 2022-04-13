@@ -3,7 +3,6 @@
 // license as described in the file LICENSE.
 
 #include "example.h"
-#include "io/logger.h"
 #include "model_utils.h"
 #include "named_labels.h"
 #include "parse_primitives.h"
@@ -11,7 +10,9 @@
 #include "shared_data.h"
 #include "vw.h"
 #include "vw/common/string_view.h"
+#include "vw/common/text_utils.h"
 #include "vw/common/vw_exception.h"
+#include "vw/io/logger.h"
 
 #include <cfloat>
 #include <cmath>
@@ -20,7 +21,7 @@ namespace COST_SENSITIVE
 {
 void name_value(VW::string_view s, std::vector<VW::string_view>& name, float& v, VW::io::logger& logger)
 {
-  tokenize(':', s, name);
+  VW::common::tokenize(':', s, name);
 
   switch (name.size())
   {

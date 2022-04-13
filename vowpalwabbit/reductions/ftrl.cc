@@ -7,7 +7,6 @@
 #include "correctedMath.h"
 #include "crossplat_compat.h"
 #include "gd.h"
-#include "io/logger.h"
 #include "label_parser.h"
 #include "learner.h"
 #include "loss_functions.h"
@@ -15,6 +14,7 @@
 #include "parser.h"
 #include "setup_base.h"
 #include "shared_data.h"
+#include "vw/io/logger.h"
 
 #include <cfloat>
 #include <cmath>

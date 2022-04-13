@@ -21,7 +21,7 @@ vw_add_library(
   NAME "slim"
   TYPE "STATIC_ONLY"
   SOURCES ${VW_SLIM_SOURCES} ${VW_SLIM_HEADERS}
-  PUBLIC_DEPS VowpalWabbit::common VowpalWabbit::explore
+  PUBLIC_DEPS vw_common VowpalWabbit::explore
 )
 target_compile_definitions(vw_slim PUBLIC EXPLORE_NOEXCEPT VW_NOEXCEPT)
 

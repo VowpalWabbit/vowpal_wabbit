@@ -6,14 +6,12 @@
 
 #include "cb/cb_adf.h"
 #include "cb/cb_algs.h"
-#include "config/options.h"
 #include "constant.h"
 #include "debug_log.h"
 #include "decision_scores.h"
 #include "example.h"
 #include "global_data.h"
 #include "interactions.h"
-#include "io/logger.h"
 #include "label_dictionary.h"
 #include "model_utils.h"
 #include "print_utils.h"
@@ -22,6 +20,8 @@
 #include "v_array_pool.h"
 #include "version.h"
 #include "vw.h"
+#include "vw/config/options.h"
+#include "vw/io/logger.h"
 #include "vw_versions.h"
 
 #include <algorithm>

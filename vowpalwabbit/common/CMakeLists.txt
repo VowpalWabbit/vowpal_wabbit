@@ -3,6 +3,8 @@ set(vw_common_sources
     include/vw/common/future_compat.h
     include/vw/common/hash.h
     include/vw/common/string_view.h
+    include/vw/common/text_utils.h
+    include/vw/common/vwvis.h
 )
 
 vw_add_library(

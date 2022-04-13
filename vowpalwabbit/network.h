@@ -3,7 +3,7 @@
 // license as described in the file LICENSE.
 #pragma once
 
-#include "io/logger.h"
+#include "vw/io/logger.h"
 
 namespace VW
 {
