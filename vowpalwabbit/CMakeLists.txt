@@ -391,7 +391,7 @@ if (BUILD_PRIVACY_ACTIVATION)
 endif()
 
 if(BUILD_FLATBUFFERS)
-  target_link_libraries(vw PRIVATE VowpalWabbit::fb_parser)
+  target_link_libraries(vw PRIVATE vw_fb_parser)
   target_compile_definitions(vw PUBLIC BUILD_FLATBUFFERS)
 endif()
 
