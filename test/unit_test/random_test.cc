@@ -3,7 +3,7 @@
 // license as described in the file LICENSE.
 
 #include <boost/test/unit_test.hpp>
-#include <explore_internal.h>
+#include "rand48.h"
 #include "rand_state.h"
 #include "test_common.h"
 
@@ -13,7 +13,7 @@ BOOST_AUTO_TEST_CASE(reproduce_max_boundary_issue)
   const uint64_t new_random_seed = VW::common::uniform_hash(&seed, sizeof(seed), seed);
   BOOST_CHECK_EQUAL(new_random_seed, 2244123448);
 
-  float random_draw = exploration::uniform_random_merand48(new_random_seed);
+  float random_draw = merand48_noadvance(new_random_seed);
   BOOST_CHECK_CLOSE(random_draw, 0.99999f, 0.001f);
 
   const float range_max = 7190.0f;
