@@ -143,7 +143,7 @@ jobs:
           cmake --build build
           # zlib adds some targets to test unconditionally which it should not do.
           # We need to ensure they are built so that our ctest run succeeds
-          cmake --build build -t example example64
+          cmake --build build -t example
       - name: Test
         run: |
           python3 test/run_tests.py -f --clean_dirty -E 0.001
