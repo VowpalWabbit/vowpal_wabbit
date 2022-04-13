@@ -8,6 +8,7 @@ vw_add_library(
     TYPE "STATIC_ONLY"
     SOURCES ${vw_spanning_tree_sources}
     PUBLIC_DEPS vw_common
+    PRIVATE_DEPS ${LINK_THREADS}
     ENABLE_INSTALL
 )
 
