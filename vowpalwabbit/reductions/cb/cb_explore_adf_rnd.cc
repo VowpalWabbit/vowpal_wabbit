@@ -8,7 +8,6 @@
 #include "cb_adf.h"
 #include "cb_explore.h"
 #include "debug_print.h"
-#include "explore.h"
 #include "gd_predict.h"
 #include "gen_cs_example.h"
 #include "label_parser.h"
@@ -16,6 +15,7 @@
 #include "scope_exit.h"
 #include "setup_base.h"
 #include "vw/config/options.h"
+#include "vw/explore/explore.h"
 
 #include <algorithm>
 #include <cfloat>

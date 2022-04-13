@@ -6,11 +6,11 @@
 
 #include "cb_label_parser.h"
 #include "crossplat_compat.h"
-#include "explore.h"
 #include "guard.h"
 #include "setup_base.h"
 #include "shared_data.h"
 #include "vw.h"
+#include "vw/explore/explore.h"
 #include "vw/io/logger.h"
 
 #include <cmath>

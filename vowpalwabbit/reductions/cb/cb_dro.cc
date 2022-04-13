@@ -3,13 +3,13 @@
 #include "cb.h"
 #include "distributionally_robust.h"
 #include "example.h"
-#include "explore.h"
 #include "global_data.h"
 #include "label_parser.h"
 #include "learner.h"
 #include "rand48.h"
 #include "setup_base.h"
 #include "vw/config/options.h"
+#include "vw/explore/explore.h"
 #include "vw/io/logger.h"
 
 using namespace VW::LEARNER;
