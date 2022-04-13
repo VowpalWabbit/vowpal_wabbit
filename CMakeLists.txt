@@ -265,7 +265,6 @@ if(GIT_FOUND AND EXISTS "${PROJECT_SOURCE_DIR}/.git")
 endif()
 
 add_subdirectory(explore)
-add_subdirectory(cluster)
 add_subdirectory(library)
 include(ext_libs/ext_libs.cmake)
 add_subdirectory(vowpalwabbit)

@@ -3,7 +3,7 @@
 // license as described in the file LICENSE.
 #pragma once
 
-#include "spanning_tree.h"
+#include "vw/spanning_tree/spanning_tree.h"
 
 namespace VW
 {

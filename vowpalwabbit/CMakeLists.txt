@@ -4,6 +4,8 @@ add_subdirectory(allreduce)
 add_subdirectory(active_interactor)
 add_subdirectory(config)
 add_subdirectory(slim)
+add_subdirectory(spanning_tree)
+add_subdirectory(spanning_tree_bin)
 if(BUILD_FLATBUFFERS)
   add_subdirectory(fb_parser)
 endif()
@@ -182,7 +184,6 @@ set(vw_all_headers
   simple_label_parser.h
   simple_label.h
   slates_label.h
-  spanning_tree.h
   stable_unique.h
   tag_utils.h
   text_utils.h
@@ -348,10 +349,6 @@ set(vw_all_sources
 
 if(BUILD_EXTERNAL_PARSER)
   set(vw_all_sources ${vw_all_sources} ${external_parser_sources})
-endif()
-
-if (vw_BUILD_NET_FRAMEWORK)
-set(vw_all_sources ${vw_all_sources} spanning_tree.cc)
 endif()
 
 add_library(vw STATIC ${vw_all_sources} ${vw_all_headers})

@@ -7,7 +7,7 @@ This creates a binary tree topology over a set of n nodes that connect.
 
  */
 
-#include "spanning_tree.h"
+#include "vw/spanning_tree/spanning_tree.h"
 #include "vw/common/vw_exception.h"
 #include "vw/config/cli_help_formatter.h"
 #include "vw/config/option_builder.h"
