@@ -424,28 +424,11 @@ endif()
 # TODO code analysis
 if(WIN32)
   target_compile_definitions(vw PUBLIC __SSE2__)
-  target_compile_options(vw PUBLIC /MP /Zc:__cplusplus)
+  target_compile_options(vw PUBLIC ${VW_WIN_FLAGS})
 else()
-  target_compile_options(vw PUBLIC ${linux_flags})
+  target_compile_options(vw PUBLIC ${VW_LINUX_FLAGS})
 endif()
-
-# Turn on warnings
-if(WARNINGS)
-  if(MSVC)
-    target_compile_options(vw PRIVATE /W4)
-  else(MSVC)
-    target_compile_options(vw PRIVATE -Wall -Wextra -Wpedantic)
-  endif(MSVC)
-endif(WARNINGS)
-
-# Turn on warnings as errors
-if(WARNING_AS_ERROR)
-  if(MSVC)
-    target_compile_options(vw PRIVATE /WX)
-  else(MSVC)
-    target_compile_options(vw PRIVATE -Wall -Wextra -Wpedantic -Werror)
-  endif(MSVC)
-endif(WARNING_AS_ERROR)
+target_compile_options(vw PRIVATE ${WARNING_OPTIONS} ${WARNING_AS_ERROR_OPTIONS})
 
 if(NOT WIN32)
   find_file(HELP2MAN_EXECUTABLE help2man HINTS /bin /usr/bin /usr/local/bin)
