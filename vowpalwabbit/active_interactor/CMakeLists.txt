@@ -8,4 +8,7 @@ IF(NOT WIN32)
 
     target_compile_definitions(vw_active_interactor_bin PUBLIC _FILE_OFFSET_BITS=64)
     target_compile_options(vw_active_interactor_bin PUBLIC ${linux_flags})
+    if(GCOV)
+      target_link_libraries(vw_active_interactor_bin PUBLIC gcov --coverage)
+    endif()
 endif()
