@@ -339,12 +339,6 @@ if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME AND BUILD_TESTING)
     set(cmake_test_verbosity "")
   endif()
 
-  # This target ensures all dependencies are built and also uses verbose mode allowing the test output to be seen.
-  add_custom_target(test_with_output
-    COMMAND ${CMAKE_CTEST_COMMAND} ${cmake_test_configuration} ${cmake_test_verbosity} --output-on-failure
-    DEPENDS spanning_tree vw-unit-test.out vw-bin ${vw_c_api_unit_test_target} ${vw_cs_unittest_targets}
-  )
-
   # Don't offer these make dependent targets on Windows
   if(NOT WIN32)
     # make bigtests BIG_TEST_ARGS="<args here>"

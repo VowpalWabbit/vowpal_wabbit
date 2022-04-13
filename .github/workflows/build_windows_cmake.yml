@@ -58,4 +58,5 @@ jobs:
           cmake --build "${{ env.CMAKE_BUILD_DIR }}" --config ${{ matrix.build_config }}
       - name: Run tests
         run: |
-          cmake --build "${{ env.CMAKE_BUILD_DIR }}" --config ${{ matrix.build_config }} --target test_with_output
+          cd ${{ env.CMAKE_BUILD_DIR }}
+          ctest --verbose --output-on-failure -C ${{ matrix.build_config }} --label-regex VWTestList
