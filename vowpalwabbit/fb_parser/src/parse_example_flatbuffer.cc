@@ -2,13 +2,14 @@
 // individual contributors. All rights reserved. Released under a BSD (revised)
 // license as described in the file LICENSE.
 
-#include "parse_example_flatbuffer.h"
+#include "vw/fb_parser/parse_example_flatbuffer.h"
 
-#include "../../action_score.h"
-#include "../../best_constant.h"
-#include "../../cb.h"
-#include "../../constant.h"
-#include "../../global_data.h"
+#include "action_score.h"
+#include "best_constant.h"
+#include "cb.h"
+#include "constant.h"
+#include "global_data.h"
+#include "parser.h"
 
 #include <cfloat>
 #include <fstream>

@@ -4,17 +4,12 @@ add_subdirectory(allreduce)
 add_subdirectory(active_interactor)
 add_subdirectory(config)
 add_subdirectory(slim)
-
+if(BUILD_FLATBUFFERS)
+  add_subdirectory(fb_parser)
+endif()
 configure_file(config.h.in config.h)
 # Use position independent code for all targets in this directory
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
-
-if(BUILD_FLATBUFFERS)
-  add_subdirectory(parser/flatbuffer)
-  add_library(FlatbuffersTarget INTERFACE)
-  target_include_directories(FlatbuffersTarget INTERFACE ${FLATBUFFERS_INCLUDE_DIR})
-  add_dependencies(FlatbuffersTarget fbschemas)
-endif()
 
 set(vw_all_headers
   accumulate.h
@@ -202,9 +197,6 @@ set(vw_all_headers
   vwdll.h
 )
 
-if(BUILD_FLATBUFFERS)
-  set(vw_all_headers ${vw_all_headers} parser/flatbuffer/parse_example_flatbuffer.h)
-endif()
 
 if(BUILD_EXTERNAL_PARSER)
   set(vw_all_headers ${vw_all_headers} ${external_parser_headers})
@@ -354,12 +346,6 @@ set(vw_all_sources
   vw_validate.cc
 )
 
-if(BUILD_FLATBUFFERS)
-  set(vw_all_sources ${vw_all_sources}
-    parser/flatbuffer/parse_example_flatbuffer.cc
-    parser/flatbuffer/parse_label.cc)
-endif()
-
 if(BUILD_EXTERNAL_PARSER)
   set(vw_all_sources ${vw_all_sources} ${external_parser_sources})
 endif()
@@ -405,9 +391,7 @@ if (BUILD_PRIVACY_ACTIVATION)
 endif()
 
 if(BUILD_FLATBUFFERS)
-  target_link_libraries(vw
-      PRIVATE
-      $<BUILD_INTERFACE:FlatbuffersTarget>)
+  target_link_libraries(vw PRIVATE vw_fb_parser)
   target_compile_definitions(vw PUBLIC BUILD_FLATBUFFERS)
 endif()
 

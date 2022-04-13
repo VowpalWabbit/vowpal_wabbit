@@ -247,10 +247,6 @@ if(STATIC_LINK_VW)
   endif()
 endif()
 
-if(BUILD_FLATBUFFERS)
-find_package(flatbuffers REQUIRED)
-endif()
-
 # This provides the variables such as CMAKE_INSTALL_LIBDIR for installation paths.
 include(GNUInstallDirs)
 
