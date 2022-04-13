@@ -42,6 +42,9 @@ jobs:
       - name: Build
         run: |
           cmake --build build
+          # zlib adds some targets to test unconditionally which it should not do.
+          # We need to ensure they are built so that our ctest run succeeds
+          cmake --build build -t example example64
       - name: Test
         run: |
           python3 test/run_tests.py -f --clean_dirty -E 0.001
@@ -101,6 +104,9 @@ jobs:
       - name: Build
         run: |
           cmake --build "${{ env.CMAKE_BUILD_DIR }}" --config ${{ matrix.build_type }}
+          # zlib adds some targets to test unconditionally which it should not do.
+          # We need to ensure they are built so that our ctest run succeeds
+          cmake --build "${{ env.CMAKE_BUILD_DIR }}" --config ${{ matrix.build_type }} -t example example64
       - name: Test run_tests.py
         # TODO: Look into test 67 failure
         run: python3 ${{ env.SOURCE_DIR }}/test/run_tests.py -f --clean_dirty -E 0.01 --skip_spanning_tree_tests --vw_bin_path ${{ env.CMAKE_BUILD_DIR }}/vowpalwabbit/${{ matrix.build_type }}/vw.exe --skip_test 67
@@ -133,7 +139,11 @@ jobs:
           -DVW_BOOST_MATH_SYS_DEP=Off
           -DVW_INSTALL=Off
       - name: Build
-        run: cmake --build build
+        run: |
+          cmake --build build
+          # zlib adds some targets to test unconditionally which it should not do.
+          # We need to ensure they are built so that our ctest run succeeds
+          cmake --build build -t example example64
       - name: Test
         run: |
           python3 test/run_tests.py -f --clean_dirty -E 0.001

@@ -59,4 +59,4 @@ jobs:
       - name: Run tests
         run: |
           cd ${{ env.CMAKE_BUILD_DIR }}
-          ctest --verbose --output-on-failure --config --config ${{ matrix.build_config }}
+          ctest --verbose --output-on-failure -C ${{ matrix.build_config }}
