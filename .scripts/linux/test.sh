@@ -11,7 +11,7 @@ python3 run_tests.py -f --epsilon 1e-3 --include_flatbuffers
 
 # Run unit tests
 cd $REPO_DIR/build
-ctest --verbose --output-on-failure
+ctest --verbose --output-on-failure --label-regex VWTestList
 
 # Run integration tests
 cd $REPO_DIR/test

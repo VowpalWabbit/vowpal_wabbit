@@ -7,4 +7,4 @@ REPO_DIR=$SCRIPT_DIR/../../
 cd $REPO_DIR
 
 cd build
-ctest --verbose --output-on-failure
+ctest --verbose --output-on-failure --label-regex VWTestList
