@@ -43,7 +43,7 @@ java_build:
 
 test_build:
 	@echo "vw running test-suite..."
-	cd build; make -j$(shell cat ./build/nprocs.txt) test_with_output
+	cd build; make -j$(shell cat ./build/nprocs.txt) all; make test
 
 unit_test_build:
 	cd build/test/unit_test; make -j$(shell cat ./build/nprocs.txt) vw-unit-test.out test

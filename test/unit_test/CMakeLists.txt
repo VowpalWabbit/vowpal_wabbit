@@ -96,3 +96,4 @@ add_test(
   COMMAND $<TARGET_FILE:vw-unit-test.out>
   WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
 )
+set_tests_properties(vw_unit_test PROPERTIES LABELS "VWTestList")

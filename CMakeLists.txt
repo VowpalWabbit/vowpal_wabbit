@@ -330,12 +330,6 @@ if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME AND BUILD_TESTING)
     set(cmake_test_verbosity "")
   endif()
 
-  # This target ensures all dependencies are built and also uses verbose mode allowing the test output to be seen.
-  add_custom_target(test_with_output
-    COMMAND ${CMAKE_CTEST_COMMAND} ${cmake_test_configuration} ${cmake_test_verbosity} --output-on-failure
-    DEPENDS spanning_tree vw-unit-test.out vw-bin ${vw_c_api_unit_test_target} ${vw_cs_unittest_targets}
-  )
-
   # Don't offer these make dependent targets on Windows
   if(NOT WIN32)
     # make bigtests BIG_TEST_ARGS="<args here>"
@@ -358,8 +352,6 @@ endif()
 
 # Handle installation of targets, version, config and pkgconfig
 if(VW_INSTALL)
-  configure_file(libvw.pc.in libvw.pc @ONLY)
-
   # only do this if the file exists. Some packages dont have this file and its only needed in a very specific use case
   if(EXISTS nuget/vowpalwabbit.nuspec.in)
     configure_file(nuget/vowpalwabbit.nuspec.in nuget/vowpalwabbit.nuspec @ONLY)
@@ -367,7 +359,7 @@ if(VW_INSTALL)
 
   configure_file(libvw_c_wrapper.pc.in libvw_c_wrapper.pc @ONLY)
   install(
-    FILES ${CMAKE_CURRENT_BINARY_DIR}/libvw.pc ${CMAKE_CURRENT_BINARY_DIR}/libvw_c_wrapper.pc
+    FILES ${CMAKE_CURRENT_BINARY_DIR}/libvw_c_wrapper.pc
     DESTINATION ${CMAKE_INSTALL_LIBDIR}/pkgconfig)
 
   install(EXPORT VowpalWabbitConfig
