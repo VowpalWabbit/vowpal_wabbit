@@ -12,3 +12,5 @@ recursive-include explore *
 recursive-include python/bin python/*.dll
 global-exclude *.o *.exe *.pyc
 recursive-exclude vowpalwabbit/.nuget *
+recursive-exclude ext_libs/boost_math/doc *
+recursive-exclude ext_libs/boost_math/test *

@@ -16,6 +16,15 @@
 #    include <locale.h>
 #  endif
 
+#  include "vwvis.h"
+
+// We want the exception types to marked as visible but not dll export
+#  ifndef _WIN32
+#    define VW_EXPORT_EXCEPTION VW_DLL_PUBLIC
+#  else
+#    define VW_EXPORT_EXCEPTION
+#  endif  // _WIN32
+
 #  ifdef _WIN32
 #    define __FILENAME__ (strrchr(__FILE__, '\\') ? strrchr(__FILE__, '\\') + 1 : __FILE__)
 #  else
@@ -24,7 +33,7 @@
 
 namespace VW
 {
-class vw_exception : public std::exception
+class VW_EXPORT_EXCEPTION vw_exception : public std::exception
 {
 private:
   // Source file exception was thrown in.
@@ -51,7 +60,7 @@ public:
   int LineNumber() const { return _line_number; }
 };
 
-class vw_argument_disagreement_exception : public vw_exception
+class VW_EXPORT_EXCEPTION vw_argument_disagreement_exception : public vw_exception
 {
 public:
   vw_argument_disagreement_exception(const char* file, int lineNumber, const std::string& message)
@@ -66,7 +75,7 @@ public:
   ~vw_argument_disagreement_exception() noexcept override = default;
 };
 
-class vw_argument_invalid_value_exception : public vw_exception
+class VW_EXPORT_EXCEPTION vw_argument_invalid_value_exception : public vw_exception
 {
 public:
   vw_argument_invalid_value_exception(const char* file, int lineNumber, const std::string& message)
@@ -81,7 +90,7 @@ public:
   ~vw_argument_invalid_value_exception() noexcept override = default;
 };
 
-class vw_unrecognised_option_exception : public vw_exception
+class VW_EXPORT_EXCEPTION vw_unrecognised_option_exception : public vw_exception
 {
 public:
   vw_unrecognised_option_exception(const char* file, int lineNumber, const std::string& message)
@@ -96,7 +105,7 @@ public:
   ~vw_unrecognised_option_exception() noexcept override = default;
 };
 
-class save_load_model_exception : public vw_exception
+class VW_EXPORT_EXCEPTION save_load_model_exception : public vw_exception
 {
 public:
   save_load_model_exception(const char* file, int lineNumber, const std::string& message)
@@ -111,7 +120,7 @@ public:
   ~save_load_model_exception() noexcept override = default;
 };
 
-class strict_parse_exception : public vw_exception
+class VW_EXPORT_EXCEPTION strict_parse_exception : public vw_exception
 {
 public:
   strict_parse_exception(const char* file, int lineNumber, const std::string& message)

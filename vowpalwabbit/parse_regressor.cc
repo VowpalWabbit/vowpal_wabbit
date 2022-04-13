@@ -1,10 +1,10 @@
 // Copyright (c) by respective owners including Yahoo!, Microsoft, and
 // individual contributors. All rights reserved. Released under a BSD (revised)
 // license as described in the file LICENSE.
-#include "config/options.h"
 #include "crossplat_compat.h"
 #include "io_buf.h"
 #include "rand_state.h"
+#include "vw/config/options.h"
 
 #include <fstream>
 #include <iostream>
@@ -13,15 +13,15 @@
 #  include <unistd.h>
 #endif
 
-#include "config/cli_options_serializer.h"
 #include "crossplat_compat.h"
 #include "global_data.h"
-#include "io/logger.h"
 #include "kskip_ngram_transformer.h"
 #include "learner.h"
 #include "rand48.h"
 #include "shared_data.h"
 #include "vw/common/vw_exception.h"
+#include "vw/config/cli_options_serializer.h"
+#include "vw/io/logger.h"
 #include "vw_validate.h"
 #include "vw_versions.h"
 

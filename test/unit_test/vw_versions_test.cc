@@ -2,13 +2,14 @@
 // individual contributors. All rights reserved. Released under a BSD (revised)
 // license as described in the file LICENSE.
 
-#include <boost/test/unit_test.hpp>
-#include <boost/test/test_tools.hpp>
-
-#include "io/logger.h"
-#include "version.h"
 #include "vw_versions.h"
+
 #include "global_data.h"
+#include "version.h"
+#include "vw/io/logger.h"
+
+#include <boost/test/test_tools.hpp>
+#include <boost/test/unit_test.hpp>
 
 using namespace VW;
 

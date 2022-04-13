@@ -4,12 +4,13 @@
 
 #include "named_labels.h"
 
-#include "io/logger.h"
 #include "parse_primitives.h"
+#include "vw/common/text_utils.h"
+#include "vw/io/logger.h"
 
 void VW::named_labels::initialize_maps_from_input_string()
 {
-  tokenize(',', m_label_list, m_id2name);
+  VW::common::tokenize(',', m_label_list, m_id2name);
 
   m_K = static_cast<uint32_t>(m_id2name.size());
   m_name2id.max_load_factor(0.25);

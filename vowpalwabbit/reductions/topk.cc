@@ -3,12 +3,12 @@
 // license as described in the file LICENSE.
 #include "topk.h"
 
-#include "config/options.h"
-#include "io/logger.h"
 #include "learner.h"
 #include "setup_base.h"
 #include "shared_data.h"
 #include "vw.h"
+#include "vw/config/options.h"
+#include "vw/io/logger.h"
 
 #include <cfloat>
 #include <queue>

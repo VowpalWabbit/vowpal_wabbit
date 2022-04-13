@@ -33,7 +33,7 @@ VW_WARNING_DISABLE_CLASS_MEMACCESS
 #include <rapidjson/reader.h>
 VW_WARNING_STATE_POP
 
-#include "io/logger.h"
+#include "vw/io/logger.h"
 
 #if (_MANAGED == 1) || (_M_CEE == 1)
 #  pragma managed(pop)

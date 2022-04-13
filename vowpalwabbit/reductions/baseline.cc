@@ -4,11 +4,11 @@
 
 #include "baseline.h"
 
-#include "config/options.h"
 #include "loss_functions.h"
 #include "setup_base.h"
 #include "shared_data.h"
 #include "vw.h"
+#include "vw/config/options.h"
 
 using namespace VW::LEARNER;
 using namespace VW::config;

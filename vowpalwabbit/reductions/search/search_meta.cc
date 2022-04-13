@@ -1,11 +1,11 @@
 // Copyright (c) by respective owners including Yahoo!, Microsoft, and
 // individual contributors. All rights reserved. Released under a BSD (revised)
 // license as described in the file LICENSE.
-#include "config/options.h"
 #include "debug_print.h"
 #include "numeric_casts.h"
 #include "search.h"
 #include "vw.h"
+#include "vw/config/options.h"
 
 #include <errno.h>
 #include <float.h>

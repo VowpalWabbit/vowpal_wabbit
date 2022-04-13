@@ -3,10 +3,10 @@
 // license as described in the file LICENSE.
 #include "print.h"
 
-#include "config/options.h"
 #include "gd.h"
 #include "learner.h"
 #include "setup_base.h"
+#include "vw/config/options.h"
 
 #include <cfloat>
 

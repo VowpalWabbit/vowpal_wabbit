@@ -7,7 +7,6 @@
 #include "example.h"
 #include "global_data.h"
 #include "interactions.h"
-#include "io/logger.h"
 #include "label_dictionary.h"
 #include "label_parser.h"
 #include "model_utils.h"
@@ -18,6 +17,8 @@
 #include "reductions/conditional_contextual_bandit.h"
 #include "vw.h"
 #include "vw/common/string_view.h"
+#include "vw/common/text_utils.h"
+#include "vw/io/logger.h"
 #include "vw_math.h"
 
 #include <algorithm>
@@ -76,10 +77,10 @@ CCB::conditional_contextual_bandit_outcome* parse_outcome(VW::string_view outcom
   auto& ccb_outcome = *(new CCB::conditional_contextual_bandit_outcome());
 
   std::vector<VW::string_view> split_commas;
-  tokenize(',', outcome, split_commas);
+  VW::common::tokenize(',', outcome, split_commas);
 
   std::vector<VW::string_view> split_colons;
-  tokenize(':', split_commas[0], split_colons);
+  VW::common::tokenize(':', split_commas[0], split_colons);
 
   if (split_colons.size() != 3) THROW("Malformed ccb label");
 
@@ -92,7 +93,7 @@ CCB::conditional_contextual_bandit_outcome* parse_outcome(VW::string_view outcom
 
   for (size_t i = 1; i < split_commas.size(); i++)
   {
-    tokenize(':', split_commas[i], split_colons);
+    VW::common::tokenize(':', split_commas[i], split_colons);
     if (split_colons.size() != 2) THROW("Must be action probability pairs");
     ccb_outcome.probabilities.push_back(convert_to_score(split_colons[0], split_colons[1], logger));
   }
@@ -143,7 +144,7 @@ void parse_label(
       }
       else
       {
-        tokenize(',', words[i], reuse_mem.tokens);
+        VW::common::tokenize(',', words[i], reuse_mem.tokens);
         parse_explicit_inclusions(ld, reuse_mem.tokens, logger);
       }
     }

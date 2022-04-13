@@ -5,7 +5,6 @@
 #include "baseline_challenger_cb.h"
 
 #include "action_score.h"
-#include "config/options.h"
 #include "debug_log.h"
 #include "distributionally_robust.h"
 #include "example.h"
@@ -13,6 +12,7 @@
 #include "model_utils.h"
 #include "setup_base.h"
 #include "vw.h"
+#include "vw/config/options.h"
 
 #include <algorithm>
 #include <cfloat>

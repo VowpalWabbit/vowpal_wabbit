@@ -4,10 +4,10 @@
 
 #include "classweight.h"
 
-#include "config/options.h"
 #include "global_data.h"
 #include "learner.h"
 #include "setup_base.h"
+#include "vw/config/options.h"
 
 #include <unordered_map>
 
