@@ -41,8 +41,8 @@ jobs:
           -DVW_INSTALL=On
       - name: Build and install
         run: |
-          cmake --build build --config Debug -t vw_io vw vw-bin vw_allreduce vw_spanning_tree_bin
-          cmake --build build --config Release -t vw_io vw vw-bin vw_allreduce vw_spanning_tree_bin
+          cmake --build build --config Debug -t vw_io vw vw_cli_bin vw_allreduce vw_spanning_tree_bin
+          cmake --build build --config Release -t vw_io vw vw_cli_bin vw_allreduce vw_spanning_tree_bin
 
           # Install debug first so that release overwrites the exe and nothing else
           cmake --install build --prefix ./nuget_staging --config Debug

@@ -1079,7 +1079,7 @@ def main():
 
     vw_bin = find_vw_binary(test_base_ref_dir, args.vw_bin_path)
     if vw_bin is None:
-        print("Can't find vw binary. Did you build the 'vw-bin' target?")
+        print("Can't find vw binary. Did you build the 'vw_cli_bin' target?")
         sys.exit(1)
     # test if vw_bin is a Path object
     elif isinstance(vw_bin, Path):

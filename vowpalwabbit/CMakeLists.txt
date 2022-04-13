@@ -7,6 +7,7 @@ add_subdirectory(config)
 add_subdirectory(slim)
 add_subdirectory(spanning_tree)
 add_subdirectory(spanning_tree_bin)
+add_subdirectory(cli)
 if(BUILD_FLATBUFFERS)
   add_subdirectory(fb_parser)
 endif()
@@ -430,33 +431,6 @@ else()
 endif()
 target_compile_options(vw PRIVATE ${WARNING_OPTIONS} ${WARNING_AS_ERROR_OPTIONS})
 
-if(NOT WIN32)
-  find_file(HELP2MAN_EXECUTABLE help2man HINTS /bin /usr/bin /usr/local/bin)
-  if (HELP2MAN_EXECUTABLE)
-    add_custom_target(manpage ALL
-      COMMAND ${HELP2MAN_EXECUTABLE}
-        --no-info
-        --name="Vowpal Wabbit -- fast online learning tool" $<TARGET_FILE:vw-bin>
-        --output=$<TARGET_FILE:vw-bin>.1
-      DEPENDS vw-bin)
-
-      if(VW_INSTALL)
-        install(FILES $<TARGET_FILE:vw-bin>.1 DESTINATION share/man/man1)
-      endif()
-  else()
-    message(STATUS "help2man not found, please install it to generate manpages")
-  endif()
-endif()
-
-# build main executable
-add_executable(vw-bin main.cc)
-target_link_libraries(vw-bin PRIVATE VowpalWabbit::vw)
-set_target_properties(vw-bin PROPERTIES OUTPUT_NAME vw)
-
-if(STATIC_LINK_VW)
-  target_link_libraries(vw-bin PRIVATE ${unix_static_flag})
-endif()
-
 if(WIN32)
   set_target_properties(vw PROPERTIES DEBUG_POSTFIX d)
 endif()
@@ -485,7 +459,7 @@ endif()
 
 if(VW_INSTALL)
   install(
-    TARGETS vw vw-bin
+    TARGETS vw
     EXPORT VowpalWabbitConfig
     ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
     LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
