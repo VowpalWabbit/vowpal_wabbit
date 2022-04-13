@@ -5,32 +5,15 @@
 
 #include "fast_pow10.h"
 #include "hashstring.h"
-#include "io/logger.h"
 #include "v_array.h"
 #include "vw/common/future_compat.h"
 #include "vw/common/string_view.h"
+#include "vw/io/logger.h"
 
 #include <cmath>
 #include <cstdint>
 #include <string>
 #include <vector>
-
-// chop up the string into a v_array or any compatible container of VW::string_view.
-template <typename ContainerT>
-void tokenize(char delim, VW::string_view s, ContainerT& ret, bool allow_empty = false)
-{
-  ret.clear();
-  size_t end_pos = 0;
-  bool last_space = false;
-
-  while (!s.empty() && ((end_pos = s.find(delim)) != VW::string_view::npos))
-  {
-    last_space = end_pos == 0;
-    if (allow_empty || end_pos > 0) ret.emplace_back(s.substr(0, end_pos));
-    s.remove_prefix(end_pos + 1);
-  }
-  if (!s.empty() || (last_space && allow_empty)) ret.emplace_back(s.substr(0));
-}
 
 // This function returns a vector of strings (not string_views) because we need to remove the escape characters
 std::vector<std::string> escaped_tokenize(char delim, VW::string_view s, bool allow_empty = false);

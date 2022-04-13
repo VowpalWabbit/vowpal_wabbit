@@ -4,12 +4,12 @@
 
 #include "vwdll.h"
 
-#include "io/io_adapter.h"
 #include "memory.h"
 #include "parse_args.h"
 #include "parser.h"
 #include "simple_label.h"
 #include "vw.h"
+#include "vw/io/io_adapter.h"
 
 #include <codecvt>
 #include <locale>

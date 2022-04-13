@@ -5,7 +5,6 @@
 #include "cb_adf.h"
 
 #include "cb_algs.h"
-#include "config/options.h"
 #include "explore.h"
 #include "gen_cs_example.h"
 #include "label_dictionary.h"
@@ -16,12 +15,13 @@
 #include "vw.h"
 #include "vw/common/string_view.h"
 #include "vw/common/vw_exception.h"
+#include "vw/config/options.h"
 #include "vw_versions.h"
 
 #undef VW_DEBUG_LOG
 #define VW_DEBUG_LOG vw_dbg::cb_adf
 
-#include "io/logger.h"
+#include "vw/io/logger.h"
 
 using namespace VW::LEARNER;
 using namespace CB;

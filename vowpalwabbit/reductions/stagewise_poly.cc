@@ -5,11 +5,11 @@
 #include "stagewise_poly.h"
 
 #include "accumulate.h"
-#include "config/options.h"
 #include "gd.h"
 #include "label_parser.h"
 #include "setup_base.h"
 #include "vw.h"
+#include "vw/config/options.h"
 #include "vw_allreduce.h"
 
 #include <cassert>

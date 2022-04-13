@@ -25,4 +25,10 @@ jobs:
       - name: Build
         run: cmake --build build --target all
       - name: Test
-        run: ctest --test-dir build --extra-verbose --output-on-failure
+        run: |
+          # Run unit tests
+          ctest --test-dir build --extra-verbose --output-on-failure --label-regex VWTestList
+          # Run integration tests
+          python3 test/run_tests.py --fuzzy_compare --exit_first_fail --epsilon 0.001 --ignore_dirty
+          python3 test/run_tests.py --fuzzy_compare --exit_first_fail --epsilon 0.001 --ignore_dirty --extra_options=--onethread
+          python3 test/run_tests.py --ignore_dirty --test_spec test/slow.vwtest.json --timeout 180

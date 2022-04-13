@@ -8,7 +8,6 @@
 #include "cb_adf.h"
 #include "cb_explore.h"
 #include "cb_explore_adf_common.h"
-#include "config/options.h"
 #include "explore.h"
 #include "gen_cs_example.h"
 #include "label_parser.h"
@@ -16,6 +15,7 @@
 #include "rand48.h"
 #include "setup_base.h"
 #include "version.h"
+#include "vw/config/options.h"
 #include "vw_versions.h"
 
 #include <algorithm>

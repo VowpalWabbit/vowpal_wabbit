@@ -4,13 +4,13 @@
 
 #include "log_multi.h"
 
-#include "config/options.h"
 #include "crossplat_compat.h"
 #include "global_data.h"
 #include "learner.h"
 #include "loss_functions.h"
 #include "parser.h"
 #include "setup_base.h"
+#include "vw/config/options.h"
 
 #include <cfloat>
 #include <cmath>

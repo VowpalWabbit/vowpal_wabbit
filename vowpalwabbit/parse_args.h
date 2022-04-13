@@ -3,9 +3,10 @@
 // license as described in the file LICENSE.
 #pragma once
 
-#include "config/options.h"
 #include "text_utils.h"
 #include "vw/common/string_view.h"
+#include "vw/common/text_utils.h"
+#include "vw/config/options.h"
 #include "vw_fwd.h"
 
 // Used in parse_source
@@ -40,10 +41,10 @@ void merge_options_from_header_strings(const std::vector<std::string>& strings, 
 VW_DEPRECATED("Moved and renamed: use VW::decode_inline_hex instead")
 std::string spoof_hex_encoded_namespaces(const std::string& arg);
 
-VW_DEPRECATED("Moved: use VW::ends_with instead")
+VW_DEPRECATED("Moved: use VW::common::ends_with instead")
 inline bool ends_with(const std::string& full_string, const std::string& ending)
 {
-  return VW::ends_with(full_string, ending);
+  return VW::common::ends_with(full_string, ending);
 }
 
 std::vector<extent_term> parse_full_name_interactions(VW::workspace& all, VW::string_view str);

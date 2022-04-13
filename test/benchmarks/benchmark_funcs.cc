@@ -1,11 +1,11 @@
-#include <benchmark/benchmark.h>
-
-#include <string>
-
-#include "io/io_adapter.h"
 #include "parse_example.h"
 #include "parser.h"
 #include "vw.h"
+#include "vw/io/io_adapter.h"
+
+#include <benchmark/benchmark.h>
+
+#include <string>
 
 static void benchmark_sum_ft_squared_char(benchmark::State& state)
 {

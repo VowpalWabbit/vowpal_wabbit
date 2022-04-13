@@ -3,7 +3,7 @@
 // license as described in the file LICENSE.
 #include "search_hooktask.h"
 
-#include "io/logger.h"
+#include "vw/io/logger.h"
 
 using namespace VW::config;
 

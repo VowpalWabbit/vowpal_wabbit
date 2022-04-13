@@ -7,12 +7,12 @@ This creates a binary tree topology over a set of n nodes that connect.
 
  */
 
-#include "config/cli_help_formatter.h"
-#include "config/option_builder.h"
-#include "config/option_group_definition.h"
-#include "config/options_cli.h"
 #include "spanning_tree.h"
 #include "vw/common/vw_exception.h"
+#include "vw/config/cli_help_formatter.h"
+#include "vw/config/option_builder.h"
+#include "vw/config/option_group_definition.h"
+#include "vw/config/options_cli.h"
 
 #ifdef _WIN32
 int daemon(int a, int b) { return 0; }
