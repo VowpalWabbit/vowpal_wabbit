@@ -1,9 +1,12 @@
 add_subdirectory(common)
+add_subdirectory(explore)
 add_subdirectory(io)
 add_subdirectory(allreduce)
 add_subdirectory(active_interactor)
 add_subdirectory(config)
 add_subdirectory(slim)
+add_subdirectory(spanning_tree)
+add_subdirectory(spanning_tree_bin)
 if(BUILD_FLATBUFFERS)
   add_subdirectory(fb_parser)
 endif()
@@ -182,7 +185,6 @@ set(vw_all_headers
   simple_label_parser.h
   simple_label.h
   slates_label.h
-  spanning_tree.h
   stable_unique.h
   tag_utils.h
   text_utils.h
@@ -350,15 +352,11 @@ if(BUILD_EXTERNAL_PARSER)
   set(vw_all_sources ${vw_all_sources} ${external_parser_sources})
 endif()
 
-if (vw_BUILD_NET_FRAMEWORK)
-set(vw_all_sources ${vw_all_sources} spanning_tree.cc)
-endif()
-
 add_library(vw STATIC ${vw_all_sources} ${vw_all_headers})
 
 target_link_libraries(vw
   PUBLIC
-    VowpalWabbit::vw_common VowpalWabbit::explore VowpalWabbit::vw_allreduce VowpalWabbit::vw_config ${spdlog_target} fmt::fmt
+    VowpalWabbit::vw_common VowpalWabbit::vw_explore VowpalWabbit::vw_allreduce VowpalWabbit::vw_config ${spdlog_target} fmt::fmt
   PRIVATE
     ${CMAKE_DL_LIBS} ${LINK_THREADS} VowpalWabbit::vw_io
     # Workaround an issue where RapidJSON needed to be exported tom install the target. This is

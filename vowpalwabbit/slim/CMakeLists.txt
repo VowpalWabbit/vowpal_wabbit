@@ -21,7 +21,7 @@ vw_add_library(
   NAME "slim"
   TYPE "STATIC_ONLY"
   SOURCES ${VW_SLIM_SOURCES} ${VW_SLIM_HEADERS}
-  PUBLIC_DEPS vw_common VowpalWabbit::explore
+  PUBLIC_DEPS vw_common VowpalWabbit::vw_explore
 )
 target_compile_definitions(vw_slim PUBLIC EXPLORE_NOEXCEPT VW_NOEXCEPT)
 
@@ -35,7 +35,6 @@ set(vw_slim_test_sources
   test/data.h
   test/ut_explore.cc
   test/ut_opts.cc
-  test/ut_util.h
   test/ut_util.cc
 )
 

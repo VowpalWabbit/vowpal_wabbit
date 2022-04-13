@@ -610,7 +610,9 @@ def find_vw_binary(
 def find_spanning_tree_binary(
     test_base_ref_dir: Path, user_supplied_bin_path: Optional[str]
 ) -> Optional[Path]:
-    spanning_tree_search_path = [test_base_ref_dir / ".." / "build" / "cluster"]
+    spanning_tree_search_path = [
+        test_base_ref_dir / ".." / "build" / "vowpalwabbit" / "spanning_tree_bin"
+    ]
 
     def is_spanning_tree_binary(file: Path) -> bool:
         return file.name == "spanning_tree"
