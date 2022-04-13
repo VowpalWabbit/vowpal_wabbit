@@ -24,7 +24,7 @@ jobs:
         uses: actions/upload-artifact@v2
         with:
           name: spanning_tree
-          path: build/cluster/spanning_tree
+          path: build/vowpalwabbit/spanning_tree_bin/spanning_tree
       - name: Upload to_flatbuff binary
         uses: actions/upload-artifact@v2
         with:

@@ -1,5 +1,5 @@
 default: vw
-all: vw library_example java spanning_tree python
+all: vw library_example java vw_spanning_tree_bin python
 
 # CMake configs
 ensure_cmake:
@@ -24,7 +24,7 @@ ensure_cmake_static:
 
 # Build targets
 spanning_tree_build:
-	cd build; make -j$(shell cat ./build/nprocs.txt) spanning_tree
+	cd build; make -j$(shell cat ./build/nprocs.txt) vw_spanning_tree_bin
 
 vw_build:
 	cd build; make -j$(shell cat ./build/nprocs.txt) vw-bin
