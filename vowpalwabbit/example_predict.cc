@@ -21,8 +21,8 @@ VW::example_predict::iterator& VW::example_predict::iterator::operator++()
 
 VW::namespace_index VW::example_predict::iterator::index() { return *_index; }
 
-bool VW::example_predict::iterator::operator==(const iterator& rhs) { return _index == rhs._index; }
-bool VW::example_predict::iterator::operator!=(const iterator& rhs) { return _index != rhs._index; }
+bool VW::example_predict::iterator::operator==(const iterator& rhs) const { return _index == rhs._index; }
+bool VW::example_predict::iterator::operator!=(const iterator& rhs) const { return _index != rhs._index; }
 
 VW::example_predict::iterator VW::example_predict::begin() { return {feature_space.data(), indices.begin()}; }
 VW::example_predict::iterator VW::example_predict::end() { return {feature_space.data(), indices.end()}; }
