@@ -14,4 +14,3 @@ global-exclude *.o *.exe *.pyc
 recursive-exclude vowpalwabbit/.nuget *
 recursive-exclude ext_libs/boost_math/doc *
 recursive-exclude ext_libs/boost_math/test *
-recursive-exclude vowpalwabbit/.nuget *
