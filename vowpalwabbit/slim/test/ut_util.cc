@@ -1,5 +1,3 @@
-#include "ut_util.h"
-
 #include "array_parameters.h"
 #include "data.h"
 #include "gmock/gmock.h"
@@ -214,7 +212,7 @@ void run_predict_in_memory(
   // compare output
   std::vector<float> preds_expected = read_floats(td.pred, td.pred_len);
 
-  EXPECT_THAT(preds, Pointwise(FloatNearPointwise(1e-5f), preds_expected));
+  EXPECT_THAT(preds, Pointwise(FloatNear(1e-5f), preds_expected));
 }
 
 enum class PredictParamWeightType
@@ -377,7 +375,7 @@ TEST(VowpalWabbitSlim, multiclass_data_4)
   std::vector<float> preds_expected = {0.901038f, 0.46983f, 0.0386223f};
 
   // compare output
-  EXPECT_THAT(out_scores, Pointwise(FloatNearPointwise(1e-5f), preds_expected));
+  EXPECT_THAT(out_scores, Pointwise(FloatNear(1e-5f), preds_expected));
 }
 
 TEST(VowpalWabbitSlim, multiclass_data_5)
@@ -427,7 +425,7 @@ TEST(VowpalWabbitSlim, multiclass_data_5)
       0.551784f, 0.575380862f, 0.598977983f, 0.5517838f, 0.560358882f, 0.592531085f, 0.624703348f, 0.560358882f};
 
   // compare output
-  EXPECT_THAT(out_scores, Pointwise(FloatNearPointwise(1e-5f), preds_expected));
+  EXPECT_THAT(out_scores, Pointwise(FloatNear(1e-5f), preds_expected));
 }
 
 void cb_data_epsilon_0_skype_jb_test_runner(int call_type, int modality, int network_type, int platform,
@@ -465,7 +463,7 @@ void cb_data_epsilon_0_skype_jb_test_runner(int call_type, int modality, int net
 
   // compare output with expected.
   EXPECT_EQ(result, 0);
-  EXPECT_THAT(pdfs, Pointwise(FloatNearPointwise(1e-5f), pdf_expected));
+  EXPECT_THAT(pdfs, Pointwise(FloatNear(1e-5f), pdf_expected));
   EXPECT_THAT(rankings, ranking_expected);
 }
 
@@ -662,7 +660,7 @@ TEST_P(CBPredictTest, CBRunPredict)
     //}
 #endif
 
-  EXPECT_THAT(histogram, Pointwise(FloatNearPointwise(1e-2f), GetParam().ranking_pdf_expected));
+  EXPECT_THAT(histogram, Pointwise(FloatNear(1e-2f), GetParam().ranking_pdf_expected));
 }
 
 CBPredictParam cb_predict_params[] = {

@@ -8,7 +8,6 @@
 #include "cb_algs.h"
 #include "cb_label_parser.h"
 #include "debug_log.h"
-#include "explore.h"
 #include "gen_cs_example.h"
 #include "rand48.h"
 #include "scope_exit.h"
@@ -16,6 +15,7 @@
 #include "shared_data.h"
 #include "version.h"
 #include "vw/config/options.h"
+#include "vw/explore/explore.h"
 #include "vw_versions.h"
 
 #include <cfloat>
