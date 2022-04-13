@@ -1,4 +1,5 @@
 add_subdirectory(common)
+add_subdirectory(explore)
 add_subdirectory(io)
 add_subdirectory(allreduce)
 add_subdirectory(active_interactor)
@@ -358,7 +359,7 @@ add_library(vw STATIC ${vw_all_sources} ${vw_all_headers})
 
 target_link_libraries(vw
   PUBLIC
-    VowpalWabbit::vw_common VowpalWabbit::explore VowpalWabbit::vw_allreduce VowpalWabbit::vw_config ${spdlog_target} fmt::fmt
+    VowpalWabbit::vw_common VowpalWabbit::vw_explore VowpalWabbit::vw_allreduce VowpalWabbit::vw_config ${spdlog_target} fmt::fmt
   PRIVATE
     ${CMAKE_DL_LIBS} ${LINK_THREADS} VowpalWabbit::vw_io
     # Workaround an issue where RapidJSON needed to be exported tom install the target. This is

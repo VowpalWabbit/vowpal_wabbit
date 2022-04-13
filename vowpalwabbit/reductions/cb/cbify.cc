@@ -7,7 +7,6 @@
 #include "cb_algs.h"
 #include "cb_label_parser.h"
 #include "debug_log.h"
-#include "explore.h"
 #include "prob_dist_cont.h"
 #include "setup_base.h"
 #include "shared_data.h"
@@ -15,6 +14,7 @@
 #include "vw.h"
 #include "vw/common/hash.h"
 #include "vw/config/options.h"
+#include "vw/explore/explore.h"
 
 #include <cfloat>
 #include <vector>
