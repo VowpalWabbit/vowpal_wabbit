@@ -5,12 +5,12 @@
 #include "cats_tree.h"
 
 #include "debug_log.h"
-#include "explore_internal.h"
 #include "global_data.h"
 #include "guard.h"
 #include "label_parser.h"
 #include "learner.h"
 #include "parser.h"
+#include "rand48.h"
 #include "setup_base.h"
 #include "vw/common/hash.h"
 
@@ -276,7 +276,7 @@ void cats_tree::learn(LEARNER::single_learner& base, example& ec)
           // generate a new seed
           uint64_t new_random_seed = VW::common::uniform_hash(&app_seed, sizeof(app_seed), app_seed);
           // pick a uniform random number between 0.0 - .001f
-          float random_draw = exploration::uniform_random_merand48(new_random_seed) * weight_th;
+          float random_draw = merand48(new_random_seed) * weight_th;
           if (random_draw < ec.weight) { ec.weight = weight_th; }
           else
           {

@@ -7,12 +7,12 @@
 #include "api_status.h"
 #include "debug_log.h"
 #include "error_constants.h"
-#include "explore.h"
 #include "global_data.h"
 #include "guard.h"
 #include "rand_state.h"
 #include "setup_base.h"
 #include "vw/config/options.h"
+#include "vw/explore/explore.h"
 
 // Aliases
 using VW::cb_continuous::continuous_label;

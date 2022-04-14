@@ -73,7 +73,7 @@ int VW_getpid() { return (int)::GetCurrentProcessId(); }
 #include <cerrno>
 #include <cstdio>
 #ifdef BUILD_FLATBUFFERS
-#  include "parser/flatbuffer/parse_example_flatbuffer.h"
+#  include "vw/fb_parser/parse_example_flatbuffer.h"
 #endif
 
 #ifdef BUILD_EXTERNAL_PARSER

@@ -4,7 +4,6 @@
 
 #include "cb_sample.h"
 
-#include "explore.h"
 #include "global_data.h"
 #include "label_parser.h"
 #include "learner.h"
@@ -14,6 +13,7 @@
 #include "tag_utils.h"
 #include "vw/common/string_view.h"
 #include "vw/config/options.h"
+#include "vw/explore/explore.h"
 
 #undef VW_DEBUG_LOG
 #define VW_DEBUG_LOG vw_dbg::cb_sample

@@ -91,3 +91,15 @@ else()
 endif()
 
 add_subdirectory(${CMAKE_CURRENT_LIST_DIR}/string-view-lite)
+
+if(BUILD_FLATBUFFERS)
+  find_package(Flatbuffers CONFIG QUIET)
+  if(FLATBUFFERS_FOUND)
+    get_property(flatc_location TARGET flatbuffers::flatc PROPERTY LOCATION)
+  else()
+    # Fallback to the old version
+    find_package(Flatbuffers MODULE REQUIRED)
+    set(flatc_location ${FLATBUFFERS_FLATC_EXECUTABLE})
+  endif()
+  include(FlatbufferUtils)
+endif()

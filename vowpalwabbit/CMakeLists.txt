@@ -1,20 +1,18 @@
 add_subdirectory(common)
+add_subdirectory(explore)
 add_subdirectory(io)
 add_subdirectory(allreduce)
 add_subdirectory(active_interactor)
 add_subdirectory(config)
 add_subdirectory(slim)
-
+add_subdirectory(spanning_tree)
+add_subdirectory(spanning_tree_bin)
+if(BUILD_FLATBUFFERS)
+  add_subdirectory(fb_parser)
+endif()
 configure_file(config.h.in config.h)
 # Use position independent code for all targets in this directory
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
-
-if(BUILD_FLATBUFFERS)
-  add_subdirectory(parser/flatbuffer)
-  add_library(FlatbuffersTarget INTERFACE)
-  target_include_directories(FlatbuffersTarget INTERFACE ${FLATBUFFERS_INCLUDE_DIR})
-  add_dependencies(FlatbuffersTarget fbschemas)
-endif()
 
 set(vw_all_headers
   accumulate.h
@@ -187,7 +185,6 @@ set(vw_all_headers
   simple_label_parser.h
   simple_label.h
   slates_label.h
-  spanning_tree.h
   stable_unique.h
   tag_utils.h
   text_utils.h
@@ -202,9 +199,6 @@ set(vw_all_headers
   vwdll.h
 )
 
-if(BUILD_FLATBUFFERS)
-  set(vw_all_headers ${vw_all_headers} parser/flatbuffer/parse_example_flatbuffer.h)
-endif()
 
 if(BUILD_EXTERNAL_PARSER)
   set(vw_all_headers ${vw_all_headers} ${external_parser_headers})
@@ -354,25 +348,15 @@ set(vw_all_sources
   vw_validate.cc
 )
 
-if(BUILD_FLATBUFFERS)
-  set(vw_all_sources ${vw_all_sources}
-    parser/flatbuffer/parse_example_flatbuffer.cc
-    parser/flatbuffer/parse_label.cc)
-endif()
-
 if(BUILD_EXTERNAL_PARSER)
   set(vw_all_sources ${vw_all_sources} ${external_parser_sources})
-endif()
-
-if (vw_BUILD_NET_FRAMEWORK)
-set(vw_all_sources ${vw_all_sources} spanning_tree.cc)
 endif()
 
 add_library(vw STATIC ${vw_all_sources} ${vw_all_headers})
 
 target_link_libraries(vw
   PUBLIC
-    VowpalWabbit::vw_common VowpalWabbit::explore VowpalWabbit::vw_allreduce VowpalWabbit::vw_config ${spdlog_target} fmt::fmt
+    VowpalWabbit::vw_common VowpalWabbit::vw_explore VowpalWabbit::vw_allreduce VowpalWabbit::vw_config ${spdlog_target} fmt::fmt
   PRIVATE
     ${CMAKE_DL_LIBS} ${LINK_THREADS} VowpalWabbit::vw_io
     # Workaround an issue where RapidJSON needed to be exported tom install the target. This is
@@ -405,9 +389,7 @@ if (BUILD_PRIVACY_ACTIVATION)
 endif()
 
 if(BUILD_FLATBUFFERS)
-  target_link_libraries(vw
-      PRIVATE
-      $<BUILD_INTERFACE:FlatbuffersTarget>)
+  target_link_libraries(vw PRIVATE vw_fb_parser)
   target_compile_definitions(vw PUBLIC BUILD_FLATBUFFERS)
 endif()
 

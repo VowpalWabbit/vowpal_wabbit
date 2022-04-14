@@ -37,7 +37,7 @@
 #include <sstream>
 
 #ifdef BUILD_FLATBUFFERS
-#  include "parser/flatbuffer/parse_example_flatbuffer.h"
+#  include "vw/fb_parser/parse_example_flatbuffer.h"
 #endif
 #ifdef BUILD_EXTERNAL_PARSER
 #  include "parse_example_external.h"

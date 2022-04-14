@@ -18,7 +18,6 @@ add_executable(vw-unit-test.out
   error_test.cc
   example_header_test.cc
   example_test.cc
-  explore_test.cc
   feature_group_test.cc
   guard_test.cc
   initialize_test.cc
@@ -54,10 +53,6 @@ add_executable(vw-unit-test.out
   vw_versions_test.cc
   weights_test.cc
 )
-
-if(BUILD_FLATBUFFERS)
-  target_sources(vw-unit-test.out PRIVATE flatbuffer_parser_test.cc)
-endif()
 
 # Add the include directories from vw target for testing
 target_include_directories(vw-unit-test.out PRIVATE $<TARGET_PROPERTY:vw,INCLUDE_DIRECTORIES>)

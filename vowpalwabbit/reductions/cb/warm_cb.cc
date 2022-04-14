@@ -6,7 +6,6 @@
 
 #include "cb_algs.h"
 #include "cb_label_parser.h"
-#include "explore.h"
 #include "rand_state.h"
 #include "scope_exit.h"
 #include "setup_base.h"
@@ -14,6 +13,7 @@
 #include "vw/common/hash.h"
 #include "vw/common/vw_exception.h"
 #include "vw/config/options.h"
+#include "vw/explore/explore.h"
 #include "vw/io/logger.h"
 
 #include <cfloat>

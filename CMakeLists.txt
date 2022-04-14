@@ -238,10 +238,6 @@ if(STATIC_LINK_VW)
   endif()
 endif()
 
-if(BUILD_FLATBUFFERS)
-find_package(flatbuffers REQUIRED)
-endif()
-
 # This provides the variables such as CMAKE_INSTALL_LIBDIR for installation paths.
 include(GNUInstallDirs)
 
@@ -268,8 +264,6 @@ if(GIT_FOUND AND EXISTS "${PROJECT_SOURCE_DIR}/.git")
   endif()
 endif()
 
-add_subdirectory(explore)
-add_subdirectory(cluster)
 add_subdirectory(library)
 include(ext_libs/ext_libs.cmake)
 add_subdirectory(vowpalwabbit)

@@ -7,7 +7,7 @@
 #include "vw.h"
 VW_WARNING_STATE_PUSH
 VW_WARNING_DISABLE_BADLY_FORMED_XML
-#include "parser/flatbuffer/generated/example_generated.h"
+#include "vw/fb_parser/generated/example_generated.h"
 VW_WARNING_STATE_POP
 #include "named_labels.h"
 #include "simple_label.h"

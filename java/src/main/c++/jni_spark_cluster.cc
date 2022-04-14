@@ -1,6 +1,6 @@
 #include "jni_spark_vw_generated.h"
-#include "spanning_tree.h"
 #include "util.h"
+#include "vw/spanning_tree/spanning_tree.h"
 
 JNIEXPORT jlong JNICALL Java_org_vowpalwabbit_spark_ClusterSpanningTree_create(
     JNIEnv *env, jclass, jint port, jboolean quiet)
