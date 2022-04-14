@@ -19,7 +19,9 @@ vw_add_test_executable(
   SOURCES tests/vwdll_test.cc
   EXTRA_DEPS vw_core
 )
-windows_set_path(vw_c_wrapper_test vw_c_wrapper)
+if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME AND BUILD_TESTING)
+  windows_set_path(vw_c_wrapper_test vw_c_wrapper)
+endif()
 
 # Also for compat install to old location.
 if(VW_INSTALL)
