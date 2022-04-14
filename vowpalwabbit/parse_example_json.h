@@ -4,11 +4,11 @@
 
 #pragma once
 
-#include "future_compat.h"
 #include "label_parser.h"
 #include "parse_example.h"
 #include "parser.h"
 #include "v_array.h"
+#include "vw/common/future_compat.h"
 
 #include <cfloat>
 #include <cstring>
@@ -33,7 +33,7 @@ VW_WARNING_DISABLE_CLASS_MEMACCESS
 #include <rapidjson/reader.h>
 VW_WARNING_STATE_POP
 
-#include "io/logger.h"
+#include "vw/io/logger.h"
 
 #if (_MANAGED == 1) || (_M_CEE == 1)
 #  pragma managed(pop)
@@ -45,7 +45,7 @@ VW_WARNING_STATE_POP
 #include "json_utils.h"
 #include "parse_slates_example_json.h"
 #include "reductions/conditional_contextual_bandit.h"
-#include "vw_string_view.h"
+#include "vw/common/string_view.h"
 
 #include <algorithm>
 #include <limits>
@@ -597,7 +597,7 @@ struct MultiState : BaseState<audit>
       CB::cb_class f;
 
       f.partial_prediction = 0.;
-      f.action = static_cast<uint32_t>(uniform_hash("shared", 6, 0));
+      f.action = static_cast<uint32_t>(VW::common::uniform_hash("shared", 6, 0));
       f.cost = FLT_MAX;
       f.probability = -1.f;
 

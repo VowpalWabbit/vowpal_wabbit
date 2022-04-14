@@ -9,14 +9,15 @@
 #include "cb/cb_algs.h"
 #include "ccb_label.h"
 #include "conditional_contextual_bandit.h"
-#include "config/options.h"
 #include "decision_scores.h"
 #include "example.h"
 #include "global_data.h"
+#include "print_utils.h"
 #include "setup_base.h"
 #include "shared_data.h"
 #include "slates_label.h"
 #include "vw.h"
+#include "vw/config/options.h"
 
 #include <algorithm>
 
@@ -160,9 +161,9 @@ float get_estimate(
   return cost * p_over_ps;
 }
 
-void output_example(VW::workspace& all, const VW::reductions::slates_data& /*c*/, const multi_ex& ec_seq)
+void output_example(VW::workspace& all, const VW::reductions::slates_data& /*c*/, const VW::multi_ex& ec_seq)
 {
-  std::vector<example*> slots;
+  std::vector<VW::example*> slots;
   size_t num_features = 0;
   float loss = 0.;
   bool is_labelled = ec_seq[SHARED_EX_INDEX]->l.slates.labeled;
@@ -205,12 +206,12 @@ void output_example(VW::workspace& all, const VW::reductions::slates_data& /*c*/
   VW::print_update_slates(all, slots, predictions, num_features);
 }
 
-void finish_multiline_example(VW::workspace& all, VW::reductions::slates_data& data, multi_ex& ec_seq)
+void finish_multiline_example(VW::workspace& all, VW::reductions::slates_data& data, VW::multi_ex& ec_seq)
 {
   if (!ec_seq.empty())
   {
     output_example(all, data, ec_seq);
-    CB_ADF::global_print_newline(all.final_prediction_sink, all.logger);
+    VW::details::global_print_newline(all.final_prediction_sink, all.logger);
     for (auto& action_scores : ec_seq[0]->pred.decision_scores) { action_scores.clear(); }
     ec_seq[0]->pred.decision_scores.clear();
   }
@@ -219,7 +220,7 @@ void finish_multiline_example(VW::workspace& all, VW::reductions::slates_data& d
 }
 
 template <bool is_learn>
-void learn_or_predict(VW::reductions::slates_data& data, VW::LEARNER::multi_learner& base, multi_ex& examples)
+void learn_or_predict(VW::reductions::slates_data& data, VW::LEARNER::multi_learner& base, VW::multi_ex& examples)
 {
   if (is_learn) { data.learn(base, examples); }
   else

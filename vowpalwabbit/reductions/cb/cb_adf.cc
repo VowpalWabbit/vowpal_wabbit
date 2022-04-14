@@ -5,22 +5,23 @@
 #include "cb_adf.h"
 
 #include "cb_algs.h"
-#include "config/options.h"
-#include "explore.h"
 #include "gen_cs_example.h"
 #include "label_dictionary.h"
 #include "label_parser.h"
+#include "print_utils.h"
 #include "setup_base.h"
 #include "shared_data.h"
 #include "vw.h"
-#include "vw_exception.h"
-#include "vw_string_view.h"
+#include "vw/common/string_view.h"
+#include "vw/common/vw_exception.h"
+#include "vw/config/options.h"
+#include "vw/explore/explore.h"
 #include "vw_versions.h"
 
 #undef VW_DEBUG_LOG
 #define VW_DEBUG_LOG vw_dbg::cb_adf
 
-#include "io/logger.h"
+#include "vw/io/logger.h"
 
 using namespace VW::LEARNER;
 using namespace CB;
@@ -62,6 +63,38 @@ cb_class get_observed_cost_or_default_cb_adf(const VW::multi_ex& examples)
   known_cost.action = found_index;
   return known_cost;
 }
+// Validates a multiline example collection as a valid sequence for action dependent features format.
+VW::example* test_adf_sequence(const VW::multi_ex& ec_seq)
+{
+  if (ec_seq.empty()) THROW("cb_adf: At least one action must be provided for an example to be valid.");
+
+  uint32_t count = 0;
+  VW::example* ret = nullptr;
+  for (auto* ec : ec_seq)
+  {
+    // Check if there is more than one cost for this example.
+    if (ec->l.cb.costs.size() > 1)
+    {
+      auto message = fmt::format(
+          "cb_adf: badly formatted example, only one cost can be known but found {}. Example number={}, tag={}",
+          ec->l.cb.costs.size(), ec->example_counter, VW::string_view{ec->tag.data(), ec->tag.size()});
+      THROW(message);
+    }
+
+    // Check whether the cost was initialized to a value.
+    if (ec->l.cb.costs.size() == 1 && ec->l.cb.costs[0].cost != FLT_MAX)
+    {
+      ret = ec;
+      count += 1;
+      if (count > 1) THROW("cb_adf: badly formatted example, only one line can have a cost");
+    }
+  }
+
+  return ret;
+}
+}  // namespace CB_ADF
+namespace
+{
 struct cb_adf
 {
 private:
@@ -274,42 +307,12 @@ void cb_adf::learn_MTR(multi_learner& base, VW::multi_ex& examples)
   }
 }
 
-// Validates a multiline example collection as a valid sequence for action dependent features format.
-VW::example* test_adf_sequence(const VW::multi_ex& ec_seq)
-{
-  if (ec_seq.empty()) THROW("cb_adf: At least one action must be provided for an example to be valid.");
-
-  uint32_t count = 0;
-  VW::example* ret = nullptr;
-  for (auto* ec : ec_seq)
-  {
-    // Check if there is more than one cost for this example.
-    if (ec->l.cb.costs.size() > 1)
-    {
-      auto message = fmt::format(
-          "cb_adf: badly formatted example, only one cost can be known but found {}. Example number={}, tag={}",
-          ec->l.cb.costs.size(), ec->example_counter, VW::string_view{ec->tag.data(), ec->tag.size()});
-      THROW(message);
-    }
-
-    // Check whether the cost was initialized to a value.
-    if (ec->l.cb.costs.size() == 1 && ec->l.cb.costs[0].cost != FLT_MAX)
-    {
-      ret = ec;
-      count += 1;
-      if (count > 1) THROW("cb_adf: badly formatted example, only one line can have a cost");
-    }
-  }
-
-  return ret;
-}
-
 void cb_adf::learn(multi_learner& base, VW::multi_ex& ec_seq)
 {
-  if (test_adf_sequence(ec_seq) != nullptr)
+  if (CB_ADF::test_adf_sequence(ec_seq) != nullptr)
   {
     _offset = ec_seq[0]->ft_offset;
-    _gen_cs.known_cost = get_observed_cost_or_default_cb_adf(ec_seq);  // need to set for test case
+    _gen_cs.known_cost = CB_ADF::get_observed_cost_or_default_cb_adf(ec_seq);  // need to set for test case
     switch (_gen_cs.cb_type)
     {
       case VW::cb_type_t::dr:
@@ -342,21 +345,9 @@ void cb_adf::learn(multi_learner& base, VW::multi_ex& ec_seq)
 void cb_adf::predict(multi_learner& base, VW::multi_ex& ec_seq)
 {
   _offset = ec_seq[0]->ft_offset;
-  _gen_cs.known_cost = get_observed_cost_or_default_cb_adf(ec_seq);  // need to set for test case
-  gen_cs_test_example(ec_seq, _cs_labels);                           // create test labels.
+  _gen_cs.known_cost = CB_ADF::get_observed_cost_or_default_cb_adf(ec_seq);  // need to set for test case
+  gen_cs_test_example(ec_seq, _cs_labels);                                   // create test labels.
   cs_ldf_learn_or_predict<false>(base, ec_seq, _cb_labels, _cs_labels, _prepped_cs_labels, false, _offset);
-}
-
-void global_print_newline(
-    const std::vector<std::unique_ptr<VW::io::writer>>& final_prediction_sink, VW::io::logger& logger)
-{
-  char temp[1];
-  temp[0] = '\n';
-  for (auto& sink : final_prediction_sink)
-  {
-    ssize_t t = sink->write(temp, 1);
-    if (t != 1) { logger.err_error("write error: {}", VW::strerror_to_string(errno)); }
-  }
 }
 
 // how to
@@ -464,7 +455,7 @@ void update_and_output(VW::workspace& all, cb_adf& data, const VW::multi_ex& ec_
   if (!ec_seq.empty())
   {
     output_example_seq(all, data, ec_seq);
-    global_print_newline(all.final_prediction_sink, all.logger);
+    VW::details::global_print_newline(all.final_prediction_sink, all.logger);
   }
 }
 
@@ -493,9 +484,8 @@ void learn(cb_adf& c, multi_learner& base, VW::multi_ex& ec_seq) { c.learn(base,
 
 void predict(cb_adf& c, multi_learner& base, VW::multi_ex& ec_seq) { c.predict(base, ec_seq); }
 
-}  // namespace CB_ADF
-using namespace CB_ADF;
-base_learner* cb_adf_setup(VW::setup_base_i& stack_builder)
+}  // namespace
+VW::LEARNER::base_learner* VW::reductions::cb_adf_setup(VW::setup_base_i& stack_builder)
 {
   options_i& options = *stack_builder.get_options();
   VW::workspace& all = *stack_builder.get_all_pointer();
@@ -545,7 +535,7 @@ base_learner* cb_adf_setup(VW::setup_base_i& stack_builder)
   catch (const VW::vw_exception& /*exception*/)
   {
     all.logger.err_warn(
-        "cb_type must be in {'ips','dr','mtr','dm','sm'}; resetting to mtr. Input was: '{}'", type_string);
+        "cb_type must be in {{'ips','dr','mtr','dm','sm'}}; resetting to mtr. Input was: '{}'", type_string);
     cb_type = VW::cb_type_t::mtr;
   }
 
@@ -584,9 +574,9 @@ base_learner* cb_adf_setup(VW::setup_base_i& stack_builder)
                 .set_output_prediction_type(VW::prediction_type_t::action_scores)
                 .set_learn_returns_prediction(lrp)
                 .set_params_per_weight(problem_multiplier)
-                .set_finish_example(CB_ADF::finish_multiline_example)
-                .set_print_example(CB_ADF::update_and_output)
-                .set_save_load(CB_ADF::save_load)
+                .set_finish_example(::finish_multiline_example)
+                .set_print_example(::update_and_output)
+                .set_save_load(::save_load)
                 .build(&all.logger);
 
   bare->set_scorer(all.scorer);

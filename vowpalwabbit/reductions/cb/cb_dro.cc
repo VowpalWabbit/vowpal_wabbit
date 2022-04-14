@@ -1,22 +1,22 @@
 #include "cb_dro.h"
 
 #include "cb.h"
-#include "config/options.h"
 #include "distributionally_robust.h"
 #include "example.h"
-#include "explore.h"
 #include "global_data.h"
-#include "io/logger.h"
 #include "label_parser.h"
 #include "learner.h"
 #include "rand48.h"
 #include "setup_base.h"
+#include "vw/config/options.h"
+#include "vw/explore/explore.h"
+#include "vw/io/logger.h"
 
 using namespace VW::LEARNER;
 using namespace VW;
 using namespace VW::config;
 
-namespace VW
+namespace
 {
 struct cb_dro_data
 {
@@ -93,15 +93,14 @@ private:
   VW::distributionally_robust::ChiSquared chisq;
   std::vector<float> save_weight;
 };
-}  // namespace VW
-
 template <bool is_learn, bool is_explore>
 void learn_or_predict(cb_dro_data& data, multi_learner& base, VW::multi_ex& examples)
 {
   data.learn_or_predict<is_learn, is_explore>(base, examples);
 }
+}  // namespace
 
-base_learner* cb_dro_setup(VW::setup_base_i& stack_builder)
+base_learner* VW::reductions::cb_dro_setup(VW::setup_base_i& stack_builder)
 {
   options_i& options = *stack_builder.get_options();
   VW::workspace& all = *stack_builder.get_all_pointer();

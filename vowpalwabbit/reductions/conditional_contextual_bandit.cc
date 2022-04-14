@@ -6,21 +6,22 @@
 
 #include "cb/cb_adf.h"
 #include "cb/cb_algs.h"
-#include "config/options.h"
 #include "constant.h"
 #include "debug_log.h"
 #include "decision_scores.h"
 #include "example.h"
 #include "global_data.h"
 #include "interactions.h"
-#include "io/logger.h"
 #include "label_dictionary.h"
 #include "model_utils.h"
+#include "print_utils.h"
 #include "setup_base.h"
 #include "shared_data.h"
 #include "v_array_pool.h"
 #include "version.h"
 #include "vw.h"
+#include "vw/config/options.h"
+#include "vw/io/logger.h"
 #include "vw_versions.h"
 
 #include <algorithm>
@@ -379,6 +380,8 @@ void build_cb_example(VW::multi_ex& cb_ex, VW::example* slot, const CCB::label& 
   std::swap(data.shared->tag, slot->tag);
 }
 
+VW_WARNING_STATE_PUSH
+VW_WARNING_DISABLE_UNUSED_INTERNAL_DECLARATION
 std::string ccb_decision_to_string(const ccb_data& data)
 {
   std::ostringstream out_stream;
@@ -395,6 +398,7 @@ std::string ccb_decision_to_string(const ccb_data& data)
 
   return out_stream.str();
 }
+VW_WARNING_STATE_POP
 
 // iterate over slots contained in the multi-example, and for each slot, build a cb example and perform a
 // cb_explore_adf call.
@@ -600,7 +604,7 @@ void finish_multiline_example(VW::workspace& all, ccb_data& data, VW::multi_ex& 
   if (!ec_seq.empty() && !data.no_pred)
   {
     output_example(all, data, ec_seq);
-    CB_ADF::global_print_newline(all.final_prediction_sink, all.logger);
+    VW::details::global_print_newline(all.final_prediction_sink, all.logger);
   }
 
   if (!data.no_pred)

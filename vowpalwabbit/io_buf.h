@@ -4,10 +4,10 @@
 
 #pragma once
 
-#include "hash.h"
-#include "io/io_adapter.h"
 #include "v_array.h"
-#include "vw_string_view.h"
+#include "vw/common/hash.h"
+#include "vw/common/string_view.h"
+#include "vw/io/io_adapter.h"
 
 #include <algorithm>
 #include <cassert>
@@ -19,7 +19,7 @@
 #include <vector>
 
 #ifndef VW_NOEXCEPT
-#  include "vw_exception.h"
+#  include "vw/common/vw_exception.h"
 #endif
 
 /* The i/o buffer can be conceptualized as an array below:
@@ -74,8 +74,12 @@ class io_buf
 
     void shift_to_front(char* head_ptr)
     {
+      assert(_end >= head_ptr);
       const size_t space_left = _end - head_ptr;
-      memmove(_begin, head_ptr, space_left);
+      // Only call memmove if we are within the bounds of the loaded buffer.
+      // Also, this ensures we don't memmove when head_ptr == _end_array which
+      // would be undefined behavior.
+      if (head_ptr >= _begin && head_ptr < _end) { std::memmove(_begin, head_ptr, space_left); }
       _end = _begin + space_left;
     }
 
@@ -272,7 +276,7 @@ public:
       len = buf_read(p, len);
 
       // compute hash for check-sum
-      if (_verify_hash) { _hash = static_cast<uint32_t>(uniform_hash(p, len, _hash)); }
+      if (_verify_hash) { _hash = static_cast<uint32_t>(VW::common::uniform_hash(p, len, _hash)); }
       memcpy(data, p, len);
       return len;
     }
@@ -289,7 +293,7 @@ public:
       memcpy(p, data, len);
 
       // compute hash for check-sum
-      if (_verify_hash) { _hash = static_cast<uint32_t>(uniform_hash(p, len, _hash)); }
+      if (_verify_hash) { _hash = static_cast<uint32_t>(VW::common::uniform_hash(p, len, _hash)); }
     }
     return len;
   }

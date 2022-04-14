@@ -4,14 +4,15 @@
 
 #include "cb_label_parser.h"
 #include "example.h"
-#include "io/logger.h"
 #include "model_utils.h"
 #include "parse_primitives.h"
 #include "shared_data.h"
 #include "text_utils.h"
 #include "vw.h"
-#include "vw_exception.h"
-#include "vw_string_view.h"
+#include "vw/common/string_view.h"
+#include "vw/common/text_utils.h"
+#include "vw/common/vw_exception.h"
+#include "vw/io/logger.h"
 
 #include <algorithm>
 #include <cfloat>
@@ -44,7 +45,7 @@ void parse_label(CB::label& ld, VW::label_parser_reuse_mem& reuse_mem, const std
     // for example "1:2:0.5"
     // action = 1, cost = 2, probability = 0.5
     cb_class f;
-    tokenize(':', word, reuse_mem.tokens);
+    VW::common::tokenize(':', word, reuse_mem.tokens);
 
     if (reuse_mem.tokens.empty() || reuse_mem.tokens.size() > 3) { THROW("malformed cost specification: " << word); }
 

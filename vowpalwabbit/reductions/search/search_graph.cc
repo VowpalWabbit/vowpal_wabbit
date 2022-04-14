@@ -4,11 +4,11 @@
 #include "search_graph.h"
 
 #include "../gd.h"
-#include "config/options.h"
 #include "memory.h"
 #include "numeric_casts.h"
 #include "vw.h"
-#include "vw_exception.h"
+#include "vw/common/vw_exception.h"
+#include "vw/config/options.h"
 
 using namespace VW::config;
 

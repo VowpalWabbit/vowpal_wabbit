@@ -7,8 +7,6 @@
 #define RAPIDJSON_HAS_STDSTRING 1
 
 #include "array_parameters.h"
-#include "future_compat.h"
-#include "io/logger.h"
 #include "kskip_ngram_transformer.h"
 #include "learner.h"
 #include "loss_functions.h"
@@ -19,9 +17,11 @@
 #include "rapidjson/rapidjson.h"
 #include "reduction_stack.h"
 #include "shared_data.h"
+#include "vw/common/future_compat.h"
+#include "vw/common/string_view.h"
+#include "vw/common/vw_exception.h"
+#include "vw/io/logger.h"
 #include "vw_allreduce.h"
-#include "vw_exception.h"
-#include "vw_string_view.h"
 
 #include <rapidjson/stringbuffer.h>
 #include <rapidjson/writer.h>
@@ -37,7 +37,7 @@
 #include <sstream>
 
 #ifdef BUILD_FLATBUFFERS
-#  include "parser/flatbuffer/parse_example_flatbuffer.h"
+#  include "vw/fb_parser/parse_example_flatbuffer.h"
 #endif
 #ifdef BUILD_EXTERNAL_PARSER
 #  include "parse_example_external.h"

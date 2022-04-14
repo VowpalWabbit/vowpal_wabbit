@@ -3,18 +3,19 @@
 // license as described in the file LICENSE.
 #include "csoaa_ldf.h"
 
-#include "config/options.h"
 #include "constant.h"
 #include "correctedMath.h"
 #include "gd.h"  // GD::foreach_feature() needed in subtract_example()
-#include "io/logger.h"
 #include "label_dictionary.h"
 #include "loss_functions.h"
+#include "print_utils.h"
 #include "scope_exit.h"
 #include "setup_base.h"
 #include "shared_data.h"
 #include "vw.h"
-#include "vw_exception.h"
+#include "vw/common/vw_exception.h"
+#include "vw/config/options.h"
+#include "vw/io/logger.h"
 
 #include <algorithm>
 #include <cerrno>
@@ -413,18 +414,6 @@ void predict_csoaa_ldf_rank(ldf& data, single_learner& base, VW::multi_ex& ec_se
   }
 }
 
-void global_print_newline(VW::workspace& all)
-{
-  char temp[1];
-  temp[0] = '\n';
-  for (auto& sink : all.final_prediction_sink)
-  {
-    ssize_t t;
-    t = sink->write(temp, 1);
-    if (t != 1) { all.logger.err_error("write error: {}", VW::strerror_to_string(errno)); }
-  }
-}
-
 void output_example(
     VW::workspace& all, const VW::example& ec, bool& hit_loss, const VW::multi_ex* ec_seq, const ldf& data)
 {
@@ -618,7 +607,7 @@ void finish_multiline_example(VW::workspace& all, ldf& data, VW::multi_ex& ec_se
   if (!ec_seq.empty())
   {
     output_example_seq(all, data, ec_seq);
-    global_print_newline(all);
+    VW::details::global_print_newline(all.final_prediction_sink, all.logger);
   }
 
   VW::finish_example(all, ec_seq);

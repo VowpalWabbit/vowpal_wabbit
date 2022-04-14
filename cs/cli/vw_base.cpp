@@ -12,8 +12,8 @@ license as described in the file LICENSE.
 
 #include "clr_io.h"
 #include "io_buf.h"
-#include "io/io_adapter.h"
-#include "vw_exception.h"
+#include "vw/io/io_adapter.h"
+#include "vw/common/vw_exception.h"
 #include "parse_args.h"
 #include "parse_regressor.h"
 

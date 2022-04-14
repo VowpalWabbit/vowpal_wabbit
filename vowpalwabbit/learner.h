@@ -27,11 +27,11 @@
 #define VW_DEBUG_LOG vw_dbg::learner
 
 #include "example.h"
-#include "future_compat.h"
 #include "label_type.h"
 #include "metric_sink.h"
 #include "prediction_type.h"
 #include "scope_exit.h"
+#include "vw/common/future_compat.h"
 
 namespace VW
 {
@@ -703,17 +703,17 @@ struct reduction_learner_builder
       if (in_pred_type != base_out_pred_type)
       {
         logger->err_warn(
-            fmt::format("Input prediction type: {} of reduction: {} does not match output prediction type: {} of base "
-                        "reduction: {}.",
-                to_string(in_pred_type), this->_learner->name, to_string(base_out_pred_type),
-                this->_learner->learn_fd.base->get_name()));
+            "Input prediction type: {} of reduction: {} does not match output prediction type: {} of base "
+            "reduction: {}.",
+            to_string(in_pred_type), this->_learner->name, to_string(base_out_pred_type),
+            this->_learner->learn_fd.base->get_name());
       }
       if (out_label_type != base_in_label_type)
       {
-        logger->err_warn(fmt::format(
+        logger->err_warn(
             "Output label type: {} of reduction: {} does not match input label type: {} of base reduction: {}.",
             to_string(out_label_type), this->_learner->name, to_string(base_in_label_type),
-            this->_learner->learn_fd.base->get_name()));
+            this->_learner->learn_fd.base->get_name());
       }
     }
     return this->_learner;

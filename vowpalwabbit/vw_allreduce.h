@@ -4,9 +4,9 @@
 
 #pragma once
 
-#include "allreduce.h"
 #include "global_data.h"
-#include "vw_exception.h"
+#include "vw/allreduce/allreduce.h"
+#include "vw/common/vw_exception.h"
 
 #include <cstddef>
 

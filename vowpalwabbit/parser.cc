@@ -4,9 +4,9 @@
 
 #include "parser.h"
 
-#include "io/logger.h"
 #include "kskip_ngram_transformer.h"
 #include "numeric_casts.h"
+#include "vw/io/logger.h"
 
 #include <sys/types.h>
 
@@ -59,7 +59,6 @@ int VW_getpid() { return (int)::GetCurrentProcessId(); }
 #include "cache.h"
 #include "constant.h"
 #include "interactions.h"
-#include "io/io_adapter.h"
 #include "parse_args.h"
 #include "parse_dispatch_loop.h"
 #include "parse_example.h"
@@ -67,13 +66,14 @@ int VW_getpid() { return (int)::GetCurrentProcessId(); }
 #include "parse_primitives.h"
 #include "unique_sort.h"
 #include "vw.h"
-#include "vw_exception.h"
+#include "vw/common/vw_exception.h"
+#include "vw/io/io_adapter.h"
 
 #include <cassert>
 #include <cerrno>
 #include <cstdio>
 #ifdef BUILD_FLATBUFFERS
-#  include "parser/flatbuffer/parse_example_flatbuffer.h"
+#  include "vw/fb_parser/parse_example_flatbuffer.h"
 #endif
 
 #ifdef BUILD_EXTERNAL_PARSER
@@ -110,7 +110,7 @@ void parse_example_label(string_view label, const VW::label_parser& lbl_parser, 
     label_parser_reuse_mem& reuse_mem, VW::example& ec, VW::io::logger& logger)
 {
   std::vector<string_view> words;
-  tokenize(' ', label, words);
+  VW::common::tokenize(' ', label, words);
   lbl_parser.parse_label(ec.l, ec._reduction_features, reuse_mem, ldict, words, logger);
 }
 }  // namespace VW
@@ -586,7 +586,7 @@ void enable_sources(VW::workspace& all, bool quiet, size_t passes, input_options
     {
       std::string filename_to_read = all.data_filename;
       std::string input_name = filename_to_read;
-      auto should_use_compressed = input_options.compressed || VW::ends_with(filename_to_read, ".gz");
+      auto should_use_compressed = input_options.compressed || VW::common::ends_with(filename_to_read, ".gz");
 
       try
       {
@@ -885,7 +885,7 @@ void releaseFeatureSpace(primitive_feature_space* features, size_t len)
 void parse_example_label(VW::workspace& all, example& ec, const std::string& label)
 {
   std::vector<VW::string_view> words;
-  tokenize(' ', label, words);
+  VW::common::tokenize(' ', label, words);
   all.example_parser->lbl_parser.parse_label(
       ec.l, ec._reduction_features, all.example_parser->parser_memory_to_reuse, all.sd->ldict.get(), words, all.logger);
 }

@@ -280,6 +280,21 @@ def is_line_different(
                     found_close_floats,
                 )
 
+    # ignore whitespace when considering delimiting tokens
+    output_delimiters = re.findall("[:,@]+", output_line)
+    ref_delimiters = re.findall("[:,@]+", ref_line)
+
+    if len(output_delimiters) != len(ref_delimiters):
+        return True, "Number of tokens different", found_close_floats
+
+    for output_token, ref_token in zip(output_delimiters, ref_delimiters):
+        if output_token != ref_token:
+            return (
+                True,
+                f"Mismatch at token {output_token} {ref_token}",
+                found_close_floats,
+            )
+
     return False, "", found_close_floats
 
 
@@ -396,10 +411,10 @@ def run_command_line_test(
         if test.is_shell:
             cmd = command_line
         else:
-            cmd = shlex.split(command_line)
+            posix = sys.platform != "win32"
+            cmd = shlex.split(command_line, posix=posix)
 
         checks: Dict[str, Union[StatusCheck, DiffCheck]] = dict()
-
         try:
             result = subprocess.run(
                 cmd,
@@ -595,7 +610,9 @@ def find_vw_binary(
 def find_spanning_tree_binary(
     test_base_ref_dir: Path, user_supplied_bin_path: Optional[str]
 ) -> Optional[Path]:
-    spanning_tree_search_path = [test_base_ref_dir / ".." / "build" / "cluster"]
+    spanning_tree_search_path = [
+        test_base_ref_dir / ".." / "build" / "vowpalwabbit" / "spanning_tree_bin"
+    ]
 
     def is_spanning_tree_binary(file: Path) -> bool:
         return file.name == "spanning_tree"

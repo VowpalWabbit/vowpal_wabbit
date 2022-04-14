@@ -6,15 +6,15 @@
 
 #include "cb_algs.h"
 #include "cb_label_parser.h"
-#include "config/options.h"
 #include "debug_log.h"
-#include "explore.h"
-#include "hash.h"
 #include "prob_dist_cont.h"
 #include "setup_base.h"
 #include "shared_data.h"
 #include "simple_label_parser.h"
 #include "vw.h"
+#include "vw/common/hash.h"
+#include "vw/config/options.h"
+#include "vw/explore/explore.h"
 
 #include <cfloat>
 #include <vector>
@@ -25,95 +25,17 @@ using namespace ACTION_SCORE;
 
 using namespace VW::config;
 
-using std::endl;
 using VW::cb_continuous::continuous_label;
 using VW::cb_continuous::continuous_label_elm;
-
-struct cbify;
 
 #undef VW_DEBUG_LOG
 #define VW_DEBUG_LOG vw_dbg::cbify
 
-struct cbify_reg
+namespace VW
 {
-  float min_value = 0.f;
-  float max_value = 0.f;
-  float bandwidth = 0.f;
-  int num_actions = 0;
-  int loss_option = 0;
-  int loss_report = 0;
-  float loss_01_ratio = 0.f;
-  continuous_label cb_cont_label;
-  float max_cost = std::numeric_limits<float>::lowest();
-};
-
-struct cbify
+namespace reductions
 {
-  CB::label cb_label;
-  uint64_t app_seed = 0;
-  action_scores a_s;
-  cbify_reg regression_data;
-  // used as the seed
-  size_t example_counter = 0;
-  VW::workspace* all = nullptr;
-  bool use_adf = false;  // if true, reduce to cb_explore_adf instead of cb_explore
-  cbify_adf_data adf_data;
-  float loss0 = 0.f;
-  float loss1 = 0.f;
-  bool flip_loss_sign = false;
-  uint32_t chosen_action = 0;
-
-  // for ldf inputs
-  std::vector<std::vector<COST_SENSITIVE::wclass>> cs_costs;
-  std::vector<std::vector<CB::cb_class>> cb_costs;
-  std::vector<ACTION_SCORE::action_scores> cb_as;
-};
-
-float loss(const cbify& data, uint32_t label, uint32_t final_prediction)
-{
-  float mult = data.flip_loss_sign ? -1.f : 1.f;
-  if (label != final_prediction) { return mult * data.loss1; }
-  else
-  {
-    return mult * data.loss0;
-  }
-}
-
-float loss_cs(const cbify& data, const std::vector<COST_SENSITIVE::wclass>& costs, uint32_t final_prediction)
-{
-  float cost = 0.;
-  for (const auto& wc : costs)
-  {
-    if (wc.class_index == final_prediction)
-    {
-      cost = wc.x;
-      break;
-    }
-  }
-  return data.loss0 + (data.loss1 - data.loss0) * cost;
-}
-
-float loss_csldf(
-    const cbify& data, const std::vector<std::vector<COST_SENSITIVE::wclass>>& cs_costs, uint32_t final_prediction)
-{
-  float cost = 0.;
-  for (const auto& costs : cs_costs)
-  {
-    if (costs[0].class_index == final_prediction)
-    {
-      cost = costs[0].x;
-      break;
-    }
-  }
-  return data.loss0 + (data.loss1 - data.loss0) * cost;
-}
-
-void finish_cbify_reg(cbify_reg& data, std::ostream* trace_stream)
-{
-  if (trace_stream != nullptr) { (*trace_stream) << "Max Cost=" << data.max_cost << std::endl; }
-}
-
-void cbify_adf_data::init_adf_data(const std::size_t num_actions_, std::size_t increment_,
+void cbify_adf_data::init_adf_data(std::size_t num_actions_, std::size_t increment_,
     std::vector<std::vector<VW::namespace_index>>& interactions,
     std::vector<std::vector<extent_term>>& extent_interactions)
 {
@@ -178,6 +100,84 @@ void cbify_adf_data::copy_example_to_adf(parameters& weights, VW::example& ec)
     if (CB_ALGS::example_is_newline_not_header(eca) && CB::cb_label.test_label(eca.l)) { eca.tag.push_back('n'); }
   }
 }
+}  // namespace reductions
+}  // namespace VW
+
+namespace
+{
+struct cbify_reg
+{
+  float min_value = 0.f;
+  float max_value = 0.f;
+  float bandwidth = 0.f;
+  int num_actions = 0;
+  int loss_option = 0;
+  int loss_report = 0;
+  float loss_01_ratio = 0.f;
+  continuous_label cb_cont_label;
+  float max_cost = std::numeric_limits<float>::lowest();
+};
+
+struct cbify
+{
+  CB::label cb_label;
+  uint64_t app_seed = 0;
+  action_scores a_s;
+  cbify_reg regression_data;
+  // used as the seed
+  size_t example_counter = 0;
+  VW::workspace* all = nullptr;
+  bool use_adf = false;  // if true, reduce to cb_explore_adf instead of cb_explore
+  VW::reductions::cbify_adf_data adf_data;
+  float loss0 = 0.f;
+  float loss1 = 0.f;
+  bool flip_loss_sign = false;
+  uint32_t chosen_action = 0;
+
+  // for ldf inputs
+  std::vector<std::vector<COST_SENSITIVE::wclass>> cs_costs;
+  std::vector<std::vector<CB::cb_class>> cb_costs;
+  std::vector<ACTION_SCORE::action_scores> cb_as;
+};
+
+float loss(const cbify& data, uint32_t label, uint32_t final_prediction)
+{
+  float mult = data.flip_loss_sign ? -1.f : 1.f;
+  if (label != final_prediction) { return mult * data.loss1; }
+  else
+  {
+    return mult * data.loss0;
+  }
+}
+
+float loss_cs(const cbify& data, const std::vector<COST_SENSITIVE::wclass>& costs, uint32_t final_prediction)
+{
+  float cost = 0.;
+  for (const auto& wc : costs)
+  {
+    if (wc.class_index == final_prediction)
+    {
+      cost = wc.x;
+      break;
+    }
+  }
+  return data.loss0 + (data.loss1 - data.loss0) * cost;
+}
+
+float loss_csldf(
+    const cbify& data, const std::vector<std::vector<COST_SENSITIVE::wclass>>& cs_costs, uint32_t final_prediction)
+{
+  float cost = 0.;
+  for (const auto& costs : cs_costs)
+  {
+    if (costs[0].class_index == final_prediction)
+    {
+      cost = costs[0].x;
+      break;
+    }
+  }
+  return data.loss0 + (data.loss1 - data.loss0) * cost;
+}
 
 float get_squared_loss(cbify& data, float chosen_action, float label)
 {
@@ -207,7 +207,7 @@ template <bool is_learn>
 void predict_or_learn_regression_discrete(cbify& data, single_learner& base, VW::example& ec)
 {
   VW_DBG(ec) << "cbify_reg: #### is_learn = " << is_learn << VW::debug::simple_label_to_string(ec)
-             << VW::debug::features_to_string(ec) << endl;
+             << VW::debug::features_to_string(ec) << std::endl;
 
   label_data regression_label = ec.l.simple;
   data.cb_label.costs.clear();
@@ -274,7 +274,7 @@ template <bool is_learn>
 void predict_or_learn_regression(cbify& data, single_learner& base, VW::example& ec)
 {
   VW_DBG(ec) << "cbify_reg: #### is_learn = " << is_learn << VW::debug::simple_label_to_string(ec)
-             << VW::debug::features_to_string(ec) << endl;
+             << VW::debug::features_to_string(ec) << std::endl;
 
   // Save simple label from the example just in case base.predict changes the label.
   // Technically it should not.
@@ -287,8 +287,8 @@ void predict_or_learn_regression(cbify& data, single_learner& base, VW::example&
   base.predict(ec);
 
   VW_DBG(ec) << "cbify-reg: base.predict() = " << VW::debug::simple_label_to_string(ec)
-             << VW::debug::features_to_string(ec) << endl;
-  VW_DBG(ec) << "cbify-reg: predict before learn, chosen_action=" << ec.pred.pdf_value.action << endl;
+             << VW::debug::features_to_string(ec) << std::endl;
+  VW_DBG(ec) << "cbify-reg: predict before learn, chosen_action=" << ec.pred.pdf_value.action << std::endl;
 
   // Create a label from the prediction and a cost derived from the actual
   // regression label.
@@ -316,10 +316,10 @@ void predict_or_learn_regression(cbify& data, single_learner& base, VW::example&
   ec.l.cb_cont = data.regression_data.cb_cont_label;
 
   VW_DBG(ec) << "cbify-reg: before base.learn() = " << VW::to_string(ec.l.cb_cont) << VW::debug::features_to_string(ec)
-             << endl;
+             << std::endl;
   if (is_learn) { base.learn(ec); }
   VW_DBG(ec) << "cbify-reg: after base.learn() = " << VW::to_string(ec.l.cb_cont) << VW::debug::features_to_string(ec)
-             << endl;
+             << std::endl;
 
   // Update the label inside the reduction data structure
   data.regression_data.cb_cont_label = ec.l.cb_cont;
@@ -675,14 +675,15 @@ void finish_multiline_example(VW::workspace& all, cbify&, VW::multi_ex& ec_seq)
   }
   VW::finish_example(all, ec_seq);
 }
+}  // namespace
 
-base_learner* cbify_setup(VW::setup_base_i& stack_builder)
+VW::LEARNER::base_learner* VW::reductions::cbify_setup(VW::setup_base_i& stack_builder)
 {
   options_i& options = *stack_builder.get_options();
   VW::workspace& all = *stack_builder.get_all_pointer();
   uint32_t num_actions = 0;
   uint32_t cb_continuous_num_actions = 0;
-  auto data = VW::make_unique<cbify>();
+  auto data = VW::make_unique<::cbify>();
   bool use_cs;
   bool use_reg;  // todo: check
   bool use_discrete;
@@ -724,7 +725,7 @@ base_learner* cbify_setup(VW::setup_base_i& stack_builder)
 
   data->regression_data.num_actions = num_actions;
   data->use_adf = options.was_supplied("cb_explore_adf");
-  data->app_seed = uniform_hash("vw", 2, 0);
+  data->app_seed = VW::common::uniform_hash("vw", 2, 0);
   data->all = &all;
 
   if (use_reg)
@@ -891,7 +892,7 @@ base_learner* cbify_setup(VW::setup_base_i& stack_builder)
   return make_base(*l);
 }
 
-base_learner* cbifyldf_setup(VW::setup_base_i& stack_builder)
+VW::LEARNER::base_learner* VW::reductions::cbifyldf_setup(VW::setup_base_i& stack_builder)
 {
   options_i& options = *stack_builder.get_options();
   VW::workspace& all = *stack_builder.get_all_pointer();
@@ -909,7 +910,7 @@ base_learner* cbifyldf_setup(VW::setup_base_i& stack_builder)
 
   if (!options.add_parse_and_check_necessary(new_options)) { return nullptr; }
 
-  data->app_seed = uniform_hash("vw", 2, 0);
+  data->app_seed = VW::common::uniform_hash("vw", 2, 0);
   data->all = &all;
   data->use_adf = true;
 

@@ -5,11 +5,11 @@
 #include "action_score.h"
 
 #include "global_data.h"
-#include "io/logger.h"
 #include "io_buf.h"
 #include "text_utils.h"
 #include "v_array.h"
-#include "vw_string_view.h"
+#include "vw/common/string_view.h"
+#include "vw/io/logger.h"
 
 namespace ACTION_SCORE
 {
@@ -43,7 +43,7 @@ std::string to_string(const ACTION_SCORE::action_scores& action_scores_or_probs,
   std::string delim;
   for (const auto& item : action_scores_or_probs)
   {
-    ss << delim << fmt::format("{},{}", item.action, VW::fmt_float(item.score, decimal_precision));
+    ss << delim << fmt::format("{}:{}", item.action, VW::fmt_float(item.score, decimal_precision));
     delim = ",";
   }
   return ss.str();

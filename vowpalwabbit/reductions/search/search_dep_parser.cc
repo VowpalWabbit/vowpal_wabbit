@@ -4,13 +4,13 @@
 #include "search_dep_parser.h"
 
 #include "../gd.h"
-#include "config/options.h"
 #include "cost_sensitive.h"
 #include "label_dictionary.h"  // for add_example_namespaces_from_example
 #include "label_parser.h"
 #include "numeric_casts.h"
 #include "vw.h"
-#include "vw_exception.h"
+#include "vw/common/vw_exception.h"
+#include "vw/config/options.h"
 
 using namespace VW::config;
 

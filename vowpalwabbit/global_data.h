@@ -6,12 +6,12 @@
 #include "array_parameters.h"
 #include "constant.h"
 #include "error_reporting.h"
-#include "future_compat.h"
 #include "interactions_predict.h"
-#include "io/logger.h"
 #include "version.h"
+#include "vw/common/future_compat.h"
+#include "vw/common/string_view.h"
+#include "vw/io/logger.h"
 #include "vw_fwd.h"
-#include "vw_string_view.h"
 
 #include <array>
 #include <cfloat>

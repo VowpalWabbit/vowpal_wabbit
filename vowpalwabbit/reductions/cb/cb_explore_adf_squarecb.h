@@ -8,11 +8,8 @@
 
 namespace VW
 {
-namespace cb_explore_adf
+namespace reductions
 {
-namespace squarecb
-{
-VW::LEARNER::base_learner* setup(VW::setup_base_i& stack_builder);
+VW::LEARNER::base_learner* cb_explore_adf_squarecb_setup(VW::setup_base_i& stack_builder);
 }  // namespace squarecb
 }  // namespace cb_explore_adf
-}  // namespace VW

@@ -19,12 +19,10 @@ add_executable(vw-unit-test.out
   error_test.cc
   example_header_test.cc
   example_test.cc
-  explore_test.cc
   feature_group_test.cc
   guard_test.cc
   initialize_test.cc
   interactions_test.cc
-  io_adapter_test.cc
   json_parser_test.cc
   loss_functions_test.cc
   main.cc
@@ -34,9 +32,6 @@ add_executable(vw-unit-test.out
   numeric_cast_test.cc
   object_pool_test.cc
   offset_tree_test.cc
-  options_boost_po_test.cc
-  options_test.cc
-  ostream_test.cc
   parse_args_test.cc
   parser_test.cc
   pmf_to_pdf_test.cc
@@ -60,13 +55,9 @@ add_executable(vw-unit-test.out
   weights_test.cc
 )
 
-if(BUILD_FLATBUFFERS)
-  target_sources(vw-unit-test.out PRIVATE flatbuffer_parser_test.cc)
-endif()
-
 # Add the include directories from vw target for testing
 target_include_directories(vw-unit-test.out PRIVATE $<TARGET_PROPERTY:vw,INCLUDE_DIRECTORIES>)
-target_link_libraries(vw-unit-test.out PRIVATE vw allreduce Boost::unit_test_framework)
+target_link_libraries(vw-unit-test.out PRIVATE vw Boost::unit_test_framework)
 
 if(NOT DEFINED DO_NOT_BUILD_VW_C_WRAPPER)
   target_sources(vw-unit-test.out PUBLIC vwdll_test.cc)
@@ -97,3 +88,4 @@ add_test(
   COMMAND $<TARGET_FILE:vw-unit-test.out>
   WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
 )
+set_tests_properties(vw_unit_test PROPERTIES LABELS "VWTestList")

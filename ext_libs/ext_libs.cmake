@@ -41,7 +41,7 @@ if(RAPIDJSON_SYS_DEP)
   target_include_directories(RapidJSON INTERFACE ${RapidJSON_INCLUDE_DIRS})
 else()
   add_library(RapidJSON INTERFACE)
-  target_include_directories(RapidJSON INTERFACE
+  target_include_directories(RapidJSON SYSTEM INTERFACE
     $<BUILD_INTERFACE:${CMAKE_CURRENT_LIST_DIR}/rapidjson/include>
     $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
   )
@@ -88,4 +88,18 @@ else()
           LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
           RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
   endif()
+endif()
+
+add_subdirectory(${CMAKE_CURRENT_LIST_DIR}/string-view-lite)
+
+if(BUILD_FLATBUFFERS)
+  find_package(Flatbuffers CONFIG QUIET)
+  if(FLATBUFFERS_FOUND)
+    get_property(flatc_location TARGET flatbuffers::flatc PROPERTY LOCATION)
+  else()
+    # Fallback to the old version
+    find_package(Flatbuffers MODULE REQUIRED)
+    set(flatc_location ${FLATBUFFERS_FLATC_EXECUTABLE})
+  endif()
+  include(FlatbufferUtils)
 endif()

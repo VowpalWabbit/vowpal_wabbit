@@ -5,13 +5,13 @@
 #include "shared_feature_merger.h"
 
 #include "cb.h"
-#include "config/options.h"
 #include "example.h"
 #include "label_dictionary.h"
 #include "learner.h"
 #include "scope_exit.h"
 #include "setup_base.h"
 #include "vw.h"
+#include "vw/config/options.h"
 
 #include <iterator>
 #include <string>
@@ -26,15 +26,15 @@ struct sfm_metrics
 struct sfm_data
 {
   std::unique_ptr<sfm_metrics> _metrics;
-  label_type_t label_type = label_type_t::cb;
+  VW::label_type_t label_type = VW::label_type_t::cb;
 };
 
 template <bool is_learn>
-void predict_or_learn(sfm_data& data, VW::LEARNER::multi_learner& base, multi_ex& ec_seq)
+void predict_or_learn(sfm_data& data, VW::LEARNER::multi_learner& base, VW::multi_ex& ec_seq)
 {
   if (ec_seq.empty()) THROW("cb_adf: At least one action must be provided for an example to be valid.");
 
-  multi_ex::value_type shared_example = nullptr;
+  VW::multi_ex::value_type shared_example = nullptr;
 
   const bool has_example_header = VW::LEARNER::ec_is_example_header(*ec_seq[0], data.label_type);
 

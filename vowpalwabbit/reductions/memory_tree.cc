@@ -4,16 +4,16 @@
 
 #include "reductions/memory_tree.h"
 
-#include "config/options.h"
 #include "example.h"
-#include "future_compat.h"
-#include "io/logger.h"
 #include "numeric_casts.h"
 #include "rand48.h"
 #include "rand_state.h"
 #include "setup_base.h"
 #include "v_array.h"
 #include "vw.h"
+#include "vw/common/future_compat.h"
+#include "vw/config/options.h"
+#include "vw/io/logger.h"
 
 #include <algorithm>
 #include <cfloat>

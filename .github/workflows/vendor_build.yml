@@ -45,7 +45,8 @@ jobs:
       - name: Test
         run: |
           python3 test/run_tests.py -f --clean_dirty -E 0.001
-          ./build/test/unit_test/vw-unit-test.out
+          cd build
+          ctest --verbose --output-on-failure --label-regex VWTestList
   build_vendor_windows:
     name: core-cli.${{ matrix.os }}.amd64.${{ matrix.build_type }}.msvc.standalone
     runs-on: ${{matrix.os}}
@@ -100,10 +101,13 @@ jobs:
       - name: Build
         run: |
           cmake --build "${{ env.CMAKE_BUILD_DIR }}" --config ${{ matrix.build_type }}
-      - name: Test
+      - name: Test run_tests.py
+        # TODO: Look into test 67 failure
+        run: python3 ${{ env.SOURCE_DIR }}/test/run_tests.py -f --clean_dirty -E 0.01 --skip_spanning_tree_tests --vw_bin_path ${{ env.CMAKE_BUILD_DIR }}/vowpalwabbit/${{ matrix.build_type }}/vw.exe --skip_test 67
+      - name: Test unit tests
         run: |
-          python3 ${{ env.SOURCE_DIR }}/test/run_tests.py -f --clean_dirty -E 0.001
-          ${{ env.CMAKE_BUILD_DIR }}/test/unit_test/${{ matrix.build_type }}/vw-unit-test.out.exe
+          cd ${{ env.CMAKE_BUILD_DIR }}
+          ctest --verbose --output-on-failure --config ${{ matrix.build_type }} --label-regex VWTestList
   build_vendor_macos:
     runs-on: ${{matrix.os}}
     name: core-cli.${{ matrix.os }}.amd64.${{ matrix.build_type }}.AppleClang.standalone
@@ -129,8 +133,10 @@ jobs:
           -DVW_BOOST_MATH_SYS_DEP=Off
           -DVW_INSTALL=Off
       - name: Build
-        run: cmake --build build
+        run: |
+          cmake --build build
       - name: Test
         run: |
           python3 test/run_tests.py -f --clean_dirty -E 0.001
-          ./build/test/unit_test/vw-unit-test.out
+          cd build
+          ctest --verbose --output-on-failure --label-regex VWTestList

@@ -237,7 +237,7 @@ inline void copy_to_action_scores(
   for (uint32_t idx = 0; idx < scores.size(); ++idx) { a_s.push_back({idx, scores[idx]}); }
 }
 
-void predict(VW::reductions::offset_tree::offset_tree& tree, single_learner& base, example& ec)
+void predict(VW::reductions::offset_tree::offset_tree& tree, single_learner& base, VW::example& ec)
 {
   // get predictions for all internal nodes in binary tree.
   ec.pred.a_s.clear();
@@ -245,7 +245,7 @@ void predict(VW::reductions::offset_tree::offset_tree& tree, single_learner& bas
   copy_to_action_scores(scores, ec.pred.a_s);
 }
 
-void learn(VW::reductions::offset_tree::offset_tree& tree, single_learner& base, example& ec)
+void learn(VW::reductions::offset_tree::offset_tree& tree, single_learner& base, VW::example& ec)
 {
   ec.pred.a_s.clear();
 
@@ -260,7 +260,7 @@ void learn(VW::reductions::offset_tree::offset_tree& tree, single_learner& base,
 }
 }  // namespace
 
-base_learner* VW::reductions::offset_tree_setup(VW::setup_base_i& stack_builder)
+VW::LEARNER::base_learner* VW::reductions::offset_tree_setup(VW::setup_base_i& stack_builder)
 {
   options_i& options = *stack_builder.get_options();
   option_group_definition new_options("[Reduction] Offset Tree");

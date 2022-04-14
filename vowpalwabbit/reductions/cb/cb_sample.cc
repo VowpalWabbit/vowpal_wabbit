@@ -4,8 +4,6 @@
 
 #include "cb_sample.h"
 
-#include "config/options.h"
-#include "explore.h"
 #include "global_data.h"
 #include "label_parser.h"
 #include "learner.h"
@@ -13,7 +11,9 @@
 #include "rand_state.h"
 #include "setup_base.h"
 #include "tag_utils.h"
-#include "vw_string_view.h"
+#include "vw/common/string_view.h"
+#include "vw/config/options.h"
+#include "vw/explore/explore.h"
 
 #undef VW_DEBUG_LOG
 #define VW_DEBUG_LOG vw_dbg::cb_sample
@@ -22,7 +22,7 @@ using namespace VW::LEARNER;
 using namespace VW;
 using namespace VW::config;
 
-namespace VW
+namespace
 {
 // cb_sample is used to automatically sample and swap from a cb explore pdf.
 struct cb_sample_data
@@ -75,7 +75,7 @@ struct cb_sample_data
 
       VW::string_view tag_seed;
       const bool tag_provided_seed = try_extract_random_seed(*examples[0], tag_seed);
-      if (tag_provided_seed) { seed = uniform_hash(tag_seed.data(), tag_seed.size(), 0); }
+      if (tag_provided_seed) { seed = VW::common::uniform_hash(tag_seed.data(), tag_seed.size(), 0); }
 
       // Sampling is done after the base learner has generated a pdf.
       auto result = exploration::sample_after_normalizing(
@@ -107,15 +107,14 @@ struct cb_sample_data
 private:
   std::shared_ptr<VW::rand_state> _random_state;
 };
-}  // namespace VW
-
 template <bool is_learn>
 void learn_or_predict(cb_sample_data& data, multi_learner& base, VW::multi_ex& examples)
 {
   data.learn_or_predict<is_learn>(base, examples);
 }
+}  // namespace
 
-base_learner* cb_sample_setup(VW::setup_base_i& stack_builder)
+base_learner* VW::reductions::cb_sample_setup(VW::setup_base_i& stack_builder)
 {
   options_i& options = *stack_builder.get_options();
   VW::workspace& all = *stack_builder.get_all_pointer();

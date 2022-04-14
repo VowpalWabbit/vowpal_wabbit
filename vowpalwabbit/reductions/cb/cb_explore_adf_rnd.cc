@@ -7,15 +7,15 @@
 #include "../bs.h"
 #include "cb_adf.h"
 #include "cb_explore.h"
-#include "config/options.h"
 #include "debug_print.h"
-#include "explore.h"
 #include "gd_predict.h"
 #include "gen_cs_example.h"
 #include "label_parser.h"
 #include "rand48.h"
 #include "scope_exit.h"
 #include "setup_base.h"
+#include "vw/config/options.h"
+#include "vw/explore/explore.h"
 
 #include <algorithm>
 #include <cfloat>
@@ -32,12 +32,9 @@
 // Hopefully it works well when the expected reward is realizable.  YMMV.
 
 using namespace VW::LEARNER;
+using namespace VW::cb_explore_adf;
 
-namespace VW
-{
-namespace cb_explore_adf
-{
-namespace rnd
+namespace
 {
 struct cb_explore_adf_rnd
 {
@@ -255,8 +252,9 @@ void cb_explore_adf_rnd::predict_or_learn_impl(multi_learner& base, multi_ex& ex
       -1.0f / max_bonus, begin_scores(preds), end_scores(preds), begin_scores(preds), end_scores(preds));
   exploration::enforce_minimum_probability(epsilon, true, begin_scores(preds), end_scores(preds));
 }
+}  // namespace
 
-base_learner* setup(VW::setup_base_i& stack_builder)
+VW::LEARNER::base_learner* VW::reductions::cb_explore_adf_rnd_setup(VW::setup_base_i& stack_builder)
 {
   VW::config::options_i& options = *stack_builder.get_options();
   VW::workspace& all = *stack_builder.get_all_pointer();
@@ -312,8 +310,8 @@ base_learner* setup(VW::setup_base_i& stack_builder)
       with_metrics, epsilon, alpha, invlambda, numrnd, base->increment * problem_multiplier, &all);
 
   if (epsilon < 0.0 || epsilon > 1.0) { THROW("The value of epsilon must be in [0,1]"); }
-  auto* l = make_reduction_learner(
-      std::move(data), base, explore_type::learn, explore_type::predict, stack_builder.get_setupfn_name(setup))
+  auto* l = make_reduction_learner(std::move(data), base, explore_type::learn, explore_type::predict,
+      stack_builder.get_setupfn_name(cb_explore_adf_rnd_setup))
                 .set_input_label_type(VW::label_type_t::cb)
                 .set_output_label_type(VW::label_type_t::cb)
                 .set_input_prediction_type(VW::prediction_type_t::action_scores)
@@ -325,6 +323,3 @@ base_learner* setup(VW::setup_base_i& stack_builder)
                 .build(&all.logger);
   return make_base(*l);
 }
-}  // namespace rnd
-}  // namespace cb_explore_adf
-}  // namespace VW

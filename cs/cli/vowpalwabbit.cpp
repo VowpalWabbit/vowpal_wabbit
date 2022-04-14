@@ -7,7 +7,7 @@
 #include "vowpalwabbit.h"
 #include "best_constant.h"
 #include "parser.h"
-#include "hash.h"
+#include "vw/common/hash.h"
 #include "vw_example.h"
 #include "vw_builder.h"
 #include "clr_io.h"
@@ -695,11 +695,11 @@ uint64_t hashall(String^ s, int offset, int count, uint64_t u)
     k1 = (uint32_t)(keys[i] | keys[i + 1] << 8 | keys[i + 2] << 16 | keys[i + 3] << 24);
 
     k1 *= c1;
-    k1 = rotl32(k1, 15);
+    k1 = common::details::rotl32(k1, 15);
     k1 *= c2;
 
     h1 ^= k1;
-    h1 = rotl32(h1, 13);
+    h1 = common::details::rotl32(h1, 13);
     h1 = h1 * 5 + 0xe6546b64;
 
     i += 4;
@@ -715,7 +715,7 @@ uint64_t hashall(String^ s, int offset, int count, uint64_t u)
     case 1:
       k1 ^= (uint32_t)(keys[tail]);
       k1 *= c1;
-      k1 = rotl32(k1, 15);
+      k1 = common::details::rotl32(k1, 15);
       k1 *= c2;
       h1 ^= k1;
       break;
@@ -724,7 +724,7 @@ uint64_t hashall(String^ s, int offset, int count, uint64_t u)
   // finalization
   h1 ^= (uint32_t)length;
 
-  return MURMUR_HASH_3::fmix(h1);
+  return common::details::fmix(h1);
 }
 
 uint64_t hashall(String^ s, uint64_t u)

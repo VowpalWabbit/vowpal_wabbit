@@ -9,8 +9,9 @@
 #include "model_utils.h"
 #include "parse_primitives.h"
 #include "parser.h"
+#include "vw/common/string_view.h"
+#include "vw/common/text_utils.h"
 #include "vw_math.h"
-#include "vw_string_view.h"
 
 #include <numeric>
 
@@ -75,12 +76,12 @@ void parse_label(slates::label& ld, VW::label_parser_reuse_mem& reuse_mem, const
     if (words.size() == 3)
     {
       ld.labeled = true;
-      tokenize(',', words[2], reuse_mem.tokens);
+      VW::common::tokenize(',', words[2], reuse_mem.tokens);
 
       std::vector<VW::string_view> split_colons;
       for (auto& token : reuse_mem.tokens)
       {
-        tokenize(':', token, split_colons);
+        VW::common::tokenize(':', token, split_colons);
         if (split_colons.size() != 2) { THROW("Malformed action score token"); }
 
         // Element 0 is the action, element 1 is the probability

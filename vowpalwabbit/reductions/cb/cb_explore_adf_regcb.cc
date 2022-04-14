@@ -8,14 +8,14 @@
 #include "cb.h"
 #include "cb_adf.h"
 #include "cb_explore.h"
-#include "config/options.h"
-#include "explore.h"
 #include "gen_cs_example.h"
-#include "io/logger.h"
 #include "label_parser.h"
 #include "rand48.h"
 #include "setup_base.h"
 #include "version.h"
+#include "vw/config/options.h"
+#include "vw/explore/explore.h"
+#include "vw/io/logger.h"
 #include "vw_versions.h"
 
 #include <algorithm>
@@ -28,13 +28,10 @@
 
 #define B_SEARCH_MAX_ITER 20
 
+using namespace VW::cb_explore_adf;
 using namespace VW::LEARNER;
 
-namespace VW
-{
-namespace cb_explore_adf
-{
-namespace regcb
+namespace
 {
 struct cb_explore_adf_regcb
 {
@@ -251,8 +248,9 @@ void cb_explore_adf_regcb::save_load(io_buf& io, bool read, bool text)
     bin_text_read_write_fixed_validated(io, reinterpret_cast<char*>(&_counter), sizeof(_counter), read, msg, text);
   }
 }
+}  // namespace
 
-base_learner* setup(VW::setup_base_i& stack_builder)
+VW::LEARNER::base_learner* VW::reductions::cb_explore_adf_regcb_setup(VW::setup_base_i& stack_builder)
 {
   VW::config::options_i& options = *stack_builder.get_options();
   VW::workspace& all = *stack_builder.get_all_pointer();
@@ -316,8 +314,8 @@ base_learner* setup(VW::setup_base_i& stack_builder)
   using explore_type = cb_explore_adf_base<cb_explore_adf_regcb>;
   auto data = VW::make_unique<explore_type>(
       with_metrics, regcbopt, c0, first_only, min_cb_cost, max_cb_cost, all.model_file_ver);
-  auto* l = make_reduction_learner(
-      std::move(data), base, explore_type::learn, explore_type::predict, stack_builder.get_setupfn_name(setup))
+  auto* l = make_reduction_learner(std::move(data), base, explore_type::learn, explore_type::predict,
+      stack_builder.get_setupfn_name(cb_explore_adf_regcb_setup))
                 .set_input_label_type(VW::label_type_t::cb)
                 .set_output_label_type(VW::label_type_t::cb)
                 .set_input_prediction_type(VW::prediction_type_t::action_scores)
@@ -330,7 +328,3 @@ base_learner* setup(VW::setup_base_i& stack_builder)
                 .build(&all.logger);
   return make_base(*l);
 }
-
-}  // namespace regcb
-}  // namespace cb_explore_adf
-}  // namespace VW

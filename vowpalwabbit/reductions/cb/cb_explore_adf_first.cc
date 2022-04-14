@@ -8,14 +8,14 @@
 #include "cb_adf.h"
 #include "cb_explore.h"
 #include "cb_explore_adf_common.h"
-#include "config/options.h"
-#include "explore.h"
 #include "gen_cs_example.h"
 #include "label_parser.h"
 #include "numeric_casts.h"
 #include "rand48.h"
 #include "setup_base.h"
 #include "version.h"
+#include "vw/config/options.h"
+#include "vw/explore/explore.h"
 #include "vw_versions.h"
 
 #include <algorithm>
@@ -23,12 +23,9 @@
 #include <vector>
 
 using namespace VW::LEARNER;
+using namespace VW::cb_explore_adf;
 
-namespace VW
-{
-namespace cb_explore_adf
-{
-namespace first
+namespace
 {
 struct cb_explore_adf_first
 {
@@ -95,8 +92,9 @@ void cb_explore_adf_first::save_load(io_buf& io, bool read, bool text)
     bin_text_read_write_fixed_validated(io, reinterpret_cast<char*>(&_tau), sizeof(_tau), read, msg, text);
   }
 }
+}  // namespace
 
-base_learner* setup(VW::setup_base_i& stack_builder)
+VW::LEARNER::base_learner* VW::reductions::cb_explore_adf_first_setup(VW::setup_base_i& stack_builder)
 {
   VW::config::options_i& options = *stack_builder.get_options();
   VW::workspace& all = *stack_builder.get_all_pointer();
@@ -134,8 +132,8 @@ base_learner* setup(VW::setup_base_i& stack_builder)
       VW::make_unique<explore_type>(with_metrics, VW::cast_to_smaller_type<size_t>(tau), epsilon, all.model_file_ver);
 
   if (epsilon < 0.0 || epsilon > 1.0) { THROW("The value of epsilon must be in [0,1]"); }
-  auto* l = make_reduction_learner(
-      std::move(data), base, explore_type::learn, explore_type::predict, stack_builder.get_setupfn_name(setup))
+  auto* l = make_reduction_learner(std::move(data), base, explore_type::learn, explore_type::predict,
+      stack_builder.get_setupfn_name(cb_explore_adf_first_setup))
                 .set_input_label_type(VW::label_type_t::cb)
                 .set_output_label_type(VW::label_type_t::cb)
                 .set_input_prediction_type(VW::prediction_type_t::action_scores)
@@ -148,7 +146,3 @@ base_learner* setup(VW::setup_base_i& stack_builder)
                 .build(&all.logger);
   return make_base(*l);
 }
-
-}  // namespace first
-}  // namespace cb_explore_adf
-}  // namespace VW

@@ -5,8 +5,8 @@
 #include "lda_core.h"
 
 #include "crossplat_compat.h"
-#include "future_compat.h"
 #include "setup_base.h"
+#include "vw/common/future_compat.h"
 
 VW_WARNING_DISABLE_DEPRECATED_USAGE
 
@@ -19,7 +19,6 @@ VW_WARNING_STATE_POP
 #include "array_parameters.h"
 #include "correctedMath.h"
 #include "gd.h"
-#include "io/logger.h"
 #include "mwt.h"
 #include "no_label.h"
 #include "numeric_casts.h"
@@ -27,7 +26,8 @@ VW_WARNING_STATE_POP
 #include "rand48.h"
 #include "shared_data.h"
 #include "vw.h"
-#include "vw_exception.h"
+#include "vw/common/vw_exception.h"
+#include "vw/io/logger.h"
 #include "vw_versions.h"
 
 #include <algorithm>

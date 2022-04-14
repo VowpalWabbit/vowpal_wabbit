@@ -6,9 +6,9 @@
 #include "best_constant.h"
 #include "cache.h"
 #include "example.h"
-#include "io/logger.h"
 #include "vw.h"
-#include "vw_string_view.h"
+#include "vw/common/string_view.h"
+#include "vw/io/logger.h"
 #include "vw_string_view_fmt.h"
 
 #include <cfloat>

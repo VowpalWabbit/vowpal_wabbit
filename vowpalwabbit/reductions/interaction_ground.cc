@@ -6,14 +6,14 @@
 
 #include "cb/cb_adf.h"
 #include "cb/cb_algs.h"
-#include "config/options.h"
 #include "label_dictionary.h"
 #include "label_parser.h"
 #include "prediction_type.h"
 #include "setup_base.h"
 #include "shared_data.h"
 #include "vw.h"
-#include "vw_exception.h"
+#include "vw/common/vw_exception.h"
+#include "vw/config/options.h"
 
 using namespace VW::LEARNER;
 using namespace VW::config;

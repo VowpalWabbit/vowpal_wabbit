@@ -6,12 +6,12 @@
 
 #include "accumulate.h"
 #include "best_constant.h"
-#include "hash.h"
 #include "parse_args.h"
 #include "parse_regressor.h"
 #include "reductions/cb/cb_algs.h"
 #include "shared_data.h"
-#include "vw_exception.h"
+#include "vw/common/hash.h"
+#include "vw/common/vw_exception.h"
 
 #include <sys/timeb.h>
 
@@ -302,7 +302,7 @@ flatbuffers::Offset<VW::parsers::flatbuffer::Namespace> to_flat::create_namespac
   ss << ":" << hash;
 
   std::string s = ss.str();
-  uint64_t refid = uniform_hash(s.c_str(), s.size(), 0);
+  uint64_t refid = VW::common::uniform_hash(s.c_str(), s.size(), 0);
   const auto find_ns_offset = _share_examples.find(refid);
 
   if (find_ns_offset == _share_examples.end())

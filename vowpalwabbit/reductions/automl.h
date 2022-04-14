@@ -10,8 +10,8 @@
 #include "metric_sink.h"
 #include "rand_state.h"
 #include "scored_config.h"
+#include "vw/common/string_view.h"
 #include "vw_fwd.h"
-#include "vw_string_view.h"
 
 #include <fmt/format.h>
 
@@ -25,22 +25,13 @@ using namespace VW::LEARNER;
 
 namespace VW
 {
-namespace automl
+namespace reductions
 {
-using namespace_index = unsigned char;
-using interaction_vec_t = std::vector<std::vector<namespace_index>>;
-
 VW::LEARNER::base_learner* automl_setup(VW::setup_base_i&);
 
-namespace details
+namespace automl
 {
-void fail_if_enabled(VW::workspace&, const std::set<std::string>&);
-// void print_weights_nonzero(VW::workspace*, uint64, dense_parameters&);
-}  // namespace details
-
-constexpr uint64_t MAX_CONFIGS = 10;
-constexpr uint64_t CONFIGS_PER_CHAMP_CHANGE = 5;
-const std::vector<unsigned char> NS_EXCLUDE_LIST = {ccb_slot_namespace, ccb_id_namespace};
+using interaction_vec_t = std::vector<std::vector<namespace_index>>;
 
 struct aml_score : VW::scored_config
 {
@@ -68,7 +59,7 @@ struct exclusion_config
   uint64_t lease;
   float ips = 0.f;
   float lower_bound = std::numeric_limits<float>::infinity();
-  config_state state = VW::automl::config_state::New;
+  config_state state = VW::reductions::automl::config_state::New;
 
   exclusion_config(uint64_t lease = 10) : lease(lease) {}
 };
@@ -170,40 +161,41 @@ private:
 };
 
 }  // namespace automl
+}  // namespace reductions
 
-VW::string_view to_string(automl::automl_state state);
-VW::string_view to_string(automl::config_state state);
+VW::string_view to_string(reductions::automl::automl_state state);
+VW::string_view to_string(reductions::automl::config_state state);
 
 namespace model_utils
 {
 template <typename CMType>
-size_t write_model_field(io_buf&, const VW::automl::automl<CMType>&, const std::string&, bool);
-size_t read_model_field(io_buf&, VW::automl::exclusion_config&);
-size_t read_model_field(io_buf&, VW::automl::aml_score&);
-size_t read_model_field(io_buf&, VW::automl::interaction_config_manager&);
+size_t write_model_field(io_buf&, const VW::reductions::automl::automl<CMType>&, const std::string&, bool);
+size_t read_model_field(io_buf&, VW::reductions::automl::exclusion_config&);
+size_t read_model_field(io_buf&, VW::reductions::automl::aml_score&);
+size_t read_model_field(io_buf&, VW::reductions::automl::interaction_config_manager&);
 template <typename CMType>
-size_t read_model_field(io_buf&, VW::automl::automl<CMType>&);
-size_t write_model_field(io_buf&, const VW::automl::exclusion_config&, const std::string&, bool);
-size_t write_model_field(io_buf&, const VW::automl::aml_score&, const std::string&, bool);
-size_t write_model_field(io_buf&, const VW::automl::interaction_config_manager&, const std::string&, bool);
+size_t read_model_field(io_buf&, VW::reductions::automl::automl<CMType>&);
+size_t write_model_field(io_buf&, const VW::reductions::automl::exclusion_config&, const std::string&, bool);
+size_t write_model_field(io_buf&, const VW::reductions::automl::aml_score&, const std::string&, bool);
+size_t write_model_field(io_buf&, const VW::reductions::automl::interaction_config_manager&, const std::string&, bool);
 }  // namespace model_utils
 }  // namespace VW
 
 namespace fmt
 {
 template <>
-struct formatter<VW::automl::automl_state> : formatter<std::string>
+struct formatter<VW::reductions::automl::automl_state> : formatter<std::string>
 {
-  auto format(VW::automl::automl_state c, format_context& ctx) -> decltype(ctx.out())
+  auto format(VW::reductions::automl::automl_state c, format_context& ctx) -> decltype(ctx.out())
   {
     return formatter<std::string>::format(std::string{VW::to_string(c)}, ctx);
   }
 };
 
 template <>
-struct formatter<VW::automl::config_state> : formatter<std::string>
+struct formatter<VW::reductions::automl::config_state> : formatter<std::string>
 {
-  auto format(VW::automl::config_state c, format_context& ctx) -> decltype(ctx.out())
+  auto format(VW::reductions::automl::config_state c, format_context& ctx) -> decltype(ctx.out())
   {
     return formatter<std::string>::format(std::string{VW::to_string(c)}, ctx);
   }

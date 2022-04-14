@@ -1,10 +1,10 @@
 // Copyright (c) by respective owners including Yahoo!, Microsoft, and
 // individual contributors. All rights reserved. Released under a BSD (revised)
 // license as described in the file LICENSE.
-#include "config/options.h"
 #include "crossplat_compat.h"
 #include "io_buf.h"
 #include "rand_state.h"
+#include "vw/config/options.h"
 
 #include <fstream>
 #include <iostream>
@@ -13,15 +13,15 @@
 #  include <unistd.h>
 #endif
 
-#include "config/cli_options_serializer.h"
 #include "crossplat_compat.h"
 #include "global_data.h"
-#include "io/logger.h"
 #include "kskip_ngram_transformer.h"
 #include "learner.h"
 #include "rand48.h"
 #include "shared_data.h"
-#include "vw_exception.h"
+#include "vw/common/vw_exception.h"
+#include "vw/config/cli_options_serializer.h"
+#include "vw/io/logger.h"
 #include "vw_validate.h"
 #include "vw_versions.h"
 
@@ -442,7 +442,7 @@ void save_load_header(VW::workspace& all, io_buf& model_file, bool read, bool te
     {
       uint32_t check_sum = (all.model_file_ver >= VW::version_definitions::VERSION_FILE_WITH_HEADER_CHAINED_HASH)
           ? model_file.hash()
-          : static_cast<uint32_t>(uniform_hash(model_file.buffer_start(), bytes_read_write, 0));
+          : static_cast<uint32_t>(VW::common::uniform_hash(model_file.buffer_start(), bytes_read_write, 0));
 
       uint32_t check_sum_saved = check_sum;
 

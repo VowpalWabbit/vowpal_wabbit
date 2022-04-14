@@ -5,15 +5,14 @@
 #include "get_pmf.h"
 
 #include "api_status.h"
-#include "config/options.h"
 #include "debug_log.h"
 #include "error_constants.h"
 #include "global_data.h"
 #include "guard.h"
 #include "setup_base.h"
+#include "vw/config/options.h"
 
 // Aliases
-using std::endl;
 using VW::cb_continuous::continuous_label;
 using VW::cb_continuous::continuous_label_elm;
 using VW::config::make_option;
@@ -31,8 +30,8 @@ namespace
 // BEGIN sample_pdf reduction and reduction methods
 struct get_pmf
 {
-  int learn(example& ec, VW::experimental::api_status* status);
-  int predict(example& ec, VW::experimental::api_status* status);
+  int learn(VW::example& ec, VW::experimental::api_status* status);
+  int predict(VW::example& ec, VW::experimental::api_status* status);
 
   void init(single_learner* p_base, float epsilon);
 
@@ -41,13 +40,13 @@ private:
   float _epsilon = 0.f;
 };
 
-int get_pmf::learn(example& ec, VW::experimental::api_status*)
+int get_pmf::learn(VW::example& ec, VW::experimental::api_status* /*unused*/)
 {
   _base->learn(ec);
   return VW::experimental::error_code::success;
 }
 
-int get_pmf::predict(example& ec, VW::experimental::api_status*)
+int get_pmf::predict(VW::example& ec, VW::experimental::api_status* /*unused*/)
 {
   uint32_t base_prediction;
 
@@ -72,7 +71,7 @@ void get_pmf::init(single_learner* p_base, float epsilon)
 
 // Free function to tie function pointers to reduction class methods
 template <bool is_learn>
-void predict_or_learn(get_pmf& reduction, single_learner&, example& ec)
+void predict_or_learn(get_pmf& reduction, single_learner& /*unused*/, VW::example& ec)
 {
   VW::experimental::api_status status;
   if (is_learn) { reduction.learn(ec, &status); }
@@ -82,7 +81,7 @@ void predict_or_learn(get_pmf& reduction, single_learner&, example& ec)
   }
 
   if (status.get_error_code() != VW::experimental::error_code::success)
-  { VW_DBG(ec) << status.get_error_msg() << endl; }
+  { VW_DBG(ec) << status.get_error_msg() << std::endl; }
 }
 }  // namespace
 

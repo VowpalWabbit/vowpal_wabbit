@@ -4,7 +4,6 @@
 
 #include "epsilon_decay.h"
 
-#include "config/options.h"
 #include "global_data.h"
 #include "label_type.h"
 #include "learner.h"
@@ -12,6 +11,7 @@
 #include "model_utils.h"
 #include "prediction_type.h"
 #include "vw.h"
+#include "vw/config/options.h"
 
 #include <algorithm>
 #include <cmath>

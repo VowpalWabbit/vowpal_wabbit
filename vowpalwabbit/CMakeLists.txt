@@ -1,50 +1,23 @@
+add_subdirectory(common)
+add_subdirectory(explore)
+add_subdirectory(io)
+add_subdirectory(allreduce)
+add_subdirectory(active_interactor)
+add_subdirectory(config)
+add_subdirectory(slim)
+add_subdirectory(spanning_tree)
+add_subdirectory(spanning_tree_bin)
+if(BUILD_FLATBUFFERS)
+  add_subdirectory(fb_parser)
+endif()
 configure_file(config.h.in config.h)
-
 # Use position independent code for all targets in this directory
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
-
-add_library(vw_io STATIC io/io_adapter.h io/io_adapter.cc io/logger.h io/logger.cc)
-target_include_directories(vw_io PUBLIC
-  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
-  $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>)
-target_link_libraries(vw_io PUBLIC ${spdlog_target} fmt::fmt PRIVATE ZLIB::ZLIB)
-
-if(SPDLOG_SYS_DEP)
-  # this doesn't get defined when using a system-installed spdlog
-  target_compile_definitions(vw_io PUBLIC SPDLOG_FMT_EXTERNAL)
-endif()
-
-add_library(VowpalWabbit::io ALIAS vw_io)
-
-add_library(allreduce STATIC allreduce_sockets.cc allreduce_threads.cc)
-target_include_directories(allreduce PUBLIC
-  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
-  $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>)
-
-add_library(VowpalWabbit::allreduce ALIAS allreduce)
-
-target_link_libraries(allreduce PRIVATE vw_io)
-
-# Winsock32 should be available on Windows
-if(WIN32)
-  target_link_libraries(allreduce PUBLIC wsock32 ws2_32)
-else()
-  target_compile_options(allreduce PUBLIC ${linux_flags})
-endif()
-
-
-if(BUILD_FLATBUFFERS)
-  add_subdirectory(parser/flatbuffer)
-  add_library(FlatbuffersTarget INTERFACE)
-  target_include_directories(FlatbuffersTarget INTERFACE ${FLATBUFFERS_INCLUDE_DIR})
-  add_dependencies(FlatbuffersTarget fbschemas)
-endif()
 
 set(vw_all_headers
   accumulate.h
   action_score.h
   active_multiclass_prediction.h
-  allreduce.h
   api_status.h
   array_parameters_dense.h
   array_parameters.h
@@ -59,15 +32,6 @@ set(vw_all_headers
   ccb_label.h
   ccb_reduction_features.h
   compat.h
-  config/cli_help_formatter.h
-  config/cli_options_serializer.h
-  config/help_formatter.h
-  config/option_group_definition.h
-  config/option.h
-  config/options_cli.h
-  config/options_name_extractor.h
-  config/options_serializer.h
-  config/options.h
   constant.h
   continuous_actions_reduction_features.h
   correctedMath.h
@@ -119,6 +83,7 @@ set(vw_all_headers
   parse_slates_example_json.h
   parser.h
   prediction_type.h
+  print_utils.h
   prob_dist_cont.h
   queue.h
   rand_state.h
@@ -221,7 +186,6 @@ set(vw_all_headers
   simple_label_parser.h
   simple_label.h
   slates_label.h
-  spanning_tree.h
   stable_unique.h
   tag_utils.h
   text_utils.h
@@ -229,19 +193,13 @@ set(vw_all_headers
   v_array.h
   version.h
   vw_allreduce.h
-  vw_exception.h
   vw_math.h
-  vw_string_view.h
   vw_validate.h
   vw_versions.h
   vw.h
   vwdll.h
-  vwvis.h
 )
 
-if(BUILD_FLATBUFFERS)
-  set(vw_all_headers ${vw_all_headers} parser/flatbuffer/parse_example_flatbuffer.h)
-endif()
 
 if(BUILD_EXTERNAL_PARSER)
   set(vw_all_headers ${vw_all_headers} ${external_parser_headers})
@@ -258,13 +216,6 @@ set(vw_all_sources
   cb.cc
   ccb_label.cc
   ccb_reduction_features.cc
-  config/cli_help_formatter.cc
-  config/cli_options_serializer.cc
-  config/help_formatter.cc
-  config/option_group_definition.cc
-  config/options_cli.cc
-  config/options_name_extractor.cc
-  config/options.cc
   cost_sensitive.cc
   crossplat_compat.cc
   debug_print.cc
@@ -295,6 +246,7 @@ set(vw_all_sources
   parse_regressor.cc
   parser.cc
   prediction_type.cc
+  print_utils.cc
   prob_dist_cont.cc
   rand48.cc
   reduction_stack.cc
@@ -398,27 +350,17 @@ set(vw_all_sources
   vw_validate.cc
 )
 
-if(BUILD_FLATBUFFERS)
-  set(vw_all_sources ${vw_all_sources}
-    parser/flatbuffer/parse_example_flatbuffer.cc
-    parser/flatbuffer/parse_label.cc)
-endif()
-
 if(BUILD_EXTERNAL_PARSER)
   set(vw_all_sources ${vw_all_sources} ${external_parser_sources})
-endif()
-
-if (vw_BUILD_NET_FRAMEWORK)
-set(vw_all_sources ${vw_all_sources} spanning_tree.cc)
 endif()
 
 add_library(vw STATIC ${vw_all_sources} ${vw_all_headers})
 
 target_link_libraries(vw
   PUBLIC
-    VowpalWabbit::explore VowpalWabbit::allreduce ${spdlog_target} fmt::fmt
+    VowpalWabbit::vw_common VowpalWabbit::vw_explore VowpalWabbit::vw_allreduce VowpalWabbit::vw_config ${spdlog_target} fmt::fmt
   PRIVATE
-    ${CMAKE_DL_LIBS} ${LINK_THREADS} vw_io
+    ${CMAKE_DL_LIBS} ${LINK_THREADS} VowpalWabbit::vw_io
     # Workaround an issue where RapidJSON needed to be exported tom install the target. This is
     # actually a private dependency and so do not "link" when processing targets for installation.
     # https://gitlab.kitware.com/cmake/cmake/issues/15415
@@ -449,9 +391,7 @@ if (BUILD_PRIVACY_ACTIVATION)
 endif()
 
 if(BUILD_FLATBUFFERS)
-  target_link_libraries(vw
-      PRIVATE
-      $<BUILD_INTERFACE:FlatbuffersTarget>)
+  target_link_libraries(vw PRIVATE vw_fb_parser)
   target_compile_definitions(vw PUBLIC BUILD_FLATBUFFERS)
 endif()
 
@@ -486,47 +426,13 @@ endif()
 # TODO code analysis
 if(WIN32)
   target_compile_definitions(vw PUBLIC __SSE2__)
-  target_compile_options(vw PUBLIC /MP /Zc:__cplusplus)
+  target_compile_options(vw PUBLIC ${VW_WIN_FLAGS})
 else()
-  target_compile_options(vw PUBLIC ${linux_flags})
+  target_compile_options(vw PUBLIC ${VW_LINUX_FLAGS})
 endif()
-
-# Turn on warnings
-if(WARNINGS)
-  if(MSVC)
-    target_compile_options(vw PRIVATE /W4)
-  else(MSVC)
-    target_compile_options(vw PRIVATE -Wall -Wextra -Wpedantic)
-  endif(MSVC)
-endif(WARNINGS)
-
-# Turn on warnings as errors
-if(WARNING_AS_ERROR)
-  if(MSVC)
-    target_compile_options(vw PRIVATE /WX)
-  else(MSVC)
-    target_compile_options(vw PRIVATE -Wall -Wextra -Wpedantic -Werror)
-  endif(MSVC)
-endif(WARNING_AS_ERROR)
+target_compile_options(vw PRIVATE ${WARNING_OPTIONS} ${WARNING_AS_ERROR_OPTIONS})
 
 if(NOT WIN32)
-  add_executable(active_interactor active_interactor.cc)
-
-  if(GCOV)
-    target_link_libraries(active_interactor PUBLIC gcov --coverage)
-  endif()
-
-  if(VW_INSTALL)
-    install(
-      TARGETS active_interactor
-      EXPORT VowpalWabbitConfig
-      RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
-  endif()
-
-  target_compile_definitions(active_interactor PUBLIC _FILE_OFFSET_BITS=64)
-  target_compile_definitions(active_interactor PUBLIC $<$<CONFIG:RELEASE>:NDEBUG>)
-  target_compile_options(active_interactor PUBLIC ${linux_flags})
-
   find_file(HELP2MAN_EXECUTABLE help2man HINTS /bin /usr/bin /usr/local/bin)
   if (HELP2MAN_EXECUTABLE)
     add_custom_target(manpage ALL
@@ -554,8 +460,6 @@ if(STATIC_LINK_VW)
 endif()
 
 if(WIN32)
-  set_target_properties(vw_io PROPERTIES DEBUG_POSTFIX d)
-  set_target_properties(allreduce PROPERTIES DEBUG_POSTFIX d)
   set_target_properties(vw PROPERTIES DEBUG_POSTFIX d)
 endif()
 
@@ -583,7 +487,7 @@ endif()
 
 if(VW_INSTALL)
   install(
-    TARGETS vw vw-bin allreduce vw_io
+    TARGETS vw vw-bin
     EXPORT VowpalWabbitConfig
     ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
     LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}

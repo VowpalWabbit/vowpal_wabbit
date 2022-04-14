@@ -5,7 +5,6 @@
 #include "../csoaa.h"
 #include "../gd.h"  // for GD::foreach_feature
 #include "crossplat_compat.h"
-#include "io/logger.h"
 #include "label_dictionary.h"
 #include "named_labels.h"
 #include "numeric_casts.h"
@@ -22,7 +21,9 @@
 #include "setup_base.h"
 #include "shared_data.h"
 #include "vw.h"
-#include "vw_exception.h"
+#include "vw/common/text_utils.h"
+#include "vw/common/vw_exception.h"
+#include "vw/io/logger.h"
 
 #include <float.h>
 #include <math.h>
@@ -158,7 +159,7 @@ private:
     size_t operator()(const byte_array& key) const
     {
       size_t sz = *key.get();
-      return uniform_hash(key.get(), sz, SEARCH_HASH_SEED);
+      return VW::common::uniform_hash(key.get(), sz, SEARCH_HASH_SEED);
     }
   };
 
@@ -2495,7 +2496,7 @@ void ensure_param(float& v, float lo, float hi, float def, const char* str, VW::
 {
   if ((v < lo) || (v > hi))
   {
-    logger.err_warn(str);
+    logger.err_warn("{}", str);
     v = def;
   }
 }
@@ -2605,7 +2606,7 @@ void parse_neighbor_features(
     }
 
     cmd.clear();
-    tokenize(':', strview, cmd, true);
+    VW::common::tokenize(':', strview, cmd, true);
     int32_t posn = 0;
     char ns = ' ';
     if (cmd.size() == 1)

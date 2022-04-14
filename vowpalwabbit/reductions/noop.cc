@@ -6,9 +6,9 @@
 
 #include "noop.h"
 
-#include "config/options.h"
 #include "learner.h"
 #include "setup_base.h"
+#include "vw/config/options.h"
 
 using namespace VW::config;
 namespace

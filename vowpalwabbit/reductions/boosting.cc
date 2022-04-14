@@ -10,14 +10,14 @@
 
 #include "boosting.h"
 
-#include "config/options.h"
 #include "correctedMath.h"
-#include "io/logger.h"
 #include "rand48.h"
 #include "rand_state.h"
 #include "setup_base.h"
 #include "shared_data.h"
 #include "vw.h"
+#include "vw/config/options.h"
+#include "vw/io/logger.h"
 #include "vw_math.h"
 
 #include <fmt/core.h>
@@ -364,10 +364,10 @@ void save_load(boosting& o, io_buf& model_file, bool read, bool text)
     else
     {
       fmt::format_to(
-          std::back_inserter(buffer), "Saving alpha, current weighted_examples = {)\n", o.all->sd->weighted_examples());
+          std::back_inserter(buffer), "Saving alpha, current weighted_examples = {}\n", o.all->sd->weighted_examples());
     }
 
-    for (int i = 0; i < o.N; i++) { fmt::format_to(std::back_inserter(buffer), "{} \n", o.alpha[i]); }
+    for (int i = 0; i < o.N; i++) { fmt::format_to(std::back_inserter(buffer), "{}\n", o.alpha[i]); }
     o.logger.err_info("{}", fmt::to_string(buffer));
   }
 }

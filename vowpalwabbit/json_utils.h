@@ -2,8 +2,8 @@
 
 #include "feature_group.h"
 #include "global_data.h"
-#include "hash.h"
 #include "vw.h"
+#include "vw/common/hash.h"
 
 #include <cstdint>
 #include <string>

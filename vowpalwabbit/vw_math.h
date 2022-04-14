@@ -1,8 +1,8 @@
 #pragma once
 #define NOMINMAX
 
-#include "future_compat.h"
-#include "vw_exception.h"
+#include "vw/common/future_compat.h"
+#include "vw/common/vw_exception.h"
 
 #include <cassert>
 #include <cmath>

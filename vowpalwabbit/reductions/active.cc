@@ -4,15 +4,15 @@
 
 #include "active.h"
 
-#include "config/options.h"
-#include "io/logger.h"
 #include "model_utils.h"
 #include "setup_base.h"
 #include "shared_data.h"
 #include "vw.h"
-#include "vw_exception.h"
+#include "vw/common/string_view.h"
+#include "vw/common/vw_exception.h"
+#include "vw/config/options.h"
+#include "vw/io/logger.h"
 #include "vw_math.h"
-#include "vw_string_view.h"
 #include "vw_versions.h"
 
 #include <cerrno>

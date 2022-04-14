@@ -7,15 +7,16 @@
 #include "../bs.h"
 #include "cb_adf.h"
 #include "cb_explore.h"
-#include "config/options.h"
-#include "explore.h"
 #include "gen_cs_example.h"
-#include "io/logger.h"
 #include "label_parser.h"
 #include "numeric_casts.h"
 #include "rand48.h"
+#include "reductions/cb/cb_explore_adf_common.h"
 #include "setup_base.h"
 #include "version.h"
+#include "vw/config/options.h"
+#include "vw/explore/explore.h"
+#include "vw/io/logger.h"
 #include "vw_versions.h"
 
 #include <algorithm>
@@ -25,11 +26,9 @@
 // All exploration algorithms return a vector of id, probability tuples, sorted in order of scores. The probabilities
 // are the probability with which each action should be replaced to the top of the list.
 
-namespace VW
-{
-namespace cb_explore_adf
-{
-namespace cover
+using namespace VW::cb_explore_adf;
+
+namespace
 {
 struct cb_explore_adf_cover
 {
@@ -238,8 +237,9 @@ void cb_explore_adf_cover::save_load(io_buf& io, bool read, bool text)
     bin_text_read_write_fixed_validated(io, reinterpret_cast<char*>(&_counter), sizeof(_counter), read, msg, text);
   }
 }
+}  // namespace
 
-VW::LEARNER::base_learner* setup(VW::setup_base_i& stack_builder)
+VW::LEARNER::base_learner* VW::reductions::cb_explore_adf_cover_setup(VW::setup_base_i& stack_builder)
 {
   VW::config::options_i& options = *stack_builder.get_options();
   VW::workspace& all = *stack_builder.get_all_pointer();
@@ -331,8 +331,8 @@ VW::LEARNER::base_learner* setup(VW::setup_base_i& stack_builder)
   auto data = VW::make_unique<explore_type>(with_metrics, VW::cast_to_smaller_type<size_t>(cover_size), psi, nounif,
       epsilon, epsilon_decay, first_only, as_multiline(all.cost_sensitive), all.scorer, cb_type, all.model_file_ver,
       all.logger);
-  auto* l = make_reduction_learner(
-      std::move(data), base, explore_type::learn, explore_type::predict, stack_builder.get_setupfn_name(setup))
+  auto* l = make_reduction_learner(std::move(data), base, explore_type::learn, explore_type::predict,
+      stack_builder.get_setupfn_name(cb_explore_adf_cover_setup))
                 .set_input_label_type(VW::label_type_t::cb)
                 .set_output_label_type(VW::label_type_t::cb)
                 .set_input_prediction_type(VW::prediction_type_t::action_scores)
@@ -346,6 +346,3 @@ VW::LEARNER::base_learner* setup(VW::setup_base_i& stack_builder)
                 .build(&all.logger);
   return make_base(*l);
 }
-}  // namespace cover
-}  // namespace cb_explore_adf
-}  // namespace VW

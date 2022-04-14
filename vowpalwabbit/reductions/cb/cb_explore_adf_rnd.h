@@ -9,11 +9,8 @@
 
 namespace VW
 {
-namespace cb_explore_adf
+namespace reductions
 {
-namespace rnd
-{
-LEARNER::base_learner* setup(VW::setup_base_i& stack_builder);
+LEARNER::base_learner* cb_explore_adf_rnd_setup(VW::setup_base_i& stack_builder);
 }  // namespace rnd
 }  // namespace cb_explore_adf
-}  // namespace VW

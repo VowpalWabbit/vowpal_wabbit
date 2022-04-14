@@ -3,11 +3,7 @@
 // license as described in the file LICENSE.
 
 #include "cb.h"
-#include "config/cli_options_serializer.h"
-#include "config/option.h"
-#include "config/options_cli.h"
 #include "cost_sensitive.h"
-#include "future_compat.h"
 #include "kskip_ngram_transformer.h"
 #include "multiclass.h"
 #include "multilabel.h"
@@ -19,6 +15,10 @@
 #include "simple_label_parser.h"
 #include "slates_label.h"
 #include "vw.h"
+#include "vw/common/future_compat.h"
+#include "vw/config/cli_options_serializer.h"
+#include "vw/config/option.h"
+#include "vw/config/options_cli.h"
 
 // see http://www.boost.org/doc/libs/1_56_0/doc/html/bbv2/installation.html
 #define BOOST_PYTHON_USE_GCC_SYMBOL_VISIBILITY 1
@@ -538,6 +538,8 @@ void my_learn(vw_ptr all, example_ptr ec)
     all->learn(*ec.get());
   }
 }
+
+std::string my_json_weights(vw_ptr all) { return all->dump_weights_to_json_experimental(); }
 
 float my_predict(vw_ptr all, example_ptr ec)
 {
@@ -1328,6 +1330,7 @@ BOOST_PYTHON_MODULE(pylibvw)
       .def("finish", &my_finish, "stop VW by calling finish (and, eg, write weights to disk)")
       .def("save", &my_save, "save model to filename")
       .def("learn", &my_learn, "given a pyvw example, learn (and predict) on that example")
+      .def("json_weights", &my_json_weights, "get json string of current weights")
       .def("predict", &my_predict, "given a pyvw example, predict on that example")
       .def("hash_space", &VW::hash_space, "given a namespace (as a string), compute the hash of that namespace")
       .def("hash_feature", &VW::hash_feature,

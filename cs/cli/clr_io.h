@@ -2,7 +2,7 @@
 // individual contributors. All rights reserved. Released under a BSD (revised)
 // license as described in the file LICENSE.
 
-#include "io/io_adapter.h"
+#include "vw/io/io_adapter.h"
 
 using namespace System;
 using namespace System::IO;
