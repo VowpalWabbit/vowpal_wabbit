@@ -45,6 +45,15 @@ set(VW_PROJECT_URL "https://vowpalwabbit.org")
 
 option(USE_LATEST_STD "Override using C++11 with the latest standard the compiler offers. Default is C++11. " OFF)
 include(DetectCXXStandard)
+set(VW_CXX_STANDARD 11)
+if(USE_LATEST_STD)
+  DetectCXXStandard(VW_CXX_STANDARD)
+endif()
+message(STATUS "Using C++ standard: " ${VW_CXX_STANDARD})
+set(CMAKE_CXX_STANDARD ${VW_CXX_STANDARD})
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_EXTENSIONS OFF)
+
 include(VowpalWabbitUtils)
 
 if(MSVC)
