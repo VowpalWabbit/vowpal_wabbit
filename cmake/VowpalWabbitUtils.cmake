@@ -157,6 +157,10 @@ function(vw_add_library)
     else()
       target_compile_options(${FULL_LIB_NAME} PRIVATE ${VW_LINUX_FLAGS})
     endif()
+
+    if(VW_GCOV)
+      target_compile_options(${FULL_LIB_NAME} PRIVATE -fprofile-arcs -ftest-coverage)
+    endif()
   endif()
 
   if(VW_INSTALL AND VW_LIB_ENABLE_INSTALL)
@@ -209,6 +213,10 @@ function(vw_add_executable)
     target_compile_options(${FULL_BIN_NAME} PRIVATE ${VW_WIN_FLAGS})
   else()
     target_compile_options(${FULL_BIN_NAME} PRIVATE ${VW_LINUX_FLAGS})
+  endif()
+
+  if(VW_GCOV)
+    target_link_libraries(${FULL_BIN_NAME} PRIVATE gcov)
   endif()
 
   if(VW_INSTALL AND VW_EXE_ENABLE_INSTALL)

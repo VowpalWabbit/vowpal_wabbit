@@ -9,7 +9,7 @@ ensure_cmake:
 # for profiling -- note that it needs to be gcc
 ensure_cmake_gcov:
 	mkdir -p build
-	cd build; cmake .. -DCMAKE_BUILD_TYPE=Debug -DCMAKE_EXE_LINKER_FLAGS="-lgcov" -DCMAKE_CXX_FLAGS="-fprofile-arcs -ftest-coverage -fno-strict-aliasing -pg"
+	cd build; cmake .. -DCMAKE_BUILD_TYPE=Debug -DVW_GCOV=On
 
 ensure_cmake_profile:
 	mkdir -p build
