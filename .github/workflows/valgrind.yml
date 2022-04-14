@@ -19,17 +19,20 @@ jobs:
         uses: actions/upload-artifact@v2
         with:
           name: vw
-          path: build/vowpalwabbit/vw
+          path: build/vowpalwabbit/cli/vw
+          if-no-files-found: error
       - name: Upload spanning_tree binary
         uses: actions/upload-artifact@v2
         with:
           name: spanning_tree
           path: build/vowpalwabbit/spanning_tree_bin/spanning_tree
+          if-no-files-found: error
       - name: Upload to_flatbuff binary
         uses: actions/upload-artifact@v2
         with:
           name: to_flatbuff
           path: build/utl/flatbuffer/to_flatbuff
+          if-no-files-found: error
       - name: Run unit tests with Valgrind
         run: ./.scripts/linux/unit-tests-valgrind.sh
   run-valgrind-tests:
