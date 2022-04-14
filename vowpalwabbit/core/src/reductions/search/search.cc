@@ -2497,7 +2497,7 @@ void ensure_param(float& v, float lo, float hi, float def, const char* str, VW::
 {
   if ((v < lo) || (v > hi))
   {
-    logger.err_warn(str);
+    logger.err_warn("{}", str);
     v = def;
   }
 }

@@ -22,7 +22,7 @@ set(LINUX_RELEASE_CONFIG -fno-strict-aliasing ${LINUX_X86_64_OPT_FLAGS} -fno-sta
 set(LINUX_DEBUG_CONFIG -fno-stack-check)
 
 #Use default visiblity on UNIX otherwise a lot of the C++ symbols end up for exported and interpose'able
-set(VW_LINUX_FLAGS -fvisibility=hidden $<$<CONFIG:Debug>:${LINUX_DEBUG_CONFIG}> $<$<CONFIG:Release,RelWithDebInfo>:${LINUX_RELEASE_CONFIG}>)
+set(VW_LINUX_FLAGS -fvisibility=hidden $<$<CONFIG:Debug>:${LINUX_DEBUG_CONFIG}> $<$<CONFIG:Release>:${LINUX_RELEASE_CONFIG}> $<$<CONFIG:RelWithDebInfo>:${LINUX_RELEASE_CONFIG}>)
 set(VW_WIN_FLAGS /MP /Zc:__cplusplus)
 
 # Turn on warnings

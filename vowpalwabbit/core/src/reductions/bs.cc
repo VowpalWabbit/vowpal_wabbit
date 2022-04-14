@@ -256,7 +256,7 @@ base_learner* VW::reductions::bs_setup(VW::setup_base_i& stack_builder)
     }
     else
     {
-      all.logger.err_warn("bs_type must be in {'mean','vote'}; resetting to mean.");
+      all.logger.err_warn("bs_type must be in {{'mean','vote'}}; resetting to mean.");
       data->bs_type = BS_TYPE_MEAN;
     }
   }

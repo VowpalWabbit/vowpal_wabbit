@@ -45,6 +45,15 @@ set(VW_PROJECT_URL "https://vowpalwabbit.org")
 
 option(USE_LATEST_STD "Override using C++11 with the latest standard the compiler offers. Default is C++11. " OFF)
 include(DetectCXXStandard)
+set(VW_CXX_STANDARD 11)
+if(USE_LATEST_STD)
+  DetectCXXStandard(VW_CXX_STANDARD)
+endif()
+message(STATUS "Using C++ standard: " ${VW_CXX_STANDARD})
+set(CMAKE_CXX_STANDARD ${VW_CXX_STANDARD})
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_EXTENSIONS OFF)
+
 include(VowpalWabbitUtils)
 
 if(MSVC)
@@ -73,6 +82,7 @@ ELSE(EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/.git)
   SET(vw_GIT_COMMIT "")
 ENDIF(EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/.git)
 
+option(VW_GCOV "Turn on flags required for gcov" OFF)
 option(WARNINGS "Turn on warning flags. ON by default." ON)
 option(WARNING_AS_ERROR "Turn on warning as error. OFF by default." OFF)
 option(STATIC_LINK_VW "Link VW executable statically. Off by default." OFF)
@@ -131,6 +141,10 @@ if(VW_INSTALL AND NOT RAPIDJSON_SYS_DEP)
   message(WARNING "Installing with a vendored version of rapidjson is not recommended. Use RAPIDJSON_SYS_DEP to use a system dependency or specify VW_INSTALL=OFF to silence this warning.")
 endif()
 
+if(VW_GCOV AND (NOT CMAKE_BUILD_TYPE STREQUAL "Debug"))
+  message(FATAL_ERROR "VW_GCOV requires Debug build type.")
+endif()
+
 # When using Ninja, or CCache GCC and Clang do not output colors as it sees it as a non-terminal output.
 # Use this option to force color output in these modes.
 option(FORCE_COLORED_OUTPUT "Always produce ANSI-colored output (GNU/Clang only)." OFF)
@@ -142,7 +156,7 @@ if(FORCE_COLORED_OUTPUT)
   endif()
 endif()
 
-if(WIN32 AND (STATIC_LINK_VW OR BUILD_JAVA))
+if(WIN32 AND (STATIC_LINK_VW OR BUILD_JAVA OR VW_GOV))
   message(FATAL_ERROR "Unsupported option enabled on Windows build")
 endif()
 
