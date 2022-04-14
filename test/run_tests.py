@@ -594,7 +594,7 @@ def find_vw_binary(
         if user_supplied_bin_path_or_python_invocation is not None
         else None
     )
-    vw_search_paths = [test_base_ref_dir / ".." / "build" / "vowpalwabbit"]
+    vw_search_paths = [test_base_ref_dir / ".." / "build" / "vowpalwabbit" / "cli"]
 
     def is_vw_binary(file: Path) -> bool:
         return file.name == "vw"
