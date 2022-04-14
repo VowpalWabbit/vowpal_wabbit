@@ -2,10 +2,12 @@
 // individual contributors. All rights reserved. Released under a BSD (revised)
 // license as described in the file LICENSE.
 
-#include <boost/test/unit_test.hpp>
-#include <explore_internal.h>
 #include "rand_state.h"
 #include "test_common.h"
+
+#include <explore_internal.h>
+
+#include <boost/test/unit_test.hpp>
 
 BOOST_AUTO_TEST_CASE(reproduce_max_boundary_issue)
 {

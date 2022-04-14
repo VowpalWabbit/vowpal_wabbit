@@ -2,15 +2,14 @@
 // individual contributors. All rights reserved. Released under a BSD (revised)
 // license as described in the file LICENSE.
 
-#include <boost/test/unit_test.hpp>
-#include <boost/test/test_tools.hpp>
-
-#include "test_common.h"
-
-#include <vector>
 #include "../../explore/explore.h"
 
 #include "reductions/cb/cb_explore_pdf.h"
+#include "test_common.h"
+
+#include <boost/test/test_tools.hpp>
+#include <boost/test/unit_test.hpp>
+#include <vector>
 
 using namespace VW::continuous_actions;
 using std::vector;
@@ -175,6 +174,6 @@ BOOST_AUTO_TEST_CASE(swap_test)
 
   scode = exploration::swap_chosen(begin(pdf), end(pdf), chosen_index);
 
-  const std::vector<float> expected_pdf_2 = { 0.266666667f,	0.133333333f,	0.2f,	0.066666667f,	0.333333333f };
+  const std::vector<float> expected_pdf_2 = {0.266666667f, 0.133333333f, 0.2f, 0.066666667f, 0.333333333f};
   check_collections_with_float_tolerance(pdf, expected_pdf_2, .0001f);
 }

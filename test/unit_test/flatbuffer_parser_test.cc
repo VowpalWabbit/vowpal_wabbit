@@ -2,15 +2,14 @@
 // individual contributors. All rights reserved. Released under a BSD (revised)
 // license as described in the file LICENSE.
 
-#include <boost/test/unit_test.hpp>
-#include <boost/test/test_tools.hpp>
-
-#include "test_common.h"
-
-#include <vector>
-#include "parser/flatbuffer/parse_example_flatbuffer.h"
 #include "constant.h"
 #include "feature_group.h"
+#include "parser/flatbuffer/parse_example_flatbuffer.h"
+#include "test_common.h"
+
+#include <boost/test/test_tools.hpp>
+#include <boost/test/unit_test.hpp>
+#include <vector>
 
 flatbuffers::Offset<void> get_label(flatbuffers::FlatBufferBuilder& builder, VW::parsers::flatbuffer::Label label_type)
 {

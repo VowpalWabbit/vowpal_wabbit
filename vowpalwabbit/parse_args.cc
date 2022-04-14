@@ -414,7 +414,7 @@ input_options parse_source(VW::workspace& all, options_i& options)
 
   // We are done adding new options. Before we are allowed to get the positionals we need to check unregistered.
   auto warnings = all.options->check_unregistered();
-  for (const auto& warning : warnings) { all.logger.err_warn(warning); }
+  for (const auto& warning : warnings) { all.logger.err_warn("{}", warning); }
 
   // Check if the options provider has any positional args. Only really makes sense for command line, others just return
   // an empty list.

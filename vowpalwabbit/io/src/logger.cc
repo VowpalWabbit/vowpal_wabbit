@@ -24,8 +24,7 @@ void logger::log_summary()
 {
   if (_logger_impl->_max_limit != SIZE_MAX && _logger_impl->_log_count > _logger_impl->_max_limit)
   {
-    _logger_impl->err_critical(
-        "Omitted some log lines. Re-run without --limit_output N for full log. Total log lines: {}",
+    err_critical("Omitted some log lines. Re-run without --limit_output N for full log. Total log lines: {}",
         _logger_impl->_log_count);
   }
 }
