@@ -52,7 +52,7 @@ jobs:
     runs-on: ${{matrix.os}}
     strategy:
       matrix:
-        os: ["windows-2019"]
+        os: ["windows-2019", "windows-2022"]
         build_type: ["Debug", "Release"]
     env:
       CMAKE_BUILD_DIR: ${{ github.workspace }}/vw/build
@@ -91,6 +91,7 @@ jobs:
           cmake -S "${{ env.SOURCE_DIR }}" -B "${{ env.CMAKE_BUILD_DIR }}"
           -G "Visual Studio 16 2019" -A "x64"
           -DCMAKE_TOOLCHAIN_FILE="${{ env.VCPKG_ROOT }}/scripts/buildsystems/vcpkg.cmake"
+          -DUSE_LATEST_STD=On
           -DBUILD_FLATBUFFERS=Off
           -DRAPIDJSON_SYS_DEP=Off
           -DFMT_SYS_DEP=Off
