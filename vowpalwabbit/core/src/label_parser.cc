@@ -4,6 +4,7 @@
 
 #include "vw/core/label_parser.h"
 
+#include "vw/common/vw_exception.h"
 #include "vw/core/cb.h"
 #include "vw/core/cb_continuous_label.h"
 #include "vw/core/ccb_label.h"
@@ -13,7 +14,6 @@
 #include "vw/core/no_label.h"
 #include "vw/core/simple_label_parser.h"
 #include "vw/core/slates_label.h"
-#include "vw/common/vw_exception.h"
 
 VW::label_parser VW::get_label_parser(VW::label_type_t label_type)
 {

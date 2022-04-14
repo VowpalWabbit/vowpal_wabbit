@@ -4,13 +4,13 @@
 
 #include "vw/core/reductions/scorer.h"
 
+#include "vw/common/vw_exception.h"
+#include "vw/config/options.h"
 #include "vw/core/correctedMath.h"
 #include "vw/core/global_data.h"
 #include "vw/core/learner.h"
 #include "vw/core/loss_functions.h"
 #include "vw/core/setup_base.h"
-#include "vw/common/vw_exception.h"
-#include "vw/config/options.h"
 
 #include <cfloat>
 

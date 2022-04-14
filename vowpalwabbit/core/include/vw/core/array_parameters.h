@@ -23,8 +23,8 @@
 #  define MAP_ANONYMOUS MAP_ANON
 #endif
 
-#include "vw/core/array_parameters_dense.h"
 #include "vw/common/vw_exception.h"
+#include "vw/core/array_parameters_dense.h"
 
 class sparse_parameters;
 using weight_map = std::unordered_map<uint64_t, weight*>;

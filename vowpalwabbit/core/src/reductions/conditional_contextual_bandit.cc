@@ -4,8 +4,7 @@
 
 #include "vw/core/reductions/conditional_contextual_bandit.h"
 
-#include "vw/core/reductions/cb/cb_adf.h"
-#include "vw/core/reductions/cb/cb_algs.h"
+#include "vw/config/options.h"
 #include "vw/core/constant.h"
 #include "vw/core/debug_log.h"
 #include "vw/core/decision_scores.h"
@@ -15,14 +14,15 @@
 #include "vw/core/label_dictionary.h"
 #include "vw/core/model_utils.h"
 #include "vw/core/print_utils.h"
+#include "vw/core/reductions/cb/cb_adf.h"
+#include "vw/core/reductions/cb/cb_algs.h"
 #include "vw/core/setup_base.h"
 #include "vw/core/shared_data.h"
 #include "vw/core/v_array_pool.h"
 #include "vw/core/version.h"
 #include "vw/core/vw.h"
-#include "vw/config/options.h"
-#include "vw/io/logger.h"
 #include "vw/core/vw_versions.h"
+#include "vw/io/logger.h"
 
 #include <algorithm>
 #include <bitset>

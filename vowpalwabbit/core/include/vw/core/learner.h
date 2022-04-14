@@ -26,12 +26,12 @@
 #undef VW_DEBUG_LOG
 #define VW_DEBUG_LOG vw_dbg::learner
 
+#include "vw/common/future_compat.h"
 #include "vw/core/example.h"
 #include "vw/core/label_type.h"
 #include "vw/core/metric_sink.h"
 #include "vw/core/prediction_type.h"
 #include "vw/core/scope_exit.h"
-#include "vw/common/future_compat.h"
 
 namespace VW
 {

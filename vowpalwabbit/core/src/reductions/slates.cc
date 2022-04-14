@@ -4,20 +4,20 @@
 
 #include "vw/core/reductions/slates.h"
 
+#include "vw/config/options.h"
 #include "vw/core/action_score.h"
-#include "vw/core/reductions/cb/cb_adf.h"
-#include "vw/core/reductions/cb/cb_algs.h"
 #include "vw/core/ccb_label.h"
-#include "vw/core/reductions/conditional_contextual_bandit.h"
 #include "vw/core/decision_scores.h"
 #include "vw/core/example.h"
 #include "vw/core/global_data.h"
 #include "vw/core/print_utils.h"
+#include "vw/core/reductions/cb/cb_adf.h"
+#include "vw/core/reductions/cb/cb_algs.h"
+#include "vw/core/reductions/conditional_contextual_bandit.h"
 #include "vw/core/setup_base.h"
 #include "vw/core/shared_data.h"
 #include "vw/core/slates_label.h"
 #include "vw/core/vw.h"
-#include "vw/config/options.h"
 
 #include <algorithm>
 

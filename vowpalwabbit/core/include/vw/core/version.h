@@ -3,8 +3,8 @@
 // license as described in the file LICENSE.
 #pragma once
 
-#include "vw/core/config.h"
 #include "vw/common/future_compat.h"
+#include "vw/core/config.h"
 
 #include <cinttypes>
 #include <string>

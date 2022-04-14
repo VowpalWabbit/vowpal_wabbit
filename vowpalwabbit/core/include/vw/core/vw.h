@@ -27,11 +27,11 @@
 #endif
 
 #include "compat.h"
-#include "vw/core/global_data.h"
 #include "hashstring.h"
+#include "vw/common/hash.h"
+#include "vw/core/global_data.h"
 #include "vw/core/parser.h"
 #include "vw/core/setup_base.h"
-#include "vw/common/hash.h"
 #include "vw/core/vw_fwd.h"
 
 #include <memory>

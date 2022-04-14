@@ -4,16 +4,16 @@
 
 #include "vw/core/parse_example.h"
 
+#include "vw/common/future_compat.h"
+#include "vw/common/hash.h"
+#include "vw/common/string_view.h"
+#include "vw/common/text_utils.h"
 #include "vw/core/constant.h"
 #include "vw/core/global_data.h"
 #include "vw/core/parse_primitives.h"
 #include "vw/core/parser.h"
 #include "vw/core/shared_data.h"
 #include "vw/core/unique_sort.h"
-#include "vw/common/future_compat.h"
-#include "vw/common/hash.h"
-#include "vw/common/string_view.h"
-#include "vw/common/text_utils.h"
 #include "vw/io/logger.h"
 
 #include <cctype>

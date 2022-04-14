@@ -4,16 +4,16 @@
 
 #include "vw/core/reductions/cb/cbify.h"
 
-#include "vw/core/reductions/cb/cb_algs.h"
+#include "vw/common/hash.h"
+#include "vw/config/options.h"
 #include "vw/core/cb_label_parser.h"
 #include "vw/core/debug_log.h"
 #include "vw/core/prob_dist_cont.h"
+#include "vw/core/reductions/cb/cb_algs.h"
 #include "vw/core/setup_base.h"
 #include "vw/core/shared_data.h"
 #include "vw/core/simple_label_parser.h"
 #include "vw/core/vw.h"
-#include "vw/common/hash.h"
-#include "vw/config/options.h"
 #include "vw/explore/explore.h"
 
 #include <cfloat>

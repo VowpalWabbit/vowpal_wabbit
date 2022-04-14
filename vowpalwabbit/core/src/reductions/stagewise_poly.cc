@@ -4,13 +4,14 @@
 
 #include "vw/core/reductions/stagewise_poly.h"
 
+#include "vw/config/options.h"
 #include "vw/core/accumulate.h"
-#include "vw/core/reductions/gd.h"
 #include "vw/core/label_parser.h"
+#include "vw/core/reductions/gd.h"
 #include "vw/core/setup_base.h"
 #include "vw/core/vw.h"
-#include "vw/config/options.h"
 #include "vw/core/vw_allreduce.h"
+
 #include <cassert>
 #include <cfloat>
 #include <cmath>

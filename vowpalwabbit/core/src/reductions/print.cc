@@ -3,10 +3,10 @@
 // license as described in the file LICENSE.
 #include "vw/core/reductions/print.h"
 
-#include "vw/core/reductions/gd.h"
-#include "vw/core/learner.h"
-#include "vw/core/setup_base.h"
 #include "vw/config/options.h"
+#include "vw/core/learner.h"
+#include "vw/core/reductions/gd.h"
+#include "vw/core/setup_base.h"
 
 #include <cfloat>
 

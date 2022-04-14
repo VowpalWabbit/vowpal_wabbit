@@ -4,6 +4,7 @@
 
 #include "vw/core/reductions/sample_pdf.h"
 
+#include "vw/config/options.h"
 #include "vw/core/api_status.h"
 #include "vw/core/debug_log.h"
 #include "vw/core/error_constants.h"
@@ -11,7 +12,6 @@
 #include "vw/core/guard.h"
 #include "vw/core/rand_state.h"
 #include "vw/core/setup_base.h"
-#include "vw/config/options.h"
 #include "vw/explore/explore.h"
 
 // Aliases

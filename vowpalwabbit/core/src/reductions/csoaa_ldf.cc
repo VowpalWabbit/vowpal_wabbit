@@ -3,18 +3,18 @@
 // license as described in the file LICENSE.
 #include "vw/core/reductions/csoaa_ldf.h"
 
+#include "vw/common/vw_exception.h"
+#include "vw/config/options.h"
 #include "vw/core/constant.h"
 #include "vw/core/correctedMath.h"
-#include "vw/core/reductions/gd.h"  // GD::foreach_feature() needed in subtract_example()
 #include "vw/core/label_dictionary.h"
 #include "vw/core/loss_functions.h"
 #include "vw/core/print_utils.h"
+#include "vw/core/reductions/gd.h"  // GD::foreach_feature() needed in subtract_example()
 #include "vw/core/scope_exit.h"
 #include "vw/core/setup_base.h"
 #include "vw/core/shared_data.h"
 #include "vw/core/vw.h"
-#include "vw/common/vw_exception.h"
-#include "vw/config/options.h"
 #include "vw/io/logger.h"
 
 #include <algorithm>

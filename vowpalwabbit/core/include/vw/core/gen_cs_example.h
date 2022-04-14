@@ -3,9 +3,9 @@
 // license as described in the file LICENSE.
 #pragma once
 #include "reductions/cb/cb_algs.h"
+#include "vw/common/vw_exception.h"
 #include "vw/core/scope_exit.h"
 #include "vw/core/vw.h"
-#include "vw/common/vw_exception.h"
 
 #include <cfloat>
 

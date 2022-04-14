@@ -1,11 +1,11 @@
 #include "vw/core/reduction_stack.h"
 
+#include "vw/config/options.h"
+#include "vw/config/options_name_extractor.h"
 #include "vw/core/cached_learner.h"
 #include "vw/core/global_data.h"  // to get vw struct
 #include "vw/core/learner.h"
 #include "vw/core/simple_label_parser.h"
-#include "vw/config/options.h"
-#include "vw/config/options_name_extractor.h"
 #include "vw/core/vw_fwd.h"
 
 // reductions / setup functions

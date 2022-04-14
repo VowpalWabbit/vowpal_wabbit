@@ -4,6 +4,8 @@
 
 #include "vw/core/cb_continuous_label.h"
 
+#include "vw/common/text_utils.h"
+#include "vw/common/vw_exception.h"
 #include "vw/core/cb_label_parser.h"
 #include "vw/core/debug_print.h"
 #include "vw/core/example.h"
@@ -11,8 +13,6 @@
 #include "vw/core/parse_primitives.h"
 #include "vw/core/text_utils.h"
 #include "vw/core/vw.h"
-#include "vw/common/text_utils.h"
-#include "vw/common/vw_exception.h"
 #include "vw/io/logger.h"
 
 #include <cfloat>

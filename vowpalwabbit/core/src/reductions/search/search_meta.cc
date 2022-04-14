@@ -1,12 +1,13 @@
 // Copyright (c) by respective owners including Yahoo!, Microsoft, and
 // individual contributors. All rights reserved. Released under a BSD (revised)
 // license as described in the file LICENSE.
+#include "vw/core/reductions/search/search_meta.h"
+
+#include "vw/config/options.h"
 #include "vw/core/debug_print.h"
 #include "vw/core/numeric_casts.h"
 #include "vw/core/reductions/search/search.h"
-#include "vw/core/reductions/search/search_meta.h"
 #include "vw/core/vw.h"
-#include "vw/config/options.h"
 
 #include <errno.h>
 #include <float.h>

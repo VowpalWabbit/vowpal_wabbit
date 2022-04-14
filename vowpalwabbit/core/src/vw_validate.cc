@@ -5,8 +5,8 @@
 
 #include "vw/core/global_data.h"
 #include "vw/core/shared_data.h"
-#include "vw/io/logger.h"
 #include "vw/core/vw_versions.h"
+#include "vw/io/logger.h"
 
 namespace VW
 {

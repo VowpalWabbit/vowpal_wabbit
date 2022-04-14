@@ -4,6 +4,7 @@
 
 #include "vw/core/reductions/lrqfa.h"
 
+#include "vw/config/options.h"
 #include "vw/core/example.h"
 #include "vw/core/global_data.h"
 #include "vw/core/learner.h"
@@ -11,7 +12,6 @@
 #include "vw/core/rand48.h"
 #include "vw/core/setup_base.h"
 #include "vw/core/text_utils.h"
-#include "vw/config/options.h"
 
 #include <cfloat>
 #include <string>

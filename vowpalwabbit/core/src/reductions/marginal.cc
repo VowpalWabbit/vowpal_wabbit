@@ -4,6 +4,7 @@
 
 #include "vw/core/reductions/marginal.h"
 
+#include "vw/config/options.h"
 #include "vw/core/correctedMath.h"
 #include "vw/core/example.h"
 #include "vw/core/global_data.h"
@@ -12,7 +13,6 @@
 #include "vw/core/loss_functions.h"
 #include "vw/core/setup_base.h"
 #include "vw/core/text_utils.h"
-#include "vw/config/options.h"
 #include "vw/io/logger.h"
 
 #include <map>

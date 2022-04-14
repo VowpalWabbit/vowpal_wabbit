@@ -3,11 +3,11 @@
 // license as described in the file LICENSE.
 
 #pragma once
+#include "vw/common/future_compat.h"
 #include "vw/core/cache.h"
 #include "vw/core/cb.h"
 #include "vw/core/cb_continuous_label.h"
 #include "vw/core/io_buf.h"
-#include "vw/common/future_compat.h"
 
 #include <cfloat>
 

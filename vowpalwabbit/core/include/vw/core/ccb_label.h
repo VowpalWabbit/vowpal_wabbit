@@ -4,11 +4,11 @@
 
 #pragma once
 
-#include "vw/core/action_score.h"
 #include "ccb_reduction_features.h"
+#include "vw/common/string_view.h"
+#include "vw/core/action_score.h"
 #include "vw/core/label_parser.h"
 #include "vw/core/v_array.h"
-#include "vw/common/string_view.h"
 
 #include <fmt/format.h>
 

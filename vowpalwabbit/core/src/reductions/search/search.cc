@@ -2,9 +2,9 @@
 // individual contributors. All rights reserved. Released under a BSD (revised)
 // license as described in the file LICENSE.
 #include "vw/core/reductions/search/search.h"
-#include "vw/core/reductions/active.h"
-#include "vw/core/reductions/csoaa.h"
-#include "vw/core/reductions/gd.h"  // for GD::foreach_feature
+
+#include "vw/common/text_utils.h"
+#include "vw/common/vw_exception.h"
 #include "vw/core/crossplat_compat.h"
 #include "vw/core/label_dictionary.h"
 #include "vw/core/named_labels.h"
@@ -12,6 +12,9 @@
 #include "vw/core/parse_primitives.h"
 #include "vw/core/parse_regressor.h"
 #include "vw/core/rand48.h"
+#include "vw/core/reductions/active.h"
+#include "vw/core/reductions/csoaa.h"
+#include "vw/core/reductions/gd.h"  // for GD::foreach_feature
 #include "vw/core/reductions/search/search_dep_parser.h"
 #include "vw/core/reductions/search/search_entityrelationtask.h"
 #include "vw/core/reductions/search/search_graph.h"
@@ -22,8 +25,6 @@
 #include "vw/core/setup_base.h"
 #include "vw/core/shared_data.h"
 #include "vw/core/vw.h"
-#include "vw/common/text_utils.h"
-#include "vw/common/vw_exception.h"
 #include "vw/io/logger.h"
 
 #include <float.h>

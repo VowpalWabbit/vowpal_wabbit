@@ -4,8 +4,8 @@
 
 #pragma once
 
-#include "vw/core/parse_primitives.h"
 #include "vw/common/text_utils.h"
+#include "vw/core/parse_primitives.h"
 
 #include <array>
 #include <cstddef>

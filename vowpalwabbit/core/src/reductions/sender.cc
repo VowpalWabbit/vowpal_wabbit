@@ -27,13 +27,13 @@
 #  include <netdb.h>
 #endif
 
+#include "vw/config/options.h"
 #include "vw/core/cache.h"
 #include "vw/core/global_data.h"
 #include "vw/core/io_buf.h"
 #include "vw/core/loss_functions.h"
 #include "vw/core/network.h"
 #include "vw/core/parser.h"
-#include "vw/config/options.h"
 
 using namespace VW::config;
 

@@ -4,15 +4,15 @@
 
 #include "vw/core/reductions/cs_active.h"
 
-#include "vw/core/reductions/csoaa.h"
+#include "vw/common/vw_exception.h"
+#include "vw/config/options.h"
 #include "vw/core/debug_log.h"
 #include "vw/core/loss_functions.h"
 #include "vw/core/rand48.h"
+#include "vw/core/reductions/csoaa.h"
 #include "vw/core/setup_base.h"
 #include "vw/core/shared_data.h"
 #include "vw/core/vw.h"
-#include "vw/common/vw_exception.h"
-#include "vw/config/options.h"
 #include "vw/io/logger.h"
 
 #include <cfloat>

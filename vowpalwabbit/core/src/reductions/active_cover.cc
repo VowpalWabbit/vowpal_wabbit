@@ -4,13 +4,13 @@
 
 #include "vw/core/reductions/active_cover.h"
 
+#include "vw/config/options.h"
 #include "vw/core/numeric_casts.h"
 #include "vw/core/rand48.h"
 #include "vw/core/rand_state.h"
 #include "vw/core/setup_base.h"
 #include "vw/core/shared_data.h"
 #include "vw/core/vw.h"
-#include "vw/config/options.h"
 #include "vw/core/vw_math.h"
 
 #include <cerrno>

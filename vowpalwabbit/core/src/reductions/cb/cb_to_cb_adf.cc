@@ -4,12 +4,12 @@
 
 #include "vw/core/reductions/cb/cb_to_cb_adf.h"
 
+#include "vw/config/options.h"
 #include "vw/core/cb_label_parser.h"
-#include "vw/core/reductions/cb/cbify.h"
 #include "vw/core/learner.h"
+#include "vw/core/reductions/cb/cbify.h"
 #include "vw/core/setup_base.h"
 #include "vw/core/vw.h"
-#include "vw/config/options.h"
 #include "vw/core/vw_versions.h"
 
 using namespace VW::LEARNER;

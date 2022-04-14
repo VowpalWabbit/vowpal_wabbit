@@ -4,22 +4,22 @@
 
 #pragma once
 
-#include "vw/core/action_score.h"
 #include "active_multiclass_prediction.h"
+#include "ccb_label.h"
+#include "decision_scores.h"
+#include "simple_label.h"
+#include "vw/core/action_score.h"
 #include "vw/core/cache.h"
 #include "vw/core/cb.h"
 #include "vw/core/cb_continuous_label.h"
-#include "ccb_label.h"
 #include "vw/core/constant.h"
 #include "vw/core/cost_sensitive.h"
-#include "decision_scores.h"
 #include "vw/core/example_predict.h"
 #include "vw/core/feature_group.h"
 #include "vw/core/multiclass.h"
 #include "vw/core/multilabel.h"
 #include "vw/core/no_label.h"
 #include "vw/core/prob_dist_cont.h"
-#include "simple_label.h"
 #include "vw/core/slates_label.h"
 #include "vw/core/v_array.h"
 

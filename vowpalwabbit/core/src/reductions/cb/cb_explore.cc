@@ -4,19 +4,19 @@
 
 #include "vw/core/reductions/cb/cb_explore.h"
 
-#include "vw/core/reductions/bs.h"
-#include "vw/core/reductions/cb/cb_algs.h"
+#include "vw/config/options.h"
 #include "vw/core/cb_label_parser.h"
 #include "vw/core/debug_log.h"
 #include "vw/core/gen_cs_example.h"
 #include "vw/core/rand48.h"
+#include "vw/core/reductions/bs.h"
+#include "vw/core/reductions/cb/cb_algs.h"
 #include "vw/core/scope_exit.h"
 #include "vw/core/setup_base.h"
 #include "vw/core/shared_data.h"
 #include "vw/core/version.h"
-#include "vw/config/options.h"
-#include "vw/explore/explore.h"
 #include "vw/core/vw_versions.h"
+#include "vw/explore/explore.h"
 
 #include <cfloat>
 #include <memory>

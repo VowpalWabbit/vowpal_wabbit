@@ -4,14 +4,15 @@
 
 #include "vw/core/reductions/audit_regressor.h"
 
-#include <fmt/format.h>
-#include "vw/core/reductions/gd.h"
+#include "vw/config/options.h"
 #include "vw/core/interactions.h"
+#include "vw/core/reductions/gd.h"
 #include "vw/core/setup_base.h"
 #include "vw/core/shared_data.h"
 #include "vw/core/table_formatter.h"
 #include "vw/core/vw.h"
-#include "vw/config/options.h"
+
+#include <fmt/format.h>
 
 #include <string>
 

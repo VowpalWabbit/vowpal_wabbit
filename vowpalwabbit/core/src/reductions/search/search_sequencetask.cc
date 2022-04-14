@@ -3,10 +3,10 @@
 // license as described in the file LICENSE.
 #include "vw/core/reductions/search/search_sequencetask.h"
 
+#include "vw/config/options.h"
 #include "vw/core/memory.h"
 #include "vw/core/numeric_casts.h"
 #include "vw/core/vw.h"
-#include "vw/config/options.h"
 
 using namespace VW::config;
 

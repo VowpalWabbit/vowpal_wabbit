@@ -4,9 +4,9 @@
 
 #pragma once
 
-#include "vw/core/memory.h"
 #include "vw/common/future_compat.h"
 #include "vw/common/vw_exception.h"
+#include "vw/core/memory.h"
 
 #include <cassert>
 #include <ostream>

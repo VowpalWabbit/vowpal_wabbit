@@ -3,11 +3,11 @@
 // license as described in the file LICENSE.
 #include "vw/core/reductions/topk.h"
 
+#include "vw/config/options.h"
 #include "vw/core/learner.h"
 #include "vw/core/setup_base.h"
 #include "vw/core/shared_data.h"
 #include "vw/core/vw.h"
-#include "vw/config/options.h"
 #include "vw/io/logger.h"
 
 #include <cfloat>

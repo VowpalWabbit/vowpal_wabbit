@@ -4,6 +4,12 @@
 
 #include "vw/core/parse_args.h"
 
+#include "vw/common/text_utils.h"
+#include "vw/common/vw_exception.h"
+#include "vw/config/cli_help_formatter.h"
+#include "vw/config/cli_options_serializer.h"
+#include "vw/config/options.h"
+#include "vw/config/options_cli.h"
 #include "vw/core/accumulate.h"
 #include "vw/core/best_constant.h"
 #include "vw/core/constant.h"
@@ -29,18 +35,12 @@
 #include "vw/core/scope_exit.h"
 #include "vw/core/text_utils.h"
 #include "vw/core/vw.h"
-#include "vw/common/text_utils.h"
-#include "vw/common/vw_exception.h"
-#include "vw/config/cli_help_formatter.h"
-#include "vw/config/cli_options_serializer.h"
-#include "vw/config/options.h"
-#include "vw/config/options_cli.h"
+#include "vw/core/vw_allreduce.h"
+#include "vw/core/vw_validate.h"
 #include "vw/io/custom_streambuf.h"
 #include "vw/io/io_adapter.h"
 #include "vw/io/logger.h"
 #include "vw/io/owning_stream.h"
-#include "vw/core/vw_allreduce.h"
-#include "vw/core/vw_validate.h"
 
 #include <sys/stat.h>
 #include <sys/types.h>

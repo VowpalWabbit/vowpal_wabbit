@@ -1,9 +1,9 @@
 #pragma once
 
+#include "vw/common/hash.h"
 #include "vw/core/feature_group.h"
 #include "vw/core/global_data.h"
 #include "vw/core/vw.h"
-#include "vw/common/hash.h"
 
 #include <cstdint>
 #include <string>

@@ -4,6 +4,7 @@
 
 #include "vw/core/reductions/cats_tree.h"
 
+#include "vw/common/hash.h"
 #include "vw/core/debug_log.h"
 #include "vw/core/global_data.h"
 #include "vw/core/guard.h"
@@ -12,7 +13,6 @@
 #include "vw/core/parser.h"
 #include "vw/core/rand48.h"
 #include "vw/core/setup_base.h"
-#include "vw/common/hash.h"
 
 #include <algorithm>
 #include <cassert>

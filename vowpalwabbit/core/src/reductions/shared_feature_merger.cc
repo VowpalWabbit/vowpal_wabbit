@@ -4,6 +4,7 @@
 
 #include "vw/core/reductions/shared_feature_merger.h"
 
+#include "vw/config/options.h"
 #include "vw/core/cb.h"
 #include "vw/core/example.h"
 #include "vw/core/label_dictionary.h"
@@ -11,7 +12,6 @@
 #include "vw/core/scope_exit.h"
 #include "vw/core/setup_base.h"
 #include "vw/core/vw.h"
-#include "vw/config/options.h"
 
 #include <iterator>
 #include <string>

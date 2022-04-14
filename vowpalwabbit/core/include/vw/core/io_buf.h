@@ -4,9 +4,9 @@
 
 #pragma once
 
-#include "vw/core/v_array.h"
 #include "vw/common/hash.h"
 #include "vw/common/string_view.h"
+#include "vw/core/v_array.h"
 #include "vw/io/io_adapter.h"
 
 #include <algorithm>

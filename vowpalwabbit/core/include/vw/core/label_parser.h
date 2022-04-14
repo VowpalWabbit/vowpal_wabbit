@@ -4,8 +4,8 @@
 
 #pragma once
 
-#include "vw/core/label_type.h"
 #include "vw/common/string_view.h"
+#include "vw/core/label_type.h"
 #include "vw/io/logger.h"
 
 #include <string>

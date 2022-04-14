@@ -4,15 +4,15 @@
 
 #include "vw/core/reductions/cbzo.h"
 
-#include "vw/core/reductions/gd.h"
 #include "vw/core/io_buf.h"
 #include "vw/core/parse_regressor.h"
 #include "vw/core/prob_dist_cont.h"
+#include "vw/core/reductions/gd.h"
 #include "vw/core/setup_base.h"
 #include "vw/core/shared_data.h"
 #include "vw/core/vw.h"
-#include "vw/io/logger.h"
 #include "vw/core/vw_math.h"
+#include "vw/io/logger.h"
 
 #include <cfloat>
 #include <random>

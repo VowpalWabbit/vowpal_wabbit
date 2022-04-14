@@ -4,6 +4,8 @@
 
 #include "vw/core/reductions/cb/cb_sample.h"
 
+#include "vw/common/string_view.h"
+#include "vw/config/options.h"
 #include "vw/core/global_data.h"
 #include "vw/core/label_parser.h"
 #include "vw/core/learner.h"
@@ -11,8 +13,6 @@
 #include "vw/core/rand_state.h"
 #include "vw/core/setup_base.h"
 #include "vw/core/tag_utils.h"
-#include "vw/common/string_view.h"
-#include "vw/config/options.h"
 #include "vw/explore/explore.h"
 
 #undef VW_DEBUG_LOG

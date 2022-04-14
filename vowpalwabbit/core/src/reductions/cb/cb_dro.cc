@@ -1,5 +1,6 @@
 #include "vw/core/reductions/cb/cb_dro.h"
 
+#include "vw/config/options.h"
 #include "vw/core/cb.h"
 #include "vw/core/distributionally_robust.h"
 #include "vw/core/example.h"
@@ -8,7 +9,6 @@
 #include "vw/core/learner.h"
 #include "vw/core/rand48.h"
 #include "vw/core/setup_base.h"
-#include "vw/config/options.h"
 #include "vw/explore/explore.h"
 #include "vw/io/logger.h"
 

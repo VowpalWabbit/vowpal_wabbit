@@ -3,15 +3,15 @@
 // license as described in the file LICENSE.
 #include "vw/core/reductions/generate_interactions.h"
 
+#include "vw/config/options.h"
 #include "vw/core/example.h"
 #include "vw/core/global_data.h"
 #include "vw/core/interactions.h"
 #include "vw/core/learner.h"
 #include "vw/core/setup_base.h"
 #include "vw/core/v_array.h"
-#include "vw/config/options.h"
-#include "vw/io/logger.h"
 #include "vw/core/vw_math.h"
+#include "vw/io/logger.h"
 
 #include <algorithm>
 #include <cfloat>

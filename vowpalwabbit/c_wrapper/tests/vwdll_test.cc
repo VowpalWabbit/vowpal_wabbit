@@ -4,9 +4,8 @@
 
 #include "vw/c_wrapper/vwdll.h"
 
-#include "vw/core/vw.h"
 #include "vw/common/string_view.h"
-
+#include "vw/core/vw.h"
 
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
@@ -21,13 +20,10 @@ void check_weights_equal(T& first, T& second)
   auto second_begin = second.begin();
   auto second_end = second.end();
   for (; first_begin != first_end && second_begin != second_end; ++first_begin, ++second_begin)
-  {
-    EXPECT_FLOAT_EQ(*first_begin, *second_begin);
-  }
+  { EXPECT_FLOAT_EQ(*first_begin, *second_begin); }
   EXPECT_EQ(first_begin, first_end);
   EXPECT_EQ(second_begin, second_end);
 }
-
 
 TEST(vwdll_test, vw_dll_parsed_and_constructed_example_parity)
 {

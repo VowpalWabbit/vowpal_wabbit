@@ -3,8 +3,8 @@
 // license as described in the file LICENSE.
 #pragma once
 
-#include "vw/core/label_parser.h"
 #include "simple_label.h"
+#include "vw/core/label_parser.h"
 
 extern VW::label_parser simple_label_parser;
 

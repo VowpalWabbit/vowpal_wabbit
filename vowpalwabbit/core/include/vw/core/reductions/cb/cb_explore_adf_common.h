@@ -14,11 +14,11 @@
 // - templatize all input parameters (con: no type safety)
 #include "vw/core/action_score.h"    // used in sort_action_probs
 #include "vw/core/cb.h"              // required for CB::label
-#include "vw/core/reductions/cb/cb_adf.h"          // used for function call in predict/learn
 #include "vw/core/example.h"         // used in predict
 #include "vw/core/gen_cs_example.h"  // required for GEN_CS::cb_to_cs_adf
 #include "vw/core/metric_sink.h"
 #include "vw/core/print_utils.h"
+#include "vw/core/reductions/cb/cb_adf.h"  // used for function call in predict/learn
 #include "vw/core/shared_data.h"
 #include "vw/core/v_array.h"  // required by action_score.h
 #include "vw/core/vw_fwd.h"

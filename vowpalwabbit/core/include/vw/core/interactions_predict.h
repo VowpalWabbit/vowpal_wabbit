@@ -3,11 +3,11 @@
 // license as described in the file LICENSE.
 #pragma once
 
+#include "object_pool.h"
+#include "vw/common/vw_exception.h"
 #include "vw/core/constant.h"
 #include "vw/core/example_predict.h"
 #include "vw/core/feature_group.h"
-#include "object_pool.h"
-#include "vw/common/vw_exception.h"
 
 #include <cstdint>
 #include <stack>

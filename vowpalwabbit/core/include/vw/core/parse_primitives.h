@@ -5,9 +5,9 @@
 
 #include "fast_pow10.h"
 #include "hashstring.h"
-#include "vw/core/v_array.h"
 #include "vw/common/future_compat.h"
 #include "vw/common/string_view.h"
+#include "vw/core/v_array.h"
 #include "vw/io/logger.h"
 
 #include <cmath>

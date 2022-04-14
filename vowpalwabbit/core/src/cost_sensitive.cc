@@ -2,6 +2,9 @@
 // individual contributors. All rights reserved. Released under a BSD (revised)
 // license as described in the file LICENSE.
 
+#include "vw/common/string_view.h"
+#include "vw/common/text_utils.h"
+#include "vw/common/vw_exception.h"
 #include "vw/core/example.h"
 #include "vw/core/model_utils.h"
 #include "vw/core/named_labels.h"
@@ -9,9 +12,6 @@
 #include "vw/core/reductions/gd.h"
 #include "vw/core/shared_data.h"
 #include "vw/core/vw.h"
-#include "vw/common/string_view.h"
-#include "vw/common/text_utils.h"
-#include "vw/common/vw_exception.h"
 #include "vw/io/logger.h"
 
 #include <cfloat>

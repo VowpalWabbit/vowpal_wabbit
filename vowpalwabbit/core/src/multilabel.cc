@@ -2,14 +2,14 @@
 // individual contributors. All rights reserved. Released under a BSD (revised)
 // license as described in the file LICENSE.
 
+#include "vw/common/text_utils.h"
 #include "vw/core/example.h"
 #include "vw/core/model_utils.h"
 #include "vw/core/parse_primitives.h"
 #include "vw/core/shared_data.h"
 #include "vw/core/vw.h"
-#include "vw/common/text_utils.h"
-#include "vw/io/logger.h"
 #include "vw/core/vw_string_view_fmt.h"
+#include "vw/io/logger.h"
 
 #include <cfloat>
 // needed for printing ranges of objects (eg: all elements of a vector)

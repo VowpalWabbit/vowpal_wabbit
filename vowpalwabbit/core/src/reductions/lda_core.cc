@@ -4,9 +4,9 @@
 
 #include "vw/core/reductions/lda_core.h"
 
+#include "vw/common/future_compat.h"
 #include "vw/core/crossplat_compat.h"
 #include "vw/core/setup_base.h"
-#include "vw/common/future_compat.h"
 
 VW_WARNING_DISABLE_DEPRECATED_USAGE
 
@@ -16,19 +16,19 @@ VW_WARNING_DISABLE_UNUSED_PARAM
 #include <boost/math/special_functions/gamma.hpp>
 VW_WARNING_STATE_POP
 
+#include "vw/common/vw_exception.h"
 #include "vw/core/array_parameters.h"
 #include "vw/core/correctedMath.h"
-#include "vw/core/reductions/gd.h"
-#include "vw/core/reductions/mwt.h"
 #include "vw/core/no_label.h"
 #include "vw/core/numeric_casts.h"
 #include "vw/core/parse_regressor.h"
 #include "vw/core/rand48.h"
+#include "vw/core/reductions/gd.h"
+#include "vw/core/reductions/mwt.h"
 #include "vw/core/shared_data.h"
 #include "vw/core/vw.h"
-#include "vw/common/vw_exception.h"
-#include "vw/io/logger.h"
 #include "vw/core/vw_versions.h"
+#include "vw/io/logger.h"
 
 #include <algorithm>
 #include <cassert>

@@ -4,6 +4,8 @@
 
 #include "vw/core/reductions/count_label.h"
 
+#include "vw/common/future_compat.h"
+#include "vw/config/options.h"
 #include "vw/core/best_constant.h"
 #include "vw/core/example.h"
 #include "vw/core/global_data.h"
@@ -11,8 +13,6 @@
 #include "vw/core/memory.h"
 #include "vw/core/parser.h"
 #include "vw/core/setup_base.h"
-#include "vw/common/future_compat.h"
-#include "vw/config/options.h"
 #include "vw/io/logger.h"
 
 namespace

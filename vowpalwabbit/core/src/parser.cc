@@ -56,6 +56,7 @@ int VW_getpid() { return (int)::GetCurrentProcessId(); }
 #  include <netinet/in.h>
 #endif
 
+#include "vw/common/vw_exception.h"
 #include "vw/core/cache.h"
 #include "vw/core/constant.h"
 #include "vw/core/interactions.h"
@@ -66,7 +67,6 @@ int VW_getpid() { return (int)::GetCurrentProcessId(); }
 #include "vw/core/parse_primitives.h"
 #include "vw/core/unique_sort.h"
 #include "vw/core/vw.h"
-#include "vw/common/vw_exception.h"
 #include "vw/io/io_adapter.h"
 
 #include <cassert>

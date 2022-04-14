@@ -4,8 +4,8 @@
 
 #include "vw/core/gen_cs_example.h"
 
-#include "vw/core/vw.h"
 #include "vw/common/vw_exception.h"
+#include "vw/core/vw.h"
 #include "vw/io/logger.h"
 
 #include <cfloat>

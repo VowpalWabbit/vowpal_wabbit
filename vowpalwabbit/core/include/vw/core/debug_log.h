@@ -4,8 +4,8 @@
 
 #pragma once
 
-#include "vw/core/debug_print.h"
 #include "vw/common/future_compat.h"
+#include "vw/core/debug_print.h"
 
 struct vw_dbg
 {

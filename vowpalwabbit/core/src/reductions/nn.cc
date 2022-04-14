@@ -4,16 +4,16 @@
 
 #include "vw/core/reductions/nn.h"
 
-#include "vw/core/reductions/gd.h"
+#include "vw/config/options.h"
 #include "vw/core/guard.h"
 #include "vw/core/loss_functions.h"
 #include "vw/core/named_labels.h"
 #include "vw/core/rand48.h"
 #include "vw/core/rand_state.h"
+#include "vw/core/reductions/gd.h"
 #include "vw/core/setup_base.h"
 #include "vw/core/shared_data.h"
 #include "vw/core/vw.h"
-#include "vw/config/options.h"
 #include "vw/io/logger.h"
 
 #include <cfloat>

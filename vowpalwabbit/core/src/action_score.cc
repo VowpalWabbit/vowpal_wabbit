@@ -4,11 +4,11 @@
 
 #include "vw/core/action_score.h"
 
+#include "vw/common/string_view.h"
 #include "vw/core/global_data.h"
 #include "vw/core/io_buf.h"
 #include "vw/core/text_utils.h"
 #include "vw/core/v_array.h"
-#include "vw/common/string_view.h"
 #include "vw/io/logger.h"
 
 namespace ACTION_SCORE

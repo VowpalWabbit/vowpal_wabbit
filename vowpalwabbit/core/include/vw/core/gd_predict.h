@@ -3,9 +3,9 @@
 // license as described in the file LICENSE.
 #pragma once
 
+#include "interactions_predict.h"
 #include "vw/core/debug_log.h"
 #include "vw/core/example_predict.h"
-#include "interactions_predict.h"
 #include "vw/core/v_array.h"
 
 #undef VW_DEBUG_LOG

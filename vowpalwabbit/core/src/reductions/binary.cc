@@ -4,11 +4,11 @@
 
 #include "vw/core/reductions/binary.h"
 
+#include "vw/config/options.h"
 #include "vw/core/debug_log.h"
 #include "vw/core/global_data.h"
 #include "vw/core/learner.h"
 #include "vw/core/setup_base.h"
-#include "vw/config/options.h"
 
 #include <cfloat>
 #include <cmath>

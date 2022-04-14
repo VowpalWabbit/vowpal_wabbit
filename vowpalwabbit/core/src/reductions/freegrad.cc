@@ -5,13 +5,13 @@
 #include "vw/core/reductions/freegrad.h"
 
 #include "vw/core/crossplat_compat.h"
-#include "vw/core/reductions/gd.h"
 #include "vw/core/global_data.h"
 #include "vw/core/learner.h"
 #include "vw/core/loss_functions.h"
 #include "vw/core/memory.h"
 #include "vw/core/parse_regressor.h"
 #include "vw/core/parser.h"
+#include "vw/core/reductions/gd.h"
 #include "vw/core/setup_base.h"
 #include "vw/core/shared_data.h"
 

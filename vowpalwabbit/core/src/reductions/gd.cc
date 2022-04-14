@@ -24,9 +24,9 @@
 
 #include "vw/core/accumulate.h"
 #include "vw/core/debug_log.h"
-#include "vw/core/reductions/gd.h"
 #include "vw/core/label_parser.h"
 #include "vw/core/parse_regressor.h"
+#include "vw/core/reductions/gd.h"
 #include "vw/core/shared_data.h"
 #include "vw/core/vw.h"
 #include "vw/core/vw_versions.h"

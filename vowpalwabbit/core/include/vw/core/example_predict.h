@@ -3,11 +3,11 @@
 // license as described in the file LICENSE.
 #pragma once
 
+#include "vw/common/future_compat.h"
 #include "vw/core/constant.h"
 #include "vw/core/feature_group.h"
 #include "vw/core/reduction_features.h"
 #include "vw/core/v_array.h"
-#include "vw/common/future_compat.h"
 
 #include <array>
 #include <set>

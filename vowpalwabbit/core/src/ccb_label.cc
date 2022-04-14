@@ -2,6 +2,8 @@
 // individual contributors. All rights reserved. Released under a BSD (revised)
 // license as described in the file LICENSE.
 
+#include "vw/common/string_view.h"
+#include "vw/common/text_utils.h"
 #include "vw/core/cache.h"
 #include "vw/core/constant.h"
 #include "vw/core/example.h"
@@ -16,10 +18,8 @@
 #include "vw/core/reductions/cb/cb_algs.h"
 #include "vw/core/reductions/conditional_contextual_bandit.h"
 #include "vw/core/vw.h"
-#include "vw/common/string_view.h"
-#include "vw/common/text_utils.h"
-#include "vw/io/logger.h"
 #include "vw/core/vw_math.h"
+#include "vw/io/logger.h"
 
 #include <algorithm>
 #include <cmath>

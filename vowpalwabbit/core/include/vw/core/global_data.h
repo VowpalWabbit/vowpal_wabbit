@@ -3,15 +3,15 @@
 // license as described in the file LICENSE.
 #pragma once
 
+#include "vw/common/future_compat.h"
+#include "vw/common/string_view.h"
 #include "vw/core/array_parameters.h"
 #include "vw/core/constant.h"
 #include "vw/core/error_reporting.h"
 #include "vw/core/interactions_predict.h"
 #include "vw/core/version.h"
-#include "vw/common/future_compat.h"
-#include "vw/common/string_view.h"
-#include "vw/io/logger.h"
 #include "vw/core/vw_fwd.h"
+#include "vw/io/logger.h"
 
 #include <array>
 #include <cfloat>

@@ -4,11 +4,11 @@
 
 #pragma once
 
+#include "vw/common/future_compat.h"
 #include "vw/core/label_parser.h"
 #include "vw/core/parse_example.h"
 #include "vw/core/parser.h"
 #include "vw/core/v_array.h"
-#include "vw/common/future_compat.h"
 
 #include <cfloat>
 #include <cstring>
@@ -39,13 +39,13 @@ VW_WARNING_STATE_POP
 #  pragma managed(pop)
 #endif
 
-#include "vw/core/best_constant.h"
-#include "vw/core/cb.h"
-#include "vw/core/cb_continuous_label.h"
 #include "json_utils.h"
 #include "parse_slates_example_json.h"
 #include "reductions/conditional_contextual_bandit.h"
 #include "vw/common/string_view.h"
+#include "vw/core/best_constant.h"
+#include "vw/core/cb.h"
+#include "vw/core/cb_continuous_label.h"
 
 #include <algorithm>
 #include <limits>

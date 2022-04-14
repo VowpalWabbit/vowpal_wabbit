@@ -4,13 +4,13 @@
 
 #include "vw/core/reductions/cb/cb_algs.h"
 
+#include "vw/common/vw_exception.h"
+#include "vw/config/options.h"
 #include "vw/core/cb_label_parser.h"
 #include "vw/core/gen_cs_example.h"
 #include "vw/core/setup_base.h"
 #include "vw/core/shared_data.h"
 #include "vw/core/vw.h"
-#include "vw/common/vw_exception.h"
-#include "vw/config/options.h"
 #include "vw/io/logger.h"
 
 #include <cfloat>

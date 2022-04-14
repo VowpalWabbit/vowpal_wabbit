@@ -4,16 +4,16 @@
 
 #include "vw/core/reductions/interaction_ground.h"
 
-#include "vw/core/reductions/cb/cb_adf.h"
-#include "vw/core/reductions/cb/cb_algs.h"
+#include "vw/common/vw_exception.h"
+#include "vw/config/options.h"
 #include "vw/core/label_dictionary.h"
 #include "vw/core/label_parser.h"
 #include "vw/core/prediction_type.h"
+#include "vw/core/reductions/cb/cb_adf.h"
+#include "vw/core/reductions/cb/cb_algs.h"
 #include "vw/core/setup_base.h"
 #include "vw/core/shared_data.h"
 #include "vw/core/vw.h"
-#include "vw/common/vw_exception.h"
-#include "vw/config/options.h"
 
 using namespace VW::LEARNER;
 using namespace VW::config;

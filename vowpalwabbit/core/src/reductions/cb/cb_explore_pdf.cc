@@ -4,12 +4,12 @@
 
 #include "vw/core/reductions/cb/cb_explore_pdf.h"
 
+#include "vw/config/options.h"
 #include "vw/core/api_status.h"
 #include "vw/core/debug_log.h"
 #include "vw/core/error_constants.h"
 #include "vw/core/global_data.h"
 #include "vw/core/setup_base.h"
-#include "vw/config/options.h"
 
 // Aliases
 using std::endl;

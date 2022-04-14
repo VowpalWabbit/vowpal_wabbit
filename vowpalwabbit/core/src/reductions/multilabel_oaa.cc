@@ -4,13 +4,13 @@
 
 #include "vw/core/reductions/multilabel_oaa.h"
 
+#include "vw/config/options.h"
 #include "vw/core/loss_functions.h"
 #include "vw/core/named_labels.h"
 #include "vw/core/numeric_casts.h"
 #include "vw/core/setup_base.h"
 #include "vw/core/shared_data.h"
 #include "vw/core/vw.h"
-#include "vw/config/options.h"
 #include "vw/io/logger.h"
 
 #include <cfloat>

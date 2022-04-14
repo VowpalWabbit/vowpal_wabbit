@@ -4,12 +4,12 @@
 
 #include "vw/core/reductions/mf.h"
 
-#include "vw/core/reductions/gd.h"
+#include "vw/config/options.h"
 #include "vw/core/learner.h"
 #include "vw/core/numeric_casts.h"
+#include "vw/core/reductions/gd.h"
 #include "vw/core/scope_exit.h"
 #include "vw/core/setup_base.h"
-#include "vw/config/options.h"
 
 using namespace VW::LEARNER;
 using namespace VW::config;

@@ -4,15 +4,16 @@
 
 #include "vw/core/reductions/confidence.h"
 
+#include "vw/config/options.h"
 #include "vw/core/example.h"
 #include "vw/core/global_data.h"
 #include "vw/core/learner.h"
-#include <math.h>
 #include "vw/core/setup_base.h"
 #include "vw/core/shared_data.h"
 #include "vw/core/vw.h"
-#include "vw/config/options.h"
 #include "vw/io/logger.h"
+
+#include <math.h>
 
 #include <cfloat>
 

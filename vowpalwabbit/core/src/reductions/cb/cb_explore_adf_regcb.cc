@@ -4,19 +4,19 @@
 
 #include "vw/core/reductions/cb/cb_explore_adf_regcb.h"
 
+#include "vw/config/options.h"
 #include "vw/core/action_score.h"
 #include "vw/core/cb.h"
-#include "vw/core/reductions/cb/cb_adf.h"
-#include "vw/core/reductions/cb/cb_explore.h"
 #include "vw/core/gen_cs_example.h"
 #include "vw/core/label_parser.h"
 #include "vw/core/rand48.h"
+#include "vw/core/reductions/cb/cb_adf.h"
+#include "vw/core/reductions/cb/cb_explore.h"
 #include "vw/core/setup_base.h"
 #include "vw/core/version.h"
-#include "vw/config/options.h"
+#include "vw/core/vw_versions.h"
 #include "vw/explore/explore.h"
 #include "vw/io/logger.h"
-#include "vw/core/vw_versions.h"
 
 #include <algorithm>
 #include <cfloat>

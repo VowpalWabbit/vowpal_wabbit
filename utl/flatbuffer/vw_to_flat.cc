@@ -4,13 +4,13 @@
 
 #include "vw_to_flat.h"
 
-#include "reductions/cb/cb_algs.h"
 #include "vw/common/hash.h"
 #include "vw/common/vw_exception.h"
 #include "vw/core/accumulate.h"
 #include "vw/core/best_constant.h"
 #include "vw/core/parse_args.h"
 #include "vw/core/parse_regressor.h"
+#include "vw/core/reductions/cb/cb_algs.h"
 #include "vw/core/shared_data.h"
 
 #include <sys/timeb.h>

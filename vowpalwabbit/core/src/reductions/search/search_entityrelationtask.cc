@@ -3,9 +3,9 @@
 // license as described in the file LICENSE.
 #include "vw/core/reductions/search/search_entityrelationtask.h"
 
+#include "vw/config/options.h"
 #include "vw/core/numeric_casts.h"
 #include "vw/core/vw.h"
-#include "vw/config/options.h"
 #include "vw/io/logger.h"
 
 using namespace VW::config;

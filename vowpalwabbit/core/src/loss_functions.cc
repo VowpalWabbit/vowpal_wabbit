@@ -4,10 +4,10 @@
 
 #include "vw/core/loss_functions.h"
 
+#include "vw/common/vw_exception.h"
 #include "vw/core/correctedMath.h"
 #include "vw/core/global_data.h"
 #include "vw/core/shared_data.h"
-#include "vw/common/vw_exception.h"
 #include "vw/io/logger.h"
 
 #include <cfloat>

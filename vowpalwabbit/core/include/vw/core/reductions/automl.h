@@ -3,6 +3,7 @@
 // license as described in the file LICENSE.
 #pragma once
 
+#include "vw/common/string_view.h"
 #include "vw/core/action_score.h"
 #include "vw/core/array_parameters_dense.h"
 #include "vw/core/distributionally_robust.h"
@@ -10,7 +11,6 @@
 #include "vw/core/metric_sink.h"
 #include "vw/core/rand_state.h"
 #include "vw/core/scored_config.h"
-#include "vw/common/string_view.h"
 #include "vw/core/vw_fwd.h"
 
 #include <fmt/format.h>

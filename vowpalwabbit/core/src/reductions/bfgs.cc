@@ -18,14 +18,14 @@ Implementation by Miro Dudik.
 #ifndef _WIN32
 #  include <netdb.h>
 #endif
+#include "vw/common/vw_exception.h"
 #include "vw/core/accumulate.h"
-#include "vw/core/reductions/gd.h"
 #include "vw/core/loss_functions.h"
 #include "vw/core/parse_regressor.h"
 #include "vw/core/parser.h"
 #include "vw/core/prediction_type.h"
+#include "vw/core/reductions/gd.h"
 #include "vw/core/shared_data.h"
-#include "vw/common/vw_exception.h"
 
 #include <sys/timeb.h>
 

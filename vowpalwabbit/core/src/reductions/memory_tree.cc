@@ -4,6 +4,8 @@
 
 #include "vw/core/reductions/memory_tree.h"
 
+#include "vw/common/future_compat.h"
+#include "vw/config/options.h"
 #include "vw/core/example.h"
 #include "vw/core/numeric_casts.h"
 #include "vw/core/rand48.h"
@@ -11,8 +13,6 @@
 #include "vw/core/setup_base.h"
 #include "vw/core/v_array.h"
 #include "vw/core/vw.h"
-#include "vw/common/future_compat.h"
-#include "vw/config/options.h"
 #include "vw/io/logger.h"
 
 #include <algorithm>

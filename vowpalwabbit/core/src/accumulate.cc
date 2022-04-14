@@ -10,6 +10,7 @@ Alekh Agarwal and John Langford, with help Olivier Chapelle.
 #include "vw/core/crossplat_compat.h"
 #include "vw/core/global_data.h"
 #include "vw/core/vw_allreduce.h"
+
 #include <cmath>
 #include <cstdint>
 #include <iostream>

@@ -4,12 +4,12 @@
 
 #pragma once
 
-#include "vw/core/reductions/baseline.h"
 #include "vw/core/cb.h"
 #include "vw/core/cb_type.h"
 #include "vw/core/example.h"
 #include "vw/core/guard.h"
 #include "vw/core/learner.h"
+#include "vw/core/reductions/baseline.h"
 
 #include <cfloat>
 

@@ -3,9 +3,9 @@
 // license as described in the file LICENSE.
 
 #pragma once
+#include "vw/config/options.h"
 #include "vw/core/api_status.h"
 #include "vw/core/learner.h"
-#include "vw/config/options.h"
 
 namespace VW
 {

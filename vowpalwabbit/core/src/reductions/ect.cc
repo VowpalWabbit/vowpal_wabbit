@@ -8,11 +8,11 @@
 
 #include "vw/core/reductions/ect.h"
 
+#include "vw/config/options.h"
 #include "vw/core/global_data.h"
 #include "vw/core/learner.h"
 #include "vw/core/parser.h"
 #include "vw/core/setup_base.h"
-#include "vw/config/options.h"
 #include "vw/io/logger.h"
 
 #include <fmt/core.h>
