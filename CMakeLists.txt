@@ -156,7 +156,7 @@ if(FORCE_COLORED_OUTPUT)
   endif()
 endif()
 
-if(WIN32 AND (STATIC_LINK_VW OR BUILD_JAVA))
+if(WIN32 AND (STATIC_LINK_VW OR BUILD_JAVA OR VW_GOV))
   message(FATAL_ERROR "Unsupported option enabled on Windows build")
 endif()
 
