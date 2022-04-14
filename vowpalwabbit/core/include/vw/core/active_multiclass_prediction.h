@@ -5,6 +5,7 @@
 
 #include "vw/core/constant.h"
 #include "vw/core/vw_fwd.h"
+#include "vw/core/v_array.h"
 
 #include <cstdint>
 #include <sstream>
