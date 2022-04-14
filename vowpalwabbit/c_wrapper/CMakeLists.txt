@@ -6,8 +6,7 @@ endif()
 vw_add_library(
     NAME "c_wrapper"
     TYPE ${lib_type}
-    SOURCES include/vw/c_wrapper/vwdll.h src/vwdll.cc
-    PUBLIC_DEPS vw_common
+    SOURCES include/vw/c_wrapper/vwdll.h include/vw/c_wrapper/vwvis.h src/vwdll.cc
     PRIVATE_DEPS vw_core
     ENABLE_INSTALL
 )
@@ -21,3 +20,16 @@ vw_add_test_executable(
   EXTRA_DEPS vw_core
 )
 windows_set_path(vw_c_wrapper_test vw_c_wrapper)
+
+# Also for compat install to old location.
+if(VW_INSTALL)
+  configure_file(${CMAKE_CURRENT_LIST_DIR}/include/vw/c_wrapper/vwdll.h ${CMAKE_CURRENT_BINARY_DIR}/vwdll.h)
+  file(APPEND ${CMAKE_CURRENT_BINARY_DIR}/vwdll.h "#pragma warning \"This header location is deprecated and will be removed in a future release. Please use vw/c_wrapper/vwdll.h\"\n")
+  install(
+    FILES
+      ${CMAKE_CURRENT_BINARY_DIR}/vwdll.h
+      ${CMAKE_CURRENT_LIST_DIR}/include/vw/c_wrapper/vwvis.h
+    DESTINATION
+      ${CMAKE_INSTALL_INCLUDEDIR}/vowpalwabbit/
+  )
+endif()

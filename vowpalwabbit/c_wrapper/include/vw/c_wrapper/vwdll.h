@@ -16,7 +16,7 @@
 
 #include "stddef.h"
 #include "stdint.h"
-#include "vw/common/vwvis.h"
+#include "vwvis.h"
 
 #ifdef MS_CONV
 #  define VW_CALLING_CONV __stdcall
