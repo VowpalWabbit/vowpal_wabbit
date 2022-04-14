@@ -326,10 +326,12 @@ set(vw_core_sources
   src/vw_validate.cc
 )
 
-set(ENABLE_INSTALL_OPTION "")
+# Installation is disabled for external parser because it would break the contract of include dirs and this project cant enforce it.
+# TODO: Remove external parser as an internal concept so that external parser just uses vw as a lib.
+set(ENABLE_INSTALL_OPTION "ENABLE_INSTALL")
 if(BUILD_EXTERNAL_PARSER)
   set(vw_all_sources ${vw_all_sources} ${external_parser_sources})
-  set(ENABLE_INSTALL_OPTION "ENABLE_INSTALL")
+  set(ENABLE_INSTALL_OPTION "")
 endif()
 
 if(BUILD_EXTERNAL_PARSER)
