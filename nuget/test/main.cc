@@ -1,4 +1,4 @@
-#include "vowpalwabbit/vw.h"
+#include "vw/core/vw.h"
 
 int main()
 {
