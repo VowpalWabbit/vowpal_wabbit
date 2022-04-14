@@ -240,7 +240,7 @@ void output_example(
       if (cl.x < min) { min = cl.x; }
     }
     if (chosen_loss == FLT_MAX)
-    { all.logger.err_warn("csoaa predicted an invalid class. Are all multi-class labels in the {1..k} range?"); }
+    { all.logger.err_warn("csoaa predicted an invalid class. Are all multi-class labels in the {{1..k}} range?"); }
 
     loss = (chosen_loss - min) * ec.weight;
     // TODO(alberto): add option somewhere to allow using absolute loss instead?
