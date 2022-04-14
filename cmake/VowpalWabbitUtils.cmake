@@ -160,6 +160,7 @@ function(vw_add_library)
 
     if(VW_GCOV)
       target_compile_options(${FULL_LIB_NAME} PRIVATE -fprofile-arcs -ftest-coverage)
+      target_link_libraries(${FULL_LIB_NAME} PRIVATE gcov)
     endif()
   endif()
 
@@ -216,6 +217,7 @@ function(vw_add_executable)
   endif()
 
   if(VW_GCOV)
+    target_compile_options(${FULL_BIN_NAME} PRIVATE -fprofile-arcs -ftest-coverage)
     target_link_libraries(${FULL_BIN_NAME} PRIVATE gcov)
   endif()
 
