@@ -2,13 +2,13 @@
 // individual contributors. All rights reserved. Released under a BSD (revised)
 // license as described in the file LICENSE.
 
-#include "tag_utils.h"
+#include "vw/core/tag_utils.h"
 
-#include "example.h"
-#include "memory.h"
 #include "test_common.h"
-#include "vw.h"
 #include "vw/config/options_cli.h"
+#include "vw/core/example.h"
+#include "vw/core/memory.h"
+#include "vw/core/vw.h"
 
 #include <boost/test/test_tools.hpp>
 #include <boost/test/unit_test.hpp>

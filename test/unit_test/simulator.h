@@ -4,16 +4,15 @@
 
 #pragma once
 
-#include <boost/test/unit_test.hpp>
-#include <boost/test/test_tools.hpp>
-
 #include "test_common.h"
-#include "rand_state.h"
+#include "vw/core/rand_state.h"
 
+#include <boost/test/test_tools.hpp>
+#include <boost/test/unit_test.hpp>
 #include <functional>
 #include <map>
-#include <vector>
 #include <string>
+#include <vector>
 
 namespace VW
 {

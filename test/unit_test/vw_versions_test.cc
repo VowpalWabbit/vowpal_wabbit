@@ -2,10 +2,10 @@
 // individual contributors. All rights reserved. Released under a BSD (revised)
 // license as described in the file LICENSE.
 
-#include "vw_versions.h"
+#include "vw/core/vw_versions.h"
 
-#include "global_data.h"
-#include "version.h"
+#include "vw/core/global_data.h"
+#include "vw/core/version.h"
 #include "vw/io/logger.h"
 
 #include <boost/test/test_tools.hpp>

@@ -2,11 +2,13 @@
 // individual contributors. All rights reserved. Released under a BSD (revised)
 // license as described in the file LICENSE.
 
-#include "vw.h"
 #include "simulator.h"
 
-#include <numeric>
+#include "vw/core/vw.h"
+
 #include <fmt/format.h>
+
+#include <numeric>
 
 namespace simulator
 {

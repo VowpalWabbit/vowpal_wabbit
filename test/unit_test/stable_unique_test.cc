@@ -2,12 +2,11 @@
 // individual contributors. All rights reserved. Released under a BSD (revised)
 // license as described in the file LICENSE.
 
-#include <boost/test/unit_test.hpp>
+#include "vw/core/stable_unique.h"
+
 #include <boost/test/test_tools.hpp>
-
+#include <boost/test/unit_test.hpp>
 #include <vector>
-
-#include "stable_unique.h"
 
 BOOST_AUTO_TEST_CASE(stable_unique_sorted)
 {

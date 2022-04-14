@@ -9,16 +9,16 @@
 #  include <arpa/inet.h>
 #  include <sys/socket.h>
 #endif
-#include "accumulate.h"
-#include "best_constant.h"
-#include "global_data.h"
-#include "memory.h"
-#include "parse_args.h"
-#include "parse_regressor.h"
-#include "vw.h"
 #include "vw/common/vw_exception.h"
 #include "vw/config/options.h"
 #include "vw/config/options_cli.h"
+#include "vw/core/accumulate.h"
+#include "vw/core/best_constant.h"
+#include "vw/core/global_data.h"
+#include "vw/core/memory.h"
+#include "vw/core/parse_args.h"
+#include "vw/core/parse_regressor.h"
+#include "vw/core/vw.h"
 
 #include <sys/timeb.h>
 

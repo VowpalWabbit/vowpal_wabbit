@@ -2,14 +2,14 @@
 // individual contributors. All rights reserved. Released under a BSD (revised)
 // license as described in the file LICENSE.
 
-#include "action_score.h"
-#include "best_constant.h"
-#include "cb.h"
-#include "constant.h"
-#include "example.h"
-#include "global_data.h"
-#include "named_labels.h"
-#include "slates_label.h"
+#include "vw/core/action_score.h"
+#include "vw/core/best_constant.h"
+#include "vw/core/cb.h"
+#include "vw/core/constant.h"
+#include "vw/core/example.h"
+#include "vw/core/global_data.h"
+#include "vw/core/named_labels.h"
+#include "vw/core/slates_label.h"
 #include "vw/fb_parser/parse_example_flatbuffer.h"
 
 #include <cfloat>

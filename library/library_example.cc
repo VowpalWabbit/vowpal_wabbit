@@ -1,6 +1,7 @@
+#include "vw/core/parser.h"
+#include "vw/core/vw.h"
+
 #include <stdio.h>
-#include "../vowpalwabbit/parser.h"
-#include "../vowpalwabbit/vw.h"
 
 inline feature vw_feature_from_string(VW::workspace& v, std::string fstr, unsigned long seed, float val)
 { auto foo = VW::hash_feature(v, fstr, seed);

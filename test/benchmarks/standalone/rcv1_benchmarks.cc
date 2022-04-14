@@ -1,11 +1,11 @@
+#include "../benchmarks_common.h"
+#include "vw/core/vw.h"
+
 #include <benchmark/benchmark.h>
 
-#include <string>
-#include <iostream>
 #include <fstream>
-
-#include "vw.h"
-#include "../benchmarks_common.h"
+#include <iostream>
+#include <string>
 
 static void benchmark_rcv1_dataset(benchmark::State& state, std::string command_line)
 {

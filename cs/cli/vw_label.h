@@ -4,12 +4,12 @@
 
 #pragma once
 
-#include "vw.h"
+#include "vw/core/best_constant.h"
+#include "vw/core/cb.h"
+#include "vw/core/constant.h"
+#include "vw/core/multiclass.h"
+#include "vw/core/vw.h"
 #include "vw_clr.h"
-#include "cb.h"
-#include "best_constant.h"
-#include "constant.h"
-#include "multiclass.h"
 
 namespace VW
 {

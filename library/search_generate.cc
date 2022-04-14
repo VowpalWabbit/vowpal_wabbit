@@ -1,11 +1,13 @@
+#include "libsearch.h"
+#include "vw/core/vw.h"
+
 #include <stdio.h>
-#include <stdlib.h> // for system
-#include <iostream>
+#include <stdlib.h>  // for system
+
 #include <fstream>
+#include <iostream>
 #include <string>
 #include <vector>
-#include "../vowpalwabbit/vw.h"
-#include "libsearch.h"
 
 using std::cerr;
 using std::endl;

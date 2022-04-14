@@ -2,7 +2,7 @@ vw_add_executable(
     NAME "cli"
     OVERRIDE_BIN_NAME "vw"
     SOURCES "src/main.cc"
-    DEPS VowpalWabbit::vw
+    DEPS vw_core
     ENABLE_INSTALL
 )
 

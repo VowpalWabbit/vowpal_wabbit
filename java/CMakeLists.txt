@@ -40,7 +40,7 @@ set(vw_jni_sources
 )
 
 add_library(vw_jni SHARED ${vw_jni_headers} ${vw_jni_sources})
-target_link_libraries(vw_jni PUBLIC VowpalWabbit::vw vw_spanning_tree)
+target_link_libraries(vw_jni PUBLIC vw_core vw_spanning_tree)
 set_property(TARGET vw_jni PROPERTY POSITION_INDEPENDENT_CODE ON)
 set_property(TARGET vw_jni PROPERTY BUILD_RPATH_USE_ORIGIN ON)
 target_include_directories(vw_jni PUBLIC

@@ -2,13 +2,13 @@
 // individual contributors. All rights reserved. Released under a BSD (revised)
 // license as described in the file LICENSE.
 
-#include "loss_functions.h"
+#include "vw/core/loss_functions.h"
+
+#include "test_common.h"
+#include "vw/core/named_labels.h"
 
 #include <boost/test/test_tools.hpp>
 #include <boost/test/unit_test.hpp>
-
-#include "named_labels.h"
-#include "test_common.h"
 
 BOOST_AUTO_TEST_CASE(squared_loss_test)
 {

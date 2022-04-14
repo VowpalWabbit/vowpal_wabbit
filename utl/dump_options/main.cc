@@ -4,10 +4,10 @@
 
 #define RAPIDJSON_HAS_STDSTRING 1
 
-#include "version.h"
-#include "vw.h"
 #include "vw/config/help_formatter.h"
 #include "vw/config/options.h"
+#include "vw/core/version.h"
+#include "vw/core/vw.h"
 
 #include <rapidjson/document.h>
 #include <rapidjson/stringbuffer.h>

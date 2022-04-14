@@ -2,9 +2,9 @@
 // individual contributors. All rights reserved. Released under a BSD (revised)
 // license as described in the file LICENSE.
 
-#include "rand48.h"
-#include "rand_state.h"
 #include "test_common.h"
+#include "vw/core/rand48.h"
+#include "vw/core/rand_state.h"
 
 #include <boost/test/unit_test.hpp>
 

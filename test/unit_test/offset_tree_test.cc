@@ -2,10 +2,10 @@
 // individual contributors. All rights reserved. Released under a BSD (revised)
 // license as described in the file LICENSE.
 
-#include "reductions/offset_tree.h"
+#include "vw/core/reductions/offset_tree.h"
 
-#include "cb_label_parser.h"
 #include "test_common.h"
+#include "vw/core/cb_label_parser.h"
 
 #include <boost/test/unit_test.hpp>
 #include <utility>

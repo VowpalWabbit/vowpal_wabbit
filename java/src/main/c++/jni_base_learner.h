@@ -2,7 +2,7 @@
 #define VW_BASE_LEARNER_H
 
 #include "util.h"
-#include "vw.h"
+#include "vw/core/vw.h"
 
 #include <jni.h>
 

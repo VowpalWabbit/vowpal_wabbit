@@ -2,9 +2,9 @@
 // individual contributors. All rights reserved. Released under a BSD (revised)
 // license as described in the file LICENSE.
 
-#include "numeric_casts.h"
 #include "test_common.h"
 #include "vw/common/vw_exception.h"
+#include "vw/core/numeric_casts.h"
 
 #include <boost/test/test_tools.hpp>
 #include <boost/test/unit_test.hpp>

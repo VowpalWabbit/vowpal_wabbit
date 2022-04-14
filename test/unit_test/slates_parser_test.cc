@@ -2,12 +2,12 @@
 // individual contributors. All rights reserved. Released under a BSD (revised)
 // license as described in the file LICENSE.
 
-#include "parse_primitives.h"
-#include "parser.h"
-#include "slates_label.h"
 #include "test_common.h"
 #include "vw/common/string_view.h"
 #include "vw/common/text_utils.h"
+#include "vw/core/parse_primitives.h"
+#include "vw/core/parser.h"
+#include "vw/core/slates_label.h"
 #include "vw/io/logger.h"
 
 #include <boost/test/test_tools.hpp>

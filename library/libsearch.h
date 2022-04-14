@@ -6,11 +6,11 @@ license as described in the file LICENSE.
 #ifndef LIBSEARCH_HOOKTASK_H
 #define LIBSEARCH_HOOKTASK_H
 
-#include "../vowpalwabbit/parser.h"
-#include "../vowpalwabbit/parse_example.h"
-#include "../vowpalwabbit/vw.h"
-#  include "../vowpalwabbit/reductions/search/search.h"
-#  include "../vowpalwabbit/reductions/search/search_hooktask.h"
+#  include "vw/core/parse_example.h"
+#  include "vw/core/parser.h"
+#  include "vw/core/reductions/search/search.h"
+#  include "vw/core/reductions/search/search_hooktask.h"
+#  include "vw/core/vw.h"
 
 #  include <memory>
 
