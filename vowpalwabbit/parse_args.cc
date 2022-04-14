@@ -414,7 +414,7 @@ input_options parse_source(VW::workspace& all, options_i& options)
 
   // We are done adding new options. Before we are allowed to get the positionals we need to check unregistered.
   auto warnings = all.options->check_unregistered();
-  for (const auto& warning : warnings) { all.logger.err_warn(warning); }
+  for (const auto& warning : warnings) { all.logger.err_warn("{}", warning); }
 
   // Check if the options provider has any positional args. Only really makes sense for command line, others just return
   // an empty list.
@@ -718,8 +718,8 @@ void parse_feature_tweaks(options_i& options, VW::workspace& all, bool interacti
        interactions_settings_duplicated /*settings were restored from model file to file_options and overriden by params from command line*/)
   {
     all.logger.err_warn(
-        "model file has set of {-q, --cubic, --interactions} settings stored, but they'll be "
-        "OVERRIDDEN by set of {-q, --cubic, --interactions} settings from command line.");
+        "model file has set of {{-q, --cubic, --interactions}} settings stored, but they'll be "
+        "OVERRIDDEN by set of {{-q, --cubic, --interactions}} settings from command line.");
     // in case arrays were already filled in with values from old model file - reset them
     if (!all.interactions.empty()) { all.interactions.clear(); }
   }
