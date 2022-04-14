@@ -27,10 +27,6 @@
 #include <boost/python/suite/indexing/vector_indexing_suite.hpp>
 #include <boost/utility.hpp>
 
-// Brings VW_DLL_PUBLIC to help control exports
-#define VWDLL_EXPORTS
-#include "../vowpalwabbit/vwdll.h"
-
 namespace py = boost::python;
 
 class py_log_wrapper;

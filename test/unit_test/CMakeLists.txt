@@ -55,7 +55,7 @@ add_executable(vw-unit-test.out
 )
 
 # Add the include directories from vw target for testing
-target_link_libraries(vw-unit-test.out PRIVATE vw_core Boost::unit_test_framework)
+target_link_libraries(vw-unit-test.out PRIVATE vw_core RapidJSON Boost::unit_test_framework)
 
 # Automatically set BOOST_TEST_DYN_LINK if the dependency is shared.
 get_target_property(boost_test_target_type Boost::unit_test_framework TYPE)
