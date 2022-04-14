@@ -4,10 +4,10 @@
 
 #pragma once
 
+#include <cassert>
 #include <queue>
 #include <set>
 #include <stack>
-#include <cassert>
 
 // Mutex and CV cannot be used in managed C++, tell the compiler that this is unmanaged even if included in a managed
 // project.
