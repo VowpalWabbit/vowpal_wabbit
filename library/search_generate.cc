@@ -102,7 +102,7 @@ public:
     }
   }
 
-  void build_max(const std::string& prefix="")
+  void build_max(const std::string& prefix = "")
   { max_count = terminus;
     max_string = prefix;
     for (size_t id = 0; id < children.size(); id++)
