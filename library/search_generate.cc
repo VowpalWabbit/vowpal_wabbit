@@ -84,13 +84,13 @@ public:
   { if (prefix == nullptr || *prefix == 0)
     { next.clear();
       float c = 1.0f / (float)count;
-      next.push_back( nextstr('$', log(1.0f + c * (float)terminus), max_string, log(1.0f + (float)max_count)) );
+      next.push_back( nextstr('$', std::log(1.0f + c * (float)terminus), max_string, std::log(1.0f + (float)max_count)) );
       for (size_t id = 0; id < children.size(); id++)
       {
         if (children[id])
         {
           next.push_back(nextstr(action2char((action)(id + 1)), c * (float)children[id]->count,
-              children[id]->max_string, log(1.0f + (float)children[id]->max_count)));
+              children[id]->max_string, std::log(1.0f + (float)children[id]->max_count)));
         }
       }
     }
@@ -280,7 +280,9 @@ public:
       std::string tmp("$");
       for (int i=m; i >= m-15 && i >= 0; i--)
       {
-        tmp = out[i] + tmp;
+        std::stringstream ss;
+        ss << out[i] << tmp;
+        tmp = ss.str();
         fs_s.push_back(1.f, VW::hash_feature(vw_obj, "p=" + tmp, ns_hash_s));
       }
 
