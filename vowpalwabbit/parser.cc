@@ -110,7 +110,7 @@ void parse_example_label(string_view label, const VW::label_parser& lbl_parser, 
     label_parser_reuse_mem& reuse_mem, VW::example& ec, VW::io::logger& logger)
 {
   std::vector<string_view> words;
-  VW::common::tokenize(' ', label, words);
+  VW::tokenize(' ', label, words);
   lbl_parser.parse_label(ec.l, ec._reduction_features, reuse_mem, ldict, words, logger);
 }
 }  // namespace VW
@@ -586,7 +586,7 @@ void enable_sources(VW::workspace& all, bool quiet, size_t passes, input_options
     {
       std::string filename_to_read = all.data_filename;
       std::string input_name = filename_to_read;
-      auto should_use_compressed = input_options.compressed || VW::common::ends_with(filename_to_read, ".gz");
+      auto should_use_compressed = input_options.compressed || VW::ends_with(filename_to_read, ".gz");
 
       try
       {
@@ -885,7 +885,7 @@ void releaseFeatureSpace(primitive_feature_space* features, size_t len)
 void parse_example_label(VW::workspace& all, example& ec, const std::string& label)
 {
   std::vector<VW::string_view> words;
-  VW::common::tokenize(' ', label, words);
+  VW::tokenize(' ', label, words);
   all.example_parser->lbl_parser.parse_label(
       ec.l, ec._reduction_features, all.example_parser->parser_memory_to_reuse, all.sd->ldict.get(), words, all.logger);
 }

@@ -19,7 +19,7 @@
 void parse_ccb_label(VW::string_view label, CCB::label& l)
 {
   std::vector<VW::string_view> words;
-  VW::common::tokenize(' ', label, words);
+  VW::tokenize(' ', label, words);
   CCB::default_label(l);
   VW::label_parser_reuse_mem mem;
   auto null_logger = VW::io::create_null_logger();
