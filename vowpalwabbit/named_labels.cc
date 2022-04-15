@@ -10,7 +10,7 @@
 
 void VW::named_labels::initialize_maps_from_input_string()
 {
-  VW::common::tokenize(',', m_label_list, m_id2name);
+  VW::tokenize(',', m_label_list, m_id2name);
 
   m_K = static_cast<uint32_t>(m_id2name.size());
   m_name2id.max_load_factor(0.25);
