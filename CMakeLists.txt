@@ -8,6 +8,9 @@ endif()
 if(POLICY CMP0092)
   cmake_policy(SET CMP0092 NEW)
 endif()
+if(POLICY CMP0074)
+  cmake_policy(SET CMP0074 NEW)
+endif()
 
 # Allow vcpkg to use versions feature if it is enabled with a manifest.
 # Right now this is done for the Python CIs.
@@ -183,10 +186,6 @@ set(LINK_THREADS Threads::Threads)
 if(STATIC_LINK_VW)
   if(APPLE)
     set(unix_static_flag "")
-    #Guess ZLIB_LIBRARY to be the one provided by homebrew if none was provided
-    if(NOT ZLIB_LIBRARY)
-      file(GLOB ZLIB_LIBRARY /usr/local/Cellar/zlib/*/lib/libz.a)
-    endif()
   else()
     set(LINK_THREADS -Wl,--whole-archive -lpthread -Wl,--no-whole-archive)
     set(unix_static_flag -static)
