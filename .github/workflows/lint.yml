@@ -129,7 +129,7 @@ jobs:
         shell: bash
         run: |
           apt update
-          apt install -y ninja-build libspdlog-dev libfmt-dev
+          apt install -y ninja-build libspdlog-dev libfmt-dev libboost-math-dev
       - name: Run clang tidy
         shell: bash
         run: ./.scripts/linux/run-clang-tidy.sh

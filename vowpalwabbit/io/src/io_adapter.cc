@@ -30,7 +30,7 @@
 typedef void* gzFile;
 #else
 struct gzFile_s;
-typedef struct gzFile_s* gzFile;
+using gzFile = struct gzFile_s *;
 #endif
 
 #ifndef O_LARGEFILE  // for OSX
