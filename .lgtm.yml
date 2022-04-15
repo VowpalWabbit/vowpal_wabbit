@@ -11,6 +11,9 @@ extraction:
     index:
       buildless: true
   cpp:
+    prepare:
+      packages:
+        - zlib1g-dev
     configure:
       command:
-        - .scripts/linux/install-flatbuffers.sh
+        - cmake -S . -B build -DBUILD_FLATBUFFERS=Off -DBUILD_TESTING=Off -DRAPIDJSON_SYS_DEP=Off -DFMT_SYS_DEP=Off -DSPDLOG_SYS_DEP=Off -DVW_BOOST_MATH_SYS_DEP=Off -DVW_INSTALL=Off
