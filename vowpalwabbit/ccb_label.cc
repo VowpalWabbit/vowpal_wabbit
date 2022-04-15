@@ -77,10 +77,10 @@ CCB::conditional_contextual_bandit_outcome* parse_outcome(VW::string_view outcom
   auto& ccb_outcome = *(new CCB::conditional_contextual_bandit_outcome());
 
   std::vector<VW::string_view> split_commas;
-  VW::common::tokenize(',', outcome, split_commas);
+  VW::tokenize(',', outcome, split_commas);
 
   std::vector<VW::string_view> split_colons;
-  VW::common::tokenize(':', split_commas[0], split_colons);
+  VW::tokenize(':', split_commas[0], split_colons);
 
   if (split_colons.size() != 3) THROW("Malformed ccb label");
 
@@ -93,7 +93,7 @@ CCB::conditional_contextual_bandit_outcome* parse_outcome(VW::string_view outcom
 
   for (size_t i = 1; i < split_commas.size(); i++)
   {
-    VW::common::tokenize(':', split_commas[i], split_colons);
+    VW::tokenize(':', split_commas[i], split_colons);
     if (split_colons.size() != 2) THROW("Must be action probability pairs");
     ccb_outcome.probabilities.push_back(convert_to_score(split_colons[0], split_colons[1], logger));
   }
@@ -144,7 +144,7 @@ void parse_label(
       }
       else
       {
-        VW::common::tokenize(',', words[i], reuse_mem.tokens);
+        VW::tokenize(',', words[i], reuse_mem.tokens);
         parse_explicit_inclusions(ld, reuse_mem.tokens, logger);
       }
     }
