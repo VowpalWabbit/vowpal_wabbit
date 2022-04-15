@@ -48,6 +48,7 @@ def test_from_column_names_constructor():
     first_line = lines_list[0]
     assert first_line == "1 | x:2"
 
+
 def test_from_column_names_no_label_constructor():
     df = pd.DataFrame({"x": [2]})
     conv = DFtoVW.from_column_names(x=["x"], df=df)
