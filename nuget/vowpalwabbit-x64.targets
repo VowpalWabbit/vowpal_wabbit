@@ -16,10 +16,10 @@
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)'=='Release' And '$(Platform)'=='x64'">
     <Link>
-      <AdditionalDependencies>vw_config.lib;vw_allreduce.lib;fmt.lib;spdlog.lib;vw_io.lib;vw.lib;zlibstatic.lib;wsock32.lib;ws2_32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>vw_config.lib;vw_allreduce.lib;fmt.lib;spdlog.lib;vw_io.lib;vw_core.lib;zlibstatic.lib;wsock32.lib;ws2_32.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <Lib>
-      <AdditionalDependencies>vw_config.lib;vw_allreduce.lib;fmt.lib;spdlog.lib;vw_io.lib;vw.lib;zlibstatic.lib;wsock32.lib;ws2_32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>vw_config.lib;vw_allreduce.lib;fmt.lib;spdlog.lib;vw_io.lib;vw_core.lib;zlibstatic.lib;wsock32.lib;ws2_32.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Lib>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Platform)'=='x64'">
