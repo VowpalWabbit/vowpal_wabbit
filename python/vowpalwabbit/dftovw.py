@@ -713,7 +713,7 @@ class DFtoVW:
         """Build DFtoVW instance using column names only.
 
             .. deprecated:: 9.2.0
-                Use :meth:`DFtoVW.from_colnames2` instead.
+                Use :meth:`DFtoVW.from_column_names` instead.
 
         Args:
             y: (list of) any hashable type (str/int/float/tuple/etc.) representing a column name
@@ -745,13 +745,13 @@ class DFtoVW:
         """
 
         warnings.warn(
-            "DFtoVW.from_colnames is deprecated. Use DFtoVW.from_colnames2 instead.",
+            "DFtoVW.from_colnames is deprecated. Use DFtoVW.from_column_names instead.",
             DeprecationWarning,
         )
-        return cls.from_colnames2(y=y, x=x, df=df, label_type=label_type)
+        return cls.from_column_names(y=y, x=x, df=df, label_type=label_type)
 
     @classmethod
-    def from_colnames2(
+    def from_column_names(
         cls,
         *,
         y: Optional[Union[Hashable, List[Hashable]]] = None,
@@ -777,12 +777,12 @@ class DFtoVW:
             >>> from vowpalwabbit.dftovw import DFtoVW
             >>> import pandas as pd
             >>> df = pd.DataFrame({"y": [1], "x": [2]})
-            >>> conv = DFtoVW.from_colnames(y="y", x="x", df=df)
+            >>> conv = DFtoVW.from_column_names(y="y", x="x", df=df)
             >>> conv.convert_df()
             ['1 | x:2']
 
             >>> df2 = pd.DataFrame({"y": [1], "x1": [2], "x2": [3], "x3": [4]})
-            >>> conv2 = DFtoVW.from_colnames(y="y", x=sorted(list(set(df2.columns) - set("y"))), df=df2)
+            >>> conv2 = DFtoVW.from_column_names(y="y", x=sorted(list(set(df2.columns) - set("y"))), df=df2)
             >>> conv2.convert_df()
             ['1 | x1:2 x2:3 x3:4']
 
