@@ -8,6 +8,9 @@ endif()
 if(POLICY CMP0092)
   cmake_policy(SET CMP0092 NEW)
 endif()
+if(POLICY CMP0074)
+  cmake_policy(SET CMP0074 NEW)
+endif()
 
 # Allow vcpkg to use versions feature if it is enabled with a manifest.
 # Right now this is done for the Python CIs.
@@ -26,12 +29,9 @@ list(GET VW_VERSION_LIST 2 VW_VERSION_PATCH)
 # Set this to on so that tooling can make use of the outputted compile commands (such as clang-tidy)
 set(CMAKE_EXPORT_COMPILE_COMMANDS On)
 
-set(DEFAULT_BUILD_TYPE "Release")
-if(NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
-  message(STATUS "Setting build type to '${DEFAULT_BUILD_TYPE}' as none was specified.")
-  set(CMAKE_BUILD_TYPE "${DEFAULT_BUILD_TYPE}" CACHE STRING "Choose the type of build." FORCE)
-  # Set the possible values of build type for cmake-gui
-  set_property(CACHE CMAKE_BUILD_TYPE PROPERTY STRINGS "Debug" "Release" "MinSizeRel" "RelWithDebInfo")
+if (NOT CMAKE_BUILD_TYPE AND NOT GENERATOR_IS_MULTI_CONFIG)
+  message(STATUS "No build type selected, defaulting to Release")
+  set(CMAKE_BUILD_TYPE "Release")
 endif()
 
 if(WIN32)
@@ -85,20 +85,12 @@ ELSE(EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/.git)
   SET(vw_GIT_COMMIT "")
 ENDIF(EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/.git)
 
-include(ProcessorCount)
-ProcessorCount(NumProcessors)
-message(STATUS "Number of processors: ${NumProcessors}")
-file(WRITE ${CMAKE_CURRENT_BINARY_DIR}/nprocs.txt ${NumProcessors})
-
-option(PROFILE "Turn on flags required for profiling" OFF)
-option(VALGRIND_PROFILE "Turn on flags required for profiling with valgrind" OFF)
-option(GCOV "Turn on flags required for gcov" OFF)
+option(VW_GCOV "Turn on flags required for gcov" OFF)
 option(WARNINGS "Turn on warning flags. ON by default." ON)
 option(WARNING_AS_ERROR "Turn on warning as error. OFF by default." OFF)
 option(STATIC_LINK_VW "Link VW executable statically. Off by default." OFF)
 option(STATIC_LINK_VW_JAVA "Link VW-JNI shared library statically. Off by default." OFF)
 option(VW_INSTALL "Add install targets." OFF)
-option(BUILD_TESTS "Build and enable tests." ON)
 option(BUILD_BENCHMARKS "Build benchmarks" OFF)
 option(BUILD_ONLY_STANDALONE_BENCHMARKS "Build only the benchmarks that can run standalone (and do not use vw internals)" OFF)
 option(BUILD_JAVA "Add Java targets." Off)
@@ -119,9 +111,8 @@ if(VW_INSTALL AND NOT VW_ZLIB_SYS_DEP)
 endif()
 
 # The only way to tell it was used is if it was turned off, since the default is true.
-if(NOT BUILD_TESTS)
-  message(WARNING "Use standard option BUILD_TESTING instead of BUILD_TESTS. BUILD_TESTS will be removed in the future.")
-  SET(BUILD_TESTING ${BUILD_TESTS} CACHE BOOL "Set value to BUILD_TESTING")
+if(DEFINED BUILD_TESTS)
+  message(WARNING "Value of BUILD_TESTS option ignored. Please use the standard option BUILD_TESTING.")
 endif()
 
 if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
@@ -151,7 +142,9 @@ if(VW_INSTALL AND NOT RAPIDJSON_SYS_DEP)
   message(WARNING "Installing with a vendored version of rapidjson is not recommended. Use RAPIDJSON_SYS_DEP to use a system dependency or specify VW_INSTALL=OFF to silence this warning.")
 endif()
 
-string(TOUPPER "${CMAKE_BUILD_TYPE}" CONFIG)
+if(VW_GCOV AND (NOT CMAKE_BUILD_TYPE STREQUAL "Debug"))
+  message(FATAL_ERROR "VW_GCOV requires Debug build type.")
+endif()
 
 # When using Ninja, or CCache GCC and Clang do not output colors as it sees it as a non-terminal output.
 # Use this option to force color output in these modes.
@@ -166,54 +159,8 @@ if(FORCE_COLORED_OUTPUT)
   endif()
 endif()
 
-if(WIN32 AND (PROFILE OR VALGRIND_PROFILE OR GCOV OR STATIC_LINK_VW OR BUILD_JAVA OR LTO))
+if(WIN32 AND (STATIC_LINK_VW OR BUILD_JAVA OR VW_GOV))
   message(FATAL_ERROR "Unsupported option enabled on Windows build")
-endif()
-
-# This was the previous default but is only valid on x86_64 systems.
-set(linux_x86_64_opt_flags "")
-if("${CMAKE_SYSTEM_PROCESSOR}" STREQUAL "x86_64")
-  set(linux_x86_64_opt_flags -msse2 -mfpmath=sse)
-endif()
-
-# Add -ffast-math for speed, remove for testability.
-# no-stack-check is added to mitigate stack alignment issue on Catalina where there is a bug with aligning stack-check instructions, and stack-check became default option
-set(linux_release_config -O3 -fno-strict-aliasing ${linux_x86_64_opt_flags} -fno-stack-check)
-set(linux_debug_config -g -O0 -fno-stack-check)
-
-if((NOT PROFILE) AND (NOT GCOV))
-  set(linux_release_config ${linux_release_config} -fomit-frame-pointer)
-endif()
-
-#Use default visiblity on UNIX otherwise a lot of the C++ symbols end up for exported and interpose'able
-set(linux_flags -fvisibility=hidden $<$<CONFIG:DEBUG>:${linux_debug_config}> $<$<CONFIG:RELEASE>:${linux_release_config}> $<$<CONFIG:RelWithDebInfo>:${linux_release_config}>)
-
-if(LTO)
-	if(NOT "${CMAKE_CXX_COMPILER_ID}" MATCHES "Clang")
-		message(FATAL_ERROR "LTO requires Clang")
-	endif()
-	if("${CMAKE_CXX_COMPILER_VERSION}" VERSION_LESS "8.0.0")
-		message(FATAL_ERROR "LTO requires Clang 8.0 (llvm 3.9) or later")
-	endif()
-	If("${CONFIG}" STREQUAL "DEBUG")
-		message(FATAL_ERROR "LTO only works with Release builds")
-	endif()
-  set(linux_flags ${linux_flags} -flto=thin)
-endif()
-
-# for profiling -- note that it needs to be gcc
-if(PROFILE)
-  set(linux_flags ${linux_flags} -fno-strict-aliasing -pg)
-endif()
-
-# for valgrind profiling: run 'valgrind --tool=callgrind PROGRAM' then 'callgrind_annotate --tree=both --inclusive=yes'
-if(VALGRIND_PROFILE)
-  set(linux_flags ${linux_flags} -g -fomit-frame-pointer -fno-strict-aliasing)
-endif()
-
-# gcov configuration
-if(GCOV)
-  set(linux_flags ${linux_flags} -g -O0 -fprofile-arcs -ftest-coverage -fno-strict-aliasing -pg)
 endif()
 
 # Use folders in VS solution
@@ -239,10 +186,6 @@ set(LINK_THREADS Threads::Threads)
 if(STATIC_LINK_VW)
   if(APPLE)
     set(unix_static_flag "")
-    #Guess ZLIB_LIBRARY to be the one provided by homebrew if none was provided
-    if(NOT ZLIB_LIBRARY)
-      file(GLOB ZLIB_LIBRARY /usr/local/Cellar/zlib/*/lib/libz.a)
-    endif()
   else()
     set(LINK_THREADS -Wl,--whole-archive -lpthread -Wl,--no-whole-archive)
     set(unix_static_flag -static)
@@ -304,36 +247,6 @@ if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME AND BUILD_TESTING)
   # Boost test is only required if we are building tests
   find_package(Boost REQUIRED COMPONENTS unit_test_framework)
   add_subdirectory(test)
-
-  set(vw_c_api_unit_test_target "")
-  if(BUILD_EXPERIMENTAL_BINDING)
-    set(vw_c_api_unit_test_target "vw_c_api_unit_test")
-  endif()
-
-  set(vw_cs_unittest_targets "")
-  if (vw_BUILD_NET_FRAMEWORK)
-    set(vw_cs_unittest_targets
-      cs_unittest
-      cs_unittest_nofriend
-    )
-  endif()
-
-  # The Visual Studio expression generator
-  set(cmake_test_configuration "")
-  set(cmake_test_verbosity "--verbose")
-  if (${CMAKE_GENERATOR} MATCHES "^Visual Studio")
-    set(cmake_test_configuration -C $<CONFIG>)
-    # The VS Generator builds fall over in test when STDOUT/ERR contains strings of the form
-    # "(<other-stuff, snipped>)?error[^:]*:.*", which our native unit tests output as part of a
-    # successful run.
-    #
-    # This is caused by MSBuild being "helpful":
-    # https://stackoverflow.com/questions/48117302/does-the-msbuild-exec-task-search-stdout-for-the-string-error
-    #
-    # The CMake team has discussed this issue, but are using an MSBuild mechanism that does not support
-    # overriding this behaviour. The fix is to disable test output on Visual Studio generator builds.
-    set(cmake_test_verbosity "")
-  endif()
 
   # Don't offer these make dependent targets on Windows
   if(NOT WIN32)
