@@ -790,11 +790,6 @@ class DFtoVW:
             An initialized DFtoVW instance.
         """
 
-        warnings.warn(
-            "Use DFtoVW.from_colnames2 instead.",
-            DeprecationWarning,
-        )
-
         dict_label_type = {
             "simple_label": SimpleLabel,
             "multiclass_label": MulticlassLabel,
