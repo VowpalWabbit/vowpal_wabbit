@@ -18,7 +18,7 @@
 void parse_label(VW::label_parser& lp, VW::string_view label, VW::polylabel& l, VW::reduction_features& red_fts)
 {
   std::vector<VW::string_view> words;
-  VW::common::tokenize(' ', label, words);
+  VW::tokenize(' ', label, words);
   lp.default_label(l);
   VW::label_parser_reuse_mem mem;
   auto null_logger = VW::io::create_null_logger();

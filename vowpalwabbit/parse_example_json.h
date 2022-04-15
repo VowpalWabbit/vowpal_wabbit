@@ -597,7 +597,7 @@ struct MultiState : BaseState<audit>
       CB::cb_class f;
 
       f.partial_prediction = 0.;
-      f.action = static_cast<uint32_t>(VW::common::uniform_hash("shared", 6, 0));
+      f.action = static_cast<uint32_t>(VW::uniform_hash("shared", 6, 0));
       f.cost = FLT_MAX;
       f.probability = -1.f;
 
