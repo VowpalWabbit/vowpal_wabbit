@@ -101,6 +101,7 @@ option(FMT_SYS_DEP "Override using the submodule for FMT dependency. Instead wil
 option(SPDLOG_SYS_DEP "Override using the submodule for spdlog dependency. Instead will use find_package" OFF)
 option(VW_BOOST_MATH_SYS_DEP "Override using the submodule for boost math dependency. Instead will use find_package" OFF)
 option(VW_ZLIB_SYS_DEP "Override using the submodule for zlib dependency. Instead will use find_package" ON)
+option(VW_BUILD_VW_C_WRAPPER "Enable building the c_wrapper project" ON)
 option(BUILD_FLATBUFFERS "Build flatbuffers" OFF)
 option(BUILD_PRIVACY_ACTIVATION "Enable privacy activation feature" OFF)
 
