@@ -84,7 +84,7 @@ public:
   { if (prefix == nullptr || *prefix == 0)
     { next.clear();
       float c = 1.0f / (float)count;
-      next.push_back( nextstr('$', std::log(1.0f + c * (float)terminus), max_string, std::log(1.0f + (float)max_count)) );
+      next.push_back(nextstr('$', std::log(1.0f + c * (float)terminus), max_string, std::log(1.0f + (float)max_count)));
       for (size_t id = 0; id < children.size(); id++)
       {
         if (children[id])
