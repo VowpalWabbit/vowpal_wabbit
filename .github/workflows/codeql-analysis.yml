@@ -1,0 +1,64 @@
+name: "CodeQL"
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    # The branches below must be a subset of the branches above
+    branches: [ master ]
+  schedule:
+    - cron: '26 11 * * 5'
+
+jobs:
+  analyze:
+    name: Analyze
+    runs-on: ${{ matrix.config.os }}
+    permissions:
+      actions: read
+      contents: read
+      security-events: write
+
+    strategy:
+      fail-fast: false
+      matrix:
+        config:
+        - { language: "cpp", os: ubuntu-latest }
+        - { language: "java", os: ubuntu-latest }
+        - { language: "python", os: ubuntu-latest }
+        - { language: "csharp", os: windows-latest }
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v3
+
+    - name: Initialize CodeQL
+      uses: github/codeql-action/init@v2
+      with:
+        languages: ${{ matrix.config.language }}
+        config-file: ./.github/codeql/codeql-config.yml
+    - name: Autobuild Python
+      if: matrix.config.language == 'python'
+      uses: github/codeql-action/autobuild@v2
+    - name: Build C++
+      if: matrix.config.language == 'cpp'
+      run: |
+        sudo apt update
+        sudo apt install -y ninja-build
+        cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Debug -DBUILD_TESTING=Off
+        cmake --build build -t vw-bin
+    - name: Build Java
+      if: matrix.config.language == 'java'
+      run: |
+        sudo apt update
+        sudo apt install -y ninja-build
+        cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Debug -DBUILD_JAVA=On -DBUILD_TESTING=Off
+        cmake --build build -t vw_jni
+    - uses: ilammy/msvc-dev-cmd@v1
+      if: matrix.config.language == 'csharp'
+    - name: Build CSharp
+      if: matrix.config.language == 'csharp'
+      run: |
+        cmake -S . -B build -A "x64" -DBUILD_TESTING=Off -DBUILD_FLATBUFFERS=Off -DRAPIDJSON_SYS_DEP=Off -DFMT_SYS_DEP=Off -DSPDLOG_SYS_DEP=Off -DVW_ZLIB_SYS_DEP=Off -DVW_BOOST_MATH_SYS_DEP=Off -DVW_INSTALL=Off -Dvw_BUILD_NET_FRAMEWORK=On
+        cmake --build build --config Debug
+    - name: Perform CodeQL Analysis
+      uses: github/codeql-action/analyze@v2
