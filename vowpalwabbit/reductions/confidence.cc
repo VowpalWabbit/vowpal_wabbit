@@ -78,7 +78,8 @@ void output_and_account_confidence_example(VW::workspace& all, VW::example& ec)
   label_data& ld = ec.l.simple;
 
   all.sd->update(ec.test_only, ld.label != FLT_MAX, ec.loss, ec.weight, ec.get_num_features());
-  if (ld.label != FLT_MAX && !ec.test_only) { all.sd->weighted_labels += static_cast<double>(ld.label) * static_cast<double>(ec.weight); }
+  if (ld.label != FLT_MAX && !ec.test_only)
+  { all.sd->weighted_labels += static_cast<double>(ld.label) * static_cast<double>(ec.weight); }
   all.sd->weighted_unlabeled_examples += ld.label == FLT_MAX ? ec.weight : 0;
 
   all.print_by_ref(all.raw_prediction.get(), ec.partial_prediction, -1, ec.tag, all.logger);
