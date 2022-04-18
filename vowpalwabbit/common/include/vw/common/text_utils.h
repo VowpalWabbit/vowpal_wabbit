@@ -11,8 +11,6 @@
 
 namespace VW
 {
-namespace common
-{
 // chop up the string into a v_array or any compatible container of VW::string_view.
 template <typename ContainerT>
 void tokenize(char delim, VW::string_view s, ContainerT& ret, bool allow_empty = false)
@@ -66,7 +64,7 @@ inline std::string wrap_text(VW::string_view text, size_t width, bool wrap_after
 {
   std::stringstream ss;
   std::vector<VW::string_view> words;
-  VW::common::tokenize(' ', text, words);
+  VW::tokenize(' ', text, words);
   size_t current_line_size = 0;
   std::string space = "";
   for (const auto& word : words)
@@ -83,5 +81,4 @@ inline std::string wrap_text(VW::string_view text, size_t width, bool wrap_after
   }
   return ss.str();
 }
-}  // namespace common
 }  // namespace VW

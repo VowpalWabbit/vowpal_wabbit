@@ -45,7 +45,7 @@ void parse_label(CB::label& ld, VW::label_parser_reuse_mem& reuse_mem, const std
     // for example "1:2:0.5"
     // action = 1, cost = 2, probability = 0.5
     cb_class f;
-    VW::common::tokenize(':', word, reuse_mem.tokens);
+    VW::tokenize(':', word, reuse_mem.tokens);
 
     if (reuse_mem.tokens.empty() || reuse_mem.tokens.size() > 3) { THROW("malformed cost specification: " << word); }
 

@@ -98,7 +98,7 @@ std::string find_in_path(const std::vector<std::string>& paths, const std::strin
   for (const auto& path : paths)
   {
     std::string full = path;
-    if (!VW::common::ends_with(path, delimiter)) { full += delimiter; }
+    if (!VW::ends_with(path, delimiter)) { full += delimiter; }
     full += fname;
     std::ifstream f(full.c_str());
     if (f.good()) { return full; }
@@ -123,7 +123,7 @@ void parse_dictionary_argument(VW::workspace& all, const std::string& str)
   std::string file_name = find_in_path(all.dictionary_path, std::string(s));
   if (file_name.empty()) THROW("error: cannot find dictionary '" << s << "' in path; try adding --dictionary_path")
 
-  bool is_gzip = VW::common::ends_with(file_name, ".gz");
+  bool is_gzip = VW::ends_with(file_name, ".gz");
   std::unique_ptr<VW::io::reader> file_adapter;
   try
   {
@@ -536,7 +536,7 @@ std::vector<extent_term> parse_full_name_interactions(VW::workspace& all, VW::st
   auto encoded = VW::decode_inline_hex(str, all.logger);
 
   std::vector<VW::string_view> tokens;
-  VW::common::tokenize('|', str, tokens, true);
+  VW::tokenize('|', str, tokens, true);
   for (const auto& token : tokens)
   {
     if (token.empty()) { THROW("A term in --experimental_full_name_interactions cannot be empty. Given: " << str) }
@@ -1680,7 +1680,7 @@ char** to_argv(std::string const& s, int& argc)
 {
   const VW::string_view strview(s);
   std::vector<VW::string_view> foo;
-  VW::common::tokenize(' ', strview, foo);
+  VW::tokenize(' ', strview, foo);
 
   char** argv = calloc_or_throw<char*>(foo.size() + 1);
   // small optimization to avoid a string copy before tokenizing

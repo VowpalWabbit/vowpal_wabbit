@@ -712,6 +712,9 @@ class DFtoVW:
     ) -> "DFtoVW":
         """Build DFtoVW instance using column names only.
 
+            .. deprecated:: 9.2.0
+                Use :meth:`DFtoVW.from_column_names` instead.
+
         Args:
             y: (list of) any hashable type (str/int/float/tuple/etc.) representing a column name
                 The column for the label.
@@ -740,6 +743,53 @@ class DFtoVW:
         Returns:
             An initialized DFtoVW instance.
         """
+
+        warnings.warn(
+            "DFtoVW.from_colnames is deprecated. Use DFtoVW.from_column_names instead.",
+            DeprecationWarning,
+        )
+        return cls.from_column_names(y=y, x=x, df=df, label_type=label_type)
+
+    @classmethod
+    def from_column_names(
+        cls,
+        *,
+        y: Optional[Union[Hashable, List[Hashable]]] = None,
+        x: Union[Hashable, List[Hashable]],
+        df: pd.DataFrame,
+        label_type: Optional[str] = "simple_label",
+    ) -> "DFtoVW":
+        """Build DFtoVW instance using column names only. Compared to :meth:`DFtoVW.from_colnames`, this method allows for y and label_type to be optional and args are named and cannot be positional.
+
+        Args:
+            y: (list of) any hashable type (str/int/float/tuple/etc.) representing a column name
+                The column for the label. Optional.
+            x: (list of) any hashable type (str/int/float/tuple/etc.) representing a column name
+                The column(s) for the feature(s).
+            df: The dataframe used.
+            label_type: The type of the label. Available labels: 'simple_label', 'multiclass_label', 'multi_label'. (default: 'simple_label'). Optional.
+
+        Raises:
+            TypeError: If argument label is not of valid type.
+            ValueError: If argument label_type is not valid.
+
+        Examples:
+            >>> from vowpalwabbit.dftovw import DFtoVW
+            >>> import pandas as pd
+            >>> df = pd.DataFrame({"y": [1], "x": [2]})
+            >>> conv = DFtoVW.from_column_names(y="y", x="x", df=df)
+            >>> conv.convert_df()
+            ['1 | x:2']
+
+            >>> df2 = pd.DataFrame({"y": [1], "x1": [2], "x2": [3], "x3": [4]})
+            >>> conv2 = DFtoVW.from_column_names(y="y", x=sorted(list(set(df2.columns) - set("y"))), df=df2)
+            >>> conv2.convert_df()
+            ['1 | x1:2 x2:3 x3:4']
+
+        Returns:
+            An initialized DFtoVW instance.
+        """
+
         dict_label_type = {
             "simple_label": SimpleLabel,
             "multiclass_label": MulticlassLabel,
@@ -753,18 +803,20 @@ class DFtoVW:
                 )
             )
 
-        y = y if isinstance(y, list) else [y]
+        if label_type and y:
+            y = y if isinstance(y, list) else [y]
+            if label_type not in ["multi_label"]:
+                if len(y) > 1:
+                    raise TypeError(
+                        "When label_type is 'simple_label' or 'multiclass', argument 'y' should be a string (or any hashable type) "
+                        + "or a list of exactly one string (or any hashable type)."
+                    )
+                else:
+                    y = y[0]
 
-        if label_type not in ["multi_label"]:
-            if len(y) > 1:
-                raise TypeError(
-                    "When label_type is 'simple_label' or 'multiclass', argument 'y' should be a string (or any hashable type) "
-                    + "or a list of exactly one string (or any hashable type)."
-                )
-            else:
-                y = y[0]
-
-        label = dict_label_type[label_type](y)
+            label = dict_label_type[label_type](y)
+        else:
+            label = None
 
         x = x if isinstance(x, list) else [x]
 
