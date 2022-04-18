@@ -6,8 +6,6 @@ vw_add_executable(
     ENABLE_INSTALL
 )
 
-add_custom_target(vw-bin DEPENDS vw_cli_bin)
-
 if(NOT WIN32)
   find_file(HELP2MAN_EXECUTABLE help2man HINTS /bin /usr/bin /usr/local/bin)
   if (HELP2MAN_EXECUTABLE)

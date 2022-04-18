@@ -6,8 +6,6 @@ vw_add_executable(
   ENABLE_INSTALL
 )
 
-add_custom_target(spanning_tree DEPENDS vw_spanning_tree_bin)
-
 if(STATIC_LINK_VW)
   target_link_libraries(vw_spanning_tree_bin PRIVATE ${unix_static_flag})
 endif()
