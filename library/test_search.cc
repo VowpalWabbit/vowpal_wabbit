@@ -5,9 +5,6 @@
 #include <stdio.h>
 #include <stdlib.h>  // for system
 
-#include <stdio.h>
-#include <stdlib.h>  // for system
-
 #include <utility>
 
 using std::cerr;
