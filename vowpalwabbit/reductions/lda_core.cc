@@ -939,7 +939,7 @@ void learn_batch(lda& l)
 
       for (; s != next; s++)
       {
-        float* v_s = &(l.v[s->document * l.all->lda]);
+        float* v_s = &(l.v[static_cast<size_t>(s->document) * static_cast<size_t>(l.all->lda)]);
         float* u_for_w = &(weights[s->f.weight_index]) + l.all->lda + 1;
         float c_w = eta * find_cw(l, u_for_w, v_s) * s->f.x;
         word_weights = &(weights[s->f.weight_index]);
