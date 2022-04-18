@@ -31,6 +31,7 @@
 #include "reductions/cb/cb_explore_adf_cover.h"
 #include "reductions/cb/cb_explore_adf_first.h"
 #include "reductions/cb/cb_explore_adf_greedy.h"
+#include "reductions/cb/cb_explore_adf_large_action_space.h"
 #include "reductions/cb/cb_explore_adf_regcb.h"
 #include "reductions/cb/cb_explore_adf_rnd.h"
 #include "reductions/cb/cb_explore_adf_softmax.h"
@@ -188,6 +189,7 @@ void prepare_reductions(std::vector<std::tuple<std::string, reduction_setup_fn>>
   reductions.push_back(VW::reductions::automl_setup);
   reductions.push_back(VW::reductions::cb_explore_setup);
   reductions.push_back(VW::reductions::cb_explore_adf_greedy_setup);
+  reductions.push_back(VW::reductions::cb_explore_adf_large_action_space_setup);
   reductions.push_back(VW::reductions::cb_explore_adf_softmax_setup);
   reductions.push_back(VW::reductions::cb_explore_adf_rnd_setup);
   reductions.push_back(VW::reductions::cb_explore_adf_regcb_setup);

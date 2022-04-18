@@ -149,6 +149,7 @@ set(vw_all_headers
   reductions/cb/cb_explore_adf_cover.h
   reductions/cb/cb_explore_adf_first.h
   reductions/cb/cb_explore_adf_greedy.h
+  reductions/cb/cb_explore_adf_large_action_space.h
   reductions/cb/cb_explore_adf_regcb.h
   reductions/cb/cb_explore_adf_rnd.h
   reductions/cb/cb_explore_adf_softmax.h
@@ -320,6 +321,7 @@ set(vw_all_sources
   reductions/cb/cb_explore_adf_cover.cc
   reductions/cb/cb_explore_adf_first.cc
   reductions/cb/cb_explore_adf_greedy.cc
+  reductions/cb/cb_explore_adf_large_action_space.cc
   reductions/cb/cb_explore_adf_regcb.cc
   reductions/cb/cb_explore_adf_rnd.cc
   reductions/cb/cb_explore_adf_softmax.cc
