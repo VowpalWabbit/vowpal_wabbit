@@ -2,7 +2,7 @@ name: "CodeQL"
 
 on:
   push:
-    branches: [ master, overhaul ]
+    branches: [ master ]
   pull_request:
     # The branches below must be a subset of the branches above
     branches: [ master ]
@@ -22,10 +22,10 @@ jobs:
       fail-fast: false
       matrix:
         config:
-        - { langauge: "cpp", os: ubuntu-latest }
-        - { langauge: "java", os: ubuntu-latest }
-        - { langauge: "python", os: ubuntu-latest }
-        - { langauge: "csharp", os: windows-latest }
+        - { language: "cpp", os: ubuntu-latest }
+        - { language: "java", os: ubuntu-latest }
+        - { language: "python", os: ubuntu-latest }
+        - { language: "csharp", os: windows-latest }
 
     steps:
     - name: Checkout repository
