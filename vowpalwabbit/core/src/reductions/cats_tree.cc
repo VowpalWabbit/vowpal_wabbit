@@ -274,7 +274,7 @@ void cats_tree::learn(LEARNER::single_learner& base, example& ec)
         if (ec.weight < weight_th)
         {
           // generate a new seed
-          uint64_t new_random_seed = VW::common::uniform_hash(&app_seed, sizeof(app_seed), app_seed);
+          uint64_t new_random_seed = VW::uniform_hash(&app_seed, sizeof(app_seed), app_seed);
           // pick a uniform random number between 0.0 - .001f
           float random_draw = merand48(new_random_seed) * weight_th;
           if (random_draw < ec.weight) { ec.weight = weight_th; }

@@ -725,7 +725,7 @@ VW::LEARNER::base_learner* VW::reductions::cbify_setup(VW::setup_base_i& stack_b
 
   data->regression_data.num_actions = num_actions;
   data->use_adf = options.was_supplied("cb_explore_adf");
-  data->app_seed = VW::common::uniform_hash("vw", 2, 0);
+  data->app_seed = VW::uniform_hash("vw", 2, 0);
   data->all = &all;
 
   if (use_reg)
@@ -910,7 +910,7 @@ VW::LEARNER::base_learner* VW::reductions::cbifyldf_setup(VW::setup_base_i& stac
 
   if (!options.add_parse_and_check_necessary(new_options)) { return nullptr; }
 
-  data->app_seed = VW::common::uniform_hash("vw", 2, 0);
+  data->app_seed = VW::uniform_hash("vw", 2, 0);
   data->all = &all;
   data->use_adf = true;
 

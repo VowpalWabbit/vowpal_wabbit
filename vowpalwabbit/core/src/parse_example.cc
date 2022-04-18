@@ -448,7 +448,7 @@ public:
         static const char* space = " ";
         _base = space;
       }
-      _channel_hash = this->_hash_seed == 0 ? 0 : VW::common::uniform_hash("", 0, this->_hash_seed);
+      _channel_hash = this->_hash_seed == 0 ? 0 : VW::uniform_hash("", 0, this->_hash_seed);
       _ae->feature_space[_index].start_ns_extent(_channel_hash);
       did_start_extent = true;
       listFeatures();
@@ -534,7 +534,7 @@ void substring_to_example(VW::workspace* all, VW::example* ae, VW::string_view e
     size_t tab_idx = label_space.find('\t');
     if (tab_idx != VW::string_view::npos) { label_space.remove_prefix(tab_idx + 1); }
 
-    VW::common::tokenize(' ', label_space, all->example_parser->words);
+    VW::tokenize(' ', label_space, all->example_parser->words);
     if (all->example_parser->words.size() > 0 &&
         ((all->example_parser->words.back().data() + all->example_parser->words.back().size()) ==
                 (label_space.data() + label_space.size()) ||
@@ -577,7 +577,7 @@ void read_lines(VW::workspace* all, const char* line, size_t len, v_array<exampl
 {
   VW::string_view line_view = VW::string_view(line, len);
   std::vector<VW::string_view> lines;
-  VW::common::tokenize('\n', line_view, lines);
+  VW::tokenize('\n', line_view, lines);
   for (size_t i = 0; i < lines.size(); i++)
   {
     // Check if a new empty example needs to be added.

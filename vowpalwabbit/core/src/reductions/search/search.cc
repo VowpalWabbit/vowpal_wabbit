@@ -161,7 +161,7 @@ private:
     size_t operator()(const byte_array& key) const
     {
       size_t sz = *key.get();
-      return VW::common::uniform_hash(key.get(), sz, SEARCH_HASH_SEED);
+      return VW::uniform_hash(key.get(), sz, SEARCH_HASH_SEED);
     }
   };
 
@@ -2608,7 +2608,7 @@ void parse_neighbor_features(
     }
 
     cmd.clear();
-    VW::common::tokenize(':', strview, cmd, true);
+    VW::tokenize(':', strview, cmd, true);
     int32_t posn = 0;
     char ns = ' ';
     if (cmd.size() == 1)

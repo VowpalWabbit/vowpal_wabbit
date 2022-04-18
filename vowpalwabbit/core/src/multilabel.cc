@@ -31,7 +31,7 @@ void parse_label(MULTILABEL::labels& ld, VW::label_parser_reuse_mem& reuse_mem,
     case 0:
       break;
     case 1:
-      VW::common::tokenize(',', words[0], reuse_mem.tokens);
+      VW::tokenize(',', words[0], reuse_mem.tokens);
 
       for (const auto& parse_name : reuse_mem.tokens)
       {

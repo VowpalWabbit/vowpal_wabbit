@@ -21,7 +21,7 @@ namespace COST_SENSITIVE
 {
 void name_value(VW::string_view s, std::vector<VW::string_view>& name, float& v, VW::io::logger& logger)
 {
-  VW::common::tokenize(':', s, name);
+  VW::tokenize(':', s, name);
 
   switch (name.size())
   {

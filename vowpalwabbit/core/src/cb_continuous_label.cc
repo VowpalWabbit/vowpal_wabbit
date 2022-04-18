@@ -35,7 +35,7 @@ void parse_pdf(const std::vector<VW::string_view>& words, size_t words_index, VW
   for (size_t i = words_index; i < words.size(); i++)
   {
     if (words[i] == CHOSEN_ACTION) { break; /* no more pdf to parse*/ }
-    VW::common::tokenize(':', words[i], reuse_mem.tokens);
+    VW::tokenize(':', words[i], reuse_mem.tokens);
     if (reuse_mem.tokens.empty() || reuse_mem.tokens.size() < 3) { continue; }
     VW::continuous_actions::pdf_segment seg;
     seg.left = float_of_string(reuse_mem.tokens[0], logger);
@@ -52,7 +52,7 @@ void parse_chosen_action(const std::vector<VW::string_view>& words, size_t words
   auto& cats_reduction_features = red_features.template get<VW::continuous_actions::reduction_features>();
   for (size_t i = words_index; i < words.size(); i++)
   {
-    VW::common::tokenize(':', words[i], reuse_mem.tokens);
+    VW::tokenize(':', words[i], reuse_mem.tokens);
     if (reuse_mem.tokens.empty() || reuse_mem.tokens.size() < 1) { continue; }
     cats_reduction_features.chosen_action = float_of_string(reuse_mem.tokens[0], logger);
     break;  // there can only be one chosen action
@@ -84,7 +84,7 @@ void parse_label(continuous_label& ld, reduction_features& red_features, VW::lab
     else if (words[i - 1] == CA_LABEL)
     {
       continuous_label_elm f{0.f, FLT_MAX, 0.f};
-      VW::common::tokenize(':', words[i], reuse_mem.tokens);
+      VW::tokenize(':', words[i], reuse_mem.tokens);
 
       if (reuse_mem.tokens.empty() || reuse_mem.tokens.size() > 4)
         THROW("malformed cost specification: "
