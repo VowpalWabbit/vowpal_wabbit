@@ -21,7 +21,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        language: [ 'cpp', 'java', 'python' ]
+        language: [ 'cpp', 'java', 'python', 'csharp' ]
 
     steps:
     - name: Checkout repository
@@ -41,10 +41,12 @@ jobs:
         sudo apt update
         sudo apt install -y ninja-build
         cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Debug -DBUILD_TESTING=Off
-        cmake --build build
+        cmake --build build -t vw-bin
     - name: Build Java
       if: ${{ matrix.language == 'java' }}
       run: |
+        sudo apt update
+        sudo apt install -y ninja-build
         cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Debug -DBUILD_JAVA=On -DBUILD_TESTING=Off
         cmake --build build -t vw_jni
 
