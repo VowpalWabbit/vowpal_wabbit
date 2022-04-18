@@ -17,7 +17,7 @@
 void parse_slates_label(VW::string_view label, VW::slates::label& l)
 {
   std::vector<VW::string_view> words;
-  VW::common::tokenize(' ', label, words);
+  VW::tokenize(' ', label, words);
   VW::slates::default_label(l);
   VW::reduction_features red_fts;
   VW::label_parser_reuse_mem mem;
