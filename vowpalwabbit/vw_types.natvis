@@ -7,7 +7,7 @@
       <Item Name="length">end - begin</Item>
     </Expand>
   </Type>
-  <Type Name="v_array&lt;*&gt;">
+  <Type Name="VW::v_array&lt;*&gt;">
     <Expand>
       <Item Name="size">_end - _begin</Item>
       <Item Name="capacity">_end_array - _begin</Item>
