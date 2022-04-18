@@ -31,9 +31,7 @@ jobs:
       uses: github/codeql-action/init@v2
       with:
         languages: ${{ matrix.language }}
-        paths-ignore:
-          - python/docs/
-          - demo/
+        config-file: ./.github/codeql/codeql-config.yml
     - name: Autobuild Python
       if: ${{ matrix.language == 'python' }}
       uses: github/codeql-action/autobuild@v2
@@ -52,3 +50,4 @@ jobs:
 
     - name: Perform CodeQL Analysis
       uses: github/codeql-action/analyze@v2
+      with:
