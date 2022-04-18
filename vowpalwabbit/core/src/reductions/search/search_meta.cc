@@ -53,7 +53,7 @@ void run(Search::search& sch, VW::multi_ex& ec);
 void initialize(Search::search& sch, size_t& num_actions, options_i& options);
 Search::search_metatask metatask = {"selective_branching", run, initialize, nullptr, nullptr, nullptr};
 
-typedef std::pair<action, float> act_score;
+using act_score = std::pair<action, float>;
 using path = std::vector<act_score>;
 using branch = std::pair<float, path>;
 

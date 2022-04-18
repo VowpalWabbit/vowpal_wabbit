@@ -91,7 +91,7 @@ int bf_hit(char* bf, char* line)
   return 1;
 }
 
-typedef std::pair<float, std::string> scored_example;
+using scored_example = std::pair<float, std::string>;
 std::vector<scored_example> scored_examples;
 
 struct compare_scored_examples

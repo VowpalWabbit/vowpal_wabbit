@@ -3,7 +3,7 @@
 
 #include <stdio.h>
 
-inline feature vw_feature_from_string(VW::workspace& v, std::string fstr, unsigned long seed, float val)
+inline feature vw_feature_from_string(VW::workspace& v, const std::string& fstr, unsigned long seed, float val)
 { auto foo = VW::hash_feature(v, fstr, seed);
   feature f = { val, foo};
   return f;

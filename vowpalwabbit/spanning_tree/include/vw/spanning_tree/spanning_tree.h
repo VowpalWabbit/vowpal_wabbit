@@ -39,7 +39,7 @@ class future;
 
 #  define CLOSESOCK close
 
-typedef int socket_t;
+using socket_t = int;
 
 #  include <future>
 #endif

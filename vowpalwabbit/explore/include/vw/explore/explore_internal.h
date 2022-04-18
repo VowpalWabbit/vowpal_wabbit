@@ -61,7 +61,7 @@ namespace exploration
   template <typename It>
   int generate_epsilon_greedy(float epsilon, uint32_t top_action, It pmf_first, It pmf_last)
   {
-    typedef typename std::iterator_traits<It>::iterator_category pmf_category;
+    using pmf_category = typename std::iterator_traits<It>::iterator_category;
     return generate_epsilon_greedy(epsilon, top_action, pmf_first, pmf_last, pmf_category());
   }
 
@@ -111,8 +111,8 @@ namespace exploration
   template <typename InputIt, typename OutputIt>
   int generate_softmax(float lambda, InputIt scores_first, InputIt scores_last, OutputIt pmf_first, OutputIt pmf_last)
   {
-    typedef typename std::iterator_traits<InputIt>::iterator_category scores_category;
-    typedef typename std::iterator_traits<OutputIt>::iterator_category pmf_category;
+    using scores_category = typename std::iterator_traits<InputIt>::iterator_category;
+    using pmf_category = typename std::iterator_traits<OutputIt>::iterator_category;
 
     return generate_softmax(lambda, scores_first, scores_last, scores_category(), pmf_first, pmf_last, pmf_category());
   }
@@ -145,8 +145,8 @@ namespace exploration
   template <typename InputIt, typename OutputIt>
   int generate_bag(InputIt top_actions_first, InputIt top_actions_last, OutputIt pmf_first, OutputIt pmf_last)
   {
-    typedef typename std::iterator_traits<InputIt>::iterator_category top_actions_category;
-    typedef typename std::iterator_traits<OutputIt>::iterator_category pmf_category;
+    using top_actions_category = typename std::iterator_traits<InputIt>::iterator_category;
+    using pmf_category = typename std::iterator_traits<OutputIt>::iterator_category;
 
     return generate_bag(
         top_actions_first, top_actions_last, top_actions_category(), pmf_first, pmf_last, pmf_category());
@@ -223,7 +223,7 @@ namespace exploration
   template <typename It>
   int enforce_minimum_probability(float minimum_uniform, bool update_zero_elements, It pmf_first, It pmf_last)
   {
-    typedef typename std::iterator_traits<It>::iterator_category pmf_category;
+    using pmf_category = typename std::iterator_traits<It>::iterator_category;
 
     return enforce_minimum_probability(minimum_uniform, update_zero_elements, pmf_first, pmf_last, pmf_category());
   }
@@ -283,7 +283,7 @@ namespace exploration
   template <typename It>
   int sample_after_normalizing(uint64_t seed, It pmf_first, It pmf_last, uint32_t& chosen_index)
   {
-    typedef typename std::iterator_traits<It>::iterator_category pmf_category;
+    using pmf_category = typename std::iterator_traits<It>::iterator_category;
     return sample_after_normalizing(seed, pmf_first, pmf_last, chosen_index, pmf_category());
   }
 
@@ -304,7 +304,7 @@ namespace exploration
   template <typename It>
   int sample_after_normalizing(const char* seed, It pmf_first, It pmf_last, uint32_t& chosen_index)
   {
-    typedef typename std::iterator_traits<It>::iterator_category pmf_category;
+    using pmf_category = typename std::iterator_traits<It>::iterator_category;
     return sample_after_normalizing(seed, pmf_first, pmf_last, chosen_index, pmf_category());
   }
 
@@ -330,7 +330,7 @@ namespace exploration
   template <typename ActionsIt>
   int swap_chosen(ActionsIt action_first, ActionsIt action_last, uint32_t chosen_index)
   {
-    typedef typename std::iterator_traits<ActionsIt>::iterator_category actionit_category;
+    using actionit_category = typename std::iterator_traits<ActionsIt>::iterator_category;
     return swap_chosen(action_first, action_last, actionit_category(), chosen_index);
   }
 
