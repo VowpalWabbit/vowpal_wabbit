@@ -4,12 +4,12 @@
 
 #include "vw/fb_parser/parse_example_flatbuffer.h"
 
-#include "action_score.h"
-#include "best_constant.h"
-#include "cb.h"
-#include "constant.h"
-#include "global_data.h"
-#include "parser.h"
+#include "vw/core/action_score.h"
+#include "vw/core/best_constant.h"
+#include "vw/core/cb.h"
+#include "vw/core/constant.h"
+#include "vw/core/global_data.h"
+#include "vw/core/parser.h"
 
 #include <cfloat>
 #include <fstream>

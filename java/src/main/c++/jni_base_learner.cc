@@ -1,7 +1,7 @@
 #include "jni_base_learner.h"
 
-#include "vw.h"
 #include "vw/common/vw_exception.h"
+#include "vw/core/vw.h"
 
 example* read_example(JNIEnv* env, jstring example_string, VW::workspace* vwInstance)
 {

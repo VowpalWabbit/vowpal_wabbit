@@ -2,9 +2,9 @@
 // individual contributors. All rights reserved. Released under a BSD (revised)
 // license as described in the file LICENSE.
 
-#include "parse_primitives.h"
-#include "vw.h"
 #include "vw/common/text_utils.h"
+#include "vw/core/parse_primitives.h"
+#include "vw/core/vw.h"
 
 #include <boost/test/test_tools.hpp>
 #include <boost/test/unit_test.hpp>

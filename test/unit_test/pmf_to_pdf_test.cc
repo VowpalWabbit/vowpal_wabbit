@@ -2,12 +2,14 @@
 // individual contributors. All rights reserved. Released under a BSD (revised)
 // license as described in the file LICENSE.
 
+#include "vw/core/reductions/pmf_to_pdf.h"
+
+#include "vw/core/action_score.h"
+#include "vw/core/cb_label_parser.h"
+#include "vw/core/learner.h"
+
 #include <boost/test/unit_test.hpp>
 #include <iostream>
-#include "learner.h"
-#include "reductions/pmf_to_pdf.h"
-#include "action_score.h"
-#include "cb_label_parser.h"
 
 using namespace VW::LEARNER;
 using std::pair;

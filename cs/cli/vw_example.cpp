@@ -5,11 +5,11 @@
 #include "vowpalwabbit.h"
 #include "vw_example.h"
 #include "vw_prediction.h"
-#include "simple_label_parser.h"
-#include "reductions/gd.h"
+#include "vw/core/simple_label_parser.h"
+#include "vw/core/reductions/gd.h"
 #include <algorithm>
-#include "shared_data.h"
-#include "parse_example.h"
+#include "vw/core/shared_data.h"
+#include "vw/core/parse_example.h"
 
 namespace VW
 {

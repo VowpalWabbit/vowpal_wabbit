@@ -8,12 +8,12 @@
 // avoid mmap dependency
 #define DISABLE_SHARED_WEIGHTS
 
-#include "array_parameters_dense.h"
-#include "example_predict.h"
-#include "gd_predict.h"
-#include "interactions.h"
 #include "model_parser.h"
 #include "opts.h"
+#include "vw/core/array_parameters_dense.h"
+#include "vw/core/example_predict.h"
+#include "vw/core/gd_predict.h"
+#include "vw/core/interactions.h"
 #include "vw/explore/explore.h"
 
 namespace vw_slim

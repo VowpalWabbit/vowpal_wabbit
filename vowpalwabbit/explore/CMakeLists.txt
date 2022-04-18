@@ -14,5 +14,5 @@ vw_add_library(
 vw_add_test_executable(
     FOR_LIB "explore"
     SOURCES tests/explore_test.cc
-    EXTRA_DEPS vw
+    EXTRA_DEPS vw_core
 )

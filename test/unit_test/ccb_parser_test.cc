@@ -2,13 +2,13 @@
 // individual contributors. All rights reserved. Released under a BSD (revised)
 // license as described in the file LICENSE.
 
-#include "memory.h"
-#include "parse_primitives.h"
-#include "parser.h"
-#include "reductions/conditional_contextual_bandit.h"
 #include "test_common.h"
 #include "vw/common/string_view.h"
 #include "vw/common/text_utils.h"
+#include "vw/core/memory.h"
+#include "vw/core/parse_primitives.h"
+#include "vw/core/parser.h"
+#include "vw/core/reductions/conditional_contextual_bandit.h"
 #include "vw/io/logger.h"
 
 #include <boost/test/test_tools.hpp>

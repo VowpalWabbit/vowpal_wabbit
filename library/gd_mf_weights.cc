@@ -1,10 +1,10 @@
-#include "crossplat_compat.h"
-#include "parser.h"
-#include "vw.h"
 #include "vw/config/cli_help_formatter.h"
 #include "vw/config/option_builder.h"
 #include "vw/config/option_group_definition.h"
 #include "vw/config/options_cli.h"
+#include "vw/core/crossplat_compat.h"
+#include "vw/core/parser.h"
+#include "vw/core/vw.h"
 
 #include <cstdio>
 #include <fstream>

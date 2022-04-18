@@ -2,10 +2,10 @@
 // individual contributors. All rights reserved. Released under a BSD (revised)
 // license as described in the file LICENSE.
 
-#include "constant.h"
-#include "feature_group.h"
-#include "parse_example.h"
-#include "vw.h"
+#include "vw/core/constant.h"
+#include "vw/core/feature_group.h"
+#include "vw/core/parse_example.h"
+#include "vw/core/vw.h"
 #include "vw/fb_parser/parse_example_flatbuffer.h"
 
 #include <gmock/gmock.h>

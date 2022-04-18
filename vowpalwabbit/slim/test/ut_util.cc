@@ -1,7 +1,7 @@
-#include "array_parameters.h"
 #include "data.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
+#include "vw/core/array_parameters.h"
 #include "vw/slim/example_predict_builder.h"
 
 #include <stdlib.h>
@@ -322,13 +322,15 @@ TEST_P(InvalidModelTest, Run)
     // https://stackoverflow.com/questions/8507385/google-test-is-there-a-way-to-combine-a-test-which-is-both-type-parameterized-a
     if (GetParam().weight_type == PredictParamWeightType::Sparse)
     {
-      vw_predict<sparse_parameters> vw;
-      EXPECT_NE(S_VW_PREDICT_OK, vw.load(&model_file[0], end)) << "partial model read until " << end << " didn't throw";
+      vw_predict<sparse_parameters> vw_pred;
+      EXPECT_NE(S_VW_PREDICT_OK, vw_pred.load(&model_file[0], end))
+          << "partial model read until " << end << " didn't throw";
     }
     else
     {
-      vw_predict<dense_parameters> vw;
-      EXPECT_NE(S_VW_PREDICT_OK, vw.load(&model_file[0], end)) << "partial model read until " << end << " didn't throw";
+      vw_predict<dense_parameters> vw_pred;
+      EXPECT_NE(S_VW_PREDICT_OK, vw_pred.load(&model_file[0], end))
+          << "partial model read until " << end << " didn't throw";
     }
   }
 }

@@ -29,7 +29,7 @@ spanning_tree_build:
 	cd build; make -j$(nproc) vw_spanning_tree_bin
 
 vw_build:
-	cd build; make -j$(nproc) vw-bin
+	cd build; make -j$(nproc) vw_cli_bin
 
 active_interactor_build:
 	cd build; make -j$(nproc) active_interactor

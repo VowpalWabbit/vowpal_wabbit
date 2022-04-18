@@ -2,15 +2,15 @@
 // individual contributors. All rights reserved. Released under a BSD (revised)
 // license as described in the file LICENSE.
 
+#include "test_common.h"
+#include "vw/core/rand48.h"
+#include "vw/core/vw.h"
+
 #include <boost/test/test_tools.hpp>
 #include <boost/test/unit_test.hpp>
 #include <ios>
 #include <sstream>
 #include <vector>
-
-#include "rand48.h"
-#include "test_common.h"
-#include "vw.h"
 
 namespace test_helpers
 {

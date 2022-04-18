@@ -1,6 +1,6 @@
-#include "../vowpalwabbit/reductions/search/search_sequencetask.h"
-#include "../vowpalwabbit/vw.h"
 #include "libsearch.h"
+#include "vw/core/reductions/search/search_sequencetask.h"
+#include "vw/core/vw.h"
 
 #include <stdio.h>
 #include <stdlib.h>  // for system

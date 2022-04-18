@@ -4,7 +4,7 @@
 
 #pragma once
 
-#include "v_array.h"
+#include "vw/core/v_array.h"
 #include "vw/fb_parser/generated/example_generated.h"
 
 class io_buf;
