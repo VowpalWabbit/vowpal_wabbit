@@ -68,8 +68,6 @@ public:
   }
 };
 
-inline void vec_add(float& p, float fx, float fw) { p += fx * fw; }
-
 template <bool is_learn>
 void cb_explore_adf_large_action_space::predict_or_learn_impl(VW::LEARNER::multi_learner& base, multi_ex& examples)
 {
@@ -104,7 +102,7 @@ void cb_explore_adf_large_action_space::predict_or_learn_impl(VW::LEARNER::multi
           LazyGaussianVector w(col, seed);
 
           float dot_product = 0.f;
-          GD::foreach_feature<float, float, vec_add, LazyGaussian>(w, all->ignore_some_linear, all->ignore_linear,
+          GD::foreach_feature<float, float, GD::vec_add, LazyGaussianVector>(w, all->ignore_some_linear, all->ignore_linear,
               all->interactions, all->extent_interactions, all->permutations, *ex, dot_product,
               all->_generate_interactions_object_cache);
 
