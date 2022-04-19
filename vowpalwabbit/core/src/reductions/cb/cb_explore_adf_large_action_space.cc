@@ -4,8 +4,7 @@
 
 #include "vw/core/reductions/cb/cb_explore_adf_large_action_space.h"
 
-#include "../../../../Eigen/Dense"
-#include "../../../../Eigen/Sparse"
+#include "Eigen/Dense"
 #include "vw/config/options.h"
 #include "vw/core/gd_predict.h"
 #include "vw/core/label_parser.h"
@@ -20,8 +19,6 @@
 #include <functional>
 #include <vector>
 using namespace VW::cb_explore_adf;
-using SparseM = Eigen::SparseMatrix<float>;
-using Triplet = Eigen::Triplet<float>;
 
 namespace
 {
