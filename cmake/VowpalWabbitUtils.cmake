@@ -121,7 +121,7 @@ function(vw_add_library)
   add_library(VowpalWabbit::${FULL_LIB_NAME} ALIAS ${FULL_LIB_NAME})
 
   if(VW_OUPUT_LIB_DESCRIPTIONS)
-    message(STATUS "{\"name\":\"${VW_LIB_NAME}\", \"target\":\"${FULL_LIB_NAME}\", \"type\":\"${VW_LIB_TYPE}\",\"public_deps\":\"${VW_LIB_PUBLIC_DEPS}\",\"private_deps\":\"${VW_LIB_PRIVATE_DEPS}\",\"exceptions\":\"${VW_LIB_EXCEPTION_DESCRIPTION}\",\"description\":\"${VW_LIB_DESCRIPTION}\"}")
+    message(STATUS "{\"name\":\"${VW_LIB_NAME}\", \"target\":\"${FULL_LIB_NAME}\", \"type\":\"${VW_LIB_TYPE}\",\"description\":\"${VW_LIB_DESCRIPTION}\",\"public_deps\":\"${VW_LIB_PUBLIC_DEPS}\",\"private_deps\":\"${VW_LIB_PRIVATE_DEPS}\",\"exceptions\":\"${VW_LIB_EXCEPTION_DESCRIPTION}\"}")
   endif()
 
   # Append d suffix if we are on Windows and are building a sttic libraru
@@ -215,7 +215,7 @@ function(vw_add_executable)
   target_sources(${FULL_BIN_NAME} PRIVATE ${VW_EXE_SOURCES})
 
   if(VW_OUPUT_LIB_DESCRIPTIONS)
-    message(STATUS "{\"name\":\"${VW_EXE_NAME}\", \"target\":\"${FULL_BIN_NAME}\", \"type\":\"EXECUTABLE\",\"public_deps\":\"\",\"private_deps\":\"${VW_EXE_DEPS}\",\"exceptions\":\"N/A\",\"description\":\"${VW_EXE_DESCRIPTION}\"}")
+    message(STATUS "{\"name\":\"${VW_EXE_NAME}\", \"target\":\"${FULL_BIN_NAME}\", \"type\":\"EXECUTABLE\",\"description\":\"${VW_EXE_DESCRIPTION}\",\"public_deps\":\"\",\"private_deps\":\"${VW_EXE_DEPS}\",\"exceptions\":\"N/A\"}")
   endif()
 
   if(VW_EXE_OVERRIDE_BIN_NAME)
