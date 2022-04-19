@@ -3248,7 +3248,7 @@ base_learner* VW::reductions::search_setup(VW::setup_base_i& stack_builder)
   if (all.training)
   {
     tmp_number_of_policies +=
-        static_cast<int>(ceil((static_cast<float>(all.numpasses)) / (static_cast<float>(priv.passes_per_policy))));
+        static_cast<int>(std::ceil((static_cast<float>(all.numpasses)) / (static_cast<float>(priv.passes_per_policy))));
   }
 
   // the user might have specified the number of policies that will eventually be trained through multiple vw calls,
