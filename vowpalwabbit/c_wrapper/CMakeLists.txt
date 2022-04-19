@@ -8,8 +8,11 @@ vw_add_library(
     TYPE ${lib_type}
     SOURCES include/vw/c_wrapper/vwdll.h include/vw/c_wrapper/vwvis.h src/vwdll.cc
     PRIVATE_DEPS vw_core
+    DESCRIPTION "Old C API. Cannot convey errors in current interface. Can be disabled using option `VW_BUILD_VW_C_WRAPPER`"
+    EXCEPTION_DESCRIPTION "Yes, exceptions are thrown across boundary"
     ENABLE_INSTALL
 )
+
 target_compile_definitions(vw_c_wrapper PUBLIC VWDLL_EXPORTS _CRT_SECURE_NO_WARNINGS _CRT_NONSTDC_NO_DEPRECATE ZLIB_WINAPI)
 
 include(WindowsSetPath)

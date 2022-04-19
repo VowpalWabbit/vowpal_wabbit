@@ -21,7 +21,9 @@ vw_add_library(
   NAME "slim"
   TYPE "STATIC_ONLY"
   SOURCES ${VW_SLIM_SOURCES} ${VW_SLIM_HEADERS}
-  PUBLIC_DEPS vw_common VowpalWabbit::vw_explore
+  PUBLIC_DEPS vw_common vw_explore
+  DESCRIPTION "Minimal inference only runtime"
+  EXCEPTION_DESCRIPTION "No"
 )
 target_compile_definitions(vw_slim PUBLIC EXPLORE_NOEXCEPT VW_NOEXCEPT)
 

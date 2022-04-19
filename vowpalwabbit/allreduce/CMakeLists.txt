@@ -9,6 +9,8 @@ vw_add_library(
     TYPE "STATIC_ONLY"
     SOURCES ${vw_allreduce_sources}
     PUBLIC_DEPS vw_common vw_io
+    DESCRIPTION "Supporting library for thread or socket based distributed learning"
+    EXCEPTION_DESCRIPTION "Yes"
     ENABLE_INSTALL
 )
 

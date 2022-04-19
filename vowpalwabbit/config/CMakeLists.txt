@@ -21,8 +21,10 @@ vw_add_library(
     NAME "config"
     TYPE "STATIC_ONLY"
     SOURCES ${vw_config_sources}
-    PUBLIC_DEPS VowpalWabbit::vw_common
+    PUBLIC_DEPS vw_common
     PRIVATE_DEPS fmt::fmt
+    DESCRIPTION "Option parsing, and command line utilities"
+    EXCEPTION_DESCRIPTION "Yes"
     ENABLE_INSTALL
 )
 
