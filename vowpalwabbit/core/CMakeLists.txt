@@ -97,6 +97,7 @@ set(vw_core_headers
   include/vw/core/reductions/cb/cb_explore_adf_cover.h
   include/vw/core/reductions/cb/cb_explore_adf_first.h
   include/vw/core/reductions/cb/cb_explore_adf_greedy.h
+  include/vw/core/reductions/cb/cb_explore_adf_large_action_space.h
   include/vw/core/reductions/cb/cb_explore_adf_regcb.h
   include/vw/core/reductions/cb/cb_explore_adf_rnd.h
   include/vw/core/reductions/cb/cb_explore_adf_softmax.h
@@ -248,6 +249,7 @@ set(vw_core_sources
   src/reductions/cb/cb_explore_adf_cover.cc
   src/reductions/cb/cb_explore_adf_first.cc
   src/reductions/cb/cb_explore_adf_greedy.cc
+  src/reductions/cb/cb_explore_adf_large_action_space.cc
   src/reductions/cb/cb_explore_adf_regcb.cc
   src/reductions/cb/cb_explore_adf_rnd.cc
   src/reductions/cb/cb_explore_adf_softmax.cc

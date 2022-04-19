@@ -2,19 +2,18 @@
 // individual contributors. All rights reserved. Released under a BSD (revised)
 // license as described in the file LICENSE.
 
-#include "cb_explore_adf_large_action_space.h"
+#include "vw/core/reductions/cb/cb_explore_adf_large_action_space.h"
 
-#include "Eigen/Dense"
-#include "Eigen/Sparse"
-#include "cb_adf.h"
-#include "cb_explore.h"
-#include "config/options.h"
-#include "explore.h"
-#include "gd_predict.h"
-#include "gen_cs_example.h"
-#include "label_parser.h"
-#include "rand48.h"
-#include "setup_base.h"
+#include "../../../../Eigen/Dense"
+#include "../../../../Eigen/Sparse"
+#include "vw/config/options.h"
+#include "vw/core/gd_predict.h"
+#include "vw/core/label_parser.h"
+#include "vw/core/rand48.h"
+#include "vw/core/reductions/cb/cb_adf.h"
+#include "vw/core/reductions/cb/cb_explore.h"
+#include "vw/core/setup_base.h"
+#include "vw/explore/explore.h"
 
 #include <algorithm>
 #include <cmath>
@@ -33,6 +32,9 @@ private:
   float gamma = 1;
   // TODO initialize seed
   uint64_t seed = 0;
+  Eigen::MatrixXf Q;
+  std::vector<float> denominators;
+
   VW::workspace* all;
 
 public:
@@ -46,6 +48,9 @@ public:
 private:
   template <bool is_learn>
   void predict_or_learn_impl(VW::LEARNER::multi_learner& base, multi_ex& examples);
+
+  void calculate_denominators(const ACTION_SCORE::action_scores& preds, float min_ck);
+  void generate_Q(const ACTION_SCORE::action_scores& preds, const multi_ex& examples);
 };
 
 cb_explore_adf_large_action_space::cb_explore_adf_large_action_space(uint64_t d_, float gamma_, VW::workspace* all_)
@@ -68,6 +73,46 @@ public:
   }
 };
 
+void cb_explore_adf_large_action_space::calculate_denominators(const ACTION_SCORE::action_scores& preds, float min_ck)
+{
+  denominators.resize(preds.size());
+  denominators.shrink_to_fit();  // just re-use v_array?
+  for (size_t i = 0; i < preds.size(); i++)
+  { denominators[i] = (std::sqrt(1 + d + (gamma / 4.0f * d) * (preds[i].score - min_ck))); }
+}
+
+void cb_explore_adf_large_action_space::generate_Q(const ACTION_SCORE::action_scores& preds, const multi_ex& examples)
+{
+  // create Q matrix with dimenstions Kxd where K = examples.size()
+  uint64_t num_actions = preds.size();
+  Q.resize(num_actions, d);
+
+  // TODO extend wildspace interactions before calling foreach
+  uint64_t row_index = 0;
+  for (auto* ex : examples)
+  {
+    if (!CB::ec_is_example_header(*ex))
+    {
+      for (size_t col = 0; col < d; col++)
+      {
+        LazyGaussianVector w(col, seed);
+
+        float dot_product = 0.f;
+        GD::foreach_feature<float, float, GD::vec_add, LazyGaussianVector>(w, all->ignore_some_linear,
+            all->ignore_linear, all->interactions, all->extent_interactions, all->permutations, *ex, dot_product,
+            all->_generate_interactions_object_cache);
+
+        Q(row_index, col) = dot_product;
+      }
+      row_index++;
+    }
+  }
+
+  std::cout << "here is a Q: " << std::endl;
+  std::cout << Q << std::endl;
+  std::cout << "-----" << std::endl;
+}
+
 template <bool is_learn>
 void cb_explore_adf_large_action_space::predict_or_learn_impl(VW::LEARNER::multi_learner& base, multi_ex& examples)
 {
@@ -82,39 +127,8 @@ void cb_explore_adf_large_action_space::predict_or_learn_impl(VW::LEARNER::multi
         [](ACTION_SCORE::action_score& a, ACTION_SCORE::action_score& b) { return a.score < b.score; })
                        ->score;
 
-    std::vector<float> denominators;
-
-    for (const auto& pred : preds)
-    { denominators.push_back(std::sqrt(1 + d + (gamma / 4.0f * d) * (pred.score - min_ck))); }
-
-    // create Q matrix with dimenstions Kxd where K = examples.size()
-    uint64_t num_actions = examples[0]->pred.a_s.size();
-    Eigen::MatrixXf Q(num_actions, d);
-
-    // TODO extend wildspace interactions before calling foreach
-    uint64_t row_index = 0;
-    for (auto* ex : examples)
-    {
-      if (!CB::ec_is_example_header(*ex))
-      {
-        for (size_t col = 0; col < d; col++)
-        {
-          LazyGaussianVector w(col, seed);
-
-          float dot_product = 0.f;
-          GD::foreach_feature<float, float, GD::vec_add, LazyGaussianVector>(w, all->ignore_some_linear, all->ignore_linear,
-              all->interactions, all->extent_interactions, all->permutations, *ex, dot_product,
-              all->_generate_interactions_object_cache);
-
-          Q(row_index, col) = dot_product;
-        }
-        row_index++;
-      }
-    }
-
-    std::cout << "here is a Q: " << std::endl;
-    std::cout << Q << std::endl;
-    std::cout << "-----" << std::endl;
+    calculate_denominators(preds, min_ck);
+    generate_Q(preds, examples);
   }
 }
 }  // namespace
@@ -140,7 +154,7 @@ VW::LEARNER::base_learner* VW::reductions::cb_explore_adf_large_action_space_set
                .necessary()
                .keep()
                .help("Large action space exploration"))
-      .add(make_option("d", d).keep().allow_override().default_value(50).help("Max number of actions to explore"))
+      .add(make_option("max_actions", d).keep().allow_override().default_value(50).help("Max number of actions to explore"))
       .add(make_option("gamma", gamma).keep().allow_override().help("Gamma hyperparameter"));
 
   auto enabled = options.add_parse_and_check_necessary(new_options) && large_action_space;

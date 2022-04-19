@@ -4,7 +4,7 @@
 #pragma once
 
 #include "cb_explore_adf_common.h"
-#include "vw_fwd.h"
+#include "vw/core/vw_fwd.h"
 
 #include <vector>
 namespace VW
