@@ -9,8 +9,8 @@
 #include "vw/core/reductions/search/search.h"
 #include "vw/core/vw.h"
 
-#include <errno.h>
-#include <float.h>
+#include <cerrno>
+#include <cfloat>
 
 using namespace VW::config;
 

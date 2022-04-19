@@ -2,9 +2,8 @@
 #include "vw/core/reductions/search/search_sequencetask.h"
 #include "vw/core/vw.h"
 
-#include <stdio.h>
-#include <stdlib.h>  // for system
-
+#include <cstdio>
+#include <cstdlib>  // for system
 #include <utility>
 
 using std::cerr;
