@@ -3,6 +3,7 @@ IF(NOT WIN32)
         NAME "active_interactor"
         OVERRIDE_BIN_NAME "active_interactor"
         SOURCES "src/active_interactor.cc"
+        DESCRIPTION "Tool for interacting with active mode reductions"
         ENABLE_INSTALL
     )
 

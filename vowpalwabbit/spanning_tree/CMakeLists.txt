@@ -9,6 +9,8 @@ vw_add_library(
     SOURCES ${vw_spanning_tree_sources}
     PUBLIC_DEPS vw_common
     PRIVATE_DEPS ${LINK_THREADS}
+    DESCRIPTION "Supporting code for connecting instances of VW for distributed learning"
+    EXCEPTION_DESCRIPTION "Yes"
     ENABLE_INSTALL
 )
 
