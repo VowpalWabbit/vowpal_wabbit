@@ -1,8 +1,11 @@
-#include <stdio.h>
-#include <stdlib.h> // for system
-#include "../vowpalwabbit/vw.h"
-#include "../vowpalwabbit/reductions/search/search_sequencetask.h"
 #include "libsearch.h"
+#include "vw/core/reductions/search/search_sequencetask.h"
+#include "vw/core/vw.h"
+
+#include <stdio.h>
+#include <stdlib.h>  // for system
+
+#include <utility>
 
 using std::cerr;
 using std::endl;
@@ -11,7 +14,7 @@ struct wt
 {
   std::string word;
   uint32_t tag;
-  wt(std::string w, uint32_t t) : word(w), tag(t) {}
+  wt(std::string w, uint32_t t) : word(std::move(w)), tag(t) {}
 };
 
 class SequenceLabelerTask : public SearchTask<std::vector<wt>, std::vector<uint32_t> >

@@ -1,6 +1,7 @@
 #include "vowpalWabbit_learner_VWCCBLearner.h"
-#include "vw.h"
+
 #include "jni_base_learner.h"
+#include "vw/core/vw.h"
 
 jobject decision_scores_prediction(example *vec, JNIEnv *env)
 {

@@ -2,19 +2,18 @@
 // individual contributors. All rights reserved. Released under a BSD (revised)
 // license as described in the file LICENSE.
 
-#include <boost/test/unit_test.hpp>
-#include <boost/test/test_tools.hpp>
+#include "vw/core/reductions/slates.h"
 
 #include "test_common.h"
+#include "vw/core/ccb_label.h"
+#include "vw/core/example.h"
+#include "vw/core/learner.h"
+#include "vw/core/slates_label.h"
+#include "vw/core/vw.h"
 
+#include <boost/test/test_tools.hpp>
+#include <boost/test/unit_test.hpp>
 #include <vector>
-
-#include "vw.h"
-#include "example.h"
-#include "reductions/slates.h"
-#include "slates_label.h"
-#include "ccb_label.h"
-#include "learner.h"
 
 template <typename LearnFunc, typename PredictFunc>
 struct test_base

@@ -2,13 +2,13 @@
 // individual contributors. All rights reserved. Released under a BSD (revised)
 // license as described in the file LICENSE.
 
-#include <boost/test/unit_test.hpp>
-#include <boost/test/test_tools.hpp>
-
 #include "test_common.h"
-#include "parse_args.h"
-#include "parse_example.h"
-#include "parse_primitives.h"
+#include "vw/core/parse_args.h"
+#include "vw/core/parse_example.h"
+#include "vw/core/parse_primitives.h"
+
+#include <boost/test/test_tools.hpp>
+#include <boost/test/unit_test.hpp>
 
 BOOST_AUTO_TEST_CASE(decode_inline_hex_test)
 {

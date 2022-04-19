@@ -2,13 +2,12 @@
 // individual contributors. All rights reserved. Released under a BSD (revised)
 // license as described in the file LICENSE.
 
-#include <boost/test/unit_test.hpp>
-#include <boost/test/test_tools.hpp>
-
 #include "test_common.h"
+#include "vw/core/reductions/conditional_contextual_bandit.h"
 
+#include <boost/test/test_tools.hpp>
+#include <boost/test/unit_test.hpp>
 #include <vector>
-#include "reductions/conditional_contextual_bandit.h"
 
 BOOST_AUTO_TEST_CASE(parse_dsjson_underscore_p)
 {

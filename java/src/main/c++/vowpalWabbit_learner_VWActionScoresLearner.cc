@@ -1,6 +1,7 @@
 #include "vowpalWabbit_learner_VWActionScoresLearner.h"
-#include "vw.h"
+
 #include "jni_base_learner.h"
+#include "vw/core/vw.h"
 
 jobject action_scores_prediction(example *vec, JNIEnv *env)
 {

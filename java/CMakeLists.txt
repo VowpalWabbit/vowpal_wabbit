@@ -37,11 +37,10 @@ set(vw_jni_sources
   ${src_base}/jni_spark_vw.cc
   ${src_base}/jni_spark_cluster.cc
   ${src_base}/util.cc
-  ${CMAKE_CURRENT_SOURCE_DIR}/../vowpalwabbit/spanning_tree.cc
 )
 
 add_library(vw_jni SHARED ${vw_jni_headers} ${vw_jni_sources})
-target_link_libraries(vw_jni PUBLIC VowpalWabbit::vw)
+target_link_libraries(vw_jni PUBLIC vw_core vw_spanning_tree)
 set_property(TARGET vw_jni PROPERTY POSITION_INDEPENDENT_CODE ON)
 set_property(TARGET vw_jni PROPERTY BUILD_RPATH_USE_ORIGIN ON)
 target_include_directories(vw_jni PUBLIC
@@ -102,9 +101,9 @@ if(NOT WIN32)
 
   add_custom_command(TARGET vw_jni POST_BUILD
       COMMAND cp $<TARGET_FILE:vw_jni> target/bin/natives/linux_64
-      COMMAND echo $<TARGET_FILE:vw-bin> > ${CMAKE_CURRENT_SOURCE_DIR}/target/test-classes/vw-bin.txt
+      COMMAND echo $<TARGET_FILE:vw_cli_bin> > ${CMAKE_CURRENT_SOURCE_DIR}/target/test-classes/vw_cli_bin.txt
       # -B is batch mode and avoids the massive download progress print out
-      COMMAND mvn -B verify 
+      COMMAND mvn -B verify
       WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
       COMMENT "Copying shared libary dependencies to output directory")
 

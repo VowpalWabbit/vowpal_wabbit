@@ -21,8 +21,14 @@ jobs:
       - name: Install dependencies
         run: brew install cmake boost flatbuffers ninja
       - name: Configure
-        run: cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=${{matrix.build_type}} -DWARNINGS=Off -DDO_NOT_BUILD_VW_C_WRAPPER=On -DBUILD_TESTING=On -DBUILD_EXPERIMENTAL_BINDING=On -DVW_INSTALL=Off
+        run: cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=${{matrix.build_type}} -DWARNINGS=Off -DVW_BUILD_VW_C_WRAPPER=Off -DBUILD_TESTING=On -DBUILD_EXPERIMENTAL_BINDING=On -DVW_INSTALL=Off
       - name: Build
         run: cmake --build build --target all
       - name: Test
-        run: ctest --test-dir build --extra-verbose --output-on-failure
+        run: |
+          # Run unit tests
+          ctest --test-dir build --extra-verbose --output-on-failure --label-regex VWTestList
+          # Run integration tests
+          python3 test/run_tests.py --fuzzy_compare --exit_first_fail --epsilon 0.001 --ignore_dirty
+          python3 test/run_tests.py --fuzzy_compare --exit_first_fail --epsilon 0.001 --ignore_dirty --extra_options=--onethread
+          python3 test/run_tests.py --ignore_dirty --test_spec test/slow.vwtest.json --timeout 180

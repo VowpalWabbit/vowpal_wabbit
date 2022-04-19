@@ -4,17 +4,16 @@
 
 #pragma once
 
-#include <boost/test/unit_test.hpp>
+#include "vw/core/action_score.h"
+#include "vw/core/ccb_reduction_features.h"
+#include "vw/core/parse_example_json.h"
+#include "vw/core/slates_label.h"
+#include "vw/core/vw.h"
+
 #include <boost/test/test_tools.hpp>
-
-#include <vector>
+#include <boost/test/unit_test.hpp>
 #include <string>
-
-#include "parse_example_json.h"
-#include "slates_label.h"
-#include "ccb_reduction_features.h"
-#include "action_score.h"
-#include "vw.h"
+#include <vector>
 
 constexpr float FLOAT_TOL = 0.0001f;
 

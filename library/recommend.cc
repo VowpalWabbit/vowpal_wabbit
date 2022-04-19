@@ -1,3 +1,10 @@
+#include "vw/config/cli_help_formatter.h"
+#include "vw/config/option_builder.h"
+#include "vw/config/option_group_definition.h"
+#include "vw/config/options_cli.h"
+#include "vw/core/crossplat_compat.h"
+#include "vw/core/vw.h"
+
 #include <unistd.h>
 
 #include <algorithm>
@@ -11,13 +18,6 @@
 #include <queue>
 #include <utility>
 #include <vector>
-
-#include "config/cli_help_formatter.h"
-#include "config/option_builder.h"
-#include "config/option_group_definition.h"
-#include "config/options_cli.h"
-#include "crossplat_compat.h"
-#include "vw.h"
 
 int pairs = 0;
 int users = 0;
@@ -91,7 +91,7 @@ int bf_hit(char* bf, char* line)
   return 1;
 }
 
-typedef std::pair<float, std::string> scored_example;
+using scored_example = std::pair<float, std::string>;
 std::vector<scored_example> scored_examples;
 
 struct compare_scored_examples

@@ -2,23 +2,23 @@
 // individual contributors. All rights reserved. Released under a BSD (revised)
 // license as described in the file LICENSE.
 
-#include "cb.h"
-#include "config/cli_options_serializer.h"
-#include "config/option.h"
-#include "config/options_cli.h"
-#include "cost_sensitive.h"
-#include "future_compat.h"
-#include "kskip_ngram_transformer.h"
-#include "multiclass.h"
-#include "multilabel.h"
-#include "parse_example.h"
-#include "reductions/gd.h"
-#include "reductions/search/search.h"
-#include "reductions/search/search_hooktask.h"
-#include "shared_data.h"
-#include "simple_label_parser.h"
-#include "slates_label.h"
-#include "vw.h"
+#include "vw/common/future_compat.h"
+#include "vw/config/cli_options_serializer.h"
+#include "vw/config/option.h"
+#include "vw/config/options_cli.h"
+#include "vw/core/cb.h"
+#include "vw/core/cost_sensitive.h"
+#include "vw/core/kskip_ngram_transformer.h"
+#include "vw/core/multiclass.h"
+#include "vw/core/multilabel.h"
+#include "vw/core/parse_example.h"
+#include "vw/core/reductions/gd.h"
+#include "vw/core/reductions/search/search.h"
+#include "vw/core/reductions/search/search_hooktask.h"
+#include "vw/core/shared_data.h"
+#include "vw/core/simple_label_parser.h"
+#include "vw/core/slates_label.h"
+#include "vw/core/vw.h"
 
 // see http://www.boost.org/doc/libs/1_56_0/doc/html/bbv2/installation.html
 #define BOOST_PYTHON_USE_GCC_SYMBOL_VISIBILITY 1
@@ -26,10 +26,6 @@
 #include <boost/python.hpp>
 #include <boost/python/suite/indexing/vector_indexing_suite.hpp>
 #include <boost/utility.hpp>
-
-// Brings VW_DLL_PUBLIC to help control exports
-#define VWDLL_EXPORTS
-#include "../vowpalwabbit/vwdll.h"
 
 namespace py = boost::python;
 
@@ -538,6 +534,8 @@ void my_learn(vw_ptr all, example_ptr ec)
     all->learn(*ec.get());
   }
 }
+
+std::string my_json_weights(vw_ptr all) { return all->dump_weights_to_json_experimental(); }
 
 float my_predict(vw_ptr all, example_ptr ec)
 {
@@ -1328,6 +1326,7 @@ BOOST_PYTHON_MODULE(pylibvw)
       .def("finish", &my_finish, "stop VW by calling finish (and, eg, write weights to disk)")
       .def("save", &my_save, "save model to filename")
       .def("learn", &my_learn, "given a pyvw example, learn (and predict) on that example")
+      .def("json_weights", &my_json_weights, "get json string of current weights")
       .def("predict", &my_predict, "given a pyvw example, predict on that example")
       .def("hash_space", &VW::hash_space, "given a namespace (as a string), compute the hash of that namespace")
       .def("hash_feature", &VW::hash_feature,

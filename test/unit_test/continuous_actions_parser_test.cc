@@ -2,23 +2,23 @@
 // individual contributors. All rights reserved. Released under a BSD (revised)
 // license as described in the file LICENSE.
 
-#include <boost/test/unit_test.hpp>
-#include <boost/test/test_tools.hpp>
-
-#include "io/logger.h"
 #include "test_common.h"
+#include "vw/common/string_view.h"
+#include "vw/common/text_utils.h"
+#include "vw/core/cb_continuous_label.h"
+#include "vw/core/parse_primitives.h"
+#include "vw/core/parser.h"
+#include "vw/io/logger.h"
 
-#include <vector>
-#include "cb_continuous_label.h"
-#include "parser.h"
-#include "parse_primitives.h"
-#include "vw_string_view.h"
+#include <boost/test/test_tools.hpp>
+#include <boost/test/unit_test.hpp>
 #include <memory>
+#include <vector>
 
 void parse_label(VW::label_parser& lp, VW::string_view label, VW::polylabel& l, VW::reduction_features& red_fts)
 {
   std::vector<VW::string_view> words;
-  tokenize(' ', label, words);
+  VW::tokenize(' ', label, words);
   lp.default_label(l);
   VW::label_parser_reuse_mem mem;
   auto null_logger = VW::io::create_null_logger();

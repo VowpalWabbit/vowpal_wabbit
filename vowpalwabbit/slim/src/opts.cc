@@ -1,7 +1,8 @@
-#include "opts.h"
+#include "vw/slim/opts.h"
 
 #include <cctype>
 #include <cstdlib>
+#include <utility>
 
 namespace vw_slim
 {
@@ -59,14 +60,14 @@ template void find_opt<std::vector<namespace_index>>(
 std::vector<std::string> find_opt(std::string const& command_line_args, std::string arg_name)
 {
   std::vector<std::string> values;
-  find_opt(command_line_args, arg_name, values);
+  find_opt(command_line_args, std::move(arg_name), values);
   return values;
 }
 
 template <typename T, typename S, S (*F)(const char*)>
 bool find_opt_parse(std::string const& command_line_args, std::string arg_name, T& value)
 {
-  std::vector<std::string> opts = find_opt(command_line_args, arg_name);
+  std::vector<std::string> opts = find_opt(command_line_args, std::move(arg_name));
 
   if (opts.size() != 1) return false;
 
@@ -77,11 +78,11 @@ bool find_opt_parse(std::string const& command_line_args, std::string arg_name, 
 
 bool find_opt_float(std::string const& command_line_args, std::string arg_name, float& value)
 {
-  return find_opt_parse<float, double, atof>(command_line_args, arg_name, value);
+  return find_opt_parse<float, double, atof>(command_line_args, std::move(arg_name), value);
 }
 
 bool find_opt_int(std::string const& command_line_args, std::string arg_name, int& value)
 {
-  return find_opt_parse<int, int, atoi>(command_line_args, arg_name, value);
+  return find_opt_parse<int, int, atoi>(command_line_args, std::move(arg_name), value);
 }
 }  // namespace vw_slim
