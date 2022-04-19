@@ -4,8 +4,6 @@
 
 #pragma once
 #ifndef VW_NOEXCEPT
-#  include <string.h>
-
 #  include <array>
 #  include <cstring>
 #  include <sstream>
@@ -13,7 +11,7 @@
 #  include <string>
 
 #  ifndef _WIN32
-#    include <locale.h>
+#    include <clocale>
 #  endif
 
 #  include "vwvis.h"

@@ -27,11 +27,10 @@
 #include "vw/core/vw.h"
 #include "vw/io/logger.h"
 
-#include <float.h>
-#include <math.h>
-#include <string.h>
-
 #include <algorithm>
+#include <cfloat>
+#include <cmath>
+#include <cstring>
 #include <memory>
 // needed for printing ranges of objects (eg: all elements of a vector)
 #include <fmt/ranges.h>

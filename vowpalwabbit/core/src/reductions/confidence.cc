@@ -13,9 +13,8 @@
 #include "vw/core/vw.h"
 #include "vw/io/logger.h"
 
-#include <math.h>
-
 #include <cfloat>
+#include <cmath>
 
 using namespace VW::LEARNER;
 using namespace VW::config;

@@ -11,8 +11,7 @@ Implementation by Miro Dudik.
 #include "vw/core/learner.h"
 #include "vw/core/setup_base.h"
 
-#include <float.h>
-
+#include <cfloat>
 #include <cmath>
 #include <fstream>
 #ifndef _WIN32

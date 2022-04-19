@@ -1,9 +1,8 @@
 #include "libsearch.h"
 #include "vw/core/vw.h"
 
-#include <stdio.h>
-#include <stdlib.h>  // for system
-
+#include <cstdio>
+#include <cstdlib>  // for system
 #include <fstream>
 #include <iostream>
 #include <string>
