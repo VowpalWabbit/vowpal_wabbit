@@ -3,6 +3,8 @@ vw_add_executable(
     OVERRIDE_BIN_NAME "vw"
     SOURCES "src/main.cc"
     DEPS vw_core
+    DESCRIPTION "Primary VW command line interface. The `vw` executable."
+
     ENABLE_INSTALL
 )
 

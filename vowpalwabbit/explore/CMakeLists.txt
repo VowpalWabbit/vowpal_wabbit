@@ -8,6 +8,8 @@ vw_add_library(
     TYPE "HEADER_ONLY"
     SOURCES ${vw_explore_sources}
     PUBLIC_DEPS vw_common
+    DESCRIPTION "Utilities for sampling and generating exploration distributions"
+    EXCEPTION_DESCRIPTION "No"
     ENABLE_INSTALL
 )
 

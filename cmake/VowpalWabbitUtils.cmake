@@ -17,6 +17,7 @@ function(vw_get_lib_target OUTPUT LIB_NAME)
   set(${OUTPUT} vw_${LIB_NAME} PARENT_SCOPE)
 endfunction()
 
+
 # Given a lib name writes to OUTPUT what the correspinding test target name will be
 function(vw_get_test_target OUTPUT LIB_NAME)
   set(${OUTPUT} vw_${LIB_NAME}_test PARENT_SCOPE)
@@ -50,7 +51,7 @@ function(vw_add_library)
   cmake_parse_arguments(
     VW_LIB
     "ENABLE_INSTALL"
-    "NAME;TYPE"
+    "NAME;TYPE;DESCRIPTION;EXCEPTION_DESCRIPTION"
     "SOURCES;PUBLIC_DEPS;PRIVATE_DEPS"
     ${ARGN}
   )
@@ -73,6 +74,14 @@ function(vw_add_library)
 
   if(NOT VW_LIB_SOURCES)
     message(FATAL_ERROR "No sources specified")
+  endif()
+
+  if(NOT DEFINED VW_LIB_DESCRIPTION)
+    message(WARNING "No DESCRIPTION specified for ${VW_LIB_NAME}")
+  endif()
+
+  if(NOT DEFINED VW_LIB_EXCEPTION_DESCRIPTION)
+    message(WARNING "No EXCEPTION_DESCRIPTION specified for ${VW_LIB_NAME}")
   endif()
 
   # TODO this can be removed when we target a minimum of CMake 3.13
@@ -110,6 +119,10 @@ function(vw_add_library)
   vw_get_lib_target(FULL_LIB_NAME ${VW_LIB_NAME})
   add_library(${FULL_LIB_NAME} ${CONCRETE_CMAKE_LIB_TYPE})
   add_library(VowpalWabbit::${FULL_LIB_NAME} ALIAS ${FULL_LIB_NAME})
+
+  if(VW_OUPUT_LIB_DESCRIPTIONS)
+    message(STATUS "{\"name\":\"${VW_LIB_NAME}\", \"target\":\"${FULL_LIB_NAME}\", \"type\":\"${VW_LIB_TYPE}\",\"public_deps\":\"${VW_LIB_PUBLIC_DEPS}\",\"private_deps\":\"${VW_LIB_PRIVATE_DEPS}\",\"exceptions\":\"${VW_LIB_EXCEPTION_DESCRIPTION}\",\"description\":\"${VW_LIB_DESCRIPTION}\"}")
+  endif()
 
   # Append d suffix if we are on Windows and are building a sttic libraru
   if(WIN32)
@@ -180,7 +193,7 @@ endfunction()
 function(vw_add_executable)
   cmake_parse_arguments(VW_EXE
     "ENABLE_INSTALL"
-    "NAME;OVERRIDE_BIN_NAME"
+    "NAME;OVERRIDE_BIN_NAME;DESCRIPTION"
     "SOURCES;DEPS"
     ${ARGN}
   )
@@ -193,9 +206,17 @@ function(vw_add_executable)
     message(FATAL_ERROR "No sources specified")
   endif()
 
+  if(NOT DEFINED VW_EXE_DESCRIPTION)
+    message(WARNING "No DESCRIPTION specified for ${VW_EXE_NAME}")
+  endif()
+
   vw_get_bin_target(FULL_BIN_NAME ${VW_EXE_NAME})
   add_executable(${FULL_BIN_NAME})
   target_sources(${FULL_BIN_NAME} PRIVATE ${VW_EXE_SOURCES})
+
+  if(VW_OUPUT_LIB_DESCRIPTIONS)
+    message(STATUS "{\"name\":\"${VW_EXE_NAME}\", \"target\":\"${FULL_BIN_NAME}\", \"type\":\"EXECUTABLE\",\"public_deps\":\"\",\"private_deps\":\"${VW_EXE_DEPS}\",\"exceptions\":\"N/A\",\"description\":\"${VW_EXE_DESCRIPTION}\"}")
+  endif()
 
   if(VW_EXE_OVERRIDE_BIN_NAME)
     set_target_properties(${FULL_BIN_NAME} PROPERTIES OUTPUT_NAME ${VW_EXE_OVERRIDE_BIN_NAME})

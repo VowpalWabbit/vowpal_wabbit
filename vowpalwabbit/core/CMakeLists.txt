@@ -342,29 +342,17 @@ vw_add_library(
     NAME "core"
     TYPE "STATIC_ONLY"
     SOURCES ${vw_core_headers} ${vw_core_sources}
-    PUBLIC_DEPS VowpalWabbit::vw_common VowpalWabbit::vw_explore VowpalWabbit::vw_allreduce VowpalWabbit::vw_config ${spdlog_target} fmt::fmt
+    PUBLIC_DEPS vw_common vw_explore vw_allreduce vw_config ${spdlog_target} fmt::fmt
     PRIVATE_DEPS
-        ${CMAKE_DL_LIBS} ${LINK_THREADS} VowpalWabbit::vw_io
+        ${CMAKE_DL_LIBS} ${LINK_THREADS} vw_io $<BUILD_INTERFACE:${boost_math_target}>
         # Workaround an issue where RapidJSON needed to be exported tom install the target. This is
         # actually a private dependency and so do not "link" when processing targets for installation.
         # https://gitlab.kitware.com/cmake/cmake/issues/15415
         $<BUILD_INTERFACE:RapidJSON>
+    DESCRIPTION "This contains all remaining VW code, all reduction implementations, driver, option handling"
+    EXCEPTION_DESCRIPTION "Yes"
     ${ENABLE_INSTALL_OPTION}
 )
-
-# If we are using a sys dep then we can link as normal as it is imported.
-if(VW_BOOST_MATH_SYS_DEP)
-  target_link_libraries(vw_core PRIVATE ${boost_math_target})
-else()
-  # If using the vendored version we need to treat it differently.
-  # CMake must propagate interface libs even if private in case they link
-  # libraries. Since we know Boost::math does not link any further libs we
-  # have to supply the build requirements piecewise and leave off link libraries.
-  # https://gitlab.kitware.com/cmake/cmake/-/issues/15415
-  target_include_directories(vw_core PRIVATE $<TARGET_PROPERTY:${boost_math_target},INTERFACE_INCLUDE_DIRECTORIES>)
-  target_compile_options(vw_core PRIVATE $<TARGET_PROPERTY:${boost_math_target},INTERFACE_COMPILE_OPTIONS>)
-  target_compile_definitions(vw_core PRIVATE $<TARGET_PROPERTY:${boost_math_target},INTERFACE_COMPILE_DEFINITIONS>)
-endif()
 
 if (BUILD_EXTERNAL_PARSER)
   target_compile_definitions(vw_core PUBLIC BUILD_EXTERNAL_PARSER)
