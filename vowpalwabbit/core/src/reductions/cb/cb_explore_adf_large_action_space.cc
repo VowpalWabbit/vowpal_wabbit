@@ -32,7 +32,7 @@ private:
 
   VW::workspace* all;
   uint64_t seed = 0;
-  std::vector<float> shrink_factors;
+  VW::v_array<float> shrink_factors;
 
 public:
   cb_explore_adf_large_action_space(uint64_t d_, float gamma_, VW::workspace* all_);
@@ -72,10 +72,9 @@ public:
 
 void cb_explore_adf_large_action_space::calculate_shrink_factor(const ACTION_SCORE::action_scores& preds, float min_ck)
 {
-  shrink_factors.resize(preds.size());
-  shrink_factors.shrink_to_fit();  // just re-use v_array?
+  shrink_factors.clear();
   for (size_t i = 0; i < preds.size(); i++)
-  { shrink_factors[i] = (std::sqrt(1 + d + (gamma / 4.0f * d) * (preds[i].score - min_ck))); }
+  { shrink_factors.push_back(std::sqrt(1 + d + (gamma / 4.0f * d) * (preds[i].score - min_ck))); }
 }
 
 void cb_explore_adf_large_action_space::generate_Q(const ACTION_SCORE::action_scores& preds, const multi_ex& examples)
