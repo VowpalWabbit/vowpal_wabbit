@@ -9,6 +9,7 @@
 #include "vw/core/gd_predict.h"
 #include "vw/core/label_parser.h"
 #include "vw/core/rand48.h"
+#include "vw/core/rand_state.h"
 #include "vw/core/reductions/cb/cb_adf.h"
 #include "vw/core/reductions/cb/cb_explore.h"
 #include "vw/core/setup_base.h"
@@ -27,12 +28,11 @@ struct cb_explore_adf_large_action_space
 private:
   uint64_t d = 0;
   float gamma = 1;
-  // TODO initialize seed
-  uint64_t seed = 0;
   Eigen::MatrixXf Q;
-  std::vector<float> denominators;
 
   VW::workspace* all;
+  uint64_t seed = 0;
+  std::vector<float> shrink_factors;
 
 public:
   cb_explore_adf_large_action_space(uint64_t d_, float gamma_, VW::workspace* all_);
@@ -46,12 +46,12 @@ private:
   template <bool is_learn>
   void predict_or_learn_impl(VW::LEARNER::multi_learner& base, multi_ex& examples);
 
-  void calculate_denominators(const ACTION_SCORE::action_scores& preds, float min_ck);
+  void calculate_shrink_factor(const ACTION_SCORE::action_scores& preds, float min_ck);
   void generate_Q(const ACTION_SCORE::action_scores& preds, const multi_ex& examples);
 };
 
 cb_explore_adf_large_action_space::cb_explore_adf_large_action_space(uint64_t d_, float gamma_, VW::workspace* all_)
-    : d(d_), gamma(gamma_), all(all_)
+    : d(d_), gamma(gamma_), all(all_), seed(all->get_random_state()->get_current_state())
 {
 }
 
@@ -70,12 +70,12 @@ public:
   }
 };
 
-void cb_explore_adf_large_action_space::calculate_denominators(const ACTION_SCORE::action_scores& preds, float min_ck)
+void cb_explore_adf_large_action_space::calculate_shrink_factor(const ACTION_SCORE::action_scores& preds, float min_ck)
 {
-  denominators.resize(preds.size());
-  denominators.shrink_to_fit();  // just re-use v_array?
+  shrink_factors.resize(preds.size());
+  shrink_factors.shrink_to_fit();  // just re-use v_array?
   for (size_t i = 0; i < preds.size(); i++)
-  { denominators[i] = (std::sqrt(1 + d + (gamma / 4.0f * d) * (preds[i].score - min_ck))); }
+  { shrink_factors[i] = (std::sqrt(1 + d + (gamma / 4.0f * d) * (preds[i].score - min_ck))); }
 }
 
 void cb_explore_adf_large_action_space::generate_Q(const ACTION_SCORE::action_scores& preds, const multi_ex& examples)
@@ -124,7 +124,7 @@ void cb_explore_adf_large_action_space::predict_or_learn_impl(VW::LEARNER::multi
         [](ACTION_SCORE::action_score& a, ACTION_SCORE::action_score& b) { return a.score < b.score; })
                        ->score;
 
-    calculate_denominators(preds, min_ck);
+    calculate_shrink_factor(preds, min_ck);
     generate_Q(preds, examples);
   }
 }
@@ -151,7 +151,11 @@ VW::LEARNER::base_learner* VW::reductions::cb_explore_adf_large_action_space_set
                .necessary()
                .keep()
                .help("Large action space exploration"))
-      .add(make_option("max_actions", d).keep().allow_override().default_value(50).help("Max number of actions to explore"))
+      .add(make_option("max_actions", d)
+               .keep()
+               .allow_override()
+               .default_value(50)
+               .help("Max number of actions to explore"))
       .add(make_option("gamma", gamma).keep().allow_override().help("Gamma hyperparameter"));
 
   auto enabled = options.add_parse_and_check_necessary(new_options) && large_action_space;
