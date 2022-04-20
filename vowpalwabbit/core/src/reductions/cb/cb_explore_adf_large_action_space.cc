@@ -3,12 +3,10 @@
 // license as described in the file LICENSE.
 
 #include "vw/core/reductions/cb/cb_explore_adf_large_action_space.h"
-
-#include "Eigen/Dense"
+#include "details/large_action_space.h"
 #include "vw/config/options.h"
 #include "vw/core/gd_predict.h"
 #include "vw/core/label_parser.h"
-#include "vw/core/rand48.h"
 #include "vw/core/rand_state.h"
 #include "vw/core/reductions/cb/cb_adf.h"
 #include "vw/core/reductions/cb/cb_explore.h"
@@ -21,54 +19,28 @@
 #include <vector>
 using namespace VW::cb_explore_adf;
 
-namespace
+namespace VW
 {
-struct cb_explore_adf_large_action_space
+namespace cb_explore_adf
 {
-private:
-  uint64_t d = 0;
-  float gamma = 1;
-  Eigen::MatrixXf Q;
-
-  VW::workspace* all;
-  uint64_t seed = 0;
-  VW::v_array<float> shrink_factors;
-
-public:
-  cb_explore_adf_large_action_space(uint64_t d_, float gamma_, VW::workspace* all_);
-  ~cb_explore_adf_large_action_space() = default;
-
-  // Should be called through cb_explore_adf_base for pre/post-processing
-  void predict(VW::LEARNER::multi_learner& base, multi_ex& examples) { predict_or_learn_impl<false>(base, examples); }
-  void learn(VW::LEARNER::multi_learner& base, multi_ex& examples) { predict_or_learn_impl<true>(base, examples); }
-
-private:
-  template <bool is_learn>
-  void predict_or_learn_impl(VW::LEARNER::multi_learner& base, multi_ex& examples);
-
-  void calculate_shrink_factor(const ACTION_SCORE::action_scores& preds, float min_ck);
-  void generate_Q(const ACTION_SCORE::action_scores& preds, const multi_ex& examples);
-};
+void cb_explore_adf_large_action_space::predict(VW::LEARNER::multi_learner& base, multi_ex& examples)
+{
+  predict_or_learn_impl<false>(base, examples);
+}
+void cb_explore_adf_large_action_space::learn(VW::LEARNER::multi_learner& base, multi_ex& examples)
+{
+  predict_or_learn_impl<true>(base, examples);
+}
 
 cb_explore_adf_large_action_space::cb_explore_adf_large_action_space(uint64_t d_, float gamma_, VW::workspace* all_)
     : d(d_), gamma(gamma_), all(all_), seed(all->get_random_state()->get_current_state())
 {
 }
 
-struct LazyGaussianVector
+LazyGaussianVector::LazyGaussianVector(uint64_t column_index_, uint64_t seed_)
+    : column_index(column_index_), seed(seed_)
 {
-private:
-  uint64_t column_index;
-  uint64_t seed;
-
-public:
-  LazyGaussianVector(uint64_t column_index_, uint64_t seed_) : column_index(column_index_), seed(seed_) {}
-  inline float operator[](uint64_t index) const
-  {
-    auto combined_index = index + column_index + seed;
-    return merand48_boxmuller(combined_index);
-  }
-};
+}
 
 void cb_explore_adf_large_action_space::calculate_shrink_factor(const ACTION_SCORE::action_scores& preds, float min_ck)
 {
@@ -77,10 +49,10 @@ void cb_explore_adf_large_action_space::calculate_shrink_factor(const ACTION_SCO
   { shrink_factors.push_back(std::sqrt(1 + d + (gamma / 4.0f * d) * (preds[i].score - min_ck))); }
 }
 
-void cb_explore_adf_large_action_space::generate_Q(const ACTION_SCORE::action_scores& preds, const multi_ex& examples)
+void cb_explore_adf_large_action_space::generate_Q(const multi_ex& examples)
 {
   // create Q matrix with dimenstions Kxd where K = examples.size()
-  uint64_t num_actions = preds.size();
+  uint64_t num_actions = examples[0]->pred.a_s.size();
   Q.resize(num_actions, d);
 
   // TODO extend wildspace interactions before calling foreach
@@ -103,10 +75,6 @@ void cb_explore_adf_large_action_space::generate_Q(const ACTION_SCORE::action_sc
       row_index++;
     }
   }
-
-  std::cout << "here is a Q: " << std::endl;
-  std::cout << Q << std::endl;
-  std::cout << "-----" << std::endl;
 }
 
 template <bool is_learn>
@@ -124,10 +92,11 @@ void cb_explore_adf_large_action_space::predict_or_learn_impl(VW::LEARNER::multi
                        ->score;
 
     calculate_shrink_factor(preds, min_ck);
-    generate_Q(preds, examples);
+    generate_Q(examples);
   }
 }
-}  // namespace
+}  // namespace cb_explore_adf
+}  // namespace VW
 
 VW::LEARNER::base_learner* VW::reductions::cb_explore_adf_large_action_space_setup(VW::setup_base_i& stack_builder)
 {
@@ -155,6 +124,7 @@ VW::LEARNER::base_learner* VW::reductions::cb_explore_adf_large_action_space_set
                .allow_override()
                .default_value(50)
                .help("Max number of actions to explore"))
+      // TODO figure out gamma
       .add(make_option("gamma", gamma).keep().allow_override().help("Gamma hyperparameter"));
 
   auto enabled = options.add_parse_and_check_necessary(new_options) && large_action_space;

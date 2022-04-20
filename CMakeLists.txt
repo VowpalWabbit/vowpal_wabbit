@@ -247,6 +247,7 @@ endif()
 if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME AND BUILD_TESTING)
   # Boost test is only required if we are building tests
   find_package(Boost REQUIRED COMPONENTS unit_test_framework)
+  set(VW_CORE_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/vowpalwabbit/core/src)
   add_subdirectory(test)
 
   # Don't offer these make dependent targets on Windows
