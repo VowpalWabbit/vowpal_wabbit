@@ -46,51 +46,69 @@ BOOST_AUTO_TEST_CASE(creation_of_Q_with_lazy_gaussian)
     action_space->explore.generate_Q(examples);
     std::cout << action_space->explore.Q << std::endl;
 
-    // // feature 1 -> stride shifted to 4
-    // // feature 2 -> stride shifted to 8
-    // // feature 3 -> stride shifted to 12
-    auto fw1 = vw.weights.dense_weights[4];
-    auto fw2 = vw.weights.dense_weights[8];
-    auto fw3 = vw.weights.dense_weights[12];
-    auto fw_constant = vw.weights.dense_weights[examples[0]->feature_space[constant_namespace].indices[0]];
+    // feature 1 -> stride shifted
+    // feature 2 -> stride shifted
+    // feature 3 -> stride shifted
+    auto f1_i = 1 << 2;
+    auto f2_i = 2 << 2;
+    auto f3_i = 3 << 2;
+    auto constant_i = examples[0]->feature_space[constant_namespace].indices[0];
+
+    auto fw1 = vw.weights.dense_weights[f1_i];
+    auto fw2 = vw.weights.dense_weights[f2_i];
+    auto fw3 = vw.weights.dense_weights[f3_i];
+
+    auto fw_constant = vw.weights.dense_weights[constant_i];
+
+    uint64_t seed = vw.get_random_state()->get_current_state();
+    // checking the multiplication of matrix A of vw action weights dim(#actions x #features) which is a sparse
+    // matrix, with the random matrix with Gaussian entries of dim(#features x d)
 
     {
-      uint64_t col = 0;
-      uint64_t row = 4;
-      uint64_t seed = vw.get_random_state()->get_current_state();
-      auto combined_index = row + col + seed;
-      auto lazyg_col_0 = merand48_boxmuller(combined_index);
-      row = 8;
-      combined_index = row + col + seed;
-      auto lazyg_col_1 = merand48_boxmuller(combined_index);
-      row = 12;
-      combined_index = row + col + seed;
-      auto lazyg_col_2 = merand48_boxmuller(combined_index);
-      row = examples[0]->feature_space[constant_namespace].indices[0];
-      combined_index = row + col + seed;
-      auto lazyg_col_3 = merand48_boxmuller(combined_index);
+      uint64_t gauss_col = 0;
 
-      float dot_product = fw1 * lazyg_col_0 + fw2 * lazyg_col_1 + fw3 * lazyg_col_2 + fw_constant * lazyg_col_3;
-      BOOST_CHECK_EQUAL(dot_product, action_space->explore.Q(0, col));
+      uint64_t A_row = f1_i;
+      auto combined_index = A_row + gauss_col + seed;
+      auto lazyg_col_0_row_f1 = merand48_boxmuller(combined_index);
+
+      A_row = f2_i;
+      combined_index = A_row + gauss_col + seed;
+      auto lazyg_col_0_row_f2 = merand48_boxmuller(combined_index);
+
+      A_row = f3_i;
+      combined_index = A_row + gauss_col + seed;
+      auto lazyg_col_0_row_f3 = merand48_boxmuller(combined_index);
+
+      A_row = constant_i;
+      combined_index = A_row + gauss_col + seed;
+      auto lazyg_col_0_row_const = merand48_boxmuller(combined_index);
+
+      float dot_product = fw1 * lazyg_col_0_row_f1 + fw2 * lazyg_col_0_row_f2 + fw3 * lazyg_col_0_row_f3 +
+          fw_constant * lazyg_col_0_row_const;
+      BOOST_CHECK_EQUAL(dot_product, action_space->explore.Q(0, gauss_col));
     }
     {
-      uint64_t col = 1;
-      uint64_t row = 4;
-      uint64_t seed = vw.get_random_state()->get_current_state();
-      auto combined_index = row + col + seed;
-      auto lazyg_col_0 = merand48_boxmuller(combined_index);
-      row = 8;
-      combined_index = row + col + seed;
-      auto lazyg_col_1 = merand48_boxmuller(combined_index);
-      row = 12;
-      combined_index = row + col + seed;
-      auto lazyg_col_2 = merand48_boxmuller(combined_index);
-      row = examples[0]->feature_space[constant_namespace].indices[0];
-      combined_index = row + col + seed;
-      auto lazyg_col_3 = merand48_boxmuller(combined_index);
+      uint64_t gauss_col = 1;
 
-      float dot_product = fw1 * lazyg_col_0 + fw2 * lazyg_col_1 + fw3 * lazyg_col_2 + fw_constant * lazyg_col_3;
-      BOOST_CHECK_EQUAL(dot_product, action_space->explore.Q(0, col));
+      uint64_t A_row = f1_i;
+      auto combined_index = A_row + gauss_col + seed;
+      auto lazyg_col_1_row_f1 = merand48_boxmuller(combined_index);
+
+      A_row = f2_i;
+      combined_index = A_row + gauss_col + seed;
+      auto lazyg_col_1_row_f2 = merand48_boxmuller(combined_index);
+
+      A_row = f3_i;
+      combined_index = A_row + gauss_col + seed;
+      auto lazyg_col_1_row_f3 = merand48_boxmuller(combined_index);
+
+      A_row = constant_i;
+      combined_index = A_row + gauss_col + seed;
+      auto lazyg_col_1_row_const = merand48_boxmuller(combined_index);
+
+      float dot_product = fw1 * lazyg_col_1_row_f1 + fw2 * lazyg_col_1_row_f2 + fw3 * lazyg_col_1_row_f3 +
+          fw_constant * lazyg_col_1_row_const;
+      BOOST_CHECK_EQUAL(dot_product, action_space->explore.Q(0, gauss_col));
     }
   }
 }
