@@ -4,11 +4,11 @@
 #pragma once
 
 #include "Eigen/Dense"
-#include "vw/core/rand48.h"
-
 #include "vw/core/action_score.h"
+#include "vw/core/rand48.h"
 #include "vw/core/v_array.h"
 #include "vw/core/vw_fwd.h"
+
 #include <iostream>
 #include <vector>
 
