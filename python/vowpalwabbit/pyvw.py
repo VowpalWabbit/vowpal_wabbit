@@ -176,9 +176,11 @@ class VWOption:
             if self.is_flag():
                 return "--{}".format(self.name)
             else:
-                # missing list case
                 if isinstance(self.value, list):
-                    return "**NOT_IMPL**"
+                    res = ""
+                    for ele in self.value:
+                        res += f"--{self.name} {ele} "
+                    return res
                 else:
                     return "--{} {}".format(self.name, self.value)
         else:
