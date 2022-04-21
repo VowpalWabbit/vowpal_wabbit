@@ -1,7 +1,8 @@
 predictions = rcv1_raw_cb_explore.preds
-using cache_file = train-sets/rcv1_raw_cb_small_p2.vw.merged.cache
-ignoring text input in favor of cache input
-num sources = 1
+creating cache_file = train-sets/rcv1_raw_cb_small_p2.vw.merged.cache
+Reading datafile = train-sets/rcv1_raw_cb_small_p1.vw
+Reading datafile = train-sets/rcv1_raw_cb_small_p2.vw
+num sources = 2
 Num weight bits = 24
 learning rate = 0.25
 initial_t = 0

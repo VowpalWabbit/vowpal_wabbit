@@ -36,11 +36,16 @@ private:
   float m_power_t;
 
   internal : VowpalWabbitArguments(VW::workspace* vw)
-      : m_data(gcnew String(vw->data_filenames.front().c_str()))
-      , m_finalRegressor(gcnew String(vw->final_regressor_name.c_str()))
+      : m_finalRegressor(gcnew String(vw->final_regressor_name.c_str()))
       , m_testonly(!vw->training)
       , m_passes((int)vw->numpasses)
   {
+    if (vw->data_filenames.size() >= 1) { m_data = gcnew String(vw->data_filenames.front().c_str()); }
+    else
+    {
+      m_data = gcnew String("");
+    }
+
     auto options = vw->options.get();
 
     if (vw->initial_regressors.size() > 0)
