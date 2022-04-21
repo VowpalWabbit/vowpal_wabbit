@@ -5123,5 +5123,20 @@
     "input_files": [
       "train-sets/cb_l_namespace.txt"
     ]
+  },
+  {
+    "id": 399,
+    "desc": "test multi d -- based on test 316 to share same metrics of the complete file dsjson_cb.json (which is split into two here)",
+    "vw_command": "-d train-sets/dsjson_cb_part1.json -d train-sets/dsjson_cb_part2.json --dsjson --cb_explore_adf --epsilon 0.2 --quadratic GT --extra_metrics metrics_time.json",
+    "diff_files": {
+      "metrics_time.json": "test-sets/ref/metrics_time.json",
+      "stdout": "train-sets/ref/metrics_time.stdout",
+      "stderr": "train-sets/ref/multid.stderr"
+    },
+    "input_files": [
+      "train-sets/dsjson_cb_part1.json",
+      "train-sets/dsjson_cb_part2.json"
+    ]
   }
+
 ]
