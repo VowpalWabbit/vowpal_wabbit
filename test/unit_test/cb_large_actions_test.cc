@@ -92,7 +92,6 @@ BOOST_AUTO_TEST_CASE(creation_of_Q_with_lazy_gaussian)
     vw.predict(examples);
 
     action_space->explore.generate_Q(examples);
-    std::cout << action_space->explore.Q << std::endl;
 
     check_matrix_multiplication(vw, action_space, examples, d);
 
