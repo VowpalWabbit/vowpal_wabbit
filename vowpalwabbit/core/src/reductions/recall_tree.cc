@@ -13,9 +13,8 @@
 #include "vw/core/setup_base.h"
 #include "vw/core/vw_math.h"
 
-#include <float.h>
-
 #include <algorithm>
+#include <cfloat>
 #include <cmath>
 #include <cstdio>
 #include <memory>

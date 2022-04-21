@@ -803,7 +803,11 @@ class DFtoVW:
                 )
             )
 
-        if label_type and y:
+        x = x if isinstance(x, list) else [x]
+        namespaces = Namespace(features=[Feature(value=colname) for colname in x])
+        if not y:
+            return cls(namespaces=namespaces, label=None, df=df)
+        else:
             y = y if isinstance(y, list) else [y]
             if label_type not in ["multi_label"]:
                 if len(y) > 1:
@@ -813,15 +817,8 @@ class DFtoVW:
                     )
                 else:
                     y = y[0]
-
             label = dict_label_type[label_type](y)
-        else:
-            label = None
-
-        x = x if isinstance(x, list) else [x]
-
-        namespaces = Namespace(features=[Feature(value=colname) for colname in x])
-        return cls(namespaces=namespaces, label=label, df=df)
+            return cls(namespaces=namespaces, label=label, df=df)
 
     def check_features_type(self, features: Union[Feature, List[Feature]]):
         """Check if the features argument is of type Feature.
