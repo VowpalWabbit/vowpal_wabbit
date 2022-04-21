@@ -584,23 +584,17 @@ void enable_sources(VW::workspace& all, bool quiet, size_t passes, input_options
     }
     else
     {
-      std::string filename_to_read = all.data_filenames.empty() ? "" : all.data_filenames.front();
-      std::string input_name = filename_to_read;
-      auto should_use_compressed = input_options.compressed || VW::ends_with(filename_to_read, ".gz");
+      auto total_files_to_read = all.data_filenames.size();
+      std::string input_name;
+      std::unique_ptr<VW::io::reader> adapter;
 
-      try
+      if (total_files_to_read == 0)
       {
-        std::unique_ptr<VW::io::reader> adapter;
-        if (!filename_to_read.empty())
-        {
-          adapter = should_use_compressed ? VW::io::open_compressed_file_reader(filename_to_read)
-                                          : VW::io::open_file_reader(filename_to_read);
-        }
-        else if (!all.stdin_off)
+        if (!all.stdin_off)
         {
           input_name = "stdin";
           // Should try and use stdin
-          if (should_use_compressed) { adapter = VW::io::open_compressed_stdin(); }
+          if (input_options.compressed) { adapter = VW::io::open_compressed_stdin(); }
           else
           {
             adapter = VW::io::open_stdin();
@@ -611,15 +605,34 @@ void enable_sources(VW::workspace& all, bool quiet, size_t passes, input_options
           // Stdin is off and no file was passed.
           input_name = "none";
         }
-
         if (!quiet) { *(all.trace_message) << "Reading datafile = " << input_name << endl; }
-
         if (adapter) { all.example_parser->input.add_file(std::move(adapter)); }
+      }
+      else
+      {
+      try
+      {
+        // iterate over all.data_filenames
+        for (size_t i = 0; i < total_files_to_read; i++)
+        {
+          input_name = all.data_filenames[i];
+          auto should_use_compressed = input_options.compressed || VW::ends_with(input_name, ".gz");
+          if (should_use_compressed) { adapter = VW::io::open_compressed_file_reader(input_name); }
+          else
+          {
+            adapter = VW::io::open_file_reader(input_name);
+          }
+          if (!quiet) { *(all.trace_message) << "Reading datafile = " << input_name << endl; }
+          all.example_parser->input.add_file(std::move(adapter));
+        }
+
       }
       catch (std::exception const& ex)
       {
-        THROW("Failed to open input data file '" << filename_to_read << "'. Inner error: " << ex.what());
+        THROW("Failed to open input data file '" << input_name << "'. Inner error: " << ex.what());
       }
+      }
+
 
       if (input_options.json || input_options.dsjson) { set_json_reader(all, input_options.dsjson); }
 #ifdef BUILD_FLATBUFFERS
