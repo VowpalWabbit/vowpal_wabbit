@@ -354,10 +354,10 @@ std::vector<VW::namespace_extent> unflatten_namespace_extents_dont_skip(
   return results;
 }
 
-void to_flat::convert_txt_to_flat(VW::workspace& all)
+void to_flat::convert_single_txt_to_flat(VW::workspace& all, std::string filename)
 {
+  if (output_flatbuffer_name.empty()) { output_flatbuffer_name = filename + ".fb"; }
   std::ofstream outfile;
-  if (output_flatbuffer_name.empty()) { output_flatbuffer_name = all.data_filenames.front() + ".fb"; }
   outfile.open(output_flatbuffer_name, std::ios::binary | std::ios::out);
 
   MultiExampleBuilder multi_ex_builder;
@@ -488,4 +488,12 @@ void to_flat::convert_txt_to_flat(VW::workspace& all)
 
   *(all.trace_message) << "Converted " << _examples << " examples" << std::endl;
   *(all.trace_message) << "Flatbuffer " << output_flatbuffer_name << " created" << std::endl;
+
+  outfile.close()
+}
+
+void to_flat::convert_txt_to_flat(VW::workspace& all)
+{
+  for (int d = 0; d < all.data_filenames.size(); d++)
+  { to_flat::convert_single_txt_to_flat(all, all.data_filenames[d]) }
 }
