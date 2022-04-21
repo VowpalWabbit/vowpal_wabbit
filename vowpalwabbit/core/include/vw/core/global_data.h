@@ -167,7 +167,7 @@ public:
 #ifdef BUILD_EXTERNAL_PARSER
   std::unique_ptr<VW::external::parser> external_parser;
 #endif
-  std::string data_filename;
+  std::vector<std::string> data_filenames;
 
   bool daemon;
   uint64_t num_children;

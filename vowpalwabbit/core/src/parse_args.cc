@@ -376,7 +376,7 @@ input_options parse_source(VW::workspace& all, options_i& options)
   input_options parsed_options;
 
   option_group_definition input_options("Input");
-  input_options.add(make_option("data", all.data_filename).short_name("d").help("Example set"))
+  input_options.add(make_option("data", all.data_filenames).short_name("d").help("Example set"))
       .add(make_option("daemon", parsed_options.daemon).help("Persistent daemon mode on port 26542"))
       .add(make_option("foreground", parsed_options.foreground)
                .help("In persistent daemon mode, do not run in the background"))
@@ -419,7 +419,7 @@ input_options parse_source(VW::workspace& all, options_i& options)
   // Check if the options provider has any positional args. Only really makes sense for command line, others just return
   // an empty list.
   const auto positional_tokens = options.get_positional_tokens();
-  if (positional_tokens.size() == 1) { all.data_filename = positional_tokens[0]; }
+  if (positional_tokens.size() == 1) { all.data_filenames.push_back(positional_tokens[0]); }
   else if (positional_tokens.size() > 1)
   {
     all.logger.err_warn(
@@ -435,7 +435,7 @@ input_options parse_source(VW::workspace& all, options_i& options)
   }
 
   // Add an implicit cache file based on the data filename.
-  if (parsed_options.cache) { parsed_options.cache_files.push_back(all.data_filename + ".cache"); }
+  if (parsed_options.cache) { parsed_options.cache_files.push_back(all.data_filenames.front() + ".cache"); }
 
   if ((parsed_options.cache || options.was_supplied("cache_file")) && options.was_supplied("invert_hash"))
     THROW("invert_hash is incompatible with a cache file.  Use it in single pass mode only.")

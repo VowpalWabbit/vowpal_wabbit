@@ -584,7 +584,7 @@ void enable_sources(VW::workspace& all, bool quiet, size_t passes, input_options
     }
     else
     {
-      std::string filename_to_read = all.data_filename;
+      std::string filename_to_read = all.data_filenames.empty() ? "" : all.data_filenames.front();
       std::string input_name = filename_to_read;
       auto should_use_compressed = input_options.compressed || VW::ends_with(filename_to_read, ".gz");
 

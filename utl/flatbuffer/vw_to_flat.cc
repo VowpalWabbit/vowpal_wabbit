@@ -357,7 +357,7 @@ std::vector<VW::namespace_extent> unflatten_namespace_extents_dont_skip(
 void to_flat::convert_txt_to_flat(VW::workspace& all)
 {
   std::ofstream outfile;
-  if (output_flatbuffer_name.empty()) { output_flatbuffer_name = all.data_filename + ".fb"; }
+  if (output_flatbuffer_name.empty()) { output_flatbuffer_name = all.data_filenames.front() + ".fb"; }
   outfile.open(output_flatbuffer_name, std::ios::binary | std::ios::out);
 
   MultiExampleBuilder multi_ex_builder;

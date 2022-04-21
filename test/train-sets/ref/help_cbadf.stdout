@@ -85,7 +85,7 @@ Feature Options:
     -q, --quadratic args...                 Create and use quadratic features (type: list[str], keep)
     --cubic args...                         Create and use cubic features (type: list[str], keep)
 Input Options:
-    -d, --data arg                          Example set (type: str)
+    -d, --data args...                      Example set (type: list[str])
     --daemon                                Persistent daemon mode on port 26542 (type: bool)
     --foreground                            In persistent daemon mode, do not run in the background (type:
                                             bool)
