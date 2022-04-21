@@ -346,7 +346,7 @@ vw_add_library(
     SOURCES ${vw_core_headers} ${vw_core_sources}
     PUBLIC_DEPS vw_common vw_explore vw_allreduce vw_config ${spdlog_target} fmt::fmt
     PRIVATE_DEPS
-        ${CMAKE_DL_LIBS} ${LINK_THREADS} vw_io $<BUILD_INTERFACE:${boost_math_target}> eigen
+        ${CMAKE_DL_LIBS} ${LINK_THREADS} vw_io $<BUILD_INTERFACE:${boost_math_target}> $<BUILD_INTERFACE:eigen>
         # Workaround an issue where RapidJSON needed to be exported tom install the target. This is
         # actually a private dependency and so do not "link" when processing targets for installation.
         # https://gitlab.kitware.com/cmake/cmake/issues/15415
