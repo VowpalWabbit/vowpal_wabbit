@@ -117,7 +117,7 @@ VW::LEARNER::base_learner* VW::reductions::cb_explore_adf_large_action_space_set
   float gamma;
 
   config::option_group_definition new_options(
-      "[Reduction] Contextual Bandit Exploration with ADF with large action space");
+      "[Reduction] Experimental: Contextual Bandit Exploration with ADF with large action space");
   new_options
       .add(make_option("cb_explore_adf", cb_explore_adf_option)
                .keep()
