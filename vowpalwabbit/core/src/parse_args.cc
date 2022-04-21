@@ -428,12 +428,19 @@ input_options parse_source(VW::workspace& all, options_i& options)
     all.numpasses = static_cast<size_t>(1e5);
   }
 
-  // Add an implicit cache file based on the data filename.
+  // Add an implicit cache file based on the last/only data filename.
   if (parsed_options.cache)
   {
-    for (int d = 0; d < all.data_filenames.size(); d++)
-    { parsed_options.cache_files.push_back(all.data_filenames[d] + ".cache"); }
-    if (all.data_filenames.size() == 0) { parsed_options.cache_files.push_back(".cache"); }
+    if (all.data_filenames.size() > 1)
+    { parsed_options.cache_files.push_back(all.data_filenames.back() + ".merged.cache"); }
+    else if (all.data_filenames.size() == 1)
+    {
+      parsed_options.cache_files.push_back(all.data_filenames.back() + ".cache");
+    }
+    else
+    {
+      parsed_options.cache_files.push_back(".cache");
+    }
   }
 
   if ((parsed_options.cache || options.was_supplied("cache_file")) && options.was_supplied("invert_hash"))
