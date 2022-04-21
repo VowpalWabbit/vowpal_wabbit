@@ -785,6 +785,7 @@ def convert_tests_for_flatbuffers(
             "337",
             "338",
             "351",
+            "399",
             "400",
         ):
             test.skip = True
