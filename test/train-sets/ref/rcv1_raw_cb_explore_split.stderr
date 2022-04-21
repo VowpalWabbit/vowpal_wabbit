@@ -1,0 +1,32 @@
+predictions = rcv1_raw_cb_explore.preds
+using no cache
+Reading datafile = train-sets/rcv1_raw_cb_small_p1.vw
+Reading datafile = train-sets/rcv1_raw_cb_small_p2.vw
+num sources = 2
+Num weight bits = 24
+learning rate = 0.25
+initial_t = 0
+power_t = 0.5
+cb_type = mtr
+Enabled reductions: gd, scorer-identity, csoaa_ldf-rank, cb_adf, cb_explore_adf_greedy, shared_feature_merger, cb_to_cbadf
+Input label = cb
+Output pred = action_probs
+average  since         example        example        current        current  current
+loss     last          counter         weight          label        predict features
+1.000000 1.000000            1            1.0        0:1:0.5          0:0.5      560
+0.500000 0.000000            2            2.0        0:0:0.5         1:0.97     1196
+0.250000 0.000000            4            4.0        0:0:0.5         1:0.97     1568
+0.131250 0.012500            8            8.0        0:0:0.5         1:0.97     1700
+0.559375 0.987500           16           16.0        0:1:0.5         1:0.97      236
+0.407812 0.256250           32           32.0        0:0:0.5         0:0.97      332
+0.366406 0.325000           64           64.0        1:1:0.5         0:0.97      680
+0.267187 0.167969          128          128.0        0:1:0.5         1:0.97     1220
+0.227539 0.187891          256          256.0        1:0:0.5         1:0.97     1424
+0.229980 0.232422          512          512.0        1:1:0.5         0:0.97      848
+
+finished run
+number of examples = 1000
+weighted example sum = 1000.000000
+weighted label sum = 0.000000
+average loss = 0.174900
+total feature number = 880040

@@ -123,13 +123,11 @@ class FlatbufferTest:
             # replace depends_on filename with our filename, will do nothing if no depends_on
             to_flatbuff_command = re.sub(
                 "{} [:a-zA-Z0-9_.\-/]*".format("-d"),
-                "-d {} ".format(from_file),
+                "",
                 to_flatbuff_command,
             )
 
-            cmd = "{} {} {} {}".format(
-                to_flatbuff, to_flatbuff_command, "--fb_out", to_file
-            )
+            to_flatbuff_command = f"-d {from_file} " + to_flatbuff_command
             if self.depends_on_cmd is not None and "audit" in self.test.command_line:
                 cmd += " --audit"
             print(
