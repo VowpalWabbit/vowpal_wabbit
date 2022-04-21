@@ -356,6 +356,7 @@ vw_add_library(
     ${ENABLE_INSTALL_OPTION}
 )
 
+target_include_directories(vw_core PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/src)
 if (BUILD_EXTERNAL_PARSER)
   target_compile_definitions(vw_core PUBLIC BUILD_EXTERNAL_PARSER)
   target_include_directories(vw_core PRIVATE ${EXTERNAL_PARSER_DIR})
