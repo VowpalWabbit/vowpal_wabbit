@@ -180,7 +180,7 @@ class VWOption:
                     res = ""
                     for ele in self.value:
                         res += f"--{self.name} {ele} "
-                    return res
+                    return res.strip()
                 else:
                     return "--{} {}".format(self.name, self.value)
         else:
