@@ -612,7 +612,6 @@ void enable_sources(VW::workspace& all, bool quiet, size_t passes, input_options
       {
         try
         {
-          // iterate over all.data_filenames
           for (size_t i = 0; i < total_files_to_read; i++)
           {
             input_name = all.data_filenames[i];

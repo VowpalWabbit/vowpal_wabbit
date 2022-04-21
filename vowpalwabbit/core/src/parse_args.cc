@@ -435,7 +435,12 @@ input_options parse_source(VW::workspace& all, options_i& options)
   }
 
   // Add an implicit cache file based on the data filename.
-  if (parsed_options.cache) { parsed_options.cache_files.push_back(all.data_filenames.front() + ".cache"); }
+  if (parsed_options.cache)
+  {
+    for (int d = 0; d < all.data_filenames.size(); d++)
+    { parsed_options.cache_files.push_back(all.data_filenames[d] + ".cache"); }
+    if (all.data_filenames.size() == 0) { parsed_options.cache_files.push_back(".cache"); }
+  }
 
   if ((parsed_options.cache || options.was_supplied("cache_file")) && options.was_supplied("invert_hash"))
     THROW("invert_hash is incompatible with a cache file.  Use it in single pass mode only.")
