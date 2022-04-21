@@ -45,7 +45,7 @@ void cb_explore_adf_large_action_space::calculate_shrink_factor(const ACTION_SCO
   { shrink_factors.push_back(std::sqrt(1 + d + (gamma / 4.0f * d) * (preds[i].score - min_ck))); }
 }
 
-inline void just_add(float& p, float, float fw) { p += fw; }
+inline void just_add_weights(float& p, float, float fw) { p += fw; }
 
 void cb_explore_adf_large_action_space::generate_Q(const multi_ex& examples)
 {
@@ -64,15 +64,15 @@ void cb_explore_adf_large_action_space::generate_Q(const multi_ex& examples)
         float dot_product = 0.f;
         if (all->weights.sparse)
         {
-          LazyGaussianVector<sparse_parameters> w(all->weights.sparse_weights, col, seed);
-          GD::foreach_feature<float, float, just_add, LazyGaussianVector<sparse_parameters>>(w,
+          LazyGaussianDotProduct<sparse_parameters> w(all->weights.sparse_weights, col, seed);
+          GD::foreach_feature<float, float, just_add_weights, LazyGaussianDotProduct<sparse_parameters>>(w,
               all->ignore_some_linear, all->ignore_linear, all->interactions, all->extent_interactions,
               all->permutations, *ex, dot_product, all->_generate_interactions_object_cache);
         }
         else
         {
-          LazyGaussianVector<dense_parameters> w(all->weights.dense_weights, col, seed);
-          GD::foreach_feature<float, float, just_add, LazyGaussianVector<dense_parameters>>(w,
+          LazyGaussianDotProduct<dense_parameters> w(all->weights.dense_weights, col, seed);
+          GD::foreach_feature<float, float, just_add_weights, LazyGaussianDotProduct<dense_parameters>>(w,
               all->ignore_some_linear, all->ignore_linear, all->interactions, all->extent_interactions,
               all->permutations, *ex, dot_product, all->_generate_interactions_object_cache);
         }

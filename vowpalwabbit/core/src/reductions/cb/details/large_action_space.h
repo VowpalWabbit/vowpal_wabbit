@@ -42,8 +42,12 @@ private:
   void predict_or_learn_impl(VW::LEARNER::multi_learner& base, multi_ex& examples);
 };
 
+// this is meant to be called with foreach_feature
+// for each feature it will multiply the weight that corresponds to the index with the corresponding gaussian element
+// If the returned values are summed the end resutlt is the dot product between the weight vector of the features of an
+// example with a vector of gaussian elements
 template <typename WeightsT>
-struct LazyGaussianVector
+struct LazyGaussianDotProduct
 {
 private:
   WeightsT& weights;
@@ -51,7 +55,7 @@ private:
   uint64_t seed;
 
 public:
-  LazyGaussianVector(WeightsT& weights_, uint64_t column_index_, uint64_t seed_)
+  LazyGaussianDotProduct(WeightsT& weights_, uint64_t column_index_, uint64_t seed_)
       : weights(weights_), column_index(column_index_), seed(seed_)
   {
   }
