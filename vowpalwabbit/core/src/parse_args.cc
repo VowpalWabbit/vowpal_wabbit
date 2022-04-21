@@ -419,13 +419,7 @@ input_options parse_source(VW::workspace& all, options_i& options)
   // Check if the options provider has any positional args. Only really makes sense for command line, others just return
   // an empty list.
   const auto positional_tokens = options.get_positional_tokens();
-  if (positional_tokens.size() == 1) { all.data_filenames.push_back(positional_tokens[0]); }
-  else if (positional_tokens.size() > 1)
-  {
-    all.logger.err_warn(
-        "Multiple data files passed as positional parameters, only the first one will be "
-        "read and the rest will be ignored.");
-  }
+  for (int d = 0; d < positional_tokens.size(); d++) { all.data_filenames.push_back(positional_tokens[d]); }
 
   if (parsed_options.daemon || options.was_supplied("pid_file") || (options.was_supplied("port") && !all.active))
   {
