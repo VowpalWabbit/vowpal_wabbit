@@ -4,6 +4,7 @@
 
 #include "vw/core/reductions/cb/cb_explore_adf_large_action_space.h"
 #include "details/large_action_space.h"
+
 #include "vw/config/options.h"
 #include "vw/core/gd_predict.h"
 #include "vw/core/label_parser.h"
@@ -37,17 +38,14 @@ cb_explore_adf_large_action_space::cb_explore_adf_large_action_space(uint64_t d_
 {
 }
 
-LazyGaussianVector::LazyGaussianVector(uint64_t column_index_, uint64_t seed_)
-    : column_index(column_index_), seed(seed_)
-{
-}
-
 void cb_explore_adf_large_action_space::calculate_shrink_factor(const ACTION_SCORE::action_scores& preds, float min_ck)
 {
   shrink_factors.clear();
   for (size_t i = 0; i < preds.size(); i++)
   { shrink_factors.push_back(std::sqrt(1 + d + (gamma / 4.0f * d) * (preds[i].score - min_ck))); }
 }
+
+inline void just_add(float& p, float, float fw) { p += fw; }
 
 void cb_explore_adf_large_action_space::generate_Q(const multi_ex& examples)
 {
@@ -63,12 +61,21 @@ void cb_explore_adf_large_action_space::generate_Q(const multi_ex& examples)
     {
       for (size_t col = 0; col < d; col++)
       {
-        LazyGaussianVector w(col, seed);
-
         float dot_product = 0.f;
-        GD::foreach_feature<float, float, GD::vec_add, LazyGaussianVector>(w, all->ignore_some_linear,
-            all->ignore_linear, all->interactions, all->extent_interactions, all->permutations, *ex, dot_product,
-            all->_generate_interactions_object_cache);
+        if (all->weights.sparse)
+        {
+          LazyGaussianVector<sparse_parameters> w(all->weights.sparse_weights, col, seed);
+          GD::foreach_feature<float, float, just_add, LazyGaussianVector<sparse_parameters>>(w,
+              all->ignore_some_linear, all->ignore_linear, all->interactions, all->extent_interactions,
+              all->permutations, *ex, dot_product, all->_generate_interactions_object_cache);
+        }
+        else
+        {
+          LazyGaussianVector<dense_parameters> w(all->weights.dense_weights, col, seed);
+          GD::foreach_feature<float, float, just_add, LazyGaussianVector<dense_parameters>>(w,
+              all->ignore_some_linear, all->ignore_linear, all->interactions, all->extent_interactions,
+              all->permutations, *ex, dot_product, all->_generate_interactions_object_cache);
+        }
 
         Q(row_index, col) = dot_product;
       }

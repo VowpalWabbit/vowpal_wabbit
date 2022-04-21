@@ -6,9 +6,10 @@
 #include "eigen/Eigen/Dense"
 #include "vw/core/rand48.h"
 
+#include "vw/core/action_score.h"
 #include "vw/core/v_array.h"
 #include "vw/core/vw_fwd.h"
-
+#include <iostream>
 #include <vector>
 
 namespace VW
@@ -41,19 +42,23 @@ private:
   void predict_or_learn_impl(VW::LEARNER::multi_learner& base, multi_ex& examples);
 };
 
+template <typename WeightsT>
 struct LazyGaussianVector
 {
 private:
+  WeightsT& weights;
   uint64_t column_index;
   uint64_t seed;
 
 public:
-  LazyGaussianVector(uint64_t column_index_, uint64_t seed_);
-
+  LazyGaussianVector(WeightsT& weights_, uint64_t column_index_, uint64_t seed_)
+      : weights(weights_), column_index(column_index_), seed(seed_)
+  {
+  }
   inline float operator[](uint64_t index) const
   {
     auto combined_index = index + column_index + seed;
-    return merand48_boxmuller(combined_index);
+    return weights[index] * merand48_boxmuller(combined_index);
   }
 };
 }  // namespace cb_explore_adf
