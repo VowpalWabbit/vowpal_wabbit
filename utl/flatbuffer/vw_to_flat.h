@@ -59,6 +59,7 @@ public:
   std::string output_flatbuffer_name;
   uint64_t collection_size = 0;
   bool collection = false;
+  void convert_single_txt_to_flat(VW::workspace& all, std::string filename);
   void convert_txt_to_flat(VW::workspace& all);
 
 private:
