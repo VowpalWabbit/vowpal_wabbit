@@ -610,29 +610,27 @@ void enable_sources(VW::workspace& all, bool quiet, size_t passes, input_options
       }
       else
       {
-      try
-      {
-        // iterate over all.data_filenames
-        for (size_t i = 0; i < total_files_to_read; i++)
+        try
         {
-          input_name = all.data_filenames[i];
-          auto should_use_compressed = input_options.compressed || VW::ends_with(input_name, ".gz");
-          if (should_use_compressed) { adapter = VW::io::open_compressed_file_reader(input_name); }
-          else
+          // iterate over all.data_filenames
+          for (size_t i = 0; i < total_files_to_read; i++)
           {
-            adapter = VW::io::open_file_reader(input_name);
+            input_name = all.data_filenames[i];
+            auto should_use_compressed = input_options.compressed || VW::ends_with(input_name, ".gz");
+            if (should_use_compressed) { adapter = VW::io::open_compressed_file_reader(input_name); }
+            else
+            {
+              adapter = VW::io::open_file_reader(input_name);
+            }
+            if (!quiet) { *(all.trace_message) << "Reading datafile = " << input_name << endl; }
+            all.example_parser->input.add_file(std::move(adapter));
           }
-          if (!quiet) { *(all.trace_message) << "Reading datafile = " << input_name << endl; }
-          all.example_parser->input.add_file(std::move(adapter));
         }
-
+        catch (std::exception const& ex)
+        {
+          THROW("Failed to open input data file '" << input_name << "'. Inner error: " << ex.what());
+        }
       }
-      catch (std::exception const& ex)
-      {
-        THROW("Failed to open input data file '" << input_name << "'. Inner error: " << ex.what());
-      }
-      }
-
 
       if (input_options.json || input_options.dsjson) { set_json_reader(all, input_options.dsjson); }
 #ifdef BUILD_FLATBUFFERS
