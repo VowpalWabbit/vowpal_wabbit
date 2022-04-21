@@ -489,11 +489,11 @@ void to_flat::convert_single_txt_to_flat(VW::workspace& all, std::string filenam
   *(all.trace_message) << "Converted " << _examples << " examples" << std::endl;
   *(all.trace_message) << "Flatbuffer " << output_flatbuffer_name << " created" << std::endl;
 
-  outfile.close()
+  outfile.close();
 }
 
 void to_flat::convert_txt_to_flat(VW::workspace& all)
 {
   for (int d = 0; d < all.data_filenames.size(); d++)
-  { to_flat::convert_single_txt_to_flat(all, all.data_filenames[d]) }
+  { to_flat::convert_single_txt_to_flat(all, all.data_filenames[d]); }
 }
