@@ -164,8 +164,8 @@ private:
     if (ec->indices.size() > 1)
     {  // 1+ nonconstant feature. (most common case first)
       return complete_multi_ex(ec);
-    // Explicitly do not process the end-of-pass examples here: It needs to be done
-    // after learning on the collected multi_ex
+      // Explicitly do not process the end-of-pass examples here: It needs to be done
+      // after learning on the collected multi_ex
     }
     else if (is_save_cmd(ec))
     {

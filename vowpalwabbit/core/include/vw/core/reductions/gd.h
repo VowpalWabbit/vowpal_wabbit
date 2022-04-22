@@ -21,7 +21,6 @@ VW::LEARNER::base_learner* gd_setup(VW::setup_base_i& stack_builder);
 }  // namespace VW
 namespace GD
 {
-
 struct gd;
 
 float finalize_prediction(shared_data* sd, VW::io::logger& logger, float ret);

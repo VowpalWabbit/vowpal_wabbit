@@ -330,7 +330,7 @@ void save_load_tree(plt& p, io_buf& model_file, bool read, bool text)
     }
   }
 }
-}  // namespace plt_ns
+}  // namespace
 
 base_learner* VW::reductions::plt_setup(VW::setup_base_i& stack_builder)
 {

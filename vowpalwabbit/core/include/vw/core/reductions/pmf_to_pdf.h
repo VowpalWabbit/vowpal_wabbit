@@ -33,5 +33,5 @@ private:
   CB::label temp_lbl_cb;
   ACTION_SCORE::action_scores temp_pred_a_s;
 };
-}  // namespace pmf_to_pdf
+}  // namespace reductions
 }  // namespace VW

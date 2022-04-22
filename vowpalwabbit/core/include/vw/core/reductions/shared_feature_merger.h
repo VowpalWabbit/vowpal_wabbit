@@ -10,5 +10,5 @@ namespace VW
 namespace reductions
 {
 VW::LEARNER::base_learner* shared_feature_merger_setup(VW::setup_base_i& stack_builder);
-}  // namespace shared_feature_merger
+}  // namespace reductions
 }  // namespace VW
