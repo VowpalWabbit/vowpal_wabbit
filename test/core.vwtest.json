@@ -5219,7 +5219,8 @@
     "depends_on": [403],
     "input_files": [
       "train-sets/rcv1_raw_cb_small_p1.vw",
-      "train-sets/rcv1_raw_cb_small_p2.vw"
+      "train-sets/rcv1_raw_cb_small_p2.vw",
+      "train-sets/rcv1_raw_cb_small_p2.vw.2.merged.cache"
     ]
   }
 
