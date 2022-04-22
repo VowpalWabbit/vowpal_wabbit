@@ -177,10 +177,7 @@ class VWOption:
                 return "--{}".format(self.name)
             else:
                 if isinstance(self.value, list):
-                    res = ""
-                    for ele in self.value:
-                        res += f"--{self.name} {ele} "
-                    return res.strip()
+                    return " ".join(map(lambda x: f"--{self.name} {x}", self.value))
                 else:
                     return "--{} {}".format(self.name, self.value)
         else:

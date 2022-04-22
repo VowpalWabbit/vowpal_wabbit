@@ -5192,6 +5192,20 @@
       "train-sets/rcv1_raw_cb_small_p1.vw",
       "train-sets/rcv1_raw_cb_small_p2.vw"
     ]
+  },
+  {
+    "id": 404,
+    "desc": "test multi d positional -- based on test 316/400 any file preceded by -d goes before any file passed via positional arg",
+    "vw_command": "--dsjson --cb_explore_adf --epsilon 0.2 train-sets/dsjson_cb_part2.json --quadratic GT --extra_metrics metrics_time.json -d train-sets/dsjson_cb_part1.json",
+    "diff_files": {
+      "metrics_time.json": "test-sets/ref/metrics_time.json",
+      "stdout": "train-sets/ref/metrics_time.stdout",
+      "stderr": "train-sets/ref/multid.stderr"
+    },
+    "input_files": [
+      "train-sets/dsjson_cb_part1.json",
+      "train-sets/dsjson_cb_part2.json"
+    ]
   }
 
 
