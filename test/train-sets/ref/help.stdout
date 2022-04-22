@@ -95,6 +95,7 @@ Input Options:
     --port_file arg                         Write port used in persistent daemon mode (type: str)
     -c, --cache                             Use a cache. The default is <data>.cache (type: bool)
     --cache_file args...                    The location(s) of cache_file (type: list[str])
+    --single_cache_file                     Use a single cache file for all source/data files (type: bool)
     --json                                  Enable JSON parsing (type: bool)
     --dsjson                                Enable Decision Service JSON parsing (type: bool)
     -k, --kill_cache                        Do not reuse existing cache: create a new one always (type: bool)
