@@ -539,6 +539,12 @@ Weight Options:
                                             uint, keep, necessary)
     --replay_m_count arg                    How many times (in expectation) should each example be played
                                             (default: 1 = permuting) (type: uint, default: 1)
+[Reduction] Experimental: Contextual Bandit Exploration with ADF with large action space Options:
+    --cb_explore_adf                        Online explore-exploit for a contextual bandit problem with multiline
+                                            action dependent features (type: bool, keep, necessary)
+    --large_action_space                    Large action space exploration (type: bool, keep, necessary)
+    --max_actions arg                       Max number of actions to explore (type: uint, default: 50, keep)
+    --gamma arg                             Gamma hyperparameter (type: float, keep)
 [Reduction] Explore Evaluation Options:
     --explore_eval                          Evaluate explore_eval adf policies (type: bool, keep, necessary)
     --multiplier arg                        Multiplier used to make all rejection sample probabilities <=

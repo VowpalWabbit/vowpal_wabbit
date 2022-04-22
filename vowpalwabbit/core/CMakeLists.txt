@@ -97,6 +97,7 @@ set(vw_core_headers
   include/vw/core/reductions/cb/cb_explore_adf_cover.h
   include/vw/core/reductions/cb/cb_explore_adf_first.h
   include/vw/core/reductions/cb/cb_explore_adf_greedy.h
+  include/vw/core/reductions/cb/cb_explore_adf_large_action_space.h
   include/vw/core/reductions/cb/cb_explore_adf_regcb.h
   include/vw/core/reductions/cb/cb_explore_adf_rnd.h
   include/vw/core/reductions/cb/cb_explore_adf_softmax.h
@@ -248,6 +249,7 @@ set(vw_core_sources
   src/reductions/cb/cb_explore_adf_cover.cc
   src/reductions/cb/cb_explore_adf_first.cc
   src/reductions/cb/cb_explore_adf_greedy.cc
+  src/reductions/cb/cb_explore_adf_large_action_space.cc
   src/reductions/cb/cb_explore_adf_regcb.cc
   src/reductions/cb/cb_explore_adf_rnd.cc
   src/reductions/cb/cb_explore_adf_softmax.cc
@@ -344,7 +346,7 @@ vw_add_library(
     SOURCES ${vw_core_headers} ${vw_core_sources}
     PUBLIC_DEPS vw_common vw_explore vw_allreduce vw_config ${spdlog_target} fmt::fmt
     PRIVATE_DEPS
-        ${CMAKE_DL_LIBS} ${LINK_THREADS} vw_io $<BUILD_INTERFACE:${boost_math_target}>
+        ${CMAKE_DL_LIBS} ${LINK_THREADS} vw_io $<BUILD_INTERFACE:${boost_math_target}> $<BUILD_INTERFACE:eigen>
         # Workaround an issue where RapidJSON needed to be exported tom install the target. This is
         # actually a private dependency and so do not "link" when processing targets for installation.
         # https://gitlab.kitware.com/cmake/cmake/issues/15415
@@ -354,6 +356,7 @@ vw_add_library(
     ${ENABLE_INSTALL_OPTION}
 )
 
+target_include_directories(vw_core PRIVATE ${CMAKE_CURRENT_LIST_DIR}/src)
 if (BUILD_EXTERNAL_PARSER)
   target_compile_definitions(vw_core PUBLIC BUILD_EXTERNAL_PARSER)
   target_include_directories(vw_core PRIVATE ${EXTERNAL_PARSER_DIR})
