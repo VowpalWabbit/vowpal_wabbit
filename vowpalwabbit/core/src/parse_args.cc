@@ -424,7 +424,18 @@ input_options parse_source(VW::workspace& all, options_i& options)
   const auto positional_tokens = options.get_positional_tokens();
 
   if (!positional_tokens.empty() && !all.data_filenames.empty())
-  { THROW("You cannot mix --data/-d argument with positional arguments. Pick one and use consistently."); }
+  {
+    const char* const delim = ", ";
+    std::ostringstream imploded;
+    std::copy(
+        positional_tokens.begin(), positional_tokens.end() - 1, std::ostream_iterator<std::string>(imploded, delim));
+
+    THROW(
+        "You cannot mix --data/-d argument with positional args. Pick one and use consistently. Supplied positional "
+        "args: [" +
+            imploded.str()
+        << positional_tokens.back() + "]");
+  }
   else if (!positional_tokens.empty() && all.data_filenames.empty())
   {
     for (const auto& positional_token : positional_tokens) { all.data_filenames.push_back(positional_token); }
@@ -442,8 +453,7 @@ input_options parse_source(VW::workspace& all, options_i& options)
           "--single_cache_file.");
     }
 
-    if (!parsed_options.cache && parsed_options.cache_files.empty())
-    { THROW("--single_cache_file is enabled, but cache is off. turn it on."); }
+    if (!parsed_options.cache) { THROW("--single_cache_file is enabled, but cache is off. turn it on."); }
   }
 
   // Add an implicit cache file based on the last/only data filename.
