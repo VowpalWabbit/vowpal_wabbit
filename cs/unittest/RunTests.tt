@@ -39,7 +39,7 @@ var skipList = new[] { 13, 32, 39, 258, 40, 259, 41, 260, 59, 60, 61, 66, 68, 90
     239, 240, 241, 242, 243, 244, 245, 246, // flatbuffer input tests, to be enabled in due course
     256, 299, 300, 306, 310, 311, 327, 328, 329, 330, 331, 396, 397, 398, 399, 400, 404, // DSJSON not supported
     383, 389, 390, 391, 392, 393, // no data file
-    401, 402, 403 // multi --data not supported
+    401, 402, 403, 405 // multi --data not supported
     };
 
 var outputModels = new Dictionary<string, TestCase>();
