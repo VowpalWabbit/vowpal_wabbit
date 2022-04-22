@@ -3,7 +3,7 @@
 // license as described in the file LICENSE.
 #pragma once
 
-#include "Eigen/Dense"
+#include <Eigen/Dense>
 #include "vw/core/action_score.h"
 #include "vw/core/rand48.h"
 #include "vw/core/v_array.h"
