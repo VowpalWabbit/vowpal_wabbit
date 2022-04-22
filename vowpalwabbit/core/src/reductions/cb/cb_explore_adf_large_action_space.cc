@@ -82,30 +82,29 @@ void cb_explore_adf_large_action_space::generate_Q(const multi_ex& examples)
   uint64_t row_index = 0;
   for (auto* ex : examples)
   {
-    if (!CB::ec_is_example_header(*ex))
-    {
-      for (size_t col = 0; col < _d; col++)
-      {
-        float dot_product = 0.f;
-        if (_all->weights.sparse)
-        {
-          LazyGaussianDotProduct<sparse_parameters> w(_all->weights.sparse_weights, col, _seed);
-          GD::foreach_feature<float, float, just_add_weights, LazyGaussianDotProduct<sparse_parameters>>(w,
-              _all->ignore_some_linear, _all->ignore_linear, _all->interactions, _all->extent_interactions,
-              _all->permutations, *ex, dot_product, _all->_generate_interactions_object_cache);
-        }
-        else
-        {
-          LazyGaussianDotProduct<dense_parameters> w(_all->weights.dense_weights, col, _seed);
-          GD::foreach_feature<float, float, just_add_weights, LazyGaussianDotProduct<dense_parameters>>(w,
-              _all->ignore_some_linear, _all->ignore_linear, _all->interactions, _all->extent_interactions,
-              _all->permutations, *ex, dot_product, _all->_generate_interactions_object_cache);
-        }
+    assert(!CB::ec_is_example_header(*ex));
 
-        Q(row_index, col) = dot_product;
+    for (size_t col = 0; col < _d; col++)
+    {
+      float dot_product = 0.f;
+      if (_all->weights.sparse)
+      {
+        LazyGaussianDotProduct<sparse_parameters> w(_all->weights.sparse_weights, col, _seed);
+        GD::foreach_feature<float, float, just_add_weights, LazyGaussianDotProduct<sparse_parameters>>(w,
+            _all->ignore_some_linear, _all->ignore_linear, _all->interactions, _all->extent_interactions,
+            _all->permutations, *ex, dot_product, _all->_generate_interactions_object_cache);
       }
-      row_index++;
+      else
+      {
+        LazyGaussianDotProduct<dense_parameters> w(_all->weights.dense_weights, col, _seed);
+        GD::foreach_feature<float, float, just_add_weights, LazyGaussianDotProduct<dense_parameters>>(w,
+            _all->ignore_some_linear, _all->ignore_linear, _all->interactions, _all->extent_interactions,
+            _all->permutations, *ex, dot_product, _all->_generate_interactions_object_cache);
+      }
+
+      Q(row_index, col) = dot_product;
     }
+    row_index++;
   }
 }
 
