@@ -7,6 +7,7 @@ add_executable(vw-unit-test.out
   cats_tree_test.cc
   cats_user_provided_pdf.cc
   cb_explore_adf_test.cc
+  cb_large_actions_test.cc
   ccb_parser_test.cc
   ccb_test.cc
   chain_hashing.cc
@@ -55,6 +56,7 @@ add_executable(vw-unit-test.out
 
 # Add the include directories from vw target for testing
 target_link_libraries(vw-unit-test.out PRIVATE vw_core RapidJSON Boost::unit_test_framework)
+target_include_directories(vw-unit-test.out PRIVATE $<TARGET_PROPERTY:vw_core,INCLUDE_DIRECTORIES>)
 
 # Automatically set BOOST_TEST_DYN_LINK if the dependency is shared.
 get_target_property(boost_test_target_type Boost::unit_test_framework TYPE)
