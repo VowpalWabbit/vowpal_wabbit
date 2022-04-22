@@ -914,7 +914,7 @@ void process_example(VW::workspace& all, bfgs& b, VW::example& ec)
   /********************************************************************/
   else  // computing curvature
   {
-    float d_dot_x = dot_with_direction(all, ec);   // w[2]
+    float d_dot_x = dot_with_direction(all, ec);  // w[2]
     if (b.example_number >= b.predictions.size())
     {  // Make things safe in case example source is strange.
       b.example_number = b.predictions.size() - 1;

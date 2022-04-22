@@ -53,5 +53,5 @@ public:
 
 VW::LEARNER::base_learner* slates_setup(VW::setup_base_i&);
 std::string generate_slates_label_printout(const std::vector<example*>& slots);
-}  // namespace slates
+}  // namespace reductions
 }  // namespace VW
