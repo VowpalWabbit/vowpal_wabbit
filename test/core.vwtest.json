@@ -5206,6 +5206,21 @@
       "train-sets/dsjson_cb_part1.json",
       "train-sets/dsjson_cb_part2.json"
     ]
+  },
+  {
+    "id": 405,
+    "desc": "re-use cache from 403 and check preds",
+    "vw_command": "-d train-sets/rcv1_raw_cb_small_p1.vw -d train-sets/rcv1_raw_cb_small_p2.vw --cb_explore 2 --ngram 2 --skips 4 -b 24 -l 0.25 -p rcv1_raw_cb_explore.preds --passes 2 -c",
+    "diff_files": {
+      "stderr": "train-sets/ref/rcv1_pass2_split_reuse.stderr",
+      "rcv1_raw_cb_explore.preds": "pred-sets/ref/rcv1_raw_cb_explore_pass2.preds",
+      "stdout": "train-sets/ref/rcv1_raw_cb_explore_pass2.stdout"
+    },
+    "depends_on": [403],
+    "input_files": [
+      "train-sets/rcv1_raw_cb_small_p1.vw",
+      "train-sets/rcv1_raw_cb_small_p2.vw"
+    ]
   }
 
 
