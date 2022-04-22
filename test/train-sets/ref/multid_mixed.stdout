@@ -1,0 +1,1 @@
+[critical] vw (parse_args.cc:427): You cannot mix --data/-d argument with positional arguments. Pick one and use consistently.

@@ -373,6 +373,7 @@ void parse_diagnostics(options_i& options, VW::workspace& all)
 
 input_options parse_source(VW::workspace& all, options_i& options)
 {
+  bool single_cache_file = false;
   input_options parsed_options;
 
   option_group_definition input_options("Input");
@@ -386,6 +387,7 @@ input_options parse_source(VW::workspace& all, options_i& options)
       .add(make_option("port_file", parsed_options.port_file).help("Write port used in persistent daemon mode"))
       .add(make_option("cache", parsed_options.cache).short_name("c").help("Use a cache.  The default is <data>.cache"))
       .add(make_option("cache_file", parsed_options.cache_files).help("The location(s) of cache_file"))
+      .add(make_option("single_cache_file", single_cache_file).help("Use a single cache file for all source/data files"))
       .add(make_option("json", parsed_options.json).help("Enable JSON parsing"))
       .add(make_option("dsjson", parsed_options.dsjson).help("Enable Decision Service JSON parsing"))
       .add(make_option("kill_cache", parsed_options.kill_cache)
@@ -419,35 +421,57 @@ input_options parse_source(VW::workspace& all, options_i& options)
   // Check if the options provider has any positional args. Only really makes sense for command line, others just return
   // an empty list.
   const auto positional_tokens = options.get_positional_tokens();
-  for (int d = 0; d < positional_tokens.size(); d++) { all.data_filenames.push_back(positional_tokens[d]); }
 
-  if (parsed_options.daemon || options.was_supplied("pid_file") || (options.was_supplied("port") && !all.active))
+  if (!positional_tokens.empty() && !all.data_filenames.empty())
+  { THROW("You cannot mix --data/-d argument with positional arguments. Pick one and use consistently."); }
+  else if (!positional_tokens.empty() && all.data_filenames.empty())
   {
-    all.daemon = true;
-    // allow each child to process up to 1e5 connections
-    all.numpasses = static_cast<size_t>(1e5);
-  }
-
-  // Add an implicit cache file based on the last/only data filename.
-  if (parsed_options.cache)
-  {
-    if (all.data_filenames.size() > 1)
-    {
-      parsed_options.cache_files.push_back(
-          all.data_filenames.back() + "." + std::to_string(all.data_filenames.size()) + ".merged.cache");
-    }
-    else if (all.data_filenames.size() == 1)
-    {
-      parsed_options.cache_files.push_back(all.data_filenames.back() + ".cache");
-    }
-    else
-    {
-      parsed_options.cache_files.push_back(".cache");
-    }
+    for (const auto& positional_token : positional_tokens) { all.data_filenames.push_back(positional_token); }
   }
 
   if ((parsed_options.cache || options.was_supplied("cache_file")) && options.was_supplied("invert_hash"))
     THROW("invert_hash is incompatible with a cache file.  Use it in single pass mode only.")
+
+  if (single_cache_file)
+  {
+    if (parsed_options.cache_files.size() > 1)
+    {
+      THROW(
+          "single_cache_file is enabled, but multiple cache files are specified. Use only one cache file with "
+          "--single_cache_file.");
+    }
+
+    if (!parsed_options.cache && parsed_options.cache_files.empty())
+    { THROW("--single_cache_file is enabled, but cache is off. turn it on."); }
+  }
+
+  // Add an implicit cache file based on the last/only data filename.
+  if (parsed_options.cache && parsed_options.cache_files.empty())
+  {
+    if (all.data_filenames.size() > 1)
+    {
+      if (single_cache_file)
+      {
+        parsed_options.cache_files.emplace_back(
+            all.data_filenames.back() + "." + std::to_string(all.data_filenames.size()) + ".merged.cache");
+      }
+      else
+      {
+        // TODO: implement one cache file per source file.
+        THROW(
+            "Only one cache_file can be specified when multiple data files are used. Supply --single_cache_file to use "
+            "a single cache file.");
+      }
+    }
+    else if (all.data_filenames.size() == 1)
+    {
+      parsed_options.cache_files.emplace_back(all.data_filenames.back() + ".cache");
+    }
+    else
+    {
+      parsed_options.cache_files.emplace_back(".cache");
+    }
+  }
 
   if (!all.holdout_set_off &&
       (options.was_supplied("output_feature_regularizer_binary") ||
@@ -455,6 +479,13 @@ input_options parse_source(VW::workspace& all, options_i& options)
   {
     all.holdout_set_off = true;
     *(all.trace_message) << "Making holdout_set_off=true since output regularizer specified" << endl;
+  }
+
+  if (parsed_options.daemon || options.was_supplied("pid_file") || (options.was_supplied("port") && !all.active))
+  {
+    all.daemon = true;
+    // allow each child to process up to 1e5 connections
+    all.numpasses = static_cast<size_t>(1e5);
   }
 
   return parsed_options;
