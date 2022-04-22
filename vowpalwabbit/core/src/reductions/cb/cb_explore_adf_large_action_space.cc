@@ -118,13 +118,15 @@ void cb_explore_adf_large_action_space::predict_or_learn_impl(VW::LEARNER::multi
     base.predict(examples);
 
     auto& preds = examples[0]->pred.a_s;
-    float min_ck =
-        std::min_element(preds.begin(), preds.end(), [](ACTION_SCORE::action_score& a, ACTION_SCORE::action_score& b) {
-          return a.score < b.score;
-        })->score;
+    float min_ck = std::min_element(preds.begin(), preds.end(),
+        [](ACTION_SCORE::action_score& a, ACTION_SCORE::action_score& b) { return a.score < b.score; })
+                       ->score;
 
     calculate_shrink_factor(preds, min_ck);
     generate_Q(examples);
+    std::cout << "Q:" << std::endl;
+    std::cout << Q << std::endl;
+    std::cout << "----" << std::endl;
   }
 }
 }  // namespace cb_explore_adf
@@ -156,7 +158,7 @@ VW::LEARNER::base_learner* VW::reductions::cb_explore_adf_large_action_space_set
                .allow_override()
                .default_value(50)
                .help("Max number of actions to explore"))
-      // TODO figure out gamma
+      // TODO: Do we still need gamma if we aren't activating squarecb?
       .add(make_option("gamma", gamma).keep().allow_override().help("Gamma hyperparameter"));
 
   auto enabled = options.add_parse_and_check_necessary(new_options) && large_action_space;
@@ -165,9 +167,20 @@ VW::LEARNER::base_learner* VW::reductions::cb_explore_adf_large_action_space_set
   // Ensure serialization of cb_adf in all cases.
   if (!options.was_supplied("cb_adf"))
   {
-    // TODO make sure this is MTR
     options.insert("cb_adf", "");
     options.insert("no_predict", "");
+  }
+
+  if (options.was_supplied("cb_type"))
+  {
+    auto cb_type = options.get_typed_option<std::string>("cb_type").value();
+    if (cb_type != "mtr")
+    {
+      all.logger.err_warn(
+          "Only cb_type 'mtr' is currently supported with large action spaces, resetting to mtr. Input was: '{}'",
+          cb_type);
+      options.replace("cb_type", "mtr");
+    }
   }
 
   size_t problem_multiplier = 1;
@@ -185,7 +198,7 @@ VW::LEARNER::base_learner* VW::reductions::cb_explore_adf_large_action_space_set
                 .set_input_label_type(VW::label_type_t::cb)
                 .set_output_label_type(VW::label_type_t::cb)
                 .set_input_prediction_type(VW::prediction_type_t::action_scores)
-                .set_output_prediction_type(VW::prediction_type_t::action_probs)
+                .set_output_prediction_type(VW::prediction_type_t::action_scores)
                 .set_params_per_weight(problem_multiplier)
                 .set_finish_example(explore_type::finish_multiline_example)
                 .set_print_example(explore_type::print_multiline_example)
