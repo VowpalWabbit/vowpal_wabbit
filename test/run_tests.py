@@ -788,6 +788,7 @@ def convert_tests_for_flatbuffers(
             "399",
             "400",
             "404",
+            "405",
         ):
             test.skip = True
             test.skip_reason = "test skipped for automatic converted flatbuffer tests for unknown reason"
