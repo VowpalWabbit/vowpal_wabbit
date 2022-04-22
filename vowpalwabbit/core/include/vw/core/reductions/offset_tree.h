@@ -14,7 +14,6 @@ LEARNER::base_learner* offset_tree_setup(VW::setup_base_i& stack_builder);
 
 namespace offset_tree
 {
-
 struct tree_node
 {
   tree_node(uint32_t node_id, uint32_t left_node_id, uint32_t right_node_id, uint32_t parent_id, bool is_leaf);
