@@ -1,1 +1,1 @@
-[critical] vw (parse_args.cc:433): You cannot mix --data/-d argument with positional args. Pick one and use consistently. Supplied positional args: [train-sets/dsjson_cb_part2.json]
+[critical] vw (parse_args.cc:437): You cannot mix --data/-d argument with positional args. Pick one and use consistently. Supplied positional args: [train-sets/dsjson_cb_part2.json]

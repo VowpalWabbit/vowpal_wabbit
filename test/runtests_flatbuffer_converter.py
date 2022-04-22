@@ -85,7 +85,14 @@ class FlatbufferTest:
 
     def convert(self, to_flatbuff, color_enum):
         # arguments and flats not supported or needed in flatbuffer conversion
-        flags_to_remove = ["-c ", "--bfgs", "--onethread", "-t ", "--search_span_bilou"]
+        flags_to_remove = [
+            "-c ",
+            "--bfgs",
+            "--onethread",
+            "-t ",
+            "--search_span_bilou",
+            "--single_cache_file",
+        ]
         arguments_to_remove = [
             "--passes",
             "--ngram",
