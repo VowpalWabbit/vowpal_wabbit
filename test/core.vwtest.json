@@ -5195,20 +5195,6 @@
   },
   {
     "id": 404,
-    "desc": "test multi d positional mixed with -d, this should fail",
-    "bash_command": "./negative-test.sh {VW} --dsjson --cb_explore_adf --epsilon 0.2 train-sets/dsjson_cb_part2.json --quadratic GT --extra_metrics metrics_time.json -d train-sets/dsjson_cb_part1.json",
-    "diff_files": {
-      "stderr": "train-sets/ref/multid_mixed.stderr",
-      "stdout": "train-sets/ref/multid_mixed.stdout"
-    },
-    "input_files": [
-      "./negative-test.sh",
-      "train-sets/dsjson_cb_part1.json",
-      "train-sets/dsjson_cb_part2.json"
-    ]
-  },
-  {
-    "id": 405,
     "desc": "re-use cache from 403 and check preds",
     "vw_command": "-d train-sets/rcv1_raw_cb_small_p1.vw -d train-sets/rcv1_raw_cb_small_p2.vw --cb_explore 2 --ngram 2 --skips 4 -b 24 -l 0.25 -p rcv1_raw_cb_explore.preds --passes 2 -c --single_cache_file",
     "diff_files": {
