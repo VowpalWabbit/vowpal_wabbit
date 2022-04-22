@@ -12,7 +12,7 @@
 
 using namespace ::testing;
 
-template<class T>
+template <class T>
 void check_weights_equal(T& first, T& second)
 {
   auto first_begin = first.begin();
@@ -27,12 +27,12 @@ void check_weights_equal(T& first, T& second)
 
 TEST(vwdll_test, vw_dll_parsed_and_constructed_example_parity)
 {
-  //parse example
+  // parse example
   VW_HANDLE handle1 = VW_InitializeA("-q st --noconstant --quiet");
   VW_EXAMPLE example_parsed;
   example_parsed = VW_ReadExampleA(handle1, "1 |s p^the_man w^the w^man |t p^un_homme w^un w^homme");
 
-  //construct example
+  // construct example
   VW_HANDLE handle2 = VW_InitializeA("-q st --noconstant --quiet");
   VW_EXAMPLE example_constructed;
   auto fs = VW_InitializeFeatureSpaces(2);
@@ -53,23 +53,20 @@ TEST(vwdll_test, vw_dll_parsed_and_constructed_example_parity)
 
   example_constructed = VW_ImportExample(handle2, "1", fs, 2);
 
-
   // learn both
   auto score_parsed = VW_Learn(handle1, example_parsed);
   auto score_constructed = VW_Learn(handle2, example_parsed);
 
-
-  //check parity
+  // check parity
   EXPECT_EQ(score_parsed, score_constructed);
   auto vw1 = static_cast<VW::workspace*>(handle1);
   auto vw2 = static_cast<VW::workspace*>(handle2);
 
   EXPECT_EQ(vw1->weights.sparse, vw2->weights.sparse);
 
-  if (vw1->weights.sparse) {
-    check_weights_equal(vw1->weights.sparse_weights, vw2->weights.sparse_weights);
-  }
-  else {
+  if (vw1->weights.sparse) { check_weights_equal(vw1->weights.sparse_weights, vw2->weights.sparse_weights); }
+  else
+  {
     check_weights_equal(vw1->weights.dense_weights, vw2->weights.dense_weights);
   }
 
