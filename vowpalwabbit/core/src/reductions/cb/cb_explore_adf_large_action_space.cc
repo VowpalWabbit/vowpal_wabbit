@@ -3,7 +3,7 @@
 // license as described in the file LICENSE.
 
 #include "vw/core/reductions/cb/cb_explore_adf_large_action_space.h"
-
+#include "vw/core/reductions/cb/cb_explore_adf_common.h"
 #include "details/large_action_space.h"
 #include "vw/config/options.h"
 #include "vw/core/gd_predict.h"
@@ -24,6 +24,30 @@ namespace VW
 {
 namespace cb_explore_adf
 {
+// this is meant to be called with foreach_feature
+// for each feature it will multiply the weight that corresponds to the index with the corresponding gaussian element
+// If the returned values are summed the end resutlt is the dot product between the weight vector of the features of an
+// example with a vector of gaussian elements
+template <typename WeightsT>
+struct LazyGaussianDotProduct
+{
+private:
+  WeightsT& _weights;
+  uint64_t _column_index;
+  uint64_t _seed;
+
+public:
+  LazyGaussianDotProduct(WeightsT& weights, uint64_t column_index, uint64_t seed)
+      : _weights(weights), _column_index(column_index), _seed(seed)
+  {
+  }
+  float operator[](uint64_t index) const
+  {
+    auto combined_index = index + _column_index + _seed;
+    return _weights[index] * merand48_boxmuller(combined_index);
+  }
+};
+
 void cb_explore_adf_large_action_space::predict(VW::LEARNER::multi_learner& base, multi_ex& examples)
 {
   predict_or_learn_impl<false>(base, examples);
@@ -33,8 +57,8 @@ void cb_explore_adf_large_action_space::learn(VW::LEARNER::multi_learner& base, 
   predict_or_learn_impl<true>(base, examples);
 }
 
-cb_explore_adf_large_action_space::cb_explore_adf_large_action_space(uint64_t d_, float gamma_, VW::workspace* all_)
-    : d(d_), gamma(gamma_), all(all_), seed(all->get_random_state()->get_current_state())
+cb_explore_adf_large_action_space::cb_explore_adf_large_action_space(uint64_t d, float gamma, VW::workspace* all)
+    : _d(d), _gamma(gamma), _all(all), _seed(all->get_random_state()->get_current_state())
 {
 }
 
@@ -42,7 +66,7 @@ void cb_explore_adf_large_action_space::calculate_shrink_factor(const ACTION_SCO
 {
   shrink_factors.clear();
   for (size_t i = 0; i < preds.size(); i++)
-  { shrink_factors.push_back(std::sqrt(1 + d + (gamma / 4.0f * d) * (preds[i].score - min_ck))); }
+  { shrink_factors.push_back(std::sqrt(1 + _d + (_gamma / 4.0f * _d) * (preds[i].score - min_ck))); }
 }
 
 inline void just_add_weights(float& p, float, float fw) { p += fw; }
@@ -51,7 +75,7 @@ void cb_explore_adf_large_action_space::generate_Q(const multi_ex& examples)
 {
   // create Q matrix with dimenstions Kxd where K = examples.size()
   uint64_t num_actions = examples[0]->pred.a_s.size();
-  Q.resize(num_actions, d);
+  Q.resize(num_actions, _d);
 
   // TODO extend wildspace interactions before calling foreach
   uint64_t row_index = 0;
@@ -59,22 +83,22 @@ void cb_explore_adf_large_action_space::generate_Q(const multi_ex& examples)
   {
     if (!CB::ec_is_example_header(*ex))
     {
-      for (size_t col = 0; col < d; col++)
+      for (size_t col = 0; col < _d; col++)
       {
         float dot_product = 0.f;
-        if (all->weights.sparse)
+        if (_all->weights.sparse)
         {
-          LazyGaussianDotProduct<sparse_parameters> w(all->weights.sparse_weights, col, seed);
+          LazyGaussianDotProduct<sparse_parameters> w(_all->weights.sparse_weights, col, _seed);
           GD::foreach_feature<float, float, just_add_weights, LazyGaussianDotProduct<sparse_parameters>>(w,
-              all->ignore_some_linear, all->ignore_linear, all->interactions, all->extent_interactions,
-              all->permutations, *ex, dot_product, all->_generate_interactions_object_cache);
+              _all->ignore_some_linear, _all->ignore_linear, _all->interactions, _all->extent_interactions,
+              _all->permutations, *ex, dot_product, _all->_generate_interactions_object_cache);
         }
         else
         {
-          LazyGaussianDotProduct<dense_parameters> w(all->weights.dense_weights, col, seed);
+          LazyGaussianDotProduct<dense_parameters> w(_all->weights.dense_weights, col, _seed);
           GD::foreach_feature<float, float, just_add_weights, LazyGaussianDotProduct<dense_parameters>>(w,
-              all->ignore_some_linear, all->ignore_linear, all->interactions, all->extent_interactions,
-              all->permutations, *ex, dot_product, all->_generate_interactions_object_cache);
+              _all->ignore_some_linear, _all->ignore_linear, _all->interactions, _all->extent_interactions,
+              _all->permutations, *ex, dot_product, _all->_generate_interactions_object_cache);
         }
 
         Q(row_index, col) = dot_product;
@@ -94,10 +118,9 @@ void cb_explore_adf_large_action_space::predict_or_learn_impl(VW::LEARNER::multi
     base.predict(examples);
 
     auto& preds = examples[0]->pred.a_s;
-    float min_ck =
-        std::min_element(preds.begin(), preds.end(), [](ACTION_SCORE::action_score& a, ACTION_SCORE::action_score& b) {
-          return a.score < b.score;
-        })->score;
+    float min_ck = std::min_element(preds.begin(), preds.end(),
+        [](ACTION_SCORE::action_score& a, ACTION_SCORE::action_score& b) { return a.score < b.score; })
+                       ->score;
 
     calculate_shrink_factor(preds, min_ck);
     generate_Q(examples);

@@ -3,10 +3,7 @@
 // license as described in the file LICENSE.
 #pragma once
 
-#include "cb_explore_adf_common.h"
 #include "vw/core/vw_fwd.h"
-
-#include <vector>
 
 namespace VW
 {
