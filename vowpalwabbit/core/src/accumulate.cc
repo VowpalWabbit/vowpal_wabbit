@@ -120,7 +120,7 @@ void do_weighting(VW::workspace& all, uint64_t length, float* local_weights, T& 
       float ratio = weight[1] / local_weights[i];
       local_weights[i] = weight[0] * ratio;
       weight[0] *= ratio;
-      weight[1] *= ratio;                                               // A crude max
+      weight[1] *= ratio;  // A crude max
       if (all.normalized_idx > 0)
       {
         weight[all.normalized_idx] *= ratio;  // A crude max
