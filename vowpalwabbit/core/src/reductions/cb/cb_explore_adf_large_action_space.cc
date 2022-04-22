@@ -3,7 +3,7 @@
 // license as described in the file LICENSE.
 
 #include "vw/core/reductions/cb/cb_explore_adf_large_action_space.h"
-#include "vw/core/reductions/cb/cb_explore_adf_common.h"
+
 #include "details/large_action_space.h"
 #include "vw/config/options.h"
 #include "vw/core/gd_predict.h"
@@ -11,6 +11,7 @@
 #include "vw/core/rand_state.h"
 #include "vw/core/reductions/cb/cb_adf.h"
 #include "vw/core/reductions/cb/cb_explore.h"
+#include "vw/core/reductions/cb/cb_explore_adf_common.h"
 #include "vw/core/setup_base.h"
 #include "vw/explore/explore.h"
 
@@ -118,9 +119,10 @@ void cb_explore_adf_large_action_space::predict_or_learn_impl(VW::LEARNER::multi
     base.predict(examples);
 
     auto& preds = examples[0]->pred.a_s;
-    float min_ck = std::min_element(preds.begin(), preds.end(),
-        [](ACTION_SCORE::action_score& a, ACTION_SCORE::action_score& b) { return a.score < b.score; })
-                       ->score;
+    float min_ck =
+        std::min_element(preds.begin(), preds.end(), [](ACTION_SCORE::action_score& a, ACTION_SCORE::action_score& b) {
+          return a.score < b.score;
+        })->score;
 
     calculate_shrink_factor(preds, min_ck);
     generate_Q(examples);
