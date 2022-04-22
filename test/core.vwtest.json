@@ -5169,7 +5169,7 @@
   {
     "id": 402,
     "desc": "cb_explore - passes 2",
-    "vw_command": "-d train-sets/rcv1_raw_cb_small.vw --cb_explore 2 --ngram 2 --skips 4 -b 24 -l 0.25 -p rcv1_raw_cb_explore.preds --passes 2 -c",
+    "vw_command": "-d train-sets/rcv1_raw_cb_small.vw --cb_explore 2 --ngram 2 --skips 4 -b 24 -l 0.25 -p rcv1_raw_cb_explore.preds --passes 2 -c -k",
     "diff_files": {
       "stderr": "train-sets/ref/rcv1_raw_cb_explore_pass2.stderr",
       "rcv1_raw_cb_explore.preds": "pred-sets/ref/rcv1_raw_cb_explore_pass2.preds",
@@ -5182,7 +5182,7 @@
   {
     "id": 403,
     "desc": "previous but with split files - cb_explore - passes 2",
-    "vw_command": "-d train-sets/rcv1_raw_cb_small_p1.vw -d train-sets/rcv1_raw_cb_small_p2.vw --cb_explore 2 --ngram 2 --skips 4 -b 24 -l 0.25 -p rcv1_raw_cb_explore.preds --passes 2 -c",
+    "vw_command": "-d train-sets/rcv1_raw_cb_small_p1.vw -d train-sets/rcv1_raw_cb_small_p2.vw --cb_explore 2 --ngram 2 --skips 4 -b 24 -l 0.25 -p rcv1_raw_cb_explore.preds --passes 2 -c -k",
     "diff_files": {
       "stderr": "train-sets/ref/rcv1_raw_cb_explore_pass2_split.stderr",
       "rcv1_raw_cb_explore.preds": "pred-sets/ref/rcv1_raw_cb_explore_pass2.preds",

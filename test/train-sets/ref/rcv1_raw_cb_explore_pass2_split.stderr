@@ -1,5 +1,5 @@
 predictions = rcv1_raw_cb_explore.preds
-creating cache_file = train-sets/rcv1_raw_cb_small_p2.vw.merged.cache
+creating cache_file = train-sets/rcv1_raw_cb_small_p2.vw.2.merged.cache
 Reading datafile = train-sets/rcv1_raw_cb_small_p1.vw
 Reading datafile = train-sets/rcv1_raw_cb_small_p2.vw
 num sources = 2

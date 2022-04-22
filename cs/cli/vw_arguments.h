@@ -40,10 +40,14 @@ private:
       , m_testonly(!vw->training)
       , m_passes((int)vw->numpasses)
   {
-    if (vw->data_filenames.size() >= 1) { m_data = gcnew String(vw->data_filenames.front().c_str()); }
-    else
+    if (vw->data_filenames.size() == 1) { m_data = gcnew String(vw->data_filenames.front().c_str()); }
+    else if (vw->data_filenames.size() == 0)
     {
       m_data = gcnew String("");
+    }
+    else
+    {
+      THROW("vw_arguments.h does not support multiple data files. Not Implemented.");
     }
 
     auto options = vw->options.get();

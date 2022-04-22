@@ -432,7 +432,10 @@ input_options parse_source(VW::workspace& all, options_i& options)
   if (parsed_options.cache)
   {
     if (all.data_filenames.size() > 1)
-    { parsed_options.cache_files.push_back(all.data_filenames.back() + ".merged.cache"); }
+    {
+      parsed_options.cache_files.push_back(
+          all.data_filenames.back() + "." + std::to_string(all.data_filenames.size()) + ".merged.cache");
+    }
     else if (all.data_filenames.size() == 1)
     {
       parsed_options.cache_files.push_back(all.data_filenames.back() + ".cache");

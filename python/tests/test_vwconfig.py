@@ -20,7 +20,7 @@ def test_vw_config_manager():
         "--no_stdin",
         "--quiet",
         "--loss_function logistic",
-        "--data test/train-sets/rcv1_small.dat",
+        "--data=test/train-sets/rcv1_small.dat",
     }
     expected_reductions = {"gd", "scorer-identity", "count_label"}
 
