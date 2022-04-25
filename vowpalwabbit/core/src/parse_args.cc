@@ -430,9 +430,7 @@ input_options parse_source(VW::workspace& all, options_i& options)
     std::copy(
         positional_tokens.begin(), positional_tokens.end() - 1, std::ostream_iterator<std::string>(imploded, delim));
 
-    THROW(
-        "You cannot mix --data/-d argument with positional args. Pick one and use consistently. Supplied positional "
-        "args: [" +
+    THROW("VW does not support mixing --data/-d arguments with positional args. Supplied positional args: [" +
             imploded.str()
         << positional_tokens.back() + "]");
   }

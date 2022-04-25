@@ -354,7 +354,7 @@ std::vector<VW::namespace_extent> unflatten_namespace_extents_dont_skip(
   return results;
 }
 
-void to_flat::convert_single_txt_to_flat(VW::workspace& all, std::string filename)
+void to_flat::convert_single_txt_to_flat(VW::workspace& all, const std::string& filename)
 {
   if (output_flatbuffer_name.empty()) { output_flatbuffer_name = filename + ".fb"; }
   std::ofstream outfile;
@@ -494,6 +494,5 @@ void to_flat::convert_single_txt_to_flat(VW::workspace& all, std::string filenam
 
 void to_flat::convert_txt_to_flat(VW::workspace& all)
 {
-  for (int d = 0; d < all.data_filenames.size(); d++)
-  { to_flat::convert_single_txt_to_flat(all, all.data_filenames[d]); }
+  for (const auto& filename : all.data_filenames) { to_flat::convert_single_txt_to_flat(all, filename); }
 }
