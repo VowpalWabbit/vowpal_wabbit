@@ -2,13 +2,12 @@
 // individual contributors. All rights reserved. Released under a BSD (revised)
 // license as described in the file LICENSE.
 
-#include <boost/test/unit_test.hpp>
-#include <boost/test/test_tools.hpp>
+#include "vw/core/v_array.h"
 
-#include <cstddef>
 #include <algorithm>
-
-#include "v_array.h"
+#include <boost/test/test_tools.hpp>
+#include <boost/test/unit_test.hpp>
+#include <cstddef>
 
 BOOST_AUTO_TEST_CASE(v_array_size_is_const)
 {

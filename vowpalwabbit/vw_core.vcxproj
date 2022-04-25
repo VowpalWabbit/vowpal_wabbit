@@ -250,6 +250,7 @@
     <ClInclude Include="reductions/csoaa_ldf.h" />
     <ClInclude Include="reductions/csoaa.h" />
     <ClInclude Include="reductions/ect.h" />
+    <ClInclude Include="reductions/epsilon_decay.h" />
     <ClInclude Include="reductions/explore_eval.h" />
     <ClInclude Include="reductions/expreplay.h" />
     <ClInclude Include="reductions/freegrad.h" />
@@ -429,6 +430,7 @@
     <ClCompile Include="reductions/csoaa_ldf.cc" />
     <ClCompile Include="reductions/csoaa.cc" />
     <ClCompile Include="reductions/ect.cc" />
+    <ClCompile Include="reductions/epsilon_decay.cc" />
     <ClCompile Include="reductions/explore_eval.cc" />
     <ClCompile Include="reductions/freegrad.cc" />
     <ClCompile Include="reductions/ftrl.cc" />

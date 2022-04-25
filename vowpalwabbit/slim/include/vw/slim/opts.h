@@ -1,6 +1,6 @@
 #pragma once
 
-#include "example_predict.h"
+#include "vw/core/example_predict.h"
 
 #include <string>
 #include <vector>

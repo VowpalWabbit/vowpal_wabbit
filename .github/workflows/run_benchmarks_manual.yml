@@ -32,6 +32,7 @@ jobs:
         with:
           name: benchmark-module
           path: test/benchmarks/
+          if-no-files-found: error
 # checkout first ref
       - uses: actions/checkout@v1
         with:
@@ -64,11 +65,13 @@ jobs:
         with:
           name: base-benchmarks
           path: base-benchmarks.json
+          if-no-files-found: error
       - name: Upload benchmark compare
         uses: actions/upload-artifact@v2
         with:
           name: benchmark-compare
           path: benchmark/tools/
+          if-no-files-found: error
       - name: Install benchmark compare requirements
         shell: bash
         run: |

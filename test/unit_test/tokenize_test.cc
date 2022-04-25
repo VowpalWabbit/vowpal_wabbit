@@ -2,9 +2,9 @@
 // individual contributors. All rights reserved. Released under a BSD (revised)
 // license as described in the file LICENSE.
 
-#include "parse_primitives.h"
-#include "vw.h"
 #include "vw/common/text_utils.h"
+#include "vw/core/parse_primitives.h"
+#include "vw/core/vw.h"
 
 #include <boost/test/test_tools.hpp>
 #include <boost/test/unit_test.hpp>
@@ -15,7 +15,7 @@
 BOOST_AUTO_TEST_CASE(tokenize_basic_string) {
   std::vector<VW::string_view> container;
   std::string str = "this is   a string  ";
-  VW::common::tokenize(' ', str, container);
+  VW::tokenize(' ', str, container);
 
   auto const expected_values = {"this", "is", "a", "string"};
   BOOST_CHECK_EQUAL_COLLECTIONS(
@@ -26,7 +26,7 @@ BOOST_AUTO_TEST_CASE(tokenize_basic_string) {
 BOOST_AUTO_TEST_CASE(tokenize_basic_string_allow_empty) {
   std::vector<VW::string_view> container;
   std::string str = "this is   a string  ";
-  VW::common::tokenize(' ', str, container, true);
+  VW::tokenize(' ', str, container, true);
 
   auto const expected_values = {"this", "is","", "", "a", "string", "", ""};
   BOOST_CHECK_EQUAL_COLLECTIONS(
@@ -37,7 +37,7 @@ BOOST_AUTO_TEST_CASE(tokenize_basic_string_allow_empty) {
 BOOST_AUTO_TEST_CASE(tokenize_basic_string_allow_empty_no_end_space) {
   std::vector<VW::string_view> container;
   std::string str = "this is   a string";
-  VW::common::tokenize(' ', str, container, true);
+  VW::tokenize(' ', str, container, true);
 
   auto const expected_values = {"this", "is","", "", "a", "string"};
   BOOST_CHECK_EQUAL_COLLECTIONS(

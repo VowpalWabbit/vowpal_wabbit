@@ -2,10 +2,10 @@
 // individual contributors. All rights reserved. Released under a BSD (revised)
 // license as described in the file LICENSE.
 
-#include "parse_args.h"
+#include "vw/core/parse_args.h"
 
-#include "memory.h"
 #include "vw/config/options_cli.h"
+#include "vw/core/memory.h"
 
 #include <boost/mpl/vector.hpp>
 #include <boost/test/test_tools.hpp>

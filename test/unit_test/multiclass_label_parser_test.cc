@@ -2,13 +2,13 @@
 // individual contributors. All rights reserved. Released under a BSD (revised)
 // license as described in the file LICENSE.
 
-#include "global_data.h"
-#include "multiclass.h"
-#include "parse_primitives.h"
-#include "parser.h"
-#include "shared_data.h"
 #include "vw/common/string_view.h"
 #include "vw/common/text_utils.h"
+#include "vw/core/global_data.h"
+#include "vw/core/multiclass.h"
+#include "vw/core/parse_primitives.h"
+#include "vw/core/parser.h"
+#include "vw/core/shared_data.h"
 
 #include <boost/test/test_tools.hpp>
 #include <boost/test/unit_test.hpp>
@@ -16,7 +16,7 @@
 void parse_label(VW::label_parser& lp, VW::string_view label, VW::polylabel& l)
 {
   std::vector<VW::string_view> words;
-  VW::common::tokenize(' ', label, words);
+  VW::tokenize(' ', label, words);
   lp.default_label(l);
   VW::reduction_features red_fts;
   VW::label_parser_reuse_mem mem;

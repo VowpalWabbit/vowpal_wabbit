@@ -31,11 +31,16 @@ public class Native {
                         continue;
 
                     if (name.startsWith("natives/linux_64/")) {
-                        Path parent = Paths.get(name).getParent();
+                        Path dest_file = tempDirectory.resolve(name);
+                        if (!dest_file.normalize().startsWith(tempDirectory))
+                        {
+                            throw new RuntimeException("Bad zip entry");
+                        }
+                        Path parent = dest_file.getParent();
                         if (parent != null)
                             Files.createDirectories(tempDirectory.resolve(parent));
 
-                        Files.copy(Native.class.getResourceAsStream("/" + name), tempDirectory.resolve(name));
+                        Files.copy(Native.class.getResourceAsStream("/" + name), dest_file);
                     }
                 }
             } finally {

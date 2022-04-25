@@ -19,7 +19,9 @@ vw_add_library(
     NAME "fb_parser"
     TYPE "STATIC_ONLY"
     SOURCES ${vw_fb_parser_sources}
-    PUBLIC_DEPS VowpalWabbit::vw $<BUILD_INTERFACE:fb_generate_headers>
+    PUBLIC_DEPS vw_core $<BUILD_INTERFACE:fb_generate_headers>
+    DESCRIPTION "Parser implementation that reads flatbuffer examples. Disabled by default. Enable with `BUILD_FLATBUFFERS`"
+    EXCEPTION_DESCRIPTION "Yes"
 )
 target_include_directories(vw_fb_parser PUBLIC ${FLATBUFFERS_INCLUDE_DIR})
 
@@ -32,5 +34,5 @@ target_include_directories(vw_fb_parser PUBLIC ${FLATBUFFERS_INCLUDE_DIR})
 vw_add_test_executable(
   FOR_LIB "fb_parser"
   SOURCES "tests/flatbuffer_parser_test.cc"
-  EXTRA_DEPS VowpalWabbit::vw
+  EXTRA_DEPS vw_core
 )

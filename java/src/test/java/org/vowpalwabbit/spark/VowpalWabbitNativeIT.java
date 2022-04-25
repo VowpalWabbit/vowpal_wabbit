@@ -11,11 +11,11 @@ import org.vowpalwabbit.spark.prediction.*;
 
 /**
  * command line invocation
- * 
+ *
  * mvn verify -Dtest=foo
  * -Dit.test=org.vowpalwabbit.spark.VowpalWabbitNativeIT#testAudit
  * -DfailIfNoTests=false -Dmaven.javadoc.skip=true
- * 
+ *
  * @author Markus Cozowicz
  */
 public class VowpalWabbitNativeIT {
@@ -33,7 +33,7 @@ public class VowpalWabbitNativeIT {
 
     @Test
     public void testWrappedVsCommandLine() throws Exception {
-        String vwBinary = Files.readAllLines(Paths.get(getClass().getResource("/vw-bin.txt").getPath())).get(0);
+        String vwBinary = Files.readAllLines(Paths.get(getClass().getResource("/vw_cli_bin.txt").getPath())).get(0);
 
         // need to use confidence_after_training as otherwise the numbers don't match
         // up...

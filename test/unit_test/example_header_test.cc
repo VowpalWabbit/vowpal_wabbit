@@ -2,13 +2,13 @@
 // individual contributors. All rights reserved. Released under a BSD (revised)
 // license as described in the file LICENSE.
 
-#include <boost/test/unit_test.hpp>
-#include <boost/test/test_tools.hpp>
+#include "vw/core/cb.h"
+#include "vw/core/cost_sensitive.h"
+#include "vw/core/reductions/conditional_contextual_bandit.h"
+#include "vw/core/vw.h"
 
-#include "vw.h"
-#include "cb.h"
-#include "cost_sensitive.h"
-#include "reductions/conditional_contextual_bandit.h"
+#include <boost/test/test_tools.hpp>
+#include <boost/test/unit_test.hpp>
 
 BOOST_AUTO_TEST_CASE(is_example_header_cb) {
   auto& vw = *VW::initialize("--cb_explore_adf --quiet", nullptr, false, nullptr, nullptr);

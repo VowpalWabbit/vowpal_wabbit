@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<AutoVisualizer xmlns="http://schemas.microsoft.com/vstudio/debugger/natvis/2010">
+  <Type Name="substring">
+    <DisplayString>substring={begin,[end - begin]s}</DisplayString>
+    <Expand>
+      <Item Name="substring">begin,[end - begin]</Item>
+      <Item Name="length">end - begin</Item>
+    </Expand>
+  </Type>
+  <Type Name="VW::v_array&lt;*&gt;">
+    <Expand>
+      <Item Name="size">_end - _begin</Item>
+      <Item Name="capacity">_end_array - _begin</Item>
+      <ArrayItems>
+        <Size>_end - _begin</Size>
+        <ValuePointer>_begin</ValuePointer>
+      </ArrayItems>
+    </Expand>
+  </Type>
+  <Type Name="VW::offset_tree_cont::tree_node">
+    <DisplayString>id={id} P={parent_id} lr={left_id},{right_id} d={depth} l={is_leaf}</DisplayString>
+  </Type>
+  <Type Name="dense_parameters">
+    <Expand>
+      <Item Name="size">_weight_mask + 1</Item>
+      <ArrayItems>
+        <Size>_weight_mask + 1</Size>
+        <ValuePointer>_begin</ValuePointer>
+      </ArrayItems>
+    </Expand>
+  </Type>
+</AutoVisualizer>

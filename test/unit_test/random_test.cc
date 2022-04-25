@@ -2,16 +2,16 @@
 // individual contributors. All rights reserved. Released under a BSD (revised)
 // license as described in the file LICENSE.
 
-#include "rand48.h"
-#include "rand_state.h"
 #include "test_common.h"
+#include "vw/core/rand48.h"
+#include "vw/core/rand_state.h"
 
 #include <boost/test/unit_test.hpp>
 
 BOOST_AUTO_TEST_CASE(reproduce_max_boundary_issue)
 {
   uint64_t seed = 58587211;
-  const uint64_t new_random_seed = VW::common::uniform_hash(&seed, sizeof(seed), seed);
+  const uint64_t new_random_seed = VW::uniform_hash(&seed, sizeof(seed), seed);
   BOOST_CHECK_EQUAL(new_random_seed, 2244123448);
 
   float random_draw = merand48_noadvance(new_random_seed);

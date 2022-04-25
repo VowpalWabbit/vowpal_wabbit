@@ -2,12 +2,13 @@
 // individual contributors. All rights reserved. Released under a BSD (revised)
 // license as described in the file LICENSE.
 
-#include <boost/test/unit_test.hpp>
-#include <boost/test/test_tools.hpp>
+#include "vw/core/distributionally_robust.h"
 
-#include "distributionally_robust.h"
-#include "memory.h"
 #include "test_common.h"
+#include "vw/core/memory.h"
+
+#include <boost/test/test_tools.hpp>
+#include <boost/test/unit_test.hpp>
 
 BOOST_AUTO_TEST_CASE(distributionally_robust_inverse_chisq)
 {

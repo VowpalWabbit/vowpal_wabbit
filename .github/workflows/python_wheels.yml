@@ -97,6 +97,7 @@ jobs:
         with:
           name: python_source_distribution
           path: dist/*.tar.gz
+          if-no-files-found: error
   linux-python-sdist-build-test:
     name: ubuntu-latest.amd64.py3.8.sdist-build-test
     needs: linux-python-sdist-bundle

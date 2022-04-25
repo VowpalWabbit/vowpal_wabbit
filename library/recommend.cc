@@ -1,9 +1,9 @@
-#include "crossplat_compat.h"
-#include "vw.h"
 #include "vw/config/cli_help_formatter.h"
 #include "vw/config/option_builder.h"
 #include "vw/config/option_group_definition.h"
 #include "vw/config/options_cli.h"
+#include "vw/core/crossplat_compat.h"
+#include "vw/core/vw.h"
 
 #include <unistd.h>
 
@@ -47,8 +47,8 @@ void progress()
 void get_hashv(char* in, size_t len, unsigned* out)
 {
   assert(NUM_HASHES == 2);
-  out[0] = MASK(VW::common::uniform_hash(in, len, 1), bits);
-  out[1] = MASK(VW::common::uniform_hash(in, len, 2), bits);
+  out[0] = MASK(VW::uniform_hash(in, len, 1), bits);
+  out[1] = MASK(VW::uniform_hash(in, len, 2), bits);
 }
 
 #define BIT_TEST(c, i) (c[i / 8] & (1 << (i % 8)))
@@ -91,7 +91,7 @@ int bf_hit(char* bf, char* line)
   return 1;
 }
 
-typedef std::pair<float, std::string> scored_example;
+using scored_example = std::pair<float, std::string>;
 std::vector<scored_example> scored_examples;
 
 struct compare_scored_examples

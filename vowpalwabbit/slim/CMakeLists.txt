@@ -3,9 +3,9 @@ set(VW_SLIM_SOURCES
   src/model_parser.cc
   src/opts.cc
   src/vw_slim_predict.cc
-  ../feature_group.cc
-  ../example_predict.cc
-  ../interactions.cc
+  ../core/src/feature_group.cc
+  ../core/src/example_predict.cc
+  ../core/src/interactions.cc
 )
 
 set(VW_SLIM_HEADERS
@@ -21,14 +21,16 @@ vw_add_library(
   NAME "slim"
   TYPE "STATIC_ONLY"
   SOURCES ${VW_SLIM_SOURCES} ${VW_SLIM_HEADERS}
-  PUBLIC_DEPS vw_common VowpalWabbit::vw_explore
+  PUBLIC_DEPS vw_common vw_explore
+  DESCRIPTION "Minimal inference only runtime"
+  EXCEPTION_DESCRIPTION "No"
 )
 target_compile_definitions(vw_slim PUBLIC EXPLORE_NOEXCEPT VW_NOEXCEPT)
 
 # TODO - remove this break of component boundaries at some point
 # At least update when the vowpalwabbit include dir is not used anymore
 target_include_directories(vw_slim PUBLIC
-  ${CMAKE_CURRENT_LIST_DIR}/../
+  ${CMAKE_CURRENT_LIST_DIR}/../core/include
 )
 
 set(vw_slim_test_sources

@@ -4,8 +4,8 @@
 
 #include "vw_clr.h"
 #include "vw_model.h"
-#include "parse_regressor.h"
-#include "parse_args.h"
+#include "vw/core/parse_regressor.h"
+#include "vw/core/parse_args.h"
 #include "clr_io.h"
 
 namespace VW

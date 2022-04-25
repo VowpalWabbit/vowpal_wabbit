@@ -19,8 +19,8 @@ int daemon(int a, int b) { return 0; }
 int getpid() { return (int)::GetCurrentProcessId(); }
 #endif
 
-#include <iostream>
 #include <fstream>
+#include <iostream>
 
 using namespace VW;
 

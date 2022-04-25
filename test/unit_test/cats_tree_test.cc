@@ -2,11 +2,12 @@
 // individual contributors. All rights reserved. Released under a BSD (revised)
 // license as described in the file LICENSE.
 
-#include <boost/test/unit_test.hpp>
+#include "vw/core/reductions/cats_tree.h"
 
-#include "reductions/cats_tree.h"
-#include "cb_label_parser.h"
 #include "test_common.h"
+#include "vw/core/cb_label_parser.h"
+
+#include <boost/test/unit_test.hpp>
 
 using namespace VW::LEARNER;
 using std::vector;

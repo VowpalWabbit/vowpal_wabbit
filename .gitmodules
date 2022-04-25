@@ -13,3 +13,6 @@
 [submodule "ext_libs/zlib"]
 	path = ext_libs/zlib
 	url = https://github.com/madler/zlib.git
+[submodule "ext_libs/eigen"]
+	path = ext_libs/eigen
+	url = https://gitlab.com/libeigen/eigen.git

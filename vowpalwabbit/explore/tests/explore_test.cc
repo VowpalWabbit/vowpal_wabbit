@@ -4,7 +4,7 @@
 
 #include "vw/explore/explore.h"
 
-#include "reductions/cb/cb_explore_pdf.h"
+#include "vw/core/reductions/cb/cb_explore_pdf.h"
 
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>

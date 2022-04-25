@@ -60,10 +60,11 @@ endif()
 
 if(VW_BOOST_MATH_SYS_DEP)
   find_package(Boost REQUIRED)
-  add_library(Boost::math ALIAS Boost::boost)
+  set(boost_math_target Boost::boost)
 else()
   set(BOOST_MATH_STANDALONE ON CACHE BOOL "Use Boost math vendored dep in standalone mode" FORCE)
   add_subdirectory(${CMAKE_CURRENT_LIST_DIR}/boost_math EXCLUDE_FROM_ALL)
+  set(boost_math_target Boost::math)
 endif()
 
 if(VW_ZLIB_SYS_DEP)
@@ -103,3 +104,9 @@ if(BUILD_FLATBUFFERS)
   endif()
   include(FlatbufferUtils)
 endif()
+
+add_library(eigen INTERFACE)
+target_include_directories(eigen SYSTEM INTERFACE
+  $<BUILD_INTERFACE:${CMAKE_CURRENT_LIST_DIR}/eigen>
+  $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
+)

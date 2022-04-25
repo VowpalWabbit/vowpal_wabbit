@@ -1,11 +1,13 @@
-#include <stdio.h>
-#include <stdlib.h> // for system
-#include <iostream>
-#include <fstream>
-#include <string>
-#include <vector>
-#include "../vowpalwabbit/vw.h"
 #include "libsearch.h"
+#include "vw/core/vw.h"
+
+#include <cstdio>
+#include <cstdlib>  // for system
+#include <fstream>
+#include <iostream>
+#include <string>
+#include <utility>
+#include <vector>
 
 using std::cerr;
 using std::endl;
@@ -33,7 +35,7 @@ struct nextstr
   float cw;
   std::string s;
   float sw;
-  nextstr(char _c, float _cw, std::string _s, float _sw) : c(_c), cw(_cw), s(_s), sw(_sw) {}
+  nextstr(char _c, float _cw, std::string _s, float _sw) : c(_c), cw(_cw), s(std::move(_s)), sw(_sw) {}
 };
 
 inline float min_float(float a, float b) { return (a < b) ? a : b; }
@@ -81,13 +83,13 @@ public:
   { if (prefix == nullptr || *prefix == 0)
     { next.clear();
       float c = 1.0f / (float)count;
-      next.push_back( nextstr('$', log(1.0f + c * (float)terminus), max_string, log(1.0f + (float)max_count)) );
+      next.push_back(nextstr('$', std::log(1.0f + c * (float)terminus), max_string, std::log(1.0f + (float)max_count)));
       for (size_t id = 0; id < children.size(); id++)
       {
         if (children[id])
         {
           next.push_back(nextstr(action2char((action)(id + 1)), c * (float)children[id]->count,
-              children[id]->max_string, log(1.0f + (float)children[id]->max_count)));
+              children[id]->max_string, std::log(1.0f + (float)children[id]->max_count)));
         }
       }
     }
@@ -99,7 +101,7 @@ public:
     }
   }
 
-  void build_max(std::string prefix="")
+  void build_max(const std::string& prefix = "")
   { max_count = terminus;
     max_string = prefix;
     for (size_t id = 0; id < children.size(); id++)
@@ -161,7 +163,7 @@ public:
     prev_row = tmp;
   }
 
-  void append(std::string s)
+  void append(const std::string& s)
   {
     for (char c : s) { append(c); }
   }
@@ -215,13 +217,13 @@ struct input
 { std::string in;
   std::string out;
   float weight;
-  input(std::string _in, std::string _out, float _weight) : in(_in), out(_out), weight(_weight) {}
-  input(std::string _in, std::string _out) : in(_in), out(_out), weight(1.) {}
-  input(std::string _in) : in(_in), out(_in), weight(1.) {}
+  input(std::string _in, std::string _out, float _weight) : in(std::move(_in)), out(std::move(_out)), weight(_weight) {}
+  input(std::string _in, std::string _out) : in(std::move(_in)), out(std::move(_out)), weight(1.) {}
+  input(const std::string& _in) : in(_in), out(_in), weight(1.) {}
   input() : weight(1.) {}
 };
 
-typedef std::string output;
+using output = std::string;
 
 float max_cost = 100.;
 
@@ -277,7 +279,9 @@ public:
       std::string tmp("$");
       for (int i=m; i >= m-15 && i >= 0; i--)
       {
-        tmp = out[i] + tmp;
+        std::stringstream ss;
+        ss << out[i] << tmp;
+        tmp = ss.str();
         fs_s.push_back(1.f, VW::hash_feature(vw_obj, "p=" + tmp, ns_hash_s));
       }
 
@@ -318,7 +322,7 @@ public:
         ex.indices.push_back('d');
 
         char best_char = '~'; float best_count = 0.;
-        for (auto xx : next)
+        for (const auto& xx : next)
         {
           if (xx.cw > 0.) { fs_d.push_back(xx.cw, VW::hash_feature(vw_obj, "c=" + std::string(1, xx.c), ns_hash_d)); }
           if (xx.sw > 0.) { fs_d.push_back(xx.sw, VW::hash_feature(vw_obj, "mc=" + xx.s, ns_hash_d)); }
