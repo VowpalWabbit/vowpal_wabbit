@@ -4,6 +4,7 @@
 
 #include "vw/core/reductions/epsilon_decay.h"
 
+#include "vw/config/options.h"
 #include "vw/core/global_data.h"
 #include "vw/core/label_type.h"
 #include "vw/core/learner.h"
@@ -11,7 +12,6 @@
 #include "vw/core/model_utils.h"
 #include "vw/core/prediction_type.h"
 #include "vw/core/vw.h"
-#include "vw/config/options.h"
 
 #include <algorithm>
 #include <cmath>
@@ -219,6 +219,8 @@ VW::LEARNER::base_learner* VW::reductions::epsilon_decay_setup(VW::setup_base_i&
                .help("Time constant for count decay"));
 
   if (!options.add_parse_and_check_necessary(new_options)) { return nullptr; }
+
+  if (model_count < 1) { THROW("Model count must be 1 or greater"); }
 
   // Update model count to be 2^n
   uint64_t params_per_weight = 1;

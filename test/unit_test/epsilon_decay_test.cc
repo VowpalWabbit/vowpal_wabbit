@@ -1,10 +1,10 @@
 
 #include "vw/core/reductions/epsilon_decay.h"
 
-#include "vw/core/metric_sink.h"
-#include "vw/core/reductions_fwd.h"
 #include "simulator.h"
 #include "test_common.h"
+#include "vw/core/metric_sink.h"
+#include "vw/core/reductions_fwd.h"
 
 #include <boost/test/test_tools.hpp>
 #include <boost/test/tools/old/interface.hpp>
