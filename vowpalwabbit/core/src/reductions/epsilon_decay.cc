@@ -12,10 +12,7 @@
 #include "vw/core/prediction_type.h"
 #include "vw/core/vw.h"
 #include "vw/config/options.h"
-
 #include <algorithm>
-#include <cmath>
-#include <string>
 
 using namespace VW::config;
 using namespace VW::LEARNER;
@@ -248,6 +245,8 @@ VW::LEARNER::base_learner* VW::reductions::epsilon_decay_setup(VW::setup_base_i&
                .help("Time constant for count decay"));
 
   if (!options.add_parse_and_check_necessary(new_options)) { return nullptr; }
+
+  if (model_count < 1) { THROW("Model count must be 1 or greater"); }
 
   // Scale confidence interval by number of examples
   float scaled_alpha = _epsilon_decay_alpha / model_count;
