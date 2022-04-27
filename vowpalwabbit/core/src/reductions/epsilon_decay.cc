@@ -13,8 +13,6 @@
 #include "vw/core/prediction_type.h"
 #include "vw/core/vw.h"
 
-#include <algorithm>
-
 using namespace VW::config;
 using namespace VW::LEARNER;
 
