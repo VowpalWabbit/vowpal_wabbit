@@ -1,9 +1,9 @@
 #include "vw/core/reductions/epsilon_decay.h"
 
-#include "vw/core/metric_sink.h"
-#include "vw/core/reductions_fwd.h"
 #include "simulator.h"
 #include "test_common.h"
+#include "vw/core/metric_sink.h"
+#include "vw/core/reductions_fwd.h"
 
 #include <boost/test/test_tools.hpp>
 #include <boost/test/tools/old/interface.hpp>
@@ -96,7 +96,6 @@ BOOST_AUTO_TEST_CASE(epsilon_decay_test_champ_change)
     BOOST_CHECK_EQUAL(epsilon_decay->_scored_configs[3][3].get_model_idx(), 2);
     return true;
   });
-
 
   // we initialize the reduction pointing to position 0 as champ, that config is hard-coded to empty
   auto ctr = simulator::_test_helper_hook(

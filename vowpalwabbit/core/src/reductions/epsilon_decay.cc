@@ -4,6 +4,7 @@
 
 #include "vw/core/reductions/epsilon_decay.h"
 
+#include "vw/config/options.h"
 #include "vw/core/global_data.h"
 #include "vw/core/label_type.h"
 #include "vw/core/learner.h"
@@ -11,7 +12,7 @@
 #include "vw/core/model_utils.h"
 #include "vw/core/prediction_type.h"
 #include "vw/core/vw.h"
-#include "vw/config/options.h"
+
 #include <algorithm>
 
 using namespace VW::config;
@@ -103,7 +104,8 @@ void learn(
 
   const float r = -logged.cost;
   // Process each model, then update the upper/lower bounds for each model
-  for (auto config_iter_vec = data._scored_configs.begin(); config_iter_vec != data._scored_configs.end(); ++config_iter_vec)
+  for (auto config_iter_vec = data._scored_configs.begin(); config_iter_vec != data._scored_configs.end();
+       ++config_iter_vec)
   {
     for (auto config_iter = config_iter_vec->begin(); config_iter != config_iter_vec->end(); ++config_iter)
     {
@@ -140,7 +142,8 @@ void learn(
       {
         for (uint64_t inner_ind = 0; inner_ind < outer_ind + 1; ++inner_ind)
         {
-          std::swap(data._scored_configs[outer_ind][inner_ind], data._scored_configs[outer_ind + swap_dist][inner_ind + swap_dist]);
+          std::swap(data._scored_configs[outer_ind][inner_ind],
+              data._scored_configs[outer_ind + swap_dist][inner_ind + swap_dist]);
         }
       }
 
@@ -149,10 +152,12 @@ void learn(
       while (params_per_weight < K * (K + 1) / 2) { params_per_weight *= 2; }
       for (uint64_t outer_ind = 0; outer_ind < K; ++outer_ind)
       {
-        for (uint64_t inner_ind = 0; inner_ind < std::min(data._scored_configs[outer_ind].size(), swap_dist); ++inner_ind)
+        for (uint64_t inner_ind = 0; inner_ind < std::min(data._scored_configs[outer_ind].size(), swap_dist);
+             ++inner_ind)
         {
           data._scored_configs[outer_ind][inner_ind].reset_stats(data._epsilon_decay_alpha, data._epsilon_decay_tau);
-          data._weights.dense_weights.clear_offset(data._scored_configs[outer_ind][inner_ind].get_model_idx(), params_per_weight);
+          data._weights.dense_weights.clear_offset(
+              data._scored_configs[outer_ind][inner_ind].get_model_idx(), params_per_weight);
         }
       }
       break;
@@ -164,9 +169,9 @@ void learn(
   for (int64_t i = 0; i < K - 1; ++i)
   {
     if (data._scored_configs[i][i].update_count > data._min_scope &&
-      data._scored_configs[i][i].update_count > std::pow(data._scored_configs[K - 1][K - 1].update_count, static_cast<float>(i + 1) / K))
+        data._scored_configs[i][i].update_count >
+            std::pow(data._scored_configs[K - 1][K - 1].update_count, static_cast<float>(i + 1) / K))
     {
-
       // Move smaller configs up one position
       if (i > 0)
       {
@@ -183,9 +188,7 @@ void learn(
       for (uint64_t outer_ind = i + 1; outer_ind < K; ++outer_ind)
       {
         for (int64_t inner_ind = i; inner_ind > 0; --inner_ind)
-        {
-          std::swap(data._scored_configs[outer_ind][inner_ind], data._scored_configs[outer_ind][inner_ind - 1]);
-        }
+        { std::swap(data._scored_configs[outer_ind][inner_ind], data._scored_configs[outer_ind][inner_ind - 1]); }
       }
 
       // Clear old scores and weights
