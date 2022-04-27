@@ -117,6 +117,7 @@ set(vw_core_headers
   include/vw/core/reductions/csoaa_ldf.h
   include/vw/core/reductions/csoaa.h
   include/vw/core/reductions/ect.h
+  include/vw/core/reductions/epsilon_decay.h
   include/vw/core/reductions/explore_eval.h
   include/vw/core/reductions/expreplay.h
   include/vw/core/reductions/freegrad.h
@@ -270,6 +271,7 @@ set(vw_core_sources
   src/reductions/csoaa_ldf.cc
   src/reductions/csoaa.cc
   src/reductions/ect.cc
+  src/reductions/epsilon_decay.cc
   src/reductions/explore_eval.cc
   src/reductions/freegrad.cc
   src/reductions/ftrl.cc

@@ -51,6 +51,7 @@
 #include "vw/core/reductions/csoaa.h"
 #include "vw/core/reductions/csoaa_ldf.h"
 #include "vw/core/reductions/ect.h"
+#include "vw/core/reductions/epsilon_decay.h"
 #include "vw/core/reductions/explore_eval.h"
 #include "vw/core/reductions/expreplay.h"
 #include "vw/core/reductions/freegrad.h"
@@ -201,6 +202,7 @@ void prepare_reductions(std::vector<std::tuple<std::string, reduction_setup_fn>>
   reductions.push_back(VW::reductions::cb_dro_setup);
   reductions.push_back(VW::reductions::cb_sample_setup);
   reductions.push_back(VW::reductions::explore_eval_setup);
+  reductions.push_back(VW::reductions::epsilon_decay_setup);
   reductions.push_back(VW::reductions::shared_feature_merger_setup);
   reductions.push_back(VW::reductions::ccb_explore_adf_setup);
   reductions.push_back(VW::reductions::slates_setup);
