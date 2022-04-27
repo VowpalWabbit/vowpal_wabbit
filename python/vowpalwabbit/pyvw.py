@@ -176,11 +176,10 @@ class VWOption:
             if self.is_flag():
                 return "--{}".format(self.name)
             else:
-                # missing list case
                 if isinstance(self.value, list):
-                    return "**NOT_IMPL**"
+                    return " ".join(map(lambda x: f"--{self.name}={x}", self.value))
                 else:
-                    return "--{} {}".format(self.name, self.value)
+                    return "--{}={}".format(self.name, self.value)
         else:
             return ""
 
