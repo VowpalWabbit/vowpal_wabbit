@@ -19,8 +19,8 @@ def test_vw_config_manager():
     expected_set = {
         "--no_stdin",
         "--quiet",
-        "--loss_function logistic",
-        "--data test/train-sets/rcv1_small.dat",
+        "--loss_function=logistic",
+        "--data=test/train-sets/rcv1_small.dat",
     }
     expected_reductions = {"gd", "scorer-identity", "count_label"}
 
