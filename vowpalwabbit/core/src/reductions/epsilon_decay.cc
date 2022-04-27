@@ -150,7 +150,8 @@ void learn(
       while (params_per_weight < K * (K + 1) / 2) { params_per_weight *= 2; }
       for (uint64_t outer_ind = 0; outer_ind < K; ++outer_ind)
       {
-        for (uint64_t inner_ind = 0; inner_ind < std::min(data._scored_configs[outer_ind].size(), swap_dist);
+        for (uint64_t inner_ind = 0;
+             inner_ind < std::min(static_cast<uint64_t>(data._scored_configs[outer_ind].size()), swap_dist);
              ++inner_ind)
         {
           data._scored_configs[outer_ind][inner_ind].reset_stats(data._epsilon_decay_alpha, data._epsilon_decay_tau);

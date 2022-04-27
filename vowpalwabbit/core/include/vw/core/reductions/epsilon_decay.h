@@ -7,6 +7,7 @@
 #include "vw/core/distributionally_robust.h"
 #include "vw/core/reductions_fwd.h"
 #include "vw/core/scored_config.h"
+
 #include <algorithm>
 
 namespace VW
