@@ -345,7 +345,7 @@ def test_command_line_using_arg_list():
 
 def test_command_line_with_double_space_in_str():
     # Test regression for double space in string breaking splitting
-    model = Workspace(arg_list="--oaa 3 -q ::    ")
+    model = Workspace(arg_str="--oaa 3 -q ::    ")
     del model
 
 
