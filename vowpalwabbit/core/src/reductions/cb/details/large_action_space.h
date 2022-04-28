@@ -42,7 +42,6 @@ public:
   void generate_Q(const multi_ex& examples);
   void generate_A(const multi_ex& examples);
   void QR_decomposition();
-  // void generate_Z(const multi_ex& examples);
 
 private:
   template <bool is_learn>

@@ -189,44 +189,6 @@ void cb_explore_adf_large_action_space::QR_decomposition()
   Q = qr.householderQ() * thinQ;
 }
 
-// void cb_explore_adf_large_action_space::generate_Z(const multi_ex& examples)
-// {
-//   // create Z matrix with dimenstions d x F where d is a parameter and F is the max number of feature representation
-//   Eigen::MatrixXf Z;
-
-//   // TODO extend wildspace interactions before calling foreach
-
-//   // To get Z we want to multiply Q.transpose() with the original A matrix (of action features)
-//   // to achieve this we will iterate over the columns of Q (which are the rows of Q.transpose()) and multiply each q
-//   // vector with a column in A. A column in A The inner product of Q.transpose().row (i.e. Q.column()) with
-//   A.column() for (uint64_t row_index = 0; row_index < Q.cols(); row_index++) {} for (auto* ex : examples)
-//   {
-//     assert(!CB::ec_is_example_header(*ex));
-
-//     for (size_t col = 0; col < _d; col++)
-//     {
-//       float dot_product = 0.f;
-//       if (_all->weights.sparse)
-//       {
-//         LazyGaussianDotProduct<sparse_parameters> w(_all->weights.sparse_weights, col, _seed);
-//         GD::foreach_feature<float, float, just_add_weights, LazyGaussianDotProduct<sparse_parameters>>(w,
-//             _all->ignore_some_linear, _all->ignore_linear, _all->interactions, _all->extent_interactions,
-//             _all->permutations, *ex, dot_product, _all->_generate_interactions_object_cache);
-//       }
-//       else
-//       {
-//         LazyGaussianDotProduct<dense_parameters> w(_all->weights.dense_weights, col, _seed);
-//         GD::foreach_feature<float, float, just_add_weights, LazyGaussianDotProduct<dense_parameters>>(w,
-//             _all->ignore_some_linear, _all->ignore_linear, _all->interactions, _all->extent_interactions,
-//             _all->permutations, *ex, dot_product, _all->_generate_interactions_object_cache);
-//       }
-
-//       Q(row_index, col) = dot_product;
-//     }
-//     row_index++;
-//   }
-// }
-
 template <bool is_learn>
 void cb_explore_adf_large_action_space::predict_or_learn_impl(VW::LEARNER::multi_learner& base, multi_ex& examples)
 {
@@ -242,10 +204,8 @@ void cb_explore_adf_large_action_space::predict_or_learn_impl(VW::LEARNER::multi
                        ->score;
 
     calculate_shrink_factor(preds, min_ck);
-    generate_A(examples);
     generate_Q(examples);
     QR_decomposition();
-    // generate_Z(examples);
   }
 }
 }  // namespace cb_explore_adf
