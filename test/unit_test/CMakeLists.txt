@@ -1,4 +1,5 @@
 add_executable(vw-unit-test.out
+  epsilon_decay_test.cc
   automl_test.cc
   automl_weights_test.cc
   baseline_cb_test.cc
@@ -21,7 +22,6 @@ add_executable(vw-unit-test.out
   example_test.cc
   feature_group_test.cc
   guard_test.cc
-  initialize_test.cc
   interactions_test.cc
   json_parser_test.cc
   loss_functions_test.cc
