@@ -15,6 +15,7 @@
 #include "vw/core/setup_base.h"
 #include "vw/explore/explore.h"
 
+#include <Eigen/QR>
 #include <algorithm>
 #include <cmath>
 #include <functional>
@@ -49,6 +50,34 @@ public:
   }
 };
 
+template <typename WeightsT>
+struct triplet_constructor
+{
+private:
+  WeightsT& _weights;
+  uint64_t _row_index;
+  std::vector<Eigen::Triplet<float>>& _triplets;
+  uint64_t& _max_col;
+
+public:
+  triplet_constructor(
+      WeightsT& weights, uint64_t row_index, std::vector<Eigen::Triplet<float>>& triplets, uint64_t& max_col)
+      : _weights(weights), _row_index(row_index), _triplets(triplets), _max_col(max_col)
+  {
+  }
+
+  float operator[](uint64_t index) const
+  {
+    if (_weights[index] != 0.f)
+    {
+      _triplets.push_back(Eigen::Triplet<float>(_row_index, index, _weights[index]));
+      if (index > _max_col) { _max_col = index; }
+    }
+    // no op operation
+    return 0.f;
+  }
+};
+
 void cb_explore_adf_large_action_space::predict(VW::LEARNER::multi_learner& base, multi_ex& examples)
 {
   predict_or_learn_impl<false>(base, examples);
@@ -71,6 +100,51 @@ void cb_explore_adf_large_action_space::calculate_shrink_factor(const ACTION_SCO
 }
 
 inline void just_add_weights(float& p, float, float fw) { p += fw; }
+
+inline void no_op(float&, float, float) {}
+
+void cb_explore_adf_large_action_space::generate_A(const multi_ex& examples)
+{
+  // TODO extend wildspace interactions before calling foreach
+  uint64_t row_index = 0;
+  uint64_t max_col = 0;
+  // TODO check triplets type
+  _triplets.clear();
+  for (auto* ex : examples)
+  {
+    assert(!CB::ec_is_example_header(*ex));
+
+    float no_op_float = 0.f;
+    if (_all->weights.sparse)
+    {
+      triplet_constructor<sparse_parameters> w(_all->weights.sparse_weights, row_index, _triplets, max_col);
+      GD::foreach_feature<float, float, no_op, triplet_constructor<sparse_parameters>>(w, _all->ignore_some_linear,
+          _all->ignore_linear, _all->interactions, _all->extent_interactions, _all->permutations, *ex, no_op_float,
+          _all->_generate_interactions_object_cache);
+    }
+    else
+    {
+      triplet_constructor<dense_parameters> w(_all->weights.dense_weights, row_index, _triplets, max_col);
+      GD::foreach_feature<float, float, no_op, triplet_constructor<dense_parameters>>(w, _all->ignore_some_linear,
+          _all->ignore_linear, _all->interactions, _all->extent_interactions, _all->permutations, *ex, no_op_float,
+          _all->_generate_interactions_object_cache);
+    }
+
+    row_index++;
+  }
+
+  assert(row_index == examples[0]->pred.a_s.size());
+  if (max_col == 0)
+  {
+    // no non-zero columns were found for A, it is empty
+    A.resize(0, 0);
+  }
+  else
+  {
+    A.resize(row_index, max_col + 1);
+    A.setFromTriplets(_triplets.begin(), _triplets.end());
+  }
+}
 
 void cb_explore_adf_large_action_space::generate_Q(const multi_ex& examples)
 {
@@ -108,6 +182,51 @@ void cb_explore_adf_large_action_space::generate_Q(const multi_ex& examples)
   }
 }
 
+void cb_explore_adf_large_action_space::QR_decomposition()
+{
+  Eigen::MatrixXf thinQ(Eigen::MatrixXf::Identity(Q.rows(), Q.cols()));
+  Eigen::HouseholderQR<Eigen::MatrixXf> qr(Q);
+  Q = qr.householderQ() * thinQ;
+}
+
+// void cb_explore_adf_large_action_space::generate_Z(const multi_ex& examples)
+// {
+//   // create Z matrix with dimenstions d x F where d is a parameter and F is the max number of feature representation
+//   Eigen::MatrixXf Z;
+
+//   // TODO extend wildspace interactions before calling foreach
+
+//   // To get Z we want to multiply Q.transpose() with the original A matrix (of action features)
+//   // to achieve this we will iterate over the columns of Q (which are the rows of Q.transpose()) and multiply each q
+//   // vector with a column in A. A column in A The inner product of Q.transpose().row (i.e. Q.column()) with
+//   A.column() for (uint64_t row_index = 0; row_index < Q.cols(); row_index++) {} for (auto* ex : examples)
+//   {
+//     assert(!CB::ec_is_example_header(*ex));
+
+//     for (size_t col = 0; col < _d; col++)
+//     {
+//       float dot_product = 0.f;
+//       if (_all->weights.sparse)
+//       {
+//         LazyGaussianDotProduct<sparse_parameters> w(_all->weights.sparse_weights, col, _seed);
+//         GD::foreach_feature<float, float, just_add_weights, LazyGaussianDotProduct<sparse_parameters>>(w,
+//             _all->ignore_some_linear, _all->ignore_linear, _all->interactions, _all->extent_interactions,
+//             _all->permutations, *ex, dot_product, _all->_generate_interactions_object_cache);
+//       }
+//       else
+//       {
+//         LazyGaussianDotProduct<dense_parameters> w(_all->weights.dense_weights, col, _seed);
+//         GD::foreach_feature<float, float, just_add_weights, LazyGaussianDotProduct<dense_parameters>>(w,
+//             _all->ignore_some_linear, _all->ignore_linear, _all->interactions, _all->extent_interactions,
+//             _all->permutations, *ex, dot_product, _all->_generate_interactions_object_cache);
+//       }
+
+//       Q(row_index, col) = dot_product;
+//     }
+//     row_index++;
+//   }
+// }
+
 template <bool is_learn>
 void cb_explore_adf_large_action_space::predict_or_learn_impl(VW::LEARNER::multi_learner& base, multi_ex& examples)
 {
@@ -118,13 +237,15 @@ void cb_explore_adf_large_action_space::predict_or_learn_impl(VW::LEARNER::multi
     base.predict(examples);
 
     auto& preds = examples[0]->pred.a_s;
-    float min_ck =
-        std::min_element(preds.begin(), preds.end(), [](ACTION_SCORE::action_score& a, ACTION_SCORE::action_score& b) {
-          return a.score < b.score;
-        })->score;
+    float min_ck = std::min_element(preds.begin(), preds.end(),
+        [](ACTION_SCORE::action_score& a, ACTION_SCORE::action_score& b) { return a.score < b.score; })
+                       ->score;
 
     calculate_shrink_factor(preds, min_ck);
+    generate_A(examples);
     generate_Q(examples);
+    QR_decomposition();
+    // generate_Z(examples);
   }
 }
 }  // namespace cb_explore_adf
