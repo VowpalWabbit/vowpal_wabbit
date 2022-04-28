@@ -161,33 +161,6 @@ BOOST_AUTO_TEST_CASE(creation_of_the_og_A_matrix)
   }
 }
 
-// use to construct Omega sparse matrix of dimension Fxd to check A * Omega = Q
-template <typename WeightsT>
-struct LazyGaussianDotProductTest
-{
-private:
-  WeightsT& _weights;
-  uint64_t _column_index;
-  uint64_t _seed;
-  std::vector<Eigen::Triplet<float>>& _triplets;
-  uint64_t& max_col;
-
-public:
-  LazyGaussianDotProductTest(WeightsT& weights, uint64_t column_index, uint64_t seed,
-      std::vector<Eigen::Triplet<float>>& triplets, uint64_t& max_col_)
-      : _weights(weights), _column_index(column_index), _seed(seed), _triplets(triplets), max_col(max_col_)
-  {
-  }
-  float operator[](uint64_t index) const
-  {
-    auto combined_index = index + _column_index + _seed;
-    auto mm = merand48_boxmuller(combined_index);
-    _triplets.push_back(Eigen::Triplet<float>(index, _column_index, mm));
-    if (index > max_col) { max_col = index; }
-    return _weights[index] * mm;
-  }
-};
-
 BOOST_AUTO_TEST_CASE(check_A_times_Omega_is_Q)
 {
   auto d = 2;
