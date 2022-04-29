@@ -37,11 +37,28 @@ jobs:
         with:
           name: cxx_docs
           path: doc/html/
+  dump-options-build:
+    container:
+      image: vowpalwabbit/ubuntu1804-build:latest
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v1
+      - run: |
+        sudo apt update
+        sudo apt install -y ninja-build
+      - name: Configure
+        run: cmake -S . -B build -G Ninja -DBUILD_TESTING=OFF
+      - name: Build dump options
+        run: cmake --build build -t vw-dump-options
+      - name: Upload vw-dump-options
+        uses: actions/upload-artifact@v1
+        with:
+          name: vw-dump-options
+          path: build/utl/dump_options/vw-dump-options
   python-build:
     container:
       image: vowpalwabbit/manylinux2010-build:latest
     runs-on: ubuntu-latest
-
     steps:
       - uses: actions/checkout@v1
       - run: echo "/opt/python/cp39-cp39/bin" >> $GITHUB_PATH
@@ -69,11 +86,17 @@ jobs:
         uses: actions/download-artifact@v1
         with:
           name: python_wheel
+      - name: Download Wheel
+        uses: actions/download-artifact@v1
+        with:
+          name: vw-dump-options
       - name: Install dependencies
         shell: bash
         run: |
           pip install -r python/docs/build-requirements.txt
           pip install -r requirements.txt
+          pip install PyYAML
+          npm install -g hbs-cli
       - name: Install wheel
         shell: bash
         run: |
@@ -81,6 +104,10 @@ jobs:
           export wheel_file="${wheel_files[0]}"
           echo Installing ${wheel_file}...
           pip install ${wheel_file}
+      - name: Generate CLI docs
+        run: |
+          cd python/docs/cmd_options_template
+          python generate_cmdline_docs.py --dump-options-bin ../../../vw-dump-options --template ./command_line_args.hbs --out ../source/ --extra-info ./cmdline_help_overrides.yml
       - name: Build docs
         run: |
           cd python/docs

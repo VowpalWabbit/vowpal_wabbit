@@ -1,0 +1,402 @@
+options:
+  predictions: |
+    ``-p /dev/stdout`` will is a handy trick for seeing outputs on linux/unix platforms.
+  raw_predictions: |
+    ``-r`` is rarely used.
+  progress: |
+    ``--progress`` changes the frequency of the diagnostic progress-update
+    printouts. If arg is an integer, the printouts happen every arg (fixed)
+    interval, e.g: arg is 10, we get printouts at 10, 20, 30, ... Alternatively,
+    if arg has a dot in it, it is interpreted as a floating point number, and
+    the printouts happen on a multiplicative schedule: e.g. when arg is 2.0 (the
+    default) progress updates will be printed on examples numbered: 1, 2, 4, 8,
+    ..., 2^n
+  sendto: |
+    Used with another VW using ``--daemon`` to send examples and get back
+    predictions from the daemon VW.
+  min_prediction: |
+    ``--min_prediction`` and ``--max_prediction`` control the range of the
+    output prediction by clipping. By default, it automatically adjusts to the
+    range of labels observed. If you set this, there is no auto-adjusting.
+  max_prediction: |
+    ``--min_prediction`` and ``--max_prediction`` control the range of the
+    output prediction by clipping. By default, it automatically adjusts to the
+    range of labels observed. If you set this, there is no auto-adjusting.
+  audit: |
+    Audit is useful for debugging and for accessing the features and values for
+    each example as well as the values in VW's weight vector. See `Audit wiki
+    page <https://github.com/VowpalWabbit/vowpal_wabbit/wiki/Audit>`_  for more
+    details.
+  compressed: |
+    This can be used for reading gzipped raw training data, writing gzipped
+    caches, and reading gzipped caches. In practice this is rarely needed to be
+    specified as the file extension is used to auto detect this.
+  testonly: |
+    Makes VW run in testing mode. The labels are ignored so this is useful for
+    assessing the generalization performance of the learned model on a test set.
+    This has the same effect as passing a 0 importance weight on every example.
+    It significantly reduces memory consumption.
+  quadratic: |
+    This is a very powerful option. It takes as an argument a pair of two
+    letters. Its effect is to create interactions between the features of two
+    namespaces. Suppose each example has a namespace user and a namespace
+    document, then specifying ``-q ud`` will create an interaction feature for every
+    pair of features (x,y) where x is a feature from the user namespace and y is
+    a feature from the document namespace. If a letter matches more than one
+    namespace then all the matching namespaces are used. In our example if there
+    is another namespace url then interactions between url and document will
+    also be modeled. The letter ``:`` is a wildcard to interact with all namespaces.
+    ``-q a:`` (or ``-q :a``) will create an interaction feature for every pair of
+    features (x,y) where x is a feature from the namespaces starting with a and
+    y is a feature from the all namespaces. ``-q ::`` would interact any combination
+    of pairs of features.
+
+    .. note::
+      ``\xFF`` notation could be used to define namespace by its character's hex
+      code (``FF`` in this example). ``\x`` is case sensitive and ``\`` shall be escaped in
+      some shells like bash (``-q \\xC0\\xC1``). This format is supported in any
+      command line argument which accepts namespaces.
+
+    See also:
+
+    * :ref:`command_line_args:cubic`
+    * :ref:`command_line_args:interactions`
+  cubic: |
+    Is similar to -q, but it takes three letters as the argument, thus enabling
+    interaction among the features of three namespaces.
+
+    See also:
+
+    * :ref:`command_line_args:quadratic`
+    * :ref:`command_line_args:interactions`
+  interactions: |
+    same as ``-q`` and ``--cubic`` but can create feature interactions of any level,
+    like ``--interactions abcde``. For example ``--interactions abc`` is equal to
+    ``--cubic abc``.
+
+    See also:
+
+    * :ref:`command_line_args:quadratic`
+    * :ref:`command_line_args:cubic`
+  ignore: |
+    Ignores a namespace, effectively making the features not there. You can use
+    it multiple times.
+  keep: |
+    Keeps namespace(s) ignoring those not listed, it is a counterpart to
+    ``--ignore``. You can use it multiple times. Useful for example to train a
+    baseline using just a single namespace.
+  redefine: |
+    Allows namespace(s) renaming without any changes in input data. Its argument
+    takes the form N:=S where := is the redefine operator, S is the list of old
+    namespaces and N is the new namespace character. Empty S or N refer to the
+    default namespace (features without namespace explicitly specified). The
+    wildcard character : may be used to represent all namespaces, including
+    default. For example, ``--redefine :=:`` will rename all namespaces to the
+    default one (all features will be stored in default namespace). The order of
+    ``--redefine``, ``--ignore``, and other name-space options (like ``-q`` or ``--cubic``)
+    matters. For example:
+
+    .. code-block::
+
+      --redefine A:=: --redefine B:= --redefine B:=q --ignore B -q AA
+
+    will ignore features of namespaces starting with q and the default
+    namespace, put all other features into one namespace A and finally generate
+    quadratic interactions between the newly defined A namespace.
+
+  holdout_off: |
+    Disables holdout validation for multiple pass learning. By default, VW holds
+    out a (controllable default = 1/10th) subset of examples whenever ``--passes`` >
+    1 and reports the test loss on the print out. This is used to prevent
+    overfitting in multiple pass learning. An extra h is printed at the end of
+    the line to specify the reported losses are holdout validation loss, instead
+    of progressive validation loss.
+
+  holdout_period: |
+    Specifies the period of holdout example used for holdout validation in
+    multiple pass learning. For example, if user specifies ``--holdout_period 5``,
+    every one in 5 examples is used for holdout validation. In other words, 80%
+    of the data is used for training.
+
+  ngram: |
+    ``--ngram`` and ``--skip`` can be used to generate ngram features possibly with
+    skips (a.k.a. don't cares). For example ``--ngram 2`` will generate (unigram
+    and) bigram features by creating new features from features that appear next
+    to each other, and ``--ngram 2`` ``--skip 1`` will generate (unigram, bigram, and)
+    trigram features plus trigram features where we don't care about the
+    identity of the middle token.
+
+    Unlike ``--ngram`` where the order of the features matters, ``--sort_features``
+    destroys the order in which features are presented and writes them in cache
+    in a way that minimizes the cache size. ``--sort_features`` and ``--ngram`` are
+    mutually exclusive.
+
+  permutations: |
+    Defines how VW interacts features of the same namespace. For example, in
+    case ``-q aa``. If namespace a contains 3 features than by default VW generates
+    only simple combinations of them: aa:{(1,1),(1,2),(1,3),(2,2),(2,3),(3,3)}.
+    With --permutations specified it will generate permutations of interacting
+    features aa:{(1,1),(1,2),(1,3),(2,1),(2,2),(2,3),(3,1),(3,2),(3,3)}. It's
+    recommended to not use ``--permutations`` without a good reason as it may cause
+    generation of a lot more features than usual.
+
+    By default VW hashes string features and does not hash integer features.
+    ``--hash all`` hashes all feature identifiers. This is useful if your features
+    are integers and you want to use parallelization as it will spread the
+    features almost equally among the threads or cluster nodes, having a load
+    balancing effect.
+
+    VW removes duplicate interactions of same set of namespaces. For example in
+    ``-q ab -q ba -q ab`` only first ``-q ab`` will be used. That is helpful to
+    remove unnecessary interactions generated by wildcards, like ``-q ::``. You
+    can switch off this behavior with ``--leave_duplicate_interactions``.
+  csoaa_ldf: |
+    See http://www.umiacs.umd.edu/~hal/tmp/multiclassVW.html
+  wap_ldf: |
+    See http://www.umiacs.umd.edu/~hal/tmp/multiclassVW.html
+  rank: |
+    Rank sticks VW in matrix factorization mode. You'll need a relatively small
+    learning rate like ``-l 0.01``.
+
+  adaptive: |
+    ``--adaptive`` turns on an individual learning rate for each feature. These
+    learning rates are adjusted automatically according to a data-dependent
+    schedule. For details the relevant papers are `Adaptive Bound Optimization
+    for Online Convex Optimization <http://arxiv.org/abs/1002.4908>`_ and
+    `Adaptive Subgradient Methods for Online Learning and Stochastic
+    Optimization <http://www.magicbroom.info/Papers/DuchiHaSi10.pdf>`_. These
+    learning rates give an improvement when the data have many features, but
+    they can be slightly slower especially when used in conjunction with options
+    that cause examples to have many non-zero features such as ``-q`` and
+    ``--ngram``.
+
+  bfgs: |
+    ``--bfgs`` and ``--conjugate_gradient`` uses a batch optimizer based on LBFGS or
+    nonlinear conjugate gradient method.  Of the two, ``--bfgs`` is recommended.
+    To avoid overfitting, you should specify ``--l2``. You may also want to
+    adjust ``--mem`` which controls the rank of an inverse hessian approximation
+    used by LBFGS. ``--termination`` causes bfgs to terminate early when only a
+    very small gradient remains.
+
+  ftrl: |
+    ``--ftrl`` and ``--ftrl_alpha`` and ``--ftrl_beta`` uses a per-Coordinate
+    FTRL-Proximal with L1 and L2 Regularization for Logistic Regression.
+    Detailed information about the algorithm can be found `in this
+    paper. <http://www.eecs.tufts.edu/~dsculley/papers/ad-click-prediction.pdf>`_
+
+  initial_pass_length: |
+    ``--initial_pass_length`` is a trick to make LBFGS quasi-online.  You must
+    first create a cache file, and then it will treat initial_pass_length as the
+    number of examples in a pass, resetting to the beginning of the file after
+    each pass.  After running ``--passes`` many times, it starts over warmstarting
+    from the final solution with twice as many examples.
+
+  hessian_on: |
+    ``--hessian_on`` is a rarely used option for LBFGS which changes the way a
+    step size is computed.  Instead of using the inverse hessian approximation
+    directly, you compute a second derivative in the update direction and use
+    that to compute the step size via a parabolic approximation.
+
+  unique_id: |
+    Should be a number that is the same for all nodes executing a particular job
+    and different for all others.
+  node: |
+    Should be unique for each node and range from {0,total-1}.
+  audit_regressor: |
+    Mode works like ``--invert_hash`` but is designed to have much smaller RAM
+    usage overhead. To use it you shall perform two steps. Firstly, train your
+    model as usual and save your regressor with ``-f``. Secondly, test your model
+    against the same dataset that was used for training with the additional
+    ``--audit_regressor result_file`` option in the command line. Technically,
+    this loads the regressor and prints out feature details when it's
+    encountered in the dataset for the first time. Thus, the second step may be
+    used on any dataset that contains the same features. It cannot process
+    features that have hash collisions - the first one encountered will be
+    printed out and the others ignored. If your model isn't too big you may
+    prefer to use ``--invert_hash`` or the ``vw-varinfo`` script for the same
+    purpose.
+  save_per_pass: |
+    This is useful for early stopping.
+  ring_size: |
+    VW uses a pool instead of a ring now, but the option name is a hold over
+    from the ring based implementation. This is the initial example pool size.
+    If more examples are required the pool will grow. ``--example_queue_limit``
+    ensures the growth is bounded though.
+  invert_hash: |
+    --invert_hash is similar to ``--readable_model``, but the model is output in
+    a [more human readable format](invert_hash-Output) with feature names
+    followed by weights, instead of hash indexes and weights. Note that running
+    vw with ``--invert_hash`` is **much slower** and needs much **more memory**.
+    Feature names are not stored in the cache files (so if ``-c`` is on and the
+    cache file exists and you want to use ``--invert_hash``, either delete the
+    cache or use ``-k`` to do it automatically). For multi-pass learning (where
+    ``-c`` is necessary), it is recommended to first train the model without
+    ``--invert_hash`` and then do another run with no learning (``-t``) which will
+    just read the previously created binary model (``-i my.model``) and store it
+    in human-readable format (``--invert_hash my.invert_hash``).
+  feature_mask:
+    Allows to specify directly a set of parameters which can
+    update, from a model file. This is useful in combination with ``--l1``. One
+    can use ``--l1`` to discover which features should have a nonzero weight and
+    do ``-f model``, then use ``--feature_mask model`` without ``--l1`` to learn a
+    better regressor.
+groups:
+  "Input Options": |
+    Raw training/testing data (in the proper plain text input format) can be
+    passed to VW in a number of ways:
+
+    - Using the ``-d`` or ``--data`` options which expect a file name as an argument
+      (specifying a file name that is not associated with any option also
+      works);
+    - Via stdin;
+    - Via a TCP/IP port if the ``--daemon`` option is
+      specified. The port itself is specified by ``--port`` otherwise the default
+      port 26542 is used. The daemon by default creates 10 child processes
+      which share the model state, allowing answering multiple simultaneous
+      queries. The number of child processes can be controlled with
+      ``--num_children``, and you can create a file with the jobid using
+      ``--pid_file`` which is later useful for killing the job.
+
+    Parsing raw data is slow so there are options to create or load data in VW's
+    native format. Files containing data in VW's native format are called
+    caches. The exact contents of a cache file depend on the input as well as a
+    few options (``-b``, ``--affix``, ``--spelling``) that are passed to VW during the
+    creation of the cache. This implies that using the cache file with different
+    options might cause VW to rebuild the cache. The easiest way to use a cache
+    is to always specify the ``-c`` option. This way, VW will first look for a cache
+    file and create it if it doesn't exist. To override the default cache file
+    name use ``--cache_file`` followed by the file name.
+
+  "[Reduction] Active Learning Options": |
+    Given a fully labeled dataset, experimenting with active learning can be
+    done with ``--simulation``. All active learning algorithms need a parameter
+    that defines the trade off between label complexity and generalization
+    performance. This is specified here with ``--mellowness``. A value of 0
+    means that the algorithm will not ask for any label. A large value means
+    that the algorithm will ask for all the labels. If instead of
+    ``--simulation``, ``--active`` is specified (together with ``--daemon``)
+    real active learning is implemented (examples are passed to VW via a TCP/IP
+    port and VW responds with its prediction as well as how much it wants this
+    example to be labeled if at all). If this is confusing, watch Daniel's
+    explanation at the VW tutorial. The active learning algorithm is described
+    in detail in `Agnostic Active Learning without Constraints [pdf].
+    <https://web.archive.org/web/20120525164352/http://books.nips.cc/papers/files/nips23/NIPS2010_0363.pdf>`_
+
+  "[Reduction] Stagewise Polynomial Options": |
+    ``--stage_poly`` tells VW to maintain polynomial features: training examples are
+    augmented with features obtained by producting together subsets (and even
+    sub-multisets) of features. VW starts with the original feature set, and
+    uses ``--batch_sz`` and (and ``--batch_sz_no_doubling`` if present) to determine
+    when to include new features (otherwise, the feature set is held fixed),
+    with ``--sched_exponent`` controlling the quantity of new features.
+
+    ``--batch_sz arg2`` (together with ``--batch_sz_no_doubling``), on a single machine,
+    causes three types of behaviors: arg2 = 0 means features are constructed at
+    the end of every non-final pass, arg2 > 0 with ``--batch_sz_no_doubling`` means
+    features are constructed every arg2 examples, and arg2 > 0 without
+    ``--batch_sz_no_doubling`` means features are constructed when the number of
+    examples seen so far is equal to arg2, then 2*arg2, 4*arg2, and so on. When
+    VW is run on multiple machines, then the options are similar, except that no
+    feature set updates occur after the first pass (so that features have more
+    time to stabilize across multiple machines). The default setting is arg2 =
+    1000 (and doubling is enabled).
+
+    ``--sched_exponent arg1`` tells VW to include s^arg1 features every time it
+    updates the feature set (as according to ``--batch_sz`` above), where s is the
+    (running) average number of nonzero features (in the input representation).
+    The default is arg1 = 1.0.
+
+    While care was taken to choose sensible defaults, the choices do matter. For
+    instance, good performance was obtained by using arg2 = #examples / 6 and
+    ``--batch_sz_no_doubling``, however arg2 = 1000 (without ``--batch_sz_no_doubling``)
+    was made default since #examples is not available to VW a priori. As usual,
+    including too many features (by updating the support to frequently, or by
+    including too many features each time) can lead to overfitting.
+
+  "Parallelization Options": |
+    VW supports cluster parallel learning, potentially on thousands of nodes
+    (it's known to work well on 1000 nodes) using the algorithms discussed here.
+
+    See `here for more details <https://github.com/VowpalWabbit/vowpal_wabbit/blob/master/cluster/readme.md>`_.
+
+    .. warning::
+      Make sure to disable the holdout feature in parallel learning using
+      ``--holdout_off``. Otherwise, some nodes might attempt to terminate earlier
+      while others continue running. If nodes become out of sync in this
+      fashion, usually a deadlock will take place. You can detect this situation
+      if you see all your vw instances hanging with a CPU usage of 0% for a long
+      time.
+
+  "[Reduction] Latent Dirichlet Allocation Options": |
+    The ``--lda`` option switches VW to LDA mode. The argument is the number of
+    topics. ``--lda_alpha`` and ``--lda_rho`` specify prior hyperparameters. ``--lda_D``
+    specifies the number of documents. VW will still work the same if this
+    number is incorrect, just the diagnostic information will be wrong. For
+    details see `Online Learning for Latent Dirichlet Allocation [pdf].
+    <http://machinelearning.wustl.edu/mlpapers/paper_files/NIPS2010_1291.pdf>`_
+
+  "Update Options": |
+
+    Currently, ``--adaptive``,  `--normalized`` and ``--invariant`` are on by default,
+    but if you specify any of those flags explicitly, the effect is that the
+    rest of these flags is turned off.
+
+    ``--l1`` and ``--l2`` specify the level (lambda values) of L1 and L2
+    regularization, and can be nonzero at the same time.  These values are
+    applied on a per-example basis in online learning (sgd),
+
+    .. math::
+
+      \sum_i \left(L(x_i,y_i,w) + \lambda_1 \|w\|_1 + 1/2 \cdot \lambda_2
+      \|w\|_2^2\right)
+
+    but on an aggregate level in batch learning (conjugate gradient and bfgs).
+
+    .. math::
+
+       \left(\sum_i L(x_i,y_i,w)\right) + \lambda_1 \|w\|_1 + 1/2 \cdot\lambda_2
+       \|w\|_2^2
+
+    ``-l <lambda>``, ``--initial_t <t_0>``, ``--power_t <p>``, and
+    ``--decay_learning_rate <d>`` specify the learning rate schedule whose generic
+    form in the :math:`(k+1)^{th}` epoch is :math:`\eta_t = \lambda d^k
+    \left(\frac{t_0}{t_0 + w_t}\right)^p` where :math:`(w_t)` is the sum of
+    importance weights of all examples seen so far. (:math:`(w_t = t)` if all
+    examples have importance weight 1.)
+
+    There is no single rule for the best learning rate form. For standard
+    learning from an i.i.d. sample, typically :math:`p \in {0, 0.5, 1}, d
+    \in(0.5,1]` and :math:`\lambda,t_0` are searched in a logarithmic scale.
+    Very often, the defaults are reasonable and only the -l option
+    (:math:`\lambda`) needs to be explored. For other problems the defaults may
+    be inadequate, e.g. for tracking (:math:`p=0`) is more sensible.
+
+    To specify a loss function use ``--loss_function`` followed by either
+    ``squared``, ``logistic``, ``hinge``, or ``quantile``. The latter is parametrized by
+    :math:`\tau \in (0,1)`(http://i.imgur.com/EHfPa0T.png) whose value can be
+    specified by `--quantile_tau`. By default this is 0.5. For more information
+    see `Loss functions <https://github.com/VowpalWabbit/vowpal_wabbit/wiki/Loss-functions>`_.
+
+    To average the gradient from :math:`k` examples and update the weights once every
+    :math:`k` examples use ``--minibatch <k>``. Minibatch updates make a big difference
+    for Latent Dirichlet Allocation and it's only enabled there.
+  "Weight Options": |
+    VW hashes all features to a predetermined range :math:`[0,2^b-1]` and uses a fixed weight vector with
+    :math:`2^b` components. The argument of ``-b``
+    option determines the value of :math:`b` which is 18 by default. Hashing the
+    features allows the algorithm to work with very raw data (since there's no
+    need to assign a unique id to each feature) and has only a negligible effect
+    on generalization performance (see for example `Feature Hashing for Large
+    Scale Multitask Learning <http://arxiv.org/abs/0902.2206>`_.
+
+    ``--input_feature_regularizer``, ``--output_feature_regularizer_binary``,
+    ``--output_feature_regularizer_text`` are analogs of ``-i``, ``-f``, and
+    ``--readable_model`` for batch optimization where want to do *per feature*
+    regularization. This is advanced, but allows efficient simulation of online
+    learning with a batch optimizer.
+
+    By default VW starts with the zero vector as its hypothesis. The
+    ``--random_weights`` option initializes with random weights. This is often
+    useful for symmetry breaking in advanced models.  It's also possible to
+    initialize with a fixed value such as the all-ones vector using
+    ``--initial_weight``.

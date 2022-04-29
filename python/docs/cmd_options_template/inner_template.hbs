@@ -1,0 +1,41 @@
+{{& name}}
+{{#times name.length}}^{{/times}}
+
+{{#if extra_info}}
+{{&extra_info}}
+{{/if}}
+
+{{#options}}
+
+{{name}}
+{{#times name.length}}"{{/times}}
+
+.. code-block::
+
+    --{{name}}{{#if short_name}}, -{{short_name}}{{/if}}{{#if one_of}} <{{#each one_of}}{{#if @index}}|{{/if}}{{this}}{{/each}}>{{else}}{{#unless (streq type "bool")}} <{{type}}>{{/unless}}{{/if}}{{#if default_value}} (default: {{default_value}}){{/if}}
+
+    {{#if keep}}
+
+.. raw:: html
+
+    <span class="option-tag">
+        <abbr title="This option is saved in the model and persist when the model is loaded.">keep</abbr>
+    </span>
+    {{/if}}
+
+    {{#if necessary}}
+
+.. raw:: html
+
+    <span class="option-tag">
+        <abbr title="Supplying this option enables the given reduction. If more than one option is marked as 'enables reduction' in the same group, then all must be supplied for the reduction to be enabled.">enables reduction</abbr>
+    </span>
+    {{/if}}
+
+{{&help}}
+
+{{#if extra_info}}
+{{&extra_info}}
+{{/if}}
+
+{{/options}}

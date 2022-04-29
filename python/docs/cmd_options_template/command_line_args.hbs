@@ -1,0 +1,32 @@
+Command line options
+====================
+
+There are two kinds of options. General and reduction based. General options generally apply irrespective of which reductions are enabled. For reduction based options they apply to only the reduction in question. If you see a note which looks like:
+
+.. note::
+    This option is required to enable the reduction.
+
+It means that supplying that option will "enable" the reduction. Without a reduction being enabled, the other options will not have any effect.
+
+There are a few cases where several reductions read the same option value and so the option itself is repeated in each option group.
+
+VW models contain the command line used for training. However, only some options are saved in the model. To determine if an option is saved on the model the line describing the option will say ``{keep}``.
+
+General
+-------
+
+{{#option_groups}}
+{{#unless (startswith name "[Reduction]")}}
+{{> inner_template }}
+{{/unless}}
+{{/option_groups}}
+
+
+Reductions
+----------
+
+{{#option_groups}}
+{{#if (startswith name "[Reduction]")}}
+{{> inner_template }}
+{{/if}}
+{{/option_groups}}
