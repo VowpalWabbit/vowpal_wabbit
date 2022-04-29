@@ -574,6 +574,7 @@ void parse_feature_tweaks(options_i& options, VW::workspace& all, bool interacti
   std::vector<std::string> full_name_interactions;
   std::vector<std::string> ignores;
   std::vector<std::string> ignore_linears;
+  std::vector<std::string> ignore_features;
   std::vector<std::string> keeps;
   std::vector<std::string> redefines;
 
@@ -606,6 +607,9 @@ void parse_feature_tweaks(options_i& options, VW::workspace& all, bool interacti
       .add(make_option("ignore_linear", ignore_linears)
                .keep()
                .help("Ignore namespaces beginning with character <arg> for linear terms only"))
+      .add(make_option("ignore_features_dsjson_experimental", ignore_features)
+               .keep()
+               .help("Ignore specified features from namespace. To ignore a feature arg should be namespace|feature"))
       .add(make_option("keep", keeps).keep().help("Keep namespaces beginning with character <arg>"))
       .add(make_option("redefine", redefines)
                .keep()
@@ -878,6 +882,24 @@ void parse_feature_tweaks(options_i& options, VW::workspace& all, bool interacti
         if (all.ignore_linear[i]) { *(all.trace_message) << " " << static_cast<unsigned char>(i); }
       }
       *(all.trace_message) << endl;
+    }
+  }
+
+  if (options.was_supplied("ignore_features_dsjson_experimental"))
+  {
+    for (const auto& ignored : ignore_features)
+    {
+      std::tuple<std::string, std::string> namespce_and_feature = VW::extract_ignored_feature(ignored);
+      const std::string& ns = std::get<0>(namespce_and_feature);
+      const std::string& feature_name = std::get<1>(namespce_and_feature);
+      if (all.ignore_features.find(ns) == all.ignore_features.end())
+      {
+        all.ignore_features.insert({ns, std::set<std::string>{feature_name}});
+      }
+      else
+      {
+        all.ignore_features.at(ns).insert(feature_name);
+      }
     }
   }
 

@@ -32,6 +32,13 @@ std::string decode_inline_hex(VW::string_view arg, VW::io::logger& logger);
  */
 std::string fmt_float(float f, int max_decimal_places);
 
+/**
+ * @brief Extract namespace, feature name, and optional feature value from ignored feature string
+ *
+ * @param namespace_feature namespace|feature:feature_value. Feature value is optional and if it is supplied chain_hash is applied
+ * @return std::tuple<std::string, std::string, std::string> (namespace, feature, value = empty string)
+ */
+std::tuple<std::string, std::string> extract_ignored_feature(const std::string& namespace_feature);
 }  // namespace VW
 
 VW_WARNING_STATE_POP

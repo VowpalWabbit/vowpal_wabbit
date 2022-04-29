@@ -967,16 +967,19 @@ public:
           *p = '_';
       }
     }
-
-    if (ctx._chain_hash) { ctx.CurrentNamespace().AddFeature(ctx.key, str, ctx._hash_func, ctx._parse_mask); }
-    else
+    const char* ns = ctx.CurrentNamespace().name;
+    if (ctx.ignore_features.find(ns) != ctx.ignore_features.end() && ctx.ignore_features.at(ns).find(ctx.key) != ctx.ignore_features.at(ns).end())
     {
-      char* prepend = const_cast<char*>(str) - ctx.key_length;
-      memmove(prepend, ctx.key, ctx.key_length);
+      if (ctx._chain_hash) { ctx.CurrentNamespace().AddFeature(ctx.key, str, ctx._hash_func, ctx._parse_mask); }
+      else
+      {
+        char* prepend = const_cast<char*>(str) - ctx.key_length;
+        memmove(prepend, ctx.key, ctx.key_length);
 
-      ctx.CurrentNamespace().AddFeature(prepend, ctx._hash_func, ctx._parse_mask);
+        ctx.CurrentNamespace().AddFeature(prepend, ctx._hash_func, ctx._parse_mask);
+      }
     }
-
+    
     return this;
   }
 
@@ -1509,6 +1512,7 @@ public:
   VW::label_parser_reuse_mem* _reuse_mem;
   const VW::named_labels* _ldict;
   VW::io::logger* _logger;
+  std::unordered_map<std::string, std::set<std::string>>* ignore_features;
 
   // last "<key>": encountered
   const char* key;
@@ -1638,6 +1642,7 @@ struct VWReaderHandler : public rapidjson::BaseReaderHandler<rapidjson::UTF8<>, 
       bool chain_hash, VW::label_parser_reuse_mem* reuse_mem, const VW::named_labels* ldict, VW::io::logger* logger,
       VW::v_array<VW::example*>* examples, rapidjson::InsituStringStream* stream, const char* stream_end,
       VW::example_factory_t example_factory, void* example_factory_context,
+      std::unordered_map<std::string, std::set<std::string>>* ignore_features,
       std::unordered_map<uint64_t, VW::example*>* dedup_examples = nullptr)
   {
     ctx.init(lbl_parser, hash_func, hash_seed, parse_mask, chain_hash, reuse_mem, ldict, logger);
@@ -1650,6 +1655,7 @@ struct VWReaderHandler : public rapidjson::BaseReaderHandler<rapidjson::UTF8<>, 
     ctx.example_factory = example_factory;
     ctx.example_factory_context = example_factory_context;
     ctx.dedup_examples = dedup_examples;
+    ctx.ignore_features = ignore_features;
   }
 
   // virtual dispatch to current state
