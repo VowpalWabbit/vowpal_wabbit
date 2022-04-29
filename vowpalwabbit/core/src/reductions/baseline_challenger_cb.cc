@@ -201,10 +201,19 @@ VW::LEARNER::base_learner* VW::reductions::baseline_challenger_cb_setup(VW::setu
       .add(make_option("baseline_challenger_cb", is_enabled)
                .necessary()
                .keep()
-               .help("Experimental: Build a CI around the baseline action and use it instead of the model if it's "
-                     "perfoming better"))
-      .add(make_option("cb_c_alpha", alpha).default_value(DEFAULT_ALPHA).keep().help("Confidence level for baseline"))
-      .add(make_option("cb_c_tau", tau).default_value(DEFAULT_TAU).keep().help("Time constant for count decay"));
+               .help("Build a CI around the baseline action and use it instead of the model if it's "
+                     "perfoming better")
+               .experimental())
+      .add(make_option("cb_c_alpha", alpha)
+               .default_value(DEFAULT_ALPHA)
+               .keep()
+               .help("Confidence level for baseline")
+               .experimental())
+      .add(make_option("cb_c_tau", tau)
+               .default_value(DEFAULT_TAU)
+               .keep()
+               .help("Time constant for count decay")
+               .experimental());
 
   if (!options.add_parse_and_check_necessary(new_options)) { return nullptr; }
 

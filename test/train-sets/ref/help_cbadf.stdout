@@ -74,9 +74,9 @@ Feature Options:
     --interactions args...                  Create feature interactions of any level between namespaces (type:
                                             list[str], keep)
     --experimental_full_name_interactions args...
-                                            EXPERIMENTAL: Create feature interactions of any level between
-                                            namespaces by specifying the full name of each namespace. (type:
-                                            list[str], keep)
+                                            Create feature interactions of any level between namespaces by
+                                            specifying the full name of each namespace. (type: list[str],
+                                            keep, experimental)
     --permutations                          Use permutations instead of combinations for feature interactions
                                             of same namespace (type: bool)
     --leave_duplicate_interactions          Don't remove interactions with duplicate combinations of namespaces.
@@ -108,7 +108,8 @@ Input Options:
     --chain_hash                            Enable chain hash in JSON for feature name and string feature
                                             value. e.g. {'A': {'B': 'C'}} is hashed as A^B^C. (type: bool,
                                             keep)
-    --flatbuffer                            Data file will be interpreted as a flatbuffer file (type: bool)
+    --flatbuffer                            Data file will be interpreted as a flatbuffer file (type: bool,
+                                            experimental)
 Logging Options:
     --quiet                                 Don't output diagnostics and progress updates. Supplying this
                                             implies --log_level off and --driver_output_off. Supplying this
@@ -132,14 +133,13 @@ Output Model Options:
                                             str)
     --invert_hash arg                       Output human-readable final regressor with feature names. Computationally
                                             expensive (type: str)
-    --dump_json_weights_experimental arg    Experimental: Output json representation of model parameters.
-                                            (type: str)
+    --dump_json_weights_experimental arg    Output json representation of model parameters. (type: str, experimental)
     --dump_json_weights_include_feature_names_experimental
-                                            Experimental: Whether to include feature names in json output
-                                            (type: bool)
+                                            Whether to include feature names in json output (type: bool,
+                                            experimental)
     --dump_json_weights_include_extra_online_state_experimental
-                                            Experimental: Whether to include extra online state in json output
-                                            (type: bool)
+                                            Whether to include extra online state in json output (type: bool,
+                                            experimental)
     --predict_only_model                    Do not save extra state for learning to be resumed. Stored model
                                             can only be used for prediction (type: bool)
     --save_resume                           This flag is now deprecated and models can continue learning
