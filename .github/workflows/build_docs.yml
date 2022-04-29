@@ -74,11 +74,13 @@ jobs:
           path: audit_output/
   python-doc:
     needs: [python-build, dump-options-build]
-    container:
-      image: python:3.9
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v1
+      - uses: actions/setup-node@v3
+      - uses: actions/setup-python@v3
+        with:
+          python-version: '3.9'
       - name: If this is a push build then set version to latest
         if: ${{ github.event_name == 'push' }}
         run: echo "VW_SPHINX_VERSION_OVERRIDE=latest" >> $GITHUB_ENV
@@ -90,7 +92,6 @@ jobs:
         uses: actions/download-artifact@v1
         with:
           name: vw-dump-options
-      - uses: actions/setup-node@v3
       - name: Install dependencies
         shell: bash
         run: |
