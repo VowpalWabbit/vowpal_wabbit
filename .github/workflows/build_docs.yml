@@ -86,10 +86,11 @@ jobs:
         uses: actions/download-artifact@v1
         with:
           name: python_wheel
-      - name: Download Wheel
+      - name: Download vw-dump-options
         uses: actions/download-artifact@v1
         with:
           name: vw-dump-options
+      - uses: actions/setup-node@v3
       - name: Install dependencies
         shell: bash
         run: |
