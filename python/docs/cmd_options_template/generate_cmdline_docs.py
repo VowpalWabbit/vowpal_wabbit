@@ -27,7 +27,7 @@ def main():
     resolved_out_dir = Path(args.out_dir).resolve()
     resolved_template = Path(args.template).resolve()
 
-    result = subprocess.check_output(args.dump_options_bin)
+    result = subprocess.check_output([args.dump_options_bin])
     data = json.loads(result)
 
     used_extra_info_options = set()
