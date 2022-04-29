@@ -12,7 +12,7 @@
 
 .. code-block::
 
-    --{{name}}{{#if short_name}}, -{{short_name}}{{/if}}{{#if one_of}} <{{#each one_of}}{{#if @index}}|{{/if}}{{this}}{{/each}}>{{else}}{{#unless (streq type "bool")}} <{{type}}>{{/unless}}{{/if}}{{#if default_value}} (default: {{default_value}}){{/if}}
+    --{{name}}{{#if short_name}}, -{{short_name}}{{/if}}{{#if one_of}} <{{#each one_of}}{{#if @index}}|{{/if}}{{this}}{{/each}}>{{else}}{{#unless (streq type "bool")}} <{{type}}>{{/unless}}{{/if}}{{#if default_value includeZero=true}} (default: {{default_value}}){{/if}}
 
     {{#if keep}}
 
