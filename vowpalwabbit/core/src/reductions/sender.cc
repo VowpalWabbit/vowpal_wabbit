@@ -122,7 +122,7 @@ VW::LEARNER::base_learner* VW::reductions::sender_setup(VW::setup_base_i& stack_
   VW::workspace& all = *stack_builder.get_all_pointer();
   std::string host;
 
-  option_group_definition sender_options("Network sending");
+  option_group_definition sender_options("[Reduction] Network sending");
   sender_options.add(make_option("sendto", host).keep().necessary().help("Send examples to <host>"));
 
   if (!options.add_parse_and_check_necessary(sender_options)) { return nullptr; }
