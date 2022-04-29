@@ -48,7 +48,7 @@ extensions = [
     "sphinx_reredirects",
 ]
 autosectionlabel_prefix_document = True
-suppress_warnings = ['autosectionlabel.*']
+suppress_warnings = ["autosectionlabel.*"]
 
 numpydoc_show_class_members = False
 autodoc_typehints_format = "short"
