@@ -44,8 +44,8 @@ jobs:
     steps:
       - uses: actions/checkout@v1
       - run: |
-        sudo apt update
-        sudo apt install -y ninja-build
+          sudo apt update
+          sudo apt install -y ninja-build
       - name: Configure
         run: cmake -S . -B build -G Ninja -DBUILD_TESTING=OFF
       - name: Build dump options
