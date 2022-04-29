@@ -9,7 +9,7 @@
 #include "vw/core/vw_fwd.h"
 
 #include <Eigen/Dense>
-#include <Eigen/Sparse>
+#include <Eigen/SparseCore>
 #include <iostream>
 #include <vector>
 
@@ -29,6 +29,7 @@ private:
 public:
   Eigen::MatrixXf Q;
   Eigen::SparseMatrix<float> A;
+  Eigen::MatrixXf U;
   VW::v_array<float> shrink_factors;
 
   cb_explore_adf_large_action_space(uint64_t d, float gamma, VW::workspace* all);
@@ -39,9 +40,10 @@ public:
   void learn(VW::LEARNER::multi_learner& base, multi_ex& examples);
 
   void calculate_shrink_factor(const ACTION_SCORE::action_scores& preds, float min_ck);
+  bool generate_A(const multi_ex& examples);
   void generate_Q(const multi_ex& examples);
-  void generate_A(const multi_ex& examples);
   void QR_decomposition();
+  void generate_U_via_SVD();
 
 private:
   template <bool is_learn>

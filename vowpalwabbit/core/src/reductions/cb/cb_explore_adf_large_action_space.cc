@@ -103,11 +103,11 @@ inline void just_add_weights(float& p, float, float fw) { p += fw; }
 
 inline void no_op(float&, float, float) {}
 
-void cb_explore_adf_large_action_space::generate_A(const multi_ex& examples)
+bool cb_explore_adf_large_action_space::generate_A(const multi_ex& examples)
 {
   // TODO extend wildspace interactions before calling foreach
   uint64_t row_index = 0;
-  uint64_t max_col = 0;
+  uint64_t max_non_zero_col = 0;
   // TODO check triplets type
   _triplets.clear();
   for (auto* ex : examples)
@@ -117,14 +117,14 @@ void cb_explore_adf_large_action_space::generate_A(const multi_ex& examples)
     float no_op_float = 0.f;
     if (_all->weights.sparse)
     {
-      triplet_constructor<sparse_parameters> w(_all->weights.sparse_weights, row_index, _triplets, max_col);
+      triplet_constructor<sparse_parameters> w(_all->weights.sparse_weights, row_index, _triplets, max_non_zero_col);
       GD::foreach_feature<float, float, no_op, triplet_constructor<sparse_parameters>>(w, _all->ignore_some_linear,
           _all->ignore_linear, _all->interactions, _all->extent_interactions, _all->permutations, *ex, no_op_float,
           _all->_generate_interactions_object_cache);
     }
     else
     {
-      triplet_constructor<dense_parameters> w(_all->weights.dense_weights, row_index, _triplets, max_col);
+      triplet_constructor<dense_parameters> w(_all->weights.dense_weights, row_index, _triplets, max_non_zero_col);
       GD::foreach_feature<float, float, no_op, triplet_constructor<dense_parameters>>(w, _all->ignore_some_linear,
           _all->ignore_linear, _all->interactions, _all->extent_interactions, _all->permutations, *ex, no_op_float,
           _all->_generate_interactions_object_cache);
@@ -134,16 +134,18 @@ void cb_explore_adf_large_action_space::generate_A(const multi_ex& examples)
   }
 
   assert(row_index == examples[0]->pred.a_s.size());
-  if (max_col == 0)
+  if (max_non_zero_col == 0)
   {
     // no non-zero columns were found for A, it is empty
     A.resize(0, 0);
   }
   else
   {
-    A.resize(row_index, max_col + 1);
+    A.resize(row_index, max_non_zero_col + 1);
     A.setFromTriplets(_triplets.begin(), _triplets.end());
   }
+
+  return (A.cols() != 0 && A.rows() != 0);
 }
 
 void cb_explore_adf_large_action_space::generate_Q(const multi_ex& examples)
@@ -189,24 +191,36 @@ void cb_explore_adf_large_action_space::QR_decomposition()
   Q = qr.householderQ() * thinQ;
 }
 
+void cb_explore_adf_large_action_space::generate_U_via_SVD()
+{
+  Eigen::MatrixXf Z = Q.transpose() * A;
+  U = Q * Z.bdcSvd(Eigen::ComputeThinU | Eigen::ComputeThinV).matrixU().transpose();
+}
+
 template <bool is_learn>
 void cb_explore_adf_large_action_space::predict_or_learn_impl(VW::LEARNER::multi_learner& base, multi_ex& examples)
 {
-  // Explore uniform random an epsilon fraction of the time.
   if (is_learn) { base.learn(examples); }
   else
   {
     base.predict(examples);
 
     auto& preds = examples[0]->pred.a_s;
-    float min_ck =
-        std::min_element(preds.begin(), preds.end(), [](ACTION_SCORE::action_score& a, ACTION_SCORE::action_score& b) {
-          return a.score < b.score;
-        })->score;
+    if (_d < preds.size())
+    {
+      // if the model is empty then can't create A and there is nothing left to do
+      if (!generate_A(examples)) { return; }
 
-    calculate_shrink_factor(preds, min_ck);
-    generate_Q(examples);
-    QR_decomposition();
+      float min_ck = std::min_element(preds.begin(), preds.end(),
+          [](ACTION_SCORE::action_score& a, ACTION_SCORE::action_score& b) { return a.score < b.score; })
+                         ->score;
+
+      calculate_shrink_factor(preds, min_ck);
+      generate_Q(examples);
+      QR_decomposition();
+      generate_U_via_SVD();
+    }
+    // TODO apply spanner on U
   }
 }
 }  // namespace cb_explore_adf

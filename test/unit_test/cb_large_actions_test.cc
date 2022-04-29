@@ -237,3 +237,68 @@ BOOST_AUTO_TEST_CASE(check_A_times_Omega_is_Q)
     BOOST_CHECK_EQUAL(Qd.isApprox(action_space->explore.Q), true);
   }
 }
+
+BOOST_AUTO_TEST_CASE(check_final_U_dimensions)
+{
+  auto d = 2;
+  auto& vw = *VW::initialize("--cb_explore_adf --large_action_space --max_actions " + std::to_string(d) + " --quiet",
+      nullptr, false, nullptr, nullptr);
+
+  {
+    VW::multi_ex examples;
+
+    examples.push_back(VW::read_example(vw, "0:1.0:0.5 | 1 2 3"));
+    examples.push_back(VW::read_example(vw, "| a_1 a_2 a_3"));
+    examples.push_back(VW::read_example(vw, "| a_4 a_5 a_6"));
+
+    vw.learn(examples);
+  }
+
+  {
+    VW::multi_ex examples;
+
+    examples.push_back(VW::read_example(vw, "| 1 2 3"));
+    examples.push_back(VW::read_example(vw, "0:1.0:0.5 | a_1 a_2 a_3"));
+    examples.push_back(VW::read_example(vw, "| a_4 a_5 a_6"));
+
+    vw.learn(examples);
+  }
+
+  {
+    VW::multi_ex examples;
+
+    examples.push_back(VW::read_example(vw, "| 1 2 3"));
+    examples.push_back(VW::read_example(vw, "| a_1 a_2 a_3"));
+    examples.push_back(VW::read_example(vw, "0:1.0:0.5 | a_4 a_5 a_6"));
+
+    vw.learn(examples);
+  }
+
+  std::vector<std::string> e_r;
+  vw.l->get_enabled_reductions(e_r);
+  if (std::find(e_r.begin(), e_r.end(), "cb_explore_adf_large_action_space") == e_r.end())
+  { BOOST_FAIL("cb_explore_adf_large_action_space not found in enabled reductions"); }
+
+  VW::LEARNER::multi_learner* learner =
+      as_multiline(vw.l->get_learner_by_name_prefix("cb_explore_adf_large_action_space"));
+
+  auto action_space = (internal_action_space*)learner->get_internal_type_erased_data_pointer_test_use_only();
+
+  BOOST_CHECK_EQUAL(action_space != nullptr, true);
+
+  {
+    VW::multi_ex examples;
+
+    examples.push_back(VW::read_example(vw, "| 1 2 3"));
+    examples.push_back(VW::read_example(vw, "| a_1 a_2 a_3"));
+    examples.push_back(VW::read_example(vw, "| a_4 a_5 a_6"));
+
+    vw.predict(examples);
+  
+    auto num_actions = examples.size();
+
+    // U dimensions should be K x d
+    BOOST_CHECK_EQUAL(action_space->explore.U.rows(), num_actions);
+    BOOST_CHECK_EQUAL(action_space->explore.U.cols(), d);
+  }
+}
