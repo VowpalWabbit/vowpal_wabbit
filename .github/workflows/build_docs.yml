@@ -112,6 +112,11 @@ jobs:
       - name: Generate CLI docs
         run: |
           cd python/docs/cmd_options_template
+          ls
+          ls ..
+          ls ../..
+          ls ../../..
+          sudo chmod 777 ../../../vw-dump-options
           python generate_cmdline_docs.py --dump-options-bin ../../../vw-dump-options --template ./command_line_args.hbs --out ../source/ --extra-info ./cmdline_help_overrides.yml
       - name: Build docs
         run: |
