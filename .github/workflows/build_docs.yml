@@ -73,7 +73,7 @@ jobs:
           name: python_wheel
           path: audit_output/
   python-doc:
-    needs: python-build
+    needs: [python-build, dump-options-build]
     container:
       image: python:3.9
     runs-on: ubuntu-latest
