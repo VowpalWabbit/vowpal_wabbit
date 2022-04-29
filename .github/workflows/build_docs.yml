@@ -94,7 +94,7 @@ jobs:
           name: vw-dump-options
       - name: Change permissions to rvw-dump-options
         shell: bash
-        run: chmod +x ./vw-dump-options
+        run: chmod +x ./vw-dump-options/vw-dump-options
       - name: Install dependencies
         shell: bash
         run: |
@@ -120,8 +120,7 @@ jobs:
           ls ../.. -al
           echo "---"
           ls ../../.. -al
-          sudo chmod 777 ../../../vw-dump-options
-          python generate_cmdline_docs.py --dump-options-bin ../../../vw-dump-options --template ./command_line_args.hbs --out ../source/ --extra-info ./cmdline_help_overrides.yml
+          python generate_cmdline_docs.py --dump-options-bin ../../../vw-dump-options/vw-dump-options --template ./command_line_args.hbs --out ../source/ --extra-info ./cmdline_help_overrides.yml
       - name: Build docs
         run: |
           cd python/docs
