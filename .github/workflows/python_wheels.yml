@@ -62,7 +62,7 @@ jobs:
         shell: bash
         run: |
           pip install -r requirements.txt
-          pip install pytest twine
+          pip install pytest twine vw_executor
           pip install built_wheel/*.whl
           twine check built_wheel/*.whl
           python -m pytest ./python/tests/
