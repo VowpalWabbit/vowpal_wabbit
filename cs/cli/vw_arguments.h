@@ -4,9 +4,12 @@
 
 #pragma once
 
+#include "vw/config/cli_options_serializer.h"
+#include "vw/config/options.h"
+#include "vw/core/vw.h"
+
 #include <msclr\marshal_cppstd.h>
-#include "vw.h"
-#include "options_serializer_boost_po.h"
+
 #include <algorithm>
 
 using namespace System;
@@ -47,7 +50,7 @@ private:
         m_regressors->Add(gcnew String(r.c_str()));
     }
 
-    VW::config::options_serializer_boost_po serializer;
+    VW::config::cli_options_serializer serializer;
     for (auto const& option : options->get_all_options())
     {
       if (options->was_supplied(option->m_name))

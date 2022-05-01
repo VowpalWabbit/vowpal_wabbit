@@ -2,17 +2,18 @@
 // individual contributors. All rights reserved. Released under a BSD (revised)
 // license as described in the file LICENSE.
 
-#include <boost/test/unit_test.hpp>
-#include <boost/test/test_tools.hpp>
+#include "vw/core/cache.h"
 
-#include "cache.h"
-#include "vw.h"
 #include "test_common.h"
+#include "vw/core/vw.h"
+
+#include <boost/test/test_tools.hpp>
+#include <boost/test/unit_test.hpp>
 
 BOOST_AUTO_TEST_CASE(write_and_read_features_from_cache)
 {
   auto& vw = *VW::initialize("--quiet");
-  example src_ex;
+  VW::example src_ex;
   VW::read_line(vw, &src_ex, "|ns1 example value test |ss2 ex:0.5");
 
   auto backing_vector = std::make_shared<std::vector<char>>();
@@ -26,8 +27,8 @@ BOOST_AUTO_TEST_CASE(write_and_read_features_from_cache)
   io_buf io_reader;
   io_reader.add_file(VW::io::create_buffer_view(backing_vector->data(), backing_vector->size()));
 
-  v_array<example*> examples;
-  example dest_ex;
+  VW::v_array<VW::example*> examples;
+  VW::example dest_ex;
   examples.push_back(&dest_ex);
   VW::read_example_from_cache(&vw, io_reader, examples);
 

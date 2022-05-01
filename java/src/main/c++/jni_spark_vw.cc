@@ -1,13 +1,17 @@
 #include "jni_spark_vw.h"
-#include "vw_exception.h"
-#include "best_constant.h"
+
 #include "util.h"
-#include "options_serializer_boost_po.h"
-#include "learner.h"
-#include "simple_label_parser.h"
+#include "vw/common/vw_exception.h"
+#include "vw/config/cli_options_serializer.h"
+#include "vw/config/options.h"
+#include "vw/core/best_constant.h"
+#include "vw/core/learner.h"
+#include "vw/core/parse_example.h"
+#include "vw/core/shared_data.h"
+#include "vw/core/simple_label_parser.h"
+
 #include <algorithm>
 #include <exception>
-#include "shared_data.h"
 
 jobject getJavaPrediction(JNIEnv* env, VW::workspace* all, example* ex);
 
@@ -35,10 +39,7 @@ CriticalArrayGuard::CriticalArrayGuard(JNIEnv* env, jarray arr) : _env(env), _ar
 
 CriticalArrayGuard::~CriticalArrayGuard()
 {
-  if (_arr0)
-  {
-    _env->ReleasePrimitiveArrayCritical(_arr, _arr0, JNI_ABORT);
-  }
+  if (_arr0) { _env->ReleasePrimitiveArrayCritical(_arr, _arr0, JNI_ABORT); }
 }
 
 void* CriticalArrayGuard::data() { return _arr0; }
@@ -209,13 +210,10 @@ JNIEXPORT jobject JNICALL Java_org_vowpalwabbit_spark_VowpalWabbitNative_getArgu
   auto* all = reinterpret_cast<VW::workspace*>(get_native_pointer(env, vwObj));
 
   // serialize the command line
-  VW::config::options_serializer_boost_po serializer;
+  VW::config::cli_options_serializer serializer;
   for (auto const& option : all->options->get_all_options())
   {
-    if (all->options->was_supplied(option->m_name))
-    {
-      serializer.add(*option);
-    }
+    if (all->options->was_supplied(option->m_name)) { serializer.add(*option); }
   }
 
   // move it to Java
@@ -263,7 +261,7 @@ JNIEXPORT jobject JNICALL Java_org_vowpalwabbit_spark_VowpalWabbitNative_getPerf
   else
     averageLoss = all->sd->holdout_best_loss;
 
-  get_best_constant(all->loss.get(), all->sd, bestConstant, bestConstantLoss);
+  VW::get_best_constant(*all->loss, *all->sd, bestConstant, bestConstantLoss);
   totalNumberOfFeatures = all->sd->total_features;
 
   jclass clazz = env->FindClass("org/vowpalwabbit/spark/VowpalWabbitPerformanceStatistics");
@@ -319,7 +317,7 @@ JNIEXPORT jint JNICALL Java_org_vowpalwabbit_spark_VowpalWabbitNative_hash(
   CriticalArrayGuard dataGuard(env, data);
   const char* values0 = (const char*)dataGuard.data();
 
-  return (jint)uniform_hash(values0 + offset, len, seed);
+  return (jint)VW::uniform_hash(values0 + offset, len, seed);
 }
 
 // VW Example
@@ -387,10 +385,7 @@ JNIEXPORT void JNICALL Java_org_vowpalwabbit_spark_VowpalWabbitExample_clear(JNI
 
 void addNamespaceIfNotExists(VW::workspace* all, example* ex, char ns)
 {
-  if (std::find(ex->indices.begin(), ex->indices.end(), ns) == ex->indices.end())
-  {
-    ex->indices.push_back(ns);
-  }
+  if (std::find(ex->indices.begin(), ex->indices.end(), ns) == ex->indices.end()) { ex->indices.push_back(ns); }
 }
 
 JNIEXPORT void JNICALL Java_org_vowpalwabbit_spark_VowpalWabbitExample_addToNamespaceDense(
@@ -487,7 +482,7 @@ JNIEXPORT void JNICALL Java_org_vowpalwabbit_spark_VowpalWabbitExample_setLabel(
     auto& red_fts = ex->_reduction_features.template get<simple_label_reduction_features>();
     red_fts.weight = weight;
 
-    count_label(all->sd, ld->label);
+    VW::count_label(*all->sd, ld->label);
   }
   catch (...)
   {
@@ -542,7 +537,7 @@ JNIEXPORT void JNICALL Java_org_vowpalwabbit_spark_VowpalWabbitExample_setShared
     CB::cb_class f;
 
     f.partial_prediction = 0.;
-    f.action = (uint32_t)uniform_hash("shared", 6 /*length of string*/, 0);
+    f.action = (uint32_t)VW::uniform_hash("shared", 6 /*length of string*/, 0);
     f.cost = FLT_MAX;
     f.probability = -1.f;
 
@@ -630,7 +625,7 @@ JNIEXPORT jstring JNICALL Java_org_vowpalwabbit_spark_VowpalWabbitExample_toStri
 
         CB::cb_class& f = ld->costs[0];
 
-        // Ignore checking if f.action == uniform_hash("shared")
+        // Ignore checking if f.action == VW::uniform_hash("shared")
         if (f.partial_prediction == 0 && f.cost == FLT_MAX && f.probability == -1.f)
           ostr << "shared";
         else
@@ -649,8 +644,7 @@ JNIEXPORT jstring JNICALL Java_org_vowpalwabbit_spark_VowpalWabbitExample_toStri
         ostr << "NULL:0,";
       else
       {
-        if ((ns >= 'a' && ns <= 'z') || (ns >= 'A' && ns <= 'Z'))
-          ostr << "'" << (char)ns << "':";
+        if ((ns >= 'a' && ns <= 'z') || (ns >= 'A' && ns <= 'Z')) ostr << "'" << (char)ns << "':";
 
         ostr << (int)ns << ",";
       }

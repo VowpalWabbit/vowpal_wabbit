@@ -4046,9 +4046,10 @@
   {
     "id": 314,
     "desc": "squarecb save_load, save model",
-    "vw_command": "-d train-sets/cb_load.dat --cb_explore_adf -q UA --squarecb -f models/sqcb_ld.model",
+    "vw_command": "-d train-sets/cb_load.dat --cb_explore_adf -q UA --squarecb -f models/sqcb_ld.model -p squarecb_pred.predict",
     "diff_files": {
       "stderr": "train-sets/ref/squarecb_save.stderr",
+      "squarecb_pred.predict": "pred-sets/ref/squarecb_pred.predict",
       "stdout": "train-sets/ref/squarecb_save.stdout"
     },
     "input_files": [
@@ -5073,5 +5074,140 @@
     "input_files": [
       "train-sets/ccb_reuse_small.data"
     ]
+  },
+  {
+    "id": 395,
+    "desc": "Test 1 but dont track the best constant and dont use multipass",
+    "vw_command": "-l 20 --initial_t 128000 --power_t 1 -d train-sets/0001.dat -f models/0001_1.model --invariant --ngram 3 --skips 1 --holdout_off --dont_output_best_constant",
+    "diff_files": {
+      "stderr": "train-sets/ref/dont_output_best_constant.stderr",
+      "stdout": "train-sets/ref/dont_output_best_constant.stdout"
+    },
+    "input_files": [
+      "train-sets/0001.dat"
+    ]
+  },
+  {
+    "id": 396,
+    "desc": "Export json weights",
+    "vw_command": "-d train-sets/dsjson_cb.json --cb_explore_adf --dsjson --dump_json_weights_experimental cb_weights.json",
+    "diff_files": {
+      "stderr": "train-sets/ref/cb_weights.stderr",
+      "stdout": "train-sets/ref/cb_weights.stdout",
+      "cb_weights.json": "train-sets/ref/cb_weights.json"
+    },
+    "input_files": [
+      "train-sets/dsjson_cb.json"
+    ]
+  },
+  {
+    "id": 397,
+    "desc": "Export json weights with all information",
+    "vw_command": "-d train-sets/dsjson_cb.json --cb_explore_adf -q :: --dsjson --dump_json_weights_experimental cb_weights_extra.json --dump_json_weights_include_feature_names_experimental --dump_json_weights_include_extra_online_state_experimental",
+    "diff_files": {
+      "stderr": "train-sets/ref/cb_weights_extra.stderr",
+      "stdout": "train-sets/ref/cb_weights_extra.stdout",
+      "cb_weights_extra.json": "train-sets/ref/cb_weights_extra.json"
+    },
+    "input_files": [
+      "train-sets/dsjson_cb.json"
+    ]
+  },
+  {
+    "id": 398,
+    "desc": "Proper handling of l namespace in cb stack",
+    "vw_command": "--cb_explore_adf --dsjson -t -d train-sets/cb_l_namespace.txt -p cb_l_namespace.pred",
+    "diff_files": {
+      "cb_l_namespace.pred": "train-sets/ref/cb_l_namespace.pred"
+    },
+    "input_files": [
+      "train-sets/cb_l_namespace.txt"
+    ]
+  },
+  {
+    "id": 399,
+    "desc": "test multi d -- based on test 316 to share same metrics of the complete file dsjson_cb.json (which is split into two here)",
+    "bash_command": "./negative-test.sh {VW} -d train-sets/dsjson_cb_part1.json -d train-sets/dsjson_cb_part2.json --dsjson --cb_explore_adf --epsilon 0.2 --quadratic GT --extra_metrics metrics_time.json",
+    "diff_files": {
+      "stdout": "train-sets/ref/metrics_time_fail.stdout",
+      "stderr": "train-sets/ref/multid_fail.stderr"
+    },
+    "input_files": [
+      "./negative-test.sh",
+      "train-sets/dsjson_cb_part1.json",
+      "train-sets/dsjson_cb_part2.json"
+    ]
+  },
+  {
+    "id": 400,
+    "desc": "test multi d positional -- based on test 316 to share same metrics of the complete file dsjson_cb.json (which is split into two here)",
+    "vw_command": "--dsjson --cb_explore_adf --epsilon 0.2 --quadratic GT --extra_metrics metrics_time.json train-sets/dsjson_cb_part1.json train-sets/dsjson_cb_part2.json",
+    "diff_files": {
+      "metrics_time.json": "test-sets/ref/metrics_time_one.json",
+      "stdout": "train-sets/ref/metrics_time_one.stdout",
+      "stderr": "train-sets/ref/multid_one.stderr"
+    },
+    "input_files": [
+      "train-sets/dsjson_cb_part1.json",
+      "train-sets/dsjson_cb_part2.json"
+    ]
+  },
+  {
+    "id": 401,
+    "desc": "test multi d - see test 121 cb_explore",
+    "bash_command": "./negative-test.sh {VW} -d train-sets/rcv1_raw_cb_small_p1.vw -d train-sets/rcv1_raw_cb_small_p2.vw --cb_explore 2 --ngram 2 --skips 4 -b 24 -l 0.25 -p rcv1_raw_cb_explore.preds",
+    "diff_files": {
+      "stderr": "train-sets/ref/rcv1_raw_cb_explore_pass2_split.stderr",
+      "rcv1_raw_cb_explore.preds": "pred-sets/ref/rcv1_raw_cb_explore_pass2_empty.preds",
+      "stdout": "train-sets/ref/rcv1_raw_cb_explore_pass2_fail.stdout"
+    },
+    "input_files": [
+      "./negative-test.sh",
+      "train-sets/rcv1_raw_cb_small_p1.vw",
+      "train-sets/rcv1_raw_cb_small_p2.vw"
+    ]
+  },
+  {
+    "id": 402,
+    "desc": "cb_explore - passes 2",
+    "vw_command": "-d train-sets/rcv1_raw_cb_small.vw --cb_explore 2 --ngram 2 --skips 4 -b 24 -l 0.25 -p rcv1_raw_cb_explore.preds --passes 2 -c -k",
+    "diff_files": {
+      "stderr": "train-sets/ref/rcv1_raw_cb_explore_pass2.stderr",
+      "rcv1_raw_cb_explore.preds": "pred-sets/ref/rcv1_raw_cb_explore_pass2.preds",
+      "stdout": "train-sets/ref/rcv1_raw_cb_explore_pass2.stdout"
+    },
+    "input_files": [
+      "train-sets/rcv1_raw_cb_small.vw"
+    ]
+  },
+  {
+    "id": 403,
+    "desc": "previous but with split files - cb_explore - passes 2",
+    "bash_command": "./negative-test.sh {VW} -d train-sets/rcv1_raw_cb_small_p1.vw -d train-sets/rcv1_raw_cb_small_p2.vw --cb_explore 2 --ngram 2 --skips 4 -b 24 -l 0.25 -p rcv1_raw_cb_explore.preds --passes 2 -c -k --single_cache_file",
+    "diff_files": {
+      "stderr": "train-sets/ref/rcv1_raw_cb_explore_pass2_split.stderr",
+      "rcv1_raw_cb_explore.preds": "pred-sets/ref/rcv1_raw_cb_explore_pass2_empty.preds",
+      "stdout": "train-sets/ref/rcv1_raw_cb_explore_pass2_fail.stdout"
+    },
+    "input_files": [
+      "./negative-test.sh",
+      "train-sets/rcv1_raw_cb_small_p1.vw",
+      "train-sets/rcv1_raw_cb_small_p2.vw"
+    ]
+  },
+  {
+    "id": 404,
+    "desc": "test multi d positional mixed with -d, this should fail",
+    "vw_command": "--dsjson --cb_explore_adf --epsilon 0.2 train-sets/dsjson_cb_part2.json --quadratic GT --extra_metrics metrics_time.json -d train-sets/dsjson_cb_part1.json",
+    "diff_files": {
+      "stderr": "train-sets/ref/multid_mixed.stderr",
+      "stdout": "train-sets/ref/multid_mixed.stdout"
+    },
+    "input_files": [
+      "train-sets/dsjson_cb_part1.json",
+      "train-sets/dsjson_cb_part2.json"
+    ]
   }
+
+
 ]

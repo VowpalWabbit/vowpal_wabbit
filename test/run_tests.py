@@ -14,7 +14,19 @@ import json
 from concurrent.futures import ThreadPoolExecutor, Future
 from enum import Enum
 import socket
-from typing import Any, Callable, Dict, List, Optional, Set, Tuple, Type, Union, cast
+from typing import (
+    Any,
+    Callable,
+    Dict,
+    List,
+    Mapping,
+    Optional,
+    Set,
+    Tuple,
+    Type,
+    Union,
+    cast,
+)
 
 from run_tests_common import TestData
 import runtests_flatbuffer_converter as fb_converter
@@ -40,6 +52,62 @@ class Result(Enum):
     SUCCESS = 1
     FAIL = 2
     SKIPPED = 3
+
+
+def are_dicts_equal(
+    expected_dict: Mapping[Any, Any], actual_dict: Mapping[Any, Any], epsilon: float
+) -> Tuple[bool, str]:
+    def _are_same(expected: Any, actual: Any, key: str) -> Tuple[bool, str]:
+        if type(expected) != type(actual):
+            return (
+                False,
+                f"Key '{key}' type mismatch. Expected: '{type(expected)}', but found: '{type(actual)}'",
+            )
+        elif type(expected) == type(None):
+            return True, ""
+        elif isinstance(expected, (int, bool, str)):
+            return (
+                expected == actual,
+                f"Key '{key}' value mismatch. Expected: '{expected}', but found: '{actual}'"
+                if expected != actual
+                else "",
+            )
+        elif isinstance(expected, (float)):
+            delta = abs(expected - actual)
+            return (
+                delta < epsilon,
+                f"Key '{key}' value mismatch. Expected: '{expected}', but found: '{actual}' (using epsilon: '{epsilon}')"
+                if delta >= epsilon
+                else "",
+            )
+        elif isinstance(expected, dict):
+            expected_keys = set(expected.keys())
+            actual_keys = set(actual.keys())
+            if expected_keys != actual_keys:
+                return (
+                    False,
+                    f"Key '{key}' keys mismatch. Expected: {expected_keys.difference(actual_keys)}. Found but not expected: {actual_keys.difference(expected_keys)}",
+                )
+            for key in expected_keys:
+                are_same, reason = _are_same(expected[key], actual[key], f"{key}")
+                if not are_same:
+                    return False, reason
+            return True, ""
+        elif isinstance(expected, list):
+            if len(expected) != len(actual):
+                return (
+                    False,
+                    f"Key '{key}' length mismatch. Expected: '{len(expected)}', but found: '{len(actual)}'",
+                )
+            for i in range(len(expected)):
+                are_same, reason = _are_same(expected[i], actual[i], f"{key}[{i}]")
+                if not are_same:
+                    return False, reason
+            return True, ""
+        else:
+            raise TypeError(f"Type {type(expected)} not supported in are_dicts_equal")
+
+    return _are_same(expected_dict, actual_dict, "root")
 
 
 class Completion:
@@ -110,7 +178,8 @@ class TestOutcome:
 
 
 def try_decode(binary_object: Optional[bytes]) -> str:
-    return binary_object.decode("utf-8") if binary_object is not None else ""
+    # ignore UTF decode errors so that we can still understand the output in this case
+    return binary_object.decode("utf-8", "ignore") if binary_object is not None else ""
 
 
 # Returns true if they are close enough to be considered equal.
@@ -185,6 +254,16 @@ def is_line_different(
     output_tokens = re.split("[ \t:,@]+", output_line)
     ref_tokens = re.split("[ \t:,@]+", ref_line)
 
+    # some compile flags cause VW to report different code line number for the same exception
+    # if this is the case we want to ignore that from the diff
+    if ref_tokens[0] == "[critical]" and output_tokens[0] == "[critical]":
+        # check that exception format is being followed
+        if ref_tokens[2][0] == "(" and ref_tokens[3][-1] == ")":
+            if ref_tokens[3][:-1].isnumeric():
+                # remove the line number before diffing
+                ref_tokens.pop(3)
+                output_tokens.pop(3)
+
     if len(output_tokens) != len(ref_tokens):
         return True, "Number of tokens different", False
 
@@ -210,6 +289,21 @@ def is_line_different(
                     f"Mismatch at token {output_token} {ref_token}",
                     found_close_floats,
                 )
+
+    # ignore whitespace when considering delimiting tokens
+    output_delimiters = re.findall("[:,@]+", output_line)
+    ref_delimiters = re.findall("[:,@]+", ref_line)
+
+    if len(output_delimiters) != len(ref_delimiters):
+        return True, "Number of tokens different", found_close_floats
+
+    for output_token, ref_token in zip(output_delimiters, ref_delimiters):
+        if output_token != ref_token:
+            return (
+                True,
+                f"Mismatch at token {output_token} {ref_token}",
+                found_close_floats,
+            )
 
     return False, "", found_close_floats
 
@@ -289,6 +383,7 @@ def run_command_line_test(
     completed_tests: Completion,
     fuzzy_compare=False,
     valgrind=False,
+    timeout=100,
 ) -> TestOutcome:
 
     if test.skip:
@@ -322,11 +417,14 @@ def run_command_line_test(
             )
             command_line = f"valgrind --quiet --error-exitcode=100 --track-origins=yes --leak-check=full --log-file={valgrind_log_file_path} {command_line}"
 
+        cmd: Union[str, List[str]]
         if test.is_shell:
             cmd = command_line
         else:
-            cmd = shlex.split(command_line)
+            posix = sys.platform != "win32"
+            cmd = shlex.split(command_line, posix=posix)
 
+        checks: Dict[str, Union[StatusCheck, DiffCheck]] = dict()
         try:
             result = subprocess.run(
                 cmd,
@@ -334,12 +432,12 @@ def run_command_line_test(
                 stderr=subprocess.PIPE,
                 cwd=current_test_working_dir,
                 shell=test.is_shell,
-                timeout=100,
+                timeout=timeout,
             )
         except subprocess.TimeoutExpired as e:
             stdout = try_decode(e.stdout)
             stderr = try_decode(e.stderr)
-            checks = dict()
+
             checks["timeout"] = StatusCheck(False, f"{e.cmd} timed out", stdout, stderr)
             return TestOutcome(
                 test.id, Result.FAIL, checks, skip_reason=test.skip_reason
@@ -348,8 +446,6 @@ def run_command_line_test(
         return_code = result.returncode
         stdout = try_decode(result.stdout)
         stderr = try_decode(result.stderr)
-
-        checks = dict()
         success = return_code == 0 or (
             return_code == 100 and test.is_shell and valgrind
         )
@@ -404,9 +500,20 @@ def run_command_line_test(
                     False, f"Failed to open ref file: {ref_file}", []
                 )
                 continue
-            is_different, reason = is_output_different(
-                output_content, ref_content, epsilon, fuzzy_compare=fuzzy_compare
-            )
+
+            if ref_file.endswith(".json"):
+                # Empty strings are falsy
+                output_json = json.loads(output_content) if output_content else dict()
+                ref_json = json.loads(ref_content) if ref_content else dict()
+                dicts_equal, reason = are_dicts_equal(
+                    output_json, ref_json, epsilon=epsilon
+                )
+                is_different = not dicts_equal
+            else:
+                is_different, reason = is_output_different(
+                    output_content, ref_content, epsilon, fuzzy_compare=fuzzy_compare
+                )
+
             if is_different and overwrite:
                 with ref_file_ref_dir.open("w") as writer:
                     writer.write(output_content)
@@ -459,7 +566,7 @@ def create_test_dir(
                 break
 
         if file_to_copy is None:
-            str_deps =  [str(dep) for dep in dependencies]
+            str_deps = [str(dep) for dep in dependencies]
             dependent_tests = ", ".join(str_deps)
             raise ValueError(
                 f"Input file '{f}' couldn't be found for test {test_id}. Searched in '{test_ref_dir}' as well as outputs of dependent tests: [{dependent_tests}]"
@@ -479,7 +586,7 @@ def create_test_dir(
 def find_vw_binary(
     test_base_ref_dir: Path, user_supplied_bin_path_or_python_invocation: Optional[str]
 ) -> Optional[Union[str, Path]]:
-    def is_python_invocation(binary_name: str) -> bool:
+    def is_python_invocation(binary_name: Optional[str]) -> bool:
         if not binary_name:
             return False
         elif binary_name.startswith("python") and binary_name.endswith(
@@ -497,7 +604,7 @@ def find_vw_binary(
         if user_supplied_bin_path_or_python_invocation is not None
         else None
     )
-    vw_search_paths = [test_base_ref_dir / ".." / "build" / "vowpalwabbit"]
+    vw_search_paths = [test_base_ref_dir / ".." / "build" / "vowpalwabbit" / "cli"]
 
     def is_vw_binary(file: Path) -> bool:
         return file.name == "vw"
@@ -511,19 +618,19 @@ def find_vw_binary(
 
 
 def find_spanning_tree_binary(
-    test_base_ref_dir: Path, user_supplied_bin_path: Path
+    test_base_ref_dir: Path, user_supplied_bin_path: Optional[str]
 ) -> Optional[Path]:
-    spanning_tree_search_path = [test_base_ref_dir / ".." / "build" / "cluster"]
+    spanning_tree_search_path = [
+        test_base_ref_dir / ".." / "build" / "vowpalwabbit" / "spanning_tree_bin"
+    ]
 
     def is_spanning_tree_binary(file: Path) -> bool:
         return file.name == "spanning_tree"
 
     user_supplied_bin_path = (
-        Path(user_supplied_bin_path)
-        if user_supplied_bin_path is not None
-        else None
+        Path(user_supplied_bin_path) if user_supplied_bin_path is not None else None
     )
-    
+
     return find_or_use_user_supplied_path(
         test_base_ref_dir=test_base_ref_dir,
         user_supplied_bin_path=user_supplied_bin_path,
@@ -533,7 +640,7 @@ def find_spanning_tree_binary(
 
 
 def find_to_flatbuf_binary(
-    test_base_ref_dir: Path, user_supplied_bin_path: Path
+    test_base_ref_dir: Path, user_supplied_bin_path: Optional[str]
 ) -> Optional[Path]:
     to_flatbuff_search_path = [
         test_base_ref_dir / ".." / "build" / "utl" / "flatbuffer"
@@ -543,11 +650,9 @@ def find_to_flatbuf_binary(
         return file.name == "to_flatbuff"
 
     user_supplied_bin_path = (
-        Path(user_supplied_bin_path)
-        if user_supplied_bin_path is not None
-        else None
+        Path(user_supplied_bin_path) if user_supplied_bin_path is not None else None
     )
-    
+
     return find_or_use_user_supplied_path(
         test_base_ref_dir=test_base_ref_dir,
         user_supplied_bin_path=user_supplied_bin_path,
@@ -690,6 +795,10 @@ def convert_tests_for_flatbuffers(
             "337",
             "338",
             "351",
+            "399",
+            "400",
+            "404",
+            "405",
         ):
             test.skip = True
             test.skip_reason = "test skipped for automatic converted flatbuffer tests for unknown reason"
@@ -801,6 +910,24 @@ def get_test(test_number: int, tests: List[TestData]) -> Optional[TestData]:
     return None
 
 
+def interpret_test_arg(arg: str, *, num_tests: int) -> List[int]:
+    single_number_pattern = re.compile(r"^\d+$")
+    range_pattern = re.compile(r"^(\d+)?\.\.(\d+)?$")
+    if single_number_pattern.match(arg):
+        return [int(arg)]
+    elif range_pattern.match(arg):
+        start, end = range_pattern.match(arg).groups()
+        start = int(start) if start else 1
+        end = int(end) if end else num_tests
+        if start > end:
+            raise ValueError(f"Invalid range: {arg}")
+        return list(range(start, end + 1))
+    else:
+        raise ValueError(
+            f"Invalid test argument '{arg}'. Must either be a single integer 'id' or a range in the form 'start..end'"
+        )
+
+
 def main():
     working_dir: Path = Path.home() / ".vw_runtests_working_dir"
     test_ref_dir: Path = Path(__file__).resolve().parent
@@ -813,10 +940,10 @@ def main():
     parser.add_argument(
         "-t",
         "--test",
-        type=int,
+        type=str,
         action="append",
         nargs="+",
-        help="Run specific tests and ignore all others",
+        help="Run specific tests and ignore all others. Can specific as a single integer 'id' or a range in the form 'start..end'",
     )
     parser.add_argument(
         "-E",
@@ -923,6 +1050,12 @@ def main():
         help="Append extra options to VW command line tests.",
         default="",
     )
+    parser.add_argument(
+        "--timeout",
+        type=int,
+        help="How long a single test can run for in seconds.",
+        default=100,
+    )
     args = parser.parse_args()
 
     # user did not supply dir
@@ -938,11 +1071,6 @@ def main():
     if args.valgrind and not is_valgrind_available():
         print("Can't find valgrind")
         sys.exit(1)
-
-    # Flatten nested lists for arg.test argument.
-    # Ideally we would have used action="extend", but that was added in 3.8
-    if args.test is not None:
-        args.test = [item for sublist in args.test for item in sublist]
 
     if test_base_working_dir.is_file():
         print(f"--working_dir='{test_base_working_dir}' cannot be a file")
@@ -965,8 +1093,11 @@ def main():
 
     vw_bin = find_vw_binary(test_base_ref_dir, args.vw_bin_path)
     if vw_bin is None:
-        print("Can't find vw binary. Did you build the 'vw-bin' target?")
+        print("Can't find vw binary. Did you build the 'vw_cli_bin' target?")
         sys.exit(1)
+    # test if vw_bin is a Path object
+    elif isinstance(vw_bin, Path):
+        vw_bin = str(vw_bin.resolve())
     print(f"Using VW binary: {vw_bin}")
 
     spanning_tree_bin: Optional[Path] = None
@@ -979,6 +1110,8 @@ def main():
                 "Can't find spanning tree binary. Did you build the 'spanning_tree' target?"
             )
             sys.exit(1)
+        else:
+            spanning_tree_bin = spanning_tree_bin.resolve()
 
         print(f"Using spanning tree binary: {spanning_tree_bin.resolve()}")
 
@@ -1000,16 +1133,29 @@ def main():
         extra_vw_options=args.extra_options,
     )
 
+    # Flatten nested lists for arg.test argument and process
+    # Ideally we would have used action="extend", but that was added in 3.8
+    interpreted_test_arg: Optional[List[int]] = None
+    if args.test is not None:
+        interpreted_test_arg = []
+        for arg in args.test:
+            for value in arg:
+                interpreted_test_arg.extend(
+                    interpret_test_arg(value, num_tests=len(tests))
+                )
+
     print()
 
     # Filter the test list if the requested tests were explicitly specified
     tests_to_run_explicitly = None
-    if args.test is not None:
-        tests_to_run_explicitly = calculate_test_to_run_explicitly(args.test, tests)
+    if interpreted_test_arg is not None:
+        tests_to_run_explicitly = calculate_test_to_run_explicitly(
+            interpreted_test_arg, tests
+        )
         print(f"Running tests: {list(tests_to_run_explicitly)}")
-        if len(args.test) != len(tests_to_run_explicitly):
+        if len(interpreted_test_arg) != len(tests_to_run_explicitly):
             print(
-                f"Note: due to test dependencies, more than just tests {args.test} must be run"
+                f"Note: due to test dependencies, more than just tests {interpreted_test_arg} must be run"
             )
         tests = list(filter(lambda x: x.id in tests_to_run_explicitly, tests))
 
@@ -1050,6 +1196,7 @@ def main():
                 completed_tests=completed_tests,
                 fuzzy_compare=args.fuzzy_compare,
                 valgrind=args.valgrind,
+                timeout=args.timeout,
             )
         )
 

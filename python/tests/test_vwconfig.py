@@ -1,6 +1,7 @@
 from vowpalwabbit import pyvw
 import vowpalwabbit
 
+
 def helper_options_to_list_strings(config):
     cmd_str_list = []
 
@@ -16,9 +17,10 @@ def helper_options_to_list_strings(config):
 
 def test_vw_config_manager():
     expected_set = {
+        "--no_stdin",
         "--quiet",
-        "--loss_function logistic",
-        "--data test/train-sets/rcv1_small.dat",
+        "--loss_function=logistic",
+        "--data=test/train-sets/rcv1_small.dat",
     }
     expected_reductions = {"gd", "scorer-identity", "count_label"}
 

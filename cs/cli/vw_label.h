@@ -4,12 +4,12 @@
 
 #pragma once
 
-#include "vw.h"
+#include "vw/core/best_constant.h"
+#include "vw/core/cb.h"
+#include "vw/core/constant.h"
+#include "vw/core/multiclass.h"
+#include "vw/core/vw.h"
 #include "vw_clr.h"
-#include "cb.h"
-#include "best_constant.h"
-#include "constant.h"
-#include "multiclass.h"
 
 namespace VW
 {
@@ -146,8 +146,7 @@ public ref class SharedLabel sealed : ILabel
 private:
   uint32_t m_action;
 
-  SharedLabel() : m_action((uint32_t)uniform_hash("shared", 6, 0))
-  { }
+  SharedLabel() : m_action((uint32_t)VW::uniform_hash("shared", 6, 0)) {}
 
 public:
   static SharedLabel^ Instance = gcnew SharedLabel;
@@ -244,7 +243,7 @@ public:
       red_fts.initial = m_initial.Value;
     }
 
-    count_label(vw->sd, ld->label);
+    VW::count_label(*vw->sd, ld->label);
   }
 
   virtual String^ ToString() override

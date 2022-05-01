@@ -2,19 +2,18 @@
 // individual contributors. All rights reserved. Released under a BSD (revised)
 // license as described in the file LICENSE.
 
-#include <boost/test/unit_test.hpp>
-#include <boost/test/test_tools.hpp>
-
-#include "test_common.h"
 #include "simulator.h"
-#include "constant.h"  // FNV_prime
-#include "vw_math.h"
+#include "test_common.h"
+#include "vw/core/constant.h"  // FNV_prime
+#include "vw/core/vw_math.h"
 
+#include <boost/test/test_tools.hpp>
+#include <boost/test/unit_test.hpp>
 #include <functional>
 #include <map>
 
 #define ARE_SAME(X, Y, Z) \
-  BOOST_CHECK_MESSAGE(VW::math::are_same_rel(X, Y, Z), "check ARE_SAME: expected: " << X << " not equal to " << Y);
+  BOOST_CHECK_MESSAGE(VW::math::are_same(X, Y, Z), "check ARE_SAME: expected: " << X << " not equal to " << Y);
 
 using simulator::callback_map;
 using simulator::cb_sim;
@@ -60,7 +59,7 @@ using namespace vw_hash_helpers;
 // n) asserts weights before/after every operation
 // NOTE: interactions are currently 0 for offset 0 since
 // config 0 is hard-coded to be empty interactions for now.
-bool weights_offset_test(cb_sim&, VW::workspace& all, multi_ex& ec)
+bool weights_offset_test(cb_sim&, VW::workspace& all, VW::multi_ex& ec)
 {
   const size_t offset_to_clear = 1;
   auto& weights = all.weights.dense_weights;

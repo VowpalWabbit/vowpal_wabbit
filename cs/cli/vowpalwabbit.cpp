@@ -2,19 +2,19 @@
 // individual contributors. All rights reserved. Released under a BSD (revised)
 // license as described in the file LICENSE.
 
-#include "vw_allreduce.h"
+#include "vw/core/vw_allreduce.h"
 #include "vw_clr.h"
 #include "vowpalwabbit.h"
-#include "best_constant.h"
-#include "parser.h"
-#include "hash.h"
+#include "vw/core/best_constant.h"
+#include "vw/core/parser.h"
+#include "vw/common/hash.h"
 #include "vw_example.h"
 #include "vw_builder.h"
 #include "clr_io.h"
-#include "lda_core.h"
-#include "parse_example.h"
-#include "parse_example_json.h"
-#include "shared_data.h"
+#include "vw/core/reductions/lda_core.h"
+#include "vw/core/parse_example.h"
+#include "vw/core/parse_example_json.h"
+#include "vw/core/shared_data.h"
 
 using namespace System;
 using namespace System::Collections::Generic;
@@ -97,7 +97,7 @@ VowpalWabbitPerformanceStatistics^ VowpalWabbit::PerformanceStatistics::get()
 	  stats->AverageLoss = m_vw->sd->holdout_best_loss;
 
   float best_constant; float best_constant_loss;
-  if (get_best_constant(m_vw->loss.get(), m_vw->sd, best_constant, best_constant_loss))
+  if (get_best_constant(*m_vw->loss, *m_vw->sd, best_constant, best_constant_loss))
   { stats->BestConstant = best_constant;
     if (best_constant_loss != FLT_MIN)
     { stats->BestConstantLoss = best_constant_loss;
@@ -695,11 +695,11 @@ uint64_t hashall(String^ s, int offset, int count, uint64_t u)
     k1 = (uint32_t)(keys[i] | keys[i + 1] << 8 | keys[i + 2] << 16 | keys[i + 3] << 24);
 
     k1 *= c1;
-    k1 = rotl32(k1, 15);
+    k1 = details::rotl32(k1, 15);
     k1 *= c2;
 
     h1 ^= k1;
-    h1 = rotl32(h1, 13);
+    h1 = details::rotl32(h1, 13);
     h1 = h1 * 5 + 0xe6546b64;
 
     i += 4;
@@ -715,7 +715,7 @@ uint64_t hashall(String^ s, int offset, int count, uint64_t u)
     case 1:
       k1 ^= (uint32_t)(keys[tail]);
       k1 *= c1;
-      k1 = rotl32(k1, 15);
+      k1 = details::rotl32(k1, 15);
       k1 *= c2;
       h1 ^= k1;
       break;
@@ -724,7 +724,7 @@ uint64_t hashall(String^ s, int offset, int count, uint64_t u)
   // finalization
   h1 ^= (uint32_t)length;
 
-  return MURMUR_HASH_3::fmix(h1);
+  return details::fmix(h1);
 }
 
 uint64_t hashall(String^ s, uint64_t u)
@@ -840,7 +840,8 @@ cli::array<List<VowpalWabbitFeature^>^>^ VowpalWabbit::GetTopicAllocation(int to
   std::vector<feature> top_weights;
   // over topics
   for (int topic = 0; topic < K; topic++)
-  { get_top_weights(m_vw, top, topic, top_weights);
+  {
+    VW::reductions::lda::get_top_weights(m_vw, top, topic, top_weights);
 
     auto clr_weights = gcnew List<VowpalWabbitFeature^>(top);
     allocation[topic] = clr_weights;

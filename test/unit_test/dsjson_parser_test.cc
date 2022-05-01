@@ -2,13 +2,12 @@
 // individual contributors. All rights reserved. Released under a BSD (revised)
 // license as described in the file LICENSE.
 
-#include <boost/test/unit_test.hpp>
-#include <boost/test/test_tools.hpp>
-
 #include "test_common.h"
+#include "vw/core/reductions/conditional_contextual_bandit.h"
 
+#include <boost/test/test_tools.hpp>
+#include <boost/test/unit_test.hpp>
 #include <vector>
-#include "conditional_contextual_bandit.h"
 
 BOOST_AUTO_TEST_CASE(parse_dsjson_underscore_p)
 {
@@ -249,7 +248,7 @@ BOOST_AUTO_TEST_CASE(parse_dsjson_cats)
 
   auto& space_names = examples[0]->feature_space[' '].space_names;
   BOOST_CHECK_EQUAL(features.size(), space_names.size());
-  for (size_t i = 0; i < space_names.size(); i++) { BOOST_CHECK_EQUAL(space_names[i].second, features[i]); }
+  for (size_t i = 0; i < space_names.size(); i++) { BOOST_CHECK_EQUAL(space_names[i].name, features[i]); }
 
   VW::finish_example(*vw, examples);
   VW::finish(*vw);
@@ -287,7 +286,7 @@ BOOST_AUTO_TEST_CASE(parse_dsjson_cats_no_label)
 
   auto& space_names = examples[0]->feature_space[' '].space_names;
   BOOST_CHECK_EQUAL(features.size(), space_names.size());
-  for (size_t i = 0; i < space_names.size(); i++) { BOOST_CHECK_EQUAL(space_names[i].second, features[i]); }
+  for (size_t i = 0; i < space_names.size(); i++) { BOOST_CHECK_EQUAL(space_names[i].name, features[i]); }
 
   VW::finish_example(*vw, examples);
   VW::finish(*vw);
@@ -340,7 +339,7 @@ BOOST_AUTO_TEST_CASE(parse_dsjson_cats_w_valid_pdf)
 
   auto& space_names = examples[0]->feature_space[' '].space_names;
   BOOST_CHECK_EQUAL(features.size(), space_names.size());
-  for (size_t i = 0; i < space_names.size(); i++) { BOOST_CHECK_EQUAL(space_names[i].second, features[i]); }
+  for (size_t i = 0; i < space_names.size(); i++) { BOOST_CHECK_EQUAL(space_names[i].name, features[i]); }
 
   VW::finish_example(*vw, examples);
   VW::finish(*vw);
@@ -386,7 +385,7 @@ BOOST_AUTO_TEST_CASE(parse_dsjson_cats_w_invalid_pdf)
 
   auto& space_names = examples[0]->feature_space[' '].space_names;
   BOOST_CHECK_EQUAL(features.size(), space_names.size());
-  for (size_t i = 0; i < space_names.size(); i++) { BOOST_CHECK_EQUAL(space_names[i].second, features[i]); }
+  for (size_t i = 0; i < space_names.size(); i++) { BOOST_CHECK_EQUAL(space_names[i].name, features[i]); }
 
   VW::finish_example(*vw, examples);
   VW::finish(*vw);
@@ -432,7 +431,7 @@ BOOST_AUTO_TEST_CASE(parse_dsjson_cats_chosen_action)
 
   auto& space_names = examples[0]->feature_space[' '].space_names;
   BOOST_CHECK_EQUAL(features.size(), space_names.size());
-  for (size_t i = 0; i < space_names.size(); i++) { BOOST_CHECK_EQUAL(space_names[i].second, features[i]); }
+  for (size_t i = 0; i < space_names.size(); i++) { BOOST_CHECK_EQUAL(space_names[i].name, features[i]); }
 
   VW::finish_example(*vw, examples);
   VW::finish(*vw);
@@ -824,7 +823,7 @@ BOOST_AUTO_TEST_CASE(parse_dsjson_slates_dom_parser)
 
   BOOST_CHECK_EQUAL(slates_examples.size(), 1);
   const auto& slates_ex = *slates_examples[0];
-  check_collections_exact(slates_ex.indices, std::vector<namespace_index>{'a', 'd', 'c', 'b', 32});
+  check_collections_exact(slates_ex.indices, std::vector<VW::namespace_index>{'a', 'd', 'c', 'b', 32});
   BOOST_CHECK_EQUAL(slates_ex.feature_space[' '].indices.size(), 2);
   BOOST_CHECK_EQUAL(slates_ex.feature_space['a'].indices.size(), 1);
   BOOST_CHECK_EQUAL(slates_ex.feature_space['b'].indices.size(), 1);

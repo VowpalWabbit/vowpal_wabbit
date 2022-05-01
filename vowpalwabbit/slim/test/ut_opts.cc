@@ -1,7 +1,6 @@
-#include "gtest/gtest.h"
 #include "gmock/gmock.h"
-
-#include "opts.h"
+#include "gtest/gtest.h"
+#include "vw/slim/opts.h"
 using namespace ::testing;
 using namespace vw_slim;
 

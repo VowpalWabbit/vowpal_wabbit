@@ -1,6 +1,6 @@
 {
     "name": "demo",
     "version": "1.0.0",
-    "builtin-baseline": "a515872b1abf58b639bf8b15ab5fe23b62f25ac3",
-    "dependencies": [ "zlib","boost-program-options","boost-align","boost-foreach","boost-python","boost-math","python3","flatbuffers" ]
+    "builtin-baseline": "773516ecf6014d89cc69b11bb54605ad4be56694",
+    "dependencies": [ "zlib","boost-python","python3","flatbuffers" ]
 }

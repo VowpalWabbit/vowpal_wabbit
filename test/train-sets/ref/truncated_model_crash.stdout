@@ -1,1 +1,1 @@
-[critical] vw (io_buf.h:366): model load failed. Error Details: Unexpected end of file encountered., model files = model-sets/truncated_model
+[critical] vw (options_cli.cc:243): Failed to convert -cb_adf to j

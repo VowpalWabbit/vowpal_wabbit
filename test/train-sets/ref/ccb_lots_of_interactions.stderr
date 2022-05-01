@@ -6,15 +6,16 @@ Num weight bits = 18
 learning rate = 0.5
 initial_t = 0
 power_t = 0.5
+cb_type = mtr
 Enabled reductions: gd, generate_interactions, scorer-identity, csoaa_ldf-rank, cb_adf, cb_explore_adf_greedy, cb_sample, shared_feature_merger, ccb_explore_adf
 Input label = ccb
 Output pred = decision_probs
-average  since         example        example  current  current  current
-loss     last          counter         weight    label  predict features
-0.000000 0.000000            1            1.0 0:0,1:0,... 0,1,2,...      372
-0.000000 0.000000            2            2.0 0:0,1:0,... 0,1,2,...      402
-0.000000 0.000000            4            4.0 0:0,1:0,... 0,1,2,...      402
--0.029762 -0.059524            8            8.0 4:-1,1:0,... 4,1,0,...     2400
+average  since         example        example        current        current  current
+loss     last          counter         weight          label        predict features
+0.000000 0.000000            1            1.0    0:0,1:0,...          0,1,2      372
+0.000000 0.000000            2            2.0    0:0,1:0,...          0,1,2      402
+0.000000 0.000000            4            4.0    0:0,1:0,...          0,1,2      402
+-0.02976 -0.05952            8            8.0   4:-1,1:0,...          4,1,0     2400
 
 finished run
 number of examples = 11

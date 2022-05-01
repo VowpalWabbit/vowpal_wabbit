@@ -8,13 +8,10 @@ cd $REPO_DIR
 
 # Check out the library.
 git clone https://github.com/google/benchmark.git
-# Benchmark requires Google Test as a dependency. Add the source tree as a subdirectory.
-git clone https://github.com/google/googletest.git benchmark/googletest
-cd benchmark/googletest
-git checkout release-1.11.0
-# Go to the library root directory
-cd ..
+cd benchmark
+git checkout v1.6.1
+
 # Generate build system files with cmake.
-cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release
+cmake -S . -B build -G Ninja -DBENCHMARK_ENABLE_GTEST_TESTS=OFF -DBENCHMARK_ENABLE_TESTING=Off -DCMAKE_BUILD_TYPE=Release
 # Install globally
 sudo cmake --build "build" --config Release --target install

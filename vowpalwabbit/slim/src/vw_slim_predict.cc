@@ -1,7 +1,7 @@
-#include "vw_slim_predict.h"
+#include "vw/slim/vw_slim_predict.h"
 
-#include <cctype>
 #include <algorithm>
+#include <cctype>
 
 namespace vw_slim
 {

@@ -11,11 +11,11 @@ license as described in the file LICENSE.
 #include "vw_example.h"
 
 #include "clr_io.h"
-#include "io_buf.h"
-#include "io/io_adapter.h"
-#include "vw_exception.h"
-#include "parse_args.h"
-#include "parse_regressor.h"
+#include "vw/core/io_buf.h"
+#include "vw/io/io_adapter.h"
+#include "vw/common/vw_exception.h"
+#include "vw/core/parse_args.h"
+#include "vw/core/parse_regressor.h"
 
 using namespace System;
 using namespace System::Collections::Generic;
@@ -27,7 +27,7 @@ void trace_listener_cli(void* context, const std::string& message)
 {
 	auto listener = (Action<String^>^)GCHandle::FromIntPtr(IntPtr(context)).Target;
 	auto str = gcnew String(message.c_str());
-	listener(str->TrimEnd());
+	listener(str);
 }
 
 VowpalWabbitBase::VowpalWabbitBase(VowpalWabbitSettings^ settings)

@@ -2,26 +2,25 @@
 // individual contributors. All rights reserved. Released under a BSD (revised)
 // license as described in the file LICENSE.
 
-#include <boost/test/unit_test.hpp>
-#include <boost/test/test_tools.hpp>
-
 #include "test_common.h"
-#include "vw.h"
-#include "example.h"
+#include "vw/core/example.h"
+#include "vw/core/reductions/conditional_contextual_bandit.h"
+#include "vw/core/vw.h"
 
+#include <boost/test/test_tools.hpp>
+#include <boost/test/unit_test.hpp>
 #include <vector>
-#include "conditional_contextual_bandit.h"
 
 namespace CCB
 {
-void inject_slot_features(example* shared, example* slot);
-void remove_slot_features(example* shared, example* slot);
+void inject_slot_features(VW::example* shared, VW::example* slot);
+void remove_slot_features(VW::example* shared, VW::example* slot);
 }  // namespace CCB
 
 BOOST_AUTO_TEST_CASE(ccb_explicit_included_actions_no_overlap)
 {
   auto& vw = *VW::initialize("--ccb_explore_adf --quiet");
-  multi_ex examples;
+  VW::multi_ex examples;
   examples.push_back(VW::read_example(vw, "ccb shared |"));
   examples.push_back(VW::read_example(vw, "ccb action |"));
   examples.push_back(VW::read_example(vw, "ccb action |"));
@@ -94,7 +93,7 @@ BOOST_AUTO_TEST_CASE(ccb_exploration_reproducibility_test)
 BOOST_AUTO_TEST_CASE(ccb_invalid_example_checks)
 {
   auto& vw = *VW::initialize("--ccb_explore_adf --quiet");
-  multi_ex examples;
+  VW::multi_ex examples;
   examples.push_back(VW::read_example(vw, "ccb shared |"));
   examples.push_back(VW::read_example(vw, "ccb action |"));
   examples.push_back(VW::read_example(vw, "ccb slot 0 |"));

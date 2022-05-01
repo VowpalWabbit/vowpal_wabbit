@@ -6,11 +6,11 @@ license as described in the file LICENSE.
 #ifndef LIBSEARCH_HOOKTASK_H
 #define LIBSEARCH_HOOKTASK_H
 
-#include "../vowpalwabbit/parser.h"
-#include "../vowpalwabbit/parse_example.h"
-#include "../vowpalwabbit/vw.h"
-#include "../vowpalwabbit/search.h"
-#include "../vowpalwabbit/search_hooktask.h"
+#  include "vw/core/parse_example.h"
+#  include "vw/core/parser.h"
+#  include "vw/core/reductions/search/search.h"
+#  include "vw/core/reductions/search/search_hooktask.h"
+#  include "vw/core/vw.h"
 
 #  include <memory>
 
@@ -49,8 +49,8 @@ protected:
   Search::search& sch;
 
 private:
-  example* bogus_example;
-  multi_ex trigger;
+  VW::example* bogus_example;
+  VW::multi_ex trigger;
   INPUT _input;
   OUTPUT _output;
 
@@ -83,12 +83,11 @@ private:
   }
 };
 
-
-class BuiltInTask : public SearchTask< std::vector<example*>, std::vector<uint32_t> >
+class BuiltInTask : public SearchTask<std::vector<VW::example*>, std::vector<uint32_t>>
 {
 public:
   BuiltInTask(VW::workspace& vw_obj, Search::search_task* task)
-      : SearchTask<std::vector<example*>, std::vector<uint32_t>>(vw_obj)
+      : SearchTask<std::vector<VW::example*>, std::vector<uint32_t>>(vw_obj)
   { HookTask::task_data* d = sch.get_task_data<HookTask::task_data>();
     size_t num_actions = d->num_actions;
     my_task = task;
@@ -98,7 +97,7 @@ public:
 
   ~BuiltInTask() { if (my_task->finish) my_task->finish(sch); }
 
-  void _run(Search::search& sch, std::vector<example*> & input_example, std::vector<uint32_t> & output)
+  void _run(Search::search& sch, std::vector<VW::example*>& input_example, std::vector<uint32_t>& output)
   { my_task->run(sch, input_example);
     sch.get_test_action_sequence(output);
   }

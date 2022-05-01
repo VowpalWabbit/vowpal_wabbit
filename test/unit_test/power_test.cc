@@ -2,11 +2,11 @@
 // individual contributors. All rights reserved. Released under a BSD (revised)
 // license as described in the file LICENSE.
 
-#include <boost/test/unit_test.hpp>
-#include <boost/test/test_tools.hpp>
-
-#include "fast_pow10.h"
 #include "test_common.h"
+#include "vw/core/fast_pow10.h"
+
+#include <boost/test/test_tools.hpp>
+#include <boost/test/unit_test.hpp>
 
 bool are_same(float a, float b) { return std::abs(a - b) < std::numeric_limits<float>::epsilon(); }
 

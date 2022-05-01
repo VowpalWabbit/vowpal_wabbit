@@ -1,8 +1,10 @@
-#include <stdio.h>
-#include <stdlib.h> // for system
-#include "../vowpalwabbit/vw.h"
-#include "../vowpalwabbit/search_sequencetask.h"
 #include "libsearch.h"
+#include "vw/core/reductions/search/search_sequencetask.h"
+#include "vw/core/vw.h"
+
+#include <cstdio>
+#include <cstdlib>  // for system
+#include <utility>
 
 using std::cerr;
 using std::endl;
@@ -11,7 +13,7 @@ struct wt
 {
   std::string word;
   uint32_t tag;
-  wt(std::string w, uint32_t t) : word(w), tag(t) {}
+  wt(std::string w, uint32_t t) : word(std::move(w)), tag(t) {}
 };
 
 class SequenceLabelerTask : public SearchTask<std::vector<wt>, std::vector<uint32_t> >
@@ -32,7 +34,7 @@ public:
     //ptag currently uint32_t
     for (ptag i=0; i<input_example.size(); i++)
     {
-      example* ex = VW::read_example(vw_obj, std::string("1 |w ") + input_example[i].word);
+      VW::example* ex = VW::read_example(vw_obj, std::string("1 |w ") + input_example[i].word);
       action p =
           Search::predictor(sch, i + 1).set_input(*ex).set_oracle(input_example[i].tag).set_condition(i, 'p').predict();
       VW::finish_example(vw_obj, *ex);
@@ -47,7 +49,7 @@ public:
     //ptag currently uint32_t
     for (ptag i=0; i<input_example.size(); i++)
     {
-      example ex;
+      VW::example ex;
       auto ns_hash_w = VW::hash_space(vw_obj, "w");
       auto& fs_w = ex.feature_space['w'];
       ex.indices.push_back('w');
@@ -82,7 +84,7 @@ void run(VW::workspace& vw_obj)
   task.learn(data, output);
   task.predict(data, output);
   cerr << "output = [";
-  for (size_t i=0; i<output.size(); i++) cerr << " " << output[i];
+  for (size_t i = 0; i < output.size(); i++) { cerr << " " << output[i]; }
   cerr << " ]" << endl;
   cerr << "should have printed: 1 2 3 1 4 2" << endl;
 }
@@ -113,14 +115,14 @@ void test_buildin_task()
       "../vowpalwabbit/vw -c -k --holdout_off --passes 20 --search 4 --search_task sequence -d "
       "../../test/train-sets/sequence_data -f "
       "sequence.model");
-  if (ret != 0) cerr << "../vowpalwabbit/vw failed" << endl;
+  if (ret != 0) { cerr << "../vowpalwabbit/vw failed" << endl; }
 
   // now, load that model using the BuiltInTask library
   cerr << endl << endl << "##### test BuiltInTask #####" << endl << endl;
   VW::workspace& vw_obj = *VW::initialize("-t --search_task hook");
   { // create a new scope for the task object
     BuiltInTask task(vw_obj, &SequenceTask::task);
-    multi_ex V;
+    VW::multi_ex V;
     V.push_back( VW::read_example(vw_obj, (char*)"1 | a") );
     V.push_back( VW::read_example(vw_obj, (char*)"1 | a") );
     V.push_back( VW::read_example(vw_obj, (char*)"1 | a") );
@@ -129,11 +131,9 @@ void test_buildin_task()
     std::vector<action> out;
     task.predict(V, out);
     cerr << "out (should be 1 2 3 4 3) =";
-    for (size_t i=0; i<out.size(); i++)
-      cerr << " " << out[i];
+    for (size_t i = 0; i < out.size(); i++) { cerr << " " << out[i]; }
     cerr << endl;
-    for (size_t i=0; i<V.size(); i++)
-      VW::finish_example(vw_obj, *V[i]);
+    for (size_t i = 0; i < V.size(); i++) { VW::finish_example(vw_obj, *V[i]); }
   }
 
   VW::finish(vw_obj, false);

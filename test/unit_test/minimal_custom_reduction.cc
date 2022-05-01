@@ -8,9 +8,9 @@
 // this test is a copy from unit_test/prediction_test.cc
 // it adds a noop reduction on top
 
-#include "vw.h"
-#include "reductions_fwd.h"
-#include "reduction_stack.h"
+#include "vw/core/reduction_stack.h"
+#include "vw/core/vw.h"
+#include "vw/core/vw_fwd.h"
 
 // this file would live in minimal_reduction.cc
 // minimal_reduction.h would define test_reduction_setup(..) fn
@@ -26,7 +26,7 @@ bool called_learn_predict = false;
 
 // minimal predict/learn fn for test_reduction_setup
 template <bool is_learn>
-void predict_or_learn(char&, VW::LEARNER::single_learner& base, example& ec)
+void predict_or_learn(char&, VW::LEARNER::single_learner& base, VW::example& ec)
 {
   called_learn_predict = true;
 

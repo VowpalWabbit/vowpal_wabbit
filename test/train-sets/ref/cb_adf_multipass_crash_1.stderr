@@ -6,14 +6,15 @@ learning rate = 0.5
 initial_t = 0
 power_t = 0.5
 decay_learning_rate = 1
+cb_type = mtr
 Enabled reductions: gd, scorer-identity, csoaa_ldf-rank, cb_adf, shared_feature_merger
 Input label = cb
 Output pred = action_scores
-average  since         example        example  current  current  current
-loss     last          counter         weight    label  predict features
-0.133333 0.133333            1            1.0 0:0.1:0.75        0:0...       11
-1.066667 2.000000            2            2.0  0:1:0.5        0:0.0817213...       12
-1.033333 1.000000            4            4.0  0:1:0.5        0:0.455317...       12
+average  since         example        example        current        current  current
+loss     last          counter         weight          label        predict features
+0.133333 0.133333            1            1.0     0:0.1:0.75            0:0       11
+1.066667 2.000000            2            2.0        0:1:0.5         0:0.08       12
+1.033333 1.000000            4            4.0        0:1:0.5         0:0.46       12
 
 finished run
 number of examples per pass = 2

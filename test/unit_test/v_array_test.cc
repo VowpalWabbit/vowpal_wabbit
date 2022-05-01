@@ -2,17 +2,16 @@
 // individual contributors. All rights reserved. Released under a BSD (revised)
 // license as described in the file LICENSE.
 
-#include <boost/test/unit_test.hpp>
-#include <boost/test/test_tools.hpp>
+#include "vw/core/v_array.h"
 
-#include <cstddef>
 #include <algorithm>
-
-#include "v_array.h"
+#include <boost/test/test_tools.hpp>
+#include <boost/test/unit_test.hpp>
+#include <cstddef>
 
 BOOST_AUTO_TEST_CASE(v_array_size_is_const)
 {
-  v_array<int> list;
+  VW::v_array<int> list;
   list.push_back(1);
   list.push_back(2);
 
@@ -22,13 +21,13 @@ BOOST_AUTO_TEST_CASE(v_array_size_is_const)
 
 BOOST_AUTO_TEST_CASE(v_array_empty_is_const)
 {
-  const v_array<int> list;
+  const VW::v_array<int> list;
   BOOST_CHECK_EQUAL(true, list.empty());
 }
 
 BOOST_AUTO_TEST_CASE(v_array_dereference)
 {
-  v_array<int> list;
+  VW::v_array<int> list;
   list.push_back(1);
   list.push_back(2);
 
@@ -37,7 +36,7 @@ BOOST_AUTO_TEST_CASE(v_array_dereference)
 
 BOOST_AUTO_TEST_CASE(v_array_clear)
 {
-  v_array<int> list;
+  VW::v_array<int> list;
   list.push_back(1);
   list.push_back(2);
   BOOST_CHECK_EQUAL(std::size_t(2), list.size());
@@ -47,35 +46,35 @@ BOOST_AUTO_TEST_CASE(v_array_clear)
 
 BOOST_AUTO_TEST_CASE(v_array_copy)
 {
-  v_array<int> list;
+  VW::v_array<int> list;
   list.push_back(1);
   list.push_back(2);
   BOOST_CHECK_EQUAL(std::size_t(2), list.size());
 
-  v_array<int> list2 = list;
+  VW::v_array<int> list2 = list;
   BOOST_CHECK_EQUAL(std::size_t(2), list2.size());
 
-  v_array<int> list3(list);
+  VW::v_array<int> list3(list);
   BOOST_CHECK_EQUAL(std::size_t(2), list3.size());
 }
 
 BOOST_AUTO_TEST_CASE(v_array_move)
 {
-  v_array<int> list;
+  VW::v_array<int> list;
   list.push_back(1);
   list.push_back(2);
   BOOST_CHECK_EQUAL(std::size_t(2), list.size());
 
-  v_array<int> list2 = std::move(list);
+  VW::v_array<int> list2 = std::move(list);
   BOOST_CHECK_EQUAL(std::size_t(2), list2.size());
 
-  v_array<int> list3(std::move(list2));
+  VW::v_array<int> list3(std::move(list2));
   BOOST_CHECK_EQUAL(std::size_t(2), list3.size());
 }
 
 BOOST_AUTO_TEST_CASE(v_array_pop_back)
 {
-  v_array<int> list;
+  VW::v_array<int> list;
   list.push_back(1);
   list.push_back(2);
   BOOST_CHECK_EQUAL(std::size_t(2), list.size());
@@ -88,7 +87,7 @@ BOOST_AUTO_TEST_CASE(v_array_pop_back)
 
 BOOST_AUTO_TEST_CASE(v_array_find_exists)
 {
-  v_array<int> list;
+  VW::v_array<int> list;
   list.push_back(1);
   list.push_back(2);
   list.push_back(6);
@@ -101,7 +100,7 @@ BOOST_AUTO_TEST_CASE(v_array_find_exists)
 
 BOOST_AUTO_TEST_CASE(v_array_find_not_exists)
 {
-  v_array<int> list;
+  VW::v_array<int> list;
   list.push_back(1);
   list.push_back(2);
   list.push_back(6);
@@ -113,7 +112,7 @@ BOOST_AUTO_TEST_CASE(v_array_find_not_exists)
 
 BOOST_AUTO_TEST_CASE(v_array_back)
 {
-  v_array<int> list;
+  VW::v_array<int> list;
   list.push_back(1);
   list.push_back(2);
   BOOST_CHECK_EQUAL(2, list.back());
@@ -121,7 +120,7 @@ BOOST_AUTO_TEST_CASE(v_array_back)
 
 BOOST_AUTO_TEST_CASE(v_array_erase_single_element_single_element_array)
 {
-  v_array<int> list;
+  VW::v_array<int> list;
   list.push_back(1);
   BOOST_CHECK_EQUAL(std::size_t(1), list.size());
   list.erase(list.begin());
@@ -130,7 +129,7 @@ BOOST_AUTO_TEST_CASE(v_array_erase_single_element_single_element_array)
 
 BOOST_AUTO_TEST_CASE(v_array_erase_single_element_reuse_array)
 {
-  v_array<int> list;
+  VW::v_array<int> list;
   list.push_back(1);
   BOOST_CHECK_EQUAL(std::size_t(1), list.size());
   list.erase(list.begin());
@@ -142,7 +141,7 @@ BOOST_AUTO_TEST_CASE(v_array_erase_single_element_reuse_array)
 
 BOOST_AUTO_TEST_CASE(v_array_erase_range)
 {
-  v_array<int> list;
+  VW::v_array<int> list;
   list.push_back(1);
   list.push_back(2);
   list.push_back(3);
@@ -157,7 +156,7 @@ BOOST_AUTO_TEST_CASE(v_array_erase_range)
 
 BOOST_AUTO_TEST_CASE(v_array_erase_range_zero_width)
 {
-  v_array<int> list;
+  VW::v_array<int> list;
   list.push_back(1);
   list.push_back(2);
   BOOST_CHECK_EQUAL(std::size_t(2), list.size());
@@ -167,7 +166,7 @@ BOOST_AUTO_TEST_CASE(v_array_erase_range_zero_width)
 
 BOOST_AUTO_TEST_CASE(v_array_erase_last_element)
 {
-  v_array<int> list;
+  VW::v_array<int> list;
   list.push_back(5);
   list.push_back(3);
   BOOST_CHECK_EQUAL(std::size_t(2), list.size());
@@ -179,7 +178,7 @@ BOOST_AUTO_TEST_CASE(v_array_erase_last_element)
 
 BOOST_AUTO_TEST_CASE(v_array_insert_from_empty)
 {
-  v_array<int> list;
+  VW::v_array<int> list;
   list.insert(list.begin(), 1);
 
   BOOST_CHECK_EQUAL(std::size_t(1), list.size());
@@ -188,7 +187,7 @@ BOOST_AUTO_TEST_CASE(v_array_insert_from_empty)
 
 BOOST_AUTO_TEST_CASE(v_array_insert_check_iterator)
 {
-  v_array<int> list;
+  VW::v_array<int> list;
   auto it = list.insert(list.begin(), 47);
 
   BOOST_CHECK_EQUAL(std::size_t(1), list.size());
@@ -198,7 +197,7 @@ BOOST_AUTO_TEST_CASE(v_array_insert_check_iterator)
 
 BOOST_AUTO_TEST_CASE(v_array_insert_end_iterator)
 {
-  v_array<int> list;
+  VW::v_array<int> list;
   auto it = list.insert(list.end(), 22);
 
   BOOST_CHECK_EQUAL(std::size_t(1), list.size());
@@ -208,7 +207,7 @@ BOOST_AUTO_TEST_CASE(v_array_insert_end_iterator)
 
 BOOST_AUTO_TEST_CASE(v_array_insert_multiple_insert)
 {
-  v_array<int> list;
+  VW::v_array<int> list;
   list.insert(list.begin(), 1);
   list.insert(list.end(), 2);
 
@@ -249,7 +248,7 @@ BOOST_AUTO_TEST_CASE(v_array_insert_multiple_insert)
 
 BOOST_AUTO_TEST_CASE(v_array_insert_in_loop)
 {
-  v_array<int> list;
+  VW::v_array<int> list;
   const auto num_values_to_insert = 1000;
   for (auto i = 0; i < num_values_to_insert; i++) { list.insert(list.begin(), i); }
 
@@ -260,7 +259,7 @@ BOOST_AUTO_TEST_CASE(v_array_insert_in_loop)
 
 BOOST_AUTO_TEST_CASE(v_array_insert_range)
 {
-  v_array<int> list;
+  VW::v_array<int> list;
   std::vector<int> to_insert = {1, 2};
   list.insert(list.begin(), to_insert.begin(), to_insert.end());
 
@@ -289,7 +288,7 @@ BOOST_AUTO_TEST_CASE(v_array_insert_range)
 
 BOOST_AUTO_TEST_CASE(v_array_insert_range_empty_end)
 {
-  v_array<int> list;
+  VW::v_array<int> list;
   std::vector<int> to_insert = {1, 2};
   list.insert(list.end(), to_insert.begin(), to_insert.end());
 

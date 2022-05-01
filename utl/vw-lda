@@ -1,4 +1,4 @@
-#!/usr/bin/env python2
+#!/usr/bin/env python3
 __author__ = 'chetan'
 
 import os, sys
@@ -66,7 +66,7 @@ class vw_lda(object):
             #empty words to be ignored
             if wrd_lst[0] == '':
                 continue
-            if wrd_lst[0] not in self.hash.keys():
+            if wrd_lst[0] not in list(self.hash.keys()):
                 self.hash[wrd_lst[0]] = self.count
                 self.count += 1
 
@@ -129,7 +129,7 @@ class vw_lda(object):
         prints the hash for each unique word to an
         intermediate file in csv format
         '''
-        sorted_x = sorted(self.hash.items(), key=operator.itemgetter(1))
+        sorted_x = sorted(list(self.hash.items()), key=operator.itemgetter(1))
         ofile = open(self.hash_values, "w")
         for l in sorted_x:
             s = str(l[1]) + "," + l[0] + "\n"
@@ -148,7 +148,7 @@ class vw_lda(object):
                 op = subprocess.check_output(str2vw_list)
             except Exception as e:
                 if(e.args[1] == 'No such file or directory'):
-                    print "ERROR: vw-doc2lda not found in the path"
+                    print("ERROR: vw-doc2lda not found in the path")
                     sys.exit(1)
                 '''
                 print type(e)
@@ -196,14 +196,14 @@ class vw_lda(object):
             + " --lda_alpha " + str(args.lda_alpha) \
             + " --lda_epsilon " + str(args.lda_epsilon) \
             + " --lda_rho " + str(args.lda_rho)
-        print "vw_cmd_line : ", vw_cmd_line
+        print("vw_cmd_line : ", vw_cmd_line)
         #print vw_cmd_line
         inp = re.split("\s+", vw_cmd_line)
         try:
             output = subprocess.check_output(inp)
         except Exception as e:
             if(e.args[1] == 'No such file or directory'):
-                print "ERROR: vw not found in the path"
+                print("ERROR: vw not found in the path")
                 sys.exit(1)
         return
 
@@ -215,42 +215,42 @@ class vw_lda(object):
         self.op_file = args.out_file
         self.hashed_lda_model = args.rd_model
         if(args.lda is None):
-            print "WARNING: -t <number_of_topics> not given, defaulting to 100"
+            print("WARNING: -t <number_of_topics> not given, defaulting to 100")
             args.lda = DEFAULT_NUM_TOPICS
         self.num_topics = args.lda        
 
         file_list = []
-        print 'reading dataset...'
+        print('reading dataset...')
         rd_start = datetime.datetime.now()
         if(args.lda_d is None or args.lda_d == 0):
             args.lda_d = self.max_file_count
         self.process_input_dataset(args.src_dir, args.flist, args.lda_d)
         rd_end = datetime.datetime.now()
-        print "Completed in " + elapsed_time_str(rd_end - rd_start)
+        print("Completed in " + elapsed_time_str(rd_end - rd_start))
 
-        print "creating hash... "
+        print("creating hash... ")
         rd_start = datetime.datetime.now()
         self.generate_hash(self.lda_ipfile)
         rd_end = datetime.datetime.now()
-        print "Completed in " + elapsed_time_str(rd_end - rd_start)
+        print("Completed in " + elapsed_time_str(rd_end - rd_start))
 
-        print "transforming inputs "
+        print("transforming inputs ")
         rd_start = datetime.datetime.now()
         self.transform_inputs(self.lda_ipfile)
         rd_end = datetime.datetime.now()
-        print "Completed in " + elapsed_time_str(rd_end - rd_start)
+        print("Completed in " + elapsed_time_str(rd_end - rd_start))
 
-        print "running vw... "
+        print("running vw... ")
         rd_start = datetime.datetime.now()
         self.run_vw(args)
         rd_end = datetime.datetime.now()
-        print "Completed in " + elapsed_time_str(rd_end - rd_start)
+        print("Completed in " + elapsed_time_str(rd_end - rd_start))
 
-        print "transforming outputs " 
+        print("transforming outputs ") 
         rd_start = datetime.datetime.now()
         self.transform_outputs(args.max_terms)
         rd_end = datetime.datetime.now()
-        print "Completed in " + elapsed_time_str(rd_end - rd_start)
+        print("Completed in " + elapsed_time_str(rd_end - rd_start))
 
         return
 
@@ -311,23 +311,23 @@ class vw_lda(object):
         in descending order
         '''
         op_file = open(self.op_file,"w")
-        print "Topics are..."
+        print("Topics are...")
         for i in range (1,num_topics):
             sorted_topics = []
             topic = "topic" + str(i)
             sorted_topics = sorted(topics,key=lambda x:x[topic], reverse=True)
             count = 0
             topic = topic.strip()
-            print topic
+            print(topic)
             l = ''
             op_file.write(topic + "\n")
             for top in sorted_topics:
                 l = "%20s : %5f" % (top['word'] , top[topic])
                 op_file.write(str(l) + "\n")
                 if (count <= top_n):
-                    print l
+                    print(l)
                 count += 1
-            print "\n"
+            print("\n")
             op_file.write("\n")
         op_file.close()
         return
@@ -336,7 +336,7 @@ class vw_lda(object):
         '''
         helper function to print top_n keys dictionary in sorted order
         '''
-        sorted_x = sorted(d.items(), key=operator.itemgetter(1), reverse=True)
+        sorted_x = sorted(list(d.items()), key=operator.itemgetter(1), reverse=True)
         count = 0
         for x in sorted_x:
             if (count > top_n):
@@ -397,8 +397,8 @@ def main(argv):
 
         args = helper.parse_args()
         vw_lda().process_args(args)
-    except Exception, e:
-        print "Exception: " + str(e)
+    except Exception as e:
+        print("Exception: " + str(e))
         traceback.print_exc()
 
     print("The arguments are", args)

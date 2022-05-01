@@ -2,15 +2,16 @@
 // individual contributors. All rights reserved. Released under a BSD (revised)
 // license as described in the file LICENSE.
 
-#include <boost/test/unit_test.hpp>
-#include <boost/test/test_tools.hpp>
+#include "vw/core/reductions/cats.h"
 
-#include "cats.h"
-#include "memory.h"
-#include "vw.h"
 #include "test_common.h"
+#include "vw/core/memory.h"
+#include "vw/core/vw.h"
 
-using namespace VW::continuous_action::cats;
+#include <boost/test/test_tools.hpp>
+#include <boost/test/unit_test.hpp>
+
+using namespace VW::reductions::cats;
 
 BOOST_AUTO_TEST_CASE(cats_test_get_loss_zero_for_bad_prediction)
 {

@@ -1,22 +1,24 @@
 default: vw
-all: vw library_example java spanning_tree python
+all: vw library_example java vw_spanning_tree_bin python
 
 # CMake configs
 ensure_cmake:
 	mkdir -p build
 	cd build; cmake ..
 
+# for profiling -- note that it needs to be gcc
 ensure_cmake_gcov:
 	mkdir -p build
-	cd build; cmake .. -DGCOV=On
+	cd build; cmake .. -DCMAKE_BUILD_TYPE=Debug -DVW_GCOV=On
 
 ensure_cmake_profile:
 	mkdir -p build
-	cd build; cmake .. -DPROFILE=On
+	cd build; cmake ..  -DCMAKE_BUILD_TYPE=Release -DCMAKE_CXX_FLAGS="-pg"
 
+# for valgrind profiling: run 'valgrind --tool=callgrind PROGRAM' then 'callgrind_annotate --tree=both --inclusive=yes'
 ensure_cmake_valgrind:
 	mkdir -p build
-	cd build; cmake .. -DVALGRIND_PROFILE=On -DCMAKE_BUILD_TYPE=Debug
+	cd build; cmake .. -DCMAKE_BUILD_TYPE=Debug -DCMAKE_CXX_FLAGS="-fomit-frame-pointer -fno-strict-aliasing"
 
 ensure_cmake_static:
 	mkdir -p build
@@ -24,35 +26,35 @@ ensure_cmake_static:
 
 # Build targets
 spanning_tree_build:
-	cd build; make -j$(shell cat ./build/nprocs.txt) spanning_tree
+	cd build; make -j$(nproc) vw_spanning_tree_bin
 
 vw_build:
-	cd build; make -j$(shell cat ./build/nprocs.txt) vw-bin
+	cd build; make -j$(nproc) vw_cli_bin
 
 active_interactor_build:
-	cd build; make -j$(shell cat ./build/nprocs.txt) active_interactor
+	cd build; make -j$(nproc) active_interactor
 
 library_example_build:
-	cd build; make -j$(shell cat ./build/nprocs.txt) ezexample_predict ezexample_predict_threaded ezexample_train library_example test_search search_generate recommend gd_mf_weights
+	cd build; make -j$(nproc) ezexample_predict ezexample_predict_threaded ezexample_train library_example test_search search_generate recommend gd_mf_weights
 
 python_build:
-	cd build; make -j$(shell cat ./build/nprocs.txt) pylibvw
+	cd build; make -j$(nproc) pylibvw
 
 java_build:
-	cd build; make -j$(shell cat ./build/nprocs.txt) vw_jni
+	cd build; make -j$(nproc) vw_jni
 
 test_build:
 	@echo "vw running test-suite..."
-	cd build; make -j$(shell cat ./build/nprocs.txt) test_with_output
+	cd build; make -j$(nproc) all; make test
 
 unit_test_build:
-	cd build/test/unit_test; make -j$(shell cat ./build/nprocs.txt) vw-unit-test.out test
+	cd build/test/unit_test; make -j$(nproc) vw-unit-test.out test
 
 bigtests_build:
-	cd build; make -j$(shell cat ./build/nprocs.txt) bigtests BIG_TEST_ARGS="$(MAKEFLAGS)"
+	cd build; make -j$(nproc) bigtests BIG_TEST_ARGS="$(MAKEFLAGS)"
 
 install_build:
-	cd build; make -j$(shell cat ./build/nprocs.txt) install
+	cd build; make -j$(nproc) install
 
 doc_build:
 	cd build; make doc

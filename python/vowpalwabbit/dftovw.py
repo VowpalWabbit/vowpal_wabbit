@@ -143,7 +143,7 @@ class _Col:
             pass
 
 
-class AttributeDescriptor(object):
+class _AttributeDescriptor(object):
     """This descriptor class add type and value checking informations to the _Col
     instance for future usage in the DFtoVW class. Indeed, the type and value checking
     can only be done once the dataframe is known (i.e in DFtoVW class). This descriptor
@@ -157,7 +157,7 @@ class AttributeDescriptor(object):
         min_value: Optional[Union[str, int, float]] = None,
         max_value: Optional[Union[str, int, float]] = None,
     ):
-        """Initialize an AttributeDescriptor instance
+        """Initialize an _AttributeDescriptor instance
 
         Args:
             attribute_name: The name of the attribute.
@@ -176,7 +176,7 @@ class AttributeDescriptor(object):
         self.min_value = min_value
         self.max_value = max_value
 
-    def __set__(self, instance: "AttributeDescriptor", arg: str) -> None:
+    def __set__(self, instance: Any, arg: str) -> None:
         """Implement set protocol to enforce type (and value range) checking
         for managed class such as SimpleLabel, MulticlassLabel, Feature, etc.
 
@@ -213,9 +213,9 @@ class AttributeDescriptor(object):
 class SimpleLabel(object):
     """The simple label type for the constructor of DFtoVW."""
 
-    label: Any = AttributeDescriptor("label", expected_type=(int, float))
+    label: Any = _AttributeDescriptor("label", expected_type=(int, float))
     """Simple label value column name"""
-    weight: Any = AttributeDescriptor("weight", expected_type=(int, float))
+    weight: Any = _AttributeDescriptor("weight", expected_type=(int, float))
     """Simple label weight column name"""
 
     def __init__(self, label: Hashable, weight: Optional[Hashable] = None):
@@ -246,9 +246,11 @@ class SimpleLabel(object):
 class MulticlassLabel(object):
     """The multiclass label type for the constructor of DFtoVW."""
 
-    label: Any = AttributeDescriptor("label", expected_type=(int,), min_value=1)
+    label: Any = _AttributeDescriptor("label", expected_type=(int,), min_value=1)
     """Multiclass label value column name"""
-    weight: Any = AttributeDescriptor("weight", expected_type=(int, float), min_value=0)
+    weight: Any = _AttributeDescriptor(
+        "weight", expected_type=(int, float), min_value=0
+    )
     """Multiclass label weight column name"""
 
     def __init__(self, label: Hashable, weight: Optional[Hashable] = None):
@@ -279,7 +281,7 @@ class MulticlassLabel(object):
 class MultiLabel(object):
     """The multi labels type for the constructor of DFtoVW."""
 
-    label: Any = AttributeDescriptor("label", expected_type=(int,), min_value=1)
+    label: Any = _AttributeDescriptor("label", expected_type=(int,), min_value=1)
     """Multilabel label value column name"""
 
     def __init__(self, label: Union[Hashable, List[Hashable]]):
@@ -312,12 +314,12 @@ class MultiLabel(object):
 class ContextualbanditLabel(object):
     """The contextual bandit label type for the constructor of DFtoVW."""
 
-    action: Any = AttributeDescriptor("action", expected_type=(int,), min_value=1)
+    action: Any = _AttributeDescriptor("action", expected_type=(int,), min_value=1)
     """Contextual bandit label action column name"""
 
-    cost: Any = AttributeDescriptor("cost", expected_type=(float, int))
+    cost: Any = _AttributeDescriptor("cost", expected_type=(float, int))
     """Contextual bandit label cost column name"""
-    probability: Any = AttributeDescriptor(
+    probability: Any = _AttributeDescriptor(
         "probability", expected_type=(float,), min_value=0, max_value=1
     )
     """Contextual bandit label probability column name"""
@@ -357,7 +359,7 @@ class ContextualbanditLabel(object):
 class Feature(object):
     """The feature type for the constructor of DFtoVW"""
 
-    value: Any = AttributeDescriptor("value", expected_type=(str, int, float))
+    value: Any = _AttributeDescriptor("value", expected_type=(str, int, float))
     """Feature value column name"""
 
     def __init__(
@@ -385,7 +387,7 @@ class Feature(object):
         else:
             self.as_type = as_type
 
-    def process(self, df: pd.DataFrame) -> pd.Series:
+    def process(self, df: pd.DataFrame, ensure_valid_values=True) -> pd.Series:
         """Returns the Feature string representation.
 
         Args:
@@ -400,6 +402,9 @@ class Feature(object):
         else:
             sep = ":" if self.value.is_number(df) else "="
 
+        if ensure_valid_values:
+            value_col = value_col.apply(_Col.make_valid_name)
+
         out = value_col.where(value_col == "", self.name + sep + value_col)
         return out
 
@@ -407,7 +412,7 @@ class Feature(object):
 class _Tag(object):
     """A tag for the constructor of DFtoVW"""
 
-    tag: Any = AttributeDescriptor("tag", expected_type=(str, int, float))
+    tag: Any = _AttributeDescriptor("tag", expected_type=(str, int, float))
     """Tag column name"""
 
     def __init__(self, tag: Hashable):
@@ -633,7 +638,7 @@ class DFtoVW:
                 List[ContextualbanditLabel],
             ]
         ] = None,
-        tag: Optional[str] = None,
+        tag: Optional[Hashable] = None,
     ):
         """Initialize a DFtoVW instance.
 
@@ -707,6 +712,9 @@ class DFtoVW:
     ) -> "DFtoVW":
         """Build DFtoVW instance using column names only.
 
+            .. deprecated:: 9.2.0
+                Use :meth:`DFtoVW.from_column_names` instead.
+
         Args:
             y: (list of) any hashable type (str/int/float/tuple/etc.) representing a column name
                 The column for the label.
@@ -735,6 +743,53 @@ class DFtoVW:
         Returns:
             An initialized DFtoVW instance.
         """
+
+        warnings.warn(
+            "DFtoVW.from_colnames is deprecated. Use DFtoVW.from_column_names instead.",
+            DeprecationWarning,
+        )
+        return cls.from_column_names(y=y, x=x, df=df, label_type=label_type)
+
+    @classmethod
+    def from_column_names(
+        cls,
+        *,
+        y: Optional[Union[Hashable, List[Hashable]]] = None,
+        x: Union[Hashable, List[Hashable]],
+        df: pd.DataFrame,
+        label_type: Optional[str] = "simple_label",
+    ) -> "DFtoVW":
+        """Build DFtoVW instance using column names only. Compared to :meth:`DFtoVW.from_colnames`, this method allows for y and label_type to be optional and args are named and cannot be positional.
+
+        Args:
+            y: (list of) any hashable type (str/int/float/tuple/etc.) representing a column name
+                The column for the label. Optional.
+            x: (list of) any hashable type (str/int/float/tuple/etc.) representing a column name
+                The column(s) for the feature(s).
+            df: The dataframe used.
+            label_type: The type of the label. Available labels: 'simple_label', 'multiclass_label', 'multi_label'. (default: 'simple_label'). Optional.
+
+        Raises:
+            TypeError: If argument label is not of valid type.
+            ValueError: If argument label_type is not valid.
+
+        Examples:
+            >>> from vowpalwabbit.dftovw import DFtoVW
+            >>> import pandas as pd
+            >>> df = pd.DataFrame({"y": [1], "x": [2]})
+            >>> conv = DFtoVW.from_column_names(y="y", x="x", df=df)
+            >>> conv.convert_df()
+            ['1 | x:2']
+
+            >>> df2 = pd.DataFrame({"y": [1], "x1": [2], "x2": [3], "x3": [4]})
+            >>> conv2 = DFtoVW.from_column_names(y="y", x=sorted(list(set(df2.columns) - set("y"))), df=df2)
+            >>> conv2.convert_df()
+            ['1 | x1:2 x2:3 x3:4']
+
+        Returns:
+            An initialized DFtoVW instance.
+        """
+
         dict_label_type = {
             "simple_label": SimpleLabel,
             "multiclass_label": MulticlassLabel,
@@ -748,36 +803,31 @@ class DFtoVW:
                 )
             )
 
-        y = y if isinstance(y, list) else [y]
-
-        if label_type not in ["multi_label"]:
-            if len(y) > 1:
-                raise TypeError(
-                    "When label_type is 'simple_label' or 'multiclass', argument 'y' should be a string (or any hashable type) "
-                    + "or a list of exactly one string (or any hashable type)."
-                )
-            else:
-                y = y[0]
-
-        label = dict_label_type[label_type](y)
-
         x = x if isinstance(x, list) else [x]
-
         namespaces = Namespace(features=[Feature(value=colname) for colname in x])
-        return cls(namespaces=namespaces, label=label, df=df)
+        if not y:
+            return cls(namespaces=namespaces, label=None, df=df)
+        else:
+            y = y if isinstance(y, list) else [y]
+            if label_type not in ["multi_label"]:
+                if len(y) > 1:
+                    raise TypeError(
+                        "When label_type is 'simple_label' or 'multiclass', argument 'y' should be a string (or any hashable type) "
+                        + "or a list of exactly one string (or any hashable type)."
+                    )
+                else:
+                    y = y[0]
+            label = dict_label_type[label_type](y)
+            return cls(namespaces=namespaces, label=label, df=df)
 
     def check_features_type(self, features: Union[Feature, List[Feature]]):
         """Check if the features argument is of type Feature.
 
         Args:
-        ----------
-        features: (list of) Feature,
-            The features argument to check.
+            features: (list of) Feature. The features argument to check.
 
-        Raises
-        ------
-        TypeError
-            If the features is not a Feature of a list of Feature.
+        Raises:
+            TypeError: If the features is not a Feature of a list of Feature.
         """
         if isinstance(features, list):
             valid_feature = all([isinstance(feature, Feature) for feature in features])

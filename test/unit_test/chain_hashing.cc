@@ -2,11 +2,11 @@
 // individual contributors. All rights reserved. Released under a BSD (revised)
 // license as described in the file LICENSE.
 
-#include <boost/test/unit_test.hpp>
-#include <boost/test/test_tools.hpp>
-
 #include "test_common.h"
-#include "vw.h"
+#include "vw/core/vw.h"
+
+#include <boost/test/test_tools.hpp>
+#include <boost/test/unit_test.hpp>
 
 BOOST_AUTO_TEST_CASE(chain_hashing_between_formats)
 {
@@ -24,10 +24,13 @@ BOOST_AUTO_TEST_CASE(chain_hashing_between_formats)
 
   auto vw = VW::initialize("--quiet --chain_hash", nullptr, false, nullptr, nullptr);
   {
-    multi_ex examples;
+    VW::multi_ex examples;
     examples.push_back(&VW::get_unused_example(vw));
     auto example = examples[0];
+
     VW::read_line(*vw, example, text.c_str());
+    setup_example(*vw, example);
+
     auto& indices = example->feature_space['f'].indices;
     txt_idx = indices[0];
     VW::finish_example(*vw, examples);
