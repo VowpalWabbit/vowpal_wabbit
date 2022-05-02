@@ -8,6 +8,8 @@
 #include "vw/core/reductions_fwd.h"
 #include "vw/core/scored_config.h"
 
+#include <algorithm>
+
 namespace VW
 {
 namespace reductions
@@ -23,11 +25,6 @@ struct epsilon_decay_score : scored_config
       : VW::scored_config(alpha, tau), _model_idx(model_idx)
   {
   }
-  template <class ForwardIt>
-  ForwardIt swap_models(ForwardIt first, ForwardIt n_first, ForwardIt end);
-  template <class ForwardIt>
-  void reset_models(ForwardIt first, ForwardIt end, parameters& weights, double epsilon_decay_alpha,
-      double epsilon_decay_tau, uint64_t model_count);
   float decayed_epsilon(uint64_t update_count);
   float get_upper_bound() const { return this->current_ips(); }
   float get_lower_bound() const { return _lower_bound; }
@@ -47,13 +44,20 @@ struct epsilon_decay_data
       , _epsilon_decay_tau(epsilon_decay_tau)
       , _weights(weights)
   {
+    uint64_t model_idx = 0;
     for (uint64_t i = 0; i < num_configs; ++i)
     {
-      epsilon_decay_score s(epsilon_decay_alpha, epsilon_decay_tau, i);
-      _scored_configs.push_back(s);
+      std::vector<epsilon_decay_score> score_vec;
+      for (uint64_t j = 0; j < i + 1; ++j)
+      {
+        epsilon_decay_score s(epsilon_decay_alpha, epsilon_decay_tau, model_idx);
+        score_vec.push_back(s);
+        ++model_idx;
+      }
+      _scored_configs.push_back(score_vec);
     }
   }
-  std::vector<epsilon_decay_score> _scored_configs;
+  std::vector<std::vector<epsilon_decay_score>> _scored_configs;
   uint64_t _min_scope;
   double _epsilon_decay_alpha;  // Confidence interval
   double _epsilon_decay_tau;    // Count decay time constant
