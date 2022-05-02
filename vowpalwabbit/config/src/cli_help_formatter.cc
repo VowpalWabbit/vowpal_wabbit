@@ -169,6 +169,7 @@ std::string cli_help_formatter::format_help(const std::vector<option_group_defin
       if (!one_of.empty()) { ss_description << ", choices {" << one_of << "}"; }
       if (option->m_keep) { ss_description << ", keep"; }
       if (option->m_necessary) { ss_description << ", necessary"; }
+      if (option->m_experimental) { ss_description << ", experimental"; }
       ss_description << ")";
 
       auto help_lines = split_string_by_newline(VW::wrap_text(ss_description.str(), RIGHT_COL_WIDTH));
