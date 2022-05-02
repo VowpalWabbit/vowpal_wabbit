@@ -84,6 +84,13 @@ struct option_builder
     return *this;
   }
 
+  /// Marks this as an experimental option.
+  option_builder& experimental(bool experimental = true)
+  {
+    m_option_obj.m_experimental = experimental;
+    return *this;
+  }
+
   option_builder& keep(bool keep = true)
   {
     m_option_obj.m_keep = keep;

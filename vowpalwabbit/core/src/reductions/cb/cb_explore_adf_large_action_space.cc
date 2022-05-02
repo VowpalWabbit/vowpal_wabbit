@@ -150,12 +150,14 @@ VW::LEARNER::base_learner* VW::reductions::cb_explore_adf_large_action_space_set
       .add(make_option("large_action_space", large_action_space)
                .necessary()
                .keep()
-               .help("Large action space exploration"))
+               .help("Large action space exploration")
+               .experimental())
       .add(make_option("max_actions", d)
                .keep()
                .allow_override()
                .default_value(50)
-               .help("Max number of actions to explore"))
+               .help("Max number of actions to explore")
+               .experimental())
       // TODO: Do we still need gamma if we aren't activating squarecb?
       .add(make_option("gamma", gamma).keep().allow_override().help("Gamma hyperparameter"));
 
