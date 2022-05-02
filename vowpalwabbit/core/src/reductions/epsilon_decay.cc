@@ -135,7 +135,8 @@ void learn(
     {
       if (data._log_champ_changes)
       {
-        data._logger.out_info("Champion with update count: {} has changed to challenger with update count: {}", data._scored_configs[K - 1][i].update_count, data._scored_configs[i][i].update_count);
+        data._logger.out_info("Champion with update count: {} has changed to challenger with update count: {}",
+            data._scored_configs[K - 1][i].update_count, data._scored_configs[i][i].update_count);
       }
       uint64_t swap_dist = K - i - 1;
 
@@ -250,9 +251,7 @@ VW::LEARNER::base_learner* VW::reductions::epsilon_decay_setup(VW::setup_base_i&
                .keep()
                .default_value(DEFAULT_TAU)
                .help("Time constant for count decay"))
-      .add(make_option("log_champ_changes", _log_champ_changes)
-               .keep()
-               .help("Log champ changes"));
+      .add(make_option("log_champ_changes", _log_champ_changes).keep().help("Log champ changes"));
 
   if (!options.add_parse_and_check_necessary(new_options)) { return nullptr; }
 
