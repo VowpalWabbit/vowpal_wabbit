@@ -3,6 +3,7 @@
 // license as described in the file LICENSE.
 
 #include "vw/core/cache.h"
+
 #include "vw/core/parse_example.h"
 #include "vw/core/vw.h"
 #include "vw/core/vw_fwd.h"
@@ -27,7 +28,8 @@ TEST(cache_tests, write_and_read_example)
   io_writer.add_file(VW::io::create_vector_writer(backing_vector));
 
   VW::details::cache_temp_buffer temp_buffer;
-  VW::write_example_to_cache(io_writer, &src_ex, workspace.example_parser->lbl_parser, workspace.parse_mask, temp_buffer);
+  VW::write_example_to_cache(
+      io_writer, &src_ex, workspace.example_parser->lbl_parser, workspace.parse_mask, temp_buffer);
   io_writer.flush();
 
   io_buf io_reader;
@@ -58,21 +60,28 @@ TEST(cache_tests, write_and_read_large_example)
   auto& workspace = *VW::initialize("--quiet");
   VW::example src_ex;
   VW::read_line(workspace, &src_ex,
-    "| example value test a b:0.3 c:0.1 d e f:0.3 g h i j k l m n o p q r s t u v w x y:5.5 z a1 b1:0.343 c1:0.1 d1 e1 f1:0.3 g1 h1 i1 j1 k1 l1 m1 n1 o1 p1 q1 r1 s1 t1 u1 v1 w1 x1 y1:5.5 z1"
-    "|a example value test a b:0.3 c:0.1 d e f:0.3 g h i j k l m n o p q r s t u v w x y:5.5 z a1 b1:0.343 c1:0.1 d1 e1 f1:0.3 g1 h1 i1 j1 k1 l1 m1 n1 o1 p1 q1 r1 s1 t1 u1 v1 w1 x1 y1:5.5 z1"
-    "|b example value test a b:0.3 c:0.1 d e f:0.3 g h i j k l m n o p q r s t u v w x y:5.5 z a1 b1:0.343 c1:0.1 d1 e1 f1:0.3 g1 h1 i1 j1 k1 l1 m1 n1 o1 p1 q1 r1 s1 t1 u1 v1 w1 x1 y1:5.5 z1"
-    "|c example value test a b:0.3 c:0.1 d e f:0.3 g h i j k l m n o p q r s t u v w x y:5.5 z a1 b1:0.343 c1:0.1 d1 e1 f1:0.3 g1 h1 i1 j1 k1 l1 m1 n1 o1 p1 q1 r1 s1 t1 u1 v1 w1 x1 y1:5.5 z1"
-    "|d example value test a b:0.3 c:0.1 d e f:0.3 g h i j k l m n o p q r s t u v w x y:5.5 z a1 b1:0.343 c1:0.1 d1 e1 f1:0.3 g1 h1 i1 j1 k1 l1 m1 n1 o1 p1 q1 r1 s1 t1 u1 v1 w1 x1 y1:5.5 z1"
-    "|e example value test a b:0.3 c:0.1 d e f:0.3 g h i j k l m n o p q r s t u v w x y:5.5 z a1 b1:0.343 c1:0.1 d1 e1 f1:0.3 g1 h1 i1 j1 k1 l1 m1 n1 o1 p1 q1 r1 s1 t1 u1 v1 w1 x1 y1:5.5 z1"
-    "|f example value test a b:0.3 c:0.1 d e f:0.3 g h i j k l m n o p q r s t u v w x y:5.5 z a1 b1:0.343 c1:0.1 d1 e1 f1:0.3 g1 h1 i1 j1 k1 l1 m1 n1 o1 p1 q1 r1 s1 t1 u1 v1 w1 x1 y1:5.5 z1"
-  );
+      "| example value test a b:0.3 c:0.1 d e f:0.3 g h i j k l m n o p q r s t u v w x y:5.5 z a1 b1:0.343 c1:0.1 d1 "
+      "e1 f1:0.3 g1 h1 i1 j1 k1 l1 m1 n1 o1 p1 q1 r1 s1 t1 u1 v1 w1 x1 y1:5.5 z1"
+      "|a example value test a b:0.3 c:0.1 d e f:0.3 g h i j k l m n o p q r s t u v w x y:5.5 z a1 b1:0.343 c1:0.1 d1 "
+      "e1 f1:0.3 g1 h1 i1 j1 k1 l1 m1 n1 o1 p1 q1 r1 s1 t1 u1 v1 w1 x1 y1:5.5 z1"
+      "|b example value test a b:0.3 c:0.1 d e f:0.3 g h i j k l m n o p q r s t u v w x y:5.5 z a1 b1:0.343 c1:0.1 d1 "
+      "e1 f1:0.3 g1 h1 i1 j1 k1 l1 m1 n1 o1 p1 q1 r1 s1 t1 u1 v1 w1 x1 y1:5.5 z1"
+      "|c example value test a b:0.3 c:0.1 d e f:0.3 g h i j k l m n o p q r s t u v w x y:5.5 z a1 b1:0.343 c1:0.1 d1 "
+      "e1 f1:0.3 g1 h1 i1 j1 k1 l1 m1 n1 o1 p1 q1 r1 s1 t1 u1 v1 w1 x1 y1:5.5 z1"
+      "|d example value test a b:0.3 c:0.1 d e f:0.3 g h i j k l m n o p q r s t u v w x y:5.5 z a1 b1:0.343 c1:0.1 d1 "
+      "e1 f1:0.3 g1 h1 i1 j1 k1 l1 m1 n1 o1 p1 q1 r1 s1 t1 u1 v1 w1 x1 y1:5.5 z1"
+      "|e example value test a b:0.3 c:0.1 d e f:0.3 g h i j k l m n o p q r s t u v w x y:5.5 z a1 b1:0.343 c1:0.1 d1 "
+      "e1 f1:0.3 g1 h1 i1 j1 k1 l1 m1 n1 o1 p1 q1 r1 s1 t1 u1 v1 w1 x1 y1:5.5 z1"
+      "|f example value test a b:0.3 c:0.1 d e f:0.3 g h i j k l m n o p q r s t u v w x y:5.5 z a1 b1:0.343 c1:0.1 d1 "
+      "e1 f1:0.3 g1 h1 i1 j1 k1 l1 m1 n1 o1 p1 q1 r1 s1 t1 u1 v1 w1 x1 y1:5.5 z1");
 
   auto backing_vector = std::make_shared<std::vector<char>>();
   io_buf io_writer;
   io_writer.add_file(VW::io::create_vector_writer(backing_vector));
 
   VW::details::cache_temp_buffer temp_buffer;
-  VW::write_example_to_cache(io_writer, &src_ex, workspace.example_parser->lbl_parser, workspace.parse_mask, temp_buffer);
+  VW::write_example_to_cache(
+      io_writer, &src_ex, workspace.example_parser->lbl_parser, workspace.parse_mask, temp_buffer);
   io_writer.flush();
 
   io_buf io_reader;
