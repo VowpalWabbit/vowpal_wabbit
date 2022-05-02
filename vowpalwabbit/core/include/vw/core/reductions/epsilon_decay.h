@@ -7,6 +7,7 @@
 #include "vw/core/distributionally_robust.h"
 #include "vw/core/reductions_fwd.h"
 #include "vw/core/scored_config.h"
+#include "vw/io/logger.h"
 
 #include <algorithm>
 
@@ -38,11 +39,13 @@ struct epsilon_decay_score : scored_config
 struct epsilon_decay_data
 {
   epsilon_decay_data(uint64_t num_configs, uint64_t min_scope, double epsilon_decay_alpha, double epsilon_decay_tau,
-      parameters& weights)
+      parameters& weights, VW::io::logger logger, bool log_champ_changes)
       : _min_scope(min_scope)
       , _epsilon_decay_alpha(epsilon_decay_alpha)
       , _epsilon_decay_tau(epsilon_decay_tau)
       , _weights(weights)
+      , _logger(std::move(logger))
+      , _log_champ_changes(log_champ_changes)
   {
     uint64_t model_idx = 0;
     for (uint64_t i = 0; i < num_configs; ++i)
@@ -62,6 +65,8 @@ struct epsilon_decay_data
   double _epsilon_decay_alpha;  // Confidence interval
   double _epsilon_decay_tau;    // Count decay time constant
   parameters& _weights;
+  VW::io::logger _logger;
+  bool _log_champ_changes;
 };
 
 }  // namespace epsilon_decay
