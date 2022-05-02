@@ -3,6 +3,7 @@
 // license as described in the file LICENSE.
 #include "vw/core/example.h"
 
+#include "vw/core/cache.h"
 #include "vw/core/cb_continuous_label.h"
 #include "vw/core/interactions.h"
 #include "vw/core/model_utils.h"
@@ -286,10 +287,9 @@ size_t read_model_field(io_buf& io, flat_example& fe, VW::label_parser& lbl_pars
   bytes += read_model_field(io, fe.num_features);
   bytes += read_model_field(io, fe.total_sum_feat_sq);
   unsigned char index = 0;
-  char* c;
-  bytes += read_cached_index(io, index, c);
+  bytes += ::VW::details::read_cached_index(io, index);
   bool sorted = true;
-  bytes += read_cached_features(io, fe.fs, sorted, c);
+  bytes += ::VW::details::read_cached_features(io, fe.fs, sorted);
   return bytes;
 }
 size_t write_model_field(io_buf& io, const flat_example& fe, const std::string& upstream_name, bool text,
@@ -305,9 +305,8 @@ size_t write_model_field(io_buf& io, const flat_example& fe, const std::string& 
   bytes += write_model_field(io, fe.global_weight, upstream_name + "_global_weight", text);
   bytes += write_model_field(io, fe.num_features, upstream_name + "_num_features", text);
   bytes += write_model_field(io, fe.total_sum_feat_sq, upstream_name + "_total_sum_feat_sq", text);
-  char* c;
-  cache_index(io, 0, fe.fs, c);
-  cache_features(io, fe.fs, parse_mask, c);
+  ::VW::details::cache_index(io, 0);
+  ::VW::details::cache_features(io, fe.fs, parse_mask);
   return bytes;
 }
 }  // namespace model_utils
