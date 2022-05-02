@@ -5,3 +5,26 @@ body {
 .thebelab-cell {
     border: none !important;
 }
+
+.option-tag
+{
+    border-radius: 5px;
+    background-color: rgba(42, 59, 147, 0.95);
+    color: rgb(235, 235, 235);
+    display: inline-block;
+    margin-bottom: 1em;
+}
+
+.option-tag abbr
+{
+    padding: 5px;
+}
+
+.option-warning {
+    background-color: #ffc107;
+    color: rgb(51, 51, 51);
+}
+
+.option-tag ~ .option-tag {
+    margin-left: 5px;
+}

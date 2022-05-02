@@ -226,7 +226,7 @@ VW::LEARNER::base_learner* VW::reductions::epsilon_decay_setup(VW::setup_base_i&
   float _epsilon_decay_alpha;
   float _epsilon_decay_tau;
 
-  option_group_definition new_options("Epsilon-Decaying Exploration");
+  option_group_definition new_options("[Reduction] Epsilon-Decaying Exploration");
   new_options
       .add(make_option("epsilon_decay", epsilon_decay_option)
                .necessary()
