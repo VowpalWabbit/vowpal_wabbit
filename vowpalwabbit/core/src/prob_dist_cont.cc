@@ -4,7 +4,6 @@
 
 #include "vw/core/prob_dist_cont.h"
 
-#include "vw/core/model_utils.h"
 #include "vw/core/text_utils.h"
 #include "vw/core/v_array.h"
 #include "vw/core/vw.h"
