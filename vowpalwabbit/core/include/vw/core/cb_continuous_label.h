@@ -5,10 +5,10 @@
 #pragma once
 
 #include "vw/core/constant.h"
+#include "vw/core/continuous_actions_reduction_features.h"
 #include "vw/core/label_parser.h"
 #include "vw/core/v_array.h"
 #include "vw/core/vw_fwd.h"
-#include "vw/core/continuous_actions_reduction_features.h"
 
 namespace VW
 {

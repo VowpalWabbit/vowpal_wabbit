@@ -4,10 +4,10 @@
 
 #include "vw/core/prob_dist_cont.h"
 
+#include "vw/core/model_utils.h"
 #include "vw/core/text_utils.h"
 #include "vw/core/v_array.h"
 #include "vw/core/vw.h"
-#include "vw/core/model_utils.h"
 
 using namespace std;
 namespace VW
@@ -55,7 +55,8 @@ size_t read_model_field(io_buf& io, VW::continuous_actions::pdf_segment& segment
   bytes += read_model_field(io, segment.pdf_value);
   return bytes;
 }
-size_t write_model_field(io_buf& io, const VW::continuous_actions::pdf_segment& segment, const std::string& upstream_name, bool text)
+size_t write_model_field(
+    io_buf& io, const VW::continuous_actions::pdf_segment& segment, const std::string& upstream_name, bool text)
 {
   size_t bytes = 0;
   bytes += write_model_field(io, segment.left, upstream_name + "_left", text);
