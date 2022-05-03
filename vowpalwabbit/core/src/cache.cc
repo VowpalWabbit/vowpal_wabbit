@@ -84,6 +84,8 @@ size_t VW::details::read_cached_index(io_buf& input, VW::namespace_index& index)
 
 size_t VW::details::read_cached_features(io_buf& input, features& feats, bool& sorted)
 {
+  // The example is sorted until we see an example of an unsorted sequence.
+  sorted = true;
   size_t total = 0;
   auto storage = input.read_value_and_accumulate_size<size_t>("feature count", total);
   total += storage;
@@ -203,7 +205,6 @@ int VW::read_example_from_cache(VW::workspace* all, io_buf& input, v_array<examp
   // (As opposed to being unable to get the next bytes while midway through reading an example)
   if (input.buf_read(unused_read_ptr, sizeof(uint64_t)) < sizeof(uint64_t)) { return 0; }
 
-  examples[0]->sorted = all->example_parser->sorted_cache;
   size_t total =
       all->example_parser->lbl_parser.read_cached_label(examples[0]->l, examples[0]->_reduction_features, input);
   if (total == 0) { THROW("Ran out of cache while reading example. File may be truncated."); }
