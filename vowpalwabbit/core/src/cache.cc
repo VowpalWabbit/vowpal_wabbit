@@ -24,7 +24,14 @@ constexpr size_t GENERAL = 2;
 constexpr unsigned char NEWLINE_EXAMPLE_INDICATOR = '1';
 constexpr unsigned char NON_NEWLINE_EXAMPLE_INDICATOR = '0';
 
-inline char* run_len_decode(char* read_head, uint64_t& num)
+// Integers are written/read 1 byte at at time (using 7 bits for the number
+// representation and the msb used to signal further bytes), with only the
+// number of bytes required to represent the number being used. For an
+// explanation of how this words see here:
+// https://developers.google.com/protocol-buffers/docs/encoding
+//
+// See the function for writing: `variable_length_int_encode`
+inline char* variable_length_int_decode(char* read_head, uint64_t& num)
 {
   // read an int 7 bits at a time.
   size_t count = 0;
@@ -33,7 +40,7 @@ inline char* run_len_decode(char* read_head, uint64_t& num)
   return read_head;
 }
 
-inline char* run_len_encode(char* write_head, uint64_t num)
+inline char* variable_length_int_encode(char* write_head, uint64_t num)
 {
   // store an int 7 bits at a time.
   while (num >= 128)
@@ -97,7 +104,7 @@ size_t VW::details::read_cached_features(io_buf& input, features& feats, bool& s
   for (; read_head < end;)
   {
     feature_index feat_idx = 0;
-    read_head = run_len_decode(read_head, feat_idx);
+    read_head = variable_length_int_decode(read_head, feat_idx);
     feature_value feat_value = 1.f;
     if ((feat_idx & NEG_ONE) != 0u) { feat_value = -1.; }
     else if ((feat_idx & GENERAL) != 0u)
@@ -155,14 +162,14 @@ void VW::details::cache_features(io_buf& cache, const features& feats, uint64_t 
     uint64_t diff = zig_zag_encode(s_diff) << 2;
     last = feat_index;
 
-    if (feat_it.value() == 1.) { write_head = run_len_encode(write_head, diff); }
+    if (feat_it.value() == 1.) { write_head = variable_length_int_encode(write_head, diff); }
     else if (feat_it.value() == -1.)
     {
-      write_head = run_len_encode(write_head, diff | NEG_ONE);
+      write_head = variable_length_int_encode(write_head, diff | NEG_ONE);
     }
     else
     {
-      write_head = run_len_encode(write_head, diff | GENERAL);
+      write_head = variable_length_int_encode(write_head, diff | GENERAL);
       memcpy(write_head, &feat_it.value(), sizeof(feature_value));
       write_head += sizeof(feature_value);
     }
