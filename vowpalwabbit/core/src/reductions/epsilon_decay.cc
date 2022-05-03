@@ -133,6 +133,11 @@ void learn(
   {
     if (data._scored_configs[i][i].get_lower_bound() > data._scored_configs[K - 1][i].get_upper_bound())
     {
+      if (data._log_champ_changes)
+      {
+        data._logger.out_info("Champion with update count: {} has changed to challenger with update count: {}",
+            data._scored_configs[K - 1][i].update_count, data._scored_configs[i][i].update_count);
+      }
       uint64_t swap_dist = K - i - 1;
 
       // Move new champ and smaller configs to front
@@ -225,26 +230,36 @@ VW::LEARNER::base_learner* VW::reductions::epsilon_decay_setup(VW::setup_base_i&
   uint64_t _min_scope;
   float _epsilon_decay_alpha;
   float _epsilon_decay_tau;
+  bool _log_champ_changes;
 
   option_group_definition new_options("[Reduction] Epsilon-Decaying Exploration");
   new_options
       .add(make_option("epsilon_decay", epsilon_decay_option)
                .necessary()
                .keep()
-               .help("Use decay of exploration reduction"))
-      .add(make_option("model_count", model_count).keep().default_value(3).help("Set number of exploration models"))
+               .help("Use decay of exploration reduction")
+               .experimental())
+      .add(make_option("model_count", model_count)
+               .keep()
+               .default_value(3)
+               .help("Set number of exploration models")
+               .experimental())
       .add(make_option("min_scope", _min_scope)
                .keep()
                .default_value(100)
-               .help("Minimum example count of model before removing"))
+               .help("Minimum example count of model before removing")
+               .experimental())
       .add(make_option("epsilon_decay_alpha", _epsilon_decay_alpha)
                .keep()
                .default_value(DEFAULT_ALPHA)
-               .help("Set confidence interval for champion change"))
+               .help("Set confidence interval for champion change")
+               .experimental())
       .add(make_option("epsilon_decay_tau", _epsilon_decay_tau)
                .keep()
                .default_value(DEFAULT_TAU)
-               .help("Time constant for count decay"));
+               .help("Time constant for count decay")
+               .experimental())
+      .add(make_option("log_champ_changes", _log_champ_changes).keep().help("Log champ changes").experimental());
 
   if (!options.add_parse_and_check_necessary(new_options)) { return nullptr; }
 
@@ -254,7 +269,7 @@ VW::LEARNER::base_learner* VW::reductions::epsilon_decay_setup(VW::setup_base_i&
   float scaled_alpha = _epsilon_decay_alpha / model_count;
 
   auto data = VW::make_unique<VW::reductions::epsilon_decay::epsilon_decay_data>(
-      model_count, _min_scope, scaled_alpha, _epsilon_decay_tau, all.weights);
+      model_count, _min_scope, scaled_alpha, _epsilon_decay_tau, all.weights, all.logger, _log_champ_changes);
 
   // Update model count to be 2^n
   uint64_t total_models = model_count * (model_count + 1) / 2;
