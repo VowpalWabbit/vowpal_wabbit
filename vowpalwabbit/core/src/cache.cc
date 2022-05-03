@@ -28,7 +28,7 @@ constexpr unsigned char NON_NEWLINE_EXAMPLE_INDICATOR = '0';
 // representation and the msb used to signal further bytes), with only the
 // number of bytes required to represent the number being used. For an
 // explanation of how this words see here:
-// https://developers.google.com/protocol-buffers/docs/encoding
+// https://developers.google.com/protocol-buffers/docs/encoding#varints
 //
 // See the function for writing: `variable_length_int_encode`
 inline char* variable_length_int_decode(char* read_head, uint64_t& num)
