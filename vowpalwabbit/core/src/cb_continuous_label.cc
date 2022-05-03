@@ -122,12 +122,20 @@ label_parser the_label_parser = {
         const VW::named_labels* /*ldict*/, const std::vector<VW::string_view>& words,
         VW::io::logger& logger) { parse_label(label.cb_cont, red_features, reuse_mem, words, logger); },
     // cache_label
-    [](const polylabel& label, const reduction_features& /*red_features*/, io_buf& cache,
+    [](const polylabel& label, const reduction_features& red_feats /*red_features*/, io_buf& cache,
         const std::string& upstream_name,
-        bool text) { return VW::model_utils::write_model_field(cache, label.cb_cont, upstream_name, text); },
+        bool text) {
+          size_t bytes = 0;
+          bytes += VW::model_utils::write_model_field(cache, label.cb_cont, upstream_name, text);
+          bytes += VW::model_utils::write_model_field(cache, red_feats.template get<VW::continuous_actions::reduction_features>(), upstream_name, text);
+          return bytes;
+          },
     // read_cached_label
-    [](polylabel& label, reduction_features& /*red_features*/, io_buf& cache) {
-      return VW::model_utils::read_model_field(cache, label.cb_cont);
+    [](polylabel& label, reduction_features& red_feats /*red_features*/, io_buf& cache) {
+      size_t bytes = 0;
+      bytes += VW::model_utils::read_model_field(cache, label.cb_cont);
+      bytes += VW::model_utils::read_model_field(cache, red_feats.template get<VW::continuous_actions::reduction_features>());
+      return bytes;
     },
     // get_weight
     // CB::weight just returns 1.f? This seems like it could be a bug...
@@ -190,6 +198,23 @@ size_t write_model_field(
 {
   size_t bytes = 0;
   bytes += write_model_field(io, cl.costs, upstream_name + "_costs", text);
+  return bytes;
+}
+
+size_t read_model_field(io_buf& io, VW::continuous_actions::reduction_features& rfs)
+{
+  size_t bytes = 0;
+  bytes += read_model_field(io, rfs.pdf);
+  bytes += read_model_field(io, rfs.chosen_action);
+  return bytes;
+}
+
+size_t write_model_field(
+    io_buf& io, const VW::continuous_actions::reduction_features& rfs, const std::string& upstream_name, bool text)
+{
+  size_t bytes = 0;
+  bytes += write_model_field(io, rfs.pdf, upstream_name + "_pdf", text);
+  bytes += write_model_field(io, rfs.chosen_action, upstream_name + "_chosen_action", text);
   return bytes;
 }
 }  // namespace model_utils

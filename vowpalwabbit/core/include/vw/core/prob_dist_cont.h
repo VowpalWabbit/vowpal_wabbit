@@ -4,6 +4,7 @@
 #pragma once
 
 #include "vw/core/constant.h"
+#include "vw/core/io_buf.h"
 
 #include <string>
 #include <vector>
@@ -40,4 +41,10 @@ std::string to_string(const continuous_actions::probability_density_function_val
     int decimal_precision = DEFAULT_FLOAT_PRECISION);
 std::string to_string(
     const continuous_actions::probability_density_function& pdf, int decimal_precision = DEFAULT_FLOAT_PRECISION);
+
+namespace model_utils
+{
+size_t read_model_field(io_buf&, VW::continuous_actions::pdf_segment&);
+size_t write_model_field(io_buf&, const VW::continuous_actions::pdf_segment&, const std::string&, bool);
+}  // namespace model_utils
 }  // namespace VW
