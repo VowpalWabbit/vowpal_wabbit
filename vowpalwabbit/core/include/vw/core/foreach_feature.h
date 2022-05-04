@@ -15,9 +15,7 @@ inline void foreach_feature_inner(
     const features& feature_group, WeightsT& weights, const FuncT& func, uint64_t offset = 0, float mult = 1.)
 {
   for (const auto& feat : feature_group)
-  {
-    func(feat.index() + offset, mult * feat.value(), weights[static_cast<size_t>(feat.index() + offset)]);
-  }
+  { func(feat.index() + offset, mult * feat.value(), weights[static_cast<size_t>(feat.index() + offset)]); }
 }
 template <typename WeightsT, typename FuncT>
 inline void foreach_linear_feature(const VW::example_predict& ec, WeightsT& weights, bool ignore_some_linear,
@@ -52,15 +50,13 @@ inline void foreach_interacted_feature(const VW::example_predict& example, Weigh
   num_features = 0;
   // often used values
   const auto inner_kernel_func = [&](features::const_audit_iterator begin, features::const_audit_iterator end,
-                                     feature_value value, feature_index index)
-  {
+                                     feature_value value, feature_index index) {
     INTERACTIONS::details::inner_kernel_v2<false>(
         weights, begin, end, example.ft_offset, value, index, func, details::unused_dummy_audit_func);
   };
   INTERACTIONS::details::generate_interactions_impl<false>(interactions, extent_interactions, permutations, example,
       num_features, cache, inner_kernel_func, details::unused_dummy_audit_func);
 }
-
 
 }  // namespace details
 
@@ -73,8 +69,9 @@ inline void audit_foreach_interacted_feature(const VW::example_predict& ec, Weig
   num_features = 0;
   // often used values
   const auto inner_kernel_func = [&](features::const_audit_iterator begin, features::const_audit_iterator end,
-                                     feature_value value, feature_index index)
-  { INTERACTIONS::details::inner_kernel_v2<true>(weights, begin, end, ec.ft_offset, value, index, func, audit_func); };
+                                     feature_value value, feature_index index) {
+    INTERACTIONS::details::inner_kernel_v2<true>(weights, begin, end, ec.ft_offset, value, index, func, audit_func);
+  };
   const auto depth_audit_func = [&](const VW::audit_strings* audit_str) { audit_func(audit_str); };
   INTERACTIONS::details::generate_interactions_impl<true>(
       interactions, extent_interactions, permutations, ec, num_features, cache, inner_kernel_func, depth_audit_func);
@@ -88,7 +85,7 @@ inline void foreach_feature(const VW::example_predict& example, WeightsT& weight
 {
   num_interacted_features = 0;
   details::foreach_linear_feature(example, weights, ignore_some_linear, ignore_linear, func);
-  foreach_interacted_feature(
+  details::foreach_interacted_feature(
       example, weights, interactions, extent_interactions, permutations, num_interacted_features, cache, func);
 }
 }  // namespace VW
