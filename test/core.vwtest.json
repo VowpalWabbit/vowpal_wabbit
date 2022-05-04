@@ -5207,7 +5207,31 @@
       "train-sets/dsjson_cb_part1.json",
       "train-sets/dsjson_cb_part2.json"
     ]
+  },
+  {
+    "id": 405,
+    "desc": "test ignore single feature",
+    "vw_command": "--dsjson train-sets/dsjson_cb_part1.json --cb_explore_adf --epsilon 0.2 --invert_hash ignore_feature.interactions --ignore_features_dsjson_experimental FromUrl|timeofday",
+    "diff_files": {
+      "stderr": "train-sets/ref/ignore_feature.stderr",
+      "ignore_feature.interactions": "train-sets/ref/ignore_feature.interactions",
+      "stdout": "train-sets/ref/ignore_feature.stdout"
+    },
+    "input_files": [
+      "train-sets/dsjson_cb_part1.json"
+    ]
+  },
+  {
+    "id": 406,
+    "desc": "test ignore multiple features",
+    "vw_command": "--dsjson train-sets/dsjson_cb_part1.json --cb_explore_adf --epsilon 0.2 --invert_hash ignore_feature.interactions --ignore_features_dsjson_experimental FromUrl|timeofday j|type",
+    "diff_files": {
+      "stderr": "train-sets/ref/ignore_multiple_features.stderr",
+      "ignore_feature.interactions": "train-sets/ref/ignore_multiple_features.interactions",
+      "stdout": "train-sets/ref/ignore_multiple_features.stdout"
+    },
+    "input_files": [
+      "train-sets/dsjson_cb_part1.json"
+    ]
   }
-
-
 ]

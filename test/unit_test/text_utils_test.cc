@@ -3,9 +3,7 @@
 // license as described in the file LICENSE.
 
 #include "vw/common/text_utils.h"
-#include "vw/core/text_utils.h"
 
-#include <boost/test/tools/old/interface.hpp>
 #include <boost/test/unit_test.hpp>
 
 BOOST_AUTO_TEST_CASE(wrap_text_tests)

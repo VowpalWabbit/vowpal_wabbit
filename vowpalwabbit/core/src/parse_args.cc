@@ -894,13 +894,16 @@ void parse_feature_tweaks(options_i& options, VW::workspace& all, bool interacti
       std::tuple<std::string, std::string> namespce_and_feature = VW::extract_ignored_feature(ignored);
       const std::string& ns = std::get<0>(namespce_and_feature);
       const std::string& feature_name = std::get<1>(namespce_and_feature);
-      if (all.ignore_features.find(ns) == all.ignore_features.end())
+      if (!(ns.empty() || feature_name.empty()))
       {
-        all.ignore_features.insert({ns, std::set<std::string>{feature_name}});
-      }
-      else
-      {
-        all.ignore_features.at(ns).insert(feature_name);
+        if (all.ignore_features.find(ns) == all.ignore_features.end())
+        {
+          all.ignore_features.insert({ns, std::set<std::string>{feature_name}});
+        }
+        else
+        {
+          all.ignore_features.at(ns).insert(feature_name);
+        }
       }
     }
   }

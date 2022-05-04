@@ -9,6 +9,8 @@
 
 using namespace ::testing;
 
+#include <string>
+
 TEST(test_utils_tests, extract_ignored_feature_test)
 {
   auto namespace_feature = VW::extract_ignored_feature("namespace|feature");
