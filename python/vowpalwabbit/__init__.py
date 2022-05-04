@@ -25,7 +25,7 @@ __all__ = [
     "MultilabelLabel",
     "NamespaceId",
     "PredictionType",
-    "sample_pmf,"
+    "sample_pmf",
     "SimpleLabel",
     "SlatesLabel",
     "SlatesLabelType",
