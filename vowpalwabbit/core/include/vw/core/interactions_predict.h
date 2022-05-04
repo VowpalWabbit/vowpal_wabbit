@@ -252,6 +252,23 @@ void inner_kernel(DataT& dat, features::const_audit_iterator& begin, features::c
   }
 }
 
+namespace details
+{
+template <bool audit, typename WeightsT, typename FuncT, typename AuditFuncT>
+void inner_kernel_v2(WeightsT& weights, features::const_audit_iterator& begin, features::const_audit_iterator& end,
+    uint64_t offset, feature_value ft_value, feature_index halfhash, const FuncT& func, const AuditFuncT& audit_func)
+{
+  for (; begin != end; ++begin)
+  {
+    if (audit) { audit_func(begin.audit() == nullptr ? &EMPTY_AUDIT_STRINGS : begin.audit()); }
+    const auto interacted_ft_index = (begin.index() ^ halfhash) + offset;
+    const auto interacted_ft_value = INTERACTION_VALUE(ft_value, begin.value());
+    func(interacted_ft_index, interacted_ft_value, weights[interacted_ft_index]);
+    if (audit) { audit_func(nullptr); }
+  }
+}
+}  // namespace details
+
 template <bool Audit, typename KernelFuncT, typename AuditFuncT>
 size_t process_quadratic_interaction(const std::tuple<features_range_t, features_range_t>& range, bool permutations,
     const KernelFuncT& kernel_func, const AuditFuncT& audit_func)
@@ -424,26 +441,14 @@ size_t process_generic_interaction(const std::vector<features_range_t>& range, b
   return num_features;
 }
 
-// this templated function generates new features for given example and set of interactions
-// and passes each of them to given function FuncT()
-// it must be in header file to avoid compilation problems
-template <class DataT, class WeightOrIndexT, void (*FuncT)(DataT&, float, WeightOrIndexT), bool audit,
-    void (*audit_func)(DataT&, const VW::audit_strings*),
-    class WeightsT>  // nullptr func can't be used as template param in old compilers
-inline void generate_interactions(const std::vector<std::vector<VW::namespace_index>>& interactions,
-    const std::vector<std::vector<extent_term>>& extent_interactions, bool permutations, VW::example_predict& ec,
-    DataT& dat, WeightsT& weights, size_t& num_features,
-    generate_interactions_object_cache& cache)  // default value removed to eliminate ambiguity in old complers
+namespace details
 {
-  num_features = 0;
-  // often used values
-  const auto inner_kernel_func = [&](features::const_audit_iterator begin, features::const_audit_iterator end,
-                                     feature_value value, feature_index index) {
-    inner_kernel<DataT, WeightOrIndexT, FuncT, audit, audit_func>(dat, begin, end, ec.ft_offset, weights, value, index);
-  };
-
-  const auto depth_audit_func = [&](const VW::audit_strings* audit_str) { audit_func(dat, audit_str); };
-
+template <bool audit, typename KernelFuncT, typename DepthAuditFuncT>
+inline void generate_interactions_impl(const std::vector<std::vector<VW::namespace_index>>& interactions,
+    const std::vector<std::vector<extent_term>>& extent_interactions, bool permutations, const VW::example_predict& ec,
+    size_t& num_features, generate_interactions_object_cache& cache, const KernelFuncT& kernel_func,
+    const DepthAuditFuncT& depth_audit_func)
+{
   // current list of namespaces to interact.
   for (const auto& ns : interactions)
   {
@@ -459,7 +464,7 @@ inline void generate_interactions(const std::vector<std::vector<VW::namespace_in
       if (has_empty_interaction_quadratic(ec.feature_space, ns)) { continue; }
       num_features +=
           process_quadratic_interaction<audit>(generate_quadratic_char_combination(ec.feature_space, ns[0], ns[1]),
-              permutations, inner_kernel_func, depth_audit_func);
+              permutations, kernel_func, depth_audit_func);
     }
     else if (len == 3)  // special case for triples
     {
@@ -467,7 +472,7 @@ inline void generate_interactions(const std::vector<std::vector<VW::namespace_in
       if (has_empty_interaction_cubic(ec.feature_space, ns)) { continue; }
       num_features +=
           process_cubic_interaction<audit>(generate_cubic_char_combination(ec.feature_space, ns[0], ns[1], ns[2]),
-              permutations, inner_kernel_func, depth_audit_func);
+              permutations, kernel_func, depth_audit_func);
     }
     else  // generic case: quatriples, etc.
 #endif
@@ -475,7 +480,7 @@ inline void generate_interactions(const std::vector<std::vector<VW::namespace_in
       // Skip over any interaction with an empty namespace.
       if (has_empty_interaction(ec.feature_space, ns)) { continue; }
       num_features += process_generic_interaction<audit>(generate_generic_char_combination(ec.feature_space, ns),
-          permutations, inner_kernel_func, depth_audit_func, cache.state_data);
+          permutations, kernel_func, depth_audit_func, cache.state_data);
     }
   }
 
@@ -492,22 +497,46 @@ inline void generate_interactions(const std::vector<std::vector<VW::namespace_in
           if (len == 2)
           {
             num_features += process_quadratic_interaction<audit>(
-                std::make_tuple(combination[0], combination[1]), permutations, inner_kernel_func, depth_audit_func);
+                std::make_tuple(combination[0], combination[1]), permutations, kernel_func, depth_audit_func);
           }
           else if (len == 3)
           {
             num_features +=
                 process_cubic_interaction<audit>(std::make_tuple(combination[0], combination[1], combination[2]),
-                    permutations, inner_kernel_func, depth_audit_func);
+                    permutations, kernel_func, depth_audit_func);
           }
           else
           {
             num_features += process_generic_interaction<audit>(
-                combination, permutations, inner_kernel_func, depth_audit_func, cache.state_data);
+                combination, permutations, kernel_func, depth_audit_func, cache.state_data);
           }
         },
         cache.in_process_frames, cache.frame_pool);
   }
+}
+}  // namespace details
+
+// this templated function generates new features for given example and set of interactions
+// and passes each of them to given function FuncT()
+// it must be in header file to avoid compilation problems
+template <class DataT, class WeightOrIndexT, void (*FuncT)(DataT&, float, WeightOrIndexT), bool audit,
+    void (*audit_func)(DataT&, const VW::audit_strings*),
+    class WeightsT>  // nullptr func can't be used as template param in old compilers
+inline void generate_interactions(const std::vector<std::vector<VW::namespace_index>>& interactions,
+    const std::vector<std::vector<extent_term>>& extent_interactions, bool permutations, VW::example_predict& ec,
+    DataT& dat, WeightsT& weights, size_t& num_features,
+    generate_interactions_object_cache& cache)  // default value removed to eliminate ambiguity in old complers
+{
+  num_features = 0;
+  const auto inner_kernel_func = [&](features::const_audit_iterator begin, features::const_audit_iterator end,
+                                     feature_value value, feature_index index) {
+    inner_kernel<DataT, WeightOrIndexT, FuncT, audit, audit_func>(dat, begin, end, ec.ft_offset, weights, value, index);
+  };
+
+  const auto depth_audit_func = [&](const VW::audit_strings* audit_str) { audit_func(dat, audit_str); };
+
+  details::generate_interactions_impl<audit>(
+      interactions, extent_interactions, permutations, ec, num_features, cache, inner_kernel_func, depth_audit_func);
 }  // foreach interaction in all.interactions
 
 }  // namespace INTERACTIONS

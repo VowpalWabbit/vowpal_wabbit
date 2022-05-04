@@ -6,6 +6,7 @@
 
 #include "vw/config/options.h"
 #include "vw/core/debug_print.h"
+#include "vw/core/foreach_feature.h"
 #include "vw/core/gd_predict.h"
 #include "vw/core/gen_cs_example.h"
 #include "vw/core/label_parser.h"
@@ -157,10 +158,12 @@ float cb_explore_adf_rnd::get_initial_prediction(example* ec)
   LazyGaussian w;
 
   std::pair<float, float> dotwithnorm(0.f, 0.f);
-  GD::foreach_feature<std::pair<float, float>, float, vec_add_with_norm, LazyGaussian>(w, all->ignore_some_linear,
-      all->ignore_linear, all->interactions, all->extent_interactions, all->permutations, *ec, dotwithnorm,
-      all->_generate_interactions_object_cache);
-
+  size_t num_interacted_features = 0;
+  VW::foreach_feature(*ec, w, all->ignore_some_linear, all->ignore_linear, all->interactions, all->extent_interactions,
+      all->permutations, num_interacted_features, all->_generate_interactions_object_cache,
+      [&](uint64_t /*index*/, float feat_value, float weight_value) {
+        vec_add_with_norm(dotwithnorm, feat_value, weight_value);
+      });
   return sqrtinvlambda * dotwithnorm.second / std::sqrt(2.0f * std::max(1e-12f, dotwithnorm.first));
 }
 

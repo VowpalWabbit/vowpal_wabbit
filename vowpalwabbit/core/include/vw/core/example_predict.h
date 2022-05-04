@@ -19,19 +19,29 @@ namespace VW
 using namespace_index = unsigned char;
 struct example_predict
 {
-  class iterator
+  template <typename FeaturesIt, typename FeaturesRef, typename IndexIt>
+  class iterator_impl
   {
-    features* _feature_space;
-    VW::v_array<namespace_index>::iterator _index;
+    FeaturesIt _feature_space;
+    IndexIt _index;
 
   public:
-    iterator(features* feature_space, namespace_index* index);
-    features& operator*();
-    iterator& operator++();
-    namespace_index index();
-    bool operator==(const iterator& rhs) const;
-    bool operator!=(const iterator& rhs) const;
+    iterator_impl(FeaturesIt feature_space, IndexIt index) : _feature_space(feature_space), _index(index) {}
+
+    FeaturesRef operator*() { return _feature_space[*_index]; }
+
+    iterator_impl& operator++()
+    {
+      _index++;
+      return *this;
+    }
+    namespace_index index() { return *_index; }
+    bool operator==(const iterator_impl& rhs) const { return _index == rhs._index; }
+    bool operator!=(const iterator_impl& rhs) const { return !(*this == rhs); }
   };
+
+  using iterator = iterator_impl<features*, features&, VW::v_array<namespace_index>::iterator>;
+  using const_iterator = iterator_impl<const features*, const features&, VW::v_array<namespace_index>::const_iterator>;
 
   example_predict() = default;
   ~example_predict() = default;
@@ -42,8 +52,10 @@ struct example_predict
 
   /// If indices is modified this iterator is invalidated.
   iterator begin();
+  const_iterator begin() const;
   /// If indices is modified this iterator is invalidated.
   iterator end();
+  const_iterator end() const;
 
   VW::v_array<namespace_index> indices;
   std::array<features, NUM_NAMESPACES> feature_space;  // Groups of feature values.

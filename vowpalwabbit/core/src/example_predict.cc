@@ -4,25 +4,10 @@
 
 #include "vw/core/example_predict.h"
 
-#include <sstream>
-
-VW::example_predict::iterator::iterator(features* feature_space, namespace_index* index)
-    : _feature_space(feature_space), _index(index)
-{
-}
-
-features& VW::example_predict::iterator::operator*() { return _feature_space[*_index]; }
-
-VW::example_predict::iterator& VW::example_predict::iterator::operator++()
-{
-  _index++;
-  return *this;
-}
-
-VW::namespace_index VW::example_predict::iterator::index() { return *_index; }
-
-bool VW::example_predict::iterator::operator==(const iterator& rhs) const { return _index == rhs._index; }
-bool VW::example_predict::iterator::operator!=(const iterator& rhs) const { return _index != rhs._index; }
-
 VW::example_predict::iterator VW::example_predict::begin() { return {feature_space.data(), indices.begin()}; }
+VW::example_predict::const_iterator VW::example_predict::begin() const
+{
+  return {feature_space.data(), indices.begin()};
+}
 VW::example_predict::iterator VW::example_predict::end() { return {feature_space.data(), indices.end()}; }
+VW::example_predict::const_iterator VW::example_predict::end() const { return {feature_space.data(), indices.end()}; }
