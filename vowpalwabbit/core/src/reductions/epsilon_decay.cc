@@ -131,7 +131,7 @@ void learn(
   // the new champion.
   for (int64_t i = 0; i < K - 1; ++i)
   {
-    if (data._scored_configs[i][i].get_lower_bound() > data._scored_configs[K - 1][i].get_upper_bound())
+    if (data._scored_configs[i][i].get_lower_bound() > data._scored_configs[K - 1][i].get_upper_bound() && data._scored_configs[i][i].update_count > 10)
     {
       if (data._log_champ_changes)
       {
