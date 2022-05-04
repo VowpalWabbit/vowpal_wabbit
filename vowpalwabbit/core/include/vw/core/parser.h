@@ -89,7 +89,6 @@ struct parser
 
   bool write_cache = false;
   bool sort_features = false;
-  bool sorted_cache = false;
 
   size_t example_queue_limit;
   std::atomic<uint64_t> num_examples_taken_from_pool;
