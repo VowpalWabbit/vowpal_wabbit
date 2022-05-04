@@ -39,6 +39,9 @@ jobs:
           -DVW_ZLIB_SYS_DEP=Off
           -DVW_BOOST_MATH_SYS_DEP=Off
           -DVW_INSTALL=Off
+          -DWARNINGS=On
+          -DWARNING_AS_ERROR=On
+          -DUSE_LATEST_STD=On
       - name: Build
         run: |
           cmake --build build
@@ -90,8 +93,6 @@ jobs:
         run: >
           cmake -S "${{ env.SOURCE_DIR }}" -B "${{ env.CMAKE_BUILD_DIR }}" -A "x64"
           -DCMAKE_TOOLCHAIN_FILE="${{ env.VCPKG_ROOT }}/scripts/buildsystems/vcpkg.cmake"
-          -DWARNINGS=On
-          -DWARNING_AS_ERROR=On
           -DUSE_LATEST_STD=On
           -DBUILD_FLATBUFFERS=Off
           -DRAPIDJSON_SYS_DEP=Off
