@@ -5,6 +5,7 @@ import vowpalwabbit
 from vowpalwabbit import Workspace
 import pytest
 import warnings
+import math
 
 BIT_SIZE = 18
 
@@ -657,3 +658,9 @@ def test_deceprecated_labels():
         vowpalwabbit.pyvw.multiclass_probabilities_label()
         vowpalwabbit.pyvw.cost_sensitive_label()
         vowpalwabbit.pyvw.cbandits_label()
+
+
+def test_sample_pmf():
+    idx, prob = vowpalwabbit.sample_pmf([0.1, 0.2, 0.3], seed=0)
+    assert idx == 2
+    assert math.isclose(prob, 0.5)

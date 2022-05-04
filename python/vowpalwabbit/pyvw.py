@@ -2,7 +2,8 @@
 """Python binding for pylibvw class"""
 
 from __future__ import division
-from typing import Any, Dict, Iterator, List, Optional, Tuple, Type, Union
+import random
+from typing import Any, Dict, Iterator, List, Optional, Sequence, Tuple, Type, Union
 import pylibvw
 import warnings
 import inspect
@@ -1978,7 +1979,37 @@ class Example(pylibvw.example):
         return switch_prediction_type[prediction_type]()
 
 
-############################ DEPREECATED CLASSES ############################
+def sample_pmf(
+    pmf: Sequence[float], *, seed: Optional[int] = None
+) -> Tuple[int, float]:
+    """Sample a probability mass function, such as one produced by Contextual Bandit exploration
+
+    Args:
+        pmf: A probability mass function, as a list of probabilities. Doesn't necessarily need to sum to 1.
+        seed: If provided, random.seed will be seeded with this value. Otherwise, random.seed will not be called.
+
+    Returns:
+        A tuple of the index of the sampled element and the probability of the sampled element.
+
+    Examples:
+        >>> sample_pmf([0.1, 0.2, 0.3, 0.4])
+        (3, 0.4)
+    """
+
+    total = sum(pmf)
+    scale = 1.0 / total
+    pmf = [x * scale for x in pmf]
+    if seed is not None:
+        random.seed(seed)
+    draw = random.random()
+    sum_prob = 0.0
+    for index, prob in enumerate(pmf):
+        sum_prob += prob
+        if sum_prob > draw:
+            return index, prob
+
+
+############################ DEPRECATED CLASSES ############################
 
 
 class abstract_label(metaclass=_DeprecatedClassMeta):
