@@ -517,13 +517,17 @@ Weight Options:
     --extra_metrics arg                     Specify filename to write metrics to. Note: There is no fixed
                                             schema (type: str, necessary)
 [Reduction] Epsilon-Decaying Exploration Options:
-    --epsilon_decay                         Use decay of exploration reduction (type: bool, keep, necessary)
-    --model_count arg                       Set number of exploration models (type: uint, default: 3, keep)
+    --epsilon_decay                         Use decay of exploration reduction (type: bool, keep, necessary,
+                                            experimental)
+    --model_count arg                       Set number of exploration models (type: uint, default: 3, keep,
+                                            experimental)
     --min_scope arg                         Minimum example count of model before removing (type: uint, default:
-                                            100, keep)
+                                            100, keep, experimental)
     --epsilon_decay_alpha arg               Set confidence interval for champion change (type: float, default:
-                                            0.05, keep)
-    --epsilon_decay_tau arg                 Time constant for count decay (type: float, default: 0.999, keep)
+                                            0.05, keep, experimental)
+    --epsilon_decay_tau arg                 Time constant for count decay (type: float, default: 0.999, keep,
+                                            experimental)
+    --log_champ_changes                     Log champ changes (type: bool, keep, experimental)
 [Reduction] Error Correcting Tournament Options:
     --ect arg                               Error correcting tournament with <k> labels (type: uint, keep,
                                             necessary)

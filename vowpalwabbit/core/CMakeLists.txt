@@ -400,3 +400,8 @@ endif()
 if(WIN32)
   target_compile_definitions(vw_core PUBLIC __SSE2__)
 endif()
+
+vw_add_test_executable(
+    FOR_LIB "core"
+    SOURCES tests/cache_test.cc
+)
