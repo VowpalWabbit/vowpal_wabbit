@@ -405,7 +405,8 @@ input_options parse_source(VW::workspace& all, options_i& options)
                .help("Enable chain hash in JSON for feature name and string feature value. e.g. {'A': {'B': 'C'}} is "
                      "hashed as A^B^C."))
       .add(make_option("flatbuffer", parsed_options.flatbuffer)
-               .help("Data file will be interpreted as a flatbuffer file"));
+               .help("Data file will be interpreted as a flatbuffer file")
+               .experimental());
 #ifdef BUILD_EXTERNAL_PARSER
   VW::external::parser::set_parse_args(input_options, parsed_options);
 #endif
@@ -649,7 +650,8 @@ void parse_feature_tweaks(options_i& options, VW::workspace& all, bool interacti
                .help("Create feature interactions of any level between namespaces"))
       .add(make_option("experimental_full_name_interactions", full_name_interactions)
                .keep()
-               .help("EXPERIMENTAL: Create feature interactions of any level between namespaces by specifying the full "
+               .experimental()
+               .help("Create feature interactions of any level between namespaces by specifying the full "
                      "name of each namespace."))
       .add(make_option("permutations", all.permutations)
                .help("Use permutations instead of combinations for feature interactions of same namespace"))
@@ -1248,13 +1250,16 @@ void parse_output_model(options_i& options, VW::workspace& all)
       .add(make_option("invert_hash", all.inv_hash_regressor_name)
                .help("Output human-readable final regressor with feature names.  Computationally expensive"))
       .add(make_option("dump_json_weights_experimental", all.json_weights_file_name)
-               .help("Experimental: Output json representation of model parameters."))
+               .experimental()
+               .help("Output json representation of model parameters."))
       .add(make_option(
           "dump_json_weights_include_feature_names_experimental", all.dump_json_weights_include_feature_names)
-               .help("Experimental: Whether to include feature names in json output"))
+               .experimental()
+               .help("Whether to include feature names in json output"))
       .add(make_option(
           "dump_json_weights_include_extra_online_state_experimental", all.dump_json_weights_include_extra_online_state)
-               .help("Experimental: Whether to include extra online state in json output"))
+               .experimental()
+               .help("Whether to include extra online state in json output"))
       .add(
           make_option("predict_only_model", predict_only_model)
               .help("Do not save extra state for learning to be resumed. Stored model can only be used for prediction"))

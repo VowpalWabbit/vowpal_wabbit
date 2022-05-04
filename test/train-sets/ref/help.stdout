@@ -9,14 +9,6 @@ Diagnostic Options:
                                             (type: bool)
 Driver Options:
     --onethread                             Disable parse thread (type: bool)
-Epsilon-Decaying Exploration Options:
-    --epsilon_decay                         Use decay of exploration reduction (type: bool, keep, necessary)
-    --model_count arg                       Set number of exploration models (type: uint, default: 3, keep)
-    --min_scope arg                         Minimum example count of model before removing (type: uint, default:
-                                            100, keep)
-    --epsilon_decay_alpha arg               Set confidence interval for champion change (type: float, default:
-                                            0.05, keep)
-    --epsilon_decay_tau arg                 Time constant for count decay (type: float, default: 0.999, keep)
 Example Options:
     -t, --testonly                          Ignore label information and just test (type: bool)
     --holdout_off                           No holdout data in multiple passes (type: bool)
@@ -82,9 +74,9 @@ Feature Options:
     --interactions args...                  Create feature interactions of any level between namespaces (type:
                                             list[str], keep)
     --experimental_full_name_interactions args...
-                                            EXPERIMENTAL: Create feature interactions of any level between
-                                            namespaces by specifying the full name of each namespace. (type:
-                                            list[str], keep)
+                                            Create feature interactions of any level between namespaces by
+                                            specifying the full name of each namespace. (type: list[str],
+                                            keep, experimental)
     --permutations                          Use permutations instead of combinations for feature interactions
                                             of same namespace (type: bool)
     --leave_duplicate_interactions          Don't remove interactions with duplicate combinations of namespaces.
@@ -116,7 +108,8 @@ Input Options:
     --chain_hash                            Enable chain hash in JSON for feature name and string feature
                                             value. e.g. {'A': {'B': 'C'}} is hashed as A^B^C. (type: bool,
                                             keep)
-    --flatbuffer                            Data file will be interpreted as a flatbuffer file (type: bool)
+    --flatbuffer                            Data file will be interpreted as a flatbuffer file (type: bool,
+                                            experimental)
 Logging Options:
     --quiet                                 Don't output diagnostics and progress updates. Supplying this
                                             implies --log_level off and --driver_output_off. Supplying this
@@ -134,22 +127,19 @@ Logging Options:
                                             str, default: stdout, choices {compat, stderr, stdout})
     --limit_output arg                      Avoid chatty output. Limit total printed lines. 0 means unbounded
                                             (type: uint, default: 0)
-Network sending Options:
-    --sendto arg                            Send examples to <host> (type: str, keep, necessary)
 Output Model Options:
     -f, --final_regressor arg               Final regressor (type: str)
     --readable_model arg                    Output human-readable final regressor with numeric features (type:
                                             str)
     --invert_hash arg                       Output human-readable final regressor with feature names. Computationally
                                             expensive (type: str)
-    --dump_json_weights_experimental arg    Experimental: Output json representation of model parameters.
-                                            (type: str)
+    --dump_json_weights_experimental arg    Output json representation of model parameters. (type: str, experimental)
     --dump_json_weights_include_feature_names_experimental
-                                            Experimental: Whether to include feature names in json output
-                                            (type: bool)
+                                            Whether to include feature names in json output (type: bool,
+                                            experimental)
     --dump_json_weights_include_extra_online_state_experimental
-                                            Experimental: Whether to include extra online state in json output
-                                            (type: bool)
+                                            Whether to include extra online state in json output (type: bool,
+                                            experimental)
     --predict_only_model                    Do not save extra state for learning to be resumed. Stored model
                                             can only be used for prediction (type: bool)
     --save_resume                           This flag is now deprecated and models can continue learning
@@ -221,23 +211,24 @@ Weight Options:
 [Reduction] Autolink Options:
     --autolink arg                          Create link function with polynomial d (type: uint, keep, necessary)
 [Reduction] Automl Options:
-    --automl arg                            Experimental: Set number of live configs (type: uint, default:
-                                            3, keep, necessary)
+    --automl arg                            Set number of live configs (type: uint, default: 3, keep, necessary,
+                                            experimental)
     --global_lease arg                      Set initial lease for automl interactions (type: uint, default:
-                                            10, keep)
+                                            10, keep, experimental)
     --cm_type arg                           Set type of config manager (type: str, default: interaction,
-                                            choices {interaction}, keep)
+                                            choices {interaction}, keep, experimental)
     --priority_type arg                     Set function to determine next config (type: str, default: none,
-                                            choices {least_exclusion, none}, keep)
+                                            choices {least_exclusion, none}, keep, experimental)
     --priority_challengers arg              Set number of priority challengers to use (type: int, default:
-                                            -1, keep)
-    --keep_configs                          Keep all configs after champ change (type: bool, keep)
-    --verbose_metrics                       Extended metrics for debugging (type: bool)
+                                            -1, keep, experimental)
+    --keep_configs                          Keep all configs after champ change (type: bool, keep, experimental)
+    --verbose_metrics                       Extended metrics for debugging (type: bool, experimental)
     --oracle_type arg                       Set oracle to generate configs (type: str, default: one_diff,
-                                            choices {one_diff, rand}, keep)
+                                            choices {one_diff, rand}, keep, experimental)
     --automl_alpha arg                      Set confidence interval for champion change (type: float, default:
-                                            0.05, keep)
-    --automl_tau arg                        Time constant for count decay (type: float, default: 0.999, keep)
+                                            0.05, keep, experimental)
+    --automl_tau arg                        Time constant for count decay (type: float, default: 0.999, keep,
+                                            experimental)
 [Reduction] Baseline Options:
     --baseline                              Learn an additive baseline (from constant features) and a residual
                                             separately in regression (type: bool, keep, necessary)
@@ -248,11 +239,13 @@ Weight Options:
     --check_enabled                         Only use baseline when the example contains enabled flag (type:
                                             bool, keep)
 [Reduction] Baseline challenger Options:
-    --baseline_challenger_cb                Experimental: Build a CI around the baseline action and use it
-                                            instead of the model if it's perfoming better (type: bool, keep,
-                                            necessary)
-    --cb_c_alpha arg                        Confidence level for baseline (type: float, default: 0.05, keep)
-    --cb_c_tau arg                          Time constant for count decay (type: float, default: 0.999, keep)
+    --baseline_challenger_cb                Build a CI around the baseline action and use it instead of the
+                                            model if it's perfoming better (type: bool, keep, necessary,
+                                            experimental)
+    --cb_c_alpha arg                        Confidence level for baseline (type: float, default: 0.05, keep,
+                                            experimental)
+    --cb_c_tau arg                          Time constant for count decay (type: float, default: 0.999, keep,
+                                            experimental)
 [Reduction] Binary Loss Options:
     --binary                                Report loss as binary classification on -1,1 (type: bool, keep,
                                             necessary)
@@ -523,6 +516,18 @@ Weight Options:
 [Reduction] Debug Metrics Options:
     --extra_metrics arg                     Specify filename to write metrics to. Note: There is no fixed
                                             schema (type: str, necessary)
+[Reduction] Epsilon-Decaying Exploration Options:
+    --epsilon_decay                         Use decay of exploration reduction (type: bool, keep, necessary,
+                                            experimental)
+    --model_count arg                       Set number of exploration models (type: uint, default: 3, keep,
+                                            experimental)
+    --min_scope arg                         Minimum example count of model before removing (type: uint, default:
+                                            100, keep, experimental)
+    --epsilon_decay_alpha arg               Set confidence interval for champion change (type: float, default:
+                                            0.05, keep, experimental)
+    --epsilon_decay_tau arg                 Time constant for count decay (type: float, default: 0.999, keep,
+                                            experimental)
+    --log_champ_changes                     Log champ changes (type: bool, keep, experimental)
 [Reduction] Error Correcting Tournament Options:
     --ect arg                               Error correcting tournament with <k> labels (type: uint, keep,
                                             necessary)
@@ -550,8 +555,10 @@ Weight Options:
 [Reduction] Experimental: Contextual Bandit Exploration with ADF with large action space Options:
     --cb_explore_adf                        Online explore-exploit for a contextual bandit problem with multiline
                                             action dependent features (type: bool, keep, necessary)
-    --large_action_space                    Large action space exploration (type: bool, keep, necessary)
-    --max_actions arg                       Max number of actions to explore (type: uint, default: 50, keep)
+    --large_action_space                    Large action space exploration (type: bool, keep, necessary,
+                                            experimental)
+    --max_actions arg                       Max number of actions to explore (type: uint, default: 50, keep,
+                                            experimental)
     --gamma arg                             Gamma hyperparameter (type: float, keep)
 [Reduction] Explore Evaluation Options:
     --explore_eval                          Evaluate explore_eval adf policies (type: bool, keep, necessary)
@@ -604,8 +611,8 @@ Weight Options:
     --interact arg                          Put weights on feature products from namespaces <n1> and <n2>
                                             (type: str, keep, necessary)
 [Reduction] Interaction Grounded Learning Options:
-    --experimental_igl                      Experimental: Do Interaction Grounding with multiline action
-                                            dependent features (type: bool, keep, necessary)
+    --experimental_igl                      Do Interaction Grounding with multiline action dependent features
+                                            (type: bool, keep, necessary, experimental)
 [Reduction] Kernel SVM Options:
     --ksvm                                  Kernel svm (type: bool, keep, necessary)
     --reprocess arg                         Number of reprocess steps for LASVM (type: uint, default: 1)
@@ -692,6 +699,8 @@ Weight Options:
     --multiworld_test arg                   Evaluate features as a policies (type: str, keep, necessary)
     --learn arg                             Do Contextual Bandit learning on <n> classes (type: uint)
     --exclude_eval                          Discard mwt policy features before learning (type: bool)
+[Reduction] Network sending Options:
+    --sendto arg                            Send examples to <host> (type: str, keep, necessary)
 [Reduction] Neural Network Options:
     --nn arg                                Sigmoidal feedforward network with <k> hidden units (type: uint,
                                             keep, necessary)

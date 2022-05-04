@@ -824,14 +824,10 @@ class DFtoVW:
         """Check if the features argument is of type Feature.
 
         Args:
-        ----------
-        features: (list of) Feature,
-            The features argument to check.
+            features: (list of) Feature. The features argument to check.
 
-        Raises
-        ------
-        TypeError
-            If the features is not a Feature of a list of Feature.
+        Raises:
+            TypeError: If the features is not a Feature of a list of Feature.
         """
         if isinstance(features, list):
             valid_feature = all([isinstance(feature, Feature) for feature in features])

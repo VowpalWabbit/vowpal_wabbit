@@ -48,6 +48,7 @@ struct base_option
   bool m_allow_override = false;
   bool m_hidden_from_help = false;
   std::string m_one_of_err = "";
+  bool m_experimental = false;
 
   virtual void accept(typed_option_visitor& handler) = 0;
 

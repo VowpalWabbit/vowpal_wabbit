@@ -67,14 +67,13 @@ void open_sockets(sender& s, const std::string& host)
 void send_features(io_buf* b, VW::example& ec, uint32_t mask)
 {
   // note: subtracting 1 b/c not sending constant
-  output_byte(*b, static_cast<unsigned char>(ec.indices.size() - 1));
+  b->write_value(static_cast<unsigned char>(ec.indices.size() - 1));
 
   for (VW::namespace_index ns : ec.indices)
   {
     if (ns == constant_namespace) { continue; }
-    char* c;
-    cache_index(*b, ns, ec.feature_space[ns], c);
-    cache_features(*b, ec.feature_space[ns], mask, c);
+    VW::details::cache_index(*b, ns);
+    VW::details::cache_features(*b, ec.feature_space[ns], mask);
   }
   b->flush();
 }
@@ -101,7 +100,7 @@ void learn(sender& s, VW::LEARNER::base_learner& /*unused*/, VW::example& ec)
   s.all->set_minmax(s.all->sd, ec.l.simple.label);
   s.all->example_parser->lbl_parser.cache_label(
       ec.l, ec._reduction_features, *s.buf, "", false);  // send label information.
-  cache_tag(*s.buf, ec.tag);
+  VW::details::cache_tag(*s.buf, ec.tag);
   send_features(s.buf, ec, static_cast<uint32_t>(s.all->parse_mask));
   s.delay_ring[s.sent_index++ % s.all->example_parser->example_queue_limit] = &ec;
 }
@@ -122,7 +121,7 @@ VW::LEARNER::base_learner* VW::reductions::sender_setup(VW::setup_base_i& stack_
   VW::workspace& all = *stack_builder.get_all_pointer();
   std::string host;
 
-  option_group_definition sender_options("Network sending");
+  option_group_definition sender_options("[Reduction] Network sending");
   sender_options.add(make_option("sendto", host).keep().necessary().help("Send examples to <host>"));
 
   if (!options.add_parse_and_check_necessary(sender_options)) { return nullptr; }
