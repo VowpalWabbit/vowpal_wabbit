@@ -73,7 +73,10 @@ std::tuple<std::string, std::string> VW::extract_ignored_feature(const std::stri
   std::tuple<std::string, std::string> extracted_ns_and_feature;
   std::string feature_delimiter = "|";
   int feature_delimiter_index = namespace_feature.find(feature_delimiter);
-  std::get<0>(extracted_ns_and_feature) = namespace_feature.substr(0, feature_delimiter_index);
-  std::get<1>(extracted_ns_and_feature) = namespace_feature.substr(feature_delimiter_index + 1, namespace_feature.size() - (feature_delimiter_index + 1));
+  if (feature_delimiter_index != std::string::npos)
+  {
+    std::get<0>(extracted_ns_and_feature) = namespace_feature.substr(0, feature_delimiter_index);
+    std::get<1>(extracted_ns_and_feature) = namespace_feature.substr(feature_delimiter_index + 1, namespace_feature.size() - (feature_delimiter_index + 1));
+  }
   return extracted_ns_and_feature;
 }

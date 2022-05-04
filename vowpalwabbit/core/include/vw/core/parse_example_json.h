@@ -968,7 +968,7 @@ public:
       }
     }
     const char* ns = ctx.CurrentNamespace().name;
-    if (ctx.ignore_features.find(ns) != ctx.ignore_features.end() && ctx.ignore_features.at(ns).find(ctx.key) != ctx.ignore_features.at(ns).end())
+    if (ctx.ignore_features->find(ns) != ctx.ignore_features->end() && ctx.ignore_features->at(ns).find(ctx.key) != ctx.ignore_features->at(ns).end())
     {
       if (ctx._chain_hash) { ctx.CurrentNamespace().AddFeature(ctx.key, str, ctx._hash_func, ctx._parse_mask); }
       else
@@ -979,7 +979,7 @@ public:
         ctx.CurrentNamespace().AddFeature(prepend, ctx._hash_func, ctx._parse_mask);
       }
     }
-    
+
     return this;
   }
 
@@ -1512,7 +1512,6 @@ public:
   VW::label_parser_reuse_mem* _reuse_mem;
   const VW::named_labels* _ldict;
   VW::io::logger* _logger;
-  std::unordered_map<std::string, std::set<std::string>>* ignore_features;
 
   // last "<key>": encountered
   const char* key;
@@ -1526,6 +1525,7 @@ public:
   std::vector<BaseState<audit>*> return_path;
 
   std::unordered_map<uint64_t, VW::example*>* dedup_examples = nullptr;
+  std::unordered_map<std::string, std::set<std::string>>* ignore_features = nullptr;
 
   VW::v_array<VW::example*>* examples;
   VW::example* ex;
@@ -1704,6 +1704,7 @@ void read_line_json_s(const VW::label_parser& lbl_parser, hash_func_t hash_func,
     uint64_t parse_mask, bool chain_hash, VW::label_parser_reuse_mem* reuse_mem, const VW::named_labels* ldict,
     VW::v_array<VW::example*>& examples, char* line, size_t length, example_factory_t example_factory,
     void* ex_factory_context, VW::io::logger& logger,
+    std::unordered_map<std::string, std::set<std::string>>* ignore_features,
     std::unordered_map<uint64_t, VW::example*>* dedup_examples = nullptr)
 {
   if (lbl_parser.label_type == VW::label_type_t::slates)
@@ -1721,7 +1722,7 @@ void read_line_json_s(const VW::label_parser& lbl_parser, hash_func_t hash_func,
   VWReaderHandler<audit>& handler = parser.handler;
 
   handler.init(lbl_parser, hash_func, hash_seed, parse_mask, chain_hash, reuse_mem, ldict, &logger, &examples, &ss,
-      line + length, example_factory, ex_factory_context, dedup_examples);
+      line + length, example_factory, ex_factory_context, ignore_features, dedup_examples);
 
   ParseResult result =
       parser.reader.template Parse<kParseInsituFlag, InsituStringStream, VWReaderHandler<audit>>(ss, handler);
@@ -1747,7 +1748,7 @@ void read_line_json_s(VW::workspace& all, VW::v_array<VW::example*>& examples, c
 {
   return read_line_json_s<audit>(all.example_parser->lbl_parser, all.example_parser->hasher, all.hash_seed,
       all.parse_mask, all.chain_hash_json, &all.example_parser->parser_memory_to_reuse, all.sd->ldict.get(), examples,
-      line, length, example_factory, ex_factory_context, all.logger, dedup_examples);
+      line, length, example_factory, ex_factory_context, all.logger, &all.ignore_features, dedup_examples);
 }
 
 inline bool apply_pdrop(
@@ -1799,7 +1800,7 @@ bool read_line_decision_service_json(VW::workspace& all, VW::v_array<VW::example
   VWReaderHandler<audit>& handler = parser.handler;
   handler.init(all.example_parser->lbl_parser, all.example_parser->hasher, all.hash_seed, all.parse_mask,
       all.chain_hash_json, &all.example_parser->parser_memory_to_reuse, all.sd->ldict.get(), &all.logger, &examples,
-      &ss, line + length, example_factory, ex_factory_context);
+      &ss, line + length, example_factory, ex_factory_context, &all.ignore_features);
 
   handler.ctx.SetStartStateToDecisionService(data);
   handler.ctx.decision_service_data = data;
