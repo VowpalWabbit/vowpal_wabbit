@@ -25,6 +25,7 @@ __all__ = [
     "MultilabelLabel",
     "NamespaceId",
     "PredictionType",
+    "sample_pmf,"
     "SimpleLabel",
     "SlatesLabel",
     "SlatesLabelType",
@@ -54,6 +55,7 @@ from .pyvw import (
     MultilabelLabel,
     NamespaceId,
     PredictionType,
+    sample_pmf,
     SimpleLabel,
     SlatesLabel,
     SlatesLabelType,
