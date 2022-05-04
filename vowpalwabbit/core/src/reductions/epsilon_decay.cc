@@ -136,7 +136,7 @@ void learn(
       if (data._log_champ_changes)
       {
         data._logger.out_info("Champion with update count: {} has changed to challenger with update count: {}",
-            data._scored_configs[K - 1][i].update_count, data._scored_configs[i][i].update_count);
+            data._scored_configs[K - 1][K - 1].update_count, data._scored_configs[i][i].update_count);
       }
       uint64_t swap_dist = K - i - 1;
 
