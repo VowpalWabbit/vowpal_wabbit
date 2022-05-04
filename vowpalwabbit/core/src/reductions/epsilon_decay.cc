@@ -77,8 +77,10 @@ size_t write_model_field(io_buf& io, const VW::reductions::epsilon_decay::epsilo
 }  // namespace model_utils
 }  // namespace VW
 
+namespace
+{
 void predict(
-    VW::reductions::epsilon_decay::epsilon_decay_data& data, VW::LEARNER::multi_learner& base, multi_ex& examples)
+    VW::reductions::epsilon_decay::epsilon_decay_data& data, VW::LEARNER::multi_learner& base, VW::multi_ex& examples)
 {
   auto& ep_fts = examples[0]->_reduction_features.template get<VW::cb_explore_adf::greedy::reduction_features>();
   uint64_t K = static_cast<uint64_t>(data._scored_configs.size());
@@ -88,12 +90,12 @@ void predict(
 }
 
 void learn(
-    VW::reductions::epsilon_decay::epsilon_decay_data& data, VW::LEARNER::multi_learner& base, multi_ex& examples)
+    VW::reductions::epsilon_decay::epsilon_decay_data& data, VW::LEARNER::multi_learner& base, VW::multi_ex& examples)
 {
   CB::cb_class logged{};
   uint64_t labelled_action = 0;
   const auto it =
-      std::find_if(examples.begin(), examples.end(), [](example* item) { return !item->l.cb.costs.empty(); });
+      std::find_if(examples.begin(), examples.end(), [](VW::example* item) { return !item->l.cb.costs.empty(); });
   if (it != examples.end())
   {
     logged = (*it)->l.cb.costs[0];
@@ -129,7 +131,7 @@ void learn(
 
   // If the lower bound of a model exceeds the upperbound of the champion, migrate the new model as
   // the new champion.
-  for (int64_t i = 0; i < K - 1; ++i)
+  for (uint64_t i = 0; i < K - 1; ++i)
   {
     if (data._scored_configs[i][i].get_lower_bound() > data._scored_configs[K - 1][i].get_upper_bound())
     {
@@ -141,7 +143,7 @@ void learn(
       uint64_t swap_dist = K - i - 1;
 
       // Move new champ and smaller configs to front
-      for (int64_t outer_ind = i; outer_ind >= 0; --outer_ind)
+      for (uint64_t outer_ind = i; outer_ind >= 0; --outer_ind)
       {
         for (uint64_t inner_ind = 0; inner_ind < outer_ind + 1; ++inner_ind)
         {
@@ -170,7 +172,7 @@ void learn(
 
   // Check if any model counts are higher than the champion. If so, shift the model
   // back to the beginning of the list and reset its counts
-  for (int64_t i = 0; i < K - 1; ++i)
+  for (uint64_t i = 0; i < K - 1; ++i)
   {
     if (data._scored_configs[i][i].update_count > data._min_scope &&
         data._scored_configs[i][i].update_count >
@@ -179,7 +181,7 @@ void learn(
       // Move smaller configs up one position
       if (i > 0)
       {
-        for (int64_t outer_ind = i - 1; outer_ind >= 0; --outer_ind)
+        for (uint64_t outer_ind = i - 1; outer_ind >= 0; --outer_ind)
         {
           for (uint64_t inner_ind = 0; inner_ind < outer_ind + 1; ++inner_ind)
           {
@@ -191,7 +193,7 @@ void learn(
       // Rebalance greater configs
       for (uint64_t outer_ind = i + 1; outer_ind < K; ++outer_ind)
       {
-        for (int64_t inner_ind = i; inner_ind > 0; --inner_ind)
+        for (uint64_t inner_ind = i; inner_ind > 0; --inner_ind)
         { std::swap(data._scored_configs[outer_ind][inner_ind], data._scored_configs[outer_ind][inner_ind - 1]); }
       }
 
@@ -218,6 +220,8 @@ void save_load_epsilon_decay(
     VW::model_utils::write_model_field(io, epsilon_decay, "_epsilon_decay", text);
   }
 }
+
+}  // namespace
 
 VW::LEARNER::base_learner* VW::reductions::epsilon_decay_setup(VW::setup_base_i& stack_builder)
 {

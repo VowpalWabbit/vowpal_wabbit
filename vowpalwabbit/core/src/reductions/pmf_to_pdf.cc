@@ -178,8 +178,8 @@ void pmf_to_pdf_reduction::learn(example& ec)
 
 namespace
 {
-void predict(VW::reductions::pmf_to_pdf_reduction& data, single_learner&, example& ec) { data.predict(ec); }
-void learn(VW::reductions::pmf_to_pdf_reduction& data, single_learner&, example& ec) { data.learn(ec); }
+void predict(VW::reductions::pmf_to_pdf_reduction& data, single_learner&, VW::example& ec) { data.predict(ec); }
+void learn(VW::reductions::pmf_to_pdf_reduction& data, single_learner&, VW::example& ec) { data.learn(ec); }
 }  // namespace
 
 base_learner* VW::reductions::pmf_to_pdf_setup(VW::setup_base_i& stack_builder)

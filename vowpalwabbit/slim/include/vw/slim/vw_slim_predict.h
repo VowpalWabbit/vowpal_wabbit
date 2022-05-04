@@ -94,7 +94,7 @@ class vw_predict
   bool _model_loaded;
 
 public:
-  vw_predict() : _model_loaded(false), _contains_wildcard(false) {}
+  vw_predict() : _contains_wildcard(false), _model_loaded(false) {}
 
   /**
    * @brief Reads the Vowpal Wabbit model from the supplied buffer (produced using vw -f <modelname>)

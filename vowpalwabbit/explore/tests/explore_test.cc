@@ -72,7 +72,7 @@ struct bins_calc
   {
     ++_total_samples;
     float left = _bins[0];
-    for (int i = 1; i < _bins.size(); i++)
+    for (size_t i = 1; i < _bins.size(); i++)
     {
       float right = _bins[i];
       if (left <= val && val < right)
@@ -103,8 +103,8 @@ TEST(explore_tests, sample_continuous_action_statistical)
   uint64_t random_seed = 7791;
   bins_calc bins({0.f, 10.f, 20.f, 30.f, 40.f, 100.f});
 
-  constexpr uint32_t iterate_count = 100000;
-  for (auto idx = 0; idx < iterate_count; idx++)
+  constexpr size_t iterate_count = 100000;
+  for (size_t idx = 0; idx < iterate_count; idx++)
   {
     const auto scode = exploration::sample_pdf(&random_seed, begin(scores), end(scores), chosen_value, pdf_value);
     EXPECT_EQ(scode, S_EXPLORATION_OK);

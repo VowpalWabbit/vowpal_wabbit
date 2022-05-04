@@ -172,8 +172,8 @@ void VW::details::cache_features(io_buf& cache, const features& feats, uint64_t 
   *reinterpret_cast<size_t*>(storage_size_loc) = write_head - storage_size_loc - sizeof(size_t);
 }
 
-void VW::write_example_to_cache(io_buf& output, example* ex_ptr, VW::label_parser& lbl_parser, uint64_t parse_mask,
-    VW::details::cache_temp_buffer& temp_buffer)
+void VW::write_example_to_cache(io_buf& output, example* ex_ptr, const VW::label_parser& lbl_parser,
+    uint64_t parse_mask, VW::details::cache_temp_buffer& temp_buffer)
 {
   temp_buffer._backing_buffer->clear();
   io_buf& temp_cache = temp_buffer._temporary_cache_buffer;

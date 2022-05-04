@@ -53,23 +53,23 @@ private:
   CB::cb_class save_class;
 
   template <bool is_learn>
-  void predict_or_learn_impl(multi_learner& base, multi_ex& examples);
+  void predict_or_learn_impl(multi_learner& base, VW::multi_ex& examples);
 
-  float get_initial_prediction(example*);
-  void get_initial_predictions(multi_ex&, uint32_t);
-  void zero_bonuses(multi_ex&);
-  void accumulate_bonuses(multi_ex&);
+  float get_initial_prediction(VW::example*);
+  void get_initial_predictions(VW::multi_ex&, uint32_t);
+  void zero_bonuses(VW::multi_ex&);
+  void accumulate_bonuses(VW::multi_ex&);
   void finish_bonuses();
   void compute_ci(v_array<ACTION_SCORE::action_score>&, float);
 
   template <bool>
-  void save_labels(multi_ex&);
+  void save_labels(VW::multi_ex&);
   template <bool>
-  void make_fake_rnd_labels(multi_ex&);
+  void make_fake_rnd_labels(VW::multi_ex&);
   template <bool>
-  void restore_labels(multi_ex&);
+  void restore_labels(VW::multi_ex&);
   template <bool>
-  void base_learn_or_predict(multi_learner&, multi_ex&, uint32_t);
+  void base_learn_or_predict(multi_learner&, VW::multi_ex&, uint32_t);
 
 public:
   cb_explore_adf_rnd(
@@ -85,13 +85,13 @@ public:
   ~cb_explore_adf_rnd() = default;
 
   // Should be called through cb_explore_adf_base for pre/post-processing
-  void predict(multi_learner& base, multi_ex& examples) { predict_or_learn_impl<false>(base, examples); }
-  void learn(multi_learner& base, multi_ex& examples) { predict_or_learn_impl<true>(base, examples); }
+  void predict(multi_learner& base, VW::multi_ex& examples) { predict_or_learn_impl<false>(base, examples); }
+  void learn(multi_learner& base, VW::multi_ex& examples) { predict_or_learn_impl<true>(base, examples); }
 };
 
-void cb_explore_adf_rnd::zero_bonuses(multi_ex& examples) { bonuses.assign(examples.size(), 0.f); }
+void cb_explore_adf_rnd::zero_bonuses(VW::multi_ex& examples) { bonuses.assign(examples.size(), 0.f); }
 
-void cb_explore_adf_rnd::accumulate_bonuses(multi_ex& examples)
+void cb_explore_adf_rnd::accumulate_bonuses(VW::multi_ex& examples)
 {
   const auto& preds = examples[0]->pred.a_s;
   for (const auto& p : preds)
@@ -114,14 +114,14 @@ void cb_explore_adf_rnd::compute_ci(v_array<ACTION_SCORE::action_score>& preds, 
 
 namespace
 {
-bool is_the_labeled_example(const example* ec)
+bool is_the_labeled_example(const VW::example* ec)
 {
   return (ec->l.cb.costs.size() == 1 && ec->l.cb.costs[0].cost != FLT_MAX && ec->l.cb.costs[0].probability > 0);
 }
 }  // namespace
 
 template <bool is_learn>
-void cb_explore_adf_rnd::save_labels(multi_ex& examples)
+void cb_explore_adf_rnd::save_labels(VW::multi_ex& examples)
 {
   if (is_learn)
   {
@@ -152,7 +152,7 @@ inline void vec_add_with_norm(std::pair<float, float>& p, float fx, float fw)
 
 }  // namespace
 
-float cb_explore_adf_rnd::get_initial_prediction(example* ec)
+float cb_explore_adf_rnd::get_initial_prediction(VW::example* ec)
 {
   LazyGaussian w;
 
@@ -164,7 +164,7 @@ float cb_explore_adf_rnd::get_initial_prediction(example* ec)
   return sqrtinvlambda * dotwithnorm.second / std::sqrt(2.0f * std::max(1e-12f, dotwithnorm.first));
 }
 
-void cb_explore_adf_rnd::get_initial_predictions(multi_ex& examples, uint32_t id)
+void cb_explore_adf_rnd::get_initial_predictions(VW::multi_ex& examples, uint32_t id)
 {
   initials.clear();
   initials.reserve(examples.size());
@@ -179,7 +179,7 @@ void cb_explore_adf_rnd::get_initial_predictions(multi_ex& examples, uint32_t id
 }
 
 template <bool is_learn>
-void cb_explore_adf_rnd::make_fake_rnd_labels(multi_ex& examples)
+void cb_explore_adf_rnd::make_fake_rnd_labels(VW::multi_ex& examples)
 {
   if (is_learn)
   {
@@ -197,7 +197,7 @@ void cb_explore_adf_rnd::make_fake_rnd_labels(multi_ex& examples)
 }
 
 template <bool is_learn>
-void cb_explore_adf_rnd::restore_labels(multi_ex& examples)
+void cb_explore_adf_rnd::restore_labels(VW::multi_ex& examples)
 {
   if (is_learn)
   {
@@ -214,7 +214,7 @@ void cb_explore_adf_rnd::restore_labels(multi_ex& examples)
 }
 
 template <bool is_learn>
-void cb_explore_adf_rnd::base_learn_or_predict(multi_learner& base, multi_ex& examples, uint32_t id)
+void cb_explore_adf_rnd::base_learn_or_predict(multi_learner& base, VW::multi_ex& examples, uint32_t id)
 {
   if (is_learn) { base.learn(examples, id); }
   else
@@ -224,7 +224,7 @@ void cb_explore_adf_rnd::base_learn_or_predict(multi_learner& base, multi_ex& ex
 }
 
 template <bool is_learn>
-void cb_explore_adf_rnd::predict_or_learn_impl(multi_learner& base, multi_ex& examples)
+void cb_explore_adf_rnd::predict_or_learn_impl(multi_learner& base, VW::multi_ex& examples)
 {
   save_labels<is_learn>(examples);
 
