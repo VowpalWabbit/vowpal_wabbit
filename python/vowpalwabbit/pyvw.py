@@ -1986,7 +1986,7 @@ def sample_pmf(
 
     Args:
         pmf: A probability mass function, as a list of probabilities. Doesn't necessarily need to sum to 1.
-        seed: If provided, random.seed will be seeded with this value. Otherwise, random.seed will not be called.
+        seed: If provided, will be used as seed for the random number generator.
 
     Returns:
         A tuple of the index of the sampled element and the probability of the sampled element.
@@ -1995,18 +1995,18 @@ def sample_pmf(
         >>> sample_pmf([0.1, 0.2, 0.3, 0.4])
         (3, 0.4)
     """
+    rng = random.Random()
+    if seed is not None:
+        rng.seed(seed)
 
     total = sum(pmf)
     scale = 1.0 / total
-    pmf = [x * scale for x in pmf]
-    if seed is not None:
-        random.seed(seed)
-    draw = random.random()
+    draw = rng.random()
     sum_prob = 0.0
     for index, prob in enumerate(pmf):
-        sum_prob += prob
+        sum_prob += prob * scale
         if sum_prob > draw:
-            return index, prob
+            return index, prob * scale
 
 
 ############################ DEPRECATED CLASSES ############################
