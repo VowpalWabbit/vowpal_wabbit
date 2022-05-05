@@ -595,7 +595,8 @@ void parse_feature_tweaks(options_i& options, VW::workspace& all, bool interacti
   std::vector<std::string> full_name_interactions;
   std::vector<std::string> ignores;
   std::vector<std::string> ignore_linears;
-  std::vector<std::string> ignore_features;
+  // this is an experimental feature which is only relevant for dsjson
+  std::vector<std::string> ignore_features_dsjson;
   std::vector<std::string> keeps;
   std::vector<std::string> redefines;
 
@@ -628,7 +629,7 @@ void parse_feature_tweaks(options_i& options, VW::workspace& all, bool interacti
       .add(make_option("ignore_linear", ignore_linears)
                .keep()
                .help("Ignore namespaces beginning with character <arg> for linear terms only"))
-      .add(make_option("ignore_features_dsjson_experimental", ignore_features)
+      .add(make_option("ignore_features_dsjson_experimental", ignore_features_dsjson)
                .keep()
                .help("Ignore specified features from namespace. To ignore a feature arg should be namespace|feature "
                      "To ignore a feature in the default namespace, arg should be |feature").experimental())
@@ -910,20 +911,20 @@ void parse_feature_tweaks(options_i& options, VW::workspace& all, bool interacti
 
   if (options.was_supplied("ignore_features_dsjson_experimental"))
   {
-    for (const auto& ignored : ignore_features)
+    for (const auto& ignored : ignore_features_dsjson)
     {
       auto namespace_and_feature = VW::details::extract_ignored_feature(ignored);
       const auto& ns = std::get<0>(namespace_and_feature);
       const auto& feature_name = std::get<1>(namespace_and_feature);
       if (!(ns.empty() || feature_name.empty()))
       {
-        if (all.ignore_features.find(ns) == all.ignore_features.end())
+        if (all.ignore_features_dsjson.find(ns) == all.ignore_features_dsjson.end())
         {
-          all.ignore_features.insert({ns, std::set<std::string>{feature_name}});
+          all.ignore_features_dsjson.insert({ns, std::set<std::string>{feature_name}});
         }
         else
         {
-          all.ignore_features.at(ns).insert(feature_name);
+          all.ignore_features_dsjson.at(ns).insert(feature_name);
         }
       }
     }

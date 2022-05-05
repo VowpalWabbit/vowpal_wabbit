@@ -1748,7 +1748,7 @@ void read_line_json_s(VW::workspace& all, VW::v_array<VW::example*>& examples, c
 {
   return read_line_json_s<audit>(all.example_parser->lbl_parser, all.example_parser->hasher, all.hash_seed,
       all.parse_mask, all.chain_hash_json, &all.example_parser->parser_memory_to_reuse, all.sd->ldict.get(), examples,
-      line, length, example_factory, ex_factory_context, all.logger, &all.ignore_features, dedup_examples);
+      line, length, example_factory, ex_factory_context, all.logger, &all.ignore_features_dsjson, dedup_examples);
 }
 
 inline bool apply_pdrop(
@@ -1800,7 +1800,7 @@ bool read_line_decision_service_json(VW::workspace& all, VW::v_array<VW::example
   VWReaderHandler<audit>& handler = parser.handler;
   handler.init(all.example_parser->lbl_parser, all.example_parser->hasher, all.hash_seed, all.parse_mask,
       all.chain_hash_json, &all.example_parser->parser_memory_to_reuse, all.sd->ldict.get(), &all.logger, &examples,
-      &ss, line + length, example_factory, ex_factory_context, &all.ignore_features);
+      &ss, line + length, example_factory, ex_factory_context, &all.ignore_features_dsjson);
 
   handler.ctx.SetStartStateToDecisionService(data);
   handler.ctx.decision_service_data = data;
