@@ -54,8 +54,8 @@ void find_opt(std::string const& command_line_args, std::string arg_name, std::v
 template void find_opt<std::string>(
     std::string const& command_line_args, std::string arg_name, std::vector<std::string>& out_values);
 
-template void find_opt<std::vector<VW::namespace_index>>(
-    std::string const& command_line_args, std::string arg_name, std::vector<std::vector<VW::namespace_index>>& out_values);
+template void find_opt<std::vector<VW::namespace_index>>(std::string const& command_line_args, std::string arg_name,
+    std::vector<std::vector<VW::namespace_index>>& out_values);
 
 std::vector<std::string> find_opt(std::string const& command_line_args, std::string arg_name)
 {
