@@ -77,7 +77,7 @@ jobs:
         uses: actions/setup-python@v2
         with:
           python-version: 3.9
-      - run: pip install black
+      - run: pip install black black[jupyter]
       - shell: bash
         run: |
           python -m black --check . --exclude ext_libs/ || (echo -e "---\nTo fix, run:\n\tpython -m black . --exclude ext_libs"; exit 1)

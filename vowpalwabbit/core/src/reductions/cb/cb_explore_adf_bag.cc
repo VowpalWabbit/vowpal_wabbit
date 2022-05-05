@@ -48,8 +48,8 @@ public:
       float epsilon, size_t bag_size, bool greedify, bool first_only, std::shared_ptr<VW::rand_state> random_state);
 
   // Should be called through cb_explore_adf_base for pre/post-processing
-  void predict(VW::LEARNER::multi_learner& base, multi_ex& examples);
-  void learn(VW::LEARNER::multi_learner& base, multi_ex& examples);
+  void predict(VW::LEARNER::multi_learner& base, VW::multi_ex& examples);
+  void learn(VW::LEARNER::multi_learner& base, VW::multi_ex& examples);
 
   const PredictionT& get_cached_prediction() { return _action_probs; };
 
@@ -78,7 +78,7 @@ uint32_t cb_explore_adf_bag::get_bag_learner_update_count(uint32_t learner_index
   }
 }
 
-void cb_explore_adf_bag::predict(VW::LEARNER::multi_learner& base, multi_ex& examples)
+void cb_explore_adf_bag::predict(VW::LEARNER::multi_learner& base, VW::multi_ex& examples)
 {
   // Randomize over predictions from a base set of predictors
   v_array<ACTION_SCORE::action_score>& preds = examples[0]->pred.a_s;
@@ -122,7 +122,7 @@ void cb_explore_adf_bag::predict(VW::LEARNER::multi_learner& base, multi_ex& exa
   std::copy(std::begin(_action_probs), std::end(_action_probs), std::begin(preds));
 }
 
-void cb_explore_adf_bag::learn(VW::LEARNER::multi_learner& base, multi_ex& examples)
+void cb_explore_adf_bag::learn(VW::LEARNER::multi_learner& base, VW::multi_ex& examples)
 {
   for (uint32_t i = 0; i < _bag_size; i++)
   {
@@ -138,14 +138,14 @@ void cb_explore_adf_bag::learn(VW::LEARNER::multi_learner& base, multi_ex& examp
   }
 }
 
-void finish_bag_example(VW::workspace& all, cb_explore_adf_base<cb_explore_adf_bag>& data, multi_ex& ec_seq)
+void finish_bag_example(VW::workspace& all, cb_explore_adf_base<cb_explore_adf_bag>& data, VW::multi_ex& ec_seq)
 {
   assert(ec_seq.size() > 0);
   ec_seq[0]->pred.a_s = data.explore.get_cached_prediction();
   cb_explore_adf_base<cb_explore_adf_bag>::finish_multiline_example(all, data, ec_seq);
 }
 
-void print_bag_example(VW::workspace& all, cb_explore_adf_base<cb_explore_adf_bag>& data, const multi_ex& ec_seq)
+void print_bag_example(VW::workspace& all, cb_explore_adf_base<cb_explore_adf_bag>& data, const VW::multi_ex& ec_seq)
 {
   assert(ec_seq.size() > 0);
   ec_seq[0]->pred.a_s = data.explore.get_cached_prediction();
