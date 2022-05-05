@@ -40,4 +40,4 @@ void example_predict_builder::push_feature(feature_index feature_idx, feature_va
 {
   _ex->feature_space[_namespace_idx].push_back(value, _namespace_hash + feature_idx);
 }
-};  // namespace vw_slim
+}  // namespace vw_slim
