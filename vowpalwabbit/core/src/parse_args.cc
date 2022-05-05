@@ -1118,10 +1118,7 @@ void parse_example_tweaks(options_i& options, VW::workspace& all)
   }
 
   // loss_parameter_0 is used with two loss functions, but with different defaults, so need to override
-  if (loss_function == "logistic" && !options.was_supplied("logistic_min"))
-  {
-    loss_parameter_0 = -1.0f;
-  }
+  if (loss_function == "logistic" && !options.was_supplied("logistic_min")) { loss_parameter_0 = -1.0f; }
 
   all.loss = get_loss_function(all, loss_function, loss_parameter_0, loss_parameter_1);
   if (options.was_supplied("quantile_tau") && all.loss->get_type() != "quantile" && all.loss->get_type() != "expectile")
@@ -1130,7 +1127,8 @@ void parse_example_tweaks(options_i& options, VW::workspace& all)
         "Option 'quantile_tau' was passed but the quantile loss function is not being used. 'quantile_tau' value will "
         "be ignored.");
   }
-  if ((options.was_supplied("logistic_min") || options.was_supplied("logistic_max")) && all.loss->get_type() != "logistic")
+  if ((options.was_supplied("logistic_min") || options.was_supplied("logistic_max")) &&
+      all.loss->get_type() != "logistic")
   {
     all.logger.err_warn(
         "Options 'logistic_min' or 'logistic_max' were passed but the logistic loss function is not being used. "

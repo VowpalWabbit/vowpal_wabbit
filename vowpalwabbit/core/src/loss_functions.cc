@@ -203,34 +203,39 @@ class logloss : public VW::loss_function
 {
   mutable VW::io::logger logger;
   float loss_min;
-  float loss_max; 
+  float loss_max;
 
 public:
-  explicit logloss(VW::io::logger logger, float loss_min, float loss_max) : logger(std::move(logger)), loss_min(loss_min), loss_max(loss_max) {}
+  explicit logloss(VW::io::logger logger, float loss_min, float loss_max)
+      : logger(std::move(logger)), loss_min(loss_min), loss_max(loss_max)
+  {
+  }
 
   std::string get_type() const override { return "logistic"; }
 
   float get_loss(const shared_data*, float prediction, float label) const override
   {
     if (label < loss_min || label > loss_max)
-      { logger.out_warn("The label {} is not in the range [{},{}] as the logistic loss function expects.", label, loss_min, loss_max); }
-    float std_label = (label - loss_min)/(loss_max - loss_min);
-    return std_label * get_loss_sub(prediction, 1.f)
-      + (1 - std_label) * get_loss_sub(prediction, -1.f);
+    {
+      logger.out_warn(
+          "The label {} is not in the range [{},{}] as the logistic loss function expects.", label, loss_min, loss_max);
+    }
+    float std_label = (label - loss_min) / (loss_max - loss_min);
+    return std_label * get_loss_sub(prediction, 1.f) + (1 - std_label) * get_loss_sub(prediction, -1.f);
   }
 
   float get_loss_sub(float prediction, float label) const
   {
     if (label != -1.f && label != 1.f)
     { logger.out_warn("The label {} is not -1 or 1 after rounding as the logistic loss function expects.", label); }
-    return std::log(1+correctedExp(-label * prediction));
+    return std::log(1 + correctedExp(-label * prediction));
   }
 
   float get_update(float prediction, float label, float update_scale, float pred_per_update) const override
   {
-    float std_label = (label - loss_min)/(loss_max - loss_min);
-    return std_label * get_update_sub(prediction, 1.f, update_scale, pred_per_update)
-      + (1 - std_label) * get_update_sub(prediction, -1.f, update_scale, pred_per_update);
+    float std_label = (label - loss_min) / (loss_max - loss_min);
+    return std_label * get_update_sub(prediction, 1.f, update_scale, pred_per_update) +
+        (1 - std_label) * get_update_sub(prediction, -1.f, update_scale, pred_per_update);
   }
 
   float get_update_sub(float prediction, float label, float update_scale, float pred_per_update) const
@@ -251,9 +256,9 @@ public:
 
   float get_unsafe_update(float prediction, float label, float update_scale) const override
   {
-    float std_label = (label - loss_min)/(loss_max - loss_min);
-    return std_label * get_unsafe_update_sub(prediction, 1.f, update_scale)
-      + (1 - std_label) * get_unsafe_update_sub(prediction, -1.f, update_scale);
+    float std_label = (label - loss_min) / (loss_max - loss_min);
+    return std_label * get_unsafe_update_sub(prediction, 1.f, update_scale) +
+        (1 - std_label) * get_unsafe_update_sub(prediction, -1.f, update_scale);
   }
 
   float get_unsafe_update_sub(float prediction, float label, float update_scale) const
@@ -278,9 +283,8 @@ public:
 
   float first_derivative(const shared_data*, float prediction, float label) const override
   {
-    float std_label = (label - loss_min)/(loss_max - loss_min);
-    return std_label * first_derivative_sub(prediction, 1.f)
-      + (1 - std_label) * first_derivative_sub(prediction, -1.f);
+    float std_label = (label - loss_min) / (loss_max - loss_min);
+    return std_label * first_derivative_sub(prediction, 1.f) + (1 - std_label) * first_derivative_sub(prediction, -1.f);
   }
 
   float first_derivative_sub(float prediction, float label) const
@@ -297,9 +301,9 @@ public:
 
   float second_derivative(const shared_data*, float prediction, float label) const override
   {
-    float std_label = (label - loss_min)/(loss_max - loss_min);
-    return std_label * second_derivative_sub(prediction, 1.f)
-      + (1 - std_label) * second_derivative_sub(prediction, -1.f);
+    float std_label = (label - loss_min) / (loss_max - loss_min);
+    return std_label * second_derivative_sub(prediction, 1.f) +
+        (1 - std_label) * second_derivative_sub(prediction, -1.f);
   }
 
   float second_derivative_sub(float prediction, float label) const
