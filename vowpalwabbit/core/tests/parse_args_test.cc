@@ -6,6 +6,7 @@
 
 #include <gtest/gtest.h>
 
+using namespace VW::details;
 using namespace ::testing;
 
 #include <string>

@@ -9,6 +9,8 @@
 #include "vw/core/text_utils.h"
 #include "vw/core/vw_fwd.h"
 
+using namespace VW::details;
+
 // Used in parse_source
 struct input_options
 {
@@ -49,10 +51,17 @@ inline bool ends_with(const std::string& full_string, const std::string& ending)
 
 std::vector<extent_term> parse_full_name_interactions(VW::workspace& all, VW::string_view str);
 
-/**
- * @brief Extract namespace, feature name, and optional feature value from ignored feature string
- *
- * @param namespace_feature namespace|feature:feature_value. Feature value is optional and if it is supplied chain_hash is applied
- * @return std::tuple<std::string, std::string, std::string> (namespace, feature, value = empty string)
- */
-std::tuple<std::string, std::string> extract_ignored_feature(const std::string& namespace_feature);
+namespace VW
+{
+namespace details
+{
+  /**
+  * @brief Extract namespace, feature name, and optional feature value from ignored feature string
+  *
+  * @param namespace_feature namespace|feature:feature_value. Feature value is optional and if it is supplied chain_hash is applied
+  * @return std::tuple<std::string, std::string> (namespace, feature)
+  */
+  std::tuple<std::string, std::string> extract_ignored_feature(VW::string_view namespace_feature);
+}
+}
+

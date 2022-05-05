@@ -106,24 +106,6 @@ std::string find_in_path(const std::vector<std::string>& paths, const std::strin
   return "";
 }
 
-std::tuple<std::string, std::string> extract_ignored_feature(const std::string& namespace_feature)
-{
-  std::tuple<std::string, std::string> extracted_ns_and_feature;
-  std::string feature_delimiter = "|";
-  int feature_delimiter_index = namespace_feature.find(feature_delimiter);
-  if (feature_delimiter_index != std::string::npos)
-  {
-    auto ns = namespace_feature.substr(0, feature_delimiter_index);
-    // check for default namespace
-    if (ns.empty())
-    {
-      ns = " ";
-    }
-    return {ns, namespace_feature.substr(feature_delimiter_index + 1, namespace_feature.size() - (feature_delimiter_index + 1))};
-  }
-  return {};
-}
-
 void parse_dictionary_argument(VW::workspace& all, const std::string& str)
 {
   if (str.length() == 0) { return; }
@@ -541,6 +523,26 @@ const char* are_features_compatible(VW::workspace& vw1, VW::workspace& vw2)
   return nullptr;
 }
 
+namespace details
+{
+  std::tuple<std::string, std::string> extract_ignored_feature(VW::string_view namespace_feature)
+{
+  std::tuple<std::string, std::string> extracted_ns_and_feature;
+  std::string feature_delimiter = "|";
+  auto feature_delimiter_index = namespace_feature.find(feature_delimiter);
+  if (feature_delimiter_index != VW::string_view::npos)
+  {
+    auto ns = namespace_feature.substr(0, feature_delimiter_index);
+    // check for default namespace
+    if (ns.empty())
+    {
+      ns = " ";
+    }
+    return {std::string(ns), std::string(namespace_feature.substr(feature_delimiter_index + 1, namespace_feature.size() - (feature_delimiter_index + 1)))};
+  }
+  return {};
+}
+}  // namespace details
 }  // namespace VW
 
 std::vector<VW::namespace_index> parse_char_interactions(VW::string_view input, VW::io::logger& logger)
@@ -910,9 +912,9 @@ void parse_feature_tweaks(options_i& options, VW::workspace& all, bool interacti
   {
     for (const auto& ignored : ignore_features)
     {
-      auto namespce_and_feature = extract_ignored_feature(ignored);
-      const auto& ns = std::get<0>(namespce_and_feature);
-      const auto& feature_name = std::get<1>(namespce_and_feature);
+      auto namespace_and_feature = VW::details::extract_ignored_feature(ignored);
+      const auto& ns = std::get<0>(namespace_and_feature);
+      const auto& feature_name = std::get<1>(namespace_and_feature);
       if (!(ns.empty() || feature_name.empty()))
       {
         if (all.ignore_features.find(ns) == all.ignore_features.end())
