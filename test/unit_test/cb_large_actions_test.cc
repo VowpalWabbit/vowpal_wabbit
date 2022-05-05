@@ -238,6 +238,84 @@ BOOST_AUTO_TEST_CASE(check_A_times_Omega_is_Q)
   }
 }
 
+BOOST_AUTO_TEST_CASE(check_At_times_Omega_is_Y)
+{
+  auto d = 2;
+  auto& vw = *VW::initialize("--cb_explore_adf --large_action_space --max_actions " + std::to_string(d) + " --quiet",
+      nullptr, false, nullptr, nullptr);
+
+  {
+    VW::multi_ex examples;
+
+    examples.push_back(VW::read_example(vw, "0:1.0:0.5 | 1 2 3"));
+    examples.push_back(VW::read_example(vw, "| a_1 a_2 a_3"));
+
+    vw.learn(examples);
+  }
+
+  std::vector<std::string> e_r;
+  vw.l->get_enabled_reductions(e_r);
+  if (std::find(e_r.begin(), e_r.end(), "cb_explore_adf_large_action_space") == e_r.end())
+  { BOOST_FAIL("cb_explore_adf_large_action_space not found in enabled reductions"); }
+
+  VW::LEARNER::multi_learner* learner =
+      as_multiline(vw.l->get_learner_by_name_prefix("cb_explore_adf_large_action_space"));
+
+  auto action_space = (internal_action_space*)learner->get_internal_type_erased_data_pointer_test_use_only();
+
+  BOOST_CHECK_EQUAL(action_space != nullptr, true);
+
+  {
+    VW::multi_ex examples;
+
+    examples.push_back(VW::read_example(vw, "0:1.0:0.5 | 1 2 3"));
+    examples.push_back(VW::read_example(vw, "| a_1 a_2 a_3"));
+
+    vw.predict(examples);
+
+    action_space->explore.generate_A(examples);
+    action_space->explore.generate_Y(examples);
+
+    uint64_t num_actions = examples[0]->pred.a_s.size();
+
+    // Generate Omega
+    std::vector<Eigen::Triplet<float>> omega_triplets;
+    uint64_t max_ft_index = 0;
+    uint64_t seed = vw.get_random_state()->get_current_state();
+
+    for (uint64_t action_index = 0; action_index < num_actions; action_index++)
+    {
+      auto* ex = examples[action_index];
+      // test sanity - test assumes no shared features
+      BOOST_CHECK_EQUAL(!CB::ec_is_example_header(*ex), true);
+      for (auto ns : ex->indices)
+      {
+        for (uint64_t col = 0; col < d; col++)
+        {
+          auto combined_index = action_index + col + seed;
+          auto mm = merand48_boxmuller(combined_index);
+          omega_triplets.push_back(Eigen::Triplet<float>(action_index, col, mm));
+        }
+      }
+    }
+
+    Eigen::SparseMatrix<float> Omega(num_actions, d);
+    Omega.setFromTriplets(omega_triplets.begin(), omega_triplets.end(), [](const float& a, const float& b) {
+      assert(a == b);
+      return b;
+    });
+    for (int k = 0; k < Omega.outerSize(); ++k)
+      for (Eigen::SparseMatrix<float>::InnerIterator it(Omega, k); it; ++it)
+      {
+        std::cout << "row: " << it.row() << std::endl;  // row index
+        std::cout << "col: " << it.col() << std::endl;  // col index (here it is equal to k)
+      }
+    Eigen::SparseMatrix<float> Yd(action_space->explore.Y.rows(), d);
+    Yd = action_space->explore.A.transpose() * Omega;
+    BOOST_CHECK_EQUAL(Yd.isApprox(action_space->explore.Y), true);
+  }
+}
+
 BOOST_AUTO_TEST_CASE(check_final_U_dimensions)
 {
   auto d = 2;
@@ -294,7 +372,7 @@ BOOST_AUTO_TEST_CASE(check_final_U_dimensions)
     examples.push_back(VW::read_example(vw, "| a_4 a_5 a_6"));
 
     vw.predict(examples);
-  
+
     auto num_actions = examples.size();
 
     // U dimensions should be K x d

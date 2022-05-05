@@ -14,6 +14,7 @@
 #include "vw/core/reductions/cb/cb_explore_adf_common.h"
 #include "vw/core/setup_base.h"
 #include "vw/explore/explore.h"
+#include "../../../../redsvd-0.2.0/src/redsvd.hpp"
 
 #include <Eigen/QR>
 #include <algorithm>
@@ -78,6 +79,43 @@ public:
   }
 };
 
+template <typename WeightsT>
+struct Y_triplet_constructor
+{
+private:
+  WeightsT& _weights;
+  uint64_t _row_index;
+  uint64_t _column_index;
+  uint64_t _seed;
+  std::vector<Eigen::Triplet<float>>& _triplets;
+  uint64_t& _max_col;
+
+public:
+  Y_triplet_constructor(WeightsT& weights, uint64_t row_index, uint64_t column_index, uint64_t seed,
+      std::vector<Eigen::Triplet<float>>& triplets, uint64_t& max_col)
+      : _weights(weights)
+      , _row_index(row_index)
+      , _column_index(column_index)
+      , _seed(seed)
+      , _triplets(triplets)
+      , _max_col(max_col)
+  {
+  }
+
+  float operator[](uint64_t index) const
+  {
+    if (_weights[index] != 0.f)
+    {
+      auto combined_index = _row_index + _column_index + _seed;
+      auto calc = _weights[index] * merand48_boxmuller(combined_index);
+      _triplets.push_back(Eigen::Triplet<float>(index, _column_index, calc));
+      if (index > _max_col) { _max_col = index; }
+    }
+    // no op operation
+    return 0.f;
+  }
+};
+
 void cb_explore_adf_large_action_space::predict(VW::LEARNER::multi_learner& base, multi_ex& examples)
 {
   predict_or_learn_impl<false>(base, examples);
@@ -102,6 +140,54 @@ void cb_explore_adf_large_action_space::calculate_shrink_factor(const ACTION_SCO
 inline void just_add_weights(float& p, float, float fw) { p += fw; }
 
 inline void no_op(float&, float, float) {}
+
+bool cb_explore_adf_large_action_space::generate_Y(const multi_ex& examples)
+{
+  // TODO extend wildspace interactions before calling foreach
+  uint64_t max_non_zero_col = 0;
+  // TODO check triplets type
+  _triplets.clear();
+  uint64_t row_index = 0;
+  for (auto* ex : examples)
+  {
+    assert(!CB::ec_is_example_header(*ex));
+
+    for (uint64_t col = 0; col < _d; col++)
+    {
+      float no_op_float = 0.f;
+      if (_all->weights.sparse)
+      {
+        Y_triplet_constructor<sparse_parameters> w(
+            _all->weights.sparse_weights, row_index, col, _seed, _triplets, max_non_zero_col);
+        GD::foreach_feature<float, float, no_op, Y_triplet_constructor<sparse_parameters>>(w, _all->ignore_some_linear,
+            _all->ignore_linear, _all->interactions, _all->extent_interactions, _all->permutations, *ex, no_op_float,
+            _all->_generate_interactions_object_cache);
+      }
+      else
+      {
+        Y_triplet_constructor<dense_parameters> w(
+            _all->weights.dense_weights, row_index, col, _seed, _triplets, max_non_zero_col);
+        GD::foreach_feature<float, float, no_op, Y_triplet_constructor<dense_parameters>>(w, _all->ignore_some_linear,
+            _all->ignore_linear, _all->interactions, _all->extent_interactions, _all->permutations, *ex, no_op_float,
+            _all->_generate_interactions_object_cache);
+      }
+    }
+    row_index++;
+  }
+
+  if (max_non_zero_col == 0)
+  {
+    // no non-zero columns were found for A, it is empty
+    Y.resize(0, 0);
+  }
+  else
+  {
+    Y.resize(max_non_zero_col + 1, _d);
+    Y.setFromTriplets(_triplets.begin(), _triplets.end());
+  }
+
+  return (Y.cols() != 0 && Y.rows() != 0);
+}
 
 bool cb_explore_adf_large_action_space::generate_A(const multi_ex& examples)
 {
@@ -160,7 +246,7 @@ void cb_explore_adf_large_action_space::generate_Q(const multi_ex& examples)
   {
     assert(!CB::ec_is_example_header(*ex));
 
-    for (size_t col = 0; col < _d; col++)
+    for (uint64_t col = 0; col < _d; col++)
     {
       float dot_product = 0.f;
       if (_all->weights.sparse)
@@ -209,16 +295,45 @@ void cb_explore_adf_large_action_space::predict_or_learn_impl(VW::LEARNER::multi
     if (_d < preds.size())
     {
       // if the model is empty then can't create A and there is nothing left to do
-      if (!generate_A(examples)) { return; }
+      // if (!generate_A(examples)) { return; }
 
       float min_ck = std::min_element(preds.begin(), preds.end(),
           [](const ACTION_SCORE::action_score& a, const ACTION_SCORE::action_score& b) { return a.score < b.score; })
                          ->score;
 
       calculate_shrink_factor(preds, min_ck);
-      generate_Q(examples);
-      QR_decomposition();
-      generate_U_via_SVD();
+      if (!generate_Y(examples)) { return; }
+      // REDSVD::RedSVD reds(A, _d);
+      // // U = reds.matrixU();
+    
+      // // generate_Q(examples);
+      // // QR_decomposition();
+      // // generate_U_via_SVD();
+
+      // // Orthonormalize Y
+      // REDSVD::Util::processGramSchmidt(Y);
+
+      // // Range(B) = Range(A^T)
+      // Eigen::MatrixXf B = A * Y;
+
+      // // Gaussian Random Matrix
+      // Eigen::MatrixXf P(B.cols(), _d);
+      // REDSVD::Util::sampleGaussianMat(P);
+
+      // // Compute Sample Matrix of B
+      // Eigen::MatrixXf Z = B * P;
+
+      // // Orthonormalize Z
+      // REDSVD::Util::processGramSchmidt(Z);
+
+      // // Range(C) = Range(B)
+      // Eigen::MatrixXf C = Z.transpose() * B;
+
+      // Eigen::JacobiSVD<Eigen::MatrixXf> svdOfC(C, Eigen::ComputeThinU | Eigen::ComputeThinV);
+
+      // // C = USV^T
+      // // A = Z * U * S * V^T * Y^T()
+      // U = Z * svdOfC.matrixU();
     }
     // TODO apply spanner on U
   }

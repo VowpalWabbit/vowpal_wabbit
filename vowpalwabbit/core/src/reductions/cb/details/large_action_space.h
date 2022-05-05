@@ -29,6 +29,7 @@ private:
 public:
   Eigen::MatrixXf Q;
   Eigen::SparseMatrix<float> A;
+  Eigen::SparseMatrix<float> Y;
   Eigen::MatrixXf U;
   VW::v_array<float> shrink_factors;
 
@@ -40,6 +41,7 @@ public:
   void learn(VW::LEARNER::multi_learner& base, multi_ex& examples);
 
   void calculate_shrink_factor(const ACTION_SCORE::action_scores& preds, float min_ck);
+  bool generate_Y(const multi_ex& examples);
   bool generate_A(const multi_ex& examples);
   void generate_Q(const multi_ex& examples);
   void QR_decomposition();
