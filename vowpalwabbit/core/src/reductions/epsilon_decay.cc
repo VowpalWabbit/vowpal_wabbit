@@ -114,10 +114,7 @@ void learn(
       if (a_s.action == labelled_action)
       {
         const float w = (logged.probability > 0) ? a_s.score / logged.probability : 0;
-        for (uint64_t j = 0; j <= i; ++j)
-        {
-          data._scored_configs[i][j].update_bounds(w, r);
-        }
+        for (uint64_t j = 0; j <= i; ++j) { data._scored_configs[i][j].update_bounds(w, r); }
         break;
       }
     }
@@ -160,9 +157,7 @@ void learn(
         }
       }
       for (uint64_t ind = 0; ind < swap_dist; ++ind)
-      {
-        data._weights.dense_weights.clear_offset(data._weight_indices[ind], params_per_weight);
-      }
+      { data._weights.dense_weights.clear_offset(data._weight_indices[ind], params_per_weight); }
       break;
     }
   }
