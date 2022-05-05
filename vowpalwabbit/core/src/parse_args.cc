@@ -106,6 +106,24 @@ std::string find_in_path(const std::vector<std::string>& paths, const std::strin
   return "";
 }
 
+std::tuple<std::string, std::string> extract_ignored_feature(const std::string& namespace_feature)
+{
+  std::tuple<std::string, std::string> extracted_ns_and_feature;
+  std::string feature_delimiter = "|";
+  int feature_delimiter_index = namespace_feature.find(feature_delimiter);
+  if (feature_delimiter_index != std::string::npos)
+  {
+    auto ns = namespace_feature.substr(0, feature_delimiter_index);
+    // check for default namespace
+    if (ns.empty())
+    {
+      ns = " ";
+    }
+    return {ns, namespace_feature.substr(feature_delimiter_index + 1, namespace_feature.size() - (feature_delimiter_index + 1))};
+  }
+  return {};
+}
+
 void parse_dictionary_argument(VW::workspace& all, const std::string& str)
 {
   if (str.length() == 0) { return; }
@@ -2011,24 +2029,6 @@ void sync_stats(VW::workspace& all)
     const auto total_features = static_cast<float>(all.sd->total_features);
     all.sd->total_features = static_cast<uint64_t>(accumulate_scalar(all, total_features));
   }
-}
-
-std::tuple<std::string, std::string> extract_ignored_feature(const std::string& namespace_feature)
-{
-  std::tuple<std::string, std::string> extracted_ns_and_feature;
-  std::string feature_delimiter = "|";
-  int feature_delimiter_index = namespace_feature.find(feature_delimiter);
-  if (feature_delimiter_index != std::string::npos)
-  {
-    auto ns = namespace_feature.substr(0, feature_delimiter_index);
-    // check for default namespace
-    if (ns.empty())
-    {
-      ns = " ";
-    }
-    return {ns, namespace_feature.substr(feature_delimiter_index + 1, namespace_feature.size() - (feature_delimiter_index + 1))};
-  }
-  return {};
 }
 
 void finish(VW::workspace& all, bool delete_all)
