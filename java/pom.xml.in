@@ -108,7 +108,7 @@
                             <excludes>
                                 <!-- files created by CMake -->
                                 <exclude>bin/**</exclude>
-                                <exclude>test-classes/vw-bin.txt</exclude>
+                                <exclude>test-classes/vw_cli_bin.txt</exclude>
                                 <exclude>*vw_jni*</exclude>
                             </excludes>
                             <followSymlinks>false</followSymlinks>

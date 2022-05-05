@@ -1,6 +1,8 @@
-#include <exception>
-#include "vw.h"
 #include "util.h"
+
+#include "vw/core/vw.h"
+
+#include <exception>
 
 // assume that the passed in object has a field "nativePointer" of type long
 jlong get_native_pointer(JNIEnv* env, jobject obj)

@@ -1,6 +1,7 @@
 #include "vowpalWabbit_learner_VWActionProbsLearner.h"
-#include "vw.h"
+
 #include "jni_base_learner.h"
+#include "vw/core/vw.h"
 
 jobject action_probs_prediction(example *vec, JNIEnv *env)
 {

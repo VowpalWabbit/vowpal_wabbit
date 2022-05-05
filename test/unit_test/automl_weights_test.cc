@@ -2,14 +2,13 @@
 // individual contributors. All rights reserved. Released under a BSD (revised)
 // license as described in the file LICENSE.
 
-#include <boost/test/unit_test.hpp>
-#include <boost/test/test_tools.hpp>
-
-#include "test_common.h"
 #include "simulator.h"
-#include "constant.h"  // FNV_prime
-#include "vw_math.h"
+#include "test_common.h"
+#include "vw/core/constant.h"  // FNV_prime
+#include "vw/core/vw_math.h"
 
+#include <boost/test/test_tools.hpp>
+#include <boost/test/unit_test.hpp>
 #include <functional>
 #include <map>
 

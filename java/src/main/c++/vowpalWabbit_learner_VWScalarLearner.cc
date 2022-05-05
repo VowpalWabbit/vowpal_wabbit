@@ -1,6 +1,7 @@
 #include "vowpalWabbit_learner_VWScalarLearner.h"
-#include "vw.h"
+
 #include "jni_base_learner.h"
+#include "vw/core/vw.h"
 
 jfloat scalar_predictor(example *vec, JNIEnv *env) { return vec->pred.scalar; }
 

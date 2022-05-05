@@ -37,12 +37,12 @@ jobs:
           -DSPDLOG_SYS_DEP=Off
           -DVW_ZLIB_SYS_DEP=Off
           -DVW_BOOST_MATH_SYS_DEP=Off
-          -DDO_NOT_BUILD_VW_C_WRAPPER=On
+          -DVW_BUILD_VW_C_WRAPPER=Off
           -DVW_INSTALL=On
       - name: Build and install
         run: |
-          cmake --build build --config Debug -t vw_io vw vw-bin allreduce spanning_tree
-          cmake --build build --config Release -t vw_io vw vw-bin allreduce spanning_tree
+          cmake --build build --config Debug -t vw_io vw_core vw_cli_bin vw_allreduce vw_spanning_tree_bin vw_c_wrapper
+          cmake --build build --config Release -t vw_io vw_core vw_cli_bin vw_allreduce vw_spanning_tree_bin vw_c_wrapper
 
           # Install debug first so that release overwrites the exe and nothing else
           cmake --install build --prefix ./nuget_staging --config Debug

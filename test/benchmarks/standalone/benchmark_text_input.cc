@@ -1,3 +1,7 @@
+#include "../benchmarks_common.h"
+#include "vw/core/parse_example.h"
+#include "vw/core/vw.h"
+
 #include <benchmark/benchmark.h>
 
 #include <array>
@@ -9,10 +13,6 @@
 #include <string>
 #include <unordered_map>
 #include <vector>
-
-#include "../benchmarks_common.h"
-#include "parse_example.h"
-#include "vw.h"
 
 template <class... ExtraArgs>
 static void bench_text(benchmark::State& state, ExtraArgs&&... extra_args)

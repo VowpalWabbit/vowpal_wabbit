@@ -254,6 +254,16 @@ def is_line_different(
     output_tokens = re.split("[ \t:,@]+", output_line)
     ref_tokens = re.split("[ \t:,@]+", ref_line)
 
+    # some compile flags cause VW to report different code line number for the same exception
+    # if this is the case we want to ignore that from the diff
+    if ref_tokens[0] == "[critical]" and output_tokens[0] == "[critical]":
+        # check that exception format is being followed
+        if ref_tokens[2][0] == "(" and ref_tokens[3][-1] == ")":
+            if ref_tokens[3][:-1].isnumeric():
+                # remove the line number before diffing
+                ref_tokens.pop(3)
+                output_tokens.pop(3)
+
     if len(output_tokens) != len(ref_tokens):
         return True, "Number of tokens different", False
 
@@ -594,7 +604,7 @@ def find_vw_binary(
         if user_supplied_bin_path_or_python_invocation is not None
         else None
     )
-    vw_search_paths = [test_base_ref_dir / ".." / "build" / "vowpalwabbit"]
+    vw_search_paths = [test_base_ref_dir / ".." / "build" / "vowpalwabbit" / "cli"]
 
     def is_vw_binary(file: Path) -> bool:
         return file.name == "vw"
@@ -610,7 +620,9 @@ def find_vw_binary(
 def find_spanning_tree_binary(
     test_base_ref_dir: Path, user_supplied_bin_path: Optional[str]
 ) -> Optional[Path]:
-    spanning_tree_search_path = [test_base_ref_dir / ".." / "build" / "cluster"]
+    spanning_tree_search_path = [
+        test_base_ref_dir / ".." / "build" / "vowpalwabbit" / "spanning_tree_bin"
+    ]
 
     def is_spanning_tree_binary(file: Path) -> bool:
         return file.name == "spanning_tree"
@@ -783,6 +795,10 @@ def convert_tests_for_flatbuffers(
             "337",
             "338",
             "351",
+            "399",
+            "400",
+            "404",
+            "405",
         ):
             test.skip = True
             test.skip_reason = "test skipped for automatic converted flatbuffer tests for unknown reason"
@@ -1077,7 +1093,7 @@ def main():
 
     vw_bin = find_vw_binary(test_base_ref_dir, args.vw_bin_path)
     if vw_bin is None:
-        print("Can't find vw binary. Did you build the 'vw-bin' target?")
+        print("Can't find vw binary. Did you build the 'vw_cli_bin' target?")
         sys.exit(1)
     # test if vw_bin is a Path object
     elif isinstance(vw_bin, Path):

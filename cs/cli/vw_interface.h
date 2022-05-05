@@ -4,7 +4,7 @@
 
 #pragma once
 
-#include "vw.h"
+#include "vw/core/vw.h"
 #include "vw_clr.h"
 #include "vw_prediction.h"
 

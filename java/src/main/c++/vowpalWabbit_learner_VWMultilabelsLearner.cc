@@ -1,6 +1,7 @@
 #include "vowpalWabbit_learner_VWMultilabelsLearner.h"
-#include "vw.h"
+
 #include "jni_base_learner.h"
+#include "vw/core/vw.h"
 
 jobject multilabel_predictor(example *vec, JNIEnv *env)
 {

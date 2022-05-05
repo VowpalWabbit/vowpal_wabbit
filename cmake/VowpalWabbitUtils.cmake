@@ -1,10 +1,22 @@
 include(CMakeParseArguments)
 include(GNUInstallDirs)
+include(VWFlags)
+include(DetectCXXStandard)
+set(VW_CXX_STANDARD 11)
+if(USE_LATEST_STD)
+  DetectCXXStandard(VW_CXX_STANDARD)
+endif()
+
+option(VW_UNIT_TEST_WITH_VALGRIND_INTERNAL "Internal flag." OFF)
+if(VW_UNIT_TEST_WITH_VALGRIND_INTERNAL)
+  find_program(VALGRIND "valgrind" REQUIRED)
+endif()
 
 # Given a lib name writes to OUTPUT what the correspinding target name will be
 function(vw_get_lib_target OUTPUT LIB_NAME)
   set(${OUTPUT} vw_${LIB_NAME} PARENT_SCOPE)
 endfunction()
+
 
 # Given a lib name writes to OUTPUT what the correspinding test target name will be
 function(vw_get_test_target OUTPUT LIB_NAME)
@@ -39,7 +51,7 @@ function(vw_add_library)
   cmake_parse_arguments(
     VW_LIB
     "ENABLE_INSTALL"
-    "NAME;TYPE"
+    "NAME;TYPE;DESCRIPTION;EXCEPTION_DESCRIPTION"
     "SOURCES;PUBLIC_DEPS;PRIVATE_DEPS"
     ${ARGN}
   )
@@ -62,6 +74,14 @@ function(vw_add_library)
 
   if(NOT VW_LIB_SOURCES)
     message(FATAL_ERROR "No sources specified")
+  endif()
+
+  if(NOT DEFINED VW_LIB_DESCRIPTION)
+    message(WARNING "No DESCRIPTION specified for ${VW_LIB_NAME}")
+  endif()
+
+  if(NOT DEFINED VW_LIB_EXCEPTION_DESCRIPTION)
+    message(WARNING "No EXCEPTION_DESCRIPTION specified for ${VW_LIB_NAME}")
   endif()
 
   # TODO this can be removed when we target a minimum of CMake 3.13
@@ -98,7 +118,11 @@ function(vw_add_library)
 
   vw_get_lib_target(FULL_LIB_NAME ${VW_LIB_NAME})
   add_library(${FULL_LIB_NAME} ${CONCRETE_CMAKE_LIB_TYPE})
-  add_library(VowpalWabbit::${VW_LIB_NAME} ALIAS ${FULL_LIB_NAME})
+  add_library(VowpalWabbit::${FULL_LIB_NAME} ALIAS ${FULL_LIB_NAME})
+
+  if(VW_OUPUT_LIB_DESCRIPTIONS)
+    message(STATUS "{\"name\":\"${VW_LIB_NAME}\", \"target\":\"${FULL_LIB_NAME}\", \"type\":\"${VW_LIB_TYPE}\",\"description\":\"${VW_LIB_DESCRIPTION}\",\"public_deps\":\"${VW_LIB_PUBLIC_DEPS}\",\"private_deps\":\"${VW_LIB_PRIVATE_DEPS}\",\"exceptions\":\"${VW_LIB_EXCEPTION_DESCRIPTION}\"}")
+  endif()
 
   # Append d suffix if we are on Windows and are building a sttic libraru
   if(WIN32)
@@ -134,9 +158,23 @@ function(vw_add_library)
   # Older CMake versions seem to not like properties on interface libraries.
   # When the miniumum is upgraded, try removing this.
   if(NOT (${VW_LIB_TYPE} STREQUAL "HEADER_ONLY"))
-    set_property(TARGET ${FULL_LIB_NAME} PROPERTY CXX_STANDARD 11)
+    set_property(TARGET ${FULL_LIB_NAME} PROPERTY CXX_STANDARD ${VW_CXX_STANDARD})
     set_property(TARGET ${FULL_LIB_NAME} PROPERTY CXX_STANDARD_REQUIRED ON)
+    set_property(TARGET ${FULL_LIB_NAME} PROPERTY CMAKE_CXX_EXTENSIONS OFF)
     set_property(TARGET ${FULL_LIB_NAME} PROPERTY POSITION_INDEPENDENT_CODE ON)
+    target_compile_options(${FULL_LIB_NAME} PRIVATE ${WARNING_OPTIONS} ${WARNING_AS_ERROR_OPTIONS})
+    target_compile_definitions(${FULL_LIB_NAME} PRIVATE _FILE_OFFSET_BITS=64)
+
+    if (WIN32)
+      target_compile_options(${FULL_LIB_NAME} PRIVATE ${VW_WIN_FLAGS})
+    else()
+      target_compile_options(${FULL_LIB_NAME} PRIVATE ${VW_LINUX_FLAGS})
+    endif()
+
+    if(VW_GCOV)
+      target_compile_options(${FULL_LIB_NAME} PRIVATE -fprofile-arcs -ftest-coverage)
+      target_link_libraries(${FULL_LIB_NAME} PRIVATE gcov)
+    endif()
   endif()
 
   if(VW_INSTALL AND VW_LIB_ENABLE_INSTALL)
@@ -155,7 +193,7 @@ endfunction()
 function(vw_add_executable)
   cmake_parse_arguments(VW_EXE
     "ENABLE_INSTALL"
-    "NAME;OVERRIDE_BIN_NAME"
+    "NAME;OVERRIDE_BIN_NAME;DESCRIPTION"
     "SOURCES;DEPS"
     ${ARGN}
   )
@@ -168,9 +206,17 @@ function(vw_add_executable)
     message(FATAL_ERROR "No sources specified")
   endif()
 
+  if(NOT DEFINED VW_EXE_DESCRIPTION)
+    message(WARNING "No DESCRIPTION specified for ${VW_EXE_NAME}")
+  endif()
+
   vw_get_bin_target(FULL_BIN_NAME ${VW_EXE_NAME})
   add_executable(${FULL_BIN_NAME})
   target_sources(${FULL_BIN_NAME} PRIVATE ${VW_EXE_SOURCES})
+
+  if(VW_OUPUT_LIB_DESCRIPTIONS)
+    message(STATUS "{\"name\":\"${VW_EXE_NAME}\", \"target\":\"${FULL_BIN_NAME}\", \"type\":\"EXECUTABLE\",\"description\":\"${VW_EXE_DESCRIPTION}\",\"public_deps\":\"\",\"private_deps\":\"${VW_EXE_DEPS}\",\"exceptions\":\"N/A\"}")
+  endif()
 
   if(VW_EXE_OVERRIDE_BIN_NAME)
     set_target_properties(${FULL_BIN_NAME} PROPERTIES OUTPUT_NAME ${VW_EXE_OVERRIDE_BIN_NAME})
@@ -180,8 +226,21 @@ function(vw_add_executable)
     target_link_libraries(${FULL_BIN_NAME} PRIVATE ${VW_EXE_DEPS})
   endif()
 
-  set_property(TARGET ${FULL_BIN_NAME} PROPERTY CXX_STANDARD 11)
+  set_property(TARGET ${FULL_BIN_NAME} PROPERTY CXX_STANDARD ${VW_CXX_STANDARD})
   set_property(TARGET ${FULL_BIN_NAME} PROPERTY CXX_STANDARD_REQUIRED ON)
+  set_property(TARGET ${FULL_BIN_NAME} PROPERTY CMAKE_CXX_EXTENSIONS OFF)
+  target_compile_options(${FULL_BIN_NAME} PRIVATE ${WARNING_OPTIONS} ${WARNING_AS_ERROR_OPTIONS})
+  target_compile_definitions(${FULL_BIN_NAME} PRIVATE _FILE_OFFSET_BITS=64)
+  if (WIN32)
+    target_compile_options(${FULL_BIN_NAME} PRIVATE ${VW_WIN_FLAGS})
+  else()
+    target_compile_options(${FULL_BIN_NAME} PRIVATE ${VW_LINUX_FLAGS})
+  endif()
+
+  if(VW_GCOV)
+    target_compile_options(${FULL_BIN_NAME} PRIVATE -fprofile-arcs -ftest-coverage)
+    target_link_libraries(${FULL_BIN_NAME} PRIVATE gcov)
+  endif()
 
   if(VW_INSTALL AND VW_EXE_ENABLE_INSTALL)
     install(
@@ -198,10 +257,11 @@ function(vw_add_test_executable)
   cmake_parse_arguments(VW_TEST
   ""
   "FOR_LIB"
-  "SOURCES;EXTRA_DEPS"
+  "SOURCES;EXTRA_DEPS;COMPILE_DEFS"
   ${ARGN})
 
-  if(NOT TARGET VowpalWabbit::${VW_TEST_FOR_LIB})
+  vw_get_lib_target(FULL_FOR_LIB_NAME ${VW_TEST_FOR_LIB})
+  if(NOT TARGET ${FULL_FOR_LIB_NAME})
     message(FATAL_ERROR "Target ${VW_TEST_FOR_LIB} does not exist")
   endif()
 
@@ -218,11 +278,21 @@ function(vw_add_test_executable)
     add_executable(${FULL_TEST_NAME})
     target_sources(${FULL_TEST_NAME} PRIVATE ${VW_TEST_SOURCES})
     target_link_libraries(${FULL_TEST_NAME} PUBLIC
-      VowpalWabbit::${VW_TEST_FOR_LIB}
+      ${FULL_FOR_LIB_NAME}
       ${VW_TEST_EXTRA_DEPS}
       gtest_main
       gmock
     )
-    add_test(NAME ${FULL_TEST_NAME} COMMAND ${FULL_TEST_NAME})
+    target_compile_definitions(${FULL_TEST_NAME} PRIVATE ${VW_TEST_COMPILE_DEFS})
+    target_compile_options(${FULL_TEST_NAME} PRIVATE ${WARNING_OPTIONS} ${WARNING_AS_ERROR_OPTIONS})
+    set_property(TARGET ${FULL_TEST_NAME} PROPERTY CXX_STANDARD ${VW_CXX_STANDARD})
+    set_property(TARGET ${FULL_TEST_NAME} PROPERTY CXX_STANDARD_REQUIRED ON)
+    set_property(TARGET ${FULL_TEST_NAME} PROPERTY CMAKE_CXX_EXTENSIONS OFF)
+    if(VW_UNIT_TEST_WITH_VALGRIND_INTERNAL)
+      add_test(NAME ${FULL_TEST_NAME} COMMAND ${VALGRIND} $<TARGET_FILE:${FULL_TEST_NAME}>)
+    else()
+      add_test(NAME ${FULL_TEST_NAME} COMMAND ${FULL_TEST_NAME})
+    endif()
+    set_tests_properties(${FULL_TEST_NAME} PROPERTIES LABELS "VWTestList")
   endif()
 endfunction()

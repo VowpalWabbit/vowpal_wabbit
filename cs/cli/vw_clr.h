@@ -8,7 +8,7 @@
 #define _CRT_SECURE_NO_WARNINGS
 #endif
 
-#include "vw.h"
+#include "vw/core/vw.h"
 #include "vw_settings.h"
 
 #include <msclr\marshal_cppstd.h>

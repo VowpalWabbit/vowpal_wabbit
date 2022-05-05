@@ -85,7 +85,13 @@ class FlatbufferTest:
 
     def convert(self, to_flatbuff, color_enum):
         # arguments and flats not supported or needed in flatbuffer conversion
-        flags_to_remove = ["-c ", "--bfgs", "--onethread", "-t ", "--search_span_bilou"]
+        flags_to_remove = [
+            "-c ",
+            "--bfgs",
+            "--onethread",
+            "-t ",
+            "--search_span_bilou",
+        ]
         arguments_to_remove = [
             "--passes",
             "--ngram",
@@ -123,9 +129,11 @@ class FlatbufferTest:
             # replace depends_on filename with our filename, will do nothing if no depends_on
             to_flatbuff_command = re.sub(
                 "{} [:a-zA-Z0-9_.\-/]*".format("-d"),
-                "-d {} ".format(from_file),
+                "",
                 to_flatbuff_command,
             )
+
+            to_flatbuff_command = f"-d {from_file} " + to_flatbuff_command
 
             cmd = "{} {} {} {}".format(
                 to_flatbuff, to_flatbuff_command, "--fb_out", to_file

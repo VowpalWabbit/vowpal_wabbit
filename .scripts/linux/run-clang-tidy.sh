@@ -3,9 +3,9 @@ set -e
 set -x
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
-REPO_DIR=$(realpath $SCRIPT_DIR/../../)
+REPO_DIR=$SCRIPT_DIR/../../
 cd $REPO_DIR
 
-CONFIG=$(cat $REPO_DIR/.clang-tidy | tr -d "\n")
-cmake -S . -B build -G Ninja -DFMT_SYS_DEP=On -DSPDLOG_SYS_DEP=On -D "CMAKE_CXX_CLANG_TIDY=clang-tidy;-config=$CONFIG;-header-filter=$REPO_DIR/vowpalwabbit/*"
-cmake --build build --target vw-bin
+# -DCMAKE_EXPORT_COMPILE_COMMANDS=On is manually set because in CMake 3.16, just setting it in the CMakeLists.txt does not work.
+cmake -S . -B build -DFMT_SYS_DEP=On -DSPDLOG_SYS_DEP=On -DVW_BOOST_MATH_SYS_DEP=On -DBUILD_TESTING=Off -DVW_BUILD_VW_C_WRAPPER=Off -DCMAKE_EXPORT_COMPILE_COMMANDS=On
+run-clang-tidy -p build -header-filter=vw/*

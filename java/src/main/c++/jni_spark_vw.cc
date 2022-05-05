@@ -1,14 +1,14 @@
 #include "jni_spark_vw.h"
 
-#include "best_constant.h"
-#include "config/cli_options_serializer.h"
-#include "config/options.h"
-#include "learner.h"
-#include "parse_example.h"
-#include "shared_data.h"
-#include "simple_label_parser.h"
 #include "util.h"
 #include "vw/common/vw_exception.h"
+#include "vw/config/cli_options_serializer.h"
+#include "vw/config/options.h"
+#include "vw/core/best_constant.h"
+#include "vw/core/learner.h"
+#include "vw/core/parse_example.h"
+#include "vw/core/shared_data.h"
+#include "vw/core/simple_label_parser.h"
 
 #include <algorithm>
 #include <exception>
@@ -317,7 +317,7 @@ JNIEXPORT jint JNICALL Java_org_vowpalwabbit_spark_VowpalWabbitNative_hash(
   CriticalArrayGuard dataGuard(env, data);
   const char* values0 = (const char*)dataGuard.data();
 
-  return (jint)VW::common::uniform_hash(values0 + offset, len, seed);
+  return (jint)VW::uniform_hash(values0 + offset, len, seed);
 }
 
 // VW Example
@@ -537,7 +537,7 @@ JNIEXPORT void JNICALL Java_org_vowpalwabbit_spark_VowpalWabbitExample_setShared
     CB::cb_class f;
 
     f.partial_prediction = 0.;
-    f.action = (uint32_t)VW::common::uniform_hash("shared", 6 /*length of string*/, 0);
+    f.action = (uint32_t)VW::uniform_hash("shared", 6 /*length of string*/, 0);
     f.cost = FLT_MAX;
     f.probability = -1.f;
 
@@ -625,7 +625,7 @@ JNIEXPORT jstring JNICALL Java_org_vowpalwabbit_spark_VowpalWabbitExample_toStri
 
         CB::cb_class& f = ld->costs[0];
 
-        // Ignore checking if f.action == VW::common::uniform_hash("shared")
+        // Ignore checking if f.action == VW::uniform_hash("shared")
         if (f.partial_prediction == 0 && f.cost == FLT_MAX && f.probability == -1.f)
           ostr << "shared";
         else

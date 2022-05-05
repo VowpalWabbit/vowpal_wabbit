@@ -2,11 +2,13 @@
 // individual contributors. All rights reserved. Released under a BSD (revised)
 // license as described in the file LICENSE.
 
-#include "vw.h"
 #include "simulator.h"
 
-#include <numeric>
+#include "vw/core/vw.h"
+
 #include <fmt/format.h>
+
+#include <numeric>
 
 namespace simulator
 {
@@ -22,7 +24,8 @@ cb_sim::cb_sim(uint64_t seed)
   callback_count = 0;
 }
 
-float cb_sim::get_reaction(const std::map<std::string, std::string>& context, const std::string& action, bool add_noise)
+float cb_sim::get_reaction(
+    const std::map<std::string, std::string>& context, const std::string& action, bool add_noise, bool swap_reward)
 {
   float like_reward = USER_LIKED_ARTICLE;
   float dislike_reward = USER_DISLIKED_ARTICLE;
@@ -31,24 +34,29 @@ float cb_sim::get_reaction(const std::map<std::string, std::string>& context, co
     like_reward += random_state.get_and_update_random();
     dislike_reward += random_state.get_and_update_random();
   }
+
+  float reward = dislike_reward;
   if (context.at("user") == "Tom")
   {
-    if (context.at("time_of_day") == "morning" && action == "politics") { return like_reward; }
+    if (context.at("time_of_day") == "morning" && action == "politics") { reward = like_reward; }
     else if (context.at("time_of_day") == "afternoon" && action == "music")
     {
-      return like_reward;
+      reward = like_reward;
     }
   }
   else if (context.at("user") == "Anna")
   {
-    if (context.at("time_of_day") == "morning" && action == "sports") { return like_reward; }
+    if (context.at("time_of_day") == "morning" && action == "sports") { reward = like_reward; }
     else if (context.at("time_of_day") == "afternoon" && action == "politics")
     {
-      return like_reward;
+      reward = like_reward;
     }
   }
-  return dislike_reward;
+
+  if (swap_reward) { return (reward == like_reward) ? dislike_reward : like_reward; }
+  return reward;
 }
+
 // todo: skip text format and create vw example directly
 std::vector<std::string> cb_sim::to_vw_example_format(
     const std::map<std::string, std::string>& context, const std::string& chosen_action, float cost, float prob)
@@ -123,7 +131,7 @@ void cb_sim::call_if_exists(VW::workspace& vw, VW::multi_ex& ex, const callback_
 }
 
 std::vector<float> cb_sim::run_simulation_hook(VW::workspace* vw, size_t num_iterations, callback_map& callbacks,
-    bool do_learn, size_t shift, bool add_noise, uint64_t num_useless_features)
+    bool do_learn, size_t shift, bool add_noise, uint64_t num_useless_features, const std::vector<uint64_t>& swap_after)
 {
   // check if there's a callback for the first possible element,
   // in this case most likely 0th event
@@ -131,8 +139,19 @@ std::vector<float> cb_sim::run_simulation_hook(VW::workspace* vw, size_t num_ite
   VW::multi_ex dummy;
   call_if_exists(*vw, dummy, callbacks, shift - 1);
 
+  bool swap_reward = false;
+  auto swap_after_iter = swap_after.begin();
+
   for (size_t i = shift; i < shift + num_iterations; ++i)
   {
+    if (swap_after_iter != swap_after.end())
+    {
+      if (i > *swap_after_iter)
+      {
+        ++swap_after_iter;
+        swap_reward = !swap_reward;
+      }
+    }
     // 1. In each simulation choose a user
     auto user = choose_user();
 
@@ -150,7 +169,7 @@ std::vector<float> cb_sim::run_simulation_hook(VW::workspace* vw, size_t num_ite
 
     // 4. Get cost of the action we chose
     // Check for reward swap
-    float cost = get_reaction(context, chosen_action, add_noise);
+    float cost = get_reaction(context, chosen_action, add_noise, swap_reward);
     cost_sum += cost;
 
     if (do_learn)
@@ -220,12 +239,13 @@ std::vector<float> _test_helper_save_load(const std::string& vw_arg, size_t num_
   return ctr;
 }
 
-std::vector<float> _test_helper_hook(const std::string& vw_arg, callback_map& hooks, size_t num_iterations, int seed)
+std::vector<float> _test_helper_hook(const std::string& vw_arg, callback_map& hooks, size_t num_iterations, int seed,
+    const std::vector<uint64_t>& swap_after)
 {
   BOOST_CHECK(true);
   auto* vw = VW::initialize(vw_arg);
   simulator::cb_sim sim(seed);
-  auto ctr = sim.run_simulation_hook(vw, num_iterations, hooks);
+  auto ctr = sim.run_simulation_hook(vw, num_iterations, hooks, true, 1, false, 0, swap_after);
   VW::finish(*vw);
   return ctr;
 }
