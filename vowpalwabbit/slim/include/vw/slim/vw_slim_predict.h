@@ -431,6 +431,7 @@ public:
   static int sort_by_scores(PdfIt pdf_first, PdfIt pdf_last, InputScoreIt scores_first, InputScoreIt scores_last,
       OutputIt ranking_begin, OutputIt ranking_last)
   {
+    _UNUSED(scores_last);
     const size_t pdf_size = pdf_last - pdf_first;
     const size_t ranking_size = ranking_last - ranking_begin;
 
