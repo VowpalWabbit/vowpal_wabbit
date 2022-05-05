@@ -1027,7 +1027,7 @@ void parse_example_tweaks(options_i& options, VW::workspace& all)
   std::string named_labels;
   std::string loss_function;
   float loss_parameter_0 = 0.0;
-  float loss_parameter_1 = 0.0;
+  float loss_parameter_1 = 1.0;
   uint64_t early_terminate_passes;
   bool test_only = false;
 
