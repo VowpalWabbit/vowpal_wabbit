@@ -48,6 +48,7 @@ struct epsilon_decay_data
       , _log_champ_changes(log_champ_changes)
   {
     uint64_t model_idx = 0;
+    uint64_t weight_idx = 0;
     for (uint64_t i = 0; i < num_configs; ++i)
     {
       std::vector<epsilon_decay_score> score_vec;
@@ -58,9 +59,12 @@ struct epsilon_decay_data
         ++model_idx;
       }
       _scored_configs.push_back(score_vec);
+      _weight_indices.push_back(weight_idx);
+      ++weight_idx;
     }
   }
   std::vector<std::vector<epsilon_decay_score>> _scored_configs;
+  std::vector<uint64_t> _weight_indices;
   uint64_t _min_scope;
   double _epsilon_decay_alpha;  // Confidence interval
   double _epsilon_decay_tau;    // Count decay time constant

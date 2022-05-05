@@ -84,7 +84,7 @@ void predict(
   uint64_t K = static_cast<uint64_t>(data._scored_configs.size());
   auto& active_score = data._scored_configs[K - 1][K - 1];
   ep_fts.epsilon = VW::reductions::epsilon_decay::decayed_epsilon(active_score.update_count);
-  base.predict(examples, active_score.get_model_idx());
+  base.predict(examples, data._weight_indices[K - 1]);
 }
 
 void learn(
@@ -100,32 +100,28 @@ void learn(
     labelled_action = std::distance(examples.begin(), it);
   }
 
+  uint64_t K = static_cast<uint64_t>(data._scored_configs.size());
   const float r = -logged.cost;
+  auto& ep_fts = examples[0]->_reduction_features.template get<VW::cb_explore_adf::greedy::reduction_features>();
   // Process each model, then update the upper/lower bounds for each model
-  for (auto config_iter_vec = data._scored_configs.begin(); config_iter_vec != data._scored_configs.end();
-       ++config_iter_vec)
+  for (int64_t i = 0; i < K; ++i)
   {
-    for (auto config_iter = config_iter_vec->begin(); config_iter != config_iter_vec->end(); ++config_iter)
+    ep_fts.epsilon = VW::reductions::epsilon_decay::decayed_epsilon(data._scored_configs[i][i].update_count);
+    if (!base.learn_returns_prediction) { base.predict(examples, data._weight_indices[i]); }
+    base.learn(examples, data._weight_indices[i]);
+    for (const auto& a_s : examples[0]->pred.a_s)
     {
-      // Update the scoring of all configs
-      // Only call if learn calls predict is set
-      auto& ep_fts = examples[0]->_reduction_features.template get<VW::cb_explore_adf::greedy::reduction_features>();
-      ep_fts.epsilon = VW::reductions::epsilon_decay::decayed_epsilon(config_iter->update_count);
-      if (!base.learn_returns_prediction) { base.predict(examples, config_iter->get_model_idx()); }
-      base.learn(examples, config_iter->get_model_idx());
-      for (const auto& a_s : examples[0]->pred.a_s)
+      if (a_s.action == labelled_action)
       {
-        if (a_s.action == labelled_action)
+        const float w = (logged.probability > 0) ? a_s.score / logged.probability : 0;
+        for (uint64_t j = 0; j <= i; ++j)
         {
-          const float w = (logged.probability > 0) ? a_s.score / logged.probability : 0;
-          config_iter->update_bounds(w, r);
-          break;
+          data._scored_configs[i][j].update_bounds(w, r);
         }
+        break;
       }
     }
   }
-
-  uint64_t K = static_cast<uint64_t>(data._scored_configs.size());
 
   // If the lower bound of a model exceeds the upperbound of the champion, migrate the new model as
   // the new champion.
@@ -148,11 +144,12 @@ void learn(
           std::swap(data._scored_configs[outer_ind][inner_ind],
               data._scored_configs[outer_ind + swap_dist][inner_ind + swap_dist]);
         }
+        std::swap(data._weight_indices[outer_ind], data._weight_indices[outer_ind + swap_dist]);
       }
 
       // Clear old scores and weights
       uint64_t params_per_weight = 1;
-      while (params_per_weight < K * (K + 1) / 2) { params_per_weight *= 2; }
+      while (params_per_weight < K) { params_per_weight *= 2; }
       for (uint64_t outer_ind = 0; outer_ind < K; ++outer_ind)
       {
         for (uint64_t inner_ind = 0;
@@ -160,9 +157,11 @@ void learn(
              ++inner_ind)
         {
           data._scored_configs[outer_ind][inner_ind].reset_stats(data._epsilon_decay_alpha, data._epsilon_decay_tau);
-          data._weights.dense_weights.clear_offset(
-              data._scored_configs[outer_ind][inner_ind].get_model_idx(), params_per_weight);
         }
+      }
+      for (uint64_t ind = 0; ind < swap_dist; ++ind)
+      {
+        data._weights.dense_weights.clear_offset(data._weight_indices[ind], params_per_weight);
       }
       break;
     }
@@ -185,6 +184,7 @@ void learn(
           {
             std::swap(data._scored_configs[outer_ind][inner_ind], data._scored_configs[outer_ind + 1][inner_ind + 1]);
           }
+          std::swap(data._weight_indices[outer_ind], data._weight_indices[outer_ind + 1]);
         }
       }
 
@@ -197,12 +197,12 @@ void learn(
 
       // Clear old scores and weights
       uint64_t params_per_weight = 1;
-      while (params_per_weight < K * (K + 1) / 2) { params_per_weight *= 2; }
+      while (params_per_weight < K) { params_per_weight *= 2; }
       for (uint64_t outer_ind = 0; outer_ind < K; ++outer_ind)
       {
         data._scored_configs[outer_ind][0].reset_stats(data._epsilon_decay_alpha, data._epsilon_decay_tau);
-        data._weights.dense_weights.clear_offset(data._scored_configs[outer_ind][0].get_model_idx(), params_per_weight);
       }
+      data._weights.dense_weights.clear_offset(data._weight_indices[0], params_per_weight);
       break;
     }
   }
@@ -271,10 +271,8 @@ VW::LEARNER::base_learner* VW::reductions::epsilon_decay_setup(VW::setup_base_i&
   auto data = VW::make_unique<VW::reductions::epsilon_decay::epsilon_decay_data>(
       model_count, _min_scope, scaled_alpha, _epsilon_decay_tau, all.weights, all.logger, _log_champ_changes);
 
-  // Update model count to be 2^n
-  uint64_t total_models = model_count * (model_count + 1) / 2;
   uint64_t params_per_weight = 1;
-  while (params_per_weight < total_models) { params_per_weight *= 2; }
+  while (params_per_weight < model_count) { params_per_weight *= 2; }
 
   // make sure we setup the rest of the stack with cleared interactions
   // to make sure there are not subtle bugs
