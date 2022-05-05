@@ -158,8 +158,7 @@ void learn(
       for (int64_t outer_ind = 0; outer_ind < K; ++outer_ind)
       {
         for (int64_t inner_ind = 0;
-             inner_ind < std::min(static_cast<int64_t>(data._scored_configs[outer_ind].size()), swap_dist);
-             ++inner_ind)
+             inner_ind < std::min(static_cast<int64_t>(data._scored_configs[outer_ind].size()), swap_dist); ++inner_ind)
         {
           data._scored_configs[outer_ind][inner_ind].reset_stats(data._epsilon_decay_alpha, data._epsilon_decay_tau);
           data._weights.dense_weights.clear_offset(
@@ -169,7 +168,6 @@ void learn(
       break;
     }
   }
-
 
   // Check if any model counts are higher than the champion. If so, shift the model
   // back to the beginning of the list and reset its counts
