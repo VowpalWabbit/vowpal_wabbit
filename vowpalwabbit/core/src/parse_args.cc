@@ -1026,7 +1026,8 @@ void parse_example_tweaks(options_i& options, VW::workspace& all)
 {
   std::string named_labels;
   std::string loss_function;
-  float loss_parameter = 0.0;
+  float loss_parameter_0 = 0.0;
+  float loss_parameter_1 = 0.0;
   uint64_t early_terminate_passes;
   bool test_only = false;
 
@@ -1059,9 +1060,15 @@ void parse_example_tweaks(options_i& options, VW::workspace& all)
                .default_value("squared")
                .one_of({"squared", "classic", "hinge", "logistic", "quantile", "expectile", "poisson"})
                .help("Specify the loss function to be used, uses squared by default"))
-      .add(make_option("quantile_tau", loss_parameter)
+      .add(make_option("quantile_tau", loss_parameter_0)
                .default_value(0.5f)
                .help("Parameter \\tau associated with Quantile loss. Defaults to 0.5"))
+      .add(make_option("logistic_min", loss_parameter_0)
+               .default_value(0.5f)
+               .help("Minimum loss value for logistic loss. Defaults to -1"))
+      .add(make_option("logistic_max", loss_parameter_1)
+               .default_value(1.0f)
+               .help("Maximum loss value for logistic loss. Defaults to +1"))
       .add(make_option("l1", all.l1_lambda).default_value(0.0f).help("L_1 lambda"))
       .add(make_option("l2", all.l2_lambda).default_value(0.0f).help("L_2 lambda"))
       .add(make_option("no_bias_regularization", all.no_bias).help("No bias in regularization"))
@@ -1110,12 +1117,24 @@ void parse_example_tweaks(options_i& options, VW::workspace& all)
     if (!all.quiet) { *(all.trace_message) << "parsed " << all.sd->ldict->getK() << " named labels" << endl; }
   }
 
-  all.loss = get_loss_function(all, loss_function, loss_parameter);
+  // loss_parameter_0 is used with two loss functions, but with different defaults, so need to override
+  if (loss_function == "logistic" && !options.was_supplied("logistic_min"))
+  {
+    loss_parameter_0 = -1.0f;
+  }
+
+  all.loss = get_loss_function(all, loss_function, loss_parameter_0, loss_parameter_1);
   if (options.was_supplied("quantile_tau") && all.loss->get_type() != "quantile" && all.loss->get_type() != "expectile")
   {
     all.logger.err_warn(
         "Option 'quantile_tau' was passed but the quantile loss function is not being used. 'quantile_tau' value will "
         "be ignored.");
+  }
+  if ((options.was_supplied("logistic_min") || options.was_supplied("logistic_max")) && all.loss->get_type() != "logistic")
+  {
+    all.logger.err_warn(
+        "Options 'logistic_min' or 'logistic_max' were passed but the logistic loss function is not being used. "
+        "These options will be ignored.");
   }
 
   if (all.l1_lambda < 0.f)

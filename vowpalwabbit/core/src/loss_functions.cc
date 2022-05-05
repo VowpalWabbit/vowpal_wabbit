@@ -204,7 +204,7 @@ class logloss : public VW::loss_function
   mutable VW::io::logger logger;
 
 public:
-  explicit logloss(VW::io::logger logger) : logger(std::move(logger)) {}
+  explicit logloss(VW::io::logger logger, float min, float max) : logger(std::move(logger)) {}
 
   std::string get_type() const override { return "logistic"; }
 
@@ -464,7 +464,7 @@ public:
 namespace VW
 {
 std::unique_ptr<loss_function> get_loss_function(
-    VW::workspace& all, const std::string& funcName, float function_parameter)
+    VW::workspace& all, const std::string& funcName, float function_parameter_0, float function_parameter_1)
 {
   if (funcName == "squared" || funcName == "Huber") { return VW::make_unique<squaredloss>(); }
   else if (funcName == "classic")
@@ -482,15 +482,15 @@ std::unique_ptr<loss_function> get_loss_function(
       all.sd->min_label = -50;
       all.sd->max_label = 50;
     }
-    return VW::make_unique<logloss>(all.logger);
+    return VW::make_unique<logloss>(all.logger, function_parameter_0, function_parameter_1);
   }
   else if (funcName == "quantile" || funcName == "pinball" || funcName == "absolute")
   {
-    return VW::make_unique<quantileloss>(function_parameter);
+    return VW::make_unique<quantileloss>(function_parameter_0);
   }
   else if (funcName == "expectile")
   {
-    return VW::make_unique<expectileloss>(function_parameter);
+    return VW::make_unique<expectileloss>(function_parameter_0);
   }
   else if (funcName == "poisson")
   {

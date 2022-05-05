@@ -36,5 +36,5 @@ public:
 };
 
 std::unique_ptr<loss_function> get_loss_function(
-    VW::workspace&, const std::string& funcName, float function_parameter = 0);
+    VW::workspace&, const std::string& funcName, float function_parameter_0 = 0, float function_parameter_1 = 0);
 }  // namespace VW
