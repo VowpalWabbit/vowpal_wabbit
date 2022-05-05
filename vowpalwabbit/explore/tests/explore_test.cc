@@ -24,8 +24,8 @@ struct pdf_seg
 
 bool continuous_action_range_check(std::vector<pdf_seg> scores, float range_min, float range_max)
 {
-  float chosen_value;
-  float pdf_value;
+  float chosen_value = 0.f;
+  float pdf_value = 0.f;
   uint64_t seed = 7791;
   auto scode = exploration::sample_pdf(&seed, begin(scores), end(scores), chosen_value, pdf_value);
   EXPECT_EQ(scode, S_EXPLORATION_OK);
