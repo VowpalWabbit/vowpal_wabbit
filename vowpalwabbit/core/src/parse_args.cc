@@ -610,7 +610,8 @@ void parse_feature_tweaks(options_i& options, VW::workspace& all, bool interacti
                .help("Ignore namespaces beginning with character <arg> for linear terms only"))
       .add(make_option("ignore_features_dsjson_experimental", ignore_features)
                .keep()
-               .help("Ignore specified features from namespace. To ignore a feature arg should be namespace|feature"))
+               .help("Ignore specified features from namespace. To ignore a feature arg should be namespace|feature "
+                     "To ignore a feature in the default namespace, arg should be |feature").experimental())
       .add(make_option("keep", keeps).keep().help("Keep namespaces beginning with character <arg>"))
       .add(make_option("redefine", redefines)
                .keep()

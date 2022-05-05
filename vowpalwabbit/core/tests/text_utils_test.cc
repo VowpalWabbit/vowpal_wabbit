@@ -16,8 +16,8 @@ TEST(test_utils_tests, extract_ignored_feature_test)
   auto namespace_feature = VW::extract_ignored_feature("namespace|feature");
   auto ns = std::get<0>(namespace_feature);
   auto feature_name = std::get<1>(namespace_feature);
-  auto expected_ns = "namespace";
-  auto expected_feature = "feature";
+  std::string expected_ns = "namespace";
+  std::string expected_feature = "feature";
   EXPECT_EQ(expected_ns, ns);
   EXPECT_EQ(expected_feature, feature_name);
   
@@ -28,4 +28,12 @@ TEST(test_utils_tests, extract_ignored_feature_test)
   std::string expected_feature2;
   EXPECT_EQ(expected_ns2, ns2);
   EXPECT_EQ(expected_feature2, feature_name2);
+
+  auto namespace_feature3 = VW::extract_ignored_feature("|feature3");
+  auto ns3 = std::get<0>(namespace_feature3);
+  auto feature_name3 = std::get<1>(namespace_feature3);
+  std::string expected_ns3 = " ";
+  std::string expected_feature3 = "feature3";
+  EXPECT_EQ(expected_ns3, ns3);
+  EXPECT_EQ(expected_feature3, feature_name3);
 }
