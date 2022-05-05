@@ -57,4 +57,4 @@ stride_shift_guard::~stride_shift_guard()
       for (auto& f : _ex.feature_space[ns]) f.index() >>= _shift;
 }
 
-};  // namespace vw_slim
+}  // namespace vw_slim
