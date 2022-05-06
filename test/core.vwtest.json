@@ -5227,7 +5227,7 @@
     "vw_command": "--dsjson train-sets/dsjson_cb_part1.json --cb_explore_adf --epsilon 0.2 --invert_hash ignore_multiple_features.interactions --ignore_features_dsjson_experimental FromUrl|timeofday j|type",
     "diff_files": {
       "stderr": "train-sets/ref/ignore_multiple_features.stderr",
-    "ignore_multiple_features.interactions": "train-sets/ref/ignore_multiple_features.interactions",
+      "ignore_multiple_features.interactions": "train-sets/ref/ignore_multiple_features.interactions",
       "stdout": "train-sets/ref/ignore_multiple_features.stdout"
     },
     "input_files": [
