@@ -10,6 +10,7 @@ rm -rf build
 cmake -S . -B build -G Ninja \
     -DBUILD_TESTING=On \
     -DBUILD_FLATBUFFERS=Off \
+    -DBUILD_CSV=Off \
     -DRAPIDJSON_SYS_DEP=Off \
     -DFMT_SYS_DEP=Off \
     -DSPDLOG_SYS_DEP=Off \

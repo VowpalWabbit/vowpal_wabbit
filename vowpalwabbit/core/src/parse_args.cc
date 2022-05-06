@@ -53,6 +53,9 @@
 #include <sstream>
 #include <tuple>
 #include <utility>
+#ifdef BUILD_CSV
+#  include "vw/csv_parser/parse_example_csv.h"
+#endif
 
 using std::endl;
 using namespace VW::config;
@@ -405,6 +408,10 @@ input_options parse_source(VW::workspace& all, options_i& options)
       .add(make_option("flatbuffer", parsed_options.flatbuffer)
                .help("Data file will be interpreted as a flatbuffer file")
                .experimental());
+#ifdef BUILD_CSV
+  parsed_options.csv_opts = VW::make_unique<VW::parsers::csv_parser_options>();
+  VW::parsers::csv_parser::set_parse_args(input_options, *parsed_options.csv_opts.get());
+#endif
 
   options.add_and_parse(input_options);
 
@@ -446,6 +453,10 @@ input_options parse_source(VW::workspace& all, options_i& options)
     all.holdout_set_off = true;
     *(all.trace_message) << "Making holdout_set_off=true since output regularizer specified" << endl;
   }
+
+#ifdef BUILD_CSV
+  VW::parsers::csv_parser::handle_parse_args(*parsed_options.csv_opts.get());
+#endif
 
   return parsed_options;
 }
