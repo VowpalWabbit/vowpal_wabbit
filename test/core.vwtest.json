@@ -5237,7 +5237,7 @@
   {
     "id": 407,
     "desc": "test ignore feature in default namespace",
-    "vw_command": "--dsjson train-sets/dsjson_cb_default_ns.json --cb_explore_adf --epsilon 0.2 --invert_hash ignore_feature_default_ns.interactions --ignore_features_dsjson_experimental |timeofday",
+    "vw_command": "--dsjson -d train-sets/dsjson_cb_default_ns.json --cb_explore_adf --epsilon 0.2 --invert_hash ignore_feature_default_ns.interactions --ignore_features_dsjson_experimental |timeofday",
     "diff_files": {
       "stderr": "train-sets/ref/ignore_feature_default_ns.stderr",
       "ignore_feature_default_ns.interactions": "train-sets/ref/ignore_feature_default_ns.interactions",
