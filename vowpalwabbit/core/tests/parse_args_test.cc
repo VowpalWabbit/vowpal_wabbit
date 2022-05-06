@@ -20,7 +20,7 @@ TEST(test_utils_tests, extract_ignored_feature_test)
   std::string expected_feature = "feature";
   EXPECT_EQ(expected_ns, ns);
   EXPECT_EQ(expected_feature, feature_name);
-  
+
   auto namespace_feature2 = extract_ignored_feature("");
   auto ns2 = std::get<0>(namespace_feature2);
   auto feature_name2 = std::get<1>(namespace_feature2);

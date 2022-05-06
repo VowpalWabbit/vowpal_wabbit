@@ -225,7 +225,9 @@ public:
   std::array<bool, NUM_NAMESPACES> ignore;  // a set of namespaces to ignore
   bool ignore_some_linear;
   std::array<bool, NUM_NAMESPACES> ignore_linear;  // a set of namespaces to ignore for linear
-  std::unordered_map<std::string, std::set<std::string>> ignore_features_dsjson;  // a map from hash(namespace) to a vector of hash(feature). This flag is only available for dsjson.
+  std::unordered_map<std::string, std::set<std::string>>
+      ignore_features_dsjson;  // a map from hash(namespace) to a vector of hash(feature). This flag is only available
+                               // for dsjson.
 
   bool redefine_some;                                  // --redefine param was used
   std::array<unsigned char, NUM_NAMESPACES> redefine;  // keeps new chars for namespaces

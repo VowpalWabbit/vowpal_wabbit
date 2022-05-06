@@ -968,7 +968,9 @@ public:
       }
     }
     const char* ns = ctx.CurrentNamespace().name;
-    if (ctx.ignore_features == nullptr || (ctx.ignore_features->find(ns) == ctx.ignore_features->end() || ctx.ignore_features->at(ns).find(ctx.key) == ctx.ignore_features->at(ns).end()))
+    if (ctx.ignore_features == nullptr ||
+        (ctx.ignore_features->find(ns) == ctx.ignore_features->end() ||
+            ctx.ignore_features->at(ns).find(ctx.key) == ctx.ignore_features->at(ns).end()))
     {
       if (ctx._chain_hash) { ctx.CurrentNamespace().AddFeature(ctx.key, str, ctx._hash_func, ctx._parse_mask); }
       else

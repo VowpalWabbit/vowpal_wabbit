@@ -55,13 +55,13 @@ namespace VW
 {
 namespace details
 {
-  /**
-  * @brief Extract namespace, feature name, and optional feature value from ignored feature string
-  *
-  * @param namespace_feature namespace|feature:feature_value. Feature value is optional and if it is supplied chain_hash is applied
-  * @return std::tuple<std::string, std::string> (namespace, feature)
-  */
-  std::tuple<std::string, std::string> extract_ignored_feature(VW::string_view namespace_feature);
-}
-}
-
+/**
+ * @brief Extract namespace, feature name, and optional feature value from ignored feature string
+ *
+ * @param namespace_feature namespace|feature:feature_value. Feature value is optional and if it is supplied chain_hash
+ * is applied
+ * @return std::tuple<std::string, std::string> (namespace, feature)
+ */
+std::tuple<std::string, std::string> extract_ignored_feature(VW::string_view namespace_feature);
+}  // namespace details
+}  // namespace VW
