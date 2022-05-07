@@ -57,7 +57,7 @@ public:
       const std::vector<uint64_t>& swap_after = std::vector<uint64_t>());
 
 private:
-  void call_if_exists(VW::workspace& vw, multi_ex& ex, const callback_map& callbacks, const size_t event);
+  void call_if_exists(VW::workspace& vw, VW::multi_ex& ex, const callback_map& callbacks, const size_t event);
 };
 
 std::vector<float> _test_helper(const std::string& vw_arg, size_t num_iterations = 3000, int seed = 10);

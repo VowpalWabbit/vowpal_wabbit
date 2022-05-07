@@ -48,13 +48,16 @@ public:
       std::shared_ptr<VW::rand_state> random_state, VW::version_struct model_file_version);
 
   // Should be called through cb_explore_adf_base for pre/post-processing
-  void predict(VW::LEARNER::multi_learner& base, multi_ex& examples) { predict_or_learn_impl<false>(base, examples); }
-  void learn(VW::LEARNER::multi_learner& base, multi_ex& examples) { predict_or_learn_impl<true>(base, examples); }
+  void predict(VW::LEARNER::multi_learner& base, VW::multi_ex& examples)
+  {
+    predict_or_learn_impl<false>(base, examples);
+  }
+  void learn(VW::LEARNER::multi_learner& base, VW::multi_ex& examples) { predict_or_learn_impl<true>(base, examples); }
   void save_load(io_buf& model_file, bool read, bool text);
 
 private:
   template <bool is_learn>
-  void predict_or_learn_impl(VW::LEARNER::multi_learner& base, multi_ex& examples);
+  void predict_or_learn_impl(VW::LEARNER::multi_learner& base, VW::multi_ex& examples);
 };
 
 cb_explore_adf_synthcover::cb_explore_adf_synthcover(float epsilon, float psi, size_t synthcoversize,
@@ -70,12 +73,12 @@ cb_explore_adf_synthcover::cb_explore_adf_synthcover(float epsilon, float psi, s
 }
 
 template <bool is_learn>
-void cb_explore_adf_synthcover::predict_or_learn_impl(VW::LEARNER::multi_learner& base, multi_ex& examples)
+void cb_explore_adf_synthcover::predict_or_learn_impl(VW::LEARNER::multi_learner& base, VW::multi_ex& examples)
 {
   VW::LEARNER::multiline_learn_or_predict<is_learn>(base, examples, examples[0]->ft_offset);
 
   const auto it =
-      std::find_if(examples.begin(), examples.end(), [](example* item) { return !item->l.cb.costs.empty(); });
+      std::find_if(examples.begin(), examples.end(), [](VW::example* item) { return !item->l.cb.costs.empty(); });
 
   if (it != examples.end())
   {

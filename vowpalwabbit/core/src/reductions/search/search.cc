@@ -213,7 +213,7 @@ public:
   VW::polylabel allowed_actions_cache;
 
   size_t loss_declared_cnt = 0;                 // how many times did run declare any loss (implicitly or explicitly)?
-  VW::v_array<scored_action> train_trajectory;  // the training trajectory
+  std::vector<scored_action> train_trajectory;  // the training trajectory
   size_t learn_t = 0;                           // what time step are we learning on?
   size_t learn_a_idx = 0;                       // what action index are we trying?
   bool done_with_all_actions = false;           // set to true when there are no more learn_a_idx to go
@@ -738,6 +738,14 @@ void search_declare_loss(search_private& priv, float loss)
 
 template <class T>
 void cdbg_print_array(const std::string& str, VW::v_array<T>& A)
+{
+  cdbg << str << " = [";
+  for (size_t i = 0; i < A.size(); i++) { cdbg << " " << A[i]; }
+  cdbg << " ]" << endl;
+}
+
+template <class T>
+void cdbg_print_array(const std::string& str, std::vector<T>& A)
 {
   cdbg << str << " = [";
   for (size_t i = 0; i < A.size(); i++) { cdbg << " " << A[i]; }

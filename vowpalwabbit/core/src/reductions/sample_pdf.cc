@@ -32,8 +32,8 @@ namespace
 // BEGIN sample_pdf reduction and reduction methods
 struct sample_pdf
 {
-  int learn(example& ec, VW::experimental::api_status* status);
-  int predict(example& ec, VW::experimental::api_status* status);
+  int learn(VW::example& ec, VW::experimental::api_status* status);
+  int predict(VW::example& ec, VW::experimental::api_status* status);
 
   void init(single_learner* p_base, std::shared_ptr<VW::rand_state> random_state);
 
@@ -43,7 +43,7 @@ private:
   single_learner* _base = nullptr;
 };
 
-int sample_pdf::learn(example& ec, VW::experimental::api_status*)
+int sample_pdf::learn(VW::example& ec, VW::experimental::api_status*)
 {
   // one of the base reductions will call predict so we need a valid
   // predict buffer
@@ -55,7 +55,7 @@ int sample_pdf::learn(example& ec, VW::experimental::api_status*)
   return VW::experimental::error_code::success;
 }
 
-int sample_pdf::predict(example& ec, VW::experimental::api_status*)
+int sample_pdf::predict(VW::example& ec, VW::experimental::api_status*)
 {
   _pred_pdf.clear();
 
@@ -83,7 +83,7 @@ void sample_pdf::init(single_learner* p_base, std::shared_ptr<VW::rand_state> ra
 
 // Free function to tie function pointers to reduction class methods
 template <bool is_learn>
-void predict_or_learn(sample_pdf& reduction, single_learner&, example& ec)
+void predict_or_learn(sample_pdf& reduction, single_learner&, VW::example& ec)
 {
   VW::experimental::api_status status;
   if (is_learn) { reduction.learn(ec, &status); }
