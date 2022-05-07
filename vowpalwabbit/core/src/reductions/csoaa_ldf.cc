@@ -43,10 +43,7 @@ struct ldf
   VW::workspace* all = nullptr;
 
   bool rank = false;
-  action_scores a_s;
   uint64_t ft_offset = 0;
-
-  std::vector<action_scores> stored_preds;
 };
 
 inline bool cmp_wclass_ptr(const COST_SENSITIVE::wclass* a, const COST_SENSITIVE::wclass* b) { return a->x < b->x; }
@@ -102,7 +99,7 @@ void unsubtract_example(VW::example* ec, VW::io::logger& logger)
   ec->indices.pop_back();
 }
 
-void make_single_prediction(ldf& data, single_learner& base, VW::example& ec)
+float make_single_prediction(ldf& data, single_learner& base, VW::example& ec)
 {
   uint64_t old_offset = ec.ft_offset;
 
@@ -123,6 +120,7 @@ void make_single_prediction(ldf& data, single_learner& base, VW::example& ec)
 
   ec.ft_offset = data.ft_offset;
   base.predict(ec);  // make a prediction
+  return ec.partial_prediction;
 }
 
 bool test_ldf_sequence(ldf& /*data*/, const VW::multi_ex& ec_seq, VW::io::logger& logger)
@@ -359,11 +357,10 @@ void predict_csoaa_ldf(ldf& data, single_learner& base, VW::multi_ex& ec_seq_all
   float min_score = FLT_MAX;
   for (uint32_t k = 0; k < K; k++)
   {
-    VW::example* ec = ec_seq_all[k];
-    make_single_prediction(data, base, *ec);
-    if (ec->partial_prediction < min_score)
+    const auto prediction = make_single_prediction(data, base, *ec_seq_all[k]);
+    if (prediction < min_score)
     {
-      min_score = ec->partial_prediction;
+      min_score = prediction;
       predicted_K = k;
     }
   }
@@ -382,36 +379,24 @@ void predict_csoaa_ldf_rank(ldf& data, single_learner& base, VW::multi_ex& ec_se
     return;  // nothing more to do
   }
 
-  uint32_t K = static_cast<uint32_t>(ec_seq_all.size());
+  const auto num_classes = static_cast<uint32_t>(ec_seq_all.size());
 
   /////////////////////// do prediction
-  data.a_s.clear();
-  data.stored_preds.clear();
+  auto& output_scores = ec_seq_all[0]->pred.a_s;
+  output_scores.clear();
 
-  auto restore_guard = VW::scope_exit([&data, &ec_seq_all, K] {
-    std::sort(data.a_s.begin(), data.a_s.end(), VW::action_score_compare_lt);
-
-    data.stored_preds[0].clear();
-    for (size_t k = 0; k < K; k++)
-    {
-      ec_seq_all[k]->pred.a_s = std::move(data.stored_preds[k]);
-      ec_seq_all[0]->pred.a_s.push_back(data.a_s[k]);
-    }
-
-    ////////////////////// compute probabilities
-    if (data.is_probabilities) { convert_to_probabilities(ec_seq_all); }
-  });
-
-  for (uint32_t k = 0; k < K; k++)
+  for (uint32_t k = 0; k < num_classes; k++)
   {
-    VW::example* ec = ec_seq_all[k];
-    data.stored_preds.emplace_back(std::move(ec->pred.a_s));
-    make_single_prediction(data, base, *ec);
-    action_score s;
-    s.score = ec->partial_prediction;
-    s.action = ec->l.cs.costs[0].class_index;
-    data.a_s.push_back(s);
+    auto* ex_ptr = ec_seq_all[k];
+    // Don't worry about moving pred struct around since we know this is only modifying scalar outputs
+    const auto prediction = make_single_prediction(data, base, *ex_ptr);
+    output_scores.push_back({ex_ptr->l.cs.costs[0].class_index, prediction});
   }
+
+  std::sort(output_scores.begin(), output_scores.end(), VW::action_score_compare_lt);
+
+  ////////////////////// compute probabilities
+  if (data.is_probabilities) { convert_to_probabilities(ec_seq_all); }
 }
 
 void output_example(
