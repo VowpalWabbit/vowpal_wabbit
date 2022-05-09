@@ -28,8 +28,8 @@ namespace
 // BEGIN sample_pdf reduction and reduction methods
 struct cb_explore_pdf
 {
-  int learn(example& ec, VW::experimental::api_status* status);
-  int predict(example& ec, VW::experimental::api_status* status);
+  int learn(VW::example& ec, VW::experimental::api_status* status);
+  int predict(VW::example& ec, VW::experimental::api_status* status);
 
   void init(single_learner* p_base);
 
@@ -42,13 +42,13 @@ private:
   single_learner* _base = nullptr;
 };
 
-int cb_explore_pdf::learn(example& ec, VW::experimental::api_status*)
+int cb_explore_pdf::learn(VW::example& ec, VW::experimental::api_status*)
 {
   _base->learn(ec);
   return VW::experimental::error_code::success;
 }
 
-int cb_explore_pdf::predict(example& ec, VW::experimental::api_status*)
+int cb_explore_pdf::predict(VW::example& ec, VW::experimental::api_status*)
 {
   const auto& reduction_features = ec._reduction_features.template get<VW::continuous_actions::reduction_features>();
   if (first_only && !reduction_features.is_pdf_set() && !reduction_features.is_chosen_action_set())
@@ -77,7 +77,7 @@ void cb_explore_pdf::init(single_learner* p_base) { _base = p_base; }
 
 // Free function to tie function pointers to reduction class methods
 template <bool is_learn>
-void predict_or_learn(cb_explore_pdf& reduction, single_learner&, example& ec)
+void predict_or_learn(cb_explore_pdf& reduction, single_learner&, VW::example& ec)
 {
   VW::experimental::api_status status;
   if (is_learn) { reduction.learn(ec, &status); }

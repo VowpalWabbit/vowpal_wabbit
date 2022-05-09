@@ -47,7 +47,7 @@ BOOST_AUTO_TEST_CASE(epsilon_decay_test_champ_change)
   const size_t deterministic_champ_switch = 5781;
   callback_map test_hooks;
 
-  test_hooks.emplace(deterministic_champ_switch - 1, [&](cb_sim&, VW::workspace& all, multi_ex&) {
+  test_hooks.emplace(deterministic_champ_switch - 1, [&](cb_sim&, VW::workspace& all, VW::multi_ex&) {
     epsilon_decay_data* epsilon_decay = epsilon_decay_test::get_epsilon_decay_data(all);
     BOOST_CHECK_EQUAL(epsilon_decay->_scored_configs[0][0].update_count, 15);
     BOOST_CHECK_EQUAL(epsilon_decay->_scored_configs[1][0].update_count, 15);
@@ -72,7 +72,7 @@ BOOST_AUTO_TEST_CASE(epsilon_decay_test_champ_change)
     return true;
   });
 
-  test_hooks.emplace(deterministic_champ_switch, [&](cb_sim&, VW::workspace& all, multi_ex&) {
+  test_hooks.emplace(deterministic_champ_switch, [&](cb_sim&, VW::workspace& all, VW::multi_ex&) {
     epsilon_decay_data* epsilon_decay = epsilon_decay_test::get_epsilon_decay_data(all);
     BOOST_CHECK_EQUAL(epsilon_decay->_scored_configs[0][0].update_count, 0);
     BOOST_CHECK_EQUAL(epsilon_decay->_scored_configs[1][0].update_count, 0);
@@ -110,7 +110,7 @@ BOOST_AUTO_TEST_CASE(epsilon_decay_test_update_count)
   const size_t seed = 100;
   callback_map test_hooks;
 
-  test_hooks.emplace(100, [&](cb_sim&, VW::workspace& all, multi_ex&) {
+  test_hooks.emplace(100, [&](cb_sim&, VW::workspace& all, VW::multi_ex&) {
     epsilon_decay_data* epsilon_decay = epsilon_decay_test::get_epsilon_decay_data(all);
     BOOST_CHECK_EQUAL(epsilon_decay->_scored_configs[0][0].get_model_idx(), 0);
     BOOST_CHECK_EQUAL(epsilon_decay->_scored_configs[1][0].get_model_idx(), 1);
@@ -129,7 +129,7 @@ BOOST_AUTO_TEST_CASE(epsilon_decay_test_update_count)
     return true;
   });
 
-  test_hooks.emplace(101, [&](cb_sim&, VW::workspace& all, multi_ex&) {
+  test_hooks.emplace(101, [&](cb_sim&, VW::workspace& all, VW::multi_ex&) {
     epsilon_decay_data* epsilon_decay = epsilon_decay_test::get_epsilon_decay_data(all);
     BOOST_CHECK_EQUAL(epsilon_decay->_scored_configs[0][0].get_model_idx(), 0);
     BOOST_CHECK_EQUAL(epsilon_decay->_scored_configs[1][0].get_model_idx(), 1);
@@ -148,7 +148,7 @@ BOOST_AUTO_TEST_CASE(epsilon_decay_test_update_count)
     return true;
   });
 
-  test_hooks.emplace(102, [&](cb_sim&, VW::workspace& all, multi_ex&) {
+  test_hooks.emplace(102, [&](cb_sim&, VW::workspace& all, VW::multi_ex&) {
     epsilon_decay_data* epsilon_decay = epsilon_decay_test::get_epsilon_decay_data(all);
     BOOST_CHECK_EQUAL(epsilon_decay->_scored_configs[0][0].get_model_idx(), 2);
     BOOST_CHECK_EQUAL(epsilon_decay->_scored_configs[1][0].get_model_idx(), 1);
@@ -167,7 +167,7 @@ BOOST_AUTO_TEST_CASE(epsilon_decay_test_update_count)
     return true;
   });
 
-  test_hooks.emplace(103, [&](cb_sim&, VW::workspace& all, multi_ex&) {
+  test_hooks.emplace(103, [&](cb_sim&, VW::workspace& all, VW::multi_ex&) {
     epsilon_decay_data* epsilon_decay = epsilon_decay_test::get_epsilon_decay_data(all);
     BOOST_CHECK_EQUAL(epsilon_decay->_scored_configs[0][0].get_model_idx(), 5);
     BOOST_CHECK_EQUAL(epsilon_decay->_scored_configs[1][0].get_model_idx(), 3);
@@ -186,7 +186,7 @@ BOOST_AUTO_TEST_CASE(epsilon_decay_test_update_count)
     return true;
   });
 
-  test_hooks.emplace(104, [&](cb_sim&, VW::workspace& all, multi_ex&) {
+  test_hooks.emplace(104, [&](cb_sim&, VW::workspace& all, VW::multi_ex&) {
     epsilon_decay_data* epsilon_decay = epsilon_decay_test::get_epsilon_decay_data(all);
     BOOST_CHECK_EQUAL(epsilon_decay->_scored_configs[0][0].get_model_idx(), 5);
     BOOST_CHECK_EQUAL(epsilon_decay->_scored_configs[1][0].get_model_idx(), 3);
