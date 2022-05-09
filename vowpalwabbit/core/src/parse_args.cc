@@ -523,6 +523,25 @@ const char* are_features_compatible(VW::workspace& vw1, VW::workspace& vw2)
   return nullptr;
 }
 
+namespace details
+{
+std::tuple<std::string, std::string> extract_ignored_feature(VW::string_view namespace_feature)
+{
+  std::tuple<std::string, std::string> extracted_ns_and_feature;
+  std::string feature_delimiter = "|";
+  auto feature_delimiter_index = namespace_feature.find(feature_delimiter);
+  if (feature_delimiter_index != VW::string_view::npos)
+  {
+    auto ns = namespace_feature.substr(0, feature_delimiter_index);
+    // check for default namespace
+    if (ns.empty()) { ns = " "; }
+    return {std::string(ns),
+        std::string(namespace_feature.substr(
+            feature_delimiter_index + 1, namespace_feature.size() - (feature_delimiter_index + 1)))};
+  }
+  return {};
+}
+}  // namespace details
 }  // namespace VW
 
 std::vector<VW::namespace_index> parse_char_interactions(VW::string_view input, VW::io::logger& logger)
@@ -575,6 +594,8 @@ void parse_feature_tweaks(options_i& options, VW::workspace& all, bool interacti
   std::vector<std::string> full_name_interactions;
   std::vector<std::string> ignores;
   std::vector<std::string> ignore_linears;
+  // this is an experimental feature which is only relevant for dsjson
+  std::vector<std::string> ignore_features_dsjson;
   std::vector<std::string> keeps;
   std::vector<std::string> redefines;
 
@@ -607,6 +628,11 @@ void parse_feature_tweaks(options_i& options, VW::workspace& all, bool interacti
       .add(make_option("ignore_linear", ignore_linears)
                .keep()
                .help("Ignore namespaces beginning with character <arg> for linear terms only"))
+      .add(make_option("ignore_features_dsjson_experimental", ignore_features_dsjson)
+               .keep()
+               .help("Ignore specified features from namespace. To ignore a feature arg should be namespace|feature "
+                     "To ignore a feature in the default namespace, arg should be |feature")
+               .experimental())
       .add(make_option("keep", keeps).keep().help("Keep namespaces beginning with character <arg>"))
       .add(make_option("redefine", redefines)
                .keep()
@@ -880,6 +906,25 @@ void parse_feature_tweaks(options_i& options, VW::workspace& all, bool interacti
         if (all.ignore_linear[i]) { *(all.trace_message) << " " << static_cast<unsigned char>(i); }
       }
       *(all.trace_message) << endl;
+    }
+  }
+
+  if (options.was_supplied("ignore_features_dsjson_experimental"))
+  {
+    for (const auto& ignored : ignore_features_dsjson)
+    {
+      auto namespace_and_feature = VW::details::extract_ignored_feature(ignored);
+      const auto& ns = std::get<0>(namespace_and_feature);
+      const auto& feature_name = std::get<1>(namespace_and_feature);
+      if (!(ns.empty() || feature_name.empty()))
+      {
+        if (all.ignore_features_dsjson.find(ns) == all.ignore_features_dsjson.end())
+        { all.ignore_features_dsjson.insert({ns, std::set<std::string>{feature_name}}); }
+        else
+        {
+          all.ignore_features_dsjson.at(ns).insert(feature_name);
+        }
+      }
     }
   }
 
