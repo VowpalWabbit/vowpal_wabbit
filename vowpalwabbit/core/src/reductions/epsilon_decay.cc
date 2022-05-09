@@ -121,7 +121,7 @@ void learn(
       }
     }
   }
-  
+
   // If the lower bound of a model exceeds the upperbound of the champion, migrate the new model as
   // the new champion.
   for (int64_t i = 0; i < K - 1; ++i)
