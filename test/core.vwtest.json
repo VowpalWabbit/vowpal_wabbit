@@ -5210,10 +5210,33 @@
   },
   {
     "id": 405,
-    "desc": "test non binary cost in logistic loss",
+    "desc": "test non binary cost in logistic loss (default range -1,1)",
     "vw_command": "-d train-sets/cb_test_non_binary_costs.ldf --loss_function logistic --cb_explore_adf",
     "diff_files": {
-      "stderr": "train-sets/ref/logistic_non_binary.stderr"
+      "stderr": "train-sets/ref/logistic_non_binary_1.stderr"
+    },
+    "input_files": [
+      "train-sets/cb_test_non_binary_costs.ldf"
+    ]
+  },
+  {
+    "id": 406,
+    "desc": "test non binary cost in logistic loss (range -1,2)",
+    "vw_command": "-d train-sets/cb_test_non_binary_costs.ldf --loss_function logistic --cb_explore_adf --logistic_min -1 --logistic_max 2",
+    "diff_files": {
+      "stderr": "train-sets/ref/logistic_non_binary_2.stderr"
+    },
+    "input_files": [
+      "train-sets/cb_test_non_binary_costs.ldf"
+    ]
+  },
+  {
+    "id": 407,
+    "desc": "test non binary cost in logistic loss (range 0,1) this should warn",
+    "vw_command": "-d train-sets/cb_test_non_binary_costs.ldf --loss_function logistic --cb_explore_adf --logistic_min 0 --logistic_max 1",
+    "diff_files": {
+      "stderr": "train-sets/ref/logistic_non_binary_3.stderr",
+      "stdout": "train-sets/ref/logistic_non_binary_3.stdout"
     },
     "input_files": [
       "train-sets/cb_test_non_binary_costs.ldf"
