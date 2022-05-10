@@ -30,8 +30,13 @@ public:
   Eigen::MatrixXf Q;
   Eigen::SparseMatrix<float> A;
   Eigen::SparseMatrix<float> Y;
+  Eigen::MatrixXf B;
+  Eigen::MatrixXf Z;
   Eigen::MatrixXf U;
+  Eigen::VectorXf _S;
+  Eigen::MatrixXf _V;
   VW::v_array<float> shrink_factors;
+  bool _set_all_svd_components = false;
 
   cb_explore_adf_large_action_space(uint64_t d, float gamma, VW::workspace* all);
   ~cb_explore_adf_large_action_space() = default;
@@ -41,11 +46,15 @@ public:
   void learn(VW::LEARNER::multi_learner& base, multi_ex& examples);
 
   void calculate_shrink_factor(const ACTION_SCORE::action_scores& preds, float min_ck);
+  void generate_Z(const multi_ex& examples);
+  void generate_B(const multi_ex& examples);
   bool generate_Y(const multi_ex& examples);
   bool generate_A(const multi_ex& examples);
   void generate_Q(const multi_ex& examples);
   void QR_decomposition();
   void generate_U_via_SVD();
+  void SVD(const Eigen::MatrixXf& A, const multi_ex& examples);
+  void _populate_all_SVD_components();
 
 private:
   template <bool is_learn>

@@ -116,6 +116,27 @@ public:
   }
 };
 
+template <typename WeightsT>
+struct DotProduct
+{
+private:
+  WeightsT& _weights;
+  uint64_t _column_index;
+  Eigen::SparseMatrix<float>& _Y;
+
+public:
+  DotProduct(WeightsT& weights, uint64_t column_index, Eigen::SparseMatrix<float>& Y)
+      : _weights(weights), _column_index(column_index), _Y(Y)
+  {
+  }
+
+  float operator[](uint64_t index) const
+  {
+    ;
+    return _weights[index] * _Y.coeffRef(index, _column_index);
+  }
+};
+
 void cb_explore_adf_large_action_space::predict(VW::LEARNER::multi_learner& base, multi_ex& examples)
 {
   predict_or_learn_impl<false>(base, examples);
@@ -140,6 +161,66 @@ void cb_explore_adf_large_action_space::calculate_shrink_factor(const ACTION_SCO
 inline void just_add_weights(float& p, float, float fw) { p += fw; }
 
 inline void no_op(float&, float, float) {}
+
+void cb_explore_adf_large_action_space::generate_Z(const multi_ex& examples)
+{
+  // create Z matrix with dimenstions Kxd where K = examples.size()
+  // Z = B * P where P is a dxd gaussian matrix
+
+  uint64_t num_actions = examples[0]->pred.a_s.size();
+  Z.resize(num_actions, _d);
+
+  // TODO extend wildspace interactions before calling foreach
+  uint64_t row_index = 0;
+  for (Eigen::Index row = 0; row < B.rows(); row++)
+  {
+    for (uint64_t col = 0; col < _d; col++)
+    {
+      for (uint64_t inner_col = 0; inner_col < _d; inner_col++)
+      {
+        auto combined_index = row + inner_col + _seed;
+        auto dot_prod_prod = B(row, inner_col) * merand48_boxmuller(combined_index);
+        Z(row, col) += dot_prod_prod;
+      }
+    }
+  }
+}
+
+void cb_explore_adf_large_action_space::generate_B(const multi_ex& examples)
+{
+  // create B matrix with dimenstions Kxd where K = examples.size()
+  uint64_t num_actions = examples[0]->pred.a_s.size();
+  B.resize(num_actions, _d);
+
+  // TODO extend wildspace interactions before calling foreach
+  uint64_t row_index = 0;
+  for (auto* ex : examples)
+  {
+    assert(!CB::ec_is_example_header(*ex));
+
+    for (int col = 0; col < Y.outerSize(); ++col)
+    {
+      float dot_product = 0.f;
+      if (_all->weights.sparse)
+      {
+        DotProduct<sparse_parameters> w(_all->weights.sparse_weights, col, Y);
+        GD::foreach_feature<float, float, just_add_weights, DotProduct<sparse_parameters>>(w, _all->ignore_some_linear,
+            _all->ignore_linear, _all->interactions, _all->extent_interactions, _all->permutations, *ex, dot_product,
+            _all->_generate_interactions_object_cache);
+      }
+      else
+      {
+        DotProduct<dense_parameters> w(_all->weights.dense_weights, col, Y);
+        GD::foreach_feature<float, float, just_add_weights, DotProduct<dense_parameters>>(w, _all->ignore_some_linear,
+            _all->ignore_linear, _all->interactions, _all->extent_interactions, _all->permutations, *ex, dot_product,
+            _all->_generate_interactions_object_cache);
+      }
+
+      B(row_index, col) = dot_product;
+    }
+    row_index++;
+  }
+}
 
 bool cb_explore_adf_large_action_space::generate_Y(const multi_ex& examples)
 {
@@ -184,6 +265,8 @@ bool cb_explore_adf_large_action_space::generate_Y(const multi_ex& examples)
   {
     Y.resize(max_non_zero_col + 1, _d);
     Y.setFromTriplets(_triplets.begin(), _triplets.end());
+    // Orthonormalize Y
+    REDSVD::Util::processGramSchmidt(Y);
   }
 
   return (Y.cols() != 0 && Y.rows() != 0);
@@ -283,6 +366,50 @@ void cb_explore_adf_large_action_space::generate_U_via_SVD()
   U = Q * Z.bdcSvd(Eigen::ComputeThinU | Eigen::ComputeThinV).matrixU().transpose();
 }
 
+void cb_explore_adf_large_action_space::_populate_all_SVD_components() { _set_all_svd_components = true; }
+
+void cb_explore_adf_large_action_space::SVD(const Eigen::MatrixXf& A, const multi_ex& examples)
+{
+  REDSVD::RedSVD reds(A, _d);
+  U = reds.matrixU();
+
+  if (_set_all_svd_components)
+  {
+    _V = reds.matrixV();
+    _S = reds.singularValues();
+  }
+
+  // // // TODO can Y be stored in the model? on some strided location ^^ ?
+  // if (!generate_Y(examples)) { return; }
+  // // Eigen::MatrixXf B = A * Y;
+  // generate_B(examples);
+
+  // // Gaussian Random Matrix
+  // Eigen::MatrixXf P(B.cols(), _d);
+  // REDSVD::Util::sampleGaussianMat(P);
+
+  // // Compute Sample Matrix of B
+  // Eigen::MatrixXf Z = B * P;
+
+  // // generate_Z(examples);
+
+  // // Orthonormalize Z
+  // REDSVD::Util::processGramSchmidt(Z);
+
+  // // Range(C) = Range(B)
+  // Eigen::MatrixXf C = Z.transpose() * B;
+
+  // Eigen::JacobiSVD<Eigen::MatrixXf> svdOfC(C, Eigen::ComputeThinU | Eigen::ComputeThinV);
+
+  // U = Z * svdOfC.matrixU();
+
+  // if (_set_all_svd_components)
+  // {
+  //   _V = Y * svdOfC.matrixV();
+  //   _S = svdOfC.singularValues();
+  // }
+}
+
 template <bool is_learn>
 void cb_explore_adf_large_action_space::predict_or_learn_impl(VW::LEARNER::multi_learner& base, multi_ex& examples)
 {
@@ -292,49 +419,20 @@ void cb_explore_adf_large_action_space::predict_or_learn_impl(VW::LEARNER::multi
     base.predict(examples);
 
     auto& preds = examples[0]->pred.a_s;
+
+    float min_ck = std::min_element(preds.begin(), preds.end(),
+        [](const ACTION_SCORE::action_score& a, const ACTION_SCORE::action_score& b) { return a.score < b.score; })
+                       ->score;
+
+    calculate_shrink_factor(preds, min_ck);
     if (_d < preds.size())
     {
       // if the model is empty then can't create A and there is nothing left to do
-      // if (!generate_A(examples)) { return; }
+      if (!generate_A(examples)) { return; }
 
-      float min_ck = std::min_element(preds.begin(), preds.end(),
-          [](const ACTION_SCORE::action_score& a, const ACTION_SCORE::action_score& b) { return a.score < b.score; })
-                         ->score;
-
-      calculate_shrink_factor(preds, min_ck);
-      if (!generate_Y(examples)) { return; }
-      // REDSVD::RedSVD reds(A, _d);
-      // // U = reds.matrixU();
-    
-      // // generate_Q(examples);
-      // // QR_decomposition();
-      // // generate_U_via_SVD();
-
-      // // Orthonormalize Y
-      // REDSVD::Util::processGramSchmidt(Y);
-
-      // // Range(B) = Range(A^T)
-      // Eigen::MatrixXf B = A * Y;
-
-      // // Gaussian Random Matrix
-      // Eigen::MatrixXf P(B.cols(), _d);
-      // REDSVD::Util::sampleGaussianMat(P);
-
-      // // Compute Sample Matrix of B
-      // Eigen::MatrixXf Z = B * P;
-
-      // // Orthonormalize Z
-      // REDSVD::Util::processGramSchmidt(Z);
-
-      // // Range(C) = Range(B)
-      // Eigen::MatrixXf C = Z.transpose() * B;
-
-      // Eigen::JacobiSVD<Eigen::MatrixXf> svdOfC(C, Eigen::ComputeThinU | Eigen::ComputeThinV);
-
-      // // C = USV^T
-      // // A = Z * U * S * V^T * Y^T()
-      // U = Z * svdOfC.matrixU();
+      SVD(A, examples);
     }
+
     // TODO apply spanner on U
   }
 }
