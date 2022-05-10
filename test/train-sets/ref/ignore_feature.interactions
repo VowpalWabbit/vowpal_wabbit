@@ -1,0 +1,53 @@
+Version 9.1.0
+Id 
+Min label:-1
+Max label:0
+bits:18
+lda:0
+0 ngram:
+0 skip:
+options: --cb_adf --cb_explore_adf --cb_type mtr --csoaa_ldf multiline --csoaa_rank --epsilon 0.200000002980232 --ignore_features_dsjson_experimental FromUrl|timeofday
+Checksum: 2616766463
+event_sum 12
+action_sum 48
+:1
+initial_t 0
+norm normalizer 68.8235
+t 12
+sum_loss -3.41176
+sum_loss_since_last_dump -2.05882
+dump_interval 16
+min_label -1
+max_label 0
+weighted_labeled_examples 12
+weighted_labels 0
+weighted_unlabeled_examples 0
+example_number 12
+total_features 432
+total_weight 7.64706
+sd::oec.weighted_labeled_examples 8
+current_pass 1
+l1_state 0
+l2_state 1
+j^originethiopia:6311:-0.065725 1.03505 1
+j^roastdark:15410:-0.0864616 3.42656 1
+i^constant:26051:-0.098572 5.15033 1
+i^idCold_brew:39661:0.0237209 0.68872 1
+FromUrl^nameCathy:42529:0.013045 1.21817 1
+FromUrl^nameBob:50489:-0.0271927 1.72377 1
+j^originbrazil:54816:0.0197519 1.90689 1
+FromUrl^nameAlice:60658:-0.0638838 1.95863 1
+i^idIced_mocha:110846:-0.065725 1.03505 1
+Constant:116060:-0.098572 5.15033 1
+j^organicno:124303:-0.0404094 2.25322 1
+i^idLatte:152734:0.013045 1.21817 1
+i^idCappucino:153620:-0.0856707 2.2084 1
+FromUrl^weatherSunny:159054:0.0669293 1.1728 1
+FromUrl^weatherSnowy:173256:-0.158582 2.75937 1
+j^typehot:188731:-0.0864616 3.42656 1
+FromUrl^nameDave:189701:-0.065701 0.249763 1
+FromUrl^weatherRainy:194859:0.013045 1.21817 1
+j^organicyes:205927:-0.0672748 2.89712 1
+j^roastlight:219055:-0.0271927 1.72377 1
+j^originkenya:231314:-0.0856707 2.2084 1
+j^typecold:257035:-0.0271927 1.72377 1
