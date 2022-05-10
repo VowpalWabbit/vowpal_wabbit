@@ -1164,7 +1164,7 @@ void parse_example_tweaks(options_i& options, VW::workspace& all)
     if (!all.quiet) { *(all.trace_message) << "parsed " << all.sd->ldict->getK() << " named labels" << endl; }
   }
 
-  constexpr const static std::array<const char*, 4> loss_functions_that_accept_quantile_tau = {
+  const std::vector<std::string> loss_functions_that_accept_quantile_tau = {
       "quantile", "pinball", "absolute", "expectile"};
   const bool loss_function_accepts_quantile_tau =
       std::find(loss_functions_that_accept_quantile_tau.begin(), loss_functions_that_accept_quantile_tau.end(),
