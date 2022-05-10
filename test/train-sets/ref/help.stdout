@@ -49,6 +49,10 @@ Feature Options:
                                             keep)
     --ignore_linear args...                 Ignore namespaces beginning with character <arg> for linear terms
                                             only (type: list[str], keep)
+    --ignore_features_dsjson_experimental args...
+                                            Ignore specified features from namespace. To ignore a feature 
+                                            arg should be namespace|feature To ignore a feature in the default
+                                            namespace, arg should be |feature (type: list[str], keep, experimental)
     --keep args...                          Keep namespaces beginning with character <arg> (type: list[str],
                                             keep)
     --redefine args...                      Redefine namespaces beginning with characters of std::string

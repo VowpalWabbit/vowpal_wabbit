@@ -5210,6 +5210,39 @@
   },
   {
     "id": 405,
+    "desc": "test ignore single feature",
+    "vw_command": "--dsjson -d train-sets/dsjson_cb_part1.json --cb_explore_adf --epsilon 0.2 --invert_hash ignore_feature.interactions --ignore_features_dsjson_experimental FromUrl|timeofday",
+    "diff_files": {
+      "ignore_feature.interactions": "train-sets/ref/ignore_feature.interactions"
+    },
+    "input_files": [
+      "train-sets/dsjson_cb_part1.json"
+    ]
+  },
+  {
+    "id": 406,
+    "desc": "test ignore multiple features",
+    "vw_command": "--dsjson -d train-sets/dsjson_cb_part1.json --cb_explore_adf --epsilon 0.2 --invert_hash ignore_multiple_features.interactions --ignore_features_dsjson_experimental FromUrl|timeofday j|type",
+    "diff_files": {
+      "ignore_multiple_features.interactions": "train-sets/ref/ignore_multiple_features.interactions"
+    },
+    "input_files": [
+      "train-sets/dsjson_cb_part1.json"
+    ]
+  },
+  {
+    "id": 407,
+    "desc": "test ignore feature in default namespace",
+    "vw_command": "--dsjson -d train-sets/dsjson_cb_default_ns.json --cb_explore_adf --epsilon 0.2 --invert_hash ignore_feature_default_ns.interactions --ignore_features_dsjson_experimental |timeofday",
+    "diff_files": {
+      "ignore_feature_default_ns.interactions": "train-sets/ref/ignore_feature_default_ns.interactions"
+    },
+    "input_files": [
+      "train-sets/dsjson_cb_default_ns.json"
+    ]
+  },
+  {
+    "id": 408,
     "desc": "test non binary cost in logistic loss (default range -1,1)",
     "vw_command": "-d train-sets/cb_test_non_binary_costs.ldf --loss_function logistic --cb_explore_adf",
     "diff_files": {
@@ -5220,7 +5253,7 @@
     ]
   },
   {
-    "id": 406,
+    "id": 409,
     "desc": "test non binary cost in logistic loss (range -1,2)",
     "vw_command": "-d train-sets/cb_test_non_binary_costs.ldf --loss_function logistic --cb_explore_adf --logistic_min -1 --logistic_max 2",
     "diff_files": {
@@ -5231,7 +5264,7 @@
     ]
   },
   {
-    "id": 407,
+    "id": 410,
     "desc": "test non binary cost in logistic loss (range 0,1) this should warn",
     "vw_command": "-d train-sets/cb_test_non_binary_costs.ldf --loss_function logistic --cb_explore_adf --logistic_min 0 --logistic_max 1",
     "diff_files": {
@@ -5242,5 +5275,4 @@
       "train-sets/cb_test_non_binary_costs.ldf"
     ]
   }
-
 ]

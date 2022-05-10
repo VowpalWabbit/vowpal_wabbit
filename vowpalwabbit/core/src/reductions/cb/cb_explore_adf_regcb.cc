@@ -58,15 +58,15 @@ public:
   ~cb_explore_adf_regcb() = default;
 
   // Should be called through cb_explore_adf_base for pre/post-processing
-  void predict(multi_learner& base, multi_ex& examples) { predict_impl(base, examples); }
-  void learn(multi_learner& base, multi_ex& examples) { learn_impl(base, examples); }
+  void predict(multi_learner& base, VW::multi_ex& examples) { predict_impl(base, examples); }
+  void learn(multi_learner& base, VW::multi_ex& examples) { learn_impl(base, examples); }
   void save_load(io_buf& io, bool read, bool text);
 
 private:
-  void predict_impl(multi_learner& base, multi_ex& examples);
-  void learn_impl(multi_learner& base, multi_ex& examples);
+  void predict_impl(multi_learner& base, VW::multi_ex& examples);
+  void learn_impl(multi_learner& base, VW::multi_ex& examples);
 
-  void get_cost_ranges(float delta, multi_learner& base, multi_ex& examples, bool min_only);
+  void get_cost_ranges(float delta, multi_learner& base, VW::multi_ex& examples, bool min_only);
   float binary_search(float fhat, float delta, float sens, float tol = 1e-6);
 };
 
@@ -108,7 +108,7 @@ float cb_explore_adf_regcb::binary_search(float fhat, float delta, float sens, f
   return l;
 }
 
-void cb_explore_adf_regcb::get_cost_ranges(float delta, multi_learner& base, multi_ex& examples, bool min_only)
+void cb_explore_adf_regcb::get_cost_ranges(float delta, multi_learner& base, VW::multi_ex& examples, bool min_only)
 {
   const size_t num_actions = examples[0]->pred.a_s.size();
   _min_costs.resize(num_actions);
@@ -132,7 +132,7 @@ void cb_explore_adf_regcb::get_cost_ranges(float delta, multi_learner& base, mul
 
   for (size_t a = 0; a < num_actions; ++a)
   {
-    example* ec = examples[a];
+    auto* ec = examples[a];
     ec->l.simple.label = cmin - 1;
     float sens = base.sensitivity(*ec);
     float w = 0;  // importance weight
@@ -167,7 +167,7 @@ void cb_explore_adf_regcb::get_cost_ranges(float delta, multi_learner& base, mul
   }
 }
 
-void cb_explore_adf_regcb::predict_impl(multi_learner& base, multi_ex& examples)
+void cb_explore_adf_regcb::predict_impl(multi_learner& base, VW::multi_ex& examples)
 {
   multiline_learn_or_predict<false>(base, examples, examples[0]->ft_offset);
   v_array<ACTION_SCORE::action_score>& preds = examples[0]->pred.a_s;
@@ -221,7 +221,7 @@ void cb_explore_adf_regcb::predict_impl(multi_learner& base, multi_ex& examples)
   }
 }
 
-void cb_explore_adf_regcb::learn_impl(multi_learner& base, multi_ex& examples)
+void cb_explore_adf_regcb::learn_impl(multi_learner& base, VW::multi_ex& examples)
 {
   v_array<ACTION_SCORE::action_score> preds = std::move(examples[0]->pred.a_s);
   for (size_t i = 0; i < examples.size() - 1; ++i)
