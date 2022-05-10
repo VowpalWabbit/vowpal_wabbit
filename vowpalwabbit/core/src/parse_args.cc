@@ -46,6 +46,7 @@
 #include <sys/types.h>
 
 #include <algorithm>
+#include <array>
 #include <cfloat>
 #include <cstdio>
 #include <fstream>
@@ -1071,8 +1072,9 @@ void parse_example_tweaks(options_i& options, VW::workspace& all)
 {
   std::string named_labels;
   std::string loss_function;
-  float loss_parameter_0 = 0.0;
-  float loss_parameter_1 = 1.0;
+  float quantile_loss_parameter = 0.0;
+  float logistic_loss_min = 0.0;
+  float logistic_loss_max = 0.0;
   uint64_t early_terminate_passes;
   bool test_only = false;
 
@@ -1105,13 +1107,13 @@ void parse_example_tweaks(options_i& options, VW::workspace& all)
                .default_value("squared")
                .one_of({"squared", "classic", "hinge", "logistic", "quantile", "expectile", "poisson"})
                .help("Specify the loss function to be used, uses squared by default"))
-      .add(make_option("quantile_tau", loss_parameter_0)
+      .add(make_option("quantile_tau", quantile_loss_parameter)
                .default_value(0.5f)
                .help("Parameter \\tau associated with Quantile loss. Defaults to 0.5"))
-      .add(make_option("logistic_min", loss_parameter_0)
-               .default_value(0.5f)
+      .add(make_option("logistic_min", logistic_loss_min)
+               .default_value(-1.f)
                .help("Minimum loss value for logistic loss. Defaults to -1"))
-      .add(make_option("logistic_max", loss_parameter_1)
+      .add(make_option("logistic_max", logistic_loss_max)
                .default_value(1.0f)
                .help("Maximum loss value for logistic loss. Defaults to +1"))
       .add(make_option("l1", all.l1_lambda).default_value(0.0f).help("L_1 lambda"))
@@ -1162,22 +1164,38 @@ void parse_example_tweaks(options_i& options, VW::workspace& all)
     if (!all.quiet) { *(all.trace_message) << "parsed " << all.sd->ldict->getK() << " named labels" << endl; }
   }
 
-  // loss_parameter_0 is used with two loss functions, but with different defaults, so need to override
-  if (loss_function == "logistic" && !options.was_supplied("logistic_min")) { loss_parameter_0 = -1.0f; }
-
-  all.loss = get_loss_function(all, loss_function, loss_parameter_0, loss_parameter_1);
-  if (options.was_supplied("quantile_tau") && all.loss->get_type() != "quantile" && all.loss->get_type() != "expectile")
+  constexpr const static std::array<const char*, 4> loss_functions_that_accept_quantile_tau = {
+      "quantile", "pinball", "absolute", "expectile"};
+  const bool loss_function_accepts_quantile_tau =
+      std::find(loss_functions_that_accept_quantile_tau.begin(), loss_functions_that_accept_quantile_tau.end(),
+          loss_function) != loss_functions_that_accept_quantile_tau.end();
+  const bool loss_function_accepts_logistic_args = loss_function == "logistic";
+  if (options.was_supplied("quantile_tau") && !loss_function_accepts_quantile_tau)
   {
-    all.logger.err_warn(
-        "Option 'quantile_tau' was passed but the quantile loss function is not being used. 'quantile_tau' value will "
-        "be ignored.");
+    THROW(
+        "Option 'quantile_tau' was passed but quantile or expectile loss functions are not being used. Selected loss "
+        "function: "
+        << loss_function);
   }
   if ((options.was_supplied("logistic_min") || options.was_supplied("logistic_max")) &&
-      all.loss->get_type() != "logistic")
+      !loss_function_accepts_logistic_args)
   {
-    all.logger.err_warn(
+    THROW(
         "Options 'logistic_min' or 'logistic_max' were passed but the logistic loss function is not being used. "
-        "These options will be ignored.");
+        "Selected loss function: "
+        << loss_function);
+  }
+
+  constexpr const static float UNUSED_LOSS_FUNC_ARG = 0.f;
+  if (loss_function_accepts_quantile_tau)
+  { all.loss = get_loss_function(all, loss_function, quantile_loss_parameter, UNUSED_LOSS_FUNC_ARG); }
+  else if (loss_function_accepts_logistic_args)
+  {
+    all.loss = get_loss_function(all, loss_function, logistic_loss_min, logistic_loss_max);
+  }
+  else
+  {
+    all.loss = get_loss_function(all, loss_function, UNUSED_LOSS_FUNC_ARG, UNUSED_LOSS_FUNC_ARG);
   }
 
   if (all.l1_lambda < 0.f)
