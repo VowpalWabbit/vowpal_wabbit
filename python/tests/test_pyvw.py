@@ -295,7 +295,7 @@ def test_regressor_args():
     assert model.predict("| feature1:2.5") == 3
 
     # save model
-    model.save(Path("tmp.model"))
+    model.save("tmp.model")
     del model
 
     # load initial regressor and confirm updated prediction
