@@ -701,7 +701,7 @@ base_learner* VW::reductions::ccb_explore_adf_setup(VW::setup_base_i& stack_buil
   data->model_file_version = all.model_file_ver;
 
   data->id_namespace_str = "_id";
-  data->id_namespace_audit_str = "_ccb_slot_id";
+  data->id_namespace_audit_str = "_ccb_slot_index";
   data->id_namespace_hash = VW::hash_space(all, data->id_namespace_str);
 
   auto* l = VW::LEARNER::make_reduction_learner(std::move(data), base, learn_or_predict<true>, learn_or_predict<false>,
