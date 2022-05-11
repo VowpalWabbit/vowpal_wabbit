@@ -168,6 +168,8 @@ public:
 #ifdef BUILD_EXTERNAL_PARSER
   std::unique_ptr<VW::external::parser> external_parser;
 #endif
+  // This field is experimental and subject to change.
+  // Used to implement the external binary parser.
   std::vector<std::function<void(VW::metric_sink&)>> metric_output_hooks;
   std::string data_filename;
 
