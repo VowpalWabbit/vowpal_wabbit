@@ -16,6 +16,7 @@ namespace details
 struct input_parser
 {
   input_parser(std::string name) : _name(std::move(name)) {}
+  virtual ~input_parser() = default;
 
   virtual bool next(VW::workspace& workspace_instance, io_buf& buffer, VW::v_array<VW::example*>& output_examples) = 0;
   VW::string_view get_name() const { return _name; }
