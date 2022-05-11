@@ -31,6 +31,10 @@ Example Options:
                                             logistic, poisson, quantile, squared})
     --quantile_tau arg                      Parameter \tau associated with Quantile loss. Defaults to 0.5
                                             (type: float, default: 0.5)
+    --logistic_min arg                      Minimum loss value for logistic loss. Defaults to -1 (type: float,
+                                            default: -1)
+    --logistic_max arg                      Maximum loss value for logistic loss. Defaults to +1 (type: float,
+                                            default: 1)
     --l1 arg                                L_1 lambda (type: float, default: 0)
     --l2 arg                                L_2 lambda (type: float, default: 0)
     --no_bias_regularization                No bias in regularization (type: bool)
