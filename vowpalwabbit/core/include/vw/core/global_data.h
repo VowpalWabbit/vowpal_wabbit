@@ -9,6 +9,7 @@
 #include "vw/core/constant.h"
 #include "vw/core/error_reporting.h"
 #include "vw/core/interactions_predict.h"
+#include "vw/core/metric_sink.h"
 #include "vw/core/version.h"
 #include "vw/core/vw_fwd.h"
 #include "vw/io/logger.h"
@@ -167,6 +168,7 @@ public:
 #ifdef BUILD_EXTERNAL_PARSER
   std::unique_ptr<VW::external::parser> external_parser;
 #endif
+  std::vector<std::function<void(VW::metric_sink&)>> metric_output_hooks;
   std::string data_filename;
 
   bool daemon;
