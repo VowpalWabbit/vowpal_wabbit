@@ -148,10 +148,7 @@ void VW::reductions::output_metrics(VW::workspace& all)
     if (all.external_parser) { all.external_parser->persist_metrics(list_metrics); }
 #endif
 
-    for (auto& metric_hook : all.metric_output_hooks)
-    {
-      metric_hook(list_metrics);
-    }
+    for (auto& metric_hook : all.metric_output_hooks) { metric_hook(list_metrics); }
 
     list_metrics.set_uint("total_log_calls", all.logger.get_log_count());
 
