@@ -307,6 +307,7 @@ def test_regressor_args():
     os.remove("{}.cache".format(data_file))
     os.remove("tmp.model")
 
+
 def test_save_to_Path():
     model = Workspace(quiet=True)
     model.learn("1 | a b c")
