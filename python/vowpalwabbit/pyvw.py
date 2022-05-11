@@ -6,6 +6,7 @@ from typing import Any, Dict, Iterator, List, Optional, Tuple, Type, Union
 import pylibvw
 import warnings
 import inspect
+from pathlib import Path
 
 from enum import IntEnum
 
@@ -717,9 +718,9 @@ class Workspace(pylibvw.vw):
 
         return prediction
 
-    def save(self, filename: str) -> None:
+    def save(self, filename: Union[str, Path]) -> None:
         """save model to disk"""
-        pylibvw.vw.save(self, filename)
+        pylibvw.vw.save(self, str(filename))
 
     def finish(self) -> None:
         """stop VW by calling finish (and, eg, write weights to disk)"""
