@@ -57,7 +57,7 @@ void finish_example(VW::workspace& all, T&, VW::example& ec)
 void default_label(label& ld);
 extern VW::label_parser cs_label;
 
-void print_update(VW::workspace& all, bool is_test, const VW::example& ec, const std::vector<VW::example*>* ec_seq,
+void print_update(VW::workspace& all, bool is_test, const VW::example& ec, const VW::multi_ex* ec_seq,
     bool multilabel, uint32_t prediction);
 bool ec_is_example_header(VW::example const& ec);  // example headers look like "0:-1" or just "shared"
 }  // namespace COST_SENSITIVE

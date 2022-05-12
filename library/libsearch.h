@@ -83,11 +83,11 @@ private:
   }
 };
 
-class BuiltInTask : public SearchTask<std::vector<VW::example*>, std::vector<uint32_t>>
+class BuiltInTask : public SearchTask<VW::multi_ex, std::vector<uint32_t>>
 {
 public:
   BuiltInTask(VW::workspace& vw_obj, Search::search_task* task)
-      : SearchTask<std::vector<VW::example*>, std::vector<uint32_t>>(vw_obj)
+      : SearchTask<VW::multi_ex, std::vector<uint32_t>>(vw_obj)
   { HookTask::task_data* d = sch.get_task_data<HookTask::task_data>();
     size_t num_actions = d->num_actions;
     my_task = task;
@@ -97,7 +97,7 @@ public:
 
   ~BuiltInTask() { if (my_task->finish) my_task->finish(sch); }
 
-  void _run(Search::search& sch, std::vector<VW::example*>& input_example, std::vector<uint32_t>& output)
+  void _run(Search::search& sch, VW::multi_ex& input_example, std::vector<uint32_t>& output)
   { my_task->run(sch, input_example);
     sch.get_test_action_sequence(output);
   }

@@ -35,7 +35,7 @@ TEST(cache_tests, write_and_read_example)
   io_buf io_reader;
   io_reader.add_file(VW::io::create_buffer_view(backing_vector->data(), backing_vector->size()));
 
-  VW::v_array<VW::example*> examples;
+  VW::multi_ex examples;
   VW::example dest_ex;
   examples.push_back(&dest_ex);
   VW::read_example_from_cache(&workspace, io_reader, examples);
@@ -87,7 +87,7 @@ TEST(cache_tests, write_and_read_large_example)
   io_buf io_reader;
   io_reader.add_file(VW::io::create_buffer_view(backing_vector->data(), backing_vector->size()));
 
-  VW::v_array<VW::example*> examples;
+  VW::multi_ex examples;
   VW::example dest_ex;
   examples.push_back(&dest_ex);
   VW::read_example_from_cache(&workspace, io_reader, examples);
