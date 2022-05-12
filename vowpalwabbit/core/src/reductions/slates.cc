@@ -163,7 +163,7 @@ float get_estimate(
 
 void output_example(VW::workspace& all, const VW::reductions::slates_data& /*c*/, const VW::multi_ex& ec_seq)
 {
-  std::vector<VW::example*> slots;
+  VW::multi_ex slots;
   size_t num_features = 0;
   float loss = 0.;
   bool is_labelled = ec_seq[SHARED_EX_INDEX]->l.slates.labeled;
