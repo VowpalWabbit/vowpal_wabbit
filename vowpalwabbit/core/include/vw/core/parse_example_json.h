@@ -1529,7 +1529,7 @@ public:
   std::unordered_map<uint64_t, VW::example*>* dedup_examples = nullptr;
   std::unordered_map<std::string, std::set<std::string>>* ignore_features = nullptr;
 
-  VW::v_array<VW::example*>* examples;
+  VW::multi_ex* examples;
   VW::example* ex;
   rapidjson::InsituStringStream* stream;
   const char* stream_end;
@@ -1642,7 +1642,7 @@ struct VWReaderHandler : public rapidjson::BaseReaderHandler<rapidjson::UTF8<>, 
 
   void init(const VW::label_parser& lbl_parser, hash_func_t hash_func, uint64_t hash_seed, uint64_t parse_mask,
       bool chain_hash, VW::label_parser_reuse_mem* reuse_mem, const VW::named_labels* ldict, VW::io::logger* logger,
-      VW::v_array<VW::example*>* examples, rapidjson::InsituStringStream* stream, const char* stream_end,
+      VW::multi_ex* examples, rapidjson::InsituStringStream* stream, const char* stream_end,
       VW::example_factory_t example_factory, void* example_factory_context,
       std::unordered_map<std::string, std::set<std::string>>* ignore_features,
       std::unordered_map<uint64_t, VW::example*>* dedup_examples = nullptr)
@@ -1704,7 +1704,7 @@ namespace VW
 template <bool audit>
 void read_line_json_s(const VW::label_parser& lbl_parser, hash_func_t hash_func, uint64_t hash_seed,
     uint64_t parse_mask, bool chain_hash, VW::label_parser_reuse_mem* reuse_mem, const VW::named_labels* ldict,
-    VW::v_array<VW::example*>& examples, char* line, size_t length, example_factory_t example_factory,
+    VW::multi_ex& examples, char* line, size_t length, example_factory_t example_factory,
     void* ex_factory_context, VW::io::logger& logger,
     std::unordered_map<std::string, std::set<std::string>>* ignore_features,
     std::unordered_map<uint64_t, VW::example*>* dedup_examples = nullptr)
@@ -1744,7 +1744,7 @@ void read_line_json_s(const VW::label_parser& lbl_parser, hash_func_t hash_func,
 }
 
 template <bool audit>
-void read_line_json_s(VW::workspace& all, VW::v_array<VW::example*>& examples, char* line, size_t length,
+void read_line_json_s(VW::workspace& all, VW::multi_ex& examples, char* line, size_t length,
     example_factory_t example_factory, void* ex_factory_context,
     std::unordered_map<uint64_t, VW::example*>* dedup_examples = nullptr)
 {
@@ -1754,7 +1754,7 @@ void read_line_json_s(VW::workspace& all, VW::v_array<VW::example*>& examples, c
 }
 
 inline bool apply_pdrop(
-    label_type_t label_type, float pdrop, VW::v_array<VW::example*>& examples, VW::io::logger& logger)
+    label_type_t label_type, float pdrop, VW::multi_ex& examples, VW::io::logger& logger)
 {
   if (pdrop == 1.)
   {
@@ -1780,7 +1780,7 @@ inline bool apply_pdrop(
 
 // returns true if succesfully parsed, returns false if not and logs warning
 template <bool audit>
-bool read_line_decision_service_json(VW::workspace& all, VW::v_array<VW::example*>& examples, char* line, size_t length,
+bool read_line_decision_service_json(VW::workspace& all, VW::multi_ex& examples, char* line, size_t length,
     bool copy_line, example_factory_t example_factory, void* ex_factory_context, DecisionServiceInteraction* data)
 {
   if (all.example_parser->lbl_parser.label_type == VW::label_type_t::slates)
@@ -1838,7 +1838,7 @@ bool read_line_decision_service_json(VW::workspace& all, VW::v_array<VW::example
 }  // namespace VW
 
 template <bool audit>
-bool parse_line_json(VW::workspace* all, char* line, size_t num_chars, VW::v_array<VW::example*>& examples)
+bool parse_line_json(VW::workspace* all, char* line, size_t num_chars, VW::multi_ex& examples)
 {
   if (all->example_parser->decision_service_json)
   {
@@ -1930,7 +1930,7 @@ bool parse_line_json(VW::workspace* all, char* line, size_t num_chars, VW::v_arr
   return true;
 }
 
-inline void append_empty_newline_example_for_driver(VW::workspace* all, VW::v_array<VW::example*>& examples)
+inline void append_empty_newline_example_for_driver(VW::workspace* all, VW::multi_ex& examples)
 {
   // note: the json parser does single pass parsing and cannot determine if a shared example is needed.
   // since the communication between the parsing thread the main learner expects examples to be requested in order (as
@@ -1952,7 +1952,7 @@ inline void append_empty_newline_example_for_driver(VW::workspace* all, VW::v_ar
 
 // This is used by the python parser
 template <bool audit>
-void line_to_examples_json(VW::workspace* all, const char* line, size_t num_chars, VW::v_array<VW::example*>& examples)
+void line_to_examples_json(VW::workspace* all, const char* line, size_t num_chars, VW::multi_ex& examples)
 {
   // The JSON reader does insitu parsing and therefore modifies the input
   // string, so we make a copy since this function cannot modify the input
@@ -1972,7 +1972,7 @@ void line_to_examples_json(VW::workspace* all, const char* line, size_t num_char
 }
 
 template <bool audit>
-int read_features_json(VW::workspace* all, io_buf& buf, VW::v_array<VW::example*>& examples)
+int read_features_json(VW::workspace* all, io_buf& buf, VW::multi_ex& examples)
 {
   // Keep reading lines until a valid set of examples is produced.
   bool reread;

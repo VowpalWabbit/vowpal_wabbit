@@ -67,7 +67,7 @@ TEST(flatbuffer_parser_tests, test_flatbuffer_standalone_example)
   uint8_t* buf = builder.GetBufferPointer();
   int size = builder.GetSize();
 
-  VW::v_array<example*> examples;
+  VW::multi_ex examples;
   examples.push_back(&VW::get_unused_example(all));
   io_buf unused_buffer;
   all->flat_converter->parse_examples(all, unused_buffer, examples, buf);
@@ -111,7 +111,7 @@ TEST(flatbuffer_parser_tests, test_flatbuffer_collection)
   uint8_t* buf = builder.GetBufferPointer();
   int size = builder.GetSize();
 
-  VW::v_array<example*> examples;
+  VW::multi_ex examples;
   examples.push_back(&VW::get_unused_example(all));
   io_buf unused_buffer;
   all->flat_converter->parse_examples(all, unused_buffer, examples, buf);

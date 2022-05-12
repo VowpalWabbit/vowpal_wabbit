@@ -8,6 +8,7 @@
 #include "vw/core/array_parameters.h"
 #include "vw/core/constant.h"
 #include "vw/core/error_reporting.h"
+#include "vw/core/input_parser.h"
 #include "vw/core/interactions_predict.h"
 #include "vw/core/metric_sink.h"
 #include "vw/core/version.h"
@@ -171,6 +172,11 @@ public:
   // This field is experimental and subject to change.
   // Used to implement the external binary parser.
   std::vector<std::function<void(VW::metric_sink&)>> metric_output_hooks;
+
+  // Experimental field.
+  // Generic parser interface to make it possible to use any external parser.
+  std::unique_ptr<VW::details::input_parser> custom_parser;
+
   std::string data_filename;
 
   bool daemon;

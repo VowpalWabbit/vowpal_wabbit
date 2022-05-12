@@ -139,7 +139,7 @@ example* alloc_examples(size_t count);
 void dealloc_examples(example* example_ptr, size_t count);
 
 void parse_example_label(VW::workspace& all, example& ec, const std::string& label);
-void setup_examples(VW::workspace& all, v_array<example*>& examples);
+void setup_examples(VW::workspace& all, VW::multi_ex& examples);
 void setup_example(VW::workspace& all, example* ae);
 example* new_unused_example(VW::workspace& all);
 example* get_example(parser* pf);

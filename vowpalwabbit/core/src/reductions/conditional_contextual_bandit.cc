@@ -92,7 +92,7 @@ struct ccb_data
 {
   VW::workspace* all = nullptr;
   VW::example* shared = nullptr;
-  std::vector<VW::example*> actions, slots;
+  VW::multi_ex actions, slots;
   std::vector<uint32_t> origin_index;
   CB::cb_class cb_label;
   std::vector<bool> exclude_list, include_list;
@@ -726,7 +726,7 @@ bool VW::reductions::ccb::ec_is_example_unset(VW::example const& ec)
   return ec.l.conditional_contextual_bandit.type == CCB::example_type::unset;
 }
 
-std::string VW::reductions::ccb::generate_ccb_label_printout(const std::vector<VW::example*>& slots)
+std::string VW::reductions::ccb::generate_ccb_label_printout(const VW::multi_ex& slots)
 {
   size_t counter = 0;
   std::stringstream label_ss;
