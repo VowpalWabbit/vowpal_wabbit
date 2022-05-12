@@ -367,47 +367,48 @@ void cb_explore_adf_large_action_space::generate_U_via_SVD()
 }
 
 void cb_explore_adf_large_action_space::_populate_all_SVD_components() { _set_all_svd_components = true; }
+void cb_explore_adf_large_action_space::set_rank(uint64_t rank) { _d = rank; }
 
 void cb_explore_adf_large_action_space::SVD(const Eigen::MatrixXf& A, const multi_ex& examples)
 {
-  REDSVD::RedSVD reds(A, _d);
-  U = reds.matrixU();
-
-  if (_set_all_svd_components)
-  {
-    _V = reds.matrixV();
-    _S = reds.singularValues();
-  }
-
-  // // // TODO can Y be stored in the model? on some strided location ^^ ?
-  // if (!generate_Y(examples)) { return; }
-  // // Eigen::MatrixXf B = A * Y;
-  // generate_B(examples);
-
-  // // Gaussian Random Matrix
-  // Eigen::MatrixXf P(B.cols(), _d);
-  // REDSVD::Util::sampleGaussianMat(P);
-
-  // // Compute Sample Matrix of B
-  // Eigen::MatrixXf Z = B * P;
-
-  // // generate_Z(examples);
-
-  // // Orthonormalize Z
-  // REDSVD::Util::processGramSchmidt(Z);
-
-  // // Range(C) = Range(B)
-  // Eigen::MatrixXf C = Z.transpose() * B;
-
-  // Eigen::JacobiSVD<Eigen::MatrixXf> svdOfC(C, Eigen::ComputeThinU | Eigen::ComputeThinV);
-
-  // U = Z * svdOfC.matrixU();
+  // REDSVD::RedSVD reds(A, _d);
+  // U = reds.matrixU();
 
   // if (_set_all_svd_components)
   // {
-  //   _V = Y * svdOfC.matrixV();
-  //   _S = svdOfC.singularValues();
+  //   _V = reds.matrixV();
+  //   _S = reds.singularValues();
   // }
+
+  // // TODO can Y be stored in the model? on some strided location ^^ ?
+  if (!generate_Y(examples)) { return; }
+  // Eigen::MatrixXf B = A * Y;
+  generate_B(examples);
+
+  // Gaussian Random Matrix
+  Eigen::MatrixXf P(B.cols(), _d);
+  REDSVD::Util::sampleGaussianMat(P);
+
+  // Compute Sample Matrix of B
+  Eigen::MatrixXf Z = B * P;
+
+  // generate_Z(examples);
+
+  // Orthonormalize Z
+  REDSVD::Util::processGramSchmidt(Z);
+
+  // Range(C) = Range(B)
+  Eigen::MatrixXf C = Z.transpose() * B;
+
+  Eigen::JacobiSVD<Eigen::MatrixXf> svdOfC(C, Eigen::ComputeThinU | Eigen::ComputeThinV);
+
+  U = Z * svdOfC.matrixU();
+
+  if (_set_all_svd_components)
+  {
+    _V = Y * svdOfC.matrixV();
+    _S = svdOfC.singularValues();
+  }
 }
 
 template <bool is_learn>

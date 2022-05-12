@@ -54,6 +54,7 @@ public:
   void QR_decomposition();
   void generate_U_via_SVD();
   void SVD(const Eigen::MatrixXf& A, const multi_ex& examples);
+  void set_rank(uint64_t rank);
   void _populate_all_SVD_components();
 
 private:

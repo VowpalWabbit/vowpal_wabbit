@@ -486,55 +486,118 @@ BOOST_AUTO_TEST_CASE(check_final_U_dimensions)
   }
 }
 
-void generate_random_matrix(Eigen::MatrixXf& mat, uint64_t seed)
+void generate_random_vector(
+    Eigen::SparseVector<float>& vec, VW::workspace& vw, uint64_t min, uint64_t max, uint64_t& min_index)
 {
-  for (size_t row = 0; row < mat.rows(); row++)
+  for (size_t i = 0; i < vec.rows(); i++)
   {
-    for (size_t col = 0; col < mat.cols(); col++)
-    {
-      auto combined_index = row + col + seed;
-      auto mm = merand48_boxmuller(combined_index);
-      mat(row, col) = mm;
-    }
-  }
-}
+    uint64_t seed = vw.get_random_state()->get_and_update_random() * 1000.f;
+    auto combined_index = i + seed;
 
-void generate_random_vector(Eigen::VectorXf& vec, uint64_t seed)
-{
-  for (size_t row = 0; row < vec.rows(); row++)
-  {
-    auto combined_index = row + seed;
-    auto mm = merand48_boxmuller(combined_index);
-    vec(row) = mm;
+    uint64_t index = merand48_boxmuller(combined_index) * 1000.f;
+    while (index < min || index > max) { index = merand48_boxmuller(combined_index) * 1000.f; }
+
+    auto stride = vw.weights.sparse ? vw.weights.sparse_weights.stride() : vw.weights.dense_weights.stride();
+    auto mask = vw.weights.sparse ? vw.weights.sparse_weights.mask() : vw.weights.dense_weights.mask();
+    auto strided_index = (index << stride) & mask;
+    combined_index = i + strided_index + seed;
+    auto gaussian_value = merand48_boxmuller(combined_index);
+    vec.coeffRef(strided_index) = gaussian_value;
+
+    if (strided_index < min_index) { min_index = strided_index; }
   }
 }
 
 BOOST_AUTO_TEST_CASE(check_final_truncated_SVD_validity)
 {
-  auto d = 3;
   auto& vw = *VW::initialize(
-      "--cb_explore_adf --noconstant --large_action_space --max_actions " + std::to_string(d) + " --quiet", nullptr,
-      false, nullptr, nullptr);
+      "--cb_explore_adf --noconstant --large_action_space --max_actions 0 --quiet", nullptr, false, nullptr, nullptr);
 
-  uint64_t num_actions = 4;  // rows
-  uint64_t num_fts = 5;      // cols
-  uint64_t seed = 0;
+  uint64_t num_actions = 5;          // rows
+  uint64_t ft_quota_per_vector = 5;  // cols
+  uint64_t max_col = vw.weights.sparse ? vw.weights.sparse_weights.mask() : vw.weights.dense_weights.mask();
 
   vw.get_random_state()->set_random_state(0);
   vw.get_random_state()->get_and_update_random();
+  uint64_t seed = vw.get_random_state()->get_and_update_random() * 100.f;
+  Eigen::SparseMatrix<float> A_square(max_col, max_col);
 
-  Eigen::MatrixXf U(num_actions, d);
-  Eigen::MatrixXf V(num_fts, d);
-  seed = vw.get_random_state()->get_and_update_random() * 100.f;
-  generate_random_matrix(U, seed);
-  REDSVD::Util::processGramSchmidt(U);
-  seed = vw.get_random_state()->get_and_update_random() * 100.f;
-  generate_random_matrix(V, seed);
-  REDSVD::Util::processGramSchmidt(V);
+  uint64_t min = 0;
+  uint64_t max = 20;
 
-  Eigen::VectorXf S(d);
-  for (int i = 0; i < d; ++i) { S(i) = d - i; }
-  Eigen::MatrixXf A = U * S.asDiagonal() * V.transpose();
+  std::vector<uint64_t> min_indexes;
+  for (size_t i = 0; i < num_actions; i++)
+  {
+    seed = vw.get_random_state()->get_and_update_random() * 100.f;
+    Eigen::SparseVector<float> v_vec(max_col);
+    uint64_t max_index = 0;
+
+    generate_random_vector(v_vec, vw, min, max, min_index);
+
+    min_indexes.push_back(min_index);
+    Eigen::SparseMatrix<float> temp = v_vec * v_vec.transpose();
+    A_square += temp;
+    min = max + 20;
+    max = min + 20;
+  }
+
+  Eigen::SparseMatrix<float> A(num_actions, max_col);
+  std::unordered_map<uint64_t, uint64_t> rows_map;
+  multi_ex examples;
+
+  std::vector<std::string> ssvector;
+  for (size_t row = 0; row < num_actions; row++)
+  {
+    std::string ss("| ");
+    ssvector.push_back(ss);
+  }
+
+  uint64_t latest_index = 0;
+  bool done = false;
+
+  for (int k = 0; k < A_square.outerSize(); ++k)
+  {
+    size_t i = 0;
+    for (SparseMatrix<float>::InnerIterator it(A_square, k); it; ++it)
+    {
+      if (done) { break; }
+      if (it.row() >= min_indexes[i])
+      {
+        i++;
+        if (rows_map.find(it.row()) == rows_map.end())
+        {
+          rows_map.insert({it.row(), latest_index});
+          latest_index++;
+          if (latest_index >= num_actions)
+          {
+            done = true;
+            break;
+          }
+        }
+      }
+    }
+  }
+
+  for (int k = 0; k < A_square.outerSize(); ++k)
+  {
+    size_t i = 0;
+    for (SparseMatrix<float>::InnerIterator it(A_square, k); it; ++it)
+    {
+      if (it.row() >= min_indexes[i] && rows_map.find(it.row()) != rows_map.end())
+      {
+        uint64_t index_mapped = rows_map[it.row()];
+        A.coeffRef(index_mapped, k) = it.value();
+
+        uint64_t vw_index = it.col() >> vw.weights.stride_shift();
+        ssvector[index_mapped] += std::to_string(vw_index) + " ";
+        if (vw.weights.sparse) { vw.weights.sparse_weights[it.col()] = it.value(); }
+        else
+        {
+          vw.weights.dense_weights[it.col()] = it.value();
+        }
+      }
+    }
+  }
 
   std::vector<std::string> e_r;
   vw.l->get_enabled_reductions(e_r);
@@ -547,13 +610,25 @@ BOOST_AUTO_TEST_CASE(check_final_truncated_SVD_validity)
   auto action_space = (internal_action_space*)learner->get_internal_type_erased_data_pointer_test_use_only();
   BOOST_CHECK_EQUAL(action_space != nullptr, true);
 
+  {
+    Eigen::FullPivLU<Eigen::MatrixXf> lu_decomp(A);
+    auto rank = lu_decomp.rank();
+    std::cout << "rank: " << rank << std::endl;
+    // for test set actual rank of A
+    action_space->explore.set_rank(rank);
+  }
+
   action_space->explore._populate_all_SVD_components();
 
-  // need to populate examples with the indexes and the vw weights with the indexes values
-  // then I need to proceed to make this sparse
+  for (size_t row = 0; row < num_actions; row++)
+  {
+    examples.push_back(VW::read_example(vw, ssvector[row]));
+    examples[0]->pred.a_s.push_back({0, 0});
+  }
 
-  multi_ex examples;
-  action_space->explore.SVD(A, examples);
+  action_space->explore.generate_A(examples);
+
+  action_space->explore.SVD(action_space->explore.A, examples);
 
   constexpr float FLOAT_TOL = 0.0001f;
 
@@ -573,7 +648,16 @@ BOOST_AUTO_TEST_CASE(check_final_truncated_SVD_validity)
   }
 
   BOOST_CHECK_SMALL(
-      (A - action_space->explore.U * action_space->explore._S.asDiagonal() * action_space->explore._V.transpose())
+      (action_space->explore.A -
+          action_space->explore.U * action_space->explore._S.asDiagonal() * action_space->explore._V.transpose())
           .norm(),
       FLOAT_TOL);
+
+  // compare singular values with actual SVD singular values
+  Eigen::MatrixXf A_dense = action_space->explore.A;
+  Eigen::JacobiSVD<Eigen::MatrixXf> svdOfA(A_dense, Eigen::ComputeThinU | Eigen::ComputeThinV);
+  Eigen::VectorXf S = svdOfA.singularValues();
+
+  for (size_t i = 0; i < action_space->explore._S.rows(); i++)
+  { BOOST_CHECK_CLOSE(S(i), action_space->explore._S(i), FLOAT_TOL); }
 }
