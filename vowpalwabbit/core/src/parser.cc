@@ -370,11 +370,6 @@ void parse_cache(VW::workspace& all, std::vector<std::string> cache_files, bool 
       {
         if (!quiet) { *(all.trace_message) << "using cache_file = " << file.c_str() << endl; }
         set_cache_reader(all);
-        if (c == all.num_bits) { all.example_parser->sorted_cache = true; }
-        else
-        {
-          all.example_parser->sorted_cache = false;
-        }
         all.example_parser->resettable = true;
       }
     }
@@ -570,9 +565,7 @@ void enable_sources(VW::workspace& all, bool quiet, size_t passes, input_options
     if (all.active) { set_string_reader(all); }
     else
     {
-      all.example_parser->sorted_cache = true;
       set_daemon_reader(all, input_options.json, input_options.dsjson);
-      all.example_parser->sorted_cache = true;
     }
     all.example_parser->resettable = all.example_parser->write_cache || all.daemon;
   }

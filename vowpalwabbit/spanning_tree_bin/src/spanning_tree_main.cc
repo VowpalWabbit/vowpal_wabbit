@@ -15,7 +15,7 @@ This creates a binary tree topology over a set of n nodes that connect.
 #include "vw/spanning_tree/spanning_tree.h"
 
 #ifdef _WIN32
-int daemon(int a, int b) { return 0; }
+int daemon(int /*a*/, int /*b*/) { return 0; }
 int getpid() { return (int)::GetCurrentProcessId(); }
 #endif
 
@@ -80,7 +80,7 @@ int main(int argc, char* argv[])
       VW_WARNING_STATE_POP
     }
 
-    SpanningTree spanningTree(port);
+    SpanningTree spanningTree(static_cast<short unsigned int>(port));
 
     if (!pid_file_name.empty())
     {

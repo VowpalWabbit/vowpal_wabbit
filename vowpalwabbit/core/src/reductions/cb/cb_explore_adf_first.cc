@@ -40,13 +40,13 @@ public:
   ~cb_explore_adf_first() = default;
 
   // Should be called through cb_explore_adf_base for pre/post-processing
-  void predict(multi_learner& base, multi_ex& examples) { predict_or_learn_impl<false>(base, examples); }
-  void learn(multi_learner& base, multi_ex& examples) { predict_or_learn_impl<true>(base, examples); }
+  void predict(multi_learner& base, VW::multi_ex& examples) { predict_or_learn_impl<false>(base, examples); }
+  void learn(multi_learner& base, VW::multi_ex& examples) { predict_or_learn_impl<true>(base, examples); }
   void save_load(io_buf& io, bool read, bool text);
 
 private:
   template <bool is_learn>
-  void predict_or_learn_impl(multi_learner& base, multi_ex& examples);
+  void predict_or_learn_impl(multi_learner& base, VW::multi_ex& examples);
 };
 
 cb_explore_adf_first::cb_explore_adf_first(size_t tau, float epsilon, VW::version_struct model_file_version)
@@ -55,7 +55,7 @@ cb_explore_adf_first::cb_explore_adf_first(size_t tau, float epsilon, VW::versio
 }
 
 template <bool is_learn>
-void cb_explore_adf_first::predict_or_learn_impl(multi_learner& base, multi_ex& examples)
+void cb_explore_adf_first::predict_or_learn_impl(multi_learner& base, VW::multi_ex& examples)
 {
   // Explore tau times, then act according to optimal.
   if (is_learn) { multiline_learn_or_predict<true>(base, examples, examples[0]->ft_offset); }

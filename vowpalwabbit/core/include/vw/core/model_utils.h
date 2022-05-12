@@ -63,8 +63,9 @@ size_t write_text_mode_output(io_buf& io, const T& var, const std::string& name_
  * @return size_t the number of bytes read
  */
 template <typename T,
-    typename std::enable_if<!std::is_pointer<T>::value && std::is_trivially_copyable<T>::value && std::is_pod<T>::value,
-        bool>::type = true>
+    typename std::enable_if<
+        !std::is_pointer<T>::value && std::is_trivial<T>::value && std::is_standard_layout<T>::value, bool>::type =
+        true>
 size_t read_model_field(io_buf& io, T& var)
 {
   auto* data = reinterpret_cast<char*>(&var);
@@ -93,8 +94,9 @@ size_t read_model_field(io_buf& io, T& var)
  * @return size_t the number of bytes written
  */
 template <typename T,
-    typename std::enable_if<!std::is_pointer<T>::value && std::is_trivially_copyable<T>::value && std::is_pod<T>::value,
-        bool>::type = true>
+    typename std::enable_if<
+        !std::is_pointer<T>::value && std::is_trivial<T>::value && std::is_standard_layout<T>::value, bool>::type =
+        true>
 size_t write_model_field(io_buf& io, const T& var, const std::string& name_or_readable_field_template, bool text)
 {
   if (text) { return details::write_text_mode_output(io, var, name_or_readable_field_template); }
