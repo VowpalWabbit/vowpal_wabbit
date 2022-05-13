@@ -27,14 +27,13 @@ private:
   std::vector<Eigen::Triplet<float>> _triplets;
 
 public:
-  Eigen::MatrixXf Q;
-  Eigen::SparseMatrix<float> A;
   Eigen::SparseMatrix<float> Y;
   Eigen::MatrixXf B;
   Eigen::MatrixXf Z;
   Eigen::MatrixXf U;
   Eigen::VectorXf _S;
   Eigen::MatrixXf _V;
+  Eigen::SparseMatrix<float> _A;
   VW::v_array<float> shrink_factors;
   bool _set_all_svd_components = false;
 
@@ -49,12 +48,9 @@ public:
   void generate_Z(const multi_ex& examples);
   void generate_B(const multi_ex& examples);
   bool generate_Y(const multi_ex& examples);
-  bool generate_A(const multi_ex& examples);
-  void generate_Q(const multi_ex& examples);
-  void QR_decomposition();
-  void generate_U_via_SVD();
-  void SVD(const Eigen::MatrixXf& A, const multi_ex& examples);
+  void randomized_SVD(const multi_ex& examples);
   void set_rank(uint64_t rank);
+  bool _generate_A(const multi_ex& examples);
   void _populate_all_SVD_components();
 
 private:

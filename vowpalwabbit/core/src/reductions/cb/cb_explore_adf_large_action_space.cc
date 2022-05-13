@@ -8,15 +8,14 @@
 #include "vw/config/options.h"
 #include "vw/core/gd_predict.h"
 #include "vw/core/label_parser.h"
+#include "vw/core/qr_decomposition.h"
 #include "vw/core/rand_state.h"
 #include "vw/core/reductions/cb/cb_adf.h"
 #include "vw/core/reductions/cb/cb_explore.h"
 #include "vw/core/reductions/cb/cb_explore_adf_common.h"
 #include "vw/core/setup_base.h"
 #include "vw/explore/explore.h"
-#include "../../../../redsvd-0.2.0/src/redsvd.hpp"
 
-#include <Eigen/QR>
 #include <algorithm>
 #include <cmath>
 #include <functional>
@@ -27,30 +26,6 @@ namespace VW
 {
 namespace cb_explore_adf
 {
-// this is meant to be called with foreach_feature
-// for each feature it will multiply the weight that corresponds to the index with the corresponding gaussian element
-// If the returned values are summed the end resutlt is the dot product between the weight vector of the features of an
-// example with a vector of gaussian elements
-template <typename WeightsT>
-struct LazyGaussianDotProduct
-{
-private:
-  WeightsT& _weights;
-  uint64_t _column_index;
-  uint64_t _seed;
-
-public:
-  LazyGaussianDotProduct(WeightsT& weights, uint64_t column_index, uint64_t seed)
-      : _weights(weights), _column_index(column_index), _seed(seed)
-  {
-  }
-  float operator[](uint64_t index) const
-  {
-    auto combined_index = index + _column_index + _seed;
-    return _weights[index] * merand48_boxmuller(combined_index);
-  }
-};
-
 template <typename WeightsT>
 struct triplet_constructor
 {
@@ -147,7 +122,7 @@ void cb_explore_adf_large_action_space::learn(VW::LEARNER::multi_learner& base, 
 }
 
 cb_explore_adf_large_action_space::cb_explore_adf_large_action_space(uint64_t d, float gamma, VW::workspace* all)
-    : _d(d), _gamma(gamma), _all(all), _seed(all->get_random_state()->get_current_state())
+    : _d(d), _gamma(gamma), _all(all), _seed(all->get_random_state()->get_current_state() * 10.f)
 {
 }
 
@@ -171,19 +146,19 @@ void cb_explore_adf_large_action_space::generate_Z(const multi_ex& examples)
   Z.resize(num_actions, _d);
 
   // TODO extend wildspace interactions before calling foreach
-  uint64_t row_index = 0;
   for (Eigen::Index row = 0; row < B.rows(); row++)
   {
     for (uint64_t col = 0; col < _d; col++)
     {
-      for (uint64_t inner_col = 0; inner_col < _d; inner_col++)
+      for (uint64_t inner_index = 0; inner_index < _d; inner_index++)
       {
-        auto combined_index = row + inner_col + _seed;
-        auto dot_prod_prod = B(row, inner_col) * merand48_boxmuller(combined_index);
+        auto combined_index = inner_index + col + _seed;
+        auto dot_prod_prod = B(row, inner_index) * merand48_boxmuller(combined_index);
         Z(row, col) += dot_prod_prod;
       }
     }
   }
+  VW::gram_schmidt(Z);
 }
 
 void cb_explore_adf_large_action_space::generate_B(const multi_ex& examples)
@@ -258,7 +233,7 @@ bool cb_explore_adf_large_action_space::generate_Y(const multi_ex& examples)
 
   if (max_non_zero_col == 0)
   {
-    // no non-zero columns were found for A, it is empty
+    // no non-zero columns were found for Y, it is empty
     Y.resize(0, 0);
   }
   else
@@ -266,13 +241,13 @@ bool cb_explore_adf_large_action_space::generate_Y(const multi_ex& examples)
     Y.resize(max_non_zero_col + 1, _d);
     Y.setFromTriplets(_triplets.begin(), _triplets.end());
     // Orthonormalize Y
-    REDSVD::Util::processGramSchmidt(Y);
+    VW::gram_schmidt(Y);
   }
 
   return (Y.cols() != 0 && Y.rows() != 0);
 }
 
-bool cb_explore_adf_large_action_space::generate_A(const multi_ex& examples)
+bool cb_explore_adf_large_action_space::_generate_A(const multi_ex& examples)
 {
   // TODO extend wildspace interactions before calling foreach
   uint64_t row_index = 0;
@@ -306,108 +281,38 @@ bool cb_explore_adf_large_action_space::generate_A(const multi_ex& examples)
   if (max_non_zero_col == 0)
   {
     // no non-zero columns were found for A, it is empty
-    A.resize(0, 0);
+    _A.resize(0, 0);
   }
   else
   {
-    A.resize(row_index, max_non_zero_col + 1);
-    A.setFromTriplets(_triplets.begin(), _triplets.end());
+    _A.resize(row_index, max_non_zero_col + 1);
+    _A.setFromTriplets(_triplets.begin(), _triplets.end());
   }
 
-  return (A.cols() != 0 && A.rows() != 0);
-}
-
-void cb_explore_adf_large_action_space::generate_Q(const multi_ex& examples)
-{
-  // create Q matrix with dimenstions Kxd where K = examples.size()
-  uint64_t num_actions = examples[0]->pred.a_s.size();
-  Q.resize(num_actions, _d);
-
-  // TODO extend wildspace interactions before calling foreach
-  uint64_t row_index = 0;
-  for (auto* ex : examples)
-  {
-    assert(!CB::ec_is_example_header(*ex));
-
-    for (uint64_t col = 0; col < _d; col++)
-    {
-      float dot_product = 0.f;
-      if (_all->weights.sparse)
-      {
-        LazyGaussianDotProduct<sparse_parameters> w(_all->weights.sparse_weights, col, _seed);
-        GD::foreach_feature<float, float, just_add_weights, LazyGaussianDotProduct<sparse_parameters>>(w,
-            _all->ignore_some_linear, _all->ignore_linear, _all->interactions, _all->extent_interactions,
-            _all->permutations, *ex, dot_product, _all->_generate_interactions_object_cache);
-      }
-      else
-      {
-        LazyGaussianDotProduct<dense_parameters> w(_all->weights.dense_weights, col, _seed);
-        GD::foreach_feature<float, float, just_add_weights, LazyGaussianDotProduct<dense_parameters>>(w,
-            _all->ignore_some_linear, _all->ignore_linear, _all->interactions, _all->extent_interactions,
-            _all->permutations, *ex, dot_product, _all->_generate_interactions_object_cache);
-      }
-
-      Q(row_index, col) = dot_product;
-    }
-    row_index++;
-  }
-}
-
-void cb_explore_adf_large_action_space::QR_decomposition()
-{
-  Eigen::MatrixXf thinQ(Eigen::MatrixXf::Identity(Q.rows(), Q.cols()));
-  Eigen::HouseholderQR<Eigen::MatrixXf> qr(Q);
-  Q = qr.householderQ() * thinQ;
-}
-
-void cb_explore_adf_large_action_space::generate_U_via_SVD()
-{
-  Eigen::MatrixXf Z = Q.transpose() * A;
-  U = Q * Z.bdcSvd(Eigen::ComputeThinU | Eigen::ComputeThinV).matrixU().transpose();
+  return (_A.cols() != 0 && _A.rows() != 0);
 }
 
 void cb_explore_adf_large_action_space::_populate_all_SVD_components() { _set_all_svd_components = true; }
 void cb_explore_adf_large_action_space::set_rank(uint64_t rank) { _d = rank; }
 
-void cb_explore_adf_large_action_space::SVD(const Eigen::MatrixXf& A, const multi_ex& examples)
+void cb_explore_adf_large_action_space::randomized_SVD(const multi_ex& examples)
 {
-  // REDSVD::RedSVD reds(A, _d);
-  // U = reds.matrixU();
-
-  // if (_set_all_svd_components)
-  // {
-  //   _V = reds.matrixV();
-  //   _S = reds.singularValues();
-  // }
-
-  // // TODO can Y be stored in the model? on some strided location ^^ ?
+  // TODO can Y be stored in the model? on some strided location ^^ ?
+  // if the model is empty then can't create Y and there is nothing left to do
   if (!generate_Y(examples)) { return; }
-  // Eigen::MatrixXf B = A * Y;
   generate_B(examples);
+  generate_Z(examples);
 
-  // Gaussian Random Matrix
-  Eigen::MatrixXf P(B.cols(), _d);
-  REDSVD::Util::sampleGaussianMat(P);
-
-  // Compute Sample Matrix of B
-  Eigen::MatrixXf Z = B * P;
-
-  // generate_Z(examples);
-
-  // Orthonormalize Z
-  REDSVD::Util::processGramSchmidt(Z);
-
-  // Range(C) = Range(B)
   Eigen::MatrixXf C = Z.transpose() * B;
 
-  Eigen::JacobiSVD<Eigen::MatrixXf> svdOfC(C, Eigen::ComputeThinU | Eigen::ComputeThinV);
+  Eigen::JacobiSVD<Eigen::MatrixXf> svd(C, Eigen::ComputeThinU | Eigen::ComputeThinV);
 
-  U = Z * svdOfC.matrixU();
+  U = Z * svd.matrixU();
 
   if (_set_all_svd_components)
   {
-    _V = Y * svdOfC.matrixV();
-    _S = svdOfC.singularValues();
+    _V = Y * svd.matrixV();
+    _S = svd.singularValues();
   }
 }
 
@@ -426,13 +331,7 @@ void cb_explore_adf_large_action_space::predict_or_learn_impl(VW::LEARNER::multi
                        ->score;
 
     calculate_shrink_factor(preds, min_ck);
-    if (_d < preds.size())
-    {
-      // if the model is empty then can't create A and there is nothing left to do
-      if (!generate_A(examples)) { return; }
-
-      SVD(A, examples);
-    }
+    if (_d < preds.size()) { randomized_SVD(examples); }
 
     // TODO apply spanner on U
   }
