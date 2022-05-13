@@ -23,5 +23,5 @@ size_t read_cached_features(io_buf& input, features& feats, bool& sorted);
 // What is written by write_example_to_cache can be read by read_example_from_cache
 void write_example_to_cache(io_buf& output, VW::example* ex_ptr, VW::label_parser& lbl_parser, uint64_t parse_mask,
     VW::details::cache_temp_buffer& temp_buffer);
-int read_example_from_cache(VW::workspace* all, io_buf& input, v_array<VW::example*>& examples);
+int read_example_from_cache(VW::workspace* all, io_buf& input, VW::multi_ex& examples);
 }  // namespace VW

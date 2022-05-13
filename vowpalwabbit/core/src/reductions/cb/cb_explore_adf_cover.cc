@@ -60,13 +60,16 @@ public:
       VW::version_struct model_file_version, VW::io::logger logger);
 
   // Should be called through cb_explore_adf_base for pre/post-processing
-  void predict(VW::LEARNER::multi_learner& base, multi_ex& examples) { predict_or_learn_impl<false>(base, examples); }
-  void learn(VW::LEARNER::multi_learner& base, multi_ex& examples) { predict_or_learn_impl<true>(base, examples); }
+  void predict(VW::LEARNER::multi_learner& base, VW::multi_ex& examples)
+  {
+    predict_or_learn_impl<false>(base, examples);
+  }
+  void learn(VW::LEARNER::multi_learner& base, VW::multi_ex& examples) { predict_or_learn_impl<true>(base, examples); }
   void save_load(io_buf& io, bool read, bool text);
 
 private:
   template <bool is_learn>
-  void predict_or_learn_impl(VW::LEARNER::multi_learner& base, multi_ex& examples);
+  void predict_or_learn_impl(VW::LEARNER::multi_learner& base, VW::multi_ex& examples);
 };
 
 cb_explore_adf_cover::cb_explore_adf_cover(size_t cover_size, float psi, bool nounif, float epsilon, bool epsilon_decay,
@@ -88,7 +91,7 @@ cb_explore_adf_cover::cb_explore_adf_cover(size_t cover_size, float psi, bool no
 }
 
 template <bool is_learn>
-void cb_explore_adf_cover::predict_or_learn_impl(VW::LEARNER::multi_learner& base, multi_ex& examples)
+void cb_explore_adf_cover::predict_or_learn_impl(VW::LEARNER::multi_learner& base, VW::multi_ex& examples)
 {
   // Redundant with the call in cb_explore_adf_base, but encapsulation means we need to do this again here
   _gen_cs.known_cost = CB_ADF::get_observed_cost_or_default_cb_adf(examples);

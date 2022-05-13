@@ -236,7 +236,7 @@ private:
 class custom_examples_queue
 {
 public:
-  void reset_examples(const v_array<example*>* examples)
+  void reset_examples(const VW::multi_ex* examples)
   {
     assert(examples != nullptr);
     _examples = examples;
@@ -250,7 +250,7 @@ public:
   }
 
 private:
-  const v_array<example*>* _examples;
+  const VW::multi_ex* _examples;
   size_t _index{0};
 };
 
@@ -301,7 +301,7 @@ void generic_driver_onethread(VW::workspace& all)
   single_instance_context context(all);
   handler_type handler(context);
   custom_examples_queue examples_queue;
-  auto multi_ex_fptr = [&handler, &examples_queue](VW::workspace& /*all*/, const v_array<example*>& examples) {
+  auto multi_ex_fptr = [&handler, &examples_queue](VW::workspace& /*all*/, const VW::multi_ex& examples) {
     examples_queue.reset_examples(&examples);
     process_examples(examples_queue, handler);
   };

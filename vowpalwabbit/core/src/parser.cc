@@ -690,7 +690,7 @@ VW::example& get_unused_example(VW::workspace* all)
   return *ex;
 }
 
-void setup_examples(VW::workspace& all, VW::v_array<VW::example*>& examples)
+void setup_examples(VW::workspace& all, VW::multi_ex& examples)
 {
   for (VW::example* ae : examples) { setup_example(all, ae); }
 }
@@ -920,7 +920,7 @@ void finish_example(VW::workspace& all, example& ec)
 }
 }  // namespace VW
 
-void thread_dispatch(VW::workspace& all, const VW::v_array<VW::example*>& examples)
+void thread_dispatch(VW::workspace& all, const VW::multi_ex& examples)
 {
   for (auto example : examples) { all.example_parser->ready_parsed_examples.push(example); }
 }

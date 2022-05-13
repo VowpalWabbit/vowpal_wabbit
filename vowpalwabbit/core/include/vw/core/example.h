@@ -174,7 +174,7 @@ inline void add_passthrough_feature_magic(example& ec, uint64_t magic, uint64_t 
 
 using multi_ex = std::vector<example*>;
 
-void return_multiple_example(VW::workspace& all, v_array<example*>& examples);
+void return_multiple_example(VW::workspace& all, VW::multi_ex& examples);
 
 using example_factory_t = example& (*)(void*);
 

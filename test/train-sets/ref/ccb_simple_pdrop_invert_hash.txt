@@ -1,4 +1,4 @@
-Id 
+Id
 Min label:-1
 Max label:0
 bits:18
@@ -12,16 +12,16 @@ event_sum 2
 action_sum 5
 :0
 sj^f2:18865:-0.103116
-sj^f2*_id^index1:25338:-0.103116
-_id^index1:25433:-0.103116
+sj^f2*_ccb_slot_index^index1:25338:-0.103116
+_ccb_slot_index^index1:25433:-0.103116
 sj^f1:32590:-0.121757
-_id^index0:68306:-0.121757
-sj^f1*_id^index0:93464:-0.121757
-action^f2*_id^index1:97567:-0.103116
+_ccb_slot_index^index0:68306:-0.121757
+sj^f1*_ccb_slot_index^index0:93464:-0.121757
+action^f2*_ccb_slot_index^index1:97567:-0.103116
 Constant:116060:-0.187565
-shared^f1*_id^index0:137661:-0.121757
+shared^f1*_ccb_slot_index^index0:137661:-0.121757
 shared^f1:147509:-0.187565
-action^f3*_id^index0:189238:-0.121757
+action^f3*_ccb_slot_index^index0:189238:-0.121757
 action^f3:208140:-0.121757
-shared^f1*_id^index1:225334:-0.103116
+shared^f1*_ccb_slot_index^index1:225334:-0.103116
 action^f2:257122:-0.103116

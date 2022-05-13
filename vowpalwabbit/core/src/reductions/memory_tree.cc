@@ -171,7 +171,7 @@ struct memory_tree
 
   std::vector<node> nodes;  // array of nodes.
   // v_array<node> nodes;         // array of nodes.
-  VW::v_array<VW::example*> examples;  // array of example points
+  VW::multi_ex examples;  // array of example points
 
   size_t max_leaf_examples = 0;
   size_t max_nodes = 0;

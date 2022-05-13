@@ -8,7 +8,9 @@
 #include "vw/core/array_parameters.h"
 #include "vw/core/constant.h"
 #include "vw/core/error_reporting.h"
+#include "vw/core/input_parser.h"
 #include "vw/core/interactions_predict.h"
+#include "vw/core/metric_sink.h"
 #include "vw/core/version.h"
 #include "vw/core/vw_fwd.h"
 #include "vw/io/logger.h"
@@ -167,6 +169,14 @@ public:
 #ifdef BUILD_EXTERNAL_PARSER
   std::unique_ptr<VW::external::parser> external_parser;
 #endif
+  // This field is experimental and subject to change.
+  // Used to implement the external binary parser.
+  std::vector<std::function<void(VW::metric_sink&)>> metric_output_hooks;
+
+  // Experimental field.
+  // Generic parser interface to make it possible to use any external parser.
+  std::unique_ptr<VW::details::input_parser> custom_parser;
+
   std::string data_filename;
 
   bool daemon;
@@ -225,6 +235,9 @@ public:
   std::array<bool, NUM_NAMESPACES> ignore;  // a set of namespaces to ignore
   bool ignore_some_linear;
   std::array<bool, NUM_NAMESPACES> ignore_linear;  // a set of namespaces to ignore for linear
+  std::unordered_map<std::string, std::set<std::string>>
+      ignore_features_dsjson;  // a map from hash(namespace) to a vector of hash(feature). This flag is only available
+                               // for dsjson.
 
   bool redefine_some;                                  // --redefine param was used
   std::array<unsigned char, NUM_NAMESPACES> redefine;  // keeps new chars for namespaces
