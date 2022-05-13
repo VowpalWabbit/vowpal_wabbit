@@ -1196,10 +1196,9 @@ void parse_example_tweaks(options_i& options, VW::workspace& all)
         << loss_function);
   }
 
-  constexpr const static float UNUSED_LOSS_FUNC_ARG = 0.f;
   if (loss_function_accepts_quantile_tau)
   {
-    all.loss = get_loss_function(all, loss_function, quantile_loss_parameter, UNUSED_LOSS_FUNC_ARG);
+    all.loss = get_loss_function(all, loss_function, quantile_loss_parameter);
   }
   else if (loss_function_accepts_expectile_q)
   {
@@ -1209,7 +1208,7 @@ void parse_example_tweaks(options_i& options, VW::workspace& all)
           "Option 'expectile_q' must be specified with a value in range (0.0, 0.5] "
           "when using the expectile loss function.");
     }
-    all.loss = get_loss_function(all, loss_function, expectile_loss_parameter, UNUSED_LOSS_FUNC_ARG);
+    all.loss = get_loss_function(all, loss_function, expectile_loss_parameter);
   }
   else if (loss_function_accepts_logistic_args)
   {
@@ -1217,7 +1216,7 @@ void parse_example_tweaks(options_i& options, VW::workspace& all)
   }
   else
   {
-    all.loss = get_loss_function(all, loss_function, UNUSED_LOSS_FUNC_ARG, UNUSED_LOSS_FUNC_ARG);
+    all.loss = get_loss_function(all, loss_function);
   }
 
   if (all.l1_lambda < 0.f)
