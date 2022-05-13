@@ -31,8 +31,8 @@ Example Options:
                                             logistic, poisson, quantile, squared})
     --quantile_tau arg                      Parameter \tau associated with Quantile loss. Defaults to 0.5
                                             (type: float, default: 0.5)
-    --expectile_q arg                       Parameter q associated with Expectile loss. Must be a value in
-                                            (0.0, 0.5]. (type: float)
+    --expectile_q arg                       Parameter q associated with Expectile loss (required). Must be
+                                            a value in (0.0, 0.5]. (type: float)
     --logistic_min arg                      Minimum loss value for logistic loss. Defaults to -1 (type: float,
                                             default: -1)
     --logistic_max arg                      Maximum loss value for logistic loss. Defaults to +1 (type: float,
