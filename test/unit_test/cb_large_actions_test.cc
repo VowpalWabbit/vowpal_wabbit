@@ -337,26 +337,15 @@ void generate_random_vector(
   }
 }
 
-BOOST_AUTO_TEST_CASE(check_final_truncated_SVD_validity)
+std::vector<uint64_t> generate_A_square(
+    Eigen::SparseMatrix<float>& A_square, VW::workspace& vw, uint64_t num_actions, uint64_t max_col)
 {
-  auto& vw = *VW::initialize(
-      "--cb_explore_adf --noconstant --large_action_space --max_actions 0 --quiet", nullptr, false, nullptr, nullptr);
-
-  uint64_t num_actions = 5;  // rows
-  uint64_t max_col = vw.weights.sparse ? vw.weights.sparse_weights.mask() : vw.weights.dense_weights.mask();
-
-  vw.get_random_state()->set_random_state(0);
-  vw.get_random_state()->get_and_update_random();
-  uint64_t seed = vw.get_random_state()->get_and_update_random() * 100.f;
-  Eigen::SparseMatrix<float> A_square(max_col, max_col);
-
   uint64_t min = 0;
   uint64_t max = 20;
 
   std::vector<uint64_t> min_indexes;
   for (size_t i = 0; i < num_actions; i++)
   {
-    seed = vw.get_random_state()->get_and_update_random() * 100.f;
     Eigen::SparseVector<float> v_vec(max_col);
     uint64_t min_index = max_col + 1;
 
@@ -368,9 +357,40 @@ BOOST_AUTO_TEST_CASE(check_final_truncated_SVD_validity)
     min = max + 20;
     max = min + 20;
   }
+  return min_indexes;
+}
 
-  Eigen::SparseMatrix<float> A(num_actions, max_col);
+std::unordered_map<uint64_t, uint64_t> map_A_square_rows_to_A_rows(
+    const Eigen::SparseMatrix<float>& A_square, const std::vector<uint64_t>& index_cutoffs, uint64_t num_actions)
+{
   std::unordered_map<uint64_t, uint64_t> rows_map;
+
+  uint64_t latest_index = 0;
+
+  for (int k = 0; k < A_square.outerSize(); ++k)
+  {
+    size_t i = 0;
+    for (Eigen::SparseMatrix<float>::InnerIterator it(A_square, k); it; ++it)
+    {
+      if (it.row() >= index_cutoffs[i])
+      {
+        i++;
+        if (rows_map.find(it.row()) == rows_map.end())
+        {
+          rows_map.insert({it.row(), latest_index});
+          latest_index++;
+          if (latest_index >= num_actions) { return rows_map; }
+        }
+      }
+    }
+  }
+  return rows_map;
+}
+
+multi_ex setup_vw_weights_and_examples_and_create_A(Eigen::SparseMatrix<float>& A,
+    const Eigen::SparseMatrix<float>& A_square, VW::workspace& vw, std::unordered_map<uint64_t, uint64_t>& rows_map,
+    const std::vector<uint64_t>& index_cutoffs, uint64_t num_actions)
+{
   multi_ex examples;
 
   std::vector<std::string> ssvector;
@@ -380,44 +400,19 @@ BOOST_AUTO_TEST_CASE(check_final_truncated_SVD_validity)
     ssvector.push_back(ss);
   }
 
-  uint64_t latest_index = 0;
-  bool done = false;
-
   for (int k = 0; k < A_square.outerSize(); ++k)
   {
     size_t i = 0;
     for (Eigen::SparseMatrix<float>::InnerIterator it(A_square, k); it; ++it)
     {
-      if (done) { break; }
-      if (it.row() >= min_indexes[i])
+      if (it.row() >= index_cutoffs[i] && rows_map.find(it.row()) != rows_map.end())
       {
-        i++;
-        if (rows_map.find(it.row()) == rows_map.end())
-        {
-          rows_map.insert({it.row(), latest_index});
-          latest_index++;
-          if (latest_index >= num_actions)
-          {
-            done = true;
-            break;
-          }
-        }
-      }
-    }
-  }
-
-  for (int k = 0; k < A_square.outerSize(); ++k)
-  {
-    size_t i = 0;
-    for (Eigen::SparseMatrix<float>::InnerIterator it(A_square, k); it; ++it)
-    {
-      if (it.row() >= min_indexes[i] && rows_map.find(it.row()) != rows_map.end())
-      {
-        uint64_t index_mapped = rows_map[it.row()];
+        auto index_mapped = rows_map[it.row()];
         A.coeffRef(index_mapped, k) = it.value();
 
-        uint64_t vw_index = it.col() >> vw.weights.stride_shift();
+        auto vw_index = it.col() >> vw.weights.stride_shift();
         ssvector[index_mapped] += std::to_string(vw_index) + " ";
+
         if (vw.weights.sparse) { vw.weights.sparse_weights[it.col()] = it.value(); }
         else
         {
@@ -426,6 +421,62 @@ BOOST_AUTO_TEST_CASE(check_final_truncated_SVD_validity)
       }
     }
   }
+
+  for (size_t row = 0; row < num_actions; row++)
+  {
+    examples.push_back(VW::read_example(vw, ssvector[row]));
+    examples[0]->pred.a_s.push_back({0, 0});
+  }
+
+  return examples;
+}
+
+BOOST_AUTO_TEST_CASE(check_final_truncated_SVD_validity)
+{
+  /*
+  To test the correctness of randomized truncated svd we need to create an appropriate low rank matrix A to test.
+  A is created by the sum of the outer products of n vectors with themselves (A = sum{i = 1, n} (v * v.transpose()))
+  n is the upper bound to A's potential rank.
+
+  A is going to be translated into vw examples so we want to avoid an A matrix where all rows have the same columns
+  populated. Column indexes will be translated into vw indexes and we want them to overlap as little as possible, since
+  in a generated A matrix it is fine for the same column to have a different value for different rows, but in vw, since
+  it represents a feature, we want same columns to have the same value on different rows. To avoid this we try to crate
+  the vectors that will comprise A as sparse vectors, each creating indexes in different feature index regions.
+
+   A is going to be a square matrix but we don't expect to have square matrixes in real-world usage so we create a
+  rectangular matrix from A_square.
+
+   We then proceed to translate that rectangular matrix to vw actions (examples) by
+  taking each column index and applying the opposite stride shift that vw will apply after parsing the features
+  (features are integers here so that vw doesn't apply extra hashing)
+
+  After applying the randomized truncated SVD step we check that U and V matrixes are orthonormal, that recreating A
+  from the decomposed matrixes is close enough to the original A matrix, and that the singular values of the truncated
+  and randomized decomposition match the singular values of a traditional SVD applied to the same matrix.
+   */
+
+  auto& vw = *VW::initialize(
+      "--cb_explore_adf --noconstant --large_action_space --max_actions 0 --quiet", nullptr, false, nullptr, nullptr);
+
+  uint64_t num_actions = 5;  // rows
+  uint64_t max_col = vw.weights.sparse ? vw.weights.sparse_weights.mask() : vw.weights.dense_weights.mask();
+
+  Eigen::SparseMatrix<float> A_square(max_col, max_col);
+
+  auto index_cutoffs = generate_A_square(A_square, vw, num_actions, max_col);
+
+  // create rectangulare A so that we can figure out its rank and set d to that
+  // we need the matrix rank to be able to test the reconstruction correctly
+  Eigen::SparseMatrix<float> A(num_actions, max_col);
+  // it is cheaper to traverse the sparse matrixes by their internal representation (non-zero columns first then their
+  // rows)
+  // we want to take #num_actions non-zero rows from A_square and place them into the 0..num_actions rows of matrix A
+  // so we proceed to create a map between those non-zero rows of A_square and the row that they correspond to in the A
+  // matrix
+  auto rows_map = map_A_square_rows_to_A_rows(A_square, index_cutoffs, num_actions);
+  // translate to internal vw representation (setting vw's weights) and create the examples so that we can call SVD
+  multi_ex examples = setup_vw_weights_and_examples_and_create_A(A, A_square, vw, rows_map, index_cutoffs, num_actions);
 
   std::vector<std::string> e_r;
   vw.l->get_enabled_reductions(e_r);
@@ -448,12 +499,6 @@ BOOST_AUTO_TEST_CASE(check_final_truncated_SVD_validity)
   }
 
   action_space->explore._populate_all_SVD_components();
-
-  for (size_t row = 0; row < num_actions; row++)
-  {
-    examples.push_back(VW::read_example(vw, ssvector[row]));
-    examples[0]->pred.a_s.push_back({0, 0});
-  }
 
   action_space->explore._generate_A(examples);
   action_space->explore.randomized_SVD(examples);
