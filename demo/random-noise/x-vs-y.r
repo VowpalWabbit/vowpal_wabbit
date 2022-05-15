@@ -1,5 +1,4 @@
-#!/usr/bin/Rscript
-# --vanilla
+#!/usr/bin/Rscript --vanilla
 #
 # Utility to plot two data-set numeric columns against each other,
 # and generate a X-vs-Y chart + pearson correlation between the two.
@@ -14,12 +13,6 @@
 #       pngfile
 #           is the output chart
 #
-
-# -- where to look for R libraries
-# .libPaths(c('~/local/lib/R',
-#             '/usr/lib/R/library',
-#             '/usr/lib/R/site-library'
-# ))
 suppressPackageStartupMessages(library(ggplot2))
 
 one_column <- function(filename, sep, fieldno) {
@@ -31,7 +24,7 @@ ratio = 1
 W = 6
 H = W / ratio
 DPI = 200
-FONTSIZE = 12 
+FONTSIZE = 12
 MyGray = 'grey50'
 
 title.theme   = element_text(family="FreeSans", face="bold.italic",
@@ -82,5 +75,3 @@ g <- ggplot(data=d, aes(x=X, y=Y), ) +
 pngfile <- ifelse(exists(argv[3]) && nchar(argv[3]) > 0, argv[3], 'X-vs-Y.png')
 # eprintf("ggsave: pngfile=%s\n", pngfile)
 ggsave(g, file=pngfile, width=W, height=H, dpi=DPI)
-
-
