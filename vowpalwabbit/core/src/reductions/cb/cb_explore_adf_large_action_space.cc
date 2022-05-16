@@ -127,14 +127,8 @@ void cb_explore_adf_large_action_space::calculate_shrink_factor(const ACTION_SCO
 
 inline void just_add_weights(float& p, float, float fw) { p += fw; }
 
-template <typename WeightsT>
-inline void Y_triplet_construction(Y_triplet_constructor<WeightsT>& tc, float, uint64_t feature_index)
-{
-  tc.set(feature_index);
-}
-
-template <typename WeightsT>
-inline void A_triplet_construction(A_triplet_constructor<WeightsT>& tc, float, uint64_t feature_index)
+template <typename triplet_type>
+inline void triplet_construction(triplet_type& tc, float, uint64_t feature_index)
 {
   tc.set(feature_index);
 }
@@ -205,7 +199,6 @@ bool cb_explore_adf_large_action_space::generate_Y(const multi_ex& examples)
 {
   // TODO extend wildspace interactions before calling foreach
   uint64_t max_non_zero_col = 0;
-  // TODO check triplets type
   _triplets.clear();
   uint64_t row_index = 0;
   for (auto* ex : examples)
@@ -218,7 +211,7 @@ bool cb_explore_adf_large_action_space::generate_Y(const multi_ex& examples)
       {
         Y_triplet_constructor<sparse_parameters> w(
             _all->weights.sparse_weights, row_index, col, _seed, _triplets, max_non_zero_col);
-        GD::foreach_feature<Y_triplet_constructor<sparse_parameters>, uint64_t, Y_triplet_construction,
+        GD::foreach_feature<Y_triplet_constructor<sparse_parameters>, uint64_t, triplet_construction,
             sparse_parameters>(_all->weights.sparse_weights, _all->ignore_some_linear, _all->ignore_linear,
             _all->interactions, _all->extent_interactions, _all->permutations, *ex, w,
             _all->_generate_interactions_object_cache);
@@ -227,10 +220,9 @@ bool cb_explore_adf_large_action_space::generate_Y(const multi_ex& examples)
       {
         Y_triplet_constructor<dense_parameters> w(
             _all->weights.dense_weights, row_index, col, _seed, _triplets, max_non_zero_col);
-        GD::foreach_feature<Y_triplet_constructor<dense_parameters>, uint64_t, Y_triplet_construction,
-            dense_parameters>(_all->weights.dense_weights, _all->ignore_some_linear, _all->ignore_linear,
-            _all->interactions, _all->extent_interactions, _all->permutations, *ex, w,
-            _all->_generate_interactions_object_cache);
+        GD::foreach_feature<Y_triplet_constructor<dense_parameters>, uint64_t, triplet_construction, dense_parameters>(
+            _all->weights.dense_weights, _all->ignore_some_linear, _all->ignore_linear, _all->interactions,
+            _all->extent_interactions, _all->permutations, *ex, w, _all->_generate_interactions_object_cache);
       }
     }
     row_index++;
@@ -258,7 +250,6 @@ bool cb_explore_adf_large_action_space::_generate_A(const multi_ex& examples)
   // TODO extend wildspace interactions before calling foreach
   uint64_t row_index = 0;
   uint64_t max_non_zero_col = 0;
-  // TODO check triplets type
   _triplets.clear();
   for (auto* ex : examples)
   {
@@ -267,16 +258,15 @@ bool cb_explore_adf_large_action_space::_generate_A(const multi_ex& examples)
     if (_all->weights.sparse)
     {
       A_triplet_constructor<sparse_parameters> w(_all->weights.sparse_weights, row_index, _triplets, max_non_zero_col);
-      GD::foreach_feature<A_triplet_constructor<sparse_parameters>, uint64_t, A_triplet_construction,
-          sparse_parameters>(_all->weights.sparse_weights, _all->ignore_some_linear, _all->ignore_linear,
-          _all->interactions, _all->extent_interactions, _all->permutations, *ex, w,
-          _all->_generate_interactions_object_cache);
+      GD::foreach_feature<A_triplet_constructor<sparse_parameters>, uint64_t, triplet_construction, sparse_parameters>(
+          _all->weights.sparse_weights, _all->ignore_some_linear, _all->ignore_linear, _all->interactions,
+          _all->extent_interactions, _all->permutations, *ex, w, _all->_generate_interactions_object_cache);
     }
     else
     {
       A_triplet_constructor<dense_parameters> w(_all->weights.dense_weights, row_index, _triplets, max_non_zero_col);
 
-      GD::foreach_feature<A_triplet_constructor<dense_parameters>, uint64_t, A_triplet_construction, dense_parameters>(
+      GD::foreach_feature<A_triplet_constructor<dense_parameters>, uint64_t, triplet_construction, dense_parameters>(
           _all->weights.dense_weights, _all->ignore_some_linear, _all->ignore_linear, _all->interactions,
           _all->extent_interactions, _all->permutations, *ex, w, _all->_generate_interactions_object_cache);
     }
