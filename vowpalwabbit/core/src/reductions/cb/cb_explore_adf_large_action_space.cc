@@ -42,7 +42,7 @@ public:
   {
   }
 
-  void set(uint64_t index) const
+  void set(uint64_t index)
   {
     if (_weights[index] != 0.f)
     {
@@ -75,7 +75,7 @@ public:
   {
   }
 
-  void set(uint64_t index) const
+  void set(uint64_t index)
   {
     if (_weights[index] != 0.f)
     {
@@ -88,7 +88,7 @@ public:
 };
 
 template <typename WeightsT>
-struct DotProduct
+struct dot_product
 {
 private:
   WeightsT& _weights;
@@ -96,7 +96,7 @@ private:
   Eigen::SparseMatrix<float>& _Y;
 
 public:
-  DotProduct(WeightsT& weights, uint64_t column_index, Eigen::SparseMatrix<float>& Y)
+  dot_product(WeightsT& weights, uint64_t column_index, Eigen::SparseMatrix<float>& Y)
       : _weights(weights), _column_index(column_index), _Y(Y)
   {
   }
@@ -127,8 +127,8 @@ void cb_explore_adf_large_action_space::calculate_shrink_factor(const ACTION_SCO
 
 inline void just_add_weights(float& p, float, float fw) { p += fw; }
 
-template <typename triplet_type>
-inline void triplet_construction(triplet_type& tc, float, uint64_t feature_index)
+template <typename TripletType>
+void triplet_construction(TripletType& tc, float, uint64_t feature_index)
 {
   tc.set(feature_index);
 }
@@ -173,23 +173,23 @@ void cb_explore_adf_large_action_space::generate_B(const multi_ex& examples)
 
     for (Eigen::Index col = 0; col < Y.outerSize(); ++col)
     {
-      float dot_product = 0.f;
+      float final_dot_prod = 0.f;
       if (_all->weights.sparse)
       {
-        DotProduct<sparse_parameters> w(_all->weights.sparse_weights, col, Y);
-        GD::foreach_feature<float, float, just_add_weights, DotProduct<sparse_parameters>>(w, _all->ignore_some_linear,
-            _all->ignore_linear, _all->interactions, _all->extent_interactions, _all->permutations, *ex, dot_product,
-            _all->_generate_interactions_object_cache);
+        dot_product<sparse_parameters> weights(_all->weights.sparse_weights, col, Y);
+        GD::foreach_feature<float, float, just_add_weights, dot_product<sparse_parameters>>(weights,
+            _all->ignore_some_linear, _all->ignore_linear, _all->interactions, _all->extent_interactions,
+            _all->permutations, *ex, final_dot_prod, _all->_generate_interactions_object_cache);
       }
       else
       {
-        DotProduct<dense_parameters> w(_all->weights.dense_weights, col, Y);
-        GD::foreach_feature<float, float, just_add_weights, DotProduct<dense_parameters>>(w, _all->ignore_some_linear,
-            _all->ignore_linear, _all->interactions, _all->extent_interactions, _all->permutations, *ex, dot_product,
-            _all->_generate_interactions_object_cache);
+        dot_product<dense_parameters> weights(_all->weights.dense_weights, col, Y);
+        GD::foreach_feature<float, float, just_add_weights, dot_product<dense_parameters>>(weights,
+            _all->ignore_some_linear, _all->ignore_linear, _all->interactions, _all->extent_interactions,
+            _all->permutations, *ex, final_dot_prod, _all->_generate_interactions_object_cache);
       }
 
-      B(row_index, col) = dot_product;
+      B(row_index, col) = final_dot_prod;
     }
     row_index++;
   }
@@ -209,20 +209,20 @@ bool cb_explore_adf_large_action_space::generate_Y(const multi_ex& examples)
     {
       if (_all->weights.sparse)
       {
-        Y_triplet_constructor<sparse_parameters> w(
+        Y_triplet_constructor<sparse_parameters> tc(
             _all->weights.sparse_weights, row_index, col, _seed, _triplets, max_non_zero_col);
         GD::foreach_feature<Y_triplet_constructor<sparse_parameters>, uint64_t, triplet_construction,
             sparse_parameters>(_all->weights.sparse_weights, _all->ignore_some_linear, _all->ignore_linear,
-            _all->interactions, _all->extent_interactions, _all->permutations, *ex, w,
+            _all->interactions, _all->extent_interactions, _all->permutations, *ex, tc,
             _all->_generate_interactions_object_cache);
       }
       else
       {
-        Y_triplet_constructor<dense_parameters> w(
+        Y_triplet_constructor<dense_parameters> tc(
             _all->weights.dense_weights, row_index, col, _seed, _triplets, max_non_zero_col);
         GD::foreach_feature<Y_triplet_constructor<dense_parameters>, uint64_t, triplet_construction, dense_parameters>(
             _all->weights.dense_weights, _all->ignore_some_linear, _all->ignore_linear, _all->interactions,
-            _all->extent_interactions, _all->permutations, *ex, w, _all->_generate_interactions_object_cache);
+            _all->extent_interactions, _all->permutations, *ex, tc, _all->_generate_interactions_object_cache);
       }
     }
     row_index++;
@@ -328,10 +328,9 @@ void cb_explore_adf_large_action_space::predict_or_learn_impl(VW::LEARNER::multi
 
     auto& preds = examples[0]->pred.a_s;
 
-    float min_ck = std::min_element(
-        preds.begin(), preds.end(), [](const ACTION_SCORE::action_score& a, const ACTION_SCORE::action_score& b) {
-          return a.score < b.score;
-        })->score;
+    float min_ck = std::min_element(preds.begin(), preds.end(),
+        [](const ACTION_SCORE::action_score& a, const ACTION_SCORE::action_score& b) { return a.score < b.score; })
+                       ->score;
 
     calculate_shrink_factor(preds, min_ck);
     if (_d < preds.size()) { randomized_SVD(examples); }

@@ -31,6 +31,7 @@ public:
   Eigen::MatrixXf B;
   Eigen::MatrixXf Z;
   Eigen::MatrixXf U;
+  // the below matrixes are used only during unit testing and are not set otherwise
   Eigen::VectorXf _S;
   Eigen::MatrixXf _V;
   Eigen::SparseMatrix<float> _A;
@@ -50,6 +51,7 @@ public:
   bool generate_Y(const multi_ex& examples);
   void randomized_SVD(const multi_ex& examples);
   void set_rank(uint64_t rank);
+  // the below methods are used only during unit testing and are not called otherwise
   bool _generate_A(const multi_ex& examples);
   void _populate_all_SVD_components();
 
