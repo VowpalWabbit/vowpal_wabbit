@@ -77,6 +77,8 @@ BOOST_AUTO_TEST_CASE(check_At_times_Omega_is_Y)
   auto& vw = *VW::initialize("--cb_explore_adf --large_action_space --max_actions " + std::to_string(d) + " --quiet",
       nullptr, false, nullptr, nullptr);
 
+  vw.get_random_state()->set_random_state(0);
+
   {
     VW::multi_ex examples;
 
@@ -114,6 +116,7 @@ BOOST_AUTO_TEST_CASE(check_At_times_Omega_is_Y)
     // Generate Omega
     std::vector<Eigen::Triplet<float>> omega_triplets;
     uint64_t max_ft_index = 0;
+
     uint64_t seed = vw.get_random_state()->get_current_state() * 10.f;
 
     for (uint64_t action_index = 0; action_index < num_actions; action_index++)
@@ -508,14 +511,14 @@ BOOST_AUTO_TEST_CASE(check_final_truncated_SVD_validity)
   // truncated randomized SVD reconstruction
   for (int i = 0; i < action_space->explore.U.cols(); ++i)
   {
-    BOOST_CHECK_CLOSE(1.f, action_space->explore.U.col(i).norm(), FLOAT_TOL);
+    BOOST_CHECK_SMALL(1.f - action_space->explore.U.col(i).norm(), FLOAT_TOL);
     for (int j = 0; j < i; ++j)
     { BOOST_CHECK_SMALL(action_space->explore.U.col(i).dot(action_space->explore.U.col(j)), FLOAT_TOL); }
   }
 
   for (int i = 0; i < action_space->explore._V.cols(); ++i)
   {
-    BOOST_CHECK_CLOSE(1.f, action_space->explore._V.col(i).norm(), FLOAT_TOL);
+    BOOST_CHECK_SMALL(1.f - action_space->explore._V.col(i).norm(), FLOAT_TOL);
     for (int j = 0; j < i; ++j)
     { BOOST_CHECK_SMALL(action_space->explore._V.col(i).dot(action_space->explore._V.col(j)), FLOAT_TOL); }
   }
@@ -532,5 +535,5 @@ BOOST_AUTO_TEST_CASE(check_final_truncated_SVD_validity)
   Eigen::VectorXf S = svd.singularValues();
 
   for (size_t i = 0; i < action_space->explore._S.rows(); i++)
-  { BOOST_CHECK_CLOSE(S(i), action_space->explore._S(i), FLOAT_TOL); }
+  { BOOST_CHECK_SMALL(S(i) - action_space->explore._S(i), FLOAT_TOL); }
 }
