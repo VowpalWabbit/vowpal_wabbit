@@ -19,8 +19,9 @@ using internal_action_space =
 BOOST_AUTO_TEST_CASE(creation_of_the_og_A_matrix)
 {
   auto d = 2;
-  auto& vw = *VW::initialize("--cb_explore_adf --large_action_space --max_actions " + std::to_string(d) + " --quiet",
-      nullptr, false, nullptr, nullptr);
+  auto& vw = *VW::initialize(
+      "--cb_explore_adf --large_action_space --max_actions " + std::to_string(d) + " --quiet --random_seed 5", nullptr,
+      false, nullptr, nullptr);
 
   {
     VW::multi_ex examples;
@@ -74,8 +75,9 @@ BOOST_AUTO_TEST_CASE(creation_of_the_og_A_matrix)
 BOOST_AUTO_TEST_CASE(check_At_times_Omega_is_Y)
 {
   auto d = 2;
-  auto& vw = *VW::initialize("--cb_explore_adf --large_action_space --max_actions " + std::to_string(d) + " --quiet",
-      nullptr, false, nullptr, nullptr);
+  auto& vw = *VW::initialize(
+      "--cb_explore_adf --large_action_space --max_actions " + std::to_string(d) + " --quiet --random_seed 5", nullptr,
+      false, nullptr, nullptr);
 
   {
     VW::multi_ex examples;
@@ -149,8 +151,9 @@ BOOST_AUTO_TEST_CASE(check_At_times_Omega_is_Y)
 BOOST_AUTO_TEST_CASE(check_A_times_Y_is_B)
 {
   auto d = 2;
-  auto& vw = *VW::initialize("--cb_explore_adf --large_action_space --max_actions " + std::to_string(d) + " --quiet",
-      nullptr, false, nullptr, nullptr);
+  auto& vw = *VW::initialize(
+      "--cb_explore_adf --large_action_space --max_actions " + std::to_string(d) + " --quiet --random_seed 5", nullptr,
+      false, nullptr, nullptr);
 
   {
     VW::multi_ex examples;
@@ -193,8 +196,9 @@ BOOST_AUTO_TEST_CASE(check_A_times_Y_is_B)
 BOOST_AUTO_TEST_CASE(check_B_times_P_is_Z)
 {
   auto d = 2;
-  auto& vw = *VW::initialize("--cb_explore_adf --large_action_space --max_actions " + std::to_string(d) + " --quiet",
-      nullptr, false, nullptr, nullptr);
+  auto& vw = *VW::initialize(
+      "--cb_explore_adf --large_action_space --max_actions " + std::to_string(d) + " --quiet --random_seed 5", nullptr,
+      false, nullptr, nullptr);
 
   {
     VW::multi_ex examples;
@@ -253,8 +257,9 @@ BOOST_AUTO_TEST_CASE(check_B_times_P_is_Z)
 BOOST_AUTO_TEST_CASE(check_final_U_dimensions)
 {
   auto d = 2;
-  auto& vw = *VW::initialize("--cb_explore_adf --large_action_space --max_actions " + std::to_string(d) + " --quiet",
-      nullptr, false, nullptr, nullptr);
+  auto& vw = *VW::initialize(
+      "--cb_explore_adf --large_action_space --max_actions " + std::to_string(d) + " --quiet --random_seed 5", nullptr,
+      false, nullptr, nullptr);
 
   {
     VW::multi_ex examples;
@@ -456,8 +461,9 @@ BOOST_AUTO_TEST_CASE(check_final_truncated_SVD_validity)
   and randomized decomposition match the singular values of a traditional SVD applied to the same matrix.
    */
 
-  auto& vw = *VW::initialize(
-      "--cb_explore_adf --noconstant --large_action_space --max_actions 0 --quiet", nullptr, false, nullptr, nullptr);
+  auto& vw =
+      *VW::initialize("--cb_explore_adf --noconstant --large_action_space --max_actions 0 --quiet --random_seed 5",
+          nullptr, false, nullptr, nullptr);
 
   uint64_t num_actions = 5;  // rows
   uint64_t max_col = vw.weights.sparse ? vw.weights.sparse_weights.mask() : vw.weights.dense_weights.mask();

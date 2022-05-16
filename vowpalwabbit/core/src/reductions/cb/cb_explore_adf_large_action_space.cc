@@ -144,6 +144,7 @@ void cb_explore_adf_large_action_space::generate_Z(const multi_ex& examples)
 
   uint64_t num_actions = examples[0]->pred.a_s.size();
   Z.resize(num_actions, _d);
+  Z.setZero();
 
   // TODO extend wildspace interactions before calling foreach
   for (Eigen::Index row = 0; row < B.rows(); row++)
@@ -166,6 +167,7 @@ void cb_explore_adf_large_action_space::generate_B(const multi_ex& examples)
   // create B matrix with dimenstions Kxd where K = examples.size()
   uint64_t num_actions = examples[0]->pred.a_s.size();
   B.resize(num_actions, _d);
+  B.setZero();
 
   // TODO extend wildspace interactions before calling foreach
   uint64_t row_index = 0;
@@ -239,6 +241,7 @@ bool cb_explore_adf_large_action_space::generate_Y(const multi_ex& examples)
   else
   {
     Y.resize(max_non_zero_col + 1, _d);
+    Y.setZero();
     Y.setFromTriplets(_triplets.begin(), _triplets.end());
     // Orthonormalize Y
     VW::gram_schmidt(Y);
@@ -286,6 +289,7 @@ bool cb_explore_adf_large_action_space::_generate_A(const multi_ex& examples)
   else
   {
     _A.resize(row_index, max_non_zero_col + 1);
+    _A.setZero();
     _A.setFromTriplets(_triplets.begin(), _triplets.end());
   }
 
