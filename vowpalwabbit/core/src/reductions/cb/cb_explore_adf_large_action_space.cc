@@ -295,6 +295,10 @@ void cb_explore_adf_large_action_space::set_rank(uint64_t rank) { _d = rank; }
 
 void cb_explore_adf_large_action_space::randomized_SVD(const multi_ex& examples)
 {
+  // This implementation is following the redsvd algorithm from this repo: https://github.com/ntessore/redsvd-h
+  // It has been adapted so that all the matrixes do not need to be materialized and so that the implementation is more
+  // natural to vw's example features representation
+
   // TODO can Y be stored in the model? on some strided location ^^ ?
   // if the model is empty then can't create Y and there is nothing left to do
   if (!generate_Y(examples)) { return; }
