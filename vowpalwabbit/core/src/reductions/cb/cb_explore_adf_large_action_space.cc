@@ -171,7 +171,7 @@ void cb_explore_adf_large_action_space::generate_B(const multi_ex& examples)
   {
     assert(!CB::ec_is_example_header(*ex));
 
-    for (int col = 0; col < Y.outerSize(); ++col)
+    for (Eigen::Index col = 0; col < Y.outerSize(); ++col)
     {
       float dot_product = 0.f;
       if (_all->weights.sparse)
