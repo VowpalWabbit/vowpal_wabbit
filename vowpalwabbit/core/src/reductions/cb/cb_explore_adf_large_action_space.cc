@@ -324,9 +324,10 @@ void cb_explore_adf_large_action_space::predict_or_learn_impl(VW::LEARNER::multi
 
     auto& preds = examples[0]->pred.a_s;
 
-    float min_ck = std::min_element(preds.begin(), preds.end(),
-        [](const ACTION_SCORE::action_score& a, const ACTION_SCORE::action_score& b) { return a.score < b.score; })
-                       ->score;
+    float min_ck = std::min_element(
+        preds.begin(), preds.end(), [](const ACTION_SCORE::action_score& a, const ACTION_SCORE::action_score& b) {
+          return a.score < b.score;
+        })->score;
 
     calculate_shrink_factor(preds, min_ck);
     if (_d < preds.size()) { randomized_SVD(examples); }
