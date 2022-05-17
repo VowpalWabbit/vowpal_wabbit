@@ -1073,6 +1073,7 @@ void parse_example_tweaks(options_i& options, VW::workspace& all)
   std::string named_labels;
   std::string loss_function;
   float quantile_loss_parameter = 0.0;
+  float expectile_loss_parameter = 0.0;
   float logistic_loss_min = 0.0;
   float logistic_loss_max = 0.0;
   uint64_t early_terminate_passes;
@@ -1110,6 +1111,8 @@ void parse_example_tweaks(options_i& options, VW::workspace& all)
       .add(make_option("quantile_tau", quantile_loss_parameter)
                .default_value(0.5f)
                .help("Parameter \\tau associated with Quantile loss. Defaults to 0.5"))
+      .add(make_option("expectile_q", expectile_loss_parameter)
+               .help("Parameter q associated with Expectile loss (required). Must be a value in (0.0, 0.5]."))
       .add(make_option("logistic_min", logistic_loss_min)
                .default_value(-1.f)
                .help("Minimum loss value for logistic loss. Defaults to -1"))
@@ -1164,17 +1167,24 @@ void parse_example_tweaks(options_i& options, VW::workspace& all)
     if (!all.quiet) { *(all.trace_message) << "parsed " << all.sd->ldict->getK() << " named labels" << endl; }
   }
 
-  const std::vector<std::string> loss_functions_that_accept_quantile_tau = {
-      "quantile", "pinball", "absolute", "expectile"};
+  const std::vector<std::string> loss_functions_that_accept_quantile_tau = {"quantile", "pinball", "absolute"};
   const bool loss_function_accepts_quantile_tau =
       std::find(loss_functions_that_accept_quantile_tau.begin(), loss_functions_that_accept_quantile_tau.end(),
           loss_function) != loss_functions_that_accept_quantile_tau.end();
-  const bool loss_function_accepts_logistic_args = loss_function == "logistic";
+  const bool loss_function_accepts_expectile_q = (loss_function == "expectile");
+  const bool loss_function_accepts_logistic_args = (loss_function == "logistic");
   if (options.was_supplied("quantile_tau") && !loss_function_accepts_quantile_tau)
   {
     THROW(
-        "Option 'quantile_tau' was passed but quantile or expectile loss functions are not being used. Selected loss "
-        "function: "
+        "Option 'quantile_tau' was passed but the quantile loss function is not being used. "
+        "Selected loss function: "
+        << loss_function);
+  }
+  if (options.was_supplied("expectile_q") && !loss_function_accepts_expectile_q)
+  {
+    THROW(
+        "Option 'expectile_q' was passed but the expectile loss function is not being used. "
+        "Selected loss function: "
         << loss_function);
   }
   if ((options.was_supplied("logistic_min") || options.was_supplied("logistic_max")) &&
@@ -1186,16 +1196,27 @@ void parse_example_tweaks(options_i& options, VW::workspace& all)
         << loss_function);
   }
 
-  constexpr const static float UNUSED_LOSS_FUNC_ARG = 0.f;
   if (loss_function_accepts_quantile_tau)
-  { all.loss = get_loss_function(all, loss_function, quantile_loss_parameter, UNUSED_LOSS_FUNC_ARG); }
+  {
+    all.loss = get_loss_function(all, loss_function, quantile_loss_parameter);
+  }
+  else if (loss_function_accepts_expectile_q)
+  {
+    if (expectile_loss_parameter <= 0.0f || expectile_loss_parameter > 0.5f)
+    {
+      THROW(
+          "Option 'expectile_q' must be specified with a value in range (0.0, 0.5] "
+          "when using the expectile loss function.");
+    }
+    all.loss = get_loss_function(all, loss_function, expectile_loss_parameter);
+  }
   else if (loss_function_accepts_logistic_args)
   {
     all.loss = get_loss_function(all, loss_function, logistic_loss_min, logistic_loss_max);
   }
   else
   {
-    all.loss = get_loss_function(all, loss_function, UNUSED_LOSS_FUNC_ARG, UNUSED_LOSS_FUNC_ARG);
+    all.loss = get_loss_function(all, loss_function);
   }
 
   if (all.l1_lambda < 0.f)
