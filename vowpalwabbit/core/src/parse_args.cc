@@ -51,6 +51,7 @@
 #include <cstdio>
 #include <fstream>
 #include <sstream>
+#include <tuple>
 #include <utility>
 
 #ifdef BUILD_EXTERNAL_PARSER
@@ -528,7 +529,6 @@ namespace details
 {
 std::tuple<std::string, std::string> extract_ignored_feature(VW::string_view namespace_feature)
 {
-  std::tuple<std::string, std::string> extracted_ns_and_feature;
   std::string feature_delimiter = "|";
   auto feature_delimiter_index = namespace_feature.find(feature_delimiter);
   if (feature_delimiter_index != VW::string_view::npos)
@@ -536,9 +536,9 @@ std::tuple<std::string, std::string> extract_ignored_feature(VW::string_view nam
     auto ns = namespace_feature.substr(0, feature_delimiter_index);
     // check for default namespace
     if (ns.empty()) { ns = " "; }
-    return {std::string(ns),
+    return std::make_tuple(std::string(ns),
         std::string(namespace_feature.substr(
-            feature_delimiter_index + 1, namespace_feature.size() - (feature_delimiter_index + 1)))};
+            feature_delimiter_index + 1, namespace_feature.size() - (feature_delimiter_index + 1))));
   }
   return {};
 }
