@@ -1,7 +1,7 @@
 codecov:
   token: dd972a6b-956e-4d07-acf4-2373926d8293
 
-# Don't add the PR comment
+# Don't add the PR comment. 
 comment: false
 
 coverage:
