@@ -622,9 +622,13 @@ void finish_example(VW::workspace& all, VW::reductions::automl::automl<CMType>& 
   uint64_t champ_live_slot = data.cm->current_champ;
   for (VW::example* ex : ec) { data.cm->apply_config(ex, champ_live_slot); }
 
-  auto restore_guard = VW::scope_exit([&data, &ec] {
-    for (VW::example* ex : ec) { data.cm->revert_config(ex); }
-  });
+  {
+    auto restore_guard = VW::scope_exit([&data, &ec] {
+      for (VW::example* ex : ec) { data.cm->revert_config(ex); }
+    });
+
+    data.adf_learner->print_example(all, ec);
+  }
 
   VW::finish_example(all, ec);
 }
@@ -779,6 +783,7 @@ VW::LEARNER::base_learner* VW::reductions::automl_setup(VW::setup_base_i& stack_
     auto ppw = max_live_configs;
     auto* persist_ptr = verbose_metrics ? persist<VW::reductions::automl::interaction_config_manager, true>
                                         : persist<VW::reductions::automl::interaction_config_manager, false>;
+    data->adf_learner = as_multiline(base_learner->get_learner_by_name_prefix("cb_adf"));
     auto* l = make_reduction_learner(std::move(data), as_multiline(base_learner),
         learn_automl<VW::reductions::automl::interaction_config_manager, true>,
         predict_automl<VW::reductions::automl::interaction_config_manager, true>,

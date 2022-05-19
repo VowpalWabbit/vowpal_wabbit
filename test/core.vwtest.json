@@ -5274,5 +5274,18 @@
     "input_files": [
       "train-sets/cb_test_non_binary_costs.ldf"
     ]
+  },
+  {
+    "id": 411,
+    "desc": "automl with cb_adf",
+    "vw_command": "-f automl.model --automl 3 --verbose_metrics --priority_type least_exclusion -d train-sets/decisionservice.json --dsjson --cb_adf --extra_metrics metrics_.json --readable_model automl_readable.txt --keep_configs --oracle_type rand",
+    "diff_files": {
+      "stderr": "train-sets/ref/cb_adf_dsjson_metrics_.stderr",
+      "metrics_.json": "test-sets/ref/metrics_cbadfautoml.json",
+      "automl_readable.txt": "train-sets/ref/cbadf_automl_readable.txt"
+    },
+    "input_files": [
+      "train-sets/decisionservice.json"
+    ]
   }
 ]
