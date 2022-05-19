@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.5)
+cmake_minimum_required(VERSION 3.10)
 
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_CURRENT_LIST_DIR}/cmake/")
 if(POLICY CMP0076)
@@ -119,6 +119,10 @@ endif()
 if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
   include(CTest)
   if(BUILD_TESTING)
+    if(${CMAKE_VERSION} VERSION_LESS "3.11.0")
+      message(WARNING "BUILD_TESTING requires CMake >= 3.11.0. You can turn if off by setting BUILD_TESTING=OFF")
+    endif()
+    cmake_minimum_required(VERSION 3.11)
     include(FetchContent)
     FetchContent_Declare(
       googletest

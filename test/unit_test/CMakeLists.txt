@@ -3,7 +3,6 @@ add_executable(vw-unit-test.out
   automl_test.cc
   automl_weights_test.cc
   baseline_cb_test.cc
-  cache_test.cc
   cats_test.cc
   cats_tree_test.cc
   cats_user_provided_pdf.cc

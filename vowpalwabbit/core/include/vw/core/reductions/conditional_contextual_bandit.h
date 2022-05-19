@@ -20,7 +20,7 @@ namespace ccb
 {
 bool ec_is_example_header(VW::example const& ec);
 bool ec_is_example_unset(VW::example const& ec);
-std::string generate_ccb_label_printout(const std::vector<VW::example*>& slots);
+std::string generate_ccb_label_printout(const VW::multi_ex& slots);
 }  // namespace ccb
 }  // namespace reductions
 }  // namespace VW

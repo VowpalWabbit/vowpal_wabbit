@@ -5,6 +5,7 @@ import vowpalwabbit
 from vowpalwabbit import Workspace
 import pytest
 import warnings
+import filecmp
 
 BIT_SIZE = 18
 
@@ -305,6 +306,16 @@ def test_regressor_args():
     # clean up
     os.remove("{}.cache".format(data_file))
     os.remove("tmp.model")
+
+
+def test_save_to_Path():
+    model = Workspace(quiet=True)
+    model.learn("1 | a b c")
+    model.save(Path("tmp1.model"))
+    model.save("tmp2.model")
+    assert filecmp.cmp("tmp1.model", "tmp2.model")
+    os.remove("tmp1.model")
+    os.remove("tmp2.model")
 
 
 def test_command_line_with_space_and_escape_kwargs():

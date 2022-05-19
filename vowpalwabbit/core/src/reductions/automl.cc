@@ -79,13 +79,13 @@ void fail_if_enabled(VW::workspace& all, const std::set<std::string>& not_compat
   }
 }
 
-std::string interaction_vec_t_to_string(const std::vector<std::vector<namespace_index>>& interactions)
+std::string interaction_vec_t_to_string(const std::vector<std::vector<VW::namespace_index>>& interactions)
 {
   std::stringstream ss;
-  for (const std::vector<namespace_index>& v : interactions)
+  for (const std::vector<VW::namespace_index>& v : interactions)
   {
     ss << "-q ";
-    for (namespace_index c : v)
+    for (VW::namespace_index c : v)
     {
       c = (c == constant_namespace) ? '0' : c;
       ss << c;
@@ -94,7 +94,7 @@ std::string interaction_vec_t_to_string(const std::vector<std::vector<namespace_
   }
   return ss.str();
 }
-std::string exclusions_to_string(const std::map<namespace_index, std::set<namespace_index>>& exclusions)
+std::string exclusions_to_string(const std::map<VW::namespace_index, std::set<VW::namespace_index>>& exclusions)
 {
   std::stringstream ss;
   for (auto const& x : exclusions)
@@ -575,13 +575,13 @@ void automl<CMType>::offset_learn(multi_learner& base, multi_ex& ec, CB::cb_clas
 namespace
 {
 template <typename CMType, bool is_explore>
-void predict_automl(VW::reductions::automl::automl<CMType>& data, multi_learner& base, multi_ex& ec)
+void predict_automl(VW::reductions::automl::automl<CMType>& data, multi_learner& base, VW::multi_ex& ec)
 {
   uint64_t champ_live_slot = data.cm->current_champ;
-  for (example* ex : ec) { data.cm->apply_config(ex, champ_live_slot); }
+  for (VW::example* ex : ec) { data.cm->apply_config(ex, champ_live_slot); }
 
   auto restore_guard = VW::scope_exit([&data, &ec] {
-    for (example* ex : ec) { data.cm->revert_config(ex); }
+    for (VW::example* ex : ec) { data.cm->revert_config(ex); }
   });
 
   base.predict(ec, champ_live_slot);
@@ -590,11 +590,11 @@ void predict_automl(VW::reductions::automl::automl<CMType>& data, multi_learner&
 // this is the registered learn function for this reduction
 // mostly uses config_manager and actual_learn(..)
 template <typename CMType, bool is_explore>
-void learn_automl(VW::reductions::automl::automl<CMType>& data, multi_learner& base, multi_ex& ec)
+void learn_automl(VW::reductions::automl::automl<CMType>& data, multi_learner& base, VW::multi_ex& ec)
 {
   CB::cb_class logged{};
   uint64_t labelled_action = 0;
-  const auto it = std::find_if(ec.begin(), ec.end(), [](example* item) { return !item->l.cb.costs.empty(); });
+  const auto it = std::find_if(ec.begin(), ec.end(), [](VW::example* item) { return !item->l.cb.costs.empty(); });
 
   if (it != ec.end())
   {
@@ -617,13 +617,13 @@ void persist(VW::reductions::automl::automl<CMType>& data, VW::metric_sink& metr
 }
 
 template <typename CMType>
-void finish_example(VW::workspace& all, VW::reductions::automl::automl<CMType>& data, multi_ex& ec)
+void finish_example(VW::workspace& all, VW::reductions::automl::automl<CMType>& data, VW::multi_ex& ec)
 {
   uint64_t champ_live_slot = data.cm->current_champ;
-  for (example* ex : ec) { data.cm->apply_config(ex, champ_live_slot); }
+  for (VW::example* ex : ec) { data.cm->apply_config(ex, champ_live_slot); }
 
   auto restore_guard = VW::scope_exit([&data, &ec] {
-    for (example* ex : ec) { data.cm->revert_config(ex); }
+    for (VW::example* ex : ec) { data.cm->revert_config(ex); }
   });
 
   VW::finish_example(all, ec);
@@ -645,7 +645,7 @@ void save_load_aml(VW::reductions::automl::automl<CMType>& aml, io_buf& io, bool
 // be the config with the least exclusion. Note that all configs will run to lease
 // before priorities and lease are reset.
 float calc_priority_least_exclusion(
-    const VW::reductions::automl::exclusion_config& config, const std::map<namespace_index, uint64_t>& ns_counter)
+    const VW::reductions::automl::exclusion_config& config, const std::map<VW::namespace_index, uint64_t>& ns_counter)
 {
   float priority = 0.f;
   for (const auto& ns_pair : config.exclusions) { priority -= ns_counter.at(ns_pair.first); }
@@ -654,7 +654,7 @@ float calc_priority_least_exclusion(
 
 // Same as above, returns 0 (includes rest to remove unused variable warning)
 float calc_priority_empty(
-    const VW::reductions::automl::exclusion_config& config, const std::map<namespace_index, uint64_t>& ns_counter)
+    const VW::reductions::automl::exclusion_config& config, const std::map<VW::namespace_index, uint64_t>& ns_counter)
 {
   _UNUSED(config);
   _UNUSED(ns_counter);
@@ -684,40 +684,48 @@ VW::LEARNER::base_learner* VW::reductions::automl_setup(VW::setup_base_i& stack_
                .necessary()
                .keep()
                .default_value(3)
-               .help("Experimental: Set number of live configs"))
+               .help("Set number of live configs")
+               .experimental())
       .add(make_option("global_lease", global_lease)
                .keep()
                .default_value(10)
-               .help("Set initial lease for automl interactions"))
+               .help("Set initial lease for automl interactions")
+               .experimental())
       .add(make_option("cm_type", cm_type)
                .keep()
                .default_value("interaction")
                .one_of({"interaction"})
-               .help("Set type of config manager"))
+               .help("Set type of config manager")
+               .experimental())
       .add(make_option("priority_type", priority_type)
                .keep()
                .default_value("none")
                .one_of({"none", "least_exclusion"})
-               .help("Set function to determine next config"))
+               .help("Set function to determine next config")
+               .experimental())
       .add(make_option("priority_challengers", priority_challengers)
                .keep()
                .default_value(-1)
-               .help("Set number of priority challengers to use"))
-      .add(make_option("keep_configs", keep_configs).keep().help("Keep all configs after champ change"))
-      .add(make_option("verbose_metrics", verbose_metrics).help("Extended metrics for debugging"))
+               .help("Set number of priority challengers to use")
+               .experimental())
+      .add(make_option("keep_configs", keep_configs).keep().help("Keep all configs after champ change").experimental())
+      .add(make_option("verbose_metrics", verbose_metrics).help("Extended metrics for debugging").experimental())
       .add(make_option("oracle_type", oracle_type)
                .keep()
                .default_value("one_diff")
                .one_of({"one_diff", "rand"})
-               .help("Set oracle to generate configs"))
+               .help("Set oracle to generate configs")
+               .experimental())
       .add(make_option("automl_alpha", automl_alpha)
                .keep()
                .default_value(DEFAULT_ALPHA)
-               .help("Set confidence interval for champion change"))
+               .help("Set confidence interval for champion change")
+               .experimental())
       .add(make_option("automl_tau", automl_tau)
                .keep()
                .default_value(DEFAULT_TAU)
-               .help("Time constant for count decay"));
+               .help("Time constant for count decay")
+               .experimental());
 
   if (!options.add_parse_and_check_necessary(new_options)) { return nullptr; }
 

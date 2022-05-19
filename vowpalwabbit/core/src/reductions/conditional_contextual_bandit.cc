@@ -92,7 +92,7 @@ struct ccb_data
 {
   VW::workspace* all = nullptr;
   VW::example* shared = nullptr;
-  std::vector<VW::example*> actions, slots;
+  VW::multi_ex actions, slots;
   std::vector<uint32_t> origin_index;
   CB::cb_class cb_label;
   std::vector<bool> exclude_list, include_list;
@@ -105,6 +105,7 @@ struct ccb_data
   std::vector<uint64_t> slot_id_hashes;
   uint64_t id_namespace_hash = 0;
   std::string id_namespace_str;
+  std::string id_namespace_audit_str;
 
   size_t base_learner_stride_shift = 0;
   bool all_slots_loss_report = false;
@@ -292,7 +293,7 @@ void inject_slot_id(ccb_data& data, VW::example* shared, size_t id)
   if (audit)
   {
     auto current_index_str = "index" + std::to_string(id);
-    shared->feature_space[ccb_id_namespace].space_names.emplace_back(data.id_namespace_str, current_index_str);
+    shared->feature_space[ccb_id_namespace].space_names.emplace_back(data.id_namespace_audit_str, current_index_str);
   }
 }
 
@@ -699,7 +700,8 @@ base_learner* VW::reductions::ccb_explore_adf_setup(VW::setup_base_i& stack_buil
   data->all = &all;
   data->model_file_version = all.model_file_ver;
 
-  data->id_namespace_str.append("_id");
+  data->id_namespace_str = "_id";
+  data->id_namespace_audit_str = "_ccb_slot_index";
   data->id_namespace_hash = VW::hash_space(all, data->id_namespace_str);
 
   auto* l = VW::LEARNER::make_reduction_learner(std::move(data), base, learn_or_predict<true>, learn_or_predict<false>,
@@ -724,7 +726,7 @@ bool VW::reductions::ccb::ec_is_example_unset(VW::example const& ec)
   return ec.l.conditional_contextual_bandit.type == CCB::example_type::unset;
 }
 
-std::string VW::reductions::ccb::generate_ccb_label_printout(const std::vector<VW::example*>& slots)
+std::string VW::reductions::ccb::generate_ccb_label_printout(const VW::multi_ex& slots)
 {
   size_t counter = 0;
   std::stringstream label_ss;

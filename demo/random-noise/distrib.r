@@ -1,5 +1,4 @@
-#!/usr/bin/Rscript
-# --vanilla
+#!/usr/bin/Rscript --vanilla
 #
 # distrib.r:
 #   utility to plot distribution/density of a numeric data-set column
@@ -8,18 +7,13 @@
 #       distrib.r data_file ["optional chart title string"]
 #   where data_file contains the numeric vector, a number per line.
 #
-# -- where to look for R libraries
-# .libPaths(c('~/local/lib/R',
-#             '/usr/lib/R/library',
-#             '/usr/lib/R/site-library'
-# ))
 suppressPackageStartupMessages(library(ggplot2))
 
 ratio = 1.61803398875
 W = 4
 H = W / ratio
 DPI = 200
-FONTSIZE = 9 
+FONTSIZE = 9
 MyGray = 'grey50'
 
 title.theme   = element_text(family="FreeSans", face="bold.italic",
@@ -71,5 +65,3 @@ g <- ggplot(data=d, aes(x=Ys)) +
 
 pngfile <- sprintf("%s.density.png", csvfile)
 ggsave(g, file=pngfile, width=W, height=H, dpi=DPI)
-
-

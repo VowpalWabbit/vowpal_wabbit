@@ -31,6 +31,12 @@ Example Options:
                                             logistic, poisson, quantile, squared})
     --quantile_tau arg                      Parameter \tau associated with Quantile loss. Defaults to 0.5
                                             (type: float, default: 0.5)
+    --expectile_q arg                       Parameter q associated with Expectile loss (required). Must be
+                                            a value in (0.0, 0.5]. (type: float)
+    --logistic_min arg                      Minimum loss value for logistic loss. Defaults to -1 (type: float,
+                                            default: -1)
+    --logistic_max arg                      Maximum loss value for logistic loss. Defaults to +1 (type: float,
+                                            default: 1)
     --l1 arg                                L_1 lambda (type: float, default: 0)
     --l2 arg                                L_2 lambda (type: float, default: 0)
     --no_bias_regularization                No bias in regularization (type: bool)
@@ -45,6 +51,10 @@ Feature Options:
                                             keep)
     --ignore_linear args...                 Ignore namespaces beginning with character <arg> for linear terms
                                             only (type: list[str], keep)
+    --ignore_features_dsjson_experimental args...
+                                            Ignore specified features from namespace. To ignore a feature
+                                            arg should be namespace|feature To ignore a feature in the default
+                                            namespace, arg should be |feature (type: list[str], keep, experimental)
     --keep args...                          Keep namespaces beginning with character <arg> (type: list[str],
                                             keep)
     --redefine args...                      Redefine namespaces beginning with characters of std::string
@@ -74,9 +84,9 @@ Feature Options:
     --interactions args...                  Create feature interactions of any level between namespaces (type:
                                             list[str], keep)
     --experimental_full_name_interactions args...
-                                            EXPERIMENTAL: Create feature interactions of any level between
-                                            namespaces by specifying the full name of each namespace. (type:
-                                            list[str], keep)
+                                            Create feature interactions of any level between namespaces by
+                                            specifying the full name of each namespace. (type: list[str],
+                                            keep, experimental)
     --permutations                          Use permutations instead of combinations for feature interactions
                                             of same namespace (type: bool)
     --leave_duplicate_interactions          Don't remove interactions with duplicate combinations of namespaces.
@@ -108,7 +118,8 @@ Input Options:
     --chain_hash                            Enable chain hash in JSON for feature name and string feature
                                             value. e.g. {'A': {'B': 'C'}} is hashed as A^B^C. (type: bool,
                                             keep)
-    --flatbuffer                            Data file will be interpreted as a flatbuffer file (type: bool)
+    --flatbuffer                            Data file will be interpreted as a flatbuffer file (type: bool,
+                                            experimental)
 Logging Options:
     --quiet                                 Don't output diagnostics and progress updates. Supplying this
                                             implies --log_level off and --driver_output_off. Supplying this
@@ -132,14 +143,13 @@ Output Model Options:
                                             str)
     --invert_hash arg                       Output human-readable final regressor with feature names. Computationally
                                             expensive (type: str)
-    --dump_json_weights_experimental arg    Experimental: Output json representation of model parameters.
-                                            (type: str)
+    --dump_json_weights_experimental arg    Output json representation of model parameters. (type: str, experimental)
     --dump_json_weights_include_feature_names_experimental
-                                            Experimental: Whether to include feature names in json output
-                                            (type: bool)
+                                            Whether to include feature names in json output (type: bool,
+                                            experimental)
     --dump_json_weights_include_extra_online_state_experimental
-                                            Experimental: Whether to include extra online state in json output
-                                            (type: bool)
+                                            Whether to include extra online state in json output (type: bool,
+                                            experimental)
     --predict_only_model                    Do not save extra state for learning to be resumed. Stored model
                                             can only be used for prediction (type: bool)
     --save_resume                           This flag is now deprecated and models can continue learning
