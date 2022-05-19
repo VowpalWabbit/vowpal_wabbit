@@ -94,7 +94,7 @@ class vw_predict
   bool _model_loaded;
 
 public:
-  vw_predict() : _model_loaded(false), _contains_wildcard(false) {}
+  vw_predict() : _contains_wildcard(false), _model_loaded(false) {}
 
   /**
    * @brief Reads the Vowpal Wabbit model from the supplied buffer (produced using vw -f <modelname>)
@@ -431,6 +431,7 @@ public:
   static int sort_by_scores(PdfIt pdf_first, PdfIt pdf_last, InputScoreIt scores_first, InputScoreIt scores_last,
       OutputIt ranking_begin, OutputIt ranking_last)
   {
+    _UNUSED(scores_last);
     const size_t pdf_size = pdf_last - pdf_first;
     const size_t ranking_size = ranking_last - ranking_begin;
 

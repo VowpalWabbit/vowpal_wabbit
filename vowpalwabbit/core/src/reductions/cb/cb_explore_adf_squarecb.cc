@@ -66,12 +66,12 @@ public:
   ~cb_explore_adf_squarecb() = default;
 
   // Should be called through cb_explore_adf_base for pre/post-processing
-  void predict(multi_learner& base, multi_ex& examples);
-  void learn(multi_learner& base, multi_ex& examples);
+  void predict(multi_learner& base, VW::multi_ex& examples);
+  void learn(multi_learner& base, VW::multi_ex& examples);
   void save_load(io_buf& io, bool read, bool text);
 
 private:
-  void get_cost_ranges(float delta, multi_learner& base, multi_ex& examples, bool min_only);
+  void get_cost_ranges(float delta, multi_learner& base, VW::multi_ex& examples, bool min_only);
   float binary_search(float fhat, float delta, float sens, float tol = 1e-6);
 };
 
@@ -127,7 +127,7 @@ float cb_explore_adf_squarecb::binary_search(float fhat, float delta, float sens
 }
 
 // TODO: Same as cb_explore_adf_regcb.cc
-void cb_explore_adf_squarecb::get_cost_ranges(float delta, multi_learner& base, multi_ex& examples, bool min_only)
+void cb_explore_adf_squarecb::get_cost_ranges(float delta, multi_learner& base, VW::multi_ex& examples, bool min_only)
 {
   const size_t num_actions = examples[0]->pred.a_s.size();
   _min_costs.resize(num_actions);
@@ -151,7 +151,7 @@ void cb_explore_adf_squarecb::get_cost_ranges(float delta, multi_learner& base, 
 
   for (size_t a = 0; a < num_actions; ++a)
   {
-    example* ec = examples[a];
+    auto* ec = examples[a];
     ec->l.simple.label = cmin - 1;
     float sens = base.sensitivity(*ec);
     float w = 0;  // importance weight
@@ -186,7 +186,7 @@ void cb_explore_adf_squarecb::get_cost_ranges(float delta, multi_learner& base, 
   }
 }
 
-void cb_explore_adf_squarecb::predict(multi_learner& base, multi_ex& examples)
+void cb_explore_adf_squarecb::predict(multi_learner& base, VW::multi_ex& examples)
 {
   multiline_learn_or_predict<false>(base, examples, examples[0]->ft_offset);
 
@@ -269,7 +269,7 @@ void cb_explore_adf_squarecb::predict(multi_learner& base, multi_ex& examples)
   }
 }
 
-void cb_explore_adf_squarecb::learn(multi_learner& base, multi_ex& examples)
+void cb_explore_adf_squarecb::learn(multi_learner& base, VW::multi_ex& examples)
 {
   v_array<ACTION_SCORE::action_score> preds = std::move(examples[0]->pred.a_s);
   for (size_t i = 0; i < examples.size() - 1; ++i)

@@ -31,6 +31,12 @@ Example Options:
                                             logistic, poisson, quantile, squared})
     --quantile_tau arg                      Parameter \tau associated with Quantile loss. Defaults to 0.5
                                             (type: float, default: 0.5)
+    --expectile_q arg                       Parameter q associated with Expectile loss (required). Must be
+                                            a value in (0.0, 0.5]. (type: float)
+    --logistic_min arg                      Minimum loss value for logistic loss. Defaults to -1 (type: float,
+                                            default: -1)
+    --logistic_max arg                      Maximum loss value for logistic loss. Defaults to +1 (type: float,
+                                            default: 1)
     --l1 arg                                L_1 lambda (type: float, default: 0)
     --l2 arg                                L_2 lambda (type: float, default: 0)
     --no_bias_regularization                No bias in regularization (type: bool)
@@ -45,6 +51,10 @@ Feature Options:
                                             keep)
     --ignore_linear args...                 Ignore namespaces beginning with character <arg> for linear terms
                                             only (type: list[str], keep)
+    --ignore_features_dsjson_experimental args...
+                                            Ignore specified features from namespace. To ignore a feature
+                                            arg should be namespace|feature To ignore a feature in the default
+                                            namespace, arg should be |feature (type: list[str], keep, experimental)
     --keep args...                          Keep namespaces beginning with character <arg> (type: list[str],
                                             keep)
     --redefine args...                      Redefine namespaces beginning with characters of std::string

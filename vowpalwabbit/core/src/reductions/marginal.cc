@@ -100,7 +100,6 @@ template <bool is_learn>
 void make_marginal(data& sm, VW::example& ec)
 {
   const uint64_t mask = sm.m_weights->mask();
-  const float label = ec.l.simple.label;
   sm.alg_loss = 0.;
   sm.net_weight = 0.;
   sm.net_feature_weight = 0.;
@@ -161,7 +160,10 @@ void make_marginal(data& sm, VW::example& ec)
           sm.net_weight += weight;
           sm.net_feature_weight += sm.expert_state[key].second.weight;
           if VW_STD17_CONSTEXPR (is_learn)
-          { sm.alg_loss += weight * sm.m_loss_function->get_loss(sm.m_shared_data, marginal_pred, label); }
+          {
+            const float label = ec.l.simple.label;
+            sm.alg_loss += weight * sm.m_loss_function->get_loss(sm.m_shared_data, marginal_pred, label);
+          }
         }
       }
     }
@@ -181,8 +183,6 @@ template <bool is_learn>
 void compute_expert_loss(data& sm, VW::example& ec)
 {
   // add in the feature-based expert and normalize,
-  const float label = ec.l.simple.label;
-
   if (sm.net_weight + sm.net_feature_weight > 0.f) { sm.average_pred += sm.net_feature_weight * sm.feature_pred; }
   else
   {
@@ -196,6 +196,7 @@ void compute_expert_loss(data& sm, VW::example& ec)
 
   if VW_STD17_CONSTEXPR (is_learn)
   {
+    const float label = ec.l.simple.label;
     sm.alg_loss += sm.net_feature_weight * sm.m_loss_function->get_loss(sm.m_shared_data, sm.feature_pred, label);
     sm.alg_loss *= inv_weight;
   }

@@ -32,13 +32,16 @@ public:
   ~cb_explore_adf_greedy() = default;
 
   // Should be called through cb_explore_adf_base for pre/post-processing
-  void predict(VW::LEARNER::multi_learner& base, multi_ex& examples) { predict_or_learn_impl<false>(base, examples); }
-  void learn(VW::LEARNER::multi_learner& base, multi_ex& examples) { predict_or_learn_impl<true>(base, examples); }
+  void predict(VW::LEARNER::multi_learner& base, VW::multi_ex& examples)
+  {
+    predict_or_learn_impl<false>(base, examples);
+  }
+  void learn(VW::LEARNER::multi_learner& base, VW::multi_ex& examples) { predict_or_learn_impl<true>(base, examples); }
 
 private:
   template <bool is_learn>
-  void predict_or_learn_impl(VW::LEARNER::multi_learner& base, multi_ex& examples);
-  void update_example_prediction(multi_ex& examples);
+  void predict_or_learn_impl(VW::LEARNER::multi_learner& base, VW::multi_ex& examples);
+  void update_example_prediction(VW::multi_ex& examples);
 };
 
 cb_explore_adf_greedy::cb_explore_adf_greedy(float epsilon, bool first_only)
@@ -46,7 +49,7 @@ cb_explore_adf_greedy::cb_explore_adf_greedy(float epsilon, bool first_only)
 {
 }
 
-void cb_explore_adf_greedy::update_example_prediction(multi_ex& examples)
+void cb_explore_adf_greedy::update_example_prediction(VW::multi_ex& examples)
 {
   ACTION_SCORE::action_scores& preds = examples[0]->pred.a_s;
   uint32_t num_actions = static_cast<uint32_t>(preds.size());
@@ -69,7 +72,7 @@ void cb_explore_adf_greedy::update_example_prediction(multi_ex& examples)
 }
 
 template <bool is_learn>
-void cb_explore_adf_greedy::predict_or_learn_impl(VW::LEARNER::multi_learner& base, multi_ex& examples)
+void cb_explore_adf_greedy::predict_or_learn_impl(VW::LEARNER::multi_learner& base, VW::multi_ex& examples)
 {
   // Explore uniform random an epsilon fraction of the time.
   if (is_learn) { base.learn(examples); }

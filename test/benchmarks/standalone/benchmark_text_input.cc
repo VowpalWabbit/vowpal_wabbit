@@ -22,7 +22,7 @@ static void bench_text(benchmark::State& state, ExtraArgs&&... extra_args)
 
   auto es = const_cast<char*>(example_string.c_str());
   auto vw = VW::initialize("--cb 2 --quiet");
-  VW::v_array<example*> examples;
+  VW::multi_ex examples;
   examples.push_back(&VW::get_unused_example(vw));
   for (auto _ : state)
   {

@@ -80,7 +80,7 @@ struct warm_cb
   CB::cb_class cl_adf;
   uint32_t ws_train_size = 0;
   uint32_t ws_vali_size = 0;
-  std::vector<VW::example*> ws_vali;
+  VW::multi_ex ws_vali;
   float cumu_var = 0.f;
   uint32_t ws_iter = 0;
   uint32_t inter_iter = 0;

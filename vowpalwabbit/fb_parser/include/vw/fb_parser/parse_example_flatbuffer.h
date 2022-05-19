@@ -22,7 +22,7 @@ namespace parsers
 {
 namespace flatbuffer
 {
-int flatbuffer_to_examples(VW::workspace* all, io_buf& buf, VW::v_array<example*>& examples);
+int flatbuffer_to_examples(VW::workspace* all, io_buf& buf, VW::multi_ex& examples);
 
 class parser
 {
@@ -30,7 +30,7 @@ public:
   parser() = default;
   const VW::parsers::flatbuffer::ExampleRoot* data();
   bool parse_examples(
-      VW::workspace* all, io_buf& buf, VW::v_array<example*>& examples, uint8_t* buffer_pointer = nullptr);
+      VW::workspace* all, io_buf& buf, VW::multi_ex& examples, uint8_t* buffer_pointer = nullptr);
 
 private:
   const VW::parsers::flatbuffer::ExampleRoot* _data;
@@ -45,7 +45,7 @@ private:
   uint64_t _c_hash = 0;
 
   bool parse(io_buf& buf, uint8_t* buffer_pointer = nullptr);
-  void process_collection_item(VW::workspace* all, VW::v_array<example*>& examples);
+  void process_collection_item(VW::workspace* all, VW::multi_ex& examples);
   void parse_example(VW::workspace* all, example* ae, const Example* eg);
   void parse_multi_example(VW::workspace* all, example* ae, const MultiExample* eg);
   void parse_namespaces(VW::workspace* all, example* ae, const Namespace* ns);

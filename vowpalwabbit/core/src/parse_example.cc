@@ -35,7 +35,7 @@ size_t read_features(io_buf& buf, char*& line, size_t& num_chars)
   return num_chars_initial;
 }
 
-int read_features_string(VW::workspace* all, io_buf& buf, VW::v_array<VW::example*>& examples)
+int read_features_string(VW::workspace* all, io_buf& buf, VW::multi_ex& examples)
 {
   char* line;
   size_t num_chars;
@@ -573,7 +573,7 @@ void read_line(VW::workspace& all, example* ex, VW::string_view line)
 
 void read_line(VW::workspace& all, example* ex, const char* line) { return read_line(all, ex, VW::string_view(line)); }
 
-void read_lines(VW::workspace* all, const char* line, size_t len, v_array<example*>& examples)
+void read_lines(VW::workspace* all, const char* line, size_t len, VW::multi_ex& examples)
 {
   VW::string_view line_view = VW::string_view(line, len);
   std::vector<VW::string_view> lines;

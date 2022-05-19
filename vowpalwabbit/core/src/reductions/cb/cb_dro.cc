@@ -43,8 +43,8 @@ struct cb_dro_data
 
     if (is_learn)
     {
-      const auto it =
-          std::find_if(examples.begin(), examples.end(), [](example* item) { return !item->l.cb.costs.empty(); });
+      const auto it = std::find_if(
+          examples.begin(), examples.end(), [](const VW::example* item) { return !item->l.cb.costs.empty(); });
 
       if (it != examples.end())
       {
@@ -75,16 +75,16 @@ struct cb_dro_data
         save_weight.clear();
         save_weight.reserve(examples.size());
         std::transform(examples.cbegin(), examples.cend(), std::back_inserter(save_weight),
-            [](example* item) { return item->weight; });
-        std::for_each(examples.begin(), examples.end(), [qlb](example* item) { item->weight *= qlb; });
+            [](const VW::example* item) { return item->weight; });
+        std::for_each(examples.begin(), examples.end(), [qlb](VW::example* item) { item->weight *= qlb; });
 
         // TODO: make sure descendants "do the right thing" with example->weight
         multiline_learn_or_predict<true>(base, examples, examples[0]->ft_offset);
 
         // restore the original weights
         auto save_weight_it = save_weight.begin();
-        std::for_each(
-            examples.begin(), examples.end(), [&save_weight_it](example* item) { item->weight = *save_weight_it++; });
+        std::for_each(examples.begin(), examples.end(),
+            [&save_weight_it](VW::example* item) { item->weight = *save_weight_it++; });
       }
     }
   }

@@ -9,6 +9,7 @@
 #include "vw/core/vw_fwd.h"
 
 #include <Eigen/Dense>
+#include <Eigen/SparseCore>
 #include <iostream>
 #include <vector>
 
@@ -23,10 +24,19 @@ private:
   float _gamma = 1;
   VW::workspace* _all;
   uint64_t _seed = 0;
+  std::vector<Eigen::Triplet<float>> _triplets;
 
 public:
-  Eigen::MatrixXf Q;
+  Eigen::SparseMatrix<float> Y;
+  Eigen::MatrixXf B;
+  Eigen::MatrixXf Z;
+  Eigen::MatrixXf U;
+  // the below matrixes are used only during unit testing and are not set otherwise
+  Eigen::VectorXf _S;
+  Eigen::MatrixXf _V;
+  Eigen::SparseMatrix<float> _A;
   VW::v_array<float> shrink_factors;
+  bool _set_all_svd_components = false;
 
   cb_explore_adf_large_action_space(uint64_t d, float gamma, VW::workspace* all);
   ~cb_explore_adf_large_action_space() = default;
@@ -36,7 +46,14 @@ public:
   void learn(VW::LEARNER::multi_learner& base, multi_ex& examples);
 
   void calculate_shrink_factor(const ACTION_SCORE::action_scores& preds, float min_ck);
-  void generate_Q(const multi_ex& examples);
+  void generate_Z(const multi_ex& examples);
+  void generate_B(const multi_ex& examples);
+  bool generate_Y(const multi_ex& examples);
+  void randomized_SVD(const multi_ex& examples);
+  void set_rank(uint64_t rank);
+  // the below methods are used only during unit testing and are not called otherwise
+  bool _generate_A(const multi_ex& examples);
+  void _populate_all_SVD_components();
 
 private:
   template <bool is_learn>

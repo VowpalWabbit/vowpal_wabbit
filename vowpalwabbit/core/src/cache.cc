@@ -203,7 +203,7 @@ void VW::write_example_to_cache(io_buf& output, example* ex_ptr, VW::label_parse
   output.bin_write_fixed(temp_buffer._backing_buffer->data(), temp_buffer._backing_buffer->size());
 }
 
-int VW::read_example_from_cache(VW::workspace* all, io_buf& input, v_array<example*>& examples)
+int VW::read_example_from_cache(VW::workspace* all, io_buf& input, VW::multi_ex& examples)
 {
   assert(all != nullptr);
   // uint64_t size; TODO: Use to be able to skip cached examples on a read failure.

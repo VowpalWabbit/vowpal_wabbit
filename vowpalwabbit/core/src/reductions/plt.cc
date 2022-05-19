@@ -349,6 +349,9 @@ base_learner* VW::reductions::plt_setup(VW::setup_base_i& stack_builder)
 
   if (!options.add_parse_and_check_necessary(new_options)) { return nullptr; }
 
+  if (all.loss->get_type() != "logistic")
+  { THROW("--plt requires --loss_function=logistic, but instead found: " << all.loss->get_type()); }
+
   tree->all = &all;
 
   // calculate number of tree nodes
@@ -406,9 +409,6 @@ base_learner* VW::reductions::plt_setup(VW::setup_base_i& stack_builder)
                 .build();
 
   all.example_parser->lbl_parser = MULTILABEL::multilabel;
-
-  // force logistic loss for base classifiers
-  all.loss = get_loss_function(all, "logistic");
 
   return make_base(*l);
 }
