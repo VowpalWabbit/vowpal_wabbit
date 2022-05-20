@@ -45,19 +45,19 @@ BOOST_AUTO_TEST_CASE(parse_text_with_extents)
 
 BOOST_AUTO_TEST_CASE(trim_whitespace_test)
 {
-  BOOST_TEST("" == VW::trim_whitespace(VW::string_view("")));
-  BOOST_TEST("abc" == VW::trim_whitespace(VW::string_view("abc")));
-  BOOST_TEST("abc" == VW::trim_whitespace(VW::string_view("              abc               ")));
-  BOOST_TEST("ab     c" == VW::trim_whitespace(VW::string_view("              ab     c               ")));
-  BOOST_TEST("a\nb     c" == VW::trim_whitespace(VW::string_view("              a\nb     c               ")));
-  BOOST_TEST("a\nb     \tc" == VW::trim_whitespace(VW::string_view("     \t         a\nb     \tc        \t\t       ")));
-  BOOST_TEST("" == VW::trim_whitespace(VW::string_view("     \t                 \t\t       ")));
-
-  BOOST_TEST("" == VW::trim_whitespace(std::string("")));
-  BOOST_TEST("abc" == VW::trim_whitespace(std::string("abc")));
-  BOOST_TEST("abc" == VW::trim_whitespace(std::string("              abc               ")));
-  BOOST_TEST("ab     c" == VW::trim_whitespace(std::string("              ab     c               ")));
-  BOOST_TEST("a\nb     c" == VW::trim_whitespace(std::string("              a\nb     c               ")));
-  BOOST_TEST("a\nb     \tc" == VW::trim_whitespace(std::string("     \t         a\nb     \tc        \t\t       ")));
-  BOOST_TEST("" == VW::trim_whitespace(std::string("     \t                 \t\t       ")));
+  BOOST_CHECK("" == VW::trim_whitespace(VW::string_view("")));
+  BOOST_CHECK("abc" == VW::trim_whitespace(VW::string_view("abc")));
+  BOOST_CHECK("abc" == VW::trim_whitespace(VW::string_view("              abc               ")));
+  BOOST_CHECK("ab     c" == VW::trim_whitespace(VW::string_view("              ab     c               ")));
+  BOOST_CHECK("a\nb     c" == VW::trim_whitespace(VW::string_view("              a\nb     c               ")));
+  BOOST_CHECK(
+      "a\nb     \tc" == VW::trim_whitespace(VW::string_view("     \t         a\nb     \tc        \t\t       ")));
+  BOOST_CHECK("" == VW::trim_whitespace(VW::string_view("     \t                 \t\t       ")));
+  BOOST_CHECK("" == VW::trim_whitespace(std::string("")));
+  BOOST_CHECK("abc" == VW::trim_whitespace(std::string("abc")));
+  BOOST_CHECK("abc" == VW::trim_whitespace(std::string("              abc               ")));
+  BOOST_CHECK("ab     c" == VW::trim_whitespace(std::string("              ab     c               ")));
+  BOOST_CHECK("a\nb     c" == VW::trim_whitespace(std::string("              a\nb     c               ")));
+  BOOST_CHECK("a\nb     \tc" == VW::trim_whitespace(std::string("     \t         a\nb     \tc        \t\t       ")));
+  BOOST_CHECK("" == VW::trim_whitespace(std::string("     \t                 \t\t       ")));
 }
