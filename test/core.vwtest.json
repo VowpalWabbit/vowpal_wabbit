@@ -5295,7 +5295,7 @@
     "desc": "train lrqfa with nn",
     "vw_command": "-d train-sets/lrqfa_nn.dat --nn 10 --lrqfa abc2 -f models/lrqfa_nn.vw --link logistic --loss_function logistic",
     "diff_files": {
-      "stderr": "train-sets/ref/lrqfa_nn_train.stderr",
+      "stderr": "train-sets/ref/lrqfa_nn_train.stderr"
     },
     "input_files": [
       "train-sets/lrqfa_nn.dat"
@@ -5304,7 +5304,7 @@
   {
     "id": 412,
     "desc": "test lrqfa w nn prediction is independent of example ordering",
-    "vw_command": "-d train-sets/lrqfa_nn.dat -i models/lrqfa_nn.vw -p lrqfa_nn_preds.predict",
+    "vw_command": "-d train-sets/lrqfa_nn.dat -i models/lrqfa_nn.vw -t -p lrqfa_nn_preds.predict",
     "diff_files": {
       "stderr": "train-sets/ref/lrqfa_nn_pred.stderr",
       "lrqfa_nn_preds.predict": "pred-sets/ref/lrqfa_nn_preds.predict"
@@ -5320,10 +5320,10 @@
   {
     "id": 413,
     "desc": "test lrqfa w nn prediction is independent of example ordering (reverse input order)",
-    "vw_command": "-d train-sets/lrqfa_nn_rev_order.dat -i models/lrqfa_nn.vw -p lrqfa_nn_preds.predict",
+    "vw_command": "-d train-sets/lrqfa_nn_rev_order.dat -i models/lrqfa_nn.vw -t -p lrqfa_nn_preds_rev_order.predict",
     "diff_files": {
       "stderr": "train-sets/ref/lrqfa_nn_pred_rev.stderr",
-      "lrqfa_nn_preds.predict": "pred-sets/ref/lrqfa_nn_preds.predict"
+      "lrqfa_nn_preds_rev_order.predict": "pred-sets/ref/lrqfa_nn_preds_rev_order.predict"
     },
     "input_files": [
       "train-sets/lrqfa_nn_rev_order.dat",
