@@ -564,8 +564,10 @@ void automl<CMType>::offset_learn(multi_learner& base, multi_ex& ec, CB::cb_clas
 
   for (; live_slot >= 0; live_slot -= 1)
   {
+    // NOTE: this implies that live_slot zero is always the CHAMP
     if (live_slot == 0)
     {
+      assert(0 == cm->current_champ);
       buffer_a_s = std::move(ec[0]->pred.a_s);
       ec[0]->pred.a_s = std::move(incoming_a_s);
     }
