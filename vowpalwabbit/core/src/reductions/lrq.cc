@@ -78,7 +78,7 @@ void predict_or_learn(LRQstate& lrq, single_learner& base, VW::example& ec)
     if (lrq.lrindices[i]) { lrq.orig_size[i] = ec.feature_space[i].size(); }
   }
 
-  size_t which = ec.example_counter;
+  size_t which = (is_learn && !example_is_test(ec)) ? ec.example_counter : 0;
   float first_prediction = 0;
   float first_loss = 0;
   float first_uncertainty = 0;
