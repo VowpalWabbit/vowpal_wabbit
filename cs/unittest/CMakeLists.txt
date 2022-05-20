@@ -6,6 +6,19 @@ include(NetFxResource)
 include(NetFxStrongName)
 include(T4Template)
 
+SET(NUGET_REFERENCE_SEPARATOR "@")
+
+function(find_nuget_lib package_name 
+                        package_version)
+  # find_path caches its output, so we need to treat each nuget_REFERENCE string as a unique key 
+  # mapping to an assembly (the full reference is necessary in case a package contains multiple assemblies, 
+  # which would require individually referencing all of them.)
+  find_file(nuget_${${package_name}${NUGET_REFERENCE_SEPARATOR}${package_version}}_PATH "${package_name}.${package_version}"
+      HINTS "${CMAKE_BINARY_DIR}/packages"
+      PATH_SUFFIXES ${netfx_nuget_SUFFIXES}
+      REQUIRED
+      NO_DEFAULT_PATH)
+endfunction()
 
 set(vw_CS_UNITTEST_SOURCES
   Properties/AssemblyInfo.cs
@@ -67,7 +80,11 @@ set(vw_CS_UNITTEST_COPIED_CONTENT
   json/test_newline.json
 )
 
-set(ENV{NewtonsoftDependencyValue} "Newtonsoft.Json.dll")
+# set (nuget_Newtonsoft.Json@9.0.1_LIB )
+install_nuget_package("Newtonsoft.Json" "9.0.1")
+find_nuget_lib("Newtonsoft.Json" "9.0.1")
+set(ENV{NewtonsoftDependencyValue} ${nuget_Newtonsoft.Json${NUGET_REFERENCE_SEPARATOR}9.0.1_LIB})
+
 configure_t4("${vw_CS_UNITTEST_T4TEMPLATES}" vw_CS_UNITTEST_GENERATED_SOURCES)
 
 # TODO: Make AssemblyInfo a configure()ed file
