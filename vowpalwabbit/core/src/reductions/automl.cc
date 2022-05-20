@@ -548,24 +548,35 @@ void automl<CMType>::offset_learn(multi_learner& base, multi_ex& ec, CB::cb_clas
   const float w = logged.probability > 0 ? 1 / logged.probability : 0;
   const float r = -logged.cost;
 
-  for (uint64_t live_slot = 0; live_slot < cm->scores.size(); ++live_slot)
+  ACTION_SCORE::action_scores incoming_a_s = std::move(ec[0]->pred.a_s);
+  ec[0]->pred.a_s = std::move(buffer_a_s);
+
+  int64_t live_slot = cm->scores.size() - 1;
+
+  for (; live_slot >= 0; live_slot -= 1)
   {
+    if (live_slot == 0)
+    {
+      buffer_a_s = std::move(ec[0]->pred.a_s);
+      ec[0]->pred.a_s = std::move(incoming_a_s);
+    }
+
     for (example* ex : ec) { cm->apply_config(ex, live_slot); }
 
-    auto restore_guard = VW::scope_exit([this, &ec] {
+    auto restore_guard = VW::scope_exit([this, &ec, &live_slot, &incoming_a_s]() {
       for (example* ex : ec) { this->cm->revert_config(ex); }
+      if (live_slot != 0)
+      {
+        buffer_a_s = std::move(ec[0]->pred.a_s);
+        ec[0]->pred.a_s = std::move(incoming_a_s);
+      }
     });
 
     if (!base.learn_returns_prediction) { base.predict(ec, live_slot); }
     base.learn(ec, live_slot);
     const uint32_t chosen_action = ec[0]->pred.a_s[0].action;
     cm->scores[live_slot].update(chosen_action == labelled_action ? w : 0, r);
-
-    // cache the champ
-    if (cm->current_champ == live_slot) { champ_a_s = std::move(ec[0]->pred.a_s); }
   }
-  // replace bc champ always gets cached
-  ec[0]->pred.a_s = std::move(champ_a_s);
 }
 
 }  // namespace automl
