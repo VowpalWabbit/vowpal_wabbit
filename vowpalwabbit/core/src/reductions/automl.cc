@@ -553,6 +553,15 @@ void automl<CMType>::offset_learn(multi_learner& base, multi_ex& ec, CB::cb_clas
 
   int64_t live_slot = cm->scores.size() - 1;
 
+  auto restore_guard = VW::scope_exit([this, &ec, &live_slot, &incoming_a_s]() {
+    for (example* ex : ec) { this->cm->revert_config(ex); }
+    if (live_slot != 0)
+    {
+      buffer_a_s = std::move(ec[0]->pred.a_s);
+      ec[0]->pred.a_s = std::move(incoming_a_s);
+    }
+  });
+
   for (; live_slot >= 0; live_slot -= 1)
   {
     if (live_slot == 0)
@@ -562,15 +571,6 @@ void automl<CMType>::offset_learn(multi_learner& base, multi_ex& ec, CB::cb_clas
     }
 
     for (example* ex : ec) { cm->apply_config(ex, live_slot); }
-
-    auto restore_guard = VW::scope_exit([this, &ec, &live_slot, &incoming_a_s]() {
-      for (example* ex : ec) { this->cm->revert_config(ex); }
-      if (live_slot != 0)
-      {
-        buffer_a_s = std::move(ec[0]->pred.a_s);
-        ec[0]->pred.a_s = std::move(incoming_a_s);
-      }
-    });
 
     if (!base.learn_returns_prediction) { base.predict(ec, live_slot); }
     base.learn(ec, live_slot);
