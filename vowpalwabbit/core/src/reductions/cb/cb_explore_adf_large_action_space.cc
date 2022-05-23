@@ -101,12 +101,11 @@ public:
   {
   }
 
-  float operator[](uint64_t index) const { 
-    if (_weights[index] == 0.f)
-    {
-      return 0.f;
-    }
-    return _weights[index] * _Y.coeffRef((index & _weights.mask()), _column_index); }
+  float operator[](uint64_t index) const
+  {
+    if (_weights[index] == 0.f) { return 0.f; }
+    return _weights[index] * _Y.coeffRef((index & _weights.mask()), _column_index);
+  }
 };
 
 void cb_explore_adf_large_action_space::predict(VW::LEARNER::multi_learner& base, multi_ex& examples)
