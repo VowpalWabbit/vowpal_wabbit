@@ -562,6 +562,10 @@ void automl<CMType>::offset_learn(multi_learner& base, multi_ex& ec, CB::cb_clas
   for (; live_slot >= 0; live_slot -= 1)
   {
     if (live_slot == current_champ) { std::swap(ec[0]->pred.a_s, buffer_a_s); }
+    else
+    {
+      ec[0]->pred.a_s.clear();
+    }
 
     for (example* ex : ec) { cm->apply_config(ex, live_slot); }
 
