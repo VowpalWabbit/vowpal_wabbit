@@ -552,10 +552,12 @@ void automl<CMType>::offset_learn(multi_learner& base, multi_ex& ec, CB::cb_clas
   ec[0]->pred.a_s = std::move(buffer_a_s);
 
   int64_t live_slot = cm->scores.size() - 1;
+  int64_t current_champ = static_cast<int64_t>(cm->current_champ);
+  assert(current_champ >= 0);
 
-  auto restore_guard = VW::scope_exit([this, &ec, &live_slot, &incoming_a_s]() {
+  auto restore_guard = VW::scope_exit([this, &ec, &live_slot, &incoming_a_s, &current_champ]() {
     for (example* ex : ec) { this->cm->revert_config(ex); }
-    if (live_slot >= 0 && live_slot != (int64_t)cm->current_champ)
+    if (live_slot >= 0 && live_slot != current_champ)
     {
       buffer_a_s = std::move(ec[0]->pred.a_s);
       ec[0]->pred.a_s = std::move(incoming_a_s);
@@ -564,7 +566,7 @@ void automl<CMType>::offset_learn(multi_learner& base, multi_ex& ec, CB::cb_clas
 
   for (; live_slot >= 0; live_slot -= 1)
   {
-    if (live_slot == (int64_t)cm->current_champ)
+    if (live_slot == current_champ)
     {
       buffer_a_s = std::move(ec[0]->pred.a_s);
       ec[0]->pred.a_s = std::move(incoming_a_s);
@@ -577,7 +579,7 @@ void automl<CMType>::offset_learn(multi_learner& base, multi_ex& ec, CB::cb_clas
     const uint32_t chosen_action = ec[0]->pred.a_s[0].action;
     cm->scores[live_slot].update(chosen_action == labelled_action ? w : 0, r);
 
-    if (live_slot == (int64_t)cm->current_champ)
+    if (live_slot == current_champ)
     {
       incoming_a_s = std::move(ec[0]->pred.a_s);
       ec[0]->pred.a_s = std::move(buffer_a_s);
