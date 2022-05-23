@@ -122,7 +122,9 @@ void cb_explore_adf_large_action_space::calculate_shrink_factor(const ACTION_SCO
 {
   shrink_factors.clear();
   for (size_t i = 0; i < preds.size(); i++)
-  { shrink_factors.push_back(std::sqrt(1 + _d + (_gamma / 4.0f * _d) * (preds[i].score - min_ck))); }
+  {
+    shrink_factors.push_back(std::sqrt(1 + _d + _gamma / (4.0f * _d) * (preds[i].score - min_ck)));
+  }
 }
 
 inline void just_add_weights(float& p, float, float fw) { p += fw; }
@@ -318,6 +320,76 @@ void cb_explore_adf_large_action_space::randomized_SVD(const multi_ex& examples)
   }
 }
 
+std::pair<float, uint64_t> cb_explore_adf_large_action_space::find_max_volume(uint64_t X_rid, Eigen::MatrixXf& X)
+{
+  // Finds the max volume by replacing row X[X_rid] with some row in U.
+  // Returns the max volume, and the row id of U used for replacing X[X_rid].
+
+  float max_volume = 0.0f;
+  uint64_t U_rid = -1;
+  Eigen::RowVectorXf original_row = X.row(X_rid);
+
+  for (uint64_t i = 0; i < U.rows(); ++i)
+  {
+    X.row(X_rid) = U.row(i);
+    float volume = abs(X.determinant());
+    if (volume > max_volume) max_volume = volume, U_rid = i;
+    X.row(X_rid) = original_row;
+  }
+
+  assert(U_rid != -1);
+  return {max_volume, U_rid};
+}
+
+std::vector<bool> cb_explore_adf_large_action_space::compute_spanner()
+{
+  // Implements the C-approximate barycentric spanner algorithm in Figure 2 of the following paper
+  // Awerbuch & Kleinberg STOC'04: https://www.cs.cornell.edu/~rdk/papers/OLSP.pdf
+
+  assert(U.cols() == _d);
+  Eigen::MatrixXf X = Eigen::MatrixXf::Identity(_d, _d);
+  std::vector<uint64_t> action_indices(_d);
+
+  // Compute a basis contained in U.
+  for (uint64_t X_rid = 0; X_rid < _d; ++X_rid)
+  {
+    uint64_t U_rid = find_max_volume(X_rid, X).second;
+    X.row(X_rid) = U.row(U_rid);
+    action_indices[X_rid] = U_rid;
+  }
+
+  // Transform the basis into C-approximate spanner.
+  constexpr int C = 2;  // TODO make this a parameter?
+  float X_volume = abs(X.determinant());
+  for (int iter = 0; iter < static_cast<int>(_d * log(_d)); ++iter)
+  {
+    bool found_larger_volume = false;
+
+    // If replacing some row in X results in larger volume, replace it with the row from U.
+    for (uint64_t X_rid = 0; X_rid < _d; ++X_rid)
+    {
+      const auto max_volume_and_row_id = find_max_volume(X_rid, X);
+      float max_volume = max_volume_and_row_id.first;
+      if (max_volume > C * X_volume)
+      {
+        uint64_t U_rid = max_volume_and_row_id.second;
+        X.row(X_rid) = U.row(U_rid);
+        action_indices[X_rid] = U_rid;
+
+        X_volume = max_volume;
+        found_larger_volume = true;
+        break;
+      }
+    }
+
+    if (!found_larger_volume) break;
+  }
+
+  std::vector<bool> spanner_bitmap(U.rows(), false);
+  for (uint64_t idx : action_indices) spanner_bitmap[idx] = true;
+  return spanner_bitmap;
+}
+
 template <bool is_learn>
 void cb_explore_adf_large_action_space::predict_or_learn_impl(VW::LEARNER::multi_learner& base, multi_ex& examples)
 {
@@ -328,12 +400,41 @@ void cb_explore_adf_large_action_space::predict_or_learn_impl(VW::LEARNER::multi
 
     auto& preds = examples[0]->pred.a_s;
 
-    float min_ck = std::min_element(preds.begin(), preds.end(), VW::action_score_compare_lt)->score;
+    const auto min_ck_idx = std::min_element(preds.begin(), preds.end(), VW::action_score_compare_lt) - preds.begin();
+    const float min_ck = preds[min_ck_idx].score;
 
     calculate_shrink_factor(preds, min_ck);
     if (_d < preds.size()) { randomized_SVD(examples); }
+    // TODO: Handle the case of smaller action sizes.
+    // Similar to generate_A but directly put into dense U.
 
-    // TODO apply spanner on U
+    if (U.rows() == 0)
+    {
+      // Set uniform random probability for empty U.
+      const float prob = 1.0f / preds.size();
+      for (auto& pred : preds) pred.score = prob;
+      return;
+    }
+
+    auto spanner_bitmap = compute_spanner();
+
+    // Set the exploration distribution over S and the minimizer.
+    assert(spanner_bitmap.size() == preds.size());
+    spanner_bitmap[min_ck_idx] = false;
+    float sum_scores = 0.0f;
+    for (auto i{0}; i < spanner_bitmap.size(); ++i)
+    {
+      if (spanner_bitmap[i])
+      {
+        preds[i].score = 1 / (1 + _d + _gamma / (4.0f * _d) * (preds[i].score - min_ck));
+        sum_scores += preds[i].score;
+      }
+      else
+      {
+        preds[i].score = 0.0f;
+      }
+    }
+    preds[min_ck_idx].score = 1.0f - sum_scores;
   }
 }
 }  // namespace cb_explore_adf
