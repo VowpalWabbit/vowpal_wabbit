@@ -548,24 +548,36 @@ void automl<CMType>::offset_learn(multi_learner& base, multi_ex& ec, CB::cb_clas
   const float w = logged.probability > 0 ? 1 / logged.probability : 0;
   const float r = -logged.cost;
 
-  for (uint64_t live_slot = 0; live_slot < cm->scores.size(); ++live_slot)
-  {
-    for (example* ex : ec) { cm->apply_config(ex, live_slot); }
+  std::swap(ec[0]->pred.a_s, buffer_a_s);
 
-    auto restore_guard = VW::scope_exit([this, &ec] {
-      for (example* ex : ec) { this->cm->revert_config(ex); }
-    });
+  int64_t live_slot = cm->scores.size() - 1;
+  int64_t current_champ = static_cast<int64_t>(cm->current_champ);
+  assert(current_champ >= 0);
+
+  auto restore_guard = VW::scope_exit([this, &ec, &live_slot, &current_champ]() {
+    for (example* ex : ec) { this->cm->revert_config(ex); }
+    if (live_slot >= 0 && live_slot != current_champ) { std::swap(ec[0]->pred.a_s, buffer_a_s); }
+  });
+
+  for (; live_slot >= 0; live_slot -= 1)
+  {
+    if (live_slot == current_champ) { std::swap(ec[0]->pred.a_s, buffer_a_s); }
+    else
+    {
+      ec[0]->pred.a_s.clear();
+    }
+
+    for (example* ex : ec) { cm->apply_config(ex, live_slot); }
 
     if (!base.learn_returns_prediction) { base.predict(ec, live_slot); }
     base.learn(ec, live_slot);
     const uint32_t chosen_action = ec[0]->pred.a_s[0].action;
     cm->scores[live_slot].update(chosen_action == labelled_action ? w : 0, r);
 
-    // cache the champ
-    if (cm->current_champ == live_slot) { champ_a_s = std::move(ec[0]->pred.a_s); }
+    if (live_slot == current_champ) { std::swap(ec[0]->pred.a_s, buffer_a_s); }
   }
-  // replace bc champ always gets cached
-  ec[0]->pred.a_s = std::move(champ_a_s);
+
+  std::swap(ec[0]->pred.a_s, buffer_a_s);
 }
 
 }  // namespace automl
@@ -622,9 +634,13 @@ void finish_example(VW::workspace& all, VW::reductions::automl::automl<CMType>& 
   uint64_t champ_live_slot = data.cm->current_champ;
   for (VW::example* ex : ec) { data.cm->apply_config(ex, champ_live_slot); }
 
-  auto restore_guard = VW::scope_exit([&data, &ec] {
-    for (VW::example* ex : ec) { data.cm->revert_config(ex); }
-  });
+  {
+    auto restore_guard = VW::scope_exit([&data, &ec] {
+      for (VW::example* ex : ec) { data.cm->revert_config(ex); }
+    });
+
+    data.adf_learner->print_example(all, ec);
+  }
 
   VW::finish_example(all, ec);
 }
@@ -779,6 +795,7 @@ VW::LEARNER::base_learner* VW::reductions::automl_setup(VW::setup_base_i& stack_
     auto ppw = max_live_configs;
     auto* persist_ptr = verbose_metrics ? persist<VW::reductions::automl::interaction_config_manager, true>
                                         : persist<VW::reductions::automl::interaction_config_manager, false>;
+    data->adf_learner = as_multiline(base_learner->get_learner_by_name_prefix("cb_adf"));
     auto* l = make_reduction_learner(std::move(data), as_multiline(base_learner),
         learn_automl<VW::reductions::automl::interaction_config_manager, true>,
         predict_automl<VW::reductions::automl::interaction_config_manager, true>,
