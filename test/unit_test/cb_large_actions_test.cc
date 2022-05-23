@@ -65,7 +65,8 @@ BOOST_AUTO_TEST_CASE(creation_of_the_og_A_matrix)
         for (auto ft_index : ex->feature_space[ns].indices)
         {
           BOOST_CHECK_EQUAL(
-              action_space->explore._A.coeffRef(action_index, ft_index), vw.weights.dense_weights[ft_index]);
+              action_space->explore._A.coeffRef(action_index, (ft_index & vw.weights.dense_weights.mask())),
+              vw.weights.dense_weights[ft_index]);
         }
       }
     }
