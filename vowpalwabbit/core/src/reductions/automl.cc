@@ -555,7 +555,7 @@ void automl<CMType>::offset_learn(multi_learner& base, multi_ex& ec, CB::cb_clas
 
   auto restore_guard = VW::scope_exit([this, &ec, &live_slot, &incoming_a_s]() {
     for (example* ex : ec) { this->cm->revert_config(ex); }
-    if (live_slot >= 1)
+    if (live_slot >= 0 && live_slot != (int64_t)cm->current_champ)
     {
       buffer_a_s = std::move(ec[0]->pred.a_s);
       ec[0]->pred.a_s = std::move(incoming_a_s);
@@ -564,10 +564,8 @@ void automl<CMType>::offset_learn(multi_learner& base, multi_ex& ec, CB::cb_clas
 
   for (; live_slot >= 0; live_slot -= 1)
   {
-    // NOTE: this implies that live_slot zero is always the CHAMP
-    if (live_slot == 0)
+    if (live_slot == (int64_t)cm->current_champ)
     {
-      assert(0 == cm->current_champ);
       buffer_a_s = std::move(ec[0]->pred.a_s);
       ec[0]->pred.a_s = std::move(incoming_a_s);
     }
@@ -578,7 +576,16 @@ void automl<CMType>::offset_learn(multi_learner& base, multi_ex& ec, CB::cb_clas
     base.learn(ec, live_slot);
     const uint32_t chosen_action = ec[0]->pred.a_s[0].action;
     cm->scores[live_slot].update(chosen_action == labelled_action ? w : 0, r);
+
+    if (live_slot == (int64_t)cm->current_champ)
+    {
+      incoming_a_s = std::move(ec[0]->pred.a_s);
+      ec[0]->pred.a_s = std::move(buffer_a_s);
+    }
   }
+
+  buffer_a_s = std::move(ec[0]->pred.a_s);
+  ec[0]->pred.a_s = std::move(incoming_a_s);
 }
 
 }  // namespace automl
