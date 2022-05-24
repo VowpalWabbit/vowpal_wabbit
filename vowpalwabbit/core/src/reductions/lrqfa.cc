@@ -53,7 +53,7 @@ void predict_or_learn(LRQFAstate& lrq, single_learner& base, VW::example& ec)
   memset(lrq.orig_size, 0, sizeof(lrq.orig_size));
   for (VW::namespace_index i : ec.indices) { lrq.orig_size[i] = ec.feature_space[i].size(); }
 
-  size_t which = ec.example_counter;
+  size_t which = (is_learn && !example_is_test(ec)) ? ec.example_counter : 0;
   float first_prediction = 0;
   float first_loss = 0;
   unsigned int maxiter = (is_learn && !example_is_test(ec)) ? 2 : 1;
