@@ -328,11 +328,11 @@ std::pair<float, uint64_t> cb_explore_adf_large_action_space::find_max_volume(ui
   // Finds the max volume by replacing row X[X_rid] with some row in U.
   // Returns the max volume, and the row id of U used for replacing X[X_rid].
 
-  float max_volume = 0.0f;
-  uint64_t U_rid = -1;
+  float max_volume = -1.0f;
+  uint64_t U_rid;
   Eigen::RowVectorXf original_row = X.row(X_rid);
 
-  for (uint64_t i = 0; i < U.rows(); ++i)
+  for (auto i{0}; i < U.rows(); ++i)
   {
     X.row(X_rid) = U.row(i);
     float volume = abs(X.determinant());
@@ -344,7 +344,7 @@ std::pair<float, uint64_t> cb_explore_adf_large_action_space::find_max_volume(ui
     X.row(X_rid) = original_row;
   }
 
-  assert(U_rid != -1);
+  assert(max_volume >= 0.0f);
   return {max_volume, U_rid};
 }
 
@@ -353,7 +353,7 @@ void cb_explore_adf_large_action_space::compute_spanner()
   // Implements the C-approximate barycentric spanner algorithm in Figure 2 of the following paper
   // Awerbuch & Kleinberg STOC'04: https://www.cs.cornell.edu/~rdk/papers/OLSP.pdf
 
-  assert(U.cols() == _d);
+  assert(static_cast<uint64_t>(U.cols()) == _d);
   Eigen::MatrixXf X = Eigen::MatrixXf::Identity(_d, _d);
 
   // Compute a basis contained in U.
@@ -434,7 +434,7 @@ void cb_explore_adf_large_action_space::predict_or_learn_impl(VW::LEARNER::multi
     // Set the exploration distribution over S and the minimizer.
     _spanner_bitvec[min_ck_idx] = false;
     float sum_scores = 0.0f;
-    for (auto i{0}; i < preds.size(); ++i)
+    for (auto i{0u}; i < preds.size(); ++i)
     {
       if (_spanner_bitvec[i])
       {
