@@ -412,23 +412,29 @@ void cb_explore_adf_large_action_space::predict_or_learn_impl(VW::LEARNER::multi
     const float min_ck = preds[min_ck_idx].score;
 
     calculate_shrink_factor(preds, min_ck);
-    if (_d < preds.size()) { randomized_SVD(examples); }
-    // TODO: Handle the case of smaller action sizes.
-    // Similar to generate_A but directly put into dense U.
-
-    if (U.rows() == 0)
+    if (_d < preds.size())
     {
-      // Set uniform random probability for empty U.
-      const float prob = 1.0f / preds.size();
-      for (auto& pred : preds) { pred.score = prob; }
-      return;
+      randomized_SVD(examples);
+
+      if (U.rows() == 0)
+      {
+        // Set uniform random probability for empty U.
+        const float prob = 1.0f / preds.size();
+        for (auto& pred : preds) { pred.score = prob; }
+        return;
+      }
+
+      compute_spanner();
+      assert(_spanner_bitvec.size() == preds.size());
+    }
+    else
+    {
+      _spanner_bitvec.clear();
+      _spanner_bitvec.resize(preds.size(), true);
     }
 
-    compute_spanner();
-    assert(_spanner_bitvec.size() == preds.size());
-    _spanner_bitvec[min_ck_idx] = false;
-
     // Set the exploration distribution over S and the minimizer.
+    _spanner_bitvec[min_ck_idx] = false;
     float sum_scores = 0.0f;
     for (auto i{0}; i < preds.size(); ++i)
     {
