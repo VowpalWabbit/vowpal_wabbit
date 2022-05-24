@@ -96,7 +96,7 @@ std::string ns_to_str(unsigned char ns)
     return std::string(1, ns);
 }
 
-std::string interaction_vec_t_to_string(const std::vector<std::vector<VW::namespace_index>>& interactions)
+std::string interaction_vec_t_to_string(const VW::reductions::automl::interaction_vec_t& interactions)
 {
   std::stringstream ss;
   for (const std::vector<VW::namespace_index>& v : interactions)
@@ -206,8 +206,8 @@ void interaction_config_manager::gen_quadratic_interactions(uint64_t live_slot)
       { interactions.push_back({idx1, idx2}); }
     }
   }
-  logger->out_info("generated interactions {} from exclusion conf: {}", ::interaction_vec_t_to_string(interactions),
-      ::exclusions_to_string(exclusions));
+  // logger->out_info("generated interactions {} from exclusion conf: {}", ::interaction_vec_t_to_string(interactions),
+  //     ::exclusions_to_string(exclusions));
 }
 
 // This function will process an incoming multi_ex, update the namespace_counter,
@@ -558,8 +558,11 @@ void interaction_config_manager::revert_config(example* ec) { ec->interactions =
 template <typename CMType>
 void automl<CMType>::offset_learn(multi_learner& base, multi_ex& ec, CB::cb_class& logged, uint64_t labelled_action)
 {
-  if (ec[0]->interactions != nullptr)
-  { logger->out_info("incoming interaction: {}", ::interaction_vec_t_to_string(*(ec[0]->interactions))); }
+  VW::reductions::automl::interaction_vec_t* incoming_interactions = ec[0]->interactions;
+  for (VW::example* ex : ec) { assert(ex->interactions == incoming_interactions); }
+
+  // if (ec[0]->interactions != nullptr)
+  // { logger->out_info("offlearn: incoming interaction: {}", ::interaction_vec_t_to_string(*(ec[0]->interactions))); }
   const float w = logged.probability > 0 ? 1 / logged.probability : 0;
   const float r = -logged.cost;
 
@@ -569,8 +572,8 @@ void automl<CMType>::offset_learn(multi_learner& base, multi_ex& ec, CB::cb_clas
   int64_t current_champ = static_cast<int64_t>(cm->current_champ);
   assert(current_champ >= 0);
 
-  auto restore_guard = VW::scope_exit([this, &ec, &live_slot, &current_champ]() {
-    for (example* ex : ec) { this->cm->revert_config(ex); }
+  auto restore_guard = VW::scope_exit([this, &ec, &live_slot, &current_champ, &incoming_interactions]() {
+    for (example* ex : ec) { ex->interactions = incoming_interactions; }
     if (live_slot >= 0 && live_slot != current_champ) { std::swap(ec[0]->pred.a_s, buffer_a_s); }
   });
 
@@ -604,13 +607,16 @@ namespace
 template <typename CMType, bool is_explore>
 void predict_automl(VW::reductions::automl::automl<CMType>& data, multi_learner& base, VW::multi_ex& ec)
 {
-  if (ec[0]->interactions != nullptr)
-  { data.logger->out_info("pred: incoming interaction: {}", ::interaction_vec_t_to_string(*(ec[0]->interactions))); }
+  VW::reductions::automl::interaction_vec_t* incoming_interactions = ec[0]->interactions;
+  for (VW::example* ex : ec) { assert(ex->interactions == incoming_interactions); }
+
+  // if (ec[0]->interactions != nullptr)
+  // { data.logger->out_info("pred: incoming interaction: {}", ::interaction_vec_t_to_string(*(ec[0]->interactions))); }
   uint64_t champ_live_slot = data.cm->current_champ;
   for (VW::example* ex : ec) { data.cm->apply_config(ex, champ_live_slot); }
 
-  auto restore_guard = VW::scope_exit([&data, &ec] {
-    for (VW::example* ex : ec) { data.cm->revert_config(ex); }
+  auto restore_guard = VW::scope_exit([&ec, &incoming_interactions] {
+    for (VW::example* ex : ec) { ex->interactions = incoming_interactions; }
   });
 
   base.predict(ec, champ_live_slot);
@@ -632,7 +638,7 @@ void learn_automl(VW::reductions::automl::automl<CMType>& data, multi_learner& b
   }
 
   data.one_step(base, ec, logged, labelled_action);
-  assert(ec[0]->interactions == nullptr);
+  assert(ec[0]->interactions != nullptr);
 }
 
 template <typename CMType, bool verbose>
@@ -648,12 +654,14 @@ void persist(VW::reductions::automl::automl<CMType>& data, VW::metric_sink& metr
 template <typename CMType>
 void finish_example(VW::workspace& all, VW::reductions::automl::automl<CMType>& data, VW::multi_ex& ec)
 {
+  VW::reductions::automl::interaction_vec_t* incoming_interactions = ec[0]->interactions;
+
   uint64_t champ_live_slot = data.cm->current_champ;
   for (VW::example* ex : ec) { data.cm->apply_config(ex, champ_live_slot); }
 
   {
-    auto restore_guard = VW::scope_exit([&data, &ec] {
-      for (VW::example* ex : ec) { data.cm->revert_config(ex); }
+    auto restore_guard = VW::scope_exit([&ec, &incoming_interactions] {
+      for (VW::example* ex : ec) { ex->interactions = incoming_interactions; }
     });
 
     data.adf_learner->print_example(all, ec);
