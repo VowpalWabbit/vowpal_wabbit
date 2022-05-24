@@ -4,6 +4,7 @@
 
 #include "test_common.h"
 #include "vw/core/example.h"
+#include "vw/core/reductions/automl.h"
 #include "vw/core/reductions/conditional_contextual_bandit.h"
 #include "vw/core/vw.h"
 
@@ -106,5 +107,54 @@ BOOST_AUTO_TEST_CASE(ccb_invalid_example_checks)
   BOOST_REQUIRE_THROW(vw.learn(examples), VW::vw_exception);
 
   vw.finish_example(examples);
+  VW::finish(vw);
+}
+
+std::string ns_to_str(unsigned char ns)
+{
+  if (ns == constant_namespace)
+    return "[constant]";
+  else if (ns == ccb_slot_namespace)
+    return "[ccbslot]";
+  else if (ns == ccb_id_namespace)
+    return "[ccbid]";
+  else if (ns == wildcard_namespace)
+    return "[wild]";
+  else if (ns == default_namespace)
+    return "[default]";
+  else
+    return std::string(1, ns);
+}
+
+std::set<std::string> interaction_vec_t_to_set(const VW::reductions::automl::interaction_vec_t& interactions)
+{
+  std::set<std::string> result;
+  std::stringstream ss;
+  for (const std::vector<VW::namespace_index>& v : interactions)
+  {
+    for (VW::namespace_index c : v) { ss << ns_to_str(c); }
+    result.insert(ss.str());
+    ss.clear();
+    ss.str("");
+  }
+  return result;
+}
+
+BOOST_AUTO_TEST_CASE(ccb_insert_interactions_impl_test)
+{
+  auto& vw = *VW::initialize("--ccb_explore_adf --quiet -q AA -q BB -q AB -q ::");
+
+  std::set<std::string> expected_before{"AA", "AB", "BB", "[wild][wild]"};
+  std::set<std::string> expected_after{
+      "AA", "AA[ccbid]", "AB", "AB[ccbid]", "BB", "BB[ccbid]", "[wild][ccbid]", "[wild][wild]", "[wild][wild][ccbid]"};
+
+  auto pre_result = interaction_vec_t_to_set(vw.interactions);
+  BOOST_CHECK_EQUAL_COLLECTIONS(expected_before.begin(), expected_before.end(), pre_result.begin(), pre_result.end());
+
+  VW::reductions::ccb::insert_ccb_interactions(vw.interactions, vw.extent_interactions);
+  auto result = interaction_vec_t_to_set(vw.interactions);
+
+  BOOST_CHECK_EQUAL_COLLECTIONS(expected_after.begin(), expected_after.end(), result.begin(), result.end());
+
   VW::finish(vw);
 }
