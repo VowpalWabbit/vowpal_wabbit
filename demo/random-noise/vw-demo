@@ -20,7 +20,7 @@ export PATH=.:$PATH
 Pager='less'
 
 # Add your favorite OS image viewer here
-ImgViewCandidates=( viu eog gwenview display preview )
+ImgViewCandidates=( eog gwenview display preview )
 ImgViewer=
 
 Poly='a + 2b - 5c + 7'
@@ -44,8 +44,10 @@ function inline-viewer() {
 function find_image_viewer() {
     if command -v kitty >/dev/null; then
         # Prefer inline image viewing iff possible
-        ImgViewer=inline-viewer
-        return
+        if [[ -n "${KITTY_WINDOW_ID:-}" ]]; then
+            ImgViewer=inline-viewer
+            return
+        fi
     fi
     local exe
     for exe in "${ImgViewCandidates[@]}" ; do
@@ -138,11 +140,11 @@ function demo_cmd() {
     esac
 
     case $opt_p in
-        1)  # read the command-line in, but allow real-time edits
+        (1) # read the command-line in, but allow real-time edits
             # via GNU readline
             read -rep "\$ " -i "$cmd" ans
             ;;
-        *)  case $opt_e in 1)
+        (*) case $opt_e in (1)
                 # If we have no readline/prompt we need to print
                 # the command so it can be seen by the audience
                 echo -n "\$ $cmd" ;;
@@ -189,24 +191,25 @@ function clean_slate() {
 function demo_session() {
     local mode="$1"
     local step=0
+    local msgext
 
     clean_slate
 
     # --- train-set generation
     case $mode in
-        globalnoise)  rand='-r -1,1'; msg=' (w/ global noise)' ;;
-        varnoise)     rand='-R -.5,.5'; msg=' (w/ per-var noise)' ;;
-        regularize)   rand='-R -.5,.5'; msg=' (w/ per-var noise)' ;;
-        clean)        rand='-r 0,0'; msg='' ;; # no noise added
+        (globalnoise) rand='-r -1,1'; msgext=' (w/ global noise)' ;;
+        (varnoise)    rand='-R -.5,.5'; msgext=' (w/ per-var noise)' ;;
+        (regularize)  rand='-R -.5,.5'; msgext=' (w/ per-var noise)' ;;
+        (clean)       rand='-r 0,0'; msgext='' ;; # no noise added
     esac
-    demo_cmd "Generate a training data-set$msg & inspect it
-       (-n N                is number of data-points (examples)
+    demo_cmd "Generate a training data-set$msgext & inspect it
+        -n N                is number of data-points (examples)
         -pN                 is data precision
         -r min,max          is global added noise
-        -R min,max          is per-variable added noise):" \
-            "random-poly -n 50000 -p6 $rand $Poly > r.train"
+        -R min,max          is per-variable added noise:" \
+            "random-poly -n 50000 -p9 $rand $Poly > r.train"
 
-    case $mode in 'clean')
+    case $mode in ('clean')
         # Only do this the 1st time, othewise it is getting tedious
         demo_cmd -s "inspect the training-set (use 'q' to exit $Pager):" \
              "$Pager r.train" ;;
@@ -218,18 +221,18 @@ function demo_session() {
     case $mode in
         # --- in the case where we added noise,
         # --- add a step of showing how big is the noise
-        *noise)
+        (*noise)
             echo '+-----------------------------------------------------+'
             echo '|           visualize the added random noise          |'
             echo '+-----------------------------------------------------+'
             # -- Prepare the reference Ys (without the noise)
             case "$mode" in
               (globalnoise)
-                  random-poly -n 50000 -p6 -r 0,0 "$Poly" |
+                  random-poly -n 50000 -p9 -r 0,0 "$Poly" |
                       cut -d' ' -f1 > Ys/r.train.nonoise
                   ;;
               (varnoise)
-                  random-poly -n 50000 -p6 -R 0,0 "$Poly" |
+                  random-poly -n 50000 -p9 -R 0,0 "$Poly" |
                       cut -d' ' -f1 > Ys/r.train.nonoise
                   ;;
             esac
@@ -244,22 +247,22 @@ function demo_session() {
 
     # --- Training
     case $mode in
-        globalnoise)
+        (globalnoise)
             vw_args=''
             msg1='Train: let VW build a model on noisy -1/+1 train-set'
             msg2='Train: look at the model weights'
             ;;
-        varnoise)
+        (varnoise)
             vw_args=''
             msg1='Train: let VW build a model (w/ per var noise)'
             msg2='Train: look at the model weights (w/ per var noise)'
             ;;
-        regularize)
+        (regularize)
             vw_args='--l2 0.000001'
             msg1='Train: let VW build a model (w/ anti-noise --l2)'
             msg2='Train: look at the model weights (w/ anti-noise --l2)'
             ;;
-        clean)  # vanilla
+        (clean)  # vanilla
             vw_args='-l 5'
             msg1='Train: let VW build a model from the train-set'
             msg2='Train: look at the model weights'
@@ -283,9 +286,9 @@ function demo_session() {
 
     # --- test-set generation
     demo_cmd "Generate a test data-set (note different random seed: -s)" \
-            "random-poly -n 50000 -p6 -s 1313131 $Poly > r.test"
+            "random-poly -n 50000 -p9 -s 1313131 $Poly > r.test"
 
-    demo_cmd "Show that train and test data-sets are different" \
+    demo_cmd "Show that train and test data-sets are (very) different" \
         'diff <(head -9 r.train) <(head -9 r.test)'
 
     demo_cmd "Visualize test-set Ys (labels) density [~5 sec to generate chart]:" \
@@ -294,7 +297,7 @@ function demo_session() {
     demo_cmd -p "Clear the Ys (labels) from the test-set" \
         'perl -i -pe "s/\S+/0/" r.test'
 
-    case $mode in 'clean')
+    case $mode in ('clean')
         # Only do this the 1st time, othewise it is getting tedious
         demo_cmd -s "inspect test-set to see Ys (labels) are gone (hit 'q' to exit $Pager):" \
             "$Pager r.test"
