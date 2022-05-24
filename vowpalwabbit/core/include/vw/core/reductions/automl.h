@@ -157,7 +157,7 @@ struct automl
   void offset_learn(multi_learner&, multi_ex&, CB::cb_class&, uint64_t);
 
 private:
-  ACTION_SCORE::action_scores champ_a_s;  // a sequence of classes with scores.  Also used for probabilities.
+  ACTION_SCORE::action_scores buffer_a_s;  // a sequence of classes with scores.  Also used for probabilities.
 };
 
 }  // namespace automl

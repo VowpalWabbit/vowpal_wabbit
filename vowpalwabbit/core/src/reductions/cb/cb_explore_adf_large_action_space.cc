@@ -46,8 +46,8 @@ public:
   {
     if (_weights[index] != 0.f)
     {
-      _triplets.emplace_back(Eigen::Triplet<float>(_row_index, index, _weights[index]));
-      if (index > _max_col) { _max_col = index; }
+      _triplets.emplace_back(Eigen::Triplet<float>(_row_index, index & _weights.mask(), _weights[index]));
+      if ((index & _weights.mask()) > _max_col) { _max_col = (index & _weights.mask()); }
     }
   }
 };
@@ -81,8 +81,8 @@ public:
     {
       auto combined_index = _row_index + _column_index + _seed;
       auto calc = _weights[index] * merand48_boxmuller(combined_index);
-      _triplets.emplace_back(Eigen::Triplet<float>(index, _column_index, calc));
-      if (index > _max_col) { _max_col = index; }
+      _triplets.emplace_back(Eigen::Triplet<float>(index & _weights.mask(), _column_index, calc));
+      if ((index & _weights.mask()) > _max_col) { _max_col = (index & _weights.mask()); }
     }
   }
 };
@@ -101,7 +101,11 @@ public:
   {
   }
 
-  float operator[](uint64_t index) const { return _weights[index] * _Y.coeffRef(index, _column_index); }
+  float operator[](uint64_t index) const
+  {
+    if (_weights[index] == 0.f) { return 0.f; }
+    return _weights[index] * _Y.coeffRef((index & _weights.mask()), _column_index);
+  }
 };
 
 void cb_explore_adf_large_action_space::predict(VW::LEARNER::multi_learner& base, multi_ex& examples)
