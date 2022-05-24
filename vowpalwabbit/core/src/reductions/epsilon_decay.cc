@@ -82,10 +82,13 @@ namespace
 void predict(
     VW::reductions::epsilon_decay::epsilon_decay_data& data, VW::LEARNER::multi_learner& base, VW::multi_ex& examples)
 {
-  auto& ep_fts = examples[0]->_reduction_features.template get<VW::cb_explore_adf::greedy::reduction_features>();
   uint64_t K = static_cast<uint64_t>(data._scored_configs.size());
-  auto& active_score = data._scored_configs[K - 1][K - 1];
-  ep_fts.epsilon = VW::reductions::epsilon_decay::decayed_epsilon(active_score.update_count);
+  if (!data._constant_epsilon)
+  {
+    auto& ep_fts = examples[0]->_reduction_features.template get<VW::cb_explore_adf::greedy::reduction_features>();
+    auto& active_score = data._scored_configs[K - 1][K - 1];
+    ep_fts.epsilon = VW::reductions::epsilon_decay::decayed_epsilon(active_score.update_count);
+  }
   base.predict(examples, data._weight_indices[K - 1]);
 }
 
@@ -195,9 +198,7 @@ void learn(
       uint64_t params_per_weight = 1;
       while (params_per_weight < static_cast<uint64_t>(K)) { params_per_weight *= 2; }
       for (int64_t outer_ind = 0; outer_ind < K; ++outer_ind)
-      {
-        data._scored_configs[outer_ind][0].reset_stats(data._epsilon_decay_alpha, data._epsilon_decay_tau);
-      }
+      { data._scored_configs[outer_ind][0].reset_stats(data._epsilon_decay_alpha, data._epsilon_decay_tau); }
       data._weights.dense_weights.clear_offset(data._weight_indices[0], params_per_weight);
       break;
     }
@@ -228,7 +229,8 @@ VW::LEARNER::base_learner* VW::reductions::epsilon_decay_setup(VW::setup_base_i&
   uint64_t _min_scope;
   float _epsilon_decay_alpha;
   float _epsilon_decay_tau;
-  bool _log_champ_changes;
+  bool _log_champ_changes = false;
+  bool _constant_epsilon = false;
 
   option_group_definition new_options("[Reduction] Epsilon-Decaying Exploration");
   new_options
@@ -257,7 +259,8 @@ VW::LEARNER::base_learner* VW::reductions::epsilon_decay_setup(VW::setup_base_i&
                .default_value(DEFAULT_TAU)
                .help("Time constant for count decay")
                .experimental())
-      .add(make_option("log_champ_changes", _log_champ_changes).keep().help("Log champ changes").experimental());
+      .add(make_option("log_champ_changes", _log_champ_changes).keep().help("Log champ changes").experimental())
+      .add(make_option("constant_epsilon", _constant_epsilon).keep().help("Keep epsilon constant across models").experimental());
 
   if (!options.add_parse_and_check_necessary(new_options)) { return nullptr; }
 
@@ -267,7 +270,7 @@ VW::LEARNER::base_learner* VW::reductions::epsilon_decay_setup(VW::setup_base_i&
   float scaled_alpha = _epsilon_decay_alpha / model_count;
 
   auto data = VW::make_unique<VW::reductions::epsilon_decay::epsilon_decay_data>(
-      model_count, _min_scope, scaled_alpha, _epsilon_decay_tau, all.weights, all.logger, _log_champ_changes);
+      model_count, _min_scope, scaled_alpha, _epsilon_decay_tau, all.weights, all.logger, _log_champ_changes, _constant_epsilon);
 
   uint64_t params_per_weight = 1;
   while (params_per_weight < model_count) { params_per_weight *= 2; }

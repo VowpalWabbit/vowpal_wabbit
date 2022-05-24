@@ -39,13 +39,14 @@ struct epsilon_decay_score : scored_config
 struct epsilon_decay_data
 {
   epsilon_decay_data(uint64_t num_configs, uint64_t min_scope, double epsilon_decay_alpha, double epsilon_decay_tau,
-      parameters& weights, VW::io::logger logger, bool log_champ_changes)
+      parameters& weights, VW::io::logger logger, bool log_champ_changes, bool constant_epsilon)
       : _min_scope(min_scope)
       , _epsilon_decay_alpha(epsilon_decay_alpha)
       , _epsilon_decay_tau(epsilon_decay_tau)
       , _weights(weights)
       , _logger(std::move(logger))
       , _log_champ_changes(log_champ_changes)
+      , _constant_epsilon(constant_epsilon)
   {
     uint64_t model_idx = 0;
     uint64_t weight_idx = 0;
@@ -71,6 +72,7 @@ struct epsilon_decay_data
   parameters& _weights;
   VW::io::logger _logger;
   bool _log_champ_changes;
+  bool _constant_epsilon;
 };
 
 }  // namespace epsilon_decay
