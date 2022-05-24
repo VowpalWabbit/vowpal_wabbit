@@ -567,8 +567,6 @@ void interaction_config_manager::apply_config(example* ec, uint64_t live_slot)
   }
 }
 
-void interaction_config_manager::revert_config(example* ec) { ec->interactions = nullptr; }
-
 // inner loop of learn driven by # MAX_CONFIGS
 template <typename CMType>
 void automl<CMType>::offset_learn(multi_learner& base, multi_ex& ec, CB::cb_class& logged, uint64_t labelled_action)

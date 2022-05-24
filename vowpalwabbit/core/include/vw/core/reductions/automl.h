@@ -77,8 +77,6 @@ struct config_manager
   // tracked by 'live_slot' into the example.
   // the impl is responsible of tracking this config-live_slot mapping
   void apply_config(example*, uint64_t);
-  // This fn is the 'undo' of configure_interactions
-  void revert_config(example*);
   void persist(metric_sink&, bool);
 
   // Public Chacha functions
@@ -125,7 +123,6 @@ struct interaction_config_manager : config_manager
       VW::io::logger*);
 
   void apply_config(example*, uint64_t);
-  void revert_config(example*);
   void persist(metric_sink&, bool);
 
   // Public Chacha functions
