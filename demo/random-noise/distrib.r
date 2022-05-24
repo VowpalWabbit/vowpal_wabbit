@@ -17,17 +17,17 @@ FONTSIZE = 9
 MyGray = 'grey50'
 
 title.theme   = element_text(family="FreeSans", face="bold.italic",
-                            size=FONTSIZE-2)
+                            size=FONTSIZE-2, hjust=0.5)
 x.title.theme = element_text(family="FreeSans", face="bold.italic",
                             size=FONTSIZE-2, vjust=-0.1)
 y.title.theme = element_text(family="FreeSans", face="bold.italic",
                            size=FONTSIZE-2, angle=90, vjust=0.2)
 x.axis.theme  = element_text(family="FreeSans", face="bold",
-                            size=FONTSIZE-2, colour=MyGray)
+                            size=FONTSIZE-2, color=MyGray)
 y.axis.theme  = element_text(family="FreeSans", face="bold",
-                            size=FONTSIZE-2, colour=MyGray)
+                            size=FONTSIZE-2, color=MyGray)
 legend.theme  = element_text(family="FreeSans", face="bold.italic",
-                            size=FONTSIZE-1, colour="black")
+                            size=FONTSIZE-1, color="black")
 
 eprintf <- function(...) cat(sprintf(...), sep='', file=stderr())
 
