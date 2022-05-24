@@ -633,3 +633,29 @@ BOOST_AUTO_TEST_CASE(check_spanner_results)
     BOOST_CHECK_CLOSE(preds[2].score, 1.0 / 3, FLOAT_TOL);
   }
 }
+
+BOOST_AUTO_TEST_CASE(check_uniform_probabilities_before_learning)
+{
+  auto d = 2;
+  auto& vw = *VW::initialize(
+      "--cb_explore_adf --large_action_space --max_actions " + std::to_string(d) + " --quiet --random_seed 5", nullptr,
+      false, nullptr, nullptr);
+
+  VW::LEARNER::multi_learner* learner =
+      as_multiline(vw.l->get_learner_by_name_prefix("cb_explore_adf_large_action_space"));
+
+  {
+    VW::multi_ex examples;
+
+    examples.push_back(VW::read_example(vw, "| 1 2 3"));
+    examples.push_back(VW::read_example(vw, "| a_1 a_2 a_3"));
+    examples.push_back(VW::read_example(vw, "| a_4 a_5 a_6"));
+
+    learner->predict(examples);
+
+    const auto num_actions = examples.size();
+    const auto& preds = examples[0]->pred.a_s;
+    BOOST_CHECK_EQUAL(preds.size(), num_actions);
+    for (const auto& pred : preds) { BOOST_CHECK_CLOSE(pred.score, 1.0 / 3, FLOAT_TOL); }
+  }
+}

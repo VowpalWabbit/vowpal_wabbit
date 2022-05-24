@@ -120,6 +120,7 @@ void cb_explore_adf_large_action_space::learn(VW::LEARNER::multi_learner& base, 
 cb_explore_adf_large_action_space::cb_explore_adf_large_action_space(uint64_t d, float gamma, VW::workspace* all)
     : _d(d), _gamma(gamma), _all(all), _seed(all->get_random_state()->get_current_state() * 10.f)
 {
+  _action_indices.resize(_d);
 }
 
 void cb_explore_adf_large_action_space::calculate_shrink_factor(const ACTION_SCORE::action_scores& preds, float min_ck)
@@ -337,7 +338,11 @@ std::pair<float, uint64_t> cb_explore_adf_large_action_space::find_max_volume(ui
   {
     X.row(X_rid) = U.row(i);
     float volume = abs(X.determinant());
-    if (volume > max_volume) max_volume = volume, U_rid = i;
+    if (volume > max_volume)
+    {
+      max_volume = volume;
+      U_rid = i;
+    }
     X.row(X_rid) = original_row;
   }
 
@@ -345,21 +350,20 @@ std::pair<float, uint64_t> cb_explore_adf_large_action_space::find_max_volume(ui
   return {max_volume, U_rid};
 }
 
-std::vector<bool> cb_explore_adf_large_action_space::compute_spanner()
+void cb_explore_adf_large_action_space::compute_spanner()
 {
   // Implements the C-approximate barycentric spanner algorithm in Figure 2 of the following paper
   // Awerbuch & Kleinberg STOC'04: https://www.cs.cornell.edu/~rdk/papers/OLSP.pdf
 
   assert(U.cols() == _d);
   Eigen::MatrixXf X = Eigen::MatrixXf::Identity(_d, _d);
-  std::vector<uint64_t> action_indices(_d);
 
   // Compute a basis contained in U.
   for (uint64_t X_rid = 0; X_rid < _d; ++X_rid)
   {
     uint64_t U_rid = find_max_volume(X_rid, X).second;
     X.row(X_rid) = U.row(U_rid);
-    action_indices[X_rid] = U_rid;
+    _action_indices[X_rid] = U_rid;
   }
 
   // Transform the basis into C-approximate spanner.
@@ -378,7 +382,7 @@ std::vector<bool> cb_explore_adf_large_action_space::compute_spanner()
       {
         uint64_t U_rid = max_volume_and_row_id.second;
         X.row(X_rid) = U.row(U_rid);
-        action_indices[X_rid] = U_rid;
+        _action_indices[X_rid] = U_rid;
 
         X_volume = max_volume;
         found_larger_volume = true;
@@ -386,12 +390,12 @@ std::vector<bool> cb_explore_adf_large_action_space::compute_spanner()
       }
     }
 
-    if (!found_larger_volume) break;
+    if (!found_larger_volume) { break; }
   }
 
-  std::vector<bool> spanner_bitmap(U.rows(), false);
-  for (uint64_t idx : action_indices) spanner_bitmap[idx] = true;
-  return spanner_bitmap;
+  _spanner_bitvec.clear();
+  _spanner_bitvec.resize(U.rows(), false);
+  for (uint64_t idx : _action_indices) { _spanner_bitvec[idx] = true; }
 }
 
 template <bool is_learn>
@@ -416,19 +420,19 @@ void cb_explore_adf_large_action_space::predict_or_learn_impl(VW::LEARNER::multi
     {
       // Set uniform random probability for empty U.
       const float prob = 1.0f / preds.size();
-      for (auto& pred : preds) pred.score = prob;
+      for (auto& pred : preds) { pred.score = prob; }
       return;
     }
 
-    auto spanner_bitmap = compute_spanner();
+    compute_spanner();
+    assert(_spanner_bitvec.size() == preds.size());
+    _spanner_bitvec[min_ck_idx] = false;
 
     // Set the exploration distribution over S and the minimizer.
-    assert(spanner_bitmap.size() == preds.size());
-    spanner_bitmap[min_ck_idx] = false;
     float sum_scores = 0.0f;
-    for (auto i{0}; i < spanner_bitmap.size(); ++i)
+    for (auto i{0}; i < preds.size(); ++i)
     {
-      if (spanner_bitmap[i])
+      if (_spanner_bitvec[i])
       {
         preds[i].score = 1 / (1 + _d + _gamma / (4.0f * _d) * (preds[i].score - min_ck));
         sum_scores += preds[i].score;
