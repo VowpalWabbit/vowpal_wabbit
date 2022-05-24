@@ -4977,7 +4977,9 @@
       "models/0001_1.model",
       "test-sets/0001.dat"
     ],
-    "depends_on": [1]
+    "depends_on": [
+      1
+    ]
   },
   {
     "id": 386,
@@ -5003,7 +5005,9 @@
       "models/0001_1_predict_only.model",
       "test-sets/0001.dat"
     ],
-    "depends_on": [386]
+    "depends_on": [
+      386
+    ]
   },
   {
     "id": 388,
@@ -5032,8 +5036,12 @@
     "diff_files": {
       "l1_l2_override_model.txt": "train-sets/ref/l1_l2_override_model.txt"
     },
-    "depends_on": [389],
-    "input_files": ["l1_l2_default_model.model"]
+    "depends_on": [
+      389
+    ],
+    "input_files": [
+      "l1_l2_default_model.model"
+    ]
   },
   {
     "id": 391,
@@ -5042,8 +5050,12 @@
     "diff_files": {
       "l1_override_l2_leave_model.txt": "train-sets/ref/l1_override_l2_leave_model.txt"
     },
-    "depends_on": [390],
-    "input_files": ["l1_l2_override_model.model"]
+    "depends_on": [
+      390
+    ],
+    "input_files": [
+      "l1_l2_override_model.model"
+    ]
   },
   {
     "id": 392,
@@ -5052,9 +5064,10 @@
     "diff_files": {
       "l1l2_migrate.txt": "train-sets/ref/l1l2_migrate.txt"
     },
-    "input_files": ["model-sets/save_resume_with_l1l2_state.model"]
-  }
-  ,
+    "input_files": [
+      "model-sets/save_resume_with_l1l2_state.model"
+    ]
+  },
   {
     "id": 393,
     "desc": "Migrate l1 l2 state from 8.10.0 model and override",
@@ -5062,7 +5075,9 @@
     "diff_files": {
       "l1l2_migrate_override.txt": "train-sets/ref/l1l2_migrate_override.txt"
     },
-    "input_files": ["model-sets/save_resume_with_l1l2_state.model"]
+    "input_files": [
+      "model-sets/save_resume_with_l1l2_state.model"
+    ]
   },
   {
     "id": 394,
@@ -5273,6 +5288,62 @@
     },
     "input_files": [
       "train-sets/cb_test_non_binary_costs.ldf"
+    ]
+  },
+  {
+    "id": 411,
+    "desc": "automl with cb_adf",
+    "vw_command": "-f automl.model --automl 3 --verbose_metrics --priority_type least_exclusion -d train-sets/decisionservice.json --dsjson --cb_adf --extra_metrics metrics_.json --readable_model automl_readable.txt --keep_configs --oracle_type rand",
+    "diff_files": {
+      "stderr": "train-sets/ref/cb_adf_dsjson_metrics_.stderr",
+      "metrics_.json": "test-sets/ref/metrics_cbadfautoml.json",
+      "automl_readable.txt": "train-sets/ref/cbadf_automl_readable.txt"
+    },
+    "input_files": [
+      "train-sets/decisionservice.json"
+    ]
+  },
+  {
+    "id": 412,
+    "desc": "train lrqfa with nn",
+    "vw_command": "-d train-sets/lrqfa_nn.dat --nn 10 --lrqfa abc2 -f models/lrqfa_nn.vw --link logistic --loss_function logistic",
+    "diff_files": {
+      "stderr": "train-sets/ref/lrqfa_nn_train.stderr"
+    },
+    "input_files": [
+      "train-sets/lrqfa_nn.dat"
+    ]
+  },
+  {
+    "id": 413,
+    "desc": "test lrqfa w nn prediction is independent of example ordering",
+    "vw_command": "-d train-sets/lrqfa_nn.dat -i models/lrqfa_nn.vw -t -p lrqfa_nn_preds.predict",
+    "diff_files": {
+      "stderr": "train-sets/ref/lrqfa_nn_pred.stderr",
+      "lrqfa_nn_preds.predict": "pred-sets/ref/lrqfa_nn_preds.predict"
+    },
+    "input_files": [
+      "train-sets/lrqfa_nn.dat",
+      "models/lrqfa_nn.vw"
+    ],
+    "depends_on": [
+      412
+    ]
+  },
+  {
+    "id": 414,
+    "desc": "test lrqfa w nn prediction is independent of example ordering (reverse input order)",
+    "vw_command": "-d train-sets/lrqfa_nn_rev_order.dat -i models/lrqfa_nn.vw -t -p lrqfa_nn_preds_rev_order.predict",
+    "diff_files": {
+      "stderr": "train-sets/ref/lrqfa_nn_pred_rev.stderr",
+      "lrqfa_nn_preds_rev_order.predict": "pred-sets/ref/lrqfa_nn_preds_rev_order.predict"
+    },
+    "input_files": [
+      "train-sets/lrqfa_nn_rev_order.dat",
+      "models/lrqfa_nn.vw"
+    ],
+    "depends_on": [
+      412
     ]
   }
 ]

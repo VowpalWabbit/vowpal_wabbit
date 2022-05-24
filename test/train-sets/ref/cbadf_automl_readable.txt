@@ -6,8 +6,8 @@ bits:18
 lda:0
 0 ngram:
 0 skip:
-options: --automl 3 --cb_adf --cb_explore_adf --cb_type mtr --csoaa_ldf multiline --csoaa_rank --epsilon 0.200000002980232 --keep_configs --oracle_type rand --priority_type least_exclusion --random_seed 13881481101454338915
-Checksum: 166296216
+options: --automl 3 --cb_adf --cb_type mtr --csoaa_ldf multiline --csoaa_rank --keep_configs --oracle_type rand --priority_type least_exclusion --random_seed 13881481101454338915
+Checksum: 2920076286
 _automl_state = Experimenting
 _automl_config_manager_count = 3
 _automl_config_manager_champ = 0
@@ -153,7 +153,7 @@ action_sum 84
 initial_t 0
 norm normalizer 245.427
 t 3
-sum_loss -0.122449
+sum_loss 0
 sum_loss_since_last_dump 0
 dump_interval 4
 min_label -1
@@ -162,9 +162,9 @@ weighted_labeled_examples 3
 weighted_labels 0
 weighted_unlabeled_examples 0
 example_number 3
-total_features 31389
+total_features 31194
 total_weight 0.714286
-sd::oec.weighted_labeled_examples 3
+sd::oec.weighted_labeled_examples 2
 current_pass 1
 l1_state 0
 l2_state 1
