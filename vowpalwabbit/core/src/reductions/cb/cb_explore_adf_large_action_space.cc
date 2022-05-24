@@ -127,9 +127,7 @@ void cb_explore_adf_large_action_space::calculate_shrink_factor(const ACTION_SCO
 {
   shrink_factors.clear();
   for (size_t i = 0; i < preds.size(); i++)
-  {
-    shrink_factors.push_back(std::sqrt(1 + _d + _gamma / (4.0f * _d) * (preds[i].score - min_ck)));
-  }
+  { shrink_factors.push_back(std::sqrt(1 + _d + _gamma / (4.0f * _d) * (preds[i].score - min_ck))); }
 }
 
 inline void just_add_weights(float& p, float, float fw) { p += fw; }
