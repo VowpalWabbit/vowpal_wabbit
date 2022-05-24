@@ -557,5 +557,6 @@ BOOST_AUTO_TEST_CASE(check_final_truncated_SVD_validity)
 
   for (size_t i = 0; i < action_space->explore._S.rows(); i++)
   { BOOST_CHECK_CLOSE(S(i), action_space->explore._S(i), FLOAT_TOL); }
+  vw.finish_example(examples);
   VW::finish(vw);
 }
