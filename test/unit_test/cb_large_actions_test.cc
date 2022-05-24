@@ -29,6 +29,7 @@ BOOST_AUTO_TEST_CASE(creation_of_the_og_A_matrix)
     examples.push_back(VW::read_example(vw, "0:1.0:0.5 | 1 2 3"));
 
     vw.learn(examples);
+    vw.finish_example(examples);
   }
 
   std::vector<std::string> e_r;
@@ -70,7 +71,9 @@ BOOST_AUTO_TEST_CASE(creation_of_the_og_A_matrix)
         }
       }
     }
+    vw.finish_example(examples);
   }
+  VW::finish(vw);
 }
 
 BOOST_AUTO_TEST_CASE(check_At_times_Omega_is_Y)
@@ -87,6 +90,7 @@ BOOST_AUTO_TEST_CASE(check_At_times_Omega_is_Y)
     examples.push_back(VW::read_example(vw, "| a_1 a_2 a_3"));
 
     vw.learn(examples);
+    vw.finish_example(examples);
   }
 
   std::vector<std::string> e_r;
@@ -146,7 +150,9 @@ BOOST_AUTO_TEST_CASE(check_At_times_Omega_is_Y)
     // Orthonormalize Yd
     VW::gram_schmidt(Yd);
     BOOST_CHECK_EQUAL(Yd.isApprox(action_space->explore.Y), true);
+    vw.finish_example(examples);
   }
+  VW::finish(vw);
 }
 
 BOOST_AUTO_TEST_CASE(check_A_times_Y_is_B)
@@ -163,6 +169,7 @@ BOOST_AUTO_TEST_CASE(check_A_times_Y_is_B)
     examples.push_back(VW::read_example(vw, "| a_1 a_2 a_3"));
 
     vw.learn(examples);
+    vw.finish_example(examples);
   }
 
   std::vector<std::string> e_r;
@@ -191,7 +198,9 @@ BOOST_AUTO_TEST_CASE(check_A_times_Y_is_B)
 
     Eigen::MatrixXf B = action_space->explore._A * action_space->explore.Y;
     BOOST_CHECK_EQUAL(B.isApprox(action_space->explore.B), true);
+    vw.finish_example(examples);
   }
+  VW::finish(vw);
 }
 
 BOOST_AUTO_TEST_CASE(check_B_times_P_is_Z)
@@ -208,6 +217,7 @@ BOOST_AUTO_TEST_CASE(check_B_times_P_is_Z)
     examples.push_back(VW::read_example(vw, "| a_1 a_2 a_3"));
 
     vw.learn(examples);
+    vw.finish_example(examples);
   }
 
   std::vector<std::string> e_r;
@@ -252,7 +262,9 @@ BOOST_AUTO_TEST_CASE(check_B_times_P_is_Z)
     Eigen::MatrixXf Zp = action_space->explore.B * P;
     VW::gram_schmidt(Zp);
     BOOST_CHECK_EQUAL(Zp.isApprox(action_space->explore.Z), true);
+    vw.finish_example(examples);
   }
+  VW::finish(vw);
 }
 
 BOOST_AUTO_TEST_CASE(check_final_U_dimensions)
@@ -270,6 +282,7 @@ BOOST_AUTO_TEST_CASE(check_final_U_dimensions)
     examples.push_back(VW::read_example(vw, "| a_4 a_5 a_6"));
 
     vw.learn(examples);
+    vw.finish_example(examples);
   }
 
   {
@@ -280,6 +293,7 @@ BOOST_AUTO_TEST_CASE(check_final_U_dimensions)
     examples.push_back(VW::read_example(vw, "| a_4 a_5 a_6"));
 
     vw.learn(examples);
+    vw.finish_example(examples);
   }
 
   {
@@ -290,6 +304,7 @@ BOOST_AUTO_TEST_CASE(check_final_U_dimensions)
     examples.push_back(VW::read_example(vw, "0:1.0:0.5 | a_4 a_5 a_6"));
 
     vw.learn(examples);
+    vw.finish_example(examples);
   }
 
   std::vector<std::string> e_r;
@@ -318,7 +333,9 @@ BOOST_AUTO_TEST_CASE(check_final_U_dimensions)
     // U dimensions should be K x d
     BOOST_CHECK_EQUAL(action_space->explore.U.rows(), num_actions);
     BOOST_CHECK_EQUAL(action_space->explore.U.cols(), d);
+    vw.finish_example(examples);
   }
+  VW::finish(vw);
 }
 
 void generate_random_vector(
@@ -540,4 +557,5 @@ BOOST_AUTO_TEST_CASE(check_final_truncated_SVD_validity)
 
   for (size_t i = 0; i < action_space->explore._S.rows(); i++)
   { BOOST_CHECK_CLOSE(S(i), action_space->explore._S(i), FLOAT_TOL); }
+  VW::finish(vw);
 }
