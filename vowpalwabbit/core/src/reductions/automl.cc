@@ -559,7 +559,11 @@ template <typename CMType>
 void automl<CMType>::offset_learn(multi_learner& base, multi_ex& ec, CB::cb_class& logged, uint64_t labelled_action)
 {
   VW::reductions::automl::interaction_vec_t* incoming_interactions = ec[0]->interactions;
-  for (VW::example* ex : ec) { assert(ex->interactions == incoming_interactions); }
+  for (VW::example* ex : ec)
+  {
+    _UNUSED(ex);
+    assert(ex->interactions == incoming_interactions);
+  }
 
   // if (ec[0]->interactions != nullptr)
   // { logger->out_info("offlearn: incoming interaction: {}", ::interaction_vec_t_to_string(*(ec[0]->interactions))); }
@@ -608,7 +612,11 @@ template <typename CMType, bool is_explore>
 void predict_automl(VW::reductions::automl::automl<CMType>& data, multi_learner& base, VW::multi_ex& ec)
 {
   VW::reductions::automl::interaction_vec_t* incoming_interactions = ec[0]->interactions;
-  for (VW::example* ex : ec) { assert(ex->interactions == incoming_interactions); }
+  for (VW::example* ex : ec)
+  {
+    _UNUSED(ex);
+    assert(ex->interactions == incoming_interactions);
+  }
 
   // if (ec[0]->interactions != nullptr)
   // { data.logger->out_info("pred: incoming interaction: {}", ::interaction_vec_t_to_string(*(ec[0]->interactions))); }
