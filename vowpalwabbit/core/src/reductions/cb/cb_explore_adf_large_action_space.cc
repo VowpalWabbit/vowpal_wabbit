@@ -329,7 +329,7 @@ std::pair<float, uint64_t> cb_explore_adf_large_action_space::find_max_volume(ui
   // Returns the max volume, and the row id of U used for replacing X[X_rid].
 
   float max_volume = -1.0f;
-  uint64_t U_rid;
+  uint64_t U_rid{};
   Eigen::RowVectorXf original_row = X.row(X_rid);
 
   for (auto i{0}; i < U.rows(); ++i)
