@@ -538,6 +538,7 @@ Weight Options:
     --epsilon_decay_tau arg                 Time constant for count decay (type: float, default: 0.999, keep,
                                             experimental)
     --log_champ_changes                     Log champ changes (type: bool, keep, experimental)
+    --constant_epsilon                      Keep epsilon constant across models (type: bool, keep, experimental)
 [Reduction] Error Correcting Tournament Options:
     --ect arg                               Error correcting tournament with <k> labels (type: uint, keep,
                                             necessary)

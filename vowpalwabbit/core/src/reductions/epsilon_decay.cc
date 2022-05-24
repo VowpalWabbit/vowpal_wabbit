@@ -260,7 +260,10 @@ VW::LEARNER::base_learner* VW::reductions::epsilon_decay_setup(VW::setup_base_i&
                .help("Time constant for count decay")
                .experimental())
       .add(make_option("log_champ_changes", _log_champ_changes).keep().help("Log champ changes").experimental())
-      .add(make_option("constant_epsilon", _constant_epsilon).keep().help("Keep epsilon constant across models").experimental());
+      .add(make_option("constant_epsilon", _constant_epsilon)
+               .keep()
+               .help("Keep epsilon constant across models")
+               .experimental());
 
   if (!options.add_parse_and_check_necessary(new_options)) { return nullptr; }
 
@@ -269,8 +272,8 @@ VW::LEARNER::base_learner* VW::reductions::epsilon_decay_setup(VW::setup_base_i&
   // Scale confidence interval by number of examples
   float scaled_alpha = _epsilon_decay_alpha / model_count;
 
-  auto data = VW::make_unique<VW::reductions::epsilon_decay::epsilon_decay_data>(
-      model_count, _min_scope, scaled_alpha, _epsilon_decay_tau, all.weights, all.logger, _log_champ_changes, _constant_epsilon);
+  auto data = VW::make_unique<VW::reductions::epsilon_decay::epsilon_decay_data>(model_count, _min_scope, scaled_alpha,
+      _epsilon_decay_tau, all.weights, all.logger, _log_champ_changes, _constant_epsilon);
 
   uint64_t params_per_weight = 1;
   while (params_per_weight < model_count) { params_per_weight *= 2; }
