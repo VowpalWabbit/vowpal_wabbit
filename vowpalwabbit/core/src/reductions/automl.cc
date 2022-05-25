@@ -11,6 +11,7 @@
 #include "vw/core/rand_state.h"
 #include "vw/core/setup_base.h"
 #include "vw/core/vw.h"
+#include "vw/io/logger.h"
 
 #include <cfloat>
 
@@ -79,36 +80,60 @@ void fail_if_enabled(VW::workspace& all, const std::set<std::string>& not_compat
   }
 }
 
-std::string interaction_vec_t_to_string(const std::vector<std::vector<VW::namespace_index>>& interactions)
+std::string ns_to_str(unsigned char ns)
+{
+  if (ns == constant_namespace)
+    return "[constant]";
+  else if (ns == ccb_slot_namespace)
+    return "[ccbslot]";
+  else if (ns == ccb_id_namespace)
+    return "[ccbid]";
+  else if (ns == wildcard_namespace)
+    return "[wild]";
+  else if (ns == default_namespace)
+    return "[default]";
+  else
+    return std::string(1, ns);
+}
+
+std::string interaction_vec_t_to_string(const VW::reductions::automl::interaction_vec_t& interactions)
 {
   std::stringstream ss;
   for (const std::vector<VW::namespace_index>& v : interactions)
   {
     ss << "-q ";
-    for (VW::namespace_index c : v)
-    {
-      c = (c == constant_namespace) ? '0' : c;
-      ss << c;
-    }
+    for (VW::namespace_index c : v) { ss << ns_to_str(c); }
     ss << " ";
   }
   return ss.str();
 }
+
 std::string exclusions_to_string(const std::map<VW::namespace_index, std::set<VW::namespace_index>>& exclusions)
 {
+  const char* const delim = ", ";
   std::stringstream ss;
+  size_t total = exclusions.size();
+  size_t count = 0;
+
+  ss << "{";
   for (auto const& x : exclusions)
   {
     auto ns1 = x.first;
-    ns1 = (ns1 == constant_namespace) ? '0' : ns1;
-    ss << ns1 << ": [";
-    for (auto ns : x.second)
+    ss << "\"" << ns_to_str(ns1) << "\""
+       << ": [";
+
+    if (!x.second.empty())
     {
-      ns = (ns == constant_namespace) ? '0' : ns;
-      ss << ns << " ";
+      auto i = x.second.begin(), second_last = std::prev(x.second.end());
+      for (; i != second_last; ++i) { ss << "\"" << ns_to_str(*i) << "\"" << delim; }
+      ss << "\"" << ns_to_str(*second_last) << "\"";
     }
-    ss << "] ";
+
+    count += 1;
+    ss << "]";
+    if (count < total) { ss << delim; }
   }
+  ss << "}";
   return ss.str();
 }
 }  // namespace
@@ -157,7 +182,7 @@ void automl<CMType>::one_step(multi_learner& base, multi_ex& ec, CB::cb_class& l
 interaction_config_manager::interaction_config_manager(uint64_t global_lease, uint64_t max_live_configs,
     std::shared_ptr<VW::rand_state> rand_state, uint64_t priority_challengers, bool keep_configs,
     std::string oracle_type, dense_parameters& weights, priority_func* calc_priority, double automl_alpha,
-    double automl_tau)
+    double automl_tau, VW::io::logger* logger)
     : global_lease(global_lease)
     , max_live_configs(max_live_configs)
     , random_state(std::move(rand_state))
@@ -168,6 +193,7 @@ interaction_config_manager::interaction_config_manager(uint64_t global_lease, ui
     , calc_priority(calc_priority)
     , automl_alpha(automl_alpha)
     , automl_tau(automl_tau)
+    , logger(logger)
 {
   configs[0] = exclusion_config(global_lease);
   configs[0].state = VW::reductions::automl::config_state::Live;
@@ -195,6 +221,8 @@ void interaction_config_manager::gen_quadratic_interactions(uint64_t live_slot)
       { interactions.push_back({idx1, idx2}); }
     }
   }
+  // logger->out_info("generated interactions {} from exclusion conf: {}", ::interaction_vec_t_to_string(interactions),
+  //     ::exclusions_to_string(exclusions));
 }
 
 // This function will process an incoming multi_ex, update the namespace_counter,
@@ -539,12 +567,19 @@ void interaction_config_manager::apply_config(example* ec, uint64_t live_slot)
   }
 }
 
-void interaction_config_manager::revert_config(example* ec) { ec->interactions = nullptr; }
-
 // inner loop of learn driven by # MAX_CONFIGS
 template <typename CMType>
 void automl<CMType>::offset_learn(multi_learner& base, multi_ex& ec, CB::cb_class& logged, uint64_t labelled_action)
 {
+  VW::reductions::automl::interaction_vec_t* incoming_interactions = ec[0]->interactions;
+  for (VW::example* ex : ec)
+  {
+    _UNUSED(ex);
+    assert(ex->interactions == incoming_interactions);
+  }
+
+  // if (ec[0]->interactions != nullptr)
+  // { logger->out_info("offlearn: incoming interaction: {}", ::interaction_vec_t_to_string(*(ec[0]->interactions))); }
   const float w = logged.probability > 0 ? 1 / logged.probability : 0;
   const float r = -logged.cost;
 
@@ -554,8 +589,8 @@ void automl<CMType>::offset_learn(multi_learner& base, multi_ex& ec, CB::cb_clas
   int64_t current_champ = static_cast<int64_t>(cm->current_champ);
   assert(current_champ >= 0);
 
-  auto restore_guard = VW::scope_exit([this, &ec, &live_slot, &current_champ]() {
-    for (example* ex : ec) { this->cm->revert_config(ex); }
+  auto restore_guard = VW::scope_exit([this, &ec, &live_slot, &current_champ, &incoming_interactions]() {
+    for (example* ex : ec) { ex->interactions = incoming_interactions; }
     if (live_slot >= 0 && live_slot != current_champ) { std::swap(ec[0]->pred.a_s, buffer_a_s); }
   });
 
@@ -589,11 +624,20 @@ namespace
 template <typename CMType, bool is_explore>
 void predict_automl(VW::reductions::automl::automl<CMType>& data, multi_learner& base, VW::multi_ex& ec)
 {
+  VW::reductions::automl::interaction_vec_t* incoming_interactions = ec[0]->interactions;
+  for (VW::example* ex : ec)
+  {
+    _UNUSED(ex);
+    assert(ex->interactions == incoming_interactions);
+  }
+
+  // if (ec[0]->interactions != nullptr)
+  // { data.logger->out_info("pred: incoming interaction: {}", ::interaction_vec_t_to_string(*(ec[0]->interactions))); }
   uint64_t champ_live_slot = data.cm->current_champ;
   for (VW::example* ex : ec) { data.cm->apply_config(ex, champ_live_slot); }
 
-  auto restore_guard = VW::scope_exit([&data, &ec] {
-    for (VW::example* ex : ec) { data.cm->revert_config(ex); }
+  auto restore_guard = VW::scope_exit([&ec, &incoming_interactions] {
+    for (VW::example* ex : ec) { ex->interactions = incoming_interactions; }
   });
 
   base.predict(ec, champ_live_slot);
@@ -615,7 +659,7 @@ void learn_automl(VW::reductions::automl::automl<CMType>& data, multi_learner& b
   }
 
   data.one_step(base, ec, logged, labelled_action);
-  assert(ec[0]->interactions == nullptr);
+  assert(ec[0]->interactions != nullptr);
 }
 
 template <typename CMType, bool verbose>
@@ -631,12 +675,14 @@ void persist(VW::reductions::automl::automl<CMType>& data, VW::metric_sink& metr
 template <typename CMType>
 void finish_example(VW::workspace& all, VW::reductions::automl::automl<CMType>& data, VW::multi_ex& ec)
 {
+  VW::reductions::automl::interaction_vec_t* incoming_interactions = ec[0]->interactions;
+
   uint64_t champ_live_slot = data.cm->current_champ;
   for (VW::example* ex : ec) { data.cm->apply_config(ex, champ_live_slot); }
 
   {
-    auto restore_guard = VW::scope_exit([&data, &ec] {
-      for (VW::example* ex : ec) { data.cm->revert_config(ex); }
+    auto restore_guard = VW::scope_exit([&ec, &incoming_interactions] {
+      for (VW::example* ex : ec) { ex->interactions = incoming_interactions; }
     });
 
     data.adf_learner->print_example(all, ec);
@@ -761,9 +807,9 @@ VW::LEARNER::base_learner* VW::reductions::automl_setup(VW::setup_base_i& stack_
 
   auto cm = VW::make_unique<VW::reductions::automl::interaction_config_manager>(global_lease, max_live_configs,
       all.get_random_state(), static_cast<uint64_t>(priority_challengers), keep_configs, oracle_type,
-      all.weights.dense_weights, calc_priority, automl_alpha, automl_tau);
+      all.weights.dense_weights, calc_priority, automl_alpha, automl_tau, &all.logger);
   auto data = VW::make_unique<VW::reductions::automl::automl<VW::reductions::automl::interaction_config_manager>>(
-      std::move(cm));
+      std::move(cm), &all.logger);
   if (max_live_configs > MAX_CONFIGS)
   {
     THROW("Maximum number of configs is "
