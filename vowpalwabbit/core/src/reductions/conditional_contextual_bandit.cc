@@ -35,6 +35,7 @@
 using namespace VW::LEARNER;
 using namespace VW;
 using namespace VW::config;
+using namespace VW::reductions::ccb;
 
 namespace
 {
@@ -52,40 +53,6 @@ void return_collection(std::vector<T>& array, VW::vector_pool<T>& pool)
   array.clear();
   pool.reclaim_object(std::move(array));
   array = std::vector<T>{};
-}
-
-// CCB adds the following interactions:
-//   1. Every existing interaction + ccb_id_namespace
-//   2. wildcard_namespace + ccb_id_namespace
-void insert_ccb_interactions(std::vector<std::vector<VW::namespace_index>>& interactions_to_add_to,
-    std::vector<std::vector<extent_term>>& extent_interactions_to_add_to)
-{
-  const auto reserve_size = interactions_to_add_to.size() * 2;
-  std::vector<std::vector<VW::namespace_index>> new_interactions;
-  new_interactions.reserve(reserve_size);
-  for (const auto& inter : interactions_to_add_to)
-  {
-    new_interactions.push_back(inter);
-    new_interactions.back().push_back(static_cast<VW::namespace_index>(ccb_id_namespace));
-    new_interactions.push_back(inter);
-  }
-  interactions_to_add_to.reserve(interactions_to_add_to.size() + new_interactions.size() + 2);
-  std::move(new_interactions.begin(), new_interactions.end(), std::back_inserter(interactions_to_add_to));
-  interactions_to_add_to.push_back({wildcard_namespace, ccb_id_namespace});
-
-  std::vector<std::vector<extent_term>> new_extent_interactions;
-  new_extent_interactions.reserve(new_extent_interactions.size() * 2);
-  for (const auto& inter : extent_interactions_to_add_to)
-  {
-    new_extent_interactions.push_back(inter);
-    new_extent_interactions.back().emplace_back(ccb_id_namespace, ccb_id_namespace);
-    new_extent_interactions.push_back(inter);
-  }
-  extent_interactions_to_add_to.reserve(extent_interactions_to_add_to.size() + new_extent_interactions.size() + 2);
-  std::move(new_extent_interactions.begin(), new_extent_interactions.end(),
-      std::back_inserter(extent_interactions_to_add_to));
-  extent_interactions_to_add_to.push_back(
-      {std::make_pair(wildcard_namespace, wildcard_namespace), std::make_pair(ccb_id_namespace, ccb_id_namespace)});
 }
 
 struct ccb_data
@@ -715,6 +682,40 @@ base_learner* VW::reductions::ccb_explore_adf_setup(VW::setup_base_i& stack_buil
                 .set_save_load(save_load)
                 .build();
   return make_base(*l);
+}
+
+// CCB adds the following interactions:
+//   1. Every existing interaction + ccb_id_namespace
+//   2. wildcard_namespace + ccb_id_namespace
+void VW::reductions::ccb::insert_ccb_interactions(std::vector<std::vector<VW::namespace_index>>& interactions_to_add_to,
+    std::vector<std::vector<extent_term>>& extent_interactions_to_add_to)
+{
+  const auto reserve_size = interactions_to_add_to.size() * 2;
+  std::vector<std::vector<VW::namespace_index>> new_interactions;
+  new_interactions.reserve(reserve_size);
+  for (const auto& inter : interactions_to_add_to)
+  {
+    new_interactions.push_back(inter);
+    new_interactions.back().push_back(static_cast<VW::namespace_index>(ccb_id_namespace));
+    new_interactions.push_back(inter);
+  }
+  interactions_to_add_to.reserve(interactions_to_add_to.size() + new_interactions.size() + 2);
+  std::move(new_interactions.begin(), new_interactions.end(), std::back_inserter(interactions_to_add_to));
+  interactions_to_add_to.push_back({wildcard_namespace, ccb_id_namespace});
+
+  std::vector<std::vector<extent_term>> new_extent_interactions;
+  new_extent_interactions.reserve(new_extent_interactions.size() * 2);
+  for (const auto& inter : extent_interactions_to_add_to)
+  {
+    new_extent_interactions.push_back(inter);
+    new_extent_interactions.back().emplace_back(ccb_id_namespace, ccb_id_namespace);
+    new_extent_interactions.push_back(inter);
+  }
+  extent_interactions_to_add_to.reserve(extent_interactions_to_add_to.size() + new_extent_interactions.size() + 2);
+  std::move(new_extent_interactions.begin(), new_extent_interactions.end(),
+      std::back_inserter(extent_interactions_to_add_to));
+  extent_interactions_to_add_to.push_back(
+      {std::make_pair(wildcard_namespace, wildcard_namespace), std::make_pair(ccb_id_namespace, ccb_id_namespace)});
 }
 
 bool VW::reductions::ccb::ec_is_example_header(VW::example const& ec)
