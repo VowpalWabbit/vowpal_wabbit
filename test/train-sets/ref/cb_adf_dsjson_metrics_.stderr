@@ -12,10 +12,12 @@ Input label = cb
 Output pred = action_scores
 average  since         example        example        current        current  current
 loss     last          counter         weight          label        predict features
+0.000000 0.000000            1            1.0      9:-1:0.82            0:0    10463
+0.000000 0.000000            2            2.0       9:0:0.82   7:-378637.81    10463
 
 finished run
-number of examples = 0
-weighted example sum = 0.000000
+number of examples = 3
+weighted example sum = 3.000000
 weighted label sum = 0.000000
-average loss = n.a.
-total feature number = 0
+average loss = 0.000000
+total feature number = 31194
