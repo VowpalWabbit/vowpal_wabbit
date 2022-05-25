@@ -111,7 +111,8 @@ void learn(
   // Process each model, then update the upper/lower bounds for each model
   for (int64_t i = 0; i < K; ++i)
   {
-    ep_fts.epsilon = VW::reductions::epsilon_decay::decayed_epsilon(data._scored_configs[i][i].update_count);
+    if (!data._constant_epsilon)
+    { ep_fts.epsilon = VW::reductions::epsilon_decay::decayed_epsilon(data._scored_configs[i][i].update_count); }
     if (!base.learn_returns_prediction) { base.predict(examples, data._weight_indices[i]); }
     base.learn(examples, data._weight_indices[i]);
     for (const auto& a_s : examples[0]->pred.a_s)
