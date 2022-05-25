@@ -329,6 +329,34 @@ void interaction_config_manager::config_oracle()
       }
     }
   }
+  else if (oracle_type == "two_diff")
+  {
+    // Add two exclusion (for each interaction)
+    for (int i = 0; i<champ_interactions.size()-1; ++i)
+    {
+      namespace_index ns1_1 = champ_interactions[i][0];
+      namespace_index ns1_2 = champ_interactions[i][1];
+      namespace_index ns2_1 = champ_interactions[i+1][0];
+      namespace_index ns2_2 = champ_interactions[i+1][1];
+      std::map<namespace_index, std::set<namespace_index>> new_exclusions(
+          configs[scores[current_champ].config_index].exclusions);
+      new_exclusions[ns1_1].insert(ns1_2);
+      new_exclusions[ns2_1].insert(ns2_2);
+      insert_config(std::move(new_exclusions));
+    }
+    // Remove two exclusion (for each exclusion)
+    for (auto& ns_pair : configs[scores[current_champ].config_index].exclusions)
+    {
+      namespace_index ns1 = ns_pair.first;
+      for (namespace_index ns2 : ns_pair.second)
+      {
+        std::map<namespace_index, std::set<namespace_index>> new_exclusions(
+            configs[scores[current_champ].config_index].exclusions);
+        new_exclusions[ns1].erase(ns2);
+        insert_config(std::move(new_exclusions));
+      }
+    }
+  }
   else
   {
     THROW("Unknown oracle type.");
