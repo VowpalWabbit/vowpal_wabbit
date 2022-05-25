@@ -4,7 +4,6 @@
 
 #include "reductions/cb/details/large_action_space.h"
 #include "test_common.h"
-#include "vw/config/options_cli.h"
 #include "vw/core/qr_decomposition.h"
 #include "vw/core/rand48.h"
 #include "vw/core/rand_state.h"
@@ -20,9 +19,9 @@ using internal_action_space =
 BOOST_AUTO_TEST_CASE(creation_of_the_og_A_matrix)
 {
   auto d = 2;
-  auto opts = VW::make_unique<VW::config::options_cli>(std::vector<std::string>{
-      "--cb_explore_adf --large_action_space --max_actions " + std::to_string(d) + " --quiet --random_seed 5"});
-  auto& vw = *VW::initialize_experimental(std::move(opts));
+  auto& vw = *VW::initialize(
+      "--cb_explore_adf --large_action_space --max_actions " + std::to_string(d) + " --quiet --random_seed 5", nullptr,
+      false, nullptr, nullptr);
 
   {
     VW::multi_ex examples;
@@ -74,14 +73,15 @@ BOOST_AUTO_TEST_CASE(creation_of_the_og_A_matrix)
     }
     vw.finish_example(examples);
   }
+  VW::finish(vw);
 }
 
 BOOST_AUTO_TEST_CASE(check_At_times_Omega_is_Y)
 {
   auto d = 2;
-  auto opts = VW::make_unique<VW::config::options_cli>(std::vector<std::string>{
-      "--cb_explore_adf --large_action_space --max_actions " + std::to_string(d) + " --quiet --random_seed 5"});
-  auto& vw = *VW::initialize_experimental(std::move(opts));
+  auto& vw = *VW::initialize(
+      "--cb_explore_adf --large_action_space --max_actions " + std::to_string(d) + " --quiet --random_seed 5", nullptr,
+      false, nullptr, nullptr);
 
   {
     VW::multi_ex examples;
@@ -152,14 +152,15 @@ BOOST_AUTO_TEST_CASE(check_At_times_Omega_is_Y)
     BOOST_CHECK_EQUAL(Yd.isApprox(action_space->explore.Y), true);
     vw.finish_example(examples);
   }
+  VW::finish(vw);
 }
 
 BOOST_AUTO_TEST_CASE(check_A_times_Y_is_B)
 {
   auto d = 2;
-  auto opts = VW::make_unique<VW::config::options_cli>(std::vector<std::string>{
-      "--cb_explore_adf --large_action_space --max_actions " + std::to_string(d) + " --quiet --random_seed 5"});
-  auto& vw = *VW::initialize_experimental(std::move(opts));
+  auto& vw = *VW::initialize(
+      "--cb_explore_adf --large_action_space --max_actions " + std::to_string(d) + " --quiet --random_seed 5", nullptr,
+      false, nullptr, nullptr);
 
   {
     VW::multi_ex examples;
@@ -199,14 +200,15 @@ BOOST_AUTO_TEST_CASE(check_A_times_Y_is_B)
     BOOST_CHECK_EQUAL(B.isApprox(action_space->explore.B), true);
     vw.finish_example(examples);
   }
+  VW::finish(vw);
 }
 
 BOOST_AUTO_TEST_CASE(check_B_times_P_is_Z)
 {
   auto d = 2;
-  auto opts = VW::make_unique<VW::config::options_cli>(std::vector<std::string>{
-      "--cb_explore_adf --large_action_space --max_actions " + std::to_string(d) + " --quiet --random_seed 5"});
-  auto& vw = *VW::initialize_experimental(std::move(opts));
+  auto& vw = *VW::initialize(
+      "--cb_explore_adf --large_action_space --max_actions " + std::to_string(d) + " --quiet --random_seed 5", nullptr,
+      false, nullptr, nullptr);
 
   {
     VW::multi_ex examples;
@@ -262,14 +264,15 @@ BOOST_AUTO_TEST_CASE(check_B_times_P_is_Z)
     BOOST_CHECK_EQUAL(Zp.isApprox(action_space->explore.Z), true);
     vw.finish_example(examples);
   }
+  VW::finish(vw);
 }
 
 BOOST_AUTO_TEST_CASE(check_final_U_dimensions)
 {
   auto d = 2;
-  auto opts = VW::make_unique<VW::config::options_cli>(std::vector<std::string>{
-      "--cb_explore_adf --large_action_space --max_actions " + std::to_string(d) + " --quiet --random_seed 5"});
-  auto& vw = *VW::initialize_experimental(std::move(opts));
+  auto& vw = *VW::initialize(
+      "--cb_explore_adf --large_action_space --max_actions " + std::to_string(d) + " --quiet --random_seed 5", nullptr,
+      false, nullptr, nullptr);
 
   {
     VW::multi_ex examples;
@@ -332,6 +335,7 @@ BOOST_AUTO_TEST_CASE(check_final_U_dimensions)
     BOOST_CHECK_EQUAL(action_space->explore.U.cols(), d);
     vw.finish_example(examples);
   }
+  VW::finish(vw);
 }
 
 void generate_random_vector(
@@ -475,9 +479,9 @@ BOOST_AUTO_TEST_CASE(check_final_truncated_SVD_validity)
   and randomized decomposition match the singular values of a traditional SVD applied to the same matrix.
    */
 
-  auto opts = VW::make_unique<VW::config::options_cli>(std::vector<std::string>{
-      "--cb_explore_adf --noconstant --large_action_space --max_actions 0 --quiet --random_seed 5"});
-  auto& vw = *VW::initialize_experimental(std::move(opts));
+  auto& vw =
+      *VW::initialize("--cb_explore_adf --noconstant --large_action_space --max_actions 0 --quiet --random_seed 5",
+          nullptr, false, nullptr, nullptr);
 
   uint64_t num_actions = 5;  // rows
   uint64_t max_col = vw.weights.sparse ? vw.weights.sparse_weights.mask() : vw.weights.dense_weights.mask();
@@ -554,4 +558,5 @@ BOOST_AUTO_TEST_CASE(check_final_truncated_SVD_validity)
   for (size_t i = 0; i < action_space->explore._S.rows(); i++)
   { BOOST_CHECK_CLOSE(S(i), action_space->explore._S(i), FLOAT_TOL); }
   vw.finish_example(examples);
+  VW::finish(vw);
 }
