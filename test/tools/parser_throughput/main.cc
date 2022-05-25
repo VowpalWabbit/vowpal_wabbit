@@ -1,17 +1,16 @@
-#include <iostream>
+#include "vw/config/cli_help_formatter.h"
+#include "vw/config/option_builder.h"
+#include "vw/config/option_group_definition.h"
+#include "vw/config/options_cli.h"
+#include "vw/core/parse_example_json.h"
+#include "vw/core/vw.h"
+
+#include <chrono>
 #include <exception>
 #include <fstream>
-#include <chrono>
+#include <iostream>
 #include <stdexcept>
 #include <string>
-
-#include "config/cli_help_formatter.h"
-#include "config/option_builder.h"
-#include "config/options_cli.h"
-#include "config/option_group_definition.h"
-
-#include "vw.h"
-#include "parse_example_json.h"
 
 enum class parser_type
 {
@@ -158,7 +157,7 @@ int main(int argc, char** argv)
     DecisionServiceInteraction interaction;
     for (const auto& line : lines)
     {
-      VW::v_array<VW::example*> examples;
+      VW::multi_ex examples;
       examples.push_back(&VW::get_unused_example(vw));
       VW::read_line_decision_service_json<false>(*vw, examples, const_cast<char*>(line.data()), line.length(), false,
           (VW::example_factory_t)&VW::get_unused_example, (void*)vw, &interaction);

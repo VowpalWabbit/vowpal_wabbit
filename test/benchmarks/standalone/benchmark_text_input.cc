@@ -1,3 +1,7 @@
+#include "../benchmarks_common.h"
+#include "vw/core/parse_example.h"
+#include "vw/core/vw.h"
+
 #include <benchmark/benchmark.h>
 
 #include <array>
@@ -10,10 +14,6 @@
 #include <unordered_map>
 #include <vector>
 
-#include "../benchmarks_common.h"
-#include "parse_example.h"
-#include "vw.h"
-
 template <class... ExtraArgs>
 static void bench_text(benchmark::State& state, ExtraArgs&&... extra_args)
 {
@@ -22,7 +22,7 @@ static void bench_text(benchmark::State& state, ExtraArgs&&... extra_args)
 
   auto es = const_cast<char*>(example_string.c_str());
   auto vw = VW::initialize("--cb 2 --quiet");
-  VW::v_array<example*> examples;
+  VW::multi_ex examples;
   examples.push_back(&VW::get_unused_example(vw));
   for (auto _ : state)
   {

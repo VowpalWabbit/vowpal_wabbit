@@ -1,17 +1,17 @@
 #include "jni_spark_vw.h"
 
+#include "util.h"
+#include "vw/common/vw_exception.h"
+#include "vw/config/cli_options_serializer.h"
+#include "vw/config/options.h"
+#include "vw/core/best_constant.h"
+#include "vw/core/learner.h"
+#include "vw/core/parse_example.h"
+#include "vw/core/shared_data.h"
+#include "vw/core/simple_label_parser.h"
+
 #include <algorithm>
 #include <exception>
-
-#include "best_constant.h"
-#include "config/cli_options_serializer.h"
-#include "config/options.h"
-#include "learner.h"
-#include "parse_example.h"
-#include "shared_data.h"
-#include "simple_label_parser.h"
-#include "util.h"
-#include "vw_exception.h"
 
 jobject getJavaPrediction(JNIEnv* env, VW::workspace* all, example* ex);
 

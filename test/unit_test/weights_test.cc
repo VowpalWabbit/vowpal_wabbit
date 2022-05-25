@@ -2,13 +2,12 @@
 // individual contributors. All rights reserved. Released under a BSD (revised)
 // license as described in the file LICENSE.
 
-#include <boost/test/unit_test.hpp>
-#include <boost/mpl/vector.hpp>
-
-#include "array_parameters.h"
-#include "array_parameters_dense.h"
-
 #include "test_common.h"
+#include "vw/core/array_parameters.h"
+#include "vw/core/array_parameters_dense.h"
+
+#include <boost/mpl/vector.hpp>
+#include <boost/test/unit_test.hpp>
 
 constexpr auto LENGTH = 16;
 constexpr auto STRIDE_SHIFT = 2;

@@ -4,10 +4,10 @@
 
 #define RAPIDJSON_HAS_STDSTRING 1
 
-#include "config/help_formatter.h"
-#include "config/options.h"
-#include "version.h"
-#include "vw.h"
+#include "vw/config/help_formatter.h"
+#include "vw/config/options.h"
+#include "vw/core/version.h"
+#include "vw/core/vw.h"
 
 #include <rapidjson/document.h>
 #include <rapidjson/stringbuffer.h>
@@ -165,6 +165,7 @@ struct json_help_formatter : VW::config::help_formatter
         }
         option_obj.AddMember("keep", option->m_keep, allocator);
         option_obj.AddMember("necessary", option->m_necessary, allocator);
+        option_obj.AddMember("experimental", option->m_experimental, allocator);
         type_info_injector injector(option_obj, allocator);
         option->accept(injector);
         options_array.PushBack(option_obj, allocator);

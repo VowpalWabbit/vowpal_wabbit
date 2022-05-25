@@ -13,9 +13,12 @@ coverage:
         # Coverage can drop by 0.5% before it is a failure.
         threshold: 0.5%
         paths:
-          - vowpalwabbit
-          - explore
-          - "!test"
+          - "vowpalwabbit/"
 
 ignore:
-  - "test"
+  - "**/tests/"
+  - "**/test/"
+  - "test/"
+  - "library/"
+  - "utl/"
+  - "ext_libs/"

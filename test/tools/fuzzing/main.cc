@@ -1,7 +1,7 @@
-#include "config/options_cli.h"
+#include "vw/common/vw_exception.h"
+#include "vw/config/options_cli.h"
+#include "vw/core/vw.h"
 
-#include "vw.h"
-#include "vw_exception.h"
 #include <memory>
 
 int main(int argc, char** argv)

@@ -2,10 +2,9 @@
 // individual contributors. All rights reserved. Released under a BSD (revised)
 // license as described in the file LICENSE.
 
+#include "vw/common/vw_exception.h"
+
 #include <boost/test/unit_test.hpp>
-
-#include "vw_exception.h"
-
 #include <cerrno>
 
 BOOST_AUTO_TEST_CASE(check_strerr_can_retrieve_error_message) {

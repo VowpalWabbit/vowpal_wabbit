@@ -6,6 +6,7 @@ from typing import Any, Dict, Iterator, List, Optional, Tuple, Type, Union
 import pylibvw
 import warnings
 import inspect
+from pathlib import Path
 
 from enum import IntEnum
 
@@ -176,11 +177,10 @@ class VWOption:
             if self.is_flag():
                 return "--{}".format(self.name)
             else:
-                # missing list case
                 if isinstance(self.value, list):
-                    return "**NOT_IMPL**"
+                    return " ".join(map(lambda x: f"--{self.name}={x}", self.value))
                 else:
-                    return "--{} {}".format(self.name, self.value)
+                    return "--{}={}".format(self.name, self.value)
         else:
             return ""
 
@@ -623,8 +623,19 @@ class Workspace(pylibvw.vw):
         elif isinstance(ec, list):
             if not self._is_multiline():
                 raise TypeError("Expecting a mutiline Learner.")
-            ec = self.parse(ec)
-            new_example = True
+            if len(ec) == 0:
+                raise ValueError("An empty list is invalid")
+            if isinstance(ec[0], str):
+                ec = self.parse(ec)
+                new_example = True
+
+        if not isinstance(ec, Example) and not (
+            isinstance(ec, list) and isinstance(ec[0], Example)
+        ):
+            raise TypeError(
+                "expecting string, example object, or list of example objects"
+                " as ec argument for learn, got %s" % type(ec)
+            )
 
         if isinstance(ec, Example):
             if not getattr(ec, "setup_done", None):
@@ -672,10 +683,15 @@ class Workspace(pylibvw.vw):
         elif isinstance(ec, list):
             if not self._is_multiline():
                 raise TypeError("Expecting a multiline Learner.")
-            ec = self.parse(ec)
-            new_example = True
+            if len(ec) == 0:
+                raise ValueError("An empty list is invalid")
+            if isinstance(ec[0], str):
+                ec = self.parse(ec)
+                new_example = True
 
-        if not isinstance(ec, Example) and not isinstance(ec, list):
+        if not isinstance(ec, Example) and not (
+            isinstance(ec, list) and isinstance(ec[0], Example)
+        ):
             raise TypeError(
                 "expecting string, example object, or list of example objects"
                 " as ec argument for predict, got %s" % type(ec)
@@ -695,16 +711,16 @@ class Workspace(pylibvw.vw):
         if isinstance(ec, Example):
             prediction = ec.get_prediction(prediction_type)
         else:
-            prediction = ec[0].get_prediction(prediction_type)
+            prediction = ec[0].get_prediction(prediction_type)  # type: ignore
 
         if new_example:
             self.finish_example(ec)
 
         return prediction
 
-    def save(self, filename: str) -> None:
+    def save(self, filename: Union[str, Path]) -> None:
         """save model to disk"""
-        pylibvw.vw.save(self, filename)
+        pylibvw.vw.save(self, str(filename))
 
     def finish(self) -> None:
         """stop VW by calling finish (and, eg, write weights to disk)"""

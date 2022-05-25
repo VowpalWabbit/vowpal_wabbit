@@ -2,15 +2,15 @@
 // individual contributors. All rights reserved. Released under a BSD (revised)
 // license as described in the file LICENSE.
 
-#include "interactions.h"
+#include "vw/core/interactions.h"
 
-#include "constant.h"
-#include "gd_predict.h"
-#include "interactions_predict.h"
-#include "parse_args.h"
-#include "reductions/gd.h"
 #include "test_common.h"
-#include "vw.h"
+#include "vw/core/constant.h"
+#include "vw/core/gd_predict.h"
+#include "vw/core/interactions_predict.h"
+#include "vw/core/parse_args.h"
+#include "vw/core/reductions/gd.h"
+#include "vw/core/vw.h"
 
 #include <array>
 #include <boost/test/test_tools.hpp>

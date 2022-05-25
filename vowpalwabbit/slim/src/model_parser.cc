@@ -1,9 +1,16 @@
-#include "model_parser.h"
+#include "vw/slim/model_parser.h"
 
 namespace vw_slim
 {
 model_parser::model_parser(const char* model, size_t length)
-    : _model_begin(model), _model(model), _model_end(model + length), _checksum(0)
+    :
+#ifdef MODEL_PARSER_DEBUG
+    _model_begin(model)
+    ,
+#endif
+    _model(model)
+    , _model_end(model + length)
+    , _checksum(0)
 {
 #ifdef MODEL_PARSER_DEBUG
   std::cout << "moder_parser("
