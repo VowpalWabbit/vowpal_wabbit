@@ -332,10 +332,13 @@ void cb_explore_adf_large_action_space::predict_or_learn_impl(VW::LEARNER::multi
 
     auto& preds = examples[0]->pred.a_s;
 
-    float min_ck = std::min_element(preds.begin(), preds.end(), VW::action_score_compare_lt)->score;
+    if (_d < preds.size())
+    {
+      float min_ck = std::min_element(preds.begin(), preds.end(), VW::action_score_compare_lt)->score;
+      calculate_shrink_factor(preds, min_ck);
 
-    calculate_shrink_factor(preds, min_ck);
-    if (_d < preds.size()) { randomized_SVD(examples); }
+      randomized_SVD(examples);
+    }
 
     // TODO apply spanner on U
   }
