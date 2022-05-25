@@ -1,4 +1,4 @@
-﻿// --------------------------------------------------------------------------------------------------------------------
+// --------------------------------------------------------------------------------------------------------------------
 // <copyright file="ReflectionHelper.cs">
 //   Copyright (c) by respective owners including Yahoo!, Microsoft, and
 //   individual contributors. All rights reserved.  Released under a BSD
@@ -31,6 +31,10 @@ namespace VW.Reflection
         /// <remarks>Can't constraint on Func (or would have to have 11 overloads) nor is it possible to constaint on delegate.</remarks>
         public static System.Delegate CompileToFunc<T>(this Expression<T> sourceExpression)
         {
+#if NETSTANDARD
+            throw new PlatformNotSupportedException("ReflectionHelper does not work in .Net Standard mode.");
+#else
+
             // inspect T to be Func<...>
             var funcType = typeof(T);
 
@@ -53,8 +57,11 @@ namespace VW.Reflection
             }
             asmName.KeyPair = kp;
 
-            var dynAsm = AppDomain.CurrentDomain.DefineDynamicAssembly(asmName, AssemblyBuilderAccess.RunAndSave);
-
+            #if NETSTANDARD
+            var dynAsm = AssemblyBuilder.DefineDynamicAssembly(asmName, AssemblyBuilderAccess.Run);
+            #else
+            var dynAsm = AppDomain.CurrentDomain.DefineDynamicAssembly(asmName, AssemblyBuilderAccess.Run);
+            #endif
             // Create a dynamic module and type
             //#if !DEBUG
             //var moduleBuilder = dynAsm.DefineDynamicModule("VowpalWabbitSerializerModule", asmName.Name + ".dll", true);
@@ -77,8 +84,8 @@ namespace VW.Reflection
             //var debugInfoGenerator = DebugInfoGenerator.CreatePdbGenerator();
             //visit.CompileToMethod(methodBuilder, debugInfoGenerator);
             //#else
+
             sourceExpression.CompileToMethod(methodBuilder);
-            //#endif
 
             var dynType = typeBuilder.CreateType();
 
@@ -86,6 +93,8 @@ namespace VW.Reflection
             // dynAsm.Save(@"my.dll");
 
             return Delegate.CreateDelegate(typeof(T), dynType.GetMethod(methodName));
+
+#endif
         }
 
         /// <summary>

@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Diagnostics.Contracts;
 using System.Linq;
@@ -85,7 +85,11 @@ namespace VW.Serializer
                             typeof(IEnumerable<TActionDependentFeature>)),
                     exampleParameter);
 
+#if !NETSTANDARD
                 this.adfAccessor = (Func<TExample, IEnumerable<TActionDependentFeature>>)expr.CompileToFunc();
+#else
+                this.adfAccessor = expr.Compile();
+#endif
             }
 
             public int GetNumberOfActionDependentExamples(TExample example)

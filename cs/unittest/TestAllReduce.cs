@@ -44,6 +44,7 @@ namespace cs_unittest
 
         [TestMethod]
         [TestCategory("Vowpal Wabbit")]
+        //[Ignore]
         public async Task TestAllReduce()
         {
             var data = Enumerable.Range(1, 1000).Select(_ => Generator.GenerateShared(10)).ToList();

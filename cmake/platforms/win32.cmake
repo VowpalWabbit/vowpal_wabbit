@@ -9,6 +9,9 @@ if(WIN32)
 
   option(vw_BUILD_NET_FRAMEWORK "Build .NET Framework targets" OFF)
 
+  # TODO: This is not Windows-Only...
+  option(vw_BUILD_NET_CORE "Build .NET Core targets" OFF)
+
   if (vw_BUILD_NET_FRAMEWORK)
     cmake_minimum_required(VERSION 3.14)
     set(CMAKE_DOTNET_TARGET_FRAMEWORK_VERSION  "v4.5.2" CACHE INTERNAL ".NET Framework SDK version to target.")
@@ -19,6 +22,26 @@ if(WIN32)
     # windows and redirect all targets to the same place.
     SET(vw_win32_CMAKE_RUNTIME_OUTPUT_DIRECTORY_backup ${CMAKE_RUNTIME_OUTPUT_DIRECTORY})
     SET(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/binaries/")
+  elseif (vw_BUILD_NET_CORE)
+    cmake_minimum_required(VERSION 3.14)
+
+    #TODO: NEEDED?
+
+    # The MSBuild system does not get properly enlightened to C++ projects (for chaining dependencies) when
+    # set up through CMake (TODO: How to fix this?). This makes it so native dependencies of the underlying VW
+    # native library do not get passed through the project reference properly. The fix is to do the same as on
+    # windows and redirect all targets to the same place.
+    SET(vw_win32_CMAKE_RUNTIME_OUTPUT_DIRECTORY_backup ${CMAKE_RUNTIME_OUTPUT_DIRECTORY})
+
+    if (vw_DOTNET_USE_MSPROJECT)
+      SET(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/binaries/x64")
+    else()
+      SET(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/binaries/")
+    endif()
+
+    add_custom_target(launch_vs COMMAND set "BinaryOutputBase=${CMAKE_BINARY_DIR}/binaries" && start "${CMAKE_BINARY_DIR}/vowpal_wabbit.sln")
+  else()
+    add_custom_target(launch_vs COMMAND start "${CMAKE_CACHEFILE_DIR}/vowpal_wabbit.sln")
   endif()
 else()
   message(FATAL_ERROR "Loading Win32-specific configuration under a non-Win32 build.")

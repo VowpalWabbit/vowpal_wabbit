@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
@@ -6,6 +7,38 @@ using VW;
 
 namespace cs_unittest
 {
+    [TestClass]
+    public class BuilderTestClass : TestBase
+    {
+        [TestMethod]
+        [TestCategory("Vowpal Wabbit/example builder")]
+        public void TestBuilderSimple()
+        {
+          using (VowpalWabbit vw = new VowpalWabbit(""))
+          {
+            VowpalWabbitExample e;
+
+            using (var exampleBuilder = new VowpalWabbitExampleBuilder(vw))
+            using (var nsBuilder = exampleBuilder.AddNamespace('U'))
+                {
+                    ulong nsHash = vw.HashSpace("User");
+                    nsBuilder.AddFeature(vw.HashFeature("e1", nsHash), 0.3425f);
+
+                    e = exampleBuilder.CreateExample();
+                }
+
+            foreach (var n in e)
+                {
+                    Debug.WriteLine($"+ ({n.Index})=>'{(char)n.Index}'");
+                    foreach (var f in n)
+                    {
+                        Debug.WriteLine($"-- {f.WeightIndex}:{f.X}");
+                    }
+                }
+          }
+        }
+    }
+
     [TestClass]
     public class Test3Class : TestBase
     {

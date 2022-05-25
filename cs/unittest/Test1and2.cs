@@ -45,6 +45,9 @@ namespace cs_test
 
                         Assert.AreEqual((float)expected, actual, 1e-6, "Learn output differs on line: " + lineNr);
 
+                        ulong vwStr_examplesPerPass = vwStr.PerformanceStatistics.NumberOfExamplesPerPass;
+                        ulong vwNative_examplesPerPass = vw.Native.PerformanceStatistics.NumberOfExamplesPerPass;
+
                         lineNr++;
                     }));
 

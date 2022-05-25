@@ -43,7 +43,7 @@ namespace VW.Serializer
 
             internal bool EnableStringFloatCompact { get; set; }
 
-            internal List<Type> CustomFeaturizer { get; set; }
+            internal IList<Type> CustomFeaturizer { get; set; }
 
             public override bool Equals(object obj)
             {
