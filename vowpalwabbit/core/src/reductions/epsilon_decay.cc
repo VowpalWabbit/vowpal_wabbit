@@ -86,7 +86,7 @@ void predict(
   if (!data._constant_epsilon)
   {
     auto& ep_fts = examples[0]->_reduction_features.template get<VW::cb_explore_adf::greedy::reduction_features>();
-    auto& active_score = data._scored_configs[K - 1][K - 1];
+    const auto& active_score = data._scored_configs[K - 1][K - 1];
     ep_fts.epsilon = VW::reductions::epsilon_decay::decayed_epsilon(active_score.update_count);
   }
   base.predict(examples, data._weight_indices[K - 1]);
