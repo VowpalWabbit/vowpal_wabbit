@@ -126,7 +126,7 @@ void cb_explore_adf_large_action_space::calculate_shrink_factor(const ACTION_SCO
 {
   shrink_factors.clear();
   for (size_t i = 0; i < preds.size(); i++)
-  { shrink_factors.push_back(std::sqrt(1 + _d + (_gamma / 4.0f * _d) * (preds[i].score - min_ck))); }
+  { shrink_factors.push_back(std::sqrt(1 + _d + _gamma / (4.0f * _d) * (preds[i].score - min_ck))); }
 }
 
 inline void just_add_weights(float& p, float, float fw) { p += fw; }
@@ -332,10 +332,13 @@ void cb_explore_adf_large_action_space::predict_or_learn_impl(VW::LEARNER::multi
 
     auto& preds = examples[0]->pred.a_s;
 
-    float min_ck = std::min_element(preds.begin(), preds.end(), VW::action_score_compare_lt)->score;
+    if (_d < preds.size())
+    {
+      float min_ck = std::min_element(preds.begin(), preds.end(), VW::action_score_compare_lt)->score;
+      calculate_shrink_factor(preds, min_ck);
 
-    calculate_shrink_factor(preds, min_ck);
-    if (_d < preds.size()) { randomized_SVD(examples); }
+      randomized_SVD(examples);
+    }
 
     // TODO apply spanner on U
   }
@@ -351,7 +354,7 @@ VW::LEARNER::base_learner* VW::reductions::cb_explore_adf_large_action_space_set
   bool cb_explore_adf_option = false;
   bool large_action_space = false;
   uint64_t d;
-  float gamma;
+  float gamma = 0;
 
   config::option_group_definition new_options(
       "[Reduction] Experimental: Contextual Bandit Exploration with ADF with large action space");
