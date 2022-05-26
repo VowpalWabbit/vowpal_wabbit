@@ -844,7 +844,7 @@ BOOST_AUTO_TEST_CASE(check_finding_max_volume)
   auto& vw = *VW::initialize(
       "--cb_explore_adf --large_action_space --max_actions " + std::to_string(d) + " --quiet --random_seed 5", nullptr,
       false, nullptr, nullptr);
-  VW::cb_explore_adf::cb_explore_adf_large_action_space largecb(0, 1, &vw);
+  VW::cb_explore_adf::cb_explore_adf_large_action_space largecb(0, 1, false, &vw);
   largecb.U = Eigen::MatrixXf{{1, 2, 3}, {4, 5, 6}, {7, 8, 9}, {0, 0, 0}, {7, 5, 3}, {6, 4, 8}};
   Eigen::MatrixXf X{{1, 2, 3}, {3, 2, 1}, {2, 1, 3}};
 
@@ -939,30 +939,45 @@ BOOST_AUTO_TEST_CASE(check_spanner_results)
 BOOST_AUTO_TEST_CASE(check_uniform_probabilities_before_learning)
 {
   auto d = 2;
-  auto& vw = *VW::initialize(
+  std::vector<std::pair<VW::workspace*, bool>> vws;
+  auto* vw_epsilon = VW::initialize(
       "--cb_explore_adf --large_action_space --max_actions " + std::to_string(d) + " --quiet --random_seed 5", nullptr,
       false, nullptr, nullptr);
 
-  VW::LEARNER::multi_learner* learner =
-      as_multiline(vw.l->get_learner_by_name_prefix("cb_explore_adf_large_action_space"));
+  vws.push_back({vw_epsilon, false});
 
+  auto* vw_squarecb = VW::initialize("--cb_explore_adf --squarecb --large_action_space --max_actions " +
+          std::to_string(d) + " --quiet --random_seed 5",
+      nullptr, false, nullptr, nullptr);
+
+  vws.push_back({vw_squarecb, true});
+
+  for (auto& vw_pair : vws)
   {
-    VW::multi_ex examples;
+    auto& vw = *std::get<0>(vw_pair);
+    auto apply_diag_M = std::get<1>(vw_pair);
 
-    examples.push_back(VW::read_example(vw, "| 1 2 3"));
-    examples.push_back(VW::read_example(vw, "| a_1 a_2 a_3"));
-    examples.push_back(VW::read_example(vw, "| a_4 a_5 a_6"));
+    VW::LEARNER::multi_learner* learner =
+        as_multiline(vw.l->get_learner_by_name_prefix("cb_explore_adf_large_action_space"));
 
-    learner->predict(examples);
+    {
+      VW::multi_ex examples;
 
-    const auto num_actions = examples.size();
-    const auto& preds = examples[0]->pred.a_s;
-    BOOST_CHECK_EQUAL(preds.size(), num_actions);
-    for (const auto& pred : preds) { BOOST_CHECK_CLOSE(pred.score, 1.0 / 3, FLOAT_TOL); }
+      examples.push_back(VW::read_example(vw, "| 1 2 3"));
+      examples.push_back(VW::read_example(vw, "| a_1 a_2 a_3"));
+      examples.push_back(VW::read_example(vw, "| a_4 a_5 a_6"));
 
-    vw.finish_example(examples);
+      learner->predict(examples);
+
+      const auto num_actions = examples.size();
+      const auto& preds = examples[0]->pred.a_s;
+      BOOST_CHECK_EQUAL(preds.size(), num_actions);
+      for (const auto& pred : preds) { BOOST_CHECK_CLOSE(pred.score, 1.0 / 3, FLOAT_TOL); }
+
+      vw.finish_example(examples);
+    }
+    VW::finish(vw);
   }
-  VW::finish(vw);
 }
 
 BOOST_AUTO_TEST_CASE(check_probabilities_when_d_is_larger)
