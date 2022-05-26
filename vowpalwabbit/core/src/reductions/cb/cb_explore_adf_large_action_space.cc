@@ -121,11 +121,12 @@ void cb_explore_adf_large_action_space::learn(VW::LEARNER::multi_learner& base, 
 }
 
 cb_explore_adf_large_action_space::cb_explore_adf_large_action_space(
-    uint64_t d, float gamma_scale, float gamma_exponent, bool apply_shrink_factor, VW::workspace* all)
+    uint64_t d, float gamma_scale, float gamma_exponent, float c, bool apply_shrink_factor, VW::workspace* all)
     : _d(d)
     , _gamma(0.f)
     , _gamma_scale(gamma_scale)
     , _gamma_exponent(gamma_exponent)
+    , _c(c)
     , _apply_shrink_factor(apply_shrink_factor)
     , _all(all)
     , _seed(all->get_random_state()->get_current_state() * 10.f)
@@ -365,19 +366,19 @@ std::pair<float, uint64_t> cb_explore_adf_large_action_space::find_max_volume(ui
 
   float max_volume = -1.0f;
   uint64_t U_rid{};
-  Eigen::RowVectorXf original_row = X.row(X_rid);
+  const Eigen::RowVectorXf original_row = X.row(X_rid);
 
-  for (auto i{0}; i < U.rows(); ++i)
+  for (auto i = 0; i < U.rows(); ++i)
   {
     X.row(X_rid) = U.row(i);
-    float volume = abs(X.determinant());
+    const float volume = std::abs(X.determinant());
     if (volume > max_volume)
     {
       max_volume = volume;
       U_rid = i;
     }
-    X.row(X_rid) = original_row;
   }
+  X.row(X_rid) = original_row;
 
   assert(max_volume >= 0.0f);
   return {max_volume, U_rid};
@@ -400,9 +401,8 @@ void cb_explore_adf_large_action_space::compute_spanner()
   }
 
   // Transform the basis into C-approximate spanner.
-  constexpr int C = 2;  // TODO make this a parameter?
   float X_volume = std::abs(X.determinant());
-  for (int iter = 0; iter < static_cast<int>(_d * log(_d)); ++iter)
+  for (int iter = 0; iter < static_cast<int>(_d * std::log(_d) / std::log(_c)); ++iter)
   {
     bool found_larger_volume = false;
 
@@ -410,8 +410,8 @@ void cb_explore_adf_large_action_space::compute_spanner()
     for (uint64_t X_rid = 0; X_rid < _d; ++X_rid)
     {
       const auto max_volume_and_row_id = find_max_volume(X_rid, X);
-      float max_volume = max_volume_and_row_id.first;
-      if (max_volume > C * X_volume)
+      const float max_volume = max_volume_and_row_id.first;
+      if (max_volume > _c * X_volume)
       {
         uint64_t U_rid = max_volume_and_row_id.second;
         X.row(X_rid) = U.row(U_rid);
@@ -474,7 +474,7 @@ void cb_explore_adf_large_action_space::predict_or_learn_impl(VW::LEARNER::multi
     // Set the exploration distribution over S and the minimizer.
     _spanner_bitvec[min_ck_idx] = false;
     float sum_scores = 0.0f;
-    for (auto i{0u}; i < preds.size(); ++i)
+    for (auto i = 0u; i < preds.size(); ++i)
     {
       if (_spanner_bitvec[i])
       {
@@ -500,8 +500,9 @@ VW::LEARNER::base_learner* VW::reductions::cb_explore_adf_large_action_space_set
   bool cb_explore_adf_option = false;
   bool large_action_space = false;
   uint64_t d;
-  float gamma_scale = 1.;
-  float gamma_exponent = 0.;
+  float gamma_scale = 1.f;
+  float gamma_exponent = 0.f;
+  float c;
   bool apply_shrink_factor = false;
 
   config::option_group_definition new_options(
@@ -521,6 +522,12 @@ VW::LEARNER::base_learner* VW::reductions::cb_explore_adf_large_action_space_set
                .allow_override()
                .default_value(50)
                .help("Max number of actions to explore")
+               .experimental())
+      .add(make_option("spanner_c", c)
+               .keep()
+               .allow_override()
+               .default_value(2)
+               .help("Parameter for computing c-approximate spanner")
                .experimental());
 
   auto enabled = options.add_parse_and_check_necessary(new_options) && large_action_space;
@@ -560,7 +567,7 @@ VW::LEARNER::base_learner* VW::reductions::cb_explore_adf_large_action_space_set
   bool with_metrics = options.was_supplied("extra_metrics");
 
   using explore_type = cb_explore_adf_base<cb_explore_adf_large_action_space>;
-  auto data = VW::make_unique<explore_type>(with_metrics, d, gamma_scale, gamma_exponent, apply_shrink_factor, &all);
+  auto data = VW::make_unique<explore_type>(with_metrics, d, gamma_scale, gamma_exponent, c, apply_shrink_factor, &all);
 
   auto* l = make_reduction_learner(std::move(data), base, explore_type::learn, explore_type::predict,
       stack_builder.get_setupfn_name(cb_explore_adf_large_action_space_setup))

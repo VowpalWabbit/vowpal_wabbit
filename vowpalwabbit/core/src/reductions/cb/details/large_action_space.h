@@ -25,6 +25,7 @@ private:
   float _gamma;
   float _gamma_scale;
   float _gamma_exponent;
+  float _c = 2;
   bool _apply_shrink_factor;
   VW::workspace* _all;
   uint64_t _seed;
@@ -47,7 +48,7 @@ public:
   bool _set_all_svd_components = false;
 
   cb_explore_adf_large_action_space(
-      uint64_t d, float gamma_scale, float gamma_exponent, bool apply_shrink_factor, VW::workspace* all);
+      uint64_t d, float gamma_scale, float gamma_exponent, float c, bool apply_shrink_factor, VW::workspace* all);
   ~cb_explore_adf_large_action_space() = default;
   void save_load(io_buf& io, bool read, bool text);
 
