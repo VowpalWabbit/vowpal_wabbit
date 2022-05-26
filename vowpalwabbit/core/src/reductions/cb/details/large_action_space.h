@@ -22,6 +22,7 @@ struct cb_explore_adf_large_action_space
 private:
   uint64_t _d = 0;
   float _gamma = 1;
+  float _c = 2;
   VW::workspace* _all;
   uint64_t _seed = 0;
   std::vector<Eigen::Triplet<float>> _triplets;
@@ -40,7 +41,7 @@ public:
   VW::v_array<float> shrink_factors;
   bool _set_all_svd_components = false;
 
-  cb_explore_adf_large_action_space(uint64_t d, float gamma, VW::workspace* all);
+  cb_explore_adf_large_action_space(uint64_t d, float gamma, float c, VW::workspace* all);
   ~cb_explore_adf_large_action_space() = default;
 
   // Should be called through cb_explore_adf_base for pre/post-processing

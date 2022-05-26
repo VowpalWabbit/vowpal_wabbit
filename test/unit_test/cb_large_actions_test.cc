@@ -567,7 +567,7 @@ BOOST_AUTO_TEST_CASE(check_finding_max_volume)
   auto& vw = *VW::initialize(
       "--cb_explore_adf --large_action_space --max_actions " + std::to_string(d) + " --quiet --random_seed 5", nullptr,
       false, nullptr, nullptr);
-  VW::cb_explore_adf::cb_explore_adf_large_action_space largecb(0, 1, &vw);
+  VW::cb_explore_adf::cb_explore_adf_large_action_space largecb(/*d=*/d, /*gamma=*/1, /*c=*/2, &vw);
   largecb.U = Eigen::MatrixXf{{1, 2, 3}, {4, 5, 6}, {7, 8, 9}, {0, 0, 0}, {7, 5, 3}, {6, 4, 8}};
   Eigen::MatrixXf X{{1, 2, 3}, {3, 2, 1}, {2, 1, 3}};
 
