@@ -312,7 +312,11 @@ bool cb_explore_adf_large_action_space::_generate_A(const multi_ex& examples)
 }
 
 void cb_explore_adf_large_action_space::_populate_all_SVD_components() { _set_all_svd_components = true; }
-void cb_explore_adf_large_action_space::set_rank(uint64_t rank) { _d = rank; }
+void cb_explore_adf_large_action_space::_set_rank(uint64_t rank)
+{
+  _d = rank;
+  _action_indices.resize(_d);
+}
 
 void cb_explore_adf_large_action_space::randomized_SVD(const multi_ex& examples)
 {

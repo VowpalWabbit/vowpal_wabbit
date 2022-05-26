@@ -55,11 +55,11 @@ public:
   void randomized_SVD(const multi_ex& examples);
   std::pair<float, uint64_t> find_max_volume(uint64_t x_row, Eigen::MatrixXf& X);
   void compute_spanner();
-  void set_rank(uint64_t rank);
 
   // the below methods are used only during unit testing and are not called otherwise
   bool _generate_A(const multi_ex& examples);
   void _populate_all_SVD_components();
+  void _set_rank(uint64_t rank);
 
 private:
   template <bool is_learn>

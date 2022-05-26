@@ -710,7 +710,7 @@ BOOST_AUTO_TEST_CASE(check_final_truncated_SVD_validity)
       Eigen::FullPivLU<Eigen::MatrixXf> lu_decomp(A);
       auto rank = lu_decomp.rank();
       // for test set actual rank of A
-      action_space->explore.set_rank(rank);
+      action_space->explore._set_rank(rank);
       // should have a rank larger than 1 for the test
       BOOST_CHECK_GT(rank, 1);
     }
