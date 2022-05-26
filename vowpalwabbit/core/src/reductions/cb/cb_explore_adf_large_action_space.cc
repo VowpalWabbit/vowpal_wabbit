@@ -366,7 +366,7 @@ void cb_explore_adf_large_action_space::compute_spanner()
 
   // Transform the basis into C-approximate spanner.
   constexpr int C = 2;  // TODO make this a parameter?
-  float X_volume = abs(X.determinant());
+  float X_volume = std::abs(X.determinant());
   for (int iter = 0; iter < static_cast<int>(_d * log(_d)); ++iter)
   {
     bool found_larger_volume = false;
@@ -409,9 +409,9 @@ void cb_explore_adf_large_action_space::predict_or_learn_impl(VW::LEARNER::multi
     const auto min_ck_idx = std::min_element(preds.begin(), preds.end(), VW::action_score_compare_lt) - preds.begin();
     const float min_ck = preds[min_ck_idx].score;
 
-    calculate_shrink_factor(preds, min_ck);
     if (_d < preds.size())
     {
+      calculate_shrink_factor(preds, min_ck);
       randomized_SVD(examples);
 
       if (U.rows() == 0)
@@ -460,7 +460,7 @@ VW::LEARNER::base_learner* VW::reductions::cb_explore_adf_large_action_space_set
   bool cb_explore_adf_option = false;
   bool large_action_space = false;
   uint64_t d;
-  float gamma;
+  float gamma = 0;
 
   config::option_group_definition new_options(
       "[Reduction] Experimental: Contextual Bandit Exploration with ADF with large action space");

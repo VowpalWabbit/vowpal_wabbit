@@ -476,7 +476,7 @@ TEST(VowpalWabbitSlim, interaction_num_bits_bug)
   input.seekg(0, std::ios::end);
   auto length = input.tellg();
   input.seekg(0, std::ios::beg);
-  std::unique_ptr<char> buffer_ptr(new char[length]);
+  std::unique_ptr<char[]> buffer_ptr(new char[length]);
   input.read(buffer_ptr.get(),
       length);  // Extract how many bytes need to be decoded and resize the payload based on those bytes.
 
@@ -773,7 +773,7 @@ TEST(ColdStartModel, action_set_not_reordered)
   input.seekg(0, std::ios::end);
   auto length = input.tellg();
   input.seekg(0, std::ios::beg);
-  std::unique_ptr<char> buffer_ptr(new char[length]);
+  std::unique_ptr<char[]> buffer_ptr(new char[length]);
   input.read(buffer_ptr.get(), length);
 
   vw_slim::vw_predict<sparse_parameters> vw;

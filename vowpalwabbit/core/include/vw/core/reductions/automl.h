@@ -77,8 +77,6 @@ struct config_manager
   // tracked by 'live_slot' into the example.
   // the impl is responsible of tracking this config-live_slot mapping
   void apply_config(example*, uint64_t);
-  // This fn is the 'undo' of configure_interactions
-  void revert_config(example*);
   void persist(metric_sink&, bool);
 
   // Public Chacha functions
@@ -106,6 +104,7 @@ struct interaction_config_manager : config_manager
   priority_func* calc_priority;
   double automl_alpha;
   double automl_tau;
+  VW::io::logger* logger;
 
   // Stores all namespaces currently seen -- Namespace switch could we use array, ask Jack
   std::map<namespace_index, uint64_t> ns_counter;
@@ -120,11 +119,10 @@ struct interaction_config_manager : config_manager
   std::priority_queue<std::pair<float, uint64_t>> index_queue;
 
   interaction_config_manager(uint64_t, uint64_t, std::shared_ptr<VW::rand_state>, uint64_t, bool, std::string,
-      dense_parameters&, float (*)(const exclusion_config&, const std::map<namespace_index, uint64_t>&), double,
-      double);
+      dense_parameters&, float (*)(const exclusion_config&, const std::map<namespace_index, uint64_t>&), double, double,
+      VW::io::logger*);
 
   void apply_config(example*, uint64_t);
-  void revert_config(example*);
   void persist(metric_sink&, bool);
 
   // Public Chacha functions
@@ -150,8 +148,9 @@ struct automl
 {
   automl_state current_state = automl_state::Collecting;
   std::unique_ptr<CMType> cm;
+  VW::io::logger* logger;
   LEARNER::multi_learner* adf_learner = nullptr;  //  re-use print from cb_explore_adf
-  automl(std::unique_ptr<CMType> cm) : cm(std::move(cm)) {}
+  automl(std::unique_ptr<CMType> cm, VW::io::logger* logger) : cm(std::move(cm)), logger(logger) {}
   // This fn gets called before learning any example
   void one_step(multi_learner&, multi_ex&, CB::cb_class&, uint64_t);
   void offset_learn(multi_learner&, multi_ex&, CB::cb_class&, uint64_t);
