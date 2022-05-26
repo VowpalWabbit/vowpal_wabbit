@@ -62,16 +62,18 @@ private:
   uint64_t _seed;
   std::vector<Eigen::Triplet<float>>& _triplets;
   uint64_t& _max_col;
+  const std::vector<float>& _shrink_factors;
 
 public:
   Y_triplet_constructor(WeightsT& weights, uint64_t row_index, uint64_t column_index, uint64_t seed,
-      std::vector<Eigen::Triplet<float>>& triplets, uint64_t& max_col)
+      std::vector<Eigen::Triplet<float>>& triplets, uint64_t& max_col, const std::vector<float>& shrink_factors)
       : _weights(weights)
       , _row_index(row_index)
       , _column_index(column_index)
       , _seed(seed)
       , _triplets(triplets)
       , _max_col(max_col)
+      , _shrink_factors(shrink_factors)
   {
   }
 
@@ -80,7 +82,8 @@ public:
     if (_weights[index] != 0.f)
     {
       auto combined_index = _row_index + _column_index + _seed;
-      auto calc = _weights[index] * merand48_boxmuller(combined_index);
+      // _weights[index] is the equivalent of going over A's rows which turn out to be A.transpose()'s columns
+      auto calc = _weights[index] * merand48_boxmuller(combined_index) * _shrink_factors[_row_index];
       _triplets.emplace_back(Eigen::Triplet<float>(index & _weights.mask(), _column_index, calc));
       if ((index & _weights.mask()) > _max_col) { _max_col = (index & _weights.mask()); }
     }
@@ -118,17 +121,41 @@ void cb_explore_adf_large_action_space::learn(VW::LEARNER::multi_learner& base, 
 }
 
 cb_explore_adf_large_action_space::cb_explore_adf_large_action_space(
-    uint64_t d, float gamma, float c, VW::workspace* all)
-    : _d(d), _gamma(gamma), _c(c), _all(all), _seed(all->get_random_state()->get_current_state() * 10.f)
+    uint64_t d, float gamma_scale, float gamma_exponent, float c, bool apply_shrink_factor, VW::workspace* all)
+    : _d(d)
+    , _gamma(0.f)
+    , _gamma_scale(gamma_scale)
+    , _gamma_exponent(gamma_exponent)
+    , _c(c)
+    , _apply_shrink_factor(apply_shrink_factor)
+    , _all(all)
+    , _seed(all->get_random_state()->get_current_state() * 10.f)
+    , _counter(0)
 {
   _action_indices.resize(_d);
 }
 
-void cb_explore_adf_large_action_space::calculate_shrink_factor(const ACTION_SCORE::action_scores& preds, float min_ck)
+void cb_explore_adf_large_action_space::save_load(io_buf& io, bool read, bool text)
 {
-  shrink_factors.clear();
-  for (size_t i = 0; i < preds.size(); i++)
-  { shrink_factors.push_back(std::sqrt(1 + _d + _gamma / (4.0f * _d) * (preds[i].score - min_ck))); }
+  if (io.num_files() == 0) { return; }
+  std::stringstream msg;
+  if (!read) { msg << "cb large action space storing example counter:  = " << _counter << "\n"; }
+  bin_text_read_write_fixed_validated(io, reinterpret_cast<char*>(&_counter), sizeof(_counter), read, msg, text);
+}
+
+void cb_explore_adf_large_action_space::calculate_shrink_factor(const ACTION_SCORE::action_scores& preds)
+{
+  if (_apply_shrink_factor)
+  {
+    shrink_factors.clear();
+    float min_ck = std::min_element(preds.begin(), preds.end(), VW::action_score_compare_lt)->score;
+    for (size_t i = 0; i < preds.size(); i++)
+    { shrink_factors.push_back(std::sqrt(1 + _d + _gamma / (4.0f * _d) * (preds[i].score - min_ck))); }
+  }
+  else
+  {
+    shrink_factors.resize(preds.size(), 1.f);
+  }
 }
 
 inline void just_add_weights(float& p, float, float fw) { p += fw; }
@@ -195,7 +222,7 @@ void cb_explore_adf_large_action_space::generate_B(const multi_ex& examples)
             _all->permutations, *ex, final_dot_prod, _all->_generate_interactions_object_cache);
       }
 
-      B(row_index, col) = final_dot_prod;
+      B(row_index, col) = shrink_factors[row_index] * final_dot_prod;
     }
     row_index++;
   }
@@ -216,7 +243,7 @@ bool cb_explore_adf_large_action_space::generate_Y(const multi_ex& examples)
       if (_all->weights.sparse)
       {
         Y_triplet_constructor<sparse_parameters> tc(
-            _all->weights.sparse_weights, row_index, col, _seed, _triplets, max_non_zero_col);
+            _all->weights.sparse_weights, row_index, col, _seed, _triplets, max_non_zero_col, shrink_factors);
         GD::foreach_feature<Y_triplet_constructor<sparse_parameters>, uint64_t, triplet_construction,
             sparse_parameters>(_all->weights.sparse_weights, _all->ignore_some_linear, _all->ignore_linear,
             _all->interactions, _all->extent_interactions, _all->permutations, *ex, tc,
@@ -225,7 +252,7 @@ bool cb_explore_adf_large_action_space::generate_Y(const multi_ex& examples)
       else
       {
         Y_triplet_constructor<dense_parameters> tc(
-            _all->weights.dense_weights, row_index, col, _seed, _triplets, max_non_zero_col);
+            _all->weights.dense_weights, row_index, col, _seed, _triplets, max_non_zero_col, shrink_factors);
         GD::foreach_feature<Y_triplet_constructor<dense_parameters>, uint64_t, triplet_construction, dense_parameters>(
             _all->weights.dense_weights, _all->ignore_some_linear, _all->ignore_linear, _all->interactions,
             _all->extent_interactions, _all->permutations, *ex, tc, _all->_generate_interactions_object_cache);
@@ -297,7 +324,11 @@ bool cb_explore_adf_large_action_space::_generate_A(const multi_ex& examples)
 }
 
 void cb_explore_adf_large_action_space::_populate_all_SVD_components() { _set_all_svd_components = true; }
-void cb_explore_adf_large_action_space::set_rank(uint64_t rank) { _d = rank; }
+void cb_explore_adf_large_action_space::_set_rank(uint64_t rank)
+{
+  _d = rank;
+  _action_indices.resize(_d);
+}
 
 void cb_explore_adf_large_action_space::randomized_SVD(const multi_ex& examples)
 {
@@ -399,7 +430,11 @@ void cb_explore_adf_large_action_space::compute_spanner()
 template <bool is_learn>
 void cb_explore_adf_large_action_space::predict_or_learn_impl(VW::LEARNER::multi_learner& base, multi_ex& examples)
 {
-  if (is_learn) { base.learn(examples); }
+  if (is_learn)
+  {
+    base.learn(examples);
+    ++_counter;
+  }
   else
   {
     base.predict(examples);
@@ -408,10 +443,11 @@ void cb_explore_adf_large_action_space::predict_or_learn_impl(VW::LEARNER::multi
 
     const auto min_ck_idx = std::min_element(preds.begin(), preds.end(), VW::action_score_compare_lt) - preds.begin();
     const float min_ck = preds[min_ck_idx].score;
+    _gamma = _gamma_scale * static_cast<float>(std::pow(_counter, _gamma_exponent));
 
     if (_d < preds.size())
     {
-      calculate_shrink_factor(preds, min_ck);
+      calculate_shrink_factor(preds);
       randomized_SVD(examples);
 
       if (U.rows() == 0)
@@ -460,8 +496,10 @@ VW::LEARNER::base_learner* VW::reductions::cb_explore_adf_large_action_space_set
   bool cb_explore_adf_option = false;
   bool large_action_space = false;
   uint64_t d;
+  float gamma_scale = 1.f;
+  float gamma_exponent = 0.f;
   float c;
-  float gamma = 0;
+  bool apply_shrink_factor = false;
 
   config::option_group_definition new_options(
       "[Reduction] Experimental: Contextual Bandit Exploration with ADF with large action space");
@@ -486,9 +524,7 @@ VW::LEARNER::base_learner* VW::reductions::cb_explore_adf_large_action_space_set
                .allow_override()
                .default_value(2)
                .help("Parameter for computing c-approximate spanner")
-               .experimental())
-      // TODO: Do we still need gamma if we aren't activating squarecb?
-      .add(make_option("gamma", gamma).keep().allow_override().help("Gamma hyperparameter"));
+               .experimental());
 
   auto enabled = options.add_parse_and_check_necessary(new_options) && large_action_space;
   if (!enabled) { return nullptr; }
@@ -498,6 +534,13 @@ VW::LEARNER::base_learner* VW::reductions::cb_explore_adf_large_action_space_set
   {
     options.insert("cb_adf", "");
     options.insert("no_predict", "");
+  }
+
+  if (options.was_supplied("squarecb"))
+  {
+    apply_shrink_factor = true;
+    gamma_scale = options.get_typed_option<float>("gamma_scale").value();
+    gamma_exponent = options.get_typed_option<float>("gamma_exponent").value();
   }
 
   if (options.was_supplied("cb_type"))
@@ -520,7 +563,7 @@ VW::LEARNER::base_learner* VW::reductions::cb_explore_adf_large_action_space_set
   bool with_metrics = options.was_supplied("extra_metrics");
 
   using explore_type = cb_explore_adf_base<cb_explore_adf_large_action_space>;
-  auto data = VW::make_unique<explore_type>(with_metrics, d, gamma, c, &all);
+  auto data = VW::make_unique<explore_type>(with_metrics, d, gamma_scale, gamma_exponent, c, apply_shrink_factor, &all);
 
   auto* l = make_reduction_learner(std::move(data), base, explore_type::learn, explore_type::predict,
       stack_builder.get_setupfn_name(cb_explore_adf_large_action_space_setup))
@@ -532,6 +575,7 @@ VW::LEARNER::base_learner* VW::reductions::cb_explore_adf_large_action_space_set
                 .set_finish_example(explore_type::finish_multiline_example)
                 .set_print_example(explore_type::print_multiline_example)
                 .set_persist_metrics(explore_type::persist_metrics)
+                .set_save_load(explore_type::save_load)
                 .build(&all.logger);
   return make_base(*l);
 }
