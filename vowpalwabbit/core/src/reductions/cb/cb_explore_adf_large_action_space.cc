@@ -120,13 +120,14 @@ void cb_explore_adf_large_action_space::learn(VW::LEARNER::multi_learner& base, 
 cb_explore_adf_large_action_space::cb_explore_adf_large_action_space(uint64_t d, float gamma, VW::workspace* all)
     : _d(d), _gamma(gamma), _all(all), _seed(all->get_random_state()->get_current_state() * 10.f)
 {
+  _action_indices.resize(_d);
 }
 
 void cb_explore_adf_large_action_space::calculate_shrink_factor(const ACTION_SCORE::action_scores& preds, float min_ck)
 {
   shrink_factors.clear();
   for (size_t i = 0; i < preds.size(); i++)
-  { shrink_factors.push_back(std::sqrt(1 + _d + (_gamma / 4.0f * _d) * (preds[i].score - min_ck))); }
+  { shrink_factors.push_back(std::sqrt(1 + _d + _gamma / (4.0f * _d) * (preds[i].score - min_ck))); }
 }
 
 inline void just_add_weights(float& p, float, float fw) { p += fw; }
@@ -322,6 +323,79 @@ void cb_explore_adf_large_action_space::randomized_SVD(const multi_ex& examples)
   }
 }
 
+std::pair<float, uint64_t> cb_explore_adf_large_action_space::find_max_volume(uint64_t X_rid, Eigen::MatrixXf& X)
+{
+  // Finds the max volume by replacing row X[X_rid] with some row in U.
+  // Returns the max volume, and the row id of U used for replacing X[X_rid].
+
+  float max_volume = -1.0f;
+  uint64_t U_rid{};
+  Eigen::RowVectorXf original_row = X.row(X_rid);
+
+  for (auto i{0}; i < U.rows(); ++i)
+  {
+    X.row(X_rid) = U.row(i);
+    float volume = abs(X.determinant());
+    if (volume > max_volume)
+    {
+      max_volume = volume;
+      U_rid = i;
+    }
+    X.row(X_rid) = original_row;
+  }
+
+  assert(max_volume >= 0.0f);
+  return {max_volume, U_rid};
+}
+
+void cb_explore_adf_large_action_space::compute_spanner()
+{
+  // Implements the C-approximate barycentric spanner algorithm in Figure 2 of the following paper
+  // Awerbuch & Kleinberg STOC'04: https://www.cs.cornell.edu/~rdk/papers/OLSP.pdf
+
+  assert(static_cast<uint64_t>(U.cols()) == _d);
+  Eigen::MatrixXf X = Eigen::MatrixXf::Identity(_d, _d);
+
+  // Compute a basis contained in U.
+  for (uint64_t X_rid = 0; X_rid < _d; ++X_rid)
+  {
+    uint64_t U_rid = find_max_volume(X_rid, X).second;
+    X.row(X_rid) = U.row(U_rid);
+    _action_indices[X_rid] = U_rid;
+  }
+
+  // Transform the basis into C-approximate spanner.
+  constexpr int C = 2;  // TODO make this a parameter?
+  float X_volume = std::abs(X.determinant());
+  for (int iter = 0; iter < static_cast<int>(_d * log(_d)); ++iter)
+  {
+    bool found_larger_volume = false;
+
+    // If replacing some row in X results in larger volume, replace it with the row from U.
+    for (uint64_t X_rid = 0; X_rid < _d; ++X_rid)
+    {
+      const auto max_volume_and_row_id = find_max_volume(X_rid, X);
+      float max_volume = max_volume_and_row_id.first;
+      if (max_volume > C * X_volume)
+      {
+        uint64_t U_rid = max_volume_and_row_id.second;
+        X.row(X_rid) = U.row(U_rid);
+        _action_indices[X_rid] = U_rid;
+
+        X_volume = max_volume;
+        found_larger_volume = true;
+        break;
+      }
+    }
+
+    if (!found_larger_volume) { break; }
+  }
+
+  _spanner_bitvec.clear();
+  _spanner_bitvec.resize(U.rows(), false);
+  for (uint64_t idx : _action_indices) { _spanner_bitvec[idx] = true; }
+}
+
 template <bool is_learn>
 void cb_explore_adf_large_action_space::predict_or_learn_impl(VW::LEARNER::multi_learner& base, multi_ex& examples)
 {
@@ -332,12 +406,47 @@ void cb_explore_adf_large_action_space::predict_or_learn_impl(VW::LEARNER::multi
 
     auto& preds = examples[0]->pred.a_s;
 
-    float min_ck = std::min_element(preds.begin(), preds.end(), VW::action_score_compare_lt)->score;
+    const auto min_ck_idx = std::min_element(preds.begin(), preds.end(), VW::action_score_compare_lt) - preds.begin();
+    const float min_ck = preds[min_ck_idx].score;
 
-    calculate_shrink_factor(preds, min_ck);
-    if (_d < preds.size()) { randomized_SVD(examples); }
+    if (_d < preds.size())
+    {
+      calculate_shrink_factor(preds, min_ck);
+      randomized_SVD(examples);
 
-    // TODO apply spanner on U
+      if (U.rows() == 0)
+      {
+        // Set uniform random probability for empty U.
+        const float prob = 1.0f / preds.size();
+        for (auto& pred : preds) { pred.score = prob; }
+        return;
+      }
+
+      compute_spanner();
+      assert(_spanner_bitvec.size() == preds.size());
+    }
+    else
+    {
+      _spanner_bitvec.clear();
+      _spanner_bitvec.resize(preds.size(), true);
+    }
+
+    // Set the exploration distribution over S and the minimizer.
+    _spanner_bitvec[min_ck_idx] = false;
+    float sum_scores = 0.0f;
+    for (auto i{0u}; i < preds.size(); ++i)
+    {
+      if (_spanner_bitvec[i])
+      {
+        preds[i].score = 1 / (1 + _d + _gamma / (4.0f * _d) * (preds[i].score - min_ck));
+        sum_scores += preds[i].score;
+      }
+      else
+      {
+        preds[i].score = 0.0f;
+      }
+    }
+    preds[min_ck_idx].score = 1.0f - sum_scores;
   }
 }
 }  // namespace cb_explore_adf
@@ -351,7 +460,7 @@ VW::LEARNER::base_learner* VW::reductions::cb_explore_adf_large_action_space_set
   bool cb_explore_adf_option = false;
   bool large_action_space = false;
   uint64_t d;
-  float gamma;
+  float gamma = 0;
 
   config::option_group_definition new_options(
       "[Reduction] Experimental: Contextual Bandit Exploration with ADF with large action space");
