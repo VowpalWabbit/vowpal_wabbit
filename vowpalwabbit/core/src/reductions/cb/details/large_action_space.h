@@ -7,7 +7,6 @@
 #include "vw/core/rand48.h"
 #include "vw/core/v_array.h"
 #include "vw/core/vw_fwd.h"
-#include "vw/core/vw_versions.h"
 
 #include <Eigen/Dense>
 #include <Eigen/SparseCore>
@@ -30,7 +29,6 @@ private:
   VW::workspace* _all;
   uint64_t _seed;
   size_t _counter;
-  VW::version_struct _model_file_version;
   std::vector<Eigen::Triplet<float>> _triplets;
   std::vector<uint64_t> _action_indices;
   std::vector<bool> _spanner_bitvec;

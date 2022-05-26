@@ -131,7 +131,6 @@ cb_explore_adf_large_action_space::cb_explore_adf_large_action_space(
     , _all(all)
     , _seed(all->get_random_state()->get_current_state() * 10.f)
     , _counter(0)
-    , _model_file_version(all->model_file_ver)
 {
   _action_indices.resize(_d);
 }
@@ -139,12 +138,9 @@ cb_explore_adf_large_action_space::cb_explore_adf_large_action_space(
 void cb_explore_adf_large_action_space::save_load(io_buf& io, bool read, bool text)
 {
   if (io.num_files() == 0) { return; }
-  if (!read || _model_file_version >= VW::version_definitions::VERSION_FILE_WITH_L1_AND_L2_STATE_IN_MODEL_DATA)
-  {
-    std::stringstream msg;
-    if (!read) { msg << "cb large action space storing example counter:  = " << _counter << "\n"; }
-    bin_text_read_write_fixed_validated(io, reinterpret_cast<char*>(&_counter), sizeof(_counter), read, msg, text);
-  }
+  std::stringstream msg;
+  if (!read) { msg << "cb large action space storing example counter:  = " << _counter << "\n"; }
+  bin_text_read_write_fixed_validated(io, reinterpret_cast<char*>(&_counter), sizeof(_counter), read, msg, text);
 }
 
 void cb_explore_adf_large_action_space::calculate_shrink_factor(const ACTION_SCORE::action_scores& preds)
