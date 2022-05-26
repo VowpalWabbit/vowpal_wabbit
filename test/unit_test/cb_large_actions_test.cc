@@ -79,192 +79,369 @@ BOOST_AUTO_TEST_CASE(creation_of_the_og_A_matrix)
 BOOST_AUTO_TEST_CASE(check_At_times_Omega_is_Y)
 {
   auto d = 2;
-  auto& vw = *VW::initialize(
+  std::vector<std::pair<VW::workspace*, bool>> vws;
+  auto* vw_epsilon = VW::initialize(
       "--cb_explore_adf --large_action_space --max_actions " + std::to_string(d) + " --quiet --random_seed 5", nullptr,
       false, nullptr, nullptr);
 
+  vws.push_back({vw_epsilon, false});
+
+  auto* vw_squarecb = VW::initialize("--cb_explore_adf --squarecb --large_action_space --max_actions " +
+          std::to_string(d) + " --quiet --random_seed 5",
+      nullptr, false, nullptr, nullptr);
+
+  vws.push_back({vw_squarecb, true});
+
+  for (auto& vw_pair : vws)
   {
-    VW::multi_ex examples;
+    auto& vw = *std::get<0>(vw_pair);
+    auto apply_diag_M = std::get<1>(vw_pair);
 
-    examples.push_back(VW::read_example(vw, "0:1.0:0.5 | 1 2 3"));
-    examples.push_back(VW::read_example(vw, "| a_1 a_2 a_3"));
-
-    vw.learn(examples);
-    vw.finish_example(examples);
-  }
-
-  std::vector<std::string> e_r;
-  vw.l->get_enabled_reductions(e_r);
-  if (std::find(e_r.begin(), e_r.end(), "cb_explore_adf_large_action_space") == e_r.end())
-  { BOOST_FAIL("cb_explore_adf_large_action_space not found in enabled reductions"); }
-
-  VW::LEARNER::multi_learner* learner =
-      as_multiline(vw.l->get_learner_by_name_prefix("cb_explore_adf_large_action_space"));
-
-  auto action_space = (internal_action_space*)learner->get_internal_type_erased_data_pointer_test_use_only();
-
-  BOOST_CHECK_EQUAL(action_space != nullptr, true);
-
-  {
-    VW::multi_ex examples;
-
-    examples.push_back(VW::read_example(vw, "0:1.0:0.5 | 1 2 3"));
-    examples.push_back(VW::read_example(vw, "| a_1 a_2 a_3"));
-
-    vw.predict(examples);
-
-    action_space->explore._generate_A(examples);
-    action_space->explore.generate_Y(examples);
-
-    uint64_t num_actions = examples[0]->pred.a_s.size();
-
-    // Generate Omega
-    std::vector<Eigen::Triplet<float>> omega_triplets;
-    uint64_t max_ft_index = 0;
-    uint64_t seed = vw.get_random_state()->get_current_state() * 10.f;
-
-    for (uint64_t action_index = 0; action_index < num_actions; action_index++)
     {
-      auto* ex = examples[action_index];
-      // test sanity - test assumes no shared features
-      BOOST_CHECK_EQUAL(!CB::ec_is_example_header(*ex), true);
-      for (auto ns : ex->indices)
-      {
-        for (uint64_t col = 0; col < d; col++)
-        {
-          auto combined_index = action_index + col + seed;
-          auto mm = merand48_boxmuller(combined_index);
-          omega_triplets.push_back(Eigen::Triplet<float>(action_index, col, mm));
-        }
-      }
+      VW::multi_ex examples;
+
+      examples.push_back(VW::read_example(vw, "0:1.0:0.5 | 1 2 3"));
+      examples.push_back(VW::read_example(vw, "| a_1 a_2 a_3"));
+      examples.push_back(VW::read_example(vw, "| a_4 a_5 a_6"));
+      examples.push_back(VW::read_example(vw, "| a_7 a_8 a_9"));
+      examples.push_back(VW::read_example(vw, "| a_10 a_11 a_12"));
+      examples.push_back(VW::read_example(vw, "| a_13 a_14 a_15"));
+      examples.push_back(VW::read_example(vw, "| a_16 a_17 a_18"));
+
+      vw.learn(examples);
+      vw.finish_example(examples);
     }
 
-    Eigen::SparseMatrix<float> Omega(num_actions, d);
-    Omega.setFromTriplets(omega_triplets.begin(), omega_triplets.end(), [](const float& a, const float& b) {
-      assert(a == b);
-      return b;
-    });
+    {
+      VW::multi_ex examples;
 
-    Eigen::SparseMatrix<float> Yd(action_space->explore.Y.rows(), d);
-    Yd = action_space->explore._A.transpose() * Omega;
-    // Orthonormalize Yd
-    VW::gram_schmidt(Yd);
-    BOOST_CHECK_EQUAL(Yd.isApprox(action_space->explore.Y), true);
-    vw.finish_example(examples);
+      examples.push_back(VW::read_example(vw, "| 1 2 3"));
+      examples.push_back(VW::read_example(vw, "0:0.9:0.5 | a_1 a_2 a_3"));
+      examples.push_back(VW::read_example(vw, "| a_4 a_5 a_6"));
+      examples.push_back(VW::read_example(vw, "| a_7 a_8 a_9"));
+      examples.push_back(VW::read_example(vw, "| a_10 a_11 a_12"));
+      examples.push_back(VW::read_example(vw, "| a_13 a_14 a_15"));
+      examples.push_back(VW::read_example(vw, "| a_16 a_17 a_18"));
+
+      vw.learn(examples);
+      vw.finish_example(examples);
+    }
+
+    {
+      VW::multi_ex examples;
+
+      examples.push_back(VW::read_example(vw, "| 1 2 3"));
+      examples.push_back(VW::read_example(vw, "| a_1 a_2 a_3"));
+      examples.push_back(VW::read_example(vw, "0:0.8:0.5 | a_4 a_5 a_6"));
+      examples.push_back(VW::read_example(vw, "| a_7 a_8 a_9"));
+      examples.push_back(VW::read_example(vw, "| a_10 a_11 a_12"));
+      examples.push_back(VW::read_example(vw, "| a_13 a_14 a_15"));
+      examples.push_back(VW::read_example(vw, "| a_16 a_17 a_18"));
+
+      vw.learn(examples);
+      vw.finish_example(examples);
+    }
+
+    {
+      VW::multi_ex examples;
+
+      examples.push_back(VW::read_example(vw, "| 1 2 3"));
+      examples.push_back(VW::read_example(vw, "| a_1 a_2 a_3"));
+      examples.push_back(VW::read_example(vw, "| a_4 a_5 a_6"));
+      examples.push_back(VW::read_example(vw, "0:0.7:0.5 | a_7 a_8 a_9"));
+      examples.push_back(VW::read_example(vw, "| a_10 a_11 a_12"));
+      examples.push_back(VW::read_example(vw, "| a_13 a_14 a_15"));
+      examples.push_back(VW::read_example(vw, "| a_16 a_17 a_18"));
+
+      vw.learn(examples);
+      vw.finish_example(examples);
+    }
+
+    {
+      VW::multi_ex examples;
+
+      examples.push_back(VW::read_example(vw, "| 1 2 3"));
+      examples.push_back(VW::read_example(vw, "| a_1 a_2 a_3"));
+      examples.push_back(VW::read_example(vw, "| a_4 a_5 a_6"));
+      examples.push_back(VW::read_example(vw, "| a_7 a_8 a_9"));
+      examples.push_back(VW::read_example(vw, "0:0.6:0.5 | a_10 a_11 a_12"));
+      examples.push_back(VW::read_example(vw, "| a_13 a_14 a_15"));
+      examples.push_back(VW::read_example(vw, "| a_16 a_17 a_18"));
+
+      vw.learn(examples);
+      vw.finish_example(examples);
+    }
+
+    {
+      VW::multi_ex examples;
+
+      examples.push_back(VW::read_example(vw, "| 1 2 3"));
+      examples.push_back(VW::read_example(vw, "| a_1 a_2 a_3"));
+      examples.push_back(VW::read_example(vw, "| a_4 a_5 a_6"));
+      examples.push_back(VW::read_example(vw, "| a_7 a_8 a_9"));
+      examples.push_back(VW::read_example(vw, "| a_10 a_11 a_12"));
+      examples.push_back(VW::read_example(vw, "0:0.5:0.5 | a_13 a_14 a_15"));
+      examples.push_back(VW::read_example(vw, "| a_16 a_17 a_18"));
+
+      vw.learn(examples);
+      vw.finish_example(examples);
+    }
+
+    {
+      VW::multi_ex examples;
+
+      examples.push_back(VW::read_example(vw, "| 1 2 3"));
+      examples.push_back(VW::read_example(vw, "| a_1 a_2 a_3"));
+      examples.push_back(VW::read_example(vw, "| a_4 a_5 a_6"));
+      examples.push_back(VW::read_example(vw, "| a_7 a_8 a_9"));
+      examples.push_back(VW::read_example(vw, "| a_10 a_11 a_12"));
+      examples.push_back(VW::read_example(vw, "| a_13 a_14 a_15"));
+      examples.push_back(VW::read_example(vw, "0:0.4:0.5 | a_16 a_17 a_18"));
+
+      vw.learn(examples);
+      vw.finish_example(examples);
+    }
+
+    std::vector<std::string> e_r;
+    vw.l->get_enabled_reductions(e_r);
+    if (std::find(e_r.begin(), e_r.end(), "cb_explore_adf_large_action_space") == e_r.end())
+    { BOOST_FAIL("cb_explore_adf_large_action_space not found in enabled reductions"); }
+
+    VW::LEARNER::multi_learner* learner =
+        as_multiline(vw.l->get_learner_by_name_prefix("cb_explore_adf_large_action_space"));
+
+    auto action_space = (internal_action_space*)learner->get_internal_type_erased_data_pointer_test_use_only();
+
+    BOOST_CHECK_EQUAL(action_space != nullptr, true);
+
+    {
+      VW::multi_ex examples;
+
+      examples.push_back(VW::read_example(vw, "| 1 2 3"));
+      examples.push_back(VW::read_example(vw, "| a_1 a_2 a_3"));
+      examples.push_back(VW::read_example(vw, "| a_4 a_5 a_6"));
+      examples.push_back(VW::read_example(vw, "| a_7 a_8 a_9"));
+      examples.push_back(VW::read_example(vw, "| a_10 a_11 a_12"));
+      examples.push_back(VW::read_example(vw, "| a_13 a_14 a_15"));
+      examples.push_back(VW::read_example(vw, "| a_16 a_17 a_18"));
+
+      vw.predict(examples);
+
+      action_space->explore.calculate_shrink_factor(examples[0]->pred.a_s);
+      action_space->explore._generate_A(examples);
+      action_space->explore.generate_Y(examples);
+
+      uint64_t num_actions = examples[0]->pred.a_s.size();
+
+      // Generate Omega
+      std::vector<Eigen::Triplet<float>> omega_triplets;
+      uint64_t max_ft_index = 0;
+      uint64_t seed = vw.get_random_state()->get_current_state() * 10.f;
+
+      for (uint64_t action_index = 0; action_index < num_actions; action_index++)
+      {
+        auto* ex = examples[action_index];
+        // test sanity - test assumes no shared features
+        BOOST_CHECK_EQUAL(!CB::ec_is_example_header(*ex), true);
+        for (auto ns : ex->indices)
+        {
+          for (uint64_t col = 0; col < d; col++)
+          {
+            auto combined_index = action_index + col + seed;
+            auto mm = merand48_boxmuller(combined_index);
+            omega_triplets.push_back(Eigen::Triplet<float>(action_index, col, mm));
+          }
+        }
+      }
+
+      Eigen::SparseMatrix<float> Omega(num_actions, d);
+      Omega.setFromTriplets(omega_triplets.begin(), omega_triplets.end(), [](const float& a, const float& b) {
+        assert(a == b);
+        return b;
+      });
+
+      Eigen::SparseMatrix<float> diag_M(num_actions, num_actions);
+
+      if (apply_diag_M)
+      {
+        for (Eigen::Index i = 0; i < action_space->explore.shrink_factors.size(); i++)
+        { diag_M.coeffRef(i, i) = action_space->explore.shrink_factors[i]; }
+      }
+      else
+      {
+        diag_M.setIdentity();
+      }
+
+      Eigen::SparseMatrix<float> Yd(action_space->explore.Y.rows(), d);
+
+      Yd = action_space->explore._A.transpose() * diag_M * Omega;
+      // Orthonormalize Yd
+      VW::gram_schmidt(Yd);
+      BOOST_CHECK_EQUAL(Yd.isApprox(action_space->explore.Y), true);
+
+      vw.finish_example(examples);
+    }
+    VW::finish(vw);
   }
-  VW::finish(vw);
 }
 
 BOOST_AUTO_TEST_CASE(check_A_times_Y_is_B)
 {
   auto d = 2;
-  auto& vw = *VW::initialize(
+  std::vector<std::pair<VW::workspace*, bool>> vws;
+  auto* vw_epsilon = VW::initialize(
       "--cb_explore_adf --large_action_space --max_actions " + std::to_string(d) + " --quiet --random_seed 5", nullptr,
       false, nullptr, nullptr);
 
+  vws.push_back({vw_epsilon, false});
+
+  auto* vw_squarecb = VW::initialize("--cb_explore_adf --squarecb --large_action_space --max_actions " +
+          std::to_string(d) + " --quiet --random_seed 5",
+      nullptr, false, nullptr, nullptr);
+
+  vws.push_back({vw_squarecb, true});
+
+  for (auto& vw_pair : vws)
   {
-    VW::multi_ex examples;
+    auto& vw = *std::get<0>(vw_pair);
+    auto apply_diag_M = std::get<1>(vw_pair);
 
-    examples.push_back(VW::read_example(vw, "0:1.0:0.5 | 1 2 3"));
-    examples.push_back(VW::read_example(vw, "| a_1 a_2 a_3"));
+    {
+      VW::multi_ex examples;
 
-    vw.learn(examples);
-    vw.finish_example(examples);
+      examples.push_back(VW::read_example(vw, "0:1.0:0.5 | 1 2 3"));
+      examples.push_back(VW::read_example(vw, "| a_1 a_2 a_3"));
+
+      vw.learn(examples);
+      vw.finish_example(examples);
+    }
+
+    std::vector<std::string> e_r;
+    vw.l->get_enabled_reductions(e_r);
+    if (std::find(e_r.begin(), e_r.end(), "cb_explore_adf_large_action_space") == e_r.end())
+    { BOOST_FAIL("cb_explore_adf_large_action_space not found in enabled reductions"); }
+
+    VW::LEARNER::multi_learner* learner =
+        as_multiline(vw.l->get_learner_by_name_prefix("cb_explore_adf_large_action_space"));
+
+    auto action_space = (internal_action_space*)learner->get_internal_type_erased_data_pointer_test_use_only();
+
+    BOOST_CHECK_EQUAL(action_space != nullptr, true);
+
+    {
+      VW::multi_ex examples;
+
+      examples.push_back(VW::read_example(vw, "0:1.0:0.5 | 1 2 3"));
+      examples.push_back(VW::read_example(vw, "| a_1 a_2 a_3"));
+
+      vw.predict(examples);
+
+      action_space->explore._generate_A(examples);
+      action_space->explore.calculate_shrink_factor(examples[0]->pred.a_s);
+      action_space->explore.generate_Y(examples);
+      action_space->explore.generate_B(examples);
+
+      auto num_actions = examples[0]->pred.a_s.size();
+      Eigen::SparseMatrix<float> diag_M(num_actions, num_actions);
+
+      if (apply_diag_M)
+      {
+        for (Eigen::Index i = 0; i < action_space->explore.shrink_factors.size(); i++)
+        { diag_M.coeffRef(i, i) = action_space->explore.shrink_factors[i]; }
+      }
+      else
+      {
+        diag_M.setIdentity();
+      }
+
+      Eigen::MatrixXf B = diag_M * action_space->explore._A * action_space->explore.Y;
+      BOOST_CHECK_EQUAL(B.isApprox(action_space->explore.B), true);
+
+      vw.finish_example(examples);
+    }
+    VW::finish(vw);
   }
-
-  std::vector<std::string> e_r;
-  vw.l->get_enabled_reductions(e_r);
-  if (std::find(e_r.begin(), e_r.end(), "cb_explore_adf_large_action_space") == e_r.end())
-  { BOOST_FAIL("cb_explore_adf_large_action_space not found in enabled reductions"); }
-
-  VW::LEARNER::multi_learner* learner =
-      as_multiline(vw.l->get_learner_by_name_prefix("cb_explore_adf_large_action_space"));
-
-  auto action_space = (internal_action_space*)learner->get_internal_type_erased_data_pointer_test_use_only();
-
-  BOOST_CHECK_EQUAL(action_space != nullptr, true);
-
-  {
-    VW::multi_ex examples;
-
-    examples.push_back(VW::read_example(vw, "0:1.0:0.5 | 1 2 3"));
-    examples.push_back(VW::read_example(vw, "| a_1 a_2 a_3"));
-
-    vw.predict(examples);
-
-    action_space->explore._generate_A(examples);
-    action_space->explore.generate_Y(examples);
-    action_space->explore.generate_B(examples);
-
-    Eigen::MatrixXf B = action_space->explore._A * action_space->explore.Y;
-    BOOST_CHECK_EQUAL(B.isApprox(action_space->explore.B), true);
-    vw.finish_example(examples);
-  }
-  VW::finish(vw);
 }
 
 BOOST_AUTO_TEST_CASE(check_B_times_P_is_Z)
 {
   auto d = 2;
-  auto& vw = *VW::initialize(
+
+  std::vector<std::pair<VW::workspace*, bool>> vws;
+  auto* vw_epsilon = VW::initialize(
       "--cb_explore_adf --large_action_space --max_actions " + std::to_string(d) + " --quiet --random_seed 5", nullptr,
       false, nullptr, nullptr);
 
+  vws.push_back({vw_epsilon, false});
+
+  auto* vw_squarecb = VW::initialize("--cb_explore_adf --squarecb --large_action_space --max_actions " +
+          std::to_string(d) + " --quiet --random_seed 5",
+      nullptr, false, nullptr, nullptr);
+
+  vws.push_back({vw_squarecb, true});
+
+  for (auto& vw_pair : vws)
   {
-    VW::multi_ex examples;
+    auto& vw = *std::get<0>(vw_pair);
 
-    examples.push_back(VW::read_example(vw, "0:1.0:0.5 | 1 2 3"));
-    examples.push_back(VW::read_example(vw, "| a_1 a_2 a_3"));
-
-    vw.learn(examples);
-    vw.finish_example(examples);
-  }
-
-  std::vector<std::string> e_r;
-  vw.l->get_enabled_reductions(e_r);
-  if (std::find(e_r.begin(), e_r.end(), "cb_explore_adf_large_action_space") == e_r.end())
-  { BOOST_FAIL("cb_explore_adf_large_action_space not found in enabled reductions"); }
-
-  VW::LEARNER::multi_learner* learner =
-      as_multiline(vw.l->get_learner_by_name_prefix("cb_explore_adf_large_action_space"));
-
-  auto action_space = (internal_action_space*)learner->get_internal_type_erased_data_pointer_test_use_only();
-
-  BOOST_CHECK_EQUAL(action_space != nullptr, true);
-
-  {
-    VW::multi_ex examples;
-
-    examples.push_back(VW::read_example(vw, "0:1.0:0.5 | 1 2 3"));
-    examples.push_back(VW::read_example(vw, "| a_1 a_2 a_3"));
-
-    vw.predict(examples);
-
-    action_space->explore._generate_A(examples);
-    action_space->explore.generate_Y(examples);
-    action_space->explore.generate_B(examples);
-    action_space->explore.generate_Z(examples);
-
-    Eigen::MatrixXf P(d, d);
-
-    uint64_t seed = vw.get_random_state()->get_current_state() * 10.f;
-
-    for (size_t row = 0; row < d; row++)
     {
-      for (size_t col = 0; col < d; col++)
-      {
-        auto combined_index = row + col + seed;
-        auto mm = merand48_boxmuller(combined_index);
-        P(row, col) = mm;
-      }
+      VW::multi_ex examples;
+
+      examples.push_back(VW::read_example(vw, "0:1.0:0.5 | 1 2 3"));
+      examples.push_back(VW::read_example(vw, "| a_1 a_2 a_3"));
+
+      vw.learn(examples);
+      vw.finish_example(examples);
     }
 
-    Eigen::MatrixXf Zp = action_space->explore.B * P;
-    VW::gram_schmidt(Zp);
-    BOOST_CHECK_EQUAL(Zp.isApprox(action_space->explore.Z), true);
-    vw.finish_example(examples);
+    std::vector<std::string> e_r;
+    vw.l->get_enabled_reductions(e_r);
+    if (std::find(e_r.begin(), e_r.end(), "cb_explore_adf_large_action_space") == e_r.end())
+    { BOOST_FAIL("cb_explore_adf_large_action_space not found in enabled reductions"); }
+
+    VW::LEARNER::multi_learner* learner =
+        as_multiline(vw.l->get_learner_by_name_prefix("cb_explore_adf_large_action_space"));
+
+    auto action_space = (internal_action_space*)learner->get_internal_type_erased_data_pointer_test_use_only();
+
+    BOOST_CHECK_EQUAL(action_space != nullptr, true);
+
+    {
+      VW::multi_ex examples;
+
+      examples.push_back(VW::read_example(vw, "0:1.0:0.5 | 1 2 3"));
+      examples.push_back(VW::read_example(vw, "| a_1 a_2 a_3"));
+
+      vw.predict(examples);
+
+      action_space->explore.calculate_shrink_factor(examples[0]->pred.a_s);
+      action_space->explore._generate_A(examples);
+      action_space->explore.generate_Y(examples);
+      action_space->explore.generate_B(examples);
+      action_space->explore.generate_Z(examples);
+
+      Eigen::MatrixXf P(d, d);
+
+      uint64_t seed = vw.get_random_state()->get_current_state() * 10.f;
+
+      for (size_t row = 0; row < d; row++)
+      {
+        for (size_t col = 0; col < d; col++)
+        {
+          auto combined_index = row + col + seed;
+          auto mm = merand48_boxmuller(combined_index);
+          P(row, col) = mm;
+        }
+      }
+
+      Eigen::MatrixXf Zp = action_space->explore.B * P;
+      VW::gram_schmidt(Zp);
+      BOOST_CHECK_EQUAL(Zp.isApprox(action_space->explore.Z), true);
+      vw.finish_example(examples);
+    }
+
+    VW::finish(vw);
   }
-  VW::finish(vw);
 }
 
 BOOST_AUTO_TEST_CASE(check_final_U_dimensions)
@@ -479,84 +656,184 @@ BOOST_AUTO_TEST_CASE(check_final_truncated_SVD_validity)
   and randomized decomposition match the singular values of a traditional SVD applied to the same matrix.
    */
 
-  auto& vw =
-      *VW::initialize("--cb_explore_adf --noconstant --large_action_space --max_actions 0 --quiet --random_seed 5",
-          nullptr, false, nullptr, nullptr);
+  uint64_t d = 2;
+  std::vector<std::pair<VW::workspace*, bool>> vws;
+  auto* vw_epsilon = VW::initialize(
+      "--cb_explore_adf --large_action_space --max_actions " + std::to_string(d) + " --quiet --random_seed 5", nullptr,
+      false, nullptr, nullptr);
 
-  uint64_t num_actions = 5;  // rows
-  uint64_t max_col = vw.weights.sparse ? vw.weights.sparse_weights.mask() : vw.weights.dense_weights.mask();
+  vws.push_back({vw_epsilon, false});
 
-  Eigen::SparseMatrix<float> A_square(max_col, max_col);
+  auto* vw_squarecb = VW::initialize("--cb_explore_adf --squarecb --large_action_space --max_actions " +
+          std::to_string(d) + " --quiet --random_seed 5",
+      nullptr, false, nullptr, nullptr);
 
-  auto index_cutoffs = generate_A_square(A_square, vw, num_actions, max_col);
+  vws.push_back({vw_squarecb, true});
 
-  // create rectangulare A so that we can figure out its rank and set d to that
-  // we need the matrix rank to be able to test the reconstruction correctly
-  Eigen::SparseMatrix<float> A(num_actions, max_col);
-  // it is cheaper to traverse the sparse matrixes by their internal representation (non-zero columns first then their
-  // rows)
-  // we want to take #num_actions non-zero rows from A_square and place them into the 0..num_actions rows of matrix A
-  // so we proceed to create a map between those non-zero rows of A_square and the row that they correspond to in the A
-  // matrix
-  auto rows_map = map_A_square_rows_to_A_rows(A_square, index_cutoffs, num_actions);
-  // translate to internal vw representation (setting vw's weights) and create the examples so that we can call SVD
-  multi_ex examples = setup_vw_weights_and_examples_and_create_A(A, A_square, vw, rows_map, index_cutoffs, num_actions);
-
-  std::vector<std::string> e_r;
-  vw.l->get_enabled_reductions(e_r);
-  if (std::find(e_r.begin(), e_r.end(), "cb_explore_adf_large_action_space") == e_r.end())
-  { BOOST_FAIL("cb_explore_adf_large_action_space not found in enabled reductions"); }
-
-  VW::LEARNER::multi_learner* learner =
-      as_multiline(vw.l->get_learner_by_name_prefix("cb_explore_adf_large_action_space"));
-
-  auto action_space = (internal_action_space*)learner->get_internal_type_erased_data_pointer_test_use_only();
-  BOOST_CHECK_EQUAL(action_space != nullptr, true);
-
+  for (auto& vw_pair : vws)
   {
-    Eigen::FullPivLU<Eigen::MatrixXf> lu_decomp(A);
-    auto rank = lu_decomp.rank();
-    // for test set actual rank of A
-    action_space->explore.set_rank(rank);
-    // should have a rank larger than 1 for the test
-    BOOST_CHECK_GT(rank, 1);
+    auto& vw = *std::get<0>(vw_pair);
+    auto apply_diag_M = std::get<1>(vw_pair);
+
+    uint64_t num_actions = 5;  // rows
+    uint64_t max_col = vw.weights.sparse ? vw.weights.sparse_weights.mask() : vw.weights.dense_weights.mask();
+
+    Eigen::SparseMatrix<float> A_square(max_col, max_col);
+
+    auto index_cutoffs = generate_A_square(A_square, vw, num_actions, max_col);
+
+    // create rectangulare A so that we can figure out its rank and set d to that
+    // we need the matrix rank to be able to test the reconstruction correctly
+    Eigen::SparseMatrix<float> A(num_actions, max_col);
+    // it is cheaper to traverse the sparse matrixes by their internal representation (non-zero columns first then their
+    // rows)
+    // we want to take #num_actions non-zero rows from A_square and place them into the 0..num_actions rows of matrix A
+    // so we proceed to create a map between those non-zero rows of A_square and the row that they correspond to in the
+    // A matrix
+    auto rows_map = map_A_square_rows_to_A_rows(A_square, index_cutoffs, num_actions);
+    // translate to internal vw representation (setting vw's weights) and create the examples so that we can call SVD
+    multi_ex examples =
+        setup_vw_weights_and_examples_and_create_A(A, A_square, vw, rows_map, index_cutoffs, num_actions);
+
+    std::vector<std::string> e_r;
+    vw.l->get_enabled_reductions(e_r);
+    if (std::find(e_r.begin(), e_r.end(), "cb_explore_adf_large_action_space") == e_r.end())
+    { BOOST_FAIL("cb_explore_adf_large_action_space not found in enabled reductions"); }
+
+    VW::LEARNER::multi_learner* learner =
+        as_multiline(vw.l->get_learner_by_name_prefix("cb_explore_adf_large_action_space"));
+
+    auto action_space = (internal_action_space*)learner->get_internal_type_erased_data_pointer_test_use_only();
+    BOOST_CHECK_EQUAL(action_space != nullptr, true);
+
+    {
+      Eigen::FullPivLU<Eigen::MatrixXf> lu_decomp(A);
+      auto rank = lu_decomp.rank();
+      // for test set actual rank of A
+      action_space->explore.set_rank(rank);
+      // should have a rank larger than 1 for the test
+      BOOST_CHECK_GT(rank, 1);
+    }
+
+    action_space->explore._populate_all_SVD_components();
+    vw.predict(examples);
+
+    action_space->explore._generate_A(examples);
+    action_space->explore.calculate_shrink_factor(examples[0]->pred.a_s);
+    action_space->explore.randomized_SVD(examples);
+
+    constexpr float FLOAT_TOL = 0.0001f;
+
+    // truncated randomized SVD reconstruction
+    for (int i = 0; i < action_space->explore.U.cols(); ++i)
+    {
+      BOOST_CHECK_CLOSE(1.f, action_space->explore.U.col(i).norm(), FLOAT_TOL);
+      for (int j = 0; j < i; ++j)
+      { BOOST_CHECK_SMALL(action_space->explore.U.col(i).dot(action_space->explore.U.col(j)), FLOAT_TOL); }
+    }
+
+    for (int i = 0; i < action_space->explore._V.cols(); ++i)
+    {
+      BOOST_CHECK_CLOSE(1.f, action_space->explore._V.col(i).norm(), FLOAT_TOL);
+      for (int j = 0; j < i; ++j)
+      { BOOST_CHECK_SMALL(action_space->explore._V.col(i).dot(action_space->explore._V.col(j)), FLOAT_TOL); }
+    }
+
+    Eigen::SparseMatrix<float> diag_M(num_actions, num_actions);
+
+    if (apply_diag_M)
+    {
+      for (Eigen::Index i = 0; i < action_space->explore.shrink_factors.size(); i++)
+      { diag_M.coeffRef(i, i) = action_space->explore.shrink_factors[i]; }
+    }
+    else
+    {
+      diag_M.setIdentity();
+    }
+
+    BOOST_CHECK_SMALL(
+        ((diag_M * action_space->explore._A) -
+            action_space->explore.U * action_space->explore._S.asDiagonal() * action_space->explore._V.transpose())
+            .norm(),
+        FLOAT_TOL);
+
+    // compare singular values with actual SVD singular values
+    Eigen::MatrixXf A_dense = diag_M * action_space->explore._A;
+    Eigen::JacobiSVD<Eigen::MatrixXf> svd(A_dense, Eigen::ComputeThinU | Eigen::ComputeThinV);
+    Eigen::VectorXf S = svd.singularValues();
+
+    for (size_t i = 0; i < action_space->explore._S.rows(); i++)
+    { BOOST_CHECK_CLOSE(S(i), action_space->explore._S(i), FLOAT_TOL); }
+    vw.finish_example(examples);
+    VW::finish(vw);
   }
+}
 
-  action_space->explore._populate_all_SVD_components();
+BOOST_AUTO_TEST_CASE(check_shrink_factor)
+{
+  auto d = 2;
+  std::vector<std::pair<VW::workspace*, bool>> vws;
+  auto* vw_epsilon = VW::initialize(
+      "--cb_explore_adf --large_action_space --max_actions " + std::to_string(d) + " --quiet --random_seed 5", nullptr,
+      false, nullptr, nullptr);
 
-  action_space->explore._generate_A(examples);
-  action_space->explore.randomized_SVD(examples);
+  vws.push_back({vw_epsilon, false});
 
-  constexpr float FLOAT_TOL = 0.0001f;
+  auto* vw_squarecb = VW::initialize("--cb_explore_adf --squarecb --large_action_space --max_actions " +
+          std::to_string(d) + " --quiet --random_seed 5",
+      nullptr, false, nullptr, nullptr);
 
-  // truncated randomized SVD reconstruction
-  for (int i = 0; i < action_space->explore.U.cols(); ++i)
+  vws.push_back({vw_squarecb, true});
+
+  for (auto& vw_pair : vws)
   {
-    BOOST_CHECK_CLOSE(1.f, action_space->explore.U.col(i).norm(), FLOAT_TOL);
-    for (int j = 0; j < i; ++j)
-    { BOOST_CHECK_SMALL(action_space->explore.U.col(i).dot(action_space->explore.U.col(j)), FLOAT_TOL); }
+    auto& vw = *std::get<0>(vw_pair);
+    auto apply_diag_M = std::get<1>(vw_pair);
+
+    std::vector<std::string> e_r;
+    vw.l->get_enabled_reductions(e_r);
+    if (std::find(e_r.begin(), e_r.end(), "cb_explore_adf_large_action_space") == e_r.end())
+    { BOOST_FAIL("cb_explore_adf_large_action_space not found in enabled reductions"); }
+
+    VW::LEARNER::multi_learner* learner =
+        as_multiline(vw.l->get_learner_by_name_prefix("cb_explore_adf_large_action_space"));
+
+    auto action_space = (internal_action_space*)learner->get_internal_type_erased_data_pointer_test_use_only();
+
+    BOOST_CHECK_EQUAL(action_space != nullptr, true);
+
+    VW::multi_ex examples;
+
+    examples.push_back(VW::read_example(vw, "| 1 2 3"));
+    examples.push_back(VW::read_example(vw, "| a_1 a_2 a_3"));
+    examples.push_back(VW::read_example(vw, "| a_4 a_5 a_6"));
+    examples.push_back(VW::read_example(vw, "| a_7 a_8 a_9"));
+    examples.push_back(VW::read_example(vw, "| a_10 a_11 a_12"));
+    examples.push_back(VW::read_example(vw, "| a_13 a_14 a_15"));
+    examples.push_back(VW::read_example(vw, "| a_16 a_17 a_18"));
+
+    vw.predict(examples);
+
+    auto num_actions = examples[0]->pred.a_s.size();
+
+    BOOST_CHECK_EQUAL(num_actions, 7);
+
+    action_space->explore.calculate_shrink_factor(examples[0]->pred.a_s);
+
+    Eigen::SparseMatrix<float> diag_M(num_actions, num_actions);
+    Eigen::SparseMatrix<float> identity_diag_M(num_actions, num_actions);
+    identity_diag_M.setIdentity();
+
+    for (Eigen::Index i = 0; i < action_space->explore.shrink_factors.size(); i++)
+    { diag_M.coeffRef(i, i) = action_space->explore.shrink_factors[i]; }
+
+    if (apply_diag_M) { BOOST_CHECK_EQUAL(diag_M.isApprox(identity_diag_M), false); }
+    else
+    {
+      BOOST_CHECK_EQUAL(diag_M.isApprox(identity_diag_M), true);
+    }
+
+    vw.finish_example(examples);
+    VW::finish(vw);
   }
-
-  for (int i = 0; i < action_space->explore._V.cols(); ++i)
-  {
-    BOOST_CHECK_CLOSE(1.f, action_space->explore._V.col(i).norm(), FLOAT_TOL);
-    for (int j = 0; j < i; ++j)
-    { BOOST_CHECK_SMALL(action_space->explore._V.col(i).dot(action_space->explore._V.col(j)), FLOAT_TOL); }
-  }
-
-  BOOST_CHECK_SMALL(
-      (action_space->explore._A -
-          action_space->explore.U * action_space->explore._S.asDiagonal() * action_space->explore._V.transpose())
-          .norm(),
-      FLOAT_TOL);
-
-  // compare singular values with actual SVD singular values
-  Eigen::MatrixXf A_dense = action_space->explore._A;
-  Eigen::JacobiSVD<Eigen::MatrixXf> svd(A_dense, Eigen::ComputeThinU | Eigen::ComputeThinV);
-  Eigen::VectorXf S = svd.singularValues();
-
-  for (size_t i = 0; i < action_space->explore._S.rows(); i++)
-  { BOOST_CHECK_CLOSE(S(i), action_space->explore._S(i), FLOAT_TOL); }
-  vw.finish_example(examples);
-  VW::finish(vw);
 }

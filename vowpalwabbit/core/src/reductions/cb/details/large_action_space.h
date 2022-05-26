@@ -22,6 +22,7 @@ struct cb_explore_adf_large_action_space
 private:
   uint64_t _d = 0;
   float _gamma = 1;
+  bool _apply_shrink_factor = false;
   VW::workspace* _all;
   uint64_t _seed = 0;
   std::vector<Eigen::Triplet<float>> _triplets;
@@ -31,21 +32,21 @@ public:
   Eigen::MatrixXf B;
   Eigen::MatrixXf Z;
   Eigen::MatrixXf U;
+  std::vector<float> shrink_factors;
   // the below matrixes are used only during unit testing and are not set otherwise
   Eigen::VectorXf _S;
   Eigen::MatrixXf _V;
   Eigen::SparseMatrix<float> _A;
-  VW::v_array<float> shrink_factors;
   bool _set_all_svd_components = false;
 
-  cb_explore_adf_large_action_space(uint64_t d, float gamma, VW::workspace* all);
+  cb_explore_adf_large_action_space(uint64_t d, float gamma, bool apply_shrink_factor, VW::workspace* all);
   ~cb_explore_adf_large_action_space() = default;
 
   // Should be called through cb_explore_adf_base for pre/post-processing
   void predict(VW::LEARNER::multi_learner& base, multi_ex& examples);
   void learn(VW::LEARNER::multi_learner& base, multi_ex& examples);
 
-  void calculate_shrink_factor(const ACTION_SCORE::action_scores& preds, float min_ck);
+  void calculate_shrink_factor(const ACTION_SCORE::action_scores& preds);
   void generate_Z(const multi_ex& examples);
   void generate_B(const multi_ex& examples);
   bool generate_Y(const multi_ex& examples);
