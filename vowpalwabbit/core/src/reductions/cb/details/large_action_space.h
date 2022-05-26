@@ -25,6 +25,8 @@ private:
   VW::workspace* _all;
   uint64_t _seed = 0;
   std::vector<Eigen::Triplet<float>> _triplets;
+  std::vector<uint64_t> _action_indices;
+  std::vector<bool> _spanner_bitvec;
 
 public:
   Eigen::SparseMatrix<float> Y;
@@ -50,7 +52,10 @@ public:
   void generate_B(const multi_ex& examples);
   bool generate_Y(const multi_ex& examples);
   void randomized_SVD(const multi_ex& examples);
+  std::pair<float, uint64_t> find_max_volume(uint64_t x_row, Eigen::MatrixXf& X);
+  void compute_spanner();
   void set_rank(uint64_t rank);
+
   // the below methods are used only during unit testing and are not called otherwise
   bool _generate_A(const multi_ex& examples);
   void _populate_all_SVD_components();
