@@ -121,14 +121,29 @@ void cb_explore_adf_large_action_space::learn(VW::LEARNER::multi_learner& base, 
 }
 
 cb_explore_adf_large_action_space::cb_explore_adf_large_action_space(
-    uint64_t d, float gamma, bool apply_shrink_factor, VW::workspace* all)
+    uint64_t d, float gamma_scale, float gamma_exponent, bool apply_shrink_factor, VW::workspace* all)
     : _d(d)
-    , _gamma(gamma)
+    , _gamma(0.f)
+    , _gamma_scale(gamma_scale)
+    , _gamma_exponent(gamma_exponent)
     , _apply_shrink_factor(apply_shrink_factor)
     , _all(all)
     , _seed(all->get_random_state()->get_current_state() * 10.f)
+    , _counter(0)
+    , _model_file_version(all->model_file_ver)
 {
   _action_indices.resize(_d);
+}
+
+void cb_explore_adf_large_action_space::save_load(io_buf& io, bool read, bool text)
+{
+  if (io.num_files() == 0) { return; }
+  if (!read || _model_file_version >= VW::version_definitions::VERSION_FILE_WITH_SQUARE_CB_SAVE_RESUME)
+  {
+    std::stringstream msg;
+    if (!read) { msg << "cb large action space storing example counter:  = " << _counter << "\n"; }
+    bin_text_read_write_fixed_validated(io, reinterpret_cast<char*>(&_counter), sizeof(_counter), read, msg, text);
+  }
 }
 
 void cb_explore_adf_large_action_space::calculate_shrink_factor(const ACTION_SCORE::action_scores& preds)
@@ -419,7 +434,11 @@ void cb_explore_adf_large_action_space::compute_spanner()
 template <bool is_learn>
 void cb_explore_adf_large_action_space::predict_or_learn_impl(VW::LEARNER::multi_learner& base, multi_ex& examples)
 {
-  if (is_learn) { base.learn(examples); }
+  if (is_learn)
+  {
+    base.learn(examples);
+    ++_counter;
+  }
   else
   {
     base.predict(examples);
@@ -428,6 +447,7 @@ void cb_explore_adf_large_action_space::predict_or_learn_impl(VW::LEARNER::multi
 
     const auto min_ck_idx = std::min_element(preds.begin(), preds.end(), VW::action_score_compare_lt) - preds.begin();
     const float min_ck = preds[min_ck_idx].score;
+    _gamma = _gamma_scale * static_cast<float>(std::pow(_counter, _gamma_exponent));
 
     if (_d < preds.size())
     {
@@ -480,7 +500,8 @@ VW::LEARNER::base_learner* VW::reductions::cb_explore_adf_large_action_space_set
   bool cb_explore_adf_option = false;
   bool large_action_space = false;
   uint64_t d;
-  float gamma = 0;
+  float gamma_scale = 1.;
+  float gamma_exponent = 0.;
   bool apply_shrink_factor = false;
 
   config::option_group_definition new_options(
@@ -515,7 +536,8 @@ VW::LEARNER::base_learner* VW::reductions::cb_explore_adf_large_action_space_set
   if (options.was_supplied("squarecb"))
   {
     apply_shrink_factor = true;
-    gamma = options.get_typed_option<float>("gamma_scale").value();
+    gamma_scale = options.get_typed_option<float>("gamma_scale").value();
+    gamma_exponent = options.get_typed_option<float>("gamma_exponent").value();
   }
 
   if (options.was_supplied("cb_type"))
@@ -538,7 +560,7 @@ VW::LEARNER::base_learner* VW::reductions::cb_explore_adf_large_action_space_set
   bool with_metrics = options.was_supplied("extra_metrics");
 
   using explore_type = cb_explore_adf_base<cb_explore_adf_large_action_space>;
-  auto data = VW::make_unique<explore_type>(with_metrics, d, gamma, apply_shrink_factor, &all);
+  auto data = VW::make_unique<explore_type>(with_metrics, d, gamma_scale, gamma_exponent, apply_shrink_factor, &all);
 
   auto* l = make_reduction_learner(std::move(data), base, explore_type::learn, explore_type::predict,
       stack_builder.get_setupfn_name(cb_explore_adf_large_action_space_setup))
@@ -550,6 +572,7 @@ VW::LEARNER::base_learner* VW::reductions::cb_explore_adf_large_action_space_set
                 .set_finish_example(explore_type::finish_multiline_example)
                 .set_print_example(explore_type::print_multiline_example)
                 .set_persist_metrics(explore_type::persist_metrics)
+                .set_save_load(explore_type::save_load)
                 .build(&all.logger);
   return make_base(*l);
 }

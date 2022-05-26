@@ -7,6 +7,7 @@
 #include "vw/core/rand48.h"
 #include "vw/core/v_array.h"
 #include "vw/core/vw_fwd.h"
+#include "vw/core/vw_versions.h"
 
 #include <Eigen/Dense>
 #include <Eigen/SparseCore>
@@ -20,11 +21,15 @@ namespace cb_explore_adf
 struct cb_explore_adf_large_action_space
 {
 private:
-  uint64_t _d = 0;
-  float _gamma = 1;
-  bool _apply_shrink_factor = false;
+  uint64_t _d;
+  float _gamma;
+  float _gamma_scale;
+  float _gamma_exponent;
+  bool _apply_shrink_factor;
   VW::workspace* _all;
-  uint64_t _seed = 0;
+  uint64_t _seed;
+  size_t _counter;
+  VW::version_struct _model_file_version;
   std::vector<Eigen::Triplet<float>> _triplets;
   std::vector<uint64_t> _action_indices;
   std::vector<bool> _spanner_bitvec;
@@ -41,8 +46,10 @@ public:
   Eigen::SparseMatrix<float> _A;
   bool _set_all_svd_components = false;
 
-  cb_explore_adf_large_action_space(uint64_t d, float gamma, bool apply_shrink_factor, VW::workspace* all);
+  cb_explore_adf_large_action_space(
+      uint64_t d, float gamma_scale, float gamma_exponent, bool apply_shrink_factor, VW::workspace* all);
   ~cb_explore_adf_large_action_space() = default;
+  void save_load(io_buf& io, bool read, bool text);
 
   // Should be called through cb_explore_adf_base for pre/post-processing
   void predict(VW::LEARNER::multi_learner& base, multi_ex& examples);
