@@ -333,7 +333,7 @@ std::pair<float, uint64_t> cb_explore_adf_large_action_space::find_max_volume(ui
   uint64_t U_rid{};
   const Eigen::RowVectorXf original_row = X.row(X_rid);
 
-  for (auto i{0}; i < U.rows(); ++i)
+  for (auto i = 0; i < U.rows(); ++i)
   {
     X.row(X_rid) = U.row(i);
     const float volume = std::abs(X.determinant());
@@ -367,7 +367,7 @@ void cb_explore_adf_large_action_space::compute_spanner()
 
   // Transform the basis into C-approximate spanner.
   float X_volume = std::abs(X.determinant());
-  for (int iter{0}; iter < static_cast<int>(_d * std::log(_d) / std::log(_c)); ++iter)
+  for (int iter = 0; iter < static_cast<int>(_d * std::log(_d) / std::log(_c)); ++iter)
   {
     bool found_larger_volume = false;
 
@@ -434,7 +434,7 @@ void cb_explore_adf_large_action_space::predict_or_learn_impl(VW::LEARNER::multi
     // Set the exploration distribution over S and the minimizer.
     _spanner_bitvec[min_ck_idx] = false;
     float sum_scores = 0.0f;
-    for (auto i{0u}; i < preds.size(); ++i)
+    for (auto i = 0u; i < preds.size(); ++i)
     {
       if (_spanner_bitvec[i])
       {
