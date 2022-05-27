@@ -33,6 +33,12 @@ void epsilon_decay_score::update_bounds(float w, float r)
   _lower_bound = static_cast<float>(sd.first);
 }
 
+void epsilon_decay_score::reset_stats(double alpha, double tau)
+{
+  VW::scored_config::reset_stats(alpha, tau);
+  _lower_bound = 0.f;
+}
+
 float decayed_epsilon(uint64_t update_count) { return static_cast<float>(std::pow(update_count + 1, -1.f / 3.f)); }
 
 }  // namespace epsilon_decay
@@ -199,7 +205,9 @@ void learn(
       uint64_t params_per_weight = 1;
       while (params_per_weight < static_cast<uint64_t>(K)) { params_per_weight *= 2; }
       for (int64_t outer_ind = 0; outer_ind < K; ++outer_ind)
-      { data._scored_configs[outer_ind][0].reset_stats(data._epsilon_decay_alpha, data._epsilon_decay_tau); }
+      {
+        data._scored_configs[outer_ind][0].reset_stats(data._epsilon_decay_alpha, data._epsilon_decay_tau);
+      }
       data._weights.dense_weights.clear_offset(data._weight_indices[0], params_per_weight);
       break;
     }
