@@ -612,7 +612,7 @@ void ex_push_feature(example_ptr ec, unsigned char ns, uint32_t fid, float v)
   ec->reset_total_sum_feat_sq();
 }
 
-// List[Union[Tuple[Union[str,int], float], Union[str,int]]]
+//List[Union[Tuple[Union[str,int], float], str,int]]
 void ex_push_feature_list(example_ptr ec, vw_ptr vw, unsigned char ns, py::list& a)
 {  // warning: assumes namespace exists!
   char ns_str[2] = {(char)ns, 0};
@@ -676,6 +676,65 @@ void ex_push_feature_list(example_ptr ec, vw_ptr vw, unsigned char ns, py::list&
   ec->reset_total_sum_feat_sq();
 }
 
+//Dict[Union[str,int],Union[int,float]]
+void ex_push_feature_dict(example_ptr ec, vw_ptr vw, unsigned char ns, PyObject* o)
+{  
+  // warning: assumes namespace exists!
+  char ns_str[2] = {(char)ns, 0};
+  uint64_t ns_hash = VW::hash_space(*vw, ns_str);
+  size_t count = 0;
+
+  PyObject *name, *value;
+  Py_ssize_t size = 0, pos=0;
+  float feat_value;
+  uint64_t feat_index;
+
+  while (PyDict_Next(o, &pos, &name, &value))
+  {
+    if (PyFloat_Check(value))
+    {
+      feat_value = (float)PyFloat_AsDouble(value);
+    } 
+    else if (PyLong_Check(value))
+    {
+      feat_value = (float)PyLong_AsDouble(value);
+    }
+    else
+    {
+      std::cerr << "warning: malformed feature in list" << std::endl;
+      continue;
+    }
+
+    if (feat_value == 0)
+    {
+      continue;
+    }
+
+    if (PyUnicode_Check(name)) 
+    {
+      feat_index = vw->example_parser->hasher(PyUnicode_AsUTF8AndSize(name, &size), size, ns_hash) & vw->parse_mask;
+    }
+    else if (PyLong_Check(name))
+    {
+      feat_index = PyLong_AsUnsignedLong(name);
+    }
+    else
+    {
+      std::cerr << "warning: malformed feature in list" << std::endl;
+      continue;
+    }
+
+    ec->feature_space[ns].push_back(feat_value, feat_index);
+    count++;
+  }
+
+  if (count > 0)
+  {
+    ec->num_features += count;
+    ec->reset_total_sum_feat_sq();
+  }
+}
+
 void ex_push_namespace(example_ptr ec, unsigned char ns) { ec->indices.push_back(ns); }
 
 void ex_ensure_namespace_exists(example_ptr ec, unsigned char ns)
@@ -685,29 +744,29 @@ void ex_ensure_namespace_exists(example_ptr ec, unsigned char ns)
   ex_push_namespace(ec, ns);
 }
 
-// Dict[str, List[Union[Tuple[Union[str,int], float], Union[str,int]]]]
-void ex_push_dictionary(example_ptr ec, vw_ptr vw, py::dict& dict)
+//Dict[str, Union[Dict[str,float], List[Union[Tuple[Union[str,int], float], str,int]]]]
+void ex_push_dictionary(example_ptr ec, vw_ptr vw, PyObject* o)
 {
-  const py::object objectKeys = py::object(py::handle<>(PyObject_GetIter(dict.keys().ptr())));
-  const py::object objectVals = py::object(py::handle<>(PyObject_GetIter(dict.values().ptr())));
-  unsigned long ulCount = boost::python::extract<unsigned long>(dict.attr("__len__")());
-  for (size_t u = 0; u < ulCount; ++u)
+  PyObject *ns_raw, *feats;
+  Py_ssize_t pos1 = 0;
+  
+  while (PyDict_Next(o, &pos1, &ns_raw, &feats)) 
   {
-    py::object objectKey = py::object(py::handle<>(PyIter_Next(objectKeys.ptr())));
-    py::object objectVal = py::object(py::handle<>(PyIter_Next(objectVals.ptr())));
+    py::extract<std::string> ns_e(ns_raw);
+    if(ns_e().length() < 1) continue;
+    unsigned char ns = ns_e()[0];
 
-    char chCheckKey = objectKey.ptr()->ob_type->tp_name[0];
-    if (chCheckKey != 's') continue;
-    chCheckKey = objectVal.ptr()->ob_type->tp_name[0];
-    if (chCheckKey != 'l') continue;
-
-    py::extract<std::string> ns_e(objectKey);
-    if (ns_e().length() < 1) continue;
-    py::extract<py::list> list_e(objectVal);
-    py::list list = list_e();
-    char ns = ns_e()[0];
     ex_ensure_namespace_exists(ec, ns);
-    ex_push_feature_list(ec, vw, ns, list);
+
+    if (PyDict_Check(feats)) 
+    {
+      ex_push_feature_dict(ec, vw, ns, feats);
+    }
+    else
+    {
+      py::list list = py::extract<py::list>(feats);
+      ex_push_feature_list(ec, vw, ns, list);
+    }
   }
 }
 
