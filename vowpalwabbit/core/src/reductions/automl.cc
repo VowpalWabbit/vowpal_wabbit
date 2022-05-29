@@ -108,30 +108,25 @@ std::string interaction_vec_t_to_string(const VW::reductions::automl::interactio
   return ss.str();
 }
 
-std::string exclusions_to_string(const std::map<VW::namespace_index, std::set<VW::namespace_index>>& exclusions)
-{
+std::string exclusions_to_string_test2(const std::set<std::set<namespace_index>>& exclusions)
+{  
   const char* const delim = ", ";
   std::stringstream ss;
-  size_t total = exclusions.size();
+  size_t total = exclusions.size(); 
   size_t count = 0;
-
   ss << "{";
   for (auto const& x : exclusions)
   {
-    auto ns1 = x.first;
-    ss << "\"" << ns_to_str(ns1) << "\""
-       << ": [";
-
-    if (!x.second.empty())
+    ss <<"[";
+    if (!x.empty())
     {
-      auto i = x.second.begin(), second_last = std::prev(x.second.end());
-      for (; i != second_last; ++i) { ss << "\"" << ns_to_str(*i) << "\"" << delim; }
-      ss << "\"" << ns_to_str(*second_last) << "\"";
+      auto i = x.begin(), x_last = std::prev(x.end());
+      for (; i != x_last; ++i) { ss << "\"" << ns_to_str(*i) << "\"" << delim;}
+      ss << "\"" << ns_to_str(*x_last) << "\"";
     }
-
     count += 1;
     ss << "]";
-    if (count < total) { ss << delim; }
+    if (count < total) { ss << delim;}
   }
   ss << "}";
   return ss.str();
