@@ -171,7 +171,7 @@ struct memory_tree
 
   std::vector<node> nodes;  // array of nodes.
   // v_array<node> nodes;         // array of nodes.
-  VW::v_array<VW::example*> examples;  // array of example points
+  VW::multi_ex examples;  // array of example points
 
   size_t max_leaf_examples = 0;
   size_t max_nodes = 0;
@@ -323,14 +323,14 @@ inline int random_sample_example_pop(memory_tree& b, uint64_t& cn)
   cn = 0;  // always start from the root:
   while (b.nodes[cn].internal == 1)
   {
-    float pred = 0.;              // deal with some edge cases:
+    float pred = 0.;  // deal with some edge cases:
     if (b.nodes[cn].nl < 1)
-    {                             // no examples routed to left ever:
-      pred = 1.f;                 // go right.
+    {              // no examples routed to left ever:
+      pred = 1.f;  // go right.
     }
     else if (b.nodes[cn].nr < 1)
-    {                             // no examples routed to right ever:
-      pred = -1.f;                // go left.
+    {               // no examples routed to right ever:
+      pred = -1.f;  // go left.
     }
     else if ((b.nodes[cn].nl >= 1) && (b.nodes[cn].nr >= 1))
     {

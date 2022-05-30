@@ -239,9 +239,9 @@ public:
       typename std::enable_if<!std::is_pointer<T>::value && std::is_trivially_copyable<T>::value, bool>::type = true>
   T read_value(VW::string_view debug_name = "")
   {
-    char* c;
+    char* read_head = nullptr;
     T value;
-    if (buf_read(c, sizeof(T)) < sizeof(T))
+    if (buf_read(read_head, sizeof(T)) < sizeof(T))
     {
       if (!debug_name.empty()) { THROW("Failed to read cache value: " << debug_name << ", with size: " << sizeof(T)); }
       else
@@ -249,9 +249,7 @@ public:
         THROW("Failed to read cache value with size: " << sizeof(T));
       }
     }
-    value = *reinterpret_cast<T*>(c);
-    c += sizeof(T);
-    set(c);
+    value = *reinterpret_cast<T*>(read_head);
     return value;
   }
 

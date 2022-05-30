@@ -164,8 +164,8 @@ private:
     if (ec->indices.size() > 1)
     {  // 1+ nonconstant feature. (most common case first)
       return complete_multi_ex(ec);
-    // Explicitly do not process the end-of-pass examples here: It needs to be done
-    // after learning on the collected multi_ex
+      // Explicitly do not process the end-of-pass examples here: It needs to be done
+      // after learning on the collected multi_ex
     }
     else if (is_save_cmd(ec))
     {
@@ -236,7 +236,7 @@ private:
 class custom_examples_queue
 {
 public:
-  void reset_examples(const v_array<example*>* examples)
+  void reset_examples(const VW::multi_ex* examples)
   {
     assert(examples != nullptr);
     _examples = examples;
@@ -250,7 +250,7 @@ public:
   }
 
 private:
-  const v_array<example*>* _examples;
+  const VW::multi_ex* _examples;
   size_t _index{0};
 };
 
@@ -301,7 +301,7 @@ void generic_driver_onethread(VW::workspace& all)
   single_instance_context context(all);
   handler_type handler(context);
   custom_examples_queue examples_queue;
-  auto multi_ex_fptr = [&handler, &examples_queue](VW::workspace& /*all*/, const v_array<example*>& examples) {
+  auto multi_ex_fptr = [&handler, &examples_queue](VW::workspace& /*all*/, const VW::multi_ex& examples) {
     examples_queue.reset_examples(&examples);
     process_examples(examples_queue, handler);
   };

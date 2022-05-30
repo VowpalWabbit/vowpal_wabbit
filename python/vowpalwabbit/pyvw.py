@@ -6,6 +6,7 @@ from typing import Any, Dict, Iterator, List, Optional, Tuple, Type, Union
 import pylibvw
 import warnings
 import inspect
+from pathlib import Path
 
 from enum import IntEnum
 
@@ -176,11 +177,10 @@ class VWOption:
             if self.is_flag():
                 return "--{}".format(self.name)
             else:
-                # missing list case
                 if isinstance(self.value, list):
-                    return "**NOT_IMPL**"
+                    return " ".join(map(lambda x: f"--{self.name}={x}", self.value))
                 else:
-                    return "--{} {}".format(self.name, self.value)
+                    return "--{}={}".format(self.name, self.value)
         else:
             return ""
 
@@ -718,9 +718,9 @@ class Workspace(pylibvw.vw):
 
         return prediction
 
-    def save(self, filename: str) -> None:
+    def save(self, filename: Union[str, Path]) -> None:
         """save model to disk"""
-        pylibvw.vw.save(self, filename)
+        pylibvw.vw.save(self, str(filename))
 
     def finish(self) -> None:
         """stop VW by calling finish (and, eg, write weights to disk)"""

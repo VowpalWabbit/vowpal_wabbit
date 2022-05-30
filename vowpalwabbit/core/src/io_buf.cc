@@ -23,8 +23,8 @@ size_t io_buf::buf_read(char*& pointer, size_t n)
       head = _buffer._begin;
     }
     if (_current < input_files.size() && fill(input_files[_current].get()) > 0)
-    {                                           // read more bytes from _current file if present
-      return buf_read(pointer, n);              // more bytes are read.
+    {                               // read more bytes from _current file if present
+      return buf_read(pointer, n);  // more bytes are read.
     }
     else if (++_current < input_files.size())
     {

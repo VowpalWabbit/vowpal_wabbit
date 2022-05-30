@@ -69,6 +69,7 @@ set(vw_core_headers
   include/vw/core/prediction_type.h
   include/vw/core/print_utils.h
   include/vw/core/prob_dist_cont.h
+  include/vw/core/qr_decomposition.h
   include/vw/core/queue.h
   include/vw/core/rand_state.h
   include/vw/core/rand48.h
@@ -97,6 +98,7 @@ set(vw_core_headers
   include/vw/core/reductions/cb/cb_explore_adf_cover.h
   include/vw/core/reductions/cb/cb_explore_adf_first.h
   include/vw/core/reductions/cb/cb_explore_adf_greedy.h
+  include/vw/core/reductions/cb/cb_explore_adf_large_action_space.h
   include/vw/core/reductions/cb/cb_explore_adf_regcb.h
   include/vw/core/reductions/cb/cb_explore_adf_rnd.h
   include/vw/core/reductions/cb/cb_explore_adf_softmax.h
@@ -116,6 +118,7 @@ set(vw_core_headers
   include/vw/core/reductions/csoaa_ldf.h
   include/vw/core/reductions/csoaa.h
   include/vw/core/reductions/ect.h
+  include/vw/core/reductions/epsilon_decay.h
   include/vw/core/reductions/explore_eval.h
   include/vw/core/reductions/expreplay.h
   include/vw/core/reductions/freegrad.h
@@ -225,6 +228,7 @@ set(vw_core_sources
   src/prediction_type.cc
   src/print_utils.cc
   src/prob_dist_cont.cc
+  src/qr_decomposition.cc
   src/rand48.cc
   src/reduction_stack.cc
   src/reductions/active_cover.cc
@@ -248,6 +252,7 @@ set(vw_core_sources
   src/reductions/cb/cb_explore_adf_cover.cc
   src/reductions/cb/cb_explore_adf_first.cc
   src/reductions/cb/cb_explore_adf_greedy.cc
+  src/reductions/cb/cb_explore_adf_large_action_space.cc
   src/reductions/cb/cb_explore_adf_regcb.cc
   src/reductions/cb/cb_explore_adf_rnd.cc
   src/reductions/cb/cb_explore_adf_softmax.cc
@@ -268,6 +273,7 @@ set(vw_core_sources
   src/reductions/csoaa_ldf.cc
   src/reductions/csoaa.cc
   src/reductions/ect.cc
+  src/reductions/epsilon_decay.cc
   src/reductions/explore_eval.cc
   src/reductions/freegrad.cc
   src/reductions/ftrl.cc
@@ -344,7 +350,7 @@ vw_add_library(
     SOURCES ${vw_core_headers} ${vw_core_sources}
     PUBLIC_DEPS vw_common vw_explore vw_allreduce vw_config ${spdlog_target} fmt::fmt
     PRIVATE_DEPS
-        ${CMAKE_DL_LIBS} ${LINK_THREADS} vw_io $<BUILD_INTERFACE:${boost_math_target}>
+        ${CMAKE_DL_LIBS} ${LINK_THREADS} vw_io $<BUILD_INTERFACE:${boost_math_target}> $<BUILD_INTERFACE:eigen>
         # Workaround an issue where RapidJSON needed to be exported tom install the target. This is
         # actually a private dependency and so do not "link" when processing targets for installation.
         # https://gitlab.kitware.com/cmake/cmake/issues/15415
@@ -354,6 +360,7 @@ vw_add_library(
     ${ENABLE_INSTALL_OPTION}
 )
 
+target_include_directories(vw_core PRIVATE ${CMAKE_CURRENT_LIST_DIR}/src)
 if (BUILD_EXTERNAL_PARSER)
   target_compile_definitions(vw_core PUBLIC BUILD_EXTERNAL_PARSER)
   target_include_directories(vw_core PRIVATE ${EXTERNAL_PARSER_DIR})
@@ -395,3 +402,8 @@ endif()
 if(WIN32)
   target_compile_definitions(vw_core PUBLIC __SSE2__)
 endif()
+
+vw_add_test_executable(
+    FOR_LIB "core"
+    SOURCES tests/cache_test.cc tests/parse_args_test.cc
+)

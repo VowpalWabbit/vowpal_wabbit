@@ -104,3 +104,9 @@ if(BUILD_FLATBUFFERS)
   endif()
   include(FlatbufferUtils)
 endif()
+
+add_library(eigen INTERFACE)
+target_include_directories(eigen SYSTEM INTERFACE
+  $<BUILD_INTERFACE:${CMAKE_CURRENT_LIST_DIR}/eigen>
+  $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
+)

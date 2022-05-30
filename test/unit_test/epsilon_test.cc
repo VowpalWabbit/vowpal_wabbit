@@ -7,7 +7,6 @@
 #include "vw/core/reduction_features.h"
 
 #include <boost/test/test_tools.hpp>
-#include <boost/test/tools/old/interface.hpp>
 #include <boost/test/unit_test.hpp>
 
 BOOST_AUTO_TEST_CASE(set_epsilon_test)

@@ -1,6 +1,7 @@
 import copy
 import os
 import os.path
+import shlex
 import subprocess
 from pathlib import Path
 import re
@@ -11,6 +12,10 @@ from run_tests_common import TestData
 
 def remove_first_arg(command_line: str) -> str:
     return " ".join(command_line.split()[1:])
+
+
+def is_input_data_file(input_file):
+    return "train-set" in input_file or "test-set" in input_file
 
 
 class FlatbufferTest:
@@ -43,12 +48,9 @@ class FlatbufferTest:
                 command = re.sub("{} [:a-zA-Z0-9_.\-/]*".format(tag), "", command)
         return command
 
-    def change_input_file(self, input_file):
-        return "train-set" in input_file or "test-set" in input_file
-
     def get_flatbuffer_file_names(self):
         for i, input_file in enumerate(self.test.input_files):
-            if self.change_input_file(input_file):
+            if is_input_data_file(input_file):
                 file_basename = os.path.basename(input_file)
                 fb_file = "".join([file_basename, ".fb"])
                 fb_file_full_path = self.working_dir.joinpath(
@@ -85,7 +87,13 @@ class FlatbufferTest:
 
     def convert(self, to_flatbuff, color_enum):
         # arguments and flats not supported or needed in flatbuffer conversion
-        flags_to_remove = ["-c ", "--bfgs", "--onethread", "-t ", "--search_span_bilou"]
+        flags_to_remove = [
+            "-c ",
+            "--bfgs",
+            "--onethread",
+            "-t ",
+            "--search_span_bilou",
+        ]
         arguments_to_remove = [
             "--passes",
             "--ngram",
@@ -123,9 +131,10 @@ class FlatbufferTest:
             # replace depends_on filename with our filename, will do nothing if no depends_on
             to_flatbuff_command = re.sub(
                 "{} [:a-zA-Z0-9_.\-/]*".format("-d"),
-                "-d {} ".format(from_file),
+                "",
                 to_flatbuff_command,
             )
+            to_flatbuff_command = f"-d {from_file} " + to_flatbuff_command
 
             cmd = "{} {} {} {}".format(
                 to_flatbuff, to_flatbuff_command, "--fb_out", to_file
@@ -137,7 +146,7 @@ class FlatbufferTest:
                     color_enum.LIGHT_PURPLE, self.test_id, cmd, color_enum.ENDC
                 )
             )
-            result = subprocess.run(cmd, shell=True, check=True)
+            result = subprocess.run(shlex.split(cmd), check=True)
             if result.returncode != 0:
                 raise RuntimeError(
                     "Generating flatbuffer file failed with {} {} {}".format(

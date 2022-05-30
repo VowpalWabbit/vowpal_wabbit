@@ -370,11 +370,6 @@ void parse_cache(VW::workspace& all, std::vector<std::string> cache_files, bool 
       {
         if (!quiet) { *(all.trace_message) << "using cache_file = " << file.c_str() << endl; }
         set_cache_reader(all);
-        if (c == all.num_bits) { all.example_parser->sorted_cache = true; }
-        else
-        {
-          all.example_parser->sorted_cache = false;
-        }
         all.example_parser->resettable = true;
       }
     }
@@ -570,9 +565,7 @@ void enable_sources(VW::workspace& all, bool quiet, size_t passes, input_options
     if (all.active) { set_string_reader(all); }
     else
     {
-      all.example_parser->sorted_cache = true;
       set_daemon_reader(all, input_options.json, input_options.dsjson);
-      all.example_parser->sorted_cache = true;
     }
     all.example_parser->resettable = all.example_parser->write_cache || all.daemon;
   }
@@ -697,7 +690,7 @@ VW::example& get_unused_example(VW::workspace* all)
   return *ex;
 }
 
-void setup_examples(VW::workspace& all, VW::v_array<VW::example*>& examples)
+void setup_examples(VW::workspace& all, VW::multi_ex& examples)
 {
   for (VW::example* ae : examples) { setup_example(all, ae); }
 }
@@ -927,7 +920,7 @@ void finish_example(VW::workspace& all, example& ec)
 }
 }  // namespace VW
 
-void thread_dispatch(VW::workspace& all, const VW::v_array<VW::example*>& examples)
+void thread_dispatch(VW::workspace& all, const VW::multi_ex& examples)
 {
   for (auto example : examples) { all.example_parser->ready_parsed_examples.push(example); }
 }

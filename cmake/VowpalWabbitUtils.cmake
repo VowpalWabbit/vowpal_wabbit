@@ -117,7 +117,14 @@ function(vw_add_library)
   # TODO: handle flags in a centralized way maybe?
 
   vw_get_lib_target(FULL_LIB_NAME ${VW_LIB_NAME})
-  add_library(${FULL_LIB_NAME} ${CONCRETE_CMAKE_LIB_TYPE})
+
+  if(${VW_LIB_TYPE} STREQUAL "HEADER_ONLY")
+    # Interface libs can't have sources in CMake 3.10
+    add_library(${FULL_LIB_NAME} ${CONCRETE_CMAKE_LIB_TYPE})
+  else()
+    add_library(${FULL_LIB_NAME} ${CONCRETE_CMAKE_LIB_TYPE} ${VW_LIB_SOURCES})
+  endif()
+
   add_library(VowpalWabbit::${FULL_LIB_NAME} ALIAS ${FULL_LIB_NAME})
 
   if(VW_OUPUT_LIB_DESCRIPTIONS)
@@ -131,12 +138,6 @@ function(vw_add_library)
       set_target_properties(${FULL_LIB_NAME} PROPERTIES DEBUG_POSTFIX d)
     endif()
   endif()
-
-  set(SOURCES_TYPE "PRIVATE")
-  if(${VW_LIB_TYPE} STREQUAL "HEADER_ONLY")
-    set(SOURCES_TYPE "INTERFACE")
-  endif()
-  target_sources(${FULL_LIB_NAME} ${SOURCES_TYPE} ${VW_LIB_SOURCES})
 
   set(PUBLIC_LINK_TYPE "PUBLIC")
   if(${VW_LIB_TYPE} STREQUAL "HEADER_ONLY")
@@ -211,8 +212,7 @@ function(vw_add_executable)
   endif()
 
   vw_get_bin_target(FULL_BIN_NAME ${VW_EXE_NAME})
-  add_executable(${FULL_BIN_NAME})
-  target_sources(${FULL_BIN_NAME} PRIVATE ${VW_EXE_SOURCES})
+  add_executable(${FULL_BIN_NAME} ${VW_EXE_SOURCES})
 
   if(VW_OUPUT_LIB_DESCRIPTIONS)
     message(STATUS "{\"name\":\"${VW_EXE_NAME}\", \"target\":\"${FULL_BIN_NAME}\", \"type\":\"EXECUTABLE\",\"description\":\"${VW_EXE_DESCRIPTION}\",\"public_deps\":\"\",\"private_deps\":\"${VW_EXE_DEPS}\",\"exceptions\":\"N/A\"}")
@@ -275,8 +275,7 @@ function(vw_add_test_executable)
   if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME AND BUILD_TESTING)
 
     vw_get_test_target(FULL_TEST_NAME ${VW_TEST_FOR_LIB})
-    add_executable(${FULL_TEST_NAME})
-    target_sources(${FULL_TEST_NAME} PRIVATE ${VW_TEST_SOURCES})
+    add_executable(${FULL_TEST_NAME} ${VW_TEST_SOURCES})
     target_link_libraries(${FULL_TEST_NAME} PUBLIC
       ${FULL_FOR_LIB_NAME}
       ${VW_TEST_EXTRA_DEPS}
@@ -289,7 +288,7 @@ function(vw_add_test_executable)
     set_property(TARGET ${FULL_TEST_NAME} PROPERTY CXX_STANDARD_REQUIRED ON)
     set_property(TARGET ${FULL_TEST_NAME} PROPERTY CMAKE_CXX_EXTENSIONS OFF)
     if(VW_UNIT_TEST_WITH_VALGRIND_INTERNAL)
-      add_test(NAME ${FULL_TEST_NAME} COMMAND ${VALGRIND} $<TARGET_FILE:${FULL_TEST_NAME}>)
+      add_test(NAME ${FULL_TEST_NAME} COMMAND ${VALGRIND} --error-exitcode=100 --track-origins=yes --leak-check=full $<TARGET_FILE:${FULL_TEST_NAME}>)
     else()
       add_test(NAME ${FULL_TEST_NAME} COMMAND ${FULL_TEST_NAME})
     endif()

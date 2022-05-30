@@ -1,12 +1,17 @@
+if(VW_UNIT_TEST_WITH_VALGRIND_INTERNAL)
+  find_program(VALGRIND "valgrind" REQUIRED)
+endif()
+
 add_executable(vw-unit-test.out
+  epsilon_decay_test.cc
   automl_test.cc
   automl_weights_test.cc
   baseline_cb_test.cc
-  cache_test.cc
   cats_test.cc
   cats_tree_test.cc
   cats_user_provided_pdf.cc
   cb_explore_adf_test.cc
+  cb_large_actions_test.cc
   ccb_parser_test.cc
   ccb_test.cc
   chain_hashing.cc
@@ -20,7 +25,6 @@ add_executable(vw-unit-test.out
   example_test.cc
   feature_group_test.cc
   guard_test.cc
-  initialize_test.cc
   interactions_test.cc
   json_parser_test.cc
   loss_functions_test.cc
@@ -56,6 +60,7 @@ add_executable(vw-unit-test.out
 
 # Add the include directories from vw target for testing
 target_link_libraries(vw-unit-test.out PRIVATE vw_core RapidJSON Boost::unit_test_framework)
+target_include_directories(vw-unit-test.out PRIVATE $<TARGET_PROPERTY:vw_core,INCLUDE_DIRECTORIES>)
 
 # Automatically set BOOST_TEST_DYN_LINK if the dependency is shared.
 get_target_property(boost_test_target_type Boost::unit_test_framework TYPE)
@@ -70,9 +75,18 @@ elseif(boost_test_target_type STREQUAL UNKNOWN_LIBRARY)
   endif()
 endif()
 
-add_test(
-  NAME vw_unit_test
-  COMMAND $<TARGET_FILE:vw-unit-test.out>
-  WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
-)
+if(VW_UNIT_TEST_WITH_VALGRIND_INTERNAL)
+  add_test(
+    NAME vw_unit_test
+    COMMAND ${VALGRIND} --error-exitcode=100 --track-origins=yes --leak-check=full $<TARGET_FILE:vw-unit-test.out>
+    WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
+  )
+else()
+  add_test(
+    NAME vw_unit_test
+    COMMAND $<TARGET_FILE:vw-unit-test.out>
+    WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
+  )
+endif()
+
 set_tests_properties(vw_unit_test PROPERTIES LABELS "VWTestList")

@@ -7,6 +7,7 @@ This project incorporates components from the projects listed below. The origina
 2.	zlib (http://zlib.net/)
 3.	flatbuffers (https://google.github.io/flatbuffers/)
 4.  string-view-lite (https://github.com/martinmoene/string-view-lite)
+5. Eigen (https://gitlab.com/libeigen/eigen)
 
 RapidJSON NOTICES AND INFORMATION BEGIN HERE
 =========================================
@@ -156,3 +157,65 @@ ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 DEALINGS IN THE SOFTWARE.
 =========================================
 END OF string-view-lite NOTICES AND INFORMATION
+
+Eigen NOTICES AND INFORMATION BEGIN HERE
+=========================================
+Eigen is primarily MPL2 licensed. See COPYING.MPL2 and these links:
+  http://www.mozilla.org/MPL/2.0/
+  http://www.mozilla.org/MPL/2.0/FAQ.html
+
+Some files contain third-party code under BSD or LGPL licenses, whence the other
+COPYING.* files here.
+
+All the LGPL code is either LGPL 2.1-only, or LGPL 2.1-or-later.
+For this reason, the COPYING.LGPL file contains the LGPL 2.1 text.
+
+If you want to guarantee that the Eigen code that you are #including is licensed
+under the MPL2 and possibly more permissive licenses (like BSD), #define this
+preprocessor symbol:
+  EIGEN_MPL2_ONLY
+For example, with most compilers, you could add this to your project CXXFLAGS:
+  -DEIGEN_MPL2_ONLY
+This will cause a compilation error to be generated if you #include any code that is
+LGPL licensed.
+=========================================
+END OF Eigen NOTICES AND INFORMATION
+
+redsvd-h NOTICES AND INFORMATION BEGIN HERE
+=========================================
+A header-only version of RedSVD
+
+Copyright (c) 2014 Nicolas Tessore
+
+based on RedSVD
+
+Copyright (c) 2010 Daisuke Okanohara
+
+All rights reserved.
+
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions are met:
+
+* Redistributions of source code must retain the above copyright notice, this
+  list of conditions and the following disclaimer.
+
+* Redistributions in binary form must reproduce the above copyright notice,
+  this list of conditions and the following disclaimer in the documentation
+  and/or other materials provided with the distribution.
+
+* Neither the name of {{{project}}} nor the names of its
+  contributors may be used to endorse or promote products derived from
+  this software without specific prior written permission.
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
+FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
+SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
+OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+=========================================
+redsvd-h OF Eigen NOTICES AND INFORMATION

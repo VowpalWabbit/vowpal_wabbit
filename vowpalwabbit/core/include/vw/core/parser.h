@@ -33,7 +33,7 @@ namespace VW
 {
 void parse_example_label(string_view label, const VW::label_parser& lbl_parser, const named_labels* ldict,
     label_parser_reuse_mem& reuse_mem, example& ec, VW::io::logger& logger);
-void setup_examples(VW::workspace& all, v_array<example*>& examples);
+void setup_examples(VW::workspace& all, VW::multi_ex& examples);
 namespace details
 {
 struct cache_temp_buffer
@@ -74,9 +74,9 @@ struct parser
   /// parsers multiple are produced which all correspond the the same overall
   /// logical example. examples must have a single empty example in it when this
   /// call is made.
-  int (*reader)(VW::workspace*, io_buf&, VW::v_array<VW::example*>& examples);
+  int (*reader)(VW::workspace*, io_buf&, VW::multi_ex& examples);
   /// text_reader consumes the char* input and is for text based parsing
-  void (*text_reader)(VW::workspace*, const char*, size_t, VW::v_array<VW::example*>&);
+  void (*text_reader)(VW::workspace*, const char*, size_t, VW::multi_ex&);
 
   shared_data* _shared_data = nullptr;
 
@@ -89,7 +89,6 @@ struct parser
 
   bool write_cache = false;
   bool sort_features = false;
-  bool sorted_cache = false;
 
   size_t example_queue_limit;
   std::atomic<uint64_t> num_examples_taken_from_pool;

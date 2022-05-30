@@ -31,6 +31,7 @@
 #include "vw/core/reductions/cb/cb_explore_adf_cover.h"
 #include "vw/core/reductions/cb/cb_explore_adf_first.h"
 #include "vw/core/reductions/cb/cb_explore_adf_greedy.h"
+#include "vw/core/reductions/cb/cb_explore_adf_large_action_space.h"
 #include "vw/core/reductions/cb/cb_explore_adf_regcb.h"
 #include "vw/core/reductions/cb/cb_explore_adf_rnd.h"
 #include "vw/core/reductions/cb/cb_explore_adf_softmax.h"
@@ -50,6 +51,7 @@
 #include "vw/core/reductions/csoaa.h"
 #include "vw/core/reductions/csoaa_ldf.h"
 #include "vw/core/reductions/ect.h"
+#include "vw/core/reductions/epsilon_decay.h"
 #include "vw/core/reductions/explore_eval.h"
 #include "vw/core/reductions/expreplay.h"
 #include "vw/core/reductions/freegrad.h"
@@ -187,6 +189,7 @@ void prepare_reductions(std::vector<std::tuple<std::string, reduction_setup_fn>>
   reductions.push_back(VW::reductions::baseline_challenger_cb_setup);
   reductions.push_back(VW::reductions::automl_setup);
   reductions.push_back(VW::reductions::cb_explore_setup);
+  reductions.push_back(VW::reductions::cb_explore_adf_large_action_space_setup);
   reductions.push_back(VW::reductions::cb_explore_adf_greedy_setup);
   reductions.push_back(VW::reductions::cb_explore_adf_softmax_setup);
   reductions.push_back(VW::reductions::cb_explore_adf_rnd_setup);
@@ -199,6 +202,7 @@ void prepare_reductions(std::vector<std::tuple<std::string, reduction_setup_fn>>
   reductions.push_back(VW::reductions::cb_dro_setup);
   reductions.push_back(VW::reductions::cb_sample_setup);
   reductions.push_back(VW::reductions::explore_eval_setup);
+  reductions.push_back(VW::reductions::epsilon_decay_setup);
   reductions.push_back(VW::reductions::shared_feature_merger_setup);
   reductions.push_back(VW::reductions::ccb_explore_adf_setup);
   reductions.push_back(VW::reductions::slates_setup);

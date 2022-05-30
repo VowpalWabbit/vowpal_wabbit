@@ -254,6 +254,16 @@ def is_line_different(
     output_tokens = re.split("[ \t:,@]+", output_line)
     ref_tokens = re.split("[ \t:,@]+", ref_line)
 
+    # some compile flags cause VW to report different code line number for the same exception
+    # if this is the case we want to ignore that from the diff
+    if ref_tokens[0] == "[critical]" and output_tokens[0] == "[critical]":
+        # check that exception format is being followed
+        if ref_tokens[2][0] == "(" and ref_tokens[3][-1] == ")":
+            if ref_tokens[3][:-1].isnumeric():
+                # remove the line number before diffing
+                ref_tokens.pop(3)
+                output_tokens.pop(3)
+
     if len(output_tokens) != len(ref_tokens):
         return True, "Number of tokens different", False
 
@@ -785,6 +795,13 @@ def convert_tests_for_flatbuffers(
             "337",
             "338",
             "351",
+            "399",
+            "400",
+            "404",
+            "405",
+            "406",
+            "407",
+            "411",
         ):
             test.skip = True
             test.skip_reason = "test skipped for automatic converted flatbuffer tests for unknown reason"

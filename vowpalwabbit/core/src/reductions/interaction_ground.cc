@@ -87,7 +87,8 @@ base_learner* VW::reductions::interaction_ground_setup(VW::setup_base_i& stack_b
   new_options.add(make_option("experimental_igl", igl_option)
                       .keep()
                       .necessary()
-                      .help("Experimental: Do Interaction Grounding with multiline action dependent features"));
+                      .help("Do Interaction Grounding with multiline action dependent features")
+                      .experimental());
 
   if (!options.add_parse_and_check_necessary(new_options)) { return nullptr; }
 

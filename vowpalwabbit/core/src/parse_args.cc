@@ -46,10 +46,12 @@
 #include <sys/types.h>
 
 #include <algorithm>
+#include <array>
 #include <cfloat>
 #include <cstdio>
 #include <fstream>
 #include <sstream>
+#include <tuple>
 #include <utility>
 
 #ifdef BUILD_EXTERNAL_PARSER
@@ -405,7 +407,8 @@ input_options parse_source(VW::workspace& all, options_i& options)
                .help("Enable chain hash in JSON for feature name and string feature value. e.g. {'A': {'B': 'C'}} is "
                      "hashed as A^B^C."))
       .add(make_option("flatbuffer", parsed_options.flatbuffer)
-               .help("Data file will be interpreted as a flatbuffer file"));
+               .help("Data file will be interpreted as a flatbuffer file")
+               .experimental());
 #ifdef BUILD_EXTERNAL_PARSER
   VW::external::parser::set_parse_args(input_options, parsed_options);
 #endif
@@ -419,12 +422,15 @@ input_options parse_source(VW::workspace& all, options_i& options)
   // Check if the options provider has any positional args. Only really makes sense for command line, others just return
   // an empty list.
   const auto positional_tokens = options.get_positional_tokens();
-  if (positional_tokens.size() == 1) { all.data_filename = positional_tokens[0]; }
-  else if (positional_tokens.size() > 1)
+  if (!positional_tokens.empty())
   {
-    all.logger.err_warn(
-        "Multiple data files passed as positional parameters, only the first one will be "
-        "read and the rest will be ignored.");
+    all.data_filename = positional_tokens[0];
+    if (positional_tokens.size() > 1)
+    {
+      all.logger.err_warn(
+          "Multiple data files passed as positional parameters, only the first one will be "
+          "read and the rest will be ignored.");
+    }
   }
 
   if (parsed_options.daemon || options.was_supplied("pid_file") || (options.was_supplied("port") && !all.active))
@@ -519,6 +525,24 @@ const char* are_features_compatible(VW::workspace& vw1, VW::workspace& vw2)
   return nullptr;
 }
 
+namespace details
+{
+std::tuple<std::string, std::string> extract_ignored_feature(VW::string_view namespace_feature)
+{
+  std::string feature_delimiter = "|";
+  auto feature_delimiter_index = namespace_feature.find(feature_delimiter);
+  if (feature_delimiter_index != VW::string_view::npos)
+  {
+    auto ns = namespace_feature.substr(0, feature_delimiter_index);
+    // check for default namespace
+    if (ns.empty()) { ns = " "; }
+    return std::make_tuple(std::string(ns),
+        std::string(namespace_feature.substr(
+            feature_delimiter_index + 1, namespace_feature.size() - (feature_delimiter_index + 1))));
+  }
+  return {};
+}
+}  // namespace details
 }  // namespace VW
 
 std::vector<VW::namespace_index> parse_char_interactions(VW::string_view input, VW::io::logger& logger)
@@ -571,6 +595,8 @@ void parse_feature_tweaks(options_i& options, VW::workspace& all, bool interacti
   std::vector<std::string> full_name_interactions;
   std::vector<std::string> ignores;
   std::vector<std::string> ignore_linears;
+  // this is an experimental feature which is only relevant for dsjson
+  std::vector<std::string> ignore_features_dsjson;
   std::vector<std::string> keeps;
   std::vector<std::string> redefines;
 
@@ -603,6 +629,11 @@ void parse_feature_tweaks(options_i& options, VW::workspace& all, bool interacti
       .add(make_option("ignore_linear", ignore_linears)
                .keep()
                .help("Ignore namespaces beginning with character <arg> for linear terms only"))
+      .add(make_option("ignore_features_dsjson_experimental", ignore_features_dsjson)
+               .keep()
+               .help("Ignore specified features from namespace. To ignore a feature arg should be namespace|feature "
+                     "To ignore a feature in the default namespace, arg should be |feature")
+               .experimental())
       .add(make_option("keep", keeps).keep().help("Keep namespaces beginning with character <arg>"))
       .add(make_option("redefine", redefines)
                .keep()
@@ -642,7 +673,8 @@ void parse_feature_tweaks(options_i& options, VW::workspace& all, bool interacti
                .help("Create feature interactions of any level between namespaces"))
       .add(make_option("experimental_full_name_interactions", full_name_interactions)
                .keep()
-               .help("EXPERIMENTAL: Create feature interactions of any level between namespaces by specifying the full "
+               .experimental()
+               .help("Create feature interactions of any level between namespaces by specifying the full "
                      "name of each namespace."))
       .add(make_option("permutations", all.permutations)
                .help("Use permutations instead of combinations for feature interactions of same namespace"))
@@ -878,6 +910,25 @@ void parse_feature_tweaks(options_i& options, VW::workspace& all, bool interacti
     }
   }
 
+  if (options.was_supplied("ignore_features_dsjson_experimental"))
+  {
+    for (const auto& ignored : ignore_features_dsjson)
+    {
+      auto namespace_and_feature = VW::details::extract_ignored_feature(ignored);
+      const auto& ns = std::get<0>(namespace_and_feature);
+      const auto& feature_name = std::get<1>(namespace_and_feature);
+      if (!(ns.empty() || feature_name.empty()))
+      {
+        if (all.ignore_features_dsjson.find(ns) == all.ignore_features_dsjson.end())
+        { all.ignore_features_dsjson.insert({ns, std::set<std::string>{feature_name}}); }
+        else
+        {
+          all.ignore_features_dsjson.at(ns).insert(feature_name);
+        }
+      }
+    }
+  }
+
   if (options.was_supplied("keep"))
   {
     for (size_t i = 0; i < NUM_NAMESPACES; i++) { all.ignore[i] = true; }
@@ -1021,7 +1072,10 @@ void parse_example_tweaks(options_i& options, VW::workspace& all)
 {
   std::string named_labels;
   std::string loss_function;
-  float loss_parameter = 0.0;
+  float quantile_loss_parameter = 0.0;
+  float expectile_loss_parameter = 0.0;
+  float logistic_loss_min = 0.0;
+  float logistic_loss_max = 0.0;
   uint64_t early_terminate_passes;
   bool test_only = false;
 
@@ -1054,9 +1108,17 @@ void parse_example_tweaks(options_i& options, VW::workspace& all)
                .default_value("squared")
                .one_of({"squared", "classic", "hinge", "logistic", "quantile", "expectile", "poisson"})
                .help("Specify the loss function to be used, uses squared by default"))
-      .add(make_option("quantile_tau", loss_parameter)
+      .add(make_option("quantile_tau", quantile_loss_parameter)
                .default_value(0.5f)
                .help("Parameter \\tau associated with Quantile loss. Defaults to 0.5"))
+      .add(make_option("expectile_q", expectile_loss_parameter)
+               .help("Parameter q associated with Expectile loss (required). Must be a value in (0.0, 0.5]."))
+      .add(make_option("logistic_min", logistic_loss_min)
+               .default_value(-1.f)
+               .help("Minimum loss value for logistic loss. Defaults to -1"))
+      .add(make_option("logistic_max", logistic_loss_max)
+               .default_value(1.0f)
+               .help("Maximum loss value for logistic loss. Defaults to +1"))
       .add(make_option("l1", all.l1_lambda).default_value(0.0f).help("L_1 lambda"))
       .add(make_option("l2", all.l2_lambda).default_value(0.0f).help("L_2 lambda"))
       .add(make_option("no_bias_regularization", all.no_bias).help("No bias in regularization"))
@@ -1105,12 +1167,56 @@ void parse_example_tweaks(options_i& options, VW::workspace& all)
     if (!all.quiet) { *(all.trace_message) << "parsed " << all.sd->ldict->getK() << " named labels" << endl; }
   }
 
-  all.loss = get_loss_function(all, loss_function, loss_parameter);
-  if (options.was_supplied("quantile_tau") && all.loss->get_type() != "quantile" && all.loss->get_type() != "expectile")
+  const std::vector<std::string> loss_functions_that_accept_quantile_tau = {"quantile", "pinball", "absolute"};
+  const bool loss_function_accepts_quantile_tau =
+      std::find(loss_functions_that_accept_quantile_tau.begin(), loss_functions_that_accept_quantile_tau.end(),
+          loss_function) != loss_functions_that_accept_quantile_tau.end();
+  const bool loss_function_accepts_expectile_q = (loss_function == "expectile");
+  const bool loss_function_accepts_logistic_args = (loss_function == "logistic");
+  if (options.was_supplied("quantile_tau") && !loss_function_accepts_quantile_tau)
   {
-    all.logger.err_warn(
-        "Option 'quantile_tau' was passed but the quantile loss function is not being used. 'quantile_tau' value will "
-        "be ignored.");
+    THROW(
+        "Option 'quantile_tau' was passed but the quantile loss function is not being used. "
+        "Selected loss function: "
+        << loss_function);
+  }
+  if (options.was_supplied("expectile_q") && !loss_function_accepts_expectile_q)
+  {
+    THROW(
+        "Option 'expectile_q' was passed but the expectile loss function is not being used. "
+        "Selected loss function: "
+        << loss_function);
+  }
+  if ((options.was_supplied("logistic_min") || options.was_supplied("logistic_max")) &&
+      !loss_function_accepts_logistic_args)
+  {
+    THROW(
+        "Options 'logistic_min' or 'logistic_max' were passed but the logistic loss function is not being used. "
+        "Selected loss function: "
+        << loss_function);
+  }
+
+  if (loss_function_accepts_quantile_tau)
+  {
+    all.loss = get_loss_function(all, loss_function, quantile_loss_parameter);
+  }
+  else if (loss_function_accepts_expectile_q)
+  {
+    if (expectile_loss_parameter <= 0.0f || expectile_loss_parameter > 0.5f)
+    {
+      THROW(
+          "Option 'expectile_q' must be specified with a value in range (0.0, 0.5] "
+          "when using the expectile loss function.");
+    }
+    all.loss = get_loss_function(all, loss_function, expectile_loss_parameter);
+  }
+  else if (loss_function_accepts_logistic_args)
+  {
+    all.loss = get_loss_function(all, loss_function, logistic_loss_min, logistic_loss_max);
+  }
+  else
+  {
+    all.loss = get_loss_function(all, loss_function);
   }
 
   if (all.l1_lambda < 0.f)
@@ -1223,13 +1329,16 @@ void parse_output_model(options_i& options, VW::workspace& all)
       .add(make_option("invert_hash", all.inv_hash_regressor_name)
                .help("Output human-readable final regressor with feature names.  Computationally expensive"))
       .add(make_option("dump_json_weights_experimental", all.json_weights_file_name)
-               .help("Experimental: Output json representation of model parameters."))
+               .experimental()
+               .help("Output json representation of model parameters."))
       .add(make_option(
           "dump_json_weights_include_feature_names_experimental", all.dump_json_weights_include_feature_names)
-               .help("Experimental: Whether to include feature names in json output"))
+               .experimental()
+               .help("Whether to include feature names in json output"))
       .add(make_option(
           "dump_json_weights_include_extra_online_state_experimental", all.dump_json_weights_include_extra_online_state)
-               .help("Experimental: Whether to include extra online state in json output"))
+               .experimental()
+               .help("Whether to include extra online state in json output"))
       .add(
           make_option("predict_only_model", predict_only_model)
               .help("Do not save extra state for learning to be resumed. Stored model can only be used for prediction"))

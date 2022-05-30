@@ -75,7 +75,7 @@ struct lda
   VW::v_array<float> Elogtheta;
   VW::v_array<float> decay_levels;
   VW::v_array<float> total_new;
-  VW::v_array<VW::example*> examples;
+  VW::multi_ex examples;
   VW::v_array<float> total_lambda;
   VW::v_array<int> doc_lengths;
   VW::v_array<float> digammas;

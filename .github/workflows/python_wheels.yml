@@ -77,7 +77,7 @@ jobs:
         # Tests without datafiles are skipped
         run: |
           cd test
-          python run_tests.py -E 0.001 -f --skip_spanning_tree_tests --vw_bin_path "python3 -m vowpalwabbit" --skip_test 60 61 92 96 149 152 177 193 194 195 220 275 276 324 325 326 349 350 356 357 358 385 389 390 391 392 393
+          python run_tests.py -E 0.001 -f --skip_spanning_tree_tests --vw_bin_path "python3 -m vowpalwabbit" --skip_test 60 61 92 96 149 152 177 193 194 195 220 275 276 324 325 326 349 350 356 357 358 385 389 390 391 392 393 400 399 401 403
   linux-python-sdist-bundle:
     name: ubuntu-latest.amd64.py3.8.sdist-bundle
     runs-on: ubuntu-latest
@@ -135,7 +135,6 @@ jobs:
     strategy:
       matrix:
         config:
-        - { version: "3.6", base_path: /opt/python/cp36-cp36m/, include_dir_name: python3.6m/ }
         - { version: "3.7", base_path: /opt/python/cp37-cp37m/, include_dir_name: python3.7m/ }
         - { version: "3.8", base_path: /opt/python/cp38-cp38/, include_dir_name: python3.8/ }
         - { version: "3.9", base_path: /opt/python/cp39-cp39/, include_dir_name: python3.9/ }
@@ -168,7 +167,6 @@ jobs:
     strategy:
       matrix:
         config:
-        - { version: "3.6" }
         - { version: "3.7" }
         - { version: "3.8" }
         - { version: "3.9" }
