@@ -55,7 +55,6 @@ enum class config_state
 
 struct exclusion_config
 {
-  // std::map<namespace_index, std::set<namespace_index>> exclusions;
   std::set<std::set<namespace_index>> exclusions;
   uint64_t lease;
   float ips = 0.f;

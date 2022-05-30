@@ -271,7 +271,7 @@ void interaction_config_manager::pre_process(const multi_ex& ecs)
 }
 Helper function to insert new configs from oracle into map of configs as well as index_queue.
 Handles creating new config with exclusions or overwriting stale configs to avoid reallocation.
-void interaction_config_manager::insert_config(std::map<namespace_index, std::set<namespace_index>>&& new_exclusions)
+void interaction_config_manager::insert_config(std::set<std::set<namespace_index>>&& new_exclusions)
 {
   // Note that configs are never actually cleared, but valid_config_size is set to 0 instead to denote that
   // configs have become stale. Here we try to write over stale configs with new configs, and if no stale
@@ -347,7 +347,7 @@ void interaction_config_manager::config_oracle()
     // Remove one exclusion (for each exclusion)
     for (auto& ns_pair : configs[scores[current_champ].config_index].exclusions)
     {
-        std::map<namespace_index, std::set<namespace_index>> new_exclusions(
+         std::set<std::set<namespace_index>> new_exclusions(
             configs[scores[current_champ].config_index].exclusions);
         new_exclusions.erase(ns_pair);
         insert_config(std::move(new_exclusions));
@@ -735,7 +735,7 @@ float calc_priority_least_exclusion(
     const VW::reductions::automl::exclusion_config& config, const std::map<VW::namespace_index, uint64_t>& ns_counter)
 {
   float priority = 0.f;
-  for (const auto& ns_pair : config.exclusions) { priority -= ns_counter.at(ns_pair.first); }
+  for (const auto& ns_pair : config.exclusions) { priority -= ns_counter.at(*ns_pair.begin()); }
   return priority;
 }
 
