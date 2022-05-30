@@ -230,6 +230,14 @@ JNIEXPORT jobject JNICALL Java_org_vowpalwabbit_spark_VowpalWabbitNative_getArgu
   return env->NewObject(clazz, ctor, all->num_bits, all->hash_seed, args, all->eta, all->power_t);
 }
 
+JNIEXPORT jstring JNICALL Java_org_vowpalwabbit_spark_VowpalWabbitNative_getOutputPredictionType(JNIEnv *env, jobject vwObj)
+{
+  auto* all = reinterpret_cast<VW::workspace*>(get_native_pointer(env, vwObj));
+
+  // produce string to avoid replication of enum types
+  return env->NewStringUTF(std::string(VW::to_string(all->l->get_output_prediction_type())).c_str());
+}
+
 JNIEXPORT jobject JNICALL Java_org_vowpalwabbit_spark_VowpalWabbitNative_getPerformanceStatistics(
     JNIEnv* env, jobject vwObj)
 {
@@ -505,7 +513,7 @@ JNIEXPORT void JNICALL Java_org_vowpalwabbit_spark_VowpalWabbitExample_setDefaul
 }
 
 JNIEXPORT void JNICALL Java_org_vowpalwabbit_spark_VowpalWabbitExample_setMulticlassLabel(
-    JNIEnv *env, jobject, jint label, jfloat weight)  
+    JNIEnv *env, jobject exampleObj, jint label, jfloat weight)  
 {
   INIT_VARS
 
@@ -513,8 +521,8 @@ JNIEXPORT void JNICALL Java_org_vowpalwabbit_spark_VowpalWabbitExample_setMultic
   {
     MULTICLASS::label_t* ld = &ex->l.multi;
     
-    ld.label = label_data;
-    ld.weight = weight;
+    ld->label = label;
+    ld->weight = weight;
   }
   catch (...)
   {

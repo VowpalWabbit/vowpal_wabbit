@@ -55,6 +55,15 @@ public class VowpalWabbitExample implements Closeable {
      */
     public native void setLabel(float weight, float label);
 
+
+    /**
+     * Set the multiclass label.
+     *
+     * @param weight weight of this example.
+     * @param label value of the label (1-based index).
+     */
+    public native void setMulticlassLabel(float weight, int label);
+
     /**
      * Set a contextual bandit (CB) label
      *
@@ -120,6 +129,15 @@ public class VowpalWabbitExample implements Closeable {
      */
     public void setLabel(float label) {
         setLabel(1f, label);
+    }
+
+    /**
+     * Set the multiclass label.
+     *
+     * @param label value of the label (1-based index).
+     */
+    public void setMulticlassLabel(int label) {
+        setMulticlassLabel(1f, label);
     }
 
     /**
