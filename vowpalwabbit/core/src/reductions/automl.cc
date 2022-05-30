@@ -108,7 +108,7 @@ std::string interaction_vec_t_to_string(const VW::reductions::automl::interactio
   return ss.str();
 }
 
-std::string exclusions_to_string_test2(const std::set<std::set<namespace_index>>& exclusions)
+std::string exclusions_to_string_test(const std::set<std::set<namespace_index>>& exclusions)
 {  
   const char* const delim = ", ";
   std::stringstream ss;
@@ -201,6 +201,26 @@ interaction_config_manager::interaction_config_manager(uint64_t global_lease, ui
 // from the corresponding live_slot. This function can be swapped out depending on
 // preference of how to generate interactions from a given set of exclusions.
 // Transforms exclusions -> interactions expected by VW.
+
+// void interaction_config_manager::gen_quadratic_interactions(uint64_t live_slot)
+// {
+//   auto& exclusions = configs[scores[live_slot].config_index].exclusions;
+//   auto& interactions = scores[live_slot].live_interactions;
+//   if (!interactions.empty()) { interactions.clear(); }
+//   for (auto it = ns_counter.begin(); it != ns_counter.end(); ++it)
+//   {
+//     auto idx1 = (*it).first;
+//     for (auto jt = it; jt != ns_counter.end(); ++jt)
+//     {
+//       auto idx2 = (*jt).first;
+//       if (exclusions.find(idx1) == exclusions.end() || exclusions.at(idx1).find(idx2) == exclusions.at(idx1).end())
+//       { interactions.push_back({idx1, idx2}); }
+//     }
+//   }
+//   // logger->out_info("generated interactions {} from exclusion conf: {}", ::interaction_vec_t_to_string(interactions),
+//   //     ::exclusions_to_string(exclusions));
+// }
+
 void interaction_config_manager::gen_quadratic_interactions(uint64_t live_slot)
 {
   auto& exclusions = configs[scores[live_slot].config_index].exclusions;
@@ -212,13 +232,19 @@ void interaction_config_manager::gen_quadratic_interactions(uint64_t live_slot)
     for (auto jt = it; jt != ns_counter.end(); ++jt)
     {
       auto idx2 = (*jt).first;
-      if (exclusions.find(idx1) == exclusions.end() || exclusions.at(idx1).find(idx2) == exclusions.at(idx1).end())
+      std::set<namespace_index> id;
+      id.insert(idx1);
+      id.insert(idx2);
+      if (exclusions.find(id)==exclusions.end())
       { interactions.push_back({idx1, idx2}); }
     }
   }
   // logger->out_info("generated interactions {} from exclusion conf: {}", ::interaction_vec_t_to_string(interactions),
   //     ::exclusions_to_string(exclusions));
 }
+
+
+
 
 // This function will process an incoming multi_ex, update the namespace_counter,
 // log if new namespaces are encountered, and regenerate interactions based on
@@ -243,9 +269,8 @@ void interaction_config_manager::pre_process(const multi_ex& ecs)
     for (uint64_t live_slot = 0; live_slot < scores.size(); ++live_slot) { gen_quadratic_interactions(live_slot); }
   }
 }
-
-// Helper function to insert new configs from oracle into map of configs as well as index_queue.
-// Handles creating new config with exclusions or overwriting stale configs to avoid reallocation.
+Helper function to insert new configs from oracle into map of configs as well as index_queue.
+Handles creating new config with exclusions or overwriting stale configs to avoid reallocation.
 void interaction_config_manager::insert_config(std::map<namespace_index, std::set<namespace_index>>&& new_exclusions)
 {
   // Note that configs are never actually cleared, but valid_config_size is set to 0 instead to denote that
@@ -269,6 +294,8 @@ void interaction_config_manager::insert_config(std::map<namespace_index, std::se
   ++valid_config_size;
 }
 
+
+
 // This will generate configs based on the current champ. These configs will be
 // stored as 'exclusions.' The current design is to look at the interactions of
 // the current champ and remove one interaction for each new config. The number
@@ -284,9 +311,12 @@ void interaction_config_manager::config_oracle()
       uint64_t rand_ind = static_cast<uint64_t>(random_state->get_and_update_random() * champ_interactions.size());
       namespace_index ns1 = champ_interactions[rand_ind][0];
       namespace_index ns2 = champ_interactions[rand_ind][1];
-      std::map<namespace_index, std::set<namespace_index>> new_exclusions(
+      std::set<std::set<namespace_index>> new_exclusions(
           configs[scores[current_champ].config_index].exclusions);
-      new_exclusions[ns1].insert(ns2);
+      std::set<namespace_index> id;
+      id.insert(ns1);
+      id.insert(ns2);
+      new_exclusions.insert(id);
       insert_config(std::move(new_exclusions));
     }
   }
@@ -306,22 +336,21 @@ void interaction_config_manager::config_oracle()
     {
       namespace_index ns1 = interaction[0];
       namespace_index ns2 = interaction[1];
-      std::map<namespace_index, std::set<namespace_index>> new_exclusions(
+      std::set<std::set<namespace_index>> new_exclusions(
           configs[scores[current_champ].config_index].exclusions);
-      new_exclusions[ns1].insert(ns2);
+      std::set<namespace_index> id;
+      id.insert(ns1);
+      id.insert(ns2);
+      new_exclusions.insert(id);
       insert_config(std::move(new_exclusions));
     }
     // Remove one exclusion (for each exclusion)
     for (auto& ns_pair : configs[scores[current_champ].config_index].exclusions)
     {
-      namespace_index ns1 = ns_pair.first;
-      for (namespace_index ns2 : ns_pair.second)
-      {
         std::map<namespace_index, std::set<namespace_index>> new_exclusions(
             configs[scores[current_champ].config_index].exclusions);
-        new_exclusions[ns1].erase(ns2);
+        new_exclusions.erase(ns_pair);
         insert_config(std::move(new_exclusions));
-      }
     }
   }
   else
@@ -329,6 +358,7 @@ void interaction_config_manager::config_oracle()
     THROW("Unknown oracle type.");
   }
 }
+//////////////////////////////////////////////////////////////////////////////////////////////////
 
 // This function is triggered when all sets of interactions generated by the oracle have been tried and
 // reached their lease. It will then add inactive configs (stored in the config manager) to the queue
