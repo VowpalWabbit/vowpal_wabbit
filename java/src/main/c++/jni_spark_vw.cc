@@ -504,6 +504,24 @@ JNIEXPORT void JNICALL Java_org_vowpalwabbit_spark_VowpalWabbitExample_setDefaul
   }
 }
 
+JNIEXPORT void JNICALL Java_org_vowpalwabbit_spark_VowpalWabbitExample_setMulticlassLabel(
+    JNIEnv *env, jobject, jint label, jfloat weight)  
+{
+  INIT_VARS
+
+  try
+  {
+    MULTICLASS::label_t* ld = &ex->l.multi;
+    
+    ld.label = label_data;
+    ld.weight = weight;
+  }
+  catch (...)
+  {
+    rethrow_cpp_exception_as_java_exception(env);
+  }
+}
+
 JNIEXPORT void JNICALL Java_org_vowpalwabbit_spark_VowpalWabbitExample_setContextualBanditLabel(
     JNIEnv* env, jobject exampleObj, jint action, jdouble cost, jdouble probability)
 {
