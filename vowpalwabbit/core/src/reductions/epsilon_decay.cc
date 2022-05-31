@@ -51,7 +51,7 @@ size_t read_model_field(io_buf& io, VW::reductions::epsilon_decay::epsilon_decay
   size_t bytes = 0;
   bytes += read_model_field(io, reinterpret_cast<VW::scored_config&>(score));
   bytes += read_model_field(io, score._lower_bound);
-  bytes += read_model_field(io, score._model_idx);
+  bytes += read_model_field(io, score._score_idx);
   return bytes;
 }
 
@@ -61,7 +61,7 @@ size_t write_model_field(io_buf& io, const VW::reductions::epsilon_decay::epsilo
   size_t bytes = 0;
   bytes += write_model_field(io, reinterpret_cast<const VW::scored_config&>(score), upstream_name, text);
   bytes += write_model_field(io, score._lower_bound, upstream_name + "_lower_bound", text);
-  bytes += write_model_field(io, score._model_idx, upstream_name + "_model_idx", text);
+  bytes += write_model_field(io, score._score_idx, upstream_name + "_score_idx", text);
   return bytes;
 }
 

@@ -23,18 +23,18 @@ struct epsilon_decay_score : scored_config
 {
   epsilon_decay_score() = default;
   epsilon_decay_score(double alpha, double tau, uint64_t model_idx)
-      : VW::scored_config(alpha, tau), _model_idx(model_idx)
+      : VW::scored_config(alpha, tau), _score_idx(model_idx)
   {
   }
   float decayed_epsilon(uint64_t update_count);
   float get_upper_bound() const { return this->current_ips(); }
   float get_lower_bound() const { return _lower_bound; }
-  uint64_t get_model_idx() const { return _model_idx; }
+  uint64_t get_score_idx() const { return _score_idx; }
   void update_bounds(float w, float r);
   void reset_stats(double alpha = DEFAULT_ALPHA, double tau = DEFAULT_TAU);
 
   float _lower_bound = 0.f;
-  uint64_t _model_idx;
+  uint64_t _score_idx;
 };
 
 struct epsilon_decay_data
