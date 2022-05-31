@@ -108,7 +108,7 @@ std::string interaction_vec_t_to_string(const VW::reductions::automl::interactio
   return ss.str();
 }
 
-std::string exclusions_to_string(const std::set<std::set<VW::namespace_index>>& exclusions)
+std::string exclusions_to_string(const std::set<std::vector<VW::namespace_index>>& exclusions)
 {
   const char* const delim = ", ";
   std::stringstream ss;
@@ -213,10 +213,11 @@ void interaction_config_manager::gen_quadratic_interactions(uint64_t live_slot)
     for (auto jt = it; jt != ns_counter.end(); ++jt)
     {
       auto idx2 = (*jt).first;
-      std::set<namespace_index> id;
-      id.insert(idx1);
-      id.insert(idx2);
-      if (exclusions.find(id) == exclusions.end()) { interactions.push_back({idx1, idx2}); }
+      std::vector<namespace_index> idx {idx1, idx2};
+      if (exclusions.find(idx) == exclusions.end()) 
+      { 
+        interactions.push_back({idx1, idx2}); 
+      }
     }
   }
   // logger->out_info("generated interactions {} from exclusion conf: {}", ::interaction_vec_t_to_string(interactions),
@@ -248,7 +249,7 @@ void interaction_config_manager::pre_process(const multi_ex& ecs)
 }
 // Helper function to insert new configs from oracle into map of configs as well as index_queue.
 // Handles creating new config with exclusions or overwriting stale configs to avoid reallocation.
-void interaction_config_manager::insert_config(std::set<std::set<namespace_index>>&& new_exclusions)
+void interaction_config_manager::insert_config(std::set<std::vector<namespace_index>>&& new_exclusions)
 {
   // Note that configs are never actually cleared, but valid_config_size is set to 0 instead to denote that
   // configs have become stale. Here we try to write over stale configs with new configs, and if no stale
@@ -286,11 +287,9 @@ void interaction_config_manager::config_oracle()
       uint64_t rand_ind = static_cast<uint64_t>(random_state->get_and_update_random() * champ_interactions.size());
       namespace_index ns1 = champ_interactions[rand_ind][0];
       namespace_index ns2 = champ_interactions[rand_ind][1];
-      std::set<std::set<namespace_index>> new_exclusions(configs[scores[current_champ].config_index].exclusions);
-      std::set<namespace_index> id;
-      id.insert(ns1);
-      id.insert(ns2);
-      new_exclusions.insert(id);
+      std::set<std::vector<namespace_index>> new_exclusions(configs[scores[current_champ].config_index].exclusions);
+      std::vector<namespace_index> idx {ns1,ns2};
+      new_exclusions.insert(idx);
       insert_config(std::move(new_exclusions));
     }
   }
@@ -310,17 +309,15 @@ void interaction_config_manager::config_oracle()
     {
       namespace_index ns1 = interaction[0];
       namespace_index ns2 = interaction[1];
-      std::set<std::set<namespace_index>> new_exclusions(configs[scores[current_champ].config_index].exclusions);
-      std::set<namespace_index> id;
-      id.insert(ns1);
-      id.insert(ns2);
-      new_exclusions.insert(id);
+      std::set<std::vector<namespace_index>> new_exclusions(configs[scores[current_champ].config_index].exclusions);
+      std::vector<namespace_index> idx {ns1,ns2};
+      new_exclusions.insert(idx);
       insert_config(std::move(new_exclusions));
     }
     // Remove one exclusion (for each exclusion)
     for (auto& ns_pair : configs[scores[current_champ].config_index].exclusions)
     {
-      std::set<std::set<namespace_index>> new_exclusions(configs[scores[current_champ].config_index].exclusions);
+      std::set<std::vector<namespace_index>> new_exclusions(configs[scores[current_champ].config_index].exclusions);
       new_exclusions.erase(ns_pair);
       insert_config(std::move(new_exclusions));
     }
