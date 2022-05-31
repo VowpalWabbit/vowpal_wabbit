@@ -98,7 +98,8 @@ void predict(
   base.predict(examples, data._weight_indices[K - 1]);
 }
 
-void update_weights(VW::reductions::epsilon_decay::epsilon_decay_data& data, VW::LEARNER::multi_learner& base, VW::multi_ex& examples)
+void update_weights(
+    VW::reductions::epsilon_decay::epsilon_decay_data& data, VW::LEARNER::multi_learner& base, VW::multi_ex& examples)
 {
   auto K = static_cast<int64_t>(data._scored_configs.size());
   CB::cb_class logged{};
@@ -110,7 +111,6 @@ void update_weights(VW::reductions::epsilon_decay::epsilon_decay_data& data, VW:
     logged = (*it)->l.cb.costs[0];
     labelled_action = std::distance(examples.begin(), it);
   }
-
 
   const float r = -logged.cost;
   auto& ep_fts = examples[0]->_reduction_features.template get<VW::cb_explore_adf::greedy::reduction_features>();

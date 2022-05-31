@@ -66,7 +66,8 @@ struct epsilon_decay_data
     }
   }
 
-  void update_weights(VW::reductions::epsilon_decay::epsilon_decay_data& data, VW::LEARNER::multi_learner& base, VW::multi_ex& examples);
+  void update_weights(VW::reductions::epsilon_decay::epsilon_decay_data& data, VW::LEARNER::multi_learner& base,
+      VW::multi_ex& examples);
   void check_score_bounds(VW::reductions::epsilon_decay::epsilon_decay_data& data, VW::multi_ex& examples);
   void check_horizon_bounds(VW::reductions::epsilon_decay::epsilon_decay_data& data, VW::multi_ex& examples);
 
