@@ -35,7 +35,7 @@ void check_interactions_match_exclusions(VW::reductions::automl::automl<interact
       std::set<namespace_index> ns;
       ns.insert(ns1);
       ns.insert(ns2);
-      BOOST_CHECK(exclusions.find(ns)==exclusions.end());
+      BOOST_CHECK(exclusions.find(ns) == exclusions.end());
     }
     // Check that interaction count is equal to quadratic interaction size minus exclusion count
     size_t exclusion_count = exclusions.size();

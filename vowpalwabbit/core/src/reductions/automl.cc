@@ -109,24 +109,24 @@ std::string interaction_vec_t_to_string(const VW::reductions::automl::interactio
 }
 
 std::string exclusions_to_string(const std::set<std::set<namespace_index>>& exclusions)
-{  
+{
   const char* const delim = ", ";
   std::stringstream ss;
-  size_t total = exclusions.size(); 
+  size_t total = exclusions.size();
   size_t count = 0;
   ss << "{";
   for (auto const& x : exclusions)
   {
-    ss <<"[";
+    ss << "[";
     if (!x.empty())
     {
       auto i = x.begin(), x_last = std::prev(x.end());
-      for (; i != x_last; ++i) { ss << "\"" << ns_to_str(*i) << "\"" << delim;}
+      for (; i != x_last; ++i) { ss << "\"" << ns_to_str(*i) << "\"" << delim; }
       ss << "\"" << ns_to_str(*x_last) << "\"";
     }
     count += 1;
     ss << "]";
-    if (count < total) { ss << delim;}
+    if (count < total) { ss << delim; }
   }
   ss << "}";
   return ss.str();
@@ -216,8 +216,7 @@ void interaction_config_manager::gen_quadratic_interactions(uint64_t live_slot)
       std::set<namespace_index> id;
       id.insert(idx1);
       id.insert(idx2);
-      if (exclusions.find(id)==exclusions.end())
-      { interactions.push_back({idx1, idx2}); }
+      if (exclusions.find(id) == exclusions.end()) { interactions.push_back({idx1, idx2}); }
     }
   }
   // logger->out_info("generated interactions {} from exclusion conf: {}", ::interaction_vec_t_to_string(interactions),
@@ -287,8 +286,7 @@ void interaction_config_manager::config_oracle()
       uint64_t rand_ind = static_cast<uint64_t>(random_state->get_and_update_random() * champ_interactions.size());
       namespace_index ns1 = champ_interactions[rand_ind][0];
       namespace_index ns2 = champ_interactions[rand_ind][1];
-      std::set<std::set<namespace_index>> new_exclusions(
-          configs[scores[current_champ].config_index].exclusions);
+      std::set<std::set<namespace_index>> new_exclusions(configs[scores[current_champ].config_index].exclusions);
       std::set<namespace_index> id;
       id.insert(ns1);
       id.insert(ns2);
@@ -312,8 +310,7 @@ void interaction_config_manager::config_oracle()
     {
       namespace_index ns1 = interaction[0];
       namespace_index ns2 = interaction[1];
-      std::set<std::set<namespace_index>> new_exclusions(
-          configs[scores[current_champ].config_index].exclusions);
+      std::set<std::set<namespace_index>> new_exclusions(configs[scores[current_champ].config_index].exclusions);
       std::set<namespace_index> id;
       id.insert(ns1);
       id.insert(ns2);
@@ -323,10 +320,9 @@ void interaction_config_manager::config_oracle()
     // Remove one exclusion (for each exclusion)
     for (auto& ns_pair : configs[scores[current_champ].config_index].exclusions)
     {
-         std::set<std::set<namespace_index>> new_exclusions(
-            configs[scores[current_champ].config_index].exclusions);
-        new_exclusions.erase(ns_pair);
-        insert_config(std::move(new_exclusions));
+      std::set<std::set<namespace_index>> new_exclusions(configs[scores[current_champ].config_index].exclusions);
+      new_exclusions.erase(ns_pair);
+      insert_config(std::move(new_exclusions));
     }
   }
   else
