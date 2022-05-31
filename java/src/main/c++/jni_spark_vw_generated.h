@@ -58,7 +58,7 @@ extern "C"
    */
   JNIEXPORT jobject JNICALL Java_org_vowpalwabbit_spark_VowpalWabbitNative_getArguments(JNIEnv *, jobject);
 
-  JNIEXPORT jstring JNICALL Java_org_vowpalwabbit_spark_VowpalWabbitNative_getOutputPredictionType(JNIEnv *, jobject);
+  JNIEXPORT jstring JNICALL Java_org_vowpalwabbit_spark_VowpalWabbitNative_getOutputPredictionType(JNIEnv*, jobject);
 
   /*
    * Class:     org_vowpalwabbit_spark_VowpalWabbitNative
