@@ -65,6 +65,11 @@ struct epsilon_decay_data
       ++weight_idx;
     }
   }
+
+  void update_weights(VW::reductions::epsilon_decay::epsilon_decay_data& data, VW::LEARNER::multi_learner& base, VW::multi_ex& examples);
+  void check_score_bounds(VW::reductions::epsilon_decay::epsilon_decay_data& data, VW::multi_ex& examples);
+  void check_horizon_bounds(VW::reductions::epsilon_decay::epsilon_decay_data& data, VW::multi_ex& examples);
+
   std::vector<std::vector<epsilon_decay_score>> _scored_configs;
   std::vector<uint64_t> _weight_indices;
   uint64_t _min_scope;

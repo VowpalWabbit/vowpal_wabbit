@@ -98,9 +98,9 @@ void predict(
   base.predict(examples, data._weight_indices[K - 1]);
 }
 
-void learn(
-    VW::reductions::epsilon_decay::epsilon_decay_data& data, VW::LEARNER::multi_learner& base, VW::multi_ex& examples)
+void update_weights(VW::reductions::epsilon_decay::epsilon_decay_data& data, VW::LEARNER::multi_learner& base, VW::multi_ex& examples)
 {
+  auto K = static_cast<int64_t>(data._scored_configs.size());
   CB::cb_class logged{};
   uint64_t labelled_action = 0;
   const auto it =
@@ -111,7 +111,7 @@ void learn(
     labelled_action = std::distance(examples.begin(), it);
   }
 
-  auto K = static_cast<int64_t>(data._scored_configs.size());
+
   const float r = -logged.cost;
   auto& ep_fts = examples[0]->_reduction_features.template get<VW::cb_explore_adf::greedy::reduction_features>();
   // Process each model, then update the upper/lower bounds for each model
@@ -131,9 +131,13 @@ void learn(
       }
     }
   }
+}
 
+void check_score_bounds(VW::reductions::epsilon_decay::epsilon_decay_data& data, VW::multi_ex& examples)
+{
   // If the lower bound of a model exceeds the upperbound of the champion, migrate the new model as
   // the new champion.
+  auto K = static_cast<int64_t>(data._scored_configs.size());
   for (int64_t i = 0; i < K - 1; ++i)
   {
     if (data._scored_configs[i][i].get_lower_bound() > data._scored_configs[K - 1][i].get_upper_bound())
@@ -172,9 +176,13 @@ void learn(
       break;
     }
   }
+}
 
+void check_horizon_bounds(VW::reductions::epsilon_decay::epsilon_decay_data& data, VW::multi_ex& examples)
+{
   // Check if any model counts are higher than the champion. If so, shift the model
   // back to the beginning of the list and reset its counts
+  auto K = static_cast<int64_t>(data._scored_configs.size());
   for (int64_t i = 0; i < K - 1; ++i)
   {
     if (data._scored_configs[i][i].update_count > data._min_scope &&
@@ -212,6 +220,14 @@ void learn(
       break;
     }
   }
+}
+
+void learn(
+    VW::reductions::epsilon_decay::epsilon_decay_data& data, VW::LEARNER::multi_learner& base, VW::multi_ex& examples)
+{
+  update_weights(data, base, examples);
+  check_score_bounds(data, examples);
+  check_horizon_bounds(data, examples);
 }
 
 void save_load_epsilon_decay(
