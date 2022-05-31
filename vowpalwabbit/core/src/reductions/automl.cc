@@ -108,7 +108,7 @@ std::string interaction_vec_t_to_string(const VW::reductions::automl::interactio
   return ss.str();
 }
 
-std::string exclusions_to_string(const std::set<std::set<namespace_index>>& exclusions)
+std::string exclusions_to_string(const std::set<std::set<VW::namespace_index>>& exclusions)
 {
   const char* const delim = ", ";
   std::stringstream ss;
