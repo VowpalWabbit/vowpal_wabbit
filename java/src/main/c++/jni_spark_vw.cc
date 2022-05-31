@@ -231,7 +231,7 @@ JNIEXPORT jobject JNICALL Java_org_vowpalwabbit_spark_VowpalWabbitNative_getArgu
 }
 
 JNIEXPORT jstring JNICALL Java_org_vowpalwabbit_spark_VowpalWabbitNative_getOutputPredictionType(
-    JNIEnv *env, jobject vwObj)
+    JNIEnv* env, jobject vwObj)
 {
   auto* all = reinterpret_cast<VW::workspace*>(get_native_pointer(env, vwObj));
 
@@ -514,7 +514,7 @@ JNIEXPORT void JNICALL Java_org_vowpalwabbit_spark_VowpalWabbitExample_setDefaul
 }
 
 JNIEXPORT void JNICALL Java_org_vowpalwabbit_spark_VowpalWabbitExample_setMulticlassLabel(
-    JNIEnv* env, jobject exampleObj, jint label, jfloat weight)  
+    JNIEnv* env, jobject exampleObj, jint label, jfloat weight)
 {
   INIT_VARS
 
