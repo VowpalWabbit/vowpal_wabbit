@@ -51,7 +51,7 @@ extern "C" {
   API size_t WorkspaceHashFeature(vw_net_native::workspace_context* workspace, char* feature, size_t feature_size, size_t space_hash);
 
   API void WorkspaceSetUpAllReduceThreadsRoot(vw_net_native::workspace_context* workspace, size_t total, size_t node);
-  API void WorkspaceSetUpAllReduceThreadsNode(vw_net_native::workspace_context* workspace, size_t total, size_t node, VW::workspace* root_workspace);
+  API void WorkspaceSetUpAllReduceThreadsNode(vw_net_native::workspace_context* workspace, size_t total, size_t node, vw_net_native::workspace_context* root_workspace);
 
   API vw_net_native::ERROR_CODE WorkspaceRunMultiPass(vw_net_native::workspace_context* workspace, VW::experimental::api_status* status);
   API vw_net_native::ERROR_CODE WorkspaceNotifyEndOfPass(vw_net_native::workspace_context* workspace, VW::experimental::api_status* status);

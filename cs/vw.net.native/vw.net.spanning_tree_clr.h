@@ -4,7 +4,7 @@
 #include "spanning_tree.h"
 
 extern "C" {
-  API VW::SpanningTree* CreateSpanningTree(short unsigned int port, bool quiet);
+  API VW::SpanningTree* CreateSpanningTree();
   API void DeleteSpanningTree(VW::SpanningTree* tree);
 
   API short unsigned int GetSpanningTreeBoundPort(VW::SpanningTree* tree);

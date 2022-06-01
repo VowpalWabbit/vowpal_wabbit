@@ -50,10 +50,10 @@ namespace VW
       {
         return new New<FeatureEnumerator>(() =>
         {
-          IntPtr result = NativeMethods.CreateFeatureEnumerator(example.Owner.DangerousGetNativeHandle(), example.DangerousGetHandle(), ns);
+          IntPtr result = NativeMethods.CreateFeatureEnumerator(example.Owner.DangerousGetNativeHandle(), example.DangerousGetNativeHandle(), ns);
 
           example.Owner.KeepAlive();
-          GC.KeepAlive(example);
+          example.KeepAliveNative();
 
           return result;
         });

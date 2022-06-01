@@ -95,6 +95,9 @@ extern "C" {
   //API const char* LookupMessageForErrorCode(int code);
 
   API uint64_t VwUniformHash(char* key, size_t len, uint64_t seed);
+
+  API size_t StdStringGetLength(const std::string* str);
+  API vw_net_native::dotnet_size_t StdStringCopyToBuffer (const std::string* str, char* buffer, vw_net_native::dotnet_size_t count);
 }
 
 #define FILL_ERROR_LS(status, code)                                                          \

@@ -40,13 +40,13 @@ namespace VW
       if (this.ex != null)
       {
         ApiStatus status = new ApiStatus();
-        if (NativeMethods.SetupExample(this.owner.DangerousGetNativeHandle(), this.ex.DangerousGetHandle(), status.ToNativeHandleOrNullptrDangerous()) != NativeMethods.SuccessStatus)
+        if (NativeMethods.SetupExample(this.owner.DangerousGetNativeHandle(), this.ex.DangerousGetNativeHandle(), status.ToNativeHandleOrNullptrDangerous()) != NativeMethods.SuccessStatus)
         {
           throw new VWException(status);
         }
 
         this.owner.KeepAlive();
-        GC.KeepAlive(this.ex);
+        this.ex.KeepAliveNative();
         GC.KeepAlive(status);
 
         VowpalWabbitExample result = Interlocked.Exchange(ref this.ex, null);
@@ -59,7 +59,7 @@ namespace VW
 
     public void ApplyLabel(ILabel label)
     {
-      label.UpdateExample(this.ex);
+      label.UpdateExample(this.owner.Native, this.ex);
     }
 
     public VowpalWabbitNamespaceBuilder AddNamespace(byte featureGroup)

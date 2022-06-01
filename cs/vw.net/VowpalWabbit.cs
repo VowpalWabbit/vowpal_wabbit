@@ -293,7 +293,7 @@ namespace VW {
           byte[] lineBytes = NativeMethods.StringEncoding.GetBytes(line);
           fixed (byte* linePtr = lineBytes)
           {
-            if (NativeMethods.WorkspaceParseSingleLine(this.DangerousGetHandle(), example.DangerousGetHandle(), new IntPtr(linePtr), new UIntPtr((uint)lineBytes.Length), status.ToNativeHandleOrNullptrDangerous()) != NativeMethods.SuccessStatus)
+            if (NativeMethods.WorkspaceParseSingleLine(this.DangerousGetHandle(), example.DangerousGetNativeHandle(), new IntPtr(linePtr), new UIntPtr((uint)lineBytes.Length), status.ToNativeHandleOrNullptrDangerous()) != NativeMethods.SuccessStatus)
             {
               throw new VWException(status);
             }
@@ -301,7 +301,7 @@ namespace VW {
             example.VowpalWabbitString = line;
 
             GC.KeepAlive(this);
-            GC.KeepAlive(example);
+            example.KeepAliveNative();
             GC.KeepAlive(status);
           }
         }
@@ -322,7 +322,7 @@ namespace VW {
       VowpalWabbitExample example = this.GetOrCreateNativeExample();
       result.Add(example);
 
-      return example.DangerousGetHandle();
+      return example.DangerousGetNativeHandle();
     }
 
     public List<VowpalWabbitExample> ParseJson(string line)
@@ -389,17 +389,21 @@ namespace VW {
         ApiStatus status = new ApiStatus();
         DecisionServiceInteractionAdapter interaction = new DecisionServiceInteractionAdapter();
 
-        unsafe 
+        if (json.Length > 0)
         {
-          fixed (byte* jsonPtr = json)
+          unsafe 
           {
-            if (NativeMethods.WorkspaceParseDecisionServiceJson(this.DangerousGetHandle(), new IntPtr(jsonPtr), new UIntPtr((uint)length), new UIntPtr((uint)offset), copyJson, GetOrCreateExample, GCHandle.ToIntPtr(resultHandle), interaction.DangerousGetHandle(), status.ToNativeHandleOrNullptrDangerous()) != NativeMethods.SuccessStatus)
+            fixed (byte* jsonPtr = json)
             {
-              throw new VWException(status);
-            }
+              if (NativeMethods.WorkspaceParseDecisionServiceJson(this.DangerousGetHandle(), new IntPtr(jsonPtr), new UIntPtr((uint)length), new UIntPtr((uint)offset), copyJson, GetOrCreateExample, GCHandle.ToIntPtr(resultHandle), interaction.DangerousGetHandle(), status.ToNativeHandleOrNullptrDangerous()) != NativeMethods.SuccessStatus)
+              {
+                throw new VWException(status);
+              }
 
+            }
           }
         }
+        
 
         header = interaction.ToInteractionHeader();
         GC.KeepAlive(header);
@@ -586,13 +590,13 @@ namespace VW {
 
       using (ApiStatus status = new ApiStatus())
       {
-        if (learnerCall(this.DangerousGetHandle(), ex.DangerousGetHandle(), createPrediction, status.ToNativeHandleOrNullptrDangerous())  != NativeMethods.SuccessStatus)
+        if (learnerCall(this.DangerousGetHandle(), ex.DangerousGetNativeHandle(), createPrediction, status.ToNativeHandleOrNullptrDangerous())  != NativeMethods.SuccessStatus)
         {
           throw new VWException(status);
         }
 
         GC.KeepAlive(this);
-        GC.KeepAlive(ex);
+        ex.KeepAliveNative();
         GC.KeepAlive(status);
       }
     }
@@ -792,7 +796,7 @@ namespace VW {
         pooledExample = new VowpalWabbitExample(this);
       }
 
-      pooledExample.MakeEmpty(this);
+      pooledExample.EmptyExampleData(this);
       pooledExample.MakeLabelDefault(this);
 
       return pooledExample;
@@ -800,9 +804,9 @@ namespace VW {
 
     private bool IsRingExample(VowpalWabbitExample example)
     {
-      bool result = NativeMethods.IsRingExample(this.DangerousGetHandle(), example.DangerousGetHandle());
-      GC.KeepAlive(example);
+      bool result = NativeMethods.IsRingExample(this.DangerousGetHandle(), example.DangerousGetNativeHandle());
       GC.KeepAlive(this);
+      example.KeepAliveNative();
 
       return result;
     }

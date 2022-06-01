@@ -1,8 +1,8 @@
 #include "vw.net.spanning_tree_clr.h"
 
-API VW::SpanningTree* CreateSpanningTree(short unsigned int port, bool quiet)
+API VW::SpanningTree* CreateSpanningTree()
 {
-  return new VW::SpanningTree(port, quiet);
+  return new VW::SpanningTree;
 }
 
 API void DeleteSpanningTree(VW::SpanningTree* tree)

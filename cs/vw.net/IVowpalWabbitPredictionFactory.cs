@@ -166,9 +166,9 @@ namespace VW
     {
       PredictionHelpers.CheckExample(vw, ex, this.PredictionType);
       
-      float result = NativeMethods.GetPredictionScalar(ex.DangerousGetHandle());
+      float result = NativeMethods.GetPredictionScalar(ex.DangerousGetNativeHandle());
       GC.KeepAlive(vw);
-      GC.KeepAlive(ex);
+      ex.KeepAliveNative();
 
       return result;
     }
@@ -191,9 +191,9 @@ namespace VW
     {
       PredictionHelpers.CheckExample(vw, ex, this.PredictionType);
       
-      VowpalWabbitScalar result = NativeMethods.GetPredictionScalarConfidence(vw.DangerousGetHandle(), ex.DangerousGetHandle());
+      VowpalWabbitScalar result = NativeMethods.GetPredictionScalarConfidence(vw.DangerousGetHandle(), ex.DangerousGetNativeHandle());
       GC.KeepAlive(vw);
-      GC.KeepAlive(ex);
+      ex.KeepAliveNative();
       
       return result;
     }
@@ -205,7 +205,7 @@ namespace VW
     
     internal static float[] ReadScalarsUnchecked(VowpalWabbit vw, VowpalWabbitExample ex)
     {
-      UIntPtr count = NativeMethods.GetPredictionScalarsCount(vw.DangerousGetHandle(), ex.DangerousGetHandle());
+      UIntPtr count = NativeMethods.GetPredictionScalarsCount(vw.DangerousGetHandle(), ex.DangerousGetNativeHandle());
       if (count.ToUInt64() > Int32.MaxValue)
       {
         // This is inconsistent with what happens in the C#/CLI implementation, but that implementation
@@ -221,9 +221,9 @@ namespace VW
       {
         fixed (float* resultPtr = result)
         {
-          int returned = NativeMethods.GetPredictionScalars(vw.DangerousGetHandle(), ex.DangerousGetHandle(), new IntPtr(resultPtr), result.Length);
+          int returned = NativeMethods.GetPredictionScalars(vw.DangerousGetHandle(), ex.DangerousGetNativeHandle(), new IntPtr(resultPtr), result.Length);
           GC.KeepAlive(vw);
-          GC.KeepAlive(ex);
+          ex.KeepAliveNative();
         
           Debug.Assert(returned >= 0, "The size returned by GetPredictionScalarsCount is insufficient to hold the scalars. This is a bug.");
           Debug.Assert(returned == result.Length, "Returned scalars count does not match requested count. This is a bug.");
@@ -249,9 +249,9 @@ namespace VW
     {
       PredictionHelpers.CheckExample(vw, ex, this.PredictionType);
       
-      float result = NativeMethods.GetPredictionProb(vw.DangerousGetHandle(), ex.DangerousGetHandle());
+      float result = NativeMethods.GetPredictionProb(vw.DangerousGetHandle(), ex.DangerousGetNativeHandle());
       GC.KeepAlive(vw);
-      GC.KeepAlive(ex);
+      ex.KeepAliveNative();
       
       return result;
     }
@@ -265,9 +265,9 @@ namespace VW
     {
       PredictionHelpers.CheckExample(vw, ex, this.PredictionType);
       
-      float result = NativeMethods.GetPredictionCostSensitive(vw.DangerousGetHandle(), ex.DangerousGetHandle());
+      float result = NativeMethods.GetPredictionCostSensitive(vw.DangerousGetHandle(), ex.DangerousGetNativeHandle());
       GC.KeepAlive(vw);
-      GC.KeepAlive(ex);
+      ex.KeepAliveNative();
       
       return result;
     }
@@ -281,9 +281,9 @@ namespace VW
     {
       PredictionHelpers.CheckExample(vw, ex, this.PredictionType);
       
-      uint result = NativeMethods.GetPredictionMulticlassClass(vw.DangerousGetHandle(), ex.DangerousGetHandle());
+      uint result = NativeMethods.GetPredictionMulticlassClass(vw.DangerousGetHandle(), ex.DangerousGetNativeHandle());
       GC.KeepAlive(vw);
-      GC.KeepAlive(ex);
+      ex.KeepAliveNative();
       
       return result;
     }
@@ -317,7 +317,7 @@ namespace VW
     {
       PredictionHelpers.CheckExample(vw, ex, this.PredictionType);
 
-      UIntPtr count = NativeMethods.GetPredictionMultilabelCount(vw.DangerousGetHandle(), ex.DangerousGetHandle());
+      UIntPtr count = NativeMethods.GetPredictionMultilabelCount(vw.DangerousGetHandle(), ex.DangerousGetNativeHandle());
       if (count.ToUInt64() > Int32.MaxValue)
       {
         throw new ArgumentOutOfRangeException("Multi-label predictions too large");
@@ -330,9 +330,9 @@ namespace VW
       {
         fixed (int* resultPtr = result)
         {
-          int returned = NativeMethods.GetPredictionMultilabel(vw.DangerousGetHandle(), ex.DangerousGetHandle(), new IntPtr(resultPtr), result.Length);
+          int returned = NativeMethods.GetPredictionMultilabel(vw.DangerousGetHandle(), ex.DangerousGetNativeHandle(), new IntPtr(resultPtr), result.Length);
           GC.KeepAlive(vw);
-          GC.KeepAlive(ex);
+          ex.KeepAliveNative();
           
           Debug.Assert(returned >= 0, "The size returned by GetPredictionMultilabelCount is insufficient to hold the multilabel. This is a bug.");
           Debug.Assert(returned == result.Length, "Returned multilabel count does not match requested count. This is a bug.");
@@ -362,7 +362,7 @@ namespace VW
     {
       PredictionHelpers.CheckExample(vw, ex, this.PredictionType);
       
-      UIntPtr count = NativeMethods.GetPredictionActionScoresCount(vw.DangerousGetHandle(), ex.DangerousGetHandle());
+      UIntPtr count = NativeMethods.GetPredictionActionScoresCount(vw.DangerousGetHandle(), ex.DangerousGetNativeHandle());
       if (count.ToUInt64() > UInt32.MaxValue)
       {
         throw new ArgumentOutOfRangeException("The number of action scores is too large.");
@@ -379,9 +379,9 @@ namespace VW
       {
         fixed (ActionScore* resultPtr = result)
         {
-          int returned = NativeMethods.GetPredictionActionScores(vw.DangerousGetHandle(), ex.DangerousGetHandle(), new IntPtr(resultPtr), result.Length);
+          int returned = NativeMethods.GetPredictionActionScores(vw.DangerousGetHandle(), ex.DangerousGetNativeHandle(), new IntPtr(resultPtr), result.Length);
           GC.KeepAlive(vw);
-          GC.KeepAlive(ex);
+          ex.KeepAliveNative();
           
           Debug.Assert(returned >= 0, "The size returned by GetPredictionActionScoresCount is insufficient to hold the action scores. This is a bug.");
           Debug.Assert(returned == result.Length, "Returned action scores count does not match requested count. This is a bug.");
@@ -410,7 +410,7 @@ namespace VW
     {
       PredictionHelpers.CheckExample(vw, ex, this.PredictionType);
 
-      UIntPtr count = NativeMethods.GetPredictionTopicProbsCount(vw.DangerousGetHandle(), ex.DangerousGetHandle());
+      UIntPtr count = NativeMethods.GetPredictionTopicProbsCount(vw.DangerousGetHandle(), ex.DangerousGetNativeHandle());
 
       if (count.ToUInt64() > UInt32.MaxValue)
       {
@@ -425,9 +425,9 @@ namespace VW
       {
         fixed (float* resultPtr = result)
         {
-          int returned = NativeMethods.GetPredictionTopicProbs(vw.DangerousGetHandle(), ex.DangerousGetHandle(), new IntPtr(resultPtr), result.Length);
+          int returned = NativeMethods.GetPredictionTopicProbs(vw.DangerousGetHandle(), ex.DangerousGetNativeHandle(), new IntPtr(resultPtr), result.Length);
           GC.KeepAlive(vw);
-          GC.KeepAlive(ex);
+          ex.KeepAliveNative();
           
           Debug.Assert(returned >= 0, "The size returned by GetPredictionTopicCount is insufficient to hold the topics. This is a bug.");
           Debug.Assert(returned == result.Length, "Returned topic count does not match requested count. This is a bug.");
@@ -450,7 +450,7 @@ namespace VW
 
     private unsafe int[] ReadMoreInfoRequiredClasses(VowpalWabbit vw, VowpalWabbitExample ex)
     {
-      UIntPtr count = NativeMethods.GetPredictionActiveMulticlassMoreInfoRequiredClassesCount(vw.DangerousGetHandle(), ex.DangerousGetHandle());
+      UIntPtr count = NativeMethods.GetPredictionActiveMulticlassMoreInfoRequiredClassesCount(vw.DangerousGetHandle(), ex.DangerousGetNativeHandle());
 
       if (count.ToUInt64() > Int32.MaxValue)
       {
@@ -463,13 +463,13 @@ namespace VW
       int[] result = new int[(int)count.ToUInt32()];
       fixed (int* resultPtr = result)
       {
-        int returned = NativeMethods.GetPredictionActiveMulticlassMoreInfoRequiredClasses(vw.DangerousGetHandle(), ex.DangerousGetHandle(), new IntPtr(resultPtr), result.Length);
+        int returned = NativeMethods.GetPredictionActiveMulticlassMoreInfoRequiredClasses(vw.DangerousGetHandle(), ex.DangerousGetNativeHandle(), new IntPtr(resultPtr), result.Length);
 
         // Strictly speaking these are not necessary, but it is better to avoid having remarks about
         // consumers of ReadMoreInfoRequiredClasses being responsible for dealing with the lifecycle
         // of the input arguments.
         GC.KeepAlive(vw);
-        GC.KeepAlive(ex);
+        ex.KeepAliveNative();
         
         Debug.Assert(returned >= 0, "The size returned by GetPredictionActiveMulticlassMoreInfoRequiredClassesCount is insufficient to hold the classes. This is a bug.");
         Debug.Assert(returned == result.Length, "Returned class count does not match requested count. This is a bug.");
@@ -484,12 +484,12 @@ namespace VW
 
       VowpalWabbitActiveMulticlass result = new VowpalWabbitActiveMulticlass
       {
-        predicted_class = NativeMethods.GetPredictionActiveMulticlassClass(vw.DangerousGetHandle(), ex.DangerousGetHandle()),
+        predicted_class = NativeMethods.GetPredictionActiveMulticlassClass(vw.DangerousGetHandle(), ex.DangerousGetNativeHandle()),
         more_info_required_for_classes = this.ReadMoreInfoRequiredClasses(vw, ex)
       };
 
       GC.KeepAlive(vw);
-      GC.KeepAlive(ex);
+      ex.KeepAliveNative();
       
       return result;
     }

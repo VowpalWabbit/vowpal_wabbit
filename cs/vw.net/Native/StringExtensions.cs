@@ -1,10 +1,19 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
 using System.Text;
 
 namespace Vw.Net.Native
 {
+    internal static partial class NativeMethods
+    {
+        [DllImport("vw.net.native.dll")]
+        public static extern UIntPtr StdStringGetLength(IntPtr str);
+
+        [DllImport("vw.net.native.dll")]
+        public static extern int StdStringCopyToBuffer(IntPtr str, IntPtr buffer, int buffer_length);
+    }
+
     internal static class StringExtensions
     {
         internal static int GetUtf8ByteCount(this IntPtr ptr)

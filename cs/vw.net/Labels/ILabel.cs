@@ -44,7 +44,7 @@ namespace VW.Labels
 
   public interface ILabel
   {
-    void UpdateExample(VowpalWabbitExample ex);
+    void UpdateExample(VowpalWabbit vw, VowpalWabbitExample ex);
     void ReadFromExample(VowpalWabbitExample ex);
   }
 
@@ -94,26 +94,30 @@ namespace VW.Labels
     [JsonIgnore]
     public bool IsShared => SharedLabel.IsShared(this);
 
-    void ILabel.UpdateExample(VowpalWabbitExample example)
+    void ILabel.UpdateExample(VowpalWabbit vw, VowpalWabbitExample example)
     {
       VowpalWabbit workspace = example.Owner.Native;
 
-      NativeMethods.CbLabelUpdateExample(example.DangerousGetHandle(), ref this.labelData);
+      NativeMethods.CbLabelUpdateExample(example.DangerousGetNativeHandle(), ref this.labelData);
 
-      GC.KeepAlive(example);
+      example.KeepAliveNative();
       GC.KeepAlive(workspace);
     }
 
     private unsafe CbClassData ReadLabelDataFromExample(VowpalWabbitExample example)
     {
-      IntPtr labelDataPtr = NativeMethods.CbLabelReadFromExampleDangerous(example.DangerousGetHandle());
-      CbClassData labelData = Marshal.PtrToStructure<CbClassData>(labelDataPtr);
+      IntPtr labelDataPtr = NativeMethods.CbLabelReadFromExampleDangerous(example.DangerousGetNativeHandle());
+      CbClassData labelData = default(CbClassData);
+      if (labelDataPtr != IntPtr.Zero)
+      {
+        labelData = Marshal.PtrToStructure<CbClassData>(labelDataPtr);
+      }
 
       // BUGBUG!
       // This needs to happen after the Marshal.PtrToStructure call, because the pointer
       // references data owned by the example, so we need to keep the example object valid
       // until after we copy out the label data.
-      GC.KeepAlive(example);
+      example.KeepAliveNative();
 
       return labelData;
     }
@@ -170,9 +174,9 @@ namespace VW.Labels
       return SharedLabelString;
     }
 
-    void ILabel.UpdateExample(VowpalWabbitExample ex)
+    void ILabel.UpdateExample(VowpalWabbit vw, VowpalWabbitExample ex)
     {
-      ((ILabel)this.labelTemplate).UpdateExample(ex);
+      ((ILabel)this.labelTemplate).UpdateExample(vw, ex);
     }
 
     void ILabel.ReadFromExample(VowpalWabbitExample ex)
@@ -197,7 +201,7 @@ namespace VW.Labels
     [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
     public float? Initial { get; set; }
 
-    void ILabel.UpdateExample(VowpalWabbitExample example)
+    void ILabel.UpdateExample(VowpalWabbit vw, VowpalWabbitExample example)
     {
       float weight, initial;
       IntPtr maybe_weight = IntPtr.Zero;
@@ -217,11 +221,10 @@ namespace VW.Labels
           maybe_initial = new IntPtr(&initial); // This is safe because weight is fixed on the stack
         }
 
-        VowpalWabbit workspace = example.Owner.Native;
-        SimpleLabelUpdateExample(workspace.DangerousGetHandle(), example.DangerousGetHandle(), this.Label, maybe_weight, maybe_initial);
+        SimpleLabelUpdateExample(vw.DangerousGetHandle(), example.DangerousGetNativeHandle(), this.Label, maybe_weight, maybe_initial);
 
-        GC.KeepAlive(example);
-        GC.KeepAlive(workspace);
+        example.KeepAliveNative();
+        GC.KeepAlive(vw);
       }
     }
 
@@ -229,8 +232,8 @@ namespace VW.Labels
     {
       float weight, initial;
 
-      this.Label = SimpleLabelReadFromExample(example.DangerousGetHandle(), out weight, out initial);
-      GC.KeepAlive(example);
+      this.Label = SimpleLabelReadFromExample(example.DangerousGetNativeHandle(), out weight, out initial);
+      example.KeepAliveNative();
 
       this.Weight = weight;
       this.Initial = initial;
@@ -283,7 +286,7 @@ namespace VW.Labels
       set;
     }
 
-    void ILabel.UpdateExample(VowpalWabbitExample example)
+    void ILabel.UpdateExample(VowpalWabbit vw, VowpalWabbitExample example)
     {
       throw new NotImplementedException("to be done...");
     }
@@ -348,15 +351,15 @@ namespace VW.Labels
         IntPtr labelLen = new IntPtr(label.Length);
         IntPtr apiStatusPtr = IntPtr.Zero;
 
-        if (StringLabelParseAndUpdateExample(workspace.DangerousGetHandle(), example.DangerousGetHandle(), labelPtr, labelLen, status.ToNativeHandleOrNullptrDangerous()) != NativeMethods.SuccessStatus)
+        if (StringLabelParseAndUpdateExample(workspace.DangerousGetHandle(), example.DangerousGetNativeHandle(), labelPtr, labelLen, status.ToNativeHandleOrNullptrDangerous()) != NativeMethods.SuccessStatus)
           throw new Vw.Net.VWException(status);
 
-        GC.KeepAlive(example);
+        example.KeepAliveNative();
         GC.KeepAlive(workspace);
       }
     }
 
-    void ILabel.UpdateExample(VowpalWabbitExample example)
+    void ILabel.UpdateExample(VowpalWabbit vw, VowpalWabbitExample example)
     {
       ParseLabelAndUpdateExample(example, this.Label);
     }

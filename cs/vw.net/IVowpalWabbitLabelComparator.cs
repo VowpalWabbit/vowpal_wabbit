@@ -28,9 +28,9 @@ namespace VW
 
     public string Diff(VowpalWabbitExample ex1, VowpalWabbitExample ex2)
     {
-      IntPtr diffStringPtr = NativeMethods.ComputeDiffDescriptionSimpleLabels(ex1.DangerousGetHandle(), ex2.DangerousGetHandle());
-      GC.KeepAlive(ex1);
-      GC.KeepAlive(ex2);
+      IntPtr diffStringPtr = NativeMethods.ComputeDiffDescriptionSimpleLabels(ex1.DangerousGetNativeHandle(), ex2.DangerousGetNativeHandle());
+      ex1.KeepAliveNative();
+      ex2.KeepAliveNative();
 
       if (diffStringPtr == IntPtr.Zero)
       {
@@ -51,9 +51,9 @@ namespace VW
   {
     public string Diff(VowpalWabbitExample ex1, VowpalWabbitExample ex2)
     {
-      IntPtr diffStringPtr = NativeMethods.ComputeDiffDescriptionSimpleLabels(ex1.DangerousGetHandle(), ex2.DangerousGetHandle());
-      GC.KeepAlive(ex1);
-      GC.KeepAlive(ex2);
+      IntPtr diffStringPtr = NativeMethods.ComputeDiffDescriptionSimpleLabels(ex1.DangerousGetNativeHandle(), ex2.DangerousGetNativeHandle());
+      ex1.KeepAliveNative();
+      ex2.KeepAliveNative();
 
       if (diffStringPtr == IntPtr.Zero)
       {

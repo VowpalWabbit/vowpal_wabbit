@@ -27,7 +27,8 @@ extern "C" {
   API bool IsExampleNewline(example* example);
   API char* ComputeDiffDescriptionExample(vw_net_native::workspace_context* workspace, example* ex1, example* ex2);
   API uint64_t GetExampleNumberOfFeatures(example* example);
-  API void MakeEmpty(vw_net_native::workspace_context* workspace, example* example);
+  API void EmptyExampleData(vw_net_native::workspace_context* workspace, example* example);
+  API void MakeIntoNewlineExample(vw_net_native::workspace_context* workspace, example* example);
   API void MakeLabelDefault(vw_net_native::workspace_context* workspace, example* example);
   API void UpdateExampleWeight(vw_net_native::workspace_context* workspace, example* example);
 

@@ -45,21 +45,17 @@ namespace VW
       this.exampleCollection = exampleCollection;
       foreach (VowpalWabbitExample example in this.exampleCollection)
       {
-        NativeMethods.MultiExAddExample(this.DangerousGetHandle(), example.DangerousGetHandle());
+        NativeMethods.MultiExAddExample(this.DangerousGetHandle(), example.DangerousGetNativeHandle());
         // GC.KeepAlive(this); is not needed because this is the constructor
-        // GC.KeepAlive(example) is unneeded because all of the examples are kept in
-        // the locally-owned exampleCollection. This means that as long as this is kept
-        // alive, so is every example.
+        example.KeepAliveNative();
       }
     }
 
     public void AddExample(VowpalWabbitExample example)
     {
-      NativeMethods.MultiExAddExample(this.DangerousGetHandle(), example.DangerousGetHandle());
+      NativeMethods.MultiExAddExample(this.DangerousGetHandle(), example.DangerousGetNativeHandle());
       GC.KeepAlive(this);
-      // GC.KeepAlive(example) is unneeded because all of the examples are kept in
-      // the locally-owned exampleCollection. This means that as long as this is kept
-      // alive, so is every example.
+      example.KeepAliveNative();
 
       this.exampleCollection.Add(example);
     }

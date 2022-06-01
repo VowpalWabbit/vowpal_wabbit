@@ -75,9 +75,9 @@ namespace VW
     {
       get
       {
-        ulong result = NativeMethods.GetShiftedWeightIndex(this.vw.DangerousGetHandle(), this.example.DangerousGetHandle(), this.weightIndexUnshifted);
+        ulong result = NativeMethods.GetShiftedWeightIndex(this.vw.DangerousGetHandle(), this.example.DangerousGetNativeHandle(), this.weightIndexUnshifted);
         GC.KeepAlive(this.vw);
-        GC.KeepAlive(this.example);
+        this.example.KeepAliveNative();
 
         return result;
       }
@@ -87,9 +87,9 @@ namespace VW
     {
       get
       {
-        float result = NativeMethods.GetWeight(this.vw.DangerousGetHandle(), this.example.DangerousGetHandle(), this.weightIndexUnshifted);
+        float result = NativeMethods.GetWeight(this.vw.DangerousGetHandle(), this.example.DangerousGetNativeHandle(), this.weightIndexUnshifted);
         GC.KeepAlive(this.vw);
-        GC.KeepAlive(this.example);
+        this.example.KeepAliveNative();
 
         return result;
       }
@@ -99,9 +99,9 @@ namespace VW
     {
       get
       {
-        float result = NativeMethods.GetAuditWeight(this.vw.DangerousGetHandle(), this.example.DangerousGetHandle(), this.weightIndexUnshifted);
+        float result = NativeMethods.GetAuditWeight(this.vw.DangerousGetHandle(), this.example.DangerousGetNativeHandle(), this.weightIndexUnshifted);
         GC.KeepAlive(this.vw);
-        GC.KeepAlive(this.example);
+        this.example.KeepAliveNative();
 
         return result;
       }

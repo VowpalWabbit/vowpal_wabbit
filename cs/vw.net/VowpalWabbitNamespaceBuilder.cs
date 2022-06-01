@@ -39,10 +39,9 @@ namespace VW
     {
       return new New<VowpalWabbitNamespaceBuilder>(() =>
       {
-        IntPtr result = NativeMethods.CreateBuilder(example.Owner.DangerousGetNativeHandle(), example.DangerousGetHandle(), namespaceIndex);
+        IntPtr result = NativeMethods.CreateBuilder(example.Owner.DangerousGetNativeHandle(), example.DangerousGetNativeHandle(), namespaceIndex);
         example.Owner.KeepAlive();
-        // GC.KeepAlive(example); // This is not necessary, since we have a direct reference to example here
-        // to ensure that the owning pool is kept alive until after we construct the native builder_context.
+        example.KeepAliveNative();
 
         return result;
       });

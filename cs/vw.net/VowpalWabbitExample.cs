@@ -33,7 +33,10 @@ namespace Vw.Net.Native
     public static extern ulong GetExampleNumberOfFeatures(IntPtr example);
 
     [DllImport("vw.net.native.dll")]
-    public static extern void MakeEmpty(IntPtr vw, IntPtr example);
+    public static extern void EmptyExampleData(IntPtr vw, IntPtr example);
+
+    [DllImport("vw.net.native.dll")]
+    public static extern void MakeIntoNewlineExample(IntPtr vw, IntPtr example);
 
     [DllImport("vw.net.native.dll")]
     public static extern void MakeLabelDefault(IntPtr vw, IntPtr example);
@@ -64,16 +67,19 @@ namespace Vw.Net.Native
 
 namespace VW
 {
-  using Vw.Net.Native;
+    using System.Runtime.ConstrainedExecution;
+    using Vw.Net.Native;
 
   using namespace_index = Byte;
+  using ctor = Func<IntPtr>;
+  using dtor = Action<IntPtr>;
 
-  [DebuggerDisplay("{DangerousGetHandle()}: '{VowpalWabbitString}'")]
-  public sealed class VowpalWabbitExample : NativeObject<VowpalWabbitExample>, IEnumerable<VowpalWabbitNamespace>
+  [DebuggerDisplay("{DangerousGetNativeHandle()}: '{VowpalWabbitString}'")]
+  public sealed class VowpalWabbitExample : IDisposable, IEnumerable<VowpalWabbitNamespace>
   {
+    private readonly IVowpalWabbitExamplePool owner;
+    private NativeHandle exampleHandle;
     private readonly VowpalWabbit vw;
-
-    
 
     internal class NamespaceEnumerator : NativeObject<NamespaceEnumerator>, IEnumerator<VowpalWabbitNamespace>
     {
@@ -83,10 +89,10 @@ namespace VW
       {
         return new New<NamespaceEnumerator>(() =>
         {
-          IntPtr result = NativeMethods.CreateNamespaceEnumerator(example.vw.DangerousGetHandle(), example.DangerousGetHandle());
+          IntPtr result = NativeMethods.CreateNamespaceEnumerator(example.vw.DangerousGetHandle(), example.exampleHandle.DangerousGetHandle());
           
           GC.KeepAlive(example.vw);
-          GC.KeepAlive(example);
+          GC.KeepAlive(example.exampleHandle);
           
           return result;
         });
@@ -126,47 +132,53 @@ namespace VW
       object IEnumerator.Current => this.Current;
     }
 
-
-
-    internal static New<VowpalWabbitExample> BindConstructorArguments(VowpalWabbitBase vw)
+    private static NativeHandle AllocateNativeExample(VowpalWabbitBase vw)
     {
-      return new New<VowpalWabbitExample>(() =>
-      {
-        IntPtr result = NativeMethods.CreateExample(vw.DangerousGetHandle());
-        
-        GC.KeepAlive(vw);
-        
-        return result;
-      });
+      ctor createExample = () => NativeMethods.CreateExample(vw.DangerousGetHandle());
+      NativeHandle result = NativeHandle.MakeNative(createExample, NativeMethods.DeleteExample);
+      GC.KeepAlive(vw);
+
+      return result;
     }
 
     internal VowpalWabbitExample(IVowpalWabbitExamplePool owner)
-      : base(BindConstructorArguments(owner.Native), NativeMethods.DeleteExample)
     {
+      this.owner = owner;
       this.vw = owner.Native;
+
+      this.exampleHandle = AllocateNativeExample(this.vw);
     }
 
-    internal VowpalWabbitExample(IVowpalWabbitExamplePool owner, IntPtr example)
-      : base(example, ownsHandle: true)
+    public VowpalWabbitExample(IVowpalWabbitExamplePool owner, VowpalWabbitExample example)
     {
+      this.owner = owner;
       this.vw = owner.Native;
+
+      this.InnerExample = example;
+      this.exampleHandle = example.exampleHandle.DangerousMakeNonOwningCopy();
     }
 
-    [Obsolete("Use the P/Invoke DangerousGetHandle() mechanism instead.")]
-    internal IntPtr m_example => this.DangerousGetHandle();
+    public void Dispose()
+    {
+      if (this.owner != null)
+      {
+        this.owner.ReturnExampleToPool(this);
+      }
+    }
+
+    internal void KeepAliveNative()
+    {
+      GC.KeepAlive(this.exampleHandle);
+    }
+
+    [Obsolete("Accessing the internal native example handle is deprecated.")]
+    internal IntPtr m_example => this.exampleHandle.DangerousGetHandle();
 
     [Obsolete("Use the public Owner property instead.")]
-    internal IVowpalWabbitExamplePool m_owner => this.vw;
+    internal IVowpalWabbitExamplePool m_owner => this.owner;
 
     [Obsolete("Use the public VowpalWabbitString property instead.")]
     internal string m_string => this.VowpalWabbitString;
-
-    public VowpalWabbitExample(IVowpalWabbitExamplePool owner, VowpalWabbitExample example)
-      : base(example.DangerousGetHandle(), ownsHandle: false)
-    {
-      this.vw = owner.Native;
-      this.InnerExample = example;
-    }
 
     public T GetPrediction<T>(VowpalWabbit vw, IVowpalWabbitPredictionFactory<T> factory)
     {
@@ -184,7 +196,7 @@ namespace VW
       private set;
     }
 
-    public IVowpalWabbitExamplePool Owner => this.vw;
+    public IVowpalWabbitExamplePool Owner => this.owner;
 
     public string VowpalWabbitString
     {
@@ -192,12 +204,17 @@ namespace VW
       set;
     }
 
+    public IntPtr DangerousGetNativeHandle()
+    {
+      return this.exampleHandle.DangerousGetHandle();
+    }
+
     public bool IsNewLine
     {
       get
       {
-        bool result = NativeMethods.IsExampleNewline(this.DangerousGetHandle());
-        GC.KeepAlive(this);
+        bool result = NativeMethods.IsExampleNewline(this.exampleHandle.DangerousGetHandle());
+        GC.KeepAlive(this.exampleHandle);
 
         return result;
       }
@@ -205,7 +222,11 @@ namespace VW
 
     public string Diff(VowpalWabbit vw, VowpalWabbitExample other, IVowpalWabbitLabelComparator comparator)
     {
-      IntPtr diffResultPtr = NativeMethods.ComputeDiffDescriptionExample(vw.DangerousGetHandle(), this.DangerousGetHandle(), other.DangerousGetHandle());
+      IntPtr diffResultPtr = NativeMethods.ComputeDiffDescriptionExample(vw.DangerousGetHandle(), this.exampleHandle.DangerousGetHandle(), other.exampleHandle.DangerousGetHandle());
+      GC.KeepAlive(vw);
+      GC.KeepAlive(this.exampleHandle);
+      GC.KeepAlive(other.exampleHandle);
+
       if (diffResultPtr != IntPtr.Zero)
       {
         // Marshall the string back using the marshalling function.
@@ -223,20 +244,29 @@ namespace VW
       return null;
     }
 
+    internal void EmptyExampleData(VowpalWabbit vw)
+    {
+      // The equivalent method is called empty_example() in the .NET Framework bindings, but this leads
+      // to potential confusion with MakeEmpty().
+      NativeMethods.EmptyExampleData(vw.DangerousGetHandle(), this.exampleHandle.DangerousGetHandle());
+      GC.KeepAlive(vw);
+      GC.KeepAlive(this.exampleHandle);
+    }
+
     public void MakeEmpty(VowpalWabbit vw)
     {
       // Is there a reason why we pass in VowpalWabbit here? Why not use the VowpalWabbit instance 
       // from the owner?
-      NativeMethods.MakeEmpty(vw.DangerousGetHandle(), this.DangerousGetHandle());
+      NativeMethods.MakeIntoNewlineExample(vw.DangerousGetHandle(), this.exampleHandle.DangerousGetHandle());
       GC.KeepAlive(vw);
-      GC.KeepAlive(this);
+      GC.KeepAlive(this.exampleHandle);
     }
 
     public void MakeLabelDefault(VowpalWabbit vw)
     {
-      NativeMethods.MakeLabelDefault(vw.DangerousGetHandle(), this.DangerousGetHandle());
+      NativeMethods.MakeLabelDefault(vw.DangerousGetHandle(), this.exampleHandle.DangerousGetHandle());
       GC.KeepAlive(vw);
-      GC.KeepAlive(this);
+      GC.KeepAlive(this.exampleHandle);
     }
 
     public IEnumerator<VowpalWabbitNamespace> GetEnumerator()
@@ -256,7 +286,7 @@ namespace VW
     {
       get
       {
-        ulong result = NativeMethods.GetExampleNumberOfFeatures(this.DangerousGetHandle());
+        ulong result = NativeMethods.GetExampleNumberOfFeatures(this.exampleHandle.DangerousGetHandle());
         GC.KeepAlive(this);
 
         return result;
@@ -309,10 +339,10 @@ namespace VW
           return; 
         }
 
-        value.UpdateExample(this);
+        value.UpdateExample(this.vw, this);
 
         // we need to update the example weight as setup_example() can be called prior to this call.
-        NativeMethods.UpdateExampleWeight(this.Owner.DangerousGetNativeHandle(), this.DangerousGetHandle());
+        NativeMethods.UpdateExampleWeight(this.Owner.DangerousGetNativeHandle(), this.exampleHandle.DangerousGetHandle());
         GC.KeepAlive(this.Owner);
         GC.KeepAlive(this);
       }

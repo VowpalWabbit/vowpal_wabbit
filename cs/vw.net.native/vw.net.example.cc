@@ -3,6 +3,7 @@
 #include "gd.h"
 #include "shared_data.h"
 
+
 #include <sstream>
 
 API example* CreateExample(vw_net_native::workspace_context* workspace)
@@ -198,7 +199,12 @@ API uint64_t GetExampleNumberOfFeatures(example* example)
   return example->num_features;
 }
 
-API void MakeEmpty(vw_net_native::workspace_context* workspace, example* example)
+API void EmptyExampleData(vw_net_native::workspace_context* workspace, example* example)
+{
+  VW::empty_example(*workspace->vw, *example);
+}
+
+API void MakeIntoNewlineExample(vw_net_native::workspace_context* workspace, example* example)
 {
   const char empty = '\0';
 
@@ -220,8 +226,9 @@ API void UpdateExampleWeight(vw_net_native::workspace_context* workspace, exampl
 API vw_net_native::namespace_enumerator* CreateNamespaceEnumerator(vw_net_native::workspace_context* workspace, example* example)
 {
   vw_net_native::namespace_enumerator* it = new vw_net_native::namespace_enumerator;
-  it->it = example->indices.cbegin();
   it->v = &example->indices;
+
+  NamespaceEnumeratorReset(it);
 
   return it;
 }
@@ -234,12 +241,12 @@ API void DeleteNamespaceEnumerator(vw_net_native::namespace_enumerator* it)
 API bool NamespaceEnumeratorMoveNext(vw_net_native::namespace_enumerator* it)
 {
   it->it++;
-  return it->it != it->v->cend();
+  return it->it < it->v->cend();
 }
 
 API void NamespaceEnumeratorReset(vw_net_native::namespace_enumerator* it)
 {
-  it->it = it->v->cbegin();
+  it->it = it->v->cbegin() - 1;
 }
 
 API namespace_index NamespaceEnumeratorGetNamespace(vw_net_native::namespace_enumerator* it)
@@ -251,8 +258,9 @@ API vw_net_native::feature_enumerator* CreateFeatureEnumerator(vw_net_native::wo
 {
   vw_net_native::feature_enumerator* it = new vw_net_native::feature_enumerator;
   it->features = &example->feature_space[ns];
-  it->it = example->feature_space[ns].cbegin();
   it->ns = ns;
+
+  FeatureEnumeratorReset(it);
 
   return it;
 }
@@ -265,12 +273,12 @@ API void DeleteFeatureEnumerator(vw_net_native::feature_enumerator* it)
 API bool FeatureEnumeratorMoveNext(vw_net_native::feature_enumerator* it)
 {
   it->it.operator++(); // Not sure why it does not like to compile without explicit reference to the operator.
-  return it->it != it->features->cend();
+  return it->it < it->features->cend();
 }
 
 API void FeatureEnumeratorReset(vw_net_native::feature_enumerator* it)
 {
-  it->it = it->features->cbegin();
+  it->it = it->features->cbegin() - 1;
 }
 
 API void FeatureEnumeratorGetFeature(vw_net_native::feature_enumerator* it, feature* feature)

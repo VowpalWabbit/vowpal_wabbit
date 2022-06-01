@@ -1,6 +1,8 @@
 using System;
+using System.Diagnostics;
 using System.IO;
 using System.Threading;
+using System.Runtime.ConstrainedExecution;
 using System.Runtime.InteropServices;
 
 namespace Vw.Net.Native
@@ -42,8 +44,7 @@ namespace Vw.Net.Native
 }
 
 namespace VW {
-    using System.Runtime.ConstrainedExecution;
-    using Vw.Net;
+  using Vw.Net;
   using Vw.Net.Native;
 
   // Do not subclass this directly? Maybe expose a VWWorkspace class instead?
@@ -53,12 +54,34 @@ namespace VW {
     private VowpalWabbitModel seedModel;
     private bool seedModelNeedsRelease;
 
-    private static void PipeTraceCallback(IntPtr trace_context, IntPtr message)
+    private static void PipeTraceCallback(IntPtr trace_context, IntPtr messagePtr)
     {
       Action<string> traceListener = GCHandle.FromIntPtr(trace_context).Target as Action<string>;
       if (traceListener != null)
       {
-        traceListener(Vw.Net.Native.NativeMethods.StringMarshallingFunc(message));
+        ulong messageSizeLong = NativeMethods.StdStringGetLength(messagePtr).ToUInt64();
+        if (messageSizeLong >= Int32.MaxValue)
+        {
+          // TODO: This should never actually happen
+          messageSizeLong = Int32.MaxValue;
+        }
+
+        byte[] messageBuffer = new byte[(int)messageSizeLong];
+        unsafe
+        {
+          fixed (byte* messageBufferPtr = messageBuffer)
+          {
+            int returned = NativeMethods.StdStringCopyToBuffer(messagePtr, new IntPtr(messageBufferPtr), (int)messageSizeLong);
+
+            Debug.Assert(returned >= 0, "The size returned by StdStringGetLength is insufficient to hold the messagePtr. This is a bug.");
+            Debug.Assert(returned == messageBuffer.Length, "Returned byte count does not match requested count. This is a bug.");
+          }
+        }
+
+        // TODO: There may be a way to avoid copying the string.
+        string message = NativeMethods.StringEncoding.GetString(messageBuffer).TrimEnd();
+
+        traceListener(message);
       }
     }
 
@@ -67,7 +90,7 @@ namespace VW {
       ApiStatus localStatus = status = new ApiStatus();
       NativeMethods.trace_message_t traceListener = null;
 
-      IntPtr localTraceContext = traceContext = IntPtr.Zero;
+      IntPtr localTraceContext = IntPtr.Zero;
       // This is a little convoluted, but there is no good clean way to do this without
       // either exposing implementation details or making the contract of NativeObject 
       // less clean/safe.
@@ -80,9 +103,11 @@ namespace VW {
       if (settings.TraceListener != null)
       {
           GCHandle traceListenerHandle = GCHandle.Alloc(settings.TraceListener);
-          traceContext = GCHandle.ToIntPtr(traceListenerHandle);
+          localTraceContext = GCHandle.ToIntPtr(traceListenerHandle);
           traceListener = PipeTraceCallback;
       }
+
+      traceContext = localTraceContext;
 
       return new New<VowpalWabbitBase>(() =>
       {
@@ -170,6 +195,8 @@ namespace VW {
       return (IntPtr handle) => localTarget.This.OperatorDelete(handle);
     }
 
+    // TODO: Is it actually accurate to say that state will not be corrupted on a failure to delete a
+    // workspace?
     [ReliabilityContract(Consistency.WillNotCorruptState, Cer.MayFail)]
     private void OperatorDelete(IntPtr workspace)
     {
@@ -236,10 +263,10 @@ namespace VW {
     // Ideally, this should only be checking IsClosed.
     protected bool m_isDisposed => this.IsClosed || this.IsInvalid;
 
-    ~VowpalWabbitBase()
-    {
-      this.Dispose(false);
-    }
+    //~VowpalWabbitBase()
+    //{
+    //  this.Dispose(false);
+    //}
 
     [Obsolete("Calling InternalDispose() from consumers of the binding layer is undefined behaviour.")]
     protected void InternalDispose()

@@ -3,6 +3,8 @@
 #include "shared_data.h"
 #include "best_constant.h"
 
+
+
 vw_net_native::workspace_context* create_workspace(std::string arguments, io_buf* model, trace_message_t trace_listener, void* trace_context)
 {
   vw_net_native::workspace_context* context = new vw_net_native::workspace_context();
@@ -149,7 +151,7 @@ API void WorkspaceGetPerformanceStatistics(vw_net_native::workspace_context* wor
   }
   else
   {
-    statistics->examples_per_pass= workspace->vw->sd->example_number / workspace->vw->current_pass;
+    statistics->examples_per_pass = workspace->vw->sd->example_number / workspace->vw->current_pass;
   }
 
   statistics->weighted_examples = workspace->vw->sd->weighted_examples();
@@ -196,10 +198,11 @@ API void WorkspaceSetUpAllReduceThreadsRoot(vw_net_native::workspace_context* wo
   workspace->vw->all_reduce = new AllReduceThreads(total, node);
 }
 
-API void WorkspaceSetUpAllReduceThreadsNode(vw_net_native::workspace_context* workspace, size_t total, size_t node, VW::workspace* root_workspace)
+API void WorkspaceSetUpAllReduceThreadsNode(vw_net_native::workspace_context* workspace, size_t total, size_t node,
+    vw_net_native::workspace_context* root_workspace)
 {
   workspace->vw->all_reduce_type = AllReduceType::Thread;
-  workspace->vw->all_reduce = new AllReduceThreads((AllReduceThreads*)root_workspace->all_reduce, total, node);
+  workspace->vw->all_reduce = new AllReduceThreads((AllReduceThreads*)root_workspace->vw->all_reduce, total, node);
 }
 
 API vw_net_native::ERROR_CODE WorkspaceRunMultiPass(vw_net_native::workspace_context* workspace, VW::experimental::api_status* status)
