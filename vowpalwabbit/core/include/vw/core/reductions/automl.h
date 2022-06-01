@@ -57,8 +57,8 @@ struct exclusion_config
 {
   std::map<namespace_index, std::set<namespace_index>> exclusions;
   uint64_t lease;
-  float ips = 0.f;
-  float lower_bound = std::numeric_limits<float>::infinity();
+  float ips = std::numeric_limits<float>::infinity();
+  float lower_bound = 0.f;
   config_state state = VW::reductions::automl::config_state::New;
 
   exclusion_config(uint64_t lease = 10) : lease(lease) {}
