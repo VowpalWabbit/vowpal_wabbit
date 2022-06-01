@@ -569,7 +569,8 @@ Weight Options:
                                             experimental)
     --max_actions arg                       Max number of actions to explore (type: uint, default: 50, keep,
                                             experimental)
-    --gamma arg                             Gamma hyperparameter (type: float, keep)
+    --spanner_c arg                         Parameter for computing c-approximate spanner (type: float, default:
+                                            2, keep, experimental)
 [Reduction] Explore Evaluation Options:
     --explore_eval                          Evaluate explore_eval adf policies (type: bool, keep, necessary)
     --multiplier arg                        Multiplier used to make all rejection sample probabilities <=
