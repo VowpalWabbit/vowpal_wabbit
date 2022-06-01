@@ -19,8 +19,7 @@ void VW::reductions::actions_mask::predict(VW::LEARNER::multi_learner& base, mul
       examples[0]->_reduction_features.template get<VW::cb_explore_adf::actions_mask::reduction_features>();
 
   auto& preds = examples[0]->pred.a_s;
-  for (auto action : red_features.action_mask)
-  { preds.push_back({action, 0.f}); }
+  for (auto action : red_features.action_mask) { preds.push_back({action, 0.f}); }
 }
 
 template <bool is_learn>

@@ -3,11 +3,11 @@
 // license as described in the file LICENSE.
 
 #pragma once
+#include "actions_mask_reduction_features.h"
 #include "ccb_reduction_features.h"
 #include "continuous_actions_reduction_features.h"
 #include "epsilon_reduction_features.h"
 #include "generated_interactions_reduction_features.h"
-#include "actions_mask_reduction_features.h"
 #include "simple_label.h"
 #include "vw/common/future_compat.h"
 
