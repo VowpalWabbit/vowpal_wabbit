@@ -1,6 +1,7 @@
 set(vw_core_headers
   include/vw/core/accumulate.h
   include/vw/core/action_score.h
+  include/vw/core/actions_mask_reduction_features.h
   include/vw/core/active_multiclass_prediction.h
   include/vw/core/api_status.h
   include/vw/core/array_parameters_dense.h
@@ -91,6 +92,7 @@ set(vw_core_headers
   include/vw/core/reductions/cats_pdf.h
   include/vw/core/reductions/cats_tree.h
   include/vw/core/reductions/cats.h
+  include/vw/core/reductions/cb/cb_actions_mask.h
   include/vw/core/reductions/cb/cb_adf.h
   include/vw/core/reductions/cb/cb_algs.h
   include/vw/core/reductions/cb/cb_dro.h
@@ -246,6 +248,7 @@ set(vw_core_sources
   src/reductions/cats_pdf.cc
   src/reductions/cats_tree.cc
   src/reductions/cats.cc
+  src/reductions/cb/cb_actions_mask.cc
   src/reductions/cb/cb_adf.cc
   src/reductions/cb/cb_algs.cc
   src/reductions/cb/cb_dro.cc

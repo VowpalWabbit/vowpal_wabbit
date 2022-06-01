@@ -127,7 +127,6 @@ void cb_explore_adf_large_action_space::learn(VW::LEARNER::multi_learner& base, 
 cb_explore_adf_large_action_space::cb_explore_adf_large_action_space(
     uint64_t d, float gamma_scale, float gamma_exponent, float c, bool apply_shrink_factor, VW::workspace* all)
     : _d(d)
-    , _gamma(0.f)
     , _gamma_scale(gamma_scale)
     , _gamma_exponent(gamma_exponent)
     , _c(c)
@@ -153,8 +152,9 @@ void cb_explore_adf_large_action_space::calculate_shrink_factor(const ACTION_SCO
   {
     shrink_factors.clear();
     float min_ck = std::min_element(preds.begin(), preds.end(), VW::action_score_compare_lt)->score;
+    float gamma = _gamma_scale * static_cast<float>(std::pow(_counter, _gamma_exponent));
     for (size_t i = 0; i < preds.size(); i++)
-    { shrink_factors.push_back(std::sqrt(1 + _d + _gamma / (4.0f * _d) * (preds[i].score - min_ck))); }
+    { shrink_factors.push_back(std::sqrt(1 + _d + gamma / (4.0f * _d) * (preds[i].score - min_ck))); }
   }
   else
   {
@@ -470,10 +470,6 @@ void cb_explore_adf_large_action_space::predict_or_learn_impl(VW::LEARNER::multi
 
     auto& preds = examples[0]->pred.a_s;
 
-    const auto min_ck_idx = std::min_element(preds.begin(), preds.end(), VW::action_score_compare_lt) - preds.begin();
-    const float min_ck = preds[min_ck_idx].score;
-    _gamma = _gamma_scale * static_cast<float>(std::pow(_counter, _gamma_exponent));
-
     if (_d < preds.size())
     {
       calculate_shrink_factor(preds);
@@ -496,22 +492,20 @@ void cb_explore_adf_large_action_space::predict_or_learn_impl(VW::LEARNER::multi
       _spanner_bitvec.resize(preds.size(), true);
     }
 
-    // Set the exploration distribution over S and the minimizer.
-    _spanner_bitvec[min_ck_idx] = false;
-    float sum_scores = 0.0f;
-    for (auto i = 0u; i < preds.size(); ++i)
+    auto& red_features =
+        examples[0]->_reduction_features.template get<VW::cb_explore_adf::actions_mask::reduction_features>();
+    red_features.reset_to_default();
+
+    size_t index = 0;
+    for (auto it = preds.begin(); it != preds.end(); it++)
     {
-      if (_spanner_bitvec[i])
+      if (!_spanner_bitvec[index])
       {
-        preds[i].score = 1 / (1 + _d + _gamma / (4.0f * _d) * (preds[i].score - min_ck));
-        sum_scores += preds[i].score;
+        red_features.action_mask.push_back((*it).action);
+        preds.erase(it--);
       }
-      else
-      {
-        preds[i].score = 0.0f;
-      }
+      index++;
     }
-    preds[min_ck_idx].score = 1.0f - sum_scores;
   }
 }
 }  // namespace cb_explore_adf

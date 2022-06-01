@@ -888,12 +888,12 @@ BOOST_AUTO_TEST_CASE(check_finding_max_volume)
   VW::finish(vw);
 }
 
-BOOST_AUTO_TEST_CASE(check_spanner_results)
+BOOST_AUTO_TEST_CASE(check_spanner_results_squarecb)
 {
   auto d = 2;
-  auto& vw = *VW::initialize(
-      "--cb_explore_adf --large_action_space --max_actions " + std::to_string(d) + " --quiet --random_seed 5", nullptr,
-      false, nullptr, nullptr);
+  auto& vw = *VW::initialize("--cb_explore_adf --squarecb --large_action_space --max_actions " + std::to_string(d) +
+          " --quiet --random_seed 5",
+      nullptr, false, nullptr, nullptr);
 
   {
     VW::multi_ex examples;
@@ -946,15 +946,97 @@ BOOST_AUTO_TEST_CASE(check_spanner_results)
     examples.push_back(VW::read_example(vw, "| a_1 a_2 a_3"));
     examples.push_back(VW::read_example(vw, "| a_4 a_5 a_6"));
 
-    learner->predict(examples);
+    vw.predict(examples);
 
     const auto num_actions = examples.size();
     const auto& preds = examples[0]->pred.a_s;
     BOOST_CHECK_EQUAL(preds.size(), num_actions);
     // Only d actions have non-zero scores.
-    BOOST_CHECK_CLOSE(preds[0].score, 0.666935921, FLOAT_TOL);  // ~ 2/3
-    BOOST_CHECK_CLOSE(preds[1].score, 0.0, FLOAT_TOL);
-    BOOST_CHECK_CLOSE(preds[2].score, 0.333064049, FLOAT_TOL);  // ~ 1/3
+    BOOST_CHECK_CLOSE(preds[0].score, 0.697270989, FLOAT_TOL);  // ~ 2/3
+    BOOST_CHECK_EQUAL(preds[0].action, 2);
+    BOOST_CHECK_CLOSE(preds[1].score, 0.30272904, FLOAT_TOL);  // ~ 1/3
+    BOOST_CHECK_EQUAL(preds[1].action, 0);
+    BOOST_CHECK_CLOSE(preds[2].score, 0.0, FLOAT_TOL);
+    BOOST_CHECK_EQUAL(preds[2].action, 1);
+
+    vw.finish_example(examples);
+  }
+  VW::finish(vw);
+}
+
+BOOST_AUTO_TEST_CASE(check_spanner_results_epsilon_greedy)
+{
+  auto d = 2;
+  float epsilon = 0.2f;
+  auto& vw = *VW::initialize("--cb_explore_adf --epsilon " + std::to_string(epsilon) +
+          " --large_action_space --max_actions " + std::to_string(d) + " --quiet --random_seed 5",
+      nullptr, false, nullptr, nullptr);
+
+  {
+    VW::multi_ex examples;
+
+    examples.push_back(VW::read_example(vw, "0:1.0:0.5 | 1 2 3"));
+    examples.push_back(VW::read_example(vw, "| a_1 a_2 a_3"));
+    examples.push_back(VW::read_example(vw, "| a_4 a_5 a_6"));
+
+    vw.learn(examples);
+    vw.finish_example(examples);
+  }
+
+  {
+    VW::multi_ex examples;
+
+    examples.push_back(VW::read_example(vw, "| 1 2 3"));
+    examples.push_back(VW::read_example(vw, "0:1.0:0.5 | a_1 a_2 a_3"));
+    examples.push_back(VW::read_example(vw, "| a_4 a_5 a_6"));
+
+    vw.learn(examples);
+    vw.finish_example(examples);
+  }
+
+  {
+    VW::multi_ex examples;
+
+    examples.push_back(VW::read_example(vw, "| 1 2 3"));
+    examples.push_back(VW::read_example(vw, "| a_1 a_2 a_3"));
+    examples.push_back(VW::read_example(vw, "0:1.0:0.5 | a_4 a_5 a_6"));
+
+    vw.learn(examples);
+    vw.finish_example(examples);
+  }
+
+  std::vector<std::string> e_r;
+  vw.l->get_enabled_reductions(e_r);
+  if (std::find(e_r.begin(), e_r.end(), "cb_explore_adf_large_action_space") == e_r.end())
+  { BOOST_FAIL("cb_explore_adf_large_action_space not found in enabled reductions"); }
+
+  VW::LEARNER::multi_learner* learner =
+      as_multiline(vw.l->get_learner_by_name_prefix("cb_explore_adf_large_action_space"));
+
+  auto action_space = (internal_action_space*)learner->get_internal_type_erased_data_pointer_test_use_only();
+  BOOST_CHECK_EQUAL(action_space != nullptr, true);
+
+  {
+    VW::multi_ex examples;
+
+    examples.push_back(VW::read_example(vw, "| 1 2 3"));
+    examples.push_back(VW::read_example(vw, "| a_1 a_2 a_3"));
+    examples.push_back(VW::read_example(vw, "| a_4 a_5 a_6"));
+
+    vw.predict(examples);
+
+    const auto num_actions = examples.size();
+    const auto& preds = examples[0]->pred.a_s;
+    BOOST_CHECK_EQUAL(preds.size(), num_actions);
+    // Only d actions have non-zero scores.
+    size_t num_actions_non_zeroed = d;
+    float epsilon_ur = epsilon / num_actions_non_zeroed;
+    BOOST_CHECK_CLOSE(preds[0].score, epsilon_ur + (1.f - epsilon), FLOAT_TOL);
+    BOOST_CHECK_EQUAL(preds[0].action, 2);
+    BOOST_CHECK_CLOSE(preds[1].score, epsilon_ur, FLOAT_TOL);
+    BOOST_CHECK_EQUAL(preds[1].action, 0);
+    BOOST_CHECK_CLOSE(preds[2].score, 0.0, FLOAT_TOL);
+    BOOST_CHECK_EQUAL(preds[2].action, 1);
 
     vw.finish_example(examples);
   }
@@ -1063,14 +1145,14 @@ BOOST_AUTO_TEST_CASE(check_probabilities_when_d_is_larger)
     examples.push_back(VW::read_example(vw, "| a_1 a_2 a_3"));
     examples.push_back(VW::read_example(vw, "| a_4 a_5 a_6"));
 
-    learner->predict(examples);
+    vw.predict(examples);
 
     const auto num_actions = examples.size();
     const auto& preds = examples[0]->pred.a_s;
     BOOST_CHECK_EQUAL(preds.size(), num_actions);
-    BOOST_CHECK_CLOSE(preds[0].score, 0.500155926, FLOAT_TOL);
-    BOOST_CHECK_CLOSE(preds[1].score, 0.249945059, FLOAT_TOL);
-    BOOST_CHECK_CLOSE(preds[2].score, 0.249898985, FLOAT_TOL);
+    BOOST_CHECK_CLOSE(preds[0].score, 0.966666639, FLOAT_TOL);
+    BOOST_CHECK_CLOSE(preds[1].score, 0.0166666675, FLOAT_TOL);
+    BOOST_CHECK_CLOSE(preds[2].score, 0.0166666675, FLOAT_TOL);
 
     vw.finish_example(examples);
   }

@@ -21,7 +21,6 @@ struct cb_explore_adf_large_action_space
 {
 private:
   uint64_t _d;
-  float _gamma;
   float _gamma_scale;
   float _gamma_exponent;
   float _c = 2;
