@@ -258,8 +258,8 @@ void interaction_config_manager::insert_config(std::set<std::vector<namespace_in
   {
     configs[valid_config_size].exclusions = std::move(new_exclusions);
     configs[valid_config_size].lease = global_lease;
-    configs[valid_config_size].ips = 0;
-    configs[valid_config_size].lower_bound = std::numeric_limits<float>::infinity();
+    configs[valid_config_size].ips = std::numeric_limits<float>::infinity();
+    configs[valid_config_size].lower_bound = 0.f;
     configs[valid_config_size].state = VW::reductions::automl::config_state::New;
   }
   else
