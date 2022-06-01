@@ -612,7 +612,7 @@ void ex_push_feature(example_ptr ec, unsigned char ns, uint32_t fid, float v)
   ec->reset_total_sum_feat_sq();
 }
 
-//List[Union[Tuple[Union[str,int], float], str,int]]
+// List[Union[Tuple[Union[str,int], float], str,int]]
 void ex_push_feature_list(example_ptr ec, vw_ptr vw, unsigned char ns, py::list& a)
 {  // warning: assumes namespace exists!
   char ns_str[2] = {(char)ns, 0};
@@ -676,48 +676,36 @@ void ex_push_feature_list(example_ptr ec, vw_ptr vw, unsigned char ns, py::list&
   ec->reset_total_sum_feat_sq();
 }
 
-//Dict[Union[str,int],Union[int,float]]
+// Dict[Union[str,int],Union[int,float]]
 void ex_push_feature_dict(example_ptr ec, vw_ptr vw, unsigned char ns, PyObject* o)
-{  
+{
   // warning: assumes namespace exists!
   char ns_str[2] = {(char)ns, 0};
   uint64_t ns_hash = VW::hash_space(*vw, ns_str);
   size_t count = 0;
 
   PyObject *name, *value;
-  Py_ssize_t size = 0, pos=0;
+  Py_ssize_t size = 0, pos = 0;
   float feat_value;
   uint64_t feat_index;
 
   while (PyDict_Next(o, &pos, &name, &value))
   {
-    if (PyFloat_Check(value))
-    {
-      feat_value = (float)PyFloat_AsDouble(value);
-    } 
-    else if (PyLong_Check(value))
-    {
-      feat_value = (float)PyLong_AsDouble(value);
-    }
+    if (PyFloat_Check(value)) { feat_value = (float)PyFloat_AsDouble(value); }
+    else if (PyLong_Check(value)) { feat_value = (float)PyLong_AsDouble(value); }
     else
     {
       std::cerr << "warning: malformed feature in list" << std::endl;
       continue;
     }
 
-    if (feat_value == 0)
-    {
-      continue;
-    }
+    if (feat_value == 0) { continue; }
 
-    if (PyUnicode_Check(name)) 
+    if (PyUnicode_Check(name))
     {
       feat_index = vw->example_parser->hasher(PyUnicode_AsUTF8AndSize(name, &size), size, ns_hash) & vw->parse_mask;
     }
-    else if (PyLong_Check(name))
-    {
-      feat_index = PyLong_AsUnsignedLong(name);
-    }
+    else if (PyLong_Check(name)) { feat_index = PyLong_AsUnsignedLong(name); }
     else
     {
       std::cerr << "warning: malformed feature in list" << std::endl;
@@ -744,24 +732,21 @@ void ex_ensure_namespace_exists(example_ptr ec, unsigned char ns)
   ex_push_namespace(ec, ns);
 }
 
-//Dict[str, Union[Dict[str,float], List[Union[Tuple[Union[str,int], float], str,int]]]]
+// Dict[str, Union[Dict[str,float], List[Union[Tuple[Union[str,int], float], str,int]]]]
 void ex_push_dictionary(example_ptr ec, vw_ptr vw, PyObject* o)
 {
   PyObject *ns_raw, *feats;
   Py_ssize_t pos1 = 0;
-  
-  while (PyDict_Next(o, &pos1, &ns_raw, &feats)) 
+
+  while (PyDict_Next(o, &pos1, &ns_raw, &feats))
   {
     py::extract<std::string> ns_e(ns_raw);
-    if(ns_e().length() < 1) continue;
+    if (ns_e().length() < 1) continue;
     unsigned char ns = ns_e()[0];
 
     ex_ensure_namespace_exists(ec, ns);
 
-    if (PyDict_Check(feats)) 
-    {
-      ex_push_feature_dict(ec, vw, ns, feats);
-    }
+    if (PyDict_Check(feats)) { ex_push_feature_dict(ec, vw, ns, feats); }
     else
     {
       py::list list = py::extract<py::list>(feats);
