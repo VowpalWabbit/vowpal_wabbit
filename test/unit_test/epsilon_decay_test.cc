@@ -1,10 +1,10 @@
 #include "vw/core/reductions/epsilon_decay.h"
-#include "vw/io/logger.h"
 
 #include "simulator.h"
 #include "test_common.h"
 #include "vw/core/metric_sink.h"
 #include "vw/core/reductions_fwd.h"
+#include "vw/io/logger.h"
 
 #include <boost/test/test_tools.hpp>
 #include <boost/test/unit_test.hpp>
@@ -237,17 +237,17 @@ BOOST_AUTO_TEST_CASE(epsilon_decay_test_score_bounds_unit)
   VW::io::logger logger = VW::io::create_default_logger();
   epsilon_decay_data ep_data(K, 100, .05, .1, dense_weights, logger, false, false);
 
-  /* 
-  * Check that score and weight indices are in expected start positions:
-  * WX denotes weight index X, and other indices denote score index
-  * 
-  * W0: 0
-  * W1: 1  2
-  * W2: 3  4  5
-  * W3: 6  7  8  9
-  * W4: 10 11 12 13 14
-  *
-  */
+  /*
+   * Check that score and weight indices are in expected start positions:
+   * WX denotes weight index X, and other indices denote score index
+   *
+   * W0: 0
+   * W1: 1  2
+   * W2: 3  4  5
+   * W3: 6  7  8  9
+   * W4: 10 11 12 13 14
+   *
+   */
   BOOST_CHECK_EQUAL(ep_data._scored_configs[0][0].get_score_idx(), 0);
   BOOST_CHECK_EQUAL(ep_data._scored_configs[1][0].get_score_idx(), 1);
   BOOST_CHECK_EQUAL(ep_data._scored_configs[1][1].get_score_idx(), 2);
@@ -272,35 +272,36 @@ BOOST_AUTO_TEST_CASE(epsilon_decay_test_score_bounds_unit)
   // Set lower_bound of model 2 to beat upper_bound of current champ and run score check
   uint64_t new_champ = 2;
   ep_data._scored_configs[new_champ][new_champ]._lower_bound = 1;
-  BOOST_CHECK_GT(ep_data._scored_configs[new_champ][new_champ].get_lower_bound(), ep_data._scored_configs[K - 1][new_champ].get_upper_bound());
+  BOOST_CHECK_GT(ep_data._scored_configs[new_champ][new_champ].get_lower_bound(),
+      ep_data._scored_configs[K - 1][new_champ].get_upper_bound());
   ep_data.check_score_bounds();
 
   /*
-  * Check that weight and score indices shift as expected when model 2 overtakes champion:
-  * WX denotes weight index X, and other indices denote score index
-  * 
-  * W4: 14
-  * W3: 8  9
-  * W0: 12 13 0
-  * W1: 6  7  1  2
-  * W2: 10 11 3  4  5
-  * 
-  */
+   * Check that weight and score indices shift as expected when model 2 overtakes champion:
+   * WX denotes weight index X, and other indices denote score index
+   *
+   * W4: 14
+   * W3: 8  9
+   * W0: 12 13 0
+   * W1: 6  7  1  2
+   * W2: 10 11 3  4  5
+   *
+   */
   BOOST_CHECK_EQUAL(ep_data._scored_configs[0][0].get_score_idx(), 14);
-  BOOST_CHECK_EQUAL(ep_data._scored_configs[1][0].get_score_idx(), 8 );
-  BOOST_CHECK_EQUAL(ep_data._scored_configs[1][1].get_score_idx(), 9 );
+  BOOST_CHECK_EQUAL(ep_data._scored_configs[1][0].get_score_idx(), 8);
+  BOOST_CHECK_EQUAL(ep_data._scored_configs[1][1].get_score_idx(), 9);
   BOOST_CHECK_EQUAL(ep_data._scored_configs[2][0].get_score_idx(), 12);
   BOOST_CHECK_EQUAL(ep_data._scored_configs[2][1].get_score_idx(), 13);
-  BOOST_CHECK_EQUAL(ep_data._scored_configs[2][2].get_score_idx(), 0 );
-  BOOST_CHECK_EQUAL(ep_data._scored_configs[3][0].get_score_idx(), 6 );
-  BOOST_CHECK_EQUAL(ep_data._scored_configs[3][1].get_score_idx(), 7 );
-  BOOST_CHECK_EQUAL(ep_data._scored_configs[3][2].get_score_idx(), 1 );
-  BOOST_CHECK_EQUAL(ep_data._scored_configs[3][3].get_score_idx(), 2 );
+  BOOST_CHECK_EQUAL(ep_data._scored_configs[2][2].get_score_idx(), 0);
+  BOOST_CHECK_EQUAL(ep_data._scored_configs[3][0].get_score_idx(), 6);
+  BOOST_CHECK_EQUAL(ep_data._scored_configs[3][1].get_score_idx(), 7);
+  BOOST_CHECK_EQUAL(ep_data._scored_configs[3][2].get_score_idx(), 1);
+  BOOST_CHECK_EQUAL(ep_data._scored_configs[3][3].get_score_idx(), 2);
   BOOST_CHECK_EQUAL(ep_data._scored_configs[4][0].get_score_idx(), 10);
   BOOST_CHECK_EQUAL(ep_data._scored_configs[4][1].get_score_idx(), 11);
-  BOOST_CHECK_EQUAL(ep_data._scored_configs[4][2].get_score_idx(), 3 );
-  BOOST_CHECK_EQUAL(ep_data._scored_configs[4][3].get_score_idx(), 4 );
-  BOOST_CHECK_EQUAL(ep_data._scored_configs[4][4].get_score_idx(), 5 );
+  BOOST_CHECK_EQUAL(ep_data._scored_configs[4][2].get_score_idx(), 3);
+  BOOST_CHECK_EQUAL(ep_data._scored_configs[4][3].get_score_idx(), 4);
+  BOOST_CHECK_EQUAL(ep_data._scored_configs[4][4].get_score_idx(), 5);
   BOOST_CHECK_EQUAL(ep_data._weight_indices[0], 4);
   BOOST_CHECK_EQUAL(ep_data._weight_indices[1], 3);
   BOOST_CHECK_EQUAL(ep_data._weight_indices[2], 0);
@@ -316,17 +317,17 @@ BOOST_AUTO_TEST_CASE(epsilon_decay_test_horizon_bounds_unit)
   VW::io::logger logger = VW::io::create_default_logger();
   epsilon_decay_data ep_data(K, 100, .05, .1, dense_weights, logger, false, false);
 
-  /* 
-  * Check that score and weight indices are in expected start positions:
-  * WX denotes weight index X, and other indices denote score index
-  * 
-  * W0: 0
-  * W1: 1  2
-  * W2: 3  4  5
-  * W3: 6  7  8  9
-  * W4: 10 11 12 13 14
-  *
-  */
+  /*
+   * Check that score and weight indices are in expected start positions:
+   * WX denotes weight index X, and other indices denote score index
+   *
+   * W0: 0
+   * W1: 1  2
+   * W2: 3  4  5
+   * W3: 6  7  8  9
+   * W4: 10 11 12 13 14
+   *
+   */
   BOOST_CHECK_EQUAL(ep_data._scored_configs[0][0].get_score_idx(), 0);
   BOOST_CHECK_EQUAL(ep_data._scored_configs[1][0].get_score_idx(), 1);
   BOOST_CHECK_EQUAL(ep_data._scored_configs[1][1].get_score_idx(), 2);
@@ -352,30 +353,31 @@ BOOST_AUTO_TEST_CASE(epsilon_decay_test_horizon_bounds_unit)
   uint64_t over_horizon = 2;
   ep_data._scored_configs[over_horizon][over_horizon].update_count = 500;
   ep_data._scored_configs[K - 1][K - 1].update_count = 1000;
-  BOOST_CHECK_GT(ep_data._scored_configs[over_horizon][over_horizon].update_count, std::pow(ep_data._scored_configs[K - 1][K - 1].update_count, static_cast<float>(over_horizon + 1) / K));
+  BOOST_CHECK_GT(ep_data._scored_configs[over_horizon][over_horizon].update_count,
+      std::pow(ep_data._scored_configs[K - 1][K - 1].update_count, static_cast<float>(over_horizon + 1) / K));
   ep_data.check_horizon_bounds();
 
   /*
-  * Check that weight and score indices shift as expected when model 2 overtakes champion:
-  * WX denotes weight index X, and other indices denote score index
-  * 
-  * W2: 5
-  * W0: 4  0
-  * W1: 3  1  2
-  * W3: 8  6  7  9
-  * W4: 12 10 11 13 14
-  * 
-  */
-  BOOST_CHECK_EQUAL(ep_data._scored_configs[0][0].get_score_idx(), 5 );
-  BOOST_CHECK_EQUAL(ep_data._scored_configs[1][0].get_score_idx(), 4 );
-  BOOST_CHECK_EQUAL(ep_data._scored_configs[1][1].get_score_idx(), 0 );
-  BOOST_CHECK_EQUAL(ep_data._scored_configs[2][0].get_score_idx(), 3 );
-  BOOST_CHECK_EQUAL(ep_data._scored_configs[2][1].get_score_idx(), 1 );
-  BOOST_CHECK_EQUAL(ep_data._scored_configs[2][2].get_score_idx(), 2 );
-  BOOST_CHECK_EQUAL(ep_data._scored_configs[3][0].get_score_idx(), 8 );
-  BOOST_CHECK_EQUAL(ep_data._scored_configs[3][1].get_score_idx(), 6 );
-  BOOST_CHECK_EQUAL(ep_data._scored_configs[3][2].get_score_idx(), 7 );
-  BOOST_CHECK_EQUAL(ep_data._scored_configs[3][3].get_score_idx(), 9 );
+   * Check that weight and score indices shift as expected when model 2 overtakes champion:
+   * WX denotes weight index X, and other indices denote score index
+   *
+   * W2: 5
+   * W0: 4  0
+   * W1: 3  1  2
+   * W3: 8  6  7  9
+   * W4: 12 10 11 13 14
+   *
+   */
+  BOOST_CHECK_EQUAL(ep_data._scored_configs[0][0].get_score_idx(), 5);
+  BOOST_CHECK_EQUAL(ep_data._scored_configs[1][0].get_score_idx(), 4);
+  BOOST_CHECK_EQUAL(ep_data._scored_configs[1][1].get_score_idx(), 0);
+  BOOST_CHECK_EQUAL(ep_data._scored_configs[2][0].get_score_idx(), 3);
+  BOOST_CHECK_EQUAL(ep_data._scored_configs[2][1].get_score_idx(), 1);
+  BOOST_CHECK_EQUAL(ep_data._scored_configs[2][2].get_score_idx(), 2);
+  BOOST_CHECK_EQUAL(ep_data._scored_configs[3][0].get_score_idx(), 8);
+  BOOST_CHECK_EQUAL(ep_data._scored_configs[3][1].get_score_idx(), 6);
+  BOOST_CHECK_EQUAL(ep_data._scored_configs[3][2].get_score_idx(), 7);
+  BOOST_CHECK_EQUAL(ep_data._scored_configs[3][3].get_score_idx(), 9);
   BOOST_CHECK_EQUAL(ep_data._scored_configs[4][0].get_score_idx(), 12);
   BOOST_CHECK_EQUAL(ep_data._scored_configs[4][1].get_score_idx(), 10);
   BOOST_CHECK_EQUAL(ep_data._scored_configs[4][2].get_score_idx(), 11);

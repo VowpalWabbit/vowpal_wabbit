@@ -41,7 +41,6 @@ void epsilon_decay_score::reset_stats(double alpha, double tau)
 
 float decayed_epsilon(uint64_t update_count) { return static_cast<float>(std::pow(update_count + 1, -1.f / 3.f)); }
 
-
 void epsilon_decay_data::update_weights(VW::LEARNER::multi_learner& base, VW::multi_ex& examples)
 {
   auto K = static_cast<int64_t>(_scored_configs.size());
@@ -110,9 +109,7 @@ void epsilon_decay_data::check_score_bounds()
       {
         for (int64_t inner_ind = 0;
              inner_ind < std::min(static_cast<int64_t>(_scored_configs[outer_ind].size()), swap_dist); ++inner_ind)
-        {
-          _scored_configs[outer_ind][inner_ind].reset_stats(_epsilon_decay_alpha, _epsilon_decay_tau);
-        }
+        { _scored_configs[outer_ind][inner_ind].reset_stats(_epsilon_decay_alpha, _epsilon_decay_tau); }
       }
       for (int64_t ind = 0; ind < swap_dist; ++ind) { _weights.clear_offset(_weight_indices[ind], params_per_weight); }
       break;
@@ -137,9 +134,7 @@ void epsilon_decay_data::check_horizon_bounds()
         for (int64_t outer_ind = i - 1; outer_ind >= 0; --outer_ind)
         {
           for (int64_t inner_ind = 0; inner_ind < outer_ind + 1; ++inner_ind)
-          {
-            std::swap(_scored_configs[outer_ind][inner_ind], _scored_configs[outer_ind + 1][inner_ind + 1]);
-          }
+          { std::swap(_scored_configs[outer_ind][inner_ind], _scored_configs[outer_ind + 1][inner_ind + 1]); }
           std::swap(_weight_indices[outer_ind], _weight_indices[outer_ind + 1]);
         }
       }
