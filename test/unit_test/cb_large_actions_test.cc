@@ -654,6 +654,13 @@ BOOST_AUTO_TEST_CASE(check_final_truncated_SVD_validity)
 
   vws.push_back({vw_w_interactions_sq, true});
 
+  auto* vw_w_interactions_sq_sparse_weights =
+      VW::initialize("--cb_explore_adf --squarecb --sparse_weights --large_action_space --max_actions " +
+              std::to_string(d) + " --quiet --random_seed 5 -q ::",
+          nullptr, false, nullptr, nullptr);
+
+  vws.push_back({vw_w_interactions_sq_sparse_weights, true});
+
   for (auto& vw_pair : vws)
   {
     auto& vw = *std::get<0>(vw_pair);
@@ -784,122 +791,6 @@ BOOST_AUTO_TEST_CASE(check_final_truncated_SVD_validity)
     }
     VW::finish(vw);
   }
-}
-
-void generate_random_vector(
-    Eigen::SparseVector<float>& vec, VW::workspace& vw, uint64_t min, uint64_t max, uint64_t& min_index)
-{
-  for (size_t i = 0; i < vec.rows(); i++)
-  {
-    uint64_t seed = vw.get_random_state()->get_and_update_random() * 1000.f;
-    auto combined_index = i + seed;
-
-    uint64_t index = merand48_boxmuller(combined_index) * 1000.f;
-    while (index < min || index > max) { index = merand48_boxmuller(combined_index) * 1000.f; }
-
-    auto stride = vw.weights.sparse ? vw.weights.sparse_weights.stride() : vw.weights.dense_weights.stride();
-    auto mask = vw.weights.sparse ? vw.weights.sparse_weights.mask() : vw.weights.dense_weights.mask();
-    auto strided_index = (index << stride) & mask;
-    combined_index = i + strided_index + seed;
-    auto gaussian_value = merand48_boxmuller(combined_index);
-    vec.coeffRef(strided_index) = gaussian_value;
-
-    if (strided_index < min_index) { min_index = strided_index; }
-  }
-}
-
-std::vector<uint64_t> generate_A_square(
-    Eigen::SparseMatrix<float>& A_square, VW::workspace& vw, uint64_t num_actions, uint64_t max_col)
-{
-  uint64_t min = 0;
-  uint64_t max = 20;
-
-  std::vector<uint64_t> min_indexes;
-  for (size_t i = 0; i < num_actions; i++)
-  {
-    Eigen::SparseVector<float> v_vec(max_col);
-    uint64_t min_index = max_col + 1;
-
-    generate_random_vector(v_vec, vw, min, max, min_index);
-
-    min_indexes.push_back(min_index);
-    Eigen::SparseMatrix<float> temp = v_vec * v_vec.transpose();
-    A_square += temp;
-    min = max + 20;
-    max = min + 20;
-  }
-  return min_indexes;
-}
-
-std::unordered_map<uint64_t, uint64_t> map_A_square_rows_to_A_rows(
-    const Eigen::SparseMatrix<float>& A_square, const std::vector<uint64_t>& index_cutoffs, uint64_t num_actions)
-{
-  std::unordered_map<uint64_t, uint64_t> rows_map;
-
-  uint64_t latest_index = 0;
-
-  for (int k = 0; k < A_square.outerSize(); ++k)
-  {
-    size_t i = 0;
-    for (Eigen::SparseMatrix<float>::InnerIterator it(A_square, k); it; ++it)
-    {
-      if (it.row() >= index_cutoffs[i])
-      {
-        i++;
-        if (rows_map.find(it.row()) == rows_map.end())
-        {
-          rows_map.insert({it.row(), latest_index});
-          latest_index++;
-          if (latest_index >= num_actions) { return rows_map; }
-        }
-      }
-    }
-  }
-  return rows_map;
-}
-
-multi_ex setup_vw_weights_and_examples_and_create_A(Eigen::SparseMatrix<float>& A,
-    const Eigen::SparseMatrix<float>& A_square, VW::workspace& vw, std::unordered_map<uint64_t, uint64_t>& rows_map,
-    const std::vector<uint64_t>& index_cutoffs, uint64_t num_actions)
-{
-  multi_ex examples;
-
-  std::vector<std::string> ssvector;
-  for (size_t row = 0; row < num_actions; row++)
-  {
-    std::string ss("| ");
-    ssvector.push_back(ss);
-  }
-
-  for (int k = 0; k < A_square.outerSize(); ++k)
-  {
-    size_t i = 0;
-    for (Eigen::SparseMatrix<float>::InnerIterator it(A_square, k); it; ++it)
-    {
-      if (it.row() >= index_cutoffs[i] && rows_map.find(it.row()) != rows_map.end())
-      {
-        auto index_mapped = rows_map[it.row()];
-        A.coeffRef(index_mapped, k) = it.value();
-
-        auto vw_index = it.col() >> vw.weights.stride_shift();
-        ssvector[index_mapped] += std::to_string(vw_index) + " ";
-
-        if (vw.weights.sparse) { vw.weights.sparse_weights[it.col()] = it.value(); }
-        else
-        {
-          vw.weights.dense_weights[it.col()] = it.value();
-        }
-      }
-    }
-  }
-
-  for (size_t row = 0; row < num_actions; row++)
-  {
-    examples.push_back(VW::read_example(vw, ssvector[row]));
-    examples[0]->pred.a_s.push_back({0, 0});
-  }
-
-  return examples;
 }
 
 BOOST_AUTO_TEST_CASE(check_shrink_factor)
