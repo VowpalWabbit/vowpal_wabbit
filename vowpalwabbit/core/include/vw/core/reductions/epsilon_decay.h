@@ -40,7 +40,7 @@ struct epsilon_decay_score : scored_config
 struct epsilon_decay_data
 {
   epsilon_decay_data(uint64_t num_configs, uint64_t min_scope, double epsilon_decay_alpha, double epsilon_decay_tau,
-      parameters& weights, VW::io::logger logger, bool log_champ_changes, bool constant_epsilon)
+      dense_parameters& weights, VW::io::logger logger, bool log_champ_changes, bool constant_epsilon)
       : _min_scope(min_scope)
       , _epsilon_decay_alpha(epsilon_decay_alpha)
       , _epsilon_decay_tau(epsilon_decay_tau)
@@ -66,17 +66,16 @@ struct epsilon_decay_data
     }
   }
 
-  void update_weights(VW::reductions::epsilon_decay::epsilon_decay_data& data, VW::LEARNER::multi_learner& base,
-      VW::multi_ex& examples);
-  void check_score_bounds(VW::reductions::epsilon_decay::epsilon_decay_data& data, VW::multi_ex& examples);
-  void check_horizon_bounds(VW::reductions::epsilon_decay::epsilon_decay_data& data, VW::multi_ex& examples);
+  void update_weights(VW::LEARNER::multi_learner& base, VW::multi_ex& examples);
+  void check_score_bounds();
+  void check_horizon_bounds();
 
   std::vector<std::vector<epsilon_decay_score>> _scored_configs;
   std::vector<uint64_t> _weight_indices;
   uint64_t _min_scope;
   double _epsilon_decay_alpha;  // Confidence interval
   double _epsilon_decay_tau;    // Count decay time constant
-  parameters& _weights;
+  dense_parameters& _weights;
   VW::io::logger _logger;
   bool _log_champ_changes;
   bool _constant_epsilon;

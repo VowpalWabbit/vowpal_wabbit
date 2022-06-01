@@ -41,6 +41,126 @@ void epsilon_decay_score::reset_stats(double alpha, double tau)
 
 float decayed_epsilon(uint64_t update_count) { return static_cast<float>(std::pow(update_count + 1, -1.f / 3.f)); }
 
+
+void epsilon_decay_data::update_weights(VW::LEARNER::multi_learner& base, VW::multi_ex& examples)
+{
+  auto K = static_cast<int64_t>(_scored_configs.size());
+  CB::cb_class logged{};
+  uint64_t labelled_action = 0;
+  const auto it =
+      std::find_if(examples.begin(), examples.end(), [](VW::example* item) { return !item->l.cb.costs.empty(); });
+  if (it != examples.end())
+  {
+    logged = (*it)->l.cb.costs[0];
+    labelled_action = std::distance(examples.begin(), it);
+  }
+
+  const float r = -logged.cost;
+  auto& ep_fts = examples[0]->_reduction_features.template get<VW::cb_explore_adf::greedy::reduction_features>();
+  // Process each model, then update the upper/lower bounds for each model
+  for (int64_t i = 0; i < K; ++i)
+  {
+    if (!_constant_epsilon)
+    { ep_fts.epsilon = VW::reductions::epsilon_decay::decayed_epsilon(_scored_configs[i][i].update_count); }
+    if (!base.learn_returns_prediction) { base.predict(examples, _weight_indices[i]); }
+    base.learn(examples, _weight_indices[i]);
+    for (const auto& a_s : examples[0]->pred.a_s)
+    {
+      if (a_s.action == labelled_action)
+      {
+        const float w = (logged.probability > 0) ? a_s.score / logged.probability : 0;
+        for (int64_t j = 0; j <= i; ++j) { _scored_configs[i][j].update_bounds(w, r); }
+        break;
+      }
+    }
+  }
+}
+
+void epsilon_decay_data::check_score_bounds()
+{
+  // If the lower bound of a model exceeds the upperbound of the champion, migrate the new model as
+  // the new champion.
+  auto K = static_cast<int64_t>(_scored_configs.size());
+  for (int64_t i = 0; i < K - 1; ++i)
+  {
+    if (_scored_configs[i][i].get_lower_bound() > _scored_configs[K - 1][i].get_upper_bound())
+    {
+      if (_log_champ_changes)
+      {
+        _logger.out_info("Champion with update count: {} has changed to challenger with update count: {}",
+            _scored_configs[K - 1][K - 1].update_count, _scored_configs[i][i].update_count);
+      }
+      int64_t swap_dist = K - i - 1;
+
+      // Move new champ and smaller configs to front
+      for (int64_t outer_ind = i; outer_ind >= 0; --outer_ind)
+      {
+        for (int64_t inner_ind = 0; inner_ind < outer_ind + 1; ++inner_ind)
+        {
+          std::swap(
+              _scored_configs[outer_ind][inner_ind], _scored_configs[outer_ind + swap_dist][inner_ind + swap_dist]);
+        }
+        std::swap(_weight_indices[outer_ind], _weight_indices[outer_ind + swap_dist]);
+      }
+
+      // Clear old scores and weights
+      uint64_t params_per_weight = 1;
+      while (params_per_weight < static_cast<uint64_t>(K)) { params_per_weight *= 2; }
+      for (int64_t outer_ind = 0; outer_ind < K; ++outer_ind)
+      {
+        for (int64_t inner_ind = 0;
+             inner_ind < std::min(static_cast<int64_t>(_scored_configs[outer_ind].size()), swap_dist); ++inner_ind)
+        {
+          _scored_configs[outer_ind][inner_ind].reset_stats(_epsilon_decay_alpha, _epsilon_decay_tau);
+        }
+      }
+      for (int64_t ind = 0; ind < swap_dist; ++ind) { _weights.clear_offset(_weight_indices[ind], params_per_weight); }
+      break;
+    }
+  }
+}
+
+void epsilon_decay_data::check_horizon_bounds()
+{
+  // Check if any model counts are higher than the champion. If so, shift the model
+  // back to the beginning of the list and reset its counts
+  auto K = static_cast<int64_t>(_scored_configs.size());
+  for (int64_t i = 0; i < K - 1; ++i)
+  {
+    if (_scored_configs[i][i].update_count > _min_scope &&
+        _scored_configs[i][i].update_count >
+            std::pow(_scored_configs[K - 1][K - 1].update_count, static_cast<float>(i + 1) / K))
+    {
+      // Move smaller configs up one position
+      if (i > 0)
+      {
+        for (int64_t outer_ind = i - 1; outer_ind >= 0; --outer_ind)
+        {
+          for (int64_t inner_ind = 0; inner_ind < outer_ind + 1; ++inner_ind)
+          {
+            std::swap(_scored_configs[outer_ind][inner_ind], _scored_configs[outer_ind + 1][inner_ind + 1]);
+          }
+          std::swap(_weight_indices[outer_ind], _weight_indices[outer_ind + 1]);
+        }
+      }
+
+      // Rebalance greater configs
+      for (int64_t outer_ind = i + 1; outer_ind < K; ++outer_ind)
+      {
+        for (int64_t inner_ind = i; inner_ind > 0; --inner_ind)
+        { std::swap(_scored_configs[outer_ind][inner_ind], _scored_configs[outer_ind][inner_ind - 1]); }
+      }
+
+      // Clear old scores and weights
+      uint64_t params_per_weight = 1;
+      while (params_per_weight < static_cast<uint64_t>(K)) { params_per_weight *= 2; }
+      for (int64_t outer_ind = 0; outer_ind < K; ++outer_ind)
+      { _scored_configs[outer_ind][0].reset_stats(_epsilon_decay_alpha, _epsilon_decay_tau); }
+      _weights.clear_offset(_weight_indices[0], params_per_weight);
+      break;
+    }
+  }
+}
 }  // namespace epsilon_decay
 }  // namespace reductions
 
@@ -98,136 +218,12 @@ void predict(
   base.predict(examples, data._weight_indices[K - 1]);
 }
 
-void update_weights(
-    VW::reductions::epsilon_decay::epsilon_decay_data& data, VW::LEARNER::multi_learner& base, VW::multi_ex& examples)
-{
-  auto K = static_cast<int64_t>(data._scored_configs.size());
-  CB::cb_class logged{};
-  uint64_t labelled_action = 0;
-  const auto it =
-      std::find_if(examples.begin(), examples.end(), [](VW::example* item) { return !item->l.cb.costs.empty(); });
-  if (it != examples.end())
-  {
-    logged = (*it)->l.cb.costs[0];
-    labelled_action = std::distance(examples.begin(), it);
-  }
-
-  const float r = -logged.cost;
-  auto& ep_fts = examples[0]->_reduction_features.template get<VW::cb_explore_adf::greedy::reduction_features>();
-  // Process each model, then update the upper/lower bounds for each model
-  for (int64_t i = 0; i < K; ++i)
-  {
-    if (!data._constant_epsilon)
-    { ep_fts.epsilon = VW::reductions::epsilon_decay::decayed_epsilon(data._scored_configs[i][i].update_count); }
-    if (!base.learn_returns_prediction) { base.predict(examples, data._weight_indices[i]); }
-    base.learn(examples, data._weight_indices[i]);
-    for (const auto& a_s : examples[0]->pred.a_s)
-    {
-      if (a_s.action == labelled_action)
-      {
-        const float w = (logged.probability > 0) ? a_s.score / logged.probability : 0;
-        for (int64_t j = 0; j <= i; ++j) { data._scored_configs[i][j].update_bounds(w, r); }
-        break;
-      }
-    }
-  }
-}
-
-void check_score_bounds(VW::reductions::epsilon_decay::epsilon_decay_data& data, VW::multi_ex& examples)
-{
-  // If the lower bound of a model exceeds the upperbound of the champion, migrate the new model as
-  // the new champion.
-  auto K = static_cast<int64_t>(data._scored_configs.size());
-  for (int64_t i = 0; i < K - 1; ++i)
-  {
-    if (data._scored_configs[i][i].get_lower_bound() > data._scored_configs[K - 1][i].get_upper_bound())
-    {
-      if (data._log_champ_changes)
-      {
-        data._logger.out_info("Champion with update count: {} has changed to challenger with update count: {}",
-            data._scored_configs[K - 1][K - 1].update_count, data._scored_configs[i][i].update_count);
-      }
-      int64_t swap_dist = K - i - 1;
-
-      // Move new champ and smaller configs to front
-      for (int64_t outer_ind = i; outer_ind >= 0; --outer_ind)
-      {
-        for (int64_t inner_ind = 0; inner_ind < outer_ind + 1; ++inner_ind)
-        {
-          std::swap(data._scored_configs[outer_ind][inner_ind],
-              data._scored_configs[outer_ind + swap_dist][inner_ind + swap_dist]);
-        }
-        std::swap(data._weight_indices[outer_ind], data._weight_indices[outer_ind + swap_dist]);
-      }
-
-      // Clear old scores and weights
-      uint64_t params_per_weight = 1;
-      while (params_per_weight < static_cast<uint64_t>(K)) { params_per_weight *= 2; }
-      for (int64_t outer_ind = 0; outer_ind < K; ++outer_ind)
-      {
-        for (int64_t inner_ind = 0;
-             inner_ind < std::min(static_cast<int64_t>(data._scored_configs[outer_ind].size()), swap_dist); ++inner_ind)
-        {
-          data._scored_configs[outer_ind][inner_ind].reset_stats(data._epsilon_decay_alpha, data._epsilon_decay_tau);
-        }
-      }
-      for (int64_t ind = 0; ind < swap_dist; ++ind)
-      { data._weights.dense_weights.clear_offset(data._weight_indices[ind], params_per_weight); }
-      break;
-    }
-  }
-}
-
-void check_horizon_bounds(VW::reductions::epsilon_decay::epsilon_decay_data& data, VW::multi_ex& examples)
-{
-  // Check if any model counts are higher than the champion. If so, shift the model
-  // back to the beginning of the list and reset its counts
-  auto K = static_cast<int64_t>(data._scored_configs.size());
-  for (int64_t i = 0; i < K - 1; ++i)
-  {
-    if (data._scored_configs[i][i].update_count > data._min_scope &&
-        data._scored_configs[i][i].update_count >
-            std::pow(data._scored_configs[K - 1][K - 1].update_count, static_cast<float>(i + 1) / K))
-    {
-      // Move smaller configs up one position
-      if (i > 0)
-      {
-        for (int64_t outer_ind = i - 1; outer_ind >= 0; --outer_ind)
-        {
-          for (int64_t inner_ind = 0; inner_ind < outer_ind + 1; ++inner_ind)
-          {
-            std::swap(data._scored_configs[outer_ind][inner_ind], data._scored_configs[outer_ind + 1][inner_ind + 1]);
-          }
-          std::swap(data._weight_indices[outer_ind], data._weight_indices[outer_ind + 1]);
-        }
-      }
-
-      // Rebalance greater configs
-      for (int64_t outer_ind = i + 1; outer_ind < K; ++outer_ind)
-      {
-        for (int64_t inner_ind = i; inner_ind > 0; --inner_ind)
-        { std::swap(data._scored_configs[outer_ind][inner_ind], data._scored_configs[outer_ind][inner_ind - 1]); }
-      }
-
-      // Clear old scores and weights
-      uint64_t params_per_weight = 1;
-      while (params_per_weight < static_cast<uint64_t>(K)) { params_per_weight *= 2; }
-      for (int64_t outer_ind = 0; outer_ind < K; ++outer_ind)
-      {
-        data._scored_configs[outer_ind][0].reset_stats(data._epsilon_decay_alpha, data._epsilon_decay_tau);
-      }
-      data._weights.dense_weights.clear_offset(data._weight_indices[0], params_per_weight);
-      break;
-    }
-  }
-}
-
 void learn(
     VW::reductions::epsilon_decay::epsilon_decay_data& data, VW::LEARNER::multi_learner& base, VW::multi_ex& examples)
 {
-  update_weights(data, base, examples);
-  check_score_bounds(data, examples);
-  check_horizon_bounds(data, examples);
+  data.update_weights(base, examples);
+  data.check_score_bounds();
+  data.check_horizon_bounds();
 }
 
 void save_load_epsilon_decay(
@@ -298,7 +294,7 @@ VW::LEARNER::base_learner* VW::reductions::epsilon_decay_setup(VW::setup_base_i&
   float scaled_alpha = _epsilon_decay_alpha / model_count;
 
   auto data = VW::make_unique<VW::reductions::epsilon_decay::epsilon_decay_data>(model_count, _min_scope, scaled_alpha,
-      _epsilon_decay_tau, all.weights, all.logger, _log_champ_changes, _constant_epsilon);
+      _epsilon_decay_tau, all.weights.dense_weights, all.logger, _log_champ_changes, _constant_epsilon);
 
   uint64_t params_per_weight = 1;
   while (params_per_weight < model_count) { params_per_weight *= 2; }
