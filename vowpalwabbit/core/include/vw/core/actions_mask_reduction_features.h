@@ -11,9 +11,7 @@
 
 namespace VW
 {
-namespace cb_explore_adf
-{
-namespace actions_mask
+namespace cb_actions_mask
 {
 struct reduction_features
 {
@@ -23,6 +21,5 @@ struct reduction_features
 
   void reset_to_default() { action_mask.clear(); }
 };
-}  // namespace actions_mask
-}  // namespace cb_explore_adf
+}  // namespace cb_actions_mask
 }  // namespace VW

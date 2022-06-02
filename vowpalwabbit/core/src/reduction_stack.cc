@@ -105,7 +105,7 @@ void register_reductions(std::vector<reduction_setup_fn>& reductions,
       {VW::reductions::shared_feature_merger_setup, "shared_feature_merger"},
       {VW::reductions::generate_interactions_setup, "generate_interactions"},
       {VW::reductions::count_label_setup, "count_label"}, {VW::reductions::cb_to_cb_adf_setup, "cb_to_cbadf"},
-      {VW::reductions::actions_mask_setup, "actions_mask"}};
+      {VW::reductions::cb_actions_mask_setup, "cb_actions_mask"}};
 
   auto name_extractor = VW::config::options_name_extractor();
   VW::workspace dummy_all(VW::io::create_null_logger());
@@ -208,7 +208,7 @@ void prepare_reductions(std::vector<std::tuple<std::string, reduction_setup_fn>>
   reductions.push_back(VW::reductions::shared_feature_merger_setup);
   reductions.push_back(VW::reductions::ccb_explore_adf_setup);
   reductions.push_back(VW::reductions::slates_setup);
-  reductions.push_back(VW::reductions::actions_mask_setup);
+  reductions.push_back(VW::reductions::cb_actions_mask_setup);
   // cbify/warm_cb can generate multi-examples. Merge shared features after them
   reductions.push_back(VW::reductions::warm_cb_setup);
   reductions.push_back(VW::reductions::get_pmf_setup);

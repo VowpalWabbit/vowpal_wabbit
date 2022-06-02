@@ -41,7 +41,7 @@ private:
   simple_label_reduction_features _simple_label_reduction_features;
   VW::cb_explore_adf::greedy::reduction_features _epsilon_reduction_features;
   VW::generated_interactions::reduction_features _generated_interactions_reduction_features;
-  VW::cb_explore_adf::actions_mask::reduction_features _actions_mask_reduction_features;
+  VW::cb_actions_mask::reduction_features _actions_mask_reduction_features;
 
 public:
   template <typename T>
@@ -126,15 +126,14 @@ reduction_features::get<VW::generated_interactions::reduction_features>() const
 }
 
 template <>
-inline VW::cb_explore_adf::actions_mask::reduction_features&
-reduction_features::get<VW::cb_explore_adf::actions_mask::reduction_features>()
+inline VW::cb_actions_mask::reduction_features& reduction_features::get<VW::cb_actions_mask::reduction_features>()
 {
   return _actions_mask_reduction_features;
 }
 
 template <>
-inline const VW::cb_explore_adf::actions_mask::reduction_features&
-reduction_features::get<VW::cb_explore_adf::actions_mask::reduction_features>() const
+inline const VW::cb_actions_mask::reduction_features& reduction_features::get<VW::cb_actions_mask::reduction_features>()
+    const
 {
   return _actions_mask_reduction_features;
 }

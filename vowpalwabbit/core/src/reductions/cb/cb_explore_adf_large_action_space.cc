@@ -492,8 +492,7 @@ void cb_explore_adf_large_action_space::predict_or_learn_impl(VW::LEARNER::multi
       _spanner_bitvec.resize(preds.size(), true);
     }
 
-    auto& red_features =
-        examples[0]->_reduction_features.template get<VW::cb_explore_adf::actions_mask::reduction_features>();
+    auto& red_features = examples[0]->_reduction_features.template get<VW::cb_actions_mask::reduction_features>();
     red_features.reset_to_default();
 
     size_t index = 0;
