@@ -34,8 +34,8 @@ struct oaa
   uint64_t num_subsample = 0;           // for randomized subsampling, how many negatives to draw?
   uint32_t* subsample_order = nullptr;  // for randomized subsampling, in what order should we touch classes
   size_t subsample_id = 0;              // for randomized subsampling, where do we live in the list
-  int32_t& indexing;                    // for 0 or 1 indexing
   VW::io::logger logger;
+  int32_t& indexing;                    // for 0 or 1 indexing
 
   oaa(VW::io::logger logger, int32_t& indexing) : logger(std::move(logger)), indexing(indexing) {}
 
@@ -254,7 +254,7 @@ void finish_example_scores(VW::workspace& all, oaa& o, VW::example& ec)
   float correct_class_prob = 0;
   if (probabilities)
   {
-    correct_class_prob = ec.pred.scalars[(o.indexing == 0) ? ec.l.multi.label : ec.l.multi.label - 1];
+    correct_class_prob = ec.pred.scalars[((o.indexing == 0) ? ec.l.multi.label : ec.l.multi.label - 1) % o.k];
     if (correct_class_prob > 0) { multiclass_log_loss = -std::log(correct_class_prob) * ec.weight; }
     if (ec.test_only) { all.sd->holdout_multiclass_log_loss += multiclass_log_loss; }
     else

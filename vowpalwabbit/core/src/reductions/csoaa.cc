@@ -23,10 +23,10 @@ namespace
 struct csoaa
 {
   uint32_t num_classes = 0;
-  int32_t& indexing;
   bool search = false;
   VW::polyprediction* pred = nullptr;
   VW::io::logger logger;
+  int32_t& indexing;
   csoaa(VW::io::logger logger, int32_t& indexing) : logger(std::move(logger)), indexing(indexing) {}
   ~csoaa() { free(pred); }
 };

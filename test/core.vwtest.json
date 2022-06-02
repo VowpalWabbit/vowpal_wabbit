@@ -4663,7 +4663,7 @@
     "diff_files": {
       "stderr": "train-sets/ref/oaa_zero_ind_probabilities.stderr",
       "oaa_zero_ind_no_flag_probabilities.predict": "pred-sets/ref/oaa_zero_ind_probabilities.predict",
-      "stdout": "train-sets/ref/oaa_zero_ind_no_flag_probabilities.stdout"
+      "stdout": "train-sets/ref/oaa_zero_ind_probabilities.stdout"
     },
     "input_files": [
       "train-sets/probabilities_zero_ind.dat"
