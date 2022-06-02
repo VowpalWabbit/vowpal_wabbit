@@ -952,12 +952,14 @@ BOOST_AUTO_TEST_CASE(check_spanner_results_squarecb)
     const auto& preds = examples[0]->pred.a_s;
     BOOST_CHECK_EQUAL(preds.size(), num_actions);
     // Only d actions have non-zero scores.
-    BOOST_CHECK_CLOSE(preds[0].score, 0.697270989, FLOAT_TOL);  // ~ 2/3
-    BOOST_CHECK_EQUAL(preds[0].action, 2);
-    BOOST_CHECK_CLOSE(preds[1].score, 0.30272904, FLOAT_TOL);  // ~ 1/3
-    BOOST_CHECK_EQUAL(preds[1].action, 0);
+    BOOST_CHECK_CLOSE(preds[0].score, 0.697270989, FLOAT_TOL);
+    BOOST_CHECK_EQUAL(preds[0].action, 1);
+
+    BOOST_CHECK_CLOSE(preds[1].score, 0.30272904, FLOAT_TOL);
+    BOOST_CHECK_EQUAL(preds[1].action, 2);
+
     BOOST_CHECK_CLOSE(preds[2].score, 0.0, FLOAT_TOL);
-    BOOST_CHECK_EQUAL(preds[2].action, 1);
+    BOOST_CHECK_EQUAL(preds[2].action, 0);
 
     vw.finish_example(examples);
   }
