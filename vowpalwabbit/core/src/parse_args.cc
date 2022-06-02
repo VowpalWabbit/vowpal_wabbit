@@ -1069,10 +1069,7 @@ void parse_feature_tweaks(options_i& options, VW::workspace& all, bool interacti
 
   if (noconstant) { all.add_constant = false; }
 
-  if (options.was_supplied("indexing"))
-  {
-    all.indexing = indexing;
-  }
+  if (options.was_supplied("indexing")) { all.indexing = indexing; }
 }
 
 void parse_example_tweaks(options_i& options, VW::workspace& all)
