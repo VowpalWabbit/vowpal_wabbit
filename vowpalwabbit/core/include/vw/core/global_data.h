@@ -329,6 +329,8 @@ public:
   // hack to support cb model loading into ccb reduction
   bool is_ccb_input_model = false;
 
+  int32_t indexing = -1;
+
   explicit workspace(VW::io::logger logger);
   ~workspace();
   std::shared_ptr<VW::rand_state> get_random_state() { return _random_state_sp; }

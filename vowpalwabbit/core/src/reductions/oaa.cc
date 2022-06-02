@@ -34,10 +34,10 @@ struct oaa
   uint64_t num_subsample = 0;           // for randomized subsampling, how many negatives to draw?
   uint32_t* subsample_order = nullptr;  // for randomized subsampling, in what order should we touch classes
   size_t subsample_id = 0;              // for randomized subsampling, where do we live in the list
-  int indexing = -1;                    // for 0 or 1 indexing
+  int32_t& indexing;                    // for 0 or 1 indexing
   VW::io::logger logger;
 
-  oaa(VW::io::logger logger) : logger(std::move(logger)) {}
+  oaa(VW::io::logger logger, int32_t& indexing) : logger(std::move(logger)), indexing(indexing) {}
 
   ~oaa()
   {
@@ -76,8 +76,9 @@ void learn_randomized(oaa& o, VW::LEARNER::single_learner& base, VW::example& ec
 
   ec.l.simple.label = 1.;  // truth
   ec._reduction_features.template get<simple_label_reduction_features>().reset_to_default();
+  uint32_t lbl_ind = (o.indexing == 0) ? ld.label : ld.label - 1; 
 
-  base.learn(ec, (ld.label + o.k - 1) % o.k);
+  base.learn(ec, lbl_ind);
 
   size_t prediction = ld.label;
   float best_partial_prediction = ec.partial_prediction;
@@ -143,14 +144,15 @@ void learn(oaa& o, VW::LEARNER::single_learner& base, VW::example& ec)
   ec.l.simple = {FLT_MAX};
   ec._reduction_features.template get<simple_label_reduction_features>().reset_to_default();
 
-  for (uint32_t i = 1; i <= o.k; i++)
+  for (uint32_t i = 0; i < o.k; i++)
   {
-    ec.l.simple.label = ((mc_label_data.label % o.k) == (i % o.k)) ? 1.f : -1.f;
+    uint32_t lbl = (o.indexing == 0) ? i : i + 1;
+    ec.l.simple.label = (mc_label_data.label == lbl) ? 1.f : -1.f;
     // The following is an unfortunate loss of abstraction
     // Downstream reduction (gd.update) uses the prediction
     // from here
-    ec.pred.scalar = o.pred[i - 1].scalar;
-    base.update(ec, i - 1);
+    ec.pred.scalar = o.pred[i].scalar;
+    base.update(ec, i);
   }
 
   // Restore label
@@ -174,12 +176,12 @@ void predict(oaa& o, VW::LEARNER::single_learner& base, VW::example& ec)
   base.multipredict(ec, 0, o.k, o.pred, true);
 
   // Find the class with the largest score (index +1)
-  uint32_t prediction = 1;
-  for (uint32_t i = 2; i <= o.k; i++)
+  uint32_t prediction = 0;
+  for (uint32_t i = 1; i < o.k; i++)
   {
-    if (o.pred[i - 1].scalar > o.pred[prediction - 1].scalar) { prediction = i; }
+    if (o.pred[i].scalar > o.pred[prediction].scalar) { prediction = i; }
   }
-  if (prediction == o.k && o.indexing == 0) { prediction = 0; }
+  if (o.indexing != 0) { ++prediction; }
 
   if (ec.passthrough)
   {
@@ -252,7 +254,7 @@ void finish_example_scores(VW::workspace& all, oaa& o, VW::example& ec)
   float correct_class_prob = 0;
   if (probabilities)
   {
-    correct_class_prob = ec.pred.scalars[(ec.l.multi.label - 1 + o.k) % o.k];
+    correct_class_prob = ec.pred.scalars[(o.indexing == 0) ? ec.l.multi.label : ec.l.multi.label - 1];
     if (correct_class_prob > 0) { multiclass_log_loss = -std::log(correct_class_prob) * ec.weight; }
     if (ec.test_only) { all.sd->holdout_multiclass_log_loss += multiclass_log_loss; }
     else
@@ -263,29 +265,28 @@ void finish_example_scores(VW::workspace& all, oaa& o, VW::example& ec)
   // === Compute `prediction` and zero_one_loss
   // We have already computed `prediction` in predict_or_learn,
   // but we cannot store it in ec.pred union because we store ec.pred.probs there.
-  uint32_t prediction = 1;
-  for (uint32_t i = 2; i <= o.k; i++)
+  uint32_t prediction_ind = 0;
+  for (uint32_t i = 1; i < o.k; i++)
   {
-    if (o.pred[i - 1].scalar > o.pred[prediction - 1].scalar) { prediction = i; }
+    if (o.pred[i].scalar > o.pred[prediction_ind].scalar) { prediction_ind = i; }
   }
-  if (prediction == o.k && o.indexing == 0) { prediction = 0; }
+  uint32_t pred_lbl = (o.indexing == 0) ? prediction_ind : prediction_ind + 1;
 
   float zero_one_loss = 0;
-  if (ec.l.multi.label != prediction) { zero_one_loss = ec.weight; }
+  if (ec.l.multi.label != pred_lbl) { zero_one_loss = ec.weight; }
 
   // === Print probabilities for all classes
   std::ostringstream outputStringStream;
   for (uint32_t i = 0; i < o.k; i++)
   {
     uint32_t corrected_label = (o.indexing == 0) ? i : i + 1;
-    uint32_t corrected_ind = (o.indexing == 0) ? (i + static_cast<uint32_t>(o.k) - 1) % o.k : i;
     if (i > 0) { outputStringStream << ' '; }
     if (all.sd->ldict) { outputStringStream << all.sd->ldict->get(corrected_label); }
     else
     {
       outputStringStream << corrected_label;
     }
-    outputStringStream << ':' << ec.pred.scalars[corrected_ind];
+    outputStringStream << ':' << ec.pred.scalars[i];
   }
   const auto ss_str = outputStringStream.str();
   for (auto& sink : all.final_prediction_sink) { all.print_text_by_ref(sink.get(), ss_str, ec.tag, all.logger); }
@@ -300,10 +301,10 @@ void finish_example_scores(VW::workspace& all, oaa& o, VW::example& ec)
   // So let's report (average) multiclass_log_loss only in the final resume.
 
   // === Print progress report
-  if (probabilities) { MULTICLASS::print_update_with_probability(all, ec, prediction); }
+  if (probabilities) { MULTICLASS::print_update_with_probability(all, ec, pred_lbl); }
   else
   {
-    MULTICLASS::print_update_with_score(all, ec, prediction);
+    MULTICLASS::print_update_with_score(all, ec, pred_lbl);
   }
   VW::finish_example(all, ec);
 }
@@ -312,7 +313,7 @@ VW::LEARNER::base_learner* VW::reductions::oaa_setup(VW::setup_base_i& stack_bui
 {
   options_i& options = *stack_builder.get_options();
   VW::workspace& all = *stack_builder.get_all_pointer();
-  auto data = VW::make_unique<oaa>(all.logger);
+  auto data = VW::make_unique<oaa>(all.logger, all.indexing);
   bool probabilities = false;
   bool scores = false;
   option_group_definition new_options("[Reduction] One Against All");
@@ -320,8 +321,7 @@ VW::LEARNER::base_learner* VW::reductions::oaa_setup(VW::setup_base_i& stack_bui
       .add(make_option("oaa_subsample", data->num_subsample)
                .help("Subsample this number of negative examples when learning"))
       .add(make_option("probabilities", probabilities).help("Predict probabilities of all classes"))
-      .add(make_option("scores", scores).help("Output raw scores per class"))
-      .add(make_option("indexing", data->indexing).one_of({0, 1}).keep().help("Choose between 0 or 1-indexing"));
+      .add(make_option("scores", scores).help("Output raw scores per class"));
 
   if (!options.add_parse_and_check_necessary(new_options)) { return nullptr; }
 

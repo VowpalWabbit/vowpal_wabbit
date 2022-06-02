@@ -4659,10 +4659,10 @@
   {
     "id": 361,
     "desc": "--probabilities --oaa zero-indexed without flag",
-    "vw_command": "-d train-sets/probabilities_zero_ind.dat --probabilities --oaa=4 --loss_function=logistic -p oaa_zero_ind_no_flag_probabilities.predict",
+    "vw_command": "-d train-sets/probabilities_zero_ind.dat --probabilities --oaa=4 --loss_function=logistic -p oaa_zero_ind_probabilities.predict",
     "diff_files": {
-      "stderr": "train-sets/ref/oaa_zero_ind_no_flag_probabilities.stderr",
-      "oaa_zero_ind_no_flag_probabilities.predict": "pred-sets/ref/oaa_zero_ind_no_flag_probabilities.predict",
+      "stderr": "train-sets/ref/oaa_zero_ind_probabilities.stderr",
+      "oaa_zero_ind_no_flag_probabilities.predict": "pred-sets/ref/oaa_zero_ind_probabilities.predict",
       "stdout": "train-sets/ref/oaa_zero_ind_no_flag_probabilities.stdout"
     },
     "input_files": [
