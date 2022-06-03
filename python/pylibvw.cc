@@ -692,7 +692,10 @@ void ex_push_feature_dict(example_ptr ec, vw_ptr vw, unsigned char ns, PyObject*
   while (PyDict_Next(o, &pos, &name, &value))
   {
     if (PyFloat_Check(value)) { feat_value = (float)PyFloat_AsDouble(value); }
-    else if (PyLong_Check(value)) { feat_value = (float)PyLong_AsDouble(value); }
+    else if (PyLong_Check(value))
+    {
+      feat_value = (float)PyLong_AsDouble(value); 
+    }
     else
     {
       std::cerr << "warning: malformed feature in list" << std::endl;
@@ -702,10 +705,11 @@ void ex_push_feature_dict(example_ptr ec, vw_ptr vw, unsigned char ns, PyObject*
     if (feat_value == 0) { continue; }
 
     if (PyUnicode_Check(name))
+    { feat_index = vw->example_parser->hasher(PyUnicode_AsUTF8AndSize(name, &size), size, ns_hash) & vw->parse_mask; }
+    else if (PyLong_Check(name))
     {
-      feat_index = vw->example_parser->hasher(PyUnicode_AsUTF8AndSize(name, &size), size, ns_hash) & vw->parse_mask;
+      feat_index = PyLong_AsUnsignedLong(name); 
     }
-    else if (PyLong_Check(name)) { feat_index = PyLong_AsUnsignedLong(name); }
     else
     {
       std::cerr << "warning: malformed feature in list" << std::endl;
