@@ -79,9 +79,9 @@ void cb_explore_adf_greedy::predict_or_learn_impl(VW::LEARNER::multi_learner& ba
   else
   {
     base.predict(examples);
-  }
 
-  update_example_prediction(examples);
+    update_example_prediction(examples);
+  }
 }
 }  // namespace
 
