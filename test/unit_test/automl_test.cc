@@ -32,7 +32,7 @@ void check_interactions_match_exclusions(VW::reductions::automl::automl<interact
     {
       VW::namespace_index ns1 = interaction[0];
       VW::namespace_index ns2 = interaction[1];
-      std::vector<namespace_index> ns {ns1,ns2};
+      std::vector<namespace_index> ns{ns1, ns2};
       BOOST_CHECK(exclusions.find(ns) == exclusions.end());
     }
     // Check that interaction count is equal to quadratic interaction size minus exclusion count
@@ -273,22 +273,10 @@ BOOST_AUTO_TEST_CASE(namespace_switch)
 
     auto champ_exclusions = aml->cm->configs[aml->cm->scores[aml->cm->current_champ].config_index].exclusions;
     BOOST_CHECK_EQUAL(champ_exclusions.size(), 1);
-
-    // BOOST_CHECK(champ_exclusions.find('U') != champ_exclusions.end()); TODO: how to handle this?
-    size_t check_u = 0;
-    for (const auto& ns_pair : champ_exclusions)
-    {
-      if(std::find(ns_pair.begin(), ns_pair.end(), 'U') != ns_pair.end()){
-        check_u = 1;
-        break;
-      }
-    }
-    BOOST_CHECK_EQUAL(check_u, 1);
-
-
+    std::vector<namespace_index> ans{'U', 'U'};
+    BOOST_CHECK(champ_exclusions.find(ans) != champ_exclusions.end());
     auto champ_interactions = aml->cm->scores[aml->cm->current_champ].live_interactions;
     BOOST_CHECK_EQUAL(champ_interactions.size(), 9);
-
     return true;
   });
 
