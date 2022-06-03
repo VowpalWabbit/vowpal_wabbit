@@ -213,11 +213,8 @@ void interaction_config_manager::gen_quadratic_interactions(uint64_t live_slot)
     for (auto jt = it; jt != ns_counter.end(); ++jt)
     {
       auto idx2 = (*jt).first;
-      std::vector<namespace_index> idx {idx1, idx2};
-      if (exclusions.find(idx) == exclusions.end()) 
-      { 
-        interactions.push_back({idx1, idx2}); 
-      }
+      std::vector<namespace_index> idx{idx1, idx2};
+      if (exclusions.find(idx) == exclusions.end()) { interactions.push_back({idx1, idx2}); }
     }
   }
   // logger->out_info("generated interactions {} from exclusion conf: {}", ::interaction_vec_t_to_string(interactions),
@@ -288,7 +285,7 @@ void interaction_config_manager::config_oracle()
       namespace_index ns1 = champ_interactions[rand_ind][0];
       namespace_index ns2 = champ_interactions[rand_ind][1];
       std::set<std::vector<namespace_index>> new_exclusions(configs[scores[current_champ].config_index].exclusions);
-      std::vector<namespace_index> idx {ns1,ns2};
+      std::vector<namespace_index> idx{ns1, ns2};
       new_exclusions.insert(idx);
       insert_config(std::move(new_exclusions));
     }
@@ -310,7 +307,7 @@ void interaction_config_manager::config_oracle()
       namespace_index ns1 = interaction[0];
       namespace_index ns2 = interaction[1];
       std::set<std::vector<namespace_index>> new_exclusions(configs[scores[current_champ].config_index].exclusions);
-      std::vector<namespace_index> idx {ns1,ns2};
+      std::vector<namespace_index> idx{ns1, ns2};
       new_exclusions.insert(idx);
       insert_config(std::move(new_exclusions));
     }
