@@ -364,6 +364,7 @@ private:
 public:
   std::vector<std::vector<VW::namespace_index>> generated_interactions;
   std::vector<std::vector<extent_term>> generated_extent_interactions;
+  bool store_in_reduction_features = false;
 
   template <generate_func_t<VW::namespace_index> generate_func, bool leave_duplicate_interactions>
   void update_interactions_if_new_namespace_seen(const std::vector<std::vector<VW::namespace_index>>& interactions,
