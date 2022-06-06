@@ -45,8 +45,7 @@ VW::LEARNER::base_learner* VW::reductions::cb_actions_mask_setup(VW::setup_base_
   VW::config::options_i& options = *stack_builder.get_options();
   auto data = VW::make_unique<VW::reductions::cb_actions_mask>();
 
-  if (!options.was_supplied("large_action_space") || !options.was_supplied("full_predictions"))
-  { return nullptr; }
+  if (!options.was_supplied("large_action_space") || !options.was_supplied("full_predictions")) { return nullptr; }
 
   auto* base = as_multiline(stack_builder.setup_base_learner());
 
