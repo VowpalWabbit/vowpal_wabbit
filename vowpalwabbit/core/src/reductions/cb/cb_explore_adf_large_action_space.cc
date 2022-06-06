@@ -503,7 +503,8 @@ void cb_explore_adf_large_action_space::predict_or_learn_impl(VW::LEARNER::multi
     base.predict(examples);
     update_example_prediction(examples);
   }
-}  // namespace cb_explore_adf
+}
+
 }  // namespace cb_explore_adf
 }  // namespace VW
 
