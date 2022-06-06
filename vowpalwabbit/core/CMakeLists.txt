@@ -91,6 +91,7 @@ set(vw_core_headers
   include/vw/core/reductions/cats_pdf.h
   include/vw/core/reductions/cats_tree.h
   include/vw/core/reductions/cats.h
+  include/vw/core/reductions/cb/cb_actions_mask.h
   include/vw/core/reductions/cb/cb_adf.h
   include/vw/core/reductions/cb/cb_algs.h
   include/vw/core/reductions/cb/cb_dro.h
@@ -246,6 +247,7 @@ set(vw_core_sources
   src/reductions/cats_pdf.cc
   src/reductions/cats_tree.cc
   src/reductions/cats.cc
+  src/reductions/cb/cb_actions_mask.cc
   src/reductions/cb/cb_adf.cc
   src/reductions/cb/cb_algs.cc
   src/reductions/cb/cb_dro.cc
