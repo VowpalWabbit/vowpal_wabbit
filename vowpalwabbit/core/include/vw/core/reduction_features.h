@@ -3,7 +3,7 @@
 // license as described in the file LICENSE.
 
 #pragma once
-#include "actions_mask_reduction_features.h"
+
 #include "ccb_reduction_features.h"
 #include "continuous_actions_reduction_features.h"
 #include "epsilon_reduction_features.h"
@@ -41,7 +41,6 @@ private:
   simple_label_reduction_features _simple_label_reduction_features;
   VW::cb_explore_adf::greedy::reduction_features _epsilon_reduction_features;
   VW::generated_interactions::reduction_features _generated_interactions_reduction_features;
-  VW::cb_actions_mask::reduction_features _actions_mask_reduction_features;
 
 public:
   template <typename T>
@@ -124,20 +123,6 @@ reduction_features::get<VW::generated_interactions::reduction_features>() const
 {
   return _generated_interactions_reduction_features;
 }
-
-template <>
-inline VW::cb_actions_mask::reduction_features& reduction_features::get<VW::cb_actions_mask::reduction_features>()
-{
-  return _actions_mask_reduction_features;
-}
-
-template <>
-inline const VW::cb_actions_mask::reduction_features& reduction_features::get<VW::cb_actions_mask::reduction_features>()
-    const
-{
-  return _actions_mask_reduction_features;
-}
-
 }  // namespace VW
 
 using reduction_features VW_DEPRECATED("reduction_features moved into VW namespace") = VW::reduction_features;

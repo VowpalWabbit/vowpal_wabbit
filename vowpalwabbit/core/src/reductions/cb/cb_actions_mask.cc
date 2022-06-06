@@ -17,11 +17,17 @@ void VW::reductions::cb_actions_mask::learn(VW::LEARNER::multi_learner& base, mu
 
 void VW::reductions::cb_actions_mask::predict(VW::LEARNER::multi_learner& base, multi_ex& examples)
 {
+  auto initial_action_size = examples.size();
   base.predict(examples);
-  auto& red_features = examples[0]->_reduction_features.template get<VW::cb_actions_mask::reduction_features>();
 
   auto& preds = examples[0]->pred.a_s;
-  for (auto action : red_features.action_mask) { preds.push_back({action, 0.f}); }
+  std::vector<bool> actions_present(initial_action_size);
+  for (const auto& action_score : preds) { actions_present[action_score.action].flip(); }
+
+  for (uint32_t i = 0; i < actions_present.size(); i++)
+  {
+    if (!actions_present[i]) { preds.push_back({i, 0.0f}); }
+  }
 }
 
 template <bool is_learn>
@@ -39,13 +45,13 @@ VW::LEARNER::base_learner* VW::reductions::cb_actions_mask_setup(VW::setup_base_
   VW::config::options_i& options = *stack_builder.get_options();
   auto data = VW::make_unique<VW::reductions::cb_actions_mask>();
 
-  if (!options.was_supplied("large_action_space")) { return nullptr; }
+  if (!options.was_supplied("large_action_space") || !options.was_supplied("full_predictions"))
+  { return nullptr; }
 
   auto* base = as_multiline(stack_builder.setup_base_learner());
 
   auto* l = VW::LEARNER::make_reduction_learner(std::move(data), base, learn_or_predict<true>, learn_or_predict<false>,
       stack_builder.get_setupfn_name(cb_actions_mask_setup))
-                .set_learn_returns_prediction(base->learn_returns_prediction)
                 .set_input_label_type(VW::label_type_t::cb)
                 .set_output_label_type(VW::label_type_t::cb)
                 .set_input_prediction_type(VW::prediction_type_t::action_scores)

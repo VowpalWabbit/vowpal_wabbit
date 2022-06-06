@@ -69,6 +69,7 @@ public:
 private:
   template <bool is_learn>
   void predict_or_learn_impl(VW::LEARNER::multi_learner& base, multi_ex& examples);
+  void update_example_prediction(VW::multi_ex& examples);
 };
 }  // namespace cb_explore_adf
 }  // namespace VW

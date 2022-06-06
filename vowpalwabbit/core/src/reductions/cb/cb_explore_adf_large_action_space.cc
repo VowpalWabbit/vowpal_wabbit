@@ -456,6 +456,40 @@ void cb_explore_adf_large_action_space::compute_spanner()
   for (uint64_t idx : _action_indices) { _spanner_bitvec[idx] = true; }
 }
 
+void cb_explore_adf_large_action_space::update_example_prediction(VW::multi_ex& examples)
+{
+  auto& preds = examples[0]->pred.a_s;
+
+  if (_d < preds.size())
+  {
+    calculate_shrink_factor(preds);
+    randomized_SVD(examples);
+
+    if (U.rows() == 0)
+    {
+      // Set uniform random probability for empty U.
+      const float prob = 1.0f / preds.size();
+      for (auto& pred : preds) { pred.score = prob; }
+      return;
+    }
+
+    compute_spanner();
+    assert(_spanner_bitvec.size() == preds.size());
+  }
+  else
+  {
+    _spanner_bitvec.clear();
+    _spanner_bitvec.resize(preds.size(), true);
+  }
+
+  size_t index = 0;
+  for (auto it = preds.begin(); it != preds.end(); it++)
+  {
+    if (!_spanner_bitvec[index]) { preds.erase(it--); }
+    index++;
+  }
+}
+
 template <bool is_learn>
 void cb_explore_adf_large_action_space::predict_or_learn_impl(VW::LEARNER::multi_learner& base, multi_ex& examples)
 {
@@ -467,46 +501,9 @@ void cb_explore_adf_large_action_space::predict_or_learn_impl(VW::LEARNER::multi
   else
   {
     base.predict(examples);
-
-    auto& preds = examples[0]->pred.a_s;
-
-    if (_d < preds.size())
-    {
-      calculate_shrink_factor(preds);
-      randomized_SVD(examples);
-
-      if (U.rows() == 0)
-      {
-        // Set uniform random probability for empty U.
-        const float prob = 1.0f / preds.size();
-        for (auto& pred : preds) { pred.score = prob; }
-        return;
-      }
-
-      compute_spanner();
-      assert(_spanner_bitvec.size() == preds.size());
-    }
-    else
-    {
-      _spanner_bitvec.clear();
-      _spanner_bitvec.resize(preds.size(), true);
-    }
-
-    auto& red_features = examples[0]->_reduction_features.template get<VW::cb_actions_mask::reduction_features>();
-    red_features.reset_to_default();
-
-    size_t index = 0;
-    for (auto it = preds.begin(); it != preds.end(); it++)
-    {
-      if (!_spanner_bitvec[index])
-      {
-        red_features.action_mask.push_back((*it).action);
-        preds.erase(it--);
-      }
-      index++;
-    }
+    update_example_prediction(examples);
   }
-}
+}  // namespace cb_explore_adf
 }  // namespace cb_explore_adf
 }  // namespace VW
 
@@ -522,6 +519,7 @@ VW::LEARNER::base_learner* VW::reductions::cb_explore_adf_large_action_space_set
   float gamma_exponent = 0.f;
   float c;
   bool apply_shrink_factor = false;
+  bool full_predictions = false;
 
   config::option_group_definition new_options(
       "[Reduction] Experimental: Contextual Bandit Exploration with ADF with large action space");
@@ -534,6 +532,10 @@ VW::LEARNER::base_learner* VW::reductions::cb_explore_adf_large_action_space_set
                .necessary()
                .keep()
                .help("Large action space exploration")
+               .experimental())
+      .add(make_option("full_predictions", full_predictions)
+               .keep()
+               .help("Full representation of the prediction's action probabilities")
                .experimental())
       .add(make_option("max_actions", d)
                .keep()
@@ -550,13 +552,6 @@ VW::LEARNER::base_learner* VW::reductions::cb_explore_adf_large_action_space_set
 
   auto enabled = options.add_parse_and_check_necessary(new_options) && large_action_space;
   if (!enabled) { return nullptr; }
-
-  // Ensure serialization of cb_adf in all cases.
-  if (!options.was_supplied("cb_adf"))
-  {
-    options.insert("cb_adf", "");
-    options.insert("no_predict", "");
-  }
 
   if (options.was_supplied("squarecb"))
   {

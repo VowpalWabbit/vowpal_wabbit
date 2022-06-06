@@ -205,10 +205,10 @@ void prepare_reductions(std::vector<std::tuple<std::string, reduction_setup_fn>>
   reductions.push_back(VW::reductions::cb_sample_setup);
   reductions.push_back(VW::reductions::explore_eval_setup);
   reductions.push_back(VW::reductions::epsilon_decay_setup);
+  reductions.push_back(VW::reductions::cb_actions_mask_setup);
   reductions.push_back(VW::reductions::shared_feature_merger_setup);
   reductions.push_back(VW::reductions::ccb_explore_adf_setup);
   reductions.push_back(VW::reductions::slates_setup);
-  reductions.push_back(VW::reductions::cb_actions_mask_setup);
   // cbify/warm_cb can generate multi-examples. Merge shared features after them
   reductions.push_back(VW::reductions::warm_cb_setup);
   reductions.push_back(VW::reductions::get_pmf_setup);

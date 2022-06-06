@@ -1,7 +1,6 @@
 set(vw_core_headers
   include/vw/core/accumulate.h
   include/vw/core/action_score.h
-  include/vw/core/actions_mask_reduction_features.h
   include/vw/core/active_multiclass_prediction.h
   include/vw/core/api_status.h
   include/vw/core/array_parameters_dense.h
