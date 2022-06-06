@@ -567,6 +567,8 @@ Weight Options:
                                             action dependent features (type: bool, keep, necessary)
     --large_action_space                    Large action space exploration (type: bool, keep, necessary,
                                             experimental)
+    --full_predictions                      Full representation of the prediction's action probabilities
+                                            (type: bool, experimental)
     --max_actions arg                       Max number of actions to explore (type: uint, default: 50, keep,
                                             experimental)
     --spanner_c arg                         Parameter for computing c-approximate spanner (type: float, default:

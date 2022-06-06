@@ -535,7 +535,6 @@ VW::LEARNER::base_learner* VW::reductions::cb_explore_adf_large_action_space_set
                .help("Large action space exploration")
                .experimental())
       .add(make_option("full_predictions", full_predictions)
-               .keep()
                .help("Full representation of the prediction's action probabilities")
                .experimental())
       .add(make_option("max_actions", d)
