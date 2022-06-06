@@ -45,7 +45,7 @@ TEST(save_load_test, save_resume_behaves_as_if_dataset_concatenated)
   }
 
   auto vw_first_half = VW::initialize_experimental(VW::make_unique<VW::config::options_cli>(
-    std::vector<std::string>{"--no_stdin", "--quiet", "--preserve_performance_counters"}));
+    std::vector<std::string>{"--no_stdin", "--quiet"}));
 
   for (size_t i = 0; i < 5; i++)
   {
