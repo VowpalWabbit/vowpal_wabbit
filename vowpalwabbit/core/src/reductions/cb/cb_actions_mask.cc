@@ -22,7 +22,7 @@ void VW::reductions::cb_actions_mask::predict(VW::LEARNER::multi_learner& base, 
 
   auto& preds = examples[0]->pred.a_s;
   std::vector<bool> actions_present(initial_action_size);
-  for (const auto& action_score : preds) { actions_present[action_score.action].flip(); }
+  for (const auto& action_score : preds) { actions_present[action_score.action] = true; }
 
   for (uint32_t i = 0; i < actions_present.size(); i++)
   {
