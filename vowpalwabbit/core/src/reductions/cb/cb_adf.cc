@@ -150,7 +150,8 @@ public:
   bool learn_returns_prediction() const
   {
     return ((_gen_cs.cb_type == VW::cb_type_t::mtr) && !_no_predict) || _gen_cs.cb_type == VW::cb_type_t::ips ||
-        _gen_cs.cb_type == VW::cb_type_t::dr || _gen_cs.cb_type == VW::cb_type_t::dm;
+        _gen_cs.cb_type == VW::cb_type_t::dr || _gen_cs.cb_type == VW::cb_type_t::dm ||
+        _gen_cs.cb_type == VW::cb_type_t::sm;
   }
 
   CB::cb_class* known_cost() { return &_gen_cs.known_cost; }
@@ -495,7 +496,7 @@ VW::LEARNER::base_learner* VW::reductions::cb_adf_setup(VW::setup_base_i& stack_
   VW::cb_type_t cb_type;
   bool rank_all;
   float clip_p;
-  bool no_predict;
+  bool no_predict = false;
 
   option_group_definition new_options("[Reduction] Contextual Bandit with Action Dependent Features");
   new_options
