@@ -26,10 +26,9 @@ struct cb_explore_adf_greedy
 private:
   float _epsilon;
   bool _first_only;
-  bool _learn_returns_prediction;
 
 public:
-  cb_explore_adf_greedy(float epsilon, bool first_only, bool learn_returns_prediction);
+  cb_explore_adf_greedy(float epsilon, bool first_only);
   ~cb_explore_adf_greedy() = default;
 
   // Should be called through cb_explore_adf_base for pre/post-processing
@@ -45,8 +44,8 @@ private:
   void update_example_prediction(VW::multi_ex& examples);
 };
 
-cb_explore_adf_greedy::cb_explore_adf_greedy(float epsilon, bool first_only, bool learn_returns_prediction)
-    : _epsilon(epsilon), _first_only(first_only), _learn_returns_prediction(learn_returns_prediction)
+cb_explore_adf_greedy::cb_explore_adf_greedy(float epsilon, bool first_only)
+    : _epsilon(epsilon), _first_only(first_only)
 {
 }
 
@@ -79,7 +78,7 @@ void cb_explore_adf_greedy::predict_or_learn_impl(VW::LEARNER::multi_learner& ba
   if (is_learn)
   {
     base.learn(examples);
-    if (_learn_returns_prediction) { update_example_prediction(examples); }
+    if (base.learn_returns_prediction) { update_example_prediction(examples); }
   }
   else
   {
@@ -139,7 +138,7 @@ VW::LEARNER::base_learner* VW::reductions::cb_explore_adf_greedy_setup(VW::setup
   bool with_metrics = options.was_supplied("extra_metrics");
 
   using explore_type = cb_explore_adf_base<cb_explore_adf_greedy>;
-  auto data = VW::make_unique<explore_type>(with_metrics, epsilon, first_only, base->learn_returns_prediction);
+  auto data = VW::make_unique<explore_type>(with_metrics, epsilon, first_only);
 
   if (epsilon < 0.0 || epsilon > 1.0) { THROW("The value of epsilon must be in [0,1]"); }
   auto* l = make_reduction_learner(std::move(data), base, explore_type::learn, explore_type::predict,
