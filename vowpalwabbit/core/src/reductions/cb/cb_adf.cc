@@ -150,7 +150,8 @@ public:
   bool learn_returns_prediction() const
   {
     return ((_gen_cs.cb_type == VW::cb_type_t::mtr) && !_no_predict) || _gen_cs.cb_type == VW::cb_type_t::ips ||
-        _gen_cs.cb_type == VW::cb_type_t::dr || _gen_cs.cb_type == VW::cb_type_t::dm || _gen_cs.cb_type == VW::cb_type_t::sm;
+        _gen_cs.cb_type == VW::cb_type_t::dr || _gen_cs.cb_type == VW::cb_type_t::dm ||
+        _gen_cs.cb_type == VW::cb_type_t::sm;
   }
 
   CB::cb_class* known_cost() { return &_gen_cs.known_cost; }
