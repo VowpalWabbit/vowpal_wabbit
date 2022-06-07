@@ -108,27 +108,22 @@ std::string interaction_vec_t_to_string(const VW::reductions::automl::interactio
   return ss.str();
 }
 
-std::string exclusions_to_string(const std::map<VW::namespace_index, std::set<VW::namespace_index>>& exclusions)
+std::string exclusions_to_string(const std::set<std::vector<VW::namespace_index>>& exclusions)
 {
   const char* const delim = ", ";
   std::stringstream ss;
   size_t total = exclusions.size();
   size_t count = 0;
-
   ss << "{";
   for (auto const& x : exclusions)
   {
-    auto ns1 = x.first;
-    ss << "\"" << ns_to_str(ns1) << "\""
-       << ": [";
-
-    if (!x.second.empty())
+    ss << "[";
+    if (!x.empty())
     {
-      auto i = x.second.begin(), second_last = std::prev(x.second.end());
-      for (; i != second_last; ++i) { ss << "\"" << ns_to_str(*i) << "\"" << delim; }
-      ss << "\"" << ns_to_str(*second_last) << "\"";
+      auto i = x.begin(), x_last = std::prev(x.end());
+      for (; i != x_last; ++i) { ss << "\"" << ns_to_str(*i) << "\"" << delim; }
+      ss << "\"" << ns_to_str(*x_last) << "\"";
     }
-
     count += 1;
     ss << "]";
     if (count < total) { ss << delim; }
@@ -206,6 +201,7 @@ interaction_config_manager::interaction_config_manager(uint64_t global_lease, ui
 // from the corresponding live_slot. This function can be swapped out depending on
 // preference of how to generate interactions from a given set of exclusions.
 // Transforms exclusions -> interactions expected by VW.
+
 void interaction_config_manager::gen_quadratic_interactions(uint64_t live_slot)
 {
   auto& exclusions = configs[scores[live_slot].config_index].exclusions;
@@ -217,8 +213,8 @@ void interaction_config_manager::gen_quadratic_interactions(uint64_t live_slot)
     for (auto jt = it; jt != ns_counter.end(); ++jt)
     {
       auto idx2 = (*jt).first;
-      if (exclusions.find(idx1) == exclusions.end() || exclusions.at(idx1).find(idx2) == exclusions.at(idx1).end())
-      { interactions.push_back({idx1, idx2}); }
+      std::vector<namespace_index> idx{idx1, idx2};
+      if (exclusions.find(idx) == exclusions.end()) { interactions.push_back({idx1, idx2}); }
     }
   }
   // logger->out_info("generated interactions {} from exclusion conf: {}", ::interaction_vec_t_to_string(interactions),
@@ -248,10 +244,9 @@ void interaction_config_manager::pre_process(const multi_ex& ecs)
     for (uint64_t live_slot = 0; live_slot < scores.size(); ++live_slot) { gen_quadratic_interactions(live_slot); }
   }
 }
-
 // Helper function to insert new configs from oracle into map of configs as well as index_queue.
 // Handles creating new config with exclusions or overwriting stale configs to avoid reallocation.
-void interaction_config_manager::insert_config(std::map<namespace_index, std::set<namespace_index>>&& new_exclusions)
+void interaction_config_manager::insert_config(std::set<std::vector<namespace_index>>&& new_exclusions)
 {
   // Note that configs are never actually cleared, but valid_config_size is set to 0 instead to denote that
   // configs have become stale. Here we try to write over stale configs with new configs, and if no stale
@@ -260,8 +255,8 @@ void interaction_config_manager::insert_config(std::map<namespace_index, std::se
   {
     configs[valid_config_size].exclusions = std::move(new_exclusions);
     configs[valid_config_size].lease = global_lease;
-    configs[valid_config_size].ips = 0;
-    configs[valid_config_size].lower_bound = std::numeric_limits<float>::infinity();
+    configs[valid_config_size].ips = std::numeric_limits<float>::infinity();
+    configs[valid_config_size].lower_bound = 0.f;
     configs[valid_config_size].state = VW::reductions::automl::config_state::New;
   }
   else
@@ -289,9 +284,9 @@ void interaction_config_manager::config_oracle()
       uint64_t rand_ind = static_cast<uint64_t>(random_state->get_and_update_random() * champ_interactions.size());
       namespace_index ns1 = champ_interactions[rand_ind][0];
       namespace_index ns2 = champ_interactions[rand_ind][1];
-      std::map<namespace_index, std::set<namespace_index>> new_exclusions(
-          configs[scores[current_champ].config_index].exclusions);
-      new_exclusions[ns1].insert(ns2);
+      std::set<std::vector<namespace_index>> new_exclusions(configs[scores[current_champ].config_index].exclusions);
+      std::vector<namespace_index> idx{ns1, ns2};
+      new_exclusions.insert(idx);
       insert_config(std::move(new_exclusions));
     }
   }
@@ -311,22 +306,17 @@ void interaction_config_manager::config_oracle()
     {
       namespace_index ns1 = interaction[0];
       namespace_index ns2 = interaction[1];
-      std::map<namespace_index, std::set<namespace_index>> new_exclusions(
-          configs[scores[current_champ].config_index].exclusions);
-      new_exclusions[ns1].insert(ns2);
+      std::set<std::vector<namespace_index>> new_exclusions(configs[scores[current_champ].config_index].exclusions);
+      std::vector<namespace_index> idx{ns1, ns2};
+      new_exclusions.insert(idx);
       insert_config(std::move(new_exclusions));
     }
     // Remove one exclusion (for each exclusion)
     for (auto& ns_pair : configs[scores[current_champ].config_index].exclusions)
     {
-      namespace_index ns1 = ns_pair.first;
-      for (namespace_index ns2 : ns_pair.second)
-      {
-        std::map<namespace_index, std::set<namespace_index>> new_exclusions(
-            configs[scores[current_champ].config_index].exclusions);
-        new_exclusions[ns1].erase(ns2);
-        insert_config(std::move(new_exclusions));
-      }
+      std::set<std::vector<namespace_index>> new_exclusions(configs[scores[current_champ].config_index].exclusions);
+      new_exclusions.erase(ns_pair);
+      insert_config(std::move(new_exclusions));
     }
   }
   else
@@ -334,7 +324,6 @@ void interaction_config_manager::config_oracle()
     THROW("Unknown oracle type.");
   }
 }
-
 // This function is triggered when all sets of interactions generated by the oracle have been tried and
 // reached their lease. It will then add inactive configs (stored in the config manager) to the queue
 // 'index_queue' which can be used to swap out live configs as they run out of lease. This functionality
@@ -710,7 +699,7 @@ float calc_priority_least_exclusion(
     const VW::reductions::automl::exclusion_config& config, const std::map<VW::namespace_index, uint64_t>& ns_counter)
 {
   float priority = 0.f;
-  for (const auto& ns_pair : config.exclusions) { priority -= ns_counter.at(ns_pair.first); }
+  for (const auto& ns_pair : config.exclusions) { priority -= ns_counter.at(*ns_pair.begin()); }
   return priority;
 }
 

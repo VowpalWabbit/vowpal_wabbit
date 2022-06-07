@@ -55,10 +55,10 @@ enum class config_state
 
 struct exclusion_config
 {
-  std::map<namespace_index, std::set<namespace_index>> exclusions;
+  std::set<std::vector<namespace_index>> exclusions;
   uint64_t lease;
-  float ips = 0.f;
-  float lower_bound = std::numeric_limits<float>::infinity();
+  float ips = std::numeric_limits<float>::infinity();
+  float lower_bound = 0.f;
   config_state state = VW::reductions::automl::config_state::New;
 
   exclusion_config(uint64_t lease = 10) : lease(lease) {}
@@ -140,7 +140,7 @@ private:
   uint64_t choose();
   bool repopulate_index_queue();
   bool swap_eligible_to_inactivate(uint64_t);
-  void insert_config(std::map<namespace_index, std::set<namespace_index>>&&);
+  void insert_config(std::set<std::vector<namespace_index>>&& new_exclusions);
 };
 
 template <typename CMType>

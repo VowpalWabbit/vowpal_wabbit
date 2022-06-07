@@ -35,6 +35,7 @@ set(vw_core_headers
   include/vw/core/feature_group.h
   include/vw/core/gd_predict.h
   include/vw/core/gen_cs_example.h
+  include/vw/core/generated_interactions_reduction_features.h
   include/vw/core/generic_range.h
   include/vw/core/global_data.h
   include/vw/core/guard.h
@@ -90,6 +91,7 @@ set(vw_core_headers
   include/vw/core/reductions/cats_pdf.h
   include/vw/core/reductions/cats_tree.h
   include/vw/core/reductions/cats.h
+  include/vw/core/reductions/cb/cb_actions_mask.h
   include/vw/core/reductions/cb/cb_adf.h
   include/vw/core/reductions/cb/cb_algs.h
   include/vw/core/reductions/cb/cb_dro.h
@@ -245,6 +247,7 @@ set(vw_core_sources
   src/reductions/cats_pdf.cc
   src/reductions/cats_tree.cc
   src/reductions/cats.cc
+  src/reductions/cb/cb_actions_mask.cc
   src/reductions/cb/cb_adf.cc
   src/reductions/cb/cb_algs.cc
   src/reductions/cb/cb_dro.cc
@@ -405,5 +408,5 @@ endif()
 
 vw_add_test_executable(
     FOR_LIB "core"
-    SOURCES tests/cache_test.cc tests/parse_args_test.cc
+    SOURCES tests/cache_test.cc tests/parse_args_test.cc tests/save_load_test.cc
 )

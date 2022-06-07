@@ -62,17 +62,20 @@ private:
   uint64_t _seed;
   std::vector<Eigen::Triplet<float>>& _triplets;
   uint64_t& _max_col;
+  std::set<uint64_t>& _non_zero_rows;
   const std::vector<float>& _shrink_factors;
 
 public:
   Y_triplet_constructor(WeightsT& weights, uint64_t row_index, uint64_t column_index, uint64_t seed,
-      std::vector<Eigen::Triplet<float>>& triplets, uint64_t& max_col, const std::vector<float>& shrink_factors)
+      std::vector<Eigen::Triplet<float>>& triplets, uint64_t& max_col, std::set<uint64_t>& non_zero_rows,
+      const std::vector<float>& shrink_factors)
       : _weights(weights)
       , _row_index(row_index)
       , _column_index(column_index)
       , _seed(seed)
       , _triplets(triplets)
       , _max_col(max_col)
+      , _non_zero_rows(non_zero_rows)
       , _shrink_factors(shrink_factors)
   {
   }
@@ -81,6 +84,7 @@ public:
   {
     if (_weights[index] != 0.f)
     {
+      _non_zero_rows.emplace((index & _weights.mask()));
       auto combined_index = _row_index + _column_index + _seed;
       // _weights[index] is the equivalent of going over A's rows which turn out to be A.transpose()'s columns
       auto calc = _weights[index] * merand48_boxmuller(combined_index) * _shrink_factors[_row_index];
@@ -123,7 +127,6 @@ void cb_explore_adf_large_action_space::learn(VW::LEARNER::multi_learner& base, 
 cb_explore_adf_large_action_space::cb_explore_adf_large_action_space(
     uint64_t d, float gamma_scale, float gamma_exponent, float c, bool apply_shrink_factor, VW::workspace* all)
     : _d(d)
-    , _gamma(0.f)
     , _gamma_scale(gamma_scale)
     , _gamma_exponent(gamma_exponent)
     , _c(c)
@@ -149,8 +152,9 @@ void cb_explore_adf_large_action_space::calculate_shrink_factor(const ACTION_SCO
   {
     shrink_factors.clear();
     float min_ck = std::min_element(preds.begin(), preds.end(), VW::action_score_compare_lt)->score;
+    float gamma = _gamma_scale * static_cast<float>(std::pow(_counter, _gamma_exponent));
     for (size_t i = 0; i < preds.size(); i++)
-    { shrink_factors.push_back(std::sqrt(1 + _d + _gamma / (4.0f * _d) * (preds[i].score - min_ck))); }
+    { shrink_factors.push_back(std::sqrt(1 + _d + gamma / (4.0f * _d) * (preds[i].score - min_ck))); }
   }
   else
   {
@@ -175,7 +179,6 @@ void cb_explore_adf_large_action_space::generate_Z(const multi_ex& examples)
   Z.resize(num_actions, _d);
   Z.setZero();
 
-  // TODO extend wildspace interactions before calling foreach
   for (Eigen::Index row = 0; row < B.rows(); row++)
   {
     for (uint64_t col = 0; col < _d; col++)
@@ -198,11 +201,12 @@ void cb_explore_adf_large_action_space::generate_B(const multi_ex& examples)
   B.resize(num_actions, _d);
   B.setZero();
 
-  // TODO extend wildspace interactions before calling foreach
   uint64_t row_index = 0;
   for (auto* ex : examples)
   {
     assert(!CB::ec_is_example_header(*ex));
+
+    auto& red_features = ex->_reduction_features.template get<VW::generated_interactions::reduction_features>();
 
     for (Eigen::Index col = 0; col < Y.outerSize(); ++col)
     {
@@ -211,14 +215,20 @@ void cb_explore_adf_large_action_space::generate_B(const multi_ex& examples)
       {
         dot_product<sparse_parameters> weights(_all->weights.sparse_weights, col, Y);
         GD::foreach_feature<float, float, just_add_weights, dot_product<sparse_parameters>>(weights,
-            _all->ignore_some_linear, _all->ignore_linear, _all->interactions, _all->extent_interactions,
+            _all->ignore_some_linear, _all->ignore_linear,
+            (red_features.generated_interactions ? *red_features.generated_interactions : *ex->interactions),
+            (red_features.generated_extent_interactions ? *red_features.generated_extent_interactions
+                                                        : *ex->extent_interactions),
             _all->permutations, *ex, final_dot_prod, _all->_generate_interactions_object_cache);
       }
       else
       {
         dot_product<dense_parameters> weights(_all->weights.dense_weights, col, Y);
         GD::foreach_feature<float, float, just_add_weights, dot_product<dense_parameters>>(weights,
-            _all->ignore_some_linear, _all->ignore_linear, _all->interactions, _all->extent_interactions,
+            _all->ignore_some_linear, _all->ignore_linear,
+            (red_features.generated_interactions ? *red_features.generated_interactions : *ex->interactions),
+            (red_features.generated_extent_interactions ? *red_features.generated_extent_interactions
+                                                        : *ex->extent_interactions),
             _all->permutations, *ex, final_dot_prod, _all->_generate_interactions_object_cache);
       }
 
@@ -230,32 +240,39 @@ void cb_explore_adf_large_action_space::generate_B(const multi_ex& examples)
 
 bool cb_explore_adf_large_action_space::generate_Y(const multi_ex& examples)
 {
-  // TODO extend wildspace interactions before calling foreach
   uint64_t max_non_zero_col = 0;
   _triplets.clear();
   uint64_t row_index = 0;
+  std::set<uint64_t> non_zero_rows;
   for (auto* ex : examples)
   {
     assert(!CB::ec_is_example_header(*ex));
+
+    auto& red_features = ex->_reduction_features.template get<VW::generated_interactions::reduction_features>();
 
     for (uint64_t col = 0; col < _d; col++)
     {
       if (_all->weights.sparse)
       {
-        Y_triplet_constructor<sparse_parameters> tc(
-            _all->weights.sparse_weights, row_index, col, _seed, _triplets, max_non_zero_col, shrink_factors);
+        Y_triplet_constructor<sparse_parameters> tc(_all->weights.sparse_weights, row_index, col, _seed, _triplets,
+            max_non_zero_col, non_zero_rows, shrink_factors);
         GD::foreach_feature<Y_triplet_constructor<sparse_parameters>, uint64_t, triplet_construction,
             sparse_parameters>(_all->weights.sparse_weights, _all->ignore_some_linear, _all->ignore_linear,
-            _all->interactions, _all->extent_interactions, _all->permutations, *ex, tc,
-            _all->_generate_interactions_object_cache);
+            (red_features.generated_interactions ? *red_features.generated_interactions : *ex->interactions),
+            (red_features.generated_extent_interactions ? *red_features.generated_extent_interactions
+                                                        : *ex->extent_interactions),
+            _all->permutations, *ex, tc, _all->_generate_interactions_object_cache);
       }
       else
       {
-        Y_triplet_constructor<dense_parameters> tc(
-            _all->weights.dense_weights, row_index, col, _seed, _triplets, max_non_zero_col, shrink_factors);
+        Y_triplet_constructor<dense_parameters> tc(_all->weights.dense_weights, row_index, col, _seed, _triplets,
+            max_non_zero_col, non_zero_rows, shrink_factors);
         GD::foreach_feature<Y_triplet_constructor<dense_parameters>, uint64_t, triplet_construction, dense_parameters>(
-            _all->weights.dense_weights, _all->ignore_some_linear, _all->ignore_linear, _all->interactions,
-            _all->extent_interactions, _all->permutations, *ex, tc, _all->_generate_interactions_object_cache);
+            _all->weights.dense_weights, _all->ignore_some_linear, _all->ignore_linear,
+            (red_features.generated_interactions ? *red_features.generated_interactions : *ex->interactions),
+            (red_features.generated_extent_interactions ? *red_features.generated_extent_interactions
+                                                        : *ex->extent_interactions),
+            _all->permutations, *ex, tc, _all->_generate_interactions_object_cache);
       }
     }
     row_index++;
@@ -275,12 +292,11 @@ bool cb_explore_adf_large_action_space::generate_Y(const multi_ex& examples)
     VW::gram_schmidt(Y);
   }
 
-  return (Y.cols() != 0 && Y.rows() != 0);
+  return (Y.cols() != 0 && Y.rows() != 0 && non_zero_rows.size() > _d);
 }
 
 bool cb_explore_adf_large_action_space::_generate_A(const multi_ex& examples)
 {
-  // TODO extend wildspace interactions before calling foreach
   uint64_t row_index = 0;
   uint64_t max_non_zero_col = 0;
   _triplets.clear();
@@ -288,20 +304,28 @@ bool cb_explore_adf_large_action_space::_generate_A(const multi_ex& examples)
   {
     assert(!CB::ec_is_example_header(*ex));
 
+    auto& red_features = ex->_reduction_features.template get<VW::generated_interactions::reduction_features>();
+
     if (_all->weights.sparse)
     {
       A_triplet_constructor<sparse_parameters> w(_all->weights.sparse_weights, row_index, _triplets, max_non_zero_col);
       GD::foreach_feature<A_triplet_constructor<sparse_parameters>, uint64_t, triplet_construction, sparse_parameters>(
-          _all->weights.sparse_weights, _all->ignore_some_linear, _all->ignore_linear, _all->interactions,
-          _all->extent_interactions, _all->permutations, *ex, w, _all->_generate_interactions_object_cache);
+          _all->weights.sparse_weights, _all->ignore_some_linear, _all->ignore_linear,
+          (red_features.generated_interactions ? *red_features.generated_interactions : *ex->interactions),
+          (red_features.generated_extent_interactions ? *red_features.generated_extent_interactions
+                                                      : *ex->extent_interactions),
+          _all->permutations, *ex, w, _all->_generate_interactions_object_cache);
     }
     else
     {
       A_triplet_constructor<dense_parameters> w(_all->weights.dense_weights, row_index, _triplets, max_non_zero_col);
 
       GD::foreach_feature<A_triplet_constructor<dense_parameters>, uint64_t, triplet_construction, dense_parameters>(
-          _all->weights.dense_weights, _all->ignore_some_linear, _all->ignore_linear, _all->interactions,
-          _all->extent_interactions, _all->permutations, *ex, w, _all->_generate_interactions_object_cache);
+          _all->weights.dense_weights, _all->ignore_some_linear, _all->ignore_linear,
+          (red_features.generated_interactions ? *red_features.generated_interactions : *ex->interactions),
+          (red_features.generated_extent_interactions ? *red_features.generated_extent_interactions
+                                                      : *ex->extent_interactions),
+          _all->permutations, *ex, w, _all->_generate_interactions_object_cache);
     }
 
     row_index++;
@@ -338,7 +362,12 @@ void cb_explore_adf_large_action_space::randomized_SVD(const multi_ex& examples)
 
   // TODO can Y be stored in the model? on some strided location ^^ ?
   // if the model is empty then can't create Y and there is nothing left to do
-  if (!generate_Y(examples)) { return; }
+  if (!generate_Y(examples) || Y.rows() < static_cast<Eigen::Index>(_d))
+  {
+    U.resize(0, 0);
+    return;
+  }
+
   generate_B(examples);
   generate_Z(examples);
 
@@ -427,6 +456,40 @@ void cb_explore_adf_large_action_space::compute_spanner()
   for (uint64_t idx : _action_indices) { _spanner_bitvec[idx] = true; }
 }
 
+void cb_explore_adf_large_action_space::update_example_prediction(VW::multi_ex& examples)
+{
+  auto& preds = examples[0]->pred.a_s;
+
+  if (_d < preds.size())
+  {
+    calculate_shrink_factor(preds);
+    randomized_SVD(examples);
+
+    if (U.rows() == 0)
+    {
+      // Set uniform random probability for empty U.
+      const float prob = 1.0f / preds.size();
+      for (auto& pred : preds) { pred.score = prob; }
+      return;
+    }
+
+    compute_spanner();
+    assert(_spanner_bitvec.size() == preds.size());
+  }
+  else
+  {
+    _spanner_bitvec.clear();
+    _spanner_bitvec.resize(preds.size(), true);
+  }
+
+  size_t index = 0;
+  for (auto it = preds.begin(); it != preds.end(); it++)
+  {
+    if (!_spanner_bitvec[index]) { preds.erase(it--); }
+    index++;
+  }
+}
+
 template <bool is_learn>
 void cb_explore_adf_large_action_space::predict_or_learn_impl(VW::LEARNER::multi_learner& base, multi_ex& examples)
 {
@@ -438,53 +501,10 @@ void cb_explore_adf_large_action_space::predict_or_learn_impl(VW::LEARNER::multi
   else
   {
     base.predict(examples);
-
-    auto& preds = examples[0]->pred.a_s;
-
-    const auto min_ck_idx = std::min_element(preds.begin(), preds.end(), VW::action_score_compare_lt) - preds.begin();
-    const float min_ck = preds[min_ck_idx].score;
-    _gamma = _gamma_scale * static_cast<float>(std::pow(_counter, _gamma_exponent));
-
-    if (_d < preds.size())
-    {
-      calculate_shrink_factor(preds);
-      randomized_SVD(examples);
-
-      if (U.rows() == 0)
-      {
-        // Set uniform random probability for empty U.
-        const float prob = 1.0f / preds.size();
-        for (auto& pred : preds) { pred.score = prob; }
-        return;
-      }
-
-      compute_spanner();
-      assert(_spanner_bitvec.size() == preds.size());
-    }
-    else
-    {
-      _spanner_bitvec.clear();
-      _spanner_bitvec.resize(preds.size(), true);
-    }
-
-    // Set the exploration distribution over S and the minimizer.
-    _spanner_bitvec[min_ck_idx] = false;
-    float sum_scores = 0.0f;
-    for (auto i = 0u; i < preds.size(); ++i)
-    {
-      if (_spanner_bitvec[i])
-      {
-        preds[i].score = 1 / (1 + _d + _gamma / (4.0f * _d) * (preds[i].score - min_ck));
-        sum_scores += preds[i].score;
-      }
-      else
-      {
-        preds[i].score = 0.0f;
-      }
-    }
-    preds[min_ck_idx].score = 1.0f - sum_scores;
+    update_example_prediction(examples);
   }
 }
+
 }  // namespace cb_explore_adf
 }  // namespace VW
 
@@ -500,6 +520,7 @@ VW::LEARNER::base_learner* VW::reductions::cb_explore_adf_large_action_space_set
   float gamma_exponent = 0.f;
   float c;
   bool apply_shrink_factor = false;
+  bool full_predictions = false;
 
   config::option_group_definition new_options(
       "[Reduction] Experimental: Contextual Bandit Exploration with ADF with large action space");
@@ -512,6 +533,9 @@ VW::LEARNER::base_learner* VW::reductions::cb_explore_adf_large_action_space_set
                .necessary()
                .keep()
                .help("Large action space exploration")
+               .experimental())
+      .add(make_option("full_predictions", full_predictions)
+               .help("Full representation of the prediction's action probabilities")
                .experimental())
       .add(make_option("max_actions", d)
                .keep()
@@ -528,13 +552,6 @@ VW::LEARNER::base_learner* VW::reductions::cb_explore_adf_large_action_space_set
 
   auto enabled = options.add_parse_and_check_necessary(new_options) && large_action_space;
   if (!enabled) { return nullptr; }
-
-  // Ensure serialization of cb_adf in all cases.
-  if (!options.was_supplied("cb_adf"))
-  {
-    options.insert("cb_adf", "");
-    options.insert("no_predict", "");
-  }
 
   if (options.was_supplied("squarecb"))
   {
