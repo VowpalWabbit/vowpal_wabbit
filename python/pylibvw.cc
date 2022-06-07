@@ -694,7 +694,7 @@ void ex_push_feature_dict(example_ptr ec, vw_ptr vw, unsigned char ns, PyObject*
     if (PyFloat_Check(value)) { feat_value = (float)PyFloat_AsDouble(value); }
     else if (PyLong_Check(value))
     {
-      feat_value = (float)PyLong_AsDouble(value); 
+      feat_value = (float)PyLong_AsDouble(value);
     }
     else
     {
@@ -708,7 +708,7 @@ void ex_push_feature_dict(example_ptr ec, vw_ptr vw, unsigned char ns, PyObject*
     { feat_index = vw->example_parser->hasher(PyUnicode_AsUTF8AndSize(name, &size), size, ns_hash) & vw->parse_mask; }
     else if (PyLong_Check(name))
     {
-      feat_index = PyLong_AsUnsignedLong(name); 
+      feat_index = PyLong_AsUnsignedLong(name);
     }
     else
     {

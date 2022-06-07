@@ -1484,7 +1484,7 @@ class Example(pylibvw.example):
             Union[
                 str,
                 Dict[str, List[Union[Tuple[Union[str, int], float], Union[str, int]]]],
-                Dict[str, Dict[Union[str,int], float]],
+                Dict[str, Dict[Union[str, int], float]],
                 Any,
                 pylibvw.example,
             ]

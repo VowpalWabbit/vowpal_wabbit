@@ -536,9 +536,12 @@ def test_example_features():
     ex.push_namespace(ns2)
     assert ex.pop_namespace()
 
+
 def test_example_features_dict():
     vw_ex = Workspace(quiet=True)
-    ex = vw_ex.example({'a': {'two':1, 'features':1.0}, 'b':{'more':1, 'features': 1, 5: 1}})
+    ex = vw_ex.example(
+        {"a": {"two": 1, "features": 1.0}, "b": {"more": 1, "features": 1, 5: 1}}
+    )
     ex.set_label_string("1")
     ns = vowpalwabbit.NamespaceId(ex, 1)
     assert ex.get_feature_id(ns, "a") == 127530
@@ -550,6 +553,7 @@ def test_example_features_dict():
     ns2 = vowpalwabbit.NamespaceId(ex, 2)
     ex.push_namespace(ns2)
     assert ex.pop_namespace()
+
 
 def test_get_weight_name():
     model = Workspace(quiet=True)
