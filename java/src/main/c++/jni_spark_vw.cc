@@ -532,7 +532,7 @@ JNIEXPORT void JNICALL Java_org_vowpalwabbit_spark_VowpalWabbitExample_setMultic
 }
 
 JNIEXPORT void JNICALL Java_org_vowpalwabbit_spark_VowpalWabbitExample_setCostSensitiveLabels(
-    JNIEnv* env, jobject exampleObj, jfloatArray costs, jintArray classes) 
+    JNIEnv* env, jobject exampleObj, jfloatArray costs, jintArray classes)
 {
   INIT_VARS
 
@@ -543,7 +543,7 @@ JNIEXPORT void JNICALL Java_org_vowpalwabbit_spark_VowpalWabbitExample_setCostSe
     int sizeCosts = env->GetArrayLength(costs);
     int sizeClasses = env->GetArrayLength(classes);
 
-    if (sizeCosts != sizeClasses) 
+    if (sizeCosts != sizeClasses)
     {
       env->ThrowNew(env->FindClass("java/lang/IllegalArgumentException"), "costs and classes length must match");
       return;
@@ -572,7 +572,7 @@ JNIEXPORT void JNICALL Java_org_vowpalwabbit_spark_VowpalWabbitExample_setCostSe
 }
 
 JNIEXPORT void JNICALL Java_org_vowpalwabbit_spark_VowpalWabbitExample_setMultiLabels(
-    JNIEnv* env, jobject exampleObj, jintArray classes) 
+    JNIEnv* env, jobject exampleObj, jintArray classes)
 {
   INIT_VARS
 
@@ -585,8 +585,7 @@ JNIEXPORT void JNICALL Java_org_vowpalwabbit_spark_VowpalWabbitExample_setMultiL
 
     int size = env->GetArrayLength(classes);
 
-    for (int i = 0; i < size; i++)
-      ld->label_v.push_back(classes0[i]);
+    for (int i = 0; i < size; i++) ld->label_v.push_back(classes0[i]);
   }
   catch (...)
   {
@@ -596,7 +595,7 @@ JNIEXPORT void JNICALL Java_org_vowpalwabbit_spark_VowpalWabbitExample_setMultiL
 
 
 JNIEXPORT void JNICALL Java_org_vowpalwabbit_spark_VowpalWabbitExample_setContextualBanditContinuousLabel(
-    JNIEnv* env, jobject exampleObj, jfloatArray actions, jfloatArray costs, jfloatArray pdfValues) 
+    JNIEnv* env, jobject exampleObj, jfloatArray actions, jfloatArray costs, jfloatArray pdfValues)
 {
   INIT_VARS
 
@@ -608,7 +607,8 @@ JNIEXPORT void JNICALL Java_org_vowpalwabbit_spark_VowpalWabbitExample_setContex
 
     if (sizeActions != sizeCosts || sizeCosts != sizePdfValues)
     {
-      env->ThrowNew(env->FindClass("java/lang/IllegalArgumentException"), "actions, costs and pdfValues length must match");
+      env->ThrowNew(
+        env->FindClass("java/lang/IllegalArgumentException"), "actions, costs and pdfValues length must match");
       return;
     }
 
@@ -685,7 +685,7 @@ JNIEXPORT void JNICALL Java_org_vowpalwabbit_spark_VowpalWabbitExample_setShared
 
 
 JNIEXPORT void JNICALL Java_org_vowpalwabbit_spark_VowpalWabbitExample_setSlatesSharedLabel(
-  JNIEnv* env, jobject exampleObj, jfloat cost)
+    JNIEnv* env, jobject exampleObj, jfloat cost)
 {
   INIT_VARS
 
