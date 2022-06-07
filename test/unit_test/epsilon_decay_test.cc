@@ -59,16 +59,6 @@ BOOST_AUTO_TEST_CASE(epsilon_decay_test_champ_change)
     BOOST_CHECK_EQUAL(epsilon_decay->_scored_configs[2][2].update_count, 459);
     BOOST_CHECK_EQUAL(epsilon_decay->_scored_configs[3][2].update_count, 459);
     BOOST_CHECK_EQUAL(epsilon_decay->_scored_configs[3][3].update_count, 5780);
-    BOOST_CHECK_EQUAL(epsilon_decay->_scored_configs[0][0].get_score_idx(), 0);
-    BOOST_CHECK_EQUAL(epsilon_decay->_scored_configs[1][0].get_score_idx(), 4);
-    BOOST_CHECK_EQUAL(epsilon_decay->_scored_configs[2][0].get_score_idx(), 3);
-    BOOST_CHECK_EQUAL(epsilon_decay->_scored_configs[3][0].get_score_idx(), 6);
-    BOOST_CHECK_EQUAL(epsilon_decay->_scored_configs[1][1].get_score_idx(), 2);
-    BOOST_CHECK_EQUAL(epsilon_decay->_scored_configs[2][1].get_score_idx(), 1);
-    BOOST_CHECK_EQUAL(epsilon_decay->_scored_configs[3][1].get_score_idx(), 7);
-    BOOST_CHECK_EQUAL(epsilon_decay->_scored_configs[2][2].get_score_idx(), 5);
-    BOOST_CHECK_EQUAL(epsilon_decay->_scored_configs[3][2].get_score_idx(), 8);
-    BOOST_CHECK_EQUAL(epsilon_decay->_scored_configs[3][3].get_score_idx(), 9);
     return true;
   });
 
@@ -84,16 +74,6 @@ BOOST_AUTO_TEST_CASE(epsilon_decay_test_champ_change)
     BOOST_CHECK_EQUAL(epsilon_decay->_scored_configs[2][2].update_count, 42);
     BOOST_CHECK_EQUAL(epsilon_decay->_scored_configs[3][2].update_count, 42);
     BOOST_CHECK_EQUAL(epsilon_decay->_scored_configs[3][3].update_count, 460);
-    BOOST_CHECK_EQUAL(epsilon_decay->_scored_configs[0][0].get_score_idx(), 9);
-    BOOST_CHECK_EQUAL(epsilon_decay->_scored_configs[1][0].get_score_idx(), 8);
-    BOOST_CHECK_EQUAL(epsilon_decay->_scored_configs[2][0].get_score_idx(), 7);
-    BOOST_CHECK_EQUAL(epsilon_decay->_scored_configs[3][0].get_score_idx(), 6);
-    BOOST_CHECK_EQUAL(epsilon_decay->_scored_configs[1][1].get_score_idx(), 0);
-    BOOST_CHECK_EQUAL(epsilon_decay->_scored_configs[2][1].get_score_idx(), 4);
-    BOOST_CHECK_EQUAL(epsilon_decay->_scored_configs[3][1].get_score_idx(), 3);
-    BOOST_CHECK_EQUAL(epsilon_decay->_scored_configs[2][2].get_score_idx(), 2);
-    BOOST_CHECK_EQUAL(epsilon_decay->_scored_configs[3][2].get_score_idx(), 1);
-    BOOST_CHECK_EQUAL(epsilon_decay->_scored_configs[3][3].get_score_idx(), 5);
     return true;
   });
 
@@ -112,16 +92,16 @@ BOOST_AUTO_TEST_CASE(epsilon_decay_test_update_count)
 
   test_hooks.emplace(100, [&](cb_sim&, VW::workspace& all, VW::multi_ex&) {
     epsilon_decay_data* epsilon_decay = epsilon_decay_test::get_epsilon_decay_data(all);
-    BOOST_CHECK_EQUAL(epsilon_decay->_scored_configs[0][0].get_score_idx(), 0);
-    BOOST_CHECK_EQUAL(epsilon_decay->_scored_configs[1][0].get_score_idx(), 1);
-    BOOST_CHECK_EQUAL(epsilon_decay->_scored_configs[1][1].get_score_idx(), 2);
-    BOOST_CHECK_EQUAL(epsilon_decay->_scored_configs[2][0].get_score_idx(), 3);
-    BOOST_CHECK_EQUAL(epsilon_decay->_scored_configs[2][1].get_score_idx(), 4);
-    BOOST_CHECK_EQUAL(epsilon_decay->_scored_configs[2][2].get_score_idx(), 5);
-    BOOST_CHECK_EQUAL(epsilon_decay->_scored_configs[3][0].get_score_idx(), 6);
-    BOOST_CHECK_EQUAL(epsilon_decay->_scored_configs[3][1].get_score_idx(), 7);
-    BOOST_CHECK_EQUAL(epsilon_decay->_scored_configs[3][2].get_score_idx(), 8);
-    BOOST_CHECK_EQUAL(epsilon_decay->_scored_configs[3][3].get_score_idx(), 9);
+    BOOST_CHECK_EQUAL(epsilon_decay->_scored_configs[0][0].update_count, 100);
+    BOOST_CHECK_EQUAL(epsilon_decay->_scored_configs[1][0].update_count, 100);
+    BOOST_CHECK_EQUAL(epsilon_decay->_scored_configs[1][1].update_count, 100);
+    BOOST_CHECK_EQUAL(epsilon_decay->_scored_configs[2][0].update_count, 100);
+    BOOST_CHECK_EQUAL(epsilon_decay->_scored_configs[2][1].update_count, 100);
+    BOOST_CHECK_EQUAL(epsilon_decay->_scored_configs[2][2].update_count, 100);
+    BOOST_CHECK_EQUAL(epsilon_decay->_scored_configs[3][0].update_count, 100);
+    BOOST_CHECK_EQUAL(epsilon_decay->_scored_configs[3][1].update_count, 100);
+    BOOST_CHECK_EQUAL(epsilon_decay->_scored_configs[3][2].update_count, 100);
+    BOOST_CHECK_EQUAL(epsilon_decay->_scored_configs[3][3].update_count, 100);
     BOOST_CHECK_EQUAL(epsilon_decay->_weight_indices[0], 0);
     BOOST_CHECK_EQUAL(epsilon_decay->_weight_indices[1], 1);
     BOOST_CHECK_EQUAL(epsilon_decay->_weight_indices[2], 2);
@@ -131,16 +111,16 @@ BOOST_AUTO_TEST_CASE(epsilon_decay_test_update_count)
 
   test_hooks.emplace(101, [&](cb_sim&, VW::workspace& all, VW::multi_ex&) {
     epsilon_decay_data* epsilon_decay = epsilon_decay_test::get_epsilon_decay_data(all);
-    BOOST_CHECK_EQUAL(epsilon_decay->_scored_configs[0][0].get_score_idx(), 0);
-    BOOST_CHECK_EQUAL(epsilon_decay->_scored_configs[1][0].get_score_idx(), 1);
-    BOOST_CHECK_EQUAL(epsilon_decay->_scored_configs[1][1].get_score_idx(), 2);
-    BOOST_CHECK_EQUAL(epsilon_decay->_scored_configs[2][0].get_score_idx(), 3);
-    BOOST_CHECK_EQUAL(epsilon_decay->_scored_configs[2][1].get_score_idx(), 4);
-    BOOST_CHECK_EQUAL(epsilon_decay->_scored_configs[2][2].get_score_idx(), 5);
-    BOOST_CHECK_EQUAL(epsilon_decay->_scored_configs[3][0].get_score_idx(), 6);
-    BOOST_CHECK_EQUAL(epsilon_decay->_scored_configs[3][1].get_score_idx(), 7);
-    BOOST_CHECK_EQUAL(epsilon_decay->_scored_configs[3][2].get_score_idx(), 8);
-    BOOST_CHECK_EQUAL(epsilon_decay->_scored_configs[3][3].get_score_idx(), 9);
+    BOOST_CHECK_EQUAL(epsilon_decay->_scored_configs[0][0].update_count, 0);
+    BOOST_CHECK_EQUAL(epsilon_decay->_scored_configs[1][0].update_count, 0);
+    BOOST_CHECK_EQUAL(epsilon_decay->_scored_configs[1][1].update_count, 101);
+    BOOST_CHECK_EQUAL(epsilon_decay->_scored_configs[2][0].update_count, 0);
+    BOOST_CHECK_EQUAL(epsilon_decay->_scored_configs[2][1].update_count, 101);
+    BOOST_CHECK_EQUAL(epsilon_decay->_scored_configs[2][2].update_count, 101);
+    BOOST_CHECK_EQUAL(epsilon_decay->_scored_configs[3][0].update_count, 0);
+    BOOST_CHECK_EQUAL(epsilon_decay->_scored_configs[3][1].update_count, 101);
+    BOOST_CHECK_EQUAL(epsilon_decay->_scored_configs[3][2].update_count, 101);
+    BOOST_CHECK_EQUAL(epsilon_decay->_scored_configs[3][3].update_count, 101);
     BOOST_CHECK_EQUAL(epsilon_decay->_weight_indices[0], 0);
     BOOST_CHECK_EQUAL(epsilon_decay->_weight_indices[1], 1);
     BOOST_CHECK_EQUAL(epsilon_decay->_weight_indices[2], 2);
@@ -150,16 +130,16 @@ BOOST_AUTO_TEST_CASE(epsilon_decay_test_update_count)
 
   test_hooks.emplace(102, [&](cb_sim&, VW::workspace& all, VW::multi_ex&) {
     epsilon_decay_data* epsilon_decay = epsilon_decay_test::get_epsilon_decay_data(all);
-    BOOST_CHECK_EQUAL(epsilon_decay->_scored_configs[0][0].get_score_idx(), 2);
-    BOOST_CHECK_EQUAL(epsilon_decay->_scored_configs[1][0].get_score_idx(), 1);
-    BOOST_CHECK_EQUAL(epsilon_decay->_scored_configs[1][1].get_score_idx(), 0);
-    BOOST_CHECK_EQUAL(epsilon_decay->_scored_configs[2][0].get_score_idx(), 4);
-    BOOST_CHECK_EQUAL(epsilon_decay->_scored_configs[2][1].get_score_idx(), 3);
-    BOOST_CHECK_EQUAL(epsilon_decay->_scored_configs[2][2].get_score_idx(), 5);
-    BOOST_CHECK_EQUAL(epsilon_decay->_scored_configs[3][0].get_score_idx(), 7);
-    BOOST_CHECK_EQUAL(epsilon_decay->_scored_configs[3][1].get_score_idx(), 6);
-    BOOST_CHECK_EQUAL(epsilon_decay->_scored_configs[3][2].get_score_idx(), 8);
-    BOOST_CHECK_EQUAL(epsilon_decay->_scored_configs[3][3].get_score_idx(), 9);
+    BOOST_CHECK_EQUAL(epsilon_decay->_scored_configs[0][0].update_count, 0);
+    BOOST_CHECK_EQUAL(epsilon_decay->_scored_configs[1][0].update_count, 0);
+    BOOST_CHECK_EQUAL(epsilon_decay->_scored_configs[1][1].update_count, 1);
+    BOOST_CHECK_EQUAL(epsilon_decay->_scored_configs[2][0].update_count, 0);
+    BOOST_CHECK_EQUAL(epsilon_decay->_scored_configs[2][1].update_count, 1);
+    BOOST_CHECK_EQUAL(epsilon_decay->_scored_configs[2][2].update_count, 102);
+    BOOST_CHECK_EQUAL(epsilon_decay->_scored_configs[3][0].update_count, 0);
+    BOOST_CHECK_EQUAL(epsilon_decay->_scored_configs[3][1].update_count, 1);
+    BOOST_CHECK_EQUAL(epsilon_decay->_scored_configs[3][2].update_count, 102);
+    BOOST_CHECK_EQUAL(epsilon_decay->_scored_configs[3][3].update_count, 102);
     BOOST_CHECK_EQUAL(epsilon_decay->_weight_indices[0], 1);
     BOOST_CHECK_EQUAL(epsilon_decay->_weight_indices[1], 0);
     BOOST_CHECK_EQUAL(epsilon_decay->_weight_indices[2], 2);
@@ -169,16 +149,16 @@ BOOST_AUTO_TEST_CASE(epsilon_decay_test_update_count)
 
   test_hooks.emplace(103, [&](cb_sim&, VW::workspace& all, VW::multi_ex&) {
     epsilon_decay_data* epsilon_decay = epsilon_decay_test::get_epsilon_decay_data(all);
-    BOOST_CHECK_EQUAL(epsilon_decay->_scored_configs[0][0].get_score_idx(), 5);
-    BOOST_CHECK_EQUAL(epsilon_decay->_scored_configs[1][0].get_score_idx(), 3);
-    BOOST_CHECK_EQUAL(epsilon_decay->_scored_configs[1][1].get_score_idx(), 2);
-    BOOST_CHECK_EQUAL(epsilon_decay->_scored_configs[2][0].get_score_idx(), 4);
-    BOOST_CHECK_EQUAL(epsilon_decay->_scored_configs[2][1].get_score_idx(), 1);
-    BOOST_CHECK_EQUAL(epsilon_decay->_scored_configs[2][2].get_score_idx(), 0);
-    BOOST_CHECK_EQUAL(epsilon_decay->_scored_configs[3][0].get_score_idx(), 8);
-    BOOST_CHECK_EQUAL(epsilon_decay->_scored_configs[3][1].get_score_idx(), 7);
-    BOOST_CHECK_EQUAL(epsilon_decay->_scored_configs[3][2].get_score_idx(), 6);
-    BOOST_CHECK_EQUAL(epsilon_decay->_scored_configs[3][3].get_score_idx(), 9);
+    BOOST_CHECK_EQUAL(epsilon_decay->_scored_configs[0][0].update_count, 0);
+    BOOST_CHECK_EQUAL(epsilon_decay->_scored_configs[1][0].update_count, 0);
+    BOOST_CHECK_EQUAL(epsilon_decay->_scored_configs[1][1].update_count, 1);
+    BOOST_CHECK_EQUAL(epsilon_decay->_scored_configs[2][0].update_count, 0);
+    BOOST_CHECK_EQUAL(epsilon_decay->_scored_configs[2][1].update_count, 1);
+    BOOST_CHECK_EQUAL(epsilon_decay->_scored_configs[2][2].update_count, 2);
+    BOOST_CHECK_EQUAL(epsilon_decay->_scored_configs[3][0].update_count, 0);
+    BOOST_CHECK_EQUAL(epsilon_decay->_scored_configs[3][1].update_count, 1);
+    BOOST_CHECK_EQUAL(epsilon_decay->_scored_configs[3][2].update_count, 2);
+    BOOST_CHECK_EQUAL(epsilon_decay->_scored_configs[3][3].update_count, 103);
     BOOST_CHECK_EQUAL(epsilon_decay->_weight_indices[0], 2);
     BOOST_CHECK_EQUAL(epsilon_decay->_weight_indices[1], 1);
     BOOST_CHECK_EQUAL(epsilon_decay->_weight_indices[2], 0);
@@ -188,16 +168,16 @@ BOOST_AUTO_TEST_CASE(epsilon_decay_test_update_count)
 
   test_hooks.emplace(104, [&](cb_sim&, VW::workspace& all, VW::multi_ex&) {
     epsilon_decay_data* epsilon_decay = epsilon_decay_test::get_epsilon_decay_data(all);
-    BOOST_CHECK_EQUAL(epsilon_decay->_scored_configs[0][0].get_score_idx(), 5);
-    BOOST_CHECK_EQUAL(epsilon_decay->_scored_configs[1][0].get_score_idx(), 3);
-    BOOST_CHECK_EQUAL(epsilon_decay->_scored_configs[1][1].get_score_idx(), 2);
-    BOOST_CHECK_EQUAL(epsilon_decay->_scored_configs[2][0].get_score_idx(), 4);
-    BOOST_CHECK_EQUAL(epsilon_decay->_scored_configs[2][1].get_score_idx(), 1);
-    BOOST_CHECK_EQUAL(epsilon_decay->_scored_configs[2][2].get_score_idx(), 0);
-    BOOST_CHECK_EQUAL(epsilon_decay->_scored_configs[3][0].get_score_idx(), 8);
-    BOOST_CHECK_EQUAL(epsilon_decay->_scored_configs[3][1].get_score_idx(), 7);
-    BOOST_CHECK_EQUAL(epsilon_decay->_scored_configs[3][2].get_score_idx(), 6);
-    BOOST_CHECK_EQUAL(epsilon_decay->_scored_configs[3][3].get_score_idx(), 9);
+    BOOST_CHECK_EQUAL(epsilon_decay->_scored_configs[0][0].update_count, 1);
+    BOOST_CHECK_EQUAL(epsilon_decay->_scored_configs[1][0].update_count, 1);
+    BOOST_CHECK_EQUAL(epsilon_decay->_scored_configs[1][1].update_count, 2);
+    BOOST_CHECK_EQUAL(epsilon_decay->_scored_configs[2][0].update_count, 1);
+    BOOST_CHECK_EQUAL(epsilon_decay->_scored_configs[2][1].update_count, 2);
+    BOOST_CHECK_EQUAL(epsilon_decay->_scored_configs[2][2].update_count, 3);
+    BOOST_CHECK_EQUAL(epsilon_decay->_scored_configs[3][0].update_count, 1);
+    BOOST_CHECK_EQUAL(epsilon_decay->_scored_configs[3][1].update_count, 2);
+    BOOST_CHECK_EQUAL(epsilon_decay->_scored_configs[3][2].update_count, 3);
+    BOOST_CHECK_EQUAL(epsilon_decay->_scored_configs[3][3].update_count, 104);
     BOOST_CHECK_EQUAL(epsilon_decay->_weight_indices[0], 2);
     BOOST_CHECK_EQUAL(epsilon_decay->_weight_indices[1], 1);
     BOOST_CHECK_EQUAL(epsilon_decay->_weight_indices[2], 0);
@@ -232,14 +212,26 @@ BOOST_AUTO_TEST_CASE(epsilon_decay_test_save_load)
 BOOST_AUTO_TEST_CASE(epsilon_decay_test_score_bounds_unit)
 {
   // Initialize epsilon_decay_data struct with 5 models
-  uint64_t K = 5;
-  dense_parameters dense_weights(K);
+  uint64_t num_models = 5;
+  dense_parameters dense_weights(num_models);
   VW::io::logger logger = VW::io::create_default_logger();
-  epsilon_decay_data ep_data(K, 100, .05, .1, dense_weights, logger, false, false);
+  epsilon_decay_data ep_data(num_models, 100, .05, .1, dense_weights, logger, false, false);
+
+  // Set update counts to fixed values with expected horizon bound violation
+  size_t score_idx = 0;
+  uint64_t over_horizon = 2;
+  for (uint64_t model_ind = 0; model_ind < num_models; ++model_ind)
+  {
+    for (uint64_t score_ind = 0; score_ind <= model_ind; ++score_ind)
+    {
+      ep_data._scored_configs[model_ind][score_ind].update_count = score_idx;
+      ++score_idx;
+    }
+  }
 
   /*
    * Check that score and weight indices are in expected start positions:
-   * WX denotes weight index X, and other indices denote score index
+   * W_i denotes weight index i, and other indices denote update_count
    *
    * W0: 0
    * W1: 1  2
@@ -248,21 +240,21 @@ BOOST_AUTO_TEST_CASE(epsilon_decay_test_score_bounds_unit)
    * W4: 10 11 12 13 14
    *
    */
-  BOOST_CHECK_EQUAL(ep_data._scored_configs[0][0].get_score_idx(), 0);
-  BOOST_CHECK_EQUAL(ep_data._scored_configs[1][0].get_score_idx(), 1);
-  BOOST_CHECK_EQUAL(ep_data._scored_configs[1][1].get_score_idx(), 2);
-  BOOST_CHECK_EQUAL(ep_data._scored_configs[2][0].get_score_idx(), 3);
-  BOOST_CHECK_EQUAL(ep_data._scored_configs[2][1].get_score_idx(), 4);
-  BOOST_CHECK_EQUAL(ep_data._scored_configs[2][2].get_score_idx(), 5);
-  BOOST_CHECK_EQUAL(ep_data._scored_configs[3][0].get_score_idx(), 6);
-  BOOST_CHECK_EQUAL(ep_data._scored_configs[3][1].get_score_idx(), 7);
-  BOOST_CHECK_EQUAL(ep_data._scored_configs[3][2].get_score_idx(), 8);
-  BOOST_CHECK_EQUAL(ep_data._scored_configs[3][3].get_score_idx(), 9);
-  BOOST_CHECK_EQUAL(ep_data._scored_configs[4][0].get_score_idx(), 10);
-  BOOST_CHECK_EQUAL(ep_data._scored_configs[4][1].get_score_idx(), 11);
-  BOOST_CHECK_EQUAL(ep_data._scored_configs[4][2].get_score_idx(), 12);
-  BOOST_CHECK_EQUAL(ep_data._scored_configs[4][3].get_score_idx(), 13);
-  BOOST_CHECK_EQUAL(ep_data._scored_configs[4][4].get_score_idx(), 14);
+  BOOST_CHECK_EQUAL(ep_data._scored_configs[0][0].update_count, 0);
+  BOOST_CHECK_EQUAL(ep_data._scored_configs[1][0].update_count, 1);
+  BOOST_CHECK_EQUAL(ep_data._scored_configs[1][1].update_count, 2);
+  BOOST_CHECK_EQUAL(ep_data._scored_configs[2][0].update_count, 3);
+  BOOST_CHECK_EQUAL(ep_data._scored_configs[2][1].update_count, 4);
+  BOOST_CHECK_EQUAL(ep_data._scored_configs[2][2].update_count, 5);
+  BOOST_CHECK_EQUAL(ep_data._scored_configs[3][0].update_count, 6);
+  BOOST_CHECK_EQUAL(ep_data._scored_configs[3][1].update_count, 7);
+  BOOST_CHECK_EQUAL(ep_data._scored_configs[3][2].update_count, 8);
+  BOOST_CHECK_EQUAL(ep_data._scored_configs[3][3].update_count, 9);
+  BOOST_CHECK_EQUAL(ep_data._scored_configs[4][0].update_count, 10);
+  BOOST_CHECK_EQUAL(ep_data._scored_configs[4][1].update_count, 11);
+  BOOST_CHECK_EQUAL(ep_data._scored_configs[4][2].update_count, 12);
+  BOOST_CHECK_EQUAL(ep_data._scored_configs[4][3].update_count, 13);
+  BOOST_CHECK_EQUAL(ep_data._scored_configs[4][4].update_count, 14);
   BOOST_CHECK_EQUAL(ep_data._weight_indices[0], 0);
   BOOST_CHECK_EQUAL(ep_data._weight_indices[1], 1);
   BOOST_CHECK_EQUAL(ep_data._weight_indices[2], 2);
@@ -273,35 +265,27 @@ BOOST_AUTO_TEST_CASE(epsilon_decay_test_score_bounds_unit)
   uint64_t new_champ = 2;
   ep_data._scored_configs[new_champ][new_champ]._lower_bound = 1;
   BOOST_CHECK_GT(ep_data._scored_configs[new_champ][new_champ].get_lower_bound(),
-      ep_data._scored_configs[K - 1][new_champ].get_upper_bound());
+      ep_data._scored_configs[num_models - 1][new_champ].get_upper_bound());
   ep_data.check_score_bounds();
 
   /*
    * Check that weight and score indices shift as expected when model 2 overtakes champion:
-   * WX denotes weight index X, and other indices denote score index
+   * W_i denotes weight index i, and other indices denote update_count. Scores
+   * marked with X have been removed and have garbage values.
    *
-   * W4: 14
-   * W3: 8  9
-   * W0: 12 13 0
-   * W1: 6  7  1  2
-   * W2: 10 11 3  4  5
+   * W4: X
+   * W3: X  X
+   * W0: X  X  0
+   * W1: X  X  1  2
+   * W2: X  X  3  4  5
    *
    */
-  BOOST_CHECK_EQUAL(ep_data._scored_configs[0][0].get_score_idx(), 14);
-  BOOST_CHECK_EQUAL(ep_data._scored_configs[1][0].get_score_idx(), 8);
-  BOOST_CHECK_EQUAL(ep_data._scored_configs[1][1].get_score_idx(), 9);
-  BOOST_CHECK_EQUAL(ep_data._scored_configs[2][0].get_score_idx(), 12);
-  BOOST_CHECK_EQUAL(ep_data._scored_configs[2][1].get_score_idx(), 13);
-  BOOST_CHECK_EQUAL(ep_data._scored_configs[2][2].get_score_idx(), 0);
-  BOOST_CHECK_EQUAL(ep_data._scored_configs[3][0].get_score_idx(), 6);
-  BOOST_CHECK_EQUAL(ep_data._scored_configs[3][1].get_score_idx(), 7);
-  BOOST_CHECK_EQUAL(ep_data._scored_configs[3][2].get_score_idx(), 1);
-  BOOST_CHECK_EQUAL(ep_data._scored_configs[3][3].get_score_idx(), 2);
-  BOOST_CHECK_EQUAL(ep_data._scored_configs[4][0].get_score_idx(), 10);
-  BOOST_CHECK_EQUAL(ep_data._scored_configs[4][1].get_score_idx(), 11);
-  BOOST_CHECK_EQUAL(ep_data._scored_configs[4][2].get_score_idx(), 3);
-  BOOST_CHECK_EQUAL(ep_data._scored_configs[4][3].get_score_idx(), 4);
-  BOOST_CHECK_EQUAL(ep_data._scored_configs[4][4].get_score_idx(), 5);
+  BOOST_CHECK_EQUAL(ep_data._scored_configs[2][2].update_count, 0);
+  BOOST_CHECK_EQUAL(ep_data._scored_configs[3][2].update_count, 1);
+  BOOST_CHECK_EQUAL(ep_data._scored_configs[3][3].update_count, 2);
+  BOOST_CHECK_EQUAL(ep_data._scored_configs[4][2].update_count, 3);
+  BOOST_CHECK_EQUAL(ep_data._scored_configs[4][3].update_count, 4);
+  BOOST_CHECK_EQUAL(ep_data._scored_configs[4][4].update_count, 5);
   BOOST_CHECK_EQUAL(ep_data._weight_indices[0], 4);
   BOOST_CHECK_EQUAL(ep_data._weight_indices[1], 3);
   BOOST_CHECK_EQUAL(ep_data._weight_indices[2], 0);
@@ -312,37 +296,52 @@ BOOST_AUTO_TEST_CASE(epsilon_decay_test_score_bounds_unit)
 BOOST_AUTO_TEST_CASE(epsilon_decay_test_horizon_bounds_unit)
 {
   // Initialize epsilon_decay_data struct with 5 models
-  uint64_t K = 5;
-  dense_parameters dense_weights(K);
+  uint64_t num_models = 5;
+  dense_parameters dense_weights(num_models);
   VW::io::logger logger = VW::io::create_default_logger();
-  epsilon_decay_data ep_data(K, 100, .05, .1, dense_weights, logger, false, false);
+  epsilon_decay_data ep_data(num_models, 100, .05, .1, dense_weights, logger, false, false);
+
+  // Set update counts to fixed values with expected horizon bound violation
+  size_t score_idx = 0;
+  uint64_t over_horizon = 2;
+  for (uint64_t model_ind = 0; model_ind < num_models; ++model_ind)
+  {
+    for (uint64_t score_ind = 0; score_ind <= model_ind; ++score_ind)
+    {
+      ep_data._scored_configs[model_ind][score_ind].update_count = score_idx;
+      ++score_idx;
+    }
+  }
+  // Set specific update_counts so model 2 in removed
+  ep_data._scored_configs[over_horizon][over_horizon].update_count = 500;
+  ep_data._scored_configs[num_models - 1][num_models - 1].update_count = 1000;
 
   /*
    * Check that score and weight indices are in expected start positions:
-   * WX denotes weight index X, and other indices denote score index
+   * W_i denotes weight index i, and other indices denote update_count
    *
    * W0: 0
    * W1: 1  2
-   * W2: 3  4  5
+   * W2: 3  4  500
    * W3: 6  7  8  9
-   * W4: 10 11 12 13 14
+   * W4: 10 11 12 13 1000
    *
    */
-  BOOST_CHECK_EQUAL(ep_data._scored_configs[0][0].get_score_idx(), 0);
-  BOOST_CHECK_EQUAL(ep_data._scored_configs[1][0].get_score_idx(), 1);
-  BOOST_CHECK_EQUAL(ep_data._scored_configs[1][1].get_score_idx(), 2);
-  BOOST_CHECK_EQUAL(ep_data._scored_configs[2][0].get_score_idx(), 3);
-  BOOST_CHECK_EQUAL(ep_data._scored_configs[2][1].get_score_idx(), 4);
-  BOOST_CHECK_EQUAL(ep_data._scored_configs[2][2].get_score_idx(), 5);
-  BOOST_CHECK_EQUAL(ep_data._scored_configs[3][0].get_score_idx(), 6);
-  BOOST_CHECK_EQUAL(ep_data._scored_configs[3][1].get_score_idx(), 7);
-  BOOST_CHECK_EQUAL(ep_data._scored_configs[3][2].get_score_idx(), 8);
-  BOOST_CHECK_EQUAL(ep_data._scored_configs[3][3].get_score_idx(), 9);
-  BOOST_CHECK_EQUAL(ep_data._scored_configs[4][0].get_score_idx(), 10);
-  BOOST_CHECK_EQUAL(ep_data._scored_configs[4][1].get_score_idx(), 11);
-  BOOST_CHECK_EQUAL(ep_data._scored_configs[4][2].get_score_idx(), 12);
-  BOOST_CHECK_EQUAL(ep_data._scored_configs[4][3].get_score_idx(), 13);
-  BOOST_CHECK_EQUAL(ep_data._scored_configs[4][4].get_score_idx(), 14);
+  BOOST_CHECK_EQUAL(ep_data._scored_configs[0][0].update_count, 0);
+  BOOST_CHECK_EQUAL(ep_data._scored_configs[1][0].update_count, 1);
+  BOOST_CHECK_EQUAL(ep_data._scored_configs[1][1].update_count, 2);
+  BOOST_CHECK_EQUAL(ep_data._scored_configs[2][0].update_count, 3);
+  BOOST_CHECK_EQUAL(ep_data._scored_configs[2][1].update_count, 4);
+  BOOST_CHECK_EQUAL(ep_data._scored_configs[2][2].update_count, 500);
+  BOOST_CHECK_EQUAL(ep_data._scored_configs[3][0].update_count, 6);
+  BOOST_CHECK_EQUAL(ep_data._scored_configs[3][1].update_count, 7);
+  BOOST_CHECK_EQUAL(ep_data._scored_configs[3][2].update_count, 8);
+  BOOST_CHECK_EQUAL(ep_data._scored_configs[3][3].update_count, 9);
+  BOOST_CHECK_EQUAL(ep_data._scored_configs[4][0].update_count, 10);
+  BOOST_CHECK_EQUAL(ep_data._scored_configs[4][1].update_count, 11);
+  BOOST_CHECK_EQUAL(ep_data._scored_configs[4][2].update_count, 12);
+  BOOST_CHECK_EQUAL(ep_data._scored_configs[4][3].update_count, 13);
+  BOOST_CHECK_EQUAL(ep_data._scored_configs[4][4].update_count, 1000);
   BOOST_CHECK_EQUAL(ep_data._weight_indices[0], 0);
   BOOST_CHECK_EQUAL(ep_data._weight_indices[1], 1);
   BOOST_CHECK_EQUAL(ep_data._weight_indices[2], 2);
@@ -350,39 +349,32 @@ BOOST_AUTO_TEST_CASE(epsilon_decay_test_horizon_bounds_unit)
   BOOST_CHECK_EQUAL(ep_data._weight_indices[4], 4);
 
   // Set update_count of model 2 to be above threshold horizon based on champion
-  uint64_t over_horizon = 2;
-  ep_data._scored_configs[over_horizon][over_horizon].update_count = 500;
-  ep_data._scored_configs[K - 1][K - 1].update_count = 1000;
   BOOST_CHECK_GT(ep_data._scored_configs[over_horizon][over_horizon].update_count,
-      std::pow(ep_data._scored_configs[K - 1][K - 1].update_count, static_cast<float>(over_horizon + 1) / K));
+      std::pow(ep_data._scored_configs[num_models - 1][num_models - 1].update_count, static_cast<float>(over_horizon + 1) / num_models));
   ep_data.check_horizon_bounds();
 
   /*
    * Check that weight and score indices shift as expected when model 2 overtakes champion:
-   * WX denotes weight index X, and other indices denote score index
+   * W_i denotes weight index i, and other indices denote update_count. Scores
+   * marked with X have been removed and have garbage values.
    *
-   * W2: 5
-   * W0: 4  0
-   * W1: 3  1  2
-   * W3: 8  6  7  9
-   * W4: 12 10 11 13 14
+   * W2: X
+   * W0: X  0
+   * W1: X  1  2
+   * W3: X  6  7  9
+   * W4: X  10 11 13 1000
    *
    */
-  BOOST_CHECK_EQUAL(ep_data._scored_configs[0][0].get_score_idx(), 5);
-  BOOST_CHECK_EQUAL(ep_data._scored_configs[1][0].get_score_idx(), 4);
-  BOOST_CHECK_EQUAL(ep_data._scored_configs[1][1].get_score_idx(), 0);
-  BOOST_CHECK_EQUAL(ep_data._scored_configs[2][0].get_score_idx(), 3);
-  BOOST_CHECK_EQUAL(ep_data._scored_configs[2][1].get_score_idx(), 1);
-  BOOST_CHECK_EQUAL(ep_data._scored_configs[2][2].get_score_idx(), 2);
-  BOOST_CHECK_EQUAL(ep_data._scored_configs[3][0].get_score_idx(), 8);
-  BOOST_CHECK_EQUAL(ep_data._scored_configs[3][1].get_score_idx(), 6);
-  BOOST_CHECK_EQUAL(ep_data._scored_configs[3][2].get_score_idx(), 7);
-  BOOST_CHECK_EQUAL(ep_data._scored_configs[3][3].get_score_idx(), 9);
-  BOOST_CHECK_EQUAL(ep_data._scored_configs[4][0].get_score_idx(), 12);
-  BOOST_CHECK_EQUAL(ep_data._scored_configs[4][1].get_score_idx(), 10);
-  BOOST_CHECK_EQUAL(ep_data._scored_configs[4][2].get_score_idx(), 11);
-  BOOST_CHECK_EQUAL(ep_data._scored_configs[4][3].get_score_idx(), 13);
-  BOOST_CHECK_EQUAL(ep_data._scored_configs[4][4].get_score_idx(), 14);
+  BOOST_CHECK_EQUAL(ep_data._scored_configs[1][1].update_count, 0);
+  BOOST_CHECK_EQUAL(ep_data._scored_configs[2][1].update_count, 1);
+  BOOST_CHECK_EQUAL(ep_data._scored_configs[2][2].update_count, 2);
+  BOOST_CHECK_EQUAL(ep_data._scored_configs[3][1].update_count, 6);
+  BOOST_CHECK_EQUAL(ep_data._scored_configs[3][2].update_count, 7);
+  BOOST_CHECK_EQUAL(ep_data._scored_configs[3][3].update_count, 9);
+  BOOST_CHECK_EQUAL(ep_data._scored_configs[4][1].update_count, 10);
+  BOOST_CHECK_EQUAL(ep_data._scored_configs[4][2].update_count, 11);
+  BOOST_CHECK_EQUAL(ep_data._scored_configs[4][3].update_count, 13);
+  BOOST_CHECK_EQUAL(ep_data._scored_configs[4][4].update_count, 1000);
   BOOST_CHECK_EQUAL(ep_data._weight_indices[0], 2);
   BOOST_CHECK_EQUAL(ep_data._weight_indices[1], 0);
   BOOST_CHECK_EQUAL(ep_data._weight_indices[2], 1);

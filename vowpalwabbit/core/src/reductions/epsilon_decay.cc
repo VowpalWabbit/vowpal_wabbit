@@ -12,6 +12,7 @@
 #include "vw/core/model_utils.h"
 #include "vw/core/prediction_type.h"
 #include "vw/core/vw.h"
+#include <utility>
 
 using namespace VW::config;
 using namespace VW::LEARNER;
@@ -43,7 +44,7 @@ float decayed_epsilon(uint64_t update_count) { return static_cast<float>(std::po
 
 void epsilon_decay_data::update_weights(VW::LEARNER::multi_learner& base, VW::multi_ex& examples)
 {
-  auto K = static_cast<int64_t>(_scored_configs.size());
+  auto num_models = static_cast<int64_t>(_scored_configs.size());
   CB::cb_class logged{};
   uint64_t labelled_action = 0;
   const auto it =
@@ -57,7 +58,7 @@ void epsilon_decay_data::update_weights(VW::LEARNER::multi_learner& base, VW::mu
   const float r = -logged.cost;
   auto& ep_fts = examples[0]->_reduction_features.template get<VW::cb_explore_adf::greedy::reduction_features>();
   // Process each model, then update the upper/lower bounds for each model
-  for (int64_t i = 0; i < K; ++i)
+  for (int64_t i = 0; i < num_models; ++i)
   {
     if (!_constant_epsilon)
     { ep_fts.epsilon = VW::reductions::epsilon_decay::decayed_epsilon(_scored_configs[i][i].update_count); }
@@ -75,43 +76,66 @@ void epsilon_decay_data::update_weights(VW::LEARNER::multi_learner& base, VW::mu
   }
 }
 
+// Promote model and all those lower with distance swap_dist
+void epsilon_decay_data::promote_model(int64_t model_ind, int64_t swap_dist)
+{
+  for (; model_ind >= 0; --model_ind)
+  {
+    for (int64_t score_ind = 0; score_ind < model_ind + 1; ++score_ind)
+    {
+      _scored_configs[model_ind + swap_dist][score_ind + swap_dist] = std::move(_scored_configs[model_ind][score_ind]);
+    }
+    std::swap(_weight_indices[model_ind + swap_dist], _weight_indices[model_ind]);
+  }
+}
+
+// Rebalance greater models to match lower shifted models
+void epsilon_decay_data::rebalance_greater_models(int64_t model_ind, int64_t swap_dist, int64_t num_models)
+{
+    int64_t greater_model = model_ind + swap_dist + 1;
+    for (int64_t curr_mod = greater_model; curr_mod < num_models; ++curr_mod)
+    {
+      for (int64_t score_ind = greater_model - swap_dist; score_ind > 0; --score_ind)
+      { _scored_configs[curr_mod][score_ind] = std::move(_scored_configs[curr_mod][score_ind - swap_dist]); }
+    }
+}
+
+// Clear values in removed weights and scores
+void epsilon_decay_data::clear_weights_and_scores(int64_t swap_dist, int64_t num_models)
+{
+  uint64_t params_per_weight = 1;
+  while (params_per_weight < static_cast<uint64_t>(num_models)) { params_per_weight *= 2; }
+  for (int64_t model_ind = 0; model_ind < num_models; ++model_ind)
+  {
+    for (int64_t score_ind = 0;
+          score_ind < std::min(static_cast<int64_t>(_scored_configs[model_ind].size()), swap_dist); ++score_ind)
+    { _scored_configs[model_ind][score_ind].reset_stats(_epsilon_decay_alpha, _epsilon_decay_tau); }
+  }
+  for (int64_t ind = 0; ind < swap_dist; ++ind) { _weights.clear_offset(_weight_indices[ind], params_per_weight); }
+}
+
+void epsilon_decay_data::shift_model(int64_t model_ind, int64_t swap_dist, int64_t num_models)
+{
+  promote_model(model_ind, swap_dist);
+  rebalance_greater_models(model_ind, swap_dist, num_models);
+  clear_weights_and_scores(swap_dist, num_models);
+}
+
 void epsilon_decay_data::check_score_bounds()
 {
   // If the lower bound of a model exceeds the upperbound of the champion, migrate the new model as
   // the new champion.
-  auto K = static_cast<int64_t>(_scored_configs.size());
-  for (int64_t i = 0; i < K - 1; ++i)
+  auto num_models = static_cast<int64_t>(_scored_configs.size());
+  for (int64_t i = 0; i < num_models - 1; ++i)
   {
-    if (_scored_configs[i][i].get_lower_bound() > _scored_configs[K - 1][i].get_upper_bound())
+    if (_scored_configs[i][i].get_lower_bound() > _scored_configs[num_models - 1][i].get_upper_bound())
     {
       if (_log_champ_changes)
       {
         _logger.out_info("Champion with update count: {} has changed to challenger with update count: {}",
-            _scored_configs[K - 1][K - 1].update_count, _scored_configs[i][i].update_count);
+            _scored_configs[num_models - 1][num_models - 1].update_count, _scored_configs[i][i].update_count);
       }
-      int64_t swap_dist = K - i - 1;
-
-      // Move new champ and smaller configs to front
-      for (int64_t outer_ind = i; outer_ind >= 0; --outer_ind)
-      {
-        for (int64_t inner_ind = 0; inner_ind < outer_ind + 1; ++inner_ind)
-        {
-          std::swap(
-              _scored_configs[outer_ind][inner_ind], _scored_configs[outer_ind + swap_dist][inner_ind + swap_dist]);
-        }
-        std::swap(_weight_indices[outer_ind], _weight_indices[outer_ind + swap_dist]);
-      }
-
-      // Clear old scores and weights
-      uint64_t params_per_weight = 1;
-      while (params_per_weight < static_cast<uint64_t>(K)) { params_per_weight *= 2; }
-      for (int64_t outer_ind = 0; outer_ind < K; ++outer_ind)
-      {
-        for (int64_t inner_ind = 0;
-             inner_ind < std::min(static_cast<int64_t>(_scored_configs[outer_ind].size()), swap_dist); ++inner_ind)
-        { _scored_configs[outer_ind][inner_ind].reset_stats(_epsilon_decay_alpha, _epsilon_decay_tau); }
-      }
-      for (int64_t ind = 0; ind < swap_dist; ++ind) { _weights.clear_offset(_weight_indices[ind], params_per_weight); }
+      shift_model(i, num_models - i - 1, num_models);
       break;
     }
   }
@@ -121,37 +145,14 @@ void epsilon_decay_data::check_horizon_bounds()
 {
   // Check if any model counts are higher than the champion. If so, shift the model
   // back to the beginning of the list and reset its counts
-  auto K = static_cast<int64_t>(_scored_configs.size());
-  for (int64_t i = 0; i < K - 1; ++i)
+  auto num_models = static_cast<int64_t>(_scored_configs.size());
+  for (int64_t i = 0; i < num_models - 1; ++i)
   {
     if (_scored_configs[i][i].update_count > _min_scope &&
         _scored_configs[i][i].update_count >
-            std::pow(_scored_configs[K - 1][K - 1].update_count, static_cast<float>(i + 1) / K))
+            std::pow(_scored_configs[num_models - 1][num_models - 1].update_count, static_cast<float>(i + 1) / num_models))
     {
-      // Move smaller configs up one position
-      if (i > 0)
-      {
-        for (int64_t outer_ind = i - 1; outer_ind >= 0; --outer_ind)
-        {
-          for (int64_t inner_ind = 0; inner_ind < outer_ind + 1; ++inner_ind)
-          { std::swap(_scored_configs[outer_ind][inner_ind], _scored_configs[outer_ind + 1][inner_ind + 1]); }
-          std::swap(_weight_indices[outer_ind], _weight_indices[outer_ind + 1]);
-        }
-      }
-
-      // Rebalance greater configs
-      for (int64_t outer_ind = i + 1; outer_ind < K; ++outer_ind)
-      {
-        for (int64_t inner_ind = i; inner_ind > 0; --inner_ind)
-        { std::swap(_scored_configs[outer_ind][inner_ind], _scored_configs[outer_ind][inner_ind - 1]); }
-      }
-
-      // Clear old scores and weights
-      uint64_t params_per_weight = 1;
-      while (params_per_weight < static_cast<uint64_t>(K)) { params_per_weight *= 2; }
-      for (int64_t outer_ind = 0; outer_ind < K; ++outer_ind)
-      { _scored_configs[outer_ind][0].reset_stats(_epsilon_decay_alpha, _epsilon_decay_tau); }
-      _weights.clear_offset(_weight_indices[0], params_per_weight);
+      shift_model(i - 1, 1, num_models);
       break;
     }
   }
@@ -166,7 +167,6 @@ size_t read_model_field(io_buf& io, VW::reductions::epsilon_decay::epsilon_decay
   size_t bytes = 0;
   bytes += read_model_field(io, reinterpret_cast<VW::scored_config&>(score));
   bytes += read_model_field(io, score._lower_bound);
-  bytes += read_model_field(io, score._score_idx);
   return bytes;
 }
 
@@ -176,7 +176,6 @@ size_t write_model_field(io_buf& io, const VW::reductions::epsilon_decay::epsilo
   size_t bytes = 0;
   bytes += write_model_field(io, reinterpret_cast<const VW::scored_config&>(score), upstream_name, text);
   bytes += write_model_field(io, score._lower_bound, upstream_name + "_lower_bound", text);
-  bytes += write_model_field(io, score._score_idx, upstream_name + "_score_idx", text);
   return bytes;
 }
 
@@ -203,14 +202,14 @@ namespace
 void predict(
     VW::reductions::epsilon_decay::epsilon_decay_data& data, VW::LEARNER::multi_learner& base, VW::multi_ex& examples)
 {
-  uint64_t K = static_cast<uint64_t>(data._scored_configs.size());
+  uint64_t num_models = static_cast<uint64_t>(data._scored_configs.size());
   if (!data._constant_epsilon)
   {
     auto& ep_fts = examples[0]->_reduction_features.template get<VW::cb_explore_adf::greedy::reduction_features>();
-    const auto& active_score = data._scored_configs[K - 1][K - 1];
+    const auto& active_score = data._scored_configs[num_models - 1][num_models - 1];
     ep_fts.epsilon = VW::reductions::epsilon_decay::decayed_epsilon(active_score.update_count);
   }
-  base.predict(examples, data._weight_indices[K - 1]);
+  base.predict(examples, data._weight_indices[num_models - 1]);
 }
 
 void learn(

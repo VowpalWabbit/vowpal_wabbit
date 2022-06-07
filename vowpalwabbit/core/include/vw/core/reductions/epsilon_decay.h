@@ -22,8 +22,8 @@ namespace epsilon_decay
 struct epsilon_decay_score : scored_config
 {
   epsilon_decay_score() = default;
-  epsilon_decay_score(double alpha, double tau, uint64_t model_idx)
-      : VW::scored_config(alpha, tau), _score_idx(model_idx)
+  epsilon_decay_score(double alpha, double tau)
+      : VW::scored_config(alpha, tau)
   {
   }
   float decayed_epsilon(uint64_t update_count);
@@ -49,16 +49,14 @@ struct epsilon_decay_data
       , _log_champ_changes(log_champ_changes)
       , _constant_epsilon(constant_epsilon)
   {
-    uint64_t model_idx = 0;
     uint64_t weight_idx = 0;
     for (uint64_t i = 0; i < num_configs; ++i)
     {
       std::vector<epsilon_decay_score> score_vec;
       for (uint64_t j = 0; j < i + 1; ++j)
       {
-        epsilon_decay_score s(epsilon_decay_alpha, epsilon_decay_tau, model_idx);
+        epsilon_decay_score s(epsilon_decay_alpha, epsilon_decay_tau);
         score_vec.push_back(s);
-        ++model_idx;
       }
       _scored_configs.push_back(score_vec);
       _weight_indices.push_back(weight_idx);
@@ -67,6 +65,10 @@ struct epsilon_decay_data
   }
 
   void update_weights(VW::LEARNER::multi_learner& base, VW::multi_ex& examples);
+  void promote_model(int64_t model_ind, int64_t swap_dist);
+  void rebalance_greater_models(int64_t model_ind, int64_t swap_dist, int64_t num_models);
+  void clear_weights_and_scores(int64_t swap_dist, int64_t num_models);
+  void shift_model(int64_t model_ind, int64_t swap_dist, int64_t num_models);
   void check_score_bounds();
   void check_horizon_bounds();
 
