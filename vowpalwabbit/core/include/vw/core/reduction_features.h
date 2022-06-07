@@ -3,6 +3,7 @@
 // license as described in the file LICENSE.
 
 #pragma once
+
 #include "ccb_reduction_features.h"
 #include "continuous_actions_reduction_features.h"
 #include "epsilon_reduction_features.h"
@@ -122,7 +123,6 @@ reduction_features::get<VW::generated_interactions::reduction_features>() const
 {
   return _generated_interactions_reduction_features;
 }
-
 }  // namespace VW
 
 using reduction_features VW_DEPRECATED("reduction_features moved into VW namespace") = VW::reduction_features;

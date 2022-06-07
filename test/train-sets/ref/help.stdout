@@ -154,7 +154,8 @@ Output Model Options:
                                             can only be used for prediction (type: bool)
     --save_resume                           This flag is now deprecated and models can continue learning
                                             by default (type: bool)
-    --preserve_performance_counters         Reset performance counters when warmstarting (type: bool)
+    --preserve_performance_counters         Prevent the default behavior of resetting counters when loading
+                                            a model. Has no effect when writing a model. (type: bool)
     --save_per_pass                         Save the model after every pass over data (type: bool)
     --output_feature_regularizer_binary arg Per feature regularization output file (type: str)
     --output_feature_regularizer_text arg   Per feature regularization output file, in text (type: str)
@@ -568,6 +569,8 @@ Weight Options:
                                             action dependent features (type: bool, keep, necessary)
     --large_action_space                    Large action space exploration (type: bool, keep, necessary,
                                             experimental)
+    --full_predictions                      Full representation of the prediction's action probabilities
+                                            (type: bool, experimental)
     --max_actions arg                       Max number of actions to explore (type: uint, default: 50, keep,
                                             experimental)
     --spanner_c arg                         Parameter for computing c-approximate spanner (type: float, default:
