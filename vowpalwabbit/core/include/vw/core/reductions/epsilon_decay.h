@@ -22,10 +22,7 @@ namespace epsilon_decay
 struct epsilon_decay_score : scored_config
 {
   epsilon_decay_score() = default;
-  epsilon_decay_score(double alpha, double tau)
-      : VW::scored_config(alpha, tau)
-  {
-  }
+  epsilon_decay_score(double alpha, double tau) : VW::scored_config(alpha, tau) {}
   float decayed_epsilon(uint64_t update_count);
   float get_upper_bound() const { return this->current_ips(); }
   float get_lower_bound() const { return _lower_bound; }

@@ -350,7 +350,8 @@ BOOST_AUTO_TEST_CASE(epsilon_decay_test_horizon_bounds_unit)
 
   // Set update_count of model 2 to be above threshold horizon based on champion
   BOOST_CHECK_GT(ep_data._scored_configs[over_horizon][over_horizon].update_count,
-      std::pow(ep_data._scored_configs[num_models - 1][num_models - 1].update_count, static_cast<float>(over_horizon + 1) / num_models));
+      std::pow(ep_data._scored_configs[num_models - 1][num_models - 1].update_count,
+          static_cast<float>(over_horizon + 1) / num_models));
   ep_data.check_horizon_bounds();
 
   /*

@@ -12,6 +12,7 @@
 #include "vw/core/model_utils.h"
 #include "vw/core/prediction_type.h"
 #include "vw/core/vw.h"
+
 #include <utility>
 
 using namespace VW::config;
@@ -92,12 +93,12 @@ void epsilon_decay_data::promote_model(int64_t model_ind, int64_t swap_dist)
 // Rebalance greater models to match lower shifted models
 void epsilon_decay_data::rebalance_greater_models(int64_t model_ind, int64_t swap_dist, int64_t num_models)
 {
-    int64_t greater_model = model_ind + swap_dist + 1;
-    for (int64_t curr_mod = greater_model; curr_mod < num_models; ++curr_mod)
-    {
-      for (int64_t score_ind = greater_model - swap_dist; score_ind > 0; --score_ind)
-      { _scored_configs[curr_mod][score_ind] = std::move(_scored_configs[curr_mod][score_ind - swap_dist]); }
-    }
+  int64_t greater_model = model_ind + swap_dist + 1;
+  for (int64_t curr_mod = greater_model; curr_mod < num_models; ++curr_mod)
+  {
+    for (int64_t score_ind = greater_model - swap_dist; score_ind > 0; --score_ind)
+    { _scored_configs[curr_mod][score_ind] = std::move(_scored_configs[curr_mod][score_ind - swap_dist]); }
+  }
 }
 
 // Clear values in removed weights and scores
@@ -108,7 +109,7 @@ void epsilon_decay_data::clear_weights_and_scores(int64_t swap_dist, int64_t num
   for (int64_t model_ind = 0; model_ind < num_models; ++model_ind)
   {
     for (int64_t score_ind = 0;
-          score_ind < std::min(static_cast<int64_t>(_scored_configs[model_ind].size()), swap_dist); ++score_ind)
+         score_ind < std::min(static_cast<int64_t>(_scored_configs[model_ind].size()), swap_dist); ++score_ind)
     { _scored_configs[model_ind][score_ind].reset_stats(_epsilon_decay_alpha, _epsilon_decay_tau); }
   }
   for (int64_t ind = 0; ind < swap_dist; ++ind) { _weights.clear_offset(_weight_indices[ind], params_per_weight); }
@@ -149,8 +150,8 @@ void epsilon_decay_data::check_horizon_bounds()
   for (int64_t i = 0; i < num_models - 1; ++i)
   {
     if (_scored_configs[i][i].update_count > _min_scope &&
-        _scored_configs[i][i].update_count >
-            std::pow(_scored_configs[num_models - 1][num_models - 1].update_count, static_cast<float>(i + 1) / num_models))
+        _scored_configs[i][i].update_count > std::pow(_scored_configs[num_models - 1][num_models - 1].update_count,
+                                                 static_cast<float>(i + 1) / num_models))
     {
       shift_model(i - 1, 1, num_models);
       break;
