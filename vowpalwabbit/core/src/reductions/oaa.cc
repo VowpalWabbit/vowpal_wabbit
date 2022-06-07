@@ -35,9 +35,9 @@ struct oaa
   uint32_t* subsample_order = nullptr;  // for randomized subsampling, in what order should we touch classes
   size_t subsample_id = 0;              // for randomized subsampling, where do we live in the list
   VW::io::logger logger;
-  int32_t& indexing;  // for 0 or 1 indexing
+  uint32_t& indexing;  // for 0 or 1 indexing
 
-  oaa(VW::io::logger logger, int32_t& indexing) : logger(std::move(logger)), indexing(indexing) {}
+  oaa(VW::io::logger logger, uint32_t& indexing) : logger(std::move(logger)), indexing(indexing) {}
 
   ~oaa()
   {
@@ -49,12 +49,12 @@ struct oaa
 void learn_randomized(oaa& o, VW::LEARNER::single_learner& base, VW::example& ec)
 {
   // Update indexing
-  if (o.indexing == -1 && ec.l.multi.label == 0)
+  if (o.indexing == 2 && ec.l.multi.label == 0)
   {
     o.logger.out_info("label 0 found -- labels are now considered 0-indexed.");
     o.indexing = 0;
   }
-  else if (o.indexing == -1 && ec.l.multi.label == o.k)
+  else if (o.indexing == 2 && ec.l.multi.label == o.k)
   {
     o.logger.out_info("label {0} found -- labels are now considered 1-indexed.", o.k);
     o.indexing = 1;
@@ -113,12 +113,12 @@ template <bool print_all, bool scores, bool probabilities>
 void learn(oaa& o, VW::LEARNER::single_learner& base, VW::example& ec)
 {
   // Update indexing
-  if (o.indexing == -1 && ec.l.multi.label == 0)
+  if (o.indexing == 2 && ec.l.multi.label == 0)
   {
     o.logger.out_info("label 0 found -- labels are now considered 0-indexed.");
     o.indexing = 0;
   }
-  else if (o.indexing == -1 && ec.l.multi.label == o.k)
+  else if (o.indexing == 2 && ec.l.multi.label == o.k)
   {
     o.logger.out_info("label {0} found -- labels are now considered 1-indexed.", o.k);
     o.indexing = 1;

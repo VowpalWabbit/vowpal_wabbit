@@ -94,7 +94,7 @@ Feature Options:
                                             '-q ::'. (type: bool)
     -q, --quadratic args...                 Create and use quadratic features (type: list[str], keep)
     --cubic args...                         Create and use cubic features (type: list[str], keep)
-    --indexing arg                          Choose between 0 or 1-indexing (type: int, choices {0, 1}, keep)
+    --indexing arg                          Choose between 0 or 1-indexing (type: uint, choices {0, 1}, keep)
 Input Options:
     -d, --data arg                          Example set (type: str)
     --daemon                                Persistent daemon mode on port 26542 (type: bool)

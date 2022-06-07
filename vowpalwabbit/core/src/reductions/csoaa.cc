@@ -26,14 +26,14 @@ struct csoaa
   bool search = false;
   VW::polyprediction* pred = nullptr;
   VW::io::logger logger;
-  int32_t& indexing;
-  csoaa(VW::io::logger logger, int32_t& indexing) : logger(std::move(logger)), indexing(indexing) {}
+  uint32_t& indexing;
+  csoaa(VW::io::logger logger, uint32_t& indexing) : logger(std::move(logger)), indexing(indexing) {}
   ~csoaa() { free(pred); }
 };
 
 template <bool is_learn>
 inline void inner_loop(single_learner& base, VW::example& ec, uint32_t i, float cost, uint32_t& prediction,
-    float& score, float& partial_prediction, int32_t& indexing)
+    float& score, float& partial_prediction, uint32_t& indexing)
 {
   if (is_learn)
   {
@@ -74,12 +74,12 @@ void predict_or_learn(csoaa& c, single_learner& base, VW::example& ec)
     {
       auto& lbl = cost.class_index;
       // Update indexing
-      if (c.indexing == -1 && lbl == 0)
+      if (c.indexing == 2 && lbl == 0)
       {
         c.logger.out_info("label 0 found -- labels are now considered 0-indexed.");
         c.indexing = 0;
       }
-      else if (c.indexing == -1 && lbl == c.num_classes)
+      else if (c.indexing == 2 && lbl == c.num_classes)
       {
         c.logger.out_info("label {0} found -- labels are now considered 1-indexed.", c.num_classes);
         c.indexing = 1;

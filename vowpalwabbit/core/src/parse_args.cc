@@ -608,7 +608,7 @@ void parse_feature_tweaks(options_i& options, VW::workspace& all, bool interacti
   bool noconstant;
   bool leave_duplicate_interactions;
   std::string affix;
-  int32_t indexing;
+  uint32_t indexing;
 
   option_group_definition feature_options("Feature");
   feature_options
@@ -1069,7 +1069,7 @@ void parse_feature_tweaks(options_i& options, VW::workspace& all, bool interacti
 
   if (noconstant) { all.add_constant = false; }
 
-  all.indexing = options.was_supplied("indexing") ? indexing : -1;
+  all.indexing = options.was_supplied("indexing") ? indexing : 2;
 }
 
 void parse_example_tweaks(options_i& options, VW::workspace& all)
