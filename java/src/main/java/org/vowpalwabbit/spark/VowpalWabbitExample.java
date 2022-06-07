@@ -55,7 +55,6 @@ public class VowpalWabbitExample implements Closeable {
      */
     public native void setLabel(float weight, float label);
 
-
     /**
      * Set the multiclass label.
      *
@@ -63,6 +62,29 @@ public class VowpalWabbitExample implements Closeable {
      * @param label value of the label (1-based index).
      */
     public native void setMulticlassLabel(float weight, int label);
+
+    /**
+     * Set the csoaa label. Length of costs and classes need to match.
+     *
+     * @param costs costs for each label.
+     * @param classes classes for this example.
+     */
+    public native void setCostSensitiveLabels(float[] costs, int[] classes);
+
+    /**
+     * Set the multilabel.
+     *
+     * @param classes classes for this example.
+     */
+    public native void setMultiLabels(int[] classes);
+
+    public native void setContextualBanditContinuousLabel(float[] actions, float[] costs, float[] pdfValues);
+
+    public native void setSlatesSharedLabel(float cost);
+
+    public native void setSlatesActionLabel(int slotId);
+
+    public native void setSlatesSlotLabel(int[] actions, float[] probs);
 
     /**
      * Set a contextual bandit (CB) label
