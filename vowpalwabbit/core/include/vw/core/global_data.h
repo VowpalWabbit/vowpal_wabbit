@@ -329,7 +329,7 @@ public:
   // hack to support cb model loading into ccb reduction
   bool is_ccb_input_model = false;
 
-  uint32_t indexing;
+  uint32_t indexing = 2;
 
   explicit workspace(VW::io::logger logger);
   ~workspace();
