@@ -33,6 +33,12 @@ void transform_single_ex(INTERACTIONS::interactions_generator& data, VW::LEARNER
   auto* saved_interactions = ec.interactions;
   ec.interactions = &data.generated_interactions;
 
+  if (data.store_in_reduction_features)
+  {
+    auto& red_features = ec._reduction_features.template get<VW::generated_interactions::reduction_features>();
+    red_features.generated_interactions = &data.generated_interactions;
+  }
+
   if (is_learn) { base.learn(ec); }
   else
   {
@@ -58,6 +64,13 @@ void transform_single_ex(INTERACTIONS::interactions_generator& data, VW::LEARNER
   auto* saved_extent_interactions = ec.extent_interactions;
   ec.extent_interactions = &data.generated_extent_interactions;
 
+  if (data.store_in_reduction_features)
+  {
+    auto& red_features = ec._reduction_features.template get<VW::generated_interactions::reduction_features>();
+    red_features.generated_interactions = &data.generated_interactions;
+    red_features.generated_extent_interactions = &data.generated_extent_interactions;
+  }
+
   if (is_learn) { base.learn(ec); }
   else
   {
@@ -83,6 +96,14 @@ void update(INTERACTIONS::interactions_generator& data, VW::LEARNER::single_lear
 
   auto* saved_interactions = ec.interactions;
   ec.interactions = &data.generated_interactions;
+
+  if (data.store_in_reduction_features)
+  {
+    auto& red_features = ec._reduction_features.template get<VW::generated_interactions::reduction_features>();
+    red_features.generated_interactions = &data.generated_interactions;
+    red_features.generated_extent_interactions = &data.generated_extent_interactions;
+  }
+
   base.update(ec);
   ec.interactions = saved_interactions;
   ec.extent_interactions = saved_extent_interactions;
@@ -97,6 +118,13 @@ void update(INTERACTIONS::interactions_generator& data, VW::LEARNER::single_lear
 
   auto* saved_interactions = ec.interactions;
   ec.interactions = &data.generated_interactions;
+
+  if (data.store_in_reduction_features)
+  {
+    auto& red_features = ec._reduction_features.template get<VW::generated_interactions::reduction_features>();
+    red_features.generated_interactions = &data.generated_interactions;
+  }
+
   base.update(ec);
   ec.interactions = saved_interactions;
 }
@@ -111,6 +139,13 @@ inline void multipredict(INTERACTIONS::interactions_generator& data, VW::LEARNER
 
   auto* saved_interactions = ec.interactions;
   ec.interactions = &data.generated_interactions;
+
+  if (data.store_in_reduction_features)
+  {
+    auto& red_features = ec._reduction_features.template get<VW::generated_interactions::reduction_features>();
+    red_features.generated_interactions = &data.generated_interactions;
+  }
+
   base.multipredict(ec, 0, count, pred, finalize_predictions);
   ec.interactions = saved_interactions;
 }
@@ -132,6 +167,14 @@ inline void multipredict(INTERACTIONS::interactions_generator& data, VW::LEARNER
 
   auto* saved_interactions = ec.interactions;
   ec.interactions = &data.generated_interactions;
+
+  if (data.store_in_reduction_features)
+  {
+    auto& red_features = ec._reduction_features.template get<VW::generated_interactions::reduction_features>();
+    red_features.generated_interactions = &data.generated_interactions;
+    red_features.generated_extent_interactions = &data.generated_extent_interactions;
+  }
+
   base.multipredict(ec, 0, count, pred, finalize_predictions);
   ec.interactions = saved_interactions;
   ec.extent_interactions = saved_extent_interactions;
@@ -143,6 +186,7 @@ VW::LEARNER::base_learner* VW::reductions::generate_interactions_setup(VW::setup
   options_i& options = *stack_builder.get_options();
   VW::workspace& all = *stack_builder.get_all_pointer();
   bool leave_duplicate_interactions;
+  bool store_in_reduction_features = false;
   option_group_definition new_options("[Reduction] Generate Interactions");
   new_options.add(make_option("leave_duplicate_interactions", leave_duplicate_interactions)
                       .help("Don't remove interactions with duplicate combinations of namespaces. For ex. this is a "
@@ -174,6 +218,8 @@ VW::LEARNER::base_learner* VW::reductions::generate_interactions_setup(VW::setup
   if (!(interactions_spec_contains_wildcards || interactions_spec_contains_extent_wildcards ||
           options.was_supplied("ccb_explore_adf")))
   { return nullptr; }
+
+  if (options.was_supplied("large_action_space")) { store_in_reduction_features = true; }
 
   using learn_pred_func_t = void (*)(INTERACTIONS::interactions_generator&, VW::LEARNER::single_learner&, VW::example&);
   using multipredict_func_t = void (*)(INTERACTIONS::interactions_generator&, VW::LEARNER::single_learner&,
@@ -281,6 +327,7 @@ VW::LEARNER::base_learner* VW::reductions::generate_interactions_setup(VW::setup
   }
 
   auto data = VW::make_unique<INTERACTIONS::interactions_generator>();
+  data->store_in_reduction_features = store_in_reduction_features;
   auto* base = as_singleline(stack_builder.setup_base_learner());
   auto* l = VW::LEARNER::make_reduction_learner(
       std::move(data), base, learn_func, pred_func, stack_builder.get_setupfn_name(generate_interactions_setup))
