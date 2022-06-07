@@ -593,7 +593,6 @@ JNIEXPORT void JNICALL Java_org_vowpalwabbit_spark_VowpalWabbitExample_setMultiL
   }
 }
 
-
 JNIEXPORT void JNICALL Java_org_vowpalwabbit_spark_VowpalWabbitExample_setContextualBanditContinuousLabel(
     JNIEnv* env, jobject exampleObj, jfloatArray actions, jfloatArray costs, jfloatArray pdfValues)
 {
@@ -608,7 +607,7 @@ JNIEXPORT void JNICALL Java_org_vowpalwabbit_spark_VowpalWabbitExample_setContex
     if (sizeActions != sizeCosts || sizeCosts != sizePdfValues)
     {
       env->ThrowNew(
-        env->FindClass("java/lang/IllegalArgumentException"), "actions, costs and pdfValues length must match");
+          env->FindClass("java/lang/IllegalArgumentException"), "actions, costs and pdfValues length must match");
       return;
     }
 
@@ -683,7 +682,6 @@ JNIEXPORT void JNICALL Java_org_vowpalwabbit_spark_VowpalWabbitExample_setShared
   }
 }
 
-
 JNIEXPORT void JNICALL Java_org_vowpalwabbit_spark_VowpalWabbitExample_setSlatesSharedLabel(
     JNIEnv* env, jobject exampleObj, jfloat cost)
 {
@@ -703,7 +701,7 @@ JNIEXPORT void JNICALL Java_org_vowpalwabbit_spark_VowpalWabbitExample_setSlates
 }
 
 JNIEXPORT void JNICALL Java_org_vowpalwabbit_spark_VowpalWabbitExample_setSlatesActionLabel(
-  JNIEnv* env, jobject exampleObj, jint slot_id)
+    JNIEnv* env, jobject exampleObj, jint slot_id)
 {
   INIT_VARS
 
@@ -721,7 +719,7 @@ JNIEXPORT void JNICALL Java_org_vowpalwabbit_spark_VowpalWabbitExample_setSlates
 }
 
 JNIEXPORT void JNICALL Java_org_vowpalwabbit_spark_VowpalWabbitExample_setSlatesSlotLabel(
-  JNIEnv* env, jobject exampleObj, jintArray actions, jfloatArray probs)
+    JNIEnv* env, jobject exampleObj, jintArray actions, jfloatArray probs)
 {
   INIT_VARS
 

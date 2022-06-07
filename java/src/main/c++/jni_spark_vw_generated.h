@@ -167,7 +167,8 @@ extern "C"
 
   JNIEXPORT void JNICALL Java_org_vowpalwabbit_spark_VowpalWabbitExample_setSlatesActionLabel(JNIEnv*, jobject, jint);
 
-  JNIEXPORT void JNICALL Java_org_vowpalwabbit_spark_VowpalWabbitExample_setSlatesSlotLabel(JNIEnv*, jobject, jintArray, jfloatArray);
+  JNIEXPORT void JNICALL Java_org_vowpalwabbit_spark_VowpalWabbitExample_setSlatesSlotLabel(
+      JNIEnv*, jobject, jintArray, jfloatArray);
 
   /*
    * Class:     org_vowpalwabbit_spark_VowpalWabbitExample
