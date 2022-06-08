@@ -537,6 +537,24 @@ def test_example_features():
     assert ex.pop_namespace()
 
 
+def test_example_features_dict():
+    vw_ex = Workspace(quiet=True)
+    ex = vw_ex.example(
+        {"a": {"two": 1, "features": 1.0}, "b": {"more": 1, "features": 1, 5: 1}}
+    )
+    ex.set_label_string("1")
+    ns = vowpalwabbit.NamespaceId(ex, 1)
+    assert ex.get_feature_id(ns, "a") == 127530
+    ex.push_hashed_feature(ns, 1122)
+    ex.push_features("x", [("c", 1.0), "d"])
+    ex.push_feature(ns, 11000)
+    assert ex.num_features_in("x") == 2
+    assert ex.sum_feat_sq(ns) == 5.0
+    ns2 = vowpalwabbit.NamespaceId(ex, 2)
+    ex.push_namespace(ns2)
+    assert ex.pop_namespace()
+
+
 def test_get_weight_name():
     model = Workspace(quiet=True)
     model.learn("1 | a a b c |ns x")
