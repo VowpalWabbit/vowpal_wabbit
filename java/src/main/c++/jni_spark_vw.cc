@@ -230,6 +230,15 @@ JNIEXPORT jobject JNICALL Java_org_vowpalwabbit_spark_VowpalWabbitNative_getArgu
   return env->NewObject(clazz, ctor, all->num_bits, all->hash_seed, args, all->eta, all->power_t);
 }
 
+JNIEXPORT jstring JNICALL Java_org_vowpalwabbit_spark_VowpalWabbitNative_getOutputPredictionType(
+    JNIEnv* env, jobject vwObj)
+{
+  auto* all = reinterpret_cast<VW::workspace*>(get_native_pointer(env, vwObj));
+
+  // produce string to avoid replication of enum types
+  return env->NewStringUTF(std::string(VW::to_string(all->l->get_output_prediction_type())).c_str());
+}
+
 JNIEXPORT jobject JNICALL Java_org_vowpalwabbit_spark_VowpalWabbitNative_getPerformanceStatistics(
     JNIEnv* env, jobject vwObj)
 {
@@ -504,6 +513,130 @@ JNIEXPORT void JNICALL Java_org_vowpalwabbit_spark_VowpalWabbitExample_setDefaul
   }
 }
 
+JNIEXPORT void JNICALL Java_org_vowpalwabbit_spark_VowpalWabbitExample_setMulticlassLabel(
+    JNIEnv* env, jobject exampleObj, jfloat weight, jint label)
+{
+  INIT_VARS
+
+  try
+  {
+    MULTICLASS::label_t* ld = &ex->l.multi;
+
+    ld->label = label;
+    ld->weight = weight;
+  }
+  catch (...)
+  {
+    rethrow_cpp_exception_as_java_exception(env);
+  }
+}
+
+JNIEXPORT void JNICALL Java_org_vowpalwabbit_spark_VowpalWabbitExample_setCostSensitiveLabels(
+    JNIEnv* env, jobject exampleObj, jfloatArray costs, jintArray classes)
+{
+  INIT_VARS
+
+  try
+  {
+    COST_SENSITIVE::label* ld = &ex->l.cs;
+
+    int sizeCosts = env->GetArrayLength(costs);
+    int sizeClasses = env->GetArrayLength(classes);
+
+    if (sizeCosts != sizeClasses)
+    {
+      env->ThrowNew(env->FindClass("java/lang/IllegalArgumentException"), "costs and classes length must match");
+      return;
+    }
+
+    CriticalArrayGuard costsGuard(env, costs);
+    float* costs0 = (float*)costsGuard.data();
+
+    CriticalArrayGuard classesGuard(env, classes);
+    int* classes0 = (int*)classesGuard.data();
+
+    // loop over weights/labels
+    for (int i = 0; i < sizeCosts; i++)
+    {
+      COST_SENSITIVE::wclass w;
+      w.x = costs0[i];
+      w.class_index = classes0[i];
+
+      ld->costs.push_back(w);
+    }
+  }
+  catch (...)
+  {
+    rethrow_cpp_exception_as_java_exception(env);
+  }
+}
+
+JNIEXPORT void JNICALL Java_org_vowpalwabbit_spark_VowpalWabbitExample_setMultiLabels(
+    JNIEnv* env, jobject exampleObj, jintArray classes)
+{
+  INIT_VARS
+
+  try
+  {
+    MULTILABEL::labels* ld = &ex->l.multilabels;
+
+    CriticalArrayGuard classesGuard(env, classes);
+    int* classes0 = (int*)classesGuard.data();
+
+    int size = env->GetArrayLength(classes);
+
+    for (int i = 0; i < size; i++) ld->label_v.push_back(classes0[i]);
+  }
+  catch (...)
+  {
+    rethrow_cpp_exception_as_java_exception(env);
+  }
+}
+
+JNIEXPORT void JNICALL Java_org_vowpalwabbit_spark_VowpalWabbitExample_setContextualBanditContinuousLabel(
+    JNIEnv* env, jobject exampleObj, jfloatArray actions, jfloatArray costs, jfloatArray pdfValues)
+{
+  INIT_VARS
+
+  try
+  {
+    int sizeActions = env->GetArrayLength(actions);
+    int sizeCosts = env->GetArrayLength(costs);
+    int sizePdfValues = env->GetArrayLength(pdfValues);
+
+    if (sizeActions != sizeCosts || sizeCosts != sizePdfValues)
+    {
+      env->ThrowNew(
+          env->FindClass("java/lang/IllegalArgumentException"), "actions, costs and pdfValues length must match");
+      return;
+    }
+
+    VW::cb_continuous::continuous_label* ld = &ex->l.cb_cont;
+
+    CriticalArrayGuard actionsGuard(env, actions);
+    float* actions0 = (float*)actionsGuard.data();
+
+    CriticalArrayGuard costsGuard(env, costs);
+    float* costs0 = (float*)costsGuard.data();
+
+    CriticalArrayGuard pdfValuesGuard(env, pdfValues);
+    float* pdfValues0 = (float*)pdfValuesGuard.data();
+
+    for (int i = 0; i < sizeActions; i++)
+    {
+      VW::cb_continuous::continuous_label_elm elm;
+      elm.action = actions0[i];
+      elm.cost = costs0[i];
+      elm.pdf_value = pdfValues0[i];
+      ld->costs.push_back(elm);
+    }
+  }
+  catch (...)
+  {
+    rethrow_cpp_exception_as_java_exception(env);
+  }
+}
+
 JNIEXPORT void JNICALL Java_org_vowpalwabbit_spark_VowpalWabbitExample_setContextualBanditLabel(
     JNIEnv* env, jobject exampleObj, jint action, jdouble cost, jdouble probability)
 {
@@ -542,6 +675,82 @@ JNIEXPORT void JNICALL Java_org_vowpalwabbit_spark_VowpalWabbitExample_setShared
     f.probability = -1.f;
 
     ld->costs.push_back(f);
+  }
+  catch (...)
+  {
+    rethrow_cpp_exception_as_java_exception(env);
+  }
+}
+
+JNIEXPORT void JNICALL Java_org_vowpalwabbit_spark_VowpalWabbitExample_setSlatesSharedLabel(
+    JNIEnv* env, jobject exampleObj, jfloat cost)
+{
+  INIT_VARS
+
+  try
+  {
+    auto* ld = &ex->l.slates;
+    ld->reset_to_default();
+    ld->type = VW::slates::example_type::shared;
+    ld->cost = cost;
+  }
+  catch (...)
+  {
+    rethrow_cpp_exception_as_java_exception(env);
+  }
+}
+
+JNIEXPORT void JNICALL Java_org_vowpalwabbit_spark_VowpalWabbitExample_setSlatesActionLabel(
+    JNIEnv* env, jobject exampleObj, jint slot_id)
+{
+  INIT_VARS
+
+  try
+  {
+    auto* ld = &ex->l.slates;
+    ld->reset_to_default();
+    ld->type = VW::slates::example_type::action;
+    ld->slot_id = slot_id;
+  }
+  catch (...)
+  {
+    rethrow_cpp_exception_as_java_exception(env);
+  }
+}
+
+JNIEXPORT void JNICALL Java_org_vowpalwabbit_spark_VowpalWabbitExample_setSlatesSlotLabel(
+    JNIEnv* env, jobject exampleObj, jintArray actions, jfloatArray probs)
+{
+  INIT_VARS
+
+  try
+  {
+    int sizeActions = env->GetArrayLength(actions);
+    int sizeProbs = env->GetArrayLength(probs);
+
+    if (sizeActions != sizeProbs)
+    {
+      env->ThrowNew(env->FindClass("java/lang/IllegalArgumentException"), "actions and probs length must match");
+      return;
+    }
+
+    auto* ld = &ex->l.slates;
+    ld->reset_to_default();
+    ld->type = VW::slates::example_type::slot;
+
+    CriticalArrayGuard actionsGuard(env, actions);
+    float* actions0 = (float*)actionsGuard.data();
+
+    CriticalArrayGuard probsGuard(env, probs);
+    float* probs0 = (float*)probsGuard.data();
+
+    for (int i = 0; i < sizeActions; i++)
+    {
+      ACTION_SCORE::action_score as;
+      as.action = actions0[i];
+      as.score = probs0[i];
+      ld->probabilities.push_back(as);
+    }
   }
   catch (...)
   {

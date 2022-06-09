@@ -71,6 +71,8 @@ public class VowpalWabbitNative implements Closeable {
      */
     public native VowpalWabbitArguments getArguments();
 
+    public native String getOutputPredictionType();
+
     public native VowpalWabbitPerformanceStatistics getPerformanceStatistics();
 
     /**
