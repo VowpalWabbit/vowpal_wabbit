@@ -56,7 +56,7 @@ void epsilon_decay_data::update_weights(VW::LEARNER::multi_learner& base, VW::mu
     labelled_action = std::distance(examples.begin(), it);
   }
 
-  const float r = -logged.cost;
+  const float r = 1 - (-logged.cost);
   auto& ep_fts = examples[0]->_reduction_features.template get<VW::cb_explore_adf::greedy::reduction_features>();
   // Process each model, then update the upper/lower bounds for each model
   for (int64_t i = 0; i < num_models; ++i)
@@ -286,7 +286,7 @@ VW::LEARNER::base_learner* VW::reductions::epsilon_decay_setup(VW::setup_base_i&
   if (model_count < 1) { THROW("Model count must be 1 or greater"); }
 
   // Scale confidence interval by number of examples
-  float scaled_alpha = _epsilon_decay_alpha / model_count;
+  float scaled_alpha = (_epsilon_decay_alpha / model_count) / 2.0;
 
   auto data = VW::make_unique<VW::reductions::epsilon_decay::epsilon_decay_data>(model_count, _min_scope, scaled_alpha,
       _epsilon_decay_tau, all.weights.dense_weights, all.logger, _log_champ_changes, _constant_epsilon);
