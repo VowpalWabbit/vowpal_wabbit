@@ -774,7 +774,7 @@ VW::LEARNER::base_learner* VW::reductions::automl_setup(VW::setup_base_i& stack_
                .experimental())
       .add(make_option("automl_tau", automl_tau)
                .keep()
-               .default_value(DEFAULT_TAU)
+               .default_value(CRESSEREAD_DEFAULT_TAU)
                .help("Time constant for count decay")
                .experimental());
 

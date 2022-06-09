@@ -272,7 +272,7 @@ VW::LEARNER::base_learner* VW::reductions::epsilon_decay_setup(VW::setup_base_i&
                .experimental())
       .add(make_option("epsilon_decay_tau", _epsilon_decay_tau)
                .keep()
-               .default_value(DEFAULT_TAU)
+               .default_value(CRESSEREAD_DEFAULT_TAU)
                .help("Time constant for count decay")
                .experimental())
       .add(make_option("log_champ_changes", _log_champ_changes).keep().help("Log champ changes").experimental())

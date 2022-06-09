@@ -28,7 +28,7 @@ struct epsilon_decay_score : scored_config
   float get_lower_bound() const { return _lower_bound; }
   uint64_t get_score_idx() const { return _score_idx; }
   void update_bounds(float w, float r);
-  void reset_stats(double alpha = DEFAULT_ALPHA, double tau = DEFAULT_TAU);
+  void reset_stats(double alpha = DEFAULT_ALPHA, double tau = CRESSEREAD_DEFAULT_TAU);
 
   float _lower_bound = 0.f;
   uint64_t _score_idx;
