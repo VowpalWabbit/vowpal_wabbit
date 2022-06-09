@@ -50,10 +50,7 @@ struct epsilon_decay_data
     for (uint64_t i = 0; i < num_configs; ++i)
     {
       std::vector<epsilon_decay_score> score_vec;
-      for (uint64_t j = 0; j < i + 1; ++j)
-      {
-        score_vec.emplace_back(epsilon_decay_alpha, epsilon_decay_tau);
-      }
+      for (uint64_t j = 0; j < i + 1; ++j) { score_vec.emplace_back(epsilon_decay_alpha, epsilon_decay_tau); }
       _scored_configs.push_back(std::move(score_vec));
       _weight_indices.push_back(weight_idx);
       ++weight_idx;
