@@ -230,4 +230,99 @@ public class VowpalWabbitNativeIT {
                 vw.close();
         }
     }
+
+    public interface VowpalWabbitLabelOperator {
+        public void op(VowpalWabbitExample ex);
+    }
+
+    private void testLabelSetter(VowpalWabbitLabelOperator op) throws Exception {
+        VowpalWabbitNative vw = null;
+        VowpalWabbitExample ex = null;
+
+        try {
+            // exepct no crash, can't directly validate as it writes to stdout
+            vw = new VowpalWabbitNative("");
+
+            ex = vw.createExample();
+
+            op.op(ex);
+        } finally {
+            if (ex != null)
+                ex.close();
+
+            if (vw != null)
+                vw.close();
+        }
+    }
+
+    @Test
+    public void testSimpleLabel() throws Exception {
+        testLabelSetter(new VowpalWabbitLabelOperator() { 
+            public void op(VowpalWabbitExample ex) { 
+                ex.setLabel(1,2);
+            }
+        });
+    }
+
+    @Test
+    public void testMulticlassLabel() throws Exception {
+        testLabelSetter(new VowpalWabbitLabelOperator() { 
+            public void op(VowpalWabbitExample ex) { 
+                ex.setMulticlassLabel(0.5f, 2);
+            }
+        });
+    }
+
+    @Test
+    public void testCostSensitiveLabels() throws Exception {
+        testLabelSetter(new VowpalWabbitLabelOperator() { 
+            public void op(VowpalWabbitExample ex) { 
+                ex.setCostSensitiveLabels(
+                    new float[] { 0.5f, 0.2f },
+                    new int[] { 0, 1}
+                );
+            }
+        });
+    }
+
+    @Test
+    public void tesContextualBanditContinuousLabel() throws Exception {
+        testLabelSetter(new VowpalWabbitLabelOperator() { 
+            public void op(VowpalWabbitExample ex) { 
+                ex.setContextualBanditContinuousLabel(
+                    new float[] { 1f, 2f, 3f },
+                    new float[] { 4f, 5f, 6f },
+                    new float[] { 0.1f, 0.3f, 0.6f });
+            }
+        });
+    }
+
+    @Test
+    public void testSlatesSharedLabel() throws Exception {
+        testLabelSetter(new VowpalWabbitLabelOperator() { 
+            public void op(VowpalWabbitExample ex) { 
+                ex.setSlatesSharedLabel(0.3f);
+            }
+        });
+    }
+
+    @Test
+    public void testSlatesActionLabel() throws Exception {
+        testLabelSetter(new VowpalWabbitLabelOperator() { 
+            public void op(VowpalWabbitExample ex) { 
+                ex.setSlatesActionLabel(3);
+            }
+        });
+    }
+
+    @Test
+    public void testSlatesSlotLabel() throws Exception {
+        testLabelSetter(new VowpalWabbitLabelOperator() { 
+            public void op(VowpalWabbitExample ex) { 
+                ex.setSlatesSlotLabel(
+                    new int[] { 1, 2 },
+                    new float[] { 0.4f, 0.6f });
+            }
+        });
+    }
 }
