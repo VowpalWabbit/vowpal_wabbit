@@ -41,7 +41,7 @@ struct aml_score : VW::scored_config
   bool eligible_to_inactivate = false;
   interaction_vec_t live_interactions;  // Live pre-allocated vectors in use
 
-  void persist(metric_sink&, const std::string&, bool);
+  void persist(metric_sink&, const std::string&, bool, const std::string&);
 };
 
 // all possible states of exclusion config
@@ -99,6 +99,7 @@ struct interaction_config_manager : config_manager
   uint64_t priority_challengers;
   uint64_t valid_config_size = 0;
   bool keep_configs;
+  std::string interaction_type;
   std::string oracle_type;
   dense_parameters& weights;
   priority_func* calc_priority;
@@ -119,8 +120,8 @@ struct interaction_config_manager : config_manager
   std::priority_queue<std::pair<float, uint64_t>> index_queue;
 
   interaction_config_manager(uint64_t, uint64_t, std::shared_ptr<VW::rand_state>, uint64_t, bool, std::string,
-      dense_parameters&, float (*)(const exclusion_config&, const std::map<namespace_index, uint64_t>&), double, double,
-      VW::io::logger*);
+      std::string, dense_parameters&, float (*)(const exclusion_config&, const std::map<namespace_index, uint64_t>&),
+      double, double, VW::io::logger*);
 
   void apply_config(example*, uint64_t);
   void persist(metric_sink&, bool);
@@ -132,7 +133,7 @@ struct interaction_config_manager : config_manager
   void update_champ();
 
   // Public for save_load
-  void gen_quadratic_interactions(uint64_t);
+  void gen_interactions(uint64_t);
 
 private:
   bool better(const exclusion_config&, const exclusion_config&) const;

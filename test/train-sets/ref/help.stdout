@@ -234,6 +234,8 @@ Weight Options:
                                             -1, keep, experimental)
     --keep_configs                          Keep all configs after champ change (type: bool, keep, experimental)
     --verbose_metrics                       Extended metrics for debugging (type: bool, experimental)
+    --interaction_type arg                  Set what type of feature to use (type: str, default: quadratic,
+                                            choices {cubic, quadratic}, keep, experimental)
     --oracle_type arg                       Set oracle to generate configs (type: str, default: one_diff,
                                             choices {one_diff, rand}, keep, experimental)
     --automl_alpha arg                      Set confidence interval for champion change (type: float, default:
