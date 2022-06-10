@@ -5349,11 +5349,11 @@
   {
     "id": 415,
     "desc": "test AutoML with cubic interaction",
-    "vw_command": "-f automl.model --automl 3 --verbose_metrics --priority_type least_exclusion -d train-sets/decisionservice.json --dsjson --cb_explore_adf --epsilon 0.2 -P 1 -p cbe_adf_dsjson.predict --extra_metrics metrics_.json --readable_model automl_readable.txt --keep_configs --oracle_type rand --interaction_type cubic",
+    "vw_command": "-f automl.model --automl 3 --verbose_metrics --priority_type least_exclusion -d train-sets/decisionservice.json --dsjson --cb_explore_adf --epsilon 0.2 -P 1 -p cbe_adf_dsjson.predict --extra_metrics metrics_cubic.json --readable_model automl_readable_cubic.txt --keep_configs --oracle_type rand --interaction_type cubic",
     "diff_files": {
       "stderr": "train-sets/ref/cbe_adf_dsjson_metrics_cubic.stderr",
-      "metrics_.json": "test-sets/ref/metrics_cubic.json",
-      "automl_readable.txt": "train-sets/ref/automl_readable_cubic.txt",
+      "metrics_cubic.json": "test-sets/ref/metrics_cubic.json",
+      "automl_readable_cubic.txt": "train-sets/ref/automl_readable_cubic.txt",
       "stdout": "train-sets/ref/cbe_adf_dsjson_metrics_cubic.stdout"
     },
     "input_files": [
