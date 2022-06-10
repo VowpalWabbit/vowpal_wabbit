@@ -36,7 +36,7 @@ struct epsilon_decay_score : scored_config
 
 struct epsilon_decay_data
 {
-  epsilon_decay_data(uint64_t num_configs, uint64_t min_scope, double epsilon_decay_alpha, double epsilon_decay_tau,
+  epsilon_decay_data(uint64_t model_count, uint64_t min_scope, double epsilon_decay_alpha, double epsilon_decay_tau,
       dense_parameters& weights, VW::io::logger logger, bool log_champ_changes, bool constant_epsilon)
       : _min_scope(min_scope)
       , _epsilon_decay_alpha(epsilon_decay_alpha)
@@ -47,9 +47,12 @@ struct epsilon_decay_data
       , _constant_epsilon(constant_epsilon)
   {
     uint64_t weight_idx = 0;
-    for (uint64_t i = 0; i < num_configs; ++i)
+    _scored_configs.reserve(model_count);
+    _weight_indices.reserve(model_count);
+    for (uint64_t i = 0; i < model_count; ++i)
     {
       std::vector<epsilon_decay_score> score_vec;
+      score_vec.reserve(i + 1);
       for (uint64_t j = 0; j < i + 1; ++j) { score_vec.emplace_back(epsilon_decay_alpha, epsilon_decay_tau); }
       _scored_configs.push_back(std::move(score_vec));
       _weight_indices.push_back(weight_idx);
@@ -59,9 +62,9 @@ struct epsilon_decay_data
 
   void update_weights(VW::LEARNER::multi_learner& base, VW::multi_ex& examples);
   void promote_model(int64_t model_ind, int64_t swap_dist);
-  void rebalance_greater_models(int64_t model_ind, int64_t swap_dist, int64_t num_models);
-  void clear_weights_and_scores(int64_t swap_dist, int64_t num_models);
-  void shift_model(int64_t model_ind, int64_t swap_dist, int64_t num_models);
+  void rebalance_greater_models(int64_t model_ind, int64_t swap_dist, int64_t model_count);
+  void clear_weights_and_scores(int64_t swap_dist, int64_t model_count);
+  void shift_model(int64_t model_ind, int64_t swap_dist, int64_t model_count);
   void check_score_bounds();
   void check_horizon_bounds();
 
