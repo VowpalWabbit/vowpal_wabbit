@@ -1,4 +1,4 @@
-final_regressor = automl.model
+final_regressor = automl_cubic.model
 predictions = cbe_adf_dsjson.predict
 using no cache
 Reading datafile = train-sets/decisionservice.json
