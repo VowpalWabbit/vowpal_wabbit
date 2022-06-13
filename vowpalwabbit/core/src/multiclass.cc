@@ -100,10 +100,10 @@ void print_label_pred(VW::workspace& all, VW::example& ec, uint32_t prediction)
 
 void print_probability(VW::workspace& all, VW::example& ec, uint32_t prediction)
 {
-  if (prediction == 0) { prediction = static_cast<uint32_t>(ec.pred.scalars.size()); }
   std::stringstream pred_ss;
+  uint32_t pred_ind = (all.indexing == 0) ? prediction : prediction - 1;
   pred_ss << prediction << "(" << std::setw(VW::DEFAULT_FLOAT_FORMATTING_DECIMAL_PRECISION) << std::setprecision(0)
-          << std::fixed << 100 * ec.pred.scalars[prediction - 1] << "%)";
+          << std::fixed << 100 * ec.pred.scalars[pred_ind] << "%)";
 
   std::stringstream label_ss;
   label_ss << ec.l.multi.label;
