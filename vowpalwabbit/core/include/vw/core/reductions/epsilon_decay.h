@@ -52,9 +52,10 @@ struct epsilon_decay_data
     std::iota(std::begin(_weight_indices), std::begin(_weight_indices) + model_count, 0);
     for (uint64_t i = 0; i < model_count; ++i)
     {
-      _scored_configs.emplace_back(i + 1);
-      for (uint64_t j = 0; j < i + 1; ++j)
-      { _scored_configs.back().emplace_back(epsilon_decay_alpha, epsilon_decay_tau); }
+      std::vector<epsilon_decay_score> score_vec;
+      score_vec.reserve(i + 1);
+      for (uint64_t j = 0; j < i + 1; ++j) { score_vec.emplace_back(epsilon_decay_alpha, epsilon_decay_tau); }
+      _scored_configs.push_back(std::move(score_vec));
     }
   }
 
