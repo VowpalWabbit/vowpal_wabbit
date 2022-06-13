@@ -117,8 +117,11 @@ void epsilon_decay_data::clear_weights_and_scores(int64_t swap_dist, int64_t mod
 
 void epsilon_decay_data::shift_model(int64_t model_ind, int64_t swap_dist, int64_t model_count)
 {
-  promote_model(model_ind, swap_dist);
-  rebalance_greater_models(model_ind, swap_dist, model_count);
+  if (model_ind >= 0)
+  {
+    promote_model(model_ind, swap_dist);
+    rebalance_greater_models(model_ind, swap_dist, model_count);
+  }
   clear_weights_and_scores(swap_dist, model_count);
 }
 

@@ -10,6 +10,7 @@
 #include "vw/io/logger.h"
 
 #include <algorithm>
+#include <numeric>
 
 namespace VW
 {
@@ -46,17 +47,14 @@ struct epsilon_decay_data
       , _log_champ_changes(log_champ_changes)
       , _constant_epsilon(constant_epsilon)
   {
-    uint64_t weight_idx = 0;
     _scored_configs.reserve(model_count);
     _weight_indices.reserve(model_count);
+    std::iota(std::begin(_weight_indices), std::begin(_weight_indices) + model_count, 0);
     for (uint64_t i = 0; i < model_count; ++i)
     {
-      std::vector<epsilon_decay_score> score_vec;
-      score_vec.reserve(i + 1);
-      for (uint64_t j = 0; j < i + 1; ++j) { score_vec.emplace_back(epsilon_decay_alpha, epsilon_decay_tau); }
-      _scored_configs.push_back(std::move(score_vec));
-      _weight_indices.push_back(weight_idx);
-      ++weight_idx;
+      _scored_configs.emplace_back();
+      _scored_configs.back().reserve(i + 1);
+      for (uint64_t j = 0; j < i + 1; ++j) { _scored_configs.back().emplace_back(epsilon_decay_alpha, epsilon_decay_tau); }
     }
   }
 
