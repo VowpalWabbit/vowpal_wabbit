@@ -35,6 +35,7 @@ struct oaa
   uint32_t* subsample_order = nullptr;  // for randomized subsampling, in what order should we touch classes
   size_t subsample_id = 0;              // for randomized subsampling, where do we live in the list
   VW::io::logger logger;
+  // Default value of 2 follows behavior of 1-indexing and can change to 0-indexing if detected
   uint32_t& indexing;  // for 0 or 1 indexing
 
   oaa(VW::io::logger logger, uint32_t& indexing) : logger(std::move(logger)), indexing(indexing) {}
