@@ -263,9 +263,9 @@ BOOST_AUTO_TEST_CASE(epsilon_decay_test_score_bounds_unit)
 
   // Set lower_bound of model 2 to beat upper_bound of current champ and run score check
   uint64_t new_champ = 2;
-  ep_data._scored_configs[new_champ][new_champ]._lower_bound = 1;
-  BOOST_CHECK_GT(ep_data._scored_configs[new_champ][new_champ].get_lower_bound(),
-      ep_data._scored_configs[num_models - 1][new_champ].get_upper_bound());
+  for (auto i = 0; i < 10000; ++i) { ep_data._scored_configs[new_champ][new_champ].update(i, 5); };
+  BOOST_CHECK_GT(ep_data._scored_configs[new_champ][new_champ].lower_bound(),
+      ep_data._scored_configs[num_models - 1][new_champ].upper_bound());
   ep_data.check_score_bounds();
 
   /*
@@ -285,7 +285,7 @@ BOOST_AUTO_TEST_CASE(epsilon_decay_test_score_bounds_unit)
   BOOST_CHECK_EQUAL(ep_data._scored_configs[3][3].update_count, 2);
   BOOST_CHECK_EQUAL(ep_data._scored_configs[4][2].update_count, 3);
   BOOST_CHECK_EQUAL(ep_data._scored_configs[4][3].update_count, 4);
-  BOOST_CHECK_EQUAL(ep_data._scored_configs[4][4].update_count, 5);
+  BOOST_CHECK_EQUAL(ep_data._scored_configs[4][4].update_count, 10005);
   BOOST_CHECK_EQUAL(ep_data._weight_indices[0], 4);
   BOOST_CHECK_EQUAL(ep_data._weight_indices[1], 3);
   BOOST_CHECK_EQUAL(ep_data._weight_indices[2], 0);

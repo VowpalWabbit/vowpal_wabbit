@@ -26,21 +26,6 @@ namespace reductions
 {
 namespace epsilon_decay
 {
-void epsilon_decay_score::update_bounds(float w, float r)
-{
-  update(w, r);
-
-  // update the lower bound
-  distributionally_robust::ScoredDual sd = this->chisq.recompute_duals();
-  _lower_bound = static_cast<float>(sd.first);
-}
-
-void epsilon_decay_score::reset_stats(double alpha, double tau)
-{
-  VW::scored_config::reset_stats(alpha, tau);
-  _lower_bound = 0.f;
-}
-
 float decayed_epsilon(uint64_t update_count) { return static_cast<float>(std::pow(update_count + 1, -1.f / 3.f)); }
 
 void epsilon_decay_data::update_weights(VW::LEARNER::multi_learner& base, VW::multi_ex& examples)
@@ -70,7 +55,7 @@ void epsilon_decay_data::update_weights(VW::LEARNER::multi_learner& base, VW::mu
       if (a_s.action == labelled_action)
       {
         const float w = (logged.probability > 0) ? a_s.score / logged.probability : 0;
-        for (int64_t j = 0; j <= i; ++j) { _scored_configs[i][j].update_bounds(w, r); }
+        for (int64_t j = 0; j <= i; ++j) { _scored_configs[i][j].update(w, r); }
         break;
       }
     }
@@ -133,7 +118,7 @@ void epsilon_decay_data::check_score_bounds()
   auto final_model_idx = model_count - 1;
   for (int64_t i = 0; i < final_model_idx; ++i)
   {
-    if (_scored_configs[i][i].get_lower_bound() > _scored_configs[final_model_idx][i].get_upper_bound())
+    if (_scored_configs[i][i].lower_bound() > _scored_configs[final_model_idx][i].upper_bound())
     {
       if (_log_champ_changes)
       {
@@ -172,7 +157,7 @@ size_t read_model_field(io_buf& io, VW::reductions::epsilon_decay::epsilon_decay
 {
   size_t bytes = 0;
   bytes += read_model_field(io, reinterpret_cast<VW::scored_config&>(score));
-  bytes += read_model_field(io, score._lower_bound);
+  bytes += read_model_field(io, score._score_idx);
   return bytes;
 }
 
@@ -181,7 +166,7 @@ size_t write_model_field(io_buf& io, const VW::reductions::epsilon_decay::epsilo
 {
   size_t bytes = 0;
   bytes += write_model_field(io, reinterpret_cast<const VW::scored_config&>(score), upstream_name, text);
-  bytes += write_model_field(io, score._lower_bound, upstream_name + "_lower_bound", text);
+  bytes += write_model_field(io, score._score_idx, upstream_name + "_score_idx", text);
   return bytes;
 }
 
