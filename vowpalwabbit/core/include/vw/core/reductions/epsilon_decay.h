@@ -28,7 +28,6 @@ struct epsilon_decay_score : scored_config
   }
   float decayed_epsilon(uint64_t update_count);
   uint64_t get_model_idx() const { return _model_idx; }
-  void update_bounds(float w, float r);
 
   uint64_t _model_idx;
 };

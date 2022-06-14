@@ -24,14 +24,6 @@ namespace reductions
 {
 namespace epsilon_decay
 {
-void epsilon_decay_score::update_bounds(float w, float r)
-{
-  update(w, r);
-
-  // update the lower bound
-  distributionally_robust::ScoredDual sd = this->chisq.recompute_duals();
-}
-
 float decayed_epsilon(uint64_t update_count) { return static_cast<float>(std::pow(update_count + 1, -1.f / 3.f)); }
 
 }  // namespace epsilon_decay
@@ -117,7 +109,7 @@ void learn(
         if (a_s.action == labelled_action)
         {
           const float w = (logged.probability > 0) ? a_s.score / logged.probability : 0;
-          config_iter->update_bounds(w, r);
+          config_iter->update(w, r);
           break;
         }
       }
