@@ -27,12 +27,9 @@ struct epsilon_decay_score : scored_config
   {
   }
   float decayed_epsilon(uint64_t update_count);
-  float get_upper_bound() const { return this->current_ips(); }
-  float get_lower_bound() const { return _lower_bound; }
   uint64_t get_model_idx() const { return _model_idx; }
   void update_bounds(float w, float r);
 
-  float _lower_bound = 0.f;
   uint64_t _model_idx;
 };
 

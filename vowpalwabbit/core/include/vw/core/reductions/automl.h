@@ -57,8 +57,6 @@ struct exclusion_config
 {
   std::set<std::vector<namespace_index>> exclusions;
   uint64_t lease;
-  float ips = std::numeric_limits<float>::infinity();
-  float lower_bound = 0.f;
   config_state state = VW::reductions::automl::config_state::New;
 
   exclusion_config(uint64_t lease = 10) : lease(lease) {}
@@ -135,8 +133,8 @@ struct interaction_config_manager : config_manager
   void gen_quadratic_interactions(uint64_t);
 
 private:
-  bool better(const exclusion_config&, const exclusion_config&) const;
-  bool worse(const exclusion_config&, const exclusion_config&) const;
+  bool better(uint64_t challenger, uint64_t champ);
+  bool worse(uint64_t challenger, uint64_t champ);
   uint64_t choose();
   bool repopulate_index_queue();
   bool swap_eligible_to_inactivate(uint64_t);
