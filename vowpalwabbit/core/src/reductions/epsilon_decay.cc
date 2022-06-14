@@ -24,15 +24,6 @@ namespace reductions
 {
 namespace epsilon_decay
 {
-void epsilon_decay_score::update_bounds(float w, float r)
-{
-  update(w, r);
-
-  // update the lower bound
-  distributionally_robust::ScoredDual sd = this->chisq.recompute_duals();
-  _lower_bound = static_cast<float>(sd.first);
-}
-
 float decayed_epsilon(uint64_t update_count) { return static_cast<float>(std::pow(update_count + 1, -1.f / 3.f)); }
 
 }  // namespace epsilon_decay
@@ -44,7 +35,6 @@ size_t read_model_field(io_buf& io, VW::reductions::epsilon_decay::epsilon_decay
 {
   size_t bytes = 0;
   bytes += read_model_field(io, reinterpret_cast<VW::scored_config&>(score));
-  bytes += read_model_field(io, score._lower_bound);
   bytes += read_model_field(io, score._model_idx);
   return bytes;
 }
@@ -54,7 +44,6 @@ size_t write_model_field(io_buf& io, const VW::reductions::epsilon_decay::epsilo
 {
   size_t bytes = 0;
   bytes += write_model_field(io, reinterpret_cast<const VW::scored_config&>(score), upstream_name, text);
-  bytes += write_model_field(io, score._lower_bound, upstream_name + "_lower_bound", text);
   bytes += write_model_field(io, score._model_idx, upstream_name + "_model_idx", text);
   return bytes;
 }
@@ -120,7 +109,7 @@ void learn(
         if (a_s.action == labelled_action)
         {
           const float w = (logged.probability > 0) ? a_s.score / logged.probability : 0;
-          config_iter->update_bounds(w, r);
+          config_iter->update(w, r);
           break;
         }
       }
@@ -133,7 +122,7 @@ void learn(
   // the new champion.
   for (int64_t i = 0; i < K - 1; ++i)
   {
-    if (data._scored_configs[i][i].get_lower_bound() > data._scored_configs[K - 1][i].get_upper_bound())
+    if (data._scored_configs[i][i].lower_bound() > data._scored_configs[K - 1][i].upper_bound())
     {
       if (data._log_champ_changes)
       {
