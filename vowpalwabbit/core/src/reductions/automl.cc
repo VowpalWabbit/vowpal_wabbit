@@ -401,7 +401,9 @@ void interaction_config_manager::schedule()
       uint64_t new_live_config_index = choose();
       scores[live_slot].config_index = new_live_config_index;
       configs[new_live_config_index].state = VW::reductions::automl::config_state::Live;
-      weights.copy_offsets(current_champ, live_slot, 4);
+      uint64_t params_per_weight = 1;
+      while (params_per_weight < max_live_configs) { params_per_weight *= 2; }
+      weights.copy_offsets(current_champ, live_slot, static_cast<size_t>(params_per_weight));
       // Regenerate interactions each time an exclusion is swapped in
       gen_quadratic_interactions(live_slot);
       // We may also want to 0 out weights here? Currently keep all same in live_slot position
