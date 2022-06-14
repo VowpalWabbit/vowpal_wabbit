@@ -421,9 +421,6 @@ bool options_cli::was_supplied(const std::string& key) const
   if (m_prog_parsed_token_map.find(key) != m_prog_parsed_token_map.end()) { return true; }
 
   // If not found there, do a fallback check on the command line itself.
-  std::array<std::string, 2> keys = {
-      std::string("--" + key),
-  };
   // Short option
   const auto short_key = "-" + key;
   auto short_option_found = std::any_of(m_command_line.begin(), m_command_line.end(),
