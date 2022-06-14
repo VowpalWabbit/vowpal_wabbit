@@ -414,10 +414,8 @@ bool interaction_config_manager::better(uint64_t challenger, uint64_t champ)
   return scores[challenger].lower_bound() > scores[champ].upper_bound();
 }
 
-bool interaction_config_manager::worse(uint64_t challenger, uint64_t champ)
+bool interaction_config_manager::worse(uint64_t, uint64_t)
 {
-  _UNUSED(challenger);
-  _UNUSED(champ);
   // Dummy return false
   return false;
 }
