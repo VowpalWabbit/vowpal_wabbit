@@ -40,11 +40,11 @@ struct epsilon_decay_data
       , _constant_epsilon(constant_epsilon)
   {
     _scored_configs.reserve(model_count);
-    _weight_indices.resize(model_count);
+    _weight_indices.resize(model_count); // resize required for iota
     std::iota(_weight_indices.begin(), _weight_indices.end(), 0);
     for (uint64_t i = 0; i < model_count; ++i)
     {
-      _scored_configs.emplace_back(i + 1);
+      _scored_configs.emplace_back(i + 1); // Model i (0-indexed) will have (i + 1) scores
       for (uint64_t j = 0; j < i + 1; ++j)
       { _scored_configs.back().emplace_back(epsilon_decay_alpha, epsilon_decay_tau); }
     }

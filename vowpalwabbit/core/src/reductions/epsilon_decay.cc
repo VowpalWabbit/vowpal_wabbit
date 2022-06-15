@@ -39,24 +39,23 @@ void epsilon_decay_data::update_weights(VW::LEARNER::multi_learner& base, VW::mu
   {
     logged = (*it)->l.cb.costs[0];
     labelled_action = std::distance(examples.begin(), it);
-  }
-
-  const float r = -logged.cost;
-  auto& ep_fts = examples[0]->_reduction_features.template get<VW::cb_explore_adf::greedy::reduction_features>();
-  // Process each model, then update the upper/lower bounds for each model
-  for (int64_t i = 0; i < model_count; ++i)
-  {
-    if (!_constant_epsilon)
-    { ep_fts.epsilon = VW::reductions::epsilon_decay::decayed_epsilon(_scored_configs[i][i].update_count); }
-    if (!base.learn_returns_prediction) { base.predict(examples, _weight_indices[i]); }
-    base.learn(examples, _weight_indices[i]);
-    for (const auto& a_s : examples[0]->pred.a_s)
+    const float r = -logged.cost;
+    auto& ep_fts = examples[0]->_reduction_features.template get<VW::cb_explore_adf::greedy::reduction_features>();
+    // Process each model, then update the upper/lower bounds for each model
+    for (int64_t i = 0; i < model_count; ++i)
     {
-      if (a_s.action == labelled_action)
+      if (!_constant_epsilon)
+      { ep_fts.epsilon = VW::reductions::epsilon_decay::decayed_epsilon(_scored_configs[i][i].update_count); }
+      if (!base.learn_returns_prediction) { base.predict(examples, _weight_indices[i]); }
+      base.learn(examples, _weight_indices[i]);
+      for (const auto& a_s : examples[0]->pred.a_s)
       {
-        const float w = (logged.probability > 0) ? a_s.score / logged.probability : 0;
-        for (int64_t j = 0; j <= i; ++j) { _scored_configs[i][j].update(w, r); }
-        break;
+        if (a_s.action == labelled_action)
+        {
+          const float w = (logged.probability > 0) ? a_s.score / logged.probability : 0;
+          for (int64_t j = 0; j <= i; ++j) { _scored_configs[i][j].update(w, r); }
+          break;
+        }
       }
     }
   }
