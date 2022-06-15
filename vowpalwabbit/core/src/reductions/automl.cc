@@ -458,15 +458,7 @@ void interaction_config_manager::update_champ()
   if (champ_change)
   {
     this->total_champ_switches++;
-    if (keep_configs)
-    {
-      for (uint64_t live_slot = 0; live_slot < scores.size(); ++live_slot)
-      {
-        scores[live_slot].reset_stats(automl_alpha, automl_tau);
-        champ_scores[live_slot].reset_stats(automl_alpha, automl_tau);
-      }
-    }
-    else
+    if (!keep_configs)
     {
       while (!index_queue.empty()) { index_queue.pop(); };
       uint64_t champ_config_index = scores[current_champ].config_index;
@@ -485,6 +477,11 @@ void interaction_config_manager::update_champ()
       champ_scores.push_back(std::move(champ_secondary_score));
       current_champ = 0;
       valid_config_size = 1;
+    }
+    for (uint64_t live_slot = 0; live_slot < scores.size(); ++live_slot)
+    {
+      scores[live_slot].reset_stats(automl_alpha, automl_tau);
+      champ_scores[live_slot].reset_stats(automl_alpha, automl_tau);
     }
     config_oracle();
   }
