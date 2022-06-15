@@ -559,9 +559,9 @@ void automl<CMType>::offset_learn(multi_learner& base, multi_ex& ec, CB::cb_clas
     const uint32_t chosen_action = ec[0]->pred.a_s[0].action;
     if (live_slot == current_champ)
     {
-      for (int64_t live_slot_upd = 0; live_slot_upd < cm->scores.size(); ++live_slot_upd)
+      for (size_t live_slot_upd = 0; live_slot_upd < cm->scores.size(); ++live_slot_upd)
       {
-        if (live_slot_upd == current_champ) { continue; }
+        if (live_slot_upd == static_cast<size_t>(current_champ)) { continue; }
         cm->champ_scores[live_slot_upd].update(chosen_action == labelled_action ? w : 0, r);
       }
       std::swap(ec[0]->pred.a_s, buffer_a_s);
