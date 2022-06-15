@@ -113,6 +113,9 @@ struct interaction_config_manager : config_manager
   // Stores scores of live configs, size will never exceed max_live_configs
   std::vector<aml_score> scores;
 
+  // Stores champion scores of live configs, size will never exceed max_live_configs
+  std::vector<scored_config> champ_scores;
+
   // Maybe not needed with oracle, maps priority to config index, unused configs
   std::priority_queue<std::pair<float, uint64_t>> index_queue;
 
@@ -133,8 +136,8 @@ struct interaction_config_manager : config_manager
   void gen_quadratic_interactions(uint64_t);
 
 private:
-  bool better(uint64_t challenger, uint64_t champ);
-  bool worse(uint64_t challenger, uint64_t champ);
+  bool better(uint64_t live_slot);
+  bool worse(uint64_t live_slot);
   uint64_t choose();
   bool repopulate_index_queue();
   bool swap_eligible_to_inactivate(uint64_t);

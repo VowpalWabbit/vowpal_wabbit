@@ -75,7 +75,7 @@ bool weights_offset_test(cb_sim&, VW::workspace& all, VW::multi_ex& ec)
 
   const float expected_w0 = 0.0248609f;
   const float expected_w1 = 0.0346472f;
-  const float expected_w2 = 0.0105546f;
+  const float expected_w2 = 0.020154f;
   const float ZERO = 0.f;
 
   for (auto index : feature_indexes)

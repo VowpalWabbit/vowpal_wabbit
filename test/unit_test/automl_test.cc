@@ -76,7 +76,7 @@ BOOST_AUTO_TEST_CASE(automl_first_champ_switch)
 {
   const size_t num_iterations = 1331;
   const size_t seed = 10;
-  const size_t deterministic_champ_switch = 161;
+  const size_t deterministic_champ_switch = 465;
   callback_map test_hooks;
 
   test_hooks.emplace(deterministic_champ_switch - 1, [&](cb_sim&, VW::workspace& all, VW::multi_ex&) {
@@ -96,7 +96,7 @@ BOOST_AUTO_TEST_CASE(automl_first_champ_switch)
         aml_test::check_interactions_match_exclusions(aml);
         aml_test::check_config_states(aml);
         BOOST_CHECK_GT(aml->cm->total_champ_switches, 0);
-        BOOST_CHECK_EQUAL(aml->cm->current_champ, 2);
+        BOOST_CHECK_EQUAL(aml->cm->current_champ, 1);
         BOOST_CHECK_EQUAL(deterministic_champ_switch, aml->cm->total_learn_count);
         BOOST_CHECK(aml->current_state == VW::reductions::automl::automl_state::Experimenting);
         return true;
@@ -215,13 +215,16 @@ BOOST_AUTO_TEST_CASE(assert_live_configs_and_lease)
     BOOST_CHECK_EQUAL(aml->cm->scores[1].config_index, 5);
     BOOST_CHECK_EQUAL(aml->cm->scores[2].config_index, 3);
     BOOST_CHECK_EQUAL(aml->cm->configs.size(), 6);
-    BOOST_CHECK_EQUAL(aml->cm->configs[0].lease, 20);
+    BOOST_CHECK_EQUAL(aml->cm->configs[0].lease, 10);
     BOOST_CHECK_EQUAL(aml->cm->configs[3].lease, 10);
     BOOST_CHECK_EQUAL(aml->cm->configs[2].lease, 10);
     BOOST_CHECK_EQUAL(aml->cm->configs[4].lease, 20);
-    BOOST_CHECK_EQUAL(aml->cm->scores[0].update_count, 15);
+    BOOST_CHECK_EQUAL(aml->cm->scores[0].update_count, 0);
     BOOST_CHECK_EQUAL(aml->cm->scores[1].update_count, 14);
     BOOST_CHECK_EQUAL(aml->cm->scores[2].update_count, 4);
+    BOOST_CHECK_EQUAL(aml->cm->champ_scores[0].update_count, 0);
+    BOOST_CHECK_EQUAL(aml->cm->champ_scores[1].update_count, 14);
+    BOOST_CHECK_EQUAL(aml->cm->champ_scores[2].update_count, 4);
     BOOST_CHECK_EQUAL(aml->cm->index_queue.size(), 2);
     return true;
   });
@@ -247,6 +250,7 @@ BOOST_AUTO_TEST_CASE(namespace_switch)
 {
   const size_t num_iterations = 3000;
   callback_map test_hooks;
+  const size_t seed = 15;
 
   test_hooks.emplace(100, [&](cb_sim& sim, VW::workspace& all, VW::multi_ex&) {
     VW::reductions::automl::automl<interaction_config_manager>* aml = aml_test::get_automl_data(all);
@@ -276,14 +280,14 @@ BOOST_AUTO_TEST_CASE(namespace_switch)
     std::vector<namespace_index> ans{'U', 'U'};
     BOOST_CHECK(champ_exclusions.find(ans) != champ_exclusions.end());
     auto champ_interactions = aml->cm->scores[aml->cm->current_champ].live_interactions;
-    BOOST_CHECK_EQUAL(champ_interactions.size(), 9);
+    BOOST_CHECK_EQUAL(champ_interactions.size(), 5);
     return true;
   });
 
   auto ctr = simulator::_test_helper_hook(
       "--automl 3 --priority_type least_exclusion --cb_explore_adf --quiet --epsilon 0.2 --random_seed 5 "
-      "--global_lease 500 --keep_configs --oracle_type rand",
-      test_hooks, num_iterations);
+      "--global_lease 500 --keep_configs --oracle_type one_diff --noconstant",
+      test_hooks, num_iterations, seed);
   BOOST_CHECK_GT(ctr.back(), 0.8f);
 }
 
@@ -291,7 +295,7 @@ BOOST_AUTO_TEST_CASE(clear_configs)
 {
   const size_t num_iterations = 3000;
   const size_t seed = 10;
-  const size_t clear_champ_switch = 161;
+  const size_t clear_champ_switch = 465;
   callback_map test_hooks;
 
   test_hooks.emplace(clear_champ_switch - 1, [&](cb_sim&, VW::workspace& all, VW::multi_ex&) {
@@ -332,9 +336,9 @@ BOOST_AUTO_TEST_CASE(clear_configs)
 
 BOOST_AUTO_TEST_CASE(clear_configs_one_diff)
 {
-  const size_t num_iterations = 3000;
-  const size_t seed = 10;
-  const size_t clear_champ_switch = 161;
+  const size_t num_iterations = 2000;
+  const size_t seed = 11;
+  const size_t clear_champ_switch = 1895;
   callback_map test_hooks;
 
   test_hooks.emplace(clear_champ_switch - 1, [&](cb_sim&, VW::workspace& all, VW::multi_ex&) {
@@ -354,7 +358,7 @@ BOOST_AUTO_TEST_CASE(clear_configs_one_diff)
     aml_test::check_config_states(aml);
     BOOST_CHECK_EQUAL(aml->cm->current_champ, 0);
     BOOST_CHECK_EQUAL(clear_champ_switch, aml->cm->total_learn_count);
-    BOOST_CHECK_EQUAL(aml->cm->scores.size(), 3);
+    BOOST_CHECK_EQUAL(aml->cm->scores.size(), 1);
     BOOST_CHECK_EQUAL(aml->cm->valid_config_size, 7);
     BOOST_CHECK(aml->current_state == VW::reductions::automl::automl_state::Experimenting);
     return true;
@@ -362,6 +366,7 @@ BOOST_AUTO_TEST_CASE(clear_configs_one_diff)
 
   test_hooks.emplace(clear_champ_switch + 1, [&clear_champ_switch](cb_sim&, VW::workspace& all, VW::multi_ex&) {
     VW::reductions::automl::automl<interaction_config_manager>* aml = aml_test::get_automl_data(all);
+    BOOST_CHECK_EQUAL(aml->cm->scores.size(), 4);
     BOOST_CHECK_EQUAL(aml->cm->scores[0].live_interactions.size(), 5);
     BOOST_CHECK_EQUAL(aml->cm->scores[1].live_interactions.size(), 6);
     BOOST_CHECK_EQUAL(aml->cm->scores[2].live_interactions.size(), 4);
@@ -370,7 +375,7 @@ BOOST_AUTO_TEST_CASE(clear_configs_one_diff)
 
   // we initialize the reduction pointing to position 0 as champ, that config is hard-coded to empty
   auto ctr = simulator::_test_helper_hook(
-      "--automl 3 --priority_type least_exclusion --cb_explore_adf --quiet --epsilon 0.2 --random_seed 5", test_hooks,
+      "--automl 4 --priority_type least_exclusion --cb_explore_adf --quiet --epsilon 0.2 --random_seed 5", test_hooks,
       num_iterations, seed);
 
   BOOST_CHECK_GT(ctr.back(), 0.4f);
