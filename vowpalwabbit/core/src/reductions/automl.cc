@@ -177,7 +177,7 @@ void automl<CMType>::one_step(multi_learner& base, multi_ex& ec, CB::cb_class& l
 interaction_config_manager::interaction_config_manager(uint64_t global_lease, uint64_t max_live_configs,
     std::shared_ptr<VW::rand_state> rand_state, uint64_t priority_challengers, bool keep_configs,
     std::string oracle_type, dense_parameters& weights, priority_func* calc_priority, double automl_alpha,
-    double automl_tau, VW::io::logger* logger)
+    double automl_tau, VW::io::logger* logger, uint32_t& wpp)
     : global_lease(global_lease)
     , max_live_configs(max_live_configs)
     , random_state(std::move(rand_state))
@@ -189,6 +189,7 @@ interaction_config_manager::interaction_config_manager(uint64_t global_lease, ui
     , automl_alpha(automl_alpha)
     , automl_tau(automl_tau)
     , logger(logger)
+    , wpp(wpp)
 {
   configs[0] = exclusion_config(global_lease);
   configs[0].state = VW::reductions::automl::config_state::Live;
@@ -401,9 +402,7 @@ void interaction_config_manager::schedule()
       uint64_t new_live_config_index = choose();
       scores[live_slot].config_index = new_live_config_index;
       configs[new_live_config_index].state = VW::reductions::automl::config_state::Live;
-      uint64_t params_per_weight = 1;
-      while (params_per_weight < max_live_configs) { params_per_weight *= 2; }
-      weights.copy_offsets(current_champ, live_slot, static_cast<size_t>(params_per_weight));
+      weights.copy_offsets(current_champ, live_slot, wpp);
       // Regenerate interactions each time an exclusion is swapped in
       gen_quadratic_interactions(live_slot);
       // We may also want to 0 out weights here? Currently keep all same in live_slot position
@@ -743,9 +742,10 @@ VW::LEARNER::base_learner* VW::reductions::automl_setup(VW::setup_base_i& stack_
 
   if (priority_challengers < 0) { priority_challengers = (static_cast<int>(max_live_configs) - 1) / 2; }
 
+  // Note that all.wpp will not be set correctly until after setup
   auto cm = VW::make_unique<VW::reductions::automl::interaction_config_manager>(global_lease, max_live_configs,
       all.get_random_state(), static_cast<uint64_t>(priority_challengers), keep_configs, oracle_type,
-      all.weights.dense_weights, calc_priority, automl_alpha, automl_tau, &all.logger);
+      all.weights.dense_weights, calc_priority, automl_alpha, automl_tau, &all.logger, all.wpp);
   auto data = VW::make_unique<VW::reductions::automl::automl<VW::reductions::automl::interaction_config_manager>>(
       std::move(cm), &all.logger);
   if (max_live_configs > MAX_CONFIGS)
