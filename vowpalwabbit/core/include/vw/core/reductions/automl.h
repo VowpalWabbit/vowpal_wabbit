@@ -103,6 +103,7 @@ struct interaction_config_manager : config_manager
   double automl_alpha;
   double automl_tau;
   VW::io::logger* logger;
+  uint32_t& wpp;
 
   // Stores all namespaces currently seen -- Namespace switch could we use array, ask Jack
   std::map<namespace_index, uint64_t> ns_counter;
@@ -113,12 +114,15 @@ struct interaction_config_manager : config_manager
   // Stores scores of live configs, size will never exceed max_live_configs
   std::vector<aml_score> scores;
 
+  // Stores champion scores of live configs, size will never exceed max_live_configs
+  std::vector<scored_config> champ_scores;
+
   // Maybe not needed with oracle, maps priority to config index, unused configs
   std::priority_queue<std::pair<float, uint64_t>> index_queue;
 
   interaction_config_manager(uint64_t, uint64_t, std::shared_ptr<VW::rand_state>, uint64_t, bool, std::string,
       dense_parameters&, float (*)(const exclusion_config&, const std::map<namespace_index, uint64_t>&), double, double,
-      VW::io::logger*);
+      VW::io::logger*, uint32_t&);
 
   void apply_config(example*, uint64_t);
   void persist(metric_sink&, bool);
@@ -133,8 +137,8 @@ struct interaction_config_manager : config_manager
   void gen_quadratic_interactions(uint64_t);
 
 private:
-  bool better(uint64_t challenger, uint64_t champ);
-  bool worse(uint64_t challenger, uint64_t champ);
+  bool better(uint64_t live_slot);
+  bool worse(uint64_t live_slot);
   uint64_t choose();
   bool repopulate_index_queue();
   bool swap_eligible_to_inactivate(uint64_t);
