@@ -25,9 +25,6 @@ struct epsilon_decay_score : scored_config
   epsilon_decay_score() = default;
   epsilon_decay_score(double alpha, double tau) : VW::scored_config(alpha, tau) {}
   float decayed_epsilon(uint64_t update_count);
-  uint64_t get_score_idx() const { return _score_idx; }
-
-  uint64_t _score_idx;
 };
 
 struct epsilon_decay_data
