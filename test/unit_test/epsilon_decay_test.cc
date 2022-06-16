@@ -219,9 +219,10 @@ BOOST_AUTO_TEST_CASE(epsilon_decay_test_score_bounds_unit)
 {
   // Initialize epsilon_decay_data struct with 5 models
   uint64_t num_models = 5;
+  uint32_t wpp = 8;
   dense_parameters dense_weights(num_models);
   VW::io::logger logger = VW::io::create_default_logger();
-  epsilon_decay_data ep_data(num_models, 100, .05, .1, dense_weights, logger, false, false);
+  epsilon_decay_data ep_data(num_models, 100, .05, .1, dense_weights, logger, false, false, wpp);
 
   // Set update counts to fixed values with expected horizon bound violation
   size_t score_idx = 0;
@@ -303,9 +304,10 @@ BOOST_AUTO_TEST_CASE(epsilon_decay_test_horizon_bounds_unit)
 {
   // Initialize epsilon_decay_data struct with 5 models
   uint64_t num_models = 5;
+  uint32_t wpp = 8;
   dense_parameters dense_weights(num_models);
   VW::io::logger logger = VW::io::create_default_logger();
-  epsilon_decay_data ep_data(num_models, 100, .05, .1, dense_weights, logger, false, false);
+  epsilon_decay_data ep_data(num_models, 100, .05, .1, dense_weights, logger, false, false, wpp);
 
   // Set update counts to fixed values with expected horizon bound violation
   size_t score_idx = 0;

@@ -88,15 +88,13 @@ void epsilon_decay_data::rebalance_greater_models(int64_t model_ind, int64_t swa
 // Clear values in removed weights and scores
 void epsilon_decay_data::clear_weights_and_scores(int64_t swap_dist, int64_t model_count)
 {
-  uint64_t params_per_weight = 1;
-  while (params_per_weight < static_cast<uint64_t>(model_count)) { params_per_weight *= 2; }
   for (int64_t model_ind = 0; model_ind < model_count; ++model_ind)
   {
     for (int64_t score_ind = 0;
          score_ind < std::min(static_cast<int64_t>(_scored_configs[model_ind].size()), swap_dist); ++score_ind)
     { _scored_configs[model_ind][score_ind].reset_stats(_epsilon_decay_alpha, _epsilon_decay_tau); }
   }
-  for (int64_t ind = 0; ind < swap_dist; ++ind) { _weights.clear_offset(_weight_indices[ind], params_per_weight); }
+  for (int64_t ind = 0; ind < swap_dist; ++ind) { _weights.clear_offset(_weight_indices[ind], _wpp); }
 }
 
 void epsilon_decay_data::shift_model(int64_t model_ind, int64_t swap_dist, int64_t model_count)
@@ -276,10 +274,7 @@ VW::LEARNER::base_learner* VW::reductions::epsilon_decay_setup(VW::setup_base_i&
   float scaled_alpha = _epsilon_decay_alpha / model_count;
 
   auto data = VW::make_unique<VW::reductions::epsilon_decay::epsilon_decay_data>(model_count, _min_scope, scaled_alpha,
-      _epsilon_decay_tau, all.weights.dense_weights, all.logger, _log_champ_changes, _constant_epsilon);
-
-  uint64_t params_per_weight = 1;
-  while (params_per_weight < model_count) { params_per_weight *= 2; }
+      _epsilon_decay_tau, all.weights.dense_weights, all.logger, _log_champ_changes, _constant_epsilon, all.wpp);
 
   // make sure we setup the rest of the stack with cleared interactions
   // to make sure there are not subtle bugs
@@ -292,7 +287,7 @@ VW::LEARNER::base_learner* VW::reductions::epsilon_decay_setup(VW::setup_base_i&
                         .set_output_label_type(VW::label_type_t::cb)
                         .set_input_prediction_type(VW::prediction_type_t::action_scores)
                         .set_output_prediction_type(VW::prediction_type_t::action_scores)
-                        .set_params_per_weight(params_per_weight)
+                        .set_params_per_weight(model_count)
                         .set_output_prediction_type(base_learner->get_output_prediction_type())
                         .set_save_load(save_load_epsilon_decay)
                         .build();

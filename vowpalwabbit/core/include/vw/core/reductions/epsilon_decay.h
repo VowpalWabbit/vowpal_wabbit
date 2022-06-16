@@ -30,7 +30,7 @@ struct epsilon_decay_score : scored_config
 struct epsilon_decay_data
 {
   epsilon_decay_data(uint64_t model_count, uint64_t min_scope, double epsilon_decay_alpha, double epsilon_decay_tau,
-      dense_parameters& weights, VW::io::logger logger, bool log_champ_changes, bool constant_epsilon)
+      dense_parameters& weights, VW::io::logger logger, bool log_champ_changes, bool constant_epsilon, uint32_t& wpp)
       : _min_scope(min_scope)
       , _epsilon_decay_alpha(epsilon_decay_alpha)
       , _epsilon_decay_tau(epsilon_decay_tau)
@@ -38,6 +38,7 @@ struct epsilon_decay_data
       , _logger(std::move(logger))
       , _log_champ_changes(log_champ_changes)
       , _constant_epsilon(constant_epsilon)
+      , _wpp(wpp)
   {
     _scored_configs.reserve(model_count);
     _weight_indices.resize(model_count);  // resize required for iota
@@ -67,6 +68,7 @@ struct epsilon_decay_data
   VW::io::logger _logger;
   bool _log_champ_changes;
   bool _constant_epsilon;
+  uint32_t& _wpp;
 };
 
 }  // namespace epsilon_decay
