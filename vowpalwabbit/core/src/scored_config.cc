@@ -40,7 +40,7 @@ void scored_config::reset_stats(double alpha, double tau)
 
 float scored_config::lower_bound() { return chisq.cressieread_lower_bound(); }
 
-float scored_config::upper_bound() { return current_ips() /* chisq.cressieread_lower_bound() */; }
+float scored_config::upper_bound() { return current_ips() /* chisq.cressieread_upper_bound() */; }
 
 namespace model_utils
 {
