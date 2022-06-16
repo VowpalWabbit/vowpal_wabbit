@@ -210,7 +210,7 @@ VW::LEARNER::base_learner* VW::reductions::baseline_challenger_cb_setup(VW::setu
                .help("Confidence level for baseline")
                .experimental())
       .add(make_option("cb_c_tau", tau)
-               .default_value(DEFAULT_TAU)
+               .default_value(BASELINE_DEFAULT_TAU)
                .keep()
                .help("Time constant for count decay")
                .experimental());
