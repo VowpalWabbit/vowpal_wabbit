@@ -239,7 +239,7 @@ Weight Options:
                                             choices {one_diff, rand}, keep, experimental)
     --automl_alpha arg                      Set confidence interval for champion change (type: float, default:
                                             0.05, keep, experimental)
-    --automl_tau arg                        Time constant for count decay (type: float, default: 0.999, keep,
+    --automl_tau arg                        Time constant for count decay (type: float, default: 1, keep,
                                             experimental)
 [Reduction] Baseline Options:
     --baseline                              Learn an additive baseline (from constant features) and a residual
@@ -536,7 +536,7 @@ Weight Options:
                                             100, keep, experimental)
     --epsilon_decay_alpha arg               Set confidence interval for champion change (type: float, default:
                                             0.05, keep, experimental)
-    --epsilon_decay_tau arg                 Time constant for count decay (type: float, default: 0.999, keep,
+    --epsilon_decay_tau arg                 Time constant for count decay (type: float, default: 1, keep,
                                             experimental)
     --log_champ_changes                     Log champ changes (type: bool, keep, experimental)
     --constant_epsilon                      Keep epsilon constant across models (type: bool, keep, experimental)
