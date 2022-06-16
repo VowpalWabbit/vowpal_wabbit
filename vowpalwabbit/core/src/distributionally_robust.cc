@@ -148,7 +148,6 @@ ScoredDual ChiSquared::cressieread_duals(double r, double sign, double phi) cons
       }
     }
   }
-  double best = 0.0;
 
   if (candidates.empty()) { return std::make_pair(rmin, Duals(true, 0, 0, 0, n)); }
   else
