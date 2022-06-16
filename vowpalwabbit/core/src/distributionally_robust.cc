@@ -173,7 +173,7 @@ ScoredDual ChiSquared::recompute_duals()
 {
   double r = rmin;
   double sign = 1;
-  duals = cressieread_duals(r, 1, get_phi());
+  duals = cressieread_duals(r, sign, get_phi());
   duals.first = VW::math::clamp(sign * duals.first, rmin, rmax);
   return duals;
 }
