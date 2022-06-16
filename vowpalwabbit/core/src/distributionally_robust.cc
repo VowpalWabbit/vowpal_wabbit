@@ -57,6 +57,91 @@ static bool isclose(double x, double y, double atol = 1e-8)
   return std::abs(x - y) <= (atol + rtol * std::abs(y));
 }
 
+ChiSquared::ChiSquared(double _alpha, double _tau, double _wmin,
+    double _wmax, double _rmin, double _rmax)
+    : alpha(_alpha)
+    , tau(_tau)
+    , wmin(_wmin)
+    , wmax(_wmax)
+    , rmin(_rmin)
+    , rmax(_rmax)
+    , n(0)
+    , sumw(0)
+    , sumwsq(0)
+    , sumwr(0)
+    , sumwsqr(0)
+    , sumwsqrsq(0)
+    , delta(chisq_onedof_isf(alpha))
+    , duals_stale(true)
+{
+}
+
+bool ChiSquared::isValid() const
+{
+  if (alpha > 1 || alpha <= 0) return false;
+  if (tau > 1 || tau <= 0) return false;
+  if (wmin >= wmax || wmin >= 1 || wmax <= 1) return false;
+  if (rmin > rmax) return false;
+
+  return true;
+}
+
+ChiSquared& ChiSquared::update(double w, double r)
+{
+  if (w >= 0)
+  {
+    n = tau * n + 1;
+    sumw = tau * sumw + w;
+    sumwsq = tau * sumwsq + w * w;
+    sumwr = tau * sumwr + w * r;
+    sumwsqr = tau * sumwsqr + w * w * r;
+    sumwsqrsq = tau * sumwsqrsq + w * w * r * r;
+
+    rmin = std::min(rmin, r);
+    rmax = std::max(rmax, r);
+
+    wmin = std::min(wmin, w);
+    wmax = std::max(wmax, w);
+
+    duals_stale = true;
+  }
+
+  return *this;
+}
+
+double ChiSquared::qlb(double w, double r)
+{
+  if (duals_stale) { recompute_duals(); }
+
+  return duals.second.qfunc(w, r);
+}
+
+void ChiSquared::reset(double _alpha, double _tau)
+{
+  alpha = _alpha;
+  tau = _tau;
+  wmin = 0.0;
+  wmax = std::numeric_limits<double>::infinity();
+  rmin = 0.0;
+  rmax = 1;
+  n = 0.0;
+  sumw = 0.0;
+  sumwsq = 0.0;
+  sumwr = 0.0;
+  sumwsqr = 0.0;
+  sumwsqrsq = 0.0;
+  delta = chisq_onedof_isf(alpha);
+  duals_stale = true;
+  duals.first = 0.0;
+  duals.second.reset();
+}
+
+double ChiSquared::lower_bound_and_update()
+{
+  if (duals_stale) { recompute_duals(); }
+  return duals.first;
+}
+
 double ChiSquared::get_phi() const
 {
   double uncwfake = sumw < n ? wmax : wmin;
