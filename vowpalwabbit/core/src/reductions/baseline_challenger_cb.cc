@@ -101,7 +101,7 @@ struct baseline_challenger_data
     }
 
     // We play baseline if policy expectation is worse than the baseline lower bound
-    double ci = baseline.lower_bound();
+    double ci = baseline.lower_bound_and_update();
     double expectation = policy_expectation.current();
 
     // TODO don't check for it at every time step
@@ -181,7 +181,7 @@ void save_load(baseline_challenger_data& data, io_buf& io, bool read, bool text)
 void persist_metrics(baseline_challenger_data& data, metric_sink& metrics)
 {
   if (!data.emit_metrics) { return; }
-  auto ci = static_cast<float>(data.baseline.lower_bound());
+  auto ci = static_cast<float>(data.baseline.lower_bound_and_update());
   auto exp = static_cast<float>(data.policy_expectation.current());
 
   metrics.set_float("baseline_cb_baseline_lowerbound", ci);

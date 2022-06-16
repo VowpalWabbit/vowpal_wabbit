@@ -167,12 +167,17 @@ public:
     duals.second.reset();
   }
 
-  double lower_bound()
+  double lower_bound_and_update()
   {
     if (duals_stale) { recompute_duals(); }
     return duals.first;
   }
 
+  double get_phi() const;
+  ScoredDual cressieread_duals(double r, double sign, double phi) const;
+  double cressieread_bound(double r, double sign, double phi) const;
+  double cressieread_lower_bound() const;
+  double cressieread_upper_bound() const;
   ScoredDual recompute_duals();
   static double chisq_onedof_isf(double alpha);
   const double& effn() { return n; }

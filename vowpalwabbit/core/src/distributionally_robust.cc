@@ -57,15 +57,8 @@ static bool isclose(double x, double y, double atol = 1e-8)
   return std::abs(x - y) <= (atol + rtol * std::abs(y));
 }
 
-ScoredDual ChiSquared::recompute_duals()
+double ChiSquared::get_phi() const
 {
-  if (n <= 0)
-  {
-    duals = std::make_pair(rmin, Duals(true, 0, 0, 0, 0));
-
-    return duals;
-  }
-
   double uncwfake = sumw < n ? wmax : wmin;
   double uncgstar;
 
@@ -79,13 +72,17 @@ ScoredDual ChiSquared::recompute_duals()
     uncgstar = (n + 1) * (unca - 1) * (unca - 1) / (uncb - unca * unca);
   }
 
-  double phi = (-uncgstar - delta) / (2 * (n + 1));
+  return (-uncgstar - delta) / (2 * (n + 1));
+}
 
-  double r = rmin;
-  double sign = 1;
+ScoredDual ChiSquared::cressieread_duals(double r, double sign, double phi) const
+{
+  if (n <= 0)
+  {
+    return std::make_pair(r, Duals(true, 0, 0, 0, 0));
+  }
 
   std::list<ScoredDual> candidates;
-
   for (auto wfake : {wmin, wmax})
   {
     if (wfake == std::numeric_limits<double>::infinity())
@@ -154,18 +151,40 @@ ScoredDual ChiSquared::recompute_duals()
       }
     }
   }
+  double best = 0.0;
 
-  if (candidates.empty()) { duals = std::make_pair(rmin, Duals(true, 0, 0, 0, n)); }
+  if (candidates.empty()) { return std::make_pair(rmin, Duals(true, 0, 0, 0, n)); }
   else
   {
     auto it = std::min_element(candidates.begin(), candidates.end(),
         [](const ScoredDual& x, const ScoredDual& y) { return std::get<0>(x) < std::get<0>(y); });
 
-    duals = *it;
+    return *it;
   }
+}
 
+double ChiSquared::cressieread_bound(double r, double sign, double phi) const
+{
+  ScoredDual sd = cressieread_duals(r, sign, phi);
+  return VW::math::clamp(sign * sd.first, rmin, rmax);
+}
+
+double ChiSquared::cressieread_lower_bound() const
+{
+  return cressieread_bound(rmin, 1, get_phi());
+}
+
+double ChiSquared::cressieread_upper_bound() const
+{
+  return cressieread_bound(rmax, -1, get_phi());
+}
+
+ScoredDual ChiSquared::recompute_duals()
+{
+  double r = rmin;
+  double sign = 1;
+  duals = cressieread_duals(r, 1, get_phi());
   duals.first = VW::math::clamp(sign * duals.first, rmin, rmax);
-
   return duals;
 }
 
