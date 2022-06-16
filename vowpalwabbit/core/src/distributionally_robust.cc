@@ -57,8 +57,7 @@ static bool isclose(double x, double y, double atol = 1e-8)
   return std::abs(x - y) <= (atol + rtol * std::abs(y));
 }
 
-ChiSquared::ChiSquared(double _alpha, double _tau, double _wmin,
-    double _wmax, double _rmin, double _rmax)
+ChiSquared::ChiSquared(double _alpha, double _tau, double _wmin, double _wmax, double _rmin, double _rmax)
     : alpha(_alpha)
     , tau(_tau)
     , wmin(_wmin)
