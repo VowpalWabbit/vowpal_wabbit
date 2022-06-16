@@ -77,10 +77,7 @@ double ChiSquared::get_phi() const
 
 ScoredDual ChiSquared::cressieread_duals(double r, double sign, double phi) const
 {
-  if (n <= 0)
-  {
-    return std::make_pair(r, Duals(true, 0, 0, 0, 0));
-  }
+  if (n <= 0) { return std::make_pair(r, Duals(true, 0, 0, 0, 0)); }
 
   std::list<ScoredDual> candidates;
   for (auto wfake : {wmin, wmax})
@@ -169,15 +166,9 @@ double ChiSquared::cressieread_bound(double r, double sign, double phi) const
   return VW::math::clamp(sign * sd.first, rmin, rmax);
 }
 
-double ChiSquared::cressieread_lower_bound() const
-{
-  return cressieread_bound(rmin, 1, get_phi());
-}
+double ChiSquared::cressieread_lower_bound() const { return cressieread_bound(rmin, 1, get_phi()); }
 
-double ChiSquared::cressieread_upper_bound() const
-{
-  return cressieread_bound(rmax, -1, get_phi());
-}
+double ChiSquared::cressieread_upper_bound() const { return cressieread_bound(rmax, -1, get_phi()); }
 
 ScoredDual ChiSquared::recompute_duals()
 {
