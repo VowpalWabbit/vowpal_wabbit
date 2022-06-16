@@ -2,9 +2,9 @@
     "json.schemas": [
         {
             "fileMatch": [
-                "runtests.AUTOGEN.json"
+                "*.vwtest.json"
             ],
-            "url": "./test/runtests.schema.json"
+            "url": "./test/vwtest.schema.json"
         }
     ]
 }
