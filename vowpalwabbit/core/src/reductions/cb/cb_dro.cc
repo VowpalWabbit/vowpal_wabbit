@@ -66,7 +66,7 @@ struct cb_dro_data
 
         chisq.update(chosen_action == labelled_action ? w : 0, r);
 
-        float qlb = static_cast<float>(w > 0 ? chisq.effn() * chisq.qlb(w, r) / w : 1);
+        float qlb = static_cast<float>(w > 0 ? chisq.effn() * chisq.qlb(w, r, 1) / w : 1);
 
         // avoid pathological cases
         qlb = std::max(qlb, 0.01f);

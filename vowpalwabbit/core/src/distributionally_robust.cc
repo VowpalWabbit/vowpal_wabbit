@@ -108,11 +108,11 @@ ChiSquared& ChiSquared::update(double w, double r)
   return *this;
 }
 
-double ChiSquared::qlb(double w, double r)
+double ChiSquared::qlb(double w, double r, double sign)
 {
   if (duals_stale) { recompute_duals(); }
 
-  return duals.second.qfunc(w, r);
+  return duals.second.qfunc(w, r, sign);
 }
 
 void ChiSquared::reset(double _alpha, double _tau)
@@ -168,7 +168,7 @@ ScoredDual ChiSquared::cressieread_duals(double r, double sign, double phi) cons
   {
     if (wfake == std::numeric_limits<double>::infinity())
     {
-      double x = r + (sumwr - sumw * r) / n;
+      double x = sign * (r + (sumwr - sumw * r) / n);
       double y = (r * sumw - sumwr) * (r * sumw - sumwr) / (n * (1 + n)) -
           (r * r * sumwsq - 2 * r * sumwsqr + sumwsqrsq) / (1 + n);
       double z = phi + 1 / (2 * n);
@@ -182,12 +182,12 @@ ScoredDual ChiSquared::cressieread_duals(double r, double sign, double phi) cons
         if (isclose(kappa, 0))
         {
           Duals candidate = {true, 0, 0, 0, n};
-          candidates.push_back(std::make_pair(r, candidate));
+          candidates.push_back(std::make_pair(sign * r, candidate));
         }
         else
         {
           double gstar = x - std::sqrt(2 * y * z);
-          double gamma = -kappa * (1 + n) / n + (r * sumw - sumwr) / n;
+          double gamma = -kappa * (1 + n) / n + sign * (r * sumw - sumwr) / n;
           double beta = -sign * r;
           Duals candidate = {false, kappa, gamma, beta, n};
           candidates.push_back(std::make_pair(gstar, candidate));
@@ -218,7 +218,7 @@ ScoredDual ChiSquared::cressieread_duals(double r, double sign, double phi) cons
           if (isclose(kappa, 0))
           {
             Duals candidate = {true, 0, 0, 0, n};
-            candidates.push_back(std::make_pair(r, candidate));
+            candidates.push_back(std::make_pair(sign * r, candidate));
           }
           else
           {
