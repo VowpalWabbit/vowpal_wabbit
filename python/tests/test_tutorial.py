@@ -1,5 +1,5 @@
 import vowpalwabbit
-import DistributionallyRobustUnitTestData as dro
+from distributionally_robust_data import OnlineCressieRead
 
 import collections
 import os
@@ -42,8 +42,8 @@ class Simulator:
         self.ocrl2 = None
 
         if has_automl:
-            self.ocrl = dro.OnlineDRO.OnlineCressieReadLB(alpha=0.05, tau=0.999)
-            self.ocrl2 = dro.OnlineDRO.OnlineCressieReadLB(alpha=0.05, tau=0.999)
+            self.ocrl = OnlineCressieRead(alpha=0.05, tau=0.999)
+            self.ocrl2 = OnlineCressieRead(alpha=0.05, tau=0.999)
 
     def get_cost(self, context, action):
         if context["user"] == "Tom":
