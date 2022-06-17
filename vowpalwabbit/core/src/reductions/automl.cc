@@ -178,9 +178,9 @@ void automl<CMType>::one_step(multi_learner& base, multi_ex& ec, CB::cb_class& l
 // this can also be interpreted as a pre-learn() hook since it gets called by a learn() right before calling
 // into its own base_learner.learn(). see learn_automl(...)
 interaction_config_manager::interaction_config_manager(uint64_t global_lease, uint64_t max_live_configs,
-    std::shared_ptr<VW::rand_state> rand_state, uint64_t priority_challengers, bool keep_configs, std::string interaction_type,
-    std::string oracle_type, dense_parameters& weights, priority_func* calc_priority, double automl_alpha,
-    double automl_tau, VW::io::logger* logger, uint32_t& wpp)
+    std::shared_ptr<VW::rand_state> rand_state, uint64_t priority_challengers, bool keep_configs,
+    std::string interaction_type, std::string oracle_type, dense_parameters& weights, priority_func* calc_priority,
+    double automl_alpha, double automl_tau, VW::io::logger* logger, uint32_t& wpp)
     : global_lease(global_lease)
     , max_live_configs(max_live_configs)
     , random_state(std::move(rand_state))
