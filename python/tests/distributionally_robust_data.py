@@ -1,7 +1,7 @@
 from math import inf
 
-class OnlineCressieRead:
 
+class OnlineCressieRead:
     @staticmethod
     def intervalimpl(
         n,
@@ -56,9 +56,7 @@ class OnlineCressieRead:
                             candidates.append((sign * r, None))
                         else:
                             gstar = x - sqrt(2 * y * z)
-                            gamma = (
-                                -kappa * (1 + n) / n + sign * (r * sumw - sumwr) / n
-                            )
+                            gamma = -kappa * (1 + n) / n + sign * (r * sumw - sumwr) / n
                             beta = -sign * r
                             candidates.append(
                                 (
@@ -84,9 +82,7 @@ class OnlineCressieRead:
 
                     if barwsq > barw**2:
                         x = barwr + (
-                            (1 - barw)
-                            * (barwsqr - barw * barwr)
-                            / (barwsq - barw**2)
+                            (1 - barw) * (barwsqr - barw * barwr) / (barwsq - barw**2)
                         )
                         y = (barwsqr - barw * barwr) ** 2 / (barwsq - barw**2) - (
                             barwsqrsq - barwr**2
@@ -166,7 +162,7 @@ class OnlineCressieRead:
 
         return self
 
-    def recomputeduals(self, is_upper = False):
+    def recomputeduals(self, is_upper=False):
         from crminustwo import CrMinusTwo as CrMinusTwo
 
         self.duals = self.intervalimpl(
@@ -189,8 +185,4 @@ class OnlineCressieRead:
 
             assert self.duals is not None
 
-        return (
-            self.duals[1][0]["qfunc"](1, w, r)
-            if self.duals[1][0] is not None
-            else 1
-        )
+        return self.duals[1][0]["qfunc"](1, w, r) if self.duals[1][0] is not None else 1
