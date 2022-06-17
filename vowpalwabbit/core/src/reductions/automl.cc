@@ -794,7 +794,7 @@ VW::LEARNER::base_learner* VW::reductions::automl_setup(VW::setup_base_i& stack_
                .keep()
                .default_value("quadratic")
                .one_of({"quadratic", "cubic"})
-               .help("Set what type of feature to use")
+               .help("Set what type of interactions to use")
                .experimental())
       .add(make_option("oracle_type", oracle_type)
                .keep()
