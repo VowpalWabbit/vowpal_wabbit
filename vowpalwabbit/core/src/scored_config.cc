@@ -38,6 +38,10 @@ void scored_config::reset_stats(double alpha, double tau)
   update_count = 0;
 }
 
+float scored_config::lower_bound() { return chisq.lower_bound(); }
+
+float scored_config::upper_bound() { return current_ips(); }
+
 namespace model_utils
 {
 size_t read_model_field(io_buf& io, VW::scored_config& sc)

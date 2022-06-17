@@ -23,17 +23,18 @@ namespace
 struct csoaa
 {
   uint32_t num_classes = 0;
-  int indexing = -1;
   bool search = false;
   VW::polyprediction* pred = nullptr;
   VW::io::logger logger;
-  csoaa(VW::io::logger logger) : logger(std::move(logger)) {}
+  // Default value of 2 follows behavior of 1-indexing and can change to 0-indexing if detected
+  uint32_t& indexing;  // for 0 or 1 indexing
+  csoaa(VW::io::logger logger, uint32_t& indexing) : logger(std::move(logger)), indexing(indexing) {}
   ~csoaa() { free(pred); }
 };
 
 template <bool is_learn>
 inline void inner_loop(single_learner& base, VW::example& ec, uint32_t i, float cost, uint32_t& prediction,
-    float& score, float& partial_prediction, int indexing)
+    float& score, float& partial_prediction, uint32_t& indexing)
 {
   if (is_learn)
   {
@@ -74,12 +75,12 @@ void predict_or_learn(csoaa& c, single_learner& base, VW::example& ec)
     {
       auto& lbl = cost.class_index;
       // Update indexing
-      if (c.indexing == -1 && lbl == 0)
+      if (c.indexing == 2 && lbl == 0)
       {
         c.logger.out_info("label 0 found -- labels are now considered 0-indexed.");
         c.indexing = 0;
       }
-      else if (c.indexing == -1 && lbl == c.num_classes)
+      else if (c.indexing == 2 && lbl == c.num_classes)
       {
         c.logger.out_info("label {0} found -- labels are now considered 1-indexed.", c.num_classes);
         c.indexing = 1;
@@ -184,11 +185,10 @@ base_learner* VW::reductions::csoaa_setup(VW::setup_base_i& stack_builder)
 {
   options_i& options = *stack_builder.get_options();
   VW::workspace& all = *stack_builder.get_all_pointer();
-  auto c = VW::make_unique<csoaa>(all.logger);
+  auto c = VW::make_unique<csoaa>(all.logger, all.indexing);
   option_group_definition new_options("[Reduction] Cost Sensitive One Against All");
-  new_options
-      .add(make_option("csoaa", c->num_classes).keep().necessary().help("One-against-all multiclass with <k> costs"))
-      .add(make_option("indexing", c->indexing).one_of({0, 1}).keep().help("Choose between 0 or 1-indexing"));
+  new_options.add(
+      make_option("csoaa", c->num_classes).keep().necessary().help("One-against-all multiclass with <k> costs"));
 
   if (!options.add_parse_and_check_necessary(new_options)) { return nullptr; }
 

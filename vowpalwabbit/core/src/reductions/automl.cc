@@ -179,8 +179,8 @@ void automl<CMType>::one_step(multi_learner& base, multi_ex& ec, CB::cb_class& l
 // into its own base_learner.learn(). see learn_automl(...)
 interaction_config_manager::interaction_config_manager(uint64_t global_lease, uint64_t max_live_configs,
     std::shared_ptr<VW::rand_state> rand_state, uint64_t priority_challengers, bool keep_configs,
-    std::string interaction_type, std::string oracle_type, dense_parameters& weights, priority_func* calc_priority,
-    double automl_alpha, double automl_tau, VW::io::logger* logger)
+    std::string oracle_type, dense_parameters& weights, priority_func* calc_priority, double automl_alpha,
+    double automl_tau, VW::io::logger* logger, uint32_t& wpp)
     : global_lease(global_lease)
     , max_live_configs(max_live_configs)
     , random_state(std::move(rand_state))
@@ -193,10 +193,12 @@ interaction_config_manager::interaction_config_manager(uint64_t global_lease, ui
     , automl_alpha(automl_alpha)
     , automl_tau(automl_tau)
     , logger(logger)
+    , wpp(wpp)
 {
   configs[0] = exclusion_config(global_lease);
   configs[0].state = VW::reductions::automl::config_state::Live;
-  scores.push_back(aml_score(automl_alpha, automl_tau));
+  scores.emplace_back(automl_alpha, automl_tau);
+  champ_scores.emplace_back(automl_alpha, automl_tau);
   ++valid_config_size;
 }
 
@@ -284,8 +286,6 @@ void interaction_config_manager::insert_config(std::set<std::vector<namespace_in
   {
     configs[valid_config_size].exclusions = std::move(new_exclusions);
     configs[valid_config_size].lease = global_lease;
-    configs[valid_config_size].ips = std::numeric_limits<float>::infinity();
-    configs[valid_config_size].lower_bound = 0.f;
     configs[valid_config_size].state = VW::reductions::automl::config_state::New;
   }
   else
@@ -408,7 +408,7 @@ bool interaction_config_manager::swap_eligible_to_inactivate(uint64_t live_slot)
   for (uint64_t other_live_slot = 0; other_live_slot < scores.size(); ++other_live_slot)
   {
     if (!scores[other_live_slot].eligible_to_inactivate && other_live_slot != current_champ &&
-        better(configs[scores[live_slot].config_index], configs[scores[other_live_slot].config_index]))
+        scores[live_slot].lower_bound() > scores[other_live_slot].upper_bound())
     {
       scores[live_slot].eligible_to_inactivate = false;
       scores[other_live_slot].eligible_to_inactivate = true;
@@ -450,7 +450,8 @@ void interaction_config_manager::schedule()
       // Allocate new score if we haven't reached maximum yet
       if (need_new_score)
       {
-        scores.push_back(aml_score(automl_alpha, automl_tau));
+        scores.emplace_back(automl_alpha, automl_tau);
+        champ_scores.emplace_back(automl_alpha, automl_tau);
         if (live_slot > priority_challengers) { scores.back().eligible_to_inactivate = true; }
       }
       // Only inactivate current config if lease is reached
@@ -459,10 +460,11 @@ void interaction_config_manager::schedule()
       { configs[scores[live_slot].config_index].state = VW::reductions::automl::config_state::Inactive; }
       // Set all features of new live config
       scores[live_slot].reset_stats(automl_alpha, automl_tau);
+      champ_scores[live_slot].reset_stats(automl_alpha, automl_tau);
       uint64_t new_live_config_index = choose();
       scores[live_slot].config_index = new_live_config_index;
       configs[new_live_config_index].state = VW::reductions::automl::config_state::Live;
-      weights.copy_offsets(current_champ, live_slot, 4);
+      weights.copy_offsets(current_champ, live_slot, wpp);
       // Regenerate interactions each time an exclusion is swapped in
       gen_interactions(live_slot);
       // We may also want to 0 out weights here? Currently keep all same in live_slot position
@@ -470,15 +472,15 @@ void interaction_config_manager::schedule()
   }
 }
 
-bool interaction_config_manager::better(const exclusion_config& challenger, const exclusion_config& champ) const
+bool interaction_config_manager::better(uint64_t live_slot)
 {
-  return challenger.lower_bound > champ.ips;
+  return scores[live_slot].lower_bound() > champ_scores[live_slot].upper_bound();
 }
 
-bool interaction_config_manager::worse(const exclusion_config& challenger, const exclusion_config& champ) const
+bool interaction_config_manager::worse(uint64_t)
 {
-  // Dummy return false to remove unused variable warning
-  return (champ.lower_bound > challenger.ips) ? false : false;
+  // Dummy return false
+  return false;
 }
 
 uint64_t interaction_config_manager::choose()
@@ -490,78 +492,27 @@ uint64_t interaction_config_manager::choose()
 
 void interaction_config_manager::update_champ()
 {
-  // Update ips and lower bound for live configs
-  for (uint64_t live_slot = 0; live_slot < scores.size(); ++live_slot)
-  {
-    float ips = scores[live_slot].current_ips();
-    distributionally_robust::ScoredDual sd = scores[live_slot].chisq.recompute_duals();
-    float lower_bound = static_cast<float>(sd.first);
-    configs[scores[live_slot].config_index].ips = ips;
-    configs[scores[live_slot].config_index].lower_bound = lower_bound;
-  }
-  exclusion_config champ_config = configs[scores[current_champ].config_index];
   bool champ_change = false;
 
   // compare lowerbound of any challenger to the ips of the champ, and switch whenever when the LB beats the champ
-  for (uint64_t config_index = 0; config_index < valid_config_size; ++config_index)
+  for (uint64_t live_slot = 0; live_slot < scores.size(); ++live_slot)
   {
-    if (configs[config_index].state == VW::reductions::automl::config_state::New ||
-        configs[config_index].state == VW::reductions::automl::config_state::Removed ||
-        scores[current_champ].config_index == config_index)
-    { continue; }
+    if (live_slot == current_champ) { continue; }
     // If challenger is better ('better function from Chacha')
-    if (better(configs[config_index], champ_config))
+    if (better(live_slot))
     {
       champ_change = true;
-      if (configs[config_index].state == VW::reductions::automl::config_state::Live)
+      // Update champ with live_slot of live config
+      if (scores[live_slot].eligible_to_inactivate)
       {
-        // Update champ with live_slot of live config
-        for (uint64_t live_slot = 0; live_slot < scores.size(); ++live_slot)
-        {
-          if (scores[live_slot].config_index == config_index)
-          {
-            if (scores[live_slot].eligible_to_inactivate)
-            {
-              scores[live_slot].eligible_to_inactivate = false;
-              scores[current_champ].eligible_to_inactivate = true;
-            }
-            current_champ = live_slot;
-            break;
-          }
-        }
-        champ_config = configs[config_index];
+        scores[live_slot].eligible_to_inactivate = false;
+        scores[current_champ].eligible_to_inactivate = true;
       }
-      else
-      {
-        float worst_ips = std::numeric_limits<float>::infinity();
-        uint64_t worst_live_slot = 0;
-        for (uint64_t live_slot = 0; live_slot < scores.size(); ++live_slot)
-        {
-          if (configs[scores[live_slot].config_index].ips < worst_ips)
-          {
-            worst_ips = configs[scores[live_slot].config_index].ips;
-            worst_live_slot = live_slot;
-          }
-        }
-        configs[scores[worst_live_slot].config_index].lease *= 2;
-        configs[scores[worst_live_slot].config_index].state = VW::reductions::automl::config_state::Inactive;
-        scores[worst_live_slot].reset_stats(automl_alpha, automl_tau);
-        scores[worst_live_slot].config_index = config_index;
-        configs[scores[worst_live_slot].config_index].state = VW::reductions::automl::config_state::Live;
-        gen_interactions(worst_live_slot);
-        if (scores[worst_live_slot].eligible_to_inactivate)
-        {
-          scores[worst_live_slot].eligible_to_inactivate = false;
-          scores[current_champ].eligible_to_inactivate = true;
-        }
-        current_champ = worst_live_slot;
-        // Rare case breaks index_queue, best to just clear it
-        while (!index_queue.empty()) { index_queue.pop(); };
-      }
+      current_champ = live_slot;
     }
-    else if (worse(configs[config_index], champ_config))  // If challenger is worse ('worse function from Chacha')
+    else if (worse(live_slot))  // If challenger is worse ('worse function from Chacha')
     {
-      configs[config_index].state = VW::reductions::automl::config_state::Removed;
+      configs[scores[live_slot].config_index].state = VW::reductions::automl::config_state::Removed;
     }
   }
   if (champ_change)
@@ -578,11 +529,19 @@ void interaction_config_manager::update_champ()
         std::swap(zero_ind, new_champ);
         scores[current_champ].config_index = 0;
       }
-      aml_score champ_score = std::move(scores[current_champ]);
+      auto champ_primary_score = std::move(scores[current_champ]);
+      auto champ_secondary_score = std::move(champ_scores[current_champ]);
       scores.clear();
-      scores.push_back(std::move(champ_score));
+      champ_scores.clear();
+      scores.push_back(std::move(champ_primary_score));
+      champ_scores.push_back(std::move(champ_secondary_score));
       current_champ = 0;
       valid_config_size = 1;
+    }
+    for (uint64_t live_slot = 0; live_slot < scores.size(); ++live_slot)
+    {
+      scores[live_slot].reset_stats(automl_alpha, automl_tau);
+      champ_scores[live_slot].reset_stats(automl_alpha, automl_tau);
     }
     config_oracle();
   }
@@ -655,9 +614,19 @@ void automl<CMType>::offset_learn(multi_learner& base, multi_ex& ec, CB::cb_clas
     if (!base.learn_returns_prediction) { base.predict(ec, live_slot); }
     base.learn(ec, live_slot);
     const uint32_t chosen_action = ec[0]->pred.a_s[0].action;
-    cm->scores[live_slot].update(chosen_action == labelled_action ? w : 0, r);
-
-    if (live_slot == current_champ) { std::swap(ec[0]->pred.a_s, buffer_a_s); }
+    if (live_slot == current_champ)
+    {
+      for (size_t live_slot_upd = 0; live_slot_upd < cm->scores.size(); ++live_slot_upd)
+      {
+        if (live_slot_upd == static_cast<size_t>(current_champ)) { continue; }
+        cm->champ_scores[live_slot_upd].update(chosen_action == labelled_action ? w : 0, r);
+      }
+      std::swap(ec[0]->pred.a_s, buffer_a_s);
+    }
+    else
+    {
+      cm->scores[live_slot].update(chosen_action == labelled_action ? w : 0, r);
+    }
   }
 
   std::swap(ec[0]->pred.a_s, buffer_a_s);
@@ -840,7 +809,7 @@ VW::LEARNER::base_learner* VW::reductions::automl_setup(VW::setup_base_i& stack_
                .experimental())
       .add(make_option("automl_tau", automl_tau)
                .keep()
-               .default_value(DEFAULT_TAU)
+               .default_value(CRESSEREAD_DEFAULT_TAU)
                .help("Time constant for count decay")
                .experimental());
 
@@ -860,9 +829,10 @@ VW::LEARNER::base_learner* VW::reductions::automl_setup(VW::setup_base_i& stack_
 
   if (priority_challengers < 0) { priority_challengers = (static_cast<int>(max_live_configs) - 1) / 2; }
 
+  // Note that all.wpp will not be set correctly until after setup
   auto cm = VW::make_unique<VW::reductions::automl::interaction_config_manager>(global_lease, max_live_configs,
-      all.get_random_state(), static_cast<uint64_t>(priority_challengers), keep_configs, interaction_type, oracle_type,
-      all.weights.dense_weights, calc_priority, automl_alpha, automl_tau, &all.logger);
+      all.get_random_state(), static_cast<uint64_t>(priority_challengers), keep_configs, oracle_type,
+      all.weights.dense_weights, calc_priority, automl_alpha, automl_tau, &all.logger, all.wpp);
   auto data = VW::make_unique<VW::reductions::automl::automl<VW::reductions::automl::interaction_config_manager>>(
       std::move(cm), &all.logger);
   if (max_live_configs > MAX_CONFIGS)
@@ -930,8 +900,6 @@ size_t read_model_field(io_buf& io, VW::reductions::automl::exclusion_config& ec
   size_t bytes = 0;
   bytes += read_model_field(io, ec.exclusions);
   bytes += read_model_field(io, ec.lease);
-  bytes += read_model_field(io, ec.ips);
-  bytes += read_model_field(io, ec.lower_bound);
   bytes += read_model_field(io, ec.state);
   return bytes;
 }
@@ -942,8 +910,6 @@ size_t write_model_field(
   size_t bytes = 0;
   bytes += write_model_field(io, ec.exclusions, upstream_name + "_exclusions", text);
   bytes += write_model_field(io, ec.lease, upstream_name + "_lease", text);
-  bytes += write_model_field(io, ec.ips, upstream_name + "_ips", text);
-  bytes += write_model_field(io, ec.lower_bound, upstream_name + "_lower_bound", text);
   bytes += write_model_field(io, ec.state, upstream_name + "_state", text);
   return bytes;
 }
@@ -977,6 +943,7 @@ size_t read_model_field(io_buf& io, VW::reductions::automl::interaction_config_m
   bytes += read_model_field(io, cm.ns_counter);
   bytes += read_model_field(io, cm.configs);
   bytes += read_model_field(io, cm.scores);
+  bytes += read_model_field(io, cm.champ_scores);
   bytes += read_model_field(io, cm.index_queue);
   for (uint64_t live_slot = 0; live_slot < cm.scores.size(); ++live_slot) { cm.gen_interactions(live_slot); }
   return bytes;
@@ -992,6 +959,7 @@ size_t write_model_field(io_buf& io, const VW::reductions::automl::interaction_c
   bytes += write_model_field(io, cm.ns_counter, upstream_name + "_ns_counter", text);
   bytes += write_model_field(io, cm.configs, upstream_name + "_configs", text);
   bytes += write_model_field(io, cm.scores, upstream_name + "_scores", text);
+  bytes += write_model_field(io, cm.champ_scores, upstream_name + "_champ_scores", text);
   bytes += write_model_field(io, cm.index_queue, upstream_name + "_index_queue", text);
   return bytes;
 }

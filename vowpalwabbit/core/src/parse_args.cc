@@ -682,7 +682,8 @@ void parse_feature_tweaks(options_i& options, VW::workspace& all, bool interacti
                .help("Don't remove interactions with duplicate combinations of namespaces. For ex. this is a "
                      "duplicate: '-q ab -q ba' and a lot more in '-q ::'."))
       .add(make_option("quadratic", quadratics).short_name("q").keep().help("Create and use quadratic features"))
-      .add(make_option("cubic", cubics).keep().help("Create and use cubic features"));
+      .add(make_option("cubic", cubics).keep().help("Create and use cubic features"))
+      .add(make_option("indexing", all.indexing).one_of({0, 1}).keep().help("Choose between 0 or 1-indexing"));
   options.add_and_parse(feature_options);
 
   // feature manipulation
