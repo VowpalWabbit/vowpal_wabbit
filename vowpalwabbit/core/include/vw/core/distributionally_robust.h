@@ -96,7 +96,7 @@ public:
       double _wmax = std::numeric_limits<double>::infinity(), double _rmin = 0, double _rmax = 1);
   bool isValid() const;
   ChiSquared& update(double w, double r);
-  double qlb(double w, double r, double sign); // sign = 1.0 for lower_bound, sign = -1.0 for upper_bound
+  double qlb(double w, double r, double sign);  // sign = 1.0 for lower_bound, sign = -1.0 for upper_bound
   void reset(double _alpha, double _tau);
   double lower_bound_and_update();
   double get_phi() const;
