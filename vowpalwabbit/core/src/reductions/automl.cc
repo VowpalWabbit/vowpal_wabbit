@@ -96,12 +96,13 @@ std::string ns_to_str(unsigned char ns)
     return std::string(1, ns);
 }
 
-std::string interaction_vec_t_to_string(const VW::reductions::automl::interaction_vec_t& interactions)
+std::string interaction_vec_t_to_string(
+    const VW::reductions::automl::interaction_vec_t& interactions, const std::string& interaction_type)
 {
   std::stringstream ss;
   for (const std::vector<VW::namespace_index>& v : interactions)
   {
-    ss << "-q ";
+    interaction_type == "quadratic" ? ss << "-q " : ss << "-cubic ";
     for (VW::namespace_index c : v) { ss << ns_to_str(c); }
     ss << " ";
   }
@@ -139,11 +140,13 @@ namespace reductions
 {
 namespace automl
 {
-void aml_score::persist(metric_sink& metrics, const std::string& suffix, bool verbose)
+void aml_score::persist(
+    metric_sink& metrics, const std::string& suffix, bool verbose, const std::string& interaction_type)
 {
   VW::scored_config::persist(metrics, suffix);
   metrics.set_uint("conf_idx" + suffix, config_index);
-  if (verbose) { metrics.set_string("interactions" + suffix, ::interaction_vec_t_to_string(live_interactions)); }
+  if (verbose)
+  { metrics.set_string("interactions" + suffix, ::interaction_vec_t_to_string(live_interactions, interaction_type)); }
 }
 
 template <typename CMType>
@@ -176,13 +179,14 @@ void automl<CMType>::one_step(multi_learner& base, multi_ex& ec, CB::cb_class& l
 // into its own base_learner.learn(). see learn_automl(...)
 interaction_config_manager::interaction_config_manager(uint64_t global_lease, uint64_t max_live_configs,
     std::shared_ptr<VW::rand_state> rand_state, uint64_t priority_challengers, bool keep_configs,
-    std::string oracle_type, dense_parameters& weights, priority_func* calc_priority, double automl_alpha,
-    double automl_tau, VW::io::logger* logger, uint32_t& wpp)
+    std::string interaction_type, std::string oracle_type, dense_parameters& weights, priority_func* calc_priority,
+    double automl_alpha, double automl_tau, VW::io::logger* logger, uint32_t& wpp)
     : global_lease(global_lease)
     , max_live_configs(max_live_configs)
     , random_state(std::move(rand_state))
     , priority_challengers(priority_challengers)
     , keep_configs(keep_configs)
+    , interaction_type(std::move(interaction_type))
     , oracle_type(std::move(oracle_type))
     , weights(weights)
     , calc_priority(calc_priority)
@@ -204,23 +208,48 @@ interaction_config_manager::interaction_config_manager(uint64_t global_lease, ui
 // preference of how to generate interactions from a given set of exclusions.
 // Transforms exclusions -> interactions expected by VW.
 
-void interaction_config_manager::gen_quadratic_interactions(uint64_t live_slot)
+void interaction_config_manager::gen_interactions(uint64_t live_slot)
 {
-  auto& exclusions = configs[scores[live_slot].config_index].exclusions;
-  auto& interactions = scores[live_slot].live_interactions;
-  if (!interactions.empty()) { interactions.clear(); }
-  for (auto it = ns_counter.begin(); it != ns_counter.end(); ++it)
+  if (interaction_type == "quadratic")
   {
-    auto idx1 = (*it).first;
-    for (auto jt = it; jt != ns_counter.end(); ++jt)
+    auto& exclusions = configs[scores[live_slot].config_index].exclusions;
+    auto& interactions = scores[live_slot].live_interactions;
+    if (!interactions.empty()) { interactions.clear(); }
+    for (auto it = ns_counter.begin(); it != ns_counter.end(); ++it)
     {
-      auto idx2 = (*jt).first;
-      std::vector<namespace_index> idx{idx1, idx2};
-      if (exclusions.find(idx) == exclusions.end()) { interactions.push_back({idx1, idx2}); }
+      auto idx1 = (*it).first;
+      for (auto jt = it; jt != ns_counter.end(); ++jt)
+      {
+        auto idx2 = (*jt).first;
+        std::vector<namespace_index> idx{idx1, idx2};
+        if (exclusions.find(idx) == exclusions.end()) { interactions.push_back({idx1, idx2}); }
+      }
     }
   }
-  // logger->out_info("generated interactions {} from exclusion conf: {}", ::interaction_vec_t_to_string(interactions),
-  //     ::exclusions_to_string(exclusions));
+  else if (interaction_type == "cubic")
+  {
+    auto& exclusions = configs[scores[live_slot].config_index].exclusions;
+    auto& interactions = scores[live_slot].live_interactions;
+    if (!interactions.empty()) { interactions.clear(); }
+    for (auto it = ns_counter.begin(); it != ns_counter.end(); ++it)
+    {
+      auto idx1 = (*it).first;
+      for (auto jt = it; jt != ns_counter.end(); ++jt)
+      {
+        auto idx2 = (*jt).first;
+        for (auto kt = jt; kt != ns_counter.end(); ++kt)
+        {
+          auto idx3 = (*kt).first;
+          std::vector<namespace_index> idx{idx1, idx2, idx3};
+          if (exclusions.find(idx) == exclusions.end()) { interactions.push_back({idx1, idx2, idx3}); }
+        }
+      }
+    }
+  }
+  else
+  {
+    THROW("Unknown interaction type.");
+  }
 }
 
 // This function will process an incoming multi_ex, update the namespace_counter,
@@ -243,7 +272,7 @@ void interaction_config_manager::pre_process(const multi_ex& ecs)
   // Regenerate interactions if new namespaces are seen
   if (new_ns_seen)
   {
-    for (uint64_t live_slot = 0; live_slot < scores.size(); ++live_slot) { gen_quadratic_interactions(live_slot); }
+    for (uint64_t live_slot = 0; live_slot < scores.size(); ++live_slot) { gen_interactions(live_slot); }
   }
 }
 // Helper function to insert new configs from oracle into map of configs as well as index_queue.
@@ -282,11 +311,26 @@ void interaction_config_manager::config_oracle()
     for (uint64_t i = 0; i < CONFIGS_PER_CHAMP_CHANGE; ++i)
     {
       uint64_t rand_ind = static_cast<uint64_t>(random_state->get_and_update_random() * champ_interactions.size());
-      namespace_index ns1 = champ_interactions[rand_ind][0];
-      namespace_index ns2 = champ_interactions[rand_ind][1];
       std::set<std::vector<namespace_index>> new_exclusions(configs[scores[current_champ].config_index].exclusions);
-      std::vector<namespace_index> idx{ns1, ns2};
-      new_exclusions.insert(idx);
+      if (interaction_type == "quadratic")
+      {
+        namespace_index ns1 = champ_interactions[rand_ind][0];
+        namespace_index ns2 = champ_interactions[rand_ind][1];
+        std::vector<namespace_index> idx{ns1, ns2};
+        new_exclusions.insert(idx);
+      }
+      else if (interaction_type == "cubic")
+      {
+        namespace_index ns1 = champ_interactions[rand_ind][0];
+        namespace_index ns2 = champ_interactions[rand_ind][1];
+        namespace_index ns3 = champ_interactions[rand_ind][2];
+        std::vector<namespace_index> idx{ns1, ns2, ns3};
+        new_exclusions.insert(idx);
+      }
+      else
+      {
+        THROW("Unknown interaction type.");
+      }
       insert_config(std::move(new_exclusions));
     }
   }
@@ -304,11 +348,26 @@ void interaction_config_manager::config_oracle()
     // Add one exclusion (for each interaction)
     for (auto& interaction : champ_interactions)
     {
-      namespace_index ns1 = interaction[0];
-      namespace_index ns2 = interaction[1];
       std::set<std::vector<namespace_index>> new_exclusions(configs[scores[current_champ].config_index].exclusions);
-      std::vector<namespace_index> idx{ns1, ns2};
-      new_exclusions.insert(idx);
+      if (interaction_type == "quadratic")
+      {
+        namespace_index ns1 = interaction[0];
+        namespace_index ns2 = interaction[1];
+        std::vector<namespace_index> idx{ns1, ns2};
+        new_exclusions.insert(idx);
+      }
+      else if (interaction_type == "cubic")
+      {
+        namespace_index ns1 = interaction[0];
+        namespace_index ns2 = interaction[1];
+        namespace_index ns3 = interaction[2];
+        std::vector<namespace_index> idx{ns1, ns2, ns3};
+        new_exclusions.insert(idx);
+      }
+      else
+      {
+        THROW("Unknown interaction type.");
+      }
       insert_config(std::move(new_exclusions));
     }
     // Remove one exclusion (for each exclusion)
@@ -407,7 +466,7 @@ void interaction_config_manager::schedule()
       configs[new_live_config_index].state = VW::reductions::automl::config_state::Live;
       weights.copy_offsets(current_champ, live_slot, wpp);
       // Regenerate interactions each time an exclusion is swapped in
-      gen_quadratic_interactions(live_slot);
+      gen_interactions(live_slot);
       // We may also want to 0 out weights here? Currently keep all same in live_slot position
     }
   }
@@ -494,7 +553,7 @@ void interaction_config_manager::persist(metric_sink& metrics, bool verbose)
   metrics.set_uint("current_champ", current_champ);
   for (uint64_t live_slot = 0; live_slot < scores.size(); ++live_slot)
   {
-    scores[live_slot].persist(metrics, "_" + std::to_string(live_slot), verbose);
+    scores[live_slot].persist(metrics, "_" + std::to_string(live_slot), verbose, interaction_type);
     if (verbose)
     {
       auto& exclusions = configs[scores[live_slot].config_index].exclusions;
@@ -694,6 +753,7 @@ VW::LEARNER::base_learner* VW::reductions::automl_setup(VW::setup_base_i& stack_
   int32_t priority_challengers;
   bool keep_configs = false;
   bool verbose_metrics = false;
+  std::string interaction_type;
   std::string oracle_type;
   float automl_alpha;
   float automl_tau;
@@ -730,6 +790,12 @@ VW::LEARNER::base_learner* VW::reductions::automl_setup(VW::setup_base_i& stack_
                .experimental())
       .add(make_option("keep_configs", keep_configs).keep().help("Keep all configs after champ change").experimental())
       .add(make_option("verbose_metrics", verbose_metrics).help("Extended metrics for debugging").experimental())
+      .add(make_option("interaction_type", interaction_type)
+               .keep()
+               .default_value("quadratic")
+               .one_of({"quadratic", "cubic"})
+               .help("Set what type of interactions to use")
+               .experimental())
       .add(make_option("oracle_type", oracle_type)
                .keep()
                .default_value("one_diff")
@@ -765,7 +831,7 @@ VW::LEARNER::base_learner* VW::reductions::automl_setup(VW::setup_base_i& stack_
 
   // Note that all.wpp will not be set correctly until after setup
   auto cm = VW::make_unique<VW::reductions::automl::interaction_config_manager>(global_lease, max_live_configs,
-      all.get_random_state(), static_cast<uint64_t>(priority_challengers), keep_configs, oracle_type,
+      all.get_random_state(), static_cast<uint64_t>(priority_challengers), keep_configs, interaction_type, oracle_type,
       all.weights.dense_weights, calc_priority, automl_alpha, automl_tau, &all.logger, all.wpp);
   auto data = VW::make_unique<VW::reductions::automl::automl<VW::reductions::automl::interaction_config_manager>>(
       std::move(cm), &all.logger);
@@ -879,7 +945,7 @@ size_t read_model_field(io_buf& io, VW::reductions::automl::interaction_config_m
   bytes += read_model_field(io, cm.scores);
   bytes += read_model_field(io, cm.champ_scores);
   bytes += read_model_field(io, cm.index_queue);
-  for (uint64_t live_slot = 0; live_slot < cm.scores.size(); ++live_slot) { cm.gen_quadratic_interactions(live_slot); }
+  for (uint64_t live_slot = 0; live_slot < cm.scores.size(); ++live_slot) { cm.gen_interactions(live_slot); }
   return bytes;
 }
 

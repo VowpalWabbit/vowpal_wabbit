@@ -27,13 +27,25 @@ void check_interactions_match_exclusions(VW::reductions::automl::automl<interact
   {
     auto& exclusions = aml->cm->configs[score.config_index].exclusions;
     auto& interactions = score.live_interactions;
+    auto& interaction_type = aml->cm->interaction_type;
     // Check that no interaction can be found in exclusions
     for (const auto& interaction : interactions)
     {
-      VW::namespace_index ns1 = interaction[0];
-      VW::namespace_index ns2 = interaction[1];
-      std::vector<namespace_index> ns{ns1, ns2};
-      BOOST_CHECK(exclusions.find(ns) == exclusions.end());
+      if (interaction_type == "quadratic")
+      {
+        VW::namespace_index ns1 = interaction[0];
+        VW::namespace_index ns2 = interaction[1];
+        std::vector<namespace_index> ns{ns1, ns2};
+        BOOST_CHECK(exclusions.find(ns) == exclusions.end());
+      }
+      else
+      {
+        VW::namespace_index ns1 = interaction[0];
+        VW::namespace_index ns2 = interaction[1];
+        VW::namespace_index ns3 = interaction[2];
+        std::vector<namespace_index> ns{ns1, ns2, ns3};
+        BOOST_CHECK(exclusions.find(ns) == exclusions.end());
+      }
     }
     // Check that interaction count is equal to quadratic interaction size minus exclusion count
     size_t exclusion_count = exclusions.size();
