@@ -57,92 +57,15 @@ static bool isclose(double x, double y, double atol = 1e-8)
   return std::abs(x - y) <= (atol + rtol * std::abs(y));
 }
 
-ChiSquared::ChiSquared(double _alpha, double _tau, double _wmin, double _wmax, double _rmin, double _rmax)
-    : alpha(_alpha)
-    , tau(_tau)
-    , wmin(_wmin)
-    , wmax(_wmax)
-    , rmin(_rmin)
-    , rmax(_rmax)
-    , n(0)
-    , sumw(0)
-    , sumwsq(0)
-    , sumwr(0)
-    , sumwsqr(0)
-    , sumwsqrsq(0)
-    , delta(chisq_onedof_isf(alpha))
-    , duals_stale(true)
+ScoredDual ChiSquared::recompute_duals()
 {
-}
-
-bool ChiSquared::isValid() const
-{
-  if (alpha > 1 || alpha <= 0) return false;
-  if (tau > 1 || tau <= 0) return false;
-  if (wmin >= wmax || wmin >= 1 || wmax <= 1) return false;
-  if (rmin > rmax) return false;
-
-  return true;
-}
-
-ChiSquared& ChiSquared::update(double w, double r)
-{
-  if (w >= 0)
+  if (n <= 0)
   {
-    n = tau * n + 1;
-    sumw = tau * sumw + w;
-    sumwsq = tau * sumwsq + w * w;
-    sumwr = tau * sumwr + w * r;
-    sumwsqr = tau * sumwsqr + w * w * r;
-    sumwsqrsq = tau * sumwsqrsq + w * w * r * r;
+    duals = std::make_pair(rmin, Duals(true, 0, 0, 0, 0));
 
-    rmin = std::min(rmin, r);
-    rmax = std::max(rmax, r);
-
-    wmin = std::min(wmin, w);
-    wmax = std::max(wmax, w);
-
-    duals_stale = true;
+    return duals;
   }
 
-  return *this;
-}
-
-double ChiSquared::qlb(double w, double r)
-{
-  if (duals_stale) { recompute_duals(); }
-
-  return duals.second.qfunc(w, r);
-}
-
-void ChiSquared::reset(double _alpha, double _tau)
-{
-  alpha = _alpha;
-  tau = _tau;
-  wmin = 0.0;
-  wmax = std::numeric_limits<double>::infinity();
-  rmin = 0.0;
-  rmax = 1;
-  n = 0.0;
-  sumw = 0.0;
-  sumwsq = 0.0;
-  sumwr = 0.0;
-  sumwsqr = 0.0;
-  sumwsqrsq = 0.0;
-  delta = chisq_onedof_isf(alpha);
-  duals_stale = true;
-  duals.first = 0.0;
-  duals.second.reset();
-}
-
-double ChiSquared::lower_bound_and_update()
-{
-  if (duals_stale) { recompute_duals(); }
-  return duals.first;
-}
-
-double ChiSquared::get_phi() const
-{
   double uncwfake = sumw < n ? wmax : wmin;
   double uncgstar;
 
@@ -156,14 +79,13 @@ double ChiSquared::get_phi() const
     uncgstar = (n + 1) * (unca - 1) * (unca - 1) / (uncb - unca * unca);
   }
 
-  return (-uncgstar - delta) / (2 * (n + 1));
-}
+  double phi = (-uncgstar - delta) / (2 * (n + 1));
 
-ScoredDual ChiSquared::cressieread_duals(double r, double sign, double phi) const
-{
-  if (n <= 0) { return std::make_pair(r, Duals(true, 0, 0, 0, 0)); }
+  double r = rmin;
+  double sign = 1;
 
   std::list<ScoredDual> candidates;
+
   for (auto wfake : {wmin, wmax})
   {
     if (wfake == std::numeric_limits<double>::infinity())
@@ -233,32 +155,17 @@ ScoredDual ChiSquared::cressieread_duals(double r, double sign, double phi) cons
     }
   }
 
-  if (candidates.empty()) { return std::make_pair(rmin, Duals(true, 0, 0, 0, n)); }
+  if (candidates.empty()) { duals = std::make_pair(rmin, Duals(true, 0, 0, 0, n)); }
   else
   {
     auto it = std::min_element(candidates.begin(), candidates.end(),
         [](const ScoredDual& x, const ScoredDual& y) { return std::get<0>(x) < std::get<0>(y); });
 
-    return *it;
+    duals = *it;
   }
-}
 
-double ChiSquared::cressieread_bound(double r, double sign, double phi) const
-{
-  ScoredDual sd = cressieread_duals(r, sign, phi);
-  return VW::math::clamp(sign * sd.first, rmin, rmax);
-}
-
-double ChiSquared::cressieread_lower_bound() const { return cressieread_bound(rmin, 1, get_phi()); }
-
-double ChiSquared::cressieread_upper_bound() const { return cressieread_bound(rmax, -1, get_phi()); }
-
-ScoredDual ChiSquared::recompute_duals()
-{
-  double r = rmin;
-  double sign = 1;
-  duals = cressieread_duals(r, sign, get_phi());
   duals.first = VW::math::clamp(sign * duals.first, rmin, rmax);
+
   return duals;
 }
 

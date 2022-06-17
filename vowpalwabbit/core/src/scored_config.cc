@@ -38,9 +38,9 @@ void scored_config::reset_stats(double alpha, double tau)
   update_count = 0;
 }
 
-float scored_config::lower_bound() { return chisq.cressieread_lower_bound(); }
+float scored_config::lower_bound() { return chisq.lower_bound(); }
 
-float scored_config::upper_bound() { return current_ips() /* chisq.cressieread_upper_bound() */; }
+float scored_config::upper_bound() { return current_ips(); }
 
 namespace model_utils
 {
