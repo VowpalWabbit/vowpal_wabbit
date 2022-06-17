@@ -45,7 +45,10 @@ struct Duals
       : unbounded(unbounded), kappa(kappa), gamma(gamma), beta(beta), n(n)
   {
   }
-  double qfunc(double w, double r, double sign) { return unbounded ? 1 : -(gamma + (beta + sign * r) * w) / ((n + 1) * kappa); }
+  double qfunc(double w, double r, double sign)
+  {
+    return unbounded ? 1 : -(gamma + (beta + sign * r) * w) / ((n + 1) * kappa);
+  }
 
   void reset()
   {
