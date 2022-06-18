@@ -43,7 +43,7 @@ struct multipredict_info
 template <class T>
 inline void vec_add_multipredict(multipredict_info<T>& mp, const float fx, uint64_t fi)
 {
-  if ((-1e-10 < fx) && (fx < 1e-10)) return;
+  if ((-1e-10 < fx) && (fx < 1e-10)) { return; }
   uint64_t mask = mp.weights.mask();
   VW::polyprediction* p = mp.pred;
   fi &= mask;
@@ -59,12 +59,14 @@ inline void vec_add_multipredict(multipredict_info<T>& mp, const float fx, uint6
                                         // change_begin())
     }
   }
-  else  // TODO: this could be faster by unrolling into two loops
+  else
+  {  // TODO: this could be faster by unrolling into two loops
     for (size_t c = 0; c < mp.count; ++c, fi += (uint64_t)mp.step, ++p)
     {
       fi &= mask;
       p->scalar += fx * mp.weights[fi];
     }
+  }
 }
 
 // iterate through one namespace (or its part), callback function FuncT(some_data_R, feature_value_x, feature_weight)
@@ -155,13 +157,17 @@ template <class R, class S, void (*T)(R&, float, S), bool audit, void (*audit_fu
 inline void generate_interactions(VW::workspace& all, VW::example_predict& ec, R& dat, size_t& num_interacted_features)
 {
   if (all.weights.sparse)
+  {
     generate_interactions<R, S, T, audit, audit_func, sparse_parameters>(*ec.interactions, *ec.extent_interactions,
         all.permutations, ec, dat, all.weights.sparse_weights, num_interacted_features,
         all._generate_interactions_object_cache);
+  }
   else
+  {
     generate_interactions<R, S, T, audit, audit_func, dense_parameters>(*ec.interactions, *ec.extent_interactions,
         all.permutations, ec, dat, all.weights.dense_weights, num_interacted_features,
         all._generate_interactions_object_cache);
+  }
 }
 
 // this code is for C++98/03 complience as I unable to pass null function-pointer as template argument in g++-4.6
@@ -169,11 +175,15 @@ template <class R, class S, void (*T)(R&, float, S)>
 inline void generate_interactions(VW::workspace& all, VW::example_predict& ec, R& dat, size_t& num_interacted_features)
 {
   if (all.weights.sparse)
+  {
     generate_interactions<R, S, T, sparse_parameters>(all.interactions, all.extent_interactions, all.permutations, ec,
         dat, all.weights.sparse_weights, num_interacted_features, all._generate_interactions_object_cache);
+  }
   else
+  {
     generate_interactions<R, S, T, dense_parameters>(all.interactions, all.extent_interactions, all.permutations, ec,
         dat, all.weights.dense_weights, num_interacted_features, all._generate_interactions_object_cache);
+  }
 }
 
 }  // namespace INTERACTIONS

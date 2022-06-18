@@ -18,7 +18,7 @@
 template <class T>
 T* calloc_or_throw(size_t nmemb)
 {
-  if (nmemb == 0) return nullptr;
+  if (nmemb == 0) { return nullptr; }
 
   void* data = calloc(nmemb, sizeof(T));
   if (data == nullptr)
@@ -124,5 +124,5 @@ T* calloc_mergable_or_throw(size_t nmemb)
 
 inline void free_it(void* ptr)
 {
-  if (ptr != nullptr) free(ptr);
+  if (ptr != nullptr) { free(ptr); }
 }

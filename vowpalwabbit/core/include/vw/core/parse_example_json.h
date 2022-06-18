@@ -458,7 +458,7 @@ struct LabelSinglePropertyState : BaseState<audit>
     ctx.key += 7;
     ctx.key_length -= 7;
 
-    if (ctx.label_object_state.Float(ctx, v) == nullptr) return nullptr;
+    if (ctx.label_object_state.Float(ctx, v) == nullptr) { return nullptr; }
 
     return ctx.previous_state;
   }
@@ -469,7 +469,7 @@ struct LabelSinglePropertyState : BaseState<audit>
     ctx.key += 7;
     ctx.key_length -= 7;
 
-    if (ctx.label_object_state.String(ctx, str, len, copy) == nullptr) return nullptr;
+    if (ctx.label_object_state.String(ctx, str, len, copy) == nullptr) { return nullptr; }
 
     return ctx.previous_state;
   }
@@ -480,7 +480,7 @@ struct LabelSinglePropertyState : BaseState<audit>
     ctx.key += 7;
     ctx.key_length -= 7;
 
-    if (ctx.label_object_state.Uint(ctx, v) == nullptr) return nullptr;
+    if (ctx.label_object_state.Uint(ctx, v) == nullptr) { return nullptr; }
 
     return ctx.previous_state;
   }
@@ -552,7 +552,7 @@ struct TextState : BaseState<audit>
         case ' ':
         case '\t':
           *p = '\0';
-          if (p - start > 0) ns.AddFeature(start, ctx._hash_func, ctx._parse_mask);
+          if (p - start > 0) { ns.AddFeature(start, ctx._hash_func, ctx._parse_mask); }
 
           start = p + 1;
           break;
@@ -564,7 +564,7 @@ struct TextState : BaseState<audit>
       }
     }
 
-    if (start < end) ns.AddFeature(start, ctx._hash_func, ctx._parse_mask);
+    if (start < end) { ns.AddFeature(start, ctx._hash_func, ctx._parse_mask); }
 
     return ctx.previous_state;
   }
@@ -735,7 +735,9 @@ public:
       ctx.CurrentNamespace().AddFeature(f, array_hash, str.str().c_str());
     }
     else
+    {
       ctx.CurrentNamespace().AddFeature(f, array_hash, nullptr);
+    }
     array_hash++;
 
     return this;
@@ -827,22 +829,24 @@ public:
           depth++;
           break;
         case '}':
-          if (depth == 0 && sq_depth == 0)
-            stop = true;
+          if (depth == 0 && sq_depth == 0) { stop = true; }
           else
+          {
             depth--;
+          }
           break;
         case '[':
           sq_depth++;
           break;
         case ']':
-          if (depth == 0 && sq_depth == 0)
-            stop = true;
+          if (depth == 0 && sq_depth == 0) { stop = true; }
           else
+          {
             sq_depth--;
+          }
           break;
         case ',':
-          if (depth == 0 && sq_depth == 0) stop = true;
+          if (depth == 0 && sq_depth == 0) { stop = true; }
           break;
       }
       head++;
@@ -879,9 +883,13 @@ public:
           return &ctx.label_single_property_state;
         }
         else if (ctx.key_length == 6)
+        {
           return &ctx.label_state;
+        }
         else if (ctx.key_length == 11 && !_stricmp(ctx.key, "_labelIndex"))
+        {
           return &ctx.label_index_state;
+        }
         else
         {
           ctx.error() << "Unsupported key '" << ctx.key << "' len: " << length;
@@ -889,14 +897,14 @@ public:
         }
       }
 
-      if (ctx.key_length == 5 && !strcmp(ctx.key, "_text")) return &ctx.text_state;
+      if (ctx.key_length == 5 && !strcmp(ctx.key, "_text")) { return &ctx.text_state; }
 
       // TODO: _multi in _multi...
       if (ctx.key_length == 6 && !strcmp(ctx.key, "_multi")) { return &ctx.multi_state; }
 
-      if (ctx.key_length == 6 && !strcmp(ctx.key, "_slots")) return &ctx.slots_state;
+      if (ctx.key_length == 6 && !strcmp(ctx.key, "_slots")) { return &ctx.slots_state; }
 
-      if (ctx.key_length == 4 && !_stricmp(ctx.key, "_tag")) return &ctx.tag_state;
+      if (ctx.key_length == 4 && !_stricmp(ctx.key, "_tag")) { return &ctx.tag_state; }
 
       if (ctx.key_length == 4 && !_stricmp(ctx.key, "_inc"))
       {
@@ -987,7 +995,7 @@ public:
 
   BaseState<audit>* Bool(Context<audit>& ctx, bool b) override
   {
-    if (b) ctx.CurrentNamespace().AddFeature(ctx.key, ctx._hash_func, ctx._parse_mask);
+    if (b) { ctx.CurrentNamespace().AddFeature(ctx.key, ctx._hash_func, ctx._parse_mask); }
 
     return this;
   }
@@ -1456,9 +1464,13 @@ public:
           return &ctx.label_single_property_state;
         }
         else if (length == 6)
+        {
           return &ctx.label_state;
+        }
         else if (length == 11 && !_stricmp(str, "_labelIndex"))
+        {
           return &ctx.label_index_state;
+        }
       }
       else if (length == 10 && !strncmp(str, "_skipLearn", 10))
       {
@@ -1597,7 +1609,7 @@ public:
 
   std::stringstream& error()
   {
-    if (!error_ptr) error_ptr.reset(new std::stringstream{});
+    if (!error_ptr) { error_ptr.reset(new std::stringstream{}); }
 
     return *error_ptr;
   }
@@ -1626,7 +1638,7 @@ public:
 
   bool TransitionState(BaseState<audit>* next_state)
   {
-    if (next_state == nullptr) return false;
+    if (next_state == nullptr) { return false; }
 
     previous_state = current_state;
     current_state = next_state;
@@ -1728,7 +1740,7 @@ void read_line_json_s(const VW::label_parser& lbl_parser, hash_func_t hash_func,
 
   ParseResult result =
       parser.reader.template Parse<kParseInsituFlag, InsituStringStream, VWReaderHandler<audit>>(ss, handler);
-  if (!result.IsError()) return;
+  if (!result.IsError()) { return; }
 
   BaseState<audit>* current_state = handler.current_state();
 
@@ -1853,7 +1865,7 @@ bool parse_line_json(VW::workspace* all, char* line, size_t num_chars, VW::multi
     {
       VW::return_multiple_example(*all, examples);
       examples.push_back(&VW::get_unused_example(all));
-      if (all->example_parser->metrics) all->example_parser->metrics->LineParseError++;
+      if (all->example_parser->metrics) { all->example_parser->metrics->LineParseError++; }
       return false;
     }
 
@@ -1862,17 +1874,21 @@ bool parse_line_json(VW::workspace* all, char* line, size_t num_chars, VW::multi
       if (!interaction.eventId.empty())
       {
         if (all->example_parser->metrics->FirstEventId.empty())
-          all->example_parser->metrics->FirstEventId = std::move(interaction.eventId);
+        { all->example_parser->metrics->FirstEventId = std::move(interaction.eventId); }
         else
+        {
           all->example_parser->metrics->LastEventId = std::move(interaction.eventId);
+        }
       }
 
       if (!interaction.timestamp.empty())
       {
         if (all->example_parser->metrics->FirstEventTime.empty())
-          all->example_parser->metrics->FirstEventTime = std::move(interaction.timestamp);
+        { all->example_parser->metrics->FirstEventTime = std::move(interaction.timestamp); }
         else
+        {
           all->example_parser->metrics->LastEventTime = std::move(interaction.timestamp);
+        }
       }
 
       // Technically the aggregation operation here is supposed to be user-defined
@@ -1908,7 +1924,7 @@ bool parse_line_json(VW::workspace* all, char* line, size_t num_chars, VW::multi
     // for counterfactual. (@marco)
     if (interaction.skipLearn)
     {
-      if (all->example_parser->metrics) all->example_parser->metrics->NumberOfSkippedEvents++;
+      if (all->example_parser->metrics) { all->example_parser->metrics->NumberOfSkippedEvents++; }
       VW::return_multiple_example(*all, examples);
       examples.push_back(&VW::get_unused_example(all));
       return false;
@@ -1917,15 +1933,17 @@ bool parse_line_json(VW::workspace* all, char* line, size_t num_chars, VW::multi
     // let's ask to continue reading data until we find a line with actions provided
     if (interaction.actions.size() == 0 && all->l->is_multiline())
     {
-      if (all->example_parser->metrics) all->example_parser->metrics->NumberOfEventsZeroActions++;
+      if (all->example_parser->metrics) { all->example_parser->metrics->NumberOfEventsZeroActions++; }
       VW::return_multiple_example(*all, examples);
       examples.push_back(&VW::get_unused_example(all));
       return false;
     }
   }
   else
+  {
     VW::template read_line_json_s<audit>(
         *all, examples, line, num_chars, reinterpret_cast<VW::example_factory_t>(&VW::get_unused_example), all);
+  }
 
   return true;
 }
@@ -1983,7 +2001,7 @@ int read_features_json(VW::workspace* all, io_buf& buf, VW::multi_ex& examples)
     char* line;
     size_t num_chars;
     size_t num_chars_initial = read_features(buf, line, num_chars);
-    if (num_chars_initial < 1) return static_cast<int>(num_chars_initial);
+    if (num_chars_initial < 1) { return static_cast<int>(num_chars_initial); }
 
     // Ensure there is a null terminator.
     line[num_chars] = '\0';

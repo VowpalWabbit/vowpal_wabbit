@@ -82,18 +82,27 @@ void fail_if_enabled(VW::workspace& all, const std::set<std::string>& not_compat
 
 std::string ns_to_str(unsigned char ns)
 {
-  if (ns == constant_namespace)
-    return "[constant]";
+  if (ns == constant_namespace) { return "[constant]"; }
   else if (ns == ccb_slot_namespace)
+  {
     return "[ccbslot]";
+  }
   else if (ns == ccb_id_namespace)
+  {
     return "[ccbid]";
+  }
   else if (ns == wildcard_namespace)
+  {
     return "[wild]";
+  }
   else if (ns == default_namespace)
+  {
     return "[default]";
+  }
   else
+  {
     return std::string(1, ns);
+  }
 }
 
 std::string interaction_vec_t_to_string(
