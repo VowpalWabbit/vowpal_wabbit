@@ -78,7 +78,7 @@ std::unique_ptr<T> make_unique(Args&&... params)
 template <class T>
 T* calloc_mergable_or_throw(size_t nmemb)
 {
-  if (nmemb == 0) return nullptr;
+  if (nmemb == 0) { return nullptr; }
   size_t length = nmemb * sizeof(T);
 #  if defined(ANDROID)
   // posix_memalign is not available on Android
