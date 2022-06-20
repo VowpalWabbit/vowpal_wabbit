@@ -1083,7 +1083,7 @@ BOOST_AUTO_TEST_CASE(check_spanner_results_epsilon_greedy)
 
       size_t num_actions_non_zeroed = d;
       float epsilon_ur = epsilon / num_actions_non_zeroed;
-      BOOST_CHECK_SMALL(preds[0].score - ( epsilon_ur + (1.f - epsilon)), FLOAT_TOL);
+      BOOST_CHECK_SMALL(preds[0].score - (epsilon_ur + (1.f - epsilon)), FLOAT_TOL);
       BOOST_CHECK_EQUAL(preds[0].action, 2);
 
       BOOST_CHECK_SMALL(preds[1].score - epsilon_ur, FLOAT_TOL);
