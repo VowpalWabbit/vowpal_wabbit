@@ -659,12 +659,12 @@ BOOST_AUTO_TEST_CASE(check_final_truncated_SVD_validity)
 
   vws.push_back({vw_w_interactions_sq, true});
 
-  // auto* vw_w_interactions_sq_sparse_weights = VW::initialize(
-  //     "--cb_explore_adf --squarecb --sparse_weights --large_action_space --full_predictions --max_actions " +
-  //         std::to_string(d) + " --quiet --random_seed 5 -q ::",
-  //     nullptr, false, nullptr, nullptr);
+  auto* vw_w_interactions_sq_sparse_weights = VW::initialize(
+      "--cb_explore_adf --squarecb --sparse_weights --large_action_space --full_predictions --max_actions " +
+          std::to_string(d) + " --quiet --random_seed 5 -q ::",
+      nullptr, false, nullptr, nullptr);
 
-  // vws.push_back({vw_w_interactions_sq_sparse_weights, true});
+  vws.push_back({vw_w_interactions_sq_sparse_weights, true});
 
   for (auto& vw_pair : vws)
   {
