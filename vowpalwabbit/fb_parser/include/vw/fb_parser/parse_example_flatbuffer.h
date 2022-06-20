@@ -49,7 +49,7 @@ private:
   void parse_example(VW::workspace* all, example* ae, const Example* eg);
   void parse_multi_example(VW::workspace* all, example* ae, const MultiExample* eg);
   void parse_namespaces(VW::workspace* all, example* ae, const Namespace* ns);
-  void parse_features(VW::workspace* all, features& fs, const Feature* feature, const flatbuffers::String* ns);
+  // void parse_features(VW::workspace* all, features& fs, const Feature* feature, const flatbuffers::String* ns);
   void parse_flat_label(shared_data* sd, example* ae, const Example* eg, VW::io::logger& logger);
 
   void parse_simple_label(shared_data* sd, polylabel* l, reduction_features* red_features, const SimpleLabel* label);
