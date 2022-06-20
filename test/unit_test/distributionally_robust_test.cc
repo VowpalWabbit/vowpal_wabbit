@@ -53,6 +53,9 @@ BOOST_AUTO_TEST_CASE(distributionally_robust_recompute_duals)
   float l_bound[] = {0.0f, 0.09662899139580064f, 0.04094541671274077f, 0.12209962713632538f, 0.1418901366388003f,
       0.14012602622199424f, 0.10155119256007322f, 0.1846416198342555f, 0.20562281337616062f, 0.23301703596172654f};
 
+  float u_bound[] = {1.0f, 0.28128352388284217f, 0.5056614942571485f, 0.6220782066057806f, 0.75416164144364f,
+      0.8175722577850846f, 0.944281011930322f, 0.7625855039970183f, 0.7386659400005198f, 0.69289830401895f};
+
   auto onlinechisq = VW::make_unique<VW::distributionally_robust::ChiSquared>(0.05, 0.999);
 
   {
@@ -74,6 +77,7 @@ BOOST_AUTO_TEST_CASE(distributionally_robust_recompute_duals)
     auto d = sd.second;
 
     BOOST_CHECK_CLOSE(l_bound[i], sd.first, 0.001);
+    BOOST_CHECK_CLOSE(u_bound[i], onlinechisq->cressieread_upper_bound(), 0.001);
     BOOST_CHECK_EQUAL(duals[i].unbounded, d.unbounded);
     BOOST_CHECK_CLOSE(duals[i].kappa, d.kappa, 0.001);
     BOOST_CHECK_CLOSE(duals[i].gamma, d.gamma, 0.001);
@@ -103,7 +107,7 @@ BOOST_AUTO_TEST_CASE(distributionally_robust_qlb)
   for (int i = 0; i < std::extent<decltype(data)>::value; ++i)
   {
     onlinechisq->update(data[i].first, data[i].second);
-    auto v = onlinechisq->qlb(data[i].first, data[i].second);
+    auto v = onlinechisq->qlb(data[i].first, data[i].second, 1);
 
     BOOST_CHECK_CLOSE(qlbs[i], v, 0.01);
   }

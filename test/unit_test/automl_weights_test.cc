@@ -75,7 +75,7 @@ bool weights_offset_test(cb_sim&, VW::workspace& all, VW::multi_ex& ec)
 
   const float expected_w0 = 0.0248609f;
   const float expected_w1 = 0.0346472f;
-  const float expected_w2 = 0.0105546f;
+  const float expected_w2 = 0.020154f;
   const float ZERO = 0.f;
 
   for (auto index : feature_indexes)
@@ -158,7 +158,8 @@ BOOST_AUTO_TEST_CASE(automl_weight_operations)
   test_hooks.emplace(num_iterations, weights_offset_test);
 
   auto ctr = simulator::_test_helper_hook(
-      "--automl 3 --priority_type least_exclusion --cb_explore_adf --quiet --epsilon 0.2 --random_seed 5 "
+      "--automl 3 --automl_tau .999 --priority_type least_exclusion --cb_explore_adf --quiet --epsilon 0.2 "
+      "--random_seed 5 "
       "--keep_configs --oracle_type rand",
       test_hooks, num_iterations, seed);
 
