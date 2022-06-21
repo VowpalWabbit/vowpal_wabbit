@@ -112,7 +112,7 @@ base_learner* VW::reductions::cb_dro_setup(VW::setup_base_i& stack_builder)
   option_group_definition new_options("[Reduction] CB Distributionally Robust Optimization");
   new_options.add(make_option("cb_dro", cb_dro_option).keep().necessary().help("Use DRO for cb learning"))
       .add(make_option("cb_dro_alpha", alpha).default_value(0.05f).keep().help("Confidence level for cb dro"))
-      .add(make_option("cb_dro_tau", tau).default_value(0.999f).keep().help("Time constant for count decay for cb dro"))
+      .add(make_option("cb_dro_tau", tau).default_value(BASELINE_DEFAULT_TAU).keep().help("Time constant for count decay for cb dro"))
       .add(make_option("cb_dro_wmax", wmax)
                .default_value(std::numeric_limits<float>::infinity())
                .keep()

@@ -23,10 +23,31 @@ using namespace VW::LEARNER;
 namespace VW
 {
 namespace reductions
-{
+{    
 namespace epsilon_decay
 {
 float decayed_epsilon(uint64_t update_count) { return static_cast<float>(std::pow(update_count + 1, -1.f / 3.f)); }
+
+epsilon_decay_data::epsilon_decay_data(uint64_t model_count, uint64_t min_scope, double epsilon_decay_alpha, double epsilon_decay_tau,
+    dense_parameters& weights, VW::io::logger logger, bool log_champ_changes, bool constant_epsilon, uint32_t& wpp)
+    : _min_scope(min_scope)
+    , _epsilon_decay_alpha(epsilon_decay_alpha)
+    , _epsilon_decay_tau(epsilon_decay_tau)
+    , _weights(weights)
+    , _logger(std::move(logger))
+    , _log_champ_changes(log_champ_changes)
+    , _constant_epsilon(constant_epsilon)
+    , _wpp(wpp)
+{
+  _weight_indices.resize(model_count);
+  std::iota(_weight_indices.begin(), _weight_indices.end(), 0);
+  for (uint64_t i = 0; i < model_count; ++i)
+  {
+    _scored_configs.emplace_back();
+    for (uint64_t j = 0; j < i + 1; ++j)
+    { _scored_configs.back().emplace_back(epsilon_decay_alpha, epsilon_decay_tau); }
+  }
+}
 
 void epsilon_decay_data::update_weights(VW::LEARNER::multi_learner& base, VW::multi_ex& examples)
 {
