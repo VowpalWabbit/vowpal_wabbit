@@ -23,13 +23,14 @@ using namespace VW::LEARNER;
 namespace VW
 {
 namespace reductions
-{    
+{
 namespace epsilon_decay
 {
 float decayed_epsilon(uint64_t update_count) { return static_cast<float>(std::pow(update_count + 1, -1.f / 3.f)); }
 
-epsilon_decay_data::epsilon_decay_data(uint64_t model_count, uint64_t min_scope, double epsilon_decay_alpha, double epsilon_decay_tau,
-    dense_parameters& weights, VW::io::logger logger, bool log_champ_changes, bool constant_epsilon, uint32_t& wpp)
+epsilon_decay_data::epsilon_decay_data(uint64_t model_count, uint64_t min_scope, double epsilon_decay_alpha,
+    double epsilon_decay_tau, dense_parameters& weights, VW::io::logger logger, bool log_champ_changes,
+    bool constant_epsilon, uint32_t& wpp)
     : _min_scope(min_scope)
     , _epsilon_decay_alpha(epsilon_decay_alpha)
     , _epsilon_decay_tau(epsilon_decay_tau)

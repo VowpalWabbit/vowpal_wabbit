@@ -80,8 +80,7 @@ BOOST_AUTO_TEST_CASE(epsilon_decay_test_champ_change)
 
   // we initialize the reduction pointing to position 0 as champ, that config is hard-coded to empty
   auto ctr = simulator::_test_helper_hook(
-      "--epsilon_decay --model_count 4 --cb_explore_adf --quiet  -q ::", test_hooks,
-      num_iterations, seed, swap_after);
+      "--epsilon_decay --model_count 4 --cb_explore_adf --quiet  -q ::", test_hooks, num_iterations, seed, swap_after);
 
   BOOST_CHECK_GT(ctr.back(), 0.8f);
 }
@@ -189,8 +188,7 @@ BOOST_AUTO_TEST_CASE(epsilon_decay_test_update_count)
 
   // we initialize the reduction pointing to position 0 as champ, that config is hard-coded to empty
   auto ctr = simulator::_test_helper_hook(
-      "--epsilon_decay --model_count 4 --cb_explore_adf --quiet  -q ::", test_hooks,
-      num_iterations, seed);
+      "--epsilon_decay --model_count 4 --cb_explore_adf --quiet  -q ::", test_hooks, num_iterations, seed);
 
   BOOST_CHECK_GT(ctr.back(), 0.5f);
 }
