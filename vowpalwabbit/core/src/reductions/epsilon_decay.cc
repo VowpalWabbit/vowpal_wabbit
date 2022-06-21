@@ -41,10 +41,12 @@ epsilon_decay_data::epsilon_decay_data(uint64_t model_count, uint64_t min_scope,
     , _wpp(wpp)
 {
   _weight_indices.resize(model_count);
+  _scored_configs.reserve(model_count);
   std::iota(_weight_indices.begin(), _weight_indices.end(), 0);
   for (uint64_t i = 0; i < model_count; ++i)
   {
     _scored_configs.emplace_back();
+    _scored_configs.back().reserve(i + 1);
     for (uint64_t j = 0; j < i + 1; ++j)
     { _scored_configs.back().emplace_back(epsilon_decay_alpha, epsilon_decay_tau); }
   }
