@@ -105,7 +105,7 @@ public:
    */
   int load(const char* model, size_t length)
   {
-    if (!model || length == 0) return E_VW_PREDICT_ERR_INVALID_MODEL;
+    if (!model || length == 0) { return E_VW_PREDICT_ERR_INVALID_MODEL; }
 
     _model_loaded = false;
 
@@ -146,7 +146,7 @@ public:
     // only 0-valued hash_seed supported
     int hash_seed;
     if (find_opt_int(_command_line_arguments, "--hash_seed", hash_seed) && hash_seed)
-      return E_VW_PREDICT_ERR_HASH_SEED_NOT_SUPPORTED;
+    { return E_VW_PREDICT_ERR_HASH_SEED_NOT_SUPPORTED; }
 
     _interactions.clear();
     find_opt(_command_line_arguments, "-q", _interactions);
@@ -191,15 +191,21 @@ public:
       {
         if (find_opt_float(_command_line_arguments, "--lambda", _lambda))
         {
-          if (_lambda > 0)  // Lambda should always be negative because we are using a cost basis.
+          if (_lambda > 0)
+          {  // Lambda should always be negative because we are using a cost basis.
             _lambda = -_lambda;
+          }
           _exploration = vw_predict_exploration::softmax;
         }
       }
       else if (find_opt_float(_command_line_arguments, "--epsilon", _epsilon))
+      {
         _exploration = vw_predict_exploration::epsilon_greedy;
+      }
       else
+      {
         return E_VW_PREDICT_ERR_CB_EXPLORATION_MISSING;
+      }
     }
 
     // VW style check_sum validation
@@ -208,12 +214,12 @@ public:
     // perform check sum check
     uint32_t check_sum_len;
     RETURN_ON_FAIL((mp.read<uint32_t, false>("check_sum_len", check_sum_len)));
-    if (check_sum_len != sizeof(uint32_t)) return E_VW_PREDICT_ERR_INVALID_MODEL;
+    if (check_sum_len != sizeof(uint32_t)) { return E_VW_PREDICT_ERR_INVALID_MODEL; }
 
     uint32_t check_sum;
     RETURN_ON_FAIL((mp.read<uint32_t, false>("check_sum", check_sum)));
 
-    if (check_sum_computed != check_sum) return E_VW_PREDICT_ERR_INVALID_MODEL_CHECK_SUM;
+    if (check_sum_computed != check_sum) { return E_VW_PREDICT_ERR_INVALID_MODEL_CHECK_SUM; }
 
     if (_command_line_arguments.find("--cb_adf") != std::string::npos)
     {
@@ -224,7 +230,7 @@ public:
     // gd.cc: save_load
     bool gd_resume;
     RETURN_ON_FAIL(mp.read("resume", gd_resume));
-    if (gd_resume) return E_VW_PREDICT_ERR_GD_RESUME_NOT_SUPPORTED;
+    if (gd_resume) { return E_VW_PREDICT_ERR_GD_RESUME_NOT_SUPPORTED; }
 
     // read sparse weights into dense
     _stride_shift = (uint32_t)ceil_log_2(num_weights);
@@ -266,7 +272,7 @@ public:
    */
   int predict(VW::example_predict& ex, float& score)
   {
-    if (!_model_loaded) return E_VW_PREDICT_ERR_NO_MODEL_LOADED;
+    if (!_model_loaded) { return E_VW_PREDICT_ERR_NO_MODEL_LOADED; }
 
     std::unique_ptr<namespace_copy_guard> ns_copy_guard;
 
@@ -298,9 +304,9 @@ public:
   int predict(
       VW::example_predict& shared, VW::example_predict* actions, size_t num_actions, std::vector<float>& out_scores)
   {
-    if (!_model_loaded) return E_VW_PREDICT_ERR_NO_MODEL_LOADED;
+    if (!_model_loaded) { return E_VW_PREDICT_ERR_NO_MODEL_LOADED; }
 
-    if (!is_csoaa_ldf()) return E_VW_PREDICT_ERR_NO_A_CSOAA_MODEL;
+    if (!is_csoaa_ldf()) { return E_VW_PREDICT_ERR_NO_A_CSOAA_MODEL; }
 
     out_scores.resize(num_actions);
 
@@ -316,7 +322,7 @@ public:
         auto ns_copy_guard = std::unique_ptr<namespace_copy_guard>(new namespace_copy_guard(*action, ns));
 
         // copy features
-        for (auto fs : shared.feature_space[ns]) ns_copy_guard->feature_push_back(fs.value(), fs.index());
+        for (auto fs : shared.feature_space[ns]) { ns_copy_guard->feature_push_back(fs.value(), fs.index()); }
 
         // keep guard around
         ns_copy_guards.push_back(std::move(ns_copy_guard));
@@ -331,9 +337,9 @@ public:
   int predict(const char* event_id, VW::example_predict& shared, VW::example_predict* actions, size_t num_actions,
       std::vector<float>& pdf, std::vector<int>& ranking)
   {
-    if (!_model_loaded) return E_VW_PREDICT_ERR_NO_MODEL_LOADED;
+    if (!_model_loaded) { return E_VW_PREDICT_ERR_NO_MODEL_LOADED; }
 
-    if (!is_cb_explore_adf()) return E_VW_PREDICT_ERR_NOT_A_CB_MODEL;
+    if (!is_cb_explore_adf()) { return E_VW_PREDICT_ERR_NOT_A_CB_MODEL; }
 
     std::vector<float> scores;
 
@@ -377,15 +383,19 @@ public:
             std::unique_ptr<stride_shift_guard>(new stride_shift_guard(shared, _stride_shift)));
         VW::example_predict* actions_end = actions + num_actions;
         for (VW::example_predict* action = actions; action != actions_end; ++action)
+        {
           stride_shift_guards.push_back(
               std::unique_ptr<stride_shift_guard>(new stride_shift_guard(*action, _stride_shift)));
+        }
 
         for (size_t i = 0; i < _bag_size; i++)
         {
           std::vector<std::unique_ptr<feature_offset_guard>> feature_offset_guards;
           for (VW::example_predict* action = actions; action != actions_end; ++action)
+          {
             feature_offset_guards.push_back(
                 std::unique_ptr<feature_offset_guard>(new feature_offset_guard(*action, i)));
+          }
 
           RETURN_ON_FAIL(predict(shared, actions, num_actions, scores));
 
@@ -435,7 +445,7 @@ public:
     const size_t pdf_size = pdf_last - pdf_first;
     const size_t ranking_size = ranking_last - ranking_begin;
 
-    if (pdf_size != ranking_size) return E_EXPLORATION_PMF_RANKING_SIZE_MISMATCH;
+    if (pdf_size != ranking_size) { return E_EXPLORATION_PMF_RANKING_SIZE_MISMATCH; }
 
     // Initialize ranking with actions 0,1,2,3 ...
     std::iota(ranking_begin, ranking_last, 0);

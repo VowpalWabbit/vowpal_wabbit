@@ -27,7 +27,7 @@ template <class T>
 std::ostream& operator<<(std::ostream& os, const std::vector<T>& vec)
 {
   os << '[';
-  for (const auto& i : vec) os << ' ' << i;
+  for (const auto& i : vec) { os << ' ' << i; }
   os << " ]";
   return os;
 }

@@ -44,16 +44,16 @@ template <VW::label_parser& lp>
 void learn(expreplay<lp>& er, VW::LEARNER::single_learner& base, VW::example& ec)
 {
   // Cannot learn if the example weight is 0.
-  if (lp.get_weight(ec.l, ec._reduction_features) == 0.) return;
+  if (lp.get_weight(ec.l, ec._reduction_features) == 0.) { return; }
 
   for (size_t replay = 1; replay < er.replay_count; replay++)
   {
     size_t n = (size_t)(er._random_state->get_and_update_random() * (float)er.N);
-    if (er.filled[n]) base.learn(er.buf[n]);
+    if (er.filled[n]) { base.learn(er.buf[n]); }
   }
 
   size_t n = (size_t)(er._random_state->get_and_update_random() * (float)er.N);
-  if (er.filled[n]) base.learn(er.buf[n]);
+  if (er.filled[n]) { base.learn(er.buf[n]); }
 
   er.filled[n] = true;
   VW::copy_example_data_with_label(&er.buf[n], &ec);
@@ -77,11 +77,13 @@ void end_pass(expreplay<lp>& er)
 {  // we need to go through and learn on everyone who remains
   // also need to clean up remaining examples
   for (size_t n = 0; n < er.N; n++)
+  {
     if (er.filled[n])
     {  // TODO: if er.replay_count > 1 do we need to play these more?
       er.base->learn(er.buf[n]);
       er.filled[n] = false;
     }
+  }
 }
 }  // namespace expreplay
 
@@ -109,7 +111,7 @@ VW::LEARNER::base_learner* expreplay_setup(VW::setup_base_i& stack_builder)
                .default_value(1)
                .help("How many times (in expectation) should each example be played (default: 1 = permuting)"));
 
-  if (!options.add_parse_and_check_necessary(new_options) || N == 0) return nullptr;
+  if (!options.add_parse_and_check_necessary(new_options) || N == 0) { return nullptr; }
 
   er->N = VW::cast_to_smaller_type<size_t>(N);
   er->replay_count = VW::cast_to_smaller_type<size_t>(replay_count);
@@ -121,8 +123,10 @@ VW::LEARNER::base_learner* expreplay_setup(VW::setup_base_i& stack_builder)
   er->filled = calloc_or_throw<bool>(er->N);
 
   if (!all.quiet)
+  {
     *(all.trace_message) << "experience replay level=" << er_level << ", buffer=" << er->N
                          << ", replay count=" << er->replay_count << std::endl;
+  }
 
   er->base = VW::LEARNER::as_singleline(stack_builder.setup_base_learner());
   auto* l = VW::LEARNER::make_reduction_learner(
