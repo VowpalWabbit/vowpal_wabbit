@@ -35,7 +35,7 @@ BOOST_AUTO_TEST_CASE(epsilon_decay_test_init)
 {
   // we initialize the reduction pointing to position 0 as champ, that config is hard-coded to empty
   auto ctr = simulator::_test_helper(
-      "--epsilon_decay --model_count 3 --cb_explore_adf --quiet --epsilon 0.2 --random_seed "
+      "--epsilon_decay --bonferroni --model_count 3 --cb_explore_adf --quiet --epsilon 0.2 --random_seed "
       "5");
   float with_save = ctr.back();
 }
@@ -80,7 +80,7 @@ BOOST_AUTO_TEST_CASE(epsilon_decay_test_champ_change)
 
   // we initialize the reduction pointing to position 0 as champ, that config is hard-coded to empty
   auto ctr = simulator::_test_helper_hook(
-      "--epsilon_decay --model_count 4 --cb_explore_adf --quiet  -q ::", test_hooks, num_iterations, seed, swap_after);
+      "--epsilon_decay --bonferroni --model_count 4 --cb_explore_adf --quiet  -q ::", test_hooks, num_iterations, seed, swap_after);
 
   BOOST_CHECK_GT(ctr.back(), 0.8f);
 }
@@ -188,7 +188,7 @@ BOOST_AUTO_TEST_CASE(epsilon_decay_test_update_count)
 
   // we initialize the reduction pointing to position 0 as champ, that config is hard-coded to empty
   auto ctr = simulator::_test_helper_hook(
-      "--epsilon_decay --model_count 4 --cb_explore_adf --quiet  -q ::", test_hooks, num_iterations, seed);
+      "--epsilon_decay --bonferroni --model_count 4 --cb_explore_adf --quiet  -q ::", test_hooks, num_iterations, seed);
 
   BOOST_CHECK_GT(ctr.back(), 0.5f);
 }
@@ -197,14 +197,14 @@ BOOST_AUTO_TEST_CASE(epsilon_decay_test_save_load)
 {
   callback_map empty_hooks;
   auto ctr = simulator::_test_helper_hook(
-      "--epsilon_decay --model_count 5 --cb_explore_adf --epsilon_decay_alpha .01 --quiet  -q "
+      "--epsilon_decay --bonferroni --model_count 5 --cb_explore_adf --epsilon_decay_alpha .01 --quiet  -q "
       "::",
       empty_hooks);
   float without_save = ctr.back();
   BOOST_CHECK_GT(without_save, 0.9f);
 
   ctr = simulator::_test_helper_save_load(
-      "--epsilon_decay --model_count 5 --cb_explore_adf --epsilon_decay_alpha .01 --quiet  -q "
+      "--epsilon_decay --bonferroni --model_count 5 --cb_explore_adf --epsilon_decay_alpha .01 --quiet  -q "
       "::");
 
   float with_save = ctr.back();
