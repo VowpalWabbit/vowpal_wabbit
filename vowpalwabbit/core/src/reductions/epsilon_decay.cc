@@ -256,6 +256,7 @@ VW::LEARNER::base_learner* VW::reductions::epsilon_decay_setup(VW::setup_base_i&
   float _epsilon_decay_tau;
   bool _log_champ_changes = false;
   bool _constant_epsilon = false;
+  bool _bonferroni = false;
 
   option_group_definition new_options("[Reduction] Epsilon-Decaying Exploration");
   new_options
@@ -288,14 +289,15 @@ VW::LEARNER::base_learner* VW::reductions::epsilon_decay_setup(VW::setup_base_i&
       .add(make_option("constant_epsilon", _constant_epsilon)
                .keep()
                .help("Keep epsilon constant across models")
-               .experimental());
+               .experimental())
+      .add(make_option("bonferroni", _bonferroni).keep().help("Use bonferroni correction (divide confidence interval by model count)").experimental());
 
   if (!options.add_parse_and_check_necessary(new_options)) { return nullptr; }
 
   if (model_count < 1) { THROW("Model count must be 1 or greater"); }
 
   // Scale confidence interval by number of examples
-  float scaled_alpha = _epsilon_decay_alpha / model_count;
+  float scaled_alpha = _bonferroni ? (_epsilon_decay_alpha / model_count) : _epsilon_decay_alpha;
 
   auto data = VW::make_unique<VW::reductions::epsilon_decay::epsilon_decay_data>(model_count, _min_scope, scaled_alpha,
       _epsilon_decay_tau, all.weights.dense_weights, all.logger, _log_champ_changes, _constant_epsilon, all.wpp);
