@@ -290,7 +290,10 @@ VW::LEARNER::base_learner* VW::reductions::epsilon_decay_setup(VW::setup_base_i&
                .keep()
                .help("Keep epsilon constant across models")
                .experimental())
-      .add(make_option("bonferroni", _bonferroni).keep().help("Use bonferroni correction (divide confidence interval by model count)").experimental());
+      .add(make_option("bonferroni", _bonferroni)
+               .keep()
+               .help("Use bonferroni correction (divide confidence interval by model count)")
+               .experimental());
 
   if (!options.add_parse_and_check_necessary(new_options)) { return nullptr; }
 
