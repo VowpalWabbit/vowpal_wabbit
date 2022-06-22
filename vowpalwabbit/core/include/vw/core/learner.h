@@ -132,7 +132,7 @@ float recur_sensitivity(void*, base_learner&, example&);
 
 inline void debug_increment_depth(example& ex)
 {
-  if (vw_dbg::track_stack) ++ex._debug_current_reduction_depth;
+  if (vw_dbg::track_stack) { ++ex._debug_current_reduction_depth; }
 }
 
 inline void debug_increment_depth(multi_ex& ec_seq)
@@ -145,7 +145,7 @@ inline void debug_increment_depth(multi_ex& ec_seq)
 
 inline void debug_decrement_depth(example& ex)
 {
-  if (vw_dbg::track_stack) --ex._debug_current_reduction_depth;
+  if (vw_dbg::track_stack) { --ex._debug_current_reduction_depth; }
 }
 
 inline void debug_decrement_depth(multi_ex& ec_seq)
@@ -317,10 +317,14 @@ public:
       {
         learn_fd.predict_f(learn_fd.data, *learn_fd.base, (void*)&ec);
         if (finalize_predictions)
+        {
           pred[c] = std::move(ec.pred);  // TODO: this breaks for complex labels because = doesn't do deep copy! (XXX we
                                          // "fix" this by moving)
+        }
         else
+        {
           pred[c].scalar = ec.partial_prediction;
+        }
         // pred[c].scalar = finalize_prediction ec.partial_prediction; // TODO: this breaks for complex labels because =
         // doesn't do deep copy! // note works if ec.partial_prediction, but only if finalize_prediction is run????
         details::increment_offset(ec, increment, 1);
@@ -368,14 +372,14 @@ public:
       better_msg << "model " << std::string(read ? "load" : "save") << " failed. Error Details: " << vwex.what();
       throw VW::save_load_model_exception(vwex.Filename(), vwex.LineNumber(), better_msg.str());
     }
-    if (save_load_fd.base) save_load_fd.base->save_load(io, read, text);
+    if (save_load_fd.base) { save_load_fd.base->save_load(io, read, text); }
   }
 
   // called when metrics is enabled.  Autorecursive.
   void persist_metrics(metric_sink& metrics)
   {
     persist_metrics_fd.save_metric_f(persist_metrics_fd.data, metrics);
-    if (persist_metrics_fd.base) persist_metrics_fd.base->persist_metrics(metrics);
+    if (persist_metrics_fd.base) { persist_metrics_fd.base->persist_metrics(metrics); }
   }
 
   inline void finish()
@@ -391,14 +395,14 @@ public:
   void end_pass()
   {
     end_pass_fd.func(end_pass_fd.data);
-    if (end_pass_fd.base) end_pass_fd.base->end_pass();
+    if (end_pass_fd.base) { end_pass_fd.base->end_pass(); }
   }  // autorecursive
 
   // called after parsing of examples is complete.  Autorecursive.
   void end_examples()
   {
     end_examples_fd.func(end_examples_fd.data);
-    if (end_examples_fd.base) end_examples_fd.base->end_examples();
+    if (end_examples_fd.base) { end_examples_fd.base->end_examples(); }
   }
 
   // Called at the beginning by the driver.  Explicitly not recursive.
@@ -432,8 +436,7 @@ public:
     if (name.find(reduction_name) != std::string::npos) { return (base_learner*)this; }
     else
     {
-      if (learn_fd.base != nullptr)
-        return learn_fd.base->get_learner_by_name_prefix(reduction_name);
+      if (learn_fd.base != nullptr) { return learn_fd.base->get_learner_by_name_prefix(reduction_name); }
       else
         THROW("fatal: could not find in learner chain: " << reduction_name);
     }
@@ -486,10 +489,11 @@ void multiline_learn_or_predict(multi_learner& base, multi_ex& examples, const u
     for (size_t i = 0; i < examples.size(); i++) { examples[i]->ft_offset = saved_offsets[i]; }
   });
 
-  if (is_learn)
-    base.learn(examples, id);
+  if (is_learn) { base.learn(examples, id); }
   else
+  {
     base.predict(examples, id);
+  }
 }
 
 VW_WARNING_STATE_PUSH

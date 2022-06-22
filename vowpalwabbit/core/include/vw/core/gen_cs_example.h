@@ -147,19 +147,25 @@ void gen_cs_example_dr(
   VW_DBG(ec) << "gen_cs_example_dr:" << is_learn << std::endl;
   cs_ld.costs.clear();
   c.pred_scores.costs.clear();
-  if (ld.costs.size() == 0)  // a test example
+  if (ld.costs.size() == 0)
+  {  // a test example
     for (uint32_t i = 1; i <= c.num_actions; i++)
     {  // Explicit declaration for a weak compiler.
       COST_SENSITIVE::wclass temp = {FLT_MAX, i, 0., 0.};
       cs_ld.costs.push_back(temp);
     }
+  }
   else if (ld.costs.size() == 0 || (ld.costs.size() == 1 && ld.costs[0].cost != FLT_MAX))
+  {
     // this is a typical example where we can perform all actions
     // in this case generate cost-sensitive example with all actions
-    for (uint32_t i = 1; i <= c.num_actions; i++) gen_cs_label<is_learn>(c, ec, cs_ld, i);
-  else  // this is an example where we can only perform a subset of the actions
+    for (uint32_t i = 1; i <= c.num_actions; i++) { gen_cs_label<is_learn>(c, ec, cs_ld, i); }
+  }
+  else
+  {  // this is an example where we can only perform a subset of the actions
     // in this case generate cost-sensitive example with only allowed actions
-    for (auto& cl : ld.costs) gen_cs_label<is_learn>(c, ec, cs_ld, cl.action);
+    for (auto& cl : ld.costs) { gen_cs_label<is_learn>(c, ec, cs_ld, cl.action); }
+  }
 }
 
 template <bool is_learn>
@@ -203,7 +209,7 @@ void gen_cs_example_dr(cb_to_cs_adf& c, VW::multi_ex& examples, COST_SENSITIVE::
   cs_labels.costs.clear();
   for (size_t i = 0; i < examples.size(); i++)
   {
-    if (CB_ALGS::example_is_newline_not_header(*examples[i])) continue;
+    if (CB_ALGS::example_is_newline_not_header(*examples[i])) { continue; }
 
     COST_SENSITIVE::wclass wc = {0., static_cast<uint32_t>(i), 0., 0.};
 
@@ -218,13 +224,15 @@ void gen_cs_example_dr(cb_to_cs_adf& c, VW::multi_ex& examples, COST_SENSITIVE::
       c.known_cost.action = known_index;
     }
     else
+    {
       wc.x = CB_ALGS::get_cost_pred<is_learn>(c.scorer, CB::cb_class{}, *(examples[i]), 0, 2);
+    }
 
     c.pred_scores.costs.push_back(wc);  // done
 
     // add correction if we observed cost for this action and regressor is wrong
     if (c.known_cost.probability != -1 && c.known_cost.action == i)
-      wc.x += (c.known_cost.cost - wc.x) / std::max(c.known_cost.probability, clip_p);
+    { wc.x += (c.known_cost.cost - wc.x) / std::max(c.known_cost.probability, clip_p); }
     cs_labels.costs.push_back(wc);
   }
 }
@@ -286,7 +294,9 @@ void cs_ldf_learn_or_predict(VW::LEARNER::multi_learner& base, VW::multi_ex& exa
     base.learn(examples, static_cast<int32_t>(id));
   }
   else
+  {
     base.predict(examples, static_cast<int32_t>(id));
+  }
 }
 
 }  // namespace GEN_CS

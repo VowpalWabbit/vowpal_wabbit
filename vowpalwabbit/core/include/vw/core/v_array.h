@@ -168,7 +168,7 @@ public:
 
   v_array& operator=(const v_array<T>& other)
   {
-    if (this == &other) return *this;
+    if (this == &other) { return *this; }
 
     copy_into_this(other);
     return *this;
@@ -234,7 +234,7 @@ public:
    */
   void reserve(size_t length)
   {
-    if (capacity() < length) reserve_nocheck(length);
+    if (capacity() < length) { reserve_nocheck(length); }
   }
 
   // Don't modify the buffer size, just clear the elements
@@ -353,7 +353,7 @@ public:
    */
   void push_back(const T& new_ele)
   {
-    if (_end == _end_array) reserve_nocheck(2 * capacity() + 3);
+    if (_end == _end_array) { reserve_nocheck(2 * capacity() + 3); }
     new (_end++) T(new_ele);
   }
 
@@ -368,7 +368,7 @@ public:
   template <class... Args>
   void emplace_back(Args&&... args)
   {
-    if (_end == _end_array) reserve_nocheck(2 * capacity() + 3);
+    if (_end == _end_array) { reserve_nocheck(2 * capacity() + 3); }
     new (_end++) T(std::forward<Args>(args)...);
   }
 
@@ -376,7 +376,7 @@ public:
   friend std::ostream& operator<<(std::ostream& os, const v_array<T>& v)
   {
     os << '[';
-    for (auto i = v.cbegin(); i != v.cend(); ++i) os << ' ' << *i;
+    for (auto i = v.cbegin(); i != v.cend(); ++i) { os << ' ' << *i; }
     os << " ]";
     return os;
   }

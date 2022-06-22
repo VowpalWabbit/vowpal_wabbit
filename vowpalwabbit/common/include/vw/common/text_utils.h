@@ -22,10 +22,10 @@ void tokenize(char delim, VW::string_view s, ContainerT& ret, bool allow_empty =
   while (!s.empty() && ((end_pos = s.find(delim)) != VW::string_view::npos))
   {
     last_space = end_pos == 0;
-    if (allow_empty || end_pos > 0) ret.emplace_back(s.substr(0, end_pos));
+    if (allow_empty || end_pos > 0) { ret.emplace_back(s.substr(0, end_pos)); }
     s.remove_prefix(end_pos + 1);
   }
-  if (!s.empty() || (last_space && allow_empty)) ret.emplace_back(s.substr(0));
+  if (!s.empty() || (last_space && allow_empty)) { ret.emplace_back(s.substr(0)); }
 }
 
 /**
