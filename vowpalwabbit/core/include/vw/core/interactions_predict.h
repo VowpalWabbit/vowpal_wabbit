@@ -247,8 +247,10 @@ void inner_kernel(DataT& dat, features::const_audit_iterator& begin, features::c
   else
   {
     for (; begin != end; ++begin)
+    {
       call_FuncT<DataT, FuncT>(
           dat, weights, INTERACTION_VALUE(ft_value, begin.value()), (begin.index() ^ halfhash) + offset);
+    }
   }
 }
 
@@ -273,7 +275,7 @@ size_t process_quadratic_interaction(const std::tuple<features_range_t, features
     if (same_namespace) { begin += i; }
     num_features += std::distance(begin, second_end);
     kernel_func(begin, second_end, first_begin.value(), halfhash);
-    if (Audit) audit_func(nullptr);
+    if (Audit) { audit_func(nullptr); }
     i++;
   }
   return num_features;
@@ -319,10 +321,10 @@ size_t process_cubic_interaction(const std::tuple<features_range_t, features_ran
       if (same_namespace2) { begin += j; }
       num_features += std::distance(begin, third_end);
       kernel_func(begin, third_end, ft_value, halfhash);
-      if (Audit) audit_func(nullptr);
+      if (Audit) { audit_func(nullptr); }
       j++;
     }  // end for (snd)
-    if (Audit) audit_func(nullptr);
+    if (Audit) { audit_func(nullptr); }
     i++;
   }
   return num_features;
@@ -378,7 +380,7 @@ size_t process_generic_interaction(const std::vector<features_range_t>& range, b
         next_data->current_it = next_data->begin_it;
       }
 
-      if (Audit) audit_func((*cur_data->current_it).audit());
+      if (Audit) { audit_func((*cur_data->current_it).audit()); }
 
       if (cur_data == gen_data_head)  // first namespace
       {
@@ -412,7 +414,7 @@ size_t process_generic_interaction(const std::vector<features_range_t>& range, b
         --cur_data;
         ++cur_data->current_it;
         go_further = cur_data->current_it == cur_data->end_it;
-        if (Audit) audit_func(nullptr);
+        if (Audit) { audit_func(nullptr); }
       } while (go_further && cur_data != gen_data_head);
 
       do_it = !(cur_data == gen_data_head && go_further);

@@ -77,10 +77,10 @@ ChiSquared::ChiSquared(double _alpha, double _tau, double _wmin, double _wmax, d
 
 bool ChiSquared::isValid() const
 {
-  if (alpha > 1 || alpha <= 0) return false;
-  if (tau > 1 || tau <= 0) return false;
-  if (wmin >= wmax || wmin >= 1 || wmax <= 1) return false;
-  if (rmin > rmax) return false;
+  if (alpha > 1 || alpha <= 0) { return false; }
+  if (tau > 1 || tau <= 0) { return false; }
+  if (wmin >= wmax || wmin >= 1 || wmax <= 1) { return false; }
+  if (rmin > rmax) { return false; }
 
   return true;
 }

@@ -53,10 +53,10 @@ constexpr inline float sign(float w) noexcept { return (w <= 0.f) ? -1.f : 1.f; 
 /// C(n,k) = n!/(k!(n-k)!)
 VW_STD14_CONSTEXPR inline int64_t choose(int64_t n, int64_t k) noexcept
 {
-  if (k > n) return 0;
-  if (k < 0) return 0;
-  if (k == n) return 1;
-  if (k == 0 && n != 0) return 1;
+  if (k > n) { return 0; }
+  if (k < 0) { return 0; }
+  if (k == n) { return 1; }
+  if (k == 0 && n != 0) { return 1; }
   int64_t r = 1;
   for (int64_t d = 1; d <= k; ++d)
   {
