@@ -158,7 +158,7 @@ public:
 
   void shallow_copy(const dense_parameters& input)
   {
-    if (!_seeded) free(_begin);
+    if (!_seeded) { free(_begin); }
     _begin = input._begin;
     _weight_mask = input._weight_mask;
     _stride_shift = input._stride_shift;
@@ -184,7 +184,7 @@ public:
 
   void set_zero(size_t offset)
   {
-    for (iterator iter = begin(); iter != end(); ++iter) (&(*iter))[offset] = 0;
+    for (iterator iter = begin(); iter != end(); ++iter) { (&(*iter))[offset] = 0; }
   }
 
   void copy_offsets(const size_t from, const size_t to, const size_t params_per_problem)

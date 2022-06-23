@@ -35,15 +35,17 @@ inline void sort_action_probs(v_array<ACTION_SCORE::action_score>& probs, const 
   // sort top_actions and action_probs by the order induced in scores.
   std::sort(probs.begin(), probs.end(),
       [&scores](const ACTION_SCORE::action_score& as1, const ACTION_SCORE::action_score& as2) {
-        if (as1.score > as2.score)
-          return true;
+        if (as1.score > as2.score) { return true; }
         else if (as1.score < as2.score)
+        {
           return false;
+        }
         // equal probabilities
-        if (scores[as1.action] < scores[as2.action])
-          return true;
+        if (scores[as1.action] < scores[as2.action]) { return true; }
         else if (scores[as1.action] > scores[as2.action])
+        {
           return false;
+        }
         // equal probabilities and equal cost estimates
         return as1.action < as2.action;
       });
@@ -98,7 +100,7 @@ public:
   template <typename... Args>
   cb_explore_adf_base(bool with_metrics, Args&&... args) : explore(std::forward<Args>(args)...)
   {
-    if (with_metrics) _metrics = VW::make_unique<cb_explore_metrics>();
+    if (with_metrics) { _metrics = VW::make_unique<cb_explore_metrics>(); }
   }
 
   static void finish_multiline_example(VW::workspace& all, cb_explore_adf_base<ExploreType>& data, multi_ex& ec_seq);
@@ -176,14 +178,14 @@ inline void cb_explore_adf_base<ExploreType>::learn(
   else
   {
     predict(data, base, examples);
-    if (data._metrics) data._metrics->metric_predict_in_learn++;
+    if (data._metrics) { data._metrics->metric_predict_in_learn++; }
   }
 }
 
 template <typename ExploreType>
 void cb_explore_adf_base<ExploreType>::output_example(VW::workspace& all, const multi_ex& ec_seq)
 {
-  if (ec_seq.size() <= 0) return;
+  if (ec_seq.size() <= 0) { return; }
 
   size_t num_features = 0;
   size_t num_namespaces = 0;
@@ -224,15 +226,17 @@ void cb_explore_adf_base<ExploreType>::output_example(VW::workspace& all, const 
     }
   }
   else
+  {
     labeled_example = false;
+  }
 
   bool holdout_example = labeled_example;
-  for (size_t i = 0; i < ec_seq.size(); i++) holdout_example &= ec_seq[i]->test_only;
+  for (size_t i = 0; i < ec_seq.size(); i++) { holdout_example &= ec_seq[i]->test_only; }
 
   all.sd->update(holdout_example, labeled_example, loss, ec.weight, num_features);
 
   for (auto& sink : all.final_prediction_sink)
-    ACTION_SCORE::print_action_score(sink.get(), ec.pred.a_s, ec.tag, all.logger);
+  { ACTION_SCORE::print_action_score(sink.get(), ec.pred.a_s, ec.tag, all.logger); }
 
   if (all.raw_prediction != nullptr)
   {
@@ -242,16 +246,17 @@ void cb_explore_adf_base<ExploreType>::output_example(VW::workspace& all, const 
 
     for (size_t i = 0; i < costs.size(); i++)
     {
-      if (i > 0) outputStringStream << ' ';
+      if (i > 0) { outputStringStream << ' '; }
       outputStringStream << costs[i].action << ':' << costs[i].partial_prediction;
     }
     all.print_text_by_ref(all.raw_prediction.get(), outputStringStream.str(), ec.tag, all.logger);
   }
 
-  if (labeled_example)
-    CB::print_update(all, !labeled_example, ec, &ec_seq, true, &_known_cost);
+  if (labeled_example) { CB::print_update(all, !labeled_example, ec, &ec_seq, true, &_known_cost); }
   else
+  {
     CB::print_update(all, !labeled_example, ec, &ec_seq, true, nullptr);
+  }
 }
 
 template <typename ExploreType>
@@ -260,7 +265,8 @@ void cb_explore_adf_base<ExploreType>::output_example_seq(VW::workspace& all, co
   if (ec_seq.size() > 0)
   {
     output_example(all, ec_seq);
-    if (all.raw_prediction != nullptr) all.print_text_by_ref(all.raw_prediction.get(), "", ec_seq[0]->tag, all.logger);
+    if (all.raw_prediction != nullptr)
+    { all.print_text_by_ref(all.raw_prediction.get(), "", ec_seq[0]->tag, all.logger); }
   }
 }
 

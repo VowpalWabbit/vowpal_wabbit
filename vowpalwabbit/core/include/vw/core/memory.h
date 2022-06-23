@@ -18,7 +18,7 @@
 template <class T>
 T* calloc_or_throw(size_t nmemb)
 {
-  if (nmemb == 0) return nullptr;
+  if (nmemb == 0) { return nullptr; }
 
   void* data = calloc(nmemb, sizeof(T));
   if (data == nullptr)
@@ -78,7 +78,7 @@ std::unique_ptr<T> make_unique(Args&&... params)
 template <class T>
 T* calloc_mergable_or_throw(size_t nmemb)
 {
-  if (nmemb == 0) return nullptr;
+  if (nmemb == 0) { return nullptr; }
   size_t length = nmemb * sizeof(T);
 #  if defined(ANDROID)
   // posix_memalign is not available on Android
@@ -124,5 +124,5 @@ T* calloc_mergable_or_throw(size_t nmemb)
 
 inline void free_it(void* ptr)
 {
-  if (ptr != nullptr) free(ptr);
+  if (ptr != nullptr) { free(ptr); }
 }
