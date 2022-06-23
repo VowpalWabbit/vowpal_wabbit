@@ -4,10 +4,10 @@
 
 #pragma once
 
-#include "vw_clr.h"
-#include <stack>
-#include "vw_interface.h"
 #include "vw_arguments.h"
+#include "vw_clr.h"
+#include "vw_interface.h"
+#include <stack>
 
 using namespace System::Collections::Generic;
 
@@ -23,13 +23,14 @@ ref class VowpalWabbitModel;
 /// Since the model class must delay diposal of <see cref="m_vw"/> until all referencing
 /// VowpalWabbit instances are disposed, the base class does not dispose <see cref="m_vw"/>.
 /// </remarks>
-public ref class VowpalWabbitBase abstract
+public
+ref class VowpalWabbitBase abstract
 {
 private:
   /// <summary>
   /// The settings used for this instance.
   /// </summary>
-  initonly VowpalWabbitSettings^ m_settings;
+  initonly VowpalWabbitSettings ^ m_settings;
 
   /// <summary>
   /// Handle to trace listener delegate, required to keep safe from garbage collection.
@@ -39,12 +40,12 @@ private:
   /// <summary>
   /// An optional shared model.
   /// </summary>
-  VowpalWabbitModel^ m_model;
+  VowpalWabbitModel ^ m_model;
 
   /// <summary>
   /// Extracted command line arguments.
   /// </summary>
-  VowpalWabbitArguments^ m_arguments;
+  VowpalWabbitArguments ^ m_arguments;
 
   /// <summary>
   /// Reference count to native data structure.
@@ -76,13 +77,13 @@ protected:
   /// <summary>
   /// Example pool. Kept in base to simplify deallocation.
   /// </summary>
-  IBag<VowpalWabbitExample^>^ m_examples;
+  IBag<VowpalWabbitExample ^> ^ m_examples;
 
   /// <summary>
   /// Initializes a new <see cref="VowpalWabbitBase"/> instance.
   /// </summary>
   /// <param name="settings">Command line arguments.</param>
-  VowpalWabbitBase(VowpalWabbitSettings^ settings);
+  VowpalWabbitBase(VowpalWabbitSettings ^ settings);
 
   /// <summary>
   /// Cleanup.
@@ -94,7 +95,7 @@ protected:
   /// </summary>
   void InternalDispose();
 
-  void DisposeExample(VowpalWabbitExample^ ex);
+  void DisposeExample(VowpalWabbitExample ^ ex);
 
 public:
   /// <summary>
@@ -105,33 +106,32 @@ public:
   /// <summary>
   /// The settings used for this instance.
   /// </summary>
-  property VowpalWabbitSettings^ Settings
-  { VowpalWabbitSettings^ get();
-  }
+  property VowpalWabbitSettings ^
+      Settings { VowpalWabbitSettings ^ get(); }
 
-  /// <summary>
-  /// Extracted command line arguments.
-  /// </summary>
-  property VowpalWabbitArguments^ Arguments
-  { VowpalWabbitArguments^ get();
-  }
+      /// <summary>
+      /// Extracted command line arguments.
+      /// </summary>
+      property VowpalWabbitArguments ^
+      Arguments { VowpalWabbitArguments ^ get(); }
 
-  /// <summary>
-  /// The read/writable model id.
-  /// </summary>
-  property String^ ID
-  { String^ get();
-    void set(String^ id);
-  }
+      /// <summary>
+      /// The read/writable model id.
+      /// </summary>
+      property String ^
+      ID {
+        String ^ get();
+        void set(String ^ id);
+      }
 
-  /// <summary>
-  /// Performs the following steps to reset the learning state:
-  ///
-  /// - Save model to in-memory buffer
-  /// - Dispose existing instance
-  /// - Initialize new instance from in-memory buffer
-  /// </summary>
-  void Reload([System::Runtime::InteropServices::Optional] String^ args);
+      /// <summary>
+      /// Performs the following steps to reset the learning state:
+      ///
+      /// - Save model to in-memory buffer
+      /// - Dispose existing instance
+      /// - Initialize new instance from in-memory buffer
+      /// </summary>
+      void Reload([System::Runtime::InteropServices::Optional] String ^ args);
 
   /// <summary>
   /// Compares features created by current instance are compatible to features created by <paramref name="other"/>.
@@ -139,7 +139,7 @@ public:
   /// <returns>
   /// Null if compatible, otherwise the difference
   /// </returns>
-  String^ AreFeaturesCompatible(VowpalWabbitBase^ other);
+  String ^ AreFeaturesCompatible(VowpalWabbitBase ^ other);
 
   /// <summary>
   /// Persist model to file specified by -i.
@@ -150,13 +150,13 @@ public:
   /// Persist model to <paramref name="filename"/>.
   /// </summary>
   /// <param name="filename">The destination filename for the model.</param>
-  void SaveModel(String^ filename);
+  void SaveModel(String ^ filename);
 
   /// <summary>
   /// Persist model to <paramref name="stream"/>.
   /// </summary>
   /// <param name="stream">The destination stream for the model.</param>
   /// <remarks>The stream is not closed to support embedded schemes.</remarks>
-  void SaveModel(Stream^ stream);
+  void SaveModel(Stream ^ stream);
 };
 }

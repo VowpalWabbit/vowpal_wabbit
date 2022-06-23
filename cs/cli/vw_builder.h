@@ -4,10 +4,10 @@
 
 #pragma once
 
-#include "vw_clr.h"
-#include "vw_base.h"
-#include "vw_example.h"
 #include "vowpalwabbit.h"
+#include "vw_base.h"
+#include "vw_clr.h"
+#include "vw_example.h"
 #include "vw_label.h"
 
 namespace VW
@@ -17,7 +17,8 @@ using namespace VW::Labels;
 /// <summary>
 /// Helper class to ease construction of native vowpal wabbit namespace data structure.
 /// </summary>
-public ref class VowpalWabbitNamespaceBuilder sealed
+public
+ref class VowpalWabbitNamespaceBuilder sealed
 {
 private:
   /// <summary>
@@ -39,14 +40,14 @@ private:
 
   !VowpalWabbitNamespaceBuilder();
 
-internal:
-  /// <summary>
-  /// Initializes a new <see cref="VowpalWabbitNamespaceBuilder"/> instance.
-  /// </summary>
-  /// <param name="features">Pointer into features owned by <see cref="VowpalWabbitExample"/>.</param>
-  /// <param name="index">The namespace index.</param>
-  /// <param name="example">The native example to build up.</param>
-  VowpalWabbitNamespaceBuilder(features* features, unsigned char index, example* example);
+  internal :
+      /// <summary>
+      /// Initializes a new <see cref="VowpalWabbitNamespaceBuilder"/> instance.
+      /// </summary>
+      /// <param name="features">Pointer into features owned by <see cref="VowpalWabbitExample"/>.</param>
+      /// <param name="index">The namespace index.</param>
+      /// <param name="example">The native example to build up.</param>
+      VowpalWabbitNamespaceBuilder(features* features, unsigned char index, example* example);
 
 public:
   ~VowpalWabbitNamespaceBuilder();
@@ -78,15 +79,16 @@ public:
 /// <summary>
 /// Helper class to ease construction of native vowpal wabbit example data structure.
 /// </summary>
-public ref class VowpalWabbitExampleBuilder sealed
+public
+ref class VowpalWabbitExampleBuilder sealed
 {
 private:
-  IVowpalWabbitExamplePool^ m_vw;
+  IVowpalWabbitExamplePool ^ m_vw;
 
   /// <summary>
   /// The produced CLR example data structure.
   /// </summary>
-  VowpalWabbitExample^ m_example;
+  VowpalWabbitExample ^ m_example;
 
 protected:
   /// <summary>
@@ -99,7 +101,7 @@ public:
   /// Initializes a new <see cref="VowpalWabbitExampleBuilder"/> instance.
   /// </summary>
   /// <param name="vw">The parent vowpal wabbit instance.</param>
-  VowpalWabbitExampleBuilder(IVowpalWabbitExamplePool^ vw);
+  VowpalWabbitExampleBuilder(IVowpalWabbitExamplePool ^ vw);
 
   /// <summary>
   /// Cleanup.
@@ -110,23 +112,23 @@ public:
   /// Creates the managed example representation.
   /// </summary>
   /// <returns>Creates the managed example.</returns>
-  VowpalWabbitExample^ CreateExample();
+  VowpalWabbitExample ^ CreateExample();
 
   /// <summary>
   /// Sets the label for the resulting example.
   /// </summary>
-  void ApplyLabel(ILabel^ label);
+  void ApplyLabel(ILabel ^ label);
 
   /// <summary>
   /// Creates and adds a new namespace to this example.
   /// </summary>
-  VowpalWabbitNamespaceBuilder^ AddNamespace(Byte featureGroup);
+  VowpalWabbitNamespaceBuilder ^ AddNamespace(Byte featureGroup);
 
   /// <summary>
   /// Creates and adds a new namespace to this example.
   /// </summary>
   /// <param name="featureGroup">The feature group of the new namespace.</param>
   /// <remarks>Casts to System::Byte.</remarks>
-  VowpalWabbitNamespaceBuilder^ AddNamespace(Char featureGroup);
+  VowpalWabbitNamespaceBuilder ^ AddNamespace(Char featureGroup);
 };
-}
+}  // namespace VW

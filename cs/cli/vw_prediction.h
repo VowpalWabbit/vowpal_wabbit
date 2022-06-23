@@ -16,8 +16,7 @@ using namespace System::Collections::Generic;
 /// <summary>
 /// Interface for prediction factories enabling read-out of various prediction results in an extendable manner.
 /// </summary>
-generic<typename T>
-public interface class IVowpalWabbitPredictionFactory
+generic<typename T> public interface class IVowpalWabbitPredictionFactory
 {
 public:
   /// <summary>
@@ -36,7 +35,8 @@ public:
 /// <summary>
 /// A scalar prediction result.
 /// </summary>
-public ref class VowpalWabbitDynamicPredictionFactory sealed : IVowpalWabbitPredictionFactory<System::Object^>
+public
+ref class VowpalWabbitDynamicPredictionFactory sealed : IVowpalWabbitPredictionFactory<System::Object ^>
 {
 public:
   /// <summary>
@@ -50,7 +50,8 @@ public:
   property VW::prediction_type_t PredictionType
   {
     virtual VW::prediction_type_t get() sealed
-    { throw gcnew NotSupportedException("Prediction type is not available.");
+    {
+      throw gcnew NotSupportedException("Prediction type is not available.");
     }
   }
 };
@@ -58,7 +59,8 @@ public:
 /// <summary>
 /// A scalar prediction result.
 /// </summary>
-public ref class VowpalWabbitScalarPredictionFactory sealed : IVowpalWabbitPredictionFactory<float>
+public
+ref class VowpalWabbitScalarPredictionFactory sealed : IVowpalWabbitPredictionFactory<float>
 {
 public:
   /// <summary>
@@ -75,7 +77,8 @@ public:
   }
 };
 
-public value struct VowpalWabbitScalar
+public
+value struct VowpalWabbitScalar
 {
 public:
   float Value;
@@ -86,7 +89,8 @@ public:
 /// <summary>
 /// A scalar prediction result.
 /// </summary>
-public ref class VowpalWabbitScalarConfidencePredictionFactory sealed : IVowpalWabbitPredictionFactory<VowpalWabbitScalar>
+public
+ref class VowpalWabbitScalarConfidencePredictionFactory sealed : IVowpalWabbitPredictionFactory<VowpalWabbitScalar>
 {
 public:
   /// <summary>
@@ -106,7 +110,8 @@ public:
 /// <summary>
 /// A scalar prediction result.
 /// </summary>
-public ref class VowpalWabbitScalarsPredictionFactory sealed : IVowpalWabbitPredictionFactory<cli::array<float>^>
+public
+ref class VowpalWabbitScalarsPredictionFactory sealed : IVowpalWabbitPredictionFactory<cli::array<float> ^>
 {
 public:
   /// <summary>
@@ -126,7 +131,8 @@ public:
 /// <summary>
 /// A scalar prediction result.
 /// </summary>
-public ref class VowpalWabbitProbabilityPredictionFactory sealed : IVowpalWabbitPredictionFactory<float>
+public
+ref class VowpalWabbitProbabilityPredictionFactory sealed : IVowpalWabbitPredictionFactory<float>
 {
 public:
   /// <summary>
@@ -146,7 +152,8 @@ public:
 /// <summary>
 /// A cost sensitive prediction result.
 /// </summary>
-public ref class VowpalWabbitCostSensitivePredictionFactory sealed : IVowpalWabbitPredictionFactory<float>
+public
+ref class VowpalWabbitCostSensitivePredictionFactory sealed : IVowpalWabbitPredictionFactory<float>
 {
 public:
   /// <summary>
@@ -166,7 +173,8 @@ public:
 /// <summary>
 /// A cost sensitive prediction result.
 /// </summary>
-public ref class VowpalWabbitMulticlassPredictionFactory sealed : IVowpalWabbitPredictionFactory<uint32_t>
+public
+ref class VowpalWabbitMulticlassPredictionFactory sealed : IVowpalWabbitPredictionFactory<uint32_t>
 {
 public:
   /// <summary>
@@ -187,7 +195,9 @@ public:
 /// A cost sensitive prediction result with associated confidence score
 /// For -oaa --probabilities
 /// </summary>
-public ref class VowpalWabbitMulticlassProbabilitiesPredictionFactory sealed : IVowpalWabbitPredictionFactory<Dictionary<int, float>^>
+public
+ref class VowpalWabbitMulticlassProbabilitiesPredictionFactory sealed
+    : IVowpalWabbitPredictionFactory<Dictionary<int, float> ^>
 {
 public:
   /// <summary>
@@ -207,7 +217,8 @@ public:
 /// <summary>
 /// A multi label prediction result.
 /// </summary>
-public ref class VowpalWabbitMultilabelPredictionFactory sealed : IVowpalWabbitPredictionFactory<cli::array<int>^>
+public
+ref class VowpalWabbitMultilabelPredictionFactory sealed : IVowpalWabbitPredictionFactory<cli::array<int> ^>
 {
 public:
   /// <summary>
@@ -224,8 +235,7 @@ public:
   }
 };
 
-[System::Diagnostics::DebuggerDisplay("{Action}:{Score}")]
-public value struct ActionScore sealed
+[System::Diagnostics::DebuggerDisplay("{Action}:{Score}")] public value struct ActionScore sealed
 {
 public:
   property uint32_t Action;
@@ -236,8 +246,9 @@ public:
 /// <summary>
 /// A action score/probability result.
 /// </summary>
-public ref class VowpalWabbitActionScoreBasePredictionFactory abstract
-  : IVowpalWabbitPredictionFactory<cli::array<ActionScore>^>
+public
+ref class VowpalWabbitActionScoreBasePredictionFactory abstract
+    : IVowpalWabbitPredictionFactory<cli::array<ActionScore> ^>
 {
 public:
   /// <summary>
@@ -254,8 +265,8 @@ public:
 /// <summary>
 /// A action score prediction result.
 /// </summary>
-public ref class VowpalWabbitActionScorePredictionFactory sealed
-    : public VowpalWabbitActionScoreBasePredictionFactory
+public
+ref class VowpalWabbitActionScorePredictionFactory sealed : public VowpalWabbitActionScoreBasePredictionFactory
 {
 public:
   /// <summary>
@@ -270,8 +281,8 @@ public:
 /// <summary>
 /// A multi label prediction result.
 /// </summary>
-public ref class VowpalWabbitActionProbabilitiesPredictionFactory sealed
-    : public VowpalWabbitActionScoreBasePredictionFactory
+public
+ref class VowpalWabbitActionProbabilitiesPredictionFactory sealed : public VowpalWabbitActionScoreBasePredictionFactory
 {
 public:
   /// <summary>
@@ -286,7 +297,8 @@ public:
 /// <summary>
 /// A topic prediction result.
 /// </summary>
-public ref class VowpalWabbitTopicPredictionFactory sealed : IVowpalWabbitPredictionFactory<cli::array<float>^>
+public
+ref class VowpalWabbitTopicPredictionFactory sealed : IVowpalWabbitPredictionFactory<cli::array<float> ^>
 {
 public:
   /// <summary>
@@ -300,7 +312,8 @@ public:
   property VW::prediction_type_t PredictionType
   {
     virtual VW::prediction_type_t get() sealed
-    { throw gcnew NotSupportedException("Prediction type is not available.");
+    {
+      throw gcnew NotSupportedException("Prediction type is not available.");
     }
   }
 };
@@ -335,68 +348,75 @@ public:
 /// <summary>
 /// Provides convenient collection of all prediction types.
 /// </summary>
-public ref class VowpalWabbitPredictionType sealed abstract
+public
+ref class VowpalWabbitPredictionType sealed abstract
 {
 public:
   /// <summary>
   /// Use for scalar predictions.
   /// </summary>
-  static initonly VowpalWabbitScalarPredictionFactory^ Scalar = gcnew VowpalWabbitScalarPredictionFactory;
+  static initonly VowpalWabbitScalarPredictionFactory ^ Scalar = gcnew VowpalWabbitScalarPredictionFactory;
 
   /// <summary>
   /// Use for scalar predictions.
   /// </summary>
-  static initonly VowpalWabbitScalarConfidencePredictionFactory^ ScalarConfidence = gcnew VowpalWabbitScalarConfidencePredictionFactory;
+  static initonly VowpalWabbitScalarConfidencePredictionFactory ^ ScalarConfidence =
+      gcnew VowpalWabbitScalarConfidencePredictionFactory;
 
   /// <summary>
   /// Use for scalar predictions.
   /// </summary>
-  static initonly VowpalWabbitScalarsPredictionFactory^ Scalars = gcnew VowpalWabbitScalarsPredictionFactory;
+  static initonly VowpalWabbitScalarsPredictionFactory ^ Scalars = gcnew VowpalWabbitScalarsPredictionFactory;
 
   /// <summary>
   /// Use for cost sensitive predictions.
   /// </summary>
-  static initonly VowpalWabbitCostSensitivePredictionFactory^ CostSensitive = gcnew VowpalWabbitCostSensitivePredictionFactory;
+  static initonly VowpalWabbitCostSensitivePredictionFactory ^ CostSensitive =
+      gcnew VowpalWabbitCostSensitivePredictionFactory;
 
   /// <summary>
   /// Use for multi label predictions.
   /// </summary>
-  static initonly VowpalWabbitMultilabelPredictionFactory^ Multilabel = gcnew VowpalWabbitMultilabelPredictionFactory;
+  static initonly VowpalWabbitMultilabelPredictionFactory ^ Multilabel = gcnew VowpalWabbitMultilabelPredictionFactory;
 
   /// <summary>
   /// Use for multi class predictions.
   /// </summary>
-  static initonly VowpalWabbitMulticlassPredictionFactory^ Multiclass = gcnew VowpalWabbitMulticlassPredictionFactory;
+  static initonly VowpalWabbitMulticlassPredictionFactory ^ Multiclass = gcnew VowpalWabbitMulticlassPredictionFactory;
 
   /// <summary>
   /// Use for action score predictions.
   /// </summary>
-  static initonly VowpalWabbitActionScorePredictionFactory^ ActionScore = gcnew VowpalWabbitActionScorePredictionFactory;
+  static initonly VowpalWabbitActionScorePredictionFactory ^ ActionScore =
+      gcnew VowpalWabbitActionScorePredictionFactory;
 
   /// <summary>
   /// Use for action score predictions.
   /// </summary>
-  static initonly VowpalWabbitActionProbabilitiesPredictionFactory^ ActionProbabilities = gcnew VowpalWabbitActionProbabilitiesPredictionFactory;
+  static initonly VowpalWabbitActionProbabilitiesPredictionFactory ^ ActionProbabilities =
+      gcnew VowpalWabbitActionProbabilitiesPredictionFactory;
 
   /// <summary>
   /// Use for LDA topic predictions.
   /// </summary>
-  static initonly VowpalWabbitTopicPredictionFactory^ Topic = gcnew VowpalWabbitTopicPredictionFactory;
+  static initonly VowpalWabbitTopicPredictionFactory ^ Topic = gcnew VowpalWabbitTopicPredictionFactory;
 
   /// <summary>
   /// Use for dynamicially determined predictions.
   /// </summary>
-  static initonly VowpalWabbitDynamicPredictionFactory^ Dynamic = gcnew VowpalWabbitDynamicPredictionFactory;
+  static initonly VowpalWabbitDynamicPredictionFactory ^ Dynamic = gcnew VowpalWabbitDynamicPredictionFactory;
 
   /// <summary>
   /// Use for dynamicially determined predictions.
   /// </summary>
-  static initonly VowpalWabbitProbabilityPredictionFactory^ Probability = gcnew VowpalWabbitProbabilityPredictionFactory;
+  static initonly VowpalWabbitProbabilityPredictionFactory ^ Probability =
+      gcnew VowpalWabbitProbabilityPredictionFactory;
 
   /// <summary>
   /// Use for multiclass predictions with probabilities
   /// </summary>
-  static initonly VowpalWabbitMulticlassProbabilitiesPredictionFactory^ MultiClassProbabilities = gcnew VowpalWabbitMulticlassProbabilitiesPredictionFactory;
+  static initonly VowpalWabbitMulticlassProbabilitiesPredictionFactory ^ MultiClassProbabilities =
+      gcnew VowpalWabbitMulticlassProbabilitiesPredictionFactory;
 
   /// <summary>
   /// Use for active multiclass predictions

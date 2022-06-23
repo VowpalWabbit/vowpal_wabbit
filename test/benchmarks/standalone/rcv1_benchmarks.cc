@@ -5319,10 +5319,7 @@ static void benchmark_rcv1_dataset(benchmark::State& state, std::string command_
 
   for (auto _ : state)
   {
-    for (auto* example : examples)
-    {
-      vw->learn(*example);
-    }
+    for (auto* example : examples) { vw->learn(*example); }
 
     benchmark::ClobberMemory();
   }

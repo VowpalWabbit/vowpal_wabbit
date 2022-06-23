@@ -1704,9 +1704,8 @@ namespace VW
 template <bool audit>
 void read_line_json_s(const VW::label_parser& lbl_parser, hash_func_t hash_func, uint64_t hash_seed,
     uint64_t parse_mask, bool chain_hash, VW::label_parser_reuse_mem* reuse_mem, const VW::named_labels* ldict,
-    VW::multi_ex& examples, char* line, size_t length, example_factory_t example_factory,
-    void* ex_factory_context, VW::io::logger& logger,
-    std::unordered_map<std::string, std::set<std::string>>* ignore_features,
+    VW::multi_ex& examples, char* line, size_t length, example_factory_t example_factory, void* ex_factory_context,
+    VW::io::logger& logger, std::unordered_map<std::string, std::set<std::string>>* ignore_features,
     std::unordered_map<uint64_t, VW::example*>* dedup_examples = nullptr)
 {
   if (lbl_parser.label_type == VW::label_type_t::slates)
@@ -1753,8 +1752,7 @@ void read_line_json_s(VW::workspace& all, VW::multi_ex& examples, char* line, si
       line, length, example_factory, ex_factory_context, all.logger, &all.ignore_features_dsjson, dedup_examples);
 }
 
-inline bool apply_pdrop(
-    label_type_t label_type, float pdrop, VW::multi_ex& examples, VW::io::logger& logger)
+inline bool apply_pdrop(label_type_t label_type, float pdrop, VW::multi_ex& examples, VW::io::logger& logger)
 {
   if (pdrop == 1.)
   {

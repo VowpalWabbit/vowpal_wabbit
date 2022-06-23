@@ -8,9 +8,10 @@
 
 namespace VW
 {
-public ref class VowpalWabbitContextualBanditUtil abstract sealed
+public
+ref class VowpalWabbitContextualBanditUtil abstract sealed
 {
 public:
   static float GetUnbiasedCost(uint32_t actionObservered, uint32_t actionTaken, float cost, float probability);
 };
-}
+}  // namespace VW
