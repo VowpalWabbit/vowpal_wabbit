@@ -289,10 +289,10 @@ BOOST_AUTO_TEST_CASE(automl_namespace_switch)
 
 BOOST_AUTO_TEST_CASE(automl_clear_configs)
 {
-  const size_t seed = 88;
-  const size_t num_iterations = 1500;
-  const std::vector<uint64_t> swap_after = {500, 1000};
-  const size_t clear_champ_switch = 1086;
+  const size_t seed = 17;
+  const size_t num_iterations = 1000;
+  const std::vector<uint64_t> swap_after = {500};
+  const size_t clear_champ_switch = 710;
   callback_map test_hooks;
 
   test_hooks.emplace(clear_champ_switch - 1, [&](cb_sim&, VW::workspace& all, VW::multi_ex&) {
@@ -302,9 +302,9 @@ BOOST_AUTO_TEST_CASE(automl_clear_configs)
     BOOST_CHECK_EQUAL(aml->cm->current_champ, 0);
     BOOST_CHECK_EQUAL(aml->cm->valid_config_size, 6);
     BOOST_CHECK_EQUAL(clear_champ_switch - 1, aml->cm->total_learn_count);
-    BOOST_CHECK_EQUAL(aml->cm->scores[0].live_interactions.size(), 6);
-    BOOST_CHECK_EQUAL(aml->cm->scores[1].live_interactions.size(), 5);
-    BOOST_CHECK_EQUAL(aml->cm->scores[2].live_interactions.size(), 5);
+    BOOST_CHECK_EQUAL(aml->cm->scores[0].live_interactions.size(), 3);
+    BOOST_CHECK_EQUAL(aml->cm->scores[1].live_interactions.size(), 2);
+    BOOST_CHECK_EQUAL(aml->cm->scores[2].live_interactions.size(), 2);
     BOOST_CHECK(aml->current_state == VW::reductions::automl::automl_state::Experimenting);
     return true;
   });
@@ -318,7 +318,7 @@ BOOST_AUTO_TEST_CASE(automl_clear_configs)
     BOOST_CHECK_EQUAL(clear_champ_switch, aml->cm->total_learn_count);
     BOOST_CHECK_EQUAL(aml->cm->scores.size(), 1);
     BOOST_CHECK_EQUAL(aml->cm->valid_config_size, 6);
-    BOOST_CHECK_EQUAL(aml->cm->scores[0].live_interactions.size(), 5);
+    BOOST_CHECK_EQUAL(aml->cm->scores[0].live_interactions.size(), 2);
     BOOST_CHECK(aml->current_state == VW::reductions::automl::automl_state::Experimenting);
     return true;
   });
@@ -381,4 +381,15 @@ BOOST_AUTO_TEST_CASE(automl_clear_configs_one_diff)
       test_hooks, num_iterations, seed, swap_after);
 
   BOOST_CHECK_GT(ctr.back(), 0.65f);
+}
+
+BOOST_AUTO_TEST_CASE(automl_q_col_consistency)
+{
+  const size_t seed = 88;
+  const size_t num_iterations = 1000;
+
+  auto ctr_q_col = simulator::_test_helper("--cb_explore_adf --quiet --epsilon 0.2 --random_seed 5 -q ::", num_iterations, seed);
+  auto ctr_aml = simulator::_test_helper("--cb_explore_adf --quiet --epsilon 0.2 --random_seed 5 --automl 1", num_iterations, seed);
+
+  BOOST_CHECK_CLOSE(ctr_q_col.back(), ctr_aml.back(), FLOAT_TOL);
 }
