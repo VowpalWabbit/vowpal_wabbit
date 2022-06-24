@@ -64,12 +64,12 @@ ChiSquared::ChiSquared(double _alpha, double _tau, double _wmin, double _wmax, d
     , wmax(_wmax)
     , rmin(_rmin)
     , rmax(_rmax)
-    , n(0)
-    , sumw(0)
-    , sumwsq(0)
-    , sumwr(0)
-    , sumwsqr(0)
-    , sumwsqrsq(0)
+    , n(0.0)
+    , sumw(0.0)
+    , sumwsq(0.0)
+    , sumwr(0.0)
+    , sumwsqr(0.0)
+    , sumwsqrsq(0.0)
     , delta(chisq_onedof_isf(alpha))
     , duals_stale(true)
 {
@@ -144,7 +144,7 @@ double ChiSquared::lower_bound_and_update()
 double ChiSquared::get_phi() const
 {
   double uncwfake = sumw < n ? wmax : wmin;
-  double uncgstar;
+  double uncgstar = 0.0;
 
   if (uncwfake == std::numeric_limits<double>::infinity()) { uncgstar = 1.0 + 1.0 / n; }
   else
