@@ -388,8 +388,10 @@ BOOST_AUTO_TEST_CASE(automl_q_col_consistency)
   const size_t seed = 88;
   const size_t num_iterations = 1000;
 
-  auto ctr_q_col = simulator::_test_helper("--cb_explore_adf --quiet --epsilon 0.2 --random_seed 5 -q ::", num_iterations, seed);
-  auto ctr_aml = simulator::_test_helper("--cb_explore_adf --quiet --epsilon 0.2 --random_seed 5 --automl 1", num_iterations, seed);
+  auto ctr_q_col =
+      simulator::_test_helper("--cb_explore_adf --quiet --epsilon 0.2 --random_seed 5 -q ::", num_iterations, seed);
+  auto ctr_aml = simulator::_test_helper(
+      "--cb_explore_adf --quiet --epsilon 0.2 --random_seed 5 --automl 1", num_iterations, seed);
 
   BOOST_CHECK_CLOSE(ctr_q_col.back(), ctr_aml.back(), FLOAT_TOL);
 }

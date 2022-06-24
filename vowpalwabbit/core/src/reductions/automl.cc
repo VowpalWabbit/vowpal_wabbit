@@ -7,11 +7,11 @@
 #include "vw/config/options.h"
 #include "vw/core/constant.h"  // NUM_NAMESPACES
 #include "vw/core/debug_log.h"
+#include "vw/core/interactions.h"
 #include "vw/core/model_utils.h"
 #include "vw/core/rand_state.h"
 #include "vw/core/setup_base.h"
 #include "vw/core/vw.h"
-#include "vw/core/interactions.h"
 #include "vw/io/logger.h"
 
 #include <cfloat>
