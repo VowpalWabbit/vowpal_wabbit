@@ -28,15 +28,13 @@ using namespace CB;
 using namespace MULTICLASS;
 using namespace Newtonsoft::Json;
 
-public
-interface class ILabel
-{
-  void UpdateExample(VW::workspace* vw, example* ex);
-  void ReadFromExample(example* ex);
-};
+public interface class ILabel
+  {
+    void UpdateExample(VW::workspace* vw, example* ex);
+    void ReadFromExample(example* ex);
+  };
 
-public
-ref class ContextualBanditLabel sealed : ILabel
+public ref class ContextualBanditLabel sealed : ILabel
 {
 private:
   uint32_t m_action;
@@ -44,94 +42,106 @@ private:
   float m_probability;
 
 public:
-  ContextualBanditLabel() : m_action(0), m_cost(0), m_probability(0) {}
+  ContextualBanditLabel()
+    : m_action(0), m_cost(0), m_probability(0)
+  { }
 
   ContextualBanditLabel(uint32_t action, float cost, float probability)
-      : m_action(action), m_cost(cost), m_probability(0)
-  {
-    Probability = probability;
+    : m_action(action), m_cost(cost), m_probability(0)
+  { Probability = probability;
   }
 
-  [JsonProperty] property uint32_t Action {
-    uint32_t get() { return m_action; }
+  [JsonProperty]
+  property uint32_t Action
+  { uint32_t get()
+    { return m_action;
+    }
 
-    void set(uint32_t value) { m_action = value; }
+    void set(uint32_t value)
+    { m_action = value;
+    }
   }
 
-      [JsonProperty] property float Probability{float get(){return m_probability;
-}
+  [JsonProperty]
+  property float Probability
+  { float get()
+    { return m_probability;
+    }
 
     void set(float value)
-{
-  if (value < 0 || value > 1)
-  {
-    if (value > 1 && value - 1 < probability_tolerance)
-      m_probability = 1.0f;
-    else
-      throw gcnew ArgumentOutOfRangeException("invalid probability: " + value);
+    { if (value < 0 || value >1)
+      {
+        if (value > 1 && value - 1 < probability_tolerance)
+          m_probability = 1.0f;
+        else
+          throw gcnew ArgumentOutOfRangeException("invalid probability: " + value);
+      }
+      else
+        m_probability = value;
+    }
   }
-  else
-    m_probability = value;
-}
-}  // namespace Labels
 
-[JsonProperty] property float Cost {
-  float get() { return m_cost; }
+  [JsonProperty]
+  property float Cost
+  { float get()
+    { return m_cost;
+    }
 
-  void set(float value) { m_cost = value; }
-}
-
-    [JsonIgnore] property bool IsShared
-{
-  bool get() { return m_cost == FLT_MAX && m_probability == -1.f; }
-}
-
-virtual void ReadFromExample(example* ex)
-{
-  CB::label* ld = &ex->l.cb;
-  if (ld->costs.size() > 0)
-  {
-    cb_class& f = ld->costs[0];
-
-    m_action = f.action;
-    m_cost = f.cost;
-    m_probability = f.probability;
+    void set(float value)
+    { m_cost = value;
+    }
   }
-}
 
-virtual void UpdateExample(VW::workspace* vw, example* ex)
-{
-  CB::label* ld = &ex->l.cb;
-  cb_class f;
+  [JsonIgnore]
+  property bool IsShared
+  { bool get()
+    { return m_cost == FLT_MAX && m_probability == -1.f;
+    }
+  }
 
-  f.partial_prediction = 0.;
-  f.action = m_action;
-  f.cost = m_cost;
-  f.probability = m_probability;
+  virtual void ReadFromExample(example* ex)
+  {
+    CB::label* ld = &ex->l.cb;
+    if (ld->costs.size() > 0)
+    { cb_class& f = ld->costs[0];
 
-  ld->costs.push_back(f);
-}
+      m_action = f.action;
+      m_cost = f.cost;
+      m_probability = f.probability;
+    }
+  }
 
-virtual String ^ ToString() override
-{
-  auto sb = gcnew StringBuilder;
+  virtual void UpdateExample(VW::workspace* vw, example* ex)
+  {
+    CB::label* ld = &ex->l.cb;
+    cb_class f;
 
-  sb->Append(m_action.ToString(CultureInfo::InvariantCulture));
-  sb->Append(L':');
-  sb->Append(m_cost.ToString(CultureInfo::InvariantCulture));
-  sb->Append(L':');
-  sb->Append(m_probability.ToString(CultureInfo::InvariantCulture));
+    f.partial_prediction = 0.;
+    f.action = m_action;
+    f.cost = m_cost;
+    f.probability = m_probability;
 
-  return sb->ToString();
-}
-};  // namespace VW
+    ld->costs.push_back(f);
+  }
+
+  virtual String^ ToString() override
+  { auto sb = gcnew StringBuilder;
+
+    sb->Append(m_action.ToString(CultureInfo::InvariantCulture));
+    sb->Append(L':');
+    sb->Append(m_cost.ToString(CultureInfo::InvariantCulture));
+    sb->Append(L':');
+    sb->Append(m_probability.ToString(CultureInfo::InvariantCulture));
+
+    return sb->ToString();
+  }
+};
 
 /// <summary>
 /// In multi-line scenarios the first example can contain a set of shared features. This first example must be
 /// marked using a 'shared' label.
 /// </summary>
-public
-ref class SharedLabel sealed : ILabel
+public ref class SharedLabel sealed : ILabel
 {
 private:
   uint32_t m_action;
@@ -139,7 +149,7 @@ private:
   SharedLabel() : m_action((uint32_t)VW::uniform_hash("shared", 6, 0)) {}
 
 public:
-  static SharedLabel ^ Instance = gcnew SharedLabel;
+  static SharedLabel^ Instance = gcnew SharedLabel;
 
   virtual void UpdateExample(VW::workspace* vw, example* ex)
   {
@@ -154,13 +164,16 @@ public:
     ld->costs.push_back(f);
   }
 
-  virtual String ^ ToString() override { return "shared"; }
+  virtual String^ ToString() override
+  { return "shared";
+  }
 
-  virtual void ReadFromExample(example* ex) {}
+  virtual void ReadFromExample(example* ex)
+  {
+  }
 };
 
-public
-ref class SimpleLabel sealed : ILabel
+public ref class SimpleLabel sealed : ILabel
 {
 private:
   float m_label;
@@ -170,84 +183,89 @@ private:
   Nullable<float> m_initial;
 
 public:
-  SimpleLabel()
-      : m_label(0){}
+  SimpleLabel() : m_label(0)
+  { }
 
-            [JsonProperty] property float Label{float get(){return m_label;
-}
+  [JsonProperty]
+  property float Label
+  { float get()
+    { return m_label;
+    }
 
     void set(float value)
-{
-  m_label = value;
-}
-}
-
-[JsonProperty(NullValueHandling = NullValueHandling::Ignore)] property Nullable<float> Weight {
-  Nullable<float> get() { return m_weight; }
-
-  void set(Nullable<float> value) { m_weight = value; }
-}
-
-    [JsonProperty(NullValueHandling = NullValueHandling::Ignore)] property Nullable<float>
-        Initial
-{
-  Nullable<float> get() { return m_initial; }
-
-  void set(Nullable<float> value) { m_initial = value; }
-}
-
-virtual void ReadFromExample(example* ex)
-{
-  label_data* ld = &ex->l.simple;
-
-  m_label = ld->label;
-
-  const auto& red_fts = ex->_reduction_features.template get<simple_label_reduction_features>();
-  m_weight = red_fts.weight;
-  m_initial = red_fts.initial;
-}
-
-virtual void UpdateExample(VW::workspace* vw, example* ex)
-{
-  label_data* ld = &ex->l.simple;
-  ld->label = m_label;
-
-  if (m_weight.HasValue) ex->weight = m_weight.Value;
-
-  if (m_initial.HasValue)
-  {
-    auto& red_fts = ex->_reduction_features.template get<simple_label_reduction_features>();
-    red_fts.initial = m_initial.Value;
-  }
-
-  VW::count_label(*vw->sd, ld->label);
-}
-
-virtual String ^ ToString() override
-{
-  auto sb = gcnew StringBuilder;
-
-  sb->Append(m_label.ToString(CultureInfo::InvariantCulture));
-
-  if (m_weight.HasValue)
-  {
-    sb->Append(L' ');
-    sb->Append(m_weight.Value.ToString(CultureInfo::InvariantCulture));
-
-    if (m_initial.HasValue)
-    {
-      sb->Append(L' ');
-      sb->Append(m_initial.Value.ToString(CultureInfo::InvariantCulture));
+    { m_label = value;
     }
   }
 
-  return sb->ToString();
-}
-}
-;
+  [JsonProperty(NullValueHandling = NullValueHandling::Ignore)]
+  property Nullable<float> Weight
+  { Nullable<float> get()
+    { return m_weight;
+    }
 
-public
-ref class MulticlassLabel sealed : ILabel
+    void set(Nullable<float> value)
+    { m_weight = value;
+    }
+  }
+
+  [JsonProperty(NullValueHandling = NullValueHandling::Ignore)]
+  property Nullable<float> Initial
+  { Nullable<float> get()
+    { return m_initial;
+    }
+
+    void set(Nullable<float> value)
+    { m_initial = value;
+    }
+  }
+
+  virtual void ReadFromExample(example* ex)
+  {
+    label_data* ld = &ex->l.simple;
+
+    m_label = ld->label;
+
+    const auto& red_fts = ex->_reduction_features.template get<simple_label_reduction_features>();
+    m_weight = red_fts.weight;
+    m_initial = red_fts.initial;
+  }
+
+  virtual void UpdateExample(VW::workspace* vw, example* ex)
+  {
+    label_data* ld = &ex->l.simple;
+    ld->label = m_label;
+
+    if (m_weight.HasValue) ex->weight = m_weight.Value;
+
+    if (m_initial.HasValue)
+    {
+      auto& red_fts = ex->_reduction_features.template get<simple_label_reduction_features>();
+      red_fts.initial = m_initial.Value;
+    }
+
+    VW::count_label(*vw->sd, ld->label);
+  }
+
+  virtual String^ ToString() override
+  { auto sb = gcnew StringBuilder;
+
+    sb->Append(m_label.ToString(CultureInfo::InvariantCulture));
+
+    if (m_weight.HasValue)
+    { sb->Append(L' ');
+      sb->Append(m_weight.Value.ToString(CultureInfo::InvariantCulture));
+
+      if (m_initial.HasValue)
+      { sb->Append(L' ');
+        sb->Append(m_initial.Value.ToString(CultureInfo::InvariantCulture));
+      }
+    }
+
+    return sb->ToString();
+  }
+};
+
+public ref class MulticlassLabel sealed : ILabel
 {
 public:
   ref class Label sealed
@@ -257,117 +275,113 @@ public:
     Nullable<float> m_weight;
 
   public:
-    property uint32_t Class{uint32_t get(){return m_class;
-  }
+    property uint32_t Class
+    { uint32_t get()
+      { return m_class;
+      }
 
-  void
-  set(uint32_t value)
-  {
-    m_class = value;
-  }
-}
-
-    [JsonProperty(NullValueHandling = NullValueHandling::Ignore)] property Nullable<float>
-        Weight
-{
-  Nullable<float> get() { return m_weight; }
-
-  void set(Nullable<float> value) { m_weight = value; }
-}
-}
-;
-
-private:
-List<Label ^> ^ m_classes;
-
-public:
-[JsonProperty] property List<Label ^> ^
-    Classes {
-      List<Label ^> ^
-          get() { return m_classes; }
-
-          void set(List<Label ^> ^ value)
-      {
-        m_classes = value;
+      void set(uint32_t value)
+      { m_class = value;
       }
     }
 
-    virtual void
-    ReadFromExample(example* ex)
-{
-  throw gcnew NotImplementedException("to be done...");
-}
-
-virtual void UpdateExample(VW::workspace* vw, example* ex) { throw gcnew NotImplementedException("to be done..."); }
-
-virtual String ^ ToString() override
-{
-  auto sb = gcnew StringBuilder;
-
-    for
-      each(Label ^ label in m_classes)
-      {
-        sb->Append(L' ');
-        sb->Append(label->Class.ToString(CultureInfo::InvariantCulture));
-
-        if (label->Weight.HasValue)
-        {
-          sb->Append(L' ');
-          sb->Append(label->Weight.Value.ToString(CultureInfo::InvariantCulture));
-        }
+    [JsonProperty(NullValueHandling = NullValueHandling::Ignore)]
+    property Nullable<float> Weight
+    { Nullable<float> get()
+      { return m_weight;
       }
 
-    // strip first space
-    if (sb->Length > 0) sb->Remove(0, 1);
+      void set(Nullable<float> value)
+      { m_weight = value;
+      }
+    }
+  };
 
-    return sb->ToString();
-}
-}
-;
-
-public
-ref class StringLabel sealed : ILabel
-{
 private:
-  String ^ m_label;
+  List<Label^>^ m_classes;
 
 public:
-  StringLabel() {}
+  [JsonProperty]
+  property List<Label^>^ Classes
+  { List<Label^>^ get()
+    { return m_classes;
+    }
 
-  StringLabel(String ^ label)
-      : m_label(label){}
+    void set(List<Label^>^ value)
+    { m_classes = value;
+    }
+  }
 
-            [JsonProperty] property String
-      ^
-      Label {
-        String ^
-            get() { return m_label; }
+  virtual void ReadFromExample(example* ex)
+  { throw gcnew NotImplementedException("to be done...");
+  }
 
-            void set(String ^ value)
-        {
-          m_label = value;
-        }
+  virtual void UpdateExample(VW::workspace* vw, example* ex) { throw gcnew NotImplementedException("to be done..."); }
+
+  virtual String^ ToString() override
+  { auto sb = gcnew StringBuilder;
+
+    for each (Label^ label in m_classes)
+    { sb->Append(L' ');
+      sb->Append(label->Class.ToString(CultureInfo::InvariantCulture));
+
+      if (label->Weight.HasValue)
+      { sb->Append(L' ');
+        sb->Append(label->Weight.Value.ToString(CultureInfo::InvariantCulture));
       }
+    }
 
-      virtual void ReadFromExample(example * ex)
-  {
-    throw gcnew NotImplementedException("to be done...");
+    // strip first space
+    if (sb->Length > 0)
+      sb->Remove(0, 1);
+
+    return sb->ToString();
+  }
+};
+
+public ref class StringLabel sealed : ILabel
+{
+private:
+  String^ m_label;
+
+public:
+  StringLabel()
+  { }
+
+  StringLabel(String^ label) : m_label(label)
+  { }
+
+  [JsonProperty]
+  property String^ Label
+  { String^ get()
+    { return m_label;
+    }
+
+    void set(String^ value)
+    { m_label = value;
+    }
+  }
+
+  virtual void ReadFromExample(example* ex)
+  { throw gcnew NotImplementedException("to be done...");
   }
 
   virtual void UpdateExample(VW::workspace* vw, example* ex)
-  {
-    auto bytes = System::Text::Encoding::UTF8->GetBytes(m_label);
+  { auto bytes = System::Text::Encoding::UTF8->GetBytes(m_label);
     auto valueHandle = GCHandle::Alloc(bytes, GCHandleType::Pinned);
 
     try
-    {
-      VW::parse_example_label(*vw, *ex, reinterpret_cast<char*>(valueHandle.AddrOfPinnedObject().ToPointer()));
+    { VW::parse_example_label(*vw, *ex, reinterpret_cast<char*>(valueHandle.AddrOfPinnedObject().ToPointer()));
     }
     CATCHRETHROW
-    finally { valueHandle.Free(); }
+    finally
+    { valueHandle.Free();
+    }
   }
 
-  virtual String ^ ToString() override { return m_label; }
+  virtual String^ ToString() override
+  { return m_label;
+  }
 };
 }
 }

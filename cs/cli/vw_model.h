@@ -4,25 +4,24 @@
 
 #pragma once
 
-#include "vw_base.h"
 #include "vw_clr.h"
+#include "vw_base.h"
 
 namespace VW
 {
 /// <summary>
 /// VowpalWabbit model wrapper used in multi-threaded scenarios.
 /// </summary>
-public
-ref class VowpalWabbitModel : public VowpalWabbitBase
+public ref class VowpalWabbitModel : public VowpalWabbitBase
 {
 public:
   /// <summary>
   /// Initializes a new <see cref="VowpalWabbitModel"/> instance.
   /// </summary>
   /// <param name="settings">Arguments passed to native instance.</param>
-  VowpalWabbitModel(VowpalWabbitSettings ^ settings);
+  VowpalWabbitModel(VowpalWabbitSettings^ settings);
 
   /// <param name="args">Command line arguments passed to native instance.</param>
-  VowpalWabbitModel(String ^ args);
+  VowpalWabbitModel(String^ args);
 };
-}  // namespace VW
+}

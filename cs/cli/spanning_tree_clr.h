@@ -10,8 +10,7 @@ namespace VW
 /// <summary>
 /// Managed wrapper for AllReduce spanning tree implementation.
 /// </summary>
-public
-ref class SpanningTreeClr
+public ref class SpanningTreeClr
 {
 private:
   SpanningTree* m_spanningTree;
@@ -39,4 +38,4 @@ public:
   /// </summary>
   void Stop();
 };
-}  // namespace VW
+}

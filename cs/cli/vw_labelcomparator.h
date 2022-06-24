@@ -13,60 +13,56 @@ ref class VowpalWabbitExample;
 /// <summary>
 /// Interface for label comparators.
 /// </summary>
-public
-interface class IVowpalWabbitLabelComparator
+public interface class IVowpalWabbitLabelComparator
 {
 public:
   /// <summary>
   /// Compares labels of <paramref name="ex1"/> and <paramref name="ex2"/>.
   /// </summary>
   /// <returns>Returns null if labels are equivalent, otherwise returns the difference description.</returns>
-  String ^ Diff(VowpalWabbitExample ^ ex1, VowpalWabbitExample ^ ex2);
+  String^ Diff(VowpalWabbitExample^ ex1, VowpalWabbitExample^ ex2);
 };
 
 /// <summary>
 /// A label comparer for simple labels.
 /// </summary>
-public
-ref class VowpalWabbitSimpleLabelComparator sealed : IVowpalWabbitLabelComparator
+public ref class VowpalWabbitSimpleLabelComparator sealed : IVowpalWabbitLabelComparator
 {
 public:
   /// <summary>
   /// Compares labels of <paramref name="ex1"/> and <paramref name="ex2"/>.
   /// </summary>
   /// <returns>Returns null if labels are equivalent, otherwise returns the difference description.</returns>
-  virtual String ^ Diff(VowpalWabbitExample ^ ex1, VowpalWabbitExample ^ ex2) sealed;
+  virtual String^ Diff(VowpalWabbitExample^ ex1, VowpalWabbitExample^ ex2) sealed;
 };
 
 /// <summary>
 /// A label comparer for contextual bandit label.
 /// </summary>
-public
-ref class VowpalWabbitContextualBanditLabelComparator sealed : IVowpalWabbitLabelComparator
+public ref class VowpalWabbitContextualBanditLabelComparator sealed : IVowpalWabbitLabelComparator
 {
 public:
   /// <summary>
   /// Compares labels of <paramref name="ex1"/> and <paramref name="ex2"/>.
   /// </summary>
   /// <returns>Returns null if labels are equivalent, otherwise returns the difference description.</returns>
-  virtual String ^ Diff(VowpalWabbitExample ^ ex1, VowpalWabbitExample ^ ex2) sealed;
+  virtual String^ Diff(VowpalWabbitExample^ ex1, VowpalWabbitExample^ ex2) sealed;
 };
 
 /// <summary>
 /// Label comparator factory.
 /// </summary>
-public
-ref class VowpalWabbitLabelComparator sealed abstract
+public ref class VowpalWabbitLabelComparator sealed abstract
 {
 public:
   /// <summary>
   /// Simple label comparator.
   /// </summary>
-  static initonly IVowpalWabbitLabelComparator ^ Simple = gcnew VowpalWabbitSimpleLabelComparator;
+  static initonly IVowpalWabbitLabelComparator^ Simple = gcnew VowpalWabbitSimpleLabelComparator;
 
   /// <summary>
   /// Contextual bandit label comparator.
   /// </summary>
-  static initonly IVowpalWabbitLabelComparator ^ ContextualBandit = gcnew VowpalWabbitContextualBanditLabelComparator;
+  static initonly IVowpalWabbitLabelComparator^ ContextualBandit = gcnew VowpalWabbitContextualBanditLabelComparator;
 };
-}  // namespace VW
+}

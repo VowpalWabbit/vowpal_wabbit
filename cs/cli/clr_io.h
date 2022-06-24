@@ -15,17 +15,17 @@ namespace VW
 class clr_stream_adapter : public VW::io::writer, public VW::io::reader
 {
 private:
-  gcroot<Stream ^> m_stream;
-  gcroot<cli::array<unsigned char> ^> m_buffer;
+  gcroot<Stream^> m_stream;
+  gcroot<cli::array<unsigned char>^> m_buffer;
 
   void ensure_buffer_size(size_t nbytes);
 
 public:
-  clr_stream_adapter(Stream ^ stream);
+  clr_stream_adapter(Stream^ stream);
   ~clr_stream_adapter();
   ssize_t read(char* buffer, size_t num_bytes) override;
   ssize_t write(const char* buffer, size_t num_bytes) override;
   void reset() override;
   void flush() override;
 };
-}  // namespace VW
+}
