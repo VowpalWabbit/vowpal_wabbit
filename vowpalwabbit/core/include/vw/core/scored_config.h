@@ -16,7 +16,7 @@ struct scored_config
   float last_r = 0.0;
   uint64_t update_count = 0;
 
-  scored_config() : chisq(0.05, 0.999, 0, std::numeric_limits<double>::infinity()) {}
+  scored_config() : chisq(DEFAULT_ALPHA, CRESSEREAD_DEFAULT_TAU, 0, std::numeric_limits<double>::infinity()) {}
   scored_config(double alpha, double tau) : chisq(alpha, tau, 0, std::numeric_limits<double>::infinity()) {}
 
   void update(float w, float r);

@@ -92,8 +92,8 @@ private:
 public:
   // alpha: confidence level
   // tau: count decay time constant
-  explicit ChiSquared(double _alpha, double _tau, double _wmin = 0,
-      double _wmax = std::numeric_limits<double>::infinity(), double _rmin = 0, double _rmax = 1);
+  explicit ChiSquared(double _alpha, double _tau, double _wmin = 0.0,
+      double _wmax = std::numeric_limits<double>::infinity(), double _rmin = 0.0, double _rmax = 1.0);
   bool isValid() const;
   ChiSquared& update(double w, double r);
   double qlb(double w, double r, double sign);  // sign = 1.0 for lower_bound, sign = -1.0 for upper_bound

@@ -7,6 +7,7 @@
 #include "vw/config/options.h"
 #include "vw/core/constant.h"  // NUM_NAMESPACES
 #include "vw/core/debug_log.h"
+#include "vw/core/interactions.h"
 #include "vw/core/model_utils.h"
 #include "vw/core/rand_state.h"
 #include "vw/core/setup_base.h"
@@ -65,7 +66,6 @@ namespace
 {
 constexpr uint64_t MAX_CONFIGS = 10;
 constexpr uint64_t CONFIGS_PER_CHAMP_CHANGE = 5;
-const std::vector<unsigned char> NS_EXCLUDE_LIST = {ccb_slot_namespace, ccb_id_namespace};
 
 // fail if incompatible reductions got setup
 // todo: audit if they reference global all interactions
@@ -272,7 +272,7 @@ void interaction_config_manager::pre_process(const multi_ex& ecs)
   {
     for (const auto& ns : ex->indices)
     {
-      if (std::find(NS_EXCLUDE_LIST.begin(), NS_EXCLUDE_LIST.end(), ns) != NS_EXCLUDE_LIST.end()) { continue; }
+      if (!INTERACTIONS::is_interaction_ns(ns)) { continue; }
       ns_counter[ns]++;
       if (ns_counter[ns] == 1) { new_ns_seen = true; }
     }
