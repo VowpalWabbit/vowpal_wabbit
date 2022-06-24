@@ -30,27 +30,7 @@ struct epsilon_decay_score : scored_config
 struct epsilon_decay_data
 {
   epsilon_decay_data(uint64_t model_count, uint64_t min_scope, double epsilon_decay_alpha, double epsilon_decay_tau,
-      dense_parameters& weights, VW::io::logger logger, bool log_champ_changes, bool constant_epsilon, uint32_t& wpp)
-      : _min_scope(min_scope)
-      , _epsilon_decay_alpha(epsilon_decay_alpha)
-      , _epsilon_decay_tau(epsilon_decay_tau)
-      , _weights(weights)
-      , _logger(std::move(logger))
-      , _log_champ_changes(log_champ_changes)
-      , _constant_epsilon(constant_epsilon)
-      , _wpp(wpp)
-  {
-    _scored_configs.reserve(model_count);
-    _weight_indices.resize(model_count);  // resize required for iota
-    std::iota(_weight_indices.begin(), _weight_indices.end(), 0);
-    for (uint64_t i = 0; i < model_count; ++i)
-    {
-      _scored_configs.emplace_back(i + 1);  // Model i (0-indexed) will have (i + 1) scores
-      for (uint64_t j = 0; j < i + 1; ++j)
-      { _scored_configs.back().emplace_back(epsilon_decay_alpha, epsilon_decay_tau); }
-    }
-  }
-
+      dense_parameters& weights, VW::io::logger logger, bool log_champ_changes, bool constant_epsilon, uint32_t& wpp);
   void update_weights(VW::LEARNER::multi_learner& base, VW::multi_ex& examples);
   void promote_model(int64_t model_ind, int64_t swap_dist);
   void rebalance_greater_models(int64_t model_ind, int64_t swap_dist, int64_t model_count);

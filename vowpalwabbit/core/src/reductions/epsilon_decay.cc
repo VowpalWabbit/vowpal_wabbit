@@ -28,6 +28,30 @@ namespace epsilon_decay
 {
 float decayed_epsilon(uint64_t update_count) { return static_cast<float>(std::pow(update_count + 1, -1.f / 3.f)); }
 
+epsilon_decay_data::epsilon_decay_data(uint64_t model_count, uint64_t min_scope, double epsilon_decay_alpha,
+    double epsilon_decay_tau, dense_parameters& weights, VW::io::logger logger, bool log_champ_changes,
+    bool constant_epsilon, uint32_t& wpp)
+    : _min_scope(min_scope)
+    , _epsilon_decay_alpha(epsilon_decay_alpha)
+    , _epsilon_decay_tau(epsilon_decay_tau)
+    , _weights(weights)
+    , _logger(std::move(logger))
+    , _log_champ_changes(log_champ_changes)
+    , _constant_epsilon(constant_epsilon)
+    , _wpp(wpp)
+{
+  _weight_indices.resize(model_count);
+  _scored_configs.reserve(model_count);
+  std::iota(_weight_indices.begin(), _weight_indices.end(), 0);
+  for (uint64_t i = 0; i < model_count; ++i)
+  {
+    _scored_configs.emplace_back();
+    _scored_configs.back().reserve(i + 1);
+    for (uint64_t j = 0; j < i + 1; ++j)
+    { _scored_configs.back().emplace_back(epsilon_decay_alpha, epsilon_decay_tau); }
+  }
+}
+
 void epsilon_decay_data::update_weights(VW::LEARNER::multi_learner& base, VW::multi_ex& examples)
 {
   auto model_count = static_cast<int64_t>(_scored_configs.size());
@@ -232,6 +256,7 @@ VW::LEARNER::base_learner* VW::reductions::epsilon_decay_setup(VW::setup_base_i&
   float _epsilon_decay_tau;
   bool _log_champ_changes = false;
   bool _constant_epsilon = false;
+  bool _bonferroni = false;
 
   option_group_definition new_options("[Reduction] Epsilon-Decaying Exploration");
   new_options
@@ -264,6 +289,10 @@ VW::LEARNER::base_learner* VW::reductions::epsilon_decay_setup(VW::setup_base_i&
       .add(make_option("constant_epsilon", _constant_epsilon)
                .keep()
                .help("Keep epsilon constant across models")
+               .experimental())
+      .add(make_option("bonferroni", _bonferroni)
+               .keep()
+               .help("Use bonferroni correction (divide confidence interval by model count)")
                .experimental());
 
   if (!options.add_parse_and_check_necessary(new_options)) { return nullptr; }
@@ -271,7 +300,7 @@ VW::LEARNER::base_learner* VW::reductions::epsilon_decay_setup(VW::setup_base_i&
   if (model_count < 1) { THROW("Model count must be 1 or greater"); }
 
   // Scale confidence interval by number of examples
-  float scaled_alpha = _epsilon_decay_alpha / model_count;
+  float scaled_alpha = _bonferroni ? (_epsilon_decay_alpha / model_count) : _epsilon_decay_alpha;
 
   auto data = VW::make_unique<VW::reductions::epsilon_decay::epsilon_decay_data>(model_count, _min_scope, scaled_alpha,
       _epsilon_decay_tau, all.weights.dense_weights, all.logger, _log_champ_changes, _constant_epsilon, all.wpp);
