@@ -165,3 +165,47 @@ BOOST_AUTO_TEST_CASE(automl_weight_operations)
 
   BOOST_CHECK_GT(ctr.back(), 0.4f);
 }
+
+bool all_weights_equal_test(cb_sim&, VW::workspace& all, VW::multi_ex& ec)
+{
+  auto& weights = all.weights.dense_weights;
+  uint32_t stride_size = 1 << weights.stride_shift();
+
+  for (auto iter = weights.begin(); iter != weights.end(); ++iter)
+  {
+    size_t prestride_index = iter.index() >> weights.stride_shift();
+    size_t current_offset = (iter.index() >> weights.stride_shift()) & (all.wpp - 1);
+    if (current_offset == 0)
+    {
+      float* first_weight = &weights.first()[(prestride_index + 0) << weights.stride_shift()];
+      for (uint32_t i = 1; i < all.wpp; ++i)
+      {
+        float* other = &weights.first()[(prestride_index + i) << weights.stride_shift()];
+        for (uint32_t j = 0; j < stride_size; ++j)
+        {
+          ARE_SAME((&(*first_weight))[j], (&(*other))[j], AUTO_ML_FLOAT_TOL);
+        }
+      }
+    }
+  }
+
+  return true;
+}
+
+BOOST_AUTO_TEST_CASE(automl_noop_samechampconfig)
+{
+  const size_t seed = 10;
+  const size_t num_iterations = 2000;
+  callback_map test_hooks;
+
+  test_hooks.emplace(500, all_weights_equal_test);
+  test_hooks.emplace(num_iterations, all_weights_equal_test);
+
+  auto ctr = simulator::_test_helper_hook(
+      "--automl 4 --automl_tau .999 --priority_type least_exclusion --cb_explore_adf --quiet --epsilon 0.2 "
+      "--random_seed 5 "
+      "--keep_configs --oracle_type champdupe -b 8",
+      test_hooks, num_iterations, seed);
+
+  BOOST_CHECK_GT(ctr.back(), 0.4f);
+}

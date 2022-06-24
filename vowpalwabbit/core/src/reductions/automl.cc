@@ -387,6 +387,13 @@ void interaction_config_manager::config_oracle()
       insert_config(std::move(new_exclusions));
     }
   }
+  else if (oracle_type == "champdupe")
+  {
+    for (uint64_t i = 0; i < max_live_configs; ++i)
+    {
+      insert_config(std::move(std::set<std::vector<namespace_index>>(configs[scores[current_champ].config_index].exclusions)));
+    }
+  }
   else
   {
     THROW("Unknown oracle type.");
@@ -808,7 +815,7 @@ VW::LEARNER::base_learner* VW::reductions::automl_setup(VW::setup_base_i& stack_
       .add(make_option("oracle_type", oracle_type)
                .keep()
                .default_value("one_diff")
-               .one_of({"one_diff", "rand"})
+               .one_of({"one_diff", "rand", "champdupe"})
                .help("Set oracle to generate configs")
                .experimental())
       .add(make_option("automl_alpha", automl_alpha)
