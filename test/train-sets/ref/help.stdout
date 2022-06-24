@@ -238,7 +238,7 @@ Weight Options:
     --interaction_type arg                  Set what type of interactions to use (type: str, default: quadratic,
                                             choices {cubic, quadratic}, keep, experimental)
     --oracle_type arg                       Set oracle to generate configs (type: str, default: one_diff,
-                                            choices {one_diff, rand}, keep, experimental)
+                                            choices {champdupe, one_diff, rand}, keep, experimental)
     --automl_alpha arg                      Set confidence interval for champion change (type: float, default:
                                             0.05, keep, experimental)
     --automl_tau arg                        Time constant for count decay (type: float, default: 1, keep,
