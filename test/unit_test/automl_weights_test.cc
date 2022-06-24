@@ -182,9 +182,7 @@ bool all_weights_equal_test(cb_sim&, VW::workspace& all, VW::multi_ex& ec)
       {
         float* other = &weights.first()[(prestride_index + i) << weights.stride_shift()];
         for (uint32_t j = 0; j < stride_size; ++j)
-        {
-          ARE_SAME((&(*first_weight))[j], (&(*other))[j], AUTO_ML_FLOAT_TOL);
-        }
+        { ARE_SAME((&(*first_weight))[j], (&(*other))[j], AUTO_ML_FLOAT_TOL); }
       }
     }
   }

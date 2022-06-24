@@ -390,9 +390,7 @@ void interaction_config_manager::config_oracle()
   else if (oracle_type == "champdupe")
   {
     for (uint64_t i = 0; i < max_live_configs; ++i)
-    {
-      insert_config(std::move(std::set<std::vector<namespace_index>>(configs[scores[current_champ].config_index].exclusions)));
-    }
+    { insert_config(std::set<std::vector<namespace_index>>(configs[scores[current_champ].config_index].exclusions)); }
   }
   else
   {
