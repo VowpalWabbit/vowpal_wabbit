@@ -215,7 +215,8 @@ BOOST_AUTO_TEST_CASE(automl_learn_order)
   callback_map test_hooks;
 
   std::string vw_arg =
-      "--automl 4 --automl_estimator_decay .999 --priority_type favor_popular_namespaces --cb_explore_adf --quiet --epsilon 0.2 "
+      "--automl 4 --automl_estimator_decay .999 --priority_type favor_popular_namespaces --cb_explore_adf --quiet "
+      "--epsilon 0.2 "
       "--random_seed 5 -b 18 "
       "--keep_configs --oracle_type one_diff ";
   int seed = 10;
