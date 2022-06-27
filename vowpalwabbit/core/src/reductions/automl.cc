@@ -606,7 +606,8 @@ void automl<CMType>::offset_learn(multi_learner& base, multi_ex& ec, CB::cb_clas
 
   std::swap(ec[0]->pred.a_s, buffer_a_s);
 
-  int64_t live_slot = cm->scores.size() - 1;
+  int64_t current_slot_index = cm->scores.size() - 1;
+  int64_t live_slot = current_slot_index;
   int64_t current_champ = static_cast<int64_t>(cm->current_champ);
   assert(current_champ >= 0);
 
@@ -615,8 +616,14 @@ void automl<CMType>::offset_learn(multi_learner& base, multi_ex& ec, CB::cb_clas
     if (live_slot >= 0 && live_slot != current_champ) { std::swap(ec[0]->pred.a_s, buffer_a_s); }
   });
 
-  for (; live_slot >= 0; live_slot -= 1)
+  for (; current_slot_index >= 0; current_slot_index -= 1)
   {
+    if (debug_reverse_learning_order) { live_slot = current_slot_index; }
+    else
+    {
+      live_slot = cm->scores.size() - 1 - current_slot_index;
+    }
+
     if (live_slot == current_champ) { std::swap(ec[0]->pred.a_s, buffer_a_s); }
     else
     {
@@ -771,6 +778,7 @@ VW::LEARNER::base_learner* VW::reductions::automl_setup(VW::setup_base_i& stack_
   std::string oracle_type;
   float automl_alpha;
   float automl_tau;
+  bool reversed_learning_order = true;
 
   option_group_definition new_options("[Reduction] Automl");
   new_options
@@ -816,6 +824,10 @@ VW::LEARNER::base_learner* VW::reductions::automl_setup(VW::setup_base_i& stack_
                .one_of({"one_diff", "rand", "champdupe"})
                .help("Set oracle to generate configs")
                .experimental())
+      .add(make_option("debug_reversed_learn", reversed_learning_order)
+               .default_value(true)
+               .help("Debug: learn each config in reversed order (last to first).")
+               .experimental())
       .add(make_option("automl_alpha", automl_alpha)
                .keep()
                .default_value(DEFAULT_ALPHA)
@@ -849,6 +861,7 @@ VW::LEARNER::base_learner* VW::reductions::automl_setup(VW::setup_base_i& stack_
       all.weights.dense_weights, calc_priority, automl_alpha, automl_tau, &all.logger, all.wpp);
   auto data = VW::make_unique<VW::reductions::automl::automl<VW::reductions::automl::interaction_config_manager>>(
       std::move(cm), &all.logger);
+  data->debug_reverse_learning_order = reversed_learning_order;
   if (max_live_configs > MAX_CONFIGS)
   {
     THROW("Maximum number of configs is "
