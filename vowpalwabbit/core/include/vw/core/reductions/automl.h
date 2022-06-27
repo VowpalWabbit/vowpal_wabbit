@@ -101,8 +101,8 @@ struct interaction_config_manager : config_manager
   std::string oracle_type;
   dense_parameters& weights;
   priority_func* calc_priority;
-  double automl_alpha;
-  double automl_tau;
+  double automl_significance_level;
+  double automl_estimator_decay;
   VW::io::logger* logger;
   uint32_t& wpp;
 
