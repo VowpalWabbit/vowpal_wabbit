@@ -917,7 +917,7 @@ void save_load_online_state(VW::workspace& all, io_buf& model_file, bool read, b
           const auto map_it = all.index_name_map.find(i);
           if (map_it != all.index_name_map.end())
           {
-            if (hexfloat_print) { msg << std::hexfloat };
+            if (hexfloat_print) { msg << std::hexfloat; }
             msg << to_string(map_it->second) << ":";
             bin_text_write_fixed(model_file, nullptr /*unused*/, 0 /*unused*/, msg, true);
           }
