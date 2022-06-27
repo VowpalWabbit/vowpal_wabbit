@@ -618,7 +618,7 @@ void automl<CMType>::offset_learn(multi_learner& base, multi_ex& ec, CB::cb_clas
 
   for (; current_slot_index >= 0; current_slot_index -= 1)
   {
-    if (debug_reverse_learning_order) { live_slot = current_slot_index; }
+    if (!debug_reverse_learning_order) { live_slot = current_slot_index; }
     else
     {
       live_slot = cm->scores.size() - 1 - current_slot_index;

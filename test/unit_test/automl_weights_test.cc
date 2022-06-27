@@ -254,4 +254,3 @@ BOOST_AUTO_TEST_CASE(automl_learn_order)
 
   BOOST_CHECK_EQUAL(ctr1, ctr2);
 }
-
