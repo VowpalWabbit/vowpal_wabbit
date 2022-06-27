@@ -96,7 +96,6 @@ struct interaction_config_manager : config_manager
   std::shared_ptr<VW::rand_state> random_state;
   uint64_t priority_challengers;
   uint64_t valid_config_size = 0;
-  bool keep_configs;
   std::string interaction_type;
   std::string oracle_type;
   dense_parameters& weights;
@@ -121,7 +120,7 @@ struct interaction_config_manager : config_manager
   // Maybe not needed with oracle, maps priority to config index, unused configs
   std::priority_queue<std::pair<float, uint64_t>> index_queue;
 
-  interaction_config_manager(uint64_t, uint64_t, std::shared_ptr<VW::rand_state>, uint64_t, bool, std::string,
+  interaction_config_manager(uint64_t, uint64_t, std::shared_ptr<VW::rand_state>, uint64_t, std::string,
       std::string, dense_parameters&, float (*)(const exclusion_config&, const std::map<namespace_index, uint64_t>&),
       double, double, VW::io::logger*, uint32_t&);
 

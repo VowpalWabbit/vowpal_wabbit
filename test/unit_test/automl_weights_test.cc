@@ -160,7 +160,7 @@ BOOST_AUTO_TEST_CASE(automl_weight_operations)
   auto ctr = simulator::_test_helper_hook(
       "--automl 3 --automl_tau .999 --priority_type least_exclusion --cb_explore_adf --quiet --epsilon 0.2 "
       "--random_seed 5 "
-      "--keep_configs --oracle_type rand",
+      "--oracle_type rand",
       test_hooks, num_iterations, seed);
 
   BOOST_CHECK_GT(ctr.back(), 0.4f);
@@ -202,7 +202,7 @@ BOOST_AUTO_TEST_CASE(automl_noop_samechampconfig)
   auto ctr = simulator::_test_helper_hook(
       "--automl 4 --automl_tau .999 --priority_type least_exclusion --cb_explore_adf --quiet --epsilon 0.2 "
       "--random_seed 5 "
-      "--keep_configs --oracle_type champdupe -b 8",
+      "--oracle_type champdupe -b 8",
       test_hooks, num_iterations, seed);
 
   BOOST_CHECK_GT(ctr.back(), 0.4f);

@@ -109,7 +109,7 @@ BOOST_AUTO_TEST_CASE(automl_save_load)
   auto ctr = simulator::_test_helper_hook(
       "--automl 3 --priority_type least_exclusion --cb_explore_adf --quiet --epsilon 0.2 "
       "--random_seed 5 "
-      "--keep_configs --oracle_type rand",
+      "--oracle_type rand",
       empty_hooks);
   float without_save = ctr.back();
   BOOST_CHECK_GT(without_save, 0.7f);
@@ -117,7 +117,7 @@ BOOST_AUTO_TEST_CASE(automl_save_load)
   ctr = simulator::_test_helper_save_load(
       "--automl 3 --priority_type least_exclusion --cb_explore_adf --quiet --epsilon 0.2 "
       "--random_seed 5 "
-      "--keep_configs --oracle_type rand");
+      "--oracle_type rand");
   float with_save = ctr.back();
   BOOST_CHECK_GT(with_save, 0.7f);
 
@@ -149,7 +149,7 @@ BOOST_AUTO_TEST_CASE(automl_assert_0th_event_automl)
   auto ctr = simulator::_test_helper_hook(
       "--automl 3 --priority_type least_exclusion --cb_explore_adf --quiet --epsilon 0.2 "
       "--random_seed 5 "
-      "--keep_configs --oracle_type rand",
+      "--oracle_type rand",
       test_hooks, num_iterations);
 
   BOOST_CHECK_GT(ctr.back(), 0.1f);
@@ -225,7 +225,7 @@ BOOST_AUTO_TEST_CASE(automl_assert_live_configs_and_lease)
   auto ctr = simulator::_test_helper_hook(
       "--automl 3 --priority_type least_exclusion --cb_explore_adf --quiet --epsilon 0.2 "
       "--random_seed 5 "
-      "--keep_configs --oracle_type rand",
+      "--oracle_type rand",
       test_hooks, num_iterations);
 
   BOOST_CHECK_GT(ctr.back(), 0.1f);
@@ -236,7 +236,7 @@ BOOST_AUTO_TEST_CASE(automl_cpp_simulator_automl)
 {
   auto ctr = simulator::_test_helper(
       "--cb_explore_adf --quiet --epsilon 0.2 --random_seed 5 --automl 3 --priority_type "
-      "least_exclusion --keep_configs --oracle_type rand");
+      "least_exclusion --oracle_type rand");
   BOOST_CHECK_GT(ctr.back(), 0.6f);
 }
 
@@ -282,9 +282,9 @@ BOOST_AUTO_TEST_CASE(automl_namespace_switch)
   auto ctr = simulator::_test_helper_hook(
       "--automl 3 --priority_type least_exclusion --cb_explore_adf --quiet --epsilon 0.2 "
       "--random_seed 5 "
-      "--global_lease 500 --keep_configs --oracle_type one_diff --noconstant",
+      "--global_lease 500 --oracle_type one_diff --noconstant",
       test_hooks, num_iterations, seed, swap_after);
-  BOOST_CHECK_GT(ctr.back(), 0.7f);
+  BOOST_CHECK_GT(ctr.back(), 0.65f);
 }
 
 BOOST_AUTO_TEST_CASE(automl_clear_configs)

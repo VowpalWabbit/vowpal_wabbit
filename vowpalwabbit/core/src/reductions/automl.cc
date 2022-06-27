@@ -187,14 +187,13 @@ void automl<CMType>::one_step(multi_learner& base, multi_ex& ec, CB::cb_class& l
 // this can also be interpreted as a pre-learn() hook since it gets called by a learn() right before calling
 // into its own base_learner.learn(). see learn_automl(...)
 interaction_config_manager::interaction_config_manager(uint64_t global_lease, uint64_t max_live_configs,
-    std::shared_ptr<VW::rand_state> rand_state, uint64_t priority_challengers, bool keep_configs,
+    std::shared_ptr<VW::rand_state> rand_state, uint64_t priority_challengers,
     std::string interaction_type, std::string oracle_type, dense_parameters& weights, priority_func* calc_priority,
     double automl_alpha, double automl_tau, VW::io::logger* logger, uint32_t& wpp)
     : global_lease(global_lease)
     , max_live_configs(max_live_configs)
     , random_state(std::move(rand_state))
     , priority_challengers(priority_challengers)
-    , keep_configs(keep_configs)
     , interaction_type(std::move(interaction_type))
     , oracle_type(std::move(oracle_type))
     , weights(weights)
@@ -532,26 +531,23 @@ void interaction_config_manager::update_champ()
   if (champ_change)
   {
     this->total_champ_switches++;
-    if (!keep_configs)
+    while (!index_queue.empty()) { index_queue.pop(); };
+    uint64_t champ_config_index = scores[current_champ].config_index;
+    if (champ_config_index != 0)
     {
-      while (!index_queue.empty()) { index_queue.pop(); };
-      uint64_t champ_config_index = scores[current_champ].config_index;
-      if (champ_config_index != 0)
-      {
-        exclusion_config& zero_ind = configs[0];
-        exclusion_config& new_champ = configs[champ_config_index];
-        std::swap(zero_ind, new_champ);
-        scores[current_champ].config_index = 0;
-      }
-      auto champ_primary_score = std::move(scores[current_champ]);
-      auto champ_secondary_score = std::move(champ_scores[current_champ]);
-      scores.clear();
-      champ_scores.clear();
-      scores.push_back(std::move(champ_primary_score));
-      champ_scores.push_back(std::move(champ_secondary_score));
-      current_champ = 0;
-      valid_config_size = 1;
+      exclusion_config& zero_ind = configs[0];
+      exclusion_config& new_champ = configs[champ_config_index];
+      std::swap(zero_ind, new_champ);
+      scores[current_champ].config_index = 0;
     }
+    auto champ_primary_score = std::move(scores[current_champ]);
+    auto champ_secondary_score = std::move(champ_scores[current_champ]);
+    scores.clear();
+    champ_scores.clear();
+    scores.push_back(std::move(champ_primary_score));
+    champ_scores.push_back(std::move(champ_secondary_score));
+    current_champ = 0;
+    valid_config_size = 1;
     for (uint64_t live_slot = 0; live_slot < scores.size(); ++live_slot)
     {
       scores[live_slot].reset_stats(automl_alpha, automl_tau);
@@ -765,7 +761,6 @@ VW::LEARNER::base_learner* VW::reductions::automl_setup(VW::setup_base_i& stack_
   std::string cm_type;
   std::string priority_type;
   int32_t priority_challengers;
-  bool keep_configs = false;
   bool verbose_metrics = false;
   std::string interaction_type;
   std::string oracle_type;
@@ -802,7 +797,6 @@ VW::LEARNER::base_learner* VW::reductions::automl_setup(VW::setup_base_i& stack_
                .default_value(-1)
                .help("Set number of priority challengers to use")
                .experimental())
-      .add(make_option("keep_configs", keep_configs).keep().help("Keep all configs after champ change").experimental())
       .add(make_option("verbose_metrics", verbose_metrics).help("Extended metrics for debugging").experimental())
       .add(make_option("interaction_type", interaction_type)
                .keep()
@@ -845,7 +839,7 @@ VW::LEARNER::base_learner* VW::reductions::automl_setup(VW::setup_base_i& stack_
 
   // Note that all.wpp will not be set correctly until after setup
   auto cm = VW::make_unique<VW::reductions::automl::interaction_config_manager>(global_lease, max_live_configs,
-      all.get_random_state(), static_cast<uint64_t>(priority_challengers), keep_configs, interaction_type, oracle_type,
+      all.get_random_state(), static_cast<uint64_t>(priority_challengers), interaction_type, oracle_type,
       all.weights.dense_weights, calc_priority, automl_alpha, automl_tau, &all.logger, all.wpp);
   auto data = VW::make_unique<VW::reductions::automl::automl<VW::reductions::automl::interaction_config_manager>>(
       std::move(cm), &all.logger);
