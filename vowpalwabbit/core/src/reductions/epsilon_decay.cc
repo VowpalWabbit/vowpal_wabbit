@@ -28,9 +28,9 @@ namespace epsilon_decay
 {
 float decayed_epsilon(uint64_t update_count) { return static_cast<float>(std::pow(update_count + 1, -1.f / 3.f)); }
 
-epsilon_decay_data::epsilon_decay_data(uint64_t model_count, uint64_t min_scope, double epsilon_decay_significance_level,
-    double epsilon_decay_estimator_decay, dense_parameters& weights, VW::io::logger logger, bool log_champ_changes,
-    bool constant_epsilon, uint32_t& wpp)
+epsilon_decay_data::epsilon_decay_data(uint64_t model_count, uint64_t min_scope,
+    double epsilon_decay_significance_level, double epsilon_decay_estimator_decay, dense_parameters& weights,
+    VW::io::logger logger, bool log_champ_changes, bool constant_epsilon, uint32_t& wpp)
     : _min_scope(min_scope)
     , _epsilon_decay_significance_level(epsilon_decay_significance_level)
     , _epsilon_decay_estimator_decay(epsilon_decay_estimator_decay)
@@ -116,7 +116,10 @@ void epsilon_decay_data::clear_weights_and_scores(int64_t swap_dist, int64_t mod
   {
     for (int64_t score_ind = 0;
          score_ind < std::min(static_cast<int64_t>(_scored_configs[model_ind].size()), swap_dist); ++score_ind)
-    { _scored_configs[model_ind][score_ind].reset_stats(_epsilon_decay_significance_level, _epsilon_decay_estimator_decay); }
+    {
+      _scored_configs[model_ind][score_ind].reset_stats(
+          _epsilon_decay_significance_level, _epsilon_decay_estimator_decay);
+    }
   }
   for (int64_t ind = 0; ind < swap_dist; ++ind) { _weights.clear_offset(_weight_indices[ind], _wpp); }
 }
@@ -300,10 +303,12 @@ VW::LEARNER::base_learner* VW::reductions::epsilon_decay_setup(VW::setup_base_i&
   if (model_count < 1) { THROW("Model count must be 1 or greater"); }
 
   // Scale confidence interval by number of examples
-  float scaled_alpha = _bonferroni ? (_epsilon_decay_significance_level / model_count) : _epsilon_decay_significance_level;
+  float scaled_alpha =
+      _bonferroni ? (_epsilon_decay_significance_level / model_count) : _epsilon_decay_significance_level;
 
   auto data = VW::make_unique<VW::reductions::epsilon_decay::epsilon_decay_data>(model_count, _min_scope, scaled_alpha,
-      _epsilon_decay_estimator_decay, all.weights.dense_weights, all.logger, _log_champ_changes, _constant_epsilon, all.wpp);
+      _epsilon_decay_estimator_decay, all.weights.dense_weights, all.logger, _log_champ_changes, _constant_epsilon,
+      all.wpp);
 
   // make sure we setup the rest of the stack with cleared interactions
   // to make sure there are not subtle bugs

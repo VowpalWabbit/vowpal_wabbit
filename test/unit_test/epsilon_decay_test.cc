@@ -198,14 +198,16 @@ BOOST_AUTO_TEST_CASE(epsilon_decay_test_save_load)
 {
   callback_map empty_hooks;
   auto ctr = simulator::_test_helper_hook(
-      "--epsilon_decay --bonferroni --model_count 5 --cb_explore_adf --epsilon_decay_significance_level .01 --quiet  -q "
+      "--epsilon_decay --bonferroni --model_count 5 --cb_explore_adf --epsilon_decay_significance_level .01 --quiet  "
+      "-q "
       "::",
       empty_hooks);
   float without_save = ctr.back();
   BOOST_CHECK_GT(without_save, 0.9f);
 
   ctr = simulator::_test_helper_save_load(
-      "--epsilon_decay --bonferroni --model_count 5 --cb_explore_adf --epsilon_decay_significance_level .01 --quiet  -q "
+      "--epsilon_decay --bonferroni --model_count 5 --cb_explore_adf --epsilon_decay_significance_level .01 --quiet  "
+      "-q "
       "::");
 
   float with_save = ctr.back();
