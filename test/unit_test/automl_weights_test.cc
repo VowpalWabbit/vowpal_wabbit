@@ -201,7 +201,7 @@ BOOST_AUTO_TEST_CASE(automl_noop_samechampconfig)
   test_hooks.emplace(num_iterations, all_weights_equal_test);
 
   auto ctr = simulator::_test_helper_hook(
-      "--automl 4 --automl_tau .999 --priority_type least_exclusion --cb_explore_adf --quiet --epsilon 0.2 "
+      "--automl 4 --automl_estimator_decay .999 --priority_type favor_popular_namespaces --cb_explore_adf --quiet --epsilon 0.2 "
       "--random_seed 5 "
       "--keep_configs --oracle_type champdupe -b 8",
       test_hooks, num_iterations, seed);
