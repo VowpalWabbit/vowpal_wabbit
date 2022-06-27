@@ -239,6 +239,7 @@ BOOST_AUTO_TEST_CASE(automl_learn_order)
   while (iter_1 != weights_1.end() && iter_2 != weights_2.end())
   {
     BOOST_CHECK_EQUAL(*iter_1, *iter_2);
+
     if (*iter_1 != *iter_2)
     {
       at_least_one_diff = true;

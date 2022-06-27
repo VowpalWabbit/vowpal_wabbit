@@ -658,6 +658,7 @@ void automl<CMType>::offset_learn(multi_learner& base, multi_ex& ec, CB::cb_clas
     {
       cm->scores[live_slot].update(chosen_action == labelled_action ? w : 0, r);
     }
+    
     std::swap(*_all_normalized, per_live_model_state_double[live_slot * 2]);
     std::swap(*_gd_total_weight, per_live_model_state_double[live_slot * 2 + 1]);
     std::swap(*_cb_adf_event_sum, per_live_model_state_uint64[live_slot * 2]);
@@ -878,6 +879,7 @@ VW::LEARNER::base_learner* VW::reductions::automl_setup(VW::setup_base_i& stack_
   data->debug_reverse_learning_order = reversed_learning_order;
   data->per_live_model_state_double = std::vector<double>(max_live_configs * 2, 0.f);
   data->per_live_model_state_uint64 = std::vector<uint64_t>(max_live_configs * 2, 0.f);
+  
   if (max_live_configs > MAX_CONFIGS)
   {
     THROW("Maximum number of configs is "
