@@ -853,6 +853,7 @@ template <class T>
 void save_load_online_state(VW::workspace& all, io_buf& model_file, bool read, bool text, gd* g, std::stringstream& msg,
     uint32_t ftrl_size, T& weights)
 {
+  bool hexfloat_print = true;
   uint64_t length = static_cast<uint64_t>(1) << all.num_bits;
 
   uint64_t i = 0;
@@ -916,6 +917,7 @@ void save_load_online_state(VW::workspace& all, io_buf& model_file, bool read, b
           const auto map_it = all.index_name_map.find(i);
           if (map_it != all.index_name_map.end())
           {
+            if (hexfloat_print) { msg << std::hexfloat };
             msg << to_string(map_it->second) << ":";
             bin_text_write_fixed(model_file, nullptr /*unused*/, 0 /*unused*/, msg, true);
           }
