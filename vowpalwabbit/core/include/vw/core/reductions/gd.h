@@ -12,6 +12,9 @@
 #include "vw/core/interactions.h"
 #include "vw/core/vw_math.h"
 
+// we need it for base_learner
+#include "vw/core/vw_fwd.h"
+
 namespace VW
 {
 namespace reductions
@@ -21,7 +24,28 @@ VW::LEARNER::base_learner* gd_setup(VW::setup_base_i& stack_builder);
 }  // namespace VW
 namespace GD
 {
-struct gd;
+struct gd
+{
+  //  double normalized_sum_norm_x;
+  double total_weight = 0.0;
+  size_t no_win_counter = 0;
+  size_t early_stop_thres = 0;
+  float initial_constant = 0.f;
+  float neg_norm_power = 0.f;
+  float neg_power_t = 0.f;
+  float sparse_l2 = 0.f;
+  float update_multiplier = 0.f;
+  void (*predict)(gd&, VW::LEARNER::base_learner&, VW::example&) = nullptr;
+  void (*learn)(gd&, VW::LEARNER::base_learner&, VW::example&) = nullptr;
+  void (*update)(gd&, VW::LEARNER::base_learner&, VW::example&) = nullptr;
+  float (*sensitivity)(gd&, VW::LEARNER::base_learner&, VW::example&) = nullptr;
+  void (*multipredict)(
+      gd&, VW::LEARNER::base_learner&, VW::example&, size_t, size_t, VW::polyprediction*, bool) = nullptr;
+  bool adaptive_input = false;
+  bool normalized_input = false;
+  bool adax = false;
+  VW::workspace* all = nullptr;  // parallel, features, parameters
+};
 
 float finalize_prediction(shared_data* sd, VW::io::logger& logger, float ret);
 void print_features(VW::workspace& all, VW::example& ec);
