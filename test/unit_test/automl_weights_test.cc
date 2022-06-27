@@ -4,7 +4,10 @@
 
 #include "simulator.h"
 #include "test_common.h"
+#include "vw/core/array_parameters_dense.h"
 #include "vw/core/constant.h"  // FNV_prime
+#include "vw/core/reductions/cb/cb_adf.h"
+#include "vw/core/reductions/gd.h"
 #include "vw/core/vw_math.h"
 
 #include <boost/test/test_tools.hpp>
@@ -73,8 +76,8 @@ bool weights_offset_test(cb_sim&, VW::workspace& all, VW::multi_ex& ec)
   const size_t interaction_index = interaction_to_index(all.weights,
       get_hash_for_feature(all, "Action", "article=sports"), get_hash_for_feature(all, "Action", "article=sports"));
 
-  const float expected_w0 = 0.0284346f;
-  const float expected_w1 = -0.0268783f;
+  const float expected_w0 = 0.0259284f;
+  const float expected_w1 = -0.028563f;
   const float expected_w2 = -0.0279688f;
   const float ZERO = 0.f;
 
@@ -235,7 +238,7 @@ BOOST_AUTO_TEST_CASE(automl_learn_order)
 
   while (iter_1 != weights_1.end() && iter_2 != weights_2.end())
   {
-    // BOOST_CHECK_EQUAL(*iter_1, *iter_2);
+    BOOST_CHECK_EQUAL(*iter_1, *iter_2);
     if (*iter_1 != *iter_2)
     {
       at_least_one_diff = true;
@@ -246,8 +249,7 @@ BOOST_AUTO_TEST_CASE(automl_learn_order)
     ++iter_2;
   }
 
-  // status quo: this will generate different weights, TODO: fix
-  BOOST_CHECK(at_least_one_diff);
+  BOOST_CHECK(!at_least_one_diff);
 
   VW::finish(*vw_increasing);
   VW::finish(*vw_decreasing);
