@@ -260,3 +260,64 @@ BOOST_AUTO_TEST_CASE(automl_learn_order)
 
   BOOST_CHECK_EQUAL(ctr1, ctr2);
 }
+
+BOOST_AUTO_TEST_CASE(automl_equal_no_automl)
+{
+  callback_map test_hooks;
+
+  std::string vw_arg =
+      "--cb_explore_adf --quiet --epsilon 0.2 "
+      "--random_seed 5 -b 18 ";
+  std::string vw_automl_arg =
+      "--automl 4 --automl_estimator_decay .999 --priority_type favor_popular_namespaces "
+      "--keep_configs --oracle_type one_diff ";
+  int seed = 10;
+  size_t num_iterations = 2000;
+
+  auto* vw_qcolcol = VW::initialize(vw_arg + "--invert_hash without_automl.vw -q ::");
+  auto* vw_automl = VW::initialize(vw_arg + vw_automl_arg + "--invert_hash with_automl.vw");
+  simulator::cb_sim sim1(seed);
+  simulator::cb_sim sim2(seed);
+  auto ctr1 = sim1.run_simulation_hook(vw_qcolcol, num_iterations, test_hooks);
+  auto ctr2 = sim2.run_simulation_hook(vw_automl, num_iterations, test_hooks);
+
+  auto& weights_qcolcol = vw_qcolcol->weights.dense_weights;
+  auto& weights_automl = vw_automl->weights.dense_weights;
+  auto iter_1 = weights_qcolcol.begin();
+  auto iter_2 = weights_automl.begin();
+
+  std::vector<std::tuple<float, float, float, float>> qcolcol_weights_vector;
+  std::vector<std::tuple<float, float, float, float>> automl_champ_weights_vector;
+
+  while (iter_1 != weights_qcolcol.end())
+  {
+    if (*iter_1 != 0.0f)
+    {
+      float* first_weight = (float*)&(*iter_1);
+      qcolcol_weights_vector.emplace_back(first_weight[0], first_weight[1], first_weight[2], first_weight[3]);
+    }
+    ++iter_1;
+  }
+
+  std::sort(qcolcol_weights_vector.begin(), qcolcol_weights_vector.end());
+
+  while (iter_2 != weights_automl.end())
+  {
+    size_t prestride_index = iter_2.index() >> 2;
+    size_t current_offset = prestride_index & (4 - 1);
+    if (*iter_2 != 0.0f && current_offset == 0)
+    {
+      float* first_weight = (float*)&(*iter_2);
+      automl_champ_weights_vector.emplace_back(first_weight[0], first_weight[1], first_weight[2], first_weight[3]);
+    }
+
+    ++iter_2;
+  }
+
+  std::sort(automl_champ_weights_vector.begin(), automl_champ_weights_vector.end());
+  BOOST_CHECK_EQUAL(qcolcol_weights_vector.size(), 31);
+  BOOST_CHECK(qcolcol_weights_vector == automl_champ_weights_vector);
+
+  VW::finish(*vw_qcolcol);
+  VW::finish(*vw_automl);
+}
