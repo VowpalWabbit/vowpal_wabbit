@@ -100,8 +100,8 @@ struct interaction_config_manager : config_manager
   std::string oracle_type;
   dense_parameters& weights;
   priority_func* calc_priority;
-  double automl_alpha;
-  double automl_tau;
+  double automl_significance_level;
+  double automl_estimator_decay;
   VW::io::logger* logger;
   uint32_t& wpp;
 
@@ -152,6 +152,7 @@ struct automl
   std::unique_ptr<CMType> cm;
   VW::io::logger* logger;
   LEARNER::multi_learner* adf_learner = nullptr;  //  re-use print from cb_explore_adf
+  bool debug_reverse_learning_order = false;
   automl(std::unique_ptr<CMType> cm, VW::io::logger* logger) : cm(std::move(cm)), logger(logger) {}
   // This fn gets called before learning any example
   void one_step(multi_learner&, multi_ex&, CB::cb_class&, uint64_t);

@@ -19,6 +19,22 @@ using simulator::callback_map;
 using simulator::cb_sim;
 using namespace VW::reductions::automl;
 
+#define TEST_SCORE_CLEARED(aml)                    \
+  {                                                \
+    for (auto score : aml->cm->scores)             \
+    {                                              \
+      BOOST_CHECK_EQUAL(score.update_count, 0);    \
+      BOOST_CHECK_EQUAL(score.lower_bound(), 0.f); \
+      BOOST_CHECK_EQUAL(score.upper_bound(), 0.f); \
+    }                                              \
+    for (auto score : aml->cm->champ_scores)       \
+    {                                              \
+      BOOST_CHECK_EQUAL(score.update_count, 0);    \
+      BOOST_CHECK_EQUAL(score.lower_bound(), 0.f); \
+      BOOST_CHECK_EQUAL(score.upper_bound(), 0.f); \
+    }                                              \
+  }
+
 namespace aml_test
 {
 void check_interactions_match_exclusions(VW::reductions::automl::automl<interaction_config_manager>* aml)
@@ -71,22 +87,6 @@ void check_config_states(VW::reductions::automl::automl<interaction_config_manag
   BOOST_CHECK_EQUAL(aml->cm->scores.size(), aml->cm->champ_scores.size());
 }
 
-void check_scores_cleared(VW::reductions::automl::automl<interaction_config_manager>* aml)
-{
-  for (auto score : aml->cm->scores)
-  {
-    BOOST_CHECK_EQUAL(score.update_count, 0);
-    BOOST_CHECK_EQUAL(score.lower_bound(), 0.f);
-    BOOST_CHECK_EQUAL(score.upper_bound(), 0.f);
-  }
-  for (auto score : aml->cm->champ_scores)
-  {
-    BOOST_CHECK_EQUAL(score.update_count, 0);
-    BOOST_CHECK_EQUAL(score.lower_bound(), 0.f);
-    BOOST_CHECK_EQUAL(score.upper_bound(), 0.f);
-  }
-}
-
 VW::reductions::automl::automl<interaction_config_manager>* get_automl_data(VW::workspace& all)
 {
   std::vector<std::string> e_r;
@@ -107,7 +107,7 @@ BOOST_AUTO_TEST_CASE(automl_save_load)
 {
   callback_map empty_hooks;
   auto ctr = simulator::_test_helper_hook(
-      "--automl 3 --priority_type least_exclusion --cb_explore_adf --quiet --epsilon 0.2 "
+      "--automl 3 --priority_type favor_popular_namespaces --cb_explore_adf --quiet --epsilon 0.2 "
       "--random_seed 5 "
       "--oracle_type rand",
       empty_hooks);
@@ -115,7 +115,7 @@ BOOST_AUTO_TEST_CASE(automl_save_load)
   BOOST_CHECK_GT(without_save, 0.7f);
 
   ctr = simulator::_test_helper_save_load(
-      "--automl 3 --priority_type least_exclusion --cb_explore_adf --quiet --epsilon 0.2 "
+      "--automl 3 --priority_type favor_popular_namespaces --cb_explore_adf --quiet --epsilon 0.2 "
       "--random_seed 5 "
       "--oracle_type rand");
   float with_save = ctr.back();
@@ -147,7 +147,7 @@ BOOST_AUTO_TEST_CASE(automl_assert_0th_event_automl)
   });
 
   auto ctr = simulator::_test_helper_hook(
-      "--automl 3 --priority_type least_exclusion --cb_explore_adf --quiet --epsilon 0.2 "
+      "--automl 3 --priority_type favor_popular_namespaces --cb_explore_adf --quiet --epsilon 0.2 "
       "--random_seed 5 "
       "--oracle_type rand",
       test_hooks, num_iterations);
@@ -202,8 +202,8 @@ BOOST_AUTO_TEST_CASE(automl_assert_live_configs_and_lease)
     BOOST_CHECK(aml->current_state == VW::reductions::automl::automl_state::Experimenting);
     BOOST_CHECK_EQUAL(aml->cm->total_learn_count, 15);
     BOOST_CHECK_EQUAL(aml->cm->current_champ, 0);
-    BOOST_CHECK_CLOSE(aml->cm->automl_alpha, 0.05, FLOAT_TOL);
-    BOOST_CHECK_CLOSE(aml->cm->automl_tau, 1.0, FLOAT_TOL);
+    BOOST_CHECK_CLOSE(aml->cm->automl_significance_level, 0.05, FLOAT_TOL);
+    BOOST_CHECK_CLOSE(aml->cm->automl_estimator_decay, 1.0, FLOAT_TOL);
     BOOST_CHECK_EQUAL(aml->cm->scores[0].config_index, 0);
     BOOST_CHECK_EQUAL(aml->cm->scores[1].config_index, 5);
     BOOST_CHECK_EQUAL(aml->cm->scores[2].config_index, 3);
@@ -223,7 +223,7 @@ BOOST_AUTO_TEST_CASE(automl_assert_live_configs_and_lease)
   });
 
   auto ctr = simulator::_test_helper_hook(
-      "--automl 3 --priority_type least_exclusion --cb_explore_adf --quiet --epsilon 0.2 "
+      "--automl 3 --priority_type favor_popular_namespaces --cb_explore_adf --quiet --epsilon 0.2 "
       "--random_seed 5 "
       "--oracle_type rand",
       test_hooks, num_iterations);
@@ -236,7 +236,7 @@ BOOST_AUTO_TEST_CASE(automl_cpp_simulator_automl)
 {
   auto ctr = simulator::_test_helper(
       "--cb_explore_adf --quiet --epsilon 0.2 --random_seed 5 --automl 3 --priority_type "
-      "least_exclusion --oracle_type rand");
+      "favor_popular_namespaces --oracle_type rand");
   BOOST_CHECK_GT(ctr.back(), 0.6f);
 }
 
@@ -280,7 +280,7 @@ BOOST_AUTO_TEST_CASE(automl_namespace_switch)
   });
 
   auto ctr = simulator::_test_helper_hook(
-      "--automl 3 --priority_type least_exclusion --cb_explore_adf --quiet --epsilon 0.2 "
+      "--automl 3 --priority_type favor_popular_namespaces --cb_explore_adf --quiet --epsilon 0.2 "
       "--random_seed 5 "
       "--global_lease 500 --oracle_type one_diff --noconstant",
       test_hooks, num_iterations, seed, swap_after);
@@ -313,7 +313,7 @@ BOOST_AUTO_TEST_CASE(automl_clear_configs)
     VW::reductions::automl::automl<interaction_config_manager>* aml = aml_test::get_automl_data(all);
     aml_test::check_interactions_match_exclusions(aml);
     aml_test::check_config_states(aml);
-    aml_test::check_scores_cleared(aml);
+    TEST_SCORE_CLEARED(aml);
     BOOST_CHECK_EQUAL(aml->cm->current_champ, 0);
     BOOST_CHECK_EQUAL(clear_champ_switch, aml->cm->total_learn_count);
     BOOST_CHECK_EQUAL(aml->cm->scores.size(), 1);
@@ -325,7 +325,7 @@ BOOST_AUTO_TEST_CASE(automl_clear_configs)
 
   // we initialize the reduction pointing to position 0 as champ, that config is hard-coded to empty
   auto ctr = simulator::_test_helper_hook(
-      "--automl 3 --priority_type least_exclusion --cb_explore_adf --quiet --epsilon 0.2 "
+      "--automl 3 --priority_type favor_popular_namespaces --cb_explore_adf --quiet --epsilon 0.2 "
       "--random_seed 5 --oracle_type "
       "rand",
       test_hooks, num_iterations, seed, swap_after);
@@ -356,7 +356,7 @@ BOOST_AUTO_TEST_CASE(automl_clear_configs_one_diff)
     VW::reductions::automl::automl<interaction_config_manager>* aml = aml_test::get_automl_data(all);
     aml_test::check_interactions_match_exclusions(aml);
     aml_test::check_config_states(aml);
-    aml_test::check_scores_cleared(aml);
+    TEST_SCORE_CLEARED(aml);
     BOOST_CHECK_EQUAL(aml->cm->current_champ, 0);
     BOOST_CHECK_EQUAL(clear_champ_switch, aml->cm->total_learn_count);
     BOOST_CHECK_EQUAL(aml->cm->scores.size(), 1);
@@ -376,7 +376,7 @@ BOOST_AUTO_TEST_CASE(automl_clear_configs_one_diff)
 
   // we initialize the reduction pointing to position 0 as champ, that config is hard-coded to empty
   auto ctr = simulator::_test_helper_hook(
-      "--automl 3 --priority_type least_exclusion --cb_explore_adf --quiet --epsilon 0.2 "
+      "--automl 3 --priority_type favor_popular_namespaces --cb_explore_adf --quiet --epsilon 0.2 "
       "--random_seed 5 --noconstant",
       test_hooks, num_iterations, seed, swap_after);
 
