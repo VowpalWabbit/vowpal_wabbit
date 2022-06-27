@@ -207,3 +207,51 @@ BOOST_AUTO_TEST_CASE(automl_noop_samechampconfig)
 
   BOOST_CHECK_GT(ctr.back(), 0.4f);
 }
+
+BOOST_AUTO_TEST_CASE(automl_learn_order)
+{
+  callback_map test_hooks;
+
+  std::string vw_arg =
+      "--automl 4 --automl_tau .999 --priority_type least_exclusion --cb_explore_adf --quiet --epsilon 0.2 "
+      "--random_seed 5 -b 18 "
+      "--keep_configs --oracle_type one_diff ";
+  int seed = 10;
+  size_t num_iterations = 2000;
+
+  auto* vw_increasing = VW::initialize(vw_arg + "--invert_hash learnorder1.vw");
+  auto* vw_decreasing = VW::initialize(vw_arg + "--invert_hash learnorder2.vw --debug_reversed_learn");
+  simulator::cb_sim sim1(seed);
+  simulator::cb_sim sim2(seed);
+  auto ctr1 = sim1.run_simulation_hook(vw_increasing, num_iterations, test_hooks);
+  auto ctr2 = sim2.run_simulation_hook(vw_decreasing, num_iterations, test_hooks);
+
+  auto& weights_1 = vw_increasing->weights.dense_weights;
+  auto& weights_2 = vw_decreasing->weights.dense_weights;
+  auto iter_1 = weights_1.begin();
+  auto iter_2 = weights_2.begin();
+
+  bool at_least_one_diff = false;
+
+  while (iter_1 != weights_1.end() && iter_2 != weights_2.end())
+  {
+    // BOOST_CHECK_EQUAL(*iter_1, *iter_2);
+    if (*iter_1 != *iter_2)
+    {
+      at_least_one_diff = true;
+      break;
+    }
+
+    ++iter_1;
+    ++iter_2;
+  }
+
+  // status quo: this will generate different weights, TODO: fix
+  BOOST_CHECK(at_least_one_diff);
+
+  VW::finish(*vw_increasing);
+  VW::finish(*vw_decreasing);
+
+  BOOST_CHECK_EQUAL(ctr1, ctr2);
+}
+

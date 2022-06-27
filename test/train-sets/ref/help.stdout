@@ -240,7 +240,7 @@ Weight Options:
     --oracle_type arg                       Set oracle to generate configs (type: str, default: one_diff,
                                             choices {champdupe, one_diff, rand}, keep, experimental)
     --debug_reversed_learn                  Debug: learn each config in reversed order (last to first). (type:
-                                            bool, default: true, experimental)
+                                            bool, default: false, experimental)
     --automl_alpha arg                      Set confidence interval for champion change (type: float, default:
                                             0.05, keep, experimental)
     --automl_tau arg                        Time constant for count decay (type: float, default: 1, keep,

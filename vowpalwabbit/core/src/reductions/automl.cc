@@ -778,7 +778,7 @@ VW::LEARNER::base_learner* VW::reductions::automl_setup(VW::setup_base_i& stack_
   std::string oracle_type;
   float automl_alpha;
   float automl_tau;
-  bool reversed_learning_order = true;
+  bool reversed_learning_order = false;
 
   option_group_definition new_options("[Reduction] Automl");
   new_options
@@ -825,7 +825,7 @@ VW::LEARNER::base_learner* VW::reductions::automl_setup(VW::setup_base_i& stack_
                .help("Set oracle to generate configs")
                .experimental())
       .add(make_option("debug_reversed_learn", reversed_learning_order)
-               .default_value(true)
+               .default_value(false)
                .help("Debug: learn each config in reversed order (last to first).")
                .experimental())
       .add(make_option("automl_alpha", automl_alpha)
