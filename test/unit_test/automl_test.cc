@@ -107,7 +107,7 @@ BOOST_AUTO_TEST_CASE(automl_save_load)
 {
   callback_map empty_hooks;
   auto ctr = simulator::_test_helper_hook(
-      "--automl 3 --priority_type least_exclusion --cb_explore_adf --quiet --epsilon 0.2 "
+      "--automl 3 --priority_type favor_popular_namespaces --cb_explore_adf --quiet --epsilon 0.2 "
       "--random_seed 5 "
       "--keep_configs --oracle_type rand",
       empty_hooks);
@@ -115,7 +115,7 @@ BOOST_AUTO_TEST_CASE(automl_save_load)
   BOOST_CHECK_GT(without_save, 0.7f);
 
   ctr = simulator::_test_helper_save_load(
-      "--automl 3 --priority_type least_exclusion --cb_explore_adf --quiet --epsilon 0.2 "
+      "--automl 3 --priority_type favor_popular_namespaces --cb_explore_adf --quiet --epsilon 0.2 "
       "--random_seed 5 "
       "--keep_configs --oracle_type rand");
   float with_save = ctr.back();
@@ -147,7 +147,7 @@ BOOST_AUTO_TEST_CASE(automl_assert_0th_event_automl)
   });
 
   auto ctr = simulator::_test_helper_hook(
-      "--automl 3 --priority_type least_exclusion --cb_explore_adf --quiet --epsilon 0.2 "
+      "--automl 3 --priority_type favor_popular_namespaces --cb_explore_adf --quiet --epsilon 0.2 "
       "--random_seed 5 "
       "--keep_configs --oracle_type rand",
       test_hooks, num_iterations);
@@ -202,8 +202,8 @@ BOOST_AUTO_TEST_CASE(automl_assert_live_configs_and_lease)
     BOOST_CHECK(aml->current_state == VW::reductions::automl::automl_state::Experimenting);
     BOOST_CHECK_EQUAL(aml->cm->total_learn_count, 15);
     BOOST_CHECK_EQUAL(aml->cm->current_champ, 0);
-    BOOST_CHECK_CLOSE(aml->cm->automl_alpha, 0.05, FLOAT_TOL);
-    BOOST_CHECK_CLOSE(aml->cm->automl_tau, 1.0, FLOAT_TOL);
+    BOOST_CHECK_CLOSE(aml->cm->automl_significance_level, 0.05, FLOAT_TOL);
+    BOOST_CHECK_CLOSE(aml->cm->automl_estimator_decay, 1.0, FLOAT_TOL);
     BOOST_CHECK_EQUAL(aml->cm->scores[0].config_index, 0);
     BOOST_CHECK_EQUAL(aml->cm->scores[1].config_index, 5);
     BOOST_CHECK_EQUAL(aml->cm->scores[2].config_index, 3);
@@ -223,7 +223,7 @@ BOOST_AUTO_TEST_CASE(automl_assert_live_configs_and_lease)
   });
 
   auto ctr = simulator::_test_helper_hook(
-      "--automl 3 --priority_type least_exclusion --cb_explore_adf --quiet --epsilon 0.2 "
+      "--automl 3 --priority_type favor_popular_namespaces --cb_explore_adf --quiet --epsilon 0.2 "
       "--random_seed 5 "
       "--keep_configs --oracle_type rand",
       test_hooks, num_iterations);
@@ -236,7 +236,7 @@ BOOST_AUTO_TEST_CASE(automl_cpp_simulator_automl)
 {
   auto ctr = simulator::_test_helper(
       "--cb_explore_adf --quiet --epsilon 0.2 --random_seed 5 --automl 3 --priority_type "
-      "least_exclusion --keep_configs --oracle_type rand");
+      "favor_popular_namespaces --keep_configs --oracle_type rand");
   BOOST_CHECK_GT(ctr.back(), 0.6f);
 }
 
@@ -280,7 +280,7 @@ BOOST_AUTO_TEST_CASE(automl_namespace_switch)
   });
 
   auto ctr = simulator::_test_helper_hook(
-      "--automl 3 --priority_type least_exclusion --cb_explore_adf --quiet --epsilon 0.2 "
+      "--automl 3 --priority_type favor_popular_namespaces --cb_explore_adf --quiet --epsilon 0.2 "
       "--random_seed 5 "
       "--global_lease 500 --keep_configs --oracle_type one_diff --noconstant",
       test_hooks, num_iterations, seed, swap_after);
@@ -325,9 +325,8 @@ BOOST_AUTO_TEST_CASE(automl_clear_configs)
 
   // we initialize the reduction pointing to position 0 as champ, that config is hard-coded to empty
   auto ctr = simulator::_test_helper_hook(
-      "--automl 4 --global_lease 500 --priority_type least_exclusion --cb_explore_adf --quiet --epsilon 0.2 "
-      "--random_seed 5 --oracle_type "
-      "rand",
+      "--automl 3 --priority_type favor_popular_namespaces --cb_explore_adf --quiet --epsilon 0.2 "
+      "--random_seed 5 --oracle_type rand --global_lease 500 ",
       test_hooks, num_iterations, seed, swap_after);
 
   BOOST_CHECK_GT(ctr.back(), 0.4f);
@@ -376,7 +375,7 @@ BOOST_AUTO_TEST_CASE(automl_clear_configs_one_diff)
 
   // we initialize the reduction pointing to position 0 as champ, that config is hard-coded to empty
   auto ctr = simulator::_test_helper_hook(
-      "--automl 3 --priority_type least_exclusion --cb_explore_adf --quiet --epsilon 0.2 "
+      "--automl 3 --priority_type favor_popular_namespaces --cb_explore_adf --quiet --epsilon 0.2 "
       "--random_seed 5 --noconstant",
       test_hooks, num_iterations, seed, swap_after);
 
