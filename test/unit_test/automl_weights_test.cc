@@ -317,6 +317,7 @@ BOOST_AUTO_TEST_CASE(automl_equal_no_automl)
   std::sort(automl_champ_weights_vector.begin(), automl_champ_weights_vector.end());
   BOOST_CHECK_EQUAL(qcolcol_weights_vector.size(), 31);
   BOOST_CHECK(qcolcol_weights_vector == automl_champ_weights_vector);
+  BOOST_CHECK(ctr1 == ctr2);
 
   VW::finish(*vw_qcolcol);
   VW::finish(*vw_automl);
