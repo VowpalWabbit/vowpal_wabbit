@@ -28,12 +28,12 @@ namespace epsilon_decay
 {
 float decayed_epsilon(uint64_t update_count) { return static_cast<float>(std::pow(update_count + 1, -1.f / 3.f)); }
 
-epsilon_decay_data::epsilon_decay_data(uint64_t model_count, uint64_t min_scope, double epsilon_decay_alpha,
-    double epsilon_decay_tau, dense_parameters& weights, VW::io::logger logger, bool log_champ_changes,
+epsilon_decay_data::epsilon_decay_data(uint64_t model_count, uint64_t min_scope, double epsilon_decay_significance_level,
+    double epsilon_decay_estimator_decay, dense_parameters& weights, VW::io::logger logger, bool log_champ_changes,
     bool constant_epsilon, uint32_t& wpp)
     : _min_scope(min_scope)
-    , _epsilon_decay_alpha(epsilon_decay_alpha)
-    , _epsilon_decay_tau(epsilon_decay_tau)
+    , _epsilon_decay_significance_level(epsilon_decay_significance_level)
+    , _epsilon_decay_estimator_decay(epsilon_decay_estimator_decay)
     , _weights(weights)
     , _logger(std::move(logger))
     , _log_champ_changes(log_champ_changes)
@@ -48,7 +48,7 @@ epsilon_decay_data::epsilon_decay_data(uint64_t model_count, uint64_t min_scope,
     _scored_configs.emplace_back();
     _scored_configs.back().reserve(i + 1);
     for (uint64_t j = 0; j < i + 1; ++j)
-    { _scored_configs.back().emplace_back(epsilon_decay_alpha, epsilon_decay_tau); }
+    { _scored_configs.back().emplace_back(epsilon_decay_significance_level, epsilon_decay_estimator_decay); }
   }
 }
 
@@ -116,7 +116,7 @@ void epsilon_decay_data::clear_weights_and_scores(int64_t swap_dist, int64_t mod
   {
     for (int64_t score_ind = 0;
          score_ind < std::min(static_cast<int64_t>(_scored_configs[model_ind].size()), swap_dist); ++score_ind)
-    { _scored_configs[model_ind][score_ind].reset_stats(_epsilon_decay_alpha, _epsilon_decay_tau); }
+    { _scored_configs[model_ind][score_ind].reset_stats(_epsilon_decay_significance_level, _epsilon_decay_estimator_decay); }
   }
   for (int64_t ind = 0; ind < swap_dist; ++ind) { _weights.clear_offset(_weight_indices[ind], _wpp); }
 }
@@ -252,8 +252,8 @@ VW::LEARNER::base_learner* VW::reductions::epsilon_decay_setup(VW::setup_base_i&
   bool epsilon_decay_option;
   uint64_t model_count;
   uint64_t _min_scope;
-  float _epsilon_decay_alpha;
-  float _epsilon_decay_tau;
+  float _epsilon_decay_significance_level;
+  float _epsilon_decay_estimator_decay;
   bool _log_champ_changes = false;
   bool _constant_epsilon = false;
   bool _bonferroni = false;
@@ -275,12 +275,12 @@ VW::LEARNER::base_learner* VW::reductions::epsilon_decay_setup(VW::setup_base_i&
                .default_value(100)
                .help("Minimum example count of model before removing")
                .experimental())
-      .add(make_option("epsilon_decay_alpha", _epsilon_decay_alpha)
+      .add(make_option("epsilon_decay_significance_level", _epsilon_decay_significance_level)
                .keep()
                .default_value(DEFAULT_ALPHA)
-               .help("Set confidence interval for champion change")
+               .help("Set significance level for champion change")
                .experimental())
-      .add(make_option("epsilon_decay_tau", _epsilon_decay_tau)
+      .add(make_option("epsilon_decay_estimator_decay", _epsilon_decay_estimator_decay)
                .keep()
                .default_value(CRESSEREAD_DEFAULT_TAU)
                .help("Time constant for count decay")
@@ -300,10 +300,10 @@ VW::LEARNER::base_learner* VW::reductions::epsilon_decay_setup(VW::setup_base_i&
   if (model_count < 1) { THROW("Model count must be 1 or greater"); }
 
   // Scale confidence interval by number of examples
-  float scaled_alpha = _bonferroni ? (_epsilon_decay_alpha / model_count) : _epsilon_decay_alpha;
+  float scaled_alpha = _bonferroni ? (_epsilon_decay_significance_level / model_count) : _epsilon_decay_significance_level;
 
   auto data = VW::make_unique<VW::reductions::epsilon_decay::epsilon_decay_data>(model_count, _min_scope, scaled_alpha,
-      _epsilon_decay_tau, all.weights.dense_weights, all.logger, _log_champ_changes, _constant_epsilon, all.wpp);
+      _epsilon_decay_estimator_decay, all.weights.dense_weights, all.logger, _log_champ_changes, _constant_epsilon, all.wpp);
 
   // make sure we setup the rest of the stack with cleared interactions
   // to make sure there are not subtle bugs

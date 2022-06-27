@@ -230,7 +230,7 @@ Weight Options:
     --cm_type arg                           Set type of config manager (type: str, default: interaction,
                                             choices {interaction}, keep, experimental)
     --priority_type arg                     Set function to determine next config (type: str, default: none,
-                                            choices {least_exclusion, none}, keep, experimental)
+                                            choices {favor_popular_namespaces, none}, keep, experimental)
     --priority_challengers arg              Set number of priority challengers to use (type: int, default:
                                             -1, keep, experimental)
     --keep_configs                          Keep all configs after champ change (type: bool, keep, experimental)
@@ -239,9 +239,9 @@ Weight Options:
                                             choices {cubic, quadratic}, keep, experimental)
     --oracle_type arg                       Set oracle to generate configs (type: str, default: one_diff,
                                             choices {champdupe, one_diff, rand}, keep, experimental)
-    --automl_alpha arg                      Set confidence interval for champion change (type: float, default:
+    --automl_significance_level arg         Set significance level for champion change (type: float, default:
                                             0.05, keep, experimental)
-    --automl_tau arg                        Time constant for count decay (type: float, default: 1, keep,
+    --automl_estimator_decay arg            Time constant for count decay (type: float, default: 1, keep,
                                             experimental)
 [Reduction] Baseline Options:
     --baseline                              Learn an additive baseline (from constant features) and a residual
@@ -536,9 +536,9 @@ Weight Options:
                                             experimental)
     --min_scope arg                         Minimum example count of model before removing (type: uint, default:
                                             100, keep, experimental)
-    --epsilon_decay_alpha arg               Set confidence interval for champion change (type: float, default:
+    --epsilon_decay_significance_level arg  Set significance level for champion change (type: float, default:
                                             0.05, keep, experimental)
-    --epsilon_decay_tau arg                 Time constant for count decay (type: float, default: 1, keep,
+    --epsilon_decay_estimator_decay arg     Time constant for count decay (type: float, default: 1, keep,
                                             experimental)
     --log_champ_changes                     Log champ changes (type: bool, keep, experimental)
     --constant_epsilon                      Keep epsilon constant across models (type: bool, keep, experimental)
