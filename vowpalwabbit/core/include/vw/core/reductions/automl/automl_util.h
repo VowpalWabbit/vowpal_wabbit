@@ -5,7 +5,9 @@
 #include "vw/core/reductions/automl/automl.h"
 #include "vw/core/vw.h"
 
-namespace
+namespace VW
+{
+namespace reductions
 {
 // fail if incompatible reductions got setup
 // todo: audit if they reference global all interactions
@@ -81,4 +83,5 @@ std::string exclusions_to_string(const std::set<std::vector<VW::namespace_index>
   ss << "}";
   return ss.str();
 }
-}  // namespace
+}  // namespace reductions
+}  // namespace VW

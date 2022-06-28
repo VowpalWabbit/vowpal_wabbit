@@ -7,6 +7,7 @@
 #include "simulator.h"
 #include "test_common.h"
 #include "vw/core/metric_sink.h"
+#include "vw/core/reductions/automl/automl_impl.h"
 #include "vw/core/vw_fwd.h"
 
 #include <boost/test/test_tools.hpp>
