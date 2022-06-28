@@ -205,7 +205,8 @@ interaction_config_manager::interaction_config_manager(uint64_t global_lease, ui
 {
   configs.emplace_back(global_lease);
   configs[0].state = VW::reductions::automl::config_state::Live;
-  scores.emplace_back(std::make_pair(aml_score(automl_significance_level, automl_estimator_decay), scored_config(automl_significance_level, automl_estimator_decay)));
+  scores.emplace_back(std::make_pair(aml_score(automl_significance_level, automl_estimator_decay),
+      scored_config(automl_significance_level, automl_estimator_decay)));
   ++valid_config_size;
 }
 
@@ -336,7 +337,8 @@ void interaction_config_manager::config_oracle()
     for (uint64_t i = 0; i < CONFIGS_PER_CHAMP_CHANGE; ++i)
     {
       uint64_t rand_ind = static_cast<uint64_t>(random_state->get_and_update_random() * champ_interactions.size());
-      std::set<std::vector<namespace_index>> new_exclusions(configs[scores[current_champ].first.config_index].exclusions);
+      std::set<std::vector<namespace_index>> new_exclusions(
+          configs[scores[current_champ].first.config_index].exclusions);
       if (interaction_type == "quadratic")
       {
         namespace_index ns1 = champ_interactions[rand_ind][0];
@@ -373,7 +375,8 @@ void interaction_config_manager::config_oracle()
     // Add one exclusion (for each interaction)
     for (auto& interaction : champ_interactions)
     {
-      std::set<std::vector<namespace_index>> new_exclusions(configs[scores[current_champ].first.config_index].exclusions);
+      std::set<std::vector<namespace_index>> new_exclusions(
+          configs[scores[current_champ].first.config_index].exclusions);
       if (interaction_type == "quadratic")
       {
         namespace_index ns1 = interaction[0];
@@ -483,7 +486,8 @@ void interaction_config_manager::schedule()
       // Allocate new score if we haven't reached maximum yet
       if (need_new_score)
       {
-        scores.emplace_back(std::make_pair(aml_score(automl_significance_level, automl_estimator_decay), scored_config(automl_significance_level, automl_estimator_decay)));
+        scores.emplace_back(std::make_pair(aml_score(automl_significance_level, automl_estimator_decay),
+            scored_config(automl_significance_level, automl_estimator_decay)));
         if (live_slot > priority_challengers) { scores.back().first.eligible_to_inactivate = true; }
       }
       // Only inactivate current config if lease is reached
@@ -545,15 +549,15 @@ void interaction_config_manager::update_champ()
   }
   if (champ_change)
   {
-    /* 
-    * Note here that the wining challenger (and its weights) will be moved into slot 0, and the old
-    * champion will move into slot 1. All other weights are no longer relevant and will later take on the
-    * champ's weights. The current champion will always be in slot 0, so if the winning challenger is in 
-    * slot 3 with 5 live models, the following operations will occur:
-    * w0 w1 w2 w3 w4
-    * w3 w1 w2 w0 w4 // w3 are the weights for the winning challenger (new champion) and placed in slot 0
-    * w3 w0 w2 w0 w4 // w0 are the old champ's weights and place in slot 1, other weights are irrelevant 
-    */
+    /*
+     * Note here that the wining challenger (and its weights) will be moved into slot 0, and the old
+     * champion will move into slot 1. All other weights are no longer relevant and will later take on the
+     * champ's weights. The current champion will always be in slot 0, so if the winning challenger is in
+     * slot 3 with 5 live models, the following operations will occur:
+     * w0 w1 w2 w3 w4
+     * w3 w1 w2 w0 w4 // w3 are the weights for the winning challenger (new champion) and placed in slot 0
+     * w3 w0 w2 w0 w4 // w0 are the old champ's weights and place in slot 1, other weights are irrelevant
+     */
     weights.move_offsets(winning_challenger_slot, old_champ_slot, wpp, true);
     if (winning_challenger_slot != 1) { weights.move_offsets(winning_challenger_slot, 1, wpp, false); }
 
@@ -576,20 +580,20 @@ void interaction_config_manager::update_champ()
     valid_config_size = 2;
 
     /*
-    * These operations rearrange the scoring data to sync up the new champion and old champion. Assume the first challenger (chal_1)
-    * is taking over the champ (old_champ). The scores would have this configuration before a champ change:
-    * slot_0: <old_champ_dummy, old_champ_dummy_track_champ>
-    * slot_1: <chal_1, chal_1_track_champ>
-    * Note that the scores <old_champ_dummy, old_champ_dummy_track_champ> are not updated since the champion does not need to track
-    * itself. After the champ change, the same scores will look like this:
-    * slot_0: <chal_1, chal_1_track_champ>
-    * slot_1: <old_champ_dummy, old_champ_dummy_track_champ>
-    * We then want to move the statistics from chal_1_track_champ to old_champ_dummy and chal_1 to old_champ_dummy_track_champ since
-    * they both share the same horizons, but have swapped which is champion and which is challenger. While we want to swap these
-    * statistics, we don't want to alter the other state such as interactions and config_index.
-    */
-    scores[1].first = aml_score(std::move(scores[0].second), scores[1].first.config_index, scores[1].first.eligible_to_inactivate,
-        scores[1].first.live_interactions);
+     * These operations rearrange the scoring data to sync up the new champion and old champion. Assume the first
+     * challenger (chal_1) is taking over the champ (old_champ). The scores would have this configuration before a champ
+     * change: slot_0: <old_champ_dummy, old_champ_dummy_track_champ> slot_1: <chal_1, chal_1_track_champ> Note that the
+     * scores <old_champ_dummy, old_champ_dummy_track_champ> are not updated since the champion does not need to track
+     * itself. After the champ change, the same scores will look like this:
+     * slot_0: <chal_1, chal_1_track_champ>
+     * slot_1: <old_champ_dummy, old_champ_dummy_track_champ>
+     * We then want to move the statistics from chal_1_track_champ to old_champ_dummy and chal_1 to
+     * old_champ_dummy_track_champ since they both share the same horizons, but have swapped which is champion and which
+     * is challenger. While we want to swap these statistics, we don't want to alter the other state such as
+     * interactions and config_index.
+     */
+    scores[1].first = aml_score(std::move(scores[0].second), scores[1].first.config_index,
+        scores[1].first.eligible_to_inactivate, scores[1].first.live_interactions);
     scores[1].second = scores[0].first;
     config_oracle();
   }

@@ -230,11 +230,8 @@ public:
       for (size_t stride_offset = 0; stride_offset < stride(); stride_offset++)
       {
         if (*iterator_to[stride_offset] != *iterator_from[stride_offset])
-        { 
-          if (swap)
-          {
-            std::swap(*iterator_to[stride_offset], *iterator_from[stride_offset]);
-          }
+        {
+          if (swap) { std::swap(*iterator_to[stride_offset], *iterator_from[stride_offset]); }
           else
           {
             *iterator_to[stride_offset] = *iterator_from[stride_offset];
