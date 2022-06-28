@@ -4,6 +4,7 @@
 
 #include "simulator.h"
 #include "test_common.h"
+#include "vw/core/array_parameters_dense.h"
 #include "vw/core/constant.h"  // FNV_prime
 #include "vw/core/vw_math.h"
 
@@ -73,9 +74,9 @@ bool weights_offset_test(cb_sim&, VW::workspace& all, VW::multi_ex& ec)
   const size_t interaction_index = interaction_to_index(all.weights,
       get_hash_for_feature(all, "Action", "article=sports"), get_hash_for_feature(all, "Action", "article=sports"));
 
-  const float expected_w0 = 0.0284346f;
-  const float expected_w1 = 0.00605286f;
-  const float expected_w2 = -0.0352068f;
+  const float expected_w0 = 0.0259284f;
+  const float expected_w1 = 0.00836942f;
+  const float expected_w2 = -0.0374119f;
   const float ZERO = 0.f;
 
   for (auto index : feature_indexes)
@@ -238,7 +239,8 @@ BOOST_AUTO_TEST_CASE(automl_learn_order)
 
   while (iter_1 != weights_1.end() && iter_2 != weights_2.end())
   {
-    // BOOST_CHECK_EQUAL(*iter_1, *iter_2);
+    BOOST_CHECK_EQUAL(*iter_1, *iter_2);
+
     if (*iter_1 != *iter_2)
     {
       at_least_one_diff = true;
@@ -249,8 +251,7 @@ BOOST_AUTO_TEST_CASE(automl_learn_order)
     ++iter_2;
   }
 
-  // status quo: this will generate different weights, TODO: fix
-  BOOST_CHECK(at_least_one_diff);
+  BOOST_CHECK(!at_least_one_diff);
 
   VW::finish(*vw_increasing);
   VW::finish(*vw_decreasing);
@@ -314,8 +315,8 @@ BOOST_AUTO_TEST_CASE(automl_equal_no_automl)
 
   std::sort(automl_champ_weights_vector.begin(), automl_champ_weights_vector.end());
   BOOST_CHECK_EQUAL(qcolcol_weights_vector.size(), 31);
-  BOOST_CHECK(qcolcol_weights_vector != automl_champ_weights_vector);
-  BOOST_CHECK(ctr1 != ctr2);
+  BOOST_CHECK(qcolcol_weights_vector == automl_champ_weights_vector);
+  BOOST_CHECK(ctr1 == ctr2);
 
   VW::finish(*vw_qcolcol);
   VW::finish(*vw_automl);
