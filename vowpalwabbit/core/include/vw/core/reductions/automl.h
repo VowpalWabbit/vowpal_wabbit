@@ -124,7 +124,7 @@ struct interaction_config_manager : config_manager
 
   interaction_config_manager(uint64_t, uint64_t, std::shared_ptr<VW::rand_state>, uint64_t, bool, std::string,
       std::string, dense_parameters&, float (*)(const exclusion_config&, const std::map<namespace_index, uint64_t>&),
-      double, double, VW::io::logger*, uint32_t&);
+      double, double, VW::io::logger*, uint32_t&, bool);
 
   void apply_config(example*, uint64_t);
   void persist(metric_sink&, bool);
@@ -155,6 +155,15 @@ struct automl
   VW::io::logger* logger;
   LEARNER::multi_learner* adf_learner = nullptr;  //  re-use print from cb_explore_adf
   bool debug_reverse_learning_order = false;
+
+  // TODO: delete all this, gd and cb_adf must respect ft_offset
+  std::vector<double> per_live_model_state_double;
+  std::vector<uint64_t> per_live_model_state_uint64;
+  double* _all_normalized = nullptr;
+  double* _gd_total_weight = nullptr;
+  uint64_t* _cb_adf_event_sum = nullptr;
+  uint64_t* _cb_adf_action_sum = nullptr;
+
   automl(std::unique_ptr<CMType> cm, VW::io::logger* logger) : cm(std::move(cm)), logger(logger) {}
   // This fn gets called before learning any example
   void one_step(multi_learner&, multi_ex&, CB::cb_class&, uint64_t);

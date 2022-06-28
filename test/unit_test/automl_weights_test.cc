@@ -4,6 +4,7 @@
 
 #include "simulator.h"
 #include "test_common.h"
+#include "vw/core/array_parameters_dense.h"
 #include "vw/core/constant.h"  // FNV_prime
 #include "vw/core/vw_math.h"
 
@@ -73,8 +74,8 @@ bool weights_offset_test(cb_sim&, VW::workspace& all, VW::multi_ex& ec)
   const size_t interaction_index = interaction_to_index(all.weights,
       get_hash_for_feature(all, "Action", "article=sports"), get_hash_for_feature(all, "Action", "article=sports"));
 
-  const float expected_w0 = 0.0284346f;
-  const float expected_w1 = -0.0268783f;
+  const float expected_w0 = 0.0259284f;
+  const float expected_w1 = -0.028563f;
   const float expected_w2 = -0.0279688f;
   const float ZERO = 0.f;
 
@@ -238,7 +239,8 @@ BOOST_AUTO_TEST_CASE(automl_learn_order)
 
   while (iter_1 != weights_1.end() && iter_2 != weights_2.end())
   {
-    // BOOST_CHECK_EQUAL(*iter_1, *iter_2);
+    BOOST_CHECK_EQUAL(*iter_1, *iter_2);
+
     if (*iter_1 != *iter_2)
     {
       at_least_one_diff = true;
@@ -249,8 +251,7 @@ BOOST_AUTO_TEST_CASE(automl_learn_order)
     ++iter_2;
   }
 
-  // status quo: this will generate different weights, TODO: fix
-  BOOST_CHECK(at_least_one_diff);
+  BOOST_CHECK(!at_least_one_diff);
 
   VW::finish(*vw_increasing);
   VW::finish(*vw_decreasing);
@@ -270,6 +271,8 @@ BOOST_AUTO_TEST_CASE(automl_equal_no_automl)
       "--keep_configs --oracle_type one_diff ";
   int seed = 10;
   size_t num_iterations = 2000;
+  // this has to match with --automl 4 above
+  size_t AUTOML_MODELS = 4;
 
   auto* vw_qcolcol = VW::initialize(vw_arg + "--invert_hash without_automl.vw -q ::");
   auto* vw_automl = VW::initialize(vw_arg + vw_automl_arg + "--invert_hash with_automl.vw");
@@ -301,20 +304,19 @@ BOOST_AUTO_TEST_CASE(automl_equal_no_automl)
   while (iter_2 != weights_automl.end())
   {
     size_t prestride_index = iter_2.index() >> 2;
-    size_t current_offset = prestride_index & (4 - 1);
-    if (*iter_2 != 0.0f && current_offset == 0)
-    {
-      float* first_weight = (float*)&(*iter_2);
-      automl_champ_weights_vector.emplace_back(first_weight[0], first_weight[1], first_weight[2], first_weight[3]);
-    }
+    size_t current_offset = prestride_index & (AUTOML_MODELS - 1);
+    BOOST_CHECK_EQUAL(current_offset, 0);
+    BOOST_CHECK_EQUAL(iter_2.index_without_stride() & AUTOML_MODELS - 1, current_offset);
 
-    ++iter_2;
+    if (*iter_2 != 0.0f) { automl_champ_weights_vector.emplace_back(*iter_2[0], *iter_2[1], *iter_2[2], *iter_2[3]); }
+
+    iter_2 += AUTOML_MODELS;
   }
 
   std::sort(automl_champ_weights_vector.begin(), automl_champ_weights_vector.end());
   BOOST_CHECK_EQUAL(qcolcol_weights_vector.size(), 31);
-  BOOST_CHECK(qcolcol_weights_vector != automl_champ_weights_vector);
-  BOOST_CHECK(ctr1 != ctr2);
+  BOOST_CHECK(qcolcol_weights_vector == automl_champ_weights_vector);
+  BOOST_CHECK(ctr1 == ctr2);
 
   VW::finish(*vw_qcolcol);
   VW::finish(*vw_automl);

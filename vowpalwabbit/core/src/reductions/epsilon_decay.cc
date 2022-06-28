@@ -30,7 +30,7 @@ float decayed_epsilon(uint64_t update_count) { return static_cast<float>(std::po
 
 epsilon_decay_data::epsilon_decay_data(uint64_t model_count, uint64_t min_scope,
     double epsilon_decay_significance_level, double epsilon_decay_estimator_decay, dense_parameters& weights,
-    VW::io::logger logger, bool log_champ_changes, bool constant_epsilon, uint32_t& wpp)
+    VW::io::logger logger, bool log_champ_changes, bool constant_epsilon, uint32_t& wpp, bool lb_trick)
     : _min_scope(min_scope)
     , _epsilon_decay_significance_level(epsilon_decay_significance_level)
     , _epsilon_decay_estimator_decay(epsilon_decay_estimator_decay)
@@ -39,6 +39,7 @@ epsilon_decay_data::epsilon_decay_data(uint64_t model_count, uint64_t min_scope,
     , _log_champ_changes(log_champ_changes)
     , _constant_epsilon(constant_epsilon)
     , _wpp(wpp)
+    , _lb_trick(lb_trick)
 {
   _weight_indices.resize(model_count);
   _scored_configs.reserve(model_count);
@@ -316,9 +317,7 @@ VW::LEARNER::base_learner* VW::reductions::epsilon_decay_setup(VW::setup_base_i&
 
   auto data = VW::make_unique<VW::reductions::epsilon_decay::epsilon_decay_data>(model_count, _min_scope, scaled_alpha,
       _epsilon_decay_estimator_decay, all.weights.dense_weights, all.logger, _log_champ_changes, _constant_epsilon,
-      all.wpp);
-
-  data->_lb_trick = _lb_trick;
+      all.wpp, _lb_trick);
 
   // make sure we setup the rest of the stack with cleared interactions
   // to make sure there are not subtle bugs
