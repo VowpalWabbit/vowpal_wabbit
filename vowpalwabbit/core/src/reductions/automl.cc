@@ -193,7 +193,8 @@ void automl<CMType>::one_step(multi_learner& base, multi_ex& ec, CB::cb_class& l
 interaction_config_manager::interaction_config_manager(uint64_t global_lease, uint64_t max_live_configs,
     std::shared_ptr<VW::rand_state> rand_state, uint64_t priority_challengers, bool keep_configs,
     std::string interaction_type, std::string oracle_type, dense_parameters& weights, priority_func* calc_priority,
-    double automl_significance_level, double automl_estimator_decay, VW::io::logger* logger, uint32_t& wpp, bool lb_trick)
+    double automl_significance_level, double automl_estimator_decay, VW::io::logger* logger, uint32_t& wpp,
+    bool lb_trick)
     : global_lease(global_lease)
     , max_live_configs(max_live_configs)
     , random_state(std::move(rand_state))
@@ -881,8 +882,8 @@ VW::LEARNER::base_learner* VW::reductions::automl_setup(VW::setup_base_i& stack_
   // Note that all.wpp will not be set correctly until after setup
   auto cm = VW::make_unique<VW::reductions::automl::interaction_config_manager>(global_lease, max_live_configs,
       all.get_random_state(), static_cast<uint64_t>(priority_challengers), keep_configs, interaction_type, oracle_type,
-      all.weights.dense_weights, calc_priority, automl_significance_level, automl_estimator_decay, &all.logger,
-      all.wpp, lb_trick);
+      all.weights.dense_weights, calc_priority, automl_significance_level, automl_estimator_decay, &all.logger, all.wpp,
+      lb_trick);
   auto data = VW::make_unique<VW::reductions::automl::automl<VW::reductions::automl::interaction_config_manager>>(
       std::move(cm), &all.logger);
   data->debug_reverse_learning_order = reversed_learning_order;
