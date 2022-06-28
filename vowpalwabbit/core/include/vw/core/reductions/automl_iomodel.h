@@ -57,7 +57,6 @@ size_t read_model_field(io_buf& io, VW::reductions::automl::interaction_config_m
   bytes += read_model_field(io, cm.ns_counter);
   bytes += read_model_field(io, cm.configs);
   bytes += read_model_field(io, cm.scores);
-  bytes += read_model_field(io, cm.champ_scores);
   bytes += read_model_field(io, cm.index_queue);
   for (uint64_t live_slot = 0; live_slot < cm.scores.size(); ++live_slot) { cm.gen_interactions(live_slot); }
   return bytes;
@@ -73,7 +72,6 @@ size_t write_model_field(io_buf& io, const VW::reductions::automl::interaction_c
   bytes += write_model_field(io, cm.ns_counter, upstream_name + "_ns_counter", text);
   bytes += write_model_field(io, cm.configs, upstream_name + "_configs", text);
   bytes += write_model_field(io, cm.scores, upstream_name + "_scores", text);
-  bytes += write_model_field(io, cm.champ_scores, upstream_name + "_champ_scores", text);
   bytes += write_model_field(io, cm.index_queue, upstream_name + "_index_queue", text);
   return bytes;
 }

@@ -75,8 +75,8 @@ bool weights_offset_test(cb_sim&, VW::workspace& all, VW::multi_ex& ec)
       get_hash_for_feature(all, "Action", "article=sports"), get_hash_for_feature(all, "Action", "article=sports"));
 
   const float expected_w0 = 0.0259284f;
-  const float expected_w1 = -0.028563f;
-  const float expected_w2 = -0.0279688f;
+  const float expected_w1 = 0.00836942f;
+  const float expected_w2 = -0.0374119f;
   const float ZERO = 0.f;
 
   for (auto index : feature_indexes)
@@ -110,7 +110,7 @@ bool weights_offset_test(cb_sim&, VW::workspace& all, VW::multi_ex& ec)
   ARE_SAME(expected_w2, weights.strided_index(interaction_index + offset_to_clear + 1), AUTO_ML_FLOAT_TOL);
 
   // copy from offset 2 to offset 1
-  weights.copy_offsets(offset_to_clear + 1, offset_to_clear, all.wpp);
+  weights.move_offsets(offset_to_clear + 1, offset_to_clear, all.wpp);
 
   for (auto index : feature_indexes)
   {
@@ -162,7 +162,7 @@ BOOST_AUTO_TEST_CASE(automl_weight_operations)
       "--automl 3 --automl_estimator_decay .999 --priority_type favor_popular_namespaces --cb_explore_adf --quiet "
       "--epsilon 0.2 "
       "--random_seed 5 "
-      "--keep_configs --oracle_type rand",
+      "--oracle_type rand",
       test_hooks, num_iterations, seed);
 
   BOOST_CHECK_GT(ctr.back(), 0.4f);
@@ -205,7 +205,7 @@ BOOST_AUTO_TEST_CASE(automl_noop_samechampconfig)
       "--automl 4 --automl_estimator_decay .999 --priority_type favor_popular_namespaces --cb_explore_adf --quiet "
       "--epsilon 0.2 "
       "--random_seed 5 "
-      "--keep_configs --oracle_type champdupe -b 8",
+      "--oracle_type champdupe -b 8",
       test_hooks, num_iterations, seed);
 
   BOOST_CHECK_GT(ctr.back(), 0.4f);
@@ -219,7 +219,7 @@ BOOST_AUTO_TEST_CASE(automl_learn_order)
       "--automl 4 --automl_estimator_decay .999 --priority_type favor_popular_namespaces --cb_explore_adf --quiet "
       "--epsilon 0.2 "
       "--random_seed 5 -b 18 "
-      "--keep_configs --oracle_type one_diff ";
+      "--oracle_type one_diff ";
   int seed = 10;
   size_t num_iterations = 2000;
 
@@ -268,7 +268,7 @@ BOOST_AUTO_TEST_CASE(automl_equal_no_automl)
       "--random_seed 5 -b 18 ";
   std::string vw_automl_arg =
       "--automl 4 --automl_estimator_decay .999 --priority_type favor_popular_namespaces "
-      "--keep_configs --oracle_type one_diff ";
+      "--oracle_type one_diff ";
   int seed = 10;
   size_t num_iterations = 2000;
   // this has to match with --automl 4 above
