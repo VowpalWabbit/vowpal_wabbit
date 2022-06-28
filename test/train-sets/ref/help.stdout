@@ -233,7 +233,6 @@ Weight Options:
                                             choices {favor_popular_namespaces, none}, keep, experimental)
     --priority_challengers arg              Set number of priority challengers to use (type: int, default:
                                             -1, keep, experimental)
-    --keep_configs                          Keep all configs after champ change (type: bool, keep, experimental)
     --verbose_metrics                       Extended metrics for debugging (type: bool, experimental)
     --interaction_type arg                  Set what type of interactions to use (type: str, default: quadratic,
                                             choices {cubic, quadratic}, keep, experimental)
