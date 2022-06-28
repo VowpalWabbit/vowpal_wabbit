@@ -14,6 +14,10 @@
 #include "vw/core/vw.h"
 #include "vw/io/logger.h"
 
+// TODO: delete this two includes
+#include "vw/core/reductions/cb/cb_adf.h"
+#include "vw/core/reductions/gd.h"
+
 #include <cfloat>
 
 using namespace VW::config;
@@ -624,6 +628,12 @@ void automl<CMType>::offset_learn(multi_learner& base, multi_ex& ec, CB::cb_clas
       live_slot = cm->scores.size() - 1 - current_slot_index;
     }
 
+    // TODO: what to do if that slot is switched with anew config?
+    std::swap(*_all_normalized, per_live_model_state_double[live_slot * 2]);
+    std::swap(*_gd_total_weight, per_live_model_state_double[live_slot * 2 + 1]);
+    std::swap(*_cb_adf_event_sum, per_live_model_state_uint64[live_slot * 2]);
+    std::swap(*_cb_adf_action_sum, per_live_model_state_uint64[live_slot * 2 + 1]);
+
     if (live_slot == current_champ) { std::swap(ec[0]->pred.a_s, buffer_a_s); }
     else
     {
@@ -648,6 +658,11 @@ void automl<CMType>::offset_learn(multi_learner& base, multi_ex& ec, CB::cb_clas
     {
       cm->scores[live_slot].update(chosen_action == labelled_action ? w : 0, r);
     }
+
+    std::swap(*_all_normalized, per_live_model_state_double[live_slot * 2]);
+    std::swap(*_gd_total_weight, per_live_model_state_double[live_slot * 2 + 1]);
+    std::swap(*_cb_adf_event_sum, per_live_model_state_uint64[live_slot * 2]);
+    std::swap(*_cb_adf_action_sum, per_live_model_state_uint64[live_slot * 2 + 1]);
   }
 
   std::swap(ec[0]->pred.a_s, buffer_a_s);
@@ -863,6 +878,9 @@ VW::LEARNER::base_learner* VW::reductions::automl_setup(VW::setup_base_i& stack_
   auto data = VW::make_unique<VW::reductions::automl::automl<VW::reductions::automl::interaction_config_manager>>(
       std::move(cm), &all.logger);
   data->debug_reverse_learning_order = reversed_learning_order;
+  data->per_live_model_state_double = std::vector<double>(max_live_configs * 2, 0.f);
+  data->per_live_model_state_uint64 = std::vector<uint64_t>(max_live_configs * 2, 0.f);
+
   if (max_live_configs > MAX_CONFIGS)
   {
     THROW("Maximum number of configs is "
@@ -895,6 +913,15 @@ VW::LEARNER::base_learner* VW::reductions::automl_setup(VW::setup_base_i& stack_
     auto* persist_ptr = verbose_metrics ? persist<VW::reductions::automl::interaction_config_manager, true>
                                         : persist<VW::reductions::automl::interaction_config_manager, false>;
     data->adf_learner = as_multiline(base_learner->get_learner_by_name_prefix("cb_adf"));
+    GD::gd& gd = *static_cast<GD::gd*>(
+        base_learner->get_learner_by_name_prefix("gd")->get_internal_type_erased_data_pointer_test_use_only());
+    auto& adf_data =
+        *static_cast<CB_ADF::cb_adf*>(data->adf_learner->get_internal_type_erased_data_pointer_test_use_only());
+    data->_all_normalized = &(all.normalized_sum_norm_x);
+    data->_gd_total_weight = &(gd.total_weight);
+    data->_cb_adf_event_sum = &(adf_data._gen_cs.event_sum);
+    data->_cb_adf_action_sum = &(adf_data._gen_cs.action_sum);
+
     auto* l = make_reduction_learner(std::move(data), as_multiline(base_learner),
         learn_automl<VW::reductions::automl::interaction_config_manager, true>,
         predict_automl<VW::reductions::automl::interaction_config_manager, true>,
@@ -998,6 +1025,8 @@ size_t read_model_field(io_buf& io, VW::reductions::automl::automl<CMType>& aml)
   size_t bytes = 0;
   bytes += read_model_field(io, aml.current_state);
   bytes += read_model_field(io, *aml.cm);
+  bytes += read_model_field(io, aml.per_live_model_state_double);
+  bytes += read_model_field(io, aml.per_live_model_state_uint64);
   return bytes;
 }
 
@@ -1008,6 +1037,8 @@ size_t write_model_field(
   size_t bytes = 0;
   bytes += write_model_field(io, aml.current_state, upstream_name + "_state", text);
   bytes += write_model_field(io, *aml.cm, upstream_name + "_config_manager", text);
+  bytes += write_model_field(io, aml.per_live_model_state_double, upstream_name + "_per_live_model_state_double", text);
+  bytes += write_model_field(io, aml.per_live_model_state_uint64, upstream_name + "_per_live_model_state_uint64", text);
   return bytes;
 }
 

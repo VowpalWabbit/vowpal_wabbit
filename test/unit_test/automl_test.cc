@@ -19,20 +19,20 @@ using simulator::callback_map;
 using simulator::cb_sim;
 using namespace VW::reductions::automl;
 
-#define TEST_SCORE_CLEARED(aml)                    \
-  {                                                \
-    for (auto score : aml->cm->scores)             \
-    {                                              \
-      BOOST_CHECK_EQUAL(score.update_count, 0);    \
-      BOOST_CHECK_EQUAL(score.lower_bound(), 0.f); \
-      BOOST_CHECK_EQUAL(score.upper_bound(), 0.f); \
-    }                                              \
-    for (auto score : aml->cm->champ_scores)       \
-    {                                              \
-      BOOST_CHECK_EQUAL(score.update_count, 0);    \
-      BOOST_CHECK_EQUAL(score.lower_bound(), 0.f); \
-      BOOST_CHECK_EQUAL(score.upper_bound(), 0.f); \
-    }                                              \
+#define TEST_SCORE_CLEARED(aml)                               \
+  {                                                           \
+    for (auto champ_score : aml->cm->champ_scores)            \
+    {                                                         \
+      BOOST_CHECK_EQUAL(champ_score.update_count, 0);         \
+      BOOST_CHECK_EQUAL(champ_score.lower_bound(), 0.f);      \
+      BOOST_CHECK_EQUAL(champ_score.upper_bound(), 0.f);      \
+    }                                                         \
+    for (auto challenger_score : aml->cm->scores)             \
+    {                                                         \
+      BOOST_CHECK_EQUAL(challenger_score.update_count, 0);    \
+      BOOST_CHECK_EQUAL(challenger_score.lower_bound(), 0.f); \
+      BOOST_CHECK_EQUAL(challenger_score.upper_bound(), 0.f); \
+    }                                                         \
   }
 
 namespace aml_test
@@ -289,10 +289,10 @@ BOOST_AUTO_TEST_CASE(automl_namespace_switch)
 
 BOOST_AUTO_TEST_CASE(automl_clear_configs)
 {
-  const size_t seed = 17;
+  const size_t seed = 88;
   const size_t num_iterations = 1000;
   const std::vector<uint64_t> swap_after = {500};
-  const size_t clear_champ_switch = 710;
+  const size_t clear_champ_switch = 686;
   callback_map test_hooks;
 
   test_hooks.emplace(clear_champ_switch - 1, [&](cb_sim&, VW::workspace& all, VW::multi_ex&) {
@@ -326,8 +326,7 @@ BOOST_AUTO_TEST_CASE(automl_clear_configs)
   // we initialize the reduction pointing to position 0 as champ, that config is hard-coded to empty
   auto ctr = simulator::_test_helper_hook(
       "--automl 3 --priority_type favor_popular_namespaces --cb_explore_adf --quiet --epsilon 0.2 "
-      "--random_seed 5 --oracle_type "
-      "rand",
+      "--random_seed 5 --oracle_type rand --global_lease 500 --noconstant ",
       test_hooks, num_iterations, seed, swap_after);
 
   BOOST_CHECK_GT(ctr.back(), 0.4f);
@@ -338,7 +337,7 @@ BOOST_AUTO_TEST_CASE(automl_clear_configs_one_diff)
   const size_t num_iterations = 1000;
   const std::vector<uint64_t> swap_after = {500};
   const size_t seed = 88;
-  const size_t clear_champ_switch = 668;
+  const size_t clear_champ_switch = 645;
   callback_map test_hooks;
 
   test_hooks.emplace(clear_champ_switch - 1, [&](cb_sim&, VW::workspace& all, VW::multi_ex&) {
