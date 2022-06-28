@@ -142,7 +142,9 @@ void epsilon_decay_data::check_score_bounds()
   auto final_model_idx = model_count - 1;
   for (int64_t i = 0; i < final_model_idx; ++i)
   {
-    bool better = _lb_trick ? _scored_configs[i][i].lower_bound() > (1.f - _scored_configs[final_model_idx][i].lower_bound()) : _scored_configs[i][i].lower_bound() > _scored_configs[final_model_idx][i].upper_bound();
+    bool better = _lb_trick
+        ? _scored_configs[i][i].lower_bound() > (1.f - _scored_configs[final_model_idx][i].lower_bound())
+        : _scored_configs[i][i].lower_bound() > _scored_configs[final_model_idx][i].upper_bound();
     if (better)
     {
       if (_log_champ_changes)

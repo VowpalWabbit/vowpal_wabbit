@@ -421,9 +421,9 @@ bool interaction_config_manager::swap_eligible_to_inactivate(uint64_t live_slot)
 {
   for (uint64_t other_live_slot = 0; other_live_slot < scores.size(); ++other_live_slot)
   {
-    bool better = lb_trick ? scores[live_slot].lower_bound() > (1.f - scores[other_live_slot].lower_bound()) : scores[live_slot].lower_bound() > scores[other_live_slot].upper_bound();
-    if (!scores[other_live_slot].eligible_to_inactivate && other_live_slot != current_champ &&
-        better)
+    bool better = lb_trick ? scores[live_slot].lower_bound() > (1.f - scores[other_live_slot].lower_bound())
+                           : scores[live_slot].lower_bound() > scores[other_live_slot].upper_bound();
+    if (!scores[other_live_slot].eligible_to_inactivate && other_live_slot != current_champ && better)
     {
       scores[live_slot].eligible_to_inactivate = false;
       scores[other_live_slot].eligible_to_inactivate = true;
@@ -489,7 +489,8 @@ void interaction_config_manager::schedule()
 
 bool interaction_config_manager::better(uint64_t live_slot)
 {
-  return lb_trick ? scores[live_slot].lower_bound() > (1.f - champ_scores[live_slot].lower_bound()) : scores[live_slot].lower_bound() > champ_scores[live_slot].upper_bound();
+  return lb_trick ? scores[live_slot].lower_bound() > (1.f - champ_scores[live_slot].lower_bound())
+                  : scores[live_slot].lower_bound() > champ_scores[live_slot].upper_bound();
 }
 
 bool interaction_config_manager::worse(uint64_t)
