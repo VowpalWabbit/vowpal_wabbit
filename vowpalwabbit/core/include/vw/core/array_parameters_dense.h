@@ -218,24 +218,20 @@ public:
   {
     assert(from < params_per_problem);
     assert(to < params_per_problem);
-    uint32_t stride_size = 1 << stride_shift();
 
     auto iterator_from = begin() + from;
     auto iterator_to = begin() + to;
 
-    while (iterator_from < end())
+    for (; iterator_from < end(); iterator_from += params_per_problem, iterator_to += params_per_problem)
     {
       assert(iterator_to.current_offset(params_per_problem) == to);
       assert(iterator_from.current_offset(params_per_problem) == from);
 
-      for (size_t stride_offset = 0; stride_offset < stride_size; stride_offset++)
+      for (size_t stride_offset = 0; stride_offset < stride(); stride_offset++)
       {
         if (*iterator_to[stride_offset] != *iterator_from[stride_offset])
         { *iterator_to[stride_offset] = *iterator_from[stride_offset]; }
       }
-
-      iterator_from += params_per_problem;
-      iterator_to += params_per_problem;
     }
   }
 
@@ -243,18 +239,13 @@ public:
   void clear_offset(const size_t offset, const size_t params_per_problem)
   {
     assert(offset < params_per_problem);
-    uint32_t stride_size = 1 << stride_shift();
 
-    for (iterator iter = begin(); iter != end(); ++iter)
+    for (auto iterator_clear = begin() + offset; iterator_clear < end(); iterator_clear += params_per_problem)
     {
-      if (*iter != 0.f)
+      assert(iterator_clear.current_offset(params_per_problem) == offset);
+      for (size_t stride_offset = 0; stride_offset < stride(); stride_offset++)
       {
-        size_t current_offset = (iter.index() >> stride_shift()) & (params_per_problem - 1);
-        if (current_offset == offset)
-        {
-          for (size_t stride_offset = 0; stride_offset < stride_size; stride_offset++)
-          { (&(*iter))[stride_offset] = 0.f; }
-        }
+        if (*iterator_clear[stride_offset] != 0.0f) { *iterator_clear[stride_offset] = 0.0f; }
       }
     }
   }
