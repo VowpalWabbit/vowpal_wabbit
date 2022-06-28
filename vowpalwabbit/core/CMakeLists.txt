@@ -82,6 +82,7 @@ set(vw_core_headers
   include/vw/core/reductions/audit_regressor.h
   include/vw/core/reductions/autolink.h
   include/vw/core/reductions/automl.h
+  include/vw/core/reductions/automl_iomodel.h
   include/vw/core/reductions/baseline_challenger_cb.h
   include/vw/core/reductions/baseline.h
   include/vw/core/reductions/bfgs.h
