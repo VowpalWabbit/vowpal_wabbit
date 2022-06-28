@@ -5,15 +5,8 @@
 #include "vw/core/reductions/automl/automl.h"
 
 #include "vw/config/options.h"
-#include "vw/core/constant.h"  // NUM_NAMESPACES
-#include "vw/core/debug_log.h"
-#include "vw/core/interactions.h"
-#include "vw/core/rand_state.h"
 #include "vw/core/reductions/automl/automl_impl.h"
 #include "vw/core/reductions/automl/automl_iomodel.h"
-#include "vw/core/setup_base.h"
-#include "vw/core/vw.h"
-#include "vw/io/logger.h"
 
 // TODO: delete this two includes
 #include "vw/core/reductions/cb/cb_adf.h"

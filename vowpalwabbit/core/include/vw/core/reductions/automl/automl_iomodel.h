@@ -3,7 +3,6 @@
 // license as described in the file LICENSE.
 
 #include "vw/core/model_utils.h"
-// #include "vw/core/reductions/automl/automl.h"
 #include "vw/core/reductions/automl/automl_impl.h"
 
 namespace VW

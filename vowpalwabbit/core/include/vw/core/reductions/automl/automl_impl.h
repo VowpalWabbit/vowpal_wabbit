@@ -3,23 +3,12 @@
 // license as described in the file LICENSE.
 #pragma once
 
-#include "vw/common/string_view.h"
-#include "vw/core/action_score.h"
 #include "vw/core/array_parameters_dense.h"
-#include "vw/core/distributionally_robust.h"
 #include "vw/core/learner.h"
-#include "vw/core/metric_sink.h"
 #include "vw/core/rand_state.h"
 #include "vw/core/scored_config.h"
-#include "vw/core/vw_fwd.h"
 
-#include <fmt/format.h>
-
-#include <cstdint>
-#include <map>
-#include <memory>
 #include <queue>
-#include <set>
 
 using namespace VW::config;
 using namespace VW::LEARNER;

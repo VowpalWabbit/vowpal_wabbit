@@ -4,25 +4,10 @@
 
 #include "vw/core/reductions/automl/automl_impl.h"
 
-// #include "vw/config/options.h"
-// #include "vw/core/constant.h"  // NUM_NAMESPACES
-// #include "vw/core/debug_log.h"
-#include "vw/core/interactions.h"
-// #include "vw/core/rand_state.h"
-#include "vw/core/reductions/automl/automl_util.h"
-// #include "vw/core/setup_base.h"
 #include "vw/common/vw_exception.h"
-#include "vw/core/vw.h"
-// #include "vw/io/logger.h"
-
-// // TODO: delete this two includes
-// #include "vw/core/reductions/cb/cb_adf.h"
-// #include "vw/core/reductions/gd.h"
-
-// #include <cfloat>
-
-// using namespace VW::config;
-// using namespace VW::LEARNER;
+#include "vw/core/interactions.h"
+#include "vw/core/metric_sink.h"
+#include "vw/core/reductions/automl/automl_util.h"
 
 /*
 This reduction implements the ChaCha algorithm from page 5 of the following paper:
@@ -79,7 +64,10 @@ void aml_score::persist(
   VW::scored_config::persist(metrics, suffix);
   metrics.set_uint("conf_idx" + suffix, config_index);
   if (verbose)
-  { metrics.set_string("interactions" + suffix, ::interaction_vec_t_to_string(live_interactions, interaction_type)); }
+  {
+    metrics.set_string(
+        "interactions" + suffix, VW::reductions::interaction_vec_t_to_string(live_interactions, interaction_type));
+  }
 }
 
 // config_manager is a state machine (config_manager_state) 'time' moves forward after a call into one_step()
@@ -511,7 +499,7 @@ void interaction_config_manager::persist(metric_sink& metrics, bool verbose)
     if (verbose)
     {
       auto& exclusions = configs[scores[live_slot].first.config_index].exclusions;
-      metrics.set_string("exclusionc_" + std::to_string(live_slot), ::exclusions_to_string(exclusions));
+      metrics.set_string("exclusionc_" + std::to_string(live_slot), VW::reductions::exclusions_to_string(exclusions));
     }
   }
   metrics.set_uint("total_champ_switches", total_champ_switches);
