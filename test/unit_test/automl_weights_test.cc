@@ -307,10 +307,7 @@ BOOST_AUTO_TEST_CASE(automl_equal_no_automl)
     BOOST_CHECK_EQUAL(current_offset, 0);
     BOOST_CHECK_EQUAL(iter_2.current_offset(AUTOML_MODELS), current_offset);
 
-    if (*iter_2 != 0.0f)
-    {
-      automl_champ_weights_vector.emplace_back(*iter_2[0], *iter_2[1], *iter_2[2], *iter_2[3]);
-    }
+    if (*iter_2 != 0.0f) { automl_champ_weights_vector.emplace_back(*iter_2[0], *iter_2[1], *iter_2[2], *iter_2[3]); }
 
     iter_2 += AUTOML_MODELS;
   }
