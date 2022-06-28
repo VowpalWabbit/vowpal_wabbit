@@ -267,7 +267,7 @@ BOOST_AUTO_TEST_CASE(automl_equal_no_automl)
       "--random_seed 5 -b 18 ";
   std::string vw_automl_arg =
       "--automl 4 --automl_estimator_decay .999 --priority_type favor_popular_namespaces "
-      "--keep_configs --oracle_type one_diff ";
+      "--oracle_type one_diff ";
   int seed = 10;
   size_t num_iterations = 2000;
 

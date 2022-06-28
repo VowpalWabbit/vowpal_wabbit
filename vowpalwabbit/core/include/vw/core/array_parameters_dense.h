@@ -206,10 +206,7 @@ public:
         {
           for (size_t stride_offset = 0; stride_offset < stride_size; stride_offset++)
           {
-            if (swap)
-            {
-              std::swap((&(*other))[stride_offset], (&(*iter))[stride_offset]);
-            }
+            if (swap) { std::swap((&(*other))[stride_offset], (&(*iter))[stride_offset]); }
             else
             {
               (&(*other))[stride_offset] = (&(*iter))[stride_offset];

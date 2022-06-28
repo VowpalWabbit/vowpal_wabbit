@@ -37,7 +37,9 @@ struct aml_score : VW::scored_config
 {
   aml_score() : VW::scored_config() {}
   aml_score(double alpha, double tau) : VW::scored_config(alpha, tau) {}
-  aml_score(VW::scored_config sc, uint64_t config_index, bool eligible_to_inactivate, interaction_vec_t& live_interactions) : VW::scored_config(sc)
+  aml_score(
+      VW::scored_config sc, uint64_t config_index, bool eligible_to_inactivate, interaction_vec_t& live_interactions)
+      : VW::scored_config(sc)
   {
     this->config_index = config_index;
     this->eligible_to_inactivate = eligible_to_inactivate;
@@ -126,9 +128,9 @@ struct interaction_config_manager : config_manager
   // Maybe not needed with oracle, maps priority to config index, unused configs
   std::priority_queue<std::pair<float, uint64_t>> index_queue;
 
-  interaction_config_manager(uint64_t, uint64_t, std::shared_ptr<VW::rand_state>, uint64_t, std::string,
-      std::string, dense_parameters&, float (*)(const exclusion_config&, const std::map<namespace_index, uint64_t>&),
-      double, double, VW::io::logger*, uint32_t&);
+  interaction_config_manager(uint64_t, uint64_t, std::shared_ptr<VW::rand_state>, uint64_t, std::string, std::string,
+      dense_parameters&, float (*)(const exclusion_config&, const std::map<namespace_index, uint64_t>&), double, double,
+      VW::io::logger*, uint32_t&);
 
   void apply_config(example*, uint64_t);
   void persist(metric_sink&, bool);

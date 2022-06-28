@@ -187,9 +187,9 @@ void automl<CMType>::one_step(multi_learner& base, multi_ex& ec, CB::cb_class& l
 // this can also be interpreted as a pre-learn() hook since it gets called by a learn() right before calling
 // into its own base_learner.learn(). see learn_automl(...)
 interaction_config_manager::interaction_config_manager(uint64_t global_lease, uint64_t max_live_configs,
-    std::shared_ptr<VW::rand_state> rand_state, uint64_t priority_challengers,
-    std::string interaction_type, std::string oracle_type, dense_parameters& weights, priority_func* calc_priority,
-    double automl_significance_level, double automl_estimator_decay, VW::io::logger* logger, uint32_t& wpp)
+    std::shared_ptr<VW::rand_state> rand_state, uint64_t priority_challengers, std::string interaction_type,
+    std::string oracle_type, dense_parameters& weights, priority_func* calc_priority, double automl_significance_level,
+    double automl_estimator_decay, VW::io::logger* logger, uint32_t& wpp)
     : global_lease(global_lease)
     , max_live_configs(max_live_configs)
     , random_state(std::move(rand_state))
@@ -294,10 +294,7 @@ void interaction_config_manager::insert_config(std::set<std::vector<namespace_in
     {
       if (configs[i].exclusions == new_exclusions)
       {
-        if (i < valid_config_size)
-        {
-          return;
-        }
+        if (i < valid_config_size) { return; }
         else
         {
           configs[valid_config_size].exclusions = std::move(configs[i].exclusions);
@@ -410,7 +407,10 @@ void interaction_config_manager::config_oracle()
   else if (oracle_type == "champdupe")
   {
     for (uint64_t i = 0; i < max_live_configs; ++i)
-    { insert_config(std::set<std::vector<namespace_index>>(configs[scores[current_champ].config_index].exclusions), true); }
+    {
+      insert_config(
+          std::set<std::vector<namespace_index>>(configs[scores[current_champ].config_index].exclusions), true);
+    }
   }
   else
   {
@@ -572,7 +572,8 @@ void interaction_config_manager::update_champ()
     champ_scores.push_back(std::move(old_champ_secondary_score));
     current_champ = 0;
     valid_config_size = 2;
-    scores[1] = aml_score(std::move(champ_scores[0]), scores[1].config_index, scores[1].eligible_to_inactivate, scores[1].live_interactions);
+    scores[1] = aml_score(std::move(champ_scores[0]), scores[1].config_index, scores[1].eligible_to_inactivate,
+        scores[1].live_interactions);
     champ_scores[1] = scores[0];
     config_oracle();
   }
