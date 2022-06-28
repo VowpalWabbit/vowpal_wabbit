@@ -33,6 +33,7 @@ private:
   T* _current;
   T* _begin;
   uint32_t _stride;
+  uint32_t _stride_shift;
 
 public:
   using iterator_category = std::forward_iterator_tag;
@@ -41,7 +42,10 @@ public:
   using pointer = T*;
   using reference = T&;
 
-  dense_iterator(T* current, T* begin, uint32_t stride) : _current(current), _begin(begin), _stride(stride) {}
+  dense_iterator(T* current, T* begin, uint32_t stride, uint32_t stride_shift)
+      : _current(current), _begin(begin), _stride(stride), _stride_shift(stride_shift)
+  {
+  }
 
   T& operator*() { return *_current; }
 
@@ -53,8 +57,31 @@ public:
     return *this;
   }
 
+  size_t current_offset(size_t total_offsets) { return ((_current - _begin) >> _stride_shift) & (total_offsets - 1); }
+
+  dense_iterator& operator+(size_t n)
+  {
+    _current += _stride * n;
+    return *this;
+  }
+
+  dense_iterator& operator+=(size_t n)
+  {
+    _current += _stride * n;
+    return *this;
+  }
+
+  // ignores the stride
+  pointer operator[](size_t n)
+  {
+    assert(n < _stride);
+    return _current + n;
+  }
+
   bool operator==(const dense_iterator& rhs) const { return _current == rhs._current; }
   bool operator!=(const dense_iterator& rhs) const { return _current != rhs._current; }
+  bool operator<(const dense_iterator& rhs) const { return _current < rhs._current; }
+  bool operator<=(const dense_iterator& rhs) const { return _current <= rhs._current; }
 };
 
 class dense_parameters
@@ -115,12 +142,12 @@ public:
     return _begin;
   }  // TODO: Temporary fix for allreduce.
      // iterator with stride
-  iterator begin() { return iterator(_begin, _begin, stride()); }
-  iterator end() { return iterator(_begin + _weight_mask + 1, _begin, stride()); }
+  iterator begin() { return iterator(_begin, _begin, stride(), stride_shift()); }
+  iterator end() { return iterator(_begin + _weight_mask + 1, _begin, stride(), stride_shift()); }
 
   // const iterator
-  const_iterator cbegin() const { return const_iterator(_begin, _begin, stride()); }
-  const_iterator cend() const { return const_iterator(_begin + _weight_mask + 1, _begin, stride()); }
+  const_iterator cbegin() const { return const_iterator(_begin, _begin, stride(), stride_shift()); }
+  const_iterator cend() const { return const_iterator(_begin + _weight_mask + 1, _begin, stride(), stride_shift()); }
 
   inline const weight& operator[](size_t i) const { return _begin[i & _weight_mask]; }
   inline weight& operator[](size_t i)
@@ -193,21 +220,22 @@ public:
     assert(to < params_per_problem);
     uint32_t stride_size = 1 << stride_shift();
 
-    int64_t diff = to - from;
-    for (auto iter = begin(); iter != end(); ++iter)
-    {
-      size_t prestride_index = iter.index() >> stride_shift();
-      size_t current_offset = prestride_index & (params_per_problem - 1);
-      if (current_offset == from)
-      {
-        float* other = &_begin[(prestride_index + diff) << stride_shift()];
+    auto iterator_from = begin() + from;
+    auto iterator_to = begin() + to;
 
-        if (*other != 0.f || *iter != 0.f)
-        {
-          for (size_t stride_offset = 0; stride_offset < stride_size; stride_offset++)
-          { (&(*other))[stride_offset] = (&(*iter))[stride_offset]; }
-        }
+    while (iterator_from < end())
+    {
+      assert(iterator_to.current_offset(params_per_problem) == to);
+      assert(iterator_from.current_offset(params_per_problem) == from);
+
+      for (size_t stride_offset = 0; stride_offset < stride_size; stride_offset++)
+      {
+        if (*iterator_to[stride_offset] != *iterator_from[stride_offset])
+        { *iterator_to[stride_offset] = *iterator_from[stride_offset]; }
       }
+
+      iterator_from += params_per_problem;
+      iterator_to += params_per_problem;
     }
   }
 

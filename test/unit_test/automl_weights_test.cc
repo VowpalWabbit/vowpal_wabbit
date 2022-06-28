@@ -270,6 +270,8 @@ BOOST_AUTO_TEST_CASE(automl_equal_no_automl)
       "--keep_configs --oracle_type one_diff ";
   int seed = 10;
   size_t num_iterations = 2000;
+  // this has to match with --automl 4 above
+  size_t AUTOML_MODELS = 4;
 
   auto* vw_qcolcol = VW::initialize(vw_arg + "--invert_hash without_automl.vw -q ::");
   auto* vw_automl = VW::initialize(vw_arg + vw_automl_arg + "--invert_hash with_automl.vw");
@@ -301,14 +303,16 @@ BOOST_AUTO_TEST_CASE(automl_equal_no_automl)
   while (iter_2 != weights_automl.end())
   {
     size_t prestride_index = iter_2.index() >> 2;
-    size_t current_offset = prestride_index & (4 - 1);
-    if (*iter_2 != 0.0f && current_offset == 0)
+    size_t current_offset = prestride_index & (AUTOML_MODELS - 1);
+    BOOST_CHECK_EQUAL(current_offset, 0);
+    BOOST_CHECK_EQUAL(iter_2.current_offset(AUTOML_MODELS), current_offset);
+
+    if (*iter_2 != 0.0f)
     {
-      float* first_weight = (float*)&(*iter_2);
-      automl_champ_weights_vector.emplace_back(first_weight[0], first_weight[1], first_weight[2], first_weight[3]);
+      automl_champ_weights_vector.emplace_back(*iter_2[0], *iter_2[1], *iter_2[2], *iter_2[3]);
     }
 
-    ++iter_2;
+    iter_2 += AUTOML_MODELS;
   }
 
   std::sort(automl_champ_weights_vector.begin(), automl_champ_weights_vector.end());
