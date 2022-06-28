@@ -42,8 +42,8 @@ public:
   using pointer = T*;
   using reference = T&;
 
-  dense_iterator(T* current, T* begin, uint32_t stride, uint32_t stride_shift)
-      : _current(current), _begin(begin), _stride(stride), _stride_shift(stride_shift)
+  dense_iterator(T* current, T* begin, uint32_t stride_shift)
+      : _current(current), _begin(begin), _stride(1 << stride_shift), _stride_shift(stride_shift)
   {
   }
 
@@ -142,12 +142,12 @@ public:
     return _begin;
   }  // TODO: Temporary fix for allreduce.
      // iterator with stride
-  iterator begin() { return iterator(_begin, _begin, stride(), stride_shift()); }
-  iterator end() { return iterator(_begin + _weight_mask + 1, _begin, stride(), stride_shift()); }
+  iterator begin() { return iterator(_begin, _begin, stride_shift()); }
+  iterator end() { return iterator(_begin + _weight_mask + 1, _begin, stride_shift()); }
 
   // const iterator
-  const_iterator cbegin() const { return const_iterator(_begin, _begin, stride(), stride_shift()); }
-  const_iterator cend() const { return const_iterator(_begin + _weight_mask + 1, _begin, stride(), stride_shift()); }
+  const_iterator cbegin() const { return const_iterator(_begin, _begin, stride_shift()); }
+  const_iterator cend() const { return const_iterator(_begin + _weight_mask + 1, _begin, stride_shift()); }
 
   inline const weight& operator[](size_t i) const { return _begin[i & _weight_mask]; }
   inline weight& operator[](size_t i)
