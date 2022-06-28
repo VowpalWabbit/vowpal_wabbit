@@ -37,6 +37,12 @@ struct aml_score : VW::scored_config
 {
   aml_score() : VW::scored_config() {}
   aml_score(double alpha, double tau) : VW::scored_config(alpha, tau) {}
+  aml_score(VW::scored_config sc, uint64_t config_index, bool eligible_to_inactivate, interaction_vec_t& live_interactions) : VW::scored_config(sc)
+  {
+    this->config_index = config_index;
+    this->eligible_to_inactivate = eligible_to_inactivate;
+    this->live_interactions = live_interactions;
+  }
   uint64_t config_index = 0;
   bool eligible_to_inactivate = false;
   interaction_vec_t live_interactions;  // Live pre-allocated vectors in use
@@ -108,8 +114,8 @@ struct interaction_config_manager : config_manager
   // Stores all namespaces currently seen -- Namespace switch could we use array, ask Jack
   std::map<namespace_index, uint64_t> ns_counter;
 
-  // Stores all configs in consideration (Map allows easy deletion unlike vector)
-  std::map<uint64_t, exclusion_config> configs;
+  // Stores all configs in consideration
+  std::vector<exclusion_config> configs;
 
   // Stores scores of live configs, size will never exceed max_live_configs
   std::vector<aml_score> scores;
@@ -142,7 +148,7 @@ private:
   uint64_t choose();
   bool repopulate_index_queue();
   bool swap_eligible_to_inactivate(uint64_t);
-  void insert_config(std::set<std::vector<namespace_index>>&& new_exclusions);
+  void insert_config(std::set<std::vector<namespace_index>>&& new_exclusions, bool allow_dups = false);
 };
 
 template <typename CMType>

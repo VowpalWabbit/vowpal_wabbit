@@ -187,7 +187,7 @@ public:
     for (iterator iter = begin(); iter != end(); ++iter) { (&(*iter))[offset] = 0; }
   }
 
-  void copy_offsets(const size_t from, const size_t to, const size_t params_per_problem)
+  void copy_offsets(const size_t from, const size_t to, const size_t params_per_problem, bool swap = false)
   {
     assert(from < params_per_problem);
     assert(to < params_per_problem);
@@ -205,7 +205,16 @@ public:
         if (*other != 0.f || *iter != 0.f)
         {
           for (size_t stride_offset = 0; stride_offset < stride_size; stride_offset++)
-          { (&(*other))[stride_offset] = (&(*iter))[stride_offset]; }
+          {
+            if (swap)
+            {
+              std::swap((&(*other))[stride_offset], (&(*iter))[stride_offset]);
+            }
+            else
+            {
+              (&(*other))[stride_offset] = (&(*iter))[stride_offset];
+            }
+          }
         }
       }
     }

@@ -65,7 +65,7 @@ to swap out and try new configs more consistently.
 namespace
 {
 constexpr uint64_t MAX_CONFIGS = 10;
-constexpr uint64_t CONFIGS_PER_CHAMP_CHANGE = 5;
+constexpr uint64_t CONFIGS_PER_CHAMP_CHANGE = 10;
 
 // fail if incompatible reductions got setup
 // todo: audit if they reference global all interactions
@@ -203,7 +203,7 @@ interaction_config_manager::interaction_config_manager(uint64_t global_lease, ui
     , logger(logger)
     , wpp(wpp)
 {
-  configs[0] = exclusion_config(global_lease);
+  configs.emplace_back(global_lease);
   configs[0].state = VW::reductions::automl::config_state::Live;
   scores.emplace_back(automl_significance_level, automl_estimator_decay);
   champ_scores.emplace_back(automl_significance_level, automl_estimator_decay);
@@ -285,8 +285,29 @@ void interaction_config_manager::pre_process(const multi_ex& ecs)
 }
 // Helper function to insert new configs from oracle into map of configs as well as index_queue.
 // Handles creating new config with exclusions or overwriting stale configs to avoid reallocation.
-void interaction_config_manager::insert_config(std::set<std::vector<namespace_index>>&& new_exclusions)
+void interaction_config_manager::insert_config(std::set<std::vector<namespace_index>>&& new_exclusions, bool allow_dups)
 {
+  // First check if config already exists
+  if (!allow_dups)
+  {
+    for (size_t i = 0; i < configs.size(); ++i)
+    {
+      if (configs[i].exclusions == new_exclusions)
+      {
+        if (i < valid_config_size)
+        {
+          return;
+        }
+        else
+        {
+          configs[valid_config_size].exclusions = std::move(configs[i].exclusions);
+          configs[valid_config_size].lease = global_lease;
+          configs[valid_config_size].state = VW::reductions::automl::config_state::New;
+        }
+      }
+    }
+  }
+
   // Note that configs are never actually cleared, but valid_config_size is set to 0 instead to denote that
   // configs have become stale. Here we try to write over stale configs with new configs, and if no stale
   // configs exist we'll generate a new one.
@@ -298,7 +319,7 @@ void interaction_config_manager::insert_config(std::set<std::vector<namespace_in
   }
   else
   {
-    configs[valid_config_size] = exclusion_config(global_lease);
+    configs.emplace_back(global_lease);
     configs[valid_config_size].exclusions = std::move(new_exclusions);
   }
   float priority = (*calc_priority)(configs[valid_config_size], ns_counter);
@@ -381,7 +402,7 @@ void interaction_config_manager::config_oracle()
     // Remove one exclusion (for each exclusion)
     for (auto& ns_pair : configs[scores[current_champ].config_index].exclusions)
     {
-      std::set<std::vector<namespace_index>> new_exclusions(configs[scores[current_champ].config_index].exclusions);
+      auto new_exclusions = configs[scores[current_champ].config_index].exclusions;
       new_exclusions.erase(ns_pair);
       insert_config(std::move(new_exclusions));
     }
@@ -389,7 +410,7 @@ void interaction_config_manager::config_oracle()
   else if (oracle_type == "champdupe")
   {
     for (uint64_t i = 0; i < max_live_configs; ++i)
-    { insert_config(std::set<std::vector<namespace_index>>(configs[scores[current_champ].config_index].exclusions)); }
+    { insert_config(std::set<std::vector<namespace_index>>(configs[scores[current_champ].config_index].exclusions), true); }
   }
   else
   {
@@ -506,6 +527,7 @@ uint64_t interaction_config_manager::choose()
 void interaction_config_manager::update_champ()
 {
   bool champ_change = false;
+  uint64_t old_champ_slot = current_champ;
 
   // compare lowerbound of any challenger to the ips of the champ, and switch whenever when the LB beats the champ
   for (uint64_t live_slot = 0; live_slot < scores.size(); ++live_slot)
@@ -515,12 +537,6 @@ void interaction_config_manager::update_champ()
     if (better(live_slot))
     {
       champ_change = true;
-      // Update champ with live_slot of live config
-      if (scores[live_slot].eligible_to_inactivate)
-      {
-        scores[live_slot].eligible_to_inactivate = false;
-        scores[current_champ].eligible_to_inactivate = true;
-      }
       current_champ = live_slot;
     }
     else if (worse(live_slot))  // If challenger is worse ('worse function from Chacha')
@@ -530,29 +546,34 @@ void interaction_config_manager::update_champ()
   }
   if (champ_change)
   {
+    weights.copy_offsets(current_champ, 0, wpp, true);
+    weights.copy_offsets(current_champ, 1, wpp, true);
     this->total_champ_switches++;
     while (!index_queue.empty()) { index_queue.pop(); };
+    scores[current_champ].eligible_to_inactivate = false;
+    if (priority_challengers > 1) { scores[old_champ_slot].eligible_to_inactivate = false; }
     uint64_t champ_config_index = scores[current_champ].config_index;
-    if (champ_config_index != 0)
-    {
-      exclusion_config& zero_ind = configs[0];
-      exclusion_config& new_champ = configs[champ_config_index];
-      std::swap(zero_ind, new_champ);
-      scores[current_champ].config_index = 0;
-    }
+    uint64_t old_champ_config_index = scores[old_champ_slot].config_index;
+    exclusion_config new_champ_config = configs[champ_config_index];
+    exclusion_config old_champ_config = configs[old_champ_config_index];
+    configs[0] = std::move(new_champ_config);
+    configs[1] = std::move(old_champ_config);
+    scores[current_champ].config_index = 0;
+    scores[old_champ_slot].config_index = 1;
     auto champ_primary_score = std::move(scores[current_champ]);
     auto champ_secondary_score = std::move(champ_scores[current_champ]);
+    auto old_champ_primary_score = std::move(scores[old_champ_slot]);
+    auto old_champ_secondary_score = std::move(champ_scores[old_champ_slot]);
     scores.clear();
     champ_scores.clear();
     scores.push_back(std::move(champ_primary_score));
     champ_scores.push_back(std::move(champ_secondary_score));
+    scores.push_back(std::move(old_champ_primary_score));
+    champ_scores.push_back(std::move(old_champ_secondary_score));
     current_champ = 0;
-    valid_config_size = 1;
-    for (uint64_t live_slot = 0; live_slot < scores.size(); ++live_slot)
-    {
-      scores[live_slot].reset_stats(automl_significance_level, automl_estimator_decay);
-      champ_scores[live_slot].reset_stats(automl_significance_level, automl_estimator_decay);
-    }
+    valid_config_size = 2;
+    scores[1] = aml_score(std::move(champ_scores[0]), scores[1].config_index, scores[1].eligible_to_inactivate, scores[1].live_interactions);
+    champ_scores[1] = scores[0];
     config_oracle();
   }
 }
