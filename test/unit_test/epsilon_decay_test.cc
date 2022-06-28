@@ -198,14 +198,16 @@ BOOST_AUTO_TEST_CASE(epsilon_decay_test_save_load)
 {
   callback_map empty_hooks;
   auto ctr = simulator::_test_helper_hook(
-      "--epsilon_decay --bonferroni --model_count 5 --cb_explore_adf --epsilon_decay_alpha .01 --quiet  -q "
+      "--epsilon_decay --bonferroni --model_count 5 --cb_explore_adf --epsilon_decay_significance_level .01 --quiet  "
+      "-q "
       "::",
       empty_hooks);
   float without_save = ctr.back();
   BOOST_CHECK_GT(without_save, 0.9f);
 
   ctr = simulator::_test_helper_save_load(
-      "--epsilon_decay --bonferroni --model_count 5 --cb_explore_adf --epsilon_decay_alpha .01 --quiet  -q "
+      "--epsilon_decay --bonferroni --model_count 5 --cb_explore_adf --epsilon_decay_significance_level .01 --quiet  "
+      "-q "
       "::");
 
   float with_save = ctr.back();
@@ -221,7 +223,7 @@ BOOST_AUTO_TEST_CASE(epsilon_decay_test_score_bounds_unit)
   uint32_t wpp = 8;
   dense_parameters dense_weights(num_models);
   VW::io::logger logger = VW::io::create_default_logger();
-  epsilon_decay_data ep_data(num_models, 100, .05, .1, dense_weights, logger, false, false, wpp);
+  epsilon_decay_data ep_data(num_models, 100, .05, .1, dense_weights, logger, false, false, wpp, false);
 
   // Set update counts to fixed values with expected horizon bound violation
   size_t score_idx = 0;
@@ -306,7 +308,7 @@ BOOST_AUTO_TEST_CASE(epsilon_decay_test_horizon_bounds_unit)
   uint32_t wpp = 8;
   dense_parameters dense_weights(num_models);
   VW::io::logger logger = VW::io::create_default_logger();
-  epsilon_decay_data ep_data(num_models, 100, .05, .1, dense_weights, logger, false, false, wpp);
+  epsilon_decay_data ep_data(num_models, 100, .05, .1, dense_weights, logger, false, false, wpp, false);
 
   // Set update counts to fixed values with expected horizon bound violation
   size_t score_idx = 0;

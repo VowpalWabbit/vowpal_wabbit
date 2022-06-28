@@ -37,6 +37,14 @@ struct aml_score : VW::scored_config
 {
   aml_score() : VW::scored_config() {}
   aml_score(double alpha, double tau) : VW::scored_config(alpha, tau) {}
+  aml_score(
+      VW::scored_config sc, uint64_t config_index, bool eligible_to_inactivate, interaction_vec_t& live_interactions)
+      : VW::scored_config(sc)
+  {
+    this->config_index = config_index;
+    this->eligible_to_inactivate = eligible_to_inactivate;
+    this->live_interactions = live_interactions;
+  }
   uint64_t config_index = 0;
   bool eligible_to_inactivate = false;
   interaction_vec_t live_interactions;  // Live pre-allocated vectors in use
@@ -96,34 +104,33 @@ struct interaction_config_manager : config_manager
   std::shared_ptr<VW::rand_state> random_state;
   uint64_t priority_challengers;
   uint64_t valid_config_size = 0;
-  bool keep_configs;
   std::string interaction_type;
   std::string oracle_type;
   dense_parameters& weights;
   priority_func* calc_priority;
-  double automl_alpha;
-  double automl_tau;
+  double automl_significance_level;
+  double automl_estimator_decay;
   VW::io::logger* logger;
   uint32_t& wpp;
+  bool lb_trick;
 
   // Stores all namespaces currently seen -- Namespace switch could we use array, ask Jack
   std::map<namespace_index, uint64_t> ns_counter;
 
-  // Stores all configs in consideration (Map allows easy deletion unlike vector)
-  std::map<uint64_t, exclusion_config> configs;
+  // Stores all configs in consideration
+  std::vector<exclusion_config> configs;
 
-  // Stores scores of live configs, size will never exceed max_live_configs
-  std::vector<aml_score> scores;
-
-  // Stores champion scores of live configs, size will never exceed max_live_configs
-  std::vector<scored_config> champ_scores;
+  // Stores scores of live configs, size will never exceed max_live_configs. Each pair will be of the form
+  // <challenger_score, champ_score> for the horizon of a given challenger. Thus each challenger has one
+  // horizon and the champ has one horizon for each challenger
+  std::vector<std::pair<aml_score, scored_config>> scores;
 
   // Maybe not needed with oracle, maps priority to config index, unused configs
   std::priority_queue<std::pair<float, uint64_t>> index_queue;
 
-  interaction_config_manager(uint64_t, uint64_t, std::shared_ptr<VW::rand_state>, uint64_t, bool, std::string,
-      std::string, dense_parameters&, float (*)(const exclusion_config&, const std::map<namespace_index, uint64_t>&),
-      double, double, VW::io::logger*, uint32_t&);
+  interaction_config_manager(uint64_t, uint64_t, std::shared_ptr<VW::rand_state>, uint64_t, std::string, std::string,
+      dense_parameters&, float (*)(const exclusion_config&, const std::map<namespace_index, uint64_t>&), double, double,
+      VW::io::logger*, uint32_t&, bool);
 
   void apply_config(example*, uint64_t);
   void persist(metric_sink&, bool);
@@ -143,7 +150,7 @@ private:
   uint64_t choose();
   bool repopulate_index_queue();
   bool swap_eligible_to_inactivate(uint64_t);
-  void insert_config(std::set<std::vector<namespace_index>>&& new_exclusions);
+  void insert_config(std::set<std::vector<namespace_index>>&& new_exclusions, bool allow_dups = false);
 };
 
 template <typename CMType>
@@ -153,6 +160,16 @@ struct automl
   std::unique_ptr<CMType> cm;
   VW::io::logger* logger;
   LEARNER::multi_learner* adf_learner = nullptr;  //  re-use print from cb_explore_adf
+  bool debug_reverse_learning_order = false;
+
+  // TODO: delete all this, gd and cb_adf must respect ft_offset
+  std::vector<double> per_live_model_state_double;
+  std::vector<uint64_t> per_live_model_state_uint64;
+  double* _all_normalized = nullptr;
+  double* _gd_total_weight = nullptr;
+  uint64_t* _cb_adf_event_sum = nullptr;
+  uint64_t* _cb_adf_action_sum = nullptr;
+
   automl(std::unique_ptr<CMType> cm, VW::io::logger* logger) : cm(std::move(cm)), logger(logger) {}
   // This fn gets called before learning any example
   void one_step(multi_learner&, multi_ex&, CB::cb_class&, uint64_t);

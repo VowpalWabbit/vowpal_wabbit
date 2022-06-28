@@ -29,8 +29,9 @@ struct epsilon_decay_score : scored_config
 
 struct epsilon_decay_data
 {
-  epsilon_decay_data(uint64_t model_count, uint64_t min_scope, double epsilon_decay_alpha, double epsilon_decay_tau,
-      dense_parameters& weights, VW::io::logger logger, bool log_champ_changes, bool constant_epsilon, uint32_t& wpp);
+  epsilon_decay_data(uint64_t model_count, uint64_t min_scope, double epsilon_decay_significance_level,
+      double epsilon_decay_estimator_decay, dense_parameters& weights, VW::io::logger logger, bool log_champ_changes,
+      bool constant_epsilon, uint32_t& wpp, bool lb_trick);
   void update_weights(VW::LEARNER::multi_learner& base, VW::multi_ex& examples);
   void promote_model(int64_t model_ind, int64_t swap_dist);
   void rebalance_greater_models(int64_t model_ind, int64_t swap_dist, int64_t model_count);
@@ -42,13 +43,14 @@ struct epsilon_decay_data
   std::vector<std::vector<epsilon_decay_score>> _scored_configs;
   std::vector<uint64_t> _weight_indices;
   uint64_t _min_scope;
-  double _epsilon_decay_alpha;  // Confidence interval
-  double _epsilon_decay_tau;    // Count decay time constant
+  double _epsilon_decay_significance_level;  // Confidence interval
+  double _epsilon_decay_estimator_decay;     // Count decay time constant
   dense_parameters& _weights;
   VW::io::logger _logger;
   bool _log_champ_changes;
   bool _constant_epsilon;
   uint32_t& _wpp;
+  bool _lb_trick;
 };
 
 }  // namespace epsilon_decay

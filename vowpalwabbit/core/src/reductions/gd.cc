@@ -45,28 +45,6 @@ constexpr double L2_STATE_DEFAULT = 1.;
 // 4. Factor various state out of VW::workspace&
 namespace GD
 {
-struct gd
-{
-  //  double normalized_sum_norm_x;
-  double total_weight = 0.0;
-  size_t no_win_counter = 0;
-  size_t early_stop_thres = 0;
-  float initial_constant = 0.f;
-  float neg_norm_power = 0.f;
-  float neg_power_t = 0.f;
-  float sparse_l2 = 0.f;
-  float update_multiplier = 0.f;
-  void (*predict)(gd&, base_learner&, VW::example&) = nullptr;
-  void (*learn)(gd&, base_learner&, VW::example&) = nullptr;
-  void (*update)(gd&, base_learner&, VW::example&) = nullptr;
-  float (*sensitivity)(gd&, base_learner&, VW::example&) = nullptr;
-  void (*multipredict)(gd&, base_learner&, VW::example&, size_t, size_t, VW::polyprediction*, bool) = nullptr;
-  bool adaptive_input = false;
-  bool normalized_input = false;
-  bool adax = false;
-  VW::workspace* all = nullptr;  // parallel, features, parameters
-};
-
 void sync_weights(VW::workspace& all);
 
 inline float quake_InvSqrt(float x)
