@@ -25,8 +25,8 @@ void check_interactions_match_exclusions(VW::reductions::automl::automl<interact
 {
   for (const auto& score : aml->cm->scores)
   {
-    auto& exclusions = aml->cm->configs[score.config_index].exclusions;
-    auto& interactions = score.live_interactions;
+    auto& exclusions = aml->cm->configs[score.first.config_index].exclusions;
+    auto& interactions = score.first.live_interactions;
     auto& interaction_type = aml->cm->interaction_type;
     // Check that no interaction can be found in exclusions
     for (const auto& interaction : interactions)
@@ -67,8 +67,7 @@ void check_config_states(VW::reductions::automl::automl<interaction_config_manag
 
   // All configs in the scores should be live
   for (const auto& score : aml->cm->scores)
-  { BOOST_CHECK(aml->cm->configs[score.config_index].state == VW::reductions::automl::config_state::Live); }
-  BOOST_CHECK_EQUAL(aml->cm->scores.size(), aml->cm->champ_scores.size());
+  { BOOST_CHECK(aml->cm->configs[score.first.config_index].state == VW::reductions::automl::config_state::Live); }
 }
 
 VW::reductions::automl::automl<interaction_config_manager>* get_automl_data(VW::workspace& all)
@@ -188,20 +187,20 @@ BOOST_AUTO_TEST_CASE(automl_assert_live_configs_and_lease)
     BOOST_CHECK_EQUAL(aml->cm->current_champ, 0);
     BOOST_CHECK_CLOSE(aml->cm->automl_significance_level, 0.05, FLOAT_TOL);
     BOOST_CHECK_CLOSE(aml->cm->automl_estimator_decay, 1.0, FLOAT_TOL);
-    BOOST_CHECK_EQUAL(aml->cm->scores[0].config_index, 0);
-    BOOST_CHECK_EQUAL(aml->cm->scores[1].config_index, 3);
-    BOOST_CHECK_EQUAL(aml->cm->scores[2].config_index, 1);
+    BOOST_CHECK_EQUAL(aml->cm->scores[0].first.config_index, 0);
+    BOOST_CHECK_EQUAL(aml->cm->scores[1].first.config_index, 3);
+    BOOST_CHECK_EQUAL(aml->cm->scores[2].first.config_index, 1);
     BOOST_CHECK_EQUAL(aml->cm->configs.size(), 4);
     BOOST_CHECK_EQUAL(aml->cm->configs[0].lease, 10);
     BOOST_CHECK_EQUAL(aml->cm->configs[1].lease, 10);
     BOOST_CHECK_EQUAL(aml->cm->configs[2].lease, 20);
     BOOST_CHECK_EQUAL(aml->cm->configs[3].lease, 20);
-    BOOST_CHECK_EQUAL(aml->cm->scores[0].update_count, 0);
-    BOOST_CHECK_EQUAL(aml->cm->scores[1].update_count, 14);
-    BOOST_CHECK_EQUAL(aml->cm->scores[2].update_count, 4);
-    BOOST_CHECK_EQUAL(aml->cm->champ_scores[0].update_count, 0);
-    BOOST_CHECK_EQUAL(aml->cm->champ_scores[1].update_count, 14);
-    BOOST_CHECK_EQUAL(aml->cm->champ_scores[2].update_count, 4);
+    BOOST_CHECK_EQUAL(aml->cm->scores[0].first.update_count, 0);
+    BOOST_CHECK_EQUAL(aml->cm->scores[1].first.update_count, 14);
+    BOOST_CHECK_EQUAL(aml->cm->scores[2].first.update_count, 4);
+    BOOST_CHECK_EQUAL(aml->cm->scores[0].second.update_count, 0);
+    BOOST_CHECK_EQUAL(aml->cm->scores[1].second.update_count, 14);
+    BOOST_CHECK_EQUAL(aml->cm->scores[2].second.update_count, 4);
     BOOST_CHECK_EQUAL(aml->cm->index_queue.size(), 0);
     return true;
   });
@@ -254,11 +253,11 @@ BOOST_AUTO_TEST_CASE(automl_namespace_switch)
   test_hooks.emplace(num_iterations, [&](cb_sim&, VW::workspace& all, VW::multi_ex&) {
     VW::reductions::automl::automl<interaction_config_manager>* aml = aml_test::get_automl_data(all);
 
-    auto champ_exclusions = aml->cm->configs[aml->cm->scores[aml->cm->current_champ].config_index].exclusions;
+    auto champ_exclusions = aml->cm->configs[aml->cm->scores[aml->cm->current_champ].first.config_index].exclusions;
     BOOST_CHECK_EQUAL(champ_exclusions.size(), 1);
     std::vector<namespace_index> ans{'U', 'U'};
     BOOST_CHECK(champ_exclusions.find(ans) != champ_exclusions.end());
-    auto champ_interactions = aml->cm->scores[aml->cm->current_champ].live_interactions;
+    auto champ_interactions = aml->cm->scores[aml->cm->current_champ].first.live_interactions;
     BOOST_CHECK_EQUAL(champ_interactions.size(), 5);
     return true;
   });
@@ -286,9 +285,9 @@ BOOST_AUTO_TEST_CASE(automl_clear_configs)
     BOOST_CHECK_EQUAL(aml->cm->current_champ, 0);
     BOOST_CHECK_EQUAL(aml->cm->valid_config_size, 4);
     BOOST_CHECK_EQUAL(clear_champ_switch - 1, aml->cm->total_learn_count);
-    BOOST_CHECK_EQUAL(aml->cm->scores[0].live_interactions.size(), 3);
-    BOOST_CHECK_EQUAL(aml->cm->scores[1].live_interactions.size(), 2);
-    BOOST_CHECK_EQUAL(aml->cm->scores[2].live_interactions.size(), 2);
+    BOOST_CHECK_EQUAL(aml->cm->scores[0].first.live_interactions.size(), 3);
+    BOOST_CHECK_EQUAL(aml->cm->scores[1].first.live_interactions.size(), 2);
+    BOOST_CHECK_EQUAL(aml->cm->scores[2].first.live_interactions.size(), 2);
     BOOST_CHECK(aml->current_state == VW::reductions::automl::automl_state::Experimenting);
     return true;
   });
@@ -301,7 +300,7 @@ BOOST_AUTO_TEST_CASE(automl_clear_configs)
     BOOST_CHECK_EQUAL(clear_champ_switch, aml->cm->total_learn_count);
     BOOST_CHECK_EQUAL(aml->cm->scores.size(), 2);
     BOOST_CHECK_EQUAL(aml->cm->valid_config_size, 4);
-    BOOST_CHECK_EQUAL(aml->cm->scores[0].live_interactions.size(), 2);
+    BOOST_CHECK_EQUAL(aml->cm->scores[0].first.live_interactions.size(), 2);
     BOOST_CHECK(aml->current_state == VW::reductions::automl::automl_state::Experimenting);
     return true;
   });
@@ -350,9 +349,9 @@ BOOST_AUTO_TEST_CASE(automl_clear_configs_one_diff)
   test_hooks.emplace(clear_champ_switch + 1, [&clear_champ_switch](cb_sim&, VW::workspace& all, VW::multi_ex&) {
     VW::reductions::automl::automl<interaction_config_manager>* aml = aml_test::get_automl_data(all);
     BOOST_CHECK_EQUAL(aml->cm->scores.size(), 3);
-    BOOST_CHECK_EQUAL(aml->cm->scores[0].live_interactions.size(), 2);
-    BOOST_CHECK_EQUAL(aml->cm->scores[1].live_interactions.size(), 3);
-    BOOST_CHECK_EQUAL(aml->cm->scores[2].live_interactions.size(), 1);
+    BOOST_CHECK_EQUAL(aml->cm->scores[0].first.live_interactions.size(), 2);
+    BOOST_CHECK_EQUAL(aml->cm->scores[1].first.live_interactions.size(), 3);
+    BOOST_CHECK_EQUAL(aml->cm->scores[2].first.live_interactions.size(), 1);
     return true;
   });
 

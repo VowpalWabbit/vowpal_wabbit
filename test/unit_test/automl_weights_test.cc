@@ -109,7 +109,7 @@ bool weights_offset_test(cb_sim&, VW::workspace& all, VW::multi_ex& ec)
   ARE_SAME(expected_w2, weights.strided_index(interaction_index + offset_to_clear + 1), AUTO_ML_FLOAT_TOL);
 
   // copy from offset 2 to offset 1
-  weights.copy_offsets(offset_to_clear + 1, offset_to_clear, all.wpp);
+  weights.move_offsets(offset_to_clear + 1, offset_to_clear, all.wpp);
 
   for (auto index : feature_indexes)
   {
@@ -270,6 +270,8 @@ BOOST_AUTO_TEST_CASE(automl_equal_no_automl)
       "--oracle_type one_diff ";
   int seed = 10;
   size_t num_iterations = 2000;
+  // this has to match with --automl 4 above
+  size_t AUTOML_MODELS = 4;
 
   auto* vw_qcolcol = VW::initialize(vw_arg + "--invert_hash without_automl.vw -q ::");
   auto* vw_automl = VW::initialize(vw_arg + vw_automl_arg + "--invert_hash with_automl.vw");
@@ -301,14 +303,13 @@ BOOST_AUTO_TEST_CASE(automl_equal_no_automl)
   while (iter_2 != weights_automl.end())
   {
     size_t prestride_index = iter_2.index() >> 2;
-    size_t current_offset = prestride_index & (4 - 1);
-    if (*iter_2 != 0.0f && current_offset == 0)
-    {
-      float* first_weight = (float*)&(*iter_2);
-      automl_champ_weights_vector.emplace_back(first_weight[0], first_weight[1], first_weight[2], first_weight[3]);
-    }
+    size_t current_offset = prestride_index & (AUTOML_MODELS - 1);
+    BOOST_CHECK_EQUAL(current_offset, 0);
+    BOOST_CHECK_EQUAL(iter_2.index_without_stride() & AUTOML_MODELS - 1, current_offset);
 
-    ++iter_2;
+    if (*iter_2 != 0.0f) { automl_champ_weights_vector.emplace_back(*iter_2[0], *iter_2[1], *iter_2[2], *iter_2[3]); }
+
+    iter_2 += AUTOML_MODELS;
   }
 
   std::sort(automl_champ_weights_vector.begin(), automl_champ_weights_vector.end());

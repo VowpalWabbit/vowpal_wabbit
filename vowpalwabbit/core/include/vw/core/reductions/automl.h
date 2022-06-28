@@ -119,11 +119,10 @@ struct interaction_config_manager : config_manager
   // Stores all configs in consideration
   std::vector<exclusion_config> configs;
 
-  // Stores scores of live configs, size will never exceed max_live_configs
-  std::vector<aml_score> scores;
-
-  // Stores champion scores of live configs, size will never exceed max_live_configs
-  std::vector<scored_config> champ_scores;
+  // Stores scores of live configs, size will never exceed max_live_configs. Each pair will be of the form
+  // <challenger_score, champ_score> for the horizon of a given challenger. Thus each challenger has one
+  // horizon and the champ has one horizon for each challenger
+  std::vector<std::pair<aml_score, scored_config>> scores;
 
   // Maybe not needed with oracle, maps priority to config index, unused configs
   std::priority_queue<std::pair<float, uint64_t>> index_queue;
