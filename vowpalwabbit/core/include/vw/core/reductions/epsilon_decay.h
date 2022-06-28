@@ -50,6 +50,7 @@ struct epsilon_decay_data
   bool _log_champ_changes;
   bool _constant_epsilon;
   uint32_t& _wpp;
+  bool _lb_trick;
 };
 
 }  // namespace epsilon_decay

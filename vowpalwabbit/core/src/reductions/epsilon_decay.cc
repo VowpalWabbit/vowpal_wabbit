@@ -142,7 +142,8 @@ void epsilon_decay_data::check_score_bounds()
   auto final_model_idx = model_count - 1;
   for (int64_t i = 0; i < final_model_idx; ++i)
   {
-    if (_scored_configs[i][i].lower_bound() > _scored_configs[final_model_idx][i].upper_bound())
+    bool better = _lb_trick ? _scored_configs[i][i].lower_bound() > (1.f - _scored_configs[final_model_idx][i].lower_bound()) : _scored_configs[i][i].lower_bound() > _scored_configs[final_model_idx][i].upper_bound();
+    if (better)
     {
       if (_log_champ_changes)
       {
@@ -260,6 +261,7 @@ VW::LEARNER::base_learner* VW::reductions::epsilon_decay_setup(VW::setup_base_i&
   bool _log_champ_changes = false;
   bool _constant_epsilon = false;
   bool _bonferroni = false;
+  bool _lb_trick = false;
 
   option_group_definition new_options("[Reduction] Epsilon-Decaying Exploration");
   new_options
@@ -296,6 +298,10 @@ VW::LEARNER::base_learner* VW::reductions::epsilon_decay_setup(VW::setup_base_i&
       .add(make_option("bonferroni", _bonferroni)
                .keep()
                .help("Use bonferroni correction (divide confidence interval by model count)")
+               .experimental())
+      .add(make_option("lb_trick", _lb_trick)
+               .default_value(false)
+               .help("Use 1-lower_bound as upper_bound for estimator")
                .experimental());
 
   if (!options.add_parse_and_check_necessary(new_options)) { return nullptr; }
@@ -309,6 +315,8 @@ VW::LEARNER::base_learner* VW::reductions::epsilon_decay_setup(VW::setup_base_i&
   auto data = VW::make_unique<VW::reductions::epsilon_decay::epsilon_decay_data>(model_count, _min_scope, scaled_alpha,
       _epsilon_decay_estimator_decay, all.weights.dense_weights, all.logger, _log_champ_changes, _constant_epsilon,
       all.wpp);
+
+  data->_lb_trick = _lb_trick;
 
   // make sure we setup the rest of the stack with cleared interactions
   // to make sure there are not subtle bugs

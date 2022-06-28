@@ -421,8 +421,9 @@ bool interaction_config_manager::swap_eligible_to_inactivate(uint64_t live_slot)
 {
   for (uint64_t other_live_slot = 0; other_live_slot < scores.size(); ++other_live_slot)
   {
+    bool better = lb_trick ? scores[live_slot].lower_bound() > (1.f - scores[other_live_slot].lower_bound()) : scores[live_slot].lower_bound() > scores[other_live_slot].upper_bound();
     if (!scores[other_live_slot].eligible_to_inactivate && other_live_slot != current_champ &&
-        scores[live_slot].lower_bound() > scores[other_live_slot].upper_bound())
+        better)
     {
       scores[live_slot].eligible_to_inactivate = false;
       scores[other_live_slot].eligible_to_inactivate = true;
@@ -488,7 +489,7 @@ void interaction_config_manager::schedule()
 
 bool interaction_config_manager::better(uint64_t live_slot)
 {
-  return scores[live_slot].lower_bound() > champ_scores[live_slot].upper_bound();
+  return lb_trick ? scores[live_slot].lower_bound() > (1.f - champ_scores[live_slot].lower_bound()) : scores[live_slot].lower_bound() > champ_scores[live_slot].upper_bound();
 }
 
 bool interaction_config_manager::worse(uint64_t)
@@ -779,6 +780,7 @@ VW::LEARNER::base_learner* VW::reductions::automl_setup(VW::setup_base_i& stack_
   float automl_significance_level;
   float automl_estimator_decay;
   bool reversed_learning_order = false;
+  bool lb_trick = false;
 
   option_group_definition new_options("[Reduction] Automl");
   new_options
@@ -828,6 +830,10 @@ VW::LEARNER::base_learner* VW::reductions::automl_setup(VW::setup_base_i& stack_
                .default_value(false)
                .help("Debug: learn each config in reversed order (last to first).")
                .experimental())
+      .add(make_option("lb_trick", lb_trick)
+               .default_value(false)
+               .help("Use 1-lower_bound as upper_bound for estimator")
+               .experimental())
       .add(make_option("automl_significance_level", automl_significance_level)
                .keep()
                .default_value(DEFAULT_ALPHA)
@@ -863,6 +869,7 @@ VW::LEARNER::base_learner* VW::reductions::automl_setup(VW::setup_base_i& stack_
   auto data = VW::make_unique<VW::reductions::automl::automl<VW::reductions::automl::interaction_config_manager>>(
       std::move(cm), &all.logger);
   data->debug_reverse_learning_order = reversed_learning_order;
+  data->cm->lb_trick = lb_trick;
   if (max_live_configs > MAX_CONFIGS)
   {
     THROW("Maximum number of configs is "

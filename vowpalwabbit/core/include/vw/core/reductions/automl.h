@@ -105,6 +105,7 @@ struct interaction_config_manager : config_manager
   double automl_estimator_decay;
   VW::io::logger* logger;
   uint32_t& wpp;
+  bool lb_trick;
 
   // Stores all namespaces currently seen -- Namespace switch could we use array, ask Jack
   std::map<namespace_index, uint64_t> ns_counter;
