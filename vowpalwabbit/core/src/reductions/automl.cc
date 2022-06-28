@@ -1025,6 +1025,8 @@ size_t read_model_field(io_buf& io, VW::reductions::automl::automl<CMType>& aml)
   size_t bytes = 0;
   bytes += read_model_field(io, aml.current_state);
   bytes += read_model_field(io, *aml.cm);
+  bytes += read_model_field(io, aml.per_live_model_state_double);
+  bytes += read_model_field(io, aml.per_live_model_state_uint64);
   return bytes;
 }
 
@@ -1035,6 +1037,8 @@ size_t write_model_field(
   size_t bytes = 0;
   bytes += write_model_field(io, aml.current_state, upstream_name + "_state", text);
   bytes += write_model_field(io, *aml.cm, upstream_name + "_config_manager", text);
+  bytes += write_model_field(io, aml.per_live_model_state_double, upstream_name + "_per_live_model_state_double", text);
+  bytes += write_model_field(io, aml.per_live_model_state_uint64, upstream_name + "_per_live_model_state_uint64", text);
   return bytes;
 }
 
