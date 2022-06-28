@@ -2,7 +2,7 @@
 // individual contributors. All rights reserved. Released under a BSD (revised)
 // license as described in the file LICENSE.
 
-#include "vw/core/reductions/automl.h"
+#include "vw/core/reductions/automl/automl.h"
 
 #include "simulator.h"
 #include "test_common.h"
