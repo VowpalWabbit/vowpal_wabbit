@@ -305,7 +305,7 @@ BOOST_AUTO_TEST_CASE(automl_equal_no_automl)
     size_t prestride_index = iter_2.index() >> 2;
     size_t current_offset = prestride_index & (AUTOML_MODELS - 1);
     BOOST_CHECK_EQUAL(current_offset, 0);
-    BOOST_CHECK_EQUAL(iter_2.current_offset(AUTOML_MODELS), current_offset);
+    BOOST_CHECK_EQUAL(iter_2.index_without_stride() & AUTOML_MODELS - 1, current_offset);
 
     if (*iter_2 != 0.0f) { automl_champ_weights_vector.emplace_back(*iter_2[0], *iter_2[1], *iter_2[2], *iter_2[3]); }
 

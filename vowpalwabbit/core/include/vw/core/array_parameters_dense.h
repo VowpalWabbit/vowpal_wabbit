@@ -51,13 +51,13 @@ public:
 
   size_t index() { return _current - _begin; }
 
+  size_t index_without_stride() { return (index() >> _stride_shift); }
+
   dense_iterator& operator++()
   {
     _current += _stride;
     return *this;
   }
-
-  size_t current_offset(size_t total_offsets) { return ((_current - _begin) >> _stride_shift) & (total_offsets - 1); }
 
   dense_iterator& operator+(size_t n)
   {
@@ -224,8 +224,8 @@ public:
 
     for (; iterator_from < end(); iterator_from += params_per_problem, iterator_to += params_per_problem)
     {
-      assert(iterator_to.current_offset(params_per_problem) == to);
-      assert(iterator_from.current_offset(params_per_problem) == from);
+      assert((iterator_to.index_without_stride() & (params_per_problem - 1)) == to);
+      assert((iterator_from.index_without_stride() & (params_per_problem - 1)) == from);
 
       for (size_t stride_offset = 0; stride_offset < stride(); stride_offset++)
       {
@@ -242,7 +242,7 @@ public:
 
     for (auto iterator_clear = begin() + offset; iterator_clear < end(); iterator_clear += params_per_problem)
     {
-      assert(iterator_clear.current_offset(params_per_problem) == offset);
+      assert((iterator_clear.index_without_stride() & (params_per_problem - 1)) == offset);
       for (size_t stride_offset = 0; stride_offset < stride(); stride_offset++)
       {
         if (*iterator_clear[stride_offset] != 0.0f) { *iterator_clear[stride_offset] = 0.0f; }
