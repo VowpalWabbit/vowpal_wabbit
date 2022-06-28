@@ -79,10 +79,7 @@ void aml_score::persist(
   VW::scored_config::persist(metrics, suffix);
   metrics.set_uint("conf_idx" + suffix, config_index);
   if (verbose)
-  {
-    metrics.set_string(
-        "interactions" + suffix, VW::reductions::interaction_vec_t_to_string(live_interactions, interaction_type));
-  }
+  { metrics.set_string("interactions" + suffix, ::interaction_vec_t_to_string(live_interactions, interaction_type)); }
 }
 
 // config_manager is a state machine (config_manager_state) 'time' moves forward after a call into one_step()
@@ -91,7 +88,7 @@ void aml_score::persist(
 interaction_config_manager::interaction_config_manager(uint64_t global_lease, uint64_t max_live_configs,
     std::shared_ptr<VW::rand_state> rand_state, uint64_t priority_challengers, std::string interaction_type,
     std::string oracle_type, dense_parameters& weights, priority_func* calc_priority, double automl_significance_level,
-    double automl_estimator_decay, VW::io::logger* logger, uint32_t& wpp)
+    double automl_estimator_decay, VW::io::logger* logger, uint32_t& wpp, bool lb_trick)
     : global_lease(global_lease)
     , max_live_configs(max_live_configs)
     , random_state(std::move(rand_state))
@@ -104,6 +101,7 @@ interaction_config_manager::interaction_config_manager(uint64_t global_lease, ui
     , automl_estimator_decay(automl_estimator_decay)
     , logger(logger)
     , wpp(wpp)
+    , lb_trick(lb_trick)
 {
   configs.emplace_back(global_lease);
   configs[0].state = VW::reductions::automl::config_state::Live;
@@ -345,8 +343,9 @@ bool interaction_config_manager::swap_eligible_to_inactivate(uint64_t live_slot)
 {
   for (uint64_t other_live_slot = 0; other_live_slot < scores.size(); ++other_live_slot)
   {
-    if (!scores[other_live_slot].first.eligible_to_inactivate && other_live_slot != current_champ &&
-        scores[live_slot].first.lower_bound() > scores[other_live_slot].first.upper_bound())
+    bool better = lb_trick ? scores[live_slot].first.lower_bound() > (1.f - scores[other_live_slot].first.lower_bound())
+                           : scores[live_slot].first.lower_bound() > scores[other_live_slot].first.upper_bound();
+    if (!scores[other_live_slot].first.eligible_to_inactivate && other_live_slot != current_champ && better)
     {
       scores[live_slot].first.eligible_to_inactivate = false;
       scores[other_live_slot].first.eligible_to_inactivate = true;
@@ -412,7 +411,8 @@ void interaction_config_manager::schedule()
 
 bool interaction_config_manager::better(uint64_t live_slot)
 {
-  return scores[live_slot].first.lower_bound() > scores[live_slot].second.upper_bound();
+  return lb_trick ? scores[live_slot].first.lower_bound() > (1.f - scores[live_slot].second.lower_bound())
+                  : scores[live_slot].first.lower_bound() > scores[live_slot].second.upper_bound();
 }
 
 bool interaction_config_manager::worse(uint64_t)
@@ -511,7 +511,7 @@ void interaction_config_manager::persist(metric_sink& metrics, bool verbose)
     if (verbose)
     {
       auto& exclusions = configs[scores[live_slot].first.config_index].exclusions;
-      metrics.set_string("exclusionc_" + std::to_string(live_slot), VW::reductions::exclusions_to_string(exclusions));
+      metrics.set_string("exclusionc_" + std::to_string(live_slot), ::exclusions_to_string(exclusions));
     }
   }
   metrics.set_uint("total_champ_switches", total_champ_switches);
@@ -527,7 +527,6 @@ void interaction_config_manager::apply_config(example* ec, uint64_t live_slot)
     THROW("fatal (automl): trying to apply a config higher than max configs allowed");
   }
 }
-
 }  // namespace automl
 }  // namespace reductions
 }  // namespace VW

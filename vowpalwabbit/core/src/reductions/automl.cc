@@ -24,7 +24,6 @@
 using namespace VW::config;
 using namespace VW::LEARNER;
 
-
 namespace
 {
 template <typename CMType, bool is_explore>
@@ -146,6 +145,7 @@ VW::LEARNER::base_learner* VW::reductions::automl_setup(VW::setup_base_i& stack_
   float automl_significance_level;
   float automl_estimator_decay;
   bool reversed_learning_order = false;
+  bool lb_trick = false;
 
   option_group_definition new_options("[Reduction] Automl");
   new_options
@@ -194,6 +194,10 @@ VW::LEARNER::base_learner* VW::reductions::automl_setup(VW::setup_base_i& stack_
                .default_value(false)
                .help("Debug: learn each config in reversed order (last to first).")
                .experimental())
+      .add(make_option("lb_trick", lb_trick)
+               .default_value(false)
+               .help("Use 1-lower_bound as upper_bound for estimator")
+               .experimental())
       .add(make_option("automl_significance_level", automl_significance_level)
                .keep()
                .default_value(DEFAULT_ALPHA)
@@ -224,8 +228,8 @@ VW::LEARNER::base_learner* VW::reductions::automl_setup(VW::setup_base_i& stack_
   // Note that all.wpp will not be set correctly until after setup
   auto cm = VW::make_unique<VW::reductions::automl::interaction_config_manager>(global_lease, max_live_configs,
       all.get_random_state(), static_cast<uint64_t>(priority_challengers), interaction_type, oracle_type,
-      all.weights.dense_weights, calc_priority, automl_significance_level, automl_estimator_decay, &all.logger,
-      all.wpp);
+      all.weights.dense_weights, calc_priority, automl_significance_level, automl_estimator_decay, &all.logger, all.wpp,
+      lb_trick);
   auto data = VW::make_unique<VW::reductions::automl::automl<VW::reductions::automl::interaction_config_manager>>(
       std::move(cm), &all.logger);
   data->debug_reverse_learning_order = reversed_learning_order;
