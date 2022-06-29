@@ -192,14 +192,14 @@ BOOST_AUTO_TEST_CASE(automl_assert_live_configs_and_lease)
     BOOST_CHECK_EQUAL(aml->cm->scores[1].first.config_index, 3);
     BOOST_CHECK_EQUAL(aml->cm->scores[2].first.config_index, 1);
     BOOST_CHECK_EQUAL(aml->cm->configs.size(), 4);
-    BOOST_CHECK_EQUAL(aml->cm->configs[0].lease, 10);
+    BOOST_CHECK_EQUAL(aml->cm->configs[0].lease, 20);
     BOOST_CHECK_EQUAL(aml->cm->configs[1].lease, 10);
     BOOST_CHECK_EQUAL(aml->cm->configs[2].lease, 20);
     BOOST_CHECK_EQUAL(aml->cm->configs[3].lease, 20);
-    BOOST_CHECK_EQUAL(aml->cm->scores[0].first.update_count, 0);
+    BOOST_CHECK_EQUAL(aml->cm->scores[0].first.update_count, 15);
     BOOST_CHECK_EQUAL(aml->cm->scores[1].first.update_count, 14);
     BOOST_CHECK_EQUAL(aml->cm->scores[2].first.update_count, 4);
-    BOOST_CHECK_EQUAL(aml->cm->scores[0].second.update_count, 0);
+    BOOST_CHECK_EQUAL(aml->cm->scores[0].second.update_count, 15);
     BOOST_CHECK_EQUAL(aml->cm->scores[1].second.update_count, 14);
     BOOST_CHECK_EQUAL(aml->cm->scores[2].second.update_count, 4);
     BOOST_CHECK_EQUAL(aml->cm->index_queue.size(), 0);

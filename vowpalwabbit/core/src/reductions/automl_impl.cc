@@ -495,7 +495,8 @@ void interaction_config_manager::persist(metric_sink& metrics, bool verbose)
   metrics.set_uint("current_champ", current_champ);
   for (uint64_t live_slot = 0; live_slot < scores.size(); ++live_slot)
   {
-    scores[live_slot].first.persist(metrics, "_" + std::to_string(live_slot), verbose, interaction_type);
+    scores[live_slot].first.persist(metrics, "_amls_" + std::to_string(live_slot), verbose, interaction_type);
+    scores[live_slot].second.persist(metrics, "_sc_" + std::to_string(live_slot));
     if (verbose)
     {
       auto& exclusions = configs[scores[live_slot].first.config_index].exclusions;
