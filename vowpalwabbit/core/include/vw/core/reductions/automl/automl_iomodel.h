@@ -28,7 +28,7 @@ size_t write_model_field(
   return bytes;
 }
 
-size_t read_model_field(io_buf& io, VW::reductions::automl::aml_esimator& amls)
+size_t read_model_field(io_buf& io, VW::reductions::automl::aml_estimator& amls)
 {
   size_t bytes = 0;
   bytes += read_model_field(io, reinterpret_cast<VW::estimator_config&>(amls));
@@ -38,7 +38,7 @@ size_t read_model_field(io_buf& io, VW::reductions::automl::aml_esimator& amls)
 }
 
 size_t write_model_field(
-    io_buf& io, const VW::reductions::automl::aml_esimator& amls, const std::string& upstream_name, bool text)
+    io_buf& io, const VW::reductions::automl::aml_estimator& amls, const std::string& upstream_name, bool text)
 {
   size_t bytes = 0;
   bytes += write_model_field(io, reinterpret_cast<const VW::estimator_config&>(amls), upstream_name, text);

@@ -186,14 +186,14 @@ void epsilon_decay_data::check_horizon_bounds()
 
 namespace model_utils
 {
-size_t read_model_field(io_buf& io, VW::reductions::epsilon_decay::epsilon_decay_esimator& estimator)
+size_t read_model_field(io_buf& io, VW::reductions::epsilon_decay::epsilon_decay_estimator& estimator)
 {
   size_t bytes = 0;
   bytes += read_model_field(io, reinterpret_cast<VW::estimator_config&>(estimator));
   return bytes;
 }
 
-size_t write_model_field(io_buf& io, const VW::reductions::epsilon_decay::epsilon_decay_esimator& estimator,
+size_t write_model_field(io_buf& io, const VW::reductions::epsilon_decay::epsilon_decay_estimator& estimator,
     const std::string& upstream_name, bool text)
 {
   size_t bytes = 0;

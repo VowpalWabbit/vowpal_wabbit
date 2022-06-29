@@ -20,10 +20,10 @@ VW::LEARNER::base_learner* epsilon_decay_setup(VW::setup_base_i&);
 
 namespace epsilon_decay
 {
-struct epsilon_decay_esimator : estimator_config
+struct epsilon_decay_estimator : estimator_config
 {
-  epsilon_decay_esimator() = default;
-  epsilon_decay_esimator(double alpha, double tau) : VW::estimator_config(alpha, tau) {}
+  epsilon_decay_estimator() = default;
+  epsilon_decay_estimator(double alpha, double tau) : VW::estimator_config(alpha, tau) {}
   float decayed_epsilon(uint64_t update_count);
 };
 
@@ -40,7 +40,7 @@ struct epsilon_decay_data
   void check_estimator_bounds();
   void check_horizon_bounds();
 
-  std::vector<std::vector<epsilon_decay_esimator>> _estimator_configs;
+  std::vector<std::vector<epsilon_decay_estimator>> _estimator_configs;
   std::vector<uint64_t> _weight_indices;
   uint64_t _min_scope;
   double _epsilon_decay_significance_level;  // Confidence interval
@@ -58,10 +58,10 @@ struct epsilon_decay_data
 
 namespace model_utils
 {
-size_t read_model_field(io_buf&, VW::reductions::epsilon_decay::epsilon_decay_esimator&);
+size_t read_model_field(io_buf&, VW::reductions::epsilon_decay::epsilon_decay_estimator&);
 size_t read_model_field(io_buf&, VW::reductions::epsilon_decay::epsilon_decay_data&);
 size_t write_model_field(
-    io_buf&, const VW::reductions::epsilon_decay::epsilon_decay_esimator&, const std::string&, bool);
+    io_buf&, const VW::reductions::epsilon_decay::epsilon_decay_estimator&, const std::string&, bool);
 size_t write_model_field(io_buf&, const VW::reductions::epsilon_decay::epsilon_decay_data&, const std::string&, bool);
 }  // namespace model_utils
 }  // namespace VW

@@ -27,11 +27,11 @@ constexpr uint64_t CONFIGS_PER_CHAMP_CHANGE = 10;
 
 using interaction_vec_t = std::vector<std::vector<namespace_index>>;
 
-struct aml_esimator : VW::estimator_config
+struct aml_estimator : VW::estimator_config
 {
-  aml_esimator() : VW::estimator_config() {}
-  aml_esimator(double alpha, double tau) : VW::estimator_config(alpha, tau) {}
-  aml_esimator(
+  aml_estimator() : VW::estimator_config() {}
+  aml_estimator(double alpha, double tau) : VW::estimator_config(alpha, tau) {}
+  aml_estimator(
       VW::estimator_config sc, uint64_t config_index, bool eligible_to_inactivate, interaction_vec_t& live_interactions)
       : VW::estimator_config(sc)
   {
@@ -117,7 +117,7 @@ struct interaction_config_manager : config_manager
   // Stores estimators of live configs, size will never exceed max_live_configs. Each pair will be of the form
   // <challenger_estimator, champ_estimator> for the horizon of a given challenger. Thus each challenger has one
   // horizon and the champ has one horizon for each challenger
-  std::vector<std::pair<aml_esimator, estimator_config>> estimators;
+  std::vector<std::pair<aml_estimator, estimator_config>> estimators;
 
   // Maybe not needed with oracle, maps priority to config index, unused configs
   std::priority_queue<std::pair<float, uint64_t>> index_queue;
@@ -280,12 +280,12 @@ namespace model_utils
 template <typename CMType>
 size_t write_model_field(io_buf&, const VW::reductions::automl::automl<CMType>&, const std::string&, bool);
 size_t read_model_field(io_buf&, VW::reductions::automl::exclusion_config&);
-size_t read_model_field(io_buf&, VW::reductions::automl::aml_esimator&);
+size_t read_model_field(io_buf&, VW::reductions::automl::aml_estimator&);
 size_t read_model_field(io_buf&, VW::reductions::automl::interaction_config_manager&);
 template <typename CMType>
 size_t read_model_field(io_buf&, VW::reductions::automl::automl<CMType>&);
 size_t write_model_field(io_buf&, const VW::reductions::automl::exclusion_config&, const std::string&, bool);
-size_t write_model_field(io_buf&, const VW::reductions::automl::aml_esimator&, const std::string&, bool);
+size_t write_model_field(io_buf&, const VW::reductions::automl::aml_estimator&, const std::string&, bool);
 size_t write_model_field(io_buf&, const VW::reductions::automl::interaction_config_manager&, const std::string&, bool);
 }  // namespace model_utils
 VW::string_view to_string(reductions::automl::automl_state state);

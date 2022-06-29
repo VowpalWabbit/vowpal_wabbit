@@ -58,7 +58,7 @@ namespace reductions
 {
 namespace automl
 {
-void aml_esimator::persist(
+void aml_estimator::persist(
     metric_sink& metrics, const std::string& suffix, bool verbose, const std::string& interaction_type)
 {
   VW::estimator_config::persist(metrics, suffix);
@@ -93,7 +93,7 @@ interaction_config_manager::interaction_config_manager(uint64_t global_lease, ui
 {
   configs.emplace_back(global_lease);
   configs[0].state = VW::reductions::automl::config_state::Live;
-  estimators.emplace_back(std::make_pair(aml_esimator(automl_significance_level, automl_estimator_decay),
+  estimators.emplace_back(std::make_pair(aml_estimator(automl_significance_level, automl_estimator_decay),
       estimator_config(automl_significance_level, automl_estimator_decay)));
   ++valid_config_size;
 }
@@ -377,7 +377,7 @@ void interaction_config_manager::schedule()
       // Allocate new estimator if we haven't reached maximum yet
       if (need_new_estimator)
       {
-        estimators.emplace_back(std::make_pair(aml_esimator(automl_significance_level, automl_estimator_decay),
+        estimators.emplace_back(std::make_pair(aml_estimator(automl_significance_level, automl_estimator_decay),
             estimator_config(automl_significance_level, automl_estimator_decay)));
         if (live_slot > priority_challengers) { estimators.back().first.eligible_to_inactivate = true; }
       }
@@ -482,7 +482,7 @@ void interaction_config_manager::update_champ()
      * same horizons, but have swapped which is champion and which is challenger. While we want to swap these
      * statistics, we don't want to alter the other state such as interactions and config_index.
      */
-    estimators[1].first = aml_esimator(std::move(estimators[0].second), estimators[1].first.config_index,
+    estimators[1].first = aml_estimator(std::move(estimators[0].second), estimators[1].first.config_index,
         estimators[1].first.eligible_to_inactivate, estimators[1].first.live_interactions);
     estimators[1].second = estimators[0].first;
     config_oracle();
