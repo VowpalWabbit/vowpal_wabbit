@@ -2,13 +2,13 @@
 // individual contributors. All rights reserved. Released under a BSD (revised)
 // license as described in the file LICENSE.
 
-#include "vw/io/logger.h"
 #include "vw/common/vw_exception.h"
 #include "vw/config/options.h"
 #include "vw/config/options_cli.h"
 #include "vw/core/global_data.h"
 #include "vw/core/memory.h"
 #include "vw/core/vw.h"
+#include "vw/io/logger.h"
 
 #include <fstream>
 
