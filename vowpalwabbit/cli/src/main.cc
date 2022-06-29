@@ -140,7 +140,7 @@ int main(int argc, char* argv[])
   }
   catch (VW::vw_exception& e)
   {
-    main_logger.err_critical("vw: ({}:{}): {}", e.Filename(), e.LineNumber(), e.what());
+    main_logger.err_critical("vw ({}:{}): {}", e.Filename(), e.LineNumber(), e.what());
     return 1;
   }
   catch (std::exception& e)
