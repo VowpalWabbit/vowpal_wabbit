@@ -16,6 +16,7 @@
 #  undef _M_CEE
 #  include <spdlog/sinks/base_sink.h>
 #  include <spdlog/sinks/null_sink.h>
+#  include <spdlog/sinks/stdout_color_sinks.h>
 #  include <spdlog/sinks/stdout_sinks.h>
 #  include <spdlog/spdlog.h>
 #  define _M_CEE 001
@@ -23,6 +24,7 @@
 #else
 #  include <spdlog/sinks/base_sink.h>
 #  include <spdlog/sinks/null_sink.h>
+#  include <spdlog/sinks/stdout_color_sinks.h>
 #  include <spdlog/sinks/stdout_sinks.h>
 #  include <spdlog/spdlog.h>
 #endif
@@ -63,7 +65,7 @@ using logger_legacy_output_func_t = void (*)(void*, const std::string&);
 
 namespace details
 {
-const constexpr char* default_pattern = "[%l] %v";
+const constexpr char* default_pattern = "%^[%l]%$ %v";
 struct logger_impl
 {
   std::unique_ptr<spdlog::logger> _spdlog_stdout_logger;
@@ -377,8 +379,8 @@ public:
 
 inline logger create_default_logger()
 {
-  auto stdout_sink = std::make_shared<spdlog::sinks::stdout_sink_mt>();
-  auto stderr_sink = std::make_shared<spdlog::sinks::stderr_sink_mt>();
+  auto stdout_sink = std::make_shared<spdlog::sinks::stdout_color_sink_mt>();
+  auto stderr_sink = std::make_shared<spdlog::sinks::stderr_color_sink_mt>();
   return logger(std::make_shared<details::logger_impl>(
       std::unique_ptr<spdlog::logger>(new spdlog::logger("vowpal-stdout", stdout_sink)),
       std::unique_ptr<spdlog::logger>(new spdlog::logger("vowpal-stderr", stderr_sink))
