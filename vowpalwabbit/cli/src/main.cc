@@ -3,25 +3,12 @@
 // license as described in the file LICENSE.
 
 #include "vw/io/logger.h"
-#ifdef _WIN32
-#  define NOMINMAX
-#  include <WinSock2.h>
-#else
-#  include <arpa/inet.h>
-#  include <sys/socket.h>
-#endif
 #include "vw/common/vw_exception.h"
 #include "vw/config/options.h"
 #include "vw/config/options_cli.h"
-#include "vw/core/accumulate.h"
-#include "vw/core/best_constant.h"
 #include "vw/core/global_data.h"
 #include "vw/core/memory.h"
-#include "vw/core/parse_args.h"
-#include "vw/core/parse_regressor.h"
 #include "vw/core/vw.h"
-
-#include <sys/timeb.h>
 
 #include <fstream>
 
