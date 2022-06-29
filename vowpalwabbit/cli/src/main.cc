@@ -2,6 +2,7 @@
 // individual contributors. All rights reserved. Released under a BSD (revised)
 // license as described in the file LICENSE.
 
+#include "vw/io/logger.h"
 #ifdef _WIN32
 #  define NOMINMAX
 #  include <WinSock2.h>
@@ -53,6 +54,7 @@ int main(int argc, char* argv[])
                               "logging messages wasn't consistent. Supplying compat will maintain that old behavior. "
                               "Compat is now deprecated so it is recommended that stdout or stderr is chosen"));
 
+  auto main_logger = VW::io::create_default_logger();
   try
   {
     // support multiple vw instances for training of the same datafile for the same instance
@@ -78,6 +80,10 @@ int main(int argc, char* argv[])
         std::vector<std::string> args(l_argv + 1, l_argv + l_argc);
         auto ptr = VW::make_unique<options_cli>(args);
         ptr->add_and_parse(driver_config);
+        auto level = VW::io::get_log_level(log_level);
+        main_logger.set_level(level);
+        auto location = VW::io::get_output_location(log_output_stream);
+        main_logger.set_location(location);
         alls.push_back(setup(std::move(ptr)));
       }
     }
@@ -85,6 +91,10 @@ int main(int argc, char* argv[])
     {
       auto ptr = VW::make_unique<options_cli>(std::vector<std::string>(argv + 1, argv + argc));
       ptr->add_and_parse(driver_config);
+      auto level = VW::io::get_log_level(log_level);
+      main_logger.set_level(level);
+      auto location = VW::io::get_output_location(log_output_stream);
+      main_logger.set_location(location);
       alls.push_back(setup(std::move(ptr)));
     }
 
@@ -130,46 +140,17 @@ int main(int argc, char* argv[])
   }
   catch (VW::vw_exception& e)
   {
-    if (log_level != "off")
-    {
-      if (log_output_stream == "compat" || log_output_stream == "stderr")
-      { std::cerr << "[critical] vw (" << e.Filename() << ":" << e.LineNumber() << "): " << e.what() << std::endl; }
-      else
-      {
-        std::cout << "[critical] vw (" << e.Filename() << ":" << e.LineNumber() << "): " << e.what() << std::endl;
-      }
-    }
+    main_logger.err_critical("vw: ({}:{}): {}", e.Filename(), e.LineNumber(), e.what());
     return 1;
   }
   catch (std::exception& e)
   {
-    // vw is implemented as a library, so we use 'throw runtime_error()'
-    // error 'handling' everywhere.  To reduce stderr pollution
-    // everything gets caught here & the error message is printed
-    // sans the excess exception noise, and core dump.
-    // TODO: If loggers are instantiated within struct vw, this line lives outside of that. Log as critical for now
-    if (log_level != "off")
-    {
-      if (log_output_stream == "compat" || log_output_stream == "stderr")
-      { std::cerr << "[critical] vw: " << e.what() << std::endl; }
-      else
-      {
-        std::cout << "[critical] vw: " << e.what() << std::endl;
-      }
-    }
+    main_logger.err_critical("vw: {}", e.what());
     return 1;
   }
   catch (...)
   {
-    if (log_level != "off")
-    {
-      if (log_output_stream == "compat" || log_output_stream == "stderr")
-      { std::cerr << "[critical] Unknown exception occurred" << std::endl; }
-      else
-      {
-        std::cout << "[critical] vw: unknown exception" << std::endl;
-      }
-    }
+    main_logger.err_critical("vw: unknown exception");
     return 1;
   }
 

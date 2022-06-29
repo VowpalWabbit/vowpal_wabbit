@@ -370,6 +370,50 @@ public:
     _logger_impl->out_critical(fmt, std::forward<Args>(args)...);
   }
 
+  #if FMT_VERSION >= 80000
+  template <typename... Args>
+  void info(fmt::format_string<Args...> fmt, Args&&... args)
+#else
+  template <typename FormatString, typename... Args>
+  void out_info(const FormatString& fmt, Args&&... args)
+#endif
+  {
+    _logger_impl->out_info(fmt, std::forward<Args>(args)...);
+  }
+
+#if FMT_VERSION >= 80000
+  template <typename... Args>
+  void warn(fmt::format_string<Args...> fmt, Args&&... args)
+#else
+  template <typename FormatString, typename... Args>
+  void out_warn(const FormatString& fmt, Args&&... args)
+#endif
+  {
+    _logger_impl->out_warn(fmt, std::forward<Args>(args)...);
+  }
+
+#if FMT_VERSION >= 80000
+  template <typename... Args>
+  void error(fmt::format_string<Args...> fmt, Args&&... args)
+#else
+  template <typename FormatString, typename... Args>
+  void out_error(const FormatString& fmt, Args&&... args)
+#endif
+  {
+    _logger_impl->out_error(fmt, std::forward<Args>(args)...);
+  }
+
+#if FMT_VERSION >= 80000
+  template <typename... Args>
+  void critical(fmt::format_string<Args...> fmt, Args&&... args)
+#else
+  template <typename FormatString, typename... Args>
+  void out_critical(const FormatString& fmt, Args&&... args)
+#endif
+  {
+    _logger_impl->out_critical(fmt, std::forward<Args>(args)...);
+  }
+
   void set_level(log_level lvl);
   void set_max_output(size_t max);
   void set_location(output_location location);
