@@ -139,6 +139,7 @@ VW::LEARNER::base_learner* VW::reductions::automl_setup(VW::setup_base_i& stack_
   float automl_estimator_decay;
   bool reversed_learning_order = false;
   bool lb_trick = false;
+  bool fixed_significance_level;
 
   option_group_definition new_options("[Reduction] Automl");
   new_options
@@ -200,6 +201,10 @@ VW::LEARNER::base_learner* VW::reductions::automl_setup(VW::setup_base_i& stack_
                .keep()
                .default_value(CRESSEREAD_DEFAULT_TAU)
                .help("Time constant for count decay")
+               .experimental())
+      .add(make_option("fixed_significance_level", fixed_significance_level)
+               .keep()
+               .help("Use fixed significance level as opposed to scaling by model count (bonferroni correction)")
                .experimental());
 
   if (!options.add_parse_and_check_necessary(new_options)) { return nullptr; }
@@ -217,6 +222,8 @@ VW::LEARNER::base_learner* VW::reductions::automl_setup(VW::setup_base_i& stack_
   }
 
   if (priority_challengers < 0) { priority_challengers = (static_cast<int>(max_live_configs) - 1) / 2; }
+
+  if (!fixed_significance_level) { automl_significance_level /= max_live_configs; }
 
   // Note that all.wpp will not be set correctly until after setup
   auto cm = VW::make_unique<VW::reductions::automl::interaction_config_manager>(global_lease, max_live_configs,

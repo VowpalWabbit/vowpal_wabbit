@@ -42,20 +42,20 @@ epsilon_decay_data::epsilon_decay_data(uint64_t model_count, uint64_t min_scope,
     , _lb_trick(lb_trick)
 {
   _weight_indices.resize(model_count);
-  _scored_configs.reserve(model_count);
+  _estimator_configs.reserve(model_count);
   std::iota(_weight_indices.begin(), _weight_indices.end(), 0);
   for (uint64_t i = 0; i < model_count; ++i)
   {
-    _scored_configs.emplace_back();
-    _scored_configs.back().reserve(i + 1);
+    _estimator_configs.emplace_back();
+    _estimator_configs.back().reserve(i + 1);
     for (uint64_t j = 0; j < i + 1; ++j)
-    { _scored_configs.back().emplace_back(epsilon_decay_significance_level, epsilon_decay_estimator_decay); }
+    { _estimator_configs.back().emplace_back(epsilon_decay_significance_level, epsilon_decay_estimator_decay); }
   }
 }
 
 void epsilon_decay_data::update_weights(VW::LEARNER::multi_learner& base, VW::multi_ex& examples)
 {
-  auto model_count = static_cast<int64_t>(_scored_configs.size());
+  auto model_count = static_cast<int64_t>(_estimator_configs.size());
   CB::cb_class logged{};
   uint64_t labelled_action = 0;
   const auto it =
@@ -70,7 +70,7 @@ void epsilon_decay_data::update_weights(VW::LEARNER::multi_learner& base, VW::mu
     for (int64_t i = 0; i < model_count; ++i)
     {
       if (!_constant_epsilon)
-      { ep_fts.epsilon = VW::reductions::epsilon_decay::decayed_epsilon(_scored_configs[i][i].update_count); }
+      { ep_fts.epsilon = VW::reductions::epsilon_decay::decayed_epsilon(_estimator_configs[i][i].update_count); }
       if (!base.learn_returns_prediction) { base.predict(examples, _weight_indices[i]); }
       base.learn(examples, _weight_indices[i]);
       for (const auto& a_s : examples[0]->pred.a_s)
@@ -78,7 +78,7 @@ void epsilon_decay_data::update_weights(VW::LEARNER::multi_learner& base, VW::mu
         if (a_s.action == labelled_action)
         {
           const float w = (logged.probability > 0) ? a_s.score / logged.probability : 0;
-          for (int64_t j = 0; j <= i; ++j) { _scored_configs[i][j].update(w, r); }
+          for (int64_t j = 0; j <= i; ++j) { _estimator_configs[i][j].update(w, r); }
           break;
         }
       }
@@ -91,9 +91,9 @@ void epsilon_decay_data::promote_model(int64_t model_ind, int64_t swap_dist)
 {
   for (; model_ind >= 0; --model_ind)
   {
-    for (int64_t score_ind = 0; score_ind < model_ind + 1; ++score_ind)
+    for (int64_t estimator_ind = 0; estimator_ind < model_ind + 1; ++estimator_ind)
     {
-      _scored_configs[model_ind + swap_dist][score_ind + swap_dist] = std::move(_scored_configs[model_ind][score_ind]);
+      _estimator_configs[model_ind + swap_dist][estimator_ind + swap_dist] = std::move(_estimator_configs[model_ind][estimator_ind]);
     }
     std::swap(_weight_indices[model_ind + swap_dist], _weight_indices[model_ind]);
   }
@@ -105,20 +105,20 @@ void epsilon_decay_data::rebalance_greater_models(int64_t model_ind, int64_t swa
   int64_t greater_model = model_ind + swap_dist + 1;
   for (int64_t curr_mod = greater_model; curr_mod < model_count; ++curr_mod)
   {
-    for (int64_t score_ind = model_ind + 1; score_ind >= swap_dist; --score_ind)
-    { _scored_configs[curr_mod][score_ind] = std::move(_scored_configs[curr_mod][score_ind - swap_dist]); }
+    for (int64_t estimator_ind = model_ind + 1; estimator_ind >= swap_dist; --estimator_ind)
+    { _estimator_configs[curr_mod][estimator_ind] = std::move(_estimator_configs[curr_mod][estimator_ind - swap_dist]); }
   }
 }
 
-// Clear values in removed weights and scores
-void epsilon_decay_data::clear_weights_and_scores(int64_t swap_dist, int64_t model_count)
+// Clear values in removed weights and estimators
+void epsilon_decay_data::clear_weights_and_estimators(int64_t swap_dist, int64_t model_count)
 {
   for (int64_t model_ind = 0; model_ind < model_count; ++model_ind)
   {
-    for (int64_t score_ind = 0;
-         score_ind < std::min(static_cast<int64_t>(_scored_configs[model_ind].size()), swap_dist); ++score_ind)
+    for (int64_t estimator_ind = 0;
+         estimator_ind < std::min(static_cast<int64_t>(_estimator_configs[model_ind].size()), swap_dist); ++estimator_ind)
     {
-      _scored_configs[model_ind][score_ind].reset_stats(
+      _estimator_configs[model_ind][estimator_ind].reset_stats(
           _epsilon_decay_significance_level, _epsilon_decay_estimator_decay);
     }
   }
@@ -132,26 +132,26 @@ void epsilon_decay_data::shift_model(int64_t model_ind, int64_t swap_dist, int64
     promote_model(model_ind, swap_dist);
     rebalance_greater_models(model_ind, swap_dist, model_count);
   }
-  clear_weights_and_scores(swap_dist, model_count);
+  clear_weights_and_estimators(swap_dist, model_count);
 }
 
-void epsilon_decay_data::check_score_bounds()
+void epsilon_decay_data::check_estimator_bounds()
 {
   // If the lower bound of a model exceeds the upperbound of the champion, migrate the new model as
   // the new champion.
-  auto model_count = static_cast<int64_t>(_scored_configs.size());
+  auto model_count = static_cast<int64_t>(_estimator_configs.size());
   auto final_model_idx = model_count - 1;
   for (int64_t i = 0; i < final_model_idx; ++i)
   {
     bool better = _lb_trick
-        ? _scored_configs[i][i].lower_bound() > (1.f - _scored_configs[final_model_idx][i].lower_bound())
-        : _scored_configs[i][i].lower_bound() > _scored_configs[final_model_idx][i].upper_bound();
+        ? _estimator_configs[i][i].lower_bound() > (1.f - _estimator_configs[final_model_idx][i].lower_bound())
+        : _estimator_configs[i][i].lower_bound() > _estimator_configs[final_model_idx][i].upper_bound();
     if (better)
     {
       if (_log_champ_changes)
       {
         _logger.out_info("Champion with update count: {} has changed to challenger with update count: {}",
-            _scored_configs[final_model_idx][final_model_idx].update_count, _scored_configs[i][i].update_count);
+            _estimator_configs[final_model_idx][final_model_idx].update_count, _estimator_configs[i][i].update_count);
       }
       shift_model(i, final_model_idx - i, model_count);
       break;
@@ -163,12 +163,12 @@ void epsilon_decay_data::check_horizon_bounds()
 {
   // Check if any model counts are higher than the champion. If so, shift the model
   // back to the beginning of the list and reset its counts
-  auto model_count = static_cast<int64_t>(_scored_configs.size());
+  auto model_count = static_cast<int64_t>(_estimator_configs.size());
   auto final_model_idx = model_count - 1;
   for (int64_t i = 0; i < final_model_idx; ++i)
   {
-    if (_scored_configs[i][i].update_count > _min_scope &&
-        _scored_configs[i][i].update_count > std::pow(_scored_configs[final_model_idx][final_model_idx].update_count,
+    if (_estimator_configs[i][i].update_count > _min_scope &&
+        _estimator_configs[i][i].update_count > std::pow(_estimator_configs[final_model_idx][final_model_idx].update_count,
                                                  static_cast<float>(i + 1) / model_count))
     {
       shift_model(i - 1, 1, model_count);
@@ -181,26 +181,26 @@ void epsilon_decay_data::check_horizon_bounds()
 
 namespace model_utils
 {
-size_t read_model_field(io_buf& io, VW::reductions::epsilon_decay::epsilon_decay_score& score)
+size_t read_model_field(io_buf& io, VW::reductions::epsilon_decay::epsilon_decay_esimator& estimator)
 {
   size_t bytes = 0;
-  bytes += read_model_field(io, reinterpret_cast<VW::scored_config&>(score));
+  bytes += read_model_field(io, reinterpret_cast<VW::estimator_config&>(estimator));
   return bytes;
 }
 
-size_t write_model_field(io_buf& io, const VW::reductions::epsilon_decay::epsilon_decay_score& score,
+size_t write_model_field(io_buf& io, const VW::reductions::epsilon_decay::epsilon_decay_esimator& estimator,
     const std::string& upstream_name, bool text)
 {
   size_t bytes = 0;
-  bytes += write_model_field(io, reinterpret_cast<const VW::scored_config&>(score), upstream_name, text);
+  bytes += write_model_field(io, reinterpret_cast<const VW::estimator_config&>(estimator), upstream_name, text);
   return bytes;
 }
 
 size_t read_model_field(io_buf& io, VW::reductions::epsilon_decay::epsilon_decay_data& epsilon_decay)
 {
   size_t bytes = 0;
-  epsilon_decay._scored_configs.clear();
-  bytes += read_model_field(io, epsilon_decay._scored_configs);
+  epsilon_decay._estimator_configs.clear();
+  bytes += read_model_field(io, epsilon_decay._estimator_configs);
   return bytes;
 }
 
@@ -208,7 +208,7 @@ size_t write_model_field(io_buf& io, const VW::reductions::epsilon_decay::epsilo
     const std::string& upstream_name, bool text)
 {
   size_t bytes = 0;
-  bytes += write_model_field(io, epsilon_decay._scored_configs, upstream_name + "_scored_configs", text);
+  bytes += write_model_field(io, epsilon_decay._estimator_configs, upstream_name + "_estimator_configs", text);
   return bytes;
 }
 }  // namespace model_utils
@@ -219,12 +219,12 @@ namespace
 void predict(
     VW::reductions::epsilon_decay::epsilon_decay_data& data, VW::LEARNER::multi_learner& base, VW::multi_ex& examples)
 {
-  uint64_t final_model_idx = static_cast<uint64_t>(data._scored_configs.size()) - 1;
+  uint64_t final_model_idx = static_cast<uint64_t>(data._estimator_configs.size()) - 1;
   if (!data._constant_epsilon)
   {
     auto& ep_fts = examples[0]->_reduction_features.template get<VW::cb_explore_adf::greedy::reduction_features>();
-    const auto& active_score = data._scored_configs[final_model_idx][final_model_idx];
-    ep_fts.epsilon = VW::reductions::epsilon_decay::decayed_epsilon(active_score.update_count);
+    const auto& active_estimator = data._estimator_configs[final_model_idx][final_model_idx];
+    ep_fts.epsilon = VW::reductions::epsilon_decay::decayed_epsilon(active_estimator.update_count);
   }
   base.predict(examples, data._weight_indices[final_model_idx]);
 }
@@ -233,7 +233,7 @@ void learn(
     VW::reductions::epsilon_decay::epsilon_decay_data& data, VW::LEARNER::multi_learner& base, VW::multi_ex& examples)
 {
   data.update_weights(base, examples);
-  data.check_score_bounds();
+  data.check_estimator_bounds();
   data.check_horizon_bounds();
 }
 
@@ -263,8 +263,8 @@ VW::LEARNER::base_learner* VW::reductions::epsilon_decay_setup(VW::setup_base_i&
   float _epsilon_decay_estimator_decay;
   bool _log_champ_changes = false;
   bool _constant_epsilon = false;
-  bool _bonferroni = false;
   bool _lb_trick = false;
+  bool _fixed_significance_level = false;
 
   option_group_definition new_options("[Reduction] Epsilon-Decaying Exploration");
   new_options
@@ -298,24 +298,22 @@ VW::LEARNER::base_learner* VW::reductions::epsilon_decay_setup(VW::setup_base_i&
                .keep()
                .help("Keep epsilon constant across models")
                .experimental())
-      .add(make_option("bonferroni", _bonferroni)
-               .keep()
-               .help("Use bonferroni correction (divide confidence interval by model count)")
-               .experimental())
       .add(make_option("lb_trick", _lb_trick)
                .default_value(false)
                .help("Use 1-lower_bound as upper_bound for estimator")
+               .experimental())
+      .add(make_option("fixed_significance_level", _fixed_significance_level)
+               .keep()
+               .help("Use fixed significance level as opposed to scaling by model count (bonferroni correction)")
                .experimental());
 
   if (!options.add_parse_and_check_necessary(new_options)) { return nullptr; }
 
   if (model_count < 1) { THROW("Model count must be 1 or greater"); }
 
-  // Scale confidence interval by number of examples
-  float scaled_alpha =
-      _bonferroni ? (_epsilon_decay_significance_level / model_count) : _epsilon_decay_significance_level;
+  if (!_fixed_significance_level) { _epsilon_decay_significance_level /= model_count; }
 
-  auto data = VW::make_unique<VW::reductions::epsilon_decay::epsilon_decay_data>(model_count, _min_scope, scaled_alpha,
+  auto data = VW::make_unique<VW::reductions::epsilon_decay::epsilon_decay_data>(model_count, _min_scope, _epsilon_decay_significance_level,
       _epsilon_decay_estimator_decay, all.weights.dense_weights, all.logger, _log_champ_changes, _constant_epsilon,
       all.wpp, _lb_trick);
 

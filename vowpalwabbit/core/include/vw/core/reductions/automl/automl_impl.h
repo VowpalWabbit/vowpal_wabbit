@@ -6,7 +6,7 @@
 #include "vw/core/array_parameters_dense.h"
 #include "vw/core/learner.h"
 #include "vw/core/rand_state.h"
-#include "vw/core/scored_config.h"
+#include "vw/core/estimator_config.h"
 
 #include <queue>
 
@@ -27,13 +27,13 @@ constexpr uint64_t CONFIGS_PER_CHAMP_CHANGE = 10;
 
 using interaction_vec_t = std::vector<std::vector<namespace_index>>;
 
-struct aml_score : VW::scored_config
+struct aml_esimator : VW::estimator_config
 {
-  aml_score() : VW::scored_config() {}
-  aml_score(double alpha, double tau) : VW::scored_config(alpha, tau) {}
-  aml_score(
-      VW::scored_config sc, uint64_t config_index, bool eligible_to_inactivate, interaction_vec_t& live_interactions)
-      : VW::scored_config(sc)
+  aml_esimator() : VW::estimator_config() {}
+  aml_esimator(double alpha, double tau) : VW::estimator_config(alpha, tau) {}
+  aml_esimator(
+      VW::estimator_config sc, uint64_t config_index, bool eligible_to_inactivate, interaction_vec_t& live_interactions)
+      : VW::estimator_config(sc)
   {
     this->config_index = config_index;
     this->eligible_to_inactivate = eligible_to_inactivate;
@@ -114,10 +114,10 @@ struct interaction_config_manager : config_manager
   // Stores all configs in consideration
   std::vector<exclusion_config> configs;
 
-  // Stores scores of live configs, size will never exceed max_live_configs. Each pair will be of the form
-  // <challenger_score, champ_score> for the horizon of a given challenger. Thus each challenger has one
+  // Stores estimators of live configs, size will never exceed max_live_configs. Each pair will be of the form
+  // <challenger_estimator, champ_estimator> for the horizon of a given challenger. Thus each challenger has one
   // horizon and the champ has one horizon for each challenger
-  std::vector<std::pair<aml_score, scored_config>> scores;
+  std::vector<std::pair<aml_esimator, estimator_config>> estimators;
 
   // Maybe not needed with oracle, maps priority to config index, unused configs
   std::priority_queue<std::pair<float, uint64_t>> index_queue;
@@ -209,22 +209,23 @@ struct automl
 
     std::swap(ec[0]->pred.a_s, buffer_a_s);
 
-    int64_t current_slot_index = cm->scores.size() - 1;
-    int64_t live_slot = current_slot_index;
+    int64_t live_slot = cm->estimators.size() - 1;
     int64_t current_champ = static_cast<int64_t>(cm->current_champ);
-    assert(current_champ >= 0);
+    std::vector<int64_t> chosen_actions(cm->estimators.size());
+    assert(current_champ == 0);
 
     auto restore_guard = VW::scope_exit([this, &ec, &live_slot, &current_champ, &incoming_interactions]() {
       for (example* ex : ec) { ex->interactions = incoming_interactions; }
       if (live_slot >= 0 && live_slot != current_champ) { std::swap(ec[0]->pred.a_s, buffer_a_s); }
     });
 
-    for (; current_slot_index >= 0; current_slot_index -= 1)
+    // Learn on all models and get chosen actions
+    for (int64_t current_slot_index = live_slot; current_slot_index >= 0; current_slot_index -= 1)
     {
       if (!debug_reverse_learning_order) { live_slot = current_slot_index; }
       else
       {
-        live_slot = cm->scores.size() - 1 - current_slot_index;
+        live_slot = cm->estimators.size() - 1 - current_slot_index;
       }
 
       // TODO: what to do if that slot is switched with anew config?
@@ -243,25 +244,21 @@ struct automl
 
       if (!base.learn_returns_prediction) { base.predict(ec, live_slot); }
       base.learn(ec, live_slot);
-      const uint32_t chosen_action = ec[0]->pred.a_s[0].action;
-      if (live_slot == current_champ)
-      {
-        for (size_t live_slot_upd = 0; live_slot_upd < cm->scores.size(); ++live_slot_upd)
-        {
-          if (live_slot_upd == static_cast<size_t>(current_champ)) { continue; }
-          cm->scores[live_slot_upd].second.update(chosen_action == labelled_action ? w : 0, r);
-        }
-        std::swap(ec[0]->pred.a_s, buffer_a_s);
-      }
-      else
-      {
-        cm->scores[live_slot].first.update(chosen_action == labelled_action ? w : 0, r);
-      }
+      chosen_actions[live_slot] = ec[0]->pred.a_s[0].action;
+      if (live_slot == current_champ) { std::swap(ec[0]->pred.a_s, buffer_a_s); }
 
       std::swap(*_all_normalized, per_live_model_state_double[live_slot * 2]);
       std::swap(*_gd_total_weight, per_live_model_state_double[live_slot * 2 + 1]);
       std::swap(*_cb_adf_event_sum, per_live_model_state_uint64[live_slot * 2]);
       std::swap(*_cb_adf_action_sum, per_live_model_state_uint64[live_slot * 2 + 1]);
+    }
+
+    // Update estimators for all challengers. Start with live_slot = 1 since the 0 position has the champion
+    // and does not require estimator updates
+    for (live_slot = 1; live_slot < cm->estimators.size(); ++live_slot)
+    {
+      cm->estimators[live_slot].first.update(chosen_actions[live_slot] == labelled_action ? w : 0, r);
+      cm->estimators[live_slot].second.update(chosen_actions[current_champ] == labelled_action ? w : 0, r);
     }
 
     std::swap(ec[0]->pred.a_s, buffer_a_s);
@@ -283,12 +280,12 @@ namespace model_utils
 template <typename CMType>
 size_t write_model_field(io_buf&, const VW::reductions::automl::automl<CMType>&, const std::string&, bool);
 size_t read_model_field(io_buf&, VW::reductions::automl::exclusion_config&);
-size_t read_model_field(io_buf&, VW::reductions::automl::aml_score&);
+size_t read_model_field(io_buf&, VW::reductions::automl::aml_esimator&);
 size_t read_model_field(io_buf&, VW::reductions::automl::interaction_config_manager&);
 template <typename CMType>
 size_t read_model_field(io_buf&, VW::reductions::automl::automl<CMType>&);
 size_t write_model_field(io_buf&, const VW::reductions::automl::exclusion_config&, const std::string&, bool);
-size_t write_model_field(io_buf&, const VW::reductions::automl::aml_score&, const std::string&, bool);
+size_t write_model_field(io_buf&, const VW::reductions::automl::aml_esimator&, const std::string&, bool);
 size_t write_model_field(io_buf&, const VW::reductions::automl::interaction_config_manager&, const std::string&, bool);
 }  // namespace model_utils
 VW::string_view to_string(reductions::automl::automl_state state);
