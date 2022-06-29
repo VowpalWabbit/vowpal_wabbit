@@ -211,7 +211,7 @@ struct automl
 
     int64_t live_slot = cm->estimators.size() - 1;
     int64_t current_champ = static_cast<int64_t>(cm->current_champ);
-    std::vector<int64_t> chosen_actions(cm->estimators.size());
+    std::vector<uint64_t> chosen_actions(cm->estimators.size());
     assert(current_champ == 0);
 
     auto restore_guard = VW::scope_exit([this, &ec, &live_slot, &current_champ, &incoming_interactions]() {
@@ -255,10 +255,10 @@ struct automl
 
     // Update estimators for all challengers. Start with live_slot = 1 since the 0 position has the champion
     // and does not require estimator updates
-    for (live_slot = 1; live_slot < cm->estimators.size(); ++live_slot)
+    for (uint64_t challenger_slot = 1; challenger_slot < cm->estimators.size(); ++challenger_slot)
     {
-      cm->estimators[live_slot].first.update(chosen_actions[live_slot] == labelled_action ? w : 0, r);
-      cm->estimators[live_slot].second.update(chosen_actions[current_champ] == labelled_action ? w : 0, r);
+      cm->estimators[challenger_slot].first.update(chosen_actions[challenger_slot] == labelled_action ? w : 0, r);
+      cm->estimators[challenger_slot].second.update(chosen_actions[current_champ] == labelled_action ? w : 0, r);
     }
 
     std::swap(ec[0]->pred.a_s, buffer_a_s);

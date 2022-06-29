@@ -235,7 +235,7 @@ action_sum 0
 initial_t 0
 norm normalizer 0
 t 3
-sum_loss -0.0204082
+sum_loss -0.122449
 sum_loss_since_last_dump 0
 dump_interval 4
 min_label -1
