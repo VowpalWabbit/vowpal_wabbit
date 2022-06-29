@@ -4,9 +4,9 @@
 #pragma once
 
 #include "vw/core/array_parameters_dense.h"
+#include "vw/core/estimator_config.h"
 #include "vw/core/learner.h"
 #include "vw/core/rand_state.h"
-#include "vw/core/estimator_config.h"
 
 #include <queue>
 

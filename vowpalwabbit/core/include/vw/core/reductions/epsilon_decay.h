@@ -5,8 +5,8 @@
 
 #include "vw/core/array_parameters.h"
 #include "vw/core/distributionally_robust.h"
-#include "vw/core/reductions_fwd.h"
 #include "vw/core/estimator_config.h"
+#include "vw/core/reductions_fwd.h"
 #include "vw/io/logger.h"
 
 #include <algorithm>
@@ -60,7 +60,8 @@ namespace model_utils
 {
 size_t read_model_field(io_buf&, VW::reductions::epsilon_decay::epsilon_decay_esimator&);
 size_t read_model_field(io_buf&, VW::reductions::epsilon_decay::epsilon_decay_data&);
-size_t write_model_field(io_buf&, const VW::reductions::epsilon_decay::epsilon_decay_esimator&, const std::string&, bool);
+size_t write_model_field(
+    io_buf&, const VW::reductions::epsilon_decay::epsilon_decay_esimator&, const std::string&, bool);
 size_t write_model_field(io_buf&, const VW::reductions::epsilon_decay::epsilon_decay_data&, const std::string&, bool);
 }  // namespace model_utils
 }  // namespace VW

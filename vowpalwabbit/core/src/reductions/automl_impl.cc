@@ -299,7 +299,8 @@ void interaction_config_manager::config_oracle()
     for (uint64_t i = 0; i < max_live_configs; ++i)
     {
       insert_config(
-          std::set<std::vector<namespace_index>>(configs[estimators[current_champ].first.config_index].exclusions), true);
+          std::set<std::vector<namespace_index>>(configs[estimators[current_champ].first.config_index].exclusions),
+          true);
     }
   }
   else
@@ -331,8 +332,9 @@ bool interaction_config_manager::swap_eligible_to_inactivate(uint64_t live_slot)
 {
   for (uint64_t other_live_slot = 0; other_live_slot < estimators.size(); ++other_live_slot)
   {
-    bool better = lb_trick ? estimators[live_slot].first.lower_bound() > (1.f - estimators[other_live_slot].first.lower_bound())
-                           : estimators[live_slot].first.lower_bound() > estimators[other_live_slot].first.upper_bound();
+    bool better = lb_trick
+        ? estimators[live_slot].first.lower_bound() > (1.f - estimators[other_live_slot].first.lower_bound())
+        : estimators[live_slot].first.lower_bound() > estimators[other_live_slot].first.upper_bound();
     if (!estimators[other_live_slot].first.eligible_to_inactivate && other_live_slot != current_champ && better)
     {
       estimators[live_slot].first.eligible_to_inactivate = false;
@@ -471,16 +473,14 @@ void interaction_config_manager::update_champ()
 
     /*
      * These operations rearrange the scoring data to sync up the new champion and old champion. Assume the first
-     * challenger (chal_1) is taking over the champ (old_champ). The estimators would have this configuration before a champ
-     * change: slot_0: <old_champ_dummy, old_champ_dummy_track_champ> slot_1: <chal_1, chal_1_track_champ> Note that the
-     * estimators <old_champ_dummy, old_champ_dummy_track_champ> are not updated since the champion does not need to track
-     * itself. After the champ change, the same estimators will look like this:
-     * slot_0: <chal_1, chal_1_track_champ>
-     * slot_1: <old_champ_dummy, old_champ_dummy_track_champ>
-     * We then want to move the statistics from chal_1_track_champ to old_champ_dummy and chal_1 to
-     * old_champ_dummy_track_champ since they both share the same horizons, but have swapped which is champion and which
-     * is challenger. While we want to swap these statistics, we don't want to alter the other state such as
-     * interactions and config_index.
+     * challenger (chal_1) is taking over the champ (old_champ). The estimators would have this configuration before a
+     * champ change: slot_0: <old_champ_dummy, old_champ_dummy_track_champ> slot_1: <chal_1, chal_1_track_champ> Note
+     * that the estimators <old_champ_dummy, old_champ_dummy_track_champ> are not updated since the champion does not
+     * need to track itself. After the champ change, the same estimators will look like this: slot_0: <chal_1,
+     * chal_1_track_champ> slot_1: <old_champ_dummy, old_champ_dummy_track_champ> We then want to move the statistics
+     * from chal_1_track_champ to old_champ_dummy and chal_1 to old_champ_dummy_track_champ since they both share the
+     * same horizons, but have swapped which is champion and which is challenger. While we want to swap these
+     * statistics, we don't want to alter the other state such as interactions and config_index.
      */
     estimators[1].first = aml_esimator(std::move(estimators[0].second), estimators[1].first.config_index,
         estimators[1].first.eligible_to_inactivate, estimators[1].first.live_interactions);

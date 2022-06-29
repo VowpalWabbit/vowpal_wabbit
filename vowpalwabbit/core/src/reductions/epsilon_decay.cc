@@ -93,7 +93,8 @@ void epsilon_decay_data::promote_model(int64_t model_ind, int64_t swap_dist)
   {
     for (int64_t estimator_ind = 0; estimator_ind < model_ind + 1; ++estimator_ind)
     {
-      _estimator_configs[model_ind + swap_dist][estimator_ind + swap_dist] = std::move(_estimator_configs[model_ind][estimator_ind]);
+      _estimator_configs[model_ind + swap_dist][estimator_ind + swap_dist] =
+          std::move(_estimator_configs[model_ind][estimator_ind]);
     }
     std::swap(_weight_indices[model_ind + swap_dist], _weight_indices[model_ind]);
   }
@@ -106,7 +107,9 @@ void epsilon_decay_data::rebalance_greater_models(int64_t model_ind, int64_t swa
   for (int64_t curr_mod = greater_model; curr_mod < model_count; ++curr_mod)
   {
     for (int64_t estimator_ind = model_ind + 1; estimator_ind >= swap_dist; --estimator_ind)
-    { _estimator_configs[curr_mod][estimator_ind] = std::move(_estimator_configs[curr_mod][estimator_ind - swap_dist]); }
+    {
+      _estimator_configs[curr_mod][estimator_ind] = std::move(_estimator_configs[curr_mod][estimator_ind - swap_dist]);
+    }
   }
 }
 
@@ -116,7 +119,8 @@ void epsilon_decay_data::clear_weights_and_estimators(int64_t swap_dist, int64_t
   for (int64_t model_ind = 0; model_ind < model_count; ++model_ind)
   {
     for (int64_t estimator_ind = 0;
-         estimator_ind < std::min(static_cast<int64_t>(_estimator_configs[model_ind].size()), swap_dist); ++estimator_ind)
+         estimator_ind < std::min(static_cast<int64_t>(_estimator_configs[model_ind].size()), swap_dist);
+         ++estimator_ind)
     {
       _estimator_configs[model_ind][estimator_ind].reset_stats(
           _epsilon_decay_significance_level, _epsilon_decay_estimator_decay);
@@ -168,8 +172,9 @@ void epsilon_decay_data::check_horizon_bounds()
   for (int64_t i = 0; i < final_model_idx; ++i)
   {
     if (_estimator_configs[i][i].update_count > _min_scope &&
-        _estimator_configs[i][i].update_count > std::pow(_estimator_configs[final_model_idx][final_model_idx].update_count,
-                                                 static_cast<float>(i + 1) / model_count))
+        _estimator_configs[i][i].update_count >
+            std::pow(_estimator_configs[final_model_idx][final_model_idx].update_count,
+                static_cast<float>(i + 1) / model_count))
     {
       shift_model(i - 1, 1, model_count);
       break;
@@ -313,9 +318,9 @@ VW::LEARNER::base_learner* VW::reductions::epsilon_decay_setup(VW::setup_base_i&
 
   if (!_fixed_significance_level) { _epsilon_decay_significance_level /= model_count; }
 
-  auto data = VW::make_unique<VW::reductions::epsilon_decay::epsilon_decay_data>(model_count, _min_scope, _epsilon_decay_significance_level,
-      _epsilon_decay_estimator_decay, all.weights.dense_weights, all.logger, _log_champ_changes, _constant_epsilon,
-      all.wpp, _lb_trick);
+  auto data = VW::make_unique<VW::reductions::epsilon_decay::epsilon_decay_data>(model_count, _min_scope,
+      _epsilon_decay_significance_level, _epsilon_decay_estimator_decay, all.weights.dense_weights, all.logger,
+      _log_champ_changes, _constant_epsilon, all.wpp, _lb_trick);
 
   // make sure we setup the rest of the stack with cleared interactions
   // to make sure there are not subtle bugs
