@@ -370,12 +370,12 @@ public:
     _logger_impl->out_critical(fmt, std::forward<Args>(args)...);
   }
 
-  #if FMT_VERSION >= 80000
+#if FMT_VERSION >= 80000
   template <typename... Args>
   void info(fmt::format_string<Args...> fmt, Args&&... args)
 #else
   template <typename FormatString, typename... Args>
-  void out_info(const FormatString& fmt, Args&&... args)
+  void info(const FormatString& fmt, Args&&... args)
 #endif
   {
     _logger_impl->out_info(fmt, std::forward<Args>(args)...);
@@ -386,7 +386,7 @@ public:
   void warn(fmt::format_string<Args...> fmt, Args&&... args)
 #else
   template <typename FormatString, typename... Args>
-  void out_warn(const FormatString& fmt, Args&&... args)
+  void warn(const FormatString& fmt, Args&&... args)
 #endif
   {
     _logger_impl->out_warn(fmt, std::forward<Args>(args)...);
@@ -397,7 +397,7 @@ public:
   void error(fmt::format_string<Args...> fmt, Args&&... args)
 #else
   template <typename FormatString, typename... Args>
-  void out_error(const FormatString& fmt, Args&&... args)
+  void error(const FormatString& fmt, Args&&... args)
 #endif
   {
     _logger_impl->out_error(fmt, std::forward<Args>(args)...);
@@ -408,7 +408,7 @@ public:
   void critical(fmt::format_string<Args...> fmt, Args&&... args)
 #else
   template <typename FormatString, typename... Args>
-  void out_critical(const FormatString& fmt, Args&&... args)
+  void critical(const FormatString& fmt, Args&&... args)
 #endif
   {
     _logger_impl->out_critical(fmt, std::forward<Args>(args)...);
