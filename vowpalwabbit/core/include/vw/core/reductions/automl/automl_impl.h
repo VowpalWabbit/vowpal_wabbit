@@ -3,22 +3,12 @@
 // license as described in the file LICENSE.
 #pragma once
 
-#include "vw/common/string_view.h"
-#include "vw/core/action_score.h"
 #include "vw/core/array_parameters_dense.h"
-#include "vw/core/distributionally_robust.h"
 #include "vw/core/learner.h"
-#include "vw/core/metric_sink.h"
 #include "vw/core/rand_state.h"
 #include "vw/core/scored_config.h"
-#include "vw/core/vw_fwd.h"
 
-#include <fmt/format.h>
-
-#include <map>
-#include <memory>
 #include <queue>
-#include <set>
 
 using namespace VW::config;
 using namespace VW::LEARNER;
@@ -27,10 +17,14 @@ namespace VW
 {
 namespace reductions
 {
-VW::LEARNER::base_learner* automl_setup(VW::setup_base_i&);
-
 namespace automl
 {
+namespace
+{
+constexpr uint64_t MAX_CONFIGS = 10;
+constexpr uint64_t CONFIGS_PER_CHAMP_CHANGE = 10;
+}  // namespace
+
 using interaction_vec_t = std::vector<std::vector<namespace_index>>;
 
 struct aml_score : VW::scored_config
@@ -172,19 +166,118 @@ struct automl
 
   automl(std::unique_ptr<CMType> cm, VW::io::logger* logger) : cm(std::move(cm)), logger(logger) {}
   // This fn gets called before learning any example
-  void one_step(multi_learner&, multi_ex&, CB::cb_class&, uint64_t);
-  void offset_learn(multi_learner&, multi_ex&, CB::cb_class&, uint64_t);
+  // void one_step(multi_learner&, multi_ex&, CB::cb_class&, uint64_t);
+  // template <typename CMType>
+  void one_step(multi_learner& base, multi_ex& ec, CB::cb_class& logged, uint64_t labelled_action)
+  {
+    cm->total_learn_count++;
+    switch (current_state)
+    {
+      case automl_state::Collecting:
+        cm->pre_process(ec);
+        cm->config_oracle();
+        offset_learn(base, ec, logged, labelled_action);
+        current_state = automl_state::Experimenting;
+        break;
+
+      case automl_state::Experimenting:
+        cm->pre_process(ec);
+        cm->schedule();
+        offset_learn(base, ec, logged, labelled_action);
+        cm->update_champ();
+        break;
+
+      default:
+        break;
+    }
+  };
+  // inner loop of learn driven by # MAX_CONFIGS
+  void offset_learn(multi_learner& base, multi_ex& ec, CB::cb_class& logged, uint64_t labelled_action)
+  {
+    interaction_vec_t* incoming_interactions = ec[0]->interactions;
+    for (VW::example* ex : ec)
+    {
+      _UNUSED(ex);
+      assert(ex->interactions == incoming_interactions);
+    }
+
+    // if (ec[0]->interactions != nullptr)
+    // { logger->out_info("offlearn: incoming interaction: {}", ::interaction_vec_t_to_string(*(ec[0]->interactions)));
+    // }
+    const float w = logged.probability > 0 ? 1 / logged.probability : 0;
+    const float r = -logged.cost;
+
+    std::swap(ec[0]->pred.a_s, buffer_a_s);
+
+    int64_t current_slot_index = cm->scores.size() - 1;
+    int64_t live_slot = current_slot_index;
+    int64_t current_champ = static_cast<int64_t>(cm->current_champ);
+    assert(current_champ >= 0);
+
+    auto restore_guard = VW::scope_exit([this, &ec, &live_slot, &current_champ, &incoming_interactions]() {
+      for (example* ex : ec) { ex->interactions = incoming_interactions; }
+      if (live_slot >= 0 && live_slot != current_champ) { std::swap(ec[0]->pred.a_s, buffer_a_s); }
+    });
+
+    for (; current_slot_index >= 0; current_slot_index -= 1)
+    {
+      if (!debug_reverse_learning_order) { live_slot = current_slot_index; }
+      else
+      {
+        live_slot = cm->scores.size() - 1 - current_slot_index;
+      }
+
+      // TODO: what to do if that slot is switched with anew config?
+      std::swap(*_all_normalized, per_live_model_state_double[live_slot * 2]);
+      std::swap(*_gd_total_weight, per_live_model_state_double[live_slot * 2 + 1]);
+      std::swap(*_cb_adf_event_sum, per_live_model_state_uint64[live_slot * 2]);
+      std::swap(*_cb_adf_action_sum, per_live_model_state_uint64[live_slot * 2 + 1]);
+
+      if (live_slot == current_champ) { std::swap(ec[0]->pred.a_s, buffer_a_s); }
+      else
+      {
+        ec[0]->pred.a_s.clear();
+      }
+
+      for (example* ex : ec) { cm->apply_config(ex, live_slot); }
+
+      if (!base.learn_returns_prediction) { base.predict(ec, live_slot); }
+      base.learn(ec, live_slot);
+      const uint32_t chosen_action = ec[0]->pred.a_s[0].action;
+      if (live_slot == current_champ)
+      {
+        for (size_t live_slot_upd = 0; live_slot_upd < cm->scores.size(); ++live_slot_upd)
+        {
+          if (live_slot_upd == static_cast<size_t>(current_champ)) { continue; }
+          cm->scores[live_slot_upd].second.update(chosen_action == labelled_action ? w : 0, r);
+        }
+        std::swap(ec[0]->pred.a_s, buffer_a_s);
+      }
+      else
+      {
+        cm->scores[live_slot].first.update(chosen_action == labelled_action ? w : 0, r);
+      }
+
+      std::swap(*_all_normalized, per_live_model_state_double[live_slot * 2]);
+      std::swap(*_gd_total_weight, per_live_model_state_double[live_slot * 2 + 1]);
+      std::swap(*_cb_adf_event_sum, per_live_model_state_uint64[live_slot * 2]);
+      std::swap(*_cb_adf_action_sum, per_live_model_state_uint64[live_slot * 2 + 1]);
+    }
+
+    std::swap(ec[0]->pred.a_s, buffer_a_s);
+  };
 
 private:
   ACTION_SCORE::action_scores buffer_a_s;  // a sequence of classes with scores.  Also used for probabilities.
 };
-
 }  // namespace automl
+
+void fail_if_enabled(VW::workspace& all, const std::set<std::string>& not_compat);
+std::string interaction_vec_t_to_string(
+    const VW::reductions::automl::interaction_vec_t& interactions, const std::string& interaction_type);
+std::string exclusions_to_string(const std::set<std::vector<VW::namespace_index>>& exclusions);
+
 }  // namespace reductions
-
-VW::string_view to_string(reductions::automl::automl_state state);
-VW::string_view to_string(reductions::automl::config_state state);
-
 namespace model_utils
 {
 template <typename CMType>
@@ -198,6 +291,8 @@ size_t write_model_field(io_buf&, const VW::reductions::automl::exclusion_config
 size_t write_model_field(io_buf&, const VW::reductions::automl::aml_score&, const std::string&, bool);
 size_t write_model_field(io_buf&, const VW::reductions::automl::interaction_config_manager&, const std::string&, bool);
 }  // namespace model_utils
+VW::string_view to_string(reductions::automl::automl_state state);
+VW::string_view to_string(reductions::automl::config_state state);
 }  // namespace VW
 
 namespace fmt
