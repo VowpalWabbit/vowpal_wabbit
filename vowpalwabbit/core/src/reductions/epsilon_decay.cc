@@ -28,17 +28,18 @@ namespace epsilon_decay
 {
 float decayed_epsilon(uint64_t update_count) { return static_cast<float>(std::pow(update_count + 1, -1.f / 3.f)); }
 
-epsilon_decay_data::epsilon_decay_data(uint64_t model_count, uint64_t min_scope, double epsilon_decay_alpha,
-    double epsilon_decay_tau, dense_parameters& weights, VW::io::logger logger, bool log_champ_changes,
-    bool constant_epsilon, uint32_t& wpp)
+epsilon_decay_data::epsilon_decay_data(uint64_t model_count, uint64_t min_scope,
+    double epsilon_decay_significance_level, double epsilon_decay_estimator_decay, dense_parameters& weights,
+    VW::io::logger logger, bool log_champ_changes, bool constant_epsilon, uint32_t& wpp, bool lb_trick)
     : _min_scope(min_scope)
-    , _epsilon_decay_alpha(epsilon_decay_alpha)
-    , _epsilon_decay_tau(epsilon_decay_tau)
+    , _epsilon_decay_significance_level(epsilon_decay_significance_level)
+    , _epsilon_decay_estimator_decay(epsilon_decay_estimator_decay)
     , _weights(weights)
     , _logger(std::move(logger))
     , _log_champ_changes(log_champ_changes)
     , _constant_epsilon(constant_epsilon)
     , _wpp(wpp)
+    , _lb_trick(lb_trick)
 {
   _weight_indices.resize(model_count);
   _scored_configs.reserve(model_count);
@@ -48,7 +49,7 @@ epsilon_decay_data::epsilon_decay_data(uint64_t model_count, uint64_t min_scope,
     _scored_configs.emplace_back();
     _scored_configs.back().reserve(i + 1);
     for (uint64_t j = 0; j < i + 1; ++j)
-    { _scored_configs.back().emplace_back(epsilon_decay_alpha, epsilon_decay_tau); }
+    { _scored_configs.back().emplace_back(epsilon_decay_significance_level, epsilon_decay_estimator_decay); }
   }
 }
 
@@ -116,7 +117,10 @@ void epsilon_decay_data::clear_weights_and_scores(int64_t swap_dist, int64_t mod
   {
     for (int64_t score_ind = 0;
          score_ind < std::min(static_cast<int64_t>(_scored_configs[model_ind].size()), swap_dist); ++score_ind)
-    { _scored_configs[model_ind][score_ind].reset_stats(_epsilon_decay_alpha, _epsilon_decay_tau); }
+    {
+      _scored_configs[model_ind][score_ind].reset_stats(
+          _epsilon_decay_significance_level, _epsilon_decay_estimator_decay);
+    }
   }
   for (int64_t ind = 0; ind < swap_dist; ++ind) { _weights.clear_offset(_weight_indices[ind], _wpp); }
 }
@@ -139,7 +143,10 @@ void epsilon_decay_data::check_score_bounds()
   auto final_model_idx = model_count - 1;
   for (int64_t i = 0; i < final_model_idx; ++i)
   {
-    if (_scored_configs[i][i].lower_bound() > _scored_configs[final_model_idx][i].upper_bound())
+    bool better = _lb_trick
+        ? _scored_configs[i][i].lower_bound() > (1.f - _scored_configs[final_model_idx][i].lower_bound())
+        : _scored_configs[i][i].lower_bound() > _scored_configs[final_model_idx][i].upper_bound();
+    if (better)
     {
       if (_log_champ_changes)
       {
@@ -252,11 +259,12 @@ VW::LEARNER::base_learner* VW::reductions::epsilon_decay_setup(VW::setup_base_i&
   bool epsilon_decay_option;
   uint64_t model_count;
   uint64_t _min_scope;
-  float _epsilon_decay_alpha;
-  float _epsilon_decay_tau;
+  float _epsilon_decay_significance_level;
+  float _epsilon_decay_estimator_decay;
   bool _log_champ_changes = false;
   bool _constant_epsilon = false;
   bool _bonferroni = false;
+  bool _lb_trick = false;
 
   option_group_definition new_options("[Reduction] Epsilon-Decaying Exploration");
   new_options
@@ -275,12 +283,12 @@ VW::LEARNER::base_learner* VW::reductions::epsilon_decay_setup(VW::setup_base_i&
                .default_value(100)
                .help("Minimum example count of model before removing")
                .experimental())
-      .add(make_option("epsilon_decay_alpha", _epsilon_decay_alpha)
+      .add(make_option("epsilon_decay_significance_level", _epsilon_decay_significance_level)
                .keep()
                .default_value(DEFAULT_ALPHA)
-               .help("Set confidence interval for champion change")
+               .help("Set significance level for champion change")
                .experimental())
-      .add(make_option("epsilon_decay_tau", _epsilon_decay_tau)
+      .add(make_option("epsilon_decay_estimator_decay", _epsilon_decay_estimator_decay)
                .keep()
                .default_value(CRESSEREAD_DEFAULT_TAU)
                .help("Time constant for count decay")
@@ -293,6 +301,10 @@ VW::LEARNER::base_learner* VW::reductions::epsilon_decay_setup(VW::setup_base_i&
       .add(make_option("bonferroni", _bonferroni)
                .keep()
                .help("Use bonferroni correction (divide confidence interval by model count)")
+               .experimental())
+      .add(make_option("lb_trick", _lb_trick)
+               .default_value(false)
+               .help("Use 1-lower_bound as upper_bound for estimator")
                .experimental());
 
   if (!options.add_parse_and_check_necessary(new_options)) { return nullptr; }
@@ -300,10 +312,12 @@ VW::LEARNER::base_learner* VW::reductions::epsilon_decay_setup(VW::setup_base_i&
   if (model_count < 1) { THROW("Model count must be 1 or greater"); }
 
   // Scale confidence interval by number of examples
-  float scaled_alpha = _bonferroni ? (_epsilon_decay_alpha / model_count) : _epsilon_decay_alpha;
+  float scaled_alpha =
+      _bonferroni ? (_epsilon_decay_significance_level / model_count) : _epsilon_decay_significance_level;
 
   auto data = VW::make_unique<VW::reductions::epsilon_decay::epsilon_decay_data>(model_count, _min_scope, scaled_alpha,
-      _epsilon_decay_tau, all.weights.dense_weights, all.logger, _log_champ_changes, _constant_epsilon, all.wpp);
+      _epsilon_decay_estimator_decay, all.weights.dense_weights, all.logger, _log_champ_changes, _constant_epsilon,
+      all.wpp, _lb_trick);
 
   // make sure we setup the rest of the stack with cleared interactions
   // to make sure there are not subtle bugs
