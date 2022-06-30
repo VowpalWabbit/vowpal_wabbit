@@ -1,6 +1,6 @@
-#include <vector>
 #include <sstream>
 #include <string>
+#include <vector>
 
 inline std::string get_x_numerical_fts(int feature_size)
 {
