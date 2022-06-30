@@ -380,6 +380,7 @@ Weight Options:
     --cb_explore_adf                        Online explore-exploit for a contextual bandit problem with multiline
                                             action dependent features (type: bool, keep, necessary)
     --epsilon arg                           Epsilon-greedy exploration (type: float, default: 0.05, keep)
+    --debug_write_adf_scores arg            Filename to output underlying cb adf scores to (type: str)
     --first_only                            Only explore the first action in a tie-breaking event (type:
                                             bool, keep)
 [Reduction] Contextual Bandit Exploration with ADF (online cover) Options:
