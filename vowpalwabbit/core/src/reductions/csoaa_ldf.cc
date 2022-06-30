@@ -604,10 +604,28 @@ void end_pass(ldf&) {}
 
 void finish_multiline_example(VW::workspace& all, ldf& data, VW::multi_ex& ec_seq)
 {
+  VW::multi_ex::value_type shared_example = nullptr;
+
+  const bool has_example_header = COST_SENSITIVE::ec_is_example_header(*ec_seq[0]);
+
+  if (has_example_header)
+  {
+    shared_example = ec_seq[0];
+    ec_seq.erase(ec_seq.begin());
+    // merge sequences
+    std::swap(ec_seq[0]->pred, shared_example->pred);
+  }
+
   if (!ec_seq.empty())
   {
     output_example_seq(all, data, ec_seq);
     VW::details::global_print_newline(all.final_prediction_sink, all.logger);
+  }
+
+  if (has_example_header)
+  {
+    std::swap(shared_example->pred, ec_seq[0]->pred);
+    ec_seq.insert(ec_seq.begin(), shared_example);
   }
 
   VW::finish_example(all, ec_seq);
