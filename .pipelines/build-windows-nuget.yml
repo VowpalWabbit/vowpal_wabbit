@@ -81,9 +81,3 @@ steps:
     PathtoPublish: $(Build.SourcesDirectory)\vowpalwabbit\out\package
     ArtifactName: package
   condition: succeededOrFailed()
-- task: PublishBuildArtifacts@1
-  displayName: 'Publish Artifact: test results'
-  inputs:
-    PathtoPublish: $(Build.SourcesDirectory)\vowpalwabbit\out\test
-    ArtifactName: test
-  condition: succeededOrFailed()
