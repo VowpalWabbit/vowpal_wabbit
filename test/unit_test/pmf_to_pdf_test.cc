@@ -30,16 +30,16 @@ struct reduction_test_harness
     { ec.pred.a_s.push_back(ACTION_SCORE::action_score{_predictions[i].first, _predictions[i].second}); }
   }
 
-  void test_learn(base_learner& base, example& ec)
+  void test_learn(base_learner& base, VW::example& ec)
   { /*noop*/
   }
 
-  static void predict(reduction_test_harness& test_reduction, base_learner& base, example& ec)
+  static void predict(reduction_test_harness& test_reduction, base_learner& base, VW::example& ec)
   {
     test_reduction.test_predict(base, ec);
   }
 
-  static void learn(reduction_test_harness& test_reduction, base_learner& base, example& ec)
+  static void learn(reduction_test_harness& test_reduction, base_learner& base, VW::example& ec)
   {
     test_reduction.test_learn(base, ec);
   };
@@ -49,7 +49,7 @@ private:
   int _curr_idx;
 };
 
-using test_learner_t = learner<reduction_test_harness, example>;
+using test_learner_t = learner<reduction_test_harness, VW::example>;
 using predictions_t = vector<pair<uint32_t, float>>;
 
 test_learner_t* get_test_harness_reduction(const predictions_t& base_reduction_predictions)
