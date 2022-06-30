@@ -5359,5 +5359,18 @@
     "input_files": [
       "train-sets/decisionservice.json"
     ]
+  },
+  {
+    "id": 416,
+    "desc": "Test CSOAA multiline LDF with shared features",
+    "vw_command": "--csoaa_ldf=m -d train-sets/csoaa_ldf_multiline_with_shared.txt -q ua -p csoaa_ldf_multiline_with_shared.predict",
+    "diff_files": {
+      "stderr": "train-sets/ref/csoaa_ldf_multiline_with_shared.stderr",
+      "stdout": "train-sets/ref/csoaa_ldf_multiline_with_shared.stdout",
+      "csoaa_ldf_multiline_with_shared.predict": "train-sets/ref/csoaa_ldf_multiline_with_shared.predict"
+    },
+    "input_files": [
+      "train-sets/csoaa_ldf_multiline_with_shared.txt"
+    ]
   }
 ]
