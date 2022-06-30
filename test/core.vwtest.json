@@ -5359,5 +5359,18 @@
     "input_files": [
       "train-sets/decisionservice.json"
     ]
+  },
+  {
+    "id": 416,
+    "desc": "test csoaa_ldf shared with larger dataset",
+    "vw_command": "-d train-sets/csoaa_ldf_shared_big.dat -p csoaa_ldf_shared_big.pred",
+    "diff_files": {
+      "stderr": "train-sets/ref/csoaa_ldf_shared_big.stderr",
+      "stdout": "train-sets/ref/csoaa_ldf_shared_big.stdout",
+      "csoaa_ldf_shared_big.pred": "train-sets/ref/csoaa_ldf_shared_big.predict"
+    },
+    "input_files": [
+      "train-sets/csoaa_ldf_shared_big.dat"
+    ]
   }
 ]
