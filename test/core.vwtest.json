@@ -5359,5 +5359,19 @@
     "input_files": [
       "train-sets/decisionservice.json"
     ]
+  },
+  {
+    "id": 416,
+    "desc": "cb_explore_adf with epsilon-greedy exploration",
+    "vw_command": "--cb_explore_adf --debug_write_adf_scores cb_adf_epsilon.predict --epsilon 0.1 -d train-sets/cb_test.ldf --noconstant -p cbe_adf_epsilon.predict",
+    "diff_files": {
+      "stderr": "train-sets/ref/cbe_adf_epsilon.stderr",
+      "cbe_adf_epsilon.predict": "pred-sets/ref/cbe_adf_epsilon.predict",
+      "cb_adf_epsilon.predict": "pred-sets/ref/cb_adf_scores_inside_explore.pred",
+      "stdout": "train-sets/ref/cbe_adf_epsilon.stdout"
+    },
+    "input_files": [
+      "train-sets/cb_test.ldf"
+    ]
   }
 ]

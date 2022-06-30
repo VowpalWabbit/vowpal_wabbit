@@ -21,6 +21,7 @@ using namespace VW::cb_explore_adf;
 
 namespace
 {
+template <bool keep_copy_adf_score>
 struct cb_explore_adf_greedy
 {
 private:
@@ -28,7 +29,13 @@ private:
   bool _first_only;
 
 public:
-  cb_explore_adf_greedy(float epsilon, bool first_only);
+  ACTION_SCORE::action_scores cb_adf_a_s;
+  std::unique_ptr<VW::io::writer> cb_adf_pred_sink;
+
+  cb_explore_adf_greedy(float epsilon, bool first_only, std::unique_ptr<VW::io::writer> pred_sink)
+      : _epsilon(epsilon), _first_only(first_only), cb_adf_pred_sink(std::move(pred_sink))
+  {
+  }
   ~cb_explore_adf_greedy() = default;
 
   // Should be called through cb_explore_adf_base for pre/post-processing
@@ -40,52 +47,56 @@ public:
 
 private:
   template <bool is_learn>
-  void predict_or_learn_impl(VW::LEARNER::multi_learner& base, VW::multi_ex& examples);
-  void update_example_prediction(VW::multi_ex& examples);
+  void predict_or_learn_impl(VW::LEARNER::multi_learner& base, VW::multi_ex& examples)
+  {
+    // Explore uniform random an epsilon fraction of the time.
+    if (is_learn)
+    {
+      base.learn(examples);
+      if (base.learn_returns_prediction) { update_example_prediction(examples); }
+    }
+    else
+    {
+      base.predict(examples);
+      update_example_prediction(examples);
+    }
+  }
+  void update_example_prediction(VW::multi_ex& examples)
+  {
+    ACTION_SCORE::action_scores& preds = examples[0]->pred.a_s;
+    if (keep_copy_adf_score) { cb_adf_a_s = preds; };
+    uint32_t num_actions = static_cast<uint32_t>(preds.size());
+
+    auto& ep_fts = examples[0]->_reduction_features.template get<VW::cb_explore_adf::greedy::reduction_features>();
+    float actual_ep = (ep_fts.valid_epsilon_supplied()) ? ep_fts.epsilon : _epsilon;
+
+    size_t tied_actions = fill_tied(preds);
+
+    const float prob = actual_ep / num_actions;
+    for (size_t i = 0; i < num_actions; i++) { preds[i].score = prob; }
+    if (!_first_only)
+    {
+      for (size_t i = 0; i < tied_actions; ++i) { preds[i].score += (1.f - actual_ep) / tied_actions; }
+    }
+    else
+    {
+      preds[0].score += 1.f - actual_ep;
+    }
+  }
 };
 
-cb_explore_adf_greedy::cb_explore_adf_greedy(float epsilon, bool first_only)
-    : _epsilon(epsilon), _first_only(first_only)
+template <typename ExploreType>
+void finish_multiline_example2(VW::workspace& all, cb_explore_adf_base<ExploreType>& data, multi_ex& ec_seq)
 {
+  cb_explore_adf_base<ExploreType>::print_multiline_example(all, data, ec_seq);
+  if (data.explore.cb_adf_pred_sink)
+  {
+    auto& ec = *ec_seq[0];
+    ACTION_SCORE::print_action_score(data.explore.cb_adf_pred_sink.get(), data.explore.cb_adf_a_s, ec.tag, all.logger);
+  }
+  VW::finish_example(all, ec_seq);
 }
 
-void cb_explore_adf_greedy::update_example_prediction(VW::multi_ex& examples)
-{
-  ACTION_SCORE::action_scores& preds = examples[0]->pred.a_s;
-  uint32_t num_actions = static_cast<uint32_t>(preds.size());
-
-  auto& ep_fts = examples[0]->_reduction_features.template get<VW::cb_explore_adf::greedy::reduction_features>();
-  float actual_ep = (ep_fts.valid_epsilon_supplied()) ? ep_fts.epsilon : _epsilon;
-
-  size_t tied_actions = fill_tied(preds);
-
-  const float prob = actual_ep / num_actions;
-  for (size_t i = 0; i < num_actions; i++) { preds[i].score = prob; }
-  if (!_first_only)
-  {
-    for (size_t i = 0; i < tied_actions; ++i) { preds[i].score += (1.f - actual_ep) / tied_actions; }
-  }
-  else
-  {
-    preds[0].score += 1.f - actual_ep;
-  }
-}
-
-template <bool is_learn>
-void cb_explore_adf_greedy::predict_or_learn_impl(VW::LEARNER::multi_learner& base, VW::multi_ex& examples)
-{
-  // Explore uniform random an epsilon fraction of the time.
-  if (is_learn)
-  {
-    base.learn(examples);
-    if (base.learn_returns_prediction) { update_example_prediction(examples); }
-  }
-  else
-  {
-    base.predict(examples);
-    update_example_prediction(examples);
-  }
-}
 }  // namespace
 
 VW::LEARNER::base_learner* VW::reductions::cb_explore_adf_greedy_setup(VW::setup_base_i& stack_builder)
@@ -96,6 +107,7 @@ VW::LEARNER::base_learner* VW::reductions::cb_explore_adf_greedy_setup(VW::setup
   bool cb_explore_adf_option = false;
   float epsilon = 0.;
   bool first_only = false;
+  std::string adf_scores_filename;
 
   config::option_group_definition new_options("[Reduction] Contextual Bandit Exploration with ADF (greedy)");
   new_options
@@ -108,6 +120,8 @@ VW::LEARNER::base_learner* VW::reductions::cb_explore_adf_greedy_setup(VW::setup
                .keep()
                .allow_override()
                .help("Epsilon-greedy exploration"))
+      .add(make_option("debug_write_adf_scores", adf_scores_filename)
+               .help("Filename to output underlying cb adf scores to"))
       .add(make_option("first_only", first_only).keep().help("Only explore the first action in a tie-breaking event"));
 
   // This is a special case "cb_explore_adf" is needed to enable this. BUT it is only enabled when all of the other
@@ -137,21 +151,45 @@ VW::LEARNER::base_learner* VW::reductions::cb_explore_adf_greedy_setup(VW::setup
 
   bool with_metrics = options.was_supplied("extra_metrics");
 
-  using explore_type = cb_explore_adf_base<cb_explore_adf_greedy>;
-  auto data = VW::make_unique<explore_type>(with_metrics, epsilon, first_only);
+  if (!adf_scores_filename.empty())
+  {
+    using explore_type = cb_explore_adf_base<cb_explore_adf_greedy<true>>;
+    auto data = VW::make_unique<explore_type>(
+        with_metrics, epsilon, first_only, std::move(VW::io::open_file_writer(adf_scores_filename)));
 
-  if (epsilon < 0.0 || epsilon > 1.0) { THROW("The value of epsilon must be in [0,1]"); }
-  auto* l = make_reduction_learner(std::move(data), base, explore_type::learn, explore_type::predict,
-      stack_builder.get_setupfn_name(cb_explore_adf_greedy_setup))
-                .set_learn_returns_prediction(base->learn_returns_prediction)
-                .set_input_label_type(VW::label_type_t::cb)
-                .set_output_label_type(VW::label_type_t::cb)
-                .set_input_prediction_type(VW::prediction_type_t::action_scores)
-                .set_output_prediction_type(VW::prediction_type_t::action_probs)
-                .set_params_per_weight(problem_multiplier)
-                .set_finish_example(explore_type::finish_multiline_example)
-                .set_print_example(explore_type::print_multiline_example)
-                .set_persist_metrics(explore_type::persist_metrics)
-                .build(&all.logger);
-  return make_base(*l);
+    if (epsilon < 0.0 || epsilon > 1.0) { THROW("The value of epsilon must be in [0,1]"); }
+    auto* l = make_reduction_learner(std::move(data), base, explore_type::learn, explore_type::predict,
+        stack_builder.get_setupfn_name(cb_explore_adf_greedy_setup))
+                  .set_learn_returns_prediction(base->learn_returns_prediction)
+                  .set_input_label_type(VW::label_type_t::cb)
+                  .set_output_label_type(VW::label_type_t::cb)
+                  .set_input_prediction_type(VW::prediction_type_t::action_scores)
+                  .set_output_prediction_type(VW::prediction_type_t::action_probs)
+                  .set_params_per_weight(problem_multiplier)
+                  .set_finish_example(finish_multiline_example2)
+                  .set_print_example(explore_type::print_multiline_example)
+                  .set_persist_metrics(explore_type::persist_metrics)
+                  .build(&all.logger);
+    return make_base(*l);
+  }
+  else
+  {
+    using explore_type = cb_explore_adf_base<cb_explore_adf_greedy<false>>;
+    auto data = VW::make_unique<explore_type>(with_metrics, epsilon, first_only, nullptr);
+
+    if (epsilon < 0.0 || epsilon > 1.0) { THROW("The value of epsilon must be in [0,1]"); }
+    auto* l = make_reduction_learner(std::move(data), base, explore_type::learn, explore_type::predict,
+        stack_builder.get_setupfn_name(cb_explore_adf_greedy_setup))
+                  .set_learn_returns_prediction(base->learn_returns_prediction)
+                  .set_input_label_type(VW::label_type_t::cb)
+                  .set_output_label_type(VW::label_type_t::cb)
+                  .set_input_prediction_type(VW::prediction_type_t::action_scores)
+                  .set_output_prediction_type(VW::prediction_type_t::action_probs)
+                  .set_params_per_weight(problem_multiplier)
+                  .set_finish_example(explore_type::finish_multiline_example)
+                  .set_print_example(explore_type::print_multiline_example)
+                  .set_persist_metrics(explore_type::persist_metrics)
+                  .build(&all.logger);
+    return make_base(*l);
+  }
 }
