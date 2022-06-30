@@ -67,7 +67,7 @@ free_ptr<T> scoped_calloc_or_throw(Args&&... args)
 
 namespace VW
 {
-#if __cplusplus >= 201402L // C++14 and beyond
+#if __cplusplus >= 201402L  // C++14 and beyond
 using std::make_unique;
 #else
 template <typename T, typename... Args>
