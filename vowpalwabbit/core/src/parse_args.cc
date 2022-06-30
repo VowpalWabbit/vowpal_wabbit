@@ -1197,10 +1197,7 @@ void parse_example_tweaks(options_i& options, VW::workspace& all)
         << loss_function);
   }
 
-  if (loss_function_accepts_quantile_tau)
-  {
-    all.loss = get_loss_function(all, loss_function, quantile_loss_parameter);
-  }
+  if (loss_function_accepts_quantile_tau) { all.loss = get_loss_function(all, loss_function, quantile_loss_parameter); }
   else if (loss_function_accepts_expectile_q)
   {
     if (expectile_loss_parameter <= 0.0f || expectile_loss_parameter > 0.5f)

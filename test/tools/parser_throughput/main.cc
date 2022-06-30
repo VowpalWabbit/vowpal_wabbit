@@ -107,10 +107,7 @@ int main(int argc, char** argv)
   }
 
   const auto type = to_parser_type(type_str);
-  if (type == parser_type::dsjson)
-  {
-    args += " --dsjson";
-  }
+  if (type == parser_type::dsjson) { args += " --dsjson"; }
 
   auto vw = VW::initialize(args, nullptr, false, nullptr, nullptr);
   const auto is_multiline = vw->l->is_multiline();
@@ -163,10 +160,7 @@ int main(int argc, char** argv)
           (VW::example_factory_t)&VW::get_unused_example, (void*)vw, &interaction);
       VW::multi_ex result;
       result.reserve(examples.size());
-      for (size_t i = 0; i < examples.size(); ++i)
-      {
-        result.push_back(examples[i]);
-      }
+      for (size_t i = 0; i < examples.size(); ++i) { result.push_back(examples[i]); }
       // TODO - finish_example should support a v_array as input.
       VW::finish_example(*vw, result);
     }

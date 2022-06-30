@@ -13,7 +13,7 @@ extern "C"
    * Method:    predict
    * Signature: (Ljava/lang/String;ZJ)LvowpalWabbit/responses/DecisionScores;
    */
-  JNIEXPORT jobject JNICALL Java_vowpalWabbit_learner_VWCCBLearner_predict(JNIEnv *, jobject, jstring, jboolean, jlong);
+  JNIEXPORT jobject JNICALL Java_vowpalWabbit_learner_VWCCBLearner_predict(JNIEnv*, jobject, jstring, jboolean, jlong);
 
   /*
    * Class:     vowpalWabbit_learner_VWCCBLearner
@@ -21,7 +21,7 @@ extern "C"
    * Signature: ([Ljava/lang/String;ZJ)LvowpalWabbit/responses/DecisionScores;
    */
   JNIEXPORT jobject JNICALL Java_vowpalWabbit_learner_VWCCBLearner_predictMultiline(
-      JNIEnv *, jobject, jobjectArray, jboolean, jlong);
+      JNIEnv*, jobject, jobjectArray, jboolean, jlong);
 
 #  ifdef __cplusplus
 }
