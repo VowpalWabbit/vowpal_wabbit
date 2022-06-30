@@ -6,7 +6,8 @@
 
 #include <boost/test/unit_test.hpp>
 
-BOOST_AUTO_TEST_CASE(cb_explore_adf_should_throw_empty_multi_example) {
+BOOST_AUTO_TEST_CASE(cb_explore_adf_should_throw_empty_multi_example)
+{
   auto vw = VW::initialize("--cb_explore_adf --quiet", nullptr, false, nullptr, nullptr);
   VW::multi_ex example_collection;
 
