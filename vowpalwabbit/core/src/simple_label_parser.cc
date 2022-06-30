@@ -3,6 +3,7 @@
 // license as described in the file LICENSE.
 
 #include "vw/core/simple_label_parser.h"
+#include "vw/core/vw_string_view_fmt.h"
 
 #include "vw/common/string_view.h"
 #include "vw/core/best_constant.h"
@@ -10,7 +11,6 @@
 #include "vw/core/example.h"
 #include "vw/core/model_utils.h"
 #include "vw/core/parse_primitives.h"
-#include "vw/core/vw_string_view_fmt.h"
 #include "vw/io/logger.h"
 
 #include <cfloat>
