@@ -97,7 +97,7 @@ jobs:
           clang-format --version
       - name: Check code formatting for codebase
         shell: bash
-        run: ./utl/clang-format check
+        run: ./utl/clang-format.sh check
         env:
           GH_WORKFLOW_LOGGING: true
       - name: Check code formatting for diff

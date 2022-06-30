@@ -58,7 +58,7 @@ void get_hashv(char* in, size_t len, unsigned* out)
 
 char* bf_new(unsigned b)
 {
-  char* bf = (char* )calloc(1, byte_len(b));
+  char* bf = (char*)calloc(1, byte_len(b));
   return bf;
 }
 
@@ -96,7 +96,7 @@ std::vector<scored_example> scored_examples;
 
 struct compare_scored_examples
 {
-  bool operator()(scored_example const &lhs, scored_example const &rhs) const { return lhs.first > rhs.first; }
+  bool operator()(scored_example const& lhs, scored_example const& rhs) const { return lhs.first > rhs.first; }
 };
 
 std::priority_queue<scored_example, std::vector<scored_example>, compare_scored_examples> pr_queue;
@@ -235,10 +235,7 @@ int main(int argc, char* argv[])
 
         const std::string str(estr);
 
-        if (pr_queue.size() < (size_t)topk)
-        {
-          pr_queue.push(std::make_pair(ex->pred.scalar, str));
-        }
+        if (pr_queue.size() < (size_t)topk) { pr_queue.push(std::make_pair(ex->pred.scalar, str)); }
         else if (pr_queue.top().first < ex->pred.scalar)
         {
           pr_queue.pop();
@@ -262,10 +259,7 @@ int main(int argc, char* argv[])
     }
   }
 
-  if (verbose > 0)
-  {
-    progress();
-  }
+  if (verbose > 0) { progress(); }
 
   VW::finish(*model);
   fclose(fI);

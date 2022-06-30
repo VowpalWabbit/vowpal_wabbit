@@ -9,6 +9,8 @@
 
 // This file should NOT be included in other header files.
 #pragma once
+#include "vw/common/string_view.h"
+
 #include <fmt/format.h>
 
 namespace fmt
