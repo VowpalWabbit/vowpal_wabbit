@@ -3,28 +3,28 @@
 /* Header for class vowpalWabbit_learner_VWMultilabelsLearner */
 
 #ifndef _Included_vowpalWabbit_learner_VWMultilabelsLearner
-#define _Included_vowpalWabbit_learner_VWMultilabelsLearner
-#ifdef __cplusplus
+#  define _Included_vowpalWabbit_learner_VWMultilabelsLearner
+#  ifdef __cplusplus
 extern "C"
 {
-#endif
-/*
- * Class:     vowpalWabbit_learner_VWMultilabelsLearner
- * Method:    predict
- * Signature: (Ljava/lang/String;ZJ)LvowpalWabbit/responses/Multilabels;
- */
-JNIEXPORT jobject JNICALL Java_vowpalWabbit_learner_VWMultilabelsLearner_predict
-(JNIEnv *, jobject, jstring, jboolean, jlong);
+#  endif
+  /*
+   * Class:     vowpalWabbit_learner_VWMultilabelsLearner
+   * Method:    predict
+   * Signature: (Ljava/lang/String;ZJ)LvowpalWabbit/responses/Multilabels;
+   */
+  JNIEXPORT jobject JNICALL Java_vowpalWabbit_learner_VWMultilabelsLearner_predict(
+      JNIEnv*, jobject, jstring, jboolean, jlong);
 
-/*
- * Class:     vowpalWabbit_learner_VWMultilabelsLearner
- * Method:    predictMultiline
- * Signature: ([Ljava/lang/String;ZJ)LvowpalWabbit/responses/Multilabels;
- */
-JNIEXPORT jobject JNICALL Java_vowpalWabbit_learner_VWMultilabelsLearner_predictMultiline
-(JNIEnv *, jobject, jobjectArray, jboolean, jlong);
+  /*
+   * Class:     vowpalWabbit_learner_VWMultilabelsLearner
+   * Method:    predictMultiline
+   * Signature: ([Ljava/lang/String;ZJ)LvowpalWabbit/responses/Multilabels;
+   */
+  JNIEXPORT jobject JNICALL Java_vowpalWabbit_learner_VWMultilabelsLearner_predictMultiline(
+      JNIEnv*, jobject, jobjectArray, jboolean, jlong);
 
-#ifdef __cplusplus
+#  ifdef __cplusplus
 }
-#endif
+#  endif
 #endif

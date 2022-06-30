@@ -12,7 +12,8 @@ bool are_same(float a, float b) { return std::abs(a - b) < std::numeric_limits<f
 
 BOOST_AUTO_TEST_CASE(pow10_tests)
 {
-  // In reality most of these tests would all evaluate to the same. The reason is that the epsilon is usually around 1.2e-7
+  // In reality most of these tests would all evaluate to the same. The reason is that the epsilon is usually
+  // around 1.2e-7
   const float base = 10;
   BOOST_CHECK(are_same(VW::fast_pow10(-127), static_cast<float>(std::pow(base, -127))));
   BOOST_CHECK(are_same(VW::fast_pow10(-46), static_cast<float>(std::pow(base, -46))));
