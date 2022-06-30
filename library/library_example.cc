@@ -4,12 +4,13 @@
 #include <cstdio>
 
 inline feature vw_feature_from_string(VW::workspace& v, const std::string& fstr, unsigned long seed, float val)
-{ auto foo = VW::hash_feature(v, fstr, seed);
-  feature f = { val, foo};
+{
+  auto foo = VW::hash_feature(v, fstr, seed);
+  feature f = {val, foo};
   return f;
 }
 
-int main(int argc, char *argv[])
+int main(int argc, char* argv[])
 {
   VW::workspace* model = VW::initialize("--hash all -q st --noconstant -f train2.vw --no_stdin");
 
@@ -50,10 +51,11 @@ int main(int argc, char *argv[])
   model2->learn(*vec2);
   std::cerr << "p4 = " << vec2->pred.scalar << std::endl;
 
-  size_t len=0;
+  size_t len = 0;
   VW::primitive_feature_space* pfs = VW::export_example(*model2, vec2, len);
   for (size_t i = 0; i < len; i++)
-  { std::cout << "namespace = " << pfs[i].name;
+  {
+    std::cout << "namespace = " << pfs[i].name;
     for (size_t j = 0; j < pfs[i].len; j++)
     {
       std::cout << " " << pfs[i].fs[j].weight_index << ":" << pfs[i].fs[j].x << ":"

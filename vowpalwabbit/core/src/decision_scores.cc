@@ -16,8 +16,8 @@
 #include <iostream>
 
 template <typename LabelPrintFunc>
-void print_update(VW::workspace& all, const VW::multi_ex& slots,
-    const VW::decision_scores_t& decision_scores, size_t num_features, LabelPrintFunc label_print_func)
+void print_update(VW::workspace& all, const VW::multi_ex& slots, const VW::decision_scores_t& decision_scores,
+    size_t num_features, LabelPrintFunc label_print_func)
 {
   if (all.sd->weighted_examples() >= all.sd->dump_interval && !all.quiet && !all.bfgs)
   {

@@ -248,8 +248,7 @@ struct automl
       {
         for (size_t live_slot_upd = 0; live_slot_upd < cm->scores.size(); ++live_slot_upd)
         {
-          if (live_slot_upd == static_cast<size_t>(current_champ))
-          { cm->scores[live_slot_upd].first.update(chosen_action == labelled_action ? w : 0, r); }
+          if (live_slot_upd == static_cast<size_t>(current_champ)) { continue; }
           cm->scores[live_slot_upd].second.update(chosen_action == labelled_action ? w : 0, r);
         }
         std::swap(ec[0]->pred.a_s, buffer_a_s);
