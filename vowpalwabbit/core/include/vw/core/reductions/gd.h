@@ -26,7 +26,7 @@ namespace GD
 {
 struct gd
 {
-  //  double normalized_sum_norm_x;
+  double normalized_sum_norm_x;
   double total_weight = 0.0;
   size_t no_win_counter = 0;
   size_t early_stop_thres = 0;
@@ -52,7 +52,7 @@ void print_features(VW::workspace& all, VW::example& ec);
 void print_audit_features(VW::workspace&, VW::example& ec);
 void save_load_regressor(VW::workspace& all, io_buf& model_file, bool read, bool text);
 void save_load_online_state(VW::workspace& all, io_buf& model_file, bool read, bool text, double& total_weight,
-    GD::gd* g = nullptr, uint32_t ftrl_size = 0);
+    double normalized_sum_norm_x = 0.0, GD::gd* g = nullptr, uint32_t ftrl_size = 0);
 
 template <class T>
 struct multipredict_info

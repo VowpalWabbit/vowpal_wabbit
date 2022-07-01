@@ -43,6 +43,7 @@ struct ftrl_update_data
   float predict = 0.f;
   float normalized_squared_norm_x = 0.f;
   float average_squared_norm_x = 0.f;
+  double normalized_sum_norm_x = 0.0;
 };
 
 struct ftrl
@@ -249,9 +250,9 @@ void coin_betting_predict(ftrl& b, base_learner&, VW::example& ec)
   GD::foreach_feature<ftrl_update_data, inner_coin_betting_predict>(*b.all, ec, b.data, num_features_from_interactions);
   ec.num_features_from_interactions = num_features_from_interactions;
 
-  b.all->normalized_sum_norm_x += (static_cast<double>(ec.weight)) * b.data.normalized_squared_norm_x;
+  b.data.normalized_sum_norm_x += (static_cast<double>(ec.weight)) * b.data.normalized_squared_norm_x;
   b.total_weight += ec.weight;
-  b.data.average_squared_norm_x = (static_cast<float>((b.all->normalized_sum_norm_x + 1e-6) / b.total_weight));
+  b.data.average_squared_norm_x = (static_cast<float>((b.data.normalized_sum_norm_x + 1e-6) / b.total_weight));
 
   ec.partial_prediction = b.data.predict / b.data.average_squared_norm_x;
 
@@ -394,7 +395,11 @@ void save_load(ftrl& b, io_buf& model_file, bool read, bool text)
     msg << ":" << resume << "\n";
     bin_text_read_write_fixed(model_file, reinterpret_cast<char*>(&resume), sizeof(resume), read, msg, text);
 
-    if (resume) { GD::save_load_online_state(*all, model_file, read, text, b.total_weight, nullptr, b.ftrl_size); }
+    if (resume)
+    {
+      GD::save_load_online_state(
+          *all, model_file, read, text, b.total_weight, b.data.normalized_sum_norm_x, nullptr, b.ftrl_size);
+    }
     else
     {
       GD::save_load_regressor(*all, model_file, read, text);
@@ -463,7 +468,7 @@ base_learner* VW::reductions::ftrl_setup(VW::setup_base_i& stack_builder)
 
   b->all = &all;
   b->no_win_counter = 0;
-  b->all->normalized_sum_norm_x = 0;
+  b->data.normalized_sum_norm_x = 0;
   b->total_weight = 0;
 
   std::string algorithm_name;

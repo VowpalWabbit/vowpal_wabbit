@@ -559,14 +559,14 @@ float get_pred_per_update(gd& g, VW::example& ec)
   {
     if (!stateless)
     {
-      g.all->normalized_sum_norm_x += (static_cast<double>(ec.weight)) * nd.norm_x;
+      g.normalized_sum_norm_x += (static_cast<double>(ec.weight)) * nd.norm_x;
       g.total_weight += ec.weight;
       g.update_multiplier = average_update<sqrt_rate, adaptive, normalized>(
-          static_cast<float>(g.total_weight), static_cast<float>(g.all->normalized_sum_norm_x), g.neg_norm_power);
+          static_cast<float>(g.total_weight), static_cast<float>(g.normalized_sum_norm_x), g.neg_norm_power);
     }
     else
     {
-      float nsnx = (static_cast<float>(g.all->normalized_sum_norm_x)) + ec.weight * nd.norm_x;
+      float nsnx = (static_cast<float>(g.normalized_sum_norm_x)) + ec.weight * nd.norm_x;
       float tw = static_cast<float>(g.total_weight) + ec.weight;
       g.update_multiplier = average_update<sqrt_rate, adaptive, normalized>(tw, nsnx, g.neg_norm_power);
     }
@@ -984,8 +984,8 @@ void save_load_online_state(VW::workspace& all, io_buf& model_file, bool read, b
   }
 }
 
-void save_load_online_state(
-    VW::workspace& all, io_buf& model_file, bool read, bool text, double& total_weight, gd* g, uint32_t ftrl_size)
+void save_load_online_state(VW::workspace& all, io_buf& model_file, bool read, bool text, double& total_weight,
+    double normalized_sum_norm_x, gd* g, uint32_t ftrl_size)
 {
   std::stringstream msg;
 
@@ -993,9 +993,9 @@ void save_load_online_state(
   bin_text_read_write_fixed(
       model_file, reinterpret_cast<char*>(&all.initial_t), sizeof(all.initial_t), read, msg, text);
 
-  msg << "norm normalizer " << all.normalized_sum_norm_x << "\n";
-  bin_text_read_write_fixed(model_file, reinterpret_cast<char*>(&all.normalized_sum_norm_x),
-      sizeof(all.normalized_sum_norm_x), read, msg, text);
+  msg << "norm normalizer " << normalized_sum_norm_x << "\n";
+  bin_text_read_write_fixed(
+      model_file, reinterpret_cast<char*>(&normalized_sum_norm_x), sizeof(normalized_sum_norm_x), read, msg, text);
 
   msg << "t " << all.sd->t << "\n";
   bin_text_read_write_fixed(model_file, reinterpret_cast<char*>(&all.sd->t), sizeof(all.sd->t), read, msg, text);
@@ -1167,7 +1167,7 @@ void save_load(gd& g, io_buf& model_file, bool read, bool text)
             "save_resume functionality is known to have inaccuracy in model files version less than '{}'",
             VW::version_definitions::VERSION_SAVE_RESUME_FIX.to_string());
       }
-      save_load_online_state(all, model_file, read, text, g.total_weight, &g);
+      save_load_online_state(all, model_file, read, text, g.total_weight, g.normalized_sum_norm_x, &g);
     }
     else
     {
@@ -1312,7 +1312,7 @@ base_learner* VW::reductions::gd_setup(VW::setup_base_i& stack_builder)
   if (options.was_supplied("l2_state")) { all.sd->contraction = local_contraction; }
 
   g->all = &all;
-  g->all->normalized_sum_norm_x = 0;
+  g->normalized_sum_norm_x = 0;
   g->no_win_counter = 0;
   g->total_weight = 0.;
   all.weights.adaptive = true;
@@ -1323,7 +1323,7 @@ base_learner* VW::reductions::gd_setup(VW::setup_base_i& stack_builder)
   if (all.initial_t > 0)  // for the normalized update: if initial_t is bigger than 1 we interpret this as if we had
                           // seen (all.initial_t) previous fake datapoints all with norm 1
   {
-    g->all->normalized_sum_norm_x = all.initial_t;
+    g->normalized_sum_norm_x = all.initial_t;
     g->total_weight = all.initial_t;
   }
 
