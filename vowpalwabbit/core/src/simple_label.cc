@@ -2,6 +2,8 @@
 // individual contributors. All rights reserved. Released under a BSD (revised)
 // license as described in the file LICENSE.
 
+#include "vw/core/vw_string_view_fmt.h"
+
 #include "vw/common/string_view.h"
 #include "vw/core/accumulate.h"
 #include "vw/core/best_constant.h"
@@ -9,7 +11,6 @@
 #include "vw/core/example.h"
 #include "vw/core/parse_primitives.h"
 #include "vw/core/vw.h"
-#include "vw/core/vw_string_view_fmt.h"
 #include "vw/io/logger.h"
 
 #include <cfloat>
