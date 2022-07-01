@@ -30,12 +30,16 @@ extern "C"
    */
   JNIEXPORT jobject JNICALL Java_org_vowpalwabbit_spark_VowpalWabbitNative_learn(JNIEnv*, jobject, jobjectArray);
 
+  JNIEXPORT jobject JNICALL Java_org_vowpalwabbit_spark_VowpalWabbitNative_learnFromString(JNIEnv*, jobject, jstring);
+
   /*
    * Class:     org_vowpalwabbit_spark_VowpalWabbitNative
    * Method:    predict
    * Signature: ([])J
    */
   JNIEXPORT jobject JNICALL Java_org_vowpalwabbit_spark_VowpalWabbitNative_predict(JNIEnv*, jobject, jobjectArray);
+
+  JNIEXPORT jobject JNICALL Java_org_vowpalwabbit_spark_VowpalWabbitNative_predictFromString(JNIEnv*, jobject, jstring);
 
   /*
    * Class:     org_vowpalwabbit_spark_VowpalWabbitNative
