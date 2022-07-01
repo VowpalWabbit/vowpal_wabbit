@@ -322,7 +322,8 @@ VW::LEARNER::base_learner* VW::reductions::oaa_setup(VW::setup_base_i& stack_bui
       .add(make_option("oaa_subsample", data->num_subsample)
                .help("Subsample this number of negative examples when learning"))
       .add(make_option("probabilities", probabilities).help("Predict probabilities of all classes"))
-      .add(make_option("scores", scores).help("Output raw scores per class"));
+      .add(make_option("scores", scores).help("Output raw scores per class"))
+      .add(make_option("indexing", all.indexing).one_of({0, 1}).keep().help("Choose between 0 or 1-indexing"));
 
   if (!options.add_parse_and_check_necessary(new_options)) { return nullptr; }
 
