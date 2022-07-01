@@ -516,6 +516,25 @@ void interaction_config_manager::apply_config(example* ec, uint64_t live_slot)
     THROW("fatal (automl): trying to apply a config higher than max configs allowed");
   }
 }
+
+void interaction_config_manager::prepare_ex_for_learn(multi_ex& ec, uint64_t live_slot)
+{
+  // TODO: what to do if that slot is switched with anew config?
+  std::swap(*_all_normalized, per_live_model_state_double[live_slot * 2]);
+  std::swap(*_gd_total_weight, per_live_model_state_double[live_slot * 2 + 1]);
+  std::swap(*_cb_adf_event_sum, per_live_model_state_uint64[live_slot * 2]);
+  std::swap(*_cb_adf_action_sum, per_live_model_state_uint64[live_slot * 2 + 1]);
+  for (example* ex : ec) { apply_config(ex, live_slot); }
+}
+
+void interaction_config_manager::restore_ex_from_learn(uint64_t live_slot)
+{
+  std::swap(*_all_normalized, per_live_model_state_double[live_slot * 2]);
+  std::swap(*_gd_total_weight, per_live_model_state_double[live_slot * 2 + 1]);
+  std::swap(*_cb_adf_event_sum, per_live_model_state_uint64[live_slot * 2]);
+  std::swap(*_cb_adf_action_sum, per_live_model_state_uint64[live_slot * 2 + 1]);
+}
+
 }  // namespace automl
 }  // namespace reductions
 }  // namespace VW

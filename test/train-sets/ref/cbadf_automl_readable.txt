@@ -215,20 +215,20 @@ _automl_config_manager_index_queue[6].first = -12
 _automl_config_manager_index_queue[6].second = 8
 _automl_config_manager_index_queue[7].first = -12
 _automl_config_manager_index_queue[7].second = 6
-_automl_per_live_model_state_double.size() = 6
-_automl_per_live_model_state_double[0] = 98.98610879850912
-_automl_per_live_model_state_double[1] = 0.30612243711948395
-_automl_per_live_model_state_double[2] = 59.39374421118373
-_automl_per_live_model_state_double[3] = 0.20408162474632263
-_automl_per_live_model_state_double[4] = 64.29170320509547
-_automl_per_live_model_state_double[5] = 0.20408162474632263
-_automl_per_live_model_state_uint64.size() = 6
-_automl_per_live_model_state_uint64[0] = 3
-_automl_per_live_model_state_uint64[1] = 36
-_automl_per_live_model_state_uint64[2] = 2
-_automl_per_live_model_state_uint64[3] = 24
-_automl_per_live_model_state_uint64[4] = 2
-_automl_per_live_model_state_uint64[5] = 24
+_automl_config_manager_per_live_model_state_double.size() = 6
+_automl_config_manager_per_live_model_state_double[0] = 98.98610879850912
+_automl_config_manager_per_live_model_state_double[1] = 0.30612243711948395
+_automl_config_manager_per_live_model_state_double[2] = 59.39374421118373
+_automl_config_manager_per_live_model_state_double[3] = 0.20408162474632263
+_automl_config_manager_per_live_model_state_double[4] = 64.29170320509547
+_automl_config_manager_per_live_model_state_double[5] = 0.20408162474632263
+_automl_config_manager_per_live_model_state_uint64.size() = 6
+_automl_config_manager_per_live_model_state_uint64[0] = 3
+_automl_config_manager_per_live_model_state_uint64[1] = 36
+_automl_config_manager_per_live_model_state_uint64[2] = 2
+_automl_config_manager_per_live_model_state_uint64[3] = 24
+_automl_config_manager_per_live_model_state_uint64[4] = 2
+_automl_config_manager_per_live_model_state_uint64[5] = 24
 event_sum 0
 action_sum 0
 :1
@@ -244,7 +244,7 @@ weighted_labeled_examples 3
 weighted_labels 0
 weighted_unlabeled_examples 0
 example_number 3
-total_features 29895
+total_features 29383
 total_weight 0
 sd::oec.weighted_labeled_examples 2
 current_pass 1

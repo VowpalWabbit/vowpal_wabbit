@@ -108,6 +108,14 @@ struct interaction_config_manager : config_manager
   uint32_t& wpp;
   bool lb_trick;
 
+  // TODO: delete all this, gd and cb_adf must respect ft_offset
+  std::vector<double> per_live_model_state_double;
+  std::vector<uint64_t> per_live_model_state_uint64;
+  double* _all_normalized = nullptr;
+  double* _gd_total_weight = nullptr;
+  uint64_t* _cb_adf_event_sum = nullptr;
+  uint64_t* _cb_adf_action_sum = nullptr;
+
   // Stores all namespaces currently seen -- Namespace switch could we use array, ask Jack
   std::map<namespace_index, uint64_t> ns_counter;
 
@@ -127,6 +135,8 @@ struct interaction_config_manager : config_manager
       VW::io::logger*, uint32_t&, bool);
 
   void apply_config(example*, uint64_t);
+  void prepare_ex_for_learn(multi_ex&, uint64_t);
+  void restore_ex_from_learn(uint64_t);
   void persist(metric_sink&, bool);
 
   // Public Chacha functions
@@ -155,14 +165,6 @@ struct automl
   VW::io::logger* logger;
   LEARNER::multi_learner* adf_learner = nullptr;  //  re-use print from cb_explore_adf
   bool debug_reverse_learning_order = false;
-
-  // TODO: delete all this, gd and cb_adf must respect ft_offset
-  std::vector<double> per_live_model_state_double;
-  std::vector<uint64_t> per_live_model_state_uint64;
-  double* _all_normalized = nullptr;
-  double* _gd_total_weight = nullptr;
-  uint64_t* _cb_adf_event_sum = nullptr;
-  uint64_t* _cb_adf_action_sum = nullptr;
 
   automl(std::unique_ptr<CMType> cm, VW::io::logger* logger) : cm(std::move(cm)), logger(logger) {}
   // This fn gets called before learning any example
@@ -211,7 +213,6 @@ struct automl
 
     int64_t live_slot = cm->estimators.size() - 1;
     int64_t current_champ = static_cast<int64_t>(cm->current_champ);
-    std::vector<uint64_t> chosen_actions(cm->estimators.size());
     assert(current_champ == 0);
 
     auto restore_guard = VW::scope_exit([this, &ec, &live_slot, &current_champ, &incoming_interactions]() {
@@ -219,46 +220,30 @@ struct automl
       if (live_slot >= 0 && live_slot != current_champ) { std::swap(ec[0]->pred.a_s, buffer_a_s); }
     });
 
-    // Learn on all models and get chosen actions
-    for (int64_t current_slot_index = live_slot; current_slot_index >= 0; current_slot_index -= 1)
+    // Learn and get action of champ
+    std::swap(ec[0]->pred.a_s, buffer_a_s);
+    cm->prepare_ex_for_learn(ec, current_champ);
+    if (!base.learn_returns_prediction) { base.predict(ec, current_champ); }
+    base.learn(ec, current_champ);
+    auto champ_action = ec[0]->pred.a_s[0].action;
+    cm->restore_ex_from_learn(current_champ);
+    std::swap(ec[0]->pred.a_s, buffer_a_s);
+
+    // Learn and update estimators of challengers
+    for (int64_t current_slot_index = live_slot; current_slot_index >= 1; current_slot_index -= 1)
     {
       if (!debug_reverse_learning_order) { live_slot = current_slot_index; }
       else
       {
-        live_slot = cm->estimators.size() - 1 - current_slot_index;
+        live_slot = cm->estimators.size() - current_slot_index;
       }
-
-      // TODO: what to do if that slot is switched with anew config?
-      std::swap(*_all_normalized, per_live_model_state_double[live_slot * 2]);
-      std::swap(*_gd_total_weight, per_live_model_state_double[live_slot * 2 + 1]);
-      std::swap(*_cb_adf_event_sum, per_live_model_state_uint64[live_slot * 2]);
-      std::swap(*_cb_adf_action_sum, per_live_model_state_uint64[live_slot * 2 + 1]);
-
-      if (live_slot == current_champ) { std::swap(ec[0]->pred.a_s, buffer_a_s); }
-      else
-      {
-        ec[0]->pred.a_s.clear();
-      }
-
-      for (example* ex : ec) { cm->apply_config(ex, live_slot); }
-
+      cm->prepare_ex_for_learn(ec, live_slot);
       if (!base.learn_returns_prediction) { base.predict(ec, live_slot); }
       base.learn(ec, live_slot);
-      chosen_actions[live_slot] = ec[0]->pred.a_s[0].action;
-      if (live_slot == current_champ) { std::swap(ec[0]->pred.a_s, buffer_a_s); }
-
-      std::swap(*_all_normalized, per_live_model_state_double[live_slot * 2]);
-      std::swap(*_gd_total_weight, per_live_model_state_double[live_slot * 2 + 1]);
-      std::swap(*_cb_adf_event_sum, per_live_model_state_uint64[live_slot * 2]);
-      std::swap(*_cb_adf_action_sum, per_live_model_state_uint64[live_slot * 2 + 1]);
-    }
-
-    // Update estimators for all challengers. Start with live_slot = 1 since the 0 position has the champion
-    // and does not require estimator updates
-    for (uint64_t challenger_slot = 1; challenger_slot < cm->estimators.size(); ++challenger_slot)
-    {
-      cm->estimators[challenger_slot].first.update(chosen_actions[challenger_slot] == labelled_action ? w : 0, r);
-      cm->estimators[challenger_slot].second.update(chosen_actions[current_champ] == labelled_action ? w : 0, r);
+      auto challenger_action = ec[0]->pred.a_s[0].action;
+      cm->restore_ex_from_learn(live_slot);
+      cm->estimators[live_slot].first.update(challenger_action == labelled_action ? w : 0, r);
+      cm->estimators[live_slot].second.update(champ_action == labelled_action ? w : 0, r);
     }
 
     std::swap(ec[0]->pred.a_s, buffer_a_s);

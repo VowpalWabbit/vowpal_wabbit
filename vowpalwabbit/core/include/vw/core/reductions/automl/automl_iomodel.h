@@ -58,6 +58,8 @@ size_t read_model_field(io_buf& io, VW::reductions::automl::interaction_config_m
   bytes += read_model_field(io, cm.configs);
   bytes += read_model_field(io, cm.estimators);
   bytes += read_model_field(io, cm.index_queue);
+  bytes += read_model_field(io, cm.per_live_model_state_double);
+  bytes += read_model_field(io, cm.per_live_model_state_uint64);
   for (uint64_t live_slot = 0; live_slot < cm.estimators.size(); ++live_slot) { cm.gen_interactions(live_slot); }
   return bytes;
 }
@@ -73,6 +75,8 @@ size_t write_model_field(io_buf& io, const VW::reductions::automl::interaction_c
   bytes += write_model_field(io, cm.configs, upstream_name + "_configs", text);
   bytes += write_model_field(io, cm.estimators, upstream_name + "_estimators", text);
   bytes += write_model_field(io, cm.index_queue, upstream_name + "_index_queue", text);
+  bytes += write_model_field(io, cm.per_live_model_state_double, upstream_name + "_per_live_model_state_double", text);
+  bytes += write_model_field(io, cm.per_live_model_state_uint64, upstream_name + "_per_live_model_state_uint64", text);
   return bytes;
 }
 
@@ -82,8 +86,6 @@ size_t read_model_field(io_buf& io, VW::reductions::automl::automl<CMType>& aml)
   size_t bytes = 0;
   bytes += read_model_field(io, aml.current_state);
   bytes += read_model_field(io, *aml.cm);
-  bytes += read_model_field(io, aml.per_live_model_state_double);
-  bytes += read_model_field(io, aml.per_live_model_state_uint64);
   return bytes;
 }
 
@@ -94,8 +96,6 @@ size_t write_model_field(
   size_t bytes = 0;
   bytes += write_model_field(io, aml.current_state, upstream_name + "_state", text);
   bytes += write_model_field(io, *aml.cm, upstream_name + "_config_manager", text);
-  bytes += write_model_field(io, aml.per_live_model_state_double, upstream_name + "_per_live_model_state_double", text);
-  bytes += write_model_field(io, aml.per_live_model_state_uint64, upstream_name + "_per_live_model_state_uint64", text);
   return bytes;
 }
 
