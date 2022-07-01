@@ -263,7 +263,7 @@ jobs:
     runs-on: windows-2019
     env:
       VCPKG_ROOT: ${{ github.workspace }}\\vcpkg
-      VCPKG_REF: 773516ecf6014d89cc69b11bb54605ad4be56694
+      VCPKG_REF: cef0b3ec767df6e83806899fe9525f6cf8d7bc91
       VCPKG_DEFAULT_BINARY_CACHE: ${{ github.workspace }}\vcpkg_binary_cache
     strategy:
       matrix:

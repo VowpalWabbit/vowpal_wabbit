@@ -11,7 +11,7 @@ class StringGuard
   const char* _cstr;
   size_t _length;
 
- public:
+public:
   StringGuard(JNIEnv* env, jstring source);
   ~StringGuard();
 
@@ -26,7 +26,7 @@ class CriticalArrayGuard
   jarray _arr;
   void* _arr0;
 
- public:
+public:
   CriticalArrayGuard(JNIEnv* env, jarray arr);
   ~CriticalArrayGuard();
 
@@ -36,9 +36,9 @@ class CriticalArrayGuard
 // bind VW instance and example together to reduce the number of variables passed around
 class VowpalWabbitExampleWrapper
 {
- public:
-   VW::workspace* _all;
-   example* _example;
+public:
+  VW::workspace* _all;
+  example* _example;
 
-   VowpalWabbitExampleWrapper(VW::workspace* all, example* example) : _all(all), _example(example) {}
+  VowpalWabbitExampleWrapper(VW::workspace* all, example* example) : _all(all), _example(example) {}
 };
