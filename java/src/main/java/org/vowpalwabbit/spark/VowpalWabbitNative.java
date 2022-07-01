@@ -44,17 +44,13 @@ public class VowpalWabbitNative implements Closeable {
      */
     public native Object learn(VowpalWabbitExample[] examples);
 
-    private native Object learnFromString(String examplesString);
-
     /**
      * Invoke multi-line learning. By default will interpret input as text format, pass `--dsjson` or `--json` to initialize to use DSJSON or JSON respectively.
      *
      * @param examplesString String representation of examples to learn from.
      * @return the one-step ahead prediction.
      */
-    public Object learn(String examplesString) {
-        return learnFromString(examplesString);
-    }
+    private native Object learnFromString(String examplesString);
 
     /**
      * Invoke multi-line prediction.
@@ -64,17 +60,13 @@ public class VowpalWabbitNative implements Closeable {
      */
     public native Object predict(VowpalWabbitExample[] examples);
 
-    private native Object predictFromString(String examplesString);
-
     /**
      * Invoke multi-line prediction. By default will interpret input as text format, pass `--dsjson` or `--json` to initialize to use DSJSON or JSON respectively.
      *
      * @param examplesString String representation of examples to learn from.
      * @return the prediction.
      */
-    public Object predict(String examplesString) {
-        return predictFromString(examplesString);
-    }
+    private native Object predictFromString(String examplesString);
 
     /**
      * Perform remaining passes.

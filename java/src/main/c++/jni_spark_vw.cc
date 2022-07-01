@@ -1,8 +1,8 @@
 #include "jni_spark_vw.h"
 
 #include "util.h"
-#include "vw/common/vw_exception.h"
 #include "vw/common/future_compat.h"
+#include "vw/common/vw_exception.h"
 #include "vw/config/cli_options_serializer.h"
 #include "vw/config/options.h"
 #include "vw/core/best_constant.h"
@@ -17,17 +17,14 @@
 jobject getJavaPrediction(JNIEnv* env, VW::workspace* all, example* ex);
 
 // Will finish the examples too
-template<bool isLearn>
+template <bool isLearn>
 jobject callLearner(JNIEnv* env, VW::workspace* all, VW::multi_ex& examples)
 {
   assert(all != nullptr);
   jobject prediction = nullptr;
   if (all->l->is_multiline())
   {
-    if VW_STD17_CONSTEXPR (isLearn)
-    {
-      all->learn(examples);
-    }
+    if VW_STD17_CONSTEXPR (isLearn) { all->learn(examples); }
     else
     {
       all->predict(examples);
@@ -39,10 +36,7 @@ jobject callLearner(JNIEnv* env, VW::workspace* all, VW::multi_ex& examples)
   else
   {
     assert(examples.size() == 1);
-    if VW_STD17_CONSTEXPR (isLearn)
-    {
-      all->learn(*examples[0]);
-    }
+    if VW_STD17_CONSTEXPR (isLearn) { all->learn(*examples[0]); }
     else
     {
       all->predict(*examples[0]);
@@ -166,7 +160,6 @@ JNIEXPORT jobject JNICALL Java_org_vowpalwabbit_spark_VowpalWabbitNative_learn(
     return nullptr;
   }
 }
-
 
 JNIEXPORT jobject JNICALL Java_org_vowpalwabbit_spark_VowpalWabbitNative_learnFromString(
     JNIEnv* env, jobject vwObj, jstring examplesString)
