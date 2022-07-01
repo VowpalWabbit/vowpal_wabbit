@@ -9,6 +9,9 @@ import java.nio.charset.StandardCharsets;
 import java.util.*;
 import org.vowpalwabbit.spark.prediction.*;
 
+import vowpalWabbit.responses.ActionProbs;
+import vowpalWabbit.responses.DecisionScores;
+
 /**
  * command line invocation
  *
@@ -257,8 +260,8 @@ public class VowpalWabbitNativeIT {
 
     @Test
     public void testSimpleLabel() throws Exception {
-        testLabelSetter(new VowpalWabbitLabelOperator() { 
-            public void op(VowpalWabbitExample ex) { 
+        testLabelSetter(new VowpalWabbitLabelOperator() {
+            public void op(VowpalWabbitExample ex) {
                 ex.setLabel(1,2);
             }
         });
@@ -266,8 +269,8 @@ public class VowpalWabbitNativeIT {
 
     @Test
     public void testMulticlassLabel() throws Exception {
-        testLabelSetter(new VowpalWabbitLabelOperator() { 
-            public void op(VowpalWabbitExample ex) { 
+        testLabelSetter(new VowpalWabbitLabelOperator() {
+            public void op(VowpalWabbitExample ex) {
                 ex.setMulticlassLabel(0.5f, 2);
             }
         });
@@ -275,8 +278,8 @@ public class VowpalWabbitNativeIT {
 
     @Test
     public void testCostSensitiveLabels() throws Exception {
-        testLabelSetter(new VowpalWabbitLabelOperator() { 
-            public void op(VowpalWabbitExample ex) { 
+        testLabelSetter(new VowpalWabbitLabelOperator() {
+            public void op(VowpalWabbitExample ex) {
                 ex.setCostSensitiveLabels(
                     new float[] { 0.5f, 0.2f },
                     new int[] { 0, 1}
@@ -287,8 +290,8 @@ public class VowpalWabbitNativeIT {
 
     @Test
     public void tesContextualBanditContinuousLabel() throws Exception {
-        testLabelSetter(new VowpalWabbitLabelOperator() { 
-            public void op(VowpalWabbitExample ex) { 
+        testLabelSetter(new VowpalWabbitLabelOperator() {
+            public void op(VowpalWabbitExample ex) {
                 ex.setContextualBanditContinuousLabel(
                     new float[] { 1f, 2f, 3f },
                     new float[] { 4f, 5f, 6f },
@@ -299,8 +302,8 @@ public class VowpalWabbitNativeIT {
 
     @Test
     public void testSlatesSharedLabel() throws Exception {
-        testLabelSetter(new VowpalWabbitLabelOperator() { 
-            public void op(VowpalWabbitExample ex) { 
+        testLabelSetter(new VowpalWabbitLabelOperator() {
+            public void op(VowpalWabbitExample ex) {
                 ex.setSlatesSharedLabel(0.3f);
             }
         });
@@ -308,8 +311,8 @@ public class VowpalWabbitNativeIT {
 
     @Test
     public void testSlatesActionLabel() throws Exception {
-        testLabelSetter(new VowpalWabbitLabelOperator() { 
-            public void op(VowpalWabbitExample ex) { 
+        testLabelSetter(new VowpalWabbitLabelOperator() {
+            public void op(VowpalWabbitExample ex) {
                 ex.setSlatesActionLabel(3);
             }
         });
@@ -317,12 +320,86 @@ public class VowpalWabbitNativeIT {
 
     @Test
     public void testSlatesSlotLabel() throws Exception {
-        testLabelSetter(new VowpalWabbitLabelOperator() { 
-            public void op(VowpalWabbitExample ex) { 
+        testLabelSetter(new VowpalWabbitLabelOperator() {
+            public void op(VowpalWabbitExample ex) {
                 ex.setSlatesSlotLabel(
                     new int[] { 1, 2 },
                     new float[] { 0.4f, 0.6f });
             }
         });
+    }
+
+    @Test
+    public void testFromStringSingleLineText() throws Exception {
+        VowpalWabbitNative vw = null;
+
+        try {
+            vw = new VowpalWabbitNative("--quiet");
+            vw.learn("0 | price:.23 sqft:.25 age:.05 2006");
+            vw.learn("1 2 'second_house | price:.18 sqft:.15 age:.35 1976");
+            ScalarPrediction pred = (ScalarPrediction)vw.predict("| price:.53 sqft:.32 age:.87 1924");
+            assertNotEquals(0.0, pred.getValue(), 0.01);
+        } finally {
+            if (vw != null) {
+                vw.close();
+            }
+        }
+    }
+
+    @Test
+    public void testFromStringMultiLineText() throws Exception {
+        VowpalWabbitNative vw = null;
+
+        try {
+            vw = new VowpalWabbitNative("--quiet --ccb_explore_adf");
+
+            vw.learn(
+                "ccb shared |User b\n"
+                + "ccb action |Action d\n"
+                + "ccb action |Action e\n"
+                + "ccb action |Action f\n"
+                + "ccb action |Action ff\n"
+                + "ccb action |Action fff\n"
+                + "ccb slot 0:0:0.2 |Slot h\n"
+                + "ccb slot 1:0:0.25 |Slot i\n"
+                + "ccb slot 2:0:0.333333 |Slot j\n");
+            DecisionScores pred = (DecisionScores)vw.predict(
+                "ccb shared |User b\n"
+                + "ccb action |Action d\n"
+                + "ccb action |Action e\n"
+                + "ccb action |Action f\n"
+                + "ccb action |Action ff\n"
+                + "ccb action |Action fff\n"
+                + "ccb slot |Slot h\n"
+                + "ccb slot |Slot i\n"
+                + "ccb slot |Slot j\n");
+            assertEquals(3, pred.getDecisionScores().length);
+            assertEquals(5, pred.getDecisionScores()[0].getActionScores().length);
+            assertEquals(4, pred.getDecisionScores()[1].getActionScores().length);
+            assertEquals(3, pred.getDecisionScores()[2].getActionScores().length);
+
+        } finally {
+            if (vw != null) {
+                vw.close();
+            }
+        }
+    }
+
+    @Test
+    public void testFromStringMultiLineDSJSON() throws Exception {
+        VowpalWabbitNative vw = null;
+
+        try {
+            vw = new VowpalWabbitNative("--quiet --cb_explore_adf --dsjson");
+
+            vw.learn("{\"_label_cost\":-0.0,\"_label_probability\":0.05000000074505806,\"_label_Action\":4,\"_labelIndex\":3,\"o\":[{\"v\":0.0,\"EventId\":\"13118d9b4c114f8485d9dec417e3aefe\",\"ActionTaken\":false}],\"Timestamp\":\"2021-02-04T16:31:29.2460000Z\",\"Version\":\"1\",\"EventId\":\"13118d9b4c114f8485d9dec417e3aefe\",\"a\":[4,2,1,3],\"c\":{\"FromUrl\":[{\"timeofday\":\"Afternoon\",\"weather\":\"Sunny\",\"name\":\"Cathy\"}],\"_multi\":[{\"_tag\":\"Cappucino\",\"i\":{\"constant\":1,\"id\":\"Cappucino\"},\"j\":[{\"type\":\"hot\",\"origin\":\"kenya\",\"organic\":\"yes\",\"roast\":\"dark\"}]},{\"_tag\":\"Cold brew\",\"i\":{\"constant\":1,\"id\":\"Cold brew\"},\"j\":[{\"type\":\"cold\",\"origin\":\"brazil\",\"organic\":\"yes\",\"roast\":\"light\"}]},{\"_tag\":\"Iced mocha\",\"i\":{\"constant\":1,\"id\":\"Iced mocha\"},\"j\":[{\"type\":\"cold\",\"origin\":\"ethiopia\",\"organic\":\"no\",\"roast\":\"light\"}]},{\"_tag\":\"Latte\",\"i\":{\"constant\":1,\"id\":\"Latte\"},\"j\":[{\"type\":\"hot\",\"origin\":\"brazil\",\"organic\":\"no\",\"roast\":\"dark\"}]}]},\"p\":[0.05,0.05,0.05,0.85],\"VWState\":{\"m\":\"ff0744c1aa494e1ab39ba0c78d048146/550c12cbd3aa47f09fbed3387fb9c6ec\"},\"_original_label_cost\":-0.0}");
+            ActionProbs pred = (ActionProbs)vw.predict("{\"_label_cost\":-1.0,\"_label_probability\":0.8500000238418579,\"_label_Action\":1,\"_labelIndex\":0,\"o\":[{\"v\":1.0,\"EventId\":\"bf50a49c34b74937a81e8d6fc95faa99\",\"ActionTaken\":false}],\"Timestamp\":\"2021-02-04T16:31:29.9430000Z\",\"Version\":\"1\",\"EventId\":\"bf50a49c34b74937a81e8d6fc95faa99\",\"a\":[1,3,2,4],\"c\":{\"FromUrl\":[{\"timeofday\":\"Evening\",\"weather\":\"Snowy\",\"name\":\"Alice\"}],\"_multi\":[{\"_tag\":\"Cappucino\",\"i\":{\"constant\":1,\"id\":\"Cappucino\"},\"j\":[{\"type\":\"hot\",\"origin\":\"kenya\",\"organic\":\"yes\",\"roast\":\"dark\"}]},{\"_tag\":\"Cold brew\",\"i\":{\"constant\":1,\"id\":\"Cold brew\"},\"j\":[{\"type\":\"cold\",\"origin\":\"brazil\",\"organic\":\"yes\",\"roast\":\"light\"}]},{\"_tag\":\"Iced mocha\",\"i\":{\"constant\":1,\"id\":\"Iced mocha\"},\"j\":[{\"type\":\"cold\",\"origin\":\"ethiopia\",\"organic\":\"no\",\"roast\":\"light\"}]},{\"_tag\":\"Latte\",\"i\":{\"constant\":1,\"id\":\"Latte\"},\"j\":[{\"type\":\"hot\",\"origin\":\"brazil\",\"organic\":\"no\",\"roast\":\"dark\"}]}]},\"p\":[0.85,0.05,0.05,0.05],\"VWState\":{\"m\":\"ff0744c1aa494e1ab39ba0c78d048146/550c12cbd3aa47f09fbed3387fb9c6ec\"},\"_original_label_cost\":-1.0}");
+            assertEquals(4, pred.getActionProbs().length);
+
+        } finally {
+            if (vw != null) {
+                vw.close();
+            }
+        }
     }
 }
