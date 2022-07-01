@@ -9,12 +9,14 @@ class StringGuard
   JNIEnv* _env;
   jstring _source;
   const char* _cstr;
+  size_t _length;
 
 public:
   StringGuard(JNIEnv* env, jstring source);
   ~StringGuard();
 
   const char* c_str();
+  size_t length();
 };
 
 // properly de-alloc resource also in case of exceptions
