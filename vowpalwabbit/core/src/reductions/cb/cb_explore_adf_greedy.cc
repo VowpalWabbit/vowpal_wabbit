@@ -156,8 +156,8 @@ VW::LEARNER::base_learner* VW::reductions::cb_explore_adf_greedy_setup(VW::setup
   if (!adf_scores_filename.empty())
   {
     using explore_type = cb_explore_adf_base<cb_explore_adf_greedy<true>>;
-    auto data = VW::make_unique<explore_type>(
-        with_metrics, epsilon, first_only, VW::io::open_file_writer(adf_scores_filename));
+    auto data =
+        VW::make_unique<explore_type>(with_metrics, epsilon, first_only, VW::io::open_file_writer(adf_scores_filename));
 
     auto* l = make_reduction_learner(std::move(data), base, explore_type::learn, explore_type::predict,
         stack_builder.get_setupfn_name(cb_explore_adf_greedy_setup))
