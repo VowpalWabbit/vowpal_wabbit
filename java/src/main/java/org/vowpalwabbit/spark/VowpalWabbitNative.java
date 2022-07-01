@@ -50,7 +50,7 @@ public class VowpalWabbitNative implements Closeable {
      * @param examplesString String representation of examples to learn from.
      * @return the one-step ahead prediction.
      */
-    private native Object learnFromString(String examplesString);
+    public native Object learnFromString(String examplesString);
 
     /**
      * Invoke multi-line prediction.
@@ -66,7 +66,7 @@ public class VowpalWabbitNative implements Closeable {
      * @param examplesString String representation of examples to learn from.
      * @return the prediction.
      */
-    private native Object predictFromString(String examplesString);
+    public native Object predictFromString(String examplesString);
 
     /**
      * Perform remaining passes.
