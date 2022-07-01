@@ -20,7 +20,6 @@ struct non_copyable_struct
   non_copyable_struct& operator=(non_copyable_struct&& other) = default;
 };
 
-
 BOOST_AUTO_TEST_CASE(swap_guard_execute_on_scope_end)
 {
   int original_location = 1;

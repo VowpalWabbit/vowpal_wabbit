@@ -3,20 +3,19 @@
 /* Header for class vowpalWabbit_VW */
 
 #ifndef _Included_vowpalWabbit_VW
-#define _Included_vowpalWabbit_VW
-#ifdef __cplusplus
+#  define _Included_vowpalWabbit_VW
+#  ifdef __cplusplus
 extern "C"
 {
-#endif
-/*
- * Class:     vowpalWabbit_VW
- * Method:    version
- * Signature: ()Ljava/lang/String;
- */
-JNIEXPORT jstring JNICALL Java_vowpalWabbit_VW_version
-(JNIEnv *, jclass);
+#  endif
+  /*
+   * Class:     vowpalWabbit_VW
+   * Method:    version
+   * Signature: ()Ljava/lang/String;
+   */
+  JNIEXPORT jstring JNICALL Java_vowpalWabbit_VW_version(JNIEnv*, jclass);
 
-#ifdef __cplusplus
+#  ifdef __cplusplus
 }
-#endif
+#  endif
 #endif
