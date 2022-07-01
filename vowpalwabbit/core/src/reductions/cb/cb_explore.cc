@@ -361,9 +361,7 @@ base_learner* VW::reductions::cb_explore_setup(VW::setup_base_i& stack_builder)
   if (!options.was_supplied("cb_force_legacy")) { return nullptr; }
 
   if (options.was_supplied("indexing"))
-  {
-    THROW("--indexing is not compatible with contextual bandits, please remove this option")
-  }
+  { THROW("--indexing is not compatible with contextual bandits, please remove this option") }
 
   data->_random_state = all.get_random_state();
   uint32_t num_actions = data->cbcs.num_actions;

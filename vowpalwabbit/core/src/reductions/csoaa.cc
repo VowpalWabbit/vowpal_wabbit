@@ -187,8 +187,8 @@ base_learner* VW::reductions::csoaa_setup(VW::setup_base_i& stack_builder)
   VW::workspace& all = *stack_builder.get_all_pointer();
   auto c = VW::make_unique<csoaa>(all.logger, all.indexing);
   option_group_definition new_options("[Reduction] Cost Sensitive One Against All");
-  new_options.add(
-      make_option("csoaa", c->num_classes).keep().necessary().help("One-against-all multiclass with <k> costs"))
+  new_options
+      .add(make_option("csoaa", c->num_classes).keep().necessary().help("One-against-all multiclass with <k> costs"))
       .add(make_option("indexing", all.indexing).one_of({0, 1}).keep().help("Choose between 0 or 1-indexing"));
 
   if (!options.add_parse_and_check_necessary(new_options)) { return nullptr; }
