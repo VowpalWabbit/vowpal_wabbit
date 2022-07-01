@@ -985,7 +985,7 @@ void save_load_online_state(VW::workspace& all, io_buf& model_file, bool read, b
 }
 
 void save_load_online_state(VW::workspace& all, io_buf& model_file, bool read, bool text, double& total_weight,
-    double normalized_sum_norm_x, gd* g, uint32_t ftrl_size)
+    double& normalized_sum_norm_x, gd* g, uint32_t ftrl_size)
 {
   std::stringstream msg;
 
