@@ -454,6 +454,9 @@ VW::LEARNER::base_learner* VW::reductions::cb_adf_setup(VW::setup_base_i& stack_
     options.add_and_parse(new_options);
   }
 
+  if (options.was_supplied("indexing"))
+  { THROW("--indexing is not compatible with contextual bandits, please remove this option") }
+
   // number of weight vectors needed
   size_t problem_multiplier = 1;  // default for IPS
   bool check_baseline_enabled = false;
