@@ -14,4 +14,4 @@ cmake -E env LDFLAGS="-Wl,--exclude-libs,ALL -static-libgcc -static-libstdc++" c
  -DBUILD_PYTHON=Off -DSTATIC_LINK_VW_JAVA=On -DCMAKE_C_COMPILER=/usr/local/bin/gcc -DCMAKE_CXX_COMPILER=/usr/local/bin/g++ \
  -DBUILD_TESTING=Off -DVW_ZLIB_SYS_DEP=Off -DBUILD_SHARED_LIBS=Off
 NUM_PROCESSORS=$(nproc)
-make all -j ${NUM_PROCESSORS}
+make vw_jni -j ${NUM_PROCESSORS}
