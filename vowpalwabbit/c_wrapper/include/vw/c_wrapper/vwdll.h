@@ -134,6 +134,8 @@ extern "C"
   VW_DLL_PUBLIC void VW_CALLING_CONV VW_ClearCapturedAuditData(VW_HANDLE handle);
   VW_DLL_PUBLIC char* VW_CALLING_CONV VW_GetAuditDataA(VW_HANDLE handle, size_t* size);
   VW_DLL_PUBLIC void VW_CALLING_CONV VW_FreeAuditDataA(VW_HANDLE handle, char* data);
+  VW_DLL_PUBLIC void VW_CALLING_CONV VW_Get_Cats_Action_Pdf(VW_HANDLE handle, VW_EXAMPLE example, float action_and_pdf[2]);
+
 
 #ifdef __cplusplus
 }
