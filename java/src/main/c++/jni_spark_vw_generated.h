@@ -162,28 +162,10 @@ extern "C"
 
   JNIEXPORT void JNICALL Java_org_vowpalwabbit_spark_VowpalWabbitExample_setMultiLabels(JNIEnv*, jobject, jintArray);
 
-  JNIEXPORT void JNICALL Java_org_vowpalwabbit_spark_VowpalWabbitExample_setMulticlassLabel(
-      JNIEnv*, jobject, jfloat, jint);
-
-  JNIEXPORT void JNICALL Java_org_vowpalwabbit_spark_VowpalWabbitExample_setCostSensitiveLabels(
-      JNIEnv*, jobject, jfloatArray, jintArray);
-
-  JNIEXPORT void JNICALL Java_org_vowpalwabbit_spark_VowpalWabbitExample_setContextualBanditContinuousLabel(
-      JNIEnv*, jobject, jfloatArray, jfloatArray, jfloatArray);
-
-  JNIEXPORT void JNICALL Java_org_vowpalwabbit_spark_VowpalWabbitExample_setMultiLabels(JNIEnv*, jobject, jintArray);
-
   JNIEXPORT void JNICALL Java_org_vowpalwabbit_spark_VowpalWabbitExample_setContextualBanditLabel(
       JNIEnv*, jobject, jint, jdouble, jdouble);
 
   JNIEXPORT void JNICALL Java_org_vowpalwabbit_spark_VowpalWabbitExample_setSharedLabel(JNIEnv*, jobject);
-
-  JNIEXPORT void JNICALL Java_org_vowpalwabbit_spark_VowpalWabbitExample_setSlatesSharedLabel(JNIEnv*, jobject, jfloat);
-
-  JNIEXPORT void JNICALL Java_org_vowpalwabbit_spark_VowpalWabbitExample_setSlatesActionLabel(JNIEnv*, jobject, jint);
-
-  JNIEXPORT void JNICALL Java_org_vowpalwabbit_spark_VowpalWabbitExample_setSlatesSlotLabel(
-      JNIEnv*, jobject, jintArray, jfloatArray);
 
   JNIEXPORT void JNICALL Java_org_vowpalwabbit_spark_VowpalWabbitExample_setSlatesSharedLabel(JNIEnv*, jobject, jfloat);
 
