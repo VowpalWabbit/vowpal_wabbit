@@ -157,6 +157,8 @@ void end_pass(gd& g)
   }
 }
 
+void resize_ppw_state(gd&, size_t factor) { std::cerr << "resize_ppw_state: factor=" << factor << std::endl; }
+
 #include <algorithm>
 
 struct string_value
@@ -1431,6 +1433,7 @@ base_learner* VW::reductions::gd_setup(VW::setup_base_i& stack_builder)
                                         .set_update(bare->update)
                                         .set_save_load(GD::save_load)
                                         .set_end_pass(GD::end_pass)
+                                        .set_resize_ppw_state(GD::resize_ppw_state)
                                         .build();
   return make_base(*l);
 }

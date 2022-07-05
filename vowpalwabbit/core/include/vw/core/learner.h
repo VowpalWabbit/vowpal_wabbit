@@ -82,6 +82,7 @@ struct learn_data
   using fn = void (*)(void* data, base_learner& base, void* ex);
   using multi_fn = void (*)(void* data, base_learner& base, void* ex, size_t count, size_t step, polyprediction* pred,
       bool finalize_predictions);
+  using resize_ppw_fn = void (*)(void* data, size_t factor);
 
   void* data = nullptr;
   base_learner* base = nullptr;
@@ -89,6 +90,7 @@ struct learn_data
   fn predict_f = nullptr;
   fn update_f = nullptr;
   multi_fn multipredict_f = nullptr;
+  resize_ppw_fn resize_ppw_f = nullptr;
 };
 
 struct sensitivity_data
@@ -125,6 +127,7 @@ struct finish_example_data
 
 inline void noop_save_load(void*, io_buf&, bool, bool) {}
 inline void noop_persist_metrics(void*, metric_sink&) {}
+inline void noop_resize_ppw_state(void*, size_t) {}
 inline void noop(void*) {}
 inline float noop_sensitivity(void*, base_learner&, example&) { return 0.; }
 inline float noop_sensitivity_base(void*, example&) { return 0.; }
@@ -382,6 +385,12 @@ public:
     if (persist_metrics_fd.base) { persist_metrics_fd.base->persist_metrics(metrics); }
   }
 
+  void resize_ppw_state(size_t factor)
+  {
+    learn_fd.resize_ppw_f(learn_fd.data, factor);
+    if (learn_fd.base) { learn_fd.base->resize_ppw_state(factor); }
+  }
+
   inline void finish()
   {
     if (finisher_fd.data) { finisher_fd.func(finisher_fd.data); }
@@ -617,6 +626,12 @@ struct common_learner_builder
     return *static_cast<FluentBuilderT*>(this);
   }
 
+  FluentBuilderT& set_resize_ppw_state(void (*fn_ptr)(DataT&, size_t))
+  {
+    _learner->learn_fd.resize_ppw_f = (details::learn_data::resize_ppw_fn)fn_ptr;
+    return *static_cast<FluentBuilderT*>(this);
+  }
+
   // This is the label type of the example passed into the learn function. This
   // label will be operated on throughout the learn function.
   FluentBuilderT& set_input_label_type(label_type_t label_type)
@@ -674,6 +689,8 @@ struct reduction_learner_builder
     this->_learner->finisher_fd.data = this->_learner->learner_data.get();
     this->_learner->finisher_fd.base = make_base(*base);
     this->_learner->finisher_fd.func = static_cast<details::func_data::fn>(details::noop);
+    this->_learner->learn_fd.resize_ppw_f =
+        reinterpret_cast<details::learn_data::resize_ppw_fn>(details::noop_resize_ppw_state);
     this->_learner->learn_fd.multipredict_f = nullptr;
 
     set_params_per_weight(1);
@@ -693,6 +710,11 @@ struct reduction_learner_builder
   {
     this->_learner->weights = params_per_weight;
     this->_learner->increment = this->_learner->learn_fd.base->increment * this->_learner->weights;
+    if (params_per_weight > 1)
+    {
+      std::cerr << this->_learner->name << std::endl;
+      this->_learner->learn_fd.base->resize_ppw_state(params_per_weight);
+    }
     return *this;
   }
 
@@ -745,6 +767,8 @@ struct reduction_no_data_learner_builder
     this->_learner->finisher_fd.data = this->_learner->learner_data.get();
     this->_learner->finisher_fd.base = make_base(*base);
     this->_learner->finisher_fd.func = static_cast<details::func_data::fn>(details::noop);
+    this->_learner->learn_fd.resize_ppw_f =
+        reinterpret_cast<details::learn_data::resize_ppw_fn>(details::noop_resize_ppw_state);
 
     set_params_per_weight(1);
     // By default, will produce what the base expects
@@ -792,6 +816,8 @@ struct base_learner_builder
         reinterpret_cast<details::finish_example_data::fn>(return_simple_example);
 
     this->_learner->learn_fd.data = this->_learner->learner_data.get();
+    this->_learner->learn_fd.resize_ppw_f =
+        reinterpret_cast<details::learn_data::resize_ppw_fn>(details::noop_resize_ppw_state);
 
     super::set_input_label_type(in_label_type);
     super::set_output_label_type(label_type_t::nolabel);
