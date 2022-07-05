@@ -978,13 +978,8 @@ jobject probability_density_function(example* ex, JNIEnv* env)
   {
     auto& pdfSegment = pdf[i];
 
-    jobject pdfSegmentObj = 
-      env->NewObject(
-        pdfSegmentClass, 
-        ctrPdfSegment,
-        pdfSegment.left,
-        pdfSegment.right,
-        pdfSegment.pdf_value);
+    jobject pdfSegmentObj =
+        env->NewObject(pdfSegmentClass, ctrPdfSegment, pdfSegment.left, pdfSegment.right, pdfSegment.pdf_value);
 
     env->SetObjectArrayElement(pdfSegments, i, pdfSegmentObj);
   }
