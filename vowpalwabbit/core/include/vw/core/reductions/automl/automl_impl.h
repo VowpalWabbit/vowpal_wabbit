@@ -111,7 +111,7 @@ struct interaction_config_manager : config_manager
   // TODO: delete all this, gd and cb_adf must respect ft_offset
   std::vector<double> per_live_model_state_double;
   std::vector<uint64_t> per_live_model_state_uint64;
-  double* _all_normalized = nullptr;
+  double* _gd_normalized = nullptr;
   double* _gd_total_weight = nullptr;
   uint64_t* _cb_adf_event_sum = nullptr;
   uint64_t* _cb_adf_action_sum = nullptr;

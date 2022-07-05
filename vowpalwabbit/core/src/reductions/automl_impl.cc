@@ -520,14 +520,14 @@ void interaction_config_manager::apply_config(example* ec, uint64_t live_slot)
 void interaction_config_manager::do_learning(multi_learner& base, multi_ex& ec, uint64_t live_slot)
 {
   // TODO: what to do if that slot is switched with anew config?
-  std::swap(*_all_normalized, per_live_model_state_double[live_slot * 2]);
+  std::swap(*_gd_normalized, per_live_model_state_double[live_slot * 2]);
   std::swap(*_gd_total_weight, per_live_model_state_double[live_slot * 2 + 1]);
   std::swap(*_cb_adf_event_sum, per_live_model_state_uint64[live_slot * 2]);
   std::swap(*_cb_adf_action_sum, per_live_model_state_uint64[live_slot * 2 + 1]);
   for (example* ex : ec) { apply_config(ex, live_slot); }
   if (!base.learn_returns_prediction) { base.predict(ec, live_slot); }
   base.learn(ec, live_slot);
-  std::swap(*_all_normalized, per_live_model_state_double[live_slot * 2]);
+  std::swap(*_gd_normalized, per_live_model_state_double[live_slot * 2]);
   std::swap(*_gd_total_weight, per_live_model_state_double[live_slot * 2 + 1]);
   std::swap(*_cb_adf_event_sum, per_live_model_state_uint64[live_slot * 2]);
   std::swap(*_cb_adf_action_sum, per_live_model_state_uint64[live_slot * 2 + 1]);
