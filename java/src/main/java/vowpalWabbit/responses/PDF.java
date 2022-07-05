@@ -4,26 +4,26 @@ import java.io.Serializable;
 import java.util.Arrays;
 
 /**
- * Created by jmorra on 8/12/16.
+ * Created by eisber 7/5/2022.
  */
-public class ActionScores implements Serializable {
+public class PDF implements Serializable {
 
     // Although this is modifiable it is not intended to be updated by the user.  This data structure mimics the
     // C data structure.
-    private final ActionScore[] actionScores;
+    private final PDFSegment[] pdfSegments;
 
-    public ActionScores(final ActionScore[] actionScores) {
-        this.actionScores = actionScores;
+    public PDF(final PDFSegment[] pdfSegments) {
+        this.pdfSegments = pdfSegments;
     }
 
-    public ActionScore[] getActionScores() {
-        return actionScores;
+    public PDFSegment[] getPDFSegments() {
+        return pdfSegments;
     }
 
     @Override
     public String toString() {
-        return "ActionScores{" +
-                "actionScores=" + Arrays.toString(actionScores) +
+        return "PDF{" +
+                "pdfSegments=" + Arrays.toString(pdfSegments) +
                 '}';
     }
 
@@ -32,14 +32,15 @@ public class ActionScores implements Serializable {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
 
-        ActionScores that = (ActionScores) o;
+        PDF that = (PDF) o;
 
         // Probably incorrect - comparing Object[] arrays with Arrays.equals
-        return Arrays.equals(actionScores, that.actionScores);
+        return Arrays.equals(pdfSegments, that.pdfSegments);
+
     }
 
     @Override
     public int hashCode() {
-        return Arrays.hashCode(actionScores);
+        return Arrays.hashCode(pdfSegments);
     }
 }
