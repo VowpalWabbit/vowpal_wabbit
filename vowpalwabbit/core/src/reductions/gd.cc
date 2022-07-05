@@ -851,8 +851,8 @@ void save_load_regressor(VW::workspace& all, io_buf& model_file, bool read, bool
 }
 
 template <class T>
-void save_load_online_state(VW::workspace& all, io_buf& model_file, bool read, bool text, gd* g, std::stringstream& msg,
-    uint32_t ftrl_size, T& weights)
+void save_load_online_state_weights(VW::workspace& all, io_buf& model_file, bool read, bool text, gd* g,
+    std::stringstream& msg, uint32_t ftrl_size, T& weights)
 {
   uint64_t length = static_cast<uint64_t>(1) << all.num_bits;
 
@@ -1119,10 +1119,10 @@ void save_load_online_state(VW::workspace& all, io_buf& model_file, bool read, b
     all.current_pass = 0;
   }
   if (all.weights.sparse)
-  { save_load_online_state(all, model_file, read, text, g, msg, ftrl_size, all.weights.sparse_weights); }
+  { save_load_online_state_weights(all, model_file, read, text, g, msg, ftrl_size, all.weights.sparse_weights); }
   else
   {
-    save_load_online_state(all, model_file, read, text, g, msg, ftrl_size, all.weights.dense_weights);
+    save_load_online_state_weights(all, model_file, read, text, g, msg, ftrl_size, all.weights.dense_weights);
   }
 }
 
