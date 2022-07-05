@@ -1,0 +1,23 @@
+shared |u real auto
+1:0 |a Real_f Auto_f RealAuto_f
+2:1 |a Toy_f  Auto_f ToyAuto_f
+3:1 |a Real_f Air_f  RealAir_f
+4:1 |a Toy_f  Air_f  ToyAir_f
+
+shared |u toy auto
+1:1 |a Real_f Auto_f RealAuto_f
+2:0 |a Toy_f  Auto_f ToyAuto_f
+3:1 |a Real_f Air_f  RealAir_f
+4:1 |a Toy_f  Air_f  ToyAir_f
+
+shared |u real air
+1:1 |a Real_f Auto_f RealAuto_f
+2:1 |a Toy_f  Auto_f ToyAuto_f
+3:0 |a Real_f Air_f  RealAir_f
+4:1 |a Toy_f  Air_f  ToyAir_f
+
+shared |u toy air
+1:1 |a Real_f Auto_f RealAuto_f
+2:1 |a Toy_f  Auto_f ToyAuto_f
+3:1 |a Real_f Air_f  RealAir_f
+4:0 |a Toy_f  Air_f  ToyAir_f

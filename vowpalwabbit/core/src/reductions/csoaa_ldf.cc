@@ -7,6 +7,7 @@
 #include "vw/config/options.h"
 #include "vw/core/constant.h"
 #include "vw/core/correctedMath.h"
+#include "vw/core/cost_sensitive.h"
 #include "vw/core/label_dictionary.h"
 #include "vw/core/loss_functions.h"
 #include "vw/core/print_utils.h"
@@ -426,6 +427,7 @@ void output_example(
   {
     all.sd->total_features +=
         (ec_seq->size() - 1) * (ec.get_num_features() - ec.feature_space[constant_namespace].size());
+    return;
   }
   else
   {
@@ -501,6 +503,7 @@ void output_rank_example(VW::workspace& all, VW::example& head_ec, bool& hit_los
   const auto& costs = head_ec.l.cs.costs;
 
   if (VW::example_is_newline(head_ec)) { return; }
+  if (COST_SENSITIVE::ec_is_example_header(head_ec)) { return; }
 
   all.sd->total_features += head_ec.get_num_features();
 
@@ -606,7 +609,17 @@ void finish_multiline_example(VW::workspace& all, ldf& data, VW::multi_ex& ec_se
 {
   if (!ec_seq.empty())
   {
+    if (ec_seq.size() > 1 && COST_SENSITIVE::ec_is_example_header(*ec_seq[0]))
+    {
+      std::swap(ec_seq[0]->pred, ec_seq[1]->pred);
+      std::swap(ec_seq[0]->tag, ec_seq[1]->tag);
+    }
     output_example_seq(all, data, ec_seq);
+    if (ec_seq.size() > 1 && COST_SENSITIVE::ec_is_example_header(*ec_seq[0]))
+    {
+      std::swap(ec_seq[0]->pred, ec_seq[1]->pred);
+      std::swap(ec_seq[0]->tag, ec_seq[1]->tag);
+    }
     VW::details::global_print_newline(all.final_prediction_sink, all.logger);
   }
 
