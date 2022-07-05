@@ -135,8 +135,7 @@ struct interaction_config_manager : config_manager
       VW::io::logger*, uint32_t&, bool);
 
   void apply_config(example*, uint64_t);
-  void prepare_ex_for_learn(multi_ex&, uint64_t);
-  void restore_ex_from_learn(uint64_t);
+  void do_learning(multi_learner&, multi_ex&, uint64_t);
   void persist(metric_sink&, bool);
 
   // Public Chacha functions
@@ -203,13 +202,8 @@ struct automl
       assert(ex->interactions == incoming_interactions);
     }
 
-    // if (ec[0]->interactions != nullptr)
-    // { logger->out_info("offlearn: incoming interaction: {}", ::interaction_vec_t_to_string(*(ec[0]->interactions)));
-    // }
     const float w = logged.probability > 0 ? 1 / logged.probability : 0;
     const float r = -logged.cost;
-
-    std::swap(ec[0]->pred.a_s, buffer_a_s);
 
     int64_t live_slot = cm->estimators.size() - 1;
     int64_t current_champ = static_cast<int64_t>(cm->current_champ);
@@ -217,16 +211,11 @@ struct automl
 
     auto restore_guard = VW::scope_exit([this, &ec, &live_slot, &current_champ, &incoming_interactions]() {
       for (example* ex : ec) { ex->interactions = incoming_interactions; }
-      if (live_slot >= 0 && live_slot != current_champ) { std::swap(ec[0]->pred.a_s, buffer_a_s); }
     });
 
     // Learn and get action of champ
-    std::swap(ec[0]->pred.a_s, buffer_a_s);
-    cm->prepare_ex_for_learn(ec, current_champ);
-    if (!base.learn_returns_prediction) { base.predict(ec, current_champ); }
-    base.learn(ec, current_champ);
+    cm->do_learning(base, ec, current_champ);
     auto champ_action = ec[0]->pred.a_s[0].action;
-    cm->restore_ex_from_learn(current_champ);
     std::swap(ec[0]->pred.a_s, buffer_a_s);
 
     // Learn and update estimators of challengers
@@ -237,15 +226,10 @@ struct automl
       {
         live_slot = cm->estimators.size() - current_slot_index;
       }
-      cm->prepare_ex_for_learn(ec, live_slot);
-      if (!base.learn_returns_prediction) { base.predict(ec, live_slot); }
-      base.learn(ec, live_slot);
-      auto challenger_action = ec[0]->pred.a_s[0].action;
-      cm->restore_ex_from_learn(live_slot);
-      cm->estimators[live_slot].first.update(challenger_action == labelled_action ? w : 0, r);
+      cm->do_learning(base, ec, live_slot);
+      cm->estimators[live_slot].first.update(ec[0]->pred.a_s[0].action == labelled_action ? w : 0, r);
       cm->estimators[live_slot].second.update(champ_action == labelled_action ? w : 0, r);
     }
-
     std::swap(ec[0]->pred.a_s, buffer_a_s);
   };
 
