@@ -205,12 +205,13 @@ struct automl
     const float w = logged.probability > 0 ? 1 / logged.probability : 0;
     const float r = -logged.cost;
 
-    int64_t live_slot = cm->estimators.size() - 1;
+    int64_t live_slot = 0;
     int64_t current_champ = static_cast<int64_t>(cm->current_champ);
     assert(current_champ == 0);
 
     auto restore_guard = VW::scope_exit([this, &ec, &live_slot, &current_champ, &incoming_interactions]() {
       for (example* ex : ec) { ex->interactions = incoming_interactions; }
+      if (live_slot != current_champ) { std::swap(ec[0]->pred.a_s, buffer_a_s); }
     });
 
     // Learn and get action of champ
@@ -219,7 +220,7 @@ struct automl
     std::swap(ec[0]->pred.a_s, buffer_a_s);
 
     // Learn and update estimators of challengers
-    for (int64_t current_slot_index = live_slot; current_slot_index >= 1; current_slot_index -= 1)
+    for (int64_t current_slot_index = 1; current_slot_index < cm->estimators.size(); current_slot_index += 1)
     {
       if (!debug_reverse_learning_order) { live_slot = current_slot_index; }
       else
