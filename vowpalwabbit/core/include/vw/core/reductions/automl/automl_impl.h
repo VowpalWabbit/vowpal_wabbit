@@ -220,7 +220,7 @@ struct automl
     std::swap(ec[0]->pred.a_s, buffer_a_s);
 
     // Learn and update estimators of challengers
-    for (int64_t current_slot_index = 1; current_slot_index < cm->estimators.size(); current_slot_index += 1)
+    for (int64_t current_slot_index = 1; static_cast<size_t>(current_slot_index) < cm->estimators.size(); ++current_slot_index)
     {
       if (!debug_reverse_learning_order) { live_slot = current_slot_index; }
       else
