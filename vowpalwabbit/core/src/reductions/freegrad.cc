@@ -57,8 +57,7 @@ struct freegrad
   size_t no_win_counter;
   size_t early_stop_thres;
   uint32_t freegrad_size;
-  double total_weight = 0.0;
-  double normalized_sum_norm_x = 0.0;
+  std::vector<GD::per_model_state> per_model_states;
 };
 
 template <bool audit>
@@ -100,7 +99,7 @@ void freegrad_predict(freegrad& fg, VW::example& ec)
   fg.update_data.predict = 0.;
   fg.update_data.squared_norm_prediction = 0.;
   size_t num_features_from_interactions = 0;
-  fg.total_weight += ec.weight;
+  fg.per_model_states[0].total_weight += ec.weight;
   float norm_w_pred;
   float projection_radius;
 
@@ -284,10 +283,7 @@ void save_load(freegrad& fg, io_buf& model_file, bool read, bool text)
     bin_text_read_write_fixed(model_file, reinterpret_cast<char*>(&resume), sizeof(resume), read, msg, text);
 
     if (resume)
-    {
-      GD::save_load_online_state(
-          *all, model_file, read, text, fg.total_weight, fg.normalized_sum_norm_x, nullptr, fg.freegrad_size);
-    }
+    { GD::save_load_online_state(*all, model_file, read, text, fg.per_model_states, nullptr, fg.freegrad_size); }
     else
     {
       GD::save_load_regressor(*all, model_file, read, text);
@@ -347,8 +343,10 @@ base_learner* VW::reductions::freegrad_setup(VW::setup_base_i& stack_builder)
   fg_ptr->project = project;
   fg_ptr->adaptiveradius = adaptiveradius;
   fg_ptr->no_win_counter = 0;
-  fg_ptr->total_weight = 0;
-  fg_ptr->normalized_sum_norm_x = 0;
+  auto single_model_state = GD::per_model_state();
+  single_model_state.normalized_sum_norm_x = 0;
+  single_model_state.total_weight = 0.;
+  fg_ptr->per_model_states.emplace_back(single_model_state);
   fg_ptr->epsilon = fepsilon;
 
   const auto* algorithm_name = "FreeGrad";

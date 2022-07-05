@@ -985,8 +985,8 @@ void save_load_online_state_weights(VW::workspace& all, io_buf& model_file, bool
   }
 }
 
-void save_load_online_state(VW::workspace& all, io_buf& model_file, bool read, bool text, double& total_weight,
-    double& normalized_sum_norm_x, gd* g, uint32_t ftrl_size)
+void save_load_online_state(VW::workspace& all, io_buf& model_file, bool read, bool text,
+    std::vector<per_model_state>& pms, gd* g, uint32_t ftrl_size)
 {
   std::stringstream msg;
 
@@ -994,9 +994,10 @@ void save_load_online_state(VW::workspace& all, io_buf& model_file, bool read, b
   bin_text_read_write_fixed(
       model_file, reinterpret_cast<char*>(&all.initial_t), sizeof(all.initial_t), read, msg, text);
 
-  msg << "norm normalizer " << normalized_sum_norm_x << "\n";
-  bin_text_read_write_fixed(
-      model_file, reinterpret_cast<char*>(&normalized_sum_norm_x), sizeof(normalized_sum_norm_x), read, msg, text);
+  assert(pms.size() == 1);
+  msg << "norm normalizer " << pms[0].normalized_sum_norm_x << "\n";
+  bin_text_read_write_fixed(model_file, reinterpret_cast<char*>(&pms[0].normalized_sum_norm_x),
+      sizeof(pms[0].normalized_sum_norm_x), read, msg, text);
 
   msg << "t " << all.sd->t << "\n";
   bin_text_read_write_fixed(model_file, reinterpret_cast<char*>(&all.sd->t), sizeof(all.sd->t), read, msg, text);
@@ -1048,12 +1049,13 @@ void save_load_online_state(VW::workspace& all, io_buf& model_file, bool read, b
 
   if (!read || all.model_file_ver >= VW::version_definitions::VERSION_SAVE_RESUME_FIX)
   {
+    assert(pms.size() == 1);
     // restore some data to allow save_resume work more accurate
 
     // fix average loss
-    msg << "total_weight " << total_weight << "\n";
+    msg << "total_weight " << pms[0].total_weight << "\n";
     bin_text_read_write_fixed(
-        model_file, reinterpret_cast<char*>(&total_weight), sizeof(total_weight), read, msg, text);
+        model_file, reinterpret_cast<char*>(&pms[0].total_weight), sizeof(pms[0].total_weight), read, msg, text);
 
     // fix "loss since last" for first printed out example details
     msg << "sd::oec.weighted_labeled_examples " << all.sd->old_weighted_labeled_examples << "\n";
@@ -1168,8 +1170,7 @@ void save_load(gd& g, io_buf& model_file, bool read, bool text)
             "save_resume functionality is known to have inaccuracy in model files version less than '{}'",
             VW::version_definitions::VERSION_SAVE_RESUME_FIX.to_string());
       }
-      save_load_online_state(all, model_file, read, text, g.per_model_states[0].total_weight,
-          g.per_model_states[0].normalized_sum_norm_x, &g);
+      save_load_online_state(all, model_file, read, text, g.per_model_states, &g);
     }
     else
     {

@@ -478,9 +478,8 @@ void save_load(OjaNewton& ON, io_buf& model_file, bool read, bool text)
     msg << ":" << resume << "\n";
     bin_text_read_write_fixed(model_file, reinterpret_cast<char*>(&resume), sizeof(resume), read, msg, text);
 
-    double temp = 0.;
-    double temp_normalized_sum_norm_x = 0.;
-    if (resume) { GD::save_load_online_state(all, model_file, read, text, temp, temp_normalized_sum_norm_x); }
+    std::vector<GD::per_model_state> temp_pms = {GD::per_model_state()};
+    if (resume) { GD::save_load_online_state(all, model_file, read, text, temp_pms); }
     else
     {
       GD::save_load_regressor(all, model_file, read, text);
