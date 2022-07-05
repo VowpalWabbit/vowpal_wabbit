@@ -157,7 +157,6 @@ struct automl
   bool debug_reverse_learning_order = false;
 
   // TODO: delete all this, gd and cb_adf must respect ft_offset
-  std::vector<double> per_live_model_state_double;
   std::vector<uint64_t> per_live_model_state_uint64;
   double* _gd_normalized = nullptr;
   double* _gd_total_weight = nullptr;
@@ -228,8 +227,6 @@ struct automl
       }
 
       // TODO: what to do if that slot is switched with anew config?
-      std::swap(*_gd_normalized, per_live_model_state_double[live_slot * 2]);
-      std::swap(*_gd_total_weight, per_live_model_state_double[live_slot * 2 + 1]);
       std::swap(*_cb_adf_event_sum, per_live_model_state_uint64[live_slot * 2]);
       std::swap(*_cb_adf_action_sum, per_live_model_state_uint64[live_slot * 2 + 1]);
 
@@ -258,8 +255,6 @@ struct automl
         cm->scores[live_slot].first.update(chosen_action == labelled_action ? w : 0, r);
       }
 
-      std::swap(*_gd_normalized, per_live_model_state_double[live_slot * 2]);
-      std::swap(*_gd_total_weight, per_live_model_state_double[live_slot * 2 + 1]);
       std::swap(*_cb_adf_event_sum, per_live_model_state_uint64[live_slot * 2]);
       std::swap(*_cb_adf_action_sum, per_live_model_state_uint64[live_slot * 2 + 1]);
     }

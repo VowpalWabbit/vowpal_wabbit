@@ -174,6 +174,7 @@ base_learner* VW::reductions::cb_algs_setup(VW::setup_base_i& stack_builder)
 
   cb_to_cs& c = data->cbcs;
 
+  // todo: is this being used?
   size_t problem_multiplier = 2;  // default for DR
   c.cb_type = VW::cb_type_from_string(type_string);
   switch (c.cb_type)

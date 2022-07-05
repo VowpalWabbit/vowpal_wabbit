@@ -226,7 +226,6 @@ VW::LEARNER::base_learner* VW::reductions::automl_setup(VW::setup_base_i& stack_
   auto data = VW::make_unique<VW::reductions::automl::automl<VW::reductions::automl::interaction_config_manager>>(
       std::move(cm), &all.logger);
   data->debug_reverse_learning_order = reversed_learning_order;
-  data->per_live_model_state_double = std::vector<double>(max_live_configs * 2, 0.f);
   data->per_live_model_state_uint64 = std::vector<uint64_t>(max_live_configs * 2, 0.f);
 
   if (max_live_configs > VW::reductions::automl::MAX_CONFIGS)
@@ -261,12 +260,8 @@ VW::LEARNER::base_learner* VW::reductions::automl_setup(VW::setup_base_i& stack_
     auto* persist_ptr = verbose_metrics ? persist<VW::reductions::automl::interaction_config_manager, true>
                                         : persist<VW::reductions::automl::interaction_config_manager, false>;
     data->adf_learner = as_multiline(base_learner->get_learner_by_name_prefix("cb_adf"));
-    GD::gd& gd = *static_cast<GD::gd*>(
-        base_learner->get_learner_by_name_prefix("gd")->get_internal_type_erased_data_pointer_test_use_only());
     auto& adf_data =
         *static_cast<CB_ADF::cb_adf*>(data->adf_learner->get_internal_type_erased_data_pointer_test_use_only());
-    data->_gd_normalized = &(gd.per_model_states[0].normalized_sum_norm_x);
-    data->_gd_total_weight = &(gd.per_model_states[0].total_weight);
     data->_cb_adf_event_sum = &(adf_data._gen_cs.event_sum);
     data->_cb_adf_action_sum = &(adf_data._gen_cs.action_sum);
 

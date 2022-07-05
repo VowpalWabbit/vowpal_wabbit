@@ -32,6 +32,7 @@ struct per_model_state
 struct gd
 {
   std::vector<per_model_state> per_model_states;
+  per_model_state* current_model_state = nullptr;
   size_t no_win_counter = 0;
   size_t early_stop_thres = 0;
   float initial_constant = 0.f;
