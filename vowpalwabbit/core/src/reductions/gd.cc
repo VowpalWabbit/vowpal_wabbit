@@ -559,15 +559,16 @@ float get_pred_per_update(gd& g, VW::example& ec)
   {
     if (!stateless)
     {
-      g.normalized_sum_norm_x += (static_cast<double>(ec.weight)) * nd.norm_x;
-      g.total_weight += ec.weight;
-      g.update_multiplier = average_update<sqrt_rate, adaptive, normalized>(
-          static_cast<float>(g.total_weight), static_cast<float>(g.normalized_sum_norm_x), g.neg_norm_power);
+      g.per_model_states[0].normalized_sum_norm_x += (static_cast<double>(ec.weight)) * nd.norm_x;
+      g.per_model_states[0].total_weight += ec.weight;
+      g.update_multiplier =
+          average_update<sqrt_rate, adaptive, normalized>(static_cast<float>(g.per_model_states[0].total_weight),
+              static_cast<float>(g.per_model_states[0].normalized_sum_norm_x), g.neg_norm_power);
     }
     else
     {
-      float nsnx = (static_cast<float>(g.normalized_sum_norm_x)) + ec.weight * nd.norm_x;
-      float tw = static_cast<float>(g.total_weight) + ec.weight;
+      float nsnx = (static_cast<float>(g.per_model_states[0].normalized_sum_norm_x)) + ec.weight * nd.norm_x;
+      float tw = static_cast<float>(g.per_model_states[0].total_weight) + ec.weight;
       g.update_multiplier = average_update<sqrt_rate, adaptive, normalized>(tw, nsnx, g.neg_norm_power);
     }
     nd.pred_per_update *= g.update_multiplier;
@@ -1167,7 +1168,8 @@ void save_load(gd& g, io_buf& model_file, bool read, bool text)
             "save_resume functionality is known to have inaccuracy in model files version less than '{}'",
             VW::version_definitions::VERSION_SAVE_RESUME_FIX.to_string());
       }
-      save_load_online_state(all, model_file, read, text, g.total_weight, g.normalized_sum_norm_x, &g);
+      save_load_online_state(all, model_file, read, text, g.per_model_states[0].total_weight,
+          g.per_model_states[0].normalized_sum_norm_x, &g);
     }
     else
     {
@@ -1312,9 +1314,11 @@ base_learner* VW::reductions::gd_setup(VW::setup_base_i& stack_builder)
   if (options.was_supplied("l2_state")) { all.sd->contraction = local_contraction; }
 
   g->all = &all;
-  g->normalized_sum_norm_x = 0;
+  auto single_model_state = GD::per_model_state();
+  single_model_state.normalized_sum_norm_x = 0;
+  single_model_state.total_weight = 0.;
+  g->per_model_states.emplace_back(single_model_state);
   g->no_win_counter = 0;
-  g->total_weight = 0.;
   all.weights.adaptive = true;
   all.weights.normalized = true;
   g->neg_norm_power = (all.weights.adaptive ? (all.power_t - 1.f) : -1.f);
@@ -1323,8 +1327,8 @@ base_learner* VW::reductions::gd_setup(VW::setup_base_i& stack_builder)
   if (all.initial_t > 0)  // for the normalized update: if initial_t is bigger than 1 we interpret this as if we had
                           // seen (all.initial_t) previous fake datapoints all with norm 1
   {
-    g->normalized_sum_norm_x = all.initial_t;
-    g->total_weight = all.initial_t;
+    g->per_model_states[0].normalized_sum_norm_x = all.initial_t;
+    g->per_model_states[0].total_weight = all.initial_t;
   }
 
   bool feature_mask_off = true;

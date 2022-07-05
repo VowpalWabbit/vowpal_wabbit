@@ -24,10 +24,14 @@ VW::LEARNER::base_learner* gd_setup(VW::setup_base_i& stack_builder);
 }  // namespace VW
 namespace GD
 {
+struct per_model_state
+{
+  double normalized_sum_norm_x = 0.0;
+  double total_weight = 0.0;
+};
 struct gd
 {
-  double normalized_sum_norm_x;
-  double total_weight = 0.0;
+  std::vector<per_model_state> per_model_states;
   size_t no_win_counter = 0;
   size_t early_stop_thres = 0;
   float initial_constant = 0.f;
