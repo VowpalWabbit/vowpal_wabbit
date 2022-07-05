@@ -43,7 +43,6 @@ struct freegrad_update_data
   float squared_norm_clipped_grad = 0.f;
   float sum_normalized_grad_norms = 0.f;
   float maximum_clipped_gradient_norm = 0.f;
-  double normalized_sum_norm_x = 0.0;
 };
 
 struct freegrad
@@ -59,6 +58,7 @@ struct freegrad
   size_t early_stop_thres;
   uint32_t freegrad_size;
   double total_weight = 0.0;
+  double normalized_sum_norm_x = 0.0;
 };
 
 template <bool audit>
@@ -285,8 +285,8 @@ void save_load(freegrad& fg, io_buf& model_file, bool read, bool text)
 
     if (resume)
     {
-      GD::save_load_online_state(*all, model_file, read, text, fg.total_weight, fg.update_data.normalized_sum_norm_x,
-          nullptr, fg.freegrad_size);
+      GD::save_load_online_state(
+          *all, model_file, read, text, fg.total_weight, fg.normalized_sum_norm_x, nullptr, fg.freegrad_size);
     }
     else
     {
@@ -347,8 +347,8 @@ base_learner* VW::reductions::freegrad_setup(VW::setup_base_i& stack_builder)
   fg_ptr->project = project;
   fg_ptr->adaptiveradius = adaptiveradius;
   fg_ptr->no_win_counter = 0;
-  fg_ptr->update_data.normalized_sum_norm_x = 0;
   fg_ptr->total_weight = 0;
+  fg_ptr->normalized_sum_norm_x = 0;
   fg_ptr->epsilon = fepsilon;
 
   const auto* algorithm_name = "FreeGrad";
