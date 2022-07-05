@@ -193,7 +193,6 @@ public:
   std::string id;
 
   VW::version_struct model_file_ver;
-  double normalized_sum_norm_x;
   bool vw_is_main = false;  // true if vw is executable; false in library mode
 
   // error reporting

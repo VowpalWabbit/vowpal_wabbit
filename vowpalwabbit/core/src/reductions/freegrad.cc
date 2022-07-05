@@ -35,29 +35,30 @@ struct freegrad;
 struct freegrad_update_data
 {
   freegrad* FG;
-  float update;
-  float ec_weight;
-  float predict;
-  float squared_norm_prediction;
-  float grad_dot_w;
-  float squared_norm_clipped_grad;
-  float sum_normalized_grad_norms;
-  float maximum_clipped_gradient_norm;
+  float update = 0.f;
+  float ec_weight = 0.f;
+  float predict = 0.f;
+  float squared_norm_prediction = 0.f;
+  float grad_dot_w = 0.f;
+  float squared_norm_clipped_grad = 0.f;
+  float sum_normalized_grad_norms = 0.f;
+  float maximum_clipped_gradient_norm = 0.f;
 };
 
 struct freegrad
 {
   VW::workspace* all;  // features, finalize, l1, l2,
-  float epsilon;
+  float epsilon = 0.f;
   bool restart;
   bool project;
   bool adaptiveradius;
-  float radius;
+  float radius = 0.f;
   freegrad_update_data update_data;
   size_t no_win_counter;
   size_t early_stop_thres;
   uint32_t freegrad_size;
-  double total_weight;
+  double total_weight = 0.0;
+  double normalized_sum_norm_x = 0.0;
 };
 
 template <bool audit>
@@ -283,7 +284,10 @@ void save_load(freegrad& fg, io_buf& model_file, bool read, bool text)
     bin_text_read_write_fixed(model_file, reinterpret_cast<char*>(&resume), sizeof(resume), read, msg, text);
 
     if (resume)
-    { GD::save_load_online_state(*all, model_file, read, text, fg.total_weight, nullptr, fg.freegrad_size); }
+    {
+      GD::save_load_online_state(
+          *all, model_file, read, text, fg.total_weight, fg.normalized_sum_norm_x, nullptr, fg.freegrad_size);
+    }
     else
     {
       GD::save_load_regressor(*all, model_file, read, text);
@@ -343,8 +347,8 @@ base_learner* VW::reductions::freegrad_setup(VW::setup_base_i& stack_builder)
   fg_ptr->project = project;
   fg_ptr->adaptiveradius = adaptiveradius;
   fg_ptr->no_win_counter = 0;
-  fg_ptr->all->normalized_sum_norm_x = 0;
   fg_ptr->total_weight = 0;
+  fg_ptr->normalized_sum_norm_x = 0;
   fg_ptr->epsilon = fepsilon;
 
   const auto* algorithm_name = "FreeGrad";
