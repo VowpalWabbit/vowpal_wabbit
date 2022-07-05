@@ -386,7 +386,8 @@ template <bool l1, bool audit>
 void multipredict(gd& g, base_learner&, VW::example& ec, size_t count, size_t step, VW::polyprediction* pred,
     bool finalize_predictions)
 {
-  assert(g.current_model_state != nullptr);
+  // tODO: do we care? use the first slot for multipredict for now
+  if (g.current_model_state == nullptr) { g.current_model_state = &(g.per_model_states[0]); }
   VW::workspace& all = *g.all;
   for (size_t c = 0; c < count; c++)
   {
@@ -445,6 +446,7 @@ void multipredict(gd& g, base_learner&, VW::example& ec, size_t count, size_t st
     }
     ec.ft_offset -= static_cast<uint64_t>(step * count);
   }
+  g.current_model_state = nullptr;
 }
 
 struct power_data
@@ -623,9 +625,11 @@ float get_scale(gd& g, VW::example& /* ec */, float weight)
 template <bool sqrt_rate, bool feature_mask_off, bool adax, size_t adaptive, size_t normalized, size_t spare>
 float sensitivity(gd& g, base_learner& /* base */, VW::example& ec)
 {
-  assert(g.current_model_state != nullptr);
+  // tODO: do we care? use the first slot for multipredict for now
+  if (g.current_model_state == nullptr) { g.current_model_state = &(g.per_model_states[0]); }
   return get_scale<adaptive>(g, ec, 1.) *
       sensitivity<sqrt_rate, feature_mask_off, adax, adaptive, normalized, spare, true>(g, ec);
+  g.current_model_state = nullptr;
 }
 
 template <bool sparse_l2, bool invariant, bool sqrt_rate, bool feature_mask_off, bool adax, size_t adaptive,
@@ -675,7 +679,8 @@ template <bool sparse_l2, bool invariant, bool sqrt_rate, bool feature_mask_off,
     size_t normalized, size_t spare>
 void update(gd& g, base_learner&, VW::example& ec)
 {
-  assert(g.current_model_state != nullptr);
+  // tODO: do we care? use the first slot for multipredict for now
+  if (g.current_model_state == nullptr) { g.current_model_state = &(g.per_model_states[0]); }
   // invariant: not a test label, importance weight > 0
   float update;
   if ((update = compute_update<sparse_l2, invariant, sqrt_rate, feature_mask_off, adax, adaptive, normalized, spare>(
@@ -707,7 +712,8 @@ void update(gd& g, base_learner&, VW::example& ec)
   {  // updating weights now to avoid numerical instability
     sync_weights(*g.all);
   }
-}  // namespace GD
+  g.current_model_state = nullptr;
+}
 
 template <bool sparse_l2, bool invariant, bool sqrt_rate, bool feature_mask_off, bool adax, size_t adaptive,
     size_t normalized, size_t spare>
@@ -719,6 +725,7 @@ void learn(gd& g, base_learner& base, VW::example& ec)
   g.predict(g, base, ec);
   g.current_model_state = &(g.per_model_states[ec.ft_offset / g.all->weights.stride()]);
   update<sparse_l2, invariant, sqrt_rate, feature_mask_off, adax, adaptive, normalized, spare>(g, base, ec);
+  assert(g.current_model_state == nullptr);  // update clears this pointer
   g.current_model_state = nullptr;
 }
 
