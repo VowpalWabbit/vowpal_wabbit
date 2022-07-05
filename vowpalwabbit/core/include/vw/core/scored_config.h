@@ -16,13 +16,15 @@ struct scored_config
   float last_r = 0.0;
   uint64_t update_count = 0;
 
-  scored_config() : chisq(0.05, 0.999, 0, std::numeric_limits<double>::infinity()) {}
+  scored_config() : chisq(DEFAULT_ALPHA, CRESSEREAD_DEFAULT_TAU, 0, std::numeric_limits<double>::infinity()) {}
   scored_config(double alpha, double tau) : chisq(alpha, tau, 0, std::numeric_limits<double>::infinity()) {}
 
   void update(float w, float r);
   void persist(metric_sink&, const std::string&);
   float current_ips() const;
-  void reset_stats(double alpha = DEFAULT_ALPHA, double tau = DEFAULT_TAU);
+  void reset_stats(double alpha = DEFAULT_ALPHA, double tau = CRESSEREAD_DEFAULT_TAU);
+  float lower_bound();
+  float upper_bound();
 };
 
 namespace model_utils

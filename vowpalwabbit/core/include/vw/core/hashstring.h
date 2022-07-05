@@ -28,10 +28,13 @@ VW_STD14_CONSTEXPR inline uint64_t hashstring(const char* s, size_t len, uint64_
   size_t ret = 0;
   const char* p = front;
   while (p != front + len)
-    if (*p >= '0' && *p <= '9')
-      ret = 10 * ret + *(p++) - '0';
+  {
+    if (*p >= '0' && *p <= '9') { ret = 10 * ret + *(p++) - '0'; }
     else
+    {
       return VW::uniform_hash(front, len, h);
+    }
+  }
 
   return ret + h;
 }

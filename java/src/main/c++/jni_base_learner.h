@@ -28,8 +28,7 @@ T base_predict(JNIEnv* env, example* ex, bool learn, VW::workspace* vwInstance, 
     else
       vwInstance->predict(*ex);
 
-    if (predict)
-      result = predictor(ex, env);
+    if (predict) result = predictor(ex, env);
 
     vwInstance->finish_example(*ex);
   }
@@ -60,8 +59,7 @@ T base_predict(JNIEnv* env, jobjectArray example_strings, jboolean learn, jlong 
     jstring example_string = (jstring)(env->GetObjectArrayElement(example_strings, i));
     example* ex = read_example(env, example_string, vwInstance);
     ex_coll.push_back(ex);
-    if (i == 0)
-      first_example = ex;
+    if (i == 0) first_example = ex;
   }
   env->DeleteLocalRef(example_strings);
 

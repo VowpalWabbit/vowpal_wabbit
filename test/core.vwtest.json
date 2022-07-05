@@ -4528,7 +4528,7 @@
   {
     "id": 351,
     "desc": "should be the same output as 158 except the line of enabled_reductions",
-    "vw_command": "-f automl.model --automl 3 --verbose_metrics --priority_type least_exclusion -d train-sets/decisionservice.json --dsjson --cb_explore_adf --epsilon 0.2 -P 1 -p cbe_adf_dsjson.predict --extra_metrics metrics_.json --readable_model automl_readable.txt --keep_configs --oracle_type rand",
+    "vw_command": "-f automl.model --automl 3 --verbose_metrics --priority_type favor_popular_namespaces -d train-sets/decisionservice.json --dsjson --cb_explore_adf --epsilon 0.2 -P 1 -p cbe_adf_dsjson.predict --extra_metrics metrics_.json --readable_model automl_readable.txt --oracle_type rand",
     "diff_files": {
       "stderr": "train-sets/ref/cbe_adf_dsjson_metrics_.stderr",
       "metrics_.json": "test-sets/ref/metrics_.json",
@@ -4659,10 +4659,10 @@
   {
     "id": 361,
     "desc": "--probabilities --oaa zero-indexed without flag",
-    "vw_command": "-d train-sets/probabilities_zero_ind.dat --probabilities --oaa=4 --loss_function=logistic -p oaa_zero_ind_no_flag_probabilities.predict",
+    "vw_command": "-d train-sets/probabilities_zero_ind.dat --probabilities --oaa=4 --loss_function=logistic -p oaa_zero_ind_probabilities.predict",
     "diff_files": {
-      "stderr": "train-sets/ref/oaa_zero_ind_no_flag_probabilities.stderr",
-      "oaa_zero_ind_no_flag_probabilities.predict": "pred-sets/ref/oaa_zero_ind_no_flag_probabilities.predict",
+      "stderr": "train-sets/ref/oaa_zero_ind_probabilities.stderr",
+      "oaa_zero_ind_probabilities.predict": "pred-sets/ref/oaa_zero_ind_probabilities.predict",
       "stdout": "train-sets/ref/oaa_zero_ind_no_flag_probabilities.stdout"
     },
     "input_files": [
@@ -5293,7 +5293,7 @@
   {
     "id": 411,
     "desc": "automl with cb_adf",
-    "vw_command": "-f automl.model --automl 3 --verbose_metrics --priority_type least_exclusion -d train-sets/decisionservice.json --dsjson --cb_adf --extra_metrics metrics_.json --readable_model automl_readable.txt --keep_configs --oracle_type rand",
+    "vw_command": "-f automl.model --automl 3 --verbose_metrics --priority_type favor_popular_namespaces -d train-sets/decisionservice.json --dsjson --cb_adf --extra_metrics metrics_.json --readable_model automl_readable.txt --oracle_type rand",
     "diff_files": {
       "stderr": "train-sets/ref/cb_adf_dsjson_metrics_.stderr",
       "metrics_.json": "test-sets/ref/metrics_cbadfautoml.json",
@@ -5344,6 +5344,20 @@
     ],
     "depends_on": [
       412
+    ]
+  },
+  {
+    "id": 415,
+    "desc": "test AutoML with cubic interaction",
+    "vw_command": "-f automl_cubic.model --automl 3 --verbose_metrics --priority_type favor_popular_namespaces -d train-sets/decisionservice.json --dsjson --cb_explore_adf --epsilon 0.2 -P 1 -p cbe_adf_dsjson.predict --extra_metrics metrics_cubic.json --readable_model automl_readable_cubic.txt --oracle_type rand --interaction_type cubic",
+    "diff_files": {
+      "stderr": "train-sets/ref/cbe_adf_dsjson_metrics_cubic.stderr",
+      "metrics_cubic.json": "test-sets/ref/metrics_cubic.json",
+      "automl_readable_cubic.txt": "train-sets/ref/automl_readable_cubic.txt",
+      "stdout": "train-sets/ref/cbe_adf_dsjson_metrics_cubic.stdout"
+    },
+    "input_files": [
+      "train-sets/decisionservice.json"
     ]
   }
 ]

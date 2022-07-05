@@ -12,6 +12,9 @@
 #include "vw/core/interactions.h"
 #include "vw/core/vw_math.h"
 
+// we need it for base_learner
+#include "vw/core/vw_fwd.h"
+
 namespace VW
 {
 namespace reductions
@@ -21,7 +24,28 @@ VW::LEARNER::base_learner* gd_setup(VW::setup_base_i& stack_builder);
 }  // namespace VW
 namespace GD
 {
-struct gd;
+struct gd
+{
+  //  double normalized_sum_norm_x;
+  double total_weight = 0.0;
+  size_t no_win_counter = 0;
+  size_t early_stop_thres = 0;
+  float initial_constant = 0.f;
+  float neg_norm_power = 0.f;
+  float neg_power_t = 0.f;
+  float sparse_l2 = 0.f;
+  float update_multiplier = 0.f;
+  void (*predict)(gd&, VW::LEARNER::base_learner&, VW::example&) = nullptr;
+  void (*learn)(gd&, VW::LEARNER::base_learner&, VW::example&) = nullptr;
+  void (*update)(gd&, VW::LEARNER::base_learner&, VW::example&) = nullptr;
+  float (*sensitivity)(gd&, VW::LEARNER::base_learner&, VW::example&) = nullptr;
+  void (*multipredict)(
+      gd&, VW::LEARNER::base_learner&, VW::example&, size_t, size_t, VW::polyprediction*, bool) = nullptr;
+  bool adaptive_input = false;
+  bool normalized_input = false;
+  bool adax = false;
+  VW::workspace* all = nullptr;  // parallel, features, parameters
+};
 
 float finalize_prediction(shared_data* sd, VW::io::logger& logger, float ret);
 void print_features(VW::workspace& all, VW::example& ec);
@@ -43,7 +67,7 @@ struct multipredict_info
 template <class T>
 inline void vec_add_multipredict(multipredict_info<T>& mp, const float fx, uint64_t fi)
 {
-  if ((-1e-10 < fx) && (fx < 1e-10)) return;
+  if ((-1e-10 < fx) && (fx < 1e-10)) { return; }
   uint64_t mask = mp.weights.mask();
   VW::polyprediction* p = mp.pred;
   fi &= mask;
@@ -59,12 +83,14 @@ inline void vec_add_multipredict(multipredict_info<T>& mp, const float fx, uint6
                                         // change_begin())
     }
   }
-  else  // TODO: this could be faster by unrolling into two loops
+  else
+  {  // TODO: this could be faster by unrolling into two loops
     for (size_t c = 0; c < mp.count; ++c, fi += (uint64_t)mp.step, ++p)
     {
       fi &= mask;
       p->scalar += fx * mp.weights[fi];
     }
+  }
 }
 
 // iterate through one namespace (or its part), callback function FuncT(some_data_R, feature_value_x, feature_weight)
@@ -155,13 +181,17 @@ template <class R, class S, void (*T)(R&, float, S), bool audit, void (*audit_fu
 inline void generate_interactions(VW::workspace& all, VW::example_predict& ec, R& dat, size_t& num_interacted_features)
 {
   if (all.weights.sparse)
+  {
     generate_interactions<R, S, T, audit, audit_func, sparse_parameters>(*ec.interactions, *ec.extent_interactions,
         all.permutations, ec, dat, all.weights.sparse_weights, num_interacted_features,
         all._generate_interactions_object_cache);
+  }
   else
+  {
     generate_interactions<R, S, T, audit, audit_func, dense_parameters>(*ec.interactions, *ec.extent_interactions,
         all.permutations, ec, dat, all.weights.dense_weights, num_interacted_features,
         all._generate_interactions_object_cache);
+  }
 }
 
 // this code is for C++98/03 complience as I unable to pass null function-pointer as template argument in g++-4.6
@@ -169,11 +199,15 @@ template <class R, class S, void (*T)(R&, float, S)>
 inline void generate_interactions(VW::workspace& all, VW::example_predict& ec, R& dat, size_t& num_interacted_features)
 {
   if (all.weights.sparse)
+  {
     generate_interactions<R, S, T, sparse_parameters>(all.interactions, all.extent_interactions, all.permutations, ec,
         dat, all.weights.sparse_weights, num_interacted_features, all._generate_interactions_object_cache);
+  }
   else
+  {
     generate_interactions<R, S, T, dense_parameters>(all.interactions, all.extent_interactions, all.permutations, ec,
         dat, all.weights.dense_weights, num_interacted_features, all._generate_interactions_object_cache);
+  }
 }
 
 }  // namespace INTERACTIONS

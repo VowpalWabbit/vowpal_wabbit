@@ -301,7 +301,7 @@ if(VW_INSTALL)
 
   configure_package_config_file (
     cmake/VowpalWabbitConfig.cmake.in
-    ${CMAKE_BINARY_DIR}/VowpalWabbitConfig.cmake
+    ${CMAKE_CURRENT_BINARY_DIR}/VowpalWabbitConfig.cmake
     INSTALL_DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/VowpalWabbit)
 
   install(

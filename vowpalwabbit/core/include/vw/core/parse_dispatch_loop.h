@@ -51,7 +51,8 @@ void parse_dispatch(VW::workspace& all, DispatchFuncT& dispatch)
           all.pass_length = all.pass_length * 2 + 1;
         }
         dispatch(all, examples);  // must be called before lock_done or race condition exists.
-        if (all.passes_complete >= all.numpasses && all.max_examples >= example_number) lock_done(*all.example_parser);
+        if (all.passes_complete >= all.numpasses && all.max_examples >= example_number)
+        { lock_done(*all.example_parser); }
         example_number = 0;
       }
 

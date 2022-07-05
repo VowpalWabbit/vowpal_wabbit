@@ -78,9 +78,9 @@ struct node_socks
   {
     if (current_master != "")
     {
-      if (parent != -1) CLOSESOCK(this->parent);
-      if (children[0] != -1) CLOSESOCK(this->children[0]);
-      if (children[1] != -1) CLOSESOCK(this->children[1]);
+      if (parent != -1) { CLOSESOCK(this->parent); }
+      if (children[0] != -1) { CLOSESOCK(this->children[0]); }
+      if (children[1] != -1) { CLOSESOCK(this->children[1]); }
     }
   }
   node_socks() { current_master = ""; }
@@ -89,7 +89,7 @@ struct node_socks
 template <class T, void (*f)(T&, const T&)>
 void addbufs(T* buf1, const T* buf2, const size_t n)
 {
-  for (size_t i = 0; i < n; i++) f(buf1[i], buf2[i]);
+  for (size_t i = 0; i < n; i++) { f(buf1[i], buf2[i]); }
 }
 
 class AllReduce
@@ -184,10 +184,10 @@ public:
     {  // Perform transposed AllReduce to help data locallity
       T& first = buffers[0][index];
 
-      for (size_t i = 1; i < total; i++) f(first, buffers[i][index]);
+      for (size_t i = 1; i < total; i++) { f(first, buffers[i][index]); }
 
       // Broadcast back
-      for (size_t i = 1; i < total; i++) buffers[i][index] = first;
+      for (size_t i = 1; i < total; i++) { buffers[i][index] = first; }
     }
 
     m_sync->waitForSynchronization();
@@ -226,8 +226,8 @@ private:
   {
     fd_set fds;
     FD_ZERO(&fds);
-    if (socks.children[0] != -1) FD_SET(socks.children[0], &fds);
-    if (socks.children[1] != -1) FD_SET(socks.children[1], &fds);
+    if (socks.children[0] != -1) { FD_SET(socks.children[0], &fds); }
+    if (socks.children[1] != -1) { FD_SET(socks.children[1], &fds); }
 
     socket_t max_fd = std::max(socks.children[0], socks.children[1]) + 1;
     size_t child_read_pos[2] = {0, 0};  // First unread float from left and right children
@@ -242,9 +242,9 @@ private:
 
     while (parent_sent_pos < n || child_read_pos[0] < n || child_read_pos[1] < n)
     {
-      if (socks.parent != -1) pass_up<T>(buffer, child_read_pos[0], child_read_pos[1], parent_sent_pos);
+      if (socks.parent != -1) { pass_up<T>(buffer, child_read_pos[0], child_read_pos[1], parent_sent_pos); }
 
-      if (parent_sent_pos >= n && child_read_pos[0] >= n && child_read_pos[1] >= n) break;
+      if (parent_sent_pos >= n && child_read_pos[0] >= n && child_read_pos[1] >= n) { break; }
 
       if (child_read_pos[0] < n || child_read_pos[1] < n)
       {
@@ -275,14 +275,18 @@ private:
                   child_read_buf[i][((old_unprocessed + read_size) / (int)sizeof(T)) * sizeof(T) + j];
             }
 
-            if (child_read_pos[i] == n)  // Done reading parent
+            if (child_read_pos[i] == n)
+            {  // Done reading parent
               FD_CLR(socks.children[i], &fds);
+            }
           }
           else if (socks.children[i] != -1 && child_read_pos[i] != n)
+          {
             FD_SET(socks.children[i], &fds);
+          }
         }
       }
-      if (socks.parent == -1 && child_read_pos[0] == n && child_read_pos[1] == n) parent_sent_pos = n;
+      if (socks.parent == -1 && child_read_pos[0] == n && child_read_pos[1] == n) { parent_sent_pos = n; }
     }
   }
 
@@ -304,7 +308,7 @@ public:
   template <class T, void (*f)(T&, const T&)>
   void all_reduce(T* buffer, const size_t n, VW::io::logger& logger)
   {
-    if (span_server != socks.current_master) all_reduce_init(logger);
+    if (span_server != socks.current_master) { all_reduce_init(logger); }
     reduce<T, f>((char*)buffer, n * sizeof(T));
     broadcast((char*)buffer, n * sizeof(T));
   }

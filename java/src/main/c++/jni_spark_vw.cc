@@ -1,6 +1,7 @@
 #include "jni_spark_vw.h"
 
 #include "util.h"
+#include "vw/common/future_compat.h"
 #include "vw/common/vw_exception.h"
 #include "vw/config/cli_options_serializer.h"
 #include "vw/config/options.h"
@@ -15,10 +16,43 @@
 
 jobject getJavaPrediction(JNIEnv* env, VW::workspace* all, example* ex);
 
+// Will finish the examples too
+template <bool isLearn>
+jobject callLearner(JNIEnv* env, VW::workspace* all, VW::multi_ex& examples)
+{
+  assert(all != nullptr);
+  jobject prediction = nullptr;
+  if (all->l->is_multiline())
+  {
+    if VW_STD17_CONSTEXPR (isLearn) { all->learn(examples); }
+    else
+    {
+      all->predict(examples);
+    }
+    // prediction is in the first example
+    prediction = getJavaPrediction(env, all, examples[0]);
+    all->finish_example(examples);
+  }
+  else
+  {
+    assert(examples.size() == 1);
+    if VW_STD17_CONSTEXPR (isLearn) { all->learn(*examples[0]); }
+    else
+    {
+      all->predict(*examples[0]);
+    }
+    prediction = getJavaPrediction(env, all, examples[0]);
+    all->finish_example(*examples[0]);
+  }
+  assert(prediction != nullptr);
+  return prediction;
+}
+
 // Guards
 StringGuard::StringGuard(JNIEnv* env, jstring source) : _env(env), _source(source), _cstr(nullptr)
 {
   _cstr = _env->GetStringUTFChars(source, 0);
+  _length = static_cast<size_t>(_env->GetStringUTFLength(source));
 }
 
 StringGuard::~StringGuard()
@@ -31,6 +65,7 @@ StringGuard::~StringGuard()
 }
 
 const char* StringGuard::c_str() { return _cstr; }
+size_t StringGuard::length() { return _length; }
 
 CriticalArrayGuard::CriticalArrayGuard(JNIEnv* env, jarray arr) : _env(env), _arr(arr), _arr0(nullptr)
 {
@@ -117,14 +152,28 @@ JNIEXPORT jobject JNICALL Java_org_vowpalwabbit_spark_VowpalWabbitNative_learn(
   try
   {
     populateMultiEx(env, examples, *all, ex_coll);
+    return callLearner<true>(env, all, ex_coll);
+  }
+  catch (...)
+  {
+    rethrow_cpp_exception_as_java_exception(env);
+    return nullptr;
+  }
+}
 
-    all->learn(ex_coll);
+JNIEXPORT jobject JNICALL Java_org_vowpalwabbit_spark_VowpalWabbitNative_learnFromString(
+    JNIEnv* env, jobject vwObj, jstring examplesString)
+{
+  auto* all = reinterpret_cast<VW::workspace*>(get_native_pointer(env, vwObj));
+  StringGuard exampleStringGuard(env, examplesString);
 
-    // as this is not a ring-based example it is not freed
-    as_multiline(all->l)->finish_example(*all, ex_coll);
-
-    // prediction is in the first example
-    return getJavaPrediction(env, all, ex_coll[0]);
+  try
+  {
+    VW::multi_ex ex_coll;
+    ex_coll.push_back(&VW::get_unused_example(all));
+    all->example_parser->text_reader(all, exampleStringGuard.c_str(), exampleStringGuard.length(), ex_coll);
+    VW::setup_examples(*all, ex_coll);
+    return callLearner<true>(env, all, ex_coll);
   }
   catch (...)
   {
@@ -142,14 +191,28 @@ JNIEXPORT jobject JNICALL Java_org_vowpalwabbit_spark_VowpalWabbitNative_predict
   try
   {
     populateMultiEx(env, examples, *all, ex_coll);
+    return callLearner<false>(env, all, ex_coll);
+  }
+  catch (...)
+  {
+    rethrow_cpp_exception_as_java_exception(env);
+    return nullptr;
+  }
+}
 
-    all->predict(ex_coll);
+JNIEXPORT jobject JNICALL Java_org_vowpalwabbit_spark_VowpalWabbitNative_predictFromString(
+    JNIEnv* env, jobject vwObj, jstring examplesString)
+{
+  auto* all = reinterpret_cast<VW::workspace*>(get_native_pointer(env, vwObj));
+  StringGuard exampleStringGuard(env, examplesString);
 
-    // as this is not a ring-based example it is not freed
-    as_multiline(all->l)->finish_example(*all, ex_coll);
-
-    // prediction is in the first example
-    return getJavaPrediction(env, all, ex_coll[0]);
+  try
+  {
+    VW::multi_ex ex_coll;
+    ex_coll.push_back(&VW::get_unused_example(all));
+    all->example_parser->text_reader(all, exampleStringGuard.c_str(), exampleStringGuard.length(), ex_coll);
+    VW::setup_examples(*all, ex_coll);
+    return callLearner<false>(env, all, ex_coll);
   }
   catch (...)
   {
@@ -881,6 +944,53 @@ jobject multilabel_predictor(example* vec, JNIEnv* env);
 jfloatArray scalars_predictor(example* vec, JNIEnv* env);
 jobject action_scores_prediction(example* vec, JNIEnv* env);
 jobject action_probs_prediction(example* vec, JNIEnv* env);
+jobject decision_scores_prediction(example* vec, JNIEnv* env);
+
+jobject probability_density_function_value(example* ex, JNIEnv* env)
+{
+  jclass predClass = env->FindClass("vowpalWabbit/responses/PDFValue");
+  CHECK_JNI_EXCEPTION(nullptr);
+
+  jmethodID ctr = env->GetMethodID(predClass, "<init>", "(FF)V");
+  CHECK_JNI_EXCEPTION(nullptr);
+
+  return env->NewObject(predClass, ctr, ex->pred.pdf_value.action, ex->pred.pdf_value.pdf_value);
+}
+
+jobject probability_density_function(example* ex, JNIEnv* env)
+{
+  jclass pdfSegmentClass = env->FindClass("vowpalWabbit/responses/PDFSegment");
+  CHECK_JNI_EXCEPTION(nullptr);
+
+  jmethodID ctrPdfSegment = env->GetMethodID(pdfSegmentClass, "<init>", "(FFF)V");
+  CHECK_JNI_EXCEPTION(nullptr);
+
+  jclass pdfClass = env->FindClass("vowpalWabbit/responses/PDF");
+  CHECK_JNI_EXCEPTION(nullptr);
+
+  jmethodID ctrPdf = env->GetMethodID(pdfClass, "<init>", "([LvowpalWabbit/responses/PDFSegment;)V");
+  CHECK_JNI_EXCEPTION(nullptr);
+
+  auto& pdf = ex->pred.pdf;
+
+  jobjectArray pdfSegments = env->NewObjectArray(pdf.size(), pdfSegmentClass, 0);
+  for (uint32_t i = 0; i < pdf.size(); ++i)
+  {
+    auto& pdfSegment = pdf[i];
+
+    jobject pdfSegmentObj = 
+      env->NewObject(
+        pdfSegmentClass, 
+        ctrPdfSegment,
+        pdfSegment.left,
+        pdfSegment.right,
+        pdfSegment.pdf_value);
+
+    env->SetObjectArrayElement(pdfSegments, i, pdfSegmentObj);
+  }
+
+  return env->NewObject(pdfClass, ctrPdf, pdfSegments);
+}
 
 jobject getJavaPrediction(JNIEnv* env, VW::workspace* all, example* ex)
 {
@@ -926,6 +1036,15 @@ jobject getJavaPrediction(JNIEnv* env, VW::workspace* all, example* ex)
 
     case VW::prediction_type_t::multilabels:
       return multilabel_predictor(ex, env);
+
+    case VW::prediction_type_t::decision_probs:
+      return decision_scores_prediction(ex, env);
+
+    case VW::prediction_type_t::pdf:
+      return probability_density_function(ex, env);
+
+    case VW::prediction_type_t::action_pdf_value:
+      return probability_density_function_value(ex, env);
 
     default:
     {
