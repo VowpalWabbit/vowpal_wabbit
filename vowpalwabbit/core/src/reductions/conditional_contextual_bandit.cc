@@ -620,7 +620,7 @@ base_learner* VW::reductions::ccb_explore_adf_setup(VW::setup_base_i& stack_buil
                .necessary()
                .help("Do Conditional Contextual Bandit learning with multiline action dependent features"))
       .add(make_option("all_slots_loss", all_slots_loss_report).help("Report average loss from all slots"))
-      .add(make_option("no_predict", data->no_pred).help("Do not do a prediction when training"))
+      .add(make_option("no_predict", data->no_pred).keep().help("Do not do a prediction when training"))
       .add(make_option("cb_type", type_string)
                .keep()
                .default_value("mtr")
