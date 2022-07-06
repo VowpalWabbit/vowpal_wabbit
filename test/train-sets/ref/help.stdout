@@ -245,6 +245,8 @@ Weight Options:
                                             0.05, keep, experimental)
     --automl_estimator_decay arg            Time constant for count decay (type: float, default: 1, keep,
                                             experimental)
+    --fixed_significance_level              Use fixed significance level as opposed to scaling by model count
+                                            (bonferroni correction) (type: bool, keep, experimental)
 [Reduction] Baseline Options:
     --baseline                              Learn an additive baseline (from constant features) and a residual
                                             separately in regression (type: bool, keep, necessary)
@@ -545,10 +547,10 @@ Weight Options:
                                             experimental)
     --log_champ_changes                     Log champ changes (type: bool, keep, experimental)
     --constant_epsilon                      Keep epsilon constant across models (type: bool, keep, experimental)
-    --bonferroni                            Use bonferroni correction (divide confidence interval by model
-                                            count) (type: bool, keep, experimental)
     --lb_trick                              Use 1-lower_bound as upper_bound for estimator (type: bool, default:
                                             false, experimental)
+    --fixed_significance_level              Use fixed significance level as opposed to scaling by model count
+                                            (bonferroni correction) (type: bool, keep, experimental)
 [Reduction] Error Correcting Tournament Options:
     --ect arg                               Error correcting tournament with <k> labels (type: uint, keep,
                                             necessary)

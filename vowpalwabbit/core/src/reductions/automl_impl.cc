@@ -27,7 +27,7 @@ c_init -> 0: The first champ is initialized to the 0th indexed set of weights
 b(budget) -> max_live_configs: The weights/configs to learn on
 C -> current_champ: The weight index of the current champ
 S -> configs: The entire set of challengers/configs generated so far
-B(+ C) -> scores: The live challengers (including the champ) with statistics
+B(+ C) -> estimators: The live challengers (including the champ) with statistics
 
 Functions from ChaCha:
 ConfigOracle -> config_oracle(): Generates new configs based on champ
@@ -58,10 +58,10 @@ namespace reductions
 {
 namespace automl
 {
-void aml_score::persist(
+void aml_estimator::persist(
     metric_sink& metrics, const std::string& suffix, bool verbose, const std::string& interaction_type)
 {
-  VW::scored_config::persist(metrics, suffix);
+  VW::estimator_config::persist(metrics, suffix);
   metrics.set_uint("conf_idx" + suffix, config_index);
   if (verbose)
   {
@@ -93,8 +93,8 @@ interaction_config_manager::interaction_config_manager(uint64_t global_lease, ui
 {
   configs.emplace_back(global_lease);
   configs[0].state = VW::reductions::automl::config_state::Live;
-  scores.emplace_back(std::make_pair(aml_score(automl_significance_level, automl_estimator_decay),
-      scored_config(automl_significance_level, automl_estimator_decay)));
+  estimators.emplace_back(std::make_pair(aml_estimator(automl_significance_level, automl_estimator_decay),
+      estimator_config(automl_significance_level, automl_estimator_decay)));
   ++valid_config_size;
 }
 
@@ -108,8 +108,8 @@ void interaction_config_manager::gen_interactions(uint64_t live_slot)
 {
   if (interaction_type == "quadratic")
   {
-    auto& exclusions = configs[scores[live_slot].first.config_index].exclusions;
-    auto& interactions = scores[live_slot].first.live_interactions;
+    auto& exclusions = configs[estimators[live_slot].first.config_index].exclusions;
+    auto& interactions = estimators[live_slot].first.live_interactions;
     if (!interactions.empty()) { interactions.clear(); }
     for (auto it = ns_counter.begin(); it != ns_counter.end(); ++it)
     {
@@ -124,8 +124,8 @@ void interaction_config_manager::gen_interactions(uint64_t live_slot)
   }
   else if (interaction_type == "cubic")
   {
-    auto& exclusions = configs[scores[live_slot].first.config_index].exclusions;
-    auto& interactions = scores[live_slot].first.live_interactions;
+    auto& exclusions = configs[estimators[live_slot].first.config_index].exclusions;
+    auto& interactions = estimators[live_slot].first.live_interactions;
     if (!interactions.empty()) { interactions.clear(); }
     for (auto it = ns_counter.begin(); it != ns_counter.end(); ++it)
     {
@@ -168,7 +168,7 @@ void interaction_config_manager::pre_process(const multi_ex& ecs)
   // Regenerate interactions if new namespaces are seen
   if (new_ns_seen)
   {
-    for (uint64_t live_slot = 0; live_slot < scores.size(); ++live_slot) { gen_interactions(live_slot); }
+    for (uint64_t live_slot = 0; live_slot < estimators.size(); ++live_slot) { gen_interactions(live_slot); }
   }
 }
 // Helper function to insert new configs from oracle into map of configs as well as index_queue.
@@ -219,14 +219,14 @@ void interaction_config_manager::insert_config(std::set<std::vector<namespace_in
 // TODO: Add logic to avoid duplicate configs (could be very costly)
 void interaction_config_manager::config_oracle()
 {
-  auto& champ_interactions = scores[current_champ].first.live_interactions;
+  auto& champ_interactions = estimators[current_champ].first.live_interactions;
   if (oracle_type == "rand")
   {
     for (uint64_t i = 0; i < CONFIGS_PER_CHAMP_CHANGE; ++i)
     {
       uint64_t rand_ind = static_cast<uint64_t>(random_state->get_and_update_random() * champ_interactions.size());
       std::set<std::vector<namespace_index>> new_exclusions(
-          configs[scores[current_champ].first.config_index].exclusions);
+          configs[estimators[current_champ].first.config_index].exclusions);
       if (interaction_type == "quadratic")
       {
         namespace_index ns1 = champ_interactions[rand_ind][0];
@@ -264,7 +264,7 @@ void interaction_config_manager::config_oracle()
     for (auto& interaction : champ_interactions)
     {
       std::set<std::vector<namespace_index>> new_exclusions(
-          configs[scores[current_champ].first.config_index].exclusions);
+          configs[estimators[current_champ].first.config_index].exclusions);
       if (interaction_type == "quadratic")
       {
         namespace_index ns1 = interaction[0];
@@ -287,9 +287,9 @@ void interaction_config_manager::config_oracle()
       insert_config(std::move(new_exclusions));
     }
     // Remove one exclusion (for each exclusion)
-    for (auto& ns_pair : configs[scores[current_champ].first.config_index].exclusions)
+    for (auto& ns_pair : configs[estimators[current_champ].first.config_index].exclusions)
     {
-      auto new_exclusions = configs[scores[current_champ].first.config_index].exclusions;
+      auto new_exclusions = configs[estimators[current_champ].first.config_index].exclusions;
       new_exclusions.erase(ns_pair);
       insert_config(std::move(new_exclusions));
     }
@@ -299,7 +299,8 @@ void interaction_config_manager::config_oracle()
     for (uint64_t i = 0; i < max_live_configs; ++i)
     {
       insert_config(
-          std::set<std::vector<namespace_index>>(configs[scores[current_champ].first.config_index].exclusions), true);
+          std::set<std::vector<namespace_index>>(configs[estimators[current_champ].first.config_index].exclusions),
+          true);
     }
   }
   else
@@ -329,14 +330,15 @@ bool interaction_config_manager::repopulate_index_queue()
 
 bool interaction_config_manager::swap_eligible_to_inactivate(uint64_t live_slot)
 {
-  for (uint64_t other_live_slot = 0; other_live_slot < scores.size(); ++other_live_slot)
+  for (uint64_t other_live_slot = 0; other_live_slot < estimators.size(); ++other_live_slot)
   {
-    bool better = lb_trick ? scores[live_slot].first.lower_bound() > (1.f - scores[other_live_slot].first.lower_bound())
-                           : scores[live_slot].first.lower_bound() > scores[other_live_slot].first.upper_bound();
-    if (!scores[other_live_slot].first.eligible_to_inactivate && other_live_slot != current_champ && better)
+    bool better = lb_trick
+        ? estimators[live_slot].first.lower_bound() > (1.f - estimators[other_live_slot].first.lower_bound())
+        : estimators[live_slot].first.lower_bound() > estimators[other_live_slot].first.upper_bound();
+    if (!estimators[other_live_slot].first.eligible_to_inactivate && other_live_slot != current_champ && better)
     {
-      scores[live_slot].first.eligible_to_inactivate = false;
-      scores[other_live_slot].first.eligible_to_inactivate = true;
+      estimators[live_slot].first.eligible_to_inactivate = false;
+      estimators[other_live_slot].first.eligible_to_inactivate = true;
       return true;
     }
   }
@@ -349,45 +351,45 @@ void interaction_config_manager::schedule()
 {
   for (uint64_t live_slot = 0; live_slot < max_live_configs; ++live_slot)
   {
-    bool need_new_score = scores.size() <= live_slot;
+    bool need_new_estimator = estimators.size() <= live_slot;
     /*
     Scheduling a new live config is necessary in 3 cases:
     1. We have not reached the maximum number of live configs yet
     2. The current live config has been removed due to Chacha's worse function
     3. A config has reached its lease
     */
-    if (need_new_score ||
-        configs[scores[live_slot].first.config_index].state == VW::reductions::automl::config_state::Removed ||
-        scores[live_slot].first.update_count >= configs[scores[live_slot].first.config_index].lease)
+    if (need_new_estimator ||
+        configs[estimators[live_slot].first.config_index].state == VW::reductions::automl::config_state::Removed ||
+        estimators[live_slot].first.update_count >= configs[estimators[live_slot].first.config_index].lease)
     {
       // Double the lease check swap for eligible_to_inactivate configs
-      if (!need_new_score &&
-          configs[scores[live_slot].first.config_index].state == VW::reductions::automl::config_state::Live)
+      if (!need_new_estimator &&
+          configs[estimators[live_slot].first.config_index].state == VW::reductions::automl::config_state::Live)
       {
-        configs[scores[live_slot].first.config_index].lease *= 2;
-        if (!scores[live_slot].first.eligible_to_inactivate || swap_eligible_to_inactivate(live_slot)) { continue; }
+        configs[estimators[live_slot].first.config_index].lease *= 2;
+        if (!estimators[live_slot].first.eligible_to_inactivate || swap_eligible_to_inactivate(live_slot)) { continue; }
       }
       // Skip over removed configs in index queue, and do nothing we we run out of eligible configs
       while (!index_queue.empty() &&
           configs[index_queue.top().second].state == VW::reductions::automl::config_state::Removed)
       { index_queue.pop(); }
       if (index_queue.empty() && !repopulate_index_queue()) { continue; }
-      // Allocate new score if we haven't reached maximum yet
-      if (need_new_score)
+      // Allocate new estimator if we haven't reached maximum yet
+      if (need_new_estimator)
       {
-        scores.emplace_back(std::make_pair(aml_score(automl_significance_level, automl_estimator_decay),
-            scored_config(automl_significance_level, automl_estimator_decay)));
-        if (live_slot > priority_challengers) { scores.back().first.eligible_to_inactivate = true; }
+        estimators.emplace_back(std::make_pair(aml_estimator(automl_significance_level, automl_estimator_decay),
+            estimator_config(automl_significance_level, automl_estimator_decay)));
+        if (live_slot > priority_challengers) { estimators.back().first.eligible_to_inactivate = true; }
       }
       // Only inactivate current config if lease is reached
-      if (!need_new_score &&
-          configs[scores[live_slot].first.config_index].state == VW::reductions::automl::config_state::Live)
-      { configs[scores[live_slot].first.config_index].state = VW::reductions::automl::config_state::Inactive; }
+      if (!need_new_estimator &&
+          configs[estimators[live_slot].first.config_index].state == VW::reductions::automl::config_state::Live)
+      { configs[estimators[live_slot].first.config_index].state = VW::reductions::automl::config_state::Inactive; }
       // Set all features of new live config
-      scores[live_slot].first.reset_stats(automl_significance_level, automl_estimator_decay);
-      scores[live_slot].second.reset_stats(automl_significance_level, automl_estimator_decay);
+      estimators[live_slot].first.reset_stats(automl_significance_level, automl_estimator_decay);
+      estimators[live_slot].second.reset_stats(automl_significance_level, automl_estimator_decay);
       uint64_t new_live_config_index = choose();
-      scores[live_slot].first.config_index = new_live_config_index;
+      estimators[live_slot].first.config_index = new_live_config_index;
       configs[new_live_config_index].state = VW::reductions::automl::config_state::Live;
       weights.move_offsets(current_champ, live_slot, wpp);
       // Regenerate interactions each time an exclusion is swapped in
@@ -399,8 +401,8 @@ void interaction_config_manager::schedule()
 
 bool interaction_config_manager::better(uint64_t live_slot)
 {
-  return lb_trick ? scores[live_slot].first.lower_bound() > (1.f - scores[live_slot].second.lower_bound())
-                  : scores[live_slot].first.lower_bound() > scores[live_slot].second.upper_bound();
+  return lb_trick ? estimators[live_slot].first.lower_bound() > (1.f - estimators[live_slot].second.lower_bound())
+                  : estimators[live_slot].first.lower_bound() > estimators[live_slot].second.upper_bound();
 }
 
 bool interaction_config_manager::worse(uint64_t)
@@ -423,7 +425,7 @@ void interaction_config_manager::update_champ()
   uint64_t winning_challenger_slot = 0;
 
   // compare lowerbound of any challenger to the ips of the champ, and switch whenever when the LB beats the champ
-  for (uint64_t live_slot = 0; live_slot < scores.size(); ++live_slot)
+  for (uint64_t live_slot = 0; live_slot < estimators.size(); ++live_slot)
   {
     if (live_slot == current_champ) { continue; }
     // If challenger is better ('better function from Chacha')
@@ -434,7 +436,7 @@ void interaction_config_manager::update_champ()
     }
     else if (worse(live_slot))  // If challenger is worse ('worse function from Chacha')
     {
-      configs[scores[live_slot].first.config_index].state = VW::reductions::automl::config_state::Removed;
+      configs[estimators[live_slot].first.config_index].state = VW::reductions::automl::config_state::Removed;
     }
   }
   if (champ_change)
@@ -453,38 +455,36 @@ void interaction_config_manager::update_champ()
 
     this->total_champ_switches++;
     while (!index_queue.empty()) { index_queue.pop(); };
-    scores[winning_challenger_slot].first.eligible_to_inactivate = false;
-    if (priority_challengers > 1) { scores[old_champ_slot].first.eligible_to_inactivate = false; }
-    exclusion_config new_champ_config = configs[scores[winning_challenger_slot].first.config_index];
-    exclusion_config old_champ_config = configs[scores[old_champ_slot].first.config_index];
+    estimators[winning_challenger_slot].first.eligible_to_inactivate = false;
+    if (priority_challengers > 1) { estimators[old_champ_slot].first.eligible_to_inactivate = false; }
+    exclusion_config new_champ_config = configs[estimators[winning_challenger_slot].first.config_index];
+    exclusion_config old_champ_config = configs[estimators[old_champ_slot].first.config_index];
     configs[0] = std::move(new_champ_config);
     configs[1] = std::move(old_champ_config);
-    scores[winning_challenger_slot].first.config_index = 0;
-    scores[old_champ_slot].first.config_index = 1;
-    auto champ_score = std::move(scores[winning_challenger_slot]);
-    auto old_champ_score = std::move(scores[old_champ_slot]);
-    scores.clear();
-    scores.push_back(std::move(champ_score));
-    scores.push_back(std::move(old_champ_score));
+    estimators[winning_challenger_slot].first.config_index = 0;
+    estimators[old_champ_slot].first.config_index = 1;
+    auto champ_estimator = std::move(estimators[winning_challenger_slot]);
+    auto old_champ_estimator = std::move(estimators[old_champ_slot]);
+    estimators.clear();
+    estimators.push_back(std::move(champ_estimator));
+    estimators.push_back(std::move(old_champ_estimator));
     current_champ = 0;
     valid_config_size = 2;
 
     /*
      * These operations rearrange the scoring data to sync up the new champion and old champion. Assume the first
-     * challenger (chal_1) is taking over the champ (old_champ). The scores would have this configuration before a champ
-     * change: slot_0: <old_champ_dummy, old_champ_dummy_track_champ> slot_1: <chal_1, chal_1_track_champ> Note that the
-     * scores <old_champ_dummy, old_champ_dummy_track_champ> are not updated since the champion does not need to track
-     * itself. After the champ change, the same scores will look like this:
-     * slot_0: <chal_1, chal_1_track_champ>
-     * slot_1: <old_champ_dummy, old_champ_dummy_track_champ>
-     * We then want to move the statistics from chal_1_track_champ to old_champ_dummy and chal_1 to
-     * old_champ_dummy_track_champ since they both share the same horizons, but have swapped which is champion and which
-     * is challenger. While we want to swap these statistics, we don't want to alter the other state such as
-     * interactions and config_index.
+     * challenger (chal_1) is taking over the champ (old_champ). The estimators would have this configuration before a
+     * champ change: slot_0: <old_champ_dummy, old_champ_dummy_track_champ> slot_1: <chal_1, chal_1_track_champ> Note
+     * that the estimators <old_champ_dummy, old_champ_dummy_track_champ> are not updated since the champion does not
+     * need to track itself. After the champ change, the same estimators will look like this: slot_0: <chal_1,
+     * chal_1_track_champ> slot_1: <old_champ_dummy, old_champ_dummy_track_champ> We then want to move the statistics
+     * from chal_1_track_champ to old_champ_dummy and chal_1 to old_champ_dummy_track_champ since they both share the
+     * same horizons, but have swapped which is champion and which is challenger. While we want to swap these
+     * statistics, we don't want to alter the other state such as interactions and config_index.
      */
-    scores[1].first = aml_score(std::move(scores[0].second), scores[1].first.config_index,
-        scores[1].first.eligible_to_inactivate, scores[1].first.live_interactions);
-    scores[1].second = scores[0].first;
+    estimators[1].first = aml_estimator(std::move(estimators[0].second), estimators[1].first.config_index,
+        estimators[1].first.eligible_to_inactivate, estimators[1].first.live_interactions);
+    estimators[1].second = estimators[0].first;
     config_oracle();
   }
 }
@@ -493,13 +493,13 @@ void interaction_config_manager::persist(metric_sink& metrics, bool verbose)
 {
   metrics.set_uint("test_county", total_learn_count);
   metrics.set_uint("current_champ", current_champ);
-  for (uint64_t live_slot = 0; live_slot < scores.size(); ++live_slot)
+  for (uint64_t live_slot = 0; live_slot < estimators.size(); ++live_slot)
   {
-    scores[live_slot].first.persist(metrics, "_amls_" + std::to_string(live_slot), verbose, interaction_type);
-    scores[live_slot].second.persist(metrics, "_sc_" + std::to_string(live_slot));
+    estimators[live_slot].first.persist(metrics, "_amls_" + std::to_string(live_slot), verbose, interaction_type);
+    estimators[live_slot].second.persist(metrics, "_sc_" + std::to_string(live_slot));
     if (verbose)
     {
-      auto& exclusions = configs[scores[live_slot].first.config_index].exclusions;
+      auto& exclusions = configs[estimators[live_slot].first.config_index].exclusions;
       metrics.set_string("exclusionc_" + std::to_string(live_slot), VW::reductions::exclusions_to_string(exclusions));
     }
   }
@@ -510,12 +510,29 @@ void interaction_config_manager::persist(metric_sink& metrics, bool verbose)
 void interaction_config_manager::apply_config(example* ec, uint64_t live_slot)
 {
   if (ec == nullptr) { return; }
-  if (live_slot < max_live_configs) { ec->interactions = &(scores[live_slot].first.live_interactions); }
+  if (live_slot < max_live_configs) { ec->interactions = &(estimators[live_slot].first.live_interactions); }
   else
   {
     THROW("fatal (automl): trying to apply a config higher than max configs allowed");
   }
 }
+
+void interaction_config_manager::do_learning(multi_learner& base, multi_ex& ec, uint64_t live_slot)
+{
+  // TODO: what to do if that slot is switched with anew config?
+  std::swap(*_gd_normalized, per_live_model_state_double[live_slot * 2]);
+  std::swap(*_gd_total_weight, per_live_model_state_double[live_slot * 2 + 1]);
+  std::swap(*_cb_adf_event_sum, per_live_model_state_uint64[live_slot * 2]);
+  std::swap(*_cb_adf_action_sum, per_live_model_state_uint64[live_slot * 2 + 1]);
+  for (example* ex : ec) { apply_config(ex, live_slot); }
+  if (!base.learn_returns_prediction) { base.predict(ec, live_slot); }
+  base.learn(ec, live_slot);
+  std::swap(*_gd_normalized, per_live_model_state_double[live_slot * 2]);
+  std::swap(*_gd_total_weight, per_live_model_state_double[live_slot * 2 + 1]);
+  std::swap(*_cb_adf_event_sum, per_live_model_state_uint64[live_slot * 2]);
+  std::swap(*_cb_adf_action_sum, per_live_model_state_uint64[live_slot * 2 + 1]);
+}
+
 }  // namespace automl
 }  // namespace reductions
 }  // namespace VW

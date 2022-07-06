@@ -8,7 +8,7 @@
 
 namespace VW
 {
-struct scored_config
+struct estimator_config
 {
   VW::distributionally_robust::ChiSquared chisq;
   float ips = 0.0;
@@ -16,8 +16,8 @@ struct scored_config
   float last_r = 0.0;
   uint64_t update_count = 0;
 
-  scored_config() : chisq(DEFAULT_ALPHA, CRESSEREAD_DEFAULT_TAU, 0, std::numeric_limits<double>::infinity()) {}
-  scored_config(double alpha, double tau) : chisq(alpha, tau, 0, std::numeric_limits<double>::infinity()) {}
+  estimator_config() : chisq(DEFAULT_ALPHA, CRESSEREAD_DEFAULT_TAU, 0, std::numeric_limits<double>::infinity()) {}
+  estimator_config(double alpha, double tau) : chisq(alpha, tau, 0, std::numeric_limits<double>::infinity()) {}
 
   void update(float w, float r);
   void persist(metric_sink&, const std::string&);
@@ -29,7 +29,7 @@ struct scored_config
 
 namespace model_utils
 {
-size_t read_model_field(io_buf&, VW::scored_config&);
-size_t write_model_field(io_buf&, const VW::scored_config&, const std::string&, bool);
+size_t read_model_field(io_buf&, VW::estimator_config&);
+size_t write_model_field(io_buf&, const VW::estimator_config&, const std::string&, bool);
 }  // namespace model_utils
 }  // namespace VW
