@@ -41,6 +41,8 @@ extern "C"
   typedef void* VW_FEATURE_SPACE;
   typedef void* VW_FEATURE;
   typedef void* VW_IOBUF;
+  typedef void *VW_EXAMPLE_POOL_HANDLE;
+
 
   const VW_HANDLE INVALID_VW_HANDLE = VW_TYPE_SAFE_NULL;
   const VW_HANDLE INVALID_VW_EXAMPLE = VW_TYPE_SAFE_NULL;
@@ -134,7 +136,7 @@ extern "C"
   VW_DLL_PUBLIC void VW_CALLING_CONV VW_ClearCapturedAuditData(VW_HANDLE handle);
   VW_DLL_PUBLIC char* VW_CALLING_CONV VW_GetAuditDataA(VW_HANDLE handle, size_t* size);
   VW_DLL_PUBLIC void VW_CALLING_CONV VW_FreeAuditDataA(VW_HANDLE handle, char* data);
-  VW_DLL_PUBLIC void VW_CALLING_CONV VW_Get_Cats_Action_Pdf(VW_HANDLE handle, VW_EXAMPLE example, float action_and_pdf[2]);
+  VW_DLL_PUBLIC void VW_CALLING_CONV VW_Get_Cats_Action_Pdf_Value(VW_HANDLE handle, VW_EXAMPLE example, float action_and_pdf[2]);
 
 
 #ifdef __cplusplus
