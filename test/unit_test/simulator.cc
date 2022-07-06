@@ -202,7 +202,8 @@ std::vector<float> cb_sim::run_simulation_hook(VW::workspace* vw, size_t num_ite
   return ctr;
 }
 
-std::vector<float> cb_sim::run_simulation(VW::workspace* vw, size_t num_iterations, bool do_learn, size_t shift, const std::vector<uint64_t>& swap_after)
+std::vector<float> cb_sim::run_simulation(
+    VW::workspace* vw, size_t num_iterations, bool do_learn, size_t shift, const std::vector<uint64_t>& swap_after)
 {
   callback_map callbacks;
   return cb_sim::run_simulation_hook(vw, num_iterations, callbacks, do_learn, shift, false, 0, swap_after);
@@ -217,7 +218,8 @@ std::vector<float> _test_helper(const std::string& vw_arg, size_t num_iterations
   return ctr;
 }
 
-std::vector<float> _test_helper_save_load(const std::string& vw_arg, size_t num_iterations, int seed, const std::vector<uint64_t>& swap_after, const size_t split)
+std::vector<float> _test_helper_save_load(const std::string& vw_arg, size_t num_iterations, int seed,
+    const std::vector<uint64_t>& swap_after, const size_t split)
 {
   BOOST_CHECK_GT(num_iterations, split);
   size_t before_save = num_iterations - split;

@@ -95,16 +95,17 @@ BOOST_AUTO_TEST_CASE(automl_save_load)
   const std::vector<uint64_t> swap_after = {500};
   callback_map empty_hooks;
   auto ctr_no_save = simulator::_test_helper_hook(
-"--automl 3 --priority_type favor_popular_namespaces --cb_explore_adf --quiet --epsilon 0.2 "
+      "--automl 3 --priority_type favor_popular_namespaces --cb_explore_adf --quiet --epsilon 0.2 "
       "--fixed_significance_level "
       "--random_seed 5 --no_predict",
       empty_hooks, num_iterations, seed, swap_after);
   BOOST_CHECK_GT(ctr_no_save.back(), 0.6f);
 
   auto ctr_with_save = simulator::_test_helper_save_load(
-"--automl 3 --priority_type favor_popular_namespaces --cb_explore_adf --quiet --epsilon 0.2 "
+      "--automl 3 --priority_type favor_popular_namespaces --cb_explore_adf --quiet --epsilon 0.2 "
       "--fixed_significance_level "
-      "--random_seed 5 --no_predict", num_iterations, seed, swap_after, split);
+      "--random_seed 5 --no_predict",
+      num_iterations, seed, swap_after, split);
   BOOST_CHECK_GT(ctr_with_save.back(), 0.6f);
 
   BOOST_CHECK_EQUAL_COLLECTIONS(ctr_no_save.begin(), ctr_no_save.end(), ctr_with_save.begin(), ctr_with_save.end());
