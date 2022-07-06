@@ -230,16 +230,8 @@ struct automl
     // Learn and get action of champ
     cm->do_learning(base, ec, current_champ);
     auto champ_action = ec[0]->pred.a_s[0].action;
-    for (int64_t current_slot_index = 1; static_cast<size_t>(current_slot_index) < cm->estimators.size();
-         ++current_slot_index)
-    {
-      if (!debug_reverse_learning_order) { live_slot = current_slot_index; }
-      else
-      {
-        live_slot = cm->estimators.size() - current_slot_index;
-      }
-      cm->estimators[live_slot].second.update(champ_action == labelled_action ? w : 0, r);
-    }
+    for (live_slot = 1; static_cast<size_t>(live_slot) < cm->estimators.size(); ++live_slot)
+    { cm->estimators[live_slot].second.update(champ_action == labelled_action ? w : 0, r); }
   };
 
 private:
