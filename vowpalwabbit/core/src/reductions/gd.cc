@@ -355,7 +355,6 @@ template <bool l1, bool audit>
 void predict(gd& g, base_learner&, VW::example& ec)
 {
   VW_DBG(ec) << "gd.predict(): ex#=" << ec.example_counter << ", offset=" << ec.ft_offset << std::endl;
-  g.current_model_state = &(g.per_model_states[ec.ft_offset / g.all->weights.stride()]);
 
   VW::workspace& all = *g.all;
   size_t num_interacted_features = 0;
@@ -373,7 +372,6 @@ void predict(gd& g, base_learner&, VW::example& ec)
              << std::endl;
 
   if (audit) { print_audit_features(all, ec); }
-  g.current_model_state = nullptr;
 }
 
 template <class T>
@@ -388,8 +386,6 @@ template <bool l1, bool audit>
 void multipredict(gd& g, base_learner&, VW::example& ec, size_t count, size_t step, VW::polyprediction* pred,
     bool finalize_predictions)
 {
-  // tODO: do we care? use the first slot for multipredict for now
-  if (g.current_model_state == nullptr) { g.current_model_state = &(g.per_model_states[0]); }
   VW::workspace& all = *g.all;
   for (size_t c = 0; c < count; c++)
   {
@@ -448,7 +444,6 @@ void multipredict(gd& g, base_learner&, VW::example& ec, size_t count, size_t st
     }
     ec.ft_offset -= static_cast<uint64_t>(step * count);
   }
-  g.current_model_state = nullptr;
 }
 
 struct power_data
@@ -725,6 +720,7 @@ void learn(gd& g, base_learner& base, VW::example& ec)
   assert(ec.l.simple.label != FLT_MAX);
   assert(ec.weight > 0.);
   g.predict(g, base, ec);
+  // this state should only matter on learn and not predict
   g.current_model_state = &(g.per_model_states[ec.ft_offset / g.all->weights.stride()]);
   update<sparse_l2, invariant, sqrt_rate, feature_mask_off, adax, adaptive, normalized, spare>(g, base, ec);
   assert(g.current_model_state == nullptr);  // update clears this pointer
