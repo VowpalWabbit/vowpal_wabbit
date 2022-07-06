@@ -89,21 +89,25 @@ VW::reductions::automl::automl<interaction_config_manager>* get_automl_data(VW::
 // config_manager and estimator_config.
 BOOST_AUTO_TEST_CASE(automl_save_load)
 {
+  const size_t num_iterations = 1000;
+  const size_t split = 690;
+  const size_t seed = 88;
+  const std::vector<uint64_t> swap_after = {500};
   callback_map empty_hooks;
   auto ctr = simulator::_test_helper_hook(
-      "--automl 3 --priority_type favor_popular_namespaces --cb_explore_adf --quiet --epsilon 0.2 "
-      "--random_seed 5 "
-      "--oracle_type rand",
-      empty_hooks);
+"--automl 3 --priority_type favor_popular_namespaces --cb_explore_adf --quiet --epsilon 0.2 "
+      "--fixed_significance_level "
+      "--random_seed 5 --noconstant",
+      empty_hooks, num_iterations, seed, swap_after);
   float without_save = ctr.back();
   BOOST_CHECK_GT(without_save, 0.7f);
 
   ctr = simulator::_test_helper_save_load(
-      "--automl 3 --priority_type favor_popular_namespaces --cb_explore_adf --quiet --epsilon 0.2 "
-      "--random_seed 5 "
-      "--oracle_type rand");
+"--automl 3 --priority_type favor_popular_namespaces --cb_explore_adf --quiet --epsilon 0.2 "
+      "--fixed_significance_level "
+      "--random_seed 5 --noconstant", num_iterations, seed, swap_after, split);
   float with_save = ctr.back();
-  BOOST_CHECK_GT(with_save, 0.7f);
+  BOOST_CHECK_GT(with_save, 0.6f);
 
   BOOST_CHECK_CLOSE(without_save, with_save, FLOAT_TOL);
 }

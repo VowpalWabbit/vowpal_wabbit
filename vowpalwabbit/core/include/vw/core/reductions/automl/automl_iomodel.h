@@ -58,6 +58,8 @@ size_t read_model_field(io_buf& io, VW::reductions::automl::interaction_config_m
   bytes += read_model_field(io, cm.configs);
   bytes += read_model_field(io, cm.estimators);
   bytes += read_model_field(io, cm.index_queue);
+  cm.per_live_model_state_double.clear();
+  cm.per_live_model_state_uint64.clear();
   bytes += read_model_field(io, cm.per_live_model_state_double);
   bytes += read_model_field(io, cm.per_live_model_state_uint64);
   for (uint64_t live_slot = 0; live_slot < cm.estimators.size(); ++live_slot) { cm.gen_interactions(live_slot); }
