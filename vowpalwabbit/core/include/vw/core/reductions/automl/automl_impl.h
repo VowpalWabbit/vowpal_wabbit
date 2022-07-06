@@ -209,15 +209,9 @@ struct automl
     int64_t current_champ = static_cast<int64_t>(cm->current_champ);
     assert(current_champ == 0);
 
-    auto restore_guard = VW::scope_exit([this, &ec, &live_slot, &current_champ, &incoming_interactions]() {
+    auto restore_guard = VW::scope_exit([this, &ec, &incoming_interactions]() {
       for (example* ex : ec) { ex->interactions = incoming_interactions; }
-      if (live_slot != current_champ) { std::swap(ec[0]->pred.a_s, buffer_a_s); }
     });
-
-    // Learn and get action of champ
-    cm->do_learning(base, ec, current_champ);
-    auto champ_action = ec[0]->pred.a_s[0].action;
-    std::swap(ec[0]->pred.a_s, buffer_a_s);
 
     // Learn and update estimators of challengers
     for (int64_t current_slot_index = 1; static_cast<size_t>(current_slot_index) < cm->estimators.size();
@@ -230,9 +224,22 @@ struct automl
       }
       cm->do_learning(base, ec, live_slot);
       cm->estimators[live_slot].first.update(ec[0]->pred.a_s[0].action == labelled_action ? w : 0, r);
+    }
+
+    // ** Note: champ learning is done after to ensure correct feature count in gd **
+    // Learn and get action of champ
+    cm->do_learning(base, ec, current_champ);
+    auto champ_action = ec[0]->pred.a_s[0].action;
+    for (int64_t current_slot_index = 1; static_cast<size_t>(current_slot_index) < cm->estimators.size();
+         ++current_slot_index)
+    {
+      if (!debug_reverse_learning_order) { live_slot = current_slot_index; }
+      else
+      {
+        live_slot = cm->estimators.size() - current_slot_index;
+      }
       cm->estimators[live_slot].second.update(champ_action == labelled_action ? w : 0, r);
     }
-    std::swap(ec[0]->pred.a_s, buffer_a_s);
   };
 
 private:
