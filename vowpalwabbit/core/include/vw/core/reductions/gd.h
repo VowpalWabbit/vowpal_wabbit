@@ -180,6 +180,15 @@ inline float trunc_weight(const float w, const float gravity)
 
 }  // namespace GD
 
+namespace VW
+{
+namespace model_utils
+{
+size_t read_model_field(io_buf&, GD::per_model_state&);
+size_t write_model_field(io_buf&, const GD::per_model_state&, const std::string&, bool);
+}  // namespace model_utils
+}  // namespace VW
+
 namespace INTERACTIONS
 {
 template <class R, class S, void (*T)(R&, float, S), bool audit, void (*audit_func)(R&, const VW::audit_strings*)>

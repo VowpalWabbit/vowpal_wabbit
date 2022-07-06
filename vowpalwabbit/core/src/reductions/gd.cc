@@ -2,6 +2,8 @@
 // individual contributors. All rights reserved. Released under a BSD (revised)
 // license as described in the file LICENSE.
 
+#include "vw/core/reductions/gd.h"
+
 #include "vw/core/crossplat_compat.h"
 #include "vw/core/feature_group.h"
 #include "vw/core/global_data.h"
@@ -25,8 +27,8 @@
 #include "vw/core/accumulate.h"
 #include "vw/core/debug_log.h"
 #include "vw/core/label_parser.h"
+#include "vw/core/model_utils.h"
 #include "vw/core/parse_regressor.h"
-#include "vw/core/reductions/gd.h"
 #include "vw/core/shared_data.h"
 #include "vw/core/vw.h"
 #include "vw/core/vw_versions.h"
@@ -1134,6 +1136,15 @@ void save_load_online_state(VW::workspace& all, io_buf& model_file, bool read, b
     { all.sd->contraction = local_contraction; }
   }
 
+  if (!read || all.model_file_ver >= VW::version_definitions::VERSION_FILE_WITH_GD_PPW_STATE)
+  {
+    if (read) { VW::model_utils::read_model_field(model_file, pms); }
+    else
+    {
+      VW::model_utils::write_model_field(model_file, pms, "gd_ppw_state", text);
+    }
+  }
+
   if (read &&
       (!all.training ||
           !all.preserve_performance_counters))  // reset various things so that we report test set performance properly
@@ -1301,6 +1312,28 @@ uint64_t ceil_log_2(uint64_t v)
 }
 
 }  // namespace GD
+
+namespace VW
+{
+namespace model_utils
+{
+size_t read_model_field(io_buf& model, GD::per_model_state& pms)
+{
+  size_t bytes = 0;
+  bytes += read_model_field(model, pms.normalized_sum_norm_x);
+  bytes += read_model_field(model, pms.total_weight);
+  return bytes;
+}
+
+size_t write_model_field(io_buf& model, const GD::per_model_state& pms, const std::string& name, bool text)
+{
+  size_t bytes = 0;
+  bytes += write_model_field(model, pms.normalized_sum_norm_x, name + "normalized_sum_norm_x", text);
+  bytes += write_model_field(model, pms.total_weight, name + "total_weight", text);
+  return bytes;
+}
+}  // namespace model_utils
+}  // namespace VW
 
 base_learner* VW::reductions::gd_setup(VW::setup_base_i& stack_builder)
 {
