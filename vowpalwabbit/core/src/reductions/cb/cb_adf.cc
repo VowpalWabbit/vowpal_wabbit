@@ -434,7 +434,7 @@ VW::LEARNER::base_learner* VW::reductions::cb_adf_setup(VW::setup_base_i& stack_
                .necessary()
                .help("Do Contextual Bandit learning with multiline action dependent features"))
       .add(make_option("rank_all", rank_all).keep().help("Return actions sorted by score order"))
-      .add(make_option("no_predict", no_predict).keep().help("Do not do a prediction when training"))
+      .add(make_option("no_predict", no_predict).help("Do not do a prediction when training"))
       .add(make_option("clip_p", clip_p)
                .keep()
                .default_value(0.f)
