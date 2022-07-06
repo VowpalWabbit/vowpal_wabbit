@@ -127,7 +127,6 @@ VW::LEARNER::base_learner* VW::reductions::cb_explore_adf_greedy_setup(VW::setup
   if (!options.was_supplied("cb_adf"))
   {
     options.insert("cb_adf", "");
-    options.insert("no_predict", "");
   }
 
   size_t problem_multiplier = 1;
