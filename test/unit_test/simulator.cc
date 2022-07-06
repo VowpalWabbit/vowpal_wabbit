@@ -233,7 +233,7 @@ std::vector<float> _test_helper_save_load(const std::string& vw_arg, size_t num_
   VW::save_predictor(*first_vw, model_file);
   VW::finish(*first_vw);
   // reload in another instance
-  auto other_vw = VW::initialize("--quiet -i " + model_file);
+  auto other_vw = VW::initialize("--quiet --no_predict -i " + model_file);
   // continue
   ctr = sim.run_simulation(other_vw, split, true, before_save + 1, swap_after);
   VW::finish(*other_vw);
