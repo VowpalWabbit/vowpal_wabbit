@@ -97,14 +97,14 @@ BOOST_AUTO_TEST_CASE(automl_save_load)
   auto ctr_no_save = simulator::_test_helper_hook(
       "--automl 3 --priority_type favor_popular_namespaces --cb_explore_adf --quiet --epsilon 0.2 "
       "--fixed_significance_level "
-      "--random_seed 5 --no_predict",
+      "--random_seed 5",
       empty_hooks, num_iterations, seed, swap_after);
   BOOST_CHECK_GT(ctr_no_save.back(), 0.6f);
 
   auto ctr_with_save = simulator::_test_helper_save_load(
       "--automl 3 --priority_type favor_popular_namespaces --cb_explore_adf --quiet --epsilon 0.2 "
       "--fixed_significance_level "
-      "--random_seed 5 --no_predict",
+      "--random_seed 5",
       num_iterations, seed, swap_after, split);
   BOOST_CHECK_GT(ctr_with_save.back(), 0.6f);
 
