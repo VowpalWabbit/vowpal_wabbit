@@ -209,7 +209,7 @@ struct automl
     int64_t current_champ = static_cast<int64_t>(cm->current_champ);
     assert(current_champ == 0);
 
-    auto restore_guard = VW::scope_exit([this, &ec, &incoming_interactions]() {
+    auto restore_guard = VW::scope_exit([&ec, &incoming_interactions]() {
       for (example* ex : ec) { ex->interactions = incoming_interactions; }
     });
 
