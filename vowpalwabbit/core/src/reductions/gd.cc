@@ -622,8 +622,8 @@ float get_scale(gd& g, VW::example& /* ec */, float weight)
 template <bool sqrt_rate, bool feature_mask_off, bool adax, size_t adaptive, size_t normalized, size_t spare>
 float sensitivity(gd& g, base_learner& /* base */, VW::example& ec)
 {
-  // tODO: do we care? use the first slot for multipredict for now
-  if (g.current_model_state == nullptr) { g.current_model_state = &(g.per_model_states[0]); }
+  if (g.current_model_state == nullptr)
+  { g.current_model_state = &(g.per_model_states[ec.ft_offset / g.all->weights.stride()]); }
   return get_scale<adaptive>(g, ec, 1.) *
       sensitivity<sqrt_rate, feature_mask_off, adax, adaptive, normalized, spare, true>(g, ec);
   g.current_model_state = nullptr;
@@ -676,8 +676,8 @@ template <bool sparse_l2, bool invariant, bool sqrt_rate, bool feature_mask_off,
     size_t normalized, size_t spare>
 void update(gd& g, base_learner&, VW::example& ec)
 {
-  // tODO: do we care? use the first slot for multipredict for now
-  if (g.current_model_state == nullptr) { g.current_model_state = &(g.per_model_states[0]); }
+  if (g.current_model_state == nullptr)
+  { g.current_model_state = &(g.per_model_states[ec.ft_offset / g.all->weights.stride()]); }
   // invariant: not a test label, importance weight > 0
   float update;
   if ((update = compute_update<sparse_l2, invariant, sqrt_rate, feature_mask_off, adax, adaptive, normalized, spare>(
