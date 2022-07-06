@@ -139,6 +139,7 @@ VW::LEARNER::base_learner* VW::reductions::automl_setup(VW::setup_base_i& stack_
   float automl_estimator_decay;
   bool reversed_learning_order = false;
   bool lb_trick = false;
+  bool fixed_significance_level;
 
   option_group_definition new_options("[Reduction] Automl");
   new_options
@@ -200,6 +201,10 @@ VW::LEARNER::base_learner* VW::reductions::automl_setup(VW::setup_base_i& stack_
                .keep()
                .default_value(CRESSEREAD_DEFAULT_TAU)
                .help("Time constant for count decay")
+               .experimental())
+      .add(make_option("fixed_significance_level", fixed_significance_level)
+               .keep()
+               .help("Use fixed significance level as opposed to scaling by model count (bonferroni correction)")
                .experimental());
 
   if (!options.add_parse_and_check_necessary(new_options)) { return nullptr; }
@@ -218,6 +223,8 @@ VW::LEARNER::base_learner* VW::reductions::automl_setup(VW::setup_base_i& stack_
 
   if (priority_challengers < 0) { priority_challengers = (static_cast<int>(max_live_configs) - 1) / 2; }
 
+  if (!fixed_significance_level) { automl_significance_level /= max_live_configs; }
+
   // Note that all.wpp will not be set correctly until after setup
   auto cm = VW::make_unique<VW::reductions::automl::interaction_config_manager>(global_lease, max_live_configs,
       all.get_random_state(), static_cast<uint64_t>(priority_challengers), interaction_type, oracle_type,
@@ -226,7 +233,7 @@ VW::LEARNER::base_learner* VW::reductions::automl_setup(VW::setup_base_i& stack_
   auto data = VW::make_unique<VW::reductions::automl::automl<VW::reductions::automl::interaction_config_manager>>(
       std::move(cm), &all.logger);
   data->debug_reverse_learning_order = reversed_learning_order;
-  data->per_live_model_state_uint64 = std::vector<uint64_t>(max_live_configs * 2, 0.f);
+  data->cm->per_live_model_state_uint64 = std::vector<uint64_t>(max_live_configs * 2, 0.f);
 
   if (max_live_configs > VW::reductions::automl::MAX_CONFIGS)
   {
@@ -262,8 +269,8 @@ VW::LEARNER::base_learner* VW::reductions::automl_setup(VW::setup_base_i& stack_
     data->adf_learner = as_multiline(base_learner->get_learner_by_name_prefix("cb_adf"));
     auto& adf_data =
         *static_cast<CB_ADF::cb_adf*>(data->adf_learner->get_internal_type_erased_data_pointer_test_use_only());
-    data->_cb_adf_event_sum = &(adf_data._gen_cs.event_sum);
-    data->_cb_adf_action_sum = &(adf_data._gen_cs.action_sum);
+    data->cm->_cb_adf_event_sum = &(adf_data._gen_cs.event_sum);
+    data->cm->_cb_adf_action_sum = &(adf_data._gen_cs.action_sum);
 
     auto* l = make_reduction_learner(std::move(data), as_multiline(base_learner),
         learn_automl<VW::reductions::automl::interaction_config_manager, true>,
