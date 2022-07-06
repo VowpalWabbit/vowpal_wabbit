@@ -946,6 +946,47 @@ jobject action_scores_prediction(example* vec, JNIEnv* env);
 jobject action_probs_prediction(example* vec, JNIEnv* env);
 jobject decision_scores_prediction(example* vec, JNIEnv* env);
 
+jobject probability_density_function_value(example* ex, JNIEnv* env)
+{
+  jclass predClass = env->FindClass("vowpalWabbit/responses/PDFValue");
+  CHECK_JNI_EXCEPTION(nullptr);
+
+  jmethodID ctr = env->GetMethodID(predClass, "<init>", "(FF)V");
+  CHECK_JNI_EXCEPTION(nullptr);
+
+  return env->NewObject(predClass, ctr, ex->pred.pdf_value.action, ex->pred.pdf_value.pdf_value);
+}
+
+jobject probability_density_function(example* ex, JNIEnv* env)
+{
+  jclass pdfSegmentClass = env->FindClass("vowpalWabbit/responses/PDFSegment");
+  CHECK_JNI_EXCEPTION(nullptr);
+
+  jmethodID ctrPdfSegment = env->GetMethodID(pdfSegmentClass, "<init>", "(FFF)V");
+  CHECK_JNI_EXCEPTION(nullptr);
+
+  jclass pdfClass = env->FindClass("vowpalWabbit/responses/PDF");
+  CHECK_JNI_EXCEPTION(nullptr);
+
+  jmethodID ctrPdf = env->GetMethodID(pdfClass, "<init>", "([LvowpalWabbit/responses/PDFSegment;)V");
+  CHECK_JNI_EXCEPTION(nullptr);
+
+  auto& pdf = ex->pred.pdf;
+
+  jobjectArray pdfSegments = env->NewObjectArray(pdf.size(), pdfSegmentClass, 0);
+  for (uint32_t i = 0; i < pdf.size(); ++i)
+  {
+    auto& pdfSegment = pdf[i];
+
+    jobject pdfSegmentObj =
+        env->NewObject(pdfSegmentClass, ctrPdfSegment, pdfSegment.left, pdfSegment.right, pdfSegment.pdf_value);
+
+    env->SetObjectArrayElement(pdfSegments, i, pdfSegmentObj);
+  }
+
+  return env->NewObject(pdfClass, ctrPdf, pdfSegments);
+}
+
 jobject getJavaPrediction(JNIEnv* env, VW::workspace* all, example* ex)
 {
   jclass predClass;
@@ -993,6 +1034,12 @@ jobject getJavaPrediction(JNIEnv* env, VW::workspace* all, example* ex)
 
     case VW::prediction_type_t::decision_probs:
       return decision_scores_prediction(ex, env);
+
+    case VW::prediction_type_t::pdf:
+      return probability_density_function(ex, env);
+
+    case VW::prediction_type_t::action_pdf_value:
+      return probability_density_function_value(ex, env);
 
     default:
     {
