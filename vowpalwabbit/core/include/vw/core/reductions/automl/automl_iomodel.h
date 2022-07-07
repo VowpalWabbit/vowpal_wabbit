@@ -28,20 +28,20 @@ size_t write_model_field(
   return bytes;
 }
 
-size_t read_model_field(io_buf& io, VW::reductions::automl::aml_score& amls)
+size_t read_model_field(io_buf& io, VW::reductions::automl::aml_estimator& amls)
 {
   size_t bytes = 0;
-  bytes += read_model_field(io, reinterpret_cast<VW::scored_config&>(amls));
+  bytes += read_model_field(io, reinterpret_cast<VW::estimator_config&>(amls));
   bytes += read_model_field(io, amls.config_index);
   bytes += read_model_field(io, amls.eligible_to_inactivate);
   return bytes;
 }
 
 size_t write_model_field(
-    io_buf& io, const VW::reductions::automl::aml_score& amls, const std::string& upstream_name, bool text)
+    io_buf& io, const VW::reductions::automl::aml_estimator& amls, const std::string& upstream_name, bool text)
 {
   size_t bytes = 0;
-  bytes += write_model_field(io, reinterpret_cast<const VW::scored_config&>(amls), upstream_name, text);
+  bytes += write_model_field(io, reinterpret_cast<const VW::estimator_config&>(amls), upstream_name, text);
   bytes += write_model_field(io, amls.config_index, upstream_name + "_index", text);
   bytes += write_model_field(io, amls.eligible_to_inactivate, upstream_name + "_eligible_to_inactivate", text);
   return bytes;
@@ -49,16 +49,21 @@ size_t write_model_field(
 
 size_t read_model_field(io_buf& io, VW::reductions::automl::interaction_config_manager& cm)
 {
-  cm.scores.clear();
+  cm.estimators.clear();
+  cm.configs.clear();
+  cm.per_live_model_state_double.clear();
+  cm.per_live_model_state_uint64.clear();
   size_t bytes = 0;
   bytes += read_model_field(io, cm.total_learn_count);
   bytes += read_model_field(io, cm.current_champ);
   bytes += read_model_field(io, cm.valid_config_size);
   bytes += read_model_field(io, cm.ns_counter);
   bytes += read_model_field(io, cm.configs);
-  bytes += read_model_field(io, cm.scores);
+  bytes += read_model_field(io, cm.estimators);
   bytes += read_model_field(io, cm.index_queue);
-  for (uint64_t live_slot = 0; live_slot < cm.scores.size(); ++live_slot) { cm.gen_interactions(live_slot); }
+  bytes += read_model_field(io, cm.per_live_model_state_double);
+  bytes += read_model_field(io, cm.per_live_model_state_uint64);
+  for (uint64_t live_slot = 0; live_slot < cm.estimators.size(); ++live_slot) { cm.gen_interactions(live_slot); }
   return bytes;
 }
 
@@ -71,8 +76,10 @@ size_t write_model_field(io_buf& io, const VW::reductions::automl::interaction_c
   bytes += write_model_field(io, cm.valid_config_size, upstream_name + "_valid_config_size", text);
   bytes += write_model_field(io, cm.ns_counter, upstream_name + "_ns_counter", text);
   bytes += write_model_field(io, cm.configs, upstream_name + "_configs", text);
-  bytes += write_model_field(io, cm.scores, upstream_name + "_scores", text);
+  bytes += write_model_field(io, cm.estimators, upstream_name + "_estimators", text);
   bytes += write_model_field(io, cm.index_queue, upstream_name + "_index_queue", text);
+  bytes += write_model_field(io, cm.per_live_model_state_double, upstream_name + "_per_live_model_state_double", text);
+  bytes += write_model_field(io, cm.per_live_model_state_uint64, upstream_name + "_per_live_model_state_uint64", text);
   return bytes;
 }
 
@@ -82,8 +89,6 @@ size_t read_model_field(io_buf& io, VW::reductions::automl::automl<CMType>& aml)
   size_t bytes = 0;
   bytes += read_model_field(io, aml.current_state);
   bytes += read_model_field(io, *aml.cm);
-  bytes += read_model_field(io, aml.per_live_model_state_double);
-  bytes += read_model_field(io, aml.per_live_model_state_uint64);
   return bytes;
 }
 
@@ -94,8 +99,6 @@ size_t write_model_field(
   size_t bytes = 0;
   bytes += write_model_field(io, aml.current_state, upstream_name + "_state", text);
   bytes += write_model_field(io, *aml.cm, upstream_name + "_config_manager", text);
-  bytes += write_model_field(io, aml.per_live_model_state_double, upstream_name + "_per_live_model_state_double", text);
-  bytes += write_model_field(io, aml.per_live_model_state_uint64, upstream_name + "_per_live_model_state_uint64", text);
   return bytes;
 }
 
